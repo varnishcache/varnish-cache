@@ -7,4 +7,6 @@ varnish_SOURCES = \
 	listener.c \
 	log.c \
 	request.c \
+	system-common.c \
+	system-@target_os@.c \
 	varnish.c

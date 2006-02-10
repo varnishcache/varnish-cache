@@ -5,9 +5,9 @@
 #ifndef CONNECTION_H_INCLUDED
 #define CONNECTION_H_INCLUDED
 
-struct connection {
-	int sd;
-	struct sockaddr_storage addr;
-};
+typedef struct connection connection_t;
+
+connection_t *connection_accept(int ld);
+void connection_destroy(connection_t *c);
 
 #endif

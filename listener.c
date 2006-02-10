@@ -13,8 +13,14 @@
 #include <unistd.h>
 
 #include "varnish.h"
-#include "listener.h"
 #include "connection.h"
+#include "listener.h"
+#include "log.h"
+
+struct listener {
+	int sd;
+	struct sockaddr_storage addr;
+};
 
 /*
  * Create a socket that listens on the specified port.  We use an IPv6 TCP
@@ -83,50 +89,14 @@ listener_destroy(struct listener *l)
 	free(l);
 }
 
-struct connection *
+connection_t *
 listener_accept(struct listener *l)
 {
-	struct connection *c;
-	socklen_t len;
+	connection_t *c;
 
-	c = calloc(1, sizeof *c);
 	for (;;) {
-		len = sizeof c->addr;
-		c->sd = accept(l->sd, (struct sockaddr *)&c->addr, &len);
-		if (c->sd != -1) {
-			switch (c->addr.ss_family) {
-#if defined(AF_INET6)
-			case AF_INET6: {
-				struct sockaddr_in6 *addr =
-				    (struct sockaddr_in6 *)&c->addr;
-				uint16_t *ip = (uint16_t *)&addr->sin6_addr;
-
-				log_info("%s(): [%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x]:%u",
-				    __func__,
-				    ntohs(ip[0]), ntohs(ip[1]),
-				    ntohs(ip[2]), ntohs(ip[3]),
-				    ntohs(ip[4]), ntohs(ip[5]),
-				    ntohs(ip[6]), ntohs(ip[7]),
-				    ntohs(addr->sin6_port));
-				break;
-			}
-#endif
-			case AF_INET: {
-				struct sockaddr_in *addr =
-				    (struct sockaddr_in *)&c->addr;
-				uint8_t *ip = (uint8_t *)&addr->sin_addr;
-
-				log_info("%s(): %u.%u.%u.%u:%u",
-				    __func__,
-				    ip[0], ip[1], ip[2], ip[3],
-				    ntohs(addr->sin_port));
-				break;
-			}
-			default:
-				LOG_UNREACHABLE();
-			}
+		if ((c = connection_accept(l->sd)) != NULL)
 			return (c);
-		}
 		if (errno != EINTR) {
 			log_syserr("accept()");
 			free(c);

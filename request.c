@@ -5,7 +5,13 @@
 #include <stdlib.h>
 
 #include "varnish.h"
+#include "connection.h"
+#include "log.h"
 #include "request.h"
+
+struct request {
+	connection_t *conn;
+};
 
 request_t *
 request_wait(connection_t *c, unsigned int timeout)
