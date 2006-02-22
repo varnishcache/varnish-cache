@@ -9,7 +9,7 @@
     <title>Varnish HTTP Accelerator Draft Specification</title>
   </articleinfo>
 
-  <section>
+  <chapter>
     <title>Introduction</title>
 
     <section>
@@ -44,9 +44,9 @@
       tuning facility (split in two? does this overlap with
       configuration facility?)</para>
     </section>
-  </section>
+  </chapter>
 
-  <section>
+  <chapter>
     <title>General requirements</title>
 
     <section>
@@ -223,9 +223,9 @@
 	</orderedlist>
       </section>
     </section>
-  </section>
+  </chapter>
 
-  <section>
+  <chapter>
     <title>Functional requirements</title>
 
     <section>
@@ -534,9 +534,9 @@
 	servers in the cluster.</para>
       </section>
     </section>
-  </section>
+  </chapter>
 
-  <section>
+  <chapter>
     <title>Application structure</title>
 
     <section>
@@ -624,7 +624,7 @@
 	log data to the Logger.</para>
       </section>
     </section>
-  </section>
+  </chapter>
 
   <bibliography>
     <title>References</title>
