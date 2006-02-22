@@ -1,0 +1,98 @@
+/* $Id$ */
+
+article, book {
+	background-color: white;
+	color: black;
+	font-family: sans-serif;
+	margin: 1in;
+}
+
+/*
+ * Titles
+ */
+title {
+	display: block;
+	color: maroon;
+}
+
+article title, article articleinfo title {
+	font-weight: bold;
+	font-size: 200%;
+}
+
+book title, book bookinfo title {
+	text-align: center;
+	font-weight: bold;
+	font-size: 200;
+}
+
+/* level 1 */
+section {
+	counter-increment: sect1;
+	counter-reset: sect2;
+}
+
+section title:before {
+	content: counter(sect1) " ";
+}
+
+section title {
+	font-weight: bold;
+	font-size: 150%;
+}
+
+/* level 2 */
+section section {
+	counter-increment: sect2;
+	counter-reset: sect3;
+}
+
+section section title:before {
+	content: counter(sect1) "." counter(sect2) " ";
+}
+
+section section title {
+	font-weight: bold;
+	font-size: 130%;
+}
+
+/* level 3 */
+section section section {
+	counter-increment: sect3;
+	counter-reset: sect4;
+}
+
+section section section title:before {
+	content: counter(sect1) "." counter(sect2) "." counter(sect3) " ";
+}
+
+section section section title {
+	font-weight: bold;
+	font-size: 130%;
+}
+
+/*
+ * Sections and paragraphs
+ */
+section {
+	display: block;
+	margin-top: 1em;
+}
+
+para {
+	display: block;
+	margin-top: 1ex;
+}
+
+/*
+ * Lists
+ */
+orderedlist {
+	display: block;
+}
+
+orderedlist listitem {
+	display: list-item;
+	list-style-type: disc inside;
+	margin-left: 4em;
+}
