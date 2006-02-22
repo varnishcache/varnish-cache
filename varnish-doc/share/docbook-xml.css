@@ -15,15 +15,34 @@ title {
 	color: maroon;
 }
 
-article title, article articleinfo title {
+article title,
+book title {
 	font-weight: bold;
 	font-size: 200%;
 }
 
-book title, book bookinfo title {
-	text-align: center;
+/* level 0 */
+chapter,
+appendix,
+bibliography
+{
+	counter-increment: sect0;
+	counter-reset: sect1;
+}
+
+chapter > title:before,
+appendix > title:before,
+bibliography > title:before
+{
+	content: counter(sect0) " ";
+}
+
+chapter > title,
+appendix > title,
+bibliography > title
+{
 	font-weight: bold;
-	font-size: 200;
+	font-size: xx-large;
 }
 
 /* level 1 */
@@ -32,48 +51,53 @@ section {
 	counter-reset: sect2;
 }
 
-section title:before {
-	content: counter(sect1) " ";
+section > title:before {
+	content: counter(sect0) "." counter(sect1) " ";
 }
 
-section title {
+section > title {
 	font-weight: bold;
-	font-size: 150%;
+	font-size: x-large;
 }
 
 /* level 2 */
-section section {
+section > section {
 	counter-increment: sect2;
 	counter-reset: sect3;
 }
 
-section section title:before {
-	content: counter(sect1) "." counter(sect2) " ";
+section > section > title:before {
+	content: counter(sect0) "." counter(sect1) "." counter(sect2) " ";
 }
 
-section section title {
+section > section > title {
 	font-weight: bold;
-	font-size: 130%;
+	font-size: large;
 }
 
 /* level 3 */
-section section section {
+section > section > section {
 	counter-increment: sect3;
 	counter-reset: sect4;
 }
 
-section section section title:before {
-	content: counter(sect1) "." counter(sect2) "." counter(sect3) " ";
+section > section > section > title:before {
+	content: counter(sect0) "." counter(sect1) "." counter(sect2) "." counter(sect3) " ";
 }
 
-section section section title {
+section > section > section > title {
 	font-weight: bold;
-	font-size: 130%;
+	font-size: 100%;
 }
 
 /*
  * Sections and paragraphs
  */
+chapter, appendix, bibliography {
+	display: block;
+	margin-top: 3em;
+}
+
 section {
 	display: block;
 	margin-top: 1em;
