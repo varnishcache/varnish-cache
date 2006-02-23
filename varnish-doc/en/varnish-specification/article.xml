@@ -9,7 +9,7 @@
     <title>Varnish HTTP Accelerator Draft Specification</title>
   </articleinfo>
 
-  <chapter>
+  <section>
     <title>Introduction</title>
 
     <section>
@@ -44,9 +44,9 @@
       tuning facility (split in two? does this overlap with
       configuration facility?)</para>
     </section>
-  </chapter>
+  </section>
 
-  <chapter>
+  <section>
     <title>General requirements</title>
 
     <section>
@@ -223,9 +223,9 @@
 	</orderedlist>
       </section>
     </section>
-  </chapter>
+  </section>
 
-  <chapter>
+  <section>
     <title>Functional requirements</title>
 
     <section>
@@ -342,12 +342,77 @@
       <title>Management</title>
 
       <section>
+	<title>Management interface</title>
+
+	<para>Varnish must provide an interface for external
+	management utilities.  This interface must accept connections
+	on a Unix socket and / or a TCP socket, depending on
+	configuration.</para>
+
+	<para>Varnish may assume that the management interface is
+	adequately protected by socket permissions or firewall rules,
+	as applicable, and that any data it receives through this
+	interface is valid management data from an authorized
+	administrator.</para>
+
+	<para>Varnish may further assume that all data received
+	through the management interface is well-formed and
+	meaningful.</para>
+      </section>
+
+      <section>
+	<title>Management library</title>
+
+	<para>Varnish must be accompanied by a C library, hereafter
+	referred to as the management library, which provides a
+	reasonably high-level API to the management interface</para>
+
+	<para>Varnish should be accompanied by a Perl library which
+	provides Perl bindings to the management library.</para>
+
+	<para>Varnish may be accompanied by libraries which provide
+	appropriate bindings to the management library for other
+	programming or scripting languages.</para>
+      </section>
+
+      <section>
+	<title>CLI management tool</title>
+
+	<para>Varnish must be accompanied by a CLI management tool,
+	written in C, which serves as a front-end to the management
+	library.</para>
+
+	<para>The CLI management tool must allow management commands
+	to be passed on the command line.</para>
+
+	<para>In addition, the CLI management tool should offer an
+	interactive mode using libreadline, libedit or a similar
+	line-editing library.</para>
+      </section>
+
+      <section>
+	<title>Web-based management tool</title>
+
+	<para>Varnish should be accompanied by a web-based management
+	tool.  This tool should have the ability to generate graphs
+	and histograms based on the data described in <xref
+	linkend="sect.logging-statistics"/>.</para>
+      </section>
+
+      <section>
+	<title>Plugins for third-party tools</title>
+
+	<para>Varnish may be accompanied by plugins for third-party
+	management tools such as Munin, Nagios and NAV.</para>
+      </section>
+
+      <section>
 	<title>Configuration</title>
 
 	<para>XXX</para>
       </section>
 
-      <section>
+      <section id="sect.logging-statistics">
 	<title>Logging and statistics</title>
 
 	<para>A separate application is responsible for collecting,
@@ -356,6 +421,7 @@
 
 	<para>Varnish must provide the data necessary to compute
 	lifetime totals and sliding averages for the following:</para>
+
 	<orderedlist>
 	  <listitem>
 	    <para>Total size of documents served to clients</para>
@@ -420,6 +486,7 @@
 	<para>In addition, Varnish must provide the data necessary to
 	compute the average, median and distribution for the
 	following:</para>
+
 	<orderedlist>
 	  <listitem>
 	    <para>Size of documents served, per unique document</para>
@@ -505,6 +572,20 @@
       same set of clients.</para>
 
       <section>
+	<title>Management</title>
+
+	<para>Varnish must be accompanied by a multiplexer for the
+	management interface which provide a single point of access to
+	the entire cluster for management tools such as the CLI
+	management tool or a web-based management interface.</para>
+
+	<para>The management protocol must be designed to allow
+	management commands to be targeted at individual nodes.  The
+	default behaviour must be to propagate management commands to
+	all nodes in the cluster.</para>
+      </section>
+
+      <section>
 	<title>Configuration</title>
 
 	<para>When multiple Varnish servers act together as a cluster,
@@ -534,9 +615,9 @@
 	servers in the cluster.</para>
       </section>
     </section>
-  </chapter>
+  </section>
 
-  <chapter>
+  <section>
     <title>Application structure</title>
 
     <section>
@@ -624,14 +705,14 @@
 	log data to the Logger.</para>
       </section>
     </section>
-  </chapter>
+  </section>
 
   <bibliography>
     <title>References</title>
 
-    <biblioentry id="RFC2119"/>
-    <biblioentry id="RFC2186"/>
-    <biblioentry id="RFC2616"/>
-    <biblioentry id="RFC2756"/>
+    <bibliomixed id="RFC2119"/>
+    <bibliomixed id="RFC2186"/>
+    <bibliomixed id="RFC2616"/>
+    <bibliomixed id="RFC2756"/>
   </bibliography>
 </article>
