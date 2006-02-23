@@ -149,4 +149,36 @@ PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
       <publishername>Internet Engineering Task Force</publishername>
     </publisher>
   </biblioentry>
+
+  <biblioentry id="RFC3507" xreflabel="[RFC3507]">
+    <abbrev>RFC3507</abbrev>
+    <title>
+      <ulink url="http://www.faqs.org/rfcs/rfc3507.html">Internet
+      Content Adaptation Protocol (ICAP)</ulink>
+    </title>
+    <authorgroup>
+      <author>
+	<surname>Elson</surname>
+	<firstname>Jeremy</firstname>
+	<affiliation>
+	  <orgname>University of California Los Angeles</orgname>
+	</affiliation>
+      </author>
+      <author>
+	<surname>Cerpa</surname>
+	<firstname>Alberto</firstname>
+	<affiliation>
+	  <orgname>University of California Los Angeles</orgname>
+	</affiliation>
+      </author>
+    </authorgroup>
+    <date>April 2003</date>
+    <biblioset>
+      <title>IETF RFC</title>
+      <volumenum>3507</volumenum>
+    </biblioset>
+    <publisher>
+      <publishername>Internet Engineering Task Force</publishername>
+    </publisher>
+  </biblioentry>
 </bibliography>
