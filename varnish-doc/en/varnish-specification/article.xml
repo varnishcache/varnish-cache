@@ -401,6 +401,16 @@
 	<para>When sending a document to a client, Varnish must set
 	the Expires header to the document's expiry time.</para>
       </section>
+
+      <section>
+	<title>Refreshing</title>
+
+	<para>Varnish must attempt to refresh documents before they
+	expire, in order to avoid stalling a client request while
+	retrieving an expired document.</para>
+
+	<para>XXX</para>
+      </section>
     </section>
 
     <section>
