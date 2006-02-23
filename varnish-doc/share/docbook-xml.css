@@ -15,79 +15,106 @@ title {
 	color: maroon;
 }
 
-article title,
-book title {
+article > title,
+article > articleinfo > title,
+book > title,
+book > bookinfo > title
+{
 	font-weight: bold;
 	font-size: 200%;
 }
 
 /* level 0 */
-chapter,
-appendix,
-bibliography
+article > section,
+article > appendix,
+article > bibliography,
+book > chapter,
+book > appendix,
+book > bibliography
 {
 	counter-increment: sect0;
 	counter-reset: sect1;
 }
 
-chapter > title:before,
-appendix > title:before,
-bibliography > title:before
+article > section > title:before,
+article > appendix > title:before,
+article > bibliography > title:before,
+book > chapter > title:before,
+book > appendix > title:before,
+book > bibliography > title:before
 {
-	content: counter(sect0) " ";
+	content: counter(sect0) ". ";
 }
 
-chapter > title,
-appendix > title,
-bibliography > title
+article > section > title,
+article > appendix > title,
+article > bibliography > title,
+book > chapter > title,
+book > appendix > title,
+book > bibliography > title
 {
 	font-weight: bold;
 	font-size: xx-large;
 }
 
 /* level 1 */
-section {
+article > section > section,
+article > appendix > section,
+article > bibliography > bibliodiv,
+book > chapter > section,
+book > appendix > section,
+book > bibliography > bibliodiv
+{
 	counter-increment: sect1;
 	counter-reset: sect2;
 }
 
-section > title:before {
-	content: counter(sect0) "." counter(sect1) " ";
+article > section > section > title:before,
+article > appendix > section > title:before,
+article > bibliography > bibliodiv > title:before,
+book > chapter > section > title:before,
+book > appendix > section > title:before,
+book > bibliography > bibliodiv > title:before
+{
+	content: counter(sect0) "." counter(sect1) ". ";
 }
 
-section > title {
+article > section > section > title,
+article > appendix > section > title,
+article > bibliography > bibliodiv > title,
+book > chapter > section > title,
+book > appendix > section > title,
+book > bibliography > bibliodiv > title
+{
 	font-weight: bold;
 	font-size: x-large;
 }
 
 /* level 2 */
-section > section {
+article > section > section > section,
+article > appendix > section > section,
+book > chapter > section > section,
+book > appendix > section > section
+{
 	counter-increment: sect2;
 	counter-reset: sect3;
 }
 
-section > section > title:before {
-	content: counter(sect0) "." counter(sect1) "." counter(sect2) " ";
+article > section > section > section > title:before,
+article > appendix > section > section > title:before,
+book > chapter > section > section > title:before,
+book > appendix > section > section > title:before
+{
+	content: counter(sect0) "." counter(sect1) "." counter(sect2) ". ";
 }
 
-section > section > title {
+article > section > section > section > title,
+article > appendix > section > section > title,
+book > chapter > section > section > title,
+book > appendix > section > section > title
+{
 	font-weight: bold;
 	font-size: large;
-}
-
-/* level 3 */
-section > section > section {
-	counter-increment: sect3;
-	counter-reset: sect4;
-}
-
-section > section > section > title:before {
-	content: counter(sect0) "." counter(sect1) "." counter(sect2) "." counter(sect3) " ";
-}
-
-section > section > section > title {
-	font-weight: bold;
-	font-size: 100%;
 }
 
 /*
@@ -111,12 +138,34 @@ para {
 /*
  * Lists
  */
-orderedlist {
+orderedlist, itemizedlist {
 	display: block;
 }
 
-orderedlist listitem {
+orderedlist > listitem {
+	display: list-item;
+	list-style-type: roman inside;
+	margin-left: 4em;
+}
+
+itemizedlist > listitem {
 	display: list-item;
 	list-style-type: disc inside;
 	margin-left: 4em;
+}
+
+/*
+ * Links
+ */
+xref:before {
+	content: "[";
+}
+
+xref {
+	color: blue;
+	font-decoration: underline;
+}
+
+xref:after {
+	content: "]";
 }
