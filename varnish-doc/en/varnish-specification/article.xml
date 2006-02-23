@@ -26,7 +26,7 @@
       <para>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”,
       “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
       “OPTIONAL” in this document are to be interpreted as described
-      in IETF RFC 2119.</para>
+      in <xref linkend="RFC2119"/>.</para>
 
       <para>XXX at this time, the above is incorrect because we
       started out using MoSCoW prioritisation before realising it was
@@ -175,7 +175,7 @@
 	<title>Internal documentation</title>
 
 	<para>The internal documentation consists of:</para>
-	<orderedlist>
+	<itemizedlist>
 	  <listitem>
 	    <para>Code comments.</para>
 	  </listitem>
@@ -197,14 +197,14 @@
 	    documentation either in the project Wiki or in DocBook XML
 	    format.</para>
 	  </listitem>
-	</orderedlist>
+	</itemizedlist>
       </section>
 
       <section>
 	<title>External documentation</title>
 
 	<para>The external documentation consists of:</para>
-	<orderedlist>
+	<itemizedlist>
 	  <listitem>
 	    <para>Manual pages for all daemons and command-line
 	    tools.</para>
@@ -220,7 +220,7 @@
 	  <listitem>
 	    <para>Sample configuration files.</para>
 	  </listitem>
-	</orderedlist>
+	</itemizedlist>
       </section>
     </section>
   </section>
@@ -249,7 +249,7 @@
 	requests from both IPv4 and IPv6 clients.</para>
 
 	<para>Varnish must, in general terms, handle these requests in
-	conformance with IETF RFC 2616.</para>
+	conformance with <xref linkend="RFC2616"/>.</para>
 
 	<para>Varnish may handle HTTP/0.9 requests in any way it sees
 	fit, including but not limited to returning a 400 Bad Request
@@ -258,19 +258,21 @@
 	<para>Varnish must use HTTP/1.1 in its communications with the
 	content servers.</para>
 
-	<para>Varnish may deviate from IETF RFC 2616 when this is
-	necessary for interoperability with non-conforming clients or
-	content servers.</para>
+	<para>Varnish may deviate from <xref linkend="RFC2616"/> when
+	this is necessary for interoperability with non-conforming
+	clients or content servers.</para>
 
-	<para>Varnish may deviate from IETF RFC 2616 in cases where
-	doing so provides a considerable performance advantage without
-	causing significant harm to interoperability.  Any such
-	deviation must be documented.</para>
+	<para>Varnish may deviate from <xref linkend="RFC2616"/> in
+	cases where doing so provides a considerable performance
+	advantage without causing significant harm to
+	interoperability.  Any such deviation must be
+	documented.</para>
 
 	<para>In its communications with clients, Varnish must
-	interpret IETF RFC 2616 as if it were an origin server.  In
-	its communications with content servers, Varnish must
-	interpret IETF RFC 2616 as if it were a cache.</para>
+	interpret <xref linkend="RFC2616"/> as if it were an origin
+	server.  In its communications with content servers, Varnish
+	must interpret <xref linkend="RFC2616"/> as if it were a
+	cache.</para>
       </section>
 
       <section>
@@ -323,18 +325,81 @@
       </section>
 
       <section>
-	<title>Expiry</title>
+	<title>Cacheability</title>
 
-	<para>If a cached document has an expiry time associated with
-	it, and that time has not yet been reached, Varnish may serve
-	the document from cache without contacting the content
-	server.</para>
+	<para>A request which includes authentication headers must not
+	be served from cache.</para>
+
+	<para>Varnish must interpret Cache-Control directives received
+	from content servers as follows:</para>
+
+	<itemizedlist>
+	  <listitem>
+	    <para>public: the document will be cached even if
+	    authentication headers are present.</para>
+	  </listitem>
+	  <listitem>
+	    <para>private: the document will not be cached, since
+	    Varnish is a shared cache.</para>
+	  </listitem>
+	  <listitem>
+	    <para>no-cache: the document will not be cached.</para>
+	  </listitem>
+	  <listitem>
+	    <para>no-store: XXX</para>
+	  </listitem>
+	  <listitem>
+	    <para>s-maxage: overrides max-age, since Varnish is a
+	    shared cache.</para>
+	  </listitem>
+	  <listitem>
+	    <para>max-age: overrides the Expires header.</para>
+	  </listitem>
+	  <listitem>
+	    <para>min-fresh: ignored.</para>
+	  </listitem>
+	  <listitem>
+	    <para>max-stale: ignored.</para>
+	  </listitem>
+	  <listitem>
+	    <para>only-if-cached: ignored.</para>
+	  </listitem>
+	  <listitem>
+	    <para>must-revalidate: as specified in <xref
+	    linkend="RFC2616"/> §14.9.4.</para>
+	  </listitem>
+	  <listitem>
+	    <para>proxy-revalidate: as must-revalidate.</para>
+	  </listitem>
+	  <listitem>
+	    <para>no-transform: ignored.</para>
+	  </listitem>
+	</itemizedlist>
+
+	<para>Varnish must ignore Cache-Control directives received
+	from clients.</para>
       </section>
 
       <section>
-	<title>Non-cacheable content</title>
+	<title>Expiry</title>
 
-	<para>XXX</para>
+	<para>If a content server returns a document with a s-maxage
+	directive, Varnish will set the expiry time for that document
+	to the time of the request plus the number of seconds
+	specified by the directive.</para>
+
+	<para>If a content server returns a document with no s-maxage
+	directive but a max-age directive, Varnish will set the expiry
+	time for that document to the time of the request plus the
+	number of seconds specified by the max-age directive.</para>
+
+	<para>If a content server returns a document with no s-maxage
+	or max-age directive but an Expires header, Varnish must set
+	the expiry time for that document to the value specified by
+	the Expires header.</para>
+
+	<para>When sending a document to a client, Varnish must set
+	the Expires header to the document's expiry time.</para>
       </section>
     </section>
 
@@ -422,7 +487,7 @@
 	<para>Varnish must provide the data necessary to compute
 	lifetime totals and sliding averages for the following:</para>
 
-	<orderedlist>
+	<itemizedlist>
 	  <listitem>
 	    <para>Total size of documents served to clients</para>
 	  </listitem>
@@ -481,13 +546,13 @@
 	  <listitem>
 	    <para>XXX length of request queues</para>
 	  </listitem>
-	</orderedlist>
+	</itemizedlist>
 
 	<para>In addition, Varnish must provide the data necessary to
 	compute the average, median and distribution for the
 	following:</para>
 
-	<orderedlist>
+	<itemizedlist>
 	  <listitem>
 	    <para>Size of documents served, per unique document</para>
 	  </listitem>
@@ -501,7 +566,9 @@
 	    <para>Requests per client connection</para>
 	  </listitem>
 	  <listitem>
-	    <para>Client request completion time</para>
+	    <para>Client request completion time, broken down by
+	    request type (HEAD / GET), cache status (HIT / MISS) and
+	    outcome (200, 404...)</para>
 	  </listitem>
 	  <listitem>
 	    <para>Content server connection duration</para>
@@ -510,12 +577,14 @@
 	    <para>Requests per content server connection</para>
 	  </listitem>
 	  <listitem>
-	    <para>Content server request completion time</para>
+	    <para>Content server request completion time, broken down
+	    by request type (HEAD / GET) and outcome (200,
+	    404...)</para>
 	  </listitem>
 	  <listitem>
 	    <para>XXX time spent in request queues</para>
 	  </listitem>
-	</orderedlist>
+	</itemizedlist>
       </section>
     </section>
 
@@ -529,7 +598,7 @@
       <para>The following monitoring operations must be
       supported:</para>
 
-      <orderedlist>
+      <itemizedlist>
 	<listitem>
 	  <para>Cache status of individual documents</para>
 	</listitem>
@@ -547,11 +616,11 @@
 	<listitem>
 	  <para>XXX</para>
 	</listitem>
-      </orderedlist>
+      </itemizedlist>
 
       <para>The following tuning operations must be supported:</para>
 
-      <orderedlist>
+      <itemizedlist>
 	<listitem>
 	  <para>Forced invalidation of individual documents</para>
 	</listitem>
@@ -561,7 +630,7 @@
 	<listitem>
 	  <para>XXX</para>
 	</listitem>
-      </orderedlist>
+      </itemizedlist>
     </section>
     <section>
       <title>Clustering</title>
@@ -714,5 +783,6 @@
     <bibliomixed id="RFC2186"/>
     <bibliomixed id="RFC2616"/>
     <bibliomixed id="RFC2756"/>
+    <bibliomixed id="RFC3507"/>
   </bibliography>
 </article>
