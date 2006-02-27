@@ -2,6 +2,6 @@
 
 INCLUDES = -I$(top_srcdir)/include
 
-lib_LIBRARIES = libvarnish.la
+lib_LTLIBRARIES = libvarnish.la
 
 libvarnish_la_SOURCES =

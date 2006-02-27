@@ -3,8 +3,8 @@
 # $Id$
 #
 
-libtoolize --copy --force
 aclocal
+libtoolize --copy --force
 autoheader
 automake --add-missing --copy --force --foreign
 autoconf
