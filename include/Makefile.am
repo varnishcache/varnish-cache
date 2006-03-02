@@ -1,4 +1,6 @@
 # $Id$
 
-include_HEADERS = varnishapi.h
+include_HEADERS = \
+	varnish/assert.h \
+	varnishapi.h
 
