@@ -65,6 +65,7 @@ AC_CONFIG_FILES([
     Makefile
     include/Makefile
     lib/Makefile
+    lib/libsbuf/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
     bin/Makefile
