@@ -2,4 +2,5 @@
 
 SUBDIRS = \
 	libvarnish \
-	libvarnishapi
+	libvarnishapi \
+	libvcl
