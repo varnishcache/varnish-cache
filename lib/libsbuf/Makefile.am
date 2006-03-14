@@ -6,3 +6,6 @@ lib_LTLIBRARIES = libsbuf.la
 
 libsbuf_la_SOURCES = \
 	sbuf.c
+
+man_MANS = \
+	sbuf.3
