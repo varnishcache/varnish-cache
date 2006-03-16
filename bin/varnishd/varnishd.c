@@ -2,14 +2,16 @@
  * $Id$
  */
 
-#include <errno.h>
 #include <assert.h>
+#include <err.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
 
 #include <sys/wait.h>
 
@@ -27,7 +29,7 @@
 
 static enum {
 	H_STOP = 0,
-	H_START,
+	H_START
 }	desired;
 static pid_t	child_pid;
 static int	child_fds[2];
@@ -55,7 +57,7 @@ static void
 std_wrcb(struct bufferevent *bev, void *arg)
 {
 
-	printf("%s(%p, %p)\n", __func__, bev, arg);
+	printf("%s(%p, %p)\n", __func__, (void*)bev, arg);
 	exit (2);
 }
 
@@ -63,7 +65,7 @@ static void
 std_excb(struct bufferevent *bev, short what, void *arg)
 {
 
-	printf("%s(%p, %d, %p)\n", __func__, bev, what, arg);
+	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
 	exit (2);
 }
 

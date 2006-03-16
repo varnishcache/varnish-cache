@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -50,7 +51,7 @@ cli_result(struct cli *cli, unsigned res)
 static void
 encode_output(struct cli *cli)
 {
-	const char *p, *q;
+	char *p, *q;
 
 	if (cli->verbose) {
 		if (cli->result != CLIS_OK)
@@ -64,7 +65,7 @@ encode_output(struct cli *cli)
 	}
 	evbuffer_add_printf(cli->bev1->output, "%d \"", cli->result);
 	for (p = q = sbuf_data(cli->sb); *p != '\0'; p++) {
-		if (*p != '"' && *p != '\\' && isgraph(*p) || *p == ' ')
+		if ((*p != '"' && *p != '\\' && isgraph(*p)) || *p == ' ')
 			continue;
 		if (p != q) 
 			evbuffer_add(cli->bev1->output, q, p - q);
@@ -83,10 +84,7 @@ static void
 rdcb(struct bufferevent *bev, void *arg)
 {
 	const char *p;
-	char **av;
 	struct cli *cli = arg;
-	unsigned u;
-	struct cli_proto *cp;
 
 	p = evbuffer_readline(bev->input);
 	if (p == NULL)
