@@ -6,118 +6,141 @@
 	"url.query",							\
 	"url.query <url>",						\
 	"\tQuery the cache status of a specific URL.\n"			\
-	    "\tReturns the TTL, size and checksum of the object." 
+	    "\tReturns the TTL, size and checksum of the object.", 	\
+	1, 1
 
 #define CLI_URL_PURGE							\
 	"url.purge",							\
 	"url.purge <regexp>",						\
 	"\tAll urls matching regexp will consider currently cached\n"	\
-	    "\tobjects obsolete"
+	    "\tobjects obsolete",					\
+	1, 1
 
 #define CLI_URL_STATUS							\
 	"url.status",							\
 	"url.status <url>",						\
-	"\tReturns all metadata for the specified URL"
+	"\tReturns all metadata for the specified URL",			\
+	1, 1
 
 #define CLI_CONFIG_LOAD							\
 	"config.load",							\
 	"config.load <configname> <filename>",				\
-	"\tCompile and load the VCL file under the name provided."
+	"\tCompile and load the VCL file under the name provided.",	\
+	2, 2
 
 #define CLI_CONFIG_INLINE						\
 	"config.inline",						\
 	"config.inline <configname> <quoted_VCLstring>",		\
-	"\tCompile and load the VCL data under the name provided." 
+	"\tCompile and load the VCL data under the name provided.",	\
+	2, 2
 
 #define CLI_CONFIG_UNLOAD						\
 	"config.unload",						\
 	"config.unload <configname>",					\
-	"\tUnload the named configuration (when possible)."
+	"\tUnload the named configuration (when possible).",		\
+	1, 1
 
 #define CLI_CONFIG_LIST							\
 	"config.list",							\
 	"config.list",							\
-	"\tList all loaded configuration."
+	"\tList all loaded configuration.",				\
+	0, 0
 
 #define CLI_CONFIG_USE							\
 	"config.use",							\
 	"config.use <configname>",					\
-	"\tSwitch to the named configuration immediately."
+	"\tSwitch to the named configuration immediately.",		\
+	1, 1
 
 #define CLI_SERVER_FREEZE						\
 	"server.freeze",						\
 	"server.freeze",						\
-	"\tStop the clock, freeze object store."
+	"\tStop the clock, freeze object store.",			\
+	0, 0 
 
 #define CLI_SERVER_THAW							\
 	"thaw",								\
 	"thaw",								\
-	"\tRestart the clock, unfreeze object store."
+	"\tRestart the clock, unfreeze object store.",			\
+	0, 0
 
 #define CLI_SERVER_SUSPEND						\
 	"suspend",							\
 	"suspend",							\
-	"\tStop accepting requests."
+	"\tStop accepting requests.",					\
+	0, 0
 
 #define CLI_SERVER_RESUME						\
 	"resume",							\
 	"resume",							\
-	"\tAccept requests."
+	"\tAccept requests.",						\
+	0, 0
 
 #define CLI_SERVER_STOP							\
 	"stop",								\
 	"stop",								\
-	"\tStop the Varnish cache process"
+	"\tStop the Varnish cache process",				\
+	0, 0
 
 #define CLI_SERVER_START						\
 	"start",							\
 	"start",							\
-	"\tStart the Varnish cache process."
+	"\tStart the Varnish cache process.",				\
+	0, 0
 
 #define CLI_SERVER_RESTART						\
 	"restart",							\
 	"restart",							\
-	"\tRestart the Varnish cache process."
+	"\tRestart the Varnish cache process.",				\
+	0, 0
 
 #define CLI_PING							\
 	"ping",								\
 	"ping [timestamp]",						\
-	"\tKeep connection alive"
+	"\tKeep connection alive",					\
+	0, 1
 
 #define CLI_STATS							\
 	"stats",							\
 	"stats",							\
-	"\tShow summary statistics"
+	"\tShow summary statistics",					\
+	0, 0
 
 #define CLI_ZERO							\
 	"zero",								\
 	"zero",								\
-	"\tZero summary statistics"
+	"\tZero summary statistics",					\
+	0, 0
 
 #define CLI_HELP							\
 	"help",								\
 	"help [command]",						\
-	"\tShow command/protocol help"
+	"\tShow command/protocol help",					\
+	0, 1
 
 #define CLI_VERBOSE							\
 	"verbose",							\
 	"verbose",							\
-	"\tEnable/Disable verbosity"
+	"\tEnable/Disable verbosity",					\
+	0, 0
 
 #define CLI_EXIT							\
 	"exit",								\
 	"exit",								\
-	"\tClose connection"
+	"\tClose connection",						\
+	0, 0
 
 #define CLI_QUIT							\
 	"quit",								\
 	"quit",								\
-	"\tClose connection"
+	"\tClose connection",						\
+	0, 0
 
 #define CLI_BYE								\
 	"bye",								\
 	"bye",								\
-	"\tClose connection"
+	"\tClose connection",						\
+	0, 0
 
 enum cli_status_e {
 	CLIS_SYNTAX	= 100,
