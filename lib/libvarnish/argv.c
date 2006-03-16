@@ -23,6 +23,7 @@ static int
 BackSlash(const char *s, int *res)
 {
 	int i, r;
+	unsigned u;
 
 	assert(*s == '\\');
 	r = i = 0;
@@ -59,8 +60,10 @@ BackSlash(const char *s, int *res)
 		}
 		break;
 	case 'x':
-		if (1 == sscanf(s + 1, "x%02x", &i))
+		if (1 == sscanf(s + 1, "x%02x", &u)) {
+			i = u;
 			r = 4;
+		}
 		break;
 	default:
 		break;

@@ -5,6 +5,7 @@
  */
 
 #include <ctype.h>
+#include <string.h>
 #include <stdio.h>
 
 #include <cli.h>
@@ -20,7 +21,6 @@
 void
 cli_func_help(struct cli *cli, char **av, void *priv)
 {
-	unsigned u;
 	struct cli_proto *cp;
 
 	if (av[2] == NULL) {

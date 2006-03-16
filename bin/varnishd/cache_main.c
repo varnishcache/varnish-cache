@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <sys/time.h>
 
 #include <event.h>
@@ -12,6 +13,7 @@
 #include <cli_priv.h>
 
 #include "heritage.h"
+#include "cli_event.h"
 
 static struct event ev_keepalive;
 
@@ -55,7 +57,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_proto[] = {
-	{ CLI_PING },
+	{ CLI_PING,		cli_func_ping },
 	{ NULL }
 };
 
