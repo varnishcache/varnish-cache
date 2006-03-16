@@ -1,5 +1,24 @@
 /*
  * $Id$
+ *
+ * Public definition of the CLI protocol, part of the published Varnish-API.
+ *
+ */
+
+/*
+ * These macros define the common data for requests in the CLI protocol.
+ * The fields are:
+ *	const char *	request_name
+ *	const char *	request_syntax (for short help)
+ *	const char *	request_help (for long help)
+ *	unsigned	minimum_arguments
+ *	unsigned	maximum_arguments
+ *
+ * If you only want a subset of these fields do this:
+ *	#define CLIF145(a,b,c,d,e)	a,d,e
+ *	[...]
+ *	CLIF145(CLI_URL_QUERY)
+ *
  */
 
 #define CLI_URL_QUERY							\
@@ -141,6 +160,10 @@
 	"bye",								\
 	"\tClose connection",						\
 	0, 0
+
+/*
+ * Status/return codes in the CLI protocol
+ */
 
 enum cli_status_e {
 	CLIS_SYNTAX	= 100,

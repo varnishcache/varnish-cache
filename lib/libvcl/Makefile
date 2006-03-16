@@ -18,3 +18,6 @@ test:	${PROG}
 
 flint:	
 	flint flint.lnt -I/usr/include -I. ${SRCS}
+
+distclean:	clean
+	
