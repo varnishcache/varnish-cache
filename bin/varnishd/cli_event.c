@@ -108,7 +108,7 @@ wrcb(struct bufferevent *bev, void *arg)
 static void
 excb(struct bufferevent *bev, short what, void *arg)
 {
-	printf("Exception\n");
+	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
 }
 
 struct cli *

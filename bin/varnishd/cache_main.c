@@ -33,7 +33,7 @@ arm_keepalive(void)
 {
 	struct timeval tv;
 
-	tv.tv_sec = 5;
+	tv.tv_sec = 30;
 	tv.tv_usec = 0;
 
 	evtimer_del(&ev_keepalive);
@@ -48,8 +48,10 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 	time_t t;
 
 	arm_keepalive();
-	if (av[2] != NULL)
-		cli_out(cli, "Got your %s\n", av[2]);
+	if (av[2] != NULL) {
+		/* XXX: check clock skew is pointless here */
+		printf("Got your ping %s\n", av[2]);
+	}
 	time(&t);
 	cli_out(cli, "PONG %ld\n", t);
 }
@@ -75,7 +77,7 @@ child_main(void)
 	eb = event_init();
 	assert(eb != NULL);
 
-	cli = cli_setup(heritage.fds[0], heritage.fds[1], 0, cli_proto);
+	cli = cli_setup(heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);
 	arm_keepalive();

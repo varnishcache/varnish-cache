@@ -5,7 +5,7 @@
  */
 
 struct heritage {
-	int	fds[2];
+	int	fds[4];
 };
 
 extern struct heritage heritage;

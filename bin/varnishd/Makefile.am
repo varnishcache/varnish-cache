@@ -7,6 +7,7 @@ bin_PROGRAMS = varnishd
 varnishd_SOURCES = \
 	cache_main.c \
 	cli_event.c \
+	mgt_child.c \
 	varnishd.c
 
 varnishd_LDADD = \
