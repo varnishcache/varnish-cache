@@ -24,6 +24,29 @@
 #include "cli_event.h"
 
 void
+cli_encode_string(struct evbuffer *buf, char *b)
+{
+	char *p, *q;
+
+	evbuffer_add_printf(buf, "\"");
+	for (p = q = b; *p != '\0'; p++) {
+		if ((*p != '"' && *p != '\\' && isgraph(*p)) || *p == ' ')
+			continue;
+		if (p != q) 
+			evbuffer_add(buf, q, p - q);
+		if (*p == '\n')
+			evbuffer_add_printf(buf, "\\n");
+		else
+			evbuffer_add_printf(buf, "\\x%02x", *p);
+		q = p + 1;
+	}
+	if (p != q) 
+		evbuffer_add(buf, q, p - q);
+	evbuffer_add_printf(buf, "\"");
+}
+
+
+void
 cli_out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
@@ -51,7 +74,6 @@ cli_result(struct cli *cli, unsigned res)
 static void
 encode_output(struct cli *cli)
 {
-	char *p, *q;
 
 	if (cli->verbose) {
 		if (cli->result != CLIS_OK)
@@ -63,21 +85,9 @@ encode_output(struct cli *cli)
 			evbuffer_add_printf(cli->bev1->output, "OK\n");
 		return;
 	}
-	evbuffer_add_printf(cli->bev1->output, "%d \"", cli->result);
-	for (p = q = sbuf_data(cli->sb); *p != '\0'; p++) {
-		if ((*p != '"' && *p != '\\' && isgraph(*p)) || *p == ' ')
-			continue;
-		if (p != q) 
-			evbuffer_add(cli->bev1->output, q, p - q);
-		if (*p == '\n')
-			evbuffer_add_printf(cli->bev1->output, "\\n");
-		else
-			evbuffer_add_printf(cli->bev1->output, "\\x%02x", *p);
-		q = p + 1;
-	}
-	if (p != q) 
-		evbuffer_add(cli->bev1->output, q, p - q);
-	evbuffer_add_printf(cli->bev1->output, "\"\n");
+	evbuffer_add_printf(cli->bev1->output, "%d ", cli->result);
+	cli_encode_string(cli->bev1->output, sbuf_data(cli->sb));
+	evbuffer_add_printf(cli->bev1->output, "\n");
 }
 
 static void
@@ -91,10 +101,12 @@ rdcb(struct bufferevent *bev, void *arg)
 		return;
 	sbuf_clear(cli->sb);
 	cli_dispatch(cli, cli->cli_proto, p);
-	sbuf_finish(cli->sb);
-	/* XXX: syslog results ? */
-	encode_output(cli);
-	bufferevent_enable(cli->bev1, EV_WRITE);
+	if (!cli->suspend) {
+		sbuf_finish(cli->sb);
+		/* XXX: syslog results ? */
+		encode_output(cli);
+		bufferevent_enable(cli->bev1, EV_WRITE);
+	}
 }
 
 static void
@@ -135,3 +147,23 @@ cli_setup(int fdr, int fdw, int ver, struct cli_proto *cli_proto)
 	bufferevent_enable(cli->bev0, EV_READ);
 	return (cli);
 }
+
+void
+cli_suspend(struct cli *cli)
+{
+
+	cli->suspend = 1;
+	bufferevent_disable(cli->bev0, EV_READ);
+}
+
+void
+cli_resume(struct cli *cli)
+{
+	sbuf_finish(cli->sb);
+	/* XXX: syslog results ? */
+	encode_output(cli);
+	bufferevent_enable(cli->bev1, EV_WRITE);
+	cli->suspend = 0;
+	bufferevent_enable(cli->bev0, EV_READ);
+}
+
