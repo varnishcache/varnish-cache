@@ -33,21 +33,26 @@
 struct heritage heritage;
 struct event_base *eb;
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Generic passthrough for CLI functions
+ */
 
 void
-xxx_ccb(unsigned u, const char *r, void *priv)
+cli_passthrough_cb(unsigned u, const char *r, void *priv)
 {
-	printf("%s(%u, %s, %p)\n", __func__, u, r, priv);
+	struct cli *cli = priv;
+
+	cli_out(cli, "%s\n", r);
+	cli_result(cli, u);
+	cli_resume(cli);
 }
 
-/*--------------------------------------------------------------------*/
-
 static void
-cli_func_url_query(struct cli *cli, char **av __unused, void *priv __unused)
+cli_func_passthrough(struct cli *cli, char **av __unused, void *priv)
 {
 
-	mgt_child_request(xxx_ccb, NULL, "url.query %s", av[2]);
+	cli_suspend(cli);
+	mgt_child_request(cli_passthrough_cb, cli, &av[2], av[1]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -94,18 +99,18 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 
 static struct cli_proto cli_proto[] = {
 	/* URL manipulation */
-	{ CLI_URL_QUERY,	cli_func_url_query, NULL },
-	{ CLI_URL_PURGE },
-	{ CLI_URL_STATUS },
+	{ CLI_URL_QUERY,	cli_func_passthrough, NULL },
+	{ CLI_URL_PURGE,	cli_func_passthrough, NULL },
+	{ CLI_URL_STATUS,	cli_func_passthrough, NULL },
 	{ CLI_CONFIG_LOAD },
 	{ CLI_CONFIG_INLINE },
 	{ CLI_CONFIG_UNLOAD },
 	{ CLI_CONFIG_LIST },
 	{ CLI_CONFIG_USE },
-	{ CLI_SERVER_FREEZE },
-	{ CLI_SERVER_THAW },
-	{ CLI_SERVER_SUSPEND },
-	{ CLI_SERVER_RESUME },
+	{ CLI_SERVER_FREEZE,	cli_func_passthrough, NULL },
+	{ CLI_SERVER_THAW,	cli_func_passthrough, NULL },
+	{ CLI_SERVER_SUSPEND,	cli_func_passthrough, NULL },
+	{ CLI_SERVER_RESUME,	cli_func_passthrough, NULL },
 	{ CLI_SERVER_STOP,	cli_func_server_stop, NULL },
 	{ CLI_SERVER_START,	cli_func_server_start, NULL },
 	{ CLI_SERVER_RESTART },

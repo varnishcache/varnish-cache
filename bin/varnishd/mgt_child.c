@@ -24,6 +24,7 @@
 #include <libvarnish.h>
 #include <cli.h>
 
+#include "cli_event.h"	/* for cli_encode_string */
 #include "heritage.h"
 #include "mgt.h"
 
@@ -45,6 +46,7 @@ static struct event ev_child_pingpong;
 struct creq {
 	TAILQ_ENTRY(creq)	list;
 	char			*req;
+	char			**argv;
 	mgt_ccb_f		*func;
 	void			*priv;
 };
@@ -90,17 +92,23 @@ static void
 send_req(void)
 {
 	struct creq *cr;
+	int u;
 
 	cr = TAILQ_FIRST(&creqhead);
 	if (cr == NULL)
 		return;
 	printf("Send Request <%s>\n", cr->req);
-	evbuffer_add_printf(child_cli1->output, "%s\n", cr->req);
+	evbuffer_add_printf(child_cli1->output, "%s", cr->req);
+	for (u = 0; cr->argv != NULL && cr->argv[u] != NULL; u++) {
+		evbuffer_add_printf(child_cli1->output, " ");
+		cli_encode_string(child_cli1->output, cr->argv[u]);
+	}
+	evbuffer_add_printf(child_cli1->output, "\n");
 	bufferevent_enable(child_cli1, EV_WRITE);
 }
 
 void
-mgt_child_request(mgt_ccb_f *func, void *priv, const char *fmt, ...)
+mgt_child_request(mgt_ccb_f *func, void *priv, char **argv, const char *fmt, ...)
 {
 	struct creq *cr;
 	va_list	ap;
@@ -110,6 +118,7 @@ mgt_child_request(mgt_ccb_f *func, void *priv, const char *fmt, ...)
 	assert(cr != NULL);
 	cr->func = func;
 	cr->priv = priv;
+	cr->argv = argv;
 	va_start(ap, fmt);
 	vasprintf(&cr->req, fmt, ap);
 	va_end(ap);
@@ -175,7 +184,7 @@ child_pingpong(int a, short b, void *c)
 
 	printf("%s(%d, %d, %p)\n", __func__, a, b, c);
 	time(&t);
-	mgt_child_request(child_pingpong_ccb, NULL, "ping %ld", t);
+	mgt_child_request(child_pingpong_ccb, NULL, NULL, "ping %ld", t);
 	if (1) {
 		tv.tv_sec = 3;
 		tv.tv_usec = 0;

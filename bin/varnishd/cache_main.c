@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -43,6 +44,17 @@ arm_keepalive(void)
 /*--------------------------------------------------------------------*/
 
 static void
+cli_func_url_query(struct cli *cli, char **av, void *priv __unused)
+{
+
+	cli_out(cli, "url <%s>", av[2]);
+	sleep(1);
+	cli_result(cli, CLIS_UNIMPL);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 {
 	time_t t;
@@ -59,6 +71,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_proto[] = {
+	{ CLI_URL_QUERY,	cli_func_url_query },
 	{ CLI_PING,		cli_func_ping },
 	{ NULL }
 };
