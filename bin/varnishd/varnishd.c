@@ -1,5 +1,7 @@
 /*
  * $Id$
+ *
+ * The management process and CLI handling
  */
 
 #include <assert.h>
@@ -22,121 +24,30 @@
 #include <cli_priv.h>
 #include <libvarnish.h>
 
+#include "mgt.h"
 #include "heritage.h"
 #include "cli_event.h"
 
 /*--------------------------------------------------------------------*/
 
-static enum {
-	H_STOP = 0,
-	H_START
-}	desired;
-static pid_t	child_pid;
-static int	child_fds[2];
-
 struct heritage heritage;
-
-static struct event_base *eb;
-
-static struct bufferevent *child_std;
+struct event_base *eb;
 
 /*--------------------------------------------------------------------*/
 
-static void
-std_rdcb(struct bufferevent *bev, void *arg)
+void
+xxx_ccb(unsigned u, const char *r, void *priv)
 {
-	const char *p;
-
-	p = evbuffer_readline(bev->input);
-	if (p == NULL)
-		return;
-	printf("Child said <%s>\n", p);
-}
-
-static void
-std_wrcb(struct bufferevent *bev, void *arg)
-{
-
-	printf("%s(%p, %p)\n", __func__, (void*)bev, arg);
-	exit (2);
-}
-
-static void
-std_excb(struct bufferevent *bev, short what, void *arg)
-{
-
-	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
-	exit (2);
-}
-
-
-
-/*--------------------------------------------------------------------*/
-
-static void
-start_child(void)
-{
-	int i;
-
-	assert(pipe(heritage.fds) == 0);
-	assert(pipe(child_fds) == 0);
-	i = fork();
-	if (i < 0) 
-		errx(1, "Could not fork child");
-	if (i == 0) {
-		/* XXX: close fds */
-		/* XXX: (re)set signals */
-
-		/* Redirect stdin/out/err */
-		close(0);
-		i = open("/dev/null", O_RDONLY);
-		assert(i == 0);
-		close(child_fds[0]);
-		dup2(child_fds[1], 1);
-		dup2(child_fds[1], 2);
-		close(child_fds[1]);
-
-		child_main();
-
-		exit (1);
-	}
-	child_pid = i;
-	printf("start child pid %d\n", i);
-
-	/*
- 	 * We do not close the unused ends of the pipes here to avoid
-	 * doing SIGPIPE handling.
-	 */
-	child_std = bufferevent_new(child_fds[0],
-	    std_rdcb, std_wrcb, std_excb, NULL);
-	assert(child_std != NULL);
-	bufferevent_enable(child_std, EV_READ);
+	printf("%s(%u, %s, %p)\n", __func__, u, r, priv);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-sig_chld(int a, short b, void *c)
+cli_func_url_query(struct cli *cli, char **av __unused, void *priv __unused)
 {
-	pid_t p;
-	int status;
 
-	printf("sig_chld(%d, %d, %p)\n", a, b, c);
-
-	p = wait4(-1, &status, WNOHANG, NULL);
-	printf("pid = %d status = 0x%x\n", p, status);
-	assert(p == child_pid);
-
-	bufferevent_free(child_std); /* XXX: is this enough ? */
-	child_std = NULL;
-
-	close(heritage.fds[0]);
-	close(heritage.fds[1]);
-	close(child_fds[0]);
-	close(child_fds[1]);
-
-	if (desired == H_START)
-		start_child();
+	mgt_child_request(xxx_ccb, NULL, "url.query %s", av[2]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -145,10 +56,7 @@ static void
 cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
 {
 
-	if (desired != H_START) {
-		desired = H_START;
-		start_child();
-	}
+	mgt_child_start();
 }
 
 /*--------------------------------------------------------------------*/
@@ -157,12 +65,7 @@ static void
 cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
 {
 
-	if (desired != H_STOP) {
-		desired = H_STOP;
-#if 0
-		stop_child();
-#endif
-	}
+	mgt_child_stop();
 }
 
 /*--------------------------------------------------------------------*/
@@ -173,6 +76,7 @@ cli_func_verbose(struct cli *cli, char **av __unused, void *priv)
 
 	cli->verbose = !cli->verbose;
 }
+
 
 static void
 cli_func_ping(struct cli *cli, char **av, void *priv __unused)
@@ -190,7 +94,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 
 static struct cli_proto cli_proto[] = {
 	/* URL manipulation */
-	{ CLI_URL_QUERY },
+	{ CLI_URL_QUERY,	cli_func_url_query, NULL },
 	{ CLI_URL_PURGE },
 	{ CLI_URL_STATUS },
 	{ CLI_CONFIG_LOAD },
@@ -228,7 +132,7 @@ testme(void)
 
 	cli = cli_setup(0, 1, 1, cli_proto);
 
-	signal_set(&e_sigchld, SIGCHLD, sig_chld, NULL);
+	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
 	signal_add(&e_sigchld, NULL);
 
 	i = event_dispatch();
