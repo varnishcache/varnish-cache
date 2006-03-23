@@ -5,7 +5,7 @@
  */
 
 #include <assert.h>
-#include <err.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -169,6 +169,39 @@ usage(void)
 
 /*--------------------------------------------------------------------*/
 
+#include "shmlog.h"
+
+static void
+init_vsl(const char *fn, unsigned size)
+{
+	struct shmloghead slh;
+	int i;
+
+	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
+	if (heritage.vsl_fd < 0) {
+		fprintf(stderr, "Could not open %s: %s\n",
+		    fn, strerror(errno));
+		exit (1);
+	}
+	i = read(heritage.vsl_fd, &slh, sizeof slh);
+	if (i == sizeof slh && slh.magic == SHMLOGHEAD_MAGIC) {
+		/* XXX more checks */
+		heritage.vsl_size = slh.size + slh.start;
+		return;
+	}
+	slh.magic = SHMLOGHEAD_MAGIC;
+	slh.size = size;
+	slh.ptr = 0;
+	slh.start = sizeof slh;
+	AZ(lseek(heritage.vsl_fd, 0, SEEK_SET));
+	i = write(heritage.vsl_fd, &slh, sizeof slh);
+	assert(i == sizeof slh);
+	AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
+	heritage.vsl_size = slh.size + slh.start;
+}
+
+/*--------------------------------------------------------------------*/
+
 /* for development purposes */
 #include <printf.h>
 
@@ -207,6 +240,8 @@ main(int argc, char *argv[])
 	 * possibility of doing a "no-glitch" restart of the child process.
 	 */
 	open_tcp(portnumber);
+
+	init_vsl("/tmp/_vsl", 1000);
 
 	testme();
 
