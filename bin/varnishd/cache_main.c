@@ -17,6 +17,7 @@
 
 #include "libvarnish.h"
 #include "heritage.h"
+#include "shmlog.h"
 #include "cache.h"
 #include "cli_event.h"
 
@@ -62,6 +63,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 {
 	time_t t;
 
+	VSL(SLT_CLI, 0, av[1]);
 	arm_keepalive();
 	if (av[2] != NULL) {
 		/* XXX: check clock skew is pointless here */
@@ -92,6 +94,8 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+	VSL_Init();
+
 	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
 
 	eb = event_init();
@@ -100,9 +104,10 @@ child_main(void)
 	cli = cli_setup(heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);
+	event_base_set(eb, &ev_keepalive);
 	arm_keepalive();
 
-	i = event_dispatch();
+	i = event_base_loop(eb, 0);
 	if (i != 0)
 		printf("event_dispatch() = %d\n", i);
 

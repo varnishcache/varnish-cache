@@ -20,6 +20,10 @@ struct heritage {
 #define HERITAGE_NSOCKS		2	/* IPv4 + IPv6 */
 	int	sock_local[HERITAGE_NSOCKS];
 	int	sock_remote[HERITAGE_NSOCKS];
+
+	/* Share memory log fd and size (incl header) */
+	int		vsl_fd;
+	unsigned	vsl_size;
 };
 
 extern struct heritage heritage;

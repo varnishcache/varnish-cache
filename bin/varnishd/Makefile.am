@@ -7,6 +7,7 @@ bin_PROGRAMS = varnishd
 varnishd_SOURCES = \
 	cache_acceptor.c \
 	cache_main.c \
+	cache_shmlog.c \
 	cli_event.c \
 	mgt_child.c \
 	tcp.c \
