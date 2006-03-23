@@ -8,6 +8,7 @@ varnishd_SOURCES = \
 	cache_main.c \
 	cli_event.c \
 	mgt_child.c \
+	tcp.c \
 	varnishd.c
 
 varnishd_LDADD = \
