@@ -1,0 +1,111 @@
+/*
+ * $Id$
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <sbuf.h>
+#include <event.h>
+
+#include "heritage.h"
+#include "cache.h"
+
+static struct event_base *evb;
+
+static struct event accept_e[2 * HERITAGE_NSOCKS];
+
+static void
+http_read_f(int fd, short event, void *arg)
+{
+	struct sess *sp = arg;
+	const char *p;
+	int i;
+
+	printf("%s(%d, %d, ...)\n", __func__, fd, event);
+	assert(VCA_RXBUFSIZE - sp->rcv_len > 0);
+	i = read(fd, sp->rcv + sp->rcv_len, VCA_RXBUFSIZE - sp->rcv_len);
+	assert(i > 0);
+	sp->rcv_len += i;
+	sp->rcv[sp->rcv_len] = '\0';
+
+	p = sp->rcv;
+	while (1) {
+		/* XXX: we could save location of all linebreaks for later */
+		p = strchr(p, '\n');
+		if (p == NULL)
+			return;
+		p++;
+		if (*p == '\r')
+			p++;
+		if (*p != '\n')
+			continue;
+		break;
+	}
+	printf("full <%s>\n", sp->rcv);
+	event_del(&sp->rd_e);
+}
+
+static void
+accept_f(int fd, short event, void *arg __unused)
+{
+	socklen_t l;
+	struct sockaddr addr;
+	struct sess *sp;
+
+	sp = calloc(sizeof *sp, 1);
+	assert(sp != NULL);
+
+	printf("%s(%d, %d, ...)\n", __func__, fd, event);
+
+	l = sizeof addr;
+	sp->fd = accept(fd, &addr, &l);
+	if (sp->fd < 0) {
+		free(sp);
+		return;
+	}
+
+	event_set(&sp->rd_e, sp->fd, EV_READ | EV_PERSIST,
+	    http_read_f, sp);
+	event_base_set(evb, &sp->rd_e);
+	event_add(&sp->rd_e, NULL);	/* XXX: timeout */
+}
+
+void *
+vca_main(void *arg)
+{
+	unsigned u;
+	struct event *ep;
+
+	evb = event_init();
+
+	ep = accept_e;
+	for (u = 0; u < HERITAGE_NSOCKS; u++) {
+		if (heritage.sock_local[u] >= 0) {
+			event_set(ep, heritage.sock_local[u],
+			    EV_READ | EV_PERSIST,
+			    accept_f, NULL);
+			event_base_set(evb, ep);
+			event_add(ep, NULL);
+			ep++;
+		}
+		if (heritage.sock_remote[u] >= 0) {
+			event_set(ep, heritage.sock_remote[u],
+			    EV_READ | EV_PERSIST,
+			    accept_f, NULL);
+			event_base_set(evb, ep);
+			event_add(ep, NULL);
+			ep++;
+		}
+	}
+
+	event_base_loop(evb, 0);
+
+	return ("FOOBAR");
+}

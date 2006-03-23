@@ -8,12 +8,16 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include <pthread.h>
+
 #include <event.h>
 
 #include <cli.h>
 #include <cli_priv.h>
 
+#include "libvarnish.h"
 #include "heritage.h"
+#include "cache.h"
 #include "cli_event.h"
 
 static struct event ev_keepalive;
@@ -48,7 +52,6 @@ cli_func_url_query(struct cli *cli, char **av, void *priv __unused)
 {
 
 	cli_out(cli, "url <%s>", av[2]);
-	sleep(1);
 	cli_result(cli, CLIS_UNIMPL);
 }
 
@@ -76,6 +79,8 @@ static struct cli_proto cli_proto[] = {
 	{ NULL }
 };
 
+static pthread_t vca_thread;
+
 void
 child_main(void)
 {
@@ -86,6 +91,8 @@ child_main(void)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
+
+	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
 
 	eb = event_init();
 	assert(eb != NULL);

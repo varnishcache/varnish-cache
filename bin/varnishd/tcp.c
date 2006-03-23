@@ -10,6 +10,7 @@
 #include <netdb.h>
 
 #include "heritage.h"
+#include "libvarnish.h"
 
 static void
 create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
@@ -24,7 +25,7 @@ create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
 	i = getaddrinfo(addr, port, &ai, &r0);
 
 	if (i) {
-		fprintf("getaddrinfo failed: %s\n", gai_strerror(i));
+		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(i));
 		return;
 	}
 
@@ -62,5 +63,11 @@ open_tcp(const char *port)
 	create_listen_socket(NULL, port,
 	    &heritage.sock_remote[0], HERITAGE_NSOCKS);
 
+	for (u = 0; u < HERITAGE_NSOCKS; u++) {
+		if (heritage.sock_local[u] >= 0)
+			AZ(listen(heritage.sock_local[u], 16));
+		if (heritage.sock_remote[u] >= 0)
+			AZ(listen(heritage.sock_remote[u], 16));
+	}
 	return (0);
 }
