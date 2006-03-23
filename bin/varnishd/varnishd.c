@@ -169,12 +169,19 @@ usage(void)
 
 /*--------------------------------------------------------------------*/
 
+/* for development purposes */
+#include <printf.h>
+
 int
 main(int argc, char *argv[])
 {
 	int o;
 	unsigned portnumber = 8080;
 	unsigned dflag = 1;	/* XXX: debug=on for now */
+
+	register_printf_render_std((const unsigned char *)"HVQ");
+
+	open_tcp("8080");
 
 	while ((o = getopt(argc, argv, "dp:")) != -1)
 		switch (o) {
