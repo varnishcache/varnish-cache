@@ -176,12 +176,10 @@ int
 main(int argc, char *argv[])
 {
 	int o;
-	unsigned portnumber = 8080;
+	const char *portnumber = "8080";
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 
 	register_printf_render_std((const unsigned char *)"HVQ");
-
-	open_tcp("8080");
 
 	while ((o = getopt(argc, argv, "dp:")) != -1)
 		switch (o) {
@@ -189,7 +187,7 @@ main(int argc, char *argv[])
 			dflag++;
 			break;
 		case 'p':
-			portnumber = strtoul(optarg, NULL, 0);
+			portnumber = optarg;
 			break;
 		default:
 			usage();
@@ -200,6 +198,15 @@ main(int argc, char *argv[])
 
 	if (argc != 0)
 		usage();
+
+	/*
+	 * XXX: Lacking the suspend/resume facility (due to the socket API
+	 * missing an unlisten(2) facility) we may want to push this into
+	 * the child to limit the amount of time where the socket(s) exists
+	 * but do not answer.  That, on the other hand, would eliminate the
+	 * possibility of doing a "no-glitch" restart of the child process.
+	 */
+	open_tcp(portnumber);
 
 	testme();
 

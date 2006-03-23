@@ -62,10 +62,12 @@ std_rdcb(struct bufferevent *bev, void *arg)
 {
 	const char *p;
 
-	p = evbuffer_readline(bev->input);
-	if (p == NULL)
-		return;
-	printf("Child said <%s>\n", p);
+	while (1) {
+		p = evbuffer_readline(bev->input);
+		if (p == NULL)
+			return;
+		printf("Child said <%s>\n", p);
+	}
 }
 
 static void
