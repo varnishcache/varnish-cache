@@ -64,9 +64,9 @@ http_read_f(int fd, short event, void *arg)
 			continue;
 		break;
 	}
+	sp->hdr_e = p;
 	event_del(sp->rd_e);
 	HttpdAnalyze(sp);
-	printf("full <%s>\n", sp->rcv);
 }
 
 static void
