@@ -70,5 +70,6 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     bin/Makefile
     bin/varnishd/Makefile
+    bin/varnishlog/Makefile
 ])
 AC_OUTPUT

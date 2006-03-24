@@ -1,9 +1,77 @@
 /*
  * $Id$
  *
- * The management process and CLI handling
+ * Log tailer for Varnish
  */
 
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+#include <shmlog.h>
+
+static struct shmloghead *loghead;
+static unsigned char *logstart, *logend;
+
+int
+main(int argc, char **argv)
+{
+	int fd;
+	int i;
+	struct shmloghead slh;
+	unsigned char *p;
+
+	fd = open(SHMLOG_FILENAME, O_RDONLY);
+	if (fd < 0) {
+		fprintf(stderr, "Cannot open %s: %s\n",
+		    SHMLOG_FILENAME, strerror(errno));
+		exit (1);
+	}
+	i = read(fd, &slh, sizeof slh);
+	if (i != sizeof slh) {
+		fprintf(stderr, "Cannot read %s: %s\n",
+		    SHMLOG_FILENAME, strerror(errno));
+		exit (1);
+	}
+	if (slh.magic != SHMLOGHEAD_MAGIC) {
+		fprintf(stderr, "Wrong magic number in file %s\n",
+		    SHMLOG_FILENAME);
+		exit (1);
+	}
+
+	loghead = mmap(NULL, slh.size + sizeof slh,
+	    PROT_READ, MAP_HASSEMAPHORE, fd, 0);
+	if (loghead == MAP_FAILED) {
+		fprintf(stderr, "Cannot mmap %s: %s\n",
+		    SHMLOG_FILENAME, strerror(errno));
+		exit (1);
+	}
+	logstart = (unsigned char *)loghead + loghead->start;
+	logend = logstart + loghead->size;
+
+	while (1) {
+		p = logstart;
+		while (1) {
+			if (*p == SLT_WRAPMARKER)
+				break;
+			while (*p == SLT_ENDMARKER) 
+				sleep(1);
+			printf("%02x %02d %02x%02x <",
+			    p[0], p[1], p[2], p[3]);
+			if (p[1] > 0)
+				fwrite(p + 4, p[1], 1, stdout);
+			printf(">\n");
+			p += p[1] + 4;
+		}
+	}
+}
+
+
+#if 0
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -248,3 +316,4 @@ main(int argc, char *argv[])
 
 	exit(0);
 }
+#endif
