@@ -7,7 +7,8 @@
  */
 
 SLTM(CLI)
-SLTM(SessionId)
+SLTM(SessionOpen)
+SLTM(SessionClose)
 SLTM(ClientAddr)
 SLTM(Request)
 SLTM(URL)

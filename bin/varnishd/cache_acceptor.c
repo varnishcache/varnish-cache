@@ -11,10 +11,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netdb.h>
+
 #include <sbuf.h>
 #include <event.h>
 
+#include "libvarnish.h"
 #include "heritage.h"
+#include "shmlog.h"
 #include "cache.h"
 
 static struct event_base *evb;
@@ -31,7 +35,14 @@ http_read_f(int fd, short event, void *arg)
 	printf("%s(%d, %d, ...)\n", __func__, fd, event);
 	assert(VCA_RXBUFSIZE - sp->rcv_len > 0);
 	i = read(fd, sp->rcv + sp->rcv_len, VCA_RXBUFSIZE - sp->rcv_len);
-	assert(i > 0);
+	if (i <= 0) {
+		VSL(SLT_SessionClose, sp->fd, "remote %d", sp->rcv_len);
+		event_del(&sp->rd_e);
+		close(sp->fd);
+		free(sp);
+		return;
+	}
+
 	sp->rcv_len += i;
 	sp->rcv[sp->rcv_len] = '\0';
 
@@ -58,11 +69,13 @@ accept_f(int fd, short event, void *arg __unused)
 	socklen_t l;
 	struct sockaddr addr;
 	struct sess *sp;
+	char port[10];
 
 	sp = calloc(sizeof *sp, 1);
-	assert(sp != NULL);
-
-	printf("%s(%d, %d, ...)\n", __func__, fd, event);
+	assert(sp != NULL);	/*
+				 * XXX: this is probably one we should handle
+				 * XXX: accept, emit error NNN and close
+				 */
 
 	l = sizeof addr;
 	sp->fd = accept(fd, &addr, &l);
@@ -70,7 +83,12 @@ accept_f(int fd, short event, void *arg __unused)
 		free(sp);
 		return;
 	}
-
+	AZ(getnameinfo(&addr, l,
+	    sp->addr, VCA_ADDRBUFSIZE,
+	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV));
+	strlcat(sp->addr, ":", VCA_ADDRBUFSIZE);
+	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
+	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
 	event_set(&sp->rd_e, sp->fd, EV_READ | EV_PERSIST,
 	    http_read_f, sp);
 	event_base_set(evb, &sp->rd_e);
