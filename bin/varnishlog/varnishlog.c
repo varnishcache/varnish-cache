@@ -14,6 +14,23 @@
 
 #include <shmlog.h>
 
+/*
+ * It would be simpler to use sparse array initialization and put it
+ * directly in tagnames, but -pedantic gets in the way
+ */
+
+static struct tagnames {
+	enum shmlogtag	tag;
+	const char	*name;
+} stagnames[] = {
+#define SLTM(foo)	{ SLT_##foo, #foo },
+#include "shmlog_tags.h"
+#undef SLTM
+	{ SLT_ENDMARKER, NULL}
+};
+
+static const char *tagnames[256];
+
 static struct shmloghead *loghead;
 static unsigned char *logstart, *logend;
 
@@ -53,6 +70,9 @@ main(int argc, char **argv)
 	logstart = (unsigned char *)loghead + loghead->start;
 	logend = logstart + loghead->size;
 
+	for (i = 0; stagnames[i].tag != SLT_ENDMARKER; i++)
+		tagnames[stagnames[i].tag] = stagnames[i].name;
+
 	while (1) {
 		p = logstart;
 		while (1) {
@@ -60,8 +80,9 @@ main(int argc, char **argv)
 				break;
 			while (*p == SLT_ENDMARKER) 
 				sleep(1);
-			printf("%02x %02d %02x%02x <",
-			    p[0], p[1], p[2], p[3]);
+			printf("%02x %02d %02x%02x %-12s <",
+			    p[0], p[1], p[2], p[3],
+			    tagnames[p[0]]);
 			if (p[1] > 0)
 				fwrite(p + 4, p[1], 1, stdout);
 			printf(">\n");
