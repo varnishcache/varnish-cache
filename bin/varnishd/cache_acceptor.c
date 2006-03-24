@@ -25,6 +25,11 @@ static struct event_base *evb;
 
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 
+struct sessmem {
+	struct sess	s;
+	struct event	e;
+};
+
 static void
 http_read_f(int fd, short event, void *arg)
 {
@@ -37,9 +42,9 @@ http_read_f(int fd, short event, void *arg)
 	i = read(fd, sp->rcv + sp->rcv_len, VCA_RXBUFSIZE - sp->rcv_len);
 	if (i <= 0) {
 		VSL(SLT_SessionClose, sp->fd, "remote %d", sp->rcv_len);
-		event_del(&sp->rd_e);
+		event_del(sp->rd_e);
 		close(sp->fd);
-		free(sp);
+		free(sp->mem);
 		return;
 	}
 
@@ -59,23 +64,29 @@ http_read_f(int fd, short event, void *arg)
 			continue;
 		break;
 	}
+	event_del(sp->rd_e);
+	HttpdAnalyze(sp);
 	printf("full <%s>\n", sp->rcv);
-	event_del(&sp->rd_e);
 }
 
 static void
 accept_f(int fd, short event, void *arg __unused)
 {
 	socklen_t l;
+	struct sessmem *sm;
 	struct sockaddr addr;
 	struct sess *sp;
 	char port[10];
 
-	sp = calloc(sizeof *sp, 1);
-	assert(sp != NULL);	/*
+	sm = calloc(sizeof *sm, 1);
+	assert(sm != NULL);	/*
 				 * XXX: this is probably one we should handle
 				 * XXX: accept, emit error NNN and close
 				 */
+
+	sp = &sm->s;
+	sp->rd_e = &sm->e;
+	sp->mem = sm;
 
 	l = sizeof addr;
 	sp->fd = accept(fd, &addr, &l);
@@ -89,10 +100,10 @@ accept_f(int fd, short event, void *arg __unused)
 	strlcat(sp->addr, ":", VCA_ADDRBUFSIZE);
 	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
-	event_set(&sp->rd_e, sp->fd, EV_READ | EV_PERSIST,
+	event_set(sp->rd_e, sp->fd, EV_READ | EV_PERSIST,
 	    http_read_f, sp);
-	event_base_set(evb, &sp->rd_e);
-	event_add(&sp->rd_e, NULL);	/* XXX: timeout */
+	event_base_set(evb, sp->rd_e);
+	event_add(sp->rd_e, NULL);	/* XXX: timeout */
 }
 
 void *
