@@ -7,6 +7,8 @@
  *
  */
 
+#define CLI_PRIV_H
+
 struct cli;	/* NB: struct cli is opaque at this level.  */
 
 typedef void cli_func_t(struct cli*, char **av, void *priv);
