@@ -22,6 +22,7 @@
 #include "cli_event.h"
 
 static struct event ev_keepalive;
+static pthread_t vca_thread;
 
 /*--------------------------------------------------------------------*/
 
@@ -81,7 +82,7 @@ static struct cli_proto cli_proto[] = {
 	{ NULL }
 };
 
-static pthread_t vca_thread;
+/*--------------------------------------------------------------------*/
 
 void
 child_main(void)
@@ -101,6 +102,7 @@ child_main(void)
 	eb = event_init();
 	assert(eb != NULL);
 
+	CVCL_Load(heritage.vcl_file, "boot");
 	cli = cli_setup(heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);

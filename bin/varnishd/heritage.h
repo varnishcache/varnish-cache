@@ -24,6 +24,9 @@ struct heritage {
 	/* Share memory log fd and size (incl header) */
 	int		vsl_fd;
 	unsigned	vsl_size;
+
+	/* Initial VCL file */
+	char		*vcl_file;
 };
 
 extern struct heritage heritage;
