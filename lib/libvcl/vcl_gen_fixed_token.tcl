@@ -59,6 +59,8 @@ puts $foh {/*
  */
 }
 
+puts $fo "#include <stdio.h>"
+puts $fo "#include <ctype.h>"
 puts $fo "#include \"vcl_priv.h\""
 
 set tn 128
@@ -103,7 +105,7 @@ set ll 0
 
 puts $fo {
 unsigned
-fixed_token(const char *p, const char **q)}
+vcl_fixed_token(const char *p, const char **q)}
 puts $fo "{"
 puts $fo ""
 puts $fo "	switch (p\[0\]) {"
@@ -158,17 +160,29 @@ puts $fo "	}"
 puts $fo "}"
 
 puts $fo ""
-puts $fo "const char *tnames\[256\];\n"
+puts $fo "const char *vcl_tnames\[256\];\n"
 puts $fo "void"
-puts $fo "init_tnames(void)"
+puts $fo "vcl_init_tnames(void)"
 puts $fo "{"
 foreach i $token2 {
-	puts $fo "\ttnames\[[lindex $i 0]\] = \"[lindex $i 0]\";"
+	puts $fo "\tvcl_tnames\[[lindex $i 0]\] = \"[lindex $i 0]\";"
 }
 foreach i $tokens {
-	puts $fo "\ttnames\[[lindex $i 0]\] = \"[lindex $i 1]\";"
+	puts $fo "\tvcl_tnames\[[lindex $i 0]\] = \"[lindex $i 1]\";"
 }
 puts $fo "}"
+
+set fi [open "../../include/vcl_lang.h"]
+
+puts $fo ""
+puts $fo "void"
+puts $fo "vcl_output_lang_h(FILE *f)"
+puts $fo "{"
+while {[gets $fi a] >= 0} {
+	puts $fo "\tfputs(\"$a\\n\", f);"
+}
+puts $fo "}"
+close $fi
 
 close $foh
 close $fo
