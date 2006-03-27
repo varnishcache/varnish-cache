@@ -305,61 +305,65 @@ fixed_token(const char *p, const char **q)
 	}
 }
 
-const char *tnames[256] = {
-	['!'] = "'!'" /* t2 '!' T! */,
-	['%'] = "'%'" /* t2 '%' T% */,
-	['&'] = "'&'" /* t2 '&' T& */,
-	['('] = "'('" /* t2 '(' T( */,
-	[')'] = "')'" /* t2 ')' T) */,
-	['*'] = "'*'" /* t2 '*' T* */,
-	['+'] = "'+'" /* t2 '+' T+ */,
-	[','] = "','" /* t2 ',' T, */,
-	['-'] = "'-'" /* t2 '-' T- */,
-	['.'] = "'.'" /* t2 '.' T. */,
-	['/'] = "'/'" /* t2 '/' T/ */,
-	['<'] = "'<'" /* t2 '<' T< */,
-	['='] = "'='" /* t2 '=' T= */,
-	['>'] = "'>'" /* t2 '>' T> */,
-	['{'] = "'{'" /* t2 '\{' T\{ */,
-	['}'] = "'}'" /* t2 '\}' T\} */,
-	['|'] = "'|'" /* t2 '|' T| */,
-	['~'] = "'~'" /* t2 '~' T~ */,
-	[';'] = "';'" /* t2 {';'} {T;} */,
-	[CNUM] = "CNUM" /* t CNUM CNUM */,
-	[CSTR] = "CSTR" /* t CSTR CSTR */,
-	[EOI] = "EOI" /* t EOI EOI */,
-	[ID] = "ID" /* t ID ID */,
-	[T_ACL] = "acl" /* t T_ACL acl */,
-	[T_BACKEND] = "backend" /* t T_BACKEND backend */,
-	[T_CALL] = "call" /* t T_CALL call */,
-	[T_CAND] = "&&" /* t T_CAND && */,
-	[T_COR] = "||" /* t T_COR || */,
-	[T_DEC] = "--" /* t T_DEC -- */,
-	[T_DECR] = "/=" /* t T_DECR /= */,
-	[T_DIV] = "/=" /* t T_DIV /= */,
-	[T_ELSE] = "else" /* t T_ELSE else */,
-	[T_ELSEIF] = "elseif" /* t T_ELSEIF elseif */,
-	[T_ELSIF] = "elsif" /* t T_ELSIF elsif */,
-	[T_EQ] = "==" /* t T_EQ == */,
-	[T_ERROR] = "error" /* t T_ERROR error */,
-	[T_FETCH] = "fetch" /* t T_FETCH fetch */,
-	[T_FINISH] = "finish" /* t T_FINISH finish */,
-	[T_FUNC] = "func" /* t T_FUNC func */,
-	[T_GEQ] = ">=" /* t T_GEQ >= */,
-	[T_IF] = "if" /* t T_IF if */,
-	[T_INC] = "++" /* t T_INC ++ */,
-	[T_INCR] = "+=" /* t T_INCR += */,
-	[T_LEQ] = "<=" /* t T_LEQ <= */,
-	[T_MUL] = "*=" /* t T_MUL *= */,
-	[T_NEQ] = "!=" /* t T_NEQ != */,
-	[T_NO_CACHE] = "no_cache" /* t T_NO_CACHE no_cache */,
-	[T_NO_NEW_CACHE] = "no_new_cache" /* t T_NO_NEW_CACHE no_new_cache */,
-	[T_PROC] = "proc" /* t T_PROC proc */,
-	[T_REWRITE] = "rewrite" /* t T_REWRITE rewrite */,
-	[T_SET] = "set" /* t T_SET set */,
-	[T_SHL] = "<<" /* t T_SHL << */,
-	[T_SHR] = ">>" /* t T_SHR >> */,
-	[T_SUB] = "sub" /* t T_SUB sub */,
-	[T_SWITCH_CONFIG] = "switch_config" /* t T_SWITCH_CONFIG switch_config */,
-	[VAR] = "VAR" /* t VAR VAR */,
-};
+const char *tnames[256];
+
+void
+init_tnames(void)
+{
+	tnames['!'] = "'!'";
+	tnames['%'] = "'%'";
+	tnames['&'] = "'&'";
+	tnames['('] = "'('";
+	tnames[')'] = "')'";
+	tnames['*'] = "'*'";
+	tnames['+'] = "'+'";
+	tnames[','] = "','";
+	tnames['-'] = "'-'";
+	tnames['.'] = "'.'";
+	tnames['/'] = "'/'";
+	tnames['<'] = "'<'";
+	tnames['='] = "'='";
+	tnames['>'] = "'>'";
+	tnames['{'] = "'{'";
+	tnames['}'] = "'}'";
+	tnames['|'] = "'|'";
+	tnames['~'] = "'~'";
+	tnames[';'] = "';'";
+	tnames[CNUM] = "CNUM";
+	tnames[CSTR] = "CSTR";
+	tnames[EOI] = "EOI";
+	tnames[ID] = "ID";
+	tnames[T_ACL] = "acl";
+	tnames[T_BACKEND] = "backend";
+	tnames[T_CALL] = "call";
+	tnames[T_CAND] = "&&";
+	tnames[T_COR] = "||";
+	tnames[T_DEC] = "--";
+	tnames[T_DECR] = "/=";
+	tnames[T_DIV] = "/=";
+	tnames[T_ELSE] = "else";
+	tnames[T_ELSEIF] = "elseif";
+	tnames[T_ELSIF] = "elsif";
+	tnames[T_EQ] = "==";
+	tnames[T_ERROR] = "error";
+	tnames[T_FETCH] = "fetch";
+	tnames[T_FINISH] = "finish";
+	tnames[T_FUNC] = "func";
+	tnames[T_GEQ] = ">=";
+	tnames[T_IF] = "if";
+	tnames[T_INC] = "++";
+	tnames[T_INCR] = "+=";
+	tnames[T_LEQ] = "<=";
+	tnames[T_MUL] = "*=";
+	tnames[T_NEQ] = "!=";
+	tnames[T_NO_CACHE] = "no_cache";
+	tnames[T_NO_NEW_CACHE] = "no_new_cache";
+	tnames[T_PROC] = "proc";
+	tnames[T_REWRITE] = "rewrite";
+	tnames[T_SET] = "set";
+	tnames[T_SHL] = "<<";
+	tnames[T_SHR] = ">>";
+	tnames[T_SUB] = "sub";
+	tnames[T_SWITCH_CONFIG] = "switch_config";
+	tnames[VAR] = "VAR";
+}
