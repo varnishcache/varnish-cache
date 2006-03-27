@@ -23,6 +23,7 @@
 #include <cli.h>
 #include <cli_priv.h>
 #include <libvarnish.h>
+#include <libvcl.h>
 
 #include "mgt.h"
 #include "heritage.h"
@@ -204,6 +205,14 @@ init_vsl(const char *fn, unsigned size)
 
 /* for development purposes */
 #include <printf.h>
+#include <err.h>
+
+#include <dlfcn.h>
+
+void
+VCL_count(unsigned u)
+{
+}
 
 int
 main(int argc, char *argv[])
@@ -213,6 +222,30 @@ main(int argc, char *argv[])
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 
 	register_printf_render_std((const unsigned char *)"HVQ");
+ 
+	{
+	struct sbuf *sb;
+
+	VCL_InitCompile();
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	VCL_Compile(sb,
+	    "backend default { set backend.ip = 10.0.0.1; } ",
+	    NULL);
+	sbuf_finish(sb);
+	fprintf(stderr, "Result: %s\n", sbuf_data(sb));
+
+	{
+	void *dlhandle;
+
+	dlhandle = dlopen("/tmp/_.so.1",
+	    RTLD_NOW | RTLD_LOCAL );
+	if (dlhandle == NULL)
+		err(1, "dlopen %s", dlerror());
+	
+	}
+	exit (0);
+	}
 
 	while ((o = getopt(argc, argv, "dp:")) != -1)
 		switch (o) {
