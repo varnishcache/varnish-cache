@@ -68,6 +68,7 @@ AC_CONFIG_FILES([
     lib/libsbuf/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
+    lib/libvcl/Makefile
     bin/Makefile
     bin/varnishd/Makefile
     bin/varnishlog/Makefile
