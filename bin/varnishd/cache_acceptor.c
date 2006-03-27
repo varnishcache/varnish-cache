@@ -37,7 +37,6 @@ http_read_f(int fd, short event, void *arg)
 	const char *p;
 	int i;
 
-	printf("%s(%d, %d, ...)\n", __func__, fd, event);
 	assert(VCA_RXBUFSIZE - sp->rcv_len > 0);
 	i = read(fd, sp->rcv + sp->rcv_len, VCA_RXBUFSIZE - sp->rcv_len);
 	if (i <= 0) {
@@ -67,6 +66,9 @@ http_read_f(int fd, short event, void *arg)
 	sp->hdr_e = p;
 	event_del(sp->rd_e);
 	HttpdAnalyze(sp);
+
+	/* XXX: for now, pass everything */
+	sp->handling = HND_Pass;
 }
 
 static void
