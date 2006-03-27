@@ -158,14 +158,17 @@ puts $fo "	}"
 puts $fo "}"
 
 puts $fo ""
-puts $fo "const char *tnames\[256\] = {"
+puts $fo "const char *tnames\[256\];\n"
+puts $fo "void"
+puts $fo "init_tnames(void)"
+puts $fo "{"
 foreach i $token2 {
-	puts $fo "\t\[[lindex $i 0]\] = \"[lindex $i 0]\" /* t2 $i */,"
+	puts $fo "\ttnames\[[lindex $i 0]\] = \"[lindex $i 0]\";"
 }
 foreach i $tokens {
-	puts $fo "\t\[[lindex $i 0]\] = \"[lindex $i 1]\" /* t $i */,"
+	puts $fo "\ttnames\[[lindex $i 0]\] = \"[lindex $i 1]\";"
 }
-puts $fo "};"
+puts $fo "}"
 
 close $foh
 close $fo
