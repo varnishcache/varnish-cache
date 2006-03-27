@@ -1370,11 +1370,15 @@ EmitStruct(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-void
+char *
 VCL_Compile(struct sbuf *sb, const char *b, const char *e)
 {
-	struct tokenlist	tokens;
+	struct tokenlist tokens;
+	struct ref *r;
+	struct token *t;
 	FILE *fo;
+	char *of = NULL;
+	char buf[BUFSIZ];
 
 	memset(&tokens, 0, sizeof tokens);
 	TAILQ_INIT(&tokens.tokens);
@@ -1393,33 +1397,60 @@ VCL_Compile(struct sbuf *sb, const char *b, const char *e)
 	assert(e != NULL);
 	tokens.e = e;
 	Lexer(&tokens, b, e);
-	ERRCHK(&tokens);
+	if (tokens.err)
+		goto done;
 	tokens.t = TAILQ_FIRST(&tokens.tokens);
 	Parse(&tokens);
-	ERRCHK(&tokens);
+	if (tokens.err)
+		goto done;
 if (0)
 	CheckRefs(&tokens);
-	ERRCHK(&tokens);
+	if (tokens.err)
+		goto done;
 	LocTable(&tokens);
 
 	EmitInitFunc(&tokens);
 
 	EmitStruct(&tokens);
 
-	fo = popen(
+	of = strdup("/tmp/vcl.XXXXXXXX");
+	assert(of != NULL);
+	mktemp(of);
+
+	sprintf(buf, 
 	    "tee /tmp/_.c |"
-	    "cc -fpic -shared -Wl,-x -o /tmp/_.so.1 -x c - ", "w");
+	    "cc -fpic -shared -Wl,-x -o %s -x c - ", of);
+
+	fo = popen(buf, "w");
+	assert(fo != NULL);
 
 	vcl_output_lang_h(fo);
 
-	fprintf(fo, "/* FH */\n");
 	sbuf_finish(tokens.fh);
 	fputs(sbuf_data(tokens.fh), fo);
+	sbuf_delete(tokens.fh);
 
-	fprintf(fo, "/* FC */\n");
 	sbuf_finish(tokens.fc);
 	fputs(sbuf_data(tokens.fc), fo);
+	sbuf_delete(tokens.fc);
+
 	pclose(fo);
+done:
+
+	/* Free References */
+	while (!TAILQ_EMPTY(&tokens.refs)) {
+		r = TAILQ_FIRST(&tokens.refs);
+		TAILQ_REMOVE(&tokens.refs, r, list);
+		free(r);
+	}
+
+	/* Free Tokens */
+	while (!TAILQ_EMPTY(&tokens.tokens)) {
+		t = TAILQ_FIRST(&tokens.tokens);
+		TAILQ_REMOVE(&tokens.tokens, t, list);
+		free(t);
+	}
+	return (of);
 }
 
 /*--------------------------------------------------------------------*/
