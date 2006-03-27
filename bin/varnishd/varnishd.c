@@ -25,6 +25,8 @@
 #include <libvarnish.h>
 #include <libvcl.h>
 
+#include "vcl_lang.h"
+
 #include "mgt.h"
 #include "heritage.h"
 #include "cli_event.h"
@@ -153,15 +155,15 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishd [options]\n");
+	fprintf(stderr, "    %-20s # %s\n", "-b", "backend_IP_number");
 	fprintf(stderr, "    %-20s # %s\n", "-d", "debug");
+	fprintf(stderr, "    %-20s # %s\n", "-f", "VCL_file");
 	fprintf(stderr, "    %-20s # %s\n", "-p number", "TCP listen port");
 #if 0
 	-c clusterid@cluster_controller
-	-f config_file
 	-m memory_limit
 	-s kind[,storage-options]
 	-l logfile,logsize
-	-b backend ip...
 	-u uid
 	-a CLI_port
 #endif
@@ -203,11 +205,66 @@ init_vsl(const char *fn, unsigned size)
 
 /*--------------------------------------------------------------------*/
 
+static char *
+vcl_default(const char *bflag)
+{
+	char *buf, *vf;
+	struct sbuf *sb;
+
+	buf = NULL;
+	asprintf(&buf,
+	   "backend default { set backend.ip = %s; }",
+	    bflag);
+	assert(buf != NULL);
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_Compile(sb, buf, NULL);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		fprintf(stderr, "%s", sbuf_data(sb));
+		free(buf);
+		sbuf_delete(sb);
+		return (NULL);
+	}
+	sbuf_delete(sb);
+	free(buf);
+	return (vf);
+}
+
+/*--------------------------------------------------------------------*/
+
+static char *
+vcl_file(const char *bflag)
+{
+	char *buf, *vf;
+	struct sbuf *sb;
+
+	return (NULL);
+	buf = NULL;
+	asprintf(&buf,
+	   "backend default { set backend.ip = %s; }",
+	    bflag);
+	assert(buf != NULL);
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_Compile(sb, buf, NULL);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		fprintf(stderr, "%s", sbuf_data(sb));
+		free(buf);
+		sbuf_delete(sb);
+		return (NULL);
+	}
+	sbuf_delete(sb);
+	free(buf);
+	return (vf);
+}
+
+/*--------------------------------------------------------------------*/
+
 /* for development purposes */
 #include <printf.h>
 #include <err.h>
-
-#include <dlfcn.h>
 
 void
 VCL_count(unsigned u)
@@ -220,37 +277,23 @@ main(int argc, char *argv[])
 	int o;
 	const char *portnumber = "8080";
 	unsigned dflag = 1;	/* XXX: debug=on for now */
+	const char *bflag = NULL;
+	const char *fflag = NULL;
 
 	register_printf_render_std((const unsigned char *)"HVQ");
  
-	{
-	struct sbuf *sb;
-
 	VCL_InitCompile();
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	VCL_Compile(sb,
-	    "backend default { set backend.ip = 10.0.0.1; } ",
-	    NULL);
-	sbuf_finish(sb);
-	fprintf(stderr, "Result: %s\n", sbuf_data(sb));
 
-	{
-	void *dlhandle;
-
-	dlhandle = dlopen("/tmp/_.so.1",
-	    RTLD_NOW | RTLD_LOCAL );
-	if (dlhandle == NULL)
-		err(1, "dlopen %s", dlerror());
-	
-	}
-	exit (0);
-	}
-
-	while ((o = getopt(argc, argv, "dp:")) != -1)
+	while ((o = getopt(argc, argv, "b:df:p:")) != -1)
 		switch (o) {
+		case 'b':
+			bflag = optarg;
+			break;
 		case 'd':
 			dflag++;
+			break;
+		case 'f':
+			fflag = optarg;
 			break;
 		case 'p':
 			portnumber = optarg;
@@ -262,8 +305,26 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 0)
+	if (argc != 0) {
+		fprintf(stderr, "Too many arguments\n");
 		usage();
+	}
+
+	if (bflag != NULL && fflag != NULL) {
+		fprintf(stderr, "Only one of -b or -f can be specified\n");
+		usage();
+	}
+	if (bflag == NULL && fflag == NULL) {
+		fprintf(stderr, "One of -b or -f must be specified\n");
+		usage();
+	}
+
+	if (bflag != NULL)
+		heritage.vcl_file = vcl_default(bflag);
+	else
+		heritage.vcl_file = vcl_file(fflag);
+	if (heritage.vcl_file == NULL)
+		exit (1);
 
 	/*
 	 * XXX: Lacking the suspend/resume facility (due to the socket API

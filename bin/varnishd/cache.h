@@ -49,4 +49,5 @@ void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #endif
 
-
+/* cache_vcl.c */
+int CVCL_Load(const char *fn, const char *name);
