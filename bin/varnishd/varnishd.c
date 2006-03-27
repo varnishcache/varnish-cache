@@ -60,6 +60,96 @@ cli_func_passthrough(struct cli *cli, char **av __unused, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static char *
+vcl_default(const char *bflag)
+{
+	char *buf, *vf;
+	struct sbuf *sb;
+
+	buf = NULL;
+	asprintf(&buf,
+	   "backend default { set backend.ip = %s; }",
+	    bflag);
+	assert(buf != NULL);
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_Compile(sb, buf, NULL);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		fprintf(stderr, "%s", sbuf_data(sb));
+		free(buf);
+		sbuf_delete(sb);
+		return (NULL);
+	}
+	sbuf_delete(sb);
+	free(buf);
+	return (vf);
+}
+
+static void
+cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
+{
+	char *vf;
+	struct sbuf *sb;
+
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_Compile(sb, av[3], NULL);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		cli_out(cli, "%s", sbuf_data(sb));
+		sbuf_delete(sb);
+		return;
+	}
+	sbuf_delete(sb);
+	cli_suspend(cli);
+	mgt_child_request(cli_passthrough_cb, cli, NULL,
+	    "config.load %s %s", av[2], vf);
+}
+
+static void
+cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
+{
+	char *vf;
+	struct sbuf *sb;
+
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_CompileFile(sb, av[3]);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		cli_out(cli, "%s", sbuf_data(sb));
+		sbuf_delete(sb);
+		return;
+	}
+	sbuf_delete(sb);
+	cli_suspend(cli);
+	mgt_child_request(cli_passthrough_cb, cli, NULL,
+	    "config.load %s %s", av[2], vf);
+}
+
+static char *
+vcl_file(const char *fflag)
+{
+	char *vf;
+	struct sbuf *sb;
+
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	vf = VCL_CompileFile(sb, fflag);
+	sbuf_finish(sb);
+	if (sbuf_len(sb) > 0) {
+		fprintf(stderr, "%s", sbuf_data(sb));
+		sbuf_delete(sb);
+		return (NULL);
+	}
+	sbuf_delete(sb);
+	return (vf);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 static void
 cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
 {
@@ -105,11 +195,11 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_URL_QUERY,	cli_func_passthrough, NULL },
 	{ CLI_URL_PURGE,	cli_func_passthrough, NULL },
 	{ CLI_URL_STATUS,	cli_func_passthrough, NULL },
-	{ CLI_CONFIG_LOAD },
-	{ CLI_CONFIG_INLINE },
-	{ CLI_CONFIG_UNLOAD },
-	{ CLI_CONFIG_LIST },
-	{ CLI_CONFIG_USE },
+	{ CLI_CONFIG_LOAD,	cli_func_config_load, NULL },
+	{ CLI_CONFIG_INLINE,	cli_func_config_inline, NULL },
+	{ CLI_CONFIG_UNLOAD,	cli_func_passthrough, NULL },
+	{ CLI_CONFIG_LIST,	cli_func_passthrough, NULL },
+	{ CLI_CONFIG_USE,	cli_func_passthrough, NULL },
 	{ CLI_SERVER_FREEZE,	cli_func_passthrough, NULL },
 	{ CLI_SERVER_THAW,	cli_func_passthrough, NULL },
 	{ CLI_SERVER_SUSPEND,	cli_func_passthrough, NULL },
@@ -202,64 +292,6 @@ init_vsl(const char *fn, unsigned size)
 	AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
 	heritage.vsl_size = slh.size + slh.start;
 }
-
-/*--------------------------------------------------------------------*/
-
-static char *
-vcl_default(const char *bflag)
-{
-	char *buf, *vf;
-	struct sbuf *sb;
-
-	buf = NULL;
-	asprintf(&buf,
-	   "backend default { set backend.ip = %s; }",
-	    bflag);
-	assert(buf != NULL);
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	vf = VCL_Compile(sb, buf, NULL);
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		fprintf(stderr, "%s", sbuf_data(sb));
-		free(buf);
-		sbuf_delete(sb);
-		return (NULL);
-	}
-	sbuf_delete(sb);
-	free(buf);
-	return (vf);
-}
-
-/*--------------------------------------------------------------------*/
-
-static char *
-vcl_file(const char *bflag)
-{
-	char *buf, *vf;
-	struct sbuf *sb;
-
-	return (NULL);
-	buf = NULL;
-	asprintf(&buf,
-	   "backend default { set backend.ip = %s; }",
-	    bflag);
-	assert(buf != NULL);
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	vf = VCL_Compile(sb, buf, NULL);
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		fprintf(stderr, "%s", sbuf_data(sb));
-		free(buf);
-		sbuf_delete(sb);
-		return (NULL);
-	}
-	sbuf_delete(sb);
-	free(buf);
-	return (vf);
-}
-
 /*--------------------------------------------------------------------*/
 
 /* for development purposes */
