@@ -3,10 +3,12 @@
  * instead, edit the Tcl script vcl_gen_fixed_token.tcl and run it by hand
  */
 
+#include <stdio.h>
+#include <ctype.h>
 #include "vcl_priv.h"
 
 unsigned
-fixed_token(const char *p, const char **q)
+vcl_fixed_token(const char *p, const char **q)
 {
 
 	switch (p[0]) {
@@ -305,65 +307,144 @@ fixed_token(const char *p, const char **q)
 	}
 }
 
-const char *tnames[256];
+const char *vcl_tnames[256];
 
 void
-init_tnames(void)
+vcl_init_tnames(void)
 {
-	tnames['!'] = "'!'";
-	tnames['%'] = "'%'";
-	tnames['&'] = "'&'";
-	tnames['('] = "'('";
-	tnames[')'] = "')'";
-	tnames['*'] = "'*'";
-	tnames['+'] = "'+'";
-	tnames[','] = "','";
-	tnames['-'] = "'-'";
-	tnames['.'] = "'.'";
-	tnames['/'] = "'/'";
-	tnames['<'] = "'<'";
-	tnames['='] = "'='";
-	tnames['>'] = "'>'";
-	tnames['{'] = "'{'";
-	tnames['}'] = "'}'";
-	tnames['|'] = "'|'";
-	tnames['~'] = "'~'";
-	tnames[';'] = "';'";
-	tnames[CNUM] = "CNUM";
-	tnames[CSTR] = "CSTR";
-	tnames[EOI] = "EOI";
-	tnames[ID] = "ID";
-	tnames[T_ACL] = "acl";
-	tnames[T_BACKEND] = "backend";
-	tnames[T_CALL] = "call";
-	tnames[T_CAND] = "&&";
-	tnames[T_COR] = "||";
-	tnames[T_DEC] = "--";
-	tnames[T_DECR] = "/=";
-	tnames[T_DIV] = "/=";
-	tnames[T_ELSE] = "else";
-	tnames[T_ELSEIF] = "elseif";
-	tnames[T_ELSIF] = "elsif";
-	tnames[T_EQ] = "==";
-	tnames[T_ERROR] = "error";
-	tnames[T_FETCH] = "fetch";
-	tnames[T_FINISH] = "finish";
-	tnames[T_FUNC] = "func";
-	tnames[T_GEQ] = ">=";
-	tnames[T_IF] = "if";
-	tnames[T_INC] = "++";
-	tnames[T_INCR] = "+=";
-	tnames[T_LEQ] = "<=";
-	tnames[T_MUL] = "*=";
-	tnames[T_NEQ] = "!=";
-	tnames[T_NO_CACHE] = "no_cache";
-	tnames[T_NO_NEW_CACHE] = "no_new_cache";
-	tnames[T_PROC] = "proc";
-	tnames[T_REWRITE] = "rewrite";
-	tnames[T_SET] = "set";
-	tnames[T_SHL] = "<<";
-	tnames[T_SHR] = ">>";
-	tnames[T_SUB] = "sub";
-	tnames[T_SWITCH_CONFIG] = "switch_config";
-	tnames[VAR] = "VAR";
+	vcl_tnames['!'] = "'!'";
+	vcl_tnames['%'] = "'%'";
+	vcl_tnames['&'] = "'&'";
+	vcl_tnames['('] = "'('";
+	vcl_tnames[')'] = "')'";
+	vcl_tnames['*'] = "'*'";
+	vcl_tnames['+'] = "'+'";
+	vcl_tnames[','] = "','";
+	vcl_tnames['-'] = "'-'";
+	vcl_tnames['.'] = "'.'";
+	vcl_tnames['/'] = "'/'";
+	vcl_tnames['<'] = "'<'";
+	vcl_tnames['='] = "'='";
+	vcl_tnames['>'] = "'>'";
+	vcl_tnames['{'] = "'{'";
+	vcl_tnames['}'] = "'}'";
+	vcl_tnames['|'] = "'|'";
+	vcl_tnames['~'] = "'~'";
+	vcl_tnames[';'] = "';'";
+	vcl_tnames[CNUM] = "CNUM";
+	vcl_tnames[CSTR] = "CSTR";
+	vcl_tnames[EOI] = "EOI";
+	vcl_tnames[ID] = "ID";
+	vcl_tnames[T_ACL] = "acl";
+	vcl_tnames[T_BACKEND] = "backend";
+	vcl_tnames[T_CALL] = "call";
+	vcl_tnames[T_CAND] = "&&";
+	vcl_tnames[T_COR] = "||";
+	vcl_tnames[T_DEC] = "--";
+	vcl_tnames[T_DECR] = "/=";
+	vcl_tnames[T_DIV] = "/=";
+	vcl_tnames[T_ELSE] = "else";
+	vcl_tnames[T_ELSEIF] = "elseif";
+	vcl_tnames[T_ELSIF] = "elsif";
+	vcl_tnames[T_EQ] = "==";
+	vcl_tnames[T_ERROR] = "error";
+	vcl_tnames[T_FETCH] = "fetch";
+	vcl_tnames[T_FINISH] = "finish";
+	vcl_tnames[T_FUNC] = "func";
+	vcl_tnames[T_GEQ] = ">=";
+	vcl_tnames[T_IF] = "if";
+	vcl_tnames[T_INC] = "++";
+	vcl_tnames[T_INCR] = "+=";
+	vcl_tnames[T_LEQ] = "<=";
+	vcl_tnames[T_MUL] = "*=";
+	vcl_tnames[T_NEQ] = "!=";
+	vcl_tnames[T_NO_CACHE] = "no_cache";
+	vcl_tnames[T_NO_NEW_CACHE] = "no_new_cache";
+	vcl_tnames[T_PROC] = "proc";
+	vcl_tnames[T_REWRITE] = "rewrite";
+	vcl_tnames[T_SET] = "set";
+	vcl_tnames[T_SHL] = "<<";
+	vcl_tnames[T_SHR] = ">>";
+	vcl_tnames[T_SUB] = "sub";
+	vcl_tnames[T_SWITCH_CONFIG] = "switch_config";
+	vcl_tnames[VAR] = "VAR";
+}
+
+void
+vcl_output_lang_h(FILE *f)
+{
+	fputs("/*\n", f);
+	fputs(" * Stuff necessary to compile a VCL programs C code\n", f);
+	fputs(" *\n", f);
+	fputs(" * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl\n", f);
+	fputs(" * XXX: *MUST* be rerun.\n", f);
+	fputs(" */\n", f);
+	fputs("\n", f);
+	fputs("\n", f);
+	fputs("struct vcl_ref {\n", f);
+	fputs("	unsigned	line;\n", f);
+	fputs("	unsigned	pos;\n", f);
+	fputs("	unsigned	count;\n", f);
+	fputs("	const char	*token;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct vcl_acl {\n", f);
+	fputs("	unsigned	ip;\n", f);
+	fputs("	unsigned	mask;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct client {\n", f);
+	fputs("	unsigned	ip;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct req {\n", f);
+	fputs("	char		*req;\n", f);
+	fputs("	char		*useragent;\n", f);
+	fputs("	struct {\n", f);
+	fputs("		char		*path;\n", f);
+	fputs("		char		*host;\n", f);
+	fputs("	}		url;\n", f);
+	fputs("	double		ttlfactor;\n", f);
+	fputs("	struct backend	*backend;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct backend {\n", f);
+	fputs("	unsigned	ip;\n", f);
+	fputs("	double		responsetime;\n", f);
+	fputs("	double		timeout;\n", f);
+	fputs("	double		bandwidth;\n", f);
+	fputs("	int		down;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct obj {\n", f);
+	fputs("	int		exists;\n", f);
+	fputs("	double		ttl;\n", f);
+	fputs("	unsigned	result;\n", f);
+	fputs("	unsigned	size;\n", f);
+	fputs("	unsigned	usage;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("#define VCL_FARGS	struct client *client, struct obj *obj, struct req *req, struct backend *backend\n", f);
+	fputs("#define VCL_PASS_ARGS	client, obj, req, backend\n", f);
+	fputs("\n", f);
+	fputs("void VCL_count(unsigned);\n", f);
+	fputs("void VCL_no_cache();\n", f);
+	fputs("void VCL_no_new_cache();\n", f);
+	fputs("int ip_match(unsigned, struct vcl_acl *);\n", f);
+	fputs("int string_match(const char *, const char *);\n", f);
+	fputs("int VCL_rewrite(const char *, const char *);\n", f);
+	fputs("int VCL_error(unsigned, const char *);\n", f);
+	fputs("int VCL_fetch(void);\n", f);
+	fputs("int VCL_switch_config(const char *);\n", f);
+	fputs("\n", f);
+	fputs("typedef void vcl_init_f(void);\n", f);
+	fputs("\n", f);
+	fputs("struct VCL_conf {\n", f);
+	fputs("	unsigned	magic;\n", f);
+	fputs("#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */\n", f);
+	fputs("	vcl_init_f	*init_func;\n", f);
+	fputs("	struct backend	*default_backend;\n", f);
+	fputs("	struct vcl_ref	*ref;\n", f);
+	fputs("	unsigned	nref;\n", f);
+	fputs("};\n", f);
 }
