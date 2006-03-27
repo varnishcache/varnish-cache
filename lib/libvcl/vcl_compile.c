@@ -36,9 +36,13 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/sbuf.h>
+#include <sys/stat.h>
 #include <sys/queue.h>
 #include "vcl_priv.h"
 
@@ -1455,6 +1459,32 @@ done:
 
 /*--------------------------------------------------------------------*/
 
+char *
+VCL_CompileFile(struct sbuf *sb, const char *fn)
+{
+	char *f, *r;
+	int fd, i;
+	struct stat st;
+
+	fd = open(fn, O_RDONLY);
+	if (fd < 0) {
+		sbuf_printf(sb, "Cannot open file '%s': %s",
+		    fn, strerror(errno));
+		return (NULL);
+	}
+	assert(0 == fstat(fd, &st));
+	f = malloc(st.st_size + 1);
+	assert(f != NULL);
+	i = read(fd, f, st.st_size); 
+	assert(i == st.st_size);
+	f[i] = '\0';
+	r = VCL_Compile(sb, f, NULL);
+	free(f);
+	return (r);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VCL_InitCompile(void)
 {
@@ -1464,47 +1494,3 @@ VCL_InitCompile(void)
 	for (v = vars; v->name != NULL; v++)
 		v->len = strlen(v->name);
 }
-
-#if 0
-/*--------------------------------------------------------------------*/
-
-#include <err.h>
-
-#define MYSPACE	(128 * 1024)
-
-int
-main(int argc, char **argv)
-{
-	char *p;
-	size_t z;
-	FILE *fi;
-	struct sbuf *sb;
-
-	setbuf(stdout, NULL);
-	{
-	struct var *v;
-
-	for (v = vars; v->name != NULL; v++) {
-		v->len = strlen(v->name);
-	}
-	}
-	if (argc != 2)
-		err(1, "Usage: %s file", argv[0]);
-	fi = fopen(argv[1], "r");
-	if (fi == NULL)
-		err(1, "Cannot open %s", argv[1]);
-	p = malloc(MYSPACE);
-	assert(p != NULL);
-
-	z = fread(p, 1, MYSPACE - 1, fi);
-	if (z == 0)
-		err(1, "Nothing read from %s", argv[1]);
-	p[z] = '\0';
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	Compile(sb, p, p + z);
-	sbuf_finish(sb);
-	if (sbuf_len(sb))
-		printf("<%s>\n", sbuf_data(sb));
-	return (0);
-}
-#endif
