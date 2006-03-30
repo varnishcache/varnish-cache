@@ -6,6 +6,7 @@
  */
 
 #include <sys/queue.h>
+#include <pthread.h>
 
 struct vcl_ref {
 	unsigned	line;
@@ -52,9 +53,16 @@ struct sess {
 
 	TAILQ_ENTRY(sess)	list;
 
+	struct VCL_conf		*vcl;
+
 	/* Various internal stuff */
 	struct event		*rd_e;
 	struct sessmem		*mem;
+};
+
+struct be_conn {
+	TAILQ_ENTRY(be_conn)	list;
+	int			fd;
 };
 
 struct backend {
@@ -63,6 +71,10 @@ struct backend {
 	double		timeout;
 	double		bandwidth;
 	int		down;
+
+	/* Internals */
+	TAILQ_HEAD(,be_conn)	bec_head;
+	unsigned		nbec;
 };
 
 #define VCL_FARGS	struct sess *sess
@@ -90,4 +102,5 @@ struct VCL_conf {
 	struct backend	*default_backend;
 	struct vcl_ref	*ref;
 	unsigned	nref;
+	unsigned	busy;
 };

@@ -12,6 +12,7 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "vcl_lang.h"
+#include "libvarnish.h"
 #include "cache.h"
 
 struct vcls {
@@ -21,10 +22,41 @@ struct vcls {
 	struct VCL_conf		*conf;
 };
 
+/*
+ * XXX: Presently all modifications to this list happen from the
+ * CLI event-engine, so no locking is necessary
+ */
 static TAILQ_HEAD(, vcls)	vcl_head =
     TAILQ_HEAD_INITIALIZER(vcl_head);
 
-static struct vcls		*active_vcl;
+
+static struct vcls		*active_vcl; /* protected by sessmtx */
+
+
+/*--------------------------------------------------------------------*/
+
+struct VCL_conf *
+GetVCL(void)
+{
+	struct VCL_conf *vc;
+
+	/* XXX: assert sessmtx (procects active_vcl && ->busy) */
+	assert(active_vcl != NULL);
+	vc = active_vcl->conf;
+	assert(vc != NULL);
+	vc->busy++;
+	return (vc);
+}
+
+void
+RelVCL(struct VCL_conf *vc)
+{
+
+	/* XXX: assert sessmtx (procects ->busy) */
+	vc->busy--;
+}
+
+/*--------------------------------------------------------------------*/
 
 int
 CVCL_Load(const char *fn, const char *name)
@@ -56,8 +88,10 @@ CVCL_Load(const char *fn, const char *name)
 	vcl->name = strdup(name);
 	assert(vcl->name != NULL);
 	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
+	AZ(pthread_mutex_lock(&sessmtx));
 	if (active_vcl == NULL)
 		active_vcl = vcl;
+	AZ(pthread_mutex_unlock(&sessmtx));
 	fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
 	return (0);
 }
@@ -68,24 +102,34 @@ cli_func_config_list(struct cli *cli, char **av, void *priv)
 	struct vcls *vcl;
 
 	TAILQ_FOREACH(vcl, &vcl_head, list) {
-		cli_out(cli, "%s%s\n",
+		cli_out(cli, "%s %6u %s\n",
 		    vcl == active_vcl ? "* " : "  ",
+		    vcl->conf->busy,
 		    vcl->name);
 	}
 }
 
+static struct vcls *
+find_vcls(const char *name)
+{
+	struct vcls *vcl;
+
+	TAILQ_FOREACH(vcl, &vcl_head, list)
+		if (!strcmp(vcl->name, name))
+			return (vcl);
+	return (NULL);
+}
 
 void
 cli_func_config_load(struct cli *cli, char **av, void *priv)
 {
 	struct vcls *vcl;
 
-	TAILQ_FOREACH(vcl, &vcl_head, list) {
-		if (!strcmp(vcl->name, av[2])) {
-			cli_out(cli, "Config '%s' already loaded", av[2]);
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
+	vcl = find_vcls(av[2]);
+	if (vcl != NULL) {
+		cli_out(cli, "Config '%s' already loaded", av[2]);
+		cli_result(cli, CLIS_PARAM);
+		return;
 	}
 	vcl = calloc(sizeof *vcl, 1);
 	assert(vcl != NULL);
@@ -115,9 +159,8 @@ cli_func_config_load(struct cli *cli, char **av, void *priv)
 	vcl->name = strdup(av[2]);
 	assert(vcl->name != NULL);
 	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	if (active_vcl == NULL)
-		active_vcl = vcl;
 	cli_out(cli, "Loaded \"%s\" from \"%s\"\n", vcl->name , av[3]);
+	return;
 }
 
 void
@@ -131,16 +174,15 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 {
 	struct vcls *vcl;
 
-	TAILQ_FOREACH(vcl, &vcl_head, list) {
-		if (!strcmp(vcl->name, av[2]))
-			break;
-	}
-	if (vcl == NULL) {
+	vcl = find_vcls(av[2]);
+	if (vcl != NULL) {
+		AZ(pthread_mutex_lock(&sessmtx));
+		active_vcl = vcl;
+		AZ(pthread_mutex_unlock(&sessmtx));
+	} else {
 		cli_out(cli, "No config named '%s' loaded", av[2]);
 		cli_result(cli, CLIS_PARAM);
-		return;
 	}
-	active_vcl = vcl;
 }
 
 /*--------------------------------------------------------------------*/

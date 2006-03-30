@@ -12,7 +12,6 @@
 
 static TAILQ_HEAD(, sess) shd = TAILQ_HEAD_INITIALIZER(shd);
 
-static pthread_mutex_t	shdmtx;
 static pthread_cond_t	shdcnd;
 
 static void *
@@ -20,31 +19,38 @@ CacheWorker(void *priv __unused)
 {
 	struct sess *sp;
 
+	AZ(pthread_mutex_lock(&sessmtx));
 	while (1) {
-		AZ(pthread_mutex_lock(&shdmtx));
 		while (1) {
 			sp = TAILQ_FIRST(&shd);
 			if (sp != NULL)
 				break;
-			AZ(pthread_cond_wait(&shdcnd, &shdmtx));
+			AZ(pthread_cond_wait(&shdcnd, &sessmtx));
 		}
 		TAILQ_REMOVE(&shd, sp, list);
-		AZ(pthread_mutex_unlock(&shdmtx));
+		sp->vcl = GetVCL();
+		AZ(pthread_mutex_unlock(&sessmtx));
 
 		HttpdAnalyze(sp);
 
-		/*
-		 * XXX send session to acceptor for reuse/disposal
-	 	 */
+		/* Call the VCL program */
+		sp->vcl->main_func(sp);
+
+		printf("Handling: %d\n", sp->handling);
+
+		AZ(pthread_mutex_lock(&sessmtx));
+		RelVCL(sp->vcl);
+		sp->vcl = NULL;
+		/* XXX send session to acceptor for reuse/disposal */
 	}
 }
 
 void
 DealWithSession(struct sess *sp)
 {
-	AZ(pthread_mutex_lock(&shdmtx));
+	AZ(pthread_mutex_lock(&sessmtx));
 	TAILQ_INSERT_TAIL(&shd, sp, list);
-	AZ(pthread_mutex_unlock(&shdmtx));
+	AZ(pthread_mutex_unlock(&sessmtx));
 	AZ(pthread_cond_signal(&shdcnd));
 }
 
@@ -53,7 +59,6 @@ CacheInitPool(void)
 {
 	pthread_t tp;
 
-	AZ(pthread_mutex_init(&shdmtx, NULL));
 	AZ(pthread_cond_init(&shdcnd, NULL));
 
 	AZ(pthread_create(&tp, NULL, CacheWorker, NULL));

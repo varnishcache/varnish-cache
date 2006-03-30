@@ -8,6 +8,9 @@ void *vca_main(void *arg);
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp);
 
+/* cache_main.c */
+pthread_mutex_t	sessmtx;
+
 /* cache_pool.c */
 void CacheInitPool(void);
 void DealWithSession(struct sess *sp);
@@ -20,6 +23,8 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #endif
 
 /* cache_vcl.c */
+void RelVCL(struct VCL_conf *vc);
+struct VCL_conf *GetVCL(void);
 int CVCL_Load(const char *fn, const char *name);
 #ifdef CLI_PRIV_H
 cli_func_t	cli_func_config_list;
