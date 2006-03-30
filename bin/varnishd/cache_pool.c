@@ -33,6 +33,7 @@ CacheWorker(void *priv __unused)
 
 		HttpdAnalyze(sp);
 
+		sp->backend = sp->vcl->default_backend;
 		/* Call the VCL program */
 		sp->vcl->main_func(sp);
 

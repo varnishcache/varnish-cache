@@ -103,6 +103,7 @@ child_main(void)
 	printf("Child starts\n");
 
 	AZ(pthread_mutex_init(&sessmtx, NULL));
+	VBE_Init();
 	VSL_Init();
 	CacheInitPool();
 
