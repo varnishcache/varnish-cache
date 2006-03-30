@@ -9,6 +9,7 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "vcl_lang.h"
 #include "cache.h"
 
 void
@@ -20,23 +21,9 @@ HttpdAnalyze(struct sess *sp)
 
 	/* First, isolate and possibly identify request type */
 	p = sp->req_b = sp->rcv;
-	if (p[0] == 'G' && p[1] == 'E' && p[2] == 'T' && p[3] == ' ') {
-		p = sp->req_e = p + 4;
-		sp->handling = HND_Handle;
-	} else if (p[0] == 'H' && p[1] == 'E' && p[2] == 'A' && p[3] == 'D'
-	    && p[4] == ' ') {
-		p = sp->req_e = p + 5;
-		sp->handling = HND_Handle;
-	} else {
-		/*
-		 * We don't bother to identify the rest, we won't handle
-		 * them in any case
-		 */
-		for (q = p; isalpha(*q); q++)
-			;
-		p = sp->req_e = q;
-		sp->handling = HND_Pass;
-	}
+	for (q = p; isalpha(*q); q++)
+		;
+	p = sp->req_e = q;
 	VSLR(SLT_Request, sp->fd, sp->req_b, sp->req_e);
 
 	/* Next find the URI */

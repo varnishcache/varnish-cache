@@ -5,6 +5,7 @@
  * XXX: *MUST* be rerun.
  */
 
+#include <sys/queue.h>
 
 struct vcl_ref {
 	unsigned	line;
@@ -18,19 +19,42 @@ struct vcl_acl {
 	unsigned	mask;
 };
 
-struct client {
-	unsigned	ip;
-};
+#define VCA_RXBUFSIZE		1024
+#define VCA_ADDRBUFSIZE		32
 
-struct req {
-	char		*req;
-	char		*useragent;
-	struct {
-		char		*path;
-		char		*host;
-	}		url;
-	double		ttlfactor;
-	struct backend	*backend;
+struct sess {
+	int			fd;
+
+	/* formatted ascii client address */
+	char			addr[VCA_ADDRBUFSIZE];
+
+	/* Receive buffer for HTTP header */
+	char			rcv[VCA_RXBUFSIZE + 1];
+	unsigned		rcv_len;
+
+	/* HTTP request info, points into rcv */
+	const char		*req_b;
+	const char		*req_e;
+	const char		*url_b;
+	const char		*url_e;
+	const char		*proto_b;
+	const char		*proto_e;
+	const char		*hdr_b;
+	const char		*hdr_e;
+
+	enum {
+		HND_Unclass,
+		HND_Handle,
+		HND_Pass
+	}			handling;
+
+	char			done;
+
+	TAILQ_ENTRY(sess)	list;
+
+	/* Various internal stuff */
+	struct event		*rd_e;
+	struct sessmem		*mem;
 };
 
 struct backend {
@@ -41,16 +65,8 @@ struct backend {
 	int		down;
 };
 
-struct obj {
-	int		exists;
-	double		ttl;
-	unsigned	result;
-	unsigned	size;
-	unsigned	usage;
-};
-
-#define VCL_FARGS	struct client *client, struct obj *obj, struct req *req, struct backend *backend
-#define VCL_PASS_ARGS	client, obj, req, backend
+#define VCL_FARGS	struct sess *sess
+#define VCL_PASS_ARGS	sess
 
 void VCL_count(unsigned);
 void VCL_no_cache();
@@ -59,15 +75,18 @@ int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
 int VCL_rewrite(const char *, const char *);
 int VCL_error(unsigned, const char *);
+void VCL_pass(VCL_FARGS);
 int VCL_fetch(void);
 int VCL_switch_config(const char *);
 
 typedef void vcl_init_f(void);
+typedef void vcl_func_f(VCL_FARGS);
 
 struct VCL_conf {
 	unsigned	magic;
 #define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 	vcl_init_f	*init_func;
+	vcl_func_f	*main_func;
 	struct backend	*default_backend;
 	struct vcl_ref	*ref;
 	unsigned	nref;
