@@ -44,6 +44,11 @@
 #include <sys/sbuf.h>
 #include <sys/stat.h>
 #include <sys/queue.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include "vcl_priv.h"
 
 #include "libvcl.h"
@@ -82,7 +87,9 @@ enum var_type {
 	RATE,
 	TIME,
 	STRING,
-	IP
+	IP,
+	HOSTNAME,
+	PORTNAME
 };
 
 struct var {
@@ -90,7 +97,6 @@ struct var {
 	enum var_type		fmt;
 	int			len;
 	const char		*cname;
-	
 };
 
 enum ref_type {
@@ -108,9 +114,13 @@ struct ref {
 };
 
 
+static struct var be_vars[] = {
+	{ "backend.host",		HOSTNAME, 0,  "backend->hostname"    },
+	{ "backend.port",		PORTNAME, 0,  "backend->portname"    },
+};
+
+
 static struct var vars[] = {
-	{ "backend.host",		STRING, 0,  "backend->hostname"    },
-	{ "backend.port",		STRING, 0,  "backend->portname"    },
 #if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
 	{ "req.url.host",		STRING, 0,  "req->url.host" },
@@ -278,6 +288,58 @@ IdIs(struct token *t, const char *p)
 		return (0);
 	return (1);
 }
+
+/*--------------------------------------------------------------------*/
+
+char *
+EncString(struct token *t)
+{
+	char *p, *q;
+	const char *r;
+	unsigned u;
+
+	assert(t->tok == CSTR);
+	p = malloc(t->e - t->b);
+	assert(p != NULL);
+	q = p;
+	for (r = t->b + 1; r < t->e - 1; ) {
+		if (*r != '\\') {
+			*q++ = *r++;
+			continue;
+		}
+		switch (r[1]) {
+		case 'n':	*q++ = '\n';	r += 2; break;
+		case 'r':	*q++ = '\r';	r += 2; break;
+		case 'v':	*q++ = '\v';	r += 2; break;
+		case 'f':	*q++ = '\f';	r += 2; break;
+		case 't':	*q++ = '\t';	r += 2; break;
+		case 'b':	*q++ = '\b';	r += 2; break;
+		case '0': case '1': case '2': case '3':
+		case '4': case '5': case '6': case '7':
+			u = digittoint(r[1]);
+			r += 2;
+			if (isdigit(r[0]) && digittoint(r[0]) < 8) {
+				u <<= 3;
+				u |= digittoint(r[0]);
+				r++;
+				if (isdigit(r[0]) && digittoint(r[0]) < 8) {
+					u <<= 3;
+					u |= digittoint(r[0]);
+					r++;
+				}
+			}
+			*q++ = u;
+			break;
+		default:
+			*q++ = r[1];	
+			r += 2;
+			break;
+		}
+	}
+	*q = '\0';
+	return (p);
+}
+
 
 /*--------------------------------------------------------------------
  * Keep track of definitions and references
@@ -487,11 +549,11 @@ IpVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static struct var *
-FindVar(struct tokenlist *tl, struct token *t)
+FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
 {
 	struct var *v;
 
-	for (v = vars; v->name != NULL; v++) {
+	for (v = vl; v->name != NULL; v++) {
 		if (t->e - t->b != v->len)
 			continue;
 		if (!memcmp(t->b, v->name, v->len))
@@ -683,7 +745,7 @@ Cond_2(struct tokenlist *tl)
 		ExpectErr(tl, ')');
 		NextToken(tl);
 	} else if (tl->t->tok == VAR) {
-		vp = FindVar(tl, tl->t);
+		vp = FindVar(tl, tl->t, vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
 		NextToken(tl);
@@ -876,7 +938,7 @@ Action(struct tokenlist *tl)
 		return;
 	case T_SET:
 		ExpectErr(tl, VAR);
-		vp = FindVar(tl, tl->t);
+		vp = FindVar(tl, tl->t, vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
 		I(tl);
@@ -1046,12 +1108,36 @@ Compound(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static const char *
+CheckHostPort(const char *host, const char *port)
+{
+	struct addrinfo *res, hint;
+	int error;
+
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+	error = getaddrinfo(host, port, &hint, &res);
+	if (error) 
+		return (gai_strerror(error));
+	freeaddrinfo(res);
+	return (NULL);
+}
+
 static void
 Backend(struct tokenlist *tl)
 {
+	struct var *vp;
+	struct token *t_be = NULL;
+	struct token *t_host = NULL;
+	struct token *t_port = NULL;
+	char *host = NULL;
+	char *port = NULL;
+	const char *ep;
 
 	NextToken(tl);
 	ExpectErr(tl, ID);
+	t_be = tl->t;
 	AddDef(tl, tl->t, R_BACKEND);
 	I(tl);
 	sbuf_printf(tl->fh, "static struct backend VCL_backend_%*.*s;\n",
@@ -1066,8 +1152,86 @@ Backend(struct tokenlist *tl)
 	    "VCL_init_backend_%*.*s (struct backend *backend)\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
+	I(tl);
+	sbuf_printf(tl->fc, "{\n");
 	NextToken(tl);
-	L(tl, Compound(tl));
+	ExpectErr(tl, '{');
+	NextToken(tl);
+	while (1) {
+		if (tl->t->tok == '}')
+			break;
+		ExpectErr(tl, T_SET);
+		NextToken(tl);
+		ExpectErr(tl, VAR);
+		vp = FindVar(tl, tl->t, be_vars);
+		ERRCHK(tl);
+		assert(vp != NULL);
+		NextToken(tl);
+		ExpectErr(tl, '=');
+		NextToken(tl);
+		switch (vp->fmt) {
+		case HOSTNAME:
+			ExpectErr(tl, CSTR);
+			t_host = tl->t;
+			host = EncString(tl->t);
+			I(tl);
+			sbuf_printf(tl->fc, "\t%s = %*.*s;\n",
+			    vp->cname,
+			    tl->t->e - tl->t->b,
+			    tl->t->e - tl->t->b, tl->t->b);
+			NextToken(tl);
+			break;
+		case PORTNAME:
+			ExpectErr(tl, CSTR);
+			t_port = tl->t;
+			port = EncString(tl->t);
+			sbuf_printf(tl->fc, "\t%s = %*.*s;\n",
+			    vp->cname,
+			    tl->t->e - tl->t->b,
+			    tl->t->e - tl->t->b, tl->t->b);
+			NextToken(tl);
+			break;
+		default:
+			sbuf_printf(tl->sb,
+			    "Assignments not possible for '%s'\n", vp->name);
+			ErrWhere(tl, tl->t);
+			return;
+		}
+		ExpectErr(tl, ';');
+		NextToken(tl);
+	}
+	ExpectErr(tl, '}');
+	if (host == NULL) {
+		sbuf_printf(tl->sb, "Backend '%*.*s' has no hostname\n",
+		    t_be->e - t_be->b,
+		    t_be->e - t_be->b, t_be->b);
+		ErrWhere(tl, tl->t);
+		return;
+	}
+	ep = CheckHostPort(host, "80");
+	if (ep != NULL) {
+		sbuf_printf(tl->sb,
+		    "Backend '%*.*s': %s\n",
+		    t_be->e - t_be->b,
+		    t_be->e - t_be->b, t_be->b, ep);
+		ErrWhere(tl, t_host);
+		return;
+	}
+	if (port != NULL) {
+		ep = CheckHostPort(host, port);
+		if (ep != NULL) {
+			sbuf_printf(tl->sb,
+			    "Backend '%*.*s': %s\n",
+			    t_be->e - t_be->b,
+			    t_be->e - t_be->b, t_be->b, ep);
+			ErrWhere(tl, t_port);
+			return;
+		}
+	}
+	
+	NextToken(tl);
+	I(tl);
+	sbuf_printf(tl->fc, "}\n");
 	sbuf_printf(tl->fc, "\n");
 }
 
@@ -1503,5 +1667,7 @@ VCL_InitCompile(void)
 
 	vcl_init_tnames();
 	for (v = vars; v->name != NULL; v++)
+		v->len = strlen(v->name);
+	for (v = be_vars; v->name != NULL; v++)
 		v->len = strlen(v->name);
 }
