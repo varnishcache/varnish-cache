@@ -25,6 +25,8 @@
 static struct event ev_keepalive;
 static pthread_t vca_thread;
 
+pthread_mutex_t	sessmtx;
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -100,6 +102,7 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+	AZ(pthread_mutex_init(&sessmtx, NULL));
 	VSL_Init();
 	CacheInitPool();
 
