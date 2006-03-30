@@ -3,8 +3,15 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/queue.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include "libvarnish.h"
 #include "vcl_lang.h"
 
@@ -32,10 +39,47 @@ static TAILQ_HEAD(,vbe) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
 static pthread_mutex_t	vbemtx;
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: we should not call getaddrinfo() every time, we should cache
+ * and apply round-robin with blacklisting of entries that do not respond
+ * etc.  Periodic re-lookups to capture changed DNS records would also 
+ * be a good thing in that case.
+ */
+
 void
 connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 {
+	struct addrinfo *res, *res0, hint;
+	int error, s;
+
+	assert(bp != NULL);
+	assert(bp->hostname != NULL);
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+	error = getaddrinfo(bp->hostname,
+	    bp->portname == NULL ? "http" : bp->portname,
+	    &hint, &res);
+	if (error) {
+		fprintf(stderr, "getaddrinfo: %s\n", 
+		    gai_strerror(error));
+		return;
+	}
+	res0 = res;
+	do {
+		s = socket(res0->ai_family, res0->ai_socktype,
+		    res0->ai_protocol);
+		if (s < 0)
+			continue;
+		error = connect(s, res0->ai_addr, res0->ai_addrlen);
+		if (!error)
+			break;
+		close(s);
+		s = -1;
+	} while ((res0 = res0->ai_next) != NULL);
+	freeaddrinfo(res);
+	vc->fd = s;
+	return;
 }
 
 /*--------------------------------------------------------------------*/
@@ -73,6 +117,7 @@ VBE_GetFd(struct backend *bp)
 	vc = calloc(sizeof *vc, 1);
 	assert(vc != NULL);
 	vc->vbe = vp;
+	vc->fd = -1;
 	TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
 	AZ(pthread_mutex_unlock(&vbemtx));
 	connect_to_backend(vc, bp);
@@ -80,9 +125,6 @@ VBE_GetFd(struct backend *bp)
 	/* XXX */
 	return (-1);
 }
-
-
-
 
 void
 VBE_Init(void)

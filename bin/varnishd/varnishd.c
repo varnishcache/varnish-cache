@@ -68,7 +68,9 @@ vcl_default(const char *bflag)
 
 	buf = NULL;
 	asprintf(&buf,
-	    "backend default { set backend.host = \"%s\"; }\n"
+	    "backend default {\n"
+	    "    set backend.host = \"%s\";\n"
+	    "}\n"
 	    "sub main {\n"
 	    "    pass;\n"
 #if 0
