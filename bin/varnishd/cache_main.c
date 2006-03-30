@@ -18,6 +18,7 @@
 #include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"
+#include "vcl_lang.h"
 #include "cache.h"
 #include "cli_event.h"
 
@@ -100,6 +101,7 @@ child_main(void)
 	printf("Child starts\n");
 
 	VSL_Init();
+	CacheInitPool();
 
 	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
 

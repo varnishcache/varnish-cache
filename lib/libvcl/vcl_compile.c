@@ -818,6 +818,11 @@ Action(struct tokenlist *tl)
 		I(tl);
 		sbuf_printf(tl->fc, "return;\n");
 		return;
+	case T_PASS:
+		I(tl);
+		sbuf_printf(tl->fc, "VCL_pass(VCL_PASS_ARGS);\n");
+		sbuf_printf(tl->fc, "return;\n");
+		return;
 	case T_FETCH:
 		I(tl);
 		sbuf_printf(tl->fc, "VCL_fetch();\n");
@@ -849,7 +854,8 @@ Action(struct tokenlist *tl)
 		sbuf_printf(tl->fc, "VCL_function_%*.*s(VCL_PASS_ARGS);\n",
 		    tl->t->e - tl->t->b,
 		    tl->t->e - tl->t->b, tl->t->b);
-		/* XXX: check if function finished request */
+		I(tl); sbuf_printf(tl->fc, "if (sess->done)\n");
+		I(tl); sbuf_printf(tl->fc, "\treturn;\n");
 		NextToken(tl);
 		return;
 	case T_REWRITE:
@@ -1363,6 +1369,8 @@ EmitStruct(struct tokenlist *tl)
 	    "\t.magic = VCL_CONF_MAGIC,\n");
 	sbuf_printf(tl->fc,
 	    "\t.init_func = VCL_Init,\n");
+	sbuf_printf(tl->fc,
+	    "\t.main_func = VCL_function_main,\n");
 	sbuf_printf(tl->fc,
 	    "\t.default_backend = &VCL_backend_default,\n");
 	sbuf_printf(tl->fc,

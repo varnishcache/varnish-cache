@@ -68,8 +68,23 @@ vcl_default(const char *bflag)
 
 	buf = NULL;
 	asprintf(&buf,
-	   "backend default { set backend.ip = %s; }",
-	    bflag);
+	    "backend default { set backend.ip = %s; }\n"
+	    "sub main {\n"
+	    "    pass;\n"
+#if 0
+	    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
+	    "        pass;\n"
+	    "    }\n"
+	    "    lookup;\n"
+	    "    if (!obj.valid) {\n"
+	    "        fetch;\n"
+	    "        if (obj.cacheable) {\n"
+	    "            insert;\n"
+	    "        }\n"
+	    "    }\n"
+#endif
+	    "}\n"
+	    "", bflag);
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);

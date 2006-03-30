@@ -13,6 +13,7 @@ set keywords {
 	backend
 
 	error
+	pass
 	fetch
 	call
 	no_cache

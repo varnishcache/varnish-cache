@@ -142,3 +142,13 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 	}
 	active_vcl = vcl;
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VCL_pass(VCL_FARGS)
+{
+
+	sess->handling = HND_Pass;
+	sess->done++;
+}

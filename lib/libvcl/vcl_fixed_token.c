@@ -245,6 +245,11 @@ vcl_fixed_token(const char *p, const char **q)
 			*q = p + 4;
 			return (T_PROC);
 		}
+		if (p[0] == 'p' && p[1] == 'a' && p[2] == 's' && 
+		    p[3] == 's' && !isvar(p[4])) {
+			*q = p + 4;
+			return (T_PASS);
+		}
 		return (0);
 	case 'r':
 		if (p[0] == 'r' && p[1] == 'e' && p[2] == 'w' && 
@@ -360,6 +365,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_NEQ] = "!=";
 	vcl_tnames[T_NO_CACHE] = "no_cache";
 	vcl_tnames[T_NO_NEW_CACHE] = "no_new_cache";
+	vcl_tnames[T_PASS] = "pass";
 	vcl_tnames[T_PROC] = "proc";
 	vcl_tnames[T_REWRITE] = "rewrite";
 	vcl_tnames[T_SET] = "set";
@@ -380,6 +386,7 @@ vcl_output_lang_h(FILE *f)
 	fputs(" * XXX: *MUST* be rerun.\n", f);
 	fputs(" */\n", f);
 	fputs("\n", f);
+	fputs("#include <sys/queue.h>\n", f);
 	fputs("\n", f);
 	fputs("struct vcl_ref {\n", f);
 	fputs("	unsigned	line;\n", f);
@@ -393,19 +400,40 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned	mask;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
-	fputs("struct client {\n", f);
-	fputs("	unsigned	ip;\n", f);
-	fputs("};\n", f);
+	fputs("#define VCA_RXBUFSIZE		1024\n", f);
+	fputs("#define VCA_ADDRBUFSIZE		32\n", f);
 	fputs("\n", f);
-	fputs("struct req {\n", f);
-	fputs("	char		*req;\n", f);
-	fputs("	char		*useragent;\n", f);
-	fputs("	struct {\n", f);
-	fputs("		char		*path;\n", f);
-	fputs("		char		*host;\n", f);
-	fputs("	}		url;\n", f);
-	fputs("	double		ttlfactor;\n", f);
-	fputs("	struct backend	*backend;\n", f);
+	fputs("struct sess {\n", f);
+	fputs("	int		fd;\n", f);
+	fputs("\n", f);
+	fputs("	/* formatted ascii client address */\n", f);
+	fputs("	char		addr[VCA_ADDRBUFSIZE];\n", f);
+	fputs("\n", f);
+	fputs("	/* Receive buffer for HTTP header */\n", f);
+	fputs("	char		rcv[VCA_RXBUFSIZE + 1];\n", f);
+	fputs("	unsigned	rcv_len;\n", f);
+	fputs("\n", f);
+	fputs("	/* HTTP request info, points into rcv */\n", f);
+	fputs("	const char	*req_b;\n", f);
+	fputs("	const char	*req_e;\n", f);
+	fputs("	const char	*url_b;\n", f);
+	fputs("	const char	*url_e;\n", f);
+	fputs("	const char	*proto_b;\n", f);
+	fputs("	const char	*proto_e;\n", f);
+	fputs("	const char	*hdr_b;\n", f);
+	fputs("	const char	*hdr_e;\n", f);
+	fputs("\n", f);
+	fputs("	enum {\n", f);
+	fputs("		HND_Unclass,\n", f);
+	fputs("		HND_Handle,\n", f);
+	fputs("		HND_Pass\n", f);
+	fputs("	}		handling;\n", f);
+	fputs("\n", f);
+	fputs("	char		done;\n", f);
+	fputs("\n", f);
+	fputs("	/* Various internal stuff */\n", f);
+	fputs("	struct event	*rd_e;\n", f);
+	fputs("	struct sessmem	*mem;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("struct backend {\n", f);
@@ -416,16 +444,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("	int		down;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
-	fputs("struct obj {\n", f);
-	fputs("	int		exists;\n", f);
-	fputs("	double		ttl;\n", f);
-	fputs("	unsigned	result;\n", f);
-	fputs("	unsigned	size;\n", f);
-	fputs("	unsigned	usage;\n", f);
-	fputs("};\n", f);
-	fputs("\n", f);
-	fputs("#define VCL_FARGS	struct client *client, struct obj *obj, struct req *req, struct backend *backend\n", f);
-	fputs("#define VCL_PASS_ARGS	client, obj, req, backend\n", f);
+	fputs("#define VCL_FARGS	struct sess *sess\n", f);
+	fputs("#define VCL_PASS_ARGS	sess\n", f);
 	fputs("\n", f);
 	fputs("void VCL_count(unsigned);\n", f);
 	fputs("void VCL_no_cache();\n", f);
@@ -434,15 +454,18 @@ vcl_output_lang_h(FILE *f)
 	fputs("int string_match(const char *, const char *);\n", f);
 	fputs("int VCL_rewrite(const char *, const char *);\n", f);
 	fputs("int VCL_error(unsigned, const char *);\n", f);
+	fputs("void VCL_pass(VCL_FARGS);\n", f);
 	fputs("int VCL_fetch(void);\n", f);
 	fputs("int VCL_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("typedef void vcl_init_f(void);\n", f);
+	fputs("typedef void vcl_func_f(VCL_FARGS);\n", f);
 	fputs("\n", f);
 	fputs("struct VCL_conf {\n", f);
 	fputs("	unsigned	magic;\n", f);
 	fputs("#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */\n", f);
 	fputs("	vcl_init_f	*init_func;\n", f);
+	fputs("	vcl_func_f	*main_func;\n", f);
 	fputs("	struct backend	*default_backend;\n", f);
 	fputs("	struct vcl_ref	*ref;\n", f);
 	fputs("	unsigned	nref;\n", f);
