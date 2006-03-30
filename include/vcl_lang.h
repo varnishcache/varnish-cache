@@ -53,6 +53,7 @@ struct sess {
 
 	TAILQ_ENTRY(sess)	list;
 
+	struct backend		*backend;
 	struct VCL_conf		*vcl;
 
 	/* Various internal stuff */
@@ -60,21 +61,18 @@ struct sess {
 	struct sessmem		*mem;
 };
 
-struct be_conn {
-	TAILQ_ENTRY(be_conn)	list;
-	int			fd;
-};
-
 struct backend {
+	const char	*hostname;
+	const char	*portname;
+	struct addrinfo	*addr;
 	unsigned	ip;
 	double		responsetime;
 	double		timeout;
 	double		bandwidth;
 	int		down;
 
-	/* Internals */
-	TAILQ_HEAD(,be_conn)	bec_head;
-	unsigned		nbec;
+	/* internal stuff */
+	struct vbe	*vbe;
 };
 
 #define VCL_FARGS	struct sess *sess

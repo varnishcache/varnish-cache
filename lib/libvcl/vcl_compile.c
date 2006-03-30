@@ -109,6 +109,9 @@ struct ref {
 
 
 static struct var vars[] = {
+	{ "backend.host",		STRING, 0,  "backend->hostname"    },
+	{ "backend.port",		STRING, 0,  "backend->portname"    },
+#if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
 	{ "req.url.host",		STRING, 0,  "req->url.host" },
 	{ "req.url.path",		STRING, 0,  "req->url.path" },
@@ -116,7 +119,6 @@ static struct var vars[] = {
 	{ "req.backend",		BACKEND, 0, "req->backend"   },
 	{ "client.ip",			IP, 0,	    "client->ip"     },
 	{ "backend.response_time",	TIME, 0,    "backend->responsetime" },
-	{ "backend.ip",			IP, 0,      "backend->ip"    },
 	{ "backend.down",		BOOL, 0,    "backend->down"  },
 	{ "backend.timeout",		TIME, 0,    "backend->timeout" },
 	{ "backend.bandwidth",		RATE, 0,    "backend->bandwidth" },
@@ -125,6 +127,7 @@ static struct var vars[] = {
 	{ "obj.result",			INT, 0,     "obj->result" },
 	{ "obj.size",			SIZE, 0,    "obj->size" },
 	{ "obj.usage",			INT, 0,     "obj->usage" },
+#endif
 	{ NULL,				INT, 0,	    "NULL" }
 };
 

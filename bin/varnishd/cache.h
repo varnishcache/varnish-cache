@@ -5,6 +5,9 @@
 /* cache_acceptor.c */
 void *vca_main(void *arg);
 
+/* cache_backend.c */
+void VBE_Init(void);
+
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp);
 
