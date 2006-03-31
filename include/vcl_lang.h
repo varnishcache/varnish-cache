@@ -5,8 +5,8 @@
  * XXX: *MUST* be rerun.
  */
 
+/* XXX: This include is bad.  The VCL compiler shouldn't know about it. */
 #include <sys/queue.h>
-#include <pthread.h>
 
 struct vcl_ref {
 	unsigned	line;
@@ -35,13 +35,11 @@ struct sess {
 
 	/* HTTP request info, points into rcv */
 	const char		*req_b;
-	const char		*req_e;
 	const char		*url_b;
-	const char		*url_e;
 	const char		*proto_b;
-	const char		*proto_e;
-	const char		*hdr_b;
-	const char		*hdr_e;
+#define HTTPH(a, b) const char *b;
+#include <http_headers.h>
+#undef HTTPH
 
 	enum {
 		HND_Unclass,

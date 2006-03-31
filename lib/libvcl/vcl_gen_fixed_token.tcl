@@ -180,6 +180,16 @@ puts $fo "void"
 puts $fo "vcl_output_lang_h(FILE *f)"
 puts $fo "{"
 while {[gets $fi a] >= 0} {
+	if {"$a" == "#include <http_headers.h>"} {
+		puts "FOO $a"
+		set fx [open "../../include/http_headers.h"]
+		while {[gets $fx b] >= 0} {
+			regsub -all {"} $b {\"} b
+			puts $fo "\tfputs(\"$b\\n\", f);"
+		}
+		close $fx
+		continue
+	}
 	puts $fo "\tfputs(\"$a\\n\", f);"
 }
 puts $fo "}"
