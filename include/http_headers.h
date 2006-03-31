@@ -1,0 +1,25 @@
+/*
+ * $Id$
+ */
+
+HTTPH("Accept-Charset",			H_Accept_Charset)
+HTTPH("Accept-Encoding",		H_Accept_Encoding)
+HTTPH("Accept-Language",		H_Accept_Language)
+HTTPH("Accept",				H_Accept)
+HTTPH("Authorization",			H_Authorization)
+HTTPH("Connection",			H_Connection)
+HTTPH("Expect",				H_Expect)
+HTTPH("From",				H_From)
+HTTPH("Host",				H_Host)
+HTTPH("If-Match",			H_If_Match)
+HTTPH("If-Modified-Since",		H_If_Modified_Since)
+HTTPH("If-None-Match",			H_If_None_Match)
+HTTPH("If-Range",			H_If_Range)
+HTTPH("If-Unmodified-Since",		H_If_Unmodifed_Since)
+HTTPH("Keep-Alive",			H_Keep_Alive)
+HTTPH("Max-Forwards",			H_Max_Forwards)
+HTTPH("Proxy-Authorization",		H_Proxy_Authorization)
+HTTPH("Range",				H_Range)
+HTTPH("Referer",			H_Referer)
+HTTPH("TE",				H_TE)
+HTTPH("User-Agent",			H_User_Agent)
