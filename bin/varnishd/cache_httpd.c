@@ -21,6 +21,8 @@ HttpdAnalyze(struct sess *sp)
 
 	sp->handling = HND_Unclass;
 
+	memset(&sp->http, 0, sizeof sp->http);
+
 	/* First, isolate and possibly identify request type */
 	sp->http.req = sp->rcv;
 	for (p = sp->rcv; isalpha(*p); p++)
@@ -54,8 +56,6 @@ HttpdAnalyze(struct sess *sp)
 	p++;
 	if (*p == '\r')
 		p++;
-
-	memset(&sp->http, 0, sizeof sp->http);
 
 	for (; p < sp->rcv + sp->rcv_len; p = r) {
 		q = strchr(p, '\n');
