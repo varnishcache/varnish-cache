@@ -55,7 +55,7 @@ HttpdAnalyze(struct sess *sp)
 	if (*p == '\r')
 		p++;
 
-#define HTTPH(a, b)	sp->b = NULL;
+#define HTTPH(a, b, c, d, e, f, g)	sp->b = NULL;
 #include "http_headers.h"
 #undef HTTPH
 
@@ -77,7 +77,7 @@ HttpdAnalyze(struct sess *sp)
 	continue;					\
     } 
 
-#define HTTPH(a, b)	W(a ":", b, p, q, sp)
+#define HTTPH(a, b, c, d, e, f, g)	W(a ":", b, p, q, sp)
 #include "http_headers.h"
 #undef HTTPH
 #undef W
