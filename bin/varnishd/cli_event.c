@@ -123,8 +123,25 @@ excb(struct bufferevent *bev, short what, void *arg)
 	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
 }
 
+/*
+ * XXX: included in libevent in CVS
+ */
+
+static int
+bufferevent_base_set(struct event_base *base, struct bufferevent *bufev)
+{
+	int res;
+
+	res = event_base_set(base, &bufev->ev_read);
+	if (res == -1)
+		return (res);
+
+	res = event_base_set(base, &bufev->ev_write);
+		return (res);
+}
+
 struct cli *
-cli_setup(int fdr, int fdw, int ver, struct cli_proto *cli_proto)
+cli_setup(struct event_base *eb, int fdr, int fdw, int ver, struct cli_proto *cli_proto)
 {
 	struct cli	*cli;
 
@@ -133,11 +150,13 @@ cli_setup(int fdr, int fdw, int ver, struct cli_proto *cli_proto)
 
 	cli->bev0 = bufferevent_new(fdr, rdcb, wrcb, excb, cli);
 	assert(cli->bev0 != NULL);
+	bufferevent_base_set(eb, cli->bev0);
 	if (fdr == fdw)
 		cli->bev1 = cli->bev0;
 	else 
 		cli->bev1 = bufferevent_new(fdw, rdcb, wrcb, excb, cli);
 	assert(cli->bev1 != NULL);
+	bufferevent_base_set(eb, cli->bev1);
 	cli->sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(cli->sb != NULL);
 

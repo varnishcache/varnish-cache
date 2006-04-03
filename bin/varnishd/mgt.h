@@ -2,7 +2,7 @@
  * $Id$
  */
 
-extern struct event_base *eb;
+extern struct event_base *mgt_eb;
 
 void mgt_child_start(void);
 void mgt_child_stop(void);
