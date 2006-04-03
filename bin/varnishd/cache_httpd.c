@@ -22,30 +22,30 @@ HttpdAnalyze(struct sess *sp)
 	sp->handling = HND_Unclass;
 
 	/* First, isolate and possibly identify request type */
-	sp->req_b = sp->rcv;
+	sp->req = sp->rcv;
 	for (p = sp->rcv; isalpha(*p); p++)
 		;
-	VSLR(SLT_Request, sp->fd, sp->req_b, p);
+	VSLR(SLT_Request, sp->fd, sp->req, p);
 	*p++ = '\0';
 
 	/* Next find the URI */
 	while (isspace(*p))
 		p++;
-	sp->url_b = p;
+	sp->url = p;
 	while (!isspace(*p))
 		p++;
-	VSLR(SLT_URL, sp->fd, sp->url_b, p);
+	VSLR(SLT_URL, sp->fd, sp->url, p);
 	*p++ = '\0';
 
 	/* Finally, look for protocol, if any */
 	while (isspace(*p) && *p != '\n')
 		p++;
-	sp->proto_b = p;
+	sp->proto = p;
 	if (*p != '\n') {
 		while (!isspace(*p))
 			p++;
 	}
-	VSLR(SLT_Protocol, sp->fd, sp->proto_b, p);
+	VSLR(SLT_Protocol, sp->fd, sp->proto, p);
 	*p++ = '\0';
 
 	while (isspace(*p) && *p != '\n')

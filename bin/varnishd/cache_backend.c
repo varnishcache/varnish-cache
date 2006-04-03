@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "vcl_lang.h"
@@ -86,7 +87,7 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 int
-VBE_GetFd(struct backend *bp)
+VBE_GetFd(struct backend *bp, void **ptr)
 {
 	struct vbe *vp;
 	struct vbe_conn *vc;
@@ -113,19 +114,80 @@ VBE_GetFd(struct backend *bp)
 		TAILQ_REMOVE(&vp->fconn, vc, list);
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
 		AZ(pthread_mutex_unlock(&vbemtx));
-		return (vc->fd);
+	} else {
+		vc = calloc(sizeof *vc, 1);
+		assert(vc != NULL);
+		vc->vbe = vp;
+		vc->fd = -1;
+		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
+		AZ(pthread_mutex_unlock(&vbemtx));
+		connect_to_backend(vc, bp);
 	}
-	vc = calloc(sizeof *vc, 1);
-	assert(vc != NULL);
-	vc->vbe = vp;
-	vc->fd = -1;
-	TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
-	AZ(pthread_mutex_unlock(&vbemtx));
-	connect_to_backend(vc, bp);
-
-	/* XXX */
-	return (-1);
+	*ptr = vc;
+	return (vc->fd);
 }
+
+void
+VBE_ClosedFd(void *ptr)
+{
+	struct vbe_conn *vc;
+
+	vc = ptr;
+	AZ(pthread_mutex_lock(&vbemtx));
+	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
+	AZ(pthread_mutex_unlock(&vbemtx));
+	free(vc);
+}
+
+/*--------------------------------------------------------------------*/
+void
+VBE_Pass(struct sess *sp)
+{
+	int fd, i;
+	void *fd_token;
+	struct sbuf *sb;
+
+	fd = VBE_GetFd(sp->backend, &fd_token);
+	assert(fd != -1);
+
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
+	sbuf_cat(sb, sp->req);
+	sbuf_cat(sb, " ");
+	sbuf_cat(sb, sp->url);
+	sbuf_cat(sb, " ");
+	sbuf_cat(sb, sp->proto);
+	sbuf_cat(sb, "\r\n");
+#define HTTPH(a, b, c, d, e, f, g) 				\
+	do {							\
+		if (c && sp->b != NULL) {			\
+			sbuf_cat(sb, a ": ");			\
+			sbuf_cat(sb, sp->b);			\
+			sbuf_cat(sb, "\r\n");			\
+		}						\
+	} while (0);
+#include "http_headers.h"
+#undef HTTPH
+	sbuf_cat(sb, "\r\n");
+	sbuf_finish(sb);
+	printf("REQ: <%s>\n", sbuf_data(sb));
+	i = write(fd, sbuf_data(sb), sbuf_len(sb));
+	assert(i == sbuf_len(sb));
+	{
+	char buf[101];
+
+	for(;;) {
+		i = read(fd, buf, 100);
+		if (i > 0) {
+			buf[i] = '\0';
+			printf("RESP: <%s>\n", buf);
+		}
+	} 
+
+	}
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 VBE_Init(void)

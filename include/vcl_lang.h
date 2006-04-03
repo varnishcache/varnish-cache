@@ -34,9 +34,9 @@ struct sess {
 	unsigned		rcv_len;
 
 	/* HTTP request info, points into rcv */
-	const char		*req_b;
-	const char		*url_b;
-	const char		*proto_b;
+	const char		*req;
+	const char		*url;
+	const char		*proto;
 #define HTTPH(a, b, c, d, e, f, g) const char *b;
 #include <http_headers.h>
 #undef HTTPH
@@ -44,7 +44,8 @@ struct sess {
 	enum {
 		HND_Unclass,
 		HND_Handle,
-		HND_Pass
+		HND_Pass,
+		HND_Pipe
 	}			handling;
 
 	char			done;
