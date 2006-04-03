@@ -94,6 +94,7 @@ CVCL_Load(const char *fn, const char *name)
 		active_vcl = vcl;
 	AZ(pthread_mutex_unlock(&sessmtx));
 	fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
+	vcl->conf->init_func();
 	return (0);
 }
 
