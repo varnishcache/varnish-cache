@@ -24,20 +24,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef _REGRESS_H_
+#define _REGRESS_H_
 
-void event_err(int eval, const char *fmt, ...);
-void event_warn(const char *fmt, ...);
-void event_errx(int eval, const char *fmt, ...);
-void event_warnx(const char *fmt, ...);
-void event_msgx(const char *fmt, ...);
-void _event_debugx(const char *fmt, ...);
-
-#ifdef USE_DEBUG
-#define event_debug(x) _event_debugx x
-#else
-#define event_debug(x) do {;} while (0)
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+void http_suite(void);
+void http_basic_test(void);
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _REGRESS_H_ */

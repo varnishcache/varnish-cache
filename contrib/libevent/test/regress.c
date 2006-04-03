@@ -39,21 +39,28 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#include <sys/queue.h>
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/signal.h>
 #include <unistd.h>
 #endif
+#include <netdb.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
-#include <event.h>
+#include "event.h"
+#include "log.h"
+#include "http.h"
 
-static int pair[2];
-static int test_ok;
+#include "regress.h"
+#include "regress.gen.h"
+
+int pair[2];
+int test_ok;
 static int called;
 static char wbuf[4096];
 static char rbuf[4096];
@@ -276,7 +283,7 @@ cleanup_test(void)
 }
 
 void
-test1(void)
+test_simpleread(void)
 {
 	struct event ev;
 
@@ -295,7 +302,7 @@ test1(void)
 }
 
 void
-test2(void)
+test_simplewrite(void)
 {
 	struct event ev;
 
@@ -311,7 +318,7 @@ test2(void)
 }
 
 void
-test3(void)
+test_multiple(void)
 {
 	struct event ev, ev2;
 	int i;
@@ -340,7 +347,7 @@ test3(void)
 }
 
 void
-test4(void)
+test_persistent(void)
 {
 	struct event ev, ev2;
 	int i;
@@ -369,7 +376,7 @@ test4(void)
 }
 
 void
-test5(void)
+test_combined(void)
 {
 	struct both r1, r2, w1, w2;
 
@@ -404,7 +411,7 @@ test5(void)
 }
 
 void
-test6(void)
+test_simpletimeout(void)
 {
 	struct timeval tv;
 	struct event ev;
@@ -424,7 +431,7 @@ test6(void)
 
 #ifndef WIN32
 void
-test7(void)
+test_simplesignal(void)
 {
 	struct event ev;
 	struct itimerval itv;
@@ -447,7 +454,7 @@ test7(void)
 #endif
 
 void
-test8(void)
+test_loopexit(void)
 {
 	struct timeval tv, tv_start, tv_end;
 	struct event ev;
@@ -477,6 +484,21 @@ test8(void)
 }
 
 void
+test_evbuffer(void) {
+	setup_test("Evbuffer: ");
+
+	struct evbuffer *evb = evbuffer_new();
+
+	evbuffer_add_printf(evb, "%s/%d", "hello", 1);
+
+	if (EVBUFFER_LENGTH(evb) == 7 &&
+	    strcmp(EVBUFFER_DATA(evb), "hello/1") == 0)
+	    test_ok = 1;
+	
+	cleanup_test();
+}
+
+void
 readcb(struct bufferevent *bev, void *arg)
 {
 	if (EVBUFFER_LENGTH(bev->input) == 8333) {
@@ -499,7 +521,7 @@ errorcb(struct bufferevent *bev, short what, void *arg)
 }
 
 void
-test9(void)
+test_bufferevent(void)
 {
 	struct bufferevent *bev1, *bev2;
 	char buffer[8333];
@@ -637,6 +659,210 @@ test_multiple_events_for_same_fd(void)
    cleanup_test();
 }
 
+int decode_int(u_int32_t *pnumber, struct evbuffer *evbuf);
+
+void
+read_once_cb(int fd, short event, void *arg)
+{
+	char buf[256];
+	int len;
+
+	len = read(fd, buf, sizeof(buf));
+
+	if (called) {
+		test_ok = 0;
+	} else if (len) {
+		/* Assumes global pair[0] can be used for writing */
+		write(pair[0], TEST1, strlen(TEST1)+1);
+		test_ok = 1;
+	}
+
+	called++;
+}
+
+void
+test_want_only_once(void)
+{
+	struct event ev;
+	struct timeval tv;
+
+	/* Very simple read test */
+	setup_test("Want read only once: ");
+	
+	write(pair[0], TEST1, strlen(TEST1)+1);
+
+	/* Setup the loop termination */
+	timerclear(&tv);
+	tv.tv_sec = 1;
+	event_loopexit(&tv);
+	
+	event_set(&ev, pair[1], EV_READ, read_once_cb, &ev);
+	if (event_add(&ev, NULL) == -1)
+		exit(1);
+	event_dispatch();
+
+	cleanup_test();
+}
+
+#define TEST_MAX_INT	6
+
+void
+evtag_int_test(void)
+{
+	struct evbuffer *tmp = evbuffer_new();
+	u_int32_t integers[TEST_MAX_INT] = {
+		0xaf0, 0x1000, 0x1, 0xdeadbeef, 0x00, 0xbef000
+	};
+	u_int32_t integer;
+	int i;
+
+	for (i = 0; i < TEST_MAX_INT; i++) {
+		int oldlen, newlen;
+		oldlen = EVBUFFER_LENGTH(tmp);
+		encode_int(tmp, integers[i]);
+		newlen = EVBUFFER_LENGTH(tmp);
+		fprintf(stdout, "\t\tencoded 0x%08x with %d bytes\n",
+		    integers[i], newlen - oldlen);
+	}
+
+	for (i = 0; i < TEST_MAX_INT; i++) {
+		if (decode_int(&integer, tmp) == -1) {
+			fprintf(stderr, "decode %d failed", i);
+			exit(1);
+		}
+		if (integer != integers[i]) {
+			fprintf(stderr, "got %x, wanted %x",
+			    integer, integers[i]);
+			exit(1);
+		}
+	}
+
+	if (EVBUFFER_LENGTH(tmp) != 0) {
+		fprintf(stderr, "trailing data");
+		exit(1);
+	}
+	evbuffer_free(tmp);
+
+	fprintf(stdout, "\t%s: OK\n", __func__);
+}
+
+void
+evtag_fuzz()
+{
+	u_char buffer[4096];
+	struct evbuffer *tmp = evbuffer_new();
+	struct timeval tv;
+	int i, j;
+
+	int not_failed = 0;
+	for (j = 0; j < 100; j++) {
+		for (i = 0; i < sizeof(buffer); i++)
+			buffer[i] = rand();
+		evbuffer_drain(tmp, -1);
+		evbuffer_add(tmp, buffer, sizeof(buffer));
+
+		if (evtag_unmarshal_timeval(tmp, 0, &tv) != -1)
+			not_failed++;
+	}
+
+	/* The majority of decodes should fail */
+	if (not_failed >= 10) {
+		fprintf(stderr, "evtag_unmarshal should have failed");
+		exit(1);
+	}
+
+	/* Now insert some corruption into the tag length field */
+	evbuffer_drain(tmp, -1);
+	timerclear(&tv);
+	tv.tv_sec = 1;
+	evtag_marshal_timeval(tmp, 0, &tv);
+	evbuffer_add(tmp, buffer, sizeof(buffer));
+
+	EVBUFFER_DATA(tmp)[1] = 0xff;
+	if (evtag_unmarshal_timeval(tmp, 0, &tv) != -1) {
+		fprintf(stderr, "evtag_unmarshal_timeval should have failed");
+		exit(1);
+	}
+
+	evbuffer_free(tmp);
+
+	fprintf(stdout, "\t%s: OK\n", __func__);
+}
+
+void
+evtag_test(void)
+{
+	fprintf(stdout, "Testing Tagging:\n");
+
+	evtag_init();
+	evtag_int_test();
+	evtag_fuzz();
+
+	fprintf(stdout, "OK\n");
+}
+
+void
+rpc_test(void)
+{
+	struct msg *msg, *msg2;
+	struct kill *kill;
+	struct run *run;
+	struct evbuffer *tmp = evbuffer_new();
+	int i;
+
+	fprintf(stdout, "Testing RPC: ");
+
+	msg = msg_new();
+	EVTAG_ASSIGN(msg, from_name, "niels");
+	EVTAG_ASSIGN(msg, to_name, "phoenix");
+
+	if (EVTAG_GET(msg, kill, &kill) == -1) {
+		fprintf(stderr, "Failed to set kill message.\n");
+		exit(1);
+	}
+
+	EVTAG_ASSIGN(kill, weapon, "feather");
+	EVTAG_ASSIGN(kill, action, "tickle");
+
+	for (i = 0; i < 3; ++i) {
+		run = EVTAG_ADD(msg, run);
+		if (run == NULL) {
+			fprintf(stderr, "Failed to add run message.\n");
+			exit(1);
+		}
+		EVTAG_ASSIGN(run, how, "very fast");
+	}
+
+	if (msg_complete(msg) == -1) {
+		fprintf(stderr, "Failed to make complete message.\n");
+		exit(1);
+	}
+
+	evtag_marshal_msg(tmp, 0, msg);
+
+	msg2 = msg_new();
+	if (evtag_unmarshal_msg(tmp, 0, msg2) == -1) {
+		fprintf(stderr, "Failed to unmarshal message.\n");
+		exit(1);
+	}
+
+	if (!EVTAG_HAS(msg2, from_name) ||
+	    !EVTAG_HAS(msg2, to_name) ||
+	    !EVTAG_HAS(msg2, kill)) {
+		fprintf(stderr, "Missing data structures.\n");
+		exit(1);
+	}
+
+	if (EVTAG_LEN(msg2, run) != 3) {
+		fprintf(stderr, "Wrong number of run messages.\n");
+		exit(1);
+	}
+
+	msg_free(msg);
+	msg_free(msg2);
+
+	fprintf(stdout, "OK\n");
+}
 
 int
 main (int argc, char **argv)
@@ -656,29 +882,39 @@ main (int argc, char **argv)
 	/* Initalize the event library */
 	event_base = event_init();
 
-	test1();
+	http_suite();
+	
+	test_simpleread();
 
-	test2();
+	test_simplewrite();
 
-	test3();
+	test_multiple();
 
-	test4();
+	test_persistent();
 
-	test5();
+	test_combined();
 
-	test6();
+	test_simpletimeout();
 #ifndef WIN32
-	test7();
+	test_simplesignal();
 #endif
-	test8();
+	test_loopexit();
 
-	test9();
+	test_evbuffer();
+	
+	test_bufferevent();
 
 	test_priorities(1);
 	test_priorities(2);
 	test_priorities(3);
 
 	test_multiple_events_for_same_fd();
+
+	test_want_only_once();
+	
+	evtag_test();
+
+	rpc_test();
 
 	return (0);
 }

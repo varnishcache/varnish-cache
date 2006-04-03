@@ -26,7 +26,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_TIME_H
@@ -52,7 +54,7 @@
 
 extern struct event_list signalqueue;
 
-static short evsigcaught[NSIG];
+static sig_atomic_t evsigcaught[NSIG];
 static int needrecalc;
 volatile sig_atomic_t evsignal_caught = 0;
 
@@ -61,11 +63,12 @@ static int ev_signal_pair[2];
 static int ev_signal_added;
 
 /* Callback for when the signal handler write a byte to our signaling socket */
-static void evsignal_cb(int fd, short what, void *arg)
+static void
+evsignal_cb(int fd, short what, void *arg)
 {
 	static char signals[100];
 	struct event *ev = arg;
-	int n;
+	ssize_t n;
 
 	n = read(fd, signals, sizeof(signals));
 	if (n == -1)
@@ -98,6 +101,8 @@ evsignal_init(sigset_t *evsigmask)
 	FD_CLOSEONEXEC(ev_signal_pair[0]);
 	FD_CLOSEONEXEC(ev_signal_pair[1]);
 
+	fcntl(ev_signal_pair[0], F_SETFL, O_NONBLOCK);
+
 	event_set(&ev_signal, ev_signal_pair[1], EV_READ,
 	    evsignal_cb, &ev_signal);
 	ev_signal.ev_flags |= EVLIST_INTERNAL;
@@ -107,12 +112,12 @@ int
 evsignal_add(sigset_t *evsigmask, struct event *ev)
 {
 	int evsignal;
-	
+
 	if (ev->ev_events & (EV_READ|EV_WRITE))
 		event_errx(1, "%s: EV_SIGNAL incompatible use", __func__);
 	evsignal = EVENT_SIGNAL(ev);
 	sigaddset(evsigmask, evsignal);
-	
+
 	return (0);
 }
 
@@ -135,11 +140,14 @@ evsignal_del(sigset_t *evsigmask, struct event *ev)
 static void
 evsignal_handler(int sig)
 {
+	int save_errno = errno;
+
 	evsigcaught[sig]++;
 	evsignal_caught = 1;
 
 	/* Wake up our notification mechanism */
 	write(ev_signal_pair[0], "a", 1);
+	errno = save_errno;
 }
 
 int
@@ -147,7 +155,7 @@ evsignal_recalc(sigset_t *evsigmask)
 {
 	struct sigaction sa;
 	struct event *ev;
-	
+
 	if (!ev_signal_added) {
 		ev_signal_added = 1;
 		event_add(&ev_signal, NULL);
@@ -159,13 +167,13 @@ evsignal_recalc(sigset_t *evsigmask)
 
 	if (sigprocmask(SIG_BLOCK, evsigmask, NULL) == -1)
 		return (-1);
-	
+
 	/* Reinstall our signal handler. */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = evsignal_handler;
 	sa.sa_mask = *evsigmask;
 	sa.sa_flags |= SA_RESTART;
-	
+
 	TAILQ_FOREACH(ev, &signalqueue, ev_signal_next) {
 		if (sigaction(EVENT_SIGNAL(ev), &sa, NULL) == -1)
 			return (-1);
@@ -187,7 +195,7 @@ void
 evsignal_process(void)
 {
 	struct event *ev;
-	short ncalls;
+	sig_atomic_t ncalls;
 
 	TAILQ_FOREACH(ev, &signalqueue, ev_signal_next) {
 		ncalls = evsigcaught[EVENT_SIGNAL(ev)];
