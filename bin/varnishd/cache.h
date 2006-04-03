@@ -4,15 +4,22 @@
 
 /* cache_acceptor.c */
 void *vca_main(void *arg);
+void vca_retire_session(struct sess *sp);
 
 /* cache_backend.c */
 void VBE_Init(void);
+int VBE_GetFd(struct backend *bp, void **ptr);
+void VBE_Pass(struct sess *sp);
+void VBE_ClosedFd(void *ptr);
 
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp);
 
 /* cache_main.c */
 pthread_mutex_t	sessmtx;
+
+/* cache_pipe.c */
+void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void CacheInitPool(void);

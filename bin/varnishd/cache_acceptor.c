@@ -137,3 +137,12 @@ vca_main(void *arg)
 
 	return ("FOOBAR");
 }
+
+void
+vca_retire_session(struct sess *sp)
+{
+
+	if (sp->fd >= 0)
+		close(sp->fd);
+	free(sp);
+}

@@ -39,10 +39,12 @@ CacheWorker(void *priv __unused)
 
 		printf("Handling: %d\n", sp->handling);
 
+		PipeSession(sp);
+
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
 		sp->vcl = NULL;
-		/* XXX send session to acceptor for reuse/disposal */
+		vca_retire_session(sp);
 	}
 }
 
