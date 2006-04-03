@@ -55,19 +55,19 @@ PipeSession(struct sess *sp)
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	sbuf_cat(sb, sp->req);
+	sbuf_cat(sb, sp->http.req);
 	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->url);
-	if (sp->proto != NULL) {
+	sbuf_cat(sb, sp->http.url);
+	if (sp->http.proto != NULL) {
 		sbuf_cat(sb, " ");
-		sbuf_cat(sb, sp->proto);
+		sbuf_cat(sb, sp->http.proto);
 	}
 	sbuf_cat(sb, "\r\n");
 #define HTTPH(a, b, c, d, e, f, g) 				\
 	do {							\
-		if (sp->b != NULL) {				\
+		if (sp->http.b != NULL) {			\
 			sbuf_cat(sb, a ": ");			\
-			sbuf_cat(sb, sp->b);			\
+			sbuf_cat(sb, sp->http.b);		\
 			sbuf_cat(sb, "\r\n");			\
 		}						\
 	} while (0);

@@ -22,6 +22,18 @@ struct vcl_acl {
 
 #define VCA_RXBUFSIZE		1024
 #define VCA_ADDRBUFSIZE		32
+#define VCA_UNKNOWNHDR		10
+
+struct httphdr {
+	const char		*req;
+	const char		*url;
+	const char		*proto;
+#define HTTPH(a, b, c, d, e, f, g) const char *b;
+#include <http_headers.h>
+#undef HTTPH
+	const char		*uhdr[VCA_UNKNOWNHDR];
+	unsigned		nuhdr;
+};
 
 struct sess {
 	int			fd;
@@ -34,12 +46,7 @@ struct sess {
 	unsigned		rcv_len;
 
 	/* HTTP request info, points into rcv */
-	const char		*req;
-	const char		*url;
-	const char		*proto;
-#define HTTPH(a, b, c, d, e, f, g) const char *b;
-#include <http_headers.h>
-#undef HTTPH
+	struct httphdr		http;
 
 	enum {
 		HND_Unclass,
