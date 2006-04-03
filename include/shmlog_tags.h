@@ -13,7 +13,8 @@ SLTM(ClientAddr)
 SLTM(Request)
 SLTM(URL)
 SLTM(Protocol)
-SLTM(H_Unknown)
+SLTM(HD_Unknown)
+SLTM(HD_Lost)
 #define HTTPH(a, b, c, d, e, f, g)	SLTM(b)
 #include "http_headers.h"
 #undef HTTPH
