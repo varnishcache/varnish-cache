@@ -113,7 +113,7 @@ child_main(void)
 	assert(eb != NULL);
 
 	CVCL_Load(heritage.vcl_file, "boot");
-	cli = cli_setup(heritage.fds[2], heritage.fds[1], 0, cli_proto);
+	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);
 	event_base_set(eb, &ev_keepalive);

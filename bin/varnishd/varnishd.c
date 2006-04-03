@@ -34,7 +34,7 @@
 /*--------------------------------------------------------------------*/
 
 struct heritage heritage;
-struct event_base *eb;
+struct event_base *mgt_eb;
 
 /*--------------------------------------------------------------------
  * Generic passthrough for CLI functions
@@ -242,15 +242,15 @@ testme(void)
 	struct cli *cli;
 	int i;
 
-	eb = event_init();
-	assert(eb != NULL);
+	mgt_eb = event_init();
+	assert(mgt_eb != NULL);
 
-	cli = cli_setup(0, 1, 1, cli_proto);
+	cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
 
 	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
 	signal_add(&e_sigchld, NULL);
 
-	i = event_dispatch();
+	i = event_base_loop(mgt_eb, 0);
 	if (i != 0)
 		printf("event_dispatch() = %d\n", i);
 

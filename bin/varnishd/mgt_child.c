@@ -246,6 +246,7 @@ start_child(void)
 	assert(child_cli1 != NULL);
 
 	evtimer_set(&ev_child_pingpong, child_pingpong, NULL);
+	event_base_set(mgt_eb, &ev_child_pingpong);
 	child_pingpong(0, 0, NULL);
 }
 
