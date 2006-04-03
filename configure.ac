@@ -63,14 +63,16 @@ AC_CHECK_FUNCS([socket])
 
 AC_CONFIG_FILES([
     Makefile
+    bin/Makefile
+    bin/varnishd/Makefile
+    bin/varnishlog/Makefile
+    contrib/Makefile
     include/Makefile
     lib/Makefile
     lib/libsbuf/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
     lib/libvcl/Makefile
-    bin/Makefile
-    bin/varnishd/Makefile
-    bin/varnishlog/Makefile
 ])
+AC_CONFIG_SUBDIRS(contrib/libevent)
 AC_OUTPUT
