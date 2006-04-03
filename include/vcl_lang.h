@@ -37,7 +37,7 @@ struct sess {
 	const char		*req_b;
 	const char		*url_b;
 	const char		*proto_b;
-#define HTTPH(a, b) const char *b;
+#define HTTPH(a, b, c, d, e, f, g) const char *b;
 #include <http_headers.h>
 #undef HTTPH
 
