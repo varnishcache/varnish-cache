@@ -31,6 +31,8 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
+
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -101,11 +103,25 @@ struct event {
 #define EVENT_SIGNAL(ev)	(int)ev->ev_fd
 #define EVENT_FD(ev)		(int)ev->ev_fd
 
+/*
+ * Key-Value pairs.  Can be used for HTTP headers but also for
+ * query argument parsing.
+ */
+struct evkeyval {
+	TAILQ_ENTRY(evkeyval) next;
+
+	char *key;
+	char *value;
+};
+
 #ifdef _EVENT_DEFINED_TQENTRY
 #undef TAILQ_ENTRY
+struct event_list;
+struct evkeyvalq;
 #undef _EVENT_DEFINED_TQENTRY
 #else
 TAILQ_HEAD (event_list, event);
+TAILQ_HEAD (evkeyvalq, evkeyval);
 #endif /* _EVENT_DEFINED_TQENTRY */
 #ifdef _EVENT_DEFINED_RBENTRY
 #undef RB_ENTRY
@@ -119,6 +135,7 @@ struct eventop {
 	int (*del)(void *, struct event *);
 	int (*recalc)(struct event_base *, void *, int);
 	int (*dispatch)(struct event_base *, void *, struct timeval *);
+	void (*dealloc)(void *);
 };
 
 #define TIMEOUT_DEFAULT	{5, 0}
@@ -126,6 +143,7 @@ struct eventop {
 void *event_init(void);
 int event_dispatch(void);
 int event_base_dispatch(struct event_base *);
+void event_base_free(struct event_base *);
 
 #define _EVENT_LOG_DEBUG 0
 #define _EVENT_LOG_MSG   1
@@ -263,13 +281,115 @@ int evbuffer_add(struct evbuffer *, void *, size_t);
 int evbuffer_remove(struct evbuffer *, void *, size_t);
 char *evbuffer_readline(struct evbuffer *);
 int evbuffer_add_buffer(struct evbuffer *, struct evbuffer *);
-int evbuffer_add_printf(struct evbuffer *, char *fmt, ...);
+int evbuffer_add_printf(struct evbuffer *, const char *fmt, ...);
+int evbuffer_add_vprintf(struct evbuffer *, const char *fmt, va_list ap);
 void evbuffer_drain(struct evbuffer *, size_t);
 int evbuffer_write(struct evbuffer *, int);
 int evbuffer_read(struct evbuffer *, int, int);
-u_char *evbuffer_find(struct evbuffer *, u_char *, size_t);
+u_char *evbuffer_find(struct evbuffer *, const u_char *, size_t);
 void evbuffer_setcb(struct evbuffer *, void (*)(struct evbuffer *, size_t, size_t, void *), void *);
 
+/* 
+ * Marshaling tagged data - We assume that all tags are inserted in their
+ * numeric order - so that unknown tags will always be higher than the
+ * known ones - and we can just ignore the end of an event buffer.
+ */
+
+void evtag_init(void);
+
+void evtag_marshal(struct evbuffer *evbuf, u_int8_t tag, const void *data,
+    u_int16_t len);
+
+void encode_int(struct evbuffer *evbuf, u_int32_t number);
+
+void evtag_marshal_int(struct evbuffer *evbuf, u_int8_t tag,
+    u_int32_t integer);
+
+void evtag_marshal_string(struct evbuffer *buf, u_int8_t tag,
+    const char *string);
+
+void evtag_marshal_timeval(struct evbuffer *evbuf, u_int8_t tag,
+    struct timeval *tv);
+
+void evtag_test(void);
+
+int evtag_unmarshal(struct evbuffer *src, u_int8_t *ptag,
+    struct evbuffer *dst);
+int evtag_peek(struct evbuffer *evbuf, u_int8_t *ptag);
+int evtag_peek_length(struct evbuffer *evbuf, u_int32_t *plength);
+int evtag_payload_length(struct evbuffer *evbuf, u_int32_t *plength);
+int evtag_consume(struct evbuffer *evbuf);
+
+int evtag_unmarshal_int(struct evbuffer *evbuf, u_int8_t need_tag,
+    u_int32_t *pinteger);
+
+int evtag_unmarshal_fixed(struct evbuffer *src, u_int8_t need_tag, void *data,
+    size_t len);
+
+int evtag_unmarshal_string(struct evbuffer *evbuf, u_int8_t need_tag,
+    char **pstring);
+
+int evtag_unmarshal_timeval(struct evbuffer *evbuf, u_int8_t need_tag,
+    struct timeval *ptv);
+
+/*
+ * Basic support for HTTP serving.
+ *
+ * As libevent is a library for dealing with event notification and most
+ * interesting applications are networked today, I have often found the
+ * need to write HTTP code.  The following prototypes and definitions provide
+ * an application with a minimal interface for making HTTP requests and for
+ * creating a very simple HTTP server.
+ */
+
+/* Response codes */	
+#define HTTP_OK			200
+#define HTTP_MOVEPERM		301
+#define HTTP_MOVETEMP		302
+#define HTTP_NOTFOUND		404
+
+struct evhttp;
+struct evhttp_request;
+
+/* Start an HTTP server on the specified address and port */
+struct evhttp *evhttp_start(const char *address, u_short port);
+
+/*
+ * Free the previously create HTTP server.  Works only if no requests are
+ * currently being served.
+ */
+void evhttp_free(struct evhttp* http);
+
+/* Set a callback for a specified URI */
+void evhttp_set_cb(struct evhttp *, const char *,
+    void (*)(struct evhttp_request *, void *), void *);
+
+/* Set a callback for all requests that are not caught by specific callbacks */
+void evhttp_set_gencb(struct evhttp *,
+    void (*)(struct evhttp_request *, void *), void *);
+
+void evhttp_send_error(struct evhttp_request *, int, const char *);
+void evhttp_send_reply(struct evhttp_request *, int, const char *,
+    struct evbuffer *);
+
+/* Interfaces for making requests */
+enum evhttp_cmd_type { EVHTTP_REQ_GET, EVHTTP_REQ_POST, EVHTTP_REQ_HEAD };
+
+struct evhttp_request *evhttp_request_new(
+	void (*cb)(struct evhttp_request *, void *), void *arg);
+void evhttp_request_free(struct evhttp_request *req);
+const char *evhttp_request_uri(struct evhttp_request *req);
+
+/* Interfaces for dealing with HTTP headers */
+
+const char *evhttp_find_header(struct evkeyvalq *, const char *);
+int evhttp_remove_header(struct evkeyvalq *, const char *);
+int evhttp_add_header(struct evkeyvalq *, const char *, const char *);
+void evhttp_clear_headers(struct evkeyvalq *);
+
+/* Miscellaneous utility functions */
+void evhttp_parse_query(const char *uri, struct evkeyvalq *);
+char *evhttp_htmlescape(const char *html);
 #ifdef __cplusplus
 }
 #endif

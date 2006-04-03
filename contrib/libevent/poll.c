@@ -74,14 +74,16 @@ int poll_add		(void *, struct event *);
 int poll_del		(void *, struct event *);
 int poll_recalc		(struct event_base *, void *, int);
 int poll_dispatch	(struct event_base *, void *, struct timeval *);
+void poll_dealloc	(void *);
 
-struct eventop pollops = {
+const struct eventop pollops = {
 	"poll",
 	poll_init,
 	poll_add,
 	poll_del,
 	poll_recalc,
-	poll_dispatch
+	poll_dispatch,
+	poll_dealloc
 };
 
 void *
@@ -89,11 +91,11 @@ poll_init(void)
 {
 	struct pollop *pollop;
 
-	/* Disable kqueue when this environment variable is set */
+	/* Disable poll when this environment variable is set */
 	if (getenv("EVENT_NOPOLL"))
 		return (NULL);
 
-        if (!(pollop = calloc(1, sizeof(struct pollop))))
+	if (!(pollop = calloc(1, sizeof(struct pollop))))
 		return (NULL);
 
 	evsignal_init(&pollop->evsigmask);
@@ -182,7 +184,7 @@ poll_dispatch(struct event_base *base, void *arg, struct timeval *tv)
 		return (0);
 
 	for (i = 0; i < nfds; i++) {
-                int what = pop->event_set[i].revents;
+		int what = pop->event_set[i].revents;
 		struct event *r_ev = NULL, *w_ev = NULL;
 		if (!what)
 			continue;
@@ -354,4 +356,22 @@ poll_del(void *arg, struct event *ev)
 
 	poll_check_ok(pop);
 	return (0);
+}
+
+void
+poll_dealloc(void *arg)
+{
+	struct pollop *pop = arg;
+
+	if (pop->event_set)
+		free(pop->event_set);
+	if (pop->event_r_back)
+		free(pop->event_r_back);
+	if (pop->event_w_back)
+		free(pop->event_w_back);
+	if (pop->idxplus1_by_fd)
+		free(pop->idxplus1_by_fd);
+
+	memset(pop, 0, sizeof(struct pollop));
+	free(pop);
 }
