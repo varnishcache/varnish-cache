@@ -2,6 +2,8 @@
  * $Id$
  */
 
+struct event_base;
+
 /* cache_acceptor.c */
 void *vca_main(void *arg);
 void vca_retire_session(struct sess *sp);
@@ -14,9 +16,13 @@ void VBE_ClosedFd(void *ptr);
 
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp);
+void HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func);
 
 /* cache_main.c */
 pthread_mutex_t	sessmtx;
+
+/* cache_pass.c */
+void PassSession(struct sess *sp);
 
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);
@@ -30,6 +36,7 @@ void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
 void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
+#define HERE() VSL(SLT_Debug, 0, "%s(%d)", __func__, __LINE__)
 #endif
 
 /* cache_vcl.c */
