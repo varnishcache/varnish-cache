@@ -19,7 +19,7 @@
  */
 
 void
-cli_func_help(struct cli *cli, char **av, void *priv)
+cli_func_help(struct cli *cli, const char **av, void *priv)
 {
 	struct cli_proto *cp;
 
@@ -41,7 +41,7 @@ cli_func_help(struct cli *cli, char **av, void *priv)
 void
 cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 {
-	char **av;
+	const char **av;
 	unsigned u;
 	struct cli_proto *cp;
 

@@ -1,12 +1,12 @@
 /*
  * $Id$
  *
- * char **ParseArgv(const char *s, int comment)
+ * const char **ParseArgv(const char *s, int comment)
  *	Parse a command like line into an argv[]
  *	Index zero contains NULL or an error message
  *	"double quotes" and backslash substitution is handled.
  *
- * void FreeArgv(char **argv)
+ * void FreeArgv(const char **argv)
  *	Free the result of ParseArgv()
  *
  */
@@ -48,15 +48,15 @@ BackSlash(const char *s, int *res)
 		i = '\\';
 		r = 2;
 		break;
-	case '0': case '1': case '2': case 3:
-	case '4': case '5': case '6': case 7:
+	case '0': case '1': case '2': case '3':
+	case '4': case '5': case '6': case '7':
 		for (r = 1; r < 4; r++) {
 			if (!isdigit(s[r]))
 				break;
-			if (digittoint(s[r]) > 7)
+			if (s[r] - '0' > 7)
 				break;
 			i <<= 3;
-			i |= digittoint(s[r]);
+			i |= s[r] - '0';
 		}
 		break;
 	case 'x':
@@ -96,10 +96,10 @@ BackSlashDecode(const char *s, const char *e)
 	return (p);
 }
 
-char **
+const char **
 ParseArgv(const char *s, int comment)
 {
-	char **argv;
+	const char **argv;
 	const char *p;
 	int nargv, largv;
 	int i, quote;
@@ -131,8 +131,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '\\') {
 				i = BackSlash(s, NULL);
 				if (i == 0) {
-					argv[0] = __DECONST(void *,
-					    "Illegal backslash sequence");
+					argv[0] = "Illegal backslash sequence";
 					return (argv);
 				}
 				s += i;
@@ -147,8 +146,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '"')
 				break;
 			if (*s == '\0') {
-				argv[0] = __DECONST(void *,
-				    "Missing '\"'");
+				argv[0] = "Missing '\"'";
 				return (argv);
 			}
 			s++;
@@ -166,12 +164,12 @@ ParseArgv(const char *s, int comment)
 }
 
 void
-FreeArgv(char **argv)
+FreeArgv(const char **argv)
 {
 	int i;
 	
 	for (i = 1; argv[i] != NULL; i++)
-		free(argv[i]);
+		free((void *)(uintptr_t)argv[i]);
 	free(argv);
 }
 

@@ -69,7 +69,7 @@ http_read_f(int fd, short event, void *arg)
 }
 
 static void
-accept_f(int fd, short event, void *arg __unused)
+accept_f(int fd, short event, void *arg)
 {
 	socklen_t l;
 	struct sessmem *sm;
@@ -77,6 +77,7 @@ accept_f(int fd, short event, void *arg __unused)
 	struct sess *sp;
 	char port[10];
 
+	(void)arg;
 	sm = calloc(sizeof *sm, 1);
 	assert(sm != NULL);	/*
 				 * XXX: this is probably one we should handle
