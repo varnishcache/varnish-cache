@@ -8,6 +8,9 @@
 /* XXX: This include is bad.  The VCL compiler shouldn't know about it. */
 #include <sys/queue.h>
 
+struct sess;
+typedef void sesscb_f(struct sess *sp);
+
 struct vcl_ref {
 	unsigned	line;
 	unsigned	pos;
@@ -58,6 +61,8 @@ struct sess {
 	char			done;
 
 	TAILQ_ENTRY(sess)	list;
+
+	sesscb_f		*sesscb;
 
 	struct backend		*backend;
 	struct VCL_conf		*vcl;
