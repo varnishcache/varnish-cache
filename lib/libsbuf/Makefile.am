@@ -2,10 +2,7 @@
 
 INCLUDES = -I$(top_srcdir)/include
 
-lib_LTLIBRARIES = libsbuf.la
+lib_LIBRARIES = libsbuf.a
 
-libsbuf_la_SOURCES = \
+libsbuf_a_SOURCES = \
 	sbuf.c
-
-man_MANS = \
-	sbuf.3
