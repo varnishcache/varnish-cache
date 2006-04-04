@@ -6,6 +6,7 @@
  *
  */
 
+SLTM(Debug)
 SLTM(CLI)
 SLTM(SessionOpen)
 SLTM(SessionClose)
