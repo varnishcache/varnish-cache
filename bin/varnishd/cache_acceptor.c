@@ -32,43 +32,6 @@ struct sessmem {
 };
 
 static void
-http_read_f(int fd, short event, void *arg)
-{
-	struct sess *sp = arg;
-	const char *p;
-	int i;
-
-	assert(VCA_RXBUFSIZE - sp->rcv_len > 0);
-	i = read(fd, sp->rcv + sp->rcv_len, VCA_RXBUFSIZE - sp->rcv_len);
-	if (i <= 0) {
-		VSL(SLT_SessionClose, sp->fd, "remote %d", sp->rcv_len);
-		event_del(sp->rd_e);
-		close(sp->fd);
-		free(sp->mem);
-		return;
-	}
-
-	sp->rcv_len += i;
-	sp->rcv[sp->rcv_len] = '\0';
-
-	p = sp->rcv;
-	while (1) {
-		/* XXX: we could save location of all linebreaks for later */
-		p = strchr(p, '\n');
-		if (p == NULL)
-			return;
-		p++;
-		if (*p == '\r')
-			p++;
-		if (*p != '\n')
-			continue;
-		break;
-	}
-	event_del(sp->rd_e);
-	DealWithSession(sp);
-}
-
-static void
 accept_f(int fd, short event, void *arg)
 {
 	socklen_t l;
@@ -100,10 +63,7 @@ accept_f(int fd, short event, void *arg)
 	strlcat(sp->addr, ":", VCA_ADDRBUFSIZE);
 	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
-	event_set(sp->rd_e, sp->fd, EV_READ | EV_PERSIST,
-	    http_read_f, sp);
-	event_base_set(evb, sp->rd_e);
-	event_add(sp->rd_e, NULL);	/* XXX: timeout */
+	HttpdGetHead(sp, evb, DealWithSession);
 }
 
 void *
