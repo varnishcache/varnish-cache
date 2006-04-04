@@ -33,21 +33,21 @@
  *	and all the rest...
  */
 
-#include <assert.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/sbuf.h>
-#include <sys/stat.h>
-#include <sys/queue.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
+#include <sbuf.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <queue.h>
+#include <unistd.h>
 
 #include "vcl_priv.h"
 
@@ -316,15 +316,15 @@ EncString(struct token *t)
 		case 'b':	*q++ = '\b';	r += 2; break;
 		case '0': case '1': case '2': case '3':
 		case '4': case '5': case '6': case '7':
-			u = digittoint(r[1]);
+			u = r[1] - '0';
 			r += 2;
-			if (isdigit(r[0]) && digittoint(r[0]) < 8) {
+			if (isdigit(r[0]) && (r[0] - '0') < 8) {
 				u <<= 3;
-				u |= digittoint(r[0]);
+				u |= r[0] - '0';
 				r++;
-				if (isdigit(r[0]) && digittoint(r[0]) < 8) {
+				if (isdigit(r[0]) && (r[0] - '0') < 8) {
 					u <<= 3;
-					u |= digittoint(r[0]);
+					u |= r[0] - '0';
 					r++;
 				}
 			}
@@ -471,7 +471,7 @@ UintVal(struct tokenlist *tl)
 	Expect(tl, CNUM);
 	for (p = tl->t->b; p < tl->t->e; p++) {
 		d *= 10;
-		d += digittoint(*p);
+		d += *p - '0';
 	}
 	NextToken(tl);
 	return (d);
@@ -490,7 +490,7 @@ DoubleVal(struct tokenlist *tl)
 	Expect(tl, CNUM);
 	for (p = tl->t->b; p < tl->t->e; p++) {
 		d *= 10;
-		d += digittoint(*p);
+		d += *p - '0';
 	}
 	NextToken(tl);
 	if (tl->t->tok != '.') 
@@ -499,7 +499,7 @@ DoubleVal(struct tokenlist *tl)
 	if (tl->t->tok != CNUM)
 		return (d);
 	for (p = tl->t->b; p < tl->t->e; p++) {
-		d += digittoint(*p) * e;
+		d += (*p - '0') * e;
 		e *= 0.1;
 	}
 	NextToken(tl);
@@ -645,9 +645,10 @@ Cond_Ip(struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_String(struct var *vp __unused, struct tokenlist *tl)
+Cond_String(struct var *vp, struct tokenlist *tl)
 {
 
+	(void)vp;
 	switch (tl->t->tok) {
 	case '~':
 		I(tl); sbuf_printf(tl->fc, "string_match(%s, ", vp->cname);

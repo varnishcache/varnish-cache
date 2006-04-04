@@ -11,7 +11,7 @@
 
 struct cli;	/* NB: struct cli is opaque at this level.  */
 
-typedef void cli_func_t(struct cli*, char **av, void *priv);
+typedef void cli_func_t(struct cli*, const char **av, void *priv);
 
 struct cli_proto {
 	/* These must match the CLI_* macros in cli.h */
