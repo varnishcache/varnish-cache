@@ -36,7 +36,7 @@ void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
 void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
-#define HERE() VSL(SLT_Debug, 0, "%s(%d)", __func__, __LINE__)
+#define HERE() VSL(SLT_Debug, 0, "HERE: %s(%d)", __func__, __LINE__)
 #endif
 
 /* cache_vcl.c */
