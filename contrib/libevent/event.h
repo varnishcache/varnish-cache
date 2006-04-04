@@ -260,6 +260,7 @@ struct bufferevent {
 struct bufferevent *bufferevent_new(int fd,
     evbuffercb readcb, evbuffercb writecb, everrorcb errorcb, void *cbarg);
 int bufferevent_priority_set(struct bufferevent *bufev, int pri);
+int bufferevent_base_set(struct event_base *base, struct bufferevent *bufev);
 void bufferevent_free(struct bufferevent *bufev);
 int bufferevent_write(struct bufferevent *bufev, void *data, size_t size);
 int bufferevent_write_buffer(struct bufferevent *bufev, struct evbuffer *buf);
