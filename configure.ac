@@ -60,6 +60,10 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([strlcat])
+AM_CONDITIONAL(HAVE_STRLCAT, test x$ac_strlcat = xtrue)
+AC_CHECK_FUNCS([strlcpy])
+AM_CONDITIONAL(HAVE_STRLCPY, test x$ac_strlcpy = xtrue)
 
 AC_CONFIG_FILES([
     Makefile
@@ -69,6 +73,7 @@ AC_CONFIG_FILES([
     contrib/Makefile
     include/Makefile
     lib/Makefile
+    lib/libcompat/Makefile
     lib/libsbuf/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile

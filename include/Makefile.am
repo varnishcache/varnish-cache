@@ -1,6 +1,7 @@
 # $Id$
 
 include_HEADERS = \
+	compat.h \
 	hash.h \
 	libvarnish.h \
 	queue.h \
