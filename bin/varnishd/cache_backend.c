@@ -139,53 +139,6 @@ VBE_ClosedFd(void *ptr)
 	free(vc);
 }
 
-/*--------------------------------------------------------------------*/
-void
-VBE_Pass(struct sess *sp)
-{
-	int fd, i;
-	void *fd_token;
-	struct sbuf *sb;
-
-	fd = VBE_GetFd(sp->backend, &fd_token);
-	assert(fd != -1);
-
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	sbuf_cat(sb, sp->http.req);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->http.url);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->http.proto);
-	sbuf_cat(sb, "\r\n");
-#define HTTPH(a, b, c, d, e, f, g) 				\
-	do {							\
-		if (c && sp->http.b != NULL) {			\
-			sbuf_cat(sb, a ": ");			\
-			sbuf_cat(sb, sp->http.b);		\
-			sbuf_cat(sb, "\r\n");			\
-		}						\
-	} while (0);
-#include "http_headers.h"
-#undef HTTPH
-	sbuf_cat(sb, "\r\n");
-	sbuf_finish(sb);
-	printf("REQ: <%s>\n", sbuf_data(sb));
-	i = write(fd, sbuf_data(sb), sbuf_len(sb));
-	assert(i == sbuf_len(sb));
-	{
-	char buf[101];
-
-	for(;;) {
-		i = read(fd, buf, 100);
-		if (i > 0) {
-			buf[i] = '\0';
-			printf("RESP: <%s>\n", buf);
-		}
-	} 
-
-	}
-}
 
 /*--------------------------------------------------------------------*/
 
