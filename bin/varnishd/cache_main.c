@@ -53,9 +53,10 @@ arm_keepalive(void)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_url_query(struct cli *cli, char **av, void *priv __unused)
+cli_func_url_query(struct cli *cli, char **av, void *priv)
 {
 
+	(void)priv;
 	cli_out(cli, "url <%s>", av[2]);
 	cli_result(cli, CLIS_UNIMPL);
 }
@@ -63,10 +64,11 @@ cli_func_url_query(struct cli *cli, char **av, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_ping(struct cli *cli, char **av, void *priv __unused)
+cli_func_ping(struct cli *cli, char **av, void *priv)
 {
 	time_t t;
 
+	(void)priv;
 	VSL(SLT_CLI, 0, av[1]);
 	arm_keepalive();
 	if (av[2] != NULL) {

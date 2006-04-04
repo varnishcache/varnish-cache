@@ -2,17 +2,18 @@
  * $Id$
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/queue.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#include <assert.h>
 #include <netdb.h>
+#include <pthread.h>
+#include <queue.h>
 #include <sbuf.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "libvarnish.h"
 #include "vcl_lang.h"

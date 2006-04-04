@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+#include <queue.h>
 
 #include "libvarnish.h"
 #include "vcl_lang.h"
@@ -15,10 +16,11 @@ static TAILQ_HEAD(, sess) shd = TAILQ_HEAD_INITIALIZER(shd);
 static pthread_cond_t	shdcnd;
 
 static void *
-CacheWorker(void *priv __unused)
+CacheWorker(void *priv)
 {
 	struct sess *sp;
 
+	(void)priv;
 	AZ(pthread_mutex_lock(&sessmtx));
 	while (1) {
 		while (1) {

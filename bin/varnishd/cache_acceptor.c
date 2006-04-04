@@ -16,6 +16,8 @@
 #include <sbuf.h>
 #include <event.h>
 
+#include "config.h"
+#include "compat.h"
 #include "libvarnish.h"
 #include "vcl_lang.h"
 #include "heritage.h"

@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 #include <sys/wait.h>
-#include <sys/queue.h>
+#include <queue.h>
 
 #include <event.h>
 #include <sbuf.h>
