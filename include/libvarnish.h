@@ -3,8 +3,8 @@
  */
 
 /* from libvarnish/argv.c */
-void FreeArgv(const char **argv);
-const char **ParseArgv(const char *s, int comment);
+void FreeArgv(char **argv);
+char **ParseArgv(const char *s, int comment);
 
 
 /* Assert zero return value */

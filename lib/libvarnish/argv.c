@@ -96,10 +96,10 @@ BackSlashDecode(const char *s, const char *e)
 	return (p);
 }
 
-const char **
+char **
 ParseArgv(const char *s, int comment)
 {
-	const char **argv;
+	char **argv;
 	const char *p;
 	int nargv, largv;
 	int i, quote;
@@ -131,7 +131,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '\\') {
 				i = BackSlash(s, NULL);
 				if (i == 0) {
-					argv[0] = "Illegal backslash sequence";
+					argv[0] = (void*)(uintptr_t)"Illegal backslash sequence";
 					return (argv);
 				}
 				s += i;
@@ -146,7 +146,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '"')
 				break;
 			if (*s == '\0') {
-				argv[0] = "Missing '\"'";
+				argv[0] = (void*)(uintptr_t)"Missing '\"'";
 				return (argv);
 			}
 			s++;
@@ -164,12 +164,12 @@ ParseArgv(const char *s, int comment)
 }
 
 void
-FreeArgv(const char **argv)
+FreeArgv(char **argv)
 {
 	int i;
 	
 	for (i = 1; argv[i] != NULL; i++)
-		free((void *)(uintptr_t)argv[i]);
+		free(argv[i]);
 	free(argv);
 }
 
