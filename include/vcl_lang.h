@@ -31,6 +31,8 @@ struct httphdr {
 	const char		*req;
 	const char		*url;
 	const char		*proto;
+	const char		*status;
+	const char		*response;
 #define HTTPH(a, b, c, d, e, f, g) const char *b;
 #include <http_headers.h>
 #undef HTTPH

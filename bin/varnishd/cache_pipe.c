@@ -75,7 +75,6 @@ PipeSession(struct sess *sp)
 #undef HTTPH
 	sbuf_cat(sb, "\r\n");
 	sbuf_finish(sb);
-	printf("REQ: <%s>\n", sbuf_data(sb));
 	i = write(fd, sbuf_data(sb), sbuf_len(sb));
 	assert(i == sbuf_len(sb));
 

@@ -15,7 +15,7 @@ void VBE_Pass(struct sess *sp);
 void VBE_ClosedFd(void *ptr);
 
 /* cache_httpd.c */
-void HttpdAnalyze(struct sess *sp);
+void HttpdAnalyze(struct sess *sp, int rr);
 void HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func);
 
 /* cache_main.c */

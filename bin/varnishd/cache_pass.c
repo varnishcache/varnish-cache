@@ -25,7 +25,7 @@ PassReturn(struct sess *sp)
 {
 
 	HERE();
-	HttpdAnalyze(sp);
+	HttpdAnalyze(sp, 2);
 }
 
 /*--------------------------------------------------------------------*/
@@ -52,7 +52,7 @@ PassSession(struct sess *sp)
 	sbuf_cat(sb, "\r\n");
 #define HTTPH(a, b, c, d, e, f, g) 				\
 	do {							\
-		if (c && sp->http.b != NULL) {			\
+		if (d && sp->http.b != NULL) {			\
 			sbuf_cat(sb, a ": ");			\
 			sbuf_cat(sb, sp->http.b);		\
 			sbuf_cat(sb, "\r\n");			\
@@ -62,7 +62,6 @@ PassSession(struct sess *sp)
 #undef HTTPH
 	sbuf_cat(sb, "\r\n");
 	sbuf_finish(sb);
-	printf("REQ: <%s>\n", sbuf_data(sb));
 	i = write(fd, sbuf_data(sb), sbuf_len(sb));
 	assert(i == sbuf_len(sb));
 
