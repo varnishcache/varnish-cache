@@ -31,7 +31,7 @@ CacheWorker(void *priv __unused)
 		sp->vcl = GetVCL();
 		AZ(pthread_mutex_unlock(&sessmtx));
 
-		HttpdAnalyze(sp);
+		HttpdAnalyze(sp, 1);
 
 		sp->backend = sp->vcl->default_backend;
 		/* Call the VCL program */
