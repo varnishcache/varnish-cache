@@ -10,6 +10,7 @@ varnishd_SOURCES = \
 	cache_httpd.c \
 	cache_main.c \
 	cache_pool.c \
+	cache_pass.c \
 	cache_pipe.c \
 	cache_shmlog.c \
 	cache_vcl.c \

@@ -39,7 +39,11 @@ CacheWorker(void *priv __unused)
 
 		printf("Handling: %d\n", sp->handling);
 
-		PipeSession(sp);
+		if (0) {
+			PipeSession(sp);
+		} else {
+			PassSession(sp);
+		}
 
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
