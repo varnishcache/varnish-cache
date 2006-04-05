@@ -22,12 +22,3 @@ for dir in $base $base/contrib/libevent ; do
 	autoconf
 	)
 done
-
-sh configure \
-	--enable-pedantic \
-	--enable-wall  \
-	--enable-werror  \
-	--enable-dependency-tracking
-
-# This is a safety-measure during development
-( cd lib/libvcl && ./*.tcl )
