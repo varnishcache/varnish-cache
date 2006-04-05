@@ -3,9 +3,13 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include <pthread.h>
 #include <queue.h>
+#include <sys/time.h>
+#include <sbuf.h>
+#include <event.h>
 
 #include "libvarnish.h"
 #include "vcl_lang.h"
@@ -19,7 +23,14 @@ static void *
 CacheWorker(void *priv)
 {
 	struct sess *sp;
+	struct worker w;
 
+	memset(&w, 0, sizeof w);
+	w.eb = event_init();
+	assert(w.eb != NULL);
+	w.sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(w.sb != NULL);
+	
 	(void)priv;
 	AZ(pthread_mutex_lock(&sessmtx));
 	while (1) {
@@ -42,9 +53,9 @@ CacheWorker(void *priv)
 		printf("Handling: %d\n", sp->handling);
 
 		if (0) {
-			PipeSession(sp);
+			PipeSession(&w, sp);
 		} else {
-			PassSession(sp);
+			PassSession(&w, sp);
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));

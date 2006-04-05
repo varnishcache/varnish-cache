@@ -42,55 +42,51 @@ rdf(int fd, short event, void *arg)
 }
 
 void
-PipeSession(struct sess *sp)
+PipeSession(struct worker *w, struct sess *sp)
 {
 	int fd, i;
 	void *fd_token;
-	struct sbuf *sb;
-	struct event_base *eb;
 	struct edir e1, e2;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	sbuf_cat(sb, sp->http.req);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->http.url);
+	sbuf_clear(w->sb);
+	assert(w->sb != NULL);
+	sbuf_cat(w->sb, sp->http.req);
+	sbuf_cat(w->sb, " ");
+	sbuf_cat(w->sb, sp->http.url);
 	if (sp->http.proto != NULL) {
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, sp->http.proto);
+		sbuf_cat(w->sb, " ");
+		sbuf_cat(w->sb, sp->http.proto);
 	}
-	sbuf_cat(sb, "\r\n");
+	sbuf_cat(w->sb, "\r\n");
 #define HTTPH(a, b, c, d, e, f, g) 				\
 	do {							\
 		if (sp->http.b != NULL) {			\
-			sbuf_cat(sb, a ": ");			\
-			sbuf_cat(sb, sp->http.b);		\
-			sbuf_cat(sb, "\r\n");			\
+			sbuf_cat(w->sb, a ": ");		\
+			sbuf_cat(w->sb, sp->http.b);		\
+			sbuf_cat(w->sb, "\r\n");		\
 		}						\
 	} while (0);
 #include "http_headers.h"
 #undef HTTPH
-	sbuf_cat(sb, "\r\n");
-	sbuf_finish(sb);
-	i = write(fd, sbuf_data(sb), sbuf_len(sb));
-	assert(i == sbuf_len(sb));
+	sbuf_cat(w->sb, "\r\n");
+	sbuf_finish(w->sb);
+	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	assert(i == sbuf_len(w->sb));
 
 	e1.fd = fd;
 	e2.fd = sp->fd;
-	eb = event_init();
 	event_set(&e1.ev, sp->fd, EV_READ | EV_PERSIST, rdf, &e1);
-	event_base_set(eb, &e1.ev);
+	event_base_set(w->eb, &e1.ev);
 	event_set(&e2.ev, fd,     EV_READ | EV_PERSIST, rdf, &e2);
-	event_base_set(eb, &e2.ev);
+	event_base_set(w->eb, &e2.ev);
 	event_add(&e1.ev, NULL);
 	event_add(&e2.ev, NULL);
-	event_base_loop(eb, 0);
+	event_base_loop(w->eb, 0);
 	close (fd);
 	close (sp->fd);
-	/* XXX: Delete eb */
 	VBE_ClosedFd(fd_token);
 	sp->fd = -1;
 }

@@ -4,6 +4,16 @@
 
 struct event_base;
 
+#ifdef EV_TIMEOUT
+struct worker {
+	struct event_base	*eb;
+	struct event		e1, e2;
+	struct sbuf		*sb;
+};
+#else
+struct worker;
+#endif
+
 /* cache_acceptor.c */
 void *vca_main(void *arg);
 void vca_retire_session(struct sess *sp);
@@ -22,10 +32,10 @@ void HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func);
 pthread_mutex_t	sessmtx;
 
 /* cache_pass.c */
-void PassSession(struct sess *sp);
+void PassSession(struct worker *w, struct sess *sp);
 
 /* cache_pipe.c */
-void PipeSession(struct sess *sp);
+void PipeSession(struct worker *w, struct sess *sp);
 
 /* cache_pool.c */
 void CacheInitPool(void);

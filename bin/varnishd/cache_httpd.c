@@ -163,7 +163,7 @@ http_read_f(int fd, short event, void *arg)
 			continue;
 		break;
 	}
-	sp->hdr_end = p - sp->rcv;
+	sp->hdr_end = ++p - sp->rcv;
 	VSL(SLT_Debug, 0, "HTTP %u %u", sp->rcv_len, sp->hdr_end);
 	event_del(sp->rd_e);
 	sp->sesscb(sp);

@@ -31,71 +31,66 @@ PassReturn(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 void
-PassSession(struct sess *sp)
+PassSession(struct worker *w, struct sess *sp)
 {
 	int fd, i, j;
 	void *fd_token;
-	struct sbuf *sb;
-	struct event_base *eb;
 	struct sess sp2;
-	struct event ev;
 	char buf[BUFSIZ];
 	off_t	cl;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	sbuf_cat(sb, sp->http.req);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->http.url);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp->http.proto);
-	sbuf_cat(sb, "\r\n");
+	sbuf_clear(w->sb);
+	assert(w->sb != NULL);
+	sbuf_cat(w->sb, sp->http.req);
+	sbuf_cat(w->sb, " ");
+	sbuf_cat(w->sb, sp->http.url);
+	sbuf_cat(w->sb, " ");
+	sbuf_cat(w->sb, sp->http.proto);
+	sbuf_cat(w->sb, "\r\n");
 #define HTTPH(a, b, c, d, e, f, g) 				\
 	do {							\
 		if (d && sp->http.b != NULL) {			\
-			sbuf_cat(sb, a ": ");			\
-			sbuf_cat(sb, sp->http.b);		\
-			sbuf_cat(sb, "\r\n");			\
+			sbuf_cat(w->sb, a ": ");		\
+			sbuf_cat(w->sb, sp->http.b);		\
+			sbuf_cat(w->sb, "\r\n");		\
 		}						\
 	} while (0);
 #include "http_headers.h"
 #undef HTTPH
-	sbuf_cat(sb, "\r\n");
-	sbuf_finish(sb);
-	i = write(fd, sbuf_data(sb), sbuf_len(sb));
-	assert(i == sbuf_len(sb));
+	sbuf_cat(w->sb, "\r\n");
+	sbuf_finish(w->sb);
+	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	assert(i == sbuf_len(w->sb));
 
 	memset(&sp2, 0, sizeof sp2);
-	memset(&ev, 0, sizeof ev);
-	sp2.rd_e = &ev;
+	sp2.rd_e = &w->e1;
 	sp2.fd = fd;
-	eb = event_init();
-	HttpdGetHead(&sp2, eb, PassReturn);
-	event_base_loop(eb, 0);
-	sbuf_clear(sb);
-	sbuf_cat(sb, sp2.http.proto);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp2.http.status);
-	sbuf_cat(sb, " ");
-	sbuf_cat(sb, sp2.http.response);
-	sbuf_cat(sb, "\r\n");
+	HttpdGetHead(&sp2, w->eb, PassReturn);
+	event_base_loop(w->eb, 0);
+	sbuf_clear(w->sb);
+	sbuf_cat(w->sb, sp2.http.proto);
+	sbuf_cat(w->sb, " ");
+	sbuf_cat(w->sb, sp2.http.status);
+	sbuf_cat(w->sb, " ");
+	sbuf_cat(w->sb, sp2.http.response);
+	sbuf_cat(w->sb, "\r\n");
 #define HTTPH(a, b, c, d, e, f, g) 				\
 	do {							\
 		if (d && sp2.http.b != NULL) {			\
-			sbuf_cat(sb, a ": ");			\
-			sbuf_cat(sb, sp2.http.b);		\
-			sbuf_cat(sb, "\r\n");			\
+			sbuf_cat(w->sb, a ": ");		\
+			sbuf_cat(w->sb, sp2.http.b);		\
+			sbuf_cat(w->sb, "\r\n");		\
 		}						\
 	} while (0);
 #include "http_headers.h"
 #undef HTTPH
-	sbuf_cat(sb, "\r\n");
-	sbuf_finish(sb);
-	i = write(sp->fd, sbuf_data(sb), sbuf_len(sb));
-	assert(i == sbuf_len(sb));
+	sbuf_cat(w->sb, "\r\n");
+	sbuf_finish(w->sb);
+	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	assert(i == sbuf_len(w->sb));
 	if (sp2.http.H_Content_Length != NULL) {
 		cl = strtoumax(sp2.http.H_Content_Length, NULL, 0);
 		VSL(SLT_Debug, 0, "CL %ju %u %u", cl, sp->rcv_len, sp->hdr_end);
