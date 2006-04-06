@@ -104,6 +104,14 @@ PassSession(struct worker *w, struct sess *sp)
 		assert(cl == 0);
 	}
 
+	if (sp2.http.H_Connection != NULL &&
+	    !strcmp(sp2.http.H_Connection, "close")) {
+		close(fd);
+		VBE_ClosedFd(fd_token);
+	} else {
+		VBE_RecycleFd(fd_token);
+	}
+
 	/* XXX: this really belongs in the acceptor */
 	if (sp->rcv_len > sp->rcv_ptr)
 		memmove(sp->rcv, sp->rcv + sp->rcv_ptr,
