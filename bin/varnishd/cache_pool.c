@@ -65,7 +65,7 @@ CacheWorker(void *priv)
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
 		sp->vcl = NULL;
-		vca_retire_session(sp);
+		vca_recycle_session(sp);
 	}
 }
 
