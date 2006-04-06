@@ -477,7 +477,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("	/* Receive buffer for HTTP header */\n", f);
 	fputs("	char			rcv[VCA_RXBUFSIZE + 1];\n", f);
 	fputs("	unsigned		rcv_len;\n", f);
-	fputs("	unsigned		hdr_end;\n", f);
+	fputs("	unsigned		rcv_ptr;\n", f);
 	fputs("\n", f);
 	fputs("	/* HTTP request info, points into rcv */\n", f);
 	fputs("	struct httphdr		http;\n", f);

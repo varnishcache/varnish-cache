@@ -45,11 +45,13 @@ PassSession(struct worker *w, struct sess *sp)
 		 * If client wants only this one request, piping is safer
 		 * and cheaper
 		 */
+		VSL(SLT_HandlingPass, sp->fd, "pipe");
 		PipeSession(w, sp);
 		return;
 	}
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
+	VSL(SLT_HandlingPass, sp->fd, "%d", fd);
 
 	HttpdBuildSbuf(0, 1, w->sb, sp);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
@@ -60,6 +62,10 @@ PassSession(struct worker *w, struct sess *sp)
 	memset(&sp2, 0, sizeof sp2);
 	sp2.rd_e = &w->e1;
 	sp2.fd = fd;
+	/*
+	 * XXX: It might be cheaper to avoid the event_engine and simply
+	 * XXX: read(2) the header
+	 */
 	HttpdGetHead(&sp2, w->eb, PassReturn);
 	event_base_loop(w->eb, 0);
 	HttpdAnalyze(&sp2, 2);
@@ -74,11 +80,12 @@ PassSession(struct worker *w, struct sess *sp)
 		i &= ~O_NONBLOCK;
 		i = fcntl(sp2.fd, F_SETFL, i);
 		assert(i != -1);
-		i = sp2.rcv_len - sp2.hdr_end;
+		i = sp2.rcv_len - sp2.rcv_ptr;
 		if (i > 0) {
-			j = write(sp->fd, sp2.rcv + sp2.hdr_end, i);
+			j = write(sp->fd, sp2.rcv + sp2.rcv_ptr, i);
 			assert(j == i);
 			cl -= i;
+			sp2.rcv_ptr += i;
 		}
 		while (cl > 0) {
 			j = sizeof buf;
@@ -97,13 +104,10 @@ PassSession(struct worker *w, struct sess *sp)
 		assert(cl == 0);
 	}
 
-	if (sp->rcv_len > sp->hdr_end) {
-		memmove(sp->rcv, sp->rcv + sp->hdr_end,
-		    sp->rcv_len - sp->hdr_end);
-		sp->rcv_len -= sp->hdr_end;
-		sp->rcv[sp->rcv_len] = '\0';
-	} else {
-		sp->rcv_len = 0;
-		sp->rcv[sp->rcv_len] = '\0';
-	}
+	/* XXX: this really belongs in the acceptor */
+	if (sp->rcv_len > sp->rcv_ptr)
+		memmove(sp->rcv, sp->rcv + sp->rcv_ptr,
+		    sp->rcv_len - sp->rcv_ptr);
+	sp->rcv_len -= sp->rcv_ptr;
+	sp->rcv_ptr = 0;
 }

@@ -14,6 +14,7 @@
 #include <event.h>
 
 #include "libvarnish.h"
+#include "shmlog.h"
 #include "vcl_lang.h"
 #include "cache.h"
 
@@ -50,13 +51,14 @@ PipeSession(struct worker *w, struct sess *sp)
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
+	VSL(SLT_HandlingPipe, sp->fd, "%d", fd);
 
 	HttpdBuildSbuf(0, 0, w->sb, sp);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
-	i = sp->rcv_len - sp->hdr_end;
+	i = sp->rcv_len - sp->rcv_ptr;
 	if (i > 0) {
-		j = write(sp->fd, sp->rcv + sp->hdr_end, i);
+		j = write(sp->fd, sp->rcv + sp->rcv_ptr, i);
 		assert(j == i);
 	}
 

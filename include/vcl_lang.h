@@ -49,7 +49,7 @@ struct sess {
 	/* Receive buffer for HTTP header */
 	char			rcv[VCA_RXBUFSIZE + 1];
 	unsigned		rcv_len;
-	unsigned		hdr_end;
+	unsigned		rcv_ptr;
 
 	/* HTTP request info, points into rcv */
 	struct httphdr		http;
