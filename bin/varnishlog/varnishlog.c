@@ -39,6 +39,7 @@ main(int argc, char **argv)
 {
 	int fd;
 	int i;
+	unsigned u;
 	struct shmloghead slh;
 	unsigned char *p;
 
@@ -82,9 +83,9 @@ main(int argc, char **argv)
 				fflush(stdout);
 				sleep(1);
 			}
-			printf("%02x %02d %02x%02x %-12s <",
-			    p[0], p[1], p[2], p[3],
-			    tagnames[p[0]]);
+			u = (p[2] << 8) | p[3];
+			printf("%02x %02d %4d %-12s <",
+			    p[0], p[1], u, tagnames[p[0]]);
 			if (p[1] > 0)
 				fwrite(p + 4, p[1], 1, stdout);
 			printf(">\n");
