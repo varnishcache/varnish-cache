@@ -128,6 +128,8 @@ VBE_GetFd(struct backend *bp, void **ptr)
 	return (vc->fd);
 }
 
+/*--------------------------------------------------------------------*/
+
 void
 VBE_ClosedFd(void *ptr)
 {
@@ -140,6 +142,19 @@ VBE_ClosedFd(void *ptr)
 	free(vc);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+VBE_RecycleFd(void *ptr)
+{
+	struct vbe_conn *vc;
+
+	vc = ptr;
+	AZ(pthread_mutex_lock(&vbemtx));
+	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
+	TAILQ_INSERT_HEAD(&vc->vbe->fconn, vc, list);
+	AZ(pthread_mutex_unlock(&vbemtx));
+}
 
 /*--------------------------------------------------------------------*/
 
