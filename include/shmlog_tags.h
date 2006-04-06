@@ -9,6 +9,7 @@
 SLTM(Debug)
 SLTM(CLI)
 SLTM(SessionOpen)
+SLTM(SessionReuse)
 SLTM(SessionClose)
 SLTM(ClientAddr)
 SLTM(Request)
