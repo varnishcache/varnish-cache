@@ -94,8 +94,16 @@ PassSession(struct worker *w, struct sess *sp)
 				break;
 			}
 		}
+		assert(cl == 0);
 	}
 
-	/* XXX: move remaining input in sp->rcv */
-	/* XXX: return session to acceptor */
+	if (sp->rcv_len > sp->hdr_end) {
+		memmove(sp->rcv, sp->rcv + sp->hdr_end,
+		    sp->rcv_len - sp->hdr_end);
+		sp->rcv_len -= sp->hdr_end;
+		sp->rcv[sp->rcv_len] = '\0';
+	} else {
+		sp->rcv_len = 0;
+		sp->rcv[sp->rcv_len] = '\0';
+	}
 }
