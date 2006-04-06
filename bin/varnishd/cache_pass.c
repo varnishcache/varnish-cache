@@ -26,7 +26,7 @@ static void
 PassReturn(struct sess *sp)
 {
 
-	HttpdAnalyze(sp, 2);
+	/* do nothing */
 }
 
 /*--------------------------------------------------------------------*/
@@ -39,22 +39,30 @@ PassSession(struct worker *w, struct sess *sp)
 	char buf[BUFSIZ];
 	off_t	cl;
 
+	if (sp->http.H_Connection != NULL &&
+	    !strcmp(sp->http.H_Connection, "close")) {
+		/*
+		 * If client wants only this one request, piping is safer
+		 * and cheaper
+		 */
+		PipeSession(w, sp);
+		return;
+	}
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
 	HttpdBuildSbuf(0, 1, w->sb, sp);
-
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
 	/* XXX: copy any contents */
-
 
 	memset(&sp2, 0, sizeof sp2);
 	sp2.rd_e = &w->e1;
 	sp2.fd = fd;
 	HttpdGetHead(&sp2, w->eb, PassReturn);
 	event_base_loop(w->eb, 0);
+	HttpdAnalyze(&sp2, 2);
 
 	HttpdBuildSbuf(1, 1, w->sb, &sp2);
 	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
