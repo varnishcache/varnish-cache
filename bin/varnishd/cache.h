@@ -18,6 +18,7 @@ struct worker;
 /* cache_acceptor.c */
 void *vca_main(void *arg);
 void vca_retire_session(struct sess *sp);
+void vca_recycle_session(struct sess *sp);
 
 /* cache_backend.c */
 void VBE_Init(void);
