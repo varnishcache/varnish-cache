@@ -165,7 +165,7 @@ http_read_f(int fd, short event, void *arg)
 			continue;
 		break;
 	}
-	sp->hdr_end = ++p - sp->rcv;
+	sp->rcv_ptr = ++p - sp->rcv;
 
 	event_del(sp->rd_e);
 	sp->sesscb(sp);
