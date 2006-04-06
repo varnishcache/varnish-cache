@@ -67,8 +67,8 @@ HttpdAnalyze(struct sess *sp, int rr)
 		p = sp->rcv;
 		while (!isspace(*p))
 			p++;
-		*p++ = '\0';
 		VSLR(SLT_Protocol, sp->fd, sp->http.proto, p);
+		*p++ = '\0';
 
 		/* Next find the status */
 		while (isspace(*p))
@@ -166,6 +166,7 @@ http_read_f(int fd, short event, void *arg)
 		break;
 	}
 	sp->hdr_end = ++p - sp->rcv;
+
 	event_del(sp->rd_e);
 	sp->sesscb(sp);
 }
@@ -217,5 +218,4 @@ HttpdBuildSbuf(int resp, int filter, struct sbuf *sb, struct sess *sp)
 #undef HTTPH
 	sbuf_cat(sb, "\r\n");
 	sbuf_finish(sb);
-
 }
