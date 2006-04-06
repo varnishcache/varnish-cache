@@ -1,5 +1,9 @@
 /*
  * $Id$
+ *
+ * XXX: We need to pass sessions back into the event engine when they are
+ * reused.  Not sure what the most efficient way is for that.  For now
+ * write the session pointer to a pipe which the event engine monitors.
  */
 
 #include <stdio.h>
@@ -25,6 +29,8 @@
 #include "cache.h"
 
 static struct event_base *evb;
+static struct event pipe_e;
+static int pipes[2];
 
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 
@@ -32,6 +38,17 @@ struct sessmem {
 	struct sess	s;
 	struct event	e;
 };
+
+static void
+pipe_f(int fd, short event, void *arg)
+{
+	struct sess *sp;
+	int i;
+
+	i = read(fd, &sp, sizeof sp);
+	assert(i == sizeof sp);
+	HttpdGetHead(sp, evb, DealWithSession);
+}
 
 static void
 accept_f(int fd, short event, void *arg)
@@ -74,7 +91,12 @@ vca_main(void *arg)
 	unsigned u;
 	struct event *ep;
 
+	AZ(pipe(pipes));
 	evb = event_init();
+
+	event_set(&pipe_e, pipes[0], EV_READ | EV_PERSIST, pipe_f, NULL);
+	event_base_set(evb, &pipe_e);
+	event_add(&pipe_e, NULL);
 
 	ep = accept_e;
 	for (u = 0; u < HERITAGE_NSOCKS; u++) {
@@ -102,9 +124,17 @@ vca_main(void *arg)
 }
 
 void
+vca_recycle_session(struct sess *sp)
+{
+	VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
+	write(pipes[1], &sp, sizeof sp);
+}
+
+void
 vca_retire_session(struct sess *sp)
 {
 
+	VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
 	if (sp->fd >= 0)
 		close(sp->fd);
 	free(sp);
