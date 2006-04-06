@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <event.h>
+#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -180,4 +181,41 @@ HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func)
 	event_set(sp->rd_e, sp->fd, EV_READ | EV_PERSIST, http_read_f, sp);
         event_base_set(eb, sp->rd_e);
         event_add(sp->rd_e, NULL);      /* XXX: timeout */
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+HttpdBuildSbuf(int resp, int filter, struct sbuf *sb, struct sess *sp)
+{
+
+	sbuf_clear(sb);
+	assert(sb != NULL);
+	if (resp) {
+		sbuf_cat(sb, sp->http.proto);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, sp->http.status);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, sp->http.response);
+	} else {
+		sbuf_cat(sb, sp->http.req);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, sp->http.url);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, sp->http.proto);
+	}
+	sbuf_cat(sb, "\r\n");
+#define HTTPH(a, b, c, d, e, f, g) 				\
+	do {							\
+		if ((!filter || d) && sp->http.b != NULL) {	\
+			sbuf_cat(sb, a ": ");			\
+			sbuf_cat(sb, sp->http.b);		\
+			sbuf_cat(sb, "\r\n");			\
+		}						\
+	} while (0);
+#include "http_headers.h"
+#undef HTTPH
+	sbuf_cat(sb, "\r\n");
+	sbuf_finish(sb);
+
 }

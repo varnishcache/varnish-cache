@@ -3,6 +3,7 @@
  */
 
 struct event_base;
+struct sbuf;
 
 #ifdef EV_TIMEOUT
 struct worker {
@@ -27,6 +28,7 @@ void VBE_ClosedFd(void *ptr);
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp, int rr);
 void HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func);
+void HttpdBuildSbuf(int resp, int filter, struct sbuf *sb, struct sess *sp);
 
 /* cache_main.c */
 pthread_mutex_t	sessmtx;
