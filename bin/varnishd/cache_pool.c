@@ -51,11 +51,15 @@ CacheWorker(void *priv)
 		sp->vcl->main_func(sp);
 
 		printf("Handling: %d\n", sp->handling);
-
-		if (0) {
+		switch(sp->handling) {
+		case HND_Unclass:
+		case HND_Handle:
+		case HND_Pipe:
 			PipeSession(&w, sp);
-		} else {
+			break;
+		case HND_Pass:
 			PassSession(&w, sp);
+			break;
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));
