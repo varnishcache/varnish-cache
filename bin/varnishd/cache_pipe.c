@@ -44,37 +44,21 @@ rdf(int fd, short event, void *arg)
 void
 PipeSession(struct worker *w, struct sess *sp)
 {
-	int fd, i;
+	int fd, i, j;
 	void *fd_token;
 	struct edir e1, e2;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	sbuf_clear(w->sb);
-	assert(w->sb != NULL);
-	sbuf_cat(w->sb, sp->http.req);
-	sbuf_cat(w->sb, " ");
-	sbuf_cat(w->sb, sp->http.url);
-	if (sp->http.proto != NULL) {
-		sbuf_cat(w->sb, " ");
-		sbuf_cat(w->sb, sp->http.proto);
-	}
-	sbuf_cat(w->sb, "\r\n");
-#define HTTPH(a, b, c, d, e, f, g) 				\
-	do {							\
-		if (sp->http.b != NULL) {			\
-			sbuf_cat(w->sb, a ": ");		\
-			sbuf_cat(w->sb, sp->http.b);		\
-			sbuf_cat(w->sb, "\r\n");		\
-		}						\
-	} while (0);
-#include "http_headers.h"
-#undef HTTPH
-	sbuf_cat(w->sb, "\r\n");
-	sbuf_finish(w->sb);
+	HttpdBuildSbuf(0, 0, w->sb, sp);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
+	i = sp->rcv_len - sp->hdr_end;
+	if (i > 0) {
+		j = write(sp->fd, sp->rcv + sp->hdr_end, i);
+		assert(j == i);
+	}
 
 	e1.fd = fd;
 	e2.fd = sp->fd;
