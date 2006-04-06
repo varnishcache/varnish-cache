@@ -290,6 +290,9 @@ mgt_sigchld(int a, short b, void *c)
 	printf("pid = %d status = 0x%x\n", p, status);
 	assert(p == child_pid);
 
+	printf("Child died :-(\n");
+	exit (0);
+
 	bufferevent_free(child_std); /* XXX: is this enough ? */
 	child_std = NULL;
 
