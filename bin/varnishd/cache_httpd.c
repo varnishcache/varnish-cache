@@ -97,6 +97,7 @@ HttpdAnalyze(struct sess *sp, int rr)
 
 	for (; p < sp->rcv + sp->rcv_len; p = r) {
 		q = strchr(p, '\n');
+		assert(q != NULL);
 		r = q + 1;
 		if (q > p && q[-1] == '\r')
 			q--;
@@ -165,7 +166,6 @@ http_read_f(int fd, short event, void *arg)
 		break;
 	}
 	sp->hdr_end = ++p - sp->rcv;
-	VSL(SLT_Debug, 0, "HTTP %u %u", sp->rcv_len, sp->hdr_end);
 	event_del(sp->rd_e);
 	sp->sesscb(sp);
 }
