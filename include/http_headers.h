@@ -46,3 +46,5 @@ HTTPH("Content-Length",		H_Content_Length,	2, 1, 0, 0, 0)
 HTTPH("Vary",			H_Vary,			2, 1, 0, 0, 0)
 HTTPH("Expires",		H_Expires,		2, 1, 0, 0, 0)
 HTTPH("Location",		H_Location,		2, 1, 0, 0, 0)
+HTTPH("Content-Encoding", 	H_Content_Encoding,	2, 1, 0, 0, 0)
+

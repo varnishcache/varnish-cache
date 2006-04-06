@@ -463,6 +463,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("HTTPH(\"Vary\",			H_Vary,			2, 1, 0, 0, 0)\n", f);
 	fputs("HTTPH(\"Expires\",		H_Expires,		2, 1, 0, 0, 0)\n", f);
 	fputs("HTTPH(\"Location\",		H_Location,		2, 1, 0, 0, 0)\n", f);
+	fputs("HTTPH(\"Content-Encoding\", 	H_Content_Encoding,	2, 1, 0, 0, 0)\n", f);
+	fputs("\n", f);
 	fputs("#undef HTTPH\n", f);
 	fputs("	const char		*uhdr[VCA_UNKNOWNHDR];\n", f);
 	fputs("	unsigned		nuhdr;\n", f);
