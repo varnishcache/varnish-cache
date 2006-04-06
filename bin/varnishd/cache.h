@@ -25,6 +25,8 @@ void VBE_Init(void);
 int VBE_GetFd(struct backend *bp, void **ptr);
 void VBE_Pass(struct sess *sp);
 void VBE_ClosedFd(void *ptr);
+void VBE_RecycleFd(void *ptr);
+
 
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp, int rr);
