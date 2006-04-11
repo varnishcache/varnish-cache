@@ -15,6 +15,7 @@ varnishd_SOURCES = \
 	cache_shmlog.c \
 	cache_vcl.c \
 	cli_event.c \
+	hash_simple_list.c \
 	mgt_child.c \
 	tcp.c \
 	varnishd.c
