@@ -15,6 +15,28 @@ struct worker {
 struct worker;
 #endif
 
+/* Hashing -----------------------------------------------------------*/
+struct object {	/* XXX: this goes elsewhere in due time */
+	unsigned char		hash[16];
+	unsigned 		refcnt;
+};
+
+typedef void hash_init_f(void);
+typedef struct object *hash_lookup_f(unsigned char *key, struct object *nobj);
+typedef void hash_purge_f(struct object *obj);
+
+struct hash_slinger {
+	const char		*name;
+	hash_init_f		*init;
+	hash_lookup_f		*lookup;
+	hash_purge_f		*purge;
+};
+
+extern struct hash_slinger hsl_slinger;
+
+/* Prototypes etc ----------------------------------------------------*/
+
+
 /* cache_acceptor.c */
 void *vca_main(void *arg);
 void vca_retire_session(struct sess *sp);
