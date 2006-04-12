@@ -40,6 +40,13 @@ struct httphdr {
 	unsigned		nuhdr;
 };
 
+struct object {	
+	unsigned char		hash[16];
+	unsigned 		refcnt;
+	unsigned		valid;
+	unsigned		cacheable;
+};
+
 struct sess {
 	int			fd;
 
@@ -68,6 +75,7 @@ struct sess {
 	sesscb_f		*sesscb;
 
 	struct backend		*backend;
+	struct object		*obj;
 	struct VCL_conf		*vcl;
 
 	/* Various internal stuff */
@@ -93,14 +101,15 @@ struct backend {
 #define VCL_PASS_ARGS	sess
 
 void VCL_count(unsigned);
-void VCL_no_cache();
-void VCL_no_new_cache();
+void VCL_no_cache(VCL_FARGS);
+void VCL_no_new_cache(VCL_FARGS);
 int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
 int VCL_rewrite(const char *, const char *);
-int VCL_error(unsigned, const char *);
+void VCL_error(VCL_FARGS, unsigned, const char *);
 void VCL_pass(VCL_FARGS);
-int VCL_fetch(void);
+void VCL_fetch(VCL_FARGS);
+void VCL_insert(VCL_FARGS);
 int VCL_switch_config(const char *);
 
 typedef void vcl_init_f(void);
@@ -110,7 +119,9 @@ struct VCL_conf {
 	unsigned	magic;
 #define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 	vcl_init_f	*init_func;
-	vcl_func_f	*main_func;
+	vcl_func_f	*recv_func;
+	vcl_func_f	*lookup_func;
+	vcl_func_f	*fetch_func;
 	struct backend	*default_backend;
 	struct vcl_ref	*ref;
 	unsigned	nref;

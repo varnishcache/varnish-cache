@@ -218,6 +218,12 @@ vcl_fixed_token(const char *p, const char **q)
 		}
 		return (0);
 	case 'i':
+		if (p[0] == 'i' && p[1] == 'n' && p[2] == 's' && 
+		    p[3] == 'e' && p[4] == 'r' && p[5] == 't'
+		     && !isvar(p[6])) {
+			*q = p + 6;
+			return (T_INSERT);
+		}
 		if (p[0] == 'i' && p[1] == 'f' && !isvar(p[2])) {
 			*q = p + 2;
 			return (T_IF);
@@ -360,6 +366,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_IF] = "if";
 	vcl_tnames[T_INC] = "++";
 	vcl_tnames[T_INCR] = "+=";
+	vcl_tnames[T_INSERT] = "insert";
 	vcl_tnames[T_LEQ] = "<=";
 	vcl_tnames[T_MUL] = "*=";
 	vcl_tnames[T_NEQ] = "!=";
@@ -464,10 +471,18 @@ vcl_output_lang_h(FILE *f)
 	fputs("HTTPH(\"Expires\",		H_Expires,		2, 1, 0, 0, 0)\n", f);
 	fputs("HTTPH(\"Location\",		H_Location,		2, 1, 0, 0, 0)\n", f);
 	fputs("HTTPH(\"Content-Encoding\", 	H_Content_Encoding,	2, 1, 0, 0, 0)\n", f);
+	fputs("HTTPH(\"ETag:\", 			H_ETag,			2, 1, 0, 0, 0)\n", f);
 	fputs("\n", f);
 	fputs("#undef HTTPH\n", f);
 	fputs("	const char		*uhdr[VCA_UNKNOWNHDR];\n", f);
 	fputs("	unsigned		nuhdr;\n", f);
+	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("struct object {	\n", f);
+	fputs("	unsigned char		hash[16];\n", f);
+	fputs("	unsigned 		refcnt;\n", f);
+	fputs("	unsigned		valid;\n", f);
+	fputs("	unsigned		cacheable;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("struct sess {\n", f);
@@ -498,6 +513,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("	sesscb_f		*sesscb;\n", f);
 	fputs("\n", f);
 	fputs("	struct backend		*backend;\n", f);
+	fputs("	struct object		*obj;\n", f);
 	fputs("	struct VCL_conf		*vcl;\n", f);
 	fputs("\n", f);
 	fputs("	/* Various internal stuff */\n", f);
@@ -523,14 +539,15 @@ vcl_output_lang_h(FILE *f)
 	fputs("#define VCL_PASS_ARGS	sess\n", f);
 	fputs("\n", f);
 	fputs("void VCL_count(unsigned);\n", f);
-	fputs("void VCL_no_cache();\n", f);
-	fputs("void VCL_no_new_cache();\n", f);
+	fputs("void VCL_no_cache(VCL_FARGS);\n", f);
+	fputs("void VCL_no_new_cache(VCL_FARGS);\n", f);
 	fputs("int ip_match(unsigned, struct vcl_acl *);\n", f);
 	fputs("int string_match(const char *, const char *);\n", f);
 	fputs("int VCL_rewrite(const char *, const char *);\n", f);
-	fputs("int VCL_error(unsigned, const char *);\n", f);
+	fputs("void VCL_error(VCL_FARGS, unsigned, const char *);\n", f);
 	fputs("void VCL_pass(VCL_FARGS);\n", f);
-	fputs("int VCL_fetch(void);\n", f);
+	fputs("void VCL_fetch(VCL_FARGS);\n", f);
+	fputs("void VCL_insert(VCL_FARGS);\n", f);
 	fputs("int VCL_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("typedef void vcl_init_f(void);\n", f);
@@ -540,7 +557,9 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned	magic;\n", f);
 	fputs("#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */\n", f);
 	fputs("	vcl_init_f	*init_func;\n", f);
-	fputs("	vcl_func_f	*main_func;\n", f);
+	fputs("	vcl_func_f	*recv_func;\n", f);
+	fputs("	vcl_func_f	*lookup_func;\n", f);
+	fputs("	vcl_func_f	*fetch_func;\n", f);
 	fputs("	struct backend	*default_backend;\n", f);
 	fputs("	struct vcl_ref	*ref;\n", f);
 	fputs("	unsigned	nref;\n", f);

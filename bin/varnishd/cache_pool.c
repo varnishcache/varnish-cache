@@ -48,7 +48,7 @@ CacheWorker(void *priv)
 
 		sp->backend = sp->vcl->default_backend;
 		/* Call the VCL program */
-		sp->vcl->main_func(sp);
+		sp->vcl->recv_func(sp);
 
 		printf("Handling: %d\n", sp->handling);
 		switch(sp->handling) {

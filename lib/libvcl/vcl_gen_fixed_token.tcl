@@ -15,6 +15,7 @@ set keywords {
 	error
 	pass
 	fetch
+	insert
 	call
 	no_cache
 	no_new_cache
