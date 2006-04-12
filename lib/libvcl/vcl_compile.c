@@ -121,6 +121,9 @@ static struct var be_vars[] = {
 
 
 static struct var vars[] = {
+	{ "req.request",		STRING,	  0,  "sess->http.req"	     },
+	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
+	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
 #if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
 	{ "req.url.host",		STRING, 0,  "req->url.host" },
@@ -659,6 +662,15 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 			tl->t->e - tl->t->b, tl->t->b);
 		NextToken(tl);
 		break;
+	case T_NEQ:
+		I(tl); sbuf_printf(tl->fc, "strcmp(%s, ", vp->cname);
+		NextToken(tl);
+		ExpectErr(tl, CSTR);
+		sbuf_printf(tl->fc, "%*.*s)\n",
+			tl->t->e - tl->t->b,
+			tl->t->e - tl->t->b, tl->t->b);
+		NextToken(tl);
+		break;
 	default:
 		sbuf_printf(tl->sb, "Illegal condition ");
 		ErrToken(tl, tl->t);
@@ -874,29 +886,41 @@ Action(struct tokenlist *tl)
 	switch (at->tok) {
 	case T_NO_NEW_CACHE:
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_no_new_cache();\n");
+		sbuf_printf(tl->fc, "VCL_no_new_cache(VCL_PASS_ARGS);\n");
 		return;
 	case T_NO_CACHE:
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_no_cache();\n");
+		sbuf_printf(tl->fc, "VCL_no_cache(VCL_PASS_ARGS);\n");
 		return;
 	case T_FINISH:
-		I(tl);
-		sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
+		I(tl); sbuf_printf(tl->fc, "return;\n");
 		return;
 	case T_PASS:
 		I(tl);
 		sbuf_printf(tl->fc, "VCL_pass(VCL_PASS_ARGS);\n");
-		sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
+		I(tl); sbuf_printf(tl->fc, "return;\n");
 		return;
 	case T_FETCH:
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_fetch();\n");
+		sbuf_printf(tl->fc, "VCL_fetch(VCL_PASS_ARGS);\n");
+		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
+		I(tl); sbuf_printf(tl->fc, "return;\n");
+		return;
+	case T_INSERT:
+		I(tl);
+		sbuf_printf(tl->fc, "VCL_insert(VCL_PASS_ARGS);\n");
+		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
+		I(tl); sbuf_printf(tl->fc, "return;\n");
 		return;
 	case T_ERROR:
-		a = UintVal(tl);
+		if (tl->t->tok == CNUM)
+			a = UintVal(tl);
+		else
+			a = 0;
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_error(%u, ", a);
+		sbuf_printf(tl->fc, "VCL_error(VCL_PASS_ARGS, %u, ", a);
 		if (tl->t->tok == CSTR) {
 			sbuf_printf(tl->fc, "%*.*s);\n",
 			    tl->t->e - tl->t->b,
@@ -904,6 +928,8 @@ Action(struct tokenlist *tl)
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
+		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
+		I(tl); sbuf_printf(tl->fc, "return;\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
@@ -1537,8 +1563,9 @@ EmitStruct(struct tokenlist *tl)
 	    "\t.magic = VCL_CONF_MAGIC,\n");
 	sbuf_printf(tl->fc,
 	    "\t.init_func = VCL_Init,\n");
-	sbuf_printf(tl->fc,
-	    "\t.main_func = VCL_function_main,\n");
+	sbuf_printf(tl->fc, "\t.recv_func = VCL_function_vcl_recv,\n");
+	sbuf_printf(tl->fc, "\t.lookup_func = VCL_function_vcl_lookup,\n");
+	sbuf_printf(tl->fc, "\t.fetch_func = VCL_function_vcl_fetch,\n");
 	sbuf_printf(tl->fc,
 	    "\t.default_backend = &VCL_backend_default,\n");
 	sbuf_printf(tl->fc,

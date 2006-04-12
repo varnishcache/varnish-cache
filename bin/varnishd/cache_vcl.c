@@ -196,3 +196,7 @@ VCL_pass(VCL_FARGS)
 	sess->handling = HND_Pass;
 	sess->done++;
 }
+
+void VCL_insert(VCL_FARGS) { }
+void VCL_fetch(VCL_FARGS) { }
+void VCL_error(VCL_FARGS, unsigned err, const char *str) { }

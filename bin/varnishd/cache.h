@@ -16,10 +16,6 @@ struct worker;
 #endif
 
 /* Hashing -----------------------------------------------------------*/
-struct object {	/* XXX: this goes elsewhere in due time */
-	unsigned char		hash[16];
-	unsigned 		refcnt;
-};
 
 typedef void hash_init_f(void);
 typedef struct object *hash_lookup_f(unsigned char *key, struct object *nobj);
