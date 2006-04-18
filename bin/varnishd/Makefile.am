@@ -17,6 +17,7 @@ varnishd_SOURCES = \
 	cli_event.c \
 	hash_simple_list.c \
 	mgt_child.c \
+	storage_malloc.c \
 	tcp.c \
 	varnishd.c
 
