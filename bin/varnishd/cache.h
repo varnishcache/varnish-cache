@@ -30,6 +30,28 @@ struct hash_slinger {
 
 extern struct hash_slinger hsl_slinger;
 
+/* Storage -----------------------------------------------------------*/
+
+struct storage {
+	TAILQ_ENTRY(storage)	list;
+	void			*ptr;
+	unsigned		len;
+	void			*priv;
+};
+
+typedef void storage_init_f(void);
+typedef struct storage *storage_alloc_f(unsigned size);
+typedef void storage_free_f(struct storage *);
+
+struct stevedore {
+	const char		*name;
+	storage_init_f		*init;
+	storage_alloc_f		*alloc;
+	storage_free_f		*free;
+};
+
+extern struct stevedore sma_stevedore;
+
 /* Prototypes etc ----------------------------------------------------*/
 
 
