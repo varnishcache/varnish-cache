@@ -29,4 +29,5 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
 	$(top_builddir)/contrib/libevent/libevent.la \
-	-lpthread
+	-lpthread \
+	-lmd

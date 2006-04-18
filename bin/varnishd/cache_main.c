@@ -25,6 +25,9 @@
 static struct event ev_keepalive;
 static pthread_t vca_thread;
 
+struct hash_slinger	*hash;
+struct stevedore	*stevedore;
+
 pthread_mutex_t	sessmtx;
 
 /*--------------------------------------------------------------------*/
@@ -113,6 +116,12 @@ child_main(void)
 
 	eb = event_init();
 	assert(eb != NULL);
+
+	hash = &hsl_slinger;
+	hash->init();
+
+	stevedore = &sma_stevedore;
+	stevedore->init();
 
 	CVCL_Load(heritage.vcl_file, "boot");
 	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);

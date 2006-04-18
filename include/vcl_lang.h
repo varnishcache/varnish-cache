@@ -45,6 +45,10 @@ struct object {
 	unsigned 		refcnt;
 	unsigned		valid;
 	unsigned		cacheable;
+
+	unsigned		busy;
+
+	TAILQ_HEAD(, storage)	store;
 };
 
 struct sess {
@@ -63,9 +67,11 @@ struct sess {
 
 	enum {
 		HND_Unclass,
-		HND_Handle,
+		HND_Deliver,
 		HND_Pass,
-		HND_Pipe
+		HND_Pipe,
+		HND_Lookup,
+		HND_Fetch
 	}			handling;
 
 	char			done;

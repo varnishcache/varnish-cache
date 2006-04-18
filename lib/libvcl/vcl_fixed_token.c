@@ -483,6 +483,10 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned 		refcnt;\n", f);
 	fputs("	unsigned		valid;\n", f);
 	fputs("	unsigned		cacheable;\n", f);
+	fputs("\n", f);
+	fputs("	unsigned		busy;\n", f);
+	fputs("\n", f);
+	fputs("	TAILQ_HEAD(, storage)	store;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("struct sess {\n", f);
@@ -501,9 +505,11 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("	enum {\n", f);
 	fputs("		HND_Unclass,\n", f);
-	fputs("		HND_Handle,\n", f);
+	fputs("		HND_Deliver,\n", f);
 	fputs("		HND_Pass,\n", f);
-	fputs("		HND_Pipe\n", f);
+	fputs("		HND_Pipe,\n", f);
+	fputs("		HND_Lookup,\n", f);
+	fputs("		HND_Fetch\n", f);
 	fputs("	}			handling;\n", f);
 	fputs("\n", f);
 	fputs("	char			done;\n", f);
