@@ -10,6 +10,7 @@ struct worker {
 	struct event_base	*eb;
 	struct event		e1, e2;
 	struct sbuf		*sb;
+	struct object		*nobj;
 };
 #else
 struct worker;
@@ -29,6 +30,8 @@ struct hash_slinger {
 };
 
 extern struct hash_slinger hsl_slinger;
+
+extern struct hash_slinger	*hash;
 
 /* Storage -----------------------------------------------------------*/
 
@@ -51,6 +54,8 @@ struct stevedore {
 };
 
 extern struct stevedore sma_stevedore;
+
+extern struct stevedore *stevedore;
 
 /* Prototypes etc ----------------------------------------------------*/
 
