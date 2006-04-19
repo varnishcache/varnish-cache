@@ -55,12 +55,22 @@ hsl_lookup(unsigned char *key, struct object *nobj)
 	assert(he2 != NULL);
 	he2->obj = nobj;
 	nobj->refcnt++;
+	memcpy(nobj->hash, key, sizeof nobj->hash);
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
 	else
 		TAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	AZ(pthread_mutex_unlock(&hsl_mutex));
 	return (nobj);
+}
+
+static void
+hsl_deref(struct object *obj)
+{
+
+	AZ(pthread_mutex_lock(&hsl_mutex));
+	obj->refcnt--;
+	AZ(pthread_mutex_unlock(&hsl_mutex));
 }
 
 static void
@@ -85,5 +95,6 @@ struct hash_slinger hsl_slinger = {
 	"simple_list",
 	hsl_init,
 	hsl_lookup,
+	hsl_deref,
 	hsl_purge
 };

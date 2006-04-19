@@ -20,12 +20,14 @@ struct worker;
 
 typedef void hash_init_f(void);
 typedef struct object *hash_lookup_f(unsigned char *key, struct object *nobj);
+typedef void hash_deref_f(struct object *obj);
 typedef void hash_purge_f(struct object *obj);
 
 struct hash_slinger {
 	const char		*name;
 	hash_init_f		*init;
 	hash_lookup_f		*lookup;
+	hash_deref_f		*deref;
 	hash_purge_f		*purge;
 };
 
@@ -37,7 +39,7 @@ extern struct hash_slinger	*hash;
 
 struct storage {
 	TAILQ_ENTRY(storage)	list;
-	void			*ptr;
+	unsigned char		*ptr;
 	unsigned		len;
 	void			*priv;
 };
@@ -72,6 +74,8 @@ void VBE_Pass(struct sess *sp);
 void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
 
+/* cache_fetch.c */
+int FetchSession(struct worker *w, struct sess *sp);
 
 /* cache_httpd.c */
 void HttpdAnalyze(struct sess *sp, int rr);
