@@ -485,6 +485,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned		cacheable;\n", f);
 	fputs("\n", f);
 	fputs("	unsigned		busy;\n", f);
+	fputs("	unsigned		len;\n", f);
 	fputs("\n", f);
 	fputs("	TAILQ_HEAD(, storage)	store;\n", f);
 	fputs("};\n", f);

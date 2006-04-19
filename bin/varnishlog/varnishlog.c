@@ -40,6 +40,7 @@ main(int argc, char **argv)
 	int fd;
 	int i;
 	unsigned u;
+	unsigned startup;
 	struct shmloghead slh;
 	unsigned char *p;
 
@@ -74,6 +75,7 @@ main(int argc, char **argv)
 	for (i = 0; stagnames[i].tag != SLT_ENDMARKER; i++)
 		tagnames[stagnames[i].tag] = stagnames[i].name;
 
+	startup = 1;
 	while (1) {
 		p = logstart;
 		while (1) {
@@ -82,13 +84,16 @@ main(int argc, char **argv)
 			while (*p == SLT_ENDMARKER) {
 				fflush(stdout);
 				sleep(1);
+				startup = 0;
 			}
 			u = (p[2] << 8) | p[3];
-			printf("%02x %02d %4d %-12s <",
-			    p[0], p[1], u, tagnames[p[0]]);
-			if (p[1] > 0)
-				fwrite(p + 4, p[1], 1, stdout);
-			printf(">\n");
+			if (!startup) {
+				printf("%02x %02d %4d %-12s <",
+				    p[0], p[1], u, tagnames[p[0]]);
+				if (p[1] > 0)
+					fwrite(p + 4, p[1], 1, stdout);
+				printf(">\n");
+			}
 			p += p[1] + 4;
 		}
 	}

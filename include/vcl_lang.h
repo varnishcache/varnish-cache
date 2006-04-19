@@ -47,6 +47,7 @@ struct object {
 	unsigned		cacheable;
 
 	unsigned		busy;
+	unsigned		len;
 
 	TAILQ_HEAD(, storage)	store;
 };

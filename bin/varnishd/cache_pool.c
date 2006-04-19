@@ -7,6 +7,7 @@
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <queue.h>
 #include <sys/time.h>
 #include <sbuf.h>
@@ -40,8 +41,12 @@ LookupSession(struct worker *w, struct sess *sp)
 	MD5Update(&ctx, sp->http.url, strlen(sp->http.url));
 	MD5Final(key, &ctx);
 	o = hash->lookup(key, w->nobj);
-	if (o == w->nobj)
+	if (o == w->nobj) {
+		VSL(SLT_Debug, 0, "Lookup new %p %s", o, sp->http.url);
 		w->nobj = NULL;
+	} else {
+		VSL(SLT_Debug, 0, "Lookup found %p %s", o, sp->http.url);
+	}
 	/*
 	 * XXX: if obj is busy, park session on it
 	 */
@@ -59,10 +64,26 @@ LookupSession(struct worker *w, struct sess *sp)
 }
 
 static int
-FetchSession(struct worker *w, struct sess *sp)
+DeliverSession(struct worker *w, struct sess *sp)
 {
+	char buf[BUFSIZ];
+	int i, j;
+	struct storage *st;
 
-	assert(w == NULL);
+	sprintf(buf,
+	    "HTTP/1.1 200 OK\r\n"
+	    "Server: Varnish\r\n"
+	    "Content-Length: %u\r\n"
+	    "\r\n", sp->obj->len);
+
+	j = strlen(buf);
+	i = write(sp->fd, buf, j);
+	assert(i == j);
+	TAILQ_FOREACH(st, &sp->obj->store, list) {
+		i = write(sp->fd, st->ptr, st->len);
+		assert(i == st->len);
+	}
+	return (1);
 }
 
 static void *
@@ -112,6 +133,9 @@ CacheWorker(void *priv)
 			case HND_Fetch:
 				done = FetchSession(&w, sp);
 				break;
+			case HND_Deliver:
+				done = DeliverSession(&w, sp);
+				break;
 			case HND_Pipe:
 				PipeSession(&w, sp);
 				done = 1;
@@ -121,15 +145,22 @@ CacheWorker(void *priv)
 				done = 1;
 				break;
 			case HND_Unclass:
-			case HND_Deliver:
 				assert(sp->handling == HND_Unclass);
 			}
+		}
+		if (sp->http.H_Connection != NULL &&
+		    !strcmp(sp->http.H_Connection, "close")) {
+			close(sp->fd);
+			sp->fd = -1;
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
 		sp->vcl = NULL;
-		vca_recycle_session(sp);
+		if (sp->fd < 0) 
+			vca_retire_session(sp);
+		else
+			vca_recycle_session(sp);
 	}
 }
 
