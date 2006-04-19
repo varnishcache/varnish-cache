@@ -91,10 +91,13 @@ FetchSession(struct worker *w, struct sess *sp)
 		p += i;
 		cl -= i;
 	}
-	if (cl != 0) {
+
+	while (cl != 0) {
 		i = read(sp2.fd, p, cl);
+		assert(i > 0);
 		VSL(SLT_Debug, 0, "R i %d cl %jd", i, cl);
-		assert(i == cl);
+		p += i;
+		cl -= i;
 	}
 
 	HttpdBuildSbuf(1, 1, w->sb, &sp2);
