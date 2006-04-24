@@ -66,6 +66,14 @@ vcl_default(const char *bflag)
 	char *buf, *vf;
 	struct sbuf *sb;
 
+	/*
+	 * XXX: should do a "HEAD /" on the -b argument to see that
+	 * XXX: it even works.  On the other hand, we should do that
+	 * XXX: for all backends in the cache process whenever we
+	 * XXX: change config, but for a complex VCL, it might not be
+	 * XXX: a bug for a backend to not reply at that time, so then
+	 * XXX: again: we should check it here in the "trivial" case.
+	 */
 	buf = NULL;
 	asprintf(&buf,
 	    "backend default {\n"
