@@ -44,7 +44,7 @@ PassSession(struct worker *w, struct sess *sp)
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	http_BuildSbuf(0, w->sb, sp->http);
+	http_BuildSbuf(1, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
@@ -61,7 +61,7 @@ PassSession(struct worker *w, struct sess *sp)
 	event_base_loop(w->eb, 0);
 	http_Dissect(sp2.http, sp2.fd, 2);
 
-	http_BuildSbuf(1, w->sb, sp2.http);
+	http_BuildSbuf(2, w->sb, sp2.http);
 	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
