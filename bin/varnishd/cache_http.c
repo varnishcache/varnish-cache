@@ -137,6 +137,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 {
 	char *p, *q, *r;
 
+	assert(hp->t != NULL);
 	if (rr == 1) {
 		/* First, isolate and possibly identify request type */
 		hp->req = hp->s;
@@ -227,6 +228,8 @@ http_Dissect(struct http *hp, int fd, int rr)
 
 /*--------------------------------------------------------------------*/
 
+#include <errno.h>
+
 static void
 http_read_f(int fd, short event, void *arg)
 {
@@ -235,13 +238,14 @@ http_read_f(int fd, short event, void *arg)
 	int i;
 
 	assert(hp->v < hp->e);
+	errno = 0;
 	i = read(fd, hp->v, hp->e - hp->v);
 	if (i <= 0) {
 		if (hp->v != hp->s)
 			VSL(SLT_SessionClose, fd,
-			    "remote had %d bytes", hp->v - hp->s);
+			    "remote had %d bytes errno %d", hp->v - hp->s, errno);
 		else
-			VSL(SLT_SessionClose, fd, "remote");
+			VSL(SLT_SessionClose, fd, "remote errno %d", errno);
 		hp->t = NULL;
 		event_del(&hp->ev);
 		if (hp->callback != NULL)
@@ -329,25 +333,27 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 
 	sbuf_clear(sb);
 	assert(sb != NULL);
-	if (resp) {
+	if (resp == 2) {
 		sbuf_cat(sb, hp->proto);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->status);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->response);
-	} else {
+	} else if (resp == 1) {
 		sbuf_cat(sb, hp->req);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->url);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->proto);
+	} else {
+		assert(resp == 1 || resp == 2);
 	}
 	sbuf_cat(sb, "\r\n");
 
 	for (u = 0; u < hp->nhdr; u++) {
 		if (http_supress(hp->hdr[u], resp))
 			continue;
-		if (0)
+		if (1)
 			VSL(SLT_Debug, 0, "Build %s", hp->hdr[u]);
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -91,11 +92,41 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 int
+tst_fd(int fd)
+{
+	fd_set	r,w,e;
+	int i;
+	struct timeval tv;
+	char c;
+
+	FD_ZERO(&r);
+	FD_ZERO(&w);
+	FD_ZERO(&e);
+	FD_SET(fd, &r);
+	FD_SET(fd, &w);
+	FD_SET(fd, &e);
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	i = select(fd + 1, &r, &w, &e, &tv);
+	printf("tst_fd fd %d i %d flag %d/%d/%d\n",
+	    fd, i, FD_ISSET(fd, &r), FD_ISSET(fd, &w), FD_ISSET(fd, &e));
+	if (FD_ISSET(fd, &r)) {
+		i = read(fd, &c, 1);
+		if (i == 0)
+			return (1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
 VBE_GetFd(struct backend *bp, void **ptr)
 {
 	struct vbe *vp;
 	struct vbe_conn *vc;
 
+again:
 	AZ(pthread_mutex_lock(&vbemtx));
 	vp = bp->vbe;
 	if (vp == NULL) {
@@ -118,6 +149,10 @@ VBE_GetFd(struct backend *bp, void **ptr)
 		TAILQ_REMOVE(&vp->fconn, vc, list);
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
 		AZ(pthread_mutex_unlock(&vbemtx));
+		if (tst_fd(vc->fd)) {
+			VBE_ClosedFd(vc);
+			goto again;
+		}
 	} else {
 		vc = calloc(sizeof *vc, 1);
 		assert(vc != NULL);
