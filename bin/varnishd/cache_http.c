@@ -30,6 +30,7 @@ struct http {
 	void			*arg;
 
 	char			*s;		/* start of buffer */
+	char			*e;		/* end of buffer */
 	char			*v;		/* valid bytes */
 	char			*t;		/* start of trailing data */
 
@@ -57,7 +58,9 @@ http_New(void)
 	hp->s = malloc(http_bufsize);
 	assert(hp->s != NULL);
 
+	hp->e = hp->s + http_bufsize;
 	hp->v = hp->s;
+	hp->t = hp->s;
 
 	hp->hdr = malloc(sizeof *hp->hdr * http_nhdr);
 	assert(hp->hdr != NULL);
@@ -230,8 +233,8 @@ http_read_f(int fd, short event, void *arg)
 	char *p;
 	int i;
 
-	assert(hp->v < hp->s + http_bufsize);
-	i = read(fd, hp->v, (hp->s + http_bufsize) - hp->v);
+	assert(hp->v < hp->e);
+	i = read(fd, hp->v, hp->e - hp->v);
 	if (i <= 0) {
 		if (hp->v != hp->s)
 			VSL(SLT_SessionClose, fd,
@@ -263,6 +266,11 @@ http_read_f(int fd, short event, void *arg)
 	}
 	hp->t = ++p;
 
+#if 0
+printf("Head:\n%#H\n", hp->s, hp->t - hp->s);
+printf("Tail:\n%#H\n", hp->t, hp->v - hp->t);
+#endif
+
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
 		hp->callback(hp->arg, 1);
@@ -275,8 +283,11 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 {
 
 	assert(hp != NULL);
+	VSL(SLT_Debug, fd, "%s s %p t %p v %p", __func__, hp->s, hp->t, hp->v);
+	assert(hp->t == hp->s || hp->t == hp->v);	/* XXX pipelining */
 	hp->callback = func;
 	hp->arg = arg;
+	hp->v = hp->s;
 	hp->t = hp->s;
 	event_set(&hp->ev, fd, EV_READ | EV_PERSIST, http_read_f, hp);
 	event_base_set(eb, &hp->ev);
