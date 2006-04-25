@@ -8,7 +8,7 @@ varnishd_SOURCES = \
 	cache_acceptor.c \
 	cache_backend.c \
 	cache_fetch.c \
-	cache_httpd.c \
+	cache_http.c \
 	cache_main.c \
 	cache_pool.c \
 	cache_pass.c \

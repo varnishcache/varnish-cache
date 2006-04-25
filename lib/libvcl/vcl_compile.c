@@ -121,7 +121,7 @@ static struct var be_vars[] = {
 
 
 static struct var vars[] = {
-	{ "req.request",		STRING,	  0,  "sess->http.req"	     },
+	{ "req.request",		STRING,	  0,  "\"GET\""	     },
 	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
 	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
 #if 0

@@ -22,13 +22,6 @@
 #include "vcl_lang.h"
 #include "cache.h"
 
-static void
-FetchReturn(struct sess *sp)
-{
-
-	/* do nothing */
-}
-
 /*--------------------------------------------------------------------*/
 int
 FetchSession(struct worker *w, struct sess *sp)
@@ -39,12 +32,14 @@ FetchSession(struct worker *w, struct sess *sp)
 	off_t	cl;
 	struct storage *st;
 	unsigned char *p;
+	char *b, *e;
+	struct http *hp;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
-	VSL(SLT_HandlingFetch, sp->fd, "%d", fd);
 
-	HttpdBuildSbuf(0, 1, w->sb, sp);
+	hp = http_New();
+	http_BuildSbuf(0, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
@@ -57,9 +52,9 @@ FetchSession(struct worker *w, struct sess *sp)
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	HttpdGetHead(&sp2, w->eb, FetchReturn);
+	http_RecvHead(hp, sp2.fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	HttpdAnalyze(&sp2, 2);
+	http_Dissect(hp, sp2.fd, 2);
 
 	/* XXX: fill in object from headers */
 	sp->obj->valid = 1;
@@ -68,9 +63,10 @@ FetchSession(struct worker *w, struct sess *sp)
 	/* XXX: unbusy, and kick other sessions into action */
 	sp->obj->busy = 0;
 
-	assert (sp2.http.H_Content_Length != NULL); /* XXX */
+	assert(http_GetHdr(hp, "Content-Length", &b));
 
-	cl = strtoumax(sp2.http.H_Content_Length, NULL, 0);
+	cl = strtoumax(b, NULL, 0);
+	VSL(SLT_Debug, 0, "cl %jd (%s)",  cl, b);
 
 	sp->handling = HND_Unclass;
 	sp->vcl->fetch_func(sp);
@@ -85,44 +81,37 @@ FetchSession(struct worker *w, struct sess *sp)
 	i &= ~O_NONBLOCK;
 	i = fcntl(sp2.fd, F_SETFL, i);
 
-	i = sp2.rcv_len - sp2.rcv_ptr;
-	if (i > 0) {
-		memcpy(p, sp2.rcv + sp2.rcv_ptr, i);
+	if (http_GetTail(hp, cl, &b, &e)) {
+		i = e - b;
+		VSL(SLT_Debug, 0, "T i %d cl %jd", i, cl);
+		memcpy(p, b, i);
 		p += i;
 		cl -= i;
 	}
 
 	while (cl != 0) {
 		i = read(sp2.fd, p, cl);
-		assert(i > 0);
 		VSL(SLT_Debug, 0, "R i %d cl %jd", i, cl);
+		assert(i > 0);
 		p += i;
 		cl -= i;
 	}
 
-	HttpdBuildSbuf(1, 1, w->sb, &sp2);
+	http_BuildSbuf(1, w->sb, hp);
 	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
 	i = write(sp->fd, st->ptr, st->len);
-	VSL(SLT_Debug, 0, "W i %d st->len %u", i, st->len);
 	assert(i == st->len);
 
 	hash->deref(sp->obj);
 
-	if (sp2.http.H_Connection != NULL &&
-	    !strcmp(sp2.http.H_Connection, "close")) {
+	if (http_GetHdr(sp->http, "Connection", &b) &&
+	    !strcasecmp(b, "close")) {
 		close(fd);
 		VBE_ClosedFd(fd_token);
 	} else {
 		VBE_RecycleFd(fd_token);
 	}
-
-	/* XXX: this really belongs in the acceptor */
-	if (sp->rcv_len > sp->rcv_ptr)
-		memmove(sp->rcv, sp->rcv + sp->rcv_ptr,
-		    sp->rcv_len - sp->rcv_ptr);
-	sp->rcv_len -= sp->rcv_ptr;
-	sp->rcv_ptr = 0;
 	return (1);
 }

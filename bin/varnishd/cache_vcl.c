@@ -12,6 +12,7 @@
 
 #include "cli.h"
 #include "cli_priv.h"
+#include "shmlog.h"
 #include "vcl_lang.h"
 #include "libvarnish.h"
 #include "cache.h"
@@ -206,3 +207,11 @@ void VCL_fetch(VCL_FARGS) {
 
 void VCL_error(VCL_FARGS, unsigned err, const char *str) { 
 }
+
+void
+VCL_count(unsigned u)
+{
+	
+	VSL(SLT_VCL, 0, "%u", u);
+}
+
