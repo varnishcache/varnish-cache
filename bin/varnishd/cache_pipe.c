@@ -52,7 +52,7 @@ PipeSession(struct worker *w, struct sess *sp)
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	http_BuildSbuf(0, w->sb, sp->http);
+	http_BuildSbuf(0, w->sb, sp->http);	/* XXX: 0 ?? */
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 	assert(__LINE__ == 0);
