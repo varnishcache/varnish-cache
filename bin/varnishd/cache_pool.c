@@ -150,7 +150,7 @@ CacheWorker(void *priv)
 				PassSession(&w, sp);
 				done = 1;
 				break;
-			case HND_Unclass:
+			default:
 				VSL(SLT_Handling, sp->fd, "Unclass");
 				assert(sp->handling == HND_Unclass);
 				assert(sp->handling != HND_Unclass);
