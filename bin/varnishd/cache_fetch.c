@@ -37,6 +37,7 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
+	VSL(SLT_Handling, sp->fd, "Fetch fd %d", fd);
 
 	hp = http_New();
 	http_BuildSbuf(0, w->sb, sp->http);
@@ -66,7 +67,6 @@ FetchSession(struct worker *w, struct sess *sp)
 	assert(http_GetHdr(hp, "Content-Length", &b));
 
 	cl = strtoumax(b, NULL, 0);
-	VSL(SLT_Debug, 0, "cl %jd (%s)",  cl, b);
 
 	sp->handling = HND_Unclass;
 	sp->vcl->fetch_func(sp);
@@ -83,7 +83,6 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	if (http_GetTail(hp, cl, &b, &e)) {
 		i = e - b;
-		VSL(SLT_Debug, 0, "T i %d cl %jd", i, cl);
 		memcpy(p, b, i);
 		p += i;
 		cl -= i;
@@ -91,7 +90,6 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	while (cl != 0) {
 		i = read(sp2.fd, p, cl);
-		VSL(SLT_Debug, 0, "R i %d cl %jd", i, cl);
 		assert(i > 0);
 		p += i;
 		cl -= i;
