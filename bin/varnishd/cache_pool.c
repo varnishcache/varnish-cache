@@ -134,7 +134,6 @@ CacheWorker(void *priv)
 				done = LookupSession(&w, sp);
 				break;
 			case HND_Fetch:
-				VSL(SLT_Handling, sp->fd, "Fetch");
 				done = FetchSession(&w, sp);
 				break;
 			case HND_Deliver:
