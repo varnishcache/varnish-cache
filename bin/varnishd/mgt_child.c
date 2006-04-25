@@ -188,7 +188,7 @@ child_pingpong(int a, short b, void *c)
 	time(&t);
 	mgt_child_request(child_pingpong_ccb, NULL, NULL, "ping %ld", t);
 	if (1) {
-		tv.tv_sec = 30;
+		tv.tv_sec = 10;
 		tv.tv_usec = 0;
 		evtimer_del(&ev_child_pingpong);
 		evtimer_add(&ev_child_pingpong, &tv);
