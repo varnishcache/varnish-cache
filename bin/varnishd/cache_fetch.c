@@ -106,7 +106,6 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	if (http_GetHdr(sp->http, "Connection", &b) &&
 	    !strcasecmp(b, "close")) {
-		close(fd);
 		VBE_ClosedFd(fd_token);
 	} else {
 		VBE_RecycleFd(fd_token);

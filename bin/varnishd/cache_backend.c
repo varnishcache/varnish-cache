@@ -16,7 +16,9 @@
 #include <unistd.h>
 
 #include "libvarnish.h"
+#include "shmlog.h"
 #include "vcl_lang.h"
+#include "cache.h"
 
 /*
  * The internal backend structure for managing connection pools per
@@ -82,6 +84,7 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 	} while ((res0 = res0->ai_next) != NULL);
 	freeaddrinfo(res);
 	vc->fd = s;
+	VSL(SLT_BackendOpen, vc->fd, "");
 	return;
 }
 
@@ -136,6 +139,8 @@ VBE_ClosedFd(void *ptr)
 	struct vbe_conn *vc;
 
 	vc = ptr;
+	VSL(SLT_BackendClose, vc->fd, "");
+	close(vc->fd);
 	AZ(pthread_mutex_lock(&vbemtx));
 	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
 	AZ(pthread_mutex_unlock(&vbemtx));
@@ -150,6 +155,7 @@ VBE_RecycleFd(void *ptr)
 	struct vbe_conn *vc;
 
 	vc = ptr;
+	VSL(SLT_BackendReuse, vc->fd, "");
 	AZ(pthread_mutex_lock(&vbemtx));
 	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
 	TAILQ_INSERT_HEAD(&vc->vbe->fconn, vc, list);
