@@ -52,7 +52,8 @@ struct sess {
 		HND_Pass,
 		HND_Pipe,
 		HND_Lookup,
-		HND_Fetch
+		HND_Fetch,
+		HND_Insert
 	}			handling;
 
 	char			done;

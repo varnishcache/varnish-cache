@@ -440,7 +440,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("		HND_Pass,\n", f);
 	fputs("		HND_Pipe,\n", f);
 	fputs("		HND_Lookup,\n", f);
-	fputs("		HND_Fetch\n", f);
+	fputs("		HND_Fetch,\n", f);
+	fputs("		HND_Insert\n", f);
 	fputs("	}			handling;\n", f);
 	fputs("\n", f);
 	fputs("	char			done;\n", f);
