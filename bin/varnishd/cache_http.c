@@ -202,6 +202,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 	if (*p == '\r')
 		p++;
 
+	hp->nhdr = 0;
 	for (; p < hp->v; p = r) {
 		q = strchr(p, '\n');
 		assert(q != NULL);
@@ -346,6 +347,8 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 	for (u = 0; u < hp->nhdr; u++) {
 		if (http_supress(hp->hdr[u], resp))
 			continue;
+		if (0)
+			VSL(SLT_Debug, 0, "Build %s", hp->hdr[u]);
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");
 	}
