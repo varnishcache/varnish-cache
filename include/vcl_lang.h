@@ -23,22 +23,7 @@ struct vcl_acl {
 	unsigned	mask;
 };
 
-#define VCA_RXBUFSIZE		1024
 #define VCA_ADDRBUFSIZE		32
-#define VCA_UNKNOWNHDR		10
-
-struct httphdr {
-	const char		*req;
-	const char		*url;
-	const char		*proto;
-	const char		*status;
-	const char		*response;
-#define HTTPH(a, b, c, d, e, f, g) const char *b;
-#include <http_headers.h>
-#undef HTTPH
-	const char		*uhdr[VCA_UNKNOWNHDR];
-	unsigned		nuhdr;
-};
 
 struct object {	
 	unsigned char		hash[16];
@@ -58,13 +43,8 @@ struct sess {
 	/* formatted ascii client address */
 	char			addr[VCA_ADDRBUFSIZE];
 
-	/* Receive buffer for HTTP header */
-	char			rcv[VCA_RXBUFSIZE + 1];
-	unsigned		rcv_len;
-	unsigned		rcv_ptr;
-
-	/* HTTP request info, points into rcv */
-	struct httphdr		http;
+	/* HTTP request */
+	struct http		*http;
 
 	enum {
 		HND_Unclass,

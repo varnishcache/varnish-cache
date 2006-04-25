@@ -47,7 +47,7 @@ pipe_f(int fd, short event, void *arg)
 
 	i = read(fd, &sp, sizeof sp);
 	assert(i == sizeof sp);
-	HttpdGetHead(sp, evb, DealWithSession);
+	http_RecvHead(sp->http, sp->fd, evb, DealWithSession, sp);
 }
 
 static void
@@ -82,7 +82,8 @@ accept_f(int fd, short event, void *arg)
 	strlcat(sp->addr, ":", VCA_ADDRBUFSIZE);
 	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
-	HttpdGetHead(sp, evb, DealWithSession);
+	sp->http = http_New();
+	http_RecvHead(sp->http, sp->fd, evb, DealWithSession, sp);
 }
 
 void *
@@ -134,8 +135,11 @@ void
 vca_retire_session(struct sess *sp)
 {
 
-	VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
-	if (sp->fd >= 0)
+	if (sp->http != NULL)
+		http_Delete(sp->http);
+	if (sp->fd >= 0) {
+		VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
 		close(sp->fd);
+	}
 	free(sp);
 }

@@ -51,16 +51,19 @@ PipeSession(struct worker *w, struct sess *sp)
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
-	VSL(SLT_HandlingPipe, sp->fd, "%d", fd);
 
-	HttpdBuildSbuf(0, 0, w->sb, sp);
+	http_BuildSbuf(0, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
+	assert(__LINE__ == 0);
+	j = 0;
+#if 0
 	i = sp->rcv_len - sp->rcv_ptr;
 	if (i > 0) {
 		j = write(sp->fd, sp->rcv + sp->rcv_ptr, i);
 		assert(j == i);
 	}
+#endif
 
 	e1.fd = fd;
 	e2.fd = sp->fd;

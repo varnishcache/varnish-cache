@@ -77,10 +77,17 @@ void VBE_RecycleFd(void *ptr);
 /* cache_fetch.c */
 int FetchSession(struct worker *w, struct sess *sp);
 
-/* cache_httpd.c */
-void HttpdAnalyze(struct sess *sp, int rr);
-void HttpdGetHead(struct sess *sp, struct event_base *eb, sesscb_f *func);
-void HttpdBuildSbuf(int resp, int filter, struct sbuf *sb, struct sess *sp);
+/* cache_http.c */
+typedef void http_callback_f(void *, int good);
+struct http;
+struct http *http_New(void);
+void http_Delete(struct http *hp);
+int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
+int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
+int http_GetURL(struct http *hp, char **b);
+void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
+void http_Dissect(struct http *sp, int fd, int rr);
+void http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp);
 
 /* cache_main.c */
 pthread_mutex_t	sessmtx;
@@ -93,7 +100,7 @@ void PipeSession(struct worker *w, struct sess *sp);
 
 /* cache_pool.c */
 void CacheInitPool(void);
-void DealWithSession(struct sess *sp);
+void DealWithSession(void *arg, int good);
 
 /* cache_shmlog.c */
 void VSL_Init(void);

@@ -29,6 +29,7 @@ LookupSession(struct worker *w, struct sess *sp)
 	struct object *o;
 	unsigned char key[16];
 	MD5_CTX ctx;
+	char *b;
 
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);	
@@ -37,15 +38,16 @@ LookupSession(struct worker *w, struct sess *sp)
 		TAILQ_INIT(&w->nobj->store);
 	}
 
+	assert(http_GetURL(sp->http, &b));
 	MD5Init(&ctx);
-	MD5Update(&ctx, sp->http.url, strlen(sp->http.url));
+	MD5Update(&ctx, b, strlen(b));
 	MD5Final(key, &ctx);
 	o = hash->lookup(key, w->nobj);
 	if (o == w->nobj) {
-		VSL(SLT_Debug, 0, "Lookup new %p %s", o, sp->http.url);
+		VSL(SLT_Debug, 0, "Lookup new %p %s", o, b);
 		w->nobj = NULL;
 	} else {
-		VSL(SLT_Debug, 0, "Lookup found %p %s", o, sp->http.url);
+		VSL(SLT_Debug, 0, "Lookup found %p %s", o, b);
 	}
 	/*
 	 * XXX: if obj is busy, park session on it
@@ -92,6 +94,7 @@ CacheWorker(void *priv)
 	struct sess *sp;
 	struct worker w;
 	int done;
+	char *b;
 
 	memset(&w, 0, sizeof w);
 	w.eb = event_init();
@@ -112,7 +115,7 @@ CacheWorker(void *priv)
 		sp->vcl = GetVCL();
 		AZ(pthread_mutex_unlock(&sessmtx));
 
-		HttpdAnalyze(sp, 1);
+		http_Dissect(sp->http, sp->fd, 1);
 
 		sp->backend = sp->vcl->default_backend;
 
@@ -125,31 +128,38 @@ CacheWorker(void *priv)
 		sp->vcl->recv_func(sp);
 
 		for (done = 0; !done; ) {
-			printf("Handling: %d\n", sp->handling);
 			switch(sp->handling) {
 			case HND_Lookup:
+				VSL(SLT_Handling, sp->fd, "Lookup");
 				done = LookupSession(&w, sp);
 				break;
 			case HND_Fetch:
+				VSL(SLT_Handling, sp->fd, "Fetch");
 				done = FetchSession(&w, sp);
 				break;
 			case HND_Deliver:
+				VSL(SLT_Handling, sp->fd, "Deliver");
 				done = DeliverSession(&w, sp);
 				break;
 			case HND_Pipe:
+				VSL(SLT_Handling, sp->fd, "Pipe");
 				PipeSession(&w, sp);
 				done = 1;
 				break;
 			case HND_Pass:
+				VSL(SLT_Handling, sp->fd, "Pass");
 				PassSession(&w, sp);
 				done = 1;
 				break;
 			case HND_Unclass:
+				VSL(SLT_Handling, sp->fd, "Unclass");
 				assert(sp->handling == HND_Unclass);
+				assert(sp->handling != HND_Unclass);
 			}
 		}
-		if (sp->http.H_Connection != NULL &&
-		    !strcmp(sp->http.H_Connection, "close")) {
+		if (http_GetHdr(sp->http, "Connection", &b) &&
+		    !strcmp(b, "close")) {
+			VSL(SLT_SessionClose, sp->fd, "hdr");
 			close(sp->fd);
 			sp->fd = -1;
 		}
@@ -165,8 +175,14 @@ CacheWorker(void *priv)
 }
 
 void
-DealWithSession(struct sess *sp)
+DealWithSession(void *arg, int good)
 {
+	struct sess *sp = arg;
+
+	if (!good) {
+		vca_retire_session(sp);
+		return;
+	}
 	AZ(pthread_mutex_lock(&sessmtx));
 	TAILQ_INSERT_TAIL(&shd, sp, list);
 	AZ(pthread_mutex_unlock(&sessmtx));

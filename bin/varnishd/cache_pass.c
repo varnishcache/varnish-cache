@@ -22,13 +22,6 @@
 #include "vcl_lang.h"
 #include "cache.h"
 
-static void
-PassReturn(struct sess *sp)
-{
-
-	/* do nothing */
-}
-
 /*--------------------------------------------------------------------*/
 void
 PassSession(struct worker *w, struct sess *sp)
@@ -38,22 +31,20 @@ PassSession(struct worker *w, struct sess *sp)
 	struct sess sp2;
 	char buf[BUFSIZ];
 	off_t	cl;
+	char *b;
 
-	if (sp->http.H_Connection != NULL &&
-	    !strcmp(sp->http.H_Connection, "close")) {
+	if (http_GetHdr(sp->http, "Connection", &b) && !strcmp(b, "close")) {
 		/*
 		 * If client wants only this one request, piping is safer
 		 * and cheaper
 		 */
-		VSL(SLT_HandlingPass, sp->fd, "pipe");
 		PipeSession(w, sp);
 		return;
 	}
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
-	VSL(SLT_HandlingPass, sp->fd, "%d", fd);
 
-	HttpdBuildSbuf(0, 1, w->sb, sp);
+	http_BuildSbuf(0, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
@@ -66,14 +57,19 @@ PassSession(struct worker *w, struct sess *sp)
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	HttpdGetHead(&sp2, w->eb, PassReturn);
+	http_RecvHead(sp2.http, sp2.fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	HttpdAnalyze(&sp2, 2);
+	http_Dissect(sp2.http, sp2.fd, 2);
 
-	HttpdBuildSbuf(1, 1, w->sb, &sp2);
+	http_BuildSbuf(1, w->sb, sp2.http);
 	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
+	assert(__LINE__ == 0);
+	cl = j = 0;
+	*buf = 0;
+
+#if 0
 	if (sp2.http.H_Content_Length != NULL) {
 		cl = strtoumax(sp2.http.H_Content_Length, NULL, 0);
 		i = fcntl(sp2.fd, F_GETFL);
@@ -118,4 +114,5 @@ PassSession(struct worker *w, struct sess *sp)
 		    sp->rcv_len - sp->rcv_ptr);
 	sp->rcv_len -= sp->rcv_ptr;
 	sp->rcv_ptr = 0;
+#endif
 }

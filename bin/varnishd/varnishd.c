@@ -329,11 +329,6 @@ init_vsl(const char *fn, unsigned size)
 #include <printf.h>
 #include <err.h>
 
-void
-VCL_count(unsigned u)
-{
-}
-
 int
 main(int argc, char *argv[])
 {
