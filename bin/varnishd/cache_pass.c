@@ -28,7 +28,7 @@
 static int
 pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *bi)
 {
-	int i, j;
+	int i;
 	char *b, *e;
 	off_t	cl;
 	unsigned c;
@@ -49,8 +49,7 @@ pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *
 			c = sizeof buf;
 		if (http_GetTail(hp, c, &b, &e)) {
 			i = e - b;
-			j = write(sp->fd, b, i);
-			assert(i == j);
+			vca_write(sp, b, i);
 			cl -= i;
 			continue;
 		}
@@ -58,8 +57,8 @@ pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *
 		if (i == 0 && bi == NULL)
 			return (1);
 		assert(i > 0);
-		j = write(sp->fd, buf, i);
-		assert(i == j);
+		vca_write(sp, buf, i);
+		vca_flush(sp);
 		cl -= i;
 	}
 	return (0);
@@ -109,9 +108,7 @@ pass_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 		if (u == 0)
 			break;
 
-		j = q - p;
-		i = write(sp->fd, q, j);
-		assert(i == j);
+		vca_write(sp, p, q - p);
 
 		p = q;
 
@@ -123,29 +120,28 @@ pass_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 			}
 			if (bp - p < j)
 				j = bp - p;
-			i = write(sp->fd, p, j);
-			assert(i == j);
+			vca_write(sp, p, j);
 			p += j;
-			u -= i;
+			u -= j;
 		}
 		while (u > 0) {
 			if (http_GetTail(hp, u, &b, &e)) {
 				j = e - b;
-				i = write(sp->fd, q, j);
-				assert(i == j);
+				vca_write(sp, q, j);
 				u -= j;
 			} else
 				break;
 		}
+		vca_flush(sp);
 		while (u > 0) {
 			j = u;
 			if (j > sizeof buf)
 				j = sizeof buf;
 			i = read(fd, buf, j);
 			assert(i > 0);
-			j = write(sp->fd, buf, i);
-			assert(j == i);
+			vca_write(sp, buf, i);
 			u -= i;
+			vca_flush(sp);
 		}
 	}
 	return (0);
@@ -181,8 +177,7 @@ PassSession(struct worker *w, struct sess *sp)
 	http_Dissect(hp, fd, 2);
 
 	http_BuildSbuf(2, w->sb, hp);
-	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
+	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
 		cls = pass_straight(w, sp, fd, hp, b);
@@ -194,6 +189,7 @@ PassSession(struct worker *w, struct sess *sp)
 		INCOMPL();
 		cls = 1;
 	}
+	vca_flush(sp);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
