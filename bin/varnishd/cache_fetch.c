@@ -60,11 +60,9 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 	}
 
 	http_BuildSbuf(2, w->sb, hp);
-	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
-
-	i = write(sp->fd, st->ptr, st->len);
-	assert(i == st->len);
+	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
+	vca_write(sp, st->ptr, st->len);
+	vca_flush(sp);
 
 	hash->deref(sp->obj);
 	return (0);
@@ -90,8 +88,6 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	while (1) {
 		bp = buf;
 		if (http_GetTail(hp, be - bp, &b, &e)) {
-if (0)
-printf("Tail: (H)\n%#H\n", b, e - b);
 			memcpy(bp, b, e - b);
 			bp += e - b;
 		} else {
@@ -100,8 +96,6 @@ printf("Tail: (H)\n%#H\n", b, e - b);
 			bp += i;
 		}
 		u = strtoul(buf, &q, 16);
-if (0)
-printf("Buf: u %u q %p buf %p\n%#H\n", u, q, buf, buf, bp - buf);
 		if (q == NULL || (*q != '\n' && *q != '\r'))
 			continue;
 		if (*q == '\r')
@@ -119,8 +113,6 @@ printf("Buf: u %u q %p buf %p\n%#H\n", u, q, buf, buf, bp - buf);
 		p += bp - q;
 		u -= bp - q;
 		if (http_GetTail(hp, u, &b, &e)) {
-if (0)
-printf("Tail: (B)\n%#H\n", b, e - b);
 			memcpy(p, b, e - b);
 			p += e - b;
 			u -= e - b;
@@ -130,21 +122,15 @@ printf("Tail: (B)\n%#H\n", b, e - b);
 			assert(i > 0);
 			u -= i;
 			p += i;
-if (0)
-printf("u = %u i = %d\n", u, i);
 		}
-if (0)
-printf("Store:\n%#H\n", st->ptr, st->len);
 	}
 
 	http_BuildSbuf(2, w->sb, hp);
-	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
+	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
-	TAILQ_FOREACH(st, &sp->obj->store, list) {
-		i = write(sp->fd, st->ptr, st->len);
-		assert(i == st->len);
-	}
+	TAILQ_FOREACH(st, &sp->obj->store, list)
+		vca_write(sp, st->ptr, st->len);
+	vca_flush(sp);
 
 	hash->deref(sp->obj);
 
