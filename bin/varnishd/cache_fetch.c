@@ -165,9 +165,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	VSL(SLT_Handling, sp->fd, "Fetch fd %d", fd);
 
 	hp = http_New();
-HERE();
 	http_BuildSbuf(1, w->sb, sp->http);
-HERE();
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
@@ -190,12 +188,11 @@ HERE();
 
 	assert(sp->handling == HND_Insert);
 
-	if (http_GetHdr(hp, "Content-Length", &b)) {
+	if (http_GetHdr(hp, "Content-Length", &b))
 		cls = fetch_straight(w, sp, fd, hp, b);
-	} else if (http_GetHdr(hp, "Transfer-Encoding", &b) &&
-	    !strcasecmp(b, "chunked")) {
+	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
 		cls = fetch_chunked(w, sp, fd, hp);
-	} else {
+	else {
 		VSL(SLT_Debug, fd, "No transfer");
 		cls = 0;
 	}

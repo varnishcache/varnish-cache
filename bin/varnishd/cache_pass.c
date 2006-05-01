@@ -22,25 +22,146 @@
 #include "vcl_lang.h"
 #include "cache.h"
 
+
+/*--------------------------------------------------------------------*/
+
+static int
+pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *bi)
+{
+	int i, j;
+	char *b, *e;
+	off_t	cl;
+	unsigned c;
+	char buf[BUFSIZ];
+
+	if (bi != NULL)
+		cl = strtoumax(bi, NULL, 0);
+	else
+		cl = (1<<30);		/* XXX */
+
+	i = fcntl(fd, F_GETFL);		/* XXX ? */
+	i &= ~O_NONBLOCK;
+	i = fcntl(fd, F_SETFL, i);
+
+	while (cl != 0) {
+		c = cl;
+		if (c > sizeof buf)
+			c = sizeof buf;
+		if (http_GetTail(hp, c, &b, &e)) {
+			i = e - b;
+			j = write(sp->fd, b, i);
+			assert(i == j);
+			cl -= i;
+			continue;
+		}
+		i = read(fd, buf, c);
+		if (i == 0 && bi == NULL)
+			return (1);
+		assert(i > 0);
+		j = write(sp->fd, buf, i);
+		assert(i == j);
+		cl -= i;
+	}
+	return (0);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static int
+pass_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
+{
+	int i, j;
+	char *b, *q, *e;
+	char *p;
+	unsigned u;
+	char buf[BUFSIZ];
+	char *bp, *be;
+
+	i = fcntl(fd, F_GETFL);		/* XXX ? */
+	i &= ~O_NONBLOCK;
+	i = fcntl(fd, F_SETFL, i);
+
+	bp = buf;
+	be = buf + sizeof buf;
+	p = buf;
+	while (1) {
+		if (http_GetTail(hp, be - bp, &b, &e)) {
+			memcpy(bp, b, e - b);
+			bp += e - b;
+		} else {
+			/* XXX: must be safe from backend */
+			i = read(fd, bp, be - bp);
+			assert(i > 0);
+			bp += i;
+		}
+		/* buffer valid from p to bp */
+
+		u = strtoul(p, &q, 16);
+		if (q == NULL || (*q != '\n' && *q != '\r')) {
+			INCOMPL();
+			/* XXX: move bp to buf start, get more */
+		}
+		if (*q == '\r')
+			q++;
+		assert(*q == '\n');
+		q++;
+		if (u == 0)
+			break;
+
+		j = q - p;
+		i = write(sp->fd, q, j);
+		assert(i == j);
+
+		p = q;
+
+		while (u > 0) {
+			j = u;
+			if (bp == p) {
+				bp = p = buf;
+				break;
+			}
+			if (bp - p < j)
+				j = bp - p;
+			i = write(sp->fd, p, j);
+			assert(i == j);
+			p += j;
+			u -= i;
+		}
+		while (u > 0) {
+			if (http_GetTail(hp, u, &b, &e)) {
+				j = e - b;
+				i = write(sp->fd, q, j);
+				assert(i == j);
+				u -= j;
+			} else
+				break;
+		}
+		while (u > 0) {
+			j = u;
+			if (j > sizeof buf)
+				j = sizeof buf;
+			i = read(fd, buf, j);
+			assert(i > 0);
+			j = write(sp->fd, buf, i);
+			assert(j == i);
+			u -= i;
+		}
+	}
+	return (0);
+}
+
+
 /*--------------------------------------------------------------------*/
 void
 PassSession(struct worker *w, struct sess *sp)
 {
-	int fd, i, j;
+	int fd, i;
 	void *fd_token;
-	struct sess sp2;
-	char buf[BUFSIZ];
-	off_t	cl;
+	struct http *hp;
 	char *b;
+	int cls;
 
-	if (http_GetHdr(sp->http, "Connection", &b) && !strcmp(b, "close")) {
-		/*
-		 * If client wants only this one request, piping is safer
-		 * and cheaper
-		 */
-		PipeSession(w, sp);
-		return;
-	}
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
@@ -50,69 +171,35 @@ PassSession(struct worker *w, struct sess *sp)
 
 	/* XXX: copy any contents */
 
-	memset(&sp2, 0, sizeof sp2);
-	sp2.rd_e = &w->e1;
-	sp2.fd = fd;
 	/*
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	http_RecvHead(sp2.http, sp2.fd, w->eb, NULL, NULL);
+	hp = http_New();
+	http_RecvHead(hp, fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	http_Dissect(sp2.http, sp2.fd, 2);
+	http_Dissect(hp, fd, 2);
 
-	http_BuildSbuf(2, w->sb, sp2.http);
+	http_BuildSbuf(2, w->sb, hp);
 	i = write(sp->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
-	assert(__LINE__ == 0);
-	cl = j = 0;
-	*buf = 0;
-
-#if 0
-	if (sp2.http.H_Content_Length != NULL) {
-		cl = strtoumax(sp2.http.H_Content_Length, NULL, 0);
-		i = fcntl(sp2.fd, F_GETFL);
-		i &= ~O_NONBLOCK;
-		i = fcntl(sp2.fd, F_SETFL, i);
-		assert(i != -1);
-		i = sp2.rcv_len - sp2.rcv_ptr;
-		if (i > 0) {
-			j = write(sp->fd, sp2.rcv + sp2.rcv_ptr, i);
-			assert(j == i);
-			cl -= i;
-			sp2.rcv_ptr += i;
-		}
-		while (cl > 0) {
-			j = sizeof buf;
-			if (j > cl)
-				j = cl;
-			i = recv(sp2.fd, buf, j, 0);
-			assert(i >= 0);
-			if (i > 0) {
-				cl -= i;
-				j = write(sp->fd, buf, i);
-				assert(j == i);
-			} else if (i == 0) {
-				break;
-			}
-		}
-		assert(cl == 0);
+	if (http_GetHdr(hp, "Content-Length", &b))
+		cls = pass_straight(w, sp, fd, hp, b);
+	else if (http_HdrIs(hp, "Connection", "close"))
+		cls = pass_straight(w, sp, fd, hp, NULL);
+	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
+		cls = pass_chunked(w, sp, fd, hp);
+	else {
+		INCOMPL();
+		cls = 1;
 	}
 
-	if (sp2.http.H_Connection != NULL &&
-	    !strcmp(sp2.http.H_Connection, "close")) {
-		close(fd);
+	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
+		cls = 1;
+
+	if (cls)
 		VBE_ClosedFd(fd_token);
-	} else {
+	else
 		VBE_RecycleFd(fd_token);
-	}
-
-	/* XXX: this really belongs in the acceptor */
-	if (sp->rcv_len > sp->rcv_ptr)
-		memmove(sp->rcv, sp->rcv + sp->rcv_ptr,
-		    sp->rcv_len - sp->rcv_ptr);
-	sp->rcv_len -= sp->rcv_ptr;
-	sp->rcv_ptr = 0;
-#endif
 }
