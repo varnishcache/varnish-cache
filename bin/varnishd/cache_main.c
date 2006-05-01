@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/time.h>
 
 #include <pthread.h>
@@ -102,6 +103,9 @@ child_main(void)
 	struct event_base *eb;
 	struct cli *cli;
 	int i;
+
+	/* XXX: SO_NOSIGPIPE does not work reliably :-( */
+	signal(SIGPIPE, SIG_IGN);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);

@@ -126,6 +126,7 @@ CacheWorker(void *priv)
 		sp->handling = HND_Lookup;
 		
 		sp->vcl->recv_func(sp);
+		sp->handling = HND_Pass;
 
 		for (done = 0; !done; ) {
 			switch(sp->handling) {

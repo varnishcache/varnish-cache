@@ -102,6 +102,19 @@ http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 }
 
 int
+http_HdrIs(struct http *hp, const char *hdr, const char *val)
+{
+	char *p;
+
+	if (!http_GetHdr(hp, hdr, &p))
+		return (0);
+	assert(p != NULL);
+	if (!strcasecmp(p, val))
+		return (1);
+	return (0);
+}
+
+int
 http_GetURL(struct http *hp, char **b)
 {
 	if (hp->url == NULL)
@@ -346,6 +359,7 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->proto);
 	} else {
+		printf("resp = %d\n", resp);
 		assert(resp == 1 || resp == 2);
 	}
 	sbuf_cat(sb, "\r\n");

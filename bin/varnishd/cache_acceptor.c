@@ -58,6 +58,7 @@ accept_f(int fd, short event, void *arg)
 	struct sockaddr addr;
 	struct sess *sp;
 	char port[10];
+	int i;
 
 	(void)arg;
 	sm = calloc(sizeof *sm, 1);
@@ -76,6 +77,8 @@ accept_f(int fd, short event, void *arg)
 		free(sp);
 		return;
 	}
+	i = 1;
+	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_NOSIGPIPE, &i, sizeof i));
 	AZ(getnameinfo(&addr, l,
 	    sp->addr, VCA_ADDRBUFSIZE,
 	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV));

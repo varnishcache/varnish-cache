@@ -83,6 +83,7 @@ struct http;
 struct http *http_New(void);
 void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
+int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_GetURL(struct http *hp, char **b);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
@@ -108,6 +109,10 @@ void VSL_Init(void);
 void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #define HERE() VSL(SLT_Debug, 0, "HERE: %s(%d)", __func__, __LINE__)
+#define INCOMPL() do {							\
+	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
+	assert(__LINE__ == 0);						\
+	} while (0)
 #endif
 
 /* cache_vcl.c */
