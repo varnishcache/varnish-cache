@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -32,12 +33,59 @@ static struct event_base *evb;
 static struct event pipe_e;
 static int pipes[2];
 
+#define SESS_IOVS	5
+
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 
 struct sessmem {
 	struct sess	s;
 	struct event	e;
+	struct iovec	iov[SESS_IOVS];
+	int		niov;
+	size_t		liov;
 };
+
+/*--------------------------------------------------------------------
+ * Write data to client
+ * We try to use writev() if possible in order to minimize number of
+ * syscalls made and packets sent.  It also just might allow the worker
+ * thread to complete the request without holding stuff locked.
+ */
+
+void
+vca_flush(struct sess *sp)
+{
+	int i;
+
+	if (sp->fd < 0 || sp->mem->niov == 0)
+		return;
+	i = writev(sp->fd, sp->mem->iov, sp->mem->niov);
+	if (i != sp->mem->liov) {
+		VSL(SLT_SessionClose, sp->fd, "Premature %d of %d",
+		    i,  sp->mem->liov);
+		close(sp->fd);
+		sp->fd = -1;
+	}
+	sp->mem->liov = 0;
+	sp->mem->niov = 0;
+}
+
+void
+vca_write(struct sess *sp, void *ptr, size_t len)
+{
+
+	if (sp->fd < 0 || len == 0)
+		return;
+	if (sp->mem->niov == SESS_IOVS)
+		vca_flush(sp);
+	if (sp->fd < 0)
+		return;
+	sp->mem->iov[sp->mem->niov].iov_base = ptr;
+	sp->mem->iov[sp->mem->niov++].iov_len = len;
+	sp->mem->liov += len;
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 pipe_f(int fd, short event, void *arg)
