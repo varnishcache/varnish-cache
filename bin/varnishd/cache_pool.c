@@ -69,7 +69,6 @@ static int
 DeliverSession(struct worker *w, struct sess *sp)
 {
 	char buf[BUFSIZ];
-	int i, j;
 	struct storage *st;
 
 	sprintf(buf,
@@ -78,13 +77,10 @@ DeliverSession(struct worker *w, struct sess *sp)
 	    "Content-Length: %u\r\n"
 	    "\r\n", sp->obj->len);
 
-	j = strlen(buf);
-	i = write(sp->fd, buf, j);
-	assert(i == j);
-	TAILQ_FOREACH(st, &sp->obj->store, list) {
-		i = write(sp->fd, st->ptr, st->len);
-		assert(i == st->len);
-	}
+	vca_write(sp, buf, strlen(buf));
+	TAILQ_FOREACH(st, &sp->obj->store, list)
+		vca_write(sp, st->ptr, st->len);
+	vca_flush(sp);
 	return (1);
 }
 
@@ -126,7 +122,6 @@ CacheWorker(void *priv)
 		sp->handling = HND_Lookup;
 		
 		sp->vcl->recv_func(sp);
-		sp->handling = HND_Pass;
 
 		for (done = 0; !done; ) {
 			switch(sp->handling) {
