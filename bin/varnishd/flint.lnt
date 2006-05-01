@@ -1,0 +1,44 @@
+-passes=3
+
+// Review all below this line
+
+-printf_code( H, void *, unsigned)
+-printf_code( ju, long long unsigned)
+
+-e763	// Redundant declaration for symbol '...' previously declared
+
+
+-e737	//  Loss of sign in promotion from int to unsigned int
+-e715	// Symbol 'arg' (line 43) not referenced
+-e818	// Pointer parameter '...' could be declared as pointing to const
+
+-e534	// Ignoring return value of function
+-e767	// macro 'LIST_INIT' was defined differently
+
+-e506	// Constant value boolean
+-e527	// Unreachable code at token 'return'
+-e732	// Loss of sign (arg. no. 2) (int to unsigned int)
+-e774	// Boolean within 'if' always evaluates to False
+-e713	// Loss of precision (assignment) (unsigned long long to long long)
+-e574	// Signed-unsigned mix with relational
+
+-e525	// Negative indentation from line 90
+-e539	// Did not expect positive indentation
+-e725	// Expected positive indentation from line 136
+-e734	// Loss of precision (assignment) (31 bits to 8 bits)
+-e747	// Significant prototype coercion (arg. no. 2) long
+-e712	// Loss of precision (assignment) (long long to
+
+
+-e785	// Too few initializers for aggregate 
+
+-e766	//  Header file '../../include/libvarnish.h' not used in module
+
+-e773	// Expression-like macro 'VCL_FARGS' not parenthesized
+
+-e788	// enum constant 'HND_Unclass' not used within defaulted switch
+
+-e716	// while(1) ... 
+-e641	// Converting enum 'cli_status_e' to int
+
+-e786	// String concatenation within initializer
