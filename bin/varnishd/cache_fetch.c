@@ -67,13 +67,8 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 	assert(i == st->len);
 
 	hash->deref(sp->obj);
+	return (0);
 
-	if (http_GetHdr(sp->http, "Connection", &b) &&
-	    !strcasecmp(b, "close")) {
-		return (1);
-	} else {
-		return (0);
-	}
 }
 
 static int
@@ -130,11 +125,13 @@ printf("Tail: (B)\n%#H\n", b, e - b);
 			p += e - b;
 			u -= e - b;
 		}
-		if (u > 0) {
+		while (u > 0) {
 			i = read(fd, p, u);
+			assert(i > 0);
+			u -= i;
+			p += i;
 if (0)
 printf("u = %u i = %d\n", u, i);
-			assert(i == u);
 		}
 if (0)
 printf("Store:\n%#H\n", st->ptr, st->len);
@@ -151,12 +148,7 @@ printf("Store:\n%#H\n", st->ptr, st->len);
 
 	hash->deref(sp->obj);
 
-	if (http_GetHdr(sp->http, "Connection", &b) &&
-	    !strcasecmp(b, "close")) {
-		return (1);
-	} else {
-		return (0);
-	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -207,6 +199,9 @@ HERE();
 		VSL(SLT_Debug, fd, "No transfer");
 		cls = 0;
 	}
+
+	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
+		cls = 1;
 
 	if (cls)
 		VBE_ClosedFd(fd_token);
