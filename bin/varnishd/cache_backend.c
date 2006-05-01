@@ -133,6 +133,7 @@ vbe_rdp(int fd, short event __unused, void *arg __unused)
 	AZ(pthread_mutex_lock(&vbemtx));
 	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
 	if (vc->fd < 0) {
+		vc->vbe->nconn--;
 		free(vc);
 	} else {
 		vc->inuse = 0;
@@ -236,6 +237,7 @@ VBE_GetFd(struct backend *bp, void **ptr)
 		vc->fd = -1;
 		vc->inuse = 1;
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
+		vp->nconn++;
 		AZ(pthread_mutex_unlock(&vbemtx));
 		connect_to_backend(vc, bp);
 		event_set(&vc->ev, vc->fd, EV_READ | EV_PERSIST, vbe_rdf, vc);
