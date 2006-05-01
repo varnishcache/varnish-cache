@@ -138,8 +138,9 @@ cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
 	    "config.load %s %s", av[2], vf);
 }
 
+/* XXX: m prefix to avoid name clash */
 static void
-cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
 {
 	char *vf;
 	struct sbuf *sb;
@@ -226,7 +227,7 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_URL_QUERY,	cli_func_passthrough, NULL },
 	{ CLI_URL_PURGE,	cli_func_passthrough, NULL },
 	{ CLI_URL_STATUS,	cli_func_passthrough, NULL },
-	{ CLI_CONFIG_LOAD,	cli_func_config_load, NULL },
+	{ CLI_CONFIG_LOAD,	m_cli_func_config_load, NULL },
 	{ CLI_CONFIG_INLINE,	cli_func_config_inline, NULL },
 	{ CLI_CONFIG_UNLOAD,	cli_func_passthrough, NULL },
 	{ CLI_CONFIG_LIST,	cli_func_passthrough, NULL },
