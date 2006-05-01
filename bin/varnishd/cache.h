@@ -91,7 +91,7 @@ void http_Dissect(struct http *sp, int fd, int rr);
 void http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp);
 
 /* cache_main.c */
-pthread_mutex_t	sessmtx;
+extern pthread_mutex_t sessmtx;
 
 /* cache_pass.c */
 void PassSession(struct worker *w, struct sess *sp);
