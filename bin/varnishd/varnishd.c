@@ -378,7 +378,7 @@ main(int argc, char *argv[])
  
 	VCL_InitCompile();
 
-	while ((o = getopt(argc, argv, "b:df:p:")) != -1)
+	while ((o = getopt(argc, argv, "b:df:p:s:")) != -1)
 		switch (o) {
 		case 'b':
 			bflag = optarg;
