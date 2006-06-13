@@ -17,3 +17,4 @@ int open_tcp(const char *port);
 #include "_stevedore.h"
 
 extern struct stevedore sma_stevedore;
+extern struct stevedore smf_stevedore;

@@ -316,6 +316,8 @@ setup_storage(const char *sflag)
 		p = strchr(sflag, '\0');
 	if (!cmp_storage(&sma_stevedore, sflag, p)) {
 		heritage.stevedore = &sma_stevedore;
+	} else if (!cmp_storage(&smf_stevedore, sflag, p)) {
+		heritage.stevedore = &smf_stevedore;
 	} else {
 		fprintf(stderr, "Unknown storage method \"%*.*s\"\n",
 			p - sflag, p - sflag, sflag);
