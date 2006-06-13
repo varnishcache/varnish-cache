@@ -309,22 +309,27 @@ cmp_storage(struct stevedore *s, const char *p, const char *q)
 static void
 setup_storage(const char *sflag)
 {
-	const char *p;
+	const char *p, *q;
+	struct stevedore *stp;
 
-	p = strchr(sflag, ',');
+	q = p = strchr(sflag, ',');
 	if (p == NULL)
-		p = strchr(sflag, '\0');
+		q = p = strchr(sflag, '\0');
+	else
+		q++;
 	if (!cmp_storage(&sma_stevedore, sflag, p)) {
-		heritage.stevedore = &sma_stevedore;
+		stp = &sma_stevedore;
 	} else if (!cmp_storage(&smf_stevedore, sflag, p)) {
-		heritage.stevedore = &smf_stevedore;
+		stp = &smf_stevedore;
 	} else {
 		fprintf(stderr, "Unknown storage method \"%*.*s\"\n",
 			p - sflag, p - sflag, sflag);
 		exit (2);
 	}
-	if (heritage.stevedore->init != NULL)
-		heritage.stevedore->init(heritage.stevedore, p);
+	heritage.stevedore = malloc(sizeof *heritage.stevedore);
+	*heritage.stevedore = *stp;
+	if (stp->init != NULL)
+		stp->init(heritage.stevedore, q);
 }
 
 /*--------------------------------------------------------------------*/
