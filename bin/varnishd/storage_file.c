@@ -238,31 +238,40 @@ smf_init(struct stevedore *parent, const char *spec)
 
 /*--------------------------------------------------------------------*/
 
+/*
+ * XXX: This may be too aggressive and soak up too much address room.
+ * XXX: On the other hand, the user, directly or implicitly asked us to 
+ * XXX: use this much storage, so we should make a decent effort.
+ * XXX: worst case (I think), malloc will fail.
+ */
+
 static void
-smf_open_chunk(struct smf_sc *sc, size_t sz, size_t off, size_t *fail, size_t *sum)
+smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 {
 	void *p;
-	size_t h;
+	off_t h;
 
-	if (sz < getpagesize() * MINPAGES)
+	if (*fail < getpagesize() * MINPAGES)
 		return;
 
-	if (sz > *fail)
-		return;
-
-	printf("%s(%ju, %ju)\n", __func__, (uintmax_t)sz, (uintmax_t)off);
-	p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
-	    MAP_NOCORE | MAP_NOSYNC | MAP_PRIVATE, sc->fd, off);
-	printf("mmap = %p\n", p);
-	if (p != MAP_FAILED) {
-		(*sum) += sz;
-		return;
+	if (sz < *fail && sz < SIZE_T_MAX) {
+		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
+		    MAP_NOCORE | MAP_NOSYNC | MAP_PRIVATE, sc->fd, off);
+		if (p != MAP_FAILED) {
+			printf("%12p...%12p  %12jx...%12jx %12jx\n",
+			    p, (u_char *)p + sz,
+			    off, off + sz, sz);
+			(*sum) += sz;
+			return;
+		}
 	}
 
 	if (sz < *fail)
 		*fail = sz;
 
 	h = sz / 2;
+	if (h > SIZE_T_MAX)
+		h = SIZE_T_MAX;
 	h -= (h % getpagesize());
 
 	smf_open_chunk(sc, h, off, fail, sum);
@@ -273,16 +282,10 @@ static void
 smf_open(struct stevedore *st)
 {
 	struct smf_sc *sc;
-	size_t fail = SIZE_T_MAX;
-	size_t sum = 0;
+	off_t fail = SIZE_T_MAX;
+	off_t sum = 0;
 
 	sc = st->priv;
-
-	if (sc->filesize > SIZE_T_MAX) {
-		sc->filesize = SIZE_T_MAX;
-		fprintf(stderr, "Truncating %s to SIZE_T_MAX %ju\n",
-		    sc->filename, sc->filesize);
-	}
 
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);
 	printf("managed to mmap %ju bytes of %ju\n",
