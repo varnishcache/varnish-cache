@@ -18,15 +18,18 @@ struct heritage {
 	 * interface IP number).
 	 */
 #define HERITAGE_NSOCKS		2	/* IPv4 + IPv6 */
-	int	sock_local[HERITAGE_NSOCKS];
-	int	sock_remote[HERITAGE_NSOCKS];
+	int			sock_local[HERITAGE_NSOCKS];
+	int			sock_remote[HERITAGE_NSOCKS];
 
 	/* Share memory log fd and size (incl header) */
-	int		vsl_fd;
-	unsigned	vsl_size;
+	int			vsl_fd;
+	unsigned		vsl_size;
 
 	/* Initial VCL file */
-	char		*vcl_file;
+	char			*vcl_file;
+
+	/* Storage method */
+	struct stevedore	*stevedore;
 };
 
 extern struct heritage heritage;

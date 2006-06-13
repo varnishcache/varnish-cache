@@ -42,21 +42,16 @@ struct storage {
 	unsigned char		*ptr;
 	unsigned		len;
 	void			*priv;
+	struct stevedore	*stevedore;
 };
 
-typedef void storage_init_f(void);
-typedef struct storage *storage_alloc_f(unsigned size);
-typedef void storage_free_f(struct storage *);
+#include "_stevedore.h"
 
-struct stevedore {
-	const char		*name;
-	storage_init_f		*init;
-	storage_alloc_f		*alloc;
-	storage_free_f		*free;
-};
-
-extern struct stevedore sma_stevedore;
-
+/*
+ * XXX: in the longer term, we want to support multiple stevedores,
+ * XXX: selected by some kind of heuristics based on size, lifetime
+ * XXX: etc etc.  For now we support only one.
+ */
 extern struct stevedore *stevedore;
 
 /* Prototypes etc ----------------------------------------------------*/

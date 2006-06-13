@@ -277,10 +277,12 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, "    %-20s # %s\n", "-b", "backend_IP_number");
-	fprintf(stderr, "    %-20s # %s\n", "-d", "debug");
-	fprintf(stderr, "    %-20s # %s\n", "-f", "VCL_file");
-	fprintf(stderr, "    %-20s # %s\n", "-p number", "TCP listen port");
+	fprintf(stderr, "    %-28s # %s\n", "-b", "backend_IP_number");
+	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
+	fprintf(stderr, "    %-28s # %s\n", "-f", "VCL_file");
+	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
+	fprintf(stderr, "    %-28s # %s\n",
+	    "-s kind[,storageoptions]", "Backend storage specification");
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
@@ -290,6 +292,37 @@ usage(void)
 	-a CLI_port
 #endif
 	exit(1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+cmp_storage(struct stevedore *s, const char *p, const char *q)
+{
+	if (strlen(s->name) != q - p)
+		return (1);
+	if (strncmp(s->name, p, q - p))
+		return (1);
+	return (0);
+}
+
+static void
+setup_storage(const char *sflag)
+{
+	const char *p;
+
+	p = strchr(sflag, ',');
+	if (p == NULL)
+		p = strchr(sflag, '\0');
+	if (!cmp_storage(&sma_stevedore, sflag, p)) {
+		heritage.stevedore = &sma_stevedore;
+	} else {
+		fprintf(stderr, "Unknown storage method \"%*.*s\"\n",
+			p - sflag, p - sflag, sflag);
+		exit (2);
+	}
+	if (heritage.stevedore->init != NULL)
+		heritage.stevedore->init(heritage.stevedore, p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -324,6 +357,7 @@ init_vsl(const char *fn, unsigned size)
 	AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
 	heritage.vsl_size = slh.size + slh.start;
 }
+
 /*--------------------------------------------------------------------*/
 
 /* for development purposes */
@@ -338,6 +372,7 @@ main(int argc, char *argv[])
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 	const char *bflag = NULL;
 	const char *fflag = NULL;
+	const char *sflag = "malloc";
 
 	register_printf_render_std((const unsigned char *)"HVQ");
  
@@ -356,6 +391,9 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			portnumber = optarg;
+			break;
+		case 's':
+			sflag = optarg;
 			break;
 		default:
 			usage();
@@ -385,6 +423,8 @@ main(int argc, char *argv[])
 	if (heritage.vcl_file == NULL)
 		exit (1);
 
+	setup_storage(sflag);
+
 	/*
 	 * XXX: Lacking the suspend/resume facility (due to the socket API
 	 * missing an unlisten(2) facility) we may want to push this into
@@ -397,7 +437,6 @@ main(int argc, char *argv[])
 	init_vsl(SHMLOG_FILENAME, 1024*1024);
 
 	testme();
-
 
 	exit(0);
 }
