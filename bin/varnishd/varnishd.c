@@ -379,7 +379,7 @@ main(int argc, char *argv[])
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 	const char *bflag = NULL;
 	const char *fflag = NULL;
-	const char *sflag = "malloc";
+	const char *sflag = "file";
 
 	register_printf_render_std((const unsigned char *)"HVQ");
  
