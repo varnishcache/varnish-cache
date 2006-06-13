@@ -18,10 +18,15 @@
 #include <pthread.h>
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/mman.h>
 
 #include "vcl_lang.h"
 #include "libvarnish.h"
 #include "cache.h"
+
+#define MINPAGES		128
+
+/*--------------------------------------------------------------------*/
 
 struct smf_sc {
 	char			*filename;
@@ -122,7 +127,12 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	/* round down to of filesystem blocksize or pagesize */
 	l -= (l % bs);
 
-	assert(l >= bs);
+	if (l < MINPAGES * getpagesize()) {
+		fprintf(stderr,
+		    "Error: size too small, at least %ju needed\n",
+		    (uintmax_t)MINPAGES * getpagesize());
+		exit (2);
+	}
 
 	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
 	    sc->filename, l, l / fsst.f_bsize, l / getpagesize());
@@ -134,6 +144,10 @@ static void
 smf_initfile(struct smf_sc *sc, const char *size, int newfile)
 {
 	smf_calcsize(sc, size, newfile);
+
+	AZ(ftruncate(sc->fd, sc->filesize));
+
+	/* XXX: force block allocation here or in open ? */
 }
 
 static void
@@ -146,6 +160,7 @@ smf_init(struct stevedore *parent, const char *spec)
 
 	sc = calloc(sizeof *sc, 1);
 	assert(sc != NULL);
+	parent->priv = sc;
 
 	/* If no size specified, use 50% of filesystem free space */
 	if (spec == NULL || *spec == '\0')
@@ -221,6 +236,65 @@ smf_init(struct stevedore *parent, const char *spec)
 	smf_initfile(sc, size, 1);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+smf_open_chunk(struct smf_sc *sc, size_t sz, size_t off, size_t *fail, size_t *sum)
+{
+	void *p;
+	size_t h;
+
+	if (sz < getpagesize() * MINPAGES)
+		return;
+
+	if (sz > *fail)
+		return;
+
+	printf("%s(%ju, %ju)\n", __func__, (uintmax_t)sz, (uintmax_t)off);
+	p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
+	    MAP_NOCORE | MAP_NOSYNC | MAP_PRIVATE, sc->fd, off);
+	printf("mmap = %p\n", p);
+	if (p != MAP_FAILED) {
+		(*sum) += sz;
+		return;
+	}
+
+	if (sz < *fail)
+		*fail = sz;
+
+	h = sz / 2;
+	h -= (h % getpagesize());
+
+	smf_open_chunk(sc, h, off, fail, sum);
+	smf_open_chunk(sc, sz - h, off + h, fail, sum);
+}
+
+static void
+smf_open(struct stevedore *st)
+{
+	struct smf_sc *sc;
+	size_t fail = SIZE_T_MAX;
+	size_t sum = 0;
+
+	sc = st->priv;
+
+	if (sc->filesize > SIZE_T_MAX) {
+		sc->filesize = SIZE_T_MAX;
+		fprintf(stderr, "Truncating %s to SIZE_T_MAX %ju\n",
+		    sc->filename, sc->filesize);
+	}
+
+	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);
+	printf("managed to mmap %ju bytes of %ju\n",
+	    (uintmax_t)sum, sc->filesize);
+
+	/* XXX */
+	if (sum < MINPAGES * getpagesize())
+		exit (2);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct storage *
 smf_alloc(struct stevedore *st __unused, unsigned size)
 {
@@ -247,8 +321,8 @@ smf_free(struct storage *s)
 
 struct stevedore smf_stevedore = {
 	"file",
-	smf_init,		/* init */
-	NULL,			/* open */
+	smf_init,
+	smf_open,
 	smf_alloc,
 	smf_free
 };
