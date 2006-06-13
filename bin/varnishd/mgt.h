@@ -14,7 +14,7 @@ void mgt_child_request(mgt_ccb_f *, void *, char **argv, const char *fmt, ...);
 /* tcp.c */
 int open_tcp(const char *port);
 
-#include "_stevedore.h"
+#include "stevedore.h"
 
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;

@@ -45,7 +45,7 @@ struct storage {
 	struct stevedore	*stevedore;
 };
 
-#include "_stevedore.h"
+#include "stevedore.h"
 
 /*
  * XXX: in the longer term, we want to support multiple stevedores,
