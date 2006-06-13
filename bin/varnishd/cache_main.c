@@ -125,9 +125,9 @@ child_main(void)
 	if (hash->init != NULL)
 		hash->init();
 
-	stevedore = &sma_stevedore;
-	if (stevedore->init != NULL)
-		stevedore->init();
+	stevedore = heritage.stevedore;
+	if (stevedore->open != NULL)
+		stevedore->open(stevedore);
 
 	CVCL_Load(heritage.vcl_file, "boot");
 	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);

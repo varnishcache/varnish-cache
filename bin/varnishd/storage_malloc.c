@@ -17,7 +17,7 @@ struct sma {
 };
 
 static struct storage *
-sma_alloc(unsigned size)
+sma_alloc(struct stevedore *st __unused, unsigned size)
 {
 	struct sma *sma;
 
@@ -41,8 +41,9 @@ sma_free(struct storage *s)
 }
 
 struct stevedore sma_stevedore = {
-	"Malloc",
+	"malloc",
 	NULL,			/* init */
+	NULL,			/* open */
 	sma_alloc,
 	sma_free
 };

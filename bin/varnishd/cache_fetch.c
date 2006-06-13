@@ -33,7 +33,7 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 	cl = strtoumax(b, NULL, 0);
 
-	st = stevedore->alloc(cl);
+	st = stevedore->alloc(stevedore, cl);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
@@ -104,7 +104,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 		q++;
 		if (u == 0)
 			break;
-		st = stevedore->alloc(u);
+		st = stevedore->alloc(stevedore, u);
 		TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 		st->len = u;
 		sp->obj->len += u;
