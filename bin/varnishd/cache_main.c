@@ -122,10 +122,12 @@ child_main(void)
 	assert(eb != NULL);
 
 	hash = &hsl_slinger;
-	hash->init();
+	if (hash->init != NULL)
+		hash->init();
 
 	stevedore = &sma_stevedore;
-	stevedore->init();
+	if (stevedore->init != NULL)
+		stevedore->init();
 
 	CVCL_Load(heritage.vcl_file, "boot");
 	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);
