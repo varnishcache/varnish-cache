@@ -159,17 +159,13 @@ CacheWorker(void *priv)
 		if (http_GetHdr(sp->http, "Connection", &b) &&
 		    !strcmp(b, "close")) {
 			VSL(SLT_SessionClose, sp->fd, "hdr");
-			close(sp->fd);
-			sp->fd = -1;
+			vca_close_session(sp);
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
 		sp->vcl = NULL;
-		if (sp->fd < 0) 
-			vca_retire_session(sp);
-		else
-			vca_recycle_session(sp);
+		vca_return_session(sp);
 	}
 }
 
@@ -179,7 +175,8 @@ DealWithSession(void *arg, int good)
 	struct sess *sp = arg;
 
 	if (!good) {
-		vca_retire_session(sp);
+		vca_close_session(sp);
+		vca_return_session(sp);
 		return;
 	}
 	AZ(pthread_mutex_lock(&sessmtx));
