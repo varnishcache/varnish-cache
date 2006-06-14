@@ -78,8 +78,12 @@ DeliverSession(struct worker *w, struct sess *sp)
 	    "\r\n", sp->obj->len);
 
 	vca_write(sp, buf, strlen(buf));
-	TAILQ_FOREACH(st, &sp->obj->store, list)
-		vca_write(sp, st->ptr, st->len);
+	TAILQ_FOREACH(st, &sp->obj->store, list) {
+		if (st->stevedore->send != NULL)
+			st->stevedore->send(st, sp);
+		else
+			vca_write(sp, st->ptr, st->len);
+	}
 	vca_flush(sp);
 	return (1);
 }
