@@ -143,6 +143,13 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 	return (1);
 }
 
+int
+http_GetStatus(struct http *hp)
+{
+
+	return (strtoul(hp->status, NULL /* XXX */, 10));
+}
+
 /*--------------------------------------------------------------------*/
 
 void
