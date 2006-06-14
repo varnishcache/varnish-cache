@@ -60,9 +60,8 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 	}
 
 	http_BuildSbuf(2, w->sb, hp);
-	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
-	vca_write(sp, st->ptr, st->len);
-	vca_flush(sp);
+
+	vca_write_obj(sp, w->sb);
 
 	hash->deref(sp->obj);
 	return (0);
@@ -126,11 +125,8 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	}
 
 	http_BuildSbuf(2, w->sb, hp);
-	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
-	TAILQ_FOREACH(st, &sp->obj->store, list)
-		vca_write(sp, st->ptr, st->len);
-	vca_flush(sp);
+	vca_write_obj(sp, w->sb);
 
 	hash->deref(sp->obj);
 

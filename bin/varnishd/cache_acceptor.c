@@ -84,6 +84,21 @@ vca_write(struct sess *sp, void *ptr, size_t len)
 	sp->mem->liov += len;
 }
 
+void
+vca_write_obj(struct sess *sp, struct sbuf *hdr)
+{
+	struct storage *st;
+
+	vca_write(sp, sbuf_data(hdr), sbuf_len(hdr));
+	TAILQ_FOREACH(st, &sp->obj->store, list) {
+		if (st->stevedore->send != NULL)
+			st->stevedore->send(st, sp);
+		else
+			vca_write(sp, st->ptr, st->len);
+	}
+	vca_flush(sp);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
