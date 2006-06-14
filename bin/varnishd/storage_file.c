@@ -19,6 +19,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 
 #include "vcl_lang.h"
 #include "libvarnish.h"
@@ -409,7 +410,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 
 	if (sz < *fail && sz < SIZE_T_MAX) {
 		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
-		    MAP_NOCORE | MAP_NOSYNC | MAP_PRIVATE, sc->fd, off);
+		    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, off);
 		if (p != MAP_FAILED) {
 			(*sum) += sz;
 			new_smf(sc, p, off, sz);
@@ -459,8 +460,11 @@ smf_alloc(struct stevedore *st, unsigned size)
 	smf->s.priv = smf;
 	smf->s.ptr = smf->ptr;
 	smf->s.len = size;
+	smf->s.stevedore = st;
 	return (&smf->s);
 }
+
+/*--------------------------------------------------------------------*/
 
 static void
 smf_free(struct storage *s)
@@ -471,10 +475,34 @@ smf_free(struct storage *s)
 	free_smf(smf);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+smf_send(struct storage *st, struct sess *sp)
+{
+	struct smf *smf;
+	int i;
+	off_t sent;
+
+	smf = st->priv;
+
+	printf("SEND   %12p  %12p %12jx %12jx\n", (void*)smf, (void*)smf->ptr, (uintmax_t)smf->offset, (uintmax_t)smf->size);
+	vca_flush(sp);
+	i = sendfile(smf->sc->fd,
+	    sp->fd,
+	    smf->offset,
+	    st->len, NULL, &sent, 0);
+	printf("sent i=%d sent=%ju size=%ju\n",
+	    i, (uintmax_t)sent, (uintmax_t)st->len);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct stevedore smf_stevedore = {
 	"file",
 	smf_init,
 	smf_open,
 	smf_alloc,
-	smf_free
+	smf_free,
+	smf_send
 };
