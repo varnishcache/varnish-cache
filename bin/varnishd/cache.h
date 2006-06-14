@@ -60,9 +60,9 @@ extern struct stevedore *stevedore;
 /* cache_acceptor.c */
 void vca_write(struct sess *sp, void *ptr, size_t len);
 void vca_flush(struct sess *sp);
-void *vca_main(void *arg);
 void vca_retire_session(struct sess *sp);
 void vca_recycle_session(struct sess *sp);
+void VCA_Init(void);
 
 /* cache_backend.c */
 void VBE_Init(void);
