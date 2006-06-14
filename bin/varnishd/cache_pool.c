@@ -158,8 +158,7 @@ CacheWorker(void *priv)
 		}
 		if (http_GetHdr(sp->http, "Connection", &b) &&
 		    !strcmp(b, "close")) {
-			VSL(SLT_SessionClose, sp->fd, "hdr");
-			vca_close_session(sp);
+			vca_close_session(sp, "Connection header");
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));
@@ -175,7 +174,7 @@ DealWithSession(void *arg, int good)
 	struct sess *sp = arg;
 
 	if (!good) {
-		vca_close_session(sp);
+		vca_close_session(sp, "no request");
 		vca_return_session(sp);
 		return;
 	}

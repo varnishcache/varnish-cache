@@ -61,7 +61,7 @@ extern struct stevedore *stevedore;
 void vca_write(struct sess *sp, void *ptr, size_t len);
 void vca_flush(struct sess *sp);
 void vca_return_session(struct sess *sp);
-void vca_close_session(struct sess *sp);
+void vca_close_session(struct sess *sp, const char *why);
 void VCA_Init(void);
 
 /* cache_backend.c */
