@@ -68,23 +68,15 @@ LookupSession(struct worker *w, struct sess *sp)
 static int
 DeliverSession(struct worker *w, struct sess *sp)
 {
-	char buf[BUFSIZ];
-	struct storage *st;
 
-	sprintf(buf,
+	sbuf_clear(w->sb);
+	sbuf_printf(w->sb,
 	    "HTTP/1.1 200 OK\r\n"
 	    "Server: Varnish\r\n"
 	    "Content-Length: %u\r\n"
 	    "\r\n", sp->obj->len);
 
-	vca_write(sp, buf, strlen(buf));
-	TAILQ_FOREACH(st, &sp->obj->store, list) {
-		if (st->stevedore->send != NULL)
-			st->stevedore->send(st, sp);
-		else
-			vca_write(sp, st->ptr, st->len);
-	}
-	vca_flush(sp);
+	vca_write_obj(sp, w->sb);
 	return (1);
 }
 
