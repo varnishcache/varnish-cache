@@ -66,8 +66,7 @@ vca_flush(struct sess *sp)
 	if (i != sp->mem->liov) {
 		VSL(SLT_SessionClose, sp->fd, "Premature %d of %d",
 		    i,  sp->mem->liov);
-		close(sp->fd);
-		sp->fd = -1;
+		vca_close_session(sp);
 	}
 	sp->mem->liov = 0;
 	sp->mem->niov = 0;
@@ -178,24 +177,31 @@ vca_main(void *arg)
 	return ("FOOBAR");
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-vca_recycle_session(struct sess *sp)
+vca_close_session(struct sess *sp)
 {
-	VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
-	write(pipes[1], &sp, sizeof sp);
+
+	VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
+	close(sp->fd);
+	sp->fd = -1;
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-vca_retire_session(struct sess *sp)
+vca_return_session(struct sess *sp)
 {
 
-	if (sp->http != NULL)
-		http_Delete(sp->http);
 	if (sp->fd >= 0) {
-		VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
-		close(sp->fd);
+		VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
+		write(pipes[1], &sp, sizeof sp);
+	} else {
+		if (sp->http != NULL)
+			http_Delete(sp->http);
+		free(sp);
 	}
-	free(sp);
 }
 
 /*--------------------------------------------------------------------*/
