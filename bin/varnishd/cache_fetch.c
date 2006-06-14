@@ -161,9 +161,19 @@ FetchSession(struct worker *w, struct sess *sp)
 	event_base_loop(w->eb, 0);
 	http_Dissect(hp, fd, 2);
 
-	/* XXX: fill in object from headers */
-	sp->obj->valid = 1;
-	sp->obj->cacheable = 1;
+	switch (http_GetStatus(hp)) {
+	case 200:
+		/* XXX: fill in object from headers */
+		sp->obj->valid = 1;
+		sp->obj->cacheable = 1;
+		break;
+	case 301:
+		sp->obj->valid = 0;
+		sp->obj->cacheable = 0;
+		break;
+	default:
+		break;
+	}
 
 	sp->handling = HND_Insert;
 	sp->vcl->fetch_func(sp);

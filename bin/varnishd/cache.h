@@ -81,6 +81,7 @@ struct http;
 struct http *http_New(void);
 void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
+int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_GetURL(struct http *hp, char **b);

@@ -205,7 +205,11 @@ void VCL_fetch(VCL_FARGS) {
 	sess->done++;
 }
 
-void VCL_error(VCL_FARGS, unsigned err, const char *str) { 
+void
+VCL_error(VCL_FARGS, unsigned err, const char *str)
+{ 
+
+	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", err, str);
 }
 
 void
