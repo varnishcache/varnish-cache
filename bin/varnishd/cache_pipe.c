@@ -75,6 +75,6 @@ PipeSession(struct worker *w, struct sess *sp)
 	event_add(&e2.ev, NULL);
 	event_base_loop(w->eb, 0);
 	close (fd);
-	vca_close_session(sp);
+	vca_close_session(sp, "pipe");
 	VBE_ClosedFd(fd_token);
 }

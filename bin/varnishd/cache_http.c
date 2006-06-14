@@ -255,10 +255,13 @@ http_read_f(int fd, short event, void *arg)
 	i = read(fd, hp->v, hp->e - hp->v);
 	if (i <= 0) {
 		if (hp->v != hp->s)
-			VSL(SLT_SessionClose, fd,
-			    "remote had %d bytes errno %d", hp->v - hp->s, errno);
+			VSL(SLT_HttpError, fd,
+			    "Received (only) %d bytes, errno %d",
+			    hp->v - hp->s, errno);
+		else if (errno == 0)
+			VSL(SLT_HttpError, fd, "Received nothing");
 		else
-			VSL(SLT_SessionClose, fd, "remote errno %d", errno);
+			VSL(SLT_HttpError, fd, "Received errno %d", errno);
 		hp->t = NULL;
 		event_del(&hp->ev);
 		if (hp->callback != NULL)

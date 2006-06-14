@@ -63,11 +63,8 @@ vca_flush(struct sess *sp)
 	if (sp->fd < 0 || sp->mem->niov == 0)
 		return;
 	i = writev(sp->fd, sp->mem->iov, sp->mem->niov);
-	if (i != sp->mem->liov) {
-		VSL(SLT_SessionClose, sp->fd, "Premature %d of %d",
-		    i,  sp->mem->liov);
-		vca_close_session(sp);
-	}
+	if (i != sp->mem->liov)
+		vca_close_session(sp, "remote closed");
 	sp->mem->liov = 0;
 	sp->mem->niov = 0;
 }
@@ -180,10 +177,10 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 void
-vca_close_session(struct sess *sp)
+vca_close_session(struct sess *sp, const char *why)
 {
 
-	VSL(SLT_SessionClose, sp->fd, "%s", sp->addr);
+	VSL(SLT_SessionClose, sp->fd, why);
 	close(sp->fd);
 	sp->fd = -1;
 }
