@@ -28,14 +28,31 @@
 
 /*--------------------------------------------------------------------*/
 
+struct smf {
+	struct storage		s;
+	struct smf_sc		*sc;
+
+	int			alloc;
+	time_t			age;
+
+	off_t			size;
+	off_t			offset;
+	unsigned char		*ptr;
+
+	TAILQ_ENTRY(smf)	order;
+	TAILQ_ENTRY(smf)	status;
+};
+
+TAILQ_HEAD(smfhead, smf);
+
 struct smf_sc {
 	char			*filename;
 	int			fd;
+	int			pagesize;
 	uintmax_t		filesize;
-};
-
-struct smf {
-	struct storage		s;
+	struct smfhead		order;
+	struct smfhead		free;
+	struct smfhead		used;
 };
 
 /*--------------------------------------------------------------------*/
@@ -55,7 +72,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AZ(fstatfs(sc->fd, &fsst));
 
 	/* We use units of the larger of filesystem blocksize and pagesize */
-	bs = getpagesize();
+	bs = sc->pagesize;
 	if (bs < fsst.f_bsize)
 		bs = fsst.f_bsize;
 
@@ -127,15 +144,15 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	/* round down to of filesystem blocksize or pagesize */
 	l -= (l % bs);
 
-	if (l < MINPAGES * getpagesize()) {
+	if (l < MINPAGES * sc->pagesize) {
 		fprintf(stderr,
 		    "Error: size too small, at least %ju needed\n",
-		    (uintmax_t)MINPAGES * getpagesize());
+		    (uintmax_t)MINPAGES * sc->pagesize);
 		exit (2);
 	}
 
 	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
-	    sc->filename, l, l / fsst.f_bsize, l / getpagesize());
+	    sc->filename, l, l / fsst.f_bsize, l / sc->pagesize);
 
 	sc->filesize = l;
 }
@@ -160,6 +177,11 @@ smf_init(struct stevedore *parent, const char *spec)
 
 	sc = calloc(sizeof *sc, 1);
 	assert(sc != NULL);
+	TAILQ_INIT(&sc->order);
+	TAILQ_INIT(&sc->free);
+	TAILQ_INIT(&sc->used);
+	sc->pagesize = getpagesize();
+
 	parent->priv = sc;
 
 	/* If no size specified, use 50% of filesystem free space */
@@ -236,6 +258,137 @@ smf_init(struct stevedore *parent, const char *spec)
 	smf_initfile(sc, size, 1);
 }
 
+/*--------------------------------------------------------------------
+ * Allocate a range from the first free range that is large enough.
+ */
+
+static struct smf *
+alloc_smf(struct smf_sc *sc, size_t bytes)
+{
+	struct smf *sp, *sp2;
+
+	bytes += (sc->pagesize - 1);
+	bytes &= ~(sc->pagesize - 1);
+	TAILQ_FOREACH(sp, &sc->free, status) {
+		if (sp->size >= bytes)
+			break;
+	}
+	if (sp == NULL)
+		return (sp);
+
+	if (sp->size == bytes) {
+		TAILQ_REMOVE(&sc->free, sp, status);
+		sp->alloc = 1;
+		TAILQ_INSERT_TAIL(&sc->used, sp, status);
+		printf("ALLOC   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
+		return (sp);
+	}
+
+	/* Split from front */
+	sp2 = malloc(sizeof *sp2);
+	assert(sp2 != NULL);
+	*sp2 = *sp;
+
+	sp->offset += bytes;
+	sp->ptr += bytes;
+	sp->size -= bytes;
+
+	sp2->size = bytes;
+	sp2->alloc = 1;
+	TAILQ_INSERT_BEFORE(sp, sp2, order);
+	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
+	printf("SPLIT   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
+	printf("ALLOC   %12p  %12p %12jx %12jx\n", (void*)sp2, (void*)sp2->ptr, (uintmax_t)sp2->offset, (uintmax_t)sp2->size);
+	return (sp2);
+}
+
+/*--------------------------------------------------------------------
+ * Free a range.  Attemt merge forward and backward, then sort into 
+ * free list according to age.
+ */
+
+static void
+free_smf(struct smf *sp)
+{
+	struct smf *sp2;
+	struct smf_sc *sc = sp->sc;
+
+	printf("FREE   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
+	TAILQ_REMOVE(&sc->used, sp, status);
+	sp->alloc = 0;
+
+	sp2 = TAILQ_NEXT(sp, order);
+	if (sp2 != NULL &&
+	    sp2->alloc == 0 &&
+	    (sp2->ptr == sp->ptr + sp->size) &&
+	    (sp2->offset == sp->offset + sp->size)) {
+		sp->size += sp2->size;
+		TAILQ_REMOVE(&sc->order, sp2, order);
+		TAILQ_REMOVE(&sc->free, sp2, status);
+		free(sp2);
+		printf("MERGEN %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
+	}
+
+	sp2 = TAILQ_PREV(sp, smfhead, order);
+	if (sp2 != NULL &&
+	    sp2->alloc == 0 &&
+	    (sp->ptr == sp2->ptr + sp2->size) &&
+	    (sp->offset == sp2->offset + sp2->size)) {
+		sp2->size += sp->size;
+		sp2->age = sp->age;
+		TAILQ_REMOVE(&sc->order, sp, order);
+		free(sp);
+		TAILQ_REMOVE(&sc->free, sp2, status);
+		sp = sp2;
+		printf("MERGEP %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
+	}
+
+	TAILQ_FOREACH(sp2, &sc->free, status) {
+		if (sp->age > sp2->age ||
+		    (sp->age == sp2->age && sp->offset < sp2->offset)) {
+			TAILQ_INSERT_BEFORE(sp2, sp, order);
+			break;
+		}
+	}
+	if (sp2 == NULL)
+		TAILQ_INSERT_TAIL(&sc->free, sp, status);
+}
+
+/*--------------------------------------------------------------------
+ * Insert a newly created range as busy, then free it to do any collapses
+ */
+
+static void
+new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
+{
+	struct smf *sp, *sp2;
+
+	sp = calloc(sizeof *sp, 1);
+	assert(sp != NULL);
+	printf("NEW    %12p  %12p %12jx %12jx\n", (void*)sp, (void*)ptr, (uintmax_t)off, (uintmax_t)len);
+
+	sp->sc = sc;
+
+	sp->size = len;
+	sp->ptr = ptr;
+	sp->offset = off;
+
+	sp->alloc = 1;
+
+	TAILQ_FOREACH(sp2, &sc->order, order) {
+		if (sp->ptr < sp2->ptr) {
+			TAILQ_INSERT_BEFORE(sp2, sp, order);
+			break;
+		}
+	}
+	if (sp2 == NULL)
+		TAILQ_INSERT_TAIL(&sc->order, sp, order);
+
+	TAILQ_INSERT_HEAD(&sc->used, sp, status);
+
+	free_smf(sp);
+}
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -251,17 +404,15 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	void *p;
 	off_t h;
 
-	if (*fail < getpagesize() * MINPAGES)
+	if (*fail < sc->pagesize * MINPAGES)
 		return;
 
 	if (sz < *fail && sz < SIZE_T_MAX) {
 		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
 		    MAP_NOCORE | MAP_NOSYNC | MAP_PRIVATE, sc->fd, off);
 		if (p != MAP_FAILED) {
-			printf("%12p...%12p  %12jx...%12jx %12jx\n",
-			    p, (u_char *)p + sz,
-			    off, off + sz, sz);
 			(*sum) += sz;
+			new_smf(sc, p, off, sz);
 			return;
 		}
 	}
@@ -272,7 +423,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	h = sz / 2;
 	if (h > SIZE_T_MAX)
 		h = SIZE_T_MAX;
-	h -= (h % getpagesize());
+	h -= (h % sc->pagesize);
 
 	smf_open_chunk(sc, h, off, fail, sum);
 	smf_open_chunk(sc, sz - h, off + h, fail, sum);
@@ -299,15 +450,14 @@ smf_open(struct stevedore *st)
 /*--------------------------------------------------------------------*/
 
 static struct storage *
-smf_alloc(struct stevedore *st __unused, unsigned size)
+smf_alloc(struct stevedore *st, unsigned size)
 {
 	struct smf *smf;
 
-	smf = calloc(sizeof *smf, 1);
+	smf = alloc_smf(st->priv, size);
 	assert(smf != NULL);
 	smf->s.priv = smf;
-	smf->s.ptr = malloc(size);
-	assert(smf->s.ptr != NULL);
+	smf->s.ptr = smf->ptr;
 	smf->s.len = size;
 	return (&smf->s);
 }
@@ -318,8 +468,7 @@ smf_free(struct storage *s)
 	struct smf *smf;
 
 	smf = s->priv;
-	free(smf->s.ptr);
-	free(smf);
+	free_smf(smf);
 }
 
 struct stevedore smf_stevedore = {
