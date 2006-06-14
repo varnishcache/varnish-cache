@@ -24,7 +24,6 @@
 #include "cli_event.h"
 
 static struct event ev_keepalive;
-static pthread_t vca_thread;
 
 struct hash_slinger	*hash;
 struct stevedore	*stevedore;
@@ -116,7 +115,7 @@ child_main(void)
 	VSL_Init();
 	CacheInitPool();
 
-	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
+	VCA_Init();
 
 	eb = event_init();
 	assert(eb != NULL);

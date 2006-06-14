@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/uio.h>
 #include <sys/types.h>
@@ -32,6 +33,8 @@
 static struct event_base *evb;
 static struct event pipe_e;
 static int pipes[2];
+
+static pthread_t vca_thread;
 
 #define SESS_IOVS	5
 
@@ -137,7 +140,7 @@ accept_f(int fd, short event, void *arg)
 	http_RecvHead(sp->http, sp->fd, evb, DealWithSession, sp);
 }
 
-void *
+static void *
 vca_main(void *arg)
 {
 	unsigned u;
@@ -193,4 +196,13 @@ vca_retire_session(struct sess *sp)
 		close(sp->fd);
 	}
 	free(sp);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCA_Init(void)
+{
+
+	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
 }
