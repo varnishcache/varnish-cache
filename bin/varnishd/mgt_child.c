@@ -99,7 +99,8 @@ send_req(void)
 	cr = TAILQ_FIRST(&creqhead);
 	if (cr == NULL)
 		return;
-	printf("Send Request <%s>\n", cr->req);
+	if (0)
+		printf("Send Request <%s>\n", cr->req);
 	evbuffer_add_printf(child_cli1->output, "%s", cr->req);
 	for (u = 0; cr->argv != NULL && cr->argv[u] != NULL; u++) {
 		evbuffer_add_printf(child_cli1->output, " ");
@@ -173,7 +174,6 @@ cli_excb(struct bufferevent *bev, short what, void *arg)
 static void
 child_pingpong_ccb(unsigned u, const char *r, void *priv)
 {
-	printf("%s(%u, \"%s\", %p)\n", __func__, u, r, priv);
 	/* XXX: reset keepalive timer */
 }
 
@@ -184,7 +184,6 @@ child_pingpong(int a, short b, void *c)
 	time_t t;
 	struct timeval tv;
 
-	printf("%s(%d, %d, %p)\n", __func__, a, b, c);
 	time(&t);
 	mgt_child_request(child_pingpong_ccb, NULL, NULL, "ping %ld", t);
 	if (1) {
