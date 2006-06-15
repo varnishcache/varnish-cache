@@ -76,7 +76,6 @@ cli_func_ping(struct cli *cli, char **av, void *priv)
 	arm_keepalive();
 	if (av[2] != NULL) {
 		/* XXX: check clock skew is pointless here */
-		printf("Got your ping %s\n", av[2]);
 	}
 	time(&t);
 	cli_out(cli, "PONG %ld\n", t);
