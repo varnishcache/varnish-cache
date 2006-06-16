@@ -55,7 +55,7 @@ HTTPH("Retry-After",		H_Retry_After,		2, 0, 0, 0, 0)	/* RFC2616 14.37 */
 HTTPH("Server",			H_Server,		2, 0, 0, 0, 0)	/* RFC2616 14.38 */
 HTTPH("TE",			H_TE,			1, 0, 0, 0, 0)	/* RFC2616 14.39 */
 HTTPH("Trailer",		H_Trailer,		1, 0, 0, 0, 0)	/* RFC2616 14.40 */
-HTTPH("Transfer-Encoding", 	H_Transfer_Encoding,	2, 0, 0, 0, 0)	/* RFC2616 14.41 */
+HTTPH("Transfer-Encoding", 	H_Transfer_Encoding,	2, 3, 0, 0, 0)	/* RFC2616 14.41 */
 HTTPH("Upgrade", 		H_Upgrade,		2, 0, 0, 0, 0)	/* RFC2616 14.42 */
 HTTPH("User-Agent",		H_User_Agent,		1, 0, 0, 0, 0)	/* RFC2616 14.43 */
 HTTPH("Vary",			H_Vary,			2, 0, 0, 0, 0)	/* RFC2616 14.44 */
