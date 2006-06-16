@@ -268,8 +268,6 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 {
 	struct smf *sp, *sp2;
 
-	bytes += (sc->pagesize - 1);
-	bytes &= ~(sc->pagesize - 1);
 	TAILQ_FOREACH(sp, &sc->free, status) {
 		if (sp->size >= bytes)
 			break;
@@ -454,14 +452,27 @@ static struct storage *
 smf_alloc(struct stevedore *st, unsigned size)
 {
 	struct smf *smf;
+	struct smf_sc *sc = st->priv;
 
-	smf = alloc_smf(st->priv, size);
+	size += (sc->pagesize - 1);
+	size &= ~(sc->pagesize - 1);
+	smf = alloc_smf(sc, size);
 	assert(smf != NULL);
+	smf->s.space = size;
 	smf->s.priv = smf;
 	smf->s.ptr = smf->ptr;
-	smf->s.len = size;
+	smf->s.len = 0;
 	smf->s.stevedore = st;
 	return (&smf->s);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+smf_trim(struct storage *s, size_t size)
+{
+
+	/* XXX: implement */
 }
 
 /*--------------------------------------------------------------------*/
@@ -503,6 +514,7 @@ struct stevedore smf_stevedore = {
 	smf_init,
 	smf_open,
 	smf_alloc,
+	smf_trim,
 	smf_free,
 	smf_send
 };
