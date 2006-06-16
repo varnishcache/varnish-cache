@@ -34,6 +34,8 @@ struct object {
 	unsigned		busy;
 	unsigned		len;
 
+	char			*header;
+
 	TAILQ_HEAD(, storage)	store;
 };
 
