@@ -27,6 +27,7 @@ sma_alloc(struct stevedore *st __unused, unsigned size)
 	sma->s.ptr = malloc(size);
 	assert(sma->s.ptr != NULL);
 	sma->s.len = size;
+	sma->s.space = size;
 	return (&sma->s);
 }
 
@@ -45,5 +46,6 @@ struct stevedore sma_stevedore = {
 	NULL,			/* init */
 	NULL,			/* open */
 	sma_alloc,
+	NULL,			/* trim */
 	sma_free
 };
