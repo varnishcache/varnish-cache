@@ -41,6 +41,7 @@ struct storage {
 	TAILQ_ENTRY(storage)	list;
 	unsigned char		*ptr;
 	unsigned		len;
+	unsigned		space;
 	void			*priv;
 	struct stevedore	*stevedore;
 };
@@ -81,6 +82,7 @@ struct http;
 struct http *http_New(void);
 void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
+int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
@@ -124,3 +126,7 @@ cli_func_t	cli_func_config_load;
 cli_func_t	cli_func_config_unload;
 cli_func_t	cli_func_config_use;
 #endif
+
+/* rfc2616.c */
+void RFC2616_Age(struct http *hp, time_t, time_t);
+

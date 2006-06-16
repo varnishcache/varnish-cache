@@ -71,10 +71,9 @@ DeliverSession(struct worker *w, struct sess *sp)
 
 	sbuf_clear(w->sb);
 	sbuf_printf(w->sb,
-	    "HTTP/1.1 200 OK\r\n"
-	    "Server: Varnish\r\n"
+	    "%sServer: Varnish\r\n"
 	    "Content-Length: %u\r\n"
-	    "\r\n", sp->obj->len);
+	    "\r\n", sp->obj->header, sp->obj->len);
 
 	vca_write_obj(sp, w->sb);
 	return (1);
