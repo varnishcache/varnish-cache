@@ -422,6 +422,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned		busy;\n", f);
 	fputs("	unsigned		len;\n", f);
 	fputs("\n", f);
+	fputs("	char			*header;\n", f);
+	fputs("\n", f);
 	fputs("	TAILQ_HEAD(, storage)	store;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
