@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <inttypes.h>
 #include <unistd.h>
 #include <string.h>
@@ -22,6 +23,17 @@
 #include "vcl_lang.h"
 #include "cache.h"
 
+/*
+ * Chunked encoding is a hack.  We prefer to have a single or a few
+ * large storage objects, and a terribly long list of small ones.
+ * If our stevedore can trim, we alloc big chunks and trim the last one
+ * at the end know the result.
+ *
+ * Good testcase: http://www.washingtonpost.com/
+ */
+#define CHUNK_PREALLOC		(128 * 1024)
+
+/*--------------------------------------------------------------------*/
 static int
 fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *b)
 {
@@ -45,7 +57,6 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 	if (http_GetTail(hp, cl, &b, &e)) {
 		i = e - b;
-		VSL(SLT_Debug, 0, "Fetch_Tail %jd %d", cl, i);
 		memcpy(p, b, i);
 		p += i;
 		cl -= i;
@@ -53,7 +64,6 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 	while (cl != 0) {
 		i = read(fd, p, cl);
-		VSL(SLT_Debug, 0, "Fetch_Read %jd %d", cl, i);
 		assert(i > 0);
 		p += i;
 		cl -= i;
@@ -68,6 +78,9 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 }
 
+/*--------------------------------------------------------------------*/
+/* XXX: Cleanup.  It must be possible somehow :-( */
+
 static int
 fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 {
@@ -75,7 +88,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	char *b, *q, *e;
 	unsigned char *p;
 	struct storage *st;
-	unsigned u;
+	unsigned u, v;
 	char buf[20];
 	char *bp, *be;
 
@@ -84,45 +97,91 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	i = fcntl(fd, F_SETFL, i);
 
 	be = buf + sizeof buf;
+	bp = buf;
+	st = NULL;
 	while (1) {
-		bp = buf;
 		if (http_GetTail(hp, be - bp, &b, &e)) {
 			memcpy(bp, b, e - b);
 			bp += e - b;
+			*bp = '\0';
 		} else {
 			i = read(fd, bp, be - bp);
 			assert(i >= 0);
 			bp += i;
+			*bp = '\0';
 		}
 		u = strtoul(buf, &q, 16);
-		if (q == NULL || (*q != '\n' && *q != '\r'))
+		if (q == NULL || q == buf)
 			continue;
+		assert(isspace(*q));
+		while (*q == '\t' || *q == ' ')
+			q++;
 		if (*q == '\r')
 			q++;
 		assert(*q == '\n');
 		q++;
 		if (u == 0)
 			break;
-		st = stevedore->alloc(stevedore, u);
-		TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-		st->len = u;
 		sp->obj->len += u;
-		p = st->ptr;
-		memcpy(p, q, bp - q);
-		p += bp - q;
-		u -= bp - q;
-		if (http_GetTail(hp, u, &b, &e)) {
-			memcpy(p, b, e - b);
-			p += e - b;
-			u -= e - b;
-		}
+
 		while (u > 0) {
-			i = read(fd, p, u);
-			assert(i > 0);
-			u -= i;
-			p += i;
+			if (st != NULL && st->len < st->space) {
+				p = st->ptr + st->len;
+			} else {
+				st = stevedore->alloc(stevedore,
+				    stevedore->trim == NULL ? u : CHUNK_PREALLOC);
+				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+				p = st->ptr;
+			}
+			v = st->space - st->len;
+			if (v > u)
+				v = u;
+
+			i = bp - q;
+			if (i == 0) {
+			} else if (v > i) {
+				memcpy(p, q, i);
+				p += i;
+				st->len += i;
+				u -= i;
+				v -= i;
+				q = bp = buf;
+			} else if (i >= v) {
+				memcpy(p, q, v);
+				p += v;
+				st->len += i;
+				q += v;
+				u -= v;
+				v -= v;
+				if (u == 0 && bp > q) {
+					memcpy(buf, q, bp - q);
+					q = bp = buf + (bp - q);
+				}
+			}
+			if (u == 0)
+				break;
+			if (v == 0)
+				continue;
+			if (http_GetTail(hp, v, &b, &e)) {
+				memcpy(p, b, e - b);
+				p += e - b;
+				st->len += e - b;
+				v -= e - b;
+				u -= e - b;
+			}
+			while (v > 0) {
+				i = read(fd, p, v);
+				assert(i > 0);
+				st->len += i;
+				v -= i;
+				u -= i;
+				p += i;
+			}
 		}
 	}
+
+	if (st != NULL && stevedore->trim != NULL)
+		stevedore->trim(st, st->len);
 
 	http_BuildSbuf(2, w->sb, hp);
 
@@ -141,6 +200,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	void *fd_token;
 	struct http *hp;
 	char *b;
+	time_t t_req, t_resp;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
@@ -150,6 +210,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	http_BuildSbuf(1, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
+	time(&t_req);
 
 	/* XXX: copy any contents */
 
@@ -159,15 +220,21 @@ FetchSession(struct worker *w, struct sess *sp)
 	 */
 	http_RecvHead(hp, fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
+	time(&t_resp);
 	http_Dissect(hp, fd, 2);
+
+	RFC2616_Age(hp, t_req, t_resp);
 
 	switch (http_GetStatus(hp)) {
 	case 200:
+	case 301:
+		http_BuildSbuf(3, w->sb, hp);
 		/* XXX: fill in object from headers */
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
+		sp->obj->header = strdup(sbuf_data(w->sb));
 		break;
-	case 301:
+	case 391:
 		sp->obj->valid = 0;
 		sp->obj->cacheable = 0;
 		break;

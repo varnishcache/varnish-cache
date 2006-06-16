@@ -102,6 +102,39 @@ http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 }
 
 int
+http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr)
+{
+	char *h;
+	int fl;
+
+	if (!http_GetHdr(hp, hdr, &h))
+		return (0);
+	fl = strlen(field);
+	while (*h) {
+		if (isspace(*h)) {
+			h++;
+			continue;
+		}
+		if (*h == ',') {
+			h++;
+			continue;
+		}
+		if (memcmp(h, field, fl) ||
+		    isalpha(h[fl]) || h[fl] == '-') {
+			while (*h && !(isspace(*h) || *h == ','))
+				h++;
+			continue;
+		}
+		if (h[fl] == '=')
+			*ptr = &h[fl + 1];
+		else
+			*ptr = NULL;
+		return (1);
+	}
+	return (0);
+}
+
+int
 http_HdrIs(struct http *hp, const char *hdr, const char *val)
 {
 	char *p;
@@ -356,7 +389,7 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 
 	sbuf_clear(sb);
 	assert(sb != NULL);
-	if (resp == 2) {
+	if (resp == 2 || resp == 3) {
 		sbuf_cat(sb, hp->proto);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->status);
@@ -382,6 +415,7 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");
 	}
-	sbuf_cat(sb, "\r\n");
+	if (resp != 3)
+		sbuf_cat(sb, "\r\n");
 	sbuf_finish(sb);
 }
