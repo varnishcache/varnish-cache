@@ -198,10 +198,12 @@ VCL_error(VCL_FARGS, unsigned err, const char *str)
 }
 
 void
-VCL_count(unsigned u)
+VCL_count(struct sess *sp, unsigned u)
 {
 	
-	VSL(SLT_VCL, 0, "%u", u);
+	VSL(SLT_VCL, 0, "%u %d.%d", u,
+	    sp->vcl->ref[u].line,
+	    sp->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/

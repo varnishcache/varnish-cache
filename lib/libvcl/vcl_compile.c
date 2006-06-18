@@ -272,7 +272,7 @@ _Expect(struct tokenlist *tl, unsigned tok, int line)
 
 #define C(tl, sep)	do {				\
 	I(tl);						\
-	sbuf_printf(tl->fc, "VCL_count(%u)%s\n", ++tl->cnt, sep);	\
+	sbuf_printf(tl->fc, "VCL_count(sess, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt; 				\
 } while (0)
 	

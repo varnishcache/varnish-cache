@@ -490,7 +490,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("#define VCL_FARGS	struct sess *sess\n", f);
 	fputs("#define VCL_PASS_ARGS	sess\n", f);
 	fputs("\n", f);
-	fputs("void VCL_count(unsigned);\n", f);
+	fputs("void VCL_count(struct sess *, unsigned);\n", f);
 	fputs("void VCL_no_cache(VCL_FARGS);\n", f);
 	fputs("void VCL_no_new_cache(VCL_FARGS);\n", f);
 	fputs("int ip_match(unsigned, struct vcl_acl *);\n", f);
