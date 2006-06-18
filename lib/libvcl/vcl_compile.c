@@ -694,7 +694,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 	case T_NEQ:
 		I(tl);
 		sbuf_printf(tl->fc, "%sstrcmp(%s, ",
-		    tl->t->tok == T_EQ ? "" : "!", vp->cname);
+		    tl->t->tok == T_EQ ? "!" : "", vp->cname);
 		NextToken(tl);
 		ExpectErr(tl, CSTR);
 		sbuf_printf(tl->fc, "%*.*s)\n",
