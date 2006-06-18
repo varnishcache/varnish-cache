@@ -89,7 +89,8 @@ enum var_type {
 	STRING,
 	IP,
 	HOSTNAME,
-	PORTNAME
+	PORTNAME,
+	HEADER
 };
 
 struct var {
@@ -124,6 +125,7 @@ static struct var vars[] = {
 	{ "req.request",		STRING,	  0,  "\"GET\""	     },
 	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
 	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
+	{ "req.http.",			HEADER,	  0,  NULL },
 #if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
 	{ "req.url.host",		STRING, 0,  "req->url.host" },
@@ -550,6 +552,28 @@ IpVal(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------*/
+static struct var *
+HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
+{
+	char *p;
+	struct var *v;
+	int i;
+
+	v = calloc(sizeof *v, 1);
+	i = t->e - t->b;
+	p = malloc(i + 1);
+	assert(p != NULL);
+	memcpy(p, t->b, i);
+	p[i] = '\0';
+	v->name = p;
+	v->fmt = STRING;
+	asprintf(&p, "VCL_GetHdr(VCL_PASS_ARGS, \"%s\")", v->name + vh->len);
+	assert(p != NULL);
+	v->cname = p;
+	return (v);
+}
+
+/*--------------------------------------------------------------------*/
 
 static struct var *
 FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
@@ -557,10 +581,15 @@ FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
 	struct var *v;
 
 	for (v = vl; v->name != NULL; v++) {
-		if (t->e - t->b != v->len)
+		if (v->fmt == HEADER  && t->e - t->b <= v->len)
 			continue;
-		if (!memcmp(t->b, v->name, v->len))
+		if (v->fmt != HEADER  && t->e - t->b != v->len)
+			continue;
+		if (memcmp(t->b, v->name, v->len))
+			continue;
+		if (v->fmt != HEADER)
 			return (v);
+		return (HeaderVar(tl, t, v));
 	}
 	sbuf_printf(tl->sb, "Unknown variable ");
 	ErrToken(tl, t);
@@ -651,7 +680,6 @@ static void
 Cond_String(struct var *vp, struct tokenlist *tl)
 {
 
-	(void)vp;
 	switch (tl->t->tok) {
 	case '~':
 		I(tl); sbuf_printf(tl->fc, "string_match(%s, ", vp->cname);
@@ -662,8 +690,11 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 			tl->t->e - tl->t->b, tl->t->b);
 		NextToken(tl);
 		break;
+	case T_EQ:
 	case T_NEQ:
-		I(tl); sbuf_printf(tl->fc, "strcmp(%s, ", vp->cname);
+		I(tl);
+		sbuf_printf(tl->fc, "%sstrcmp(%s, ",
+		    tl->t->tok == T_EQ ? "" : "!", vp->cname);
 		NextToken(tl);
 		ExpectErr(tl, CSTR);
 		sbuf_printf(tl->fc, "%*.*s)\n",
@@ -672,11 +703,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		NextToken(tl);
 		break;
 	default:
-		sbuf_printf(tl->sb, "Illegal condition ");
-		ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, " on string variable\n");
-		sbuf_printf(tl->sb, "  only '~' is legal\n");
-		ErrWhere(tl, tl->t);
+		I(tl); sbuf_printf(tl->fc, "%s != (void*)0", vp->cname);
 		break;
 	}
 }
