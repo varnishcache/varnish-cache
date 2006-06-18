@@ -259,3 +259,17 @@ VCL_method(recv,  HND_Error|HND_Pass|HND_Pipe|HND_Lookup)
 VCL_method(miss,  HND_Error|HND_Pass|HND_Pipe|HND_Fetch)
 VCL_method(hit,	  HND_Error|HND_Pass|HND_Pipe|HND_Deliver)
 VCL_method(fetch, HND_Error|HND_Pass|HND_Pipe|HND_Insert)
+
+/*--------------------------------------------------------------------*/
+
+char *
+VCL_GetHdr(VCL_FARGS, const char *n)
+{
+	char *p;
+
+	assert(sess != NULL);
+	assert(sess->http != NULL);
+	if (!http_GetHdr(sess->http, n, &p))
+		return (NULL);
+	return (p);
+}
