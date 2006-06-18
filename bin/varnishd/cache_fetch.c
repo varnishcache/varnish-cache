@@ -242,10 +242,7 @@ FetchSession(struct worker *w, struct sess *sp)
 		break;
 	}
 
-	sp->handling = HND_Insert;
-	sp->vcl->fetch_func(sp);
-
-	assert(sp->handling == HND_Insert);
+	VCL_fetch_method(sp);
 
 	if (http_GetHdr(hp, "Content-Length", &b))
 		cls = fetch_straight(w, sp, fd, hp, b);

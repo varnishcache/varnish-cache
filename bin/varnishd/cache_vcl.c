@@ -191,22 +191,6 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_pass(VCL_FARGS)
-{
-
-	sess->handling = HND_Pass;
-	sess->done++;
-}
-
-void VCL_insert(VCL_FARGS) { }
-void VCL_deliver(VCL_FARGS) { }
-
-void VCL_fetch(VCL_FARGS) { 
-	sess->handling = HND_Fetch;
-	sess->done++;
-}
-
-void
 VCL_error(VCL_FARGS, unsigned err, const char *str)
 { 
 
@@ -220,3 +204,58 @@ VCL_count(unsigned u)
 	VSL(SLT_VCL, 0, "%u", u);
 }
 
+/*--------------------------------------------------------------------*/
+
+static const char *
+HandlingName(unsigned u)
+{
+
+	switch (u) {
+	case HND_Error:		return ("Error");
+	case HND_Pass:		return ("Pass");
+	case HND_Pipe:		return ("Pipe");
+	case HND_Lookup:	return ("Lookup");
+	case HND_Fetch:		return ("Fetch");
+	case HND_Insert:	return ("Insert");
+	case HND_Deliver:	return ("Deliver");
+	default:		return (NULL);
+	}
+}
+
+static void
+CheckHandling(struct sess *sp, const char *func, unsigned bitmap)
+{
+	unsigned u;
+	const char *n;
+
+	u = sp->handling;
+	n = HandlingName(u);
+	if (n != NULL)
+		VSL(SLT_Handling, sp->fd, "%s(): %s", func, n);
+	else
+		VSL(SLT_Handling, sp->fd, "%s(): Illegal: 0x%x", func, u);
+	if (u & (u - 1))
+		VSL(SLT_Debug, sp->fd,
+		    "Illegal handling after %s function: 0x%x", func, u);
+	else if (!(u & bitmap))
+		VSL(SLT_Debug, sp->fd,
+		    "Wrong handling after %s function: 0x%x", func, u);
+	else
+		return;
+	sp->handling = HND_Error;
+}
+
+#define VCL_method(func, bitmap) 		\
+void						\
+VCL_##func##_method(struct sess *sp)		\
+{						\
+						\
+	sp->handling = 0;			\
+	sp->vcl->func##_func(sp);		\
+	CheckHandling(sp, #func, (bitmap));	\
+}
+
+VCL_method(recv,  HND_Error|HND_Pass|HND_Pipe|HND_Lookup)
+VCL_method(miss,  HND_Error|HND_Pass|HND_Pipe|HND_Fetch)
+VCL_method(hit,	  HND_Error|HND_Pass|HND_Pipe|HND_Deliver)
+VCL_method(fetch, HND_Error|HND_Pass|HND_Pipe|HND_Insert)

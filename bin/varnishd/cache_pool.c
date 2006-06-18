@@ -23,6 +23,8 @@ static TAILQ_HEAD(, sess) shd = TAILQ_HEAD_INITIALIZER(shd);
 
 static pthread_cond_t	shdcnd;
 
+/*--------------------------------------------------------------------*/
+
 static int
 LookupSession(struct worker *w, struct sess *sp)
 {
@@ -31,6 +33,7 @@ LookupSession(struct worker *w, struct sess *sp)
 	MD5_CTX ctx;
 	char *b;
 
+	/* Make sure worker thread has a fresh object at hand */
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);	
 		assert(w->nobj != NULL);
@@ -43,24 +46,15 @@ LookupSession(struct worker *w, struct sess *sp)
 	MD5Update(&ctx, b, strlen(b));
 	MD5Final(key, &ctx);
 	o = hash->lookup(key, w->nobj);
+	sp->obj = o;
 	if (o == w->nobj) {
 		VSL(SLT_Debug, 0, "Lookup new %p %s", o, b);
 		w->nobj = NULL;
+		VCL_miss_method(sp);
 	} else {
+		/* XXX: wait while obj->busy */
 		VSL(SLT_Debug, 0, "Lookup found %p %s", o, b);
-	}
-	/*
-	 * XXX: if obj is busy, park session on it
-	 */
-
-	sp->obj = o;
-	sp->handling = HND_Unclass;
-	sp->vcl->lookup_func(sp);
-	if (sp->handling == HND_Unclass) {
-		if (o->valid && o->cacheable)
-			sp->handling = HND_Deliver;
-		else
-			sp->handling = HND_Pass;
+		VCL_hit_method(sp);
 	}
 	return (0);
 }
@@ -110,13 +104,7 @@ CacheWorker(void *priv)
 
 		sp->backend = sp->vcl->default_backend;
 
-		/*
-		 * Call the VCL recv function.
-		 * Default action is to lookup
-		 */
-		sp->handling = HND_Lookup;
-		
-		sp->vcl->recv_func(sp);
+		VCL_recv_method(sp);
 
 		for (done = 0; !done; ) {
 			switch(sp->handling) {
@@ -142,9 +130,7 @@ CacheWorker(void *priv)
 				done = 1;
 				break;
 			default:
-				VSL(SLT_Handling, sp->fd, "Unclass");
-				assert(sp->handling == HND_Unclass);
-				assert(sp->handling != HND_Unclass);
+				INCOMPL();
 			}
 		}
 		if (http_GetHdr(sp->http, "Connection", &b) &&
