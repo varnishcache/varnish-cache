@@ -892,7 +892,9 @@ Action(struct tokenlist *tl)
 		I(tl);
 		sbuf_printf(tl->fc, "VCL_no_cache(VCL_PASS_ARGS);\n");
 		return;
-	case T_FINISH:
+	case T_DELIVER:
+		I(tl);
+		sbuf_printf(tl->fc, "VCL_deliver(VCL_PASS_ARGS);\n");
 		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
 		I(tl); sbuf_printf(tl->fc, "return;\n");
 		return;
@@ -1564,7 +1566,8 @@ EmitStruct(struct tokenlist *tl)
 	sbuf_printf(tl->fc,
 	    "\t.init_func = VCL_Init,\n");
 	sbuf_printf(tl->fc, "\t.recv_func = VCL_function_vcl_recv,\n");
-	sbuf_printf(tl->fc, "\t.lookup_func = VCL_function_vcl_lookup,\n");
+	sbuf_printf(tl->fc, "\t.hit_func = VCL_function_vcl_hit,\n");
+	sbuf_printf(tl->fc, "\t.miss_func = VCL_function_vcl_miss,\n");
 	sbuf_printf(tl->fc, "\t.fetch_func = VCL_function_vcl_fetch,\n");
 	sbuf_printf(tl->fc,
 	    "\t.default_backend = &VCL_backend_default,\n");
