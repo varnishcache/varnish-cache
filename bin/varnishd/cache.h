@@ -120,6 +120,10 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 void RelVCL(struct VCL_conf *vc);
 struct VCL_conf *GetVCL(void);
 int CVCL_Load(const char *fn, const char *name);
+void VCL_recv_method(struct sess *);
+void VCL_hit_method(struct sess *);
+void VCL_miss_method(struct sess *);
+void VCL_fetch_method(struct sess *);
 #ifdef CLI_PRIV_H
 cli_func_t	cli_func_config_list;
 cli_func_t	cli_func_config_load;
