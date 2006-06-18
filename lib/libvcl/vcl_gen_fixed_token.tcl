@@ -16,12 +16,13 @@ set keywords {
 	pass
 	fetch
 	insert
+	deliver
+
 	call
 	no_cache
 	no_new_cache
 	set
 	rewrite
-	finish
 	switch_config
 }
 

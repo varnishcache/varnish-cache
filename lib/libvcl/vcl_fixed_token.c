@@ -176,6 +176,14 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_CALL);
 		}
 		return (0);
+	case 'd':
+		if (p[0] == 'd' && p[1] == 'e' && p[2] == 'l' && 
+		    p[3] == 'i' && p[4] == 'v' && p[5] == 'e' && 
+		    p[6] == 'r' && !isvar(p[7])) {
+			*q = p + 7;
+			return (T_DELIVER);
+		}
+		return (0);
 	case 'e':
 		if (p[0] == 'e' && p[1] == 'r' && p[2] == 'r' && 
 		    p[3] == 'o' && p[4] == 'r' && !isvar(p[5])) {
@@ -204,12 +212,6 @@ vcl_fixed_token(const char *p, const char **q)
 		    p[3] == 'c' && !isvar(p[4])) {
 			*q = p + 4;
 			return (T_FUNC);
-		}
-		if (p[0] == 'f' && p[1] == 'i' && p[2] == 'n' && 
-		    p[3] == 'i' && p[4] == 's' && p[5] == 'h'
-		     && !isvar(p[6])) {
-			*q = p + 6;
-			return (T_FINISH);
 		}
 		if (p[0] == 'f' && p[1] == 'e' && p[2] == 't' && 
 		    p[3] == 'c' && p[4] == 'h' && !isvar(p[5])) {
@@ -353,6 +355,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
 	vcl_tnames[T_DECR] = "/=";
+	vcl_tnames[T_DELIVER] = "deliver";
 	vcl_tnames[T_DIV] = "/=";
 	vcl_tnames[T_ELSE] = "else";
 	vcl_tnames[T_ELSEIF] = "elseif";
@@ -360,7 +363,6 @@ vcl_init_tnames(void)
 	vcl_tnames[T_EQ] = "==";
 	vcl_tnames[T_ERROR] = "error";
 	vcl_tnames[T_FETCH] = "fetch";
-	vcl_tnames[T_FINISH] = "finish";
 	vcl_tnames[T_FUNC] = "func";
 	vcl_tnames[T_GEQ] = ">=";
 	vcl_tnames[T_IF] = "if";
@@ -498,7 +500,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */\n", f);
 	fputs("	vcl_init_f	*init_func;\n", f);
 	fputs("	vcl_func_f	*recv_func;\n", f);
-	fputs("	vcl_func_f	*lookup_func;\n", f);
+	fputs("	vcl_func_f	*hit_func;\n", f);
+	fputs("	vcl_func_f	*miss_func;\n", f);
 	fputs("	vcl_func_f	*fetch_func;\n", f);
 	fputs("	struct backend	*default_backend;\n", f);
 	fputs("	struct vcl_ref	*ref;\n", f);

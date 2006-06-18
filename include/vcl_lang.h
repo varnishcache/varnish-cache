@@ -110,7 +110,8 @@ struct VCL_conf {
 #define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 	vcl_init_f	*init_func;
 	vcl_func_f	*recv_func;
-	vcl_func_f	*lookup_func;
+	vcl_func_f	*hit_func;
+	vcl_func_f	*miss_func;
 	vcl_func_f	*fetch_func;
 	struct backend	*default_backend;
 	struct vcl_ref	*ref;

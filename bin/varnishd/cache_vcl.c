@@ -199,6 +199,7 @@ VCL_pass(VCL_FARGS)
 }
 
 void VCL_insert(VCL_FARGS) { }
+void VCL_deliver(VCL_FARGS) { }
 
 void VCL_fetch(VCL_FARGS) { 
 	sess->handling = HND_Fetch;
