@@ -91,7 +91,7 @@ struct backend {
 #define VCL_FARGS	struct sess *sess
 #define VCL_PASS_ARGS	sess
 
-void VCL_count(unsigned);
+void VCL_count(struct sess *, unsigned);
 void VCL_no_cache(VCL_FARGS);
 void VCL_no_new_cache(VCL_FARGS);
 int ip_match(unsigned, struct vcl_acl *);
