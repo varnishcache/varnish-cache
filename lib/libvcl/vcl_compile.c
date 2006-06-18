@@ -894,6 +894,7 @@ IfStmt(struct tokenlist *tl)
 			ERRCHK(tl);
 			break;
 		default:
+			C(tl, ";");
 			return;
 		}
 	}
