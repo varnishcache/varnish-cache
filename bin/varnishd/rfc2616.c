@@ -71,6 +71,7 @@ RFC2616_Age(struct http *hp, time_t t_req, time_t t_resp)
 	printf("Expires: %d\n", h_expires);
 	printf("Age: %d\n", h_age);
 	printf("CIAge: %d\n", corrected_initial_age);
+	printf("Max-Age: %d\n", max_age);
 
 
 }
