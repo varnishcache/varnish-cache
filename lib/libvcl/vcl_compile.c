@@ -122,7 +122,7 @@ static struct var be_vars[] = {
 
 
 static struct var vars[] = {
-	{ "req.request",		STRING,	  0,  "\"GET\""	     },
+	{ "req.request",		STRING,	  0,  "VCL_GetReq(VCL_PASS_ARGS)"	     },
 	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
 	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
 	{ "req.http.",			HEADER,	  0,  NULL },

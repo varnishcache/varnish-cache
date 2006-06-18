@@ -273,3 +273,14 @@ VCL_GetHdr(VCL_FARGS, const char *n)
 		return (NULL);
 	return (p);
 }
+
+char *
+VCL_GetReq(VCL_FARGS)
+{
+	char *p;
+
+	assert(sess != NULL);
+	assert(sess->http != NULL);
+	assert(http_GetReq(sess->http, &p));
+	return (p);
+}

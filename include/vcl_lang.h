@@ -101,6 +101,7 @@ void VCL_error(VCL_FARGS, unsigned, const char *);
 int VCL_switch_config(const char *);
 
 char *VCL_GetHdr(VCL_FARGS, const char *);
+char *VCL_GetReq(VCL_FARGS);
 
 typedef void vcl_init_f(void);
 typedef void vcl_func_f(VCL_FARGS);
