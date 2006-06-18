@@ -83,6 +83,7 @@ vcl_default(const char *bflag)
 	    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
 	    "        pass;\n"
 	    "    }\n"
+	    "    lookup;\n"
 	    "}\n"
 	    "\n"
 	    "sub vcl_hit {\n"
