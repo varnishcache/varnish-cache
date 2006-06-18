@@ -893,28 +893,19 @@ Action(struct tokenlist *tl)
 		sbuf_printf(tl->fc, "VCL_no_cache(VCL_PASS_ARGS);\n");
 		return;
 	case T_DELIVER:
-		I(tl);
-		sbuf_printf(tl->fc, "VCL_deliver(VCL_PASS_ARGS);\n");
-		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
-		I(tl); sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Deliver);\n");
+		return;
+	case T_LOOKUP:
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Lookup);\n");
 		return;
 	case T_PASS:
-		I(tl);
-		sbuf_printf(tl->fc, "VCL_pass(VCL_PASS_ARGS);\n");
-		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
-		I(tl); sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Pass);\n");
 		return;
 	case T_FETCH:
-		I(tl);
-		sbuf_printf(tl->fc, "VCL_fetch(VCL_PASS_ARGS);\n");
-		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
-		I(tl); sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Fetch);\n");
 		return;
 	case T_INSERT:
-		I(tl);
-		sbuf_printf(tl->fc, "VCL_insert(VCL_PASS_ARGS);\n");
-		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
-		I(tl); sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Insert);\n");
 		return;
 	case T_ERROR:
 		if (tl->t->tok == CNUM)
@@ -930,8 +921,7 @@ Action(struct tokenlist *tl)
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
-		I(tl); sbuf_printf(tl->fc, "sess->done = 1;\n");
-		I(tl); sbuf_printf(tl->fc, "return;\n");
+		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Error);\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
