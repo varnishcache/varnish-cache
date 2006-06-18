@@ -38,6 +38,15 @@ struct object {
 
 	TAILQ_HEAD(, storage)	store;
 };
+enum handling {
+	HND_Error	= (1 << 0),
+	HND_Pipe	= (1 << 1),
+	HND_Pass	= (1 << 2),
+	HND_Lookup	= (1 << 3),
+	HND_Fetch	= (1 << 4),
+	HND_Insert	= (1 << 5),
+	HND_Deliver	= (1 << 6),
+};
 
 struct sess {
 	int			fd;
@@ -48,15 +57,7 @@ struct sess {
 	/* HTTP request */
 	struct http		*http;
 
-	enum {
-		HND_Unclass,
-		HND_Deliver,
-		HND_Pass,
-		HND_Pipe,
-		HND_Lookup,
-		HND_Fetch,
-		HND_Insert
-	}			handling;
+	enum handling		handling;
 
 	char			done;
 
@@ -97,9 +98,6 @@ int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
 int VCL_rewrite(const char *, const char *);
 void VCL_error(VCL_FARGS, unsigned, const char *);
-void VCL_pass(VCL_FARGS);
-void VCL_fetch(VCL_FARGS);
-void VCL_insert(VCL_FARGS);
 int VCL_switch_config(const char *);
 
 typedef void vcl_init_f(void);
@@ -118,3 +116,10 @@ struct VCL_conf {
 	unsigned	nref;
 	unsigned	busy;
 };
+
+#define VCL_done(sess, hand)			\
+	do {					\
+		sess->handling = hand;		\
+		sess->done = 1;			\
+		return;				\
+	} while (0)

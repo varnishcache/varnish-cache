@@ -231,6 +231,14 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_IF);
 		}
 		return (0);
+	case 'l':
+		if (p[0] == 'l' && p[1] == 'o' && p[2] == 'o' && 
+		    p[3] == 'k' && p[4] == 'u' && p[5] == 'p'
+		     && !isvar(p[6])) {
+			*q = p + 6;
+			return (T_LOOKUP);
+		}
+		return (0);
 	case 'n':
 		if (p[0] == 'n' && p[1] == 'o' && p[2] == '_' && 
 		    p[3] == 'n' && p[4] == 'e' && p[5] == 'w' && 
@@ -370,6 +378,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_INCR] = "+=";
 	vcl_tnames[T_INSERT] = "insert";
 	vcl_tnames[T_LEQ] = "<=";
+	vcl_tnames[T_LOOKUP] = "lookup";
 	vcl_tnames[T_MUL] = "*=";
 	vcl_tnames[T_NEQ] = "!=";
 	vcl_tnames[T_NO_CACHE] = "no_cache";
@@ -428,6 +437,15 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("	TAILQ_HEAD(, storage)	store;\n", f);
 	fputs("};\n", f);
+	fputs("enum handling {\n", f);
+	fputs("	HND_Error	= (1 << 0),\n", f);
+	fputs("	HND_Pipe	= (1 << 1),\n", f);
+	fputs("	HND_Pass	= (1 << 2),\n", f);
+	fputs("	HND_Lookup	= (1 << 3),\n", f);
+	fputs("	HND_Fetch	= (1 << 4),\n", f);
+	fputs("	HND_Insert	= (1 << 5),\n", f);
+	fputs("	HND_Deliver	= (1 << 6),\n", f);
+	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("struct sess {\n", f);
 	fputs("	int			fd;\n", f);
@@ -438,15 +456,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("	/* HTTP request */\n", f);
 	fputs("	struct http		*http;\n", f);
 	fputs("\n", f);
-	fputs("	enum {\n", f);
-	fputs("		HND_Unclass,\n", f);
-	fputs("		HND_Deliver,\n", f);
-	fputs("		HND_Pass,\n", f);
-	fputs("		HND_Pipe,\n", f);
-	fputs("		HND_Lookup,\n", f);
-	fputs("		HND_Fetch,\n", f);
-	fputs("		HND_Insert\n", f);
-	fputs("	}			handling;\n", f);
+	fputs("	enum handling		handling;\n", f);
 	fputs("\n", f);
 	fputs("	char			done;\n", f);
 	fputs("\n", f);
@@ -487,9 +497,6 @@ vcl_output_lang_h(FILE *f)
 	fputs("int string_match(const char *, const char *);\n", f);
 	fputs("int VCL_rewrite(const char *, const char *);\n", f);
 	fputs("void VCL_error(VCL_FARGS, unsigned, const char *);\n", f);
-	fputs("void VCL_pass(VCL_FARGS);\n", f);
-	fputs("void VCL_fetch(VCL_FARGS);\n", f);
-	fputs("void VCL_insert(VCL_FARGS);\n", f);
 	fputs("int VCL_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("typedef void vcl_init_f(void);\n", f);
@@ -508,4 +515,11 @@ vcl_output_lang_h(FILE *f)
 	fputs("	unsigned	nref;\n", f);
 	fputs("	unsigned	busy;\n", f);
 	fputs("};\n", f);
+	fputs("\n", f);
+	fputs("#define VCL_done(sess, hand)			\\\n", f);
+	fputs("	do {					\\\n", f);
+	fputs("		sess->handling = hand;		\\\n", f);
+	fputs("		sess->done = 1;			\\\n", f);
+	fputs("		return;				\\\n", f);
+	fputs("	} while (0)\n", f);
 }

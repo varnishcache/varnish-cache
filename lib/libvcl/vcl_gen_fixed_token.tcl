@@ -13,6 +13,7 @@ set keywords {
 	backend
 
 	error
+	lookup
 	pass
 	fetch
 	insert
@@ -192,6 +193,7 @@ while {[gets $fi a] >= 0} {
 		close $fx
 		continue
 	}
+	regsub -all {\\} $a {\\\\} a
 	puts $fo "\tfputs(\"$a\\n\", f);"
 }
 puts $fo "}"
