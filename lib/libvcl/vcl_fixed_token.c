@@ -500,6 +500,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("int VCL_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("char *VCL_GetHdr(VCL_FARGS, const char *);\n", f);
+	fputs("char *VCL_GetReq(VCL_FARGS);\n", f);
 	fputs("\n", f);
 	fputs("typedef void vcl_init_f(void);\n", f);
 	fputs("typedef void vcl_func_f(VCL_FARGS);\n", f);

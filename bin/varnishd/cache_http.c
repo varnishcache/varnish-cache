@@ -148,6 +148,15 @@ http_HdrIs(struct http *hp, const char *hdr, const char *val)
 }
 
 int
+http_GetReq(struct http *hp, char **b)
+{
+	if (hp->req == NULL)
+		return (0);
+	*b = hp->req;
+	return (1);
+}
+
+int
 http_GetURL(struct http *hp, char **b)
 {
 	if (hp->url == NULL)
