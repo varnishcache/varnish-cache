@@ -76,16 +76,13 @@ struct backend {
 	struct vbe	*vbe;
 };
 
-#define VCL_FARGS	struct sess *sess
-#define VCL_PASS_ARGS	sess
-
 #if 0
 int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
 #endif
 
 typedef void vcl_init_f(void);
-typedef void vcl_func_f(VCL_FARGS);
+typedef void vcl_func_f(struct sess *sp);
 
 struct VCL_conf {
 	unsigned	magic;

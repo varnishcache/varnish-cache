@@ -122,9 +122,9 @@ static struct var be_vars[] = {
 
 
 static struct var vars[] = {
-	{ "req.request",		STRING,	  0,  "VRT_GetReq(VCL_PASS_ARGS)"	     },
-	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
-	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
+	{ "req.request",		STRING,	  0,  "VRT_GetReq(sp)"	     },
+	{ "obj.valid",			BOOL,	  0,  "sp->obj->valid"     },
+	{ "obj.cacheable",		BOOL,	  0,  "sp->obj->cacheable" },
 	{ "req.http.",			HEADER,	  0,  NULL },
 #if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
@@ -272,7 +272,7 @@ _Expect(struct tokenlist *tl, unsigned tok, int line)
 
 #define C(tl, sep)	do {				\
 	I(tl);						\
-	sbuf_printf(tl->fc, "VRT_count(sess, %u)%s\n", ++tl->cnt, sep);	\
+	sbuf_printf(tl->fc, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt; 				\
 } while (0)
 	
@@ -567,7 +567,7 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
-	asprintf(&p, "VRT_GetHdr(VCL_PASS_ARGS, \"%s\")", v->name + vh->len);
+	asprintf(&p, "VRT_GetHdr(sp, \"%s\")", v->name + vh->len);
 	assert(p != NULL);
 	v->cname = p;
 	return (v);
@@ -914,26 +914,26 @@ Action(struct tokenlist *tl)
 	switch (at->tok) {
 	case T_NO_NEW_CACHE:
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_no_new_cache(VCL_PASS_ARGS);\n");
+		sbuf_printf(tl->fc, "VCL_no_new_cache(sp);\n");
 		return;
 	case T_NO_CACHE:
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_no_cache(VCL_PASS_ARGS);\n");
+		sbuf_printf(tl->fc, "VCL_no_cache(sp);\n");
 		return;
 	case T_DELIVER:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Deliver);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Deliver);\n");
 		return;
 	case T_LOOKUP:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Lookup);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Lookup);\n");
 		return;
 	case T_PASS:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Pass);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Pass);\n");
 		return;
 	case T_FETCH:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Fetch);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Fetch);\n");
 		return;
 	case T_INSERT:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Insert);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Insert);\n");
 		return;
 	case T_ERROR:
 		if (tl->t->tok == CNUM)
@@ -941,7 +941,7 @@ Action(struct tokenlist *tl)
 		else
 			a = 0;
 		I(tl);
-		sbuf_printf(tl->fc, "VRT_error(VCL_PASS_ARGS, %u, ", a);
+		sbuf_printf(tl->fc, "VRT_error(sp, %u, ", a);
 		if (tl->t->tok == CSTR) {
 			sbuf_printf(tl->fc, "%*.*s);\n",
 			    tl->t->e - tl->t->b,
@@ -949,7 +949,7 @@ Action(struct tokenlist *tl)
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Error);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, HND_Error);\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
@@ -963,10 +963,10 @@ Action(struct tokenlist *tl)
 		ExpectErr(tl, ID);
 		AddRef(tl, tl->t, R_FUNC);
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_function_%*.*s(VCL_PASS_ARGS);\n",
+		sbuf_printf(tl->fc, "VGC_function_%*.*s(sp);\n",
 		    tl->t->e - tl->t->b,
 		    tl->t->e - tl->t->b, tl->t->b);
-		I(tl); sbuf_printf(tl->fc, "if (sess->done)\n");
+		I(tl); sbuf_printf(tl->fc, "if (sp->done)\n");
 		I(tl); sbuf_printf(tl->fc, "\treturn;\n");
 		NextToken(tl);
 		return;
@@ -1035,7 +1035,7 @@ Action(struct tokenlist *tl)
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				NextToken(tl);
-				sbuf_printf(tl->fc, "= &VCL_backend_%*.*s;\n",
+				sbuf_printf(tl->fc, "= &VGC_backend_%*.*s;\n",
 				    tl->t->e - tl->t->b,
 				    tl->t->e - tl->t->b, tl->t->b);
 				NextToken(tl);
@@ -1187,16 +1187,16 @@ Backend(struct tokenlist *tl)
 	t_be = tl->t;
 	AddDef(tl, tl->t, R_BACKEND);
 	I(tl);
-	sbuf_printf(tl->fh, "static struct backend VCL_backend_%*.*s;\n",
+	sbuf_printf(tl->fh, "static struct backend VGC_backend_%*.*s;\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
-	sbuf_printf(tl->fc, "static struct backend VCL_backend_%*.*s;\n",
+	sbuf_printf(tl->fc, "static struct backend VGC_backend_%*.*s;\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	sbuf_printf(tl->fc, "static void\n");
 	I(tl);
 	sbuf_printf(tl->fc,
-	    "VCL_init_backend_%*.*s (struct backend *backend)\n",
+	    "VGC_init_backend_%*.*s (struct backend *backend)\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	I(tl);
@@ -1291,13 +1291,13 @@ Function(struct tokenlist *tl)
 	NextToken(tl);
 	ExpectErr(tl, ID);
 	AddDef(tl, tl->t, R_FUNC);
-	sbuf_printf(tl->fh, "static void VCL_function_%*.*s (VCL_FARGS);\n",
+	sbuf_printf(tl->fh, "static void VGC_function_%*.*s (struct sess *sp);\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	I(tl);
 	sbuf_printf(tl->fc, "static void\n");
 	I(tl);
-	sbuf_printf(tl->fc, "VCL_function_%*.*s (VCL_FARGS)\n",
+	sbuf_printf(tl->fc, "VGC_function_%*.*s (struct sess *sp)\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	NextToken(tl);
@@ -1550,7 +1550,7 @@ EmitInitFunc(struct tokenlist *tl)
 
 	sbuf_printf(tl->fc,
 	    "\nstatic void\n"
-	    "VCL_Init(void)\n"
+	    "VGC_Init(void)\n"
 	    "{\n\n");
 	
 	TAILQ_FOREACH(r, &tl->refs, list) {
@@ -1561,7 +1561,7 @@ EmitInitFunc(struct tokenlist *tl)
 			break;
 		case R_BACKEND:
 			sbuf_printf(tl->fc,
-			    "\tVCL_init_backend_%*.*s(&VCL_backend_%*.*s);\n",
+			    "\tVGC_init_backend_%*.*s(&VGC_backend_%*.*s);\n",
 			    r->name->e - r->name->b,
 			    r->name->e - r->name->b, r->name->b,
 			    r->name->e - r->name->b,
@@ -1582,13 +1582,13 @@ EmitStruct(struct tokenlist *tl)
 	sbuf_printf(tl->fc,
 	    "\t.magic = VCL_CONF_MAGIC,\n");
 	sbuf_printf(tl->fc,
-	    "\t.init_func = VCL_Init,\n");
-	sbuf_printf(tl->fc, "\t.recv_func = VCL_function_vcl_recv,\n");
-	sbuf_printf(tl->fc, "\t.hit_func = VCL_function_vcl_hit,\n");
-	sbuf_printf(tl->fc, "\t.miss_func = VCL_function_vcl_miss,\n");
-	sbuf_printf(tl->fc, "\t.fetch_func = VCL_function_vcl_fetch,\n");
+	    "\t.init_func = VGC_Init,\n");
+	sbuf_printf(tl->fc, "\t.recv_func = VGC_function_vcl_recv,\n");
+	sbuf_printf(tl->fc, "\t.hit_func = VGC_function_vcl_hit,\n");
+	sbuf_printf(tl->fc, "\t.miss_func = VGC_function_vcl_miss,\n");
+	sbuf_printf(tl->fc, "\t.fetch_func = VGC_function_vcl_fetch,\n");
 	sbuf_printf(tl->fc,
-	    "\t.default_backend = &VCL_backend_default,\n");
+	    "\t.default_backend = &VGC_backend_default,\n");
 	sbuf_printf(tl->fc,
 	    "\t.ref = VGC_ref,\n");
 	sbuf_printf(tl->fc,

@@ -24,7 +24,7 @@
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(VCL_FARGS, unsigned err, const char *str)
+VRT_error(struct sess *sp, unsigned err, const char *str)
 { 
 
 	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", err, str);
@@ -44,13 +44,13 @@ VRT_count(struct sess *sp, unsigned u)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_GetHdr(VCL_FARGS, const char *n)
+VRT_GetHdr(struct sess *sp, const char *n)
 {
 	char *p;
 
-	assert(sess != NULL);
-	assert(sess->http != NULL);
-	if (!http_GetHdr(sess->http, n, &p))
+	assert(sp != NULL);
+	assert(sp->http != NULL);
+	if (!http_GetHdr(sp->http, n, &p))
 		return (NULL);
 	return (p);
 }
@@ -58,12 +58,12 @@ VRT_GetHdr(VCL_FARGS, const char *n)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_GetReq(VCL_FARGS)
+VRT_GetReq(struct sess *sp)
 {
 	char *p;
 
-	assert(sess != NULL);
-	assert(sess->http != NULL);
-	assert(http_GetReq(sess->http, &p));
+	assert(sp != NULL);
+	assert(sp->http != NULL);
+	assert(http_GetReq(sp->http, &p));
 	return (p);
 }
