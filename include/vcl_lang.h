@@ -11,18 +11,6 @@
 struct sess;
 typedef void sesscb_f(struct sess *sp);
 
-struct vcl_ref {
-	unsigned	line;
-	unsigned	pos;
-	unsigned	count;
-	const char	*token;
-};
-
-struct vcl_acl {
-	unsigned	ip;
-	unsigned	mask;
-};
-
 #define VCA_ADDRBUFSIZE		32
 
 struct object {	
@@ -91,17 +79,10 @@ struct backend {
 #define VCL_FARGS	struct sess *sess
 #define VCL_PASS_ARGS	sess
 
-void VCL_count(struct sess *, unsigned);
-void VCL_no_cache(VCL_FARGS);
-void VCL_no_new_cache(VCL_FARGS);
+#if 0
 int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
-int VCL_rewrite(const char *, const char *);
-void VCL_error(VCL_FARGS, unsigned, const char *);
-int VCL_switch_config(const char *);
-
-char *VCL_GetHdr(VCL_FARGS, const char *);
-char *VCL_GetReq(VCL_FARGS);
+#endif
 
 typedef void vcl_init_f(void);
 typedef void vcl_func_f(VCL_FARGS);
@@ -115,14 +96,7 @@ struct VCL_conf {
 	vcl_func_f	*miss_func;
 	vcl_func_f	*fetch_func;
 	struct backend	*default_backend;
-	struct vcl_ref	*ref;
+	struct vrt_ref	*ref;
 	unsigned	nref;
 	unsigned	busy;
 };
-
-#define VCL_done(sess, hand)			\
-	do {					\
-		sess->handling = hand;		\
-		sess->done = 1;			\
-		return;				\
-	} while (0)

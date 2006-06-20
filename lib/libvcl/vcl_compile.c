@@ -122,7 +122,7 @@ static struct var be_vars[] = {
 
 
 static struct var vars[] = {
-	{ "req.request",		STRING,	  0,  "VCL_GetReq(VCL_PASS_ARGS)"	     },
+	{ "req.request",		STRING,	  0,  "VRT_GetReq(VCL_PASS_ARGS)"	     },
 	{ "obj.valid",			BOOL,	  0,  "sess->obj->valid"     },
 	{ "obj.cacheable",		BOOL,	  0,  "sess->obj->cacheable" },
 	{ "req.http.",			HEADER,	  0,  NULL },
@@ -272,7 +272,7 @@ _Expect(struct tokenlist *tl, unsigned tok, int line)
 
 #define C(tl, sep)	do {				\
 	I(tl);						\
-	sbuf_printf(tl->fc, "VCL_count(sess, %u)%s\n", ++tl->cnt, sep);	\
+	sbuf_printf(tl->fc, "VRT_count(sess, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt; 				\
 } while (0)
 	
@@ -567,7 +567,7 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
-	asprintf(&p, "VCL_GetHdr(VCL_PASS_ARGS, \"%s\")", v->name + vh->len);
+	asprintf(&p, "VRT_GetHdr(VCL_PASS_ARGS, \"%s\")", v->name + vh->len);
 	assert(p != NULL);
 	v->cname = p;
 	return (v);
@@ -921,19 +921,19 @@ Action(struct tokenlist *tl)
 		sbuf_printf(tl->fc, "VCL_no_cache(VCL_PASS_ARGS);\n");
 		return;
 	case T_DELIVER:
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Deliver);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Deliver);\n");
 		return;
 	case T_LOOKUP:
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Lookup);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Lookup);\n");
 		return;
 	case T_PASS:
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Pass);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Pass);\n");
 		return;
 	case T_FETCH:
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Fetch);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Fetch);\n");
 		return;
 	case T_INSERT:
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Insert);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Insert);\n");
 		return;
 	case T_ERROR:
 		if (tl->t->tok == CNUM)
@@ -941,7 +941,7 @@ Action(struct tokenlist *tl)
 		else
 			a = 0;
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_error(VCL_PASS_ARGS, %u, ", a);
+		sbuf_printf(tl->fc, "VRT_error(VCL_PASS_ARGS, %u, ", a);
 		if (tl->t->tok == CSTR) {
 			sbuf_printf(tl->fc, "%*.*s);\n",
 			    tl->t->e - tl->t->b,
@@ -949,7 +949,7 @@ Action(struct tokenlist *tl)
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
-		I(tl); sbuf_printf(tl->fc, "VCL_done(sess, HND_Error);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sess, HND_Error);\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
@@ -1508,11 +1508,11 @@ LocTable(struct tokenlist *tl)
 	const char *p;
 	
 	sbuf_printf(tl->fh,
-	    "#define VCL_NREFS %u\n", tl->cnt + 1);
+	    "#define VGC_NREFS %u\n", tl->cnt + 1);
 	sbuf_printf(tl->fh,
-	    "static struct vcl_ref VCL_ref[VCL_NREFS];\n");
+	    "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
 	sbuf_printf(tl->fc,
-	    "static struct vcl_ref VCL_ref[VCL_NREFS] = {\n");
+	    "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	p = tl->b;
@@ -1590,9 +1590,9 @@ EmitStruct(struct tokenlist *tl)
 	sbuf_printf(tl->fc,
 	    "\t.default_backend = &VCL_backend_default,\n");
 	sbuf_printf(tl->fc,
-	    "\t.ref = VCL_ref,\n");
+	    "\t.ref = VGC_ref,\n");
 	sbuf_printf(tl->fc,
-	    "\t.nref = VCL_NREFS,\n");
+	    "\t.nref = VGC_NREFS,\n");
 	sbuf_printf(tl->fc, "};\n");
 }
 

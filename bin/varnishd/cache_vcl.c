@@ -190,24 +190,6 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void
-VCL_error(VCL_FARGS, unsigned err, const char *str)
-{ 
-
-	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", err, str);
-}
-
-void
-VCL_count(struct sess *sp, unsigned u)
-{
-	
-	VSL(SLT_VCL, 0, "%u %d.%d", u,
-	    sp->vcl->ref[u].line,
-	    sp->vcl->ref[u].pos);
-}
-
-/*--------------------------------------------------------------------*/
-
 static const char *
 HandlingName(unsigned u)
 {
@@ -261,28 +243,3 @@ VCL_method(recv,  HND_Error|HND_Pass|HND_Pipe|HND_Lookup)
 VCL_method(miss,  HND_Error|HND_Pass|HND_Pipe|HND_Fetch)
 VCL_method(hit,	  HND_Error|HND_Pass|HND_Pipe|HND_Deliver)
 VCL_method(fetch, HND_Error|HND_Pass|HND_Pipe|HND_Insert)
-
-/*--------------------------------------------------------------------*/
-
-char *
-VCL_GetHdr(VCL_FARGS, const char *n)
-{
-	char *p;
-
-	assert(sess != NULL);
-	assert(sess->http != NULL);
-	if (!http_GetHdr(sess->http, n, &p))
-		return (NULL);
-	return (p);
-}
-
-char *
-VCL_GetReq(VCL_FARGS)
-{
-	char *p;
-
-	assert(sess != NULL);
-	assert(sess->http != NULL);
-	assert(http_GetReq(sess->http, &p));
-	return (p);
-}

@@ -176,28 +176,37 @@ foreach i $tokens {
 }
 puts $fo "}"
 
-set fi [open "../../include/vcl_lang.h"]
+
+
+proc copy_include {n} {
+	global fo
+
+	set fi [open $n]
+	while {[gets $fi a] >= 0} {
+		if {"$a" == "#include <http_headers.h>"} {
+			puts "FOO $a"
+			set fx [open "../../include/http_headers.h"]
+			while {[gets $fx b] >= 0} {
+				regsub -all {"} $b {\"} b
+				puts $fo "\tfputs(\"$b\\n\", f);"
+			}
+			close $fx
+			continue
+		}
+		regsub -all {\\} $a {\\\\} a
+		puts $fo "\tfputs(\"$a\\n\", f);"
+	}
+	close $fi
+}
 
 puts $fo ""
 puts $fo "void"
 puts $fo "vcl_output_lang_h(FILE *f)"
 puts $fo "{"
-while {[gets $fi a] >= 0} {
-	if {"$a" == "#include <http_headers.h>"} {
-		puts "FOO $a"
-		set fx [open "../../include/http_headers.h"]
-		while {[gets $fx b] >= 0} {
-			regsub -all {"} $b {\"} b
-			puts $fo "\tfputs(\"$b\\n\", f);"
-		}
-		close $fx
-		continue
-	}
-	regsub -all {\\} $a {\\\\} a
-	puts $fo "\tfputs(\"$a\\n\", f);"
-}
+copy_include ../../include/vcl_lang.h
+copy_include ../../include/vrt.h
+
 puts $fo "}"
-close $fi
 
 close $foh
 close $fo
