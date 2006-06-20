@@ -46,7 +46,7 @@ char *VRT_GetHdr(struct sess *, const char *);
 char *VRT_GetReq(struct sess *);
 void VRT_handling(struct sess *sp, unsigned hand);
 int VRT_obj_valid(struct sess *);
-int VRT_obj_cachable(struct sess *);
+int VRT_obj_cacheable(struct sess *);
 
 void VRT_set_backend_hostname(struct backend *, const char *);
 void VRT_set_backend_portname(struct backend *, const char *);
