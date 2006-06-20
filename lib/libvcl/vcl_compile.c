@@ -300,7 +300,7 @@ IdIs(struct token *t, const char *p)
 
 /*--------------------------------------------------------------------*/
 
-char *
+static char *
 EncString(struct token *t)
 {
 	char *p, *q;
@@ -564,6 +564,7 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 	int i;
 
 	v = calloc(sizeof *v, 1);
+	assert(v != NULL);
 	i = t->e - t->b;
 	p = malloc(i + 1);
 	assert(p != NULL);
@@ -1219,7 +1220,6 @@ Backend(struct tokenlist *tl)
 		case HOSTNAME:
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
-			host = EncString(tl->t);
 			I(tl); sbuf_printf(tl->fc, "\tp = %*.*s;\n",
 			    tl->t->e - tl->t->b,
 			    tl->t->e - tl->t->b, tl->t->b);
@@ -1231,7 +1231,6 @@ Backend(struct tokenlist *tl)
 		case PORTNAME:
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
-			port = EncString(tl->t);
 			I(tl); sbuf_printf(tl->fc, "\tp = %*.*s;\n",
 			    tl->t->e - tl->t->b,
 			    tl->t->e - tl->t->b, tl->t->b);
@@ -1250,13 +1249,14 @@ Backend(struct tokenlist *tl)
 		NextToken(tl);
 	}
 	ExpectErr(tl, '}');
-	if (host == NULL) {
+	if (t_host == NULL) {
 		sbuf_printf(tl->sb, "Backend '%*.*s' has no hostname\n",
 		    t_be->e - t_be->b,
 		    t_be->e - t_be->b, t_be->b);
 		ErrWhere(tl, tl->t);
 		return;
 	}
+	host = EncString(t_host);
 	ep = CheckHostPort(host, "80");
 	if (ep != NULL) {
 		sbuf_printf(tl->sb,
@@ -1266,7 +1266,8 @@ Backend(struct tokenlist *tl)
 		ErrWhere(tl, t_host);
 		return;
 	}
-	if (port != NULL) {
+	if (t_port != NULL) {
+		port = EncString(tl->t);
 		ep = CheckHostPort(host, port);
 		if (ep != NULL) {
 			sbuf_printf(tl->sb,
