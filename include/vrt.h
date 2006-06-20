@@ -19,18 +19,18 @@ struct vrt_acl {
 };
 
 void VRT_count(struct sess *, unsigned);
-void VRT_no_cache(VCL_FARGS);
-void VRT_no_new_cache(VCL_FARGS);
+void VRT_no_cache(struct sess *);
+void VRT_no_new_cache(struct sess *);
 #if 0
 int ip_match(unsigned, struct vcl_acl *);
 int string_match(const char *, const char *);
 #endif
 int VRT_rewrite(const char *, const char *);
-void VRT_error(VCL_FARGS, unsigned, const char *);
+void VRT_error(struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-char *VRT_GetHdr(VCL_FARGS, const char *);
-char *VRT_GetReq(VCL_FARGS);
+char *VRT_GetHdr(struct sess *, const char *);
+char *VRT_GetReq(struct sess *);
 
 #define VRT_done(sess, hand)			\
 	do {					\
