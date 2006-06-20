@@ -16,9 +16,9 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "shmlog.h"
-#include "vcl_lang.h"
 #include "vrt.h"
 #include "libvarnish.h"
+#include "vcl_lang.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------*/
@@ -71,8 +71,58 @@ VRT_GetReq(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(struct sess *sp, enum handling hand)
+VRT_handling(struct sess *sp, unsigned hand)
 {
 
-	sp->handling = hand;
+	assert(!(hand & (hand -1)));	/* must be power of two */
+	switch (hand) {
+#define FOO(a,b)  case VRT_H_##a: sp->handling = HND_##b; break;
+	FOO(error, Error);
+	FOO(pipe, Pipe);
+	FOO(pass, Pass);
+	FOO(lookup, Lookup);
+	FOO(fetch, Fetch);
+	FOO(insert, Insert);
+	FOO(deliver, Deliver);
+#undef FOO
+	default:
+		assert(hand == 0);
+	}
+}
+
+int
+VRT_obj_valid(struct sess *sp)
+{
+	return (sp->obj->valid);
+}
+
+int
+VRT_obj_cacheable(struct sess *sp)
+{
+	return (sp->obj->cacheable);
+}
+
+void
+VRT_set_backend_hostname(struct backend *be, const char *h)
+{
+	be->hostname = h;
+}
+
+void
+VRT_set_backend_portname(struct backend *be, const char *p)
+{
+	be->portname = p;
+}
+
+void
+VRT_alloc_backends(struct VCL_conf *cp)
+{
+	int i;
+
+	cp->backend = calloc(sizeof *cp->backend, cp->nbackend);
+	assert(cp->backend != NULL);
+	for (i = 0; i < cp->nbackend; i++) {
+		cp->backend[i] = calloc(sizeof *cp->backend[i], 1);
+		assert(cp->backend[i] != NULL);
+	}
 }

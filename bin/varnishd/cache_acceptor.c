@@ -16,6 +16,7 @@
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/queue.h>
 
 #include <netdb.h>
 
@@ -25,7 +26,6 @@
 #include "config.h"
 #include "compat.h"
 #include "libvarnish.h"
-#include "vcl_lang.h"
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"

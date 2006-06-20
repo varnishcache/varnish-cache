@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#include <sys/queue.h>
+
 struct event_base;
 struct sbuf;
 
@@ -54,6 +56,73 @@ struct storage {
  * XXX: etc etc.  For now we support only one.
  */
 extern struct stevedore *stevedore;
+
+/* Storage -----------------------------------------------------------*/
+
+struct sess;
+typedef void sesscb_f(struct sess *sp);
+
+#define VCA_ADDRBUFSIZE		32
+
+struct object {	
+	unsigned char		hash[16];
+	unsigned 		refcnt;
+	unsigned		valid;
+	unsigned		cacheable;
+
+	unsigned		busy;
+	unsigned		len;
+
+	char			*header;
+
+	TAILQ_HEAD(, storage)	store;
+};
+
+#define	HND_Error	(1 << 0)
+#define	HND_Pipe	(1 << 1)
+#define	HND_Pass	(1 << 2)
+#define	HND_Lookup	(1 << 3)
+#define	HND_Fetch	(1 << 4)
+#define	HND_Insert	(1 << 5)
+#define	HND_Deliver	(1 << 6)
+
+struct sess {
+	int			fd;
+
+	/* formatted ascii client address */
+	char			addr[VCA_ADDRBUFSIZE];
+
+	/* HTTP request */
+	struct http		*http;
+
+	unsigned 		handling;
+
+	TAILQ_ENTRY(sess)	list;
+
+	sesscb_f		*sesscb;
+
+	struct backend		*backend;
+	struct object		*obj;
+	struct VCL_conf		*vcl;
+
+	/* Various internal stuff */
+	struct event		*rd_e;
+	struct sessmem		*mem;
+};
+
+struct backend {
+	const char	*hostname;
+	const char	*portname;
+	struct addrinfo	*addr;
+	unsigned	ip;
+	double		responsetime;
+	double		timeout;
+	double		bandwidth;
+	int		down;
+
+	/* internal stuff */
+	struct vbe	*vbe;
+};
 
 /* Prototypes etc ----------------------------------------------------*/
 

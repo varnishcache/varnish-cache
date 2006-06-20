@@ -102,7 +102,7 @@ CacheWorker(void *priv)
 
 		http_Dissect(sp->http, sp->fd, 1);
 
-		sp->backend = sp->vcl->default_backend;
+		sp->backend = sp->vcl->backend[0];
 
 		VCL_recv_method(sp);
 
