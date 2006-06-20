@@ -962,12 +962,11 @@ Action(struct tokenlist *tl)
 	case T_CALL:
 		ExpectErr(tl, ID);
 		AddRef(tl, tl->t, R_FUNC);
-		I(tl);
-		sbuf_printf(tl->fc, "VGC_function_%*.*s(sp);\n",
+		I(tl); sbuf_printf(tl->fc,
+		    "if (VGC_function_%*.*s(sp))\n",
 		    tl->t->e - tl->t->b,
 		    tl->t->e - tl->t->b, tl->t->b);
-		I(tl); sbuf_printf(tl->fc, "if (sp->done)\n");
-		I(tl); sbuf_printf(tl->fc, "\treturn;\n");
+		I(tl); sbuf_printf(tl->fc, "\treturn (1);\n");
 		NextToken(tl);
 		return;
 	case T_REWRITE:
@@ -1291,13 +1290,11 @@ Function(struct tokenlist *tl)
 	NextToken(tl);
 	ExpectErr(tl, ID);
 	AddDef(tl, tl->t, R_FUNC);
-	sbuf_printf(tl->fh, "static void VGC_function_%*.*s (struct sess *sp);\n",
+	sbuf_printf(tl->fh, "static int VGC_function_%*.*s (struct sess *sp);\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
-	I(tl);
-	sbuf_printf(tl->fc, "static void\n");
-	I(tl);
-	sbuf_printf(tl->fc, "VGC_function_%*.*s (struct sess *sp)\n",
+	I(tl); sbuf_printf(tl->fc, "static int\n");
+	I(tl); sbuf_printf(tl->fc, "VGC_function_%*.*s (struct sess *sp)\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	NextToken(tl);

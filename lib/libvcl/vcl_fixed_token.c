@@ -446,8 +446,6 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("	enum handling		handling;\n", f);
 	fputs("\n", f);
-	fputs("	char			done;\n", f);
-	fputs("\n", f);
 	fputs("	TAILQ_ENTRY(sess)	list;\n", f);
 	fputs("\n", f);
 	fputs("	sesscb_f		*sesscb;\n", f);
@@ -481,7 +479,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("#endif\n", f);
 	fputs("\n", f);
 	fputs("typedef void vcl_init_f(void);\n", f);
-	fputs("typedef void vcl_func_f(struct sess *sp);\n", f);
+	fputs("typedef int vcl_func_f(struct sess *sp);\n", f);
 	fputs("\n", f);
 	fputs("struct VCL_conf {\n", f);
 	fputs("	unsigned	magic;\n", f);
@@ -529,11 +527,11 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("char *VRT_GetHdr(struct sess *, const char *);\n", f);
 	fputs("char *VRT_GetReq(struct sess *);\n", f);
+	fputs("void VRT_handling(struct sess *sp, enum handling hand);\n", f);
 	fputs("\n", f);
-	fputs("#define VRT_done(sess, hand)			\\\n", f);
+	fputs("#define VRT_done(sp, hand)			\\\n", f);
 	fputs("	do {					\\\n", f);
-	fputs("		sess->handling = hand;		\\\n", f);
-	fputs("		sess->done = 1;			\\\n", f);
-	fputs("		return;				\\\n", f);
+	fputs("		VRT_handling(sp, hand);		\\\n", f);
+	fputs("		return (1);			\\\n", f);
 	fputs("	} while (0)\n", f);
 }
