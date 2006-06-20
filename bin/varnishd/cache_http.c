@@ -16,7 +16,6 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
-#include "vcl_lang.h"
 #include "cache.h"
 
 static unsigned		http_bufsize	= 4096;
