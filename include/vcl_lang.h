@@ -47,8 +47,6 @@ struct sess {
 
 	enum handling		handling;
 
-	char			done;
-
 	TAILQ_ENTRY(sess)	list;
 
 	sesscb_f		*sesscb;
@@ -82,7 +80,7 @@ int string_match(const char *, const char *);
 #endif
 
 typedef void vcl_init_f(void);
-typedef void vcl_func_f(struct sess *sp);
+typedef int vcl_func_f(struct sess *sp);
 
 struct VCL_conf {
 	unsigned	magic;

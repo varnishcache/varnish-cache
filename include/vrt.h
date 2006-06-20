@@ -31,10 +31,10 @@ int VRT_switch_config(const char *);
 
 char *VRT_GetHdr(struct sess *, const char *);
 char *VRT_GetReq(struct sess *);
+void VRT_handling(struct sess *sp, enum handling hand);
 
-#define VRT_done(sess, hand)			\
+#define VRT_done(sp, hand)			\
 	do {					\
-		sess->handling = hand;		\
-		sess->done = 1;			\
-		return;				\
+		VRT_handling(sp, hand);		\
+		return (1);			\
 	} while (0)

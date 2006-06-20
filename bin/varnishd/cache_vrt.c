@@ -67,3 +67,12 @@ VRT_GetReq(struct sess *sp)
 	assert(http_GetReq(sp->http, &p));
 	return (p);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_handling(struct sess *sp, enum handling hand)
+{
+
+	sp->handling = hand;
+}
