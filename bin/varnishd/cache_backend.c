@@ -78,7 +78,7 @@ static int vbe_pipe[2];
  * be a good thing in that case.
  */
 
-void
+static void
 connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 {
 	struct addrinfo *res, *res0, hint;

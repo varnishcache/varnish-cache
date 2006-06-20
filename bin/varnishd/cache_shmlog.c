@@ -23,7 +23,6 @@ static unsigned char *logstart, *logend;
 void
 VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 {
-	va_list ap;
 	unsigned char *p, *q;
 
 	assert(b != NULL);
@@ -58,8 +57,6 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	loghead->ptr = (p + 4 + (e - b)) - logstart;
 	
 	/* XXX: Unlock */
-
-	va_end(ap);
 }
 
 

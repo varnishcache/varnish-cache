@@ -48,7 +48,7 @@ TAILQ_HEAD(smfhead, smf);
 struct smf_sc {
 	char			*filename;
 	int			fd;
-	int			pagesize;
+	unsigned		pagesize;
 	uintmax_t		filesize;
 	struct smfhead		order;
 	struct smfhead		free;
@@ -481,7 +481,7 @@ smf_free(struct storage *s)
 {
 	struct smf *smf;
 
-	smf = s->priv;
+	smf = (struct smf *)(s->priv);
 	free_smf(smf);
 }
 

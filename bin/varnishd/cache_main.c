@@ -35,7 +35,7 @@ static void
 timer_keepalive(int a, short b, void *c)
 {
 
-	printf("%s(%d, %d, %p)\n", __func__, a, b, c);
+	printf("%s(%d, %d, %p)\n", __func__, a, (int)b, c);
 	printf("Heeellloooo ?   Ohh bother...\n");
 	exit (1);
 }

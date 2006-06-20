@@ -120,7 +120,7 @@ wrcb(struct bufferevent *bev, void *arg)
 static void
 excb(struct bufferevent *bev, short what, void *arg)
 {
-	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
+	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, (int)what, arg);
 }
 
 struct cli *

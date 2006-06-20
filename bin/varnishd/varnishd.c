@@ -38,7 +38,7 @@ struct event_base *mgt_eb;
  * Generic passthrough for CLI functions
  */
 
-void
+static void
 cli_passthrough_cb(unsigned u, const char *r, void *priv)
 {
 	struct cli *cli = priv;
@@ -319,11 +319,13 @@ setup_storage(const char *sflag)
 	const char *p, *q;
 	struct stevedore *stp;
 
-	q = p = strchr(sflag, ',');
+	p = strchr(sflag, ',');
 	if (p == NULL)
 		q = p = strchr(sflag, '\0');
 	else
-		q++;
+		q = p + 1;
+	assert(p != NULL);
+	assert(q != NULL);
 	if (!cmp_storage(&sma_stevedore, sflag, p)) {
 		stp = &sma_stevedore;
 	} else if (!cmp_storage(&smf_stevedore, sflag, p)) {
