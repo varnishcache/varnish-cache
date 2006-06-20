@@ -10,7 +10,6 @@
 #include <sys/queue.h>
 
 #include <libvarnish.h>
-#include <vcl_lang.h>
 #include <cache.h>
 
 struct hsl_entry {

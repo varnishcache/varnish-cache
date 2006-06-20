@@ -9,7 +9,6 @@
 #include <sys/queue.h>
 #include <pthread.h>
 
-#include "vcl_lang.h"
 #include "cache.h"
 
 struct sma {

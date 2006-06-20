@@ -19,7 +19,6 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
-#include "vcl_lang.h"
 #include "cache.h"
 
 
