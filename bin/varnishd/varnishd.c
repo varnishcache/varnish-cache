@@ -113,7 +113,7 @@ vcl_default(const char *bflag)
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	vf = VCL_Compile(sb, buf, NULL);
+	vf = VCC_Compile(sb, buf, NULL);
 	sbuf_finish(sb);
 	if (sbuf_len(sb) > 0) {
 		fprintf(stderr, "%s", sbuf_data(sb));
@@ -134,7 +134,7 @@ cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	vf = VCL_Compile(sb, av[3], NULL);
+	vf = VCC_Compile(sb, av[3], NULL);
 	sbuf_finish(sb);
 	if (sbuf_len(sb) > 0) {
 		cli_out(cli, "%s", sbuf_data(sb));
@@ -156,7 +156,7 @@ m_cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	vf = VCL_CompileFile(sb, av[3]);
+	vf = VCC_CompileFile(sb, av[3]);
 	sbuf_finish(sb);
 	if (sbuf_len(sb) > 0) {
 		cli_out(cli, "%s", sbuf_data(sb));
@@ -177,7 +177,7 @@ vcl_file(const char *fflag)
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	vf = VCL_CompileFile(sb, fflag);
+	vf = VCC_CompileFile(sb, fflag);
 	sbuf_finish(sb);
 	if (sbuf_len(sb) > 0) {
 		fprintf(stderr, "%s", sbuf_data(sb));
@@ -392,7 +392,7 @@ main(int argc, char *argv[])
 
 	register_printf_render_std((const unsigned char *)"HVQ");
  
-	VCL_InitCompile();
+	VCC_InitCompile();
 
 	while ((o = getopt(argc, argv, "b:df:p:s:")) != -1)
 		switch (o) {

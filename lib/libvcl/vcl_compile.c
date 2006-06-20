@@ -1599,7 +1599,7 @@ EmitStruct(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 char *
-VCL_Compile(struct sbuf *sb, const char *b, const char *e)
+VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 {
 	struct tokenlist tokens;
 	struct ref *r;
@@ -1684,7 +1684,7 @@ done:
 /*--------------------------------------------------------------------*/
 
 char *
-VCL_CompileFile(struct sbuf *sb, const char *fn)
+VCC_CompileFile(struct sbuf *sb, const char *fn)
 {
 	char *f, *r;
 	int fd, i;
@@ -1702,7 +1702,7 @@ VCL_CompileFile(struct sbuf *sb, const char *fn)
 	i = read(fd, f, st.st_size); 
 	assert(i == st.st_size);
 	f[i] = '\0';
-	r = VCL_Compile(sb, f, NULL);
+	r = VCC_Compile(sb, f, NULL);
 	free(f);
 	return (r);
 }
@@ -1710,7 +1710,7 @@ VCL_CompileFile(struct sbuf *sb, const char *fn)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_InitCompile(void)
+VCC_InitCompile(void)
 {
 	struct var *v;
 
