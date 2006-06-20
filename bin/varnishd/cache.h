@@ -60,7 +60,6 @@ extern struct stevedore *stevedore;
 /* Storage -----------------------------------------------------------*/
 
 struct sess;
-typedef void sesscb_f(struct sess *sp);
 
 #define VCA_ADDRBUFSIZE		32
 
@@ -99,8 +98,6 @@ struct sess {
 
 	TAILQ_ENTRY(sess)	list;
 
-	sesscb_f		*sesscb;
-
 	struct backend		*backend;
 	struct object		*obj;
 	struct VCL_conf		*vcl;
@@ -113,12 +110,14 @@ struct sess {
 struct backend {
 	const char	*hostname;
 	const char	*portname;
-	struct addrinfo	*addr;
 	unsigned	ip;
+#if 0
+	struct addrinfo	*addr;
 	double		responsetime;
 	double		timeout;
 	double		bandwidth;
 	int		down;
+#endif
 
 	/* internal stuff */
 	struct vbe	*vbe;
@@ -138,7 +137,6 @@ void VCA_Init(void);
 /* cache_backend.c */
 void VBE_Init(void);
 int VBE_GetFd(struct backend *bp, void **ptr);
-void VBE_Pass(struct sess *sp);
 void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
 

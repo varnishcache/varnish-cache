@@ -139,6 +139,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 			i = bp - q;
 			if (i == 0) {
 			} else if (v > i) {
+				assert(i > 0);
 				memcpy(p, q, i);
 				p += i;
 				st->len += i;

@@ -4,6 +4,7 @@
 
 -printf_code( H, void *, unsigned)
 -printf_code( ju, long long unsigned)
+-printf_code( jx, long long unsigned)
 
 -e763	// Redundant declaration for symbol '...' previously declared
 
