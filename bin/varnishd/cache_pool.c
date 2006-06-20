@@ -16,7 +16,7 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
-#include "vcl_lang.h"
+#include "vcl.h"
 #include "cache.h"
 
 static TAILQ_HEAD(, sess) shd = TAILQ_HEAD_INITIALIZER(shd);

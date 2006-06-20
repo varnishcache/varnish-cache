@@ -13,7 +13,7 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "shmlog.h"
-#include "vcl_lang.h"
+#include "vcl.h"
 #include "libvarnish.h"
 #include "cache.h"
 

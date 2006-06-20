@@ -1,5 +1,7 @@
 /*
- * Stuff necessary to compile a VCL programs C code
+ * $Id$
+ *
+ * Interface to a compiled VCL program.
  *
  * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl
  * XXX: *MUST* be rerun.

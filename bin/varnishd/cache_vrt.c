@@ -17,8 +17,8 @@
 #include "cli_priv.h"
 #include "shmlog.h"
 #include "vrt.h"
+#include "vcl.h"
 #include "libvarnish.h"
-#include "vcl_lang.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------*/

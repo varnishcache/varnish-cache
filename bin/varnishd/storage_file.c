@@ -21,7 +21,6 @@
 #include <sys/mman.h>
 #include <sys/socket.h>
 
-#include "vcl_lang.h"
 #include "libvarnish.h"
 #include "cache.h"
 

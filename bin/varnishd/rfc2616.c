@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "vcl_lang.h"
 
 #include "cache.h"
 #include "libvarnish.h"

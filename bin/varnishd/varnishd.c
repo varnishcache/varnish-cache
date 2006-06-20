@@ -25,8 +25,6 @@
 #include <libvarnish.h>
 #include <libvcl.h>
 
-#include "vcl_lang.h"
-
 #include "mgt.h"
 #include "heritage.h"
 #include "cli_event.h"
