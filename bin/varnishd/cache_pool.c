@@ -47,15 +47,15 @@ LookupSession(struct worker *w, struct sess *sp)
 	MD5Final(key, &ctx);
 	o = hash->lookup(key, w->nobj);
 	sp->obj = o;
-	if (o == w->nobj) {
-		VSL(SLT_Debug, 0, "Lookup new %p %s", o, b);
-		w->nobj = NULL;
-		VCL_miss_method(sp);
-	} else {
+	if (o != w->nobj && o->ttl > sp->t0) {
 		/* XXX: wait while obj->busy */
 		VSL(SLT_Debug, 0, "Lookup found %p %s", o, b);
 		VCL_hit_method(sp);
+		return (0);
 	}
+	VSL(SLT_Debug, 0, "Lookup new %p %s", o, b);
+	w->nobj = NULL;
+	VCL_miss_method(sp);
 	return (0);
 }
 
@@ -97,6 +97,7 @@ CacheWorker(void *priv)
 			AZ(pthread_cond_wait(&shdcnd, &sessmtx));
 		}
 		TAILQ_REMOVE(&shd, sp, list);
+		time(&sp->t0);
 		sp->vcl = GetVCL();
 		AZ(pthread_mutex_unlock(&sessmtx));
 

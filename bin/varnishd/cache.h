@@ -71,6 +71,7 @@ struct object {
 
 	unsigned		busy;
 	unsigned		len;
+	time_t			ttl;
 
 	char			*header;
 
@@ -105,6 +106,7 @@ struct sess {
 	/* Various internal stuff */
 	struct event		*rd_e;
 	struct sessmem		*mem;
+	time_t			t0;
 };
 
 struct backend {
@@ -200,5 +202,4 @@ cli_func_t	cli_func_config_use;
 #endif
 
 /* rfc2616.c */
-void RFC2616_Age(struct http *hp, time_t, time_t);
-
+time_t RFC2616_Ttl(struct http *hp, time_t, time_t);

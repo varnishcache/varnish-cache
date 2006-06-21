@@ -223,7 +223,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	time(&t_resp);
 	http_Dissect(hp, fd, 2);
 
-	RFC2616_Age(hp, t_req, t_resp);
+	sp->obj->ttl = RFC2616_Ttl(hp, t_req, t_resp);
 
 	switch (http_GetStatus(hp)) {
 	case 200:
