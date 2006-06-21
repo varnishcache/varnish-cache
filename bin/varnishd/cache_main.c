@@ -114,6 +114,7 @@ child_main(void)
 	CacheInitPool();
 
 	VCA_Init();
+	EXP_Init();
 
 	eb = event_init();
 	assert(eb != NULL);

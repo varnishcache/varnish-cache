@@ -7,6 +7,7 @@ bin_PROGRAMS = varnishd
 varnishd_SOURCES = \
 	cache_acceptor.c \
 	cache_backend.c \
+	cache_expire.c \
 	cache_fetch.c \
 	cache_http.c \
 	cache_main.c \
