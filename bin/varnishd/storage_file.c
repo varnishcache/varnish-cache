@@ -278,7 +278,6 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 		TAILQ_REMOVE(&sc->free, sp, status);
 		sp->alloc = 1;
 		TAILQ_INSERT_TAIL(&sc->used, sp, status);
-		printf("ALLOC   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
 		return (sp);
 	}
 
@@ -295,8 +294,6 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	sp2->alloc = 1;
 	TAILQ_INSERT_BEFORE(sp, sp2, order);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
-	printf("SPLIT   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
-	printf("ALLOC   %12p  %12p %12jx %12jx\n", (void*)sp2, (void*)sp2->ptr, (uintmax_t)sp2->offset, (uintmax_t)sp2->size);
 	return (sp2);
 }
 
@@ -311,7 +308,6 @@ free_smf(struct smf *sp)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
-	printf("FREE   %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
 	TAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
 
@@ -324,7 +320,6 @@ free_smf(struct smf *sp)
 		TAILQ_REMOVE(&sc->order, sp2, order);
 		TAILQ_REMOVE(&sc->free, sp2, status);
 		free(sp2);
-		printf("MERGEN %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
 	}
 
 	sp2 = TAILQ_PREV(sp, smfhead, order);
@@ -338,7 +333,6 @@ free_smf(struct smf *sp)
 		free(sp);
 		TAILQ_REMOVE(&sc->free, sp2, status);
 		sp = sp2;
-		printf("MERGEP %12p  %12p %12jx %12jx\n", (void*)sp, (void*)sp->ptr, (uintmax_t)sp->offset, (uintmax_t)sp->size);
 	}
 
 	TAILQ_FOREACH(sp2, &sc->free, status) {
@@ -363,7 +357,6 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 
 	sp = calloc(sizeof *sp, 1);
 	assert(sp != NULL);
-	printf("NEW    %12p  %12p %12jx %12jx\n", (void*)sp, (void*)ptr, (uintmax_t)off, (uintmax_t)len);
 
 	sp->sc = sc;
 
@@ -496,14 +489,16 @@ smf_send(struct storage *st, struct sess *sp)
 
 	smf = st->priv;
 
-	printf("SEND   %12p  %12p %12jx %12jx\n", (void*)smf, (void*)smf->ptr, (uintmax_t)smf->offset, (uintmax_t)smf->size);
 	vca_flush(sp);
 	i = sendfile(smf->sc->fd,
 	    sp->fd,
 	    smf->offset,
 	    st->len, NULL, &sent, 0);
+	if (sent == st->len)
+		return;
 	printf("sent i=%d sent=%ju size=%ju\n",
 	    i, (uintmax_t)sent, (uintmax_t)st->len);
+	assert(sent == st->len);
 }
 
 /*--------------------------------------------------------------------*/
