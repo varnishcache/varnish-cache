@@ -290,6 +290,7 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-s kind[,storageoptions]", "Backend storage specification");
+	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
@@ -394,7 +395,9 @@ main(int argc, char *argv[])
  
 	VCC_InitCompile();
 
-	while ((o = getopt(argc, argv, "b:df:p:s:")) != -1)
+	heritage.default_ttl = 120;
+
+	while ((o = getopt(argc, argv, "b:df:p:s:t:")) != -1)
 		switch (o) {
 		case 'b':
 			bflag = optarg;
@@ -410,6 +413,9 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			sflag = optarg;
+			break;
+		case 't':
+			heritage.default_ttl = strtoul(optarg, NULL, 0);
 			break;
 		default:
 			usage();
