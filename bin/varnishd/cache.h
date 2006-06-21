@@ -142,6 +142,9 @@ int VBE_GetFd(struct backend *bp, void **ptr);
 void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
 
+/* cache_expiry.c */
+void EXP_Init(void);
+
 /* cache_fetch.c */
 int FetchSession(struct worker *w, struct sess *sp);
 
