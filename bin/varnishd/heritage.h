@@ -30,6 +30,8 @@ struct heritage {
 
 	/* Storage method */
 	struct stevedore	*stevedore;
+
+	unsigned		default_ttl;
 };
 
 extern struct heritage heritage;
