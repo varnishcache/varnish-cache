@@ -78,13 +78,7 @@ struct object {
 	TAILQ_HEAD(, storage)	store;
 };
 
-#define	HND_Error	(1 << 0)
-#define	HND_Pipe	(1 << 1)
-#define	HND_Pass	(1 << 2)
-#define	HND_Lookup	(1 << 3)
-#define	HND_Fetch	(1 << 4)
-#define	HND_Insert	(1 << 5)
-#define	HND_Deliver	(1 << 6)
+#include "vcl_returns.h"
 
 struct sess {
 	int			fd;

@@ -50,6 +50,7 @@
 #include <unistd.h>
 
 #include "vcl_priv.h"
+#include "vcl_returns.h"
 
 #include "libvcl.h"
 
@@ -77,6 +78,8 @@ struct tokenlist {
 	struct sbuf		*sb;
 	int			err;
 	int			nbackend;
+	TAILQ_HEAD(, proc)	procs;
+	struct proc		*curproc;
 };
 
 enum var_type {
@@ -117,6 +120,41 @@ struct var {
 	const char		*lname;
 };
 
+/*--------------------------------------------------------------------
+ * Consistency check
+ */
+
+static struct method {
+	const char		*name;
+	unsigned		returns;
+} method_tab[] = {
+#define VCL_RET_MAC(a,b,c)
+#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, c },
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+#undef VCL_RET_MAC
+	{ NULL, 0U }
+};
+
+struct proccall {
+	TAILQ_ENTRY(proccall)	list;
+	struct proc		*p;
+	struct token		*t;
+};
+
+struct proc {
+	TAILQ_ENTRY(proc)	list;
+	TAILQ_HEAD(,proccall)	calls;
+	struct token		*name;
+	unsigned		returns;
+	unsigned		exists;
+	unsigned		called;
+	unsigned		active;
+	struct token		*returnt[VCL_RET_MAX];
+};
+
+/*--------------------------------------------------------------------*/
+
 static struct var be_vars[] = {
 	{ "backend.host",
 		HOSTNAME, 0,  NULL, "VRT_set_backend_hostname(backend, %s)" },
@@ -152,6 +190,8 @@ static struct var vars[] = {
 
 static void Compound(struct tokenlist *tl);
 static void Cond_0(struct tokenlist *tl);
+static struct proc *AddProc(struct tokenlist *tl, struct token *t, int def);
+static void AddCall(struct tokenlist *tl, struct token *t);
 
 /*--------------------------------------------------------------------*/
 
@@ -925,15 +965,14 @@ Action(struct tokenlist *tl)
 		I(tl);
 		sbuf_printf(tl->fc, "VCL_no_cache(sp);\n");
 		return;
-	case T_DELIVER:
-	case T_LOOKUP:
-	case T_PASS:
-	case T_FETCH:
-	case T_INSERT:
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, VRT_H_%*.*s);\n",
-		    at->e - at->b,
-		    at->e - at->b, at->b);
+#define VCL_RET_MAC(a,b,c) case T_##b: \
+		I(tl); \
+		sbuf_printf(tl->fc, "VRT_done(sp, VCL_RET_%s);\n", #b); \
+		tl->curproc->returns |= VCL_RET_##b; \
+		tl->curproc->returnt[c] = at; \
 		return;
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
 	case T_ERROR:
 		if (tl->t->tok == CNUM)
 			a = UintVal(tl);
@@ -948,7 +987,7 @@ Action(struct tokenlist *tl)
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
-		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, VRT_H_error);\n");
+		I(tl); sbuf_printf(tl->fc, "VRT_done(sp, VCL_RET_ERROR);\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
@@ -960,6 +999,7 @@ Action(struct tokenlist *tl)
 		return;
 	case T_CALL:
 		ExpectErr(tl, ID);
+		AddCall(tl, tl->t);
 		AddRef(tl, tl->t, R_FUNC);
 		I(tl); sbuf_printf(tl->fc,
 		    "if (VGC_function_%*.*s(sp))\n",
@@ -1294,8 +1334,11 @@ Function(struct tokenlist *tl)
 
 	NextToken(tl);
 	ExpectErr(tl, ID);
+	tl->curproc = AddProc(tl, tl->t, 1);
+	tl->curproc->exists++;
 	AddDef(tl, tl->t, R_FUNC);
-	sbuf_printf(tl->fh, "static int VGC_function_%*.*s (struct sess *sp);\n",
+	sbuf_printf(tl->fh,
+	    "static int VGC_function_%*.*s (struct sess *sp);\n",
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	I(tl); sbuf_printf(tl->fc, "static int\n");
@@ -1460,6 +1503,125 @@ Lexer(struct tokenlist *tl, const char *b, const char *e)
 	AddToken(tl, EOI, p, p);
 }
 
+/*--------------------------------------------------------------------
+ * Consistency check
+ */
+
+static struct proc *
+AddProc(struct tokenlist *tl, struct token *t, int def)
+{
+	struct proc *p;
+
+	TAILQ_FOREACH(p, &tl->procs, list) {
+		if (p->name->e - p->name->b != t->e - t->b)
+			continue;
+		if (!memcmp(p->name->b, t->b, t->e - t->b)) {
+			if (def)
+				p->name = t;
+			return (p);
+		}
+	}
+	p = calloc(sizeof *p, 1);
+	assert(p != NULL);
+	p->name = t;
+	TAILQ_INIT(&p->calls);
+	TAILQ_INSERT_TAIL(&tl->procs, p, list);
+	return (p);
+}
+
+static void
+AddCall(struct tokenlist *tl, struct token *t)
+{
+	struct proccall *pc;
+	struct proc *p;
+
+	p = AddProc(tl, t, 0);
+	TAILQ_FOREACH(pc, &tl->curproc->calls, list) {
+		if (pc->p == p)
+			return;
+	}
+	pc = calloc(sizeof *pc, 1);
+	assert(pc != NULL);
+	pc->p = p;
+	pc->t = t;
+	TAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
+}
+
+static int
+Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
+{
+	unsigned u;
+	struct proccall *pc;
+
+	if (!p->exists) {
+		sbuf_printf(tl->sb, "Function %*.*s does not exist\n",
+			p->name->e - p->name->b,
+			p->name->e - p->name->b,
+			p->name->b);
+		return (1);
+	}
+	if (p->active) {
+		sbuf_printf(tl->sb, "Function recurses on\n");
+		ErrWhere(tl, p->name);
+		return (1);
+	}
+	u = p->returns & ~returns;
+	if (u) {
+#define VCL_RET_MAC(a, b, c) \
+		if (u & VCL_RET_##b) { \
+			sbuf_printf(tl->sb, "Illegal return for method\n"); \
+			ErrWhere(tl, p->returnt[c]); \
+		} 
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+		sbuf_printf(tl->sb, "In function\n");
+		ErrWhere(tl, p->name);
+		return (1);
+	}
+	p->active = 1;
+	TAILQ_FOREACH(pc, &p->calls, list) {
+		if (Consist_Decend(tl, pc->p, returns)) {
+			sbuf_printf(tl->sb, "\nCalled from\n");
+			ErrWhere(tl, p->name);
+			sbuf_printf(tl->sb, "at\n");
+			ErrWhere(tl, pc->t);
+			return (1);
+		}
+	}
+	p->active = 0;
+	p->called++;
+	return (0);
+}
+
+static int
+Consistency(struct tokenlist *tl)
+{
+	struct proc *p;
+	struct method *m;
+
+	TAILQ_FOREACH(p, &tl->procs, list) {
+		for(m = method_tab; m->name != NULL; m++) {
+			if (IdIs(p->name, m->name))
+				break;
+		}
+		if (m->name == NULL) 
+			continue;
+		if (Consist_Decend(tl, p, m->returns)) {
+			sbuf_printf(tl->sb,
+			    "\nwhich is a %s method\n", m->name);
+			return (1);
+		}
+	}
+	TAILQ_FOREACH(p, &tl->procs, list) {
+		if (p->called)
+			continue;
+		sbuf_printf(tl->sb, "Function unused\n");
+		ErrWhere(tl, p->name);
+		return (1);
+	}
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -1614,6 +1776,7 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	memset(&tokens, 0, sizeof tokens);
 	TAILQ_INIT(&tokens.tokens);
 	TAILQ_INIT(&tokens.refs);
+	TAILQ_INIT(&tokens.procs);
 	tokens.sb = sb;
 
 	tokens.fc = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
@@ -1636,6 +1799,7 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	Parse(&tokens);
 	if (tokens.err)
 		goto done;
+	Consistency(&tokens);
 if (0)
 	CheckRefs(&tokens);
 	if (tokens.err)

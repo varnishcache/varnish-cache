@@ -195,13 +195,11 @@ HandlingName(unsigned u)
 {
 
 	switch (u) {
-	case HND_Error:		return ("Error");
-	case HND_Pass:		return ("Pass");
-	case HND_Pipe:		return ("Pipe");
-	case HND_Lookup:	return ("Lookup");
-	case HND_Fetch:		return ("Fetch");
-	case HND_Insert:	return ("Insert");
-	case HND_Deliver:	return ("Deliver");
+#define VCL_RET_MAC(a, b, c)	case VCL_RET_##b: return(#a);
+#define VCL_RET_MAC_E(a, b, c)	case VCL_RET_##b: return(#a);
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+#undef VCL_RET_MAC_E
 	default:		return (NULL);
 	}
 }
@@ -226,7 +224,7 @@ CheckHandling(struct sess *sp, const char *func, unsigned bitmap)
 		    "Wrong handling after %s function: 0x%x", func, u);
 	else
 		return;
-	sp->handling = HND_Error;
+	sp->handling = VCL_RET_ERROR;
 }
 
 #define VCL_method(func, bitmap) 		\
@@ -239,7 +237,8 @@ VCL_##func##_method(struct sess *sp)		\
 	CheckHandling(sp, #func, (bitmap));	\
 }
 
-VCL_method(recv,  HND_Error|HND_Pass|HND_Pipe|HND_Lookup)
-VCL_method(miss,  HND_Error|HND_Pass|HND_Pipe|HND_Fetch)
-VCL_method(hit,	  HND_Error|HND_Pass|HND_Pipe|HND_Deliver)
-VCL_method(fetch, HND_Error|HND_Pass|HND_Pipe|HND_Insert)
+#define VCL_RET_MAC(l,u,b)
+#define VCL_MET_MAC(l,u,b) VCL_method(l, b)
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+#undef VCL_RET_MAC

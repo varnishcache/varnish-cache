@@ -7,14 +7,6 @@
  * XXX: *MUST* be rerun.
  */
 
-#define	VRT_H_error	(1 << 0)
-#define	VRT_H_pipe	(1 << 1)
-#define	VRT_H_pass	(1 << 2)
-#define	VRT_H_lookup	(1 << 3)
-#define	VRT_H_fetch	(1 << 4)
-#define	VRT_H_insert	(1 << 5)
-#define	VRT_H_deliver	(1 << 6)
-
 struct sess;
 struct backend;
 struct VCL_conf;
