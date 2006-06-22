@@ -1,6 +1,9 @@
 /*
+ * $Id$
+ *
  * NB:  This file is machine generated, DO NOT EDIT!
- * instead, edit the Tcl script vcl_gen_fixed_token.tcl and run it by hand
+ *
+ * Edit vcl_gen_fixed_token.tcl instead
  */
 
 #include <stdio.h>
@@ -261,6 +264,11 @@ vcl_fixed_token(const char *p, const char **q)
 			*q = p + 4;
 			return (T_PROC);
 		}
+		if (p[0] == 'p' && p[1] == 'i' && p[2] == 'p' && 
+		    p[3] == 'e' && !isvar(p[4])) {
+			*q = p + 4;
+			return (T_PIPE);
+		}
 		if (p[0] == 'p' && p[1] == 'a' && p[2] == 's' && 
 		    p[3] == 's' && !isvar(p[4])) {
 			*q = p + 4;
@@ -384,6 +392,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_NO_CACHE] = "no_cache";
 	vcl_tnames[T_NO_NEW_CACHE] = "no_new_cache";
 	vcl_tnames[T_PASS] = "pass";
+	vcl_tnames[T_PIPE] = "pipe";
 	vcl_tnames[T_PROC] = "proc";
 	vcl_tnames[T_REWRITE] = "rewrite";
 	vcl_tnames[T_SET] = "set";
@@ -397,13 +406,19 @@ vcl_init_tnames(void)
 void
 vcl_output_lang_h(FILE *f)
 {
+	fputs("#define VCL_RET_ERROR  (1 << 0)\n", f);
+	fputs("#define VCL_RET_LOOKUP  (1 << 1)\n", f);
+	fputs("#define VCL_RET_PIPE  (1 << 2)\n", f);
+	fputs("#define VCL_RET_PASS  (1 << 3)\n", f);
+	fputs("#define VCL_RET_FETCH  (1 << 4)\n", f);
+	fputs("#define VCL_RET_INSERT  (1 << 5)\n", f);
+	fputs("#define VCL_RET_DELIVER  (1 << 6)\n", f);
 	fputs("/*\n", f);
 	fputs(" * $Id$\n", f);
 	fputs(" *\n", f);
-	fputs(" * Interface to a compiled VCL program.\n", f);
+	fputs(" * NB:  This file is machine generated, DO NOT EDIT!\n", f);
 	fputs(" *\n", f);
-	fputs(" * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl\n", f);
-	fputs(" * XXX: *MUST* be rerun.\n", f);
+	fputs(" * Edit vcl_gen_fixed_token.tcl instead\n", f);
 	fputs(" */\n", f);
 	fputs("\n", f);
 	fputs("struct sess;\n", f);
@@ -412,18 +427,21 @@ vcl_output_lang_h(FILE *f)
 	fputs("typedef int vcl_func_f(struct sess *sp);\n", f);
 	fputs("\n", f);
 	fputs("struct VCL_conf {\n", f);
-	fputs("	unsigned	magic;\n", f);
-	fputs("#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */\n", f);
-	fputs("	vcl_init_f	*init_func;\n", f);
+	fputs("	unsigned        magic;\n", f);
+	fputs("#define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */\n", f);
+	fputs("\n", f);
+	fputs("        struct backend  **backend;\n", f);
+	fputs("        unsigned        nbackend;\n", f);
+	fputs("        struct vrt_ref  *ref;\n", f);
+	fputs("        unsigned        nref;\n", f);
+	fputs("        unsigned        busy;\n", f);
+	fputs("\n", f);
+	fputs("        vcl_init_f      *init_func;\n", f);
+	fputs("\n", f);
 	fputs("	vcl_func_f	*recv_func;\n", f);
-	fputs("	vcl_func_f	*hit_func;\n", f);
 	fputs("	vcl_func_f	*miss_func;\n", f);
+	fputs("	vcl_func_f	*hit_func;\n", f);
 	fputs("	vcl_func_f	*fetch_func;\n", f);
-	fputs("	struct backend	**backend;\n", f);
-	fputs("	unsigned	nbackend;\n", f);
-	fputs("	struct vrt_ref	*ref;\n", f);
-	fputs("	unsigned	nref;\n", f);
-	fputs("	unsigned	busy;\n", f);
 	fputs("};\n", f);
 	fputs("/*\n", f);
 	fputs(" * $Id$ \n", f);
@@ -433,14 +451,6 @@ vcl_output_lang_h(FILE *f)
 	fputs(" * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl\n", f);
 	fputs(" * XXX: *MUST* be rerun.\n", f);
 	fputs(" */\n", f);
-	fputs("\n", f);
-	fputs("#define	VRT_H_error	(1 << 0)\n", f);
-	fputs("#define	VRT_H_pipe	(1 << 1)\n", f);
-	fputs("#define	VRT_H_pass	(1 << 2)\n", f);
-	fputs("#define	VRT_H_lookup	(1 << 3)\n", f);
-	fputs("#define	VRT_H_fetch	(1 << 4)\n", f);
-	fputs("#define	VRT_H_insert	(1 << 5)\n", f);
-	fputs("#define	VRT_H_deliver	(1 << 6)\n", f);
 	fputs("\n", f);
 	fputs("struct sess;\n", f);
 	fputs("struct backend;\n", f);

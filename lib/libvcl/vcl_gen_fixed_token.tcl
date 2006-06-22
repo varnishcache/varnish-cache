@@ -1,8 +1,32 @@
 #!/usr/local/bin/tclsh8.4
 #
-# Generate a C source file to recognize a set of tokens for the
-# Varnish 
+# Generate various .c and .h files for the VCL compiler and the interfaces
+# for it.
 
+# These are the metods which can be called in the VCL program. 
+# Second element is list of valid return actions.
+#
+set methods {
+	{recv	{error pass pipe lookup}}
+	{miss	{error pass pipe fetch}}
+	{hit	{error pass pipe deliver}}
+	{fetch	{error pass pipe insert}}
+}
+
+# These are the return actions
+#
+set returns {
+	error
+	lookup
+	pipe
+	pass
+	fetch
+	insert
+	deliver
+}
+
+# Language keywords
+#
 set keywords {
 	if else elseif elsif
 
@@ -12,13 +36,6 @@ set keywords {
 
 	backend
 
-	error
-	lookup
-	pass
-	fetch
-	insert
-	deliver
-
 	call
 	no_cache
 	no_new_cache
@@ -27,6 +44,8 @@ set keywords {
 	switch_config
 }
 
+# Non-word tokens
+#
 set magic {
 	{"++"	INC}
 	{"--"	DEC}
@@ -44,24 +63,107 @@ set magic {
 	{"/="	DIV}
 }
 
+# Single char tokens
+#
 set char {{}()*+-/%><=;!&.|~,}
 
+# Other token identifiers
+#
 set extras {ID VAR CNUM CSTR EOI}
 
-set fo [open "vcl_fixed_token.c" w]
+#----------------------------------------------------------------------
+# Boilerplate warning for all generated files.
 
-puts $fo {/*
- * NB:  This file is machine generated, DO NOT EDIT!
- * instead, edit the Tcl script vcl_gen_fixed_token.tcl and run it by hand
- */
+proc warns {fd} {
+
+	puts $fd "/*"
+	puts $fd { * $Id$}
+	puts $fd " *"
+	puts $fd " * NB:  This file is machine generated, DO NOT EDIT!"
+	puts $fd " *"
+	puts $fd " * Edit vcl_gen_fixed_token.tcl instead"
+	puts $fd " */"
+	puts $fd ""
 }
+
+#----------------------------------------------------------------------
+# Build the vcl.h #include file
+
+set fo [open ../../include/vcl.h w]
+warns $fo
+puts $fo {struct sess;
+
+typedef void vcl_init_f(void);
+typedef int vcl_func_f(struct sess *sp);
+}
+puts $fo "struct VCL_conf {"
+puts $fo {	unsigned        magic;
+#define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */
+
+        struct backend  **backend;
+        unsigned        nbackend;
+        struct vrt_ref  *ref;
+        unsigned        nref;
+        unsigned        busy;
+
+        vcl_init_f      *init_func;
+}
+foreach m $methods {
+	puts $fo "\tvcl_func_f\t*[lindex $m 0]_func;"
+}
+puts $fo "};"
+
+close $fo
+
+#----------------------------------------------------------------------
+# Build the vcl_returns.h #include file
+
+set for [open "../../include/vcl_returns.h" w]
+warns $for
+puts $for "#ifdef VCL_RET_MAC"
+set i 0
+foreach k $returns {
+	if {$k == "error"} {
+		puts $for "#ifdef VCL_RET_MAC_E"
+		puts $for "VCL_RET_MAC_E($k, [string toupper $k], $i)"
+		puts $for "#endif"
+	} else {
+		puts $for "VCL_RET_MAC($k, [string toupper $k], (1 << $i))"
+	}
+	incr i
+}
+puts $for "#else"
+set i 0
+foreach k $returns {
+	puts $for "#define VCL_RET_[string toupper $k]  (1 << $i)"
+	incr i
+}
+puts $for "#define VCL_RET_MAX $i"
+puts $for "#endif"
+puts $for ""
+puts $for "#ifdef VCL_MET_MAC"
+foreach m $methods {
+	puts -nonewline $for "VCL_MET_MAC([lindex $m 0]"
+	puts -nonewline $for ",[string toupper [lindex $m 0]]"
+	set l [lindex $m 1]
+	puts -nonewline $for ",(VCL_RET_[string toupper [lindex $l 0]]"
+	foreach r [lrange $l 1 end] {
+		puts -nonewline $for "|VCL_RET_[string toupper $r]"
+	}
+	puts -nonewline $for ")"
+	puts $for ")"
+}
+puts $for "#endif"
+close $for
+
+#----------------------------------------------------------------------
+# Build the compiler token table and recognizers
+
+set fo [open "vcl_fixed_token.c" w]
+warns $fo
 
 set foh [open "vcl_token_defs.h" w]
-puts $foh {/*
- * NB:  This file is machine generated, DO NOT EDIT!
- * instead, edit the Tcl script vcl_gen_fixed_token.tcl and run it by hand
- */
-}
+warns $foh
 
 puts $fo "#include <stdio.h>"
 puts $fo "#include <ctype.h>"
@@ -70,20 +172,24 @@ puts $fo "#include \"vcl_priv.h\""
 set tn 128
 puts $foh "#define LOW_TOKEN $tn"
 
-foreach k $keywords {
-	set t T_[string toupper $k]
-	lappend tokens [list $t $k]
-	puts $foh "#define $t $tn"
+
+proc add_token {tok str alpha} {
+	global tokens tn fixed foh
+
+	lappend tokens [list $tok $str]
+	puts $foh "#define $tok $tn"
 	incr tn
-	lappend fixed [list $k $t 1]
+	lappend fixed [list $str $tok $alpha]
 }
-foreach k $magic {
-	set t T_[string toupper [lindex $k 1]]
-	lappend tokens [list $t [lindex $k 0]]
-	puts $foh "#define $t $tn"
-	incr tn
-	lappend fixed [list [lindex $k 0] $t 0]
+
+proc mk_token {tok str alpha} {
+	set tok T_[string toupper $tok]
+	add_token $tok $str $alpha
 }
+
+foreach k $keywords { mk_token $k $k 1 }
+foreach k $returns { mk_token $k $k 1 }
+foreach k $magic { mk_token [lindex $k 1] [lindex $k 0] 0 }
 foreach k $extras {
 	set t [string toupper $k]
 	lappend tokens [list $t $t]
@@ -176,7 +282,9 @@ foreach i $tokens {
 }
 puts $fo "}"
 
-
+#----------------------------------------------------------------------
+# Create the C-code which emits the boilerplate definitions for the
+# generated C code output
 
 proc copy_include {n} {
 	global fo
@@ -193,6 +301,12 @@ puts $fo ""
 puts $fo "void"
 puts $fo "vcl_output_lang_h(FILE *f)"
 puts $fo "{"
+set i 0
+foreach k $returns {
+	puts $fo "\tfputs(\"#define VCL_RET_[string toupper $k]  (1 << $i)\\n\", f);"
+	incr i
+}
+
 copy_include ../../include/vcl.h
 copy_include ../../include/vrt.h
 

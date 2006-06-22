@@ -75,19 +75,7 @@ VRT_handling(struct sess *sp, unsigned hand)
 {
 
 	assert(!(hand & (hand -1)));	/* must be power of two */
-	switch (hand) {
-#define FOO(a,b)  case VRT_H_##a: sp->handling = HND_##b; break;
-	FOO(error, Error);
-	FOO(pipe, Pipe);
-	FOO(pass, Pass);
-	FOO(lookup, Lookup);
-	FOO(fetch, Fetch);
-	FOO(insert, Insert);
-	FOO(deliver, Deliver);
-#undef FOO
-	default:
-		assert(hand == 0);
-	}
+	sp->handling = hand;
 }
 
 int
