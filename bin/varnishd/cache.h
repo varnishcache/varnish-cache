@@ -104,6 +104,7 @@ struct sess {
 };
 
 struct backend {
+	const char	*vcl_name;
 	const char	*hostname;
 	const char	*portname;
 	unsigned	ip;

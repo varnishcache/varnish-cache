@@ -7,6 +7,7 @@
  */
 
 SLTM(Debug)
+SLTM(Error)
 SLTM(CLI)
 SLTM(SessionOpen)
 SLTM(SessionReuse)
@@ -16,7 +17,12 @@ SLTM(BackendReuse)
 SLTM(BackendClose)
 SLTM(HttpError)
 SLTM(ClientAddr)
-SLTM(Handling)
+#define VCL_RET_MAC(l,u,b)
+#define VCL_MET_MAC(l,u,b) SLTM(vcl_##l)
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+#undef VCL_RET_MAC
+SLTM(Backend)
 SLTM(Request)
 SLTM(Response)
 SLTM(Status)
