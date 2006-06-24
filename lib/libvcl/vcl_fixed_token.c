@@ -180,6 +180,12 @@ vcl_fixed_token(const char *p, const char **q)
 		}
 		return (0);
 	case 'd':
+		if (p[0] == 'd' && p[1] == 'i' && p[2] == 's' && 
+		    p[3] == 'c' && p[4] == 'a' && p[5] == 'r' && 
+		    p[6] == 'd' && !isvar(p[7])) {
+			*q = p + 7;
+			return (T_DISCARD);
+		}
 		if (p[0] == 'd' && p[1] == 'e' && p[2] == 'l' && 
 		    p[3] == 'i' && p[4] == 'v' && p[5] == 'e' && 
 		    p[6] == 'r' && !isvar(p[7])) {
@@ -373,6 +379,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_DEC] = "--";
 	vcl_tnames[T_DECR] = "/=";
 	vcl_tnames[T_DELIVER] = "deliver";
+	vcl_tnames[T_DISCARD] = "discard";
 	vcl_tnames[T_DIV] = "/=";
 	vcl_tnames[T_ELSE] = "else";
 	vcl_tnames[T_ELSEIF] = "elseif";
@@ -414,6 +421,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("#define VCL_RET_FETCH  (1 << 4)\n", f);
 	fputs("#define VCL_RET_INSERT  (1 << 5)\n", f);
 	fputs("#define VCL_RET_DELIVER  (1 << 6)\n", f);
+	fputs("#define VCL_RET_DISCARD  (1 << 7)\n", f);
 	fputs("/*\n", f);
 	fputs(" * $Id$\n", f);
 	fputs(" *\n", f);
@@ -443,6 +451,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("	vcl_func_f	*miss_func;\n", f);
 	fputs("	vcl_func_f	*hit_func;\n", f);
 	fputs("	vcl_func_f	*fetch_func;\n", f);
+	fputs("	vcl_func_f	*timeout_func;\n", f);
 	fputs("};\n", f);
 	fputs("/*\n", f);
 	fputs(" * $Id$ \n", f);
