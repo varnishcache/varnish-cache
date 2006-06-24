@@ -223,8 +223,6 @@ FetchSession(struct worker *w, struct sess *sp)
 	time(&t_resp);
 	http_Dissect(hp, fd, 2);
 
-	sp->obj->ttl = RFC2616_Ttl(hp, t_req, t_resp);
-
 	switch (http_GetStatus(hp)) {
 	case 200:
 	case 301:
@@ -242,7 +240,15 @@ FetchSession(struct worker *w, struct sess *sp)
 		break;
 	}
 
+	sp->obj->ttl = RFC2616_Ttl(hp, t_req, t_resp);
+	if (sp->obj->ttl == 0) {
+		sp->obj->cacheable = 0;
+	}
+
 	VCL_fetch_method(sp);
+
+	if (sp->obj->cacheable)
+		EXP_Insert(sp->obj);
 
 	if (http_GetHdr(hp, "Content-Length", &b))
 		cls = fetch_straight(w, sp, fd, hp, b);
@@ -263,6 +269,8 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	/* XXX: unbusy, and kick other sessions into action */
 	sp->obj->busy = 0;
+
+	/* XXX: if not cachable, destroy */
 
 	return (1);
 }

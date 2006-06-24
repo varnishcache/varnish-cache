@@ -138,6 +138,7 @@ void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
 
 /* cache_expiry.c */
+void EXP_Insert(struct object *o);
 void EXP_Init(void);
 
 /* cache_fetch.c */
