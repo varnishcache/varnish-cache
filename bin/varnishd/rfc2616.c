@@ -80,7 +80,9 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 		ttl = h_expires;
 	if (ttl == 0)
 		ttl = t_resp + heritage.default_ttl;
-	printf("TTL: %d (+%d)\n", ttl, ttl - t_resp);
+	printf("TTL: %d (%+d)\n", ttl, ttl - t_resp);
+	if (ttl < t_resp)
+		return (t_resp);
 
 	return (ttl);
 }
