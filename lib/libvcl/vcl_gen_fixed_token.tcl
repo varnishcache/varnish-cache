@@ -69,7 +69,7 @@ set char {{}()*+-/%><=;!&.|~,}
 
 # Other token identifiers
 #
-set extras {ID VAR CNUM CSTR EOI}
+set extras {ID VAR CNUM CSTR EOI METHOD}
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.

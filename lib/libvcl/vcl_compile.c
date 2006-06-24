@@ -169,6 +169,7 @@ static struct var vars[] = {
 	{ "req.request",		STRING,	  0,  "VRT_GetReq(sp)"	     },
 	{ "obj.valid",			BOOL,	  0,  "VRT_obj_valid(sp)"     },
 	{ "obj.cacheable",		BOOL,	  0,  "VRT_obj_cacheable(sp)" },
+	{ "obj.backend",		BACKEND,  0,  "VRT_obj_backend(sp)"   },
 	{ "req.http.",			HEADER,	  0,  NULL },
 #if 0
 	{ "req.ttlfactor",		FLOAT, 0,   "req->ttlfactor" },
@@ -226,6 +227,8 @@ ErrWhere(struct tokenlist *tl, struct token *t)
 	
 	lin = 1;
 	pos = 0;
+	if (t->tok == METHOD)
+		return;
 	for (l = p = tl->b; p < t->b; p++) {
 		if (*p == '\n') {
 			lin++;
@@ -316,7 +319,9 @@ _Expect(struct tokenlist *tl, unsigned tok, int line)
 	tl->t->cnt = tl->cnt; 				\
 } while (0)
 	
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Printf output to the two sbufs, possibly indented
+ */
 
 static void
 Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
@@ -340,6 +345,18 @@ Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_start(ap, fmt);
 	sbuf_vprintf(tl->fc, fmt, ap);
 	va_end(ap);
+}
+
+/*--------------------------------------------------------------------
+ * Compare token to token
+ */
+
+static int
+Teq(struct token *t1, struct token *t2)
+{
+	if (t1->e - t1->b != t2->e - t2->b)
+		return (0);
+	return (!memcmp(t1->b, t2->b, t1->e - t1->b));
 }
 
 /*--------------------------------------------------------------------
@@ -424,11 +441,8 @@ FindRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 	TAILQ_FOREACH(r, &tl->refs, list) {
 		if (r->type != type)
 			continue;
-		if (r->name->e - r->name->b != t->e - t->b)
-			continue;
-		if (memcmp(t->b, r->name->b, t->e - t->b))
-			continue;
-		return (r);
+		if (Teq(r->name, t))
+			return (r);
 	}
 	r = calloc(sizeof *r, 1);
 	assert(r != NULL);
@@ -446,10 +460,25 @@ AddRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 }
 
 static void
+AddRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
+{
+	struct token *t;
+
+	t = calloc(sizeof *t, 1);
+	t->b = s;
+	t->e = strchr(s, '\0');
+	t->tok = METHOD;
+	AddRef(tl, t, type);
+}
+
+static void
 AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
 {
+	struct ref *r;
 
-	FindRef(tl, t, type)->defcnt++;
+	r = FindRef(tl, t, type);
+	r->defcnt++;
+	r->name = t;
 }
 
 /*--------------------------------------------------------------------
@@ -1055,6 +1084,7 @@ Action(struct tokenlist *tl)
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				NextToken(tl);
+				AddRef(tl, tl->t, R_BACKEND);
 				Fc(tl, 0, "= &VGC_backend_%T;\n", tl->t);
 				NextToken(tl);
 				break;
@@ -1196,6 +1226,8 @@ Backend(struct tokenlist *tl)
 	ExpectErr(tl, ID);
 	t_be = tl->t;
 	AddDef(tl, tl->t, R_BACKEND);
+	if (tl->nbackend == 0)
+		AddRef(tl, tl->t, R_BACKEND);
 	Fh(tl, 1, "#define VGC_backend_%T (VCL_conf.backend[%d])\n",
 	    tl->t, tl->nbackend);
 	Fc(tl, 0, "static void\n");
@@ -1459,13 +1491,11 @@ AddProc(struct tokenlist *tl, struct token *t, int def)
 	struct proc *p;
 
 	TAILQ_FOREACH(p, &tl->procs, list) {
-		if (p->name->e - p->name->b != t->e - t->b)
+		if (!Teq(p->name, t)) 
 			continue;
-		if (!memcmp(p->name->b, t->b, t->e - t->b)) {
-			if (def)
-				p->name = t;
-			return (p);
-		}
+		if (def)
+			p->name = t;
+		return (p);
 	}
 	p = calloc(sizeof *p, 1);
 	assert(p != NULL);
@@ -1567,28 +1597,27 @@ Consistency(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 CheckRefs(struct tokenlist *tl)
 {
 	struct ref *r;
-	const char *bug;
+	const char *type;
+	int nerr = 0;
 
 	TAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->defcnt == 0)
-			bug = "Undefined ";
-		else if (r->refcnt == 0)
-			bug = "Unreferenced ";
-		else
+		if (r->defcnt != 0 && r->refcnt != 0)
 			continue;
+		nerr++;
+
 		switch(r->type) {
 		case R_FUNC:
-			sbuf_printf(tl->sb, "%s function ", bug);
+			type = "function";
 			break;
 		case R_ACL:
-			sbuf_printf(tl->sb, "%s acl ", bug);
+			type = "acl";
 			break;
 		case R_BACKEND:
-			sbuf_printf(tl->sb, "%s backend ", bug);
+			type = "backend";
 			break;
 		default:
 			ErrInternal(tl);
@@ -1596,13 +1625,26 @@ CheckRefs(struct tokenlist *tl)
 			ErrToken(tl, r->name);
 			sbuf_printf(tl->sb, " has unknown type %d\n",
 			    r->type);
-			return;
+			continue;
 		}
-		ErrToken(tl, r->name);
-		sbuf_cat(tl->sb, ", first mention is\n");
+		if (r->defcnt == 0 && r->name->tok == METHOD) {
+			sbuf_printf(tl->sb,
+			    "No definition for method %T\n", r->name);
+			continue;
+		}
+
+		if (r->defcnt == 0) {
+			sbuf_printf(tl->sb,
+			    "Undefined %s %T, first reference:\n",
+			    type, r->name);
+			ErrWhere(tl, r->name);
+			continue;
+		} 
+
+		sbuf_printf(tl->sb, "Unused %s %T, defined:\n", type, r->name);
 		ErrWhere(tl, r->name);
-		return;
 	}
+	return (nerr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1674,13 +1716,16 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\nstruct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
-	Fc(tl, 0, "\t.recv_func = VGC_function_vcl_recv,\n");
-	Fc(tl, 0, "\t.hit_func = VGC_function_vcl_hit,\n");
-	Fc(tl, 0, "\t.miss_func = VGC_function_vcl_miss,\n");
-	Fc(tl, 0, "\t.fetch_func = VGC_function_vcl_fetch,\n");
 	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
+#define VCL_RET_MAC(l,u,b)
+#define VCL_MET_MAC(l,u,b) \
+	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); \
+	AddRefStr(tl, "vcl_" #l, R_FUNC);
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+#undef VCL_RET_MAC
 	Fc(tl, 0, "};\n");
 }
 
@@ -1723,8 +1768,6 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	if (tokens.err)
 		goto done;
 	Consistency(&tokens);
-if (0)
-	CheckRefs(&tokens);
 	if (tokens.err)
 		goto done;
 	LocTable(&tokens);
@@ -1732,6 +1775,9 @@ if (0)
 	EmitInitFunc(&tokens);
 
 	EmitStruct(&tokens);
+
+	if (CheckRefs(&tokens))
+		goto done;
 
 	of = strdup("/tmp/vcl.XXXXXXXX");
 	assert(of != NULL);
