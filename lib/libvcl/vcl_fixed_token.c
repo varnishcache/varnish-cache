@@ -364,6 +364,7 @@ vcl_init_tnames(void)
 	vcl_tnames[CSTR] = "CSTR";
 	vcl_tnames[EOI] = "EOI";
 	vcl_tnames[ID] = "ID";
+	vcl_tnames[METHOD] = "METHOD";
 	vcl_tnames[T_ACL] = "acl";
 	vcl_tnames[T_BACKEND] = "backend";
 	vcl_tnames[T_CALL] = "call";

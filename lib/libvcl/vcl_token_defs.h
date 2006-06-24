@@ -48,3 +48,4 @@
 #define CNUM 166
 #define CSTR 167
 #define EOI 168
+#define METHOD 169
