@@ -7,10 +7,11 @@
 # Second element is list of valid return actions.
 #
 set methods {
-	{recv	{error pass pipe lookup}}
-	{miss	{error pass pipe fetch}}
-	{hit	{error pass pipe deliver}}
-	{fetch	{error pass pipe insert}}
+	{recv		{error pass pipe lookup}}
+	{miss		{error pass pipe fetch}}
+	{hit		{error pass pipe deliver}}
+	{fetch		{error pass pipe insert}}
+	{timeout	{fetch discard}}
 }
 
 # These are the return actions
@@ -23,6 +24,7 @@ set returns {
 	fetch
 	insert
 	deliver
+	discard
 }
 
 # Language keywords

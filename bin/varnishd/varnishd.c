@@ -107,6 +107,9 @@ vcl_default(const char *bflag)
 	    "    }\n"
 	    "    insert;\n"
 	    "}\n"
+	    "sub vcl_timeout {\n"
+	    "    discard;\n"
+	    "}\n"
 	    "", bflag);
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);

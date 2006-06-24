@@ -27,4 +27,5 @@ struct VCL_conf {
 	vcl_func_f	*miss_func;
 	vcl_func_f	*hit_func;
 	vcl_func_f	*fetch_func;
+	vcl_func_f	*timeout_func;
 };
