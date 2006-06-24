@@ -16,6 +16,7 @@
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static pthread_mutex_t expmtx;
+static unsigned expearly = 30;
 
 /*--------------------------------------------------------------------*/
 
@@ -40,12 +41,17 @@ exp_main(void *arg)
 		time(&t);
 		AZ(pthread_mutex_lock(&expmtx));
 		o = binheap_root(exp_heap);
-		AZ(pthread_mutex_unlock(&expmtx));
-		if (o != NULL) {
-			printf("Root: %p %d (%d)\n",
-			    (void*)o, o->ttl, o->ttl - t);
+		if (o == NULL || o->ttl - t > expearly) {
+			AZ(pthread_mutex_unlock(&expmtx));
+			if (o != NULL)
+				printf("Root: %p %d (%d)\n",
+				    (void*)o, o->ttl, o->ttl - t);
+			sleep(1);
+			continue;
 		}
-		sleep(1);
+		printf("Root: %p %d (%d)\n", (void*)o, o->ttl, o->ttl - t);
+		binheap_delete(exp_heap, 0);
+		AZ(pthread_mutex_unlock(&expmtx));
 	}
 
 	return ("FOOBAR");
