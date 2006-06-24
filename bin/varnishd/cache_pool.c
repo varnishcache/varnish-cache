@@ -110,23 +110,19 @@ CacheWorker(void *priv)
 		for (done = 0; !done; ) {
 			switch(sp->handling) {
 			case VCL_RET_LOOKUP:
-				VSL(SLT_Handling, sp->fd, "Lookup");
 				done = LookupSession(&w, sp);
 				break;
 			case VCL_RET_FETCH:
 				done = FetchSession(&w, sp);
 				break;
 			case VCL_RET_DELIVER:
-				VSL(SLT_Handling, sp->fd, "Deliver");
 				done = DeliverSession(&w, sp);
 				break;
 			case VCL_RET_PIPE:
-				VSL(SLT_Handling, sp->fd, "Pipe");
 				PipeSession(&w, sp);
 				done = 1;
 				break;
 			case VCL_RET_PASS:
-				VSL(SLT_Handling, sp->fd, "Pass");
 				PassSession(&w, sp);
 				done = 1;
 				break;

@@ -204,7 +204,7 @@ FetchSession(struct worker *w, struct sess *sp)
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
-	VSL(SLT_Handling, sp->fd, "Fetch fd %d", fd);
+	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
 
 	hp = http_New();
 	http_BuildSbuf(1, w->sb, sp->http);

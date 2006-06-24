@@ -103,6 +103,12 @@ VRT_set_backend_portname(struct backend *be, const char *p)
 }
 
 void
+VRT_set_backend_name(struct backend *be, const char *p)
+{
+	be->vcl_name = p;
+}
+
+void
 VRT_alloc_backends(struct VCL_conf *cp)
 {
 	int i;

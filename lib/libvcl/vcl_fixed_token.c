@@ -485,6 +485,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("int VRT_obj_valid(struct sess *);\n", f);
 	fputs("int VRT_obj_cacheable(struct sess *);\n", f);
 	fputs("\n", f);
+	fputs("void VRT_set_backend_name(struct backend *, const char *);\n", f);
 	fputs("void VRT_set_backend_hostname(struct backend *, const char *);\n", f);
 	fputs("void VRT_set_backend_portname(struct backend *, const char *);\n", f);
 	fputs("\n", f);

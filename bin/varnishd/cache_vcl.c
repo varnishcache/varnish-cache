@@ -212,15 +212,11 @@ CheckHandling(struct sess *sp, const char *func, unsigned bitmap)
 
 	u = sp->handling;
 	n = HandlingName(u);
-	if (n != NULL)
-		VSL(SLT_Handling, sp->fd, "%s(): %s", func, n);
-	else
-		VSL(SLT_Handling, sp->fd, "%s(): Illegal: 0x%x", func, u);
 	if (u & (u - 1))
-		VSL(SLT_Debug, sp->fd,
+		VSL(SLT_Error, sp->fd,
 		    "Illegal handling after %s function: 0x%x", func, u);
 	else if (!(u & bitmap))
-		VSL(SLT_Debug, sp->fd,
+		VSL(SLT_Error, sp->fd,
 		    "Wrong handling after %s function: 0x%x", func, u);
 	else
 		return;
@@ -235,6 +231,7 @@ VCL_##func##_method(struct sess *sp)		\
 	sp->handling = 0;			\
 	sp->vcl->func##_func(sp);		\
 	CheckHandling(sp, #func, (bitmap));	\
+	VSL(SLT_vcl_##func, sp->fd, "%s", HandlingName(sp->handling)); \
 }
 
 #define VCL_RET_MAC(l,u,b)

@@ -42,8 +42,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <sbuf.h>
 #include <stdio.h>
+#include <sbuf.h>
 #include <stdlib.h>
 #include <string.h>
 #include <queue.h>
@@ -1241,6 +1241,11 @@ Backend(struct tokenlist *tl)
 	    tl->t->e - tl->t->b,
 	    tl->t->e - tl->t->b, tl->t->b);
 	I(tl); sbuf_printf(tl->fc, "\tconst char *p;\n");
+	I(tl); sbuf_printf(tl->fc, "\n");
+	I(tl); sbuf_printf(tl->fc,
+	    "\tVRT_set_backend_name(backend, \"%*.*s\");\n",
+	    tl->t->e - tl->t->b,
+	    tl->t->e - tl->t->b, tl->t->b);
 	NextToken(tl);
 	ExpectErr(tl, '{');
 	NextToken(tl);
