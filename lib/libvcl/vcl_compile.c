@@ -43,6 +43,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <printf.h>
 #include <sbuf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,7 +203,7 @@ ErrToken(struct tokenlist *tl, struct token *t)
 	if (t->tok == EOI)
 		sbuf_printf(tl->sb, "end of input");
 	else
-		sbuf_printf(tl->sb, "'%*.*s'", t->e - t->b, t->e - t->b, t->b);
+		sbuf_printf(tl->sb, "'%T'", t);
 }
 
 static void
@@ -692,19 +693,14 @@ Cond_Ip(struct var *vp, struct tokenlist *tl)
 		ExpectErr(tl, ID);
 		I(tl);
 		AddRef(tl, tl->t, R_ACL);
-		sbuf_printf(tl->fc, "ip_match(%s, acl_%*.*s)\n",
-		    vp->rname,
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "ip_match(%s, acl_%T)\n",
+		    vp->rname, tl->t);
 		NextToken(tl);
 		break;
 	case T_EQ:
 	case T_NEQ:
 		I(tl);
-		sbuf_printf(tl->fc, "%s %*.*s ",
-		    vp->rname,
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "%s %T ", vp->rname, tl->t);
 		NextToken(tl);
 		u = IpVal(tl);
 		sbuf_printf(tl->fc, "%uU /* %u.%u.%u.%u */\n", u,
@@ -730,9 +726,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		I(tl); sbuf_printf(tl->fc, "string_match(%s, ", vp->rname);
 		NextToken(tl);
 		ExpectErr(tl, CSTR);
-		sbuf_printf(tl->fc, "%*.*s)\n",
-			tl->t->e - tl->t->b,
-			tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "%T)\n", tl->t);
 		NextToken(tl);
 		break;
 	case T_EQ:
@@ -742,9 +736,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		NextToken(tl);
 		ExpectErr(tl, CSTR);
-		sbuf_printf(tl->fc, "%*.*s)\n",
-			tl->t->e - tl->t->b,
-			tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "%T)\n", tl->t);
 		NextToken(tl);
 		break;
 	default:
@@ -766,9 +758,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 	case T_GEQ:
 	case '>':
 	case '<':
-		sbuf_printf(tl->fc, "%*.*s ", 
-			tl->t->e - tl->t->b,
-			tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "%T ", tl->t);
 		NextToken(tl);
 		switch(vp->fmt) {
 		case TIME:
@@ -776,9 +766,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 			break;
 		case INT:
 			ExpectErr(tl, CNUM);
-			sbuf_printf(tl->fc, "%*.*s ", 
-				tl->t->e - tl->t->b,
-				tl->t->e - tl->t->b, tl->t->b);
+			sbuf_printf(tl->fc, "%T ", tl->t);
 			NextToken(tl);
 			break;
 		case SIZE:
@@ -981,9 +969,7 @@ Action(struct tokenlist *tl)
 		I(tl);
 		sbuf_printf(tl->fc, "VRT_error(sp, %u, ", a);
 		if (tl->t->tok == CSTR) {
-			sbuf_printf(tl->fc, "%*.*s);\n",
-			    tl->t->e - tl->t->b,
-			    tl->t->e - tl->t->b, tl->t->b);
+			sbuf_printf(tl->fc, "%T);\n", tl->t);
 			NextToken(tl);
 		} else
 			sbuf_printf(tl->fc, "(const char *)0);\n");
@@ -992,9 +978,7 @@ Action(struct tokenlist *tl)
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_switch_config(\"%*.*s\");\n",
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "VCL_switch_config(\"%T\");\n", tl->t);
 		NextToken(tl);
 		return;
 	case T_CALL:
@@ -1002,23 +986,17 @@ Action(struct tokenlist *tl)
 		AddCall(tl, tl->t);
 		AddRef(tl, tl->t, R_FUNC);
 		I(tl); sbuf_printf(tl->fc,
-		    "if (VGC_function_%*.*s(sp))\n",
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		    "if (VGC_function_%T(sp))\n", tl->t);
 		I(tl); sbuf_printf(tl->fc, "\treturn (1);\n");
 		NextToken(tl);
 		return;
 	case T_REWRITE:
 		ExpectErr(tl, CSTR);
 		I(tl);
-		sbuf_printf(tl->fc, "VCL_rewrite(%*.*s",
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, "VCL_rewrite(%T", tl->t);
 		NextToken(tl);
 		ExpectErr(tl, CSTR);
-		sbuf_printf(tl->fc, ", %*.*s);\n",
-		    tl->t->e - tl->t->b,
-		    tl->t->e - tl->t->b, tl->t->b);
+		sbuf_printf(tl->fc, ", %T);\n", tl->t);
 		NextToken(tl);
 		return;
 	case T_SET:
@@ -1035,9 +1013,7 @@ Action(struct tokenlist *tl)
 		case RATE:
 		case TIME:
 		case FLOAT:
-			sbuf_printf(tl->fc, "%*.*s ",
-			    tl->t->e - tl->t->b,
-			    tl->t->e - tl->t->b, tl->t->b);
+			sbuf_printf(tl->fc, "%T ", tl->t);
 			a = tl->t->tok;
 			NextToken(tl);
 			if (a == T_MUL || a == T_DIV)
@@ -1073,9 +1049,8 @@ Action(struct tokenlist *tl)
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				NextToken(tl);
-				sbuf_printf(tl->fc, "= &VGC_backend_%*.*s;\n",
-				    tl->t->e - tl->t->b,
-				    tl->t->e - tl->t->b, tl->t->b);
+				sbuf_printf(tl->fc, "= &VGC_backend_%T;\n",
+				    tl->t);
 				NextToken(tl);
 				break;
 			}
@@ -1110,13 +1085,9 @@ Acl(struct tokenlist *tl)
 
 	ExpectErr(tl, ID);
 	AddDef(tl, tl->t, R_ACL);
-	sbuf_printf(tl->fh, "static struct vcl_acl acl_%*.*s[];\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	sbuf_printf(tl->fh, "static struct vcl_acl acl_%T[];\n", tl->t);
 	I(tl);
-	sbuf_printf(tl->fc, "static struct vcl_acl acl_%*.*s[] = {\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	sbuf_printf(tl->fc, "static struct vcl_acl acl_%T[] = {\n", tl->t);
 	NextToken(tl);
 
 	tl->indent += INDENT;
@@ -1226,26 +1197,18 @@ Backend(struct tokenlist *tl)
 	AddDef(tl, tl->t, R_BACKEND);
 	I(tl);
 	sbuf_printf(tl->fh,
-	    "#define VGC_backend_%*.*s (VCL_conf.backend[%d])\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b, tl->nbackend);
+	    "#define VGC_backend_%T (VCL_conf.backend[%d])\n",
+	    tl->t, tl->nbackend);
 	sbuf_printf(tl->fc, "static void\n");
-	I(tl); sbuf_printf(tl->fc,
-	    "VGC_init_backend_%*.*s (void)\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	I(tl); sbuf_printf(tl->fc, "VGC_init_backend_%T (void)\n", tl->t);
 	I(tl);
 	sbuf_printf(tl->fc, "{\n");
 	I(tl); sbuf_printf(tl->fc,
-	    "\tstruct backend *backend = VGC_backend_%*.*s;\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	    "\tstruct backend *backend = VGC_backend_%T;\n", tl->t);
 	I(tl); sbuf_printf(tl->fc, "\tconst char *p;\n");
 	I(tl); sbuf_printf(tl->fc, "\n");
 	I(tl); sbuf_printf(tl->fc,
-	    "\tVRT_set_backend_name(backend, \"%*.*s\");\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	    "\tVRT_set_backend_name(backend, \"%T\");\n", tl->t);
 	NextToken(tl);
 	ExpectErr(tl, '{');
 	NextToken(tl);
@@ -1265,9 +1228,7 @@ Backend(struct tokenlist *tl)
 		case HOSTNAME:
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
-			I(tl); sbuf_printf(tl->fc, "\tp = %*.*s;\n",
-			    tl->t->e - tl->t->b,
-			    tl->t->e - tl->t->b, tl->t->b);
+			I(tl); sbuf_printf(tl->fc, "\tp = %T;\n", tl->t);
 			I(tl); sbuf_printf(tl->fc, "\t");
 			sbuf_printf(tl->fc, vp->lname, "p");
 			sbuf_printf(tl->fc, ";\n");
@@ -1276,9 +1237,7 @@ Backend(struct tokenlist *tl)
 		case PORTNAME:
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
-			I(tl); sbuf_printf(tl->fc, "\tp = %*.*s;\n",
-			    tl->t->e - tl->t->b,
-			    tl->t->e - tl->t->b, tl->t->b);
+			I(tl); sbuf_printf(tl->fc, "\tp = %T;\n", tl->t);
 			I(tl); sbuf_printf(tl->fc, "\t");
 			sbuf_printf(tl->fc, vp->lname, "p");
 			sbuf_printf(tl->fc, ";\n");
@@ -1295,19 +1254,14 @@ Backend(struct tokenlist *tl)
 	}
 	ExpectErr(tl, '}');
 	if (t_host == NULL) {
-		sbuf_printf(tl->sb, "Backend '%*.*s' has no hostname\n",
-		    t_be->e - t_be->b,
-		    t_be->e - t_be->b, t_be->b);
+		sbuf_printf(tl->sb, "Backend '%T' has no hostname\n", t_be);
 		ErrWhere(tl, tl->t);
 		return;
 	}
 	host = EncString(t_host);
 	ep = CheckHostPort(host, "80");
 	if (ep != NULL) {
-		sbuf_printf(tl->sb,
-		    "Backend '%*.*s': %s\n",
-		    t_be->e - t_be->b,
-		    t_be->e - t_be->b, t_be->b, ep);
+		sbuf_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
 		ErrWhere(tl, t_host);
 		return;
 	}
@@ -1315,10 +1269,7 @@ Backend(struct tokenlist *tl)
 		port = EncString(tl->t);
 		ep = CheckHostPort(host, port);
 		if (ep != NULL) {
-			sbuf_printf(tl->sb,
-			    "Backend '%*.*s': %s\n",
-			    t_be->e - t_be->b,
-			    t_be->e - t_be->b, t_be->b, ep);
+			sbuf_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
 			ErrWhere(tl, t_port);
 			return;
 		}
@@ -1343,13 +1294,10 @@ Function(struct tokenlist *tl)
 	tl->curproc->exists++;
 	AddDef(tl, tl->t, R_FUNC);
 	sbuf_printf(tl->fh,
-	    "static int VGC_function_%*.*s (struct sess *sp);\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	    "static int VGC_function_%T (struct sess *sp);\n", tl->t);
 	I(tl); sbuf_printf(tl->fc, "static int\n");
-	I(tl); sbuf_printf(tl->fc, "VGC_function_%*.*s (struct sess *sp)\n",
-	    tl->t->e - tl->t->b,
-	    tl->t->e - tl->t->b, tl->t->b);
+	I(tl); sbuf_printf(tl->fc, "VGC_function_%T (struct sess *sp)\n",
+	    tl->t);
 	NextToken(tl);
 	L(tl, Compound(tl));
 	sbuf_printf(tl->fc, "\n");
@@ -1559,10 +1507,7 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 	struct proccall *pc;
 
 	if (!p->exists) {
-		sbuf_printf(tl->sb, "Function %*.*s does not exist\n",
-			p->name->e - p->name->b,
-			p->name->e - p->name->b,
-			p->name->b);
+		sbuf_printf(tl->sb, "Function %T does not exist\n", p->name);
 		return (1);
 	}
 	if (p->active) {
@@ -1700,11 +1645,9 @@ LocTable(struct tokenlist *tl)
 		
 		}
 		sbuf_printf(tl->fc,
-		    "%*.*s[%3u] = { %4u, %3u, 0, \"%*.*s\" },\n",
+		    "%*.*s[%3u] = { %4u, %3u, 0, \"T\" },\n",
 		    INDENT, INDENT, "",
-		    t->cnt, lin, pos + 1,
-		    t->e - t->b,
-		    t->e - t->b, t->b);
+		    t->cnt, lin, pos + 1, t);
 	}
 	sbuf_printf(tl->fc, "};\n");
 }
@@ -1733,9 +1676,7 @@ EmitInitFunc(struct tokenlist *tl)
 			break;
 		case R_BACKEND:
 			sbuf_printf(tl->fc,
-			    "\tVGC_init_backend_%*.*s();\n",
-			    r->name->e - r->name->b,
-			    r->name->e - r->name->b, r->name->b);
+			    "\tVGC_init_backend_%T();\n", r->name);
 			break;
 		}
 	}
@@ -1883,11 +1824,33 @@ VCC_CompileFile(struct sbuf *sb, const char *fn)
 
 /*--------------------------------------------------------------------*/
 
+int
+VCC_T_render(FILE *f, const struct printf_info *info, const void *const *args)
+{
+	const struct token *t;
+
+	t = *((const struct token **) (args[0]));
+	return (fprintf(f, "%*.*s",
+	    t->e - t->b, t->e - t->b, t->b));
+}
+     
+int
+VCC_T_arginfo(const struct printf_info *info, size_t n, int *argtypes)
+{
+
+	if (n > 0)
+		argtypes[0] = PA_POINTER;
+	return 1;
+}
+     
+/*--------------------------------------------------------------------*/
+
 void
 VCC_InitCompile(void)
 {
 	struct var *v;
 
+	register_printf_function ('T', VCC_T_render, VCC_T_arginfo);
 	vcl_init_tnames();
 	for (v = vars; v->name != NULL; v++)
 		v->len = strlen(v->name);
