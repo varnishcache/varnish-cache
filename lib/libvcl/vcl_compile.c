@@ -1055,8 +1055,7 @@ Action(struct tokenlist *tl)
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				NextToken(tl);
-				Fc(tl, 0, "= &VGC_backend_%T;\n",
-				    tl->t);
+				Fc(tl, 0, "= &VGC_backend_%T;\n", tl->t);
 				NextToken(tl);
 				break;
 			}
@@ -1289,8 +1288,7 @@ Function(struct tokenlist *tl)
 	tl->curproc = AddProc(tl, tl->t, 1);
 	tl->curproc->exists++;
 	AddDef(tl, tl->t, R_FUNC);
-	Fh(tl, 0,
-	    "static int VGC_function_%T (struct sess *sp);\n", tl->t);
+	Fh(tl, 0, "static int VGC_function_%T (struct sess *sp);\n", tl->t);
 	Fc(tl, 1, "static int\n");
 	Fc(tl, 1, "VGC_function_%T (struct sess *sp)\n", tl->t);
 	NextToken(tl);
@@ -1616,12 +1614,9 @@ LocTable(struct tokenlist *tl)
 	unsigned lin, pos;
 	const char *p;
 	
-	Fh(tl, 0,
-	    "#define VGC_NREFS %u\n", tl->cnt + 1);
-	Fh(tl, 0,
-	    "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
-	Fc(tl, 0,
-	    "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
+	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
+	Fh(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
+	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	p = tl->b;
@@ -1639,9 +1634,7 @@ LocTable(struct tokenlist *tl)
 				pos++;
 		
 		}
-		Fc(tl, 0,
-		    "%*.*s[%3u] = { %4u, %3u, 0, \"T\" },\n",
-		    INDENT, INDENT, "",
+		Fc(tl, 0, "  [%3u] = { %4u, %3u, 0, \"T\" },\n",
 		    t->cnt, lin, pos + 1, t);
 	}
 	Fc(tl, 0, "};\n");
@@ -1655,13 +1648,8 @@ EmitInitFunc(struct tokenlist *tl)
 {
 	struct ref *r;
 
-	Fc(tl, 0,
-	    "\nstatic void\n"
-	    "VGC_Init(void)\n"
-	    "{\n\n");
-
-	Fc(tl, 0,
-	    "\tVRT_alloc_backends(&VCL_conf);\n");
+	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
+	Fc(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
 	
 	TAILQ_FOREACH(r, &tl->refs, list) {
 		switch(r->type) {
@@ -1670,8 +1658,7 @@ EmitInitFunc(struct tokenlist *tl)
 		case R_ACL:
 			break;
 		case R_BACKEND:
-			Fc(tl, 0,
-			    "\tVGC_init_backend_%T();\n", r->name);
+			Fc(tl, 0, "\tVGC_init_backend_%T();\n", r->name);
 			break;
 		}
 	}
@@ -1685,20 +1672,15 @@ EmitStruct(struct tokenlist *tl)
 {
 
 	Fc(tl, 0, "\nstruct VCL_conf VCL_conf = {\n");
-	Fc(tl, 0,
-	    "\t.magic = VCL_CONF_MAGIC,\n");
-	Fc(tl, 0,
-	    "\t.init_func = VGC_Init,\n");
+	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
+	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
 	Fc(tl, 0, "\t.recv_func = VGC_function_vcl_recv,\n");
 	Fc(tl, 0, "\t.hit_func = VGC_function_vcl_hit,\n");
 	Fc(tl, 0, "\t.miss_func = VGC_function_vcl_miss,\n");
 	Fc(tl, 0, "\t.fetch_func = VGC_function_vcl_fetch,\n");
-	Fc(tl, 0,
-	    "\t.nbackend = %d,\n", tl->nbackend);
-	Fc(tl, 0,
-	    "\t.ref = VGC_ref,\n");
-	Fc(tl, 0,
-	    "\t.nref = VGC_NREFS,\n");
+	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
+	Fc(tl, 0, "\t.ref = VGC_ref,\n");
+	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "};\n");
 }
 
