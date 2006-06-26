@@ -188,12 +188,59 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	http_BuildSbuf(2, w->sb, hp);
 
 	vca_write_obj(sp, w->sb);
-
-#if 0
-	hash->deref(sp->obj);
-#endif
-
 	return (0);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+#include <errno.h>
+
+static int
+fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
+{
+	int i;
+	char *b, *e;
+	unsigned char *p;
+	struct storage *st;
+	unsigned v;
+
+	i = fcntl(fd, F_GETFL);		/* XXX ? */
+	i &= ~O_NONBLOCK;
+	i = fcntl(fd, F_SETFL, i);
+
+	p = NULL;
+	v = 0;
+	while (1) {
+		if (v == 0) {
+			st = stevedore->alloc(stevedore, CHUNK_PREALLOC);
+			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+			p = st->ptr + st->len;
+			v = st->space - st->len;
+		}
+		if (http_GetTail(hp, v, &b, &e)) {
+			memcpy(p, b, e - b);
+			p += e - b;
+			v -= e - b;
+			st->len += e - b;
+			*p = '\0';
+		}
+		i = read(fd, p, v);
+		assert(i >= 0);
+		if (i == 0)
+		     break;
+		p += i;
+		v -= i;
+		st->len += i;
+	}
+
+	if (st != NULL && stevedore->trim != NULL)
+		stevedore->trim(st, st->len);
+
+	http_BuildSbuf(2, w->sb, hp);
+
+	vca_write_obj(sp, w->sb);
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -258,10 +305,8 @@ FetchSession(struct worker *w, struct sess *sp)
 		cls = fetch_straight(w, sp, fd, hp, b);
 	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
 		cls = fetch_chunked(w, sp, fd, hp);
-	else {
-		VSL(SLT_Debug, fd, "No transfer");
-		cls = 0;
-	}
+	else 
+		cls = fetch_eof(w, sp, fd, hp);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
