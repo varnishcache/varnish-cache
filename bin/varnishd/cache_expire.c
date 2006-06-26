@@ -52,6 +52,7 @@ exp_main(void *arg)
 		printf("Root: %p %d (%d)\n", (void*)o, o->ttl, o->ttl - t);
 		binheap_delete(exp_heap, 0);
 		AZ(pthread_mutex_unlock(&expmtx));
+		HSH_Deref(o);
 	}
 
 	return ("FOOBAR");

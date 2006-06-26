@@ -88,10 +88,11 @@ hsl_lookup(const char *key, struct objhead *nobj)
  * Dereference and if no references are left, free.
  */
 
-static void
+static int
 hsl_deref(struct objhead *obj)
 {
 	struct hsl_entry *he;
+	int ret;
 
 	assert(obj->hashpriv != NULL);
 	he = obj->hashpriv;
@@ -100,8 +101,11 @@ hsl_deref(struct objhead *obj)
 		free(he->key);
 		TAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
-	}
+		ret = 0;
+	} else
+		ret = 1;
 	AZ(pthread_mutex_unlock(&hsl_mutex));
+	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

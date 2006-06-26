@@ -30,7 +30,7 @@ struct worker;
 
 typedef void hash_init_f(void);
 typedef struct objhead *hash_lookup_f(const char *key, struct objhead *nobj);
-typedef void hash_deref_f(struct objhead *obj);
+typedef int hash_deref_f(struct objhead *obj);
 
 struct hash_slinger {
 	const char		*name;
@@ -155,7 +155,7 @@ int FetchSession(struct worker *w, struct sess *sp);
 /* cache_hash.c */
 struct object *HSH_Lookup(struct worker *w, struct http *h);
 void HSH_Unbusy(struct object *o);
-void HSH_Unref(struct object *o);
+void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
