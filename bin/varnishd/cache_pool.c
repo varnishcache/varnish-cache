@@ -12,7 +12,6 @@
 #include <sys/time.h>
 #include <sbuf.h>
 #include <event.h>
-#include <md5.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -29,33 +28,13 @@ static int
 LookupSession(struct worker *w, struct sess *sp)
 {
 	struct object *o;
-	unsigned char key[16];
-	MD5_CTX ctx;
-	char *b;
 
-	/* Make sure worker thread has a fresh object at hand */
-	if (w->nobj == NULL) {
-		w->nobj = calloc(sizeof *w->nobj, 1);	
-		assert(w->nobj != NULL);
-		w->nobj->busy = 1;
-		TAILQ_INIT(&w->nobj->store);
-	}
-
-	assert(http_GetURL(sp->http, &b));
-	MD5Init(&ctx);
-	MD5Update(&ctx, b, strlen(b));
-	MD5Final(key, &ctx);
-	o = hash->lookup(key, w->nobj);
+	o = HSH_Lookup(w, sp->http);
 	sp->obj = o;
-	if (o != w->nobj && o->ttl > sp->t0) {
-		/* XXX: wait while obj->busy */
-		VSL(SLT_Debug, 0, "Lookup found %p %s", o, b);
+	if (o->busy)
+		VCL_miss_method(sp);
+	else
 		VCL_hit_method(sp);
-		return (0);
-	}
-	VSL(SLT_Debug, 0, "Lookup new %p %s", o, b);
-	w->nobj = NULL;
-	VCL_miss_method(sp);
 	return (0);
 }
 
