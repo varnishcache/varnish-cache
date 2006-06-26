@@ -42,6 +42,7 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 	time_t apparent_age = 0, corrected_received_age;
 	time_t response_delay, corrected_initial_age;
 	time_t max_age = -1, ttl;
+	time_t fudge;
 	char *p;
 
 	if (http_GetHdrField(hp, "Cache-Control", "max-age", &p))
@@ -49,6 +50,12 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 
 	if (http_GetHdr(hp, "Date", &p))
 		h_date = TIM_parse(p);
+
+	if (h_date + 3600 < t_resp) {
+		fudge = t_resp - h_date;
+		h_date += fudge;
+	} else
+		fudge = 0;
 
 	if (h_date < t_resp)
 		apparent_age = t_resp - h_date;
@@ -64,8 +71,9 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 	response_delay = t_resp - t_req;
 	corrected_initial_age = corrected_received_age + response_delay;
 
-	if (http_GetHdr(hp, "Expires", &p))
-		h_expires = TIM_parse(p);
+	if (http_GetHdr(hp, "Expires", &p)) {
+		h_expires = TIM_parse(p) + fudge;
+	}
 
 	printf("Date: %d\n", h_date);
 	printf("Recv: %d\n", t_resp);
