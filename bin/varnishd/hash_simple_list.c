@@ -1,5 +1,7 @@
 /*
  * $Id$
+ *
+ * This is the reference hash(/lookup) implementation
  */
 
 #include <assert.h>
@@ -12,13 +14,22 @@
 #include <libvarnish.h>
 #include <cache.h>
 
+/*--------------------------------------------------------------------*/
+
 struct hsl_entry {
 	TAILQ_ENTRY(hsl_entry)	list;
+	char			*key;
 	struct objhead		*obj;
+	unsigned		refcnt;
 };
 
 static TAILQ_HEAD(, hsl_entry)	hsl_head = TAILQ_HEAD_INITIALIZER(hsl_head);
 static pthread_mutex_t hsl_mutex;
+
+/*--------------------------------------------------------------------
+ * The ->init method is called during process start and allows 
+ * initialization to happen before the first lookup.
+ */
 
 static void
 hsl_init(void)
@@ -27,23 +38,31 @@ hsl_init(void)
 	AZ(pthread_mutex_init(&hsl_mutex, NULL));
 }
 
+/*--------------------------------------------------------------------
+ * Lookup and possibly insert element.
+ * If nobj != NULL and the lookup does not find key, nobj is inserted.
+ * If nobj == NULL and the lookup does not find key, NULL is returned.
+ * A reference to the returned object is held.
+ */
+
 static struct objhead *
-hsl_lookup(unsigned char *key, struct objhead *nobj)
+hsl_lookup(const char *key, struct objhead *nobj)
 {
 	struct hsl_entry *he, *he2;
 	int i;
 
 	AZ(pthread_mutex_lock(&hsl_mutex));
 	TAILQ_FOREACH(he, &hsl_head, list) {
-		i = memcmp(key, he->obj->hash, sizeof he->obj->hash);
+		i = strcmp(key, he->key);
+		if (i < 0)
+			continue;
 		if (i == 0) {
-			he->obj->refcnt++;
+			he->refcnt++;
 			nobj = he->obj;
+			nobj->hashpriv = he;
 			AZ(pthread_mutex_unlock(&hsl_mutex));
 			return (nobj);
 		}
-		if (i < 0)
-			continue;
 		if (nobj == NULL) {
 			AZ(pthread_mutex_unlock(&hsl_mutex));
 			return (NULL);
@@ -53,8 +72,10 @@ hsl_lookup(unsigned char *key, struct objhead *nobj)
 	he2 = calloc(sizeof *he2, 1);
 	assert(he2 != NULL);
 	he2->obj = nobj;
-	nobj->refcnt++;
-	memcpy(nobj->hash, key, sizeof nobj->hash);
+	he2->refcnt = 1;
+	he2->key = strdup(key);
+	assert(he2->key != NULL);
+	nobj->hashpriv = he2;
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
 	else
@@ -63,37 +84,31 @@ hsl_lookup(unsigned char *key, struct objhead *nobj)
 	return (nobj);
 }
 
+/*--------------------------------------------------------------------
+ * Dereference and if no references are left, free.
+ */
+
 static void
 hsl_deref(struct objhead *obj)
 {
+	struct hsl_entry *he;
 
+	assert(obj->hashpriv != NULL);
+	he = obj->hashpriv;
 	AZ(pthread_mutex_lock(&hsl_mutex));
-	obj->refcnt--;
+	if (--he->refcnt == 0) {
+		free(he->key);
+		TAILQ_REMOVE(&hsl_head, he, list);
+		free(he);
+	}
 	AZ(pthread_mutex_unlock(&hsl_mutex));
 }
 
-static void
-hsl_purge(struct objhead *obj)
-{
-	struct hsl_entry *he;
-
-	assert(obj->refcnt > 0);
-	AZ(pthread_mutex_lock(&hsl_mutex));
-	TAILQ_FOREACH(he, &hsl_head, list) {
-		if (he->obj == obj) {
-			TAILQ_REMOVE(&hsl_head, he, list);
-			AZ(pthread_mutex_unlock(&hsl_mutex));
-			free(he);
-			return;
-		}
-	}
-	assert(he != NULL);
-}
+/*--------------------------------------------------------------------*/
 
 struct hash_slinger hsl_slinger = {
 	"simple_list",
 	hsl_init,
 	hsl_lookup,
 	hsl_deref,
-	hsl_purge
 };

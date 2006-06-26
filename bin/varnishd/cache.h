@@ -29,16 +29,14 @@ struct worker;
 /* Hashing -----------------------------------------------------------*/
 
 typedef void hash_init_f(void);
-typedef struct objhead *hash_lookup_f(unsigned char *key, struct objhead *nobj);
+typedef struct objhead *hash_lookup_f(const char *key, struct objhead *nobj);
 typedef void hash_deref_f(struct objhead *obj);
-typedef void hash_purge_f(struct objhead *obj);
 
 struct hash_slinger {
 	const char		*name;
 	hash_init_f		*init;
 	hash_lookup_f		*lookup;
 	hash_deref_f		*deref;
-	hash_purge_f		*purge;
 };
 
 extern struct hash_slinger hsl_slinger;
@@ -66,13 +64,12 @@ extern struct stevedore *stevedore;
 /* -------------------------------------------------------------------*/
 
 struct object {	
-	unsigned char		hash[16];
 	unsigned 		refcnt;
-	unsigned		valid;
-	unsigned		cacheable;
-
 	struct objhead		*objhead;
 	pthread_cond_t		cv;
+
+	unsigned		valid;
+	unsigned		cacheable;
 
 	unsigned		busy;
 	unsigned		len;
@@ -85,8 +82,7 @@ struct object {
 };
 
 struct objhead {
-	unsigned char		hash[16];
-	unsigned 		refcnt;
+	void			*hashpriv;
 
 	pthread_mutex_t		mtx;
 	TAILQ_HEAD(,object)	objects;
