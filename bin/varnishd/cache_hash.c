@@ -29,7 +29,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		assert(w->nobjhead != NULL);
 		TAILQ_INIT(&w->nobjhead->objects);
-		AZ(pthread_mutex_init(&oh->mtx, NULL));
+		AZ(pthread_mutex_init(&w->nobjhead->mtx, NULL));
 	}
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);
