@@ -14,7 +14,7 @@
 
 struct hsl_entry {
 	TAILQ_ENTRY(hsl_entry)	list;
-	struct object		*obj;
+	struct objhead		*obj;
 };
 
 static TAILQ_HEAD(, hsl_entry)	hsl_head = TAILQ_HEAD_INITIALIZER(hsl_head);
@@ -27,8 +27,8 @@ hsl_init(void)
 	AZ(pthread_mutex_init(&hsl_mutex, NULL));
 }
 
-static struct object *
-hsl_lookup(unsigned char *key, struct object *nobj)
+static struct objhead *
+hsl_lookup(unsigned char *key, struct objhead *nobj)
 {
 	struct hsl_entry *he, *he2;
 	int i;
@@ -64,7 +64,7 @@ hsl_lookup(unsigned char *key, struct object *nobj)
 }
 
 static void
-hsl_deref(struct object *obj)
+hsl_deref(struct objhead *obj)
 {
 
 	AZ(pthread_mutex_lock(&hsl_mutex));
@@ -73,7 +73,7 @@ hsl_deref(struct object *obj)
 }
 
 static void
-hsl_purge(struct object *obj)
+hsl_purge(struct objhead *obj)
 {
 	struct hsl_entry *he;
 

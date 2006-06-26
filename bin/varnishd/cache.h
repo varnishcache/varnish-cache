@@ -4,14 +4,22 @@
 
 #include <sys/queue.h>
 
+#include "vcl_returns.h"
+
+#define VCA_ADDRBUFSIZE		32	/* Sizeof ascii network address */
+
 struct event_base;
 struct sbuf;
+struct sess;
+struct object;
+struct objhead;
 
 #ifdef EV_TIMEOUT
 struct worker {
 	struct event_base	*eb;
 	struct event		e1, e2;
 	struct sbuf		*sb;
+	struct objhead		*nobjhead;
 	struct object		*nobj;
 };
 #else
@@ -21,9 +29,9 @@ struct worker;
 /* Hashing -----------------------------------------------------------*/
 
 typedef void hash_init_f(void);
-typedef struct object *hash_lookup_f(unsigned char *key, struct object *nobj);
-typedef void hash_deref_f(struct object *obj);
-typedef void hash_purge_f(struct object *obj);
+typedef struct objhead *hash_lookup_f(unsigned char *key, struct objhead *nobj);
+typedef void hash_deref_f(struct objhead *obj);
+typedef void hash_purge_f(struct objhead *obj);
 
 struct hash_slinger {
 	const char		*name;
@@ -34,8 +42,6 @@ struct hash_slinger {
 };
 
 extern struct hash_slinger hsl_slinger;
-
-extern struct hash_slinger	*hash;
 
 /* Storage -----------------------------------------------------------*/
 
@@ -57,11 +63,7 @@ struct storage {
  */
 extern struct stevedore *stevedore;
 
-/* Storage -----------------------------------------------------------*/
-
-struct sess;
-
-#define VCA_ADDRBUFSIZE		32
+/* -------------------------------------------------------------------*/
 
 struct object {	
 	unsigned char		hash[16];
@@ -69,16 +71,26 @@ struct object {
 	unsigned		valid;
 	unsigned		cacheable;
 
+	struct objhead		*objhead;
+	pthread_cond_t		cv;
+
 	unsigned		busy;
 	unsigned		len;
 	time_t			ttl;
 
 	char			*header;
+	TAILQ_ENTRY(object)	list;
 
 	TAILQ_HEAD(, storage)	store;
 };
 
-#include "vcl_returns.h"
+struct objhead {
+	unsigned char		hash[16];
+	unsigned 		refcnt;
+
+	pthread_mutex_t		mtx;
+	TAILQ_HEAD(,object)	objects;
+};
 
 struct sess {
 	int			fd;
@@ -143,6 +155,12 @@ void EXP_Init(void);
 
 /* cache_fetch.c */
 int FetchSession(struct worker *w, struct sess *sp);
+
+/* cache_hash.c */
+struct object *HSH_Lookup(struct worker *w, struct http *h);
+void HSH_Unbusy(struct object *o);
+void HSH_Unref(struct object *o);
+void HSH_Init(void);
 
 /* cache_http.c */
 typedef void http_callback_f(void *, int good);

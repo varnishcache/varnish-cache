@@ -24,7 +24,6 @@
 
 static struct event ev_keepalive;
 
-struct hash_slinger	*hash;
 struct stevedore	*stevedore;
 
 pthread_mutex_t	sessmtx;
@@ -115,13 +114,10 @@ child_main(void)
 
 	VCA_Init();
 	EXP_Init();
+	HSH_Init();
 
 	eb = event_init();
 	assert(eb != NULL);
-
-	hash = &hsl_slinger;
-	if (hash->init != NULL)
-		hash->init();
 
 	stevedore = heritage.stevedore;
 	if (stevedore->open != NULL)

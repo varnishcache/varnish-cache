@@ -72,7 +72,9 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 	vca_write_obj(sp, w->sb);
 
+#if 0
 	hash->deref(sp->obj);
+#endif
 	return (0);
 
 }
@@ -187,7 +189,9 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 
 	vca_write_obj(sp, w->sb);
 
+#if 0
 	hash->deref(sp->obj);
+#endif
 
 	return (0);
 }
