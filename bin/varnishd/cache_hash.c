@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <md5.h>
 #include <event.h>
 #include <pthread.h>
 
@@ -23,8 +22,6 @@ HSH_Lookup(struct worker *w, struct http *h)
 {
 	struct objhead *oh;
 	struct object *o;
-	unsigned char key[16];
-	MD5_CTX ctx;
 	char *b;
 
 	assert(hash != NULL);
@@ -43,10 +40,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 	}
 
 	assert(http_GetURL(h, &b));
-	MD5Init(&ctx);
-	MD5Update(&ctx, b, strlen(b));
-	MD5Final(key, &ctx);
-	oh = hash->lookup(key, w->nobjhead);
+	oh = hash->lookup(b, w->nobjhead);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	AZ(pthread_mutex_lock(&oh->mtx));
