@@ -16,7 +16,7 @@ struct sma {
 };
 
 static struct storage *
-sma_alloc(struct stevedore *st __unused, unsigned size)
+sma_alloc(struct stevedore *st, unsigned size)
 {
 	struct sma *sma;
 
@@ -27,6 +27,7 @@ sma_alloc(struct stevedore *st __unused, unsigned size)
 	assert(sma->s.ptr != NULL);
 	sma->s.len = size;
 	sma->s.space = size;
+	sma->s.stevedore = st;
 	return (&sma->s);
 }
 
