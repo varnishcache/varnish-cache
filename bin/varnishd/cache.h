@@ -78,6 +78,8 @@ struct object {
 	char			*header;
 	TAILQ_ENTRY(object)	list;
 
+	TAILQ_ENTRY(object)	deathrow;
+
 	TAILQ_HEAD(, storage)	store;
 };
 
