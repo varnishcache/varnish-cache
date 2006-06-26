@@ -10,13 +10,15 @@
 #include <stdio.h>
 
 #include "libvarnish.h"
+#include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
-static pthread_mutex_t expmtx;
+static pthread_mutex_t exp_mtx;
 static unsigned expearly = 30;
+static TAILQ_HEAD(,object) exp_deathrow = TAILQ_HEAD_INITIALIZER(exp_deathrow);
 
 /*--------------------------------------------------------------------*/
 
@@ -24,35 +26,76 @@ void
 EXP_Insert(struct object *o)
 {
 
-	AZ(pthread_mutex_lock(&expmtx));
+	AZ(pthread_mutex_lock(&exp_mtx));
 	binheap_insert(exp_heap, o);
-	AZ(pthread_mutex_unlock(&expmtx));
+	AZ(pthread_mutex_unlock(&exp_mtx));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This thread monitors deathrow and kills objects when they time out.
+ */
 
 static void *
-exp_main(void *arg)
+exp_hangman(void *arg)
 {
 	struct object *o;
 	time_t t;
 
 	while (1) {
-		time(&t);
-		AZ(pthread_mutex_lock(&expmtx));
-		o = binheap_root(exp_heap);
-		if (o == NULL || o->ttl - t > expearly) {
-			AZ(pthread_mutex_unlock(&expmtx));
-			if (o != NULL)
-				printf("Root: %p %d (%d)\n",
-				    (void*)o, o->ttl, o->ttl - t);
+		time (&t); 
+		AZ(pthread_mutex_lock(&exp_mtx));
+		o = TAILQ_FIRST(&exp_deathrow);
+		if (o == NULL || o->ttl >= t) {	/* XXX: > or >= ? */
+			AZ(pthread_mutex_unlock(&exp_mtx));
 			sleep(1);
 			continue;
 		}
-		printf("Root: %p %d (%d)\n", (void*)o, o->ttl, o->ttl - t);
-		binheap_delete(exp_heap, 0);
-		AZ(pthread_mutex_unlock(&expmtx));
+		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		AZ(pthread_mutex_unlock(&exp_mtx));
 		HSH_Deref(o);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * This thread monitors the root of the binary heap and whenever an
+ * object gets close enough, VCL is asked to decide if it should be
+ * discarded or prefetched.
+ * If discarded, the object is put on deathrow where exp_hangman() will
+ * do what needs to be done.
+ * XXX: If prefetched pass to the pool for pickup.
+ */
+
+static void *
+exp_prefetch(void *arg)
+{
+	struct object *o;
+	time_t t;
+	struct sess sp;
+
+	while (1) {
+		time(&t);
+		AZ(pthread_mutex_lock(&exp_mtx));
+		o = binheap_root(exp_heap);
+		if (o == NULL || o->ttl - t > expearly) {
+			AZ(pthread_mutex_unlock(&exp_mtx));
+			sleep(1);
+			continue;
+		}
+		binheap_delete(exp_heap, 0);
+		AZ(pthread_mutex_unlock(&exp_mtx));
+
+		sp.vcl = GetVCL();
+		sp.obj = o;
+		VCL_timeout_method(&sp);
+		RelVCL(sp.vcl);
+
+		if (sp.handling == VCL_RET_DISCARD) {
+			AZ(pthread_mutex_lock(&exp_mtx));
+			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+			AZ(pthread_mutex_unlock(&exp_mtx));
+			continue;
+		}
+		assert(sp.handling == VCL_RET_DISCARD);
 	}
 
 	return ("FOOBAR");
@@ -76,8 +119,9 @@ void
 EXP_Init(void)
 {
 
-	AZ(pthread_create(&exp_thread, NULL, exp_main, NULL));
-	AZ(pthread_mutex_init(&expmtx, NULL));
+	AZ(pthread_mutex_init(&exp_mtx, NULL));
+	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));
+	AZ(pthread_create(&exp_thread, NULL, exp_hangman, NULL));
 	exp_heap = binheap_new(NULL, object_cmp, NULL);
 	assert(exp_heap != NULL);
 }
