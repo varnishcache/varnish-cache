@@ -49,6 +49,8 @@ DeliverSession(struct worker *w, struct sess *sp)
 	    "\r\n", sp->obj->header, sp->obj->len);
 
 	vca_write_obj(sp, w->sb);
+	HSH_Deref(sp->obj);
+	sp->obj = NULL;
 	return (1);
 }
 

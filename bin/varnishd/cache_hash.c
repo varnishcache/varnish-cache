@@ -16,7 +16,6 @@
 
 static struct hash_slinger      *hash;
 
-
 struct object *
 HSH_Lookup(struct worker *w, struct http *h)
 {
@@ -25,18 +24,19 @@ HSH_Lookup(struct worker *w, struct http *h)
 	char *b;
 
 	assert(hash != NULL);
-	/* Make sure we have both a new objhead and object if we need them */
+	/* Precreate an objhead and object in case we need them */
 	if (w->nobjhead == NULL) {
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		assert(w->nobjhead != NULL);
 		TAILQ_INIT(&w->nobjhead->objects);
+		AZ(pthread_mutex_init(&oh->mtx, NULL));
 	}
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);
 		assert(w->nobj != NULL);
 		w->nobj->busy = 1;
 		TAILQ_INIT(&w->nobj->store);
-		pthread_cond_init(&w->nobj->cv, NULL);
+		AZ(pthread_cond_init(&w->nobj->cv, NULL));
 	}
 
 	assert(http_GetURL(h, &b));
@@ -53,11 +53,19 @@ HSH_Lookup(struct worker *w, struct http *h)
 			break;
 		o->refcnt--;
 	}
-	if (o == NULL) {
-		o = w->nobj;
-		w->nobj = NULL;
-		TAILQ_INSERT_TAIL(&oh->objects, o, list);
+	if (o != NULL) {
+		AZ(pthread_mutex_unlock(&oh->mtx));
+		hash->deref(oh);
+		return (o);
 	}
+
+	/* Insert (precreated) object in objecthead */
+	o = w->nobj;
+	w->nobj = NULL;
+	o->refcnt = 1;
+	o->objhead = oh;
+	TAILQ_INSERT_TAIL(&oh->objects, o, list);
+	/* NB: do not deref objhead the new object inherits our reference */
 	AZ(pthread_mutex_unlock(&oh->mtx));
 	return (o);
 }
@@ -73,12 +81,39 @@ HSH_Unbusy(struct object *o)
 }
 
 void
-HSH_Unref(struct object *o)
+HSH_Deref(struct object *o)
 {
+	struct objhead *oh;
+	struct storage *st, *stn;
 
-	AZ(pthread_mutex_lock(&o->objhead->mtx));
-	o->refcnt--;
-	AZ(pthread_mutex_unlock(&o->objhead->mtx));
+	oh = o->objhead;
+
+	/* drop ref on object */
+	AZ(pthread_mutex_lock(&oh->mtx));
+	if (--o->refcnt == 0)
+		TAILQ_REMOVE(&oh->objects, o, list);
+	else 
+		o = NULL;
+	AZ(pthread_mutex_unlock(&oh->mtx));
+
+	/* If still referenced, done */
+	if (o == NULL)
+		return;
+
+	AZ(pthread_cond_destroy(&o->cv));
+
+	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+		TAILQ_REMOVE(&o->store, st, list);
+		st->stevedore->free(st);
+	}
+	free(o);
+
+	/* Drop our ref on the objhead */
+	if (hash->deref(oh))
+		return;
+	assert(TAILQ_EMPTY(&oh->objects));
+	AZ(pthread_mutex_destroy(&oh->mtx));
+	free(oh);
 }
 
 void

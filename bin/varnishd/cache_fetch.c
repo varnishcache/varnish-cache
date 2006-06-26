@@ -271,10 +271,9 @@ FetchSession(struct worker *w, struct sess *sp)
 	else
 		VBE_RecycleFd(fd_token);
 
-	/* XXX: unbusy, and kick other sessions into action */
-	sp->obj->busy = 0;
-
-	/* XXX: if not cachable, destroy */
+	HSH_Unbusy(sp->obj);
+	if (!sp->obj->cacheable)
+		HSH_Deref(sp->obj);
 
 	return (1);
 }
