@@ -338,7 +338,7 @@ free_smf(struct smf *sp)
 	TAILQ_FOREACH(sp2, &sc->free, status) {
 		if (sp->age > sp2->age ||
 		    (sp->age == sp2->age && sp->offset < sp2->offset)) {
-			TAILQ_INSERT_BEFORE(sp2, sp, order);
+			TAILQ_INSERT_BEFORE(sp2, sp, status);
 			break;
 		}
 	}
@@ -359,13 +359,14 @@ trim_smf(struct smf *sp, size_t bytes)
 	assert(bytes > 0);
 	sp2 = malloc(sizeof *sp2);
 	assert(sp2 != NULL);
+	*sp2 = *sp;
 
-	sp2->size = sp->size - bytes;
+	sp2->size -= bytes;
 	sp->size = bytes;
-	sp2->ptr = sp->ptr + bytes;
-	sp2->offset = sp->offset + bytes;
+	sp2->ptr += bytes;
+	sp2->offset += bytes;
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
-	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, status);
+	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
 	free_smf(sp2);
 }
 
@@ -487,14 +488,19 @@ static void
 smf_trim(struct storage *s, size_t size)
 {
 	struct smf *smf;
-	struct smf_sc *sc = s->priv;
+	struct smf_sc *sc;
 
+	assert(size <= s->space);
 	assert(size > 0);
+	smf = (struct smf *)(s->priv);
+	assert(size <= smf->size);
+	sc = smf->sc;
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
-	smf = (struct smf *)(s->priv);
-	if (smf->size > size)
+	if (smf->size > size) {
 		trim_smf(smf, size);
+		smf->s.space = size;
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -526,9 +532,9 @@ smf_send(struct storage *st, struct sess *sp)
 	    st->len, NULL, &sent, 0);
 	if (sent == st->len)
 		return;
-	printf("sent i=%d sent=%ju size=%ju\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len);
-	assert(sent == st->len);
+	printf("sent i=%d sent=%ju size=%ju errno=%d\n",
+	    i, (uintmax_t)sent, (uintmax_t)st->len, errno);
+	vca_close_session(sp, "remote closed");
 }
 
 /*--------------------------------------------------------------------*/
@@ -542,3 +548,69 @@ struct stevedore smf_stevedore = {
 	smf_free,
 	smf_send
 };
+
+#ifdef INCLUDE_TEST_DRIVER
+
+void vca_flush(struct sess *sp) {}
+void vca_close_session(struct sess *sp, const char *why) {}
+
+#define N	100
+#define M	(128*1024)
+
+struct storage *s[N];
+
+static void
+dumpit(void)
+{
+	struct smf_sc *sc = smf_stevedore.priv;
+	struct smf *s;
+
+	return (0);
+	printf("----------------\n");
+	printf("Order:\n");
+	TAILQ_FOREACH(s, &sc->order, order) {
+		printf("%10p %12ju %12ju %12ju\n",
+		    s, s->offset, s->size, s->offset + s->size);
+	}
+	printf("Used:\n");
+	TAILQ_FOREACH(s, &sc->used, status) {
+		printf("%10p %12ju %12ju %12ju\n",
+		    s, s->offset, s->size, s->offset + s->size);
+	}
+	printf("Free:\n");
+	TAILQ_FOREACH(s, &sc->free, status) {
+		printf("%10p %12ju %12ju %12ju\n",
+		    s, s->offset, s->size, s->offset + s->size);
+	}
+	printf("================\n");
+}
+
+int
+main(int argc, char **argv)
+{
+	int i, j;
+
+	setbuf(stdout, NULL);
+	smf_init(&smf_stevedore, "");
+	smf_open(&smf_stevedore);
+	while (1) {
+		dumpit();
+		i = random() % N;
+		do
+			j = random() % M;
+		while (j == 0);
+		if (s[i] == NULL) {
+			s[i] = smf_alloc(&smf_stevedore, j);
+			printf("A %10p %12d\n", s[i], j);
+		} else if (j < s[i]->space) {
+			smf_trim(s[i], j);
+			printf("T %10p %12d\n", s[i], j);
+		} else {
+			smf_free(s[i]);
+			printf("D %10p\n", s[i]);
+			s[i] = NULL;
+		}
+	}
+}
+
+#endif /* INCLUDE_TEST_DRIVER */
