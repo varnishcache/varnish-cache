@@ -45,13 +45,8 @@ static int
 DeliverSession(struct worker *w, struct sess *sp)
 {
 
-	sbuf_clear(w->sb);
-	sbuf_printf(w->sb,
-	    "%sServer: Varnish\r\n"
-	    "Content-Length: %u\r\n"
-	    "\r\n", sp->obj->header, sp->obj->len);
 
-	vca_write_obj(sp, w->sb);
+	vca_write_obj(sp, sp->obj->header, 0);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	return (1);
@@ -147,9 +142,11 @@ void
 CacheInitPool(void)
 {
 	pthread_t tp;
+	int i;
 
 	AZ(pthread_cond_init(&shdcnd, NULL));
 
-	AZ(pthread_create(&tp, NULL, CacheWorker, NULL));
+	for (i = 0; i < 5; i++)
+		AZ(pthread_create(&tp, NULL, CacheWorker, NULL));
 	AZ(pthread_detach(tp));
 }

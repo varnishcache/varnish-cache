@@ -85,12 +85,14 @@ vca_write(struct sess *sp, void *ptr, size_t len)
 }
 
 void
-vca_write_obj(struct sess *sp, struct sbuf *hdr)
+vca_write_obj(struct sess *sp, const char *b, unsigned l)
 {
 	struct storage *st;
 	unsigned u = 0;
 
-	vca_write(sp, sbuf_data(hdr), sbuf_len(hdr));
+	if (l == 0)
+		l = strlen(b);
+	vca_write(sp, b, l);
 	TAILQ_FOREACH(st, &sp->obj->store, list) {
 		u += st->len;
 		if (st->stevedore->send != NULL)

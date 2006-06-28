@@ -306,7 +306,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	sbuf_finish(w->sb);
 	sp->obj->header = strdup(sbuf_data(w->sb));
 
-	vca_write_obj(sp, w->sb);
+	vca_write_obj(sp, sp->obj->header, 0);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
