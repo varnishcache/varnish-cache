@@ -347,6 +347,29 @@ free_smf(struct smf *sp)
 }
 
 /*--------------------------------------------------------------------
+ * Trim the tail of a range.
+ */
+
+static void
+trim_smf(struct smf *sp, size_t bytes)
+{
+	struct smf *sp2;
+	struct smf_sc *sc = sp->sc;
+
+	assert(bytes > 0);
+	sp2 = malloc(sizeof *sp2);
+	assert(sp2 != NULL);
+
+	sp2->size = sp->size - bytes;
+	sp->size = bytes;
+	sp2->ptr = sp->ptr + bytes;
+	sp2->offset = sp->offset + bytes;
+	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
+	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, status);
+	free_smf(sp2);
+}
+
+/*--------------------------------------------------------------------
  * Insert a newly created range as busy, then free it to do any collapses
  */
 
@@ -463,8 +486,15 @@ smf_alloc(struct stevedore *st, unsigned size)
 static void
 smf_trim(struct storage *s, size_t size)
 {
+	struct smf *smf;
+	struct smf_sc *sc = s->priv;
 
-	/* XXX: implement */
+	assert(size > 0);
+	size += (sc->pagesize - 1);
+	size &= ~(sc->pagesize - 1);
+	smf = (struct smf *)(s->priv);
+	if (smf->size > size)
+		trim_smf(smf, size);
 }
 
 /*--------------------------------------------------------------------*/
