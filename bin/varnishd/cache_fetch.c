@@ -200,6 +200,7 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 
 	p = NULL;
 	v = 0;
+	st = NULL;
 	while (1) {
 		if (v == 0) {
 			st = stevedore->alloc(stevedore, CHUNK_PREALLOC);
@@ -207,6 +208,8 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 			p = st->ptr + st->len;
 			v = st->space - st->len;
 		}
+		assert(p != NULL);
+		assert(st != NULL);
 		if (http_GetTail(hp, v, &b, &e)) {
 			memcpy(p, b, e - b);
 			p += e - b;
@@ -278,6 +281,7 @@ FetchSession(struct worker *w, struct sess *sp)
 		body = 0;
 		break;
 	default:
+		body = 0;
 		break;
 	}
 
