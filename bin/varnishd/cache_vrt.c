@@ -36,7 +36,7 @@ void
 VRT_count(struct sess *sp, unsigned u)
 {
 	
-	VSL(SLT_VCL, 0, "%u %d.%d", u,
+	VSL(SLT_VCL, sp->fd, "%u %d.%d", u,
 	    sp->vcl->ref[u].line,
 	    sp->vcl->ref[u].pos);
 }
