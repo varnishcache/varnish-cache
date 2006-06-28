@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/mman.h>
+#include <pthread.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -21,6 +22,7 @@ struct varnish_stats *VSL_stats;
 
 static struct shmloghead *loghead;
 static unsigned char *logstart, *logend;
+static pthread_mutex_t vsl_mutex;
 
 /*
  * This variant copies a byte-range directly to the log, without
@@ -41,7 +43,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	if (e - b > 255)
 		e = b + 255;
 
-	/* XXX: Lock */
+	AZ(pthread_mutex_lock(&vsl_mutex));
 	q = NULL;
 	p = logstart + loghead->ptr;
 	assert(p < logend);
@@ -63,7 +65,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 
 	loghead->ptr = (p + 4 + (e - b)) - logstart;
 	
-	/* XXX: Unlock */
+	AZ(pthread_mutex_unlock(&vsl_mutex));
 }
 
 
@@ -76,7 +78,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	/* XXX: Lock */
+	AZ(pthread_mutex_lock(&vsl_mutex));
 	q = NULL;
 	p = logstart + loghead->ptr;
 	assert(p < logend);
@@ -119,7 +121,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	loghead->ptr = (p + 4 + n) - logstart;
 	
-	/* XXX: Unlock */
+	AZ(pthread_mutex_unlock(&vsl_mutex));
 
 	va_end(ap);
 }
@@ -138,6 +140,7 @@ VSL_Init(void)
 	logstart = (unsigned char *)loghead + loghead->start;
 	logend = logstart + loghead->size;
 	VSL_stats = &loghead->stats;
+	AZ(pthread_mutex_init(&vsl_mutex, NULL));
 }
 
 /*--------------------------------------------------------------------*/
