@@ -9,50 +9,22 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <curses.h>
-#include <sys/mman.h>
 
-#include <shmlog.h>
-
-static struct shmloghead *loghead;
+#include "shmlog.h"
+#include "varnishapi.h"
 
 int
 main(int argc, char **argv)
 {
-	int fd;
-	int i, c;
-	struct shmloghead slh;
+	int c;
+	struct shmloghead *lh;
 	struct varnish_stats *VSL_stats;
 	int c_flag = 0;
 
-	fd = open(SHMLOG_FILENAME, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr, "Cannot open %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
-		exit (1);
-	}
-	i = read(fd, &slh, sizeof slh);
-	if (i != sizeof slh) {
-		fprintf(stderr, "Cannot read %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
-		exit (1);
-	}
-	if (slh.magic != SHMLOGHEAD_MAGIC) {
-		fprintf(stderr, "Wrong magic number in file %s\n",
-		    SHMLOG_FILENAME);
-		exit (1);
-	}
+	lh = VSL_OpenLog();
 
-	loghead = mmap(NULL, slh.size + sizeof slh,
-	    PROT_READ, MAP_HASSEMAPHORE, fd, 0);
-	if (loghead == MAP_FAILED) {
-		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
-		exit (1);
-	}
-
-	VSL_stats = &loghead->stats;
+	VSL_stats = &lh->stats;
 
 	while ((c = getopt(argc, argv, "c")) != -1) {
 		switch (c) {
