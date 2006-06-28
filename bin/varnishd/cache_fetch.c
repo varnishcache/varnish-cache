@@ -243,7 +243,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
 
 	hp = http_New();
-	http_BuildSbuf(1, w->sb, sp->http);
+	http_BuildSbuf(fd, 1, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 	time(&t_req);
@@ -262,7 +262,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	switch (http_GetStatus(hp)) {
 	case 200:
 	case 301:
-		http_BuildSbuf(3, w->sb, hp);
+		http_BuildSbuf(sp->fd, 3, w->sb, hp);
 		/* XXX: fill in object from headers */
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
@@ -270,7 +270,7 @@ FetchSession(struct worker *w, struct sess *sp)
 		body = 1;
 		break;
 	case 304:
-		http_BuildSbuf(3, w->sb, hp);
+		http_BuildSbuf(sp->fd, 3, w->sb, hp);
 		/* XXX: fill in object from headers */
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
@@ -305,7 +305,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	} else
 		cls = 0;
 
-	http_BuildSbuf(2, w->sb, hp);
+	http_BuildSbuf(sp->fd, 2, w->sb, hp);
 
 	vca_write_obj(sp, w->sb);
 

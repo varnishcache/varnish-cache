@@ -391,7 +391,7 @@ http_supress(const char *hdr, int flag)
 /*--------------------------------------------------------------------*/
 
 void
-http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
+http_BuildSbuf(int fd, int resp, struct sbuf *sb, struct http *hp)
 {
 	unsigned u;
 
@@ -419,7 +419,7 @@ http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp)
 		if (http_supress(hp->hdr[u], resp))
 			continue;
 		if (1)
-			VSL(SLT_Debug, 0, "Build %s", hp->hdr[u]);
+			VSL(SLT_BldHdr, fd, "%s", hp->hdr[u]);
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");
 	}
