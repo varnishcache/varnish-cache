@@ -3,14 +3,21 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
 #include <sys/mman.h>
 
+#include "libvarnish.h"
 #include "shmlog.h"
 
 #include "heritage.h"
+
+struct varnish_stats *VSL_stats;
 
 static struct shmloghead *loghead;
 static unsigned char *logstart, *logend;
@@ -130,4 +137,45 @@ VSL_Init(void)
 	/* XXX check sanity of loghead */
 	logstart = (unsigned char *)loghead + loghead->start;
 	logend = logstart + loghead->size;
+	VSL_stats = &loghead->stats;
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VSL_MgtInit(const char *fn, unsigned size)
+{
+	struct shmloghead slh;
+	int i;
+
+	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
+	if (heritage.vsl_fd < 0) {
+		fprintf(stderr, "Could not open %s: %s\n",
+		    fn, strerror(errno));
+		exit (1);
+	}
+	i = read(heritage.vsl_fd, &slh, sizeof slh);
+	if (i != sizeof slh || slh.magic != SHMLOGHEAD_MAGIC) {
+		/* XXX more checks */
+
+		slh.magic = SHMLOGHEAD_MAGIC;
+		slh.size = size;
+		slh.ptr = 0;
+		slh.start = sizeof slh;
+		AZ(lseek(heritage.vsl_fd, 0, SEEK_SET));
+		i = write(heritage.vsl_fd, &slh, sizeof slh);
+		assert(i == sizeof slh);
+		AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
+		heritage.vsl_size = slh.size + slh.start;
+	} else {
+		heritage.vsl_size = slh.size + slh.start;
+	}
+
+	/*
+	 * Call VSL_Init so that we get a VSL_stats pointer in the
+	 * management process as well.
+	 */
+	VSL_Init();
+	memset(VSL_stats, 0, sizeof *VSL_stats);
+}
+

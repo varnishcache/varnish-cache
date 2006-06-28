@@ -200,6 +200,7 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 	assert(__LINE__ == 0);						\
 	} while (0)
 #endif
+extern struct varnish_stats *VSL_stats;
 
 /* cache_vcl.c */
 void RelVCL(struct VCL_conf *vc);
