@@ -7,6 +7,11 @@
 
 #define V_DEAD __attribute__ ((noreturn))
 
+/* shmlog.c */
+struct shmloghead *VSL_OpenLog(void);
+unsigned char *VSL_NextLog(struct shmloghead *lh, unsigned char **pp);
+
+
 /* varnish_debug.c */
 void		 vdb_panic(const char *, ...) V_DEAD;
 
