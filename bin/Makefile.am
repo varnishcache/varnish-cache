@@ -1,3 +1,3 @@
 # $Id$
 
-SUBDIRS = varnishd varnishlog
+SUBDIRS = varnishd varnishlog varnishstat
