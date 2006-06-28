@@ -174,7 +174,7 @@ int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_GetURL(struct http *hp, char **b);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
 void http_Dissect(struct http *sp, int fd, int rr);
-void http_BuildSbuf(int resp, struct sbuf *sb, struct http *hp);
+void http_BuildSbuf(int fd, int resp, struct sbuf *sb, struct http *hp);
 
 /* cache_main.c */
 extern pthread_mutex_t sessmtx;

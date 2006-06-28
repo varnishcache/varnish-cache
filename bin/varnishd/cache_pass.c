@@ -160,7 +160,7 @@ PassSession(struct worker *w, struct sess *sp)
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
 
-	http_BuildSbuf(1, w->sb, sp->http);
+	http_BuildSbuf(fd, 1, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
@@ -175,7 +175,7 @@ PassSession(struct worker *w, struct sess *sp)
 	event_base_loop(w->eb, 0);
 	http_Dissect(hp, fd, 2);
 
-	http_BuildSbuf(2, w->sb, hp);
+	http_BuildSbuf(sp->fd, 2, w->sb, hp);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
