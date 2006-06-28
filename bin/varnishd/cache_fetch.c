@@ -161,6 +161,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 				st->len += e - b;
 				v -= e - b;
 				u -= e - b;
+				sp->obj->len += e - b;
 			}
 			while (v > 0) {
 				i = read(fd, p, v);
@@ -169,6 +170,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 				v -= i;
 				u -= i;
 				p += i;
+				sp->obj->len += i;
 			}
 		}
 	}
@@ -210,6 +212,7 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 			p += e - b;
 			v -= e - b;
 			st->len += e - b;
+			sp->obj->len += e - b;
 			*p = '\0';
 		}
 		i = read(fd, p, v);
@@ -219,6 +222,7 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 		p += i;
 		v -= i;
 		st->len += i;
+		sp->obj->len += i;
 	}
 
 	if (st != NULL && stevedore->trim != NULL)
@@ -262,24 +266,16 @@ FetchSession(struct worker *w, struct sess *sp)
 	switch (http_GetStatus(hp)) {
 	case 200:
 	case 301:
-		http_BuildSbuf(sp->fd, 3, w->sb, hp);
 		/* XXX: fill in object from headers */
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
-		sp->obj->header = strdup(sbuf_data(w->sb));
 		body = 1;
 		break;
 	case 304:
-		http_BuildSbuf(sp->fd, 3, w->sb, hp);
 		/* XXX: fill in object from headers */
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
-		sp->obj->header = strdup(sbuf_data(w->sb));
 		body = 0;
-		break;
-	case 391:
-		sp->obj->valid = 0;
-		sp->obj->cacheable = 0;
 		break;
 	default:
 		break;
@@ -295,6 +291,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	if (sp->obj->cacheable)
 		EXP_Insert(sp->obj);
 
+	http_BuildSbuf(sp->fd, 3, w->sb, hp);
 	if (body) {
 		if (http_GetHdr(hp, "Content-Length", &b))
 			cls = fetch_straight(w, sp, fd, hp, b);
@@ -302,10 +299,12 @@ FetchSession(struct worker *w, struct sess *sp)
 			cls = fetch_chunked(w, sp, fd, hp);
 		else 
 			cls = fetch_eof(w, sp, fd, hp);
+		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
 	} else
 		cls = 0;
-
-	http_BuildSbuf(sp->fd, 2, w->sb, hp);
+	sbuf_cat(w->sb, "\r\n");
+	sbuf_finish(w->sb);
+	sp->obj->header = strdup(sbuf_data(w->sb));
 
 	vca_write_obj(sp, w->sb);
 
