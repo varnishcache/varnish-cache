@@ -27,6 +27,7 @@
 
 #include "mgt.h"
 #include "heritage.h"
+#include "shmlog.h"
 #include "cli_event.h"
 
 /*--------------------------------------------------------------------*/
@@ -49,7 +50,7 @@ cli_passthrough_cb(unsigned u, const char *r, void *priv)
 }
 
 static void
-cli_func_passthrough(struct cli *cli, char **av __unused, void *priv)
+m_cli_func_passthrough(struct cli *cli, char **av __unused, void *priv)
 {
 
 	cli_suspend(cli);
@@ -128,7 +129,7 @@ vcl_default(const char *bflag)
 }
 
 static void
-cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
 {
 	char *vf;
 	struct sbuf *sb;
@@ -193,7 +194,7 @@ vcl_file(const char *fflag)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
+m_cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
 {
 
 	mgt_child_start();
@@ -202,7 +203,7 @@ cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
+m_cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
 {
 
 	mgt_child_stop();
@@ -211,7 +212,7 @@ cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_verbose(struct cli *cli, char **av __unused, void *priv)
+m_cli_func_verbose(struct cli *cli, char **av __unused, void *priv)
 {
 
 	cli->verbose = !cli->verbose;
@@ -219,7 +220,7 @@ cli_func_verbose(struct cli *cli, char **av __unused, void *priv)
 
 
 static void
-cli_func_ping(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 {
 	time_t t;
 
@@ -232,28 +233,41 @@ cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 
 /*--------------------------------------------------------------------*/
 
+static void
+m_cli_func_stats(struct cli *cli, char **av, void *priv __unused)
+{
+
+	assert (VSL_stats != NULL);
+#define MAC_STAT(n,t,f,d) \
+    cli_out(cli, "%12ju  " d "\n", (VSL_stats->n));
+#include "stat_field.h"
+#undef MAC_STAT
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct cli_proto cli_proto[] = {
 	/* URL manipulation */
-	{ CLI_URL_QUERY,	cli_func_passthrough, NULL },
-	{ CLI_URL_PURGE,	cli_func_passthrough, NULL },
-	{ CLI_URL_STATUS,	cli_func_passthrough, NULL },
+	{ CLI_URL_QUERY,	m_cli_func_passthrough, NULL },
+	{ CLI_URL_PURGE,	m_cli_func_passthrough, NULL },
+	{ CLI_URL_STATUS,	m_cli_func_passthrough, NULL },
 	{ CLI_CONFIG_LOAD,	m_cli_func_config_load, NULL },
-	{ CLI_CONFIG_INLINE,	cli_func_config_inline, NULL },
-	{ CLI_CONFIG_UNLOAD,	cli_func_passthrough, NULL },
-	{ CLI_CONFIG_LIST,	cli_func_passthrough, NULL },
-	{ CLI_CONFIG_USE,	cli_func_passthrough, NULL },
-	{ CLI_SERVER_FREEZE,	cli_func_passthrough, NULL },
-	{ CLI_SERVER_THAW,	cli_func_passthrough, NULL },
-	{ CLI_SERVER_SUSPEND,	cli_func_passthrough, NULL },
-	{ CLI_SERVER_RESUME,	cli_func_passthrough, NULL },
-	{ CLI_SERVER_STOP,	cli_func_server_stop, NULL },
-	{ CLI_SERVER_START,	cli_func_server_start, NULL },
+	{ CLI_CONFIG_INLINE,	m_cli_func_config_inline, NULL },
+	{ CLI_CONFIG_UNLOAD,	m_cli_func_passthrough, NULL },
+	{ CLI_CONFIG_LIST,	m_cli_func_passthrough, NULL },
+	{ CLI_CONFIG_USE,	m_cli_func_passthrough, NULL },
+	{ CLI_SERVER_FREEZE,	m_cli_func_passthrough, NULL },
+	{ CLI_SERVER_THAW,	m_cli_func_passthrough, NULL },
+	{ CLI_SERVER_SUSPEND,	m_cli_func_passthrough, NULL },
+	{ CLI_SERVER_RESUME,	m_cli_func_passthrough, NULL },
+	{ CLI_SERVER_STOP,	m_cli_func_server_stop, NULL },
+	{ CLI_SERVER_START,	m_cli_func_server_start, NULL },
 	{ CLI_SERVER_RESTART },
-	{ CLI_PING,		cli_func_ping, NULL },
-	{ CLI_STATS },
+	{ CLI_PING,		m_cli_func_ping, NULL },
+	{ CLI_STATS,		m_cli_func_stats, NULL },
 	{ CLI_ZERO },
 	{ CLI_HELP,		cli_func_help, cli_proto },
-	{ CLI_VERBOSE,		cli_func_verbose, NULL },
+	{ CLI_VERBOSE,		m_cli_func_verbose, NULL },
 	{ CLI_EXIT },
 	{ CLI_QUIT },
 	{ CLI_BYE },
@@ -347,39 +361,6 @@ setup_storage(const char *sflag)
 
 /*--------------------------------------------------------------------*/
 
-#include "shmlog.h"
-
-static void
-init_vsl(const char *fn, unsigned size)
-{
-	struct shmloghead slh;
-	int i;
-
-	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
-	if (heritage.vsl_fd < 0) {
-		fprintf(stderr, "Could not open %s: %s\n",
-		    fn, strerror(errno));
-		exit (1);
-	}
-	i = read(heritage.vsl_fd, &slh, sizeof slh);
-	if (i == sizeof slh && slh.magic == SHMLOGHEAD_MAGIC) {
-		/* XXX more checks */
-		heritage.vsl_size = slh.size + slh.start;
-		return;
-	}
-	slh.magic = SHMLOGHEAD_MAGIC;
-	slh.size = size;
-	slh.ptr = 0;
-	slh.start = sizeof slh;
-	AZ(lseek(heritage.vsl_fd, 0, SEEK_SET));
-	i = write(heritage.vsl_fd, &slh, sizeof slh);
-	assert(i == sizeof slh);
-	AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
-	heritage.vsl_size = slh.size + slh.start;
-}
-
-/*--------------------------------------------------------------------*/
-
 /* for development purposes */
 #include <printf.h>
 #include <err.h>
@@ -459,7 +440,7 @@ main(int argc, char *argv[])
 	 */
 	open_tcp(portnumber);
 
-	init_vsl(SHMLOG_FILENAME, 1024*1024);
+	VSL_MgtInit(SHMLOG_FILENAME, 1024*1024);
 
 	testme();
 

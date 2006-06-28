@@ -18,3 +18,6 @@ int open_tcp(const char *port);
 
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
+
+void VSL_MgtInit(const char *fn, unsigned size);
+extern struct varnish_stats *VSL_stats;

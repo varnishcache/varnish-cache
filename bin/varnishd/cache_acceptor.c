@@ -122,6 +122,8 @@ accept_f(int fd, short event, void *arg)
 	char port[10];
 	int i;
 
+	VSL_stats->cli_conn++;
+
 	(void)arg;
 	sm = calloc(sizeof *sm, 1);
 	assert(sm != NULL);	/*

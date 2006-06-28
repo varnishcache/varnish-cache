@@ -9,21 +9,25 @@
 
 #define SHMLOG_FILENAME		"/tmp/_.vsl"
 
+#include "stats.h"
+
 struct shmloghead {
 #define SHMLOGHEAD_MAGIC	4185512498U	/* From /dev/random */
-	unsigned	magic;
+	unsigned		magic;
 
 	/*
 	 * Byte offset into the file where the fifolog starts
  	 * This allows the header to expand later.
 	 */
-	unsigned	start;
+	unsigned		start;
 
 	/* Length of the fifolog area in bytes */
-	unsigned	size;
+	unsigned		size;
 
 	/* Current write position relative to the beginning of start */
-	unsigned	ptr;
+	unsigned		ptr;
+
+	struct varnish_stats	stats;
 };
 
 /*
