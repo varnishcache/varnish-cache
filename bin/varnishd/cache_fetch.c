@@ -67,16 +67,7 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 		p += i;
 		cl -= i;
 	}
-
-	http_BuildSbuf(2, w->sb, hp);
-
-	vca_write_obj(sp, w->sb);
-
-#if 0
-	hash->deref(sp->obj);
-#endif
 	return (0);
-
 }
 
 /*--------------------------------------------------------------------*/
@@ -184,10 +175,6 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 
 	if (st != NULL && stevedore->trim != NULL)
 		stevedore->trim(st, st->len);
-
-	http_BuildSbuf(2, w->sb, hp);
-
-	vca_write_obj(sp, w->sb);
 	return (0);
 }
 
@@ -237,9 +224,6 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 	if (st != NULL && stevedore->trim != NULL)
 		stevedore->trim(st, st->len);
 
-	http_BuildSbuf(2, w->sb, hp);
-
-	vca_write_obj(sp, w->sb);
 	return (1);
 }
 
@@ -252,6 +236,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	struct http *hp;
 	char *b;
 	time_t t_req, t_resp;
+	int body;
 
 	fd = VBE_GetFd(sp->backend, &fd_token);
 	assert(fd != -1);
@@ -282,6 +267,15 @@ FetchSession(struct worker *w, struct sess *sp)
 		sp->obj->valid = 1;
 		sp->obj->cacheable = 1;
 		sp->obj->header = strdup(sbuf_data(w->sb));
+		body = 1;
+		break;
+	case 304:
+		http_BuildSbuf(3, w->sb, hp);
+		/* XXX: fill in object from headers */
+		sp->obj->valid = 1;
+		sp->obj->cacheable = 1;
+		sp->obj->header = strdup(sbuf_data(w->sb));
+		body = 0;
 		break;
 	case 391:
 		sp->obj->valid = 0;
@@ -301,12 +295,19 @@ FetchSession(struct worker *w, struct sess *sp)
 	if (sp->obj->cacheable)
 		EXP_Insert(sp->obj);
 
-	if (http_GetHdr(hp, "Content-Length", &b))
-		cls = fetch_straight(w, sp, fd, hp, b);
-	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-		cls = fetch_chunked(w, sp, fd, hp);
-	else 
-		cls = fetch_eof(w, sp, fd, hp);
+	if (body) {
+		if (http_GetHdr(hp, "Content-Length", &b))
+			cls = fetch_straight(w, sp, fd, hp, b);
+		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
+			cls = fetch_chunked(w, sp, fd, hp);
+		else 
+			cls = fetch_eof(w, sp, fd, hp);
+	} else
+		cls = 0;
+
+	http_BuildSbuf(2, w->sb, hp);
+
+	vca_write_obj(sp, w->sb);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
