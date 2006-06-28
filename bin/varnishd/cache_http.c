@@ -352,7 +352,6 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 {
 
 	assert(hp != NULL);
-	VSL(SLT_Debug, fd, "%s s %p t %p v %p", __func__, hp->s, hp->t, hp->v);
 	assert(hp->t == hp->s || hp->t == hp->v);	/* XXX pipelining */
 	hp->callback = func;
 	hp->arg = arg;
@@ -423,7 +422,8 @@ http_BuildSbuf(int fd, int resp, struct sbuf *sb, struct http *hp)
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");
 	}
-	if (resp != 3)
+	if (resp != 3) {
 		sbuf_cat(sb, "\r\n");
-	sbuf_finish(sb);
+		sbuf_finish(sb);
+	}
 }
