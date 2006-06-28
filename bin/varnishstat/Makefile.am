@@ -6,5 +6,6 @@ bin_PROGRAMS = varnishstat
 
 varnishstat_SOURCES = varnishstat.c
 
-varnishstat_LDADD = -lcurses
-# varnishlog_LDADD = $(top_builddir)/lib/libvarnishapi/libvarnishapi.la 
+varnishstat_LDADD = \
+	-lcurses \
+	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la 
