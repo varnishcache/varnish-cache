@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <curses.h>
 #include <sys/mman.h>
 
 #include <shmlog.h>
@@ -20,9 +21,10 @@ int
 main(int argc, char **argv)
 {
 	int fd;
-	int i;
+	int i, c;
 	struct shmloghead slh;
 	struct varnish_stats *VSL_stats;
+	int c_flag = 0;
 
 	fd = open(SHMLOG_FILENAME, O_RDONLY);
 	if (fd < 0) {
@@ -49,13 +51,40 @@ main(int argc, char **argv)
 		    SHMLOG_FILENAME, strerror(errno));
 		exit (1);
 	}
-	
+
 	VSL_stats = &loghead->stats;
 
+	while ((c = getopt(argc, argv, "c")) != -1) {
+		switch (c) {
+		case 'c':
+			c_flag = 1;
+			break;
+		default:
+			fprintf(stderr, "Usage:  varnishstat [-c]\n");
+			exit (2);
+		}
+	}
+
+	if (c_flag) {
+		initscr();
+		erase();
+
+		while (1) {
+			move(0,0);
 #define MAC_STAT(n,t,f,d) \
-    printf("%12ju  " d "\n", (VSL_stats->n));
+			printw("%12ju  " d "\n", (VSL_stats->n));
 #include "stat_field.h"
 #undef MAC_STAT
+			refresh();
+			sleep(1);
+		}
+	} else {
+
+#define MAC_STAT(n,t,f,d) \
+		printf("%12ju  " d "\n", (VSL_stats->n));
+#include "stat_field.h"
+#undef MAC_STAT
+	}
 
 	exit (0);
 

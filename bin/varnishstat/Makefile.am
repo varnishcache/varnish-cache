@@ -4,6 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishstat
 
-varnishlog_SOURCES = varnishstat.c
+varnishstat_SOURCES = varnishstat.c
 
+varnishstat_LDADD = -lcurses
 # varnishlog_LDADD = $(top_builddir)/lib/libvarnishapi/libvarnishapi.la 
