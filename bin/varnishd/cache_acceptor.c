@@ -88,14 +88,17 @@ void
 vca_write_obj(struct sess *sp, struct sbuf *hdr)
 {
 	struct storage *st;
+	unsigned u = 0;
 
 	vca_write(sp, sbuf_data(hdr), sbuf_len(hdr));
 	TAILQ_FOREACH(st, &sp->obj->store, list) {
+		u += st->len;
 		if (st->stevedore->send != NULL)
 			st->stevedore->send(st, sp);
 		else
 			vca_write(sp, st->ptr, st->len);
 	}
+	assert(u == sp->obj->len);
 	vca_flush(sp);
 }
 
