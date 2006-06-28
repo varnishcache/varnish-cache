@@ -239,6 +239,7 @@ VBE_GetFd(struct backend *bp, void **ptr)
 		vp->nconn++;
 		AZ(pthread_mutex_unlock(&vbemtx));
 		connect_to_backend(vc, bp);
+		VSL_stats->backend_conn++;
 		event_set(&vc->ev, vc->fd, EV_READ | EV_PERSIST, vbe_rdf, vc);
 		event_base_set(vbe_evb, &vc->ev);
 	}
@@ -270,6 +271,7 @@ VBE_RecycleFd(void *ptr)
 	struct vbe_conn *vc;
 	int i;
 
+	VSL_stats->backend_recycle++;
 	vc = ptr;
 	VSL(SLT_BackendReuse, vc->fd, "");
 	i = write(vbe_pipe[1], &vc, sizeof vc);

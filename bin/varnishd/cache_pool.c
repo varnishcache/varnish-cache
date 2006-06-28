@@ -31,10 +31,13 @@ LookupSession(struct worker *w, struct sess *sp)
 
 	o = HSH_Lookup(w, sp->http);
 	sp->obj = o;
-	if (o->busy)
+	if (o->busy) {
+		VSL_stats->cache_miss++;
 		VCL_miss_method(sp);
-	else
+	} else {
+		VSL_stats->cache_hit++;
 		VCL_hit_method(sp);
+	}
 	return (0);
 }
 
@@ -133,6 +136,7 @@ DealWithSession(void *arg, int good)
 		vca_return_session(sp);
 		return;
 	}
+	VSL_stats->client_req++;
 	AZ(pthread_mutex_lock(&sessmtx));
 	TAILQ_INSERT_TAIL(&shd, sp, list);
 	AZ(pthread_mutex_unlock(&sessmtx));
