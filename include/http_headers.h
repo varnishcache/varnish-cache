@@ -38,11 +38,11 @@ HTTPH("Expect",			H_Expect,		1, 0, 0, 0, 0)	/* RFC2616 14.20 */
 HTTPH("Expires",		H_Expires,		2, 0, 0, 0, 0)	/* RFC2616 14.21 */
 HTTPH("From",			H_From,			1, 0, 0, 0, 0)	/* RFC2616 14.22 */
 HTTPH("Host",			H_Host,			1, 0, 0, 0, 0)	/* RFC2616 14.23 */
-HTTPH("If-Match",		H_If_Match,		1, 0, 0, 0, 0)	/* RFC2616 14.24 */
-HTTPH("If-Modified-Since",	H_If_Modified_Since,	1, 0, 0, 0, 0)	/* RFC2616 14.25 */
-HTTPH("If-None-Match",		H_If_None_Match,	1, 0, 0, 0, 0)	/* RFC2616 14.26 */
-HTTPH("If-Range",		H_If_Range,		1, 0, 0, 0, 0)	/* RFC2616 14.27 */
-HTTPH("If-Unmodified-Since",	H_If_Unmodifed_Since,	1, 0, 0, 0, 0)	/* RFC2616 14.28 */
+HTTPH("If-Match",		H_If_Match,		1, 1, 0, 0, 0)	/* RFC2616 14.24 */
+HTTPH("If-Modified-Since",	H_If_Modified_Since,	1, 1, 0, 0, 0)	/* RFC2616 14.25 */
+HTTPH("If-None-Match",		H_If_None_Match,	1, 1, 0, 0, 0)	/* RFC2616 14.26 */
+HTTPH("If-Range",		H_If_Range,		1, 1, 0, 0, 0)	/* RFC2616 14.27 */
+HTTPH("If-Unmodified-Since",	H_If_Unmodifed_Since,	1, 1, 0, 0, 0)	/* RFC2616 14.28 */
 HTTPH("Last-Modified",		H_Last_Modified,	2, 0, 0, 0, 0)	/* RFC2616 14.29 */
 HTTPH("Location",		H_Location,		2, 0, 0, 0, 0)	/* RFC2616 14.30 */
 HTTPH("Max-Forwards",		H_Max_Forwards,		1, 0, 0, 0, 0)	/* RFC2616 14.31 */
