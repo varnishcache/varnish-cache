@@ -70,6 +70,7 @@ struct object {
 	struct objhead		*objhead;
 	pthread_cond_t		cv;
 
+	unsigned		heap_idx;
 	unsigned		ban_seq;
 
 	unsigned		valid;

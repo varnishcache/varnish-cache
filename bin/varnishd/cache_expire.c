@@ -115,6 +115,14 @@ object_cmp(void *priv, void *a, void *b)
 	return (aa->ttl < bb->ttl);
 }
 
+static void
+object_update(void *priv, void *p, unsigned u)
+{
+	struct object *o = p;
+
+	o->heap_idx = u;
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -124,6 +132,6 @@ EXP_Init(void)
 	AZ(pthread_mutex_init(&exp_mtx, NULL));
 	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));
 	AZ(pthread_create(&exp_thread, NULL, exp_hangman, NULL));
-	exp_heap = binheap_new(NULL, object_cmp, NULL);
+	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	assert(exp_heap != NULL);
 }
