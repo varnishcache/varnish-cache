@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #include "libvarnish.h"
+#include "shmlog.h"
 #include "cache.h"
 
 static struct hash_slinger      *hash;
@@ -48,8 +49,13 @@ HSH_Lookup(struct worker *w, struct http *h)
 		o->refcnt++;
 		if (o->busy)
 			AZ(pthread_cond_wait(&o->cv, &oh->mtx));
-		/* XXX: do Vary: comparison */
-		if (1)
+		/* XXX: check TTL */
+		if (o->ttl == 0) {
+			VSL(SLT_Debug, 0, "Object %p had 0 ttl", o);
+		} else if (BAN_CheckObject(o, b)) {
+			o->ttl = 0;
+			VSL(SLT_Debug, 0, "Object %p was banned", o);
+		} else 
 			break;
 		o->refcnt--;
 	}
@@ -67,6 +73,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 	TAILQ_INSERT_TAIL(&oh->objects, o, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	AZ(pthread_mutex_unlock(&oh->mtx));
+	BAN_NewObj(o);
 	return (o);
 }
 

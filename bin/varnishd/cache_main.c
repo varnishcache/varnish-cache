@@ -83,6 +83,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv)
 
 static struct cli_proto cli_proto[] = {
 	{ CLI_URL_QUERY,	cli_func_url_query },
+	{ CLI_URL_PURGE,	cli_func_url_purge },
 	{ CLI_CONFIG_LOAD,	cli_func_config_load },
 	{ CLI_CONFIG_LIST,	cli_func_config_list },
 	{ CLI_CONFIG_UNLOAD,	cli_func_config_unload },
@@ -115,6 +116,7 @@ child_main(void)
 	VCA_Init();
 	EXP_Init();
 	HSH_Init();
+	BAN_Init();
 
 	eb = event_init();
 	assert(eb != NULL);
