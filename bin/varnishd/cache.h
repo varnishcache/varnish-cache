@@ -162,6 +162,7 @@ int BAN_CheckObject(struct object *o, const char *url);
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
+void EXP_TTLchange(struct object *o);
 
 /* cache_fetch.c */
 int FetchSession(struct worker *w, struct sess *sp);

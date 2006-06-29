@@ -51,10 +51,11 @@ HSH_Lookup(struct worker *w, struct http *h)
 			AZ(pthread_cond_wait(&o->cv, &oh->mtx));
 		/* XXX: check TTL */
 		if (o->ttl == 0) {
-			VSL(SLT_Debug, 0, "Object %p had 0 ttl", o);
+			/* Object banned but not reaped yet */
 		} else if (BAN_CheckObject(o, b)) {
 			o->ttl = 0;
-			VSL(SLT_Debug, 0, "Object %p was banned", o);
+			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
+			EXP_TTLchange(o);
 		} else 
 			break;
 		o->refcnt--;
