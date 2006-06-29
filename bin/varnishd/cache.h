@@ -9,6 +9,7 @@
 #define VCA_ADDRBUFSIZE		32	/* Sizeof ascii network address */
 
 struct event_base;
+struct cli;
 struct sbuf;
 struct sess;
 struct object;
@@ -68,6 +69,8 @@ struct object {
 	unsigned		xid;
 	struct objhead		*objhead;
 	pthread_cond_t		cv;
+
+	unsigned		ban_seq;
 
 	unsigned		valid;
 	unsigned		cacheable;
@@ -148,6 +151,12 @@ void VBE_Init(void);
 int VBE_GetFd(struct backend *bp, void **ptr, unsigned xid);
 void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
+
+/* cache_ban.c */
+void BAN_Init(void);
+void cli_func_url_purge(struct cli *cli, char **av, void *priv);
+void BAN_NewObj(struct object *o);
+int BAN_CheckObject(struct object *o, const char *url);
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
