@@ -52,6 +52,7 @@ exp_hangman(void *arg)
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
 		AZ(pthread_mutex_unlock(&exp_mtx));
+		VSL(SLT_ExpKill, 0, "%u", o->xid);
 		HSH_Deref(o);
 	}
 }
@@ -83,6 +84,7 @@ exp_prefetch(void *arg)
 		}
 		binheap_delete(exp_heap, 0);
 		AZ(pthread_mutex_unlock(&exp_mtx));
+		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
 		sp.vcl = GetVCL();
 		sp.obj = o;
