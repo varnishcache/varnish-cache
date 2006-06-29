@@ -201,7 +201,7 @@ vbe_main(void *priv __unused)
  */
 
 int
-VBE_GetFd(struct backend *bp, void **ptr)
+VBE_GetFd(struct backend *bp, void **ptr, unsigned xid)
 {
 	struct vbe *vp;
 	struct vbe_conn *vc;
@@ -244,6 +244,7 @@ VBE_GetFd(struct backend *bp, void **ptr)
 		event_base_set(vbe_evb, &vc->ev);
 	}
 	*ptr = vc;
+	VSL(SLT_BackendXID, vc->fd, "%u", xid);
 	return (vc->fd);
 }
 

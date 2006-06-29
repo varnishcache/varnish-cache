@@ -157,7 +157,7 @@ PassSession(struct worker *w, struct sess *sp)
 	char *b;
 	int cls;
 
-	fd = VBE_GetFd(sp->backend, &fd_token);
+	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
 	assert(fd != -1);
 
 	http_BuildSbuf(fd, 1, w->sb, sp->http);
