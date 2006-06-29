@@ -48,7 +48,7 @@ PipeSession(struct worker *w, struct sess *sp)
 	void *fd_token;
 	struct edir e1, e2;
 
-	fd = VBE_GetFd(sp->backend, &fd_token);
+	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
 	assert(fd != -1);
 
 	http_BuildSbuf(fd, 0, w->sb, sp->http);	/* XXX: 0 ?? */

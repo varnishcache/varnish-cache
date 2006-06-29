@@ -92,6 +92,7 @@ struct objhead {
 
 struct sess {
 	int			fd;
+	unsigned		xid;
 
 	/* formatted ascii client address */
 	char			addr[VCA_ADDRBUFSIZE];
@@ -143,7 +144,7 @@ void VCA_Init(void);
 
 /* cache_backend.c */
 void VBE_Init(void);
-int VBE_GetFd(struct backend *bp, void **ptr);
+int VBE_GetFd(struct backend *bp, void **ptr, unsigned xid);
 void VBE_ClosedFd(void *ptr);
 void VBE_RecycleFd(void *ptr);
 

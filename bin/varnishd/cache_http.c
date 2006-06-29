@@ -335,11 +335,6 @@ http_read_f(int fd, short event, void *arg)
 	}
 	hp->t = ++p;
 
-#if 0
-printf("Head:\n%#H\n", hp->s, hp->t - hp->s);
-printf("Tail:\n%#H\n", hp->t, hp->v - hp->t);
-#endif
-
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
 		hp->callback(hp->arg, 1);

@@ -21,6 +21,7 @@
 static TAILQ_HEAD(, sess) shd = TAILQ_HEAD_INITIALIZER(shd);
 
 static pthread_cond_t	shdcnd;
+static unsigned		xids;
 
 /*--------------------------------------------------------------------*/
 
@@ -131,6 +132,13 @@ DealWithSession(void *arg, int good)
 		vca_return_session(sp);
 		return;
 	}
+
+	/*
+	 * No locking necessary, we're serialized in the acceptor thread
+	 */
+	sp->xid = xids++;
+	VSL(SLT_XID, sp->fd, "%u", sp->xid);
+
 	VSL_stats->client_req++;
 	AZ(pthread_mutex_lock(&sessmtx));
 	TAILQ_INSERT_TAIL(&shd, sp, list);
@@ -149,4 +157,6 @@ CacheInitPool(void)
 	for (i = 0; i < 5; i++)
 		AZ(pthread_create(&tp, NULL, CacheWorker, NULL));
 	AZ(pthread_detach(tp));
+	srandomdev();
+	xids = random();
 }
