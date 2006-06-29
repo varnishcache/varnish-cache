@@ -227,9 +227,10 @@ VCL_##func##_method(struct sess *sp)		\
 {						\
 						\
 	sp->handling = 0;			\
+	VSL(SLT_VCL_call, sp->fd, "%s", #func); 	\
 	sp->vcl->func##_func(sp);		\
 	CheckHandling(sp, #func, (bitmap));	\
-	VSL(SLT_vcl_##func, sp->fd, "0x%x %s", sp->handling, HandlingName(sp->handling)); \
+	VSL(SLT_VCL_return, sp->fd, "%s", HandlingName(sp->handling)); \
 }
 
 #define VCL_RET_MAC(l,u,b)

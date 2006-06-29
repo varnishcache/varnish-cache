@@ -46,14 +46,39 @@ order(unsigned char *p)
 		ob[u] = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 		assert(ob[u] != NULL);
 	}
-	sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-	    p[0], p[1], u, tagnames[p[0]]);
-	if (p[1] > 0) {
-		sbuf_cat(ob[u], " <");
-		sbuf_bcat(ob[u], p + 4, p[1]);
-		sbuf_cat(ob[u], ">");
+	switch (p[0]) {
+	case SLT_VCL_call:
+		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		    p[0], p[1], u, tagnames[p[0]]);
+		if (p[1] > 0) {
+			sbuf_cat(ob[u], " <");
+			sbuf_bcat(ob[u], p + 4, p[1]);
+		}
+		break;
+	case SLT_VCL_trace:
+		if (p[1] > 0) {
+			sbuf_cat(ob[u], " ");
+			sbuf_bcat(ob[u], p + 4, p[1]);
+		}
+		break;
+	case SLT_VCL_return:
+		if (p[1] > 0) {
+			sbuf_cat(ob[u], " ");
+			sbuf_bcat(ob[u], p + 4, p[1]);
+			sbuf_cat(ob[u], ">\n");
+		}
+		break;
+	default:
+		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		    p[0], p[1], u, tagnames[p[0]]);
+		if (p[1] > 0) {
+			sbuf_cat(ob[u], " <");
+			sbuf_bcat(ob[u], p + 4, p[1]);
+			sbuf_cat(ob[u], ">");
+		}
+		sbuf_cat(ob[u], "\n");
+		break;
 	}
-	sbuf_cat(ob[u], "\n");
 	if (u == 0) {
 		sbuf_finish(ob[u]);
 		printf("%s", sbuf_data(ob[u]));
