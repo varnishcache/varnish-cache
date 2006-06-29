@@ -31,6 +31,15 @@ EXP_Insert(struct object *o)
 	AZ(pthread_mutex_unlock(&exp_mtx));
 }
 
+void
+EXP_TTLchange(struct object *o)
+{
+	AZ(pthread_mutex_lock(&exp_mtx));
+	binheap_delete(exp_heap, o->heap_idx);
+	binheap_insert(exp_heap, o);
+	AZ(pthread_mutex_unlock(&exp_mtx));
+}
+
 /*--------------------------------------------------------------------
  * This thread monitors deathrow and kills objects when they time out.
  */
@@ -77,7 +86,7 @@ exp_prefetch(void *arg)
 		time(&t);
 		AZ(pthread_mutex_lock(&exp_mtx));
 		o = binheap_root(exp_heap);
-		if (o == NULL || o->ttl - t > expearly) {
+		if (o == NULL || o->ttl > t + expearly) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			sleep(1);
 			continue;
