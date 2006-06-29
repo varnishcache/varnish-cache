@@ -65,6 +65,7 @@ extern struct stevedore *stevedore;
 
 struct object {	
 	unsigned 		refcnt;
+	unsigned		xid;
 	struct objhead		*objhead;
 	pthread_cond_t		cv;
 
