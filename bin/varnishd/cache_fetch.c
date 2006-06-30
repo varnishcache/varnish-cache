@@ -161,7 +161,6 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 				st->len += e - b;
 				v -= e - b;
 				u -= e - b;
-				sp->obj->len += e - b;
 			}
 			while (v > 0) {
 				i = read(fd, p, v);
@@ -170,7 +169,6 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 				v -= i;
 				u -= i;
 				p += i;
-				sp->obj->len += i;
 			}
 		}
 	}
