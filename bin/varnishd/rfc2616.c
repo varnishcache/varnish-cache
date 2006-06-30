@@ -9,7 +9,6 @@
 #include "cache.h"
 #include "libvarnish.h"
 #include "heritage.h"
-
 /*--------------------------------------------------------------------
  * From RFC2616, 13.2.3 Age Calculations
  *
@@ -35,7 +34,7 @@
  *
  */
 
-time_t
+static time_t
 RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 {
 	time_t h_date = 0, h_expires = 0, h_age = 0;
@@ -94,3 +93,38 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 
 	return (ttl);
 }
+
+int
+RFC2616_cache_policy(struct sess *sp, struct http *hp)
+{
+	int body = 0;
+
+	/*
+	 * Initial cacheability determination per [RFC2616, 13.4]
+	 * We do not support ranges yet, so 206 is out.
+	 */
+	switch (http_GetStatus(hp)) {
+	case 200: /* OK */
+		sp->obj->valid = 1;
+	case 203: /* Non-Authoritative Information */
+	case 300: /* Multiple Choices */
+	case 301: /* Moved Permanently */
+	case 410: /* Gone */
+		sp->obj->cacheable = 1;
+		body = 1;
+		break;
+	default:
+		sp->obj->cacheable = 0;
+		body = 0;
+		break;
+	}
+
+	sp->obj->ttl = RFC2616_Ttl(hp, sp->t_req, sp->t_resp);
+	if (sp->obj->ttl == 0) {
+		sp->obj->cacheable = 0;
+	}
+
+	return (body);
+
+}
+
