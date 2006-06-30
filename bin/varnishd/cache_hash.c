@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <event.h>
 #include <pthread.h>
+#include <queue.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"

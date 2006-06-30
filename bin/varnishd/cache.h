@@ -2,7 +2,7 @@
  * $Id$
  */
 
-#include <sys/queue.h>
+#include <queue.h>
 
 #include "vcl_returns.h"
 

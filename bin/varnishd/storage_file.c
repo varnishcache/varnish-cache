@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/queue.h>
+#include <queue.h>
 #include <sys/stat.h>
 #include <pthread.h>
 #include <sys/param.h>
