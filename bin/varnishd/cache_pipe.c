@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <sys/queue.h>
+#include <queue.h>
 #include <sys/socket.h>
 #include <sbuf.h>
 #include <event.h>

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <sys/queue.h>
+#include <queue.h>
 
 #include <libvarnish.h>
 #include <cache.h>
