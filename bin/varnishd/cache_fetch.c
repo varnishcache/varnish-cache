@@ -240,7 +240,6 @@ FetchSession(struct worker *w, struct sess *sp)
 	void *fd_token;
 	struct http *hp;
 	char *b;
-	time_t t_req, t_resp;
 	int body;
 
 	sp->obj->xid = sp->xid;
@@ -253,7 +252,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	http_BuildSbuf(fd, 1, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
-	time(&t_req);
+	time(&sp->t_req);
 
 	/* XXX: copy any contents */
 
@@ -263,32 +262,10 @@ FetchSession(struct worker *w, struct sess *sp)
 	 */
 	http_RecvHead(hp, fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	time(&t_resp);
+	time(&sp->t_resp);
 	http_Dissect(hp, fd, 2);
 
-	switch (http_GetStatus(hp)) {
-	case 200:
-	case 301:
-		/* XXX: fill in object from headers */
-		sp->obj->valid = 1;
-		sp->obj->cacheable = 1;
-		body = 1;
-		break;
-	case 304:
-		/* XXX: fill in object from headers */
-		sp->obj->valid = 1;
-		sp->obj->cacheable = 1;
-		body = 0;
-		break;
-	default:
-		body = 0;
-		break;
-	}
-
-	sp->obj->ttl = RFC2616_Ttl(hp, t_req, t_resp);
-	if (sp->obj->ttl == 0) {
-		sp->obj->cacheable = 0;
-	}
+	body = RFC2616_cache_policy(sp, hp);
 
 	VCL_fetch_method(sp);
 

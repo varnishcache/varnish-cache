@@ -105,6 +105,9 @@ struct sess {
 	/* HTTP request */
 	struct http		*http;
 
+	time_t			t_req;
+	time_t			t_resp;
+
 	unsigned 		handling;
 
 	TAILQ_ENTRY(sess)	list;
@@ -234,4 +237,4 @@ cli_func_t	cli_func_config_use;
 #endif
 
 /* rfc2616.c */
-time_t RFC2616_Ttl(struct http *hp, time_t, time_t);
+int RFC2616_cache_policy(struct sess *sp, struct http *hp);
