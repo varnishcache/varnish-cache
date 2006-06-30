@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -69,6 +70,7 @@ CVCL_Load(const char *fn, const char *name)
 	assert(vcl != NULL);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	unlink(fn);
 	if (vcl->dlh == NULL) {
 		fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());
 		free(vcl);
