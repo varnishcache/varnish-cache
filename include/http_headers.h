@@ -9,6 +9,8 @@
  * f	unused
  * g	unused
  *
+ * see [RFC2616 13.5.1 End-to-end and Hop-by-hop Headers]
+ *
  *    a                         b                       c  d  e  f  g 
  *--------------------------------------------------------------------
  */
@@ -47,16 +49,16 @@ HTTPH("Last-Modified",		H_Last_Modified,	2, 0, 0, 0, 0)	/* RFC2616 14.29 */
 HTTPH("Location",		H_Location,		2, 0, 0, 0, 0)	/* RFC2616 14.30 */
 HTTPH("Max-Forwards",		H_Max_Forwards,		1, 0, 0, 0, 0)	/* RFC2616 14.31 */
 HTTPH("Pragma",			H_Pragma,		1, 0, 0, 0, 0)  /* RFC2616 14.32 */
-HTTPH("Proxy-Authenticate",	H_Proxy_Authenticate,	2, 0, 0, 0, 0)	/* RFC2616 14.33 */
-HTTPH("Proxy-Authorization",	H_Proxy_Authorization,	1, 0, 0, 0, 0)	/* RFC2616 14.34 */
+HTTPH("Proxy-Authenticate",	H_Proxy_Authenticate,	2, 3, 0, 0, 0)	/* RFC2616 14.33 */
+HTTPH("Proxy-Authorization",	H_Proxy_Authorization,	1, 3, 0, 0, 0)	/* RFC2616 14.34 */
 HTTPH("Range",			H_Range,		1, 0, 0, 0, 0)	/* RFC2616 14.35 */
 HTTPH("Referer",		H_Referer,		1, 0, 0, 0, 0)	/* RFC2616 14.36 */
 HTTPH("Retry-After",		H_Retry_After,		2, 0, 0, 0, 0)	/* RFC2616 14.37 */
 HTTPH("Server",			H_Server,		2, 0, 0, 0, 0)	/* RFC2616 14.38 */
-HTTPH("TE",			H_TE,			1, 0, 0, 0, 0)	/* RFC2616 14.39 */
-HTTPH("Trailer",		H_Trailer,		1, 0, 0, 0, 0)	/* RFC2616 14.40 */
+HTTPH("TE",			H_TE,			1, 3, 0, 0, 0)	/* RFC2616 14.39 */
+HTTPH("Trailer",		H_Trailer,		1, 3, 0, 0, 0)	/* RFC2616 14.40 */
 HTTPH("Transfer-Encoding", 	H_Transfer_Encoding,	2, 3, 0, 0, 0)	/* RFC2616 14.41 */
-HTTPH("Upgrade", 		H_Upgrade,		2, 0, 0, 0, 0)	/* RFC2616 14.42 */
+HTTPH("Upgrade", 		H_Upgrade,		2, 3, 0, 0, 0)	/* RFC2616 14.42 */
 HTTPH("User-Agent",		H_User_Agent,		1, 0, 0, 0, 0)	/* RFC2616 14.43 */
 HTTPH("Vary",			H_Vary,			2, 0, 0, 0, 0)	/* RFC2616 14.44 */
 HTTPH("Via",			H_Via,			2, 0, 0, 0, 0)	/* RFC2616 14.45 */
