@@ -14,6 +14,7 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "heritage.h"
 #include "cache.h"
 
 static struct hash_slinger      *hash;
@@ -129,7 +130,7 @@ void
 HSH_Init(void)
 {
 
-	hash = &hsl_slinger;
-	if (hash->init != NULL)
-		hash->init();
+	hash = heritage.hash;
+	if (hash->start != NULL)
+		hash->start();
 }

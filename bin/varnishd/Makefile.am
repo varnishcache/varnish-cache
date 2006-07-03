@@ -21,6 +21,7 @@ varnishd_SOURCES = \
 	cache_vrt.c \
 	cli_event.c \
 	hash_simple_list.c \
+	hash_classic.c \
 	mgt_child.c \
 	rfc2616.c \
 	storage_file.c \

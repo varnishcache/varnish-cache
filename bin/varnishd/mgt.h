@@ -19,5 +19,10 @@ int open_tcp(const char *port);
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
 
+#include "hash_slinger.h"
+
+extern struct hash_slinger hsl_slinger;
+extern struct hash_slinger hcl_slinger;
+
 void VSL_MgtInit(const char *fn, unsigned size);
 extern struct varnish_stats *VSL_stats;

@@ -245,7 +245,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	sp->obj->xid = sp->xid;
 
 	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
-	assert(fd != -1);
+	assert(fd != -1);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
 
 	hp = http_New();

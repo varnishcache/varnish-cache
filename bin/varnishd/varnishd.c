@@ -297,26 +297,47 @@ testme(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
-usage(void)
+static int
+cmp_hash(struct hash_slinger *s, const char *p, const char *q)
 {
-	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, "    %-28s # %s\n", "-b", "backend_IP_number");
-	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
-	fprintf(stderr, "    %-28s # %s\n", "-f", "VCL_file");
-	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
-	fprintf(stderr, "    %-28s # %s\n",
-	    "-s kind[,storageoptions]", "Backend storage specification");
-	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
-#if 0
-	-c clusterid@cluster_controller
-	-m memory_limit
-	-s kind[,storage-options]
-	-l logfile,logsize
-	-u uid
-	-a CLI_port
-#endif
-	exit(1);
+	if (strlen(s->name) != q - p)
+		return (1);
+	if (strncmp(s->name, p, q - p))
+		return (1);
+	return (0);
+}
+
+static void
+setup_hash(const char *sflag)
+{
+	const char *p, *q;
+	struct hash_slinger *hp;
+
+	p = strchr(sflag, ',');
+	if (p == NULL)
+		q = p = strchr(sflag, '\0');
+	else
+		q = p + 1;
+	assert(p != NULL);
+	assert(q != NULL);
+	if (!cmp_hash(&hcl_slinger, sflag, p)) {
+		hp = &hcl_slinger;
+	} else if (!cmp_hash(&hsl_slinger, sflag, p)) {
+		hp = &hsl_slinger;
+	} else {
+		fprintf(stderr, "Unknown hash method \"%*.*s\"\n",
+			p - sflag, p - sflag, sflag);
+		exit (2);
+	}
+	heritage.hash = hp;
+	if (hp->init != NULL) {
+		if (hp->init(q))
+			exit (1);
+	} else if (*q) {
+		fprintf(stderr, "Hash method \"%s\" takes no arguments\n",
+		    hp->name);
+		exit (1);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -361,6 +382,36 @@ setup_storage(const char *sflag)
 
 /*--------------------------------------------------------------------*/
 
+static void
+usage(void)
+{
+	fprintf(stderr, "usage: varnishd [options]\n");
+	fprintf(stderr, "    %-28s # %s\n", "-b backend",
+	    "backend IP or hostname");
+	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
+	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL_file");
+	fprintf(stderr, "    %-28s # %s\n",
+	    "-h kind[,hashoptions]", "Hash specification");
+	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
+	fprintf(stderr, "    %-28s # %s\n",
+	    "-s kind[,storageoptions]", "Backend storage specification");
+	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
+	fprintf(stderr, "    %-28s # %s\n", "-w int[,int]",
+	    "Number of worker threads (fixed/{min,max})");
+#if 0
+	-c clusterid@cluster_controller
+	-m memory_limit
+	-s kind[,storage-options]
+	-l logfile,logsize
+	-u uid
+	-a CLI_port
+#endif
+	exit(1);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 /* for development purposes */
 #include <printf.h>
 #include <err.h>
@@ -368,20 +419,24 @@ setup_storage(const char *sflag)
 int
 main(int argc, char *argv[])
 {
-	int o;
+	int o, i;
+	unsigned ua, ub;
 	const char *portnumber = "8080";
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 	const char *bflag = NULL;
 	const char *fflag = NULL;
 	const char *sflag = "file";
+	const char *hflag = "classic";
 
 	register_printf_render_std((const unsigned char *)"HVQ");
  
 	VCC_InitCompile();
 
 	heritage.default_ttl = 120;
+	heritage.wthread_min = 5;
+	heritage.wthread_max = 5;
 
-	while ((o = getopt(argc, argv, "b:df:p:s:t:")) != -1)
+	while ((o = getopt(argc, argv, "b:df:h:p:s:t:w:")) != -1)
 		switch (o) {
 		case 'b':
 			bflag = optarg;
@@ -392,6 +447,9 @@ main(int argc, char *argv[])
 		case 'f':
 			fflag = optarg;
 			break;
+		case 'h':
+			hflag = optarg;
+			break;
 		case 'p':
 			portnumber = optarg;
 			break;
@@ -400,6 +458,15 @@ main(int argc, char *argv[])
 			break;
 		case 't':
 			heritage.default_ttl = strtoul(optarg, NULL, 0);
+			break;
+		case 'w':
+			i = sscanf(optarg, "%u,%u", &ua, &ub);
+			if (i == 0)
+				usage();
+			heritage.wthread_min = ua;
+			heritage.wthread_max = ua;
+			if (i == 2)
+				heritage.wthread_max = ub;
 			break;
 		default:
 			usage();
@@ -430,6 +497,7 @@ main(int argc, char *argv[])
 		exit (1);
 
 	setup_storage(sflag);
+	setup_hash(hflag);
 
 	/*
 	 * XXX: Lacking the suspend/resume facility (due to the socket API

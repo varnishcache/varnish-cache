@@ -9,6 +9,7 @@
 #include "cache.h"
 #include "libvarnish.h"
 #include "heritage.h"
+
 /*--------------------------------------------------------------------
  * From RFC2616, 13.2.3 Age Calculations
  *
@@ -106,6 +107,7 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 	switch (http_GetStatus(hp)) {
 	case 200: /* OK */
 		sp->obj->valid = 1;
+		/* FALLTHROUGH */
 	case 203: /* Non-Authoritative Information */
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
