@@ -122,9 +122,9 @@ accept_f(int fd, short event, void *arg)
 {
 	socklen_t l;
 	struct sessmem *sm;
-	struct sockaddr addr;
+	struct sockaddr addr[2];
 	struct sess *sp;
-	char port[10];
+	char port[NI_MAXSERV];
 	int i;
 
 	VSL_stats->client_conn++;
@@ -141,17 +141,21 @@ accept_f(int fd, short event, void *arg)
 	sp->mem = sm;
 
 	l = sizeof addr;
-	sp->fd = accept(fd, &addr, &l);
+	sp->fd = accept(fd, addr, &l);
 	if (sp->fd < 0) {
 		free(sp);
 		return;
 	}
 	i = 1;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_NOSIGPIPE, &i, sizeof i));
-	AZ(getnameinfo(&addr, l,
+	i = getnameinfo(addr, l,
 	    sp->addr, VCA_ADDRBUFSIZE,
-	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV));
-	strlcat(sp->addr, ":", VCA_ADDRBUFSIZE);
+	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV);
+	if (i) {
+		printf("getnameinfo = %d %s\n", i,
+		    gai_strerror(i));
+	}
+	strlcat(sp->addr, " ", VCA_ADDRBUFSIZE);
 	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
 	sp->http = http_New();

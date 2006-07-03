@@ -6,7 +6,7 @@
 
 #include "vcl_returns.h"
 
-#define VCA_ADDRBUFSIZE		32	/* Sizeof ascii network address */
+#define VCA_ADDRBUFSIZE		64	/* Sizeof ascii network address */
 
 struct event_base;
 struct cli;
