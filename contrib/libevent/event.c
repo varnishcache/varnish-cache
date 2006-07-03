@@ -164,36 +164,38 @@ void *
 event_init(void)
 {
 	int i;
+	struct event_base *mybase;
 
-	if ((current_base = calloc(1, sizeof(struct event_base))) == NULL)
+	if ((mybase = calloc(1, sizeof(struct event_base))) == NULL)
 		event_err(1, "%s: calloc");
 
 	event_sigcb = NULL;
 	event_gotsig = 0;
-	gettime(&current_base->event_tv);
+	gettime(&mybase->event_tv);
 	
-	RB_INIT(&current_base->timetree);
-	TAILQ_INIT(&current_base->eventqueue);
+	RB_INIT(&mybase->timetree);
+	TAILQ_INIT(&mybase->eventqueue);
 	TAILQ_INIT(&signalqueue);
 	
-	current_base->evbase = NULL;
-	for (i = 0; eventops[i] && !current_base->evbase; i++) {
-		current_base->evsel = eventops[i];
+	mybase->evbase = NULL;
+	for (i = 0; eventops[i] && NULL == mybase->evbase; i++) {
+		mybase->evsel = eventops[i];
 
-		current_base->evbase = current_base->evsel->init();
+		mybase->evbase = mybase->evsel->init();
 	}
 
-	if (current_base->evbase == NULL)
+	if (mybase->evbase == NULL)
 		event_errx(1, "%s: no event mechanism available", __func__);
 
 	if (getenv("EVENT_SHOW_METHOD")) 
 		event_msgx("libevent using: %s\n",
-			   current_base->evsel->name);
+			   mybase->evsel->name);
 
 	/* allocate a single active event queue */
-	event_base_priority_init(current_base, 1);
+	event_base_priority_init(mybase, 1);
 
-	return (current_base);
+	current_base = mybase;
+	return (mybase);
 }
 
 void
