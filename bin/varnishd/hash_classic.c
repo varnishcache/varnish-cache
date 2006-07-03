@@ -45,7 +45,7 @@ hcl_init(const char *p)
 	unsigned u1, u2;
 
 	i = sscanf(p, "%u,%u", &u1, &u2);
-	if (i == 0)
+	if (i <= 0)
 		return (0);
 	if (u1 == 0 || (i == 2 && (u2 == 0 || u2 > u1))) {
 		fprintf(stderr, "Invallid parameters to hash \"classic\":\n");
