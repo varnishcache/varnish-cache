@@ -1,5 +1,7 @@
 /*
  * $Id$
+ *
+ * XXX: automatic thread-pool size adaptation.
  */
 
 #include <stdio.h>
@@ -14,6 +16,7 @@
 #include <event.h>
 
 #include "libvarnish.h"
+#include "heritage.h"
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"
@@ -154,9 +157,10 @@ CacheInitPool(void)
 
 	AZ(pthread_cond_init(&shdcnd, NULL));
 
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < heritage.wthread_min; i++) {
 		AZ(pthread_create(&tp, NULL, CacheWorker, NULL));
-	AZ(pthread_detach(tp));
+		AZ(pthread_detach(tp));
+	}
 	srandomdev();
 	xids = random();
 }

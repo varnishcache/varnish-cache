@@ -31,7 +31,13 @@ struct heritage {
 	/* Storage method */
 	struct stevedore	*stevedore;
 
+	/* Hash method */
+	struct hash_slinger	*hash;
+
 	unsigned		default_ttl;
+
+	/* Worker threads */
+	unsigned		wthread_min, wthread_max;
 };
 
 extern struct heritage heritage;

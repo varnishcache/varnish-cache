@@ -27,20 +27,7 @@ struct worker {
 struct worker;
 #endif
 
-/* Hashing -----------------------------------------------------------*/
-
-typedef void hash_init_f(void);
-typedef struct objhead *hash_lookup_f(const char *key, struct objhead *nobj);
-typedef int hash_deref_f(struct objhead *obj);
-
-struct hash_slinger {
-	const char		*name;
-	hash_init_f		*init;
-	hash_lookup_f		*lookup;
-	hash_deref_f		*deref;
-};
-
-extern struct hash_slinger hsl_slinger;
+#include "hash_slinger.h"
 
 /* Storage -----------------------------------------------------------*/
 

@@ -112,6 +112,7 @@ hsl_deref(struct objhead *obj)
 
 struct hash_slinger hsl_slinger = {
 	"simple_list",
+	NULL,
 	hsl_init,
 	hsl_lookup,
 	hsl_deref,
