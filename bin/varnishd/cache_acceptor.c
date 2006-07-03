@@ -85,7 +85,7 @@ vca_write(struct sess *sp, void *ptr, size_t len)
 }
 
 void
-vca_write_obj(struct sess *sp, const char *b, unsigned l)
+vca_write_obj(struct sess *sp, char *b, unsigned l)
 {
 	struct storage *st;
 	unsigned u = 0;
