@@ -32,7 +32,7 @@ static pthread_mutex_t hsl_mutex;
  */
 
 static void
-hsl_init(void)
+hsl_start(void)
 {
 
 	AZ(pthread_mutex_init(&hsl_mutex, NULL));
@@ -113,7 +113,7 @@ hsl_deref(struct objhead *obj)
 struct hash_slinger hsl_slinger = {
 	"simple_list",
 	NULL,
-	hsl_init,
+	hsl_start,
 	hsl_lookup,
 	hsl_deref,
 };
