@@ -136,6 +136,7 @@ binheap_insert(struct binheap *bh, void *p)
 {
 	unsigned u;
 
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(bh->length >= bh->next);
 	if (bh->length == bh->next) {
@@ -158,6 +159,7 @@ void *
 binheap_root(struct binheap *bh)
 {
 
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
 	if(bh->next == 0)
 		return (NULL);
@@ -168,6 +170,7 @@ void
 binheap_delete(struct binheap *bh, unsigned idx)
 {
 
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(bh->next > 0);
 	assert(idx < bh->next);
