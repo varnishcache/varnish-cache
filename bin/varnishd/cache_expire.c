@@ -139,8 +139,8 @@ EXP_Init(void)
 {
 
 	AZ(pthread_mutex_init(&exp_mtx, NULL));
-	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));
-	AZ(pthread_create(&exp_thread, NULL, exp_hangman, NULL));
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	assert(exp_heap != NULL);
+	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));
+	AZ(pthread_create(&exp_thread, NULL, exp_hangman, NULL));
 }
