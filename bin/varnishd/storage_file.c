@@ -465,7 +465,7 @@ smf_open(struct stevedore *st)
 /*--------------------------------------------------------------------*/
 
 static struct storage *
-smf_alloc(struct stevedore *st, unsigned size)
+smf_alloc(struct stevedore *st, size_t size)
 {
 	struct smf *smf;
 	struct smf_sc *sc = st->priv;
