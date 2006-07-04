@@ -305,11 +305,13 @@ http_read_f(int fd, short event, void *arg)
 {
 	struct http *hp = arg;
 	char *p;
+	unsigned l;
 	int i;
 
-	assert(hp->v < hp->e);
+	l = hp->e - hp->v;
+	assert(l > 1);
 	errno = 0;
-	i = read(fd, hp->v, hp->e - hp->v);
+	i = read(fd, hp->v, l - 1);
 	if (i <= 0) {
 		if (hp->v != hp->s)
 			VSL(SLT_HttpError, fd,
