@@ -135,7 +135,7 @@ main(int argc, char **argv)
 		p = VSL_NextLog(loghead, &q);
 		if (p == NULL) {
 			fflush(stdout);
-			sleep(1);
+			usleep(50000);
 			continue;
 		}
 		if (o_flag) {
