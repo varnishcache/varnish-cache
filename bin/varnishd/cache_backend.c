@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <queue.h>
 #include <sbuf.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,11 +102,14 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 	do {
 		s = socket(res0->ai_family, res0->ai_socktype,
 		    res0->ai_protocol);
-		if (s < 0)
+		if (s < 0) {
+			VSL(SLT_Debug, 0, "Socket errno=%d", errno);
 			continue;
+		}
 		error = connect(s, res0->ai_addr, res0->ai_addrlen);
 		if (!error)
 			break;
+		VSL(SLT_Debug, 0, "Connect errno=%d", errno);
 		close(s);
 		s = -1;
 	} while ((res0 = res0->ai_next) != NULL);
