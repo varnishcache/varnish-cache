@@ -5,7 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <limits.h>
 
+#include "shmlog.h"
 #include "cache.h"
 #include "libvarnish.h"
 #include "heritage.h"
@@ -35,124 +37,88 @@
  * that talks about how a cache should react to a clockless origin server,
  * and more or uses the inverse logic for the opposite relationship.
  *
- *	/* Marker for no retirement age determined */
- *	retirement_age = INT_MAX
- *
- *	/* If we have a max-age directive, respect it */
- *	if (max-age)
- *		retirement_age = max(0,min(retirement_age, max-age - Age:))
- *
- *	/* If we have no Date: and Expires: looks sensible, use it */
- *	if (!date && expires > our_clock) {
- *		ttd = min(our_clock + retirement_age, Expires:)
- *
- *	/* If Date: is in the past, and Expires: looks sensible, use it */
- *	} else if (date < our_clock && expires > our_clock) {
- *		ttd = min(date + retirement_age, Expires:)
- *
- *	/* Otherwise we have clock-skew */
- *	} else {
- *		/* If we have both date and expires, infer max-age */
- *		if (date && expires)
- *			retirement_age =
- *			    max(0, min(retirement_age, Expires: - Date:)
- *
- *		/* Apply default_ttl if nothing better found */
- *		if (retirement_age == INT_MAX)
- *			retirement_age = default_ttl
- *
- *		/* Apply the max-age we can up with */
- *		ttd = our_clock + retirement_age
- *	}
- *
- *	/* Apply hard limits */
- *	ttd = max(ttd, our_clock + hard_lower_ttl)
- *	ttd = min(ttd, our_clock + hard_upper_ttl)
  */
 
-/*--------------------------------------------------------------------
- * From RFC2616, 13.2.3 Age Calculations
- *
- * age_value
- *      is the value of Age: header received by the cache with
- *      this response.
- * date_value
- *      is the value of the origin server's Date: header
- * request_time
- *      is the (local) time when the cache made the request
- *      that resulted in this cached response
- * response_time
- *      is the (local) time when the cache received the response
- * now
- *      is the current (local) time
- *
- * apparent_age = max(0, response_time - date_value);
- * corrected_received_age = max(apparent_age, age_value);
- * response_delay = response_time - request_time;
- * corrected_initial_age = corrected_received_age + response_delay;
- * resident_time = now - response_time;
- * current_age   = corrected_initial_age + resident_time;
- *
- */
+#if PSEUDO_CODE
+ 	/* Marker for no retirement age determined */
+ 	retirement_age = INT_MAX
+
+ 	/* If we have a max-age directive, respect it */
+ 	if (max-age)
+ 		retirement_age = max(0,min(retirement_age, max-age - Age:))
+ 
+ 	/* If Date: is not in future and Expires: looks sensible, use it */
+ 	if ((!date || date < our_clock) && expires > our_clock) {
+ 		ttd = min(our_clock + retirement_age, Expires:)
+  
+ 	/* Otherwise we have clock-skew */
+ 	} else {
+ 		/* If we have both date and expires, infer max-age */
+ 		if (date && expires)
+ 			retirement_age =
+ 			    max(0, min(retirement_age, Expires: - Date:)
+  
+ 		/* Apply default_ttl if nothing better found */
+ 		if (retirement_age == INT_MAX)
+ 			retirement_age = default_ttl
+  
+ 		/* Apply the max-age we can up with */
+ 		ttd = our_clock + retirement_age
+ 	}
+  
+ 	/* Apply hard limits */
+ 	ttd = max(ttd, our_clock + hard_lower_ttl)
+ 	ttd = min(ttd, our_clock + hard_upper_ttl)
+#endif
 
 static time_t
 RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 {
-	time_t h_date = 0, h_expires = 0, h_age = 0;
-	time_t apparent_age = 0, corrected_received_age;
-	time_t response_delay, corrected_initial_age;
-	time_t max_age = -1, ttl;
-	time_t fudge;
+	int retirement_age;
+	unsigned u1, u2;
+	time_t h_date, h_expires, ttd;
 	char *p;
+	
+	retirement_age = INT_MAX;
 
-	if (http_GetHdrField(hp, "Cache-Control", "max-age", &p))
-		max_age = strtoul(p, NULL, 0);
+	u1 = u2 = 0;
+	if (http_GetHdrField(hp, "Cache-Control", "max-age", &p)) {
+		u1 = strtoul(p, NULL, 0);
+		u2 = 0;
+		if (http_GetHdr(hp, "Age", &p))
+			u2 = strtoul(p, NULL, 0);
+		if (u2 <= u1)
+			retirement_age = u1 - u2;
+	}
 
+	h_date = 0;
 	if (http_GetHdr(hp, "Date", &p))
 		h_date = TIM_parse(p);
 
-	if (h_date + 3600 < t_resp) {
-		fudge = t_resp - h_date;
-		h_date += fudge;
-	} else
-		fudge = 0;
+	h_expires = 0;
+	if (http_GetHdr(hp, "Expires", &p))
+		h_expires = TIM_parse(p);
 
-	if (h_date < t_resp)
-		apparent_age = t_resp - h_date;
+	if (h_date < t_req && h_expires > t_req) {
+		ttd = h_expires;
+		if (retirement_age != INT_MAX && t_req + retirement_age < ttd)
+			ttd = t_req + retirement_age;
+	} else {
+		if (h_date != 0 && h_expires != 0) {
+			if (h_date < h_expires &&
+			    h_expires - h_date < retirement_age)
+				retirement_age = h_expires - h_date;
+		}
+		if (retirement_age == INT_MAX)
+			retirement_age = heritage.default_ttl;
 
-	if (http_GetHdr(hp, "Age", &p))
-		h_age = strtoul(p, NULL, 0);
-
-	if (h_age > apparent_age)
-		corrected_received_age = h_age;
-	else
-		corrected_received_age = apparent_age;
-
-	response_delay = t_resp - t_req;
-	corrected_initial_age = corrected_received_age + response_delay;
-
-	if (http_GetHdr(hp, "Expires", &p)) {
-		h_expires = TIM_parse(p) + fudge;
+		ttd = t_req + retirement_age;
 	}
-
-	printf("Date: %d\n", h_date);
-	printf("Recv: %d\n", t_resp);
-	printf("Expires: %d\n", h_expires);
-	printf("Age: %d\n", h_age);
-	printf("CIAge: %d\n", corrected_initial_age);
-	printf("Max-Age: %d\n", max_age);
-	ttl = 0;
-	if (max_age >= 0)
-		ttl = t_resp + max_age - corrected_initial_age;
-	if (h_expires && h_expires < ttl)
-		ttl = h_expires;
-	if (ttl == 0)
-		ttl = t_resp + heritage.default_ttl;
-	printf("TTL: %d (%+d)\n", ttl, ttl - t_resp);
-	if (ttl < t_resp)
-		return (0);
-
-	return (ttl);
+	VSL(SLT_Debug, 0,
+	    "TTD: max-age %u Age: %u Date: %d (%d) Expires %d (%d) our_clock %d"
+	    " -> ttd %d (%d)",
+	    u1, u2, h_date, h_date - t_req, h_expires, h_expires - t_req, t_req, ttd, ttd - t_req);
+	return (ttd);
 }
 
 int
