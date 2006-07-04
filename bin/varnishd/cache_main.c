@@ -92,7 +92,9 @@ static struct cli_proto cli_proto[] = {
 	{ NULL }
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: Think more about which order we start things
+ */
 
 void
 child_main(void)
@@ -108,6 +110,7 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+	CVCL_Load(heritage.vcl_file, "boot");
 	AZ(pthread_mutex_init(&sessmtx, NULL));
 	VBE_Init();
 	VSL_Init();
@@ -125,7 +128,6 @@ child_main(void)
 	if (stevedore->open != NULL)
 		stevedore->open(stevedore);
 
-	CVCL_Load(heritage.vcl_file, "boot");
 	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);
