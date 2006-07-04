@@ -291,10 +291,33 @@ http_Dissect(struct http *hp, int fd, int rr)
 			VSLR(SLT_LostHeader, fd, p, q);
 		}
 	}
-	if (*++p == '\r')
-		p++;
-	hp->t = ++p;
+	assert(hp->t == r);
 }
+
+/*--------------------------------------------------------------------*/
+
+static int
+http_header_complete(struct http *hp)
+{
+	char *p;
+
+	p = hp->s;
+	while (1) {
+		/* XXX: we could save location of all linebreaks for later */
+		p = strchr(p, '\n');
+		if (p == NULL)
+			return (0);
+		p++;
+		if (*p == '\r')
+			p++;
+		if (*p != '\n')
+			continue;
+		break;
+	}
+	hp->t = ++p;
+	return (1);
+}
+
 
 /*--------------------------------------------------------------------*/
 
@@ -330,21 +353,8 @@ http_read_f(int fd, short event, void *arg)
 
 	hp->v += i;
 	*hp->v = '\0';
-
-	p = hp->s;
-	while (1) {
-		/* XXX: we could save location of all linebreaks for later */
-		p = strchr(p, '\n');
-		if (p == NULL)
-			return;
-		p++;
-		if (*p == '\r')
-			p++;
-		if (*p != '\n')
-			continue;
-		break;
-	}
-	hp->t = ++p;
+	if (!http_header_complete(hp))
+		return;
 
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
@@ -356,9 +366,18 @@ http_read_f(int fd, short event, void *arg)
 void
 http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg)
 {
+	unsigned l;
 
 	assert(hp != NULL);
-	assert(hp->t == hp->s || hp->t == hp->v);	/* XXX pipelining */
+	if (hp->t > hp->s && hp->t < hp->v) {
+		l = hp->v - hp->t;
+		memmove(hp->s, hp->t, l);
+		hp->v = hp->s + l;
+		if (http_header_complete(hp)) {
+			func(arg, 1);
+			return;
+		}
+	}
 	hp->callback = func;
 	hp->arg = arg;
 	hp->v = hp->s;
