@@ -116,6 +116,9 @@ CacheWorker(void *priv)
 		if (http_GetHdr(sp->http, "Connection", &b) &&
 		    !strcmp(b, "close")) {
 			vca_close_session(sp, "Connection header");
+		} else if (http_GetProto(sp->http, &b) &&
+		    strcmp(b, "HTTP/1.1")) {
+			vca_close_session(sp, "not HTTP/1.1");
 		}
 
 		AZ(pthread_mutex_lock(&sessmtx));

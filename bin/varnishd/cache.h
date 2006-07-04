@@ -171,6 +171,7 @@ void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetReq(struct http *hp, char **b);
+int http_GetProto(struct http *hp, char **b);
 int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
