@@ -10,6 +10,66 @@
 #include "libvarnish.h"
 #include "heritage.h"
 
+
+/*--------------------------------------------------------------------
+ * TTL and Age calculation in Varnish
+ *
+ * RFC2616 has a lot to say about how caches should calculate the TTL
+ * and expiry times of objects, but it sort of misses the case that
+ * applies to Varnish:  the server-side cache.
+ *
+ * A normal cache, shared or single-client, has no symbiotic relationship
+ * with the server, and therefore must take a very defensive attitude
+ * if the Data/Expiry/Age/max-age data does not make sense.  Overall
+ * the policy described in section 13 of RFC 2616 results in no caching
+ * happening on the first little sign of trouble.
+ *
+ * Varnish on the other hand tries to offload as many transactions from
+ * the backend as possible, and therefore just passing through everything
+ * if there is a clock-skew between backend and Varnish is not a workable
+ * choice.
+ *
+ * Varnish implements a policy which is RFC2616 compliant when there
+ * is no clockskew, and falls back to a new "clockless cache" mode otherwise.
+ * Our "clockless cache" model is syntehsized from the bits of RFC2616
+ * that talks about how a cache should react to a clockless origin server,
+ * and more or uses the inverse logic for the opposite relationship.
+ *
+ *	/* Marker for no retirement age determined */
+ *	retirement_age = INT_MAX
+ *
+ *	/* If we have a max-age directive, respect it */
+ *	if (max-age)
+ *		retirement_age = max(0,min(retirement_age, max-age - Age:))
+ *
+ *	/* If we have no Date: and Expires: looks sensible, use it */
+ *	if (!date && expires > our_clock) {
+ *		ttd = min(our_clock + retirement_age, Expires:)
+ *
+ *	/* If Date: is in the past, and Expires: looks sensible, use it */
+ *	} else if (date < our_clock && expires > our_clock) {
+ *		ttd = min(date + retirement_age, Expires:)
+ *
+ *	/* Otherwise we have clock-skew */
+ *	} else {
+ *		/* If we have both date and expires, infer max-age */
+ *		if (date && expires)
+ *			retirement_age =
+ *			    max(0, min(retirement_age, Expires: - Date:)
+ *
+ *		/* Apply default_ttl if nothing better found */
+ *		if (retirement_age == INT_MAX)
+ *			retirement_age = default_ttl
+ *
+ *		/* Apply the max-age we can up with */
+ *		ttd = our_clock + retirement_age
+ *	}
+ *
+ *	/* Apply hard limits */
+ *	ttd = max(ttd, our_clock + hard_lower_ttl)
+ *	ttd = min(ttd, our_clock + hard_upper_ttl)
+ */
+
 /*--------------------------------------------------------------------
  * From RFC2616, 13.2.3 Age Calculations
  *
