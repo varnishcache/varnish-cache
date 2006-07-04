@@ -160,6 +160,7 @@ CacheInitPool(void)
 
 	AZ(pthread_cond_init(&shdcnd, NULL));
 
+	VSL(SLT_Debug, 0, "Starting %u worker threads", heritage.wthread_min);
 	for (i = 0; i < heritage.wthread_min; i++) {
 		AZ(pthread_create(&tp, NULL, CacheWorker, NULL));
 		AZ(pthread_detach(tp));

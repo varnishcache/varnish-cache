@@ -151,7 +151,6 @@ VSL_MgtInit(const char *fn, unsigned size)
 	struct shmloghead slh;
 	int i;
 
-	unlink(fn);
 	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
 	if (heritage.vsl_fd < 0) {
 		fprintf(stderr, "Could not open %s: %s\n",

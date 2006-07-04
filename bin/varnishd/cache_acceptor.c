@@ -89,18 +89,22 @@ vca_write_obj(struct sess *sp, char *b, unsigned l)
 {
 	struct storage *st;
 	unsigned u = 0;
+	char *r;
 
 	if (l == 0)
 		l = strlen(b);
 	vca_write(sp, b, l);
-	TAILQ_FOREACH(st, &sp->obj->store, list) {
-		u += st->len;
-		if (st->stevedore->send != NULL)
-			st->stevedore->send(st, sp);
-		else
-			vca_write(sp, st->ptr, st->len);
+	assert(http_GetReq(sp->http, &r));
+	if (!strcmp(r, "GET")) {
+		TAILQ_FOREACH(st, &sp->obj->store, list) {
+			u += st->len;
+			if (st->stevedore->send != NULL)
+				st->stevedore->send(st, sp);
+			else
+				vca_write(sp, st->ptr, st->len);
+		}
+		assert(u == sp->obj->len);
 	}
-	assert(u == sp->obj->len);
 	vca_flush(sp);
 }
 

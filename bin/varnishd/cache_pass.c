@@ -160,7 +160,7 @@ PassSession(struct worker *w, struct sess *sp)
 	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
 	assert(fd != -1);
 
-	http_BuildSbuf(fd, 1, w->sb, sp->http);
+	http_BuildSbuf(fd, Build_Pass, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
