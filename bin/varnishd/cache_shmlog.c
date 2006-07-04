@@ -28,11 +28,21 @@ static pthread_mutex_t vsl_mutex;
  * This variant copies a byte-range directly to the log, without
  * taking the detour over sprintf()
  */
+
+static void
+vsl_wrap(void)
+{
+
+	*logstart = SLT_ENDMARKER;
+	logstart[loghead->ptr] = SLT_WRAPMARKER;
+	loghead->ptr = 0;
+}
  
 void
 VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 {
-	unsigned char *p, *q;
+	unsigned char *p;
+	unsigned l;
 
 	assert(b != NULL);
 	if (e == NULL)
@@ -40,31 +50,28 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	assert(e != NULL);
 
 	/* Truncate */
-	if (e - b > 255)
-		e = b + 255;
+	l = e - b;
+	if (l > 255) {
+		l = 255;
+		e = b + l;
+	}
 
 	AZ(pthread_mutex_lock(&vsl_mutex));
-	q = NULL;
-	p = logstart + loghead->ptr;
-	assert(p < logend);
+	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
-	if (p + 4 + (e - b) > logend) {
-		q = p;
-		p = logstart;
-		*p = SLT_ENDMARKER;
-	}
-	p[1] = e - b;
+	if (loghead->ptr + 5 + l > loghead->size)
+		vsl_wrap();
+	p = logstart + loghead->ptr;
+	p[1] = l;
 	p[2] = id >> 8;
 	p[3] = id & 0xff;
-	memcpy(p + 4, b, e - b);
+	memcpy(p + 4, b, l);
+	p[4 + l] = SLT_ENDMARKER;
 	p[0] = tag;
 
-	if (q != NULL)
-		*q = SLT_WRAPMARKER;
-
-	loghead->ptr = (p + 4 + (e - b)) - logstart;
-	
+	loghead->ptr += 4 + l;
+	assert(loghead->ptr < loghead->size);
 	AZ(pthread_mutex_unlock(&vsl_mutex));
 }
 
@@ -73,29 +80,27 @@ void
 VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 {
 	va_list ap;
-	unsigned char *p, *q;
+	unsigned char *p;
 	unsigned m, n;
 
 	va_start(ap, fmt);
 
 	AZ(pthread_mutex_lock(&vsl_mutex));
-	q = NULL;
-	p = logstart + loghead->ptr;
-	assert(p < logend);
+	assert(loghead->ptr < loghead->size);
 
 	/*
 	 * Wrap early if we approach the end 
-	 * 32 is arbitraryly larger than minimum of 4.
+	 * 32 is arbitraryly larger than minimum of 5.
 	 */
-	if (p + 32 > logend) {
-		q = p;
-		p = logstart;
-		*p = SLT_ENDMARKER;
-	}
+	if (loghead->ptr + 32 > loghead->size) 
+		vsl_wrap();
+
+	p = logstart + loghead->ptr;
 	n = 0;
 	if (fmt != NULL) {
 		while (1) {
-			m = logend - (p + 4);
+			/* We need 4 four header + 1 for ENDMARKER */
+			m = loghead->size - (loghead->ptr + 5);
 			if (m > 256)
 				m = 256;
 			n = vsnprintf((char *)p + 4, m, fmt, ap);
@@ -103,23 +108,18 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 				n = 255; 	/* we truncate long fields */
 			if (n < m)
 				break;
-			/* wraparound */
-			assert(q == NULL);
-			q = p;
-			p = logstart;
-			*p = SLT_ENDMARKER;
+			vsl_wrap();
 			continue;	/* Try again */
 		}
 	}
 	p[1] = n;
 	p[2] = id >> 8;
 	p[3] = id & 0xff;
+	p[4 + n] = SLT_ENDMARKER;
 	p[0] = tag;
 
-	if (q != NULL)
-		*q = SLT_WRAPMARKER;
-
-	loghead->ptr = (p + 4 + n) - logstart;
+	loghead->ptr += 4 + n;
+	assert(loghead->ptr < loghead->size);
 	
 	AZ(pthread_mutex_unlock(&vsl_mutex));
 
@@ -151,6 +151,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	struct shmloghead slh;
 	int i;
 
+	unlink(fn);
 	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
 	if (heritage.vsl_fd < 0) {
 		fprintf(stderr, "Could not open %s: %s\n",
@@ -169,10 +170,8 @@ VSL_MgtInit(const char *fn, unsigned size)
 		i = write(heritage.vsl_fd, &slh, sizeof slh);
 		assert(i == sizeof slh);
 		AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
-		heritage.vsl_size = slh.size + slh.start;
-	} else {
-		heritage.vsl_size = slh.size + slh.start;
 	}
+	heritage.vsl_size = slh.size + slh.start;
 
 	/*
 	 * Call VSL_Init so that we get a VSL_stats pointer in the
