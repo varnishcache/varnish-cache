@@ -415,39 +415,52 @@ http_supress(const char *hdr, int flag)
 /*--------------------------------------------------------------------*/
 
 void
-http_BuildSbuf(int fd, int resp, struct sbuf *sb, struct http *hp)
+http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 {
-	unsigned u;
+	unsigned u, sup;
 
 	sbuf_clear(sb);
 	assert(sb != NULL);
-	if (resp == 2 || resp == 3) {
+	switch (mode) {
+	case Build_Reply:
 		sbuf_cat(sb, hp->proto);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->status);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->response);
-	} else if (resp == 1) {
+		sup = 2;
+		break;
+	case Build_Pipe:
+	case Build_Pass:
 		sbuf_cat(sb, hp->req);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->url);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->proto);
-	} else {
-		printf("resp = %d\n", resp);
-		assert(resp == 1 || resp == 2);
+		sup = 2;
+		break;
+	case Build_Fetch:
+		sbuf_cat(sb, "GET ");
+		sbuf_cat(sb, hp->url);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->proto);
+		sup = 1;
+		break;
+	default:
+		printf("mode = %d\n", mode);
+		assert(mode == 1 || mode == 2);
 	}
 	sbuf_cat(sb, "\r\n");
 
 	for (u = 0; u < hp->nhdr; u++) {
-		if (http_supress(hp->hdr[u], resp))
+		if (http_supress(hp->hdr[u], sup))
 			continue;
 		if (1)
 			VSL(SLT_BldHdr, fd, "%s", hp->hdr[u]);
 		sbuf_cat(sb, hp->hdr[u]);
 		sbuf_cat(sb, "\r\n");
 	}
-	if (resp != 3) {
+	if (mode != Build_Reply) {
 		sbuf_cat(sb, "\r\n");
 		sbuf_finish(sb);
 	}

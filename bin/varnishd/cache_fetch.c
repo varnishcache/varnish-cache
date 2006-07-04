@@ -249,7 +249,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
 
 	hp = http_New();
-	http_BuildSbuf(fd, 1, w->sb, sp->http);
+	http_BuildSbuf(fd, Build_Fetch, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 	time(&sp->t_req);
@@ -272,7 +272,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	if (sp->obj->cacheable)
 		EXP_Insert(sp->obj);
 
-	http_BuildSbuf(sp->fd, 3, w->sb, hp);
+	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	if (body) {
 		if (http_GetHdr(hp, "Content-Length", &b))
 			cls = fetch_straight(w, sp, fd, hp, b);
