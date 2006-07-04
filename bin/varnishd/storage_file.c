@@ -53,6 +53,7 @@ struct smf_sc {
 	struct smfhead		order;
 	struct smfhead		free;
 	struct smfhead		used;
+	pthread_mutex_t		mtx;
 };
 
 /*--------------------------------------------------------------------*/
@@ -462,6 +463,7 @@ smf_open(struct stevedore *st)
 	/* XXX */
 	if (sum < MINPAGES * getpagesize())
 		exit (2);
+	AZ(pthread_mutex_init(&sc->mtx, NULL));
 }
 
 /*--------------------------------------------------------------------*/
@@ -474,7 +476,9 @@ smf_alloc(struct stevedore *st, size_t size)
 
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
+	AZ(pthread_mutex_lock(&sc->mtx));
 	smf = alloc_smf(sc, size);
+	AZ(pthread_mutex_unlock(&sc->mtx));
 	assert(smf != NULL);
 	smf->s.space = size;
 	smf->s.priv = smf;
@@ -493,14 +497,16 @@ smf_trim(struct storage *s, size_t size)
 	struct smf_sc *sc;
 
 	assert(size <= s->space);
-	assert(size > 0);
+	assert(size > 0);	/* XXX: seen */
 	smf = (struct smf *)(s->priv);
 	assert(size <= smf->size);
 	sc = smf->sc;
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
 	if (smf->size > size) {
+		AZ(pthread_mutex_lock(&sc->mtx));
 		trim_smf(smf, size);
+		AZ(pthread_mutex_unlock(&sc->mtx));
 		smf->s.space = size;
 	}
 }
@@ -511,9 +517,13 @@ static void
 smf_free(struct storage *s)
 {
 	struct smf *smf;
+	struct smf_sc *sc;
 
 	smf = (struct smf *)(s->priv);
+	sc = smf->sc;
+	AZ(pthread_mutex_lock(&sc->mtx));
 	free_smf(smf);
+	AZ(pthread_mutex_unlock(&sc->mtx));
 }
 
 /*--------------------------------------------------------------------*/
