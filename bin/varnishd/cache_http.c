@@ -165,6 +165,15 @@ http_GetURL(struct http *hp, char **b)
 }
 
 int
+http_GetProto(struct http *hp, char **b)
+{
+	if (hp->proto == NULL)
+		return (0);
+	*b = hp->proto;
+	return (1);
+}
+
+int
 http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 {
 
