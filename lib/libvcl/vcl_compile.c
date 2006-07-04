@@ -1676,7 +1676,7 @@ LocTable(struct tokenlist *tl)
 				pos++;
 		
 		}
-		Fc(tl, 0, "  [%3u] = { %4u, %3u, 0, \"T\" },\n",
+		Fc(tl, 0, "  [%3u] = { %4u, %3u, 0, \"%T\" },\n",
 		    t->cnt, lin, pos + 1, t);
 	}
 	Fc(tl, 0, "};\n");
