@@ -555,7 +555,7 @@ smf_send(struct storage *st, struct sess *sp, struct iovec *iov, int niov, size_
 	if (sent == st->len + liov)
 		return;
 	printf("sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len, liov, errno);
+	    i, (uintmax_t)sent, (uintmax_t)st->len, (uintmax_t)liov, errno);
 	vca_close_session(sp, "remote closed");
 }
 
