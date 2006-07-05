@@ -377,11 +377,12 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 			func(arg, 1);
 			return;
 		}
+	} else  {
+		hp->v = hp->s;
+		hp->t = hp->s;
 	}
 	hp->callback = func;
 	hp->arg = arg;
-	hp->v = hp->s;
-	hp->t = hp->s;
 	event_set(&hp->ev, fd, EV_READ | EV_PERSIST, http_read_f, hp);
 	event_base_set(eb, &hp->ev);
 	event_add(&hp->ev, NULL);      /* XXX: timeout */
