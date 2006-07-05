@@ -22,7 +22,7 @@ main(int argc, char **argv)
 	struct shmloghead *lh;
 	struct varnish_stats *VSL_stats, copy;
 	int c_flag = 0;
-	uintmax_t ju;
+	intmax_t ju;
 	struct timespec ts;
 	double tt, lt;
 
@@ -53,7 +53,7 @@ main(int argc, char **argv)
 			lt = tt - lt;
 #define MAC_STAT(n,t,f,d) \
 			ju = VSL_stats->n; \
-			printw("%12ju  %10.2f " d "\n", ju, (ju - copy.n)/lt); \
+			printw("%12ju  %10.2f " d "\n", ju, (ju - (intmax_t)copy.n)/lt); \
 			copy.n = ju;
 #include "stat_field.h"
 #undef MAC_STAT
