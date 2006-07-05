@@ -302,5 +302,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	if (!sp->obj->cacheable)
 		HSH_Deref(sp->obj);
 
+	http_Delete(hp);
+
 	return (1);
 }
