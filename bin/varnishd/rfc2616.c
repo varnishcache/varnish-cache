@@ -130,7 +130,8 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 	 * Initial cacheability determination per [RFC2616, 13.4]
 	 * We do not support ranges yet, so 206 is out.
 	 */
-	switch (http_GetStatus(hp)) {
+	sp->obj->response = http_GetStatus(hp);
+	switch (sp->obj->response) {
 	case 200: /* OK */
 		sp->obj->valid = 1;
 		/* FALLTHROUGH */

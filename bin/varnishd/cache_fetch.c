@@ -63,7 +63,7 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 
 	while (cl != 0) {
 		i = read(fd, p, cl);
-		assert(i > 0);
+		assert(i > 0);	/* XXX seen */
 		p += i;
 		cl -= i;
 	}
@@ -245,6 +245,8 @@ FetchSession(struct worker *w, struct sess *sp)
 	sp->obj->xid = sp->xid;
 
 	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
+	if (fd == -1)
+		fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
 	assert(fd != -1);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
 
@@ -286,6 +288,9 @@ FetchSession(struct worker *w, struct sess *sp)
 	sbuf_cat(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	sp->obj->header = strdup(sbuf_data(w->sb));
+
+	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
+	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	vca_write_obj(sp, sp->obj->header, 0);
 
