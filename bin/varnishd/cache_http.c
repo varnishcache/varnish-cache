@@ -192,6 +192,7 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 	*b = hp->t;
 	*e = hp->t + len;
 	hp->t += len;
+	assert(hp->t <= hp->v);
 	return (1);
 }
 
@@ -217,6 +218,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 			;
 		VSLR(SLT_Request, fd, hp->req, p);
 		*p++ = '\0';
+		assert(!strcmp(hp->req, "GET"));
 
 		/* Next find the URI */
 		while (isspace(*p))
@@ -293,6 +295,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 			VSLR(SLT_LostHeader, fd, p, q);
 		}
 	}
+	assert(hp->t <= hp->v);
 	assert(hp->t == r);
 }
 
@@ -316,7 +319,10 @@ http_header_complete(struct http *hp)
 			continue;
 		break;
 	}
-	hp->t = ++p;
+	if (++p > hp->v)
+		return (0);
+	hp->t = p;
+	assert(hp->t <= hp->v);
 	return (1);
 }
 
@@ -371,6 +377,8 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	unsigned l;
 
 	assert(hp != NULL);
+	assert(hp->v <= hp->e);
+	assert(hp->t <= hp->v);
 	VSL(SLT_Debug, fd, "Recv t %u v %u", hp->t - hp->s, hp->v - hp->s);
 	if (hp->t > hp->s && hp->t < hp->v) {
 		l = hp->v - hp->t;
