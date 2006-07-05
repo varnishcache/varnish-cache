@@ -110,6 +110,7 @@ HSH_Deref(struct object *o)
 	if (o == NULL)
 		return;
 
+	free(o->header);
 	AZ(pthread_cond_destroy(&o->cv));
 
 	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
@@ -123,7 +124,6 @@ HSH_Deref(struct object *o)
 		return;
 	assert(TAILQ_EMPTY(&oh->objects));
 	AZ(pthread_mutex_destroy(&oh->mtx));
-	free(oh->header);
 	free(oh);
 }
 
