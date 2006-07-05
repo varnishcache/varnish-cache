@@ -268,10 +268,9 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 {
 	struct smf *sp, *sp2;
 
-	TAILQ_FOREACH(sp, &sc->free, status) {
+	TAILQ_FOREACH(sp, &sc->free, status)
 		if (sp->size >= bytes)
 			break;
-	}
 	if (sp == NULL)
 		return (sp);
 
@@ -478,6 +477,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	size &= ~(sc->pagesize - 1);
 	AZ(pthread_mutex_lock(&sc->mtx));
 	smf = alloc_smf(sc, size);
+	assert(smf->size == size);
 	AZ(pthread_mutex_unlock(&sc->mtx));
 	assert(smf != NULL);
 	smf->s.space = size;
@@ -506,6 +506,7 @@ smf_trim(struct storage *s, size_t size)
 	if (smf->size > size) {
 		AZ(pthread_mutex_lock(&sc->mtx));
 		trim_smf(smf, size);
+		assert(smf->size == size);
 		AZ(pthread_mutex_unlock(&sc->mtx));
 		smf->s.space = size;
 	}
