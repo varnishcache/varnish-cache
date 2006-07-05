@@ -33,6 +33,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 		assert(w->nobjhead != NULL);
 		TAILQ_INIT(&w->nobjhead->objects);
 		AZ(pthread_mutex_init(&w->nobjhead->mtx, NULL));
+		VSL_stats->n_objecthead++;
 	}
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);
@@ -40,6 +41,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 		w->nobj->busy = 1;
 		TAILQ_INIT(&w->nobj->store);
 		AZ(pthread_cond_init(&w->nobj->cv, NULL));
+		VSL_stats->n_object++;
 	}
 
 	assert(http_GetURL(h, &b));
@@ -110,7 +112,10 @@ HSH_Deref(struct object *o)
 	if (o == NULL)
 		return;
 
-	free(o->header);
+	if (o->header != NULL) {
+		free(o->header);
+		VSL_stats->n_header--;
+	}
 	AZ(pthread_cond_destroy(&o->cv));
 
 	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
@@ -118,12 +123,14 @@ HSH_Deref(struct object *o)
 		st->stevedore->free(st);
 	}
 	free(o);
+	VSL_stats->n_object--;
 
 	/* Drop our ref on the objhead */
 	if (hash->deref(oh))
 		return;
 	assert(TAILQ_EMPTY(&oh->objects));
 	AZ(pthread_mutex_destroy(&oh->mtx));
+	VSL_stats->n_objecthead--;
 	free(oh);
 }
 

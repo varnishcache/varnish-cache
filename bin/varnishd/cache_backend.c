@@ -90,10 +90,13 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
+	res = NULL;
 	error = getaddrinfo(bp->hostname,
 	    bp->portname == NULL ? "http" : bp->portname,
 	    &hint, &res);
 	if (error) {
+		if (res != NULL)
+			freeaddrinfo(res);
 		fprintf(stderr, "getaddrinfo: %s\n", 
 		    gai_strerror(error));
 		return;
@@ -138,6 +141,7 @@ vbe_rdp(int fd, short event __unused, void *arg __unused)
 	if (vc->fd < 0) {
 		vc->vbe->nconn--;
 		free(vc);
+		VSL_stats->n_vbe_conn--;
 	} else {
 		vc->inuse = 0;
 		event_add(&vc->ev, NULL);
@@ -172,6 +176,7 @@ vbe_rdf(int fd, short event __unused, void *arg)
 	event_del(&vc->ev);
 	close(vc->fd);
 	free(vc);
+	VSL_stats->n_vbe_conn--;
 }
 
 /* Backend monitoring thread -----------------------------------------*/
@@ -220,6 +225,7 @@ VBE_GetFd(struct backend *bp, void **ptr, unsigned xid)
 	if (vp == NULL) {
 		vp = calloc(sizeof *vp, 1);
 		assert(vp != NULL);
+		VSL_stats->n_vbe++;
 		TAILQ_INIT(&vp->fconn);
 		TAILQ_INIT(&vp->bconn);
 		vp->ip = bp->ip;
@@ -235,6 +241,7 @@ VBE_GetFd(struct backend *bp, void **ptr, unsigned xid)
 		AZ(pthread_mutex_unlock(&vbemtx));
 	} else {
 		vc = calloc(sizeof *vc, 1);
+		VSL_stats->n_vbe_conn++;
 		assert(vc != NULL);
 		vc->vbe = vp;
 		vc->fd = -1;
