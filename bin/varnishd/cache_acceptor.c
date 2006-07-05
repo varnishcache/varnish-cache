@@ -102,6 +102,8 @@ vca_write_obj(struct worker *w, struct sess *sp)
 		sp->obj->age + sp->t_req - sp->obj->entered);
 	sbuf_printf(w->sb, "Via: 1.1 varnish\r\n");
 	sbuf_printf(w->sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
+	if (http_GetProto(sp->http, &r) && strcmp(r, "HTTP/1.1")) 
+		sbuf_printf(w->sb, "Connection: close\r\n");
 	sbuf_printf(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
