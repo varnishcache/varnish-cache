@@ -60,6 +60,8 @@ struct object {
 	unsigned		heap_idx;
 	unsigned		ban_seq;
 
+	unsigned		response;
+
 	unsigned		valid;
 	unsigned		cacheable;
 
