@@ -483,9 +483,9 @@ smf_alloc(struct stevedore *st, size_t size)
 	size &= ~(sc->pagesize - 1);
 	AZ(pthread_mutex_lock(&sc->mtx));
 	smf = alloc_smf(sc, size);
-	assert(smf->size == size);
 	AZ(pthread_mutex_unlock(&sc->mtx));
 	assert(smf != NULL);
+	assert(smf->size == size);
 	smf->s.space = size;
 	smf->s.priv = smf;
 	smf->s.ptr = smf->ptr;
