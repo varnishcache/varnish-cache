@@ -529,23 +529,26 @@ smf_free(struct storage *s)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_send(struct storage *st, struct sess *sp)
+smf_send(struct storage *st, struct sess *sp, struct iovec *iov, int niov, size_t liov)
 {
 	struct smf *smf;
 	int i;
 	off_t sent;
+	struct sf_hdtr sfh;
 
 	smf = st->priv;
 
-	vca_flush(sp);
+	memset(&sfh, 0, sizeof sfh);
+	sfh.headers = iov;
+	sfh.hdr_cnt = niov;
 	i = sendfile(smf->sc->fd,
 	    sp->fd,
 	    smf->offset,
-	    st->len, NULL, &sent, 0);
-	if (sent == st->len)
+	    st->len, &sfh, &sent, 0);
+	if (sent == st->len + liov)
 		return;
-	printf("sent i=%d sent=%ju size=%ju errno=%d\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len, errno);
+	printf("sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
+	    i, (uintmax_t)sent, (uintmax_t)st->len, liov, errno);
 	vca_close_session(sp, "remote closed");
 }
 

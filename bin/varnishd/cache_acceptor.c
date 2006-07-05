@@ -36,7 +36,7 @@ static int pipes[2];
 
 static pthread_t vca_thread;
 
-#define SESS_IOVS	5
+#define SESS_IOVS	10
 
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 
@@ -108,10 +108,14 @@ vca_write_obj(struct worker *w, struct sess *sp)
 	if (!strcmp(r, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			u += st->len;
-			if (st->stevedore->send != NULL)
-				st->stevedore->send(st, sp);
-			else
+			if (st->stevedore->send == NULL) {
 				vca_write(sp, st->ptr, st->len);
+				continue;
+			}
+			st->stevedore->send(st, sp,
+			    sp->mem->iov, sp->mem->niov, sp->mem->liov);
+			sp->mem->niov = 0;
+			sp->mem->liov = 0;
 		}
 		assert(u == sp->obj->len);
 	}

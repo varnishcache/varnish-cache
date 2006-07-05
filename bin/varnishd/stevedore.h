@@ -4,13 +4,14 @@
 
 struct stevedore;
 struct sess;
+struct iovec;
 
 typedef void storage_init_f(struct stevedore *, const char *spec);
 typedef void storage_open_f(struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
-typedef void storage_send_f(struct storage *, struct sess *);
+typedef void storage_send_f(struct storage *, struct sess *, struct iovec *, int niovec, size_t liovec);
 
 struct stevedore {
 	const char		*name;
