@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <curses.h>
+#include <time.h>
 
 #include "shmlog.h"
 #include "varnishapi.h"
@@ -19,8 +20,11 @@ main(int argc, char **argv)
 {
 	int c;
 	struct shmloghead *lh;
-	struct varnish_stats *VSL_stats;
+	struct varnish_stats *VSL_stats, copy;
 	int c_flag = 0;
+	uintmax_t ju;
+	struct timespec ts;
+	double tt, lt;
 
 	lh = VSL_OpenLog();
 
@@ -38,15 +42,22 @@ main(int argc, char **argv)
 	}
 
 	if (c_flag) {
+		memset(&copy, 0, sizeof copy);
 		initscr();
 		erase();
 
 		while (1) {
 			move(0,0);
+			clock_gettime(CLOCK_MONOTONIC, &ts);
+			tt = ts.tv_nsec * 1e-9 + ts.tv_sec;
+			lt = tt - lt;
 #define MAC_STAT(n,t,f,d) \
-			printw("%12ju  " d "\n", (VSL_stats->n));
+			ju = VSL_stats->n; \
+			printw("%12ju  %10.2f " d "\n", ju, (ju - copy.n)/lt); \
+			copy.n = ju;
 #include "stat_field.h"
 #undef MAC_STAT
+			lt = tt;
 			refresh();
 			sleep(1);
 		}
