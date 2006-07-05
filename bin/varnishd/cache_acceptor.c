@@ -242,7 +242,7 @@ vca_return_session(struct sess *sp)
 	} else {
 		if (sp->http != NULL)
 			http_Delete(sp->http);
-		free(sp);
+		free(sp->mem);
 	}
 }
 
