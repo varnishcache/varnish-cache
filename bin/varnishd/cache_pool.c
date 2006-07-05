@@ -50,8 +50,6 @@ DeliverSession(struct worker *w, struct sess *sp)
 {
 
 
-	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
-	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 	vca_write_obj(sp, sp->obj->header, 0);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;

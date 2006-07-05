@@ -289,9 +289,6 @@ FetchSession(struct worker *w, struct sess *sp)
 	sbuf_finish(w->sb);
 	sp->obj->header = strdup(sbuf_data(w->sb));
 
-	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
-	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
-
 	vca_write_obj(sp, sp->obj->header, 0);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))

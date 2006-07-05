@@ -91,6 +91,9 @@ vca_write_obj(struct sess *sp, char *b, unsigned l)
 	unsigned u = 0;
 	char *r;
 
+	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
+	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
+
 	if (l == 0)
 		l = strlen(b);
 	vca_write(sp, b, l);
