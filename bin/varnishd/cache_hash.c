@@ -123,6 +123,7 @@ HSH_Deref(struct object *o)
 		return;
 	assert(TAILQ_EMPTY(&oh->objects));
 	AZ(pthread_mutex_destroy(&oh->mtx));
+	free(oh->header);
 	free(oh);
 }
 
