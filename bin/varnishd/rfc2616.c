@@ -72,7 +72,7 @@
 #endif
 
 static time_t
-RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
+RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;
@@ -85,8 +85,10 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp)
 	if (http_GetHdrField(hp, "Cache-Control", "max-age", &p)) {
 		u1 = strtoul(p, NULL, 0);
 		u2 = 0;
-		if (http_GetHdr(hp, "Age", &p))
+		if (http_GetHdr(hp, "Age", &p)) {
 			u2 = strtoul(p, NULL, 0);
+			obj->age = u2;
+		}
 		if (u2 <= u1)
 			retirement_age = u1 - u2;
 	}
@@ -148,7 +150,8 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 		break;
 	}
 
-	sp->obj->ttl = RFC2616_Ttl(hp, sp->t_req, sp->t_resp);
+	sp->obj->ttl = RFC2616_Ttl(hp, sp->t_req, sp->t_resp, sp->obj);
+	sp->obj->entered = sp->t_req;
 	if (sp->obj->ttl == 0) {
 		sp->obj->cacheable = 0;
 	}
