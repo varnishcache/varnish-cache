@@ -60,7 +60,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
-	if (loghead->ptr + 5 + l > loghead->size)
+	if (loghead->ptr + 4 + l + 1 > loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
 	p[1] = l;
@@ -88,29 +88,16 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	AZ(pthread_mutex_lock(&vsl_mutex));
 	assert(loghead->ptr < loghead->size);
 
-	/*
-	 * Wrap early if we approach the end 
-	 * 32 is arbitraryly larger than minimum of 5.
-	 */
-	if (loghead->ptr + 32 > loghead->size) 
+	/* Wrap if we cannot fit a full size record */
+	if (loghead->ptr + 4 + 255 + 1 > loghead->size) 
 		vsl_wrap();
 
 	p = logstart + loghead->ptr;
 	n = 0;
 	if (fmt != NULL) {
-		while (1) {
-			/* We need 4 four header + 1 for ENDMARKER */
-			m = loghead->size - (loghead->ptr + 5);
-			if (m > 256)
-				m = 256;
-			n = vsnprintf((char *)p + 4, m, fmt, ap);
-			if (n >= 255)
-				n = 255; 	/* we truncate long fields */
-			if (n < m)
-				break;
-			vsl_wrap();
-			continue;	/* Try again */
-		}
+		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+		if (n > 255)
+			n = 255; 	/* we truncate long fields */
 	}
 	p[1] = n;
 	p[2] = id >> 8;
@@ -151,7 +138,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	struct shmloghead slh;
 	int i;
 
-	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0600);
+	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
 	if (heritage.vsl_fd < 0) {
 		fprintf(stderr, "Could not open %s: %s\n",
 		    fn, strerror(errno));
