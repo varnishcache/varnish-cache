@@ -53,6 +53,7 @@ http_New(void)
 
 	hp = calloc(sizeof *hp, 1);
 	assert(hp != NULL);
+	VSL_stats->n_http++;
 
 	hp->s = malloc(http_bufsize);
 	assert(hp->s != NULL);
@@ -74,6 +75,7 @@ http_Delete(struct http *hp)
 	free(hp->hdr);
 	free(hp->s);
 	free(hp);
+	VSL_stats->n_http--;
 }
 
 /*--------------------------------------------------------------------*/
@@ -369,10 +371,12 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	unsigned l;
 
 	assert(hp != NULL);
+	VSL(SLT_Debug, fd, "Recv t %u v %u", hp->t - hp->s, hp->v - hp->s);
 	if (hp->t > hp->s && hp->t < hp->v) {
 		l = hp->v - hp->t;
 		memmove(hp->s, hp->t, l);
 		hp->v = hp->s + l;
+		hp->t = hp->s;
 		if (http_header_complete(hp)) {
 			func(arg, 1);
 			return;

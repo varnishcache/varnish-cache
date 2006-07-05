@@ -154,6 +154,7 @@ accept_f(int fd, short event, void *arg)
 				 * XXX: this is probably one we should handle
 				 * XXX: accept, emit error NNN and close
 				 */
+	VSL_stats->n_sess++;
 
 	sp = &sm->s;
 	sp->rd_e = &sm->e;
@@ -242,6 +243,7 @@ vca_return_session(struct sess *sp)
 	} else {
 		if (sp->http != NULL)
 			http_Delete(sp->http);
+		VSL_stats->n_sess--;
 		free(sp->mem);
 	}
 }

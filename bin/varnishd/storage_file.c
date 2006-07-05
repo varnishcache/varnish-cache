@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 
 #include "libvarnish.h"
+#include "shmlog.h"
 #include "cache.h"
 
 #define MINPAGES		128
@@ -284,6 +285,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	/* Split from front */
 	sp2 = malloc(sizeof *sp2);
 	assert(sp2 != NULL);
+	VSL_stats->n_smf++;
 	*sp2 = *sp;
 
 	sp->offset += bytes;
@@ -320,6 +322,7 @@ free_smf(struct smf *sp)
 		TAILQ_REMOVE(&sc->order, sp2, order);
 		TAILQ_REMOVE(&sc->free, sp2, status);
 		free(sp2);
+		VSL_stats->n_smf--;
 	}
 
 	sp2 = TAILQ_PREV(sp, smfhead, order);
@@ -331,6 +334,7 @@ free_smf(struct smf *sp)
 		sp2->age = sp->age;
 		TAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
+		VSL_stats->n_smf--;
 		TAILQ_REMOVE(&sc->free, sp2, status);
 		sp = sp2;
 	}
@@ -359,6 +363,7 @@ trim_smf(struct smf *sp, size_t bytes)
 	assert(bytes > 0);
 	sp2 = malloc(sizeof *sp2);
 	assert(sp2 != NULL);
+	VSL_stats->n_smf++;
 	*sp2 = *sp;
 
 	sp2->size -= bytes;
@@ -381,6 +386,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 
 	sp = calloc(sizeof *sp, 1);
 	assert(sp != NULL);
+	VSL_stats->n_smf++;
 
 	sp->sc = sc;
 

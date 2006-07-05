@@ -287,6 +287,7 @@ FetchSession(struct worker *w, struct sess *sp)
 		cls = 0;
 	sbuf_finish(w->sb);
 	sp->obj->header = strdup(sbuf_data(w->sb));
+	VSL_stats->n_header++;
 
 	vca_write_obj(w, sp);
 
