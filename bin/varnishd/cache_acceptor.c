@@ -85,18 +85,25 @@ vca_write(struct sess *sp, void *ptr, size_t len)
 }
 
 void
-vca_write_obj(struct sess *sp, char *b, unsigned l)
+vca_write_obj(struct worker *w, struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
 	char *r;
+	
 
 	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
-	if (l == 0)
-		l = strlen(b);
-	vca_write(sp, b, l);
+	vca_write(sp, sp->obj->header, strlen(sp->obj->header));
+
+	sbuf_clear(w->sb);
+	sbuf_printf(w->sb, "Age: %u\r\n",
+		sp->obj->age + sp->t_req - sp->obj->entered);
+	sbuf_printf(w->sb, "Via: 1.1 varnish\r\n");
+	sbuf_printf(w->sb, "\r\n");
+	sbuf_finish(w->sb);
+	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(http_GetReq(sp->http, &r));
 	if (!strcmp(r, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {

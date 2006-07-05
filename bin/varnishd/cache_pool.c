@@ -50,7 +50,7 @@ DeliverSession(struct worker *w, struct sess *sp)
 {
 
 
-	vca_write_obj(sp, sp->obj->header, 0);
+	vca_write_obj(w, sp);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	return (1);
@@ -138,6 +138,8 @@ DealWithSession(void *arg, int good)
 		vca_return_session(sp);
 		return;
 	}
+
+	time(&sp->t_req);
 
 	/*
 	 * No locking necessary, we're serialized in the acceptor thread

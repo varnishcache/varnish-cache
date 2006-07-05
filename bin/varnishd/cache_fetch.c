@@ -285,11 +285,10 @@ FetchSession(struct worker *w, struct sess *sp)
 		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
 	} else
 		cls = 0;
-	sbuf_cat(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	sp->obj->header = strdup(sbuf_data(w->sb));
 
-	vca_write_obj(sp, sp->obj->header, 0);
+	vca_write_obj(w, sp);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
