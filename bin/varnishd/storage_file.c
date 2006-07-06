@@ -562,9 +562,12 @@ smf_send(struct storage *st, struct sess *sp, struct iovec *iov, int niov, size_
 	    st->len, &sfh, &sent, 0);
 	if (sent == st->len + liov)
 		return;
-	printf("sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len, (uintmax_t)liov, errno);
 	vca_close_session(sp, "remote closed");
+	if (errno == EPIPE || errno == ENOTCONN)
+		return;
+	VSL(SLT_Debug, sp->fd,
+	    "sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
+	    i, (uintmax_t)sent, (uintmax_t)st->len, (uintmax_t)liov, errno);
 }
 
 /*--------------------------------------------------------------------*/
