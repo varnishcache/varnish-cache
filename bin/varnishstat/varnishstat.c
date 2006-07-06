@@ -15,6 +15,15 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
+static void
+myexp(double *acc, double val, unsigned *n, unsigned nmax)
+{
+
+	if (*n < nmax)
+		(*n)++;
+	(*acc) += (val - *acc) / (double)*n;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -24,7 +33,12 @@ main(int argc, char **argv)
 	int c_flag = 0;
 	intmax_t ju;
 	struct timespec ts;
-	double tt, lt;
+	double tt, lt, hit, miss, ratio;
+	double a1, a2, a3;
+	unsigned n1, n2, n3;
+
+	a1 = a2 = a3 = 0;
+	n1 = n2 = n3 = 0;
 
 	lh = VSL_OpenLog();
 
@@ -47,10 +61,26 @@ main(int argc, char **argv)
 		erase();
 
 		while (1) {
-			move(0,0);
 			clock_gettime(CLOCK_MONOTONIC, &ts);
 			tt = ts.tv_nsec * 1e-9 + ts.tv_sec;
 			lt = tt - lt;
+			move(0,0);
+			hit = (intmax_t)VSL_stats->cache_hit -
+			    (intmax_t)copy.cache_hit;
+			miss = (intmax_t)VSL_stats->cache_miss -
+			    (intmax_t)copy.cache_miss;
+			hit /= lt;
+			miss /= lt;
+			if (hit + miss != 0) {
+				ratio = hit / (hit + miss);
+				myexp(&a1, ratio, &n1, 10);
+				myexp(&a2, ratio, &n2, 100);
+				myexp(&a3, ratio, &n3, 1000);
+			}
+			printw("Hitrate ratio: %8u %8u %8u\n", n1, n2, n3);
+			printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
+			printw("\n");
+
 #define MAC_STAT(n,t,f,d) \
 			ju = VSL_stats->n; \
 			printw("%12ju  %10.2f " d "\n", ju, (ju - (intmax_t)copy.n)/lt); \
