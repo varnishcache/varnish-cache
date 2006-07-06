@@ -4,6 +4,8 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/contrib/libevent
 
 bin_PROGRAMS = varnishd
 
+man_MANS = varnishd.1
+
 varnishd_SOURCES = \
 	cache_acceptor.c \
 	cache_backend.c \

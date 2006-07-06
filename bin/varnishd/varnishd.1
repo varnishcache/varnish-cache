@@ -1,0 +1,72 @@
+.\"
+.\" $Id$
+.\"
+.Dd July 6, 2006
+.Dt VARNISHD 1
+.Os
+.Sh NAME
+.Nm varnishd
+.Nd HTTP accelerator daemon
+.Sh SYNOPSIS
+.Nm
+.Op Fl b Ar host Ns Op : Ns Ar port
+.Op Fl d
+.Op Fl f Ar config
+.Op Fl h Ar type Ns Op , Ns Ar options
+.Op Fl p Ar port
+.Op Fl s Ar type Ns Op , Ns Ar options
+.Op Fl t Ar ttl
+.Op Fl w Ar min Ns Op , Ns Ar max
+.Sh DESCRIPTION
+The
+.Nm
+daemon accepts HTTP requests from clients, passes them on to a backend
+server and caches the returned documents to better satisfy future
+requests for the same document.
+.Pp
+The following options are available:
+.Bl -tag -width Fl
+.It Fl b Ar host Ns Op : Ns Ar port
+Use the specified
+.Ar host
+as backend server.
+If
+.Ar port
+is not specified, the default is 8080.
+.It Fl d
+Enables debugging mode.
+.It Fl f Ar config
+Specifies a VCL configuration file to use instead of the hardcoded
+default.
+.It Fl h Ar type Ns Op , Ns Ar options
+Specifies the hash algorithm.
+.It Fl p Ar port
+Specifies which port to listen on for incoming client connections.
+.It Fl s Ar type Ns Op , Ns Ar options
+Specifies the storage backend.
+.It Fl t Ar ttl
+Specifies a hard minimum time to live for cached documents.
+.It Fl w Ar min Ns Op , Ns Ar max
+Specifies the number of worker threads to start.
+If only
+.Ar min
+is specified,
+.Nm
+will start
+.Ar min
+threads.
+If both
+.Ar min
+and
+.Ar max
+are specified,
+.Nm
+the number of worker threads will vary within the specified range
+according to system load.
+.El
+.Sh HISTORY
+The
+.Nm
+daemon was developed by
+.An Poul-Henning Kamp Aq phk@freebsd.dk
+in cooperation with Verdens Gang AS and Linpro AS.
