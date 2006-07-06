@@ -205,7 +205,7 @@ http_GetStatus(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 http_Dissect(struct http *hp, int fd, int rr)
 {
 	char *p, *q, *r;
@@ -216,7 +216,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 	for (p = hp->s ; isspace(*p); p++)
 		continue;
 	if (rr == 1) {
-		/* First, isolate and possibly identify request type */
+		/* First, the request type (GET/HEAD etc) */
 		hp->req = p;
 		for (; isalpha(*p); p++)
 			;
@@ -224,31 +224,34 @@ http_Dissect(struct http *hp, int fd, int rr)
 		*p++ = '\0';
 
 		/* Next find the URI */
-		while (isspace(*p))
+		while (isspace(*p) && *p != '\n')
 			p++;
+		if (*p == '\n')
+			return (400);
 		hp->url = p;
 		while (!isspace(*p))
 			p++;
 		VSLR(SLT_URL, fd, hp->url, p);
-		if (*p != '\n') {
-			*p++ = '\0';
-
-			/* Finally, look for protocol, if any */
-			while (isspace(*p) && *p != '\n')
-				p++;
-			if (*p != '\n') {
-				hp->proto = p;
-				while (!isspace(*p))
-					p++;
-				if (*p != '\n')
-					*p++ = '\0';
-				while (isspace(*p) && *p != '\n')
-					p++;
-			}
-		}
+		if (*p == '\n')
+			return (400);
 		*p++ = '\0';
-		if (hp->proto != NULL)
-			VSLR(SLT_Protocol, fd, hp->proto, p);
+
+		/* Finally, look for protocol */
+		while (isspace(*p) && *p != '\n')
+			p++;
+		if (*p == '\n')
+			return (400);
+		hp->proto = p;
+		while (!isspace(*p))
+			p++;
+		VSLR(SLT_Protocol, fd, hp->proto, p);
+		if (*p != '\n')
+			*p++ = '\0';
+		while (isspace(*p) && *p != '\n')
+			p++;
+		if (*p != '\n')
+			return (400);
+		*p++ = '\0';
 	} else {
 		/* First, protocol */
 		hp->proto = p;
@@ -304,6 +307,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 	if (hp->t != r)
 		printf("hp->t %p r %p\n", hp->t, r);
 	assert(hp->t == r);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -390,6 +394,7 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	assert(hp != NULL);
 	assert(hp->v <= hp->e);
 	assert(hp->t <= hp->v);
+	if (0)
 	VSL(SLT_Debug, fd, "Recv t %u v %u", hp->t - hp->s, hp->v - hp->s);
 	if (hp->t > hp->s && hp->t < hp->v) {
 		l = hp->v - hp->t;
@@ -460,21 +465,15 @@ http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 		sbuf_cat(sb, hp->req);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->url);
-		if (hp->proto != NULL) {
-			sbuf_cat(sb, " ");
-			sbuf_cat(sb, hp->proto);
-		}
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->proto);
 		sup = 2;
 		break;
 	case Build_Fetch:
 		sbuf_cat(sb, "GET ");
 		sbuf_cat(sb, hp->url);
-		if (hp->proto != NULL) {
-			sbuf_cat(sb, " ");
-			sbuf_cat(sb, hp->proto);
-		} else {
-			sbuf_cat(sb, " HTTP/1.1");
-		}
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->proto);
 		sup = 1;
 		break;
 	default:
