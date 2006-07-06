@@ -56,6 +56,11 @@ exp_hangman(void *arg)
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			if (o->ttl >= t)
 				break;
+			if (o->busy) {
+				VSL(SLT_Debug, 0,
+				    "Grim Reaper: Busy object xid %u", o->xid);
+				continue;
+			}
 			if (o->refcnt == 0)
 				break;
 		}
