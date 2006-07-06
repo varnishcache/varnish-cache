@@ -13,6 +13,10 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
+#ifndef MAP_HASSEMAPHORE
+#define MAP_HASSEMAPHORE 0 /* XXX Linux */
+#endif
+
 static unsigned char *logstart, *logend;
 
 struct shmloghead *
