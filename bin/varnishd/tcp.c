@@ -5,12 +5,28 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
 #include "heritage.h"
 #include "libvarnish.h"
+
+static void
+accept_filter(int fd)
+{
+	struct accept_filter_arg afa;
+	int i;
+
+	bzero(&afa, sizeof(afa));
+	strcpy(afa.af_name, "httpready");
+	errno = 0;
+	i = setsockopt(fd, SOL_SOCKET, SO_ACCEPTFILTER,
+	    &afa, sizeof(afa));
+	printf("Acceptfilter(%d, httpready): %d %s\n",
+	    fd, i, strerror(errno));
+}
 
 static void
 create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
@@ -64,10 +80,14 @@ open_tcp(const char *port)
 	    &heritage.sock_remote[0], HERITAGE_NSOCKS);
 
 	for (u = 0; u < HERITAGE_NSOCKS; u++) {
-		if (heritage.sock_local[u] >= 0)
+		if (heritage.sock_local[u] >= 0) {
 			AZ(listen(heritage.sock_local[u], 16));
-		if (heritage.sock_remote[u] >= 0)
+			accept_filter(heritage.sock_local[u]);
+		}
+		if (heritage.sock_remote[u] >= 0) {
 			AZ(listen(heritage.sock_remote[u], 16));
+			accept_filter(heritage.sock_remote[u]);
+		}
 	}
 	return (0);
 }
