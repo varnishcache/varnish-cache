@@ -24,8 +24,9 @@ accept_filter(int fd)
 	errno = 0;
 	i = setsockopt(fd, SOL_SOCKET, SO_ACCEPTFILTER,
 	    &afa, sizeof(afa));
-	printf("Acceptfilter(%d, httpready): %d %s\n",
-	    fd, i, strerror(errno));
+	if (i)
+		printf("Acceptfilter(%d, httpready): %d %s\n",
+		    fd, i, strerror(errno));
 }
 
 static void
