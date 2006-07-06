@@ -47,6 +47,7 @@ clean_order()
 		sbuf_finish(ob[u]);
 		if (sbuf_len(ob[u]))
 			printf("%s\n", sbuf_data(ob[u]));
+		sbuf_clear(ob[u]);
 	}
 }
 
@@ -188,9 +189,11 @@ main(int argc, char **argv)
 		if (r_opt == NULL) {
 			p = VSL_NextLog(loghead, &q);
 			if (p == NULL) {
-				if (w_opt == NULL)
+				if (w_opt == NULL) {
+					if (o_flag && ++v == 100)
+						clean_order();
 					fflush(stdout);
-				else if (++v == 100) {
+				} else if (++v == 100) {
 					fflush(wfile);
 					printf("\nFlushed\n");
 				}
@@ -207,8 +210,8 @@ main(int argc, char **argv)
 				break;
 			p = rbuf;
 		}
+		v = 0;
 		if (wfile != NULL) {
-			v = 0;
 			i = fwrite(p, 4 + p[1], 1, wfile);
 			if (i != 1)
 				perror(w_opt);
