@@ -53,8 +53,13 @@ exp_hangman(void *arg)
 	while (1) {
 		time (&t); 
 		AZ(pthread_mutex_lock(&exp_mtx));
-		o = TAILQ_FIRST(&exp_deathrow);
-		if (o == NULL || o->ttl >= t) {	/* XXX: > or >= ? */
+		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
+			if (o->ttl >= t)
+				break;
+			if (o->refcnt == 0)
+				break;
+		}
+		if (o == NULL || o->ttl >= t || o->refcnt > 0) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			sleep(1);
 			continue;
