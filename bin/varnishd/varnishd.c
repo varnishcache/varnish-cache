@@ -50,8 +50,10 @@ cli_passthrough_cb(unsigned u, const char *r, void *priv)
 }
 
 static void
-m_cli_func_passthrough(struct cli *cli, char **av __unused, void *priv)
+m_cli_func_passthrough(struct cli *cli, char **av, void *priv)
 {
+
+	(void)av;
 
 	cli_suspend(cli);
 	mgt_child_request(cli_passthrough_cb, cli, &av[2], av[1]);
@@ -129,10 +131,12 @@ vcl_default(const char *bflag)
 }
 
 static void
-m_cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_config_inline(struct cli *cli, char **av, void *priv)
 {
 	char *vf;
 	struct sbuf *sb;
+
+	(void)priv;
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
@@ -151,10 +155,12 @@ m_cli_func_config_inline(struct cli *cli, char **av, void *priv __unused)
 
 /* XXX: m prefix to avoid name clash */
 static void
-m_cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_config_load(struct cli *cli, char **av, void *priv)
 {
 	char *vf;
 	struct sbuf *sb;
+
+	(void)priv;
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
@@ -194,8 +200,12 @@ vcl_file(const char *fflag)
 /*--------------------------------------------------------------------*/
 
 static void
-m_cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused)
+m_cli_func_server_start(struct cli *cli, char **av, void *priv)
 {
+
+	(void)cli;
+	(void)av;
+	(void)priv;
 
 	mgt_child_start();
 }
@@ -203,8 +213,12 @@ m_cli_func_server_start(struct cli *cli, char **av __unused, void *priv __unused
 /*--------------------------------------------------------------------*/
 
 static void
-m_cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
+m_cli_func_server_stop(struct cli *cli, char **av, void *priv)
 {
+
+	(void)cli;
+	(void)av;
+	(void)priv;
 
 	mgt_child_stop();
 }
@@ -212,17 +226,22 @@ m_cli_func_server_stop(struct cli *cli, char **av __unused, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static void
-m_cli_func_verbose(struct cli *cli, char **av __unused, void *priv)
+m_cli_func_verbose(struct cli *cli, char **av, void *priv)
 {
+
+	(void)av;
+	(void)priv;
 
 	cli->verbose = !cli->verbose;
 }
 
 
 static void
-m_cli_func_ping(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_ping(struct cli *cli, char **av, void *priv)
 {
 	time_t t;
+
+	(void)priv;
 
 	if (av[2] != NULL) {
 		cli_out(cli, "Got your %s\n", av[2]);
@@ -234,8 +253,11 @@ m_cli_func_ping(struct cli *cli, char **av, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static void
-m_cli_func_stats(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_stats(struct cli *cli, char **av, void *priv)
 {
+
+	(void)av;
+	(void)priv;
 
 	assert (VSL_stats != NULL);
 #define MAC_STAT(n,t,f,d) \
