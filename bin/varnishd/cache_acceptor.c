@@ -168,8 +168,10 @@ accept_f(int fd, short event, void *arg)
 		free(sp);
 		return;
 	}
+#ifdef SO_NOSIGPIPE /* XXX Linux */
 	i = 1;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_NOSIGPIPE, &i, sizeof i));
+#endif
 	i = getnameinfo(addr, l,
 	    sp->addr, VCA_ADDRBUFSIZE,
 	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV);
