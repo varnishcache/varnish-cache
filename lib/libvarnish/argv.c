@@ -200,9 +200,12 @@ Test(const char *str)
 }
 
 int
-main(int argc __unused, char **argv __unused)
+main(int argc, char **argv)
 {
 	char buf[BUFSIZ];
+
+	(void)argc;
+	(void)argv;
 
         register_printf_render_std("V");
 

@@ -156,9 +156,11 @@ cli_rdcb(struct bufferevent *bev, void *arg)
 }
 
 static void
-cli_wrcb(struct bufferevent *bev __unused, void *arg __unused)
+cli_wrcb(struct bufferevent *bev, void *arg)
 {
 
+	(void)bev;
+	(void)arg;
 }
 
 static void
