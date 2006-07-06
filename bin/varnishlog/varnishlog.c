@@ -102,6 +102,12 @@ order(unsigned char *p)
 
 /*--------------------------------------------------------------------*/
 
+static void
+Usage(void)
+{
+	fprintf(stderr, "Usage: varnishlog [-o] [-w file] [-r file]\n");
+	exit(2);
+}
 
 int
 main(int argc, char **argv)
@@ -110,6 +116,11 @@ main(int argc, char **argv)
 	unsigned u;
 	unsigned char *p, *q;
 	int o_flag = 0;
+	char *w_opt = NULL;
+	FILE *wfile = NULL;
+	char *r_opt = NULL;
+	FILE *rfile = NULL;
+	unsigned char rbuf[255+4];
 	struct shmloghead *loghead;
 
 	loghead = VSL_OpenLog();
@@ -117,25 +128,73 @@ main(int argc, char **argv)
 	for (i = 0; stagnames[i].tag != SLT_ENDMARKER; i++)
 		tagnames[stagnames[i].tag] = stagnames[i].name;
 
-	while ((c = getopt(argc, argv, "o")) != -1) {
+	while ((c = getopt(argc, argv, "or:w:")) != -1) {
 		switch (c) {
 		case 'o':
 			o_flag = 1;
 			break;
+		case 'r':
+			r_opt = optarg;
+			break;
+		case 'w':
+			w_opt = optarg;
+			break;
 		default:
-			fprintf(stderr, "Usage: varnishlog [-o]\n");
-			exit (2);
+			Usage();
 		}
 	}
 
+	if (r_opt != NULL && w_opt != NULL)
+		Usage();
+	if (o_flag && w_opt != NULL)
+		Usage();
+
+	if (r_opt != NULL) {
+		rfile = fopen(r_opt, "r");
+		if (rfile == NULL)
+			perror(r_opt);
+		u = 0;
+	}
+	if (w_opt != NULL) {
+		wfile = fopen(w_opt, "w");
+		if (wfile == NULL)
+			perror(w_opt);
+		u = 0;
+	}
+
 	q = NULL;
-	while (VSL_NextLog(loghead, &q) != NULL)
-		;
+	if (r_opt == NULL) {
+		while (VSL_NextLog(loghead, &q) != NULL)
+			;
+	}
 	while (1) {
-		p = VSL_NextLog(loghead, &q);
-		if (p == NULL) {
-			fflush(stdout);
-			usleep(50000);
+		if (r_opt == NULL) {
+			p = VSL_NextLog(loghead, &q);
+			if (p == NULL) {
+				if (w_opt == NULL)
+					fflush(stdout);
+				usleep(50000);
+				continue;
+			}
+		} else {
+			i = fread(rbuf, 4, 1, rfile);
+			if (i != 1)
+				break;
+			if (rbuf[1] > 0)
+			i = fread(rbuf + 4, rbuf[1], 1, rfile);
+			if (i != 1)
+				break;
+			p = rbuf;
+		}
+		if (wfile != NULL) {
+			i = fwrite(p, 4 + p[1], 1, wfile);
+			if (i != 1)
+				perror(w_opt);
+			u++;
+			if (!(u % 1000)) {
+				printf("%u\r", u);
+				fflush(stdout);
+			}
 			continue;
 		}
 		if (o_flag) {
