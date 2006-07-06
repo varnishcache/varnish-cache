@@ -135,13 +135,13 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 	sp->obj->response = http_GetStatus(hp);
 	switch (sp->obj->response) {
 	case 200: /* OK */
-		sp->obj->valid = 1;
-		/* FALLTHROUGH */
 	case 203: /* Non-Authoritative Information */
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
 	case 410: /* Gone */
+	case 404: /* Not Found */
 		sp->obj->cacheable = 1;
+		sp->obj->valid = 1;
 		body = 1;
 		break;
 	default:
@@ -157,6 +157,5 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 	}
 
 	return (body);
-
 }
 
