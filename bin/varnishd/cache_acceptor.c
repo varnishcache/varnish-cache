@@ -92,7 +92,7 @@ vca_write_obj(struct worker *w, struct sess *sp)
 	char *r;
 	
 
-	VSL(SLT_Response, sp->fd, "%u", sp->obj->response);
+	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	vca_write(sp, sp->obj->header, strlen(sp->obj->header));
