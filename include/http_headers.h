@@ -32,7 +32,7 @@ HTTPH("Content-Langugae",	H_Content_Language,	2, 0, 0, 0, 0)	/* RFC2616 14.12 */
 HTTPH("Content-Length",		H_Content_Length,	2, 2, 0, 0, 0)	/* RFC2616 14.13 */
 HTTPH("Content-Location",	H_Content_Location,	2, 0, 0, 0, 0)  /* RFC2616 14.14 */
 HTTPH("Content-MD5",		H_Content_MD5,		2, 0, 0, 0, 0)  /* RFC2616 14.15 */
-HTTPH("Content-Range",		H_Content_Range,	2, 0, 0, 0, 0)  /* RFC2616 14.16 */
+HTTPH("Content-Range",		H_Content_Range,	2, 3, 0, 0, 0)  /* RFC2616 14.16 */
 HTTPH("Content-Type",		H_Content_Type,		2, 0, 0, 0, 0)  /* RFC2616 14.17 */
 HTTPH("Date",			H_Date,			2, 0, 0, 0, 0)  /* RFC2616 14.18 */
 HTTPH("ETag", 			H_ETag,			2, 0, 0, 0, 0)	/* RFC2616 14.19 */
