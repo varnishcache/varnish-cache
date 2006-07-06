@@ -40,6 +40,7 @@ LookupSession(struct worker *w, struct sess *sp)
 		VCL_miss_method(sp);
 	} else {
 		VSL_stats->cache_hit++;
+		VSL(SLT_Hit, sp->fd, "%u", o->xid);
 		VCL_hit_method(sp);
 	}
 	return (0);
