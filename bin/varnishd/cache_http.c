@@ -210,11 +210,13 @@ http_Dissect(struct http *hp, int fd, int rr)
 {
 	char *p, *q, *r;
 
+	for (p = hp->s ; p < hp->v && isspace(*p); p++)
+		continue;
 	assert(hp->t != NULL);
 	if (rr == 1) {
 		/* First, isolate and possibly identify request type */
-		hp->req = hp->s;
-		for (p = hp->s; isalpha(*p); p++)
+		hp->req = p;
+		for (; isalpha(*p); p++)
 			;
 		VSLR(SLT_Request, fd, hp->req, p);
 		*p++ = '\0';
@@ -244,8 +246,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 		p++;
 	} else {
 		/* First, protocol */
-		hp->proto = hp->s;
-		p = hp->s;
+		hp->proto = p;
 		while (!isspace(*p))
 			p++;
 		VSLR(SLT_Protocol, fd, hp->proto, p);
@@ -295,6 +296,8 @@ http_Dissect(struct http *hp, int fd, int rr)
 		}
 	}
 	assert(hp->t <= hp->v);
+	if (hp->t != r)
+		printf("hp->t %p r %p\n", hp->t, r);
 	assert(hp->t == r);
 }
 
@@ -305,7 +308,10 @@ http_header_complete(struct http *hp)
 {
 	char *p;
 
-	p = hp->s;
+	for (p = hp->s ; p < hp->v && isspace(*p); p++)
+		continue;
+	if (p >= hp->v)
+		return (0);
 	while (1) {
 		/* XXX: we could save location of all linebreaks for later */
 		p = strchr(p, '\n');
