@@ -1,0 +1,31 @@
+.\"
+.\" $Id$
+.\"
+.Dd July 6, 2006
+.Dt VARNISHSTAT 1
+.Os
+.Sh NAME
+.Nm varnishstat
+.Nd HTTP accelerator statistics
+.Sh SYNOPSIS
+.Nm
+.Op Fl c
+.Sh DESCRIPTION
+The
+.Nm
+utility displays statistics from a running
+.Xr varnishd 1
+instance.
+.Pp
+The following options are available:
+.Bl -tag -width Fl
+.It Fl c
+Present a continuously updating display using
+.Xr curses 3 .
+.El
+.Sh HISTORY
+The
+.Nm
+utility was developed by
+.An Poul-Henning Kamp Aq phk@freebsd.dk
+in cooperation with Verdens Gang AS and Linpro AS.
