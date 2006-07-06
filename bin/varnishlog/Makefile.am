@@ -4,6 +4,8 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishlog
 
+man_MANS = varnishlog.1
+
 varnishlog_SOURCES = varnishlog.c
 
 varnishlog_LDADD = \
