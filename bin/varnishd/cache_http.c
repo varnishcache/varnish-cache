@@ -218,7 +218,6 @@ http_Dissect(struct http *hp, int fd, int rr)
 			;
 		VSLR(SLT_Request, fd, hp->req, p);
 		*p++ = '\0';
-		assert(!strcmp(hp->req, "GET"));
 
 		/* Next find the URI */
 		while (isspace(*p))
