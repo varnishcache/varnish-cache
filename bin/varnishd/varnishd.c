@@ -530,7 +530,7 @@ main(int argc, char *argv[])
 	 */
 	open_tcp(portnumber);
 
-	VSL_MgtInit(SHMLOG_FILENAME, 1024*1024);
+	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
 	testme();
 
