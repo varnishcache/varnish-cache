@@ -210,9 +210,11 @@ http_Dissect(struct http *hp, int fd, int rr)
 {
 	char *p, *q, *r;
 
-	for (p = hp->s ; p < hp->v && isspace(*p); p++)
-		continue;
 	assert(hp->t != NULL);
+	assert(hp->s < hp->t);
+	assert(hp->t <= hp->v);
+	for (p = hp->s ; isspace(*p); p++)
+		continue;
 	if (rr == 1) {
 		/* First, isolate and possibly identify request type */
 		hp->req = p;
@@ -228,22 +230,25 @@ http_Dissect(struct http *hp, int fd, int rr)
 		while (!isspace(*p))
 			p++;
 		VSLR(SLT_URL, fd, hp->url, p);
-		*p++ = '\0';
-
-		/* Finally, look for protocol, if any */
-		while (isspace(*p) && *p != '\n')
-			p++;
-		hp->proto = p;
 		if (*p != '\n') {
-			while (!isspace(*p))
-				p++;
-		}
-		VSLR(SLT_Protocol, fd, hp->proto, p);
-		*p++ = '\0';
+			*p++ = '\0';
 
-		while (isspace(*p) && *p != '\n')
-			p++;
-		p++;
+			/* Finally, look for protocol, if any */
+			while (isspace(*p) && *p != '\n')
+				p++;
+			if (*p != '\n') {
+				hp->proto = p;
+				while (!isspace(*p))
+					p++;
+				if (*p != '\n')
+					*p++ = '\0';
+				while (isspace(*p) && *p != '\n')
+					p++;
+			}
+		}
+		*p++ = '\0';
+		if (hp->proto != NULL)
+			VSLR(SLT_Protocol, fd, hp->proto, p);
 	} else {
 		/* First, protocol */
 		hp->proto = p;
@@ -369,6 +374,7 @@ http_read_f(int fd, short event, void *arg)
 	if (!http_header_complete(hp))
 		return;
 
+	assert(hp->t != NULL);
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
 		hp->callback(hp->arg, 1);
@@ -391,6 +397,7 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 		hp->v = hp->s + l;
 		hp->t = hp->s;
 		if (http_header_complete(hp)) {
+			assert(func != NULL);
 			func(arg, 1);
 			return;
 		}
@@ -453,15 +460,21 @@ http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 		sbuf_cat(sb, hp->req);
 		sbuf_cat(sb, " ");
 		sbuf_cat(sb, hp->url);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->proto);
+		if (hp->proto != NULL) {
+			sbuf_cat(sb, " ");
+			sbuf_cat(sb, hp->proto);
+		}
 		sup = 2;
 		break;
 	case Build_Fetch:
 		sbuf_cat(sb, "GET ");
 		sbuf_cat(sb, hp->url);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->proto);
+		if (hp->proto != NULL) {
+			sbuf_cat(sb, " ");
+			sbuf_cat(sb, hp->proto);
+		} else {
+			sbuf_cat(sb, " HTTP/1.1");
+		}
 		sup = 1;
 		break;
 	default:
