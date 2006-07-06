@@ -36,6 +36,20 @@ static const char *tagnames[256];
 
 static struct sbuf	*ob[65536];
 
+static void
+clean_order()
+{
+	unsigned u;
+
+	for (u = 0; u < 65536; u++) {
+		if (ob[u] == NULL)
+			continue;
+		sbuf_finish(ob[u]);
+		if (sbuf_len(ob[u]))
+			printf("%s\n", sbuf_data(ob[u]));
+	}
+}
+
 static void 
 order(unsigned char *p)
 {
@@ -113,7 +127,7 @@ int
 main(int argc, char **argv)
 {
 	int i, c;
-	unsigned u;
+	unsigned u, v;
 	unsigned char *p, *q;
 	int o_flag = 0;
 	char *w_opt = NULL;
@@ -150,7 +164,10 @@ main(int argc, char **argv)
 		Usage();
 
 	if (r_opt != NULL) {
-		rfile = fopen(r_opt, "r");
+		if (!strcmp(r_opt, "-"))
+			rfile = stdin;
+		else
+			rfile = fopen(r_opt, "r");
 		if (rfile == NULL)
 			perror(r_opt);
 		u = 0;
@@ -173,6 +190,10 @@ main(int argc, char **argv)
 			if (p == NULL) {
 				if (w_opt == NULL)
 					fflush(stdout);
+				else if (++v == 100) {
+					fflush(wfile);
+					printf("\nFlushed\n");
+				}
 				usleep(50000);
 				continue;
 			}
@@ -187,6 +208,7 @@ main(int argc, char **argv)
 			p = rbuf;
 		}
 		if (wfile != NULL) {
+			v = 0;
 			i = fwrite(p, 4 + p[1], 1, wfile);
 			if (i != 1)
 				perror(w_opt);
@@ -208,4 +230,6 @@ main(int argc, char **argv)
 			fwrite(p + 4, p[1], 1, stdout);
 		printf(">\n");
 	}
+	if (o_flag)
+		clean_order();
 }
