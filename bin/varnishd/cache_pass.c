@@ -175,7 +175,7 @@ PassSession(struct worker *w, struct sess *sp)
 	event_base_loop(w->eb, 0);
 	http_Dissect(hp, fd, 2);
 
-	http_BuildSbuf(sp->fd, 2, w->sb, hp);
+	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
