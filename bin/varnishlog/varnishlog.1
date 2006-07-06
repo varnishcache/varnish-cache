@@ -1,0 +1,40 @@
+.\"
+.\" $Id$
+.\"
+.Dd July 6, 2006
+.Dt VARNISHLOG 1
+.Os
+.Sh NAME
+.Nm varnishlog
+.Nd HTTP accelerator log watcher
+.Sh SYNOPSIS
+.Nm
+.Op Fl o
+.Op Fl r Ar file
+.Op Fl w Ar file
+.Sh DESCRIPTION
+The
+.Nm
+utility reads and presents
+.Xr varnishd 1
+shared memory logs.
+.Pp
+The following options are available:
+.Bl -tag -width Fl
+.It Fl o
+Group log entries by request ID.
+.It Fl r Ar file
+Read log entries from
+.Ar file
+instead of shared memory.
+.It Fl w Ar file
+Write log entries to
+.Ar file
+instead of displaying them.
+.El
+.Sh HISTORY
+The
+.Nm
+utility was developed by
+.An Poul-Henning Kamp Aq phk@freebsd.dk
+in cooperation with Verdens Gang AS and Linpro AS.
