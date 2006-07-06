@@ -182,7 +182,7 @@ int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_GetURL(struct http *hp, char **b);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
-void http_Dissect(struct http *sp, int fd, int rr);
+int http_Dissect(struct http *sp, int fd, int rr);
 enum http_build {
 	Build_Pipe,
 	Build_Pass,
@@ -216,6 +216,9 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 	} while (0)
 #endif
 extern struct varnish_stats *VSL_stats;
+
+/* cache_response.c */
+void RES_Error(struct worker *w, struct sess *sp, int error, const char *msg);
 
 /* cache_vcl.c */
 void RelVCL(struct VCL_conf *vc);

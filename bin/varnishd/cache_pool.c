@@ -84,7 +84,11 @@ CacheWorker(void *priv)
 		sp->vcl = GetVCL();
 		AZ(pthread_mutex_unlock(&sessmtx));
 
-		http_Dissect(sp->http, sp->fd, 1);
+		done = http_Dissect(sp->http, sp->fd, 1);
+		if (done != 0) {
+			RES_Error(&w, sp, done, NULL);
+			goto out;
+		}
 
 		sp->backend = sp->vcl->backend[0];
 
@@ -121,6 +125,7 @@ CacheWorker(void *priv)
 			vca_close_session(sp, "not HTTP/1.1");
 		}
 
+out:
 		AZ(pthread_mutex_lock(&sessmtx));
 		RelVCL(sp->vcl);
 		sp->vcl = NULL;
