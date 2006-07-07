@@ -478,6 +478,13 @@ http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 		sup = 2;
 		break;
 	case Build_Pipe:
+		sbuf_cat(sb, hp->req);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->url);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->proto);
+		sup = 0;
+		break;
 	case Build_Pass:
 		sbuf_cat(sb, hp->req);
 		sbuf_cat(sb, " ");
