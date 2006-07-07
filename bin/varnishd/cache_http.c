@@ -226,21 +226,27 @@ http_Dissect(struct http *hp, int fd, int rr)
 		/* Next find the URI */
 		while (isspace(*p) && *p != '\n')
 			p++;
-		if (*p == '\n')
+		if (*p == '\n') {
+			VSLR(SLT_Debug, fd, hp->s, hp->v);
 			return (400);
+		}
 		hp->url = p;
 		while (!isspace(*p))
 			p++;
 		VSLR(SLT_URL, fd, hp->url, p);
-		if (*p == '\n')
+		if (*p == '\n') {
+			VSLR(SLT_Debug, fd, hp->s, hp->v);
 			return (400);
+		}
 		*p++ = '\0';
 
 		/* Finally, look for protocol */
 		while (isspace(*p) && *p != '\n')
 			p++;
-		if (*p == '\n')
+		if (*p == '\n') {
+			VSLR(SLT_Debug, fd, hp->s, hp->v);
 			return (400);
+		}
 		hp->proto = p;
 		while (!isspace(*p))
 			p++;
@@ -249,8 +255,10 @@ http_Dissect(struct http *hp, int fd, int rr)
 			*p++ = '\0';
 		while (isspace(*p) && *p != '\n')
 			p++;
-		if (*p != '\n')
+		if (*p != '\n') {
+			VSLR(SLT_Debug, fd, hp->s, hp->v);
 			return (400);
+		}
 		*p++ = '\0';
 	} else {
 		/* First, protocol */
@@ -354,6 +362,14 @@ http_read_f(int fd, short event, void *arg)
 	int i;
 
 	l = hp->e - hp->v;
+	if (l <= 1) {
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		hp->t = NULL;
+		event_del(&hp->ev);
+		if (hp->callback != NULL)
+			hp->callback(hp->arg, 1);
+		return;
+	}
 	assert(l > 1);
 	errno = 0;
 	i = read(fd, hp->v, l - 1);
@@ -366,10 +382,11 @@ http_read_f(int fd, short event, void *arg)
 			VSL(SLT_HttpError, fd, "Received nothing");
 		else
 			VSL(SLT_HttpError, fd, "Received errno %d", errno);
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
 		hp->t = NULL;
 		event_del(&hp->ev);
 		if (hp->callback != NULL)
-			hp->callback(hp->arg, 0);
+			hp->callback(hp->arg, 2);
 		return;
 	}
 
@@ -381,7 +398,7 @@ http_read_f(int fd, short event, void *arg)
 	assert(hp->t != NULL);
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
-		hp->callback(hp->arg, 1);
+		hp->callback(hp->arg, 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -403,7 +420,7 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 		hp->t = hp->s;
 		if (http_header_complete(hp)) {
 			assert(func != NULL);
-			func(arg, 1);
+			func(arg, 0);
 			return;
 		}
 	} else  {

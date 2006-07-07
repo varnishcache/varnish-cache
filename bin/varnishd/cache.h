@@ -169,7 +169,7 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
-typedef void http_callback_f(void *, int good);
+typedef void http_callback_f(void *, int bad);
 struct http;
 struct http *http_New(void);
 void http_Delete(struct http *hp);
