@@ -55,6 +55,10 @@ create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
 		assert(i == 0);
 
 		i = bind(s, r1->ai_addr, r1->ai_addrlen);
+		if (i != 0) {
+			perror("bind");
+			continue;
+		}
 		assert(i == 0);
 		*sp = s;
 		sp++;
