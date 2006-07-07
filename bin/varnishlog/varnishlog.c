@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sbuf.h>
+#include <vis.h>
 
 #include "shmlog.h"
 #include "varnishapi.h"
@@ -31,6 +32,18 @@ static struct tagnames {
 };
 
 static const char *tagnames[256];
+
+static char *
+vis_it(unsigned char *p)
+{
+	static char visbuf[255*4 + 3 + 1];
+
+	strcpy(visbuf, " [");
+	strvisx(visbuf + 2, p + 4, p[1],
+	    VIS_OCTAL | VIS_TAB | VIS_NL);
+	strcat(visbuf, "]");
+	return (visbuf);
+}
 
 /* Ordering-----------------------------------------------------------*/
 
@@ -82,6 +95,13 @@ order(unsigned char *p)
 			sbuf_bcat(ob[u], p + 4, p[1]);
 			sbuf_cat(ob[u], ">\n");
 		}
+		break;
+	case SLT_Debug:
+		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		    p[0], p[1], u, tagnames[p[0]]);
+		if (p[1] > 0)
+			sbuf_cat(ob[u], vis_it(p));
+		sbuf_cat(ob[u], "\n");
 		break;
 	default:
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
@@ -227,11 +247,20 @@ main(int argc, char **argv)
 			continue;
 		}
 		u = (p[2] << 8) | p[3];
-		printf("%02x %3d %4d %-12s <",
+		printf("%02x %3d %4d %-12s",
 		    p[0], p[1], u, tagnames[p[0]]);
-		if (p[1] > 0)
-			fwrite(p + 4, p[1], 1, stdout);
-		printf(">\n");
+		
+		if (p[1] > 0) {
+			if (p[0] != SLT_Debug) {
+				printf(" <");
+				fwrite(p + 4, p[1], 1, stdout);
+				printf(">");
+			} else {
+				fputs(vis_it(p), stdout);
+			}
+				
+		}
+		printf("\n");
 	}
 	if (o_flag)
 		clean_order();
