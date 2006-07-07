@@ -137,7 +137,6 @@ vca_tick(int a, short b, void *c)
 	struct sess *sp, *sp2;
 	time_t t;
 
-	printf("vca_tick\n");
 	evtimer_add(&tick_e, &tick_rate);
 	time(&t);
 	TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
