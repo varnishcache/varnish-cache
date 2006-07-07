@@ -47,24 +47,18 @@ PipeSession(struct worker *w, struct sess *sp)
 	int fd, i;
 	void *fd_token;
 	struct edir e1, e2;
+	char *b, *e;
 
 	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
 	assert(fd != -1);
 
-	http_BuildSbuf(fd, Build_Pipe, w->sb, sp->http);	/* XXX: 0 ?? */
+	http_BuildSbuf(fd, Build_Pipe, w->sb, sp->http);
 	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
-	assert(__LINE__ == 0);
-#if 0
-	{ int j;
-	j = 0;
-	i = sp->rcv_len - sp->rcv_ptr;
-	if (i > 0) {
-		j = write(sp->fd, sp->rcv + sp->rcv_ptr, i);
-		assert(j == i);
+	if (http_GetTail(sp->http, 99999999, &b, &e) && b != e) { /* XXX */
+		i = write(fd, b, e - b);
+		assert(i == e - b);
 	}
-	}
-#endif
 
 	e1.fd = fd;
 	e2.fd = sp->fd;
