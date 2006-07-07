@@ -82,7 +82,7 @@ vcl_default(const char *bflag)
 	    "}\n"
 	    "sub vcl_recv {\n"
 	    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
-	    "        pass;\n"
+	    "        pipe;\n"
 	    "    }\n"
 	    "    if (req.http.Authenticate || req.http.Cookie) {\n"
 	    "        pass;\n"
