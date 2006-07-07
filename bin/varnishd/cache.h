@@ -202,7 +202,7 @@ void PipeSession(struct worker *w, struct sess *sp);
 
 /* cache_pool.c */
 void CacheInitPool(void);
-void DealWithSession(void *arg, int good);
+void DealWithSession(void *arg);
 
 /* cache_shmlog.c */
 void VSL_Init(void);

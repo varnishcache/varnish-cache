@@ -34,11 +34,15 @@ static struct event_base *evb;
 static struct event pipe_e;
 static int pipes[2];
 
+static struct event tick_e;
+static struct timeval tick_rate;
+
 static pthread_t vca_thread;
 
 #define SESS_IOVS	10
 
 static struct event accept_e[2 * HERITAGE_NSOCKS];
+static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
 
 struct sessmem {
 	struct sess	s;
@@ -128,6 +132,41 @@ vca_write_obj(struct worker *w, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
+vca_tick(int a, short b, void *c)
+{
+	struct sess *sp, *sp2;
+	time_t t;
+
+	printf("vca_tick\n");
+	evtimer_add(&tick_e, &tick_rate);
+	time(&t);
+	TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
+		if (sp->t_resp + 30 < t) {
+			TAILQ_REMOVE(&sesshead, sp, list);
+			vca_close_session(sp, "timeout");
+			vca_return_session(sp);
+		}
+	}
+}
+
+static void
+vca_callback(void *arg, int bad)
+{
+	struct sess *sp = arg;
+
+	TAILQ_REMOVE(&sesshead, sp, list);
+	if (bad) {
+		if (bad == 1)
+			vca_close_session(sp, "overflow");
+		else
+			vca_close_session(sp, "no request");
+		vca_return_session(sp);
+		return;
+	}
+	DealWithSession(sp);
+}
+
+static void
 pipe_f(int fd, short event, void *arg)
 {
 	struct sess *sp;
@@ -135,7 +174,9 @@ pipe_f(int fd, short event, void *arg)
 
 	i = read(fd, &sp, sizeof sp);
 	assert(i == sizeof sp);
-	http_RecvHead(sp->http, sp->fd, evb, DealWithSession, sp);
+	time(&sp->t_resp);
+	TAILQ_INSERT_TAIL(&sesshead, sp, list);
+	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void
@@ -182,8 +223,10 @@ accept_f(int fd, short event, void *arg)
 	strlcat(sp->addr, " ", VCA_ADDRBUFSIZE);
 	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
+	time(&sp->t_resp);
+	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	sp->http = http_New();
-	http_RecvHead(sp->http, sp->fd, evb, DealWithSession, sp);
+	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void *
@@ -198,6 +241,11 @@ vca_main(void *arg)
 	event_set(&pipe_e, pipes[0], EV_READ | EV_PERSIST, pipe_f, NULL);
 	event_base_set(evb, &pipe_e);
 	event_add(&pipe_e, NULL);
+
+	evtimer_set(&tick_e, vca_tick, NULL);
+	event_base_set(evb, &tick_e);
+	
+	evtimer_add(&tick_e, &tick_rate);
 
 	ep = accept_e;
 	for (u = 0; u < HERITAGE_NSOCKS; u++) {
@@ -258,5 +306,7 @@ void
 VCA_Init(void)
 {
 
+	tick_rate.tv_sec = 1;
+	tick_rate.tv_usec = 0;
 	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
 }

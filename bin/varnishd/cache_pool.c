@@ -135,18 +135,9 @@ out:
 }
 
 void
-DealWithSession(void *arg, int bad)
+DealWithSession(void *arg)
 {
 	struct sess *sp = arg;
-
-	if (bad) {
-		if (bad == 1)
-			vca_close_session(sp, "overflow");
-		else
-			vca_close_session(sp, "no request");
-		vca_return_session(sp);
-		return;
-	}
 
 	time(&sp->t_req);
 
