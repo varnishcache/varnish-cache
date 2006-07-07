@@ -37,7 +37,11 @@ rdf(int fd, short event, void *arg)
 		event_del(&ep->ev);
 	} else {
 		j = write(ep->fd, buf, i);
-		assert(i == j);
+		if (i != j) {
+			shutdown(fd, SHUT_WR);
+			shutdown(ep->fd, SHUT_RD);
+			event_del(&ep->ev);
+		}
 	}
 }
 
@@ -57,7 +61,11 @@ PipeSession(struct worker *w, struct sess *sp)
 	assert(i == sbuf_len(w->sb));
 	if (http_GetTail(sp->http, 99999999, &b, &e) && b != e) { /* XXX */
 		i = write(fd, b, e - b);
-		assert(i == e - b);
+		if (i != e - b) {
+			close (fd);
+			vca_close_session(sp, "pipe");
+			VBE_ClosedFd(fd_token);
+		}
 	}
 
 	e1.fd = fd;
