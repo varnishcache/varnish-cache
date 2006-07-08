@@ -2,7 +2,10 @@
  * $Id$
  */
 
+#include <pthread.h>
+#include <sys/time.h>
 #include <queue.h>
+#include <event.h>
 
 #include "vcl_returns.h"
 
@@ -15,7 +18,36 @@ struct sess;
 struct object;
 struct objhead;
 
-#ifdef EV_TIMEOUT
+/*--------------------------------------------------------------------
+ * HTTP Request/Response/Header handling structure.
+ * RSN: struct worker and struct session will have one of these embedded.
+ */
+
+typedef void http_callback_f(void *, int bad);
+
+struct http {
+	struct event		ev;
+	http_callback_f		*callback;
+	void			*arg;
+
+	char			*s;		/* start of buffer */
+	char			*e;		/* end of buffer */
+	char			*v;		/* valid bytes */
+	char			*t;		/* start of trailing data */
+
+
+	char			*req;
+	char			*url;
+	char			*proto;
+	char			*status;
+	char			*response;
+	
+	char			**hdr;
+	unsigned		nhdr;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	struct event_base	*eb;
 	struct event		e1, e2;
@@ -23,9 +55,6 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 };
-#else
-struct worker;
-#endif
 
 #include "hash_slinger.h"
 
@@ -169,8 +198,6 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
-typedef void http_callback_f(void *, int bad);
-struct http;
 struct http *http_New(void);
 void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
@@ -187,7 +214,7 @@ enum http_build {
 	Build_Pipe,
 	Build_Pass,
 	Build_Fetch,
-	Build_Reply,
+	Build_Reply
 };
 void http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp);
 

@@ -23,29 +23,6 @@ static unsigned		http_nhdr	= 128;
 
 /*--------------------------------------------------------------------*/
 
-struct http {
-	struct event		ev;
-	http_callback_f		*callback;
-	void			*arg;
-
-	char			*s;		/* start of buffer */
-	char			*e;		/* end of buffer */
-	char			*v;		/* valid bytes */
-	char			*t;		/* start of trailing data */
-
-
-	char			*req;
-	char			*url;
-	char			*proto;
-	char			*status;
-	char			*response;
-	
-	char			**hdr;
-	unsigned		nhdr;
-};
-
-/*--------------------------------------------------------------------*/
-
 struct http *
 http_New(void)
 {
