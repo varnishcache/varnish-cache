@@ -43,3 +43,5 @@
 -e641	// Converting enum 'cli_status_e' to int
 
 -e786	// String concatenation within initializer
+
+-emacro(19, MAC_STAT)	// Useless Declaration
