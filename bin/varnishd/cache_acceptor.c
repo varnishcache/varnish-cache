@@ -8,20 +8,16 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <queue.h>
 
 #include <netdb.h>
 
 #include <sbuf.h>
-#include <event.h>
 
 #include "config.h"
 #include "compat.h"

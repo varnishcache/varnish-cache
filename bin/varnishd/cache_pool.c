@@ -7,13 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <pthread.h>
 #include <unistd.h>
-#include <queue.h>
-#include <sys/time.h>
 #include <sbuf.h>
-#include <event.h>
 
 #include "libvarnish.h"
 #include "heritage.h"

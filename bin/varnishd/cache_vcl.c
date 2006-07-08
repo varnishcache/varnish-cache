@@ -5,11 +5,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <assert.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <dlfcn.h>
-#include <queue.h>
 
 #include "cli.h"
 #include "cli_priv.h"

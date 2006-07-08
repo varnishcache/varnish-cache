@@ -4,12 +4,9 @@
  * A classic bucketed hash
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
-#include <queue.h>
 #include <sys/types.h>
 #include <md5.h>
 

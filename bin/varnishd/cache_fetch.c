@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <inttypes.h>
@@ -10,13 +9,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <pthread.h>
-#include <queue.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sbuf.h>
-#include <event.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"

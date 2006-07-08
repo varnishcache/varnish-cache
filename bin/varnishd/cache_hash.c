@@ -4,13 +4,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <event.h>
-#include <pthread.h>
-#include <queue.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"

@@ -4,10 +4,7 @@
  * Storage method based on malloc(3)
  */
 
-#include <assert.h>
 #include <stdlib.h>
-#include <queue.h>
-#include <pthread.h>
 
 #include "cache.h"
 
