@@ -51,7 +51,6 @@ struct http {
 
 struct worker {
 	struct event_base	*eb;
-	struct event		e1, e2;
 	struct sbuf		*sb;
 	struct objhead		*nobjhead;
 	struct object		*nobj;

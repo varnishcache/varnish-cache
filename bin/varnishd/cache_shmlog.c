@@ -28,7 +28,7 @@
 struct varnish_stats *VSL_stats;
 
 static struct shmloghead *loghead;
-static unsigned char *logstart, *logend;
+static unsigned char *logstart;
 static pthread_mutex_t vsl_mutex;
 
 /*
@@ -88,7 +88,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned char *p;
-	unsigned m, n;
+	unsigned n;
 
 	va_start(ap, fmt);
 
@@ -132,7 +132,6 @@ VSL_Init(void)
 
 	/* XXX check sanity of loghead */
 	logstart = (unsigned char *)loghead + loghead->start;
-	logend = logstart + loghead->size;
 	VSL_stats = &loghead->stats;
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
 }

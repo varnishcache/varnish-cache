@@ -268,6 +268,8 @@ http_Dissect(struct http *hp, int fd, int rr)
 		p++;
 
 	hp->nhdr = 0;
+	r = NULL;		/* For FlexeLint */
+	assert(p < hp->v);	/* http_header_complete() guarantees this */
 	for (; p < hp->v; p = r) {
 		q = strchr(p, '\n');
 		assert(q != NULL);
@@ -331,7 +333,6 @@ static void
 http_read_f(int fd, short event, void *arg)
 {
 	struct http *hp = arg;
-	char *p;
 	unsigned l;
 	int i;
 
@@ -475,6 +476,7 @@ http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 		sup = 1;
 		break;
 	default:
+		sup = 0;	/* for flexelint */
 		printf("mode = %d\n", mode);
 		assert(mode == 1 || mode == 2);
 	}
