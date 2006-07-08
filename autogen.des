@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# $Id$
+#
+
+set -ex
+
+./autogen.sh
+
+./configure \
+    --enable-developer-warnings \
+    --enable-debugging-symbols \
+    --enable-dependency-tracking \
+    --prefix=/opt/varnish
