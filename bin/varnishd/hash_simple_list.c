@@ -4,12 +4,9 @@
  * This is the reference hash(/lookup) implementation
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
-#include <queue.h>
 
 #include <libvarnish.h>
 #include <cache.h>

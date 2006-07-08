@@ -4,14 +4,8 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/time.h>
-
-#include <pthread.h>
-
-#include <event.h>
 
 #include <cli.h>
 #include <cli_priv.h>

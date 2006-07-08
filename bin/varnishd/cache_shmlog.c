@@ -7,14 +7,13 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <assert.h>
 #include <string.h>
 #include <stdarg.h>
 #include <sys/mman.h>
-#include <pthread.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "cache.h"
 
 #include "heritage.h"
 

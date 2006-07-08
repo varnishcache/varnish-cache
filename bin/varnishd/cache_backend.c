@@ -25,10 +25,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <assert.h>
 #include <netdb.h>
-#include <pthread.h>
-#include <queue.h>
 #include <sbuf.h>
 #include <errno.h>
 #include <stdio.h>
@@ -37,8 +34,6 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
-
-#include <event.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"

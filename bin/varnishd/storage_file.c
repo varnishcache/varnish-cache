@@ -4,7 +4,6 @@
  * Storage method based on mmap'ed file
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -13,9 +12,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <queue.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/mman.h>

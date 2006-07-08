@@ -4,9 +4,7 @@
  * Expiry of cached objects and execution of prefetcher
  */
 
-#include <pthread.h>
 #include <unistd.h>
-#include <assert.h>
 #include <stdio.h>
 
 #include "libvarnish.h"

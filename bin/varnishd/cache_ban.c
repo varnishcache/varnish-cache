@@ -4,11 +4,9 @@
  * Ban processing
  */
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
-#include <pthread.h>
 
 #include "shmlog.h"
 #include "cli_priv.h"

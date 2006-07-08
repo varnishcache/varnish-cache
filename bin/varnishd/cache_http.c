@@ -5,13 +5,10 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <ctype.h>
-#include <event.h>
 #include <sbuf.h>
 
 #include "libvarnish.h"
