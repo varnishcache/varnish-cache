@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: autogen.sh 118 2006-04-05 09:40:22Z phk $
+# $Id$
 #
 
 set -ex
