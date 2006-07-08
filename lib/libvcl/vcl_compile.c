@@ -1294,7 +1294,7 @@ Backend(struct tokenlist *tl)
 		return;
 	}
 	if (t_port != NULL) {
-		port = EncString(tl->t);
+		port = EncString(t_port);
 		ep = CheckHostPort(host, port);
 		if (ep != NULL) {
 			sbuf_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
