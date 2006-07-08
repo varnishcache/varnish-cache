@@ -19,6 +19,9 @@ DEVELOPER_CFLAGS="-Wall -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prot
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
+AC_ARG_ENABLE(debugging-symbols,
+	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
+	CFLAGS="${CFLAGS} -g -fno-inline -fno-builtin")
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
