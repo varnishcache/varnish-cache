@@ -7,6 +7,13 @@ bin_PROGRAMS = varnishd
 man_MANS = varnishd.1
 
 varnishd_SOURCES = \
+	cache.h \
+	cli_event.h \
+	hash_slinger.h \
+	heritage.h \
+	mgt.h \
+	stevedore.h \
+	\
 	cache_acceptor.c \
 	cache_backend.c \
 	cache_ban.c \

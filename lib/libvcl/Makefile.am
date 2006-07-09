@@ -5,5 +5,8 @@ INCLUDES = -I$(top_srcdir)/include
 lib_LTLIBRARIES = libvcl.la
 
 libvcl_la_SOURCES = \
+	vcl_priv.h \
+	vcl_token_defs.h \
+	\
 	vcl_compile.c \
 	vcl_fixed_token.c
