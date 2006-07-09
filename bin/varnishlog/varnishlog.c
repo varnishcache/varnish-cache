@@ -48,6 +48,8 @@ vis_it(unsigned char *p)
 /* Ordering-----------------------------------------------------------*/
 
 static struct sbuf	*ob[65536];
+static int 		hc[65536];
+static int 		xrf[65536];
 
 static void
 clean_order()
@@ -65,15 +67,16 @@ clean_order()
 }
 
 static void 
-order(unsigned char *p)
+order(unsigned char *p, int h_opt)
 {
-	unsigned u;
+	unsigned u, v;
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
 		ob[u] = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 		assert(ob[u] != NULL);
 	}
+	v = 0;
 	switch (p[0]) {
 	case SLT_VCL_call:
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
@@ -82,6 +85,8 @@ order(unsigned char *p)
 			sbuf_cat(ob[u], " <");
 			sbuf_bcat(ob[u], p + 4, p[1]);
 		}
+		if (h_opt && p[1] == 3 && !memcmp(p + 4, "hit", 3))
+			hc[u]++;
 		break;
 	case SLT_VCL_trace:
 		if (p[1] > 0) {
@@ -95,15 +100,69 @@ order(unsigned char *p)
 			sbuf_bcat(ob[u], p + 4, p[1]);
 			sbuf_cat(ob[u], ">\n");
 		}
+		if (h_opt && p[1] == 7 && !memcmp(p + 4, "deliver", 7))
+			hc[u]++;
+		if (h_opt && p[1] == 6 && !memcmp(p + 4, "insert", 6)) {
+			if (hc[xrf[u]] == 1) {
+				hc[u] += 2;
+				hc[xrf[u]] = 4;
+			}
+		}
 		break;
 	case SLT_Debug:
+		if (p[1] == 0)
+			break;
+		if (!h_opt)
+			;
+		else if (p[1] > 4 && !memcmp(p + 4, "TTD:", 4))
+			break;
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, tagnames[p[0]]);
 		if (p[1] > 0)
 			sbuf_cat(ob[u], vis_it(p));
 		sbuf_cat(ob[u], "\n");
 		break;
+	case SLT_HttpError:
+		if (!h_opt) 
+			v = 1;
+		else if (p[1] == 16 && !memcmp(p + 4, "Received nothing", 16))
+			;
+		else if (p[1] == 17 && !memcmp(p + 4, "Received errno 54", 17))
+			;
+		else
+			v = 1;
+		break;
+	case SLT_SessionClose:
+		if (!h_opt) 
+			v = 1;
+		else if (p[1] == 10 && !memcmp(p + 4, "no request", 10))
+			;
+		else if (p[1] == 7 && !memcmp(p + 4, "timeout", 7))
+			;
+		else
+			v = 1;
+		break;
+	case SLT_Request:
+		if (h_opt && p[1] == 3 && !memcmp(p + 4, "GET", 3))
+			hc[u]++;
+		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 3))
+			hc[u]++;
+		v = 1;
+		break;
+	case SLT_Backend:
+		xrf[u] = atoi(p + 4);
+		v = 1;
+		break;
+	case SLT_Status:
+		if (h_opt && p[1] == 3 && !memcmp(p + 4, "200", 3))
+			hc[u]++;
+		v = 1;
+		break;
 	default:
+		v = 1;
+		break;
+	}
+	if (v) {
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, tagnames[p[0]]);
 		if (p[1] > 0) {
@@ -112,7 +171,6 @@ order(unsigned char *p)
 			sbuf_cat(ob[u], ">");
 		}
 		sbuf_cat(ob[u], "\n");
-		break;
 	}
 	if (u == 0) {
 		sbuf_finish(ob[u]);
@@ -125,8 +183,11 @@ order(unsigned char *p)
 	case SLT_SessionReuse:
 	case SLT_BackendClose:
 		sbuf_finish(ob[u]);
-		printf("%s\n", sbuf_data(ob[u]));
+		if ((hc[u] != 4 || h_opt == 0) && sbuf_len(ob[u]) > 1)
+			printf("%s\n", sbuf_data(ob[u]));
 		sbuf_clear(ob[u]);
+		hc[u] = 0;
+		xrf[u] = 0;
 		break;
 	default:
 		break;
@@ -155,6 +216,7 @@ main(int argc, char **argv)
 	FILE *wfile = NULL;
 	char *r_opt = NULL;
 	FILE *rfile = NULL;
+	int h_opt = 0;
 	unsigned char rbuf[255+4];
 	struct shmloghead *loghead;
 
@@ -163,8 +225,11 @@ main(int argc, char **argv)
 	for (i = 0; stagnames[i].tag != SLT_ENDMARKER; i++)
 		tagnames[stagnames[i].tag] = stagnames[i].name;
 
-	while ((c = getopt(argc, argv, "or:w:")) != -1) {
+	while ((c = getopt(argc, argv, "hor:w:")) != -1) {
 		switch (c) {
+		case 'h':
+			h_opt = 1;
+			break;
 		case 'o':
 			o_flag = 1;
 			break;
@@ -243,7 +308,7 @@ main(int argc, char **argv)
 			continue;
 		}
 		if (o_flag) {
-			order(p);
+			order(p, h_opt);
 			continue;
 		}
 		u = (p[2] << 8) | p[3];
