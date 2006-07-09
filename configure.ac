@@ -10,7 +10,7 @@ AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+AM_INIT_AUTOMAKE
 
 # Compiler flags (assume GCC).
 # This section *must* come before AC_PROG_CC / AC_PROG_CPP.
