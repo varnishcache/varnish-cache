@@ -59,7 +59,7 @@ VSL_OpenLog(void)
 }
 
 unsigned char *
-VSL_NextLog(struct shmloghead *lh, unsigned char **pp)
+VSL_NextLog(struct shmloghead *lh __unused, unsigned char **pp)
 {
 	unsigned char *p;
 
