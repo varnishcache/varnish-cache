@@ -210,9 +210,8 @@ static void
 accept_f(int fd, short event __unused, void *arg __unused)
 {
 	socklen_t l;
-	struct sockaddr addr[2];
+	struct sockaddr addr[2];	/* XXX: IPv6 hack */
 	struct sess *sp;
-	char port[NI_MAXSERV];
 	int i;
 	struct linger linger;
 
@@ -238,15 +237,7 @@ accept_f(int fd, short event __unused, void *arg __unused)
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &linger, sizeof linger));
 #endif
 
-	i = getnameinfo(addr, l,
-	    sp->addr, VCA_ADDRBUFSIZE,
-	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV);
-	if (i) {
-		printf("getnameinfo = %d %s\n", i,
-		    gai_strerror(i));
-	}
-	strlcat(sp->addr, " ", VCA_ADDRBUFSIZE);
-	strlcat(sp->addr, port, VCA_ADDRBUFSIZE);
+	TCP_name(addr, l, sp->addr);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
 	time(&sp->t_resp);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
