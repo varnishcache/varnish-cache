@@ -23,6 +23,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "libvarnish.h"
+
 void
 TIM_format(time_t t, char *p)
 {

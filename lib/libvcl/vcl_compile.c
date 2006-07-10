@@ -647,8 +647,9 @@ IpVal(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------*/
+
 static struct var *
-HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
+HeaderVar(struct tokenlist *tl __unused, struct token *t, struct var *vh)
 {
 	char *p;
 	struct var *v;
@@ -1847,18 +1848,18 @@ VCC_CompileFile(struct sbuf *sb, const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-int
-VCC_T_render(FILE *f, const struct printf_info *info, const void *const *args)
+static int
+VCC_T_render(FILE *f, const struct printf_info *info __unused, const void *const *args)
 {
 	const struct token *t;
 
-	t = *((const struct token **) (args[0]));
+	t = *((const struct token * const*) (args[0]));
 	return (fprintf(f, "%*.*s",
 	    t->e - t->b, t->e - t->b, t->b));
 }
      
-int
-VCC_T_arginfo(const struct printf_info *info, size_t n, int *argtypes)
+static int
+VCC_T_arginfo(const struct printf_info *info __unused, size_t n, int *argtypes)
 {
 
 	if (n > 0)
