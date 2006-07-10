@@ -19,10 +19,10 @@
 #include "cache.h"
 
 /*
- * Chunked encoding is a hack.  We prefer to have a single or a few
- * large storage objects, and a terribly long list of small ones.
+ * Chunked encoding is a hack.  We prefer to have a single chunk or a 
+ * few large chunks, and not a terribly long list of small ones.
  * If our stevedore can trim, we alloc big chunks and trim the last one
- * at the end know the result.
+ * at the end when we know the result.
  *
  * Good testcase: http://www.washingtonpost.com/
  */
