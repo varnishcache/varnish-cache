@@ -21,7 +21,7 @@
 /*--------------------------------------------------------------------*/
 
 static int
-pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *bi)
+pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 {
 	int i;
 	char *b, *e;
@@ -63,7 +63,7 @@ pass_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *
 /*--------------------------------------------------------------------*/
 
 static int
-pass_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
+pass_chunked(struct sess *sp, int fd, struct http *hp)
 {
 	int i, j;
 	char *b, *q, *e;
@@ -175,11 +175,11 @@ PassSession(struct worker *w, struct sess *sp)
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
-		cls = pass_straight(w, sp, vc->fd, hp, b);
+		cls = pass_straight(sp, vc->fd, hp, b);
 	else if (http_HdrIs(hp, "Connection", "close"))
-		cls = pass_straight(w, sp, vc->fd, hp, NULL);
+		cls = pass_straight(sp, vc->fd, hp, NULL);
 	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-		cls = pass_chunked(w, sp, vc->fd, hp);
+		cls = pass_chunked(sp, vc->fd, hp);
 	else {
 		INCOMPL();
 		cls = 1;

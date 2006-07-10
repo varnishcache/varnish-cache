@@ -43,7 +43,7 @@ EXP_TTLchange(struct object *o)
  */
 
 static void *
-exp_hangman(void *arg)
+exp_hangman(void *arg __unused)
 {
 	struct object *o;
 	time_t t;
@@ -84,7 +84,7 @@ exp_hangman(void *arg)
  */
 
 static void *
-exp_prefetch(void *arg)
+exp_prefetch(void *arg __unused)
 {
 	struct object *o;
 	time_t t;
@@ -116,14 +116,12 @@ exp_prefetch(void *arg)
 		}
 		assert(sp.handling == VCL_RET_DISCARD);
 	}
-
-	return ("FOOBAR");
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-object_cmp(void *priv, void *a, void *b)
+object_cmp(void *priv __unused, void *a, void *b)
 {
 	struct object *aa, *bb;
 
@@ -133,7 +131,7 @@ object_cmp(void *priv, void *a, void *b)
 }
 
 static void
-object_update(void *priv, void *p, unsigned u)
+object_update(void *priv __unused, void *p, unsigned u)
 {
 	struct object *o = p;
 

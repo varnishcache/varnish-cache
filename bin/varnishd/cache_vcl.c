@@ -99,7 +99,7 @@ CVCL_Load(const char *fn, const char *name)
 }
 
 void
-cli_func_config_list(struct cli *cli, char **av, void *priv)
+cli_func_config_list(struct cli *cli, char **av __unused, void *priv __unused)
 {
 	struct vcls *vcl;
 
@@ -123,7 +123,7 @@ find_vcls(const char *name)
 }
 
 void
-cli_func_config_load(struct cli *cli, char **av, void *priv)
+cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
 {
 	struct vcls *vcl;
 
@@ -166,13 +166,13 @@ cli_func_config_load(struct cli *cli, char **av, void *priv)
 }
 
 void
-cli_func_config_unload(struct cli *cli, char **av, void *priv)
+cli_func_config_unload(struct cli *cli, char **av __unused, void *priv __unused)
 {
 	cli_result(cli, CLIS_UNIMPL);
 }
 
 void
-cli_func_config_use(struct cli *cli, char **av, void *priv)
+cli_func_config_use(struct cli *cli, char **av, void *priv __unused)
 {
 	struct vcls *vcl;
 

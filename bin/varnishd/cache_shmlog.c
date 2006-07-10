@@ -26,7 +26,6 @@
 #endif
 
 struct varnish_stats *VSL_stats;
-
 static struct shmloghead *loghead;
 static unsigned char *logstart;
 static pthread_mutex_t vsl_mutex;
@@ -132,8 +131,8 @@ VSL_Init(void)
 
 	/* XXX check sanity of loghead */
 	logstart = (unsigned char *)loghead + loghead->start;
-	VSL_stats = &loghead->stats;
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
+	VSL_stats = &loghead->stats;
 }
 
 /*--------------------------------------------------------------------*/

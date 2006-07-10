@@ -50,7 +50,7 @@ cli_passthrough_cb(unsigned u, const char *r, void *priv)
 }
 
 static void
-m_cli_func_passthrough(struct cli *cli, char **av, void *priv)
+m_cli_func_passthrough(struct cli *cli, char **av, void *priv __unused)
 {
 
 	(void)av;

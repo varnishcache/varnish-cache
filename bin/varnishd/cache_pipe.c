@@ -19,7 +19,7 @@ struct edir {
 };
 
 static void
-rdf(int fd, short event, void *arg)
+rdf(int fd, short event __unused, void *arg)
 {
 	int i, j;
 	struct edir *ep;

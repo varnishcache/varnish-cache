@@ -11,6 +11,7 @@
 #include <netdb.h>
 
 #include "heritage.h"
+#include "mgt.h"
 #include "libvarnish.h"
 
 static void

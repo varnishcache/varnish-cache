@@ -30,7 +30,7 @@
 
 /*--------------------------------------------------------------------*/
 static int
-fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char *b)
+fetch_straight(struct sess *sp, int fd, struct http *hp, char *b)
 {
 	int i;
 	char *e;
@@ -70,7 +70,7 @@ fetch_straight(struct worker *w, struct sess *sp, int fd, struct http *hp, char 
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
 static int
-fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
+fetch_chunked(struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *b, *q, *e;
@@ -180,7 +180,7 @@ fetch_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 #include <errno.h>
 
 static int
-fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
+fetch_eof(struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *b, *e;
@@ -273,11 +273,11 @@ FetchSession(struct worker *w, struct sess *sp)
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	if (body) {
 		if (http_GetHdr(hp, "Content-Length", &b))
-			cls = fetch_straight(w, sp, vc->fd, hp, b);
+			cls = fetch_straight(sp, vc->fd, hp, b);
 		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-			cls = fetch_chunked(w, sp, vc->fd, hp);
+			cls = fetch_chunked(sp, vc->fd, hp);
 		else 
-			cls = fetch_eof(w, sp, vc->fd, hp);
+			cls = fetch_eof(sp, vc->fd, hp);
 		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
 	} else
 		cls = 0;

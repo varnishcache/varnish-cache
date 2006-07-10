@@ -110,7 +110,7 @@ rdcb(struct bufferevent *bev, void *arg)
 }
 
 static void
-wrcb(struct bufferevent *bev, void *arg)
+wrcb(struct bufferevent *bev __unused, void *arg)
 {
 	struct cli *cli = arg;
 

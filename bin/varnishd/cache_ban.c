@@ -71,7 +71,7 @@ BAN_CheckObject(struct object *o, const char *url)
 }
 
 void
-cli_func_url_purge(struct cli *cli, char **av, void *priv)
+cli_func_url_purge(struct cli *cli, char **av, void *priv __unused)
 {
 
 	AddBan(av[2]);

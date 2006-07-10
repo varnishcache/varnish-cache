@@ -21,6 +21,7 @@ static struct event ev_keepalive;
 struct stevedore	*stevedore;
 
 pthread_mutex_t	sessmtx;
+struct varnish_stats *VSL_stats;
 
 /*--------------------------------------------------------------------*/
 
