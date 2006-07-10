@@ -172,3 +172,16 @@ VSL_MgtInit(const char *fn, unsigned size)
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+__assert(const char *func, const char *file, int line, const char *failedexpr)
+{
+	(void)fprintf(stderr,
+	     "\r\nAssertion failed: (%s)\n"
+	     "    function %s, file %s, line %d.\n"
+	     "    errno %d = \"%s\"\n", 
+	     failedexpr, func, file, line, errno, strerror(errno));
+	abort();
+	/* NOTREACHED */
+}
