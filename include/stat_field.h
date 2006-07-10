@@ -16,5 +16,7 @@ MAC_STAT(n_header,		uint64_t, "u", "N struct header");
 MAC_STAT(n_smf,			uint64_t, "u", "N struct smf");
 MAC_STAT(n_vbe,			uint64_t, "u", "N struct vbe");
 MAC_STAT(n_vbe_conn,		uint64_t, "u", "N struct vbe_conn");
+MAC_STAT(n_wrk,			uint64_t, "u", "N worker threads");
+MAC_STAT(n_wrkbusy,		uint64_t, "u", "N busy worker threads");
 
 

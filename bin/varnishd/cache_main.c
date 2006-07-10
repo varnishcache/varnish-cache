@@ -109,7 +109,7 @@ child_main(void)
 	AZ(pthread_mutex_init(&sessmtx, NULL));
 	VBE_Init();
 	VSL_Init();
-	CacheInitPool();
+	WRK_Init();
 
 	VCA_Init();
 	EXP_Init();

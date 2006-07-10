@@ -37,7 +37,9 @@ struct heritage {
 	unsigned		default_ttl;
 
 	/* Worker threads */
-	unsigned		wthread_min, wthread_max;
+	unsigned		wthread_min;
+	unsigned		wthread_max;
+	unsigned		wthread_timeout;
 
 	/* Memory allocation hints */
 	unsigned		mem_http_headerspace;

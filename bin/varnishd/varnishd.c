@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -419,8 +420,8 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-s kind[,storageoptions]", "Backend storage specification");
 	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
-	fprintf(stderr, "    %-28s # %s\n", "-w int[,int]",
-	    "Number of worker threads (fixed/{min,max})");
+	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
+	    "Number of worker threads (fixed/{min,max}/{min/max/timeout})");
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
@@ -435,6 +436,28 @@ usage(void)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tackle_warg(const char *argv)
+{
+	int i;
+	unsigned ua, ub, uc;
+
+	i = sscanf(argv, "%u,%u,%u", &ua, &ub, &uc);
+	if (i == 0)
+		usage();
+	if (ua < 1)
+		usage();
+	heritage.wthread_min = ua;
+	heritage.wthread_max = ua;
+	heritage.wthread_timeout = 10;
+	if (i >= 2)
+		heritage.wthread_max = ub;
+	if (i >= 3)
+		heritage.wthread_timeout = uc;
+}
+
+/*--------------------------------------------------------------------*/
+
 /* for development purposes */
 #include <printf.h>
 #include <err.h>
@@ -442,8 +465,7 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	int o, i;
-	unsigned ua, ub;
+	int o;
 	const char *portnumber = "8080";
 	unsigned dflag = 1;	/* XXX: debug=on for now */
 	const char *bflag = NULL;
@@ -456,8 +478,9 @@ main(int argc, char *argv[])
 	VCC_InitCompile();
 
 	heritage.default_ttl = 120;
-	heritage.wthread_min = 5;
-	heritage.wthread_max = 5;
+	heritage.wthread_min = 1;
+	heritage.wthread_max = UINT_MAX;
+	heritage.wthread_timeout = 10;
 	heritage.mem_http_headerspace= 4096;
 	heritage.mem_http_headers= 32;
 	heritage.mem_workspace = 0;
@@ -486,13 +509,7 @@ main(int argc, char *argv[])
 			heritage.default_ttl = strtoul(optarg, NULL, 0);
 			break;
 		case 'w':
-			i = sscanf(optarg, "%u,%u", &ua, &ub);
-			if (i == 0)
-				usage();
-			heritage.wthread_min = ua;
-			heritage.wthread_max = ua;
-			if (i == 2)
-				heritage.wthread_max = ub;
+			tackle_warg(optarg);
 			break;
 		default:
 			usage();
