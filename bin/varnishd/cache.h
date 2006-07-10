@@ -9,6 +9,7 @@
 #include <event.h>
 
 #include "vcl_returns.h"
+#include "common.h"
 
 #define VCA_ADDRBUFSIZE		64	/* Sizeof ascii network address */
 
@@ -241,7 +242,6 @@ void CacheInitPool(void);
 void DealWithSession(void *arg);
 
 /* cache_shmlog.c */
-#include "cache_shmlog.h"
 
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC

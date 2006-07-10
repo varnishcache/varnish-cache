@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#include "common.h"
+
 extern struct event_base *mgt_eb;
 
 void mgt_child_start(void);
@@ -24,4 +26,3 @@ extern struct stevedore smf_stevedore;
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
 
-#include "cache_shmlog.h"
