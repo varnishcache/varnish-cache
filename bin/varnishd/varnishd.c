@@ -457,7 +457,6 @@ main(int argc, char *argv[])
 	heritage.default_ttl = 120;
 	heritage.wthread_min = 5;
 	heritage.wthread_max = 5;
-	heritage.mem_http_1_line= 512;
 	heritage.mem_http_headerspace= 4096;
 	heritage.mem_http_headers= 32;
 	heritage.mem_workspace = 0;

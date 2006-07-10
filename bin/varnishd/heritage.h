@@ -40,7 +40,6 @@ struct heritage {
 	unsigned		wthread_min, wthread_max;
 
 	/* Memory allocation hints */
-	unsigned		mem_http_1_line;
 	unsigned		mem_http_headerspace;
 	unsigned		mem_http_headers;
 	unsigned		mem_workspace;
