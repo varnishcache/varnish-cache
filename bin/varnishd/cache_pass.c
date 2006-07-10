@@ -147,17 +147,17 @@ pass_chunked(struct worker *w, struct sess *sp, int fd, struct http *hp)
 void
 PassSession(struct worker *w, struct sess *sp)
 {
-	int fd, i;
-	void *fd_token;
+	int i;
+	struct vbe_conn *vc;
 	struct http *hp;
 	char *b;
 	int cls;
 
-	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
-	assert(fd != -1);
+	vc = VBE_GetFd(sp->backend, sp->xid);
+	assert(vc != NULL);
 
-	http_BuildSbuf(fd, Build_Pass, w->sb, sp->http);
-	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	http_BuildSbuf(vc->fd, Build_Pass, w->sb, sp->http);
+	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 
 	/* XXX: copy any contents */
@@ -167,19 +167,19 @@ PassSession(struct worker *w, struct sess *sp)
 	 * XXX: read(2) the header
 	 */
 	hp = http_New();
-	http_RecvHead(hp, fd, w->eb, NULL, NULL);
+	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	http_Dissect(hp, fd, 2);
+	http_Dissect(hp, vc->fd, 2);
 
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
-		cls = pass_straight(w, sp, fd, hp, b);
+		cls = pass_straight(w, sp, vc->fd, hp, b);
 	else if (http_HdrIs(hp, "Connection", "close"))
-		cls = pass_straight(w, sp, fd, hp, NULL);
+		cls = pass_straight(w, sp, vc->fd, hp, NULL);
 	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-		cls = pass_chunked(w, sp, fd, hp);
+		cls = pass_chunked(w, sp, vc->fd, hp);
 	else {
 		INCOMPL();
 		cls = 1;
@@ -190,7 +190,7 @@ PassSession(struct worker *w, struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_ClosedFd(fd_token);
+		VBE_ClosedFd(vc);
 	else
-		VBE_RecycleFd(fd_token);
+		VBE_RecycleFd(vc);
 }

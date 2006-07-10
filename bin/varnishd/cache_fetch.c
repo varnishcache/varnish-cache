@@ -232,23 +232,23 @@ fetch_eof(struct worker *w, struct sess *sp, int fd, struct http *hp)
 int
 FetchSession(struct worker *w, struct sess *sp)
 {
-	int fd, i, cls;
-	void *fd_token;
+	int i, cls;
+	struct vbe_conn *vc;
 	struct http *hp;
 	char *b;
 	int body;
 
 	sp->obj->xid = sp->xid;
 
-	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
-	if (fd == -1)
-		fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
-	assert(fd != -1);	/* XXX: handle this */
-	VSL(SLT_Backend, sp->fd, "%d %s", fd, sp->backend->vcl_name);
+	vc = VBE_GetFd(sp->backend, sp->xid);
+	if (vc == NULL)
+		vc = VBE_GetFd(sp->backend, sp->xid);
+	assert(vc != NULL);	/* XXX: handle this */
+	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	hp = http_New();
-	http_BuildSbuf(fd, Build_Fetch, w->sb, sp->http);
-	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	http_BuildSbuf(vc->fd, Build_Fetch, w->sb, sp->http);
+	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 	time(&sp->t_req);
 
@@ -258,10 +258,10 @@ FetchSession(struct worker *w, struct sess *sp)
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	http_RecvHead(hp, fd, w->eb, NULL, NULL);
+	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
 	time(&sp->t_resp);
-	assert(http_Dissect(hp, fd, 2) == 0);
+	assert(http_Dissect(hp, vc->fd, 2) == 0);
 
 	body = RFC2616_cache_policy(sp, hp);
 
@@ -273,11 +273,11 @@ FetchSession(struct worker *w, struct sess *sp)
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	if (body) {
 		if (http_GetHdr(hp, "Content-Length", &b))
-			cls = fetch_straight(w, sp, fd, hp, b);
+			cls = fetch_straight(w, sp, vc->fd, hp, b);
 		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-			cls = fetch_chunked(w, sp, fd, hp);
+			cls = fetch_chunked(w, sp, vc->fd, hp);
 		else 
-			cls = fetch_eof(w, sp, fd, hp);
+			cls = fetch_eof(w, sp, vc->fd, hp);
 		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
 	} else
 		cls = 0;
@@ -291,9 +291,9 @@ FetchSession(struct worker *w, struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_ClosedFd(fd_token);
+		VBE_ClosedFd(vc);
 	else
-		VBE_RecycleFd(fd_token);
+		VBE_RecycleFd(vc);
 
 	HSH_Unbusy(sp->obj);
 	if (!sp->obj->cacheable)
