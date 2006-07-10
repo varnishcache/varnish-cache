@@ -457,6 +457,9 @@ main(int argc, char *argv[])
 	heritage.default_ttl = 120;
 	heritage.wthread_min = 5;
 	heritage.wthread_max = 5;
+	heritage.mem_http_1_line= 512;
+	heritage.mem_http_header= 4096;
+	heritage.mem_workspace = 0;
 
 	while ((o = getopt(argc, argv, "b:df:h:p:s:t:w:")) != -1)
 		switch (o) {
