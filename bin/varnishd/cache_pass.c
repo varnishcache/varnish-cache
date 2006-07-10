@@ -155,6 +155,7 @@ PassSession(struct worker *w, struct sess *sp)
 
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	assert(vc != NULL);
+	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_BuildSbuf(vc->fd, Build_Pass, w->sb, sp->http);
 	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
