@@ -52,7 +52,7 @@ static int 		hc[65536];
 static int 		xrf[65536];
 
 static void
-clean_order()
+clean_order(void)
 {
 	unsigned u;
 
@@ -256,14 +256,14 @@ main(int argc, char **argv)
 			rfile = fopen(r_opt, "r");
 		if (rfile == NULL)
 			perror(r_opt);
-		u = 0;
 	}
 	if (w_opt != NULL) {
 		wfile = fopen(w_opt, "w");
 		if (wfile == NULL)
 			perror(w_opt);
-		u = 0;
 	}
+	u = 0;
+	v = 0;
 
 	q = NULL;
 	if (r_opt == NULL) {
@@ -329,4 +329,5 @@ main(int argc, char **argv)
 	}
 	if (o_flag)
 		clean_order();
+	return (0);
 }
