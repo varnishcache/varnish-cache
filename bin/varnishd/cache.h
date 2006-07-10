@@ -42,8 +42,8 @@ struct http {
 	char			*status;
 	char			*response;
 	
-	char			**hdr;
 	unsigned		nhdr;
+	char			**hdr;
 };
 
 /*--------------------------------------------------------------------*/
@@ -61,10 +61,12 @@ struct worker {
 
 struct vbe_conn {
 	TAILQ_ENTRY(vbe_conn)	list;
+	struct vbc_mem		*vbcm;
 	struct vbe		*vbe;
 	int			fd;
 	struct event		ev;
 	int			inuse;
+	struct http		*http;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -207,6 +209,7 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
+void http_Init(struct http *ht, void *space);
 struct http *http_New(void);
 void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);

@@ -13,10 +13,22 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "heritage.h"
 #include "cache.h"
 
-static unsigned		http_bufsize	= 4096;
-static unsigned		http_nhdr	= 128;
+/*--------------------------------------------------------------------*/
+
+void
+http_Init(struct http *hp, void *space)
+{
+	char *sp = space;
+
+	memset(hp, 0, sizeof *hp);
+	hp->hdr = (void *)sp;
+	sp += heritage.mem_http_headers * sizeof hp->hdr;
+	hp->s = sp;
+	hp->e = hp->s + heritage.mem_http_headerspace;
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -29,14 +41,14 @@ http_New(void)
 	assert(hp != NULL);
 	VSL_stats->n_http++;
 
-	hp->s = malloc(http_bufsize);
+	hp->s = malloc(heritage.mem_http_headerspace);
 	assert(hp->s != NULL);
 
-	hp->e = hp->s + http_bufsize;
+	hp->e = hp->s + heritage.mem_http_headerspace;
 	hp->v = hp->s;
 	hp->t = hp->s;
 
-	hp->hdr = malloc(sizeof *hp->hdr * http_nhdr);
+	hp->hdr = malloc(sizeof *hp->hdr * heritage.mem_http_headers);
 	assert(hp->hdr != NULL);
 
 	return (hp);
@@ -280,7 +292,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 		if (p == q)
 			break;
 
-		if (hp->nhdr < http_nhdr) {
+		if (hp->nhdr < heritage.mem_http_headers) {
 			hp->hdr[hp->nhdr++] = p;
 			VSLR(SLT_Header, fd, p, q);
 		} else {
