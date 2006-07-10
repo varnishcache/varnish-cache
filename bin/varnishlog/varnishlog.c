@@ -16,11 +16,6 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
-static const char *tagnames[] = {
-#define SLTM(foo)	[SLT_##foo] = #foo,
-#include "shmlog_tags.h"
-#undef SLTM
-};
 
 static char *
 vis_it(unsigned char *p)
@@ -69,7 +64,7 @@ order(unsigned char *p, int h_opt)
 	switch (p[0]) {
 	case SLT_VCL_call:
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, tagnames[p[0]]);
+		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0) {
 			sbuf_cat(ob[u], " <");
 			sbuf_bcat(ob[u], p + 4, p[1]);
@@ -106,7 +101,7 @@ order(unsigned char *p, int h_opt)
 		else if (p[1] > 4 && !memcmp(p + 4, "TTD:", 4))
 			break;
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, tagnames[p[0]]);
+		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0)
 			sbuf_cat(ob[u], vis_it(p));
 		sbuf_cat(ob[u], "\n");
@@ -153,7 +148,7 @@ order(unsigned char *p, int h_opt)
 	}
 	if (v) {
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, tagnames[p[0]]);
+		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0) {
 			sbuf_cat(ob[u], " <");
 			sbuf_bcat(ob[u], p + 4, p[1]);
@@ -210,7 +205,10 @@ main(int argc, char **argv)
 	vd = VSL_New();
 	
 	while ((c = getopt(argc, argv, VSL_ARGS "how:")) != -1) {
-		if (VSL_Arg(vd, c, optarg))
+		i = VSL_Arg(vd, c, optarg);
+		if (i < 0)
+			exit (1);
+		if (i > 0)
 			continue;
 		switch (c) {
 		case 'h':
@@ -273,7 +271,7 @@ main(int argc, char **argv)
 		}
 		u = (p[2] << 8) | p[3];
 		printf("%02x %3d %4d %-12s",
-		    p[0], p[1], u, tagnames[p[0]]);
+		    p[0], p[1], u, VSL_tags[p[0]]);
 		
 		if (p[1] > 0) {
 			if (p[0] != SLT_Debug) {

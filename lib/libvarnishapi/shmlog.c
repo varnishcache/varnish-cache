@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,9 +19,12 @@ struct VSL_data {
 	unsigned char		*logstart;
 	unsigned char		*logend;
 	unsigned char		*ptr;
-	char			*r_arg;
+
 	FILE			*fi;
 	unsigned char		rbuf[4 + 255 + 1];
+
+	int			ix_opt;
+	unsigned char 		supr[256];
 };
 
 #ifndef MAP_HASSEMAPHORE
@@ -29,6 +33,14 @@ struct VSL_data {
 
 static int vsl_fd;
 static struct shmloghead *vsl_lh;
+
+/*--------------------------------------------------------------------*/
+
+const char *VSL_tags[256] = {
+#define SLTM(foo)       [SLT_##foo] = #foo,
+#include "shmlog_tags.h"
+#undef SLTM
+};
 
 /*--------------------------------------------------------------------*/
 
@@ -84,22 +96,16 @@ int
 VSL_OpenLog(struct VSL_data *vd)
 {
 
-	if (vd->r_arg != NULL) {
-		if (!strcmp(vd->r_arg, "-"))
-			vd->fi = stdin;
-		else
-			vd->fi = fopen(vd->r_arg, "r");
-		if (vd->fi != NULL)
-			return (0);
-		perror(vd->r_arg);
-		return (1);
-	}
+	if (vd->fi != NULL)
+		return (0);
+
 	if (vsl_shmem_map())
 		return (1);
 
+	vd->head = vsl_lh;
 	vd->logstart = (unsigned char *)vsl_lh + vsl_lh->start;
 	vd->logend = vd->logstart + vsl_lh->size;
-	vd->head = vsl_lh;
+	vd->ptr = vd->logstart;
 	return (0);
 }
 
@@ -110,21 +116,22 @@ VSL_NextLog(struct VSL_data *vd)
 	int i;
 
 	if (vd->fi != NULL) {
-		i = fread(vd->rbuf, 4, 1, vd->fi);
-		if (i != 1)
-			return (NULL);
-		if (vd->rbuf[1] > 0) {
-			i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
+		while (1) {
+			i = fread(vd->rbuf, 4, 1, vd->fi);
 			if (i != 1)
 				return (NULL);
+			if (vd->rbuf[1] > 0) {
+				i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
+				if (i != 1)
+					return (NULL);
+			}
+			if (!vd->supr[vd->rbuf[0]])
+				return (vd->rbuf);
 		}
-		return (vd->rbuf);
 	}
 
 	p = vd->ptr;
-	if (p == NULL)
-		p = vd->logstart;
-	while (1) {
+	for (p = vd->ptr; ; p = vd->ptr) {
 		if (*p == SLT_WRAPMARKER) {
 			p = vd->logstart;
 			continue;
@@ -134,17 +141,89 @@ VSL_NextLog(struct VSL_data *vd)
 			return (NULL);
 		}
 		vd->ptr = p + p[1] + 4;
-		return (p);
+		if (!vd->supr[p[0]]) 
+			return (p);
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+static int
+vsl_r_arg(struct VSL_data *vd, const char *opt)
+{
+
+	if (!strcmp(opt, "-"))
+		vd->fi = stdin;
+	else
+		vd->fi = fopen(opt, "r");
+	if (vd->fi != NULL)
+		return (1);
+	perror(opt);
+	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
+{
+	int i, j, l;
+	const char *b, *e, *p, *q;
+
+	/* If first option is 'i', set all bits for supression */
+	if (arg == 'i' && vd->ix_opt == 0)
+		for (i = 0; i < 256; i++)
+			vd->supr[i] = 1;
+	vd->ix_opt = 1;
+
+	for (b = opt; *b; b = e) {
+		while (isspace(*b))
+			b++;
+		e = strchr(b, ',');
+		if (e == NULL)
+			e = strchr(b, '\0');
+		l = e - b;
+		if (*e == ',')
+			e++;
+		while (isspace(b[l - 1]))
+			l--;
+		for (i = 0; i < 256; i++) {
+			if (VSL_tags[i] == NULL)
+				continue;
+			p = VSL_tags[i];
+			q = b;
+			for (j = 0; j < l; j++)
+				if (tolower(*q++) != tolower(*p++))
+					break;
+			if (j != l)
+				continue;
+
+			if (arg == 'x')
+				vd->supr[i] = 1;
+			else
+				vd->supr[i] = 0;
+			break;
+		}
+		if (i == 256) {
+			fprintf(stderr,
+			    "Could not match \"%*.*s\" to any tag\n", l, l, b);
+			return (-1);
+		}
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
 
 int
 VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
 	switch (arg) {
+	case 'i':
+	case 'x':
+		return (vsl_ix_arg(vd, opt, arg));
 	case 'r':
-		vd->r_arg = strdup(opt);
-		return (1);
+		return (vsl_r_arg(vd, opt));
 	default:
 		return (0);
 	}
