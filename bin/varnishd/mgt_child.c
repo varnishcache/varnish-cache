@@ -58,7 +58,7 @@ static TAILQ_HEAD(,creq)	creqhead = TAILQ_HEAD_INITIALIZER(creqhead);
  */
 
 static void
-std_rdcb(struct bufferevent *bev, void *arg)
+std_rdcb(struct bufferevent *bev, void *arg __unused)
 {
 	const char *p;
 
@@ -132,7 +132,7 @@ mgt_child_request(mgt_ccb_f *func, void *priv, char **argv, const char *fmt, ...
 }
 
 static void
-cli_rdcb(struct bufferevent *bev, void *arg)
+cli_rdcb(struct bufferevent *bev, void *arg __unused)
 {
 	const char *p;
 	char **av;
@@ -174,14 +174,14 @@ cli_excb(struct bufferevent *bev, short what, void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-child_pingpong_ccb(unsigned u, const char *r, void *priv)
+child_pingpong_ccb(unsigned u __unused, const char *r __unused, void *priv __unused)
 {
 	/* XXX: reset keepalive timer */
 }
 
 
 static void
-child_pingpong(int a, short b, void *c)
+child_pingpong(int a __unused, short b __unused, void *c __unused)
 {
 	time_t t;
 	struct timeval tv;

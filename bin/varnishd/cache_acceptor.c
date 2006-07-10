@@ -160,7 +160,7 @@ vca_write_obj(struct worker *w, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_tick(int a, short b, void *c)
+vca_tick(int a __unused, short b __unused, void *c __unused)
 {
 	struct sess *sp, *sp2;
 	time_t t;
@@ -194,7 +194,7 @@ vca_callback(void *arg, int bad)
 }
 
 static void
-pipe_f(int fd, short event, void *arg)
+pipe_f(int fd, short event __unused, void *arg __unused)
 {
 	struct sess *sp;
 	int i;
@@ -207,7 +207,7 @@ pipe_f(int fd, short event, void *arg)
 }
 
 static void
-accept_f(int fd, short event, void *arg)
+accept_f(int fd, short event __unused, void *arg __unused)
 {
 	socklen_t l;
 	struct sockaddr addr[2];
@@ -254,7 +254,7 @@ accept_f(int fd, short event, void *arg)
 }
 
 static void *
-vca_main(void *arg)
+vca_main(void *arg __unused)
 {
 	unsigned u;
 	struct event *ep;
@@ -292,8 +292,8 @@ vca_main(void *arg)
 	}
 
 	event_base_loop(evb, 0);
-
-	return ("FOOBAR");
+	assert(0 == 1);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/

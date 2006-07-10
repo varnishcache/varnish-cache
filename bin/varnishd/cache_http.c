@@ -308,7 +308,7 @@ http_header_complete(struct http *hp)
 #include <errno.h>
 
 static void
-http_read_f(int fd, short event, void *arg)
+http_read_f(int fd, short event __unused, void *arg)
 {
 	struct http *hp = arg;
 	unsigned l;

@@ -24,5 +24,4 @@ extern struct stevedore smf_stevedore;
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
 
-void VSL_MgtInit(const char *fn, unsigned size);
-extern struct varnish_stats *VSL_stats;
+#include "cache_shmlog.h"

@@ -241,6 +241,8 @@ void CacheInitPool(void);
 void DealWithSession(void *arg);
 
 /* cache_shmlog.c */
+#include "cache_shmlog.h"
+
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
 void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
@@ -251,7 +253,6 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 	assert(__LINE__ == 0);						\
 	} while (0)
 #endif
-extern struct varnish_stats *VSL_stats;
 
 /* cache_response.c */
 void RES_Error(struct worker *w, struct sess *sp, int error, const char *msg);

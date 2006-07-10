@@ -151,13 +151,10 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
  */
 
 static void
-vbe_rdp(int fd, short event, void *arg)
+vbe_rdp(int fd, short event __unused, void *arg __unused)
 {
 	struct vbe_conn *vc;
 	int i;
-
-	(void)event;
-	(void)arg;
 
 	i = read(fd, &vc, sizeof vc);
 	assert(i == sizeof vc);
@@ -181,12 +178,10 @@ vbe_rdp(int fd, short event, void *arg)
  */
 
 static void
-vbe_rdf(int fd, short event, void *arg)
+vbe_rdf(int fd __unused, short event __unused, void *arg)
 {
 	struct vbe_conn *vc;
 	int j;
-
-	(void)event;
 
 	vc = arg;
 	AZ(pthread_mutex_lock(&vbemtx));
@@ -207,11 +202,9 @@ vbe_rdf(int fd, short event, void *arg)
 /* Backend monitoring thread -----------------------------------------*/
 
 static void *
-vbe_main(void *priv)
+vbe_main(void *priv __unused)
 {
 	struct event pev;
-
-	(void)priv;
 
 	vbe_evb = event_init();
 	assert(vbe_evb != NULL);
