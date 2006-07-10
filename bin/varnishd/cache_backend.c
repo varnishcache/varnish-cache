@@ -36,8 +36,15 @@
 #include <sys/ioctl.h>
 
 #include "libvarnish.h"
+#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
+
+struct vbc_mem {
+	struct vbe_conn		vbe;
+	struct http		http;
+	char			*http_hdr;
+};
 
 /* A backend IP */
 
@@ -56,6 +63,36 @@ static pthread_mutex_t	vbemtx;
 static pthread_t vbe_thread;
 static struct event_base *vbe_evb;
 static int vbe_pipe[2];
+
+/*--------------------------------------------------------------------*/
+
+static struct vbe_conn *
+vbe_new_conn(void)
+{
+	struct vbc_mem *vbcm;
+
+	vbcm = calloc(
+	    sizeof *vbcm +
+	    heritage.mem_http_headers * sizeof vbcm->http_hdr +
+	    heritage.mem_http_headerspace +
+	    heritage.mem_workspace,
+	    1);
+	if (vbcm == NULL)
+		return (NULL);
+	VSL_stats->n_vbe_conn++;
+	vbcm->vbe.vbcm = vbcm;
+	vbcm->vbe.http = &vbcm->http;
+	http_Init(&vbcm->http, (void *)(vbcm + 1));
+	return (&vbcm->vbe);
+}
+
+static void
+vbe_delete_conn(struct vbe_conn *vb)
+{
+
+	VSL_stats->n_vbe_conn--;
+	free(vb->vbcm);
+}
 
 /*--------------------------------------------------------------------
  * XXX: we should not call getaddrinfo() every time, we should cache
@@ -128,8 +165,7 @@ vbe_rdp(int fd, short event, void *arg)
 	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
 	if (vc->fd < 0) {
 		vc->vbe->nconn--;
-		free(vc);
-		VSL_stats->n_vbe_conn--;
+		vbe_delete_conn(vc);
 	} else {
 		vc->inuse = 0;
 		event_add(&vc->ev, NULL);
@@ -165,8 +201,7 @@ vbe_rdf(int fd, short event, void *arg)
 	AZ(pthread_mutex_unlock(&vbemtx));
 	event_del(&vc->ev);
 	close(vc->fd);
-	free(vc);
-	VSL_stats->n_vbe_conn--;
+	vbe_delete_conn(vc);
 }
 
 /* Backend monitoring thread -----------------------------------------*/
@@ -217,7 +252,6 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 	if (vp == NULL) {
 		vp = calloc(sizeof *vp, 1);
 		assert(vp != NULL);
-		VSL_stats->n_vbe++;
 		TAILQ_INIT(&vp->fconn);
 		TAILQ_INIT(&vp->bconn);
 		vp->ip = bp->ip;
@@ -232,14 +266,16 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
 		AZ(pthread_mutex_unlock(&vbemtx));
 	} else {
-		vc = calloc(sizeof *vc, 1);
-		VSL_stats->n_vbe_conn++;
-		assert(vc != NULL);
+		vc = vbe_new_conn();
+		if (vc == NULL) {
+			AZ(pthread_mutex_unlock(&vbemtx));
+			return (NULL);
+		}
+		vp->nconn++;
 		vc->vbe = vp;
 		vc->fd = -1;
 		vc->inuse = 1;
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
-		vp->nconn++;
 		AZ(pthread_mutex_unlock(&vbemtx));
 		connect_to_backend(vc, bp);
 		if (vc->fd < 0) {
@@ -247,16 +283,15 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 			TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
 			vp->nconn--;
 			AZ(pthread_mutex_unlock(&vbemtx));
-			free(vc);
-			vc = NULL;
-		} else {
-			VSL_stats->backend_conn++;
-			event_set(&vc->ev, vc->fd, EV_READ | EV_PERSIST, vbe_rdf, vc);
-			event_base_set(vbe_evb, &vc->ev);
+			vbe_delete_conn(vc);
+			return (NULL);
 		}
+		VSL_stats->backend_conn++;
+		event_set(&vc->ev, vc->fd,
+		    EV_READ | EV_PERSIST, vbe_rdf, vc);
+		event_base_set(vbe_evb, &vc->ev);
 	}
-	if (vc != NULL)
-		VSL(SLT_BackendXID, vc->fd, "%u", xid);
+	VSL(SLT_BackendXID, vc->fd, "%u", xid);
 	return (vc);
 }
 
