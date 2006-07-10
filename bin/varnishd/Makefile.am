@@ -26,7 +26,6 @@ varnishd_SOURCES = \
 	cache_pass.c \
 	cache_pipe.c \
 	cache_response.c \
-	cache_shmlog.c \
 	cache_vcl.c \
 	cache_vrt.c \
 	cli_event.c \
@@ -34,6 +33,7 @@ varnishd_SOURCES = \
 	hash_classic.c \
 	mgt_child.c \
 	rfc2616.c \
+	shmlog.c \
 	storage_file.c \
 	storage_malloc.c \
 	tcp.c \
