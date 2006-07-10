@@ -28,7 +28,6 @@ int
 main(int argc, char **argv)
 {
 	int c;
-	struct shmloghead *lh;
 	struct varnish_stats *VSL_stats, copy;
 	int c_flag = 0;
 	intmax_t ju;
@@ -42,9 +41,7 @@ main(int argc, char **argv)
 
 	lt = 0;
 
-	lh = VSL_OpenLog();
-
-	VSL_stats = &lh->stats;
+	VSL_stats = VSL_OpenStats();
 
 	while ((c = getopt(argc, argv, "c")) != -1) {
 		switch (c) {

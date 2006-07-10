@@ -16,22 +16,11 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
-/*
- * It would be simpler to use sparse array initialization and put it
- * directly in tagnames, but -pedantic gets in the way
- */
-
-static struct tagnames {
-	enum shmlogtag	tag;
-	const char	*name;
-} stagnames[] = {
-#define SLTM(foo)	{ SLT_##foo, #foo },
+static const char *tagnames[] = {
+#define SLTM(foo)	[SLT_##foo] = #foo,
 #include "shmlog_tags.h"
 #undef SLTM
-	{ SLT_ENDMARKER, NULL}
 };
-
-static const char *tagnames[256];
 
 static char *
 vis_it(unsigned char *p)
@@ -211,31 +200,24 @@ main(int argc, char **argv)
 {
 	int i, c;
 	unsigned u, v;
-	unsigned char *p, *q;
+	unsigned char *p;
 	int o_flag = 0;
 	char *w_opt = NULL;
 	FILE *wfile = NULL;
-	char *r_opt = NULL;
-	FILE *rfile = NULL;
 	int h_opt = 0;
-	unsigned char rbuf[255+4];
-	struct shmloghead *loghead;
+	struct VSL_data *vd;
 
-	loghead = VSL_OpenLog();
+	vd = VSL_New();
 	
-	for (i = 0; stagnames[i].tag != SLT_ENDMARKER; i++)
-		tagnames[stagnames[i].tag] = stagnames[i].name;
-
-	while ((c = getopt(argc, argv, "hor:w:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "how:")) != -1) {
+		if (VSL_Arg(vd, c, optarg))
+			continue;
 		switch (c) {
 		case 'h':
 			h_opt = 1;
 			break;
 		case 'o':
 			o_flag = 1;
-			break;
-		case 'r':
-			r_opt = optarg;
 			break;
 		case 'w':
 			w_opt = optarg;
@@ -245,19 +227,12 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (r_opt != NULL && w_opt != NULL)
-		Usage();
+	if (VSL_OpenLog(vd))
+		exit (1);
+
 	if (o_flag && w_opt != NULL)
 		Usage();
 
-	if (r_opt != NULL) {
-		if (!strcmp(r_opt, "-"))
-			rfile = stdin;
-		else
-			rfile = fopen(r_opt, "r");
-		if (rfile == NULL)
-			perror(r_opt);
-	}
 	if (w_opt != NULL) {
 		wfile = fopen(w_opt, "w");
 		if (wfile == NULL)
@@ -266,35 +241,19 @@ main(int argc, char **argv)
 	u = 0;
 	v = 0;
 
-	q = NULL;
-	if (r_opt == NULL) {
-		while (VSL_NextLog(loghead, &q) != NULL)
-			;
-	}
 	while (1) {
-		if (r_opt == NULL) {
-			p = VSL_NextLog(loghead, &q);
-			if (p == NULL) {
-				if (w_opt == NULL) {
-					if (o_flag && ++v == 100)
-						clean_order();
-					fflush(stdout);
-				} else if (++v == 100) {
-					fflush(wfile);
-					printf("\nFlushed\n");
-				}
-				usleep(50000);
-				continue;
+		p = VSL_NextLog(vd);
+		if (p == NULL) {
+			if (w_opt == NULL) {
+				if (o_flag && ++v == 100)
+					clean_order();
+				fflush(stdout);
+			} else if (++v == 100) {
+				fflush(wfile);
+				printf("\nFlushed\n");
 			}
-		} else {
-			i = fread(rbuf, 4, 1, rfile);
-			if (i != 1)
-				break;
-			if (rbuf[1] > 0)
-			i = fread(rbuf + 4, rbuf[1], 1, rfile);
-			if (i != 1)
-				break;
-			p = rbuf;
+			usleep(50000);
+			continue;
 		}
 		v = 0;
 		if (wfile != NULL) {
