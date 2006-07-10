@@ -39,16 +39,6 @@
 #include "shmlog.h"
 #include "cache.h"
 
-/* A backend connection */
-
-struct vbe_conn {
-	TAILQ_ENTRY(vbe_conn)	list;
-	struct vbe		*vbe;
-	int			fd;
-	struct event		ev;
-	int			inuse;
-};
-
 /* A backend IP */
 
 struct vbe {
@@ -211,8 +201,8 @@ vbe_main(void *priv)
  * new connection.
  */
 
-int
-VBE_GetFd(struct backend *bp, void **ptr, unsigned xid)
+struct vbe_conn *
+VBE_GetFd(struct backend *bp, unsigned xid)
 {
 	struct vbe *vp;
 	struct vbe_conn *vc;
@@ -252,24 +242,31 @@ VBE_GetFd(struct backend *bp, void **ptr, unsigned xid)
 		vp->nconn++;
 		AZ(pthread_mutex_unlock(&vbemtx));
 		connect_to_backend(vc, bp);
-		VSL_stats->backend_conn++;
-		event_set(&vc->ev, vc->fd, EV_READ | EV_PERSIST, vbe_rdf, vc);
-		event_base_set(vbe_evb, &vc->ev);
+		if (vc->fd < 0) {
+			AZ(pthread_mutex_lock(&vbemtx));
+			TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
+			vp->nconn--;
+			AZ(pthread_mutex_unlock(&vbemtx));
+			free(vc);
+			vc = NULL;
+		} else {
+			VSL_stats->backend_conn++;
+			event_set(&vc->ev, vc->fd, EV_READ | EV_PERSIST, vbe_rdf, vc);
+			event_base_set(vbe_evb, &vc->ev);
+		}
 	}
-	*ptr = vc;
-	VSL(SLT_BackendXID, vc->fd, "%u", xid);
-	return (vc->fd);
+	if (vc != NULL)
+		VSL(SLT_BackendXID, vc->fd, "%u", xid);
+	return (vc);
 }
 
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(void *ptr)
+VBE_ClosedFd(struct vbe_conn *vc)
 {
-	struct vbe_conn *vc;
 	int i;
 
-	vc = ptr;
 	VSL(SLT_BackendClose, vc->fd, "");
 	close(vc->fd);
 	vc->fd = -1;
@@ -280,13 +277,11 @@ VBE_ClosedFd(void *ptr)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VBE_RecycleFd(void *ptr)
+VBE_RecycleFd(struct vbe_conn *vc)
 {
-	struct vbe_conn *vc;
 	int i;
 
 	VSL_stats->backend_recycle++;
-	vc = ptr;
 	VSL(SLT_BackendReuse, vc->fd, "");
 	i = write(vbe_pipe[1], &vc, sizeof vc);
 	assert(i == sizeof vc);

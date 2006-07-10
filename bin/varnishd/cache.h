@@ -57,6 +57,16 @@ struct worker {
 
 #include "hash_slinger.h"
 
+/* Backend Connection ------------------------------------------------*/
+
+struct vbe_conn {
+	TAILQ_ENTRY(vbe_conn)	list;
+	struct vbe		*vbe;
+	int			fd;
+	struct event		ev;
+	int			inuse;
+};
+
 /* Storage -----------------------------------------------------------*/
 
 struct storage {
@@ -172,9 +182,9 @@ void VCA_Init(void);
 
 /* cache_backend.c */
 void VBE_Init(void);
-int VBE_GetFd(struct backend *bp, void **ptr, unsigned xid);
-void VBE_ClosedFd(void *ptr);
-void VBE_RecycleFd(void *ptr);
+struct vbe_conn *VBE_GetFd(struct backend *bp, unsigned xid);
+void VBE_ClosedFd(struct vbe_conn *vc);
+void VBE_RecycleFd(struct vbe_conn *vc);
 
 /* cache_ban.c */
 void BAN_Init(void);

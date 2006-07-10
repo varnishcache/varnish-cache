@@ -44,36 +44,35 @@ rdf(int fd, short event, void *arg)
 void
 PipeSession(struct worker *w, struct sess *sp)
 {
-	int fd, i;
-	void *fd_token;
+	int i;
+	struct vbe_conn *vc;
 	struct edir e1, e2;
 	char *b, *e;
 
-	fd = VBE_GetFd(sp->backend, &fd_token, sp->xid);
-	assert(fd != -1);
+	vc = VBE_GetFd(sp->backend, sp->xid);
+	assert(vc != NULL);
 
-	http_BuildSbuf(fd, Build_Pipe, w->sb, sp->http);
-	i = write(fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	http_BuildSbuf(vc->fd, Build_Pipe, w->sb, sp->http);
+	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
 	if (http_GetTail(sp->http, 99999999, &b, &e) && b != e) { /* XXX */
-		i = write(fd, b, e - b);
+		i = write(vc->fd, b, e - b);
 		if (i != e - b) {
-			close (fd);
+			close (vc->fd);
 			vca_close_session(sp, "pipe");
-			VBE_ClosedFd(fd_token);
+			VBE_ClosedFd(vc);
 		}
 	}
 
-	e1.fd = fd;
+	e1.fd = vc->fd;
 	e2.fd = sp->fd;
 	event_set(&e1.ev, sp->fd, EV_READ | EV_PERSIST, rdf, &e1);
 	event_base_set(w->eb, &e1.ev);
-	event_set(&e2.ev, fd,     EV_READ | EV_PERSIST, rdf, &e2);
+	event_set(&e2.ev, vc->fd, EV_READ | EV_PERSIST, rdf, &e2);
 	event_base_set(w->eb, &e2.ev);
 	event_add(&e1.ev, NULL);
 	event_add(&e2.ev, NULL);
 	event_base_loop(w->eb, 0);
-	close (fd);
 	vca_close_session(sp, "pipe");
-	VBE_ClosedFd(fd_token);
+	VBE_ClosedFd(vc);
 }
