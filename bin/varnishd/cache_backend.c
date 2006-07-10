@@ -94,22 +94,17 @@ vbe_delete_conn(struct vbe_conn *vb)
 	free(vb->vbcm);
 }
 
-/*--------------------------------------------------------------------
- * XXX: we should not call getaddrinfo() every time, we should cache
- * and apply round-robin with blacklisting of entries that do not respond
- * etc.  Periodic re-lookups to capture changed DNS records would also 
- * be a good thing in that case.
- */
+/*--------------------------------------------------------------------*/
 
 static void
-connect_to_backend(struct vbe_conn *vc, struct backend *bp)
+vbe_lookup(struct backend *bp)
 {
-	struct addrinfo *res, *res0, hint;
-	int error, s;
-	char buf[TCP_ADDRBUFFSIZE * 2 + 1], *p;
+	struct addrinfo *res, hint;
+	int error;
 
-	assert(bp != NULL);
-	assert(bp->hostname != NULL);
+	if (bp->addr != NULL)
+		freeaddrinfo(bp->addr);
+
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
@@ -120,36 +115,95 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 	if (error) {
 		if (res != NULL)
 			freeaddrinfo(res);
-		fprintf(stderr, "getaddrinfo: %s\n", 
-		    gai_strerror(error));
+		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
+		bp->addr = NULL;
 		return;
 	}
-	res0 = res;
-	do {
-		s = socket(res0->ai_family, res0->ai_socktype,
-		    res0->ai_protocol);
-		if (s < 0) {
-			VSL(SLT_Debug, 0, "Socket errno=%d", errno);
-			continue;
-		}
-		error = connect(s, res0->ai_addr, res0->ai_addrlen);
-		if (!error) 
-			break;
-		VSL(SLT_Debug, 0, "Connect errno=%d", errno);
+	bp->addr = res;
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vbe_sock_conn(struct addrinfo *ai)
+{
+	int s;
+
+	s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if (s < 0) 
+		return (s);
+	else if (connect(s, ai->ai_addr, ai->ai_addrlen)) {
 		close(s);
 		s = -1;
-	} while ((res0 = res0->ai_next) != NULL);
-	vc->fd = s;
-	if (s >= 0) {
-		TCP_myname(s, buf);
-		p = strchr(buf, '\0');
-		assert(p != NULL);
-		*p++ = ' ';
-		TCP_name(res0->ai_addr, res0->ai_addrlen, p);
-		VSL(SLT_BackendOpen, vc->fd, buf);
+	} 
+	return (s);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vbe_conn_try(struct backend *bp, struct addrinfo **pai)
+{
+	struct addrinfo *ai;
+	int s;
+
+	/* First try the cached good address, and any following it */
+	for (ai = bp->last_addr; ai != NULL; ai = ai->ai_next) {
+		s = vbe_sock_conn(ai);
+		if (s >= 0) {
+			bp->last_addr = ai;
+			*pai = ai;
+			return (s);
+		}
 	}
-	freeaddrinfo(res);
-	return;
+
+	/* Then try the list until the cached last good address */
+	for (ai = bp->addr; ai != bp->last_addr; ai = ai->ai_next) {
+		s = vbe_sock_conn(ai);
+		if (s >= 0) {
+			bp->last_addr = ai;
+			*pai = ai;
+			return (s);
+		}
+	}
+
+	/* Then do another lookup to catch DNS changes */
+	vbe_lookup(bp);
+
+	/* And try the entire list */
+	for (ai = bp->addr; ai != NULL; ai = ai->ai_next) {
+		s = vbe_sock_conn(ai);
+		if (s >= 0) {
+			bp->last_addr = ai;
+			*pai = ai;
+			return (s);
+		}
+	}
+
+	return (-1);
+}
+
+static int
+vbe_connect(struct backend *bp)
+{
+	int s;
+	char buf[TCP_ADDRBUFFSIZE * 2 + 1], *p;
+	struct addrinfo *ai;
+
+	assert(bp != NULL);
+	assert(bp->hostname != NULL);
+
+	s = vbe_conn_try(bp, &ai);
+	if (s < 0) 
+		return (s);
+
+	TCP_myname(s, buf);
+	p = strchr(buf, '\0');
+	assert(p != NULL);
+	*p++ = ' ';
+	TCP_name(ai->ai_addr, ai->ai_addrlen, p);
+	VSL(SLT_BackendOpen, s, buf);
+	return (s);
 }
 
 /*--------------------------------------------------------------------
@@ -278,7 +332,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		vc->inuse = 1;
 		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
 		AZ(pthread_mutex_unlock(&vbemtx));
-		connect_to_backend(vc, bp);
+		vc->fd = vbe_connect(bp);
 		if (vc->fd < 0) {
 			AZ(pthread_mutex_lock(&vbemtx));
 			TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
