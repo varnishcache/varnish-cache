@@ -106,6 +106,7 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 {
 	struct addrinfo *res, *res0, hint;
 	int error, s;
+	char buf[TCP_ADDRBUFFSIZE * 2 + 1], *p;
 
 	assert(bp != NULL);
 	assert(bp->hostname != NULL);
@@ -132,15 +133,22 @@ connect_to_backend(struct vbe_conn *vc, struct backend *bp)
 			continue;
 		}
 		error = connect(s, res0->ai_addr, res0->ai_addrlen);
-		if (!error)
+		if (!error) 
 			break;
 		VSL(SLT_Debug, 0, "Connect errno=%d", errno);
 		close(s);
 		s = -1;
 	} while ((res0 = res0->ai_next) != NULL);
-	freeaddrinfo(res);
 	vc->fd = s;
-	VSL(SLT_BackendOpen, vc->fd, "");
+	if (s >= 0) {
+		TCP_myname(s, buf);
+		p = strchr(buf, '\0');
+		assert(p != NULL);
+		*p++ = ' ';
+		TCP_name(res0->ai_addr, res0->ai_addrlen, p);
+		VSL(SLT_BackendOpen, vc->fd, buf);
+	}
+	freeaddrinfo(res);
 	return;
 }
 

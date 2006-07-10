@@ -11,8 +11,6 @@
 #include "vcl_returns.h"
 #include "common.h"
 
-#define VCA_ADDRBUFSIZE		64	/* Sizeof ascii network address */
-
 struct event_base;
 struct cli;
 struct sbuf;
@@ -133,7 +131,7 @@ struct sess {
 	unsigned		xid;
 
 	/* formatted ascii client address */
-	char			addr[VCA_ADDRBUFSIZE];
+	char			addr[TCP_ADDRBUFFSIZE];
 
 	/* HTTP request */
 	struct http		*http;

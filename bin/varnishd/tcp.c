@@ -14,6 +14,40 @@
 #include "mgt.h"
 #include "libvarnish.h"
 
+/*--------------------------------------------------------------------*/
+
+void
+TCP_name(struct sockaddr *addr, unsigned l, char *buf)
+{
+	int i;
+	char port[NI_MAXSERV];
+
+	i = getnameinfo(addr, l, buf, TCP_ADDRBUFFSIZE,
+	    port, sizeof port, NI_NUMERICHOST | NI_NUMERICSERV);
+	if (i) {
+		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
+		strcpy(buf, "Conversion:Failed");
+		return;
+	}
+	strlcat(buf, " ", TCP_ADDRBUFFSIZE);
+	strlcat(buf, port, TCP_ADDRBUFFSIZE);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+TCP_myname(int sock, char *buf)
+{
+	struct sockaddr addr[2];	/* XXX: IPv6 hack */
+	socklen_t l;
+
+	l = sizeof addr;
+	AZ(getsockname(sock, addr, &l));
+	TCP_name(addr, l, buf);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 accept_filter(int fd)
 {
