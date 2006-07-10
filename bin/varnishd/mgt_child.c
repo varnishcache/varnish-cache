@@ -237,14 +237,19 @@ start_child(void)
 	child_std = bufferevent_new(child_fds[0],
 	    std_rdcb, std_wrcb, std_excb, NULL);
 	assert(child_std != NULL);
+	bufferevent_base_set(mgt_eb, child_std);
 	bufferevent_enable(child_std, EV_READ);
+
 	child_cli0 = bufferevent_new(heritage.fds[0],
 	    cli_rdcb, cli_wrcb, cli_excb, NULL);
 	assert(child_cli0 != NULL);
+	bufferevent_base_set(mgt_eb, child_cli0);
 	bufferevent_enable(child_cli0, EV_READ);
+
 	child_cli1 = bufferevent_new(heritage.fds[3],
 	    cli_rdcb, cli_wrcb, cli_excb, NULL);
 	assert(child_cli1 != NULL);
+	bufferevent_base_set(mgt_eb, child_cli1);
 
 	evtimer_set(&ev_child_pingpong, child_pingpong, NULL);
 	event_base_set(mgt_eb, &ev_child_pingpong);

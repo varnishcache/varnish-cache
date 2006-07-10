@@ -309,6 +309,7 @@ testme(void)
 	cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
 
 	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
+	event_base_set(mgt_eb, &e_sigchld);
 	signal_add(&e_sigchld, NULL);
 
 	i = event_base_loop(mgt_eb, 0);
