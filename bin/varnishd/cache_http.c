@@ -279,10 +279,15 @@ http_header_complete(struct http *hp)
 {
 	char *p;
 
+	assert(hp->v <= hp->e);
+	assert(*hp->v == '\0');
+	/* Skip any leading white space */
 	for (p = hp->s ; p < hp->v && isspace(*p); p++)
 		continue;
-	if (p >= hp->v)
+	if (p >= hp->v) {
+		hp->v = hp->s;
 		return (0);
+	}
 	while (1) {
 		/* XXX: we could save location of all linebreaks for later */
 		p = strchr(p, '\n');
@@ -312,46 +317,42 @@ http_read_f(int fd, short event __unused, void *arg)
 {
 	struct http *hp = arg;
 	unsigned l;
-	int i;
+	int i, ret = 0;
 
 	l = hp->e - hp->v;
 	if (l <= 1) {
+		VSL(SLT_HttpError, fd, "Received too much");
 		VSLR(SLT_Debug, fd, hp->s, hp->v);
 		hp->t = NULL;
-		event_del(&hp->ev);
-		if (hp->callback != NULL)
-			hp->callback(hp->arg, 1);
-		return;
-	}
-	assert(l > 1);
-	errno = 0;
-	i = read(fd, hp->v, l - 1);
-	if (i <= 0) {
-		if (hp->v != hp->s)
-			VSL(SLT_HttpError, fd,
-			    "Received (only) %d bytes, errno %d",
-			    hp->v - hp->s, errno);
-		else if (errno == 0)
-			VSL(SLT_HttpError, fd, "Received nothing");
-		else
-			VSL(SLT_HttpError, fd, "Received errno %d", errno);
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
-		hp->t = NULL;
-		event_del(&hp->ev);
-		if (hp->callback != NULL)
-			hp->callback(hp->arg, 2);
-		return;
+		ret = 1;
+	} else {
+		errno = 0;
+		i = read(fd, hp->v, l - 1);
+		if (i > 0) {
+			hp->v += i;
+			*hp->v = '\0';
+			if (!http_header_complete(hp))
+				return;
+		} else {
+			if (hp->v != hp->s) {
+				VSL(SLT_HttpError, fd,
+				    "Received (only) %d bytes, errno %d",
+				    hp->v - hp->s, errno);
+				VSLR(SLT_Debug, fd, hp->s, hp->v);
+			} else if (errno == 0)
+				VSL(SLT_HttpError, fd, "Received nothing");
+			else
+				VSL(SLT_HttpError, fd,
+				    "Received errno %d", errno);
+			hp->t = NULL;
+			ret = 2;
+		}
 	}
 
-	hp->v += i;
-	*hp->v = '\0';
-	if (!http_header_complete(hp))
-		return;
-
-	assert(hp->t != NULL);
+	assert(hp->t != NULL || ret != 0);
 	event_del(&hp->ev);
 	if (hp->callback != NULL)
-		hp->callback(hp->arg, 0);
+		hp->callback(hp->arg, ret);
 }
 
 /*--------------------------------------------------------------------*/
