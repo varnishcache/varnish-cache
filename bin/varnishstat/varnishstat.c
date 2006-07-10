@@ -40,6 +40,8 @@ main(int argc, char **argv)
 	a1 = a2 = a3 = 0;
 	n1 = n2 = n3 = 0;
 
+	lt = 0;
+
 	lh = VSL_OpenLog();
 
 	VSL_stats = &lh->stats;
