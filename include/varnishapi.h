@@ -8,8 +8,13 @@
 #define V_DEAD __attribute__ ((noreturn))
 
 /* shmlog.c */
-struct shmloghead *VSL_OpenLog(void);
-unsigned char *VSL_NextLog(struct shmloghead *lh, unsigned char **pp);
+#define VSL_ARGS	"r:"
+struct VSL_data;
+struct VSL_data *VSL_New(void);
+int VSL_OpenLog(struct VSL_data *vd);
+unsigned char *VSL_NextLog(struct VSL_data *lh);
+int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
+struct varnish_stats *VSL_OpenStats(void);
 
 
 /* varnish_debug.c */
