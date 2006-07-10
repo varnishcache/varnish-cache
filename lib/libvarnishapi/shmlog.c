@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <regex.h>
 #include <sys/mman.h>
 
 #include "shmlog.h"
@@ -25,6 +26,10 @@ struct VSL_data {
 
 	int			ix_opt;
 	unsigned char 		supr[256];
+
+	int			regflags;
+	regex_t			*regincl;
+	regex_t			*regexcl;
 };
 
 #ifndef MAP_HASSEMAPHORE
@@ -89,6 +94,7 @@ VSL_New(void)
 	struct VSL_data *vd;
 
 	vd = calloc(sizeof *vd, 1);
+	vd->regflags = REG_EXTENDED | REG_NOSUB;
 	return (vd);
 }
 
@@ -109,29 +115,28 @@ VSL_OpenLog(struct VSL_data *vd)
 	return (0);
 }
 
-unsigned char *
-VSL_NextLog(struct VSL_data *vd)
+/*--------------------------------------------------------------------*/
+
+static unsigned char *
+vsl_nextlog(struct VSL_data *vd)
 {
 	unsigned char *p;
 	int i;
 
 	if (vd->fi != NULL) {
-		while (1) {
-			i = fread(vd->rbuf, 4, 1, vd->fi);
+		i = fread(vd->rbuf, 4, 1, vd->fi);
+		if (i != 1)
+			return (NULL);
+		if (vd->rbuf[1] > 0) {
+			i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
 			if (i != 1)
 				return (NULL);
-			if (vd->rbuf[1] > 0) {
-				i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
-				if (i != 1)
-					return (NULL);
-			}
-			if (!vd->supr[vd->rbuf[0]])
-				return (vd->rbuf);
 		}
+		return (vd->rbuf);
 	}
 
 	p = vd->ptr;
-	for (p = vd->ptr; ; p = vd->ptr) {
+	while (1) {
 		if (*p == SLT_WRAPMARKER) {
 			p = vd->logstart;
 			continue;
@@ -141,8 +146,36 @@ VSL_NextLog(struct VSL_data *vd)
 			return (NULL);
 		}
 		vd->ptr = p + p[1] + 4;
-		if (!vd->supr[p[0]]) 
+		return (p);
+	}
+}
+
+unsigned char *
+VSL_NextLog(struct VSL_data *vd)
+{
+	unsigned char *p;
+	regmatch_t rm;
+	int i;
+
+	while (1) {
+		p = vsl_nextlog(vd);
+		if (p == NULL)
 			return (p);
+		if (vd->supr[p[0]]) 
+			continue;
+		rm.rm_so = 0;
+		rm.rm_eo = p[1];
+		if (vd->regincl != NULL) {
+			i = regexec(vd->regincl, p + 4, 1, &rm, REG_STARTEND);
+			if (i == REG_NOMATCH)
+				continue;
+		}
+		if (vd->regexcl != NULL) {
+			i = regexec(vd->regexcl, p + 4, 1, &rm, REG_STARTEND);
+			if (i != REG_NOMATCH)
+				continue;
+		}
+		return (p);
 	}
 }
 
@@ -160,6 +193,37 @@ vsl_r_arg(struct VSL_data *vd, const char *opt)
 		return (1);
 	perror(opt);
 	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
+{
+	int i;
+	regex_t **rp;
+	char buf[BUFSIZ];
+
+	if (arg == 'I')
+		rp = &vd->regincl;
+	else
+		rp = &vd->regexcl;
+	if (*rp != NULL) {
+		fprintf(stderr, "Option %c can only be given once", arg);
+		return (-1);
+	}
+	*rp = calloc(sizeof(regex_t), 1);
+	if (*rp == NULL) {
+		perror("malloc");
+		return (-1);
+	}
+	i = regcomp(*rp, opt, vd->regflags);
+	if (i) {
+		regerror(i, *rp, buf, sizeof buf);
+		fprintf(stderr, "%s", buf);
+		return (-1);
+	}
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -219,11 +283,10 @@ int
 VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
 	switch (arg) {
-	case 'i':
-	case 'x':
-		return (vsl_ix_arg(vd, opt, arg));
-	case 'r':
-		return (vsl_r_arg(vd, opt));
+	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
+	case 'r': return (vsl_r_arg(vd, opt));
+	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
+	case 'C': vd->regflags = REG_ICASE; return (1);
 	default:
 		return (0);
 	}
