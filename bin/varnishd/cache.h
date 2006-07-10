@@ -157,8 +157,10 @@ struct backend {
 	const char	*hostname;
 	const char	*portname;
 	unsigned	ip;
-#if 0
+
 	struct addrinfo	*addr;
+	struct addrinfo	*last_addr;
+#if 0
 	double		responsetime;
 	double		timeout;
 	double		bandwidth;
