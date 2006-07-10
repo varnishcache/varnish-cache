@@ -32,40 +32,6 @@ http_Init(struct http *hp, void *space)
 
 /*--------------------------------------------------------------------*/
 
-struct http *
-http_New(void)
-{
-	struct http *hp;
-
-	hp = calloc(sizeof *hp, 1);
-	assert(hp != NULL);
-	VSL_stats->n_http++;
-
-	hp->s = malloc(heritage.mem_http_headerspace);
-	assert(hp->s != NULL);
-
-	hp->e = hp->s + heritage.mem_http_headerspace;
-	hp->v = hp->s;
-	hp->t = hp->s;
-
-	hp->hdr = malloc(sizeof *hp->hdr * heritage.mem_http_headers);
-	assert(hp->hdr != NULL);
-
-	return (hp);
-}
-
-void
-http_Delete(struct http *hp)
-{
-
-	free(hp->hdr);
-	free(hp->s);
-	free(hp);
-	VSL_stats->n_http--;
-}
-
-/*--------------------------------------------------------------------*/
-
 int
 http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 {

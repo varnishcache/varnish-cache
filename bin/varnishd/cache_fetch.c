@@ -246,7 +246,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	assert(vc != NULL);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	hp = http_New();
+	hp = vc->http;
 	http_BuildSbuf(vc->fd, Build_Fetch, w->sb, sp->http);
 	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
@@ -298,8 +298,6 @@ FetchSession(struct worker *w, struct sess *sp)
 	HSH_Unbusy(sp->obj);
 	if (!sp->obj->cacheable)
 		HSH_Deref(sp->obj);
-
-	http_Delete(hp);
 
 	return (1);
 }

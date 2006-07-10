@@ -149,7 +149,6 @@ struct sess {
 	struct VCL_conf		*vcl;
 
 	/* Various internal stuff */
-	struct event		*rd_e;
 	struct sessmem		*mem;
 	time_t			t0;
 };
@@ -210,8 +209,6 @@ void HSH_Init(void);
 
 /* cache_http.c */
 void http_Init(struct http *ht, void *space);
-struct http *http_New(void);
-void http_Delete(struct http *hp);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetReq(struct http *hp, char **b);

@@ -166,7 +166,7 @@ PassSession(struct worker *w, struct sess *sp)
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	hp = http_New();
+	hp = vc->http;
 	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
 	http_Dissect(hp, vc->fd, 2);

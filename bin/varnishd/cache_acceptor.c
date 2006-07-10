@@ -41,12 +41,44 @@ static struct event accept_e[2 * HERITAGE_NSOCKS];
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
 
 struct sessmem {
-	struct sess	s;
-	struct event	e;
+	struct sess	sess;
 	struct iovec	iov[SESS_IOVS];
 	int		niov;
 	size_t		liov;
+	struct http	http;
+	char		*http_hdr;
 };
+
+/*--------------------------------------------------------------------*/
+
+static struct sess *
+vca_new_sess(void)
+{
+	struct sessmem *sm;
+
+	sm = calloc(
+	    sizeof *sm +
+	    heritage.mem_http_headers * sizeof sm->http_hdr +
+	    heritage.mem_http_headerspace +
+	    heritage.mem_workspace,
+	    1);
+	if (sm == NULL)
+		return (NULL);
+	VSL_stats->n_sess++;
+	sm->sess.mem = sm;
+	sm->sess.http = &sm->http;
+	http_Init(&sm->http, (void *)(sm + 1));
+	return (&sm->sess);
+}
+
+static void
+vca_delete_sess(struct sess *sp)
+{
+
+	VSL_stats->n_sess--;
+	free(sp->mem);
+}
+
 
 /*--------------------------------------------------------------------
  * Write data to client
@@ -178,7 +210,6 @@ static void
 accept_f(int fd, short event, void *arg)
 {
 	socklen_t l;
-	struct sessmem *sm;
 	struct sockaddr addr[2];
 	struct sess *sp;
 	char port[NI_MAXSERV];
@@ -187,22 +218,14 @@ accept_f(int fd, short event, void *arg)
 
 	VSL_stats->client_conn++;
 
-	(void)arg;
-	sm = calloc(sizeof *sm, 1);
-	assert(sm != NULL);	/*
-				 * XXX: this is probably one we should handle
-				 * XXX: accept, emit error NNN and close
-				 */
-	VSL_stats->n_sess++;
+	sp = vca_new_sess();
+	assert(sp != NULL);	/* XXX handle */
 
-	sp = &sm->s;
-	sp->rd_e = &sm->e;
-	sp->mem = sm;
 
 	l = sizeof addr;
 	sp->fd = accept(fd, addr, &l);
 	if (sp->fd < 0) {
-		free(sp);
+		vca_delete_sess(sp);
 		return;
 	}
 #ifdef SO_NOSIGPIPE /* XXX Linux */
@@ -227,7 +250,6 @@ accept_f(int fd, short event, void *arg)
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
 	time(&sp->t_resp);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
-	sp->http = http_New();
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
@@ -295,10 +317,7 @@ vca_return_session(struct sess *sp)
 		VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
 		write(pipes[1], &sp, sizeof sp);
 	} else {
-		if (sp->http != NULL)
-			http_Delete(sp->http);
-		VSL_stats->n_sess--;
-		free(sp->mem);
+		vca_delete_sess(sp);
 	}
 }
 
