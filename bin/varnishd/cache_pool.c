@@ -138,24 +138,25 @@ wrk_thread(void *priv)
 	assert(w->sb != NULL);
 	
 	AZ(pthread_mutex_lock(&wrk_mtx));
-	VSL_stats->n_wrk++;
 	w->nbr = VSL_stats->n_wrk;
-	if (priv == NULL)
+	if (priv == NULL) {
+		VSL_stats->n_wrk_create++;
 		VSL(SLT_WorkThread, 0, "%u born dynamic", w->nbr);
-	else
+	} else {
 		VSL(SLT_WorkThread, 0, "%u born permanent", w->nbr);
+	}
 	TAILQ_INSERT_HEAD(&wrk_head, w, list);
 	while (1) {
 		wrq = TAILQ_FIRST(&wrk_reqhead);
 		if (wrq != NULL) {
-			VSL_stats->n_wrkbusy++;
+			VSL_stats->n_wrk_busy++;
 			TAILQ_REMOVE(&wrk_head, w, list);
 			TAILQ_REMOVE(&wrk_reqhead, wrq, list);
 			AZ(pthread_mutex_unlock(&wrk_mtx));
 			assert(wrq->sess != NULL);
 			wrk_WorkSession(w, wrq->sess);
 			AZ(pthread_mutex_lock(&wrk_mtx));
-			VSL_stats->n_wrkbusy--;
+			VSL_stats->n_wrk_busy--;
 			TAILQ_INSERT_HEAD(&wrk_head, w, list);
 		}
 		if (wrk_overflow > 0) {
@@ -219,11 +220,13 @@ WRK_QueueSession(struct sess *sp)
 	/* Register overflow if max threads reached */
 	if (VSL_stats->n_wrk >= heritage.wthread_max) {
 		wrk_overflow++;
+		VSL_stats->n_wrk_short++;
 		AZ(pthread_mutex_unlock(&wrk_mtx));
 		return;
 	}
 
 	/* Try to create a thread */
+	VSL_stats->n_wrk++;
 	AZ(pthread_mutex_unlock(&wrk_mtx));
 	if (!pthread_create(&tp, NULL, wrk_thread, NULL)) {
 		AZ(pthread_detach(tp));
@@ -235,7 +238,10 @@ WRK_QueueSession(struct sess *sp)
 
 	/* Register overflow */
 	AZ(pthread_mutex_lock(&wrk_mtx));
+	VSL_stats->n_wrk--;
 	wrk_overflow++;
+	VSL_stats->n_wrk_failed++;
+	VSL_stats->n_wrk_short++;
 	AZ(pthread_mutex_unlock(&wrk_mtx));
 }
 	
@@ -252,6 +258,7 @@ WRK_Init(void)
 
 	VSL(SLT_Debug, 0, "Starting %u worker threads", heritage.wthread_min);
 	for (i = 0; i < heritage.wthread_min; i++) {
+		VSL_stats->n_wrk++;
 		AZ(pthread_create(&tp, NULL, wrk_thread, &i));
 		AZ(pthread_detach(tp));
 	}
