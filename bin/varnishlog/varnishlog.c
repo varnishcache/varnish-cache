@@ -182,6 +182,7 @@ order(unsigned char *p, int h_opt)
 	case SLT_SessionClose:
 	case SLT_SessionReuse:
 	case SLT_BackendClose:
+	case SLT_BackendReuse:
 		sbuf_finish(ob[u]);
 		if ((hc[u] != 4 || h_opt == 0) && sbuf_len(ob[u]) > 1)
 			printf("%s\n", sbuf_data(ob[u]));

@@ -190,7 +190,7 @@ vca_callback(void *arg, int bad)
 		vca_return_session(sp);
 		return;
 	}
-	DealWithSession(sp);
+	WRK_QueueSession(sp);
 }
 
 static void

@@ -52,6 +52,15 @@ struct worker {
 	struct sbuf		*sb;
 	struct objhead		*nobjhead;
 	struct object		*nobj;
+
+	unsigned		nbr;
+	pthread_cond_t		cv;
+	TAILQ_ENTRY(worker)	list;
+};
+
+struct workreq {
+	TAILQ_ENTRY(workreq)	list;
+	struct sess		*sess;
 };
 
 #include "hash_slinger.h"
@@ -150,6 +159,8 @@ struct sess {
 	/* Various internal stuff */
 	struct sessmem		*mem;
 	time_t			t0;
+
+	struct workreq		workreq;
 };
 
 struct backend {
@@ -238,8 +249,8 @@ void PassSession(struct worker *w, struct sess *sp);
 void PipeSession(struct worker *w, struct sess *sp);
 
 /* cache_pool.c */
-void CacheInitPool(void);
-void DealWithSession(void *arg);
+void WRK_Init(void);
+void WRK_QueueSession(struct sess *sp);
 
 /* cache_shmlog.c */
 
