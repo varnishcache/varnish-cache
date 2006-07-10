@@ -194,7 +194,9 @@ event_init(void)
 	/* allocate a single active event queue */
 	event_base_priority_init(mybase, 1);
 
+#if 0
 	current_base = mybase;
+#endif
 	return (mybase);
 }
 
@@ -504,7 +506,8 @@ event_set(struct event *ev, int fd, short events,
 	ev->ev_pncalls = NULL;
 
 	/* by default, we put new events into the middle priority */
-	ev->ev_pri = current_base->nactivequeues/2;
+	if (current_base != NULL)
+		ev->ev_pri = current_base->nactivequeues/2;
 }
 
 int
