@@ -38,6 +38,11 @@ struct heritage {
 
 	/* Worker threads */
 	unsigned		wthread_min, wthread_max;
+
+	/* Memory allocation hints */
+	unsigned		mem_http_1_line;
+	unsigned		mem_http_header;
+	unsigned		mem_workspace;
 };
 
 extern struct heritage heritage;
