@@ -32,10 +32,9 @@ struct http {
 	void			*arg;
 
 	char			*s;		/* start of buffer */
+	char			*t;		/* start of trailing data */
 	char			*e;		/* end of buffer */
 	char			*v;		/* valid bytes */
-	char			*t;		/* start of trailing data */
-
 
 	char			*req;
 	char			*url;
