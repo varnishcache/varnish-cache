@@ -57,7 +57,13 @@ DOT }
 DOT deliver2 -> DONE [style=bold]
  */
 
-static void cnt_deliver(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_deliver(struct worker *w, struct sess *sp)
+{
+
+	vca_write_obj(w, sp);
+	sp->step = STP_DONE;
+}
 
 /*--------------------------------------------------------------------
 DOT	DONE [
@@ -139,7 +145,29 @@ DOT fetch_insert -> DELIVER [style=bold]
 DOT fetch_error -> ERROR
  */
 
-static void cnt_fetch(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_fetch(struct worker *w, struct sess *sp)
+{
+
+	RFC2616_cache_policy(sp, sp->bkd_http);
+
+	VCL_fetch_method(sp);
+
+	if (sp->handling == VCL_RET_LOOKUP)
+		INCOMPL();
+	if (sp->handling == VCL_RET_PASS)
+		INCOMPL();
+	if (sp->handling == VCL_RET_INSERT_PASS)
+		INCOMPL();
+	if (sp->handling == VCL_RET_INSERT) {
+		FetchBody(w, sp);
+		sp->step = STP_DELIVER;
+		return;
+	}
+	if (sp->handling == VCL_RET_ERROR)
+		INCOMPL();
+	INCOMPL();
+}
 
 /*--------------------------------------------------------------------
 DOT subgraph cluster_hit {
@@ -208,16 +236,14 @@ DOT lookup2 -> MISS [label="miss", style=bold]
 static void
 cnt_lookup(struct worker *w, struct sess *sp)
 {
-	struct object *o;
 
-	o = HSH_Lookup(w, sp->http);
-	sp->obj = o;
-	if (o->busy) {
+	sp->obj = HSH_Lookup(w, sp->http);
+	if (sp->obj->busy) {
 		VSL_stats->cache_miss++;
 		sp->step = STP_MISS;
 	} else {
 		VSL_stats->cache_hit++;
-		VSL(SLT_Hit, sp->fd, "%u", o->xid);
+		VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
 		sp->step = STP_HIT;
 	}
 }
@@ -269,9 +295,8 @@ cnt_miss(struct worker *w, struct sess *sp)
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
-		/* XXX */
-		FetchSession(w, sp);
-		sp->step = STP_DONE;
+		FetchHeaders(w, sp);
+		sp->step = STP_FETCH;
 		return;
 	}
 	INCOMPL();

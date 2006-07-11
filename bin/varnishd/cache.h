@@ -161,6 +161,8 @@ struct sess {
 
 	TAILQ_ENTRY(sess)	list;
 
+	struct vbe_conn		*vbc;
+	struct http		*bkd_http;
 	struct backend		*backend;
 	struct object		*obj;
 	struct VCL_conf		*vcl;
@@ -223,7 +225,8 @@ void EXP_Init(void);
 void EXP_TTLchange(struct object *o);
 
 /* cache_fetch.c */
-int FetchSession(struct worker *w, struct sess *sp);
+int FetchBody(struct worker *w, struct sess *sp);
+int FetchHeaders(struct worker *w, struct sess *sp);
 
 /* cache_hash.c */
 struct object *HSH_Lookup(struct worker *w, struct http *h);
