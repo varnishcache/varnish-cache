@@ -18,6 +18,14 @@ struct sess;
 struct object;
 struct objhead;
 
+/*--------------------------------------------------------------------*/
+
+enum step {
+#define STEP(l, u)	STP_##u,
+#include "steps.h"
+#undef STEP
+};
+
 /*--------------------------------------------------------------------
  * HTTP Request/Response/Header handling structure.
  * RSN: struct worker and struct session will have one of these embedded.
@@ -148,6 +156,7 @@ struct sess {
 	time_t			t_req;
 	time_t			t_resp;
 
+	enum step		step;
 	unsigned 		handling;
 
 	TAILQ_ENTRY(sess)	list;
