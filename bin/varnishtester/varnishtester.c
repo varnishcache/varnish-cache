@@ -5,11 +5,14 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <netdb.h>
 
 #include "libvarnish.h"
 #include "event.h"
+#include "queue.h"
 
 
 /*--------------------------------------------------------------------
@@ -27,7 +30,154 @@ void cli_result(struct cli *cli, unsigned res) { (void)cli; (void)res; abort(); 
 /*--------------------------------------------------------------------*/
 
 static struct event_base *eb;
-static struct bufferevent *e_cmd;
+
+/*--------------------------------------------------------------------*/
+
+static int serv_sock = -1;
+static struct event e_acc;
+static int sock_acc = -1;
+static struct bufferevent *e_racc;
+
+struct serv {
+	TAILQ_ENTRY(serv)	list;
+	char			*data;
+};
+
+static TAILQ_HEAD(,serv) serv_head = TAILQ_HEAD_INITIALIZER(serv_head);
+
+static void
+rd_acc(struct bufferevent *bev, void *arg)
+{
+	char *p;
+	struct serv *sp;
+	int *ip;
+
+	ip = arg;
+	while (1) {
+		p = evbuffer_readline(bev->input);
+		if (p == NULL)
+			return;
+		printf("A: <<%s>>\n", p);
+		if (*p == '\0') {
+			sp = TAILQ_FIRST(&serv_head);
+			assert(sp != NULL);
+			write(*ip, sp->data, strlen(sp->data));
+			if (TAILQ_NEXT(sp, list) != NULL) {
+				TAILQ_REMOVE(&serv_head, sp, list);
+				free(sp->data);	
+				free(sp);
+			}
+		}
+	}
+}
+
+static void
+ex_acc(struct bufferevent *bev, short what, void *arg)
+{
+	int *ip;
+
+	ip = arg;
+	printf("%s(%p, 0x%x, %p)\n", __func__, bev, what, arg);
+	bufferevent_disable(bev, EV_READ);
+	bufferevent_free(bev);
+	close(*ip);
+	free(ip);
+}
+
+static void
+acc_sock(int fd, short event, void *arg)
+{
+	struct sockaddr addr[2];	/* XXX: IPv6 hack */
+	socklen_t l;
+	struct linger linger;
+	int *ip;
+
+	ip = calloc(sizeof *ip, 1);
+	(void)event;
+	(void)arg;
+	l = sizeof addr;
+	fd = accept(fd, addr, &l);
+	if (fd < 0) {
+		perror("accept");
+		exit (2);
+	}
+#ifdef SO_LINGER /* XXX Linux ? */
+	linger.l_onoff = 0;
+	linger.l_linger = 0;
+	assert(setsockopt(fd, SOL_SOCKET, SO_LINGER,
+	   &linger, sizeof linger) == 0);
+#endif
+	*ip = fd;
+	e_racc = bufferevent_new(fd, rd_acc, NULL, ex_acc, ip);
+	assert(e_racc != NULL);
+	bufferevent_base_set(eb, e_racc);
+	bufferevent_enable(e_racc, EV_READ);
+}
+
+static void
+open_serv_sock(void)
+{
+	struct addrinfo ai, *r0, *r1;
+	int i, j, s = -1;
+
+	memset(&ai, 0, sizeof ai);
+	ai.ai_family = PF_UNSPEC;
+	ai.ai_socktype = SOCK_STREAM;
+	ai.ai_flags = AI_PASSIVE;
+	i = getaddrinfo("localhost", "8081", &ai, &r0);
+
+	if (i) {
+		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(i));
+		return;
+	}
+
+	for (r1 = r0; r1 != NULL; r1 = r1->ai_next) {
+		s = socket(r1->ai_family, r1->ai_socktype, r1->ai_protocol);
+		if (s < 0)
+			continue;
+		j = 1;
+		i = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof j);
+		assert(i == 0);
+
+		i = bind(s, r1->ai_addr, r1->ai_addrlen);
+		if (i != 0) {
+			perror("bind");
+			continue;
+		}
+		assert(i == 0);
+		serv_sock = s;
+		break;
+	}
+	freeaddrinfo(r0);
+	if (s < 0) {
+		perror("bind");
+		exit (2);
+	}
+
+	listen(s, 16);
+
+	event_set(&e_acc, s, EV_READ | EV_PERSIST, acc_sock, NULL);
+	event_base_set(eb, &e_acc);
+	event_add(&e_acc, NULL);
+}
+
+static void
+cmd_serve(char **av)
+{
+	struct serv *sp;
+	int i;
+
+	for (i = 0; av[i] != NULL; i++) {
+		sp = calloc(sizeof *sp, 1);
+		assert(sp != NULL);
+		sp->data = strdup(av[i]);
+		assert(sp->data != NULL);
+		TAILQ_INSERT_TAIL(&serv_head, sp, list);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct bufferevent *e_pipe2;
 static int pipe1[2];
 static int pipe2[2];
@@ -41,10 +191,12 @@ rd_pipe2(struct bufferevent *bev, void *arg)
 	char *p;
 
 	(void)arg;
-	p = evbuffer_readline(bev->input);
-	if (p == NULL)
-		return;
-	printf("V: <<%s>>\n", p);
+	while (1) {
+		p = evbuffer_readline(bev->input);
+		if (p == NULL)
+			return;
+		printf("V: <<%s>>\n", p);
+	}
 }
 
 static void
@@ -143,6 +295,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		cmd_start(av + 2);
 	else if (!strcmp(av[1], "stop"))
 		cmd_stop(av + 2);
+	else if (!strcmp(av[1], "serve"))
+		cmd_serve(av + 2);
 	else {
 		fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 		exit (2);
@@ -151,6 +305,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 }
 
 /*--------------------------------------------------------------------*/
+
+static struct bufferevent *e_cmd;
 
 int
 main(int argc, char **argv)
@@ -162,6 +318,8 @@ main(int argc, char **argv)
 
 	eb = event_init();
 	assert(eb != NULL);
+
+	open_serv_sock();
 
 	e_cmd = bufferevent_new(0, rd_cmd, NULL, NULL, NULL);
 	assert(e_cmd != NULL);
