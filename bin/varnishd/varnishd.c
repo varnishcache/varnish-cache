@@ -66,6 +66,7 @@ static char *
 vcl_default(const char *bflag)
 {
 	char *buf, *vf;
+	const char *p, *q;
 	struct sbuf *sb;
 
 	/*
@@ -76,10 +77,19 @@ vcl_default(const char *bflag)
 	 * XXX: a bug for a backend to not reply at that time, so then
 	 * XXX: again: we should check it here in the "trivial" case.
 	 */
+	p = strchr(bflag, ':');
+	if (p != NULL) {
+		q = p + 1;
+	} else {
+		p = strchr(bflag, '\0');
+		q = "http";
+	}
+	
 	buf = NULL;
 	asprintf(&buf,
 	    "backend default {\n"
-	    "    set backend.host = \"%s\";\n"
+	    "    set backend.host = \"%*.*s\";\n"
+	    "    set backend.port = \"%s\";\n"
 	    "}\n"
 	    "sub vcl_recv {\n"
 	    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
@@ -117,7 +127,7 @@ vcl_default(const char *bflag)
 	    "sub vcl_timeout {\n"
 	    "    discard;\n"
 	    "}\n"
-	    "", bflag);
+	    "", p - bflag, p - bflag, bflag, q);
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
