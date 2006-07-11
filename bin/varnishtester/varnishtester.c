@@ -218,6 +218,8 @@ rd_pipe2(struct bufferevent *bev, void *arg)
 		printf("V: <<%s>>\n", p);
 		if (!strcmp(p, "Child said <Ready>"))
 			Resume();
+		else if (!strcmp(p, "OK"))
+			Resume();
 	}
 }
 
@@ -305,6 +307,7 @@ cmd_cli(char **av)
 	}
 	cli_write(av[0]);
 	cli_write("\n");
+	Pause();
 }
 
 /*--------------------------------------------------------------------*/
@@ -461,6 +464,18 @@ cmd_req(char **av)
 
 /*--------------------------------------------------------------------*/
 
+static void
+cmd_exit(char **av)
+{
+
+	(void)av;
+	cmd_close(NULL);
+	cmd_stop(NULL);
+	exit (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct bufferevent *e_cmd;
 static int run = 1;
 
@@ -500,6 +515,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 			cmd_close(av + 2);
 		else if (!strcmp(av[1], "req"))
 			cmd_req(av + 2);
+		else if (!strcmp(av[1], "exit"))
+			cmd_exit(av + 2);
 		else {
 			fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 			exit (2);
