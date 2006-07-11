@@ -41,7 +41,10 @@ DOT start -> RECV
 #include "vcl.h"
 #include "cache.h"
 
+
 /*--------------------------------------------------------------------
+ * We have a refcounted object on the session, now deliver it.
+ *
 DOT subgraph cluster_deliver {
 DOT 	deliver [
 DOT		shape=ellipse
@@ -65,13 +68,16 @@ cnt_deliver(struct worker *w, struct sess *sp)
 	sp->step = STP_DONE;
 }
 
+
 /*--------------------------------------------------------------------
+ * This is the final state, figure out if we should close or recycle
+ * the client connection
+ *
 DOT	DONE [
 DOT		shape=hexagon
 DOT		label="Request completed"
 DOT	]
  */
-
 
 static void
 cnt_done(struct worker *w, struct sess *sp)
@@ -87,7 +93,10 @@ cnt_done(struct worker *w, struct sess *sp)
 	}
 }
 
+
 /*--------------------------------------------------------------------
+ * Emit an error
+ *
 DOT subgraph cluster_error {
 DOT	error [
 DOT		shape=ellipse
@@ -100,7 +109,11 @@ DOT error -> DONE
 
 static void cnt_error(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
 
+
 /*--------------------------------------------------------------------
+ * We have fetched the headers from the backend, ask the VCL code what
+ * to do next, then head off in that direction.
+ *
 DOT subgraph cluster_fetch {
 DOT	fetch [
 DOT		shape=ellipse
@@ -169,7 +182,10 @@ cnt_fetch(struct worker *w, struct sess *sp)
 	INCOMPL();
 }
 
+
 /*--------------------------------------------------------------------
+ * We had a cache hit.  Ask VCL, then march off as instructed.
+ *
 DOT subgraph cluster_hit {
 DOT	hit [
 DOT		shape=box
@@ -216,7 +232,10 @@ cnt_hit(struct worker *w, struct sess *sp)
 	sp->step = STP_DONE;
 }
 
+
 /*--------------------------------------------------------------------
+ * Look up request in hash table
+ *
 DOT subgraph cluster_lookup {
 DOT	lookup [
 DOT		shape=ellipse
@@ -248,7 +267,10 @@ cnt_lookup(struct worker *w, struct sess *sp)
 	}
 }
 
+
 /*--------------------------------------------------------------------
+ * We had a miss, ask VCL, proceed as instructed
+ *
 DOT subgraph cluster_miss {
 DOT	miss [
 DOT		shape=box
@@ -302,7 +324,11 @@ cnt_miss(struct worker *w, struct sess *sp)
 	INCOMPL();
 }
 
+
 /*--------------------------------------------------------------------
+ * Start pass processing by getting headers from backend, then
+ * continue in passbody.
+ *
 DOT subgraph cluster_pass {
 DOT	pass [
 DOT		shape=ellipse
@@ -315,7 +341,11 @@ DOT pass -> PASSBODY
 
 static void cnt_pass(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
 
+
 /*--------------------------------------------------------------------
+ * We get here when we have the backends headers, send them to client
+ * and pass any body the backend may have on as well.
+ *
 DOT subgraph cluster_passbody {
 DOT	passbody [
 DOT		shape=ellipse
@@ -328,7 +358,11 @@ DOT passbody -> DONE
 
 static void cnt_passbody(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
 
+
 /*--------------------------------------------------------------------
+ * Ship the request header to the backend unchanged, then pipe
+ * until one of the ends close the connection.
+ *
 DOT subgraph cluster_pipe {
 DOT	pipe [
 DOT		shape=ellipse
@@ -341,7 +375,10 @@ DOT pipe -> DONE
 
 static void cnt_pipe(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
 
+
 /*--------------------------------------------------------------------
+ * Dispatch the request as instructed by VCL
+ *
 DOT subgraph cluster_recv {
 DOT	recv [
 DOT		shape=box
