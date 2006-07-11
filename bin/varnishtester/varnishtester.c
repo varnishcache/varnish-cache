@@ -31,6 +31,10 @@ void cli_result(struct cli *cli, unsigned res) { (void)cli; (void)res; abort(); 
 
 static struct event_base *eb;
 
+
+static void Pause(void);
+static void Resume(void);
+
 /*--------------------------------------------------------------------*/
 
 static int serv_sock = -1;
@@ -212,6 +216,8 @@ rd_pipe2(struct bufferevent *bev, void *arg)
 		if (p == NULL)
 			return;
 		printf("V: <<%s>>\n", p);
+		if (!strcmp(p, "Child said <Ready>"))
+			Resume();
 	}
 }
 
@@ -237,7 +243,6 @@ static void
 cmd_start(char **av)
 {
 
-	printf("%s()\n", __func__);
 	(void)av;
 	assert(pipe(pipe1) == 0);
 	assert(pipe(pipe2) == 0);
@@ -269,6 +274,7 @@ cmd_start(char **av)
 	}
 	close(pipe1[0]);
 	close(pipe2[1]);
+	Pause();
 }
 
 
@@ -389,48 +395,68 @@ cmd_close(char **av)
 
 /*--------------------------------------------------------------------*/
 
+static struct bufferevent *e_cmd;
+
 static void
 rd_cmd(struct bufferevent *bev, void *arg)
 {
 	char *p;
 	char **av;
+	int run = 1;
 
 	(void)bev;
 	(void)arg;
-	p = evbuffer_readline(bev->input);
-	if (p == NULL)
-		return;
-	av = ParseArgv(p, 0);
-	if (av[0] != NULL) {
-		fprintf(stderr, "%s\n", av[0]);
-		exit (1);
+	while (run) {
+		p = evbuffer_readline(bev->input);
+		if (p == NULL)
+			return;
+		printf("]: <<%s>>\n", p);
+		av = ParseArgv(p, 0);
+		if (av[0] != NULL) {
+			fprintf(stderr, "%s\n", av[0]);
+			exit (1);
+		}
+		if (av[1] == NULL)
+			return;
+		if (!strcmp(av[1], "start")) {
+			cmd_start(av + 2);
+			run = 0;
+		} else if (!strcmp(av[1], "stop"))
+			cmd_stop(av + 2);
+		else if (!strcmp(av[1], "serve"))
+			cmd_serve(av + 2);
+		else if (!strcmp(av[1], "cli"))
+			cmd_cli(av + 2);
+		else if (!strcmp(av[1], "vcl"))
+			cmd_vcl(av + 2);
+		else if (!strcmp(av[1], "open"))
+			cmd_open(av + 2);
+		else if (!strcmp(av[1], "close"))
+			cmd_close(av + 2);
+		else {
+			fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
+			exit (2);
+		}
+		FreeArgv(av);
 	}
-	if (av[1] == NULL)
-		return;
-	if (!strcmp(av[1], "start"))
-		cmd_start(av + 2);
-	else if (!strcmp(av[1], "stop"))
-		cmd_stop(av + 2);
-	else if (!strcmp(av[1], "serve"))
-		cmd_serve(av + 2);
-	else if (!strcmp(av[1], "cli"))
-		cmd_cli(av + 2);
-	else if (!strcmp(av[1], "vcl"))
-		cmd_vcl(av + 2);
-	else if (!strcmp(av[1], "open"))
-		cmd_open(av + 2);
-	else if (!strcmp(av[1], "close"))
-		cmd_close(av + 2);
-	else {
-		fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
-		exit (2);
-	}
-	FreeArgv(av);
+}
+
+static void
+Pause()
+{
+	printf("X: Pause\n");
+	bufferevent_disable(e_cmd, EV_READ);
+}
+
+static void
+Resume()
+{
+	printf("X: Resume\n");
+	bufferevent_enable(e_cmd, EV_READ);
+	rd_cmd(e_cmd, NULL);
 }
 
 /*--------------------------------------------------------------------*/
-
-static struct bufferevent *e_cmd;
 
 int
 main(int argc, char **argv)
