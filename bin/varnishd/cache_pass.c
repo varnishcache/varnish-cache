@@ -170,7 +170,7 @@ PassSession(struct worker *w, struct sess *sp)
 	hp = vc->http;
 	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
-	http_Dissect(hp, vc->fd, 2);
+	http_DissectResponse(hp, vc->fd);
 
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));

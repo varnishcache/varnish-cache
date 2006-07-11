@@ -261,7 +261,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
 	event_base_loop(w->eb, 0);
 	time(&sp->t_resp);
-	assert(http_Dissect(hp, vc->fd, 2) == 0);
+	assert(http_DissectResponse(hp, vc->fd) == 0);
 
 	body = RFC2616_cache_policy(sp, hp);
 
