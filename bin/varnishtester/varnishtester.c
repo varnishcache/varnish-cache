@@ -35,7 +35,6 @@ static struct event_base *eb;
 
 static int serv_sock = -1;
 static struct event e_acc;
-static int sock_acc = -1;
 static struct bufferevent *e_racc;
 
 struct serv {
@@ -333,6 +332,63 @@ cmd_vcl(char **av)
 
 /*--------------------------------------------------------------------*/
 
+static int req_sock = -1;
+
+static void
+cmd_open(char **av)
+{
+	struct addrinfo ai, *r0, *r1;
+	int i, j, s = -1;
+
+	(void)av;
+	memset(&ai, 0, sizeof ai);
+	ai.ai_family = PF_UNSPEC;
+	ai.ai_socktype = SOCK_STREAM;
+	ai.ai_flags = AI_PASSIVE;
+	i = getaddrinfo("localhost", "8080", &ai, &r0);
+
+	if (i) {
+		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(i));
+		return;
+	}
+
+	for (r1 = r0; r1 != NULL; r1 = r1->ai_next) {
+		s = socket(r1->ai_family, r1->ai_socktype, r1->ai_protocol);
+		if (s < 0)
+			continue;
+		j = 1;
+		i = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof j);
+		assert(i == 0);
+
+		i = connect(s, r1->ai_addr, r1->ai_addrlen);
+		if (i) {
+			perror("connect");
+			close(s);
+			s = -1;
+			continue;
+		}
+		assert(i == 0);
+		req_sock = s;
+		break;
+	}
+	freeaddrinfo(r0);
+	if (s < 0) {
+		perror("connect");
+		exit (2);
+	}
+}
+
+static void
+cmd_close(char **av)
+{
+
+	(void)av;
+	close(req_sock);
+	req_sock = -1;
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 rd_cmd(struct bufferevent *bev, void *arg)
 {
@@ -361,6 +417,10 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		cmd_cli(av + 2);
 	else if (!strcmp(av[1], "vcl"))
 		cmd_vcl(av + 2);
+	else if (!strcmp(av[1], "open"))
+		cmd_open(av + 2);
+	else if (!strcmp(av[1], "close"))
+		cmd_close(av + 2);
 	else {
 		fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 		exit (2);
