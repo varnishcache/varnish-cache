@@ -41,6 +41,7 @@ static struct bufferevent *e_racc;
 struct serv {
 	TAILQ_ENTRY(serv)	list;
 	char			*data;
+	int			close;
 };
 
 static TAILQ_HEAD(,serv) serv_head = TAILQ_HEAD_INITIALIZER(serv_head);
@@ -57,11 +58,13 @@ rd_acc(struct bufferevent *bev, void *arg)
 		p = evbuffer_readline(bev->input);
 		if (p == NULL)
 			return;
-		printf("A: <<%s>>\n", p);
+		printf("B: <<%s>>\n", p);
 		if (*p == '\0') {
 			sp = TAILQ_FIRST(&serv_head);
 			assert(sp != NULL);
 			write(*ip, sp->data, strlen(sp->data));
+			if (sp->close)
+				shutdown(*ip, SHUT_WR);
 			if (TAILQ_NEXT(sp, list) != NULL) {
 				TAILQ_REMOVE(&serv_head, sp, list);
 				free(sp->data);	
@@ -76,8 +79,8 @@ ex_acc(struct bufferevent *bev, short what, void *arg)
 {
 	int *ip;
 
+	(void)what;
 	ip = arg;
-	printf("%s(%p, 0x%x, %p)\n", __func__, bev, what, arg);
 	bufferevent_disable(bev, EV_READ);
 	bufferevent_free(bev);
 	close(*ip);
@@ -170,7 +173,12 @@ cmd_serve(char **av)
 	for (i = 0; av[i] != NULL; i++) {
 		sp = calloc(sizeof *sp, 1);
 		assert(sp != NULL);
-		sp->data = strdup(av[i]);
+		if (av[i][0] == '!') {
+			sp->close = 1;
+			sp->data = strdup(av[i] + 1);
+		} else {
+			sp->data = strdup(av[i]);
+		}
 		assert(sp->data != NULL);
 		TAILQ_INSERT_TAIL(&serv_head, sp, list);
 	}
