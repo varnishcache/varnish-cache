@@ -22,6 +22,7 @@ RES_Error(struct worker *w, struct sess *sp, int error, const char *msg)
 	if (msg == NULL) {
 		switch (error) {
 		case 400:	msg = "Bad Request"; break;
+		case 500:	msg = "Internal Error"; break;
 		default:	msg = "HTTP request error"; break;
 		}
 	}
@@ -43,8 +44,18 @@ RES_Error(struct worker *w, struct sess *sp, int error, const char *msg)
 		"  </HEAD>\r\n"
 		"  <BODY>\r\n");
 	sbuf_printf(w->sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
+	switch(error) {
+	case 400:
+		sbuf_cat(w->sb,
+		    "    Your HTTP protocol request did not make sense.\r\n");
+		break;
+	case 500:
+	default:
+		sbuf_cat(w->sb,
+		    "    Something unexpected happened.\r\n");
+		break;
+	}
 	sbuf_cat(w->sb,
-		"    Your HTTP protocol request did not make sense.\r\n"
 		"    <P>\r\n"
 		"    <I>\r\n"
 		"    <A href=\"http://varnish.linpro.no/\">Varnish</A>\r\n"
