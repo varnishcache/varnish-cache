@@ -68,7 +68,7 @@ wrk_WorkSession(struct worker *w, struct sess *sp)
 	sp->vcl = GetVCL();
 	AZ(pthread_mutex_unlock(&sessmtx));
 
-	done = http_Dissect(sp->http, sp->fd, 1);
+	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
 		RES_Error(w, sp, done, NULL);
 		goto out;

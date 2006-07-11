@@ -21,3 +21,5 @@ MAC_STAT(n_wrk_create,		uint64_t, "u", "N worker threads created");
 MAC_STAT(n_wrk_failed,		uint64_t, "u", "N worker threads not created");
 MAC_STAT(n_wrk_short,		uint64_t, "u", "N worker threads shortages");
 MAC_STAT(n_wrk_busy,		uint64_t, "u", "N busy worker threads");
+
+MAC_STAT(losthdr,		uint64_t, "u", "HTTP header overflows");

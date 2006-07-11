@@ -157,90 +157,10 @@ http_GetStatus(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-int
-http_Dissect(struct http *hp, int fd, int rr)
+static int
+http_dissect_hdrs(struct http *hp, int fd, char *p)
 {
-	char *p, *q, *r;
-
-	assert(hp->t != NULL);
-	assert(hp->s < hp->t);
-	assert(hp->t <= hp->v);
-	for (p = hp->s ; isspace(*p); p++)
-		continue;
-	if (rr == 1) {
-		/* First, the request type (GET/HEAD etc) */
-		hp->req = p;
-		for (; isalpha(*p); p++)
-			;
-		VSLR(SLT_Request, fd, hp->req, p);
-		*p++ = '\0';
-
-		/* Next find the URI */
-		while (isspace(*p) && *p != '\n')
-			p++;
-		if (*p == '\n') {
-			VSLR(SLT_Debug, fd, hp->s, hp->v);
-			return (400);
-		}
-		hp->url = p;
-		while (!isspace(*p))
-			p++;
-		VSLR(SLT_URL, fd, hp->url, p);
-		if (*p == '\n') {
-			VSLR(SLT_Debug, fd, hp->s, hp->v);
-			return (400);
-		}
-		*p++ = '\0';
-
-		/* Finally, look for protocol */
-		while (isspace(*p) && *p != '\n')
-			p++;
-		if (*p == '\n') {
-			VSLR(SLT_Debug, fd, hp->s, hp->v);
-			return (400);
-		}
-		hp->proto = p;
-		while (!isspace(*p))
-			p++;
-		VSLR(SLT_Protocol, fd, hp->proto, p);
-		if (*p != '\n')
-			*p++ = '\0';
-		while (isspace(*p) && *p != '\n')
-			p++;
-		if (*p != '\n') {
-			VSLR(SLT_Debug, fd, hp->s, hp->v);
-			return (400);
-		}
-		*p++ = '\0';
-	} else {
-		/* First, protocol */
-		hp->proto = p;
-		while (!isspace(*p))
-			p++;
-		VSLR(SLT_Protocol, fd, hp->proto, p);
-		*p++ = '\0';
-
-		/* Next find the status */
-		while (isspace(*p))
-			p++;
-		hp->status = p;
-		while (!isspace(*p))
-			p++;
-		VSLR(SLT_Status, fd, hp->status, p);
-		*p++ = '\0';
-
-		/* Next find the response */
-		while (isspace(*p))
-			p++;
-		hp->response = p;
-		while (*p != '\n')
-			p++;
-		for (q = p; q > hp->response && isspace(q[-1]); q--)
-			continue;
-		*q = '\0';
-		VSLR(SLT_Response, fd, hp->response, q);
-		p++;
-	}
+	char *q, *r;
 
 	if (*p == '\r')
 		p++;
@@ -262,6 +182,7 @@ http_Dissect(struct http *hp, int fd, int rr)
 			hp->hdr[hp->nhdr++] = p;
 			VSLR(SLT_Header, fd, p, q);
 		} else {
+			VSL_stats->losthdr++;
 			VSLR(SLT_LostHeader, fd, p, q);
 		}
 	}
@@ -270,6 +191,111 @@ http_Dissect(struct http *hp, int fd, int rr)
 		printf("hp->t %p r %p\n", hp->t, r);
 	assert(hp->t == r);
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+http_DissectRequest(struct http *hp, int fd)
+{
+	char *p;
+
+	assert(hp->t != NULL);
+	assert(hp->s < hp->t);
+	assert(hp->t <= hp->v);
+	for (p = hp->s ; isspace(*p); p++)
+		continue;
+
+	/* First, the request type (GET/HEAD etc) */
+	hp->req = p;
+	for (; isalpha(*p); p++)
+		;
+	VSLR(SLT_Request, fd, hp->req, p);
+	*p++ = '\0';
+
+	/* Next find the URI */
+	while (isspace(*p) && *p != '\n')
+		p++;
+	if (*p == '\n') {
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		return (400);
+	}
+	hp->url = p;
+	while (!isspace(*p))
+		p++;
+	VSLR(SLT_URL, fd, hp->url, p);
+	if (*p == '\n') {
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		return (400);
+	}
+	*p++ = '\0';
+
+	/* Finally, look for protocol */
+	while (isspace(*p) && *p != '\n')
+		p++;
+	if (*p == '\n') {
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		return (400);
+	}
+	hp->proto = p;
+	while (!isspace(*p))
+		p++;
+	VSLR(SLT_Protocol, fd, hp->proto, p);
+	if (*p != '\n')
+		*p++ = '\0';
+	while (isspace(*p) && *p != '\n')
+		p++;
+	if (*p != '\n') {
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		return (400);
+	}
+	*p++ = '\0';
+
+	return (http_dissect_hdrs(hp, fd, p));
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+http_DissectResponse(struct http *hp, int fd)
+{
+	char *p, *q;
+
+	assert(hp->t != NULL);
+	assert(hp->s < hp->t);
+	assert(hp->t <= hp->v);
+	for (p = hp->s ; isspace(*p); p++)
+		continue;
+
+	/* First, protocol */
+	hp->proto = p;
+	while (!isspace(*p))
+		p++;
+	VSLR(SLT_Protocol, fd, hp->proto, p);
+	*p++ = '\0';
+
+	/* Next find the status */
+	while (isspace(*p))
+		p++;
+	hp->status = p;
+	while (!isspace(*p))
+		p++;
+	VSLR(SLT_Status, fd, hp->status, p);
+	*p++ = '\0';
+
+	/* Next find the response */
+	while (isspace(*p))
+		p++;
+	hp->response = p;
+	while (*p != '\n')
+		p++;
+	for (q = p; q > hp->response && isspace(q[-1]); q--)
+		continue;
+	*q = '\0';
+	VSLR(SLT_Response, fd, hp->response, q);
+	p++;
+
+	return (http_dissect_hdrs(hp, fd, p));
 }
 
 /*--------------------------------------------------------------------*/
