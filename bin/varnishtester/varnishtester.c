@@ -282,6 +282,20 @@ cmd_stop(char **av)
 /*--------------------------------------------------------------------*/
 
 static void
+cmd_cli(char **av)
+{
+
+	if (child == 0) {
+		fprintf(stderr, "No child running\n");
+		exit (2);
+	}
+	write(pipe1[1], av[0], strlen(av[0]));
+	write(pipe1[1], "\n", 1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 rd_cmd(struct bufferevent *bev, void *arg)
 {
 	char *p;
@@ -305,6 +319,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		cmd_stop(av + 2);
 	else if (!strcmp(av[1], "serve"))
 		cmd_serve(av + 2);
+	else if (!strcmp(av[1], "cli"))
+		cmd_cli(av + 2);
 	else {
 		fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 		exit (2);
