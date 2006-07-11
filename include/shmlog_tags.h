@@ -4,6 +4,8 @@
  * Define the tags in the shared memory in a reusable format.
  * Whoever includes this get to define what the SLTM macro does.
  *
+ * REMEMBER to update the documentation (especially the varnishlog(1) man
+ * page) whenever this list changes.
  */
 
 SLTM(Debug)
