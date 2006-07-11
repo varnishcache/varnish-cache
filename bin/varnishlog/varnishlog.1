@@ -1,7 +1,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 6, 2006
+.Dd July 11, 2006
 .Dt VARNISHLOG 1
 .Os
 .Sh NAME
@@ -10,6 +10,8 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl C
+.Op Fl b
+.Op Fl c
 .Op Fl o
 .Op Fl I Ar regex
 .Op Fl X Ar regex
@@ -28,14 +30,43 @@ The following options are available:
 .Bl -tag -width Fl
 .It Fl C
 Ignore case when matching regular expressions.
+.It Fl b
+Include log entries which result from communication with a backend
+server.
+If neither
+.Fl b
+nor
+.Fl c
+is specified,
+.Nm
+acts as if they both were.
+.It Fl c
+Include log entries which result from communication with a client.
+If neither
+.Fl b
+nor
+.Fl c
+is specified,
+.Nm
+acts as if they both were.
 .It Fl o
 Group log entries by request ID.
 .It Fl I Ar regex
 Include log entries which match the specified regular expression.
+If neither
+.Fl I
+nor
+.Fl i
+is specified, all log entries are included.
 .It Fl X Ar regex
 Exclude log entries which match the specified regular expression.
 .It Fl i Ar tag
 Include log entries with the specified tag.
+If neither
+.Fl I
+nor
+.Fl i
+is specified, all log entries are included.
 .It Fl r Ar file
 Read log entries from
 .Ar file
