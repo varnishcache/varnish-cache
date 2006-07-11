@@ -283,6 +283,16 @@ mgt_child_stop(void)
 /*--------------------------------------------------------------------*/
 
 void
+mgt_child_kill(void)
+{
+
+	desired = H_STOP;
+	kill(child_pid, 9);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 mgt_sigchld(int a, short b, void *c)
 {
 	pid_t p;

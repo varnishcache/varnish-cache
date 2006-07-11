@@ -240,6 +240,16 @@ m_cli_func_server_stop(struct cli *cli, char **av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
+m_cli_func_exit(struct cli *cli, char **av, void *priv)
+{
+
+	mgt_child_kill();
+	exit (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 m_cli_func_verbose(struct cli *cli, char **av, void *priv)
 {
 
@@ -304,7 +314,7 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_ZERO },
 	{ CLI_HELP,		cli_func_help, cli_proto },
 	{ CLI_VERBOSE,		m_cli_func_verbose, NULL },
-	{ CLI_EXIT },
+	{ CLI_EXIT, 		m_cli_func_exit, NULL},
 	{ CLI_QUIT },
 	{ CLI_BYE },
 	{ NULL }
