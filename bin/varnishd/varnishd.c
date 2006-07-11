@@ -326,6 +326,8 @@ testme(void)
 	event_base_set(mgt_eb, &e_sigchld);
 	signal_add(&e_sigchld, NULL);
 
+	mgt_child_start();
+
 	i = event_base_loop(mgt_eb, 0);
 	if (i != 0)
 		printf("event_dispatch() = %d\n", i);
