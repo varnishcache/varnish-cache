@@ -10,7 +10,7 @@ set methods {
 	{recv		{error pass pipe lookup}}
 	{miss		{error pass pipe fetch}}
 	{hit		{error pass pipe deliver}}
-	{fetch		{error pass pipe insert}}
+	{fetch		{error pass pipe insert insert_pass}}
 	{timeout	{fetch discard}}
 }
 
@@ -21,6 +21,7 @@ set returns {
 	lookup
 	pipe
 	pass
+	insert_pass
 	fetch
 	insert
 	deliver
