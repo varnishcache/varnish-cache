@@ -129,6 +129,7 @@ child_main(void)
 	event_base_set(eb, &ev_keepalive);
 	arm_keepalive();
 
+	printf("Ready\n");
 	i = event_base_loop(eb, 0);
 	if (i != 0)
 		printf("event_dispatch() = %d\n", i);
