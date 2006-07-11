@@ -229,8 +229,54 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 }
 
 /*--------------------------------------------------------------------*/
+
 int
-FetchSession(struct worker *w, struct sess *sp)
+FetchBody(struct worker *w, struct sess *sp)
+{
+	int i, cls;
+	struct vbe_conn *vc;
+	struct http *hp;
+	char *b;
+	int body;
+
+	vc = sp->vbc;
+	hp = sp->bkd_http;
+
+	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
+	if (body) {
+		if (http_GetHdr(hp, "Content-Length", &b))
+			cls = fetch_straight(sp, vc->fd, hp, b);
+		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
+			cls = fetch_chunked(sp, vc->fd, hp);
+		else 
+			cls = fetch_eof(sp, vc->fd, hp);
+		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
+	} else
+		cls = 0;
+	sbuf_finish(w->sb);
+	sp->obj->header = strdup(sbuf_data(w->sb));
+	VSL_stats->n_header++;
+
+	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
+		cls = 1;
+
+	if (cls)
+		VBE_ClosedFd(vc);
+	else
+		VBE_RecycleFd(vc);
+
+	if (sp->obj->cacheable)
+		EXP_Insert(sp->obj);
+	HSH_Unbusy(sp->obj);
+	if (!sp->obj->cacheable)
+		HSH_Deref(sp->obj);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+FetchHeaders(struct worker *w, struct sess *sp)
 {
 	int i, cls;
 	struct vbe_conn *vc;
@@ -252,7 +298,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	assert(i == sbuf_len(w->sb));
 	time(&sp->t_req);
 
-	/* XXX: copy any contents */
+	/* XXX: copy any body ?? */
 
 	/*
 	 * XXX: It might be cheaper to avoid the event_engine and simply
@@ -262,42 +308,7 @@ FetchSession(struct worker *w, struct sess *sp)
 	event_base_loop(w->eb, 0);
 	time(&sp->t_resp);
 	assert(http_DissectResponse(hp, vc->fd) == 0);
-
-	body = RFC2616_cache_policy(sp, hp);
-
-	VCL_fetch_method(sp);
-
-	if (sp->obj->cacheable)
-		EXP_Insert(sp->obj);
-
-	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
-	if (body) {
-		if (http_GetHdr(hp, "Content-Length", &b))
-			cls = fetch_straight(sp, vc->fd, hp, b);
-		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
-			cls = fetch_chunked(sp, vc->fd, hp);
-		else 
-			cls = fetch_eof(sp, vc->fd, hp);
-		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
-	} else
-		cls = 0;
-	sbuf_finish(w->sb);
-	sp->obj->header = strdup(sbuf_data(w->sb));
-	VSL_stats->n_header++;
-
-	vca_write_obj(w, sp);
-
-	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
-		cls = 1;
-
-	if (cls)
-		VBE_ClosedFd(vc);
-	else
-		VBE_RecycleFd(vc);
-
-	HSH_Unbusy(sp->obj);
-	if (!sp->obj->cacheable)
-		HSH_Deref(sp->obj);
-
-	return (1);
+	sp->vbc = vc;
+	sp->bkd_http = hp;
+	return (0);
 }
