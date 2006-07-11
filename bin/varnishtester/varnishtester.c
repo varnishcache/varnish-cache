@@ -339,7 +339,46 @@ cmd_vcl(char **av)
 /*--------------------------------------------------------------------*/
 
 static int req_sock = -1;
+static struct bufferevent *e_req;
 
+static void
+req_write(const char *s)
+{
+
+	write(req_sock, s, strlen(s));
+}
+
+/*--------------------------------------------------------------------*/
+static void
+rd_req(struct bufferevent *bev, void *arg)
+{
+	char *p;
+
+	(void)arg;
+	while (1) {
+		p = evbuffer_readline(bev->input);
+		if (p == NULL)
+			return;
+		printf("R: <<%s>>\n", p);
+	}
+}
+
+static void
+ex_req(struct bufferevent *bev, short what, void *arg)
+{
+
+	(void)arg;
+	printf("%s(%p, 0x%x, %p)\n", __func__, bev, what, arg);
+	bufferevent_disable(e_req, EV_READ);
+	bufferevent_free(e_req);
+	e_req = NULL;
+	close(req_sock);
+	req_sock = -1;
+	Resume();
+}
+
+
+/*--------------------------------------------------------------------*/
 static void
 cmd_open(char **av)
 {
@@ -382,27 +421,54 @@ cmd_open(char **av)
 		perror("connect");
 		exit (2);
 	}
+	e_req = bufferevent_new(s, rd_req, NULL, ex_req, NULL);
+	assert(e_req != NULL);
+	bufferevent_base_set(eb, e_req);
+	bufferevent_enable(e_req, EV_READ);
 }
 
 static void
 cmd_close(char **av)
 {
 
+	if (req_sock == -1)
+		return;
 	(void)av;
+	bufferevent_disable(e_req, EV_READ);
+	bufferevent_free(e_req);
+	e_req = NULL;
 	close(req_sock);
 	req_sock = -1;
 }
 
 /*--------------------------------------------------------------------*/
 
+static void
+cmd_req(char **av)
+{
+	char *p = av[0];
+
+	if (req_sock == -1)
+		cmd_open(av);
+	if (*p == '!') {
+		req_write(p + 1);
+		shutdown(req_sock, SHUT_WR);
+	} else {
+		req_write(p);
+	}
+	Pause();
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct bufferevent *e_cmd;
+static int run = 1;
 
 static void
 rd_cmd(struct bufferevent *bev, void *arg)
 {
 	char *p;
 	char **av;
-	int run = 1;
 
 	(void)bev;
 	(void)arg;
@@ -418,10 +484,9 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		}
 		if (av[1] == NULL)
 			return;
-		if (!strcmp(av[1], "start")) {
+		if (!strcmp(av[1], "start"))
 			cmd_start(av + 2);
-			run = 0;
-		} else if (!strcmp(av[1], "stop"))
+		else if (!strcmp(av[1], "stop"))
 			cmd_stop(av + 2);
 		else if (!strcmp(av[1], "serve"))
 			cmd_serve(av + 2);
@@ -433,6 +498,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 			cmd_open(av + 2);
 		else if (!strcmp(av[1], "close"))
 			cmd_close(av + 2);
+		else if (!strcmp(av[1], "req"))
+			cmd_req(av + 2);
 		else {
 			fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 			exit (2);
@@ -442,16 +509,34 @@ rd_cmd(struct bufferevent *bev, void *arg)
 }
 
 static void
+ex_cmd(struct bufferevent *bev, short what, void *arg)
+{
+
+	(void)arg;
+	printf("%s(%p, 0x%x, %p)\n", __func__, bev, what, arg);
+	bufferevent_disable(e_cmd, EV_READ);
+	bufferevent_free(e_cmd);
+	e_cmd = NULL;
+	cmd_close(NULL);
+	cmd_stop(NULL);
+	exit(0);
+}
+
+static void
 Pause()
 {
+	assert(run == 1);
 	printf("X: Pause\n");
+	run = 0;
 	bufferevent_disable(e_cmd, EV_READ);
 }
 
 static void
 Resume()
 {
+	assert(run == 0);
 	printf("X: Resume\n");
+	run = 1;
 	bufferevent_enable(e_cmd, EV_READ);
 	rd_cmd(e_cmd, NULL);
 }
@@ -471,7 +556,7 @@ main(int argc, char **argv)
 
 	open_serv_sock();
 
-	e_cmd = bufferevent_new(0, rd_cmd, NULL, NULL, NULL);
+	e_cmd = bufferevent_new(0, rd_cmd, NULL, ex_cmd, NULL);
 	assert(e_cmd != NULL);
 	bufferevent_base_set(eb, e_cmd);
 	bufferevent_enable(e_cmd, EV_READ);
