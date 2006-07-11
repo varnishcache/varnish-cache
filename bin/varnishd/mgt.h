@@ -8,6 +8,7 @@ extern struct event_base *mgt_eb;
 
 void mgt_child_start(void);
 void mgt_child_stop(void);
+void mgt_child_kill(void);
 void mgt_sigchld(int, short, void *);
 
 typedef void mgt_ccb_f(unsigned, const char *, void *);
