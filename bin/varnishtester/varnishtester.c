@@ -194,6 +194,15 @@ static pid_t child;
 /*--------------------------------------------------------------------*/
 
 static void
+cli_write(const char *s)
+{
+
+	write(pipe1[1], s, strlen(s));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 rd_pipe2(struct bufferevent *bev, void *arg)
 {
 	char *p;
@@ -275,7 +284,7 @@ cmd_stop(char **av)
 		fprintf(stderr, "No child running\n");
 		exit (2);
 	}
-	write(pipe1[1], "exit\r", 5);
+	cli_write("exit\n");
 	/* XXX: arm timeout */
 }
 
@@ -289,8 +298,37 @@ cmd_cli(char **av)
 		fprintf(stderr, "No child running\n");
 		exit (2);
 	}
-	write(pipe1[1], av[0], strlen(av[0]));
-	write(pipe1[1], "\n", 1);
+	cli_write(av[0]);
+	cli_write("\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+cmd_vcl(char **av)
+{
+	char *p, buf[5];
+
+	if (child == 0) {
+		fprintf(stderr, "No child running\n");
+		exit (2);
+	}
+	if (av[0] == NULL || av[1] == NULL) {
+		fprintf(stderr, "usage: vcl $name $vcl\n");
+		exit (2);
+	}
+	cli_write("config.inline ");
+	cli_write(av[0]);
+	cli_write(" \"");
+	for (p = av[1]; *p; p++) {
+		if (*p < ' ' || *p == '"' || *p == '\\' || *p > '~') {
+			sprintf(buf, "\\%03o", *p);
+			cli_write(buf);
+		} else {
+			write(pipe1[1], p, 1);
+		}
+	}
+	cli_write("\"\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -321,6 +359,8 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		cmd_serve(av + 2);
 	else if (!strcmp(av[1], "cli"))
 		cmd_cli(av + 2);
+	else if (!strcmp(av[1], "vcl"))
+		cmd_vcl(av + 2);
 	else {
 		fprintf(stderr, "Unknown command \"%s\"\n", av[1]);
 		exit (2);
