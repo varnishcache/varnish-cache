@@ -108,8 +108,6 @@ int
 VSL_OpenLog(struct VSL_data *vd)
 {
 
-	if (!vd->b_opt && !vd->c_opt)
-		vd->b_opt = vd->c_opt = 1;
 
 	if (vd->fi != NULL)
 		return (0);
