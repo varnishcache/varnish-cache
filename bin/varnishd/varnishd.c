@@ -489,6 +489,9 @@ main(int argc, char *argv[])
 	const char *hflag = "classic";
 
 	register_printf_render_std((const unsigned char *)"HVQ");
+
+	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
  
 	VCC_InitCompile();
 
