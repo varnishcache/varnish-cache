@@ -9,9 +9,14 @@
 .Nd HTTP accelerator log watcher
 .Sh SYNOPSIS
 .Nm
+.Op Fl C
 .Op Fl o
+.Op Fl I Ar regex
+.Op Fl X Ar regex
+.Op Fl i Ar tag
 .Op Fl r Ar file
 .Op Fl w Ar file
+.Op Fl x Ar tag
 .Sh DESCRIPTION
 The
 .Nm
@@ -21,8 +26,16 @@ shared memory logs.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
+.It Fl C
+Ignore case when matching regular expressions.
 .It Fl o
 Group log entries by request ID.
+.It Fl I Ar regex
+Include log entries which match the specified regular expression.
+.It Fl X Ar regex
+Exclude log entries which match the specified regular expression.
+.It Fl i Ar tag
+Include log entries with the specified tag.
 .It Fl r Ar file
 Read log entries from
 .Ar file
@@ -31,7 +44,49 @@ instead of shared memory.
 Write log entries to
 .Ar file
 instead of displaying them.
+.It Fl x Ar tag
+Exclude log entries with the specified tag.
 .El
+.Sh TAGS
+The following log entry tags are currently defined:
+.\" keep in sync with include/shmlog_tags.h
+.\" XXX add descriptions
+.Bl -tag -width 16
+.It Dv Backend
+.It Dv BackendClose
+.It Dv BackendOpen
+.It Dv BackendReuse
+.It Dv BackendXID
+.It Dv BldHdr
+.It Dv CLI
+.It Dv ClientAddr
+.It Dv Debug
+.It Dv Error
+.It Dv ExpBan
+.It Dv ExpKill
+.It Dv ExpPick
+.It Dv Header
+.It Dv Hit
+.It Dv HttpError
+.It Dv Length
+.It Dv LostHeader
+.It Dv Protocol
+.It Dv Request
+.It Dv Response
+.It Dv SessionClose
+.It Dv SessionOpen
+.It Dv SessionReuse
+.It Dv Status
+.It Dv URL
+.It Dv VCL_call
+.It Dv VCL_return
+.It Dv VCL_trace
+.It Dv WorkThread
+.It Dv XID
+.El
+.Sh SEE ALSO
+.Xr varnishd 1 ,
+.Xr varnishstat 1
 .Sh HISTORY
 The
 .Nm
