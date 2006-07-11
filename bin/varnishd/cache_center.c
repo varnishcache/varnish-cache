@@ -41,37 +41,6 @@ DOT start -> RECV
 #include "vcl.h"
 #include "cache.h"
 
-/*--------------------------------------------------------------------*/
-
-static int
-LookupSession(struct worker *w, struct sess *sp)
-{
-	struct object *o;
-
-	o = HSH_Lookup(w, sp->http);
-	sp->obj = o;
-	if (o->busy) {
-		VSL_stats->cache_miss++;
-		VCL_miss_method(sp);
-	} else {
-		VSL_stats->cache_hit++;
-		VSL(SLT_Hit, sp->fd, "%u", o->xid);
-		VCL_hit_method(sp);
-	}
-	return (0);
-}
-
-static int
-DeliverSession(struct worker *w, struct sess *sp)
-{
-
-
-	vca_write_obj(w, sp);
-	HSH_Deref(sp->obj);
-	sp->obj = NULL;
-	return (1);
-}
-
 /*--------------------------------------------------------------------
 DOT subgraph cluster_deliver {
 DOT 	deliver [
@@ -97,16 +66,20 @@ DOT		label="Request completed"
 DOT	]
  */
 
-#if 0
+
+static void
+cnt_done(struct worker *w, struct sess *sp)
+{
+	char *b;
+
 	if (http_GetHdr(sp->http, "Connection", &b) &&
 	    !strcmp(b, "close")) {
 		vca_close_session(sp, "Connection header");
 	} else if (http_GetProto(sp->http, &b) &&
 	    strcmp(b, "HTTP/1.1")) {
 		vca_close_session(sp, "not HTTP/1.1");
-#endif
-
-static void cnt_done(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+	}
+}
 
 /*--------------------------------------------------------------------
 DOT subgraph cluster_error {
@@ -203,7 +176,17 @@ DOT hit_lookup -> LOOKUP [style=dotted, weight=0]
 DOT hit2 -> DELIVER [style=bold]
  */
 
-static void cnt_hit(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_hit(struct worker *w, struct sess *sp)
+{
+
+	VCL_hit_method(sp);
+
+	vca_write_obj(w, sp);
+	HSH_Deref(sp->obj);
+	sp->obj = NULL;
+	sp->step = STP_DONE;
+}
 
 /*--------------------------------------------------------------------
 DOT subgraph cluster_lookup {
@@ -222,7 +205,22 @@ DOT lookup -> HIT [label="hit", style=bold]
 DOT lookup2 -> MISS [label="miss", style=bold]
  */
 
-static void cnt_lookup(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_lookup(struct worker *w, struct sess *sp)
+{
+	struct object *o;
+
+	o = HSH_Lookup(w, sp->http);
+	sp->obj = o;
+	if (o->busy) {
+		VSL_stats->cache_miss++;
+		sp->step = STP_MISS;
+	} else {
+		VSL_stats->cache_hit++;
+		VSL(SLT_Hit, sp->fd, "%u", o->xid);
+		sp->step = STP_HIT;
+	}
+}
 
 /*--------------------------------------------------------------------
 DOT subgraph cluster_miss {
@@ -259,7 +257,25 @@ DOT miss_lookup -> LOOKUP [style=dotted, weight=0]
 DOT
  */
 
-static void cnt_miss(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_miss(struct worker *w, struct sess *sp)
+{
+
+	VCL_miss_method(sp);
+	if (sp->handling == VCL_RET_ERROR)
+		INCOMPL();
+	if (sp->handling == VCL_RET_PASS)
+		INCOMPL();
+	if (sp->handling == VCL_RET_LOOKUP)
+		INCOMPL();
+	if (sp->handling == VCL_RET_FETCH) {
+		/* XXX */
+		FetchSession(w, sp);
+		sp->step = STP_DONE;
+		return;
+	}
+	INCOMPL();
+}
 
 /*--------------------------------------------------------------------
 DOT subgraph cluster_pass {
@@ -390,6 +406,8 @@ CNT_Session(struct worker *w, struct sess *sp)
 		default:	INCOMPL();
 		}
 	}
+
+	cnt_done(w, sp);	/* The loop doesn't do this */
 
 	AZ(pthread_mutex_lock(&sessmtx));
 	RelVCL(sp->vcl);
