@@ -24,8 +24,13 @@ struct VSL_data {
 	FILE			*fi;
 	unsigned char		rbuf[4 + 255 + 1];
 
+	int			b_opt;
+	int			c_opt;
+
 	int			ix_opt;
 	unsigned char 		supr[256];
+
+	unsigned char		dir[65536];
 
 	int			regflags;
 	regex_t			*regincl;
@@ -38,6 +43,7 @@ struct VSL_data {
 
 static int vsl_fd;
 static struct shmloghead *vsl_lh;
+
 
 /*--------------------------------------------------------------------*/
 
@@ -102,6 +108,9 @@ int
 VSL_OpenLog(struct VSL_data *vd)
 {
 
+	if (!vd->b_opt && !vd->c_opt)
+		vd->b_opt = vd->c_opt = 1;
+
 	if (vd->fi != NULL)
 		return (0);
 
@@ -155,13 +164,29 @@ VSL_NextLog(struct VSL_data *vd)
 {
 	unsigned char *p;
 	regmatch_t rm;
+	unsigned u;
 	int i;
 
 	while (1) {
 		p = vsl_nextlog(vd);
 		if (p == NULL)
 			return (p);
+		u = (p[2] << 8) | p[3];
+		switch(p[0]) {
+		case SLT_SessionOpen:
+			vd->dir[u] = 1;
+			break;
+		case SLT_BackendOpen:
+			vd->dir[u] = 2;
+			break;
+		default:
+			break;
+		}
 		if (vd->supr[p[0]]) 
+			continue;
+		if (vd->b_opt && vd->dir[u] == 1)
+			continue;
+		if (vd->c_opt && vd->dir[u] == 2)
 			continue;
 		if (vd->regincl != NULL) {
 			rm.rm_so = 0;
@@ -285,6 +310,8 @@ int
 VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
 	switch (arg) {
+	case 'b': vd->b_opt = !vd->b_opt; return (1);
+	case 'c': vd->c_opt = !vd->c_opt; return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));

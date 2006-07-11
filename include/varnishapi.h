@@ -8,7 +8,7 @@
 #define V_DEAD __attribute__ ((noreturn))
 
 /* shmlog.c */
-#define VSL_ARGS	"r:i:x:CI:X:"
+#define VSL_ARGS	"bcr:i:x:CI:X:"
 struct VSL_data;
 struct VSL_data *VSL_New(void);
 int VSL_OpenLog(struct VSL_data *vd);
