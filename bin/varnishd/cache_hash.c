@@ -1,5 +1,29 @@
 /*
  * $Id$
+ *
+ * This is the central hash-table code, it relies on a chosen hash 
+ * implmentation only for the actual hashing, all the housekeeping
+ * happens here.
+ *
+ * We have two kinds of structures, objecthead and object.  An objecthead
+ * corresponds to a given (Host:, URL) tupple, and the objects hung from
+ * the objecthead may represent various variations (ie: Vary: header,
+ * different TTL etc) instances of that web-entity.
+ *
+ * Each objecthead has a mutex which locks both its own fields, the
+ * list of objects and fields in the objects.
+ *   
+ * The hash implementation must supply a reference count facility on
+ * the objecthead, and return with a reference held after a lookup.
+ *
+ * Lookups in the hash implementation returns with a ref held and each
+ * object hung from the objhead holds a ref as well.
+ *
+ * Objects have refcounts which are locked by the objecthead mutex.
+ *
+ * New objects are always marked busy, and they can go from busy to
+ * not busy only once.
+ *
  */
 
 #include <stdio.h>
@@ -35,6 +59,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 		w->nobj = calloc(sizeof *w->nobj, 1);
 		assert(w->nobj != NULL);
 		w->nobj->busy = 1;
+		w->nobj->refcnt = 1;
 		TAILQ_INIT(&w->nobj->store);
 		AZ(pthread_cond_init(&w->nobj->cv, NULL));
 		VSL_stats->n_object++;
@@ -51,8 +76,11 @@ HSH_Lookup(struct worker *w, struct http *h)
 		o->refcnt++;
 		if (o->busy)
 			AZ(pthread_cond_wait(&o->cv, &oh->mtx));
-		/* XXX: check TTL */
-		if (o->ttl == 0) {
+		/* XXX: check ttl */
+		/* XXX: check Vary: */
+		if (!o->cacheable) {
+			/* ignore */
+		} else if (o->ttl == 0) {
 			/* Object banned but not reaped yet */
 		} else if (BAN_CheckObject(o, b)) {
 			o->ttl = 0;
@@ -71,7 +99,6 @@ HSH_Lookup(struct worker *w, struct http *h)
 	/* Insert (precreated) object in objecthead */
 	o = w->nobj;
 	w->nobj = NULL;
-	o->refcnt = 1;
 	o->objhead = oh;
 	TAILQ_INSERT_TAIL(&oh->objects, o, list);
 	/* NB: do not deref objhead the new object inherits our reference */
@@ -95,19 +122,19 @@ HSH_Deref(struct object *o)
 {
 	struct objhead *oh;
 	struct storage *st, *stn;
+	unsigned r;
 
 	oh = o->objhead;
 
 	/* drop ref on object */
 	AZ(pthread_mutex_lock(&oh->mtx));
-	if (--o->refcnt == 0)
+	r = --o->refcnt;
+	if (!r)
 		TAILQ_REMOVE(&oh->objects, o, list);
-	else 
-		o = NULL;
 	AZ(pthread_mutex_unlock(&oh->mtx));
 
 	/* If still referenced, done */
-	if (o == NULL)
+	if (r != 0)
 		return;
 
 	if (o->header != NULL) {
