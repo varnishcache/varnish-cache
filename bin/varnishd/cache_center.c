@@ -225,11 +225,23 @@ cnt_hit(struct worker *w, struct sess *sp)
 {
 
 	VCL_hit_method(sp);
-
-	vca_write_obj(w, sp);
-	HSH_Deref(sp->obj);
-	sp->obj = NULL;
-	sp->step = STP_DONE;
+	if (sp->handling == VCL_RET_LOOKUP)
+		INCOMPL();
+	if (sp->handling == VCL_RET_PASS) {
+		PassSession(w, sp);
+		sp->step = STP_DONE;
+		return;
+	}
+	if (sp->handling == VCL_RET_ERROR)
+		INCOMPL();
+	if (sp->handling == VCL_RET_DELIVER) {
+		vca_write_obj(w, sp);
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_DONE;
+		return;
+	}
+	INCOMPL();
 }
 
 
