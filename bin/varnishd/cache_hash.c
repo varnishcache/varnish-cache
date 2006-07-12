@@ -20,7 +20,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 {
 	struct objhead *oh;
 	struct object *o;
-	char *b;
+	char *b, *c;
 
 	assert(hash != NULL);
 	/* Precreate an objhead and object in case we need them */
@@ -41,7 +41,9 @@ HSH_Lookup(struct worker *w, struct http *h)
 	}
 
 	assert(http_GetURL(h, &b));
-	oh = hash->lookup(b, w->nobjhead);
+	if (!http_GetHdr(h, "Host", &c))
+		c = b;
+	oh = hash->lookup(b, c, w->nobjhead);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	AZ(pthread_mutex_lock(&oh->mtx));

@@ -233,11 +233,11 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 int
 FetchBody(struct worker *w, struct sess *sp)
 {
-	int i, cls;
+	int cls;
 	struct vbe_conn *vc;
 	struct http *hp;
 	char *b;
-	int body;
+	int body = 1;		/* XXX */
 
 	vc = sp->vbc;
 	hp = sp->bkd_http;
@@ -278,11 +278,9 @@ FetchBody(struct worker *w, struct sess *sp)
 int
 FetchHeaders(struct worker *w, struct sess *sp)
 {
-	int i, cls;
+	int i;
 	struct vbe_conn *vc;
 	struct http *hp;
-	char *b;
-	int body;
 
 	sp->obj->xid = sp->xid;
 

@@ -15,7 +15,8 @@
 
 struct hsl_entry {
 	TAILQ_ENTRY(hsl_entry)	list;
-	char			*key;
+	char			*key1;
+	char			*key2;
 	struct objhead		*obj;
 	unsigned		refcnt;
 };
@@ -43,35 +44,41 @@ hsl_start(void)
  */
 
 static struct objhead *
-hsl_lookup(const char *key, struct objhead *nobj)
+hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 {
 	struct hsl_entry *he, *he2;
 	int i;
 
 	AZ(pthread_mutex_lock(&hsl_mutex));
 	TAILQ_FOREACH(he, &hsl_head, list) {
-		i = strcmp(key, he->key);
+		i = strcmp(key1, he->key1);
 		if (i < 0)
 			continue;
-		if (i == 0) {
-			he->refcnt++;
-			nobj = he->obj;
-			nobj->hashpriv = he;
-			AZ(pthread_mutex_unlock(&hsl_mutex));
-			return (nobj);
-		}
-		if (nobj == NULL) {
-			AZ(pthread_mutex_unlock(&hsl_mutex));
-			return (NULL);
-		}
-		break;
+		if (i > 0) 
+			break;
+		i = strcmp(key2, he->key2);
+		if (i < 0)
+			continue;
+		if (i > 0) 
+			break;
+		he->refcnt++;
+		nobj = he->obj;
+		nobj->hashpriv = he;
+		AZ(pthread_mutex_unlock(&hsl_mutex));
+		return (nobj);
+	}
+	if (nobj == NULL) {
+		AZ(pthread_mutex_unlock(&hsl_mutex));
+		return (NULL);
 	}
 	he2 = calloc(sizeof *he2, 1);
 	assert(he2 != NULL);
 	he2->obj = nobj;
 	he2->refcnt = 1;
-	he2->key = strdup(key);
-	assert(he2->key != NULL);
+	he2->key1 = strdup(key1);
+	assert(he2->key1 != NULL);
+	he2->key2 = strdup(key2);
+	assert(he2->key2 != NULL);
 	nobj->hashpriv = he2;
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
@@ -95,7 +102,8 @@ hsl_deref(struct objhead *obj)
 	he = obj->hashpriv;
 	AZ(pthread_mutex_lock(&hsl_mutex));
 	if (--he->refcnt == 0) {
-		free(he->key);
+		free(he->key1);
+		free(he->key2);
 		TAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
 		ret = 0;

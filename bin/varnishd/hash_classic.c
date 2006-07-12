@@ -17,7 +17,8 @@
 
 struct hcl_entry {
 	TAILQ_ENTRY(hcl_entry)	list;
-	char			*key;
+	char			*key1;
+	char			*key2;
 	struct objhead		*obj;
 	unsigned		refcnt;
 	unsigned		hash;
@@ -97,7 +98,7 @@ hcl_start(void)
  */
 
 static struct objhead *
-hcl_lookup(const char *key, struct objhead *nobj)
+hcl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 {
 	struct hcl_entry *he, *he2;
 	MD5_CTX c;
@@ -106,7 +107,9 @@ hcl_lookup(const char *key, struct objhead *nobj)
 	int i;
 
 	MD5Init(&c);
-	MD5Update(&c, key, strlen(key));
+	MD5Update(&c, key1, strlen(key1));
+	MD5Update(&c, "", 1);
+	MD5Update(&c, key2, strlen(key2));
 	MD5Final(md5, &c);
 	memcpy(&u1, md5, sizeof u1);
 	u1 %= hcl_nhash;
@@ -115,21 +118,25 @@ hcl_lookup(const char *key, struct objhead *nobj)
 
 	AZ(pthread_mutex_lock(&hcl_mutex[u2]));
 	TAILQ_FOREACH(he, &hcl_head[u1], list) {
-		i = strcmp(key, he->key);
+		i = strcmp(key1, he->key1);
 		if (i < 0)
 			continue;
-		if (i == 0) {
-			he->refcnt++;
-			nobj = he->obj;
-			nobj->hashpriv = he;
-			AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
-			return (nobj);
-		}
-		if (nobj == NULL) {
-			AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
-			return (NULL);
-		}
-		break;
+		if (i > 0)
+			break;
+		i = strcmp(key2, he->key2);
+		if (i < 0)
+			continue;
+		if (i > 0)
+			break;
+		he->refcnt++;
+		nobj = he->obj;
+		nobj->hashpriv = he;
+		AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
+		return (nobj);
+	}
+	if (nobj == NULL) {
+		AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
+		return (NULL);
 	}
 	he2 = calloc(sizeof *he2, 1);
 	assert(he2 != NULL);
@@ -137,8 +144,10 @@ hcl_lookup(const char *key, struct objhead *nobj)
 	he2->refcnt = 1;
 	he2->hash = u1;
 	he2->mtx = u2;
-	he2->key = strdup(key);
-	assert(he2->key != NULL);
+	he2->key1 = strdup(key1);
+	assert(he2->key1 != NULL);
+	he2->key2 = strdup(key2);
+	assert(he2->key2 != NULL);
 	nobj->hashpriv = he2;
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
@@ -164,7 +173,8 @@ hcl_deref(struct objhead *obj)
 	mtx = he->mtx;
 	AZ(pthread_mutex_lock(&hcl_mutex[mtx]));
 	if (--he->refcnt == 0) {
-		free(he->key);
+		free(he->key1);
+		free(he->key2);
 		TAILQ_REMOVE(&hcl_head[he->hash], he, list);
 		free(he);
 		ret = 0;
