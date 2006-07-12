@@ -105,16 +105,17 @@ rdcb(struct bufferevent *bev, void *arg)
 		sbuf_finish(cli->sb);
 		/* XXX: syslog results ? */
 		encode_output(cli);
-		bufferevent_enable(cli->bev1, EV_WRITE);
+		AZ(bufferevent_enable(cli->bev1, EV_WRITE));
 	}
 }
 
 static void
-wrcb(struct bufferevent *bev __unused, void *arg)
+wrcb(struct bufferevent *bev, void *arg)
 {
 	struct cli *cli = arg;
 
-	bufferevent_disable(cli->bev1, EV_WRITE);
+	(void)bev;
+	AZ(bufferevent_disable(cli->bev1, EV_WRITE));
 }
 
 static void
@@ -133,20 +134,20 @@ cli_setup(struct event_base *eb, int fdr, int fdw, int ver, struct cli_proto *cl
 
 	cli->bev0 = bufferevent_new(fdr, rdcb, wrcb, excb, cli);
 	assert(cli->bev0 != NULL);
-	bufferevent_base_set(eb, cli->bev0);
+	AZ(bufferevent_base_set(eb, cli->bev0));
 	if (fdr == fdw)
 		cli->bev1 = cli->bev0;
 	else 
 		cli->bev1 = bufferevent_new(fdw, rdcb, wrcb, excb, cli);
 	assert(cli->bev1 != NULL);
-	bufferevent_base_set(eb, cli->bev1);
+	AZ(bufferevent_base_set(eb, cli->bev1));
 	cli->sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(cli->sb != NULL);
 
 	cli->verbose = ver;
 	cli->cli_proto = cli_proto;
 	
-	bufferevent_enable(cli->bev0, EV_READ);
+	AZ(bufferevent_enable(cli->bev0, EV_READ));
 	return (cli);
 }
 
@@ -155,7 +156,7 @@ cli_suspend(struct cli *cli)
 {
 
 	cli->suspend = 1;
-	bufferevent_disable(cli->bev0, EV_READ);
+	AZ(bufferevent_disable(cli->bev0, EV_READ));
 }
 
 void
@@ -164,8 +165,8 @@ cli_resume(struct cli *cli)
 	sbuf_finish(cli->sb);
 	/* XXX: syslog results ? */
 	encode_output(cli);
-	bufferevent_enable(cli->bev1, EV_WRITE);
+	AZ(bufferevent_enable(cli->bev1, EV_WRITE));
 	cli->suspend = 0;
-	bufferevent_enable(cli->bev0, EV_READ);
+	AZ(bufferevent_enable(cli->bev0, EV_READ));
 }
 

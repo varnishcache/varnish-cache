@@ -79,7 +79,7 @@ wrk_thread(void *priv)
 		}
 
 		/* If we are a dynamic thread, time out and die */
-		clock_gettime(CLOCK_REALTIME, &ts);
+		AZ(clock_gettime(CLOCK_REALTIME, &ts));
 		ts.tv_sec += heritage.wthread_timeout;
 		if (pthread_cond_timedwait(&w->cv, &wrk_mtx, &ts)) {
 			VSL_stats->n_wrk--;
@@ -102,7 +102,7 @@ WRK_QueueSession(struct sess *sp)
 	struct worker *w;
 	pthread_t tp;
 
-	time(&sp->t_req);
+	sp->t_req = time(NULL);
 
 	/*
 	 * No locking necessary, we're serialized in the acceptor thread

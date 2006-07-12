@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 
@@ -204,7 +203,7 @@ PassSession(struct worker *w, struct sess *sp)
 	 */
 	hp = vc->http;
 	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
-	event_base_loop(w->eb, 0);
+	(void)event_base_loop(w->eb, 0);
 	http_DissectResponse(hp, vc->fd);
 
 	sp->bkd_http = hp;

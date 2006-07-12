@@ -92,7 +92,7 @@ HSH_Lookup(struct worker *w, struct http *h)
 	}
 	if (o != NULL) {
 		AZ(pthread_mutex_unlock(&oh->mtx));
-		hash->deref(oh);
+		(void)hash->deref(oh);
 		return (o);
 	}
 

@@ -20,15 +20,13 @@ static struct event ev_keepalive;
 
 struct stevedore	*stevedore;
 
-struct varnish_stats *VSL_stats;
-
 /*--------------------------------------------------------------------*/
 
 static void
 timer_keepalive(int a, short b, void *c)
 {
 
-	printf("%s(%d, %d, %p)\n", __func__, a, (int)b, c);
+	printf("%s(%d, %d, %p)\n", (const char *)__func__, a, (int)b, c);
 	printf("Heeellloooo ?   Ohh bother...\n");
 	exit (1);
 }
@@ -41,8 +39,8 @@ arm_keepalive(void)
 	tv.tv_sec = 30;
 	tv.tv_usec = 0;
 
-	evtimer_del(&ev_keepalive);
-	evtimer_add(&ev_keepalive, &tv);
+	AZ(evtimer_del(&ev_keepalive));
+	AZ(evtimer_add(&ev_keepalive, &tv));
 }
 
 /*--------------------------------------------------------------------*/
@@ -69,7 +67,7 @@ cli_func_ping(struct cli *cli, char **av, void *priv)
 	if (av[2] != NULL) {
 		/* XXX: check clock skew is pointless here */
 	}
-	time(&t);
+	t = time(NULL);
 	cli_out(cli, "PONG %ld\n", t);
 }
 
@@ -126,7 +124,7 @@ child_main(void)
 	cli = cli_setup(eb, heritage.fds[2], heritage.fds[1], 0, cli_proto);
 
 	evtimer_set(&ev_keepalive, timer_keepalive, NULL);
-	event_base_set(eb, &ev_keepalive);
+	AZ(event_base_set(eb, &ev_keepalive));
 	arm_keepalive();
 
 	printf("Ready\n");

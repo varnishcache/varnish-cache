@@ -8,6 +8,7 @@
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ... 
 -e785	// Too few initializers for aggregate 
+-e786	// String concatenation within initializer
 
 -emacro(740, TAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
 -emacro((826), TAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
@@ -17,6 +18,8 @@
 -esym(534, fprintf)	// Ignoring return value of function
 -esym(534, memset)	// Ignoring return value of function
 -esym(534, memcpy)	// Ignoring return value of function
+-esym(534, memmove)	// Ignoring return value of function
+-esym(534, strcpy)	// Ignoring return value of function
 -esym(534, sbuf_printf)	// Ignoring return value of function
 -esym(534, sbuf_cat)	// Ignoring return value of function
 
@@ -31,14 +34,7 @@
 -esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
-// storage_file.c
-
-// Review all below this line
-
-// -printf_code( H, void *, unsigned)
-// -printf_code( ju, long long unsigned)
-// -printf_code( jx, long long unsigned)
-// 
+// Review all below this line ///////////////////////////////////////////////
 
 -e767	// Macro redef (system queue.h vs ours )
 
@@ -46,33 +42,11 @@
 -e712	// Loss of precision (assignment) (long long to
 -e747	// Significant prototype coercion (arg. no. 2) long
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
+-e506	// Constant value boolean
+-e818	// Pointer parameter '...' could be declared as pointing to const
+-e774	// Boolean within 'if' always evaluates to False
+-e534	// Ignoring return value of function
+-e557	// unrecog format
+-e732   // Loss of sign (arg. no. 2) (int to unsigned
+-e737	// [45]  Loss of sign in promotion from int to unsigned
 
-// 
-// 
--e737	//  Loss of sign in promotion from int to unsigned int
--e732	// Loss of sign (arg. no. 2) (int to unsigned int)
-// -e715	// Symbol 'arg' (line 43) not referenced
-// -e818	// Pointer parameter '...' could be declared as pointing to const
-// 
-// -e534	// Ignoring return value of function
-// -e767	// macro 'LIST_INIT' was defined differently
-// 
-// -e506	// Constant value boolean
-// -e527	// Unreachable code at token 'return'
-// -e774	// Boolean within 'if' always evaluates to False
-// 
-// -e525	// Negative indentation from line 90
-// -e539	// Did not expect positive indentation
-// -e725	// Expected positive indentation from line 136
-// -e734	// Loss of precision (assignment) (31 bits to 8 bits)
-// 
-// 
-// 
-// -e766	//  Header file '../../include/libvarnish.h' not used in module
-// 
-// -e773	// Expression-like macro 'VCL_FARGS' not parenthesized
-// 
-// -e788	// enum constant 'HND_Unclass' not used within defaulted switch
-// 
-// 
-// -e786	// String concatenation within initializer

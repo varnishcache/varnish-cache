@@ -91,10 +91,11 @@ cli_passthrough_cb(unsigned u, const char *r, void *priv)
 }
 
 static void
-m_cli_func_passthrough(struct cli *cli, char **av, void *priv __unused)
+m_cli_func_passthrough(struct cli *cli, char **av, void *priv)
 {
 
 	(void)av;
+	(void)priv;
 
 	cli_suspend(cli);
 	mgt_child_request(cli_passthrough_cb, cli, &av[2], av[1]);
@@ -277,7 +278,7 @@ m_cli_func_ping(struct cli *cli, char **av, void *priv)
 	if (av[2] != NULL) {
 		cli_out(cli, "Got your %s\n", av[2]);
 	} 
-	time(&t);
+	t = time(NULL);
 	cli_out(cli, "PONG %ld\n", t);
 }
 
@@ -340,8 +341,8 @@ testme(void)
 	cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
 
 	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
-	event_base_set(mgt_eb, &e_sigchld);
-	signal_add(&e_sigchld, NULL);
+	AZ(event_base_set(mgt_eb, &e_sigchld));
+	AZ(signal_add(&e_sigchld, NULL));
 
 	mgt_child_start();
 
@@ -505,7 +506,7 @@ main(int argc, char *argv[])
 	const char *sflag = "file";
 	const char *hflag = "classic";
 
-	register_printf_render_std((const unsigned char *)"HVQ");
+	(void)register_printf_render_std((const unsigned char *)"HVQ");
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
