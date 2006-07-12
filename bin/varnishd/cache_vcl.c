@@ -1,5 +1,10 @@
 /*
  * $Id$
+ *
+ * Interface *to* compiled VCL code:  Loading, unloading, calling into etc.
+ *
+ * The interface *from* the compiled VCL code is in cache_vrt.c.
+ *
  */
 
 #include <stdio.h>
@@ -20,7 +25,6 @@ struct vcls {
 	const char		*name;
 	void			*dlh;
 	struct VCL_conf		*conf;
-	unsigned		busy;
 };
 
 /*
@@ -91,7 +95,13 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	assert(vcl != NULL);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	unlink(fn);
+
+	/*
+	 * Delete the file, either we got hold of it, or we couldn't care
+	 * less about it anyway.
+	 */
+	(void)unlink(fn);
+
 	if (vcl->dlh == NULL) {
 		if (cli == NULL)
 			fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());
@@ -106,7 +116,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 			fprintf(stderr, "No VCL_conf symbol\n");
 		else 
 			cli_out(cli, "No VCL_conf symbol\n");
-		dlclose(vcl->dlh);
+		(void)dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
 	}
@@ -115,7 +125,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 			fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
 		else
 			cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
-		dlclose(vcl->dlh);
+		(void)dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
 	}
@@ -137,10 +147,12 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 /*--------------------------------------------------------------------*/
 
 void
-cli_func_config_list(struct cli *cli, char **av __unused, void *priv __unused)
+cli_func_config_list(struct cli *cli, char **av, void *priv)
 {
 	struct vcls *vcl;
 
+	(void)av;
+	(void)priv;
 	TAILQ_FOREACH(vcl, &vcl_head, list) {
 		cli_out(cli, "%s %6u %s\n",
 		    vcl == vcl_active ? "* " : "  ",
@@ -150,25 +162,32 @@ cli_func_config_list(struct cli *cli, char **av __unused, void *priv __unused)
 }
 
 void
-cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
+cli_func_config_load(struct cli *cli, char **av, void *priv)
 {
 
+	(void)av;
+	(void)priv;
 	if (VCL_Load(av[3], av[2], cli))
 		cli_result(cli, CLIS_PARAM);
 	return;
 }
 
 void
-cli_func_config_unload(struct cli *cli, char **av __unused, void *priv __unused)
+cli_func_config_unload(struct cli *cli, char **av, void *priv)
 {
+
+	(void)av;
+	(void)priv;
 	cli_result(cli, CLIS_UNIMPL);
 }
 
 void
-cli_func_config_use(struct cli *cli, char **av, void *priv __unused)
+cli_func_config_use(struct cli *cli, char **av, void *priv)
 {
 	struct vcls *vcl;
 
+	(void)av;
+	(void)priv;
 	vcl = vcl_find(av[2]);
 	if (vcl != NULL) {
 		AZ(pthread_mutex_lock(&vcl_mtx));
@@ -183,7 +202,7 @@ cli_func_config_use(struct cli *cli, char **av, void *priv __unused)
 /*--------------------------------------------------------------------*/
 
 static const char *
-HandlingName(unsigned u)
+vcl_handlingname(unsigned u)
 {
 
 	switch (u) {
@@ -192,41 +211,27 @@ HandlingName(unsigned u)
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
-	default:		return (NULL);
+	default:
+		return (NULL);
 	}
 }
 
-static void
-CheckHandling(struct sess *sp, const char *func, unsigned bitmap)
-{
-	unsigned u;
-
-	u = sp->handling;
-	if (u & (u - 1))
-		VSL(SLT_Error, sp->fd,
-		    "Illegal handling after %s function: 0x%x", func, u);
-	else if (!(u & bitmap))
-		VSL(SLT_Error, sp->fd,
-		    "Wrong handling after %s function: 0x%x", func, u);
-	else
-		return;
-	sp->handling = VCL_RET_ERROR;
-}
-
-#define VCL_method(func, bitmap) 		\
-void						\
-VCL_##func##_method(struct sess *sp)		\
-{						\
-						\
-	sp->handling = 0;			\
-	VSL(SLT_VCL_call, sp->fd, "%s", #func); 	\
-	sp->vcl->func##_func(sp);		\
-	CheckHandling(sp, #func, (bitmap));	\
-	VSL(SLT_VCL_return, sp->fd, "%s", HandlingName(sp->handling)); \
-}
-
 #define VCL_RET_MAC(l,u,b)
-#define VCL_MET_MAC(l,u,b) VCL_method(l, b)
+
+#define VCL_MET_MAC(func, xxx, bitmap) 					\
+void									\
+VCL_##func##_method(struct sess *sp)					\
+{									\
+									\
+	sp->handling = 0;						\
+	VSL(SLT_VCL_call, sp->fd, "%s", #func); 			\
+	sp->vcl->func##_func(sp);					\
+	VSL(SLT_VCL_return, sp->fd, "%s",				\
+	     vcl_handlingname(sp->handling));				\
+	assert(sp->handling & bitmap);					\
+	assert(!(sp->handling & ~bitmap));				\
+}
+
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
