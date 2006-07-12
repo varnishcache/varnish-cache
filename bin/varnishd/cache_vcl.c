@@ -58,10 +58,30 @@ RelVCL(struct VCL_conf *vc)
 
 /*--------------------------------------------------------------------*/
 
-int
-CVCL_Load(const char *fn, const char *name)
+static struct vcls *
+find_vcls(const char *name)
 {
 	struct vcls *vcl;
+
+	TAILQ_FOREACH(vcl, &vcl_head, list)
+		if (!strcmp(vcl->name, name))
+			return (vcl);
+	return (NULL);
+}
+
+int
+CVCL_Load(const char *fn, const char *name, struct cli *cli)
+{
+	struct vcls *vcl;
+
+	vcl = find_vcls(name);
+	if (vcl != NULL) {
+		if (cli == NULL)
+			fprintf(stderr, "Config '%s' already loaded", name);
+		else 
+			cli_out(cli, "Config '%s' already loaded", name);
+		return (1);
+	}
 
 	vcl = calloc(sizeof *vcl, 1);
 	assert(vcl != NULL);
@@ -69,19 +89,28 @@ CVCL_Load(const char *fn, const char *name)
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	unlink(fn);
 	if (vcl->dlh == NULL) {
-		fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());
+		if (cli == NULL)
+			fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());
+		else
+			cli_out(cli, "dlopen(%s): %s\n", fn, dlerror());
 		free(vcl);
 		return (1);
 	}
 	vcl->conf = dlsym(vcl->dlh, "VCL_conf");
 	if (vcl->conf == NULL) {
-		fprintf(stderr, "No VCL_conf symbol\n");
+		if (cli == NULL)
+			fprintf(stderr, "No VCL_conf symbol\n");
+		else 
+			cli_out(cli, "No VCL_conf symbol\n");
 		dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
 	}
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
+		if (cli == NULL) 
+			fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
+		else
+			cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
 		dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
@@ -93,7 +122,10 @@ CVCL_Load(const char *fn, const char *name)
 	if (active_vcl == NULL)
 		active_vcl = vcl;
 	AZ(pthread_mutex_unlock(&sessmtx));
-	fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
+	if (cli == NULL)
+		fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
+	else 
+		cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
 	vcl->conf->init_func();
 	return (0);
 }
@@ -111,57 +143,12 @@ cli_func_config_list(struct cli *cli, char **av __unused, void *priv __unused)
 	}
 }
 
-static struct vcls *
-find_vcls(const char *name)
-{
-	struct vcls *vcl;
-
-	TAILQ_FOREACH(vcl, &vcl_head, list)
-		if (!strcmp(vcl->name, name))
-			return (vcl);
-	return (NULL);
-}
-
 void
 cli_func_config_load(struct cli *cli, char **av, void *priv __unused)
 {
-	struct vcls *vcl;
 
-	vcl = find_vcls(av[2]);
-	if (vcl != NULL) {
-		cli_out(cli, "Config '%s' already loaded", av[2]);
+	if (CVCL_Load(av[3], av[2], cli))
 		cli_result(cli, CLIS_PARAM);
-		return;
-	}
-	vcl = calloc(sizeof *vcl, 1);
-	assert(vcl != NULL);
-
-	vcl->dlh = dlopen(av[3], RTLD_NOW | RTLD_LOCAL);
-	if (vcl->dlh == NULL) {
-		cli_out(cli, "dlopen(%s): %s\n", av[3], dlerror());
-		cli_result(cli, CLIS_PARAM);
-		free(vcl);
-		return;
-	}
-	vcl->conf = dlsym(vcl->dlh, "VCL_conf");
-	if (vcl->conf == NULL) {
-		cli_out(cli, "No VCL_conf symbol\n");
-		cli_result(cli, CLIS_PARAM);
-		dlclose(vcl->dlh);
-		free(vcl);
-		return;
-	}
-	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
-		cli_result(cli, CLIS_PARAM);
-		dlclose(vcl->dlh);
-		free(vcl);
-		return;
-	}
-	vcl->name = strdup(av[2]);
-	assert(vcl->name != NULL);
-	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	cli_out(cli, "Loaded \"%s\" from \"%s\"\n", vcl->name , av[3]);
 	return;
 }
 

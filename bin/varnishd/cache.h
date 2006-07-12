@@ -287,7 +287,7 @@ void RES_Error(struct worker *w, struct sess *sp, int error, const char *msg);
 /* cache_vcl.c */
 void RelVCL(struct VCL_conf *vc);
 struct VCL_conf *GetVCL(void);
-int CVCL_Load(const char *fn, const char *name);
+int CVCL_Load(const char *fn, const char *name, struct cli *cli);
 
 #define VCL_RET_MAC(l,u,b)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
