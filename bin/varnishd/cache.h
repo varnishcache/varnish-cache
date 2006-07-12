@@ -116,6 +116,8 @@ struct object {
 	unsigned		heap_idx;
 	unsigned		ban_seq;
 
+	unsigned		pass;
+
 	unsigned		response;
 
 	unsigned		valid;
@@ -260,6 +262,7 @@ extern pthread_mutex_t sessmtx;
 
 /* cache_pass.c */
 void PassSession(struct worker *w, struct sess *sp);
+void PassBody(struct worker *w, struct sess *sp);
 
 /* cache_pipe.c */
 void PipeSession(struct worker *w, struct sess *sp);
