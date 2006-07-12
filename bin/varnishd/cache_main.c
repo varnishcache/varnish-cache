@@ -105,7 +105,7 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
-	CVCL_Load(heritage.vcl_file, "boot");
+	CVCL_Load(heritage.vcl_file, "boot", NULL);
 	AZ(pthread_mutex_init(&sessmtx, NULL));
 	VBE_Init();
 	VSL_Init();
