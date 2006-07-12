@@ -312,8 +312,15 @@ cnt_miss(struct worker *w, struct sess *sp)
 	VCL_miss_method(sp);
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
-	if (sp->handling == VCL_RET_PASS)
-		INCOMPL();
+	if (sp->handling == VCL_RET_PASS) {
+		sp->obj->cacheable = 0;
+		HSH_Unbusy(sp->obj);
+		HSH_Deref(sp->obj);
+		sp->obj = 0;
+		PassSession(w, sp);
+		sp->step = STP_DONE;
+		return;
+	}
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
