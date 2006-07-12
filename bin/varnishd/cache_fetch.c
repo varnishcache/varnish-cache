@@ -265,9 +265,9 @@ FetchBody(struct worker *w, struct sess *sp)
 	else
 		VBE_RecycleFd(vc);
 
-	if (sp->obj->cacheable)
-		EXP_Insert(sp->obj);
 	HSH_Unbusy(sp->obj);
+	/* Hold on to the reference count, it's not released until
+	 * expiry */
 	if (!sp->obj->cacheable)
 		HSH_Deref(sp->obj);
 	return (0);

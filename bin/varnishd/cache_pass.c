@@ -144,33 +144,19 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 
 
 /*--------------------------------------------------------------------*/
+
 void
-PassSession(struct worker *w, struct sess *sp)
+PassBody(struct worker *w, struct sess *sp)
 {
-	int i;
 	struct vbe_conn *vc;
 	struct http *hp;
 	char *b;
 	int cls;
 
-	vc = VBE_GetFd(sp->backend, sp->xid);
+	hp = sp->bkd_http;
+	assert(hp != NULL);
+	vc = sp->vbc;
 	assert(vc != NULL);
-	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
-
-	http_BuildSbuf(vc->fd, Build_Pass, w->sb, sp->http);
-	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
-
-	/* XXX: copy any contents */
-
-	/*
-	 * XXX: It might be cheaper to avoid the event_engine and simply
-	 * XXX: read(2) the header
-	 */
-	hp = vc->http;
-	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
-	event_base_loop(w->eb, 0);
-	http_DissectResponse(hp, vc->fd);
 
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
@@ -193,4 +179,35 @@ PassSession(struct worker *w, struct sess *sp)
 		VBE_ClosedFd(vc);
 	else
 		VBE_RecycleFd(vc);
+}
+
+/*--------------------------------------------------------------------*/
+void
+PassSession(struct worker *w, struct sess *sp)
+{
+	int i;
+	struct vbe_conn *vc;
+	struct http *hp;
+
+	vc = VBE_GetFd(sp->backend, sp->xid);
+	assert(vc != NULL);
+	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+
+	http_BuildSbuf(vc->fd, Build_Pass, w->sb, sp->http);
+	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
+	assert(i == sbuf_len(w->sb));
+
+	/* XXX: copy any contents */
+
+	/*
+	 * XXX: It might be cheaper to avoid the event_engine and simply
+	 * XXX: read(2) the header
+	 */
+	hp = vc->http;
+	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
+	event_base_loop(w->eb, 0);
+	http_DissectResponse(hp, vc->fd);
+
+	sp->bkd_http = hp;
+	sp->vbc = vc;
 }

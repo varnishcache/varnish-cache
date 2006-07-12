@@ -111,6 +111,8 @@ void
 HSH_Unbusy(struct object *o)
 {
 
+	if (o->cacheable)
+		EXP_Insert(o);
 	AZ(pthread_mutex_lock(&o->objhead->mtx));
 	o->busy = 0;
 	AZ(pthread_mutex_unlock(&o->objhead->mtx));
