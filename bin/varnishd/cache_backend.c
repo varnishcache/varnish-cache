@@ -26,7 +26,6 @@
 #include <sys/socket.h>
 
 #include <netdb.h>
-#include <sbuf.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

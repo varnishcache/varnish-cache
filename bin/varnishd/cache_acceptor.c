@@ -17,8 +17,6 @@
 
 #include <netdb.h>
 
-#include <sbuf.h>
-
 #include "config.h"
 #include "libvarnish.h"
 #include "heritage.h"

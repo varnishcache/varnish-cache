@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 #include <sys/wait.h>
-#include <queue.h>
+#include "queue.h"
 
 #include <event.h>
 #include <sbuf.h>
@@ -58,9 +58,11 @@ static TAILQ_HEAD(,creq)	creqhead = TAILQ_HEAD_INITIALIZER(creqhead);
  */
 
 static void
-std_rdcb(struct bufferevent *bev, void *arg __unused)
+std_rdcb(struct bufferevent *bev, void *arg)
 {
 	const char *p;
+
+	(void)arg;
 
 	while (1) {
 		p = evbuffer_readline(bev->input);
@@ -74,7 +76,8 @@ static void
 std_wrcb(struct bufferevent *bev, void *arg)
 {
 
-	printf("%s(%p, %p)\n", __func__, (void*)bev, arg);
+	printf("%s(%p, %p)\n",
+	    (const char *)__func__, (void*)bev, arg);
 	exit (2);
 }
 
@@ -82,7 +85,8 @@ static void
 std_excb(struct bufferevent *bev, short what, void *arg)
 {
 
-	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
+	printf("%s(%p, %d, %p)\n",
+	    (const char *)__func__, (void*)bev, what, arg);
 	exit (2);
 }
 
@@ -107,7 +111,7 @@ send_req(void)
 		cli_encode_string(child_cli1->output, cr->argv[u]);
 	}
 	evbuffer_add_printf(child_cli1->output, "\n");
-	bufferevent_enable(child_cli1, EV_WRITE);
+	AZ(bufferevent_enable(child_cli1, EV_WRITE));
 }
 
 void
@@ -132,11 +136,13 @@ mgt_child_request(mgt_ccb_f *func, void *priv, char **argv, const char *fmt, ...
 }
 
 static void
-cli_rdcb(struct bufferevent *bev, void *arg __unused)
+cli_rdcb(struct bufferevent *bev, void *arg)
 {
 	const char *p;
 	char **av;
 	struct creq *cr;
+
+	(void)arg;
 
 	p = evbuffer_readline(bev->input);
 	if (p == NULL)
@@ -167,32 +173,41 @@ static void
 cli_excb(struct bufferevent *bev, short what, void *arg)
 {
 
-	printf("%s(%p, %d, %p)\n", __func__, (void*)bev, what, arg);
+	printf("%s(%p, %d, %p)\n",
+	    (const char *)__func__, (void*)bev, what, arg);
 	exit (2);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-child_pingpong_ccb(unsigned u __unused, const char *r __unused, void *priv __unused)
+child_pingpong_ccb(unsigned u, const char *r, void *priv)
 {
+	(void)u;
+	(void)r;
+	(void)priv;
+
 	/* XXX: reset keepalive timer */
 }
 
 
 static void
-child_pingpong(int a __unused, short b __unused, void *c __unused)
+child_pingpong(int a, short b, void *c)
 {
 	time_t t;
 	struct timeval tv;
 
-	time(&t);
+	(void)a;
+	(void)b;
+	(void)c;
+
+	t = time(NULL);
 	mgt_child_request(child_pingpong_ccb, NULL, NULL, "ping %ld", t);
 	if (1) {
 		tv.tv_sec = 10;
 		tv.tv_usec = 0;
-		evtimer_del(&ev_child_pingpong);
-		evtimer_add(&ev_child_pingpong, &tv);
+		AZ(evtimer_del(&ev_child_pingpong));
+		AZ(evtimer_add(&ev_child_pingpong, &tv));
 	}
 }
 
@@ -237,22 +252,22 @@ start_child(void)
 	child_std = bufferevent_new(child_fds[0],
 	    std_rdcb, std_wrcb, std_excb, NULL);
 	assert(child_std != NULL);
-	bufferevent_base_set(mgt_eb, child_std);
+	AZ(bufferevent_base_set(mgt_eb, child_std));
 	bufferevent_enable(child_std, EV_READ);
 
 	child_cli0 = bufferevent_new(heritage.fds[0],
 	    cli_rdcb, cli_wrcb, cli_excb, NULL);
 	assert(child_cli0 != NULL);
-	bufferevent_base_set(mgt_eb, child_cli0);
+	AZ(bufferevent_base_set(mgt_eb, child_cli0));
 	bufferevent_enable(child_cli0, EV_READ);
 
 	child_cli1 = bufferevent_new(heritage.fds[3],
 	    cli_rdcb, cli_wrcb, cli_excb, NULL);
 	assert(child_cli1 != NULL);
-	bufferevent_base_set(mgt_eb, child_cli1);
+	AZ(bufferevent_base_set(mgt_eb, child_cli1));
 
 	evtimer_set(&ev_child_pingpong, child_pingpong, NULL);
-	event_base_set(mgt_eb, &ev_child_pingpong);
+	AZ(event_base_set(mgt_eb, &ev_child_pingpong));
 	child_pingpong(0, 0, NULL);
 }
 
@@ -312,12 +327,12 @@ mgt_sigchld(int a, short b, void *c)
 	bufferevent_free(child_std); /* XXX: is this enough ? */
 	child_std = NULL;
 
-	close(heritage.fds[0]);
-	close(heritage.fds[1]);
-	close(heritage.fds[2]);
-	close(heritage.fds[3]);
-	close(child_fds[0]);
-	close(child_fds[1]);
+	AZ(close(heritage.fds[0]));
+	AZ(close(heritage.fds[1]));
+	AZ(close(heritage.fds[2]));
+	AZ(close(heritage.fds[3]));
+	AZ(close(child_fds[0]));
+	AZ(close(child_fds[1]));
 
 	if (desired == H_START)
 		start_child();

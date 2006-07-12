@@ -43,13 +43,15 @@ EXP_TTLchange(struct object *o)
  */
 
 static void *
-exp_hangman(void *arg __unused)
+exp_hangman(void *arg)
 {
 	struct object *o;
 	time_t t;
 
+	(void)arg;
+
 	while (1) {
-		time (&t); 
+		t = time(NULL); 
 		AZ(pthread_mutex_lock(&exp_mtx));
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			if (o->ttl >= t)
@@ -64,7 +66,7 @@ exp_hangman(void *arg __unused)
 		}
 		if (o == NULL || o->ttl >= t || o->refcnt > 0) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
-			sleep(1);
+			AZ(sleep(1));
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
@@ -84,19 +86,21 @@ exp_hangman(void *arg __unused)
  */
 
 static void *
-exp_prefetch(void *arg __unused)
+exp_prefetch(void *arg)
 {
 	struct object *o;
 	time_t t;
 	struct sess sp;
 
+	(void)arg;
+
 	while (1) {
-		time(&t);
+		t = time(NULL);
 		AZ(pthread_mutex_lock(&exp_mtx));
 		o = binheap_root(exp_heap);
 		if (o == NULL || o->ttl > t + expearly) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
-			sleep(1);
+			AZ(sleep(1));
 			continue;
 		}
 		binheap_delete(exp_heap, 0);
@@ -121,9 +125,11 @@ exp_prefetch(void *arg __unused)
 /*--------------------------------------------------------------------*/
 
 static int
-object_cmp(void *priv __unused, void *a, void *b)
+object_cmp(void *priv, void *a, void *b)
 {
 	struct object *aa, *bb;
+
+	(void)priv;
 
 	aa = a;
 	bb = b;
@@ -131,10 +137,11 @@ object_cmp(void *priv __unused, void *a, void *b)
 }
 
 static void
-object_update(void *priv __unused, void *p, unsigned u)
+object_update(void *priv, void *p, unsigned u)
 {
 	struct object *o = p;
 
+	(void)priv;
 	o->heap_idx = u;
 }
 

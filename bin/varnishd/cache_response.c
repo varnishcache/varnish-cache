@@ -5,10 +5,8 @@
 #include <stdio.h>		/* XXX: for NULL ?? */
 #include <sys/types.h>
 #include <sys/time.h>
-#include <event.h>
 
 #include "libvarnish.h"
-#include "sbuf.h"
 #include "cache.h"
 
 

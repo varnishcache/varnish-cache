@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
