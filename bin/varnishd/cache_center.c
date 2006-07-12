@@ -522,9 +522,7 @@ CNT_Session(struct worker *w, struct sess *sp)
 {
 
 	time(&sp->t0);
-	AZ(pthread_mutex_lock(&sessmtx));
-	sp->vcl = GetVCL();
-	AZ(pthread_mutex_unlock(&sessmtx));
+	sp->vcl = VCL_Get();
 
 	for (sp->step = STP_RECV; sp->step != STP_DONE; ) {
 		switch (sp->step) {
@@ -541,9 +539,7 @@ CNT_Session(struct worker *w, struct sess *sp)
 
 	cnt_done(w, sp);	/* The loop doesn't do this */
 
-	AZ(pthread_mutex_lock(&sessmtx));
-	RelVCL(sp->vcl);
-	AZ(pthread_mutex_unlock(&sessmtx));
+	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
 
 	vca_return_session(sp);
