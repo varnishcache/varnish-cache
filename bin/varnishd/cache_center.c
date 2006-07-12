@@ -33,10 +33,7 @@ DOT start -> RECV
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sbuf.h>
 
-#include "libvarnish.h"
-#include "heritage.h"
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"
@@ -521,7 +518,7 @@ void
 CNT_Session(struct worker *w, struct sess *sp)
 {
 
-	time(&sp->t0);
+	sp->t0 = time(NULL);
 	sp->vcl = VCL_Get();
 
 	for (sp->step = STP_RECV; sp->step != STP_DONE; ) {

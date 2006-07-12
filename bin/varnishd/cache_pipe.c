@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"

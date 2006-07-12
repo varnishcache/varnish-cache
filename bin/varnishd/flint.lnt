@@ -6,18 +6,32 @@
 -e763	// Redundant declaration for symbol '...' previously declared
 -e726	// Extraneous comma ignored
 -e728	// Symbol ... not explicitly initialized
+-e716	// while(1) ... 
+-e785	// Too few initializers for aggregate 
 
+-emacro(740, TAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
+-emacro((826), TAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
+
+
+-esym(534, printf)	// Ignoring return value of function
 -esym(534, fprintf)	// Ignoring return value of function
 -esym(534, memset)	// Ignoring return value of function
+-esym(534, memcpy)	// Ignoring return value of function
 -esym(534, sbuf_printf)	// Ignoring return value of function
+-esym(534, sbuf_cat)	// Ignoring return value of function
 
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean
+
+// cache_center.c
+-efunc(525, CNT_Session)	// Negative indentation from line
 
 // cache_vcl.c
 -efunc(525, vcl_handlingname)	// Negative indentation from line
 -esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
+
+// storage_file.c
 
 // Review all below this line
 
@@ -26,6 +40,12 @@
 // -printf_code( jx, long long unsigned)
 // 
 
+-e767	// Macro redef (system queue.h vs ours )
+
+-e574	// Signed-unsigned mix with relational
+-e712	// Loss of precision (assignment) (long long to
+-e747	// Significant prototype coercion (arg. no. 2) long
+-e713	// Loss of precision (assignment) (unsigned long long to long long)
 
 // 
 // 
@@ -40,18 +60,13 @@
 // -e506	// Constant value boolean
 // -e527	// Unreachable code at token 'return'
 // -e774	// Boolean within 'if' always evaluates to False
-// -e713	// Loss of precision (assignment) (unsigned long long to long long)
-// -e574	// Signed-unsigned mix with relational
 // 
 // -e525	// Negative indentation from line 90
 // -e539	// Did not expect positive indentation
 // -e725	// Expected positive indentation from line 136
 // -e734	// Loss of precision (assignment) (31 bits to 8 bits)
-// -e747	// Significant prototype coercion (arg. no. 2) long
-// -e712	// Loss of precision (assignment) (long long to
 // 
 // 
-// -e785	// Too few initializers for aggregate 
 // 
 // -e766	//  Header file '../../include/libvarnish.h' not used in module
 // 
@@ -59,6 +74,5 @@
 // 
 // -e788	// enum constant 'HND_Unclass' not used within defaulted switch
 // 
-// -e716	// while(1) ... 
 // 
 // -e786	// String concatenation within initializer

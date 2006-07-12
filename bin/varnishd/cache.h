@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include <queue.h>
-#include <event.h>
+
+#include "queue.h"
+#include "event.h"
+#include "sbuf.h"
 
 #include "vcl_returns.h"
 #include "common.h"

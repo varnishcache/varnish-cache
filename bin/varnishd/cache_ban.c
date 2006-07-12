@@ -36,7 +36,7 @@ AddBan(const char *regexp)
 	if (i) {
 		char buf[512];
 	
-		regerror(i, &b->regexp, buf, sizeof buf);
+		(void)regerror(i, &b->regexp, buf, sizeof buf);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
 	}
 	b->gen = ++ban_next;
@@ -71,9 +71,10 @@ BAN_CheckObject(struct object *o, const char *url)
 }
 
 void
-cli_func_url_purge(struct cli *cli, char **av, void *priv __unused)
+cli_func_url_purge(struct cli *cli, char **av, void *priv)
 {
 
+	(void)priv;
 	AddBan(av[2]);
 	cli_out(cli, "PURGE %s\n", av[2]);
 }

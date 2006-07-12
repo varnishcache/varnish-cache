@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -29,8 +28,9 @@
 #define CHUNK_PREALLOC		(128 * 1024)
 
 /*--------------------------------------------------------------------*/
+
 static int
-fetch_straight(struct sess *sp, int fd, struct http *hp, char *b)
+fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 {
 	int i;
 	char *e;
@@ -70,7 +70,7 @@ fetch_straight(struct sess *sp, int fd, struct http *hp, char *b)
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
 static int
-fetch_chunked(struct sess *sp, int fd, struct http *hp)
+fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *b, *q, *e;
@@ -180,7 +180,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 #include <errno.h>
 
 static int
-fetch_eof(struct sess *sp, int fd, struct http *hp)
+fetch_eof(const struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *b, *e;
@@ -222,7 +222,7 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 		sp->obj->len += i;
 	}
 
-	if (st != NULL && stevedore->trim != NULL)
+	if (stevedore->trim != NULL)
 		stevedore->trim(st, st->len);
 
 	return (1);
@@ -294,7 +294,7 @@ FetchHeaders(struct worker *w, struct sess *sp)
 	http_BuildSbuf(vc->fd, Build_Fetch, w->sb, sp->http);
 	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
-	time(&sp->t_req);
+	sp->t_req = time(NULL);
 
 	/* XXX: copy any body ?? */
 
@@ -303,8 +303,8 @@ FetchHeaders(struct worker *w, struct sess *sp)
 	 * XXX: read(2) the header
 	 */
 	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
-	event_base_loop(w->eb, 0);
-	time(&sp->t_resp);
+	(void)event_base_loop(w->eb, 0);
+	sp->t_resp = time(NULL);
 	assert(http_DissectResponse(hp, vc->fd) == 0);
 	sp->vbc = vc;
 	sp->bkd_http = hp;

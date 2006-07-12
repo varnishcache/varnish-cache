@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <sbuf.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
