@@ -257,9 +257,6 @@ enum http_build {
 };
 void http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp);
 
-/* cache_main.c */
-extern pthread_mutex_t sessmtx;
-
 /* cache_pass.c */
 void PassSession(struct worker *w, struct sess *sp);
 void PassBody(struct worker *w, struct sess *sp);
@@ -288,9 +285,10 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 void RES_Error(struct worker *w, struct sess *sp, int error, const char *msg);
 
 /* cache_vcl.c */
-void RelVCL(struct VCL_conf *vc);
-struct VCL_conf *GetVCL(void);
-int CVCL_Load(const char *fn, const char *name, struct cli *cli);
+void VCL_Init(void);
+void VCL_Rel(struct VCL_conf *vc);
+struct VCL_conf *VCL_Get(void);
+int VCL_Load(const char *fn, const char *name, struct cli *cli);
 
 #define VCL_RET_MAC(l,u,b)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

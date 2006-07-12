@@ -20,7 +20,6 @@ static struct event ev_keepalive;
 
 struct stevedore	*stevedore;
 
-pthread_mutex_t	sessmtx;
 struct varnish_stats *VSL_stats;
 
 /*--------------------------------------------------------------------*/
@@ -105,8 +104,9 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
-	CVCL_Load(heritage.vcl_file, "boot", NULL);
-	AZ(pthread_mutex_init(&sessmtx, NULL));
+	VCL_Init();
+	VCL_Load(heritage.vcl_file, "boot", NULL);
+
 	VBE_Init();
 	VSL_Init();
 	WRK_Init();

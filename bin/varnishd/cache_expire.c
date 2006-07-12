@@ -103,10 +103,10 @@ exp_prefetch(void *arg __unused)
 		AZ(pthread_mutex_unlock(&exp_mtx));
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
-		sp.vcl = GetVCL();
+		sp.vcl = VCL_Get();
 		sp.obj = o;
 		VCL_timeout_method(&sp);
-		RelVCL(sp.vcl);
+		VCL_Rel(sp.vcl);
 
 		if (sp.handling == VCL_RET_DISCARD) {
 			AZ(pthread_mutex_lock(&exp_mtx));
