@@ -122,6 +122,7 @@ vcl_default(const char *bflag)
 		q = p + 1;
 	} else {
 		p = strchr(bflag, '\0');
+		assert(p != NULL);
 		q = "http";
 	}
 	

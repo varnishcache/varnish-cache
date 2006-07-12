@@ -20,7 +20,6 @@
 #include <sbuf.h>
 
 #include "config.h"
-#include "compat.h"
 #include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"
@@ -72,7 +71,7 @@ vca_new_sess(void)
 }
 
 static void
-vca_delete_sess(struct sess *sp)
+vca_delete_sess(const struct sess *sp)
 {
 
 	VSL_stats->n_sess--;
@@ -160,13 +159,16 @@ vca_write_obj(struct worker *w, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_tick(int a __unused, short b __unused, void *c __unused)
+vca_tick(int a, short b, void *c)
 {
 	struct sess *sp, *sp2;
 	time_t t;
 
-	evtimer_add(&tick_e, &tick_rate);
-	time(&t);
+	(void)a;
+	(void)b;
+	(void)c;
+	AZ(evtimer_add(&tick_e, &tick_rate));
+	(void)time(&t);
 	TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 		if (sp->t_resp + 30 < t) {
 			TAILQ_REMOVE(&sesshead, sp, list);
@@ -194,20 +196,22 @@ vca_callback(void *arg, int bad)
 }
 
 static void
-pipe_f(int fd, short event __unused, void *arg __unused)
+pipe_f(int fd, short event, void *arg)
 {
 	struct sess *sp;
 	int i;
 
+	(void)event;
+	(void)arg;
 	i = read(fd, &sp, sizeof sp);
 	assert(i == sizeof sp);
-	time(&sp->t_resp);
+	sp->t_resp = time(NULL);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void
-accept_f(int fd, short event __unused, void *arg __unused)
+accept_f(int fd, short event, void *arg)
 {
 	socklen_t l;
 	struct sockaddr addr[2];	/* XXX: IPv6 hack */
@@ -215,6 +219,8 @@ accept_f(int fd, short event __unused, void *arg __unused)
 	int i;
 	struct linger linger;
 
+	(void)event;
+	(void)arg;
 	VSL_stats->client_conn++;
 
 	sp = vca_new_sess();
@@ -239,28 +245,31 @@ accept_f(int fd, short event __unused, void *arg __unused)
 
 	TCP_name(addr, l, sp->addr);
 	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
-	time(&sp->t_resp);
+	(void)time(&sp->t_resp);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void *
-vca_main(void *arg __unused)
+vca_main(void *arg)
 {
 	unsigned u;
 	struct event *ep;
 
+	(void)arg;
+
 	AZ(pipe(pipes));
 	evb = event_init();
+	assert(evb != NULL);
 
 	event_set(&pipe_e, pipes[0], EV_READ | EV_PERSIST, pipe_f, NULL);
-	event_base_set(evb, &pipe_e);
-	event_add(&pipe_e, NULL);
+	AZ(event_base_set(evb, &pipe_e));
+	AZ(event_add(&pipe_e, NULL));
 
 	evtimer_set(&tick_e, vca_tick, NULL);
-	event_base_set(evb, &tick_e);
+	AZ(event_base_set(evb, &tick_e));
 	
-	evtimer_add(&tick_e, &tick_rate);
+	AZ(evtimer_add(&tick_e, &tick_rate));
 
 	ep = accept_e;
 	for (u = 0; u < HERITAGE_NSOCKS; u++) {
@@ -268,23 +277,22 @@ vca_main(void *arg __unused)
 			event_set(ep, heritage.sock_local[u],
 			    EV_READ | EV_PERSIST,
 			    accept_f, NULL);
-			event_base_set(evb, ep);
-			event_add(ep, NULL);
+			AZ(event_base_set(evb, ep));
+			AZ(event_add(ep, NULL));
 			ep++;
 		}
 		if (heritage.sock_remote[u] >= 0) {
 			event_set(ep, heritage.sock_remote[u],
 			    EV_READ | EV_PERSIST,
 			    accept_f, NULL);
-			event_base_set(evb, ep);
-			event_add(ep, NULL);
+			AZ(event_base_set(evb, ep));
+			AZ(event_add(ep, NULL));
 			ep++;
 		}
 	}
 
-	event_base_loop(evb, 0);
-	assert(0 == 1);
-	return (NULL);
+	AZ(event_base_loop(evb, 0));
+	INCOMPL();
 }
 
 /*--------------------------------------------------------------------*/
@@ -294,7 +302,8 @@ vca_close_session(struct sess *sp, const char *why)
 {
 
 	VSL(SLT_SessionClose, sp->fd, why);
-	close(sp->fd);
+	if (sp->fd >= 0)
+		AZ(close(sp->fd));
 	sp->fd = -1;
 }
 
@@ -306,7 +315,7 @@ vca_return_session(struct sess *sp)
 
 	if (sp->fd >= 0) {
 		VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
-		write(pipes[1], &sp, sizeof sp);
+		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
 	} else {
 		vca_delete_sess(sp);
 	}

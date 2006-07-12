@@ -199,7 +199,6 @@ vbe_connect(struct backend *bp)
 
 	TCP_myname(s, buf);
 	p = strchr(buf, '\0');
-	assert(p != NULL);
 	*p++ = ' ';
 	TCP_name(ai->ai_addr, ai->ai_addrlen, p);
 	VSL(SLT_BackendOpen, s, buf);
