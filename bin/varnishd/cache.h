@@ -277,7 +277,8 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #define HERE() VSL(SLT_Debug, 0, "HERE: %s(%d)", __func__, __LINE__)
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
-	assert(__LINE__ == 0);						\
+	fprintf(stderr,"INCOMPLETE AT: %s(%d)\n", (const char *)__func__, __LINE__);	\
+	abort();							\
 	} while (0)
 #endif
 
