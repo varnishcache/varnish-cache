@@ -128,10 +128,11 @@ struct var {
 
 static struct method {
 	const char		*name;
+	const char		*defname;
 	unsigned		returns;
 } method_tab[] = {
 #define VCL_RET_MAC(a,b,c)
-#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, c },
+#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, "default_vcl_"#a, c },
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -195,6 +196,7 @@ static void Compound(struct tokenlist *tl);
 static void Cond_0(struct tokenlist *tl);
 static struct proc *AddProc(struct tokenlist *tl, struct token *t, int def);
 static void AddCall(struct tokenlist *tl, struct token *t);
+static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
@@ -223,13 +225,22 @@ static void
 ErrWhere(struct tokenlist *tl, struct token *t)
 {
 	unsigned lin, pos, x, y;
-	const char *p, *l;
+	const char *p, *l, *f, *b, *e;
 	
 	lin = 1;
 	pos = 0;
 	if (t->tok == METHOD)
 		return;
-	for (l = p = tl->b; p < t->b; p++) {
+	if (t->b >= vcc_default_vcl_b && t->b < vcc_default_vcl_e) {
+		f = "Default VCL code (compiled in)";
+		b = vcc_default_vcl_b;
+		e = vcc_default_vcl_e;
+	} else {
+		f = "VCL code";
+		b = tl->b;
+		e = tl->e;
+	}
+	for (l = p = b; p < t->b; p++) {
 		if (*p == '\n') {
 			lin++;
 			pos = 0;
@@ -240,9 +251,9 @@ ErrWhere(struct tokenlist *tl, struct token *t)
 		} else
 			pos++;
 	}
-	sbuf_printf(tl->sb, "Line %d Pos %d\n", lin, pos);
+	sbuf_printf(tl->sb, "In %s Line %d Pos %d\n", f, lin, pos);
 	x = y = 0;
-	for (p = l; p < tl->e && *p != '\n'; p++) {
+	for (p = l; p < e && *p != '\n'; p++) {
 		if (*p == '\t') {
 			y &= ~7;
 			y += 8;
@@ -258,7 +269,7 @@ ErrWhere(struct tokenlist *tl, struct token *t)
 	}
 	sbuf_cat(tl->sb, "\n");
 	x = y = 0;
-	for (p = l; p < tl->e && *p != '\n'; p++) {
+	for (p = l; p < e && *p != '\n'; p++) {
 		if (p >= t->b && p < t->e) {
 			sbuf_bcat(tl->sb, "#", 1);
 			x++;
@@ -450,6 +461,20 @@ FindRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 	r->type = type;
 	TAILQ_INSERT_TAIL(&tl->refs, r, list);
 	return (r);
+}
+
+static int
+FindRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
+{
+	struct ref *r;
+
+	TAILQ_FOREACH(r, &tl->refs, list) {
+		if (r->type != type)
+			continue;
+		if (IdIs(r->name, s))
+			return (1);
+	}
+	return (0);
 }
 
 static void
@@ -1381,8 +1406,13 @@ AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 	t->e = e;
 	TAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
-	if (0)
-		fprintf(stderr, "+ %s\n", vcl_tnames[tok]);
+	if (0) {
+		fprintf(stderr, "[%s %*.*s] ",
+		    vcl_tnames[tok],
+		    e - b, e - b, b);
+		if (tok == EOI)
+			fprintf(stderr, "\n");
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -1478,8 +1508,6 @@ Lexer(struct tokenlist *tl, const char *b, const char *e)
 		ErrWhere(tl, tl->t);
 		return;
 	}
-	/* Add End Of Input token */
-	AddToken(tl, EOI, p, p);
 }
 
 /*--------------------------------------------------------------------
@@ -1575,6 +1603,8 @@ Consistency(struct tokenlist *tl)
 
 	TAILQ_FOREACH(p, &tl->procs, list) {
 		for(m = method_tab; m->name != NULL; m++) {
+			if (IdIs(p->name, m->defname))
+				p->called = 1;
 			if (IdIs(p->name, m->name))
 				break;
 		}
@@ -1722,8 +1752,13 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 #define VCL_RET_MAC(l,u,b)
 #define VCL_MET_MAC(l,u,b) \
-	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); \
-	AddRefStr(tl, "vcl_" #l, R_FUNC);
+	if (FindRefStr(tl, "vcl_" #l, R_FUNC)) { \
+		Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); \
+		AddRefStr(tl, "vcl_" #l, R_FUNC); \
+	} else { \
+		Fc(tl, 0, "\t." #l "_func = VGC_function_default_vcl_" #l ",\n"); \
+	} \
+	AddRefStr(tl, "default_vcl_" #l, R_FUNC);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -1762,6 +1797,8 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	assert(e != NULL);
 	tokens.e = e;
 	Lexer(&tokens, b, e);
+	Lexer(&tokens, vcc_default_vcl_b, vcc_default_vcl_e);
+	AddToken(&tokens, EOI, e, e);
 	if (tokens.err)
 		goto done;
 	tokens.t = TAILQ_FIRST(&tokens.tokens);
@@ -1870,10 +1907,14 @@ VCC_T_arginfo(const struct printf_info *info __unused, size_t n, int *argtypes)
 /*--------------------------------------------------------------------*/
 
 void
-VCC_InitCompile(void)
+VCC_InitCompile(const char *default_vcl)
 {
 	struct var *v;
 
+	vcc_default_vcl_b = default_vcl;
+	vcc_default_vcl_e = strchr(default_vcl, '\0');
+	assert(vcc_default_vcl_e != NULL);
+	
 	register_printf_function ('T', VCC_T_render, VCC_T_arginfo);
 	vcl_init_tnames();
 	for (v = vars; v->name != NULL; v++)

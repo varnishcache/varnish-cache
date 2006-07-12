@@ -33,6 +33,46 @@
 
 /*--------------------------------------------------------------------*/
 
+static const char *default_vcl =
+    "sub default_vcl_recv {\n"
+    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
+    "        pipe;\n"
+    "    }\n"
+    "    if (req.http.Expect) {\n"
+    "        pipe;\n"
+    "    }\n"
+    "    if (req.http.Authenticate || req.http.Cookie) {\n"
+    "        pass;\n"
+    "    }\n"
+    "    lookup;\n"
+    "}\n"
+    "\n"
+    "sub default_vcl_hit {\n"
+    "    if (!obj.cacheable) {\n"
+    "        pass;\n"
+    "    }\n"
+    "    deliver;\n"
+    "}\n"
+    "\n"
+    "sub default_vcl_miss {\n"
+    "    fetch;\n"
+    "}\n"
+    "\n"
+    "sub default_vcl_fetch {\n"
+    "    if (!obj.valid) {\n"
+    "        error;\n"
+    "    }\n"
+    "    if (!obj.cacheable) {\n"
+    "        pass;\n"
+    "    }\n"
+    "    insert;\n"
+    "}\n"
+    "sub default_vcl_timeout {\n"
+    "    discard;\n"
+    "}\n";
+
+/*--------------------------------------------------------------------*/
+
 struct heritage heritage;
 struct event_base *mgt_eb;
 
@@ -90,44 +130,7 @@ vcl_default(const char *bflag)
 	    "backend default {\n"
 	    "    set backend.host = \"%*.*s\";\n"
 	    "    set backend.port = \"%s\";\n"
-	    "}\n"
-	    "sub vcl_recv {\n"
-	    "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"
-	    "        pipe;\n"
-	    "    }\n"
-	    "    if (req.http.Expect) {\n"
-	    "        pipe;\n"
-	    "    }\n"
-	    "    if (req.http.Authenticate || req.http.Cookie) {\n"
-	    "        pass;\n"
-	    "    }\n"
-	    "    lookup;\n"
-	    "}\n"
-	    "\n"
-	    "sub vcl_hit {\n"
-	    "    if (!obj.cacheable) {\n"
-	    "        pass;\n"
-	    "    }\n"
-	    "    deliver;\n"
-	    "}\n"
-	    "\n"
-	    "sub vcl_miss {\n"
-	    "    fetch;\n"
-	    "}\n"
-	    "\n"
-	    "sub vcl_fetch {\n"
-	    "    if (!obj.valid) {\n"
-	    "        error;\n"
-	    "    }\n"
-	    "    if (!obj.cacheable) {\n"
-	    "        pass;\n"
-	    "    }\n"
-	    "    insert;\n"
-	    "}\n"
-	    "sub vcl_timeout {\n"
-	    "    discard;\n"
-	    "}\n"
-	    "", p - bflag, p - bflag, bflag, q);
+	    "}\n", p - bflag, p - bflag, bflag, q);
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
@@ -243,6 +246,9 @@ static void
 m_cli_func_exit(struct cli *cli, char **av, void *priv)
 {
 
+	(void)cli;
+	(void)av;
+	(void)priv;
 	mgt_child_kill();
 	exit (0);
 }
@@ -503,7 +509,7 @@ main(int argc, char *argv[])
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
  
-	VCC_InitCompile();
+	VCC_InitCompile(default_vcl);
 
 	heritage.default_ttl = 120;
 	heritage.wthread_min = 1;
