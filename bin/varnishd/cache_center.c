@@ -373,7 +373,13 @@ DOT }
 DOT pipe -> DONE
  */
 
-static void cnt_pipe(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_pipe(struct worker *w, struct sess *sp)
+{
+
+	PipeSession(w, sp);
+	sp->step = STP_DONE;
+}
 
 
 /*--------------------------------------------------------------------
