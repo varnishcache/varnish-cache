@@ -125,7 +125,7 @@ vbe_lookup(struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 static int
-vbe_sock_conn(struct addrinfo *ai)
+vbe_sock_conn(const struct addrinfo *ai)
 {
 	int s;
 
@@ -133,7 +133,7 @@ vbe_sock_conn(struct addrinfo *ai)
 	if (s < 0) 
 		return (s);
 	else if (connect(s, ai->ai_addr, ai->ai_addrlen)) {
-		close(s);
+		AZ(close(s));
 		s = -1;
 	} 
 	return (s);
@@ -212,11 +212,13 @@ vbe_connect(struct backend *bp)
  */
 
 static void
-vbe_rdp(int fd, short event __unused, void *arg __unused)
+vbe_rdp(int fd, short event, void *arg)
 {
 	struct vbe_conn *vc;
 	int i;
 
+	(void)event;
+	(void)arg;
 	i = read(fd, &vc, sizeof vc);
 	assert(i == sizeof vc);
 	AZ(pthread_mutex_lock(&vbemtx));
@@ -226,7 +228,7 @@ vbe_rdp(int fd, short event __unused, void *arg __unused)
 		vbe_delete_conn(vc);
 	} else {
 		vc->inuse = 0;
-		event_add(&vc->ev, NULL);
+		AZ(event_add(&vc->ev, NULL));
 		TAILQ_INSERT_HEAD(&vc->vbe->fconn, vc, list);
 	}
 	AZ(pthread_mutex_unlock(&vbemtx));
@@ -239,15 +241,17 @@ vbe_rdp(int fd, short event __unused, void *arg __unused)
  */
 
 static void
-vbe_rdf(int fd __unused, short event __unused, void *arg)
+vbe_rdf(int fd, short event, void *arg)
 {
 	struct vbe_conn *vc;
 	int j;
 
+	(void)fd;
+	(void)event;
 	vc = arg;
 	AZ(pthread_mutex_lock(&vbemtx));
 	if (vc->inuse) {
-		event_del(&vc->ev);
+		AZ(event_del(&vc->ev));
 		AZ(pthread_mutex_unlock(&vbemtx));
 		return;
 	} 
@@ -255,18 +259,19 @@ vbe_rdf(int fd __unused, short event __unused, void *arg)
 	VSL(SLT_BackendClose, vc->fd, "Remote (%d chars)", j);
 	TAILQ_REMOVE(&vc->vbe->fconn, vc, list);
 	AZ(pthread_mutex_unlock(&vbemtx));
-	event_del(&vc->ev);
-	close(vc->fd);
+	AZ(event_del(&vc->ev));
+	AZ(close(vc->fd));
 	vbe_delete_conn(vc);
 }
 
 /* Backend monitoring thread -----------------------------------------*/
 
 static void *
-vbe_main(void *priv __unused)
+vbe_main(void *priv)
 {
 	struct event pev;
 
+	(void)priv;
 	vbe_evb = event_init();
 	assert(vbe_evb != NULL);
 
@@ -274,13 +279,12 @@ vbe_main(void *priv __unused)
 
 	memset(&pev, 0, sizeof pev);
 	event_set(&pev, vbe_pipe[0], EV_READ | EV_PERSIST, vbe_rdp, NULL);
-	event_base_set(vbe_evb, &pev);
-	event_add(&pev, NULL);
+	AZ(event_base_set(vbe_evb, &pev));
+	AZ(event_add(&pev, NULL));
 
-	event_base_loop(vbe_evb, 0);
+	AZ(event_base_loop(vbe_evb, 0));
 
-	assert(__LINE__ == 0);
-	return (NULL);
+	INCOMPL();
 }
 
 /* Get a backend connection ------------------------------------------
@@ -343,7 +347,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		VSL_stats->backend_conn++;
 		event_set(&vc->ev, vc->fd,
 		    EV_READ | EV_PERSIST, vbe_rdf, vc);
-		event_base_set(vbe_evb, &vc->ev);
+		AZ(event_base_set(vbe_evb, &vc->ev));
 	}
 	VSL(SLT_BackendXID, vc->fd, "%u", xid);
 	return (vc);
@@ -356,8 +360,9 @@ VBE_ClosedFd(struct vbe_conn *vc)
 {
 	int i;
 
+	assert(vc->fd >= 0);
 	VSL(SLT_BackendClose, vc->fd, "");
-	close(vc->fd);
+	AZ(close(vc->fd));
 	vc->fd = -1;
 	i = write(vbe_pipe[1], &vc, sizeof vc);
 	assert(i == sizeof vc);
