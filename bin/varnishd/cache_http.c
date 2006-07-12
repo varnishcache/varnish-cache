@@ -338,11 +338,13 @@ http_header_complete(struct http *hp)
 #include <errno.h>
 
 static void
-http_read_f(int fd, short event __unused, void *arg)
+http_read_f(int fd, short event, void *arg)
 {
 	struct http *hp = arg;
 	unsigned l;
 	int i, ret = 0;
+
+	(void)event;
 
 	l = hp->e - hp->v;
 	if (l <= 1) {
@@ -391,7 +393,8 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	assert(hp->v <= hp->e);
 	assert(hp->t <= hp->v);
 	if (0)
-	VSL(SLT_Debug, fd, "Recv t %u v %u", hp->t - hp->s, hp->v - hp->s);
+		VSL(SLT_Debug, fd, "Recv t %u v %u",
+		    hp->t - hp->s, hp->v - hp->s);
 	if (hp->t > hp->s && hp->t < hp->v) {
 		l = hp->v - hp->t;
 		memmove(hp->s, hp->t, l);
@@ -409,8 +412,8 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	hp->callback = func;
 	hp->arg = arg;
 	event_set(&hp->ev, fd, EV_READ | EV_PERSIST, http_read_f, hp);
-	event_base_set(eb, &hp->ev);
-	event_add(&hp->ev, NULL);      /* XXX: timeout */
+	AZ(event_base_set(eb, &hp->ev));
+	AZ(event_add(&hp->ev, NULL));      /* XXX: timeout */
 }
 
 /*--------------------------------------------------------------------*/

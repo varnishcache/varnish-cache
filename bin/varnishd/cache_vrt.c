@@ -8,14 +8,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
-#include "cli.h"
-#include "cli_priv.h"
 #include "shmlog.h"
 #include "vrt.h"
 #include "vcl.h"
-#include "libvarnish.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------*/
@@ -24,6 +20,7 @@ void
 VRT_error(struct sess *sp, unsigned err, const char *str)
 { 
 
+	(void)sp;
 	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", err, str);
 }
 

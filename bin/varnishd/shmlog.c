@@ -69,8 +69,8 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	if (loghead->ptr + 4 + l + 1 > loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
-	p[1] = l;
-	p[2] = id >> 8;
+	p[1] = l & 0xff;
+	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
 	memcpy(p + 4, b, l);
 	p[4 + l] = SLT_ENDMARKER;

@@ -78,6 +78,8 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
 	time_t h_date, h_expires, ttd;
 	char *p;
 	
+	(void)t_resp;	/* XXX */
+
 	retirement_age = INT_MAX;
 
 	u1 = u2 = 0;
