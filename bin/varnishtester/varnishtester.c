@@ -328,6 +328,15 @@ cmd_vcl(char **av)
 	cli_write("config.inline ");
 	cli_write(av[0]);
 	cli_write(" \"");
+
+	/* Always insert our magic backend first */
+
+	cli_write(
+	    "backend default {\\n"
+	    "    set backend.host = \\\"localhost\\\";\\n"
+	    "    set backend.port = \\\"8081\\\";\\n"
+	    "}\\n");
+
 	for (p = av[1]; *p; p++) {
 		if (*p < ' ' || *p == '"' || *p == '\\' || *p > '~') {
 			sprintf(buf, "\\%03o", *p);
@@ -493,13 +502,13 @@ rd_cmd(struct bufferevent *bev, void *arg)
 		if (p == NULL)
 			return;
 		printf("]: <<%s>>\n", p);
-		av = ParseArgv(p, 0);
+		av = ParseArgv(p, 1);
 		if (av[0] != NULL) {
 			fprintf(stderr, "%s\n", av[0]);
 			exit (1);
 		}
 		if (av[1] == NULL)
-			return;
+			continue;
 		if (!strcmp(av[1], "start"))
 			cmd_start(av + 2);
 		else if (!strcmp(av[1], "stop"))
