@@ -339,7 +339,13 @@ DOT }
 DOT pass -> PASSBODY
  */
 
-static void cnt_pass(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static void
+cnt_pass(struct worker *w, struct sess *sp)
+{
+
+	PassSession(w, sp);
+	sp->step = STP_DONE;	/* XXX */
+}
 
 
 /*--------------------------------------------------------------------
