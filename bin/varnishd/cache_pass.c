@@ -182,8 +182,7 @@ PassSession(struct worker *w, struct sess *sp)
 	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
 		cls = pass_chunked(sp, vc->fd, hp);
 	else {
-		INCOMPL();
-		cls = 1;
+		cls = pass_straight(sp, vc->fd, hp, NULL);
 	}
 	vca_flush(sp);
 
