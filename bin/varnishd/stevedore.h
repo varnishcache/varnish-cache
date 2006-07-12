@@ -1,5 +1,5 @@
 /*
- * $Id: cache.h 164 2006-05-01 12:45:20Z phk $
+ * $Id$
  */
 
 struct stevedore;
