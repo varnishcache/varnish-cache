@@ -153,6 +153,7 @@ vca_callback(void *arg, int bad)
 		vca_return_session(sp);
 		return;
 	}
+	sp->step = STP_RECV;
 	WRK_QueueSession(sp);
 }
 

@@ -531,7 +531,6 @@ CNT_Session(struct sess *sp)
 {
 	int done;
 
-	sp->step = STP_RECV;
 	for (done = 0; !done; ) {
 		switch (sp->step) {
 #define STEP(l,u) \
@@ -544,7 +543,6 @@ CNT_Session(struct sess *sp)
 		default:	INCOMPL();
 		}
 	}
-
 }
 
 /*
