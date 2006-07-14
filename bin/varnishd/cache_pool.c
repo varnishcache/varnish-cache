@@ -17,7 +17,6 @@
 #include "cache.h"
 
 static pthread_mutex_t wrk_mtx;
-static unsigned		xids;
 
 /* Number of work requests queued in excess of worker threads available */
 static unsigned		wrk_overflow;
@@ -105,15 +104,7 @@ WRK_QueueSession(struct sess *sp)
 
 	sp->t_req = time(NULL);
 
-	/*
-	 * No locking necessary, we're serialized in the acceptor thread
-	 * XXX: still ?
-	 */
-	sp->xid = xids++;
-	VSL(SLT_XID, sp->fd, "%u", sp->xid);
-
 	sp->workreq.sess = sp;
-	VSL_stats->client_req++;
 
 	AZ(pthread_mutex_lock(&wrk_mtx));
 	TAILQ_INSERT_TAIL(&wrk_reqhead, &sp->workreq, list);
@@ -171,6 +162,4 @@ WRK_Init(void)
 		AZ(pthread_create(&tp, NULL, wrk_thread, &i));
 		AZ(pthread_detach(tp));
 	}
-	srandomdev();
-	xids = random();
 }

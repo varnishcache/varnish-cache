@@ -120,7 +120,6 @@ struct object {
 	unsigned 		refcnt;
 	unsigned		xid;
 	struct objhead		*objhead;
-	pthread_cond_t		cv;
 
 	unsigned		heap_idx;
 	unsigned		ban_seq;
@@ -145,6 +144,8 @@ struct object {
 	TAILQ_ENTRY(object)	deathrow;
 
 	TAILQ_HEAD(, storage)	store;
+
+	TAILQ_HEAD(, sess)	waitinglist;
 };
 
 struct objhead {
@@ -257,7 +258,7 @@ int FetchBody(struct worker *w, struct sess *sp);
 int FetchHeaders(struct worker *w, struct sess *sp);
 
 /* cache_hash.c */
-struct object *HSH_Lookup(struct worker *w, struct http *h);
+struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Deref(struct object *o);
 void HSH_Init(void);
