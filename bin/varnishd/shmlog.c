@@ -105,8 +105,8 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 		if (n > 255)
 			n = 255; 	/* we truncate long fields */
 	}
-	p[1] = n;
-	p[2] = id >> 8;
+	p[1] = n & 0xff;
+	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
 	p[4 + n] = SLT_ENDMARKER;
 	p[0] = tag;
@@ -145,6 +145,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	struct shmloghead slh;
 	int i = 0;
 
+	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	heritage.vsl_fd = open(fn, O_RDWR, 0644);
 	if (heritage.vsl_fd >= 0)
 		i = read(heritage.vsl_fd, &slh, sizeof slh);
@@ -154,10 +155,9 @@ VSL_MgtInit(const char *fn, unsigned size)
 		/* XXX more checks */
 
 		fprintf(stderr, "Creating new SHMFILE\n");
-		if (heritage.vsl_fd >= 0); {
+		if (heritage.vsl_fd >= 0)
 			close(heritage.vsl_fd);
-		}
-		unlink(fn);
+		(void)unlink(fn);
 		heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
 		if (heritage.vsl_fd < 0) {
 			fprintf(stderr, "Could not open %s: %s\n",
@@ -174,7 +174,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 		AZ(lseek(heritage.vsl_fd, 0, SEEK_SET));
 		i = write(heritage.vsl_fd, &slh, sizeof slh);
 		assert(i == sizeof slh);
-		AZ(ftruncate(heritage.vsl_fd, sizeof slh + size));
+		AZ(ftruncate(heritage.vsl_fd, (off_t)sizeof slh + (off_t)size));
 	}
 	heritage.vsl_size = slh.size + slh.start;
 
