@@ -32,49 +32,8 @@ static struct timeval tick_rate;
 
 static pthread_t vca_thread;
 
-#define SESS_IOVS	10
-
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
-
-struct sessmem {
-	struct sess	sess;
-	struct iovec	iov[SESS_IOVS];
-	int		niov;
-	size_t		liov;
-	struct http	http;
-	char		*http_hdr;
-};
-
-/*--------------------------------------------------------------------*/
-
-static struct sess *
-vca_new_sess(void)
-{
-	struct sessmem *sm;
-
-	sm = calloc(
-	    sizeof *sm +
-	    heritage.mem_http_headers * sizeof sm->http_hdr +
-	    heritage.mem_http_headerspace +
-	    heritage.mem_workspace,
-	    1);
-	if (sm == NULL)
-		return (NULL);
-	VSL_stats->n_sess++;
-	sm->sess.mem = sm;
-	sm->sess.http = &sm->http;
-	http_Init(&sm->http, (void *)(sm + 1));
-	return (&sm->sess);
-}
-
-static void
-vca_delete_sess(const struct sess *sp)
-{
-
-	VSL_stats->n_sess--;
-	free(sp->mem);
-}
 
 
 /*--------------------------------------------------------------------
@@ -89,13 +48,13 @@ vca_flush(struct sess *sp)
 {
 	int i;
 
-	if (sp->fd < 0 || sp->mem->niov == 0)
+	if (sp->fd < 0 || sp->wrk->niov == 0)
 		return;
-	i = writev(sp->fd, sp->mem->iov, sp->mem->niov);
-	if (i != sp->mem->liov)
+	i = writev(sp->fd, sp->wrk->iov, sp->wrk->niov);
+	if (i != sp->wrk->liov)
 		vca_close_session(sp, "remote closed");
-	sp->mem->liov = 0;
-	sp->mem->niov = 0;
+	sp->wrk->liov = 0;
+	sp->wrk->niov = 0;
 }
 
 void
@@ -104,13 +63,13 @@ vca_write(struct sess *sp, void *ptr, size_t len)
 
 	if (sp->fd < 0 || len == 0)
 		return;
-	if (sp->mem->niov == SESS_IOVS)
+	if (sp->wrk->niov == MAX_IOVS)
 		vca_flush(sp);
 	if (sp->fd < 0)
 		return;
-	sp->mem->iov[sp->mem->niov].iov_base = ptr;
-	sp->mem->iov[sp->mem->niov++].iov_len = len;
-	sp->mem->liov += len;
+	sp->wrk->iov[sp->wrk->niov].iov_base = ptr;
+	sp->wrk->iov[sp->wrk->niov++].iov_len = len;
+	sp->wrk->liov += len;
 }
 
 void
@@ -145,9 +104,9 @@ vca_write_obj(struct worker *w, struct sess *sp)
 				continue;
 			}
 			st->stevedore->send(st, sp,
-			    sp->mem->iov, sp->mem->niov, sp->mem->liov);
-			sp->mem->niov = 0;
-			sp->mem->liov = 0;
+			    sp->wrk->iov, sp->wrk->niov, sp->wrk->liov);
+			sp->wrk->niov = 0;
+			sp->wrk->liov = 0;
 		}
 		assert(u == sp->obj->len);
 	}
@@ -221,16 +180,17 @@ accept_f(int fd, short event, void *arg)
 	(void)arg;
 	VSL_stats->client_conn++;
 
-	sp = vca_new_sess();
-	assert(sp != NULL);	/* XXX handle */
-
 
 	l = sizeof addr;
-	sp->fd = accept(fd, addr, &l);
-	if (sp->fd < 0) {
-		vca_delete_sess(sp);
+	i = accept(fd, addr, &l);
+	if (i < 0) {
 		return;
 	}
+	sp = SES_New(addr, l);
+	assert(sp != NULL);	/* XXX handle */
+
+	sp->fd = i;
+
 #ifdef SO_NOSIGPIPE /* XXX Linux */
 	i = 1;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_NOSIGPIPE, &i, sizeof i));
@@ -315,7 +275,7 @@ vca_return_session(struct sess *sp)
 		VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
 		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
 	} else {
-		vca_delete_sess(sp);
+		SES_Delete(sp);
 	}
 }
 

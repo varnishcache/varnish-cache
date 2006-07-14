@@ -105,6 +105,8 @@ child_main(void)
 	VCL_Init();
 	VCL_Load(heritage.vcl_file, "boot", NULL);
 
+	SES_Init();
+
 	VBE_Init();
 	VSL_Init();
 	WRK_Init();
