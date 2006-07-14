@@ -268,7 +268,7 @@ cmd_start(char **av)
 		execl(
 		    "./varnishd",
 		    "varnishd",
-		    "-blocalhost:8081",
+		    "-b", "localhost 8081",
 		    "-sfile,/tmp/,10m",
 		    NULL);
 		perror("execl");
