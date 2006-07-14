@@ -62,7 +62,8 @@ wrk_thread(void *priv)
 			TAILQ_REMOVE(&wrk_reqhead, wrq, list);
 			AZ(pthread_mutex_unlock(&wrk_mtx));
 			assert(wrq->sess != NULL);
-			CNT_Session(w, wrq->sess);
+			wrq->sess->wrk = w;
+			CNT_Session(wrq->sess);
 			AZ(pthread_mutex_lock(&wrk_mtx));
 			VSL_stats->n_wrk_busy--;
 			TAILQ_INSERT_HEAD(&wrk_head, w, list);

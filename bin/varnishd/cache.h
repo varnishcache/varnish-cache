@@ -245,7 +245,7 @@ void BAN_NewObj(struct object *o);
 int BAN_CheckObject(struct object *o, const char *url);
 
 /* cache_center.c [CNT] */
-void CNT_Session(struct worker *w, struct sess *sp);
+void CNT_Session(struct sess *sp);
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
