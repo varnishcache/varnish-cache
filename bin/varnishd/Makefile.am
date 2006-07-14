@@ -27,6 +27,7 @@ varnishd_SOURCES = \
 	cache_pass.c \
 	cache_pipe.c \
 	cache_response.c \
+	cache_session.c \
 	cache_vcl.c \
 	cache_vrt.c \
 	cli_event.c \

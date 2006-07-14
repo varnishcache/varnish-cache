@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <sys/uio.h>
 #include <sys/time.h>
 
 #include "queue.h"
@@ -12,6 +13,8 @@
 
 #include "vcl_returns.h"
 #include "common.h"
+
+#define MAX_IOVS		10
 
 struct event_base;
 struct cli;
@@ -66,6 +69,10 @@ struct worker {
 	unsigned		nbr;
 	pthread_cond_t		cv;
 	TAILQ_ENTRY(worker)	list;
+
+	struct iovec		iov[MAX_IOVS];
+	unsigned		niov;
+	size_t			liov;
 };
 
 struct workreq {
@@ -147,12 +154,24 @@ struct objhead {
 	TAILQ_HEAD(,object)	objects;
 };
 
+/* -------------------------------------------------------------------*/
+
+struct client {
+	TAILQ_ENTRY(client)	list;
+	unsigned		nsess;
+	char			addr[TCP_ADDRBUFFSIZE];
+	uint64_t		bytes;
+};
+
 struct sess {
 	int			fd;
 	unsigned		xid;
 
+	struct worker		*wrk;
+
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFFSIZE];
+	struct client		*client;
 
 	/* HTTP request */
 	struct http		*http;
@@ -269,6 +288,12 @@ void PipeSession(struct worker *w, struct sess *sp);
 /* cache_pool.c */
 void WRK_Init(void);
 void WRK_QueueSession(struct sess *sp);
+
+/* cache_session.c [SES] */
+void SES_Init(void);
+struct sess *SES_New(struct sockaddr *addr, unsigned len);
+void SES_Delete(const struct sess *sp);
+
 
 /* cache_shmlog.c */
 
