@@ -134,6 +134,7 @@ VSL_Init(void)
 	/* XXX check sanity of loghead */
 	logstart = (unsigned char *)loghead + loghead->start;
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
+	loghead->starttime = time(NULL);
 	VSL_stats = &loghead->stats;
 }
 
