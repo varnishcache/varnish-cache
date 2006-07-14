@@ -129,6 +129,8 @@ VSL_Init(void)
 	    heritage.vsl_fd, 0);
 	assert(loghead != MAP_FAILED);
 
+	assert(loghead->magic == SHMLOGHEAD_MAGIC);
+	assert(loghead->hdrsize == sizeof *loghead);
 	/* XXX check sanity of loghead */
 	logstart = (unsigned char *)loghead + loghead->start;
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
@@ -151,8 +153,10 @@ VSL_MgtInit(const char *fn, unsigned size)
 	    slh.hdrsize != sizeof slh) {
 		/* XXX more checks */
 
-		if (heritage.vsl_fd >= 0);
+		fprintf(stderr, "Creating new SHMFILE\n");
+		if (heritage.vsl_fd >= 0); {
 			close(heritage.vsl_fd);
+		}
 		unlink(fn);
 		heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
 		if (heritage.vsl_fd < 0) {
@@ -160,8 +164,8 @@ VSL_MgtInit(const char *fn, unsigned size)
 			    fn, strerror(errno));
 			exit (1);
 		}
-		memset(&slh, 0, sizeof slh);
 
+		memset(&slh, 0, sizeof slh);
 		slh.magic = SHMLOGHEAD_MAGIC;
 		slh.hdrsize = sizeof slh;
 		slh.size = size;

@@ -15,6 +15,8 @@ struct shmloghead {
 #define SHMLOGHEAD_MAGIC	4185512498U	/* From /dev/random */
 	unsigned		magic;
 
+	unsigned		hdrsize;
+
 	/*
 	 * Byte offset into the file where the fifolog starts
  	 * This allows the header to expand later.
