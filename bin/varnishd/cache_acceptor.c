@@ -32,6 +32,7 @@ static struct event tick_e;
 static struct timeval tick_rate;
 
 static pthread_t vca_thread;
+static unsigned		xids;
 
 static struct event accept_e[2 * HERITAGE_NSOCKS];
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
@@ -154,6 +155,9 @@ vca_callback(void *arg, int bad)
 		return;
 	}
 	sp->step = STP_RECV;
+	VSL_stats->client_req++;
+	sp->xid = xids++;
+	VSL(SLT_XID, sp->fd, "%u", sp->xid);
 	WRK_QueueSession(sp);
 }
 
@@ -295,4 +299,6 @@ VCA_Init(void)
 	tick_rate.tv_sec = 1;
 	tick_rate.tv_usec = 0;
 	AZ(pthread_create(&vca_thread, NULL, vca_main, NULL));
+	srandomdev();
+	xids = random();
 }

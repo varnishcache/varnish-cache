@@ -273,17 +273,20 @@ cnt_hit(struct sess *sp)
 /*--------------------------------------------------------------------
  * Look up request in hash table
  *
+ * LOOKUP consists of two substates so that we can reenter if we
+ * encounter a busy object.
+ *
 DOT subgraph cluster_lookup {
 DOT	lookup [
 DOT		shape=ellipse
 DOT		label="find obj in cache"
 DOT	]
 DOT	LOOKUP -> lookup [style=bold]
-DOT	lookup2 [
+DOT	lookup3 [
 DOT		shape=ellipse
 DOT		label="Insert new busy object"
 DOT	]
-DOT	lookup -> lookup2 [style=bold]
+DOT	lookup -> lookup3 [style=bold]
 DOT }
 DOT lookup -> HIT [label="hit", style=bold]
 DOT lookup2 -> MISS [label="miss", style=bold]
@@ -292,22 +295,48 @@ DOT lookup2 -> MISS [label="miss", style=bold]
 static int
 cnt_lookup(struct sess *sp)
 {
+	sp->obj = NULL;
+	sp->step = STP_LOOKUP2;
+	return (0);
+}
 
-	sp->obj = HSH_Lookup(sp->wrk, sp->http);
+static int
+cnt_lookup2(struct sess *sp)
+{
+	struct object *o;
+
+	/*
+	 * We don't assign to sp->obj directly because it is used
+ 	 * to store state when we encounter a busy object.
+	 */
+	o = HSH_Lookup(sp);
+
+	/* If we encountered busy-object, disembark worker thread */
+	if (o == NULL) {
+		VSL(SLT_Debug, sp->fd,
+		    "on waiting list on obj %u", sp->obj->xid);
+		return (1);
+	}
+
+	sp->obj = o;
+
+	/* If we inserted a new object it's a miss */
 	if (sp->obj->busy) {
 		VSL_stats->cache_miss++;
 		sp->step = STP_MISS;
 		return (0);
 	}
+
+	/* Account separately for pass and cache objects */
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
 		VSL(SLT_HitPass, sp->fd, "%u", sp->obj->xid);
-		sp->step = STP_HIT;
-		return (0);
-	} 
-	VSL_stats->cache_hit++;
-	VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
+	} else {
+		VSL_stats->cache_hit++;
+		VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
+	}
 	sp->step = STP_HIT;
+HERE();
 	return (0);
 }
 
