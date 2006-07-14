@@ -3,24 +3,26 @@
  *
  * Session and Client management.
  *
- * The client structures are kept around only as a convenience feature to
+ * The srcaddr structures are kept around only as a convenience feature to
  * make it possible to track down offenders and misconfigured caches.
  * As such it is pure overhead and we do not want to spend too much time
  * on maintaining it.
  *
- * We identify clients by their address only and disregard the port number,
- * because the desired level of granularity is "whois is abuse@ or tech-c@
- * in the RIPE database.
+ * We identify srcaddrs instead of full addr+port because the desired level
+ * of granularity is "whois is abuse@ or tech-c@ in the RIPE database.
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/uio.h>
 
+#include "libvarnish.h"
 #include "heritage.h"
-#include "cache.h"
 #include "shmlog.h"
+#include "cache.h"
 
 #define CLIENT_HASH			256
+#define CLIENT_TTL			30
 
 /*--------------------------------------------------------------------*/
 
@@ -32,9 +34,113 @@ struct sessmem {
 
 /*--------------------------------------------------------------------*/
 
-TAILQ_HEAD(clienthead ,client);
+TAILQ_HEAD(srcaddrhead ,srcaddr);
 
-static struct clienthead	client_hash[CLIENT_HASH];
+static struct srcaddrhead	srcaddr_hash[CLIENT_HASH];
+static pthread_mutex_t		ses_mtx;
+
+/*--------------------------------------------------------------------
+ * Assign a srcaddr to this session.
+ *
+ * We use a simple hash over the ascii representation of the address
+ * because it is nice and modular.  I'm not sure how much improvement
+ * using the binary address would be anyway.
+ *
+ * Each hash bucket is sorted in least recently used order and if we
+ * need to make a new entry we recycle the first expired entry we find.
+ * If we find more expired entries during our search, we delete them.
+ */
+
+void
+SES_RefSrcAddr(struct sess *sp)
+{
+	unsigned u, v;
+	char *p;
+	struct srcaddr *c, *c2, *c3;
+	struct srcaddrhead *ch;
+	time_t now;
+
+	for (u = 0, p = sp->addr; *p; p++)
+		u += u + *p;
+	v = u % CLIENT_HASH;
+	ch = &srcaddr_hash[v];
+	now = time(NULL);
+
+	AZ(pthread_mutex_lock(&ses_mtx));
+	c3 = NULL;
+	TAILQ_FOREACH_SAFE(c, ch, list, c2) {
+		if (c->sum == u && !strcmp(c->addr, sp->addr)) {
+			c->nsess++;
+			c->ttl = now + CLIENT_TTL;
+			sp->srcaddr = c;
+			TAILQ_REMOVE(ch, c, list);
+			TAILQ_INSERT_TAIL(ch, c, list);
+			AZ(pthread_mutex_unlock(&ses_mtx));
+			return;
+		}
+		if (c->nsess > 0 || c->ttl > now)
+			continue;
+		if (c3 == NULL) {
+			c3 = c;
+			continue;
+		}
+		TAILQ_REMOVE(ch, c2, list);
+		free(c2);
+		VSL_stats->n_srcaddr--;
+	}
+	if (c3 == NULL) {
+		c3 = malloc(sizeof *c3);
+		if (c3 != NULL)
+			VSL_stats->n_srcaddr++;
+	} else
+		TAILQ_REMOVE(ch, c3, list);
+	if (c3 != NULL) {
+		memset(c3, 0, sizeof *c3);
+		strcpy(c3->addr, sp->addr);
+		c3->sum = u;
+		c3->first = now;
+		c3->ttl = now + CLIENT_TTL;
+		c3->nsess = 1;
+		c3->sah = ch;
+		TAILQ_INSERT_TAIL(ch, c3, list);
+	}
+	sp->srcaddr = c3;
+	AZ(pthread_mutex_unlock(&ses_mtx));
+}
+
+void
+SES_ChargeBytes(struct sess *sp, uint64_t bytes)
+{
+	struct srcaddr *sa;
+	time_t now;
+
+	assert(sp->srcaddr != NULL);
+	sa = sp->srcaddr;
+	now = time(NULL);
+	AZ(pthread_mutex_lock(&ses_mtx));
+VSL(SLT_Debug, 0, "%ju", bytes);
+VSL(SLT_Debug, 0, "%ju", sa->bytes);
+	sa->bytes += bytes;
+VSL(SLT_Debug, 0, "%ju", sa->bytes);
+	sa->ttl = now + CLIENT_TTL;
+	TAILQ_REMOVE(sa->sah, sa, list);
+	TAILQ_INSERT_TAIL(sa->sah, sa, list);
+	bytes = sa->bytes;
+	AZ(pthread_mutex_unlock(&ses_mtx));
+	VSL(SLT_SrcAddr, sp->fd, "%s %jd %d",
+	    sa->addr, (intmax_t)(bytes), now - sa->first);
+}
+
+void
+SES_RelSrcAddr(struct sess *sp)
+{
+
+	assert(sp->srcaddr != NULL);
+	AZ(pthread_mutex_lock(&ses_mtx));
+	sp->srcaddr->nsess--;
+	sp->srcaddr = NULL;
+	AZ(pthread_mutex_unlock(&ses_mtx));
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -61,10 +167,11 @@ SES_New(struct sockaddr *addr, unsigned len)
 }
 
 void
-SES_Delete(const struct sess *sp)
+SES_Delete(struct sess *sp)
 {
 
 	VSL_stats->n_sess--;
+	SES_RelSrcAddr(sp);
 	free(sp->mem);
 }
 
@@ -76,5 +183,6 @@ SES_Init()
 	int i;
 
 	for (i = 0; i < CLIENT_HASH; i++)
-		TAILQ_INIT(&client_hash[i]);
+		TAILQ_INIT(&srcaddr_hash[i]);
+	AZ(pthread_mutex_init(&ses_mtx, NULL));
 }

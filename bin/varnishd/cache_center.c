@@ -523,6 +523,8 @@ CNT_Session(struct worker *w, struct sess *sp)
 
 	sp->wrk = w;
 
+	SES_RefSrcAddr(sp);
+
 	for (sp->step = STP_RECV; sp->step != STP_DONE; ) {
 		switch (sp->step) {
 #define STEP(l,u) \

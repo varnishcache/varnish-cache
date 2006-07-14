@@ -156,11 +156,15 @@ struct objhead {
 
 /* -------------------------------------------------------------------*/
 
-struct client {
-	TAILQ_ENTRY(client)	list;
+struct srcaddr {
+	TAILQ_ENTRY(srcaddr)	list;
 	unsigned		nsess;
 	char			addr[TCP_ADDRBUFSIZE];
+	unsigned		sum;
+	time_t			first;
+	time_t			ttl;
 	uint64_t		bytes;
+	struct srcaddrhead	*sah;
 };
 
 struct sess {
@@ -172,7 +176,7 @@ struct sess {
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFSIZE];
 	char			port[TCP_PORTBUFSIZE];
-	struct client		*client;
+	struct srcaddr		*srcaddr;
 
 	/* HTTP request */
 	struct http		*http;
@@ -293,8 +297,10 @@ void WRK_QueueSession(struct sess *sp);
 /* cache_session.c [SES] */
 void SES_Init(void);
 struct sess *SES_New(struct sockaddr *addr, unsigned len);
-void SES_Delete(const struct sess *sp);
-
+void SES_Delete(struct sess *sp);
+void SES_RefSrcAddr(struct sess *sp);
+void SES_RelSrcAddr(struct sess *sp);
+void SES_ChargeBytes(struct sess *sp, uint64_t bytes);
 
 /* cache_shmlog.c */
 

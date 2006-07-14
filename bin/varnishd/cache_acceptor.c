@@ -79,6 +79,7 @@ vca_write_obj(struct worker *w, struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	char *r;
+	uint64_t bytes = 0;
 	
 
 	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
@@ -96,6 +97,7 @@ vca_write_obj(struct worker *w, struct sess *sp)
 	sbuf_printf(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
+	bytes += sbuf_len(w->sb);
 	assert(http_GetReq(sp->http, &r));
 	if (!strcmp(r, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -111,6 +113,7 @@ vca_write_obj(struct worker *w, struct sess *sp)
 		}
 		assert(u == sp->obj->len);
 	}
+	SES_ChargeBytes(sp, bytes + u);
 	vca_flush(sp);
 }
 
