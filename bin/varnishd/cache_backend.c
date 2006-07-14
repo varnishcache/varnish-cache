@@ -186,7 +186,8 @@ static int
 vbe_connect(struct backend *bp)
 {
 	int s;
-	char buf[TCP_ADDRBUFFSIZE * 2 + 1], *p;
+	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
+	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 	struct addrinfo *ai;
 
 	assert(bp != NULL);
@@ -196,11 +197,10 @@ vbe_connect(struct backend *bp)
 	if (s < 0) 
 		return (s);
 
-	TCP_myname(s, buf);
-	p = strchr(buf, '\0');
-	*p++ = ' ';
-	TCP_name(ai->ai_addr, ai->ai_addrlen, p);
-	VSL(SLT_BackendOpen, s, buf);
+	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	TCP_name(ai->ai_addr, ai->ai_addrlen,
+	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VSL(SLT_BackendOpen, s, "%s %s %s %s", abuf1, pbuf1, abuf2, pbuf2);
 	return (s);
 }
 
