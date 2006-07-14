@@ -141,19 +141,29 @@ void
 VSL_MgtInit(const char *fn, unsigned size)
 {
 	struct shmloghead slh;
-	int i;
+	int i = 0;
 
-	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
-	if (heritage.vsl_fd < 0) {
-		fprintf(stderr, "Could not open %s: %s\n",
-		    fn, strerror(errno));
-		exit (1);
-	}
-	i = read(heritage.vsl_fd, &slh, sizeof slh);
-	if (i != sizeof slh || slh.magic != SHMLOGHEAD_MAGIC) {
+	heritage.vsl_fd = open(fn, O_RDWR, 0644);
+	if (heritage.vsl_fd >= 0)
+		i = read(heritage.vsl_fd, &slh, sizeof slh);
+	if (heritage.vsl_fd < 0 || i != sizeof slh ||
+	    slh.magic != SHMLOGHEAD_MAGIC ||
+	    slh.hdrsize != sizeof slh) {
 		/* XXX more checks */
 
+		if (heritage.vsl_fd >= 0);
+			close(heritage.vsl_fd);
+		unlink(fn);
+		heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
+		if (heritage.vsl_fd < 0) {
+			fprintf(stderr, "Could not open %s: %s\n",
+			    fn, strerror(errno));
+			exit (1);
+		}
+		memset(&slh, 0, sizeof slh);
+
 		slh.magic = SHMLOGHEAD_MAGIC;
+		slh.hdrsize = sizeof slh;
 		slh.size = size;
 		slh.ptr = 0;
 		slh.start = sizeof slh;
