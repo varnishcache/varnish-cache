@@ -11,6 +11,7 @@
 SLTM(Debug)
 SLTM(Error)
 SLTM(CLI)
+SLTM(SrcAddr)
 SLTM(SessionOpen)
 SLTM(SessionReuse)
 SLTM(SessionClose)

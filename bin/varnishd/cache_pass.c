@@ -1,5 +1,7 @@
 /*
  * $Id$
+ *
+ * XXX: charge bytes to srcaddr
  */
 
 #include <stdio.h>
