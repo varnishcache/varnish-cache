@@ -9,6 +9,8 @@
 
 #define SHMLOG_FILENAME		"/tmp/_.vsl"
 
+#include <time.h>
+
 #include "stats.h"
 
 struct shmloghead {
@@ -16,6 +18,8 @@ struct shmloghead {
 	unsigned		magic;
 
 	unsigned		hdrsize;
+
+	time_t			starttime;
 
 	/*
 	 * Byte offset into the file where the fifolog starts
