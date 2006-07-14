@@ -118,7 +118,7 @@ vcl_default(const char *bflag)
 	 * XXX: a bug for a backend to not reply at that time, so then
 	 * XXX: again: we should check it here in the "trivial" case.
 	 */
-	p = strchr(bflag, ':');
+	p = strchr(bflag, ' ');
 	if (p != NULL) {
 		q = p + 1;
 	} else {
@@ -444,17 +444,43 @@ usage(void)
 {
 	fprintf(stderr, "usage: varnishd [options]\n");
 	fprintf(stderr, "    %-28s # %s\n", "-b backend",
-	    "backend IP or hostname");
+	    "backend location");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "   -b <hostname_or_IP>");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "   -b '<hostname_or_IP> <port_or_service>'");
 	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
 	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL_file");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-h kind[,hashoptions]", "Hash specification");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -h simple_list");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -h classic  [default]");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -h classic,<buckets>");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -h classic,<buckets>,<buckets_per_mutex>");
 	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-s kind[,storageoptions]", "Backend storage specification");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -s malloc");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -s file  [default: use /tmp]");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -s file,<dir_or_file>");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
 	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
-	    "Number of worker threads (fixed/{min,max}/{min/max/timeout})");
+	    "Number of worker threads");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -w <fixed_count>");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -w min,max");
+	fprintf(stderr, "    %-28s # %s\n", "",
+	    "  -w min,max,timeout [default: -w1,INF,10]");
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
