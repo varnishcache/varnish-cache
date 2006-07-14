@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -184,6 +185,8 @@ accept_f(int fd, short event, void *arg)
 	l = sizeof addr;
 	i = accept(fd, addr, &l);
 	if (i < 0) {
+		VSL(SLT_Debug, fd, "Accept failed errno=%d", errno);
+		/* XXX: stats ? */
 		return;
 	}
 	sp = SES_New(addr, l);
@@ -201,8 +204,8 @@ accept_f(int fd, short event, void *arg)
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &linger, sizeof linger));
 #endif
 
-	TCP_name(addr, l, sp->addr);
-	VSL(SLT_SessionOpen, sp->fd, "%s", sp->addr);
+	TCP_name(addr, l, sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
 	(void)time(&sp->t_resp);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
@@ -272,7 +275,7 @@ vca_return_session(struct sess *sp)
 {
 
 	if (sp->fd >= 0) {
-		VSL(SLT_SessionReuse, sp->fd, "%s", sp->addr);
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
 	} else {
 		SES_Delete(sp);

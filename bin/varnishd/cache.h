@@ -159,7 +159,7 @@ struct objhead {
 struct client {
 	TAILQ_ENTRY(client)	list;
 	unsigned		nsess;
-	char			addr[TCP_ADDRBUFFSIZE];
+	char			addr[TCP_ADDRBUFSIZE];
 	uint64_t		bytes;
 };
 
@@ -170,7 +170,8 @@ struct sess {
 	struct worker		*wrk;
 
 	/* formatted ascii client address */
-	char			addr[TCP_ADDRBUFFSIZE];
+	char			addr[TCP_ADDRBUFSIZE];
+	char			port[TCP_PORTBUFSIZE];
 	struct client		*client;
 
 	/* HTTP request */
