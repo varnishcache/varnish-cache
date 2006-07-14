@@ -57,12 +57,13 @@ DOT }
 DOT deliver2 -> DONE [style=bold]
  */
 
-static void
+static int
 cnt_deliver(struct worker *w, struct sess *sp)
 {
 
 	vca_write_obj(w, sp);
 	sp->step = STP_DONE;
+	return (0);
 }
 
 
@@ -76,7 +77,7 @@ DOT		label="Request completed"
 DOT	]
  */
 
-static void
+static int
 cnt_done(struct worker *w, struct sess *sp)
 {
 	char *b;
@@ -89,6 +90,7 @@ cnt_done(struct worker *w, struct sess *sp)
 	    strcmp(b, "HTTP/1.1")) {
 		vca_close_session(sp, "not HTTP/1.1");
 	}
+	return (1);
 }
 
 
@@ -105,7 +107,7 @@ DOT }
 DOT error -> DONE
  */
 
-static void cnt_error(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
+static int cnt_error(struct worker *w, struct sess *sp) { (void)w; (void)sp; INCOMPL(); }
 
 
 /*--------------------------------------------------------------------
@@ -156,7 +158,7 @@ DOT fetch_insert -> DELIVER [style=bold]
 DOT fetch_error -> ERROR
  */
 
-static void
+static int
 cnt_fetch(struct worker *w, struct sess *sp)
 {
 
@@ -172,7 +174,7 @@ cnt_fetch(struct worker *w, struct sess *sp)
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASSBODY;
-		return;
+		return (0);
 	}
 	if (sp->handling == VCL_RET_INSERT_PASS) {
 		sp->obj->pass = 1;
@@ -180,13 +182,13 @@ cnt_fetch(struct worker *w, struct sess *sp)
 		HSH_Unbusy(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASSBODY;
-		return;
+		return (0);
 	}
 	if (sp->handling == VCL_RET_INSERT) {
 		sp->obj->cacheable = 1;
 		FetchBody(w, sp);
 		sp->step = STP_DELIVER;
-		return;
+		return (0);
 	}
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
@@ -231,7 +233,7 @@ DOT hit_lookup -> LOOKUP [style=dotted, weight=0]
 DOT hit2 -> DELIVER [style=bold]
  */
 
-static void
+static int
 cnt_hit(struct worker *w, struct sess *sp)
 {
 
@@ -245,14 +247,14 @@ cnt_hit(struct worker *w, struct sess *sp)
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_DONE;
-		return;
+		return (0);
 	}
 	if (sp->handling == VCL_RET_PASS) {
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		PassSession(w, sp);
 		sp->step = STP_PASSBODY;
-		return;
+		return (0);
 	}
 
 	if (sp->handling == VCL_RET_ERROR)
@@ -284,7 +286,7 @@ DOT lookup -> HIT [label="hit", style=bold]
 DOT lookup2 -> MISS [label="miss", style=bold]
  */
 
-static void
+static int
 cnt_lookup(struct worker *w, struct sess *sp)
 {
 
@@ -292,17 +294,18 @@ cnt_lookup(struct worker *w, struct sess *sp)
 	if (sp->obj->busy) {
 		VSL_stats->cache_miss++;
 		sp->step = STP_MISS;
-		return;
+		return (0);
 	}
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
 		VSL(SLT_HitPass, sp->fd, "%u", sp->obj->xid);
 		sp->step = STP_HIT;
-		return;
+		return (0);
 	} 
 	VSL_stats->cache_hit++;
 	VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
 	sp->step = STP_HIT;
+	return (0);
 }
 
 
@@ -343,7 +346,7 @@ DOT miss_lookup -> LOOKUP [style=dotted, weight=0]
 DOT
  */
 
-static void
+static int
 cnt_miss(struct worker *w, struct sess *sp)
 {
 
@@ -357,14 +360,14 @@ cnt_miss(struct worker *w, struct sess *sp)
 		sp->obj = 0;
 		PassSession(w, sp);
 		sp->step = STP_PASSBODY;
-		return;
+		return (0);
 	}
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
 		FetchHeaders(w, sp);
 		sp->step = STP_FETCH;
-		return;
+		return (0);
 	}
 	INCOMPL();
 }
@@ -384,12 +387,13 @@ DOT }
 DOT pass -> PASSBODY
  */
 
-static void
+static int
 cnt_pass(struct worker *w, struct sess *sp)
 {
 
 	PassSession(w, sp);
 	sp->step = STP_PASSBODY;
+	return (0);
 }
 
 
@@ -407,12 +411,12 @@ DOT }
 DOT passbody -> DONE
  */
 
-static void
+static int
 cnt_passbody(struct worker *w, struct sess *sp)
 {
 	PassBody(w, sp);
 	sp->step = STP_DONE;
-	return;
+	return (0);
 }
 
 
@@ -430,12 +434,13 @@ DOT }
 DOT pipe -> DONE
  */
 
-static void
+static int
 cnt_pipe(struct worker *w, struct sess *sp)
 {
 
 	PipeSession(w, sp);
 	sp->step = STP_DONE;
+	return (0);
 }
 
 
@@ -465,7 +470,7 @@ DOT recv_lookup -> LOOKUP
 DOT recv_error -> ERROR
  */
 
-static void
+static int
 cnt_recv(struct worker *w, struct sess *sp)
 {
 	int done;
@@ -474,7 +479,7 @@ cnt_recv(struct worker *w, struct sess *sp)
 	if (done != 0) {
 		RES_Error(w, sp, done, NULL);
 		sp->step = STP_DONE;
-		return;
+		return (0);
 	}
 
 	sp->backend = sp->vcl->backend[0];
@@ -489,17 +494,17 @@ cnt_recv(struct worker *w, struct sess *sp)
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */
 		sp->step = STP_LOOKUP;
-		return;
+		return (0);
 	case VCL_RET_PIPE:
 		sp->step = STP_PIPE;
-		return;
+		return (0);
 	case VCL_RET_PASS:
 		sp->step = STP_PASS;
-		return;
+		return (0);
 	case VCL_RET_ERROR:
 		/* XXX: discard req body, if any */
 		sp->step = STP_ERROR;
-		return;
+		return (0);
 	default:
 		INCOMPL();
 	}
@@ -517,6 +522,7 @@ cnt_recv(struct worker *w, struct sess *sp)
 void
 CNT_Session(struct worker *w, struct sess *sp)
 {
+	int done;
 
 	sp->t0 = time(NULL);
 	sp->vcl = VCL_Get();
@@ -525,20 +531,19 @@ CNT_Session(struct worker *w, struct sess *sp)
 
 	SES_RefSrcAddr(sp);
 
-	for (sp->step = STP_RECV; sp->step != STP_DONE; ) {
+	sp->step = STP_RECV;
+	for (done = 0; !done; ) {
 		switch (sp->step) {
 #define STEP(l,u) \
 		case STP_##u: \
 			VSL(SLT_Debug, sp->fd, "State " #u); \
-			cnt_##l(w, sp); \
+			done = cnt_##l(w, sp); \
 			break;
 #include "steps.h"
 #undef STEP
 		default:	INCOMPL();
 		}
 	}
-
-	cnt_done(w, sp);	/* The loop doesn't do this */
 
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
