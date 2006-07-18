@@ -54,12 +54,10 @@ VRT_GetHdr(struct sess *sp, const char *n)
 char *
 VRT_GetReq(struct sess *sp)
 {
-	char *p;
 
 	assert(sp != NULL);
 	assert(sp->http != NULL);
-	assert(http_GetReq(sp->http, &p));
-	return (p);
+	return (sp->http->req);
 }
 
 /*--------------------------------------------------------------------*/

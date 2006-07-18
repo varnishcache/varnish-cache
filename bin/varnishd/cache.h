@@ -45,8 +45,8 @@ struct http {
 
 	char			*s;		/* start of buffer */
 	char			*t;		/* start of trailing data */
+	char			*v;		/* end of valid bytes */
 	char			*e;		/* end of buffer */
-	char			*v;		/* valid bytes */
 
 	char			*req;
 	char			*url;
@@ -267,12 +267,9 @@ void HSH_Init(void);
 void http_Init(struct http *ht, void *space);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
-int http_GetReq(struct http *hp, char **b);
-int http_GetProto(struct http *hp, char **b);
 int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
-int http_GetURL(struct http *hp, char **b);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
 int http_DissectRequest(struct http *sp, int fd);
 int http_DissectResponse(struct http *sp, int fd);

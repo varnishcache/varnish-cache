@@ -79,7 +79,6 @@ vca_write_obj(struct worker *w, struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
-	char *r;
 	uint64_t bytes = 0;
 	
 
@@ -93,14 +92,14 @@ vca_write_obj(struct worker *w, struct sess *sp)
 		sp->obj->age + sp->t_req - sp->obj->entered);
 	sbuf_printf(w->sb, "Via: 1.1 varnish\r\n");
 	sbuf_printf(w->sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
-	if (http_GetProto(sp->http, &r) && strcmp(r, "HTTP/1.1")) 
+	if (strcmp(sp->http->proto, "HTTP/1.1")) 
 		sbuf_printf(w->sb, "Connection: close\r\n");
 	sbuf_printf(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 	bytes += sbuf_len(w->sb);
-	assert(http_GetReq(sp->http, &r));
-	if (!strcmp(r, "GET")) {
+	/* XXX: conditional request handling */
+	if (!strcmp(sp->http->req, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			u += st->len;
 			if (st->stevedore->send == NULL) {
