@@ -33,7 +33,7 @@ struct binheap {
 	unsigned		granularity;
 };
 
-#define PARENT(u)	(((u) - 1) / 2)
+#define PARENT(u)	((u) / 2)
 #define CHILD(u,n)	((u) * 2 + (n))
 
 /* Implementation ----------------------------------------------------*/
@@ -43,6 +43,7 @@ binheap_update(struct binheap *bh, unsigned u)
 {
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(u < bh->next);
+	assert(bh->array[u] != NULL);
 	if (bh->update == NULL)
 		return;
 	bh->update(bh->priv, bh->array[u], u);
