@@ -17,6 +17,7 @@
 #include "shmlog.h"
 #include "cache.h"
 
+#define			PASS_BUFSIZ		8192
 
 /*--------------------------------------------------------------------*/
 
@@ -27,12 +28,12 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 	char *b, *e;
 	off_t	cl;
 	unsigned c;
-	char buf[BUFSIZ];
+	char buf[PASS_BUFSIZ];
 
 	if (bi != NULL)
 		cl = strtoumax(bi, NULL, 0);
 	else
-		cl = (1<<30);		/* XXX */
+		cl = (1 << 30);
 
 	i = fcntl(fd, F_GETFL);		/* XXX ? */
 	i &= ~O_NONBLOCK;
@@ -69,7 +70,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 	char *b, *q, *e;
 	char *p;
 	unsigned u;
-	char buf[BUFSIZ];
+	char buf[PASS_BUFSIZ];
 	char *bp, *be;
 
 	i = fcntl(fd, F_GETFL);		/* XXX ? */
@@ -159,6 +160,8 @@ PassBody(struct worker *w, struct sess *sp)
 	assert(vc != NULL);
 
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
+	sbuf_cat(w->sb, "\r\n");
+	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
