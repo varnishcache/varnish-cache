@@ -33,7 +33,6 @@ static int
 fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 {
 	int i;
-	char *e;
 	unsigned char *p;
 	off_t	cl;
 	struct storage *st;
@@ -50,15 +49,8 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	i &= ~O_NONBLOCK;
 	i = fcntl(fd, F_SETFL, i);
 
-	if (http_GetTail(hp, cl, &b, &e)) {
-		i = e - b;
-		memcpy(p, b, i);
-		p += i;
-		cl -= i;
-	}
-
 	while (cl != 0) {
-		i = read(fd, p, cl);
+		i = http_Read(hp, fd, p, cl);
 		assert(i > 0);	/* XXX seen */
 		p += i;
 		cl -= i;
@@ -73,7 +65,7 @@ static int
 fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 {
 	int i;
-	char *b, *q, *e;
+	char *q;
 	unsigned char *p;
 	struct storage *st;
 	unsigned u, v;
@@ -88,16 +80,10 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 	bp = buf;
 	st = NULL;
 	while (1) {
-		if (http_GetTail(hp, be - bp, &b, &e)) {
-			memcpy(bp, b, e - b);
-			bp += e - b;
-			*bp = '\0';
-		} else {
-			i = read(fd, bp, be - bp);
-			assert(i >= 0);
-			bp += i;
-			*bp = '\0';
-		}
+		i = http_Read(hp, fd, bp, be - bp);
+		assert(i >= 0);
+		bp += i;
+		*bp = '\0';
 		u = strtoul(buf, &q, 16);
 		if (q == NULL || q == buf)
 			continue;
@@ -151,15 +137,8 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 				break;
 			if (v == 0)
 				continue;
-			if (http_GetTail(hp, v, &b, &e)) {
-				memcpy(p, b, e - b);
-				p += e - b;
-				st->len += e - b;
-				v -= e - b;
-				u -= e - b;
-			}
 			while (v > 0) {
-				i = read(fd, p, v);
+				i = http_Read(hp, fd, p, v);
 				assert(i > 0);
 				st->len += i;
 				v -= i;
@@ -183,7 +162,6 @@ static int
 fetch_eof(const struct sess *sp, int fd, struct http *hp)
 {
 	int i;
-	char *b, *e;
 	unsigned char *p;
 	struct storage *st;
 	unsigned v;
@@ -204,15 +182,7 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 		}
 		assert(p != NULL);
 		assert(st != NULL);
-		if (http_GetTail(hp, v, &b, &e)) {
-			memcpy(p, b, e - b);
-			p += e - b;
-			v -= e - b;
-			st->len += e - b;
-			sp->obj->len += e - b;
-			*p = '\0';
-		}
-		i = read(fd, p, v);
+		i = http_Read(hp, fd, p, v);
 		assert(i >= 0);
 		if (i == 0)
 		     break;

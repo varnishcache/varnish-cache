@@ -59,7 +59,7 @@ PipeSession(struct worker *w, struct sess *sp)
 	http_BuildSbuf(vc->fd, Build_Pipe, w->sb, sp->http);
 	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
 	assert(i == sbuf_len(w->sb));
-	if (http_GetTail(sp->http, 0, &b, &e) && b != e) { /* XXX */
+	if (http_GetTail(sp->http, 0, &b, &e) && b != e) {
 		i = write(vc->fd, b, e - b);
 		if (i != e - b) {
 			close (vc->fd);

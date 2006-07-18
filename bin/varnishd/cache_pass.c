@@ -25,7 +25,6 @@ static int
 pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 {
 	int i;
-	char *b, *e;
 	off_t	cl;
 	unsigned c;
 	char buf[PASS_BUFSIZ];
@@ -43,13 +42,7 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 		c = cl;
 		if (c > sizeof buf)
 			c = sizeof buf;
-		if (http_GetTail(hp, c, &b, &e)) {
-			i = e - b;
-			vca_write(sp, b, i);
-			cl -= i;
-			continue;
-		}
-		i = read(fd, buf, c);
+		i = http_Read(hp, fd, buf, c);
 		if (i == 0 && bi == NULL)
 			return (1);
 		assert(i > 0);
@@ -81,15 +74,10 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 	be = buf + sizeof buf;
 	p = buf;
 	while (1) {
-		if (http_GetTail(hp, be - bp, &b, &e)) {
-			memcpy(bp, b, e - b);
-			bp += e - b;
-		} else {
-			/* XXX: must be safe from backend */
-			i = read(fd, bp, be - bp);
-			assert(i > 0);
-			bp += i;
-		}
+		i = http_Read(hp, fd, bp, be - bp);
+		i = read(fd, bp, be - bp);
+		assert(i > 0);
+		bp += i;
 		/* buffer valid from p to bp */
 
 		u = strtoul(p, &q, 16);
@@ -159,7 +147,7 @@ PassBody(struct worker *w, struct sess *sp)
 	vc = sp->vbc;
 	assert(vc != NULL);
 
-	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
+	http_BuildSbuf(sp->fd, Build_Passreply, w->sb, hp);
 	sbuf_cat(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));

@@ -120,6 +120,33 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 	return (1);
 }
 
+/* Read from fd, but soak up any tail first */
+
+int
+http_Read(struct http *hp, int fd, char *b, unsigned len)
+{
+	int i;
+	unsigned u;
+
+	u = 0;
+	if (hp->t < hp->v) {
+		u = hp->v - hp->t;
+		if (u > len)
+			u = len;
+		memcpy(b, hp->t, u);
+		hp->t += u;
+		b += u;
+		len -= u;
+	}
+	if (len > 0) {
+		i = read(fd, b, len);
+		if (i < 0)
+			return (i);
+		u += i;
+	}
+	return (u);
+}
+
 int
 http_GetStatus(struct http *hp)
 {
