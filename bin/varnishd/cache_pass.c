@@ -147,7 +147,7 @@ PassBody(struct worker *w, struct sess *sp)
 	vc = sp->vbc;
 	assert(vc != NULL);
 
-	http_BuildSbuf(sp->fd, Build_Pass, w->sb, hp);
+	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	sbuf_cat(w->sb, "\r\n");
 	sbuf_finish(w->sb);
 	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
