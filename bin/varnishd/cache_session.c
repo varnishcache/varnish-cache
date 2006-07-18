@@ -118,10 +118,7 @@ SES_ChargeBytes(struct sess *sp, uint64_t bytes)
 	sa = sp->srcaddr;
 	now = time(NULL);
 	AZ(pthread_mutex_lock(&ses_mtx));
-VSL(SLT_Debug, 0, "%ju", bytes);
-VSL(SLT_Debug, 0, "%ju", sa->bytes);
 	sa->bytes += bytes;
-VSL(SLT_Debug, 0, "%ju", sa->bytes);
 	sa->ttl = now + CLIENT_TTL;
 	TAILQ_REMOVE(sa->sah, sa, list);
 	TAILQ_INSERT_TAIL(sa->sah, sa, list);
