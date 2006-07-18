@@ -295,7 +295,8 @@ DOT lookup2 -> MISS [label="miss", style=bold]
 static int
 cnt_lookup(struct sess *sp)
 {
-	sp->obj = NULL;
+
+	assert(sp->obj == NULL);
 	sp->step = STP_LOOKUP2;
 	return (0);
 }
@@ -307,7 +308,7 @@ cnt_lookup2(struct sess *sp)
 
 	/*
 	 * We don't assign to sp->obj directly because it is used
- 	 * to store state when we encounter a busy object.
+ 	 * to cache state when we encounter a busy object.
 	 */
 	o = HSH_Lookup(sp);
 
@@ -336,7 +337,6 @@ cnt_lookup2(struct sess *sp)
 		VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
 	}
 	sp->step = STP_HIT;
-HERE();
 	return (0);
 }
 
