@@ -176,6 +176,8 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(bh->next > ROOT_IDX);
 	assert(idx < bh->next);
+	if (bh->update != NULL)
+		bh->update(bh->priv, bh->array[idx], 0);
 	if (idx == --bh->next)
 		return;
 	bh->array[idx] = bh->array[bh->next];
