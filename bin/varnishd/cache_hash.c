@@ -128,6 +128,7 @@ HSH_Unbusy(struct object *o)
 	struct sess *sp;
 
 	assert(o != NULL);
+	assert(o->busy);
 	assert(o->refcnt > 0);
 	if (o->cacheable)
 		EXP_Insert(o);
