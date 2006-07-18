@@ -13,7 +13,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 
@@ -235,11 +234,6 @@ FetchBody(struct worker *w, struct sess *sp)
 	else
 		VBE_RecycleFd(vc);
 
-	HSH_Unbusy(sp->obj);
-	/* Hold on to the reference count, it's not released until
-	 * expiry */
-	if (!sp->obj->cacheable)
-		HSH_Deref(sp->obj);
 	return (0);
 }
 
