@@ -85,8 +85,7 @@ cnt_done(struct sess *sp)
 	if (http_GetHdr(sp->http, "Connection", &b) &&
 	    !strcmp(b, "close")) {
 		vca_close_session(sp, "Connection header");
-	} else if (http_GetProto(sp->http, &b) &&
-	    strcmp(b, "HTTP/1.1")) {
+	} else if (strcmp(sp->http->proto, "HTTP/1.1")) {
 		vca_close_session(sp, "not HTTP/1.1");
 	}
 	VCL_Rel(sp->vcl);

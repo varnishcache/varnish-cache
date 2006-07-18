@@ -46,7 +46,7 @@ HSH_Lookup(struct sess *sp)
 	struct http *h;
 	struct objhead *oh;
 	struct object *o;
-	char *b, *c;
+	char *c;
 
 	assert(hash != NULL);
 	w = sp->wrk;
@@ -70,16 +70,15 @@ HSH_Lookup(struct sess *sp)
 		VSL_stats->n_object++;
 	}
 
-	assert(http_GetURL(h, &b));
 	if (!http_GetHdr(h, "Host", &c))
-		c = b;
+		c = h->url;
 	if (sp->obj != NULL) {
 		o = sp->obj;
 		oh = o->objhead;
 		AZ(pthread_mutex_lock(&oh->mtx));
 		goto were_back;
 	}
-	oh = hash->lookup(b, c, w->nobjhead);
+	oh = hash->lookup(h->url, c, w->nobjhead);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	AZ(pthread_mutex_lock(&oh->mtx));
@@ -98,7 +97,7 @@ HSH_Lookup(struct sess *sp)
 			/* ignore */
 		} else if (o->ttl == 0) {
 			/* Object banned but not reaped yet */
-		} else if (BAN_CheckObject(o, b)) {
+		} else if (BAN_CheckObject(o, h->url)) {
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			EXP_TTLchange(o);
