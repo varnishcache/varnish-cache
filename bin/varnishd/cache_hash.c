@@ -144,6 +144,17 @@ HSH_Unbusy(struct object *o)
 }
 
 void
+HSH_Ref(struct object *o)
+{
+	struct objhead *oh;
+
+	oh = o->objhead;
+	AZ(pthread_mutex_lock(&oh->mtx));
+	o->refcnt++;
+	AZ(pthread_mutex_unlock(&oh->mtx));
+}
+
+void
 HSH_Deref(struct object *o)
 {
 	struct objhead *oh;

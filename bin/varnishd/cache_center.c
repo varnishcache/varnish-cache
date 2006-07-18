@@ -62,6 +62,8 @@ cnt_deliver(struct sess *sp)
 {
 
 	vca_write_obj(sp->wrk, sp);
+	HSH_Deref(sp->obj);
+	sp->obj = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -82,6 +84,7 @@ cnt_done(struct sess *sp)
 {
 	char *b;
 
+	assert(sp->obj == NULL);
 	if (http_GetHdr(sp->http, "Connection", &b) &&
 	    !strcmp(b, "close")) {
 		vca_close_session(sp, "Connection header");
@@ -182,6 +185,7 @@ cnt_fetch(struct sess *sp)
 		sp->obj->pass = 1;
 		sp->obj->cacheable = 1;
 		HSH_Unbusy(sp->obj);
+		/* Don't HSH_Deref(sp->obj); we need the ref for storage */
 		sp->obj = NULL;
 		sp->step = STP_PASSBODY;
 		return (0);
@@ -189,6 +193,8 @@ cnt_fetch(struct sess *sp)
 	if (sp->handling == VCL_RET_INSERT) {
 		sp->obj->cacheable = 1;
 		FetchBody(sp->wrk, sp);
+		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
+		HSH_Unbusy(sp->obj);
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -509,6 +515,8 @@ cnt_recv(struct sess *sp)
 	sp->t0 = time(NULL);
 	sp->vcl = VCL_Get();
 	SES_RefSrcAddr(sp);
+
+	assert(sp->obj == NULL);
 
 	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
