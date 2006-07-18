@@ -24,6 +24,7 @@ void
 EXP_Insert(struct object *o)
 {
 
+	assert(o->heap_idx == 0);
 	AZ(pthread_mutex_lock(&exp_mtx));
 	binheap_insert(exp_heap, o);
 	AZ(pthread_mutex_unlock(&exp_mtx));
@@ -32,6 +33,7 @@ EXP_Insert(struct object *o)
 void
 EXP_TTLchange(struct object *o)
 {
+	assert(o->heap_idx != 0);
 	AZ(pthread_mutex_lock(&exp_mtx));
 	binheap_delete(exp_heap, o->heap_idx);
 	binheap_insert(exp_heap, o);
@@ -54,17 +56,19 @@ exp_hangman(void *arg)
 		t = time(NULL); 
 		AZ(pthread_mutex_lock(&exp_mtx));
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
-			if (o->ttl >= t)
+			if (o->ttl >= t) {
+				o = NULL;
 				break;
+			}
 			if (o->busy) {
 				VSL(SLT_Debug, 0,
 				    "Grim Reaper: Busy object xid %u", o->xid);
 				continue;
 			}
-			if (o->refcnt == 0)
+			if (o->refcnt == 1)
 				break;
 		}
-		if (o == NULL || o->ttl >= t || o->refcnt > 0) {
+		if (o == NULL) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			AZ(sleep(1));
 			continue;
@@ -103,7 +107,7 @@ exp_prefetch(void *arg)
 			AZ(sleep(1));
 			continue;
 		}
-		binheap_delete(exp_heap, 0);
+		binheap_delete(exp_heap, o->heap_idx);
 		AZ(pthread_mutex_unlock(&exp_mtx));
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
