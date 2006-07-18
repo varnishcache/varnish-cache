@@ -123,10 +123,11 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 /* Read from fd, but soak up any tail first */
 
 int
-http_Read(struct http *hp, int fd, char *b, unsigned len)
+http_Read(struct http *hp, int fd, void *p, unsigned len)
 {
 	int i;
 	unsigned u;
+	char *b = p;
 
 	u = 0;
 	if (hp->t < hp->v) {

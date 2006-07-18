@@ -271,7 +271,7 @@ int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char *
 int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
-int http_Read(struct http *hp, int fd, char *b, unsigned len);
+int http_Read(struct http *hp, int fd, void *b, unsigned len);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
 int http_DissectRequest(struct http *sp, int fd);
 int http_DissectResponse(struct http *sp, int fd);
