@@ -19,6 +19,8 @@
 
 #define MIN_LENGTH		16
 
+#define ROOT_IDX		1
+
 struct binheap {
 	unsigned		magic;
 #define BINHEAP_MAGIC		0xf581581aU	/* from /dev/random */
@@ -57,7 +59,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	bh->priv = priv;
 	bh->cmp = cmp_f;
 	bh->update = update_f;
-	bh->next = 0;
+	bh->next = ROOT_IDX;
 	bh->length = MIN_LENGTH;
 	bh->array = calloc(sizeof *bh->array, bh->length);
 	assert(bh->array != NULL);
@@ -87,7 +89,7 @@ binheap_trickleup(struct binheap *bh, unsigned u)
 	unsigned v;
 
 	assert(bh->magic == BINHEAP_MAGIC);
-	while (u > 0) {
+	while (u > ROOT_IDX) {
 		v = PARENT(u);
 		if (bh->cmp(bh->priv, bh->array[u], bh->array[v])) {
 			binhead_swap(bh, u, v);
@@ -161,9 +163,9 @@ binheap_root(struct binheap *bh)
 
 	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
-	if(bh->next == 0)
+	if(bh->next == ROOT_IDX)
 		return (NULL);
-	return (bh->array[0]);
+	return (bh->array[ROOT_IDX]);
 }
 
 void
@@ -172,7 +174,7 @@ binheap_delete(struct binheap *bh, unsigned idx)
 
 	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
-	assert(bh->next > 0);
+	assert(bh->next > ROOT_IDX);
 	assert(idx < bh->next);
 	if (idx == --bh->next)
 		return;
