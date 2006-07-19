@@ -24,22 +24,81 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 	(*acc) += (val - *acc) / (double)*n;
 }
 
-int
-main(int argc, char **argv)
+static void
+do_curses(struct varnish_stats *VSL_stats)
 {
-	int c;
-	struct varnish_stats *VSL_stats, copy;
-	int c_flag = 0;
+	struct varnish_stats copy;
 	intmax_t ju;
 	struct timespec ts;
 	double tt, lt, hit, miss, ratio;
 	double a1, a2, a3;
 	unsigned n1, n2, n3;
+	time_t rt;
+	int i;
 
-	a1 = a2 = a3 = 0;
+
+	memset(&copy, 0, sizeof copy);
+
+	a1 = a2 = a3 = 0.0;
 	n1 = n2 = n3 = 0;
 
+	initscr();
+	erase();
+
 	lt = 0;
+	while (1) {
+		clock_gettime(CLOCK_REALTIME, &ts);
+		tt = ts.tv_nsec * 1e-9 + ts.tv_sec;
+		lt = tt - lt;
+
+		rt = ts.tv_sec - VSL_stats->start_time;
+
+		move(0,0);
+		i = 0;
+		if (rt > 86400) {
+			printw("%dd+", rt / 86400);
+			rt %= 86400;
+			i++;
+		}
+		printw("%02d:", rt / 3600);
+		rt %= 3600;
+		printw("%02d:", rt / 60);
+		rt %= 60;
+		printw("%02d\n", rt);
+		hit = (intmax_t)VSL_stats->cache_hit -
+		    (intmax_t)copy.cache_hit;
+		miss = (intmax_t)VSL_stats->cache_miss -
+		    (intmax_t)copy.cache_miss;
+		hit /= lt;
+		miss /= lt;
+		if (hit + miss != 0) {
+			ratio = hit / (hit + miss);
+			myexp(&a1, ratio, &n1, 10);
+			myexp(&a2, ratio, &n2, 100);
+			myexp(&a3, ratio, &n3, 1000);
+		}
+		printw("Hitrate ratio: %8u %8u %8u\n", n1, n2, n3);
+		printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
+		printw("\n");
+
+#define MAC_STAT(n,t,f,d) \
+		ju = VSL_stats->n; \
+		printw("%12ju  %10.2f " d "\n", ju, (ju - (intmax_t)copy.n)/lt); \
+		copy.n = ju;
+#include "stat_field.h"
+#undef MAC_STAT
+		lt = tt;
+		refresh();
+		sleep(1);
+	}
+}
+
+int
+main(int argc, char **argv)
+{
+	int c;
+	struct varnish_stats *VSL_stats;
+	int c_flag = 0;
 
 	VSL_stats = VSL_OpenStats();
 
@@ -55,41 +114,7 @@ main(int argc, char **argv)
 	}
 
 	if (c_flag) {
-		memset(&copy, 0, sizeof copy);
-		initscr();
-		erase();
-
-		while (1) {
-			clock_gettime(CLOCK_MONOTONIC, &ts);
-			tt = ts.tv_nsec * 1e-9 + ts.tv_sec;
-			lt = tt - lt;
-			move(0,0);
-			hit = (intmax_t)VSL_stats->cache_hit -
-			    (intmax_t)copy.cache_hit;
-			miss = (intmax_t)VSL_stats->cache_miss -
-			    (intmax_t)copy.cache_miss;
-			hit /= lt;
-			miss /= lt;
-			if (hit + miss != 0) {
-				ratio = hit / (hit + miss);
-				myexp(&a1, ratio, &n1, 10);
-				myexp(&a2, ratio, &n2, 100);
-				myexp(&a3, ratio, &n3, 1000);
-			}
-			printw("Hitrate ratio: %8u %8u %8u\n", n1, n2, n3);
-			printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
-			printw("\n");
-
-#define MAC_STAT(n,t,f,d) \
-			ju = VSL_stats->n; \
-			printw("%12ju  %10.2f " d "\n", ju, (ju - (intmax_t)copy.n)/lt); \
-			copy.n = ju;
-#include "stat_field.h"
-#undef MAC_STAT
-			lt = tt;
-			refresh();
-			sleep(1);
-		}
+		do_curses(VSL_stats);
 	} else {
 
 #define MAC_STAT(n,t,f,d) \

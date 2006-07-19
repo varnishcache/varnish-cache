@@ -136,6 +136,7 @@ VSL_Init(void)
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
 	loghead->starttime = time(NULL);
 	VSL_stats = &loghead->stats;
+	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
 
 /*--------------------------------------------------------------------*/
@@ -184,7 +185,6 @@ VSL_MgtInit(const char *fn, unsigned size)
 	 * management process as well.
 	 */
 	VSL_Init();
-	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
 
 /*--------------------------------------------------------------------*/

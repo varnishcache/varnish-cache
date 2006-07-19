@@ -130,6 +130,7 @@ child_main(void)
 	arm_keepalive();
 
 	printf("Ready\n");
+	VSL_stats->start_time = time(NULL);
 	i = event_base_loop(eb, 0);
 	if (i != 0)
 		printf("event_dispatch() = %d\n", i);
