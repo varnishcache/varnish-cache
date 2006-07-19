@@ -87,8 +87,8 @@ SES_RefSrcAddr(struct sess *sp)
 			c3 = c;
 			continue;
 		}
-		TAILQ_REMOVE(ch, c2, list);
-		free(c2);
+		TAILQ_REMOVE(ch, c, list);
+		free(c);
 		VSL_stats->n_srcaddr--;
 	}
 	if (c3 == NULL) {
