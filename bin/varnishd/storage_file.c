@@ -507,6 +507,10 @@ smf_trim(struct storage *s, size_t size)
 	struct smf *smf;
 	struct smf_sc *sc;
 
+	if (size == 0) {
+		/* XXX: this should not happen */
+		return;
+	}
 	assert(size <= s->space);
 	assert(size > 0);	/* XXX: seen */
 	smf = (struct smf *)(s->priv);
