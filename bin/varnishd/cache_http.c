@@ -402,6 +402,7 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 		memmove(hp->s, hp->t, l);
 		hp->v = hp->s + l;
 		hp->t = hp->s;
+		*hp->v = '\0';
 		if (http_header_complete(hp)) {
 			assert(func != NULL);
 			func(arg, 0);
