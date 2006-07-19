@@ -40,6 +40,8 @@
 #include "cache.h"
 
 struct vbc_mem {
+	unsigned		magic;
+#define VBC_MEM_MAGIC		0x2fd7af01
 	struct vbe_conn		vbe;
 	struct http		http;
 	char			*http_hdr;
@@ -48,6 +50,8 @@ struct vbc_mem {
 /* A backend IP */
 
 struct vbe {
+	unsigned		magic;
+#define VBE_MAGIC		0x079648f0
 	unsigned		ip;
 	TAILQ_ENTRY(vbe)	list;
 	TAILQ_HEAD(,vbe_conn)	fconn;
@@ -78,7 +82,9 @@ vbe_new_conn(void)
 	    1);
 	if (vbcm == NULL)
 		return (NULL);
+	vbcm->magic = VBC_MEM_MAGIC;
 	VSL_stats->n_vbe_conn++;
+	vbcm->vbe.magic = VBE_CONN_MAGIC;
 	vbcm->vbe.vbcm = vbcm;
 	vbcm->vbe.http = &vbcm->http;
 	http_Init(&vbcm->http, (void *)(vbcm + 1));
@@ -89,6 +95,8 @@ static void
 vbe_delete_conn(struct vbe_conn *vb)
 {
 
+	CHECK_OBJ_NOTNULL(vb, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vb->vbcm, VBC_MEM_MAGIC);
 	VSL_stats->n_vbe_conn--;
 	free(vb->vbcm);
 }
@@ -299,6 +307,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 	struct vbe *vp;
 	struct vbe_conn *vc;
 
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AZ(pthread_mutex_lock(&vbemtx));
 	vp = bp->vbe;
 	if (vp == NULL) {

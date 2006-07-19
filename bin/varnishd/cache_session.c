@@ -27,6 +27,9 @@
 /*--------------------------------------------------------------------*/
 
 struct sessmem {
+	unsigned	magic;
+#define SESSMEM_MAGIC	0x555859c5
+
 	struct sess	sess;
 	struct http	http;
 	char		*http_hdr;
@@ -156,7 +159,9 @@ SES_New(struct sockaddr *addr, unsigned len)
 	    1);
 	if (sm == NULL)
 		return (NULL);
+	sm->magic = SESSMEM_MAGIC;
 	VSL_stats->n_sess++;
+	sm->sess.magic = SESS_MAGIC;
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
 	http_Init(&sm->http, (void *)(sm + 1));
@@ -167,8 +172,10 @@ void
 SES_Delete(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	VSL_stats->n_sess--;
 	SES_RelSrcAddr(sp);
+	CHECK_OBJ_NOTNULL(sp->mem, SESSMEM_MAGIC);
 	free(sp->mem);
 }
 

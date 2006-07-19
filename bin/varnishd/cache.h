@@ -13,6 +13,7 @@
 
 #include "vcl_returns.h"
 #include "common.h"
+#include "miniobj.h"
 
 #define MAX_IOVS		10
 
@@ -39,6 +40,8 @@ enum step {
 typedef void http_callback_f(void *, int bad);
 
 struct http {
+	unsigned		magic;
+#define HTTP_MAGIC		0x6428b5c9
 	struct event		ev;
 	http_callback_f		*callback;
 	void			*arg;
@@ -61,6 +64,8 @@ struct http {
 /*--------------------------------------------------------------------*/
 
 struct worker {
+	unsigned		magic;
+#define WORKER_MAGIC		0x6391adcf
 	struct event_base	*eb;
 	struct sbuf		*sb;
 	struct objhead		*nobjhead;
@@ -76,6 +81,8 @@ struct worker {
 };
 
 struct workreq {
+	unsigned		magic;
+#define WORKREQ_MAGIC		0x5ccb4eb2
 	TAILQ_ENTRY(workreq)	list;
 	struct sess		*sess;
 };
@@ -85,6 +92,8 @@ struct workreq {
 /* Backend Connection ------------------------------------------------*/
 
 struct vbe_conn {
+	unsigned		magic;
+#define VBE_CONN_MAGIC		0x0c5e6592
 	TAILQ_ENTRY(vbe_conn)	list;
 	struct vbc_mem		*vbcm;
 	struct vbe		*vbe;
@@ -97,6 +106,8 @@ struct vbe_conn {
 /* Storage -----------------------------------------------------------*/
 
 struct storage {
+	unsigned		magic;
+#define STORAGE_MAGIC		0x1a4e51c0
 	TAILQ_ENTRY(storage)	list;
 	unsigned char		*ptr;
 	unsigned		len;
@@ -117,6 +128,8 @@ extern struct stevedore *stevedore;
 /* -------------------------------------------------------------------*/
 
 struct object {	
+	unsigned		magic;
+#define OBJECT_MAGIC		0x32851d42
 	unsigned 		refcnt;
 	unsigned		xid;
 	struct objhead		*objhead;
@@ -149,6 +162,8 @@ struct object {
 };
 
 struct objhead {
+	unsigned		magic;
+#define OBJHEAD_MAGIC		0x1b96615d
 	void			*hashpriv;
 
 	pthread_mutex_t		mtx;
@@ -158,6 +173,8 @@ struct objhead {
 /* -------------------------------------------------------------------*/
 
 struct srcaddr {
+	unsigned		magic;
+#define SRCADDR_MAGIC		0x375111db
 	TAILQ_ENTRY(srcaddr)	list;
 	unsigned		nsess;
 	char			addr[TCP_ADDRBUFSIZE];
@@ -169,6 +186,8 @@ struct srcaddr {
 };
 
 struct sess {
+	unsigned		magic;
+#define SESS_MAGIC		0x2c2f9c5a
 	int			fd;
 	unsigned		xid;
 
@@ -204,6 +223,8 @@ struct sess {
 };
 
 struct backend {
+	unsigned		magic;
+#define BACKEND_MAGIC		0x64c4c7c6
 	const char	*vcl_name;
 	const char	*hostname;
 	const char	*portname;
