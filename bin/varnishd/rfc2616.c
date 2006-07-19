@@ -148,6 +148,7 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 		break;
 	default:
 		sp->obj->cacheable = 0;
+		sp->obj->valid = 1; 	/* XXX ? */
 		body = 0;
 		break;
 	}
