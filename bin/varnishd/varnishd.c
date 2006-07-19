@@ -63,7 +63,7 @@ static const char *default_vcl =
     "        error;\n"
     "    }\n"
     "    if (!obj.cacheable) {\n"
-    "        pass;\n"
+    "        insert_pass;\n"
     "    }\n"
     "    insert;\n"
     "}\n"
