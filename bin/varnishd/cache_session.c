@@ -135,6 +135,11 @@ void
 SES_RelSrcAddr(struct sess *sp)
 {
 
+	if (sp->srcaddr == NULL) {
+		/* XXX who comes this way ? */
+		VSL(SLT_Debug, sp->fd, "had no srcaddr");
+		return;
+	}
 	assert(sp->srcaddr != NULL);
 	AZ(pthread_mutex_lock(&ses_mtx));
 	sp->srcaddr->nsess--;
