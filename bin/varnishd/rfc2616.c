@@ -139,6 +139,7 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 	case 203: /* Non-Authoritative Information */
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
+	case 302: /* XXX */
 	case 410: /* Gone */
 	case 404: /* Not Found */
 		sp->obj->cacheable = 1;
