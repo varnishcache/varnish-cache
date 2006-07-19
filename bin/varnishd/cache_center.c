@@ -85,7 +85,9 @@ cnt_done(struct sess *sp)
 	char *b;
 
 	assert(sp->obj == NULL);
-	if (http_GetHdr(sp->http, "Connection", &b) &&
+	if (sp->fd < 0) {
+		/* Allready closed */
+	} else if (http_GetHdr(sp->http, "Connection", &b) &&
 	    !strcmp(b, "close")) {
 		vca_close_session(sp, "Connection header");
 	} else if (strcmp(sp->http->proto, "HTTP/1.1")) {
