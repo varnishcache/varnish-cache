@@ -132,7 +132,7 @@ vcl_default(const char *bflag)
 	    "backend default {\n"
 	    "    set backend.host = \"%*.*s\";\n"
 	    "    set backend.port = \"%s\";\n"
-	    "}\n", p - bflag, p - bflag, bflag, q);
+	    "}\n", (int)(p - bflag), (int)(p - bflag), bflag, q);
 	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
