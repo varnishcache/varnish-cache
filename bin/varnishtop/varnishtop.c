@@ -45,6 +45,13 @@ upd(void)
 	int l;
 	double t = 0;
 	unsigned u = 0;
+	static time_t last;
+	time_t now;
+
+	now = time(NULL);
+	if (now == last)
+		return;
+	last = now;
 
 	erase();
 	l = 0;
