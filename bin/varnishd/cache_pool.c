@@ -34,7 +34,7 @@ wrk_thread(void *priv)
 	struct timespec ts;
 
 	w = &ww;
-	memset(w, 0, sizeof w);
+	memset(w, 0, sizeof *w);
 
 	AZ(pthread_cond_init(&w->cv, NULL));
 
