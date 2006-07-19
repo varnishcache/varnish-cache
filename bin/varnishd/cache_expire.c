@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -56,6 +57,7 @@ exp_hangman(void *arg)
 		t = time(NULL); 
 		AZ(pthread_mutex_lock(&exp_mtx));
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
+			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
 				o = NULL;
 				break;
@@ -94,14 +96,17 @@ exp_prefetch(void *arg)
 {
 	struct object *o;
 	time_t t;
-	struct sess sp;
+	struct sess *sp;
 
 	(void)arg;
 
+	sp = SES_New(NULL, 0);
 	while (1) {
 		t = time(NULL);
 		AZ(pthread_mutex_lock(&exp_mtx));
 		o = binheap_root(exp_heap);
+		if (o != NULL)
+			CHECK_OBJ(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			AZ(sleep(1));
@@ -111,18 +116,18 @@ exp_prefetch(void *arg)
 		AZ(pthread_mutex_unlock(&exp_mtx));
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
-		sp.vcl = VCL_Get();
-		sp.obj = o;
-		VCL_timeout_method(&sp);
-		VCL_Rel(sp.vcl);
+		sp->vcl = VCL_Get();
+		sp->obj = o;
+		VCL_timeout_method(sp);
+		VCL_Rel(sp->vcl);
 
-		if (sp.handling == VCL_RET_DISCARD) {
+		if (sp->handling == VCL_RET_DISCARD) {
 			AZ(pthread_mutex_lock(&exp_mtx));
 			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			continue;
 		}
-		assert(sp.handling == VCL_RET_DISCARD);
+		assert(sp->handling == VCL_RET_DISCARD);
 	}
 }
 

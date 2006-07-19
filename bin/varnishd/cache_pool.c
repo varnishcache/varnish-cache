@@ -35,6 +35,7 @@ wrk_thread(void *priv)
 
 	w = &ww;
 	memset(w, 0, sizeof *w);
+	w->magic = WORKER_MAGIC;
 
 	AZ(pthread_cond_init(&w->cv, NULL));
 
@@ -54,6 +55,11 @@ wrk_thread(void *priv)
 	}
 	TAILQ_INSERT_HEAD(&wrk_head, w, list);
 	while (1) {
+		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 		wrq = TAILQ_FIRST(&wrk_reqhead);
 		if (wrq != NULL) {
 			VSL_stats->n_wrk_busy++;
@@ -62,6 +68,7 @@ wrk_thread(void *priv)
 			AZ(pthread_mutex_unlock(&wrk_mtx));
 			assert(wrq->sess != NULL);
 			wrq->sess->wrk = w;
+			CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 			CNT_Session(wrq->sess);
 			AZ(pthread_mutex_lock(&wrk_mtx));
 			VSL_stats->n_wrk_busy--;
@@ -71,12 +78,20 @@ wrk_thread(void *priv)
 			wrk_overflow--;
 			continue;
 		}
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 
 		/* If we are a reserved thread we don't die */
 		if (priv != NULL) {
 			AZ(pthread_cond_wait(&w->cv, &wrk_mtx));
 			continue;
 		}
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 
 		/* If we are a dynamic thread, time out and die */
 		AZ(clock_gettime(CLOCK_REALTIME, &ts));
@@ -91,6 +106,10 @@ wrk_thread(void *priv)
 			AZ(pthread_cond_destroy(&w->cv));
 			return (NULL);
 		}
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	}
 }
 

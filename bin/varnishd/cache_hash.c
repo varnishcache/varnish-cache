@@ -48,6 +48,9 @@ HSH_Lookup(struct sess *sp)
 	struct object *o;
 	char *c;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	assert(hash != NULL);
 	w = sp->wrk;
 	h = sp->http;
@@ -56,29 +59,36 @@ HSH_Lookup(struct sess *sp)
 	if (w->nobjhead == NULL) {
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		assert(w->nobjhead != NULL);
+		w->nobjhead->magic = OBJHEAD_MAGIC;
 		TAILQ_INIT(&w->nobjhead->objects);
 		AZ(pthread_mutex_init(&w->nobjhead->mtx, NULL));
 		VSL_stats->n_objecthead++;
-	}
+	} else
+		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);
 		assert(w->nobj != NULL);
+		w->nobj->magic = OBJECT_MAGIC;
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
 		TAILQ_INIT(&w->nobj->store);
 		TAILQ_INIT(&w->nobj->waitinglist);
 		VSL_stats->n_object++;
-	}
+	} else
+		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 
 	if (!http_GetHdr(h, "Host", &c))
 		c = h->url;
 	if (sp->obj != NULL) {
+		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 		o = sp->obj;
 		oh = o->objhead;
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		AZ(pthread_mutex_lock(&oh->mtx));
 		goto were_back;
 	}
 	oh = hash->lookup(h->url, c, w->nobjhead);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	AZ(pthread_mutex_lock(&oh->mtx));

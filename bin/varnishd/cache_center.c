@@ -566,8 +566,21 @@ void
 CNT_Session(struct sess *sp)
 {
 	int done;
+	struct worker *w;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	w = sp->wrk;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 	for (done = 0; !done; ) {
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		if (sp->obj != NULL)
+			CHECK_OBJ(sp->obj, OBJECT_MAGIC);
+		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 		switch (sp->step) {
 #define STEP(l,u) \
 		case STP_##u: \
@@ -578,6 +591,10 @@ CNT_Session(struct sess *sp)
 #undef STEP
 		default:	INCOMPL();
 		}
+		if (w->nobj != NULL)
+			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
+		if (w->nobjhead != NULL)
+			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	}
 }
 

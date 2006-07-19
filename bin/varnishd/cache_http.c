@@ -23,6 +23,7 @@ http_Init(struct http *hp, void *space)
 	char *sp = space;
 
 	memset(hp, 0, sizeof *hp);
+	hp->magic = HTTP_MAGIC;
 	hp->hdr = (void *)sp;
 	sp += heritage.mem_http_headers * sizeof hp->hdr;
 	hp->s = sp;
