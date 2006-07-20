@@ -140,11 +140,12 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 		b += u;
 		len -= u;
 	}
-	if (len > 0) {
+	while (len > 0) {
 		i = read(fd, b, len);
-		if (i < 0)
+		if (i <= 0)
 			return (i);
 		u += i;
+		len -= u;
 	}
 	return (u);
 }
