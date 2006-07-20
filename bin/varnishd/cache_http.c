@@ -156,7 +156,10 @@ http_GetStatus(struct http *hp)
 	return (strtoul(hp->status, NULL /* XXX */, 10));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Dissect the headers of the HTTP protocol message.
+ * Detect conditionals (headers which start with '^[Ii][Ff]-')
+ */
 
 static int
 http_dissect_hdrs(struct http *hp, int fd, char *p)
@@ -167,6 +170,7 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 		p++;
 
 	hp->nhdr = 0;
+	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
 	assert(p < hp->v);	/* http_header_complete() guarantees this */
 	for (; p < hp->v; p = r) {
@@ -178,6 +182,11 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 		*q = '\0';
 		if (p == q)
 			break;
+
+		if ((p[0] == 'i' || p[0] == 'I') &&
+		    (p[1] == 'f' || p[1] == 'F') &&
+		    p[2] == '-') 
+			hp->conds = 1;
 
 		if (hp->nhdr < heritage.mem_http_headers) {
 			hp->hdr[hp->nhdr++] = p;
