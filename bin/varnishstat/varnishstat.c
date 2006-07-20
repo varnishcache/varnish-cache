@@ -30,7 +30,7 @@ do_curses(struct varnish_stats *VSL_stats)
 	struct varnish_stats copy;
 	intmax_t ju;
 	struct timespec ts;
-	double tt, lt, hit, miss, ratio;
+	double tt, lt, hit, miss, ratio, up;
 	double a1, a2, a3;
 	unsigned n1, n2, n3;
 	time_t rt;
@@ -52,6 +52,7 @@ do_curses(struct varnish_stats *VSL_stats)
 		lt = tt - lt;
 
 		rt = ts.tv_sec - VSL_stats->start_time;
+		up = rt;
 
 		move(0,0);
 		i = 0;
@@ -83,7 +84,8 @@ do_curses(struct varnish_stats *VSL_stats)
 
 #define MAC_STAT(n,t,f,d) \
 		ju = VSL_stats->n; \
-		printw("%12ju  %10.2f " d "\n", ju, (ju - (intmax_t)copy.n)/lt); \
+		printw("%12ju  %10.2f %10.2f " d "\n", \
+		    ju, (ju - (intmax_t)copy.n)/lt, ju / up); \
 		copy.n = ju;
 #include "stat_field.h"
 #undef MAC_STAT
