@@ -11,6 +11,7 @@ MAC_STAT(backend_conn,		uint64_t, "u", "Backend connections initiated")
 MAC_STAT(backend_recycle,	uint64_t, "u", "Backend connections recyles")
 
 MAC_STAT(n_srcaddr,		uint64_t, "u", "N struct srcaddr")
+MAC_STAT(n_srcaddr_act,		uint64_t, "u", "N active struct srcaddr")
 MAC_STAT(n_sess,		uint64_t, "u", "N struct sess")
 MAC_STAT(n_object,		uint64_t, "u", "N struct object")
 MAC_STAT(n_objecthead,		uint64_t, "u", "N struct objecthead")
