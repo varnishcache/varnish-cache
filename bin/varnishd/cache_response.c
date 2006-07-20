@@ -196,6 +196,7 @@ RES_WriteObj(struct sess *sp)
 	/* XXX: conditional request handling */
 	if (!strcmp(sp->http->req, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
+			assert(st->stevedore != NULL);
 			u += st->len;
 			if (st->stevedore->send == NULL) {
 				RES_Write(sp, st->ptr, st->len);
