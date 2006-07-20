@@ -105,6 +105,7 @@ child_main(void)
 	VCL_Init();
 	VCL_Load(heritage.vcl_file, "boot", NULL);
 
+	HTTP_Init();
 	SES_Init();
 
 	VBE_Init();

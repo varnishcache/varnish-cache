@@ -152,18 +152,18 @@ PassBody(struct worker *w, struct sess *sp)
 	sbuf_finish(w->sb);
 	RES_Write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
-	if (http_GetHdr(hp, "Content-Length", &b))
+	if (http_GetHdr(hp, H_Content_Length, &b))
 		cls = pass_straight(sp, vc->fd, hp, b);
-	else if (http_HdrIs(hp, "Connection", "close"))
+	else if (http_HdrIs(hp, H_Connection, "close"))
 		cls = pass_straight(sp, vc->fd, hp, NULL);
-	else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
+	else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
 		cls = pass_chunked(sp, vc->fd, hp);
 	else {
 		cls = pass_straight(sp, vc->fd, hp, NULL);
 	}
 	RES_Flush(sp);
 
-	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
+	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)

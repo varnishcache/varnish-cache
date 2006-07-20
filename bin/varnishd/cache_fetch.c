@@ -216,13 +216,13 @@ FetchBody(struct worker *w, struct sess *sp)
 	vc = sp->vbc;
 	hp = sp->bkd_http;
 
-	if (http_GetHdr(hp, "Last-Modified", &b))
+	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	if (body) {
-		if (http_GetHdr(hp, "Content-Length", &b))
+		if (http_GetHdr(hp, H_Content_Length, &b))
 			cls = fetch_straight(sp, vc->fd, hp, b);
-		else if (http_HdrIs(hp, "Transfer-Encoding", "chunked"))
+		else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
 			cls = fetch_chunked(sp, vc->fd, hp);
 		else 
 			cls = fetch_eof(sp, vc->fd, hp);
@@ -233,7 +233,7 @@ FetchBody(struct worker *w, struct sess *sp)
 	sp->obj->header = strdup(sbuf_data(w->sb));
 	VSL_stats->n_header++;
 
-	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
+	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)

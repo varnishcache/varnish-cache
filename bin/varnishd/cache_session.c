@@ -32,7 +32,6 @@ struct sessmem {
 
 	struct sess	sess;
 	struct http	http;
-	char		*http_hdr;
 };
 
 /*--------------------------------------------------------------------*/
@@ -170,10 +169,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	(void)addr;	/* XXX */
 	(void)len;	/* XXX */
 	sm = calloc(
-	    sizeof *sm +
-	    heritage.mem_http_headers * sizeof sm->http_hdr +
-	    heritage.mem_http_headerspace +
-	    heritage.mem_workspace,
+	    sizeof *sm + heritage.mem_workspace,
 	    1);
 	if (sm == NULL)
 		return (NULL);
@@ -182,7 +178,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sm->sess.magic = SESS_MAGIC;
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
-	http_Init(&sm->http, (void *)(sm + 1));
+	http_Init(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
 	return (&sm->sess);
 }
 

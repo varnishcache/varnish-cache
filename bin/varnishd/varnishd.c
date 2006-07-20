@@ -543,9 +543,7 @@ main(int argc, char *argv[])
 	heritage.wthread_min = 1;
 	heritage.wthread_max = UINT_MAX;
 	heritage.wthread_timeout = 10;
-	heritage.mem_http_headerspace= 4096;
-	heritage.mem_http_headers= 32;
-	heritage.mem_workspace = 0;
+	heritage.mem_workspace = 4096;
 
 	while ((o = getopt(argc, argv, "b:df:h:p:s:t:w:")) != -1)
 		switch (o) {

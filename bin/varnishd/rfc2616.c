@@ -83,10 +83,10 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
 	retirement_age = INT_MAX;
 
 	u1 = u2 = 0;
-	if (http_GetHdrField(hp, "Cache-Control", "max-age", &p)) {
+	if (http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) {
 		u1 = strtoul(p, NULL, 0);
 		u2 = 0;
-		if (http_GetHdr(hp, "Age", &p)) {
+		if (http_GetHdr(hp, H_Age, &p)) {
 			u2 = strtoul(p, NULL, 0);
 			obj->age = u2;
 		}
@@ -95,11 +95,11 @@ RFC2616_Ttl(struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
 	}
 
 	h_date = 0;
-	if (http_GetHdr(hp, "Date", &p))
+	if (http_GetHdr(hp, H_Date, &p))
 		h_date = TIM_parse(p);
 
 	h_expires = 0;
-	if (http_GetHdr(hp, "Expires", &p))
+	if (http_GetHdr(hp, H_Expires, &p))
 		h_expires = TIM_parse(p);
 
 	if (h_date < t_req && h_expires > t_req) {

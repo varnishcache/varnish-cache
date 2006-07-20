@@ -17,6 +17,19 @@
 
 #define MAX_IOVS		10
 
+#define MAX_HTTP_HDRS		32
+
+#define HTTP_HDR_REQ		0
+#define HTTP_HDR_URL		1
+#define HTTP_HDR_PROTO		2
+#define HTTP_HDR_STATUS		3
+#define HTTP_HDR_RESPONSE	4
+#define HTTP_HDR_FIRST		5
+
+#define HTTP_START		0
+#define HTTP_DATA		1
+#define HTTP_END		2
+
 struct event_base;
 struct cli;
 struct sbuf;
@@ -46,21 +59,16 @@ struct http {
 	http_callback_f		*callback;
 	void			*arg;
 
-	char			*s;		/* start of buffer */
-	char			*t;		/* start of trailing data */
-	char			*v;		/* end of valid bytes */
-	char			*e;		/* end of buffer */
-
-	char			*req;
-	char			*url;
-	char			*proto;
-	char			*status;
-	char			*response;
+	char			*s;		/* (S)tart of buffer */
+	char			*t;		/* start of (T)railing data */
+	char			*v;		/* end of (V)alid bytes */
+	char			*f;		/* first (F)ree byte */
+	char			*e;		/* (E)nd of buffer */
 
 	unsigned		conds;		/* If-* headers present */
-	
-	unsigned		nhdr;
-	char			**hdr;
+
+	char			*hd[MAX_HTTP_HDRS][HTTP_END + 1];
+	unsigned		nhd;
 };
 
 /*--------------------------------------------------------------------*/
@@ -287,7 +295,8 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
-void http_Init(struct http *ht, void *space);
+void HTTP_Init(void);
+void http_Init(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetStatus(struct http *hp);
@@ -304,6 +313,9 @@ enum http_build {
 	Build_Reply
 };
 void http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp);
+#define HTTPH(a, b, c, d, e, f, g) extern char b[];
+#include "http_headers.h"
+#undef HTTPH
 
 /* cache_pass.c */
 void PassSession(struct worker *w, struct sess *sp);

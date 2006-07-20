@@ -46,7 +46,7 @@ HSH_Lookup(struct sess *sp)
 	struct http *h;
 	struct objhead *oh;
 	struct object *o;
-	char *c;
+	char *url, *host;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -77,8 +77,9 @@ HSH_Lookup(struct sess *sp)
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 
-	if (!http_GetHdr(h, "Host", &c))
-		c = h->url;
+	url = h->hd[HTTP_HDR_URL][HTTP_START];
+	if (!http_GetHdr(h, H_Host, &host))
+		host = url;
 	if (sp->obj != NULL) {
 		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 		o = sp->obj;
@@ -87,7 +88,7 @@ HSH_Lookup(struct sess *sp)
 		AZ(pthread_mutex_lock(&oh->mtx));
 		goto were_back;
 	}
-	oh = hash->lookup(h->url, c, w->nobjhead);
+	oh = hash->lookup(url, host, w->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
@@ -108,7 +109,7 @@ HSH_Lookup(struct sess *sp)
 			/* Object banned but not reaped yet */
 		} else if (o->ttl < sp->t_req) {
 			/* Object expired */
-		} else if (BAN_CheckObject(o, h->url)) {
+		} else if (BAN_CheckObject(o, url)) {
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			EXP_TTLchange(o);

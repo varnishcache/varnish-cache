@@ -44,7 +44,6 @@ struct vbc_mem {
 #define VBC_MEM_MAGIC		0x2fd7af01
 	struct vbe_conn		vbe;
 	struct http		http;
-	char			*http_hdr;
 };
 
 /* A backend IP */
@@ -74,12 +73,7 @@ vbe_new_conn(void)
 {
 	struct vbc_mem *vbcm;
 
-	vbcm = calloc(
-	    sizeof *vbcm +
-	    heritage.mem_http_headers * sizeof vbcm->http_hdr +
-	    heritage.mem_http_headerspace +
-	    heritage.mem_workspace,
-	    1);
+	vbcm = calloc(sizeof *vbcm + heritage.mem_workspace, 1);
 	if (vbcm == NULL)
 		return (NULL);
 	vbcm->magic = VBC_MEM_MAGIC;
@@ -87,7 +81,7 @@ vbe_new_conn(void)
 	vbcm->vbe.magic = VBE_CONN_MAGIC;
 	vbcm->vbe.vbcm = vbcm;
 	vbcm->vbe.http = &vbcm->http;
-	http_Init(&vbcm->http, (void *)(vbcm + 1));
+	http_Init(&vbcm->http, (void *)(vbcm + 1), heritage.mem_workspace);
 	return (&vbcm->vbe);
 }
 

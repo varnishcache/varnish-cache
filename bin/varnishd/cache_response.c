@@ -126,7 +126,7 @@ res_do_304(struct sess *sp, char *p)
 	RES_Write(sp, "Last-Modified: ", -1);
 	RES_Write(sp, p, -1);
 	RES_Write(sp, "\r\n", -1);
-	if (strcmp(sp->http->proto, "HTTP/1.1")) 
+	if (strcmp(sp->http->hd[HTTP_HDR_PROTO][HTTP_START], "HTTP/1.1")) 
 		RES_Write(sp, "Connection: close\r\n", -1);
 	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
 	sbuf_printf(sb, "\r\n");
@@ -144,7 +144,7 @@ res_do_conds(struct sess *sp)
 	time_t ims;
 
 	if (sp->obj->last_modified > 0 &&
-	    http_GetHdr(sp->http, "If-Modified-Since", &p)) {
+	    http_GetHdr(sp->http, H_If_Modified_Since, &p)) {
 		ims = TIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
@@ -187,14 +187,14 @@ RES_WriteObj(struct sess *sp)
 		sp->obj->age + sp->t_req - sp->obj->entered);
 	sbuf_printf(sb, "Via: 1.1 varnish\r\n");
 	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
-	if (strcmp(sp->http->proto, "HTTP/1.1")) 
+	if (strcmp(sp->http->hd[HTTP_HDR_PROTO][HTTP_START], "HTTP/1.1")) 
 		sbuf_printf(sb, "Connection: close\r\n");
 	sbuf_printf(sb, "\r\n");
 	sbuf_finish(sb);
 	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
 	bytes += sbuf_len(sb);
 	/* XXX: conditional request handling */
-	if (!strcmp(sp->http->req, "GET")) {
+	if (!strcmp(sp->http->hd[HTTP_HDR_REQ][HTTP_START], "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			assert(st->stevedore != NULL);
 			u += st->len;

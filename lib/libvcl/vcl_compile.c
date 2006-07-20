@@ -689,7 +689,8 @@ HeaderVar(struct tokenlist *tl __unused, struct token *t, struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
-	asprintf(&p, "VRT_GetHdr(sp, \"%s\")", v->name + vh->len);
+	asprintf(&p, "VRT_GetHdr(sp, \"\\%03o%s:\")",
+	    strlen(v->name + vh->len) + 1, v->name + vh->len);
 	assert(p != NULL);
 	v->rname = p;
 	return (v);
