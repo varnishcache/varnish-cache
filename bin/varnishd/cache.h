@@ -335,10 +335,10 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #endif
 
 /* cache_response.c */
-void RES_Error(struct worker *w, struct sess *sp, int error, const char *msg);
+void RES_Error(struct sess *sp, int error, const char *msg);
 void RES_Flush(struct sess *sp);
 void RES_Write(struct sess *sp, void *ptr, size_t len);
-void RES_WriteObj(struct worker *w, struct sess *sp);
+void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */
 void VCL_Init(void);

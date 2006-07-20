@@ -15,9 +15,12 @@
 /*--------------------------------------------------------------------*/
 
 void
-RES_Error(struct worker *w, struct sess *sp, int error, const char *msg)
+RES_Error(struct sess *sp, int error, const char *msg)
 {
 	char buf[40];
+	struct sbuf *sb;
+
+	sb = sp->wrk->sb;
 
 	if (msg == NULL) {
 		switch (error) {
@@ -27,11 +30,11 @@ RES_Error(struct worker *w, struct sess *sp, int error, const char *msg)
 		}
 	}
 
-	sbuf_clear(w->sb);
-	sbuf_printf(w->sb, "HTTP/1.1 %03d %s\r\n", error, msg);
+	sbuf_clear(sb);
+	sbuf_printf(sb, "HTTP/1.1 %03d %s\r\n", error, msg);
 	TIM_format(sp->t_req, buf);
-	sbuf_printf(w->sb, "Date: %s\r\n", buf);
-	sbuf_cat(w->sb,
+	sbuf_printf(sb, "Date: %s\r\n", buf);
+	sbuf_cat(sb,
 		"Server: Varnish\r\n"
 		"Connection: close\r\n"
 		"content-Type: text/html; charset=iso-8859-1\r\n"
@@ -39,30 +42,30 @@ RES_Error(struct worker *w, struct sess *sp, int error, const char *msg)
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
 		"<HTML>\r\n"
 		"  <HEAD>\r\n");
-	sbuf_printf(w->sb, "    <TITLE>%03d %s</TITLE>\r\n", error, msg);
-	sbuf_cat(w->sb,
+	sbuf_printf(sb, "    <TITLE>%03d %s</TITLE>\r\n", error, msg);
+	sbuf_cat(sb,
 		"  </HEAD>\r\n"
 		"  <BODY>\r\n");
-	sbuf_printf(w->sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
+	sbuf_printf(sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
 	switch(error) {
 	case 400:
-		sbuf_cat(w->sb,
+		sbuf_cat(sb,
 		    "    Your HTTP protocol request did not make sense.\r\n");
 		break;
 	case 500:
 	default:
-		sbuf_cat(w->sb,
+		sbuf_cat(sb,
 		    "    Something unexpected happened.\r\n");
 		break;
 	}
-	sbuf_cat(w->sb,
+	sbuf_cat(sb,
 		"    <P>\r\n"
 		"    <I>\r\n"
 		"    <A href=\"http://varnish.linpro.no/\">Varnish</A>\r\n"
 		"  </BODY>\r\n"
 		"</HTML>\r\n");
-	sbuf_finish(w->sb);
-	RES_Write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
+	sbuf_finish(sb);
+	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
 	RES_Flush(sp);
 	vca_close_session(sp, msg);
 }
@@ -105,29 +108,32 @@ RES_Write(struct sess *sp, void *ptr, size_t len)
 }
 
 void
-RES_WriteObj(struct worker *w, struct sess *sp)
+RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
+	struct sbuf *sb;
 	unsigned u = 0;
 	uint64_t bytes = 0;
 	
+
+	sb = sp->wrk->sb;
 
 	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	RES_Write(sp, sp->obj->header, strlen(sp->obj->header));
 
-	sbuf_clear(w->sb);
-	sbuf_printf(w->sb, "Age: %u\r\n",
+	sbuf_clear(sb);
+	sbuf_printf(sb, "Age: %u\r\n",
 		sp->obj->age + sp->t_req - sp->obj->entered);
-	sbuf_printf(w->sb, "Via: 1.1 varnish\r\n");
-	sbuf_printf(w->sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
+	sbuf_printf(sb, "Via: 1.1 varnish\r\n");
+	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
 	if (strcmp(sp->http->proto, "HTTP/1.1")) 
-		sbuf_printf(w->sb, "Connection: close\r\n");
-	sbuf_printf(w->sb, "\r\n");
-	sbuf_finish(w->sb);
-	RES_Write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
-	bytes += sbuf_len(w->sb);
+		sbuf_printf(sb, "Connection: close\r\n");
+	sbuf_printf(sb, "\r\n");
+	sbuf_finish(sb);
+	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
+	bytes += sbuf_len(sb);
 	/* XXX: conditional request handling */
 	if (!strcmp(sp->http->req, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
