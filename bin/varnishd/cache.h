@@ -56,6 +56,8 @@ struct http {
 	char			*proto;
 	char			*status;
 	char			*response;
+
+	unsigned		conds;		/* If-* headers present */
 	
 	unsigned		nhdr;
 	char			**hdr;
@@ -150,6 +152,8 @@ struct object {
 	time_t			age;
 	time_t			entered;
 	time_t			ttl;
+
+	time_t			last_modified;
 
 	char			*header;
 	TAILQ_ENTRY(object)	list;
@@ -337,7 +341,7 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 /* cache_response.c */
 void RES_Error(struct sess *sp, int error, const char *msg);
 void RES_Flush(struct sess *sp);
-void RES_Write(struct sess *sp, void *ptr, size_t len);
+void RES_Write(struct sess *sp, const void *ptr, size_t len);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */

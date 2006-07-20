@@ -12,8 +12,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <time.h>
 
 #include "shmlog.h"
+#include "libvarnish.h"
 #include "cache.h"
 
 /*
@@ -211,6 +213,8 @@ FetchBody(struct worker *w, struct sess *sp)
 	vc = sp->vbc;
 	hp = sp->bkd_http;
 
+	if (http_GetHdr(hp, "Last-Modified", &b))
+		sp->obj->last_modified = TIM_parse(b);
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	if (body) {
 		if (http_GetHdr(hp, "Content-Length", &b))

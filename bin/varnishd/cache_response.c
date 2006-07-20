@@ -93,19 +93,75 @@ RES_Flush(struct sess *sp)
 }
 
 void
-RES_Write(struct sess *sp, void *ptr, size_t len)
+RES_Write(struct sess *sp, const void *ptr, size_t len)
 {
 
 	if (sp->fd < 0 || len == 0)
 		return;
+	if (len == -1)
+		len = strlen(ptr);
 	if (sp->wrk->niov == MAX_IOVS)
 		RES_Flush(sp);
 	if (sp->fd < 0)
 		return;
-	sp->wrk->iov[sp->wrk->niov].iov_base = ptr;
+	sp->wrk->iov[sp->wrk->niov].iov_base = (void*)(uintptr_t)ptr;
 	sp->wrk->iov[sp->wrk->niov++].iov_len = len;
 	sp->wrk->liov += len;
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+res_do_304(struct sess *sp, char *p)
+{
+	struct sbuf *sb;
+
+	sb = sp->wrk->sb;
+	sbuf_clear(sb);
+
+	VSL(SLT_Status, sp->fd, "%u", 304);
+	VSL(SLT_Length, sp->fd, "%u", 0);
+	RES_Write(sp, "HTTP/1.1 304 Not Modified\r\n", -1);
+	RES_Write(sp, "Via: 1.1 varnish\r\n", -1);
+	RES_Write(sp, "Last-Modified: ", -1);
+	RES_Write(sp, p, -1);
+	RES_Write(sp, "\r\n", -1);
+	if (strcmp(sp->http->proto, "HTTP/1.1")) 
+		RES_Write(sp, "Connection: close\r\n", -1);
+	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
+	sbuf_printf(sb, "\r\n");
+	sbuf_finish(sb);
+	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
+	RES_Flush(sp);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+res_do_conds(struct sess *sp)
+{
+	char *p;
+	time_t ims;
+
+	if (sp->obj->last_modified > 0 &&
+	    http_GetHdr(sp->http, "If-Modified-Since", &p)) {
+		ims = TIM_parse(p);
+		if (ims > sp->t_req)	/* [RFC2616 14.25] */
+			return (0);
+		if (ims > sp->obj->last_modified) {
+			VSL(SLT_Debug, sp->fd,
+			    "Cond: %d > %d ", sp->obj->last_modified, ims);
+			return (0);
+		}
+		VSL(SLT_Debug, sp->fd,
+		    "Cond: %d <= %d", sp->obj->last_modified, ims);
+		res_do_304(sp, p);
+		return (1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 RES_WriteObj(struct sess *sp)
@@ -118,6 +174,9 @@ RES_WriteObj(struct sess *sp)
 
 	sb = sp->wrk->sb;
 
+	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
+		return;
+		
 	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
