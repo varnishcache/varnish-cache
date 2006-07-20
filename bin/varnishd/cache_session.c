@@ -63,6 +63,7 @@ SES_RefSrcAddr(struct sess *sp)
 	struct srcaddrhead *ch;
 	time_t now;
 
+	assert(sp->srcaddr == NULL);
 	for (u = 0, p = sp->addr; *p; p++)
 		u += u + *p;
 	v = u % CLIENT_HASH;
@@ -105,6 +106,7 @@ SES_RefSrcAddr(struct sess *sp)
 			VSL_stats->n_srcaddr++;
 	} else
 		TAILQ_REMOVE(ch, c3, list);
+	assert (c3 != NULL);
 	if (c3 != NULL) {
 		memset(c3, 0, sizeof *c3);
 		strcpy(c3->addr, sp->addr);
@@ -115,8 +117,8 @@ SES_RefSrcAddr(struct sess *sp)
 		c3->sah = ch;
 		VSL_stats->n_srcaddr_act++;
 		TAILQ_INSERT_TAIL(ch, c3, list);
+		sp->srcaddr = c3;
 	}
-	sp->srcaddr = c3;
 	AZ(pthread_mutex_unlock(&ses_mtx));
 }
 
