@@ -76,8 +76,10 @@ exp_hangman(void *arg)
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		VSL_stats->n_deathrow--;
+		VSL_stats->n_expired++;
 		AZ(pthread_mutex_unlock(&exp_mtx));
-		VSL(SLT_ExpKill, 0, "%u", o->xid);
+		VSL(SLT_ExpKill, 0, "%u %d", o->xid, (int)(o->ttl - t));
 		HSH_Deref(o);
 	}
 }
@@ -124,6 +126,7 @@ exp_prefetch(void *arg)
 		if (sp->handling == VCL_RET_DISCARD) {
 			AZ(pthread_mutex_lock(&exp_mtx));
 			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+			VSL_stats->n_deathrow++;
 			AZ(pthread_mutex_unlock(&exp_mtx));
 			continue;
 		}
