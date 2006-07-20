@@ -73,11 +73,18 @@ SES_RefSrcAddr(struct sess *sp)
 	c3 = NULL;
 	TAILQ_FOREACH_SAFE(c, ch, list, c2) {
 		if (c->sum == u && !strcmp(c->addr, sp->addr)) {
+			if (c->nsess == 0)
+				VSL_stats->n_srcaddr_act++;
 			c->nsess++;
 			c->ttl = now + CLIENT_TTL;
 			sp->srcaddr = c;
 			TAILQ_REMOVE(ch, c, list);
 			TAILQ_INSERT_TAIL(ch, c, list);
+			if (0 && c3 != NULL) {
+				TAILQ_REMOVE(ch, c3, list);
+				VSL_stats->n_srcaddr--;
+				free(c3);
+			}
 			AZ(pthread_mutex_unlock(&ses_mtx));
 			return;
 		}
@@ -93,6 +100,7 @@ SES_RefSrcAddr(struct sess *sp)
 	}
 	if (c3 == NULL) {
 		c3 = malloc(sizeof *c3);
+		assert(c3 != NULL);
 		if (c3 != NULL)
 			VSL_stats->n_srcaddr++;
 	} else
@@ -105,6 +113,7 @@ SES_RefSrcAddr(struct sess *sp)
 		c3->ttl = now + CLIENT_TTL;
 		c3->nsess = 1;
 		c3->sah = ch;
+		VSL_stats->n_srcaddr_act++;
 		TAILQ_INSERT_TAIL(ch, c3, list);
 	}
 	sp->srcaddr = c3;
@@ -135,14 +144,17 @@ void
 SES_RelSrcAddr(struct sess *sp)
 {
 
-	if (sp->srcaddr == NULL) {
+	if (0 && sp->srcaddr == NULL) {
 		/* XXX who comes this way ? */
 		VSL(SLT_Debug, sp->fd, "had no srcaddr");
 		return;
 	}
 	assert(sp->srcaddr != NULL);
 	AZ(pthread_mutex_lock(&ses_mtx));
+	assert(sp->srcaddr->nsess > 0);
 	sp->srcaddr->nsess--;
+	if (sp->srcaddr->nsess == 0)
+		VSL_stats->n_srcaddr_act--;
 	sp->srcaddr = NULL;
 	AZ(pthread_mutex_unlock(&ses_mtx));
 }
