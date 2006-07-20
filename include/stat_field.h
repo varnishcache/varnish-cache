@@ -26,4 +26,7 @@ MAC_STAT(n_wrk_max,		uint64_t, "u", "N worker threads limited")
 MAC_STAT(n_wrk_busy,		uint64_t, "u", "N busy worker threads")
 MAC_STAT(n_wrk_queue,		uint64_t, "u", "N queued work requests")
 
+MAC_STAT(n_expired,		uint64_t, "u", "N expired objects")
+MAC_STAT(n_deathrow,		uint64_t, "u", "N objects on deathrow")
+
 MAC_STAT(losthdr,		uint64_t, "u", "HTTP header overflows")
