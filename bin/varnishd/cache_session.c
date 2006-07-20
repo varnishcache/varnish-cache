@@ -144,9 +144,8 @@ void
 SES_RelSrcAddr(struct sess *sp)
 {
 
-	if (0 && sp->srcaddr == NULL) {
-		/* XXX who comes this way ? */
-		VSL(SLT_Debug, sp->fd, "had no srcaddr");
+	if (sp->srcaddr == NULL) {
+		/* If we never get to work pool (illegal req) */
 		return;
 	}
 	assert(sp->srcaddr != NULL);
