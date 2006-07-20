@@ -2,6 +2,13 @@
  * $Id$
  *
  * Expiry of cached objects and execution of prefetcher
+ *
+ * XXX: Objects can linger on deathrow as long as a slow client
+ * XXX: tickles data away from it.  With many slow clients this could
+ * XXX: possibly make deathrow very long and make the hangman waste
+ * XXX: time.  The solution is to have another queue for such "pending
+ * XXX: cases" and have HSH_Deref() move them to deathrow when they
+ * XXX: are ready.
  */
 
 #include <unistd.h>
