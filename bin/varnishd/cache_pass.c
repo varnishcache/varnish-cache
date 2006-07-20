@@ -46,8 +46,8 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 		if (i == 0 && bi == NULL)
 			return (1);
 		assert(i > 0);
-		vca_write(sp, buf, i);
-		vca_flush(sp);
+		RES_Write(sp, buf, i);
+		RES_Flush(sp);
 		cl -= i;
 	}
 	return (0);
@@ -92,7 +92,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 		if (u == 0)
 			break;
 
-		vca_write(sp, p, q - p);
+		RES_Write(sp, p, q - p);
 
 		p = q;
 
@@ -104,28 +104,28 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			}
 			if (bp - p < j)
 				j = bp - p;
-			vca_write(sp, p, j);
+			RES_Write(sp, p, j);
 			p += j;
 			u -= j;
 		}
 		while (u > 0) {
 			if (http_GetTail(hp, u, &b, &e)) {
 				j = e - b;
-				vca_write(sp, q, j);
+				RES_Write(sp, q, j);
 				u -= j;
 			} else
 				break;
 		}
-		vca_flush(sp);
+		RES_Flush(sp);
 		while (u > 0) {
 			j = u;
 			if (j > sizeof buf)
 				j = sizeof buf;
 			i = read(fd, buf, j);
 			assert(i > 0);
-			vca_write(sp, buf, i);
+			RES_Write(sp, buf, i);
 			u -= i;
-			vca_flush(sp);
+			RES_Flush(sp);
 		}
 	}
 	return (0);
@@ -150,7 +150,7 @@ PassBody(struct worker *w, struct sess *sp)
 	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
 	sbuf_cat(w->sb, "\r\n");
 	sbuf_finish(w->sb);
-	vca_write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
+	RES_Write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
 
 	if (http_GetHdr(hp, "Content-Length", &b))
 		cls = pass_straight(sp, vc->fd, hp, b);
@@ -161,7 +161,7 @@ PassBody(struct worker *w, struct sess *sp)
 	else {
 		cls = pass_straight(sp, vc->fd, hp, NULL);
 	}
-	vca_flush(sp);
+	RES_Flush(sp);
 
 	if (http_GetHdr(hp, "Connection", &b) && !strcasecmp(b, "close"))
 		cls = 1;
