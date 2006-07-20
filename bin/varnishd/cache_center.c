@@ -61,7 +61,7 @@ static int
 cnt_deliver(struct sess *sp)
 {
 
-	vca_write_obj(sp->wrk, sp);
+	RES_WriteObj(sp->wrk, sp);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	sp->step = STP_DONE;
@@ -253,7 +253,7 @@ cnt_hit(struct sess *sp)
 		sp->handling = VCL_RET_PASS;
 
 	if (sp->handling == VCL_RET_DELIVER) {
-		vca_write_obj(sp->wrk, sp);
+		RES_WriteObj(sp->wrk, sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_DONE;
