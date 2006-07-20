@@ -61,7 +61,7 @@ static int
 cnt_deliver(struct sess *sp)
 {
 
-	RES_WriteObj(sp->wrk, sp);
+	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	sp->step = STP_DONE;
@@ -253,7 +253,7 @@ cnt_hit(struct sess *sp)
 		sp->handling = VCL_RET_PASS;
 
 	if (sp->handling == VCL_RET_DELIVER) {
-		RES_WriteObj(sp->wrk, sp);
+		RES_WriteObj(sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_DONE;
@@ -522,7 +522,7 @@ cnt_recv(struct sess *sp)
 
 	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
-		RES_Error(sp->wrk, sp, done, NULL);
+		RES_Error(sp, done, NULL);
 		sp->step = STP_DONE;
 		return (0);
 	}
