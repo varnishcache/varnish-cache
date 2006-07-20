@@ -101,12 +101,13 @@ HSH_Lookup(struct sess *sp)
 			return (NULL);
 		}
 	were_back:
-		/* XXX: check ttl */
 		/* XXX: check Vary: */
 		if (!o->cacheable) {
 			/* ignore */
 		} else if (o->ttl == 0) {
 			/* Object banned but not reaped yet */
+		} else if (o->ttl < sp->t_req) {
+			/* Object expired */
 		} else if (BAN_CheckObject(o, h->url)) {
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
