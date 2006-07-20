@@ -15,19 +15,28 @@
 #include "heritage.h"
 #include "cache.h"
 
+#define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
+#include "http_headers.h"
+#undef HTTPH
+
+#define VSLH(a, b, c, d) \
+	VSLR((a), (b), (c)->hd[d][HTTP_START], (c)->hd[d][HTTP_END]);
+
 /*--------------------------------------------------------------------*/
 
 void
-http_Init(struct http *hp, void *space)
+http_Init(struct http *hp, void *space, unsigned len)
 {
 	char *sp = space;
 
+	assert(len > 0);
 	memset(hp, 0, sizeof *hp);
 	hp->magic = HTTP_MAGIC;
-	hp->hdr = (void *)sp;
-	sp += heritage.mem_http_headers * sizeof hp->hdr;
 	hp->s = sp;
-	hp->e = hp->s + heritage.mem_http_headerspace;
+	hp->t = sp;
+	hp->v = sp;
+	hp->f = sp;
+	hp->e = sp + len;
 }
 
 /*--------------------------------------------------------------------*/
@@ -38,19 +47,29 @@ http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 	unsigned u, l;
 	char *p;
 
-	l = strlen(hdr);
-	for (u = 0; u < hp->nhdr; u++) {
-		if (strncasecmp(hdr, hp->hdr[u], l))
+	l = hdr[0];
+	assert(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+	hdr++;
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		assert(hp->hd[u][HTTP_START] != NULL);
+		assert(hp->hd[u][HTTP_END] != NULL);
+		if (hp->hd[u][HTTP_END] < hp->hd[u][HTTP_START] + l)
 			continue;
-		p = hp->hdr[u];
-		if (p[l] != ':')
+		if (hp->hd[u][HTTP_START][l-1] != ':')
 			continue;
-		p += l + 1;
-		while (isspace(*p))
-			p++;
-		*ptr = p;
+		if (strncasecmp(hdr, hp->hd[u][HTTP_START], l))
+			continue;
+		if (hp->hd[u][HTTP_DATA] == NULL) {
+			p = hp->hd[u][HTTP_START] + l;
+			while (isspace(*p))
+				p++;
+			hp->hd[u][HTTP_DATA] = p;
+		}
+		*ptr = hp->hd[u][HTTP_DATA];
 		return (1);
 	}
+	*ptr = NULL;
 	return (0);
 }
 
@@ -153,7 +172,9 @@ int
 http_GetStatus(struct http *hp)
 {
 
-	return (strtoul(hp->status, NULL /* XXX */, 10));
+	assert(hp->hd[HTTP_HDR_STATUS][HTTP_START] != NULL);
+	return (strtoul(hp->hd[HTTP_HDR_STATUS][HTTP_START],
+	    NULL /* XXX */, 10));
 }
 
 /*--------------------------------------------------------------------
@@ -169,11 +190,12 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 	if (*p == '\r')
 		p++;
 
-	hp->nhdr = 0;
+	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
 	assert(p < hp->v);	/* http_header_complete() guarantees this */
 	for (; p < hp->v; p = r) {
+		/* XXX: handle continuation lines */
 		q = strchr(p, '\n');
 		assert(q != NULL);
 		r = q + 1;
@@ -188,17 +210,17 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 		    p[2] == '-') 
 			hp->conds = 1;
 
-		if (hp->nhdr < heritage.mem_http_headers) {
-			hp->hdr[hp->nhdr++] = p;
-			VSLR(SLT_Header, fd, p, q);
+		if (hp->nhd < MAX_HTTP_HDRS) {
+			hp->hd[hp->nhd][HTTP_START] = p;
+			hp->hd[hp->nhd][HTTP_END] = q;
+			VSLH(SLT_Header, fd, hp, hp->nhd);
+			hp->nhd++;
 		} else {
 			VSL_stats->losthdr++;
 			VSLR(SLT_LostHeader, fd, p, q);
 		}
 	}
 	assert(hp->t <= hp->v);
-	if (hp->t != r)
-		printf("hp->t %p r %p\n", hp->t, r);
 	assert(hp->t == r);
 	return (0);
 }
@@ -217,25 +239,27 @@ http_DissectRequest(struct http *hp, int fd)
 		continue;
 
 	/* First, the request type (GET/HEAD etc) */
-	hp->req = p;
+	hp->hd[HTTP_HDR_REQ][HTTP_START] = p;
 	for (; isalpha(*p); p++)
 		;
-	VSLR(SLT_Request, fd, hp->req, p);
+	hp->hd[HTTP_HDR_REQ][HTTP_END] = p;
+	VSLH(SLT_Request, fd, hp, HTTP_HDR_REQ);
 	*p++ = '\0';
 
 	/* Next find the URI */
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		return (400);
 	}
-	hp->url = p;
+	hp->hd[HTTP_HDR_URL][HTTP_START] = p;
 	while (!isspace(*p))
 		p++;
-	VSLR(SLT_URL, fd, hp->url, p);
+	hp->hd[HTTP_HDR_URL][HTTP_END] = p;
+	VSLH(SLT_URL, fd, hp, HTTP_HDR_URL);
 	if (*p == '\n') {
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		return (400);
 	}
 	*p++ = '\0';
@@ -244,19 +268,20 @@ http_DissectRequest(struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		return (400);
 	}
-	hp->proto = p;
+	hp->hd[HTTP_HDR_PROTO][HTTP_START] = p;
 	while (!isspace(*p))
 		p++;
-	VSLR(SLT_Protocol, fd, hp->proto, p);
+	hp->hd[HTTP_HDR_PROTO][HTTP_END] = p;
+	VSLH(SLT_Protocol, fd, hp, HTTP_HDR_PROTO);
 	if (*p != '\n')
 		*p++ = '\0';
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p != '\n') {
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		return (400);
 	}
 	*p++ = '\0';
@@ -278,31 +303,35 @@ http_DissectResponse(struct http *hp, int fd)
 		continue;
 
 	/* First, protocol */
-	hp->proto = p;
+	hp->hd[HTTP_HDR_PROTO][HTTP_START] = p;
 	while (!isspace(*p))
 		p++;
-	VSLR(SLT_Protocol, fd, hp->proto, p);
+	hp->hd[HTTP_HDR_PROTO][HTTP_END] = p;
+	VSLH(SLT_Protocol, fd, hp, HTTP_HDR_PROTO);
 	*p++ = '\0';
 
 	/* Next find the status */
 	while (isspace(*p))
 		p++;
-	hp->status = p;
+	hp->hd[HTTP_HDR_STATUS][HTTP_START] = p;
 	while (!isspace(*p))
 		p++;
-	VSLR(SLT_Status, fd, hp->status, p);
+	hp->hd[HTTP_HDR_STATUS][HTTP_END] = p;
+	VSLH(SLT_Status, fd, hp, HTTP_HDR_STATUS);
 	*p++ = '\0';
 
 	/* Next find the response */
 	while (isspace(*p))
 		p++;
-	hp->response = p;
+	hp->hd[HTTP_HDR_RESPONSE][HTTP_START] = p;
 	while (*p != '\n')
 		p++;
-	for (q = p; q > hp->response && isspace(q[-1]); q--)
+	for (q = p; q > hp->hd[HTTP_HDR_RESPONSE][HTTP_START] &&
+	    isspace(q[-1]); q--)
 		continue;
 	*q = '\0';
-	VSLR(SLT_Response, fd, hp->response, q);
+	hp->hd[HTTP_HDR_RESPONSE][HTTP_END] = q;
+	VSLH(SLT_Response, fd, hp, HTTP_HDR_RESPONSE);
 	p++;
 
 	return (http_dissect_hdrs(hp, fd, p));
@@ -360,7 +389,7 @@ http_read_f(int fd, short event, void *arg)
 	l = hp->e - hp->v;
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		hp->t = NULL;
 		ret = 1;
 	} else {
@@ -458,59 +487,59 @@ http_supress(const char *hdr, int flag)
 void
 http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 {
-	unsigned u, sup;
+	unsigned u, sup, rr;
 
 	sbuf_clear(sb);
 	assert(sb != NULL);
 	switch (mode) {
-	case Build_Reply:
-		sbuf_cat(sb, hp->proto);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->status);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->response);
-		sup = 2;
-		break;
-	case Build_Pipe:
-		sbuf_cat(sb, hp->req);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->url);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->proto);
-		sup = 0;
-		break;
-	case Build_Pass:
-		sbuf_cat(sb, hp->req);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->url);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->proto);
-		sup = 2;
-		break;
-	case Build_Fetch:
-		sbuf_cat(sb, "GET ");
-		sbuf_cat(sb, hp->url);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->proto);
-		sup = 1;
-		break;
+	case Build_Reply: rr = 0; sup = 2; break;
+	case Build_Pipe:  rr = 1; sup = 0; break;
+	case Build_Pass:  rr = 1; sup = 2; break;
+	case Build_Fetch: rr = 2; sup = 1; break;
 	default:
 		sup = 0;	/* for flexelint */
+		rr = 0;	/* for flexelint */
 		printf("mode = %d\n", mode);
-		assert(mode == 1 || mode == 2);
+		assert(__LINE__ == 0);
 	}
+	if (rr == 0) {
+		sbuf_cat(sb, hp->hd[HTTP_HDR_PROTO][HTTP_START]);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->hd[HTTP_HDR_STATUS][HTTP_START]);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->hd[HTTP_HDR_RESPONSE][HTTP_START]);
+	} else {
+		if (rr == 2) {
+			sbuf_cat(sb, "GET ");
+		} else {
+			sbuf_cat(sb, hp->hd[HTTP_HDR_REQ][HTTP_START]);
+			sbuf_cat(sb, " ");
+		}
+		sbuf_cat(sb, hp->hd[HTTP_HDR_URL][HTTP_START]);
+		sbuf_cat(sb, " ");
+		sbuf_cat(sb, hp->hd[HTTP_HDR_PROTO][HTTP_START]);
+	}
+
 	sbuf_cat(sb, "\r\n");
 
-	for (u = 0; u < hp->nhdr; u++) {
-		if (http_supress(hp->hdr[u], sup))
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		if (http_supress(hp->hd[u][HTTP_START], sup))
 			continue;
 		if (1)
-			VSL(SLT_BldHdr, fd, "%s", hp->hdr[u]);
-		sbuf_cat(sb, hp->hdr[u]);
+			VSL(SLT_BldHdr, fd, "%s", hp->hd[u][HTTP_START]);
+		sbuf_cat(sb, hp->hd[u][HTTP_START]);
 		sbuf_cat(sb, "\r\n");
 	}
 	if (mode != Build_Reply) {
 		sbuf_cat(sb, "\r\n");
 		sbuf_finish(sb);
 	}
+}
+
+void
+HTTP_Init(void)
+{
+#define HTTPH(a, b, c, d, e, f, g) b[0] = strlen(b + 1);
+#include "http_headers.h"
+#undef HTTPH
 }

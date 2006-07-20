@@ -56,11 +56,12 @@ VRT_GetHdr(struct sess *sp, const char *n)
 char *
 VRT_GetReq(struct sess *sp)
 {
+	char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp != NULL);
 	assert(sp->http != NULL);
-	return (sp->http->req);
+	return (sp->http->hd[HTTP_HDR_REQ][HTTP_START]);
 }
 
 /*--------------------------------------------------------------------*/
