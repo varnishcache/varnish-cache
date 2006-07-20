@@ -516,7 +516,6 @@ cnt_recv(struct sess *sp)
 
 	sp->t0 = time(NULL);
 	sp->vcl = VCL_Get();
-	SES_RefSrcAddr(sp);
 
 	assert(sp->obj == NULL);
 

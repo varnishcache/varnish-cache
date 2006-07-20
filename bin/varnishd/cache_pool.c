@@ -37,9 +37,10 @@ wrk_do_one(struct worker *w)
 	TAILQ_REMOVE(&wrk_reqhead, wrq, list);
 	VSL_stats->n_wrk_queue--;
 	AZ(pthread_mutex_unlock(&wrk_mtx));
-	assert(wrq->sess != NULL);
-	wrq->sess->wrk = w;
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
+	wrq->sess->wrk = w;
+	if (wrq->sess->srcaddr == NULL)
+		SES_RefSrcAddr(wrq->sess);
 	if (w->nobj != NULL)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
