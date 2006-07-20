@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,7 +20,8 @@
 #include "varnishapi.h"
 
 struct top {
-	unsigned char		*rec;
+	unsigned char		rec[4 + 255];
+	unsigned		clen;
 	unsigned		hash;
 	TAILQ_ENTRY(top)	list;
 	double			count;
@@ -78,20 +80,25 @@ int
 main(int argc, char **argv)
 {
 	int i, c;
-	unsigned char *p;
+	unsigned char *p, *q;
 	struct VSL_data *vd;
 	unsigned u, v;
 	struct top *tp, *tp2;
+	unsigned one_flag = 0;
+
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "how:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "1")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
 		if (i > 0)
 			continue;
 		switch (c) {
+		case '1':
+			one_flag = 1;
+			break;
 		default:
 			Usage();
 		}
@@ -114,30 +121,34 @@ main(int argc, char **argv)
 			v = 0;
 		}
 		u = 0;
-		for (i = 4; i < 4 + p[1]; i++)
-			u += p[i];
+		q = p + 4;
+		for (i = 0; i < p[1]; i++, q++) {
+			if (one_flag && (*q == ':' || isspace(*q)))
+				break;
+			u += *q;
+		}
 		TAILQ_FOREACH(tp, &top_head, list) {
 			if (tp->hash != u)
 				continue;
 			if (tp->rec[0] != p[0])
 				continue;
-			if (tp->rec[1] != p[1])
+			if (tp->clen != q - p)
 				continue;
-			if (memcmp(p + 4, tp->rec + 4, p[1]))
+			if (memcmp(p + 4, tp->rec + 4, q - (p + 4)))
 				continue;
 			tp->count += 1.0;
 			break;
 		}
 		if (tp == NULL) {
 			ntop++;
-			tp = calloc(sizeof *tp + 4 + p[1], 1);
+			tp = calloc(sizeof *tp, 1);
 			assert(tp != NULL);
 			tp->hash = u;
-			tp->rec = (void *)(tp + 1);
-			memcpy(tp->rec, p, 4 + p[1]);
 			tp->count = 1.0;
+			tp->clen = q - p;
 			TAILQ_INSERT_TAIL(&top_head, tp, list);
-		}
+		} 
+		memcpy(tp->rec, p, 4 + p[1]);
 		while (1) {
 			tp2 = TAILQ_PREV(tp, tophead, list);
 			if (tp2 == NULL || tp2->count >= tp->count)
