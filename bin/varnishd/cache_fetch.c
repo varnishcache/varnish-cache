@@ -41,6 +41,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	cl = strtoumax(b, NULL, 0);
 
 	st = stevedore->alloc(stevedore, cl);
+	assert(st->stevedore != NULL);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
@@ -105,6 +106,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			} else {
 				st = stevedore->alloc(stevedore,
 				    stevedore->trim == NULL ? u : CHUNK_PREALLOC);
+				assert(st->stevedore != NULL);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 				p = st->ptr;
 			}
@@ -177,6 +179,7 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	while (1) {
 		if (v == 0) {
 			st = stevedore->alloc(stevedore, CHUNK_PREALLOC);
+			assert(st->stevedore != NULL);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
