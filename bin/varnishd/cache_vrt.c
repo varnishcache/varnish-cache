@@ -11,6 +11,7 @@
 
 #include "shmlog.h"
 #include "vrt.h"
+#include "vrt_obj.h"
 #include "vcl.h"
 #include "cache.h"
 
@@ -74,32 +75,34 @@ VRT_handling(struct sess *sp, unsigned hand)
 	sp->handling = hand;
 }
 
-int
-VRT_obj_valid(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->obj->valid);
-}
-
-int
-VRT_obj_cacheable(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->obj->cacheable);
-}
+/*--------------------------------------------------------------------*/
 
 void
-VRT_set_backend_hostname(struct backend *be, const char *h)
+VRT_l_backend_host(struct backend *be, const char *h)
 {
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	be->hostname = h;
 }
 
+const char *
+VRT_r_backend_host(struct backend *be)
+{
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	return (be->hostname);
+}
+
 void
-VRT_set_backend_portname(struct backend *be, const char *p)
+VRT_l_backend_port(struct backend *be, const char *p)
 {
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	be->portname = p;
+}
+
+const char *
+VRT_r_backend_port(struct backend *be)
+{
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	return (be->portname);
 }
 
 void
@@ -122,3 +125,59 @@ VRT_alloc_backends(struct VCL_conf *cp)
 		cp->backend[i]->magic = BACKEND_MAGIC;
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_obj_ttl(struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	(void)a;
+}
+
+double
+VRT_r_obj_ttl(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->ttl - sp->t_req);
+}
+
+
+double
+VRT_r_obj_valid(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->valid);
+}
+
+
+double
+VRT_r_obj_cacheable(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->cacheable);
+}
+
+/*--------------------------------------------------------------------*/
+
+const char *
+VRT_r_req_request(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	return (sp->http->hd[HTTP_HDR_REQ].b);
+}
+
+
+const char *
+VRT_r_req_url(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	return (sp->http->hd[HTTP_HDR_URL].b);
+}
+
