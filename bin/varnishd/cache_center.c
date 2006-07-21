@@ -477,7 +477,7 @@ static int
 cnt_pipe(struct sess *sp)
 {
 
-	PipeSession(sp->wrk, sp);
+	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
 }

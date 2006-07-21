@@ -191,6 +191,7 @@ PassSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
+
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
@@ -214,6 +215,5 @@ PassSession(struct sess *sp)
 	(void)event_base_loop(w->eb, 0);
 	http_DissectResponse(hp, vc->fd);
 
-	sp->bkd_http = hp;
 	sp->vbc = vc;
 }
