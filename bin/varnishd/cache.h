@@ -15,9 +15,9 @@
 #include "common.h"
 #include "miniobj.h"
 
-#define MAX_IOVS		10
-
 #define MAX_HTTP_HDRS		32
+
+#define MAX_IOVS		(MAX_HTTP_HDRS * 2)
 
 #define HTTP_HDR_REQ		0
 #define HTTP_HDR_URL		1
@@ -25,10 +25,6 @@
 #define HTTP_HDR_STATUS		3
 #define HTTP_HDR_RESPONSE	4
 #define HTTP_HDR_FIRST		5
-
-#define HTTP_START		0
-#define HTTP_DATA		1
-#define HTTP_END		2
 
 struct event_base;
 struct cli;
@@ -52,6 +48,11 @@ enum step {
 
 typedef void http_callback_f(void *, int bad);
 
+struct http_hdr {
+	char			*b;
+	char			*e;
+};
+
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
@@ -67,8 +68,9 @@ struct http {
 
 	unsigned		conds;		/* If-* headers present */
 
-	char			*hd[MAX_HTTP_HDRS][HTTP_END + 1];
+	struct http_hdr		hd[MAX_HTTP_HDRS];
 	unsigned		nhd;
+	unsigned char		hdf[MAX_HTTP_HDRS];
 };
 
 /*--------------------------------------------------------------------*/
@@ -85,6 +87,8 @@ struct worker {
 	pthread_cond_t		cv;
 	TAILQ_ENTRY(worker)	list;
 
+	int			*wfd;
+	unsigned		werr;	/* valid after WRK_Flush() */
 	struct iovec		iov[MAX_IOVS];
 	unsigned		niov;
 	size_t			liov;
@@ -296,6 +300,13 @@ void HSH_Init(void);
 
 /* cache_http.c */
 void HTTP_Init(void);
+void http_Write(struct worker *w, struct http *hp, int resp);
+void http_CopyReq(int fd, struct http *to, struct http *fm);
+void http_CopyResp(int fd, struct http *to, struct http *fm);
+void http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how);
+void http_CopyHeader(int fd, struct http *to, struct http *fm, unsigned n);
+void http_PrintfHeader(int fd, struct http *to, const char *fmt, ...);
+int http_IsHdr(struct http_hdr *hh, char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
@@ -318,7 +329,7 @@ void http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *
 #undef HTTPH
 
 /* cache_pass.c */
-void PassSession(struct worker *w, struct sess *sp);
+void PassSession(struct sess *sp);
 void PassBody(struct worker *w, struct sess *sp);
 
 /* cache_pipe.c */
@@ -327,6 +338,10 @@ void PipeSession(struct worker *w, struct sess *sp);
 /* cache_pool.c */
 void WRK_Init(void);
 void WRK_QueueSession(struct sess *sp);
+void WRK_Reset(struct worker *w, int *fd);
+int WRK_Flush(struct worker *w);
+void WRK_Write(struct worker *w, const void *ptr, size_t len);
+void WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
 
 /* cache_session.c [SES] */
 void SES_Init(void);
@@ -352,8 +367,6 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 
 /* cache_response.c */
 void RES_Error(struct sess *sp, int error, const char *msg);
-void RES_Flush(struct sess *sp);
-void RES_Write(struct sess *sp, const void *ptr, size_t len);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */

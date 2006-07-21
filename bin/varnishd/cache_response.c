@@ -65,49 +65,11 @@ RES_Error(struct sess *sp, int error, const char *msg)
 		"  </BODY>\r\n"
 		"</HTML>\r\n");
 	sbuf_finish(sb);
-	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
-	RES_Flush(sp);
+	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
+	WRK_Flush(sp->wrk);
 	vca_close_session(sp, msg);
 }
 
-
-/*--------------------------------------------------------------------
- * Write data to client
- * We try to use writev() if possible in order to minimize number of
- * syscalls made and packets sent.  It also just might allow the worker
- * thread to complete the request without holding stuff locked.
- */
-
-void
-RES_Flush(struct sess *sp)
-{
-	int i;
-
-	if (sp->fd < 0 || sp->wrk->niov == 0)
-		return;
-	i = writev(sp->fd, sp->wrk->iov, sp->wrk->niov);
-	if (i != sp->wrk->liov)
-		vca_close_session(sp, "remote closed");
-	sp->wrk->liov = 0;
-	sp->wrk->niov = 0;
-}
-
-void
-RES_Write(struct sess *sp, const void *ptr, size_t len)
-{
-
-	if (sp->fd < 0 || len == 0)
-		return;
-	if (len == -1)
-		len = strlen(ptr);
-	if (sp->wrk->niov == MAX_IOVS)
-		RES_Flush(sp);
-	if (sp->fd < 0)
-		return;
-	sp->wrk->iov[sp->wrk->niov].iov_base = (void*)(uintptr_t)ptr;
-	sp->wrk->iov[sp->wrk->niov++].iov_len = len;
-	sp->wrk->liov += len;
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -121,18 +83,18 @@ res_do_304(struct sess *sp, char *p)
 
 	VSL(SLT_Status, sp->fd, "%u", 304);
 	VSL(SLT_Length, sp->fd, "%u", 0);
-	RES_Write(sp, "HTTP/1.1 304 Not Modified\r\n", -1);
-	RES_Write(sp, "Via: 1.1 varnish\r\n", -1);
-	RES_Write(sp, "Last-Modified: ", -1);
-	RES_Write(sp, p, -1);
-	RES_Write(sp, "\r\n", -1);
-	if (strcmp(sp->http->hd[HTTP_HDR_PROTO][HTTP_START], "HTTP/1.1")) 
-		RES_Write(sp, "Connection: close\r\n", -1);
+	WRK_Write(sp->wrk, "HTTP/1.1 304 Not Modified\r\n", -1);
+	WRK_Write(sp->wrk, "Via: 1.1 varnish\r\n", -1);
+	WRK_Write(sp->wrk, "Last-Modified: ", -1);
+	WRK_Write(sp->wrk, p, -1);
+	WRK_Write(sp->wrk, "\r\n", -1);
+	if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) 
+		WRK_Write(sp->wrk, "Connection: close\r\n", -1);
 	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
 	sbuf_printf(sb, "\r\n");
 	sbuf_finish(sb);
-	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
-	RES_Flush(sp);
+	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
+	WRK_Flush(sp->wrk);
 }
 
 /*--------------------------------------------------------------------*/
@@ -180,26 +142,26 @@ RES_WriteObj(struct sess *sp)
 	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
-	RES_Write(sp, sp->obj->header, strlen(sp->obj->header));
+	WRK_Write(sp->wrk, sp->obj->header, strlen(sp->obj->header));
 
 	sbuf_clear(sb);
 	sbuf_printf(sb, "Age: %u\r\n",
 		sp->obj->age + sp->t_req - sp->obj->entered);
 	sbuf_printf(sb, "Via: 1.1 varnish\r\n");
 	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
-	if (strcmp(sp->http->hd[HTTP_HDR_PROTO][HTTP_START], "HTTP/1.1")) 
+	if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) 
 		sbuf_printf(sb, "Connection: close\r\n");
 	sbuf_printf(sb, "\r\n");
 	sbuf_finish(sb);
-	RES_Write(sp, sbuf_data(sb), sbuf_len(sb));
+	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
 	bytes += sbuf_len(sb);
 	/* XXX: conditional request handling */
-	if (!strcmp(sp->http->hd[HTTP_HDR_REQ][HTTP_START], "GET")) {
+	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			assert(st->stevedore != NULL);
 			u += st->len;
 			if (st->stevedore->send == NULL) {
-				RES_Write(sp, st->ptr, st->len);
+				WRK_Write(sp->wrk, st->ptr, st->len);
 				continue;
 			}
 			st->stevedore->send(st, sp,
@@ -210,5 +172,5 @@ RES_WriteObj(struct sess *sp)
 		assert(u == sp->obj->len);
 	}
 	SES_ChargeBytes(sp, bytes + u);
-	RES_Flush(sp);
+	WRK_Flush(sp->wrk);
 }
