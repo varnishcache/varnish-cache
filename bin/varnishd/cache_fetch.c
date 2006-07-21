@@ -209,7 +209,6 @@ FetchBody(struct sess *sp)
 {
 	int cls;
 	struct vbe_conn *vc;
-	struct worker *w;
 	char *b;
 	int body = 1;		/* XXX */
 
@@ -217,7 +216,6 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	assert(sp->obj->busy != 0);
-	w = sp->wrk;
 
 	vc = sp->vbc;
 

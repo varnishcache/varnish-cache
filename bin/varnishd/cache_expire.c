@@ -110,6 +110,7 @@ exp_prefetch(void *arg)
 	(void)arg;
 
 	sp = SES_New(NULL, 0);
+	assert(sp != NULL);
 	while (1) {
 		t = time(NULL);
 		AZ(pthread_mutex_lock(&exp_mtx));

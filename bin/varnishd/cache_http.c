@@ -551,8 +551,8 @@ http_CopyResp(int fd, struct http *to, struct http *fm)
 	http_copyh(fd, to, fm, HTTP_HDR_RESPONSE, SLT_Response);
 }
 
-void
-http_CopyHeader(int fd, struct http *to, struct http *fm, unsigned n)
+static void
+http_copyheader(int fd, struct http *to, struct http *fm, unsigned n)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -584,7 +584,7 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 			continue;
 #include "http_headers.h"
 #undef HTTPH
-		http_CopyHeader(fd, to, fm, u);
+		http_copyheader(fd, to, fm, u);
 	}
 }
 
@@ -644,7 +644,7 @@ http_Write(struct worker *w, struct http *hp, int resp)
 void
 HTTP_Init(void)
 {
-#define HTTPH(a, b, c, d, e, f, g) b[0] = strlen(b + 1);
+#define HTTPH(a, b, c, d, e, f, g) b[0] = (char)strlen(b + 1);
 #include "http_headers.h"
 #undef HTTPH
 }

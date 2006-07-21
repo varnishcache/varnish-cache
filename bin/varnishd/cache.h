@@ -303,7 +303,6 @@ void http_Write(struct worker *w, struct http *hp, int resp);
 void http_CopyReq(int fd, struct http *to, struct http *fm);
 void http_CopyResp(int fd, struct http *to, struct http *fm);
 void http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how);
-void http_CopyHeader(int fd, struct http *to, struct http *fm, unsigned n);
 void http_PrintfHeader(int fd, struct http *to, const char *fmt, ...);
 int http_IsHdr(struct http_hdr *hh, char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
@@ -316,13 +315,7 @@ int http_Read(struct http *hp, int fd, void *b, unsigned len);
 void http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
 int http_DissectRequest(struct http *sp, int fd);
 int http_DissectResponse(struct http *sp, int fd);
-enum http_build {
-	Build_Pipe,
-	Build_Pass,
-	Build_Fetch,
-	Build_Reply
-};
-void http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp);
+
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
 #include "http_headers.h"
 #undef HTTPH
@@ -339,7 +332,7 @@ void WRK_Init(void);
 void WRK_QueueSession(struct sess *sp);
 void WRK_Reset(struct worker *w, int *fd);
 int WRK_Flush(struct worker *w);
-void WRK_Write(struct worker *w, const void *ptr, size_t len);
+void WRK_Write(struct worker *w, const void *ptr, int len);
 void WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
 
 /* cache_session.c [SES] */
@@ -347,7 +340,6 @@ void SES_Init(void);
 struct sess *SES_New(struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
 void SES_RefSrcAddr(struct sess *sp);
-void SES_RelSrcAddr(struct sess *sp);
 void SES_ChargeBytes(struct sess *sp, uint64_t bytes);
 
 /* cache_shmlog.c */
