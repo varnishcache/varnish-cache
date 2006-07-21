@@ -488,8 +488,6 @@ vcl_output_lang_h(FILE *f)
 	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("void VRT_count(struct sess *, unsigned);\n", f);
-	fputs("void VRT_no_cache(struct sess *);\n", f);
-	fputs("void VRT_no_new_cache(struct sess *);\n", f);
 	fputs("#if 0\n", f);
 	fputs("int ip_match(unsigned, struct vcl_acl *);\n", f);
 	fputs("int string_match(const char *, const char *);\n", f);
@@ -499,14 +497,9 @@ vcl_output_lang_h(FILE *f)
 	fputs("int VRT_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("char *VRT_GetHdr(struct sess *, const char *);\n", f);
-	fputs("char *VRT_GetReq(struct sess *);\n", f);
 	fputs("void VRT_handling(struct sess *sp, unsigned hand);\n", f);
-	fputs("int VRT_obj_valid(struct sess *);\n", f);
-	fputs("int VRT_obj_cacheable(struct sess *);\n", f);
 	fputs("\n", f);
 	fputs("void VRT_set_backend_name(struct backend *, const char *);\n", f);
-	fputs("void VRT_set_backend_hostname(struct backend *, const char *);\n", f);
-	fputs("void VRT_set_backend_portname(struct backend *, const char *);\n", f);
 	fputs("\n", f);
 	fputs("void VRT_alloc_backends(struct VCL_conf *cp);\n", f);
 	fputs("\n", f);
