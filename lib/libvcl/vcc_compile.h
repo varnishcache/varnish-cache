@@ -63,7 +63,7 @@ struct ref {
 struct var {
 	const char		*name;
 	enum var_type		fmt;
-	int			len;
+	unsigned		len;
 	const char		*rname;
 	const char		*lname;
 };
@@ -107,6 +107,7 @@ extern const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];
 extern struct var vcc_vars[];
+const char *vrt_obj_h;
 
 /* vcc_token.c */
 void vcc_ErrToken(struct tokenlist *tl, struct token *t);
