@@ -13,7 +13,6 @@
 
 #include "libvarnish.h"
 #include "shmlog.h"
-#include "heritage.h"
 #include "cache.h"
 
 #define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
