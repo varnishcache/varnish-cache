@@ -30,6 +30,10 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_url(sp)",
 	    "VRT_l_req_url(sp, ",
 	},
+	{ "req.proto", STRING, 9,
+	    "VRT_r_req_proto(sp)",
+	    "VRT_l_req_proto(sp, ",
+	},
 	{ "obj.valid", BOOL, 9,
 	    "VRT_r_obj_valid(sp)",
 	    "VRT_l_obj_valid(sp, ",
@@ -70,6 +74,8 @@ const char *vrt_obj_h =
 	"void VRT_l_req_request(struct sess *, const char *);\n"
 	"const char * VRT_r_req_url(struct sess *);\n"
 	"void VRT_l_req_url(struct sess *, const char *);\n"
+	"const char * VRT_r_req_proto(struct sess *);\n"
+	"void VRT_l_req_proto(struct sess *, const char *);\n"
 	"double VRT_r_obj_valid(struct sess *);\n"
 	"void VRT_l_obj_valid(struct sess *, double);\n"
 	"double VRT_r_obj_cacheable(struct sess *);\n"

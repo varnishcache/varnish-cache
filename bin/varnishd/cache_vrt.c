@@ -54,18 +54,6 @@ VRT_GetHdr(struct sess *sp, const char *n)
 
 /*--------------------------------------------------------------------*/
 
-char *
-VRT_GetReq(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp != NULL);
-	assert(sp->http != NULL);
-	return (sp->http->hd[HTTP_HDR_REQ].b);
-}
-
-/*--------------------------------------------------------------------*/
-
 void
 VRT_handling(struct sess *sp, unsigned hand)
 {
@@ -76,34 +64,6 @@ VRT_handling(struct sess *sp, unsigned hand)
 }
 
 /*--------------------------------------------------------------------*/
-
-void
-VRT_l_backend_host(struct backend *be, const char *h)
-{
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	be->hostname = h;
-}
-
-const char *
-VRT_r_backend_host(struct backend *be)
-{
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	return (be->hostname);
-}
-
-void
-VRT_l_backend_port(struct backend *be, const char *p)
-{
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	be->portname = p;
-}
-
-const char *
-VRT_r_backend_port(struct backend *be)
-{
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	return (be->portname);
-}
 
 void
 VRT_set_backend_name(struct backend *be, const char *p)
@@ -128,6 +88,26 @@ VRT_alloc_backends(struct VCL_conf *cp)
 
 /*--------------------------------------------------------------------*/
 
+#define VBACKEND(type,onm,field)			\
+void							\
+VRT_l_backend_##onm(struct backend *be, type a)		\
+{							\
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);		\
+	be->field = a;					\
+}							\
+							\
+type							\
+VRT_r_backend_##onm(struct backend *be)			\
+{							\
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);		\
+	return (be->field);				\
+}
+
+VBACKEND(const char *,	host,	hostname)
+VBACKEND(const char *,	port,	portname)
+
+/*--------------------------------------------------------------------*/
+
 void
 VRT_l_obj_ttl(struct sess *sp, double a)
 {
@@ -144,40 +124,39 @@ VRT_r_obj_ttl(struct sess *sp)
 	return (sp->obj->ttl - sp->t_req);
 }
 
+/*--------------------------------------------------------------------*/
 
-double
-VRT_r_obj_valid(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->valid);
+#define VOBJ(type,onm,field)						\
+void									\
+VRT_l_obj_##onm(struct sess *sp, type a)				\
+{									\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
+	sp->obj->field = a;						\
+}									\
+									\
+type									\
+VRT_r_obj_##onm(struct sess *sp)					\
+{									\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
+	return (sp->obj->field);					\
 }
 
-
-double
-VRT_r_obj_cacheable(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->cacheable);
-}
+VOBJ(double, valid, valid)
+VOBJ(double, cacheable, cacheable)
 
 /*--------------------------------------------------------------------*/
 
-const char *
-VRT_r_req_request(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	return (sp->http->hd[HTTP_HDR_REQ].b);
+#define  VREQ(n1, n2)					\
+const char *						\
+VRT_r_req_##n1(struct sess *sp)				\
+{							\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);		\
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);	\
+	return (sp->http->hd[n2].b);			\
 }
 
-
-const char *
-VRT_r_req_url(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	return (sp->http->hd[HTTP_HDR_URL].b);
-}
-
+VREQ(request, HTTP_HDR_REQ)
+VREQ(url, HTTP_HDR_URL)
+VREQ(proto, HTTP_HDR_PROTO)

@@ -14,6 +14,7 @@ set beobj {
 set spobj {
 	{ req.request	STRING }
         { req.url	STRING }
+        { req.proto	STRING }
         { obj.valid	BOOL }
         { obj.cacheable	BOOL }
         { obj.backend	BACKEND }

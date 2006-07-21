@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_obj.tcl 545 2006-07-21 20:43:56Z phk $
+ * $Id: vcc_gen_obj.tcl 548 2006-07-21 20:51:24Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -14,6 +14,8 @@ const char * VRT_r_req_request(struct sess *);
 void VRT_l_req_request(struct sess *, const char *);
 const char * VRT_r_req_url(struct sess *);
 void VRT_l_req_url(struct sess *, const char *);
+const char * VRT_r_req_proto(struct sess *);
+void VRT_l_req_proto(struct sess *, const char *);
 double VRT_r_obj_valid(struct sess *);
 void VRT_l_obj_valid(struct sess *, double);
 double VRT_r_obj_cacheable(struct sess *);
