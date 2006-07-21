@@ -3,7 +3,7 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcl_gen_fixed_token.tcl instead
+ * Edit vcc_gen_fixed_token.tcl instead
  */
 
 #ifdef VCL_RET_MAC
