@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: vcc_gen_fixed_token.tcl 545 2006-07-21 20:43:56Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -8,16 +8,16 @@
 
 #ifdef VCL_RET_MAC
 #ifdef VCL_RET_MAC_E
-VCL_RET_MAC_E(error, ERROR, 0)
+VCL_RET_MAC_E(error, ERROR, (1 << 0), 0)
 #endif
-VCL_RET_MAC(lookup, LOOKUP, (1 << 1))
-VCL_RET_MAC(pipe, PIPE, (1 << 2))
-VCL_RET_MAC(pass, PASS, (1 << 3))
-VCL_RET_MAC(insert_pass, INSERT_PASS, (1 << 4))
-VCL_RET_MAC(fetch, FETCH, (1 << 5))
-VCL_RET_MAC(insert, INSERT, (1 << 6))
-VCL_RET_MAC(deliver, DELIVER, (1 << 7))
-VCL_RET_MAC(discard, DISCARD, (1 << 8))
+VCL_RET_MAC(lookup, LOOKUP, (1 << 1), 1)
+VCL_RET_MAC(pipe, PIPE, (1 << 2), 2)
+VCL_RET_MAC(pass, PASS, (1 << 3), 3)
+VCL_RET_MAC(insert_pass, INSERT_PASS, (1 << 4), 4)
+VCL_RET_MAC(fetch, FETCH, (1 << 5), 5)
+VCL_RET_MAC(insert, INSERT, (1 << 6), 6)
+VCL_RET_MAC(deliver, DELIVER, (1 << 7), 7)
+VCL_RET_MAC(discard, DISCARD, (1 << 8), 8)
 #else
 #define VCL_RET_ERROR  (1 << 0)
 #define VCL_RET_LOOKUP  (1 << 1)

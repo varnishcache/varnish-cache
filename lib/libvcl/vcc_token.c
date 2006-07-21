@@ -26,10 +26,6 @@
 
 #include "libvcl.h"
 
-#define ERRCHK(tl)	do { if ((tl)->err) return; } while (0)
-
-#define INDENT		2
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -145,21 +141,6 @@ vcc__Expect(struct tokenlist *tl, unsigned tok, int line)
 	sbuf_printf(tl->sb, "\n(program line %u), at\n", line);
 	vcc_ErrWhere(tl, tl->t);
 }
-
-#define Expect(a, b) _Expect(a, b, __LINE__)
-#define ExpectErr(a, b) do { _Expect(a, b, __LINE__); ERRCHK(a);} while (0)
-
-#define L(tl, foo)	do {	\
-	tl->indent += INDENT;	\
-	foo;			\
-	tl->indent -= INDENT;	\
-} while (0)
-
-#define C(tl, sep)	do {				\
-	Fc(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
-	tl->t->cnt = tl->cnt; 				\
-} while (0)
-	
 
 /*--------------------------------------------------------------------
  * Compare token to token

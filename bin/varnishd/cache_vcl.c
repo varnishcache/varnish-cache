@@ -206,8 +206,8 @@ vcl_handlingname(unsigned u)
 {
 
 	switch (u) {
-#define VCL_RET_MAC(a, b, c)	case VCL_RET_##b: return(#a);
-#define VCL_RET_MAC_E(a, b, c)	case VCL_RET_##b: return(#a);
+#define VCL_RET_MAC(a, b, c,d)	case VCL_RET_##b: return(#a);
+#define VCL_RET_MAC_E(a, b, c,d)	case VCL_RET_##b: return(#a);
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
@@ -216,7 +216,7 @@ vcl_handlingname(unsigned u)
 	}
 }
 
-#define VCL_RET_MAC(l,u,b)
+#define VCL_RET_MAC(l,u,b,n)
 
 #define VCL_MET_MAC(func, xxx, bitmap) 					\
 void									\

@@ -68,17 +68,10 @@ struct var {
 	const char		*lname;
 };
 
-static struct method {
+struct method {
 	const char		*name;
 	const char		*defname;
 	unsigned		returns;
-} method_tab[] = {
-#define VCL_RET_MAC(a,b,c)
-#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, "default_vcl_"#a, c },
-#include "vcl_returns.h"
-#undef VCL_MET_MAC
-#undef VCL_RET_MAC
-	{ NULL, 0U }
 };
 
 struct proccall {
@@ -107,7 +100,7 @@ extern const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];
 extern struct var vcc_vars[];
-const char *vrt_obj_h;
+extern const char *vrt_obj_h;
 
 /* vcc_token.c */
 void vcc_ErrToken(struct tokenlist *tl, struct token *t);

@@ -366,7 +366,7 @@ void VCL_Rel(struct VCL_conf *vc);
 struct VCL_conf *VCL_Get(void);
 int VCL_Load(const char *fn, const char *name, struct cli *cli);
 
-#define VCL_RET_MAC(l,u,b)
+#define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC

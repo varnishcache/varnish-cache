@@ -128,10 +128,10 @@ set i 0
 foreach k $returns {
 	if {$k == "error"} {
 		puts $for "#ifdef VCL_RET_MAC_E"
-		puts $for "VCL_RET_MAC_E($k, [string toupper $k], $i)"
+		puts $for "VCL_RET_MAC_E($k, [string toupper $k], (1 << $i), $i)"
 		puts $for "#endif"
 	} else {
-		puts $for "VCL_RET_MAC($k, [string toupper $k], (1 << $i))"
+		puts $for "VCL_RET_MAC($k, [string toupper $k], (1 << $i), $i)"
 	}
 	incr i
 }

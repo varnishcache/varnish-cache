@@ -58,6 +58,15 @@
 
 #define ERRCHK(tl)	do { if ((tl)->err) return; } while (0)
 
+static struct method method_tab[] = {
+#define VCL_RET_MAC(a,b,c,d)
+#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, "default_vcl_"#a, c },
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+#undef VCL_RET_MAC
+	{ NULL, 0U }
+};
+
 /*--------------------------------------------------------------------*/
 
 static void Compound(struct tokenlist *tl);
@@ -214,6 +223,7 @@ AddRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
 	struct token *t;
 
 	t = calloc(sizeof *t, 1);
+	assert(t != NULL);
 	t->b = s;
 	t->e = strchr(s, '\0');
 	t->tok = METHOD;
@@ -745,10 +755,10 @@ Action(struct tokenlist *tl)
 	case T_NO_CACHE:
 		Fc(tl, 1, "VCL_no_cache(sp);\n");
 		return;
-#define VCL_RET_MAC(a,b,c) case T_##b: \
+#define VCL_RET_MAC(a,b,c,d) case T_##b: \
 		Fc(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
 		tl->curproc->returns |= VCL_RET_##b; \
-		tl->curproc->returnt[c] = at; \
+		tl->curproc->returnt[d] = at; \
 		return;
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
@@ -1169,10 +1179,10 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 	}
 	u = p->returns & ~returns;
 	if (u) {
-#define VCL_RET_MAC(a, b, c) \
+#define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
 			sbuf_printf(tl->sb, "Illegal return for method\n"); \
-			vcc_ErrWhere(tl, p->returnt[c]); \
+			vcc_ErrWhere(tl, p->returnt[d]); \
 		} 
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
@@ -1350,7 +1360,7 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
-#define VCL_RET_MAC(l,u,b)
+#define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
 	if (FindRefStr(tl, "vcl_" #l, R_FUNC)) { \
 		Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); \
