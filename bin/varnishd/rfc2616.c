@@ -71,7 +71,7 @@
 #endif
 
 static time_t
-RFC2616_Ttl(int fd, struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
+RFC2616_Ttl(struct sess *sp, struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;
@@ -119,7 +119,7 @@ RFC2616_Ttl(int fd, struct http *hp, time_t t_req, time_t t_resp, struct object 
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	VSL(SLT_TTL, fd, "%d %d %d %d %d %d",
+	VSL(SLT_TTL, sp->fd, "%u RFC %d %d %d %d %d %d", sp->xid,
 	    (int)(ttd - t_req), (int)t_req, (int)h_date, (int)h_expires,
 	    (int)u1, (int)u2);
 
@@ -155,7 +155,7 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 		break;
 	}
 
-	sp->obj->ttl = RFC2616_Ttl(sp->fd, hp, sp->t_req, sp->t_resp, sp->obj);
+	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->t_req, sp->t_resp, sp->obj);
 	sp->obj->entered = sp->t_req;
 	if (sp->obj->ttl == 0) {
 		sp->obj->cacheable = 0;
