@@ -622,9 +622,9 @@ http_Write(struct worker *w, struct http *hp, int resp)
 
 	if (resp) {
 		assert(hp->hd[HTTP_HDR_STATUS].b != NULL);
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
+		WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
 		WRK_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], " ");
+		WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
 	} else {
 		assert(hp->hd[HTTP_HDR_URL].b != NULL);
 		WRK_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
