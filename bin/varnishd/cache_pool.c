@@ -135,9 +135,6 @@ wrk_thread(void *priv)
 	w->eb = event_init();
 	assert(w->eb != NULL);
 
-	w->sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(w->sb != NULL);
-	
 	AZ(pthread_mutex_lock(&wrk_mtx));
 	w->nbr = VSL_stats->n_wrk;
 	if (priv == NULL) {
@@ -168,7 +165,6 @@ wrk_thread(void *priv)
 				TAILQ_REMOVE(&wrk_head, w, list);
 				AZ(pthread_mutex_unlock(&wrk_mtx));
 				VSL(SLT_WorkThread, 0, "%u suicide", w->nbr);
-				sbuf_delete(w->sb);
 				event_base_free(w->eb);
 				AZ(pthread_cond_destroy(&w->cv));
 				return (NULL);

@@ -185,7 +185,6 @@ PassSession(struct sess *sp)
 {
 	int i;
 	struct vbe_conn *vc;
-	struct http *hp;
 	struct worker *w;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -210,10 +209,9 @@ PassSession(struct sess *sp)
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	hp = vc->http;
-	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
+	http_RecvHead(vc->http, vc->fd, w->eb, NULL, NULL);
 	(void)event_base_loop(w->eb, 0);
-	http_DissectResponse(hp, vc->fd);
+	http_DissectResponse(vc->http, vc->fd);
 
 	sp->vbc = vc;
 }

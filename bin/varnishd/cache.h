@@ -70,7 +70,6 @@ struct http {
 
 	struct http_hdr		hd[MAX_HTTP_HDRS];
 	unsigned		nhd;
-	unsigned char		hdf[MAX_HTTP_HDRS];
 };
 
 /*--------------------------------------------------------------------*/
@@ -79,7 +78,6 @@ struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
 	struct event_base	*eb;
-	struct sbuf		*sb;
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
@@ -167,7 +165,7 @@ struct object {
 
 	time_t			last_modified;
 
-	char			*header;
+	struct http		http;
 	TAILQ_ENTRY(object)	list;
 
 	TAILQ_ENTRY(object)	deathrow;
@@ -215,6 +213,7 @@ struct sess {
 	struct srcaddr		*srcaddr;
 
 	/* HTTP request */
+	const char		*doclose;
 	struct http		*http;
 
 	time_t			t_req;
@@ -226,7 +225,6 @@ struct sess {
 	TAILQ_ENTRY(sess)	list;
 
 	struct vbe_conn		*vbc;
-	struct http		*bkd_http;
 	struct backend		*backend;
 	struct object		*obj;
 	struct VCL_conf		*vcl;
@@ -288,8 +286,8 @@ void EXP_Init(void);
 void EXP_TTLchange(struct object *o);
 
 /* cache_fetch.c */
-int FetchBody(struct worker *w, struct sess *sp);
-int FetchHeaders(struct worker *w, struct sess *sp);
+int FetchBody(struct sess *sp);
+int FetchHeaders(struct sess *sp);
 
 /* cache_hash.c */
 struct object *HSH_Lookup(struct sess *sp);
@@ -300,6 +298,7 @@ void HSH_Init(void);
 
 /* cache_http.c */
 void HTTP_Init(void);
+void http_CopyHttp(struct http *to, struct http *fm);
 void http_Write(struct worker *w, struct http *hp, int resp);
 void http_CopyReq(int fd, struct http *to, struct http *fm);
 void http_CopyResp(int fd, struct http *to, struct http *fm);
