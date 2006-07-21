@@ -75,7 +75,7 @@ WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf)
 }
 
 void
-WRK_Write(struct worker *w, const void *ptr, size_t len)
+WRK_Write(struct worker *w, const void *ptr, int len)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);

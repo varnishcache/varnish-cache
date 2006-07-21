@@ -141,8 +141,8 @@ SES_ChargeBytes(struct sess *sp, uint64_t bytes)
 	    sa->addr, (intmax_t)(bytes), now - sa->first);
 }
 
-void
-SES_RelSrcAddr(struct sess *sp)
+static void
+ses_relsrcaddr(struct sess *sp)
 {
 
 	if (sp->srcaddr == NULL) {
@@ -188,7 +188,7 @@ SES_Delete(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	VSL_stats->n_sess--;
-	SES_RelSrcAddr(sp);
+	ses_relsrcaddr(sp);
 	CHECK_OBJ_NOTNULL(sp->mem, SESSMEM_MAGIC);
 	free(sp->mem);
 }
