@@ -24,6 +24,73 @@ static unsigned		wrk_overflow;
 static TAILQ_HEAD(, worker) wrk_head = TAILQ_HEAD_INITIALIZER(wrk_head);
 static TAILQ_HEAD(, workreq) wrk_reqhead = TAILQ_HEAD_INITIALIZER(wrk_reqhead);
 
+/*--------------------------------------------------------------------
+ * Write data to fd
+ * We try to use writev() if possible in order to minimize number of
+ * syscalls made and packets sent.  It also just might allow the worker
+ * thread to complete the request without holding stuff locked.
+ */
+
+void
+WRK_Reset(struct worker *w, int *fd)
+{
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	w->werr = 0;
+	w->liov = 0;
+	w->niov = 0;
+	w->wfd = fd;
+}
+
+int
+WRK_Flush(struct worker *w)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	if (*w->wfd < 0 || w->niov == 0 || w->werr)
+		return (w->werr);
+VSL(SLT_Debug, 0, "%s %d", __func__, *w->wfd);
+	i = writev(*w->wfd, w->iov, w->niov);
+	if (i != w->liov)
+		w->werr++;
+	else {
+		w->liov = 0;
+		w->niov = 0;
+	}
+	return (w->werr);
+}
+
+void
+WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf)
+{
+	
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	assert(w != NULL);
+	assert(hh != NULL);
+	assert(hh->b != NULL);
+	assert(hh->e != NULL);
+	WRK_Write(w, hh->b, hh->e - hh->b);
+	if (suf != NULL)
+		WRK_Write(w, suf, -1);
+}
+
+void
+WRK_Write(struct worker *w, const void *ptr, size_t len)
+{
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	if (len == 0 || *w->wfd < 0)
+		return;
+	if (len == -1)
+		len = strlen(ptr);
+	if (w->niov == MAX_IOVS)
+		WRK_Flush(w);
+	w->iov[w->niov].iov_base = (void*)(uintptr_t)ptr;
+	w->iov[w->niov++].iov_len = len;
+	w->liov += len;
+}
+
 /*--------------------------------------------------------------------*/
 
 static void

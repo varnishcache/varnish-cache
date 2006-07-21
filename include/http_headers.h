@@ -5,7 +5,7 @@
  * b	session field name
  * c	Request(1)/Response(2) bitfield
  * d	Supress header to backend (1) / Supress header to client (2)
- * e	unused
+ * e	Supress header in pass from client to backend
  * f	unused
  * g	unused
  *
@@ -15,24 +15,29 @@
  *--------------------------------------------------------------------
  */
 
-HTTPH("Keep-Alive",		H_Keep_Alive,		3, 3, 0, 0, 0)	/* RFC2068 */
+#ifndef HTTPH_R_PASS
+#define HTTPH_R_PASS	(1 << 0)
+#define HTTPH_A_PASS	(1 << 1)
+#endif
+
+HTTPH("Keep-Alive",		H_Keep_Alive,		3, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2068 */
 
 HTTPH("Accept",			H_Accept,		1, 0, 0, 0, 0)	/* RFC2616 14.1 */
 HTTPH("Accept-Charset",		H_Accept_Charset,	1, 0, 0, 0, 0)	/* RFC2616 14.2 */
 HTTPH("Accept-Encoding",	H_Accept_Encoding,	1, 0, 0, 0, 0)	/* RFC2616 14.3 */
 HTTPH("Accept-Language",	H_Accept_Language,	1, 0, 0, 0, 0)	/* RFC2616 14.4 */
-HTTPH("Accept-Ranges",		H_Accept_Ranges,	2, 3, 0, 0, 0)	/* RFC2616 14.5 */
+HTTPH("Accept-Ranges",		H_Accept_Ranges,	2, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.5 */
 HTTPH("Age",			H_Age,			2, 0, 0, 0, 0)	/* RFC2616 14.6 */
 HTTPH("Allow",			H_Allow,		2, 0, 0, 0, 0)	/* RFC2616 14.7 */
 HTTPH("Authorization",		H_Authorization,	1, 0, 0, 0, 0)	/* RFC2616 14.8 */
-HTTPH("Cache-Control",		H_Cache_Control,	3, 3, 0, 0, 0)	/* RFC2616 14.9 */
-HTTPH("Connection",		H_Connection,		3, 3, 0, 0, 0)	/* RFC2616 14.10 */
+HTTPH("Cache-Control",		H_Cache_Control,	3, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.9 */
+HTTPH("Connection",		H_Connection,		3, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.10 */
 HTTPH("Content-Encoding",	H_Content_Encoding,	2, 0, 0, 0, 0)	/* RFC2616 14.11 */
 HTTPH("Content-Langugae",	H_Content_Language,	2, 0, 0, 0, 0)	/* RFC2616 14.12 */
 HTTPH("Content-Length",		H_Content_Length,	2, 2, 0, 0, 0)	/* RFC2616 14.13 */
 HTTPH("Content-Location",	H_Content_Location,	2, 0, 0, 0, 0)  /* RFC2616 14.14 */
 HTTPH("Content-MD5",		H_Content_MD5,		2, 0, 0, 0, 0)  /* RFC2616 14.15 */
-HTTPH("Content-Range",		H_Content_Range,	2, 3, 0, 0, 0)  /* RFC2616 14.16 */
+HTTPH("Content-Range",		H_Content_Range,	2, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)  /* RFC2616 14.16 */
 HTTPH("Content-Type",		H_Content_Type,		2, 0, 0, 0, 0)  /* RFC2616 14.17 */
 HTTPH("Date",			H_Date,			2, 0, 0, 0, 0)  /* RFC2616 14.18 */
 HTTPH("ETag", 			H_ETag,			2, 0, 0, 0, 0)	/* RFC2616 14.19 */
@@ -55,10 +60,10 @@ HTTPH("Range",			H_Range,		1, 0, 0, 0, 0)	/* RFC2616 14.35 */
 HTTPH("Referer",		H_Referer,		1, 0, 0, 0, 0)	/* RFC2616 14.36 */
 HTTPH("Retry-After",		H_Retry_After,		2, 0, 0, 0, 0)	/* RFC2616 14.37 */
 HTTPH("Server",			H_Server,		2, 0, 0, 0, 0)	/* RFC2616 14.38 */
-HTTPH("TE",			H_TE,			1, 3, 0, 0, 0)	/* RFC2616 14.39 */
-HTTPH("Trailer",		H_Trailer,		1, 3, 0, 0, 0)	/* RFC2616 14.40 */
-HTTPH("Transfer-Encoding", 	H_Transfer_Encoding,	2, 3, 0, 0, 0)	/* RFC2616 14.41 */
-HTTPH("Upgrade", 		H_Upgrade,		2, 3, 0, 0, 0)	/* RFC2616 14.42 */
+HTTPH("TE",			H_TE,			1, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.39 */
+HTTPH("Trailer",		H_Trailer,		1, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.40 */
+HTTPH("Transfer-Encoding", 	H_Transfer_Encoding,	2, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.41 */
+HTTPH("Upgrade", 		H_Upgrade,		2, 3, HTTPH_R_PASS|HTTPH_A_PASS, 0, 0)	/* RFC2616 14.42 */
 HTTPH("User-Agent",		H_User_Agent,		1, 0, 0, 0, 0)	/* RFC2616 14.43 */
 HTTPH("Vary",			H_Vary,			2, 0, 0, 0, 0)	/* RFC2616 14.44 */
 HTTPH("Via",			H_Via,			2, 0, 0, 0, 0)	/* RFC2616 14.45 */

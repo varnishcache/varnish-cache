@@ -77,7 +77,7 @@ HSH_Lookup(struct sess *sp)
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 
-	url = h->hd[HTTP_HDR_URL][HTTP_START];
+	url = h->hd[HTTP_HDR_URL].b;
 	if (!http_GetHdr(h, H_Host, &host))
 		host = url;
 	if (sp->obj != NULL) {

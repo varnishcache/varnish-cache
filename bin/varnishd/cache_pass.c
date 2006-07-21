@@ -46,8 +46,9 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 		if (i == 0 && bi == NULL)
 			return (1);
 		assert(i > 0);
-		RES_Write(sp, buf, i);
-		RES_Flush(sp);
+		WRK_Write(sp->wrk, buf, i);
+		if (WRK_Flush(sp->wrk))
+			vca_close_session(sp, "remote closed");
 		cl -= i;
 	}
 	return (0);
@@ -92,7 +93,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 		if (u == 0)
 			break;
 
-		RES_Write(sp, p, q - p);
+		WRK_Write(sp->wrk, p, q - p);
 
 		p = q;
 
@@ -104,28 +105,30 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			}
 			if (bp - p < j)
 				j = bp - p;
-			RES_Write(sp, p, j);
+			WRK_Write(sp->wrk, p, j);
 			p += j;
 			u -= j;
 		}
 		while (u > 0) {
 			if (http_GetTail(hp, u, &b, &e)) {
 				j = e - b;
-				RES_Write(sp, q, j);
+				WRK_Write(sp->wrk, q, j);
 				u -= j;
 			} else
 				break;
 		}
-		RES_Flush(sp);
+		if (WRK_Flush(sp->wrk))
+			vca_close_session(sp, "remote closed");
 		while (u > 0) {
 			j = u;
 			if (j > sizeof buf)
 				j = sizeof buf;
 			i = read(fd, buf, j);
 			assert(i > 0);
-			RES_Write(sp, buf, i);
+			WRK_Write(sp->wrk, buf, i);
 			u -= i;
-			RES_Flush(sp);
+			if (WRK_Flush(sp->wrk))
+				vca_close_session(sp, "remote closed");
 		}
 	}
 	return (0);
@@ -138,32 +141,34 @@ void
 PassBody(struct worker *w, struct sess *sp)
 {
 	struct vbe_conn *vc;
-	struct http *hp;
 	char *b;
 	int cls;
 
-	hp = sp->bkd_http;
-	assert(hp != NULL);
 	vc = sp->vbc;
 	assert(vc != NULL);
 
-	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
-	sbuf_cat(w->sb, "\r\n");
-	sbuf_finish(w->sb);
-	RES_Write(sp, sbuf_data(w->sb), sbuf_len(w->sb));
+	sp->http->f = sp->http->v;
+	sp->http->nhd = HTTP_HDR_FIRST;
+	http_CopyResp(sp->fd, sp->http, vc->http);
+	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
+	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	WRK_Reset(w, &sp->fd);
+	http_Write(w, sp->http, 1);
 
-	if (http_GetHdr(hp, H_Content_Length, &b))
-		cls = pass_straight(sp, vc->fd, hp, b);
-	else if (http_HdrIs(hp, H_Connection, "close"))
-		cls = pass_straight(sp, vc->fd, hp, NULL);
-	else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
-		cls = pass_chunked(sp, vc->fd, hp);
+	if (http_GetHdr(vc->http, H_Content_Length, &b))
+		cls = pass_straight(sp, vc->fd, vc->http, b);
+	else if (http_HdrIs(vc->http, H_Connection, "close"))
+		cls = pass_straight(sp, vc->fd, vc->http, NULL);
+	else if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
+		cls = pass_chunked(sp, vc->fd, vc->http);
 	else {
-		cls = pass_straight(sp, vc->fd, hp, NULL);
+		cls = pass_straight(sp, vc->fd, vc->http, NULL);
 	}
-	RES_Flush(sp);
 
-	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
+	if (WRK_Flush(w))
+		vca_close_session(sp, "remote closed");
+
+	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)
@@ -172,21 +177,31 @@ PassBody(struct worker *w, struct sess *sp)
 		VBE_RecycleFd(vc);
 }
 
+
 /*--------------------------------------------------------------------*/
+
 void
-PassSession(struct worker *w, struct sess *sp)
+PassSession(struct sess *sp)
 {
 	int i;
 	struct vbe_conn *vc;
 	struct http *hp;
+	struct worker *w;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	http_BuildSbuf(vc->fd, Build_Pass, w->sb, sp->http);
-	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
+	http_CopyReq(vc->fd, vc->http, sp->http);
+	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PASS);
+	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	WRK_Reset(w, &vc->fd);
+	http_Write(w, vc->http, 0);
+	i = WRK_Flush(w);
+	assert(i == 0);
 
 	/* XXX: copy any contents */
 

@@ -90,8 +90,7 @@ cnt_done(struct sess *sp)
 	} else if (http_GetHdr(sp->http, H_Connection, &b) &&
 	    !strcmp(b, "close")) {
 		vca_close_session(sp, "Connection header");
-	} else if (strcmp(sp->http->hd[HTTP_HDR_PROTO][HTTP_START],
-	    "HTTP/1.1")) {
+	} else if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) {
 		vca_close_session(sp, "not HTTP/1.1");
 	}
 	VCL_Rel(sp->vcl);
@@ -263,7 +262,7 @@ cnt_hit(struct sess *sp)
 	if (sp->handling == VCL_RET_PASS) {
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
-		PassSession(sp->wrk, sp);
+		PassSession(sp);
 		sp->step = STP_PASSBODY;
 		return (0);
 	}
@@ -398,7 +397,7 @@ cnt_miss(struct sess *sp)
 		HSH_Unbusy(sp->obj);
 		HSH_Deref(sp->obj);
 		sp->obj = 0;
-		PassSession(sp->wrk, sp);
+		PassSession(sp);
 		sp->step = STP_PASSBODY;
 		return (0);
 	}
@@ -431,7 +430,7 @@ static int
 cnt_pass(struct sess *sp)
 {
 
-	PassSession(sp->wrk, sp);
+	PassSession(sp);
 	sp->step = STP_PASSBODY;
 	return (0);
 }

@@ -60,7 +60,7 @@ VRT_GetReq(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp != NULL);
 	assert(sp->http != NULL);
-	return (sp->http->hd[HTTP_HDR_REQ][HTTP_START]);
+	return (sp->http->hd[HTTP_HDR_REQ].b);
 }
 
 /*--------------------------------------------------------------------*/
