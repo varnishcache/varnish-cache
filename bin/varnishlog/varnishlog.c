@@ -240,8 +240,10 @@ main(int argc, char **argv)
 	v = 0;
 
 	while (1) {
-		p = VSL_NextLog(vd);
-		if (p == NULL) {
+		i = VSL_NextLog(vd, &p);
+		if (i < 0)
+			break;
+		if (i == 0) {
 			if (w_opt == NULL) {
 				if (o_flag && ++v == 100)
 					clean_order();

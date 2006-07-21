@@ -110,8 +110,10 @@ main(int argc, char **argv)
 	initscr();
 	v = 0;
 	while (1) {
-		p = VSL_NextLog(vd);
-		if (p == NULL) {
+		i = VSL_NextLog(vd, &p);
+		if (i < 0)
+			break;
+		if (i == 0) {
 			upd();
 			usleep(50000);
 			continue;
