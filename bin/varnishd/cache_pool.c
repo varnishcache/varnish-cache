@@ -50,7 +50,6 @@ WRK_Flush(struct worker *w)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	if (*w->wfd < 0 || w->niov == 0 || w->werr)
 		return (w->werr);
-VSL(SLT_Debug, 0, "%s %d", __func__, *w->wfd);
 	i = writev(*w->wfd, w->iov, w->niov);
 	if (i != w->liov)
 		w->werr++;

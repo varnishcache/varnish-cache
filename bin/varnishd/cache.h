@@ -333,7 +333,7 @@ void PassSession(struct sess *sp);
 void PassBody(struct worker *w, struct sess *sp);
 
 /* cache_pipe.c */
-void PipeSession(struct worker *w, struct sess *sp);
+void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);

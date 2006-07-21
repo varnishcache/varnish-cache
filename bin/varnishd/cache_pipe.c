@@ -45,27 +45,34 @@ rdf(int fd, short event, void *arg)
 }
 
 void
-PipeSession(struct worker *w, struct sess *sp)
+PipeSession(struct sess *sp)
 {
-	int i;
 	struct vbe_conn *vc;
 	struct edir e1, e2;
 	char *b, *e;
+	struct worker *w;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
 
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	http_BuildSbuf(vc->fd, Build_Pipe, w->sb, sp->http);
-	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
-	if (http_GetTail(sp->http, 0, &b, &e) && b != e) {
-		i = write(vc->fd, b, e - b);
-		if (i != e - b) {
-			close (vc->fd);
-			vca_close_session(sp, "pipe");
-			VBE_ClosedFd(vc);
-		}
+	http_CopyReq(vc->fd, vc->http, sp->http);
+	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PIPE);
+	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	WRK_Reset(w, &vc->fd);
+	http_Write(w, vc->http, 0);
+
+	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
+		WRK_Write(w, b, e - b);
+
+	if (WRK_Flush(w)) {
+		vca_close_session(sp, "pipe");
+		VBE_ClosedFd(vc);
+		return;
 	}
 
 	e1.fd = vc->fd;
