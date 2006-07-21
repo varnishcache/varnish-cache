@@ -312,12 +312,14 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 	if (vp == NULL) {
 		vp = calloc(sizeof *vp, 1);
 		assert(vp != NULL);
+		vp->magic = VBE_MAGIC;
 		TAILQ_INIT(&vp->fconn);
 		TAILQ_INIT(&vp->bconn);
 		vp->ip = bp->ip;
 		bp->vbe = vp;
 		TAILQ_INSERT_TAIL(&vbe_head, vp, list);
-	}
+	} else
+		CHECK_OBJ(vp, VBE_MAGIC);
 	/* XXX: check nconn vs backend->maxcon */
 	vc = TAILQ_FIRST(&vp->fconn);
 	if (vc != NULL) {
