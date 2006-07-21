@@ -4,7 +4,7 @@
  * a	Http header name
  * b	session field name
  * c	Request(1)/Response(2) bitfield
- * d	Supress header to backend (1) / Supress header to client (2)
+ * d	(obsolete)
  * e	Supress header in pass from client to backend
  * f	unused
  * g	unused
