@@ -25,7 +25,7 @@
 /*--------------------------------------------------------------------*/
 
 void
-http_Init(struct http *hp, void *space, unsigned len)
+http_Setup(struct http *hp, void *space, unsigned len)
 {
 	char *sp = space;
 
@@ -213,7 +213,7 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 		if (hp->nhd < MAX_HTTP_HDRS) {
 			hp->hd[hp->nhd][HTTP_START] = p;
 			hp->hd[hp->nhd][HTTP_END] = q;
-			VSLH(SLT_Header, fd, hp, hp->nhd);
+			VSLH(SLT_RxHeader, fd, hp, hp->nhd);
 			hp->nhd++;
 		} else {
 			VSL_stats->losthdr++;
@@ -526,7 +526,7 @@ http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
 		if (http_supress(hp->hd[u][HTTP_START], sup))
 			continue;
 		if (1)
-			VSL(SLT_BldHdr, fd, "%s", hp->hd[u][HTTP_START]);
+			VSL(SLT_TxHeader, fd, "%s", hp->hd[u][HTTP_START]);
 		sbuf_cat(sb, hp->hd[u][HTTP_START]);
 		sbuf_cat(sb, "\r\n");
 	}
