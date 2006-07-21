@@ -21,13 +21,13 @@ set spobj {
         { req.http.	HEADER }
 }
 
-set tt(STRING)	"char *"
+set tt(STRING)	"const char *"
 set tt(BOOL)	"double"
 set tt(BACKEND)	"struct backend *"
 set tt(TIME)	"double"
-set tt(HEADER)	"char *"
-set tt(HOSTNAME) "char *"
-set tt(PORTNAME) "char *"
+set tt(HEADER)	"const char *"
+set tt(HOSTNAME) "const char *"
+set tt(PORTNAME) "const char *"
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.
