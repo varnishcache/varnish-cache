@@ -2,7 +2,7 @@
  * Stuff shared between main.c and fixed_token.c
  */
 
-#include "vcl_token_defs.h"
+#include "vcc_token_defs.h"
 
 #define isident1(c) (isalpha(c))
 #define isident(c) (isalpha(c) || isdigit(c) || (c) == '_')

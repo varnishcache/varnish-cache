@@ -3,12 +3,12 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcl_gen_fixed_token.tcl instead
+ * Edit vcc_gen_fixed_token.tcl instead
  */
 
 #include <stdio.h>
 #include <ctype.h>
-#include "vcl_priv.h"
+#include "vcc_priv.h"
 
 unsigned
 vcl_fixed_token(const char *p, const char **q)
@@ -436,7 +436,7 @@ vcl_output_lang_h(FILE *f)
 	fputs(" *\n", f);
 	fputs(" * NB:  This file is machine generated, DO NOT EDIT!\n", f);
 	fputs(" *\n", f);
-	fputs(" * Edit vcl_gen_fixed_token.tcl instead\n", f);
+	fputs(" * Edit vcc_gen_fixed_token.tcl instead\n", f);
 	fputs(" */\n", f);
 	fputs("\n", f);
 	fputs("struct sess;\n", f);
