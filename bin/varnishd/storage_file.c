@@ -70,7 +70,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	uintmax_t l;
 	unsigned bs;
 	char suff[2];
-	int i;
+	int i, expl;
 	off_t o;
 	struct statfs fsst;
 	struct stat st;
@@ -87,6 +87,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
 
+	expl = i;
 	if (i == 0) {
 		fprintf(stderr,
 		    "Error: (-sfile) size \"%s\" not understood\n", size);
@@ -151,11 +152,20 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	/* round down to of filesystem blocksize or pagesize */
 	l -= (l % bs);
 
-	if (l < MINPAGES * sc->pagesize) {
+	if (l < MINPAGES * (uintmax_t)sc->pagesize) {
 		fprintf(stderr,
 		    "Error: size too small, at least %ju needed\n",
 		    (uintmax_t)MINPAGES * sc->pagesize);
 		exit (2);
+	}
+
+	if (expl < 0 && sizeof(void *) == 4 && l > (1ULL << 31)) {
+		fprintf(stderr,
+		    "NB: Limiting size to 2GB on 32 bit architecture to"
+		    " prevent running out of\naddress space."
+		    "  Specifiy explicit size to override.\n"
+		);
+		l = 1ULL << 31;
 	}
 
 	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
@@ -471,7 +481,7 @@ smf_open(struct stevedore *st)
 	    (uintmax_t)sum, sc->filesize);
 
 	/* XXX */
-	if (sum < MINPAGES * getpagesize())
+	if (sum < MINPAGES * (uintmax_t)getpagesize())
 		exit (2);
 	AZ(pthread_mutex_init(&sc->mtx, NULL));
 }
