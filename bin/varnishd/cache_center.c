@@ -82,17 +82,10 @@ DOT	]
 static int
 cnt_done(struct sess *sp)
 {
-	char *b;
 
 	assert(sp->obj == NULL);
-	if (sp->fd < 0) {
-		/* Allready closed */
-	} else if (http_GetHdr(sp->http, H_Connection, &b) &&
-	    !strcmp(b, "close")) {
-		vca_close_session(sp, "Connection header");
-	} else if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) {
-		vca_close_session(sp, "not HTTP/1.1");
-	}
+	if (sp->fd >= 0 && sp->doclose != NULL)
+		vca_close_session(sp, sp->doclose);
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
 
@@ -169,7 +162,7 @@ static int
 cnt_fetch(struct sess *sp)
 {
 
-	RFC2616_cache_policy(sp, sp->bkd_http);
+	RFC2616_cache_policy(sp, sp->vbc->http);
 
 	VCL_fetch_method(sp);
 
@@ -194,7 +187,7 @@ cnt_fetch(struct sess *sp)
 	}
 	if (sp->handling == VCL_RET_INSERT) {
 		sp->obj->cacheable = 1;
-		FetchBody(sp->wrk, sp);
+		FetchBody(sp);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
 		sp->step = STP_DELIVER;
@@ -404,7 +397,7 @@ cnt_miss(struct sess *sp)
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
-		FetchHeaders(sp->wrk, sp);
+		FetchHeaders(sp);
 		sp->step = STP_FETCH;
 		return (0);
 	}
@@ -513,6 +506,7 @@ static int
 cnt_recv(struct sess *sp)
 {
 	int done;
+	char *b;
 
 	sp->t0 = time(NULL);
 	sp->vcl = VCL_Get();
@@ -525,6 +519,11 @@ cnt_recv(struct sess *sp)
 		sp->step = STP_DONE;
 		return (0);
 	}
+
+	if (http_GetHdr(sp->http, H_Connection, &b) && !strcmp(b, "close"))
+		sp->doclose = "Connection:";
+	else if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+		sp->doclose = "not HTTP/1.1";
 
 	sp->backend = sp->vcl->backend[0];
 

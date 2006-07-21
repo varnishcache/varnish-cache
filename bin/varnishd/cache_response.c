@@ -20,7 +20,8 @@ RES_Error(struct sess *sp, int error, const char *msg)
 	char buf[40];
 	struct sbuf *sb;
 
-	sb = sp->wrk->sb;
+	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(sb != NULL);
 
 	if (msg == NULL) {
 		switch (error) {
@@ -68,6 +69,7 @@ RES_Error(struct sess *sp, int error, const char *msg)
 	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
 	WRK_Flush(sp->wrk);
 	vca_close_session(sp, msg);
+	sbuf_delete(sb);
 }
 
 
@@ -76,25 +78,31 @@ RES_Error(struct sess *sp, int error, const char *msg)
 static void
 res_do_304(struct sess *sp, char *p)
 {
-	struct sbuf *sb;
-
-	sb = sp->wrk->sb;
-	sbuf_clear(sb);
 
 	VSL(SLT_Status, sp->fd, "%u", 304);
 	VSL(SLT_Length, sp->fd, "%u", 0);
-	WRK_Write(sp->wrk, "HTTP/1.1 304 Not Modified\r\n", -1);
-	WRK_Write(sp->wrk, "Via: 1.1 varnish\r\n", -1);
-	WRK_Write(sp->wrk, "Last-Modified: ", -1);
-	WRK_Write(sp->wrk, p, -1);
-	WRK_Write(sp->wrk, "\r\n", -1);
-	if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) 
-		WRK_Write(sp->wrk, "Connection: close\r\n", -1);
-	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
-	sbuf_printf(sb, "\r\n");
-	sbuf_finish(sb);
-	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
-	WRK_Flush(sp->wrk);
+
+	sp->http->f = sp->http->v;
+
+	sp->http->nhd = HTTP_HDR_PROTO;
+	http_PrintfHeader(sp->fd, sp->http, "HTTP/1.1");
+
+	sp->http->nhd = HTTP_HDR_STATUS;
+	http_PrintfHeader(sp->fd, sp->http, "304");
+
+	sp->http->nhd = HTTP_HDR_RESPONSE;
+	http_PrintfHeader(sp->fd, sp->http, "Not Modified");
+
+	sp->http->nhd = HTTP_HDR_FIRST;
+	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->fd, sp->http, "Via: 1.1 varnish");
+	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", p);
+	if (sp->doclose != NULL)
+		http_PrintfHeader(sp->fd, sp->http, "Connection: close");
+	WRK_Reset(sp->wrk, &sp->fd);
+	http_Write(sp->wrk, sp->http, 1);
+	if (WRK_Flush(sp->wrk))
+		vca_close_session(sp, "remote closed");
 }
 
 /*--------------------------------------------------------------------*/
@@ -129,32 +137,34 @@ void
 RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
-	struct sbuf *sb;
 	unsigned u = 0;
 	uint64_t bytes = 0;
 	
-
-	sb = sp->wrk->sb;
-
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
 		
 	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
-	WRK_Write(sp->wrk, sp->obj->header, strlen(sp->obj->header));
-
-	sbuf_clear(sb);
-	sbuf_printf(sb, "Age: %u\r\n",
-		sp->obj->age + sp->t_req - sp->obj->entered);
-	sbuf_printf(sb, "Via: 1.1 varnish\r\n");
-	sbuf_printf(sb, "X-Varnish: xid %u\r\n", sp->obj->xid);
-	if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1")) 
-		sbuf_printf(sb, "Connection: close\r\n");
-	sbuf_printf(sb, "\r\n");
-	sbuf_finish(sb);
-	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
+	sp->http->f = sp->http->v;
+	sp->http->nhd = HTTP_HDR_FIRST;
+	http_CopyResp(sp->fd, sp->http, &sp->obj->http);
+	http_FilterHeader(sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
+	if (sp->xid != sp->obj->xid)
+		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u %u", sp->xid, sp->obj->xid);
+	else
+		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->fd, sp->http, "Age: %u",
+	    sp->obj->age + sp->t_req - sp->obj->entered);
+	http_PrintfHeader(sp->fd, sp->http, "Via: 1.1 varnish");
+	if (sp->doclose != NULL)
+		http_PrintfHeader(sp->fd, sp->http, "Connection: close");
+	WRK_Reset(sp->wrk, &sp->fd);
+	http_Write(sp->wrk, sp->http, 1);
+	
+#if 0 /* XXX */
 	bytes += sbuf_len(sb);
+#endif
 	/* XXX: conditional request handling */
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -172,5 +182,6 @@ RES_WriteObj(struct sess *sp)
 		assert(u == sp->obj->len);
 	}
 	SES_ChargeBytes(sp, bytes + u);
-	WRK_Flush(sp->wrk);
+	if (WRK_Flush(sp->wrk))
+		vca_close_session(sp, "remote closed");
 }

@@ -205,35 +205,43 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct worker *w, struct sess *sp)
+FetchBody(struct sess *sp)
 {
 	int cls;
 	struct vbe_conn *vc;
-	struct http *hp;
+	struct worker *w;
 	char *b;
 	int body = 1;		/* XXX */
 
-	vc = sp->vbc;
-	hp = sp->bkd_http;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	assert(sp->obj->busy != 0);
+	w = sp->wrk;
 
-	if (http_GetHdr(hp, H_Last_Modified, &b))
+	vc = sp->vbc;
+
+	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
-	http_BuildSbuf(sp->fd, Build_Reply, w->sb, hp);
+
+	sp->http->f = sp->http->v;
+	sp->http->nhd = HTTP_HDR_FIRST;
+	http_CopyResp(sp->fd, sp->http, vc->http);
+	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_INS);
+	
 	if (body) {
-		if (http_GetHdr(hp, H_Content_Length, &b))
-			cls = fetch_straight(sp, vc->fd, hp, b);
-		else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
-			cls = fetch_chunked(sp, vc->fd, hp);
+		if (http_GetHdr(vc->http, H_Content_Length, &b))
+			cls = fetch_straight(sp, vc->fd, vc->http, b);
+		else if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
+			cls = fetch_chunked(sp, vc->fd, vc->http);
 		else 
-			cls = fetch_eof(sp, vc->fd, hp);
-		sbuf_printf(w->sb, "Content-Length: %u\r\n", sp->obj->len);
+			cls = fetch_eof(sp, vc->fd, vc->http);
+		http_PrintfHeader(sp->fd, sp->http, "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
-	sbuf_finish(w->sb);
-	sp->obj->header = strdup(sbuf_data(w->sb));
-	VSL_stats->n_header++;
+	http_CopyHttp(&sp->obj->http, sp->http);
 
-	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
+	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)
@@ -247,11 +255,17 @@ FetchBody(struct worker *w, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchHeaders(struct worker *w, struct sess *sp)
+FetchHeaders(struct sess *sp)
 {
 	int i;
 	struct vbe_conn *vc;
-	struct http *hp;
+	struct worker *w;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	assert(sp->obj->busy != 0);
+	w = sp->wrk;
 
 	sp->obj->xid = sp->xid;
 
@@ -261,23 +275,24 @@ FetchHeaders(struct worker *w, struct sess *sp)
 	assert(vc != NULL);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	hp = vc->http;
-	http_BuildSbuf(vc->fd, Build_Fetch, w->sb, sp->http);
-	i = write(vc->fd, sbuf_data(w->sb), sbuf_len(w->sb));
-	assert(i == sbuf_len(w->sb));
-	sp->t_req = time(NULL);
+	http_CopyReq(vc->fd, vc->http, sp->http);
+	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 
-	/* XXX: copy any body ?? */
+	sp->t_req = time(NULL);
+	WRK_Reset(w, &vc->fd);
+	http_Write(w, vc->http, 0);
+	i = WRK_Flush(w);
+	assert(i == 0);
 
 	/*
 	 * XXX: It might be cheaper to avoid the event_engine and simply
 	 * XXX: read(2) the header
 	 */
-	http_RecvHead(hp, vc->fd, w->eb, NULL, NULL);
+	http_RecvHead(vc->http, vc->fd, w->eb, NULL, NULL);
 	(void)event_base_loop(w->eb, 0);
 	sp->t_resp = time(NULL);
-	assert(http_DissectResponse(hp, vc->fd) == 0);
+	assert(http_DissectResponse(vc->http, vc->fd) == 0);
 	sp->vbc = vc;
-	sp->bkd_http = hp;
 	return (0);
 }

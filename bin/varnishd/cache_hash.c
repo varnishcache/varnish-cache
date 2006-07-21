@@ -69,6 +69,7 @@ HSH_Lookup(struct sess *sp)
 		w->nobj = calloc(sizeof *w->nobj, 1);
 		assert(w->nobj != NULL);
 		w->nobj->magic = OBJECT_MAGIC;
+		w->nobj->http.magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
 		TAILQ_INIT(&w->nobj->store);
@@ -187,9 +188,8 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (o->header != NULL) {
-		free(o->header);
-		VSL_stats->n_header--;
+	if (o->http.s != NULL) {
+		free(o->http.s);
 	}
 
 	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {

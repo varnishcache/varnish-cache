@@ -483,27 +483,36 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 
 /*--------------------------------------------------------------------*/
 
-static int
-http_supress(const char *hdr, int flag)
+void
+http_CopyHttp(struct http *to, struct http *fm)
 {
+	unsigned u, l;
 
-#define HTTPH_0(a,d)
-#define HTTPH_1(a,d)						\
-	if ((flag & d) && !strncasecmp(hdr, a, strlen(a))) {	\
-		return (1);					\
+	l = 0;
+	for (u = 0; u < fm->nhd; u++) {
+		if (fm->hd[u].b == NULL)
+			continue;
+		assert(fm->hd[u].e != NULL);
+		l += (fm->hd[u].e - fm->hd[u].b) + 1;
 	}
-#define HTTPH_2(a,d)		HTTPH_1(a,d)
-#define HTTPH_3(a,d)		HTTPH_1(a,d)
-
-#define HTTPH(a,b,c,d,e,f,g)	HTTPH_ ## d(a ":",d)
-#include "http_headers.h"
-#undef HTTPH
-#undef HTTPH_0
-#undef HTTPH_1
-#undef HTTPH_2
-#undef HTTPH_3
-
-	return (0);
+	to->s = malloc(l);
+	assert(to->s != NULL);
+	to->e = to->s + l;
+	to->f = to->s;
+	for (u = 0; u < fm->nhd; u++) {
+		if (fm->hd[u].b == NULL)
+			continue;
+		assert(fm->hd[u].e != NULL);
+		assert(*fm->hd[u].e == '\0');
+		l = fm->hd[u].e - fm->hd[u].b;
+		assert(l == strlen(fm->hd[u].b));
+		memcpy(to->f, fm->hd[u].b, l);
+		to->hd[u].b = to->f;
+		to->hd[u].e = to->f + l;
+		*to->hd[u].e = '\0';
+		to->f += l + 1;
+	}
+	to->nhd = fm->nhd;
 }
 
 /*--------------------------------------------------------------------*/
@@ -631,56 +640,6 @@ http_Write(struct worker *w, struct http *hp, int resp)
 }
 
 /*--------------------------------------------------------------------*/
-
-void
-http_BuildSbuf(int fd, enum http_build mode, struct sbuf *sb, struct http *hp)
-{
-	unsigned u, sup, rr;
-
-	sbuf_clear(sb);
-	assert(sb != NULL);
-	switch (mode) {
-	case Build_Reply: rr = 0; sup = 2; break;
-	case Build_Pipe:  rr = 1; sup = 0; break;
-	case Build_Pass:  rr = 1; sup = 2; break;
-	case Build_Fetch: rr = 2; sup = 1; break;
-	default:
-		sup = 0;	/* for flexelint */
-		rr = 0;	/* for flexelint */
-		printf("mode = %d\n", mode);
-		assert(__LINE__ == 0);
-	}
-	if (rr == 0) {
-		sbuf_cat(sb, hp->hd[HTTP_HDR_PROTO].b);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->hd[HTTP_HDR_STATUS].b);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->hd[HTTP_HDR_RESPONSE].b);
-	} else {
-		if (rr == 2) {
-			sbuf_cat(sb, "GET ");
-		} else {
-			sbuf_cat(sb, hp->hd[HTTP_HDR_REQ].b);
-			sbuf_cat(sb, " ");
-		}
-		sbuf_cat(sb, hp->hd[HTTP_HDR_URL].b);
-		sbuf_cat(sb, " ");
-		sbuf_cat(sb, hp->hd[HTTP_HDR_PROTO].b);
-	}
-
-	sbuf_cat(sb, "\r\n");
-
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (http_supress(hp->hd[u].b, sup))
-			continue;
-		sbuf_cat(sb, hp->hd[u].b);
-		sbuf_cat(sb, "\r\n");
-	}
-	if (mode != Build_Reply) {
-		sbuf_cat(sb, "\r\n");
-		sbuf_finish(sb);
-	}
-}
 
 void
 HTTP_Init(void)
