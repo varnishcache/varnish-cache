@@ -42,7 +42,7 @@
 struct vbc_mem {
 	unsigned		magic;
 #define VBC_MEM_MAGIC		0x2fd7af01
-	struct vbe_conn		vbe;
+	struct vbe_conn		vbc;
 	struct http		http;
 };
 
@@ -78,11 +78,11 @@ vbe_new_conn(void)
 		return (NULL);
 	vbcm->magic = VBC_MEM_MAGIC;
 	VSL_stats->n_vbe_conn++;
-	vbcm->vbe.magic = VBE_CONN_MAGIC;
-	vbcm->vbe.vbcm = vbcm;
-	vbcm->vbe.http = &vbcm->http;
+	vbcm->vbc.magic = VBE_CONN_MAGIC;
+	vbcm->vbc.vbcm = vbcm;
+	vbcm->vbc.http = &vbcm->http;
 	http_Setup(&vbcm->http, (void *)(vbcm + 1), heritage.mem_workspace);
-	return (&vbcm->vbe);
+	return (&vbcm->vbc);
 }
 
 static void
