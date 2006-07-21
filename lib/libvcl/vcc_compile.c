@@ -1,5 +1,5 @@
 /*
- * $Id: vcl_compile.c 531 2006-07-20 22:08:43Z phk $
+ * $Id$
  */
 
 /*
@@ -791,7 +791,7 @@ Action(struct tokenlist *tl)
 		vp = FindVar(tl, tl->t, vcc_vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
-		Fc(tl, 1, "%s ", vp->rname);
+		Fc(tl, 1, "%s", vp->lname);
 		vcc_NextToken(tl);
 		switch (vp->fmt) {
 		case INT:
@@ -799,7 +799,8 @@ Action(struct tokenlist *tl)
 		case RATE:
 		case TIME:
 		case FLOAT:
-			Fc(tl, 0, "%T ", tl->t);
+			if (tl->t->tok != '=') 
+				Fc(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 			a = tl->t->tok;
 			vcc_NextToken(tl);
 			if (a == T_MUL || a == T_DIV)
@@ -812,7 +813,7 @@ Action(struct tokenlist *tl)
 				RateVal(tl);
 			else 
 				Fc(tl, 0, "%g", DoubleVal(tl));
-			Fc(tl, 0, ";\n");
+			Fc(tl, 0, ");\n");
 			break;
 		case IP:
 			if (tl->t->tok == '=') {
@@ -1007,19 +1008,13 @@ Backend(struct tokenlist *tl)
 		case HOSTNAME:
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
-			Fc(tl, 1, "\tp = %T;\n", tl->t);
-			Fc(tl, 1, "\t");
-			Fc(tl, 0, vp->lname, "p");
-			Fc(tl, 0, ";\n");
+			Fc(tl, 1, "\t%s %T);\n", vp->lname, tl->t);
 			vcc_NextToken(tl);
 			break;
 		case PORTNAME:
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
-			Fc(tl, 1, "\tp = %T;\n", tl->t);
-			Fc(tl, 1, "\t");
-			Fc(tl, 0, vp->lname, "p");
-			Fc(tl, 0, ";\n");
+			Fc(tl, 1, "\t%s %T);\n", vp->lname, tl->t);
 			vcc_NextToken(tl);
 			break;
 		default:
@@ -1381,6 +1376,7 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	FILE *fo;
 	char *of = NULL;
 	char buf[BUFSIZ];
+	int i;
 
 	memset(&tokens, 0, sizeof tokens);
 	TAILQ_INIT(&tokens.tokens);
@@ -1434,6 +1430,7 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	assert(fo != NULL);
 
 	vcl_output_lang_h(fo);
+	fputs(vrt_obj_h, fo);
 
 	sbuf_finish(tokens.fh);
 	fputs(sbuf_data(tokens.fh), fo);
@@ -1443,7 +1440,14 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	fputs(sbuf_data(tokens.fc), fo);
 	sbuf_delete(tokens.fc);
 
-	pclose(fo);
+	i = pclose(fo);
+	fprintf(stderr, "pclose=%d\n", i);
+	if (i) {
+		sbuf_printf(sb, "Internal error: GCC returned 0x%04x\n", i);
+		unlink(of);
+		free(of);
+		return (NULL);
+	}
 done:
 
 	/* Free References */
