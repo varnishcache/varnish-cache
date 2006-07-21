@@ -117,10 +117,12 @@ RFC2616_Ttl(int fd, struct http *hp, time_t t_req, time_t t_resp, struct object 
 
 		ttd = t_req + retirement_age;
 	}
-	VSL(SLT_Debug, fd,
-	    "TTD: max-age %u Age: %u Date: %d (%d) Expires %d (%d) our_clock %d"
-	    " -> ttd %d (%d)",
-	    u1, u2, h_date, h_date - t_req, h_expires, h_expires - t_req, t_req, ttd, ttd - t_req);
+
+	/* calculated TTL, Our time, Date, Expires, max-age, age */
+	VSL(SLT_TTL, fd, "%d %d %d %d %d %d",
+	    (int)(ttd - t_req), (int)t_req, (int)h_date, (int)h_expires,
+	    (int)u1, (int)u2);
+
 	return (ttd);
 }
 
