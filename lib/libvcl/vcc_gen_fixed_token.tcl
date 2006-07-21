@@ -84,7 +84,7 @@ proc warns {fd} {
 	puts $fd " *"
 	puts $fd " * NB:  This file is machine generated, DO NOT EDIT!"
 	puts $fd " *"
-	puts $fd " * Edit vcl_gen_fixed_token.tcl instead"
+	puts $fd " * Edit vcc_gen_fixed_token.tcl instead"
 	puts $fd " */"
 	puts $fd ""
 }
@@ -162,15 +162,15 @@ close $for
 #----------------------------------------------------------------------
 # Build the compiler token table and recognizers
 
-set fo [open "vcl_fixed_token.c" w]
+set fo [open "vcc_fixed_token.c" w]
 warns $fo
 
-set foh [open "vcl_token_defs.h" w]
+set foh [open "vcc_token_defs.h" w]
 warns $foh
 
 puts $fo "#include <stdio.h>"
 puts $fo "#include <ctype.h>"
-puts $fo "#include \"vcl_priv.h\""
+puts $fo "#include \"vcc_priv.h\""
 
 set tn 128
 puts $foh "#define LOW_TOKEN $tn"
