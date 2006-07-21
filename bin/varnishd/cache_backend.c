@@ -81,7 +81,7 @@ vbe_new_conn(void)
 	vbcm->vbe.magic = VBE_CONN_MAGIC;
 	vbcm->vbe.vbcm = vbcm;
 	vbcm->vbe.http = &vbcm->http;
-	http_Init(&vbcm->http, (void *)(vbcm + 1), heritage.mem_workspace);
+	http_Setup(&vbcm->http, (void *)(vbcm + 1), heritage.mem_workspace);
 	return (&vbcm->vbe);
 }
 

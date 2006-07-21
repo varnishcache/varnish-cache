@@ -178,7 +178,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sm->sess.magic = SESS_MAGIC;
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
-	http_Init(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
+	http_Setup(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
 	return (&sm->sess);
 }
 

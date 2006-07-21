@@ -296,7 +296,7 @@ void HSH_Init(void);
 
 /* cache_http.c */
 void HTTP_Init(void);
-void http_Init(struct http *ht, void *space, unsigned len);
+void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetStatus(struct http *hp);

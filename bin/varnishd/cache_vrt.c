@@ -56,7 +56,6 @@ VRT_GetHdr(struct sess *sp, const char *n)
 char *
 VRT_GetReq(struct sess *sp)
 {
-	char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp != NULL);
