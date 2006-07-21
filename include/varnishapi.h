@@ -8,11 +8,11 @@
 #define V_DEAD __attribute__ ((noreturn))
 
 /* shmlog.c */
-#define VSL_ARGS	"bcr:i:x:CI:X:"
+#define VSL_ARGS	"bcdr:i:x:CI:X:"
 struct VSL_data;
 struct VSL_data *VSL_New(void);
 int VSL_OpenLog(struct VSL_data *vd);
-unsigned char *VSL_NextLog(struct VSL_data *lh);
+int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
 struct varnish_stats *VSL_OpenStats(void);
 const char *VSL_tags[256];

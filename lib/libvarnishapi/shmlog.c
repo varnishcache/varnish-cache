@@ -26,6 +26,7 @@ struct VSL_data {
 
 	int			b_opt;
 	int			c_opt;
+	int			d_opt;
 
 	int			ix_opt;
 	unsigned char 		supr[256];
@@ -44,6 +45,7 @@ struct VSL_data {
 static int vsl_fd;
 static struct shmloghead *vsl_lh;
 
+static int vsl_nextlog(struct VSL_data *vd, unsigned char **pp);
 
 /*--------------------------------------------------------------------*/
 
@@ -107,7 +109,7 @@ VSL_New(void)
 int
 VSL_OpenLog(struct VSL_data *vd)
 {
-
+	unsigned char *p;
 
 	if (vd->fi != NULL)
 		return (0);
@@ -119,13 +121,17 @@ VSL_OpenLog(struct VSL_data *vd)
 	vd->logstart = (unsigned char *)vsl_lh + vsl_lh->start;
 	vd->logend = vd->logstart + vsl_lh->size;
 	vd->ptr = vd->logstart;
+
+	if (!vd->d_opt)
+		while (vsl_nextlog(vd, &p) == 1)
+			continue;
 	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-static unsigned char *
-vsl_nextlog(struct VSL_data *vd)
+static int
+vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
 	int i;
@@ -133,13 +139,14 @@ vsl_nextlog(struct VSL_data *vd)
 	if (vd->fi != NULL) {
 		i = fread(vd->rbuf, 4, 1, vd->fi);
 		if (i != 1)
-			return (NULL);
+			return (-1);
 		if (vd->rbuf[1] > 0) {
 			i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
 			if (i != 1)
-				return (NULL);
+				return (-1);
 		}
-		return (vd->rbuf);
+		*pp = vd->rbuf;
+		return (1);
 	}
 
 	p = vd->ptr;
@@ -150,15 +157,16 @@ vsl_nextlog(struct VSL_data *vd)
 		}
 		if (*p == SLT_ENDMARKER) {
 			vd->ptr = p;
-			return (NULL);
+			return (0);
 		}
 		vd->ptr = p + p[1] + 4;
-		return (p);
+		*pp = p;
+		return (1);
 	}
 }
 
-unsigned char *
-VSL_NextLog(struct VSL_data *vd)
+int
+VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
 	regmatch_t rm;
@@ -166,9 +174,9 @@ VSL_NextLog(struct VSL_data *vd)
 	int i;
 
 	while (1) {
-		p = vsl_nextlog(vd);
-		if (p == NULL)
-			return (p);
+		i = vsl_nextlog(vd, &p);
+		if (i != 1)
+			return (i);
 		u = (p[2] << 8) | p[3];
 		switch(p[0]) {
 		case SLT_SessionOpen:
@@ -200,7 +208,8 @@ VSL_NextLog(struct VSL_data *vd)
 			if (i != REG_NOMATCH)
 				continue;
 		}
-		return (p);
+		*pp = p;
+		return (1);
 	}
 }
 
@@ -310,6 +319,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	switch (arg) {
 	case 'b': vd->b_opt = !vd->b_opt; return (1);
 	case 'c': vd->c_opt = !vd->c_opt; return (1);
+	case 'd': vd->d_opt = !vd->d_opt; return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
