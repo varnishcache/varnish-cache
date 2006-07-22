@@ -207,6 +207,9 @@ struct sess {
 
 	struct worker		*wrk;
 
+	unsigned		sockaddrlen;
+	struct sockaddr		*sockaddr;
+
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFSIZE];
 	char			port[TCP_PORTBUFSIZE];
