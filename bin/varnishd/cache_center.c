@@ -256,7 +256,7 @@ cnt_hit(struct sess *sp)
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		PassSession(sp);
-		sp->step = STP_PASSBODY;
+		sp->step = STP_PASS;
 		return (0);
 	}
 
