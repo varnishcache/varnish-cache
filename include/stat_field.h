@@ -29,3 +29,11 @@ MAC_STAT(n_expired,		uint64_t, "u", "N expired objects")
 MAC_STAT(n_deathrow,		uint64_t, "u", "N objects on deathrow")
 
 MAC_STAT(losthdr,		uint64_t, "u", "HTTP header overflows")
+
+MAC_STAT(s_sess,		uint64_t, "u", "Total Sessions")
+MAC_STAT(s_req,			uint64_t, "u", "Total Requests")
+MAC_STAT(s_pipe,		uint64_t, "u", "Total pipe")
+MAC_STAT(s_pass,		uint64_t, "u", "Total pass")
+MAC_STAT(s_fetch,		uint64_t, "u", "Total fetch")
+MAC_STAT(s_hdrbytes,		uint64_t, "u", "Total header bytes")
+MAC_STAT(s_bodybytes,		uint64_t, "u", "Total body bytes")

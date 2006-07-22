@@ -118,6 +118,7 @@ accept_f(int fd, short event, void *arg)
 	assert(sp != NULL);	/* XXX handle */
 
 	sp->fd = i;
+	sp->id = i;
 
 #ifdef SO_NOSIGPIPE /* XXX Linux */
 	i = 1;

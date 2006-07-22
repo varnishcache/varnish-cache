@@ -74,6 +74,19 @@ struct http {
 
 /*--------------------------------------------------------------------*/
 
+struct acct {
+	time_t			first;
+	uint64_t		sess;
+	uint64_t		req;
+	uint64_t		pipe;
+	uint64_t		pass;
+	uint64_t		fetch;
+	uint64_t		hdrbytes;
+	uint64_t		bodybytes;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -90,6 +103,8 @@ struct worker {
 	struct iovec		iov[MAX_IOVS];
 	unsigned		niov;
 	size_t			liov;
+
+	struct acct		acct;
 };
 
 struct workreq {
@@ -189,20 +204,24 @@ struct objhead {
 struct srcaddr {
 	unsigned		magic;
 #define SRCADDR_MAGIC		0x375111db
+
+	unsigned		hash;
 	TAILQ_ENTRY(srcaddr)	list;
-	unsigned		nsess;
-	char			addr[TCP_ADDRBUFSIZE];
-	unsigned		sum;
-	time_t			first;
-	time_t			ttl;
-	uint64_t		bytes;
 	struct srcaddrhead	*sah;
+
+	char			addr[TCP_ADDRBUFSIZE];
+	unsigned		nref;
+
+	time_t			ttl;
+
+	struct acct		acct;
 };
 
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 	int			fd;
+	int			id;
 	unsigned		xid;
 
 	struct worker		*wrk;
@@ -237,6 +256,7 @@ struct sess {
 	time_t			t0;
 
 	struct workreq		workreq;
+	struct acct		acct;
 };
 
 struct backend {
@@ -344,7 +364,7 @@ void SES_Init(void);
 struct sess *SES_New(struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
 void SES_RefSrcAddr(struct sess *sp);
-void SES_ChargeBytes(struct sess *sp, uint64_t bytes);
+void SES_Charge(struct sess *sp);
 
 /* cache_shmlog.c */
 

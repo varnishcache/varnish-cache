@@ -138,7 +138,6 @@ RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
-	uint64_t bytes = 0;
 	
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
@@ -162,9 +161,6 @@ RES_WriteObj(struct sess *sp)
 	WRK_Reset(sp->wrk, &sp->fd);
 	http_Write(sp->wrk, sp->http, 1);
 	
-#if 0 /* XXX */
-	bytes += sbuf_len(sb);
-#endif
 	/* XXX: conditional request handling */
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -181,7 +177,6 @@ RES_WriteObj(struct sess *sp)
 		}
 		assert(u == sp->obj->len);
 	}
-	SES_ChargeBytes(sp, bytes + u);
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }

@@ -74,10 +74,10 @@ SES_RefSrcAddr(struct sess *sp)
 	AZ(pthread_mutex_lock(&ses_mtx));
 	c3 = NULL;
 	TAILQ_FOREACH_SAFE(c, ch, list, c2) {
-		if (c->sum == u && !strcmp(c->addr, sp->addr)) {
-			if (c->nsess == 0)
+		if (c->hash == u && !strcmp(c->addr, sp->addr)) {
+			if (c->nref == 0)
 				VSL_stats->n_srcaddr_act++;
-			c->nsess++;
+			c->nref++;
 			c->ttl = now + CLIENT_TTL;
 			sp->srcaddr = c;
 			TAILQ_REMOVE(ch, c, list);
@@ -90,7 +90,7 @@ SES_RefSrcAddr(struct sess *sp)
 			AZ(pthread_mutex_unlock(&ses_mtx));
 			return;
 		}
-		if (c->nsess > 0 || c->ttl > now)
+		if (c->nref > 0 || c->ttl > now)
 			continue;
 		if (c3 == NULL) {
 			c3 = c;
@@ -111,10 +111,10 @@ SES_RefSrcAddr(struct sess *sp)
 	if (c3 != NULL) {
 		memset(c3, 0, sizeof *c3);
 		strcpy(c3->addr, sp->addr);
-		c3->sum = u;
-		c3->first = now;
+		c3->hash = u;
+		c3->acct.first = now;
 		c3->ttl = now + CLIENT_TTL;
-		c3->nsess = 1;
+		c3->nref = 1;
 		c3->sah = ch;
 		VSL_stats->n_srcaddr_act++;
 		TAILQ_INSERT_TAIL(ch, c3, list);
@@ -123,24 +123,42 @@ SES_RefSrcAddr(struct sess *sp)
 	AZ(pthread_mutex_unlock(&ses_mtx));
 }
 
-void
-SES_ChargeBytes(struct sess *sp, uint64_t bytes)
+static void
+ses_sum_acct(struct acct *sum, struct acct *inc)
 {
-	struct srcaddr *sa;
-	time_t now;
 
-	assert(sp->srcaddr != NULL);
-	sa = sp->srcaddr;
-	now = time(NULL);
+	sum->sess += inc->sess;
+	sum->req += inc->req;
+	sum->pipe += inc->pipe;
+	sum->pass += inc->pass;
+	sum->fetch += inc->fetch;
+	sum->hdrbytes += inc->hdrbytes;
+	sum->bodybytes += inc->bodybytes;
+}
+
+void
+SES_Charge(struct sess *sp)
+{
+	struct acct *a = &sp->wrk->acct;
+	struct acct *b = &sp->srcaddr->acct;
+
+	ses_sum_acct(&sp->acct, a);
+	
 	AZ(pthread_mutex_lock(&ses_mtx));
-	sa->bytes += bytes;
-	sa->ttl = now + CLIENT_TTL;
-	TAILQ_REMOVE(sa->sah, sa, list);
-	TAILQ_INSERT_TAIL(sa->sah, sa, list);
-	bytes = sa->bytes;
+	ses_sum_acct(b, a);
+	VSL(SLT_StatAddr, sp->id, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
+	    sp->srcaddr->addr, time(NULL) - b->first,
+	    b->sess, b->req, b->pipe, b->pass,
+	    b->fetch, b->hdrbytes, b->bodybytes);
+	VSL_stats->s_sess += a->sess;
+	VSL_stats->s_req += a->req;
+	VSL_stats->s_pipe += a->pipe;
+	VSL_stats->s_pass += a->pass;
+	VSL_stats->s_fetch += a->fetch;
+	VSL_stats->s_hdrbytes += a->hdrbytes;
+	VSL_stats->s_bodybytes += a->bodybytes;
 	AZ(pthread_mutex_unlock(&ses_mtx));
-	VSL(SLT_SrcAddr, sp->fd, "%s %jd %d",
-	    sa->addr, (intmax_t)(bytes), now - sa->first);
+	memset(a, 0, sizeof *a);
 }
 
 static void
@@ -153,9 +171,9 @@ ses_relsrcaddr(struct sess *sp)
 	}
 	assert(sp->srcaddr != NULL);
 	AZ(pthread_mutex_lock(&ses_mtx));
-	assert(sp->srcaddr->nsess > 0);
-	sp->srcaddr->nsess--;
-	if (sp->srcaddr->nsess == 0)
+	assert(sp->srcaddr->nref > 0);
+	sp->srcaddr->nref--;
+	if (sp->srcaddr->nref == 0)
 		VSL_stats->n_srcaddr_act--;
 	sp->srcaddr = NULL;
 	AZ(pthread_mutex_unlock(&ses_mtx));
@@ -183,17 +201,26 @@ SES_New(struct sockaddr *addr, unsigned len)
 	assert(len  < sizeof(sm->sockaddr));
 	memcpy(sm->sess.sockaddr, addr, len);
 	sm->sess.sockaddrlen = len;
+
 	http_Setup(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
+
+	sm->sess.acct.first = time(NULL);
+
 	return (&sm->sess);
 }
 
 void
 SES_Delete(struct sess *sp)
 {
+	struct acct *b = &sp->acct;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
+	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",
+	    sp->addr, sp->port, time(NULL) - b->first,
+	    b->sess, b->req, b->pipe, b->pass,
+	    b->fetch, b->hdrbytes, b->bodybytes);
 	CHECK_OBJ_NOTNULL(sp->mem, SESSMEM_MAGIC);
 	free(sp->mem);
 }

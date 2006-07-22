@@ -89,6 +89,7 @@ cnt_done(struct sess *sp)
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
 
+	SES_Charge(sp);
 	vca_return_session(sp);
 	return (1);
 }
@@ -316,6 +317,7 @@ cnt_lookup2(struct sess *sp)
 	if (o == NULL) {
 		VSL(SLT_Debug, sp->fd,
 		    "on waiting list on obj %u", sp->obj->xid);
+		SES_Charge(sp);
 		return (1);
 	}
 
@@ -584,7 +586,7 @@ CNT_Session(struct sess *sp)
 		switch (sp->step) {
 #define STEP(l,u) \
 		case STP_##u: \
-			VSL(SLT_Debug, sp->fd, "State " #u); \
+			VSL(SLT_Debug, sp->id, "State " #u); \
 			done = cnt_##l(sp); \
 			break;
 #include "steps.h"
