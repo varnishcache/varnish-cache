@@ -555,7 +555,7 @@ smf_free(struct storage *s)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_send(struct storage *st, struct sess *sp, struct iovec *iov, int niov, size_t liov)
+smf_send(struct storage *st, struct sess *sp)
 {
 	struct smf *smf;
 	int i;
@@ -565,32 +565,33 @@ smf_send(struct storage *st, struct sess *sp, struct iovec *iov, int niov, size_
 	smf = st->priv;
 
 	memset(&sfh, 0, sizeof sfh);
-	sfh.headers = iov;
-	sfh.hdr_cnt = niov;
+	sfh.headers = sp->wrk->iov;
+	sfh.hdr_cnt = sp->wrk->niov;
 	i = sendfile(smf->sc->fd,
 	    sp->fd,
 	    smf->offset,
 	    st->len, &sfh, &sent, 0);
-	if (sent == st->len + liov)
+	if (sent == st->len + sp->wrk->liov)
 		return;
 	vca_close_session(sp, "remote closed");
 	if (errno == EPIPE || errno == ENOTCONN)
 		return;
 	VSL(SLT_Debug, sp->fd,
 	    "sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len, (uintmax_t)liov, errno);
+	    i, (uintmax_t)sent, (uintmax_t)st->len,
+	    (uintmax_t)sp->wrk->liov, errno);
 }
 
 /*--------------------------------------------------------------------*/
 
 struct stevedore smf_stevedore = {
-	"file",
-	smf_init,
-	smf_open,
-	smf_alloc,
-	smf_trim,
-	smf_free,
-	smf_send
+	.name =		"file",
+	.init =		smf_init,
+	.open =		smf_open,
+	.alloc =	smf_alloc,
+	.trim =		smf_trim,
+	.free =		smf_free,
+	.send =		smf_send
 };
 
 #ifdef INCLUDE_TEST_DRIVER

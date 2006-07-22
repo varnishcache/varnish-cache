@@ -191,6 +191,7 @@ cnt_fetch(struct sess *sp)
 		FetchBody(sp);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
+		sp->wrk->acct.fetch++;
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -448,7 +449,9 @@ DOT passbody -> DONE
 static int
 cnt_passbody(struct sess *sp)
 {
-	PassBody(sp->wrk, sp);
+
+	sp->wrk->acct.pass++;
+	PassBody(sp);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -472,6 +475,7 @@ static int
 cnt_pipe(struct sess *sp)
 {
 
+	sp->wrk->acct.pipe++;
 	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
@@ -515,6 +519,7 @@ cnt_recv(struct sess *sp)
 
 	assert(sp->obj == NULL);
 
+	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
 		RES_Error(sp, done, NULL);

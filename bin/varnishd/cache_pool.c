@@ -60,27 +60,29 @@ WRK_Flush(struct worker *w)
 	return (w->werr);
 }
 
-void
+unsigned
 WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf)
 {
+	unsigned u;
 	
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	assert(w != NULL);
 	assert(hh != NULL);
 	assert(hh->b != NULL);
 	assert(hh->e != NULL);
-	WRK_Write(w, hh->b, hh->e - hh->b);
+	u = WRK_Write(w, hh->b, hh->e - hh->b);
 	if (suf != NULL)
-		WRK_Write(w, suf, -1);
+		u += WRK_Write(w, suf, -1);
+	return (u);
 }
 
-void
+unsigned
 WRK_Write(struct worker *w, const void *ptr, int len)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	if (len == 0 || *w->wfd < 0)
-		return;
+		return (0);
 	if (len == -1)
 		len = strlen(ptr);
 	if (w->niov == MAX_IOVS)
@@ -88,6 +90,7 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 	w->iov[w->niov].iov_base = (void*)(uintptr_t)ptr;
 	w->iov[w->niov++].iov_len = len;
 	w->liov += len;
+	return (len);
 }
 
 /*--------------------------------------------------------------------*/

@@ -322,7 +322,7 @@ void HSH_Init(void);
 /* cache_http.c */
 void HTTP_Init(void);
 void http_CopyHttp(struct http *to, struct http *fm);
-void http_Write(struct worker *w, struct http *hp, int resp);
+unsigned http_Write(struct worker *w, struct http *hp, int resp);
 void http_GetReq(int fd, struct http *to, struct http *fm);
 void http_CopyReq(int fd, struct http *to, struct http *fm);
 void http_CopyResp(int fd, struct http *to, struct http *fm);
@@ -346,7 +346,7 @@ int http_DissectResponse(struct http *sp, int fd);
 
 /* cache_pass.c */
 void PassSession(struct sess *sp);
-void PassBody(struct worker *w, struct sess *sp);
+void PassBody(struct sess *sp);
 
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);
@@ -356,8 +356,8 @@ void WRK_Init(void);
 void WRK_QueueSession(struct sess *sp);
 void WRK_Reset(struct worker *w, int *fd);
 int WRK_Flush(struct worker *w);
-void WRK_Write(struct worker *w, const void *ptr, int len);
-void WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
+unsigned WRK_Write(struct worker *w, const void *ptr, int len);
+unsigned WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
 
 /* cache_session.c [SES] */
 void SES_Init(void);

@@ -39,10 +39,7 @@ sma_free(struct storage *s)
 }
 
 struct stevedore sma_stevedore = {
-	"malloc",
-	NULL,			/* init */
-	NULL,			/* open */
-	sma_alloc,
-	NULL,			/* trim */
-	sma_free
+	.name =		"malloc",
+	.alloc =	sma_alloc,
+	.free =		sma_free
 };
