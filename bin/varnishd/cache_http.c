@@ -635,28 +635,29 @@ http_PrintfHeader(int fd, struct http *to, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
+unsigned
 http_Write(struct worker *w, struct http *hp, int resp)
 {
-	unsigned u;
+	unsigned u, l;
 
 	if (resp) {
 		assert(hp->hd[HTTP_HDR_STATUS].b != NULL);
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
+		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
+		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
+		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
 	} else {
 		assert(hp->hd[HTTP_HDR_URL].b != NULL);
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
+		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
+		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
+		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		assert(hp->hd[u].b != NULL);
 		assert(hp->hd[u].e != NULL);
-		WRK_WriteH(w, &hp->hd[u], "\r\n");
+		l += WRK_WriteH(w, &hp->hd[u], "\r\n");
 	}
-	WRK_Write(w, "\r\n", -1);
+	l += WRK_Write(w, "\r\n", -1);
+	return (l);
 }
 
 /*--------------------------------------------------------------------*/

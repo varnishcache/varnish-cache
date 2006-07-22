@@ -46,7 +46,7 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 		if (i == 0 && bi == NULL)
 			return (1);
 		assert(i > 0);
-		WRK_Write(sp->wrk, buf, i);
+		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
 		if (WRK_Flush(sp->wrk))
 			vca_close_session(sp, "remote closed");
 		cl -= i;
@@ -93,7 +93,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 		if (u == 0)
 			break;
 
-		WRK_Write(sp->wrk, p, q - p);
+		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, q - p);
 
 		p = q;
 
@@ -105,14 +105,15 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			}
 			if (bp - p < j)
 				j = bp - p;
-			WRK_Write(sp->wrk, p, j);
+			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, j);
 			p += j;
 			u -= j;
 		}
 		while (u > 0) {
 			if (http_GetTail(hp, u, &b, &e)) {
 				j = e - b;
-				WRK_Write(sp->wrk, q, j);
+				sp->wrk->acct.bodybytes +=
+				    WRK_Write(sp->wrk, q, j);
 				u -= j;
 			} else
 				break;
@@ -125,7 +126,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 				j = sizeof buf;
 			i = read(fd, buf, j);
 			assert(i > 0);
-			WRK_Write(sp->wrk, buf, i);
+			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
 			u -= i;
 			if (WRK_Flush(sp->wrk))
 				vca_close_session(sp, "remote closed");
@@ -138,7 +139,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 /*--------------------------------------------------------------------*/
 
 void
-PassBody(struct worker *w, struct sess *sp)
+PassBody(struct sess *sp)
 {
 	struct vbe_conn *vc;
 	char *b;
@@ -152,8 +153,8 @@ PassBody(struct worker *w, struct sess *sp)
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
-	WRK_Reset(w, &sp->fd);
-	http_Write(w, sp->http, 1);
+	WRK_Reset(sp->wrk, &sp->fd);
+	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
 	if (http_GetHdr(vc->http, H_Content_Length, &b))
 		cls = pass_straight(sp, vc->fd, vc->http, b);
@@ -165,7 +166,7 @@ PassBody(struct worker *w, struct sess *sp)
 		cls = pass_straight(sp, vc->fd, vc->http, NULL);
 	}
 
-	if (WRK_Flush(w))
+	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))

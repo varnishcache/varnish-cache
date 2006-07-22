@@ -159,21 +159,21 @@ RES_WriteObj(struct sess *sp)
 	if (sp->doclose != NULL)
 		http_PrintfHeader(sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
-	http_Write(sp->wrk, sp->http, 1);
+	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	
 	/* XXX: conditional request handling */
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET")) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			assert(st->stevedore != NULL);
 			u += st->len;
+			sp->wrk->acct.bodybytes += st->len;
 			if (st->stevedore->send == NULL) {
 				WRK_Write(sp->wrk, st->ptr, st->len);
-				continue;
+			} else {
+				st->stevedore->send(st, sp);
+				sp->wrk->niov = 0;
+				sp->wrk->liov = 0;
 			}
-			st->stevedore->send(st, sp,
-			    sp->wrk->iov, sp->wrk->niov, sp->wrk->liov);
-			sp->wrk->niov = 0;
-			sp->wrk->liov = 0;
 		}
 		assert(u == sp->obj->len);
 	}
