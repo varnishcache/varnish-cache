@@ -19,14 +19,85 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <netinet/in.h>
 
+
+static unsigned ipv4mask[] = {
+	[0]	=	0xffffffff,
+#define M(n)	[n] = (0xffffffff << (32 - n))
+        M( 1), M( 2), M( 3), M( 4), M( 5), M( 6), M( 7), M( 8), M( 9), M(10),
+        M(11), M(12), M(13), M(14), M(15), M(16), M(17), M(18), M(19), M(20),
+        M(21), M(22), M(23), M(24), M(25), M(26), M(27), M(28), M(29), M(30),
+        M(31), M(32)
+};
+
+static int
+vrt_acl_vsl(struct sess *sp, const char *acl, struct vrt_acl *ap, int r)
+{
+
+	assert(ap != NULL);
+	if (ap->name == NULL) {
+		assert(r == 0);
+		VSL(SLT_VCL_acl, sp->fd, "NO_MATCH %s", acl);
+		return (r);
+	}
+	if (ap->priv == NULL) {
+		assert(r == 0);
+		VSL(SLT_VCL_acl, sp->fd, "FAIL %s %s", acl, ap->desc);
+		return (r);
+	}
+	
+	VSL(SLT_VCL_acl, sp->fd, "%s %s %s",
+		r ? "MATCH" : "NEG_MATCH", acl, ap->desc);
+	return (r);
+}
 
 int
-VRT_acl_match(struct sess *sp, struct vrt_acl *ap)
+VRT_acl_match(struct sess *sp, const char *acl, struct vrt_acl *ap)
 {
-	(void)sp;
-	(void)ap;
-	return (0);
+	struct addrinfo *a1;
+	struct sockaddr_in *sin1, *sin2;
+
+	if (sp->sockaddr->sa_family == AF_INET) {
+		assert(sp->sockaddrlen >= sizeof *sin1);
+		sin1 = (void*)sp->sockaddr;
+	} else {
+		sin1 = NULL;
+	}
+	
+	for ( ; ap->name != NULL; ap++) {
+		if (ap->priv == NULL && ap->paren)
+			continue;
+		if (ap->priv == NULL && ap->not) {
+			return (vrt_acl_vsl(sp, acl, ap, 0));
+		}
+		if (ap->priv == NULL)
+			continue;
+		for (a1 = ap->priv; a1 != NULL; a1 = a1->ai_next) {
+
+			/* only match the right family */
+			if (a1->ai_family != sp->sockaddr->sa_family)
+				continue;
+
+			if (a1->ai_family == AF_INET) {
+				assert(sin1 != NULL);
+				assert(a1->ai_addrlen >= sizeof (*sin2));
+				sin2 = (void*)a1->ai_addr;
+				if (0 == ((
+				    htonl(sin1->sin_addr.s_addr) ^
+				    htonl(sin2->sin_addr.s_addr)) &
+				    ipv4mask[ap->mask > 32 ? 32 : ap->mask]))
+					return (
+					    vrt_acl_vsl(sp, acl, ap, !ap->not));
+				continue;
+			}
+
+			/* Not rules for unknown protos match */
+			if (ap->not)
+				return (vrt_acl_vsl(sp, acl, ap, 0));
+		}
+	}
+	return (vrt_acl_vsl(sp, acl, ap, 0));
 }
 
 void
