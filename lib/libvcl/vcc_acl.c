@@ -33,7 +33,7 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		AddRef(tl, tl->t, R_ACL);
-		Fc(tl, 1, "VRT_acl_match(sp, acl_%T)\n", tl->t);
+		Fc(tl, 1, "VRT_acl_match(sp, \"%T\", acl_%T)\n", tl->t, tl->t);
 		vcc_NextToken(tl);
 		break;
 	default:
@@ -51,6 +51,7 @@ vcc_Acl(struct tokenlist *tl)
 {
 	unsigned mask, para, not;
 	struct token *t, *an;
+	char *p;
 
 	vcc_NextToken(tl);
 
@@ -71,13 +72,13 @@ vcc_Acl(struct tokenlist *tl)
 
 		not = para = mask = 0;
 
-		if (tl->t->tok == '!') {
-			not = 1;
+		if (tl->t->tok == '(') {
+			para = 1;
 			vcc_NextToken(tl);
 		} 
 
-		if (tl->t->tok == '(') {
-			para = 1;
+		if (tl->t->tok == '!') {
+			not = 1;
 			vcc_NextToken(tl);
 		} 
 
@@ -90,7 +91,19 @@ vcc_Acl(struct tokenlist *tl)
 			ExpectErr(tl, CNUM);
 			mask = UintVal(tl);
 		} 
-		Fc(tl, 1, "{ %u, %u, %u, %T },\n", not, mask, para, t);
+		Fc(tl, 1, "{ %u, %u, %u, %T, \"", not, mask, para, t);
+		if (para)
+			Fc(tl, 0, "(");
+		if (not)
+			Fc(tl, 0, "!");
+		p = EncString(t);
+		Fc(tl, 0, "%s", p);
+		free(p);
+		if (mask)
+			Fc(tl, 0, "/%u", mask);
+		if (para)
+			Fc(tl, 0, ")");
+		Fc(tl, 0, "\" },\n");
 
 		if (para) {
 			ExpectErr(tl, ')');
@@ -99,7 +112,7 @@ vcc_Acl(struct tokenlist *tl)
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
-	Fc(tl, 1, "{ 0, 0, 0, (void*)0}\n", 0, 0);
+	Fc(tl, 1, "{ 0, 0, 0, (void*)0, ""}\n", 0, 0);
 	tl->indent -= INDENT;
 	Fc(tl, 1, "};\n\n");
 

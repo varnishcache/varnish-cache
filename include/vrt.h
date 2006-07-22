@@ -20,14 +20,15 @@ struct vrt_ref {
 
 struct vrt_acl {
 	unsigned char	not;
-	unsigned char	paren;
 	unsigned char	mask;
+	unsigned char	paren;
 	const char	*name;
+	const char	*desc;
 	void		*priv;
 };
 
 /* ACL related */
-int VRT_acl_match(struct sess *, struct vrt_acl *);
+int VRT_acl_match(struct sess *, const char *, struct vrt_acl *);
 void VRT_acl_init(struct vrt_acl *);
 void VRT_acl_fini(struct vrt_acl *);
 

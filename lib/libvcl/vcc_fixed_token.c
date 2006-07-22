@@ -486,14 +486,15 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("struct vrt_acl {\n", f);
 	fputs("	unsigned char	not;\n", f);
-	fputs("	unsigned char	paren;\n", f);
 	fputs("	unsigned char	mask;\n", f);
+	fputs("	unsigned char	paren;\n", f);
 	fputs("	const char	*name;\n", f);
+	fputs("	const char	*desc;\n", f);
 	fputs("	void		*priv;\n", f);
 	fputs("};\n", f);
 	fputs("\n", f);
 	fputs("/* ACL related */\n", f);
-	fputs("int VRT_acl_match(struct sess *, struct vrt_acl *);\n", f);
+	fputs("int VRT_acl_match(struct sess *, const char *, struct vrt_acl *);\n", f);
 	fputs("void VRT_acl_init(struct vrt_acl *);\n", f);
 	fputs("void VRT_acl_fini(struct vrt_acl *);\n", f);
 	fputs("\n", f);
