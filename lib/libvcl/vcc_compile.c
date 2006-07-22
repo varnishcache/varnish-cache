@@ -54,6 +54,7 @@
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 
+#include "vrt.h"
 #include "libvcl.h"
 
 static struct method method_tab[] = {
@@ -471,15 +472,36 @@ RateVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+vcc_re(struct tokenlist *tl, const char *str, struct token *re)
+{
+	char buf[32], *p;
+
+	p = EncString(re);
+	if (VRT_re_test(tl->sb, p)) {
+		vcc_ErrWhere(tl, re);
+		return;
+	}
+	free(p);
+	sprintf(buf, "VGC_re_%u", tl->recnt++);
+
+	Fc(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
+	Fh(tl, 0, "void *%s;\n", buf);
+	Fi(tl, 0, "\tVRT_re_init(&%s, %T);\n", buf, re);
+	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
 Cond_String(struct var *vp, struct tokenlist *tl)
 {
 
 	switch (tl->t->tok) {
 	case '~':
-		Fc(tl, 1, "string_match(%s, ", vp->rname);
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		Fc(tl, 0, "%T)\n", tl->t);
+		vcc_re(tl, vp->rname, tl->t);
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:
