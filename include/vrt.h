@@ -8,6 +8,7 @@
  */
 
 struct sess;
+struct sbuf;
 struct backend;
 struct VCL_conf;
 
@@ -31,6 +32,12 @@ struct vrt_acl {
 int VRT_acl_match(struct sess *, const char *, struct vrt_acl *);
 void VRT_acl_init(struct vrt_acl *);
 void VRT_acl_fini(struct vrt_acl *);
+
+/* Regexp related */
+void VRT_re_init(void **, const char *);
+void VRT_re_fini(void *);
+int VRT_re_match(const char *, void *re);
+int VRT_re_test(struct sbuf *, const char *);
 
 void VRT_count(struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);

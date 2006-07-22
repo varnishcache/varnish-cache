@@ -29,6 +29,8 @@ struct tokenlist {
 	int			nbackend;
 	TAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
+
+	unsigned		recnt;
 };
 
 enum var_type {
