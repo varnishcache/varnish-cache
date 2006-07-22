@@ -30,6 +30,7 @@ varnishd_SOURCES = \
 	cache_session.c \
 	cache_vcl.c \
 	cache_vrt.c \
+	cache_vrt_acl.c \
 	cli_event.c \
 	hash_simple_list.c \
 	hash_classic.c \

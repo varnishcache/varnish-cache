@@ -9,6 +9,7 @@
 struct sess;
 
 typedef void vcl_init_f(void);
+typedef void vcl_fini_f(void);
 typedef int vcl_func_f(struct sess *sp);
 
 struct VCL_conf {
@@ -22,6 +23,7 @@ struct VCL_conf {
         unsigned        busy;
 
         vcl_init_f      *init_func;
+        vcl_fini_f      *fini_func;
 
 	vcl_func_f	*recv_func;
 	vcl_func_f	*miss_func;

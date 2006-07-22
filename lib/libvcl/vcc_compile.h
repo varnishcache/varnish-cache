@@ -22,7 +22,7 @@ struct tokenlist {
 	struct token		*t;
 	int			indent;
 	unsigned		cnt;
-	struct sbuf		*fc, *fh;
+	struct sbuf		*fc, *fh, *fi, *ff;
 	TAILQ_HEAD(, ref)	refs;
 	struct sbuf		*sb;
 	int			err;
@@ -97,16 +97,19 @@ struct proc {
 /* vcc_acl.c */
 
 void vcc_Acl(struct tokenlist *tl);
-unsigned vcc_IpVal(struct tokenlist *tl);
 void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
 
 /* vcc_compile.c */
 extern const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fi(struct tokenlist *tl, int indent, const char *fmt, ...);
+void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
 unsigned UintVal(struct tokenlist *tl);
 void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
+char *EncString(struct token *t);
+
 
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];
