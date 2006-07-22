@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_obj.tcl 550 2006-07-21 21:13:43Z phk $
+ * $Id: vcc_gen_obj.tcl 555 2006-07-22 08:02:47Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *

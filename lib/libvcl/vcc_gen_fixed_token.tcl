@@ -97,6 +97,7 @@ warns $fo
 puts $fo {struct sess;
 
 typedef void vcl_init_f(void);
+typedef void vcl_fini_f(void);
 typedef int vcl_func_f(struct sess *sp);
 }
 puts $fo "struct VCL_conf {"
@@ -110,6 +111,7 @@ puts $fo {	unsigned        magic;
         unsigned        busy;
 
         vcl_init_f      *init_func;
+        vcl_fini_f      *fini_func;
 }
 foreach m $methods {
 	puts $fo "\tvcl_func_f\t*[lindex $m 0]_func;"

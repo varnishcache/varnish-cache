@@ -114,9 +114,33 @@ Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_end(ap);
 }
 
+void
+Fi(struct tokenlist *tl, int indent, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (indent)
+		sbuf_printf(tl->fi, "%*.*s", tl->indent, tl->indent, "");
+	va_start(ap, fmt);
+	sbuf_vprintf(tl->fi, fmt, ap);
+	va_end(ap);
+}
+
+void
+Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (indent)
+		sbuf_printf(tl->ff, "%*.*s", tl->indent, tl->indent, "");
+	va_start(ap, fmt);
+	sbuf_vprintf(tl->ff, fmt, ap);
+	va_end(ap);
+}
+
 /*--------------------------------------------------------------------*/
 
-static char *
+char *
 EncString(struct token *t)
 {
 	char *p, *q;
@@ -871,11 +895,11 @@ Backend(struct tokenlist *tl)
 		AddRef(tl, tl->t, R_BACKEND);
 	Fh(tl, 1, "#define VGC_backend_%T (VCL_conf.backend[%d])\n",
 	    tl->t, tl->nbackend);
+	Fc(tl, 0, "\n");
 	Fc(tl, 0, "static void\n");
 	Fc(tl, 1, "VGC_init_backend_%T (void)\n", tl->t);
 	Fc(tl, 1, "{\n");
 	Fc(tl, 1, "\tstruct backend *backend = VGC_backend_%T;\n", tl->t);
-	Fc(tl, 1, "\tconst char *p;\n");
 	Fc(tl, 1, "\n");
 	Fc(tl, 1, "\tVRT_set_backend_name(backend, \"%T\");\n", tl->t);
 	vcc_NextToken(tl);
@@ -941,6 +965,8 @@ Backend(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	Fc(tl, 1, "}\n");
 	Fc(tl, 0, "\n");
+	Fi(tl, 0, "\tVGC_init_backend_%T();\n", t_be);
+	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%T);\n", t_be);
 	tl->nbackend++;
 }
 
@@ -1208,22 +1234,20 @@ LocTable(struct tokenlist *tl)
 static void
 EmitInitFunc(struct tokenlist *tl)
 {
-	struct ref *r;
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
-	Fc(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
-	
-	TAILQ_FOREACH(r, &tl->refs, list) {
-		switch(r->type) {
-		case R_FUNC:
-			break;
-		case R_ACL:
-			break;
-		case R_BACKEND:
-			Fc(tl, 0, "\tVGC_init_backend_%T();\n", r->name);
-			break;
-		}
-	}
+	sbuf_finish(tl->fi);
+	sbuf_cat(tl->fc, sbuf_data(tl->fi));
+	Fc(tl, 0, "}\n");
+}
+
+static void
+EmitFiniFunc(struct tokenlist *tl)
+{
+
+	Fc(tl, 0, "\nstatic void\nVGC_Fini(void)\n{\n\n");
+	sbuf_finish(tl->ff);
+	sbuf_cat(tl->fc, sbuf_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
 
@@ -1236,6 +1260,7 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\nstruct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
+	Fc(tl, 0, "\t.fini_func = VGC_Fini,\n");
 	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
@@ -1279,7 +1304,15 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	tokens.fh = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(tokens.fh != NULL);
 
+	tokens.fi = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(tokens.fi != NULL);
+
+	tokens.ff = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	assert(tokens.ff != NULL);
+
 	Fh(&tokens, 0, "extern struct VCL_conf VCL_conf;\n");
+
+	Fi(&tokens, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
 
 	tokens.b = b;
 	if (e == NULL)
@@ -1300,7 +1333,11 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 		goto done;
 	LocTable(&tokens);
 
+	Ff(&tokens, 0, "\tVRT_free_backends(&VCL_conf);\n");
+
 	EmitInitFunc(&tokens);
+
+	EmitFiniFunc(&tokens);
 
 	EmitStruct(&tokens);
 

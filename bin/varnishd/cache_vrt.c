@@ -86,6 +86,19 @@ VRT_alloc_backends(struct VCL_conf *cp)
 	}
 }
 
+void
+VRT_free_backends(struct VCL_conf *cp)
+{
+
+	(void)cp;
+}
+
+void
+VRT_fini_backend(struct backend *be)
+{
+	(void)be;
+}
+
 /*--------------------------------------------------------------------*/
 
 #define VBACKEND(type,onm,field)			\
