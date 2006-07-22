@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_obj.tcl 548 2006-07-21 20:51:24Z phk $
+ * $Id: vcc_gen_obj.tcl 550 2006-07-21 21:13:43Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -10,6 +10,8 @@ const char * VRT_r_backend_host(struct backend *);
 void VRT_l_backend_host(struct backend *, const char *);
 const char * VRT_r_backend_port(struct backend *);
 void VRT_l_backend_port(struct backend *, const char *);
+const unsigned char * VRT_r_client_ip(struct sess *);
+void VRT_l_client_ip(struct sess *, const unsigned char *);
 const char * VRT_r_req_request(struct sess *);
 void VRT_l_req_request(struct sess *, const char *);
 const char * VRT_r_req_url(struct sess *);

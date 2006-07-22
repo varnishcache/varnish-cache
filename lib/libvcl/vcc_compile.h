@@ -94,13 +94,25 @@ struct proc {
 
 /*--------------------------------------------------------------------*/
 
+/* vcc_acl.c */
+
+void vcc_Acl(struct tokenlist *tl);
+unsigned vcc_IpVal(struct tokenlist *tl);
+void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
+
 /* vcc_compile.c */
 extern const char *vcc_default_vcl_b, *vcc_default_vcl_e;
+void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
+unsigned UintVal(struct tokenlist *tl);
+void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
+void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
 
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];
 extern struct var vcc_vars[];
 extern const char *vrt_obj_h;
+
 
 /* vcc_token.c */
 void vcc_ErrToken(struct tokenlist *tl, struct token *t);
@@ -112,3 +124,9 @@ void vcc_Lexer(struct tokenlist *tl, const char *b, const char *e);
 void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
+
+#define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
+#define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
+#define Expect(a, b) vcc__Expect(a, b, __LINE__)
+#define ExpectErr(a, b) do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
+

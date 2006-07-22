@@ -9,6 +9,7 @@ libvcl_la_SOURCES = \
 	vcc_compile.h \
 	vcc_token_defs.h \
 	\
+	vcc_acl.c \
 	vcc_compile.c \
 	vcc_fixed_token.c \
 	vcc_obj.c \

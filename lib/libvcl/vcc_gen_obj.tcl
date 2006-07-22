@@ -12,6 +12,7 @@ set beobj {
 # Objects which operate on sessions
 
 set spobj {
+	{ client.ip	IP }
 	{ req.request	STRING }
         { req.url	STRING }
         { req.proto	STRING }
@@ -22,6 +23,7 @@ set spobj {
         { req.http.	HEADER }
 }
 
+set tt(IP)	"const unsigned char *"
 set tt(STRING)	"const char *"
 set tt(BOOL)	"double"
 set tt(BACKEND)	"struct backend *"

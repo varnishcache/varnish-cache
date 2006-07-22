@@ -56,8 +56,6 @@
 
 #include "libvcl.h"
 
-#define ERRCHK(tl)	do { if ((tl)->err) return; } while (0)
-
 static struct method method_tab[] = {
 #define VCL_RET_MAC(a,b,c,d)
 #define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, "default_vcl_"#a, c },
@@ -77,11 +75,6 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
-#define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
-
-#define Expect(a, b) vcc__Expect(a, b, __LINE__)
-#define ExpectErr(a, b) do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
-
 #define L(tl, foo)	do {	\
 	tl->indent += INDENT;	\
 	foo;			\
@@ -97,7 +90,7 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
  * Printf output to the two sbufs, possibly indented
  */
 
-static void
+void
 Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
@@ -109,7 +102,7 @@ Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_end(ap);
 }
 
-static void
+void
 Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
@@ -210,7 +203,7 @@ FindRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
 	return (0);
 }
 
-static void
+void
 AddRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 {
 
@@ -230,7 +223,7 @@ AddRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
 	AddRef(tl, t, type);
 }
 
-static void
+void
 AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
 {
 	struct ref *r;
@@ -321,7 +314,7 @@ RateUnit(struct tokenlist *tl)
  * Recognize and convert { CNUM } to unsigned value
  */
 
-static unsigned
+unsigned
 UintVal(struct tokenlist *tl)
 {
 	unsigned d = 0;
@@ -363,46 +356,6 @@ DoubleVal(struct tokenlist *tl)
 	}
 	vcc_NextToken(tl);
 	return (d);
-}
-
-/*--------------------------------------------------------------------*/
-
-static unsigned
-IpVal(struct tokenlist *tl)
-{
-	unsigned u, v;
-	struct token *t;
-
-	t = tl->t;
-	u = UintVal(tl);
-	if (u < 256) {
-		v = u << 24;
-		Expect(tl, '.');
-		vcc_NextToken(tl);
-		t = tl->t;
-		u = UintVal(tl);
-		if (u < 256) {
-			v |= u << 16;
-			Expect(tl, '.');
-			vcc_NextToken(tl);
-			t = tl->t;
-			u = UintVal(tl);
-			if (u < 256) {
-				v |= u << 8;
-				Expect(tl, '.');
-				vcc_NextToken(tl);
-				t = tl->t;
-				u = UintVal(tl);
-				if (u < 256) {
-					v |= u;
-					return (v);
-				}
-			}
-		}
-	}
-	sbuf_printf(tl->sb, "Illegal octet in IP number\n");
-	vcc_ErrWhere(tl, t);
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -492,38 +445,6 @@ RateVal(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------*/
-
-static void
-Cond_Ip(struct var *vp, struct tokenlist *tl)
-{
-	unsigned u;
-
-	switch (tl->t->tok) {
-	case '~':
-		vcc_NextToken(tl);
-		ExpectErr(tl, ID);
-		AddRef(tl, tl->t, R_ACL);
-		Fc(tl, 1, "ip_match(%s, acl_%T)\n", vp->rname, tl->t);
-		vcc_NextToken(tl);
-		break;
-	case T_EQ:
-	case T_NEQ:
-		Fc(tl, 1, "%s %T ", vp->rname, tl->t);
-		vcc_NextToken(tl);
-		u = IpVal(tl);
-		Fc(tl, 0, "%uU /* %u.%u.%u.%u */\n", u,
-		    (u >> 24) & 0xff, (u >> 16) & 0xff,
-		    (u >> 8) & 0xff, (u) & 0xff);
-		break;
-	default:
-		sbuf_printf(tl->sb, "Illegal condition ");
-		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, " on IP number variable\n");
-		sbuf_printf(tl->sb, "  only '==', '!=' and '~' are legal\n");
-		vcc_ErrWhere(tl, tl->t);
-		break;
-	}
-}
 
 static void
 Cond_String(struct var *vp, struct tokenlist *tl)
@@ -631,7 +552,7 @@ Cond_2(struct tokenlist *tl)
 		case INT:	L(tl, Cond_Int(vp, tl)); break;
 		case SIZE:	L(tl, Cond_Int(vp, tl)); break;
 		case BOOL:	L(tl, Cond_Bool(vp, tl)); break;
-		case IP:	L(tl, Cond_Ip(vp, tl)); break;
+		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
 		case STRING:	L(tl, Cond_String(vp, tl)); break;
 		case TIME:	L(tl, Cond_Int(vp, tl)); break;
 		/* XXX backend == */
@@ -742,7 +663,7 @@ IfStmt(struct tokenlist *tl)
 static void
 Action(struct tokenlist *tl)
 {
-	unsigned a, u;
+	unsigned a;
 	struct var *vp;
 	struct token *at;
 
@@ -825,10 +746,11 @@ Action(struct tokenlist *tl)
 				Fc(tl, 0, "%g", DoubleVal(tl));
 			Fc(tl, 0, ");\n");
 			break;
+#if 0	/* XXX: enable if we find a legit use */
 		case IP:
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
-				u = IpVal(tl);
+				u = vcc_IpVal(tl);
 				Fc(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
 				    u,
 				    (u >> 24) & 0xff,
@@ -843,6 +765,7 @@ Action(struct tokenlist *tl)
 			    " only '=' is legal for IP numbers\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
+#endif
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
@@ -869,50 +792,6 @@ Action(struct tokenlist *tl)
 		vcc_ErrWhere(tl, at);
 		return;
 	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-Acl(struct tokenlist *tl)
-{
-	unsigned u, m;
-
-	vcc_NextToken(tl);
-
-	ExpectErr(tl, ID);
-	AddDef(tl, tl->t, R_ACL);
-	Fh(tl, 0, "static struct vcl_acl acl_%T[];\n", tl->t);
-	Fc(tl, 1, "static struct vcl_acl acl_%T[] = {\n", tl->t);
-	vcc_NextToken(tl);
-
-	tl->indent += INDENT;
-
-	ExpectErr(tl, '{');
-	vcc_NextToken(tl);
-
-	while (tl->t->tok == CNUM) {
-		u = IpVal(tl);
-		if (tl->t->tok == '/') {
-			vcc_NextToken(tl);
-			ExpectErr(tl, CNUM);
-			m = UintVal(tl);
-		} else
-			m = 32;
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
-		Fc(tl, 1, "{ %11uU, %3uU }, /* %u.%u.%u.%u/%u */\n",
-		    u, m,
-		    (u >> 24) & 0xff, (u >> 16) & 0xff,
-		    (u >> 8) & 0xff, (u) & 0xff, m);
-	}
-	ExpectErr(tl, '}');
-	Fc(tl, 1, "{ %11uU, %3uU }\n", 0, 0);
-
-	tl->indent -= INDENT;
-
-	Fc(tl, 1, "};\n\n");
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1099,7 +978,7 @@ Parse(struct tokenlist *tl)
 		ERRCHK(tl);
 		switch (tl->t->tok) {
 		case T_ACL:
-			Acl(tl);
+			vcc_Acl(tl);
 			break;
 		case T_SUB:
 			Function(tl);
