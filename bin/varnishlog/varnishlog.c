@@ -233,8 +233,10 @@ main(int argc, char **argv)
 
 	if (w_opt != NULL) {
 		wfile = fopen(w_opt, "w");
-		if (wfile == NULL)
+		if (wfile == NULL) {
 			perror(w_opt);
+			exit (1);
+		}
 	}
 	u = 0;
 	v = 0;
