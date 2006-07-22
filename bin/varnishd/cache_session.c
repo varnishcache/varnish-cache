@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/uio.h>
+#include <sys/socket.h>
 
 #include "libvarnish.h"
 #include "heritage.h"
@@ -27,11 +28,12 @@
 /*--------------------------------------------------------------------*/
 
 struct sessmem {
-	unsigned	magic;
-#define SESSMEM_MAGIC	0x555859c5
+	unsigned		magic;
+#define SESSMEM_MAGIC		0x555859c5
 
-	struct sess	sess;
-	struct http	http;
+	struct sess		sess;
+	struct http		http;
+	struct sockaddr		sockaddr[2];	/* INET6 hack */
 };
 
 /*--------------------------------------------------------------------*/
@@ -166,8 +168,6 @@ SES_New(struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
 
-	(void)addr;	/* XXX */
-	(void)len;	/* XXX */
 	sm = calloc(
 	    sizeof *sm + heritage.mem_workspace,
 	    1);
@@ -178,6 +178,11 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sm->sess.magic = SESS_MAGIC;
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
+
+	sm->sess.sockaddr = sm->sockaddr;
+	assert(len  < sizeof(sm->sockaddr));
+	memcpy(sm->sess.sockaddr, addr, len);
+	sm->sess.sockaddrlen = len;
 	http_Setup(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
 	return (&sm->sess);
 }
