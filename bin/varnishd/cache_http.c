@@ -517,6 +517,16 @@ http_CopyHttp(struct http *to, struct http *fm)
 /*--------------------------------------------------------------------*/
 
 static void
+http_seth(int fd, struct http *to, unsigned n, enum shmlogtag tag, const char *fm)
+{
+	assert(n < MAX_HTTP_HDRS);
+	assert(fm != NULL);
+	to->hd[n].b = (void*)(uintptr_t)fm;
+	to->hd[n].e = strchr(fm, '\0');
+	VSLH(tag, fd, to, n);
+}
+
+static void
 http_copyh(int fd, struct http *to, struct http *fm, unsigned n, enum shmlogtag tag)
 {
 
@@ -525,6 +535,17 @@ http_copyh(int fd, struct http *to, struct http *fm, unsigned n, enum shmlogtag 
 	to->hd[n].b = fm->hd[n].b;
 	to->hd[n].e = fm->hd[n].e;
 	VSLH(tag, fd, to, n);
+}
+
+void
+http_GetReq(int fd, struct http *to, struct http *fm)
+{
+
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	http_seth(fd, to, HTTP_HDR_REQ, SLT_Request, "GET");
+	http_copyh(fd, to, fm, HTTP_HDR_URL, SLT_URL);
+	http_seth(fd, to, HTTP_HDR_PROTO, SLT_Protocol, "HTTP/1.1");
 }
 
 void
