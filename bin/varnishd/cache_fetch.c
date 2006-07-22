@@ -51,7 +51,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	i &= ~O_NONBLOCK;
 	i = fcntl(fd, F_SETFL, i);
 
-	while (cl != 0) {
+	while (cl > 0) {
 		i = http_Read(hp, fd, p, cl);
 		assert(i > 0);	/* XXX seen */
 		p += i;
@@ -273,7 +273,7 @@ FetchHeaders(struct sess *sp)
 	assert(vc != NULL);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	http_CopyReq(vc->fd, vc->http, sp->http);
+	http_GetReq(vc->fd, vc->http, sp->http);
 	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
 	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 

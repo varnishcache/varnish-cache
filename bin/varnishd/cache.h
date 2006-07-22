@@ -303,6 +303,7 @@ void HSH_Init(void);
 void HTTP_Init(void);
 void http_CopyHttp(struct http *to, struct http *fm);
 void http_Write(struct worker *w, struct http *hp, int resp);
+void http_GetReq(int fd, struct http *to, struct http *fm);
 void http_CopyReq(int fd, struct http *to, struct http *fm);
 void http_CopyResp(int fd, struct http *to, struct http *fm);
 void http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how);
