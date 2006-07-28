@@ -129,7 +129,7 @@ order(unsigned char *p, int h_opt)
 	case SLT_Request:
 		if (h_opt && p[1] == 3 && !memcmp(p + 4, "GET", 3))
 			hc[u]++;
-		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 3))
+		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 4))
 			hc[u]++;
 		v = 1;
 		break;
