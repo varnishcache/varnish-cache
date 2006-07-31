@@ -148,8 +148,7 @@ PassBody(struct sess *sp)
 	vc = sp->vbc;
 	assert(vc != NULL);
 
-	sp->http->f = sp->http->v;
-	sp->http->nhd = HTTP_HDR_FIRST;
+	http_ClrHeader(sp->http);
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);

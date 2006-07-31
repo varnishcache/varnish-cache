@@ -79,14 +79,10 @@ static void
 res_do_304(struct sess *sp, char *p)
 {
 
-	VSL(SLT_Status, sp->fd, "%u", 304);
 	VSL(SLT_Length, sp->fd, "%u", 0);
 
-	sp->http->f = sp->http->v;
-
+	http_ClrHeader(sp->http);
 	http_SetResp(sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
-
-	sp->http->nhd = HTTP_HDR_FIRST;
 	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", p);
@@ -135,15 +131,14 @@ RES_WriteObj(struct sess *sp)
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
 		
-	VSL(SLT_Status, sp->fd, "%u", sp->obj->response);
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
-	sp->http->f = sp->http->v;
-	sp->http->nhd = HTTP_HDR_FIRST;
+	http_ClrHeader(sp->http);
 	http_CopyResp(sp->fd, sp->http, &sp->obj->http);
 	http_FilterHeader(sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
 	if (sp->xid != sp->obj->xid)
-		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u %u", sp->xid, sp->obj->xid);
+		http_PrintfHeader(sp->fd, sp->http,
+		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
 	else
 		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->fd, sp->http, "Age: %u",
@@ -155,7 +150,7 @@ RES_WriteObj(struct sess *sp)
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	
 	/* XXX: conditional request handling */
-	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET")) {
+	if (sp->wantbody) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			assert(st->stevedore != NULL);
 			u += st->len;

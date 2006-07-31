@@ -629,9 +629,22 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 /*--------------------------------------------------------------------*/
 
 void
+http_ClrHeader(struct http *to)
+{
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	to->f = to->v;
+	to->nhd = HTTP_HDR_FIRST;
+	memset(to->hd, 0, sizeof to->hd);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 http_SetHeader(int fd, struct http *to, const char *hdr)
 {
 
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	to->hd[to->nhd].b = (void*)(uintptr_t)hdr;
 	to->hd[to->nhd].e = strchr(hdr, '\0');
 	assert(to->hd[to->nhd].e != NULL);
@@ -647,6 +660,7 @@ http_PrintfHeader(int fd, struct http *to, const char *fmt, ...)
 	va_list ap;
 	unsigned l, n;
 
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	va_start(ap, fmt);
 	l = to->e - to->f;
 	n = vsnprintf(to->f, l, fmt, ap);
