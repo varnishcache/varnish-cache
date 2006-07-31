@@ -84,16 +84,14 @@ res_do_304(struct sess *sp, char *p)
 
 	sp->http->f = sp->http->v;
 
-	http_SetHeader(sp->fd, sp->http, HTTP_HDR_PROTO, "HTTP/1.1");
-	http_SetHeader(sp->fd, sp->http, HTTP_HDR_STATUS, "304");
-	http_SetHeader(sp->fd, sp->http, HTTP_HDR_RESPONSE, "Not Modified");
+	http_SetResp(sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
 
 	sp->http->nhd = HTTP_HDR_FIRST;
-	http_SetHeader(sp->fd, sp->http, 0, "Via: 1.1 varnish");
+	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", p);
 	if (sp->doclose != NULL)
-		http_SetHeader(sp->fd, sp->http, 0, "Connection: close");
+		http_SetHeader(sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
 	http_Write(sp->wrk, sp->http, 1);
 	if (WRK_Flush(sp->wrk))
@@ -150,9 +148,9 @@ RES_WriteObj(struct sess *sp)
 		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->fd, sp->http, "Age: %u",
 	    sp->obj->age + sp->t_req - sp->obj->entered);
-	http_SetHeader(sp->fd, sp->http, 0, "Via: 1.1 varnish");
+	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
-		http_SetHeader(sp->fd, sp->http, 0, "Connection: close");
+		http_SetHeader(sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	
