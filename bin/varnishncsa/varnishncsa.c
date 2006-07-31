@@ -1,7 +1,15 @@
 /*
- * $Id$
+ * $Id:$
  *
- * Log tailer for Varnish
+ * Program that will get data from the shared memory log. When it has the data
+ * it will order the data based on the sessionid. When the data is ordered
+ * and session is finished it will write the data into disk. Logging will be
+ * in NCSA extended/combined access log format.
+ *
+ *	"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""
+ * 
+ * TODO:	- Log in any format one wants
+ *		- Maybe rotate/compress log
  */
 
 #include <stdio.h>
@@ -17,23 +25,23 @@
 #include "varnishapi.h"
 
 
-static char *
-vis_it(unsigned char *p)
-{
-	static char visbuf[255*4 + 3 + 1];
-
-	strcpy(visbuf, " [");
-	strvisx(visbuf + 2, p + 4, p[1],
-	    VIS_OCTAL | VIS_TAB | VIS_NL);
-	strcat(visbuf, "]");
-	return (visbuf);
-}
-
 /* Ordering-----------------------------------------------------------*/
 
+
+/* We make a array of pointers to sbuf's. Sbuf is a string buffer.
+* The buffer can be made/extended/cleared etc. through a API.
+* The array is 65536 long because we will use sessionid as key.
+*
+*/
+
 static struct sbuf	*ob[65536];
-static int 		hc[65536];
-static int 		xrf[65536];
+
+
+/*
+* Clean order is called once in a while. It clears all the sessions that 
+* where never finished (SLT_SessionClose). Because the data is not complete
+* we disregard the data.
+*/
 
 static void
 clean_order(void)
@@ -44,16 +52,34 @@ clean_order(void)
 		if (ob[u] == NULL)
 			continue;
 		sbuf_finish(ob[u]);
-		if (sbuf_len(ob[u]))
-			printf("%s\n", sbuf_data(ob[u]));
+		
+		/* XXX delete this code? Probably, since we write data to disk/screen
+		* as soon as we have all the data we need anyway. If we are here
+		* we don't have all the data, hence we don't bother to write out. 
+		*
+		*
+		* if (sbuf_len(ob[u]))
+		*	printf("%s\n", sbuf_data(ob[u]));
+		*/
+			
 		sbuf_clear(ob[u]);
 	}
 }
 
 static void 
-order(unsigned char *p, int h_opt)
+extended_log_format(unsigned char *p, char *w_opt)
 {
 	unsigned u, v;
+	int i,j;
+	char *ans;
+	char soek[1];
+	strcpy(soek," ");
+
+	if (w_opt != NULL){
+		// printf(" Has w_opt\n");
+	} else {
+		// printf(" Does not have w_opt\n");
+	}
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
@@ -62,91 +88,36 @@ order(unsigned char *p, int h_opt)
 	}
 	v = 0;
 	switch (p[0]) {
-	case SLT_VCL_call:
-		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		if (p[1] > 0) {
-			sbuf_cat(ob[u], " <");
+
+	case SLT_SessionOpen:
+
+		//ans = strchr(&p[4], (int)soek);
+		//j = strlen(ans);
+		//printf("%d\n",j);
+		break;
+
+	case SLT_RxHeader:
+	
+		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
+			//printf(" User-Agent: %s\n", p[4]);
+			//sbuf_printf(ob[u], "%s\n", &p[4]);
 			sbuf_bcat(ob[u], p + 4, p[1]);
-		}
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "hit", 3))
-			hc[u]++;
-		break;
-	case SLT_VCL_trace:
-		if (p[1] > 0) {
-			sbuf_cat(ob[u], " ");
-			sbuf_bcat(ob[u], p + 4, p[1]);
+			sbuf_cat(ob[u], "\n");
+			sbuf_finish(ob[u]);
+			printf("%s", sbuf_data(ob[u]));
+			sbuf_clear(ob[u]);
 		}
 		break;
-	case SLT_VCL_return:
-		if (p[1] > 0) {
-			sbuf_cat(ob[u], " ");
-			sbuf_bcat(ob[u], p + 4, p[1]);
-			sbuf_cat(ob[u], ">\n");
-		}
-		if (h_opt && p[1] == 7 && !memcmp(p + 4, "deliver", 7))
-			hc[u]++;
-		if (h_opt && p[1] == 6 && !memcmp(p + 4, "insert", 6)) {
-			if (hc[xrf[u]] == 1) {
-				hc[u] += 2;
-				hc[xrf[u]] = 4;
-			}
-		}
-		break;
-	case SLT_Debug:
-		if (p[1] == 0)
-			break;
-		if (!h_opt)
-			;
-		else if (p[1] > 4 && !memcmp(p + 4, "TTD:", 4))
-			break;
-		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		if (p[1] > 0)
-			sbuf_cat(ob[u], vis_it(p));
-		sbuf_cat(ob[u], "\n");
-		break;
-	case SLT_HttpError:
-		if (!h_opt) 
-			v = 1;
-		else if (p[1] == 16 && !memcmp(p + 4, "Received nothing", 16))
-			;
-		else if (p[1] == 17 && !memcmp(p + 4, "Received errno 54", 17))
-			;
-		else
-			v = 1;
-		break;
+	
 	case SLT_SessionClose:
-		if (!h_opt) 
-			v = 1;
-		else if (p[1] == 10 && !memcmp(p + 4, "no request", 10))
-			;
-		else if (p[1] == 7 && !memcmp(p + 4, "timeout", 7))
-			;
-		else
-			v = 1;
-		break;
-	case SLT_Request:
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "GET", 3))
-			hc[u]++;
-		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 4))
-			hc[u]++;
-		v = 1;
-		break;
-	case SLT_Backend:
-		xrf[u] = atoi(p + 4);
-		v = 1;
-		break;
-	case SLT_Status:
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "200", 3))
-			hc[u]++;
-		v = 1;
 		break;
 	default:
 		v = 1;
 		break;
 	}
 	if (v) {
+		
+		/* XXX Need to write some code to make the logline 
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0) {
@@ -155,38 +126,27 @@ order(unsigned char *p, int h_opt)
 			sbuf_cat(ob[u], ">");
 		}
 		sbuf_cat(ob[u], "\n");
+		*/
 	}
+	
+	/* XXX Do I need this? When is u == 0? I can't seem to see
+	* it used before this place.
 	if (u == 0) {
 		sbuf_finish(ob[u]);
 		printf("%s", sbuf_data(ob[u]));
 		sbuf_clear(ob[u]);
 		return;
 	}
-	switch (p[0]) {
-	case SLT_SessionClose:
-	case SLT_SessionReuse:
-	case SLT_BackendClose:
-	case SLT_BackendReuse:
-		sbuf_finish(ob[u]);
-		if ((hc[u] != 4 || h_opt == 0) && sbuf_len(ob[u]) > 1)
-			printf("%s\n", sbuf_data(ob[u]));
-		sbuf_clear(ob[u]);
-		hc[u] = 0;
-		xrf[u] = 0;
-		break;
-	default:
-		break;
-	}
+	*/
+	
 }
-
-
 
 /*--------------------------------------------------------------------*/
 
 static void
 Usage(void)
 {
-	fprintf(stderr, "Usage: varnishncsa [-o] [-w file] [-r file]\n");
+	fprintf(stderr, "Usage: varnishlogfile [-w file] [-r file]\n");
 	exit(2);
 }
 
@@ -196,27 +156,22 @@ main(int argc, char **argv)
 	int i, c;
 	unsigned u, v;
 	unsigned char *p;
-	int o_flag = 0;
+	//int o_flag = 0;
+	//int l_flag = 0;
 	char *w_opt = NULL;
 	FILE *wfile = NULL;
-	int h_opt = 0;
+	// int h_opt = 0;
 	struct VSL_data *vd;
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "how:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "w:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
 		if (i > 0)
 			continue;
 		switch (c) {
-		case 'h':
-			h_opt = 1;
-			break;
-		case 'o':
-			o_flag = 1;
-			break;
 		case 'w':
 			w_opt = optarg;
 			break;
@@ -227,9 +182,6 @@ main(int argc, char **argv)
 
 	if (VSL_OpenLog(vd))
 		exit (1);
-
-	if (o_flag && w_opt != NULL)
-		Usage();
 
 	if (w_opt != NULL) {
 		wfile = fopen(w_opt, "w");
@@ -247,17 +199,24 @@ main(int argc, char **argv)
 			break;
 		if (i == 0) {
 			if (w_opt == NULL) {
-				if (o_flag && ++v == 100)
+				if (++v == 100)
 					clean_order();
 				fflush(stdout);
 			} else if (++v == 100) {
-				fflush(wfile);
-				printf("\nFlushed\n");
-			}
+			
+				/* Not sure if needed.
+				*
+				*fflush(wfile);
+				*/
+				
+				printf("\n Inside the ++v==100 and w_opt is set.\n");
+				}
 			usleep(50000);
 			continue;
 		}
 		v = 0;
+		
+		/* XXX probably wanna throw this out. Not sure when needed.
 		if (wfile != NULL) {
 			i = fwrite(p, 4 + p[1], 1, wfile);
 			if (i != 1)
@@ -269,27 +228,14 @@ main(int argc, char **argv)
 			}
 			continue;
 		}
-		if (o_flag) {
-			order(p, h_opt);
-			continue;
-		}
-		u = (p[2] << 8) | p[3];
-		printf("%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
+		*/
 		
-		if (p[1] > 0) {
-			if (p[0] != SLT_Debug) {
-				printf(" <");
-				fwrite(p + 4, p[1], 1, stdout);
-				printf(">");
-			} else {
-				fputs(vis_it(p), stdout);
-			}
-				
-		}
-		printf("\n");
+		extended_log_format(p, w_opt);
+		
+	
+	//printf("\n");
 	}
-	if (o_flag)
-		clean_order();
+	
+	clean_order();
 	return (0);
 }
