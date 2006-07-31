@@ -22,7 +22,7 @@ struct VSL_data {
 	unsigned char		*ptr;
 
 	FILE			*fi;
-	unsigned char		rbuf[4 + 255 + 1];
+	unsigned char		rbuf[5 + 255 + 1];
 
 	int			b_opt;
 	int			c_opt;
@@ -140,11 +140,9 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 		i = fread(vd->rbuf, 4, 1, vd->fi);
 		if (i != 1)
 			return (-1);
-		if (vd->rbuf[1] > 0) {
-			i = fread(vd->rbuf + 4, vd->rbuf[1], 1, vd->fi);
-			if (i != 1)
-				return (-1);
-		}
+		i = fread(vd->rbuf + 4, vd->rbuf[1] + 1, 1, vd->fi);
+		if (i != 1)
+			return (-1);
 		*pp = vd->rbuf;
 		return (1);
 	}
@@ -159,7 +157,7 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 			vd->ptr = p;
 			return (0);
 		}
-		vd->ptr = p + p[1] + 4;
+		vd->ptr = p + p[1] + 5;
 		*pp = p;
 		return (1);
 	}
