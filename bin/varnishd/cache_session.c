@@ -199,8 +199,10 @@ SES_New(struct sockaddr *addr, unsigned len)
 
 	sm->sess.sockaddr = sm->sockaddr;
 	assert(len  < sizeof(sm->sockaddr));
-	memcpy(sm->sess.sockaddr, addr, len);
-	sm->sess.sockaddrlen = len;
+	if (addr != NULL) {
+		memcpy(sm->sess.sockaddr, addr, len);
+		sm->sess.sockaddrlen = len;
+	}
 
 	http_Setup(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
 
