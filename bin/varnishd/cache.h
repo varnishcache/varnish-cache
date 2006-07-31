@@ -244,6 +244,7 @@ struct sess {
 
 	enum step		step;
 	unsigned 		handling;
+	unsigned char		wantbody;
 
 	TAILQ_ENTRY(sess)	list;
 
@@ -322,6 +323,7 @@ void HSH_Init(void);
 
 /* cache_http.c */
 void HTTP_Init(void);
+void http_ClrHeader(struct http *to);
 void http_CopyHttp(struct http *to, struct http *fm);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
 void http_GetReq(int fd, struct http *to, struct http *fm);

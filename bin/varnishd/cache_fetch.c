@@ -228,8 +228,7 @@ FetchBody(struct sess *sp)
 	 * The actual headers to reply with are built later on over in
 	 * cache_response.c
 	 */
-	sp->http->f = sp->http->v;
-	sp->http->nhd = HTTP_HDR_FIRST;
+	http_ClrHeader(sp->http);
 	sp->http->objlog = 1;	/* log as SLT_ObjHeader */
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_INS);
@@ -247,7 +246,6 @@ FetchBody(struct sess *sp)
 		cls = 0;
 	sp->http->objlog = 0;
 	http_CopyHttp(&sp->obj->http, sp->http);
-	sp->http->f = sp->http->v;
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;

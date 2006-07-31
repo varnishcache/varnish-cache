@@ -543,6 +543,7 @@ cnt_recv(struct sess *sp)
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */
+		sp->wantbody = !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET");
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
