@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  *
  * Program that will get data from the shared memory log. When it has the data
  * it will order the data based on the sessionid. When the data is ordered
@@ -70,15 +70,29 @@ static void
 extended_log_format(unsigned char *p, char *w_opt)
 {
 	unsigned u, v;
-	int i,j;
-	char *ans;
-	char soek[1];
-	strcpy(soek," ");
+	int i,j,k;
+	unsigned char *ans;
+	// Declare the int's that are used to determin if we have all data. 
+	int ll_h = 0; // %h
+	int ll_l = 0; // %l
+	int ll_u = 0; // %u
+	int ll_t = 0; // %t
+	int ll_r = 0; // %r
+	int ll_s = 0; // %s
+	int ll_b = 0; // %b
+	int ll_R = 0; // %{Referer}i
+	int ll_U = 0; // %{User-agent}i
+	// Declare the data where we store the differnt parts
+	char df_h[4 * (3 + 1)];	// Datafield for %h (IP adress)
+	char df_l;
+	char df_u[65536];
+	char df_U[65536];
+	
 
 	if (w_opt != NULL){
 		// printf(" Has w_opt\n");
 	} else {
-		// printf(" Does not have w_opt\n");
+		//printf(" Does not have w_opt:\n");
 	}
 
 	u = (p[2] << 8) | p[3];
@@ -91,21 +105,34 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_SessionOpen:
 
-		//ans = strchr(&p[4], (int)soek);
-		//j = strlen(ans);
-		//printf("%d\n",j);
+		
+		// Finding the IP adress when data is: "XXX.XXX.XXX.XXX somenumber"
+
+		ans = strchr(p + 4, ' ');
+	        j = ans - (p + 4);                // length
+	        //printf("Ip address: '%*.*s'\n", j, j, p + 4);
+	        memcpy(df_h, p + 4, j);
+	        df_h[j] = '\0';
+	        //printf("Ip address: %s\n", df_h);
+		ll_h = 1;
+
 		break;
 
 	case SLT_RxHeader:
 	
 		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
-			//printf(" User-Agent: %s\n", p[4]);
-			//sbuf_printf(ob[u], "%s\n", &p[4]);
-			sbuf_bcat(ob[u], p + 4, p[1]);
+			// Could actually check for ll_h = 1 also in line above.
+			// If it is equal 1 we know a new client is in, hence a new User-Agent.
+		
+			memcpy(df_U, p + 4, p[1]);
+			df_U[p[1]] = '\0';	
+			//printf("Ip address: %s\n", df_U);
+			/*sbuf_bcat(ob[u], p + 4, p[1]);
 			sbuf_cat(ob[u], "\n");
 			sbuf_finish(ob[u]);
 			printf("%s", sbuf_data(ob[u]));
 			sbuf_clear(ob[u]);
+			*/
 		}
 		break;
 	
@@ -115,7 +142,10 @@ extended_log_format(unsigned char *p, char *w_opt)
 		v = 1;
 		break;
 	}
-	if (v) {
+
+	
+
+	if (ll_h && ll_U) {
 		
 		/* XXX Need to write some code to make the logline 
 		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
