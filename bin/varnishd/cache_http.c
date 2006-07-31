@@ -484,7 +484,9 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 	AZ(event_add(&hp->ev, NULL));      /* XXX: timeout */
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Copy HTTP headers into malloc'ed space.
+ */
 
 void
 http_CopyHttp(struct http *to, struct http *fm)
@@ -610,6 +612,19 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 #undef HTTPH
 		http_copyheader(fd, to, fm, u);
 	}
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_SetHeader(int fd, struct http *to, unsigned n, const char *hdr)
+{
+
+	if (n == 0)
+		n = to->nhd++;
+	to->hd[n].b = (void*)(uintptr_t)hdr;
+	to->hd[n].e = strchr(hdr, '\0');
+	VSLH(SLT_TxHeader, fd, to, n);
 }
 
 /*--------------------------------------------------------------------*/

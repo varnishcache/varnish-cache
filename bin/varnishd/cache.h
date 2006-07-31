@@ -328,6 +328,7 @@ void http_CopyReq(int fd, struct http *to, struct http *fm);
 void http_CopyResp(int fd, struct http *to, struct http *fm);
 void http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how);
 void http_PrintfHeader(int fd, struct http *to, const char *fmt, ...);
+void http_SetHeader(int fd, struct http *to, unsigned n, const char *hdr);
 int http_IsHdr(struct http_hdr *hh, char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
