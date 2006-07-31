@@ -222,8 +222,15 @@ FetchBody(struct sess *sp)
 	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
+	/*
+	 * We borrow the sessions workspace and http header for building the
+	 * headers to store in the object, then copy them over there.
+	 * The actual headers to reply with are built later on over in
+	 * cache_response.c
+	 */
 	sp->http->f = sp->http->v;
 	sp->http->nhd = HTTP_HDR_FIRST;
+	sp->http->objlog = 1;	/* log as SLT_ObjHeader */
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_INS);
 	
@@ -234,10 +241,13 @@ FetchBody(struct sess *sp)
 			cls = fetch_chunked(sp, vc->fd, vc->http);
 		else 
 			cls = fetch_eof(sp, vc->fd, vc->http);
-		http_PrintfHeader(sp->fd, sp->http, "Content-Length: %u", sp->obj->len);
+		http_PrintfHeader(sp->fd, sp->http,
+		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
+	sp->http->objlog = 0;
 	http_CopyHttp(&sp->obj->http, sp->http);
+	sp->http->f = sp->http->v;
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;

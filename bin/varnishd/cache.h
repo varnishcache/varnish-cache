@@ -66,7 +66,8 @@ struct http {
 	char			*f;		/* first (F)ree byte */
 	char			*e;		/* (E)nd of buffer */
 
-	unsigned		conds;		/* If-* headers present */
+	unsigned char		conds;		/* If-* headers present */
+	unsigned char		objlog;
 
 	struct http_hdr		hd[MAX_HTTP_HDRS];
 	unsigned		nhd;
