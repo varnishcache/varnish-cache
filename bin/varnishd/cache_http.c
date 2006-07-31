@@ -580,6 +580,15 @@ http_CopyResp(int fd, struct http *to, struct http *fm)
 	http_copyh(fd, to, fm, HTTP_HDR_RESPONSE, SLT_Response);
 }
 
+void
+http_SetResp(int fd, struct http *to, const char *proto, const char *status, const char *response)
+{
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	http_seth(fd, to, HTTP_HDR_PROTO, SLT_Protocol, proto);
+	http_seth(fd, to, HTTP_HDR_STATUS, SLT_Status, status);
+	http_seth(fd, to, HTTP_HDR_RESPONSE, SLT_Response, response);
+}
+
 static void
 http_copyheader(int fd, struct http *to, struct http *fm, unsigned n)
 {
@@ -620,14 +629,14 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetHeader(int fd, struct http *to, unsigned n, const char *hdr)
+http_SetHeader(int fd, struct http *to, const char *hdr)
 {
 
-	if (n == 0)
-		n = to->nhd++;
-	to->hd[n].b = (void*)(uintptr_t)hdr;
-	to->hd[n].e = strchr(hdr, '\0');
-	VSLHT(fd, to, n);
+	to->hd[to->nhd].b = (void*)(uintptr_t)hdr;
+	to->hd[to->nhd].e = strchr(hdr, '\0');
+	assert(to->hd[to->nhd].e != NULL);
+	VSLHT(fd, to, to->nhd);
+	to->nhd++;
 }
 
 /*--------------------------------------------------------------------*/
