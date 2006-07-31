@@ -259,7 +259,7 @@ main(int argc, char **argv)
 		}
 		v = 0;
 		if (wfile != NULL) {
-			i = fwrite(p, 4 + p[1], 1, wfile);
+			i = fwrite(p, 5 + p[1], 1, wfile);
 			if (i != 1)
 				perror(w_opt);
 			u++;

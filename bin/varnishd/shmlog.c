@@ -66,17 +66,18 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
-	if (loghead->ptr + 4 + l + 1 > loghead->size)
+	if (loghead->ptr + 5 + l + 1 > loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
 	p[1] = l & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
 	memcpy(p + 4, b, l);
-	p[4 + l] = SLT_ENDMARKER;
+	p[4 + l] = '\0';
+	p[5 + l] = SLT_ENDMARKER;
 	p[0] = tag;
 
-	loghead->ptr += 4 + l;
+	loghead->ptr += 5 + l;
 	assert(loghead->ptr < loghead->size);
 	AZ(pthread_mutex_unlock(&vsl_mutex));
 }
@@ -95,7 +96,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if we cannot fit a full size record */
-	if (loghead->ptr + 4 + 255 + 1 > loghead->size) 
+	if (loghead->ptr + 5 + 255 + 1 > loghead->size) 
 		vsl_wrap();
 
 	p = logstart + loghead->ptr;
@@ -108,10 +109,11 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	p[1] = n & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
-	p[4 + n] = SLT_ENDMARKER;
+	p[4 + n] = '\0';;
+	p[5 + n] = SLT_ENDMARKER;
 	p[0] = tag;
 
-	loghead->ptr += 4 + n;
+	loghead->ptr += 5 + n;
 	assert(loghead->ptr < loghead->size);
 	
 	AZ(pthread_mutex_unlock(&vsl_mutex));
