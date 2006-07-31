@@ -67,7 +67,11 @@ struct http {
 	char			*e;		/* (E)nd of buffer */
 
 	unsigned char		conds;		/* If-* headers present */
-	unsigned char		objlog;
+	enum httpwhence {
+		HTTP_Rx,
+		HTTP_Tx,
+		HTTP_Obj
+	}			logtag;
 
 	struct http_hdr		hd[MAX_HTTP_HDRS];
 	unsigned		nhd;

@@ -126,7 +126,7 @@ order(unsigned char *p, int h_opt)
 		else
 			v = 1;
 		break;
-	case SLT_Request:
+	case SLT_RxRequest:
 		if (h_opt && p[1] == 3 && !memcmp(p + 4, "GET", 3))
 			hc[u]++;
 		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 4))
@@ -137,7 +137,7 @@ order(unsigned char *p, int h_opt)
 		xrf[u] = atoi(p + 4);
 		v = 1;
 		break;
-	case SLT_Status:
+	case SLT_RxStatus:
 		if (h_opt && p[1] == 3 && !memcmp(p + 4, "200", 3))
 			hc[u]++;
 		v = 1;
