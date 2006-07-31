@@ -170,7 +170,6 @@ static int
 hcl_deref(struct objhead *oh)
 {
 	struct hcl_entry *he;
-	int ret;
 	unsigned mtx;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
