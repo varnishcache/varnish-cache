@@ -291,7 +291,7 @@ DOT	]
 DOT	lookup -> lookup3 [style=bold]
 DOT }
 DOT lookup -> HIT [label="hit", style=bold]
-DOT lookup2 -> MISS [label="miss", style=bold]
+DOT lookup3 -> MISS [label="miss", style=bold]
  */
 
 static int
