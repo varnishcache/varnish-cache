@@ -409,7 +409,11 @@ http_read_f(int fd, short event, void *arg)
 
 	(void)event;
 
-	l = hp->e - hp->v;
+	l = (hp->e - hp->s) / 2;
+	if (l < hp->v - hp->s)
+		l = 0;
+	else
+		l -= hp->v - hp->s;
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
 		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
