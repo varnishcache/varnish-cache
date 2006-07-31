@@ -179,7 +179,7 @@ hcl_deref(struct objhead *oh)
 	AZ(pthread_mutex_lock(&hcl_mutex[mtx]));
 	if (--he->refcnt >= 0) {
 		AZ(pthread_mutex_unlock(&hcl_mutex[mtx]));
-		return (1)
+		return (1);
 	}
 	TAILQ_REMOVE(&hcl_head[he->hash], he, list);
 	AZ(pthread_mutex_unlock(&hcl_mutex[mtx]));
