@@ -22,6 +22,9 @@
 #define VSLH(ax, bx, cx, dx) \
 	VSLR((ax), (bx), (cx)->hd[(dx)].b, (cx)->hd[(dx)].e);
 
+#define VSLHT(bx, cx, dx) \
+	VSLH((cx)->objlog ? SLT_ObjHeader : SLT_TxHeader, bx, cx, dx)
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -588,7 +591,7 @@ http_copyheader(int fd, struct http *to, struct http *fm, unsigned n)
 	if (to->nhd < MAX_HTTP_HDRS) {
 		to->hd[to->nhd].b = fm->hd[n].b;
 		to->hd[to->nhd].e = fm->hd[n].e;
-		VSLH(SLT_TxHeader, fd, to, to->nhd);
+		VSLHT(fd, to, to->nhd);
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
@@ -624,7 +627,7 @@ http_SetHeader(int fd, struct http *to, unsigned n, const char *hdr)
 		n = to->nhd++;
 	to->hd[n].b = (void*)(uintptr_t)hdr;
 	to->hd[n].e = strchr(hdr, '\0');
-	VSLH(SLT_TxHeader, fd, to, n);
+	VSLHT(fd, to, n);
 }
 
 /*--------------------------------------------------------------------*/
@@ -646,7 +649,7 @@ http_PrintfHeader(int fd, struct http *to, const char *fmt, ...)
 		to->hd[to->nhd].b = to->f;
 		to->hd[to->nhd].e = to->f + n;
 		to->f += n + 1;
-		VSLH(SLT_TxHeader, fd, to, to->nhd);
+		VSLHT(fd, to, to->nhd);
 		to->nhd++;
 	}
 	va_end(ap);
