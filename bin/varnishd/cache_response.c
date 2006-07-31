@@ -82,6 +82,7 @@ res_do_304(struct sess *sp, char *p)
 	VSL(SLT_Length, sp->fd, "%u", 0);
 
 	http_ClrHeader(sp->http);
+	sp->http->logtag = HTTP_Tx;
 	http_SetResp(sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
 	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
@@ -134,6 +135,7 @@ RES_WriteObj(struct sess *sp)
 	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	http_ClrHeader(sp->http);
+	sp->http->logtag = HTTP_Tx;
 	http_CopyResp(sp->fd, sp->http, &sp->obj->http);
 	http_FilterHeader(sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
 	if (sp->xid != sp->obj->xid)

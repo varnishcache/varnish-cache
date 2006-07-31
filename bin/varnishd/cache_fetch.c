@@ -229,7 +229,7 @@ FetchBody(struct sess *sp)
 	 * cache_response.c
 	 */
 	http_ClrHeader(sp->http);
-	sp->http->objlog = 1;	/* log as SLT_ObjHeader */
+	sp->http->logtag = HTTP_Obj;
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_INS);
 	
@@ -244,7 +244,6 @@ FetchBody(struct sess *sp)
 		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
-	sp->http->objlog = 0;
 	http_CopyHttp(&sp->obj->http, sp->http);
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
@@ -282,6 +281,8 @@ FetchHeaders(struct sess *sp)
 	assert(vc != NULL);	/* XXX: handle this */
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
+	http_ClrHeader(vc->http);
+	vc->http->logtag = HTTP_Tx;
 	http_GetReq(vc->fd, vc->http, sp->http);
 	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
 	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
