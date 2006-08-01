@@ -176,7 +176,8 @@ hcl_deref(struct objhead *oh)
 	CAST_OBJ_NOTNULL(he, oh->hashpriv, HCL_ENTRY_MAGIC);
 	mtx = he->mtx;
 	AZ(pthread_mutex_lock(&hcl_mutex[mtx]));
-	if (--he->refcnt >= 0) {
+	assert(he->refcnt > 0);
+	if (--he->refcnt > 0) {
 		AZ(pthread_mutex_unlock(&hcl_mutex[mtx]));
 		return (1);
 	}
