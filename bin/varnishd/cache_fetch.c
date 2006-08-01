@@ -17,7 +17,6 @@
 #include "shmlog.h"
 #include "libvarnish.h"
 #include "cache.h"
-#include "heritage.h"
 
 /*
  * Chunked encoding is a hack.  We prefer to have a single chunk or a 

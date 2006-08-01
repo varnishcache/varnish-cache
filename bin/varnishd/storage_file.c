@@ -35,6 +35,8 @@
 /*--------------------------------------------------------------------*/
 
 struct smf {
+	unsigned		magic;
+#define SMF_MAGIC		0x0927a8a0
 	struct storage		s;
 	struct smf_sc		*sc;
 
@@ -284,9 +286,11 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 {
 	struct smf *sp, *sp2;
 
-	TAILQ_FOREACH(sp, &sc->free, status)
+	TAILQ_FOREACH(sp, &sc->free, status) {
+		CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 		if (sp->size >= bytes)
 			break;
+	}
 	if (sp == NULL)
 		return (sp);
 
@@ -325,6 +329,7 @@ free_smf(struct smf *sp)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
+	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	TAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
 
@@ -376,6 +381,7 @@ trim_smf(struct smf *sp, size_t bytes)
 	struct smf_sc *sc = sp->sc;
 
 	assert(bytes > 0);
+	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
 	assert(sp2 != NULL);
 	VSL_stats->n_smf++;
@@ -401,6 +407,8 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 
 	sp = calloc(sizeof *sp, 1);
 	assert(sp != NULL);
+	sp->magic = SMF_MAGIC;
+	sp->s.magic = STORAGE_MAGIC;
 	VSL_stats->n_smf++;
 
 	sp->sc = sc;
@@ -498,6 +506,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	size &= ~(sc->pagesize - 1);
 	AZ(pthread_mutex_lock(&sc->mtx));
 	smf = alloc_smf(sc, size);
+	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
 	AZ(pthread_mutex_unlock(&sc->mtx));
 	assert(smf != NULL);
 	assert(smf->size == size);
@@ -506,6 +515,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	smf->s.ptr = smf->ptr;
 	smf->s.len = 0;
 	smf->s.stevedore = st;
+	CHECK_OBJ_NOTNULL(&smf->s, STORAGE_MAGIC);
 	return (&smf->s);
 }
 
@@ -517,13 +527,14 @@ smf_trim(struct storage *s, size_t size)
 	struct smf *smf;
 	struct smf_sc *sc;
 
+	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	if (size == 0) {
 		/* XXX: this should not happen */
 		return;
 	}
 	assert(size <= s->space);
 	assert(size > 0);	/* XXX: seen */
-	smf = (struct smf *)(s->priv);
+	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	assert(size <= smf->size);
 	sc = smf->sc;
 	size += (sc->pagesize - 1);
@@ -545,7 +556,8 @@ smf_free(struct storage *s)
 	struct smf *smf;
 	struct smf_sc *sc;
 
-	smf = (struct smf *)(s->priv);
+	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
+	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	sc = smf->sc;
 	AZ(pthread_mutex_lock(&sc->mtx));
 	free_smf(smf);
@@ -562,8 +574,9 @@ smf_send(struct storage *st, struct sess *sp)
 	off_t sent;
 	struct sf_hdtr sfh;
 
-	smf = st->priv;
-
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	CAST_OBJ_NOTNULL(smf, st->priv, SMF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(&sfh, 0, sizeof sfh);
 	sfh.headers = sp->wrk->iov;
 	sfh.hdr_cnt = sp->wrk->niov;
@@ -571,6 +584,12 @@ smf_send(struct storage *st, struct sess *sp)
 	    sp->fd,
 	    smf->offset,
 	    st->len, &sfh, &sent, 0);
+
+	/* Check again after potentially long sleep */
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
 	if (sent == st->len + sp->wrk->liov)
 		return;
 	vca_close_session(sp, "remote closed");
