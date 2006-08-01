@@ -224,17 +224,7 @@ FetchBody(struct sess *sp)
 	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
-	hp = &sp->obj->http;
-	hp->s = malloc(heritage.mem_workspace);
-	assert(hp->s != NULL);
-	hp->e = hp->s + heritage.mem_workspace;
-	hp->v = hp->s;
-	/*
-	 * We borrow the sessions workspace and http header for building the
-	 * headers to store in the object, then copy them over there.
-	 * The actual headers to reply with are built later on over in
-	 * cache_response.c
-	 */
+	hp = vc->http2;
 	http_ClrHeader(hp);
 	hp->logtag = HTTP_Obj;
 	http_CopyResp(sp->fd, hp, vc->http);
@@ -251,6 +241,8 @@ FetchBody(struct sess *sp)
 		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
+
+	http_CopyHttp(&sp->obj->http, hp);
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;

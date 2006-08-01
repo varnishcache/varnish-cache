@@ -133,6 +133,8 @@ struct vbe_conn {
 	struct event		ev;
 	int			inuse;
 	struct http		*http;
+	struct http		*http2;
+	struct http		http_mem[2];
 };
 
 /* Storage -----------------------------------------------------------*/
