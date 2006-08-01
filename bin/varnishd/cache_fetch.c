@@ -17,6 +17,7 @@
 #include "shmlog.h"
 #include "libvarnish.h"
 #include "cache.h"
+#include "heritage.h"
 
 /*
  * Chunked encoding is a hack.  We prefer to have a single chunk or a 
@@ -211,6 +212,7 @@ FetchBody(struct sess *sp)
 	struct vbe_conn *vc;
 	char *b;
 	int body = 1;		/* XXX */
+	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -222,16 +224,21 @@ FetchBody(struct sess *sp)
 	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
+	hp = &sp->obj->http;
+	hp->s = malloc(heritage.mem_workspace);
+	assert(hp->s != NULL);
+	hp->e = hp->s + heritage.mem_workspace;
+	hp->v = hp->s;
 	/*
 	 * We borrow the sessions workspace and http header for building the
 	 * headers to store in the object, then copy them over there.
 	 * The actual headers to reply with are built later on over in
 	 * cache_response.c
 	 */
-	http_ClrHeader(sp->http);
-	sp->http->logtag = HTTP_Obj;
-	http_CopyResp(sp->fd, sp->http, vc->http);
-	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_INS);
+	http_ClrHeader(hp);
+	hp->logtag = HTTP_Obj;
+	http_CopyResp(sp->fd, hp, vc->http);
+	http_FilterHeader(sp->fd, hp, vc->http, HTTPH_A_INS);
 	
 	if (body) {
 		if (http_GetHdr(vc->http, H_Content_Length, &b))
@@ -240,11 +247,10 @@ FetchBody(struct sess *sp)
 			cls = fetch_chunked(sp, vc->fd, vc->http);
 		else 
 			cls = fetch_eof(sp, vc->fd, vc->http);
-		http_PrintfHeader(sp->fd, sp->http,
+		http_PrintfHeader(sp->fd, hp,
 		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
-	http_CopyHttp(&sp->obj->http, sp->http);
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
