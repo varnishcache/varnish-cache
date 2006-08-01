@@ -500,7 +500,7 @@ http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *f
 {
 	unsigned l;
 
-	assert(hp != NULL);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(hp->v <= hp->e);
 	assert(hp->t <= hp->v);
 	if (0)
@@ -537,6 +537,8 @@ http_CopyHttp(struct http *to, struct http *fm)
 {
 	unsigned u, l;
 
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	l = 0;
 	for (u = 0; u < fm->nhd; u++) {
 		if (fm->hd[u].b == NULL)
@@ -656,6 +658,8 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 {
 	unsigned u;
 
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	to->nhd = HTTP_HDR_FIRST;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
 #define HTTPH(a, b, c, d, e, f, g) \
