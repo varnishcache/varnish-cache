@@ -41,15 +41,15 @@ static void
 vca_tick(int a, short b, void *c)
 {
 	struct sess *sp, *sp2;
-	time_t t;
+	struct timespec t;
 
 	(void)a;
 	(void)b;
 	(void)c;
 	AZ(evtimer_add(&tick_e, &tick_rate));
-	(void)time(&t);
+	clock_gettime(CLOCK_MONOTONIC, &t);
 	TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
-		if (sp->t_resp + 30 < t) {
+		if (sp->t_idle.tv_sec + 30 < t.tv_sec) {
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_close_session(sp, "timeout");
 			vca_return_session(sp);
@@ -88,7 +88,7 @@ pipe_f(int fd, short event, void *arg)
 	(void)arg;
 	i = read(fd, &sp, sizeof sp);
 	assert(i == sizeof sp);
-	sp->t_resp = time(NULL);
+	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }
@@ -132,7 +132,7 @@ accept_f(int fd, short event, void *arg)
 
 	TCP_name(addr, l, sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
-	(void)time(&sp->t_resp);
+	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
 	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
 }

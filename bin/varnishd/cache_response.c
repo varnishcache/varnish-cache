@@ -33,7 +33,7 @@ RES_Error(struct sess *sp, int error, const char *msg)
 
 	sbuf_clear(sb);
 	sbuf_printf(sb, "HTTP/1.1 %03d %s\r\n", error, msg);
-	TIM_format(sp->t_req, buf);
+	TIM_format(sp->t_req.tv_sec, buf);
 	sbuf_printf(sb, "Date: %s\r\n", buf);
 	sbuf_cat(sb,
 		"Server: Varnish\r\n"
@@ -106,7 +106,7 @@ res_do_conds(struct sess *sp)
 	if (sp->obj->last_modified > 0 &&
 	    http_GetHdr(sp->http, H_If_Modified_Since, &p)) {
 		ims = TIM_parse(p);
-		if (ims > sp->t_req)	/* [RFC2616 14.25] */
+		if (ims > sp->t_req.tv_sec)	/* [RFC2616 14.25] */
 			return (0);
 		if (ims > sp->obj->last_modified) {
 			VSL(SLT_Debug, sp->fd,
@@ -128,7 +128,15 @@ RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
+	double dt;
+	struct timespec t_resp;
 	
+	clock_gettime(CLOCK_REALTIME, &t_resp);
+	dt = (t_resp.tv_sec - sp->t_req.tv_sec);
+	dt += (t_resp.tv_nsec - sp->t_req.tv_nsec) * 1e-9;
+	VSL(SLT_ReqServTime, sp->fd, "%ld.%09ld %.9f",
+	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec, dt);
+
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
 		
@@ -144,7 +152,7 @@ RES_WriteObj(struct sess *sp)
 	else
 		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->fd, sp->http, "Age: %u",
-	    sp->obj->age + sp->t_req - sp->obj->entered);
+	    sp->obj->age + sp->t_req.tv_sec - sp->obj->entered);
 	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->fd, sp->http, "Connection: close");

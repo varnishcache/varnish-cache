@@ -189,7 +189,7 @@ WRK_QueueSession(struct sess *sp)
 	struct worker *w;
 	pthread_t tp;
 
-	sp->t_req = time(NULL);
+	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 
 	sp->workreq.sess = sp;
 
