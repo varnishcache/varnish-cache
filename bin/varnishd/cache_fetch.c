@@ -291,7 +291,6 @@ FetchHeaders(struct sess *sp)
 		    sp->backend->hostname);
 	}
 
-	sp->t_req = time(NULL);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 	i = WRK_Flush(w);
@@ -303,8 +302,10 @@ FetchHeaders(struct sess *sp)
 	 */
 	http_RecvHead(vc->http, vc->fd, w->eb, NULL, NULL);
 	(void)event_base_loop(w->eb, 0);
-	sp->t_resp = time(NULL);
 	assert(http_DissectResponse(vc->http, vc->fd) == 0);
 	sp->vbc = vc;
+
+	sp->obj->entered = time(NULL);
+
 	return (0);
 }

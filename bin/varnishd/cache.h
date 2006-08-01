@@ -243,8 +243,8 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 
-	time_t			t_req;
-	time_t			t_resp;
+	struct timespec		t_req;
+	struct timespec		t_idle;
 
 	enum step		step;
 	unsigned 		handling;

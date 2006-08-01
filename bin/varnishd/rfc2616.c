@@ -71,15 +71,13 @@
 #endif
 
 static time_t
-RFC2616_Ttl(struct sess *sp, struct http *hp, time_t t_req, time_t t_resp, struct object *obj)
+RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;
 	time_t h_date, h_expires, ttd;
 	char *p;
 	
-	(void)t_resp;	/* XXX */
-
 	retirement_age = INT_MAX;
 
 	u1 = u2 = 0;
@@ -102,10 +100,11 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, time_t t_req, time_t t_resp, struc
 	if (http_GetHdr(hp, H_Expires, &p))
 		h_expires = TIM_parse(p);
 
-	if (h_date < t_req && h_expires > t_req) {
+	if (h_date < obj->entered && h_expires > obj->entered) {
 		ttd = h_expires;
-		if (retirement_age != INT_MAX && t_req + retirement_age < ttd)
-			ttd = t_req + retirement_age;
+		if (retirement_age != INT_MAX &&
+		    obj->entered + retirement_age < ttd)
+			ttd = obj->entered + retirement_age;
 	} else {
 		if (h_date != 0 && h_expires != 0) {
 			if (h_date < h_expires &&
@@ -115,13 +114,13 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, time_t t_req, time_t t_resp, struc
 		if (retirement_age == INT_MAX)
 			retirement_age = heritage.default_ttl;
 
-		ttd = t_req + retirement_age;
+		ttd = obj->entered + retirement_age;
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSL(SLT_TTL, sp->fd, "%u RFC %d %d %d %d %d %d", sp->xid,
-	    (int)(ttd - t_req), (int)t_req, (int)h_date, (int)h_expires,
-	    (int)u1, (int)u2);
+	    (int)(ttd - obj->entered), (int)obj->entered, (int)h_date,
+	    (int)h_expires, (int)u1, (int)u2);
 
 	return (ttd);
 }
@@ -155,8 +154,7 @@ RFC2616_cache_policy(struct sess *sp, struct http *hp)
 		break;
 	}
 
-	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->t_req, sp->t_resp, sp->obj);
-	sp->obj->entered = sp->t_req;
+	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->obj);
 	if (sp->obj->ttl == 0) {
 		sp->obj->cacheable = 0;
 	}
