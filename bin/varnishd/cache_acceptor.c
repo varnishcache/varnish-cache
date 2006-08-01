@@ -49,6 +49,7 @@ vca_tick(int a, short b, void *c)
 	AZ(evtimer_add(&tick_e, &tick_rate));
 	clock_gettime(CLOCK_MONOTONIC, &t);
 	TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		if (sp->t_idle.tv_sec + 30 < t.tv_sec) {
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_close_session(sp, "timeout");
@@ -60,8 +61,9 @@ vca_tick(int a, short b, void *c)
 static void
 vca_callback(void *arg, int bad)
 {
-	struct sess *sp = arg;
+	struct sess *sp;
 
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 	TAILQ_REMOVE(&sesshead, sp, list);
 	if (bad) {
 		if (bad == 1)
