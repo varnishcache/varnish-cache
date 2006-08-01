@@ -446,12 +446,13 @@ http_header_complete(struct http *hp)
 static void
 http_read_f(int fd, short event, void *arg)
 {
-	struct http *hp = arg;
+	struct http *hp;
 	unsigned l;
 	int i, ret = 0;
 
 	(void)event;
 
+	CAST_OBJ_NOTNULL(hp, arg, HTTP_MAGIC);
 	l = (hp->e - hp->s) / 2;
 	if (l < hp->v - hp->s)
 		l = 0;
