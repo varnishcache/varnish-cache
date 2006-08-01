@@ -13,7 +13,6 @@
 
 #include "shmlog.h"
 #include "vrt.h"
-#include "vrt_obj.h"
 #include "vcl.h"
 #include "cache.h"
 #include <sys/types.h>

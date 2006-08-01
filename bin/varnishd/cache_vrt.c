@@ -136,7 +136,8 @@ VRT_l_obj_ttl(struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	VSL(SLT_TTL, sp->fd, "%u VCL %.0f %u", sp->obj->xid, a, sp->t_req);
+	VSL(SLT_TTL, sp->fd, "%u VCL %.0f %u",
+	    sp->obj->xid, a, sp->t_req.tv_sec);
 	if (a < 0)
 		a = 0;
 	sp->obj->ttl = sp->t_req.tv_sec + (int)a;
