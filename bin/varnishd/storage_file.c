@@ -161,7 +161,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		exit (2);
 	}
 
-	if (expl < 0 && sizeof(void *) == 4 && l > (1ULL << 31)) {
+	if (expl < 3 && sizeof(void *) == 4 && l > (1ULL << 31)) {
 		fprintf(stderr,
 		    "NB: Limiting size to 2GB on 32 bit architecture to"
 		    " prevent running out of\naddress space."
