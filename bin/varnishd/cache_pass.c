@@ -205,12 +205,8 @@ PassSession(struct sess *sp)
 
 	/* XXX: copy any contents */
 
-	/*
-	 * XXX: It might be cheaper to avoid the event_engine and simply
-	 * XXX: read(2) the header
-	 */
-	http_RecvHead(vc->http, vc->fd, w->eb, NULL, NULL);
-	(void)event_base_loop(w->eb, 0);
+	i = http_RecvHead(vc->http, vc->fd);
+	assert(i == 0);
 	http_DissectResponse(vc->http, vc->fd);
 
 	sp->vbc = vc;

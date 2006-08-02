@@ -296,12 +296,9 @@ FetchHeaders(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	/*
-	 * XXX: It might be cheaper to avoid the event_engine and simply
-	 * XXX: read(2) the header
-	 */
-	http_RecvHead(vc->http, vc->fd, w->eb, NULL, NULL);
-	(void)event_base_loop(w->eb, 0);
+
+	i = http_RecvHead(vc->http, vc->fd);
+	assert(i == 0);
 	assert(http_DissectResponse(vc->http, vc->fd) == 0);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);

@@ -92,7 +92,7 @@ pipe_f(int fd, short event, void *arg)
 	assert(i == sizeof sp);
 	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
-	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
+	http_RecvHeadEv(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void
@@ -136,7 +136,7 @@ accept_f(int fd, short event, void *arg)
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
 	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
 	TAILQ_INSERT_TAIL(&sesshead, sp, list);
-	http_RecvHead(sp->http, sp->fd, evb, vca_callback, sp);
+	http_RecvHeadEv(sp->http, sp->fd, evb, vca_callback, sp);
 }
 
 static void *
