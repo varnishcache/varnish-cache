@@ -226,29 +226,31 @@ start_child(void)
 	if (i < 0) 
 		errx(1, "Could not fork child");
 	if (i == 0) {
-		/* XXX: close fds */
-		/* XXX: (re)set signals */
-
 		/* Redirect stdin/out/err */
-		close(0);
+		AZ(close(0));
 		i = open("/dev/null", O_RDONLY);
 		assert(i == 0);
-		close(child_fds[0]);
-		dup2(child_fds[1], 1);
-		dup2(child_fds[1], 2);
-		close(child_fds[1]);
+		assert(dup2(child_fds[1], 1) == 1);
+		assert(dup2(child_fds[1], 2) == 2);
+		AZ(close(child_fds[0]));
+		AZ(close(child_fds[1]));
+
+		AZ(close(heritage.fds[0]));
+		AZ(close(heritage.fds[3]));
 
 		child_main();
 
 		exit (1);
 	}
+
 	child_pid = i;
 	printf("start child pid %d\n", i);
 
-	/*
- 	 * We do not close the unused ends of the pipes here to avoid
-	 * doing SIGPIPE handling.
-	 */
+	AZ(close(child_fds[1]));
+
+	AZ(close(heritage.fds[1]));
+	AZ(close(heritage.fds[2]));
+
 	child_std = bufferevent_new(child_fds[0],
 	    std_rdcb, std_wrcb, std_excb, NULL);
 	assert(child_std != NULL);
