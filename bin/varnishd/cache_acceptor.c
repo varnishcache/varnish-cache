@@ -180,7 +180,7 @@ vca_main(void *arg)
 		if (heritage.sock_local[u] >= 0)
 			vca_poll(heritage.sock_local[u]);
 		if (heritage.sock_remote[u] >= 0)
-			vca_poll(heritage.sock_local[u]);
+			vca_poll(heritage.sock_remote[u]);
 	}
 
 	while (1) {
@@ -203,7 +203,7 @@ vca_main(void *arg)
 			}
 			if (heritage.sock_remote[u] >= 0 &&
 			    pollfd[heritage.sock_remote[u]].revents) {
-				accept_f(heritage.sock_local[u]);
+				accept_f(heritage.sock_remote[u]);
 				v--;
 			}
 		}
