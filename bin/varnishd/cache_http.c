@@ -436,14 +436,15 @@ http_header_complete(struct http *hp)
 	if (++p > hp->v)
 		return (0);
 	hp->t = p;
+	assert(hp->t > hp->s);
 	assert(hp->t <= hp->v);
 	return (1);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void
-http_preprecv(struct http *hp)
+void
+http_RecvPrep(struct http *hp)
 {
 	unsigned l;
 
@@ -462,10 +463,19 @@ http_preprecv(struct http *hp)
 	}
 }
 
+int
+http_RecvPrepAgain(struct http *hp)
+{
+	http_RecvPrep(hp);
+	if (hp->v == hp->s)
+		return (0);
+	return (http_header_complete(hp));
+}
+
 /*--------------------------------------------------------------------*/
 
-static int
-http_read_hdr(int fd, struct http *hp)
+int
+http_RecvSome(int fd, struct http *hp)
 {
 	unsigned l;
 	int i;
@@ -507,55 +517,15 @@ http_read_hdr(int fd, struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-static void
-http_read_f(int fd, short event, void *arg)
-{
-	struct http *hp;
-	int i;
-
-	(void)event;
-
-	CAST_OBJ_NOTNULL(hp, arg, HTTP_MAGIC);
-	i = http_read_hdr(fd, hp);
-	if (i < 0)
-		return;
-
-	event_del(&hp->ev);
-	if (hp->callback != NULL)
-		hp->callback(hp->arg, i);
-}
-
-
-void
-http_RecvHeadEv(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg)
-{
-
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(func != NULL);
-	http_preprecv(hp);
-	if (hp->v != hp->s && http_header_complete(hp)) {
-		func(arg, 0);
-		return;
-	}
-	hp->callback = func;
-	hp->arg = arg;
-	event_set(&hp->ev, fd, EV_READ | EV_PERSIST, http_read_f, hp);
-	AZ(event_base_set(eb, &hp->ev));
-	AZ(event_add(&hp->ev, NULL));      /* XXX: timeout */
-	return;
-}
-
-/*--------------------------------------------------------------------*/
-
 int
 http_RecvHead(struct http *hp, int fd)
 {
 	int i;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	http_preprecv(hp);
+	http_RecvPrep(hp);
 	do 
-		i = http_read_hdr(fd, hp);
+		i = http_RecvSome(fd, hp);
 	while (i == -1);
 	return (i);
 }
