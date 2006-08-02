@@ -225,7 +225,6 @@ struct sess {
 	int			id;
 	unsigned		xid;
 
-	struct event		ev;
 	struct worker		*wrk;
 
 	unsigned		sockaddrlen;
