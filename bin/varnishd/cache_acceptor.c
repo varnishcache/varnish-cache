@@ -261,13 +261,18 @@ static void
 vca_kq_sess(struct sess *sp, int arm)
 {
 	struct kevent ke[2];
+	int i;
 
 	assert(arm == EV_ADD || arm == EV_DELETE);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(ke, 0, sizeof ke);
 	EV_SET(&ke[0], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	EV_SET(&ke[1], sp->fd, EVFILT_TIMER, arm , 0, 5000, sp);
-	AZ(kevent(kq, ke, 2, NULL, 0, NULL));
+	i = kevent(kq, ke, 2, NULL, 0, NULL);
+	if (arm == EV_ADD)
+		assert(i == 0);
+	else
+		assert(i == 0 || errno == ENOENT);
 }
 
 static void
