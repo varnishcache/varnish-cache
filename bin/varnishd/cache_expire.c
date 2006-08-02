@@ -123,6 +123,12 @@ exp_prefetch(void *arg)
 			continue;
 		}
 		binheap_delete(exp_heap, o->heap_idx);
+{
+	struct object *o2;
+	o2 = binheap_root(exp_heap);
+	if (o2 != NULL)
+		assert(o2->ttl >= o->ttl);
+}
 		AZ(pthread_mutex_unlock(&exp_mtx));
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
