@@ -95,7 +95,6 @@ struct acct {
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
-	struct event_base	*eb;
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 

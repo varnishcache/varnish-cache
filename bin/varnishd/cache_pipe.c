@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 
@@ -20,26 +21,22 @@ struct edir {
 };
 
 static void
-rdf(int fd, short event, void *arg)
+rdf(struct pollfd *fds, int idx)
 {
 	int i, j;
-	struct edir *ep;
 	char buf[BUFSIZ];
 
-	(void)event;
-
-	ep = arg;
-	i = read(fd, buf, sizeof buf);
+	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0) {
-		shutdown(fd, SHUT_RD);
-		shutdown(ep->fd, SHUT_WR);
-		AZ(event_del(&ep->ev));
+		shutdown(fds[idx].fd, SHUT_RD);
+		shutdown(fds[1-idx].fd, SHUT_WR);
+		fds[idx].events = 0;
 	} else {
-		j = write(ep->fd, buf, i);
+		j = write(fds[1-idx].fd, buf, i);
 		if (i != j) {
-			shutdown(fd, SHUT_WR);
-			shutdown(ep->fd, SHUT_RD);
-			AZ(event_del(&ep->ev));
+			shutdown(fds[idx].fd, SHUT_WR);
+			shutdown(fds[1-idx].fd, SHUT_RD);
+			fds[1-idx].events = 0;
 		}
 	}
 }
@@ -48,9 +45,10 @@ void
 PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
-	struct edir e1, e2;
 	char *b, *e;
 	struct worker *w;
+	struct pollfd fds[2];
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -75,15 +73,22 @@ PipeSession(struct sess *sp)
 		return;
 	}
 
-	e1.fd = vc->fd;
-	e2.fd = sp->fd;
-	event_set(&e1.ev, sp->fd, EV_READ | EV_PERSIST, rdf, &e1);
-	AZ(event_base_set(w->eb, &e1.ev));
-	event_set(&e2.ev, vc->fd, EV_READ | EV_PERSIST, rdf, &e2);
-	AZ(event_base_set(w->eb, &e2.ev));
-	AZ(event_add(&e1.ev, NULL));
-	AZ(event_add(&e2.ev, NULL));
-	(void)event_base_loop(w->eb, 0);
+	memset(fds, 0, sizeof fds);
+	fds[0].fd = vc->fd;
+	fds[0].events = POLLIN | POLLERR;
+	fds[1].fd = sp->fd;
+	fds[1].events = POLLIN | POLLERR;
+
+	while (fds[0].events || fds[1].events) {
+		fds[0].revents = 0;
+		fds[1].revents = 0;
+		i = poll(fds, 2, INFTIM);
+		assert(i > 0);
+		if (fds[0].revents)
+			rdf(fds, 0);
+		if (fds[1].revents)
+			rdf(fds, 1);
+	}
 	vca_close_session(sp, "pipe");
 	VBE_ClosedFd(vc);
 }
