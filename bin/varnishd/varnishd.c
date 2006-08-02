@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -18,8 +19,8 @@
 
 #include <sys/wait.h>
 
-#include <event.h>
-#include <sbuf.h>
+#include "event.h"
+#include "sbuf.h"
 
 #include <cli.h>
 #include <cli_priv.h>
@@ -328,29 +329,6 @@ static struct cli_proto cli_proto[] = {
 	{ NULL }
 };
 
-static void
-testme(void)
-{
-	struct event e_sigchld;
-	struct cli *cli;
-	int i;
-
-	mgt_eb = event_init();
-	assert(mgt_eb != NULL);
-
-	cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
-
-	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
-	AZ(event_base_set(mgt_eb, &e_sigchld));
-	AZ(signal_add(&e_sigchld, NULL));
-
-	mgt_child_start();
-
-	i = event_base_loop(mgt_eb, 0);
-	if (i != 0)
-		printf("event_dispatch() = %d\n", i);
-
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -515,18 +493,107 @@ tackle_warg(const char *argv)
 		heritage.wthread_timeout = uc;
 }
 
+/*--------------------------------------------------------------------
+ * When -d is specified we fork a third process which will relay
+ * keystrokes between the terminal and the CLI.  This allows us to
+ * detach from the process and have it daemonize properly (ie: it already
+ * did that long time ago).
+ * Doing the simple thing and calling daemon(3) when the user asks for
+ * it does not work, daemon(3) forks and all the threads are lost.
+ */
+
+static pid_t d_child;
+
+#include <err.h>
+
+static void
+DebugSigPass(int sig)
+{
+	int i;
+
+	i = kill(d_child, sig);
+	printf("sig %d i %d pid %d\n", sig, i, d_child);
+}
+
+static void
+DebugStunt(void)
+{
+	int pipes[2][2];
+	struct pollfd pfd[2];
+	char buf[BUFSIZ];
+	int i, j, k;
+	char *p;
+
+	AZ(pipe(pipes[0]));
+	AZ(pipe(pipes[1]));
+	d_child = fork();
+	if (!d_child) {
+		assert(dup2(pipes[0][0], 0) >= 0);
+		assert(dup2(pipes[1][1], 1) >= 0);
+		assert(dup2(pipes[1][1], 2) >= 0);
+		AZ(close(pipes[0][0]));
+		AZ(close(pipes[0][1]));
+		AZ(close(pipes[1][0]));
+		AZ(close(pipes[1][1]));
+		return;
+	}
+	AZ(close(pipes[0][0]));
+	assert(dup2(pipes[0][1], 3) >= 0);
+	pipes[0][0] = 0;
+	pipes[0][1] = 3;
+
+	assert(dup2(pipes[1][0], 4) >= 0);
+	AZ(close(pipes[1][1]));
+	pipes[1][0] = 4;
+	pipes[1][1] = 1;
+
+	for (i = 5; i < 100; i++)
+		close(i);
+
+	pfd[0].fd = pipes[0][0];
+	pfd[0].events = POLLIN;
+	pfd[1].fd = pipes[1][0];
+	pfd[1].events = POLLIN;
+
+	signal(SIGINT, DebugSigPass);
+	i = read(pipes[1][0], buf, sizeof buf - 1);
+	buf[i] = '\0';
+	d_child = strtoul(buf, &p, 0);
+	assert(p != NULL);
+	printf("New Pid %d\n", d_child);
+	i = strlen(p);
+	j = write(pipes[1][1], p, i);
+	assert(j == i);
+
+	while (1) {
+		i = poll(pfd, 2, INFTIM);
+		for (k = 0; k < 2; k++) {
+			if (pfd[k].revents) {
+				j = read(pipes[k][0], buf, sizeof buf);
+				if (j == 0)
+					exit (0);
+				if (j > 0) {
+					i = write(pipes[k][1], buf, j);
+					if (i != j)
+						err(1, "i = %d j = %d\n", i, j);
+				}
+			}
+		}
+	}
+}
+
+
 /*--------------------------------------------------------------------*/
 
 /* for development purposes */
 #include <printf.h>
-#include <err.h>
 
 int
 main(int argc, char *argv[])
 {
 	int o;
 	const char *portnumber = "8080";
-	unsigned dflag = 1;	/* XXX: debug=on for now */
+	unsigned dflag = 0;
 	const char *bflag = NULL;
 	const char *fflag = NULL;
 	const char *sflag = "file";
@@ -613,7 +680,34 @@ main(int argc, char *argv[])
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
-	testme();
+	if (dflag)
+		DebugStunt();
+	daemon(0, dflag);
+	if (dflag)
+		printf("%d\n%d\n%d\n", getpid(), getsid(0), getpgrp());
+
+	{
+	struct event e_sigchld;
+	struct cli *cli;
+	int i;
+
+	mgt_eb = event_init();
+	assert(mgt_eb != NULL);
+
+	if (dflag)
+		cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
+
+	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
+	AZ(event_base_set(mgt_eb, &e_sigchld));
+	AZ(signal_add(&e_sigchld, NULL));
+
+	mgt_child_start();
+
+	i = event_base_loop(mgt_eb, 0);
+	if (i != 0)
+		printf("event_dispatch() = %d\n", i);
+
+	}
 
 	exit(0);
 }
