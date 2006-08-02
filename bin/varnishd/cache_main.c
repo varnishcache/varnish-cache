@@ -14,6 +14,7 @@
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
+#include "event.h"
 #include "cli_event.h"
 
 static struct event ev_keepalive;

@@ -219,6 +219,7 @@ FetchBody(struct sess *sp)
 	assert(sp->obj->busy != 0);
 
 	vc = sp->vbc;
+	sp->vbc = NULL;
 
 	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
@@ -303,6 +304,7 @@ FetchHeaders(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	assert(sp->vbc == NULL);
 	sp->vbc = vc;
 
 	sp->obj->entered = time(NULL);

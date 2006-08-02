@@ -3,23 +3,9 @@
  *
  * Manage backend connections.
  *
- * For each backend ip number we maintain a shadow backend structure so
- * that backend connections can be reused across VCL changes.
- *
- * For each IP we maintain a list of busy and free backend connections,
- * and free connections are monitored to detect if the backend closes
- * the connection.
- *
- * We recycle backend connections in most recently used order to minimize
- * the number of open connections to any one backend.
- *
- * XXX:
- * I'm not happy about recycling always going through the monitor thread
- * but not doing so is slightly more tricky:  A connection might be reused
- * several times before the monitor thread got around to it, and it would
- * have to double check if it had already armed the event for that connection.
- * Hopefully this is nowhere close to a performance issue, but if it is,
- * it can be optimized at the expense of more complex code.
+ * XXX: When we switch VCL we can have vbe_conn's dangling from
+ * XXX: the backends no longer used.  When the VCL's refcount
+ * XXX: drops to zero we should zap them.
  */
 
 #include <sys/types.h>
@@ -31,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <poll.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
 
@@ -41,23 +28,9 @@
 
 /* A backend IP */
 
-struct vbe {
-	unsigned		magic;
-#define VBE_MAGIC		0x079648f0
-	unsigned		ip;
-	TAILQ_ENTRY(vbe)	list;
-	TAILQ_HEAD(,vbe_conn)	fconn;
-	TAILQ_HEAD(,vbe_conn)	bconn;
-	unsigned		nconn;
-};
-
-static TAILQ_HEAD(,vbe) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
+static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
 static pthread_mutex_t	vbemtx;
-
-static pthread_t vbe_thread;
-static struct event_base *vbe_evb;
-static int vbe_pipe[2];
 
 /*--------------------------------------------------------------------*/
 
@@ -74,20 +47,12 @@ vbe_new_conn(void)
 	vbc->magic = VBE_CONN_MAGIC;
 	vbc->http = &vbc->http_mem[0];
 	vbc->http2 = &vbc->http_mem[1];
+	vbc->fd = -1;
 	p = (void *)(vbc + 1);
 	http_Setup(vbc->http, p, heritage.mem_workspace);
 	p += heritage.mem_workspace;
 	http_Setup(vbc->http2, p, heritage.mem_workspace);
 	return (vbc);
-}
-
-static void
-vbe_delete_conn(struct vbe_conn *vb)
-{
-
-	CHECK_OBJ_NOTNULL(vb, VBE_CONN_MAGIC);
-	VSL_stats->n_vbe_conn--;
-	free(vb);
 }
 
 /*--------------------------------------------------------------------*/
@@ -197,90 +162,9 @@ vbe_connect(struct backend *bp)
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name(ai->ai_addr, ai->ai_addrlen,
 	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSL(SLT_BackendOpen, s, "%s %s %s %s", abuf1, pbuf1, abuf2, pbuf2);
+	VSL(SLT_BackendOpen, s, "%s %s %s %s %s",
+	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 	return (s);
-}
-
-/*--------------------------------------------------------------------
- * When backend connections have been used, they are passed to us through
- * the vbe_pipe.  If fd == -1 it has been closed and will be reclaimed,
- * otherwise arm an event to monitor if the backend closes and recycle.
- */
-
-static void
-vbe_rdp(int fd, short event, void *arg)
-{
-	struct vbe_conn *vc;
-	int i;
-
-	(void)event;
-	(void)arg;
-	i = read(fd, &vc, sizeof vc);
-	assert(i == sizeof vc);
-	AZ(pthread_mutex_lock(&vbemtx));
-	TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
-	if (vc->fd < 0) {
-		vc->vbe->nconn--;
-		vbe_delete_conn(vc);
-	} else {
-		vc->inuse = 0;
-		AZ(event_add(&vc->ev, NULL));
-		TAILQ_INSERT_HEAD(&vc->vbe->fconn, vc, list);
-	}
-	AZ(pthread_mutex_unlock(&vbemtx));
-}
-
-/*--------------------------------------------------------------------
- * A backend connection became ready.  This can happen if it was reused
- * in which case we unarm the event and get out of the way, or if the 
- * backend closed the connection in which case we clean up.
- */
-
-static void
-vbe_rdf(int fd, short event, void *arg)
-{
-	struct vbe_conn *vc;
-	int j;
-
-	(void)fd;
-	(void)event;
-	vc = arg;
-	AZ(pthread_mutex_lock(&vbemtx));
-	if (vc->inuse) {
-		AZ(event_del(&vc->ev));
-		AZ(pthread_mutex_unlock(&vbemtx));
-		return;
-	} 
-	AZ(ioctl(vc->fd, FIONREAD, &j));
-	VSL(SLT_BackendClose, vc->fd, "Remote (%d chars)", j);
-	TAILQ_REMOVE(&vc->vbe->fconn, vc, list);
-	AZ(pthread_mutex_unlock(&vbemtx));
-	AZ(event_del(&vc->ev));
-	AZ(close(vc->fd));
-	vbe_delete_conn(vc);
-}
-
-/* Backend monitoring thread -----------------------------------------*/
-
-static void *
-vbe_main(void *priv)
-{
-	struct event pev;
-
-	(void)priv;
-	vbe_evb = event_init();
-	assert(vbe_evb != NULL);
-
-	AZ(pipe(vbe_pipe));
-
-	memset(&pev, 0, sizeof pev);
-	event_set(&pev, vbe_pipe[0], EV_READ | EV_PERSIST, vbe_rdp, NULL);
-	AZ(event_base_set(vbe_evb, &pev));
-	AZ(event_add(&pev, NULL));
-
-	AZ(event_base_loop(vbe_evb, 0));
-
-	INCOMPL();
 }
 
 /* Get a backend connection ------------------------------------------
@@ -293,62 +177,73 @@ vbe_main(void *priv)
 struct vbe_conn *
 VBE_GetFd(struct backend *bp, unsigned xid)
 {
-	struct vbe *vp;
-	struct vbe_conn *vc;
+	struct vbe_conn *vc, *vc2;
+	struct pollfd pfd;
 
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	AZ(pthread_mutex_lock(&vbemtx));
-	vp = bp->vbe;
-	if (vp == NULL) {
-		TAILQ_FOREACH(vp, &vbe_head, list)
-			if (vp->ip == bp->ip)
-				break;
+	while (1) {
+		/*
+		 * Try all connections on this backend until we find one
+		 * that works.  If that fails, grab a free connection
+		 * (if any) while we have the lock anyway.
+		 */
+		vc2 = NULL;
+		AZ(pthread_mutex_lock(&vbemtx));
+		vc = TAILQ_FIRST(&bp->connlist);
+		if (vc != NULL) {
+			assert(vc->fd >= 0);
+			TAILQ_REMOVE(&bp->connlist, vc, list);
+		} else {
+			vc2 = TAILQ_FIRST(&vbe_head);
+			if (vc2 != NULL)
+				TAILQ_REMOVE(&vbe_head, vc2, list);
+		}
+		AZ(pthread_mutex_unlock(&vbemtx));
+		if (vc == NULL)
+			break;
+
+		/* Test the connection for remote close before we use it */
+		pfd.fd = vc->fd;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		if (!poll(&pfd, 1, 0))
+			break;
+		VBE_ClosedFd(vc);
 	}
-	if (vp == NULL) {
-		vp = calloc(sizeof *vp, 1);
-		assert(vp != NULL);
-		vp->magic = VBE_MAGIC;
-		TAILQ_INIT(&vp->fconn);
-		TAILQ_INIT(&vp->bconn);
-		vp->ip = bp->ip;
-		bp->vbe = vp;
-		TAILQ_INSERT_TAIL(&vbe_head, vp, list);
-	} else
-		CHECK_OBJ(vp, VBE_MAGIC);
-	/* XXX: check nconn vs backend->maxcon */
-	vc = TAILQ_FIRST(&vp->fconn);
-	if (vc != NULL) {
-		vc->inuse = 1;
-		TAILQ_REMOVE(&vp->fconn, vc, list);
-		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
+
+	if (vc == NULL) {
+		if (vc2 == NULL)
+			vc = vbe_new_conn();
+		else
+			vc = vc2;
+		assert(vc != NULL);
+		assert(vc->fd == -1);
+		assert(vc->backend == NULL);
+	}
+
+	/* If not connected yet, do so */
+	if (vc->fd < 0) {
+		assert(vc->backend == NULL);
+		vc->fd = vbe_connect(bp);
+		AZ(pthread_mutex_lock(&vbemtx));
+		if (vc->fd < 0) {
+			vc->backend = NULL;
+			TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+			vc = NULL;
+		} else {
+			vc->backend = bp;
+		}
 		AZ(pthread_mutex_unlock(&vbemtx));
 	} else {
-		vc = vbe_new_conn();
-		if (vc == NULL) {
-			AZ(pthread_mutex_unlock(&vbemtx));
-			return (NULL);
-		}
-		vp->nconn++;
-		vc->vbe = vp;
-		vc->fd = -1;
-		vc->inuse = 1;
-		TAILQ_INSERT_TAIL(&vp->bconn, vc, list);
-		AZ(pthread_mutex_unlock(&vbemtx));
-		vc->fd = vbe_connect(bp);
-		if (vc->fd < 0) {
-			AZ(pthread_mutex_lock(&vbemtx));
-			TAILQ_REMOVE(&vc->vbe->bconn, vc, list);
-			vp->nconn--;
-			AZ(pthread_mutex_unlock(&vbemtx));
-			vbe_delete_conn(vc);
-			return (NULL);
-		}
-		VSL_stats->backend_conn++;
-		event_set(&vc->ev, vc->fd,
-		    EV_READ | EV_PERSIST, vbe_rdf, vc);
-		AZ(event_base_set(vbe_evb, &vc->ev));
+		assert(vc->fd >= 0);
+		assert(vc->backend == bp);
 	}
-	VSL(SLT_BackendXID, vc->fd, "%u", xid);
+	if (vc != NULL ) {
+		assert(vc->fd >= 0);
+		VSL_stats->backend_conn++;
+		VSL(SLT_BackendXID, vc->fd, "%u", xid);
+		assert(vc->backend != NULL);
+	}
 	return (vc);
 }
 
@@ -357,14 +252,17 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 void
 VBE_ClosedFd(struct vbe_conn *vc)
 {
-	int i;
 
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
-	VSL(SLT_BackendClose, vc->fd, "");
+	assert(vc->backend != NULL);
+	VSL(SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	AZ(close(vc->fd));
 	vc->fd = -1;
-	i = write(vbe_pipe[1], &vc, sizeof vc);
-	assert(i == sizeof vc);
+	vc->backend = NULL;
+	AZ(pthread_mutex_lock(&vbemtx));
+	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+	AZ(pthread_mutex_unlock(&vbemtx));
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -372,12 +270,15 @@ VBE_ClosedFd(struct vbe_conn *vc)
 void
 VBE_RecycleFd(struct vbe_conn *vc)
 {
-	int i;
 
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	assert(vc->fd >= 0);
+	assert(vc->backend != NULL);
 	VSL_stats->backend_recycle++;
-	VSL(SLT_BackendReuse, vc->fd, "");
-	i = write(vbe_pipe[1], &vc, sizeof vc);
-	assert(i == sizeof vc);
+	VSL(SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
+	AZ(pthread_mutex_lock(&vbemtx));
+	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
+	AZ(pthread_mutex_unlock(&vbemtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -387,5 +288,4 @@ VBE_Init(void)
 {
 
 	AZ(pthread_mutex_init(&vbemtx, NULL));
-	AZ(pthread_create(&vbe_thread, NULL, vbe_main, NULL));
 }
