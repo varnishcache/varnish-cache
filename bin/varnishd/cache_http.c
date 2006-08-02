@@ -440,19 +440,36 @@ http_header_complete(struct http *hp)
 	return (1);
 }
 
-
 /*--------------------------------------------------------------------*/
 
 static void
-http_read_f(int fd, short event, void *arg)
+http_preprecv(struct http *hp)
 {
-	struct http *hp;
 	unsigned l;
-	int i, ret = 0;
 
-	(void)event;
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	assert(hp->v <= hp->e);
+	assert(hp->t <= hp->v);
+	if (hp->t > hp->s && hp->t < hp->v) {
+		l = hp->v - hp->t;
+		memmove(hp->s, hp->t, l);
+		hp->v = hp->s + l;
+		hp->t = hp->s;
+		*hp->v = '\0';
+	} else  {
+		hp->v = hp->s;
+		hp->t = hp->s;
+	}
+}
 
-	CAST_OBJ_NOTNULL(hp, arg, HTTP_MAGIC);
+/*--------------------------------------------------------------------*/
+
+static int
+http_read_hdr(int fd, struct http *hp)
+{
+	unsigned l;
+	int i;
+
 	l = (hp->e - hp->s) / 2;
 	if (l < hp->v - hp->s)
 		l = 0;
@@ -462,70 +479,85 @@ http_read_f(int fd, short event, void *arg)
 		VSL(SLT_HttpError, fd, "Received too much");
 		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
 		hp->t = NULL;
-		ret = 1;
-	} else {
-		errno = 0;
-		i = read(fd, hp->v, l - 1);
-		if (i > 0) {
-			hp->v += i;
-			*hp->v = '\0';
-			if (!http_header_complete(hp))
-				return;
-		} else {
-			if (hp->v != hp->s) {
-				VSL(SLT_HttpError, fd,
-				    "Received (only) %d bytes, errno %d",
-				    hp->v - hp->s, errno);
-				VSLR(SLT_Debug, fd, hp->s, hp->v);
-			} else if (errno == 0)
-				VSL(SLT_HttpError, fd, "Received nothing");
-			else
-				VSL(SLT_HttpError, fd,
-				    "Received errno %d", errno);
-			hp->t = NULL;
-			ret = 2;
-		}
+		return (1);
 	}
+	errno = 0;
+	i = read(fd, hp->v, l - 1);
+	if (i > 0) {
+		hp->v += i;
+		*hp->v = '\0';
+		if (http_header_complete(hp))
+			return(0);
+		return (-1);
+	} 
 
-	assert(hp->t != NULL || ret != 0);
-	event_del(&hp->ev);
-	if (hp->callback != NULL)
-		hp->callback(hp->arg, ret);
+	if (hp->v != hp->s) {
+		VSL(SLT_HttpError, fd,
+		    "Received (only) %d bytes, errno %d",
+		    hp->v - hp->s, errno);
+		VSLR(SLT_Debug, fd, hp->s, hp->v);
+	} else if (errno == 0)
+		VSL(SLT_HttpError, fd, "Received nothing");
+	else
+		VSL(SLT_HttpError, fd,
+		    "Received errno %d", errno);
+	hp->t = NULL;
+	return(2);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
-http_RecvHead(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg)
+static void
+http_read_f(int fd, short event, void *arg)
 {
-	unsigned l;
+	struct http *hp;
+	int i;
+
+	(void)event;
+
+	CAST_OBJ_NOTNULL(hp, arg, HTTP_MAGIC);
+	i = http_read_hdr(fd, hp);
+	if (i < 0)
+		return;
+
+	event_del(&hp->ev);
+	if (hp->callback != NULL)
+		hp->callback(hp->arg, i);
+}
+
+
+void
+http_RecvHeadEv(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg)
+{
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(hp->v <= hp->e);
-	assert(hp->t <= hp->v);
-	if (0)
-		VSL(SLT_Debug, fd, "Recv t %u v %u",
-		    hp->t - hp->s, hp->v - hp->s);
-	if (hp->t > hp->s && hp->t < hp->v) {
-		l = hp->v - hp->t;
-		memmove(hp->s, hp->t, l);
-		hp->v = hp->s + l;
-		hp->t = hp->s;
-		*hp->v = '\0';
-		if (http_header_complete(hp)) {
-			assert(func != NULL);
-			func(arg, 0);
-			return;
-		}
-	} else  {
-		hp->v = hp->s;
-		hp->t = hp->s;
+	assert(func != NULL);
+	http_preprecv(hp);
+	if (hp->v != hp->s && http_header_complete(hp)) {
+		func(arg, 0);
+		return;
 	}
 	hp->callback = func;
 	hp->arg = arg;
 	event_set(&hp->ev, fd, EV_READ | EV_PERSIST, http_read_f, hp);
 	AZ(event_base_set(eb, &hp->ev));
 	AZ(event_add(&hp->ev, NULL));      /* XXX: timeout */
+	return;
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+http_RecvHead(struct http *hp, int fd)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	http_preprecv(hp);
+	do 
+		i = http_read_hdr(fd, hp);
+	while (i == -1);
+	return (i);
 }
 
 /*--------------------------------------------------------------------
