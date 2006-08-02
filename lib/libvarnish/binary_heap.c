@@ -108,10 +108,10 @@ binheap_trickledown(struct binheap *bh, unsigned u)
 
 	assert(bh->magic == BINHEAP_MAGIC);
 	while (1) {
-		v1 = CHILD(u, 1);
+		v1 = CHILD(u, 0);
+		v2 = CHILD(u, 1);
 		if (v1 >= bh->next)
 			return;
-		v2 = CHILD(u, 2);
 		if (v2 >= bh->next) {
 			if (!bh->cmp(bh->priv, bh->array[u], bh->array[v1]))
 				binhead_swap(bh, u, v1);
@@ -183,6 +183,7 @@ binheap_delete(struct binheap *bh, unsigned idx)
 		return;
 	bh->array[idx] = bh->array[bh->next];
 	binheap_update(bh, idx);
+	idx = binheap_trickleup(bh, idx);
 	binheap_trickledown(bh, idx);
 	/* XXX: free part of array ? */
 }
@@ -192,6 +193,8 @@ binheap_delete(struct binheap *bh, unsigned idx)
 /* Test driver -------------------------------------------------------*/
 
 #include <stdio.h>
+
+#if 0
 
 static int
 cmp(void *priv, void *a, void *b)
@@ -219,7 +222,7 @@ dump(struct binheap *bh, const char *what, unsigned ptr)
 	fprintf(f, "size=\"7,10\"\n");
 	fprintf(f, "ptr [label=\"%s\"]\n", what);
 	fprintf(f, "ptr -> node_%u\n", ptr);
-	for (u = 0; u < bh->next; u++) {
+	for (u = 1; u < bh->next; u++) {
 		up = bh->array[u];
 		fprintf(f, "node_%u [label=\"%u\"];\n", u, *up);
 		if (u > 0)
@@ -236,10 +239,6 @@ main(int argc, char **argv)
 	struct binheap *bh;
 	unsigned l[N], u, *up, lu;
 
-	srandomdev();
-	u = random();
-	printf("Seed %u\n", u);
-	srandom(u);
 	system("echo %! > /tmp/_.ps");
 	bh = binheap_new(NULL, cmp, update);
 	for (u = 0; u < N; u++) {
@@ -265,4 +264,87 @@ main(int argc, char **argv)
 
 	return (0);
 }
+#else
+
+struct foo {
+	unsigned 	idx;
+	unsigned	key;
+};
+
+#define M 1311191
+#define N 131
+
+struct foo ff[N];
+
+
+static int
+cmp(void *priv, void *a, void *b)
+{
+	struct foo *fa, *fb;
+
+	fa = a;
+	fb = b;
+	return (fa->key < fb->key);
+}
+
+void
+update(void *priv, void *a, unsigned u)
+{
+	struct foo *fa;
+
+	fa = a;
+	fa->idx = u;
+}
+
+void
+chk(struct binheap *bh)
+{
+	unsigned u, v, nb = 0;
+	struct foo *fa, *fb;
+
+	for (u = 2; u < bh->next; u++) {
+		v = PARENT(u);
+		fa = bh->array[u];
+		fb = bh->array[v];
+		assert(fa->key > fb->key);
+		continue;
+		printf("[%2u/%2u] %10u > [%2u/%2u] %10u %s\n",
+		    u, fa - ff, fa->key,
+		    v, fb - ff, fb->key,
+		    fa->key > fb->key ? "OK" : "BAD");
+		if (fa->key <= fb->key)
+			nb++;
+	}
+	if (nb)
+		exit(0);
+}
+
+int
+main(int argc, char **argv)
+{
+	struct binheap *bh;
+	unsigned u, v;
+
+#if 0
+	srandomdev();
+	u = random();
+	printf("Seed %u\n", u);
+	srandom(u);
+#endif
+	bh = binheap_new(NULL, cmp, update);
+	for (u = 0; u < M; u++) {
+		v = random() % N;
+		if (ff[v].idx > 0) {
+			printf("Delete [%u] %'u\n", v, ff[v].key);
+			binheap_delete(bh, ff[v].idx);
+		} else {
+			ff[v].key = random();
+			printf("Insert [%u] %'u\n", v, ff[v].key);
+			binheap_insert(bh, &ff[v]);
+		}
+		chk(bh);
+	}
+	return (0);
+}
+#endif
 #endif
