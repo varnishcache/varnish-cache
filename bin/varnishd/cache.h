@@ -46,8 +46,6 @@ enum step {
  * RSN: struct worker and struct session will have one of these embedded.
  */
 
-typedef void http_callback_f(void *, int bad);
-
 struct http_hdr {
 	char			*b;
 	char			*e;
@@ -56,9 +54,6 @@ struct http_hdr {
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
-	struct event		ev;
-	http_callback_f		*callback;
-	void			*arg;
 
 	char			*s;		/* (S)tart of buffer */
 	char			*t;		/* start of (T)railing data */
@@ -230,6 +225,7 @@ struct sess {
 	int			id;
 	unsigned		xid;
 
+	struct event		ev;
 	struct worker		*wrk;
 
 	unsigned		sockaddrlen;
@@ -346,7 +342,9 @@ int http_GetStatus(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_Read(struct http *hp, int fd, void *b, unsigned len);
-void http_RecvHeadEv(struct http *hp, int fd, struct event_base *eb, http_callback_f *func, void *arg);
+void http_RecvPrep(struct http *hp);
+int http_RecvPrepAgain(struct http *hp);
+int http_RecvSome(int fd, struct http *hp);
 int http_RecvHead(struct http *hp, int fd);
 int http_DissectRequest(struct http *sp, int fd);
 int http_DissectResponse(struct http *sp, int fd);
