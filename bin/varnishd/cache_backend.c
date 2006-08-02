@@ -39,12 +39,6 @@
 #include "shmlog.h"
 #include "cache.h"
 
-struct vbc_mem {
-	unsigned		magic;
-#define VBC_MEM_MAGIC		0x2fd7af01
-	struct vbe_conn		vbc;
-};
-
 /* A backend IP */
 
 struct vbe {
@@ -70,21 +64,17 @@ static int vbe_pipe[2];
 static struct vbe_conn *
 vbe_new_conn(void)
 {
-	struct vbc_mem *vbcm;
 	struct vbe_conn *vbc;
 	unsigned char *p;
 
-	vbcm = calloc(sizeof *vbcm + heritage.mem_workspace * 2, 1);
-	if (vbcm == NULL)
+	vbc = calloc(sizeof *vbc + heritage.mem_workspace * 2, 1);
+	if (vbc == NULL)
 		return (NULL);
-	vbcm->magic = VBC_MEM_MAGIC;
 	VSL_stats->n_vbe_conn++;
-	vbc = &vbcm->vbc;
 	vbc->magic = VBE_CONN_MAGIC;
-	vbc->vbcm = vbcm;
 	vbc->http = &vbc->http_mem[0];
 	vbc->http2 = &vbc->http_mem[1];
-	p = (void *)(vbcm + 1);
+	p = (void *)(vbc + 1);
 	http_Setup(vbc->http, p, heritage.mem_workspace);
 	p += heritage.mem_workspace;
 	http_Setup(vbc->http2, p, heritage.mem_workspace);
@@ -96,9 +86,8 @@ vbe_delete_conn(struct vbe_conn *vb)
 {
 
 	CHECK_OBJ_NOTNULL(vb, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(vb->vbcm, VBC_MEM_MAGIC);
 	VSL_stats->n_vbe_conn--;
-	free(vb->vbcm);
+	free(vb);
 }
 
 /*--------------------------------------------------------------------*/

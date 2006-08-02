@@ -121,7 +121,6 @@ struct vbe_conn {
 	unsigned		magic;
 #define VBE_CONN_MAGIC		0x0c5e6592
 	TAILQ_ENTRY(vbe_conn)	list;
-	struct vbc_mem		*vbcm;
 	struct vbe		*vbe;
 	int			fd;
 	struct event		ev;
