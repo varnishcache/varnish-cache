@@ -106,6 +106,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 	        j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
 	        strncpy(ll[u].df_h, p + 4, j);
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+		printf("New session [%d]: %s \n",u, ll[u].df_h);
 
 		break;
 
@@ -117,18 +118,18 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		break;
 
-	case SLT_StatAddr:
-
-		break;
-	
 	case SLT_SessionClose:
-		printf("Closing session [%d]: %s %s\n",u, ll[u].df_h, ll[u].df_U);
+		printf("Session close [%d]: %s %s\n",u, ll[u].df_h, ll[u].df_U);
 		break;
+
+	case SLT_SessionReuse:
+		printf("Session reuse [%d]: %s %s\n",u, ll[u].df_h, ll[u].df_U);
+		break;
+
 	default:
+
 		break;
 	}
-
-	
 
 	if (0) {
 		
