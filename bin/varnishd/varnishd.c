@@ -682,7 +682,7 @@ main(int argc, char *argv[])
 
 	if (dflag)
 		DebugStunt();
-	daemon(0, dflag);
+	daemon(dflag, dflag);
 	if (dflag)
 		printf("%d\n%d\n%d\n", getpid(), getsid(0), getpgrp());
 
