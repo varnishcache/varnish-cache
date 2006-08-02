@@ -146,7 +146,7 @@ SES_Charge(struct sess *sp)
 	
 	AZ(pthread_mutex_lock(&ses_mtx));
 	ses_sum_acct(b, a);
-	VSL(SLT_StatAddr, sp->id, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
+	VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
 	    sp->srcaddr->addr, time(NULL) - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
