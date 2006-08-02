@@ -15,11 +15,6 @@
 #include "shmlog.h"
 #include "cache.h"
 
-struct edir {
-	int fd;
-	struct event ev;
-};
-
 static void
 rdf(struct pollfd *fds, int idx)
 {
