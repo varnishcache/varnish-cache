@@ -83,6 +83,7 @@ VRT_alloc_backends(struct VCL_conf *cp)
 		cp->backend[i] = calloc(sizeof *cp->backend[i], 1);
 		assert(cp->backend[i] != NULL);
 		cp->backend[i]->magic = BACKEND_MAGIC;
+		TAILQ_INIT(&cp->backend[i]->connlist);
 	}
 }
 

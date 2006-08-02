@@ -8,7 +8,6 @@
 #include <sys/time.h>
 
 #include "queue.h"
-#include "event.h"
 #include "sbuf.h"
 
 #include "vcl_returns.h"
@@ -121,10 +120,8 @@ struct vbe_conn {
 	unsigned		magic;
 #define VBE_CONN_MAGIC		0x0c5e6592
 	TAILQ_ENTRY(vbe_conn)	list;
-	struct vbe		*vbe;
+	struct backend		*backend;
 	int			fd;
-	struct event		ev;
-	int			inuse;
 	struct http		*http;
 	struct http		*http2;
 	struct http		http_mem[2];
@@ -263,22 +260,22 @@ struct sess {
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
-	const char	*vcl_name;
-	const char	*hostname;
-	const char	*portname;
-	unsigned	ip;
+	const char		*vcl_name;
+	const char		*hostname;
+	const char		*portname;
+	unsigned		ip;
 
-	struct addrinfo	*addr;
-	struct addrinfo	*last_addr;
+	struct addrinfo		*addr;
+	struct addrinfo		*last_addr;
+
+	TAILQ_HEAD(,vbe_conn)	connlist;
 #if 0
-	double		responsetime;
-	double		timeout;
-	double		bandwidth;
-	int		down;
+	double			responsetime;
+	double			timeout;
+	double			bandwidth;
+	int			down;
 #endif
 
-	/* internal stuff */
-	struct vbe	*vbe;
 };
 
 /* Prototypes etc ----------------------------------------------------*/
