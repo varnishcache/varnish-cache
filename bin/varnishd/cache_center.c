@@ -84,6 +84,7 @@ cnt_done(struct sess *sp)
 {
 
 	assert(sp->obj == NULL);
+	assert(sp->vbc == NULL);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	VCL_Rel(sp->vcl);
@@ -163,6 +164,7 @@ static int
 cnt_fetch(struct sess *sp)
 {
 
+	assert(sp->vbc != NULL);
 	RFC2616_cache_policy(sp, sp->vbc->http);
 
 	VCL_fetch_method(sp);
@@ -188,7 +190,9 @@ cnt_fetch(struct sess *sp)
 	}
 	if (sp->handling == VCL_RET_INSERT) {
 		sp->obj->cacheable = 1;
+		assert(sp->vbc != NULL);
 		FetchBody(sp);
+		assert(sp->vbc == NULL);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
 		sp->wrk->acct.fetch++;
@@ -400,8 +404,10 @@ cnt_miss(struct sess *sp)
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
+		assert(sp->vbc == NULL);
 		FetchHeaders(sp);
 		sp->step = STP_FETCH;
+		assert(sp->vbc != NULL);
 		return (0);
 	}
 	INCOMPL();
@@ -426,7 +432,9 @@ static int
 cnt_pass(struct sess *sp)
 {
 
+	assert(sp->vbc == NULL);
 	PassSession(sp);
+	assert(sp->vbc != NULL);
 	sp->step = STP_PASSBODY;
 	return (0);
 }
@@ -451,7 +459,9 @@ cnt_passbody(struct sess *sp)
 {
 
 	sp->wrk->acct.pass++;
+	assert(sp->vbc != NULL);
 	PassBody(sp);
+	assert(sp->vbc == NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -518,6 +528,7 @@ cnt_recv(struct sess *sp)
 	sp->vcl = VCL_Get();
 
 	assert(sp->obj == NULL);
+	assert(sp->vbc == NULL);
 
 	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->http, sp->fd);
