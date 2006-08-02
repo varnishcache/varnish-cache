@@ -261,7 +261,6 @@ cnt_hit(struct sess *sp)
 	if (sp->handling == VCL_RET_PASS) {
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
-		PassSession(sp);
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -396,9 +395,8 @@ cnt_miss(struct sess *sp)
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp->obj);
 		HSH_Deref(sp->obj);
-		sp->obj = 0;
-		PassSession(sp);
-		sp->step = STP_PASSBODY;
+		sp->obj = NULL;
+		sp->step = STP_PASS;
 		return (0);
 	}
 	if (sp->handling == VCL_RET_LOOKUP)
