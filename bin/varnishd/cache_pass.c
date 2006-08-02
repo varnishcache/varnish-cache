@@ -147,6 +147,7 @@ PassBody(struct sess *sp)
 
 	vc = sp->vbc;
 	assert(vc != NULL);
+	sp->vbc = NULL;
 
 	http_ClrHeader(sp->http);
 	http_CopyResp(sp->fd, sp->http, vc->http);
@@ -209,5 +210,6 @@ PassSession(struct sess *sp)
 	assert(i == 0);
 	http_DissectResponse(vc->http, vc->fd);
 
+	assert(sp->vbc == NULL);
 	sp->vbc = vc;
 }
