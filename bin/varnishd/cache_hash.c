@@ -162,8 +162,11 @@ HSH_Ref(struct object *o)
 {
 	struct objhead *oh;
 
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	AZ(pthread_mutex_lock(&oh->mtx));
+	assert(o->refcnt > 0);
 	o->refcnt++;
 	AZ(pthread_mutex_unlock(&oh->mtx));
 }
@@ -175,10 +178,13 @@ HSH_Deref(struct object *o)
 	struct storage *st, *stn;
 	unsigned r;
 
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* drop ref on object */
 	AZ(pthread_mutex_lock(&oh->mtx));
+	assert(o->refcnt > 0);
 	r = --o->refcnt;
 	if (!r)
 		TAILQ_REMOVE(&oh->objects, o, list);
@@ -193,6 +199,7 @@ HSH_Deref(struct object *o)
 	}
 
 	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		TAILQ_REMOVE(&o->store, st, list);
 		st->stevedore->free(st);
 	}
