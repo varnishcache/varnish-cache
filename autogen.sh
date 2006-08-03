@@ -11,7 +11,7 @@ if [ -d /usr/local/gnu-autotools/bin ] ; then
 fi
 
 base=$(cd $(dirname $0) && pwd)
-for dir in $base $base/contrib/libevent ; do
+for dir in $base ; do
 	(
 	echo $dir
 	cd $dir
