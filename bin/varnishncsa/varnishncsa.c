@@ -34,14 +34,14 @@
 
 struct logline {
 	char df_h[4 * (3 + 1)]; // Datafield for %h (IP adress)
-	//   //   int y;
-	//   //   unsigned char *df_l; // Datafield for %l
-	//   //   unsigned char *df_u; // Datafield for %u
-	//   //   unsigned char *df_t; // Datafield for %t
-	//   //   unsigned char *df_r; // Datafield for %r
-	//   //   unsigned char *df_s; // Datafield for %s
-	//   //   unsigned char *df_b; // Datafield for %b
-	//   //   unsigned char *df_R; // Datafield for %{Referer}i
+	//   int y;
+	//   unsigned char *df_l; // Datafield for %l
+	//   unsigned char *df_u; // Datafield for %u
+	//   unsigned char *df_t; // Datafield for %t
+	unsigned char *df_r; // Datafield for %r
+	//   unsigned char *df_s; // Datafield for %s
+	//   unsigned char *df_b; // Datafield for %b
+	//   unsigned char *df_R; // Datafield for %{Referer}i
 	unsigned char *df_U; // Datafield for %{User-agent}i
 };
 
@@ -99,6 +99,9 @@ extended_log_format(unsigned char *p, char *w_opt)
 	}
 	switch (p[0]) {
 
+		// XXX remember to check for NULL when strdup, if no allocate
+		// XXX also remember to free() after strdup?
+
 	case SLT_SessionOpen:
 		// Finding the IP adress when data is: "XXX.XXX.XXX.XXX somenumber"
 
@@ -107,6 +110,41 @@ extended_log_format(unsigned char *p, char *w_opt)
 	        strncpy(ll[u].df_h, p + 4, j);
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
 		printf("New session [%d]: %s \n",u, ll[u].df_h);
+
+		break;
+
+	case SLT_RxRequest:
+		// XXX: Remember to support more than GET, HEAD and POST.
+		// http://rfc.net/rfc2616.html#p51
+	
+		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",11)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+	                //printf("Got a HEAD\n");
+	        }
+
+		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "POST",11)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+		        //printf("Got a POST\n");
+		}
+
+		if (p[1] >= 3 && !strncasecmp((void *)&p[4], "GET",11)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got a GET\n");
+		}
+
+		break;
+
+	case SLT_RxURL:
+		
+		sbuf_cat(ob[u], " ");
+		sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+
+		break;
+
+	case SLT_RxProtocol:
+		
+		sbuf_cat(ob[u], " ");
+		sbuf_bcat(ob[u], p + 4, strlen(p + 4));
 
 		break;
 
@@ -119,11 +157,23 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 
 	case SLT_SessionClose:
-		printf("Session close [%d]: %s %s\n",u, ll[u].df_h, ll[u].df_U);
+
+		printf("Session close [%d]: %s ",u, ll[u].df_h);
+		sbuf_finish(ob[u]);
+		printf("\"%s\"", sbuf_data(ob[u]));
+		printf(" \"%s\"\n", ll[u].df_U);
+		sbuf_clear(ob[u]);
+		
 		break;
 
 	case SLT_SessionReuse:
-		printf("Session reuse [%d]: %s %s\n",u, ll[u].df_h, ll[u].df_U);
+
+		printf("Session reuse [%d]: %s ",u, ll[u].df_h);
+		sbuf_finish(ob[u]);
+		printf("\"%s\"", sbuf_data(ob[u]));
+		printf(" \"%s\"\n", ll[u].df_U);
+		sbuf_clear(ob[u]);
+
 		break;
 
 	default:
