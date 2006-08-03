@@ -4,213 +4,64 @@
  * The mechanics of handling the child process
  */
 
-#include <assert.h>
-#include <err.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
-
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <assert.h>
+#include <errno.h>
+#include <poll.h>
+#include <pthread.h>
+#include <sys/types.h>
 #include <sys/wait.h>
-#include "queue.h"
 
-#include <event.h>
-#include <sbuf.h>
+#include <err.h>		/* XXX */
 
-#include <libvarnish.h>
-#include <cli.h>
-
-#include "cli_event.h"	/* for cli_encode_string */
+#include "libvarnish.h"
 #include "heritage.h"
 #include "mgt.h"
 
+static pid_t		child_pid = -1;
+static int		child_fds[2];
+static unsigned 	child_should_run;
+static pthread_t	child_listen_thread;
+static pthread_t	child_poker_thread;
+static pthread_mutex_t	child_mtx;
+static pthread_cond_t	child_cv;
+static unsigned		child_ticker;
+
 /*--------------------------------------------------------------------*/
 
-static enum {
-	H_STOP = 0,
-	H_START
-}	desired;
-
-static pid_t	child_pid;
-static int	child_fds[2];
-
-static struct bufferevent *child_std;
-static struct bufferevent *child_cli0, *child_cli1;
-
-static struct event ev_child_pingpong;
-
-struct creq {
-	TAILQ_ENTRY(creq)	list;
-	char			*req;
-	char			**argv;
-	mgt_ccb_f		*func;
-	void			*priv;
-};
-
-static TAILQ_HEAD(,creq)	creqhead = TAILQ_HEAD_INITIALIZER(creqhead);
-
-/*--------------------------------------------------------------------
- * Handle stdout+stderr from the child.
- */
-
-static void
-std_rdcb(struct bufferevent *bev, void *arg)
+static void *
+child_listener(void *arg)
 {
-	const char *p;
+	FILE *f;
+	char buf[BUFSIZ];
 
 	(void)arg;
 
+	f = fdopen(child_fds[0], "r");
+	assert(f != NULL);
+	while (fgets(buf, sizeof buf, f)) {
+		printf("Child said: %s", buf);
+	}
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void *
+child_poker(void *arg)
+{
+
+	(void)arg;
 	while (1) {
-		p = evbuffer_readline(bev->input);
-		if (p == NULL)
-			return;
-		printf("Child said <%s>\n", p);
+		sleep (1);
+		/* CLI: ping/pong */
+		child_ticker = 0;
 	}
 }
-
-static void
-std_wrcb(struct bufferevent *bev, void *arg)
-{
-
-	printf("%s(%p, %p)\n",
-	    (const char *)__func__, (void*)bev, arg);
-	exit (2);
-}
-
-static void
-std_excb(struct bufferevent *bev, short what, void *arg)
-{
-
-	printf("%s(%p, %d, %p)\n",
-	    (const char *)__func__, (void*)bev, what, arg);
-	exit (2);
-}
-
-/*--------------------------------------------------------------------
- * Multiplex requests/answers to the child
- */
-
-static void
-send_req(void)
-{
-	struct creq *cr;
-	int u;
-
-	cr = TAILQ_FIRST(&creqhead);
-	if (cr == NULL)
-		return;
-	if (0)
-		printf("Send Request <%s>\n", cr->req);
-	evbuffer_add_printf(child_cli1->output, "%s", cr->req);
-	for (u = 0; cr->argv != NULL && cr->argv[u] != NULL; u++) {
-		evbuffer_add_printf(child_cli1->output, " ");
-		cli_encode_string(child_cli1->output, cr->argv[u]);
-	}
-	evbuffer_add_printf(child_cli1->output, "\n");
-	AZ(bufferevent_enable(child_cli1, EV_WRITE));
-}
-
-void
-mgt_child_request(mgt_ccb_f *func, void *priv, char **argv, const char *fmt, ...)
-{
-	struct creq *cr;
-	va_list	ap;
-	int i;
-
-	cr = calloc(sizeof *cr, 1);
-	assert(cr != NULL);
-	cr->func = func;
-	cr->priv = priv;
-	cr->argv = argv;
-	va_start(ap, fmt);
-	vasprintf(&cr->req, fmt, ap);
-	va_end(ap);
-	i = TAILQ_EMPTY(&creqhead);
-	TAILQ_INSERT_TAIL(&creqhead, cr, list);
-	if (i)
-		send_req();
-}
-
-static void
-cli_rdcb(struct bufferevent *bev, void *arg)
-{
-	const char *p;
-	char **av;
-	struct creq *cr;
-
-	(void)arg;
-
-	p = evbuffer_readline(bev->input);
-	if (p == NULL)
-		return;
-	cr = TAILQ_FIRST(&creqhead);
-	assert(cr != NULL);
-	av = ParseArgv(p, 0);
-	if (av[0] != NULL) 
-		cr->func(CLIS_SYNTAX, av[0], cr->priv);
-	else
-		cr->func(strtoul(av[1], NULL, 0), av[2], cr->priv);
-	FreeArgv(av);
-	TAILQ_REMOVE(&creqhead, cr, list);
-	free(cr->req);
-	free(cr);
-	send_req();
-}
-
-static void
-cli_wrcb(struct bufferevent *bev, void *arg)
-{
-
-	(void)bev;
-	(void)arg;
-}
-
-static void
-cli_excb(struct bufferevent *bev, short what, void *arg)
-{
-
-	printf("%s(%p, %d, %p)\n",
-	    (const char *)__func__, (void*)bev, what, arg);
-	exit (2);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-child_pingpong_ccb(unsigned u, const char *r, void *priv)
-{
-	(void)u;
-	(void)r;
-	(void)priv;
-
-	/* XXX: reset keepalive timer */
-}
-
-
-static void
-child_pingpong(int a, short b, void *c)
-{
-	time_t t;
-	struct timeval tv;
-
-	(void)a;
-	(void)b;
-	(void)c;
-
-	t = time(NULL);
-	mgt_child_request(child_pingpong_ccb, NULL, NULL, "ping %ld", t);
-	if (1) {
-		tv.tv_sec = 10;
-		tv.tv_usec = 0;
-		AZ(evtimer_del(&ev_child_pingpong));
-		AZ(evtimer_add(&ev_child_pingpong, &tv));
-	}
-}
-
 
 /*--------------------------------------------------------------------*/
 
@@ -219,13 +70,14 @@ start_child(void)
 {
 	int i;
 
-	assert(pipe(&heritage.fds[0]) == 0);
-	assert(pipe(&heritage.fds[2]) == 0);
-	assert(pipe(child_fds) == 0);
+	AZ(pipe(&heritage.fds[0]));
+	AZ(pipe(&heritage.fds[2]));
+	AZ(pipe(child_fds));
 	i = fork();
 	if (i < 0) 
 		errx(1, "Could not fork child");
 	if (i == 0) {
+		AZ(pthread_single_np());
 		/* Redirect stdin/out/err */
 		AZ(close(0));
 		i = open("/dev/null", O_RDONLY);
@@ -243,99 +95,119 @@ start_child(void)
 		exit (1);
 	}
 
-	child_pid = i;
 	printf("start child pid %d\n", i);
 
 	AZ(close(child_fds[1]));
 
 	AZ(close(heritage.fds[1]));
 	AZ(close(heritage.fds[2]));
-
-	child_std = bufferevent_new(child_fds[0],
-	    std_rdcb, std_wrcb, std_excb, NULL);
-	assert(child_std != NULL);
-	AZ(bufferevent_base_set(mgt_eb, child_std));
-	bufferevent_enable(child_std, EV_READ);
-
-	child_cli0 = bufferevent_new(heritage.fds[0],
-	    cli_rdcb, cli_wrcb, cli_excb, NULL);
-	assert(child_cli0 != NULL);
-	AZ(bufferevent_base_set(mgt_eb, child_cli0));
-	bufferevent_enable(child_cli0, EV_READ);
-
-	child_cli1 = bufferevent_new(heritage.fds[3],
-	    cli_rdcb, cli_wrcb, cli_excb, NULL);
-	assert(child_cli1 != NULL);
-	AZ(bufferevent_base_set(mgt_eb, child_cli1));
-
-	evtimer_set(&ev_child_pingpong, child_pingpong, NULL);
-	AZ(event_base_set(mgt_eb, &ev_child_pingpong));
-	child_pingpong(0, 0, NULL);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-void
-mgt_child_start(void)
-{
-
-	if (desired == H_START)
-		return;
-	desired = H_START;
-	start_child();
+	mgt_cli_start_child(heritage.fds[0], heritage.fds[3]);
+	child_pid = i;
+	AZ(pthread_create(&child_listen_thread, NULL, child_listener, NULL));
+	AZ(pthread_create(&child_poker_thread, NULL, child_poker, NULL));
 }
 
 /*--------------------------------------------------------------------*/
 
-void
-mgt_child_stop(void)
+static void
+stop_child(void)
 {
 
-	if (desired == H_STOP)
-		return;
-	desired = H_STOP;
+	exit(2);
+	/* kill child, if relevant */
+	/* join child_listen_thread */
+	/* join child_poker_thread */
+	/* close heritage.fds */
+	/* close child_fds */
 }
 
 /*--------------------------------------------------------------------*/
 
-void
-mgt_child_kill(void)
+static void
+mgt_sigchld(int arg)
 {
-
-	desired = H_STOP;
-	kill(child_pid, 9);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-mgt_sigchld(int a, short b, void *c)
-{
-	pid_t p;
 	int status;
+	pid_t r;
 
-	printf("sig_chld(%d, %d, %p)\n", a, b, c);
+	(void)arg;
+	r = wait4(-1, &status, WNOHANG, NULL);
+	if (r == child_pid) {
+		printf("Cache child died pid=%d status=0x%x\n",
+		    r, status);
+		child_pid = -1;
+	} else {
+		printf("Unknown child died pid=%d status=0x%x\n",
+		    r, status);
+	}
+}
 
-	p = wait4(-1, &status, WNOHANG, NULL);
-	if (p == 0)
-		return;
-	printf("pid = %d status = 0x%x\n", p, status);
-	assert(p == child_pid);
+/*--------------------------------------------------------------------
+ * This thread is the master thread in the management process.
+ * The relatively simple task is to start and stop the child process
+ * and to reincarnate it in case of trouble.
+ */
 
-	printf("Child died :-(\n");
-	exit (0);
+void
+mgt_run(int dflag)
+{
+	struct timespec to;
+	struct sigaction sac;
+	int i, dstarts = 0;
 
-	bufferevent_free(child_std); /* XXX: is this enough ? */
-	child_std = NULL;
+#if 1
+	if (dflag)
+		mgt_cli_setup(0, 1, 1);
+#else
+	dflag = 0;
+#endif
 
-	AZ(close(heritage.fds[0]));
-	AZ(close(heritage.fds[1]));
-	AZ(close(heritage.fds[2]));
-	AZ(close(heritage.fds[3]));
-	AZ(close(child_fds[0]));
-	AZ(close(child_fds[1]));
+	sac.sa_handler = mgt_sigchld;
+	sac.sa_flags = SA_NOCLDSTOP;
+	AZ(sigaction(SIGCHLD, &sac, NULL));
+	child_should_run = !dflag;
 
-	if (desired == H_START)
-		start_child();
+	AZ(pthread_cond_init(&child_cv, NULL));
+	AZ(pthread_mutex_init(&child_mtx, NULL));
+
+	while (1) {
+		if (!child_should_run && child_pid != -1)
+			stop_child();
+		else if (child_should_run && child_pid == -1) {
+			if (dflag && dstarts)
+				exit(2);
+			start_child();
+			dstarts = 1;
+		}
+			
+		/* XXX POSIXBRAINDAMAGE */
+		AZ(clock_gettime(CLOCK_REALTIME, &to));
+		to.tv_sec += 1;
+
+		AZ(pthread_mutex_lock(&child_mtx));
+		i = pthread_cond_timedwait(&child_cv, &child_mtx, &to);
+		AZ(pthread_mutex_unlock(&child_mtx));
+		if (i == ETIMEDOUT && ++child_ticker > 5 && child_pid != -1) {
+			stop_child();
+			if (dflag)
+				exit (2);
+		}
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+mgt_start_child(void)
+{
+
+	child_should_run = 1;
+	AZ(pthread_cond_signal(&child_cv));
+}
+
+void
+mgt_stop_child(void)
+{
+
+	child_should_run = 0;
+	AZ(pthread_cond_signal(&child_cv));
 }

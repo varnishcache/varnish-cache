@@ -11,7 +11,6 @@
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
-#include "event.h"
 
 struct stevedore	*stevedore;
 
