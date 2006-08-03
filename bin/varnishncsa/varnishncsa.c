@@ -120,6 +120,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 		//
 		// Have to gather together data in SLT_RxRequest, SLT_RxURL, SLT_RxProtocol
 		// to build the request, so I use a sbuf.
+		
+		sbuf_clear(ob[u]);
 	
 		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",4)){
 			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
