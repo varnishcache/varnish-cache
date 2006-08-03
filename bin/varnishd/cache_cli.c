@@ -10,13 +10,11 @@
 #include <poll.h>
 #include <pthread.h>
 
-#include "event.h"		/* XXX only as long as it takes */
-
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "cli.h"
 #include "cli_priv.h"
-#include "cli_event.h"
+#include "common_cli.h"
 #include "cache.h"
 #include "sbuf.h"
 #include "heritage.h"
@@ -54,24 +52,6 @@ struct cli_proto CLI_cmds[] = {
 	{ NULL }
 };
 
-static int
-cli_writes(const char *s, const char *r, const char *t)
-{
-	int i, l;
-	struct iovec iov[3];
-
-	iov[0].iov_base = (void*)(uintptr_t)s;
-	iov[1].iov_base = (void*)(uintptr_t)r;
-	iov[2].iov_base = (void*)(uintptr_t)t;
-	for (l = i = 0; i < 3; i++) {
-		iov[i].iov_len = strlen(iov[i].iov_base);
-		l += iov[i].iov_len;
-	}
-	i = writev(heritage.fds[1], iov, 3);
-	VSL(SLT_CLI, 0, "Wr %d %s %s", i != l, s, r);
-	return (i != l);
-}
-
 void
 CLI_Init(void)
 {
@@ -80,7 +60,6 @@ CLI_Init(void)
 	unsigned nbuf, lbuf;
 	struct cli *cli, clis;
 	int i;
-	char res[30];
 
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
@@ -116,11 +95,13 @@ CLI_Init(void)
 		sbuf_clear(cli->sb);
 		cli_dispatch(cli, CLI_cmds, buf);
 		sbuf_finish(cli->sb);
-		sprintf(res, "%d ", cli->result);
-		if (cli_writes(res, sbuf_data(cli->sb), "\n")) {
+		i = cli_writeres(heritage.fds[2], cli);
+		if (i) {
 			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
 			return;
 		}
+		VSL(SLT_CLI, 0, "Wr %d %d %s",
+		    i, cli->result, sbuf_data(cli->sb));
 		i = ++p - buf; 
 		assert(i <= nbuf);
 		if (i < nbuf)

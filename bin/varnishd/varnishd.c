@@ -17,20 +17,17 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <sys/wait.h>
-
-#include "event.h"
 #include "sbuf.h"
 
-#include <cli.h>
-#include <cli_priv.h>
-#include <libvarnish.h>
-#include <libvcl.h>
+#include "libvarnish.h"
+#include "libvcl.h"
+#include "cli.h"
+#include "cli_priv.h"
+#include "common_cli.h"
 
 #include "mgt.h"
 #include "heritage.h"
 #include "shmlog.h"
-#include "cli_event.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -75,8 +72,8 @@ static const char *default_vcl =
 /*--------------------------------------------------------------------*/
 
 struct heritage heritage;
-struct event_base *mgt_eb;
 
+#if 0
 /*--------------------------------------------------------------------
  * Generic passthrough for CLI functions
  */
@@ -101,6 +98,7 @@ m_cli_func_passthrough(struct cli *cli, char **av, void *priv)
 	cli_suspend(cli);
 	mgt_child_request(cli_passthrough_cb, cli, &av[2], av[1]);
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -149,7 +147,7 @@ vcl_default(const char *bflag)
 	free(buf);
 	return (vf);
 }
-
+#if 0
 static void
 m_cli_func_config_inline(struct cli *cli, char **av, void *priv)
 {
@@ -196,6 +194,7 @@ m_cli_func_config_load(struct cli *cli, char **av, void *priv)
 	mgt_child_request(cli_passthrough_cb, cli, NULL,
 	    "config.load %s %s", av[2], vf);
 }
+#endif
 
 static char *
 vcl_file(const char *fflag)
@@ -216,6 +215,7 @@ vcl_file(const char *fflag)
 	return (vf);
 }
 
+#if 0
 
 /*--------------------------------------------------------------------*/
 
@@ -329,6 +329,7 @@ static struct cli_proto cli_proto[] = {
 	{ NULL }
 };
 
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -585,6 +586,7 @@ DebugStunt(void)
 
 /*--------------------------------------------------------------------*/
 
+
 /* for development purposes */
 #include <printf.h>
 
@@ -686,28 +688,9 @@ main(int argc, char *argv[])
 	if (dflag)
 		printf("%d\n%d\n%d\n", getpid(), getsid(0), getpgrp());
 
-	{
-	struct event e_sigchld;
-	struct cli *cli;
-	int i;
+	mgt_cli_init();
 
-	mgt_eb = event_init();
-	assert(mgt_eb != NULL);
-
-	if (dflag)
-		cli = cli_setup(mgt_eb, 0, 1, 1, cli_proto);
-
-	signal_set(&e_sigchld, SIGCHLD, mgt_sigchld, NULL);
-	AZ(event_base_set(mgt_eb, &e_sigchld));
-	AZ(signal_add(&e_sigchld, NULL));
-
-	mgt_child_start();
-
-	i = event_base_loop(mgt_eb, 0);
-	if (i != 0)
-		printf("event_dispatch() = %d\n", i);
-
-	}
+	mgt_run(dflag);
 
 	exit(0);
 }
