@@ -301,6 +301,9 @@ int BAN_CheckObject(struct object *o, const char *url);
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
 
+/* cache_cli.c [CLI] */
+void CLI_Init(void);
+
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
