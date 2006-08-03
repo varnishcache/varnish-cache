@@ -1,6 +1,6 @@
 # $Id: Makefile.am 426 2006-07-11 12:31:44Z phk $
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/contrib/libevent
+INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishtester
 
@@ -12,5 +12,4 @@ varnishtester_SOURCES = \
 # varnishd_LDFLAGS = -export-dynamic 
 
 varnishtester_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/contrib/libevent/libevent.la
+	$(top_builddir)/lib/libvarnish/libvarnish.la
