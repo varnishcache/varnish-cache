@@ -1,3 +1,6 @@
 # $Id$
 
-SUBDIRS = varnishd varnishlog varnishncsa varnishstat varnishtester varnishtop
+SUBDIRS = varnishd varnishlog varnishncsa varnishstat varnishtop
+
+# Awaiting dis-libeventing
+# SUBDIRS += varnistester
