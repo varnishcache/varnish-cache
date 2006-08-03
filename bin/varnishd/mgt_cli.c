@@ -24,13 +24,16 @@ static int		cli_i = -1, cli_o = -1;
 /*--------------------------------------------------------------------*/
 
 static void
-mcf_server_start(struct cli *cli)
+mcf_server_startstop(struct cli *cli, char **av, void *priv)
 {
 
 	(void)cli;
-	mgt_start_child();
+	(void)av;
+	if (priv != NULL)
+		mgt_stop_child();
+	else
+		mgt_start_child();
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -38,7 +41,8 @@ static struct cli_proto *cli_proto;
 
 static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_HELP,		cli_func_help, NULL },	/* must be first */
-	{ CLI_SERVER_START,	mcf_server_start, NULL },
+	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
+	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
 	{ CLI_CONFIG_LOAD },
 #if 0
 	{ CLI_CONFIG_LOAD,	m_cli_func_config_load, NULL },
