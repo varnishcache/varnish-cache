@@ -556,6 +556,7 @@ DebugStunt(void)
 	pfd[1].fd = pipes[1][0];
 	pfd[1].events = POLLIN;
 
+	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, DebugSigPass);
 	i = read(pipes[1][0], buf, sizeof buf - 1);
 	buf[i] = '\0';
@@ -569,15 +570,17 @@ DebugStunt(void)
 	while (1) {
 		i = poll(pfd, 2, INFTIM);
 		for (k = 0; k < 2; k++) {
-			if (pfd[k].revents) {
-				j = read(pipes[k][0], buf, sizeof buf);
-				if (j == 0)
-					exit (0);
-				if (j > 0) {
-					i = write(pipes[k][1], buf, j);
-					if (i != j)
-						err(1, "i = %d j = %d\n", i, j);
-				}
+			if (pfd[k].revents == 0)
+				continue;
+			if (pfd[k].revents != POLLIN)
+				exit (2);
+			j = read(pipes[k][0], buf, sizeof buf);
+			if (j == 0)
+				exit (0);
+			if (j > 0) {
+				i = write(pipes[k][1], buf, j);
+				if (i != j)
+					err(1, "i = %d j = %d\n", i, j);
 			}
 		}
 	}
