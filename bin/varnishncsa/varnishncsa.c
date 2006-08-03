@@ -97,6 +97,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 		ob[u] = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 		assert(ob[u] != NULL);
 	}
+	//printf("Hele [%d]: %s %s\n",u, p+4);
 	switch (p[0]) {
 
 		// XXX remember to check for NULL when strdup, if no allocate
@@ -109,27 +110,35 @@ extended_log_format(unsigned char *p, char *w_opt)
 	        j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
 	        strncpy(ll[u].df_h, p + 4, j);
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
-		printf("New session [%d]: %s \n",u, ll[u].df_h);
+		//printf("New session [%d]: %s \n",u, ll[u].df_h);
 
 		break;
 
 	case SLT_RxRequest:
 		// XXX: Remember to support more than GET, HEAD and POST.
 		// http://rfc.net/rfc2616.html#p51
+		//
+		// Have to gather together data in SLT_RxRequest, SLT_RxURL, SLT_RxProtocol
+		// to build the request, so I use a sbuf.
 	
-		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",11)){
+		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",4)){
 			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
 	                //printf("Got a HEAD\n");
 	        }
 
-		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "POST",11)){
+		else if (p[1] >= 4 && !strncasecmp((void *)&p[4], "POST",4)){
 			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
 		        //printf("Got a POST\n");
 		}
 
-		if (p[1] >= 3 && !strncasecmp((void *)&p[4], "GET",11)){
+		else if (p[1] >= 3 && !strncasecmp((void *)&p[4], "GET",3)){
 			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
 			//printf("Got a GET\n");
+		}
+
+		else {
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got something other than HEAD, POST, GET\n");
 		}
 
 		break;
@@ -158,22 +167,43 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_SessionClose:
 
-		printf("Session close [%d]: %s ",u, ll[u].df_h);
-		sbuf_finish(ob[u]);
-		printf("\"%s\"", sbuf_data(ob[u]));
-		printf(" \"%s\"\n", ll[u].df_U);
-		sbuf_clear(ob[u]);
+		if (p[1] >= 7 && !strncasecmp((void *)&p[4], "timeout",7)){
+			printf("Timeout...\n");
+		}
+		else{
+			
+			printf("%s ", ll[u].df_h);
+			sbuf_finish(ob[u]);
+			printf("\"%s\"", sbuf_data(ob[u]));
+			printf(" \"%s\"\n", ll[u].df_U);
+			sbuf_clear(ob[u]);
+			
+		}
 		
 		break;
 
 	case SLT_SessionReuse:
 
-		printf("Session reuse [%d]: %s ",u, ll[u].df_h);
+		// XXX have to catch the IP in the SessionReuse in case
+		// We never got the SessionOpen and the client keeps open
+
+		if (ll[u].df_h[0] == '\0'){
+			// If we are here, there is a session going on, and we haven't
+			// catched the IP in SessionOpen, we "steal" it from SessionReuse.
+			//
+			tmpPtr = strchr(p + 4, ' ');
+			j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
+			strncpy(ll[u].df_h, p + 4, j);
+			ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+
+		}
+		
+		printf("%s ", ll[u].df_h);
 		sbuf_finish(ob[u]);
 		printf("\"%s\"", sbuf_data(ob[u]));
 		printf(" \"%s\"\n", ll[u].df_U);
 		sbuf_clear(ob[u]);
-
+		
 		break;
 
 	default:
