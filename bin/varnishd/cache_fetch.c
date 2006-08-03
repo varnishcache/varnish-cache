@@ -242,6 +242,17 @@ FetchBody(struct sess *sp)
 	} else
 		cls = 0;
 
+	{
+	/* Sanity check fetch methods accounting */
+		struct storage *st;
+		unsigned uu;
+
+		uu = 0;
+		TAILQ_FOREACH(st, &sp->obj->store, list)
+			uu += st->len;
+		assert(uu == sp->obj->len);
+	}
+
 	http_CopyHttp(&sp->obj->http, hp);
 
 	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
