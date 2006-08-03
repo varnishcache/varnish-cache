@@ -127,7 +127,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			} else if (i >= v) {
 				memcpy(p, q, v);
 				p += v;
-				st->len += i;
+				st->len += v;
 				q += v;
 				u -= v;
 				v -= v;
