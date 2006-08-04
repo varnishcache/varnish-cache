@@ -37,18 +37,21 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Passthru of cli commands.
+ * Passthru of cli commands.  It is more or less just undoing what
+ * the cli parser did, but such is life...
  */
 
 static void
 mcf_passthru(struct cli *cli, char **av, void *priv)
 {
-	char buf[BUFSIZ], *bp, *be;
-	char *p;
+	char *p, *q, *r;
 	unsigned u, v;
-	int i, j, k;
+	int i;
+
+	(void)priv;
 
 	AZ(pthread_mutex_lock(&cli_mtx));
+
 	/* Request */
 	if (cli_o <= 0) {
 		AZ(pthread_mutex_unlock(&cli_mtx));
@@ -56,46 +59,37 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "Cache process not running");
 		return;
 	}
-	(void)priv;
-	bp = buf;
-	be = bp + sizeof buf;
+	v = 0;
+	for (u = 1; av[u] != NULL; u++)
+		v += strlen(av[u]) + 3;
+	p = malloc(v);
+	assert(p != NULL);
+	q = p;
 	for (u = 1; av[u] != NULL; u++) {
-		v = strlen(av[u]);
-		if (5 + bp + 4 * v > be) {
-			*bp = '\0';
-			v = bp - buf;
-			i = write(cli_o, buf, v);
-			assert(i == v);
-			bp = buf;
-		}
-		*bp++ = '"';
-		for (p = av[u]; *p; p++) {
-			switch (*p) {
-			case '\\':	*bp++ = '\\'; *bp++ = '\\'; break;
-			case '\n':	*bp++ = '\\'; *bp++ = 'n'; break;
-			case '"':	*bp++ = '\\'; *bp++ = '"'; break;
-			default:	*bp++ = *p; break;
+		*q++ = '"';
+		for (r = av[u]; *r; r++) {
+			switch (*r) {
+			case '\\':	*q++ = '\\'; *q++ = '\\'; break;
+			case '\n':	*q++ = '\\'; *q++ = 'n'; break;
+			case '"':	*q++ = '\\'; *q++ = '"'; break;
+			default:	*q++ = *r; break;
 			}
 		}
-		*bp++ = '"';
-		*bp++ = ' ';
+		*q++ = '"';
+		*q++ = ' ';
 	}
-	if (bp != buf) {
-		*bp++ = '\n';
-		v = bp - buf;
-		i = write(cli_o, buf, v);
-		assert(i == v);
-	}
+	*q++ = '\n';
+	v = q - p;
+	i = write(cli_o, p, v);
+	assert(i == v);
+	free(p);
 
-	/* Response */
-	i = read(cli_i, buf, sizeof buf - 1);
-	assert(i > 0);
-	buf[i] = '\0';
-	j = sscanf(buf, "%u %u\n%n", &u, &v, &k);
-	assert(j == 2);
-	assert(i == k + v + 1);
+	i = cli_readres(cli_i, &u, &p);
+	assert(i == 0);
 	cli_result(cli, u);
-	cli_out(cli, "%*.*s", v, v, buf + k);
+	cli_out(cli, "%s", p);
+	free(p);
+
 	AZ(pthread_mutex_unlock(&cli_mtx));
 }
 

@@ -181,3 +181,6 @@ enum cli_status_e {
 	CLIS_OK		= 200,
 	CLIS_CANT	= 300
 };
+
+/* Length of first line of response */
+#define CLI_LINE0_LEN	13

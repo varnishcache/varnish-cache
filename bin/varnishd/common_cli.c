@@ -52,9 +52,14 @@ cli_writeres(int fd, struct cli *cli)
 {
 	int i, l;
 	struct iovec iov[3];
-	char res[32];
+	char res[CLI_LINE0_LEN + 2];	/*
+					 * NUL + one more so we can catch
+					 * any misformats by snprintf
+					 */
 
-	sprintf(res, "%d %d\n", cli->result, sbuf_len(cli->sb));
+	i = snprintf(res, sizeof res,
+	    "%-3d %-8d\n", cli->result, sbuf_len(cli->sb));
+	assert(i == CLI_LINE0_LEN);
 	iov[0].iov_base = (void*)(uintptr_t)res;
 	iov[1].iov_base = (void*)(uintptr_t)sbuf_data(cli->sb);
 	iov[2].iov_base = (void*)(uintptr_t)"\n";
@@ -64,4 +69,37 @@ cli_writeres(int fd, struct cli *cli)
 	}
 	i = writev(fd, iov, 3);
 	return (i != l);
+}
+
+int
+cli_readres(int fd, unsigned *status, char **ptr)
+{
+	char res[CLI_LINE0_LEN + 1];	/* For NUL */
+	int i, j;
+	unsigned u, v;
+	char *p;
+
+	i = read(fd, res, CLI_LINE0_LEN);
+	if (i < 0)
+		return (i);
+	assert(i == CLI_LINE0_LEN);	/* XXX: handle */
+	assert(res[3] == ' ');
+	assert(res[CLI_LINE0_LEN - 1] == '\n');
+	j = sscanf(res, "%u %u\n", &u, &v);
+	assert(j == 2);
+	if (status != NULL)
+		*status = u;
+	p = malloc(v + 1);
+	assert(p != NULL);
+	i = read(fd, p, v + 1);
+	if (i < 0)
+		return (i);
+	assert(i == v + 1);
+	assert(p[v] == '\n');
+	p[v] = '\0';
+	if (ptr == NULL)
+		free(p);
+	else
+		*ptr = p;
+	return (0);
 }
