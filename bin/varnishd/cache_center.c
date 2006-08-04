@@ -106,7 +106,7 @@ cnt_done(struct sess *sp)
 	dh = cnt_dt(&sp->t_open, &sp->t_req);
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
 	da = cnt_dt(&sp->t_resp, &te);
-	VSL(SLT_ReqServTime, sp->fd, "%u %ld.%09ld %.9f %.9f %.9f",
+	VSL(SLT_ReqServTime, sp->id, "%u %ld.%09ld %.9f %.9f %.9f",
 	    sp->xid, (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
 	    dh, dp, da);
 
