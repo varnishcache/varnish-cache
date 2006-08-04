@@ -38,6 +38,7 @@ varnishd_SOURCES = \
 	hash_classic.c \
 	mgt_child.c \
 	mgt_cli.c \
+	mgt_vcc.c \
 	rfc2616.c \
 	shmlog.c \
 	storage_file.c \
