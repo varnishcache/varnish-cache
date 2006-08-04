@@ -122,6 +122,12 @@ VSL_OpenLog(struct VSL_data *vd)
 	vd->logend = vd->logstart + vsl_lh->size;
 	vd->ptr = vd->logstart;
 
+	if (vd->b_opt)
+		memset(vd->dir, 1, sizeof vd->dir);
+
+	if (vd->c_opt)
+		memset(vd->dir, 2, sizeof vd->dir);
+
 	if (!vd->d_opt)
 		while (vsl_nextlog(vd, &p) == 1)
 			continue;
