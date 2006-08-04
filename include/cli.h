@@ -178,5 +178,6 @@ enum cli_status_e {
 	CLIS_TOOFEW	= 104,
 	CLIS_TOOMANY	= 105,
 	CLIS_PARAM	= 106,
-	CLIS_OK		= 200
+	CLIS_OK		= 200,
+	CLIS_CANT	= 300
 };
