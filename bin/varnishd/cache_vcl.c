@@ -96,12 +96,6 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
-	/*
-	 * Delete the file, either we got hold of it, or we couldn't care
-	 * less about it anyway.
-	 */
-	(void)unlink(fn);
-
 	if (vcl->dlh == NULL) {
 		if (cli == NULL)
 			fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());

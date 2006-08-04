@@ -27,7 +27,6 @@ child_main(void)
 	printf("Child starts\n");
 
 	VCL_Init();
-	VCL_Load(heritage.vcl_file, "boot", NULL);
 
 	HTTP_Init();
 	SES_Init();
@@ -36,7 +35,6 @@ child_main(void)
 	VSL_Init();
 	WRK_Init();
 
-	VCA_Init();
 	EXP_Init();
 	HSH_Init();
 	BAN_Init();

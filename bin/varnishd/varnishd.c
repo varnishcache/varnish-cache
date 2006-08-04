@@ -363,12 +363,8 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (bflag != NULL)
-		heritage.vcl_file = mgt_vcc_default(bflag);
-	else
-		heritage.vcl_file = mgt_vcc_file(fflag);
-	if (heritage.vcl_file == NULL)
-		exit (1);
+	if (mgt_vcc_default(bflag, fflag))
+		exit (2);
 
 	setup_storage(sflag);
 	setup_hash(hflag);

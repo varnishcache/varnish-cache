@@ -25,9 +25,6 @@ struct heritage {
 	int			vsl_fd;
 	unsigned		vsl_size;
 
-	/* Initial VCL file */
-	char			*vcl_file;
-
 	/* Storage method */
 	struct stevedore	*stevedore;
 

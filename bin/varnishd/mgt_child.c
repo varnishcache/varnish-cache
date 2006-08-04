@@ -21,9 +21,12 @@
 #include "libvarnish.h"
 #include "heritage.h"
 #include "mgt.h"
+#include "cli_priv.h"
+#include "mgt_cli.h"
+
+pid_t		mgt_pid;
 
 static pid_t		child_pid = -1;
-static pid_t		mgr_pid;
 static int		child_fds[2];
 static unsigned 	child_should_run;
 static pthread_t	child_listen_thread;
@@ -74,6 +77,7 @@ static void
 start_child(void)
 {
 	int i;
+	char *p;
 
 	AZ(pipe(&heritage.fds[0]));
 	AZ(pipe(&heritage.fds[2]));
@@ -115,6 +119,12 @@ start_child(void)
 	AZ(pthread_detach(child_listen_thread));
 	AZ(pthread_create(&child_poker_thread, NULL, child_poker, NULL));
 	AZ(pthread_detach(child_poker_thread));
+	if (mgt_push_vcls_and_start(&i, &p)) {
+		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
+		free(p);
+		exit (2);
+	}
+	child_ticker = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -190,7 +200,7 @@ mgt_sigint(int arg)
 {
 
 	(void)arg;
-	if (getpid() != mgr_pid) {
+	if (getpid() != mgt_pid) {
 		printf("Got SIGINT\n");
 		exit (2);
 	}
@@ -212,7 +222,7 @@ mgt_run(int dflag)
 	struct sigaction sac;
 	int i;
 
-	mgr_pid = getpid();
+	mgt_pid = getpid();
 
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
@@ -275,18 +285,17 @@ mgt_run(int dflag)
 /*--------------------------------------------------------------------*/
 
 void
-mgt_start_child(void)
+mcf_server_startstop(struct cli *cli, char **av, void *priv)
 {
 
+	(void)cli;
+	(void)av;
+	if (priv != NULL) {
+		child_should_run = 0;
+		AZ(pthread_cond_signal(&child_cv));
+		return;
+	} 
 	dstarts = 0;
 	child_should_run = 1;
-	AZ(pthread_cond_signal(&child_cv));
-}
-
-void
-mgt_stop_child(void)
-{
-
-	child_should_run = 0;
 	AZ(pthread_cond_signal(&child_cv));
 }
