@@ -21,24 +21,6 @@
 
 /*--------------------------------------------------------------------*/
 
-static void
-cli_func_ping(struct cli *cli, char **av, void *priv)
-{
-	time_t t;
-
-	(void)priv;
-#if 0
-	arm_keepalive();
-#endif
-	if (av[2] != NULL) {
-		/* XXX: check clock skew is pointless here */
-	}
-	t = time(NULL);
-	cli_out(cli, "PONG %ld", t);
-}
-
-/*--------------------------------------------------------------------*/
-
 struct cli_proto CLI_cmds[] = {
 	{ CLI_PING,		cli_func_ping },
 #if 0
