@@ -17,6 +17,10 @@ void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
 int mgt_cli_askchild(int *status, char **resp, const char *fmt, ...);
 
+/* mgt_vcc.c */
+void mgt_vcc_init(void);
+char *mgt_vcc_default(const char *bflag);
+char *mgt_vcc_file(const char *fflag);
 
 /* tcp.c */
 int open_tcp(const char *port);
