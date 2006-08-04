@@ -63,8 +63,8 @@ child_poker(void *arg)
 	(void)arg;
 	while (1) {
 		sleep (1);
-		/* CLI: ping/pong */
-		child_ticker = 0;
+		if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
+			child_ticker = 0;
 	}
 }
 
