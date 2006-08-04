@@ -19,6 +19,7 @@
 #include "sbuf.h"
 #include "common_cli.h"
 #include "mgt.h"
+#include "shmlog.h"
 
 static int		cli_i = -1, cli_o = -1;
 static pthread_mutex_t	cli_mtx;
@@ -36,6 +37,23 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 	else
 		mgt_start_child();
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+mcf_stats(struct cli *cli, char **av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+
+	assert (VSL_stats != NULL);
+#define MAC_STAT(n,t,f,d) \
+    cli_out(cli, "%12ju  " d "\n", (VSL_stats->n));
+#include "stat_field.h"
+#undef MAC_STAT
+}
+
 
 /*--------------------------------------------------------------------
  * Passthru of cli commands.  It is more or less just undoing what
@@ -103,6 +121,7 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
 	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
+	{ CLI_STATS,		mcf_stats, NULL },
 	{ CLI_CONFIG_LOAD },
 #if 0
 	{ CLI_CONFIG_LOAD,	m_cli_func_config_load, NULL },
@@ -110,7 +129,6 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_SERVER_STOP,	m_cli_func_server_stop, NULL },
 	{ CLI_SERVER_RESTART },
 	{ CLI_PING,		m_cli_func_ping, NULL },
-	{ CLI_STATS,		m_cli_func_stats, NULL },
 	{ CLI_ZERO },
 	{ CLI_VERBOSE,		m_cli_func_verbose, NULL },
 	{ CLI_EXIT, 		m_cli_func_exit, NULL},
