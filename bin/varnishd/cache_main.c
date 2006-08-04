@@ -22,9 +22,6 @@ void
 child_main(void)
 {
 
-	/* XXX: SO_NOSIGPIPE does not work reliably :-( */
-	signal(SIGPIPE, SIG_IGN);
-
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
