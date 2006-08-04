@@ -20,6 +20,7 @@
 #include "mgt.h"
 
 static int		cli_i = -1, cli_o = -1;
+static pthread_mutex_t	cli_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -33,6 +34,69 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 		mgt_stop_child();
 	else
 		mgt_start_child();
+}
+
+/*--------------------------------------------------------------------
+ * Passthru of cli commands.
+ */
+
+static void
+mcf_passthru(struct cli *cli, char **av, void *priv)
+{
+	char buf[BUFSIZ], *bp, *be;
+	char *p;
+	unsigned u, v;
+	int i, j, k;
+
+	AZ(pthread_mutex_lock(&cli_mtx));
+	/* Request */
+	if (cli_o <= 0) {
+		AZ(pthread_mutex_unlock(&cli_mtx));
+		cli_result(cli, CLIS_CANT);
+		cli_out(cli, "Cache process not running");
+		return;
+	}
+	(void)priv;
+	bp = buf;
+	be = bp + sizeof buf;
+	for (u = 1; av[u] != NULL; u++) {
+		v = strlen(av[u]);
+		if (5 + bp + 4 * v > be) {
+			*bp = '\0';
+			v = bp - buf;
+			i = write(cli_o, buf, v);
+			assert(i == v);
+			bp = buf;
+		}
+		*bp++ = '"';
+		for (p = av[u]; *p; p++) {
+			switch (*p) {
+			case '\\':	*bp++ = '\\'; *bp++ = '\\'; break;
+			case '\n':	*bp++ = '\\'; *bp++ = 'n'; break;
+			case '"':	*bp++ = '\\'; *bp++ = '"'; break;
+			default:	*bp++ = *p; break;
+			}
+		}
+		*bp++ = '"';
+		*bp++ = ' ';
+	}
+	if (bp != buf) {
+		*bp++ = '\n';
+		v = bp - buf;
+		i = write(cli_o, buf, v);
+		assert(i == v);
+	}
+
+	/* Response */
+	i = read(cli_i, buf, sizeof buf - 1);
+	assert(i > 0);
+	buf[i] = '\0';
+	j = sscanf(buf, "%u %u\n%n", &u, &v, &k);
+	assert(j == 2);
+	assert(i == k + v + 1);
+	cli_result(cli, u);
+	cli_out(cli, "%*.*s", v, v, buf + k);
+	AZ(pthread_mutex_unlock(&cli_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -70,6 +134,7 @@ mgt_cli_init(void)
 	unsigned u, v;
 
 
+	AZ(pthread_mutex_init(&cli_mtx, NULL));
 	/*
 	 * Build the joint cli_proto by combining the manager process
 	 * entries with with the cache process entries.  The latter
@@ -93,7 +158,7 @@ mgt_cli_init(void)
 		if (v < u)
 			continue;
 		cli_proto[u] = *cp;
-		cli_proto[u].func = NULL;	/* XXX: pass */
+		cli_proto[u].func = mcf_passthru;
 		u++;
 	}
 
