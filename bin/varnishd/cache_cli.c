@@ -95,7 +95,7 @@ CLI_Init(void)
 		sbuf_clear(cli->sb);
 		cli_dispatch(cli, CLI_cmds, buf);
 		sbuf_finish(cli->sb);
-		i = cli_writeres(heritage.fds[2], cli);
+		i = cli_writeres(heritage.fds[1], cli);
 		if (i) {
 			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
 			return;
