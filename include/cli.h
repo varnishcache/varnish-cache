@@ -59,9 +59,9 @@
 	"\tCompile and load the VCL data under the name provided.",	\
 	2, 2
 
-#define CLI_CONFIG_UNLOAD						\
-	"config.unload",						\
-	"config.unload <configname>",					\
+#define CLI_CONFIG_DISCARD						\
+	"config.discard",						\
+	"config.discard <configname>",					\
 	"\tUnload the named configuration (when possible).",		\
 	1, 1
 

@@ -25,6 +25,7 @@ struct vcls {
 	const char		*name;
 	void			*dlh;
 	struct VCL_conf		*conf;
+	int			discard;
 };
 
 /*
@@ -58,10 +59,24 @@ VCL_Get(void)
 void
 VCL_Rel(struct VCL_conf *vc)
 {
+	struct vcls *vcl;
 
 	AZ(pthread_mutex_lock(&vcl_mtx));
+	assert(vc->busy > 0);
 	vc->busy--;
+	vcl = vc->priv;	/* XXX miniobj */
+	if (vc->busy == 0 && vcl_active != vcl) {
+		/* XXX: purge backends */
+	}
+	if (vc->busy == 0 && vcl->discard) {
+		TAILQ_REMOVE(&vcl_head, vcl, list);
+	} else {
+		vcl = NULL;
+	}
 	AZ(pthread_mutex_unlock(&vcl_mtx));
+	if (vcl != NULL) {
+		/* XXX: dispose of vcl */
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -114,6 +129,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		free(vcl);
 		return (1);
 	}
+
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
 		if (cli == NULL) 
 			fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
@@ -123,6 +139,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		free(vcl);
 		return (1);
 	}
+	vcl->conf->priv = vcl;
 	vcl->name = strdup(name);
 	assert(vcl->name != NULL);
 	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
@@ -167,12 +184,34 @@ cli_func_config_load(struct cli *cli, char **av, void *priv)
 }
 
 void
-cli_func_config_unload(struct cli *cli, char **av, void *priv)
+cli_func_config_discard(struct cli *cli, char **av, void *priv)
 {
+	struct vcls *vcl;
 
 	(void)av;
 	(void)priv;
-	cli_result(cli, CLIS_UNIMPL);
+	vcl = vcl_find(av[2]);
+	if (vcl->discard) {
+		cli_result(cli, CLIS_PARAM);
+		cli_out(cli, "VCL %s already discarded", av[2]);
+		return;
+	}
+	AZ(pthread_mutex_lock(&vcl_mtx));
+	if (vcl == vcl_active) {
+		AZ(pthread_mutex_unlock(&vcl_mtx));
+		cli_result(cli, CLIS_PARAM);
+		cli_out(cli, "VCL %s is the active VCL", av[2]);
+		return;
+	}
+	vcl->discard = 1;
+	if (vcl->conf->busy == 0)
+		TAILQ_REMOVE(&vcl_head, vcl, list);
+	else
+		vcl = NULL;
+	AZ(pthread_mutex_unlock(&vcl_mtx));
+	if (vcl != NULL) {
+		/* XXX dispose of vcl */
+	}
 }
 
 void
@@ -183,14 +222,19 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 	(void)av;
 	(void)priv;
 	vcl = vcl_find(av[2]);
-	if (vcl != NULL) {
-		AZ(pthread_mutex_lock(&vcl_mtx));
-		vcl_active = vcl;
-		AZ(pthread_mutex_unlock(&vcl_mtx));
-	} else {
-		cli_out(cli, "No config named '%s' loaded", av[2]);
+	if (vcl == NULL) {
+		cli_out(cli, "No VCL named '%s'", av[2]);
 		cli_result(cli, CLIS_PARAM);
+		return;
 	}
+	if (vcl->discard) {
+		cli_out(cli, "VCL '%s' has been discarded", av[2]);
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+	AZ(pthread_mutex_lock(&vcl_mtx));
+	vcl_active = vcl;
+	AZ(pthread_mutex_unlock(&vcl_mtx));
 }
 
 /*--------------------------------------------------------------------*/

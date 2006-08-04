@@ -406,7 +406,7 @@ int VCL_Load(const char *fn, const char *name, struct cli *cli);
 #ifdef CLI_PRIV_H
 cli_func_t	cli_func_config_list;
 cli_func_t	cli_func_config_load;
-cli_func_t	cli_func_config_unload;
+cli_func_t	cli_func_config_discard;
 cli_func_t	cli_func_config_use;
 #endif
 
