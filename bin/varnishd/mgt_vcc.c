@@ -206,9 +206,6 @@ mgt_vcc_atexit(void)
 	if (getpid() != mgt_pid)
 		return;
 	AZ(pthread_mutex_lock(&vcc_mtx));
-	TAILQ_FOREACH(vp, &vclhead, list) {
-		printf("Has %s %s\n", vp->name, vp->fname);
-	}
 	while (1) {
 		vp = TAILQ_FIRST(&vclhead);
 		if (vp == NULL)
@@ -286,4 +283,72 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 		return;
 	}
 	mgt_vcc_add(av[2], vf);
+}
+
+static struct vcls *
+mcf_find_vcl(struct cli *cli, const char *name)
+{
+	struct vcls *vp;
+
+	TAILQ_FOREACH(vp, &vclhead, list)
+		if (!strcmp(vp->name, name))
+			break;
+	if (vp == NULL) {
+		cli_result(cli, CLIS_PARAM);
+		cli_out(cli, "No configuration named %s known.", name);
+	}
+	return (vp);
+}
+
+void
+mcf_config_use(struct cli *cli, char **av, void *priv)
+{
+	int status;
+	char *p;
+	struct vcls *vp;
+
+	(void)priv;
+	AZ(pthread_mutex_lock(&vcc_mtx));
+	vp = mcf_find_vcl(cli, av[2]);
+	if (vp != NULL && vp->active == 0) {
+		if (mgt_cli_askchild(&status, &p, "config.use %s\n", av[2])) {
+			cli_result(cli, status);
+			cli_out(cli, "%s", p);
+			free(p);
+		} else {
+			vp->active = 2;
+			TAILQ_FOREACH(vp, &vclhead, list) {
+				if (vp->active == 1)
+					vp->active = 0;
+				else if (vp->active == 2)
+					vp->active = 1;
+			}
+		}
+	}
+	AZ(pthread_mutex_unlock(&vcc_mtx));
+}
+
+void
+mcf_config_discard(struct cli *cli, char **av, void *priv)
+{
+	int status;
+	char *p;
+	struct vcls *vp;
+	(void)priv;
+	AZ(pthread_mutex_lock(&vcc_mtx));
+	vp = mcf_find_vcl(cli, av[2]);
+	if (vp != NULL && vp->active) {
+		cli_result(cli, CLIS_PARAM);
+		cli_out(cli, "Cannot discard active VCL program\n");
+	} else if (vp != NULL) {
+		if (mgt_cli_askchild(&status, &p,
+		    "config.discard %s\n", av[2])) {
+			cli_result(cli, status);
+			cli_out(cli, "%s", p);
+			free(p);
+		} else {
+			AZ(mgt_vcc_delbyname(av[2]));
+		}
+	}
+	AZ(pthread_mutex_unlock(&vcc_mtx));
 }

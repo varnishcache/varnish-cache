@@ -455,6 +455,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("        unsigned        nref;\n", f);
 	fputs("        unsigned        busy;\n", f);
 	fputs("\n", f);
+	fputs("	void		*priv;\n", f);
+	fputs("\n", f);
 	fputs("        vcl_init_f      *init_func;\n", f);
 	fputs("        vcl_fini_f      *fini_func;\n", f);
 	fputs("\n", f);

@@ -44,7 +44,7 @@ struct cli_proto CLI_cmds[] = {
 	{ CLI_URL_PURGE,	cli_func_url_purge },
 	{ CLI_CONFIG_LOAD,	cli_func_config_load },
 	{ CLI_CONFIG_LIST,	cli_func_config_list },
-	{ CLI_CONFIG_UNLOAD,	cli_func_config_unload },
+	{ CLI_CONFIG_DISCARD,	cli_func_config_discard },
 	{ CLI_CONFIG_USE,	cli_func_config_use },
 	{ NULL }
 };

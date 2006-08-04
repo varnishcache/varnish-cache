@@ -22,6 +22,8 @@ struct VCL_conf {
         unsigned        nref;
         unsigned        busy;
 
+	void		*priv;
+
         vcl_init_f      *init_func;
         vcl_fini_f      *fini_func;
 

@@ -111,6 +111,8 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_STATS,		mcf_stats, NULL },
 	{ CLI_CONFIG_LOAD,	mcf_config_load, NULL },
 	{ CLI_CONFIG_INLINE,	mcf_config_inline, NULL },
+	{ CLI_CONFIG_USE,	mcf_config_use, NULL },
+	{ CLI_CONFIG_DISCARD,	mcf_config_discard, NULL },
 #if 0
 	{ CLI_SERVER_STOP,	m_cli_func_server_stop, NULL },
 	{ CLI_SERVER_RESTART },
