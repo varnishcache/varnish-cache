@@ -128,15 +128,9 @@ RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
-	double dt;
-	struct timespec t_resp;
 	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	clock_gettime(CLOCK_REALTIME, &t_resp);
-	dt = (t_resp.tv_sec - sp->t_req.tv_sec);
-	dt += (t_resp.tv_nsec - sp->t_req.tv_nsec) * 1e-9;
-	VSL(SLT_ReqServTime, sp->fd, "%ld.%09ld %.9f",
-	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec, dt);
+	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;

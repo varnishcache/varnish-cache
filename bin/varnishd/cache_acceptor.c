@@ -49,6 +49,7 @@ vca_accept_sess(int fd)
 	sp = SES_New(addr, l);
 	assert(sp != NULL);	/* XXX handle */
 
+	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
 	sp->fd = i;
 	sp->id = i;
 
@@ -246,6 +247,7 @@ vca_return_session(struct sess *sp)
 		SES_Delete(sp);
 		return;
 	}
+	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
 	VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 	assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
 }
@@ -364,6 +366,7 @@ vca_return_session(struct sess *sp)
 		SES_Delete(sp);
 		return;
 	}
+	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
 	VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 	if (http_RecvPrepAgain(sp->http))
 		vca_handover(sp, 0);
