@@ -235,7 +235,9 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 
+	struct timespec		t_open;
 	struct timespec		t_req;
+	struct timespec		t_resp;
 	struct timespec		t_idle;
 
 	enum step		step;

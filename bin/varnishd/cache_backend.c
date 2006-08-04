@@ -195,8 +195,10 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 			TAILQ_REMOVE(&bp->connlist, vc, list);
 		} else {
 			vc2 = TAILQ_FIRST(&vbe_head);
-			if (vc2 != NULL)
+			if (vc2 != NULL) {
+				VSL_stats->backend_unused--;
 				TAILQ_REMOVE(&vbe_head, vc2, list);
+			}
 		}
 		AZ(pthread_mutex_unlock(&vbemtx));
 		if (vc == NULL)
@@ -229,6 +231,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		if (vc->fd < 0) {
 			vc->backend = NULL;
 			TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+			VSL_stats->backend_unused++;
 			vc = NULL;
 		} else {
 			vc->backend = bp;
@@ -262,6 +265,7 @@ VBE_ClosedFd(struct vbe_conn *vc)
 	vc->backend = NULL;
 	AZ(pthread_mutex_lock(&vbemtx));
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+	VSL_stats->backend_unused++;
 	AZ(pthread_mutex_unlock(&vbemtx));
 }
 

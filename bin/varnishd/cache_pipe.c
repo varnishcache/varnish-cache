@@ -68,6 +68,8 @@ PipeSession(struct sess *sp)
 		return;
 	}
 
+	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
+
 	memset(fds, 0, sizeof fds);
 	fds[0].fd = vc->fd;
 	fds[0].events = POLLIN | POLLERR;

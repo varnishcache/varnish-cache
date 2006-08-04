@@ -217,6 +217,8 @@ SES_Delete(struct sess *sp)
 	struct acct *b = &sp->acct;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(sp->obj == NULL);
+	assert(sp->vcl == NULL);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
 	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",

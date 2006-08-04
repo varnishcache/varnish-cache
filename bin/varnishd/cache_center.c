@@ -79,9 +79,21 @@ DOT		label="Request completed"
 DOT	]
  */
 
+static double
+cnt_dt(struct timespec *t1, struct timespec *t2)
+{
+	double dt;
+
+	dt = (t2->tv_sec - t1->tv_sec);
+	dt += (t2->tv_nsec - t1->tv_nsec) * 1e-9;
+	return (dt);
+}
+
 static int
 cnt_done(struct sess *sp)
 {
+	double dh, dp, da;
+	struct timespec te;
 
 	assert(sp->obj == NULL);
 	assert(sp->vbc == NULL);
@@ -89,6 +101,14 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, sp->doclose);
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
+
+	clock_gettime(CLOCK_REALTIME, &te);
+	dh = cnt_dt(&sp->t_open, &sp->t_req);
+	dp = cnt_dt(&sp->t_req, &sp->t_resp);
+	da = cnt_dt(&sp->t_resp, &te);
+	VSL(SLT_ReqServTime, sp->fd, "%u %ld.%09ld %.9f %.9f %.9f",
+	    sp->xid, (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
+	    dh, dp, da);
 
 	SES_Charge(sp);
 	vca_return_session(sp);
@@ -523,6 +543,7 @@ cnt_recv(struct sess *sp)
 	char *b;
 
 	sp->t0 = time(NULL);
+	assert(sp->vcl == NULL);
 	sp->vcl = VCL_Get();
 
 	assert(sp->obj == NULL);

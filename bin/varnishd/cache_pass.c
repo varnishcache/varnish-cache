@@ -149,6 +149,8 @@ PassBody(struct sess *sp)
 	assert(vc != NULL);
 	sp->vbc = NULL;
 
+	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
+
 	http_ClrHeader(sp->http);
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
