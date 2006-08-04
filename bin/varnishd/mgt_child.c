@@ -25,8 +25,8 @@
 #include "mgt_cli.h"
 
 pid_t		mgt_pid;
+pid_t		child_pid = -1;
 
-static pid_t		child_pid = -1;
 static int		child_fds[2];
 static unsigned 	child_should_run;
 static pthread_t	child_listen_thread;
