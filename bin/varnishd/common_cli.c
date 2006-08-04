@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include <signal.h>
 
 #include <sys/wait.h>
@@ -102,4 +103,17 @@ cli_readres(int fd, unsigned *status, char **ptr)
 	else
 		*ptr = p;
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+cli_func_ping(struct cli *cli, char **av, void *priv)
+{
+	time_t t;
+
+	(void)priv;
+	(void)av;
+	t = time(NULL);
+	cli_out(cli, "PONG %ld", t);
 }
