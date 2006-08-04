@@ -246,7 +246,8 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 		return;
 	}
 	sbuf_delete(sb);
-	if (mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+	if (child_pid >= 0 &&
+	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
 		free(p);
@@ -276,7 +277,8 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 		return;
 	}
 	sbuf_delete(sb);
-	if (mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+	if (child_pid >= 0 &&
+	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
 		free(p);
@@ -334,6 +336,7 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 	int status;
 	char *p;
 	struct vcls *vp;
+
 	(void)priv;
 	AZ(pthread_mutex_lock(&vcc_mtx));
 	vp = mcf_find_vcl(cli, av[2]);
@@ -352,3 +355,29 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 	}
 	AZ(pthread_mutex_unlock(&vcc_mtx));
 }
+
+void
+mcf_config_list(struct cli *cli, char **av, void *priv)
+{
+	int status;
+	char *p;
+	struct vcls *vp;
+
+	(void)av;
+	(void)priv;
+	if (child_pid >= 0) {
+		mgt_cli_askchild(&status, &p, "config.list\n");
+		cli_result(cli, status);
+		cli_out(cli, "%s", p);
+		free(p);
+	} else {
+		AZ(pthread_mutex_lock(&vcc_mtx));
+		TAILQ_FOREACH(vp, &vclhead, list) {
+			cli_out(cli, "%s %6s %s\n",
+			    vp->active ? "*" : " ",
+			    "N/A", vp->name);
+		}
+		AZ(pthread_mutex_unlock(&vcc_mtx));
+	}
+}
+
