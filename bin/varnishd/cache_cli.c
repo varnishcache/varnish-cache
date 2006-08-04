@@ -21,8 +21,23 @@
 
 /*--------------------------------------------------------------------*/
 
+static void
+cli_func_start(struct cli *cli, char **av, void *priv)
+{
+
+	(void)cli;
+	(void)av;
+	(void)priv;
+	VCA_Init();
+	return;
+}
+
+
+/*--------------------------------------------------------------------*/
+
 struct cli_proto CLI_cmds[] = {
 	{ CLI_PING,		cli_func_ping },
+	{ CLI_SERVER_START,	cli_func_start },
 #if 0
 	{ CLI_URL_QUERY,	cli_func_url_query },
 #endif

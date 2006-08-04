@@ -5,12 +5,15 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 #include <sys/types.h>
 
 #include "sbuf.h"
+#include "queue.h"
 
 #include "libvarnish.h"
 #include "libvcl.h"
@@ -19,6 +22,19 @@
 #include "common_cli.h"
 
 #include "mgt.h"
+#include "mgt_cli.h"
+
+struct vcls {
+	TAILQ_ENTRY(vcls)	list;
+	char 			*name;
+	char			*fname;
+	int			active;
+};
+
+
+static TAILQ_HEAD(, vcls) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
+
+static pthread_mutex_t		vcc_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -62,104 +78,163 @@ static const char *default_vcl =
 
 /*--------------------------------------------------------------------*/
 
-char *
-mgt_vcc_default(const char *bflag)
+static struct vcls *
+mgt_vcc_add(const char *name, char *file)
+{
+	struct vcls *vp;
+
+	vp = calloc(sizeof *vp, 1);
+	assert(vp != NULL);
+	vp->name = strdup(name);
+	vp->fname = file;
+	AZ(pthread_mutex_lock(&vcc_mtx));
+	TAILQ_INSERT_TAIL(&vclhead, vp, list);
+	AZ(pthread_mutex_unlock(&vcc_mtx));
+	return (vp);
+}
+
+static void
+mgt_vcc_del(struct vcls *vp)
+{
+	TAILQ_REMOVE(&vclhead, vp, list);
+	printf("unlink %s\n", vp->fname);
+	AZ(unlink(vp->fname));	/* XXX assert for now */
+	free(vp->fname);
+	free(vp->name);
+	free(vp);
+}
+
+static int
+mgt_vcc_delbyname(const char *name)
+{
+	struct vcls *vp;
+
+	TAILQ_FOREACH(vp, &vclhead, list) {
+		if (!strcmp(name, vp->name)) {
+			mgt_vcc_del(vp);
+			return (0);
+		}
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+mgt_vcc_default(const char *bflag, const char *fflag)
 {
 	char *buf, *vf;
 	const char *p, *q;
 	struct sbuf *sb;
+	struct vcls *vp;
 
-	/*
-	 * XXX: should do a "HEAD /" on the -b argument to see that
-	 * XXX: it even works.  On the other hand, we should do that
-	 * XXX: for all backends in the cache process whenever we
-	 * XXX: change config, but for a complex VCL, it might not be
-	 * XXX: a bug for a backend to not reply at that time, so then
-	 * XXX: again: we should check it here in the "trivial" case.
-	 */
-	p = strchr(bflag, ' ');
-	if (p != NULL) {
-		q = p + 1;
-	} else {
-		p = strchr(bflag, '\0');
-		assert(p != NULL);
-		q = "http";
-	}
-	
-	buf = NULL;
-	asprintf(&buf,
-	    "backend default {\n"
-	    "    set backend.host = \"%*.*s\";\n"
-	    "    set backend.port = \"%s\";\n"
-	    "}\n", (int)(p - bflag), (int)(p - bflag), bflag, q);
-	assert(buf != NULL);
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
-	vf = VCC_Compile(sb, buf, NULL);
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		fprintf(stderr, "%s", sbuf_data(sb));
+	if (bflag != NULL) {
+		/*
+		 * XXX: should do a "HEAD /" on the -b argument to see that
+		 * XXX: it even works.  On the other hand, we should do that
+		 * XXX: for all backends in the cache process whenever we
+		 * XXX: change config, but for a complex VCL, it might not be
+		 * XXX: a bug for a backend to not reply at that time, so then
+		 * XXX: again: we should check it here in the "trivial" case.
+		 */
+		p = strchr(bflag, ' ');
+		if (p != NULL) {
+			q = p + 1;
+		} else {
+			p = strchr(bflag, '\0');
+			assert(p != NULL);
+			q = "http";
+		}
+		
+		buf = NULL;
+		asprintf(&buf,
+		    "backend default {\n"
+		    "    set backend.host = \"%*.*s\";\n"
+		    "    set backend.port = \"%s\";\n"
+		    "}\n", (int)(p - bflag), (int)(p - bflag), bflag, q);
+		assert(buf != NULL);
+		vf = VCC_Compile(sb, buf, NULL);
 		free(buf);
-		sbuf_delete(sb);
-		return (NULL);
+	} else {
+		vf = VCC_CompileFile(sb, fflag);
 	}
-	sbuf_delete(sb);
-	free(buf);
-	return (vf);
-}
-
-/*--------------------------------------------------------------------*/
-
-char *
-mgt_vcc_file(const char *fflag)
-{
-	char *vf;
-	struct sbuf *sb;
-
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
-	assert(sb != NULL);
-	vf = VCC_CompileFile(sb, fflag);
 	sbuf_finish(sb);
 	if (sbuf_len(sb) > 0) {
 		fprintf(stderr, "%s", sbuf_data(sb));
 		sbuf_delete(sb);
-		return (NULL);
+		return (1);
 	}
 	sbuf_delete(sb);
-	return (vf);
+	vp = mgt_vcc_add("boot", vf);
+	vp->active = 1;
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
+
+int
+mgt_push_vcls_and_start(int *status, char **p)
+{
+	struct vcls *vp;
+
+	AZ(pthread_mutex_lock(&vcc_mtx));
+	TAILQ_FOREACH(vp, &vclhead, list) {
+		if (mgt_cli_askchild(status, p,
+		    "config.load %s %s\n", vp->name, vp->fname))
+			return (1);
+		if (vp->active)
+		if (mgt_cli_askchild(status, p,
+		    "config.use %s\n", vp->name, vp->fname))
+			return (1);
+	}
+	AZ(pthread_mutex_unlock(&vcc_mtx));
+	if (mgt_cli_askchild(status, p, "start\n"))
+		return (1);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static
+void
+mgt_vcc_atexit(void)
+{
+	struct vcls *vp;
+
+	if (getpid() != mgt_pid)
+		return;
+	AZ(pthread_mutex_lock(&vcc_mtx));
+	TAILQ_FOREACH(vp, &vclhead, list) {
+		printf("Has %s %s\n", vp->name, vp->fname);
+	}
+	while (1) {
+		vp = TAILQ_FIRST(&vclhead);
+		if (vp == NULL)
+			break;
+		mgt_vcc_del(vp);
+	}
+	AZ(pthread_mutex_unlock(&vcc_mtx));
+}
 
 void
 mgt_vcc_init(void)
 {
 
+	AZ(pthread_mutex_init(&vcc_mtx, NULL));
 	VCC_InitCompile(default_vcl);
+	AZ(atexit(mgt_vcc_atexit));
 }
 
+/*--------------------------------------------------------------------*/
 
-#if 0
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <poll.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-
-#include "mgt.h"
-
-static void
-m_cli_func_config_inline(struct cli *cli, char **av, void *priv)
+void
+mcf_config_inline(struct cli *cli, char **av, void *priv)
 {
-	char *vf;
+	char *vf, *p;
 	struct sbuf *sb;
+	int status;
 
 	(void)priv;
 
@@ -170,20 +245,26 @@ m_cli_func_config_inline(struct cli *cli, char **av, void *priv)
 	if (sbuf_len(sb) > 0) {
 		cli_out(cli, "%s", sbuf_data(sb));
 		sbuf_delete(sb);
+		cli_result(cli, CLIS_PARAM);
 		return;
 	}
 	sbuf_delete(sb);
-	cli_suspend(cli);
-	mgt_child_request(cli_passthrough_cb, cli, NULL,
-	    "config.load %s %s", av[2], vf);
+	if (mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+		cli_result(cli, status);
+		cli_out(cli, "%s", p);
+		free(p);
+		return;
+	}
+	mgt_vcc_add(av[2], vf);
 }
 
-/* XXX: m prefix to avoid name clash */
-static void
-m_cli_func_config_load(struct cli *cli, char **av, void *priv)
+void
+mcf_config_load(struct cli *cli, char **av, void *priv)
 {
 	char *vf;
 	struct sbuf *sb;
+	int status;
+	char *p;
 
 	(void)priv;
 
@@ -194,12 +275,15 @@ m_cli_func_config_load(struct cli *cli, char **av, void *priv)
 	if (sbuf_len(sb) > 0) {
 		cli_out(cli, "%s", sbuf_data(sb));
 		sbuf_delete(sb);
+		cli_result(cli, CLIS_PARAM);
 		return;
 	}
 	sbuf_delete(sb);
-	cli_suspend(cli);
-	mgt_child_request(cli_passthrough_cb, cli, NULL,
-	    "config.load %s %s", av[2], vf);
+	if (mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+		cli_result(cli, status);
+		cli_out(cli, "%s", p);
+		free(p);
+		return;
+	}
+	mgt_vcc_add(av[2], vf);
 }
-
-#endif

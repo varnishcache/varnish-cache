@@ -8,19 +8,20 @@
 void mgt_run(int dflag);
 void mgt_start_child(void);
 void mgt_stop_child(void);
+extern pid_t mgt_pid;
 
 /* mgt_cli.c */
 
 void mgt_cli_init(void);
 void mgt_cli_setup(int fdi, int fdo, int verbose);
+int mgt_cli_askchild(int *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
-int mgt_cli_askchild(int *status, char **resp, const char *fmt, ...);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
-char *mgt_vcc_default(const char *bflag);
-char *mgt_vcc_file(const char *fflag);
+int mgt_vcc_default(const char *bflag, const char *fflag);
+int mgt_push_vcls_and_start(int *status, char **p);
 
 /* tcp.c */
 int open_tcp(const char *port);

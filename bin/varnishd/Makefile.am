@@ -12,6 +12,7 @@ varnishd_SOURCES = \
 	hash_slinger.h \
 	heritage.h \
 	mgt.h \
+	mgt_cli.h \
 	stevedore.h \
 	\
 	cache_acceptor.c \
