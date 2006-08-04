@@ -15,6 +15,8 @@ void mgt_cli_init(void);
 void mgt_cli_setup(int fdi, int fdo, int verbose);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
+int mgt_cli_askchild(int *status, char **resp, const char *fmt, ...);
+
 
 /* tcp.c */
 int open_tcp(const char *port);

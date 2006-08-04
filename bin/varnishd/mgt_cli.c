@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <pthread.h>
 #include <sys/types.h>
 
@@ -99,6 +100,7 @@ static struct cli_proto *cli_proto;
 
 static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_HELP,		cli_func_help, NULL },	/* must be first */
+	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
 	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
 	{ CLI_CONFIG_LOAD },
@@ -161,6 +163,36 @@ mgt_cli_init(void)
 	cli_proto[0].priv = cli_proto;
 
 	/* XXX: open listening sockets, contact cluster server etc */
+}
+
+/*--------------------------------------------------------------------
+ * Ask the child something over CLI, return zero only if everything is
+ * happy happy.
+ */
+
+int
+mgt_cli_askchild(int *status, char **resp, const char *fmt, ...)
+{
+	char *p;
+	int i, j;
+	va_list ap;
+
+	va_start(ap, fmt);
+	i = vasprintf(&p, fmt, ap);
+	va_end(ap);
+	if (i < 0)
+		return (i);
+	AZ(pthread_mutex_lock(&cli_mtx));
+	assert(p[i - 1] == '\n');
+	i = write(cli_o, p, strlen(p));
+	assert(i == strlen(p));
+	free(p);
+
+	i = cli_readres(cli_i, &j, resp);
+	AZ(pthread_mutex_unlock(&cli_mtx));
+	if (status != NULL)
+		*status = j;
+	return (j == CLIS_OK ? 0 : j);
 }
 
 /*--------------------------------------------------------------------*/
