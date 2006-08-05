@@ -115,6 +115,7 @@ start_child(void)
 		setproctitle("Varnish-Chld");
 
 		signal(SIGINT, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
 		child_main();
 
 		exit (1);
@@ -276,6 +277,13 @@ mgt_run(int dflag)
 
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
+
+	e = ev_new();
+	assert(e != NULL);
+	e->sig = SIGTERM;
+	e->callback = mgt_sigint;
+	e->name = "mgt_sigterm";
+	AZ(ev_add(mgt_evb, e));
 
 	e = ev_new();
 	assert(e != NULL);
