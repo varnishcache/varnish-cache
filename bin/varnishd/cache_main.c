@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
