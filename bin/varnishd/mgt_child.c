@@ -29,7 +29,13 @@ pid_t		mgt_pid;
 pid_t		child_pid = -1;
 
 static int		child_fds[2];
-static unsigned 	child_should_run;
+static enum {
+	CH_STOPPED = 0,
+	CH_STARTING = 1,
+	CH_RUNNING = 2,
+	CH_STOPPING = 3,
+	CH_DIED = 4
+}			child_state = CH_STOPPED;
 
 struct evbase		*mgt_evb;
 struct ev		*ev_poker;
@@ -54,7 +60,7 @@ child_listener(struct ev *e, int what)
 		return (1);
 	}
 	buf[i] = '\0';
-	printf("Child said: <<%s>>\n", buf);
+	printf("Child said (%d, %d): <<%s>>\n", child_state, child_pid, buf);
 	return (0);
 }
 
@@ -66,7 +72,7 @@ child_poker(struct ev *e, int what)
 
 	(void)e;
 	(void)what;
-	if (!child_should_run)
+	if (child_state != CH_RUNNING)
 		return (1);
 	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n"))
 		kill(child_pid, SIGKILL);
@@ -82,10 +88,10 @@ start_child(void)
 	char *p;
 	struct ev *e;
 
-	if (child_pid >= 0)
+	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	child_should_run = 1;
+	child_state = CH_STARTING;
 
 	AZ(pipe(&heritage.fds[0]));
 	AZ(pipe(&heritage.fds[2]));
@@ -147,6 +153,7 @@ start_child(void)
 		free(p);
 		exit (2);
 	}
+	child_state = CH_RUNNING;
 }
 
 /*--------------------------------------------------------------------*/
@@ -155,14 +162,14 @@ static void
 stop_child(void)
 {
 
-	if (child_pid < 0)
+	if (child_state != CH_RUNNING)
 		return;
+
+	child_state = CH_STOPPING;
 
 	if (ev_poker != NULL)
 		ev_del(mgt_evb, ev_poker);
 	ev_poker = NULL;
-
-	child_should_run = 0;
 
 	printf("Clean child\n");
 	mgt_cli_stop_child();
@@ -173,7 +180,7 @@ stop_child(void)
 	AZ(close(heritage.fds[3]));
 	heritage.fds[3] = -1;
 
-	printf("Child stopped\n");
+	printf("Child stopping\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -200,7 +207,8 @@ mgt_sigchld(struct ev *e, int what)
 	printf("Cache child died pid=%d status=0x%x\n", r, status);
 	child_pid = -1;
 
-	if (child_should_run) {
+	if (child_state == CH_RUNNING) {
+		child_state = CH_DIED;
 		printf("Clean child\n");
 		mgt_cli_stop_child();
 
@@ -219,8 +227,10 @@ mgt_sigchld(struct ev *e, int what)
 	child_fds[0] = -1;
 	printf("Child cleaned\n");
 
-	if (child_should_run)
+	if (child_state == CH_DIED)
 		start_child();
+	else if (child_state == CH_STOPPING)
+		child_state = CH_STOPPED;
 	return (0);
 }
 
@@ -278,6 +288,7 @@ mgt_run(int dflag)
 
 	sac.sa_handler = SIG_IGN;
 	sac.sa_flags = SA_RESTART;
+
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
