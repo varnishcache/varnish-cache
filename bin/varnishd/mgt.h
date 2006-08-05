@@ -9,8 +9,6 @@ extern struct evbase	*mgt_evb;
 
 /* mgt_child.c */
 void mgt_run(int dflag);
-void mgt_start_child(void);
-void mgt_stop_child(void);
 extern pid_t mgt_pid, child_pid;
 
 /* mgt_cli.c */
