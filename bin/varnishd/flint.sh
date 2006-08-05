@@ -5,7 +5,6 @@ flexelint \
 	-I/usr/include \
 	-I. \
 	-I../../include \
-	-I../../contrib/libevent \
 	flint.lnt \
 	*.c > $T 2>&1
 
