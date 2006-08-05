@@ -271,21 +271,31 @@ DebugStunt(void)
 			break;
 		i = poll(pfd, 2, INFTIM);
 		for (k = 0; k < 2; k++) {
+			if (pfd[k].fd == -1)
+				continue;
 			if (pfd[k].revents == 0)
 				continue;
 			if (pfd[k].revents != POLLIN) {
 				printf("k %d rev %d\n", k, pfd[k].revents);
+				AZ(close(pipes[k][0]));
+				AZ(close(pipes[k][1]));
 				pfd[k].fd = -1;
+				if (k == 1)
+					exit (0);
 			}
 			j = read(pipes[k][0], buf, sizeof buf);
 			if (j == 0) {
 				printf("k %d eof\n", k);
+				AZ(close(pipes[k][0]));
+				AZ(close(pipes[k][1]));
 				pfd[k].fd = -1;
 			}
 			if (j > 0) {
 				i = write(pipes[k][1], buf, j);
 				if (i != j) {
 					printf("k %d write (%d %d)\n", k, i, j);
+					AZ(close(pipes[k][0]));
+					AZ(close(pipes[k][1]));
 					pfd[k].fd = -1;
 				}
 			}
@@ -391,7 +401,8 @@ main(int argc, char *argv[])
 
 	if (dflag == 1)
 		DebugStunt();
-	daemon(dflag, dflag);
+	if (dflag != 2)
+		daemon(dflag, dflag);
 	if (dflag)
 		printf("%d\n%d\n%d\n", getpid(), getsid(0), getpgrp());
 
