@@ -3,6 +3,9 @@
  */
 
 #include "common.h"
+#include "miniobj.h"
+
+extern struct evbase	*mgt_evb;
 
 /* mgt_child.c */
 void mgt_run(int dflag);

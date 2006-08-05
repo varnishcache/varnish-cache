@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <pthread.h>
 #include <sys/types.h>
 
 #include "sbuf.h"
@@ -33,8 +32,6 @@ struct vcls {
 
 
 static TAILQ_HEAD(, vcls) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
-
-static pthread_mutex_t		vcc_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -87,9 +84,7 @@ mgt_vcc_add(const char *name, char *file)
 	assert(vp != NULL);
 	vp->name = strdup(name);
 	vp->fname = file;
-	AZ(pthread_mutex_lock(&vcc_mtx));
 	TAILQ_INSERT_TAIL(&vclhead, vp, list);
-	AZ(pthread_mutex_unlock(&vcc_mtx));
 	return (vp);
 }
 
@@ -179,7 +174,6 @@ mgt_push_vcls_and_start(int *status, char **p)
 {
 	struct vcls *vp;
 
-	AZ(pthread_mutex_lock(&vcc_mtx));
 	TAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p,
 		    "config.load %s %s\n", vp->name, vp->fname))
@@ -189,7 +183,6 @@ mgt_push_vcls_and_start(int *status, char **p)
 		    "config.use %s\n", vp->name, vp->fname))
 			return (1);
 	}
-	AZ(pthread_mutex_unlock(&vcc_mtx));
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
 	return (0);
@@ -205,21 +198,18 @@ mgt_vcc_atexit(void)
 
 	if (getpid() != mgt_pid)
 		return;
-	AZ(pthread_mutex_lock(&vcc_mtx));
 	while (1) {
 		vp = TAILQ_FIRST(&vclhead);
 		if (vp == NULL)
 			break;
 		mgt_vcc_del(vp);
 	}
-	AZ(pthread_mutex_unlock(&vcc_mtx));
 }
 
 void
 mgt_vcc_init(void)
 {
 
-	AZ(pthread_mutex_init(&vcc_mtx, NULL));
 	VCC_InitCompile(default_vcl);
 	AZ(atexit(mgt_vcc_atexit));
 }
@@ -310,7 +300,6 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 	struct vcls *vp;
 
 	(void)priv;
-	AZ(pthread_mutex_lock(&vcc_mtx));
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active == 0) {
 		if (mgt_cli_askchild(&status, &p, "config.use %s\n", av[2])) {
@@ -327,7 +316,6 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 			}
 		}
 	}
-	AZ(pthread_mutex_unlock(&vcc_mtx));
 }
 
 void
@@ -338,7 +326,6 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 	struct vcls *vp;
 
 	(void)priv;
-	AZ(pthread_mutex_lock(&vcc_mtx));
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active) {
 		cli_result(cli, CLIS_PARAM);
@@ -353,7 +340,6 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 			AZ(mgt_vcc_delbyname(av[2]));
 		}
 	}
-	AZ(pthread_mutex_unlock(&vcc_mtx));
 }
 
 void
@@ -371,13 +357,11 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "%s", p);
 		free(p);
 	} else {
-		AZ(pthread_mutex_lock(&vcc_mtx));
 		TAILQ_FOREACH(vp, &vclhead, list) {
 			cli_out(cli, "%s %6s %s\n",
 			    vp->active ? "*" : " ",
 			    "N/A", vp->name);
 		}
-		AZ(pthread_mutex_unlock(&vcc_mtx));
 	}
 }
 
