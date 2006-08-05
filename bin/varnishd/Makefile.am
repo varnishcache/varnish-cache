@@ -13,6 +13,7 @@ varnishd_SOURCES = \
 	heritage.h \
 	mgt.h \
 	mgt_cli.h \
+	mgt_event.h \
 	stevedore.h \
 	\
 	cache_acceptor.c \
@@ -39,6 +40,7 @@ varnishd_SOURCES = \
 	hash_classic.c \
 	mgt_child.c \
 	mgt_cli.c \
+	mgt_event.c \
 	mgt_vcc.c \
 	rfc2616.c \
 	shmlog.c \
