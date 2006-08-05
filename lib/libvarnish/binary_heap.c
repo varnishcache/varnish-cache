@@ -178,10 +178,14 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	assert(bh->next > ROOT_IDX);
 	assert(idx < bh->next);
 	assert(idx > 0);
+	assert(bh->array[idx] != NULL);
 	bh->update(bh->priv, bh->array[idx], 0);
-	if (idx == --bh->next)
+	if (idx == --bh->next) { 
+		bh->array[bh->next] = NULL;
 		return;
+	}
 	bh->array[idx] = bh->array[bh->next];
+	bh->array[bh->next] = NULL;
 	binheap_update(bh, idx);
 	idx = binheap_trickleup(bh, idx);
 	binheap_trickledown(bh, idx);
