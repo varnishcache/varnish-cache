@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <poll.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/uio.h>
@@ -71,15 +72,31 @@ cli_writeres(int fd, struct cli *cli)
 	return (i != l);
 }
 
-int
-cli_readres(int fd, unsigned *status, char **ptr)
+static int
+read_tmo(int fd, void *ptr, unsigned len, double tmo)
 {
-	char res[CLI_LINE0_LEN + 1];	/* For NUL */
+	int i;
+	struct pollfd pfd[1];
+
+	pfd->fd = fd;
+	pfd->events = POLLIN;
+	i = poll(pfd, 1, (int)(tmo * 1e3));
+	if (i == 0) {
+		errno = ETIMEDOUT;
+		return (-1);
+	}
+	return (read(fd, ptr, len));
+}
+
+int
+cli_readres(int fd, unsigned *status, char **ptr, double tmo)
+{
+	char res[CLI_LINE0_LEN];	/* For NUL */
 	int i, j;
 	unsigned u, v;
 	char *p;
 
-	i = read(fd, res, CLI_LINE0_LEN);
+	i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
 	if (i < 0)
 		return (i);
 	assert(i == CLI_LINE0_LEN);	/* XXX: handle */
@@ -91,7 +108,7 @@ cli_readres(int fd, unsigned *status, char **ptr)
 		*status = u;
 	p = malloc(v + 1);
 	assert(p != NULL);
-	i = read(fd, p, v + 1);
+	i = read_tmo(fd, p, v + 1, tmo);
 	if (i < 0) {
 		free(p);
 		return (i);

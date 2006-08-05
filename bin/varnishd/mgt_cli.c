@@ -85,7 +85,7 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	assert(i == v);
 	free(p);
 
-	i = cli_readres(cli_i, &u, &p);
+	i = cli_readres(cli_i, &u, &p, 3.0);
 	assert(i == 0);
 	cli_result(cli, u);
 	cli_out(cli, "%s", p);
@@ -187,7 +187,8 @@ mgt_cli_askchild(int *status, char **resp, const char *fmt, ...)
 	assert(i == strlen(p));
 	free(p);
 
-	i = cli_readres(cli_i, &j, resp);
+	i = cli_readres(cli_i, &j, resp, 3.0);
+	assert(i == 0);
 	if (status != NULL)
 		*status = j;
 	return (j == CLIS_OK ? 0 : j);
