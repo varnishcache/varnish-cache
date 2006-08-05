@@ -32,6 +32,8 @@ static int		child_fds[2];
 static unsigned 	child_should_run;
 
 struct evbase		*mgt_evb;
+struct ev		*ev_poker;
+struct ev		*ev_listen;
 
 /*--------------------------------------------------------------------*/
 
@@ -42,11 +44,15 @@ child_listener(struct ev *e, int what)
 	char buf[BUFSIZ];
 
 	(void)e;
-	if ((what & ~EV_RD))
+	if ((what & ~EV_RD)) {
+		ev_listen = NULL;
 		return (1);
+	}
 	i = read(child_fds[0], buf, sizeof buf - 1);
-	if (i <= 0)
+	if (i <= 0) {
+		ev_listen = NULL;
 		return (1);
+	}
 	buf[i] = '\0';
 	printf("Child said: <<%s>>\n", buf);
 	return (0);
@@ -120,6 +126,7 @@ start_child(void)
 	e->name = "Child listener";
 	e->callback = child_listener;
 	AZ(ev_add(mgt_evb, e));
+	ev_listen = e;
 
 	e = ev_new();
 	assert(e != NULL);
@@ -127,7 +134,7 @@ start_child(void)
 	e->callback = child_poker;
 	e->name = "child poker";
 	AZ(ev_add(mgt_evb, e));
-
+	ev_poker = e;
 
 	mgt_cli_start_child(heritage.fds[0], heritage.fds[3]);
 	AZ(close(heritage.fds[1]));
@@ -150,6 +157,10 @@ stop_child(void)
 
 	if (child_pid < 0)
 		return;
+
+	if (ev_poker != NULL)
+		ev_del(mgt_evb, ev_poker);
+	ev_poker = NULL;
 
 	child_should_run = 0;
 
@@ -175,6 +186,11 @@ mgt_sigchld(struct ev *e, int what)
 
 	(void)e;
 	(void)what;
+
+	if (ev_poker != NULL)
+		ev_del(mgt_evb, ev_poker);
+	ev_poker = NULL;
+
 	r = wait4(-1, &status, WNOHANG, NULL);
 	if (r != child_pid) {
 		printf("Unknown child died pid=%d status=0x%x\n",
@@ -194,6 +210,10 @@ mgt_sigchld(struct ev *e, int what)
 		AZ(close(heritage.fds[3]));
 		heritage.fds[3] = -1;
 	}
+
+	if (ev_listen != NULL)
+		ev_del(mgt_evb, ev_listen);
+	ev_listen = NULL;
 
 	AZ(close(child_fds[0]));
 	child_fds[0] = -1;
@@ -261,7 +281,8 @@ mgt_run(int dflag)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	printf("rolling...\n");
+	printf("rolling(1)...\n");
+	fprintf(stderr, "rolling(2)...\n");
 	if (!dflag)
 		start_child();
 

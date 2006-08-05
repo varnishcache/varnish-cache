@@ -15,14 +15,14 @@ extern pid_t mgt_pid, child_pid;
 
 void mgt_cli_init(void);
 void mgt_cli_setup(int fdi, int fdo, int verbose);
-int mgt_cli_askchild(int *status, char **resp, const char *fmt, ...);
+int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
 int mgt_vcc_default(const char *bflag, const char *fflag);
-int mgt_push_vcls_and_start(int *status, char **p);
+int mgt_push_vcls_and_start(unsigned *status, char **p);
 
 /* tcp.c */
 int open_tcp(const char *port);

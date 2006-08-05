@@ -89,10 +89,10 @@ ev_get_pfd(struct evbase *evb)
 
 	if (evb->npfd > 256)
 		u = evb->npfd + 256;
-	else if (evb->npfd > 8)
-		u = evb->npfd * 2;
-	else
+	else if (evb->npfd < 8)
 		u = 8;
+	else
+		u = evb->npfd * 2;
 	p = realloc(evb->pfd, sizeof *evb->pfd * u);
 	if (p == NULL)
 		return (1);
@@ -217,6 +217,7 @@ ev_add(struct evbase *evb, struct ev *e)
 	}
 
 	if (e->fd >= 0) {
+		assert(evb->lpfd < evb->npfd);
 		evb->pfd[evb->lpfd].fd = e->fd;
 		evb->pfd[evb->lpfd].events =
 		    e->fd_flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
@@ -268,7 +269,10 @@ ev_del(struct evbase *evb, struct ev *e)
 
 	if (e->fd >= 0) {
 		evb->pfd[e->__poll_idx].fd = -1;
-		evb->compact_pfd++;
+		if (e->__poll_idx == evb->lpfd - 1)
+			evb->lpfd--;
+		else
+			evb->compact_pfd++;
 		e->fd = -1;
 	}
 
@@ -311,7 +315,25 @@ ev_schedule(struct evbase *evb)
 static void
 ev_compact_pfd(struct evbase *evb)
 {
-	/* XXX TBD */
+	unsigned u;
+	struct pollfd *p;
+	struct ev *ep;
+
+	p = evb->pfd;
+	ep = TAILQ_FIRST(&evb->events);
+	for (u = 0; u < evb->lpfd; u++, p++) {
+		if (p->fd >= 0)
+			continue;
+		for(; ep != NULL; ep = TAILQ_NEXT(ep, __list)) {
+			if (ep->fd >= 0 && ep->__poll_idx > u)
+				break;
+		} 
+		if (ep == NULL)
+			break;
+		*p = evb->pfd[ep->__poll_idx];
+		ep->__poll_idx = u;
+	}
+	evb->lpfd = u;
 	evb->compact_pfd = 0;
 }
 
@@ -370,8 +392,8 @@ ev_schedule_one(struct evbase *evb)
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
-		assert(e->__binheap_idx == 1);
 		CHECK_OBJ_NOTNULL(e, EV_MAGIC);
+		assert(e->__binheap_idx == 1);
 		t = ev_now();
 		if (e->__when <= t)
 			return (ev_sched_timeout(evb, e, t));
@@ -389,6 +411,7 @@ ev_schedule_one(struct evbase *evb)
 
 	if (evb->psig)
 		return (ev_sched_signal(evb));
+	assert(evb->lpfd < evb->npfd);
 	i = poll(evb->pfd, evb->lpfd, tmo);
 	if(i == -1 && errno == EINTR)
 		return (ev_sched_signal(evb));
@@ -407,7 +430,6 @@ ev_schedule_one(struct evbase *evb)
 		assert(e->__poll_idx < evb->lpfd);
 		pfd = &evb->pfd[e->__poll_idx];
 		assert(pfd->fd == e->fd);
-		assert(pfd->events == e->fd_flags);
 		if (!pfd->revents)
 			continue;
 		j = e->callback(e, pfd->revents);

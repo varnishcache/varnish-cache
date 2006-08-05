@@ -170,7 +170,7 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_push_vcls_and_start(int *status, char **p)
+mgt_push_vcls_and_start(unsigned *status, char **p)
 {
 	struct vclprog *vp;
 
@@ -221,7 +221,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 {
 	char *vf, *p;
 	struct sbuf *sb;
-	int status;
+	unsigned status;
 
 	(void)priv;
 
@@ -251,7 +251,7 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 {
 	char *vf;
 	struct sbuf *sb;
-	int status;
+	unsigned status;
 	char *p;
 
 	(void)priv;
@@ -295,7 +295,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 void
 mcf_config_use(struct cli *cli, char **av, void *priv)
 {
-	int status;
+	unsigned status;
 	char *p;
 	struct vclprog *vp;
 
@@ -321,7 +321,7 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 void
 mcf_config_discard(struct cli *cli, char **av, void *priv)
 {
-	int status;
+	unsigned status;
 	char *p;
 	struct vclprog *vp;
 
@@ -345,7 +345,7 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 void
 mcf_config_list(struct cli *cli, char **av, void *priv)
 {
-	int status;
+	unsigned status;
 	char *p;
 	struct vclprog *vp;
 
