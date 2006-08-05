@@ -92,7 +92,7 @@ vcl_find(const char *name)
 	return (NULL);
 }
 
-int
+static int
 VCL_Load(const char *fn, const char *name, struct cli *cli)
 {
 	struct vcls *vcl;
@@ -191,6 +191,11 @@ cli_func_config_discard(struct cli *cli, char **av, void *priv)
 	(void)av;
 	(void)priv;
 	vcl = vcl_find(av[2]);
+	if (vcl == NULL) {
+		cli_result(cli, CLIS_PARAM);
+		cli_out(cli, "VCL '%s' unknown", av[2]);
+		return;
+	}
 	if (vcl->discard) {
 		cli_result(cli, CLIS_PARAM);
 		cli_out(cli, "VCL %s already discarded", av[2]);
