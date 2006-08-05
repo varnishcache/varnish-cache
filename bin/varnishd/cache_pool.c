@@ -14,6 +14,7 @@
 #include "heritage.h"
 #include "shmlog.h"
 #include "vcl.h"
+#include "cli_priv.h"
 #include "cache.h"
 
 static pthread_mutex_t wrk_mtx;
@@ -21,7 +22,8 @@ static pthread_mutex_t wrk_mtx;
 /* Number of work requests queued in excess of worker threads available */
 static unsigned		wrk_overflow;
 
-static TAILQ_HEAD(, worker) wrk_head = TAILQ_HEAD_INITIALIZER(wrk_head);
+static TAILQ_HEAD(, worker) wrk_idle = TAILQ_HEAD_INITIALIZER(wrk_idle);
+static TAILQ_HEAD(, worker) wrk_busy = TAILQ_HEAD_INITIALIZER(wrk_busy);
 static TAILQ_HEAD(, workreq) wrk_reqhead = TAILQ_HEAD_INITIALIZER(wrk_reqhead);
 
 /*--------------------------------------------------------------------
@@ -107,7 +109,9 @@ wrk_do_one(struct worker *w)
 	VSL_stats->n_wrk_queue--;
 	AZ(pthread_mutex_unlock(&wrk_mtx));
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
+	assert(wrq->sess->wrk == NULL);
 	wrq->sess->wrk = w;
+	w->wrq = wrq;
 	if (wrq->sess->srcaddr == NULL) {
 		w->acct.sess++;
 		SES_RefSrcAddr(wrq->sess);
@@ -121,6 +125,8 @@ wrk_do_one(struct worker *w)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+	wrq->sess->wrk = NULL;
+	w->wrq = NULL;
 	AZ(pthread_mutex_lock(&wrk_mtx));
 	VSL_stats->n_wrk_busy--;
 }
@@ -143,6 +149,7 @@ wrk_thread(void *priv)
 		VSL_stats->n_wrk_create++;
 		VSL(SLT_WorkThread, 0, "%u born dynamic", w->nbr);
 	}
+	TAILQ_INSERT_HEAD(&wrk_busy, w, list);
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
@@ -153,7 +160,8 @@ wrk_thread(void *priv)
 			continue;
 		}
 		
-		TAILQ_INSERT_HEAD(&wrk_head, w, list);
+		TAILQ_REMOVE(&wrk_busy, w, list);
+		TAILQ_INSERT_HEAD(&wrk_idle, w, list);
 
 		/* If we are a reserved thread we don't die */
 		if (priv != NULL) {
@@ -164,7 +172,7 @@ wrk_thread(void *priv)
 			ts.tv_sec += heritage.wthread_timeout;
 			if (pthread_cond_timedwait(&w->cv, &wrk_mtx, &ts)) {
 				VSL_stats->n_wrk--;
-				TAILQ_REMOVE(&wrk_head, w, list);
+				TAILQ_REMOVE(&wrk_idle, w, list);
 				AZ(pthread_mutex_unlock(&wrk_mtx));
 				VSL(SLT_WorkThread, 0, "%u suicide", w->nbr);
 				AZ(pthread_cond_destroy(&w->cv));
@@ -172,7 +180,7 @@ wrk_thread(void *priv)
 			}
 		}
 
-		/* we are already removed from wrk_head */
+		/* we are already removed from wrk_idle */
 		wrk_do_one(w);
 	}
 }
@@ -194,10 +202,11 @@ WRK_QueueSession(struct sess *sp)
 	VSL_stats->n_wrk_queue++;
 
 	/* If there are idle threads, we tickle the first one into action */
-	w = TAILQ_FIRST(&wrk_head);
+	w = TAILQ_FIRST(&wrk_idle);
 	if (w != NULL) {
 		AZ(pthread_cond_signal(&w->cv));
-		TAILQ_REMOVE(&wrk_head, w, list);
+		TAILQ_REMOVE(&wrk_idle, w, list);
+		TAILQ_INSERT_TAIL(&wrk_busy, w, list);
 		AZ(pthread_mutex_unlock(&wrk_mtx));
 		return;
 	}
@@ -247,4 +256,40 @@ WRK_Init(void)
 		AZ(pthread_create(&tp, NULL, wrk_thread, &i));
 		AZ(pthread_detach(tp));
 	}
+}
+
+
+/*--------------------------------------------------------------------*/
+
+void
+cli_func_dump_pool(struct cli *cli, char **av, void *priv)
+{
+	unsigned u;
+	struct sess *s;
+	time_t t;
+
+	(void)av;
+	(void)priv;
+	struct worker *w;
+	AZ(pthread_mutex_lock(&wrk_mtx));
+	t = time(NULL);
+	TAILQ_FOREACH(w, &wrk_busy, list) {
+		cli_out(cli, "\n");
+		cli_out(cli, "W %p nbr %d ", w, w->nbr);
+		if (w->wrq == NULL)
+			continue;
+		s = w->wrq->sess;
+		if (s == NULL)
+			continue;
+		cli_out(cli, "sess %p fd %d xid %u step %d handling %d age %d",
+		    s, s->fd, s->xid, s->step, s->handling,
+		    t - s->t_req.tv_sec);
+	}
+	cli_out(cli, "\n");
+
+	u = 0;
+	TAILQ_FOREACH(w, &wrk_idle, list)
+		u++;
+	cli_out(cli, "%u idle workers\n", u);
+	AZ(pthread_mutex_unlock(&wrk_mtx));
 }

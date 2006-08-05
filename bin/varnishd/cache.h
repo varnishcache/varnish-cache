@@ -30,6 +30,7 @@ struct sbuf;
 struct sess;
 struct object;
 struct objhead;
+struct workreq;
 
 /*--------------------------------------------------------------------*/
 
@@ -94,6 +95,7 @@ struct worker {
 	unsigned		nbr;
 	pthread_cond_t		cv;
 	TAILQ_ENTRY(worker)	list;
+	struct workreq		*wrq;
 
 	int			*wfd;
 	unsigned		werr;	/* valid after WRK_Flush() */
@@ -407,6 +409,7 @@ cli_func_t	cli_func_config_list;
 cli_func_t	cli_func_config_load;
 cli_func_t	cli_func_config_discard;
 cli_func_t	cli_func_config_use;
+cli_func_t	cli_func_dump_pool;
 #endif
 
 /* rfc2616.c */
