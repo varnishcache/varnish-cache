@@ -1,4 +1,5 @@
 
+#include <poll.h>
 #include "queue.h"
 
 struct ev;
@@ -11,6 +12,7 @@ struct ev {
 #define EV_MAGIC	0x15c8134b
 
 	/* pub */
+	const char	*name;
 	int		fd;
 	unsigned	flags;
 #define		EV_RD	POLLIN
