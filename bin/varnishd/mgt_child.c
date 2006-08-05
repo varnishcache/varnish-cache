@@ -125,6 +125,7 @@ start_child(void)
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
 
+	assert(ev_listen == NULL);
 	e = ev_new();
 	assert(e != NULL);
 	e->fd = child_fds[0];
@@ -134,6 +135,7 @@ start_child(void)
 	AZ(ev_add(mgt_evb, e));
 	ev_listen = e;
 
+	assert(ev_poker == NULL);
 	e = ev_new();
 	assert(e != NULL);
 	e->timeout = 3.0;
@@ -167,8 +169,10 @@ stop_child(void)
 
 	child_state = CH_STOPPING;
 
-	if (ev_poker != NULL)
+	if (ev_poker != NULL) {
 		ev_del(mgt_evb, ev_poker);
+		free(ev_poker);
+	}
 	ev_poker = NULL;
 
 	printf("Clean child\n");
@@ -194,8 +198,10 @@ mgt_sigchld(struct ev *e, int what)
 	(void)e;
 	(void)what;
 
-	if (ev_poker != NULL)
+	if (ev_poker != NULL) {
 		ev_del(mgt_evb, ev_poker);
+		free(ev_poker);
+	}
 	ev_poker = NULL;
 
 	r = wait4(-1, &status, WNOHANG, NULL);
@@ -219,8 +225,10 @@ mgt_sigchld(struct ev *e, int what)
 		heritage.fds[3] = -1;
 	}
 
-	if (ev_listen != NULL)
+	if (ev_listen != NULL) {
 		ev_del(mgt_evb, ev_listen);
+		free(ev_listen);
+	}
 	ev_listen = NULL;
 
 	AZ(close(child_fds[0]));
