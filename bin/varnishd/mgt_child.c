@@ -21,6 +21,7 @@
 #include "libvarnish.h"
 #include "heritage.h"
 #include "mgt.h"
+#include "cli.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
 #include "mgt_event.h"
@@ -36,6 +37,14 @@ static enum {
 	CH_STOPPING = 3,
 	CH_DIED = 4
 }			child_state = CH_STOPPED;
+
+const char *ch_state[] = {
+	[CH_STOPPED] =	"stopped",
+	[CH_STARTING] =	"starting",
+	[CH_RUNNING] =	"running",
+	[CH_STOPPING] =	"stopping",
+	[CH_DIED] =	"died, (restarting)",
+};
 
 struct evbase		*mgt_evb;
 struct ev		*ev_poker;
@@ -327,9 +336,12 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 
 	(void)cli;
 	(void)av;
-	if (priv != NULL) {
+	if (priv != NULL && child_state == CH_RUNNING)
 		stop_child();
-		return;
-	} 
-	start_child();
+	else if (priv == NULL && child_state == CH_STOPPED)
+		start_child();
+	else {
+		cli_result(cli, CLIS_CANT);
+		cli_out(cli, "Child in state %s", ch_state[child_state]);
+	}
 }
