@@ -79,17 +79,25 @@ clean_order(void)
 static void 
 extended_log_format(unsigned char *p, char *w_opt)
 {
-	unsigned u;
+	unsigned u,v;
 	int i,j;
 	unsigned char *tmpPtr;
 	char *tmpPtra;
 	char *tmpPtrb;
 	char *tmpPtrc;
-	// Declare the int's that are used to determin if we have all data. 
 	int timesec = 0; // Where we store the utime for request as int.
 	char temp_time[27]; // Where we store the string we take from the log
-	// Declare the data where we store the differnt parts
-	time_t req_time;
+	time_t req_time; // Timeobject used for making the requesttime.
+
+	// Variables used to clean memory.
+	int cm_h = 0;
+	int cm_r = 0;
+	int cm_s = 0;
+	int cm_b = 0;
+	int cm_R = 0;
+	int cm_U = 0;
+
+
 
 
 	if (w_opt != NULL){
@@ -106,6 +114,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 	//printf("Hele [%d]: %s %s\n",u, p+4);
 	
 	i = 0;
+	v = 0;
 
 	switch (p[0]) {
 
@@ -172,9 +181,11 @@ extended_log_format(unsigned char *p, char *w_opt)
 			
 		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
 			ll[u].df_U = strdup(p + 4);
+			cm_U = 1;
 		}
 		if (p[1] >= 8 && !strncasecmp((void *)&p[4], "referer:",8)){
 			ll[u].df_R = strdup(p + 4);
+			cm_R = 1;
 		}
 		else if (ll[u].df_R == NULL){
 			ll[u].df_R = strdup(p + 4);
@@ -241,15 +252,10 @@ extended_log_format(unsigned char *p, char *w_opt)
 		}
 		else{
 			
-			printf("%s - - %s", ll[u].df_h, temp_time);
-			sbuf_finish(ob[u]);
-			printf("\"%s\"", sbuf_data(ob[u]));
-			printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
-			sbuf_clear(ob[u]);
-			//free(ll[u].df_R);
-			//free(ll[u].df_U);
 			
 		}
+
+		v = 1; // We are done, clean memory
 		
 		break;
 
@@ -269,13 +275,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		}
 		
-		printf("%s - - %s", ll[u].df_h, temp_time);
-		sbuf_finish(ob[u]);
-		printf("\"%s\"", sbuf_data(ob[u]));
-		printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
-		sbuf_clear(ob[u]);
-		//free(ll[u].df_R);
-		//free(ll[u].df_U);
+
+		v = 1; // We are done, clean memory
 		
 		break;
 
@@ -284,8 +285,26 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 	}
 
-	if (0) {
+	// Memorycleaner and stringwriter.
+	if (v) {
+	
 		
+
+		printf("%s - - %s", ll[u].df_h, temp_time);
+                sbuf_finish(ob[u]);
+                printf("\"%s\"", sbuf_data(ob[u]));
+                printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
+                sbuf_clear(ob[u]);
+
+		if (cm_R){
+			// Clean the memory for Referer
+			free(ll[u].df_R);
+		}
+		if (cm_U){
+			// Clean memory for User-Agent
+			free(ll[u].df_U);
+		}
+										
 	}
 	
 	
