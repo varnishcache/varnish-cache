@@ -21,7 +21,6 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "common_cli.h"
-#include "libvarnish.h"
 
 void
 cli_out(struct cli *cli, const char *fmt, ...)
@@ -93,8 +92,10 @@ cli_readres(int fd, unsigned *status, char **ptr)
 	p = malloc(v + 1);
 	assert(p != NULL);
 	i = read(fd, p, v + 1);
-	if (i < 0)
+	if (i < 0) {
+		free(p);
 		return (i);
+	}
 	assert(i == v + 1);
 	assert(p[v] == '\n');
 	p[v] = '\0';
