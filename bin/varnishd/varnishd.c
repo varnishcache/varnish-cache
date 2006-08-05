@@ -267,22 +267,31 @@ DebugStunt(void)
 	assert(j == i);
 
 	while (1) {
+		if (pfd[0].fd == -1 && pfd[1].fd == -1)
+			break;
 		i = poll(pfd, 2, INFTIM);
 		for (k = 0; k < 2; k++) {
 			if (pfd[k].revents == 0)
 				continue;
-			if (pfd[k].revents != POLLIN)
-				exit (2);
+			if (pfd[k].revents != POLLIN) {
+				printf("k %d rev %d\n", k, pfd[k].revents);
+				pfd[k].fd = -1;
+			}
 			j = read(pipes[k][0], buf, sizeof buf);
-			if (j == 0)
-				exit (0);
+			if (j == 0) {
+				printf("k %d eof\n", k);
+				pfd[k].fd = -1;
+			}
 			if (j > 0) {
 				i = write(pipes[k][1], buf, j);
-				if (i != j)
-					err(1, "i = %d j = %d\n", i, j);
+				if (i != j) {
+					printf("k %d write (%d %d)\n", k, i, j);
+					pfd[k].fd = -1;
+				}
 			}
 		}
 	}
+	exit (0);
 }
 
 
@@ -380,7 +389,7 @@ main(int argc, char *argv[])
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
-	if (dflag)
+	if (dflag == 1)
 		DebugStunt();
 	daemon(dflag, dflag);
 	if (dflag)
