@@ -1,7 +1,11 @@
--passes=12
+-passes=3
+
++libh mgt_event.h
 
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
+
+-ffc	// No automatic custody
 
 -e763	// Redundant declaration for symbol '...' previously declared
 -e726	// Extraneous comma ignored
