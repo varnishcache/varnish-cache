@@ -124,7 +124,6 @@ wrk_do_one(struct worker *w)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
-	wrq->sess->wrk = NULL;
 	w->wrq = NULL;
 	AZ(pthread_mutex_lock(&wrk_mtx));
 	VSL_stats->n_wrk_busy--;
