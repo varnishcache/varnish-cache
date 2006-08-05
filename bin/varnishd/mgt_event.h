@@ -14,11 +14,14 @@ struct ev {
 	/* pub */
 	const char	*name;
 	int		fd;
-	unsigned	flags;
+	unsigned	fd_flags;
 #define		EV_RD	POLLIN
 #define		EV_WR	POLLOUT
 #define		EV_ERR	POLLERR
 #define		EV_HUP	POLLHUP
+#define		EV_SIG	-1
+	int		signal;
+	unsigned	sig_flags;
 	double		timeout;
 	ev_cb_f		*callback;
 	void		*priv;

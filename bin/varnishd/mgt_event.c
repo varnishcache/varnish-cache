@@ -2,15 +2,28 @@
  * $Id$
  */
 
+#include <stdio.h>
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <time.h>
+#include <signal.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "mgt_event.h"
 #include "miniobj.h"
 #include "binary_heap.h"
+
+struct evsig {
+	struct evbase		*evb;
+	struct ev		*ev;
+	struct sigaction	sigact;
+	unsigned char		happened;
+};
+
+static struct evsig		*ev_sigs;
+static unsigned			ev_nsig;
 
 struct evbase {
 	unsigned		magic;
@@ -64,6 +77,64 @@ ev_bh_cmp(void *priv, void *a, void *b)
 
 /*--------------------------------------------------------------------*/
 
+static int
+ev_get_pfd(struct evbase *evb)
+{
+	unsigned u;
+	void *p;
+
+	if (evb->lpfd < evb->npfd) 
+		return (0);
+
+	if (evb->npfd > 256)
+		u = evb->npfd + 256;
+	else if (evb->npfd > 8)
+		u = evb->npfd * 2;
+	else
+		u = 8;
+	p = realloc(evb->pfd, sizeof *evb->pfd * u);
+	if (p == NULL)
+		return (1);
+	evb->npfd = u;
+	evb->pfd = p;
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+ev_get_sig(int sig)
+{
+	struct evsig *os;
+
+	if (sig < ev_nsig) 
+		return (0);
+
+	os = calloc(sizeof *os, (sig + 1));
+	if (os == NULL)
+		return (ENOMEM);
+
+	memcpy(os, ev_sigs, ev_nsig);
+
+	free(ev_sigs);
+	ev_sigs = os;
+	ev_nsig = sig + 1;
+
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+ev_sighandler(int sig)
+{
+	assert(sig < ev_nsig);
+	assert(ev_sigs != NULL);
+	ev_sigs[sig].happened = 1;
+}
+
+/*--------------------------------------------------------------------*/
+
 struct evbase *
 ev_new_base(void)
 {
@@ -72,14 +143,12 @@ ev_new_base(void)
 	evb = calloc(sizeof *evb, 1);
 	if (!evb)
 		return (evb);
-	evb->magic = EVBASE_MAGIC;
-	TAILQ_INIT(&evb->events);
-	evb->npfd = 1;
-	evb->pfd = calloc(sizeof *evb->pfd, evb->npfd);
-	if (evb->pfd == NULL) {
+	if (ev_get_pfd(evb)) {
 		free(evb);
 		return (NULL);
 	}
+	evb->magic = EVBASE_MAGIC;
+	TAILQ_INIT(&evb->events);
 	evb->binheap = binheap_new(evb, ev_bh_cmp, ev_bh_update);
 	return (evb);
 }
@@ -94,48 +163,42 @@ ev_destroy_base(struct evbase *evb)
 	free(evb);
 }
 
-/*--------------------------------------------------------------------*/
-
-static int
-ev_get_pfd(struct evbase *evb)
-{
-	unsigned u;
-	void *p;
-
-	if (evb->lpfd <= evb->npfd) 
-		return (0);
-
-	if (evb->npfd > 256)
-		u = evb->npfd + 256;
-	else
-		u = evb->npfd * 2;
-	p = realloc(evb->pfd, sizeof *evb->pfd * u);
-	if (p == NULL)
-		return (1);
-	evb->npfd = u;
-	evb->pfd = p;
-	return (0);
-}
 
 /*--------------------------------------------------------------------*/
 
 int
 ev_add(struct evbase *evb, struct ev *e)
 {
+	struct evsig *es;
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	assert(e->magic != EV_MAGIC);
 	assert(e->callback != NULL);
+	assert(e->signal >= 0);
+	assert(e->timeout >= 0.0);
 
-	if (e->timeout < 0.0)
-		return (EINVAL);
+	if (e->signal > 0 && ev_get_sig(e->signal))
+		return (ENOMEM);
+
+	if (e->fd >= 0 && ev_get_pfd(evb))
+		return (ENOMEM);
+
+	if (e->signal > 0) {
+		es = &ev_sigs[e->signal];
+		if (es->ev != NULL)
+			return (EBUSY);
+		assert(es->happened == 0);
+		es->ev = e;
+		es->sigact.sa_flags = e->sig_flags;
+		es->sigact.sa_handler = ev_sighandler;
+		assert(sigaction(e->signal, &es->sigact, NULL) == 0);
+		es->evb = evb;
+	}
 
 	if (e->fd >= 0) {
-		if (ev_get_pfd(evb))
-			return (ENOMEM);
 		evb->pfd[evb->lpfd].fd = e->fd;
 		evb->pfd[evb->lpfd].events =
-		    e->flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
+		    e->fd_flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
 		e->__poll_idx = evb->lpfd;
 		evb->lpfd++;
 	} else
@@ -165,6 +228,8 @@ ev_add(struct evbase *evb, struct ev *e)
 void
 ev_del(struct evbase *evb, struct ev *e)
 {
+	struct evsig *es;
+
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	CHECK_OBJ_NOTNULL(e, EV_MAGIC);
 	assert(evb == e->__evb);
@@ -177,6 +242,18 @@ ev_del(struct evbase *evb, struct ev *e)
 		evb->pfd[e->__poll_idx].fd = -1;
 		evb->compact_pfd++;
 		e->fd = -1;
+	}
+
+	if (e->signal > 0) {
+		assert(e->signal < ev_nsig);
+		es = &ev_sigs[e->signal];
+		assert(es->ev == e);
+		es->ev = NULL;
+		es->evb = NULL;
+		es->sigact.sa_flags = e->sig_flags;
+		es->sigact.sa_handler = SIG_DFL;
+		assert(sigaction(e->signal, &es->sigact, NULL) == 0);
+		es->happened = 0;
 	}
 
 	TAILQ_REMOVE(&evb->events, e, __list);
@@ -217,7 +294,9 @@ ev_sched_timeout(struct evbase *evb, struct ev *e, double t)
 {
 	int i;
 
+printf("Call %p %s (TMO)\n", e, e->name);
 	i = e->callback(e, 0);
+printf("Back %p %s (TMO)\n", e, e->name);
 	if (i) {
 		ev_del(evb, e);
 		free(e);
@@ -255,6 +334,23 @@ ev_schedule_one(struct evbase *evb)
 	if (tmo == INFTIM && evb->lpfd == 0)
 		return (0);
 	i = poll(evb->pfd, evb->lpfd, tmo);
+	if(i == -1 && errno == EINTR) {
+		for (j = 0; j < ev_nsig; j++) {
+			if (!ev_sigs[j].happened || ev_sigs[j].evb != evb)
+				continue;
+			ev_sigs[j].happened = 0;
+			e = ev_sigs[j].ev;
+			assert(e != NULL);
+printf("Call %p %s (sig %d)\n", e, e->name, j);
+			i = e->callback(e, EV_SIG);
+printf("Back %p %s (sig %d)\n", e, e->name, j);
+			if (i) {
+				ev_del(evb, e);
+				free(e);
+			}
+		}
+		return (1);
+	}
 	if (i == 0) {
 		assert(e != NULL);
 		t = ev_now();
@@ -271,12 +367,12 @@ ev_schedule_one(struct evbase *evb)
 		assert(e->__poll_idx < evb->lpfd);
 		pfd = &evb->pfd[e->__poll_idx];
 		assert(pfd->fd == e->fd);
-		assert(pfd->events == e->flags);
+		assert(pfd->events == e->fd_flags);
 		if (!pfd->revents)
 			continue;
 printf("Call %p %s (%u)\n", e, e->name, pfd->revents);
 		j = e->callback(e, pfd->revents);
-printf("Back from %p %s (%u)\n", e, e->name, pfd->revents);
+printf("Back %p %s (%u)\n", e, e->name, pfd->revents);
 		i--;
 		if (evb->disturbed) {
 			TAILQ_FOREACH(e2, &evb->events, __list)
