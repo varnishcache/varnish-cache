@@ -12,7 +12,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 

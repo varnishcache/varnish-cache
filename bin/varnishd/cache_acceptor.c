@@ -19,7 +19,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "config.h"
 #include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"

@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 
