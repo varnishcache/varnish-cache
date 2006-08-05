@@ -178,13 +178,17 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 		if (mgt_cli_askchild(status, p,
 		    "config.load %s %s\n", vp->name, vp->fname))
 			return (1);
-		if (vp->active)
-		if (mgt_cli_askchild(status, p,
+		free(*p);
+		if (vp->active &&
+		    mgt_cli_askchild(status, p,
 		    "config.use %s\n", vp->name, vp->fname))
 			return (1);
+		free(*p);
 	}
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
+	free(*p);
+	*p = NULL;
 	return (0);
 }
 
