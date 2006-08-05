@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <sbuf.h>
 #include <vis.h>
+#include <time.h>
 
 #include "shmlog.h"
 #include "varnishapi.h"
@@ -37,7 +38,7 @@ struct logline {
 	//   int y;
 	//   unsigned char *df_l; // Datafield for %l
 	//   unsigned char *df_u; // Datafield for %u
-	//   unsigned char *df_t; // Datafield for %t
+	struct tm *logline_time; // Datafield for %t
 	unsigned char *df_r; // Datafield for %r
 	//   unsigned char *df_s; // Datafield for %s
 	//   unsigned char *df_b; // Datafield for %b
@@ -81,10 +82,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 	unsigned u;
 	int i,j;
 	unsigned char *tmpPtr;
+	char *tmpPtra;
+	char *tmpPtrb;
+	char *tmpPtrc;
 	// Declare the int's that are used to determin if we have all data. 
-	int ll_h = 0; // %h
-	int ll_U = 0; // %{User-agent}i
+	int timesec = 0; // Where we store the utime for request as int.
+	char temp_time[27]; // Where we store the string we take from the log
 	// Declare the data where we store the differnt parts
+	time_t req_time;
+
 
 	if (w_opt != NULL){
 		// printf(" Has w_opt\n");
@@ -98,6 +104,9 @@ extended_log_format(unsigned char *p, char *w_opt)
 		assert(ob[u] != NULL);
 	}
 	//printf("Hele [%d]: %s %s\n",u, p+4);
+	
+	i = 0;
+
 	switch (p[0]) {
 
 		// XXX remember to check for NULL when strdup, if no allocate
@@ -167,14 +176,48 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		break;
 
+	case SLT_ReqServTime:
+
+		// First clear temp_time
+		temp_time[0] = '\0';
+
+		tmpPtrb =  strdup(p + 4);
+
+		for ( tmpPtra = strtok(tmpPtrb," "); tmpPtra != NULL; tmpPtra = strtok(NULL, " ")){
+			if (i = 1){
+				tmpPtrc = tmpPtra;
+			}
+			printf("ReqServTime number %d: %s\n", i, tmpPtra);
+			
+			i++;
+		}
+		
+
+		//printf("Br: %s\n",tmpPtrc);
+		
+		/*
+		tmpPtr = strchr(tmpPtrc, '.');
+		j = strlen(tmpPtrc) - strlen(tmpPtr);                // length of timestamp
+		strncpy(temp_time, tmpPtrc, j);
+		temp_time[j] = '\0';
+		printf("j: %s",temp_time);
+		timesec = atoi(temp_time);
+		*/
+		timesec = 1;
+		req_time = timesec;
+		ll[u].logline_time = localtime(&req_time);
+		strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
+
+		break;
+
 	case SLT_SessionClose:
 
 		if (p[1] >= 7 && !strncasecmp((void *)&p[4], "timeout",7)){
-			printf("Timeout...\n");
+			//printf("Timeout...\n");
 		}
 		else{
 			
-			printf("%s ", ll[u].df_h);
+			printf("%s %s", ll[u].df_h, temp_time);
 			sbuf_finish(ob[u]);
 			printf("\"%s\"", sbuf_data(ob[u]));
 			printf(" \"%s\"\n", ll[u].df_U);
@@ -200,7 +243,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		}
 		
-		printf("%s ", ll[u].df_h);
+		printf("%s %s", ll[u].df_h, temp_time);
 		sbuf_finish(ob[u]);
 		printf("\"%s\"", sbuf_data(ob[u]));
 		printf(" \"%s\"\n", ll[u].df_U);
