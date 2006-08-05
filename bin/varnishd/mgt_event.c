@@ -447,6 +447,7 @@ ev_schedule_one(struct evbase *evb)
 		}
 		if (j) {
 			ev_del(evb, e);
+			evb->disturbed = 0;
 			free(e);
 		}
 	}
