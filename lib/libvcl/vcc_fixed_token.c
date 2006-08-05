@@ -455,7 +455,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("        unsigned        nref;\n", f);
 	fputs("        unsigned        busy;\n", f);
 	fputs("\n", f);
-	fputs("	void		*priv;\n", f);
+	fputs("        void            *priv;\n", f);
 	fputs("\n", f);
 	fputs("        vcl_init_f      *init_func;\n", f);
 	fputs("        vcl_fini_f      *fini_func;\n", f);
@@ -471,7 +471,7 @@ vcl_output_lang_h(FILE *f)
 	fputs(" *\n", f);
 	fputs(" * Runtime support for compiled VCL programs.\n", f);
 	fputs(" *\n", f);
-	fputs(" * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl\n", f);
+	fputs(" * XXX: When this file is changed, lib/libvcl/vcc_gen_fixed_token.tcl\n", f);
 	fputs(" * XXX: *MUST* be rerun.\n", f);
 	fputs(" */\n", f);
 	fputs("\n", f);
@@ -481,6 +481,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("struct VCL_conf;\n", f);
 	fputs("\n", f);
 	fputs("struct vrt_ref {\n", f);
+	fputs("	unsigned	file;\n", f);
 	fputs("	unsigned	line;\n", f);
 	fputs("	unsigned	pos;\n", f);
 	fputs("	unsigned	count;\n", f);

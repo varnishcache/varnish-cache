@@ -190,6 +190,21 @@ EncString(struct token *t)
 	return (p);
 }
 
+/*--------------------------------------------------------------------*/
+
+static int
+IsMethod(struct token *t)
+{
+	struct method *m;
+
+	for(m = method_tab; m->name != NULL; m++) {
+		if (vcc_IdIs(t, m->defname))
+			return (2);
+		if (vcc_IdIs(t, m->name))
+			return (1);
+	}
+	return (0);
+}
 
 /*--------------------------------------------------------------------
  * Keep track of definitions and references
@@ -997,17 +1012,26 @@ Backend(struct tokenlist *tl)
 static void
 Function(struct tokenlist *tl)
 {
+	struct token *tn;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	tl->curproc = AddProc(tl, tl->t, 1);
 	tl->curproc->exists++;
+	tn = tl->t;
 	AddDef(tl, tl->t, R_FUNC);
 	Fh(tl, 0, "static int VGC_function_%T (struct sess *sp);\n", tl->t);
 	Fc(tl, 1, "static int\n");
 	Fc(tl, 1, "VGC_function_%T (struct sess *sp)\n", tl->t);
 	vcc_NextToken(tl);
+	tl->indent += INDENT;
+	Fc(tl, 1, "{\n");
 	L(tl, Compound(tl));
+	if (IsMethod(tn) == 1) {
+		Fc(tl, 1, "VGC_function_default_%T(sp);\n", tn);
+	}
+	Fc(tl, 1, "}\n");
+	tl->indent -= INDENT;
 	Fc(tl, 0, "\n");
 }
 
@@ -1221,19 +1245,26 @@ static void
 LocTable(struct tokenlist *tl)
 {
 	struct token *t;
-	unsigned lin, pos;
+	unsigned fil, lin, pos;
 	const char *p;
 	
 	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
 	Fh(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
 	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
+	fil = 0;
 	lin = 1;
 	pos = 0;
-	p = tl->b;
+	p = vcc_default_vcl_b;
 	TAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->cnt == 0)
 			continue;
 		for (;p < t->b; p++) {
+			if (p == vcc_default_vcl_e) {
+				p = tl->b;
+				fil = 1;
+				lin = 1;
+				pos = 0;
+			}
 			if (*p == '\n') {
 				lin++;
 				pos = 0;
@@ -1244,8 +1275,8 @@ LocTable(struct tokenlist *tl)
 				pos++;
 		
 		}
-		Fc(tl, 0, "  [%3u] = { %4u, %3u, 0, \"%T\" },\n",
-		    t->cnt, lin, pos + 1, t);
+		Fc(tl, 0, "  [%3u] = { %d, %4u, %3u, 0, \"%T\" },\n",
+		    t->cnt, fil, lin, pos + 1, t);
 	}
 	Fc(tl, 0, "};\n");
 }
@@ -1341,8 +1372,8 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 		e = strchr(b, '\0');
 	assert(e != NULL);
 	tokens.e = e;
-	vcc_Lexer(&tokens, b, e);
 	vcc_Lexer(&tokens, vcc_default_vcl_b, vcc_default_vcl_e);
+	vcc_Lexer(&tokens, b, e);
 	vcc_AddToken(&tokens, EOI, e, e);
 	if (tokens.err)
 		goto done;

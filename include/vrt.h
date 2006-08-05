@@ -3,7 +3,7 @@
  *
  * Runtime support for compiled VCL programs.
  *
- * XXX: When this file is changed, lib/libvcl/vcl_gen_fixed_token.tcl
+ * XXX: When this file is changed, lib/libvcl/vcc_gen_fixed_token.tcl
  * XXX: *MUST* be rerun.
  */
 
@@ -13,6 +13,7 @@ struct backend;
 struct VCL_conf;
 
 struct vrt_ref {
+	unsigned	file;
 	unsigned	line;
 	unsigned	pos;
 	unsigned	count;
