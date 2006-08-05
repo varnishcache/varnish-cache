@@ -138,7 +138,8 @@ ev_add(struct evbase *evb, struct ev *e)
 		    e->flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
 		e->__poll_idx = evb->lpfd;
 		evb->lpfd++;
-	}
+	} else
+		e->__poll_idx = -1;
 
 	if (e->timeout != 0.0) {
 		e->__when += ev_now() + e->timeout;
@@ -151,7 +152,6 @@ ev_add(struct evbase *evb, struct ev *e)
 	e->__evb = evb;
 	e->__binheap_idx = 0;
 	e->__privflags = 0;
-	e->__poll_idx = -1;
 	if (e->fd < 0)
 		TAILQ_INSERT_TAIL(&evb->events, e, __list);
 	else
@@ -196,7 +196,7 @@ ev_schedule(struct evbase *evb)
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	do 
-		i = ev_schedule(evb);
+		i = ev_schedule_one(evb);
 	while (i == 1);
 	return (i);
 }
@@ -220,6 +220,7 @@ ev_sched_timeout(struct evbase *evb, struct ev *e, double t)
 	i = e->callback(e, 0);
 	if (i) {
 		ev_del(evb, e);
+		free(e);
 	} else {
 		e->__when += t + e->timeout;
 		binheap_delete(evb->binheap, 0);
@@ -273,7 +274,9 @@ ev_schedule_one(struct evbase *evb)
 		assert(pfd->events == e->flags);
 		if (!pfd->revents)
 			continue;
+printf("Call %p %s (%u)\n", e, e->name, pfd->revents);
 		j = e->callback(e, pfd->revents);
+printf("Back from %p %s (%u)\n", e, e->name, pfd->revents);
 		i--;
 		if (evb->disturbed) {
 			TAILQ_FOREACH(e2, &evb->events, __list)
@@ -283,8 +286,10 @@ ev_schedule_one(struct evbase *evb)
 			e2 = TAILQ_NEXT(e, __list);
 			evb->disturbed = 0;
 		}
-		if (j)
+		if (j) {
 			ev_del(evb, e);
+			free(e);
+		}
 	}
 	return (1);
 }
