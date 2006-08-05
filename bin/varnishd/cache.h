@@ -25,7 +25,6 @@
 #define HTTP_HDR_RESPONSE	4
 #define HTTP_HDR_FIRST		5
 
-struct event_base;
 struct cli;
 struct sbuf;
 struct sess;
@@ -265,7 +264,6 @@ struct backend {
 	const char		*vcl_name;
 	const char		*hostname;
 	const char		*portname;
-	unsigned		ip;
 
 	struct addrinfo		*addr;
 	struct addrinfo		*last_addr;
@@ -397,7 +395,6 @@ void RES_WriteObj(struct sess *sp);
 void VCL_Init(void);
 void VCL_Rel(struct VCL_conf *vc);
 struct VCL_conf *VCL_Get(void);
-int VCL_Load(const char *fn, const char *name, struct cli *cli);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
