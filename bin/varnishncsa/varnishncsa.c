@@ -134,7 +134,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
 		//printf("New session [%d]: %s \n",u, ll[u].df_h);
 		ll[u].w = 1; // We have IP
-		//printf("w = 1\n");
 
 		break;
 
@@ -283,7 +282,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 			strncpy(ll[u].df_h, p + 4, j);
 			ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
 			ll[u].w = 1; // We have a IP
-			//printf("w = 1\n");
 
 		}
 		
