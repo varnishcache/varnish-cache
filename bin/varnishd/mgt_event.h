@@ -5,7 +5,7 @@
 struct ev;
 struct evbase;
 
-typedef int ev_cb_f(struct ev *, unsigned what);
+typedef int ev_cb_f(struct ev *, int what);
 
 struct ev {
 	unsigned	magic;
@@ -20,7 +20,7 @@ struct ev {
 #define		EV_ERR	POLLERR
 #define		EV_HUP	POLLHUP
 #define		EV_SIG	-1
-	int		signal;
+	int		sig;
 	unsigned	sig_flags;
 	double		timeout;
 	ev_cb_f		*callback;
@@ -39,6 +39,9 @@ struct evbase;
 
 struct evbase *ev_new_base(void);
 void ev_destroy_base(struct evbase *evb);
+
+struct ev *ev_new(void);
+
 int ev_add(struct evbase *evb, struct ev *e);
 void ev_del(struct evbase *evb, struct ev *e);
 

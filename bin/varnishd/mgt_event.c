@@ -35,6 +35,7 @@ struct evbase {
 	struct binheap		*binheap;
 	unsigned char		compact_pfd;
 	unsigned char		disturbed;
+	unsigned		psig;
 };
 
 /*--------------------------------------------------------------------*/
@@ -114,7 +115,7 @@ ev_get_sig(int sig)
 	if (os == NULL)
 		return (ENOMEM);
 
-	memcpy(os, ev_sigs, ev_nsig);
+	memcpy(os, ev_sigs, ev_nsig * sizeof *os);
 
 	free(ev_sigs);
 	ev_sigs = os;
@@ -128,9 +129,15 @@ ev_get_sig(int sig)
 static void
 ev_sighandler(int sig)
 {
+	struct evsig *es;
+
 	assert(sig < ev_nsig);
 	assert(ev_sigs != NULL);
-	ev_sigs[sig].happened = 1;
+	es = &ev_sigs[sig];
+	if (!es->happened)
+		es->evb->psig++;
+	es->happened = 1;
+printf("SIG %d happened\n", sig);
 }
 
 /*--------------------------------------------------------------------*/
@@ -163,6 +170,19 @@ ev_destroy_base(struct evbase *evb)
 	free(evb);
 }
 
+/*--------------------------------------------------------------------*/
+
+struct ev *
+ev_new(void)
+{
+	struct ev *e;
+
+	e = calloc(sizeof *e, 1);
+	if (e != NULL) {
+		e->fd = -1;
+	}
+	return (e);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -174,25 +194,27 @@ ev_add(struct evbase *evb, struct ev *e)
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	assert(e->magic != EV_MAGIC);
 	assert(e->callback != NULL);
-	assert(e->signal >= 0);
+	assert(e->sig >= 0);
 	assert(e->timeout >= 0.0);
+	assert(e->fd < 0 || e->fd_flags);
 
-	if (e->signal > 0 && ev_get_sig(e->signal))
+	if (e->sig > 0 && ev_get_sig(e->sig))
 		return (ENOMEM);
 
 	if (e->fd >= 0 && ev_get_pfd(evb))
 		return (ENOMEM);
 
-	if (e->signal > 0) {
-		es = &ev_sigs[e->signal];
+	if (e->sig > 0) {
+		es = &ev_sigs[e->sig];
 		if (es->ev != NULL)
 			return (EBUSY);
 		assert(es->happened == 0);
 		es->ev = e;
+		es->evb = evb;
 		es->sigact.sa_flags = e->sig_flags;
 		es->sigact.sa_handler = ev_sighandler;
-		assert(sigaction(e->signal, &es->sigact, NULL) == 0);
-		es->evb = evb;
+	} else {
+		es = NULL;
 	}
 
 	if (e->fd >= 0) {
@@ -220,6 +242,11 @@ ev_add(struct evbase *evb, struct ev *e)
 	else
 		TAILQ_INSERT_HEAD(&evb->events, e, __list);
 
+	if (e->sig > 0) {
+		assert(es != NULL);
+		assert(sigaction(e->sig, &es->sigact, NULL) == 0);
+	}
+
 	return (0);
 }
 
@@ -244,15 +271,15 @@ ev_del(struct evbase *evb, struct ev *e)
 		e->fd = -1;
 	}
 
-	if (e->signal > 0) {
-		assert(e->signal < ev_nsig);
-		es = &ev_sigs[e->signal];
+	if (e->sig > 0) {
+		assert(e->sig < ev_nsig);
+		es = &ev_sigs[e->sig];
 		assert(es->ev == e);
 		es->ev = NULL;
 		es->evb = NULL;
 		es->sigact.sa_flags = e->sig_flags;
 		es->sigact.sa_handler = SIG_DFL;
-		assert(sigaction(e->signal, &es->sigact, NULL) == 0);
+		assert(sigaction(e->sig, &es->sigact, NULL) == 0);
 		es->happened = 0;
 	}
 
@@ -307,11 +334,36 @@ printf("Back %p %s (TMO)\n", e, e->name);
 	}
 }
 
+static void
+ev_sched_signal(struct evbase *evb)
+{
+	int i, j;
+	struct evsig *es;
+	struct ev *e;
+
+	es = ev_sigs;
+	for (j = 0; j < ev_nsig; j++, es++) {
+		if (!es->happened || es->evb != evb)
+			continue;
+		evb->psig--;
+		es->happened = 0;
+		e = es->ev;
+		assert(e != NULL);
+printf("Call %p %s (sig %d)\n", e, e->name, j);
+		i = e->callback(e, EV_SIG);
+printf("Back %p %s (sig %d)\n", e, e->name, j);
+		if (i) {
+			ev_del(evb, e);
+			free(e);
+		}
+	}
+}
+
 int
 ev_schedule_one(struct evbase *evb)
 {
 	double t;
-	struct ev *e, *e2;
+	struct ev *e, *e2, *e3;
 	int i, j, tmo;
 	struct pollfd *pfd;
 
@@ -333,22 +385,16 @@ ev_schedule_one(struct evbase *evb)
 
 	if (tmo == INFTIM && evb->lpfd == 0)
 		return (0);
+
+	if (evb->psig) {
+printf("hassig\n");
+		ev_sched_signal(evb);
+		return (1);
+	}
 	i = poll(evb->pfd, evb->lpfd, tmo);
 	if(i == -1 && errno == EINTR) {
-		for (j = 0; j < ev_nsig; j++) {
-			if (!ev_sigs[j].happened || ev_sigs[j].evb != evb)
-				continue;
-			ev_sigs[j].happened = 0;
-			e = ev_sigs[j].ev;
-			assert(e != NULL);
-printf("Call %p %s (sig %d)\n", e, e->name, j);
-			i = e->callback(e, EV_SIG);
-printf("Back %p %s (sig %d)\n", e, e->name, j);
-			if (i) {
-				ev_del(evb, e);
-				free(e);
-			}
-		}
+printf("gotsig\n");
+		ev_sched_signal(evb);
 		return (1);
 	}
 	if (i == 0) {
@@ -375,11 +421,14 @@ printf("Call %p %s (%u)\n", e, e->name, pfd->revents);
 printf("Back %p %s (%u)\n", e, e->name, pfd->revents);
 		i--;
 		if (evb->disturbed) {
-			TAILQ_FOREACH(e2, &evb->events, __list)
-				if (e2 == e)
+			TAILQ_FOREACH(e3, &evb->events, __list) {
+				if (e3 == e) {
+					e3 = TAILQ_NEXT(e, __list);
 					break;
-			assert(e2 == e);
-			e2 = TAILQ_NEXT(e, __list);
+				} else if (e3 == e2)
+					break;
+			}
+			e2 = e3;
 			evb->disturbed = 0;
 		}
 		if (j) {
