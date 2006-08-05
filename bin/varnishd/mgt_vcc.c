@@ -23,15 +23,15 @@
 #include "mgt.h"
 #include "mgt_cli.h"
 
-struct vcls {
-	TAILQ_ENTRY(vcls)	list;
+struct vclprog {
+	TAILQ_ENTRY(vclprog)	list;
 	char 			*name;
 	char			*fname;
 	int			active;
 };
 
 
-static TAILQ_HEAD(, vcls) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
+static TAILQ_HEAD(, vclprog) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
 
 /*--------------------------------------------------------------------*/
 
@@ -75,10 +75,10 @@ static const char *default_vcl =
 
 /*--------------------------------------------------------------------*/
 
-static struct vcls *
+static struct vclprog *
 mgt_vcc_add(const char *name, char *file)
 {
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	vp = calloc(sizeof *vp, 1);
 	assert(vp != NULL);
@@ -89,7 +89,7 @@ mgt_vcc_add(const char *name, char *file)
 }
 
 static void
-mgt_vcc_del(struct vcls *vp)
+mgt_vcc_del(struct vclprog *vp)
 {
 	TAILQ_REMOVE(&vclhead, vp, list);
 	printf("unlink %s\n", vp->fname);
@@ -102,7 +102,7 @@ mgt_vcc_del(struct vcls *vp)
 static int
 mgt_vcc_delbyname(const char *name)
 {
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	TAILQ_FOREACH(vp, &vclhead, list) {
 		if (!strcmp(name, vp->name)) {
@@ -121,7 +121,7 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 	char *buf, *vf;
 	const char *p, *q;
 	struct sbuf *sb;
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
 	assert(sb != NULL);
@@ -172,7 +172,7 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 int
 mgt_push_vcls_and_start(int *status, char **p)
 {
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	TAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p,
@@ -194,7 +194,7 @@ static
 void
 mgt_vcc_atexit(void)
 {
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	if (getpid() != mgt_pid)
 		return;
@@ -277,10 +277,10 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 	mgt_vcc_add(av[2], vf);
 }
 
-static struct vcls *
+static struct vclprog *
 mcf_find_vcl(struct cli *cli, const char *name)
 {
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	TAILQ_FOREACH(vp, &vclhead, list)
 		if (!strcmp(vp->name, name))
@@ -297,7 +297,7 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 {
 	int status;
 	char *p;
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
@@ -323,7 +323,7 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 {
 	int status;
 	char *p;
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
@@ -347,7 +347,7 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
 {
 	int status;
 	char *p;
-	struct vcls *vp;
+	struct vclprog *vp;
 
 	(void)av;
 	(void)priv;
