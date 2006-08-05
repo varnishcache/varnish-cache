@@ -6,13 +6,13 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
-#include <pthread.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -23,52 +23,50 @@
 #include "mgt.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
+#include "mgt_event.h"
 
 pid_t		mgt_pid;
 pid_t		child_pid = -1;
 
 static int		child_fds[2];
 static unsigned 	child_should_run;
-static pthread_t	child_listen_thread;
-static pthread_t	child_poker_thread;
-static pthread_mutex_t	child_mtx;
-static pthread_cond_t	child_cv;
 static unsigned		child_ticker;
-static unsigned		gotint;
 static unsigned		dstarts;
+
+struct evbase		*mgt_evb;
 
 /*--------------------------------------------------------------------*/
 
-static void *
-child_listener(void *arg)
+static int
+child_listener(struct ev *e, int what)
 {
 	int i;
 	char buf[BUFSIZ];
 
-	(void)arg;
-
-	while (1) {
-		i = read(child_fds[0], buf, sizeof buf - 1);
-		if (i <= 0)
-			break;
-		buf[i] = '\0';
-		printf("Child said: %s", buf);
-	}
-	return (NULL);
+	(void)e;
+	if ((what & ~EV_RD))
+		return (1);
+	i = read(child_fds[0], buf, sizeof buf - 1);
+	if (i <= 0)
+		return (1);
+	buf[i] = '\0';
+	printf("Child said: <<%s>>\n", buf);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void *
-child_poker(void *arg)
+static int
+child_poker(struct ev *e, int what)
 {
 
-	(void)arg;
-	while (1) {
-		sleep (1);
-		if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
-			child_ticker = 0;
-	}
+	(void)e;
+	(void)what;
+	if (!child_should_run)
+		return (1);
+	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n"))
+		kill(child_pid, SIGKILL);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -78,6 +76,12 @@ start_child(void)
 {
 	int i;
 	char *p;
+	struct ev *e;
+
+	if (child_pid >= 0)
+		return;
+
+	child_should_run = 1;
 
 	AZ(pipe(&heritage.fds[0]));
 	AZ(pipe(&heritage.fds[2]));
@@ -99,6 +103,8 @@ start_child(void)
 		AZ(close(heritage.fds[3]));
 
 		setproctitle("Varnish-Chld");
+
+		signal(SIGINT, SIG_DFL);
 		child_main();
 
 		exit (1);
@@ -109,16 +115,28 @@ start_child(void)
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
 
+	e = ev_new();
+	assert(e != NULL);
+	e->fd = child_fds[0];
+	e->fd_flags = EV_RD;
+	e->name = "Child listener";
+	e->callback = child_listener;
+	AZ(ev_add(mgt_evb, e));
+
+	e = ev_new();
+	assert(e != NULL);
+	e->timeout = 3.0;
+	e->callback = child_poker;
+	e->name = "child poker";
+	AZ(ev_add(mgt_evb, e));
+
+
 	mgt_cli_start_child(heritage.fds[0], heritage.fds[3]);
 	AZ(close(heritage.fds[1]));
 	heritage.fds[1] = -1;
 	AZ(close(heritage.fds[2]));
 	heritage.fds[2] = -1;
 	child_pid = i;
-	AZ(pthread_create(&child_listen_thread, NULL, child_listener, NULL));
-	AZ(pthread_detach(child_listen_thread));
-	AZ(pthread_create(&child_poker_thread, NULL, child_poker, NULL));
-	AZ(pthread_detach(child_poker_thread));
 	if (mgt_push_vcls_and_start(&i, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
@@ -132,12 +150,13 @@ start_child(void)
 static void
 stop_child(void)
 {
-	int i;
 
-	assert(child_pid != -1);
+	if (child_pid < 0)
+		return;
 
-	printf("Stop child\n");
-	AZ(pthread_cancel(child_poker_thread));
+	child_should_run = 0;
+
+	printf("Clean child\n");
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
@@ -146,67 +165,61 @@ stop_child(void)
 	AZ(close(heritage.fds[3]));
 	heritage.fds[3] = -1;
 
-	/*
-	 * Give it one second to die, then wack it hard
-	 * then another second and then we get real angry
-	 */
-	for (i = 0; i < 30; i++) {
-		printf("Waiting %d %d\n",i, child_pid);
-		if (child_pid == -2)
-			break;
-		if (i == 10) {
-			printf("Giving cacher SIGINT\n");
-			kill(child_pid, SIGINT);
-		}
-		if (i == 20) {
-			printf("Giving cacher SIGKILL\n");
-			kill(child_pid, SIGKILL);
-		}
-		usleep(100000);
-	}
-
-	assert(child_pid == -2);
-
-	AZ(close(child_fds[0]));
-	child_fds[0] = -1;
-	child_pid = -1;
 	printf("Child stopped\n");
 }
 
 /*--------------------------------------------------------------------*/
 
-static void
-mgt_sigchld(int arg)
+static int
+mgt_sigchld(struct ev *e, int what)
 {
 	int status;
 	pid_t r;
 
-	(void)arg;
+	(void)e;
+	(void)what;
 	r = wait4(-1, &status, WNOHANG, NULL);
-	if (r == child_pid) {
-		printf("Cache child died pid=%d status=0x%x\n",
-		    r, status);
-		child_pid = -2;
-	} else {
+	if (r != child_pid) {
 		printf("Unknown child died pid=%d status=0x%x\n",
 		    r, status);
+		return (0);
 	}
+	printf("Cache child died pid=%d status=0x%x\n", r, status);
+	child_pid = -1;
+
+	if (child_should_run) {
+		printf("Clean child\n");
+		mgt_cli_stop_child();
+
+		/* We tell the child to die gracefully by closing the CLI */
+		AZ(close(heritage.fds[0]));
+		heritage.fds[0] = -1;
+		AZ(close(heritage.fds[3]));
+		heritage.fds[3] = -1;
+	}
+
+	AZ(close(child_fds[0]));
+	child_fds[0] = -1;
+	printf("Child cleaned\n");
+
+	if (child_should_run)
+		start_child();
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void
-mgt_sigint(int arg)
+static int
+mgt_sigint(struct ev *e, int what)
 {
 
-	(void)arg;
-	if (getpid() != mgt_pid) {
-		printf("Got SIGINT\n");
-		exit (2);
-	}
+	(void)e;
+	(void)what;
 	printf("Manager got SIGINT\n");
-	gotint = 1;
-	child_should_run = 0;
+	fflush(stdout);
+	if (child_pid >= 0)
+		stop_child();
+	exit (2);
 }
 
 /*--------------------------------------------------------------------
@@ -218,23 +231,30 @@ mgt_sigint(int arg)
 void
 mgt_run(int dflag)
 {
-	struct timespec to;
 	struct sigaction sac;
-	int i;
+	struct ev *ev_sigchld, *ev_sigint;
 
 	mgt_pid = getpid();
+
+	mgt_evb = ev_new_base();
+	assert(mgt_evb != NULL);
 
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
 
-	sac.sa_handler = mgt_sigchld;
-	sac.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	AZ(sigaction(SIGCHLD, &sac, NULL));
+	ev_sigint = ev_new();
+	assert(ev_sigint != NULL);
+	ev_sigint->sig = SIGINT;
+	ev_sigint->callback = mgt_sigint;
+	ev_sigint->name = "mgt_sigint";
+	AZ(ev_add(mgt_evb, ev_sigint));
 
-	sac.sa_handler = mgt_sigint;
-	sac.sa_flags = SA_RESTART;
-	AZ(sigaction(SIGINT, &sac, NULL));
-	AZ(sigaction(SIGTERM, &sac, NULL));
+	ev_sigchld = ev_new();
+	ev_sigchld->sig = SIGCHLD;
+	ev_sigchld->sig_flags = SA_NOCLDSTOP;
+	ev_sigchld->callback = mgt_sigchld;
+	ev_sigchld->name = "mgt_sigchild";
+	AZ(ev_add(mgt_evb, ev_sigchld));
 
 	setproctitle("Varnish-Mgr");
 
@@ -243,43 +263,14 @@ mgt_run(int dflag)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	child_should_run = !dflag;
+	printf("rolling...\n");
+	if (!dflag)
+		start_child();
 
-	AZ(pthread_cond_init(&child_cv, NULL));
-	AZ(pthread_mutex_init(&child_mtx, NULL));
+	ev_schedule(mgt_evb);
 
-	while (1) {
-		if (child_should_run && child_pid == -2)
-			stop_child();
-		if (!child_should_run && child_pid != -1)
-			stop_child();
-		if (gotint) {
-			printf("Manager died due to sigint\n");
-			exit(2);
-		}
-		if (child_should_run && child_pid == -1) {
-			if (dflag && dstarts) {
-				printf(
-				    "Manager not autostarting in debug mode\n");
-				exit(2);
-			}
-			start_child();
-			dstarts = 1;
-		}
-			
-		/* XXX POSIXBRAINDAMAGE */
-		AZ(clock_gettime(CLOCK_REALTIME, &to));
-		to.tv_sec += 1;
-
-		AZ(pthread_mutex_lock(&child_mtx));
-		i = pthread_cond_timedwait(&child_cv, &child_mtx, &to);
-		AZ(pthread_mutex_unlock(&child_mtx));
-		if (i == ETIMEDOUT && ++child_ticker > 5 && child_pid != -1) {
-			stop_child();
-			if (dflag)
-				exit (2);
-		}
-	}
+	printf("manager dies\n");
+	exit(2);
 }
 
 /*--------------------------------------------------------------------*/
@@ -291,11 +282,9 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 	(void)cli;
 	(void)av;
 	if (priv != NULL) {
-		child_should_run = 0;
-		AZ(pthread_cond_signal(&child_cv));
+		stop_child();
 		return;
 	} 
 	dstarts = 0;
-	child_should_run = 1;
-	AZ(pthread_cond_signal(&child_cv));
+	start_child();
 }
