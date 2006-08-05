@@ -171,11 +171,12 @@ mgt_cli_init(void)
  */
 
 int
-mgt_cli_askchild(int *status, char **resp, const char *fmt, ...)
+mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 {
 	char *p;
-	int i, j;
+	int i;
 	va_list ap;
+	unsigned u;
 
 	va_start(ap, fmt);
 	i = vasprintf(&p, fmt, ap);
@@ -187,11 +188,11 @@ mgt_cli_askchild(int *status, char **resp, const char *fmt, ...)
 	assert(i == strlen(p));
 	free(p);
 
-	i = cli_readres(cli_i, &j, resp, 3.0);
+	i = cli_readres(cli_i, &u, resp, 3.0);
 	assert(i == 0);
 	if (status != NULL)
-		*status = j;
-	return (j == CLIS_OK ? 0 : j);
+		*status = u;
+	return (u == CLIS_OK ? 0 : u);
 }
 
 /*--------------------------------------------------------------------*/
@@ -254,6 +255,7 @@ mgt_cli_callback(struct ev *e, int what)
 		if (p == NULL)
 			return (0);
 		*p = '\0';
+fprintf(stderr, "CLI <%s>\n", cp->buf);
 		sbuf_clear(cp->cli->sb);
 		cli_dispatch(cp->cli, cli_proto, cp->buf);
 		sbuf_finish(cp->cli->sb);

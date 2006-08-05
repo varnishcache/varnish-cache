@@ -76,11 +76,11 @@ static int
 read_tmo(int fd, void *ptr, unsigned len, double tmo)
 {
 	int i;
-	struct pollfd pfd[1];
+	struct pollfd pfd;
 
-	pfd->fd = fd;
-	pfd->events = POLLIN;
-	i = poll(pfd, 1, (int)(tmo * 1e3));
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+	i = poll(&pfd, 1, (int)(tmo * 1e3));
 	if (i == 0) {
 		errno = ETIMEDOUT;
 		return (-1);
