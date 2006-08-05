@@ -137,7 +137,6 @@ ev_sighandler(int sig)
 	if (!es->happened)
 		es->evb->psig++;
 	es->happened = 1;
-printf("SIG %d happened\n", sig);
 }
 
 /*--------------------------------------------------------------------*/
@@ -324,9 +323,7 @@ ev_sched_timeout(struct evbase *evb, struct ev *e, double t)
 	int i;
 
 
-printf("Call %p %s (TMO)\n", e, e->name);
 	i = e->callback(e, 0);
-printf("Back %p %s (TMO)\n", e, e->name);
 	if (i) {
 		ev_del(evb, e);
 		free(e);
@@ -353,9 +350,7 @@ ev_sched_signal(struct evbase *evb)
 		es->happened = 0;
 		e = es->ev;
 		assert(e != NULL);
-printf("Call %p %s (sig %d)\n", e, e->name, j);
 		i = e->callback(e, EV_SIG);
-printf("Back %p %s (sig %d)\n", e, e->name, j);
 		if (i) {
 			ev_del(evb, e);
 			free(e);
@@ -415,9 +410,7 @@ ev_schedule_one(struct evbase *evb)
 		assert(pfd->events == e->fd_flags);
 		if (!pfd->revents)
 			continue;
-printf("Call %p %s (%u)\n", e, e->name, pfd->revents);
 		j = e->callback(e, pfd->revents);
-printf("Back %p %s (%u)\n", e, e->name, pfd->revents);
 		i--;
 		if (evb->disturbed) {
 			TAILQ_FOREACH(e3, &evb->events, __list) {
