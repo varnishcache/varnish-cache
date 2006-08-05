@@ -226,16 +226,18 @@ ev_add(struct evbase *evb, struct ev *e)
 	} else
 		e->__poll_idx = -1;
 
+	e->magic = EV_MAGIC;	/* before binheap_insert() */
+
 	if (e->timeout != 0.0) {
 		e->__when += ev_now() + e->timeout;
 		binheap_insert(evb->binheap, e);
+		assert(e->__binheap_idx > 0);
 	} else {
 		e->__when = 0.0;
+		e->__binheap_idx = 0;
 	}
 
-	e->magic = EV_MAGIC;
 	e->__evb = evb;
-	e->__binheap_idx = 0;
 	e->__privflags = 0;
 	if (e->fd < 0)
 		TAILQ_INSERT_TAIL(&evb->events, e, __list);
@@ -316,10 +318,11 @@ ev_compact_pfd(struct evbase *evb)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 ev_sched_timeout(struct evbase *evb, struct ev *e, double t)
 {
 	int i;
+
 
 printf("Call %p %s (TMO)\n", e, e->name);
 	i = e->callback(e, 0);
@@ -328,13 +331,14 @@ printf("Back %p %s (TMO)\n", e, e->name);
 		ev_del(evb, e);
 		free(e);
 	} else {
-		e->__when += t + e->timeout;
-		binheap_delete(evb->binheap, 0);
+		e->__when = t + e->timeout;
+		binheap_delete(evb->binheap, e->__binheap_idx);
 		binheap_insert(evb->binheap, e);
 	}
+	return (1);
 }
 
-static void
+static int
 ev_sched_signal(struct evbase *evb)
 {
 	int i, j;
@@ -357,6 +361,7 @@ printf("Back %p %s (sig %d)\n", e, e->name, j);
 			free(e);
 		}
 	}
+	return (1);
 }
 
 int
@@ -370,13 +375,14 @@ ev_schedule_one(struct evbase *evb)
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
+		assert(e->__binheap_idx == 1);
 		CHECK_OBJ_NOTNULL(e, EV_MAGIC);
 		t = ev_now();
-		if (e->__when <= t) {
-			ev_sched_timeout(evb, e, t);
-			return (1);
-		}
+		if (e->__when <= t)
+			return (ev_sched_timeout(evb, e, t));
 		tmo = (e->__when - t) * 1e3;
+		if (tmo == 0)
+			tmo = 1;
 	} else
 		tmo = INFTIM;
 
@@ -386,23 +392,16 @@ ev_schedule_one(struct evbase *evb)
 	if (tmo == INFTIM && evb->lpfd == 0)
 		return (0);
 
-	if (evb->psig) {
-printf("hassig\n");
-		ev_sched_signal(evb);
-		return (1);
-	}
+	if (evb->psig)
+		return (ev_sched_signal(evb));
 	i = poll(evb->pfd, evb->lpfd, tmo);
-	if(i == -1 && errno == EINTR) {
-printf("gotsig\n");
-		ev_sched_signal(evb);
-		return (1);
-	}
+	if(i == -1 && errno == EINTR)
+		return (ev_sched_signal(evb));
 	if (i == 0) {
 		assert(e != NULL);
 		t = ev_now();
 		if (e->__when <= t)
-			ev_sched_timeout(evb, e, t);
-		return (1);
+			return (ev_sched_timeout(evb, e, t));
 	}
 	evb->disturbed = 0;
 	TAILQ_FOREACH_SAFE(e, &evb->events, __list, e2) {
