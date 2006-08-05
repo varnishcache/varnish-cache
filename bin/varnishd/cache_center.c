@@ -272,10 +272,7 @@ cnt_hit(struct sess *sp)
 		sp->handling = VCL_RET_PASS;
 
 	if (sp->handling == VCL_RET_DELIVER) {
-		RES_WriteObj(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
-		sp->step = STP_DONE;
+		sp->step = STP_DELIVER;
 		return (0);
 	}
 	if (sp->handling == VCL_RET_PASS) {
