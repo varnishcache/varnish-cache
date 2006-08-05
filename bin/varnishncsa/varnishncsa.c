@@ -35,7 +35,10 @@
 
 struct logline {
 	char df_h[4 * (3 + 1)]; // Datafield for %h (IP adress)
-	//   int y;
+	// XXX Set to 1 if we have a IP adress. Not sure when to unset.
+	// Know for sure when we have a real SessionClose. Probably
+	// When we clean also. When we have timeout. Are there any more?
+	int w;
 	//   unsigned char *df_l; // Datafield for %l
 	//   unsigned char *df_u; // Datafield for %u
 	struct tm *logline_time; // Datafield for %t
@@ -79,7 +82,7 @@ clean_order(void)
 static void 
 extended_log_format(unsigned char *p, char *w_opt)
 {
-	unsigned u,v;
+	unsigned u,v,w;
 	int i,j;
 	unsigned char *tmpPtr;
 	char *tmpPtra;
@@ -115,6 +118,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 	
 	i = 0;
 	v = 0;
+	w = 0;
 
 	switch (p[0]) {
 
@@ -129,6 +133,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 	        strncpy(ll[u].df_h, p + 4, j);
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
 		//printf("New session [%d]: %s \n",u, ll[u].df_h);
+		ll[u].w = 1; // We have IP
+		//printf("w = 1\n");
 
 		break;
 
@@ -191,6 +197,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 			ll[u].df_R = strdup(p + 4);
 			ll[u].df_R[0] = '-';
 			ll[u].df_R[1] = '\0';
+			cm_R = 1;
 		}
 
 		break;
@@ -226,6 +233,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 		req_time = timesec;
 		ll[u].logline_time = localtime(&req_time);
 		strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
+		cm_r = 1;
 
 		break;
 
@@ -248,15 +256,17 @@ extended_log_format(unsigned char *p, char *w_opt)
 	case SLT_SessionClose:
 
 		if (p[1] >= 7 && !strncasecmp((void *)&p[4], "timeout",7)){
+			// XXX what to do with the timeout?
+			// Right now I am gonna just let it pass, and not even clean memory.
 			//printf("Timeout...\n");
+			ll[u].w = 0;
 		}
 		else{
-			
-			
+
+			v = 1; // We are done, clean memory
+			ll[u].w = 0;
 		}
 
-		v = 1; // We are done, clean memory
-		
 		break;
 
 	case SLT_SessionReuse:
@@ -272,6 +282,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 			j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
 			strncpy(ll[u].df_h, p + 4, j);
 			ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+			ll[u].w = 1; // We have a IP
+			//printf("w = 1\n");
 
 		}
 		
@@ -285,8 +297,13 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 	}
 
-	// Memorycleaner and stringwriter.
-	if (v) {
+	// Memorycleaner and stringwriter. v is 1 after SLT_SessionClose OR SLT_SessionReuse that
+	// do something useful. w is set when we have a real IP adress, somewhere we are getting
+	// requests without.
+	//
+	// XXX Find out why we don't have IP and get rid of w.
+	//
+	if (v && ll[u].w) {
 	
 		
 
@@ -303,6 +320,10 @@ extended_log_format(unsigned char *p, char *w_opt)
 		if (cm_U){
 			// Clean memory for User-Agent
 			free(ll[u].df_U);
+		}
+		if (cm_r){
+			// Clean memory for Date variables
+			free(tmpPtrb);
 		}
 										
 	}
