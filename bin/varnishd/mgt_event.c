@@ -147,7 +147,7 @@ ev_new_base(void)
 	struct evbase *evb;
 
 	evb = calloc(sizeof *evb, 1);
-	if (!evb)
+	if (evb == NULL)
 		return (evb);
 	if (ev_get_pfd(evb)) {
 		free(evb);
