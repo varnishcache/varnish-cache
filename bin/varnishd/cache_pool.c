@@ -109,7 +109,6 @@ wrk_do_one(struct worker *w)
 	VSL_stats->n_wrk_queue--;
 	AZ(pthread_mutex_unlock(&wrk_mtx));
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
-	assert(wrq->sess->wrk == NULL);
 	wrq->sess->wrk = w;
 	w->wrq = wrq;
 	if (wrq->sess->srcaddr == NULL) {
