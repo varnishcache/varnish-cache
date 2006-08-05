@@ -30,8 +30,6 @@ pid_t		child_pid = -1;
 
 static int		child_fds[2];
 static unsigned 	child_should_run;
-static unsigned		child_ticker;
-static unsigned		dstarts;
 
 struct evbase		*mgt_evb;
 
@@ -142,7 +140,6 @@ start_child(void)
 		free(p);
 		exit (2);
 	}
-	child_ticker = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -232,7 +229,7 @@ void
 mgt_run(int dflag)
 {
 	struct sigaction sac;
-	struct ev *ev_sigchld, *ev_sigint;
+	struct ev *e;
 
 	mgt_pid = getpid();
 
@@ -242,19 +239,20 @@ mgt_run(int dflag)
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
 
-	ev_sigint = ev_new();
-	assert(ev_sigint != NULL);
-	ev_sigint->sig = SIGINT;
-	ev_sigint->callback = mgt_sigint;
-	ev_sigint->name = "mgt_sigint";
-	AZ(ev_add(mgt_evb, ev_sigint));
+	e = ev_new();
+	assert(e != NULL);
+	e->sig = SIGINT;
+	e->callback = mgt_sigint;
+	e->name = "mgt_sigint";
+	AZ(ev_add(mgt_evb, e));
 
-	ev_sigchld = ev_new();
-	ev_sigchld->sig = SIGCHLD;
-	ev_sigchld->sig_flags = SA_NOCLDSTOP;
-	ev_sigchld->callback = mgt_sigchld;
-	ev_sigchld->name = "mgt_sigchild";
-	AZ(ev_add(mgt_evb, ev_sigchld));
+	e = ev_new();
+	assert(e != NULL);
+	e->sig = SIGCHLD;
+	e->sig_flags = SA_NOCLDSTOP;
+	e->callback = mgt_sigchld;
+	e->name = "mgt_sigchild";
+	AZ(ev_add(mgt_evb, e));
 
 	setproctitle("Varnish-Mgr");
 
@@ -285,6 +283,5 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 		stop_child();
 		return;
 	} 
-	dstarts = 0;
 	start_child();
 }
