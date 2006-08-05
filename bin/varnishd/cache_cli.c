@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cli.h"
 #include "cli_priv.h"
@@ -72,7 +71,7 @@ CLI_Init(void)
 		i = poll(pfd, 1, 5000);
 		if (i == 0)
 			continue;
-		if (nbuf == lbuf) {
+		if ((nbuf + 2) >= lbuf) {
 			lbuf += lbuf;
 			buf = realloc(buf, lbuf);
 			assert(buf != NULL);
@@ -80,6 +79,7 @@ CLI_Init(void)
 		i = read(heritage.fds[2], buf + nbuf, lbuf - nbuf);
 		if (i <= 0) {
 			VSL(SLT_Error, 0, "CLI read %d (errno=%d)", i, errno);
+			free(buf);
 			return;
 		}
 		nbuf += i;
@@ -94,6 +94,7 @@ CLI_Init(void)
 		i = cli_writeres(heritage.fds[1], cli);
 		if (i) {
 			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
+			free(buf);
 			return;
 		}
 		VSL(SLT_CLI, 0, "Wr %d %d %s",
