@@ -8,7 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <poll.h>
-#include <pthread.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
