@@ -178,6 +178,8 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	va_list ap;
 	unsigned u;
 
+	if (cli_i < 0|| cli_o < 0)
+		return (CLIS_CANT);
 	va_start(ap, fmt);
 	i = vasprintf(&p, fmt, ap);
 	va_end(ap);
