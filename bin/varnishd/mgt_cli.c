@@ -12,7 +12,6 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
-#include "libvarnish.h"
 #include "cli_priv.h"
 #include "cli.h"
 #include "sbuf.h"
@@ -232,7 +231,7 @@ struct cli_port {
 };
 
 static int
-mgt_cli_callback(struct ev *e, unsigned what)
+mgt_cli_callback(struct ev *e, int what)
 {
 	struct cli_port *cp;
 	char *p;
