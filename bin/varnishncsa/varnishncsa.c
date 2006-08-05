@@ -40,9 +40,9 @@ struct logline {
 	//   unsigned char *df_u; // Datafield for %u
 	struct tm *logline_time; // Datafield for %t
 	unsigned char *df_r; // Datafield for %r
-	//   unsigned char *df_s; // Datafield for %s
-	//   unsigned char *df_b; // Datafield for %b
-	//   unsigned char *df_R; // Datafield for %{Referer}i
+	unsigned char *df_s; // Datafield for %s
+	unsigned char *df_b; // Datafield for %b
+	unsigned char *df_R; // Datafield for %{Referer}i
 	unsigned char *df_U; // Datafield for %{User-agent}i
 };
 
@@ -173,6 +173,14 @@ extended_log_format(unsigned char *p, char *w_opt)
 		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
 			ll[u].df_U = strdup(p + 4);
 		}
+		if (p[1] >= 8 && !strncasecmp((void *)&p[4], "referer:",8)){
+			ll[u].df_R = strdup(p + 4);
+		}
+		else if (ll[u].df_R == NULL){
+			ll[u].df_R = strdup(p + 4);
+			ll[u].df_R[0] = '-';
+			ll[u].df_R[1] = '\0';
+		}
 
 		break;
 
@@ -184,10 +192,10 @@ extended_log_format(unsigned char *p, char *w_opt)
 		tmpPtrb =  strdup(p + 4);
 
 		for ( tmpPtra = strtok(tmpPtrb," "); tmpPtra != NULL; tmpPtra = strtok(NULL, " ")){
-			if (i = 1){
+			//if (i = 1){
 				tmpPtrc = tmpPtra;
-			}
-			printf("ReqServTime number %d: %s\n", i, tmpPtra);
+			//}
+			//printf("ReqServTime number %d: %s\n", i, tmpPtra);
 			
 			i++;
 		}
@@ -210,6 +218,22 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		break;
 
+	case SLT_TxStatus:
+
+		ll[u].df_s = strdup(p + 4);
+
+		break;
+	
+	case SLT_Length:
+
+		ll[u].df_b = strdup(p + 4);
+		if (!atoi(ll[u].df_b)){
+			ll[u].df_b[0] = '-';	
+			ll[u].df_b[1] = '\0';
+		}
+
+		break;
+
 	case SLT_SessionClose:
 
 		if (p[1] >= 7 && !strncasecmp((void *)&p[4], "timeout",7)){
@@ -217,11 +241,13 @@ extended_log_format(unsigned char *p, char *w_opt)
 		}
 		else{
 			
-			printf("%s %s", ll[u].df_h, temp_time);
+			printf("%s - - %s", ll[u].df_h, temp_time);
 			sbuf_finish(ob[u]);
 			printf("\"%s\"", sbuf_data(ob[u]));
-			printf(" \"%s\"\n", ll[u].df_U);
+			printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
 			sbuf_clear(ob[u]);
+			//free(ll[u].df_R);
+			//free(ll[u].df_U);
 			
 		}
 		
@@ -243,11 +269,13 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		}
 		
-		printf("%s %s", ll[u].df_h, temp_time);
+		printf("%s - - %s", ll[u].df_h, temp_time);
 		sbuf_finish(ob[u]);
 		printf("\"%s\"", sbuf_data(ob[u]));
-		printf(" \"%s\"\n", ll[u].df_U);
+		printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
 		sbuf_clear(ob[u]);
+		//free(ll[u].df_R);
+		//free(ll[u].df_U);
 		
 		break;
 
