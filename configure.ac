@@ -14,14 +14,14 @@ AM_INIT_AUTOMAKE
 
 # Compiler flags (assume GCC).
 # This section *must* come before AC_PROG_CC / AC_PROG_CPP.
-CFLAGS="${CFLAGS:--O2}"
+CFLAGS="${CFLAGS:--O2 -pipe}"
 DEVELOPER_CFLAGS="-Wall -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls"
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
-	CFLAGS="${CFLAGS} -g -fno-inline -fno-builtin")
+	CFLAGS="${CFLAGS} -O -g -fno-inline -fno-builtin")
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
