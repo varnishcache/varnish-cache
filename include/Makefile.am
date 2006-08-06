@@ -9,6 +9,7 @@ noinst_HEADERS = \
 	http_headers.h \
 	libvarnish.h \
 	libvcl.h \
+	miniobj.h \
 	queue.h \
 	sbuf.h \
 	shmlog.h \
@@ -20,4 +21,6 @@ noinst_HEADERS = \
 	varnishapi.h \
 	vcl.h \
 	vcl_returns.h \
-	vrt.h
+	vrt.h \
+	vrt_obj.h
+
