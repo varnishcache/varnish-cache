@@ -71,7 +71,6 @@ AC_CONFIG_FILES([
     bin/varnishlog/Makefile
     bin/varnishncsa/Makefile
     bin/varnishstat/Makefile
-    bin/varnishtester/Makefile
     bin/varnishtop/Makefile
     contrib/Makefile
     include/Makefile
