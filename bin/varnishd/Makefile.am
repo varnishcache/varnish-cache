@@ -53,6 +53,8 @@ noinst_HEADERS = \
 	common.h \
 	steps.h
 
+varnishd_CFLAGS = -include config.h
+
 varnishd_LDFLAGS = -export-dynamic 
 
 varnishd_LDADD = \
