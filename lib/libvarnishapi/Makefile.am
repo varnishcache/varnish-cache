@@ -7,7 +7,4 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_SOURCES = \
 	shmlog.c
 
-
-#	varnish_debug.c 
-#	varnish_log.c 
-#	varnish_util.c
+libvarnishapi_la_CFLAGS = -include config.h

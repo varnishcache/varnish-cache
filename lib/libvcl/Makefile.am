@@ -14,3 +14,5 @@ libvcl_la_SOURCES = \
 	vcc_fixed_token.c \
 	vcc_obj.c \
 	vcc_token.c
+
+libvcl_la_CFLAGS = -include config.h
