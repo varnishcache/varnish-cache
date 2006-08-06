@@ -72,7 +72,6 @@ AC_CONFIG_FILES([
     bin/varnishncsa/Makefile
     bin/varnishstat/Makefile
     bin/varnishtop/Makefile
-    contrib/Makefile
     include/Makefile
     lib/Makefile
     lib/libcompat/Makefile
@@ -81,5 +80,4 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     lib/libvcl/Makefile
 ])
-AC_CONFIG_SUBDIRS(contrib/libevent)
 AC_OUTPUT
