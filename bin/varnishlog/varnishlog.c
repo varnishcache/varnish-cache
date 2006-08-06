@@ -232,7 +232,10 @@ main(int argc, char **argv)
 		Usage();
 
 	if (w_opt != NULL) {
-		wfile = fopen(w_opt, "w");
+		if (!strcmp(w_opt, "-"))
+			wfile = stdout;
+		else
+			wfile = fopen(w_opt, "w");
 		if (wfile == NULL) {
 			perror(w_opt);
 			exit (1);
@@ -249,10 +252,10 @@ main(int argc, char **argv)
 			if (w_opt == NULL) {
 				if (o_flag && ++v == 100)
 					clean_order();
-				fflush(stdout);
+				fflush(stderr);
 			} else if (++v == 100) {
 				fflush(wfile);
-				printf("\nFlushed\n");
+				fprintf(stderr, "\nFlushed\n");
 			}
 			usleep(50000);
 			continue;
@@ -264,8 +267,8 @@ main(int argc, char **argv)
 				perror(w_opt);
 			u++;
 			if (!(u % 1000)) {
-				printf("%u\r", u);
-				fflush(stdout);
+				fprintf(stderr, "%u\r", u);
+				fflush(stderr);
 			}
 			continue;
 		}
