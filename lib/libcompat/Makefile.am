@@ -7,3 +7,5 @@ lib_LIBRARIES = libcompat.a
 libcompat_a_SOURCES = \
 	strlcat.c \
 	strlcpy.c
+
+libcompat_a_CFLAGS = -include config.h

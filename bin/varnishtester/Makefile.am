@@ -4,12 +4,12 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishtester
 
-# man_MANS = varnishd.1
+# dist_man_MANS = varnishtester.1
 
 varnishtester_SOURCES = \
 	varnishtester.c
 
-# varnishd_LDFLAGS = -export-dynamic 
+varnishtester_CFLAGS = -include config.h
 
 varnishtester_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la

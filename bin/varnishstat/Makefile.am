@@ -8,6 +8,8 @@ dist_man_MANS = varnishstat.1
 
 varnishstat_SOURCES = varnishstat.c
 
+varnishstat_CFLAGS = -include config.h
+
 varnishstat_LDADD = \
 	-lcurses \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la 
