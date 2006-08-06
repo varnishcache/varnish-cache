@@ -4,7 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishncsa
 
-man_MANS = varnishncsa.1
+dist_man_MANS = varnishncsa.1
 
 varnishncsa_SOURCES = varnishncsa.c
 

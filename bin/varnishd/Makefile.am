@@ -4,7 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishd
 
-man_MANS = varnishd.1
+dist_man_MANS = varnishd.1
 
 varnishd_SOURCES = \
 	cache.h \
@@ -48,6 +48,10 @@ varnishd_SOURCES = \
 	storage_malloc.c \
 	tcp.c \
 	varnishd.c
+
+noinst_HEADERS = \
+	common.h \
+	steps.h
 
 varnishd_LDFLAGS = -export-dynamic 
 
