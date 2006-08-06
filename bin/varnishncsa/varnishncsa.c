@@ -38,6 +38,8 @@ struct logline {
 	// XXX Set to 1 if we have a IP adress. Not sure when to unset.
 	// Know for sure when we have a real SessionClose. Probably
 	// When we clean also. When we have timeout. Are there any more?
+	int v;
+	// Set to 1 if we wanna print the loglinestring because we are done
 	int w;
 	//   unsigned char *df_l; // Datafield for %l
 	//   unsigned char *df_u; // Datafield for %u
@@ -119,6 +121,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 	i = 0;
 	v = 0;
 	w = 0;
+	ll[u].w = 0;
 
 	switch (p[0]) {
 
@@ -133,7 +136,12 @@ extended_log_format(unsigned char *p, char *w_opt)
 	        strncpy(ll[u].df_h, p + 4, j);
 		ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
 		//printf("New session [%d]: %s \n",u, ll[u].df_h);
-		ll[u].w = 1; // We have IP
+		ll[u].v = 1; // We have IP
+
+		// We have a new session. This is a good place to initialize and
+		// clean data from previous sessions with same filedescriptor.
+		
+		//free(ll[u].df_U);
 
 		break;
 
@@ -258,13 +266,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 			// XXX what to do with the timeout?
 			// Right now I am gonna just let it pass, and not even clean memory.
 			//printf("Timeout...\n");
-			ll[u].w = 0;
+			//ll[u].w = 1;
 		}
 		else{
 
-			v = 1; // We are done, clean memory
-			ll[u].w = 0;
+			ll[u].w = 1; // We are done, clean memory
+
 		}
+
+		free(ll[u].df_U);
 
 		break;
 
@@ -281,12 +291,12 @@ extended_log_format(unsigned char *p, char *w_opt)
 			j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
 			strncpy(ll[u].df_h, p + 4, j);
 			ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
-			ll[u].w = 1; // We have a IP
+			ll[u].v = 1; // We have a IP
 
 		}
 		
 
-		v = 1; // We are done, clean memory
+		ll[u].w = 1; // We are done, clean memory
 		
 		break;
 
@@ -295,13 +305,13 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 	}
 
-	// Memorycleaner and stringwriter. v is 1 after SLT_SessionClose OR SLT_SessionReuse that
-	// do something useful. w is set when we have a real IP adress, somewhere we are getting
+	// Memorycleaner and stringwriter. w is 1 after SLT_SessionClose OR SLT_SessionReuse that
+	// do something useful. v is set when we have a real IP adress, somewhere we are getting
 	// requests without.
 	//
-	// XXX Find out why we don't have IP and get rid of w.
+	// XXX Find out why we don't have IP and get rid of v.
 	//
-	if (v && ll[u].w) {
+	if (ll[u].w && ll[u].v) {
 	
 		
 
@@ -310,19 +320,30 @@ extended_log_format(unsigned char *p, char *w_opt)
                 printf("\"%s\"", sbuf_data(ob[u]));
                 printf(" %s %s \"%s\" \"%s\"\n", ll[u].df_s, ll[u].df_b, ll[u].df_R, ll[u].df_U);
                 sbuf_clear(ob[u]);
+		ll[u].df_U == NULL;
+
+		
 
 		if (cm_R){
 			// Clean the memory for Referer
 			free(ll[u].df_R);
 		}
 		if (cm_U){
+			// Clean User-Agent.
+
 			// Clean memory for User-Agent
 			free(ll[u].df_U);
+
+			// Initialize User-Agent.
+			ll[u].df_U == NULL;
+		
 		}
 		if (cm_r){
 			// Clean memory for Date variables
 			free(tmpPtrb);
 		}
+		// XXX We reinitialize the struct logline
+		// free(ll[u]);
 										
 	}
 	
