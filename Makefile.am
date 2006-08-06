@@ -1,3 +1,3 @@
 # $Id$
 
-SUBDIRS = include lib bin
+SUBDIRS = contrib include lib bin
