@@ -12,7 +12,7 @@
 #include "shmlog.h"
 #include "cli.h"
 #include "cli_priv.h"
-#include "common_cli.h"
+#include "cli_common.h"
 #include "cache.h"
 #include "sbuf.h"
 #include "heritage.h"

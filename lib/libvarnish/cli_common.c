@@ -21,7 +21,7 @@
 
 #include "cli.h"
 #include "cli_priv.h"
-#include "common_cli.h"
+#include "cli_common.h"
 
 void
 cli_out(struct cli *cli, const char *fmt, ...)

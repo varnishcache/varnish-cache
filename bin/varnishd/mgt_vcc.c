@@ -18,7 +18,7 @@
 #include "libvcl.h"
 #include "cli.h"
 #include "cli_priv.h"
-#include "common_cli.h"
+#include "cli_common.h"
 
 #include "mgt.h"
 #include "mgt_cli.h"
