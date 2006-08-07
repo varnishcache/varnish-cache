@@ -14,6 +14,7 @@
 
 #include "vsb.h"
 
+#include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
 
