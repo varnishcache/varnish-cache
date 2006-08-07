@@ -15,7 +15,7 @@
 #include "cli_priv.h"
 #include "cli.h"
 #include "sbuf.h"
-#include "common_cli.h"
+#include "cli_common.h"
 #include "mgt.h"
 #include "mgt_cli.h"
 #include "mgt_event.h"
