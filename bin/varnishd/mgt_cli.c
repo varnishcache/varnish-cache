@@ -86,7 +86,6 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	free(p);
 
 	i = cli_readres(cli_i, &u, &p, 3.0);
-	assert(i == 0);
 	cli_result(cli, u);
 	cli_out(cli, "%s", p);
 	free(p);
@@ -174,7 +173,7 @@ int
 mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 {
 	char *p;
-	int i;
+	int i, j;
 	va_list ap;
 	unsigned u;
 
@@ -186,9 +185,16 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	if (i < 0)
 		return (i);
 	assert(p[i - 1] == '\n');
-	i = write(cli_o, p, strlen(p));
-	assert(i == strlen(p));
+	j = write(cli_o, p, i);
 	free(p);
+	if (j != i) {
+		free(p);
+		if (status != NULL)
+			*status = CLIS_COMMS;
+		if (resp != NULL)
+			*resp = strdup("CLI communication error");
+		return (CLIS_COMMS);
+	}
 
 	i = cli_readres(cli_i, &u, resp, 3.0);
 	assert(i == 0);
