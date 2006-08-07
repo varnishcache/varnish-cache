@@ -20,7 +20,6 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "config.h"
 #include "compat.h"
 
 #ifndef HAVE_STRLCPY

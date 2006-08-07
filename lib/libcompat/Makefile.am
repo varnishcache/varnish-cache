@@ -5,6 +5,8 @@ INCLUDES = -I$(top_srcdir)/include
 lib_LIBRARIES = libcompat.a
 
 libcompat_a_SOURCES = \
+	asprintf.c \
+	vasprintf.c \
 	strlcat.c \
 	strlcpy.c
 
