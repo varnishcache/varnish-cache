@@ -180,9 +180,8 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 	TAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
 	if (0) {
-		fprintf(stderr, "[%s %*.*s] ",
-		    vcl_tnames[tok],
-		    e - b, e - b, b);
+		fprintf(stderr, "[%s %.*s] ",
+		    vcl_tnames[tok],(int)(e - b), b);
 		if (tok == EOI)
 			fprintf(stderr, "\n");
 	}

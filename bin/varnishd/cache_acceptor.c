@@ -6,8 +6,8 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
-#define ACCEPTOR_USE_POLL
-#undef ACCEPTOR_USE_KQUEUE
+#undef ACCEPTOR_USE_POLL
+#define ACCEPTOR_USE_KQUEUE
 
 #include <stdio.h>
 #include <errno.h>

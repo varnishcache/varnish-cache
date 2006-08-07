@@ -63,8 +63,8 @@ setup_hash(const char *sflag)
 	} else if (!cmp_hash(&hsl_slinger, sflag, p)) {
 		hp = &hsl_slinger;
 	} else {
-		fprintf(stderr, "Unknown hash method \"%*.*s\"\n",
-			p - sflag, p - sflag, sflag);
+		fprintf(stderr, "Unknown hash method \"%.*s\"\n",
+		    (int)(p - sflag), sflag);
 		exit (2);
 	}
 	heritage.hash = hp;
@@ -108,8 +108,8 @@ setup_storage(const char *sflag)
 	} else if (!cmp_storage(&smf_stevedore, sflag, p)) {
 		stp = &smf_stevedore;
 	} else {
-		fprintf(stderr, "Unknown storage method \"%*.*s\"\n",
-			p - sflag, p - sflag, sflag);
+		fprintf(stderr, "Unknown storage method \"%.*s\"\n",
+		    (int)(p - sflag), sflag);
 		exit (2);
 	}
 	heritage.stevedore = malloc(sizeof *heritage.stevedore);
