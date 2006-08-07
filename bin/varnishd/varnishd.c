@@ -311,10 +311,6 @@ DebugStunt(void)
 
 /*--------------------------------------------------------------------*/
 
-
-/* for development purposes */
-#include <printf.h>
-
 int
 main(int argc, char *argv[])
 {
@@ -325,8 +321,6 @@ main(int argc, char *argv[])
 	const char *fflag = NULL;
 	const char *sflag = "file";
 	const char *hflag = "classic";
-
-	(void)register_printf_render_std((const unsigned char *)"HVQ");
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
