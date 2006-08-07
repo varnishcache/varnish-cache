@@ -70,6 +70,8 @@
 static void
 _vsb_assert_integrity(const char *fun, struct vsb *s)
 {
+	(void)fun;
+	(void)s;
 	KASSERT(s != NULL,
 	    ("%s called with a NULL vsb pointer", fun));
 	KASSERT(s->s_buf != NULL,
@@ -81,6 +83,9 @@ _vsb_assert_integrity(const char *fun, struct vsb *s)
 static void
 _vsb_assert_state(const char *fun, struct vsb *s, int state)
 {
+	(void)fun;
+	(void)s;
+	(void)state;
 	KASSERT((s->s_flags & VSB_FINISHED) == state,
 	    ("%s called with %sfinished or corrupt vsb", fun,
 	    (state ? "un" : "")));
