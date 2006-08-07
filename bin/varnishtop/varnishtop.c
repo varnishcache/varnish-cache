@@ -15,6 +15,7 @@
 #include <vsb.h>
 #include <vis.h>
 
+#include "libvarnish.h"
 #include "shmlog.h"
 #include "queue.h"
 #include "varnishapi.h"
