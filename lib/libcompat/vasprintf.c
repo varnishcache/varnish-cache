@@ -5,14 +5,15 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "compat.h"
 
 #ifndef HAVE_VASPRINTF
 int
-asprintf(char **strp, const char *fmt, va_list ap)
+vasprintf(char **strp, const char *fmt, va_list ap)
 {
-	va_list ap, aq;
+	va_list aq;
 	int ret;
 
 	va_copy(aq, ap);
