@@ -68,11 +68,11 @@ AC_CHECK_FUNCS([strlcpy])
 # are present in the C library, but their prototypes are hidden behind
 # conditionals which we won't bother to unravel.
 AC_CHECK_DECL([asprintf],
-	AC_DEFINE(HAVE_ASPRINTF,1,[Whether asprintf() is available]),
+	AC_DEFINE(HAVE_ASPRINTF,1,[Define to 1 if asprintf() is available]),
 	,
 	[stdio.h])
 AC_CHECK_DECL([vasprintf],
-	AC_DEFINE(HAVE_VASPRINTF,1,[Whether vasprintf() is available]),
+	AC_DEFINE(HAVE_VASPRINTF,1,[Define to 1 if vasprintf() is available]),
 	,
 	[stdio.h])
 
