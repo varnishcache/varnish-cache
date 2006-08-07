@@ -110,6 +110,8 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	if (i != CLI_LINE0_LEN) {
 		if (status != NULL)
 			*status = CLIS_COMMS;
+		if (ptr != NULL)
+			*ptr = strdup("CLI communication error");
 		return (1);
 	}
 	assert(i == CLI_LINE0_LEN);
