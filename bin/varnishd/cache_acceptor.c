@@ -88,7 +88,7 @@ vca_handover(struct sess *sp, int bad)
 	sp->step = STP_RECV;
 	VSL_stats->client_req++;
 	sp->xid = xids++;
-	VSL(SLT_XID, sp->fd, "%u", sp->xid);
+	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
 	WRK_QueueSession(sp);
 }
 
