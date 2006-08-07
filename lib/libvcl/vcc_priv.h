@@ -11,3 +11,5 @@ unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char *vcl_tnames[256];
 void vcl_init_tnames(void);
 void vcl_output_lang_h(FILE *f);
+
+#define PF(t)	((t)->e - (t)->b), (t)->b
