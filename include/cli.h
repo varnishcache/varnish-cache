@@ -179,7 +179,8 @@ enum cli_status_e {
 	CLIS_TOOMANY	= 105,
 	CLIS_PARAM	= 106,
 	CLIS_OK		= 200,
-	CLIS_CANT	= 300
+	CLIS_CANT	= 300,
+	CLIS_COMMS	= 400
 };
 
 /* Length of first line of response */
