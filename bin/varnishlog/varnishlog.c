@@ -184,10 +184,10 @@ order(unsigned char *p, int h_opt)
 /*--------------------------------------------------------------------*/
 
 static void
-Usage(void)
+usage(void)
 {
-	fprintf(stderr, "Usage: varnishlog [-o] [-w file] [-r file]\n");
-	exit(2);
+	fprintf(stderr, "usage: varnishlog [-oV] [-w file] [-r file]\n");
+	exit(1);
 }
 
 int
@@ -204,7 +204,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "how:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "hoVw:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -217,11 +217,14 @@ main(int argc, char **argv)
 		case 'o':
 			o_flag = 1;
 			break;
+		case 'V':
+			varnish_version("varnishlog");
+			exit(0);
 		case 'w':
 			w_opt = optarg;
 			break;
 		default:
-			Usage();
+			usage();
 		}
 	}
 
@@ -229,7 +232,7 @@ main(int argc, char **argv)
 		exit (1);
 
 	if (o_flag && w_opt != NULL)
-		Usage();
+		usage();
 
 	if (w_opt != NULL) {
 		if (!strcmp(w_opt, "-"))

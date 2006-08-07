@@ -34,10 +34,10 @@ static unsigned ntop;
 /*--------------------------------------------------------------------*/
 
 static void
-Usage(void)
+usage(void)
 {
-	fprintf(stderr, "Usage: varnishtop\n");
-	exit(2);
+	fprintf(stderr, "usage: varnishtop [-1V]\n");
+	exit(1);
 }
 
 static void
@@ -89,7 +89,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "1")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "1V")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -99,8 +99,11 @@ main(int argc, char **argv)
 		case '1':
 			one_flag = 1;
 			break;
+		case 'V':
+			varnish_version("varnishtop");
+			exit(0);
 		default:
-			Usage();
+			usage();
 		}
 	}
 

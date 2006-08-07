@@ -151,6 +151,7 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
+	fprintf(stderr, "    %-28s # %s\n", "-V", "version");
 	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
 	    "Number of worker threads");
 	fprintf(stderr, "    %-28s # %s\n", "",
@@ -335,7 +336,7 @@ main(int argc, char *argv[])
 	heritage.wthread_timeout = 10;
 	heritage.mem_workspace = 4096;
 
-	while ((o = getopt(argc, argv, "b:df:h:p:s:t:w:")) != -1)
+	while ((o = getopt(argc, argv, "b:df:h:p:s:t:Vw:")) != -1)
 		switch (o) {
 		case 'b':
 			bflag = optarg;
@@ -358,6 +359,9 @@ main(int argc, char *argv[])
 		case 't':
 			heritage.default_ttl = strtoul(optarg, NULL, 0);
 			break;
+		case 'V':
+			varnish_version("varnishd");
+			exit(0);
 		case 'w':
 			tackle_warg(optarg);
 			break;
