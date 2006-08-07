@@ -18,9 +18,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
-#include <vsb.h>
 #include <vis.h>
 #include <time.h>
+
+#include "vsb.h"
 
 #include "shmlog.h"
 #include "varnishapi.h"

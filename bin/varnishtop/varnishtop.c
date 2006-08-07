@@ -12,8 +12,9 @@
 #include <unistd.h>
 #include <assert.h>
 #include <curses.h>
-#include <vsb.h>
 #include <vis.h>
+
+#include "vsb.h"
 
 #include "libvarnish.h"
 #include "shmlog.h"
