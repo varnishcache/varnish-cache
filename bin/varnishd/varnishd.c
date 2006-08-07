@@ -403,10 +403,10 @@ main(int argc, char *argv[])
 
 	if (dflag == 1)
 		DebugStunt();
-	if (dflag != 2)
+	if (dflag < 2)
 		daemon(dflag, dflag);
-	if (dflag)
-		printf("%d\n%d\n%d\n", getpid(), getsid(0), getpgrp());
+	if (dflag == 1)
+		printf("%d\n", getpid());
 
 	mgt_cli_init();
 

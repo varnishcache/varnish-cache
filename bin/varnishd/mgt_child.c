@@ -67,7 +67,7 @@ child_listener(struct ev *e, int what)
 		return (1);
 	}
 	buf[i] = '\0';
-	printf("Child said (%d, %d): <<%s>>\n", child_state, child_pid, buf);
+	fprintf(stderr, "Child said (%d, %d): <<%s>>\n", child_state, child_pid, buf);
 	return (0);
 }
 
@@ -128,7 +128,7 @@ start_child(void)
 		exit (1);
 	}
 
-	printf("start child pid %d\n", i);
+	fprintf(stderr, "start child pid %d\n", i);
 
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
@@ -183,7 +183,7 @@ stop_child(void)
 	}
 	ev_poker = NULL;
 
-	printf("Clean child\n");
+	fprintf(stderr, "Clean child\n");
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
@@ -192,7 +192,7 @@ stop_child(void)
 	AZ(close(heritage.fds[3]));
 	heritage.fds[3] = -1;
 
-	printf("Child stopping\n");
+	fprintf(stderr, "Child stopping\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -214,16 +214,16 @@ mgt_sigchld(struct ev *e, int what)
 
 	r = wait4(-1, &status, WNOHANG, NULL);
 	if (r != child_pid) {
-		printf("Unknown child died pid=%d status=0x%x\n",
+		fprintf(stderr, "Unknown child died pid=%d status=0x%x\n",
 		    r, status);
 		return (0);
 	}
-	printf("Cache child died pid=%d status=0x%x\n", r, status);
+	fprintf(stderr, "Cache child died pid=%d status=0x%x\n", r, status);
 	child_pid = -1;
 
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
-		printf("Clean child\n");
+		fprintf(stderr, "Clean child\n");
 		mgt_cli_stop_child();
 
 		/* We tell the child to die gracefully by closing the CLI */
@@ -241,7 +241,7 @@ mgt_sigchld(struct ev *e, int what)
 
 	AZ(close(child_fds[0]));
 	child_fds[0] = -1;
-	printf("Child cleaned\n");
+	fprintf(stderr, "Child cleaned\n");
 
 	if (child_state == CH_DIED)
 		start_child();
@@ -258,7 +258,7 @@ mgt_sigint(struct ev *e, int what)
 
 	(void)e;
 	(void)what;
-	printf("Manager got SIGINT\n");
+	fprintf(stderr, "Manager got SIGINT\n");
 	fflush(stdout);
 	if (child_pid >= 0)
 		stop_child();
@@ -276,6 +276,7 @@ mgt_run(int dflag)
 {
 	struct sigaction sac;
 	struct ev *e;
+	int i;
 
 	mgt_pid = getpid();
 
@@ -320,9 +321,10 @@ mgt_run(int dflag)
 	if (!dflag)
 		start_child();
 
-	ev_schedule(mgt_evb);
+	i = ev_schedule(mgt_evb);
+	fprintf(stderr, "ev_schedule = %d\n", i);
 
-	printf("manager dies\n");
+	fprintf(stderr, "manager dies\n");
 	exit(2);
 }
 
