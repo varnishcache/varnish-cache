@@ -453,7 +453,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	if (*fail < (uintmax_t)sc->pagesize * MINPAGES)
 		return;
 
-	if (sz > 0 && sz < *fail && sz < SIZE_T_MAX) {
+	if (sz > 0 && sz < *fail && sz < SIZE_MAX) {
 		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
 		    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, off);
 		if (p != MAP_FAILED) {
@@ -467,8 +467,8 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 		*fail = sz;
 
 	h = sz / 2;
-	if (h > SIZE_T_MAX)
-		h = SIZE_T_MAX;
+	if (h > SIZE_MAX)
+		h = SIZE_MAX;
 	h -= (h % sc->pagesize);
 
 	smf_open_chunk(sc, h, off, fail, sum);
