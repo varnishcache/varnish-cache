@@ -28,6 +28,11 @@
 #include "heritage.h"
 #include "shmlog.h"
 
+/* INFTIM indicates an infinite timeout for poll(2) */
+#ifndef INFTIM
+#define INFTIM -1
+#endif
+
 struct heritage heritage;
 
 /*--------------------------------------------------------------------*/
