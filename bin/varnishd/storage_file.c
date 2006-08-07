@@ -515,6 +515,8 @@ smf_alloc(struct stevedore *st, size_t size)
 	smf->s.ptr = smf->ptr;
 	smf->s.len = 0;
 	smf->s.stevedore = st;
+	smf->s.fd = smf->sc->fd;
+	smf->s.where = smf->offset;
 	CHECK_OBJ_NOTNULL(&smf->s, STORAGE_MAGIC);
 	return (&smf->s);
 }
@@ -566,43 +568,6 @@ smf_free(struct storage *s)
 
 /*--------------------------------------------------------------------*/
 
-static void
-smf_send(struct storage *st, struct sess *sp)
-{
-	struct smf *smf;
-	int i;
-	off_t sent;
-	struct sf_hdtr sfh;
-
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	CAST_OBJ_NOTNULL(smf, st->priv, SMF_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	memset(&sfh, 0, sizeof sfh);
-	sfh.headers = sp->wrk->iov;
-	sfh.hdr_cnt = sp->wrk->niov;
-	i = sendfile(smf->sc->fd,
-	    sp->fd,
-	    smf->offset,
-	    st->len, &sfh, &sent, 0);
-
-	/* Check again after potentially long sleep */
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	if (sent == st->len + sp->wrk->liov)
-		return;
-	vca_close_session(sp, "remote closed");
-	if (errno == EPIPE || errno == ENOTCONN)
-		return;
-	VSL(SLT_Debug, sp->fd,
-	    "sent i=%d sent=%ju size=%ju liov=%ju errno=%d\n",
-	    i, (uintmax_t)sent, (uintmax_t)st->len,
-	    (uintmax_t)sp->wrk->liov, errno);
-}
-
-/*--------------------------------------------------------------------*/
-
 struct stevedore smf_stevedore = {
 	.name =		"file",
 	.init =		smf_init,
@@ -610,7 +575,6 @@ struct stevedore smf_stevedore = {
 	.alloc =	smf_alloc,
 	.trim =		smf_trim,
 	.free =		smf_free,
-	.send =		smf_send
 };
 
 #ifdef INCLUDE_TEST_DRIVER
