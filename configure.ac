@@ -76,6 +76,11 @@ AC_CHECK_DECL([vasprintf],
 	,
 	[stdio.h])
 
+AC_CHECK_DECL([SO_ACCEPTFILER],
+	AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
+	,
+	[sys/types.h, sys/socket.h])
+
 AC_CONFIG_FILES([
     Makefile
     bin/Makefile
