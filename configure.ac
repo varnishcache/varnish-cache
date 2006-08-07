@@ -61,10 +61,20 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
-AC_CHECK_FUNCS([vasprintf])
-AC_CHECK_FUNCS([asprintf])
 AC_CHECK_FUNCS([strlcat])
 AC_CHECK_FUNCS([strlcpy])
+
+# asprintf() and vasprintf() are tricky, because on some systems, they
+# are present in the C library, but their prototypes are hidden behind
+# conditionals which we won't bother to unravel.
+AC_CHECK_DECL([asprintf],
+	AC_DEFINE(HAVE_ASPRINTF,1,[Whether asprintf() is available]),
+	,
+	[stdio.h])
+AC_CHECK_DECL([vasprintf],
+	AC_DEFINE(HAVE_VASPRINTF,1,[Whether vasprintf() is available]),
+	,
+	[stdio.h])
 
 AC_CONFIG_FILES([
     Makefile
