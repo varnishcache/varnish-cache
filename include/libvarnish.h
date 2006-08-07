@@ -22,7 +22,7 @@ void varnish_version(const char *);
 #else /* WITH_ASSERTS */
 #define assert(e)							\
 do { 									\
-	if (e)								\
+	if (!(e))							\
 		lbv_assert(__func__, __FILE__, __LINE__, #e, errno);	\
 } while (0)
 #endif
