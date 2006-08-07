@@ -14,7 +14,7 @@ lbv_assert(const char *func, const char *file, int line, const char *cond, int e
 {
 
 	fprintf(stderr,
-	    "Assert error in %s(), %s line %s:\n"
+	    "Assert error in %s(), %s line %d:\n"
 	    "  Condition(%s) not true.\n"
 	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
 	abort();
