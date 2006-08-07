@@ -24,8 +24,8 @@
 -esym(534, memcpy)	// Ignoring return value of function
 -esym(534, memmove)	// Ignoring return value of function
 -esym(534, strcpy)	// Ignoring return value of function
--esym(534, sbuf_printf)	// Ignoring return value of function
--esym(534, sbuf_cat)	// Ignoring return value of function
+-esym(534, vsb_printf)	// Ignoring return value of function
+-esym(534, vsb_cat)	// Ignoring return value of function
 
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean

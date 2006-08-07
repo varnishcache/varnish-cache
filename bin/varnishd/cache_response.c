@@ -18,9 +18,9 @@ void
 RES_Error(struct sess *sp, int error, const char *msg)
 {
 	char buf[40];
-	struct sbuf *sb;
+	struct vsb *sb;
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
 
 	if (msg == NULL) {
@@ -31,11 +31,11 @@ RES_Error(struct sess *sp, int error, const char *msg)
 		}
 	}
 
-	sbuf_clear(sb);
-	sbuf_printf(sb, "HTTP/1.1 %03d %s\r\n", error, msg);
+	vsb_clear(sb);
+	vsb_printf(sb, "HTTP/1.1 %03d %s\r\n", error, msg);
 	TIM_format(sp->t_req.tv_sec, buf);
-	sbuf_printf(sb, "Date: %s\r\n", buf);
-	sbuf_cat(sb,
+	vsb_printf(sb, "Date: %s\r\n", buf);
+	vsb_cat(sb,
 		"Server: Varnish\r\n"
 		"Connection: close\r\n"
 		"content-Type: text/html; charset=iso-8859-1\r\n"
@@ -43,33 +43,33 @@ RES_Error(struct sess *sp, int error, const char *msg)
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
 		"<HTML>\r\n"
 		"  <HEAD>\r\n");
-	sbuf_printf(sb, "    <TITLE>%03d %s</TITLE>\r\n", error, msg);
-	sbuf_cat(sb,
+	vsb_printf(sb, "    <TITLE>%03d %s</TITLE>\r\n", error, msg);
+	vsb_cat(sb,
 		"  </HEAD>\r\n"
 		"  <BODY>\r\n");
-	sbuf_printf(sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
+	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
 	switch(error) {
 	case 400:
-		sbuf_cat(sb,
+		vsb_cat(sb,
 		    "    Your HTTP protocol request did not make sense.\r\n");
 		break;
 	case 500:
 	default:
-		sbuf_cat(sb,
+		vsb_cat(sb,
 		    "    Something unexpected happened.\r\n");
 		break;
 	}
-	sbuf_cat(sb,
+	vsb_cat(sb,
 		"    <P>\r\n"
 		"    <I>\r\n"
 		"    <A href=\"http://varnish.linpro.no/\">Varnish</A>\r\n"
 		"  </BODY>\r\n"
 		"</HTML>\r\n");
-	sbuf_finish(sb);
-	WRK_Write(sp->wrk, sbuf_data(sb), sbuf_len(sb));
+	vsb_finish(sb);
+	WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
 	WRK_Flush(sp->wrk);
 	vca_close_session(sp, msg);
-	sbuf_delete(sb);
+	vsb_delete(sb);
 }
 
 

@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <sys/types.h>
 
-#include "sbuf.h"
+#include "vsb.h"
 #include "queue.h"
 
 #include "libvarnish.h"
@@ -120,10 +120,10 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 {
 	char *buf, *vf;
 	const char *p, *q;
-	struct sbuf *sb;
+	struct vsb *sb;
 	struct vclprog *vp;
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
 	if (bflag != NULL) {
 		/*
@@ -155,13 +155,13 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 	} else {
 		vf = VCC_CompileFile(sb, fflag);
 	}
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		fprintf(stderr, "%s", sbuf_data(sb));
-		sbuf_delete(sb);
+	vsb_finish(sb);
+	if (vsb_len(sb) > 0) {
+		fprintf(stderr, "%s", vsb_data(sb));
+		vsb_delete(sb);
 		return (1);
 	}
-	sbuf_delete(sb);
+	vsb_delete(sb);
 	vp = mgt_vcc_add("boot", vf);
 	vp->active = 1;
 	return (0);
@@ -224,22 +224,22 @@ void
 mcf_config_inline(struct cli *cli, char **av, void *priv)
 {
 	char *vf, *p;
-	struct sbuf *sb;
+	struct vsb *sb;
 	unsigned status;
 
 	(void)priv;
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
 	vf = VCC_Compile(sb, av[3], NULL);
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		cli_out(cli, "%s", sbuf_data(sb));
-		sbuf_delete(sb);
+	vsb_finish(sb);
+	if (vsb_len(sb) > 0) {
+		cli_out(cli, "%s", vsb_data(sb));
+		vsb_delete(sb);
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	sbuf_delete(sb);
+	vsb_delete(sb);
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
@@ -254,23 +254,23 @@ void
 mcf_config_load(struct cli *cli, char **av, void *priv)
 {
 	char *vf;
-	struct sbuf *sb;
+	struct vsb *sb;
 	unsigned status;
 	char *p;
 
 	(void)priv;
 
-	sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
 	vf = VCC_CompileFile(sb, av[3]);
-	sbuf_finish(sb);
-	if (sbuf_len(sb) > 0) {
-		cli_out(cli, "%s", sbuf_data(sb));
-		sbuf_delete(sb);
+	vsb_finish(sb);
+	if (vsb_len(sb) > 0) {
+		cli_out(cli, "%s", vsb_data(sb));
+		vsb_delete(sb);
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	sbuf_delete(sb);
+	vsb_delete(sb);
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);

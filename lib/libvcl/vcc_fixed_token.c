@@ -476,7 +476,7 @@ vcl_output_lang_h(FILE *f)
 	fputs(" */\n", f);
 	fputs("\n", f);
 	fputs("struct sess;\n", f);
-	fputs("struct sbuf;\n", f);
+	fputs("struct vsb;\n", f);
 	fputs("struct backend;\n", f);
 	fputs("struct VCL_conf;\n", f);
 	fputs("\n", f);
@@ -506,7 +506,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("void VRT_re_init(void **, const char *);\n", f);
 	fputs("void VRT_re_fini(void *);\n", f);
 	fputs("int VRT_re_match(const char *, void *re);\n", f);
-	fputs("int VRT_re_test(struct sbuf *, const char *);\n", f);
+	fputs("int VRT_re_test(struct vsb *, const char *);\n", f);
 	fputs("\n", f);
 	fputs("void VRT_count(struct sess *, unsigned);\n", f);
 	fputs("int VRT_rewrite(const char *, const char *);\n", f);

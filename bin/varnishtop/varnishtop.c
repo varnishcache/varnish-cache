@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <curses.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <vis.h>
 
 #include "shmlog.h"

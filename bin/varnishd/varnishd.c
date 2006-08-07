@@ -17,7 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "sbuf.h"
+#include "vsb.h"
 
 #include "libvarnish.h"
 #include "cli.h"

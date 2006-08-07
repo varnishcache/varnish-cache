@@ -12,7 +12,7 @@ noinst_HEADERS = \
 	libvcl.h \
 	miniobj.h \
 	queue.h \
-	sbuf.h \
+	vsb.h \
 	shmlog.h \
 	shmlog_tags.h \
 	stat_field.h \

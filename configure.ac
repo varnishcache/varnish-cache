@@ -75,7 +75,6 @@ AC_CONFIG_FILES([
     include/Makefile
     lib/Makefile
     lib/libcompat/Makefile
-    lib/libsbuf/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
     lib/libvcl/Makefile

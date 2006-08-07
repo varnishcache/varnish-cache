@@ -11,5 +11,5 @@ varnishlog_SOURCES = varnishlog.c
 varnishlog_CFLAGS = -include config.h
 
 varnishlog_LDADD = \
-	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	$(top_builddir)/lib/libsbuf/libsbuf.a 
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
+	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la

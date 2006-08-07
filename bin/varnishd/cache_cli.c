@@ -14,7 +14,7 @@
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "cache.h"
-#include "sbuf.h"
+#include "vsb.h"
 #include "heritage.h"
 
 /*--------------------------------------------------------------------*/
@@ -64,7 +64,7 @@ CLI_Init(void)
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
 	
-	cli->sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(cli->sb != NULL);
 	lbuf = 4096;
 	buf = malloc(lbuf);
@@ -93,9 +93,9 @@ CLI_Init(void)
 			continue;
 		*p = '\0';
 		VSL(SLT_CLI, 0, "Rd %s", buf);
-		sbuf_clear(cli->sb);
+		vsb_clear(cli->sb);
 		cli_dispatch(cli, CLI_cmds, buf);
-		sbuf_finish(cli->sb);
+		vsb_finish(cli->sb);
 		i = cli_writeres(heritage.fds[1], cli);
 		if (i) {
 			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
@@ -103,7 +103,7 @@ CLI_Init(void)
 			return;
 		}
 		VSL(SLT_CLI, 0, "Wr %d %d %s",
-		    i, cli->result, sbuf_data(cli->sb));
+		    i, cli->result, vsb_data(cli->sb));
 		i = ++p - buf; 
 		assert(i <= nbuf);
 		if (i < nbuf)

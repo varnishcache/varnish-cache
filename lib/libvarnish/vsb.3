@@ -24,89 +24,89 @@
 .\" SUCH DAMAGE.
 .\"
 .\" $Id$
-.\" $FreeBSD: src/share/man/man9/sbuf.9,v 1.25 2005/12/23 11:49:52 phk Exp $
+.\" $FreeBSD: src/share/man/man9/vsb.9,v 1.25 2005/12/23 11:49:52 phk Exp $
 .\"
 .Dd March 14, 2006
-.Dt SBUF 3
+.Dt VSB 3
 .Os
 .Sh NAME
-.Nm sbuf_new ,
-.Nm sbuf_clear ,
-.Nm sbuf_setpos ,
-.Nm sbuf_bcat ,
-.Nm sbuf_bcpy ,
-.Nm sbuf_cat ,
-.Nm sbuf_cpy ,
-.Nm sbuf_printf ,
-.Nm sbuf_vprintf ,
-.Nm sbuf_putc ,
-.Nm sbuf_trim ,
-.Nm sbuf_overflowed ,
-.Nm sbuf_finish ,
-.Nm sbuf_data ,
-.Nm sbuf_len ,
-.Nm sbuf_done ,
-.Nm sbuf_delete
+.Nm vsb_new ,
+.Nm vsb_clear ,
+.Nm vsb_setpos ,
+.Nm vsb_bcat ,
+.Nm vsb_bcpy ,
+.Nm vsb_cat ,
+.Nm vsb_cpy ,
+.Nm vsb_printf ,
+.Nm vsb_vprintf ,
+.Nm vsb_putc ,
+.Nm vsb_trim ,
+.Nm vsb_overflowed ,
+.Nm vsb_finish ,
+.Nm vsb_data ,
+.Nm vsb_len ,
+.Nm vsb_done ,
+.Nm vsb_delete
 .Nd safe string formatting
 .Sh LIBRARY
-.Lb libsbuf
+.Lb libvarnish
 .Sh SYNOPSIS
-.In sbuf.h
-.Ft struct sbuf *
-.Fn sbuf_new "struct sbuf *s" "char *buf" "int length" "int flags"
+.In vsb.h
+.Ft struct vsb *
+.Fn vsb_new "struct vsb *s" "char *buf" "int length" "int flags"
 .Ft void
-.Fn sbuf_clear "struct sbuf *s"
+.Fn vsb_clear "struct vsb *s"
 .Ft int
-.Fn sbuf_setpos "struct sbuf *s" "int pos"
+.Fn vsb_setpos "struct vsb *s" "int pos"
 .Ft int
-.Fn sbuf_bcat "struct sbuf *s" "const void *buf" "size_t len"
+.Fn vsb_bcat "struct vsb *s" "const void *buf" "size_t len"
 .Ft int
-.Fn sbuf_bcpy "struct sbuf *s" "const void *buf" "size_t len"
+.Fn vsb_bcpy "struct vsb *s" "const void *buf" "size_t len"
 .Ft int
-.Fn sbuf_cat "struct sbuf *s" "const char *str"
+.Fn vsb_cat "struct vsb *s" "const char *str"
 .Ft int
-.Fn sbuf_cpy "struct sbuf *s" "const char *str"
+.Fn vsb_cpy "struct vsb *s" "const char *str"
 .Ft int
-.Fn sbuf_printf "struct sbuf *s" "const char *fmt" "..."
+.Fn vsb_printf "struct vsb *s" "const char *fmt" "..."
 .Ft int
-.Fn sbuf_vprintf "struct sbuf *s" "const char *fmt" "va_list ap"
+.Fn vsb_vprintf "struct vsb *s" "const char *fmt" "va_list ap"
 .Ft int
-.Fn sbuf_putc "struct sbuf *s" "int c"
+.Fn vsb_putc "struct vsb *s" "int c"
 .Ft int
-.Fn sbuf_trim "struct sbuf *s"
+.Fn vsb_trim "struct vsb *s"
 .Ft int
-.Fn sbuf_overflowed "struct sbuf *s"
+.Fn vsb_overflowed "struct vsb *s"
 .Ft void
-.Fn sbuf_finish "struct sbuf *s"
+.Fn vsb_finish "struct vsb *s"
 .Ft char *
-.Fn sbuf_data "struct sbuf *s"
+.Fn vsb_data "struct vsb *s"
 .Ft int
-.Fn sbuf_len "struct sbuf *s"
+.Fn vsb_len "struct vsb *s"
 .Ft int
-.Fn sbuf_done "struct sbuf *s"
+.Fn vsb_done "struct vsb *s"
 .Ft void
-.Fn sbuf_delete "struct sbuf *s"
+.Fn vsb_delete "struct vsb *s"
 .Sh DESCRIPTION
 The
-.Nm sbuf
+.Nm vsb
 family of functions allows one to safely allocate, construct and
 release bounded null-terminated strings in kernel space.
 Instead of arrays of characters, these functions operate on structures
 called
-.Fa sbufs ,
+.Fa vsbs ,
 defined in
-.In sys/sbuf.h .
+.In sys/vsb.h .
 .Pp
 The
-.Fn sbuf_new
+.Fn vsb_new
 function initializes the
-.Fa sbuf
+.Fa vsb
 pointed to by its first argument.
 If that pointer is
 .Dv NULL ,
-.Fn sbuf_new
+.Fn vsb_new
 allocates a
-.Vt struct sbuf
+.Vt struct vsb
 using
 .Xr malloc 9 .
 The
@@ -114,7 +114,7 @@ The
 argument is a pointer to a buffer in which to store the actual string;
 if it is
 .Dv NULL ,
-.Fn sbuf_new
+.Fn vsb_new
 will allocate one using
 .Xr malloc 9 .
 The
@@ -123,11 +123,11 @@ is the initial size of the storage buffer.
 The fourth argument,
 .Fa flags ,
 may be comprised of the following flags:
-.Bl -tag -width ".Dv SBUF_AUTOEXTEND"
-.It Dv SBUF_FIXEDLEN
+.Bl -tag -width ".Dv VSB_AUTOEXTEND"
+.It Dv VSB_FIXEDLEN
 The storage buffer is fixed at its initial size.
-Attempting to extend the sbuf beyond this size results in an overflow condition.
-.It Dv SBUF_AUTOEXTEND
+Attempting to extend the vsb beyond this size results in an overflow condition.
+.It Dv VSB_AUTOEXTEND
 This indicates that the storage buffer may be extended as necessary, so long
 as resources allow, to hold additional data.
 .El
@@ -140,175 +140,175 @@ it must point to an array of at least
 .Fa length
 characters.
 The result of accessing that array directly while it is in use by the
-sbuf is undefined.
+vsb is undefined.
 .Pp
 The
-.Fn sbuf_delete
+.Fn vsb_delete
 function clears the
-.Fa sbuf
+.Fa vsb
 and frees any memory allocated for it.
 There must be a call to
-.Fn sbuf_delete
+.Fn vsb_delete
 for every call to
-.Fn sbuf_new .
-Any attempt to access the sbuf after it has been deleted will fail.
+.Fn vsb_new .
+Any attempt to access the vsb after it has been deleted will fail.
 .Pp
 The
-.Fn sbuf_clear
+.Fn vsb_clear
 function invalidates the contents of the
-.Fa sbuf
+.Fa vsb
 and resets its position to zero.
 .Pp
 The
-.Fn sbuf_setpos
+.Fn vsb_setpos
 function sets the
-.Fa sbuf Ns 's
+.Fa vsb Ns 's
 end position to
 .Fa pos ,
 which is a value between zero and one less than the size of the
 storage buffer.
-This effectively truncates the sbuf at the new position.
+This effectively truncates the vsb at the new position.
 .Pp
 The
-.Fn sbuf_bcat
+.Fn vsb_bcat
 function appends the first
 .Fa len
 bytes from the buffer
 .Fa buf
 to the
-.Fa sbuf .
+.Fa vsb .
 .Pp
 The
-.Fn sbuf_bcpy
+.Fn vsb_bcpy
 function replaces the contents of the
-.Fa sbuf
+.Fa vsb
 with the first
 .Fa len
 bytes from the buffer
 .Fa buf .
 .Pp
 The
-.Fn sbuf_cat
+.Fn vsb_cat
 function appends the NUL-terminated string
 .Fa str
 to the
-.Fa sbuf
+.Fa vsb
 at the current position.
 .Pp
 The
-.Fn sbuf_cpy
+.Fn vsb_cpy
 function replaces the contents of the
-.Fa sbuf
+.Fa vsb
 with those of the NUL-terminated string
 .Fa str .
 This is equivalent to calling
-.Fn sbuf_cat
+.Fn vsb_cat
 with a fresh
-.Fa sbuf
+.Fa vsb
 or one which position has been reset to zero with
-.Fn sbuf_clear
+.Fn vsb_clear
 or
-.Fn sbuf_setpos .
+.Fn vsb_setpos .
 .Pp
 The
-.Fn sbuf_printf
+.Fn vsb_printf
 function formats its arguments according to the format string pointed
 to by
 .Fa fmt
 and appends the resulting string to the
-.Fa sbuf
+.Fa vsb
 at the current position.
 .Pp
 The
-.Fn sbuf_vprintf
+.Fn vsb_vprintf
 function behaves the same as
-.Fn sbuf_printf
+.Fn vsb_printf
 except that the arguments are obtained from the variable-length argument list
 .Fa ap .
 .Pp
 The
-.Fn sbuf_putc
+.Fn vsb_putc
 function appends the character
 .Fa c
 to the
-.Fa sbuf
+.Fa vsb
 at the current position.
 .Pp
 The
-.Fn sbuf_trim
+.Fn vsb_trim
 function removes trailing whitespace from the
-.Fa sbuf .
+.Fa vsb .
 .Pp
 The
-.Fn sbuf_overflowed
+.Fn vsb_overflowed
 function returns a non-zero value if the
-.Fa sbuf
+.Fa vsb
 overflowed.
 .Pp
 The
-.Fn sbuf_finish
+.Fn vsb_finish
 function null-terminates the
-.Fa sbuf
+.Fa vsb
 and marks it as finished, which means that it may no longer be
 modified using
-.Fn sbuf_setpos ,
-.Fn sbuf_cat ,
-.Fn sbuf_cpy ,
-.Fn sbuf_printf
+.Fn vsb_setpos ,
+.Fn vsb_cat ,
+.Fn vsb_cpy ,
+.Fn vsb_printf
 or
-.Fn sbuf_putc .
+.Fn vsb_putc .
 .Pp
 The
-.Fn sbuf_data
+.Fn vsb_data
 and
-.Fn sbuf_len
+.Fn vsb_len
 functions return the actual string and its length, respectively;
-.Fn sbuf_data
+.Fn vsb_data
 only works on a finished
-.Fa sbuf .
-.Fn sbuf_done
-returns non-zero if the sbuf is finished.
+.Fa vsb .
+.Fn vsb_done
+returns non-zero if the vsb is finished.
 .Sh NOTES
 If an operation caused an
-.Fa sbuf
+.Fa vsb
 to overflow, most subsequent operations on it will fail until the
-.Fa sbuf
+.Fa vsb
 is finished using
-.Fn sbuf_finish
+.Fn vsb_finish
 or reset using
-.Fn sbuf_clear ,
+.Fn vsb_clear ,
 or its position is reset to a value between 0 and one less than the
 size of its storage buffer using
-.Fn sbuf_setpos ,
+.Fn vsb_setpos ,
 or it is reinitialized to a sufficiently short string using
-.Fn sbuf_cpy .
+.Fn vsb_cpy .
 .Sh RETURN VALUES
-.Fn sbuf_new
+.Fn vsb_new
 returns
 .Dv NULL
 if it failed to allocate a storage buffer, and a pointer to the new
-.Fa sbuf
+.Fa vsb
 otherwise.
 .Pp
-.Fn sbuf_setpos
+.Fn vsb_setpos
 returns \-1 if
 .Fa pos
 was invalid, and zero otherwise.
 .Pp
-.Fn sbuf_cat ,
-.Fn sbuf_cpy ,
-.Fn sbuf_printf ,
-.Fn sbuf_putc ,
+.Fn vsb_cat ,
+.Fn vsb_cpy ,
+.Fn vsb_printf ,
+.Fn vsb_putc ,
 and
-.Fn sbuf_trim
+.Fn vsb_trim
 all return \-1 if the buffer overflowed, and zero otherwise.
 .Pp
-.Fn sbuf_overflowed
+.Fn vsb_overflowed
 returns a non-zero value if the buffer overflowed, and zero otherwise.
 .Pp
-.Fn sbuf_data
+.Fn vsb_data
 and
-.Fn sbuf_len
+.Fn vsb_len
 return
 .Dv NULL
 and \-1, respectively, if the buffer overflowed.
@@ -318,13 +318,13 @@ and \-1, respectively, if the buffer overflowed.
 .Xr strcpy 3
 .Sh HISTORY
 The
-.Nm sbuf
+.Nm vsb
 family of functions first appeared in
 .Fx 4.4 .
 .Sh AUTHORS
 .An -nosplit
 The
-.Nm sbuf
+.Nm vsb
 family of functions was designed by
 .An Poul-Henning Kamp Aq phk@FreeBSD.org
 and implemented by

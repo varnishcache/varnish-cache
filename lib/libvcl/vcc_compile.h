@@ -22,9 +22,9 @@ struct tokenlist {
 	struct token		*t;
 	int			indent;
 	unsigned		cnt;
-	struct sbuf		*fc, *fh, *fi, *ff;
+	struct vsb		*fc, *fh, *fi, *ff;
 	TAILQ_HEAD(, ref)	refs;
-	struct sbuf		*sb;
+	struct vsb		*sb;
 	int			err;
 	int			nbackend;
 	TAILQ_HEAD(, proc)	procs;
