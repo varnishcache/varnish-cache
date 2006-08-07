@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <printf.h>
 #include <stdarg.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <queue.h>
@@ -33,16 +33,16 @@ vcc_ErrToken(struct tokenlist *tl, struct token *t)
 {
 
 	if (t->tok == EOI)
-		sbuf_printf(tl->sb, "end of input");
+		vsb_printf(tl->sb, "end of input");
 	else
-		sbuf_printf(tl->sb, "'%T'", t);
+		vsb_printf(tl->sb, "'%T'", t);
 }
 
 void
 vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line)
 {
 
-	sbuf_printf(tl->sb, "VCL compiler internal error at %s():%u\n",
+	vsb_printf(tl->sb, "VCL compiler internal error at %s():%u\n",
 	    func, line);
 	tl->err = 1;
 }
@@ -77,27 +77,27 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 		} else
 			pos++;
 	}
-	sbuf_printf(tl->sb, "In %s Line %d Pos %d\n", f, lin, pos);
+	vsb_printf(tl->sb, "In %s Line %d Pos %d\n", f, lin, pos);
 	x = y = 0;
 	for (p = l; p < e && *p != '\n'; p++) {
 		if (*p == '\t') {
 			y &= ~7;
 			y += 8;
 			while (x < y) {
-				sbuf_bcat(tl->sb, " ", 1);
+				vsb_bcat(tl->sb, " ", 1);
 				x++;
 			}
 		} else {
 			x++;
 			y++;
-			sbuf_bcat(tl->sb, p, 1);
+			vsb_bcat(tl->sb, p, 1);
 		}
 	}
-	sbuf_cat(tl->sb, "\n");
+	vsb_cat(tl->sb, "\n");
 	x = y = 0;
 	for (p = l; p < e && *p != '\n'; p++) {
 		if (p >= t->b && p < t->e) {
-			sbuf_bcat(tl->sb, "#", 1);
+			vsb_bcat(tl->sb, "#", 1);
 			x++;
 			y++;
 			continue;
@@ -108,11 +108,11 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 		} else
 			y++;
 		while (x < y) {
-			sbuf_bcat(tl->sb, "-", 1);
+			vsb_bcat(tl->sb, "-", 1);
 			x++;
 		}
 	}
-	sbuf_cat(tl->sb, "\n");
+	vsb_cat(tl->sb, "\n");
 	tl->err = 1;
 }
 
@@ -123,7 +123,7 @@ vcc_NextToken(struct tokenlist *tl)
 {
 	tl->t = TAILQ_NEXT(tl->t, list);
 	if (tl->t == NULL) {
-		sbuf_printf(tl->sb,
+		vsb_printf(tl->sb,
 		    "Ran out of input, something is missing or"
 		    " maybe unbalanced (...) or {...}\n");
 		tl->err = 1;
@@ -136,9 +136,9 @@ vcc__Expect(struct tokenlist *tl, unsigned tok, int line)
 {
 	if (tl->t->tok == tok)
 		return;
-	sbuf_printf(tl->sb, "Expected %s got ", vcl_tnames[tok]);
+	vsb_printf(tl->sb, "Expected %s got ", vcl_tnames[tok]);
 	vcc_ErrToken(tl, tl->t);
-	sbuf_printf(tl->sb, "\n(program line %u), at\n", line);
+	vsb_printf(tl->sb, "\n(program line %u), at\n", line);
 	vcc_ErrWhere(tl, tl->t);
 }
 
@@ -286,7 +286,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 			continue;
 		}
 		vcc_AddToken(tl, EOI, p, p + 1);
-		sbuf_printf(tl->sb, "Syntax error at\n");
+		vsb_printf(tl->sb, "Syntax error at\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}

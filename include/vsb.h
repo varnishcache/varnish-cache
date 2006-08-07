@@ -26,27 +26,27 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * $Id$
- * $FreeBSD: src/sys/sys/sbuf.h,v 1.14 2004/07/09 11:35:30 des Exp $
+ * $FreeBSD: src/sys/sys/vsb.h,v 1.14 2004/07/09 11:35:30 des Exp $
  */
 
-#ifndef SBUF_H_INCLUDED
-#define SBUF_H_INCLUDED
+#ifndef VSB_H_INCLUDED
+#define VSB_H_INCLUDED
 
 /*
  * Structure definition
  */
-struct sbuf {
+struct vsb {
 	char		*s_buf;		/* storage buffer */
 	void		*s_unused;	/* binary compatibility. */
 	int		 s_size;	/* size of storage buffer */
 	int		 s_len;		/* current length of string */
-#define	SBUF_FIXEDLEN	0x00000000	/* fixed length buffer (default) */
-#define	SBUF_AUTOEXTEND	0x00000001	/* automatically extend buffer */
-#define	SBUF_USRFLAGMSK 0x0000ffff	/* mask of flags the user may specify */
-#define	SBUF_DYNAMIC	0x00010000	/* s_buf must be freed */
-#define	SBUF_FINISHED	0x00020000	/* set by sbuf_finish() */
-#define	SBUF_OVERFLOWED	0x00040000	/* sbuf overflowed */
-#define	SBUF_DYNSTRUCT	0x00080000	/* sbuf must be freed */
+#define	VSB_FIXEDLEN	0x00000000	/* fixed length buffer (default) */
+#define	VSB_AUTOEXTEND	0x00000001	/* automatically extend buffer */
+#define	VSB_USRFLAGMSK 0x0000ffff	/* mask of flags the user may specify */
+#define	VSB_DYNAMIC	0x00010000	/* s_buf must be freed */
+#define	VSB_FINISHED	0x00020000	/* set by vsb_finish() */
+#define	VSB_OVERFLOWED	0x00040000	/* vsb overflowed */
+#define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
 };
 
@@ -54,25 +54,25 @@ __BEGIN_DECLS
 /*
  * API functions
  */
-struct sbuf	*sbuf_new(struct sbuf *, char *, int, int);
-void		 sbuf_clear(struct sbuf *);
-int		 sbuf_setpos(struct sbuf *, int);
-int		 sbuf_bcat(struct sbuf *, const void *, size_t);
-int		 sbuf_bcpy(struct sbuf *, const void *, size_t);
-int		 sbuf_cat(struct sbuf *, const char *);
-int		 sbuf_cpy(struct sbuf *, const char *);
-int		 sbuf_printf(struct sbuf *, const char *, ...) /* __printflike(2, 3) */;
+struct vsb	*vsb_new(struct vsb *, char *, int, int);
+void		 vsb_clear(struct vsb *);
+int		 vsb_setpos(struct vsb *, int);
+int		 vsb_bcat(struct vsb *, const void *, size_t);
+int		 vsb_bcpy(struct vsb *, const void *, size_t);
+int		 vsb_cat(struct vsb *, const char *);
+int		 vsb_cpy(struct vsb *, const char *);
+int		 vsb_printf(struct vsb *, const char *, ...) /* __printflike(2, 3) */;
 #ifdef va_start
-int		 sbuf_vprintf(struct sbuf *, const char *, va_list) /* __printflike(2, 0) */;
+int		 vsb_vprintf(struct vsb *, const char *, va_list) /* __printflike(2, 0) */;
 #endif
-int		 sbuf_putc(struct sbuf *, int);
-int		 sbuf_trim(struct sbuf *);
-int		 sbuf_overflowed(struct sbuf *);
-void		 sbuf_finish(struct sbuf *);
-char		*sbuf_data(struct sbuf *);
-int		 sbuf_len(struct sbuf *);
-int		 sbuf_done(struct sbuf *);
-void		 sbuf_delete(struct sbuf *);
+int		 vsb_putc(struct vsb *, int);
+int		 vsb_trim(struct vsb *);
+int		 vsb_overflowed(struct vsb *);
+void		 vsb_finish(struct vsb *);
+char		*vsb_data(struct vsb *);
+int		 vsb_len(struct vsb *);
+int		 vsb_done(struct vsb *);
+void		 vsb_delete(struct vsb *);
 __END_DECLS
 
 #endif

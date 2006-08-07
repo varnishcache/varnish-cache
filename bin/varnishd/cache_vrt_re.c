@@ -12,7 +12,7 @@
 
 #include "shmlog.h"
 #include "vrt.h"
-#include "sbuf.h"
+#include "vsb.h"
 #include "vcl.h"
 #include "cache.h"
 
@@ -52,7 +52,7 @@ VRT_re_match(const char *s, void *re)
 }
 
 int
-VRT_re_test(struct sbuf *sb, const char *re)
+VRT_re_test(struct vsb *sb, const char *re)
 {
 	int i;
 	regex_t	t;	
@@ -65,7 +65,7 @@ VRT_re_test(struct sbuf *sb, const char *re)
 		return (0);
 	}
 	(void)regerror(i, &t, buf, sizeof buf);
-	sbuf_printf(sb, "Regexp compilation error:\n\n%s\n\n", buf);
+	vsb_printf(sb, "Regexp compilation error:\n\n%s\n\n", buf);
 	regfree(&t);
 	return (1);
 }

@@ -45,7 +45,7 @@
 #include <stdio.h>
 #include <printf.h>
 #include <stdarg.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <queue.h>
@@ -88,7 +88,7 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 } while (0)
 	
 /*--------------------------------------------------------------------
- * Printf output to the two sbufs, possibly indented
+ * Printf output to the two vsbs, possibly indented
  */
 
 void
@@ -97,9 +97,9 @@ Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		sbuf_printf(tl->fh, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->fh, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	sbuf_vprintf(tl->fh, fmt, ap);
+	vsb_vprintf(tl->fh, fmt, ap);
 	va_end(ap);
 }
 
@@ -109,9 +109,9 @@ Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		sbuf_printf(tl->fc, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->fc, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	sbuf_vprintf(tl->fc, fmt, ap);
+	vsb_vprintf(tl->fc, fmt, ap);
 	va_end(ap);
 }
 
@@ -121,9 +121,9 @@ Fi(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		sbuf_printf(tl->fi, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->fi, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	sbuf_vprintf(tl->fi, fmt, ap);
+	vsb_vprintf(tl->fi, fmt, ap);
 	va_end(ap);
 }
 
@@ -133,9 +133,9 @@ Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		sbuf_printf(tl->ff, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->ff, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	sbuf_vprintf(tl->ff, fmt, ap);
+	vsb_vprintf(tl->ff, fmt, ap);
 	va_end(ap);
 }
 
@@ -294,9 +294,9 @@ TimeUnit(struct tokenlist *tl)
 	else if (vcc_IdIs(tl->t, "d"))
 		sc = 60.0 * 60.0 * 24.0;
 	else {
-		sbuf_printf(tl->sb, "Unknown time unit ");
+		vsb_printf(tl->sb, "Unknown time unit ");
 		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, ".  Legal are 's', 'm', 'h' and 'd'\n");
+		vsb_printf(tl->sb, ".  Legal are 's', 'm', 'h' and 'd'\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (1.0);
 	}
@@ -323,9 +323,9 @@ SizeUnit(struct tokenlist *tl)
 	else if (vcc_IdIs(tl->t, "gb") || vcc_IdIs(tl->t, "Gb"))
 		sc = 1024.0 * 1024.0 * 1024.0;
 	else {
-		sbuf_printf(tl->sb, "Unknown size unit ");
+		vsb_printf(tl->sb, "Unknown size unit ");
 		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, ".  Legal are 'kb', 'mb' and 'gb'\n");
+		vsb_printf(tl->sb, ".  Legal are 'kb', 'mb' and 'gb'\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (1.0);
 	}
@@ -441,9 +441,9 @@ FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
 			return (v);
 		return (HeaderVar(tl, t, v));
 	}
-	sbuf_printf(tl->sb, "Unknown variable ");
+	vsb_printf(tl->sb, "Unknown variable ");
 	vcc_ErrToken(tl, t);
-	sbuf_cat(tl->sb, "\nAt: ");
+	vsb_cat(tl->sb, "\nAt: ");
 	vcc_ErrWhere(tl, t);
 	return (NULL);
 }
@@ -561,7 +561,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 			SizeVal(tl);
 			break;
 		default:
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "No conditions available for variable '%s'\n",
 			    vp->name);
 			vcc_ErrWhere(tl, tl->t);
@@ -570,10 +570,10 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 		Fc(tl, 0, "\n");
 		break;
 	default:
-		sbuf_printf(tl->sb, "Illegal condition ");
+		vsb_printf(tl->sb, "Illegal condition ");
 		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, " on integer variable\n");
-		sbuf_printf(tl->sb,
+		vsb_printf(tl->sb, " on integer variable\n");
+		vsb_printf(tl->sb,
 		    "  only '==', '!=', '<', '>', '<=' and '>=' are legal\n");
 		vcc_ErrWhere(tl, tl->t);
 		break;
@@ -618,7 +618,7 @@ Cond_2(struct tokenlist *tl)
 		case TIME:	L(tl, Cond_Int(vp, tl)); break;
 		/* XXX backend == */
 		default:	
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "Variable '%s'"
 			    " has no conditions that can be checked\n",
 			    vp->name);
@@ -626,11 +626,11 @@ Cond_2(struct tokenlist *tl)
 			return;
 		}
 	} else {
-		sbuf_printf(tl->sb,
+		vsb_printf(tl->sb,
 		    "Syntax error in condition, expected '(', '!' or"
 		    " variable name, found ");
 		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, "\n");
+		vsb_printf(tl->sb, "\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
@@ -820,9 +820,9 @@ Action(struct tokenlist *tl)
 				    u & 0xff);
 				break;
 			}
-			sbuf_printf(tl->sb, "Illegal assignment operator ");
+			vsb_printf(tl->sb, "Illegal assignment operator ");
 			vcc_ErrToken(tl, tl->t);
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    " only '=' is legal for IP numbers\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -835,21 +835,21 @@ Action(struct tokenlist *tl)
 				vcc_NextToken(tl);
 				break;
 			}
-			sbuf_printf(tl->sb, "Illegal assignment operator ");
+			vsb_printf(tl->sb, "Illegal assignment operator ");
 			vcc_ErrToken(tl, tl->t);
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    " only '=' is legal for backend\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		default:
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "Assignments not possible for '%s'\n", vp->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		return;
 	default:
-		sbuf_printf(tl->sb, "Expected action, 'if' or '}'\n");
+		vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");
 		vcc_ErrWhere(tl, at);
 		return;
 	}
@@ -881,7 +881,7 @@ Compound(struct tokenlist *tl)
 			Fc(tl, 1, "}\n");
 			return;
 		case EOI:
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "End of input while in compound statement\n");
 			tl->err = 1;
 			return;
@@ -968,7 +968,7 @@ Backend(struct tokenlist *tl)
 			vcc_NextToken(tl);
 			break;
 		default:
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "Assignments not possible for '%s'\n", vp->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -978,14 +978,14 @@ Backend(struct tokenlist *tl)
 	}
 	ExpectErr(tl, '}');
 	if (t_host == NULL) {
-		sbuf_printf(tl->sb, "Backend '%T' has no hostname\n", t_be);
+		vsb_printf(tl->sb, "Backend '%T' has no hostname\n", t_be);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	host = EncString(t_host);
 	ep = CheckHostPort(host, "80");
 	if (ep != NULL) {
-		sbuf_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
+		vsb_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
@@ -993,7 +993,7 @@ Backend(struct tokenlist *tl)
 		port = EncString(t_port);
 		ep = CheckHostPort(host, port);
 		if (ep != NULL) {
-			sbuf_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
+			vsb_printf(tl->sb, "Backend '%T': %s\n", t_be, ep);
 			vcc_ErrWhere(tl, t_port);
 			return;
 		}
@@ -1061,10 +1061,10 @@ Parse(struct tokenlist *tl)
 		case EOI:
 			break;
 		default:
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "Expected 'acl', 'sub' or 'backend', found ");
 			vcc_ErrToken(tl, tl->t);
-			sbuf_printf(tl->sb, " at\n");
+			vsb_printf(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -1120,11 +1120,11 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 	struct proccall *pc;
 
 	if (!p->exists) {
-		sbuf_printf(tl->sb, "Function %T does not exist\n", p->name);
+		vsb_printf(tl->sb, "Function %T does not exist\n", p->name);
 		return (1);
 	}
 	if (p->active) {
-		sbuf_printf(tl->sb, "Function recurses on\n");
+		vsb_printf(tl->sb, "Function recurses on\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -1132,21 +1132,21 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 	if (u) {
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
-			sbuf_printf(tl->sb, "Illegal return for method\n"); \
+			vsb_printf(tl->sb, "Illegal return for method\n"); \
 			vcc_ErrWhere(tl, p->returnt[d]); \
 		} 
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-		sbuf_printf(tl->sb, "In function\n");
+		vsb_printf(tl->sb, "In function\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
 	p->active = 1;
 	TAILQ_FOREACH(pc, &p->calls, list) {
 		if (Consist_Decend(tl, pc->p, returns)) {
-			sbuf_printf(tl->sb, "\nCalled from\n");
+			vsb_printf(tl->sb, "\nCalled from\n");
 			vcc_ErrWhere(tl, p->name);
-			sbuf_printf(tl->sb, "at\n");
+			vsb_printf(tl->sb, "at\n");
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -1172,7 +1172,7 @@ Consistency(struct tokenlist *tl)
 		if (m->name == NULL) 
 			continue;
 		if (Consist_Decend(tl, p, m->returns)) {
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "\nwhich is a %s method\n", m->name);
 			return (1);
 		}
@@ -1180,7 +1180,7 @@ Consistency(struct tokenlist *tl)
 	TAILQ_FOREACH(p, &tl->procs, list) {
 		if (p->called)
 			continue;
-		sbuf_printf(tl->sb, "Function unused\n");
+		vsb_printf(tl->sb, "Function unused\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -1213,27 +1213,27 @@ CheckRefs(struct tokenlist *tl)
 			break;
 		default:
 			ErrInternal(tl);
-			sbuf_printf(tl->sb, "Ref ");
+			vsb_printf(tl->sb, "Ref ");
 			vcc_ErrToken(tl, r->name);
-			sbuf_printf(tl->sb, " has unknown type %d\n",
+			vsb_printf(tl->sb, " has unknown type %d\n",
 			    r->type);
 			continue;
 		}
 		if (r->defcnt == 0 && r->name->tok == METHOD) {
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "No definition for method %T\n", r->name);
 			continue;
 		}
 
 		if (r->defcnt == 0) {
-			sbuf_printf(tl->sb,
+			vsb_printf(tl->sb,
 			    "Undefined %s %T, first reference:\n",
 			    type, r->name);
 			vcc_ErrWhere(tl, r->name);
 			continue;
 		} 
 
-		sbuf_printf(tl->sb, "Unused %s %T, defined:\n", type, r->name);
+		vsb_printf(tl->sb, "Unused %s %T, defined:\n", type, r->name);
 		vcc_ErrWhere(tl, r->name);
 	}
 	return (nerr);
@@ -1289,8 +1289,8 @@ EmitInitFunc(struct tokenlist *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
-	sbuf_finish(tl->fi);
-	sbuf_cat(tl->fc, sbuf_data(tl->fi));
+	vsb_finish(tl->fi);
+	vsb_cat(tl->fc, vsb_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
 
@@ -1299,8 +1299,8 @@ EmitFiniFunc(struct tokenlist *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(void)\n{\n\n");
-	sbuf_finish(tl->ff);
-	sbuf_cat(tl->fc, sbuf_data(tl->ff));
+	vsb_finish(tl->ff);
+	vsb_cat(tl->fc, vsb_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
 
@@ -1335,7 +1335,7 @@ EmitStruct(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 char *
-VCC_Compile(struct sbuf *sb, const char *b, const char *e)
+VCC_Compile(struct vsb *sb, const char *b, const char *e)
 {
 	struct tokenlist tokens;
 	struct ref *r;
@@ -1351,16 +1351,16 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	TAILQ_INIT(&tokens.procs);
 	tokens.sb = sb;
 
-	tokens.fc = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	tokens.fc = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.fc != NULL);
 
-	tokens.fh = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	tokens.fh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.fh != NULL);
 
-	tokens.fi = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	tokens.fi = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.fi != NULL);
 
-	tokens.ff = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	tokens.ff = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.ff != NULL);
 
 	Fh(&tokens, 0, "extern struct VCL_conf VCL_conf;\n");
@@ -1411,18 +1411,18 @@ VCC_Compile(struct sbuf *sb, const char *b, const char *e)
 	vcl_output_lang_h(fo);
 	fputs(vrt_obj_h, fo);
 
-	sbuf_finish(tokens.fh);
-	fputs(sbuf_data(tokens.fh), fo);
-	sbuf_delete(tokens.fh);
+	vsb_finish(tokens.fh);
+	fputs(vsb_data(tokens.fh), fo);
+	vsb_delete(tokens.fh);
 
-	sbuf_finish(tokens.fc);
-	fputs(sbuf_data(tokens.fc), fo);
-	sbuf_delete(tokens.fc);
+	vsb_finish(tokens.fc);
+	fputs(vsb_data(tokens.fc), fo);
+	vsb_delete(tokens.fc);
 
 	i = pclose(fo);
 	fprintf(stderr, "pclose=%d\n", i);
 	if (i) {
-		sbuf_printf(sb, "Internal error: GCC returned 0x%04x\n", i);
+		vsb_printf(sb, "Internal error: GCC returned 0x%04x\n", i);
 		unlink(of);
 		free(of);
 		return (NULL);
@@ -1448,7 +1448,7 @@ done:
 /*--------------------------------------------------------------------*/
 
 char *
-VCC_CompileFile(struct sbuf *sb, const char *fn)
+VCC_CompileFile(struct vsb *sb, const char *fn)
 {
 	char *f, *r;
 	int fd, i;
@@ -1456,7 +1456,7 @@ VCC_CompileFile(struct sbuf *sb, const char *fn)
 
 	fd = open(fn, O_RDONLY);
 	if (fd < 0) {
-		sbuf_printf(sb, "Cannot open file '%s': %s",
+		vsb_printf(sb, "Cannot open file '%s': %s",
 		    fn, strerror(errno));
 		return (NULL);
 	}

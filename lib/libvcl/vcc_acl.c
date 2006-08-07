@@ -12,7 +12,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -37,10 +37,10 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		break;
 	default:
-		sbuf_printf(tl->sb, "Illegal condition ");
+		vsb_printf(tl->sb, "Illegal condition ");
 		vcc_ErrToken(tl, tl->t);
-		sbuf_printf(tl->sb, " on IP number variable\n");
-		sbuf_printf(tl->sb, "  only '==', '!=' and '~' are legal\n");
+		vsb_printf(tl->sb, " on IP number variable\n");
+		vsb_printf(tl->sb, "  only '==', '!=' and '~' are legal\n");
 		vcc_ErrWhere(tl, tl->t);
 		break;
 	}

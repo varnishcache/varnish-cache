@@ -11,6 +11,6 @@ varnishtop_SOURCES = varnishtop.c
 varnishtop_CFLAGS = -include config.h
 
 varnishtop_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	$(top_builddir)/lib/libsbuf/libsbuf.a \
 	-lcurses

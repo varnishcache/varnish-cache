@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <vis.h>
 
 #include "shmlog.h"
@@ -31,7 +31,7 @@ vis_it(unsigned char *p)
 
 /* Ordering-----------------------------------------------------------*/
 
-static struct sbuf	*ob[65536];
+static struct vsb	*ob[65536];
 static int 		hc[65536];
 static int 		xrf[65536];
 
@@ -43,10 +43,10 @@ clean_order(void)
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
-		sbuf_finish(ob[u]);
-		if (sbuf_len(ob[u]))
-			printf("%s\n", sbuf_data(ob[u]));
-		sbuf_clear(ob[u]);
+		vsb_finish(ob[u]);
+		if (vsb_len(ob[u]))
+			printf("%s\n", vsb_data(ob[u]));
+		vsb_clear(ob[u]);
 	}
 }
 
@@ -57,32 +57,32 @@ order(unsigned char *p, int h_opt)
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
-		ob[u] = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+		ob[u] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 		assert(ob[u] != NULL);
 	}
 	v = 0;
 	switch (p[0]) {
 	case SLT_VCL_call:
-		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		vsb_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0) {
-			sbuf_cat(ob[u], " <");
-			sbuf_bcat(ob[u], p + 4, p[1]);
+			vsb_cat(ob[u], " <");
+			vsb_bcat(ob[u], p + 4, p[1]);
 		}
 		if (h_opt && p[1] == 3 && !memcmp(p + 4, "hit", 3))
 			hc[u]++;
 		break;
 	case SLT_VCL_trace:
 		if (p[1] > 0) {
-			sbuf_cat(ob[u], " ");
-			sbuf_bcat(ob[u], p + 4, p[1]);
+			vsb_cat(ob[u], " ");
+			vsb_bcat(ob[u], p + 4, p[1]);
 		}
 		break;
 	case SLT_VCL_return:
 		if (p[1] > 0) {
-			sbuf_cat(ob[u], " ");
-			sbuf_bcat(ob[u], p + 4, p[1]);
-			sbuf_cat(ob[u], ">\n");
+			vsb_cat(ob[u], " ");
+			vsb_bcat(ob[u], p + 4, p[1]);
+			vsb_cat(ob[u], ">\n");
 		}
 		if (h_opt && p[1] == 7 && !memcmp(p + 4, "deliver", 7))
 			hc[u]++;
@@ -100,11 +100,11 @@ order(unsigned char *p, int h_opt)
 			;
 		else if (p[1] > 4 && !memcmp(p + 4, "TTD:", 4))
 			break;
-		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		vsb_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0)
-			sbuf_cat(ob[u], vis_it(p));
-		sbuf_cat(ob[u], "\n");
+			vsb_cat(ob[u], vis_it(p));
+		vsb_cat(ob[u], "\n");
 		break;
 	case SLT_HttpError:
 		if (!h_opt) 
@@ -147,19 +147,19 @@ order(unsigned char *p, int h_opt)
 		break;
 	}
 	if (v) {
-		sbuf_printf(ob[u], "%02x %3d %4d %-12s",
+		vsb_printf(ob[u], "%02x %3d %4d %-12s",
 		    p[0], p[1], u, VSL_tags[p[0]]);
 		if (p[1] > 0) {
-			sbuf_cat(ob[u], " <");
-			sbuf_bcat(ob[u], p + 4, p[1]);
-			sbuf_cat(ob[u], ">");
+			vsb_cat(ob[u], " <");
+			vsb_bcat(ob[u], p + 4, p[1]);
+			vsb_cat(ob[u], ">");
 		}
-		sbuf_cat(ob[u], "\n");
+		vsb_cat(ob[u], "\n");
 	}
 	if (u == 0) {
-		sbuf_finish(ob[u]);
-		printf("%s", sbuf_data(ob[u]));
-		sbuf_clear(ob[u]);
+		vsb_finish(ob[u]);
+		printf("%s", vsb_data(ob[u]));
+		vsb_clear(ob[u]);
 		return;
 	}
 	switch (p[0]) {
@@ -167,10 +167,10 @@ order(unsigned char *p, int h_opt)
 	case SLT_SessionReuse:
 	case SLT_BackendClose:
 	case SLT_BackendReuse:
-		sbuf_finish(ob[u]);
-		if ((hc[u] != 4 || h_opt == 0) && sbuf_len(ob[u]) > 1)
-			printf("%s\n", sbuf_data(ob[u]));
-		sbuf_clear(ob[u]);
+		vsb_finish(ob[u]);
+		if ((hc[u] != 4 || h_opt == 0) && vsb_len(ob[u]) > 1)
+			printf("%s\n", vsb_data(ob[u]));
+		vsb_clear(ob[u]);
 		hc[u] = 0;
 		xrf[u] = 0;
 		break;

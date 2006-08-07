@@ -8,7 +8,7 @@
 #include <sys/time.h>
 
 #include "queue.h"
-#include "sbuf.h"
+#include "vsb.h"
 
 #include "vcl_returns.h"
 #include "common.h"
@@ -26,7 +26,7 @@
 #define HTTP_HDR_FIRST		5
 
 struct cli;
-struct sbuf;
+struct vsb;
 struct sess;
 struct object;
 struct objhead;

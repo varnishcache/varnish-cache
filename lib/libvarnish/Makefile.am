@@ -9,6 +9,7 @@ libvarnish_la_SOURCES = \
 	binary_heap.c \
 	cli.c \
 	cli_common.c \
-	time.c
+	time.c \
+	vsb.c
 
 libvarnish_la_CFLAGS = -include config.h

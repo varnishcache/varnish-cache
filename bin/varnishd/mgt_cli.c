@@ -14,7 +14,7 @@
 
 #include "cli_priv.h"
 #include "cli.h"
-#include "sbuf.h"
+#include "vsb.h"
 #include "cli_common.h"
 #include "mgt.h"
 #include "mgt_cli.h"
@@ -258,9 +258,9 @@ mgt_cli_callback(struct ev *e, int what)
 			return (0);
 		*p = '\0';
 fprintf(stderr, "CLI <%s>\n", cp->buf);
-		sbuf_clear(cp->cli->sb);
+		vsb_clear(cp->cli->sb);
 		cli_dispatch(cp->cli, cli_proto, cp->buf);
-		sbuf_finish(cp->cli->sb);
+		vsb_finish(cp->cli->sb);
 		/* XXX: cp->verbose */
 		if (cli_writeres(cp->fdo, cp->cli))
 			break;
@@ -271,7 +271,7 @@ fprintf(stderr, "CLI <%s>\n", cp->buf);
 		cp->nbuf -= i;
 		return (0);
 	}
-	sbuf_delete(cp->cli->sb);
+	vsb_delete(cp->cli->sb);
 	free(cp->buf);
 	close(cp->fdi);
 	close(cp->fdo);
@@ -298,7 +298,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 	cp->buf = malloc(cp->lbuf);
 	assert(cp->buf != NULL);
 
-	cp->cli->sb = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+	cp->cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(cp->cli->sb != NULL);
 
 	cp->ev = calloc(sizeof *cp->ev, 1);

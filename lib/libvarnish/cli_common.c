@@ -17,7 +17,7 @@
 
 #include <sys/wait.h>
 
-#include "sbuf.h"
+#include "vsb.h"
 
 #include "cli.h"
 #include "cli_priv.h"
@@ -29,7 +29,7 @@ cli_out(struct cli *cli, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	sbuf_vprintf(cli->sb, fmt, ap);
+	vsb_vprintf(cli->sb, fmt, ap);
 	va_end(ap);
 }
 
@@ -59,10 +59,10 @@ cli_writeres(int fd, struct cli *cli)
 					 */
 
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8d\n", cli->result, sbuf_len(cli->sb));
+	    "%-3d %-8d\n", cli->result, vsb_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
 	iov[0].iov_base = (void*)(uintptr_t)res;
-	iov[1].iov_base = (void*)(uintptr_t)sbuf_data(cli->sb);
+	iov[1].iov_base = (void*)(uintptr_t)vsb_data(cli->sb);
 	iov[2].iov_base = (void*)(uintptr_t)"\n";
 	for (l = i = 0; i < 3; i++) {
 		iov[i].iov_len = strlen(iov[i].iov_base);

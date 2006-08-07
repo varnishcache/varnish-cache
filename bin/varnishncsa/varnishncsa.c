@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
-#include <sbuf.h>
+#include <vsb.h>
 #include <vis.h>
 #include <time.h>
 
@@ -39,13 +39,13 @@ struct logline {
 
 };
 
-/* We make a array of pointers to sbuf's. Sbuf is a string buffer.
+/* We make a array of pointers to vsb's. Sbuf is a string buffer.
  * * The buffer can be made/extended/cleared etc. through a API.
  * * The array is 65536 long because we will use sessionid as key.
  * *
  * */
 
-static struct sbuf      *ob[65536];
+static struct vsb      *ob[65536];
 static struct logline	ll[65536];
 
 
@@ -64,8 +64,8 @@ clean_order(void)
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
-		sbuf_finish(ob[u]);
-		sbuf_clear(ob[u]);
+		vsb_finish(ob[u]);
+		vsb_clear(ob[u]);
 	}
 }
 
@@ -80,7 +80,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
-		ob[u] = sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND);
+		ob[u] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 		assert(ob[u] != NULL);
 	}
 	
