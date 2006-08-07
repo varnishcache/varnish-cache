@@ -73,9 +73,9 @@ cli_writeres(int fd, struct cli *cli)
 }
 
 static int
-read_tmo(int fd, void *ptr, unsigned len, double tmo)
+read_tmo(int fd, char *ptr, unsigned len, double tmo)
 {
-	int i;
+	int i, j;
 	struct pollfd pfd;
 
 	pfd.fd = fd;
@@ -85,7 +85,17 @@ read_tmo(int fd, void *ptr, unsigned len, double tmo)
 		errno = ETIMEDOUT;
 		return (-1);
 	}
-	return (read(fd, ptr, len));
+	for (j = 0; len > 0; ) {
+		i = read(fd, ptr, len);
+		if (i < 0)
+			return (i);
+		if (i == 0)
+			break;
+		len -= i;
+		ptr += i;
+		j += i;
+	}
+	return (j);
 }
 
 int
@@ -97,9 +107,12 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	char *p;
 
 	i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
-	if (i < 0)
-		return (i);
-	assert(i == CLI_LINE0_LEN);	/* XXX: handle */
+	if (i != CLI_LINE0_LEN) {
+		if (status != NULL)
+			*status = CLIS_COMMS;
+		return (1);
+	}
+	assert(i == CLI_LINE0_LEN);
 	assert(res[3] == ' ');
 	assert(res[CLI_LINE0_LEN - 1] == '\n');
 	j = sscanf(res, "%u %u\n", &u, &v);
