@@ -10,7 +10,7 @@
 #include "libvarnish.h"
 
 void
-__assert(const char *func, const char *file, int line, const char *cond, int err)
+lbv_assert(const char *func, const char *file, int line, const char *cond, int err)
 {
 
 	fprintf(stderr,
