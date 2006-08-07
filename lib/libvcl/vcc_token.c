@@ -14,11 +14,12 @@
 #include <stdio.h>
 #include <printf.h>
 #include <stdarg.h>
-#include <vsb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <queue.h>
 #include <unistd.h>
+
+#include "vsb.h"
 
 #include "vcc_priv.h"
 #include "vcl_returns.h"

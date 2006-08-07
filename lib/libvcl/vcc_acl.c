@@ -12,10 +12,11 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <vsb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "vsb.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
