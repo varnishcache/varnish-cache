@@ -7,15 +7,6 @@ bin_PROGRAMS = varnishd
 dist_man_MANS = varnishd.1
 
 varnishd_SOURCES = \
-	cache.h \
-	common_cli.h \
-	hash_slinger.h \
-	heritage.h \
-	mgt.h \
-	mgt_cli.h \
-	mgt_event.h \
-	stevedore.h \
-	\
 	cache_acceptor.c \
 	cache_backend.c \
 	cache_ban.c \
@@ -50,8 +41,16 @@ varnishd_SOURCES = \
 	varnishd.c
 
 noinst_HEADERS = \
+	cache.h \
 	common.h \
-	steps.h
+	common_cli.h \
+	hash_slinger.h \
+	heritage.h \
+	mgt.h \
+	mgt_cli.h \
+	mgt_event.h \
+	steps.h \
+	stevedore.h
 
 varnishd_CFLAGS = -include config.h
 
