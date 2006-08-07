@@ -401,11 +401,13 @@ DoubleVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static struct var *
-HeaderVar(struct tokenlist *tl __unused, struct token *t, struct var *vh)
+HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 {
 	char *p;
 	struct var *v;
 	int i;
+
+	(void)tl;
 
 	v = calloc(sizeof *v, 1);
 	assert(v != NULL);
@@ -1474,9 +1476,11 @@ VCC_CompileFile(struct vsb *sb, const char *fn)
 /*--------------------------------------------------------------------*/
 
 static int
-VCC_T_render(FILE *f, const struct printf_info *info __unused, const void *const *args)
+VCC_T_render(FILE *f, const struct printf_info *info, const void *const *args)
 {
 	const struct token *t;
+
+	(void)info;
 
 	t = *((const struct token * const*) (args[0]));
 	return (fprintf(f, "%*.*s",
@@ -1484,8 +1488,10 @@ VCC_T_render(FILE *f, const struct printf_info *info __unused, const void *const
 }
      
 static int
-VCC_T_arginfo(const struct printf_info *info __unused, size_t n, int *argtypes)
+VCC_T_arginfo(const struct printf_info *info, size_t n, int *argtypes)
 {
+
+	(void)info;
 
 	if (n > 0)
 		argtypes[0] = PA_POINTER;
