@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"

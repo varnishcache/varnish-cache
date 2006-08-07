@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"

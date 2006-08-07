@@ -15,7 +15,6 @@
 #include <time.h>
 
 #include "shmlog.h"
-#include "libvarnish.h"
 #include "cache.h"
 
 /*

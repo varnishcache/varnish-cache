@@ -21,7 +21,6 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 
-#include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"

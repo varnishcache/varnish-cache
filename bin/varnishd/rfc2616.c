@@ -8,7 +8,6 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "libvarnish.h"
 #include "heritage.h"
 
 
