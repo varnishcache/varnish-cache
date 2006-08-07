@@ -4,20 +4,22 @@
  * Storage method based on mmap'ed file
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <sys/param.h>
+#include <sys/mman.h>
+#include <sys/mount.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+
 #include <errno.h>
-#include <stdint.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/param.h>
-#include <sys/mount.h>
-#include <sys/mman.h>
-#include <sys/socket.h>
+#include <unistd.h>
 
+#include "compat.h"
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
