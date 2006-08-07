@@ -2,20 +2,20 @@
  * $Id: cli_event.c 466 2006-07-12 23:30:49Z phk $
  */
 
-#include <errno.h>
-#include <assert.h>
-#include <poll.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <sys/uio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
-#include <signal.h>
 
-#include <sys/wait.h>
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <poll.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "vsb.h"
 
