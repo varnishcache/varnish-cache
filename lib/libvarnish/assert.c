@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "libvarnish.h"
 
 void
 __assert(const char *func, const char *file, int line, const char *cond, int err)

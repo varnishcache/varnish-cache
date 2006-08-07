@@ -10,7 +10,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
 #include "heritage.h"
 #include "shmlog.h"
 #include "vcl.h"

@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 

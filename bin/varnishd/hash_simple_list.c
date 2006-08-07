@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libvarnish.h>
 #include <cache.h>
 
 /*--------------------------------------------------------------------*/

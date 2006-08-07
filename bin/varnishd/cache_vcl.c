@@ -17,7 +17,6 @@
 #include "cli_priv.h"
 #include "shmlog.h"
 #include "vcl.h"
-#include "libvarnish.h"
 #include "cache.h"
 
 struct vcls {
