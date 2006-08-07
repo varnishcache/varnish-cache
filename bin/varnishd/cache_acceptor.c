@@ -65,7 +65,7 @@ vca_accept_sess(int fd)
 	{
 	struct timeval tv;
 
-	tv.tv_sec = 120;
+	tv.tv_sec = 600;
 	tv.tv_usec = 0;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv));
 	}
