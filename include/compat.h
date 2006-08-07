@@ -6,11 +6,13 @@
 #define COMPAT_H_INCLUDED
 
 #ifndef HAVE_VASPRINTF
-int vasprintf(char **strp, const char *fmt, va_list ap)
+#ifdef va_start /* make sure <stdarg.h> is in scope */
+int vasprintf(char **strp, const char *fmt, va_list ap);
+#endif
 #endif
 
 #ifndef HAVE_ASPRINTF
-int asprintf(char **strp, const char *fmt, ...)
+int asprintf(char **strp, const char *fmt, ...);
 #endif
 
 #ifndef HAVE_STRLCPY
