@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -189,7 +190,6 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	j = write(cli_o, p, i);
 	free(p);
 	if (j != i) {
-		free(p);
 		if (status != NULL)
 			*status = CLIS_COMMS;
 		if (resp != NULL)
@@ -198,7 +198,6 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	}
 
 	i = cli_readres(cli_i, &u, resp, 3.0);
-	assert(i == 0);
 	if (status != NULL)
 		*status = u;
 	return (u == CLIS_OK ? 0 : u);
@@ -281,7 +280,14 @@ fprintf(stderr, "CLI <%s>\n", cp->buf);
 	vsb_delete(cp->cli->sb);
 	free(cp->buf);
 	close(cp->fdi);
+	if (cp->fdi == 0)
+		open("/dev/null", O_RDONLY);
 	close(cp->fdo);
+	if (cp->fdo == 1) {
+		close(2);
+		open("/dev/null", O_WRONLY);
+		open("/dev/null", O_WRONLY);
+	}
 	free(cp);
 	return (1);
 }
