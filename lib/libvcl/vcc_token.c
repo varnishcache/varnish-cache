@@ -2,25 +2,15 @@
  * $Id$
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-
-#include <assert.h>
 #include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <printf.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <queue.h>
-#include <unistd.h>
 
 #include "vsb.h"
+#include "queue.h"
 
+#include "libvarnish.h"
 #include "vcc_priv.h"
 #include "vcl_returns.h"
 #include "vcc_compile.h"
