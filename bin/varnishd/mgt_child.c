@@ -10,7 +10,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <sys/types.h>
@@ -18,7 +17,6 @@
 
 #include <err.h>		/* XXX */
 
-#include "libvarnish.h"
 #include "heritage.h"
 #include "mgt.h"
 #include "cli.h"

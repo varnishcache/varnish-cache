@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libvarnish.la
 
 libvarnish_la_SOURCES = \
 	argv.c \
+	assert.c \
 	binary_heap.c \
 	cli.c \
 	cli_common.c \

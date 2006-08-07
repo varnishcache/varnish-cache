@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <time.h>
@@ -11,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "mgt.h"
 #include "mgt_event.h"
 #include "miniobj.h"
 #include "binary_heap.h"

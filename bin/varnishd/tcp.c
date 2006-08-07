@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -13,7 +12,6 @@
 
 #include "heritage.h"
 #include "mgt.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/
 
