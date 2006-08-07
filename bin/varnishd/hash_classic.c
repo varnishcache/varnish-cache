@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <md5.h>
 
-#include <libvarnish.h>
 #include <cache.h>
 
 /*--------------------------------------------------------------------*/

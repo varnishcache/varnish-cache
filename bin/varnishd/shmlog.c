@@ -11,7 +11,6 @@
 #include <stdarg.h>
 #include <sys/mman.h>
 
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 

@@ -5,6 +5,8 @@
 #include "common.h"
 #include "miniobj.h"
 
+#include "libvarnish.h"
+
 extern struct evbase	*mgt_evb;
 
 /* mgt_child.c */

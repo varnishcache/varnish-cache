@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <errno.h>
 #include <time.h>
 
 /* from libvarnish/argv.c */
@@ -14,6 +15,19 @@ time_t TIM_parse(const char *p);
 
 /* from libvarnish/version.c */
 void varnish_version(const char *);
+
+/* from libvarnish/assert.c */
+#ifdef WITHOUT_ASSERTS
+#define assert(e)	((void)0)
+#else /* WITH_ASSERTS */
+#define assert(e)							\
+do { 									\
+	if (e)								\
+		__assert(__func__, __FILE__, __LINE__, #e, errno);	\
+} while (0)
+#endif
+
+void __assert(const char *, const char *, int, const char *, int);
 
 /* Assert zero return value */
 #define AZ(foo)	do { assert((foo) == 0); } while (0)

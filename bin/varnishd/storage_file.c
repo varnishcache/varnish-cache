@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 #include "compat.h"
-#include "libvarnish.h"
 #include "shmlog.h"
 #include "cache.h"
 

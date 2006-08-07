@@ -6,7 +6,6 @@
 
 #include <sys/types.h>
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +15,6 @@
 #include "vsb.h"
 #include "queue.h"
 
-#include "libvarnish.h"
 #include "libvcl.h"
 #include "cli.h"
 #include "cli_priv.h"

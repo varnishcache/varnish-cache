@@ -5,12 +5,13 @@
 #include <sys/time.h>
 #include <sys/uio.h>
 
-#include <assert.h>
 #include <pthread.h>
 #include <stdint.h>
 
 #include "queue.h"
 #include "vsb.h"
+
+#include "libvarnish.h"
 
 #include "vcl_returns.h"
 #include "common.h"

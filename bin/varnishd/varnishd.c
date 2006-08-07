@@ -4,7 +4,6 @@
  * The management process and CLI handling
  */
 
-#include <assert.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -19,7 +18,6 @@
 
 #include "vsb.h"
 
-#include "libvarnish.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
