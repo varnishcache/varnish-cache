@@ -420,7 +420,7 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 	v->name = p;
 	v->fmt = STRING;
 	asprintf(&p, "VRT_GetHdr(sp, \"\\%03o%s:\")",
-	    strlen(v->name + vh->len) + 1, v->name + vh->len);
+	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	assert(p != NULL);
 	v->rname = p;
 	return (v);
