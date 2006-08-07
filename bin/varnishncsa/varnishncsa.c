@@ -192,10 +192,10 @@ extended_log_format(unsigned char *p, char *w_opt)
 /*--------------------------------------------------------------------*/
 
 static void
-Usage(void)
+usage(void)
 {
-	fprintf(stderr, "Usage: varnishlogfile [-w file] [-r file]\n");
-	exit(2);
+	fprintf(stderr, "usage: varnishncsa [-V] [-w file] [-r file]\n");
+	exit(1);
 }
 
 int
@@ -217,11 +217,14 @@ main(int argc, char **argv)
 		if (i > 0)
 			continue;
 		switch (c) {
+		case 'V':
+			varnish_version("varnishncsa");
+			exit(0);
 		case 'w':
 			w_opt = optarg;
 			break;
 		default:
-			Usage();
+			usage();
 		}
 	}
 

@@ -11,5 +11,6 @@ varnishstat_SOURCES = varnishstat.c
 varnishstat_CFLAGS = -include config.h
 
 varnishstat_LDADD = \
-	-lcurses \
-	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la 
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
+	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la  \
+	-lcurses

@@ -10,6 +10,7 @@ libvarnish_la_SOURCES = \
 	cli.c \
 	cli_common.c \
 	time.c \
+	version.c \
 	vsb.c
 
 libvarnish_la_CFLAGS = -include config.h
