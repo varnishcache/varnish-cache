@@ -3,6 +3,7 @@
 noinst_HEADERS = \
 	binary_heap.h \
 	cli.h \
+	cli_common.h \
 	cli_priv.h \
 	compat.h \
 	hash.h \

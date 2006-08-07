@@ -26,7 +26,6 @@ varnishd_SOURCES = \
 	cache_vrt.c \
 	cache_vrt_acl.c \
 	cache_vrt_re.c \
-	common_cli.c \
 	hash_simple_list.c \
 	hash_classic.c \
 	mgt_child.c \
@@ -43,7 +42,6 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	cache.h \
 	common.h \
-	common_cli.h \
 	hash_slinger.h \
 	heritage.h \
 	mgt.h \
