@@ -266,6 +266,7 @@ DebugStunt(void)
 	d_child = strtoul(buf, &p, 0);
 	assert(p != NULL);
 	printf("New Pid %d\n", d_child);
+	assert(d_child != 0);
 	i = strlen(p);
 	j = write(pipes[1][1], p, i);
 	assert(j == i);
