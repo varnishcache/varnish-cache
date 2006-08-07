@@ -6,7 +6,7 @@
 #define COMPAT_H_INCLUDED
 
 #ifndef HAVE_VASPRINTF
-int asprintf(char **strp, const char *fmt, va_list ap)
+int vasprintf(char **strp, const char *fmt, va_list ap)
 #endif
 
 #ifndef HAVE_ASPRINTF
