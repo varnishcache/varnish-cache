@@ -15,6 +15,11 @@
 #include "miniobj.h"
 #include "binary_heap.h"
 
+/* INFTIM indicates an infinite timeout for poll(2) */
+#ifndef INFTIM
+#define INFTIM -1
+#endif
+
 struct evsig {
 	struct evbase		*evb;
 	struct ev		*ev;
