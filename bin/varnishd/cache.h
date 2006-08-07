@@ -2,10 +2,12 @@
  * $Id$
  */
 
+#include <sys/time.h>
+#include <sys/uio.h>
+
 #include <assert.h>
 #include <pthread.h>
-#include <sys/uio.h>
-#include <sys/time.h>
+#include <stdint.h>
 
 #include "queue.h"
 #include "vsb.h"
