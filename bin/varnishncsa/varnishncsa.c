@@ -120,7 +120,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 			
 		break;
 
-	case SLT_ReqServTime:
+	case SLT_ReqEnd:
 
 		break;
 
