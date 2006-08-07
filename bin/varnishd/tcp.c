@@ -2,13 +2,14 @@
  * $Id$
  */
 
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#include <assert.h>
+#include <errno.h>
 #include <netdb.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "heritage.h"
 #include "mgt.h"
@@ -46,6 +47,7 @@ TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 
 /*--------------------------------------------------------------------*/
 
+#ifdef HAVE_ACCEPT_FILTERS
 static void
 accept_filter(int fd)
 {
@@ -61,6 +63,7 @@ accept_filter(int fd)
 		printf("Acceptfilter(%d, httpready): %d %s\n",
 		    fd, i, strerror(errno));
 }
+#endif
 
 static void
 create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
@@ -120,11 +123,15 @@ open_tcp(const char *port)
 	for (u = 0; u < HERITAGE_NSOCKS; u++) {
 		if (heritage.sock_local[u] >= 0) {
 			AZ(listen(heritage.sock_local[u], 16));
+#ifdef HAVE_ACCEPT_FILTERS
 			accept_filter(heritage.sock_local[u]);
+#endif
 		}
 		if (heritage.sock_remote[u] >= 0) {
 			AZ(listen(heritage.sock_remote[u], 16));
+#ifdef HAVE_ACCEPT_FILTERS
 			accept_filter(heritage.sock_remote[u]);
+#endif
 		}
 	}
 	return (0);
