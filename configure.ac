@@ -70,11 +70,11 @@ AC_CHECK_FUNCS([strlcpy])
 AC_CHECK_DECL([asprintf],
 	AC_DEFINE(HAVE_ASPRINTF,1,[Define to 1 if asprintf() is available]),
 	,
-	[stdio.h])
+	[#include <stdio.h>])
 AC_CHECK_DECL([vasprintf],
 	AC_DEFINE(HAVE_VASPRINTF,1,[Define to 1 if vasprintf() is available]),
 	,
-	[stdio.h])
+	[#include <stdio.h>])
 
 AC_CHECK_DECL([SO_ACCEPTFILER],
 	AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
