@@ -155,7 +155,6 @@ RES_WriteObj(struct sess *sp)
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	
-	/* XXX: conditional request handling */
 	if (sp->wantbody) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -163,15 +162,7 @@ RES_WriteObj(struct sess *sp)
 			assert(st->stevedore != NULL);
 			u += st->len;
 			sp->wrk->acct.bodybytes += st->len;
-			if (st->stevedore->send == NULL) {
-				WRK_Write(sp->wrk, st->ptr, st->len);
-			} else {
-				st->stevedore->send(st, sp);
-				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-				CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-				sp->wrk->niov = 0;
-				sp->wrk->liov = 0;
-			}
+			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
 	}

@@ -134,11 +134,15 @@ struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
 	TAILQ_ENTRY(storage)	list;
+	struct stevedore	*stevedore;
+	void			*priv;
+
 	unsigned char		*ptr;
 	unsigned		len;
 	unsigned		space;
-	void			*priv;
-	struct stevedore	*stevedore;
+
+	int			fd;
+	off_t			where;
 };
 
 #include "stevedore.h"

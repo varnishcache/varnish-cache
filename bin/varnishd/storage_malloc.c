@@ -24,6 +24,7 @@ sma_alloc(struct stevedore *st, size_t size)
 	assert(sma->s.ptr != NULL);
 	sma->s.len = 0;
 	sma->s.space = size;
+	sma->s.fd = -1;
 	sma->s.stevedore = st;
 	return (&sma->s);
 }
