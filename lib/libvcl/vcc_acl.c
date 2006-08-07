@@ -34,7 +34,8 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		AddRef(tl, tl->t, R_ACL);
-		Fc(tl, 1, "VRT_acl_match(sp, \"%T\", acl_%T)\n", tl->t, tl->t);
+		Fc(tl, 1, "VRT_acl_match(sp, \"%.*s\", acl_%.*s)\n",
+		    PF(tl->t), PF(tl->t));
 		vcc_NextToken(tl);
 		break;
 	default:
@@ -61,8 +62,8 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	AddDef(tl, an, R_ACL);
-	Fh(tl, 0, "static struct vrt_acl acl_%T[];\n", an);
-	Fc(tl, 1, "static struct vrt_acl acl_%T[] = {\n", an);
+	Fh(tl, 0, "static struct vrt_acl acl_%.*s[];\n", PF(an));
+	Fc(tl, 1, "static struct vrt_acl acl_%.*s[] = {\n", PF(an));
 
 	tl->indent += INDENT;
 
@@ -92,7 +93,7 @@ vcc_Acl(struct tokenlist *tl)
 			ExpectErr(tl, CNUM);
 			mask = UintVal(tl);
 		} 
-		Fc(tl, 1, "{ %u, %u, %u, %T, \"", not, mask, para, t);
+		Fc(tl, 1, "{ %u, %u, %u, %.*s, \"", not, mask, para, PF(t));
 		if (para)
 			Fc(tl, 0, "(");
 		if (not)
@@ -120,6 +121,6 @@ vcc_Acl(struct tokenlist *tl)
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
 
-	Fi(tl, 1, "\tVRT_acl_init(acl_%T);\n", an);
-	Ff(tl, 1, "\tVRT_acl_fini(acl_%T);\n", an);
+	Fi(tl, 1, "\tVRT_acl_init(acl_%.*s);\n", PF(an));
+	Ff(tl, 1, "\tVRT_acl_fini(acl_%.*s);\n", PF(an));
 }

@@ -26,7 +26,7 @@ vcc_ErrToken(struct tokenlist *tl, struct token *t)
 	if (t->tok == EOI)
 		vsb_printf(tl->sb, "end of input");
 	else
-		vsb_printf(tl->sb, "'%T'", t);
+		vsb_printf(tl->sb, "'%.*s'", PF(t));
 }
 
 void
