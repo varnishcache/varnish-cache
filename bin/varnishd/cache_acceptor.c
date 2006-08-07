@@ -61,6 +61,15 @@ vca_accept_sess(int fd)
 	linger.l_linger = 0;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &linger, sizeof linger));
 #endif
+#ifdef SO_SNDTIMEO
+	{
+	struct timeval tv;
+
+	tv.tv_sec = 120;
+	tv.tv_usec = 0;
+	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv));
+	}
+#endif
 
 	TCP_name(addr, l, sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
