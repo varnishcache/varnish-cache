@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "compat/srandomdev.h"
+
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
