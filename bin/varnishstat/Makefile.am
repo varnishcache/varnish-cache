@@ -14,3 +14,7 @@ varnishstat_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la  \
 	-lcurses
+
+if NEED_LIBRT
+varnishstat_LDADD += -lrt
+endif
