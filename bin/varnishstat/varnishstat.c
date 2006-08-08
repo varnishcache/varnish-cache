@@ -12,6 +12,7 @@
 #include <curses.h>
 #include <time.h>
 
+#include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
 
