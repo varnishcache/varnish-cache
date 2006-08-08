@@ -17,6 +17,8 @@
 
 #include <err.h>		/* XXX */
 
+#include "compat/setproctitle.h"
+
 #include "heritage.h"
 #include "mgt.h"
 #include "cli.h"

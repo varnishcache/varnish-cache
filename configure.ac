@@ -68,6 +68,7 @@ AC_CHECK_FUNCS([strptime])
 # These functions are provided by libcompat on platforms where they
 # are not available
 AC_CHECK_FUNCS([asprintf vasprintf])
+AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([vis strvis strvisx])
