@@ -4,14 +4,15 @@
  * Log tailer for Varnish
  */
 
-#include <stdio.h>
 #include <ctype.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <curses.h>
-#include <vis.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "compat/vis.h"
 
 #include "vsb.h"
 

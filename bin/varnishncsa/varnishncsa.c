@@ -17,8 +17,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <vis.h>
 #include <time.h>
+
+#include "compat/vis.h"
 
 #include "vsb.h"
 

@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	compat/strlcat.h \
 	compat/strlcpy.h \
 	compat/vasprintf.h \
+	compat/vis.h \
 	hash.h \
 	http_headers.h \
 	libvarnish.h \

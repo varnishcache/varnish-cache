@@ -9,6 +9,7 @@ libcompat_a_SOURCES = \
 	vasprintf.c \
 	srandomdev.c \
 	strlcat.c \
-	strlcpy.c
+	strlcpy.c \
+	vis.c
 
 libcompat_a_CFLAGS = -include config.h

@@ -61,9 +61,12 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
+
+# These functions are provided by libcompat on platforms where they
+# are not available
 AC_CHECK_FUNCS([srandomdev])
-AC_CHECK_FUNCS([strlcat])
-AC_CHECK_FUNCS([strlcpy])
+AC_CHECK_FUNCS([strlcat strlcpy])
+AC_CHECK_FUNCS([vis strvis strvisx])
 
 # asprintf() and vasprintf() are tricky, because on some systems, they
 # are present in the C library, but their prototypes are hidden behind
