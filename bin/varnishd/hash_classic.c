@@ -96,11 +96,11 @@ crc32(const char *p1, const char *p2)
 	crc = ~0U;
 
 	for (p = (const unsigned char*)p1; *p != '\0'; p++)
-		crc = (crc >> 8) ^ crc32bits[(crc ^ *p++) & 0xff];
+		crc = (crc >> 8) ^ crc32bits[(crc ^ *p) & 0xff];
 	for (p = (const unsigned char*)p2; *p != '\0'; p++)
-		crc = (crc >> 8) ^ crc32bits[(crc ^ *p++) & 0xff];
+		crc = (crc >> 8) ^ crc32bits[(crc ^ *p) & 0xff];
 
-	return crc ^ ~0U;
+	return (crc ^ ~0U);
 }
 
 #endif /* HASH_CLASSIC_MD5 */
