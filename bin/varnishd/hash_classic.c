@@ -13,6 +13,11 @@
 
 #include <cache.h>
 
+#if defined(HASH_CLASSIC_MD5) && !defined(HAVE_MD5)
+/* MD5 is not available */
+#undef HASH_CLASSIC_MD5
+#endif
+
 #ifdef HASH_CLASSIC_MD5
 #include <md5.h>
 #endif

@@ -58,5 +58,11 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
-	-lpthread \
-	-lmd
+	-lpthread
+
+if NEED_LIBMD
+varnishd_LDADD += -lmd
+endif
+if NEED_LIBRT
+varnishd_LDADD += -lrt
+endif
