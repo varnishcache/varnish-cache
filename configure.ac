@@ -66,26 +66,10 @@ AC_CHECK_FUNCS([strptime])
 
 # These functions are provided by libcompat on platforms where they
 # are not available
+AC_CHECK_FUNCS([asprintf vasprintf])
 AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([vis strvis strvisx])
-
-# asprintf() and vasprintf() are tricky, because on some systems, they
-# are present in the C library, but their prototypes are hidden behind
-# conditionals which we won't bother to unravel.
-AC_CHECK_DECL([asprintf],
-	AC_DEFINE(HAVE_ASPRINTF,1,[Define to 1 if asprintf() is available]),
-	,
-	[#include <stdio.h>])
-AC_CHECK_DECL([vasprintf],
-	AC_DEFINE(HAVE_VASPRINTF,1,[Define to 1 if vasprintf() is available]),
-	,
-	[#include <stdio.h>])
-
-AC_CHECK_DECL([SO_ACCEPTFILER],
-	AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
-	,
-	[sys/types.h, sys/socket.h])
 
 # On some systems, clock_gettime is in librt rather than libc
 AC_CHECK_LIB(rt, clock_gettime, need_librt=yes)
