@@ -27,6 +27,7 @@ AC_ARG_ENABLE(werror,
 	CFLAGS="${CFLAGS} -Werror")
 
 # Checks for programs.
+AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -61,6 +62,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([strptime])
 
 # These functions are provided by libcompat on platforms where they
 # are not available
