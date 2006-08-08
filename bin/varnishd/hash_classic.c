@@ -34,8 +34,8 @@ struct hcl_entry {
 TAILQ_HEAD(hcl_head, hcl_entry);
 
 static struct hcl_head *hcl_head;
-static unsigned hcl_nhash = 256;
-static unsigned hcl_nmtx = 16;
+static unsigned hcl_nhash = 4096;
+static unsigned hcl_nmtx = 256;
 static pthread_mutex_t *hcl_mutex;
 
 /*--------------------------------------------------------------------*/
