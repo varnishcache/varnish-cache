@@ -85,7 +85,7 @@ vsl_shmem_map(void)
 	}
 
 	vsl_lh = mmap(NULL, slh.size + sizeof slh,
-	    PROT_READ, MAP_HASSEMAPHORE, vsl_fd, 0);
+	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vsl_fd, 0);
 	if (vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
 		    SHMLOG_FILENAME, strerror(errno));
