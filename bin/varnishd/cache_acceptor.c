@@ -103,7 +103,7 @@ vca_handover(struct sess *sp, int bad)
 /*====================================================================*/
 #ifdef ACCEPTOR_USE_POLL
 
-#include <sys/poll.h>
+#include <poll.h>
 
 static struct pollfd *pollfd;
 static unsigned npoll;
