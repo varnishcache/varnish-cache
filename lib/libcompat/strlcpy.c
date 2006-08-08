@@ -17,12 +17,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef HAVE_STRLCPY
+
 #include <sys/types.h>
 #include <string.h>
 
-#include "compat.h"
+#include "compat/strlcpy.h"
 
-#ifndef HAVE_STRLCPY
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
  * will be copied.  Always NUL terminates (unless siz == 0).

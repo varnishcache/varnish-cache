@@ -19,7 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat.h"
+#include "compat/asprintf.h"
 #include "shmlog.h"
 #include "cache.h"
 

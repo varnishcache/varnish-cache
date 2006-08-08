@@ -3,12 +3,14 @@
  *
  */
 
+#ifndef HAVE_ASPRINTF
+
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "compat.h"
+#include "compat/asprintf.h"
+#include "compat/vasprintf.h"
 
-#ifndef HAVE_ASPRINTF
 int
 asprintf(char **strp, const char *fmt, ...)
 {

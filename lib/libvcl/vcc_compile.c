@@ -49,7 +49,7 @@
 #include <queue.h>
 #include <unistd.h>
 
-#include "compat.h"
+#include "compat/asprintf.h"
 #include "vsb.h"
 
 #include "vcc_priv.h"
