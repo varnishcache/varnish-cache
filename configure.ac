@@ -77,6 +77,10 @@ AC_CHECK_FUNCS([vis strvis strvisx])
 AC_CHECK_LIB(rt, clock_gettime, need_librt=yes)
 AM_CONDITIONAL(NEED_LIBRT, test x$need_librt = xyes)
 
+# Check if dlopen() requires libdl
+AC_CHECK_LIB(dl, dlopen, need_libdl=yes)
+AM_CONDITIONAL(NEED_LIBDL, test x$need_libdl = xyes)
+
 # Check for the presence of RSA's MD5 implementation (libmd on *BSD)
 AC_CHECK_HEADERS([md5.h])
 if test x$ac_cv_header_md5_h = xyes ; then
