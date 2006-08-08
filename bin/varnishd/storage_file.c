@@ -10,6 +10,10 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
