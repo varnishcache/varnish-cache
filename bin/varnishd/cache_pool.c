@@ -8,6 +8,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_SENDFILE
+#include <sys/uio.h>
+#include <sys/socket.h>
+#endif /* HAVE_SENDFILE */
 #include <unistd.h>
 
 #include "heritage.h"
@@ -54,10 +58,8 @@ WRK_Flush(struct worker *w)
 	i = writev(*w->wfd, w->iov, w->niov);
 	if (i != w->liov)
 		w->werr++;
-	else {
-		w->liov = 0;
-		w->niov = 0;
-	}
+	w->liov = 0;
+	w->niov = 0;
 	return (w->werr);
 }
 
@@ -93,6 +95,30 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 	w->liov += len;
 	return (len);
 }
+
+#ifdef HAVE_SENDFILE
+void
+WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
+{
+	struct sf_hdtr sfh;
+	int i;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	assert(fd >= 0);
+	assert(len > 0);
+
+	memset(&sfh, 0, sizeof sfh);
+	if (w->niov > 0) {
+		sfh.headers = w->iov;
+		sfh.hdr_cnt = w->niov;
+	}
+	i = sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0);
+	if (i != 0)
+		w->werr++;
+	w->liov = 0;
+	w->niov = 0;
+}
+#endif /* HAVE_SENDFILE */
 
 /*--------------------------------------------------------------------*/
 

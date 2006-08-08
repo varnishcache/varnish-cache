@@ -374,6 +374,9 @@ void WRK_Reset(struct worker *w, int *fd);
 int WRK_Flush(struct worker *w);
 unsigned WRK_Write(struct worker *w, const void *ptr, int len);
 unsigned WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
+#ifdef HAVE_SENDFILE
+void WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
+#endif  /* HAVE_SENDFILE */
 
 /* cache_session.c [SES] */
 void SES_Init(void);

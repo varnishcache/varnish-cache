@@ -161,6 +161,19 @@ RES_WriteObj(struct sess *sp)
 			assert(st->stevedore != NULL);
 			u += st->len;
 			sp->wrk->acct.bodybytes += st->len;
+#ifdef HAVE_SENDFILE
+			/*
+			 * XXX: the overhead of setting up senddile is not
+			 * XXX: epsilon and maybe not even delta, so avoid
+			 * XXX: engaging sendfile for small objects.
+			 * XXX: Should use getpagesize() ?
+			 */
+			if (st->fd >= 0 && st->len >= 8192) {
+				WRK_Sendfile(sp->wrk, st->fd,
+				    st->where, st->len);
+				continue;
+			}
+#endif /* HAVE_SENDFILE */
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
