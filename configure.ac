@@ -85,11 +85,16 @@ AC_CHECK_DECL([SO_ACCEPTFILER],
 AC_CHECK_LIB(rt, clock_gettime, need_librt=yes)
 AM_CONDITIONAL(NEED_LIBRT, test x$need_librt = xyes)
 
+# Check for the presence of RSA's MD5 implementation (libmd on *BSD)
 AC_CHECK_HEADERS([md5.h])
 if test x$ac_cv_header_md5_h = xyes ; then
 	AC_CHECK_LIB(md, MD5Init, need_libmd=yes)
 fi
 AM_CONDITIONAL(NEED_LIBMD, test x$need_libmd = xyes)
+
+# Check which mechanism to use for the acceptor
+AC_CHECK_FUNCS([kqueue])
+AC_CHECK_FUNCS([poll])
 
 AC_CONFIG_FILES([
     Makefile

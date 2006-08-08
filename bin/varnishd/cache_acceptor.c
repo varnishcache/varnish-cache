@@ -6,8 +6,16 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+#undef ACCEPTOR_USE_KQUEUE
 #undef ACCEPTOR_USE_POLL
-#define ACCEPTOR_USE_KQUEUE
+
+#if defined(HAVE_KQUEUE)
+#define ACCEPTOR_USE_KQUEUE 1
+#elif defined(HAVE_POLL)
+#define ACCEPTOR_USE_POLL 1
+#else
+#error No usable acceptors detected.
+#endif
 
 #include <stdio.h>
 #include <errno.h>
@@ -95,7 +103,7 @@ vca_handover(struct sess *sp, int bad)
 /*====================================================================*/
 #ifdef ACCEPTOR_USE_POLL
 
-#include <poll.h>
+#include <sys/poll.h>
 
 static struct pollfd *pollfd;
 static unsigned npoll;
@@ -262,6 +270,7 @@ vca_return_session(struct sess *sp)
 #endif /* ACCEPTOR_USE_POLL */
 /*====================================================================*/
 #ifdef ACCEPTOR_USE_KQUEUE
+
 #include <sys/event.h>
 
 static int kq = -1;
