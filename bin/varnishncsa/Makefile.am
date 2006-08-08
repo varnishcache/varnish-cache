@@ -12,5 +12,8 @@ varnishncsa_CFLAGS = -include config.h
 
 varnishncsa_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la
+
+if NEED_LIBRT
+varnishncsa_LDADD += -lrt
+endif
