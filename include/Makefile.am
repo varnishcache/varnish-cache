@@ -5,7 +5,10 @@ noinst_HEADERS = \
 	cli.h \
 	cli_common.h \
 	cli_priv.h \
-	compat.h \
+	compat/asprintf.h \
+	compat/strlcat.h \
+	compat/strlcpy.h \
+	compat/vasprintf.h \
 	hash.h \
 	http_headers.h \
 	libvarnish.h \

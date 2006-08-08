@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat.h"
+#include "compat/asprintf.h"
 #include "vsb.h"
 #include "queue.h"
 

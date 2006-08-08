@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "compat/strlcpy.h"
 #include "heritage.h"
 #include "mgt.h"
 

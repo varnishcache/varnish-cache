@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat.h"
+#include "compat/vasprintf.h"
 #include "cli_priv.h"
 #include "cli.h"
 #include "vsb.h"
