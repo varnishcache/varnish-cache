@@ -61,6 +61,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat])
 AC_CHECK_FUNCS([strlcpy])
 

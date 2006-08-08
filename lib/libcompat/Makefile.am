@@ -7,6 +7,7 @@ lib_LIBRARIES = libcompat.a
 libcompat_a_SOURCES = \
 	asprintf.c \
 	vasprintf.c \
+	srandomdev.c \
 	strlcat.c \
 	strlcpy.c
 
