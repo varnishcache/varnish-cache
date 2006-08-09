@@ -99,6 +99,7 @@ cnt_done(struct sess *sp)
 	assert(sp->vbc == NULL);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
+	sp->backend = NULL;
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
 
