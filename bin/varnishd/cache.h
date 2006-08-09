@@ -17,16 +17,18 @@
 #include "common.h"
 #include "miniobj.h"
 
-#define MAX_HTTP_HDRS		32
+enum {
+	HTTP_HDR_REQ,
+	HTTP_HDR_URL,
+	HTTP_HDR_PROTO,
+	HTTP_HDR_STATUS,
+	HTTP_HDR_RESPONSE,
+	/* add more here */
+	HTTP_HDR_FIRST,
+	HTTP_HDR_MAX = 32
+};
 
-#define MAX_IOVS		(MAX_HTTP_HDRS * 2)
-
-#define HTTP_HDR_REQ		0
-#define HTTP_HDR_URL		1
-#define HTTP_HDR_PROTO		2
-#define HTTP_HDR_STATUS		3
-#define HTTP_HDR_RESPONSE	4
-#define HTTP_HDR_FIRST		5
+#define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
 struct cli;
 struct vsb;
@@ -70,7 +72,7 @@ struct http {
 		HTTP_Obj
 	}			logtag;
 
-	struct http_hdr		hd[MAX_HTTP_HDRS];
+	struct http_hdr		hd[HTTP_HDR_MAX];
 	unsigned		nhd;
 };
 

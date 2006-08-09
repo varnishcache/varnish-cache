@@ -274,7 +274,7 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 		    p[2] == '-') 
 			hp->conds = 1;
 
-		if (hp->nhd < MAX_HTTP_HDRS) {
+		if (hp->nhd < HTTP_HDR_MAX) {
 			hp->hd[hp->nhd].b = p;
 			hp->hd[hp->nhd].e = q;
 			VSLH(HTTP_T_Header, fd, hp, hp->nhd);
@@ -573,7 +573,7 @@ http_CopyHttp(struct http *to, struct http *fm)
 static void
 http_seth(int fd, struct http *to, unsigned n, enum httptag tag, const char *fm)
 {
-	assert(n < MAX_HTTP_HDRS);
+	assert(n < HTTP_HDR_MAX);
 	assert(fm != NULL);
 	to->hd[n].b = (void*)(uintptr_t)fm;
 	to->hd[n].e = (void*)(uintptr_t)strchr(fm, '\0');
@@ -584,7 +584,7 @@ static void
 http_copyh(int fd, struct http *to, struct http *fm, unsigned n, enum httptag tag)
 {
 
-	assert(n < MAX_HTTP_HDRS);
+	assert(n < HTTP_HDR_MAX);
 	assert(fm->hd[n].b != NULL);
 	to->hd[n].b = fm->hd[n].b;
 	to->hd[n].e = fm->hd[n].e;
@@ -640,9 +640,9 @@ http_copyheader(int fd, struct http *to, struct http *fm, unsigned n)
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	assert(n < MAX_HTTP_HDRS);
+	assert(n < HTTP_HDR_MAX);
 	assert(fm->hd[n].b != NULL);
-	if (to->nhd < MAX_HTTP_HDRS) {
+	if (to->nhd < HTTP_HDR_MAX) {
 		to->hd[to->nhd].b = fm->hd[n].b;
 		to->hd[to->nhd].e = fm->hd[n].e;
 		VSLH(HTTP_T_Header, fd, to, to->nhd);
@@ -692,7 +692,7 @@ http_SetHeader(int fd, struct http *to, const char *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	if (to->nhd >= MAX_HTTP_HDRS) {
+	if (to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
 		VSL(T(to, HTTP_T_LostHeader), fd, "%s", hdr);
 		return;
@@ -712,7 +712,7 @@ http_PrintfHeader(int fd, struct http *to, const char *fmt, ...)
 	va_start(ap, fmt);
 	l = to->e - to->f;
 	n = vsnprintf(to->f, l, fmt, ap);
-	if (n + 1 > l || to->nhd >= MAX_HTTP_HDRS) {
+	if (n + 1 > l || to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
 		VSL(T(to, HTTP_T_LostHeader), fd, "%s", to->f);
 	} else {
