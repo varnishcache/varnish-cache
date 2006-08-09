@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 638 2006-08-04 10:54:30Z phk $
+ * $Id: /mirror/varnish/trunk/varnish-cache/lib/libvcl/vcc_gen_fixed_token.tcl 30751 2006-08-04T10:54:30.556113Z phk  $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *

@@ -30,6 +30,10 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_request(sp)",
 	    "VRT_l_req_request(sp, ",
 	},
+	{ "req.host", STRING, 8,
+	    "VRT_r_req_host(sp)",
+	    "VRT_l_req_host(sp, ",
+	},
 	{ "req.url", STRING, 7,
 	    "VRT_r_req_url(sp)",
 	    "VRT_l_req_url(sp, ",
@@ -38,6 +42,10 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_proto(sp)",
 	    "VRT_l_req_proto(sp, ",
 	},
+	{ "req.backend", BACKEND, 11,
+	    "VRT_r_req_backend(sp)",
+	    "VRT_l_req_backend(sp, ",
+	},
 	{ "obj.valid", BOOL, 9,
 	    "VRT_r_obj_valid(sp)",
 	    "VRT_l_obj_valid(sp, ",
@@ -45,10 +53,6 @@ struct var vcc_vars[] = {
 	{ "obj.cacheable", BOOL, 13,
 	    "VRT_r_obj_cacheable(sp)",
 	    "VRT_l_obj_cacheable(sp, ",
-	},
-	{ "obj.backend", BACKEND, 11,
-	    "VRT_r_obj_backend(sp)",
-	    "VRT_l_obj_backend(sp, ",
 	},
 	{ "obj.ttl", TIME, 7,
 	    "VRT_r_obj_ttl(sp)",
@@ -78,16 +82,18 @@ const char *vrt_obj_h =
 	"void VRT_l_client_ip(struct sess *, const unsigned char *);\n"
 	"const char * VRT_r_req_request(struct sess *);\n"
 	"void VRT_l_req_request(struct sess *, const char *);\n"
+	"const char * VRT_r_req_host(struct sess *);\n"
+	"void VRT_l_req_host(struct sess *, const char *);\n"
 	"const char * VRT_r_req_url(struct sess *);\n"
 	"void VRT_l_req_url(struct sess *, const char *);\n"
 	"const char * VRT_r_req_proto(struct sess *);\n"
 	"void VRT_l_req_proto(struct sess *, const char *);\n"
+	"struct backend * VRT_r_req_backend(struct sess *);\n"
+	"void VRT_l_req_backend(struct sess *, struct backend *);\n"
 	"double VRT_r_obj_valid(struct sess *);\n"
 	"void VRT_l_obj_valid(struct sess *, double);\n"
 	"double VRT_r_obj_cacheable(struct sess *);\n"
 	"void VRT_l_obj_cacheable(struct sess *, double);\n"
-	"struct backend * VRT_r_obj_backend(struct sess *);\n"
-	"void VRT_l_obj_backend(struct sess *, struct backend *);\n"
 	"double VRT_r_obj_ttl(struct sess *);\n"
 	"void VRT_l_obj_ttl(struct sess *, double);\n"
 	"const char * VRT_r_req_http_(struct sess *);\n"
