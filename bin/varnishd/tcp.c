@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "compat/strlcpy.h"
 #include "heritage.h"
@@ -64,74 +65,66 @@ accept_filter(int fd)
 }
 #endif
 
-static void
-create_listen_socket(const char *addr, const char *port, int *sp, int nsp)
-{
-	struct addrinfo ai, *r0, *r1;
-	int i, j, s;
-
-	memset(&ai, 0, sizeof ai);
-	ai.ai_family = PF_UNSPEC;
-	ai.ai_socktype = SOCK_STREAM;
-	ai.ai_flags = AI_PASSIVE;
-	i = getaddrinfo(addr, port, &ai, &r0);
-
-	if (i) {
-		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(i));
-		return;
-	}
-
-	for (r1 = r0; r1 != NULL && nsp > 0; r1 = r1->ai_next) {
-		s = socket(r1->ai_family, r1->ai_socktype, r1->ai_protocol);
-		if (s < 0)
-			continue;
-		j = 1;
-		i = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof j);
-		assert(i == 0);
-
-		i = bind(s, r1->ai_addr, r1->ai_addrlen);
-		if (i != 0) {
-			perror("bind");
-			continue;
-		}
-		assert(i == 0);
-		*sp = s;
-		sp++;
-		nsp--;
-	}
-
-	freeaddrinfo(r0);
-}
-
 int
 open_tcp(const char *port)
 {
-	unsigned u;
+	struct addrinfo hints, *res;
+	int ret, sd, val;
 
-	for (u = 0; u < HERITAGE_NSOCKS; u++) {
-		heritage.sock_local[u] = -1;
-		heritage.sock_remote[u] = -1;
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	if ((ret = getaddrinfo(NULL, port, &hints, &res)) != 0) {
+		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(ret));
+		return (-1);
 	}
 
-	create_listen_socket("localhost", port,
-	    &heritage.sock_local[0], HERITAGE_NSOCKS);
-
-	create_listen_socket(NULL, port,
-	    &heritage.sock_remote[0], HERITAGE_NSOCKS);
-
-	for (u = 0; u < HERITAGE_NSOCKS; u++) {
-		if (heritage.sock_local[u] >= 0) {
-			AZ(listen(heritage.sock_local[u], 16));
-#ifdef HAVE_ACCEPT_FILTERS
-			accept_filter(heritage.sock_local[u]);
-#endif
+	sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (sd < 0 && errno == EPROTONOSUPPORT) {
+		freeaddrinfo(res);
+		hints.ai_family = AF_INET;
+		if ((ret = getaddrinfo(NULL, port, &hints, &res)) != 0) {
+			fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(ret));
+			return (-1);
 		}
-		if (heritage.sock_remote[u] >= 0) {
-			AZ(listen(heritage.sock_remote[u], 16));
-#ifdef HAVE_ACCEPT_FILTERS
-			accept_filter(heritage.sock_remote[u]);
-#endif
-		}
+		sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	}
+	if (sd < 0) {
+		perror("socket()");
+		freeaddrinfo(res);
+		return (-1);
+	}
+	val = 1;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
+		perror("setsockopt(SO_REUSEADDR, 1)");
+		freeaddrinfo(res);
+		close(sd);
+		return (-1);
+	}
+	val = 0;
+	if (res->ai_family == AF_INET6 &&
+	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
+		perror("setsockopt(IPV6_V6ONLY, 0)");
+		freeaddrinfo(res);
+		close(sd);
+		return (-1);
+	}
+	if (bind(sd, res->ai_addr, res->ai_addrlen) != 0) {
+		perror("bind()");
+		freeaddrinfo(res);
+		close(sd);
+		return (-1);
+	}
+	if (listen(sd, 16) != 0) {
+		perror("listen()");
+		freeaddrinfo(res);
+		close(sd);
+		return (-1);
+	}
+#ifdef HAVE_ACCEPT_FILTERS
+	accept_filter(sd);
+#endif
+	heritage.socket = sd;
 	return (0);
 }

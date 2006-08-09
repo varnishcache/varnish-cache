@@ -12,14 +12,8 @@ struct heritage {
 	 */
 	int	fds[4];
 
-	/*
-	 * Two sockets from which to accept connections, one bound to
-	 * loopback only and one bound for wildcard (or possibly a specific
-	 * interface IP number).
-	 */
-#define HERITAGE_NSOCKS		2	/* IPv4 + IPv6 */
-	int			sock_local[HERITAGE_NSOCKS];
-	int			sock_remote[HERITAGE_NSOCKS];
+	/* Socket from which to accept connections */
+	int			socket;
 
 	/* Share memory log fd and size (incl header) */
 	int			vsl_fd;

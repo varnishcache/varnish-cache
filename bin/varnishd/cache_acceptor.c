@@ -194,12 +194,8 @@ vca_main(void *arg)
 	AZ(pipe(pipes));
 	vca_poll(pipes[0]);
 
-	for (u = 0; u < HERITAGE_NSOCKS; u++) {
-		if (heritage.sock_local[u] >= 0)
-			vca_poll(heritage.sock_local[u]);
-		if (heritage.sock_remote[u] >= 0)
-			vca_poll(heritage.sock_remote[u]);
-	}
+	if (heritage.socket >= 0)
+		vca_poll(heritage.socket);
 
 	while (1) {
 		v = poll(pollfd, npoll, 5000);
@@ -213,17 +209,10 @@ vca_main(void *arg)
 			else
 				vca_rcvhdev(sp);
 		}
-		for (u = 0; v && u < HERITAGE_NSOCKS; u++) {
-			if (heritage.sock_local[u] >= 0 &&
-			    pollfd[heritage.sock_local[u]].revents) {
-				accept_f(heritage.sock_local[u]);
-				v--;
-			}
-			if (heritage.sock_remote[u] >= 0 &&
-			    pollfd[heritage.sock_remote[u]].revents) {
-				accept_f(heritage.sock_remote[u]);
-				v--;
-			}
+		if (heritage.socket >= 0 &&
+		    pollfd[heritage.socket].revents) {
+			accept_f(heritage.socket);
+			v--;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &t);
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
@@ -322,19 +311,11 @@ vca_main(void *arg)
 	assert(kq >= 0);
 
 
-	for (u = 0; u < HERITAGE_NSOCKS; u++) {
-		if (heritage.sock_local[u] >= 0) {
-			memset(&ke, 0, sizeof ke);
-			EV_SET(&ke, heritage.sock_local[u],
-			    EVFILT_READ, EV_ADD, 0, 0, accept_f);
-			AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
-		}
-		if (heritage.sock_remote[u] >= 0) {
-			memset(&ke, 0, sizeof ke);
-			EV_SET(&ke, heritage.sock_remote[u],
-			    EVFILT_READ, EV_ADD, 0, 0, accept_f);
-			AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
-		}
+	if (heritage.socket >= 0) {
+		memset(&ke, 0, sizeof ke);
+		EV_SET(&ke, heritage.socket,
+		    EVFILT_READ, EV_ADD, 0, 0, accept_f);
+		AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
 	}
 
 	while (1) {
