@@ -178,6 +178,22 @@ VOBJ(double, cacheable, cacheable)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_l_req_backend(struct sess *sp, struct backend *be)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->backend = be;
+}
+
+struct backend *
+VRT_r_req_backend(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (sp->backend);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define  VREQ(n1, n2)					\
 const char *						\
 VRT_r_req_##n1(struct sess *sp)				\

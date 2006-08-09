@@ -14,11 +14,12 @@ set beobj {
 set spobj {
 	{ client.ip	IP }
 	{ req.request	STRING }
+	{ req.host	STRING }
         { req.url	STRING }
         { req.proto	STRING }
+        { req.backend	BACKEND }
         { obj.valid	BOOL }
         { obj.cacheable	BOOL }
-        { obj.backend	BACKEND }
         { obj.ttl	TIME }
         { req.http.	HEADER }
 }

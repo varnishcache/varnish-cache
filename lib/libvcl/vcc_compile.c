@@ -591,6 +591,13 @@ Cond_Bool(struct var *vp, struct tokenlist *tl)
 }
 
 static void
+Cond_Backend(struct var *vp, struct tokenlist *tl)
+{
+
+	Fc(tl, 1, "%s\n", vp->rname);
+}
+
+static void
 Cond_2(struct tokenlist *tl)
 {
 	struct var *vp;
@@ -619,7 +626,7 @@ Cond_2(struct tokenlist *tl)
 		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
 		case STRING:	L(tl, Cond_String(vp, tl)); break;
 		case TIME:	L(tl, Cond_Int(vp, tl)); break;
-		/* XXX backend == */
+		case BACKEND:	L(tl, Cond_Backend(vp, tl)); break;
 		default:	
 			vsb_printf(tl->sb,
 			    "Variable '%s'"
@@ -834,8 +841,9 @@ Action(struct tokenlist *tl)
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
 				AddRef(tl, tl->t, R_BACKEND);
-				Fc(tl, 0, "= &VGC_backend_%.*s;\n", PF(tl->t));
+				Fc(tl, 0, "VGC_backend_%.*s", PF(tl->t));
 				vcc_NextToken(tl);
+				Fc(tl, 0, ");\n");
 				break;
 			}
 			vsb_printf(tl->sb, "Illegal assignment operator ");
