@@ -90,6 +90,7 @@ AM_CONDITIONAL(NEED_LIBMD, test x$need_libmd = xyes)
 
 # Check which mechanism to use for the acceptor
 AC_CHECK_FUNCS([kqueue])
+AC_CHECK_FUNCS([epoll_ctl])
 AC_CHECK_FUNCS([poll])
 
 AC_CONFIG_FILES([
