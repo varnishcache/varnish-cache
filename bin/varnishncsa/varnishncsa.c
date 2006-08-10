@@ -42,6 +42,7 @@ struct logline {
 	int df_rfini;	// Set to 1 when a ReqServTime has come.
 	unsigned char *df_s; // Datafield for %s, Status
 	unsigned char *df_b; // Datafield for %b, Bytes
+	struct tm *logline_time; // Datafield for %t
 };
 
 /* We make a array of pointers to vsb's. Sbuf is a string buffer.
@@ -83,6 +84,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 	unsigned char *tmpPtr;
 	int j;
 
+	// Used for requesttime.
+	char *tmpPtra;
+        char *tmpPtrb;
+        char *tmpPtrc;
+        int timesec = 0; // Where we store the utime for request as int.
+        char temp_time[27]; // Where we store the string we take from the log
+        time_t req_time; // Timeobject used for making the requesttime.
+	int i;
+
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
 		ob[u] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
@@ -91,6 +101,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 	
 	v = 0;
 	w = 0;
+	i = 0;
+	j = 0;
 	ll[u].df_rfini = 0;
 	ll[u].df_hfini = 0;
 
@@ -172,6 +184,30 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// We use ReqServTime to find how the time the request was delivered
 		// also to define that a request is finished.
 		
+		tmpPtra =  strdup(p + 4);
+		temp_time[0] = '\0';
+
+		for ( tmpPtrb = strtok(tmpPtra," "); tmpPtrb != NULL; tmpPtrb = strtok(NULL, " ")){
+			if (i == 1){
+				// We have the right time
+				free(tmpPtra);
+			   	tmpPtra = tmpPtrb;
+			}
+			//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
+		
+	                i++;
+	         }
+		tmpPtrc = strchr(tmpPtra, '.');
+	        j = strlen(tmpPtrc);                // length of timestamp
+		//printf("j=%d\n", j);
+		strncpy(temp_time, tmpPtra, j);
+		temp_time[j] = '\0';
+		//printf("inten: %s\n",temp_time);
+		timesec = atoi(temp_time);
+		req_time = timesec;
+                ll[u].logline_time = localtime(&req_time);
+                strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
+		
 		ll[u].df_rfini = 1;
 		printf("ReqServTime [%d]\n", u);
 
@@ -224,6 +260,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	default:
 
+		// printf("DEBUG: %s\n", p+4);
+
 		break;
 	}
 
@@ -232,7 +270,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// We have a ReqServTime. Lets print the logline
 		// and clear variables that are different for each request.
 		
-		printf("[%d] %s ", u, ll[u].df_h );
+		printf("[%d] %s - - %s ", u, ll[u].df_h, temp_time );
 		vsb_finish(ob[u]);
 		printf("\"%s\"", vsb_data(ob[u]));
 		printf(" %s %s ", ll[u].df_s, ll[u].df_b);
