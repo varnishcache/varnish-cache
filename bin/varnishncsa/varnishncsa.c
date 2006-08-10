@@ -110,7 +110,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		break;
 
-	case SLT_XID:
+	case SLT_ReqStart:
 
 		// We use XID to catch that a new request is comming inn.
 
@@ -118,25 +118,25 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_RxRequest:
 
-		sbuf_clear(ob[u]);
+		vsb_clear(ob[u]);
 
 		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",4)){
-			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			vsb_bcat(ob[u], p + 4, strlen(p + 4));
 			//printf("Got a HEAD\n");
 		}
 	
 		else if (p[1] >= 4 && !strncasecmp((void *)&p[4], "POST",4)){
-			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			vsb_bcat(ob[u], p + 4, strlen(p + 4));
 			//printf("Got a POST\n");
 		}
 		
 		else if (p[1] >= 3 && !strncasecmp((void *)&p[4], "GET",3)){
-			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			vsb_bcat(ob[u], p + 4, strlen(p + 4));
 			//printf("Got a GET\n");
 		}
 		
 		else {
-			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			vsb_bcat(ob[u], p + 4, strlen(p + 4));
 			//printf("Got something other than HEAD, POST, GET\n");
 		}
 		
@@ -144,15 +144,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_RxURL:
 
-		sbuf_cat(ob[u], " ");
-		sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+		vsb_cat(ob[u], " ");
+		vsb_bcat(ob[u], p + 4, strlen(p + 4));
 
 		break;
 
 	case SLT_RxProtocol:
 		
-		sbuf_cat(ob[u], " ");
-                sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+		vsb_cat(ob[u], " ");
+                vsb_bcat(ob[u], p + 4, strlen(p + 4));
 
 		break;
 
@@ -233,11 +233,11 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// and clear variables that are different for each request.
 		
 		printf("[%d] %s ", u, ll[u].df_h );
-		sbuf_finish(ob[u]);
-		printf("\"%s\"", sbuf_data(ob[u]));
+		vsb_finish(ob[u]);
+		printf("\"%s\"", vsb_data(ob[u]));
 		printf(" %s %s ", ll[u].df_s, ll[u].df_b);
 		printf("\n");
-                sbuf_clear(ob[u]);
+                vsb_clear(ob[u]);
 
 		ll[u].df_rfini = 0;
 
