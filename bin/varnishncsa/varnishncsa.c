@@ -37,8 +37,11 @@
 
 struct logline {
 	char df_h[4 * (3 + 1)]; // Datafield for %h (IP adress)
+	int df_hfini;	// Set to 1 when a SessionClose is seen.
 	unsigned char *df_r; // Datafield for %r (Request)
-
+	int df_rfini;	// Set to 1 when a ReqServTime has come.
+	unsigned char *df_s; // Datafield for %s, Status
+	unsigned char *df_b; // Datafield for %b, Bytes
 };
 
 /* We make a array of pointers to vsb's. Sbuf is a string buffer.
@@ -88,6 +91,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 	
 	v = 0;
 	w = 0;
+	ll[u].df_rfini = 0;
+	ll[u].df_hfini = 0;
 
 	switch (p[0]) {
 
@@ -101,35 +106,87 @@ extended_log_format(unsigned char *p, char *w_opt)
                 j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
                 strncpy(ll[u].df_h, p + 4, j);
                 ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
-                //printf("New session [%d]: %s \n",u, ll[u].df_h);
+                printf("New session [%d]: %s \n",u, ll[u].df_h);
+
+		break;
+
+	case SLT_XID:
+
+		// We use XID to catch that a new request is comming inn.
 
 		break;
 
 	case SLT_RxRequest:
 
-		break;
+		sbuf_clear(ob[u]);
+
+		if (p[1] >= 4 && !strncasecmp((void *)&p[4], "HEAD",4)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got a HEAD\n");
+		}
+	
+		else if (p[1] >= 4 && !strncasecmp((void *)&p[4], "POST",4)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got a POST\n");
+		}
+		
+		else if (p[1] >= 3 && !strncasecmp((void *)&p[4], "GET",3)){
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got a GET\n");
+		}
+		
+		else {
+			sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+			//printf("Got something other than HEAD, POST, GET\n");
+		}
+		
+	break;
 
 	case SLT_RxURL:
-		
+
+		sbuf_cat(ob[u], " ");
+		sbuf_bcat(ob[u], p + 4, strlen(p + 4));
+
 		break;
 
 	case SLT_RxProtocol:
 		
-		break;
-
-	case SLT_RxHeader:
-			
-		break;
-
-	case SLT_ReqEnd:
+		sbuf_cat(ob[u], " ");
+                sbuf_bcat(ob[u], p + 4, strlen(p + 4));
 
 		break;
 
 	case SLT_TxStatus:
+		
+		ll[u].df_s = strdup(p + 4);
 
 		break;
 	
+	case SLT_RxHeader:
+			
+		break;
+	
+
+	case SLT_ReqEnd:
+
+		// We use ReqServTime to find how the time the request was delivered
+		// also to define that a request is finished.
+		
+		ll[u].df_rfini = 1;
+		printf("ReqServTime [%d]\n", u);
+
+		break;
+
 	case SLT_Length:
+
+		// XXX ask DES or PHK about this one. Am I overflowing?
+
+		ll[u].df_b = strdup(p + 4);
+                if (!atoi(ll[u].df_b)){
+	                ll[u].df_b[0] = '-';
+        	        ll[u].df_b[1] = '\0';
+                }
+
 
 		break;
 
@@ -137,17 +194,17 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		// Session is closed, we clean up things. But do not write.
 
-		//printf("Session close [%d]\n", u);
+		printf("Session close [%d]\n", u);
 		
-		v = 1;
-
+		ll[u].df_hfini = 1;
 
 		break;
 
 	case SLT_SessionReuse:
 
-		// It's in SessionReuse we wrap things up.
-		// SessionClose is not suited to use for a write, but to clean up.
+		// We use SessionReuse to catch the IP adress of a session that has already
+		// started with a SessionOpen that we did not catch.
+		// Other than that it is not used.
 
 		// Catch IP if not already done.
 		
@@ -161,9 +218,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 			printf("Got IP from Reuse [%d] : %s\n", u, ll[u].df_h);
 		}
 
-		//printf("Session reuse [%d]\n", u);
-
-		w = 1;
+		printf("Session reuse [%d]\n", u);
 
 		break;
 
@@ -172,20 +227,44 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 	}
 
-	if (v) {
-		// We have a SessionClose. Lets clean.
-		//
-		// Clean IP adress
-		ll[u].df_h[0] = '\0';
-										
-	}
 
-	if (w) {
-		// We have a SessionReuse. Lets print the logline
-		//
+	if (ll[u].df_rfini) {
+		// We have a ReqServTime. Lets print the logline
+		// and clear variables that are different for each request.
 		
-		printf("%s ", ll[u].df_h);
+		printf("[%d] %s ", u, ll[u].df_h );
+		sbuf_finish(ob[u]);
+		printf("\"%s\"", sbuf_data(ob[u]));
+		printf(" %s %s ", ll[u].df_s, ll[u].df_b);
 		printf("\n");
+                sbuf_clear(ob[u]);
+
+		ll[u].df_rfini = 0;
+
+		// Clear the TxStaus
+
+		if (ll[u].df_s != NULL){
+			free(ll[u].df_s);
+			printf("Freed df_s\n");
+		}
+
+		if (ll[u].df_b != NULL){
+			free(ll[u].df_b);
+			printf("Freed df_b\n");
+		}
+
+		if (ll[u].df_hfini) {
+			// We have a SessionClose. Lets clean data.
+			//
+			// Clean IP adress
+			ll[u].df_h[0] = '\0';
+			printf("Clearer [%d]\n", u);
+										
+		}
+
+
+
+
 	}
 	
 	
