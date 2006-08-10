@@ -61,8 +61,7 @@ static int
 pass_chunked(struct sess *sp, int fd, struct http *hp)
 {
 	int i, j;
-	char *b, *q, *e;
-	char *p;
+	char *p, *q;
 	unsigned u;
 	char buf[PASS_BUFSIZ];
 	char *bp, *be;
@@ -76,62 +75,64 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 	p = buf;
 	while (1) {
 		i = http_Read(hp, fd, bp, be - bp);
-		i = read(fd, bp, be - bp);
-		assert(i > 0);
+		assert(i >= 0);
+		if (i == 0 && p == bp)
+			break;
 		bp += i;
 		/* buffer valid from p to bp */
+		assert(bp >= p);
 
+		/* chunk starts with f("%x\r\n", len) */
 		u = strtoul(p, &q, 16);
-		if (q == NULL || (*q != '\n' && *q != '\r')) {
-			INCOMPL();
-			/* XXX: move bp to buf start, get more */
-		}
-		if (*q == '\r')
+		while (q && q < bp && *q == ' ')
+			/* shouldn't happen - but sometimes it does */
 			q++;
+		if (q == NULL || q > bp - 2 /* want \r\n in same buffer */) {
+			/* short - move to start of buffer and extend */
+			memmove(buf, p, bp - p);
+			bp -= p - buf;
+			p = buf;
+			continue;
+		}
+		assert(*q == '\r');
+		q++;
 		assert(*q == '\n');
 		q++;
-		if (u == 0)
+
+		/* we just received the final zero-length chunk */
+		if (u == 0) {
+			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, q - p);
 			break;
+		}
 
-		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, q - p);
+		/* include chunk header */
+		u += q - p;
 
-		p = q;
+		/* include trailing \r\n with chunk */
+		u += 2;
 
-		while (u > 0) {
+		for (;;) {
 			j = u;
-			if (bp == p) {
-				bp = p = buf;
-				break;
-			}
 			if (bp - p < j)
 				j = bp - p;
 			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, j);
+			WRK_Flush(sp->wrk);
 			p += j;
 			u -= j;
-		}
-		while (u > 0) {
-			if (http_GetTail(hp, u, &b, &e)) {
-				j = e - b;
-				sp->wrk->acct.bodybytes +=
-				    WRK_Write(sp->wrk, q, j);
-				u -= j;
-			} else
+			assert(u >= 0);
+			if (u == 0)
 				break;
-		}
-		if (WRK_Flush(sp->wrk))
-			vca_close_session(sp, "remote closed");
-		while (u > 0) {
+			p = bp = buf;
 			j = u;
-			if (j > sizeof buf)
-				j = sizeof buf;
-			i = read(fd, buf, j);
+			if (j > be - bp)
+				j = be - bp;
+			i = http_Read(hp, fd, bp, j);
 			assert(i > 0);
-			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
-			u -= i;
-			if (WRK_Flush(sp->wrk))
-				vca_close_session(sp, "remote closed");
+			bp += i;
 		}
 	}
+	if (WRK_Flush(sp->wrk))
+		vca_close_session(sp, "remote closed");
 	return (0);
 }
 
@@ -155,6 +156,9 @@ PassBody(struct sess *sp)
 	http_CopyResp(sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	/* XXX */
+	if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
+		http_PrintfHeader(sp->fd, sp->http, "Transfer-Encoding: chunked");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
