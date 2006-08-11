@@ -75,7 +75,7 @@
  <xsl:param name="strip-prefix" select="'/'" />
 
  <!-- the length of a line to wrap messages at -->
- <xsl:param name="linelen" select="75" />
+ <xsl:param name="linelen" select="78" />
  
  <!-- whether entries should be grouped by day -->
  <xsl:param name="groupbyday" select="'no'" />
@@ -185,12 +185,12 @@
   <!-- add newline here if separate-daylogs is in effect -->
   <xsl:if test="$groupbyday='yes' and $separate-daylogs='yes'"><xsl:text>&newl;</xsl:text></xsl:if>
   <!-- first line is indented (other indents are done in wrap template) -->
-  <xsl:text>&tab;*&space;</xsl:text>
+  <xsl:text>&space;*&space;</xsl:text>
   <!-- print the paths and message nicely wrapped -->
   <xsl:call-template name="wrap">
    <xsl:with-param name="txt" select="concat($rev,$paths)" />
   </xsl:call-template>
-  <xsl:text>&tab;&space;&space;</xsl:text>
+  <xsl:text>&newl;&space;&space;&space;</xsl:text>
   <xsl:call-template name="wrap">
    <xsl:with-param name="txt" select="$msg" />
   </xsl:call-template>
@@ -312,14 +312,13 @@
      <xsl:call-template name="wrap">
       <xsl:with-param name="txt" select="substring-before($txt,'&newl;')" />
      </xsl:call-template>
-     <!-- print tab -->
-     <xsl:text>&tab;&space;&space;</xsl:text>
+     <xsl:text>&space;&space;&space;</xsl:text>
      <!-- wrap the rest of the text -->
      <xsl:call-template name="wrap">
       <xsl:with-param name="txt" select="substring-after($txt,'&newl;')" />
      </xsl:call-template>
    </xsl:when>
-   <xsl:when test="(string-length($txt) &lt; (($linelen)-9)) or not(contains($txt,' '))">
+   <xsl:when test="(string-length($txt) &lt; (($linelen)-2)) or not(contains($txt,' '))">
     <!-- this is easy, nothing to do -->
     <xsl:value-of select="normalize-space($txt)" />
     <!-- add newline -->
@@ -327,7 +326,7 @@
    </xsl:when>
    <xsl:otherwise>
     <!-- find the first line -->
-    <xsl:variable name="tmp" select="substring($txt,1,(($linelen)-10))" />
+    <xsl:variable name="tmp" select="substring($txt,1,(($linelen)-7))" />
     <xsl:variable name="line">
      <xsl:choose>
       <xsl:when test="contains($tmp,' ')">
@@ -340,9 +339,8 @@
       </xsl:otherwise>
      </xsl:choose>
     </xsl:variable>
-    <!-- print newline and tab -->
     <xsl:value-of select="normalize-space($line)" />
-    <xsl:text>&newl;&tab;&space;&space;</xsl:text>
+    <xsl:text>&newl;&space;&space;&space;</xsl:text>
     <!-- wrap the rest of the text -->
     <xsl:call-template name="wrap">
      <xsl:with-param name="txt" select="substring($txt,string-length($line)+1)" />
