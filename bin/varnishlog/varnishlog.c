@@ -48,7 +48,8 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 	(void)priv;
 
 	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
-		VSL_H_Print(stdout, tag, fd, len, spec, ptr);
+		if (!bflag && !cflag)
+			VSL_H_Print(stdout, tag, fd, len, spec, ptr);
 		return (0);
 	}
 	if (ob[fd] == NULL) {
