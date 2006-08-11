@@ -13,7 +13,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
+#endif
 #include "heritage.h"
 #include "mgt.h"
 
@@ -67,34 +69,38 @@ accept_filter(int fd)
 }
 #endif
 
+static int
+try_sock(int family, const char *port, struct addrinfo **resp)
+{
+	struct addrinfo hints, *res;
+	int ret, sd;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = family;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	ret = getaddrinfo(NULL, port, &hints, &res);
+	if (ret != 0)
+		return (-1);
+	sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (sd < 0)
+		freeaddrinfo(res);
+	else
+		*resp = res;
+	return (sd);
+}
+
 int
 open_tcp(const char *port)
 {
-	struct addrinfo hints, *res;
-	int ret, sd, val;
+	int sd, val;
+	struct addrinfo *res;
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET6;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	if ((ret = getaddrinfo(NULL, port, &hints, &res)) != 0) {
-		fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(ret));
-		return (-1);
-	}
-
-	sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if (sd < 0 && errno == EPROTONOSUPPORT) {
-		freeaddrinfo(res);
-		hints.ai_family = AF_INET;
-		if ((ret = getaddrinfo(NULL, port, &hints, &res)) != 0) {
-			fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(ret));
-			return (-1);
-		}
-		sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	}
+	sd = try_sock(AF_INET6, port, &res);
+	if (sd < 0)
+		sd = try_sock(AF_INET, port, &res);
 	if (sd < 0) {
-		perror("socket()");
-		freeaddrinfo(res);
+		fprintf(stderr, "Failed to get listening socket\n");
 		return (-1);
 	}
 	val = 1;
@@ -127,6 +133,7 @@ open_tcp(const char *port)
 #ifdef HAVE_ACCEPT_FILTERS
 	accept_filter(sd);
 #endif
+	freeaddrinfo(res);
 	heritage.socket = sd;
 	return (0);
 }

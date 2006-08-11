@@ -13,7 +13,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_VASPRINTF
 #include "compat/vasprintf.h"
+#endif
+
 #include "cli_priv.h"
 #include "cli.h"
 #include "vsb.h"
@@ -263,7 +266,7 @@ mgt_cli_callback(struct ev *e, int what)
 		if (p == NULL)
 			return (0);
 		*p = '\0';
-fprintf(stderr, "CLI <%s>\n", cp->buf);
+		fprintf(stderr, "CLI <%s>\n", cp->buf);
 		vsb_clear(cp->cli->sb);
 		cli_dispatch(cp->cli, cli_proto, cp->buf);
 		vsb_finish(cp->cli->sb);

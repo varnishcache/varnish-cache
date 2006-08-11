@@ -17,7 +17,9 @@
 
 #include <err.h>		/* XXX */
 
+#ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
+#endif
 
 #include "heritage.h"
 #include "mgt.h"

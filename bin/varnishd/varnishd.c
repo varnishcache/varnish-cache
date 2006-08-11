@@ -397,7 +397,8 @@ main(int argc, char *argv[])
 	 * but do not answer.  That, on the other hand, would eliminate the
 	 * possibility of doing a "no-glitch" restart of the child process.
 	 */
-	open_tcp(portnumber);
+	if (open_tcp(portnumber))
+		exit (2);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
