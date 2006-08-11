@@ -1,0 +1,13 @@
+		      Installation Instructions
+
+Varnish uses the GNU autotools.  To build and install Varnish, simply
+run the 'configure' script in the top-level directory, then run 'make'
+and 'make install'.
+
+Additional 'configure' options of interest:
+
+  --enable-developer-warnings
+                          enable strict warnings (default is NO)
+  --enable-debugging-symbols
+                          enable debugging symbols (default is NO)
+  --enable-werror         use -Werror (default is NO)
