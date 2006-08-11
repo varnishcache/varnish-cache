@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #ifndef HAVE_VASPRINTF
 #include "compat/vasprintf.h"
@@ -27,6 +28,8 @@
 #include "shmlog.h"
 
 static int		cli_i = -1, cli_o = -1;
+static int		telnet_sock;
+static struct ev	*telnet_ev;
 
 /*--------------------------------------------------------------------*/
 
@@ -134,7 +137,6 @@ mgt_cli_init(void)
 	struct cli_proto *cp;
 	unsigned u, v;
 
-
 	/*
 	 * Build the joint cli_proto by combining the manager process
 	 * entries with with the cache process entries.  The latter
@@ -165,8 +167,6 @@ mgt_cli_init(void)
 	/* Fixup the entry for 'help' entry */
 	assert(!strcmp(cli_proto[0].request, "help"));
 	cli_proto[0].priv = cli_proto;
-
-	/* XXX: open listening sockets, contact cluster server etc */
 }
 
 /*--------------------------------------------------------------------
@@ -324,4 +324,40 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 	cp->ev->callback = mgt_cli_callback;
 	cp->ev->priv = cp;
 	ev_add(mgt_evb, cp->ev);
+}
+
+static int
+telnet_accept(struct ev *ev, int what)
+{
+	socklen_t l;
+	struct sockaddr addr[2];	/* XXX IPv6 hack */
+	int i;
+
+	(void)ev;
+	(void)what;
+	l = sizeof addr;
+	i = accept(telnet_sock, addr, &l);
+	if (i < 0)
+		return (0);
+
+	mgt_cli_setup(i, i, 0);
+	return (0);
+}
+
+int
+mgt_cli_telnet(const char *port)
+{
+
+	telnet_sock = open_tcp(port, 0);
+	if (telnet_sock < 0) {
+		fprintf(stderr, "Could not open TELNET port\n");
+		exit (2);
+	}
+	telnet_ev = ev_new();
+	assert(telnet_ev != NULL);
+	telnet_ev->fd = telnet_sock;
+	telnet_ev->fd_flags = POLLIN;
+	telnet_ev->callback = telnet_accept;
+	ev_add(mgt_evb, telnet_ev);
+	return (0);
 }

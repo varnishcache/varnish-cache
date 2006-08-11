@@ -154,6 +154,7 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
+	fprintf(stderr, "    %-28s # %s\n", "-T port", "Telnet port");
 	fprintf(stderr, "    %-28s # %s\n", "-V", "version");
 	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
 	    "Number of worker threads");
@@ -166,7 +167,6 @@ usage(void)
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
-	-s kind[,storage-options]
 	-l logfile,logsize
 	-u uid
 	-a CLI_port
@@ -322,6 +322,7 @@ main(int argc, char *argv[])
 	const char *fflag = NULL;
 	const char *sflag = "file";
 	const char *hflag = "classic";
+	const char *Tflag = NULL;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -334,7 +335,7 @@ main(int argc, char *argv[])
 	heritage.wthread_timeout = 10;
 	heritage.mem_workspace = 4096;
 
-	while ((o = getopt(argc, argv, "b:df:h:p:s:t:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "b:df:h:p:s:t:T:Vw:")) != -1)
 		switch (o) {
 		case 'b':
 			bflag = optarg;
@@ -356,6 +357,9 @@ main(int argc, char *argv[])
 			break;
 		case 't':
 			heritage.default_ttl = strtoul(optarg, NULL, 0);
+			break;
+		case 'T':
+			Tflag = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishd");
@@ -397,7 +401,8 @@ main(int argc, char *argv[])
 	 * but do not answer.  That, on the other hand, would eliminate the
 	 * possibility of doing a "no-glitch" restart of the child process.
 	 */
-	if (open_tcp(portnumber))
+	heritage.socket = open_tcp(portnumber, 1);
+	if (heritage.socket < 0)
 		exit (2);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
@@ -411,7 +416,7 @@ main(int argc, char *argv[])
 
 	mgt_cli_init();
 
-	mgt_run(dflag);
+	mgt_run(dflag, Tflag);
 
 	exit(0);
 }

@@ -276,7 +276,7 @@ mgt_sigint(struct ev *e, int what)
  */
 
 void
-mgt_run(int dflag)
+mgt_run(int dflag, const char *Tflag)
 {
 	struct sigaction sac;
 	struct ev *e;
@@ -289,6 +289,9 @@ mgt_run(int dflag)
 
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
+
+	if (Tflag)
+		mgt_cli_telnet(Tflag);
 
 	e = ev_new();
 	assert(e != NULL);
