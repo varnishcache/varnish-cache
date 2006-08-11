@@ -188,7 +188,11 @@
   <xsl:text>&tab;*&space;</xsl:text>
   <!-- print the paths and message nicely wrapped -->
   <xsl:call-template name="wrap">
-   <xsl:with-param name="txt" select="concat($rev,$paths,$msg)" />
+   <xsl:with-param name="txt" select="concat($rev,$paths)" />
+  </xsl:call-template>
+  <xsl:text>&tab;&space;&space;</xsl:text>
+  <xsl:call-template name="wrap">
+   <xsl:with-param name="txt" select="$msg" />
   </xsl:call-template>
  </xsl:template>
 
