@@ -111,7 +111,7 @@ void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
 unsigned UintVal(struct tokenlist *tl);
 void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
-char *EncString(struct token *t);
+void EncString(struct vsb *sb, struct token *t);
 
 
 /* vcc_obj.c */

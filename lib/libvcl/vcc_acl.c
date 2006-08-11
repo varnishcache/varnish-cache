@@ -53,7 +53,6 @@ vcc_Acl(struct tokenlist *tl)
 {
 	unsigned mask, para, not;
 	struct token *t, *an;
-	char *p;
 
 	vcc_NextToken(tl);
 
@@ -93,14 +92,16 @@ vcc_Acl(struct tokenlist *tl)
 			ExpectErr(tl, CNUM);
 			mask = UintVal(tl);
 		} 
-		Fc(tl, 1, "{ %u, %u, %u, %.*s, \"", not, mask, para, PF(t));
+		Fc(tl, 1, "{ %u, %u, %u, ", not, mask, para);
+		EncString(tl->fc, t);
+		Fc(tl, 0, ", \"");
 		if (para)
 			Fc(tl, 0, "(");
 		if (not)
 			Fc(tl, 0, "!");
-		p = EncString(t);
-		Fc(tl, 0, "%s", p);
-		free(p);
+		Fc(tl, 0, "\\\"\" ");
+		EncString(tl->fc, t);
+		Fc(tl, 0, " \"\\\"");
 		if (mask)
 			Fc(tl, 0, "/%u", mask);
 		if (para)

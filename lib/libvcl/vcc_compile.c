@@ -142,53 +142,22 @@ Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
-char *
-EncString(struct token *t)
+void
+EncString(struct vsb *sb, struct token *t)
 {
-	char *p, *q;
-	const char *r;
-	unsigned u;
+	const char *p;
 
 	assert(t->tok == CSTR);
-	p = malloc(t->e - t->b);
-	assert(p != NULL);
-	q = p;
-	for (r = t->b + 1; r < t->e - 1; ) {
-		if (*r != '\\') {
-			*q++ = *r++;
-			continue;
-		}
-		switch (r[1]) {
-		case 'n':	*q++ = '\n';	r += 2; break;
-		case 'r':	*q++ = '\r';	r += 2; break;
-		case 'v':	*q++ = '\v';	r += 2; break;
-		case 'f':	*q++ = '\f';	r += 2; break;
-		case 't':	*q++ = '\t';	r += 2; break;
-		case 'b':	*q++ = '\b';	r += 2; break;
-		case '0': case '1': case '2': case '3':
-		case '4': case '5': case '6': case '7':
-			u = r[1] - '0';
-			r += 2;
-			if (isdigit(r[0]) && (r[0] - '0') < 8) {
-				u <<= 3;
-				u |= r[0] - '0';
-				r++;
-				if (isdigit(r[0]) && (r[0] - '0') < 8) {
-					u <<= 3;
-					u |= r[0] - '0';
-					r++;
-				}
-			}
-			*q++ = u;
-			break;
-		default:
-			*q++ = r[1];	
-			r += 2;
-			break;
-		}
+	vsb_cat(sb, "\"");
+	for (p = t->dec; *p != '\0'; p++) {
+		if (*p == '\\' || *p == '"')
+			vsb_printf(sb, "\\%c", *p);
+		else if (isgraph(*p))
+			vsb_printf(sb, "%c", *p);
+		else
+			vsb_printf(sb, "\\%03o", *p);
 	}
-	*q = '\0';
-	return (p);
+	vsb_cat(sb, "\"");
 }
 
 /*--------------------------------------------------------------------*/
@@ -492,19 +461,20 @@ RateVal(struct tokenlist *tl)
 static void
 vcc_re(struct tokenlist *tl, const char *str, struct token *re)
 {
-	char buf[32], *p;
+	char buf[32];
 
-	p = EncString(re);
-	if (VRT_re_test(tl->sb, p)) {
+	assert(re->tok == CSTR);
+	if (VRT_re_test(tl->sb, re->dec)) {
 		vcc_ErrWhere(tl, re);
 		return;
 	}
-	free(p);
 	sprintf(buf, "VGC_re_%u", tl->recnt++);
 
 	Fc(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
 	Fh(tl, 0, "void *%s;\n", buf);
-	Fi(tl, 0, "\tVRT_re_init(&%s, %.*s);\n", buf, PF(re));
+	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
+	EncString(tl->fi, re);
+	Fi(tl, 0, ");\n");
 	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
 }
 
@@ -528,7 +498,8 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		Fc(tl, 0, "%.*s)\n", PF(tl->t));
+		EncString(tl->fc, tl->t);
+		Fc(tl, 0, ")\n");
 		vcc_NextToken(tl);
 		break;
 	default:
@@ -931,8 +902,6 @@ Backend(struct tokenlist *tl)
 	struct token *t_be = NULL;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
-	char *host = NULL;
-	char *port = NULL;
 	const char *ep;
 
 	vcc_NextToken(tl);
@@ -969,13 +938,17 @@ Backend(struct tokenlist *tl)
 		case HOSTNAME:
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
-			Fc(tl, 1, "\t%s %.*s);\n", vp->lname, PF(tl->t));
+			Fc(tl, 1, "\t%s ", vp->lname);
+			EncString(tl->fc, t_host);
+			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
 			break;
 		case PORTNAME:
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
-			Fc(tl, 1, "\t%s %.*s);\n", vp->lname, PF(tl->t));
+			Fc(tl, 1, "\t%s ", vp->lname);
+			EncString(tl->fc, t_port);
+			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
 			break;
 		default:
@@ -994,18 +967,17 @@ Backend(struct tokenlist *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	host = EncString(t_host);
-	ep = CheckHostPort(host, "80");
+	ep = CheckHostPort(t_host->dec, "80");
 	if (ep != NULL) {
 		vsb_printf(tl->sb, "Backend '%.*s': %s\n", PF(t_be), ep);
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
 	if (t_port != NULL) {
-		port = EncString(t_port);
-		ep = CheckHostPort(host, port);
+		ep = CheckHostPort(t_host->dec, t_port->dec);
 		if (ep != NULL) {
-			vsb_printf(tl->sb, "Backend '%.*s': %s\n", PF(t_be), ep);
+			vsb_printf(tl->sb,
+			    "Backend '%.*s': %s\n", PF(t_be), ep);
 			vcc_ErrWhere(tl, t_port);
 			return;
 		}
