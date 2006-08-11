@@ -118,8 +118,8 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, j);
 			WRK_Flush(sp->wrk);
 			p += j;
+			assert(u >= j);
 			u -= j;
-			assert(u >= 0);
 			if (u == 0)
 				break;
 			p = bp = buf;
