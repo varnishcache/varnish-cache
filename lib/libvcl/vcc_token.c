@@ -185,6 +185,7 @@ vcc_decstr(struct tokenlist *tl)
 {
 	const char *p;
 	char *q;
+	unsigned char u;
 
 	assert(tl->t->tok == CSTR);
 	tl->t->dec = malloc((tl->t->e - tl->t->b) - 1);
@@ -209,7 +210,15 @@ vcc_decstr(struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return(1);
 		}
-		*q++ = vcc_xdig(p[1]) * 16 + vcc_xdig(p[2]);
+		u = vcc_xdig(p[1]) * 16 + vcc_xdig(p[2]);
+		if (!isgraph(u)) {
+			vcc_AddToken(tl, CSTR, p, p + 3);
+			vsb_printf(tl->sb,
+			    "Control character in %%xx escape\n");
+			vcc_ErrWhere(tl, tl->t);
+			return(1);
+		}
+		*q++ = u;
 		p += 3;
 	}
 	*q++ = '\0';
