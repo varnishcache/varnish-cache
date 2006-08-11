@@ -40,7 +40,7 @@ TAILQ_HEAD(hcl_head, hcl_entry);
 
 static struct hcl_head *hcl_head;
 static unsigned hcl_nhash = 4096;
-static unsigned hcl_nmtx = 256;
+static unsigned hcl_nmtx = 4096;
 static pthread_mutex_t *hcl_mutex;
 
 /*--------------------------------------------------------------------*/
@@ -131,7 +131,7 @@ hcl_init(const char *p)
 	}
 	hcl_nhash = u1;
 	if (i == 1) {
-		hcl_nmtx = hcl_nhash / 16;
+		hcl_nmtx = hcl_nhash;
 		if (hcl_nmtx <  1)
 			hcl_nmtx = 1;
 		return(0);
