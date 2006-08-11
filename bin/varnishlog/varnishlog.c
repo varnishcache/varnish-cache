@@ -58,7 +58,7 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 	switch (tag) {
 	case SLT_VCL_call:
 		invcl[fd] = 1;
-		vsb_printf(ob[fd], "%5d %-12s %c <%.*s",
+		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag],
 		    ((spec & VSL_S_CLIENT) ? 'c' : \
 		    (spec & VSL_S_BACKEND) ? 'b' : ' '),
@@ -78,8 +78,10 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		invcl[fd] = 0;
 		break;
 	}
-	if (invcl[fd])
+	if (invcl[fd]) {
 		vsb_cat(ob[fd], "\n");
+		invcl[fd] = 0;
+	}
 	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
 	    fd, VSL_tags[tag],
 	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '),
