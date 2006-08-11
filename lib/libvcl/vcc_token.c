@@ -164,6 +164,59 @@ vcc_IdIs(struct token *t, const char *p)
 }
 
 /*--------------------------------------------------------------------
+ * Decode %xx in a string
+ */
+
+static int
+vcc_xdig(const char c)
+{
+	static const char *xdigit =
+	    "0123456789abcdef"
+	    "0123456789ABCDEF";
+	const char *p;
+
+	p = strchr(xdigit, c);
+	assert(p != NULL);
+	return ((p - xdigit) % 16);
+}
+
+static int
+vcc_decstr(struct tokenlist *tl)
+{
+	const char *p;
+	char *q;
+
+	assert(tl->t->tok == CSTR);
+	tl->t->dec = malloc((tl->t->e - tl->t->b) - 1);
+	assert(tl->t->dec != NULL);
+	q = tl->t->dec;
+	for (p = tl->t->b + 1; p < tl->t->e - 1; ) {
+		if (*p != '%') {
+			*q++ = *p++;
+			continue;
+		}
+		if (p + 4 > tl->t->e) {
+			vcc_AddToken(tl, CSTR, p, tl->t->e);
+			vsb_printf(tl->sb,
+			    "Incomplete %%xx escape\n");
+			vcc_ErrWhere(tl, tl->t);
+			return(1);
+		}
+		if (!isxdigit(p[1]) || !isxdigit(p[2])) {
+			vcc_AddToken(tl, CSTR, p, p + 3);
+			vsb_printf(tl->sb,
+			    "Illegal hex char in %%xx escape\n");
+			vcc_ErrWhere(tl, tl->t);
+			return(1);
+		}
+		*q++ = vcc_xdig(p[1]) * 16 + vcc_xdig(p[2]);
+		p += 3;
+	}
+	*q++ = '\0';
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Add a token to the token list.
  */
 
@@ -235,16 +288,21 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 		/* Match strings, with \\ and \" escapes */
 		if (*p == '"') {
 			for (q = p + 1; q < e; q++) {
-				if (*q == '\\' && q[1] == '\\')
-					q++;
-				else if (*q == '\\' && q[1] == '"')
-					q++;
-				else if (*q == '"') {
+				if (*q == '"') {
 					q++;
 					break;
 				}
+				if (*q == '\r' || *q == '\n') {
+					vcc_AddToken(tl, EOI, p, q);
+					vsb_printf(tl->sb,
+					    "Unterminated string at\n");
+					vcc_ErrWhere(tl, tl->t);
+					return;
+				}
 			}
 			vcc_AddToken(tl, CSTR, p, q);
+			if (vcc_decstr(tl))
+				return;
 			p = q;
 			continue;
 		}

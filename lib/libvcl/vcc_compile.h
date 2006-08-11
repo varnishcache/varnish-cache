@@ -13,6 +13,7 @@ struct token {
 	const char		*e;
 	TAILQ_ENTRY(token)	list;
 	unsigned		cnt;
+	char			*dec;
 };
 
 struct tokenlist {
