@@ -16,7 +16,6 @@
 #ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
 #endif
-#include "heritage.h"
 #include "mgt.h"
 
 /*--------------------------------------------------------------------*/
@@ -91,7 +90,7 @@ try_sock(int family, const char *port, struct addrinfo **resp)
 }
 
 int
-open_tcp(const char *port)
+open_tcp(const char *port, int http)
 {
 	int sd, val;
 	struct addrinfo *res;
@@ -131,9 +130,11 @@ open_tcp(const char *port)
 		return (-1);
 	}
 #ifdef HAVE_ACCEPT_FILTERS
-	accept_filter(sd);
+	if (http)
+		accept_filter(sd);
+#else
+	(void)http;
 #endif
 	freeaddrinfo(res);
-	heritage.socket = sd;
-	return (0);
+	return (sd);
 }
