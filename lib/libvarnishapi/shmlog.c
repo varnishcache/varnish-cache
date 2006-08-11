@@ -155,9 +155,11 @@ VSL_OpenLog(struct VSL_data *vd)
 	vd->logend = vd->logstart + vsl_lh->size;
 	vd->ptr = vd->logstart;
 
-	if (!vd->d_opt)
-		while (vsl_nextlog(vd, &p) == 1)
-			continue;
+	if (!vd->d_opt && vd->fi == NULL) {
+		for (p = vd->ptr; *p != SLT_ENDMARKER; )
+			p += p[1] + 5;
+		vd->ptr = p;
+	}
 	return (0);
 }
 
