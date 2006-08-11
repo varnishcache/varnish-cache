@@ -23,7 +23,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
+#endif
 #include "shmlog.h"
 #include "cache.h"
 
