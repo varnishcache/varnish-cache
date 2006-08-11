@@ -43,6 +43,8 @@ struct logline {
 	unsigned char *df_s; // Datafield for %s, Status
 	unsigned char *df_b; // Datafield for %b, Bytes
 	struct tm *logline_time; // Datafield for %t
+	unsigned char *df_R; // Datafield for %{Referer}i
+	unsigned char *df_U; // Datafield for %{User-agent}i
 };
 
 /* We make a array of pointers to vsb's. Sbuf is a string buffer.
@@ -85,13 +87,14 @@ extended_log_format(unsigned char *p, char *w_opt)
 	int j;
 
 	// Used for requesttime.
-	char *tmpPtra;
-        char *tmpPtrb;
-        char *tmpPtrc;
+	char *tmpPtra = NULL;
+        char *tmpPtrb = NULL;
+        char *tmpPtrc = NULL;
         int timesec = 0; // Where we store the utime for request as int.
         char temp_time[27]; // Where we store the string we take from the log
         time_t req_time; // Timeobject used for making the requesttime.
 	int i;
+
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
@@ -175,7 +178,19 @@ extended_log_format(unsigned char *p, char *w_opt)
 		break;
 	
 	case SLT_RxHeader:
-			
+		/*
+		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
+                        ll[u].df_U = strdup(p + 4);
+                }
+                if (p[1] >= 8 && !strncasecmp((void *)&p[4], "referer:",8)){
+                        ll[u].df_R = strdup(p + 4);
+                }
+		else if (ll[u].df_R == NULL){
+                        ll[u].df_R = strdup(p + 4);
+                        ll[u].df_R[0] = '-';
+                        ll[u].df_R[1] = '\0';
+                }
+		*/
 		break;
 	
 
@@ -183,14 +198,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		// We use ReqServTime to find how the time the request was delivered
 		// also to define that a request is finished.
-		
+		/*	
 		tmpPtra =  strdup(p + 4);
+		tmpPtrb = malloc(strlen(p + 4));
+		tmpPtrc = malloc(strlen(p + 4));
 		temp_time[0] = '\0';
 
 		for ( tmpPtrb = strtok(tmpPtra," "); tmpPtrb != NULL; tmpPtrb = strtok(NULL, " ")){
 			if (i == 1){
 				// We have the right time
-				free(tmpPtra);
 			   	tmpPtra = tmpPtrb;
 			}
 			//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
@@ -207,7 +223,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 		req_time = timesec;
                 ll[u].logline_time = localtime(&req_time);
                 strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
-		
+		*/
 		ll[u].df_rfini = 1;
 		printf("ReqServTime [%d]\n", u);
 
@@ -218,11 +234,12 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// XXX ask DES or PHK about this one. Am I overflowing?
 
 		ll[u].df_b = strdup(p + 4);
+		/*
                 if (!atoi(ll[u].df_b)){
 	                ll[u].df_b[0] = '-';
         	        ll[u].df_b[1] = '\0';
                 }
-
+		*/
 
 		break;
 
@@ -269,27 +286,63 @@ extended_log_format(unsigned char *p, char *w_opt)
 	if (ll[u].df_rfini) {
 		// We have a ReqServTime. Lets print the logline
 		// and clear variables that are different for each request.
-		
-		printf("[%d] %s - - %s ", u, ll[u].df_h, temp_time );
-		vsb_finish(ob[u]);
-		printf("\"%s\"", vsb_data(ob[u]));
-		printf(" %s %s ", ll[u].df_s, ll[u].df_b);
-		printf("\n");
-                vsb_clear(ob[u]);
+		//
 
+		if (ll[u].df_h[0] == '\0'){
+		printf("Tom IP \n");		
+		}
+		else{	
+			printf("[%d] %s - -  ", u, ll[u].df_h );
+			vsb_finish(ob[u]);
+			printf("\"%s\"", vsb_data(ob[u]));
+			printf(" %s %s \"%s\" \"%s\"", ll[u].df_s, ll[u].df_b,  ll[u].df_R,  ll[u].df_U);
+			printf("\n");
+		}
+
+		vsb_finish(ob[u]);
+               	vsb_clear(ob[u]);
 		ll[u].df_rfini = 0;
 
 		// Clear the TxStaus
 
 		if (ll[u].df_s != NULL){
 			free(ll[u].df_s);
-			printf("Freed df_s\n");
+			printf("Freed df_s [%d]\n", u);
 		}
 
 		if (ll[u].df_b != NULL){
 			free(ll[u].df_b);
-			printf("Freed df_b\n");
+			printf("Freed df_b [%d]\n", u);
 		}
+
+		// Clean User-Agent and Referer
+		if (ll[u].df_U != NULL){
+			free(ll[u].df_U);
+			printf("Freed df_U [%d]\n", u);
+		}
+		
+		if (ll[u].df_R != NULL){
+			free(ll[u].df_R);
+			printf("Freed df_R [%d]\n", u);
+		}
+
+		// Clean up ReqEnd/Time variables
+		
+		if (tmpPtra != NULL){
+			free(tmpPtra);
+			printf("Freed tmpPtra [%d]\n", u);
+		}
+
+		if (tmpPtrb != NULL){
+			free(tmpPtrb);
+			printf("Freed tmpPtrb [%d]\n", u);
+		}
+		if (tmpPtrc != NULL){
+			free(tmpPtrc);
+			printf("Freed tmpPtrc [%d]\n", u);
+		}
+		temp_time[0] = '\0';	
+		
 
 		if (ll[u].df_hfini) {
 			// We have a SessionClose. Lets clean data.
