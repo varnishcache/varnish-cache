@@ -13,7 +13,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
+#endif
 #include "heritage.h"
 #include "mgt.h"
 
