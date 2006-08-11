@@ -30,7 +30,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
+#endif
 
 #include "heritage.h"
 #include "shmlog.h"
@@ -422,7 +424,6 @@ accept_f(int fd)
 static void *
 vca_main(void *arg)
 {
-	unsigned u;
 	struct kevent ke;
 	int i;
 	struct sess *sp;
