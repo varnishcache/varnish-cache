@@ -2,7 +2,7 @@
 
 INCLUDES = -I$(top_srcdir)/include
 
-lib_LIBRARIES = libcompat.a
+noinst_LIBRARIES = libcompat.a
 
 libcompat_a_SOURCES = \
 	asprintf.c \
