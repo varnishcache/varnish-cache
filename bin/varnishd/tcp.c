@@ -33,6 +33,12 @@ TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbu
 		strlcpy(pbuf, "Failed", plen);
 		return;
 	}
+	/* XXX dirty hack for v4-to-v6 mapped addresses */
+	if (strncmp(abuf, "::ffff:", 7) == 0) {
+		for (i = 0; abuf[i + 7]; ++i)
+			abuf[i] = abuf[i + 7];
+		abuf[i] = '\0';
+	}
 }
 
 /*--------------------------------------------------------------------*/
