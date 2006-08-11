@@ -422,7 +422,6 @@ accept_f(int fd)
 static void *
 vca_main(void *arg)
 {
-	unsigned u;
 	struct kevent ke;
 	int i;
 	struct sess *sp;
