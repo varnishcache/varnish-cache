@@ -5,6 +5,7 @@ flexelint \
 	-I/usr/include \
 	-I. \
 	-I../../include \
+	-DHAVE_KQUEUE \
 	flint.lnt \
 	*.c > $T 2>&1
 
