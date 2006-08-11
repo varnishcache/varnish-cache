@@ -219,6 +219,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		u = (p[2] << 8) | p[3];
 		switch(p[0]) {
 		case SLT_SessionOpen:
+		case SLT_ReqStart:
 			vd->map[u] |= M_CLIENT;
 			vd->map[u] &= ~M_BACKEND;
 			break;
