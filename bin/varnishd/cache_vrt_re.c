@@ -45,6 +45,7 @@ VRT_re_match(const char *s, void *re)
 
 	if (s == NULL)
 		return (0);
+	assert(re != NULL);
 	t = re;
 	i = regexec(t, s, 0, NULL, 0);
 	if (i == 0)
