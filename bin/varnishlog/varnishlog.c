@@ -18,30 +18,19 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
-
-static char *
-vis_it(unsigned char *p)
-{
-	static char visbuf[255*4 + 3 + 1];
-
-	strcpy(visbuf, " [");
-	strvisx(visbuf + 2, p + 4, p[1],
-	    VIS_OCTAL | VIS_TAB | VIS_NL);
-	strcat(visbuf, "]");
-	return (visbuf);
-}
+static int	bflag, cflag;
 
 /* Ordering-----------------------------------------------------------*/
 
 static struct vsb	*ob[65536];
-static int 		hc[65536];
-static int 		xrf[65536];
+static unsigned char	invcl[65536];
 
 static void
 clean_order(void)
 {
 	unsigned u;
 
+printf("Clean\n");
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
@@ -52,143 +41,139 @@ clean_order(void)
 	}
 }
 
-static void 
-order(unsigned char *p, int h_opt)
+static int 
+h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
-	unsigned u, v;
 
-	u = (p[2] << 8) | p[3];
-	if (ob[u] == NULL) {
-		ob[u] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-		assert(ob[u] != NULL);
+	(void)priv;
+
+	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
+		VSL_H_Print(stdout, tag, fd, len, spec, ptr);
+		return (0);
 	}
-	v = 0;
-	switch (p[0]) {
+	if (ob[fd] == NULL) {
+		ob[fd] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+		assert(ob[fd] != NULL);
+	}
+	switch (tag) {
 	case SLT_VCL_call:
-		vsb_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		if (p[1] > 0) {
-			vsb_cat(ob[u], " <");
-			vsb_bcat(ob[u], p + 4, p[1]);
-		}
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "hit", 3))
-			hc[u]++;
-		break;
+		invcl[fd] = 1;
+		vsb_printf(ob[fd], "%5d %-12s %c <%.*s",
+		    fd, VSL_tags[tag],
+		    ((spec & VSL_S_CLIENT) ? 'c' : \
+		    (spec & VSL_S_BACKEND) ? 'b' : ' '),
+		    len, ptr);
+		return (0);
 	case SLT_VCL_trace:
-		if (p[1] > 0) {
-			vsb_cat(ob[u], " ");
-			vsb_bcat(ob[u], p + 4, p[1]);
-		}
-		break;
 	case SLT_VCL_return:
-		if (p[1] > 0) {
-			vsb_cat(ob[u], " ");
-			vsb_bcat(ob[u], p + 4, p[1]);
-			vsb_cat(ob[u], ">\n");
+		if (invcl[fd]) {
+			vsb_cat(ob[fd], " ");
+			vsb_bcat(ob[fd], ptr, len);
+			return (0);
 		}
-		if (h_opt && p[1] == 7 && !memcmp(p + 4, "deliver", 7))
-			hc[u]++;
-		if (h_opt && p[1] == 6 && !memcmp(p + 4, "insert", 6)) {
-			if (hc[xrf[u]] == 1) {
-				hc[u] += 2;
-				hc[xrf[u]] = 4;
-			}
-		}
-		break;
-	case SLT_Debug:
-		if (p[1] == 0)
-			break;
-		if (!h_opt)
-			;
-		else if (p[1] > 4 && !memcmp(p + 4, "TTD:", 4))
-			break;
-		vsb_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		if (p[1] > 0)
-			vsb_cat(ob[u], vis_it(p));
-		vsb_cat(ob[u], "\n");
-		break;
-	case SLT_HttpError:
-		if (!h_opt) 
-			v = 1;
-		else if (p[1] == 16 && !memcmp(p + 4, "Received nothing", 16))
-			;
-		else if (p[1] == 17 && !memcmp(p + 4, "Received errno 54", 17))
-			;
-		else
-			v = 1;
-		break;
-	case SLT_SessionClose:
-		if (!h_opt) 
-			v = 1;
-		else if (p[1] == 10 && !memcmp(p + 4, "no request", 10))
-			;
-		else if (p[1] == 7 && !memcmp(p + 4, "timeout", 7))
-			;
-		else
-			v = 1;
-		break;
-	case SLT_RxRequest:
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "GET", 3))
-			hc[u]++;
-		if (h_opt && p[1] == 4 && !memcmp(p + 4, "HEAD", 4))
-			hc[u]++;
-		v = 1;
-		break;
-	case SLT_Backend:
-		xrf[u] = atoi(p + 4);
-		v = 1;
-		break;
-	case SLT_RxStatus:
-		if (h_opt && p[1] == 3 && !memcmp(p + 4, "200", 3))
-			hc[u]++;
-		v = 1;
 		break;
 	default:
-		v = 1;
+		if (invcl[fd])
+			vsb_cat(ob[fd], "\n");
+		invcl[fd] = 0;
 		break;
 	}
-	if (v) {
-		vsb_printf(ob[u], "%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		if (p[1] > 0) {
-			vsb_cat(ob[u], " <");
-			vsb_bcat(ob[u], p + 4, p[1]);
-			vsb_cat(ob[u], ">");
-		}
-		vsb_cat(ob[u], "\n");
-	}
-	if (u == 0) {
-		vsb_finish(ob[u]);
-		printf("%s", vsb_data(ob[u]));
-		vsb_clear(ob[u]);
-		return;
-	}
-	switch (p[0]) {
-	case SLT_SessionClose:
-	case SLT_SessionReuse:
+	if (invcl[fd])
+		vsb_cat(ob[fd], "\n");
+	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
+	    fd, VSL_tags[tag],
+	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '),
+	    len, ptr);
+	switch (tag) {
+	case SLT_ReqEnd:
 	case SLT_BackendClose:
 	case SLT_BackendReuse:
-		vsb_finish(ob[u]);
-		if ((hc[u] != 4 || h_opt == 0) && vsb_len(ob[u]) > 1)
-			printf("%s\n", vsb_data(ob[u]));
-		vsb_clear(ob[u]);
-		hc[u] = 0;
-		xrf[u] = 0;
+	case SLT_StatSess:
+		vsb_finish(ob[fd]);
+		if (vsb_len(ob[fd]) > 1)
+			printf("%s\n", vsb_data(ob[fd]));
+		vsb_clear(ob[fd]);
 		break;
 	default:
 		break;
 	}
+	return (0);
 }
 
+static void
+do_order(struct VSL_data *vd)
+{
+	int i;
 
+	if (!bflag) {
+		VSL_Select(vd, SLT_SessionOpen);
+		VSL_Select(vd, SLT_SessionClose);
+		VSL_Select(vd, SLT_ReqEnd);
+	}
+	if (!cflag) {
+		VSL_Select(vd, SLT_BackendOpen);
+		VSL_Select(vd, SLT_BackendClose);
+		VSL_Select(vd, SLT_BackendReuse);
+	}
+	while (1) {
+		i = VSL_Dispatch(vd, h_order, NULL);
+		if (i == 0) {
+			clean_order();
+			fflush(stdout);
+		}
+		else if (i < 0)
+			break;
+	} 
+	clean_order();
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+do_write(struct VSL_data *vd, const char *w_opt)
+{
+	FILE *wfile = NULL;
+	unsigned u;
+	int i;
+	unsigned char *p;
+
+	if (!strcmp(w_opt, "-"))
+		wfile = stdout;
+	else
+		wfile = fopen(w_opt, "w");
+	if (wfile == NULL) {
+		perror(w_opt);
+		exit (1);
+	}
+	u = 0;
+	while (1) {
+		i = VSL_NextLog(vd, &p);
+		if (i < 0)
+			break;
+		if (i == 0) {
+			fflush(wfile);
+			fprintf(stderr, "\nFlushed\n");
+		} else {
+			i = fwrite(p, 5 + p[1], 1, wfile);
+			if (i != 1)
+				perror(w_opt);
+			u++;
+			if (!(u % 1000)) {
+				fprintf(stderr, "%u\r", u);
+				fflush(stderr);
+			}
+		}
+	}
+	exit (0);
+}
 
 /*--------------------------------------------------------------------*/
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishlog [-oV] [-w file] [-r file]\n");
+	fprintf(stderr,
+	    "usage: varnishlog [(stdopts)] [-oV] [-w file] [-r file]\n");
 	exit(1);
 }
 
@@ -196,26 +181,14 @@ int
 main(int argc, char **argv)
 {
 	int i, c;
-	unsigned u, v;
-	unsigned char *p;
 	int o_flag = 0;
 	char *w_opt = NULL;
-	FILE *wfile = NULL;
-	int h_opt = 0;
 	struct VSL_data *vd;
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "hoVw:")) != -1) {
-		i = VSL_Arg(vd, c, optarg);
-		if (i < 0)
-			exit (1);
-		if (i > 0)
-			continue;
+	while ((c = getopt(argc, argv, VSL_ARGS "oVw:")) != -1) {
 		switch (c) {
-		case 'h':
-			h_opt = 1;
-			break;
 		case 'o':
 			o_flag = 1;
 			break;
@@ -225,79 +198,42 @@ main(int argc, char **argv)
 		case 'w':
 			w_opt = optarg;
 			break;
+		case 'c':
+			cflag = 1;
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
+		case 'b':
+			bflag = 1;
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
 		default:
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
 			usage();
 		}
 	}
 
-	if (VSL_OpenLog(vd))
-		exit (1);
-
 	if (o_flag && w_opt != NULL)
 		usage();
 
-	if (w_opt != NULL) {
-		if (!strcmp(w_opt, "-"))
-			wfile = stdout;
-		else
-			wfile = fopen(w_opt, "w");
-		if (wfile == NULL) {
-			perror(w_opt);
-			exit (1);
-		}
-	}
-	u = 0;
-	v = 0;
+	if (VSL_OpenLog(vd))
+		exit (1);
+
+	if (w_opt != NULL) 
+		do_write(vd, w_opt);
+
+	if (o_flag)
+		do_order(vd);
 
 	while (1) {
-		i = VSL_NextLog(vd, &p);
-		if (i < 0)
+		i = VSL_Dispatch(vd, VSL_H_Print, stdout);
+		if (i == 0)
+			fflush(stdout);
+		else if (i < 0)
 			break;
-		if (i == 0) {
-			if (w_opt == NULL) {
-				if (o_flag && ++v == 100)
-					clean_order();
-				fflush(stderr);
-			} else if (++v == 100) {
-				fflush(wfile);
-				fprintf(stderr, "\nFlushed\n");
-			}
-			usleep(50000);
-			continue;
-		}
-		v = 0;
-		if (wfile != NULL) {
-			i = fwrite(p, 5 + p[1], 1, wfile);
-			if (i != 1)
-				perror(w_opt);
-			u++;
-			if (!(u % 1000)) {
-				fprintf(stderr, "%u\r", u);
-				fflush(stderr);
-			}
-			continue;
-		}
-		if (o_flag) {
-			order(p, h_opt);
-			continue;
-		}
-		u = (p[2] << 8) | p[3];
-		printf("%02x %3d %4d %-12s",
-		    p[0], p[1], u, VSL_tags[p[0]]);
-		
-		if (p[1] > 0) {
-			if (p[0] != SLT_Debug) {
-				printf(" <");
-				fwrite(p + 4, p[1], 1, stdout);
-				printf(">");
-			} else {
-				fputs(vis_it(p), stdout);
-			}
-				
-		}
-		printf("\n");
-	}
-	if (o_flag)
-		clean_order();
+	} 
+
 	return (0);
 }
