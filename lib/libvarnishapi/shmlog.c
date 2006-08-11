@@ -11,16 +11,28 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <sys/mman.h>
+#include <assert.h>
 
 #include "shmlog.h"
+#include "miniobj.h"
 #include "varnishapi.h"
 
+/* Parameters */
+#define			SLEEP_USEC	(50*1000)
+#define			TIMEOUT_USEC	(5*1000*1000)
+
+#define NFD		(256 * 256)
+
 struct VSL_data {
+	unsigned		magic;
+#define VSL_MAGIC		0x6e3bd69b
+
 	struct shmloghead	*head;
 	unsigned char		*logstart;
 	unsigned char		*logend;
 	unsigned char		*ptr;
 
+	/* for -r option */
 	FILE			*fi;
 	unsigned char		rbuf[5 + 255 + 1];
 
@@ -28,10 +40,14 @@ struct VSL_data {
 	int			c_opt;
 	int			d_opt;
 
-	int			ix_opt;
-	unsigned char 		supr[256];
+	unsigned		flags;
+#define F_SEEN_IX		(1 << 0)
 
-	unsigned char		dir[65536];
+	unsigned char		map[NFD];
+#define M_CLIENT		(1 << 0)
+#define M_BACKEND		(1 << 1)
+#define M_SUPPRESS		(1 << 2)
+#define M_SELECT		(1 << 3)
 
 	int			regflags;
 	regex_t			*regincl;
@@ -101,16 +117,33 @@ VSL_New(void)
 {
 	struct VSL_data *vd;
 
+	assert(VSL_S_CLIENT == M_CLIENT);
+	assert(VSL_S_BACKEND == M_BACKEND);
 	vd = calloc(sizeof *vd, 1);
+	assert(vd != NULL);
 	vd->regflags = REG_EXTENDED | REG_NOSUB;
+	vd->magic = VSL_MAGIC;
 	return (vd);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VSL_Select(struct VSL_data *vd, unsigned tag)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	vd->map[tag] |= M_SELECT;
+}
+
+/*--------------------------------------------------------------------*/
 
 int
 VSL_OpenLog(struct VSL_data *vd)
 {
 	unsigned char *p;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fi != NULL)
 		return (0);
 
@@ -121,12 +154,6 @@ VSL_OpenLog(struct VSL_data *vd)
 	vd->logstart = (unsigned char *)vsl_lh + vsl_lh->start;
 	vd->logend = vd->logstart + vsl_lh->size;
 	vd->ptr = vd->logstart;
-
-	if (vd->b_opt)
-		memset(vd->dir, 1, sizeof vd->dir);
-
-	if (vd->c_opt)
-		memset(vd->dir, 2, sizeof vd->dir);
 
 	if (!vd->d_opt)
 		while (vsl_nextlog(vd, &p) == 1)
@@ -140,8 +167,10 @@ static int
 vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
+	unsigned w;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fi != NULL) {
 		i = fread(vd->rbuf, 4, 1, vd->fi);
 		if (i != 1)
@@ -154,19 +183,22 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 	}
 
 	p = vd->ptr;
-	while (1) {
+	for (w = 0; w < TIMEOUT_USEC;) {
 		if (*p == SLT_WRAPMARKER) {
 			p = vd->logstart;
 			continue;
 		}
 		if (*p == SLT_ENDMARKER) {
-			vd->ptr = p;
-			return (0);
+			w += SLEEP_USEC;
+			usleep(SLEEP_USEC);
+			continue;
 		}
 		vd->ptr = p + p[1] + 5;
 		*pp = p;
 		return (1);
 	}
+	vd->ptr = p;
+	return (0);
 }
 
 int
@@ -177,6 +209,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 	unsigned u;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	while (1) {
 		i = vsl_nextlog(vd, &p);
 		if (i != 1)
@@ -184,19 +217,25 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		u = (p[2] << 8) | p[3];
 		switch(p[0]) {
 		case SLT_SessionOpen:
-			vd->dir[u] = 1;
+			vd->map[u] |= M_CLIENT;
+			vd->map[u] &= ~M_BACKEND;
 			break;
 		case SLT_BackendOpen:
-			vd->dir[u] = 2;
+			vd->map[u] |= M_BACKEND;
+			vd->map[u] &= ~M_CLIENT;
 			break;
 		default:
 			break;
 		}
-		if (vd->supr[p[0]]) 
+		if (vd->map[p[0]] & M_SELECT) {
+			*pp = p;
+			return (1);
+		}
+		if (vd->map[p[0]] & M_SUPPRESS) 
 			continue;
-		if (vd->b_opt && vd->dir[u] == 1)
+		if (vd->b_opt && !(vd->map[u] & M_BACKEND))
 			continue;
-		if (vd->c_opt && vd->dir[u] == 2)
+		if (vd->c_opt && !(vd->map[u] & M_CLIENT))
 			continue;
 		if (vd->regincl != NULL) {
 			rm.rm_so = 0;
@@ -219,10 +258,51 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 
 /*--------------------------------------------------------------------*/
 
+int
+VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
+{
+	int i;
+	unsigned u;
+	unsigned char *p;
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	while (1) {
+		i = VSL_NextLog(vd, &p);
+		if (i <= 0)
+			return (i);
+		u = (p[2] << 8) | p[3];
+		if (func(priv,
+		    p[0], u, p[1],
+		    vd->map[u] & (VSL_S_CLIENT|VSL_S_BACKEND),
+		    p + 4))
+			return (1);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSL_H_Print(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+{
+	FILE *fo = priv;
+
+	assert(fo != NULL);
+	if (tag == SLT_Debug) {
+	}
+	fprintf(fo, "%5d %-12s %c %.*s\n",
+	    fd, VSL_tags[tag],
+	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '),
+	    len, ptr);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 static int
 vsl_r_arg(struct VSL_data *vd, const char *opt)
 {
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (!strcmp(opt, "-"))
 		vd->fi = stdin;
 	else
@@ -242,6 +322,7 @@ vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
 	regex_t **rp;
 	char buf[BUFSIZ];
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (arg == 'I')
 		rp = &vd->regincl;
 	else
@@ -272,11 +353,12 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 	int i, j, l;
 	const char *b, *e, *p, *q;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	/* If first option is 'i', set all bits for supression */
-	if (arg == 'i' && vd->ix_opt == 0)
+	if (arg == 'i' && !(vd->flags & F_SEEN_IX))
 		for (i = 0; i < 256; i++)
-			vd->supr[i] = 1;
-	vd->ix_opt = 1;
+			vd->map[i] |= M_SUPPRESS;
+	vd->flags |= F_SEEN_IX;
 
 	for (b = opt; *b; b = e) {
 		while (isspace(*b))
@@ -301,9 +383,9 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 				continue;
 
 			if (arg == 'x')
-				vd->supr[i] = 1;
+				vd->map[i] |= M_SUPPRESS;
 			else
-				vd->supr[i] = 0;
+				vd->map[i] &= ~M_SUPPRESS;
 			break;
 		}
 		if (i == 256) {
@@ -320,6 +402,8 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 int
 VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	switch (arg) {
 	case 'b': vd->b_opt = !vd->b_opt; return (1);
 	case 'c': vd->c_opt = !vd->c_opt; return (1);
