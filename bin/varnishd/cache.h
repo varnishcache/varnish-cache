@@ -253,6 +253,9 @@ struct sess {
 	enum step		step;
 	unsigned 		handling;
 	unsigned char		wantbody;
+	int			err_code;
+	const char		*err_msg;
+	const char		*err_expl;
 
 	TAILQ_ENTRY(sess)	list;
 
@@ -402,7 +405,7 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 #endif
 
 /* cache_response.c */
-void RES_Error(struct sess *sp, int error, const char *msg);
+void RES_Error(struct sess *sp, int code, const char *msg, const char *expl);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */

@@ -510,7 +510,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("\n", f);
 	fputs("void VRT_count(struct sess *, unsigned);\n", f);
 	fputs("int VRT_rewrite(const char *, const char *);\n", f);
-	fputs("void VRT_error(struct sess *, unsigned, const char *);\n", f);
+	fputs("void VRT_error(struct sess *, unsigned, const char *, const char *);\n", f);
 	fputs("int VRT_switch_config(const char *);\n", f);
 	fputs("\n", f);
 	fputs("char *VRT_GetHdr(struct sess *, const char *);\n", f);

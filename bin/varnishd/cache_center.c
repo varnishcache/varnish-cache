@@ -130,7 +130,17 @@ DOT }
 DOT error -> DONE
  */
 
-static int cnt_error(struct sess *sp) { (void)sp; INCOMPL(); }
+static int
+cnt_error(struct sess *sp)
+{
+
+	RES_Error(sp, sp->err_code, sp->err_msg, sp->err_expl);
+	sp->err_code = 0;
+	sp->err_msg = NULL;
+	sp->err_expl = NULL;
+	sp->step = STP_DONE;
+	return (0);
+}
 
 
 /*--------------------------------------------------------------------
@@ -550,7 +560,7 @@ cnt_recv(struct sess *sp)
 	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
-		RES_Error(sp, done, NULL);
+		RES_Error(sp, done, NULL, NULL);
 		sp->step = STP_DONE;
 		return (0);
 	}

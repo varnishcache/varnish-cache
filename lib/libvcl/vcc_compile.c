@@ -708,6 +708,7 @@ Action(struct tokenlist *tl)
 	unsigned a;
 	struct var *vp;
 	struct token *at;
+	int i;
 
 	at = tl->t;
 	vcc_NextToken(tl);
@@ -730,12 +731,16 @@ Action(struct tokenlist *tl)
 			a = UintVal(tl);
 		else
 			a = 0;
-		Fc(tl, 1, "VRT_error(sp, %u, ", a);
-		if (tl->t->tok == CSTR) {
-			Fc(tl, 0, "%.*s);\n", PF(tl->t));
-			vcc_NextToken(tl);
-		} else
-			Fc(tl, 0, "(const char *)0);\n");
+		Fc(tl, 1, "VRT_error(sp, %u", a);
+		for (i = 0; i < 2; ++i) {
+			if (tl->t->tok == CSTR) {
+				Fc(tl, 0, ", %.*s", PF(tl->t));
+				vcc_NextToken(tl);
+			} else {
+				Fc(tl, 0, ", (const char *)0");
+			}
+		}
+		Fc(tl, 0, ");\n");
 		Fc(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
 		return;
 	case T_SWITCH_CONFIG:

@@ -14,24 +14,32 @@
 /*--------------------------------------------------------------------*/
 
 void
-RES_Error(struct sess *sp, int error, const char *msg)
+RES_Error(struct sess *sp, int code, const char *msg, const char *expl)
 {
 	char buf[40];
 	struct vsb *sb;
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
+	assert(code >= 100 && code <= 999);
 
 	if (msg == NULL) {
-		switch (error) {
+		switch (code) {
 		case 400:	msg = "Bad Request"; break;
 		case 500:	msg = "Internal Error"; break;
 		default:	msg = "HTTP request error"; break;
 		}
 	}
+	if (expl == NULL) {
+		switch (code) {
+		case 400:	expl = "Your HTTP protocol request did not make sense."; break;
+		case 404:	expl = "The document you requested was not found."; break;
+		default:	expl = "Something unexpected happened."; break;
+		}
+	}
 
 	vsb_clear(sb);
-	vsb_printf(sb, "HTTP/1.1 %03d %s\r\n", error, msg);
+	vsb_printf(sb, "HTTP/1.1 %03d %s\r\n", code, msg);
 	TIM_format(sp->t_req.tv_sec, buf);
 	vsb_printf(sb, "Date: %s\r\n", buf);
 	vsb_cat(sb,
@@ -42,29 +50,18 @@ RES_Error(struct sess *sp, int error, const char *msg)
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
 		"<HTML>\r\n"
 		"  <HEAD>\r\n");
-	vsb_printf(sb, "    <TITLE>%03d %s</TITLE>\r\n", error, msg);
+	vsb_printf(sb, "    <TITLE>%03d %s</TITLE>\r\n", code, msg);
 	vsb_cat(sb,
 		"  </HEAD>\r\n"
 		"  <BODY>\r\n");
-	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", error, msg);
-	switch(error) {
-	case 400:
-		vsb_cat(sb,
-		    "    Your HTTP protocol request did not make sense.\r\n");
-		break;
-	case 500:
-	default:
-		vsb_cat(sb,
-		    "    Something unexpected happened.\r\n");
-		break;
-	}
+	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", code, msg);
+	vsb_printf(sb, "    <P>%s</P>\r\n", expl);
 	vsb_cat(sb,
-		"    <P>\r\n"
-		"    <I>\r\n"
-		"    <A href=\"http://varnish.linpro.no/\">Varnish</A>\r\n"
+		"    <I><A href=\"http://varnish.linpro.no/\">Varnish</A></I>\r\n"
 		"  </BODY>\r\n"
 		"</HTML>\r\n");
 	vsb_finish(sb);
+	WRK_Reset(sp->wrk, &sp->fd);
 	WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
 	WRK_Flush(sp->wrk);
 	vca_close_session(sp, msg);
