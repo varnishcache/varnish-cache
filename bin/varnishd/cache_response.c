@@ -72,17 +72,21 @@ RES_Error(struct sess *sp, int code, const char *msg, const char *expl)
 /*--------------------------------------------------------------------*/
 
 static void
-res_do_304(struct sess *sp, char *p)
+res_do_304(struct sess *sp)
 {
+	char lm[64];
 
 	VSL(SLT_Length, sp->fd, "%u", 0);
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
 	http_SetResp(sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
+	TIM_format(sp->t_req.tv_sec, lm);
+	http_PrintfHeader(sp->fd, sp->http, "Date: %s\r\n", lm);
 	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", p);
+	TIM_format(sp->obj->last_modified, lm);
+	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", lm);
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
@@ -111,7 +115,7 @@ res_do_conds(struct sess *sp)
 		}
 		VSL(SLT_Debug, sp->fd,
 		    "Cond: %d <= %d", sp->obj->last_modified, ims);
-		res_do_304(sp, p);
+		res_do_304(sp);
 		return (1);
 	}
 	return (0);
