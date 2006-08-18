@@ -118,6 +118,7 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		if (vsb_len(ob[fd]) > 1 &&
 		    (match_tag == -1 || flg[fd] & F_MATCH))
 			printf("%s\n", vsb_data(ob[fd]));
+		flg[fd] &= ~F_MATCH;
 		vsb_clear(ob[fd]);
 		break;
 	default:
