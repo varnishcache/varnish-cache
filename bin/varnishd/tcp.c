@@ -129,7 +129,7 @@ open_tcp(const char *port, int http)
 		close(sd);
 		return (-1);
 	}
-	if (listen(sd, 16) != 0) {
+	if (listen(sd, http ? 1024 : 16) != 0) {
 		perror("listen()");
 		freeaddrinfo(res);
 		close(sd);
