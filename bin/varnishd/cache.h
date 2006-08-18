@@ -73,6 +73,8 @@ struct http {
 	}			logtag;
 
 	struct http_hdr		hd[HTTP_HDR_MAX];
+	unsigned char		hdf[HTTP_HDR_MAX];
+#define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 	unsigned		nhd;
 };
 
@@ -360,6 +362,7 @@ int http_RecvSome(int fd, struct http *hp);
 int http_RecvHead(struct http *hp, int fd);
 int http_DissectRequest(struct http *sp, int fd);
 int http_DissectResponse(struct http *sp, int fd);
+void http_DoConnection(struct sess *sp);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
 #include "http_headers.h"
