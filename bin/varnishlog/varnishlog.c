@@ -138,7 +138,7 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
 			exit (2);
 		}
-		i = regcomp(&match_re, argv[1], REG_EXTENDED);
+		i = regcomp(&match_re, argv[1], REG_EXTENDED | REG_NOSUB);
 		if (i) {
 			char buf[BUFSIZ];
 			regerror(i, &match_re, buf, sizeof buf);
