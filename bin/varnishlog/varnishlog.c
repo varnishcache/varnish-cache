@@ -57,8 +57,10 @@ printf("Clean\n");
 		if (ob[u] == NULL)
 			continue;
 		vsb_finish(ob[u]);
-		if (vsb_len(ob[u]))
+		if (vsb_len(ob[u]) > 1 &&
+		    (match_tag == -1 || flg[u] & F_MATCH))
 			printf("%s\n", vsb_data(ob[u]));
+		flg[u] = 0;
 		vsb_clear(ob[u]);
 	}
 }
