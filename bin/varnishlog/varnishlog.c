@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <regex.h>
 
 #include "compat/vis.h"
 
@@ -20,11 +21,31 @@
 
 static int	bflag, cflag;
 
+/* -------------------------------------------------------------------*/
+
+static int
+name2tag(const char *n)
+{
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (!strcasecmp(n, VSL_tags[i]))
+			return (i);
+	}
+	return (-1);
+}
+
 /* Ordering-----------------------------------------------------------*/
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
 #define F_INVCL		(1 << 0)
+#define F_MATCH		(1 << 1)
+
+static int		match_tag = -1;
+static regex_t		match_re;
 
 static void
 clean_order(void)
@@ -57,6 +78,9 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		ob[fd] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 		assert(ob[fd] != NULL);
 	}
+	if (tag == match_tag &&
+	    !regexec(&match_re, ptr, 0, NULL, 0))
+		flg[fd] |= F_MATCH;
 	switch (tag) {
 	case SLT_VCL_call:
 		flg[fd] |= F_INVCL;
@@ -91,7 +115,8 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 	case SLT_BackendReuse:
 	case SLT_StatSess:
 		vsb_finish(ob[fd]);
-		if (vsb_len(ob[fd]) > 1)
+		if (vsb_len(ob[fd]) > 1 &&
+		    (match_tag == -1 || flg[fd] & F_MATCH))
 			printf("%s\n", vsb_data(ob[fd]));
 		vsb_clear(ob[fd]);
 		break;
@@ -102,10 +127,24 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 }
 
 static void
-do_order(struct VSL_data *vd)
+do_order(struct VSL_data *vd, int argc, char **argv)
 {
 	int i;
 
+	if (argc == 2) {
+		match_tag = name2tag(argv[0]);
+		if (match_tag < 0) {
+			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
+			exit (2);
+		}
+		i = regcomp(&match_re, argv[1], REG_EXTENDED);
+		if (i) {
+			char buf[BUFSIZ];
+			regerror(i, &match_re, buf, sizeof buf);
+			fprintf(stderr, "%s\n", buf);
+			exit (2);
+		}
+	}
 	if (!bflag) {
 		VSL_Select(vd, SLT_SessionOpen);
 		VSL_Select(vd, SLT_SessionClose);
@@ -226,7 +265,7 @@ main(int argc, char **argv)
 		do_write(vd, w_opt);
 
 	if (o_flag)
-		do_order(vd);
+		do_order(vd, argc - optind, argv + optind);
 
 	while (1) {
 		i = VSL_Dispatch(vd, VSL_H_Print, stdout);
