@@ -565,10 +565,7 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	if (http_GetHdr(sp->http, H_Connection, &b) && !strcmp(b, "close"))
-		sp->doclose = "Connection:";
-	else if (strcmp(sp->http->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		sp->doclose = "not HTTP/1.1";
+	http_DoConnection(sp);
 
 	sp->backend = sp->vcl->backend[0];
 

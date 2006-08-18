@@ -99,6 +99,25 @@ http_IsHdr(struct http_hdr *hh, char *hdr)
 
 /*--------------------------------------------------------------------*/
 
+static unsigned
+http_findhdr(struct http *hp, unsigned l, const char *hdr)
+{
+	unsigned u;
+
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		assert(hp->hd[u].b != NULL);
+		assert(hp->hd[u].e != NULL);
+		if (hp->hd[u].e < hp->hd[u].b + l + 1)
+			continue;
+		if (hp->hd[u].b[l] != ':')
+			continue;
+		if (strncasecmp(hdr, hp->hd[u].b, l))
+			continue;
+		return (u);
+	}
+	return (0);
+}
+
 int
 http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 {
@@ -109,23 +128,16 @@ http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 	assert(l == strlen(hdr + 1));
 	assert(hdr[l] == ':');
 	hdr++;
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		assert(hp->hd[u].b != NULL);
-		assert(hp->hd[u].e != NULL);
-		if (hp->hd[u].e < hp->hd[u].b + l)
-			continue;
-		if (hp->hd[u].b[l-1] != ':')
-			continue;
-		if (strncasecmp(hdr, hp->hd[u].b, l))
-			continue;
-		p = hp->hd[u].b + l;
-		while (isspace(*p))
-			p++;
-		*ptr = p;
-		return (1);
+	u = http_findhdr(hp, l - 1, hdr);
+	if (u == 0) {
+		*ptr = NULL;
+		return (0);
 	}
-	*ptr = NULL;
-	return (0);
+	p = hp->hd[u].b + l;
+	while (isspace(*p))
+		p++;
+	*ptr = p;
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -161,6 +173,43 @@ http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr
 		return (1);
 	}
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_DoConnection(struct sess *sp)
+{
+	struct http *hp = sp->http;
+	char *p, *q;
+	int i;
+	unsigned u;
+
+	if (!http_GetHdr(hp, H_Connection, &p)) {
+		if (strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+			sp->doclose = "not HTTP/1.1";
+		return;
+	}
+	VSL(SLT_Debug, sp->fd, "DoConnect(%s)", p);
+	for (; *p; p++) {
+		if (isspace(*p))
+			continue;
+		if (*p == ',')
+			continue;
+		for (q = p + 1; *q; q++)
+			if (*q == ',' || isspace(*q))
+				break;
+		i = q - p;
+		if (i == 5 && !strncasecmp(p, "close", i))
+			sp->doclose = "Connection: close";
+		u = http_findhdr(hp, i, p);
+		if (u != 0)
+			hp->hdf[u] |= HDF_FILTER;
+		VSL(SLT_Debug, sp->fd, "FLD(%.*s) u = %u", q - p, p, u);
+		if (!*q)
+			break;
+		p = q;
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -275,6 +324,7 @@ http_dissect_hdrs(struct http *hp, int fd, char *p)
 			hp->conds = 1;
 
 		if (hp->nhd < HTTP_HDR_MAX) {
+			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
 			hp->hd[hp->nhd].e = q;
 			VSLH(HTTP_T_Header, fd, hp, hp->nhd);
@@ -577,6 +627,7 @@ http_seth(int fd, struct http *to, unsigned n, enum httptag tag, const char *fm)
 	assert(fm != NULL);
 	to->hd[n].b = (void*)(uintptr_t)fm;
 	to->hd[n].e = (void*)(uintptr_t)strchr(fm, '\0');
+	to->hdf[n] = 0;
 	VSLH(tag, fd, to, n);
 }
 
@@ -588,6 +639,7 @@ http_copyh(int fd, struct http *to, struct http *fm, unsigned n, enum httptag ta
 	assert(fm->hd[n].b != NULL);
 	to->hd[n].b = fm->hd[n].b;
 	to->hd[n].e = fm->hd[n].e;
+	to->hdf[n] = fm->hdf[n];
 	VSLH(tag, fd, to, n);
 }
 
@@ -664,6 +716,8 @@ http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	to->nhd = HTTP_HDR_FIRST;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
+		if (fm->hdf[u] & HDF_FILTER)
+			continue;
 #define HTTPH(a, b, c, d, e, f, g) \
 		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
