@@ -23,7 +23,8 @@ static int	bflag, cflag;
 /* Ordering-----------------------------------------------------------*/
 
 static struct vsb	*ob[65536];
-static unsigned char	invcl[65536];
+static unsigned char	flg[65536];
+#define F_INVCL		(1 << 0)
 
 static void
 clean_order(void)
@@ -58,7 +59,7 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 	}
 	switch (tag) {
 	case SLT_VCL_call:
-		invcl[fd] = 1;
+		flg[fd] |= F_INVCL;
 		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag],
 		    ((spec & VSL_S_CLIENT) ? 'c' : \
@@ -67,21 +68,18 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		return (0);
 	case SLT_VCL_trace:
 	case SLT_VCL_return:
-		if (invcl[fd]) {
+		if (flg[fd] & F_INVCL) {
 			vsb_cat(ob[fd], " ");
 			vsb_bcat(ob[fd], ptr, len);
 			return (0);
 		}
 		break;
 	default:
-		if (invcl[fd])
-			vsb_cat(ob[fd], "\n");
-		invcl[fd] = 0;
 		break;
 	}
-	if (invcl[fd]) {
+	if (flg[fd] & F_INVCL) {
 		vsb_cat(ob[fd], "\n");
-		invcl[fd] = 0;
+		flg[fd] &= ~F_INVCL;
 	}
 	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
 	    fd, VSL_tags[tag],
