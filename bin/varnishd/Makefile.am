@@ -31,6 +31,7 @@ varnishd_SOURCES = \
 	mgt_child.c \
 	mgt_cli.c \
 	mgt_event.c \
+	mgt_param.c \
 	mgt_vcc.c \
 	rfc2616.c \
 	shmlog.c \

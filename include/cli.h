@@ -77,6 +77,18 @@
 	"\tSwitch to the named configuration immediately.",		\
 	1, 1
 
+#define CLI_PARAM_SHOW							\
+	"param.show",							\
+	"param.show [<param>]",						\
+	"\tShow parameters and their values.",				\
+	0, 1
+
+#define CLI_PARAM_SET							\
+	"param.set",							\
+	"param.set <param> <value>",					\
+	"\tSet parameter value.",					\
+	2,2 
+
 #define CLI_SERVER_FREEZE						\
 	"server.freeze",						\
 	"server.freeze",						\
