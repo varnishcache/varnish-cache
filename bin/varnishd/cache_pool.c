@@ -192,7 +192,7 @@ wrk_thread(void *priv)
 		} else {
 			/* If we are a dynamic thread, time out and die */
 			AZ(clock_gettime(CLOCK_REALTIME, &ts));
-			ts.tv_sec += heritage.wthread_timeout;
+			ts.tv_sec += params->wthread_timeout;
 			if (pthread_cond_timedwait(&w->cv, &wrk_mtx, &ts)) {
 				VSL_stats->n_wrk--;
 				TAILQ_REMOVE(&wrk_idle, w, list);
@@ -237,7 +237,7 @@ WRK_QueueSession(struct sess *sp)
 	wrk_overflow++;
 
 	/* Can we create more threads ? */
-	if (VSL_stats->n_wrk >= heritage.wthread_max) {
+	if (VSL_stats->n_wrk >= params->wthread_max) {
 		VSL_stats->n_wrk_max++;
 		AZ(pthread_mutex_unlock(&wrk_mtx));
 		return;
@@ -273,8 +273,8 @@ WRK_Init(void)
 
 	AZ(pthread_mutex_init(&wrk_mtx, NULL));
 
-	VSL(SLT_Debug, 0, "Starting %u worker threads", heritage.wthread_min);
-	for (i = 0; i < heritage.wthread_min; i++) {
+	VSL(SLT_Debug, 0, "Starting %u worker threads", params->wthread_min);
+	for (i = 0; i < params->wthread_min; i++) {
 		VSL_stats->n_wrk++;
 		AZ(pthread_create(&tp, NULL, wrk_thread, &i));
 		AZ(pthread_detach(tp));

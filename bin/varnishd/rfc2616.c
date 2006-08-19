@@ -111,7 +111,7 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 				retirement_age = h_expires - h_date;
 		}
 		if (retirement_age == INT_MAX)
-			retirement_age = heritage.default_ttl;
+			retirement_age = params->default_ttl;
 
 		ttd = obj->entered + retirement_age;
 	}

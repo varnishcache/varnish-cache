@@ -186,7 +186,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	struct sessmem *sm;
 
 	sm = calloc(
-	    sizeof *sm + heritage.mem_workspace,
+	    sizeof *sm + params->mem_workspace,
 	    1);
 	if (sm == NULL)
 		return (NULL);
@@ -203,7 +203,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 		sm->sess.sockaddrlen = len;
 	}
 
-	http_Setup(&sm->http, (void *)(sm + 1), heritage.mem_workspace);
+	http_Setup(&sm->http, (void *)(sm + 1), params->mem_workspace);
 
 	sm->sess.acct.first = time(NULL);
 

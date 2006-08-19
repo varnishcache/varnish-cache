@@ -25,6 +25,11 @@ struct heritage {
 	/* Hash method */
 	struct hash_slinger	*hash;
 
+};
+
+struct params {
+
+	/* TTL used for lack of anything better */
 	unsigned		default_ttl;
 
 	/* Worker threads */
@@ -36,6 +41,7 @@ struct heritage {
 	unsigned		mem_workspace;
 };
 
+extern struct params *params;
 extern struct heritage heritage;
 
 void child_main(void);
