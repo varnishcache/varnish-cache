@@ -104,8 +104,8 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 
 static struct cli_proto *cli_proto;
 
+/* XXX: what order should this list be in ? */
 static struct cli_proto mgt_cli_proto[] = {
-	{ CLI_HELP,		cli_func_help, NULL },	/* must be first */
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
 	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
@@ -115,6 +115,9 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_CONFIG_USE,	mcf_config_use, NULL },
 	{ CLI_CONFIG_DISCARD,	mcf_config_discard, NULL },
 	{ CLI_CONFIG_LIST,	mcf_config_list, NULL },
+	{ CLI_PARAM_SHOW,	mcf_param_show, NULL },
+	{ CLI_PARAM_SET,	mcf_param_set, NULL },
+	{ CLI_HELP,		cli_func_help, NULL },
 #if 0
 	{ CLI_SERVER_RESTART },
 	{ CLI_ZERO },
@@ -163,8 +166,12 @@ mgt_cli_init(void)
 	}
 
 	/* Fixup the entry for 'help' entry */
-	assert(!strcmp(cli_proto[0].request, "help"));
-	cli_proto[0].priv = cli_proto;
+	for (u = 0; cli_proto[u].request != NULL; u++) {
+		if (!strcmp(cli_proto[u].request, "help")) {
+			cli_proto[u].priv = cli_proto;
+			break;
+		}
+	}
 }
 
 /*--------------------------------------------------------------------
