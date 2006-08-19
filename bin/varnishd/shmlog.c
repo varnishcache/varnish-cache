@@ -124,19 +124,12 @@ void
 VSL_Init(void)
 {
 
-	loghead = mmap(NULL, heritage.vsl_size,
-	    PROT_READ|PROT_WRITE,
-	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
-	    heritage.vsl_fd, 0);
-	assert(loghead != MAP_FAILED);
-
 	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 	assert(loghead->hdrsize == sizeof *loghead);
-	/* XXX check sanity of loghead */
+	/* XXX more check sanity of loghead  ? */
 	logstart = (unsigned char *)loghead + loghead->start;
 	AZ(pthread_mutex_init(&vsl_mutex, NULL));
 	loghead->starttime = time(NULL);
-	VSL_stats = &loghead->stats;
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
 
@@ -181,9 +174,10 @@ VSL_MgtInit(const char *fn, unsigned size)
 	}
 	heritage.vsl_size = slh.size + slh.start;
 
-	/*
-	 * Call VSL_Init so that we get a VSL_stats pointer in the
-	 * management process as well.
-	 */
-	VSL_Init();
+	loghead = mmap(NULL, heritage.vsl_size,
+	    PROT_READ|PROT_WRITE,
+	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
+	    heritage.vsl_fd, 0);
+	assert(loghead != MAP_FAILED);
+	VSL_stats = &loghead->stats;
 }
