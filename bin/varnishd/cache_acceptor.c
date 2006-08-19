@@ -79,7 +79,7 @@ vca_accept_sess(int fd)
 	{
 	struct timeval tv;
 
-	tv.tv_sec = 600;
+	tv.tv_sec = params->send_timeout;
 	tv.tv_usec = 0;
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv));
 	}
@@ -233,7 +233,7 @@ vca_main(void *arg)
 				vca_handover(sp, i);
 				continue;
 			}
-			if (sp->t_idle.tv_sec + 5 < t.tv_sec) {
+			if (sp->t_idle.tv_sec + params->sess_timeout < t.tv_sec) {
 				TAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(sp->fd);
 				vca_close_session(sp, "timeout");
@@ -354,7 +354,7 @@ vca_main(void *arg)
 		clock_gettime(CLOCK_MONOTONIC, &t);
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			if (sp->t_idle.tv_sec + 5 < t.tv_sec) {
+			if (sp->t_idle.tv_sec + params->sess_timeout < t.tv_sec) {
 				TAILQ_REMOVE(&sesshead, sp, list);
 				vca_del(sp->fd);
 				vca_close_session(sp, "timeout");
@@ -400,7 +400,8 @@ vca_kq_sess(struct sess *sp, int arm)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(ke, 0, sizeof ke);
 	EV_SET(&ke[0], sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	EV_SET(&ke[1], sp->fd, EVFILT_TIMER, arm , 0, 5000, sp);
+	EV_SET(&ke[1], sp->fd, EVFILT_TIMER, arm , 0,
+	    params->sess_timeout * 1000, sp);
 	i = kevent(kq, ke, 2, NULL, 0, NULL);
 	if (arm == EV_ADD)
 		assert(i == 0);
