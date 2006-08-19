@@ -135,44 +135,68 @@ VSL_Init(void)
 
 /*--------------------------------------------------------------------*/
 
+static int
+vsl_goodold(int fd)
+{
+	struct shmloghead slh;
+	int i;
+
+	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
+	i = read(fd, &slh, sizeof slh);
+	if (i != sizeof slh)
+		return (0);
+	if (slh.magic != SHMLOGHEAD_MAGIC)
+		return (0);
+	if (slh.hdrsize != sizeof slh)
+		return (0);
+	if (slh.start != sizeof slh + sizeof *params)
+		return (0);
+	/* XXX more checks */
+	heritage.vsl_size = slh.size + slh.start;
+	return (1);
+}
+
+static void
+vsl_buildnew(const char *fn, unsigned size)
+{
+	struct shmloghead slh;
+	int i;
+
+	(void)unlink(fn);
+	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
+	if (heritage.vsl_fd < 0) {
+		fprintf(stderr, "Could not open %s: %s\n",
+		    fn, strerror(errno));
+		exit (1);
+	}
+
+	memset(&slh, 0, sizeof slh);
+	slh.magic = SHMLOGHEAD_MAGIC;
+	slh.hdrsize = sizeof slh;
+	slh.size = size;
+	slh.ptr = 0;
+	slh.start = sizeof slh + sizeof *params;
+	i = write(heritage.vsl_fd, &slh, sizeof slh);
+	assert(i == sizeof slh);
+	heritage.vsl_size = slh.start + size;
+	AZ(ftruncate(heritage.vsl_fd, (off_t)heritage.vsl_size));
+}
+
 void
 VSL_MgtInit(const char *fn, unsigned size)
 {
-	struct shmloghead slh;
-	int i = 0;
+	int i;
+	struct params *pp;
 
-	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
-	heritage.vsl_fd = open(fn, O_RDWR, 0644);
-	if (heritage.vsl_fd >= 0)
-		i = read(heritage.vsl_fd, &slh, sizeof slh);
-	if (heritage.vsl_fd < 0 || i != sizeof slh ||
-	    slh.magic != SHMLOGHEAD_MAGIC ||
-	    slh.hdrsize != sizeof slh) {
-		/* XXX more checks */
-
+	i = open(fn, O_RDWR, 0644);
+	if (i >= 0 && vsl_goodold(i)) {
+		fprintf(stderr, "Using old SHMFILE\n");
+		heritage.vsl_fd = i;
+	} else {
 		fprintf(stderr, "Creating new SHMFILE\n");
-		if (heritage.vsl_fd >= 0)
-			close(heritage.vsl_fd);
-		(void)unlink(fn);
-		heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
-		if (heritage.vsl_fd < 0) {
-			fprintf(stderr, "Could not open %s: %s\n",
-			    fn, strerror(errno));
-			exit (1);
-		}
-
-		memset(&slh, 0, sizeof slh);
-		slh.magic = SHMLOGHEAD_MAGIC;
-		slh.hdrsize = sizeof slh;
-		slh.size = size;
-		slh.ptr = 0;
-		slh.start = sizeof slh;
-		AZ(lseek(heritage.vsl_fd, 0, SEEK_SET));
-		i = write(heritage.vsl_fd, &slh, sizeof slh);
-		assert(i == sizeof slh);
-		AZ(ftruncate(heritage.vsl_fd, (off_t)sizeof slh + (off_t)size));
+		(void)close(i);
+		vsl_buildnew(fn, size);
 	}
-	heritage.vsl_size = slh.size + slh.start;
 
 	loghead = mmap(NULL, heritage.vsl_size,
 	    PROT_READ|PROT_WRITE,
@@ -180,4 +204,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	    heritage.vsl_fd, 0);
 	assert(loghead != MAP_FAILED);
 	VSL_stats = &loghead->stats;
+	pp = (void *)(loghead + 1);
+	memcpy(pp, params, sizeof *pp);
+	params = pp;
 }

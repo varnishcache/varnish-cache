@@ -32,6 +32,7 @@
 #endif
 
 struct heritage heritage;
+struct params *params;
 
 /*--------------------------------------------------------------------*/
 
@@ -188,13 +189,13 @@ tackle_warg(const char *argv)
 		usage();
 	if (ua < 1)
 		usage();
-	heritage.wthread_min = ua;
-	heritage.wthread_max = ua;
-	heritage.wthread_timeout = 10;
+	params->wthread_min = ua;
+	params->wthread_max = ua;
+	params->wthread_timeout = 10;
 	if (i >= 2)
-		heritage.wthread_max = ub;
+		params->wthread_max = ub;
 	if (i >= 3)
-		heritage.wthread_timeout = uc;
+		params->wthread_timeout = uc;
 }
 
 /*--------------------------------------------------------------------
@@ -323,17 +324,20 @@ main(int argc, char *argv[])
 	const char *sflag = "file";
 	const char *hflag = "classic";
 	const char *Tflag = NULL;
+	struct params param;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	memset(&param, 0, sizeof param);
+	params = &param;
 	mgt_vcc_init(); 
 
-	heritage.default_ttl = 120;
-	heritage.wthread_min = 1;
-	heritage.wthread_max = UINT_MAX;
-	heritage.wthread_timeout = 10;
-	heritage.mem_workspace = 4096;
+	params->default_ttl = 120;
+	params->wthread_min = 1;
+	params->wthread_max = UINT_MAX;
+	params->wthread_timeout = 10;
+	params->mem_workspace = 4096;
 
 	while ((o = getopt(argc, argv, "b:df:h:p:s:t:T:Vw:")) != -1)
 		switch (o) {
@@ -356,7 +360,7 @@ main(int argc, char *argv[])
 			sflag = optarg;
 			break;
 		case 't':
-			heritage.default_ttl = strtoul(optarg, NULL, 0);
+			params->default_ttl = strtoul(optarg, NULL, 0);
 			break;
 		case 'T':
 			Tflag = optarg;
