@@ -79,9 +79,9 @@
 
 #define CLI_PARAM_SHOW							\
 	"param.show",							\
-	"param.show [<param>]",						\
+	"param.show [-l] [<param>]",					\
 	"\tShow parameters and their values.",				\
-	0, 1
+	0, 2
 
 #define CLI_PARAM_SET							\
 	"param.set",							\
