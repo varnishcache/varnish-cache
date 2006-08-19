@@ -120,6 +120,46 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_sess_timeout(struct cli *cli, struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		if (u == 0) {
+			cli_out(cli, "Timeout must be greater than zero\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		params->sess_timeout = u;
+	}
+	cli_out(cli, "%u [seconds]\n", params->sess_timeout);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		if (u == 0) {
+			cli_out(cli, "Timeout must be greater than zero\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		params->send_timeout = u;
+	}
+	cli_out(cli, "%u [seconds]\n", params->send_timeout);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -166,6 +206,21 @@ static struct parspec parspec[] = {
 		SHOULD_RESTART
 		"Default is 4096 bytes. "
 		"Minimum is 1024 bytes. " },
+	{ "sess_timeout", tweak_sess_timeout,
+		"Idle timeout for persistent sessions. "
+		"If a HTTP request has not been received in this many "
+		"seconds, the session is closed.\n"
+#ifdef HAVE_ACCEPT_FILTERS
+		DELAYED_EFFECT
+#endif
+		"Default is 15 seconds. " },
+	{ "send_timeout", tweak_send_timeout,
+		"Send timeout for client connections. "
+		"If no data has been sent to the client in this many seconds, "
+		"the session is closed.\n"
+		"See getopt(3) under SO_SNDTIMEO for more information.\n"
+		"Default is 600 seconds. " },
+		
 	{ NULL, NULL, NULL }
 };
 

@@ -39,6 +39,10 @@ struct params {
 
 	/* Memory allocation hints */
 	unsigned		mem_workspace;
+
+	/* Acceptor hints */
+	unsigned		sess_timeout;
+	unsigned		send_timeout;
 };
 
 extern struct params *params;
