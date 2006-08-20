@@ -160,6 +160,7 @@ wrk_thread(void *priv)
 	struct worker *w, ww;
 	struct timespec ts;
 
+	(void)priv;
 	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
@@ -168,10 +169,8 @@ wrk_thread(void *priv)
 
 	AZ(pthread_mutex_lock(&wrk_mtx));
 	w->nbr = VSL_stats->n_wrk;
-	if (priv == NULL) {
-		VSL_stats->n_wrk_create++;
-		VSL(SLT_WorkThread, 0, "%u born dynamic", w->nbr);
-	}
+	VSL_stats->n_wrk_create++;
+	VSL(SLT_WorkThread, 0, "%u born", w->nbr);
 	TAILQ_INSERT_HEAD(&wrk_busy, w, list);
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
@@ -187,7 +186,7 @@ wrk_thread(void *priv)
 		TAILQ_INSERT_HEAD(&wrk_idle, w, list);
 
 		/* If we are a reserved thread we don't die */
-		if (priv != NULL) {
+		if (w->nbr < params->wthread_min) {
 			AZ(pthread_cond_wait(&w->cv, &wrk_mtx));
 		} else {
 			/* If we are a dynamic thread, time out and die */
@@ -276,7 +275,7 @@ WRK_Init(void)
 	VSL(SLT_Debug, 0, "Starting %u worker threads", params->wthread_min);
 	for (i = 0; i < params->wthread_min; i++) {
 		VSL_stats->n_wrk++;
-		AZ(pthread_create(&tp, NULL, wrk_thread, &i));
+		AZ(pthread_create(&tp, NULL, wrk_thread, NULL));
 		AZ(pthread_detach(tp));
 	}
 }
