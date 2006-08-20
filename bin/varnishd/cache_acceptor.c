@@ -394,21 +394,26 @@ static void
 vca_kq_sess(struct sess *sp, int arm)
 {
 	struct kevent ke[2];
-	int i, j;
+	int i, j, arm2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(ke, 0, sizeof ke);
 	j = 0;
-	/* close(2) automatically removes the EVFILT_READ event */
+	if (arm == EV_ADD || arm == EV_ENABLE) {
+		assert(sp->kqa == 0);
+		sp->kqa = 1;
+		arm2 = EV_ADD;
+	} else  {
+		assert(sp->kqa == 1);
+		sp->kqa = 0;
+		arm2 = EV_DELETE;
+	}
+	EV_SET(&ke[j++], sp->id, EVFILT_TIMER, arm2,
+	    0, params->sess_timeout * 1000, sp);
+	j = 0;
 	if (sp->fd >= 0)
 		EV_SET(&ke[j++], sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	EV_SET(&ke[j++], sp->id, EVFILT_TIMER | EV_ONESHOT,
-	    arm == EV_ADD || arm == EV_ENABLE ? EV_ADD : EV_DELETE,
-	    0, params->sess_timeout * 1000, sp);
-	if (arm == EV_ADD || arm == EV_ENABLE)
-		sp->kqa = 1;
-	else 
-		sp->kqa = 0;
+
 	i = kevent(kq, ke, j, NULL, 0, NULL);
 	assert(i == 0);
 }
@@ -440,7 +445,7 @@ vca_kev(struct kevent *kp)
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
 	if (sp->kqa == 0) {
-		VSL(SLT_Debug, sp->fd,
+		VSL(SLT_Debug, sp->id,
 		    "KQ %s flags %x fflags %x data %x",
 		    kp->filter == EVFILT_READ ? "R" : "T",
 		    kp->flags, kp->fflags, kp->data);
