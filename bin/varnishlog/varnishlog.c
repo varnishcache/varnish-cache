@@ -89,7 +89,7 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag],
 		    ((spec & VSL_S_CLIENT) ? 'c' : \
-		    (spec & VSL_S_BACKEND) ? 'b' : ' '),
+		    (spec & VSL_S_BACKEND) ? 'b' : '-'),
 		    len, ptr);
 		return (0);
 	case SLT_VCL_trace:
@@ -109,7 +109,7 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 	}
 	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
 	    fd, VSL_tags[tag],
-	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '),
+	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : '-'),
 	    len, ptr);
 	switch (tag) {
 	case SLT_ReqEnd:
