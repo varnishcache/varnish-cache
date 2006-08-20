@@ -548,7 +548,6 @@ static int
 cnt_recv(struct sess *sp)
 {
 	int done;
-	char *b;
 
 	sp->t0 = time(NULL);
 	assert(sp->vcl == NULL);
