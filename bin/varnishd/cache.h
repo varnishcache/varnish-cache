@@ -272,6 +272,7 @@ struct sess {
 
 	struct workreq		workreq;
 	struct acct		acct;
+	unsigned		kqa;
 };
 
 struct backend {
