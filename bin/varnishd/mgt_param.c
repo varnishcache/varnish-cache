@@ -218,6 +218,7 @@ static struct parspec parspec[] = {
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
+		DELAYED_EFFECT
 		"See getopt(3) under SO_SNDTIMEO for more information.\n"
 		"Default is 600 seconds. " },
 		
