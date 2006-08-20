@@ -43,6 +43,9 @@ struct params {
 	/* Acceptor hints */
 	unsigned		sess_timeout;
 	unsigned		send_timeout;
+
+	/* Management hints */
+	unsigned		auto_restart;
 };
 
 extern struct params *params;

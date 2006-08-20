@@ -247,8 +247,10 @@ mgt_sigchld(struct ev *e, int what)
 	child_fds[0] = -1;
 	fprintf(stderr, "Child cleaned\n");
 
-	if (child_state == CH_DIED)
+	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
+	else if (child_state == CH_DIED)
+		child_state = CH_STOPPED;
 	else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
 	return (0);
