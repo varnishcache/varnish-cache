@@ -309,7 +309,8 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active == 0) {
-		if (mgt_cli_askchild(&status, &p, "config.use %s\n", av[2])) {
+		if (child_pid >= 0 &&
+		    mgt_cli_askchild(&status, &p, "config.use %s\n", av[2])) {
 			cli_result(cli, status);
 			cli_out(cli, "%s", p);
 			free(p);
@@ -338,7 +339,8 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 		cli_result(cli, CLIS_PARAM);
 		cli_out(cli, "Cannot discard active VCL program\n");
 	} else if (vp != NULL) {
-		if (mgt_cli_askchild(&status, &p,
+		if (child_pid >= 0 &&
+		    mgt_cli_askchild(&status, &p,
 		    "config.discard %s\n", av[2])) {
 			cli_result(cli, status);
 			cli_out(cli, "%s", p);
