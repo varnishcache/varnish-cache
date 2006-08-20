@@ -341,6 +341,7 @@ main(int argc, char *argv[])
 	params->mem_workspace = 4096;
 	params->sess_timeout = 15;
 	params->send_timeout = 600;
+	params->auto_restart = 1;
 
 	while ((o = getopt(argc, argv, "b:df:h:p:s:t:T:Vw:")) != -1)
 		switch (o) {

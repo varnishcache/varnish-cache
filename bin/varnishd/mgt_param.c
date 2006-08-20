@@ -160,6 +160,26 @@ tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		if (u != 0 && u != 1) {
+			cli_out(cli, "Only zero and one allowed.\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		params->auto_restart = u;
+	}
+	cli_out(cli, "%u {1 = yes, 0 = no}\n", params->auto_restart);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -221,7 +241,10 @@ static struct parspec parspec[] = {
 		DELAYED_EFFECT
 		"See getopt(3) under SO_SNDTIMEO for more information.\n"
 		"Default is 600 seconds. " },
-		
+	{ "auto_restart", tweak_auto_restart,
+		"Restart child process automatically if it dies. "
+		"1 = yes, 0 = no.\n"
+		"Default is 1. " },
 	{ NULL, NULL, NULL }
 };
 
