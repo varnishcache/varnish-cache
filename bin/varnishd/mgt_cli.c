@@ -187,8 +187,15 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	va_list ap;
 	unsigned u;
 
-	if (cli_i < 0|| cli_o < 0)
+	if (resp != NULL)
+		*resp = NULL;
+	if (status != NULL)
+		*status = 0;
+	if (cli_i < 0|| cli_o < 0) {
+		if (status != NULL)
+			*status = CLIS_CANT;
 		return (CLIS_CANT);
+	}
 	va_start(ap, fmt);
 	i = vasprintf(&p, fmt, ap);
 	va_end(ap);
