@@ -396,7 +396,6 @@ vca_kq_sess(struct sess *sp, int arm)
 	struct kevent ke[2];
 	int i;
 
-	assert(arm == EV_ADD || arm == EV_DELETE);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(ke, 0, sizeof ke);
 	EV_SET(&ke[0], sp->fd, EVFILT_READ, arm, 0, 0, sp);
@@ -410,16 +409,19 @@ vca_kq_sess(struct sess *sp, int arm)
 }
 
 static void
-accept_f(int fd)
+accept_f(int fd, int nq)
 {
 	struct sess *sp;
 
-	sp = vca_accept_sess(fd);
-	if (sp == NULL)
-		return;
-	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
-	http_RecvPrep(sp->http);
-	vca_kq_sess(sp, EV_ADD);
+	while (nq-- > 0) {
+		sp = vca_accept_sess(fd);
+		if (sp == NULL)
+			return;
+		clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
+		http_RecvPrep(sp->http);
+		vca_kq_sess(sp, EV_ADD);
+		sp->kqa = 1;
+	}
 }
 
 #define NKEV	20
@@ -427,7 +429,7 @@ accept_f(int fd)
 static void *
 vca_main(void *arg)
 {
-	struct kevent ke[10];
+	struct kevent ke[10], *kp;
 	int i, j, n;
 	struct sess *sp;
 
@@ -448,24 +450,43 @@ vca_main(void *arg)
 		n = kevent(kq, NULL, 0, ke, NKEV, NULL);
 		assert(n >= 1);
 		VSL(SLT_Debug, 0, "KQ %d", n);
-		for (j = 0; j < n; j++) {
-			if (ke[j].udata == accept_f) {
-				accept_f(ke[j].ident);
+		for (kp = ke, j = 0; j < n; j++, kp++) {
+			if (kp->udata == accept_f) {
+				VSL(SLT_Debug, kp->ident,
+				    "KQ accept data %d\n", kp->data);
+				accept_f(kp->ident, kp->data);
 				continue;
 			}
-			CAST_OBJ_NOTNULL(sp, ke[j].udata, SESS_MAGIC);
-			if (ke[j].filter == EVFILT_READ) {
-				i = http_RecvSome(sp->fd, sp->http);
-				if (i == -1)
-					continue;
-				vca_kq_sess(sp, EV_DELETE);
-				vca_handover(sp, i);
+			CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
+			if (sp->kqa == 0 || 1) {
+				VSL(SLT_Debug, sp->fd,
+				    "KQ %d/%d %s flags %x fflags %x data %x\n",
+				    j, n,
+				    kp->filter == EVFILT_READ ? "R" : "T",
+				    kp->flags, kp->fflags, kp->data);
+				assert (sp->kqa);
+			}
+			if (kp->filter == EVFILT_READ) {
+				if (kp->data > 0) {
+					i = http_RecvSome(sp->fd, sp->http);
+					if (i == -1)
+						continue;
+					vca_kq_sess(sp, EV_DISABLE);
+					sp->kqa = 0;
+					vca_handover(sp, i);
+				} else if (kp->flags == EV_EOF) {
+					sp->kqa = 0;
+					vca_close_session(sp, "no request");
+					SES_Delete(sp);
+				} else
+					INCOMPL();
 				continue;
 			}
-			if (ke[j].filter == EVFILT_TIMER) {
-				vca_kq_sess(sp, EV_DELETE);
+			if (kp->filter == EVFILT_TIMER) {
+				vca_kq_sess(sp, EV_DISABLE);
+				sp->kqa = 0;
 				vca_close_session(sp, "timeout");
-				vca_return_session(sp);
+				SES_Delete(sp);
 				continue;
 			} 
 			INCOMPL();
@@ -489,8 +510,10 @@ vca_return_session(struct sess *sp)
 	VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 	if (http_RecvPrepAgain(sp->http))
 		vca_handover(sp, 0);
-	else
-		vca_kq_sess(sp, EV_ADD);
+	else {
+		sp->kqa = 1;
+		vca_kq_sess(sp, EV_ENABLE);
+	}
 }
 
 #endif /* ACCEPTOR_USE_KQUEUE */
