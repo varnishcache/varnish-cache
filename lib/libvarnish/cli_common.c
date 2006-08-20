@@ -58,6 +58,8 @@ cli_writeres(int fd, struct cli *cli)
 					 * any misformats by snprintf
 					 */
 
+	assert(cli->result >= 100);
+	assert(cli->result <= 999);
 	i = snprintf(res, sizeof res,
 	    "%-3d %-8d\n", cli->result, vsb_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
