@@ -422,11 +422,13 @@ accept_f(int fd)
 	vca_kq_sess(sp, EV_ADD);
 }
 
+#define NKEV	20
+
 static void *
 vca_main(void *arg)
 {
-	struct kevent ke;
-	int i;
+	struct kevent ke[10];
+	int i, j, n;
 	struct sess *sp;
 
 	(void)arg;
@@ -436,44 +438,38 @@ vca_main(void *arg)
 
 
 	if (heritage.socket >= 0) {
-		memset(&ke, 0, sizeof ke);
-		EV_SET(&ke, heritage.socket,
+		memset(&ke[0], 0, sizeof ke[0]);
+		EV_SET(&ke[0], heritage.socket,
 		    EVFILT_READ, EV_ADD, 0, 0, accept_f);
-		AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
+		AZ(kevent(kq, &ke[0], 1, NULL, 0, NULL));
 	}
 
 	while (1) {
-		i = kevent(kq, NULL, 0, &ke, 1, NULL);
-		assert(i == 1);
-#if 0
-		printf("i = %d\n", i);
-		printf("ke.ident = %ju\n", (uintmax_t)ke.ident);
-		printf("ke.filter = %u\n", ke.filter);
-		printf("ke.flags = %u\n", ke.flags);
-		printf("ke.fflags = %u\n", ke.fflags);
-		printf("ke.data = %jd\n", (intmax_t)ke.data);
-		printf("ke.udata = %p\n", ke.udata);
-#endif
-		if (ke.udata == accept_f) {
-			accept_f(ke.ident);
-			continue;
-		}
-		CAST_OBJ_NOTNULL(sp, ke.udata, SESS_MAGIC);
-		if (ke.filter == EVFILT_READ) {
-			i = http_RecvSome(sp->fd, sp->http);
-			if (i == -1)
+		n = kevent(kq, NULL, 0, ke, NKEV, NULL);
+		assert(n >= 1);
+		VSL(SLT_Debug, 0, "KQ %d", n);
+		for (j = 0; j < n; j++) {
+			if (ke[j].udata == accept_f) {
+				accept_f(ke[j].ident);
 				continue;
-			vca_kq_sess(sp, EV_DELETE);
-			vca_handover(sp, i);
-			continue;
+			}
+			CAST_OBJ_NOTNULL(sp, ke[j].udata, SESS_MAGIC);
+			if (ke[j].filter == EVFILT_READ) {
+				i = http_RecvSome(sp->fd, sp->http);
+				if (i == -1)
+					continue;
+				vca_kq_sess(sp, EV_DELETE);
+				vca_handover(sp, i);
+				continue;
+			}
+			if (ke[j].filter == EVFILT_TIMER) {
+				vca_kq_sess(sp, EV_DELETE);
+				vca_close_session(sp, "timeout");
+				vca_return_session(sp);
+				continue;
+			} 
+			INCOMPL();
 		}
-		if (ke.filter == EVFILT_TIMER) {
-			vca_kq_sess(sp, EV_DELETE);
-			vca_close_session(sp, "timeout");
-			vca_return_session(sp);
-			continue;
-		} 
-		INCOMPL();
 	}
 
 	INCOMPL();
