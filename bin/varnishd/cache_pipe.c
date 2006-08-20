@@ -22,12 +22,16 @@ rdf(struct pollfd *fds, int idx)
 
 	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0) {
+		VSL(SLT_Debug, fds[idx].fd, "Pipe Shut read(read)");
+		VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut write(read)");
 		shutdown(fds[idx].fd, SHUT_RD);
 		shutdown(fds[1-idx].fd, SHUT_WR);
 		fds[idx].events = 0;
 	} else {
 		j = write(fds[1-idx].fd, buf, i);
 		if (i != j) {
+			VSL(SLT_Debug, fds[idx].fd, "Pipe Shut write(write)");
+			VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut read(write)");
 			shutdown(fds[idx].fd, SHUT_WR);
 			shutdown(fds[1-idx].fd, SHUT_RD);
 			fds[1-idx].events = 0;
