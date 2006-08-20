@@ -116,6 +116,9 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (VSL_OpenLog(vd))
+		exit (1);
+
 	c_hist = 10.0 / log(10.0);
 	initscr();
 	erase();
