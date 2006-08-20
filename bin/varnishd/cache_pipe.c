@@ -51,6 +51,7 @@ PipeSession(struct sess *sp)
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+	vc->http->logtag = HTTP_Tx;
 
 	http_CopyReq(vc->fd, vc->http, sp->http);
 	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PIPE);
