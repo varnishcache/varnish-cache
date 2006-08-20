@@ -217,7 +217,7 @@ mgt_sigchld(struct ev *e, int what)
 	ev_poker = NULL;
 
 	r = wait4(-1, &status, WNOHANG, NULL);
-	if (r != child_pid) {
+	if (r != child_pid || r == -1) {
 		fprintf(stderr, "Unknown child died pid=%d status=0x%x\n",
 		    r, status);
 		return (0);
