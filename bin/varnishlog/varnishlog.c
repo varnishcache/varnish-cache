@@ -4,12 +4,13 @@
  * Log tailer for Varnish
  */
 
-#include <stdio.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <regex.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "compat/vis.h"
 
@@ -175,36 +176,25 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 static void
 do_write(struct VSL_data *vd, const char *w_opt)
 {
-	FILE *wfile = NULL;
-	unsigned u;
-	int i;
+	int fd, i;
 	unsigned char *p;
 
 	if (!strcmp(w_opt, "-"))
-		wfile = stdout;
+		fd = STDOUT_FILENO;
 	else
-		wfile = fopen(w_opt, "w");
-	if (wfile == NULL) {
+		fd = open(w_opt, O_WRONLY|O_APPEND|O_CREAT, 0644);
+	if (fd < 0) {
 		perror(w_opt);
 		exit (1);
 	}
-	u = 0;
 	while (1) {
 		i = VSL_NextLog(vd, &p);
 		if (i < 0)
 			break;
-		if (i == 0) {
-			fflush(wfile);
-			fprintf(stderr, "\nFlushed\n");
-		} else {
-			i = fwrite(p, 5 + p[1], 1, wfile);
+		if (i > 0) {
+			i = write(fd, p, 5 + p[1]);
 			if (i != 1)
 				perror(w_opt);
-			u++;
-			if (!(u % 1000)) {
-				fprintf(stderr, "%u\r", u);
-				fflush(stderr);
-			}
 		}
 	}
 	exit (0);
