@@ -21,7 +21,7 @@
 #include "shmlog.h"
 #include "cache.h"
 
-#define CLIENT_HASH			256
+#define CLIENT_HASH			1024
 #define CLIENT_TTL			30
 
 /*--------------------------------------------------------------------*/
@@ -33,14 +33,18 @@ struct sessmem {
 	struct sess		sess;
 	struct http		http;
 	struct sockaddr		sockaddr[2];	/* INET6 hack */
+	TAILQ_ENTRY(sessmem)	list;
 };
 
 /*--------------------------------------------------------------------*/
 
-TAILQ_HEAD(srcaddrhead ,srcaddr);
+static TAILQ_HEAD(,sessmem)	ses_free_mem =
+    TAILQ_HEAD_INITIALIZER(ses_free_mem);
 
+TAILQ_HEAD(srcaddrhead ,srcaddr);
 static struct srcaddrhead	srcaddr_hash[CLIENT_HASH];
 static pthread_mutex_t		ses_mtx;
+static pthread_mutex_t		ses_mem_mtx;
 
 /*--------------------------------------------------------------------
  * Assign a srcaddr to this session.
@@ -185,13 +189,21 @@ SES_New(struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
 
-	sm = calloc(
-	    sizeof *sm + params->mem_workspace,
-	    1);
+	AZ(pthread_mutex_lock(&ses_mem_mtx));
+	sm = TAILQ_FIRST(&ses_free_mem);
+	if (sm != NULL)
+		TAILQ_REMOVE(&ses_free_mem, sm, list);
+	AZ(pthread_mutex_unlock(&ses_mem_mtx));
+	if (sm == NULL) {
+		sm = calloc(sizeof *sm + params->mem_workspace, 1);
+		sm->magic = SESSMEM_MAGIC;
+		VSL_stats->n_sess_mem++;
+	}
 	if (sm == NULL)
 		return (NULL);
-	sm->magic = SESSMEM_MAGIC;
+	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	VSL_stats->n_sess++;
+	memset(&sm->sess, 0, sizeof sm->sess);
 	sm->sess.magic = SESS_MAGIC;
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
@@ -225,7 +237,9 @@ SES_Delete(struct sess *sp)
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	CHECK_OBJ_NOTNULL(sp->mem, SESSMEM_MAGIC);
-	free(sp->mem);
+	AZ(pthread_mutex_lock(&ses_mem_mtx));
+	TAILQ_INSERT_HEAD(&ses_free_mem, sp->mem, list);
+	AZ(pthread_mutex_unlock(&ses_mem_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -238,4 +252,5 @@ SES_Init()
 	for (i = 0; i < CLIENT_HASH; i++)
 		TAILQ_INIT(&srcaddr_hash[i]);
 	AZ(pthread_mutex_init(&ses_mtx, NULL));
+	AZ(pthread_mutex_init(&ses_mem_mtx, NULL));
 }
