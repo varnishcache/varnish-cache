@@ -118,8 +118,9 @@ mgt_vcc_delbyname(const char *name)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_vcc_default(const char *bflag, const char *fflag)
+mgt_vcc_default(const char *b_arg, const char *f_arg)
 {
+	char *addr, *port;
 	char *buf, *vf;
 	const char *p, *q;
 	struct vsb *sb;
@@ -127,7 +128,7 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
-	if (bflag != NULL) {
+	if (b_arg != NULL) {
 		/*
 		 * XXX: should do a "HEAD /" on the -b argument to see that
 		 * XXX: it even works.  On the other hand, we should do that
@@ -136,26 +137,24 @@ mgt_vcc_default(const char *bflag, const char *fflag)
 		 * XXX: a bug for a backend to not reply at that time, so then
 		 * XXX: again: we should check it here in the "trivial" case.
 		 */
-		p = strchr(bflag, ' ');
-		if (p != NULL) {
-			q = p + 1;
-		} else {
-			p = strchr(bflag, '\0');
-			assert(p != NULL);
-			q = "http";
+		if (TCP_parse(b_arg, &addr, &port) != 0) {
+			fprintf(stderr, "invalid backend address\n");
+			return (1);
 		}
 		
 		buf = NULL;
 		asprintf(&buf,
 		    "backend default {\n"
-		    "    set backend.host = \"%*.*s\";\n"
+		    "    set backend.host = \"%s\";\n"
 		    "    set backend.port = \"%s\";\n"
-		    "}\n", (int)(p - bflag), (int)(p - bflag), bflag, q);
+		    "}\n", addr, port ? port : "http");
+		free(addr);
+		free(port);
 		assert(buf != NULL);
 		vf = VCC_Compile(sb, buf, NULL);
 		free(buf);
 	} else {
-		vf = VCC_CompileFile(sb, fflag);
+		vf = VCC_CompileFile(sb, f_arg);
 	}
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {

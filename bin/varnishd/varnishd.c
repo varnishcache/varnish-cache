@@ -47,25 +47,25 @@ cmp_hash(struct hash_slinger *s, const char *p, const char *q)
 }
 
 static void
-setup_hash(const char *sflag)
+setup_hash(const char *s_arg)
 {
 	const char *p, *q;
 	struct hash_slinger *hp;
 
-	p = strchr(sflag, ',');
+	p = strchr(s_arg, ',');
 	if (p == NULL)
-		q = p = strchr(sflag, '\0');
+		q = p = strchr(s_arg, '\0');
 	else
 		q = p + 1;
 	assert(p != NULL);
 	assert(q != NULL);
-	if (!cmp_hash(&hcl_slinger, sflag, p)) {
+	if (!cmp_hash(&hcl_slinger, s_arg, p)) {
 		hp = &hcl_slinger;
-	} else if (!cmp_hash(&hsl_slinger, sflag, p)) {
+	} else if (!cmp_hash(&hsl_slinger, s_arg, p)) {
 		hp = &hsl_slinger;
 	} else {
 		fprintf(stderr, "Unknown hash method \"%.*s\"\n",
-		    (int)(p - sflag), sflag);
+		    (int)(p - s_arg), s_arg);
 		exit (2);
 	}
 	heritage.hash = hp;
@@ -92,25 +92,25 @@ cmp_storage(struct stevedore *s, const char *p, const char *q)
 }
 
 static void
-setup_storage(const char *sflag)
+setup_storage(const char *s_arg)
 {
 	const char *p, *q;
 	struct stevedore *stp;
 
-	p = strchr(sflag, ',');
+	p = strchr(s_arg, ',');
 	if (p == NULL)
-		q = p = strchr(sflag, '\0');
+		q = p = strchr(s_arg, '\0');
 	else
 		q = p + 1;
 	assert(p != NULL);
 	assert(q != NULL);
-	if (!cmp_storage(&sma_stevedore, sflag, p)) {
+	if (!cmp_storage(&sma_stevedore, s_arg, p)) {
 		stp = &sma_stevedore;
-	} else if (!cmp_storage(&smf_stevedore, sflag, p)) {
+	} else if (!cmp_storage(&smf_stevedore, s_arg, p)) {
 		stp = &smf_stevedore;
 	} else {
 		fprintf(stderr, "Unknown storage method \"%.*s\"\n",
-		    (int)(p - sflag), sflag);
+		    (int)(p - s_arg), s_arg);
 		exit (2);
 	}
 	heritage.stevedore = malloc(sizeof *heritage.stevedore);
@@ -125,12 +125,14 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, "    %-28s # %s\n", "-b backend",
-	    "backend location");
+	fprintf(stderr, "    %-28s # %s\n", "-a address:port",
+	    "HTTP listen address and port");
+	fprintf(stderr, "    %-28s # %s\n", "-b address:port",
+	    "backend address and port");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "   -b <hostname_or_IP>");
 	fprintf(stderr, "    %-28s # %s\n", "",
-	    "   -b '<hostname_or_IP> <port_or_service>'");
+	    "   -b '<hostname_or_IP>:<port_or_service>'");
 	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
 	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL_file");
 	fprintf(stderr, "    %-28s # %s\n",
@@ -143,7 +145,6 @@ usage(void)
 	    "  -h classic,<buckets>");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>,<buckets_per_mutex>");
-	fprintf(stderr, "    %-28s # %s\n", "-p number", "TCP listen port");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-s kind[,storageoptions]", "Backend storage specification");
 	fprintf(stderr, "    %-28s # %s\n", "",
@@ -155,7 +156,8 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
-	fprintf(stderr, "    %-28s # %s\n", "-T port", "Telnet port");
+	fprintf(stderr, "    %-28s # %s\n", "-T address:port",
+	    "Telnet listen address and port");
 	fprintf(stderr, "    %-28s # %s\n", "-V", "version");
 	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
 	    "Number of worker threads");
@@ -317,13 +319,14 @@ int
 main(int argc, char *argv[])
 {
 	int o;
-	const char *portnumber = "8080";
-	unsigned dflag = 0;
-	const char *bflag = NULL;
-	const char *fflag = NULL;
-	const char *sflag = "file";
-	const char *hflag = "classic";
-	const char *Tflag = NULL;
+	unsigned d_flag = 0;
+	char *addr, *port;
+	const char *a_arg = "0.0.0.0:http";
+	const char *b_arg = NULL;
+	const char *f_arg = NULL;
+	const char *h_flag = "classic";
+	const char *s_arg = "file";
+	const char *T_arg = NULL;
 	struct params param;
 
 	setbuf(stdout, NULL);
@@ -343,31 +346,31 @@ main(int argc, char *argv[])
 	params->send_timeout = 600;
 	params->auto_restart = 1;
 
-	while ((o = getopt(argc, argv, "b:df:h:p:s:t:T:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:df:h:s:t:T:Vw:")) != -1)
 		switch (o) {
+		case 'a':
+			a_arg = optarg;
+			break;
 		case 'b':
-			bflag = optarg;
+			b_arg = optarg;
 			break;
 		case 'd':
-			dflag++;
+			d_flag++;
 			break;
 		case 'f':
-			fflag = optarg;
+			f_arg = optarg;
 			break;
 		case 'h':
-			hflag = optarg;
-			break;
-		case 'p':
-			portnumber = optarg;
+			h_flag = optarg;
 			break;
 		case 's':
-			sflag = optarg;
+			s_arg = optarg;
 			break;
 		case 't':
 			params->default_ttl = strtoul(optarg, NULL, 0);
 			break;
 		case 'T':
-			Tflag = optarg;
+			T_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishd");
@@ -387,20 +390,20 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (bflag != NULL && fflag != NULL) {
+	if (b_arg != NULL && f_arg != NULL) {
 		fprintf(stderr, "Only one of -b or -f can be specified\n");
 		usage();
 	}
-	if (bflag == NULL && fflag == NULL) {
+	if (b_arg == NULL && f_arg == NULL) {
 		fprintf(stderr, "One of -b or -f must be specified\n");
 		usage();
 	}
 
-	if (mgt_vcc_default(bflag, fflag))
+	if (mgt_vcc_default(b_arg, f_arg))
 		exit (2);
 
-	setup_storage(sflag);
-	setup_hash(hflag);
+	setup_storage(s_arg);
+	setup_hash(h_flag);
 
 	/*
 	 * XXX: Lacking the suspend/resume facility (due to the socket API
@@ -409,22 +412,26 @@ main(int argc, char *argv[])
 	 * but do not answer.  That, on the other hand, would eliminate the
 	 * possibility of doing a "no-glitch" restart of the child process.
 	 */
-	heritage.socket = open_tcp(portnumber, 1);
+	if (TCP_parse(a_arg, &addr, &port) != 0)
+		fprintf(stderr, "invalid listen address\n");
+	heritage.socket = TCP_open(addr, port ? port : "http", 1);
+	free(addr);
+	free(port);
 	if (heritage.socket < 0)
 		exit (2);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
-	if (dflag == 1)
+	if (d_flag == 1)
 		DebugStunt();
-	if (dflag < 2)
-		daemon(dflag, dflag);
-	if (dflag == 1)
+	if (d_flag < 2)
+		daemon(d_flag, d_flag);
+	if (d_flag == 1)
 		printf("%d\n", getpid());
 
 	mgt_cli_init();
 
-	mgt_run(dflag, Tflag);
+	mgt_run(d_flag, T_arg);
 
 	exit(0);
 }
