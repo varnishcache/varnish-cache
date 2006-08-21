@@ -74,51 +74,60 @@ accept_filter(int fd)
 }
 #endif
 
-static int
-try_sock(int family, const char *port, struct addrinfo **resp)
+int
+TCP_parse(const char *str, char **addr, char **port)
 {
-	struct addrinfo hints, *res;
-	int ret, sd;
+	const char *p;
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = family;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	ret = getaddrinfo(NULL, port, &hints, &res);
-	if (ret != 0)
-		return (-1);
-	sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if (sd < 0)
-		freeaddrinfo(res);
-	else
-		*resp = res;
-	return (sd);
+	*addr = *port = NULL;
+
+	if (str[0] == '[') {
+		/* IPv6 address of the form [::1]:80 */
+		if ((p = strchr(str, ']')) == NULL ||
+		    p == str + 1 ||
+		    (p[1] != '\0' && p[1] != ':'))
+			return (-1);
+		*addr = strndup(str + 1, p - (str + 1));
+		if (p[1] == ':')
+			*port = strdup(p + 2);
+	} else {
+		/* IPv4 address of the form 127.0.0.1:80, or non-numeric */
+		p = strchr(str, ':');
+		if (p == NULL) {
+			*addr = strdup(str);
+		} else {
+			if (p == str)
+				return (-1);
+			*addr = strndup(str, p - str);
+			*port = strdup(p + 1);
+		}
+	}
+	return (0);
 }
 
 int
-open_tcp(const char *port, int http)
+TCP_open(const char *addr, const char *port, int http)
 {
-	int sd, val;
-	struct addrinfo *res;
+	struct addrinfo hints, *res;
+	int ret, sd, val;
 
-	sd = try_sock(AF_INET6, port, &res);
-	if (sd < 0)
-		sd = try_sock(AF_INET, port, &res);
+	memset(&hints, 0, sizeof hints);
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	ret = getaddrinfo(addr, port, &hints, &res);
+	if (ret != 0) {
+		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ret));
+		return (-1);
+	}
+	sd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (sd < 0) {
-		fprintf(stderr, "Failed to get listening socket\n");
+		perror("socket()");
+		freeaddrinfo(res);
 		return (-1);
 	}
 	val = 1;
 	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
 		perror("setsockopt(SO_REUSEADDR, 1)");
-		freeaddrinfo(res);
-		close(sd);
-		return (-1);
-	}
-	val = 0;
-	if (res->ai_family == AF_INET6 &&
-	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
-		perror("setsockopt(IPV6_V6ONLY, 0)");
 		freeaddrinfo(res);
 		close(sd);
 		return (-1);

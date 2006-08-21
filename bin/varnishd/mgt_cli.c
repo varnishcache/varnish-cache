@@ -357,10 +357,14 @@ telnet_accept(struct ev *ev, int what)
 }
 
 int
-mgt_cli_telnet(const char *port)
+mgt_cli_telnet(const char *T_arg)
 {
+	char *addr, *port;
 
-	telnet_sock = open_tcp(port, 0);
+	TCP_parse(T_arg, &addr, &port);
+	telnet_sock = TCP_open(addr, port, 0);
+	free(addr);
+	free(port);
 	if (telnet_sock < 0) {
 		fprintf(stderr, "Could not open TELNET port\n");
 		exit (2);
