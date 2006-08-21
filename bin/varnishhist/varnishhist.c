@@ -19,10 +19,10 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
-#define HIST_LOW -55
-#define HIST_HIGH 20
+#define HIST_LOW -50
+#define HIST_HIGH 25
 #define HIST_W (1 + (HIST_HIGH - HIST_LOW))
-#define HIST_N 1000
+#define HIST_N 10000
 
 static unsigned char rr_hist[HIST_N];
 static unsigned next_hist;
@@ -34,7 +34,13 @@ r_hist(void)
 {
 	int x, y;
 	double m, r;
+	time_t t;
+	static time_t tl;
 
+	t = time(NULL);
+	if (t == tl)
+		return;
+	tl = t;
 	m = 0;
 	r = 0;
 	for (x = 0; x < HIST_W; x++) {
@@ -70,7 +76,11 @@ h_hist(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const
 	(void)spec;
 	if (tag != SLT_ReqEnd)
 		return (0);
+#if 0
+	i = sscanf(ptr, "%*d %*f %*f %*f %lf", &b);
+#else
 	i = sscanf(ptr, "%*d %*f %*f %lf", &b);
+#endif
 	assert(i == 1);
 	i = log(b) * c_hist;
 	if (i < HIST_LOW)
