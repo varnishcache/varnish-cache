@@ -39,6 +39,8 @@ static struct acceptor *vca_acceptors[] = {
 	NULL,
 };
 
+static struct acceptor *vca_act;
+
 static unsigned		xids;
 static pthread_t 	vca_thread_acct;
 
@@ -171,7 +173,7 @@ vca_return_session(struct sess *sp)
 			return;
 		}
 	}
-	vca_acceptors[0]->recycle(sp);
+	vca_act->recycle(sp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -202,10 +204,12 @@ VCA_Init(void)
 	xids = random();
 
 	/* XXX: Add selector mechanism at some point */
-	if (vca_acceptors[0]->name == NULL) {
+	vca_act = vca_acceptors[0];
+
+	if (vca_act->name == NULL) {
 		fprintf(stderr, "No acceptor in program\n");
 		exit (2);
 	}
-	vca_acceptors[0]->init();
+	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 }
