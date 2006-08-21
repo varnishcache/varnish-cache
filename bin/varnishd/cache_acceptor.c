@@ -40,6 +40,7 @@ static struct acceptor *vca_acceptors[] = {
 };
 
 static unsigned		xids;
+static pthread_t 	vca_thread_acct;
 
 struct sess *
 vca_accept_sess(int fd)
@@ -128,6 +129,23 @@ vca_handfirst(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+int
+vca_pollsession(struct sess *sp)
+{
+	int i;
+
+	i = http_RecvSome(sp->fd, sp->http);
+	if (i < 1)
+		return (i);
+	if (i == 1)
+		vca_close_session(sp, "overflow");
+	else if (i == 2)
+		vca_close_session(sp, "no request");
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 vca_close_session(struct sess *sp, const char *why)
 {
@@ -143,8 +161,32 @@ vca_return_session(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->fd >= 0) {
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
+		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+		if (http_RecvPrepAgain(sp->http))
+			vca_handover(sp, 0);
+	}
 	vca_acceptors[0]->recycle(sp);
 }
+
+/*--------------------------------------------------------------------*/
+
+static void *
+vca_acct(void *arg)
+{
+	struct sess *sp;
+
+	(void)arg;
+	while (1) {
+		sp = vca_accept_sess(heritage.socket);
+		if (sp == NULL)
+			continue;
+		http_RecvPrep(sp->http);
+		vca_handfirst(sp);
+	}
+}
+
 
 /*--------------------------------------------------------------------*/
 
@@ -161,4 +203,5 @@ VCA_Init(void)
 		exit (2);
 	}
 	vca_acceptors[0]->init();
+	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 }
