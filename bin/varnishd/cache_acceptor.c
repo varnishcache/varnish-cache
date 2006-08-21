@@ -161,11 +161,15 @@ vca_return_session(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(sp->obj == NULL);
+	assert(sp->vcl == NULL);
 	if (sp->fd >= 0) {
 		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
-		if (http_RecvPrepAgain(sp->http))
+		if (http_RecvPrepAgain(sp->http)) {
 			vca_handover(sp, 0);
+			return;
+		}
 	}
 	vca_acceptors[0]->recycle(sp);
 }
