@@ -28,8 +28,11 @@
 #include "cache.h"
 #include "cache_acceptor.h"
 
-static pthread_t vca_kqueue_thread;
+static pthread_t vca_kqueue_thread1;
+static pthread_t vca_kqueue_thread2;
 static int kq = -1;
+
+#define NKEV	100
 
 static void
 vca_kq_sess(struct sess *sp, int arm)
@@ -64,17 +67,6 @@ vca_kev(struct kevent *kp)
 	int i;
 	struct sess *sp;
 
-	if (kp->udata == vca_accept_sess) {
-		while (kp->data-- > 0) {
-			sp = vca_accept_sess(kp->ident);
-			if (sp == NULL)
-				return (NULL);
-			clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
-			http_RecvPrep(sp->http);
-			vca_kq_sess(sp, EV_ADD);
-		}
-		return (NULL);
-	}
 	if (kp->udata == NULL) {
 		VSL(SLT_Debug, 0,
 		    "KQ RACE %s flags %x fflags %x data %x",
@@ -125,10 +117,8 @@ vca_kev(struct kevent *kp)
 }
 
 
-#define NKEV	100
-
 static void *
-vca_main(void *arg)
+vca_kqueue_main(void *arg)
 {
 	struct kevent ke[NKEV], *kp;
 	int i, j, n;
@@ -138,12 +128,6 @@ vca_main(void *arg)
 
 	kq = kqueue();
 	assert(kq >= 0);
-
-
-	assert(heritage.socket >= 0);
-	EV_SET(&ke[0], heritage.socket,
-	    EVFILT_READ, EV_ADD, 0, 0, vca_accept_sess);
-	AZ(kevent(kq, &ke[0], 1, NULL, 0, NULL));
 
 	while (1) {
 		n = kevent(kq, NULL, 0, ke, NKEV, NULL);
@@ -160,6 +144,22 @@ vca_main(void *arg)
 		}
 	}
 	INCOMPL();
+}
+
+static void *
+vca_kqueue_acct(void *arg)
+{
+	struct sess *sp;
+
+	(void)arg;
+	while (1) {
+		sp = vca_accept_sess(heritage.socket);
+		if (sp == NULL)
+			continue;
+		clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
+		http_RecvPrep(sp->http);
+		vca_kq_sess(sp, EV_ADD);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -183,7 +183,8 @@ vca_kqueue_recycle(struct sess *sp)
 static void
 vca_kqueue_init(void)
 {
-	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_main, NULL));
+	AZ(pthread_create(&vca_kqueue_thread1, NULL, vca_kqueue_main, NULL));
+	AZ(pthread_create(&vca_kqueue_thread2, NULL, vca_kqueue_acct, NULL));
 }
 
 struct acceptor acceptor_kqueue = {
