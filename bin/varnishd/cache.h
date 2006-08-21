@@ -305,7 +305,7 @@ void VCA_Init(void);
 /* cache_backend.c */
 void VBE_Init(void);
 struct vbe_conn *VBE_GetFd(struct backend *bp, unsigned xid);
-void VBE_ClosedFd(struct vbe_conn *vc);
+void VBE_ClosedFd(struct vbe_conn *vc, int already);
 void VBE_RecycleFd(struct vbe_conn *vc);
 
 /* cache_ban.c */
