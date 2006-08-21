@@ -425,7 +425,6 @@ vca_kev(struct kevent *kp)
 	struct sess *sp;
 
 	if (kp->udata == vca_accept_sess) {
-		assert(kp->data > 0);
 		while (kp->data-- > 0) {
 			sp = vca_accept_sess(kp->ident);
 			if (sp == NULL)
