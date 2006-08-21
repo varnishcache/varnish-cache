@@ -13,6 +13,7 @@ MAC_STAT(backend_unused,	uint64_t, "u", "Backend connections unused")
 
 MAC_STAT(n_srcaddr,		uint64_t, "u", "N struct srcaddr")
 MAC_STAT(n_srcaddr_act,		uint64_t, "u", "N active struct srcaddr")
+MAC_STAT(n_sess_mem,		uint64_t, "u", "N struct sess_mem")
 MAC_STAT(n_sess,		uint64_t, "u", "N struct sess")
 MAC_STAT(n_object,		uint64_t, "u", "N struct object")
 MAC_STAT(n_objecthead,		uint64_t, "u", "N struct objecthead")
