@@ -84,6 +84,15 @@ vca_accept_sess(int fd)
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv));
 	}
 #endif
+#ifdef SO_RCVTIMEO
+	{
+	struct timeval tv;
+
+	tv.tv_sec = params->sess_timeout;
+	tv.tv_usec = 0;
+	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv));
+	}
+#endif
 
 	TCP_name(addr, l, sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
@@ -101,6 +110,16 @@ vca_handover(struct sess *sp, int bad)
 		return;
 	}
 	sp->step = STP_RECV;
+	VSL_stats->client_req++;
+	sp->xid = xids++;
+	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
+	WRK_QueueSession(sp);
+}
+
+void
+vca_handfirst(struct sess *sp)
+{
+	sp->step = STP_FIRST;
 	VSL_stats->client_req++;
 	sp->xid = xids++;
 	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);

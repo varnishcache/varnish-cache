@@ -235,6 +235,36 @@ cnt_fetch(struct sess *sp)
 	INCOMPL();
 }
 
+static int
+cnt_first(struct sess *sp)
+{
+	int i;
+
+	for (;;) {
+		i = http_RecvSome(sp->fd, sp->http);
+		switch (i) {
+		case -1:
+			continue;
+		case 0:
+			sp->step = STP_RECV;
+			return (0);
+		case 1:
+			vca_close_session(sp, "overflow");
+			SES_Charge(sp);
+			vca_return_session(sp);
+			sp->step = STP_DONE;
+			return (1);
+		case 2:
+			vca_close_session(sp, "no request");
+			SES_Charge(sp);
+			vca_return_session(sp);
+			sp->step = STP_DONE;
+			return (1);
+		default:
+			INCOMPL();
+		}
+	}
+}
 
 /*--------------------------------------------------------------------
  * We had a cache hit.  Ask VCL, then march off as instructed.
