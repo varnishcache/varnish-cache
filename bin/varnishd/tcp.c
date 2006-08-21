@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -73,6 +74,19 @@ accept_filter(int fd)
 		    fd, i, strerror(errno));
 }
 #endif
+
+static char *
+strndup(const char *p, unsigned n)
+{
+	char *q;
+
+	q = malloc(n + 1);
+	if (q != NULL) {
+		memcpy(q, p, n);
+		q[n] = '\0';
+	}
+	return (q);
+}
 
 int
 TCP_parse(const char *str, char **addr, char **port)
