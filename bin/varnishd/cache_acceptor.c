@@ -398,7 +398,6 @@ vca_kq_sess(struct sess *sp, int arm)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	memset(ke, 0, sizeof ke);
-	j = 0;
 	if (arm == EV_ADD || arm == EV_ENABLE) {
 		assert(sp->kqa == 0);
 		sp->kqa = 1;
@@ -408,9 +407,9 @@ vca_kq_sess(struct sess *sp, int arm)
 		sp->kqa = 0;
 		arm2 = EV_DELETE;
 	}
+	j = 0;
 	EV_SET(&ke[j++], sp->id, EVFILT_TIMER, arm2,
 	    0, params->sess_timeout * 1000, sp);
-	j = 0;
 	if (sp->fd >= 0)
 		EV_SET(&ke[j++], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 
