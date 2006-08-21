@@ -33,13 +33,18 @@ struct sessmem {
 	struct sess		sess;
 	struct http		http;
 	struct sockaddr		sockaddr[2];	/* INET6 hack */
+	unsigned		workspace;
 	TAILQ_ENTRY(sessmem)	list;
 };
 
 /*--------------------------------------------------------------------*/
 
-static TAILQ_HEAD(,sessmem)	ses_free_mem =
-    TAILQ_HEAD_INITIALIZER(ses_free_mem);
+static TAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
+    TAILQ_HEAD_INITIALIZER(ses_free_mem[0]),
+    TAILQ_HEAD_INITIALIZER(ses_free_mem[1]),
+};
+
+static unsigned ses_qp;
 
 TAILQ_HEAD(srcaddrhead ,srcaddr);
 static struct srcaddrhead	srcaddr_hash[CLIENT_HASH];
@@ -188,15 +193,37 @@ struct sess *
 SES_New(struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
+	unsigned u;
 
-	AZ(pthread_mutex_lock(&ses_mem_mtx));
-	sm = TAILQ_FIRST(&ses_free_mem);
-	if (sm != NULL)
-		TAILQ_REMOVE(&ses_free_mem, sm, list);
-	AZ(pthread_mutex_unlock(&ses_mem_mtx));
+
+	/*
+	 * One of the two queues is unlocked because only one
+	 * thread ever gets here to empty it.
+	 */
+	assert(ses_qp <= 1);
+	sm = TAILQ_FIRST(&ses_free_mem[ses_qp]);
 	if (sm == NULL) {
-		sm = calloc(sizeof *sm + params->mem_workspace, 1);
+		/*
+		 * If that queue is empty, flip queues holding the lock
+		 * and try the new unlocked queue.
+		 */
+		AZ(pthread_mutex_lock(&ses_mem_mtx));
+		ses_qp = 1 - ses_qp;
+		AZ(pthread_mutex_unlock(&ses_mem_mtx));
+		sm = TAILQ_FIRST(&ses_free_mem[ses_qp]);
+	}
+	if (sm != NULL) {
+		TAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
+	} else {
+		/*
+		 * If that fails, alloc new one.
+		 */
+		u = params->mem_workspace;
+		sm = malloc(sizeof *sm + u);
+		if (sm == NULL)
+			return (NULL);
 		sm->magic = SESSMEM_MAGIC;
+		sm->workspace = u;
 		VSL_stats->n_sess_mem++;
 	}
 	if (sm == NULL)
@@ -215,7 +242,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 		sm->sess.sockaddrlen = len;
 	}
 
-	http_Setup(&sm->http, (void *)(sm + 1), params->mem_workspace);
+	http_Setup(&sm->http, (void *)(sm + 1), sm->workspace);
 
 	sm->sess.acct.first = time(NULL);
 
@@ -226,8 +253,12 @@ void
 SES_Delete(struct sess *sp)
 {
 	struct acct *b = &sp->acct;
+	struct sessmem *sm;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sm = sp->mem;
+	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+	
 	assert(sp->obj == NULL);
 	assert(sp->vcl == NULL);
 	VSL_stats->n_sess--;
@@ -236,10 +267,14 @@ SES_Delete(struct sess *sp)
 	    sp->addr, sp->port, time(NULL) - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
-	CHECK_OBJ_NOTNULL(sp->mem, SESSMEM_MAGIC);
-	AZ(pthread_mutex_lock(&ses_mem_mtx));
-	TAILQ_INSERT_HEAD(&ses_free_mem, sp->mem, list);
-	AZ(pthread_mutex_unlock(&ses_mem_mtx));
+	if (sm->workspace != params->mem_workspace) { 
+		VSL_stats->n_sess_mem--;
+		free(sm);
+	} else {
+		AZ(pthread_mutex_lock(&ses_mem_mtx));
+		TAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
+		AZ(pthread_mutex_unlock(&ses_mem_mtx));
+	}
 }
 
 /*--------------------------------------------------------------------*/
