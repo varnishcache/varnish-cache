@@ -26,8 +26,6 @@ extern struct acceptor acceptor_poll;
 #endif
 
 /* vca_acceptor.c */
-struct sess *vca_accept_sess(int fd);
 void vca_handover(struct sess *sp, int bad);
-void vca_handfirst(struct sess *sp);
 int vca_pollsession(struct sess *sp);
 
