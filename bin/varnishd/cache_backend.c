@@ -209,7 +209,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		pfd.revents = 0;
 		if (!poll(&pfd, 1, 0))
 			break;
-		VBE_ClosedFd(vc);
+		VBE_ClosedFd(vc, 0);
 	}
 
 	if (vc == NULL) {
@@ -252,14 +252,15 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(struct vbe_conn *vc)
+VBE_ClosedFd(struct vbe_conn *vc, int already)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
 	assert(vc->backend != NULL);
 	VSL(SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
-	AZ(close(vc->fd));
+	if (!already)
+		AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
 	AZ(pthread_mutex_lock(&vbemtx));

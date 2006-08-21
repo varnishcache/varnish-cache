@@ -68,7 +68,7 @@ PipeSession(struct sess *sp)
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");
-		VBE_ClosedFd(vc);
+		VBE_ClosedFd(vc, 0);
 		return;
 	}
 
@@ -92,5 +92,6 @@ PipeSession(struct sess *sp)
 			rdf(fds, 1);
 	}
 	vca_close_session(sp, "pipe");
-	VBE_ClosedFd(vc);
+	(void)close (vc->fd);
+	VBE_ClosedFd(vc, 1);
 }

@@ -179,7 +179,7 @@ PassBody(struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_ClosedFd(vc);
+		VBE_ClosedFd(vc, 0);
 	else
 		VBE_RecycleFd(vc);
 }
