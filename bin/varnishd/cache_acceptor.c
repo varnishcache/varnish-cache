@@ -6,20 +6,6 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
-#undef ACCEPTOR_USE_KQUEUE
-#undef ACCEPTOR_USE_EPOLL
-#undef ACCEPTOR_USE_POLL
-    
-#if defined(HAVE_KQUEUE)
-#define ACCEPTOR_USE_KQUEUE 1
-#elif defined(HAVE_EPOLL_CTL)
-#define ACCEPTOR_USE_EPOLL 1
-#elif defined(HAVE_POLL)
-#define ACCEPTOR_USE_POLL 1
-#else
-#error No usable acceptors detected.
-#endif
-
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -47,7 +33,7 @@ static struct acceptor *vca_acceptors[] = {
 #if defined(HAVE_EPOLL_CTL)
 	&acceptor_epoll,
 #endif
-#if defined(HAVE_POLL_CTL)
+#if defined(HAVE_POLL)
 	&acceptor_poll,
 #endif
 	NULL,
@@ -151,5 +137,9 @@ VCA_Init(void)
 	xids = random();
 
 	/* XXX: Add selector mechanism at some point */
+	if (vca_acceptors[0]->name == NULL) {
+		fprintf(stderr, "No acceptor in program\n");
+		exit (2);
+	}
 	vca_acceptors[0]->init();
 }

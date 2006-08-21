@@ -106,7 +106,7 @@ accept_f(int fd)
 static void *
 vca_main(void *arg)
 {
-	unsigned u, v;
+	unsigned v;
 	struct sess *sp, *sp2;
 	struct timespec t;
 	int i;
