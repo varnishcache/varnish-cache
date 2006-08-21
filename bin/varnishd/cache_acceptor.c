@@ -44,7 +44,7 @@ static struct acceptor *vca_act;
 static unsigned		xids;
 static pthread_t 	vca_thread_acct;
 
-struct sess *
+static struct sess *
 vca_accept_sess(int fd)
 {
 	socklen_t l;
@@ -119,16 +119,6 @@ vca_handover(struct sess *sp, int bad)
 	WRK_QueueSession(sp);
 }
 
-void
-vca_handfirst(struct sess *sp)
-{
-	sp->step = STP_FIRST;
-	VSL_stats->client_req++;
-	sp->xid = xids++;
-	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
-	WRK_QueueSession(sp);
-}
-
 /*--------------------------------------------------------------------*/
 
 int
@@ -189,7 +179,11 @@ vca_acct(void *arg)
 		if (sp == NULL)
 			continue;
 		http_RecvPrep(sp->http);
-		vca_handfirst(sp);
+		sp->step = STP_FIRST;
+		VSL_stats->client_req++;
+		sp->xid = xids++;
+		VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
+		WRK_QueueSession(sp);
 	}
 }
 

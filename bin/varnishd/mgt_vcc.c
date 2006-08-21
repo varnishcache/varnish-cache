@@ -122,7 +122,6 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 {
 	char *addr, *port;
 	char *buf, *vf;
-	const char *p, *q;
 	struct vsb *sb;
 	struct vclprog *vp;
 

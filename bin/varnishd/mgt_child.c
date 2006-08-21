@@ -40,7 +40,7 @@ static enum {
 	CH_DIED = 4
 }			child_state = CH_STOPPED;
 
-const char *ch_state[] = {
+static const char *ch_state[] = {
 	[CH_STOPPED] =	"stopped",
 	[CH_STARTING] =	"starting",
 	[CH_RUNNING] =	"running",
@@ -49,8 +49,8 @@ const char *ch_state[] = {
 };
 
 struct evbase		*mgt_evb;
-struct ev		*ev_poker;
-struct ev		*ev_listen;
+static struct ev	*ev_poker;
+static struct ev	*ev_listen;
 
 /*--------------------------------------------------------------------*/
 
