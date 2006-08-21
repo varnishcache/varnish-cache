@@ -8,6 +8,9 @@ dist_man_MANS = varnishd.1
 
 varnishd_SOURCES = \
 	cache_acceptor.c \
+	cache_acceptor_epoll.c \
+	cache_acceptor_poll.c \
+	cache_acceptor_kqueue.c \
 	cache_backend.c \
 	cache_ban.c \
 	cache_center.c \
