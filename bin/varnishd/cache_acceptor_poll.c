@@ -15,14 +15,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include <sys/uio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -80,89 +72,58 @@ vca_unpoll(int fd)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vca_rcvhdev(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	clock_gettime(CLOCK_MONOTONIC, &sp->t_idle);
-	TAILQ_INSERT_TAIL(&sesshead, sp, list);
-	vca_poll(sp->fd);
-}
-
-static void
-accept_f(int fd)
-{
-	struct sess *sp;
-
-	sp = vca_accept_sess(fd);
-	if (sp == NULL)
-		return;
-
-	http_RecvPrep(sp->http);
-	vca_rcvhdev(sp);
-}
-
 static void *
 vca_main(void *arg)
 {
 	unsigned v;
 	struct sess *sp, *sp2;
-	struct timespec t;
+	struct timespec ts;
 	int i;
 
 	(void)arg;
 
-	AZ(pipe(pipes));
 	vca_poll(pipes[0]);
 
-	if (heritage.socket >= 0)
-		vca_poll(heritage.socket);
-
 	while (1) {
-		v = poll(pollfd, npoll, 5000);
+		v = poll(pollfd, npoll, 100);
 		if (v && pollfd[pipes[0]].revents) {
 			v--;
 			i = read(pipes[0], &sp, sizeof sp);
 			assert(i == sizeof sp);
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			if (http_RecvPrepAgain(sp->http))
-				vca_handover(sp, 0);
-			else
-				vca_rcvhdev(sp);
+			TAILQ_INSERT_TAIL(&sesshead, sp, list);
+			vca_poll(sp->fd);
 		}
-		if (heritage.socket >= 0 &&
-		    pollfd[heritage.socket].revents) {
-			accept_f(heritage.socket);
-			v--;
-		}
-		clock_gettime(CLOCK_MONOTONIC, &t);
+		clock_gettime(CLOCK_REALTIME, &ts);
+		ts.tv_sec -= params->sess_timeout;
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
+			if (v == 0)
+				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		    	if (pollfd[sp->fd].revents) {
 				v--;
-				i = http_RecvSome(sp->fd, sp->http);
+				i = vca_pollsession(sp);
 				if (i < 0)
 					continue;
-
-				vca_unpoll(sp->fd);
-				TAILQ_REMOVE(&sesshead, sp, list);
-				vca_handover(sp, i);
-				continue;
-			}
-			if (sp->t_idle.tv_sec + params->sess_timeout < t.tv_sec) {
 				TAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(sp->fd);
-				vca_close_session(sp, "timeout");
-				vca_return_session(sp);
+				if (i == 0)
+					vca_handover(sp, i);
+				else
+					SES_Delete(sp);
 				continue;
 			}
-			if (v == 0)
-				break;
+			if (sp->t_open.tv_sec > ts.tv_sec)
+				continue;
+			if (sp->t_open.tv_sec == ts.tv_sec &&
+			    sp->t_open.tv_nsec > ts.tv_nsec)
+				continue;
+			TAILQ_REMOVE(&sesshead, sp, list);
+			vca_unpoll(sp->fd);
+			vca_close_session(sp, "timeout");
+			SES_Delete(sp);
 		}
 	}
-
-	INCOMPL();
 }
 
 /*--------------------------------------------------------------------*/
@@ -171,18 +132,16 @@ static void
 vca_poll_recycle(struct sess *sp)
 {
 
-	if (sp->fd < 0) {
+	if (sp->fd < 0)
 		SES_Delete(sp);
-		return;
-	}
-	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
-	VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
-	assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
+	else
+		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
 }
 
 static void
 vca_poll_init(void)
 {
+	AZ(pipe(pipes));
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 
