@@ -134,6 +134,8 @@ h_hist(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const
 		next_hist = 0;
 	}
 	hh[fd] = 0;
+	if (redraw)
+		r_hist();
 	return (0);
 }
 
@@ -192,8 +194,6 @@ main(int argc, char **argv)
 		i = VSL_Dispatch(vd, h_hist, NULL);
 		if (i < 0)
 			break;
-		if (redraw)
-			r_hist();
 	} 
 
 	return (0);
