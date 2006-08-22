@@ -66,9 +66,9 @@ r_hist(void)
 			r = y * m;
 		for (x = 0; x < HIST_W; x++) {
 			if (bucket_miss[x] > r)
-				addch('|');
-			else if (bucket_hit[x] + bucket_miss[x] > r)
 				addch('#');
+			else if (bucket_hit[x] + bucket_miss[x] > r)
+				addch('|');
 			else
 				addch(' ');
 		}
