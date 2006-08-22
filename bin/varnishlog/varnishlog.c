@@ -193,8 +193,10 @@ do_write(struct VSL_data *vd, const char *w_opt)
 			break;
 		if (i > 0) {
 			i = write(fd, p, 5 + p[1]);
-			if (i != 1)
+			if (i < 0) {
 				perror(w_opt);
+				exit(1);
+			}
 		}
 	}
 	exit (0);
