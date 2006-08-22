@@ -136,7 +136,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 		 * XXX: a bug for a backend to not reply at that time, so then
 		 * XXX: again: we should check it here in the "trivial" case.
 		 */
-		if (TCP_parse(b_arg, &addr, &port) != 0) {
+		if (TCP_parse(b_arg, &addr, &port) != 0 || addr == NULL) {
 			fprintf(stderr, "invalid backend address\n");
 			return (1);
 		}

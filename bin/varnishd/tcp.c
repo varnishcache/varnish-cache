@@ -101,9 +101,8 @@ TCP_parse(const char *str, char **addr, char **port)
 		if (p == NULL) {
 			*addr = strdup(str);
 		} else {
-			if (p == str)
-				return (-1);
-			*addr = strndup(str, p - str);
+			if (p > str)
+				*addr = strndup(str, p - str);
 			*port = strdup(p + 1);
 		}
 	}
