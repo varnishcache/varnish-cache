@@ -14,15 +14,6 @@
 #include <shmlog.h>
 #include <cache.h>
 
-#if defined(HASH_CLASSIC_MD5) && !defined(HAVE_MD5)
-/* MD5 is not available */
-#undef HASH_CLASSIC_MD5
-#endif
-
-#ifdef HASH_CLASSIC_MD5
-#include <md5.h>
-#endif
-
 /*--------------------------------------------------------------------*/
 
 struct hcl_entry {
@@ -45,12 +36,11 @@ struct hcl_hd {
 	pthread_mutex_t		mtx;
 };
 
-static unsigned			hcl_nhash = 4096;
+static unsigned			hcl_nhash = 16383;
 static struct hcl_hd		*hcl_head;
 
 /*--------------------------------------------------------------------*/
 
-#ifndef HASH_CLASSIC_MD5
 static uint32_t crc32bits[] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
     0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -113,7 +103,6 @@ crc32(const char *p1, const char *p2)
 	return (crc ^ ~0U);
 }
 
-#endif /* HASH_CLASSIC_MD5 */
 
 /*--------------------------------------------------------------------
  * The ->init method allows the management process to pass arguments
@@ -128,6 +117,15 @@ hcl_init(const char *p)
 	i = sscanf(p, "%u", &u);
 	if (i <= 0 || u == 0)
 		return (0);
+	if (u > 2 && !(u & (u - 1))) {
+		fprintf(stderr,
+		    "NOTE:\n"
+		    "\tA power of two number of hash buckets is "
+		    "marginally less efficient\n"
+		    "\twith systematic URLs.  Reducing by one"
+		    " hash bucket.\n");
+		u--;
+	}
 	hcl_nhash = u;
 	fprintf(stderr, "Classic hash: %u buckets\n", hcl_nhash);
 	return (0);
@@ -169,23 +167,10 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 	struct hcl_hd *hp;
 	unsigned u1, digest, kl1, kl2, kl, r;
 	int i;
-#ifdef HASH_CLASSIC_MD5
-	MD5_CTX c;
-	unsigned char md5[MD5_DIGEST_LENGTH];
-#endif
 
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 
-#ifdef HASH_CLASSIC_MD5
-	MD5Init(&c);
-	MD5Update(&c, key1, strlen(key1));
-	MD5Update(&c, "", 1);
-	MD5Update(&c, key2, strlen(key2));
-	MD5Final(md5, &c);
-	memcpy(&digest, md5, sizeof digest);
-#else
 	digest = crc32(key1, key2);
-#endif
 
 	u1 = digest % hcl_nhash;
 	hp = &hcl_head[u1];
