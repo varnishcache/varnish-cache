@@ -323,8 +323,12 @@ cnt_hit(struct sess *sp)
 		return (0);
 	}
 
-	if (sp->handling == VCL_RET_ERROR)
-		INCOMPL();
+	if (sp->handling == VCL_RET_ERROR) {
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_ERROR;
+		return (0);
+	}
 
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
