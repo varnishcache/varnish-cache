@@ -1,5 +1,5 @@
 /*
- * $Id: varnishlog.c 412 2006-07-10 20:27:52Z phk $
+ * $Id$
  *
  * Log tailer for Varnish
  */

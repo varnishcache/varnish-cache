@@ -1,5 +1,5 @@
 /*
- * $Id: varnishlog.c 153 2006-04-25 08:17:43Z phk $
+ * $Id$
  */
 
 #include <stdio.h>

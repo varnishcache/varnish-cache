@@ -1,5 +1,5 @@
 /*
- * $Id: /mirror/varnish/trunk/varnish-cache/lib/libvcl/vcc_gen_obj.tcl 30980 2006-08-09T11:24:39.011200Z des  $
+ * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
