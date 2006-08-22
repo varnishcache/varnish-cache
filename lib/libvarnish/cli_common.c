@@ -1,5 +1,5 @@
 /*
- * $Id: cli_event.c 466 2006-07-12 23:30:49Z phk $
+ * $Id$
  */
 
 #include <sys/uio.h>

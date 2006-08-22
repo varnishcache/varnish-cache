@@ -1,5 +1,5 @@
 /*
- * $Id: cache_acceptor.c 860 2006-08-21 09:49:43Z phk $
+ * $Id$
  *
  * XXX: We need to pass sessions back into the event engine when they are
  * reused.  Not sure what the most efficient way is for that.  For now
