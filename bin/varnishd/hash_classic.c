@@ -202,8 +202,10 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 				continue;
 			if (kl > he->klen)
 				break;
-			if (he->digest != digest)
+			if (he->digest < digest)
 				continue;
+			if (he->digest > digest)
+				break;
 			if (memcmp(he->key, key1, kl1))
 				continue;
 			if (memcmp(he->key + kl1, key2, kl2))
