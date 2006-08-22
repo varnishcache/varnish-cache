@@ -71,6 +71,7 @@ AC_CHECK_FUNCS([asprintf vasprintf])
 AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
+AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
 
 # On some systems, clock_gettime is in librt rather than libc

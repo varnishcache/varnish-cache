@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	compat/srandomdev.h \
 	compat/strlcat.h \
 	compat/strlcpy.h \
+	compat/strndup.h \
 	compat/vasprintf.h \
 	compat/vis.h \
 	hash.h \
