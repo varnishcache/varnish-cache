@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <shmlog.h>
 #include <cache.h>
 
 #if defined(HASH_CLASSIC_MD5) && !defined(HAVE_MD5)
@@ -28,20 +29,24 @@ struct hcl_entry {
 	unsigned		magic;
 #define HCL_ENTRY_MAGIC		0x0ba707bf
 	TAILQ_ENTRY(hcl_entry)	list;
-	char			*key1;
-	char			*key2;
+	struct hcl_hd		*head;
+	char			*key;
+	unsigned		klen;
 	struct objhead		*oh;
 	unsigned		refcnt;
+	unsigned		digest;
 	unsigned		hash;
-	unsigned		mtx;
 };
 
-TAILQ_HEAD(hcl_head, hcl_entry);
+struct hcl_hd {
+	unsigned		magic;
+#define HCL_HEAD_MAGIC		0x0f327016
+	TAILQ_HEAD(, hcl_entry)	head;
+	pthread_mutex_t		mtx;
+};
 
-static struct hcl_head *hcl_head;
-static unsigned hcl_nhash = 4096;
-static unsigned hcl_nmtx = 4096;
-static pthread_mutex_t *hcl_mutex;
+static unsigned			hcl_nhash = 4096;
+static struct hcl_hd		*hcl_head;
 
 /*--------------------------------------------------------------------*/
 
@@ -118,30 +123,13 @@ static int
 hcl_init(const char *p)
 {
 	int i;
-	unsigned u1, u2;
+	unsigned u;
 
-	i = sscanf(p, "%u,%u", &u1, &u2);
-	if (i <= 0)
+	i = sscanf(p, "%u", &u);
+	if (i <= 0 || u == 0)
 		return (0);
-	if (u1 == 0 || (i == 2 && (u2 == 0 || u2 > u1))) {
-		fprintf(stderr, "Invallid parameters to hash \"classic\":\n");
-		fprintf(stderr,
-		    "\t-h classic,<bucket count>[,<buckets per mutex>]\n");
-		return (1);
-	}
-	hcl_nhash = u1;
-	if (i == 1) {
-		hcl_nmtx = hcl_nhash;
-		if (hcl_nmtx <  1)
-			hcl_nmtx = 1;
-		return(0);
-	} else {
-		hcl_nmtx = hcl_nhash / u2;
-		if (hcl_nmtx < 1)
-			hcl_nmtx = 1;
-	}
-	fprintf(stderr, "Classic hash: %u buckets %u mutexes\n",
-	    hcl_nhash, hcl_nmtx);
+	hcl_nhash = u;
+	fprintf(stderr, "Classic hash: %u buckets\n", hcl_nhash);
 	return (0);
 }
 
@@ -157,15 +145,12 @@ hcl_start(void)
 
 	hcl_head = calloc(sizeof *hcl_head, hcl_nhash);
 	assert(hcl_head != NULL);
-	hcl_mutex = calloc(sizeof *hcl_mutex, hcl_nmtx);
-	assert(hcl_mutex != NULL);
 
-
-	for (u = 0; u < hcl_nhash; u++)
-		TAILQ_INIT(&hcl_head[u]);
-
-	for (u = 0; u < hcl_nmtx; u++)
-		AZ(pthread_mutex_init(&hcl_mutex[u], NULL));
+	for (u = 0; u < hcl_nhash; u++) {
+		TAILQ_INIT(&hcl_head[u].head);
+		AZ(pthread_mutex_init(&hcl_head[u].mtx, NULL));
+		hcl_head[u].magic = HCL_HEAD_MAGIC;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -173,13 +158,16 @@ hcl_start(void)
  * If nobj != NULL and the lookup does not find key, nobj is inserted.
  * If nobj == NULL and the lookup does not find key, NULL is returned.
  * A reference to the returned object is held.
+ * We use a two-pass algorithm to handle inserts as they are quite
+ * rare and collisions even rarer.
  */
 
 static struct objhead *
 hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 {
 	struct hcl_entry *he, *he2;
-	unsigned u1, u2;
+	struct hcl_hd *hp;
+	unsigned u1, digest, kl1, kl2, kl, r;
 	int i;
 #ifdef HASH_CLASSIC_MD5
 	MD5_CTX c;
@@ -194,60 +182,72 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 	MD5Update(&c, "", 1);
 	MD5Update(&c, key2, strlen(key2));
 	MD5Final(md5, &c);
-	memcpy(&u1, md5, sizeof u1);
-	memcpy(&u2, md5 + sizeof u1, sizeof u2);
+	memcpy(&digest, md5, sizeof digest);
 #else
-	u1 = u2 = crc32(key1, key2);
+	digest = crc32(key1, key2);
 #endif
 
-	u1 %= hcl_nhash;
-	u2 %= hcl_nmtx;
+	u1 = digest % hcl_nhash;
+	hp = &hcl_head[u1];
+	kl1 = strlen(key1) + 1;		/* Incl '/0' */
+	kl2 = strlen(key2);
+	kl = kl1 + kl2;
+	he2 = NULL;
 
-	AZ(pthread_mutex_lock(&hcl_mutex[u2]));
-	TAILQ_FOREACH(he, &hcl_head[u1], list) {
-		CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
-		i = strcmp(key1, he->key1);
-		if (i < 0)
-			continue;
-		if (i > 0)
-			break;
-		i = strcmp(key2, he->key2);
-		if (i < 0)
-			continue;
-		if (i > 0)
-			break;
-		he->refcnt++;
-		noh = he->oh;
-		noh->hashpriv = he;
-		AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
-		return (noh);
+	for (r = 0; r < 2; r++ ) {
+		AZ(pthread_mutex_lock(&hp->mtx));
+		TAILQ_FOREACH(he, &hp->head, list) {
+			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
+			if (kl < he->klen)
+				continue;
+			if (kl > he->klen)
+				break;
+			if (he->digest != digest)
+				continue;
+			if (memcmp(he->key, key1, kl1))
+				continue;
+			if (memcmp(he->key + kl1, key2, kl2))
+				continue;
+			he->refcnt++;
+			noh = he->oh;
+			AZ(pthread_mutex_unlock(&hp->mtx));
+			if (he2 != NULL)
+				free(he2);
+			return (noh);
+		}
+		if (noh == NULL) {
+			AZ(pthread_mutex_unlock(&hp->mtx));
+			return (NULL);
+		}
+		if (he2 != NULL) {
+			if (he != NULL)
+				TAILQ_INSERT_BEFORE(he, he2, list);
+			else
+				TAILQ_INSERT_TAIL(&hp->head, he2, list);
+			he2->refcnt++;
+			noh = he2->oh;
+			AZ(pthread_mutex_unlock(&hp->mtx));
+			return (noh);
+		}
+		AZ(pthread_mutex_unlock(&hp->mtx));
+
+		i = sizeof *he2 + kl;
+		he2 = calloc(i, 1);
+		assert(he2 != NULL);
+		he2->magic = HCL_ENTRY_MAGIC;
+		he2->oh = noh;
+		he2->digest = digest;
+		he2->hash = u1;
+		he2->head = hp;
+		he2->klen = kl;
+		noh->hashpriv = he2;
+
+		he2->key = (void*)(he2 + 1);
+		memcpy(he2->key, key1, kl1);
+		memcpy(he2->key + kl1, key2, kl2);
 	}
-	if (noh == NULL) {
-		AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
-		return (NULL);
-	}
-	i = sizeof *he2 + strlen(key1) + 1 + strlen(key2) + 1;
-	he2 = calloc(i, 1);
-	assert(he2 != NULL);
-	he2->magic = HCL_ENTRY_MAGIC;
-	he2->oh = noh;
-	he2->refcnt = 1;
-	he2->hash = u1;
-	he2->mtx = u2;
-
-	he2->key1 = (void*)(he2 + 1);
-	strcpy(he2->key1, key1);
-	he2->key2 = strchr(he2->key1, '\0');
-	he2->key2++;
-	strcpy(he2->key2, key2);
-
-	noh->hashpriv = he2;
-	if (he != NULL)
-		TAILQ_INSERT_BEFORE(he, he2, list);
-	else
-		TAILQ_INSERT_TAIL(&hcl_head[u1], he2, list);
-	AZ(pthread_mutex_unlock(&hcl_mutex[u2]));
-	return (noh);
+	assert(he2 == NULL);		/* FlexeLint */
+	INCOMPL();
 }
 
 /*--------------------------------------------------------------------
@@ -258,20 +258,21 @@ static int
 hcl_deref(struct objhead *oh)
 {
 	struct hcl_entry *he;
-	unsigned mtx;
+	struct hcl_hd *hp;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	CAST_OBJ_NOTNULL(he, oh->hashpriv, HCL_ENTRY_MAGIC);
+	hp = he->head;
+	CHECK_OBJ_NOTNULL(hp, HCL_HEAD_MAGIC);
 	assert(he->refcnt > 0);
-	assert(he->mtx < hcl_nmtx);
 	assert(he->hash < hcl_nhash);
-	mtx = he->mtx;
-	AZ(pthread_mutex_lock(&hcl_mutex[mtx]));
+	assert(hp == &hcl_head[he->hash]);
+	AZ(pthread_mutex_lock(&hp->mtx));
 	if (--he->refcnt == 0)
-		TAILQ_REMOVE(&hcl_head[he->hash], he, list);
+		TAILQ_REMOVE(&hp->head, he, list);
 	else
 		he = NULL;
-	AZ(pthread_mutex_unlock(&hcl_mutex[mtx]));
+	AZ(pthread_mutex_unlock(&hp->mtx));
 	if (he == NULL)
 		return (1);
 	free(he);
