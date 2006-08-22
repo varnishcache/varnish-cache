@@ -27,7 +27,7 @@
 struct varnish_stats *VSL_stats;
 static struct shmloghead *loghead;
 static unsigned char *logstart;
-static pthread_mutex_t vsl_mutex;
+static pthread_mutex_t vsl_mtx;
 
 /*
  * This variant copies a byte-range directly to the log, without
@@ -61,7 +61,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 		e = b + l;
 	}
 
-	AZ(pthread_mutex_lock(&vsl_mutex));
+	AZ(pthread_mutex_lock(&vsl_mtx));
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
@@ -78,7 +78,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 
 	loghead->ptr += 5 + l;
 	assert(loghead->ptr < loghead->size);
-	AZ(pthread_mutex_unlock(&vsl_mutex));
+	AZ(pthread_mutex_unlock(&vsl_mtx));
 }
 
 
@@ -91,7 +91,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	AZ(pthread_mutex_lock(&vsl_mutex));
+	AZ(pthread_mutex_lock(&vsl_mtx));
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if we cannot fit a full size record */
@@ -115,7 +115,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	loghead->ptr += 5 + n;
 	assert(loghead->ptr < loghead->size);
 	
-	AZ(pthread_mutex_unlock(&vsl_mutex));
+	AZ(pthread_mutex_unlock(&vsl_mtx));
 
 	va_end(ap);
 }
@@ -128,7 +128,7 @@ VSL_Init(void)
 	assert(loghead->hdrsize == sizeof *loghead);
 	/* XXX more check sanity of loghead  ? */
 	logstart = (unsigned char *)loghead + loghead->start;
-	AZ(pthread_mutex_init(&vsl_mutex, NULL));
+	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	loghead->starttime = time(NULL);
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
