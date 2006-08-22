@@ -4,14 +4,15 @@
  * Log tailer for Varnish
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <regex.h>
-#include <math.h>
 #include <curses.h>
+#include <errno.h>
+#include <math.h>
+#include <regex.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "compat/vis.h"
 
@@ -24,6 +25,8 @@
 #define HIST_W (1 + (HIST_HIGH - HIST_LOW))
 #define HIST_N 2000
 
+static int delay = 1;
+static volatile sig_atomic_t redraw;
 static char rr_hist[HIST_N];
 static unsigned next_hist;
 static unsigned bucket_miss[HIST_W];
@@ -33,17 +36,19 @@ static double scale = 10;
 static double c_hist;
 
 static void
+sigalrm(int sig)
+{
+
+	(void)sig;
+	redraw = 1;
+}
+
+static void
 r_hist(void)
 {
 	int x, y;
 	double m, r;
-	time_t t;
-	static time_t tl;
 
-	t = time(NULL);
-	if (t == tl)
-		return;
-	tl = t;
 	m = 0;
 	r = 0;
 	for (x = 1; x < HIST_W; x++) {
@@ -75,6 +80,8 @@ r_hist(void)
 		addch('\n');
 	}
 	refresh();
+	redraw = 0;
+	alarm(delay);
 }
 
 static int 
@@ -126,8 +133,6 @@ h_hist(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const
 	if (++next_hist == HIST_N) {
 		next_hist = 0;
 	}
-	if (!(next_hist % 100))
-		r_hist();
 	hh[fd] = 0;
 	return (0);
 }
@@ -150,8 +155,11 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS)) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "w:")) != -1) {
 		switch (c) {
+		case 'w':
+			delay = atoi(optarg);
+			break;
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
@@ -178,11 +186,13 @@ main(int argc, char **argv)
 		mvprintw(LINES - 1, x, "|1e%d", (x + HIST_LOW) / 10);
 	}
 
+	signal(SIGALRM, sigalrm);
+	redraw = 1;
 	while (1) {
 		i = VSL_Dispatch(vd, h_hist, NULL);
 		if (i < 0)
 			break;
-		if (i == 0)
+		if (redraw)
 			r_hist();
 	} 
 
