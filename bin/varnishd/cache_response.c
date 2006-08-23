@@ -10,14 +10,72 @@
 #include "shmlog.h"
 #include "cache.h"
 
+/*--------------------------------------------------------------------*/
+/* List of canonical HTTP response code names from RFC2616 */
+
+static struct http_msg {
+	unsigned	nbr;
+	const char	*txt;
+} http_msg[] = {
+	{ 101, "Switching Protocols" },
+	{ 200, "OK" },
+	{ 201, "Created" },
+	{ 202, "Accepted" },
+	{ 203, "Non-Authoritative Information" },
+	{ 204, "No Content" },
+	{ 205, "Reset Content" },
+	{ 206, "Partial Content" },
+	{ 300, "Multiple Choices" },
+	{ 301, "Moved Permanently" },
+	{ 302, "Found" },
+	{ 303, "See Other" },
+	{ 304, "Not Modified" },
+	{ 305, "Use Proxy" },
+	{ 306, "(Unused)" },
+	{ 307, "Temporary Redirect" },
+	{ 400, "Bad Request" },
+	{ 401, "Unauthorized" },
+	{ 402, "Payment Required" },
+	{ 403, "Forbidden" },
+	{ 404, "Not Found" },
+	{ 405, "Method Not Allowed" },
+	{ 406, "Not Acceptable" },
+	{ 407, "Proxy Authentication Required" },
+	{ 408, "Request Timeout" },
+	{ 409, "Conflict" },
+	{ 410, "Gone" },
+	{ 411, "Length Required" },
+	{ 412, "Precondition Failed" },
+	{ 413, "Request Entity Too Large" },
+	{ 414, "Request-URI Too Long" },
+	{ 415, "Unsupported Media Type" },
+	{ 416, "Requested Range Not Satisfiable" },
+	{ 417, "Expectation Failed" },
+	{ 500, "Internal Server Error" },
+	{ 501, "Not Implemented" },
+	{ 502, "Bad Gateway" },
+	{ 503, "Service Unavailable" },
+	{ 504, "Gateway Timeout" },
+	{ 505, "HTTP Version Not Supported" },
+	{ 0, NULL }
+};
 
 /*--------------------------------------------------------------------*/
 
 void
-RES_Error(struct sess *sp, int code, const char *msg, const char *expl)
+RES_Error(struct sess *sp, int code, const char *expl)
 {
 	char buf[40];
 	struct vsb *sb;
+	struct http_msg *mp;
+	const char *msg;
+
+	msg = "Unknown error";
+	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= code; mp++) 
+		if (mp->nbr == code) {
+			msg = mp->txt;
+			break;
+		}
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(sb != NULL);
@@ -56,6 +114,8 @@ RES_Error(struct sess *sp, int code, const char *msg, const char *expl)
 		"  <BODY>\r\n");
 	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", code, msg);
 	vsb_printf(sb, "    <P>%s</P>\r\n", expl);
+	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n", expl);
+	vsb_printf(sb, "    <P>XID: %u</P>\r\n", sp->xid);
 	vsb_cat(sb,
 		"    <I><A href=\"http://varnish.linpro.no/\">Varnish</A></I>\r\n"
 		"  </BODY>\r\n"

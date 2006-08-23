@@ -732,13 +732,11 @@ Action(struct tokenlist *tl)
 		else
 			a = 0;
 		Fc(tl, 1, "VRT_error(sp, %u", a);
-		for (i = 0; i < 2; ++i) {
-			if (tl->t->tok == CSTR) {
-				Fc(tl, 0, ", %.*s", PF(tl->t));
-				vcc_NextToken(tl);
-			} else {
-				Fc(tl, 0, ", (const char *)0");
-			}
+		if (tl->t->tok == CSTR) {
+			Fc(tl, 0, ", %.*s", PF(tl->t));
+			vcc_NextToken(tl);
+		} else {
+			Fc(tl, 0, ", (const char *)0");
 		}
 		Fc(tl, 0, ");\n");
 		Fc(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");

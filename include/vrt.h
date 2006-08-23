@@ -42,7 +42,7 @@ int VRT_re_test(struct vsb *, const char *);
 
 void VRT_count(struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(struct sess *, unsigned, const char *, const char *);
+void VRT_error(struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 char *VRT_GetHdr(struct sess *, const char *);
