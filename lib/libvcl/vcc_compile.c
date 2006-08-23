@@ -708,7 +708,6 @@ Action(struct tokenlist *tl)
 	unsigned a;
 	struct var *vp;
 	struct token *at;
-	int i;
 
 	at = tl->t;
 	vcc_NextToken(tl);
