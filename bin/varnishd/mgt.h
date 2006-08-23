@@ -22,6 +22,9 @@ void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
 int mgt_cli_telnet(const char *T_arg);
 
+/* mgt_param.c */
+void MCF_ParamInit(void);
+
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
 int mgt_vcc_default(const char *bflag, const char *fflag);

@@ -22,7 +22,29 @@ struct parspec {
 	const char	*name;
 	tweak_t		*func;
 	const char	*expl;
+	const char	*def;
 };
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_generic_timeout(struct cli *cli, unsigned *dst, const char *arg)
+{
+	unsigned u;
+
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		if (u == 0) {
+			cli_out(cli, "Timeout must be greater than zero\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		*dst = u;
+	}
+	if (cli == NULL)
+		return;
+	cli_out(cli, "%u [seconds]\n", *dst);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -33,6 +55,8 @@ tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
 	(void)par;
 	if (arg != NULL)
 		params->default_ttl = strtoul(arg, NULL, 0);
+	if (cli == NULL)
+		return;
 	cli_out(cli, "%u [seconds]\n", params->default_ttl);
 }
 
@@ -53,6 +77,8 @@ tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
 		}
 		params->wthread_min = u;
 	}
+	if (cli == NULL)
+		return;
 	cli_out(cli, "%u [threads]\n", params->wthread_min);
 }
 
@@ -73,6 +99,8 @@ tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
 		}
 		params->wthread_max = u;
 	}
+	if (cli == NULL)
+		return;
 	if (params->wthread_max == UINT_MAX) 
 		cli_out(cli, "unlimited\n");
 	else 
@@ -84,20 +112,11 @@ tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
 static void
 tweak_thread_pool_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
-	unsigned u;
 
 	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			cli_out(cli, "Timeout must be greater than zero\n");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
-		params->wthread_timeout = u;
-	}
-	cli_out(cli, "%u [seconds]\n", params->wthread_timeout);
+	tweak_generic_timeout(cli, &params->wthread_timeout, arg);
 }
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -115,6 +134,8 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 		}
 		params->mem_workspace = u;
 	}
+	if (cli == NULL)
+		return;
 	cli_out(cli, "%u [bytes]\n", params->mem_workspace);
 }
 
@@ -123,19 +144,17 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 static void
 tweak_sess_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
-	unsigned u;
-
 	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			cli_out(cli, "Timeout must be greater than zero\n");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
-		params->sess_timeout = u;
-	}
-	cli_out(cli, "%u [seconds]\n", params->sess_timeout);
+	tweak_generic_timeout(cli, &params->sess_timeout, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_pipe_timeout(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_timeout(cli, &params->pipe_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -143,19 +162,8 @@ tweak_sess_timeout(struct cli *cli, struct parspec *par, const char *arg)
 static void
 tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
-	unsigned u;
-
 	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			cli_out(cli, "Timeout must be greater than zero\n");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
-		params->send_timeout = u;
-	}
-	cli_out(cli, "%u [seconds]\n", params->send_timeout);
+	tweak_generic_timeout(cli, &params->send_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -175,6 +183,8 @@ tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 		}
 		params->auto_restart = u;
 	}
+	if (cli == NULL)
+		return;
 	cli_out(cli, "%u {1 = yes, 0 = no}\n", params->auto_restart);
 }
 
@@ -205,46 +215,48 @@ static struct parspec parspec[] = {
 		"made until they are fetched from the backend again.\n"
 		"To force an immediate effect at the expense of a total "
 		"flush of the cache use \"url.purge .\"\n"
-		"Default is 120 seconds. " },
+		"Default is 120 seconds. ", "120" },
+	{ "thread_pool_max", tweak_thread_pool_max,
+		"The maximum number of threads in the worker pool.\n"
+		DELAYED_EFFECT
+		"Default is no limit.", "-1" },
 	{ "thread_pool_min", tweak_thread_pool_min,
 		"The minimum number of threads in the worker pool.\n"
 		DELAYED_EFFECT
 		"Default is 1 thread. " 
-		"Minimum is 1 thread. " },
-	{ "thread_pool_max", tweak_thread_pool_max,
-		"The maximum number of threads in the worker pool.\n"
-		DELAYED_EFFECT
-		"Default is no limit." },
+		"Minimum is 1 thread. ", "1" },
 	{ "thread_pool_timeout", tweak_thread_pool_timeout,
 		"Thread dies after this many seconds of inactivity.\n"
 		"Default is 10 seconds. "
-		"Minimum is 1 second. " },
+		"Minimum is 1 second. ", "10" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
 		SHOULD_RESTART
 		"Default is 4096 bytes. "
-		"Minimum is 1024 bytes. " },
+		"Minimum is 1024 bytes. ", "4096" },
 	{ "sess_timeout", tweak_sess_timeout,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
 		"seconds, the session is closed.\n"
-#ifdef HAVE_ACCEPT_FILTERS
-		DELAYED_EFFECT
-#endif
-		"Default is 15 seconds. " },
+		"Default is 5 seconds. ", "5" },
+	{ "pipe_timeout", tweak_pipe_timeout,
+		"Idle timeout for PIPE sessions. "
+		"If nothing have been received in either directoin for "
+	        "this many seconds, the session is closed.\n"
+		"Default is 60 seconds. ", "60" },
 	{ "send_timeout", tweak_send_timeout,
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
 		DELAYED_EFFECT
 		"See getopt(3) under SO_SNDTIMEO for more information.\n"
-		"Default is 600 seconds. " },
+		"Default is 600 seconds. ", "600" },
 	{ "auto_restart", tweak_auto_restart,
 		"Restart child process automatically if it dies. "
 		"1 = yes, 0 = no.\n"
-		"Default is 1. " },
+		"Default is 1. ", "1" },
 	{ NULL, NULL, NULL }
 };
 
@@ -325,3 +337,13 @@ mcf_param_set(struct cli *cli, char **av, void *priv)
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+MCF_ParamInit(void)
+{
+	struct parspec *pp;
+
+	for (pp = parspec; pp->name != NULL; pp++)
+		pp->func(NULL, pp, pp->def);
+}

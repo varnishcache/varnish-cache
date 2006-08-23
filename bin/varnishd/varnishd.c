@@ -336,15 +336,7 @@ main(int argc, char *argv[])
 	params = &param;
 	mgt_vcc_init(); 
 
-	/* XXX: move this to mgt_params.c ?? */
-	params->default_ttl = 120;
-	params->wthread_min = 1;
-	params->wthread_max = UINT_MAX;
-	params->wthread_timeout = 60;
-	params->mem_workspace = 4096;
-	params->sess_timeout = 5;
-	params->send_timeout = 600;
-	params->auto_restart = 1;
+	MCF_ParamInit();
 
 	while ((o = getopt(argc, argv, "a:b:df:h:s:t:T:Vw:")) != -1)
 		switch (o) {
