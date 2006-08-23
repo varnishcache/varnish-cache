@@ -492,9 +492,11 @@ cnt_pass(struct sess *sp)
 {
 
 	assert(sp->vbc == NULL);
-	PassSession(sp);
-	assert(sp->vbc != NULL);
-	sp->step = STP_PASSBODY;
+	if (!PassSession(sp)) {
+		assert(sp->vbc != NULL);
+		sp->step = STP_PASSBODY;
+	} else 
+		sp->step = STP_DONE;
 	return (0);
 }
 

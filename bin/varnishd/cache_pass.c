@@ -187,7 +187,7 @@ PassBody(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 PassSession(struct sess *sp)
 {
 	int i;
@@ -199,6 +199,10 @@ PassSession(struct sess *sp)
 	w = sp->wrk;
 
 	vc = VBE_GetFd(sp->backend, sp->xid);
+	if (vc == NULL) {
+		RES_Error(sp, 503, "Backend did not respond.");
+		return (1);
+	}
 	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
@@ -218,4 +222,5 @@ PassSession(struct sess *sp)
 
 	assert(sp->vbc == NULL);
 	sp->vbc = vc;
+	return (0);
 }
