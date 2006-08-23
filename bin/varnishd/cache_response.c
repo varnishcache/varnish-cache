@@ -70,6 +70,10 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	struct http_msg *mp;
 	const char *msg;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
+
 	msg = "Unknown error";
 	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= code; mp++) 
 		if (mp->nbr == code) {
