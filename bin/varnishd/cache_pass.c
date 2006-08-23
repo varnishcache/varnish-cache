@@ -45,6 +45,10 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 		i = http_Read(hp, fd, buf, c);
 		if (i == 0 && bi == NULL)
 			return (1);
+		if (i <= 0) {
+			vca_close_session(sp, "backend closed");
+			return (1);
+		}
 		assert(i > 0);
 		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
 		if (WRK_Flush(sp->wrk))
