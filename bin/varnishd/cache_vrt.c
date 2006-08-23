@@ -18,13 +18,12 @@
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(struct sess *sp, unsigned code, const char *msg, const char *expl)
+VRT_error(struct sess *sp, unsigned code, const char *expl)
 { 
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	VSL(SLT_Debug, 0, "VCL_error(%u, %s, %s)", code, msg, expl);
+	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", code, expl);
 	sp->err_code = code;
-	sp->err_msg = msg;
 	sp->err_expl = expl;
 }
 
