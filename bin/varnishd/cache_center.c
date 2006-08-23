@@ -450,8 +450,14 @@ cnt_miss(struct sess *sp)
 {
 
 	VCL_miss_method(sp);
-	if (sp->handling == VCL_RET_ERROR)
-		INCOMPL();
+	if (sp->handling == VCL_RET_ERROR) {
+		sp->obj->cacheable = 0;
+		HSH_Unbusy(sp->obj);
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_ERROR;
+		return (0);
+	}
 	if (sp->handling == VCL_RET_PASS) {
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp->obj);
