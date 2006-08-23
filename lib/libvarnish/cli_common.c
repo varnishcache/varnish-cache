@@ -29,23 +29,30 @@ cli_out(struct cli *cli, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	vsb_vprintf(cli->sb, fmt, ap);
+	if (cli != NULL)
+		vsb_vprintf(cli->sb, fmt, ap);
+	else
+		vfprintf(stdout, fmt, ap);
 	va_end(ap);
-}
-
-void
-cli_param(struct cli *cli)
-{
-
-	cli->result = CLIS_PARAM;
-	cli_out(cli, "Parameter error, use \"help [command]\" for more info.\n");
 }
 
 void
 cli_result(struct cli *cli, unsigned res)
 {
 
-	cli->result = res;
+	if (cli != NULL)
+		cli->result = res;
+	else
+		printf("CLI result = %d\n", res);
+}
+
+
+void
+cli_param(struct cli *cli)
+{
+
+	cli_result(cli, CLIS_PARAM);
+	cli_out(cli, "Parameter error, use \"help [command]\" for more info.\n");
 }
 
 int
