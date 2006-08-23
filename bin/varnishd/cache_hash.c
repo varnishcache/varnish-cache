@@ -107,7 +107,7 @@ HSH_Lookup(struct sess *sp)
 			/* ignore */
 		} else if (o->ttl == 0) {
 			/* Object banned but not reaped yet */
-		} else if (o->ttl < sp->t_req.tv_sec) {
+		} else if (o->ttl <= sp->t_req.tv_sec) {
 			/* Object expired */
 		} else if (BAN_CheckObject(o, url)) {
 			o->ttl = 0;
