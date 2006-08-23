@@ -368,7 +368,7 @@ void http_DoConnection(struct sess *sp);
 #undef HTTPH
 
 /* cache_pass.c */
-void PassSession(struct sess *sp);
+int PassSession(struct sess *sp);
 void PassBody(struct sess *sp);
 
 /* cache_pipe.c */
