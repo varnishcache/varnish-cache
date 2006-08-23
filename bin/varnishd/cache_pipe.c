@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 
 #include "shmlog.h"
+#include "heritage.h"
 #include "cache.h"
 
 static void
@@ -83,7 +84,7 @@ PipeSession(struct sess *sp)
 	while (fds[0].events || fds[1].events) {
 		fds[0].revents = 0;
 		fds[1].revents = 0;
-		i = poll(fds, 2, 600000);
+		i = poll(fds, 2, params->pipe_timeout * 1000);
 		if (i != 1)
 			break;
 		if (fds[0].revents)
