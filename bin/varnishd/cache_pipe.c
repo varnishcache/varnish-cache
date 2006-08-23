@@ -55,7 +55,7 @@ PipeSession(struct sess *sp)
 
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	if (vc == NULL) {
-		RES_Error(sp, 503, "Backend did not reply");
+		RES_Error(sp, 503, "Backend did not respond.");
 		return;
 	}
 	assert(vc != NULL);
