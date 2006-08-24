@@ -79,7 +79,7 @@ SES_RefSrcAddr(struct sess *sp)
 	ch = &srcaddr_hash[v];
 	now = time(NULL);
 
-	AZ(pthread_mutex_lock(&ses_mtx));
+	LOCK(&ses_mtx);
 	c3 = NULL;
 	TAILQ_FOREACH_SAFE(c, ch, list, c2) {
 		if (c->hash == u && !strcmp(c->addr, sp->addr)) {
@@ -95,7 +95,7 @@ SES_RefSrcAddr(struct sess *sp)
 				VSL_stats->n_srcaddr--;
 				free(c3);
 			}
-			AZ(pthread_mutex_unlock(&ses_mtx));
+			UNLOCK(&ses_mtx);
 			return;
 		}
 		if (c->nref > 0 || c->ttl > now)
@@ -128,7 +128,7 @@ SES_RefSrcAddr(struct sess *sp)
 		TAILQ_INSERT_TAIL(ch, c3, list);
 		sp->srcaddr = c3;
 	}
-	AZ(pthread_mutex_unlock(&ses_mtx));
+	UNLOCK(&ses_mtx);
 }
 
 static void
@@ -152,7 +152,7 @@ SES_Charge(struct sess *sp)
 
 	ses_sum_acct(&sp->acct, a);
 	
-	AZ(pthread_mutex_lock(&ses_mtx));
+	LOCK(&ses_mtx);
 	ses_sum_acct(b, a);
 	VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
 	    sp->srcaddr->addr, time(NULL) - b->first,
@@ -165,7 +165,7 @@ SES_Charge(struct sess *sp)
 	VSL_stats->s_fetch += a->fetch;
 	VSL_stats->s_hdrbytes += a->hdrbytes;
 	VSL_stats->s_bodybytes += a->bodybytes;
-	AZ(pthread_mutex_unlock(&ses_mtx));
+	UNLOCK(&ses_mtx);
 	memset(a, 0, sizeof *a);
 }
 
@@ -178,13 +178,13 @@ ses_relsrcaddr(struct sess *sp)
 		return;
 	}
 	assert(sp->srcaddr != NULL);
-	AZ(pthread_mutex_lock(&ses_mtx));
+	LOCK(&ses_mtx);
 	assert(sp->srcaddr->nref > 0);
 	sp->srcaddr->nref--;
 	if (sp->srcaddr->nref == 0)
 		VSL_stats->n_srcaddr_act--;
 	sp->srcaddr = NULL;
-	AZ(pthread_mutex_unlock(&ses_mtx));
+	UNLOCK(&ses_mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -207,9 +207,9 @@ SES_New(struct sockaddr *addr, unsigned len)
 		 * If that queue is empty, flip queues holding the lock
 		 * and try the new unlocked queue.
 		 */
-		AZ(pthread_mutex_lock(&ses_mem_mtx));
+		LOCK(&ses_mem_mtx);
 		ses_qp = 1 - ses_qp;
-		AZ(pthread_mutex_unlock(&ses_mem_mtx));
+		UNLOCK(&ses_mem_mtx);
 		sm = TAILQ_FIRST(&ses_free_mem[ses_qp]);
 	}
 	if (sm != NULL) {
@@ -271,9 +271,9 @@ SES_Delete(struct sess *sp)
 		VSL_stats->n_sess_mem--;
 		free(sm);
 	} else {
-		AZ(pthread_mutex_lock(&ses_mem_mtx));
+		LOCK(&ses_mem_mtx);
 		TAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
-		AZ(pthread_mutex_unlock(&ses_mem_mtx));
+		UNLOCK(&ses_mem_mtx);
 	}
 }
 

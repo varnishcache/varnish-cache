@@ -48,7 +48,7 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 	struct hsl_entry *he, *he2;
 	int i;
 
-	AZ(pthread_mutex_lock(&hsl_mutex));
+	LOCK(&hsl_mutex);
 	TAILQ_FOREACH(he, &hsl_head, list) {
 		i = strcmp(key1, he->key1);
 		if (i < 0)
@@ -63,11 +63,11 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 		he->refcnt++;
 		nobj = he->obj;
 		nobj->hashpriv = he;
-		AZ(pthread_mutex_unlock(&hsl_mutex));
+		UNLOCK(&hsl_mutex);
 		return (nobj);
 	}
 	if (nobj == NULL) {
-		AZ(pthread_mutex_unlock(&hsl_mutex));
+		UNLOCK(&hsl_mutex);
 		return (NULL);
 	}
 	he2 = calloc(sizeof *he2, 1);
@@ -83,7 +83,7 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 		TAILQ_INSERT_BEFORE(he, he2, list);
 	else
 		TAILQ_INSERT_TAIL(&hsl_head, he2, list);
-	AZ(pthread_mutex_unlock(&hsl_mutex));
+	UNLOCK(&hsl_mutex);
 	return (nobj);
 }
 
@@ -99,7 +99,7 @@ hsl_deref(struct objhead *obj)
 
 	assert(obj->hashpriv != NULL);
 	he = obj->hashpriv;
-	AZ(pthread_mutex_lock(&hsl_mutex));
+	LOCK(&hsl_mutex);
 	if (--he->refcnt == 0) {
 		free(he->key1);
 		free(he->key2);
@@ -108,7 +108,7 @@ hsl_deref(struct objhead *obj)
 		ret = 0;
 	} else
 		ret = 1;
-	AZ(pthread_mutex_unlock(&hsl_mutex));
+	UNLOCK(&hsl_mutex);
 	return (ret);
 }
 

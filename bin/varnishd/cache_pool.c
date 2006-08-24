@@ -132,7 +132,7 @@ wrk_do_one(struct worker *w)
 	VSL_stats->n_wrk_busy++;
 	TAILQ_REMOVE(&wrk_reqhead, wrq, list);
 	VSL_stats->n_wrk_queue--;
-	AZ(pthread_mutex_unlock(&wrk_mtx));
+	UNLOCK(&wrk_mtx);
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
 	w->wrq = wrq;
@@ -150,7 +150,7 @@ wrk_do_one(struct worker *w)
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	w->wrq = NULL;
-	AZ(pthread_mutex_lock(&wrk_mtx));
+	LOCK(&wrk_mtx);
 	VSL_stats->n_wrk_busy--;
 }
 
@@ -167,7 +167,7 @@ wrk_thread(void *priv)
 
 	AZ(pthread_cond_init(&w->cv, NULL));
 
-	AZ(pthread_mutex_lock(&wrk_mtx));
+	LOCK(&wrk_mtx);
 	w->nbr = VSL_stats->n_wrk;
 	VSL_stats->n_wrk_create++;
 	VSL(SLT_WorkThread, 0, "%u born", w->nbr);
@@ -195,7 +195,7 @@ wrk_thread(void *priv)
 			if (pthread_cond_timedwait(&w->cv, &wrk_mtx, &ts)) {
 				VSL_stats->n_wrk--;
 				TAILQ_REMOVE(&wrk_idle, w, list);
-				AZ(pthread_mutex_unlock(&wrk_mtx));
+				UNLOCK(&wrk_mtx);
 				VSL(SLT_WorkThread, 0, "%u suicide", w->nbr);
 				AZ(pthread_cond_destroy(&w->cv));
 				return (NULL);
@@ -219,7 +219,7 @@ WRK_QueueSession(struct sess *sp)
 
 	sp->workreq.sess = sp;
 
-	AZ(pthread_mutex_lock(&wrk_mtx));
+	LOCK(&wrk_mtx);
 	TAILQ_INSERT_TAIL(&wrk_reqhead, &sp->workreq, list);
 	VSL_stats->n_wrk_queue++;
 
@@ -229,7 +229,7 @@ WRK_QueueSession(struct sess *sp)
 		AZ(pthread_cond_signal(&w->cv));
 		TAILQ_REMOVE(&wrk_idle, w, list);
 		TAILQ_INSERT_TAIL(&wrk_busy, w, list);
-		AZ(pthread_mutex_unlock(&wrk_mtx));
+		UNLOCK(&wrk_mtx);
 		return;
 	}
 	
@@ -238,13 +238,13 @@ WRK_QueueSession(struct sess *sp)
 	/* Can we create more threads ? */
 	if (VSL_stats->n_wrk >= params->wthread_max) {
 		VSL_stats->n_wrk_max++;
-		AZ(pthread_mutex_unlock(&wrk_mtx));
+		UNLOCK(&wrk_mtx);
 		return;
 	}
 
 	/* Try to create a thread */
 	VSL_stats->n_wrk++;
-	AZ(pthread_mutex_unlock(&wrk_mtx));
+	UNLOCK(&wrk_mtx);
 
 	if (!pthread_create(&tp, NULL, wrk_thread, NULL)) {
 		AZ(pthread_detach(tp));
@@ -255,10 +255,10 @@ WRK_QueueSession(struct sess *sp)
 	    errno, strerror(errno));
 
 	/* Register overflow */
-	AZ(pthread_mutex_lock(&wrk_mtx));
+	LOCK(&wrk_mtx);
 	VSL_stats->n_wrk--;
 	VSL_stats->n_wrk_failed++;
-	AZ(pthread_mutex_unlock(&wrk_mtx));
+	UNLOCK(&wrk_mtx);
 }
 	
 
@@ -293,7 +293,7 @@ cli_func_dump_pool(struct cli *cli, char **av, void *priv)
 	(void)av;
 	(void)priv;
 	struct worker *w;
-	AZ(pthread_mutex_lock(&wrk_mtx));
+	LOCK(&wrk_mtx);
 	t = time(NULL);
 	TAILQ_FOREACH(w, &wrk_busy, list) {
 		cli_out(cli, "\n");
@@ -313,5 +313,5 @@ cli_func_dump_pool(struct cli *cli, char **av, void *priv)
 	TAILQ_FOREACH(w, &wrk_idle, list)
 		u++;
 	cli_out(cli, "%u idle workers\n", u);
-	AZ(pthread_mutex_unlock(&wrk_mtx));
+	UNLOCK(&wrk_mtx);
 }

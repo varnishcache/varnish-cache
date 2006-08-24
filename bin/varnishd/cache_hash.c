@@ -85,20 +85,20 @@ HSH_Lookup(struct sess *sp)
 		o = sp->obj;
 		oh = o->objhead;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		AZ(pthread_mutex_lock(&oh->mtx));
+		LOCK(&oh->mtx);
 		goto were_back;
 	}
 	oh = hash->lookup(url, host, w->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
-	AZ(pthread_mutex_lock(&oh->mtx));
+	LOCK(&oh->mtx);
 	TAILQ_FOREACH(o, &oh->objects, list) {
 		o->refcnt++;
 		if (o->busy) {
 			TAILQ_INSERT_TAIL(&o->waitinglist, sp, list);
 			sp->obj = o;
-			AZ(pthread_mutex_unlock(&oh->mtx));
+			UNLOCK(&oh->mtx);
 			return (NULL);
 		}
 	were_back:
@@ -118,7 +118,7 @@ HSH_Lookup(struct sess *sp)
 		o->refcnt--;
 	}
 	if (o != NULL) {
-		AZ(pthread_mutex_unlock(&oh->mtx));
+		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
 		return (o);
 	}
@@ -129,7 +129,7 @@ HSH_Lookup(struct sess *sp)
 	o->objhead = oh;
 	TAILQ_INSERT_TAIL(&oh->objects, o, list);
 	/* NB: do not deref objhead the new object inherits our reference */
-	AZ(pthread_mutex_unlock(&oh->mtx));
+	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
 	return (o);
 }
@@ -144,9 +144,9 @@ HSH_Unbusy(struct object *o)
 	assert(o->refcnt > 0);
 	if (o->cacheable)
 		EXP_Insert(o);
-	AZ(pthread_mutex_lock(&o->objhead->mtx));
+	LOCK(&o->objhead->mtx);
 	o->busy = 0;
-	AZ(pthread_mutex_unlock(&o->objhead->mtx));
+	UNLOCK(&o->objhead->mtx);
 	while (1) {
 		sp = TAILQ_FIRST(&o->waitinglist);
 		if (sp == NULL)
@@ -164,10 +164,10 @@ HSH_Ref(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	AZ(pthread_mutex_lock(&oh->mtx));
+	LOCK(&oh->mtx);
 	assert(o->refcnt > 0);
 	o->refcnt++;
-	AZ(pthread_mutex_unlock(&oh->mtx));
+	UNLOCK(&oh->mtx);
 }
 
 void
@@ -182,12 +182,12 @@ HSH_Deref(struct object *o)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* drop ref on object */
-	AZ(pthread_mutex_lock(&oh->mtx));
+	LOCK(&oh->mtx);
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
 	if (!r)
 		TAILQ_REMOVE(&oh->objects, o, list);
-	AZ(pthread_mutex_unlock(&oh->mtx));
+	UNLOCK(&oh->mtx);
 
 	/* If still referenced, done */
 	if (r != 0)

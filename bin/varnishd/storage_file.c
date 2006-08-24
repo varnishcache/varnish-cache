@@ -511,10 +511,10 @@ smf_alloc(struct stevedore *st, size_t size)
 
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
-	AZ(pthread_mutex_lock(&sc->mtx));
+	LOCK(&sc->mtx);
 	smf = alloc_smf(sc, size);
 	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
-	AZ(pthread_mutex_unlock(&sc->mtx));
+	UNLOCK(&sc->mtx);
 	assert(smf != NULL);
 	assert(smf->size == size);
 	smf->s.space = size;
@@ -549,10 +549,10 @@ smf_trim(struct storage *s, size_t size)
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
 	if (smf->size > size) {
-		AZ(pthread_mutex_lock(&sc->mtx));
+		LOCK(&sc->mtx);
 		trim_smf(smf, size);
 		assert(smf->size == size);
-		AZ(pthread_mutex_unlock(&sc->mtx));
+		UNLOCK(&sc->mtx);
 		smf->s.space = size;
 	}
 }
@@ -568,9 +568,9 @@ smf_free(struct storage *s)
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	sc = smf->sc;
-	AZ(pthread_mutex_lock(&sc->mtx));
+	LOCK(&sc->mtx);
 	free_smf(smf);
-	AZ(pthread_mutex_unlock(&sc->mtx));
+	UNLOCK(&sc->mtx);
 }
 
 /*--------------------------------------------------------------------*/

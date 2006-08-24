@@ -187,7 +187,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		 * (if any) while we have the lock anyway.
 		 */
 		vc2 = NULL;
-		AZ(pthread_mutex_lock(&vbemtx));
+		LOCK(&vbemtx);
 		vc = TAILQ_FIRST(&bp->connlist);
 		if (vc != NULL) {
 			assert(vc->fd >= 0);
@@ -199,7 +199,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 				TAILQ_REMOVE(&vbe_head, vc2, list);
 			}
 		}
-		AZ(pthread_mutex_unlock(&vbemtx));
+		UNLOCK(&vbemtx);
 		if (vc == NULL)
 			break;
 
@@ -226,7 +226,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 	if (vc->fd < 0) {
 		assert(vc->backend == NULL);
 		vc->fd = vbe_connect(bp);
-		AZ(pthread_mutex_lock(&vbemtx));
+		LOCK(&vbemtx);
 		if (vc->fd < 0) {
 			vc->backend = NULL;
 			TAILQ_INSERT_HEAD(&vbe_head, vc, list);
@@ -235,7 +235,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		} else {
 			vc->backend = bp;
 		}
-		AZ(pthread_mutex_unlock(&vbemtx));
+		UNLOCK(&vbemtx);
 	} else {
 		assert(vc->fd >= 0);
 		assert(vc->backend == bp);
@@ -263,10 +263,10 @@ VBE_ClosedFd(struct vbe_conn *vc, int already)
 		AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
-	AZ(pthread_mutex_lock(&vbemtx));
+	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
-	AZ(pthread_mutex_unlock(&vbemtx));
+	UNLOCK(&vbemtx);
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -280,9 +280,9 @@ VBE_RecycleFd(struct vbe_conn *vc)
 	assert(vc->backend != NULL);
 	VSL_stats->backend_recycle++;
 	VSL(SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	AZ(pthread_mutex_lock(&vbemtx));
+	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
-	AZ(pthread_mutex_unlock(&vbemtx));
+	UNLOCK(&vbemtx);
 }
 
 /*--------------------------------------------------------------------*/
