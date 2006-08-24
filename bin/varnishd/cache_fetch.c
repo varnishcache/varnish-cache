@@ -40,7 +40,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	cl = strtoumax(b, NULL, 0);
 
 	st = stevedore->alloc(stevedore, cl);
-	assert(st->stevedore != NULL);
+	XXXAN(st->stevedore);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
@@ -52,7 +52,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 
 	while (cl > 0) {
 		i = http_Read(hp, fd, p, cl);
-		assert(i > 0);	/* XXX seen */
+		xxxassert(i > 0);	/* XXX seen */
 		p += i;
 		cl -= i;
 	}
@@ -82,18 +82,18 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 	st = NULL;
 	while (1) {
 		i = http_Read(hp, fd, bp, be - bp);
-		assert(i >= 0);
+		xxxassert(i >= 0);
 		bp += i;
 		*bp = '\0';
 		u = strtoul(buf, &q, 16);
 		if (q == NULL || q == buf)
 			continue;
-		assert(isspace(*q));
+		xxxassert(isspace(*q));
 		while (*q == '\t' || *q == ' ')
 			q++;
 		if (*q == '\r')
 			q++;
-		assert(*q == '\n');
+		xxxassert(*q == '\n');
 		q++;
 		if (u == 0)
 			break;
@@ -105,7 +105,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			} else {
 				st = stevedore->alloc(stevedore,
 				    stevedore->trim == NULL ? u : CHUNK_PREALLOC);
-				assert(st->stevedore != NULL);
+				XXXAN(st->stevedore);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 				p = st->ptr;
 			}
@@ -114,9 +114,9 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 				v = u;
 
 			i = bp - q;
+			assert(i >= 0);
 			if (i == 0) {
 			} else if (v > i) {
-				assert(i > 0);
 				memcpy(p, q, i);
 				p += i;
 				st->len += i;
@@ -141,7 +141,6 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 				continue;
 			while (v > 0) {
 				i = http_Read(hp, fd, p, v);
-				assert(i > 0);
 				st->len += i;
 				v -= i;
 				u -= i;
@@ -178,15 +177,15 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	while (1) {
 		if (v == 0) {
 			st = stevedore->alloc(stevedore, CHUNK_PREALLOC);
-			assert(st->stevedore != NULL);
+			XXXAN(st->stevedore);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
 		}
-		assert(p != NULL);
-		assert(st != NULL);
+		AN(p);
+		AN(st);
 		i = http_Read(hp, fd, p, v);
-		assert(i >= 0);
+		xxxassert(i >= 0);
 		if (i == 0)
 		     break;
 		p += i;
@@ -286,7 +285,7 @@ FetchHeaders(struct sess *sp)
 	vc = VBE_GetFd(sp->backend, sp->xid);
 	if (vc == NULL)
 		vc = VBE_GetFd(sp->backend, sp->xid);
-	assert(vc != NULL);	/* XXX: handle this */
+	XXXAN(vc);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_ClrHeader(vc->http);
@@ -302,19 +301,19 @@ FetchHeaders(struct sess *sp)
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 	i = WRK_Flush(w);
-	assert(i == 0);
+	xxxassert(i == 0);
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	i = http_RecvHead(vc->http, vc->fd);
-	assert(i == 0);
-	assert(http_DissectResponse(vc->http, vc->fd) == 0);
+	xxxassert(i == 0);
+	xxxassert(http_DissectResponse(vc->http, vc->fd) == 0);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	assert(sp->vbc == NULL);
+	AZ(sp->vbc);
 	sp->vbc = vc;
 
 	sp->obj->entered = time(NULL);

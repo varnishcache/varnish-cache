@@ -142,7 +142,7 @@ hcl_start(void)
 	unsigned u;
 
 	hcl_head = calloc(sizeof *hcl_head, hcl_nhash);
-	assert(hcl_head != NULL);
+	XXXAN(hcl_head);
 
 	for (u = 0; u < hcl_nhash; u++) {
 		TAILQ_INIT(&hcl_head[u].head);
@@ -220,7 +220,7 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 
 		i = sizeof *he2 + kl;
 		he2 = calloc(i, 1);
-		assert(he2 != NULL);
+		XXXAN(he2);
 		he2->magic = HCL_ENTRY_MAGIC;
 		he2->oh = noh;
 		he2->digest = digest;

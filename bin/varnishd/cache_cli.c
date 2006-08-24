@@ -65,10 +65,10 @@ CLI_Init(void)
 	memset(cli, 0, sizeof *cli);
 	
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(cli->sb != NULL);
+	XXXAN(cli->sb);
 	lbuf = 4096;
 	buf = malloc(lbuf);
-	assert(buf != NULL);
+	XXXAN(buf);
 	nbuf = 0;
 	while (1) {
 		pfd[0].fd = heritage.fds[2];
@@ -79,7 +79,7 @@ CLI_Init(void)
 		if ((nbuf + 2) >= lbuf) {
 			lbuf += lbuf;
 			buf = realloc(buf, lbuf);
-			assert(buf != NULL);
+			XXXAN(buf);
 		}
 		i = read(heritage.fds[2], buf + nbuf, lbuf - nbuf);
 		if (i <= 0) {

@@ -49,7 +49,6 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 			vca_close_session(sp, "backend closed");
 			return (1);
 		}
-		assert(i > 0);
 		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
 		if (WRK_Flush(sp->wrk))
 			vca_close_session(sp, "remote closed");
@@ -79,7 +78,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 	p = buf;
 	while (1) {
 		i = http_Read(hp, fd, bp, be - bp);
-		assert(i >= 0);
+		xxxassert(i >= 0);
 		if (i == 0 && p == bp)
 			break;
 		bp += i;
@@ -131,7 +130,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			if (j > be - bp)
 				j = be - bp;
 			i = http_Read(hp, fd, bp, j);
-			assert(i > 0);
+			xxxassert(i > 0);
 			bp += i;
 		}
 	}
@@ -150,8 +149,9 @@ PassBody(struct sess *sp)
 	char *b;
 	int cls;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBE_CONN_MAGIC);
 	vc = sp->vbc;
-	assert(vc != NULL);
 	sp->vbc = NULL;
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
@@ -207,7 +207,6 @@ PassSession(struct sess *sp)
 		RES_Error(sp, 503, "Backend did not respond.");
 		return (1);
 	}
-	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_CopyReq(vc->fd, vc->http, sp->http);
@@ -216,12 +215,12 @@ PassSession(struct sess *sp)
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 	i = WRK_Flush(w);
-	assert(i == 0);
+	xxxassert(i == 0);
 
 	/* XXX: copy any contents */
 
 	i = http_RecvHead(vc->http, vc->fd);
-	assert(i == 0);
+	xxxassert(i == 0);
 	http_DissectResponse(vc->http, vc->fd);
 
 	assert(sp->vbc == NULL);

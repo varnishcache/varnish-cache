@@ -87,9 +87,9 @@ http_IsHdr(struct http_hdr *hh, char *hdr)
 {
 	unsigned l;
 
-	assert(hh->b != NULL);
-	assert(hh->e != NULL);
-	assert(hdr != NULL);
+	AN(hh->b);
+	AN(hh->e);
+	AN(hdr);
 	l = hdr[0];
 	assert(l == strlen(hdr + 1));
 	assert(hdr[l] == ':');
@@ -105,8 +105,8 @@ http_findhdr(struct http *hp, unsigned l, const char *hdr)
 	unsigned u;
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		assert(hp->hd[u].b != NULL);
-		assert(hp->hd[u].e != NULL);
+		AN(hp->hd[u].b);
+		AN(hp->hd[u].e);
 		if (hp->hd[u].e < hp->hd[u].b + l + 1)
 			continue;
 		if (hp->hd[u].b[l] != ':')
@@ -221,7 +221,7 @@ http_HdrIs(struct http *hp, const char *hdr, const char *val)
 
 	if (!http_GetHdr(hp, hdr, &p))
 		return (0);
-	assert(p != NULL);
+	AN(p);
 	if (!strcasecmp(p, val))
 		return (1);
 	return (0);
@@ -285,7 +285,7 @@ int
 http_GetStatus(struct http *hp)
 {
 
-	assert(hp->hd[HTTP_HDR_STATUS].b != NULL);
+	AN(hp->hd[HTTP_HDR_STATUS].b);
 	return (strtoul(hp->hd[HTTP_HDR_STATUS].b,
 	    NULL /* XXX */, 10));
 }
@@ -346,7 +346,8 @@ http_DissectRequest(struct http *hp, int fd)
 {
 	char *p;
 
-	assert(hp->t != NULL);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	AN(hp->t);
 	assert(hp->s < hp->t);
 	assert(hp->t <= hp->v);
 	hp->logtag = HTTP_Rx;
@@ -412,7 +413,8 @@ http_DissectResponse(struct http *hp, int fd)
 {
 	char *p, *q;
 
-	assert(hp->t != NULL);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	AN(hp->t);
 	assert(hp->s < hp->t);
 	assert(hp->t <= hp->v);
 	hp->logtag = HTTP_Rx;
@@ -462,6 +464,7 @@ http_header_complete(struct http *hp)
 {
 	char *p;
 
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(hp->v <= hp->e);
 	assert(*hp->v == '\0');
 	/* Skip any leading white space */
@@ -595,17 +598,17 @@ http_CopyHttp(struct http *to, struct http *fm)
 	for (u = 0; u < fm->nhd; u++) {
 		if (fm->hd[u].b == NULL)
 			continue;
-		assert(fm->hd[u].e != NULL);
+		AN(fm->hd[u].e);
 		l += (fm->hd[u].e - fm->hd[u].b) + 1;
 	}
 	to->s = malloc(l);
-	assert(to->s != NULL);
+	XXXAN(to->s);
 	to->e = to->s + l;
 	to->f = to->s;
 	for (u = 0; u < fm->nhd; u++) {
 		if (fm->hd[u].b == NULL)
 			continue;
-		assert(fm->hd[u].e != NULL);
+		AN(fm->hd[u].e);
 		assert(*fm->hd[u].e == '\0');
 		l = fm->hd[u].e - fm->hd[u].b;
 		assert(l == strlen(fm->hd[u].b));
@@ -623,8 +626,9 @@ http_CopyHttp(struct http *to, struct http *fm)
 static void
 http_seth(int fd, struct http *to, unsigned n, enum httptag tag, const char *fm)
 {
+
 	assert(n < HTTP_HDR_MAX);
-	assert(fm != NULL);
+	AN(fm);
 	to->hd[n].b = (void*)(uintptr_t)fm;
 	to->hd[n].e = (void*)(uintptr_t)strchr(fm, '\0');
 	to->hdf[n] = 0;
@@ -636,7 +640,7 @@ http_copyh(int fd, struct http *to, struct http *fm, unsigned n, enum httptag ta
 {
 
 	assert(n < HTTP_HDR_MAX);
-	assert(fm->hd[n].b != NULL);
+	AN(fm->hd[n].b);
 	to->hd[n].b = fm->hd[n].b;
 	to->hd[n].e = fm->hd[n].e;
 	to->hdf[n] = fm->hdf[n];
@@ -693,7 +697,7 @@ http_copyheader(int fd, struct http *to, struct http *fm, unsigned n)
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	assert(n < HTTP_HDR_MAX);
-	assert(fm->hd[n].b != NULL);
+	AN(fm->hd[n].b);
 	if (to->nhd < HTTP_HDR_MAX) {
 		to->hd[to->nhd].b = fm->hd[n].b;
 		to->hd[to->nhd].e = fm->hd[n].e;
@@ -788,19 +792,19 @@ http_Write(struct worker *w, struct http *hp, int resp)
 	unsigned u, l;
 
 	if (resp) {
-		assert(hp->hd[HTTP_HDR_STATUS].b != NULL);
+		AN(hp->hd[HTTP_HDR_STATUS].b);
 		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
 	} else {
-		assert(hp->hd[HTTP_HDR_URL].b != NULL);
+		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		assert(hp->hd[u].b != NULL);
-		assert(hp->hd[u].e != NULL);
+		AN(hp->hd[u].b);
+		AN(hp->hd[u].e);
 		l += WRK_WriteH(w, &hp->hd[u], "\r\n");
 	}
 	l += WRK_Write(w, "\r\n", -1);

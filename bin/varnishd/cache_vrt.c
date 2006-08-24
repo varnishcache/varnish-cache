@@ -47,8 +47,7 @@ VRT_GetHdr(struct sess *sp, const char *n)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp != NULL);
-	assert(sp->http != NULL);
+	AN(sp->http);
 	if (!http_GetHdr(sp->http, n, &p))
 		return (NULL);
 	return (p);
@@ -80,10 +79,10 @@ VRT_alloc_backends(struct VCL_conf *cp)
 	int i;
 
 	cp->backend = calloc(sizeof *cp->backend, cp->nbackend);
-	assert(cp->backend != NULL);
+	XXXAN(cp->backend);
 	for (i = 0; i < cp->nbackend; i++) {
 		cp->backend[i] = calloc(sizeof *cp->backend[i], 1);
-		assert(cp->backend[i] != NULL);
+		XXXAN(cp->backend[i]);
 		cp->backend[i]->magic = BACKEND_MAGIC;
 		TAILQ_INIT(&cp->backend[i]->connlist);
 	}

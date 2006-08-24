@@ -30,7 +30,7 @@ AddBan(const char *regexp)
 	int i;
 
 	b = calloc(sizeof *b, 1);
-	assert(b != NULL);
+	XXXAN(b);
 
 	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_NOSUB);
 	if (i) {

@@ -71,13 +71,13 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 		return (NULL);
 	}
 	he2 = calloc(sizeof *he2, 1);
-	assert(he2 != NULL);
+	XXXAN(he2);
 	he2->obj = nobj;
 	he2->refcnt = 1;
 	he2->key1 = strdup(key1);
-	assert(he2->key1 != NULL);
+	XXXAN(he2->key1);
 	he2->key2 = strdup(key2);
-	assert(he2->key2 != NULL);
+	XXXAN(he2->key2);
 	nobj->hashpriv = he2;
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
@@ -97,7 +97,7 @@ hsl_deref(struct objhead *obj)
 	struct hsl_entry *he;
 	int ret;
 
-	assert(obj->hashpriv != NULL);
+	AN(obj->hashpriv);
 	he = obj->hashpriv;
 	LOCK(&hsl_mutex);
 	if (--he->refcnt == 0) {

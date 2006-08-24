@@ -20,12 +20,11 @@ void
 VRT_re_init(void **rep, const char *re)
 {
 	regex_t	*t;
-	int i;
 
 	t = calloc(sizeof *t, 1);
-	assert(t != NULL);
-	i = regcomp(t, re, REG_EXTENDED | REG_NOSUB);
-	assert(i == 0);
+	XXXAN(t);
+	/* This was already check-compiled by the VCL compiler */
+	AZ(regcomp(t, re, REG_EXTENDED | REG_NOSUB));
 	*rep = t;
 }
 
@@ -45,7 +44,7 @@ VRT_re_match(const char *s, void *re)
 
 	if (s == NULL)
 		return (0);
-	assert(re != NULL);
+	AN(re);
 	t = re;
 	i = regexec(t, s, 0, NULL, 0);
 	if (i == 0)

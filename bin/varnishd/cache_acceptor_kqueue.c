@@ -32,14 +32,12 @@ static void
 vca_kq_sess(struct sess *sp, int arm)
 {
 	struct kevent ke;
-	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->fd < 0)
 		return;
 	EV_SET(&ke, sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	i = kevent(kq, &ke, 1, NULL, 0, NULL);
-	assert(i == 0);
+	AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
 }
 
 static void
@@ -48,7 +46,7 @@ vca_kev(struct kevent *kp)
 	int i;
 	struct sess *sp;
 
-	assert(kp->udata != NULL);
+	AN(kp->udata);
 	if (kp->udata == pipes) {
 		while (kp->data > 0) {
 			i = read(pipes[0], &sp, sizeof sp);
@@ -89,7 +87,7 @@ static void *
 vca_kqueue_main(void *arg)
 {
 	struct kevent ke[NKEV], *kp;
-	int i, j, n;
+	int j, n;
 	struct timespec ts;
 	struct sess *sp;
 
@@ -101,8 +99,7 @@ vca_kqueue_main(void *arg)
 	j = 0;
 	EV_SET(&ke[j++], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
 	EV_SET(&ke[j++], pipes[0], EVFILT_READ, EV_ADD, 0, 0, pipes);
-	i = kevent(kq, ke, j, NULL, 0, NULL);
-	assert(i == 0);
+	AZ(kevent(kq, ke, j, NULL, 0, NULL));
 
 	while (1) {
 		n = kevent(kq, NULL, 0, ke, NKEV, NULL);

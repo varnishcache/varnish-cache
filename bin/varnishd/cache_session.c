@@ -72,7 +72,7 @@ SES_RefSrcAddr(struct sess *sp)
 	struct srcaddrhead *ch;
 	time_t now;
 
-	assert(sp->srcaddr == NULL);
+	AZ(sp->srcaddr);
 	for (u = 0, p = sp->addr; *p; p++)
 		u += u + *p;
 	v = u % CLIENT_HASH;
@@ -110,12 +110,12 @@ SES_RefSrcAddr(struct sess *sp)
 	}
 	if (c3 == NULL) {
 		c3 = malloc(sizeof *c3);
-		assert(c3 != NULL);
+		XXXAN(c3);
 		if (c3 != NULL)
 			VSL_stats->n_srcaddr++;
 	} else
 		TAILQ_REMOVE(ch, c3, list);
-	assert (c3 != NULL);
+	AN(c3);
 	if (c3 != NULL) {
 		memset(c3, 0, sizeof *c3);
 		strcpy(c3->addr, sp->addr);
@@ -177,7 +177,7 @@ ses_relsrcaddr(struct sess *sp)
 		/* If we never get to work pool (illegal req) */
 		return;
 	}
-	assert(sp->srcaddr != NULL);
+	AN(sp->srcaddr);
 	LOCK(&ses_mtx);
 	assert(sp->srcaddr->nref > 0);
 	sp->srcaddr->nref--;
@@ -236,7 +236,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sm->sess.http = &sm->http;
 
 	sm->sess.sockaddr = sm->sockaddr;
-	assert(len  < sizeof(sm->sockaddr));
+	assert(len < sizeof(sm->sockaddr));
 	if (addr != NULL) {
 		memcpy(sm->sess.sockaddr, addr, len);
 		sm->sess.sockaddrlen = len;
@@ -259,8 +259,8 @@ SES_Delete(struct sess *sp)
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	
-	assert(sp->obj == NULL);
-	assert(sp->vcl == NULL);
+	AZ(sp->obj);
+	AZ(sp->vcl);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
 	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",

@@ -44,7 +44,7 @@ vca_pollspace(int fd)
 		u += u;
 	VSL(SLT_Debug, 0, "Acceptor Pollspace %u", u);
 	p = realloc(pollfd, u * sizeof *p);
-	assert(p != NULL);
+	XXXAN(p);	/* close offending fd */
 	memset(p + npoll, 0, (u - npoll) * sizeof *p);
 	for (v = npoll ; v <= u; v++) 
 		p->fd = -1;

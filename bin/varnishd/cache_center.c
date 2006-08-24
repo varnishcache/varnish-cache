@@ -95,8 +95,8 @@ cnt_done(struct sess *sp)
 	double dh, dp, da;
 	struct timespec te;
 
-	assert(sp->obj == NULL);
-	assert(sp->vbc == NULL);
+	AZ(sp->obj);
+	AZ(sp->vbc);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	sp->backend = NULL;
@@ -194,7 +194,7 @@ static int
 cnt_fetch(struct sess *sp)
 {
 
-	assert(sp->vbc != NULL);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBE_CONN_MAGIC);
 	RFC2616_cache_policy(sp, sp->vbc->http);
 
 	VCL_fetch_method(sp);
@@ -220,9 +220,8 @@ cnt_fetch(struct sess *sp)
 	}
 	if (sp->handling == VCL_RET_INSERT) {
 		sp->obj->cacheable = 1;
-		assert(sp->vbc != NULL);
 		FetchBody(sp);
-		assert(sp->vbc == NULL);
+		AZ(sp->vbc);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
 		sp->wrk->acct.fetch++;
@@ -362,7 +361,7 @@ static int
 cnt_lookup(struct sess *sp)
 {
 
-	assert(sp->obj == NULL);
+	AZ(sp->obj);
 	sp->step = STP_LOOKUP2;
 	return (0);
 }
@@ -469,10 +468,10 @@ cnt_miss(struct sess *sp)
 	if (sp->handling == VCL_RET_LOOKUP)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
-		assert(sp->vbc == NULL);
+		AZ(sp->vbc);
 		FetchHeaders(sp);
 		sp->step = STP_FETCH;
-		assert(sp->vbc != NULL);
+		AN(sp->vbc);
 		return (0);
 	}
 	INCOMPL();
@@ -497,9 +496,9 @@ static int
 cnt_pass(struct sess *sp)
 {
 
-	assert(sp->vbc == NULL);
+	AZ(sp->vbc);
 	if (!PassSession(sp)) {
-		assert(sp->vbc != NULL);
+		AN(sp->vbc);
 		sp->step = STP_PASSBODY;
 	} else 
 		sp->step = STP_DONE;
@@ -526,9 +525,9 @@ cnt_passbody(struct sess *sp)
 {
 
 	sp->wrk->acct.pass++;
-	assert(sp->vbc != NULL);
+	AN(sp->vbc);
 	PassBody(sp);
-	assert(sp->vbc == NULL);
+	AZ(sp->vbc);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -591,11 +590,11 @@ cnt_recv(struct sess *sp)
 	int done;
 
 	sp->t0 = time(NULL);
-	assert(sp->vcl == NULL);
+	AZ(sp->vcl);
 	sp->vcl = VCL_Get();
 
-	assert(sp->obj == NULL);
-	assert(sp->vbc == NULL);
+	AZ(sp->obj);
+	AZ(sp->vbc);
 
 	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->http, sp->fd);

@@ -57,8 +57,8 @@ setup_hash(const char *s_arg)
 		q = p = strchr(s_arg, '\0');
 	else
 		q = p + 1;
-	assert(p != NULL);
-	assert(q != NULL);
+	xxxassert(p != NULL);
+	xxxassert(q != NULL);
 	if (!cmp_hash(&hcl_slinger, s_arg, p)) {
 		hp = &hcl_slinger;
 	} else if (!cmp_hash(&hsl_slinger, s_arg, p)) {
@@ -102,8 +102,8 @@ setup_storage(const char *s_arg)
 		q = p = strchr(s_arg, '\0');
 	else
 		q = p + 1;
-	assert(p != NULL);
-	assert(q != NULL);
+	xxxassert(p != NULL);
+	xxxassert(q != NULL);
 	if (!cmp_storage(&sma_stevedore, s_arg, p)) {
 		stp = &sma_stevedore;
 	} else if (!cmp_storage(&smf_stevedore, s_arg, p)) {
@@ -267,12 +267,12 @@ DebugStunt(void)
 	i = read(pipes[1][0], buf, sizeof buf - 1);
 	buf[i] = '\0';
 	d_child = strtoul(buf, &p, 0);
-	assert(p != NULL);
+	xxxassert(p != NULL);
 	printf("New Pid %d\n", d_child);
-	assert(d_child != 0);
+	xxxassert(d_child != 0);
 	i = strlen(p);
 	j = write(pipes[1][1], p, i);
-	assert(j == i);
+	xxxassert(j == i);
 
 	while (1) {
 		if (pfd[0].fd == -1 && pfd[1].fd == -1)

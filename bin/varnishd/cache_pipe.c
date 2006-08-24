@@ -58,7 +58,6 @@ PipeSession(struct sess *sp)
 		RES_Error(sp, 503, "Backend did not respond.");
 		return;
 	}
-	assert(vc != NULL);
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 	vc->http->logtag = HTTP_Tx;
 

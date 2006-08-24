@@ -82,7 +82,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 		}
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(sb != NULL);
+	XXXAN(sb);
 	assert(code >= 100 && code <= 999);
 
 	if (msg == NULL) {
@@ -226,7 +226,7 @@ RES_WriteObj(struct sess *sp)
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-			assert(st->stevedore != NULL);
+			AN(st->stevedore);
 			u += st->len;
 			sp->wrk->acct.bodybytes += st->len;
 #ifdef HAVE_SENDFILE

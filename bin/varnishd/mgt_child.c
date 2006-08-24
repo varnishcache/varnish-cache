@@ -114,7 +114,7 @@ start_child(void)
 		/* Redirect stdin/out/err */
 		AZ(close(0));
 		i = open("/dev/null", O_RDONLY);
-		assert(i == 0);
+		xxxassert(i == 0);
 		assert(dup2(child_fds[1], 1) == 1);
 		assert(dup2(child_fds[1], 2) == 2);
 		AZ(close(child_fds[0]));
@@ -137,9 +137,9 @@ start_child(void)
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
 
-	assert(ev_listen == NULL);
+	AZ(ev_listen);
 	e = ev_new();
-	assert(e != NULL);
+	XXXAN(e);
 	e->fd = child_fds[0];
 	e->fd_flags = EV_RD;
 	e->name = "Child listener";
@@ -147,9 +147,9 @@ start_child(void)
 	AZ(ev_add(mgt_evb, e));
 	ev_listen = e;
 
-	assert(ev_poker == NULL);
+	AZ(ev_poker);
 	e = ev_new();
-	assert(e != NULL);
+	XXXAN(e);
 	e->timeout = 3.0;
 	e->callback = child_poker;
 	e->name = "child poker";
@@ -287,7 +287,7 @@ mgt_run(int dflag, const char *T_arg)
 	mgt_pid = getpid();
 
 	mgt_evb = ev_new_base();
-	assert(mgt_evb != NULL);
+	XXXAN(mgt_evb);
 
 	if (dflag)
 		mgt_cli_setup(0, 1, 1);
@@ -296,21 +296,21 @@ mgt_run(int dflag, const char *T_arg)
 		mgt_cli_telnet(T_arg);
 
 	e = ev_new();
-	assert(e != NULL);
+	XXXAN(e);
 	e->sig = SIGTERM;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigterm";
 	AZ(ev_add(mgt_evb, e));
 
 	e = ev_new();
-	assert(e != NULL);
+	XXXAN(e);
 	e->sig = SIGINT;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigint";
 	AZ(ev_add(mgt_evb, e));
 
 	e = ev_new();
-	assert(e != NULL);
+	XXXAN(e);
 	e->sig = SIGCHLD;
 	e->sig_flags = SA_NOCLDSTOP;
 	e->callback = mgt_sigchld;
