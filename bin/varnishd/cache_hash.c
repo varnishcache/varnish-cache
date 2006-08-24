@@ -50,14 +50,14 @@ HSH_Lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	assert(hash != NULL);
+	AN(hash);
 	w = sp->wrk;
 	h = sp->http;
 
 	/* Precreate an objhead and object in case we need them */
 	if (w->nobjhead == NULL) {
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
-		assert(w->nobjhead != NULL);
+		XXXAN(w->nobjhead);
 		w->nobjhead->magic = OBJHEAD_MAGIC;
 		TAILQ_INIT(&w->nobjhead->objects);
 		AZ(pthread_mutex_init(&w->nobjhead->mtx, NULL));
@@ -66,7 +66,7 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 	if (w->nobj == NULL) {
 		w->nobj = calloc(sizeof *w->nobj, 1);
-		assert(w->nobj != NULL);
+		XXXAN(w->nobj);
 		w->nobj->magic = OBJECT_MAGIC;
 		w->nobj->http.magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
@@ -139,7 +139,7 @@ HSH_Unbusy(struct object *o)
 {
 	struct sess *sp;
 
-	assert(o != NULL);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
 	assert(o->refcnt > 0);
 	if (o->cacheable)

@@ -63,7 +63,7 @@ vca_accept_sess(int fd)
 		return (NULL);
 	}
 	sp = SES_New(addr, l);
-	assert(sp != NULL);	/* XXX handle */
+	XXXAN(sp);
 
 	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
 	sp->fd = i;
@@ -156,8 +156,8 @@ vca_return_session(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp->obj == NULL);
-	assert(sp->vcl == NULL);
+	AZ(sp->obj);
+	AZ(sp->vcl);
 	if (sp->fd >= 0) {
 		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);

@@ -92,7 +92,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	if (bs < fsst.f_bsize)
 		bs = fsst.f_bsize;
 
-	assert(S_ISREG(st.st_mode));
+	xxxassert(S_ISREG(st.st_mode));
 
 	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
 
@@ -202,7 +202,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	struct smf_sc *sc;
 
 	sc = calloc(sizeof *sc, 1);
-	assert(sc != NULL);
+	XXXAN(sc);
 	TAILQ_INIT(&sc->order);
 	TAILQ_INIT(&sc->free);
 	TAILQ_INIT(&sc->used);
@@ -218,9 +218,9 @@ smf_init(struct stevedore *parent, const char *spec)
 		asprintf(&p, "%s,", spec);
 	else
 		p = strdup(spec);
-	assert(p != NULL);
+	XXXAN(p);
 	size = strchr(p, ',');
-	assert(size != NULL);
+	XXXAN(size);
 
 	*size++ = '\0';
 
@@ -269,7 +269,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	}
 
 	asprintf(&q, "%s/varnish.XXXXXX", p);
-	assert(q != NULL);
+	XXXAN(q);
 	sc->fd = mkstemp(q);
 	if (sc->fd < 0) {
 		fprintf(stderr,
@@ -279,7 +279,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	}
 	AZ(unlink(q));
 	asprintf(&sc->filename, "%s (unlinked)", q);
-	assert(sc->filename != NULL);
+	XXXAN(sc->filename);
 	free(q);
 	smf_initfile(sc, size, 1);
 }
@@ -310,7 +310,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 
 	/* Split from front */
 	sp2 = malloc(sizeof *sp2);
-	assert(sp2 != NULL);
+	XXXAN(sp2);
 	VSL_stats->n_smf++;
 	*sp2 = *sp;
 
@@ -390,7 +390,7 @@ trim_smf(struct smf *sp, size_t bytes)
 	assert(bytes > 0);
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
-	assert(sp2 != NULL);
+	XXXAN(sp2);
 	VSL_stats->n_smf++;
 	*sp2 = *sp;
 
@@ -413,7 +413,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	struct smf *sp, *sp2;
 
 	sp = calloc(sizeof *sp, 1);
-	assert(sp != NULL);
+	XXXAN(sp);
 	sp->magic = SMF_MAGIC;
 	sp->s.magic = STORAGE_MAGIC;
 	VSL_stats->n_smf++;
@@ -515,7 +515,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	smf = alloc_smf(sc, size);
 	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
 	UNLOCK(&sc->mtx);
-	assert(smf != NULL);
+	XXXAN(smf);
 	assert(smf->size == size);
 	smf->s.space = size;
 	smf->s.priv = smf;
@@ -542,7 +542,7 @@ smf_trim(struct storage *s, size_t size)
 		return;
 	}
 	assert(size <= s->space);
-	assert(size > 0);	/* XXX: seen */
+	xxxassert(size > 0);	/* XXX: seen */
 	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	assert(size <= smf->size);
 	sc = smf->sc;

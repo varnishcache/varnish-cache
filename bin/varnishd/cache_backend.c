@@ -151,8 +151,8 @@ vbe_connect(struct backend *bp)
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 	struct addrinfo *ai;
 
-	assert(bp != NULL);
-	assert(bp->hostname != NULL);
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	AN(bp->hostname);
 
 	s = vbe_conn_try(bp, &ai);
 	if (s < 0) 
@@ -217,14 +217,14 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 			vc = vbe_new_conn();
 		else
 			vc = vc2;
-		assert(vc != NULL);
+		AN(vc);
 		assert(vc->fd == -1);
-		assert(vc->backend == NULL);
+		AZ(vc->backend);
 	}
 
 	/* If not connected yet, do so */
 	if (vc->fd < 0) {
-		assert(vc->backend == NULL);
+		AZ(vc->backend);
 		vc->fd = vbe_connect(bp);
 		LOCK(&vbemtx);
 		if (vc->fd < 0) {
@@ -244,7 +244,7 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 		assert(vc->fd >= 0);
 		VSL_stats->backend_conn++;
 		VSL(SLT_BackendXID, vc->fd, "%u", xid);
-		assert(vc->backend != NULL);
+		AN(vc->backend);
 	}
 	return (vc);
 }
@@ -257,7 +257,7 @@ VBE_ClosedFd(struct vbe_conn *vc, int already)
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
-	assert(vc->backend != NULL);
+	AN(vc->backend);
 	VSL(SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	if (!already)
 		AZ(close(vc->fd));
@@ -277,7 +277,7 @@ VBE_RecycleFd(struct vbe_conn *vc)
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
-	assert(vc->backend != NULL);
+	AN(vc->backend);
 	VSL_stats->backend_recycle++;
 	VSL(SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vbemtx);

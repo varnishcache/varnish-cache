@@ -34,7 +34,7 @@ static int
 vrt_acl_vsl(struct sess *sp, const char *acl, struct vrt_acl *ap, int r)
 {
 
-	assert(ap != NULL);
+	AN(ap);
 	if (ap->name == NULL) {
 		assert(r == 0);
 		VSL(SLT_VCL_acl, sp->fd, "NO_MATCH %s", acl);

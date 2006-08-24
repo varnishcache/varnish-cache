@@ -40,7 +40,7 @@ mcf_stats(struct cli *cli, char **av, void *priv)
 	(void)av;
 	(void)priv;
 
-	assert (VSL_stats != NULL);
+	AN(VSL_stats);
 #define MAC_STAT(n,t,f,d) \
     cli_out(cli, "%12ju  " d "\n", (VSL_stats->n));
 #include "stat_field.h"
@@ -72,7 +72,7 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	for (u = 1; av[u] != NULL; u++)
 		v += strlen(av[u]) + 3;
 	p = malloc(v);
-	assert(p != NULL);
+	XXXAN(p);
 	q = p;
 	for (u = 1; av[u] != NULL; u++) {
 		*q++ = '"';
@@ -90,7 +90,7 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	*q++ = '\n';
 	v = q - p;
 	i = write(cli_o, p, v);
-	assert(i == v);
+	xxxassert(i == v);
 	free(p);
 
 	i = cli_readres(cli_i, &u, &p, 3.0);
@@ -149,7 +149,7 @@ mgt_cli_init(void)
 	for (cp = CLI_cmds; cp->request != NULL; cp++)
 		u++;
 	cli_proto = calloc(sizeof *cli_proto, u + 1);
-	assert(cli_proto != NULL);
+	XXXAN(cli_proto);
 	u = 0;
 	for (cp = mgt_cli_proto; cp->request != NULL; cp++)
 		cli_proto[u++] = *cp;
@@ -268,7 +268,7 @@ mgt_cli_callback(struct ev *e, int what)
 		if (cp->nbuf == cp->lbuf) {
 			cp->lbuf += cp->lbuf;
 			cp->buf = realloc(cp->buf, cp->lbuf);
-			assert(cp->buf != NULL);
+			XXXAN(cp->buf);
 		}
 		i = read(cp->fdi, cp->buf + cp->nbuf, cp->lbuf - cp->nbuf);
 		if (i <= 0)
@@ -313,7 +313,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 	struct cli_port *cp;
 
 	cp = calloc(sizeof *cp, 1);
-	assert(cp != NULL);
+	XXXAN(cp);
 
 	sprintf(cp->name, "cli %d->%d", fdi, fdo);
 	cp->magic = CLI_PORT_MAGIC;
@@ -324,10 +324,10 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 
 	cp->lbuf = 4096;
 	cp->buf = malloc(cp->lbuf);
-	assert(cp->buf != NULL);
+	XXXAN(cp->buf);
 
 	cp->cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(cp->cli->sb != NULL);
+	XXXAN(cp->cli->sb);
 
 	cp->ev = calloc(sizeof *cp->ev, 1);
 	cp->ev->name = cp->name;
@@ -370,7 +370,7 @@ mgt_cli_telnet(const char *T_arg)
 		exit (2);
 	}
 	telnet_ev = ev_new();
-	assert(telnet_ev != NULL);
+	XXXAN(telnet_ev);
 	telnet_ev->fd = telnet_sock;
 	telnet_ev->fd_flags = POLLIN;
 	telnet_ev->callback = telnet_accept;

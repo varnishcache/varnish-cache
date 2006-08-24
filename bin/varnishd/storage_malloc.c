@@ -18,10 +18,10 @@ sma_alloc(struct stevedore *st, size_t size)
 	struct sma *sma;
 
 	sma = calloc(sizeof *sma, 1);
-	assert(sma != NULL);
+	XXXAN(sma);
 	sma->s.priv = sma;
 	sma->s.ptr = malloc(size);
-	assert(sma->s.ptr != NULL);
+	XXXAN(sma->s.ptr);
 	sma->s.len = 0;
 	sma->s.space = size;
 	sma->s.fd = -1;

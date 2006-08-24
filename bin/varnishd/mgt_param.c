@@ -292,12 +292,11 @@ mcf_param_show(struct cli *cli, char **av, void *priv)
 				q = strchr(p, '\n');
 				if (q == NULL)
 					q = strchr(p, '\0');
-				assert(q != NULL);
 				if (q > p + 52) {
 					q = p + 52;
 					while (q > p && *q != ' ')
 						q--;
-					assert(q != NULL);
+					AN(q);
 				}
 				cli_out(cli, "%20s %.*s\n", "", q - p, p);
 				p = q;

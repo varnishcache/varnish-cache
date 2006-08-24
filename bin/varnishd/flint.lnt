@@ -8,6 +8,7 @@
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
 
 -sem(lbv_assert, r_no)
+-sem(lbv_xxxassert, r_no)
 
 -ffc	// No automatic custody
 

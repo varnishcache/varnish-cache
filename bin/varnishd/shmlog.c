@@ -52,7 +52,6 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	assert(b != NULL);
 	if (e == NULL)
 		e = strchr(b, '\0');
-	assert(e != NULL);
 
 	/* Truncate */
 	l = e - b;
@@ -185,7 +184,7 @@ vsl_buildnew(const char *fn, unsigned size)
 	slh.ptr = 0;
 	slh.start = sizeof slh + sizeof *params;
 	i = write(heritage.vsl_fd, &slh, sizeof slh);
-	assert(i == sizeof slh);
+	xxxassert(i == sizeof slh);
 	heritage.vsl_size = slh.start + size;
 	AZ(ftruncate(heritage.vsl_fd, (off_t)heritage.vsl_size));
 }
@@ -210,7 +209,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    heritage.vsl_fd, 0);
-	assert(loghead != MAP_FAILED);
+	xxxassert(loghead != MAP_FAILED);
 	VSL_stats = &loghead->stats;
 	pp = (void *)(loghead + 1);
 	memcpy(pp, params, sizeof *pp);

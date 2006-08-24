@@ -110,7 +110,7 @@ exp_prefetch(void *arg)
 	(void)arg;
 
 	sp = SES_New(NULL, 0);
-	assert(sp != NULL);
+	XXXAN(sp);
 	while (1) {
 		t = time(NULL);
 		LOCK(&exp_mtx);
@@ -179,7 +179,7 @@ EXP_Init(void)
 
 	AZ(pthread_mutex_init(&exp_mtx, NULL));
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
-	assert(exp_heap != NULL);
+	XXXAN(exp_heap);
 	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));
 	AZ(pthread_create(&exp_thread, NULL, exp_hangman, NULL));
 }

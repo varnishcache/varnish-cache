@@ -69,10 +69,10 @@ WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf)
 	unsigned u;
 	
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	assert(w != NULL);
-	assert(hh != NULL);
-	assert(hh->b != NULL);
-	assert(hh->e != NULL);
+	AN(w);
+	AN(hh);
+	AN(hh->b);
+	AN(hh->e);
 	u = WRK_Write(w, hh->b, hh->e - hh->b);
 	if (suf != NULL)
 		u += WRK_Write(w, suf, -1);
@@ -128,7 +128,7 @@ wrk_do_one(struct worker *w)
 	struct workreq *wrq;
 
 	wrq = TAILQ_FIRST(&wrk_reqhead);
-	assert(wrq != NULL);
+	AN(wrq);
 	VSL_stats->n_wrk_busy++;
 	TAILQ_REMOVE(&wrk_reqhead, wrq, list);
 	VSL_stats->n_wrk_queue--;

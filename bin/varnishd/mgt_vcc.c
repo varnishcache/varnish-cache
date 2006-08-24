@@ -83,7 +83,7 @@ mgt_vcc_add(const char *name, char *file)
 	struct vclprog *vp;
 
 	vp = calloc(sizeof *vp, 1);
-	assert(vp != NULL);
+	XXXAN(vp);
 	vp->name = strdup(name);
 	vp->fname = file;
 	TAILQ_INSERT_TAIL(&vclhead, vp, list);
@@ -95,7 +95,7 @@ mgt_vcc_del(struct vclprog *vp)
 {
 	TAILQ_REMOVE(&vclhead, vp, list);
 	printf("unlink %s\n", vp->fname);
-	AZ(unlink(vp->fname));	/* XXX assert for now */
+	XXXAZ(unlink(vp->fname));
 	free(vp->fname);
 	free(vp->name);
 	free(vp);
@@ -126,7 +126,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 	struct vclprog *vp;
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(sb != NULL);
+	XXXAN(sb);
 	if (b_arg != NULL) {
 		/*
 		 * XXX: should do a "HEAD /" on the -b argument to see that
@@ -149,7 +149,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 		    "}\n", addr, port ? port : "http");
 		free(addr);
 		free(port);
-		assert(buf != NULL);
+		AN(buf);
 		vf = VCC_Compile(sb, buf, NULL);
 		free(buf);
 	} else {
@@ -231,7 +231,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 	(void)priv;
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(sb != NULL);
+	XXXAN(sb);
 	vf = VCC_Compile(sb, av[3], NULL);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
@@ -262,7 +262,7 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 	(void)priv;
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(sb != NULL);
+	XXXAN(sb);
 	vf = VCC_CompileFile(sb, av[3]);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {

@@ -47,9 +47,9 @@ VCL_Get(void)
 	struct VCL_conf *vc;
 
 	LOCK(&vcl_mtx);
-	assert(vcl_active != NULL);
+	AN(vcl_active);
 	vc = vcl_active->conf;
-	assert(vc != NULL);
+	AN(vc);
 	vc->busy++;
 	UNLOCK(&vcl_mtx);
 	return (vc);
@@ -106,7 +106,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 
 	vcl = calloc(sizeof *vcl, 1);
-	assert(vcl != NULL);
+	XXXAN(vcl);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
@@ -140,7 +140,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 	vcl->conf->priv = vcl;
 	vcl->name = strdup(name);
-	assert(vcl->name != NULL);
+	XXXAN(vcl->name);
 	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	LOCK(&vcl_mtx);
 	if (vcl_active == NULL)
