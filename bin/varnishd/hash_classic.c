@@ -180,7 +180,7 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 	he2 = NULL;
 
 	for (r = 0; r < 2; r++ ) {
-		AZ(pthread_mutex_lock(&hp->mtx));
+		LOCK(&hp->mtx);
 		TAILQ_FOREACH(he, &hp->head, list) {
 			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
 			if (kl < he->klen)
@@ -197,13 +197,13 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 				continue;
 			he->refcnt++;
 			noh = he->oh;
-			AZ(pthread_mutex_unlock(&hp->mtx));
+			UNLOCK(&hp->mtx);
 			if (he2 != NULL)
 				free(he2);
 			return (noh);
 		}
 		if (noh == NULL) {
-			AZ(pthread_mutex_unlock(&hp->mtx));
+			UNLOCK(&hp->mtx);
 			return (NULL);
 		}
 		if (he2 != NULL) {
@@ -213,10 +213,10 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 				TAILQ_INSERT_TAIL(&hp->head, he2, list);
 			he2->refcnt++;
 			noh = he2->oh;
-			AZ(pthread_mutex_unlock(&hp->mtx));
+			UNLOCK(&hp->mtx);
 			return (noh);
 		}
-		AZ(pthread_mutex_unlock(&hp->mtx));
+		UNLOCK(&hp->mtx);
 
 		i = sizeof *he2 + kl;
 		he2 = calloc(i, 1);
@@ -254,12 +254,12 @@ hcl_deref(struct objhead *oh)
 	assert(he->refcnt > 0);
 	assert(he->hash < hcl_nhash);
 	assert(hp == &hcl_head[he->hash]);
-	AZ(pthread_mutex_lock(&hp->mtx));
+	LOCK(&hp->mtx);
 	if (--he->refcnt == 0)
 		TAILQ_REMOVE(&hp->head, he, list);
 	else
 		he = NULL;
-	AZ(pthread_mutex_unlock(&hp->mtx));
+	UNLOCK(&hp->mtx);
 	if (he == NULL)
 		return (1);
 	free(he);

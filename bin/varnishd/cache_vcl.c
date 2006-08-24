@@ -46,12 +46,12 @@ VCL_Get(void)
 {
 	struct VCL_conf *vc;
 
-	AZ(pthread_mutex_lock(&vcl_mtx));
+	LOCK(&vcl_mtx);
 	assert(vcl_active != NULL);
 	vc = vcl_active->conf;
 	assert(vc != NULL);
 	vc->busy++;
-	AZ(pthread_mutex_unlock(&vcl_mtx));
+	UNLOCK(&vcl_mtx);
 	return (vc);
 }
 
@@ -60,7 +60,7 @@ VCL_Rel(struct VCL_conf *vc)
 {
 	struct vcls *vcl;
 
-	AZ(pthread_mutex_lock(&vcl_mtx));
+	LOCK(&vcl_mtx);
 	assert(vc->busy > 0);
 	vc->busy--;
 	vcl = vc->priv;	/* XXX miniobj */
@@ -72,7 +72,7 @@ VCL_Rel(struct VCL_conf *vc)
 	} else {
 		vcl = NULL;
 	}
-	AZ(pthread_mutex_unlock(&vcl_mtx));
+	UNLOCK(&vcl_mtx);
 	if (vcl != NULL) {
 		/* XXX: dispose of vcl */
 	}
@@ -142,10 +142,10 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	vcl->name = strdup(name);
 	assert(vcl->name != NULL);
 	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	AZ(pthread_mutex_lock(&vcl_mtx));
+	LOCK(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
-	AZ(pthread_mutex_unlock(&vcl_mtx));
+	UNLOCK(&vcl_mtx);
 	if (cli == NULL)
 		fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
 	else 
@@ -200,9 +200,9 @@ cli_func_config_discard(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "VCL %s already discarded", av[2]);
 		return;
 	}
-	AZ(pthread_mutex_lock(&vcl_mtx));
+	LOCK(&vcl_mtx);
 	if (vcl == vcl_active) {
-		AZ(pthread_mutex_unlock(&vcl_mtx));
+		UNLOCK(&vcl_mtx);
 		cli_result(cli, CLIS_PARAM);
 		cli_out(cli, "VCL %s is the active VCL", av[2]);
 		return;
@@ -212,7 +212,7 @@ cli_func_config_discard(struct cli *cli, char **av, void *priv)
 		TAILQ_REMOVE(&vcl_head, vcl, list);
 	else
 		vcl = NULL;
-	AZ(pthread_mutex_unlock(&vcl_mtx));
+	UNLOCK(&vcl_mtx);
 	if (vcl != NULL) {
 		/* XXX dispose of vcl */
 	}
@@ -236,9 +236,9 @@ cli_func_config_use(struct cli *cli, char **av, void *priv)
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	AZ(pthread_mutex_lock(&vcl_mtx));
+	LOCK(&vcl_mtx);
 	vcl_active = vcl;
-	AZ(pthread_mutex_unlock(&vcl_mtx));
+	UNLOCK(&vcl_mtx);
 }
 
 /*--------------------------------------------------------------------*/

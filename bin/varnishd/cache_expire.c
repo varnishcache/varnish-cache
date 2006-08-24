@@ -32,19 +32,19 @@ EXP_Insert(struct object *o)
 {
 
 	assert(o->heap_idx == 0);
-	AZ(pthread_mutex_lock(&exp_mtx));
+	LOCK(&exp_mtx);
 	binheap_insert(exp_heap, o);
-	AZ(pthread_mutex_unlock(&exp_mtx));
+	UNLOCK(&exp_mtx);
 }
 
 void
 EXP_TTLchange(struct object *o)
 {
 	assert(o->heap_idx != 0);
-	AZ(pthread_mutex_lock(&exp_mtx));
+	LOCK(&exp_mtx);
 	binheap_delete(exp_heap, o->heap_idx);
 	binheap_insert(exp_heap, o);
-	AZ(pthread_mutex_unlock(&exp_mtx));
+	UNLOCK(&exp_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -61,7 +61,7 @@ exp_hangman(void *arg)
 
 	while (1) {
 		t = time(NULL); 
-		AZ(pthread_mutex_lock(&exp_mtx));
+		LOCK(&exp_mtx);
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
@@ -77,14 +77,14 @@ exp_hangman(void *arg)
 				break;
 		}
 		if (o == NULL) {
-			AZ(pthread_mutex_unlock(&exp_mtx));
+			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
 		VSL_stats->n_deathrow--;
 		VSL_stats->n_expired++;
-		AZ(pthread_mutex_unlock(&exp_mtx));
+		UNLOCK(&exp_mtx);
 		VSL(SLT_ExpKill, 0, "%u %d", o->xid, (int)(o->ttl - t));
 		HSH_Deref(o);
 	}
@@ -113,12 +113,12 @@ exp_prefetch(void *arg)
 	assert(sp != NULL);
 	while (1) {
 		t = time(NULL);
-		AZ(pthread_mutex_lock(&exp_mtx));
+		LOCK(&exp_mtx);
 		o = binheap_root(exp_heap);
 		if (o != NULL)
 			CHECK_OBJ(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
-			AZ(pthread_mutex_unlock(&exp_mtx));
+			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
 			continue;
 		}
@@ -129,7 +129,7 @@ exp_prefetch(void *arg)
 		if (o2 != NULL)
 			assert(o2->ttl >= o->ttl);
 
-		AZ(pthread_mutex_unlock(&exp_mtx));
+		UNLOCK(&exp_mtx);
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
 		sp->vcl = VCL_Get();
@@ -138,10 +138,10 @@ exp_prefetch(void *arg)
 		VCL_Rel(sp->vcl);
 
 		if (sp->handling == VCL_RET_DISCARD) {
-			AZ(pthread_mutex_lock(&exp_mtx));
+			LOCK(&exp_mtx);
 			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
 			VSL_stats->n_deathrow++;
-			AZ(pthread_mutex_unlock(&exp_mtx));
+			UNLOCK(&exp_mtx);
 			continue;
 		}
 		assert(sp->handling == VCL_RET_DISCARD);

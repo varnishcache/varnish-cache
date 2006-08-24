@@ -62,7 +62,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	}
 
 	/* Only hold the lock while we find our space */
-	AZ(pthread_mutex_lock(&vsl_mtx));
+	LOCK(&vsl_mtx);
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
@@ -72,7 +72,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	loghead->ptr += 5 + l;
 	p[5 + l] = SLT_ENDMARKER;
 	assert(loghead->ptr < loghead->size);
-	AZ(pthread_mutex_unlock(&vsl_mtx));
+	UNLOCK(&vsl_mtx);
 
 	p[1] = l & 0xff;
 	p[2] = (id >> 8) & 0xff;
@@ -99,7 +99,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 		return;
 	}
 
-	AZ(pthread_mutex_lock(&vsl_mtx));
+	LOCK(&vsl_mtx);
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if we cannot fit a full size record */
@@ -123,7 +123,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	loghead->ptr += 5 + n;
 	assert(loghead->ptr < loghead->size);
 	
-	AZ(pthread_mutex_unlock(&vsl_mtx));
+	UNLOCK(&vsl_mtx);
 
 	va_end(ap);
 }
