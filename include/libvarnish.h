@@ -40,10 +40,11 @@ do { 									\
 #define xxxassert(e)							\
 do { 									\
 	if (!(e))							\
-		lbv_assert("XXX:" __func__, __FILE__, __LINE__, #e, errno); \
+		lbv_xxxassert(__func__, __FILE__, __LINE__, #e, errno); \
 } while (0)
 
 void lbv_assert(const char *, const char *, int, const char *, int);
+void lbv_xxxassert(const char *, const char *, int, const char *, int);
 
 /* Assert zero return value */
 #define AZ(foo)	do { assert((foo) == 0); } while (0)
