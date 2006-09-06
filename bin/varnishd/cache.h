@@ -99,7 +99,8 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
-	unsigned		nbr;
+	time_t			idle;
+
 	pthread_cond_t		cv;
 	TAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
