@@ -78,7 +78,7 @@ vca_main(void *arg)
 	unsigned v;
 	struct sess *sp, *sp2;
 	struct timespec ts;
-	int i;
+	int i, fd;
 
 	(void)arg;
 
@@ -100,13 +100,14 @@ vca_main(void *arg)
 			if (v == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		    	if (pollfd[sp->fd].revents) {
+			fd = sp->fd;
+		    	if (pollfd[fd].revents) {
 				v--;
 				i = vca_pollsession(sp);
 				if (i < 0)
 					continue;
 				TAILQ_REMOVE(&sesshead, sp, list);
-				vca_unpoll(sp->fd);
+				vca_unpoll(fd);
 				if (i == 0)
 					vca_handover(sp, i);
 				else
@@ -119,7 +120,7 @@ vca_main(void *arg)
 			    sp->t_open.tv_nsec > ts.tv_nsec)
 				continue;
 			TAILQ_REMOVE(&sesshead, sp, list);
-			vca_unpoll(sp->fd);
+			vca_unpoll(fd);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
 		}
