@@ -138,10 +138,6 @@ wrk_do_one(struct worker *w)
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
 	w->wrq = wrq;
-	if (wrq->sess->srcaddr == NULL) {
-		w->acct.sess++;
-		SES_RefSrcAddr(wrq->sess);
-	}
 	if (w->nobj != NULL)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
