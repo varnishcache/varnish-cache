@@ -49,6 +49,7 @@ static unsigned ses_qp;
 TAILQ_HEAD(srcaddrhead ,srcaddr);
 static struct srcaddrhead	srcaddr_hash[CLIENT_HASH];
 static pthread_mutex_t		ses_mtx;
+static pthread_mutex_t		stat_mtx;
 static pthread_mutex_t		ses_mem_mtx;
 
 /*--------------------------------------------------------------------
@@ -152,7 +153,7 @@ SES_Charge(struct sess *sp)
 
 	ses_sum_acct(&sp->acct, a);
 	
-	LOCK(&ses_mtx);
+	LOCK(&stat_mtx);
 	ses_sum_acct(b, a);
 	VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
 	    sp->srcaddr->addr, time(NULL) - b->first,
@@ -165,7 +166,7 @@ SES_Charge(struct sess *sp)
 	VSL_stats->s_fetch += a->fetch;
 	VSL_stats->s_hdrbytes += a->hdrbytes;
 	VSL_stats->s_bodybytes += a->bodybytes;
-	UNLOCK(&ses_mtx);
+	UNLOCK(&stat_mtx);
 	memset(a, 0, sizeof *a);
 }
 
@@ -285,5 +286,6 @@ SES_Init()
 	for (i = 0; i < CLIENT_HASH; i++)
 		TAILQ_INIT(&srcaddr_hash[i]);
 	AZ(pthread_mutex_init(&ses_mtx, NULL));
+	AZ(pthread_mutex_init(&stat_mtx, NULL));
 	AZ(pthread_mutex_init(&ses_mem_mtx, NULL));
 }
