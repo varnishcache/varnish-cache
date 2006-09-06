@@ -69,7 +69,7 @@ SES_RefSrcAddr(struct sess *sp)
 	time_t now;
 
 	AZ(sp->srcaddr);
-	u = crc32_l(sp->sockaddr, sp->sockaddrlen);
+	u = crc32_2s(sp->addr, "");
 	v = u % CLIENT_HASH;
 	ch = &srcaddr_hash[v];
 	now = time(NULL);
