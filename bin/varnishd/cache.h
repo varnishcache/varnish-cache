@@ -299,6 +299,7 @@ struct backend {
 /* cache_acceptor.c */
 void vca_return_session(struct sess *sp);
 void vca_close_session(struct sess *sp, const char *why);
+void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 
 /* cache_backend.c */
@@ -315,6 +316,7 @@ int BAN_CheckObject(struct object *o, const char *url);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
+void CNT_Init(void);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
