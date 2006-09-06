@@ -38,6 +38,7 @@ DOT start -> RECV
 #include "vcl.h"
 #include "cache.h"
 
+static unsigned xids;
 
 /*--------------------------------------------------------------------
  * We have a refcounted object on the session, now deliver it.
@@ -238,6 +239,7 @@ cnt_first(struct sess *sp)
 {
 	int i;
 
+	VCA_Prep(sp);
 	for (;;) {
 		i = http_RecvSome(sp->fd, sp->http);
 		switch (i) {
@@ -590,6 +592,8 @@ cnt_recv(struct sess *sp)
 	int done;
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
+	sp->xid = ++xids;
+	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
 
 	AZ(sp->vcl);
 	sp->vcl = VCL_Get();
@@ -684,3 +688,11 @@ CNT_Session(struct sess *sp)
 /*
 DOT }
 */
+
+void
+CNT_Init(void)
+{
+
+	srandomdev();
+	xids = random();
+}

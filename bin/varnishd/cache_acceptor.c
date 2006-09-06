@@ -41,7 +41,6 @@ static struct acceptor *vca_acceptors[] = {
 
 static struct acceptor *vca_act;
 
-static unsigned		xids;
 static pthread_t 	vca_thread_acct;
 
 static struct sess *
@@ -51,7 +50,6 @@ vca_accept_sess(int fd)
 	struct sockaddr addr[2];	/* XXX: IPv6 hack */
 	struct sess *sp;
 	int i;
-	struct linger linger;
 
 	VSL_stats->client_conn++;
 
@@ -65,11 +63,22 @@ vca_accept_sess(int fd)
 	sp = SES_New(addr, l);
 	XXXAN(sp);
 
-	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
-	sp->acct.first = sp->t_open.tv_sec;
 	sp->fd = i;
 	sp->id = i;
+	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
 
+	return (sp);
+}
+
+void
+VCA_Prep(struct sess *sp)
+{
+	struct linger linger;
+
+	TCP_name(sp->sockaddr, sp->sockaddrlen,
+	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
+	sp->acct.first = sp->t_open.tv_sec;
 #ifdef SO_LINGER /* XXX Linux*/
 	linger.l_onoff = 0;
 	linger.l_linger = 0;
@@ -93,10 +102,6 @@ vca_accept_sess(int fd)
 	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv));
 	}
 #endif
-
-	TCP_name(addr, l, sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
-	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
-	return (sp);
 }
 
 void
@@ -111,8 +116,6 @@ vca_handover(struct sess *sp, int bad)
 	}
 	sp->step = STP_RECV;
 	VSL_stats->client_req++;
-	sp->xid = xids++;
-	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
 	WRK_QueueSession(sp);
 }
 
@@ -181,8 +184,6 @@ vca_acct(void *arg)
 		http_RecvPrep(sp->http);
 		sp->step = STP_FIRST;
 		VSL_stats->client_req++;
-		sp->xid = xids++;
-		VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
 		WRK_QueueSession(sp);
 	}
 }
@@ -194,8 +195,6 @@ void
 VCA_Init(void)
 {
 
-	srandomdev();
-	xids = random();
 
 	/* XXX: Add selector mechanism at some point */
 	vca_act = vca_acceptors[0];

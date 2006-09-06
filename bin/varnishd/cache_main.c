@@ -25,6 +25,7 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+	CNT_Init();
 	VCL_Init();
 
 	HTTP_Init();
