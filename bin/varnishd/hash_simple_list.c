@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cache.h>
+#include "shmlog.h"
+#include "cache.h"
 
 /*--------------------------------------------------------------------*/
 

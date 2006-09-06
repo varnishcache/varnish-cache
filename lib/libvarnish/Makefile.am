@@ -10,6 +10,7 @@ libvarnish_la_SOURCES = \
 	binary_heap.c \
 	cli.c \
 	cli_common.c \
+	crc32.c \
 	time.c \
 	version.c \
 	vsb.c

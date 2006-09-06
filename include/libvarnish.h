@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <time.h>
+#include <sys/types.h>
 
 #ifndef NULL
 #define NULL ((void*)0)
@@ -12,6 +13,10 @@
 /* from libvarnish/argv.c */
 void FreeArgv(char **argv);
 char **ParseArgv(const char *s, int comment);
+
+/* from libvarnish/crc32.c */
+uint32_t crc32_2s(const char *p1, const char *p2);
+uint32_t crc32_l(const void *p1, unsigned l);
 
 /* from libvarnish/time.c */
 void TIM_format(time_t t, char *p);
@@ -52,5 +57,13 @@ void lbv_xxxassert(const char *, const char *, int, const char *, int);
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
 #define XXXAN(foo)	do { xxxassert((foo) != NULL); } while (0)
 
+#define LOCKSHM(foo)	AZ(pthread_mutex_lock(foo))
+#define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
+
+#if 1
 #define LOCK(foo)	AZ(pthread_mutex_lock(foo))
 #define UNLOCK(foo)	AZ(pthread_mutex_unlock(foo))
+#else
+#define LOCK(foo)	do { AZ(pthread_mutex_lock(foo)); VSL(SLT_Debug, 0, "LOCK(%s,%s,%d," #foo ")", __func__, __FILE__, __LINE__); } while (0);
+#define UNLOCK(foo)	do { AZ(pthread_mutex_unlock(foo)); VSL(SLT_Debug, 0, "UNLOC(%s,%s,%d," #foo ")", __func__, __FILE__, __LINE__); } while (0);
+#endif

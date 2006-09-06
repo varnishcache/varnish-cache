@@ -55,10 +55,6 @@ static pthread_mutex_t		ses_mem_mtx;
 /*--------------------------------------------------------------------
  * Assign a srcaddr to this session.
  *
- * We use a simple hash over the ascii representation of the address
- * because it is nice and modular.  I'm not sure how much improvement
- * using the binary address would be anyway.
- *
  * Each hash bucket is sorted in least recently used order and if we
  * need to make a new entry we recycle the first expired entry we find.
  * If we find more expired entries during our search, we delete them.
@@ -68,14 +64,12 @@ void
 SES_RefSrcAddr(struct sess *sp)
 {
 	unsigned u, v;
-	char *p;
 	struct srcaddr *c, *c2, *c3;
 	struct srcaddrhead *ch;
 	time_t now;
 
 	AZ(sp->srcaddr);
-	for (u = 0, p = sp->addr; *p; p++)
-		u += u + *p;
+	u = crc32_l(sp->sockaddr, sp->sockaddrlen);
 	v = u % CLIENT_HASH;
 	ch = &srcaddr_hash[v];
 	now = time(NULL);
