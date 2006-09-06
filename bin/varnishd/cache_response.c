@@ -126,7 +126,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 		"</HTML>\r\n");
 	vsb_finish(sb);
 	WRK_Reset(sp->wrk, &sp->fd);
-	WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
+	sp->wrk->acct.hdrbytes += WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
 	WRK_Flush(sp->wrk);
 	VSL(SLT_TxResponse, sp->id, "%d", code);
 	VSL(SLT_TxProtocol, sp->id, "HTTP/1.1");
@@ -157,7 +157,7 @@ res_do_304(struct sess *sp)
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
-	http_Write(sp->wrk, sp->http, 1);
+	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }
@@ -180,8 +180,6 @@ res_do_conds(struct sess *sp)
 			    "Cond: %d > %d ", sp->obj->last_modified, ims);
 			return (0);
 		}
-		VSL(SLT_Debug, sp->fd,
-		    "Cond: %d <= %d", sp->obj->last_modified, ims);
 		res_do_304(sp);
 		return (1);
 	}
