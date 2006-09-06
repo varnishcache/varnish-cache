@@ -70,10 +70,6 @@ vca_accept_sess(int fd)
 	sp->fd = i;
 	sp->id = i;
 
-#ifdef SO_NOSIGPIPE /* XXX Linux */
-	i = 1;
-	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_NOSIGPIPE, &i, sizeof i));
-#endif
 #ifdef SO_LINGER /* XXX Linux*/
 	linger.l_onoff = 0;
 	linger.l_linger = 0;
