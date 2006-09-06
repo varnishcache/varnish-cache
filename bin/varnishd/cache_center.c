@@ -240,6 +240,8 @@ cnt_first(struct sess *sp)
 	int i;
 
 	VCA_Prep(sp);
+	sp->wrk->acct.sess++;
+	SES_RefSrcAddr(sp);
 	for (;;) {
 		i = http_RecvSome(sp->fd, sp->http);
 		switch (i) {
