@@ -22,6 +22,7 @@ set spobj {
         { obj.cacheable	BOOL }
         { obj.ttl	TIME }
         { req.http.	HEADER }
+        { resp.http.	HEADER }
 }
 
 set tt(IP)	"const unsigned char *"

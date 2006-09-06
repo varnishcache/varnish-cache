@@ -62,6 +62,10 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_http_(sp)",
 	    "VRT_l_req_http_(sp, ",
 	},
+	{ "resp.http.", HEADER, 10,
+	    "VRT_r_resp_http_(sp)",
+	    "VRT_l_resp_http_(sp, ",
+	},
 	{ NULL }
 };
 
@@ -98,4 +102,6 @@ const char *vrt_obj_h =
 	"void VRT_l_obj_ttl(struct sess *, double);\n"
 	"const char * VRT_r_req_http_(struct sess *);\n"
 	"void VRT_l_req_http_(struct sess *, const char *);\n"
+	"const char * VRT_r_resp_http_(struct sess *);\n"
+	"void VRT_l_resp_http_(struct sess *, const char *);\n"
 ;
