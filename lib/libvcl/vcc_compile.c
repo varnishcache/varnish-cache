@@ -375,7 +375,7 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 {
 	char *p;
 	struct var *v;
-	int i;
+	int i, w;
 
 	(void)tl;
 
@@ -388,7 +388,11 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
-	asprintf(&p, "VRT_GetHdr(sp, \"\\%03o%s:\")",
+	if (!memcmp(vh->name, "req.", 4))
+		w = 1;
+	else
+		w = 2;
+	asprintf(&p, "VRT_GetHdr(sp, %d, \"\\%03o%s:\")", w,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	assert(p != NULL);
 	v->rname = p;

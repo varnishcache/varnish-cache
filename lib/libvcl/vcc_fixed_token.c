@@ -513,7 +513,7 @@ vcl_output_lang_h(FILE *f)
 	fputs("void VRT_error(struct sess *, unsigned, const char *);\n", f);
 	fputs("int VRT_switch_config(const char *);\n", f);
 	fputs("\n", f);
-	fputs("char *VRT_GetHdr(struct sess *, const char *);\n", f);
+	fputs("char *VRT_GetHdr(struct sess *, int where, const char *);\n", f);
 	fputs("void VRT_handling(struct sess *sp, unsigned hand);\n", f);
 	fputs("\n", f);
 	fputs("/* Backend related */\n", f);

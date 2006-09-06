@@ -42,13 +42,24 @@ VRT_count(struct sess *sp, unsigned u)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_GetHdr(struct sess *sp, const char *n)
+VRT_GetHdr(struct sess *sp, int where, const char *n)
 {
 	char *p;
+	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(sp->http);
-	if (!http_GetHdr(sp->http, n, &p))
+	switch (where) {
+	case 1:
+		hp = sp->http;
+		break;
+	case 2:
+		hp = sp->vbc->http;
+		break;
+	default:
+		INCOMPL();
+	}
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	if (!http_GetHdr(hp, n, &p))
 		return (NULL);
 	return (p);
 }

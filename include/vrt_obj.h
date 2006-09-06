@@ -30,3 +30,5 @@ double VRT_r_obj_ttl(struct sess *);
 void VRT_l_obj_ttl(struct sess *, double);
 const char * VRT_r_req_http_(struct sess *);
 void VRT_l_req_http_(struct sess *, const char *);
+const char * VRT_r_resp_http_(struct sess *);
+void VRT_l_resp_http_(struct sess *, const char *);
