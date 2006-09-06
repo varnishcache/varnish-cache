@@ -393,7 +393,7 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 			for (j = 0; j < l; j++)
 				if (tolower(*q++) != tolower(*p++))
 					break;
-			if (j != l)
+			if (j != l || *p != '\0')
 				continue;
 
 			if (arg == 'x')
