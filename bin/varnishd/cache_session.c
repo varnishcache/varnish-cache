@@ -244,8 +244,6 @@ SES_New(struct sockaddr *addr, unsigned len)
 
 	http_Setup(&sm->http, (void *)(sm + 1), sm->workspace);
 
-	sm->sess.acct.first = time(NULL);
-
 	return (&sm->sess);
 }
 
