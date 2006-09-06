@@ -227,8 +227,8 @@ static struct parspec parspec[] = {
 		"Minimum is 1 thread. ", "1" },
 	{ "thread_pool_timeout", tweak_thread_pool_timeout,
 		"Thread dies after this many seconds of inactivity.\n"
-		"Default is 10 seconds. "
-		"Minimum is 1 second. ", "10" },
+		"Default is 120 seconds. "
+		"Minimum is 1 second. ", "120" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
