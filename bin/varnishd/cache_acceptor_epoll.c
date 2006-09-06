@@ -37,7 +37,10 @@ vca_add(int fd, void *data)
 static void
 vca_del(int fd)
 {
-	AZ(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL));
+	int i;
+
+	i = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+	assert(i == 0 || errno == EBADF);
 }
 
 static void
