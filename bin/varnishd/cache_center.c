@@ -589,7 +589,6 @@ cnt_recv(struct sess *sp)
 {
 	int done;
 
-	sp->t0 = time(NULL);
 	AZ(sp->vcl);
 	sp->vcl = VCL_Get();
 

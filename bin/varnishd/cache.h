@@ -267,7 +267,6 @@ struct sess {
 
 	/* Various internal stuff */
 	struct sessmem		*mem;
-	time_t			t0;
 
 	struct workreq		workreq;
 	struct acct		acct;
