@@ -67,86 +67,94 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *q;
-	unsigned char *p;
 	struct storage *st;
 	unsigned u, v;
-	char buf[20];
+	char buf[20];		/* XXX: arbitrary */
 	char *bp, *be;
 
-	i = fcntl(fd, F_GETFL);		/* XXX ? */
-	i &= ~O_NONBLOCK;
-	i = fcntl(fd, F_SETFL, i);
-
-	be = buf + sizeof buf;
+	be = buf + sizeof buf - 1;
 	bp = buf;
 	st = NULL;
+	u = 0;
 	while (1) {
-		i = http_Read(hp, fd, bp, be - bp);
-		xxxassert(i >= 0);
-		bp += i;
+		/* Try to parse buf as a chunk length */
 		*bp = '\0';
 		u = strtoul(buf, &q, 16);
-		if (q == NULL || q == buf)
+
+		/* Skip trailing whitespace */
+		if (q != NULL && q > buf) {
+			while (*q == '\t' || *q == ' ')
+				q++;
+			if (*q == '\r')
+				q++;
+		}
+
+		/* If we didn't succeed, add to buffer, try again */
+		if (q == NULL || q == buf || *q != '\n') {
+			xxxassert(be > bp);
+			i = http_Read(hp, fd, bp, be - bp);
+			xxxassert(i >= 0);
+			bp += i;
 			continue;
-		xxxassert(isspace(*q));
-		while (*q == '\t' || *q == ' ')
-			q++;
-		if (*q == '\r')
-			q++;
-		xxxassert(*q == '\n');
+		}
+
+		/* Skip NL */
 		q++;
+
+		/* Last chunk is zero bytes long */
 		if (u == 0)
 			break;
-		sp->obj->len += u;
 
 		while (u > 0) {
-			if (st != NULL && st->len < st->space) {
-				p = st->ptr + st->len;
-			} else {
-				st = stevedore->alloc(stevedore,
-				    stevedore->trim == NULL ? u : CHUNK_PREALLOC);
+
+			/* Get some storage if we don't have any */
+			if (st == NULL || st->len == st->space) {
+				v = u;
+				if (u < CHUNK_PREALLOC && 
+				    stevedore->trim != NULL)
+					v = CHUNK_PREALLOC;
+				st = stevedore->alloc(stevedore, v);
 				XXXAN(st->stevedore);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-				p = st->ptr;
 			}
 			v = st->space - st->len;
 			if (v > u)
 				v = u;
 
+			/* Handle anything left in our buffer first */
 			i = bp - q;
 			assert(i >= 0);
-			if (i == 0) {
-			} else if (v > i) {
-				memcpy(p, q, i);
-				p += i;
+			if (i > v)
+				i = v;
+			if (i != 0) {
+				memcpy(st->ptr + st->len, q, i);
 				st->len += i;
+				sp->obj->len += i;
 				u -= i;
 				v -= i;
-				q = bp = buf;
-			} else if (i >= v) {
-				memcpy(p, q, v);
-				p += v;
-				st->len += v;
-				q += v;
-				u -= v;
-				v -= v;
-				if (u == 0 && bp > q) {
-					memcpy(buf, q, bp - q);
-					q = bp = buf + (bp - q);
-				}
+				q += i;
 			}
 			if (u == 0)
 				break;
 			if (v == 0)
 				continue;
+
+			/* Pick up the rest of this chunk */
 			while (v > 0) {
-				i = http_Read(hp, fd, p, v);
+				i = http_Read(hp, fd, st->ptr + st->len, v);
 				st->len += i;
-				v -= i;
+				sp->obj->len += i;
 				u -= i;
-				p += i;
+				v -= i;
 			}
 		}
+		assert(u == 0);
+
+		/* We might still have stuff in our buffer */
+		v = bp - q;
+		if (v > 0)
+			memcpy(buf, q, v);
+		q = bp = buf + v;
 	}
 
 	if (st != NULL && stevedore->trim != NULL)
