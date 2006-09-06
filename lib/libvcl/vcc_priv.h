@@ -5,7 +5,7 @@
 #include "vcc_token_defs.h"
 
 #define isident1(c) (isalpha(c))
-#define isident(c) (isalpha(c) || isdigit(c) || (c) == '_')
+#define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
 #define isvar(c) (isident(c) || (c) == '.')
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char *vcl_tnames[256];
