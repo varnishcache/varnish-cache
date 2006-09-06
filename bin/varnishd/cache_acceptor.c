@@ -66,6 +66,7 @@ vca_accept_sess(int fd)
 	XXXAN(sp);
 
 	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+	sp->acct.first = sp->t_open.tv_sec;
 	sp->fd = i;
 	sp->id = i;
 
