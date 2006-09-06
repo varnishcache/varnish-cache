@@ -589,6 +589,8 @@ cnt_recv(struct sess *sp)
 {
 	int done;
 
+	clock_gettime(CLOCK_REALTIME, &sp->t_req);
+
 	AZ(sp->vcl);
 	sp->vcl = VCL_Get();
 
