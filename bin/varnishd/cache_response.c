@@ -128,9 +128,9 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
 	WRK_Flush(sp->wrk);
-	VSL(SLT_TxResponse, sp->id, "%d", code);
+	VSL(SLT_TxStatus, sp->id, "%d", code);
 	VSL(SLT_TxProtocol, sp->id, "HTTP/1.1");
-	VSL(SLT_TxStatus, sp->id, msg);
+	VSL(SLT_TxResponse, sp->id, msg);
 	vca_close_session(sp, expl);
 	vsb_delete(sb);
 }
