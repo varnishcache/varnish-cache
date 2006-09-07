@@ -673,7 +673,6 @@ CNT_Session(struct sess *sp)
 		switch (sp->step) {
 #define STEP(l,u) \
 		case STP_##u: \
-			VSL(SLT_Debug, sp->id, "State " #u); \
 			done = cnt_##l(sp); \
 			break;
 #include "steps.h"

@@ -176,8 +176,6 @@ res_do_conds(struct sess *sp)
 		if (ims > sp->t_req.tv_sec)	/* [RFC2616 14.25] */
 			return (0);
 		if (sp->obj->last_modified > ims) {
-			VSL(SLT_Debug, sp->fd,
-			    "Cond: %d > %d ", sp->obj->last_modified, ims);
 			return (0);
 		}
 		res_do_304(sp);

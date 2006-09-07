@@ -190,7 +190,6 @@ http_DoConnection(struct sess *sp)
 			sp->doclose = "not HTTP/1.1";
 		return;
 	}
-	VSL(SLT_Debug, sp->fd, "DoConnect(%s)", p);
 	for (; *p; p++) {
 		if (isspace(*p))
 			continue;
@@ -205,7 +204,6 @@ http_DoConnection(struct sess *sp)
 		u = http_findhdr(hp, i, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;
-		VSL(SLT_Debug, sp->fd, "FLD(%.*s) u = %u", q - p, p, u);
 		if (!*q)
 			break;
 		p = q;
