@@ -52,7 +52,6 @@ struct smf {
 	struct smf_sc		*sc;
 
 	int			alloc;
-	time_t			age;
 
 	off_t			size;
 	off_t			offset;
@@ -309,8 +308,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	TAILQ_FOREACH(sp2, sp->flist, status) {
 		assert(sp2->alloc == 0);
 		assert(sp2->flist == sp->flist);
-		if (sp->age > sp2->age ||
-		    (sp->age == sp2->age && sp->offset < sp2->offset)) {
+		if (sp->offset < sp2->offset) {
 			TAILQ_INSERT_BEFORE(sp2, sp, status);
 			break;
 		}
@@ -429,7 +427,6 @@ free_smf(struct smf *sp)
 		remfree(sc, sp2);
 		sp2->size += sp->size;
 		VSL(SLT_Debug, 0, "FILE CP %p -> %p %ju", sp, sp2, sp2->size);
-		sp2->age = sp->age;
 		TAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
 		VSL_stats->n_smf--;
