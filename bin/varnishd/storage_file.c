@@ -460,7 +460,6 @@ trim_smf(struct smf *sp, size_t bytes)
 	sp->size = bytes;
 	sp2->ptr += bytes;
 	sp2->offset += bytes;
-	sp2->alloc = 0;
 	VSL(SLT_Debug, 0, "FILE T %p -> %p %ju %d", sp, sp2, sp2->size);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
