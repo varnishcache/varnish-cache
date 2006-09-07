@@ -38,6 +38,8 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	struct storage *st;
 
 	cl = strtoumax(b, NULL, 0);
+	if (cl == 0)
+		return (0);
 
 	st = stevedore->alloc(stevedore, cl);
 	XXXAN(st->stevedore);
@@ -157,7 +159,10 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 		q = bp = buf + v;
 	}
 
-	if (st != NULL && stevedore->trim != NULL)
+	if (st != NULL && st->len == 0) {
+		TAILQ_REMOVE(&sp->obj->store, st, list);
+		stevedore->free(st);
+	} else if (st != NULL && stevedore->trim != NULL)
 		stevedore->trim(st, st->len);
 	return (0);
 }
@@ -202,7 +207,10 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 		sp->obj->len += i;
 	}
 
-	if (stevedore->trim != NULL)
+	if (st->len == 0) {
+		TAILQ_REMOVE(&sp->obj->store, st, list);
+		stevedore->free(st);
+	} else if (stevedore->trim != NULL)
 		stevedore->trim(st, st->len);
 
 	return (1);
