@@ -288,6 +288,24 @@ smf_init(struct stevedore *parent, const char *spec)
 	smf_initfile(sc, size, 1);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+phk(struct smf *sp)
+{
+	struct smf *sp2;
+	sp2 = TAILQ_NEXT(sp, order);
+	if (sp2 != NULL) {
+		assert(sp2->offset > sp->offset);
+		assert(sp2->ptr > sp->ptr);
+	}
+	sp2 = TAILQ_PREV(sp, smfhead, order);
+	if (sp2 != NULL) {
+		assert(sp2->offset < sp->offset);
+		assert(sp2->ptr < sp->ptr);
+	}
+}
+
 /*--------------------------------------------------------------------
  * Insert/Remove from correct freelist
  */
@@ -298,6 +316,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	unsigned b, n;
 	struct smf *sp2;
 
+	phk(sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist == NULL);
 	b = sp->size / sc->pagesize;
@@ -327,6 +346,7 @@ remfree(struct smf_sc *sc, struct smf *sp)
 {
 	unsigned b;
 
+	phk(sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist != NULL);
 	b = sp->size / sc->pagesize;
@@ -356,10 +376,8 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	if (b >= NBUCKET)
 		b = NBUCKET - 1;
 	n = 0;
-	for (sp = NULL; b < NBUCKET; b++) {
+	for (sp = NULL; sp == NULL && b < NBUCKET; b++) {
 		sp = TAILQ_FIRST(&sc->free[b]);
-		if (sp != NULL)
-			break;
 		n++;
 	}
 	if (sp == NULL)
@@ -388,6 +406,8 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	TAILQ_INSERT_BEFORE(sp, sp2, order);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	insfree(sc, sp);
+	phk(sp);
+	phk(sp2);
 	return (sp2);
 }
 
@@ -403,9 +423,10 @@ free_smf(struct smf *sp)
 	struct smf_sc *sc = sp->sc;
 
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
-	TAILQ_REMOVE(&sc->used, sp, status);
 	assert(sp->alloc != 0);
+	TAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
+	phk(sp);
 
 	sp2 = TAILQ_NEXT(sp, order);
 	if (sp2 != NULL &&
@@ -445,6 +466,8 @@ trim_smf(struct smf *sp, size_t bytes)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
+	phk(sp);
+	assert(sp->alloc != 0);
 	assert(bytes > 0);
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
