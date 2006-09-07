@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -43,19 +44,29 @@ vca_kq_sess(struct sess *sp, int arm)
 static void
 vca_kev(struct kevent *kp)
 {
-	int i;
+	int i, j;
 	struct sess *sp;
+	struct kevent ke[NKEV];
+	struct sess *ss[NKEV];
 
 	AN(kp->udata);
 	if (kp->udata == pipes) {
-		while (kp->data > 0) {
-			i = read(pipes[0], &sp, sizeof sp);
-			assert(i == sizeof sp);
-			kp->data -= i;
-			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			TAILQ_INSERT_TAIL(&sesshead, sp, list);
-			vca_kq_sess(sp, EV_ADD);
+		j = 0;
+		i = read(pipes[0], ss, sizeof ss);
+		if (i == -1 && errno == EAGAIN)
+			return;
+		while (i >= sizeof ss[0]) {
+			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+			assert(ss[j]->fd >= 0);
+			TAILQ_INSERT_TAIL(&sesshead, ss[j], list);
+			EV_SET(&ke[j], ss[j]->fd, EVFILT_READ,
+			    EV_ADD, 0, 0, ss[j]);
+			j++;
+			i -= sizeof ss[0];
 		}
+		assert(i == 0);
+		AZ(kevent(kq, ke, j, NULL, 0, NULL));
+		VSL(SLT_Debug, 0, "KQ %d", j);
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
@@ -143,8 +154,13 @@ vca_kqueue_recycle(struct sess *sp)
 static void
 vca_kqueue_init(void)
 {
+	int i;
 
 	AZ(pipe(pipes));
+	i = fcntl(pipes[0], F_GETFL);
+	i |= O_NONBLOCK;
+	i = fcntl(pipes[0], F_SETFL, i);
+	
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
 }
 
