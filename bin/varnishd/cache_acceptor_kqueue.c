@@ -66,7 +66,6 @@ vca_kev(struct kevent *kp)
 		}
 		assert(i == 0);
 		AZ(kevent(kq, ke, j, NULL, 0, NULL));
-		VSL(SLT_Debug, 0, "KQ %d", j);
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
