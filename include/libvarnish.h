@@ -4,7 +4,7 @@
 
 #include <errno.h>
 #include <time.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #ifndef NULL
 #define NULL ((void*)0)
