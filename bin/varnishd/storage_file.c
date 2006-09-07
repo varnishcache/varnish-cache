@@ -291,18 +291,31 @@ smf_init(struct stevedore *parent, const char *spec)
 /*--------------------------------------------------------------------*/
 
 static void
-phk(struct smf *sp)
+phk(struct smf_sc *sc, struct smf *sp)
 {
 	struct smf *sp2;
+	size_t b;
+
+	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
+	return;
+	assert(sp->size > 0);
 	sp2 = TAILQ_NEXT(sp, order);
 	if (sp2 != NULL) {
+		CHECK_OBJ(sp2, SMF_MAGIC);
 		assert(sp2->offset > sp->offset);
 		assert(sp2->ptr > sp->ptr);
 	}
 	sp2 = TAILQ_PREV(sp, smfhead, order);
 	if (sp2 != NULL) {
+		CHECK_OBJ(sp2, SMF_MAGIC);
 		assert(sp2->offset < sp->offset);
 		assert(sp2->ptr < sp->ptr);
+	}
+	if (sp->flist != NULL) {
+		b = sp->size / sc->pagesize;
+		if (b >= NBUCKET)
+			b = NBUCKET - 1;
+		assert(sp->flist == &sc->free[b]);
 	}
 }
 
@@ -313,10 +326,11 @@ phk(struct smf *sp)
 static void
 insfree(struct smf_sc *sc, struct smf *sp)
 {
-	unsigned b, n;
+	size_t b;
 	struct smf *sp2;
+	size_t ns;
 
-	phk(sp);
+	phk(sc, sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist == NULL);
 	b = sp->size / sc->pagesize;
@@ -327,26 +341,28 @@ insfree(struct smf_sc *sc, struct smf *sp)
 		VSL_stats->n_smf_frag++;
 	}
 	sp->flist = &sc->free[b];
-	n = 0;
+	ns = b * sc->pagesize;
 	TAILQ_FOREACH(sp2, sp->flist, status) {
+		phk(sc, sp2);
+		assert(sp2->size >= ns);
 		assert(sp2->alloc == 0);
 		assert(sp2->flist == sp->flist);
-		if (sp->offset < sp2->offset) {
-			TAILQ_INSERT_BEFORE(sp2, sp, status);
+		if (sp->offset < sp2->offset)
 			break;
-		}
-		n++;
 	}
 	if (sp2 == NULL)
 		TAILQ_INSERT_TAIL(sp->flist, sp, status);
+	else
+		TAILQ_INSERT_BEFORE(sp2, sp, status);
+	phk(sc, sp);
 }
 
 static void
 remfree(struct smf_sc *sc, struct smf *sp)
 {
-	unsigned b;
+	size_t b;
 
-	phk(sp);
+	phk(sc, sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist != NULL);
 	b = sp->size / sc->pagesize;
@@ -359,6 +375,7 @@ remfree(struct smf_sc *sc, struct smf *sp)
 	assert(sp->flist == &sc->free[b]);
 	TAILQ_REMOVE(sp->flist, sp, status);
 	sp->flist = NULL;
+	phk(sc, sp);
 }
 
 /*--------------------------------------------------------------------
@@ -369,22 +386,30 @@ static struct smf *
 alloc_smf(struct smf_sc *sc, size_t bytes)
 {
 	struct smf *sp, *sp2;
-	unsigned b;
-	int n;
+	size_t b;
 
+	assert(!(bytes % sc->pagesize));
 	b = bytes / sc->pagesize;
 	if (b >= NBUCKET)
 		b = NBUCKET - 1;
-	n = 0;
-	for (sp = NULL; sp == NULL && b < NBUCKET; b++) {
+	for (sp = NULL; b < NBUCKET - 1; b++) {
 		sp = TAILQ_FIRST(&sc->free[b]);
-		n++;
+		if (sp != NULL)
+			break;
+	}
+	if (sp == NULL) {
+		TAILQ_FOREACH(sp, &sc->free[NBUCKET -1], status)
+			if (sp->size >= bytes)
+				break;
 	}
 	if (sp == NULL)
 		return (sp);
 
+	phk(sc, sp);
+	assert(sp->size >= bytes);
 	remfree(sc, sp);
 
+	phk(sc, sp);
 	if (sp->size == bytes) {
 		sp->alloc = 1;
 		TAILQ_INSERT_TAIL(&sc->used, sp, status);
@@ -403,11 +428,14 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 
 	sp2->size = bytes;
 	sp2->alloc = 1;
+	phk(sc, sp);
 	TAILQ_INSERT_BEFORE(sp, sp2, order);
+	phk(sc, sp);
+	phk(sc, sp2);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	insfree(sc, sp);
-	phk(sp);
-	phk(sp2);
+	phk(sc, sp);
+	phk(sc, sp2);
 	return (sp2);
 }
 
@@ -424,11 +452,15 @@ free_smf(struct smf *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	assert(sp->alloc != 0);
+	assert(sp->size > 0);
+	assert(!(sp->size % sc->pagesize));
 	TAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
-	phk(sp);
+	phk(sc, sp);
 
 	sp2 = TAILQ_NEXT(sp, order);
+	if (sp2 != NULL)
+		phk(sc, sp2);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp2->ptr == sp->ptr + sp->size) &&
@@ -438,9 +470,12 @@ free_smf(struct smf *sp)
 		remfree(sc, sp2);
 		free(sp2);
 		VSL_stats->n_smf--;
+		phk(sc, sp);
 	}
 
 	sp2 = TAILQ_PREV(sp, smfhead, order);
+	if (sp2 != NULL)
+		phk(sc, sp2);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp->ptr == sp2->ptr + sp2->size) &&
@@ -451,6 +486,7 @@ free_smf(struct smf *sp)
 		free(sp);
 		VSL_stats->n_smf--;
 		sp = sp2;
+		phk(sc, sp);
 	}
 
 	insfree(sc, sp);
@@ -466,9 +502,12 @@ trim_smf(struct smf *sp, size_t bytes)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
-	phk(sp);
+	phk(sc, sp);
 	assert(sp->alloc != 0);
 	assert(bytes > 0);
+	assert(bytes < sp->size);
+	assert(!(bytes % sc->pagesize));
+	assert(!(sp->size % sc->pagesize));
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
 	XXXAN(sp2);
@@ -479,8 +518,8 @@ trim_smf(struct smf *sp, size_t bytes)
 	sp->size = bytes;
 	sp2->ptr += bytes;
 	sp2->offset += bytes;
-	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
+	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	free_smf(sp2);
 }
 
@@ -506,6 +545,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	sp->alloc = 1;
 
 	TAILQ_FOREACH(sp2, &sc->order, order) {
+		phk(sc, sp2);
 		if (sp->ptr < sp2->ptr) {
 			TAILQ_INSERT_BEFORE(sp2, sp, order);
 			break;
@@ -588,6 +628,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	struct smf *smf;
 	struct smf_sc *sc = st->priv;
 
+	assert(size > 0);
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
 	LOCK(&sc->mtx);
@@ -616,10 +657,7 @@ smf_trim(struct storage *s, size_t size)
 	struct smf_sc *sc;
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	if (size == 0) {
-		/* XXX: this should not happen */
-		return;
-	}
+	assert(size > 0);
 	assert(size <= s->space);
 	xxxassert(size > 0);	/* XXX: seen */
 	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
