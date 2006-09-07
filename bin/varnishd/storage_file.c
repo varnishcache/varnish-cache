@@ -301,8 +301,12 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	assert(sp->alloc == 0);
 	assert(sp->flist == NULL);
 	b = sp->size / sc->pagesize;
-	if (b >= NBUCKET)
+	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
+		VSL_stats->n_smf_large++;
+	} else {
+		VSL_stats->n_smf_frag++;
+	}
 	sp->flist = &sc->free[b];
 	n = 0;
 	TAILQ_FOREACH(sp2, sp->flist, status) {
@@ -316,7 +320,6 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	}
 	if (sp2 == NULL)
 		TAILQ_INSERT_TAIL(sp->flist, sp, status);
-	VSL(SLT_Debug, 0, "FILE i %u %p %ju [%u]", b, sp, sp->size, n);
 }
 
 static void
@@ -327,12 +330,15 @@ remfree(struct smf_sc *sc, struct smf *sp)
 	assert(sp->alloc == 0);
 	assert(sp->flist != NULL);
 	b = sp->size / sc->pagesize;
-	if (b >= NBUCKET)
+	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
+		VSL_stats->n_smf_large--;
+	} else {
+		VSL_stats->n_smf_frag--;
+	}
 	assert(sp->flist == &sc->free[b]);
 	TAILQ_REMOVE(sp->flist, sp, status);
 	sp->flist = NULL;
-	VSL(SLT_Debug, 0, "FILE r %u %p %ju", b, sp, sp->size);
 }
 
 /*--------------------------------------------------------------------
@@ -364,8 +370,6 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	if (sp->size == bytes) {
 		sp->alloc = 1;
 		TAILQ_INSERT_TAIL(&sc->used, sp, status);
-		VSL(SLT_Debug, 0, "FILE A %p %ju == %ju [%d]",
-		    sp, (uintmax_t)sp->size, (uintmax_t)bytes, n);
 		return (sp);
 	}
 
@@ -374,8 +378,6 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	XXXAN(sp2);
 	VSL_stats->n_smf++;
 	*sp2 = *sp;
-	VSL(SLT_Debug, 0, "FILE A %p %ju > %ju [%d] %p",
-	    sp, (uintmax_t)sp->size, (uintmax_t)bytes, n, sp2);
 
 	sp->offset += bytes;
 	sp->ptr += bytes;
@@ -405,14 +407,12 @@ free_smf(struct smf *sp)
 	assert(sp->alloc != 0);
 	sp->alloc = 0;
 
-	VSL(SLT_Debug, 0, "FILE F %p %ju", sp, sp->size);
 	sp2 = TAILQ_NEXT(sp, order);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp2->ptr == sp->ptr + sp->size) &&
 	    (sp2->offset == sp->offset + sp->size)) {
 		sp->size += sp2->size;
-		VSL(SLT_Debug, 0, "FILE CN %p -> %p %ju", sp2, sp, sp->size);
 		TAILQ_REMOVE(&sc->order, sp2, order);
 		remfree(sc, sp2);
 		free(sp2);
@@ -426,7 +426,6 @@ free_smf(struct smf *sp)
 	    (sp->offset == sp2->offset + sp2->size)) {
 		remfree(sc, sp2);
 		sp2->size += sp->size;
-		VSL(SLT_Debug, 0, "FILE CP %p -> %p %ju", sp, sp2, sp2->size);
 		TAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
 		VSL_stats->n_smf--;
@@ -457,7 +456,6 @@ trim_smf(struct smf *sp, size_t bytes)
 	sp->size = bytes;
 	sp2->ptr += bytes;
 	sp2->offset += bytes;
-	VSL(SLT_Debug, 0, "FILE T %p -> %p %ju %d", sp, sp2, sp2->size);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
 	free_smf(sp2);
