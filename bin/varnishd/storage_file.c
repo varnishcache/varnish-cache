@@ -288,7 +288,9 @@ smf_init(struct stevedore *parent, const char *spec)
 	smf_initfile(sc, size, 1);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: Temporary sanity checker
+ */
 
 static void
 phk(struct smf_sc *sc, struct smf *sp)
