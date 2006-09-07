@@ -39,7 +39,11 @@
 
 #define MINPAGES		128
 
+#define NBUCKET			32	/* 32 * 4k = 128k (see fetch) */
+
 /*--------------------------------------------------------------------*/
+
+TAILQ_HEAD(smfhead, smf);
 
 struct smf {
 	unsigned		magic;
@@ -56,9 +60,8 @@ struct smf {
 
 	TAILQ_ENTRY(smf)	order;
 	TAILQ_ENTRY(smf)	status;
+	struct smfhead		*flist;
 };
-
-TAILQ_HEAD(smfhead, smf);
 
 struct smf_sc {
 	char			*filename;
@@ -66,7 +69,7 @@ struct smf_sc {
 	unsigned		pagesize;
 	uintmax_t		filesize;
 	struct smfhead		order;
-	struct smfhead		free;
+	struct smfhead		free[NBUCKET];
 	struct smfhead		used;
 	pthread_mutex_t		mtx;
 };
@@ -200,11 +203,13 @@ smf_init(struct stevedore *parent, const char *spec)
 	char *p, *q;
 	struct stat st;
 	struct smf_sc *sc;
+	unsigned u;
 
 	sc = calloc(sizeof *sc, 1);
 	XXXAN(sc);
 	TAILQ_INIT(&sc->order);
-	TAILQ_INIT(&sc->free);
+	for (u = 0; u < NBUCKET; u++)
+		TAILQ_INIT(&sc->free[u]);
 	TAILQ_INIT(&sc->used);
 	sc->pagesize = getpagesize();
 
@@ -285,6 +290,54 @@ smf_init(struct stevedore *parent, const char *spec)
 }
 
 /*--------------------------------------------------------------------
+ * Insert/Remove from correct freelist
+ */
+
+static void
+insfree(struct smf_sc *sc, struct smf *sp)
+{
+	unsigned b, n;
+	struct smf *sp2;
+
+	assert(sp->alloc == 0);
+	assert(sp->flist == NULL);
+	b = sp->size / sc->pagesize;
+	if (b >= NBUCKET)
+		b = NBUCKET - 1;
+	sp->flist = &sc->free[b];
+	n = 0;
+	TAILQ_FOREACH(sp2, sp->flist, status) {
+		assert(sp2->alloc == 0);
+		assert(sp2->flist == sp->flist);
+		if (sp->age > sp2->age ||
+		    (sp->age == sp2->age && sp->offset < sp2->offset)) {
+			TAILQ_INSERT_BEFORE(sp2, sp, status);
+			break;
+		}
+		n++;
+	}
+	if (sp2 == NULL)
+		TAILQ_INSERT_TAIL(sp->flist, sp, status);
+	VSL(SLT_Debug, 0, "FILE i %u %p %ju [%u]", b, sp, sp->size, n);
+}
+
+static void
+remfree(struct smf_sc *sc, struct smf *sp)
+{
+	unsigned b;
+
+	assert(sp->alloc == 0);
+	assert(sp->flist != NULL);
+	b = sp->size / sc->pagesize;
+	if (b >= NBUCKET)
+		b = NBUCKET - 1;
+	assert(sp->flist == &sc->free[b]);
+	TAILQ_REMOVE(sp->flist, sp, status);
+	sp->flist = NULL;
+	VSL(SLT_Debug, 0, "FILE r %u %p %ju", b, sp, sp->size);
+}
+
+/*--------------------------------------------------------------------
  * Allocate a range from the first free range that is large enough.
  */
 
@@ -292,19 +345,29 @@ static struct smf *
 alloc_smf(struct smf_sc *sc, size_t bytes)
 {
 	struct smf *sp, *sp2;
+	unsigned b;
+	int n;
 
-	TAILQ_FOREACH(sp, &sc->free, status) {
-		CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
-		if (sp->size >= bytes)
+	b = bytes / sc->pagesize;
+	if (b >= NBUCKET)
+		b = NBUCKET - 1;
+	n = 0;
+	for (sp = NULL; b < NBUCKET; b++) {
+		sp = TAILQ_FIRST(&sc->free[b]);
+		if (sp != NULL)
 			break;
+		n++;
 	}
 	if (sp == NULL)
 		return (sp);
 
+	remfree(sc, sp);
+
 	if (sp->size == bytes) {
-		TAILQ_REMOVE(&sc->free, sp, status);
 		sp->alloc = 1;
 		TAILQ_INSERT_TAIL(&sc->used, sp, status);
+		VSL(SLT_Debug, 0, "FILE A %p %ju == %ju [%d]",
+		    sp, (uintmax_t)sp->size, (uintmax_t)bytes, n);
 		return (sp);
 	}
 
@@ -313,6 +376,8 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	XXXAN(sp2);
 	VSL_stats->n_smf++;
 	*sp2 = *sp;
+	VSL(SLT_Debug, 0, "FILE A %p %ju > %ju [%d] %p",
+	    sp, (uintmax_t)sp->size, (uintmax_t)bytes, n, sp2);
 
 	sp->offset += bytes;
 	sp->ptr += bytes;
@@ -322,6 +387,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	sp2->alloc = 1;
 	TAILQ_INSERT_BEFORE(sp, sp2, order);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
+	insfree(sc, sp);
 	return (sp2);
 }
 
@@ -338,16 +404,19 @@ free_smf(struct smf *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	TAILQ_REMOVE(&sc->used, sp, status);
+	assert(sp->alloc != 0);
 	sp->alloc = 0;
 
+	VSL(SLT_Debug, 0, "FILE F %p %ju", sp, sp->size);
 	sp2 = TAILQ_NEXT(sp, order);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp2->ptr == sp->ptr + sp->size) &&
 	    (sp2->offset == sp->offset + sp->size)) {
 		sp->size += sp2->size;
+		VSL(SLT_Debug, 0, "FILE CN %p -> %p %ju", sp2, sp, sp->size);
 		TAILQ_REMOVE(&sc->order, sp2, order);
-		TAILQ_REMOVE(&sc->free, sp2, status);
+		remfree(sc, sp2);
 		free(sp2);
 		VSL_stats->n_smf--;
 	}
@@ -357,24 +426,17 @@ free_smf(struct smf *sp)
 	    sp2->alloc == 0 &&
 	    (sp->ptr == sp2->ptr + sp2->size) &&
 	    (sp->offset == sp2->offset + sp2->size)) {
+		remfree(sc, sp2);
 		sp2->size += sp->size;
+		VSL(SLT_Debug, 0, "FILE CP %p -> %p %ju", sp, sp2, sp2->size);
 		sp2->age = sp->age;
 		TAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
 		VSL_stats->n_smf--;
-		TAILQ_REMOVE(&sc->free, sp2, status);
 		sp = sp2;
 	}
 
-	TAILQ_FOREACH(sp2, &sc->free, status) {
-		if (sp->age > sp2->age ||
-		    (sp->age == sp2->age && sp->offset < sp2->offset)) {
-			TAILQ_INSERT_BEFORE(sp2, sp, status);
-			break;
-		}
-	}
-	if (sp2 == NULL)
-		TAILQ_INSERT_TAIL(&sc->free, sp, status);
+	insfree(sc, sp);
 }
 
 /*--------------------------------------------------------------------
@@ -398,6 +460,8 @@ trim_smf(struct smf *sp, size_t bytes)
 	sp->size = bytes;
 	sp2->ptr += bytes;
 	sp2->offset += bytes;
+	sp2->alloc = 0;
+	VSL(SLT_Debug, 0, "FILE T %p -> %p %ju %d", sp, sp2, sp2->size);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
 	free_smf(sp2);
@@ -419,11 +483,9 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	VSL_stats->n_smf++;
 
 	sp->sc = sc;
-
 	sp->size = len;
 	sp->ptr = ptr;
 	sp->offset = off;
-
 	sp->alloc = 1;
 
 	TAILQ_FOREACH(sp2, &sc->order, order) {
