@@ -39,7 +39,14 @@
 
 #define MINPAGES		128
 
-#define NBUCKET			32	/* 32 * 4k = 128k (see fetch) */
+/*
+ * Number of buckets on free-list.
+ * 
+ * Last bucket is "larger than" so choose number so that the second
+ * to last bucket matches the 128k CHUNKSIZE in cache_fetch.c when
+ * using the a 4K minimal page size
+ */
+#define NBUCKET			(128 / 4 + 1)
 
 /*--------------------------------------------------------------------*/
 
@@ -289,39 +296,6 @@ smf_init(struct stevedore *parent, const char *spec)
 }
 
 /*--------------------------------------------------------------------
- * XXX: Temporary sanity checker
- */
-
-static void
-phk(struct smf_sc *sc, struct smf *sp)
-{
-	struct smf *sp2;
-	size_t b;
-
-	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
-	return;
-	assert(sp->size > 0);
-	sp2 = TAILQ_NEXT(sp, order);
-	if (sp2 != NULL) {
-		CHECK_OBJ(sp2, SMF_MAGIC);
-		assert(sp2->offset > sp->offset);
-		assert(sp2->ptr > sp->ptr);
-	}
-	sp2 = TAILQ_PREV(sp, smfhead, order);
-	if (sp2 != NULL) {
-		CHECK_OBJ(sp2, SMF_MAGIC);
-		assert(sp2->offset < sp->offset);
-		assert(sp2->ptr < sp->ptr);
-	}
-	if (sp->flist != NULL) {
-		b = sp->size / sc->pagesize;
-		if (b >= NBUCKET)
-			b = NBUCKET - 1;
-		assert(sp->flist == &sc->free[b]);
-	}
-}
-
-/*--------------------------------------------------------------------
  * Insert/Remove from correct freelist
  */
 
@@ -332,7 +306,6 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	struct smf *sp2;
 	size_t ns;
 
-	phk(sc, sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist == NULL);
 	b = sp->size / sc->pagesize;
@@ -345,7 +318,6 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	sp->flist = &sc->free[b];
 	ns = b * sc->pagesize;
 	TAILQ_FOREACH(sp2, sp->flist, status) {
-		phk(sc, sp2);
 		assert(sp2->size >= ns);
 		assert(sp2->alloc == 0);
 		assert(sp2->flist == sp->flist);
@@ -356,7 +328,6 @@ insfree(struct smf_sc *sc, struct smf *sp)
 		TAILQ_INSERT_TAIL(sp->flist, sp, status);
 	else
 		TAILQ_INSERT_BEFORE(sp2, sp, status);
-	phk(sc, sp);
 }
 
 static void
@@ -364,7 +335,6 @@ remfree(struct smf_sc *sc, struct smf *sp)
 {
 	size_t b;
 
-	phk(sc, sp);
 	assert(sp->alloc == 0);
 	assert(sp->flist != NULL);
 	b = sp->size / sc->pagesize;
@@ -377,7 +347,6 @@ remfree(struct smf_sc *sc, struct smf *sp)
 	assert(sp->flist == &sc->free[b]);
 	TAILQ_REMOVE(sp->flist, sp, status);
 	sp->flist = NULL;
-	phk(sc, sp);
 }
 
 /*--------------------------------------------------------------------
@@ -407,11 +376,9 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	if (sp == NULL)
 		return (sp);
 
-	phk(sc, sp);
 	assert(sp->size >= bytes);
 	remfree(sc, sp);
 
-	phk(sc, sp);
 	if (sp->size == bytes) {
 		sp->alloc = 1;
 		TAILQ_INSERT_TAIL(&sc->used, sp, status);
@@ -430,14 +397,9 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 
 	sp2->size = bytes;
 	sp2->alloc = 1;
-	phk(sc, sp);
 	TAILQ_INSERT_BEFORE(sp, sp2, order);
-	phk(sc, sp);
-	phk(sc, sp2);
 	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	insfree(sc, sp);
-	phk(sc, sp);
-	phk(sc, sp2);
 	return (sp2);
 }
 
@@ -458,11 +420,8 @@ free_smf(struct smf *sp)
 	assert(!(sp->size % sc->pagesize));
 	TAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
-	phk(sc, sp);
 
 	sp2 = TAILQ_NEXT(sp, order);
-	if (sp2 != NULL)
-		phk(sc, sp2);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp2->ptr == sp->ptr + sp->size) &&
@@ -472,12 +431,9 @@ free_smf(struct smf *sp)
 		remfree(sc, sp2);
 		free(sp2);
 		VSL_stats->n_smf--;
-		phk(sc, sp);
 	}
 
 	sp2 = TAILQ_PREV(sp, smfhead, order);
-	if (sp2 != NULL)
-		phk(sc, sp2);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp->ptr == sp2->ptr + sp2->size) &&
@@ -488,7 +444,6 @@ free_smf(struct smf *sp)
 		free(sp);
 		VSL_stats->n_smf--;
 		sp = sp2;
-		phk(sc, sp);
 	}
 
 	insfree(sc, sp);
@@ -504,7 +459,6 @@ trim_smf(struct smf *sp, size_t bytes)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
-	phk(sc, sp);
 	assert(sp->alloc != 0);
 	assert(bytes > 0);
 	assert(bytes < sp->size);
@@ -547,7 +501,6 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	sp->alloc = 1;
 
 	TAILQ_FOREACH(sp2, &sc->order, order) {
-		phk(sc, sp2);
 		if (sp->ptr < sp2->ptr) {
 			TAILQ_INSERT_BEFORE(sp2, sp, order);
 			break;
