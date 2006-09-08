@@ -190,6 +190,23 @@ tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		params->fetch_chunksize = u;
+	}
+	if (cli == NULL)
+		return;
+	cli_out(cli, "%u [kb]\n", params->fetch_chunksize);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -257,6 +274,9 @@ static struct parspec parspec[] = {
 		"Restart child process automatically if it dies. "
 		"1 = yes, 0 = no.\n"
 		"Default is 1. ", "1" },
+	{ "fetch_chunksize", tweak_fetch_chunksize,
+		"The default chunksize used by fetcher.\n"
+		"Default is 128 kilobytes. ", "128" },
 	{ NULL, NULL, NULL }
 };
 

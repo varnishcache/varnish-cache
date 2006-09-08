@@ -47,6 +47,9 @@ struct params {
 
 	/* Management hints */
 	unsigned		auto_restart;
+
+	/* Fetcher hints */
+	unsigned		fetch_chunksize;
 };
 
 extern struct params *params;
