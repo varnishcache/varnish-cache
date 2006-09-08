@@ -16,16 +16,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-
-/*
- * Chunked encoding is a hack.  We prefer to have a single chunk or a 
- * few large chunks, and not a terribly long list of small ones.
- * If our stevedore can trim, we alloc big chunks and trim the last one
- * at the end when we know the result.
- *
- * Good testcase: http://www.washingtonpost.com/
- */
-#define CHUNK_PREALLOC		(128 * 1024)
+#include "heritage.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -112,9 +103,9 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			/* Get some storage if we don't have any */
 			if (st == NULL || st->len == st->space) {
 				v = u;
-				if (u < CHUNK_PREALLOC && 
+				if (u < params->fetch_chunksize && 
 				    stevedore->trim != NULL)
-					v = CHUNK_PREALLOC;
+					v = params->fetch_chunksize;
 				st = stevedore->alloc(stevedore, v);
 				XXXAN(st->stevedore);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
@@ -189,7 +180,7 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	st = NULL;
 	while (1) {
 		if (v == 0) {
-			st = stevedore->alloc(stevedore, CHUNK_PREALLOC);
+			st = stevedore->alloc(stevedore, params->fetch_chunksize);
 			XXXAN(st->stevedore);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
