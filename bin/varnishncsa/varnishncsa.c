@@ -48,6 +48,7 @@ struct logline {
 	unsigned char *df_R; // Datafield for %{Referer}i
 	int df_Rfini;
 	unsigned char *df_U; // Datafield for %{User-agent}i
+	char df_UN[512];
 	int df_Ufini;
 	int bogus_req; // Set to 1 if we discover a bogus request
 };
@@ -193,6 +194,11 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_RxHeader:
 		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
+		//	(void)strncpy(ll[u].df_UN, p + 4, sizeof(ll[u].df_UN) - 1);
+		//	ll[u].df_UN[sizeof(ll[u].df_UN) - 1] = '\0';
+		//	w = strlen(p + 4);
+		//	printf("Lengde: %d\n", w);
+
                         ll[u].df_U = strdup(p + 4);
 			ll[u].df_Ufini = 1;
                 }
@@ -213,8 +219,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		// We use ReqServTime to find how the time the request was delivered
 		// also to define that a request is finished.
-	
-		/*
+/*	
 		tmpPtra =  strdup(p + 4);
 		jalla2 = strlen(p + 4);
 		printf("Lengde av ReqEnd: %d \n", jalla2);
@@ -227,7 +232,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 				free(tmpPtra);
 			   	tmpPtra = tmpPtrb;
 			}
-			printf("ReqServTime number %d: %s\n", i, tmpPtrb);
+			//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
 		
 	                i++;
 	         }
@@ -242,8 +247,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 		req_time = timesec;
                 ll[u].logline_time = localtime(&req_time);
                 strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
-		*/
-		
+*/		
 		ll[u].df_rfini = 1;
 		//printf("ReqServTime [%d]\n", u);
 
@@ -318,13 +322,22 @@ extended_log_format(unsigned char *p, char *w_opt)
 			printf("[%d] %s - - %s ", u, ll[u].df_h, temp_time );
 			vsb_finish(ob[u]);
 			printf("\"%s\"", vsb_data(ob[u]));
-			printf(" %s %s \"%s\" \"%s\"", ll[u].df_s, ll[u].df_b,  ll[u].df_R,  ll[u].df_U);
+			printf(" %s %s \"%s\"", ll[u].df_s, ll[u].df_b,  ll[u].df_R);
+			if (ll[u].df_Ufini){
+				printf(" \"%s\" ", ll[u].df_U);
+			}
+			else {
+				printf(" \"-\" ");
+			}
 			printf("\n");
 		}
 
-		vsb_finish(ob[u]);
+		//vsb_finish(ob[u]);
                	vsb_clear(ob[u]);
+
+
 		ll[u].df_rfini = 0;
+
 
 		// Clear the TxStaus
 
@@ -348,6 +361,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 		if (ll[u].df_Ufini){
 			free(ll[u].df_U);
 			ll[u].df_Ufini = 0;
+			ll[u].df_UN[0] = '\0';
+			ll[u].df_U[0] = '\0';
 			//printf("Freed df_U [%d]\n", u);
 			jalla = strlen(ll[u].df_U);
                         //printf("Jalla: %d\n", jalla);
