@@ -269,7 +269,9 @@ wrk_reaperthread(void *priv)
 		now = time(NULL);
 		LOCK(&wrk_mtx);
 		w = TAILQ_LAST(&wrk_idle, workerhead);
-		if (w != NULL && w->idle + params->wthread_timeout < now)
+		if (w != NULL &&
+		   (w->idle + params->wthread_timeout < now ||
+		    VSL_stats->n_wrk <= params->wthread_max)
 			TAILQ_REMOVE(&wrk_idle, w, list);
 		else 
 			w = NULL;
