@@ -160,7 +160,7 @@ vca_return_session(struct sess *sp)
 	AZ(sp->vcl);
 	if (sp->fd >= 0) {
 		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
-		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+		sp->t_open = sp->t_end;
 		if (http_RecvPrepAgain(sp->http)) {
 			vca_handover(sp, 0);
 			return;
