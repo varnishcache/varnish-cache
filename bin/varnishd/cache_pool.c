@@ -129,15 +129,10 @@ wrk_do_one(struct worker *w)
 {
 	struct workreq *wrq;
 
-	wrq = TAILQ_FIRST(&wrk_reqhead);
-	AN(wrq);
-	VSL_stats->n_wrk_busy++;
-	TAILQ_REMOVE(&wrk_reqhead, wrq, list);
-	VSL_stats->n_wrk_queue--;
-	UNLOCK(&wrk_mtx);
+	AN(w->wrq);
+	wrq = w->wrq;
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
-	w->wrq = wrq;
 	if (w->nobj != NULL)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
@@ -148,8 +143,6 @@ wrk_do_one(struct worker *w)
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	w->wrq = NULL;
-	LOCK(&wrk_mtx);
-	VSL_stats->n_wrk_busy--;
 }
 
 static void *
@@ -163,29 +156,42 @@ wrk_thread(void *priv)
 	w->magic = WORKER_MAGIC;
 	w->idle = time(NULL);
 	AZ(pthread_cond_init(&w->cv, NULL));
+	AZ(pthread_mutex_init(&w->mtx, NULL));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 	LOCK(&wrk_mtx);
 	VSL_stats->n_wrk_create++;
 	TAILQ_INSERT_HEAD(&wrk_busy, w, list);
+	VSL_stats->n_wrk_busy++;
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process overflow requests, if any */
 		if (wrk_overflow > 0) {
 			wrk_overflow--;
+			w->wrq = TAILQ_FIRST(&wrk_reqhead);
+			TAILQ_REMOVE(&wrk_reqhead, w->wrq, list);
+			VSL_stats->n_wrk_queue--;
+			UNLOCK(&wrk_mtx);
 			wrk_do_one(w);
+			LOCK(&wrk_mtx);
 			continue;
 		}
 		
 		TAILQ_REMOVE(&wrk_busy, w, list);
 		TAILQ_INSERT_HEAD(&wrk_idle, w, list);
 		assert(w->idle != 0);
-		AZ(pthread_cond_wait(&w->cv, &wrk_mtx));
+		VSL_stats->n_wrk_busy--;
+		UNLOCK(&wrk_mtx);
+		LOCK(&w->mtx);
+		AZ(pthread_cond_wait(&w->cv, &w->mtx));
+		UNLOCK(&w->mtx);
 		if (w->idle == 0)
 			break;
 		wrk_do_one(w);
+		LOCK(&wrk_mtx);
 	}
+	LOCK(&wrk_mtx);
 	VSL_stats->n_wrk--;
 	UNLOCK(&wrk_mtx);
 	VSL(SLT_WorkThread, 0, "%p end", w);
@@ -204,19 +210,21 @@ WRK_QueueSession(struct sess *sp)
 	sp->workreq.sess = sp;
 
 	LOCK(&wrk_mtx);
-	TAILQ_INSERT_TAIL(&wrk_reqhead, &sp->workreq, list);
-	VSL_stats->n_wrk_queue++;
 
 	/* If there are idle threads, we tickle the first one into action */
 	w = TAILQ_FIRST(&wrk_idle);
 	if (w != NULL) {
 		TAILQ_REMOVE(&wrk_idle, w, list);
 		TAILQ_INSERT_TAIL(&wrk_busy, w, list);
+		VSL_stats->n_wrk_busy++;
 		UNLOCK(&wrk_mtx);
+		w->wrq = &sp->workreq;
 		AZ(pthread_cond_signal(&w->cv));
 		return;
 	}
 	
+	TAILQ_INSERT_TAIL(&wrk_reqhead, &sp->workreq, list);
+	VSL_stats->n_wrk_queue++;
 	wrk_overflow++;
 
 	/* Can we create more threads ? */
