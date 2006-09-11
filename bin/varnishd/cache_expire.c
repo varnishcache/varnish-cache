@@ -112,6 +112,7 @@ exp_prefetch(void *arg)
 
 	sp = SES_New(NULL, 0);
 	XXXAN(sp);
+	sleep(10);		/* Takes time for VCL to arrive */
 	sp->vcl = VCL_Get();
 	t = time(NULL);
 	while (1) {
