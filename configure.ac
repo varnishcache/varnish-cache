@@ -64,6 +64,7 @@ AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
+AC_CHECK_FUNCS([sendfile])
 
 # These functions are provided by libcompat on platforms where they
 # are not available
