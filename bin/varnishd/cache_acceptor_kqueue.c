@@ -29,16 +29,21 @@ static int pipes[2];
 
 #define NKEV	100
 
+static struct kevent ki[NKEV];
+static unsigned nki;
+
 static void
 vca_kq_sess(struct sess *sp, int arm)
 {
-	struct kevent ke;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->fd < 0)
 		return;
-	EV_SET(&ke, sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	AZ(kevent(kq, &ke, 1, NULL, 0, NULL));
+	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
+	if (++nki == NKEV) {
+		AZ(kevent(kq, ki, nki, NULL, 0, NULL));
+		nki = 0;
+	}
 }
 
 static void
@@ -46,7 +51,6 @@ vca_kev(struct kevent *kp)
 {
 	int i, j;
 	struct sess *sp;
-	struct kevent ke[NKEV];
 	struct sess *ss[NKEV];
 
 	AN(kp->udata);
@@ -59,13 +63,13 @@ vca_kev(struct kevent *kp)
 			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 			assert(ss[j]->fd >= 0);
 			TAILQ_INSERT_TAIL(&sesshead, ss[j], list);
-			EV_SET(&ke[j], ss[j]->fd, EVFILT_READ,
-			    EV_ADD, 0, 0, ss[j]);
+			vca_kq_sess(ss[j], EV_ADD);
 			j++;
 			i -= sizeof ss[0];
 		}
 		assert(i == 0);
-		AZ(kevent(kq, ke, j, NULL, 0, NULL));
+		assert(j > 0);
+		assert(j <= NKEV);
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
@@ -111,9 +115,11 @@ vca_kqueue_main(void *arg)
 	EV_SET(&ke[j++], pipes[0], EVFILT_READ, EV_ADD, 0, 0, pipes);
 	AZ(kevent(kq, ke, j, NULL, 0, NULL));
 
+	nki = 0;
 	while (1) {
-		n = kevent(kq, NULL, 0, ke, NKEV, NULL);
+		n = kevent(kq, ki, nki, ke, NKEV, NULL);
 		assert(n >= 1 && n <= NKEV);
+		nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			if (kp->filter == EVFILT_TIMER)
 				continue; 
