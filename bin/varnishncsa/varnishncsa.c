@@ -83,6 +83,36 @@ clean_order(void)
 	}
 }
 
+static struct tm *make_timestring(char *tmpPtra){
+	char *tmpPtrb, *tmpPtrc;
+	int timesec = 0;
+	time_t req_time; // Timeobject used for making the requesttime.
+	int i = 0;
+	int j = 0;
+	char temp_time[27];
+	struct tm *timestring;
+
+	temp_time[0] = '\0';
+	for ( tmpPtrb = strtok(tmpPtra," "); tmpPtrb != NULL; tmpPtrb = strtok(NULL, " ")){
+		if (i == 1){
+			// We have the right time
+			//printf("Time: %s\n", tmpPtrb);
+			tmpPtra = tmpPtrb;
+		}
+		//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
+	
+                i++;
+         }
+	strncpy(temp_time, tmpPtra, 10);
+	temp_time[10] = '\0';
+	//printf("inten: %s\n",temp_time);
+	timesec = atoi(temp_time);
+	req_time = timesec;
+        timestring = localtime(&req_time);
+	return timestring;
+
+}
+
 static void 
 extended_log_format(unsigned char *p, char *w_opt)
 {
@@ -94,12 +124,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	// Used for requesttime.
 	char *tmpPtra = NULL;
-        char *tmpPtrb = NULL;
-        char *tmpPtrc = NULL;
-        int timesec = 0; // Where we store the utime for request as int.
-        char temp_time[27]; // Where we store the string we take from the log
-        time_t req_time; // Timeobject used for making the requesttime.
-	int i;
 
 	// Used for cleaning memoryalloc
 	
@@ -117,7 +141,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 	
 	v = 0;
 	w = 0;
-	i = 0;
 	j = 0;
 	//ll[u].df_rfini = 0;
 	//ll[u].df_hfini = 0;
@@ -210,51 +233,18 @@ extended_log_format(unsigned char *p, char *w_opt)
 			ll[u].df_R = ll[u].df_R + 9;
 			ll[u].df_Rfini = 1;
                 }
-		/*
-		else if (ll[u].df_R == NULL){
-                        ll[u].df_R = strdup(p + 4);
-                        ll[u].df_R[0] = '-';
-                        ll[u].df_R[1] = '\0';
-                }
-		*/
+
 		break;
-	
 
 	case SLT_ReqEnd:
 
 		// We use ReqServTime to find how the time the request was delivered
 		// also to define that a request is finished.
-/*	
 		tmpPtra =  strdup(p + 4);
-		jalla2 = strlen(p + 4);
-		printf("Lengde av ReqEnd: %d \n", jalla2);
-		tmpPtrb = malloc(jalla2);
-		//tmpPtrc = malloc(jalla2);
-		temp_time[0] = '\0';
-		for ( tmpPtrb = strtok(tmpPtra," "); tmpPtrb != NULL; tmpPtrb = strtok(NULL, " ")){
-			if (i == 1){
-				// We have the right time
-				free(tmpPtra);
-			   	tmpPtra = tmpPtrb;
-			}
-			//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
-		
-	                i++;
-	         }
-		free(tmpPtrb);
-		tmpPtrc = strchr(tmpPtra, '.');
-	        j = strlen(tmpPtrc);                // length of timestamp
-		//printf("j=%d\n", j);
-		strncpy(temp_time, tmpPtra, j);
-		temp_time[j] = '\0';
-		//printf("inten: %s\n",temp_time);
-		timesec = atoi(temp_time);
-		req_time = timesec;
-                ll[u].logline_time = localtime(&req_time);
-                strftime (temp_time, 50, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
-*/		
+		ll[u].logline_time = make_timestring(tmpPtra);
+		free(tmpPtra);
 		ll[u].df_rfini = 1;
-		//printf("ReqServTime [%d]\n", u);
+		//printf("ReqServTime %s\n", temp_time);
 
 		break;
 
@@ -318,13 +308,17 @@ extended_log_format(unsigned char *p, char *w_opt)
 		//
 
 		int jalla;
+		char temp_time[27]; // Where we store the string we take from the log
+
+		// make temp_time
+		strftime (temp_time, 28, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
 
 		if (ll[u].df_h[0] == '\0' || ll[u].bogus_req){
 			ll[u].bogus_req = 0;
 			//printf("Tom IP \n");		
 		}
 		else{	
-			printf("[%d] %s - - %s ", u, ll[u].df_h, temp_time );
+			printf("%s - - %s ", ll[u].df_h, temp_time );
 			vsb_finish(ob[u]);
 			printf("\"%s\"", vsb_data(ob[u]));
 			printf(" %s %s ", ll[u].df_s, ll[u].df_b,  ll[u].df_R);
@@ -346,6 +340,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		//vsb_finish(ob[u]);
                	vsb_clear(ob[u]);
+		temp_time[0] = '\0';
 
 
 		ll[u].df_rfini = 0;
@@ -394,9 +389,9 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// Clean up ReqEnd/Time variables
 		
 		//if (tmpPtra != NULL){
-			free(tmpPtra);
+		//	free(tmpPtra);
 			//printf("Freed tmpPtra [%d]\n", u);
-			jalla = strlen(tmpPtra);
+		//	jalla = strlen(tmpPtra);
 	                //printf("Jalla: %d\n", jalla);
 		//}
 
