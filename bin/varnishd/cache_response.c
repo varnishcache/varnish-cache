@@ -8,6 +8,7 @@
 #include <sys/time.h>
 
 #include "shmlog.h"
+#include "heritage.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------*/
@@ -232,12 +233,15 @@ RES_WriteObj(struct sess *sp)
 			 * XXX: engaging sendfile for small objects.
 			 * XXX: Should use getpagesize() ?
 			 */
-			if (st->fd >= 0 && st->len >= 8192) {
+			if (st->fd >= 0 &&
+			    st->len >= params->sendfile_threshold) {
+				VSL_stats->n_objsendfile++;
 				WRK_Sendfile(sp->wrk, st->fd,
 				    st->where, st->len);
 				continue;
 			}
 #endif /* HAVE_SENDFILE */
+			VSL_stats->n_objwrite++;
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);

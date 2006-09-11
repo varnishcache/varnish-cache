@@ -205,6 +205,25 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 	cli_out(cli, "%u [kb]\n", params->fetch_chunksize);
 }
 
+#ifdef HAVE_SENDFILE
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		params->sendfile_threshold = u;
+	}
+	if (cli == NULL)
+		return;
+	cli_out(cli, "%u [bytes]\n", params->sendfile_threshold);
+}
+#endif /* HAVE_SENDFILE */
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -277,6 +296,11 @@ static struct parspec parspec[] = {
 	{ "fetch_chunksize", tweak_fetch_chunksize,
 		"The default chunksize used by fetcher.\n"
 		"Default is 128 kilobytes. ", "128" },
+#ifdef HAVE_SENDFILE
+	{ "sendfile_threshold", tweak_sendfile_threshold,
+		"The minimum size of objects transmitted with sendfile.\n"
+		"Default is 8192 bytes.", "8192" },
+#endif /* HAVE_SENDFILE */
 	{ NULL, NULL, NULL }
 };
 
