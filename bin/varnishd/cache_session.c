@@ -72,7 +72,7 @@ SES_RefSrcAddr(struct sess *sp)
 	u = crc32_2s(sp->addr, "");
 	v = u % CLIENT_HASH;
 	ch = &srcaddr_hash[v];
-	now = time(NULL);
+	now = sp->t_open.tv_sec;
 
 	LOCK(&ses_mtx);
 	c3 = NULL;
@@ -150,7 +150,7 @@ SES_Charge(struct sess *sp)
 	LOCK(&stat_mtx);
 	ses_sum_acct(b, a);
 	VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
-	    sp->srcaddr->addr, time(NULL) - b->first,
+	    sp->srcaddr->addr, sp->t_end.tv_sec - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	VSL_stats->s_sess += a->sess;
@@ -257,7 +257,7 @@ SES_Delete(struct sess *sp)
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
 	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port, time(NULL) - b->first,
+	    sp->addr, sp->port, sp->t_end.tv_sec - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->mem_workspace) { 
