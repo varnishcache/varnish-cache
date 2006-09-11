@@ -59,8 +59,8 @@ exp_hangman(void *arg)
 
 	(void)arg;
 
+	t = time(NULL); 
 	while (1) {
-		t = time(NULL); 
 		LOCK(&exp_mtx);
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			CHECK_OBJ(o, OBJECT_MAGIC);
@@ -79,6 +79,7 @@ exp_hangman(void *arg)
 		if (o == NULL) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
+			t = time(NULL); 
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
@@ -111,15 +112,19 @@ exp_prefetch(void *arg)
 
 	sp = SES_New(NULL, 0);
 	XXXAN(sp);
+	sp->vcl = VCL_Get();
+	t = time(NULL);
 	while (1) {
-		t = time(NULL);
 		LOCK(&exp_mtx);
 		o = binheap_root(exp_heap);
 		if (o != NULL)
 			CHECK_OBJ(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
 			UNLOCK(&exp_mtx);
+			VCL_Rel(sp->vcl);
 			AZ(sleep(1));
+			sp->vcl = VCL_Get();
+			t = time(NULL);
 			continue;
 		}
 		binheap_delete(exp_heap, o->heap_idx);
@@ -132,10 +137,8 @@ exp_prefetch(void *arg)
 		UNLOCK(&exp_mtx);
 		VSL(SLT_ExpPick, 0, "%u", o->xid);
 
-		sp->vcl = VCL_Get();
 		sp->obj = o;
 		VCL_timeout_method(sp);
-		VCL_Rel(sp->vcl);
 
 		if (sp->handling == VCL_RET_DISCARD) {
 			LOCK(&exp_mtx);
