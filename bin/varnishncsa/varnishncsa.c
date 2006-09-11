@@ -200,12 +200,17 @@ extended_log_format(unsigned char *p, char *w_opt)
 		//	printf("Lengde: %d\n", w);
 
                         ll[u].df_U = strdup(p + 4);
+			//strchr(ll[u].df_U, ':');
+			// Jump ahead past "User-Agent: "
+			ll[u].df_U = ll[u].df_U + 12;
 			ll[u].df_Ufini = 1;
                 }
-		/*
                 if (p[1] >= 8 && !strncasecmp((void *)&p[4], "referer:",8)){
                         ll[u].df_R = strdup(p + 4);
+			ll[u].df_R = ll[u].df_R + 9;
+			ll[u].df_Rfini = 1;
                 }
+		/*
 		else if (ll[u].df_R == NULL){
                         ll[u].df_R = strdup(p + 4);
                         ll[u].df_R[0] = '-';
@@ -322,7 +327,14 @@ extended_log_format(unsigned char *p, char *w_opt)
 			printf("[%d] %s - - %s ", u, ll[u].df_h, temp_time );
 			vsb_finish(ob[u]);
 			printf("\"%s\"", vsb_data(ob[u]));
-			printf(" %s %s \"%s\"", ll[u].df_s, ll[u].df_b,  ll[u].df_R);
+			printf(" %s %s ", ll[u].df_s, ll[u].df_b,  ll[u].df_R);
+			if (ll[u].df_Rfini){
+				printf(" \"%s\" ", ll[u].df_R);
+			}
+			else {
+				printf(" \"-\" ");
+			}
+
 			if (ll[u].df_Ufini){
 				printf(" \"%s\" ", ll[u].df_U);
 			}
@@ -359,6 +371,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 		// Clean User-Agent and Referer
 		if (ll[u].df_Ufini){
+			ll[u].df_U = ll[u].df_U - 12;
 			free(ll[u].df_U);
 			ll[u].df_Ufini = 0;
 			ll[u].df_UN[0] = '\0';
@@ -368,8 +381,11 @@ extended_log_format(unsigned char *p, char *w_opt)
                         //printf("Jalla: %d\n", jalla);
 		}
 		
-		if (ll[u].df_R != NULL){
+		if (ll[u].df_Rfini){
+			ll[u].df_R = ll[u].df_R - 9;
 			free(ll[u].df_R);
+			ll[u].df_R[0] = '\0';
+			ll[u].df_Rfini = 0;
 			//printf("Freed df_R [%d]\n", u);
 			jalla = strlen(ll[u].df_R);
                         //printf("Jalla: %d\n", jalla);
