@@ -251,7 +251,7 @@ struct sess {
 	struct timespec		t_open;
 	struct timespec		t_req;
 	struct timespec		t_resp;
-	struct timespec		t_idle;
+	struct timespec		t_end;
 
 	enum step		step;
 	unsigned 		handling;

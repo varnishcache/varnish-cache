@@ -104,8 +104,8 @@ cnt_done(struct sess *sp)
 	VCL_Rel(sp->vcl);
 	sp->vcl = NULL;
 
-	clock_gettime(CLOCK_REALTIME, &te);
-	sp->wrk->idle = te.tv_sec;
+	clock_gettime(CLOCK_REALTIME, &sp->t_end);
+	sp->wrk->idle = sp->t_end.tv_sec;
 	dh = cnt_dt(&sp->t_open, &sp->t_req);
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
 	da = cnt_dt(&sp->t_resp, &te);
