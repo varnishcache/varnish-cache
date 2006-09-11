@@ -149,14 +149,14 @@ static void *
 wrk_thread(void *priv)
 {
 	struct worker *w, ww;
+	char c;
 
 	(void)priv;
 	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->idle = time(NULL);
-	AZ(pthread_cond_init(&w->cv, NULL));
-	AZ(pthread_mutex_init(&w->mtx, NULL));
+	AZ(pipe(w->pipe));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 	LOCK(&wrk_mtx);
@@ -170,6 +170,7 @@ wrk_thread(void *priv)
 		if (wrk_overflow > 0) {
 			wrk_overflow--;
 			w->wrq = TAILQ_FIRST(&wrk_reqhead);
+			AN(w->wrq);
 			TAILQ_REMOVE(&wrk_reqhead, w->wrq, list);
 			VSL_stats->n_wrk_queue--;
 			UNLOCK(&wrk_mtx);
@@ -183,9 +184,7 @@ wrk_thread(void *priv)
 		assert(w->idle != 0);
 		VSL_stats->n_wrk_busy--;
 		UNLOCK(&wrk_mtx);
-		LOCK(&w->mtx);
-		AZ(pthread_cond_wait(&w->cv, &w->mtx));
-		UNLOCK(&w->mtx);
+		assert(1 == read(w->pipe[0], &c, 1));
 		if (w->idle == 0)
 			break;
 		wrk_do_one(w);
@@ -195,7 +194,6 @@ wrk_thread(void *priv)
 	VSL_stats->n_wrk--;
 	UNLOCK(&wrk_mtx);
 	VSL(SLT_WorkThread, 0, "%p end", w);
-	AZ(pthread_cond_destroy(&w->cv));
 	return (NULL);
 }
 
@@ -219,7 +217,7 @@ WRK_QueueSession(struct sess *sp)
 		VSL_stats->n_wrk_busy++;
 		UNLOCK(&wrk_mtx);
 		w->wrq = &sp->workreq;
-		AZ(pthread_cond_signal(&w->cv));
+		assert(1 == write(w->pipe[1], w, 1));
 		return;
 	}
 	
@@ -277,7 +275,7 @@ wrk_reaperthread(void *priv)
 		if (w == NULL)
 			continue;
 		w->idle = 0;
-		AZ(pthread_cond_signal(&w->cv));
+		assert(1 == write(w->pipe[1], w, 1));
 	}
 	INCOMPL();
 }
