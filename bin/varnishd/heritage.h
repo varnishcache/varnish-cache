@@ -50,6 +50,9 @@ struct params {
 
 	/* Fetcher hints */
 	unsigned		fetch_chunksize;
+
+	/* Sendfile object minimum size */
+	unsigned		sendfile_threshold;
 };
 
 extern struct params *params;

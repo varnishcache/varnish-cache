@@ -33,6 +33,9 @@ MAC_STAT(n_deathrow,		uint64_t, "u", "N objects on deathrow")
 
 MAC_STAT(losthdr,		uint64_t, "u", "HTTP header overflows")
 
+MAC_STAT(n_objsendfile,		uint64_t, "u", "Objects sent with sendfile")
+MAC_STAT(n_objwrite,		uint64_t, "u", "Objects sent with write")
+
 MAC_STAT(s_sess,		uint64_t, "u", "Total Sessions")
 MAC_STAT(s_req,			uint64_t, "u", "Total Requests")
 MAC_STAT(s_pipe,		uint64_t, "u", "Total pipe")
