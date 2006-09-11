@@ -101,8 +101,7 @@ struct worker {
 
 	time_t			idle;
 
-	pthread_cond_t		cv;
-	pthread_mutex_t		mtx;
+	int			pipe[2];
 
 	TAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
