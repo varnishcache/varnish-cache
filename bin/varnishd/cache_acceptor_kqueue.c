@@ -101,7 +101,7 @@ static void *
 vca_kqueue_main(void *arg)
 {
 	struct kevent ke[NKEV], *kp;
-	int j, n;
+	int j, n, dotimer;
 	struct timespec ts;
 	struct sess *sp;
 
@@ -117,15 +117,20 @@ vca_kqueue_main(void *arg)
 
 	nki = 0;
 	while (1) {
+		dotimer = 0;
 		n = kevent(kq, ki, nki, ke, NKEV, NULL);
 		assert(n >= 1 && n <= NKEV);
 		nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
-			if (kp->filter == EVFILT_TIMER)
+			if (kp->filter == EVFILT_TIMER) {
+				dotimer = 1;
 				continue; 
+			}
 			assert(kp->filter == EVFILT_READ);
 			vca_kev(kp);
 		}
+		if (!dotimer)
+			continue;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec -= params->sess_timeout;
 		for (;;) {
