@@ -194,6 +194,8 @@ wrk_thread(void *priv)
 	VSL_stats->n_wrk--;
 	UNLOCK(&wrk_mtx);
 	VSL(SLT_WorkThread, 0, "%p end", w);
+	close(w->pipe[0]);
+	close(w->pipe[1]);
 	return (NULL);
 }
 
