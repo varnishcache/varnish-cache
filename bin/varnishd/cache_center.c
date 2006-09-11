@@ -105,6 +105,7 @@ cnt_done(struct sess *sp)
 	sp->vcl = NULL;
 
 	clock_gettime(CLOCK_REALTIME, &te);
+	sp->wrk->idle = te.tv_sec;
 	dh = cnt_dt(&sp->t_open, &sp->t_req);
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
 	da = cnt_dt(&sp->t_resp, &te);
@@ -240,6 +241,7 @@ cnt_first(struct sess *sp)
 	int i;
 
 	VCA_Prep(sp);
+	sp->wrk->idle = sp->t_open.tv_sec;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	for (;;) {
@@ -594,6 +596,7 @@ cnt_recv(struct sess *sp)
 	int done;
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
+	sp->wrk->idle = sp->t_req.tv_sec;
 	sp->xid = ++xids;
 	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
 

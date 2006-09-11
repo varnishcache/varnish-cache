@@ -148,7 +148,6 @@ wrk_do_one(struct worker *w)
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	w->wrq = NULL;
-	w->idle = time(NULL);
 	LOCK(&wrk_mtx);
 	VSL_stats->n_wrk_busy--;
 }
