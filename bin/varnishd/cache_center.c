@@ -94,7 +94,6 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
-	struct timespec te;
 
 	AZ(sp->obj);
 	AZ(sp->vbc);
@@ -108,7 +107,7 @@ cnt_done(struct sess *sp)
 	sp->wrk->idle = sp->t_end.tv_sec;
 	dh = cnt_dt(&sp->t_open, &sp->t_req);
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
-	da = cnt_dt(&sp->t_resp, &te);
+	da = cnt_dt(&sp->t_resp, &sp->t_end);
 	VSL(SLT_ReqEnd, sp->id, "%u %ld.%09ld %.9f %.9f %.9f",
 	    sp->xid, (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
 	    dh, dp, da);
