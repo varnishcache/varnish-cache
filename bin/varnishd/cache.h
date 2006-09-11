@@ -433,3 +433,14 @@ cli_func_t	cli_func_dump_pool;
 
 /* rfc2616.c */
 int RFC2616_cache_policy(struct sess *sp, struct http *hp);
+
+#define LOCKSHM(foo)	AZ(pthread_mutex_lock(foo))
+#define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
+
+#if 1
+#define LOCK(foo)	AZ(pthread_mutex_lock(foo))
+#define UNLOCK(foo)	AZ(pthread_mutex_unlock(foo))
+#else
+#define LOCK(foo)	do { AZ(pthread_mutex_lock(foo)); VSL(SLT_Debug, 0, "LOCK(%s,%s,%d," #foo ")", __func__, __FILE__, __LINE__); } while (0);
+#define UNLOCK(foo)	do { AZ(pthread_mutex_unlock(foo)); VSL(SLT_Debug, 0, "UNLOC(%s,%s,%d," #foo ")", __func__, __FILE__, __LINE__); } while (0);
+#endif
