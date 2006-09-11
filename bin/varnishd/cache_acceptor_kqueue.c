@@ -68,8 +68,6 @@ vca_kev(struct kevent *kp)
 			i -= sizeof ss[0];
 		}
 		assert(i == 0);
-		assert(j > 0);
-		assert(j <= NKEV);
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
@@ -122,6 +120,8 @@ vca_kqueue_main(void *arg)
 		assert(n >= 1 && n <= NKEV);
 		nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
+			if (kp->flags & EV_ERROR)
+				continue;
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
 				continue; 
