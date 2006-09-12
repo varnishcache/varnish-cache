@@ -41,7 +41,8 @@ vca_kq_sess(struct sess *sp, int arm)
 		return;
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++nki == NKEV) {
-		AZ(kevent(kq, ki, nki, NULL, 0, NULL));
+		(void)kevent(kq, ki, nki, NULL, 0, NULL);
+		/* XXX: we could check the error returns here */
 		nki = 0;
 	}
 }
