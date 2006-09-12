@@ -198,11 +198,11 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 	(void)par;
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
-		params->fetch_chunksize = u;
+		params->fetch_chunksize = u * 1024;
 	}
 	if (cli == NULL)
 		return;
-	cli_out(cli, "%u [kb]\n", params->fetch_chunksize);
+	cli_out(cli, "%u [kb]\n", params->fetch_chunksize * 1024);
 }
 
 #ifdef HAVE_SENDFILE
