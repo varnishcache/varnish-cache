@@ -451,7 +451,7 @@ do { 							\
 		AZ(pthread_mutex_lock(foo)); 		\
 	} else {					\
 		VSL(SLT_Debug, 0,			\
-		    "MTXLOCK(%s,%s,%d," #foo ")",		\
+		    "MTX_LOCK(%s,%s,%d," #foo ")",		\
 		    __func__, __FILE__, __LINE__); 	\
 	}						\
 } while (0);
