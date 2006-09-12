@@ -48,7 +48,6 @@ struct logline {
 	unsigned char *df_R; // Datafield for %{Referer}i
 	int df_Rfini;
 	unsigned char *df_U; // Datafield for %{User-agent}i
-	char df_UN[512];
 	int df_Ufini;
 	int bogus_req; // Set to 1 if we discover a bogus request
 };
@@ -84,11 +83,10 @@ clean_order(void)
 }
 
 static struct tm *make_timestring(char *tmpPtra){
-	char *tmpPtrb, *tmpPtrc;
+	char *tmpPtrb;
 	int timesec = 0;
 	time_t req_time; // Timeobject used for making the requesttime.
 	int i = 0;
-	int j = 0;
 	char temp_time[27];
 	struct tm *timestring;
 
@@ -114,7 +112,7 @@ static struct tm *make_timestring(char *tmpPtra){
 }
 
 static void 
-extended_log_format(unsigned char *p, char *w_opt)
+extended_log_format(unsigned char *p)
 {
 	unsigned u,v,w;
 
@@ -123,15 +121,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 	int j;
 
 	// Used for requesttime.
-	char *tmpPtra = NULL;
-
-	// Used for cleaning memoryalloc
-	
-	int df_s_set = 0;
-	int df_b_set = 0;
-
-	int jalla2 = 0;
-
+	char *tmpPtra;
 
 	u = (p[2] << 8) | p[3];
 	if (ob[u] == NULL) {
@@ -153,11 +143,15 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// We also catch IP in SessionReuse because we can not always
 		// be sure we see a SessionOpen when we start logging.
 		
-
+		//printf("IP %s\n", p+4);
+		ll[u].df_h[0] = '\0';
 		tmpPtr = strchr(p + 4, ' ');
-                j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
-                strncpy(ll[u].df_h, p + 4, j);
-                ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+		if (tmpPtr != NULL){
+
+			j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
+			strncpy(ll[u].df_h, p + 4, j);
+			ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+		}
 		//printf("New session [%d]: %s \n",u, ll[u].df_h);
 
 		break;
@@ -217,13 +211,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 
 	case SLT_RxHeader:
 		if (p[1] >= 11 && !strncasecmp((void *)&p[4], "user-agent:",11)){
-		//	(void)strncpy(ll[u].df_UN, p + 4, sizeof(ll[u].df_UN) - 1);
-		//	ll[u].df_UN[sizeof(ll[u].df_UN) - 1] = '\0';
-		//	w = strlen(p + 4);
-		//	printf("Lengde: %d\n", w);
-
                         ll[u].df_U = strdup(p + 4);
-			//strchr(ll[u].df_U, ':');
 			// Jump ahead past "User-Agent: "
 			ll[u].df_U = ll[u].df_U + 12;
 			ll[u].df_Ufini = 1;
@@ -282,11 +270,14 @@ extended_log_format(unsigned char *p, char *w_opt)
 		
 		if (ll[u].df_h[0] == '\0'){
 			// We don't have IP, fetch it.
+			//
 			
 			tmpPtr = strchr(p + 4, ' ');
-		        j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
-		        strncpy(ll[u].df_h, p + 4, j);
-	                ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+			if (tmpPtr != NULL){
+				j = strlen(p + 4) - strlen(tmpPtr);                // length of IP
+				strncpy(ll[u].df_h, p + 4, j);
+				ll[u].df_h[j] = '\0'; // put on a NULL at end of buffer.
+			}
 			//printf("Got IP from Reuse [%d] : %s\n", u, ll[u].df_h);
 		}
 
@@ -307,7 +298,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 		// and clear variables that are different for each request.
 		//
 
-		int jalla;
 		char temp_time[27]; // Where we store the string we take from the log
 
 		// make temp_time
@@ -321,7 +311,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 			printf("%s - - %s ", ll[u].df_h, temp_time );
 			vsb_finish(ob[u]);
 			printf("\"%s\"", vsb_data(ob[u]));
-			printf(" %s %s ", ll[u].df_s, ll[u].df_b,  ll[u].df_R);
+			printf(" %s %s ", ll[u].df_s, ll[u].df_b);
 			if (ll[u].df_Rfini){
 				printf(" \"%s\" ", ll[u].df_R);
 			}
@@ -337,6 +327,7 @@ extended_log_format(unsigned char *p, char *w_opt)
 			}
 			printf("\n");
 		}
+		fflush(stdout);
 
 		//vsb_finish(ob[u]);
                	vsb_clear(ob[u]);
@@ -352,16 +343,12 @@ extended_log_format(unsigned char *p, char *w_opt)
 			free(ll[u].df_s);
 			ll[u].df_sfini = 0;
 			//printf("Freed df_s [%d]\n", u);
-			jalla = strlen(ll[u].df_s);
-			//printf("Jalla: %d\n", jalla);
 		}
 
 		if (ll[u].df_bfini){
 			free(ll[u].df_b);
 			ll[u].df_bfini = 0;
 			//printf("Freed df_b [%d]\n", u);
-			jalla = strlen(ll[u].df_b);
-                        //printf("Jalla: %d\n", jalla);
 		}
 
 		// Clean User-Agent and Referer
@@ -369,11 +356,8 @@ extended_log_format(unsigned char *p, char *w_opt)
 			ll[u].df_U = ll[u].df_U - 12;
 			free(ll[u].df_U);
 			ll[u].df_Ufini = 0;
-			ll[u].df_UN[0] = '\0';
 			ll[u].df_U[0] = '\0';
 			//printf("Freed df_U [%d]\n", u);
-			jalla = strlen(ll[u].df_U);
-                        //printf("Jalla: %d\n", jalla);
 		}
 		
 		if (ll[u].df_Rfini){
@@ -382,8 +366,6 @@ extended_log_format(unsigned char *p, char *w_opt)
 			ll[u].df_R[0] = '\0';
 			ll[u].df_Rfini = 0;
 			//printf("Freed df_R [%d]\n", u);
-			jalla = strlen(ll[u].df_R);
-                        //printf("Jalla: %d\n", jalla);
 		}
 
 		// Clean up ReqEnd/Time variables
@@ -391,22 +373,16 @@ extended_log_format(unsigned char *p, char *w_opt)
 		//if (tmpPtra != NULL){
 		//	free(tmpPtra);
 			//printf("Freed tmpPtra [%d]\n", u);
-		//	jalla = strlen(tmpPtra);
-	                //printf("Jalla: %d\n", jalla);
 		//}
 
 			/*
 		if (tmpPtrb != NULL){
 			free(tmpPtrb);
 			//printf("Freed tmpPtrb [%d]\n", u);
-			jalla = strlen(tmpPtrb);
-			//printf("Jalla: %d\n", jalla);
 		}
 		if (tmpPtrc != NULL){
 			free(tmpPtrc);
 			//printf("Freed tmpPtrc [%d]\n", u);
-			jalla = strlen(tmpPtrc);
-			//printf("Jalla: %d\n", jalla);
 		}
 		*/
 		temp_time[0] = '\0';	
@@ -498,7 +474,7 @@ main(int argc, char **argv)
 		}
 		v = 0;
 		
-		extended_log_format(p, w_opt);
+		extended_log_format(p);
 	}
 	
 	clean_order();
