@@ -245,27 +245,24 @@ cnt_first(struct sess *sp)
 	SES_RefSrcAddr(sp);
 	for (;;) {
 		i = http_RecvSome(sp->fd, sp->http);
-		switch (i) {
-		case -1:
+		if (i == -1)	
 			continue;
-		case 0:
+		if (i == 0) {
 			sp->step = STP_RECV;
 			return (0);
-		case 1:
-			vca_close_session(sp, "overflow");
-			SES_Charge(sp);
-			vca_return_session(sp);
-			sp->step = STP_DONE;
-			return (1);
-		case 2:
-			vca_close_session(sp, "no request");
-			SES_Charge(sp);
-			vca_return_session(sp);
-			sp->step = STP_DONE;
-			return (1);
-		default:
-			INCOMPL();
 		}
+		if (i == 1)
+			vca_close_session(sp, "overflow");
+		else if (i == 2)
+			vca_close_session(sp, "no request");
+		else
+			INCOMPL();
+		clock_gettime(CLOCK_REALTIME, &sp->t_end);
+		sp->wrk->idle = sp->t_end.tv_sec;
+		SES_Charge(sp);
+		vca_return_session(sp);
+		sp->step = STP_DONE;
+		return (1);
 	}
 }
 
