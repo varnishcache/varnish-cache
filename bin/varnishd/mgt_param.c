@@ -270,8 +270,8 @@ static struct parspec parspec[] = {
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
 		SHOULD_RESTART
-		"Default is 4096 bytes. "
-		"Minimum is 1024 bytes. ", "4096" },
+		"Default is 8192 bytes. "
+		"Minimum is 1024 bytes. ", "8192" },
 	{ "sess_timeout", tweak_sess_timeout,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
