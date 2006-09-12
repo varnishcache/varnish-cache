@@ -252,9 +252,9 @@ cnt_first(struct sess *sp)
 			return (0);
 		}
 		if (i == 1)
-			vca_close_session(sp, "overflow");
+			vca_close_session(sp, "blast");
 		else if (i == 2)
-			vca_close_session(sp, "no request");
+			vca_close_session(sp, "silent");
 		else
 			INCOMPL();
 		clock_gettime(CLOCK_REALTIME, &sp->t_end);
