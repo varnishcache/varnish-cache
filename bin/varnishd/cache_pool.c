@@ -102,19 +102,33 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 void
 WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 {
-	struct sf_hdtr sfh;
 	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	assert(fd >= 0);
 	assert(len > 0);
 
-	memset(&sfh, 0, sizeof sfh);
-	if (w->niov > 0) {
-		sfh.headers = w->iov;
-		sfh.hdr_cnt = w->niov;
-	}
-	i = sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0);
+#if defined(__FreeBSD__)
+	do {
+		struct sf_hdtr sfh;
+		memset(&sfh, 0, sizeof sfh);
+		if (w->niov > 0) {
+			sfh.headers = w->iov;
+			sfh.hdr_cnt = w->niov;
+		}
+		i = sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0);
+	} while (0);
+#elif defined(__linux__)
+	do {
+		if (w->niov > 0 &&
+		    (i = writev(*w->wfd, w->iov, w->niov)) != 0)
+			break;
+		WRK_Flush(w);
+		i = sendfile(*w->wfd, fd, off, len);
+	} while (0);
+#else
+#error Unknown sendfile() implementation
+#endif
 	if (i != 0)
 		w->werr++;
 	w->liov = 0;
