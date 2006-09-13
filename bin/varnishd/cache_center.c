@@ -100,16 +100,24 @@ cnt_done(struct sess *sp)
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	sp->backend = NULL;
-	VCL_Rel(sp->vcl);
-	sp->vcl = NULL;
+	if (sp->vcl != NULL) {
+		VCL_Rel(sp->vcl);
+		sp->vcl = NULL;
+	}
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_end);
 	sp->wrk->idle = sp->t_end.tv_sec;
-	dh = cnt_dt(&sp->t_open, &sp->t_req);
+	if (sp->xid == 0) {
+		sp->t_req = sp->t_end;
+		sp->t_resp = sp->t_end;
+	}
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
 	da = cnt_dt(&sp->t_resp, &sp->t_end);
-	VSL(SLT_ReqEnd, sp->id, "%u %ld.%09ld %.9f %.9f %.9f",
-	    sp->xid, (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
+	dh = cnt_dt(&sp->t_open, &sp->t_req);
+	VSL(SLT_ReqEnd, sp->id, "%u %ld.%09ld %ld.%09ld %.9f %.9f %.9f",
+	    sp->xid,
+	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
+	    (long)sp->t_end.tv_sec, (long)sp->t_end.tv_nsec,
 	    dh, dp, da);
 
 	SES_Charge(sp);
@@ -234,36 +242,34 @@ cnt_fetch(struct sess *sp)
 	INCOMPL();
 }
 
+/*--------------------------------------------------------------------
+ * The very first request
+ */
 static int
 cnt_first(struct sess *sp)
 {
 	int i;
 
+	assert(sp->xid == 0);
 	VCA_Prep(sp);
 	sp->wrk->idle = sp->t_open.tv_sec;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
-	for (;;) {
+	do 
 		i = http_RecvSome(sp->fd, sp->http);
-		if (i == -1)	
-			continue;
-		if (i == 0) {
-			sp->step = STP_RECV;
-			return (0);
-		}
-		if (i == 1)
-			vca_close_session(sp, "blast");
-		else if (i == 2)
-			vca_close_session(sp, "silent");
-		else
-			INCOMPL();
-		clock_gettime(CLOCK_REALTIME, &sp->t_end);
-		sp->wrk->idle = sp->t_end.tv_sec;
-		SES_Charge(sp);
-		vca_return_session(sp);
-		sp->step = STP_DONE;
-		return (1);
+	while (i == -1);
+	if (i == 0) {
+		sp->step = STP_RECV;
+		return (0);
 	}
+	if (i == 1)
+		vca_close_session(sp, "blast");
+	else if (i == 2)
+		vca_close_session(sp, "silent");
+	else
+		INCOMPL();
+	sp->step = STP_DONE;
+	return (0);
 }
 
 /*--------------------------------------------------------------------
