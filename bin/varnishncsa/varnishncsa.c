@@ -82,7 +82,7 @@ clean_order(void)
 	}
 }
 
-static struct tm *make_timestring(char *tmpPtra){
+static struct tm *make_timestruct(char *tmpPtra){
 	char *tmpPtrb;
 	int timesec = 0;
 	time_t req_time; // Timeobject used for making the requesttime.
@@ -92,17 +92,19 @@ static struct tm *make_timestring(char *tmpPtra){
 
 	temp_time[0] = '\0';
 	for ( tmpPtrb = strtok(tmpPtra," "); tmpPtrb != NULL; tmpPtrb = strtok(NULL, " ")){
-		if (i == 1){
+		if (i == 2){
 			// We have the right time
 			//printf("Time: %s\n", tmpPtrb);
 			tmpPtra = tmpPtrb;
+			strncpy(temp_time, tmpPtra, 10);
+			temp_time[11] = '\0';
 		}
 		//printf("ReqServTime number %d: %s\n", i, tmpPtrb);
 	
                 i++;
          }
-	strncpy(temp_time, tmpPtra, 10);
-	temp_time[10] = '\0';
+
+	//strncpy(temp_time, tmpPtra, 20);
 	//printf("inten: %s\n",temp_time);
 	timesec = atoi(temp_time);
 	req_time = timesec;
@@ -229,7 +231,7 @@ extended_log_format(unsigned char *p)
 		// We use ReqServTime to find how the time the request was delivered
 		// also to define that a request is finished.
 		tmpPtra =  strdup(p + 4);
-		ll[u].logline_time = make_timestring(tmpPtra);
+		ll[u].logline_time = make_timestruct(tmpPtra);
 		free(tmpPtra);
 		ll[u].df_rfini = 1;
 		//printf("ReqServTime %s\n", temp_time);
@@ -301,7 +303,7 @@ extended_log_format(unsigned char *p)
 		char temp_time[27]; // Where we store the string we take from the log
 
 		// make temp_time
-		strftime (temp_time, 28, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
+		strftime (temp_time, 29, "[%d/%b/%Y:%X %z] ", ll[u].logline_time);
 
 		if (ll[u].df_h[0] == '\0' || ll[u].bogus_req){
 			ll[u].bogus_req = 0;
