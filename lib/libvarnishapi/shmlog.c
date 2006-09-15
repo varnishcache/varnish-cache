@@ -243,14 +243,14 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->regincl != NULL) {
 			rm.rm_so = 0;
 			rm.rm_eo = p[1];
-			i = regexec(vd->regincl, p + 4, 1, &rm, REG_STARTEND);
+			i = regexec(vd->regincl, p + 4, 1, &rm, 0);
 			if (i == REG_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
 			rm.rm_so = 0;
 			rm.rm_eo = p[1];
-			i = regexec(vd->regexcl, p + 4, 1, &rm, REG_STARTEND);
+			i = regexec(vd->regexcl, p + 4, 1, &rm, 0);
 			if (i != REG_NOMATCH)
 				continue;
 		}
