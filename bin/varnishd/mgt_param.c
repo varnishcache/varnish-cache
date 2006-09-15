@@ -321,7 +321,8 @@ static struct parspec parspec[] = {
 	{ "session_grace", tweak_session_grace,
 		"How long a workerthread waits for a new request to arrive "
 		"before sending the session to the herder.\n"
-		"Default is 10 msec.", "10" },
+	        "Units are milliseconds, zero disables.\n"
+		"Default is disabled.", "0" },
 	{ NULL, NULL, NULL }
 };
 
