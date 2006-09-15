@@ -174,7 +174,6 @@ vca_acct(void *arg)
 			continue;
 		http_RecvPrep(sp->http);
 		sp->step = STP_FIRST;
-		VSL_stats->client_req++;
 		WRK_QueueSession(sp);
 	}
 }
