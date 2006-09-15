@@ -78,13 +78,10 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	switch (tag) {
 
 	case SLT_SessionOpen:
-	case SLT_SessionReuse:
+	case SLT_ReqStart:
 		for (p = ptr, q = lp->df_h; *p && *p != ' ';)
 			*q++ = *p++;
 		*q = '\0';
-		break;
-
-	case SLT_ReqStart:
 		vsb_clear(lp->sb);
 		break;
 
