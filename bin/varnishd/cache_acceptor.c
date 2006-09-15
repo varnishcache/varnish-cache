@@ -115,7 +115,6 @@ vca_handover(struct sess *sp, int bad)
 		return;
 	}
 	sp->step = STP_RECV;
-	VSL_stats->client_req++;
 	WRK_QueueSession(sp);
 }
 

@@ -673,6 +673,7 @@ cnt_recv(struct sess *sp)
 {
 	int done;
 
+	VSL_stats->client_req++;
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 	sp->wrk->idle = sp->t_req.tv_sec;
 	sp->xid = ++xids;
