@@ -41,6 +41,39 @@ DOT start -> RECV
 static unsigned xids;
 
 /*--------------------------------------------------------------------
+ * The very first request
+ */
+static int
+cnt_again(struct sess *sp)
+{
+	int i;
+
+	assert(sp->xid == 0);
+	sp->wrk->idle = sp->t_open.tv_sec;
+
+	if (http_RecvPrepAgain(sp->http)) {
+		sp->step = STP_RECV;
+		return (0);
+	}
+	do 
+		i = http_RecvSome(sp->fd, sp->http);
+	while (i == -1);
+	if (i == 0) {
+		sp->step = STP_RECV;
+		return (0);
+	}
+	if (i == 1)
+		vca_close_session(sp, "overflow");
+	else if (i == 2)
+		vca_close_session(sp, "no request");
+	else
+		INCOMPL();
+	sp->step = STP_DONE;
+	return (0);
+}
+
+
+/*--------------------------------------------------------------------
  * We have a refcounted object on the session, now deliver it.
  *
 DOT subgraph cluster_deliver {
@@ -119,6 +152,23 @@ cnt_done(struct sess *sp)
 	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
 	    (long)sp->t_end.tv_sec, (long)sp->t_end.tv_nsec,
 	    dh, dp, da);
+
+	sp->xid = 0;
+	sp->t_open = sp->t_end;
+	if (sp->fd > 0) {
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
+
+		/* If we have anything in the input buffer, start over */
+		/*
+		 * XXX: we might even want to do a short timed read (poll)
+		 * XXX: here to see if something is pending in the kernel
+		 */
+		
+		if (sp->http->t < sp->http->v) {
+			sp->step = STP_AGAIN;
+			return (0);
+		}
+	}
 
 	SES_Charge(sp);
 	vca_return_session(sp);

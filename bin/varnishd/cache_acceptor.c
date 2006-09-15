@@ -158,14 +158,6 @@ vca_return_session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	if (sp->fd >= 0) {
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
-		sp->t_open = sp->t_end;
-		if (http_RecvPrepAgain(sp->http)) {
-			vca_handover(sp, 0);
-			return;
-		}
-	}
 	vca_act->recycle(sp);
 }
 
