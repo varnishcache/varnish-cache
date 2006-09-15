@@ -226,7 +226,6 @@ RES_WriteObj(struct sess *sp)
 			AN(st->stevedore);
 			u += st->len;
 			sp->wrk->acct.bodybytes += st->len;
-#ifdef __FreeBSD__
 #ifdef HAVE_SENDFILE
 			/*
 			 * XXX: the overhead of setting up senddile is not
@@ -242,7 +241,6 @@ RES_WriteObj(struct sess *sp)
 				continue;
 			}
 #endif /* HAVE_SENDFILE */
-#endif /* __FreeBSD__ */
 			VSL_stats->n_objwrite++;
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
