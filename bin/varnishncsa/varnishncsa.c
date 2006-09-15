@@ -71,12 +71,14 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 		assert(ll[fd] != NULL);
 		ll[fd]->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 		assert(ll[fd]->sb != NULL);
+		strcpy(ll[fd]->df_h, "-");
 	}
 	lp = ll[fd];
 
 	switch (tag) {
 
 	case SLT_SessionOpen:
+	case SLT_SessionReuse:
 		for (p = ptr, q = lp->df_h; *p && *p != ' ';)
 			*q++ = *p++;
 		*q = '\0';
