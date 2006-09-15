@@ -49,12 +49,7 @@ cnt_again(struct sess *sp)
 	int i;
 
 	assert(sp->xid == 0);
-	sp->wrk->idle = sp->t_open.tv_sec;
 
-	if (http_RecvPrepAgain(sp->http)) {
-		sp->step = STP_RECV;
-		return (0);
-	}
 	do 
 		i = http_RecvSome(sp->fd, sp->http);
 	while (i == -1);
@@ -139,7 +134,6 @@ cnt_done(struct sess *sp)
 	}
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_end);
-	sp->wrk->idle = sp->t_end.tv_sec;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
@@ -155,6 +149,7 @@ cnt_done(struct sess *sp)
 
 	sp->xid = 0;
 	sp->t_open = sp->t_end;
+	SES_Charge(sp);
 	if (sp->fd > 0) {
 		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 
@@ -164,13 +159,17 @@ cnt_done(struct sess *sp)
 		 * XXX: here to see if something is pending in the kernel
 		 */
 		
+		if (http_RecvPrepAgain(sp->http)) {
+			sp->step = STP_RECV;
+			return (0);
+		}
 		if (sp->http->t < sp->http->v) {
 			sp->step = STP_AGAIN;
 			return (0);
 		}
 	}
 
-	SES_Charge(sp);
+	sp->wrk->idle = sp->t_open.tv_sec;
 	vca_return_session(sp);
 	return (1);
 }
