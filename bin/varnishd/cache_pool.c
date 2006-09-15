@@ -4,14 +4,23 @@
  * XXX: automatic thread-pool size adaptation.
  */
 
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+
+#ifdef HAVE_SENDFILE
+#if defined(__FreeBSD__)
+#include <sys/socket.h>
+#elif defined(__linux__)
+#include <sys/sendfile.h>
+#else
+#error Unknown sendfile() implementation
+#endif
+#endif /* HAVE_SENDFILE */
+
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_SENDFILE
-#include <sys/uio.h>
-#include <sys/socket.h>
-#endif /* HAVE_SENDFILE */
 #include <unistd.h>
 
 #include "heritage.h"
@@ -102,7 +111,6 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 void
 WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	assert(fd >= 0);
@@ -116,23 +124,21 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 			sfh.headers = w->iov;
 			sfh.hdr_cnt = w->niov;
 		}
-		i = sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0);
+		if (sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0) != 0)
+			w->werr++;
+		w->liov = 0;
+		w->niov = 0;
 	} while (0);
 #elif defined(__linux__)
 	do {
-		if (w->niov > 0 &&
-		    (i = writev(*w->wfd, w->iov, w->niov)) != 0)
-			break;
-		WRK_Flush(w);
-		i = sendfile(*w->wfd, fd, off, len);
+		if (WRK_Flush(w) == 0) {
+			if (sendfile(*w->wfd, fd, &off, len) != 0)
+				w->werr++;
+		}
 	} while (0);
 #else
 #error Unknown sendfile() implementation
 #endif
-	if (i != 0)
-		w->werr++;
-	w->liov = 0;
-	w->niov = 0;
 }
 #endif /* HAVE_SENDFILE */
 
