@@ -10,6 +10,15 @@
  *
  * We identify srcaddrs instead of full addr+port because the desired level
  * of granularity is "whois is abuse@ or tech-c@ in the RIPE database.
+ *
+ * XXX: The two-list session management is actually not a good idea
+ * XXX: come to think of it, because we want the sessions reused in
+ * XXX: Most Recently Used order.
+ * XXX: Another and maybe more interesting option would be to cache 
+ * XXX: free sessions in the worker threads and postpone session 
+ * XXX: allocation until then.  This does not quite implment MRU order
+ * XXX: but it does save some locking, although not that much because
+ * XXX: we still have to do the source-addr lookup.
  */
 
 #include <stdlib.h>
