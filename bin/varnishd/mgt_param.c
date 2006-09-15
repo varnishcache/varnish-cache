@@ -176,11 +176,6 @@ tweak_session_grace(struct cli *cli, struct parspec *par, const char *arg)
 	(void)par;
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			cli_out(cli, "Timeout must be greater than zero\n");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
 		params->session_grace = u;
 	}
 	if (cli == NULL)
