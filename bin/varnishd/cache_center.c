@@ -175,6 +175,7 @@ cnt_done(struct sess *sp)
 	}
 	if (params->session_grace == 0) {
 		VSL_stats->sess_herd++;
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->wrk->idle = sp->t_open.tv_sec;
 		vca_return_session(sp);
 		return (1);
@@ -188,11 +189,11 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, "EOF");
 	} else if (i == 1 && (fds[0].revents & POLLIN)) {
 		VSL_stats->sess_ready++;
-		VSL(SLT_SessionReuse, sp->fd, "%s %s",
-		    sp->addr, sp->port);
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->step = STP_AGAIN;
 		return (0);
 	} else {
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		VSL_stats->sess_herd++;
 	}
 	sp->wrk->idle = sp->t_open.tv_sec;
