@@ -53,6 +53,9 @@ struct params {
 
 	/* Sendfile object minimum size */
 	unsigned		sendfile_threshold;
+
+	/* Session dispostion grace period */
+	unsigned		session_grace;
 };
 
 extern struct params *params;

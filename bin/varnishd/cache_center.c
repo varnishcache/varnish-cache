@@ -33,8 +33,10 @@ DOT start -> RECV
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include "shmlog.h"
+#include "heritage.h"
 #include "vcl.h"
 #include "cache.h"
 
@@ -122,6 +124,8 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
+	struct pollfd fds[1];
+	int i;
 
 	AZ(sp->obj);
 	AZ(sp->vbc);
@@ -150,25 +154,47 @@ cnt_done(struct sess *sp)
 	sp->xid = 0;
 	sp->t_open = sp->t_end;
 	SES_Charge(sp);
-	if (sp->fd > 0) {
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
-
-		/* If we have anything in the input buffer, start over */
-		/*
-		 * XXX: we might even want to do a short timed read (poll)
-		 * XXX: here to see if something is pending in the kernel
-		 */
-		
-		if (http_RecvPrepAgain(sp->http)) {
-			sp->step = STP_RECV;
-			return (0);
-		}
-		if (sp->http->t < sp->http->v) {
-			sp->step = STP_AGAIN;
-			return (0);
-		}
+	if (sp->fd < 0) {
+		VSL_stats->sess_closed++;
+		sp->wrk->idle = sp->t_open.tv_sec;
+		vca_return_session(sp);
+		return (1);
 	}
 
+	if (http_RecvPrepAgain(sp->http)) {
+		VSL_stats->sess_pipeline++;
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
+		sp->step = STP_RECV;
+		return (0);
+	}
+	if (sp->http->t < sp->http->v) {
+		VSL_stats->sess_readahead++;
+		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
+		sp->step = STP_AGAIN;
+		return (0);
+	}
+	if (params->session_grace == 0) {
+		VSL_stats->sess_herd++;
+		sp->wrk->idle = sp->t_open.tv_sec;
+		vca_return_session(sp);
+		return (1);
+	}
+	fds[0].fd = sp->fd;
+	fds[0].events = POLLIN;
+	fds[0].revents = 0;
+	i = poll(fds, 1, params->session_grace);
+	if (i == 1 && (fds[0].revents & POLLHUP)) {
+		VSL_stats->sess_EOF++;
+		vca_close_session(sp, "EOF");
+	} else if (i == 1 && (fds[0].revents & POLLIN)) {
+		VSL_stats->sess_ready++;
+		VSL(SLT_SessionReuse, sp->fd, "%s %s",
+		    sp->addr, sp->port);
+		sp->step = STP_AGAIN;
+		return (0);
+	} else {
+		VSL_stats->sess_herd++;
+	}
 	sp->wrk->idle = sp->t_open.tv_sec;
 	vca_return_session(sp);
 	return (1);
