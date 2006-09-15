@@ -33,7 +33,6 @@ DOT start -> RECV
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <poll.h>
 
 #include "shmlog.h"
 #include "heritage.h"
@@ -124,8 +123,6 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
-	struct pollfd fds[1];
-	int i;
 
 	AZ(sp->obj);
 	AZ(sp->vbc);
@@ -171,26 +168,7 @@ cnt_done(struct sess *sp)
 		sp->step = STP_AGAIN;
 		return (0);
 	}
-	if (params->session_grace == 0) {
-		VSL_stats->sess_herd++;
-		sp->wrk->idle = sp->t_open.tv_sec;
-		vca_return_session(sp);
-		return (1);
-	}
-	fds[0].fd = sp->fd;
-	fds[0].events = POLLIN;
-	fds[0].revents = 0;
-	i = poll(fds, 1, params->session_grace);
-	if (i == 1 && (fds[0].revents & POLLHUP)) {
-		VSL_stats->sess_EOF++;
-		vca_close_session(sp, "EOF");
-	} else if (i == 1 && (fds[0].revents & POLLIN)) {
-		VSL_stats->sess_ready++;
-		sp->step = STP_AGAIN;
-		return (0);
-	} else {
-		VSL_stats->sess_herd++;
-	}
+	VSL_stats->sess_herd++;
 	sp->wrk->idle = sp->t_open.tv_sec;
 	vca_return_session(sp);
 	return (1);

@@ -169,23 +169,6 @@ tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_session_grace(struct cli *cli, struct parspec *par, const char *arg)
-{
-	unsigned u;
-
-	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		params->session_grace = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [milliseconds]\n", params->session_grace);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 {
 	unsigned u;
@@ -318,11 +301,6 @@ static struct parspec parspec[] = {
 		"The minimum size of objects transmitted with sendfile.\n"
 		"Default is 8192 bytes.", "8192" },
 #endif /* HAVE_SENDFILE */
-	{ "session_grace", tweak_session_grace,
-		"How long a workerthread waits for a new request to arrive "
-		"before sending the session to the herder.\n"
-	        "Units are milliseconds, zero disables.\n"
-		"Default is disabled.", "0" },
 	{ NULL, NULL, NULL }
 };
 
