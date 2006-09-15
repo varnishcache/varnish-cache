@@ -163,19 +163,16 @@ cnt_done(struct sess *sp)
 
 	if (http_RecvPrepAgain(sp->http)) {
 		VSL_stats->sess_pipeline++;
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->step = STP_RECV;
 		return (0);
 	}
 	if (sp->http->t < sp->http->v) {
 		VSL_stats->sess_readahead++;
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->step = STP_AGAIN;
 		return (0);
 	}
 	if (params->session_grace == 0) {
 		VSL_stats->sess_herd++;
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->wrk->idle = sp->t_open.tv_sec;
 		vca_return_session(sp);
 		return (1);
@@ -189,11 +186,9 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, "EOF");
 	} else if (i == 1 && (fds[0].revents & POLLIN)) {
 		VSL_stats->sess_ready++;
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		sp->step = STP_AGAIN;
 		return (0);
 	} else {
-		VSL(SLT_SessionReuse, sp->fd, "%s %s", sp->addr, sp->port);
 		VSL_stats->sess_herd++;
 	}
 	sp->wrk->idle = sp->t_open.tv_sec;
@@ -677,7 +672,7 @@ cnt_recv(struct sess *sp)
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 	sp->wrk->idle = sp->t_req.tv_sec;
 	sp->xid = ++xids;
-	VSL(SLT_ReqStart, sp->fd, "XID %u", sp->xid);
+	VSL(SLT_ReqStart, sp->fd, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	AZ(sp->vcl);
 	sp->vcl = VCL_Get();
