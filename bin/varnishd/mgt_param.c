@@ -118,6 +118,18 @@ tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_thread_pools(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	tweak_generic_uint(cli, &params->wthread_pools, arg,
+	    1, UINT_MAX);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
 {
 
@@ -296,6 +308,9 @@ static struct parspec parspec[] = {
 		"To force an immediate effect at the expense of a total "
 		"flush of the cache use \"url.purge .\"",
 		"120", "seconds" },
+	{ "thread_pools", tweak_thread_pools,
+		"Number of thread pools.\n",
+		"1", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max,
 		"The maximum number of threads in the worker pool.\n"
 		"-1 is unlimited.\n"

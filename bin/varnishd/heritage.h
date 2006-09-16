@@ -36,6 +36,7 @@ struct params {
 	unsigned		wthread_min;
 	unsigned		wthread_max;
 	unsigned		wthread_timeout;
+	unsigned		wthread_pools;
 
 	/* Memory allocation hints */
 	unsigned		mem_workspace;
