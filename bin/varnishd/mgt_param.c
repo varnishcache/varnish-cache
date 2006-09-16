@@ -226,6 +226,34 @@ tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	if (arg != NULL) {
+		if (!strcasecmp(arg, "off"))
+			params->vcl_trace = 0;
+		else if (!strcasecmp(arg, "disable"))
+			params->vcl_trace = 0;
+		else if (!strcasecmp(arg, "no"))
+			params->vcl_trace = 0;
+		else if (!strcasecmp(arg, "on"))
+			params->vcl_trace = 1;
+		else if (!strcasecmp(arg, "enable"))
+			params->vcl_trace = 1;
+		else if (!strcasecmp(arg, "yes"))
+			params->vcl_trace = 1;
+		else {
+			cli_out(cli, "use \"on\" or \"off\"\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+	}
+	cli_out(cli, params->vcl_trace ? "on" : "off");
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -301,6 +329,9 @@ static struct parspec parspec[] = {
 		"The minimum size of objects transmitted with sendfile.\n"
 		"Default is 8192 bytes.", "8192" },
 #endif /* HAVE_SENDFILE */
+	{ "vcl_trace", tweak_vcl_trace,
+		"Trace VCL execution in the shmlog\n"
+		"Default is off", "off" },
 	{ NULL, NULL, NULL }
 };
 
