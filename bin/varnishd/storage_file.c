@@ -77,7 +77,7 @@ struct smf_sc {
 	struct smfhead		order;
 	struct smfhead		free[NBUCKET];
 	struct smfhead		used;
-	pthread_mutex_t		mtx;
+	MTX			mtx;
 };
 
 /*--------------------------------------------------------------------*/
@@ -492,6 +492,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 {
 	struct smf *sp, *sp2;
 
+	assert(!(len % sc->pagesize));
 	sp = calloc(sizeof *sp, 1);
 	XXXAN(sp);
 	sp->magic = SMF_MAGIC;
@@ -534,6 +535,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	off_t h;
 
 	assert(sz != 0);
+	assert(!(sz % sc->pagesize));
 
 	if (*fail < (uintmax_t)sc->pagesize * MINPAGES)
 		return;
@@ -576,7 +578,7 @@ smf_open(struct stevedore *st)
 	/* XXX */
 	if (sum < MINPAGES * (uintmax_t)getpagesize())
 		exit (2);
-	AZ(pthread_mutex_init(&sc->mtx, NULL));
+	MTX_INIT(&sc->mtx);
 }
 
 /*--------------------------------------------------------------------*/

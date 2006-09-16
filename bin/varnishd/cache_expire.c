@@ -21,7 +21,7 @@
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
-static pthread_mutex_t exp_mtx;
+static MTX exp_mtx;
 static unsigned expearly = 30;
 static TAILQ_HEAD(,object) exp_deathrow = TAILQ_HEAD_INITIALIZER(exp_deathrow);
 
@@ -181,7 +181,7 @@ void
 EXP_Init(void)
 {
 
-	AZ(pthread_mutex_init(&exp_mtx, NULL));
+	MTX_INIT(&exp_mtx);
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	XXXAN(exp_heap);
 	AZ(pthread_create(&exp_thread, NULL, exp_prefetch, NULL));

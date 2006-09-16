@@ -22,7 +22,7 @@ struct hsl_entry {
 };
 
 static TAILQ_HEAD(, hsl_entry)	hsl_head = TAILQ_HEAD_INITIALIZER(hsl_head);
-static pthread_mutex_t hsl_mutex;
+static MTX hsl_mutex;
 
 /*--------------------------------------------------------------------
  * The ->init method is called during process start and allows 
@@ -33,7 +33,7 @@ static void
 hsl_start(void)
 {
 
-	AZ(pthread_mutex_init(&hsl_mutex, NULL));
+	MTX_INIT(&hsl_mutex);
 }
 
 /*--------------------------------------------------------------------
