@@ -381,6 +381,7 @@ main(int argc, char *argv[])
 			p = strchr(optarg, '=');
 			if (p == NULL)
 				usage();
+			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
 			cli_check(cli);
