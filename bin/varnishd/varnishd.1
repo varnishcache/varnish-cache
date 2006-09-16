@@ -9,14 +9,17 @@
 .Nd HTTP accelerator daemon
 .Sh SYNOPSIS
 .Nm
+.Op Fl a Ar addrss Ns Op : Ns Ar port
 .Op Fl b Ar host Ns Op : Ns Ar port
 .Op Fl d
 .Op Fl f Ar config
 .Op Fl h Ar type Ns Op , Ns Ar options
-.Op Fl p Ar port
+.Op Fl p Ar param Ns = Ns Ar value
 .Op Fl s Ar type Ns Op , Ns Ar options
 .Op Fl t Ar ttl
-.Op Fl w Ar min Ns Op , Ns Ar max
+.Op Fl T Ar address Ns Op : Ns Ar port
+.Op Fl V
+.Op Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
 .Sh DESCRIPTION
 The
 .Nm
@@ -26,6 +29,25 @@ requests for the same document.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
+.It Fl a Ar address Ns Op : Ns Ar port
+Listen for client requests on the specified
+.Ar address
+and
+.Ar port .
+The
+.Ar address
+can be a host name, an IPv4 dotted-quad, or an IPv6 address enclosed
+in square brackets.
+If
+.Ar address
+is not specified,
+.Nm
+will listen on all available interfaces.
+If
+.Ar port
+is not specified, the default HTTP port as listed in
+.Pa /etc/services
+is used.
 .It Fl b Ar host Ns Op : Ns Ar port
 Use the specified
 .Ar host
@@ -36,37 +58,170 @@ is not specified, the default is 8080.
 .It Fl d
 Enables debugging mode.
 .It Fl f Ar config
-Specifies a VCL configuration file to use instead of the hardcoded
+Use the specified VCL configuration file instead of the builtin
 default.
 .It Fl h Ar type Ns Op , Ns Ar options
 Specifies the hash algorithm.
-.It Fl p Ar port
-Specifies which port to listen on for incoming client connections.
+See
+.Sx Hash Algorithms
+for a list of supported algorithms.
+.It Fl p Ar param Ns = Ns Ar value
+Set the parameter specified by
+.Ar param
+to the specified
+.Ar value .
+See
+.Sx Run-Time Parameters
+for a list of parameters.
 .It Fl s Ar type Ns Op , Ns Ar options
-Specifies the storage backend.
+Use the specified storage backend.
+See
+.Sx Storage Types
+for a list of supported storage types.
 .It Fl t Ar ttl
 Specifies a hard minimum time to live for cached documents.
-.It Fl w Ar min Ns Op , Ns Ar max
-Specifies the number of worker threads to start.
+.It Fl T Ar address Ns Op : Ns Ar port
+Offer a management interface on the specified
+.Ar address
+and
+.Ar port .
+See
+.Sx Management Interface
+for a list of management commands.
+.It Fl V
+Display the version number and exit.
+.It Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
+Start at least
+.Ar min
+but no more than
+.Ar max
+worker threads with the specified idle timeout.
+.Pp
 If only
 .Ar min
 is specified,
 .Nm
 will start
 .Ar min
-threads.
+threads and will not kill idle threads.
+.Pp
 If both
 .Ar min
 and
 .Ar max
-are specified,
+are specified, the number of threads is allowed to vary within the
+specified range according to system load.
+Idle threads are killed after
+.Ar timeout
+seconds.
+.Pp
+The default values are 1 for
+.Ar min ,
+infinity for
+.Ar max ,
+and 10 for
+.Ar timeout .
+.El
+.Ss Hash Algorithms
+The following hash algorithms are available:
+.Bl -tag -width=4
+.It Cm simple_list
+A simple doubly-linked list.
+Not recommended for production use.
+.It Cm classic Ns Op Ns , Ns Ar buckets
+A standard hash table.
+The hash key is the CRC32 of the object's URL modulo the size of the
+hash table.
+Each table entry points to a list of elements which share the same
+hash key.
+.Pp
+The
+.Ar buckets
+parameter specifies the number of entries in the hash table.
+The default is 16383.
+.El
+.Ss Storage Types
+The following storage types are available:
+.Bl -tag -width=4
+.It Cm malloc
+Storage for each object is allocated with
+.Xr malloc 3 .
+Not recommended for production use.
+.It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size
+Storage for each object is allocated from an arena backed by a file.
+.Pp
+The
+.Ar path
+parameter specifies either the path to the backing file or the path to
+a directory in which
 .Nm
-the number of worker threads will vary within the specified range
-according to system load.
+will create the backing file.
+The default is
+.Pa /tmp .
+.Pp
+The
+.Ar size
+parameter specifies the size of the backing file.
+If the backing file already exists, it will be truncated or expanded
+to the specified size.
+.Pp
+Note that if
+.Nm
+has to create or expand the file, it will not pre-allocate the added
+space, leading to fragmentation, which may adversely impact
+performance.
+Pre-creating the storage file using
+.Xr dd 1
+will reduce fragmentation to a minimum.
+.El
+.Ss Management Interface
+If the
+.Fl -T
+option was specified,
+.Nm
+will offer a command-line management interface on the specified
+address and port.
+The following commands are available:
+.Bl -tag -width=4
+.It Cm dump.pool
+.It Cm help
+.It Cm param.set Ar param Ar value
+.It Cm param.show Ar param
+.It Cm param.show Op Fl l
+.It Cm ping Op Ns Ar timestamp
+.It Cm start
+.It Cm stats
+.It Cm stop
+.It Cm url.purge Ar regexp
+.It Cm vcl.discard Ar configname
+.It Cm vcl.inline Ar configname Ar vcl
+.It Cm vcl.list
+.It Cm vcl.load Ar configname Ar filename
+.It Cm vcl.use Ar configname
+.El
+.Ss Run-Time Parameters
+.Bl -tag -width=4
+.It Va auto_restart
+.It Va default_ttl
+.It Va fetch_chunksize
+.It Va http_workspace
+.It Va listen_address
+.It Va listen_depth
+.It Va pipe_timeout
+.It Va send_timeout
+.It Va sendfile_threshold
+.It Va sess_timeout
+.It Va thread_pool_max
+.It Va thread_pool_min
+.It Va thread_pool_timeout
+.It Va vcl_trace
 .El
 .Sh SEE ALSO
 .Xr varnishlog 1 ,
-.Xr varnishstat 1
+.Xr varnishhist 1 ,
+.Xr varnishncsa 1 ,
+.Xr varnishstat 1 ,
+.Xr varnishtop 1
 .\" .Sh STANDARDS
 .\" .Rs
 .\" .%A R. Fielding
