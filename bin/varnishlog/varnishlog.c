@@ -174,15 +174,16 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 /*--------------------------------------------------------------------*/
 
 static void
-do_write(struct VSL_data *vd, const char *w_opt)
+do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
 {
-	int fd, i;
+	int fd, flags, i;
 	unsigned char *p;
 
+	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
 	if (!strcmp(w_opt, "-"))
 		fd = STDOUT_FILENO;
 	else
-		fd = open(w_opt, O_WRONLY|O_APPEND|O_CREAT, 0644);
+		fd = open(w_opt, flags, 0644);
 	if (fd < 0) {
 		perror(w_opt);
 		exit (1);
@@ -208,7 +209,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishlog [(stdopts)] [-oV] [-w file] [-r file]\n");
+	    "usage: varnishlog %s [-aoV] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -216,14 +217,17 @@ int
 main(int argc, char **argv)
 {
 	int i, c;
-	int o_flag = 0;
+	int a_flag = 0, o_flag = 0;
 	char *w_opt = NULL;
 	struct VSL_data *vd;
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "oVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aoVw:")) != -1) {
 		switch (c) {
+		case 'a':
+			a_flag = 1;
+			break;
 		case 'o':
 			o_flag = 1;
 			break;
@@ -257,7 +261,7 @@ main(int argc, char **argv)
 		exit (1);
 
 	if (w_opt != NULL) 
-		do_write(vd, w_opt);
+		do_write(vd, w_opt, a_flag);
 
 	if (o_flag)
 		do_order(vd, argc - optind, argv + optind);
