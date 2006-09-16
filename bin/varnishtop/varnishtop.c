@@ -86,12 +86,12 @@ main(int argc, char **argv)
 	struct VSL_data *vd;
 	unsigned u, v;
 	struct top *tp, *tp2;
-	unsigned one_flag = 0;
+	int f_flag = 0;
 
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "1V")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -99,7 +99,10 @@ main(int argc, char **argv)
 			continue;
 		switch (c) {
 		case '1':
-			one_flag = 1;
+			VSL_NonBlocking(vd, 1);
+			break;
+		case 'f':
+			f_flag = 1;
 			break;
 		case 'V':
 			varnish_version("varnishtop");
@@ -130,7 +133,7 @@ main(int argc, char **argv)
 		u = 0;
 		q = p + 4;
 		for (i = 0; i < p[1]; i++, q++) {
-			if (one_flag && (*q == ':' || isspace(*q)))
+			if (f_flag && (*q == ':' || isspace(*q)))
 				break;
 			u += *q;
 		}
