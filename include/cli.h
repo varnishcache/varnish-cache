@@ -47,33 +47,33 @@
 	"\tReturns all metadata for the specified URL",			\
 	1, 1
 
-#define CLI_CONFIG_LOAD							\
-	"config.load",							\
-	"config.load <configname> <filename>",				\
+#define CLI_VCL_LOAD							\
+	"vcl.load",							\
+	"vcl.load <configname> <filename>",				\
 	"\tCompile and load the VCL file under the name provided.",	\
 	2, 2
 
-#define CLI_CONFIG_INLINE						\
-	"config.inline",						\
-	"config.inline <configname> <quoted_VCLstring>",		\
+#define CLI_VCL_INLINE						\
+	"vcl.inline",						\
+	"vcl.inline <configname> <quoted_VCLstring>",		\
 	"\tCompile and load the VCL data under the name provided.",	\
 	2, 2
 
-#define CLI_CONFIG_DISCARD						\
-	"config.discard",						\
-	"config.discard <configname>",					\
+#define CLI_VCL_DISCARD						\
+	"vcl.discard",						\
+	"vcl.discard <configname>",					\
 	"\tUnload the named configuration (when possible).",		\
 	1, 1
 
-#define CLI_CONFIG_LIST							\
-	"config.list",							\
-	"config.list",							\
+#define CLI_VCL_LIST							\
+	"vcl.list",							\
+	"vcl.list",							\
 	"\tList all loaded configuration.",				\
 	0, 0
 
-#define CLI_CONFIG_USE							\
-	"config.use",							\
-	"config.use <configname>",					\
+#define CLI_VCL_USE							\
+	"vcl.use",							\
+	"vcl.use <configname>",					\
 	"\tSwitch to the named configuration immediately.",		\
 	1, 1
 
