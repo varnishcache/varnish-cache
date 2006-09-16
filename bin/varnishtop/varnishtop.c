@@ -38,7 +38,7 @@ static unsigned ntop;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtop [-1V]\n");
+	fprintf(stderr, "usage: varnishtop %s [-1V]\n", VSL_USAGE);
 	exit(1);
 }
 
