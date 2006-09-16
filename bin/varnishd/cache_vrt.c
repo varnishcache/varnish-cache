@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #include "shmlog.h"
+#include "heritage.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 #include "vcl.h"
@@ -34,9 +35,9 @@ VRT_count(struct sess *sp, unsigned u)
 {
 	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	VSL(SLT_VCL_trace, sp->fd, "%u %d.%d", u,
-	    sp->vcl->ref[u].line,
-	    sp->vcl->ref[u].pos);
+	if (params->vcl_trace)
+		VSL(SLT_VCL_trace, sp->fd, "%u %d.%d", u,
+		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/
