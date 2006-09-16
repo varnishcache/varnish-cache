@@ -56,6 +56,11 @@ struct params {
 
 	/* VCL traces */
 	unsigned		vcl_trace;
+
+	/* Listen address */
+	char			*listen_address;
+	char			*listen_host;
+	char			*listen_port;
 };
 
 extern struct params *params;
