@@ -103,9 +103,9 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			/* Get some storage if we don't have any */
 			if (st == NULL || st->len == st->space) {
 				v = u;
-				if (u < params->fetch_chunksize && 
+				if (u < params->fetch_chunksize * 1024 && 
 				    stevedore->trim != NULL)
-					v = params->fetch_chunksize;
+					v = params->fetch_chunksize * 1024;
 				st = stevedore->alloc(stevedore, v);
 				XXXAN(st->stevedore);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
@@ -180,7 +180,8 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	st = NULL;
 	while (1) {
 		if (v == 0) {
-			st = stevedore->alloc(stevedore, params->fetch_chunksize);
+			st = stevedore->alloc(stevedore,
+			    params->fetch_chunksize * 1024);
 			XXXAN(st->stevedore);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;

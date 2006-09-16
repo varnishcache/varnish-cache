@@ -21,6 +21,7 @@
 #include "compat/strndup.h"
 #endif
 
+#include "heritage.h"
 #include "mgt.h"
 #include "cli.h"
 #include "cli_priv.h"
@@ -165,7 +166,7 @@ TCP_open(const char *addr, const char *port, int http)
 		close(sd);
 		return (-1);
 	}
-	if (listen(sd, http ? 1024 : 16) != 0) {
+	if (listen(sd, http ? params->listen_depth : 16) != 0) {
 		perror("listen()");
 		freeaddrinfo(res);
 		close(sd);
