@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,9 +10,11 @@
 
 #include "cli.h"
 #include "cli_priv.h"
+#include "cli_common.h"
 #include "mgt.h"
 #include "mgt_cli.h"
 
+#include "vsb.h"
 #include "heritage.h"
 
 struct parspec;
@@ -40,10 +43,8 @@ tweak_generic_timeout(struct cli *cli, unsigned *dst, const char *arg)
 			return;
 		}
 		*dst = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [seconds]\n", *dst);
+	} else
+		cli_out(cli, "%u [seconds]\n", *dst);
 }
 
 /*--------------------------------------------------------------------*/
@@ -55,9 +56,8 @@ tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
 	(void)par;
 	if (arg != NULL)
 		params->default_ttl = strtoul(arg, NULL, 0);
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [seconds]\n", params->default_ttl);
+	else
+		cli_out(cli, "%u [seconds]\n", params->default_ttl);
 }
 
 /*--------------------------------------------------------------------*/
@@ -76,10 +76,8 @@ tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
 			return;
 		}
 		params->wthread_min = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [threads]\n", params->wthread_min);
+	} else
+		cli_out(cli, "%u [threads]\n", params->wthread_min);
 }
 
 /*--------------------------------------------------------------------*/
@@ -99,8 +97,6 @@ tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
 		}
 		params->wthread_max = u;
 	}
-	if (cli == NULL)
-		return;
 	if (params->wthread_max == UINT_MAX) 
 		cli_out(cli, "unlimited\n");
 	else 
@@ -133,10 +129,8 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 			return;
 		}
 		params->mem_workspace = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [bytes]\n", params->mem_workspace);
+	} else
+		cli_out(cli, "%u [bytes]\n", params->mem_workspace);
 }
 
 /*--------------------------------------------------------------------*/
@@ -182,10 +176,8 @@ tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 			return;
 		}
 		params->auto_restart = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u {1 = yes, 0 = no}\n", params->auto_restart);
+	} else
+		cli_out(cli, "%u {1 = yes, 0 = no}\n", params->auto_restart);
 }
 
 /*--------------------------------------------------------------------*/
@@ -199,10 +191,8 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
 		params->fetch_chunksize = u * 1024;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [kb]\n", params->fetch_chunksize * 1024);
+	} else
+		cli_out(cli, "%u [kb]\n", params->fetch_chunksize * 1024);
 }
 
 #ifdef HAVE_SENDFILE
@@ -217,10 +207,8 @@ tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
 		params->sendfile_threshold = u;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%u [bytes]\n", params->sendfile_threshold);
+	} else
+		cli_out(cli, "%u [bytes]\n", params->sendfile_threshold);
 }
 #endif /* HAVE_SENDFILE */
 
@@ -248,10 +236,8 @@ tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, params->vcl_trace ? "on\n" : "off\n");
+	} else
+		cli_out(cli, params->vcl_trace ? "on\n" : "off\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -268,21 +254,22 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
+		if (p == NULL) {
+			p = strdup("http");
+			AN(p);
+		}
+		TCP_check(cli, a, p);
+		if (cli->result != CLIS_OK)
+			return;
 		free(params->listen_address);
 		free(params->listen_host);
 		free(params->listen_port);
 		params->listen_address = strdup(arg);
 		AN(params->listen_address);
 		params->listen_host = a;
-		if (p == NULL) {
-			p = strdup("http");
-			AN(p);
-		}
 		params->listen_port = p;
-	}
-	if (cli == NULL)
-		return;
-	cli_out(cli, "%s", params->listen_address);
+	} else 
+		cli_out(cli, "%s\n", params->listen_address);
 }
 /*--------------------------------------------------------------------*/
 
@@ -429,31 +416,38 @@ mcf_param_show(struct cli *cli, char **av, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_param_set(struct cli *cli, char **av, void *priv)
+MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
 	struct parspec *pp;
 
-	(void)priv;
 	for (pp = parspec; pp->name != NULL; pp++) {
-		if (!strcmp(pp->name, av[2])) {
-			cli_out(cli, "%-20s ", pp->name);
-			pp->func(cli, pp, av[3]);
+		if (!strcmp(pp->name, param)) {
+			pp->func(cli, pp, val);
 			return;
 		}
 	}
-	if (av[2] != NULL) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "Unknown paramter \"%s\".", av[2]);
-	}
+	cli_result(cli, CLIS_PARAM);
+	cli_out(cli, "Unknown paramter \"%s\".", param);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+void
+mcf_param_set(struct cli *cli, char **av, void *priv)
+{
+
+	(void)priv;
+	MCF_ParamSet(cli, av[2], av[3]);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-MCF_ParamInit(void)
+MCF_ParamInit(struct cli *cli)
 {
 	struct parspec *pp;
 
 	for (pp = parspec; pp->name != NULL; pp++)
-		pp->func(NULL, pp, pp->def);
+		pp->func(cli, pp, pp->def);
 }

@@ -315,12 +315,25 @@ DebugStunt(void)
 
 /*--------------------------------------------------------------------*/
 
+static void
+cli_check(struct cli *cli)
+{
+	if (cli->result == CLIS_OK) {
+		vsb_clear(cli->sb);
+		return;
+	}
+	vsb_finish(cli->sb);
+	fprintf(stderr, "Error:\n%s\n", vsb_data(cli->sb));
+	exit (2);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 main(int argc, char *argv[])
 {
 	int o;
 	unsigned d_flag = 0;
-	char *addr, *port;
 	const char *a_arg = NULL;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
@@ -328,16 +341,23 @@ main(int argc, char *argv[])
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
 	struct params param;
+	struct cli cli[1];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+
+	memset(cli, 0, sizeof cli);
+	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	XXXAN(cli->sb);
+	cli->result = CLIS_OK;
 
 	heritage.socket = -1;
 	memset(&param, 0, sizeof param);
 	params = &param;
 	mgt_vcc_init(); 
 
-	MCF_ParamInit();
+	MCF_ParamInit(cli);
+	cli_check(cli);
 
 	while ((o = getopt(argc, argv, "a:b:df:h:s:t:T:Vw:")) != -1)
 		switch (o) {
@@ -398,19 +418,9 @@ main(int argc, char *argv[])
 	setup_storage(s_arg);
 	setup_hash(h_flag);
 
-	if (a_arg != NULL) {
-		if (TCP_parse(a_arg, &addr, &port) != 0) {
-			fprintf(stderr, "invalid listen address\n");
-			exit (2);
-		}
-		free(params->listen_address);
-		free(params->listen_host);
-		free(params->listen_port);
-		params->listen_address = strdup(a_arg);
-		AN(params->listen_address);
-		params->listen_host = addr;
-		params->listen_port = port;
-	}
+	if (a_arg != NULL)
+		MCF_ParamSet(cli, "listen_address", a_arg);
+	cli_check(cli);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
