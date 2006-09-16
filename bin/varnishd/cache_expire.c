@@ -113,7 +113,7 @@ exp_prefetch(void *arg)
 	sp = SES_New(NULL, 0);
 	XXXAN(sp);
 	sleep(10);		/* Takes time for VCL to arrive */
-	sp->vcl = VCL_Get();
+	VCL_Get(&sp->vcl);
 	t = time(NULL);
 	while (1) {
 		LOCK(&exp_mtx);
@@ -122,9 +122,9 @@ exp_prefetch(void *arg)
 			CHECK_OBJ(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
 			UNLOCK(&exp_mtx);
-			VCL_Rel(sp->vcl);
+			VCL_Rel(&sp->vcl);
 			AZ(sleep(1));
-			sp->vcl = VCL_Get();
+			VCL_Get(&sp->vcl);
 			t = time(NULL);
 			continue;
 		}
