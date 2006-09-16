@@ -284,7 +284,7 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->vbc);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
-		sp->acct.fetch++;
+		sp->wrk->acct.fetch++;
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -304,7 +304,7 @@ cnt_first(struct sess *sp)
 	assert(sp->xid == 0);
 	VCA_Prep(sp);
 	sp->wrk->idle = sp->t_open.tv_sec;
-	sp->acct.sess++;
+	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do 
 		i = http_RecvSome(sp->fd, sp->http);
@@ -583,7 +583,7 @@ static int
 cnt_passbody(struct sess *sp)
 {
 
-	sp->acct.pass++;
+	sp->wrk->acct.pass++;
 	AN(sp->vbc);
 	PassBody(sp);
 	AZ(sp->vbc);
@@ -610,7 +610,7 @@ static int
 cnt_pipe(struct sess *sp)
 {
 
-	sp->acct.pipe++;
+	sp->wrk->acct.pipe++;
 	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
@@ -662,7 +662,7 @@ cnt_recv(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->vbc);
 
-	sp->acct.req++;
+	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->http, sp->fd);
 	if (done != 0) {
 		RES_Error(sp, done, NULL);
