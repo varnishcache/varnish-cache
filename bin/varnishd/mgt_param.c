@@ -316,6 +316,10 @@ tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 	"\nNB: This parameter will not take any effect until the " \
 	"child process has been restarted.\n"
 
+#define EXPERIMENTAL \
+	"\nNB: We don't know yet if it is a good idea to change " \
+	"this parameter.  Caution adviced.\n"
+
 
 static struct parspec parspec[] = {
 	{ "default_ttl", tweak_default_ttl,
@@ -327,28 +331,37 @@ static struct parspec parspec[] = {
 		"flush of the cache use \"url.purge .\"",
 		"120", "seconds" },
 	{ "thread_pools", tweak_thread_pools,
-		"Number of thread pools.\n",
+		"Number of worker pools. "
+		"Increasing number of worker pools decreases lock "
+		"contention but increases the number of threads as well. "
+		"Can be increased on the fly, but decreases require a "
+		"restart to take effect.\n"
+		EXPERIMENTAL,
 		"1", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max,
-		"The maximum number of threads in the worker pool.\n"
+		"The maximum number of threads in the total worker pool.\n"
 		"-1 is unlimited.\n"
+		EXPERIMENTAL
 		DELAYED_EFFECT,
-		"-1", "threads" },
+		"1000", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min,
 		"The minimum number of threads in the worker pool.\n"
-		DELAYED_EFFECT
-		"Minimum is 1 thread. ",
+		"Minimum is 1 thread. "
+		EXPERIMENTAL
+		DELAYED_EFFECT,
 		"1", "threads" },
 	{ "thread_pool_timeout", tweak_thread_pool_timeout,
 		"Thread dies after this many seconds of inactivity.\n"
-		"Minimum is 1 second. ",
+		"Minimum is 1 second. "
+		EXPERIMENTAL
+		DELAYED_EFFECT,
 		"120", "seconds" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
-		SHOULD_RESTART
-		"Minimum is 1024 bytes. ",
+		"Minimum is 1024 bytes. "
+		DELAYED_EFFECT,
 		"8192", "bytes" },
 	{ "sess_timeout", tweak_sess_timeout,
 		"Idle timeout for persistent sessions. "
@@ -357,30 +370,52 @@ static struct parspec parspec[] = {
 		"5", "seconds" },
 	{ "pipe_timeout", tweak_pipe_timeout,
 		"Idle timeout for PIPE sessions. "
-		"If nothing have been received in either directoin for "
+		"If nothing have been received in either direction for "
 	        "this many seconds, the session is closed.\n",
 		"60", "seconds" },
 	{ "send_timeout", tweak_send_timeout,
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
-		DELAYED_EFFECT
-		"See getopt(3) under SO_SNDTIMEO for more information.\n",
+		"See getopt(3) under SO_SNDTIMEO for more information.\n"
+		DELAYED_EFFECT,
 		"600", "seconds" },
 	{ "auto_restart", tweak_auto_restart,
-		"Restart child process automatically if it dies.\n"
-		"Minimum is 4 kilobytes.\n",
+		"Restart child process automatically if it dies.\n",
 		"on", "bool" },
 	{ "fetch_chunksize", tweak_fetch_chunksize,
-		"The default chunksize used by fetcher.\n",
+		"The default chunksize used by fetcher. "
+		"This should be bigger than the majority of objects with "
+		"short TTLs.\n"
+		"Internal limits in the storage_file module makes increases "
+		"above 128kb a dubious idea.\n"
+		EXPERIMENTAL,
 		"128", "kilobytes" },
 #ifdef HAVE_SENDFILE
 	{ "sendfile_threshold", tweak_sendfile_threshold,
-		"The minimum size of objects transmitted with sendfile.\n",
+		"The minimum size of objects transmitted with sendfile.\n"
+#if defined(__FreeBSD__)
+		"In \"plenty-of-RAM\" scenarios this is unlikely to "
+		"have any effect.  Once disk-I/O becomes frequent "
+		"we guess smaller values are likely to be better.\n"
+#elif defined(__Linux__)
+		"Linux sendfile(2) does not allow for inclusion of "
+		"header data and therefore using sendfile(2) means "
+		"an extra system call, compared to using writev(2) for "
+		"both the header and body.\n"
+		"We suspect that sendfile(2) on Linux will only start "
+		"to be beneficial in low-ram scenarios.  Therefore it "
+		"may make sense to set this to \"unlimited\".\n"
+#endif
+		EXPERIMENTAL,
 		"8192", "bytes" },
 #endif /* HAVE_SENDFILE */
 	{ "vcl_trace", tweak_vcl_trace,
-		"Trace VCL execution in the shmlog\n",
+		"Trace VCL execution in the shmlog.\n"
+		"Enabling this will allow you to see the path each "
+		"request has taken through the VCL program.\n"
+		"This generates a lot of logrecords so it is off by "
+		"default. ",
 		"off", "bool" },
 	{ "listen_address", tweak_listen_address,
 		"The network address/port where Varnish services requests.\n"
@@ -388,16 +423,22 @@ static struct parspec parspec[] = {
 		"0.0.0.0:80" },
 	{ "listen_depth", tweak_listen_depth,
 		"Listen(2) queue depth.\n"
+#if defined(__FreeBSD__)
+		"Please see FreeBSDs tuning(7) manual page for more "
+		"information.\n"
+#endif
 		MUST_RESTART,
 		"1024", "connections" },
 	{ "srcaddr_hash", tweak_srcaddr_hash,
 		"Number of source address hash buckets.\n"
 		"Powers of two are bad, prime numbers are good.\n"
+		EXPERIMENTAL
 		MUST_RESTART,
 		"1049", "buckets" },
 	{ "srcaddr_ttl", tweak_srcaddr_ttl,
 		"Lifetime of srcaddr entries.\n"
-		"Zero will disable srcaddr accounting.\n",
+		"Zero will disable srcaddr accounting entirely.\n"
+		EXPERIMENTAL,
 		"30", "seconds" },
 	{ NULL, NULL, NULL }
 };
