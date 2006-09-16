@@ -445,6 +445,9 @@ int RFC2616_cache_policy(struct sess *sp, struct http *hp);
 #define LOCK(foo)		AZ(pthread_mutex_lock(foo))
 #define UNLOCK(foo)		AZ(pthread_mutex_unlock(foo))
 #else
+#define MTX			pthread_mutex_t
+#define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
+#define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
 #define LOCK(foo) 					\
 do { 							\
 	if (pthread_mutex_trylock(foo)) {		\
@@ -452,17 +455,18 @@ do { 							\
 		    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
 		    __func__, __FILE__, __LINE__);	\
 		AZ(pthread_mutex_lock(foo)); 		\
-	} else {					\
+	} else if (1) {					\
 		VSL(SLT_Debug, 0,			\
-		    "MTX_LOCK(%s,%s,%d," #foo ")",		\
+		    "MTX_LOCK(%s,%s,%d," #foo ")",	\
 		    __func__, __FILE__, __LINE__); 	\
 	}						\
 } while (0);
 #define UNLOCK(foo)					\
 do {							\
 	AZ(pthread_mutex_unlock(foo));			\
-	VSL(SLT_Debug, 0,				\
-	    "MTX_UNLOCK(%s,%s,%d," #foo ")",		\
-	    __func__, __FILE__, __LINE__);		\
+	if (1)						\
+		VSL(SLT_Debug, 0,			\
+		    "MTX_UNLOCK(%s,%s,%d," #foo ")",	\
+		    __func__, __FILE__, __LINE__);	\
 } while (0);
 #endif
