@@ -160,7 +160,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishncsa [-V] [-w file] [-r file]\n");
+	fprintf(stderr, "usage: varnishncsa %s [-aV] [-w file]\n", VSL_ARGS);
 	exit(1);
 }
 
@@ -169,32 +169,52 @@ main(int argc, char **argv)
 {
 	int i, c;
 	struct VSL_data *vd;
+	const char *ofn = NULL;
+	FILE *of = stdout;
+	int append = 0;
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aVw:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
 		if (i > 0)
 			continue;
 		switch (c) {
+		case 'a':
+			append = 1;
+			break;
 		case 'V':
 			varnish_version("varnishncsa");
 			exit(0);
+		case 'w':
+			ofn = optarg;
+			break;
 		default:
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
 			usage();
 		}
 	}
 
 	if (VSL_OpenLog(vd))
-		exit (1);
+		exit(1);
 
-	while (1) {
-		i = VSL_Dispatch(vd, extended_log_format, stdout);
-		if (i < 0)
-			break;
+	if (ofn && (of = fopen(ofn, append ? "a" : "w")) == NULL) {
+		perror(ofn);
+		exit(1);
+	} else {
+		ofn = "stdout";
 	}
-	return (0);
+
+	while (VSL_Dispatch(vd, extended_log_format, of) == 0) {
+		if (fflush(of) != 0) {
+			perror(ofn);
+			exit(1);
+		}
+	}
+
+	exit(0);
 }
 
