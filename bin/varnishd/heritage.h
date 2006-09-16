@@ -61,6 +61,9 @@ struct params {
 	char			*listen_address;
 	char			*listen_host;
 	char			*listen_port;
+
+	/* Listen depth */
+	unsigned		listen_depth;
 };
 
 extern struct params *params;
