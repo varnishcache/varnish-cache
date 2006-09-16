@@ -286,7 +286,7 @@ static void
 tweak_srcaddr_hash(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_uint(cli, &params->srcaddr_hash, arg, 64, UINT_MAX);
+	tweak_generic_uint(cli, &params->srcaddr_hash, arg, 63, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -392,10 +392,12 @@ static struct parspec parspec[] = {
 		"1024", "connections" },
 	{ "srcaddr_hash", tweak_srcaddr_hash,
 		"Number of source address hash buckets.\n"
+		"Powers of two are bad, prime numbers are good.\n"
 		MUST_RESTART,
-		"1024", "buckets" },
+		"1049", "buckets" },
 	{ "srcaddr_ttl", tweak_srcaddr_ttl,
-		"Lifetime of srcaddr entries.\n",
+		"Lifetime of srcaddr entries.\n"
+		"Zero will disable srcaddr accounting.\n",
 		"30", "seconds" },
 	{ NULL, NULL, NULL }
 };
