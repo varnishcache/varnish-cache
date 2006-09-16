@@ -15,8 +15,8 @@ int base64_decode(char *d, unsigned dlen, const char *s);
 typedef int vsl_handler(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-#define VSL_ARGS	"bcdr:i:x:CI:X:"
-#define VSL_USAGE	"[-bcCd] [-r file] [-i tag] [-x tag] [-I regexp] [-X regexp]"
+#define VSL_ARGS	"bCcdI:i:r:X:x:"
+#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-r file] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;
 struct VSL_data;
 struct VSL_data *VSL_New(void);
