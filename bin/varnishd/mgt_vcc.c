@@ -245,7 +245,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 	}
 	vsb_delete(sb);
 	if (child_pid >= 0 &&
-	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
 		free(p);
@@ -276,7 +276,7 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 	}
 	vsb_delete(sb);
 	if (child_pid >= 0 &&
-	    mgt_cli_askchild(&status, &p, "config.load %s %s\n", av[2], vf)) {
+	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
 		free(p);
@@ -311,7 +311,7 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active == 0) {
 		if (child_pid >= 0 &&
-		    mgt_cli_askchild(&status, &p, "config.use %s\n", av[2])) {
+		    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
 			cli_result(cli, status);
 			cli_out(cli, "%s", p);
 			free(p);
@@ -342,7 +342,7 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 	} else if (vp != NULL) {
 		if (child_pid >= 0 &&
 		    mgt_cli_askchild(&status, &p,
-		    "config.discard %s\n", av[2])) {
+		    "vcl.discard %s\n", av[2])) {
 			cli_result(cli, status);
 			cli_out(cli, "%s", p);
 			free(p);
@@ -362,7 +362,7 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
 	(void)av;
 	(void)priv;
 	if (child_pid >= 0) {
-		mgt_cli_askchild(&status, &p, "config.list\n");
+		mgt_cli_askchild(&status, &p, "vcl.list\n");
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
 		free(p);
