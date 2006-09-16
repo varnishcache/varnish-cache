@@ -145,6 +145,8 @@ usage(void)
 	    "  -h classic,<buckets>");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>,<buckets_per_mutex>");
+	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
+	    "set parameter");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-s kind[,storageoptions]", "Backend storage specification");
 	fprintf(stderr, "    %-28s # %s\n", "",
@@ -334,12 +336,12 @@ main(int argc, char *argv[])
 {
 	int o;
 	unsigned d_flag = 0;
-	const char *a_arg = NULL;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_flag = "classic";
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
+	char *p;
 	struct params param;
 	struct cli cli[1];
 
@@ -359,10 +361,11 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:df:h:s:t:T:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:df:h:p:s:t:T:Vw:")) != -1)
 		switch (o) {
 		case 'a':
-			a_arg = optarg;
+			MCF_ParamSet(cli, "listen_address", optarg);
+			cli_check(cli);
 			break;
 		case 'b':
 			b_arg = optarg;
@@ -375,6 +378,14 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			h_flag = optarg;
+			break;
+		case 'p':
+			p = strchr(optarg, '=');
+			if (p == NULL)
+				usage();
+			*p++ = '\0';
+			MCF_ParamSet(cli, optarg, p);
+			cli_check(cli);
 			break;
 		case 's':
 			s_arg = optarg;
@@ -417,10 +428,6 @@ main(int argc, char *argv[])
 
 	setup_storage(s_arg);
 	setup_hash(h_flag);
-
-	if (a_arg != NULL)
-		MCF_ParamSet(cli, "listen_address", a_arg);
-	cli_check(cli);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
