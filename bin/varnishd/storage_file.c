@@ -187,6 +187,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		    "  Specifiy explicit size to override.\n"
 		);
 		l = INT32_MAX;
+		l -= (l % bs);
 	}
 
 	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
