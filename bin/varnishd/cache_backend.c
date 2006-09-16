@@ -62,8 +62,10 @@ vbe_lookup(struct backend *bp)
 	struct addrinfo *res, hint;
 	int error;
 
-	if (bp->addr != NULL)
+	if (bp->addr != NULL) {
 		freeaddrinfo(bp->addr);
+		bp->addr = NULL;
+	}
 
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
