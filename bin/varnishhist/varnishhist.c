@@ -145,7 +145,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishhist");
+	    "usage: varnishhist %s [-V] [-w delay]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -157,8 +157,11 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 	
-	while ((c = getopt(argc, argv, VSL_ARGS "w:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (c) {
+		case 'V':
+			varnish_version("varnishhist");
+			exit(0);
 		case 'w':
 			delay = atoi(optarg);
 			break;
