@@ -197,7 +197,6 @@ wrk_thread(void *priv)
 			w->wrq = TAILQ_FIRST(&qp->req);
 			AN(w->wrq);
 			TAILQ_REMOVE(&qp->req, w->wrq, list);
-			VSL_stats->n_wrk_queue--;
 			UNLOCK(&qp->mtx);
 			wrk_do_one(w);
 			LOCK(&qp->mtx);
@@ -257,11 +256,11 @@ WRK_QueueSession(struct sess *sp)
 	}
 	
 	TAILQ_INSERT_TAIL(&qp->req, &sp->workreq, list);
-	VSL_stats->n_wrk_queue++;
 	qp->overflow++;
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
+	VSL_stats->n_wrk_queue++;
 	/* Can we create more threads ? */
 	if (VSL_stats->n_wrk >= params->wthread_max) {
 		VSL_stats->n_wrk_max++;
