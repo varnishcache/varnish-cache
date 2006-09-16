@@ -22,6 +22,8 @@
 #endif
 
 #include "mgt.h"
+#include "cli.h"
+#include "cli_priv.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -107,6 +109,27 @@ TCP_parse(const char *str, char **addr, char **port)
 		}
 	}
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+TCP_check(struct cli *cli, const char *addr, const char *port)
+{
+	struct addrinfo hints, *res;
+	int ret;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	ret = getaddrinfo(addr, port, &hints, &res);
+	if (ret == 0) {
+		freeaddrinfo(res);
+		return;
+	}
+	cli_out(cli, "getaddrinfo(%s, %s): %s\n",
+	    addr, port, gai_strerror(ret));
+	cli_result(cli, CLIS_PARAM);
 }
 
 int

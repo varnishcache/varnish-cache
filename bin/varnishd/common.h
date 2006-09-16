@@ -2,6 +2,7 @@
  * $Id$
  */
 
+struct cli;
 struct sockaddr;
 
 /* shmlog.c */
@@ -17,3 +18,5 @@ void TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char
 void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_parse(const char *str, char **addr, char **port);
 int TCP_open(const char *addr, const char *port, int http);
+void TCP_check(struct cli *cli, const char *addr, const char *port);
+

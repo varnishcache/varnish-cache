@@ -7,6 +7,8 @@
 
 #include "libvarnish.h"
 
+struct cli;
+
 extern struct evbase	*mgt_evb;
 
 /* mgt_child.c */
@@ -23,7 +25,8 @@ void mgt_cli_stop_child(void);
 int mgt_cli_telnet(const char *T_arg);
 
 /* mgt_param.c */
-void MCF_ParamInit(void);
+void MCF_ParamInit(struct cli *);
+void MCF_ParamSet(struct cli *, const char *param, const char *val);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
