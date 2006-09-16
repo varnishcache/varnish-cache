@@ -70,6 +70,7 @@ CLI_Init(void)
 	buf = malloc(lbuf);
 	XXXAN(buf);
 	nbuf = 0;
+	printf("CLI ready\n");
 	while (1) {
 		pfd[0].fd = heritage.fds[2];
 		pfd[0].events = POLLIN;

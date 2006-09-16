@@ -29,7 +29,7 @@
 
 static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
-static pthread_mutex_t	vbemtx;
+static MTX vbemtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -293,5 +293,5 @@ void
 VBE_Init(void)
 {
 
-	AZ(pthread_mutex_init(&vbemtx, NULL));
+	MTX_INIT(&vbemtx);
 }

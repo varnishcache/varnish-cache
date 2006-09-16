@@ -29,7 +29,7 @@
 #include "cli_priv.h"
 #include "cache.h"
 
-static pthread_mutex_t wrk_mtx;
+static MTX wrk_mtx;
 
 /* Number of work requests queued in excess of worker threads available */
 static unsigned		wrk_overflow;
@@ -312,7 +312,7 @@ WRK_Init(void)
 	pthread_t tp;
 	int i;
 
-	AZ(pthread_mutex_init(&wrk_mtx, NULL));
+	MTX_INIT(&wrk_mtx);
 
 	AZ(pthread_create(&tp, NULL, wrk_reaperthread, NULL));
 	AZ(pthread_detach(tp));

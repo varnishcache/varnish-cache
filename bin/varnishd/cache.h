@@ -439,8 +439,11 @@ int RFC2616_cache_policy(struct sess *sp, struct http *hp);
 #define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
 
 #if 1
-#define LOCK(foo)	AZ(pthread_mutex_lock(foo))
-#define UNLOCK(foo)	AZ(pthread_mutex_unlock(foo))
+#define MTX			pthread_mutex_t
+#define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
+#define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
+#define LOCK(foo)		AZ(pthread_mutex_lock(foo))
+#define UNLOCK(foo)		AZ(pthread_mutex_unlock(foo))
 #else
 #define LOCK(foo) 					\
 do { 							\

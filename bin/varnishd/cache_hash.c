@@ -60,7 +60,7 @@ HSH_Lookup(struct sess *sp)
 		XXXAN(w->nobjhead);
 		w->nobjhead->magic = OBJHEAD_MAGIC;
 		TAILQ_INIT(&w->nobjhead->objects);
-		AZ(pthread_mutex_init(&w->nobjhead->mtx, NULL));
+		MTX_INIT(&w->nobjhead->mtx);
 		VSL_stats->n_objecthead++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
@@ -209,7 +209,7 @@ HSH_Deref(struct object *o)
 	if (hash->deref(oh))
 		return;
 	assert(TAILQ_EMPTY(&oh->objects));
-	AZ(pthread_mutex_destroy(&oh->mtx));
+	MTX_DESTROY(&oh->mtx);
 	VSL_stats->n_objecthead--;
 	free(oh);
 }

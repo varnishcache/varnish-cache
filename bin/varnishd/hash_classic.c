@@ -31,7 +31,7 @@ struct hcl_hd {
 	unsigned		magic;
 #define HCL_HEAD_MAGIC		0x0f327016
 	TAILQ_HEAD(, hcl_entry)	head;
-	pthread_mutex_t		mtx;
+	MTX			mtx;
 };
 
 static unsigned			hcl_nhash = 16383;
@@ -79,7 +79,7 @@ hcl_start(void)
 
 	for (u = 0; u < hcl_nhash; u++) {
 		TAILQ_INIT(&hcl_head[u].head);
-		AZ(pthread_mutex_init(&hcl_head[u].mtx, NULL));
+		MTX_INIT(&hcl_head[u].mtx);
 		hcl_head[u].magic = HCL_HEAD_MAGIC;
 	}
 }

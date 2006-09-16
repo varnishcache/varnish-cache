@@ -27,7 +27,7 @@
 struct varnish_stats *VSL_stats;
 static struct shmloghead *loghead;
 static unsigned char *logstart;
-static pthread_mutex_t vsl_mtx;
+static MTX vsl_mtx;
 
 /*
  * This variant copies a byte-range directly to the log, without
@@ -135,7 +135,7 @@ VSL_Init(void)
 	assert(loghead->hdrsize == sizeof *loghead);
 	/* XXX more check sanity of loghead  ? */
 	logstart = (unsigned char *)loghead + loghead->start;
-	AZ(pthread_mutex_init(&vsl_mtx, NULL));
+	MTX_INIT(&vsl_mtx);
 	loghead->starttime = time(NULL);
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 }

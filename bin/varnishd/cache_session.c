@@ -57,9 +57,9 @@ static unsigned ses_qp;
 
 TAILQ_HEAD(srcaddrhead ,srcaddr);
 static struct srcaddrhead	srcaddr_hash[CLIENT_HASH];
-static pthread_mutex_t		ses_mtx;
-static pthread_mutex_t		stat_mtx;
-static pthread_mutex_t		ses_mem_mtx;
+static MTX			ses_mtx;
+static MTX			stat_mtx;
+static MTX			ses_mem_mtx;
 
 /*--------------------------------------------------------------------
  * Assign a srcaddr to this session.
@@ -288,7 +288,7 @@ SES_Init()
 
 	for (i = 0; i < CLIENT_HASH; i++)
 		TAILQ_INIT(&srcaddr_hash[i]);
-	AZ(pthread_mutex_init(&ses_mtx, NULL));
-	AZ(pthread_mutex_init(&stat_mtx, NULL));
-	AZ(pthread_mutex_init(&ses_mem_mtx, NULL));
+	MTX_INIT(&ses_mtx);
+	MTX_INIT(&stat_mtx);
+	MTX_INIT(&ses_mem_mtx);
 }

@@ -37,7 +37,7 @@ static TAILQ_HEAD(, vcls)	vcl_head =
 
 static struct vcls		*vcl_active; /* protected by vcl_mtx */
 
-static pthread_mutex_t		vcl_mtx;
+static MTX			vcl_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -284,5 +284,5 @@ void
 VCL_Init()
 {
 
-	AZ(pthread_mutex_init(&vcl_mtx, NULL));
+	MTX_INIT(&vcl_mtx);
 }
