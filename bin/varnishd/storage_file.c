@@ -147,23 +147,26 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 			}
 		}
 
+		/*
+		 * This trickery wouldn't be necessary if X/Open would
+		 * just add OFF_MAX to <limits.h>...
+		 */
 		o = l;
 		if (o != l || o < 0) {
-			fprintf(stderr,
-			    "Warning: size reduced to system limit (off_t)\n");
 			do {
 				l >>= 1;
 				o = l;
 			} while (o != l || o < 0);
+			fprintf(stderr, "WARNING: storage file size reduced"
+			    " to %ju due to system limitations\n", l);
 		}
 
 		if (l < st.st_size) {
 			AZ(ftruncate(sc->fd, l));
 		} else if (l - st.st_size > fsst.f_bsize * fsst.f_bavail) {
-			fprintf(stderr,
-			    "Warning: size larger than filesystem free space,"
-			    " reduced to 80%% of free space.\n");
-			l = (fsst.f_bsize * fsst.f_bavail * 80) / 100;
+			l = ((uintmax_t)fsst.f_bsize * fsst.f_bavail * 80) / 100;
+			fprintf(stderr, "WARNING: storage file size reduced"
+			    " to %ju (80%% of available disk space)\n", l);
 		}
 	}
 
@@ -177,13 +180,13 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		exit (2);
 	}
 
-	if (expl < 3 && sizeof(void *) == 4 && l > (1ULL << 31)) {
+	if (expl < 3 && sizeof(void *) == 4 && l > INT32_MAX) {
 		fprintf(stderr,
 		    "NB: Limiting size to 2GB on 32 bit architecture to"
 		    " prevent running out of\naddress space."
 		    "  Specifiy explicit size to override.\n"
 		);
-		l = 1ULL << 31;
+		l = INT32_MAX;
 	}
 
 	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
