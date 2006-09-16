@@ -49,7 +49,7 @@ pass_straight(struct sess *sp, int fd, struct http *hp, char *bi)
 			vca_close_session(sp, "backend closed");
 			return (1);
 		}
-		sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
+		sp->acct.bodybytes += WRK_Write(sp->wrk, buf, i);
 		if (WRK_Flush(sp->wrk))
 			vca_close_session(sp, "remote closed");
 		cl -= i;
@@ -104,7 +104,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 
 		/* we just received the final zero-length chunk */
 		if (u == 0) {
-			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, q - p);
+			sp->acct.bodybytes += WRK_Write(sp->wrk, p, q - p);
 			break;
 		}
 
@@ -118,7 +118,7 @@ pass_chunked(struct sess *sp, int fd, struct http *hp)
 			j = u;
 			if (bp - p < j)
 				j = bp - p;
-			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk, p, j);
+			sp->acct.bodybytes += WRK_Write(sp->wrk, p, j);
 			WRK_Flush(sp->wrk);
 			p += j;
 			assert(u >= j);
@@ -164,7 +164,7 @@ PassBody(struct sess *sp)
 	if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
 		http_PrintfHeader(sp->fd, sp->http, "Transfer-Encoding: chunked");
 	WRK_Reset(sp->wrk, &sp->fd);
-	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
+	sp->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
 	if (http_GetHdr(vc->http, H_Content_Length, &b))
 		cls = pass_straight(sp, vc->fd, vc->http, b);
