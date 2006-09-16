@@ -222,6 +222,12 @@ wrk_thread(void *priv)
 		VCL_Rel(&w->vcl);
 	close(w->pipe[0]);
 	close(w->pipe[1]);
+	if (w->srcaddr != NULL)
+		free(w->srcaddr);
+	if (w->nobjhead != NULL)
+		free(w->nobjhead);
+	if (w->nobj!= NULL)
+		free(w->nobj);
 	return (NULL);
 }
 

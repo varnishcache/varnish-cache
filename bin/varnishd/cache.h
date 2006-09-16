@@ -113,6 +113,7 @@ struct worker {
 	size_t			liov;
 
 	struct VCL_conf		*vcl;
+	struct srcaddr		*srcaddr;
 };
 
 struct workreq {
