@@ -102,6 +102,13 @@ start_child(void)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
+	if (heritage.socket < 0) {
+		heritage.socket =
+		    TCP_open(params->listen_host, params->listen_port, 1);
+		if (heritage.socket < 0)
+			return;
+	}
+
 	child_state = CH_STARTING;
 
 	AZ(pipe(&heritage.fds[0]));
@@ -179,6 +186,8 @@ stop_child(void)
 	if (child_state != CH_RUNNING)
 		return;
 
+	close(heritage.socket);
+	heritage.socket = -1;
 	child_state = CH_STOPPING;
 
 	if (ev_poker != NULL) {
@@ -249,8 +258,11 @@ mgt_sigchld(struct ev *e, int what)
 
 	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
-	else if (child_state == CH_DIED)
+	else if (child_state == CH_DIED) {
+		close(heritage.socket);
+		heritage.socket = -1;
 		child_state = CH_STOPPED;
+	}
 	else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
 	return (0);

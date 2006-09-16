@@ -249,9 +249,41 @@ tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
 			return;
 		}
 	}
-	cli_out(cli, params->vcl_trace ? "on" : "off");
+	if (cli == NULL)
+		return;
+	cli_out(cli, params->vcl_trace ? "on\n" : "off\n");
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
+{
+	char *a, *p;
+
+	(void)par;
+	if (arg != NULL) {
+		if (TCP_parse(arg, &a, &p) != 0) {
+			cli_out(cli, "Invalid listen address");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		free(params->listen_address);
+		free(params->listen_host);
+		free(params->listen_port);
+		params->listen_address = strdup(arg);
+		AN(params->listen_address);
+		params->listen_host = a;
+		if (p == NULL) {
+			p = strdup("http");
+			AN(p);
+		}
+		params->listen_port = p;
+	}
+	if (cli == NULL)
+		return;
+	cli_out(cli, "%s", params->listen_address);
+}
 /*--------------------------------------------------------------------*/
 
 /*
@@ -332,6 +364,10 @@ static struct parspec parspec[] = {
 	{ "vcl_trace", tweak_vcl_trace,
 		"Trace VCL execution in the shmlog\n"
 		"Default is off", "off" },
+	{ "listen_address", tweak_listen_address,
+		"The network address/port where Varnish services requests.\n"
+		MUST_RESTART
+		"Default is \"0.0.0.0:80\"", "0.0.0.0:80" },
 	{ NULL, NULL, NULL }
 };
 

@@ -321,7 +321,7 @@ main(int argc, char *argv[])
 	int o;
 	unsigned d_flag = 0;
 	char *addr, *port;
-	const char *a_arg = "0.0.0.0:http";
+	const char *a_arg = NULL;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_flag = "classic";
@@ -332,6 +332,7 @@ main(int argc, char *argv[])
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	heritage.socket = -1;
 	memset(&param, 0, sizeof param);
 	params = &param;
 	mgt_vcc_init(); 
@@ -397,20 +398,19 @@ main(int argc, char *argv[])
 	setup_storage(s_arg);
 	setup_hash(h_flag);
 
-	/*
-	 * XXX: Lacking the suspend/resume facility (due to the socket API
-	 * missing an unlisten(2) facility) we may want to push this into
-	 * the child to limit the amount of time where the socket(s) exists
-	 * but do not answer.  That, on the other hand, would eliminate the
-	 * possibility of doing a "no-glitch" restart of the child process.
-	 */
-	if (TCP_parse(a_arg, &addr, &port) != 0)
-		fprintf(stderr, "invalid listen address\n");
-	heritage.socket = TCP_open(addr, port ? port : "http", 1);
-	free(addr);
-	free(port);
-	if (heritage.socket < 0)
-		exit (2);
+	if (a_arg != NULL) {
+		if (TCP_parse(a_arg, &addr, &port) != 0) {
+			fprintf(stderr, "invalid listen address\n");
+			exit (2);
+		}
+		free(params->listen_address);
+		free(params->listen_host);
+		free(params->listen_port);
+		params->listen_address = strdup(a_arg);
+		AN(params->listen_address);
+		params->listen_host = addr;
+		params->listen_port = port;
+	}
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
