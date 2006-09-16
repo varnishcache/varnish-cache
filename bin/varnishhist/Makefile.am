@@ -4,7 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishhist
 
-# dist_man_MANS = varnishlog.1
+dist_man_MANS = varnishhist.1
 
 varnishhist_SOURCES = varnishhist.c
 
