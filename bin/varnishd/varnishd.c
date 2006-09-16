@@ -359,7 +359,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:df:h:p:s:t:T:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:df:h:p:s:T:t:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
