@@ -143,8 +143,6 @@ usage(void)
 	    "  -h classic  [default]");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -h classic,<buckets>,<buckets_per_mutex>");
 	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
 	    "set parameter");
 	fprintf(stderr, "    %-28s # %s\n",
