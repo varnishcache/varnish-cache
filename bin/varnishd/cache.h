@@ -112,7 +112,6 @@ struct worker {
 	unsigned		niov;
 	size_t			liov;
 
-	struct acct		acct;
 	struct VCL_conf		*vcl;
 };
 

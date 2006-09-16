@@ -198,11 +198,9 @@ ses_sum_acct(struct acct *sum, struct acct *inc)
 void
 SES_Charge(struct sess *sp)
 {
-	struct acct *a = &sp->wrk->acct;
+	struct acct *a = &sp->acct;
 	struct acct *b;
 
-	ses_sum_acct(&sp->acct, a);
-	
 	if (sp->srcaddr != NULL) {
 		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 		LOCK(&sp->srcaddr->sah->mtx);
