@@ -114,6 +114,7 @@ struct worker {
 
 	struct VCL_conf		*vcl;
 	struct srcaddr		*srcaddr;
+	struct acct		acct;
 };
 
 struct workreq {

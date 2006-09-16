@@ -195,19 +195,20 @@ ses_sum_acct(struct acct *sum, struct acct *inc)
 void
 SES_Charge(struct sess *sp)
 {
-	struct acct *a = &sp->acct;
-	struct acct *b;
+	struct acct *a = &sp->wrk->acct;
+	struct acct b;
 
+	ses_sum_acct(&sp->acct, a);
 	if (sp->srcaddr != NULL) {
 		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 		LOCK(&sp->srcaddr->sah->mtx);
-		b = &sp->srcaddr->acct;
-		ses_sum_acct(b, a);
-		VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
-		    sp->srcaddr->addr, sp->t_end.tv_sec - b->first,
-		    b->sess, b->req, b->pipe, b->pass,
-		    b->fetch, b->hdrbytes, b->bodybytes);
+		ses_sum_acct(&sp->srcaddr->acct, a);
+		b = sp->srcaddr->acct;
 		UNLOCK(&sp->srcaddr->sah->mtx);
+		VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
+		    sp->srcaddr->addr, sp->t_end.tv_sec - b.first,
+		    b.sess, b.req, b.pipe, b.pass,
+		    b.fetch, b.hdrbytes, b.bodybytes);
 	}
 	LOCK(&stat_mtx);
 	VSL_stats->s_sess += a->sess;
