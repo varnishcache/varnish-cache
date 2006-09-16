@@ -16,8 +16,8 @@
 .Op Fl h Ar type Ns Op , Ns Ar options
 .Op Fl p Ar param Ns = Ns Ar value
 .Op Fl s Ar type Ns Op , Ns Ar options
-.Op Fl t Ar ttl
 .Op Fl T Ar address Ns Op : Ns Ar port
+.Op Fl t Ar ttl
 .Op Fl V
 .Op Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
 .Sh DESCRIPTION
@@ -78,8 +78,6 @@ Use the specified storage backend.
 See
 .Sx Storage Types
 for a list of supported storage types.
-.It Fl t Ar ttl
-Specifies a hard minimum time to live for cached documents.
 .It Fl T Ar address Ns Op : Ns Ar port
 Offer a management interface on the specified
 .Ar address
@@ -88,6 +86,8 @@ and
 See
 .Sx Management Interface
 for a list of management commands.
+.It Fl t Ar ttl
+Specifies a hard minimum time to live for cached documents.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
