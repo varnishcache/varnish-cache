@@ -105,6 +105,10 @@ SES_RefSrcAddr(struct sess *sp)
 	ch = &srchash[v];
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
 	now = sp->t_open.tv_sec;
+	if (sp->wrk->srcaddr == NULL) {
+		sp->wrk->srcaddr = calloc(sizeof *sp->wrk->srcaddr, 1);
+		XXXAN(sp->wrk->srcaddr);
+	}
 
 	LOCK(&ch->mtx);
 	c3 = NULL;
@@ -117,45 +121,38 @@ SES_RefSrcAddr(struct sess *sp)
 			sp->srcaddr = c;
 			TAILQ_REMOVE(&ch->head, c, list);
 			TAILQ_INSERT_TAIL(&ch->head, c, list);
-			if (0 && c3 != NULL) {
+			if (c3 != NULL) {
 				TAILQ_REMOVE(&ch->head, c3, list);
 				VSL_stats->n_srcaddr--;
-				free(c3);
 			}
 			UNLOCK(&ch->mtx);
+			if (c3 != NULL)
+				free(c3);
 			return;
 		}
 		if (c->nref > 0 || c->ttl > now)
 			continue;
-		if (c3 == NULL) {
+		if (c3 == NULL)
 			c3 = c;
-			continue;
-		}
-		TAILQ_REMOVE(&ch->head, c, list);
-		free(c);
-		VSL_stats->n_srcaddr--;
 	}
 	if (c3 == NULL) {
-		c3 = malloc(sizeof *c3);
-		XXXAN(c3);
-		if (c3 != NULL)
-			VSL_stats->n_srcaddr++;
+		c3 = sp->wrk->srcaddr;
+		sp->wrk->srcaddr = NULL;
+		VSL_stats->n_srcaddr++;
 	} else
 		TAILQ_REMOVE(&ch->head, c3, list);
 	AN(c3);
-	if (c3 != NULL) {
-		memset(c3, 0, sizeof *c3);
-		strcpy(c3->addr, sp->addr);
-		c3->magic = SRCADDR_MAGIC;
-		c3->hash = u;
-		c3->acct.first = now;
-		c3->ttl = now + params->srcaddr_ttl;
-		c3->nref = 1;
-		c3->sah = ch;
-		VSL_stats->n_srcaddr_act++;
-		TAILQ_INSERT_TAIL(&ch->head, c3, list);
-		sp->srcaddr = c3;
-	}
+	memset(c3, 0, sizeof *c3);
+	c3->magic = SRCADDR_MAGIC;
+	strcpy(c3->addr, sp->addr);
+	c3->hash = u;
+	c3->acct.first = now;
+	c3->ttl = now + params->srcaddr_ttl;
+	c3->nref = 1;
+	c3->sah = ch;
+	VSL_stats->n_srcaddr_act++;
+	TAILQ_INSERT_TAIL(&ch->head, c3, list);
+	sp->srcaddr = c3;
 	UNLOCK(&ch->mtx);
 }
 
