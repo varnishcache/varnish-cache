@@ -146,6 +146,7 @@ SES_RefSrcAddr(struct sess *sp)
 	if (c3 != NULL) {
 		memset(c3, 0, sizeof *c3);
 		strcpy(c3->addr, sp->addr);
+		c3->magic = SRCADDR_MAGIC;
 		c3->hash = u;
 		c3->acct.first = now;
 		c3->ttl = now + params->srcaddr_ttl;
@@ -167,6 +168,7 @@ ses_relsrcaddr(struct sess *sp)
 
 	if (sp->srcaddr == NULL)
 		return;
+	CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 	ch = sp->srcaddr->sah;
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
 	LOCK(&ch->mtx);
@@ -202,6 +204,7 @@ SES_Charge(struct sess *sp)
 	ses_sum_acct(&sp->acct, a);
 	
 	if (sp->srcaddr != NULL) {
+		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 		LOCK(&sp->srcaddr->sah->mtx);
 		b = &sp->srcaddr->acct;
 		ses_sum_acct(b, a);
