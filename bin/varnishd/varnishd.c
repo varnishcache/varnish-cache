@@ -391,7 +391,7 @@ main(int argc, char *argv[])
 			s_arg = optarg;
 			break;
 		case 't':
-			params->default_ttl = strtoul(optarg, NULL, 0);
+			MCF_ParamSet(cli, "default_ttl", optarg);
 			break;
 		case 'T':
 			T_arg = optarg;
