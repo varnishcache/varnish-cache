@@ -71,7 +71,8 @@ child_listener(struct ev *e, int what)
 		return (1);
 	}
 	buf[i] = '\0';
-	fprintf(stderr, "Child said (%d, %d): <<%s>>\n", child_state, child_pid, buf);
+	fprintf(stderr, "Child said (%d, %d): <<%s>>\n",
+	    child_state, child_pid, buf);
 	return (0);
 }
 
