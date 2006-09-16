@@ -1,35 +1,38 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 11, 2006
+.Dd September 16, 2006
 .Dt VARNISHNCSA 1
 .Os
 .Sh NAME
 .Nm varnishncsa
-.Nd Generate NCSA common / combined logs
+.Nd Generate NCSA logs
 .Sh SYNOPSIS
 .Nm
-.Op Fl C
+.Op Fl a
 .Op Fl b
+.Op Fl C
 .Op Fl c
-.Op Fl o
+.Op Fl d
 .Op Fl I Ar regex
-.Op Fl X Ar regex
 .Op Fl i Ar tag
 .Op Fl r Ar file
+.Op Fl V
 .Op Fl w Ar file
+.Op Fl X Ar regex
 .Op Fl x Ar tag
 .Sh DESCRIPTION
 The
 .Nm
-utility reads and presents
+utility reads
 .Xr varnishd 1
-shared memory logs.
+shared memory logs and presents them in the NCSA "common" or
+"combined" log format.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
-.It Fl C
-Ignore case when matching regular expressions.
+.It Fl a
+When writing to a file, append to it rather than overwrite it.
 .It Fl b
 Include log entries which result from communication with a backend
 server.
@@ -40,6 +43,8 @@ nor
 is specified,
 .Nm
 acts as if they both were.
+.It Fl C
+Ignore case when matching regular expressions.
 .It Fl c
 Include log entries which result from communication with a client.
 If neither
@@ -49,8 +54,12 @@ nor
 is specified,
 .Nm
 acts as if they both were.
-.It Fl o
-Group log entries by request ID.
+.It Fl d
+Process old log entries on startup.
+Normally,
+.Nm
+will only process entries which are written to the log after it
+starts.
 .It Fl I Ar regex
 Include log entries which match the specified regular expression.
 If neither
@@ -58,8 +67,6 @@ If neither
 nor
 .Fl i
 is specified, all log entries are included.
-.It Fl X Ar regex
-Exclude log entries which match the specified regular expression.
 .It Fl i Ar tag
 Include log entries with the specified tag.
 If neither
@@ -71,53 +78,26 @@ is specified, all log entries are included.
 Read log entries from
 .Ar file
 instead of shared memory.
+.It Fl V
+Display the version number and exit.
 .It Fl w Ar file
 Write log entries to
 .Ar file
 instead of displaying them.
+The file will be overwritten unless the
+.Fl a
+option was specified.
+.It Fl X Ar regex
+Exclude log entries which match the specified regular expression.
 .It Fl x Ar tag
 Exclude log entries with the specified tag.
 .El
-.Sh TAGS
-The following log entry tags are currently defined:
-.\" keep in sync with include/shmlog_tags.h
-.\" XXX add descriptions
-.Bl -tag -width 16
-.It Dv Backend
-.It Dv BackendClose
-.It Dv BackendOpen
-.It Dv BackendReuse
-.It Dv BackendXID
-.It Dv BldHdr
-.It Dv CLI
-.It Dv ClientAddr
-.It Dv Debug
-.It Dv Error
-.It Dv ExpBan
-.It Dv ExpKill
-.It Dv ExpPick
-.It Dv Header
-.It Dv Hit
-.It Dv HttpError
-.It Dv Length
-.It Dv LostHeader
-.It Dv Protocol
-.It Dv Request
-.It Dv Response
-.It Dv SessionClose
-.It Dv SessionOpen
-.It Dv SessionReuse
-.It Dv Status
-.It Dv URL
-.It Dv VCL_call
-.It Dv VCL_return
-.It Dv VCL_trace
-.It Dv WorkThread
-.It Dv XID
-.El
 .Sh SEE ALSO
 .Xr varnishd 1 ,
-.Xr varnishstat 1
+.Xr varnishhist 1 ,
+.Xr varnishlog 1 ,
+.Xr varnishstat 1 ,
+.Xr varnishtop 1 ,
 .Sh HISTORY
 The
 .Nm
