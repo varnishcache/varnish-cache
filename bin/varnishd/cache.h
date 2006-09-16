@@ -213,22 +213,6 @@ struct objhead {
 
 /* -------------------------------------------------------------------*/
 
-struct srcaddr {
-	unsigned		magic;
-#define SRCADDR_MAGIC		0x375111db
-
-	unsigned		hash;
-	TAILQ_ENTRY(srcaddr)	list;
-	struct srcaddrhead	*sah;
-
-	char			addr[TCP_ADDRBUFSIZE];
-	unsigned		nref;
-
-	time_t			ttl;
-
-	struct acct		acct;
-};
-
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a

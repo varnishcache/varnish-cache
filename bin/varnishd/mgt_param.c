@@ -282,6 +282,24 @@ tweak_listen_depth(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_srcaddr_hash(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_uint(cli, &params->srcaddr_hash, arg, 64, UINT_MAX);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_uint(cli, &params->srcaddr_ttl, arg, 0, UINT_MAX);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -372,6 +390,13 @@ static struct parspec parspec[] = {
 		"Listen(2) queue depth.\n"
 		MUST_RESTART,
 		"1024", "connections" },
+	{ "srcaddr_hash", tweak_srcaddr_hash,
+		"Number of source address hash buckets.\n"
+		MUST_RESTART,
+		"1024", "buckets" },
+	{ "srcaddr_ttl", tweak_srcaddr_ttl,
+		"Lifetime of srcaddr entries.\n",
+		"30", "seconds" },
 	{ NULL, NULL, NULL }
 };
 
