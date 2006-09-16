@@ -41,24 +41,36 @@ static MTX			vcl_mtx;
 
 /*--------------------------------------------------------------------*/
 
-struct VCL_conf *
-VCL_Get(void)
+void
+VCL_Refresh(struct VCL_conf **vcc)
 {
-	struct VCL_conf *vc;
-
-	LOCK(&vcl_mtx);
-	AN(vcl_active);
-	vc = vcl_active->conf;
-	AN(vc);
-	vc->busy++;
-	UNLOCK(&vcl_mtx);
-	return (vc);
+	if (*vcc == vcl_active->conf)
+		return;
+	if (*vcc != NULL)
+		VCL_Rel(vcc);
+	VCL_Get(vcc);
 }
 
 void
-VCL_Rel(struct VCL_conf *vc)
+VCL_Get(struct VCL_conf **vcc)
+{
+
+	LOCK(&vcl_mtx);
+	AN(vcl_active);
+	*vcc = vcl_active->conf;
+	AN(*vcc);
+	(*vcc)->busy++;
+	UNLOCK(&vcl_mtx);
+}
+
+void
+VCL_Rel(struct VCL_conf **vcc)
 {
 	struct vcls *vcl;
+	struct VCL_conf *vc;
+
+	vc = *vcc;
+	*vcc = NULL;
 
 	LOCK(&vcl_mtx);
 	assert(vc->busy > 0);

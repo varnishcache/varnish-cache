@@ -130,7 +130,9 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, sp->doclose);
 	sp->backend = NULL;
 	if (sp->vcl != NULL) {
-		VCL_Rel(sp->vcl);
+		if (sp->wrk->vcl != NULL)
+			VCL_Rel(&sp->wrk->vcl);
+		sp->wrk->vcl = sp->vcl;
 		sp->vcl = NULL;
 	}
 
@@ -653,7 +655,9 @@ cnt_recv(struct sess *sp)
 	VSL(SLT_ReqStart, sp->fd, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	AZ(sp->vcl);
-	sp->vcl = VCL_Get();
+	VCL_Refresh(&sp->wrk->vcl);
+	sp->vcl = sp->wrk->vcl;
+	sp->wrk->vcl = NULL;
 
 	AZ(sp->obj);
 	AZ(sp->vbc);

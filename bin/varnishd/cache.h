@@ -113,6 +113,7 @@ struct worker {
 	size_t			liov;
 
 	struct acct		acct;
+	struct VCL_conf		*vcl;
 };
 
 struct workreq {
@@ -415,8 +416,9 @@ void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */
 void VCL_Init(void);
-void VCL_Rel(struct VCL_conf *vc);
-struct VCL_conf *VCL_Get(void);
+void VCL_Refresh(struct VCL_conf **vcc);
+void VCL_Rel(struct VCL_conf **vcc);
+void VCL_Get(struct VCL_conf **vcc);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

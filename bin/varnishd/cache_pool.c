@@ -218,6 +218,8 @@ wrk_thread(void *priv)
 	VSL_stats->n_wrk--;
 	UNLOCK(&tmtx);
 	VSL(SLT_WorkThread, 0, "%p end", w);
+	if (w->vcl != NULL)
+		VCL_Rel(&w->vcl);
 	close(w->pipe[0]);
 	close(w->pipe[1]);
 	return (NULL);
