@@ -99,7 +99,7 @@ do_curses(struct varnish_stats *VSL_stats)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishstat [-cV]\n");
+	fprintf(stderr, "usage: varnishstat [-1V]\n");
 	exit(1);
 }
 
@@ -108,14 +108,14 @@ main(int argc, char **argv)
 {
 	int c;
 	struct varnish_stats *VSL_stats;
-	int c_flag = 0;
+	int once = 0;
 
 	VSL_stats = VSL_OpenStats();
 
-	while ((c = getopt(argc, argv, "cV")) != -1) {
+	while ((c = getopt(argc, argv, "1V")) != -1) {
 		switch (c) {
-		case 'c':
-			c_flag = 1;
+		case '1':
+			once = 1;
 			break;
 		case 'V':
 			varnish_version("varnishstat");
@@ -125,7 +125,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (c_flag) {
+	if (!once) {
 		do_curses(VSL_stats);
 	} else {
 
