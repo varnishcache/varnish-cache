@@ -42,6 +42,7 @@ struct VSL_data {
 
 	unsigned		flags;
 #define F_SEEN_IX		(1 << 0)
+#define F_NON_BLOCKING		(1 << 1)
 
 	unsigned char		map[NFD];
 #define M_CLIENT		(1 << 0)
@@ -165,6 +166,17 @@ VSL_OpenLog(struct VSL_data *vd)
 
 /*--------------------------------------------------------------------*/
 
+void
+VSL_NonBlocking(struct VSL_data *vd, int nb)
+{
+	if (nb)
+		vd->flags |= F_NON_BLOCKING;
+	else
+		vd->flags &= ~F_NON_BLOCKING;
+}
+
+/*--------------------------------------------------------------------*/
+
 static int
 vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 {
@@ -191,6 +203,8 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 			continue;
 		}
 		if (*p == SLT_ENDMARKER) {
+			if (vd->flags & F_NON_BLOCKING)
+				return (-1);
 			w += SLEEP_USEC;
 			usleep(SLEEP_USEC);
 			continue;

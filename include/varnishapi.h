@@ -22,6 +22,7 @@ struct VSL_data;
 struct VSL_data *VSL_New(void);
 void VSL_Select(struct VSL_data *vd, unsigned tag);
 int VSL_OpenLog(struct VSL_data *vd);
+void VSL_NonBlocking(struct VSL_data *vd, int nb);
 int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
