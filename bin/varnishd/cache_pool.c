@@ -242,7 +242,7 @@ WRK_QueueSession(struct sess *sp)
 	unsigned onq;
 
 	onq = nq + 1;
-	if (onq > nwq)
+	if (onq >= nwq)
 		onq = 0;
 	sp->workreq.sess = sp;
 	qp = wq[onq];
