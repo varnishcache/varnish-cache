@@ -238,9 +238,15 @@ WRK_QueueSession(struct sess *sp)
 	struct worker *w;
 	pthread_t tp;
 	struct wq *qp;
+	static unsigned nq;
+	unsigned onq;
 
+	onq = nq + 1;
+	if (onq > nwq)
+		onq = 0;
 	sp->workreq.sess = sp;
-	qp = wq[sp->fd % nwq];
+	qp = wq[onq];
+	nq = onq;
 
 	LOCK(&qp->mtx);
 
