@@ -318,9 +318,13 @@ tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 
 #define EXPERIMENTAL \
 	"\nNB: We don't know yet if it is a good idea to change " \
-	"this parameter.  Caution adviced.\n"
+	"this parameter.  Caution advised.\n"
 
 
+/*
+ * Remember to update varnishd.1 whenever you add / remove a parameter or
+ * change its default value.
+ */
 static struct parspec parspec[] = {
 	{ "default_ttl", tweak_default_ttl,
 		"The TTL assigned to objects if neither the backend nor "
