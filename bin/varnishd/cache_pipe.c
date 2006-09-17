@@ -61,9 +61,9 @@ PipeSession(struct sess *sp)
 	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 	vc->http->logtag = HTTP_Tx;
 
-	http_CopyReq(vc->fd, vc->http, sp->http);
-	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PIPE);
-	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	http_CopyReq(w, vc->fd, vc->http, sp->http);
+	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_PIPE);
+	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 

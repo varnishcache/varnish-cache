@@ -120,6 +120,7 @@ struct worker {
 	struct acct		acct;
 	unsigned char		wlog[WLOGSPACE];
 	unsigned char		*wlp, *wle;
+	unsigned		wlr;
 };
 
 struct workreq {
@@ -334,13 +335,13 @@ void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 void http_CopyHttp(struct http *to, struct http *fm);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
-void http_GetReq(int fd, struct http *to, struct http *fm);
-void http_CopyReq(int fd, struct http *to, struct http *fm);
-void http_CopyResp(int fd, struct http *to, struct http *fm);
-void http_SetResp(int fd, struct http *to, const char *proto, const char *status, const char *response);
-void http_FilterHeader(int fd, struct http *to, struct http *fm, unsigned how);
-void http_PrintfHeader(int fd, struct http *to, const char *fmt, ...);
-void http_SetHeader(int fd, struct http *to, const char *hdr);
+void http_GetReq(struct worker *w, int fd, struct http *to, struct http *fm);
+void http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm);
+void http_CopyResp(struct worker *w, int fd, struct http *to, struct http *fm);
+void http_SetResp(struct worker *w, int fd, struct http *to, const char *proto, const char *status, const char *response);
+void http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
+void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
+void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 int http_IsHdr(struct http_hdr *hh, char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);

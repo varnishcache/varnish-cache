@@ -74,6 +74,8 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 
 	/* Only hold the lock while we find our space */
 	LOCKSHM(&vsl_mtx);
+	VSL_stats->shm_writes++;	
+	VSL_stats->shm_records++;	
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
@@ -112,6 +114,8 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	}
 
 	LOCKSHM(&vsl_mtx);
+	VSL_stats->shm_writes++;	
+	VSL_stats->shm_records++;	
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if we cannot fit a full size record */
@@ -153,6 +157,8 @@ WSL_Flush(struct worker *w)
 		return;
 	l = w->wlp - w->wlog;
 	LOCKSHM(&vsl_mtx);
+	VSL_stats->shm_writes++;	
+	VSL_stats->shm_records += w->wlr;
 	if (loghead->ptr + l + 1 >= loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
@@ -163,6 +169,7 @@ WSL_Flush(struct worker *w)
 	p[0] = w->wlog[0];
 	UNLOCKSHM(&vsl_mtx);
 	w->wlp = w->wlog;
+	w->wlr = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -200,6 +207,7 @@ WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const cha
 	memcpy(p + 4, b, l);
 	p[4 + l] = '\0';
 	p[0] = tag;
+	w->wlr++;
 }
 
 /*--------------------------------------------------------------------*/
@@ -241,6 +249,7 @@ WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	w->wlp += 5 + n;
 	assert(w->wlp < w->wle);
+	w->wlr++;
 	va_end(ap);
 }
 

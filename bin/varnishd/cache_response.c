@@ -129,9 +129,9 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += WRK_Write(sp->wrk, vsb_data(sb), vsb_len(sb));
 	WRK_Flush(sp->wrk);
-	VSL(SLT_TxStatus, sp->id, "%d", code);
-	VSL(SLT_TxProtocol, sp->id, "HTTP/1.1");
-	VSL(SLT_TxResponse, sp->id, msg);
+	WSL(sp->wrk, SLT_TxStatus, sp->id, "%d", code);
+	WSL(sp->wrk, SLT_TxProtocol, sp->id, "HTTP/1.1");
+	WSL(sp->wrk, SLT_TxResponse, sp->id, msg);
 	vca_close_session(sp, expl);
 	vsb_delete(sb);
 }
@@ -144,19 +144,19 @@ res_do_304(struct sess *sp)
 {
 	char lm[64];
 
-	VSL(SLT_Length, sp->fd, "%u", 0);
+	WSL(sp->wrk, SLT_Length, sp->fd, "%u", 0);
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_SetResp(sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
+	http_SetResp(sp->wrk, sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
 	TIM_format(sp->t_req.tv_sec, lm);
-	http_PrintfHeader(sp->fd, sp->http, "Date: %s", lm);
-	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
+	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	TIM_format(sp->obj->last_modified, lm);
-	http_PrintfHeader(sp->fd, sp->http, "Last-Modified: %s", lm);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
 	if (sp->doclose != NULL)
-		http_SetHeader(sp->fd, sp->http, "Connection: close");
+		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	if (WRK_Flush(sp->wrk))
@@ -199,22 +199,22 @@ RES_WriteObj(struct sess *sp)
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
 		
-	VSL(SLT_Length, sp->fd, "%u", sp->obj->len);
+	WSL(sp->wrk, SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_CopyResp(sp->fd, sp->http, &sp->obj->http);
-	http_FilterHeader(sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
+	http_CopyResp(sp->wrk, sp->fd, sp->http, &sp->obj->http);
+	http_FilterHeader(sp->wrk, sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
 	if (sp->xid != sp->obj->xid)
-		http_PrintfHeader(sp->fd, sp->http,
+		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
 	else
-		http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->fd, sp->http, "Age: %u",
+		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %u",
 	    sp->obj->age + sp->t_req.tv_sec - sp->obj->entered);
-	http_SetHeader(sp->fd, sp->http, "Via: 1.1 varnish");
+	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
-		http_SetHeader(sp->fd, sp->http, "Connection: close");
+		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);

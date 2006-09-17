@@ -23,7 +23,7 @@ VRT_error(struct sess *sp, unsigned code, const char *expl)
 { 
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	VSL(SLT_Debug, 0, "VCL_error(%u, %s)", code, expl);
+	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, expl);
 	sp->err_code = code;
 	sp->err_expl = expl;
 }
@@ -36,7 +36,7 @@ VRT_count(struct sess *sp, unsigned u)
 	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (params->vcl_trace)
-		VSL(SLT_VCL_trace, sp->fd, "%u %d.%d", u,
+		WSL(sp->wrk, SLT_VCL_trace, sp->fd, "%u %d.%d", u,
 		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
 }
 
@@ -150,7 +150,7 @@ VRT_l_obj_ttl(struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	VSL(SLT_TTL, sp->fd, "%u VCL %.0f %u",
+	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %u",
 	    sp->obj->xid, a, sp->t_req.tv_sec);
 	if (a < 0)
 		a = 0;

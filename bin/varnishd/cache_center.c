@@ -156,6 +156,7 @@ cnt_done(struct sess *sp)
 	if (sp->fd < 0) {
 		VSL_stats->sess_closed++;
 		sp->wrk->idle = sp->t_open.tv_sec;
+		sp->wrk = NULL;
 		vca_return_session(sp);
 		return (1);
 	}
@@ -172,6 +173,7 @@ cnt_done(struct sess *sp)
 	}
 	VSL_stats->sess_herd++;
 	sp->wrk->idle = sp->t_open.tv_sec;
+	sp->wrk = NULL;
 	vca_return_session(sp);
 	return (1);
 }

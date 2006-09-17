@@ -157,12 +157,12 @@ PassBody(struct sess *sp)
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
 	http_ClrHeader(sp->http);
-	http_CopyResp(sp->fd, sp->http, vc->http);
-	http_FilterHeader(sp->fd, sp->http, vc->http, HTTPH_A_PASS);
-	http_PrintfHeader(sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_CopyResp(sp->wrk, sp->fd, sp->http, vc->http);
+	http_FilterHeader(sp->wrk, sp->fd, sp->http, vc->http, HTTPH_A_PASS);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	/* XXX */
 	if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
-		http_PrintfHeader(sp->fd, sp->http, "Transfer-Encoding: chunked");
+		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Transfer-Encoding: chunked");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
@@ -209,9 +209,9 @@ PassSession(struct sess *sp)
 	}
 	WSL(w, SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
-	http_CopyReq(vc->fd, vc->http, sp->http);
-	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PASS);
-	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	http_CopyReq(w, vc->fd, vc->http, sp->http);
+	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_PASS);
+	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 	i = WRK_Flush(w);
