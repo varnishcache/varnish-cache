@@ -41,8 +41,7 @@ vca_kq_sess(struct sess *sp, int arm)
 		return;
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++nki == NKEV) {
-		(void)kevent(kq, ki, nki, NULL, 0, NULL);
-		/* XXX: we could check the error returns here */
+		assert(kevent(kq, ki, nki, NULL, 0, NULL) <= 0);
 		nki = 0;
 	}
 }
@@ -84,14 +83,12 @@ vca_kev(struct kevent *kp)
 			SES_Delete(sp);
 		}
 		return;
-	}
-	if (kp->flags == EV_EOF) {
+	} else if (kp->flags == EV_EOF) {
 		TAILQ_REMOVE(&sesshead, sp, list);
 		vca_close_session(sp, "EOF");
 		SES_Delete(sp);
 		return;
 	}
-	INCOMPL();
 }
 
 /*--------------------------------------------------------------------*/
