@@ -144,7 +144,7 @@ cnt_done(struct sess *sp)
 	dp = cnt_dt(&sp->t_req, &sp->t_resp);
 	da = cnt_dt(&sp->t_resp, &sp->t_end);
 	dh = cnt_dt(&sp->t_open, &sp->t_req);
-	VSL(SLT_ReqEnd, sp->id, "%u %ld.%09ld %ld.%09ld %.9f %.9f %.9f",
+	WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %ld.%09ld %ld.%09ld %.9f %.9f %.9f",
 	    sp->xid,
 	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
 	    (long)sp->t_end.tv_sec, (long)sp->t_end.tv_nsec,
@@ -438,7 +438,7 @@ cnt_lookup2(struct sess *sp)
 
 	/* If we encountered busy-object, disembark worker thread */
 	if (o == NULL) {
-		VSL(SLT_Debug, sp->fd,
+		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "on waiting list on obj %u", sp->obj->xid);
 		SES_Charge(sp);
 		return (1);
@@ -456,10 +456,10 @@ cnt_lookup2(struct sess *sp)
 	/* Account separately for pass and cache objects */
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
-		VSL(SLT_HitPass, sp->fd, "%u", sp->obj->xid);
+		WSL(sp->wrk, SLT_HitPass, sp->fd, "%u", sp->obj->xid);
 	} else {
 		VSL_stats->cache_hit++;
-		VSL(SLT_Hit, sp->fd, "%u", sp->obj->xid);
+		WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
 	}
 	sp->step = STP_HIT;
 	return (0);
@@ -652,7 +652,7 @@ cnt_recv(struct sess *sp)
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 	sp->wrk->idle = sp->t_req.tv_sec;
 	sp->xid = ++xids;
-	VSL(SLT_ReqStart, sp->fd, "%s %s %u", sp->addr, sp->port,  sp->xid);
+	WSL(sp->wrk, SLT_ReqStart, sp->fd, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	AZ(sp->vcl);
 	VCL_Refresh(&sp->wrk->vcl);
@@ -663,7 +663,7 @@ cnt_recv(struct sess *sp)
 	AZ(sp->vbc);
 
 	sp->wrk->acct.req++;
-	done = http_DissectRequest(sp->http, sp->fd);
+	done = http_DissectRequest(sp->wrk, sp->http, sp->fd);
 	if (done != 0) {
 		RES_Error(sp, done, NULL);
 		sp->step = STP_DONE;
@@ -743,6 +743,7 @@ CNT_Session(struct sess *sp)
 		if (w->nobjhead != NULL)
 			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	}
+	WSL_Flush(w);
 }
 
 /*

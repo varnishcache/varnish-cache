@@ -182,6 +182,8 @@ wrk_thread(void *priv)
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->idle = time(NULL);
+	w->wlp = w->wlog;
+	w->wle = w->wlog + sizeof w->wlog;
 	AZ(pipe(w->pipe));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
