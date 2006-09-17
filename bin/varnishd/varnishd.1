@@ -200,6 +200,7 @@ The following commands are available:
 .It Cm vcl.use Ar configname
 .El
 .Ss Run-Time Parameters
+.\" Keep in synch with parspec[] in mgt_param.c
 .Bl -tag -width=4
 .It Va auto_restart
 .It Va default_ttl
@@ -208,11 +209,14 @@ The following commands are available:
 .It Va listen_address
 .It Va listen_depth
 .It Va pipe_timeout
-.It Va send_timeout
 .It Va sendfile_threshold
+.It Va send_timeout
 .It Va sess_timeout
+.It Va srcaddr_hash
+.It Va srcaddr_ttl
 .It Va thread_pool_max
 .It Va thread_pool_min
+.It Va thread_pools
 .It Va thread_pool_timeout
 .It Va vcl_trace
 .El
