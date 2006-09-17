@@ -233,8 +233,8 @@ FetchBody(struct sess *sp)
 	hp = vc->http2;
 	http_ClrHeader(hp);
 	hp->logtag = HTTP_Obj;
-	http_CopyResp(sp->fd, hp, vc->http);
-	http_FilterHeader(sp->fd, hp, vc->http, HTTPH_A_INS);
+	http_CopyResp(sp->wrk, sp->fd, hp, vc->http);
+	http_FilterHeader(sp->wrk, sp->fd, hp, vc->http, HTTPH_A_INS);
 	
 	if (body) {
 		if (http_GetHdr(vc->http, H_Content_Length, &b))
@@ -243,7 +243,7 @@ FetchBody(struct sess *sp)
 			cls = fetch_chunked(sp, vc->fd, vc->http);
 		else 
 			cls = fetch_eof(sp, vc->fd, vc->http);
-		http_PrintfHeader(sp->fd, hp,
+		http_PrintfHeader(sp->wrk, sp->fd, hp,
 		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
@@ -294,15 +294,15 @@ FetchHeaders(struct sess *sp)
 	if (vc == NULL)
 		vc = VBE_GetFd(sp->backend, sp->xid);
 	XXXAN(vc);
-	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+	WSL(w, SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_ClrHeader(vc->http);
 	vc->http->logtag = HTTP_Tx;
-	http_GetReq(vc->fd, vc->http, sp->http);
-	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	http_GetReq(w, vc->fd, vc->http, sp->http);
+	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 	if (!http_GetHdr(vc->http, H_Host, &b)) {
-		http_PrintfHeader(vc->fd, vc->http, "Host: %s",
+		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
 		    sp->backend->hostname);
 	}
 

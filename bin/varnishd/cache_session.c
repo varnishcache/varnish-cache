@@ -205,7 +205,8 @@ SES_Charge(struct sess *sp)
 		ses_sum_acct(&sp->srcaddr->acct, a);
 		b = sp->srcaddr->acct;
 		UNLOCK(&sp->srcaddr->sah->mtx);
-		VSL(SLT_StatAddr, 0, "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
+		WSL(sp->wrk, SLT_StatAddr, 0,
+		    "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
 		    sp->srcaddr->addr, sp->t_end.tv_sec - b.first,
 		    b.sess, b.req, b.pipe, b.pass,
 		    b.fetch, b.hdrbytes, b.bodybytes);

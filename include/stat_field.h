@@ -49,4 +49,6 @@ MAC_STAT(sess_pipeline,		uint64_t, "u", "Session Pipeline")
 MAC_STAT(sess_readahead,	uint64_t, "u", "Session Read Ahead")
 MAC_STAT(sess_herd,		uint64_t, "u", "Session herd")
 
+MAC_STAT(shm_records,		uint64_t, "u", "SHM records")
+MAC_STAT(shm_writes,		uint64_t, "u", "SHM writes")
 MAC_STAT(shm_cont,		uint64_t, "u", "SHM MTX contention")
