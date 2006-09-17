@@ -173,7 +173,9 @@ start_child(void)
 	if (mgt_push_vcls_and_start(&i, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
-		exit (2);
+		/* Pick up any stuff lingering on stdout/stderr */
+		child_listener(NULL, EV_RD);
+		exit(2);
 	}
 	child_state = CH_RUNNING;
 }
@@ -234,6 +236,9 @@ mgt_sigchld(struct ev *e, int what)
 	}
 	fprintf(stderr, "Cache child died pid=%d status=0x%x\n", r, status);
 	child_pid = -1;
+
+	/* Pick up any stuff lingering on stdout/stderr */
+	child_listener(NULL, EV_RD);
 
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
