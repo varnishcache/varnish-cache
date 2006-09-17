@@ -207,7 +207,7 @@ PassSession(struct sess *sp)
 		RES_Error(sp, 503, "Backend did not respond.");
 		return (1);
 	}
-	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+	WSL(w, SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_CopyReq(vc->fd, vc->http, sp->http);
 	http_FilterHeader(vc->fd, vc->http, sp->http, HTTPH_R_PASS);
@@ -221,7 +221,7 @@ PassSession(struct sess *sp)
 
 	i = http_RecvHead(vc->http, vc->fd);
 	xxxassert(i == 0);
-	http_DissectResponse(vc->http, vc->fd);
+	http_DissectResponse(w, vc->http, vc->fd);
 
 	assert(sp->vbc == NULL);
 	sp->vbc = vc;

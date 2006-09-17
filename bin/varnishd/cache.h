@@ -30,6 +30,9 @@ enum {
 
 #define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
+/* Amount of per-worker logspace */
+#define WLOGSPACE	8192
+
 struct cli;
 struct vsb;
 struct sess;
@@ -115,6 +118,8 @@ struct worker {
 	struct VCL_conf		*vcl;
 	struct srcaddr		*srcaddr;
 	struct acct		acct;
+	unsigned char		wlog[WLOGSPACE];
+	unsigned char		*wlp, *wle;
 };
 
 struct workreq {
@@ -348,8 +353,8 @@ void http_RecvPrep(struct http *hp);
 int http_RecvPrepAgain(struct http *hp);
 int http_RecvSome(int fd, struct http *hp);
 int http_RecvHead(struct http *hp, int fd);
-int http_DissectRequest(struct http *sp, int fd);
-int http_DissectResponse(struct http *sp, int fd);
+int http_DissectRequest(struct worker *w, struct http *sp, int fd);
+int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
@@ -387,6 +392,9 @@ void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
 void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
+void WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const char *e);
+void WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...);
+void WSL_Flush(struct worker *w);
 #define HERE() VSL(SLT_Debug, 0, "HERE: %s(%d)", __func__, __LINE__)
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \

@@ -317,7 +317,7 @@ FetchHeaders(struct sess *sp)
 
 	i = http_RecvHead(vc->http, vc->fd);
 	xxxassert(i == 0);
-	xxxassert(http_DissectResponse(vc->http, vc->fd) == 0);
+	xxxassert(http_DissectResponse(sp->wrk, vc->http, vc->fd) == 0);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
