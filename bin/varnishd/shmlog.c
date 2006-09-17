@@ -16,6 +16,16 @@
 
 #include "heritage.h"
 
+#define LOCKSHM(foo)					\
+	do {						\
+		if (pthread_mutex_trylock(foo)) {	\
+			AZ(pthread_mutex_lock(foo));	\
+			VSL_stats->shm_cont++;		\
+		}					\
+	} while (0);
+		
+#define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
+
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
 #endif

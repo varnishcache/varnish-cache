@@ -24,7 +24,6 @@ noinst_HEADERS = \
 	shmlog_tags.h \
 	stat_field.h \
 	stats.h \
-	tree.h \
 	varnish/assert.h \
 	varnishapi.h \
 	vcl.h \

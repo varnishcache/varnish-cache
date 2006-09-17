@@ -422,9 +422,6 @@ cli_func_t	cli_func_dump_pool;
 /* rfc2616.c */
 int RFC2616_cache_policy(struct sess *sp, struct http *hp);
 
-#define LOCKSHM(foo)	AZ(pthread_mutex_lock(foo))
-#define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
-
 #if 1
 #define MTX			pthread_mutex_t
 #define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
