@@ -42,67 +42,113 @@ static struct acceptor *vca_acceptors[] = {
 static struct acceptor *vca_act;
 
 static pthread_t 	vca_thread_acct;
+static struct timeval	tv_sndtimeo;
+static struct timeval	tv_rcvtimeo;
+static struct linger	linger;
 
-static struct sess *
-vca_accept_sess(int fd)
+static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+
+static void
+sock_test(int fd)
 {
+	struct linger lin;
+	struct timeval tv;
 	socklen_t l;
-	struct sockaddr addr[2];	/* XXX: IPv6 hack */
-	struct sess *sp;
-	int i;
 
-	VSL_stats->client_conn++;
+	l = sizeof lin;
+	AZ(getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l));
+	assert(l == sizeof lin);
+	if (memcmp(&lin, &linger, l))
+		need_linger = 1;
 
-	l = sizeof addr;
-	i = accept(fd, addr, &l);
-	if (i < 0) {
-		VSL(SLT_Debug, fd, "Accept failed errno=%d", errno);
-		/* XXX: stats ? */
-		return (NULL);
-	}
-	sp = SES_New(addr, l);
-	XXXAN(sp);
+	l = sizeof tv;
+	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l));
+	assert(l == sizeof tv);
+	if (memcmp(&tv, &tv_sndtimeo, l))
+		need_sndtimeo = 1;
 
-	sp->fd = i;
-	sp->id = i;
-	(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
-
-	return (sp);
+	l = sizeof tv;
+	AZ(getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l));
+	assert(l == sizeof tv);
+	if (memcmp(&tv, &tv_rcvtimeo, l))
+		need_rcvtimeo = 1;
+	need_test = 0;
+	printf("socktest: linger=%d sndtimeo=%d rcvtimeo=%d\n",
+	    need_linger, need_sndtimeo, need_rcvtimeo);
 }
 
 void
 VCA_Prep(struct sess *sp)
 {
-	struct linger linger;
 
 	TCP_name(sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
 	sp->acct.first = sp->t_open.tv_sec;
-#ifdef SO_LINGER /* XXX Linux*/
-	linger.l_onoff = 0;
-	linger.l_linger = 0;
-	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &linger, sizeof linger));
-#endif
-#ifdef SO_SNDTIMEO
-	{
-	struct timeval tv;
-
-	tv.tv_sec = params->send_timeout;
-	tv.tv_usec = 0;
-	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv));
-	}
-#endif
-#ifdef SO_RCVTIMEO
-	{
-	struct timeval tv;
-
-	tv.tv_sec = params->sess_timeout;
-	tv.tv_usec = 0;
-	AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv));
-	}
-#endif
+	if (need_test)
+		sock_test(sp->fd);
+	if (need_linger)
+		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		    &linger, sizeof linger));
+	if (need_sndtimeo)
+		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		    &tv_sndtimeo, sizeof tv_sndtimeo));
+	if (need_rcvtimeo)
+		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 }
+
+/*--------------------------------------------------------------------*/
+
+static void *
+vca_acct(void *arg)
+{
+	struct sess *sp;
+	socklen_t l;
+	struct sockaddr addr[2];	/* XXX: IPv6 hack */
+	int i;
+
+	(void)arg;
+	need_test = 1;
+	AZ(setsockopt(heritage.socket, SOL_SOCKET, SO_LINGER,
+	    &linger, sizeof linger));
+	while (1) {
+		if (params->send_timeout != tv_sndtimeo.tv_sec) {
+			need_test = 1;
+			tv_sndtimeo.tv_sec = params->send_timeout;
+			AZ(setsockopt(heritage.socket, SOL_SOCKET,
+			    SO_SNDTIMEO, &tv_sndtimeo, sizeof tv_sndtimeo));
+		}
+		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
+			need_test = 1;
+			tv_rcvtimeo.tv_sec = params->sess_timeout;
+			AZ(setsockopt(heritage.socket, SOL_SOCKET,
+			    SO_RCVTIMEO, &tv_rcvtimeo, sizeof tv_rcvtimeo));
+		}
+		VSL_stats->client_conn++;
+
+		l = sizeof addr;
+		i = accept(heritage.socket, addr, &l);
+		if (i < 0) {
+			VSL(SLT_Debug, heritage.socket,
+			    "Accept failed errno=%d", errno);
+			/* XXX: stats ? */
+			continue;
+		}
+		sp = SES_New(addr, l);
+		XXXAN(sp);
+
+		sp->fd = i;
+		sp->id = i;
+		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+
+		http_RecvPrep(sp->http);
+		sp->step = STP_FIRST;
+		WRK_QueueSession(sp);
+	}
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 vca_handover(struct sess *sp, int bad)
@@ -158,24 +204,6 @@ vca_return_session(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->vcl);
 	vca_act->recycle(sp);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void *
-vca_acct(void *arg)
-{
-	struct sess *sp;
-
-	(void)arg;
-	while (1) {
-		sp = vca_accept_sess(heritage.socket);
-		if (sp == NULL)
-			continue;
-		http_RecvPrep(sp->http);
-		sp->step = STP_FIRST;
-		WRK_QueueSession(sp);
-	}
 }
 
 
