@@ -50,4 +50,3 @@ child_main(void)
 
 	printf("Child dies\n");
 }
-
