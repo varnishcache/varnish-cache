@@ -25,7 +25,6 @@ MAC_STAT(n_wrk,			uint64_t, "u", "N worker threads")
 MAC_STAT(n_wrk_create,		uint64_t, "u", "N worker threads created")
 MAC_STAT(n_wrk_failed,		uint64_t, "u", "N worker threads not created")
 MAC_STAT(n_wrk_max,		uint64_t, "u", "N worker threads limited")
-MAC_STAT(n_wrk_busy,		uint64_t, "u", "N busy worker threads")
 MAC_STAT(n_wrk_queue,		uint64_t, "u", "N queued work requests")
 MAC_STAT(n_wrk_overflow,	uint64_t, "u", "N overflowed work requests")
 
