@@ -322,7 +322,6 @@ FetchBody(struct sess *sp)
 int
 FetchHeaders(struct sess *sp)
 {
-	int i;
 	struct vbe_conn *vc;
 	struct worker *w;
 	char *b;
