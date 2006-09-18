@@ -12,6 +12,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 
@@ -664,7 +665,10 @@ http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_copyh(w, fd, to, fm, HTTP_HDR_REQ, HTTP_T_Request);
 	http_copyh(w, fd, to, fm, HTTP_HDR_URL, HTTP_T_URL);
-	http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
+	if (params->backend_http11)
+		http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, "HTTP/1.1");
+	else
+		http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
 }
 
 
@@ -674,7 +678,10 @@ http_CopyResp(struct worker *w, int fd, struct http *to, struct http *fm)
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
+	if (params->client_http11)
+		http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, "HTTP/1.1");
+	else
+		http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
 	http_copyh(w, fd, to, fm, HTTP_HDR_STATUS, HTTP_T_Status);
 	http_copyh(w, fd, to, fm, HTTP_HDR_RESPONSE, HTTP_T_Response);
 }

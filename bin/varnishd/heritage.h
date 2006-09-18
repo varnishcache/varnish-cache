@@ -38,6 +38,8 @@ struct params {
 	unsigned		wthread_timeout;
 	unsigned		wthread_pools;
 
+	unsigned		overflow_max;
+
 	/* Memory allocation hints */
 	unsigned		mem_workspace;
 
@@ -69,6 +71,10 @@ struct params {
 	/* Srcaddr hash */
 	unsigned		srcaddr_hash;
 	unsigned		srcaddr_ttl;
+
+	/* HTTP proto behaviour */
+	unsigned		backend_http11;
+	unsigned		client_http11;
 };
 
 extern struct params *params;
