@@ -143,7 +143,8 @@ res_do_304(struct sess *sp)
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_SetResp(sp->wrk, sp->fd, sp->http, "HTTP/1.1", "304", "Not Modified");
+	http_SetResp(sp->wrk, sp->fd, sp->http,
+	    "HTTP/1.1", "304", NULL);
 	TIM_format(sp->t_req.tv_sec, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");

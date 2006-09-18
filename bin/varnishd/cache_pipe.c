@@ -40,7 +40,7 @@ rdf(struct pollfd *fds, int idx)
 	}
 }
 
-int
+void
 PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
@@ -55,7 +55,7 @@ PipeSession(struct sess *sp)
 
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
-		return (1);
+		return;
 	vc->http->logtag = HTTP_Tx;
 
 	http_CopyReq(w, vc->fd, vc->http, sp->http);
@@ -69,7 +69,7 @@ PipeSession(struct sess *sp)
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");
-		VBE_ClosedFd(vc, 0);
+		VBE_ClosedFd(sp->wrk, vc, 0);
 		return;
 	}
 
@@ -94,5 +94,5 @@ PipeSession(struct sess *sp)
 	}
 	vca_close_session(sp, "pipe");
 	(void)close (vc->fd);
-	VBE_ClosedFd(vc, 1);
+	VBE_ClosedFd(sp->wrk, vc, 1);
 }
