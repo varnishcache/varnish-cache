@@ -212,7 +212,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 		return (CLIS_COMMS);
 	}
 
-	i = cli_readres(cli_i, &u, resp, 3.0);
+	i = cli_readres(cli_i, &u, resp, 5.0);
 	if (status != NULL)
 		*status = u;
 	return (u == CLIS_OK ? 0 : u);
