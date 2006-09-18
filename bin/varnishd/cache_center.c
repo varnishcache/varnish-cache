@@ -134,6 +134,7 @@ cnt_done(struct sess *sp)
 	}
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_end);
+	sp->wrk->idle = sp->t_end.tv_sec;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
@@ -155,7 +156,6 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, sp->doclose);
 	if (sp->fd < 0) {
 		VSL_stats->sess_closed++;
-		sp->wrk->idle = sp->t_open.tv_sec;
 		sp->wrk = NULL;
 		vca_return_session(sp);
 		return (1);
@@ -172,7 +172,6 @@ cnt_done(struct sess *sp)
 		return (0);
 	}
 	VSL_stats->sess_herd++;
-	sp->wrk->idle = sp->t_open.tv_sec;
 	sp->wrk = NULL;
 	vca_return_session(sp);
 	return (1);
