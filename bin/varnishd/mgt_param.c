@@ -161,6 +161,16 @@ tweak_thread_pool_timeout(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_overflow_max(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	tweak_generic_uint(cli, &params->overflow_max, arg, 0, UINT_MAX);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 {
 
@@ -299,6 +309,24 @@ tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_backend_http11(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_bool(cli, &params->backend_http11, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_client_http11(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_bool(cli, &params->client_http11, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -355,6 +383,11 @@ static struct parspec parspec[] = {
 		EXPERIMENTAL
 		DELAYED_EFFECT,
 		"120", "seconds" },
+	{ "overflow_max", tweak_overflow_max,
+		"Limit on overflow queue length in percent of "
+		"thread_pool_max parameter.\n"
+		EXPERIMENTAL,
+		"100", "%" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
@@ -439,6 +472,18 @@ static struct parspec parspec[] = {
 		"Zero will disable srcaddr accounting entirely.\n"
 		EXPERIMENTAL,
 		"30", "seconds" },
+	{ "backend_http11", tweak_backend_http11,
+		"Force all backend requests to be HTTP/1.1.\n"
+		"By default we copy the protocol version from the "
+		"incoming client request."
+		EXPERIMENTAL,
+		"off", "bool" },
+	{ "client_http11", tweak_client_http11,
+		"Force all client responses to be HTTP/1.1.\n"
+		"By default we copy the protocol version from the "
+		"backend response."
+		EXPERIMENTAL,
+		"off", "bool" },
 	{ NULL, NULL, NULL }
 };
 

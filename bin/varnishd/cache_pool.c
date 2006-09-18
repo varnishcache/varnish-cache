@@ -268,6 +268,14 @@ WRK_QueueSession(struct sess *sp)
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
+	if ((VSL_stats->n_wrk_overflow >
+	    (params->wthread_max * params->overflow_max) / 100)) {
+		VSL_stats->n_wrk_drop++;
+		UNLOCK(&tmtx);
+		vca_close_session(sp, "dropped");
+		vca_return_session(sp);
+		return;
+	}
 	/*
 	 * XXX: If there are too many requests in the overflow queue
 	 * XXX: we should kill the request right here. 
