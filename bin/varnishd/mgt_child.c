@@ -97,6 +97,7 @@ static void
 start_child(void)
 {
 	int i;
+	unsigned u;
 	char *p;
 	struct ev *e;
 
@@ -170,7 +171,7 @@ start_child(void)
 	AZ(close(heritage.fds[2]));
 	heritage.fds[2] = -1;
 	child_pid = i;
-	if (mgt_push_vcls_and_start(&i, &p)) {
+	if (mgt_push_vcls_and_start(&u, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
 		/* Pick up any stuff lingering on stdout/stderr */

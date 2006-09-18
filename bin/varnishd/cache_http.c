@@ -58,9 +58,6 @@ T(struct http *hp, enum httptag t)
 	return (logmtx[hp->logtag][t]);
 }
 
-#define VSLH(ax, bx, cx, dx) \
-	VSLR(T((cx), (ax)), (bx), (cx)->hd[(dx)].b, (cx)->hd[(dx)].e);
-
 #define WSLH(wx, ax, bx, cx, dx) \
 	WSLR(wx, T((cx), (ax)), (bx), (cx)->hd[(dx)].b, (cx)->hd[(dx)].e);
 
@@ -85,7 +82,7 @@ http_Setup(struct http *hp, void *space, unsigned len)
 /*--------------------------------------------------------------------*/
 
 
-int
+static int
 http_IsHdr(struct http_hdr *hh, char *hdr)
 {
 	unsigned l;

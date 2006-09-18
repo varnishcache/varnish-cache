@@ -14,7 +14,6 @@
 #include "mgt.h"
 #include "mgt_cli.h"
 
-#include "vsb.h"
 #include "heritage.h"
 
 struct parspec;
@@ -307,10 +306,6 @@ tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 
 #define DELAYED_EFFECT \
 	"\nNB: This parameter will take some time to take effect.\n"
-
-#define SHOULD_RESTART \
-	"\nNB: This parameter will not take full effect until the " \
-	"child process has been restarted.\n"
 
 #define MUST_RESTART \
 	"\nNB: This parameter will not take any effect until the " \

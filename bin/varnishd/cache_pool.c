@@ -240,7 +240,7 @@ WRK_QueueSession(struct sess *sp)
 	struct worker *w;
 	pthread_t tp;
 	struct wq *qp;
-	static unsigned nq;
+	static unsigned nq = 0;
 	unsigned onq;
 
 	onq = nq + 1;

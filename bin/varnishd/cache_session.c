@@ -76,7 +76,7 @@ static struct srcaddrhead {
 	MTX			mtx;
 } *srchash;
 	
-unsigned			nsrchash;
+static unsigned			nsrchash;
 static MTX			stat_mtx;
 
 /*--------------------------------------------------------------------

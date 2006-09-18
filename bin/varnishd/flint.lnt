@@ -1,6 +1,7 @@
 -passes=3
 
 +libh mgt_event.h
++libh ../../config.h
 
 -header(../../config.h)
 
@@ -20,7 +21,9 @@
 -e786	// String concatenation within initializer
 
 -emacro(740, TAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
+-emacro(740, TAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
 -emacro((826), TAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
+-emacro((826), TAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
 
 
 -esym(534, printf)	// Ignoring return value of function
