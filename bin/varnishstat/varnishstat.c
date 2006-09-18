@@ -26,7 +26,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 static void
-do_curses(struct varnish_stats *VSL_stats)
+do_curses(struct varnish_stats *VSL_stats, int delay)
 {
 	struct varnish_stats copy;
 	intmax_t ju;
@@ -92,14 +92,14 @@ do_curses(struct varnish_stats *VSL_stats)
 #undef MAC_STAT
 		lt = tt;
 		refresh();
-		sleep(1);
+		sleep(delay);
 	}
 }
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishstat [-1V]\n");
+	fprintf(stderr, "usage: varnishstat [-1V] [-w delay]\n");
 	exit(1);
 }
 
@@ -108,11 +108,11 @@ main(int argc, char **argv)
 {
 	int c;
 	struct varnish_stats *VSL_stats;
-	int once = 0;
+	int delay = 1, once = 0;
 
 	VSL_stats = VSL_OpenStats();
 
-	while ((c = getopt(argc, argv, "1V")) != -1) {
+	while ((c = getopt(argc, argv, "1Vw:")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -120,13 +120,16 @@ main(int argc, char **argv)
 		case 'V':
 			varnish_version("varnishstat");
 			exit(0);
+		case 'w':
+			delay = atoi(optarg);
+			break;
 		default:
 			usage();
 		}
 	}
 
 	if (!once) {
-		do_curses(VSL_stats);
+		do_curses(VSL_stats, delay);
 	} else {
 
 #define MAC_STAT(n,t,f,d) \

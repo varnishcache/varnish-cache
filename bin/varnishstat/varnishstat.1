@@ -11,6 +11,7 @@
 .Nm
 .Op Fl 1
 .Op Fl V
+.Op Fl w Ar delay
 .Sh DESCRIPTION
 The
 .Nm
@@ -25,6 +26,11 @@ Instead of presenting of a continuously updated display, print the
 statistics once and exit.
 .It Fl V
 Display the version number and exit.
+.It Fl w Ar delay
+Wait
+.Ar delay
+seconds between updates.
+The default is 1.
 .El
 .Pp
 The columns in the main display are, from left to right:
@@ -32,7 +38,7 @@ The columns in the main display are, from left to right:
 .It
 Total since startup
 .It
-Delta since last update (normally the last second)
+Delta since last update
 .It
 Average over process lifetime
 .It
