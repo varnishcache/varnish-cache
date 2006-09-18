@@ -260,12 +260,16 @@ struct vbe_conn *
 VBE_GetFd(struct sess *sp)
 {
 	struct vbe_conn *vc;
+	unsigned n;
 
-	vc = vbe_nextfd(sp);
-	if (vc != NULL) {
-		WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
-		    sp->backend->vcl_name);
-		return (vc);
+	for (n = 1; n < 5; n++) {
+		vc = vbe_nextfd(sp);
+		if (vc != NULL) {
+			WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
+			    sp->backend->vcl_name);
+			return (vc);
+		}
+		usleep(100000 * n);
 	}
 	RES_Error(sp, 503, "Backend did not respond.");
 	return (NULL);
