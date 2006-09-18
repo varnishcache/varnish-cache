@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
-/*
+ *
  * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
