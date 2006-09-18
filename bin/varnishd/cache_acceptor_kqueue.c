@@ -33,7 +33,7 @@ static struct kevent ki[NKEV];
 static unsigned nki;
 
 static void
-vca_kq_sess(struct sess *sp, int arm)
+vca_kq_sess(struct sess *sp, short arm)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);

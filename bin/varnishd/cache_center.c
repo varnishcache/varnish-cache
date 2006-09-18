@@ -35,7 +35,6 @@ DOT start -> RECV
 #include <unistd.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "vcl.h"
 #include "cache.h"
 

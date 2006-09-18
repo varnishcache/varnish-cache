@@ -124,8 +124,6 @@ struct worker {
 };
 
 struct workreq {
-	unsigned		magic;
-#define WORKREQ_MAGIC		0x5ccb4eb2
 	TAILQ_ENTRY(workreq)	list;
 	struct sess		*sess;
 };
@@ -342,7 +340,6 @@ void http_SetResp(struct worker *w, int fd, struct http *to, const char *proto, 
 void http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
-int http_IsHdr(struct http_hdr *hh, char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
@@ -396,7 +393,6 @@ void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
 void WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const char *e);
 void WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...);
 void WSL_Flush(struct worker *w);
-#define HERE() VSL(SLT_Debug, 0, "HERE: %s(%d)", __func__, __LINE__)
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
 	fprintf(stderr,"INCOMPLETE AT: %s(%d)\n", (const char *)__func__, __LINE__);	\

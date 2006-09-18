@@ -107,8 +107,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	p = strchr(fmt, '%');
-	if (p == NULL) {
+	if (strchr(fmt, '%') == NULL) {
 		VSLR(tag, id, fmt, NULL);
 		return;
 	}
@@ -221,8 +220,7 @@ WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	p = strchr(fmt, '%');
-	if (p == NULL) {
+	if (strchr(fmt, '%') == NULL) {
 		WSLR(w, tag, id, fmt, NULL);
 		return;
 	}

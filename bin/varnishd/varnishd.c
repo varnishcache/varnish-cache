@@ -347,9 +347,9 @@ main(int argc, char *argv[])
 	setbuf(stderr, NULL);
 
 	memset(cli, 0, sizeof cli);
-	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	XXXAN(cli->sb);
-	cli->result = CLIS_OK;
+	cli[0].sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	XXXAN(cli[0].sb);
+	cli[0].result = CLIS_OK;
 
 	heritage.socket = -1;
 	memset(&param, 0, sizeof param);
