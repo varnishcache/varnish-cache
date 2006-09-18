@@ -17,6 +17,7 @@
 static struct http_msg {
 	unsigned	nbr;
 	const char	*txt;
+	const char	*expl;
 } http_msg[] = {
 	{ 101, "Switching Protocols" },
 	{ 200, "OK" },
@@ -71,35 +72,29 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	struct http_msg *mp;
 	const char *msg;
 
+	assert(code >= 100 && code <= 999);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
 	msg = "Unknown error";
-	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= code; mp++) 
-		if (mp->nbr == code) {
-			msg = mp->txt;
+	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= code; mp++)  {
+		if (mp->nbr < code)
+			continue;
+		if (mp->nbr > code)
 			break;
-		}
+		msg = mp->txt;
+		if (expl == NULL)
+			expl = mp->expl;
+		break;
+	}
+	if (expl == NULL) 
+		expl = msg;
+	AN(expl);
+	AN(msg);
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(sb);
-	assert(code >= 100 && code <= 999);
-
-	if (msg == NULL) {
-		switch (code) {
-		case 400:	msg = "Bad Request"; break;
-		case 500:	msg = "Internal Error"; break;
-		default:	msg = "HTTP request error"; break;
-		}
-	}
-	if (expl == NULL) {
-		switch (code) {
-		case 400:	expl = "Your HTTP protocol request did not make sense."; break;
-		case 404:	expl = "The document you requested was not found."; break;
-		default:	expl = "Something unexpected happened."; break;
-		}
-	}
 
 	vsb_clear(sb);
 	vsb_printf(sb, "HTTP/1.1 %03d %s\r\n", code, msg);

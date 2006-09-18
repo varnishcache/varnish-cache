@@ -654,7 +654,8 @@ cnt_recv(struct sess *sp)
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 	sp->wrk->idle = sp->t_req.tv_sec;
 	sp->xid = ++xids;
-	WSL(sp->wrk, SLT_ReqStart, sp->fd, "%s %s %u", sp->addr, sp->port,  sp->xid);
+	WSL(sp->wrk, SLT_ReqStart, sp->fd,
+	    "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	AZ(sp->vcl);
 	VCL_Refresh(&sp->wrk->vcl);
