@@ -86,8 +86,10 @@ child_poker(struct ev *e, int what)
 	(void)what;
 	if (child_state != CH_RUNNING)
 		return (1);
-	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n"))
+	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n")) {
+		fprintf(stderr, "Child not responding to ping\n");
 		kill(child_pid, SIGKILL);
+	}
 	return (0);
 }
 
