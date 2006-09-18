@@ -1,5 +1,7 @@
 /*
- * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Written by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * This file is in the public domain.
  *
  * $Id$
  */

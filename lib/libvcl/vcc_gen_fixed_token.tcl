@@ -4,6 +4,8 @@
 # Copyright (c) 2006 Linpro AS
 # All rights reserved.
 #
+# Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
