@@ -146,7 +146,7 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 }
 
 static int
-vbe_connect(struct backend *bp)
+vbe_connect(struct sess *sp, struct backend *bp)
 {
 	int s;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
@@ -163,7 +163,7 @@ vbe_connect(struct backend *bp)
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name(ai->ai_addr, ai->ai_addrlen,
 	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSL(SLT_BackendOpen, s, "%s %s %s %s %s",
+	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
 	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 	return (s);
 }
@@ -214,7 +214,7 @@ vbe_nextfd(struct sess *sp)
 		pfd.revents = 0;
 		if (!poll(&pfd, 1, 0))
 			break;
-		VBE_ClosedFd(vc, 0);
+		VBE_ClosedFd(sp->wrk, vc, 0);
 	}
 
 	if (vc == NULL) {
@@ -230,7 +230,7 @@ vbe_nextfd(struct sess *sp)
 	/* If not connected yet, do so */
 	if (vc->fd < 0) {
 		AZ(vc->backend);
-		vc->fd = vbe_connect(bp);
+		vc->fd = vbe_connect(sp, bp);
 		LOCK(&vbemtx);
 		if (vc->fd < 0) {
 			vc->backend = NULL;
@@ -274,13 +274,13 @@ VBE_GetFd(struct sess *sp)
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(struct vbe_conn *vc, int already)
+VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
 	AN(vc->backend);
-	VSL(SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
+	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	if (!already)
 		AZ(close(vc->fd));
 	vc->fd = -1;
@@ -294,14 +294,14 @@ VBE_ClosedFd(struct vbe_conn *vc, int already)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VBE_RecycleFd(struct vbe_conn *vc)
+VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	VSL_stats->backend_recycle++;
-	VSL(SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
+	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
 	UNLOCK(&vbemtx);

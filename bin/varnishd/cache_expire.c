@@ -103,6 +103,7 @@ exp_hangman(void *arg)
 static void *
 exp_prefetch(void *arg)
 {
+	struct worker ww;
 	struct object *o;
 	time_t t;
 	struct sess *sp;
@@ -112,6 +113,11 @@ exp_prefetch(void *arg)
 
 	sp = SES_New(NULL, 0);
 	XXXAN(sp);
+	sp->wrk = &ww;
+	ww.magic = WORKER_MAGIC;
+	ww.wlp = ww.wlog;
+	ww.wle = ww.wlog + sizeof ww.wlog;
+
 	sleep(10);		/* Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
 	t = time(NULL);
@@ -122,9 +128,8 @@ exp_prefetch(void *arg)
 			CHECK_OBJ(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
 			UNLOCK(&exp_mtx);
-			VCL_Rel(&sp->vcl);
 			AZ(sleep(1));
-			VCL_Get(&sp->vcl);
+			VCL_Refresh(&sp->vcl);
 			t = time(NULL);
 			continue;
 		}
@@ -136,7 +141,7 @@ exp_prefetch(void *arg)
 			assert(o2->ttl >= o->ttl);
 
 		UNLOCK(&exp_mtx);
-		VSL(SLT_ExpPick, 0, "%u", o->xid);
+		WSL(&ww, SLT_ExpPick, 0, "%u", o->xid);
 
 		sp->obj = o;
 		VCL_timeout_method(sp);

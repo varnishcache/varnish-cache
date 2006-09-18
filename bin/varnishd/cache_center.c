@@ -126,8 +126,6 @@ cnt_done(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->vbc);
-	if (sp->fd >= 0 && sp->doclose != NULL)
-		vca_close_session(sp, sp->doclose);
 	sp->backend = NULL;
 	if (sp->vcl != NULL) {
 		if (sp->wrk->vcl != NULL)
@@ -153,6 +151,9 @@ cnt_done(struct sess *sp)
 	sp->xid = 0;
 	sp->t_open = sp->t_end;
 	SES_Charge(sp);
+	WSL_Flush(sp->wrk);
+	if (sp->fd >= 0 && sp->doclose != NULL)
+		vca_close_session(sp, sp->doclose);
 	if (sp->fd < 0) {
 		VSL_stats->sess_closed++;
 		sp->wrk->idle = sp->t_open.tv_sec;
@@ -620,7 +621,7 @@ cnt_pipe(struct sess *sp)
 {
 
 	sp->wrk->acct.pipe++;
-	(void)PipeSession(sp);
+	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
 }
