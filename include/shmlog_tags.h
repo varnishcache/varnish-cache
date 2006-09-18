@@ -24,6 +24,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * $Id$
  *
  * Define the tags in the shared memory in a reusable format.

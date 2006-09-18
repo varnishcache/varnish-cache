@@ -24,6 +24,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Initial implementation by Dag-Erling Smørgrav <des@des.no>
+ *
  * $Id$
  */
 

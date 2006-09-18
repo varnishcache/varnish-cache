@@ -24,6 +24,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Initial implementation by Anders Berg <andersb@vgnett.no> and
+ * Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * $Id$
  *
  * Program that will get data from the shared memory log. When it has the data
