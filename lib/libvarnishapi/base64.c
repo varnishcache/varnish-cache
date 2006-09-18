@@ -6,6 +6,10 @@
  * $Id$
  */
 
+#include <sys/types.h>
+#include <stdint.h>
+#include "varnishapi.h"
+
 static const char *b64 =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -20,7 +24,7 @@ base64_init(void)
 	for (i = 0; i < 256; i++)
 		i64[i] = -1;
 	for (p = b64, i = 0; *p; p++, i++)
-		i64[*p] = i;
+		i64[(int)*p] = i;
 	i64['='] = 0;
 }
 
@@ -30,12 +34,13 @@ base64_decode(char *d, unsigned dlen, const char *s)
 	unsigned u, v, l;
 	int i;
 
+	u = 0;
 	l = 0;
 	while (*s) {
 		for (v = 0; v < 4; v++) {
 			if (!*s)
 				break;
-			i = i64[*s++];
+			i = i64[(int)*s++];
 			if (i < 0)
 				return (-1);
 			u <<= 6;
@@ -50,7 +55,6 @@ base64_decode(char *d, unsigned dlen, const char *s)
 			d++;
 		}
 	}
-	printf("\n");
 	*d = '\0';
 	return (0);
 }
