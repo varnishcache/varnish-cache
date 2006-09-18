@@ -103,7 +103,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	vsb_cat(sb,
 		"Server: Varnish\r\n"
 		"Connection: close\r\n"
-		"content-Type: text/html; charset=iso-8859-1\r\n"
+		"Content-Type: text/html; charset=iso-8859-1\r\n"
 		"\r\n"
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
 		"<HTML>\r\n"

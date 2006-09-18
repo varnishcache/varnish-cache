@@ -202,12 +202,9 @@ PassSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	vc = VBE_GetFd(sp->backend, sp->xid);
-	if (vc == NULL) {
-		RES_Error(sp, 503, "Backend did not respond.");
+	vc = VBE_GetFd(sp);
+	if (vc == NULL)
 		return (1);
-	}
-	WSL(w, SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
 
 	http_CopyReq(w, vc->fd, vc->http, sp->http);
 	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_PASS);

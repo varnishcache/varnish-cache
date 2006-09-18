@@ -40,7 +40,7 @@ rdf(struct pollfd *fds, int idx)
 	}
 }
 
-void
+int
 PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
@@ -53,12 +53,9 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	vc = VBE_GetFd(sp->backend, sp->xid);
-	if (vc == NULL) {
-		RES_Error(sp, 503, "Backend did not respond.");
-		return;
-	}
-	VSL(SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+	vc = VBE_GetFd(sp);
+	if (vc == NULL)
+		return (1);
 	vc->http->logtag = HTTP_Tx;
 
 	http_CopyReq(w, vc->fd, vc->http, sp->http);
