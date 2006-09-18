@@ -85,7 +85,7 @@ do_curses(struct varnish_stats *VSL_stats)
 
 #define MAC_STAT(n,t,f,d) \
 		ju = VSL_stats->n; \
-		printw("%12ju  %10.2f %10.2f " d "\n", \
+		printw("%12ju %12.2f %12.2f " d "\n", \
 		    ju, (ju - (intmax_t)copy.n)/lt, ju / up); \
 		copy.n = ju;
 #include "stat_field.h"
