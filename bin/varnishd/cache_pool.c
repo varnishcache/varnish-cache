@@ -36,11 +36,11 @@ TAILQ_HEAD(workerhead, worker);
 struct wq {
 	MTX 			mtx;
 	struct workerhead	idle;
-	TAILQ_HEAD(, workreq)   req;
 	unsigned		nwrk;
 };
 
 static MTX			tmtx;
+static TAILQ_HEAD(, workreq)	overflow = TAILQ_HEAD_INITIALIZER(overflow);
 
 static struct wq		**wq;
 static unsigned			nwq;
@@ -191,22 +191,25 @@ wrk_thread(void *priv)
 	VSL_stats->n_wrk_busy++;
 	VSL_stats->n_wrk_create++;
 	UNLOCK(&tmtx);
-	LOCK(&qp->mtx);
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process overflow requests, if any */
-		for(;;) {
-			w->wrq = TAILQ_FIRST(&qp->req);
-			if (w->wrq == NULL)
-				break;
-			AN(w->wrq);
-			TAILQ_REMOVE(&qp->req, w->wrq, list);
-			UNLOCK(&qp->mtx);
-			wrk_do_one(w);
-			LOCK(&qp->mtx);
+		w->wrq = TAILQ_FIRST(&overflow);
+		if (w != NULL) {
+			LOCK(&tmtx);
+			w->wrq = TAILQ_FIRST(&overflow);
+			if (w->wrq != NULL) {
+				VSL_stats->n_wrk_queue--;
+				TAILQ_REMOVE(&overflow, w->wrq, list);
+				UNLOCK(&tmtx);
+				wrk_do_one(w);
+				continue;
+			}
+			UNLOCK(&tmtx);
 		}
 		
+		LOCK(&qp->mtx);
 		TAILQ_INSERT_HEAD(&qp->idle, w, list);
 		assert(w->idle != 0);
 		UNLOCK(&qp->mtx);
@@ -217,7 +220,6 @@ wrk_thread(void *priv)
 		if (w->idle == 0)
 			break;
 		wrk_do_one(w);
-		LOCK(&qp->mtx);
 	}
 	LOCK(&tmtx);
 	VSL_stats->n_wrk--;
@@ -270,10 +272,11 @@ WRK_QueueSession(struct sess *sp)
 		return;
 	}
 	
-	TAILQ_INSERT_TAIL(&qp->req, &sp->workreq, list);
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
+	TAILQ_INSERT_TAIL(&overflow, &sp->workreq, list);
+	VSL_stats->n_wrk_overflow++;
 	VSL_stats->n_wrk_queue++;
 	/* Can we create more threads ? */
 	if (VSL_stats->n_wrk >= params->wthread_max ||
@@ -327,7 +330,6 @@ wrk_addpools(unsigned t)
 		XXXAN(wq[u]);
 		MTX_INIT(&wq[u]->mtx);
 		TAILQ_INIT(&wq[u]->idle);
-		TAILQ_INIT(&wq[u]->req);
 	}
 	free(owq);
 	nwq = t;
