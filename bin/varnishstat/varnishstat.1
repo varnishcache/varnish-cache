@@ -26,6 +26,18 @@ statistics once and exit.
 .It Fl V
 Display the version number and exit.
 .El
+.Pp
+The columns in the main display are, from left to right:
+.Bl -enum
+.It
+Total since startup
+.It
+Delta since last update (normally the last second)
+.It
+Average over process lifetime
+.It
+Descriptive text
+.El
 .Sh SEE ALSO
 .Xr varnishd 1 ,
 .Xr varnishhist 1 ,
