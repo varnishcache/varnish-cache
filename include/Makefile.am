@@ -13,7 +13,6 @@ noinst_HEADERS = \
 	compat/strndup.h \
 	compat/vasprintf.h \
 	compat/vis.h \
-	hash.h \
 	http_headers.h \
 	libvarnish.h \
 	libvcl.h \
