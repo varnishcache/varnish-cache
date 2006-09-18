@@ -196,7 +196,7 @@ wrk_thread(void *priv)
 
 		/* Process overflow requests, if any */
 		w->wrq = TAILQ_FIRST(&overflow);
-		if (w != NULL) {
+		if (w->wrq != NULL) {
 			LOCK(&tmtx);
 			w->wrq = TAILQ_FIRST(&overflow);
 			if (w->wrq != NULL) {
