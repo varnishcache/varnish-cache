@@ -1,3 +1,8 @@
+/*
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * $Id$
+ */
 
 #include <poll.h>
 #include "queue.h"

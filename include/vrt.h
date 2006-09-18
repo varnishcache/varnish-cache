@@ -24,7 +24,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$ 
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * $Id$
  *
  * Runtime support for compiled VCL programs.
  *

@@ -24,6 +24,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * $Id$
  *
  * This file contains the heritage passed when mgt forks cache

@@ -24,10 +24,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * $Id$
  *
- * This is the central hash-table code, it relies on a chosen hash 
- * implmentation only for the actual hashing, all the housekeeping
+ * This is the central hash-table code, it relies on a chosen hash
+ * implementation only for the actual hashing, all the housekeeping
  * happens here.
  *
  * We have two kinds of structures, objecthead and object.  An objecthead
@@ -37,7 +39,7 @@
  *
  * Each objecthead has a mutex which locks both its own fields, the
  * list of objects and fields in the objects.
- *   
+ *
  * The hash implementation must supply a reference count facility on
  * the objecthead, and return with a reference held after a lookup.
  *

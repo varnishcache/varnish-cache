@@ -25,6 +25,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * $Id$
  * $FreeBSD: src/sys/sys/vsb.h,v 1.14 2004/07/09 11:35:30 des Exp $
  */

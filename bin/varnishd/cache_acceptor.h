@@ -1,5 +1,7 @@
-/* 
- * $Id$ 
+/*
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * $Id$
  */
 
 struct sess;

@@ -1,4 +1,8 @@
-/* $Id$ */
+/*
+ * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * $Id$
+ */
 
 MAC_STAT(client_conn,		uint64_t, "u", "Client connections accepted")
 MAC_STAT(client_req,		uint64_t, "u", "Client requests received")
