@@ -322,16 +322,23 @@ FetchHeaders(struct sess *sp)
 
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
-	i = WRK_Flush(w);
-	xxxassert(i == 0);
+	if (WRK_Flush(w)) {
+		/* XXX: cleanup */
+		return (1);
+	}
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
-	i = http_RecvHead(vc->http, vc->fd);
-	xxxassert(i == 0);
-	xxxassert(http_DissectResponse(sp->wrk, vc->http, vc->fd) == 0);
+	if (http_RecvHead(vc->http, vc->fd)) {
+		/* XXX: cleanup */
+		return (1);
+	}
+	if (http_DissectResponse(sp->wrk, vc->http, vc->fd)) {
+		/* XXX: cleanup */
+		return (1);
+	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);

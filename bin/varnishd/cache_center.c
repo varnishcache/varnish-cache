@@ -550,6 +550,7 @@ cnt_miss(struct sess *sp)
 			HSH_Deref(sp->obj);
 			sp->obj = NULL;
 			sp->step = STP_DONE;
+			RES_Error(sp, 503, NULL);
 			return (0);
 		}
 		sp->step = STP_FETCH;

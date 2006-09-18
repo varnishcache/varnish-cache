@@ -421,6 +421,10 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	for (p = hp->s ; isspace(*p); p++)
 		continue;
 
+	if (memcmp(p, "HTTP/1.", 7)) {
+		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		return (400);
+	}
 	/* First, protocol */
 	hp->hd[HTTP_HDR_PROTO].b = p;
 	while (!isspace(*p))
