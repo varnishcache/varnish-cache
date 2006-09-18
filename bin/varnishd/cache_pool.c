@@ -275,6 +275,12 @@ WRK_QueueSession(struct sess *sp)
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
+	/*
+	 * XXX: If there are too many requests in the overflow queue
+	 * XXX: we should kill the request right here. 
+	 * XXX: Not sure how though.  Simply closing may be the better
+	 * XXX: compromise.
+	 */
 	TAILQ_INSERT_TAIL(&overflow, &sp->workreq, list);
 	VSL_stats->n_wrk_overflow++;
 	VSL_stats->n_wrk_queue++;
