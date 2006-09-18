@@ -79,7 +79,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
-	if (loghead->ptr + 5 + l + 1 > loghead->size)
+	if (loghead->ptr + 5 + l + 1 >= loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
 	loghead->ptr += 5 + l;
