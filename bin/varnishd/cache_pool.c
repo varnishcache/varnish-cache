@@ -188,7 +188,6 @@ wrk_thread(void *priv)
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 	LOCK(&tmtx);
-	VSL_stats->n_wrk_busy++;
 	VSL_stats->n_wrk_create++;
 	UNLOCK(&tmtx);
 	while (1) {
@@ -213,9 +212,6 @@ wrk_thread(void *priv)
 		TAILQ_INSERT_HEAD(&qp->idle, w, list);
 		assert(w->idle != 0);
 		UNLOCK(&qp->mtx);
-		LOCK(&tmtx);
-		VSL_stats->n_wrk_busy--;
-		UNLOCK(&tmtx);
 		assert(1 == read(w->pipe[0], &c, 1));
 		if (w->idle == 0)
 			break;
@@ -266,9 +262,6 @@ WRK_QueueSession(struct sess *sp)
 		UNLOCK(&qp->mtx);
 		w->wrq = &sp->workreq;
 		assert(1 == write(w->pipe[1], w, 1));
-		LOCK(&tmtx);
-		VSL_stats->n_wrk_busy++;
-		UNLOCK(&tmtx);
 		return;
 	}
 	
