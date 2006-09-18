@@ -37,7 +37,6 @@ struct wq {
 	MTX 			mtx;
 	struct workerhead	idle;
 	TAILQ_HEAD(, workreq)   req;
-	unsigned		overflow;
 	unsigned		nwrk;
 };
 
@@ -197,15 +196,15 @@ wrk_thread(void *priv)
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process overflow requests, if any */
-		if (qp->overflow > 0) {
-			qp->overflow--;
+		for(;;) {
 			w->wrq = TAILQ_FIRST(&qp->req);
+			if (w->wrq == NULL)
+				break;
 			AN(w->wrq);
 			TAILQ_REMOVE(&qp->req, w->wrq, list);
 			UNLOCK(&qp->mtx);
 			wrk_do_one(w);
 			LOCK(&qp->mtx);
-			continue;
 		}
 		
 		TAILQ_INSERT_HEAD(&qp->idle, w, list);
@@ -272,7 +271,6 @@ WRK_QueueSession(struct sess *sp)
 	}
 	
 	TAILQ_INSERT_TAIL(&qp->req, &sp->workreq, list);
-	qp->overflow++;
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
