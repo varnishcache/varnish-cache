@@ -303,6 +303,13 @@ cnt_first(struct sess *sp)
 {
 	int i;
 
+	/*
+	 * XXX: If we don't have acceptfilters we are somewhat subject
+	 * XXX: to DoS'ing here.  One remedy would be to set a shorter
+	 * XXX: SO_RCVTIMEO and once we have received something here
+	 * XXX: increase it to the normal value.
+	 */
+
 	assert(sp->xid == 0);
 	VCA_Prep(sp);
 	sp->wrk->idle = sp->t_open.tv_sec;
