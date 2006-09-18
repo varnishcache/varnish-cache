@@ -290,11 +290,9 @@ FetchHeaders(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 
-	vc = VBE_GetFd(sp->backend, sp->xid);
+	vc = VBE_GetFd(sp);
 	if (vc == NULL)
-		vc = VBE_GetFd(sp->backend, sp->xid);
-	XXXAN(vc);
-	WSL(w, SLT_Backend, sp->fd, "%d %s", vc->fd, sp->backend->vcl_name);
+		return (1);
 
 	http_ClrHeader(vc->http);
 	vc->http->logtag = HTTP_Tx;

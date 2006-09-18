@@ -297,7 +297,7 @@ void VCA_Init(void);
 
 /* cache_backend.c */
 void VBE_Init(void);
-struct vbe_conn *VBE_GetFd(struct backend *bp, unsigned xid);
+struct vbe_conn *VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct vbe_conn *vc, int already);
 void VBE_RecycleFd(struct vbe_conn *vc);
 
@@ -367,7 +367,7 @@ int PassSession(struct sess *sp);
 void PassBody(struct sess *sp);
 
 /* cache_pipe.c */
-void PipeSession(struct sess *sp);
+int PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);

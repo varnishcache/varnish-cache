@@ -175,12 +175,15 @@ vbe_connect(struct backend *bp)
  * new connection.
  */
 
-struct vbe_conn *
-VBE_GetFd(struct backend *bp, unsigned xid)
+static struct vbe_conn *
+vbe_nextfd(struct sess *sp)
 {
 	struct vbe_conn *vc, *vc2;
 	struct pollfd pfd;
+	struct backend *bp;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	bp = sp->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	while (1) {
 		/*
@@ -245,10 +248,27 @@ VBE_GetFd(struct backend *bp, unsigned xid)
 	if (vc != NULL ) {
 		assert(vc->fd >= 0);
 		VSL_stats->backend_conn++;
-		VSL(SLT_BackendXID, vc->fd, "%u", xid);
+		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
 		AN(vc->backend);
 	}
 	return (vc);
+}
+
+/*--------------------------------------------------------------------*/
+
+struct vbe_conn *
+VBE_GetFd(struct sess *sp)
+{
+	struct vbe_conn *vc;
+
+	vc = vbe_nextfd(sp);
+	if (vc != NULL) {
+		WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
+		    sp->backend->vcl_name);
+		return (vc);
+	}
+	RES_Error(sp, 503, "Backend did not respond.");
+	return (NULL);
 }
 
 /* Close a connection ------------------------------------------------*/

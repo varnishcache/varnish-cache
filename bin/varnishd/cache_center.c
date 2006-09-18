@@ -530,7 +530,14 @@ cnt_miss(struct sess *sp)
 		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
 		AZ(sp->vbc);
-		FetchHeaders(sp);
+		if (FetchHeaders(sp)) {
+			sp->obj->cacheable = 0;
+			HSH_Unbusy(sp->obj);
+			HSH_Deref(sp->obj);
+			sp->obj = NULL;
+			sp->step = STP_DONE;
+			return (0);
+		}
 		sp->step = STP_FETCH;
 		AN(sp->vbc);
 		return (0);
@@ -613,7 +620,7 @@ cnt_pipe(struct sess *sp)
 {
 
 	sp->wrk->acct.pipe++;
-	PipeSession(sp);
+	(void)PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
 }
