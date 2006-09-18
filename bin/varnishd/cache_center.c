@@ -280,8 +280,16 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 	if (sp->handling == VCL_RET_INSERT) {
+		if (FetchBody(sp)) {
+			sp->obj->cacheable = 0;
+			HSH_Unbusy(sp->obj);
+			HSH_Deref(sp->obj);
+			sp->obj = NULL;
+			RES_Error(sp, 503, NULL);
+			sp->step = STP_DONE;
+			return (0);
+		}
 		sp->obj->cacheable = 1;
-		FetchBody(sp);
 		AZ(sp->vbc);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);

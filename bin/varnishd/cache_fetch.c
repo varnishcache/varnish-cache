@@ -45,7 +45,8 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 
 	while (cl > 0) {
 		i = http_Read(hp, fd, p, cl);
-		xxxassert(i > 0);	/* XXX seen */
+		if (i <= 0)
+			return (-1);
 		p += i;
 		cl -= i;
 	}
@@ -86,7 +87,8 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 		if (q == NULL || q == buf || *q != '\n') {
 			xxxassert(be > bp);
 			i = http_Read(hp, fd, bp, be - bp);
-			xxxassert(i >= 0);
+			if (i <= 0)
+				return (-1);
 			bp += i;
 			continue;
 		}
@@ -135,6 +137,8 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			/* Pick up the rest of this chunk */
 			while (v > 0) {
 				i = http_Read(hp, fd, st->ptr + st->len, v);
+				if (i <= 0)
+					return (-1);
 				st->len += i;
 				sp->obj->len += i;
 				u -= i;
@@ -190,9 +194,10 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 		AN(p);
 		AN(st);
 		i = http_Read(hp, fd, p, v);
-		xxxassert(i >= 0);
+		if (i < 0)
+			return (-1);
 		if (i == 0)
-		     break;
+			break;
 		p += i;
 		v -= i;
 		st->len += i;
@@ -218,6 +223,7 @@ FetchBody(struct sess *sp)
 	char *b;
 	int body = 1;		/* XXX */
 	struct http *hp;
+	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -248,9 +254,19 @@ FetchBody(struct sess *sp)
 	} else
 		cls = 0;
 
+	if (cls < 0) {
+		while (!TAILQ_EMPTY(&sp->obj->store)) {
+			st = TAILQ_FIRST(&sp->obj->store);
+			TAILQ_REMOVE(&sp->obj->store, st, list);
+			stevedore->free(st);
+		}
+		close(vc->fd);
+		VBE_ClosedFd(sp->wrk, vc, 1);
+		return (-1);
+	}
+
 	{
 	/* Sanity check fetch methods accounting */
-		struct storage *st;
 		unsigned uu;
 
 		uu = 0;
