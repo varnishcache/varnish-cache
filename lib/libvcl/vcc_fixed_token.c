@@ -494,7 +494,6 @@ vcl_output_lang_h(FILE *f)
 	fputs(" * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n", f);
 	fputs(" * SUCH DAMAGE.\n", f);
 	fputs(" *\n", f);
-	fputs(" * Initial implementation by Poul-Henning Kamp <phk@phk.freebsd.dk>\n", f);
 	fputs(" *\n", f);
 	fputs(" * $Id$\n", f);
 	fputs(" *\n", f);
