@@ -1,0 +1,64 @@
+.\"-
+.\" Copyright (c) 2006 Verdens Gang AS
+.\" Copyright (c) 2006 Linpro AS
+.\" All rights reserved.
+.\"
+.\" Author: Dag-Erling Smørgrav <des@linpro.no>
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $Id$
+.\"
+.Dd September 20, 2006
+.Dt VCL 7
+.Os
+.Sh NAME
+.Nm VCL
+.Nd Varnish Configuration Language
+.Sh SYNOPSIS
+.\" ...
+.Sh DESCRIPTION
+The
+.Nm
+language is a small domain-specific language designed to be used to
+define request handling and document caching policies for the Varnish
+HTTP accelerator.
+.Pp
+When a new configuration is loaded, the
+.Nm varnishd
+management process translates the VCL code to C and compiles it to a
+shared object which is then dynamically linked into the server
+process.
+.Ss Syntax
+.Ss The State Machine
+.Ss Backend Definitions
+.Ss Access Control Lists
+.Sh SEE ALSO
+.Xr varnishd 1
+.Sh HISTORY
+The
+.Nm
+language was developed by
+.An Poul-Henning Kamp Aq phk@phk.freebsd.dk
+in cooperation with Verdens Gang AS and Linpro AS.
+This manual page was written by
+.An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
