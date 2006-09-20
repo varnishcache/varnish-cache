@@ -13,9 +13,5 @@ varnishstat_CFLAGS = -include config.h
 varnishstat_LDADD = \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la  \
+	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lcurses
-
-if NEED_LIBRT
-varnishstat_LDADD += -lrt
-endif
