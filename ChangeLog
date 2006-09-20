@@ -1,3 +1,2966 @@
+2006-09-20 09:44  des
+
+ * branches/1.0, branches/1.0/README:
+
+   r31732@cat (orig r1101): des | 2006-09-20 11:43:39 +0200
+   Update.
+
+2006-09-20 09:44  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pool.c:
+
+   r31731@cat (orig r1100): phk | 2006-09-20 11:00:20 +0200
+   When ditching sessions due to overflow, only ditch new sessions.
+   
+   
+
+2006-09-20 08:44  des
+
+ * branches/1.0, branches/1.0/configure.ac:
+
+   Branch 1.0 and set version number.
+
+2006-09-20 08:37  des
+
+ * trunk/varnish-cache/bin/varnishd/Makefile.am,
+   trunk/varnish-cache/bin/varnishncsa/Makefile.am,
+   trunk/varnish-cache/bin/varnishstat/Makefile.am,
+   trunk/varnish-cache/configure.ac:
+
+   Trust autoconf to dtrt wrt libraries.
+   Prefer libthr to libpthread if it's available (i.e. on FreeBSD 6 and newer)
+
+2006-09-20 07:51  des
+
+ * trunk/varnish-cache/include/vcl.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c:
+
+   Regenerate.
+
+2006-09-20 07:50  des
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/hash_slinger.h,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_event.c,
+   trunk/varnish-cache/bin/varnishd/mgt_event.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/steps.h,
+   trunk/varnish-cache/bin/varnishd/stevedore.h,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.c,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/binary_heap.h,
+   trunk/varnish-cache/include/cli.h,
+   trunk/varnish-cache/include/cli_common.h,
+   trunk/varnish-cache/include/cli_priv.h,
+   trunk/varnish-cache/include/compat/asprintf.h,
+   trunk/varnish-cache/include/compat/setproctitle.h,
+   trunk/varnish-cache/include/compat/srandomdev.h,
+   trunk/varnish-cache/include/compat/strlcat.h,
+   trunk/varnish-cache/include/compat/strlcpy.h,
+   trunk/varnish-cache/include/compat/strndup.h,
+   trunk/varnish-cache/include/compat/vasprintf.h,
+   trunk/varnish-cache/include/http_headers.h,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/include/libvcl.h,
+   trunk/varnish-cache/include/shmlog.h,
+   trunk/varnish-cache/include/shmlog_tags.h,
+   trunk/varnish-cache/include/stat_field.h,
+   trunk/varnish-cache/include/stats.h,
+   trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/include/vcl.h, trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vsb.h,
+   trunk/varnish-cache/lib/libcompat/asprintf.c,
+   trunk/varnish-cache/lib/libcompat/setproctitle.c,
+   trunk/varnish-cache/lib/libcompat/srandomdev.c,
+   trunk/varnish-cache/lib/libcompat/strndup.c,
+   trunk/varnish-cache/lib/libcompat/vasprintf.c,
+   trunk/varnish-cache/lib/libvarnish/argv.c,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/binary_heap.c,
+   trunk/varnish-cache/lib/libvarnish/cli.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnish/time.c,
+   trunk/varnish-cache/lib/libvarnish/version.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c,
+   trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c:
+
+   Whitespace, comment and attribution fixes.
+
+2006-09-19 05:39  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/hash_slinger.h,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_event.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/stevedore.h,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/binary_heap.h,
+   trunk/varnish-cache/include/cli.h,
+   trunk/varnish-cache/include/cli_common.h,
+   trunk/varnish-cache/include/cli_priv.h,
+   trunk/varnish-cache/include/compat/asprintf.h,
+   trunk/varnish-cache/include/compat/setproctitle.h,
+   trunk/varnish-cache/include/compat/srandomdev.h,
+   trunk/varnish-cache/include/compat/strlcat.h,
+   trunk/varnish-cache/include/compat/strlcpy.h,
+   trunk/varnish-cache/include/compat/strndup.h,
+   trunk/varnish-cache/include/compat/vasprintf.h,
+   trunk/varnish-cache/include/http_headers.h,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/include/libvcl.h,
+   trunk/varnish-cache/include/shmlog.h,
+   trunk/varnish-cache/include/shmlog_tags.h,
+   trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/include/vrt.h, trunk/varnish-cache/include/vsb.h,
+   trunk/varnish-cache/lib/libcompat/strndup.c,
+   trunk/varnish-cache/lib/libvarnish/argv.c,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/binary_heap.c,
+   trunk/varnish-cache/lib/libvarnish/cli.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnish/time.c,
+   trunk/varnish-cache/lib/libvarnish/version.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c,
+   trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c:
+
+   Remove doubled author information.
+
+2006-09-18 22:39  des
+
+ * trunk/varnish-cache/include/vcl.h,
+   trunk/varnish-cache/include/vcl_returns.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_token_defs.h:
+
+   Re-regenerate.
+
+2006-09-18 22:04  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c:
+
+   Typo
+
+2006-09-18 22:03  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/base64.c:
+
+   Quench warnings.
+
+2006-09-18 22:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/hash_slinger.h,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_event.c,
+   trunk/varnish-cache/bin/varnishd/mgt_event.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/steps.h,
+   trunk/varnish-cache/bin/varnishd/stevedore.h,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/binary_heap.h,
+   trunk/varnish-cache/include/cli.h,
+   trunk/varnish-cache/include/cli_common.h,
+   trunk/varnish-cache/include/cli_priv.h,
+   trunk/varnish-cache/include/http_headers.h,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/include/libvcl.h,
+   trunk/varnish-cache/include/miniobj.h,
+   trunk/varnish-cache/include/shmlog_tags.h,
+   trunk/varnish-cache/include/stat_field.h,
+   trunk/varnish-cache/include/stats.h,
+   trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/include/vcl.h,
+   trunk/varnish-cache/include/vcl_returns.h,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libvarnish/argv.c,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/binary_heap.c,
+   trunk/varnish-cache/lib/libvarnish/cli.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnish/time.c,
+   trunk/varnish-cache/lib/libvarnishapi/base64.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c,
+   trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_gen_fixed_token.tcl,
+   trunk/varnish-cache/lib/libvcl/vcc_gen_obj.tcl,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_token_defs.h:
+
+   Assert my right to be identified as the author of this work.
+   
+   A couple of files were written by me previous to this project and
+   in the public domain.
+
+2006-09-18 21:51  phk
+
+ * trunk/varnish-cache/bin/varnishtester:
+
+   Remove this not-quite-a-prototype
+
+2006-09-18 21:50  des
+
+ * trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_token_defs.h:
+
+   Regenerate to revert over-eager mechanical edits.
+
+2006-09-18 21:48  des
+
+ * trunk/varnish-cache/bin/varnishd/mgt_event.h,
+   trunk/varnish-cache/bin/varnishtester/varnishtester.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h:
+
+   Expand tags.
+
+2006-09-18 21:48  des
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/hash_slinger.h,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_event.c,
+   trunk/varnish-cache/bin/varnishd/mgt_event.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/steps.h,
+   trunk/varnish-cache/bin/varnishd/stevedore.h,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.1,
+   trunk/varnish-cache/bin/varnishd/varnishd.c,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.1,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.1,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.c,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.1,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.1,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtester/varnishtester.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.1,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/binary_heap.h,
+   trunk/varnish-cache/include/cli.h,
+   trunk/varnish-cache/include/cli_common.h,
+   trunk/varnish-cache/include/cli_priv.h,
+   trunk/varnish-cache/include/compat/asprintf.h,
+   trunk/varnish-cache/include/compat/setproctitle.h,
+   trunk/varnish-cache/include/compat/srandomdev.h,
+   trunk/varnish-cache/include/compat/strlcat.h,
+   trunk/varnish-cache/include/compat/strlcpy.h,
+   trunk/varnish-cache/include/compat/strndup.h,
+   trunk/varnish-cache/include/compat/vasprintf.h,
+   trunk/varnish-cache/include/http_headers.h,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/include/libvcl.h,
+   trunk/varnish-cache/include/miniobj.h,
+   trunk/varnish-cache/include/shmlog.h,
+   trunk/varnish-cache/include/shmlog_tags.h,
+   trunk/varnish-cache/include/stat_field.h,
+   trunk/varnish-cache/include/stats.h,
+   trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/include/vcl.h,
+   trunk/varnish-cache/include/vcl_returns.h,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/include/vsb.h,
+   trunk/varnish-cache/lib/libcompat/asprintf.c,
+   trunk/varnish-cache/lib/libcompat/setproctitle.c,
+   trunk/varnish-cache/lib/libcompat/srandomdev.c,
+   trunk/varnish-cache/lib/libcompat/strndup.c,
+   trunk/varnish-cache/lib/libcompat/vasprintf.c,
+   trunk/varnish-cache/lib/libvarnish/argv.c,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/binary_heap.c,
+   trunk/varnish-cache/lib/libvarnish/cli.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnish/time.c,
+   trunk/varnish-cache/lib/libvarnish/version.c,
+   trunk/varnish-cache/lib/libvarnishapi/base64.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c,
+   trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_token_defs.h:
+
+   Rendons à César ce qui lui appartient.
+
+2006-09-18 21:33  phk
+
+ * trunk/varnish-cache/include/varnish:
+
+   Remove unused directory
+
+2006-09-18 21:32  phk
+
+ * trunk/varnish-cache/include/Makefile.am,
+   trunk/varnish-cache/include/varnish/assert.h:
+
+   Remove unused file
+
+2006-09-18 21:30  phk
+
+ * trunk/varnish-cache/include/Makefile.am,
+   trunk/varnish-cache/include/hash.h:
+
+   Remove unused file
+
+2006-09-18 21:08  des
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.1,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.1,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.1,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.1,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.1,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.1:
+
+   Licensify man pages as well.
+
+2006-09-18 20:27  des
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/hash_slinger.h,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_event.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/stevedore.h,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/bin/varnishlog/varnishlog.c,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/binary_heap.h,
+   trunk/varnish-cache/include/cli.h,
+   trunk/varnish-cache/include/cli_common.h,
+   trunk/varnish-cache/include/cli_priv.h,
+   trunk/varnish-cache/include/compat/asprintf.h,
+   trunk/varnish-cache/include/compat/setproctitle.h,
+   trunk/varnish-cache/include/compat/srandomdev.h,
+   trunk/varnish-cache/include/compat/strlcat.h,
+   trunk/varnish-cache/include/compat/strlcpy.h,
+   trunk/varnish-cache/include/compat/strndup.h,
+   trunk/varnish-cache/include/compat/vasprintf.h,
+   trunk/varnish-cache/include/http_headers.h,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/include/libvcl.h,
+   trunk/varnish-cache/include/shmlog.h,
+   trunk/varnish-cache/include/shmlog_tags.h,
+   trunk/varnish-cache/include/varnish/assert.h,
+   trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/include/vcl.h,
+   trunk/varnish-cache/include/vcl_returns.h,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libcompat/asprintf.c,
+   trunk/varnish-cache/lib/libcompat/setproctitle.c,
+   trunk/varnish-cache/lib/libcompat/srandomdev.c,
+   trunk/varnish-cache/lib/libcompat/strndup.c,
+   trunk/varnish-cache/lib/libcompat/vasprintf.c,
+   trunk/varnish-cache/lib/libvarnish/argv.c,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/binary_heap.c,
+   trunk/varnish-cache/lib/libvarnish/cli.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnish/time.c,
+   trunk/varnish-cache/lib/libvarnish/version.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c,
+   trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_gen_fixed_token.tcl,
+   trunk/varnish-cache/lib/libvcl/vcc_gen_obj.tcl,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c,
+   trunk/varnish-cache/lib/libvcl/vcc_priv.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_token_defs.h:
+
+   Licensify.
+
+2006-09-18 19:47  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c:
+
+   More backend error conditions changed from assert to 503
+
+2006-09-18 19:38  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c:
+
+   Deal with backend connection errors while fetching the body.
+   
+   Eventually, VCL should get a say in this.
+
+2006-09-18 18:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Introduce three new params, to limit overflow queue length
+   and to force HTTP/1.1 protocol version.
+
+2006-09-18 17:18  phk
+
+ * trunk/varnish-cache/include/http_headers.h:
+
+   Don't copy the Age: header into the object.
+
+2006-09-18 15:24  des
+
+ * trunk/varnish-cache/bin/varnishtop/Makefile.am,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.1:
+
+   Add man page.
+
+2006-09-18 14:54  phk
+
+ * trunk/varnish-cache/bin/varnishd/shmlog.c:
+
+   Off by one.
+
+2006-09-18 14:29  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Set worker idle timestamp to request end.
+
+2006-09-18 10:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Drop the n_wrk_busy statistics, it is too expensive to maintain
+   due to locking.
+
+2006-09-18 10:38  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Add a couple of XXX comments
+
+2006-09-18 10:21  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   typo
+
+2006-09-18 10:10  phk
+
+ * trunk/varnish-cache/include/stat_field.h:
+
+   Add stat field missing in last commit
+
+2006-09-18 10:10  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Make a global overflow queue so we don't risk parking requests
+   on workpools with no available threads.
+
+2006-09-18 09:57  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   eliminate redundant counter.
+
+2006-09-18 09:33  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c:
+
+   Increase CLI respone timeout to 5 seconds and tell that
+   a ping has failed before we kill the child.
+
+2006-09-18 09:25  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1:
+
+   Correct the description of the second and third fields.
+
+2006-09-18 09:22  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c:
+
+   Add a -w option to set the delay between updates.
+
+2006-09-18 09:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Make sure all threads don't end up in the same work queue
+
+2006-09-18 08:55  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1:
+
+   Add an explanation of the columns in the main display.
+
+2006-09-18 08:55  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.c:
+
+   Widen fields sufficiently to accomodate gigabit rates.
+
+2006-09-18 07:36  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/flint.lnt,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Make flexelint happier
+
+2006-09-18 07:16  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_backend.c:
+
+   Add a simple linear retry in five steps for backend connection.
+
+2006-09-18 07:11  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   braino
+
+2006-09-18 07:08  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c:
+
+   Get shmlog records into more sensible order.
+
+2006-09-18 06:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Unify backend error handling
+
+2006-09-18 06:26  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Minor cleanups
+
+2006-09-17 21:48  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_vcl.c:
+
+   Revert these two for now. The expiry thread doesn't have
+   a worker structure.
+
+2006-09-17 20:26  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Use workerthres log buffer much more extensively
+
+2006-09-17 19:57  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c:
+
+   Decontest the shared memory mutex:
+   
+   Add a log buffer to the worker threads, log a lot of stuff to that
+   and flush it into the "real" shmbuffer every so often.
+
+2006-09-17 19:31  phk
+
+ * trunk/varnish-cache/include/tree.h:
+
+   Part of this commit leaked into the previous commit:
+   
+   We don't use splay trees.
+
+2006-09-17 19:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/include/Makefile.am,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Keep track of shmlog mutex contests
+
+2006-09-17 18:31  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Oops, off by one.
+
+2006-09-17 18:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Use the worker pools in round-robin fashion.
+
+2006-09-17 09:26  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Fix logic bug so we don't reap worker threads all the time.
+
+2006-09-17 09:06  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_main.c:
+
+   Whitespace
+
+2006-09-17 09:06  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_child.c:
+
+   Make sure we get the error messages from a dying child.
+
+2006-09-17 08:44  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Set sockopts on the listen socket and probe the accepted socket (once)
+   to see which we do not need to set there because they are inherited.
+   
+   This could potentially save three syscalls per session.
+
+2006-09-17 08:39  des
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.1:
+
+   Update the parameter list in the man page, and add reminders to keep the
+   lists in synch.
+
+2006-09-17 06:45  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Possibly better logic.
+
+2006-09-16 22:32  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Embellish the parameter descriptions somewhat.
+
+2006-09-16 22:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Change statistics from gauge to counter
+
+2006-09-16 21:45  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Duh! We need to count stats in per workerthread and summarize into
+   session, otherwise we cannot correctly summarize into srcaddr and global.
+
+2006-09-16 21:35  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Preallocate a srcaddr per workerthread to speed up locked section.
+   
+   Remember to free preallocated storage in workerthread.
+
+2006-09-16 21:20  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Account directly into the session.
+
+2006-09-16 21:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   use miniobj on srcaddr's
+
+2006-09-16 21:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   make flexelint marginally happier
+
+2006-09-16 21:05  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   twiddle explanations and defaults.
+
+2006-09-16 20:59  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Use srcaddr mutex for srcaddr stats update to reduce contention on stat_mtx
+
+2006-09-16 20:52  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Give the srcaddr stats an overhaul.
+   
+   Make the number of buckets a parameter (needs restart though).
+   
+   Make the ttl a parameter and have zero disable srcaddr accounting.
+   
+   Give each hash bucket its own mutex.
+
+2006-09-16 20:17  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c:
+
+   VCL configs change relatively seldom so we can cache the requests
+   VCL reference in the worker thread when the request is done and
+   with a cheap check reuse it for the next request handled by this
+   thread.
+   
+   This should reduce mutex contention.
+
+2006-09-16 19:54  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Make it possible to have multiple worker pools.
+   
+   The acceptor selects the pool based on filedescriptor modulus
+   number of pools.
+   
+   This is an attempt to reduce lock contention.
+
+2006-09-16 16:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h:
+
+   fix debug locks
+
+2006-09-16 15:54  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Wrap mutex more completely so that experimentation becomes easier.
+
+2006-09-16 15:52  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_child.c:
+
+   wrap line
+
+2006-09-16 15:51  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   correctly round INT32_MAX down to page boundary
+
+2006-09-16 14:53  des
+
+ * trunk/varnish-cache/bin/varnishtop/varnishtop.c:
+
+   Rename -1 to -f, and add a -1 option meaning "once". It currently does not
+   work very well; it should use a non-curses method to display the ranking.
+
+2006-09-16 14:50  des
+
+ * trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Add a non-blocking mode to the log reader.
+
+2006-09-16 14:21  des
+
+ * trunk/varnish-cache/bin/varnishhist/Makefile.am,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.1:
+
+   Add a man page.
+
+2006-09-16 14:06  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1:
+
+   Umm, what have I been smoking? varnishstat is not a logger and does not
+   support VSL_ARGS.
+
+2006-09-16 13:08  des
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.1:
+
+   Bring up-to-date.
+
+2006-09-16 13:06  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1:
+
+   Remove stray -a description.
+
+2006-09-16 13:02  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.1:
+
+   Bring up-to-date.
+
+2006-09-16 13:02  des
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.1:
+
+   Bump date and add cross-references to all log programs.
+
+2006-09-16 12:59  des
+
+ * trunk/varnish-cache/bin/varnishstat/varnishstat.c:
+
+   -c collides with one of the standard VSL options, so replace it with -1,
+   which has the opposite meaning (IMHO, the continuous display is the most
+   useful)
+
+2006-09-16 12:45  des
+
+ * trunk/varnish-cache/include/varnishapi.h:
+
+   Sort options correctly.
+
+2006-09-16 12:43  des
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.1:
+
+   Bring up-to-date, and sort options correctly.
+
+2006-09-16 12:43  des
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.1,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Sort options correctly.
+
+2006-09-16 12:29  des
+
+ * trunk/varnish-cache/bin/varnishtop/varnishtop.c:
+
+   Fix usage string.
+
+2006-09-16 12:28  des
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Add -V option, fix usage string.
+
+2006-09-16 12:28  des
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Add the ability to write to a file (it was previously documented but not
+   implemented).
+   Fix the usage string.
+
+2006-09-16 12:26  des
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Add a -a option to control append / overwrite when writing to a file.
+   Fix the usage string.
+
+2006-09-16 12:25  des
+
+ * trunk/varnish-cache/include/varnishapi.h:
+
+   Add a usage string for the standard VSL options.
+
+2006-09-16 12:23  des
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Tweak storage file size calculations. Avoid overflow when calculating 80%
+   of available storage on 32-bit Linux (most fields in struct statfs are long
+   instead of int64_t as in BSD)
+
+2006-09-16 11:34  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_backend.c:
+
+   Just in case.
+
+2006-09-16 11:28  des
+
+ * trunk/varnish-cache/lib/libvarnish/crc32.c,
+   trunk/varnish-cache/lib/libvarnishapi/base64.c:
+
+   Expand keywords.
+
+2006-09-16 11:01  des
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.1:
+
+   Bring up-to-date. Still lacks descriptions for management commands and
+   run-time parameters.
+
+2006-09-16 11:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_vcc.c:
+
+   Forgot about embedded CLI commands here.
+
+2006-09-16 10:36  des
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   The buckets_per_mutex parameter was removed in r813.
+
+2006-09-16 09:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Use generic param setting stuff
+
+2006-09-16 09:38  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c:
+
+   Make the listen depth a paramter.
+   
+   Clean up the paramter stuff even more.
+
+2006-09-16 09:06  phk
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Add -p param=value command line argument.
+
+2006-09-16 09:01  phk
+
+ * trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Generalize parameter setting at start up.
+   
+   Give the managers main a struct cli and use that to call into
+   the paramter stuff for setting listen address. More params to follow.
+   
+   When setting the listen address, check that getaddrinfo() doesn't
+   hate it.
+
+2006-09-16 08:20  phk
+
+ * trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Open and close the listen socket when we start and stop the child.
+   
+   Make the listen address a parameter.
+
+2006-09-16 07:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/include/cli.h:
+
+   Rename the config.* CLI command family to vcl.*. It is more intuitive
+   that way and we may eventually want a config file for varnishd to
+   control obscure parameters.
+
+2006-09-16 07:44  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Make the shmlog'ing of vcl execution a parameter.
+   
+   VCL tracing is responsible for a very large fraction of the shmlog
+   records and will generally only be used for debugging of VCL code.
+
+2006-09-15 19:25  phk
+
+ * trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/lib/libvarnishapi/Makefile.am,
+   trunk/varnish-cache/lib/libvarnishapi/base64.c:
+
+   Add a base64 decoder.
+
+2006-09-15 16:18  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Eliminate the session_grace thing, the inter-request interval is to
+   large in general (think RTT) for this to make sense, it costs a syscall
+   and if a delay is used, at least two context switches.
+   
+   We still capture sessions that do pipe-line avoiding the context switch
+   in that case, without incurring the syscall overhead.
+
+2006-09-15 16:10  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.c,
+   trunk/varnish-cache/include/shmlog_tags.h:
+
+   Remove the SessionReuse shmem tag, we have little or no benefit from
+   knowing this at the end of a request.
+   
+   Instead put the address + port in the ReqStart shmtag where it does
+   a lot of good.
+
+2006-09-15 10:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Disable session_grace for now.
+   
+   It is not clear if this is a benefit or not. There seems to be a
+   significant
+   (100msec ?) inter-request gap and seeting the grace period that long
+   means tying up worker threads doing basically nothing.
+   
+   Setting a short timeout (10msec) results in an extra system call which
+   practically never does anything good.
+   
+   Unless benefit is shown, this stuff should be removed again.
+
+2006-09-15 10:24  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   fix more stats
+
+2006-09-15 10:23  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Fix stats.
+
+2006-09-15 10:03  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Add missing SessionReuse log entries
+
+2006-09-15 10:01  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Improve portability: Since all log strings are NUL terminated we do not
+   need to use REG_STARTEND any more.
+
+2006-09-15 09:54  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Allow session_grace to be set to zero
+
+2006-09-15 09:43  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Try to avoid sending EOF'ed or ready sessions to the herder.
+
+2006-09-15 08:48  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Add XXX comment
+
+2006-09-15 08:43  phk
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Print '-' if we don't have an IP# on startup.
+   
+   Also skip IP# from SessionReuse records.
+
+2006-09-15 08:14  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Fix sendfile() on Linux:
+   
+   - use the correct headers
+   - don't duplicate WRK_Flush()
+   - pass the offset correctly
+
+2006-09-15 08:08  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Avoid parking a worker thread on trailing space
+
+2006-09-15 07:37  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/steps.h:
+
+   If after handling a request we find anything in our input buffer,
+   don't waste time putting the session on the herder, but go right
+   back and take the next request in the current worker thread.
+
+2006-09-15 07:14  phk
+
+ * trunk/varnish-cache/bin/varnishncsa/flint.lnt,
+   trunk/varnish-cache/bin/varnishncsa/flint.sh,
+   trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Overhaul NCSA logging.
+   
+   Reduce memory footprint by only allocating space for a fd first time
+   we see it. Few if any servers will ever see 64k fd's in use.
+   
+   Move the sbuf into the logline structure for simplicity.
+   
+   Access the logline structure through a pointer instead of indexing
+   the array all the time.
+   
+   Reduce amount of malloc/free traffic for performance.
+   
+   Use the "cooked" SHMlog api where the length, fd, etc are broken out
+   as arguments for us. Pass the FILE* where we want the stuff to
+   go as private data (stdout for now).
+   
+   Add FlexeLint files.
+   
+   Now over to Anders again...
+
+2006-09-13 21:26  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Fixed timestamp so thats it's correct. PHK added a new variable to
+   ReqEnd that contains a correct endtime.
+
+2006-09-13 20:43  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Add the end time as timestamp to the ReqEnd SHM record.
+   
+   Vector failures of the the FIRST case via DONE as well to
+   avoid code duplication.
+
+2006-09-13 19:07  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Dike out Linux senfile, it doesn't work.
+   
+   Isolated by: Xing Li <xing@litespeedtech.com>
+
+2006-09-12 21:21  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Double the default workspace for the benefit of Blackberris and other
+   low-bandwidth devices which for some reason include their entire
+   lifehistory in the HTTP requests.
+
+2006-09-12 21:02  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Made the code more robust but fixing a bug that caused coredumps.
+   Haven't seen dumps after fix.
+   
+   Cleared some unused variables.
+
+2006-09-12 20:50  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Distinguish the explanation for the first request from the one used
+   on subsequent requests.
+
+2006-09-12 20:17  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Fix timestamps in shm tag StatSess for sessions with no requests.
+
+2006-09-12 20:06  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   chunksize is in kilobytes
+
+2006-09-12 19:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   There may be error returns from kevent, don't assert there are none.
+
+2006-09-12 10:12  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Implement sendfile() support for Linux.
+
+2006-09-12 09:38  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   fix typo
+
+2006-09-11 23:30  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Getting somewhere. I now have a "full" logline. Apart from writing
+   usernames caught by the auth header, the logline is complete.
+   I have now cleared up my obvious memoryleaks also.
+   
+   The code looks like it has been through a shredder, and needs massive
+   cleaning before alpha.
+
+2006-09-11 17:18  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   If we have more threads than the max, kill one if we can.
+
+2006-09-11 15:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   remember to close pipes
+
+2006-09-11 14:50  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Use a pipe for synchronization instead.
+
+2006-09-11 14:34  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Redo the worker thread pool locking a bit, all the while cursing
+   pthreads deficient API design for it's shortcomings.
+
+2006-09-11 12:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h:
+
+   Embellish the mutex debugging a bit
+
+2006-09-11 11:55  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/include/libvarnish.h:
+
+   Move LOCK/UNLOCK macros to cache.h where they belong.
+
+2006-09-11 10:35  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Ignore kevent error return entries
+
+2006-09-11 10:16  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Only expire when the timer fires
+
+2006-09-11 10:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Piggy-back kevent changes on kevent wait call
+
+2006-09-11 10:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_expire.c:
+
+   Avoid a startup-race
+
+2006-09-11 09:35  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Cleaned up User-Agent and Referer. Both should now work correct. As
+   far as I can see, I only have the timestamp left for a sane loggline.
+
+2006-09-11 09:16  des
+
+ * trunk/varnish-cache/configure.ac:
+
+   Check for sendfile().
+
+2006-09-11 09:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_expire.c:
+
+   Reduce syscall footprint of expiry and hangman
+
+2006-09-11 09:05  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Avoid a clock_gettime() call
+
+2006-09-11 09:00  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   braino in last commit.
+
+2006-09-11 08:58  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Save more time() calls
+
+2006-09-11 08:53  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   A avoid a time(NULL) call
+
+2006-09-11 08:42  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Do stats on sendfile/write split.
+   
+   Add param for minimum size of object before we will sendfile it.
+
+2006-09-10 22:23  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Started to fix output of User-Agent. It was all over the place. Found
+   what I was doing wrong and fixed it.
+   
+   Should work with correct User-Agent now.
+
+2006-09-08 06:47  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Make the fetchers chunksize a parameter, but keep the default at 128k
+
+2006-09-08 05:58  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Add an extra bucket and make it clear how the number was chosen.
+   
+   Remove extra sanitychecking.
+
+2006-09-07 10:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Missing commit message from previous commit:
+   
+   Fix a logic bug which allowed storage objects to be trampled on:
+   the last bucket may contain object smaller than we want.
+
+2006-09-07 10:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Handle zero length storage objects correctly: Don't let them exist.
+
+2006-09-07 08:25  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Insert a bunch of asserts to try to catch anything going wrong
+
+2006-09-07 08:01  phk
+
+ * trunk/varnish-cache/include/libvarnish.h:
+
+   Pick up uint32_t from <stdint.h> instead of <sys/types.h>
+
+2006-09-07 07:50  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Logging for status & response was swapped for generated errors.
+
+2006-09-07 07:33  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Remove debugging messages.
+
+2006-09-07 07:27  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/include/stat_field.h:
+
+   Add stats counters for large and small free fragments.
+   
+   Remove debugging
+
+2006-09-07 07:17  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   remove "age", it was effectively unused. Revisit the idea later.
+
+2006-09-07 07:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Don't clear alloc, it will be done in due time.
+
+2006-09-07 07:09  phk
+
+ * trunk/varnish-cache/bin/varnishd/storage_file.c:
+
+   Split the freelist by size.
+   
+   Use 32 buckets for now, with a 4k pagesize that takes us to 128k
+   which matches the fetchers default chunksize.
+
+2006-09-07 05:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Remove debug entry
+
+2006-09-07 05:40  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Read more than one session pointer at a time from the pipe and
+   handle them all with one kevent call.
+
+2006-09-06 22:09  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Don't use binary address anyway, we only want the IP number part
+   and splitting that out of the binary part is not worth the
+   trouble.
+
+2006-09-06 22:02  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Account for header bytes in error and 304 responses.
+   
+   Remove unhelpful debug entry.
+
+2006-09-06 21:52  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Move some setup code to first state now that we have it.
+
+2006-09-06 21:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_main.c:
+
+   Move a bunch of work from the acceptor thread to the worker thread
+   for better scaling.
+
+2006-09-06 21:15  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/lib/libvarnish/Makefile.am,
+   trunk/varnish-cache/lib/libvarnish/crc32.c:
+
+   Move CRC32 into libvarnish
+   
+   Use it for hashing srcaddr as well. Hash the sockaddr instead
+   of the ascii representation.
+   
+   Add a primitive mutex tracking facility which writes debug
+   records to the shmlog if enabled.
+
+2006-09-06 20:45  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Give the stats summation its own mutex
+
+2006-09-06 19:35  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Reduce traffic on the wrk_mtx, saving some syscalls along the way:
+   
+   Make a thread-reaper-thread which examines the tail end of the queue
+   and kicks threads which are too old so the wake up and die.
+   
+   This allows us to assume that a thread on the free queue is always
+   waiting on its condvar, so we don't need to hold the mutex when we
+   signal the condvar.
+   
+   As a result, the woken thread stands a chance to grab the mutex
+   and a little song and dance between the two threads is avoided.
+
+2006-09-06 19:08  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Grab the r_recv timestamp at the right time.
+
+2006-09-06 18:47  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Don't bother with SO_NOSIGPIPE, it doesn't always work and we
+   have ignored the signal anyway.
+
+2006-09-06 18:46  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Remove unused timestamp "t0" and save a syscall per request.
+
+2006-09-06 18:37  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Save a systemcall by using the same timestamp twice.
+
+2006-09-06 18:32  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Give pool threads 120 second timeout, 10 was close to silly.
+
+2006-09-06 18:23  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c:
+
+   Fix the poll acceptor, we need to cache the fd as sp->fd might
+   change to -1 under us.
+
+2006-09-06 11:21  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Fix buglet in -i/-x name matching
+
+2006-09-06 10:45  phk
+
+ * trunk/varnish-cache/lib/libvcl/vcc_priv.h:
+
+   Allow '-' in identifiers.
+   
+   For further study: should we accept RFC2616's definition of "token" ?
+
+2006-09-06 09:58  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_vcc.c:
+
+   Mark responses with Set-Cookie as "pass"
+
+2006-09-06 09:54  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c,
+   trunk/varnish-cache/lib/libvcl/vcc_gen_obj.tcl,
+   trunk/varnish-cache/lib/libvcl/vcc_obj.c:
+
+   Add support for inspecting response headers.
+
+2006-09-06 09:18  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c:
+
+   Fix the same issue as in the kqueue acceptor: By the time we get
+   here the filedescriptor may already be closed, so accept EBADF.
+   
+   Reported by: Xing Li <xing@litespeedtech.com>
+
+2006-09-06 07:37  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_fetch.c:
+
+   Fix a bug in chunked fetching:
+   
+   With very short chunks, in this case 3 characters, our buffer may
+   contain not only the chunk length and the chunk data, but also the
+   next chunk length.
+   
+   If the short chunk is the last chunk before the zero length chunk
+   at the end, unconditionally trying to fill the buffer before parsing
+   the length may hang because we already have everything there is to
+   have in the buffer.
+   
+   The fix is to always try to parse the buffer before adding to it.
+   
+   While here, tighten up and improve error checks of the code.
+   
+   Reported by: Xing Li <xing@litespeedtech.com>
+
+2006-09-06 06:39  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   escape control characters in SLT_Debug as %XX
+
+2006-09-05 22:11  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   Added more outputdata, fixed memory leaks (I think).
+   
+   Code still not Alpha ready, but I think most concepts work now.
+
+2006-08-24 07:57  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_ban.c,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_cli.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_acl.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt_re.c,
+   trunk/varnish-cache/bin/varnishd/flint.lnt,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/bin/varnishd/storage_malloc.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Go through all asserts and mark those which indicate missing code with
+   xxx or XXX.
+
+2006-08-24 07:17  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_expire.c,
+   trunk/varnish-cache/bin/varnishd/cache_hash.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/cache_vcl.c,
+   trunk/varnish-cache/bin/varnishd/hash_classic.c,
+   trunk/varnish-cache/bin/varnishd/hash_simple_list.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/storage_file.c,
+   trunk/varnish-cache/include/libvarnish.h:
+
+   Introduce LOCK() and UNLOCK() macros which does the right thing
+   with pthread_mutex_{lock,unlock}()
+
+2006-08-24 07:10  phk
+
+ * trunk/varnish-cache/include/libvarnish.h,
+   trunk/varnish-cache/lib/libvarnish/assert.c:
+
+   Give xxxasserts their own backend with a different message.
+
+2006-08-24 06:58  phk
+
+ * trunk/varnish-cache/include/libvarnish.h:
+
+   Split assert into "static check" and "missing code" variants.
+   
+   The "missing code" variants have xxx prefix
+   
+   Introduce AN() (assert non-null) variant as well.
+
+2006-08-24 06:15  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   This is a workaround for what is probably a race in FreeBSD RELENG_6
+   socket dismantling.
+   
+   There is no way that close(2) should ever be able to return EINVAL,
+   but we've seen it.
+   
+   Specifically assert on EBADF which is the check we're really after.
+
+2006-08-23 14:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pass.c:
+
+   Handle backend failure in pass mode
+
+2006-08-23 13:11  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/varnish_debug.c,
+   trunk/varnish-cache/lib/libvarnishapi/varnish_log.c,
+   trunk/varnish-cache/lib/libvarnishapi/varnish_util.c:
+
+   These are not used.
+
+2006-08-23 12:10  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_hash.c:
+
+   don't service cached objects the last second of their lifetime.
+
+2006-08-23 11:42  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Set response timestamp when we emit an error.
+
+2006-08-23 11:27  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Implement error in miss also
+
+2006-08-23 07:32  phk
+
+ * trunk/varnish-cache/lib/libvcl/vcc_compile.c:
+
+   unused variable.
+
+2006-08-23 07:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c:
+
+   Handle backend connection error in pass mode with a 503
+
+2006-08-23 07:29  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Fill shmem log with the reply
+
+2006-08-23 07:22  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pipe.c:
+
+   grammar police.
+
+2006-08-23 07:16  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c:
+
+   Teach RES_Error() about the canonical response code texts from
+   RFC2616.
+   
+   Add the XID as "guru meditation" in the error HTML.
+
+2006-08-23 06:55  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pipe.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Move defaults from varnishd.c to mgt_param.c and use regular functions
+   for setting them.
+   
+   Collapse all the 'timeout' functions.
+   
+   Add pipe_timeout parameter.
+
+2006-08-23 06:53  phk
+
+ * trunk/varnish-cache/lib/libvarnish/cli_common.c:
+
+   If CLI is NULL, use stdout.
+
+2006-08-22 19:14  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Implement "error" in vcl_hit()
+
+2006-08-22 10:56  phk
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Redraw must be checked when we update, we cannot trust
+   that we will actually have a timeout.
+
+2006-08-22 10:46  phk
+
+ * trunk/varnish-cache/bin/varnishd/shmlog.c:
+
+   Optimize shmlog writing:
+   
+   If we know the record length, only hold the mutex while we reserve
+   the space. Until we change the first byte, nothing bad can happen.
+   
+   XXX: a memory barrier is strictly speaking necessary before we assign
+   the first byte.
+   
+   If there are no '%' in the format string, treat as fixed length for
+   speed.
+
+2006-08-22 10:40  phk
+
+ * trunk/varnish-cache/bin/varnishd/shmlog.c:
+
+   Consistent naming of mutex
+
+2006-08-22 10:14  des
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Allow the delay between screen updates to be specified with -w.
+
+2006-08-22 09:37  des
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Correct the error check for write().
+
+2006-08-22 09:31  des
+
+ * trunk/varnish-cache/lib/libcompat/strndup.c:
+
+   Slight optimization: use strlcpy() to avoid calloc().
+
+2006-08-22 09:30  phk
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Swap the '|' and '#' symbols so '#' means "miss", that's much more
+   graphically useful.
+
+2006-08-22 09:16  phk
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Use different marks for hit & miss
+   
+   Autoscale vertical axis.
+
+2006-08-22 08:55  phk
+
+ * trunk/varnish-cache/bin/varnishd/hash_classic.c:
+
+   Eliminate the MD5 optional code. There is no sufficiently strong
+   statistical basis for using MD5 that will outweigh the performance
+   penalty or "IT USES THE BR0K3N MD5 ALGORITM" cries on slashdot.
+   
+   The only known artifact in CRC32 is that hashing it with a power
+   of two is slightly inefficient (a few percent in bucket length
+   standard deviation) if you have URLs with fixed width fields of
+   a limited charset (such as numeric) fields in them.
+   
+   Avoid this by checking the hash width specified for power of two,
+   and reduce it by one telling the user why.
+   
+   Using a hash width that is a prime number does provable advantage
+   over just not using power-of-two width. I have heard a mathematician
+   say that this is inherent in the design of the polynomia chosen
+   for CRC algorithms error (optimized for bit error detection) but
+   the actual math is way beyond me.
+   
+   Increase default hash width to 16383, which is probably still
+   smaller than it should be.
+
+2006-08-22 08:18  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c,
+   trunk/varnish-cache/bin/varnishd/mgt_event.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishstat/varnishstat.c,
+   trunk/varnish-cache/bin/varnishtester/varnishtester.c,
+   trunk/varnish-cache/bin/varnishtop/varnishtop.c,
+   trunk/varnish-cache/include/vcl_returns.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libvarnish/assert.c,
+   trunk/varnish-cache/lib/libvarnish/cli_common.c,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Expand keywords.
+
+2006-08-22 08:17  des
+
+ * trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c:
+
+   Allow an empty address if a port is specified; thus ":80" is a valid
+   listening address ("port 80 on all interfaces")
+
+2006-08-22 08:06  phk
+
+ * trunk/varnish-cache/bin/varnishd/hash_classic.c:
+
+   Additional marginal improvement:
+   
+   Sort on length of key, then on digest.
+
+2006-08-22 07:52  phk
+
+ * trunk/varnish-cache/bin/varnishd/hash_classic.c:
+
+   Rework the classic hasher to reduce lock contention and CPU usage.
+   
+   Make nbuckets=nhash mandatory.
+   
+   Order hash lists by the length of key instead of the key contents,
+   comparing the length is much faster.
+   
+   Also compare disgest before we take the expensive content compare.
+   
+   Use memcmp() for content compare instead of strcmp().
+   
+   Use a two-pass algorithm for inserts to lower mutex contention.
+
+2006-08-22 07:24  des
+
+ * trunk/varnish-cache/bin/varnishd/Makefile.am:
+
+   Add cache_acceptor.h to noinst_HEADERS.
+
+2006-08-22 07:11  des
+
+ * trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/configure.ac,
+   trunk/varnish-cache/include/Makefile.am,
+   trunk/varnish-cache/include/compat/strndup.h,
+   trunk/varnish-cache/lib/libcompat/Makefile.am,
+   trunk/varnish-cache/lib/libcompat/strndup.c:
+
+   Add strndup() to libcompat.
+
+2006-08-21 20:42  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c:
+
+   Flexelint inpired cleanups
+
+2006-08-21 20:30  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_fetch.c,
+   trunk/varnish-cache/bin/varnishd/cache_pass.c,
+   trunk/varnish-cache/bin/varnishd/cache_pipe.c:
+
+   Give VBE_ClosedFd() an argument to tell if the fd has already
+   been closed.
+   
+   Pipe does this and would panic otherwise.
+
+2006-08-21 20:25  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c:
+
+   Fix these two up to current standard.
+   
+   Poll is tested, epoll isn't.
+   
+   While the three implementations share a lot of identical code
+   right now, I will wait a bit before unifying more of them, at
+   least until performance proves that this is the right way for
+   kqueue.
+   
+   XXX: they're really not acceptors any more, they're herders.
+
+2006-08-21 20:23  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Make it easier to experiement with acceptors by having a single
+   pointer to the one in use.
+
+2006-08-21 20:23  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Remove unused #includes
+
+2006-08-21 19:05  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Add asserts.
+   
+   Return if we pass on directly.
+
+2006-08-21 18:55  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Overhaul kqueue acceptor in light of todays learnings.
+   
+   Use the pipe trick to inject sessions into the system, as far as I
+   can tell it is cheaper because of the low rate it happens and the
+   high rate of mutex operations avoided.
+   
+   Ignore the timer event, but purge the list every time we wake up
+   to reduce lumpyness of timeout'ing.
+   
+   Centralize the polling of a session so we don't have the same two
+   messages spread out all over the place.
+   
+   Centralize the acceptor thread and send things directly to the worker
+   thread, leaving only the session-herder in the split out files.
+   
+   poll & epoll not yet updated accordingly.
+
+2006-08-21 17:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/tcp.c:
+
+   Bandaid until Dag Erling does what's necessary
+
+2006-08-21 17:32  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Retire sessions if the workspace size changes, properly cache the
+   workspace size so we do not get caught unaware when it changes.
+   
+   Implement flip-flop free queue where SES_New() can read from
+   one of them without a lock, which frees happen to the other one
+   under lock. If the lock-less queue is empty, SES_New() flips
+   the two queues under lock and tries again. If that queue is
+   also empty call malloc(3).
+
+2006-08-21 17:26  des
+
+ * trunk/varnish-cache/bin/varnishd/common.h,
+   trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_vcc.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Rename open_tcp() to TCP_open() and modify it to open only one socket of
+   the appropriate type for the address that was passed in.
+   
+   Introduce TCP_parse(), which extracts an address and port from a string of
+   the form "hostname:port", "i.p.v.4:port" or "[i:p:v:6]:port" (where "port"
+   can be either a decimal number or a service name).
+   
+   Use TCP_parse() to parse the argument to -a (listen address), -b (backend
+   address) and -T (telnet address). Eliminate -p (listen port).
+   
+   While there, rename a bunch of "fooflag" variables which aren't flags to
+   "foo_arg".
+
+2006-08-21 13:15  phk
+
+ * trunk/varnish-cache/include/stat_field.h:
+
+   Add n_sess_mem
+
+2006-08-21 13:15  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_session.c:
+
+   Increase client hash to 1k
+   
+   Cache used sessmem chunks on a private list and recycle from there,
+   no point in bothering malloc all the time.
+
+2006-08-21 12:57  des
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   When writing to a file, open it with O_APPEND rather than O_TRUNC.
+
+2006-08-21 12:55  des
+
+ * trunk/varnish-cache/bin/varnishhist/Makefile.am,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Set properties.
+
+2006-08-21 12:54  des
+
+ * trunk/varnish-cache/bin/varnishhist:
+
+   Set properties.
+
+2006-08-21 12:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/steps.h:
+
+   Create the possiblity for the the acceptor to send the session directly
+   to the workerpool instead of taking the detour around the session-herder.
+   
+   This saves a context switch and is presumabley a good idea because the
+   majority of sessions will have requst already in the pipeline.
+   
+   For accept filters it makes even more sense because we know this to
+   be the case.
+
+2006-08-21 11:18  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c:
+
+   Split the accepting and session-herding functionality into two threads,
+   this is totally free from a locking point of view, but will cost
+   in context switches.
+
+2006-08-21 11:11  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.h:
+
+   Add file
+
+2006-08-21 11:05  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c:
+
+   various cleanups.
+
+2006-08-21 10:59  phk
+
+ * trunk/varnish-cache/bin/varnishd/Makefile.am,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_epoll.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_kqueue.c,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor_poll.c:
+
+   Break the acceptors out into their own files.
+   
+   The intent here is to compile in all acceptors supported on the
+   operating system and allow the user to select one at startup time.
+
+2006-08-21 09:51  phk
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Adjusments to scale.
+   
+   Refresh 1/sec max
+   
+   Put more in the rolling buffer.
+
+2006-08-21 09:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Don't hose TIMER kevent with READ kevent
+
+2006-08-21 09:49  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   This assert is not warranted, a connection might disappear before
+   we get to it.
+
+2006-08-20 19:55  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Close another tiny race.
+
+2006-08-20 18:33  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Give the kevent acceptor another overhaul.
+   
+   On a number of fine points the kevent API behaves different from
+   what I would have expected.
+   
+   For instance EV_DISABLE/EV_ENABLE on a timer does not reset the
+   timer.
+   
+   This is a very defensive version and if that works, it can be optimized
+   some more.
+
+2006-08-20 16:35  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Heavy-duty work on kqueue acceptor.
+
+2006-08-20 16:35  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pipe.c:
+
+   Add some debugging
+
+2006-08-20 16:34  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_center.c:
+
+   Remove unused variable.
+
+2006-08-20 15:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pipe.c:
+
+   Use TxHeader for pipe backend.
+
+2006-08-20 15:12  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_vcc.c:
+
+   Don't chat up non-running childs.
+
+2006-08-20 15:11  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_cli.c:
+
+   Make sure the returns have some value.
+
+2006-08-20 15:11  phk
+
+ * trunk/varnish-cache/lib/libvarnish/cli_common.c:
+
+   Assert that the cli status is valid
+
+2006-08-20 14:53  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_child.c:
+
+   pid -1 is not our child
+
+2006-08-20 14:53  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_vcc.c:
+
+   Fix malloc bug.
+
+2006-08-20 13:39  phk
+
+ * trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   New defaults:
+   5 sec session timeout
+   60 sec thread pool timeout
+
+2006-08-20 13:38  phk
+
+ * trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Make autostart a tweakable parameter, this is useful for debugging
+
+2006-08-20 12:15  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c:
+
+   Pull out up to 20 kevents at time instead of just one.
+
+2006-08-20 11:19  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_pool.c:
+
+   Respect lower pool limit dynamically
+
+2006-08-20 07:32  phk
+
+ * trunk/varnish-cache/bin/varnishhist/varnishhist.c:
+
+   Remember to open the shmlog
+
+2006-08-20 07:27  phk
+
+ * trunk/varnish-cache/bin/Makefile.am,
+   trunk/varnish-cache/bin/varnishhist,
+   trunk/varnish-cache/bin/varnishhist/Makefile.am,
+   trunk/varnish-cache/bin/varnishhist/varnishhist.c,
+   trunk/varnish-cache/configure.ac:
+
+   Add varnishhist(1) a program that shows the responsetime as a curses
+   histogram.
+
+2006-08-20 07:27  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c:
+
+   Add note that send_timeout has DELAYED effect
+
+2006-08-20 07:26  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Make sure we have predictable column numbers by printing '-' if it
+   is neither classified as client or backend.
+
+2006-08-19 21:48  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_acceptor.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Make the session timeout and send timeout tweakables.
+
+2006-08-19 21:32  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/cli.h:
+
+   Implement the first load of tweable parameters
+
+2006-08-19 20:28  phk
+
+ * trunk/varnish-cache/bin/varnishd/Makefile.am,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.h,
+   trunk/varnish-cache/bin/varnishd/mgt_param.c,
+   trunk/varnish-cache/include/cli.h:
+
+   Add two new CLI commands: param.set and param.show.
+   
+   Eliminate requirement that "help" be first, I was just lazy I guess.
+
+2006-08-19 20:16  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt_cli.c:
+
+   cleanup
+
+2006-08-19 20:15  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_backend.c,
+   trunk/varnish-cache/bin/varnishd/cache_pool.c,
+   trunk/varnish-cache/bin/varnishd/cache_session.c,
+   trunk/varnish-cache/bin/varnishd/heritage.h,
+   trunk/varnish-cache/bin/varnishd/rfc2616.c,
+   trunk/varnish-cache/bin/varnishd/shmlog.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   We have a number of adjustable parameters, things like "default TTL" which
+   should be adjustable at runtime.
+   
+   We need to make adjustments in such a way that a restart of the child also
+   uses the new paramters.
+   
+   We can either do this by parsing the CLI in both mgt+child and have both
+   update their private copy, or we can parse it only in one of them and
+   update a shared copy.
+   
+   We opt for the latter method.
+   
+   Add a "struct params" which holds the adjustable parameters and put on
+   in the shmlog segment, between struct shmloghead and the round-robin
+   buffer.
+   
+   Move parameters from heritage to params.
+   
+   We put it there without exposing it in struct shmloghead which is
+   the public view of the shared memory because we do not want to make
+   it a public API or even to tempt people to think that it is one.
+   
+   Now I just need to add the CLI functions to actually twiddle the
+   parameters.
+
+2006-08-19 19:46  phk
+
+ * trunk/varnish-cache/bin/varnishd/shmlog.c:
+
+   Don't re-mmap the shmlog in the child, we already did it in the management
+   process and the inherited copy is perfectly fine to use.
+
+2006-08-18 20:07  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Respect and clear TAG also on flush
+
+2006-08-18 19:53  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_http.c:
+
+   Do a better job on Connection: header processing in client requests.
+   
+   Add a flag field for each HTTP header and define a bit HDF_FILTER
+   to mean "filter this out", and initialize to zero all relevant
+   places.
+   
+   If HDF_FILTER is set, do not copy the header across when filtering.
+   
+   Run through Connection: header (if present) and set HDF_FILTER on
+   any header that matches a word in the contents.
+   
+   If we are not HTTP/1.1 and have no Connection header, we close
+   the session when this reqest is done.
+   
+   If we have a Connection header, we respect that.
+
+2006-08-18 19:10  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Set REG_NOSUB for speed
+
+2006-08-18 18:16  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Remember to clear match bit
+
+2006-08-18 18:14  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Make it possible to select which requests we want to see in
+   ordered mode. For instance
+   ./varnishlog -o rxurl foo
+   will only show requests that match the regexp "foo" on the rxurl field
+
+2006-08-18 18:00  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Turn the "invcl" array into a flag array so we can put more stuff there.
+
+2006-08-18 16:04  phk
+
+ * trunk/varnish-cache/bin/varnishd/tcp.c:
+
+   Deeper listenqueue for HTTP sockets
+
+2006-08-15 10:38  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Correct inverted test in If-Modified-Since logic. This should fix the
+   "stale front page" problem that has plagued VG.
+
+2006-08-15 10:36  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Fix a bug in previous commit: an extra CR LF was inserted after the Date
+   header in a 304 response.
+
+2006-08-15 07:55  des
+
+ * trunk/varnish-cache/bin/varnishd/cache_response.c:
+
+   Better 304 responses: include a Date header, and send the correct
+   Last-Modified value.
+
+2006-08-13 11:38  des
+
+ * trunk/varnish-cache/bin/varnishd/cache.h,
+   trunk/varnish-cache/bin/varnishd/cache_center.c,
+   trunk/varnish-cache/bin/varnishd/cache_response.c,
+   trunk/varnish-cache/bin/varnishd/cache_vrt.c,
+   trunk/varnish-cache/include/vrt.h,
+   trunk/varnish-cache/include/vrt_obj.h,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_fixed_token.c:
+
+   Implement the "error" VCL keyword:
+   
+   - add fields to struct sess where VRT_error can store the error code and
+   message
+   - modify cnt_error() to pass these fields to RES_Error(), then clear them
+   - modify RES_Error() (and the entire chain) to accept a third argument
+   giving an explanation of the error.
+   - have RES_Error() reset the worker before writing the error document, to
+   make sure wfd is set.
+   
+   fixes: #4
+
+2006-08-11 20:47  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   When -b and -c given, supress "other" messages.
+
+2006-08-11 20:46  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   fix formatting glitches in -o mode
+
+2006-08-11 20:43  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Also mark as client on ReqStart
+
+2006-08-11 20:34  phk
+
+ * trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Make lack of -d option work as expected.
+
+2006-08-11 20:28  phk
+
+ * trunk/varnish-cache/bin/varnishlog/varnishlog.c:
+
+   Drop the -h option, it never really worked out.
+   
+   Use the new libvarnishapi facilities to structure code better.
+
+2006-08-11 20:24  phk
+
+ * trunk/varnish-cache/include/varnishapi.h,
+   trunk/varnish-cache/lib/libvarnishapi/shmlog.c:
+
+   Improve the shmlog facilities.
+   
+   Move the sleeping and timing out into the library so we do not
+   have to repeat it in all apps. Should we ever find an app
+   that needs something else, we will cater for it then.
+   
+   Add VSL_Dispatch() which calls a (supplied) function (pointer) for each
+   record. Additional useful information is passed as arguments, such
+   as classification (backend/client/other) etc.
+   
+   Add a default handler for printing a record.
+   
+   Add VSL_Select() where the application can specify tags that are mandatory
+   and which should not be subject to -i/-x/-I/-X/-b/-c filtering.
+   
+   Be more frugal with memory.
+
+2006-08-11 14:45  des
+
+ * trunk/varnish-cache/bin/varnishd/tcp.c:
+
+   Dirty hack: strip the leading "::ffff:" from v4-to-v6-mapped addresses.
+
+2006-08-11 14:26  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_vrt_re.c:
+
+   Assert regexp != NULL
+
+2006-08-11 14:21  phk
+
+ * trunk/varnish-cache/bin/varnishd/cache_vrt_re.c:
+
+   A NULL pointer does not match a regexp
+
+2006-08-11 14:09  phk
+
+ * trunk/varnish-cache/bin/varnishd/hash_classic.c:
+
+   Use 1:1 for hashbucket:mutex ratio
+
+2006-08-11 13:41  phk
+
+ * trunk/varnish-cache/bin/varnishd/mgt.h,
+   trunk/varnish-cache/bin/varnishd/mgt_child.c,
+   trunk/varnish-cache/bin/varnishd/mgt_cli.c,
+   trunk/varnish-cache/bin/varnishd/tcp.c,
+   trunk/varnish-cache/bin/varnishd/varnishd.c:
+
+   Add -T <telnetport> option.
+
+2006-08-11 11:23  phk
+
+ * trunk/varnish-cache/lib/libvcl/vcc_acl.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.c,
+   trunk/varnish-cache/lib/libvcl/vcc_compile.h:
+
+   Use the already decoded CSTR where applicable and use
+   EncString() to encode strings for C source usage.
+
+2006-08-11 11:22  phk
+
+ * trunk/varnish-cache/lib/libvcl/vcc_token.c:
+
+   Until we know of a legitimate use for them, consider non !isgraph()
+   %xx escapes an error.
+
+2006-08-11 10:47  phk
+
+ * trunk/varnish-cache/lib/libvcl/vcc_compile.h,
+   trunk/varnish-cache/lib/libvcl/vcc_token.c:
+
+   Don't recognize '\' as magic in CSTR tokens, use %xx escapes instead.
+   
+   Add decoded string element to struct token.
+
+2006-08-11 10:20  phk
+
+ * trunk/varnish-cache/lib/libvcl/flint.lnt:
+
+   Improve flexelint setup
+
+2006-08-11 10:17  andersb
+
+ * trunk/varnish-cache/bin/varnishncsa/varnishncsa.c:
+
+   More meat, and even more debug code. I am free()'ing stuff that does
+   not exsist.
+   
+   Strugling with the pointers and strings, since they obviously are
+   "bleeding" from one to another.
+   I take that as a clear sign of not allocating and freeing right.
+
+2006-08-11 08:41  des
+
+ * trunk/varnish-cache/ChangeLog:
+
+   Regenerate.
+
 2006-08-11 08:40  des
 
  * trunk/varnish-cache/svn2cl.xsl:
