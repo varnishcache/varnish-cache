@@ -35,6 +35,10 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
+AC_CHECK_LIB(rt, clock_gettime)
+AC_CHECK_LIB(dl, dlopen)
+#AC_SEARCH_LIBS(initscr, [curses ncurses])
+AC_SEARCH_LIBS(pthread_create, [thr pthread c_r])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -74,21 +78,6 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
-
-# On some systems, clock_gettime is in librt rather than libc
-AC_CHECK_LIB(rt, clock_gettime, need_librt=yes)
-AM_CONDITIONAL(NEED_LIBRT, test x$need_librt = xyes)
-
-# Check if dlopen() requires libdl
-AC_CHECK_LIB(dl, dlopen, need_libdl=yes)
-AM_CONDITIONAL(NEED_LIBDL, test x$need_libdl = xyes)
-
-# Check for the presence of RSA's MD5 implementation (libmd on *BSD)
-AC_CHECK_HEADERS([md5.h])
-if test x$ac_cv_header_md5_h = xyes ; then
-	AC_CHECK_LIB(md, MD5Init, need_libmd=yes)
-fi
-AM_CONDITIONAL(NEED_LIBMD, test x$need_libmd = xyes)
 
 # Check which mechanism to use for the acceptor
 AC_CHECK_FUNCS([kqueue])
