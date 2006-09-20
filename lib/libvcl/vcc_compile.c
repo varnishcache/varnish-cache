@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -36,7 +35,7 @@
  *
  * XXX:
  *	Better error messages, throughout.
- *	>It also accured to me that we could link the errors to the error 
+ *	>It also accured to me that we could link the errors to the error
  *	>documentation.
  *	>
  *	>Unreferenced  function 'request_policy', first mention is
@@ -53,7 +52,7 @@
  *	>         ------------#############------------
  *	>Read more about this type of error:
  *	>http://varnish/doc/error.html#Unknown%20variable
- * 
+ *
  * XXX:
  *	Create proper tmp filenames for .h, .c and .o
  *
@@ -115,7 +114,7 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 	Fc(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt; 				\
 } while (0)
-	
+
 /*--------------------------------------------------------------------
  * Printf output to the two vsbs, possibly indented
  */
@@ -383,7 +382,7 @@ DoubleVal(struct tokenlist *tl)
 		d += *p - '0';
 	}
 	vcc_NextToken(tl);
-	if (tl->t->tok != '.') 
+	if (tl->t->tok != '.')
 		return (d);
 	vcc_NextToken(tl);
 	if (tl->t->tok != CNUM)
@@ -630,7 +629,7 @@ Cond_2(struct tokenlist *tl)
 		case STRING:	L(tl, Cond_String(vp, tl)); break;
 		case TIME:	L(tl, Cond_Int(vp, tl)); break;
 		case BACKEND:	L(tl, Cond_Backend(vp, tl)); break;
-		default:	
+		default:
 			vsb_printf(tl->sb,
 			    "Variable '%s'"
 			    " has no conditions that can be checked\n",
@@ -806,7 +805,7 @@ Action(struct tokenlist *tl)
 		case RATE:
 		case TIME:
 		case FLOAT:
-			if (tl->t->tok != '=') 
+			if (tl->t->tok != '=')
 				Fc(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 			a = tl->t->tok;
 			vcc_NextToken(tl);
@@ -818,7 +817,7 @@ Action(struct tokenlist *tl)
 				SizeVal(tl);
 			else if (vp->fmt == RATE)
 				RateVal(tl);
-			else 
+			else
 				Fc(tl, 0, "%g", DoubleVal(tl));
 			Fc(tl, 0, ");\n");
 			break;
@@ -923,7 +922,7 @@ CheckHostPort(const char *host, const char *port)
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
 	error = getaddrinfo(host, port, &hint, &res);
-	if (error) 
+	if (error)
 		return (gai_strerror(error));
 	freeaddrinfo(res);
 	return (NULL);
@@ -1016,7 +1015,7 @@ Backend(struct tokenlist *tl)
 			return;
 		}
 	}
-	
+
 	vcc_NextToken(tl);
 	Fc(tl, 1, "}\n");
 	Fc(tl, 0, "\n");
@@ -1100,7 +1099,7 @@ AddProc(struct tokenlist *tl, struct token *t, int def)
 	struct proc *p;
 
 	TAILQ_FOREACH(p, &tl->procs, list) {
-		if (!vcc_Teq(p->name, t)) 
+		if (!vcc_Teq(p->name, t))
 			continue;
 		if (def)
 			p->name = t;
@@ -1154,7 +1153,7 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 		if (u & VCL_RET_##b) { \
 			vsb_printf(tl->sb, "Illegal return for method\n"); \
 			vcc_ErrWhere(tl, p->returnt[d]); \
-		} 
+		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 		vsb_printf(tl->sb, "In function\n");
@@ -1189,7 +1188,7 @@ Consistency(struct tokenlist *tl)
 			if (vcc_IdIs(p->name, m->name))
 				break;
 		}
-		if (m->name == NULL) 
+		if (m->name == NULL)
 			continue;
 		if (Consist_Decend(tl, p, m->returns)) {
 			vsb_printf(tl->sb,
@@ -1251,7 +1250,7 @@ CheckRefs(struct tokenlist *tl)
 			    type, PF(r->name));
 			vcc_ErrWhere(tl, r->name);
 			continue;
-		} 
+		}
 
 		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
 		    type, PF(r->name));
@@ -1268,7 +1267,7 @@ LocTable(struct tokenlist *tl)
 	struct token *t;
 	unsigned fil, lin, pos;
 	const char *p;
-	
+
 	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
 	Fh(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
 	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
@@ -1294,7 +1293,7 @@ LocTable(struct tokenlist *tl)
 				pos += 8;
 			} else
 				pos++;
-		
+
 		}
 		Fc(tl, 0, "  [%3u] = { %d, %4u, %3u, 0, \"%.*s\" },\n",
 		    t->cnt, fil, lin, pos + 1, PF(t));
@@ -1422,7 +1421,7 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	assert(of != NULL);
 	mktemp(of);
 
-	sprintf(buf, 
+	sprintf(buf,
 	    "tee /tmp/_.c |"
 	    "cc -fpic -shared -Wl,-x -o %s -x c - ", of);
 
@@ -1484,7 +1483,7 @@ VCC_CompileFile(struct vsb *sb, const char *fn)
 	assert(0 == fstat(fd, &st));
 	f = malloc(st.st_size + 1);
 	assert(f != NULL);
-	i = read(fd, f, st.st_size); 
+	i = read(fd, f, st.st_size);
 	assert(i == st.st_size);
 	f[i] = '\0';
 	r = VCC_Compile(sb, f, NULL);
@@ -1502,7 +1501,7 @@ VCC_InitCompile(const char *default_vcl)
 	vcc_default_vcl_b = default_vcl;
 	vcc_default_vcl_e = strchr(default_vcl, '\0');
 	assert(vcc_default_vcl_e != NULL);
-	
+
 	vcl_init_tnames();
 	for (v = vcc_vars; v->name != NULL; v++)
 		v->len = strlen(v->name);

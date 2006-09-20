@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Expiry of cached objects and execution of prefetcher
@@ -87,7 +86,7 @@ exp_hangman(void *arg)
 
 	(void)arg;
 
-	t = time(NULL); 
+	t = time(NULL);
 	while (1) {
 		LOCK(&exp_mtx);
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
@@ -107,7 +106,7 @@ exp_hangman(void *arg)
 		if (o == NULL) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
-			t = time(NULL); 
+			t = time(NULL);
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);

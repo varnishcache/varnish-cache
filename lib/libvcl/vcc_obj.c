@@ -69,7 +69,7 @@ struct var vcc_vars[] = {
 	{ NULL }
 };
 
-const char *vrt_obj_h = 
+const char *vrt_obj_h =
 	"/*\n"
 	" * $Id$\n"
 	" *\n"

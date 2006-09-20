@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -116,12 +115,12 @@ tweak_generic_uint(struct cli *cli, unsigned *dest, const char *arg, unsigned mi
 			u = strtoul(arg, NULL, 0);
 		if (u < min) {
 			cli_out(cli, "Must be at least %u", min);
-			cli_result(cli, CLIS_PARAM);	
+			cli_result(cli, CLIS_PARAM);
 			return;
 		}
 		if (u > max) {
 			cli_out(cli, "Must be no more than %u", max);
-			cli_result(cli, CLIS_PARAM);	
+			cli_result(cli, CLIS_PARAM);
 			return;
 		}
 		*dest = u;
@@ -304,7 +303,7 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 		AN(params->listen_address);
 		params->listen_host = a;
 		params->listen_port = p;
-	} else 
+	} else
 		cli_out(cli, "%s", params->listen_address);
 }
 
@@ -431,7 +430,7 @@ static struct parspec parspec[] = {
 	{ "pipe_timeout", tweak_pipe_timeout,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
-	        "this many seconds, the session is closed.\n",
+		"this many seconds, the session is closed.\n",
 		"60", "seconds" },
 	{ "send_timeout", tweak_send_timeout,
 		"Send timeout for client connections. "
@@ -535,7 +534,7 @@ mcf_param_show(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "%-20s ", pp->name);
 		if (pp->func == NULL) {
 			cli_out(cli, "Not implemented.\n");
-			if (av[2] != NULL && !lfmt) 
+			if (av[2] != NULL && !lfmt)
 				return;
 			else
 				continue;

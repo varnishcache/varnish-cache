@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * This file contains the central state machine for pushing requests.
@@ -41,7 +40,6 @@
  * extract the DOT lines and run though dot(1), for instance with the
  * command:
  *	sed -n '/^DOT/s///p' cache_center.c | dot -Tps > /tmp/_.ps
- *
  */
 
 /*
@@ -78,7 +76,7 @@ cnt_again(struct sess *sp)
 
 	assert(sp->xid == 0);
 
-	do 
+	do
 		i = http_RecvSome(sp->fd, sp->http);
 	while (i == -1);
 	if (i == 0) {
@@ -273,8 +271,8 @@ DOT	]
 DOT	vcl_fetch -> fetch_error [label="error"]
 DOT }
 DOT fetch_lookup -> LOOKUP [style=dotted, weight=0]
-DOT fetch_pass -> PASSBODY 
-DOT fetch_ipass -> PASSBODY 
+DOT fetch_pass -> PASSBODY
+DOT fetch_ipass -> PASSBODY
 DOT fetch_insert -> DELIVER [style=bold]
 DOT fetch_error -> ERROR
  */
@@ -350,7 +348,7 @@ cnt_first(struct sess *sp)
 	sp->wrk->idle = sp->t_open.tv_sec;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
-	do 
+	do
 		i = http_RecvSome(sp->fd, sp->http);
 	while (i == -1);
 	if (i == 0) {
@@ -476,7 +474,7 @@ cnt_lookup2(struct sess *sp)
 
 	/*
 	 * We don't assign to sp->obj directly because it is used
- 	 * to cache state when we encounter a busy object.
+	 * to cache state when we encounter a busy object.
 	 */
 	o = HSH_Lookup(sp);
 
@@ -611,7 +609,7 @@ cnt_pass(struct sess *sp)
 	if (!PassSession(sp)) {
 		AN(sp->vbc);
 		sp->step = STP_PASSBODY;
-	} else 
+	} else
 		sp->step = STP_DONE;
 	return (0);
 }
@@ -757,7 +755,7 @@ cnt_recv(struct sess *sp)
 
 /*--------------------------------------------------------------------
  * Central state engine dispatcher.
- * 
+ *
  * We grab a VCL reference, and keeps kicking the session around until
  * it has had enough.
  *

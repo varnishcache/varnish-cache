@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Runtime support for compiled VCL programs
@@ -48,7 +47,7 @@
 
 void
 VRT_error(struct sess *sp, unsigned code, const char *expl)
-{ 
+{
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, expl);
@@ -61,7 +60,7 @@ VRT_error(struct sess *sp, unsigned code, const char *expl)
 void
 VRT_count(struct sess *sp, unsigned u)
 {
-	
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (params->vcl_trace)
 		WSL(sp->wrk, SLT_VCL_trace, sp->fd, "%u %d.%d", u,

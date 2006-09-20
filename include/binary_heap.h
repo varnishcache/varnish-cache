@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Binary Heap API (see: http://en.wikipedia.org/wiki/Binary_heap)
@@ -41,7 +40,7 @@ struct binheap;
 typedef int binheap_cmp_t(void *priv, void *a, void *b);
 	/*
 	 * Comparison function.
- 	 * Should return true if item 'a' should be closer to the root
+	 * Should return true if item 'a' should be closer to the root
 	 * than item 'b'
 	 */
 
@@ -57,7 +56,7 @@ struct binheap *binheap_new(void *priv, binheap_cmp_t, binheap_update_t);
 	/*
 	 * Create Binary tree
 	 * 'priv' is passed to cmp and update functions.
- 	 */
+	 */
 
 void binheap_insert(struct binheap *, void *);
 	/*

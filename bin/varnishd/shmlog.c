@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -51,7 +50,7 @@
 			VSL_stats->shm_cont++;		\
 		}					\
 	} while (0);
-		
+
 #define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
 
 #ifndef MAP_HASSEMAPHORE
@@ -82,7 +81,7 @@ vsl_wrap(void)
 }
 
 /*--------------------------------------------------------------------*/
- 
+
 void
 VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 {
@@ -102,8 +101,8 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 
 	/* Only hold the lock while we find our space */
 	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_writes++;	
-	VSL_stats->shm_records++;	
+	VSL_stats->shm_writes++;
+	VSL_stats->shm_records++;
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
@@ -141,12 +140,12 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 	}
 
 	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_writes++;	
-	VSL_stats->shm_records++;	
+	VSL_stats->shm_writes++;
+	VSL_stats->shm_records++;
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if we cannot fit a full size record */
-	if (loghead->ptr + 5 + 255 + 1 >= loghead->size) 
+	if (loghead->ptr + 5 + 255 + 1 >= loghead->size)
 		vsl_wrap();
 
 	p = logstart + loghead->ptr;
@@ -165,7 +164,7 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	loghead->ptr += 5 + n;
 	assert(loghead->ptr < loghead->size);
-	
+
 	UNLOCKSHM(&vsl_mtx);
 
 	va_end(ap);
@@ -184,7 +183,7 @@ WSL_Flush(struct worker *w)
 		return;
 	l = w->wlp - w->wlog;
 	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_writes++;	
+	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
 	if (loghead->ptr + l + 1 >= loghead->size)
 		vsl_wrap();
@@ -200,7 +199,7 @@ WSL_Flush(struct worker *w)
 }
 
 /*--------------------------------------------------------------------*/
- 
+
 void
 WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const char *e)
 {

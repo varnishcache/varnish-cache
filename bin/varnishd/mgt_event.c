@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -117,7 +116,7 @@ ev_get_pfd(struct evbase *evb)
 	unsigned u;
 	void *p;
 
-	if (evb->lpfd < evb->npfd) 
+	if (evb->lpfd < evb->npfd)
 		return (0);
 
 	if (evb->npfd > 256)
@@ -141,7 +140,7 @@ ev_get_sig(int sig)
 {
 	struct evsig *os;
 
-	if (sig < ev_nsig) 
+	if (sig < ev_nsig)
 		return (0);
 
 	os = calloc(sizeof *os, (sig + 1));
@@ -337,7 +336,7 @@ ev_schedule(struct evbase *evb)
 	int i;
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
-	do 
+	do
 		i = ev_schedule_one(evb);
 	while (i == 1);
 	return (i);
@@ -360,7 +359,7 @@ ev_compact_pfd(struct evbase *evb)
 		for(; ep != NULL; ep = TAILQ_NEXT(ep, __list)) {
 			if (ep->fd >= 0 && ep->__poll_idx > u)
 				break;
-		} 
+		}
 		if (ep == NULL)
 			break;
 		*p = evb->pfd[ep->__poll_idx];

@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Ban processing
@@ -63,7 +62,7 @@ AddBan(const char *regexp)
 	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_NOSUB);
 	if (i) {
 		char buf[512];
-	
+
 		(void)regerror(i, &b->regexp, buf, sizeof buf);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
 	}
@@ -93,7 +92,7 @@ BAN_CheckObject(struct object *o, const char *url)
 		i = regexec(&b->regexp, url, 0, NULL, 0);
 		if (!i)
 			return (1);
-	} 
+	}
 	o->ban_seq = b0->gen;
 	return (0);
 }

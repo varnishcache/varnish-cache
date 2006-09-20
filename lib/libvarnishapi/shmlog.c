@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -276,7 +275,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			*pp = p;
 			return (1);
 		}
-		if (vd->map[p[0]] & M_SUPPRESS) 
+		if (vd->map[p[0]] & M_SUPPRESS)
 			continue;
 		if (vd->b_opt && !(vd->map[u] & M_BACKEND))
 			continue;

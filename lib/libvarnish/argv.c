@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * const char **ParseArgv(const char *s, int comment)
@@ -194,7 +193,7 @@ void
 FreeArgv(char **argv)
 {
 	int i;
-	
+
 	for (i = 1; argv[i] != NULL; i++)
 		free(argv[i]);
 	free(argv);
@@ -234,7 +233,7 @@ main(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-        register_printf_render_std("V");
+	register_printf_render_std("V");
 
 	while (fgets(buf, sizeof buf, stdin))
 		Test(buf);

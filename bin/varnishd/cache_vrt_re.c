@@ -26,11 +26,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Runtime support for compiled VCL programs, regexps
- *
  */
 
 #include <stdio.h>
@@ -85,7 +83,7 @@ int
 VRT_re_test(struct vsb *sb, const char *re)
 {
 	int i;
-	regex_t	t;	
+	regex_t	t;
 	char buf[BUFSIZ];
 
 	memset(&t, 0, sizeof t);

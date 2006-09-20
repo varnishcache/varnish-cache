@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Log tailer for Varnish
@@ -94,7 +93,7 @@ printf("Clean\n");
 	}
 }
 
-static int 
+static int
 h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 
@@ -195,7 +194,7 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 		}
 		else if (i < 0)
 			break;
-	} 
+	}
 	clean_order();
 }
 
@@ -250,7 +249,7 @@ main(int argc, char **argv)
 	struct VSL_data *vd;
 
 	vd = VSL_New();
-	
+
 	while ((c = getopt(argc, argv, VSL_ARGS "aoVw:")) != -1) {
 		switch (c) {
 		case 'a':
@@ -288,7 +287,7 @@ main(int argc, char **argv)
 	if (VSL_OpenLog(vd))
 		exit (1);
 
-	if (w_opt != NULL) 
+	if (w_opt != NULL)
 		do_write(vd, w_opt, a_flag);
 
 	if (o_flag)
@@ -300,7 +299,7 @@ main(int argc, char **argv)
 			fflush(stdout);
 		else if (i < 0)
 			break;
-	} 
+	}
 
 	return (0);
 }

@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * The management process and CLI handling
@@ -382,7 +381,7 @@ main(int argc, char *argv[])
 	heritage.socket = -1;
 	memset(&param, 0, sizeof param);
 	params = &param;
-	mgt_vcc_init(); 
+	mgt_vcc_init();
 
 	MCF_ParamInit(cli);
 	cli_check(cli);

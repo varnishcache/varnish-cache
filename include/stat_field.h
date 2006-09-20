@@ -27,7 +27,6 @@
  * SUCH DAMAGE.
  *
  * $Id$
- *
  */
 
 MAC_STAT(client_conn,		uint64_t, "u", "Client connections accepted")

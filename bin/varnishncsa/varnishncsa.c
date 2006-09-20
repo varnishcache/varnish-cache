@@ -3,6 +3,9 @@
  * Copyright (c) 2006 Linpro AS
  * All rights reserved.
  *
+ * Author: Anders Berg <andersb@vgnett.no>
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -24,9 +27,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Initial implementation by Anders Berg <andersb@vgnett.no> and
- * Poul-Henning Kamp <phk@phk.freebsd.dk>
- *
  * $Id$
  *
  * Program that will get data from the shared memory log. When it has the data
@@ -35,7 +35,7 @@
  * in NCSA extended/combined access log format.
  *
  *	"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""
- * 
+ *
  * TODO:	- Log in any format one wants
  *		- Maybe rotate/compress log
  */
@@ -124,7 +124,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 			lp->bogus_req = 1;
 		}
 		break;
-	
+
 	case SLT_RxURL:
 		vsb_cat(lp->sb, " ");
 		vsb_bcat(lp->sb, ptr, len);
@@ -141,9 +141,9 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 
 	case SLT_RxHeader:
 		if (ispfx(ptr, len, "user-agent:"))
-                        lp->df_U = strdup(ptr + 12);
-                else if (ispfx(ptr, len, "referer:"))
-                        lp->df_R = strdup(ptr + 9);
+			lp->df_U = strdup(ptr + 12);
+		else if (ispfx(ptr, len, "referer:"))
+			lp->df_R = strdup(ptr + 9);
 		break;
 
 	case SLT_Length:
@@ -202,7 +202,7 @@ main(int argc, char **argv)
 	int append = 0;
 
 	vd = VSL_New();
-	
+
 	while ((c = getopt(argc, argv, VSL_ARGS "aVw:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)

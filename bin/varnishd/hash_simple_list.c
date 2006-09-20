@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * This is the reference hash(/lookup) implementation
@@ -53,7 +52,7 @@ static TAILQ_HEAD(, hsl_entry)	hsl_head = TAILQ_HEAD_INITIALIZER(hsl_head);
 static MTX hsl_mutex;
 
 /*--------------------------------------------------------------------
- * The ->init method is called during process start and allows 
+ * The ->init method is called during process start and allows
  * initialization to happen before the first lookup.
  */
 
@@ -82,12 +81,12 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 		i = strcmp(key1, he->key1);
 		if (i < 0)
 			continue;
-		if (i > 0) 
+		if (i > 0)
 			break;
 		i = strcmp(key2, he->key2);
 		if (i < 0)
 			continue;
-		if (i > 0) 
+		if (i > 0)
 			break;
 		he->refcnt++;
 		nobj = he->obj;

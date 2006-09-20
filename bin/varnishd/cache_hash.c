@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * This is the central hash-table code, it relies on a chosen hash
@@ -51,7 +50,6 @@
  *
  * New objects are always marked busy, and they can go from busy to
  * not busy only once.
- *
  */
 
 #include <stdio.h>
@@ -141,7 +139,7 @@ HSH_Lookup(struct sess *sp)
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			EXP_TTLchange(o);
-		} else 
+		} else
 			break;
 		o->refcnt--;
 	}

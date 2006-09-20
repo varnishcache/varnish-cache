@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Implementation of a binary heap API
@@ -208,7 +207,7 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	assert(idx > 0);
 	assert(bh->array[idx] != NULL);
 	bh->update(bh->priv, bh->array[idx], 0);
-	if (idx == --bh->next) { 
+	if (idx == --bh->next) {
 		bh->array[bh->next] = NULL;
 		return;
 	}

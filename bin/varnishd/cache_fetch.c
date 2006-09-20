@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -133,7 +132,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			/* Get some storage if we don't have any */
 			if (st == NULL || st->len == st->space) {
 				v = u;
-				if (u < params->fetch_chunksize * 1024 && 
+				if (u < params->fetch_chunksize * 1024 &&
 				    stevedore->trim != NULL)
 					v = params->fetch_chunksize * 1024;
 				st = stevedore->alloc(stevedore, v);
@@ -269,13 +268,13 @@ FetchBody(struct sess *sp)
 	hp->logtag = HTTP_Obj;
 	http_CopyResp(sp->wrk, sp->fd, hp, vc->http);
 	http_FilterHeader(sp->wrk, sp->fd, hp, vc->http, HTTPH_A_INS);
-	
+
 	if (body) {
 		if (http_GetHdr(vc->http, H_Content_Length, &b))
 			cls = fetch_straight(sp, vc->fd, vc->http, b);
 		else if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
 			cls = fetch_chunked(sp, vc->fd, vc->http);
-		else 
+		else
 			cls = fetch_eof(sp, vc->fd, vc->http);
 		http_PrintfHeader(sp->wrk, sp->fd, hp,
 		    "Content-Length: %u", sp->obj->len);

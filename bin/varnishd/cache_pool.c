@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * XXX: automatic thread-pool size adaptation.
@@ -111,7 +110,7 @@ unsigned
 WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf)
 {
 	unsigned u;
-	
+
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AN(w);
 	AN(hh);
@@ -235,7 +234,7 @@ wrk_thread(void *priv)
 			}
 			UNLOCK(&tmtx);
 		}
-		
+
 		LOCK(&qp->mtx);
 		TAILQ_INSERT_HEAD(&qp->idle, w, list);
 		assert(w->idle != 0);
@@ -292,7 +291,7 @@ WRK_QueueSession(struct sess *sp)
 		assert(1 == write(w->pipe[1], w, 1));
 		return;
 	}
-	
+
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
@@ -306,7 +305,7 @@ WRK_QueueSession(struct sess *sp)
 	}
 	/*
 	 * XXX: If there are too many requests in the overflow queue
-	 * XXX: we should kill the request right here. 
+	 * XXX: we should kill the request right here.
 	 * XXX: Not sure how though.  Simply closing may be the better
 	 * XXX: compromise.
 	 */
@@ -371,7 +370,7 @@ wrk_addpools(unsigned t)
 }
 
 /*--------------------------------------------------------------------*/
-	
+
 static void *
 wrk_reaperthread(void *priv)
 {
@@ -385,7 +384,7 @@ wrk_reaperthread(void *priv)
 		wrk_addpools(params->wthread_pools);
 		sleep(1);
 		if (VSL_stats->n_wrk <= params->wthread_min)
-			continue; 
+			continue;
 		now = time(NULL);
 		for (u = 0; u < nwq; u++) {
 			qp = wq[u];
@@ -395,7 +394,7 @@ wrk_reaperthread(void *priv)
 			   (w->idle + params->wthread_timeout < now ||
 			    VSL_stats->n_wrk > params->wthread_max))
 				TAILQ_REMOVE(&qp->idle, w, list);
-			else 
+			else
 				w = NULL;
 			UNLOCK(&qp->mtx);
 			if (w == NULL)

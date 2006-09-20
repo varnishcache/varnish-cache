@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * VCL compiler stuff
@@ -171,7 +170,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 			fprintf(stderr, "invalid backend address\n");
 			return (1);
 		}
-		
+
 		buf = NULL;
 		asprintf(&buf,
 		    "backend default {\n"
