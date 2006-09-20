@@ -54,7 +54,7 @@ int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
 struct varnish_stats *VSL_OpenStats(void);
-const char *VSL_tags[256];
+extern const char *VSL_tags[256];
 
 /* varnish_debug.c */
 void		 vdb_panic(const char *, ...) V_DEAD;
