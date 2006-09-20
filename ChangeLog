@@ -1,3 +1,44 @@
+2006-09-20 17:17  des
+
+ * branches/1.0/configure.ac:
+
+   Bump version.
+
+2006-09-20 15:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishtop/varnishtop.1:
+
+   r31740@cat (orig r1109): des | 2006-09-20 17:43:57 +0200
+   Correct the title, name and description which were copy-pasted from
+   varnishhist(1).
+   
+   Spotted by: Anders Hanssen <anders@rethink.no>
+
+2006-09-20 15:46  des
+
+ * branches/1.0, branches/1.0/include/varnishapi.h:
+
+   r31739@cat (orig r1108): des | 2006-09-20 17:41:23 +0200
+   Declare VSL_tags[] rather than define it. This allows Varnish to build
+   on MacOS.
+
+2006-09-20 15:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pool.c:
+
+   r31738@cat (orig r1107): phk | 2006-09-20 16:52:07 +0200
+   Examine queue length, not how many have passed through the queue over
+   all time.
+   
+   MFC: yes.
+   
+
+2006-09-20 09:49  des
+
+ * branches/1.0/ChangeLog:
+
+   Regenerate.
+
 2006-09-20 09:44  des
 
  * branches/1.0, branches/1.0/README:
