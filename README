@@ -1,13 +1,14 @@
-This is an alpha release of the Varnish high-performance HTTP
-accelerator.
+This is the Varnish high-performance HTTP accelerator.
 
-Please read the following web page before trying out Varnish:
+Documentation and additional information about Varnish is available on
+the following web sites:
 
-  http://varnish.projects.linpro.no/wiki/AlphaReadme
+  http://www.varnish-cache.org/         Official web site
+
+  http://varnish.projects.linpro.no/    Developer site and wiki
 
 Technical questions about Varnish and this release should be addressed
 to <varnish-dev@projects.linpro.no>.
 
-For more information about the project, see:
-
-  http://varnish.projects.linpro.no/wiki
+Questions about commercial support and services related to Varnish
+should be addressed to <varnish@linpro.no>.
