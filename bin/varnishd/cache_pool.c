@@ -295,7 +295,15 @@ WRK_QueueSession(struct sess *sp)
 	UNLOCK(&qp->mtx);
 
 	LOCK(&tmtx);
-	if ((VSL_stats->n_wrk_overflow >
+	/*
+	 * If we have too much in the overflow, and this is a new session
+	 * just drop it.  We do not drop sessions which were waiting for
+	 * a busy object, they will be cheap to serve from here and the
+	 * cleanup would be more complex to carry out than delivering
+	 * the result will be
+	 */
+	if (sp->obj == NULL &&
+	    (VSL_stats->n_wrk_overflow >
 	    (params->wthread_max * params->overflow_max) / 100)) {
 		VSL_stats->n_wrk_drop++;
 		UNLOCK(&tmtx);
