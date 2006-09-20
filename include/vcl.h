@@ -16,16 +16,16 @@ struct VCL_conf {
 	unsigned        magic;
 #define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */
 
-	struct backend  **backend;
-	unsigned        nbackend;
-	struct vrt_ref  *ref;
-	unsigned        nref;
-	unsigned        busy;
+        struct backend  **backend;
+        unsigned        nbackend;
+        struct vrt_ref  *ref;
+        unsigned        nref;
+        unsigned        busy;
 
-	void            *priv;
+        void            *priv;
 
-	vcl_init_f      *init_func;
-	vcl_fini_f      *fini_func;
+        vcl_init_f      *init_func;
+        vcl_fini_f      *fini_func;
 
 	vcl_func_f	*recv_func;
 	vcl_func_f	*miss_func;
