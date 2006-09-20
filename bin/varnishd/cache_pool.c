@@ -303,7 +303,7 @@ WRK_QueueSession(struct sess *sp)
 	 * the result will be
 	 */
 	if (sp->obj == NULL &&
-	    (VSL_stats->n_wrk_overflow >
+	    (VSL_stats->n_wrk_queue >
 	    (params->wthread_max * params->overflow_max) / 100)) {
 		VSL_stats->n_wrk_drop++;
 		UNLOCK(&tmtx);
