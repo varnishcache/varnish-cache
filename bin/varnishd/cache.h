@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -199,7 +198,7 @@ extern struct stevedore *stevedore;
 
 /* -------------------------------------------------------------------*/
 
-struct object {	
+struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
 	unsigned 		refcnt;

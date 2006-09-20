@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Log tailer for Varnish
@@ -118,7 +117,7 @@ main(int argc, char **argv)
 
 
 	vd = VSL_New();
-	
+
 	while ((c = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
@@ -185,7 +184,7 @@ main(int argc, char **argv)
 			tp->count = 1.0;
 			tp->clen = q - p;
 			TAILQ_INSERT_TAIL(&top_head, tp, list);
-		} 
+		}
 		memcpy(tp->rec, p, 4 + p[1]);
 		while (1) {
 			tp2 = TAILQ_PREV(tp, tophead, list);

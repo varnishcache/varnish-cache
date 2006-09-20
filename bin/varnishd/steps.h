@@ -27,7 +27,6 @@
  * SUCH DAMAGE.
  *
  * $Id$
- *
  */
 
 STEP(again,	AGAIN)

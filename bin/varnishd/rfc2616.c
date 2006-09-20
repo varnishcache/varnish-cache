@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -66,35 +65,35 @@
  */
 
 #if PSEUDO_CODE
- 	/* Marker for no retirement age determined */
- 	retirement_age = INT_MAX
+	/* Marker for no retirement age determined */
+	retirement_age = INT_MAX
 
- 	/* If we have a max-age directive, respect it */
- 	if (max-age)
- 		retirement_age = max(0,min(retirement_age, max-age - Age:))
- 
- 	/* If Date: is not in future and Expires: looks sensible, use it */
- 	if ((!date || date < our_clock) && expires > our_clock) {
- 		ttd = min(our_clock + retirement_age, Expires:)
-  
- 	/* Otherwise we have clock-skew */
- 	} else {
- 		/* If we have both date and expires, infer max-age */
- 		if (date && expires)
- 			retirement_age =
- 			    max(0, min(retirement_age, Expires: - Date:)
-  
- 		/* Apply default_ttl if nothing better found */
- 		if (retirement_age == INT_MAX)
- 			retirement_age = default_ttl
-  
- 		/* Apply the max-age we can up with */
- 		ttd = our_clock + retirement_age
- 	}
-  
- 	/* Apply hard limits */
- 	ttd = max(ttd, our_clock + hard_lower_ttl)
- 	ttd = min(ttd, our_clock + hard_upper_ttl)
+	/* If we have a max-age directive, respect it */
+	if (max-age)
+		retirement_age = max(0,min(retirement_age, max-age - Age:))
+
+	/* If Date: is not in future and Expires: looks sensible, use it */
+	if ((!date || date < our_clock) && expires > our_clock) {
+		ttd = min(our_clock + retirement_age, Expires:)
+
+	/* Otherwise we have clock-skew */
+	} else {
+		/* If we have both date and expires, infer max-age */
+		if (date && expires)
+			retirement_age =
+			    max(0, min(retirement_age, Expires: - Date:)
+
+		/* Apply default_ttl if nothing better found */
+		if (retirement_age == INT_MAX)
+			retirement_age = default_ttl
+
+		/* Apply the max-age we can up with */
+		ttd = our_clock + retirement_age
+	}
+
+	/* Apply hard limits */
+	ttd = max(ttd, our_clock + hard_lower_ttl)
+	ttd = min(ttd, our_clock + hard_upper_ttl)
 #endif
 
 static time_t
@@ -104,7 +103,7 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 	unsigned u1, u2;
 	time_t h_date, h_expires, ttd;
 	char *p;
-	
+
 	retirement_age = INT_MAX;
 
 	u1 = u2 = 0;

@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Storage method based on mmap'ed file
@@ -69,7 +68,7 @@
 
 /*
  * Number of buckets on free-list.
- * 
+ *
  * Last bucket is "larger than" so choose number so that the second
  * to last bucket matches the 128k CHUNKSIZE in cache_fetch.c when
  * using the a 4K minimal page size
@@ -150,7 +149,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		l = st.st_size;
 
 	/* We must have at least one block */
-	if (l < bs) {	
+	if (l < bs) {
 		if (i == -1) {
 			fprintf(stderr,
 			    "Info: (-sfile) default to 80%% size\n");
@@ -436,7 +435,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 }
 
 /*--------------------------------------------------------------------
- * Free a range.  Attemt merge forward and backward, then sort into 
+ * Free a range.  Attemt merge forward and backward, then sort into
  * free list according to age.
  */
 
@@ -551,7 +550,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 
 /*
  * XXX: This may be too aggressive and soak up too much address room.
- * XXX: On the other hand, the user, directly or implicitly asked us to 
+ * XXX: On the other hand, the user, directly or implicitly asked us to
  * XXX: use this much storage, so we should make a decent effort.
  * XXX: worst case (I think), malloc will fail.
  */

@@ -26,17 +26,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Public definition of the CLI protocol, part of the published Varnish-API.
  *
- * The overall structure of the protocol is a command-line like 
+ * The overall structure of the protocol is a command-line like
  * "command+arguments" request and a IETF style "number + string" response.
  *
  * Arguments can contain arbitrary sequences of bytes which are encoded
  * in back-slash notation in double-quoted, if necessary.
- *
  */
 
 /*
@@ -115,13 +113,13 @@
 	"param.set",							\
 	"param.set <param> <value>",					\
 	"\tSet parameter value.",					\
-	2,2 
+	2,2
 
 #define CLI_SERVER_FREEZE						\
 	"server.freeze",						\
 	"server.freeze",						\
 	"\tStop the clock, freeze object store.",			\
-	0, 0 
+	0, 0
 
 #define CLI_SERVER_THAW							\
 	"thaw",								\

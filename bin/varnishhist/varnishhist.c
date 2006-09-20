@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Log tailer for Varnish
@@ -112,12 +111,12 @@ r_hist(void)
 	alarm(delay);
 }
 
-static int 
+static int
 h_hist(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 	double b;
 	int i, j;
-	
+
 	(void)priv;
 	(void)fd;
 	(void)len;
@@ -184,7 +183,7 @@ main(int argc, char **argv)
 	struct VSL_data *vd;
 
 	vd = VSL_New();
-	
+
 	while ((c = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (c) {
 		case 'V':
@@ -225,7 +224,7 @@ main(int argc, char **argv)
 		i = VSL_Dispatch(vd, h_hist, NULL);
 		if (i < 0)
 			break;
-	} 
+	}
 
 	return (0);
 }

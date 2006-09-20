@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Manage backend connections.
@@ -120,12 +119,12 @@ vbe_sock_conn(const struct addrinfo *ai)
 	int s;
 
 	s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-	if (s < 0) 
+	if (s < 0)
 		return (s);
 	else if (connect(s, ai->ai_addr, ai->ai_addrlen)) {
 		AZ(close(s));
 		s = -1;
-	} 
+	}
 	return (s);
 }
 
@@ -185,7 +184,7 @@ vbe_connect(struct sess *sp, struct backend *bp)
 	AN(bp->hostname);
 
 	s = vbe_conn_try(bp, &ai);
-	if (s < 0) 
+	if (s < 0)
 		return (s);
 
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);

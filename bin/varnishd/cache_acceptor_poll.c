@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * XXX: We need to pass sessions back into the event engine when they are
@@ -74,7 +73,7 @@ vca_pollspace(int fd)
 	p = realloc(pollfd, u * sizeof *p);
 	XXXAN(p);	/* close offending fd */
 	memset(p + npoll, 0, (u - npoll) * sizeof *p);
-	for (v = npoll ; v <= u; v++) 
+	for (v = npoll ; v <= u; v++)
 		p->fd = -1;
 	pollfd = p;
 	npoll = u;
@@ -129,7 +128,7 @@ vca_main(void *arg)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			fd = sp->fd;
-		    	if (pollfd[fd].revents) {
+			if (pollfd[fd].revents) {
 				v--;
 				i = vca_pollsession(sp);
 				if (i < 0)

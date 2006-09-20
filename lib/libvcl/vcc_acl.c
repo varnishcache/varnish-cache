@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -104,12 +103,12 @@ vcc_Acl(struct tokenlist *tl)
 		if (tl->t->tok == '(') {
 			para = 1;
 			vcc_NextToken(tl);
-		} 
+		}
 
 		if (tl->t->tok == '!') {
 			not = 1;
 			vcc_NextToken(tl);
-		} 
+		}
 
 		ExpectErr(tl, CSTR);
 		/* XXX: try to look it up, warn if failure */
@@ -119,7 +118,7 @@ vcc_Acl(struct tokenlist *tl)
 			vcc_NextToken(tl);
 			ExpectErr(tl, CNUM);
 			mask = UintVal(tl);
-		} 
+		}
 		Fc(tl, 1, "{ %u, %u, %u, ", not, mask, para);
 		EncString(tl->fc, t);
 		Fc(tl, 0, ", \"");

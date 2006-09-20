@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * a	Http header name
@@ -39,7 +38,7 @@
  *
  * see [RFC2616 13.5.1 End-to-end and Hop-by-hop Headers]
  *
- *    a                         b                       c  d  e  f  g 
+ *    a                         b                       c  d  e  f  g
  *--------------------------------------------------------------------
  */
 

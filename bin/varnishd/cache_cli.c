@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -91,7 +90,7 @@ CLI_Init(void)
 
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
-	
+
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli->sb);
 	lbuf = 4096;
@@ -133,7 +132,7 @@ CLI_Init(void)
 		}
 		VSL(SLT_CLI, 0, "Wr %d %d %s",
 		    i, cli->result, vsb_data(cli->sb));
-		i = ++p - buf; 
+		i = ++p - buf;
 		assert(i <= nbuf);
 		if (i < nbuf)
 			memcpy(buf, p, nbuf - i);

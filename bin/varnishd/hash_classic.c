@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * A classic bucketed hash
@@ -93,7 +92,7 @@ hcl_init(const char *p)
 }
 
 /*--------------------------------------------------------------------
- * The ->start method is called during cache process start and allows 
+ * The ->start method is called during cache process start and allows
  * initialization to happen before the first lookup.
  */
 

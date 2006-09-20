@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * The mechanics of handling the child process
@@ -147,7 +146,7 @@ start_child(void)
 	AZ(pipe(&heritage.fds[2]));
 	AZ(pipe(child_fds));
 	i = fork();
-	if (i < 0) 
+	if (i < 0)
 		errx(1, "Could not fork child");
 	if (i == 0) {
 		/* Redirect stdin/out/err */

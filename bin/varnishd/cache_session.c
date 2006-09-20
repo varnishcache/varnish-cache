@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Session and Client management.
@@ -42,8 +41,8 @@
  * XXX: The two-list session management is actually not a good idea
  * XXX: come to think of it, because we want the sessions reused in
  * XXX: Most Recently Used order.
- * XXX: Another and maybe more interesting option would be to cache 
- * XXX: free sessions in the worker threads and postpone session 
+ * XXX: Another and maybe more interesting option would be to cache
+ * XXX: free sessions in the worker threads and postpone session
  * XXX: allocation until then.  This does not quite implment MRU order
  * XXX: but it does save some locking, although not that much because
  * XXX: we still have to do the source-addr lookup.
@@ -103,7 +102,7 @@ static struct srcaddrhead {
 	TAILQ_HEAD(,srcaddr)	head;
 	MTX			mtx;
 } *srchash;
-	
+
 static unsigned			nsrchash;
 static MTX			stat_mtx;
 
@@ -320,7 +319,7 @@ SES_Delete(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
-	
+
 	AZ(sp->obj);
 	AZ(sp->vcl);
 	VSL_stats->n_sess--;
@@ -329,7 +328,7 @@ SES_Delete(struct sess *sp)
 	    sp->addr, sp->port, sp->t_end.tv_sec - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
-	if (sm->workspace != params->mem_workspace) { 
+	if (sm->workspace != params->mem_workspace) {
 		VSL_stats->n_sess_mem--;
 		free(sm);
 	} else {

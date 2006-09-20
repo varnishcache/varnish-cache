@@ -26,13 +26,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * Interface *to* compiled VCL code:  Loading, unloading, calling into etc.
  *
  * The interface *from* the compiled VCL code is in cache_vrt.c.
- *
  */
 
 #include <stdio.h>
@@ -140,7 +138,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	if (vcl != NULL) {
 		if (cli == NULL)
 			fprintf(stderr, "Config '%s' already loaded", name);
-		else 
+		else
 			cli_out(cli, "Config '%s' already loaded", name);
 		return (1);
 	}
@@ -162,7 +160,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	if (vcl->conf == NULL) {
 		if (cli == NULL)
 			fprintf(stderr, "No VCL_conf symbol\n");
-		else 
+		else
 			cli_out(cli, "No VCL_conf symbol\n");
 		(void)dlclose(vcl->dlh);
 		free(vcl);
@@ -170,7 +168,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		if (cli == NULL) 
+		if (cli == NULL)
 			fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
 		else
 			cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
@@ -188,7 +186,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	UNLOCK(&vcl_mtx);
 	if (cli == NULL)
 		fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
-	else 
+	else
 		cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
 	vcl->conf->init_func();
 	return (0);

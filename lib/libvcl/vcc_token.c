@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -71,7 +70,7 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 {
 	unsigned lin, pos, x, y;
 	const char *p, *l, *f, *b, *e;
-	
+
 	lin = 1;
 	pos = 0;
 	if (t->tok == METHOD)

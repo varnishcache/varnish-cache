@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  */
 
@@ -116,7 +115,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 			expl = mp->expl;
 		break;
 	}
-	if (expl == NULL) 
+	if (expl == NULL)
 		expl = msg;
 	AN(expl);
 	AN(msg);
@@ -216,13 +215,13 @@ RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
-	
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
-		
+
 	WSL(sp->wrk, SLT_Length, sp->fd, "%u", sp->obj->len);
 
 	http_ClrHeader(sp->http);
@@ -242,7 +241,7 @@ RES_WriteObj(struct sess *sp)
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	
+
 	if (sp->wantbody) {
 		TAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);

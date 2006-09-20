@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * XXX: We need to pass sessions back into the event engine when they are
@@ -150,7 +149,7 @@ vca_kqueue_main(void *arg)
 				continue;
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
-				continue; 
+				continue;
 			}
 			assert(kp->filter == EVFILT_READ);
 			vca_kev(kp);
@@ -163,7 +162,7 @@ vca_kqueue_main(void *arg)
 			sp = TAILQ_FIRST(&sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open.tv_sec > ts.tv_sec) 
+			if (sp->t_open.tv_sec > ts.tv_sec)
 				break;
 			if (sp->t_open.tv_sec == ts.tv_sec &&
 			    sp->t_open.tv_nsec > ts.tv_nsec)
@@ -196,7 +195,7 @@ vca_kqueue_init(void)
 	i = fcntl(pipes[0], F_GETFL);
 	i |= O_NONBLOCK;
 	i = fcntl(pipes[0], F_SETFL, i);
-	
+
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
 }
 

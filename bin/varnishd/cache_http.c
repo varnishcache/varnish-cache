@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  * $Id$
  *
  * HTTP request storage and manipulation
@@ -268,7 +267,7 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 
 	if (hp->t + len > hp->v)
 		len = hp->v - hp->t;
-	if (len == 0) 
+	if (len == 0)
 		return (0);
 	*b = hp->t;
 	*e = hp->t + len;
@@ -347,7 +346,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 
 		if ((p[0] == 'i' || p[0] == 'I') &&
 		    (p[1] == 'f' || p[1] == 'F') &&
-		    p[2] == '-') 
+		    p[2] == '-')
 			hp->conds = 1;
 
 		if (hp->nhd < HTTP_HDR_MAX) {
@@ -583,7 +582,7 @@ http_RecvSome(int fd, struct http *hp)
 		if (http_header_complete(hp))
 			return(0);
 		return (-1);
-	} 
+	}
 
 	if (hp->v != hp->s) {
 		VSL(SLT_HttpError, fd,
@@ -608,7 +607,7 @@ http_RecvHead(struct http *hp, int fd)
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	http_RecvPrep(hp);
-	do 
+	do
 		i = http_RecvSome(fd, hp);
 	while (i == -1);
 	return (i);
