@@ -187,6 +187,8 @@ PassBody(struct sess *sp)
 	http_CopyResp(sp->wrk, sp->fd, sp->http, vc->http);
 	http_FilterHeader(sp->wrk, sp->fd, sp->http, vc->http, HTTPH_A_PASS);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+	    "X-Forwarded-for: %s", sp->addr);
 	/* XXX */
 	if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Transfer-Encoding: chunked");

@@ -341,6 +341,8 @@ FetchHeaders(struct sess *sp)
 	http_GetReq(w, vc->fd, vc->http, sp->http);
 	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
 	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, vc->http,
+	    "X-Forwarded-for: %s", sp->addr);
 	if (!http_GetHdr(vc->http, H_Host, &b)) {
 		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
 		    sp->backend->hostname);
