@@ -198,10 +198,17 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 		free(lp->df_R);
 		lp->df_R = NULL;
 	}
+	else {
+	        fprintf(fo, " \"-\"");
+				        }
+
 	if (lp->df_U != NULL) {
 		fprintf(fo, " \"%s\"", lp->df_U);
 		free(lp->df_U);
 		lp->df_U = NULL;
+	}
+	else {
+		fprintf(fo, " \"-\"");
 	}
 	fprintf(fo, "\n");
 
