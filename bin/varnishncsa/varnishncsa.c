@@ -91,6 +91,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	unsigned lu;
 	struct tm tm;
 	char tbuf[40];
+	char rubuf[128];
 	struct logline *lp;
 
 	if (!(spec &VSL_S_CLIENT))
@@ -177,11 +178,13 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	
 	if (lp->df_RU != NULL){
 		base64_init();
-		lu = sizeof lp->df_RU;
-		base64_decode(lp->df_RU, &lu, lp->df_RU);
-		q = strchr(lp->df_RU, ':');
-		*q = '\0';
-		fprintf(fo, " %s", lp->df_RU);
+		lu = sizeof rubuf;
+		base64_decode(rubuf, lu, lp->df_RU);
+		q = strchr(rubuf, ':');
+		if (q != NULL){
+			*q = '\0';
+		}
+		fprintf(fo, " %s", rubuf);
 		free(lp->df_RU);
 		lp->df_RU = NULL;
 	}
