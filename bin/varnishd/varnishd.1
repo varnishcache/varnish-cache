@@ -151,7 +151,7 @@ and 10 for
 .El
 .Ss Hash Algorithms
 The following hash algorithms are available:
-.Bl -tag -width=4
+.Bl -tag -width 4n
 .It Cm simple_list
 A simple doubly-linked list.
 Not recommended for production use.
@@ -169,7 +169,7 @@ The default is 16383.
 .El
 .Ss Storage Types
 The following storage types are available:
-.Bl -tag -width=4
+.Bl -tag -width 4n
 .It Cm malloc
 Storage for each object is allocated with
 .Xr malloc 3 .
@@ -209,26 +209,73 @@ option was specified,
 will offer a command-line management interface on the specified
 address and port.
 The following commands are available:
-.Bl -tag -width=4
+.Bl -tag -width 4n
 .It Cm dump.pool
 .It Cm help
+Display a list of available commands.
 .It Cm param.set Ar param Ar value
+Set the parameter specified by
+.Ar param
+to the specified
+.Ar value .
+See
+.Sx Run-Time Parameters
+for a list of parameters.
 .It Cm param.show Ar param
+Display the value of the parameter specified by
+.Ar param .
+See
+.Sx Run-Time Parameters
+for a list of parameters.
 .It Cm param.show Op Fl l
+Display a list of run-time parameters and their values.
+If the
+.Fl l
+option is specified, the list includes a brief explanation of each
+parameter.
 .It Cm ping Op Ns Ar timestamp
+Ping the child process.
 .It Cm start
+Start the child process if it is not already running.
 .It Cm stats
+Display server statistics.
+All the numbers presented are totals since server startup; for a
+better idea of the current situation, use the
+.Xr varnishstat 1
+utility.
 .It Cm stop
+Stop the child process.
 .It Cm url.purge Ar regexp
+Immediately invalidate all documents whos URL matches the specified
+regular expression.
 .It Cm vcl.discard Ar configname
+Discard the configuration specified by
+.Ar configname .
+This will have no effect if the specified configuration has a non-zero
+reference count.
 .It Cm vcl.inline Ar configname Ar vcl
+Create a new configuration named
+.Ar configname
+with the VCL code specified by
+.Ar vcl ,
+which must be a quoted string.
 .It Cm vcl.list
+List available configurations and their respective reference counts.
+The active configuration is indicated with an asterisk ("*").
 .It Cm vcl.load Ar configname Ar filename
+Create a new configuration named
+.Ar configname
+with the contents of the specified file.
 .It Cm vcl.use Ar configname
+Start using the configuration specified by
+.Ar configname
+for all new requests.
+Existing requests will continue using whichever configuration was in
+use when they arrived.
 .El
 .Ss Run-Time Parameters
 .\" Keep in synch with parspec[] in mgt_param.c
-.Bl -tag -width=4
+.Bl -tag -width 4n
 .It Va auto_restart
 .It Va default_ttl
 .It Va fetch_chunksize
