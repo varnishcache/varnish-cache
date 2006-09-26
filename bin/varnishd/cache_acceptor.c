@@ -157,9 +157,11 @@ vca_acct(void *arg)
 		l = sizeof addr;
 		i = accept(heritage.socket, addr, &l);
 		if (i < 0) {
-			VSL(SLT_Debug, heritage.socket,
-			    "Accept failed errno=%d", errno);
-			/* XXX: stats ? */
+			if (errno != EAGAIN) {
+				VSL(SLT_Debug, heritage.socket,
+				    "Accept failed errno=%d", errno);
+				/* XXX: stats ? */
+			}
 			continue;
 		}
 		sp = SES_New(addr, l);
