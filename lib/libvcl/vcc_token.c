@@ -313,6 +313,13 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 			continue;
 		}
 
+		/* Skip C++-style comments */
+		if (*p == '/' && p[1] == '/') {
+			while (p < e && *p != '\n')
+				p++;
+			continue;
+		}
+
 		/* Match for the fixed tokens (see token.tcl) */
 		u = vcl_fixed_token(p, &q);
 		if (u != 0) {
