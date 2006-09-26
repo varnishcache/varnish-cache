@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 20, 2006
+.Dd September 26, 2006
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -277,22 +277,122 @@ use when they arrived.
 .\" Keep in synch with parspec[] in mgt_param.c
 .Bl -tag -width 4n
 .It Va auto_restart
+Whether to automatically restart the child process if it dies.
+.Pp
+The default is
+.Dv on .
+.It Va backend_http11
+Whether to force the use of HTTP/1.1 when requesting documents from
+the server, or just use the same protocol version as the client which
+triggered the retrieval.
+.Pp
+The default is
+.Dv off .
+.It Va client_http11
+Whether to force the use of HTTP/1.1 when responding to client
+requests, or just use the same protocol version as that used by the
+backend server which delivered the requested document.
+.Pp
+The default is
+.Dv off .
 .It Va default_ttl
+The default time-to-live assigned to objects if neither the backend
+nor the configuration assign one.
+Note that changes to this parameter are not applied retroactively.
+.Pp
+The default is 120 seconds.
 .It Va fetch_chunksize
+The default chunk size used when retrieving documents for which the
+backend server does not specify a content length.
+.Pp
+The default is 128 kilobytes.
 .It Va http_workspace
+The size of the per-session workspace for HTTP protocol data.
+For performance reasons, this space is preallocated, so any change to
+this parameter will only apply to new client sessions.
+.Pp
+The default is 8192 bytes.
 .It Va listen_address
+The address at which to listen for client connections.
+Changes to this parameter will only take effect when the child process
+is restarted.
+.Pp
+The default is 0.0.0.0:80.
 .It Va listen_depth
+The depth of the TCP listen queue.
+.Pp
+The default is 512.
+.It Va overflow_max
+The maximum depth of the overflow queue as a percentage of
+.Va thread_pool_max .
+The overflow queue holds requests waiting for a worker thread to
+become available.
+If the overflow queue fills up,
+.Nm
+will start dropping new connections.
+.Pp
+The default is 100%.
 .It Va pipe_timeout
 .It Va sendfile_threshold
+The size threshold beyond which documents are sent to the client using
+.Xr sendfile 2
+instead of
+.Xr writev 2 .
+This is not likely to have any effect unless the working set is too
+large to fit in physical memory.
+.Pp
+The default is 8192 bytes, which is probably too low.
 .It Va send_timeout
+The time to wait before dropping the connection to a client which is
+not accepting data sent to it.
+.Pp
+The default is 600 seconds.
 .It Va sess_timeout
+The time to wait before dropping an idle client session.
+.Pp
+The default is 5 seconds.
 .It Va srcaddr_hash
+The size of the hash table used to store per-client accounting data.
+This should preferably be a prime number.
+.Pp
+The default is 1049.
 .It Va srcaddr_ttl
+The length of time to keep per-client accounting records.
+Setting this to 0 will disable per-client accounting.
 .It Va thread_pool_max
+The maximum total number of worker threads.
+If the number of concurrent requests rises beyond this number,
+requests will start queueing up waiting for a worker thread to pick
+them up.
+Higher values may improve response time but will increase pressure on
+the scheduler.
+.Pp
+The default is 1000.
 .It Va thread_pool_min
+The minimum total number of worker threads.
+Higher values may allow
+.Nm
+to respond faster to a sudden increase in traffic.
+.Pp
+The default is 1.
 .It Va thread_pools
+The number of worker thread pools.
+Higher values reduce lock contention but increase pressure on the
+scheduler.
+Note that a decrease of this parameter will only take effect after a
+restart.
+.Pp
+The default is 1.
 .It Va thread_pool_timeout
+The time to wait before killing an idle worker thread.
+.Pp
+The default is 120 seconds.
 .It Va vcl_trace
+Whether to issue log entries for calls to VCL code and their results.
+Note that this will generate large amounts of log data.
+.Pp
+The default is
+.Dv off .
 .El
 .Sh SEE ALSO
 .Xr varnishlog 1 ,
