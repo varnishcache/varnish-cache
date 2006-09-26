@@ -2,7 +2,7 @@
 
 INCLUDES = -I$(top_srcdir)/include
 
-bin_PROGRAMS = varnishd
+sbin_PROGRAMS = varnishd
 
 dist_man_MANS = varnishd.1
 
