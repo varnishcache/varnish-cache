@@ -21,7 +21,7 @@ AC_ARG_ENABLE(developer-warnings,
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
-	CFLAGS="${CFLAGS} -O -g -fno-inline")
+	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
