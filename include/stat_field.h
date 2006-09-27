@@ -37,7 +37,7 @@ MAC_STAT(cache_hitpass,		uint64_t, "u", "Cache hits for pass")
 MAC_STAT(cache_miss,		uint64_t, "u", "Cache misses")
 
 MAC_STAT(backend_conn,		uint64_t, "u", "Backend connections initiated")
-MAC_STAT(backend_recycle,	uint64_t, "u", "Backend connections recyles")
+MAC_STAT(backend_recycle,	uint64_t, "u", "Backend connections recycles")
 MAC_STAT(backend_unused,	uint64_t, "u", "Backend connections unused")
 
 MAC_STAT(n_srcaddr,		uint64_t, "u", "N struct srcaddr")
