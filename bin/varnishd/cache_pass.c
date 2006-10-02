@@ -226,6 +226,7 @@ PassSession(struct sess *sp)
 	int i;
 	struct vbe_conn *vc;
 	struct worker *w;
+	char *b;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -238,6 +239,10 @@ PassSession(struct sess *sp)
 	http_CopyReq(w, vc->fd, vc->http, sp->http);
 	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_PASS);
 	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	if (!http_GetHdr(vc->http, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
+		    sp->backend->hostname);
+	}
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 	i = WRK_Flush(w);
