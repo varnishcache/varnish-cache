@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <regex.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,7 +81,6 @@ clean_order(void)
 {
 	unsigned u;
 
-printf("Clean\n");
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
@@ -200,11 +200,20 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 
 /*--------------------------------------------------------------------*/
 
+static sig_atomic_t reopen;
+
 static void
-do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
+sighup(int sig)
 {
-	int fd, flags, i;
-	unsigned char *p;
+
+	(void)sig;
+	reopen = 1;
+}
+
+static int
+open_log(const char *w_opt, int a_flag)
+{
+	int fd, flags;
 
 	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
 	if (!strcmp(w_opt, "-"))
@@ -215,6 +224,17 @@ do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
 		perror(w_opt);
 		exit (1);
 	}
+	return (fd);
+}
+
+static void
+do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
+{
+	int fd, i;
+	unsigned char *p;
+
+	fd = open_log(w_opt, a_flag);
+	signal(SIGHUP, sighup);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
 		if (i < 0)
@@ -225,6 +245,11 @@ do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
 				perror(w_opt);
 				exit(1);
 			}
+		}
+		if (reopen) {
+			close(fd);
+			fd = open_log(w_opt, a_flag);
+			reopen = 0;
 		}
 	}
 	exit (0);

@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 20, 2006
+.Dd October 5, 2006
 .Dt VARNISHNCSA 1
 .Os
 .Sh NAME
@@ -114,6 +114,13 @@ instead of displaying them.
 The file will be overwritten unless the
 .Fl a
 option was specified.
+.Pp
+If
+.Nm
+receives a
+.Dv SIGHUP
+while writing to a file, it will reopen the file, allowing the old one
+to be rotated away.
 .It Fl X Ar regex
 Exclude log entries which match the specified regular expression.
 .It Fl x Ar tag
