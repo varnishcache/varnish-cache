@@ -201,6 +201,8 @@ PassBody(struct sess *sp)
 		cls = pass_straight(sp, vc->fd, vc->http, NULL);
 	else if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
 		cls = pass_chunked(sp, vc->fd, vc->http);
+	else if (http_IsBodyless(vc->http))
+		cls = 0;
 	else {
 		cls = pass_straight(sp, vc->fd, vc->http, NULL);
 	}
