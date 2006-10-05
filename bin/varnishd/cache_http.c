@@ -316,6 +316,21 @@ http_GetStatus(struct http *hp)
 	    NULL /* XXX */, 10));
 }
 
+/*---------------------------------------------------------------------
+ * All 1xx (informational), 204 (no content), and 304 (not modified)
+ * responses MUST NOT include a message-body.
+ */
+
+int
+http_IsBodyless(struct http *hp)
+{
+	int status;
+
+	status = http_GetStatus(hp);
+	return (status >= 100 && status < 200)
+		|| status == 204 || status == 304;
+}
+
 /*--------------------------------------------------------------------
  * Dissect the headers of the HTTP protocol message.
  * Detect conditionals (headers which start with '^[Ii][Ff]-')
