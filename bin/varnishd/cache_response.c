@@ -234,7 +234,7 @@ RES_WriteObj(struct sess *sp)
 	else
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %u",
-	    sp->obj->age + sp->t_req.tv_sec - sp->obj->entered);
+	    sp->obj->age + sp->t_resp.tv_sec - sp->obj->entered);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
