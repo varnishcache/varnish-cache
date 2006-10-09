@@ -31,6 +31,8 @@
  * Ban processing
  */
 
+#include <sys/types.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>

@@ -60,6 +60,10 @@ DOT start -> RECV
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"

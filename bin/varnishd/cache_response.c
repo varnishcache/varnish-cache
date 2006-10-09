@@ -34,6 +34,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"

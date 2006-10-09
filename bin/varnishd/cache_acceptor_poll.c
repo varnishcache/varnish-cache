@@ -42,6 +42,10 @@
 #include <unistd.h>
 #include <poll.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
