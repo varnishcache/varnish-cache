@@ -39,6 +39,10 @@
 #include <curses.h>
 #include <time.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"

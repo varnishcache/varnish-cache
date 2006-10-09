@@ -43,6 +43,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif

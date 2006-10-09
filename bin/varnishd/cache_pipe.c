@@ -38,6 +38,10 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"
