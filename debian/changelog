@@ -1,0 +1,13 @@
+varnish (1.0.1-2) unstable; urgency=low
+
+  * Removed wrong upstream author.
+  * Added dependency on gcc-4.1 needed by varnish at runtime.
+
+ -- Lars Bahner <bahner@debian.org>  Fri,  6 Oct 2006 17:54:53 +0200
+
+varnish (1.0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #382451)
+
+ -- Lars Bahner <bahner@debian.org>  Fri,  6 Oct 2006 16:26:57 +0200
+
