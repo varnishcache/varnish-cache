@@ -3,7 +3,7 @@ Section: web
 Priority: optional
 Maintainer: Stig Sandbeck Mathiesen <ssm@debian.org>
 Uploaders: Lars Bahner <bahner@debian.org>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, libtool, autoconf, gcc (>= 4.1)
+Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, gcc (>= 4.1)
 Standards-Version: 3.7.2
 
 Package: varnish
