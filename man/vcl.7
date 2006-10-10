@@ -34,8 +34,6 @@
 .Sh NAME
 .Nm VCL
 .Nd Varnish Configuration Language
-.Sh SYNOPSIS
-.\" ...
 .Sh DESCRIPTION
 The
 .Nm
@@ -275,6 +273,37 @@ sub vcl_recv {
 sub vcl_fetch {
     if (resp.http.Set-Cookie) {
         insert;
+    }
+}
+.Ed
+.Pp
+The following code implements the HTTP PURGE method as used by Squid
+for object invalidation:
+.Bd -literal -offset 4n
+acl purge {
+        "localhost";
+        "10.0.0.1"/8;
+}
+
+sub vcl_recv {
+    if (req.request == "PURGE") {
+        if (!client.ip ~ purge) {
+            error 405 "Not allowed.";
+        }
+        lookup;
+    }
+}
+
+sub vcl_hit {
+    if (req.request == "PURGE") {
+        set obj.ttl = 0s;
+        error 200 "Purged.";
+    }
+}
+
+sub vcl_miss {
+    if (req.request == "PURGE") {
+        error 404 "Not in cache.";
     }
 }
 .Ed
