@@ -22,4 +22,5 @@ something.
 By setting varnish on port 6081 by default you will be able to take it
 for a spin right-out-of-the-box(tm).
 
+
 2006-10-12 Lars Bahner <bahner@debian.org>
