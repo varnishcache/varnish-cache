@@ -24,9 +24,14 @@ else
 	CFLAGS += -O2
 endif
 
+configure:
+	./autogen.sh
+
 config.status: configure
 	dh_testdir
 	# The boilerplate linker flags won't allow varnish to compile :(
+	# There are circular dependencies in the varnish libraries, but
+	# the core developers have OK'ed that we don't check.
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)"
 
 
@@ -36,7 +41,6 @@ build-stamp:  config.status
 	dh_testdir
 
 	$(MAKE)
-	#docbook-to-man debian/varnish.sgml > varnish.1
 
 	touch $@
 
@@ -45,7 +49,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub config.sub
@@ -63,8 +66,8 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/varnish.
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/varnish
+	install -m 644 $(CURDIR)/debian/vcl.conf $(CURDIR)/debian/varnish/etc/varnish/
 
 
 # Build architecture-independent files here.
@@ -77,7 +80,8 @@ binary-arch: build install
 	dh_testroot
 	dh_installchangelogs ChangeLog
 	dh_installdocs
-#FIXME	dh_installinit
+	# Since varnish looses its cache on restart - we don't.
+	dh_installinit -r
 	dh_installman
 	dh_link
 	dh_strip

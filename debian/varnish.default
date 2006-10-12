@@ -1,0 +1,44 @@
+# Configuration file for varnish
+
+
+# Main configuration file. You probably want to change it :)
+VARNISH_VCL_CONF=/etc/varnish/vcl.conf
+
+# Default address and port to bind to
+VARNISH_LISTEN_ADDRESS=0.0.0.0
+VARNISH_LISTEN_PORT=6081
+
+
+# Telnet admin interface listen address and port
+VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
+VARNISH_ADMIN_LISTEN_PORT=6082
+
+
+# The minimum number of threads to start
+VARNISH_MIN_WORKER_THREADS=1
+
+
+# Maximum number of worker threads or INF for unlimited
+VARNISH_MAX_WORKER_THREADS=INF
+
+
+# Timeout value in seconds for threads to return
+VARNISH_WORKER_THREAD_TIMEOUT=10 
+
+
+# Hash algorithm to be used
+VARNISH_HASHOPTION=classic
+
+
+# Maximum size of the backend storagefile in bytes
+VARNISH_BACKEND_STORAGE_SIZE=10240000
+VARNISH_BACKEND_STORAGE_FILE=/var/spool/varnish/varnish_storage.bin
+
+
+# Backend storage specification
+VARNISH_BACKEND_STORAGE="file,${VARNISH_BACKEND_STORAGE_FILE},${VARNISH_BACKEND_STORAGE_SIZE}"
+
+
+# Set default ttl in secounds
+VARNISH_TTL=120
+
