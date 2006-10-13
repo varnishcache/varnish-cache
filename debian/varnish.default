@@ -32,7 +32,7 @@ VARNISH_HASHOPTION=classic
 
 # Maximum size of the backend storagefile in bytes
 VARNISH_BACKEND_STORAGE_SIZE=10240000
-VARNISH_BACKEND_STORAGE_FILE=/var/spool/varnish/varnish_storage.bin
+VARNISH_BACKEND_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
 
 
 # Backend storage specification
