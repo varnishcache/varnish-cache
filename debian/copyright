@@ -1,7 +1,8 @@
 This package was debianized by Lars Bahner <bahner@debian.org> on
 Fri,  6 Oct 2006 16:26:57 +0200.
 
-It was downloaded from http://ovh.dl.sourceforge.net/sourceforge/varnish/varnish-1.0.1.tar.gz
+It was pulled from the Subversion repository with
+svn co http://varnish.projects.linpro.no/svn/trunk
 
 Copyright: 	2006 Verdens Gang AS
 		2006 Linpro AS
