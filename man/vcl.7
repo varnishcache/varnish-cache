@@ -165,10 +165,49 @@ builtin default.
 See the
 .Sx EXAMPLES
 section for a listing of the default code.
-.Ss Objects
+.Ss Variables
 Although subroutines take no arguments, the necessary information is
-made available to the handler subroutines through global objects.
-.\" Document these objects...
+made available to the handler subroutines through global variables.
+.Pp
+The following variables are available in backend declarations:
+.Bl -tag -width 4n
+.It Va backend.host
+Host name or IP address of a backend.
+.It Va backend.port
+Service name or port number of a backend.
+.El
+.Pp
+The following variables are available while processing a request:
+.Bl -tag -width 4n
+.It Va client.ip
+The client's IP address.
+.It Va req.request
+The request type (e.g. "GET", "HEAD").
+.It Va req.url
+The requested URL.
+.It Va req.proto
+The HTTP protocol version used by the client.
+.It Va req.backend
+The backend to use to service the request.
+.It Va req.http. Ns Ar header
+The corresponding
+.Ar header
+from the HTTP request.
+.El
+.Pp
+The following variables are available after the requested object has
+been retrieved from cache or from the backend:
+.Bl -tag -width 4n
+.It Va obj.valid
+True if the object was successfully retrieved.
+.It Va obj.cacheable
+True if the object is cacheable.
+.\" XXX what are the criteria?
+.It Va obj.ttl
+The object's time to live.
+.\" .It Va resp.http. Ns Ar header
+.\" XXX not implemented?
+.El
 .Sh EXAMPLES
 The following code is the equivalent of the default configuration with
 the backend address set to "backend.example.com" and no backend port
