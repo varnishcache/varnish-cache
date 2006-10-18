@@ -1,3 +1,389 @@
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/man/vcl.7:
+
+   r32907@cat (orig r1155): des | 2006-10-17 14:44:48 +0200
+   Additional details about global variables.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/copyright:
+
+   r32906@cat (orig r1154): bahner | 2006-10-13 10:04:07 +0200
+   Change debian/copyright to refer to Subversion
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/TODO, branches/1.0/debian/changelog,
+   branches/1.0/debian/dirs, branches/1.0/debian/varnish.default:
+
+   r32905@cat (orig r1153): bahner | 2006-10-13 09:59:54 +0200
+   Changed storage location of backend storage to be FHS 2.3 compliant
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/control:
+
+   r32904@cat (orig r1152): bahner | 2006-10-12 19:14:41 +0200
+   Added build dependency on libncurses-dev and a runtime dependency on
+   gcc >= 3.3.
+   Now compiles on pristine etch-systems
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/README.Debian,
+   branches/1.0/debian/TODO, branches/1.0/debian/changelog:
+
+   r32903@cat (orig r1151): bahner | 2006-10-12 19:05:59 +0200
+   Cleaned up and remembered a todo item.
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/README.Debian,
+   branches/1.0/debian/TODO, branches/1.0/debian/changelog,
+   branches/1.0/debian/control, branches/1.0/debian/dirs,
+   branches/1.0/debian/rules, branches/1.0/debian/varnish.default,
+   branches/1.0/debian/varnish.init, branches/1.0/debian/vcl.conf:
+
+   r32902@cat (orig r1150): bahner | 2006-10-12 18:56:54 +0200
+   Added init-scripts and configuration files for Debian.
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/man/vcl.7:
+
+   r32901@cat (orig r1149): des | 2006-10-10 15:36:11 +0200
+   Add an example based on VG's PURGE code.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian/changelog, branches/1.0/debian/control:
+
+   r32900@cat (orig r1148): bahner | 2006-10-10 15:01:42 +0200
+   Bumped automake dependency to automake 1.9
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/debian, branches/1.0/debian/TODO,
+   branches/1.0/debian/changelog, branches/1.0/debian/compat,
+   branches/1.0/debian/control, branches/1.0/debian/copyright,
+   branches/1.0/debian/dirs, branches/1.0/debian/docs,
+   branches/1.0/debian/rules:
+
+   r32899@cat (orig r1147): bahner | 2006-10-10 14:05:46 +0200
+   Initial debian packaging
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/lib/libvarnish/cli_common.c:
+
+   r32848@cat (orig r1146): des | 2006-10-09 12:04:47 +0200
+   Add <sys/types.h> before <sys/uio.h>.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_acceptor.c,
+   branches/1.0/bin/varnishd/cache_acceptor_epoll.c,
+   branches/1.0/bin/varnishd/cache_acceptor_kqueue.c,
+   branches/1.0/bin/varnishd/cache_acceptor_poll.c,
+   branches/1.0/bin/varnishd/cache_ban.c,
+   branches/1.0/bin/varnishd/cache_center.c,
+   branches/1.0/bin/varnishd/cache_pass.c,
+   branches/1.0/bin/varnishd/cache_pipe.c,
+   branches/1.0/bin/varnishd/cache_response.c,
+   branches/1.0/bin/varnishd/cache_vrt.c,
+   branches/1.0/bin/varnishd/cache_vrt_acl.c,
+   branches/1.0/bin/varnishd/cache_vrt_re.c,
+   branches/1.0/bin/varnishd/hash_simple_list.c,
+   branches/1.0/bin/varnishd/mgt_event.c,
+   branches/1.0/bin/varnishd/rfc2616.c,
+   branches/1.0/bin/varnishd/storage_malloc.c,
+   branches/1.0/bin/varnishstat/varnishstat.c, branches/1.0/configure.ac,
+   branches/1.0/include/Makefile.am,
+   branches/1.0/include/compat/clock_gettime.h,
+   branches/1.0/lib/libcompat/Makefile.am,
+   branches/1.0/lib/libcompat/clock_gettime.c:
+
+   r32847@cat (orig r1145): des | 2006-10-09 11:58:58 +0200
+   Fix build on MacOS X: add a fake clock_gettime() and fix some includes.
+   
+   WARNING: varnish will build and run, but the lack of a monotonic clock
+   may lead to strange behaviour if the clock is stepped (rather than skewed)
+   while varnish is running.
+   
+   Thanks to Niklas Saers for providing a test environment.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_acceptor_epoll.c:
+
+   r32845@cat (orig r1143): des | 2006-10-06 17:37:32 +0200
+   On Linux 2.6.8 and older, epoll_ctl(EPOLL_CTL_DEL) requires a poll_event
+   even though it is not used, and will return EFAULT if one is not provided.
+   
+   Also, instead of silently accepting EBADF from epoll_ctl(), check that
+   sp->fd != -1 before calling vca_del(). This can happen in some cases
+   where vca_pollsession() closes the session before returning. This way,
+   we will still get an assertion failure if epoll_ctl() fails for some
+   other (unexpected) reason.
+   
+   Thanks to airmax for his assistance in tracking this down.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_response.c:
+
+   r32844@cat (orig r1142): des | 2006-10-06 14:58:04 +0200
+   The delivered document's age should be computed relative to the time of
+   the response, not the time of the request. If the document was not in
+   cache and the backend took a long time to respond, the document would
+   end up with a negative computed age, which when printed with %u would
+   appear as a large positive number (a few seconds short of either 2^32
+   or 2^64 depending on the size of time_t).
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.1:
+
+   r32842@cat (orig r1141): des | 2006-10-06 13:04:01 +0200
+   Clarify the semantics of -d and -dd.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/autogen.sh:
+
+   r32804@cat (orig r1140): des | 2006-10-05 16:56:50 +0200
+   Older versions of automake generate incorrect Makefiles, and automake's
+   own mechanism for specifying a required version doesn't seem to work.
+   Hack autogen.sh to check which version of automake is installed.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/autogen.sh:
+
+   r32803@cat (orig r1139): des | 2006-10-05 16:20:29 +0200
+   Older versions of automake (such as 1.4, which is the default in Debian
+   and Ubuntu) do not understand --force[-missing], and we can do without.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache.h,
+   branches/1.0/bin/varnishd/cache_http.c,
+   branches/1.0/bin/varnishd/cache_pass.c:
+
+   r32802@cat (orig r1138): des | 2006-10-05 13:57:35 +0200
+   RFC 2616 says "All 1xx (informational), 204 (no content), and 304 (not
+   modified) responses MUST NOT include a message-body," so
+   Content-Length: is not needed in these cases (and Apache does indeed
+   not include it). This causes PassBody() to call pass_straight() with
+   a NULL length argument, which waits until the connection is closed by
+   the server. PassBody() should not call pass_*() at all for responses
+   that are known to be bodyless.
+   
+   Submitted by: Dagfinn Ilmari Manns?ker <ilmari@ping.uio.no>
+   
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/mgt_vcc.c:
+
+   r31768@cat (orig r1137): des | 2006-10-05 11:52:30 +0200
+   Reminder to keep the default VCL code in synch with the man page.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/man/vcl.7:
+
+   r31767@cat (orig r1136): des | 2006-10-05 11:51:51 +0200
+   Mostly complete, still lacks a list of available objects. Hope to have
+   that done later today.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishlog/varnishlog.1,
+   branches/1.0/bin/varnishlog/varnishlog.c,
+   branches/1.0/bin/varnishncsa/varnishncsa.1,
+   branches/1.0/bin/varnishncsa/varnishncsa.c:
+
+   r31766@cat (orig r1135): des | 2006-10-05 11:50:40 +0200
+   Reopen the output file on SIGHUP. Document same. Also document
+   varnishlog's request selection feature.
+
+2006-10-18 14:27  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pass.c,
+   branches/1.0/bin/varnishd/cache_pipe.c:
+
+   r31765@cat (orig r1134): phk | 2006-10-02 16:08:49 +0200
+   Also add missing Host: headers for Pass & Pipe
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pipe.c:
+
+   r31764@cat (orig r1133): phk | 2006-09-29 20:37:02 +0200
+   Don't suffer if one side of a piped connection keeps blasting away.
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/configure.ac:
+
+   r31763@cat (orig r1132): des | 2006-09-27 15:32:18 +0200
+   Turn off all optimization when building with debugging symbols.
+   Apparently,
+   just -O is not enough to prevent gcc from optimizing away loop variables.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/include/stat_field.h:
+
+   r31762@cat (orig r1131): des | 2006-09-27 09:43:21 +0200
+   recyles -> recycles
+   
+   Ticket: #46
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/lib/libvcl/vcc_token.c:
+
+   r31761@cat (orig r1130): des | 2006-09-26 16:34:39 +0200
+   Add support for C++-style comments.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.1:
+
+   r31760@cat (orig r1129): des | 2006-09-26 16:27:18 +0200
+   Document the run-time parameters. Bump date.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/mgt_param.c:
+
+   r31759@cat (orig r1128): des | 2006-09-26 15:52:29 +0200
+   Correct man page reference in send_timeout description.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.1:
+
+   r31758@cat (orig r1127): des | 2006-09-26 15:31:58 +0200
+   Document management interface commands, and fix list markup.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/Makefile.am:
+
+   r31757@cat (orig r1126): des | 2006-09-26 15:12:01 +0200
+   Install varnishd into the sbin directory.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_acceptor.c:
+
+   r31756@cat (orig r1125): des | 2006-09-26 15:10:36 +0200
+   Ignore accept() failures if errno is EAGAIN - this is not likely to happen
+   on a production server, but it will on a test rig, and it may confuse and
+   alarm the admin.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishncsa/varnishncsa.c:
+
+   r31755@cat (orig r1124): andersb | 2006-09-24 19:59:00 +0200
+   Fixed: Compiles correctly, but has a 128 char long maximum for Remote
+   Username.
+   
+   
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishncsa/varnishncsa.c:
+
+   r31754@cat (orig r1123): andersb | 2006-09-24 19:14:28 +0200
+   Fixed: Correctly logging "-" when there is no User-Agent or Referer.
+   
+   Note: Still builds with warning.
+   
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishncsa/varnishncsa.c:
+
+   r31753@cat (orig r1122): andersb | 2006-09-24 18:17:06 +0200
+   Fixed: [] around time. NCSA logformat requires it.
+   Fixed: Status variable is not shown correctly.
+   Added: base64() decode of Remote User.
+   
+   Note: Getting compile warning.
+   
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_fetch.c,
+   branches/1.0/bin/varnishd/cache_pass.c,
+   branches/1.0/bin/varnishd/cache_pipe.c:
+
+   r31752@cat (orig r1121): phk | 2006-09-23 21:30:29 +0200
+   Always send X-Forwarded-for: header to backend.
+   
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pool.c:
+
+   r31751@cat (orig r1120): phk | 2006-09-23 18:45:26 +0200
+   Linux sendfile returns number of bytes written.
+   
+   Detected by: Xing Li <xing@litespeedtech.com>
+   
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishtop/varnishtop.1:
+
+   r31750@cat (orig r1119): des | 2006-09-22 14:37:55 +0200
+   Remove leftovers from copy-paste.
+   
+   Spotted by: Anders Hanssen <anders@rethink.no>
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.1,
+   branches/1.0/bin/varnishhist/varnishhist.1,
+   branches/1.0/bin/varnishlog/varnishlog.1,
+   branches/1.0/bin/varnishncsa/varnishncsa.1,
+   branches/1.0/bin/varnishstat/varnishstat.1,
+   branches/1.0/bin/varnishtop/varnishtop.1:
+
+   r31745@cat (orig r1114): des | 2006-09-20 18:33:24 +0200
+   Add attribution, bump date.
+
+2006-10-18 14:26  des
+
+ * branches/1.0, branches/1.0/Makefile.am, branches/1.0/configure.ac,
+   branches/1.0/man, branches/1.0/man/Makefile.am, branches/1.0/man/vcl.7:
+
+   r31744@cat (orig r1113): des | 2006-09-20 18:26:54 +0200
+   Add an unfinished vcl(7) man page.
+
+2006-09-20 17:21  des
+
+ * branches/1.0/ChangeLog:
+
+   Regenerate.
+
 2006-09-20 17:17  des
 
  * branches/1.0/configure.ac:
