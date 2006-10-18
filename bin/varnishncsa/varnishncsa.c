@@ -42,6 +42,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -220,6 +221,30 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 
 /*--------------------------------------------------------------------*/
 
+static sig_atomic_t reopen;
+
+static void
+sighup(int sig)
+{
+
+	(void)sig;
+	reopen = 1;
+}
+
+static FILE *
+open_log(const char *ofn, int append)
+{
+	FILE *of;
+
+	if ((of = fopen(ofn, append ? "a" : "w")) == NULL) {
+		perror(ofn);
+		exit(1);
+	}
+	return (of);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 usage(void)
 {
@@ -233,8 +258,8 @@ main(int argc, char **argv)
 	int i, c;
 	struct VSL_data *vd;
 	const char *ofn = NULL;
-	FILE *of = stdout;
 	int append = 0;
+	FILE *of;
 
 	vd = VSL_New();
 
@@ -264,17 +289,23 @@ main(int argc, char **argv)
 	if (VSL_OpenLog(vd))
 		exit(1);
 
-	if (ofn && (of = fopen(ofn, append ? "a" : "w")) == NULL) {
-		perror(ofn);
-		exit(1);
+	if (ofn) {
+		of = open_log(ofn, append);
+		signal(SIGHUP, sighup);
 	} else {
 		ofn = "stdout";
+		of = stdout;
 	}
 
 	while (VSL_Dispatch(vd, extended_log_format, of) == 0) {
 		if (fflush(of) != 0) {
 			perror(ofn);
 			exit(1);
+		}
+		if (reopen && of != stdout) {
+			fclose(of);
+			of = open_log(ofn, append);
+			reopen = 0;
 		}
 	}
 
