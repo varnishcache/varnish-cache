@@ -62,10 +62,8 @@ vca_add(int fd, void *data)
 static void
 vca_del(int fd)
 {
-	int i;
-
-	i = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
-	assert(i == 0 || errno == EBADF);
+	struct epoll_event ev = { 0, { 0 } };
+	AZ(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev));
 }
 
 static void
@@ -103,7 +101,8 @@ vca_main(void *arg)
 				i = vca_pollsession(sp);
 				if (i >= 0) {
 					TAILQ_REMOVE(&sesshead, sp, list);
-					vca_del(sp->fd);
+					if (sp->fd != -1)
+						vca_del(sp->fd);
 					if (i == 0)
 						vca_handover(sp, i);
 					else
