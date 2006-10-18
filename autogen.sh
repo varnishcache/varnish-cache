@@ -13,5 +13,5 @@ fi
 aclocal
 libtoolize --copy --force
 autoheader
-automake --add-missing --copy --force --foreign
+automake --add-missing --copy --foreign
 autoconf
