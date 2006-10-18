@@ -90,6 +90,10 @@ PipeSession(struct sess *sp)
 	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(w, vc->fd, vc->http,
 	    "X-Forwarded-for: %s", sp->addr);
+	if (!http_GetHdr(vc->http, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
+		    sp->backend->hostname);
+	}
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, vc->http, 0);
 
