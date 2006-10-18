@@ -37,6 +37,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "mgt.h"
 #include "mgt_event.h"
 #include "miniobj.h"

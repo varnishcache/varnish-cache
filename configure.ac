@@ -78,6 +78,7 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
+AC_CHECK_FUNCS([clock_gettime])
 
 # Check which mechanism to use for the acceptor
 AC_CHECK_FUNCS([kqueue])

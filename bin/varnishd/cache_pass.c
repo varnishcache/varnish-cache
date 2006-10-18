@@ -41,6 +41,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "shmlog.h"
 #include "cache.h"
 

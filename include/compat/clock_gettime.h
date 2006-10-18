@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,49 +27,18 @@
  * SUCH DAMAGE.
  *
  * $Id$
- *
- * Storage method based on malloc(3)
  */
 
-#include <sys/types.h>
+#ifndef COMPAT_CLOCK_GETTIME_H_INCLUDED
+#define COMPAT_CLOCK_GETTIME_H_INCLUDED
 
-#include <stdlib.h>
+#ifndef HAVE_CLOCK_GETTIME
+typedef enum {
+	CLOCK_REALTIME,
+	CLOCK_MONOTONIC,
+} clockid_t;
 
-#include "cache.h"
+int clock_gettime(clockid_t clk_id, struct timespec *tp);
+#endif
 
-struct sma {
-	struct storage		s;
-};
-
-static struct storage *
-sma_alloc(struct stevedore *st, size_t size)
-{
-	struct sma *sma;
-
-	sma = calloc(sizeof *sma, 1);
-	XXXAN(sma);
-	sma->s.priv = sma;
-	sma->s.ptr = malloc(size);
-	XXXAN(sma->s.ptr);
-	sma->s.len = 0;
-	sma->s.space = size;
-	sma->s.fd = -1;
-	sma->s.stevedore = st;
-	return (&sma->s);
-}
-
-static void
-sma_free(struct storage *s)
-{
-	struct sma *sma;
-
-	sma = s->priv;
-	free(sma->s.ptr);
-	free(sma);
-}
-
-struct stevedore sma_stevedore = {
-	.name =		"malloc",
-	.alloc =	sma_alloc,
-	.free =		sma_free
-};
+#endif
