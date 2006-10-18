@@ -49,7 +49,7 @@ rdf(struct pollfd *fds, int idx)
 	char buf[BUFSIZ];
 
 	i = read(fds[idx].fd, buf, sizeof buf);
-	if (i <= 0) {
+	if (i <= 0 || fds[1-idx].events == 0) {
 		VSL(SLT_Debug, fds[idx].fd, "Pipe Shut read(read)");
 		VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut write(read)");
 		shutdown(fds[idx].fd, SHUT_RD);
