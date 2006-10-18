@@ -163,10 +163,9 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__linux__)
 	do {
-		if (WRK_Flush(w) == 0) {
-			if (sendfile(*w->wfd, fd, &off, len) != 0)
-				w->werr++;
-		}
+		if (WRK_Flush(w) == 0 &&
+		    sendfile(*w->wfd, fd, &off, len) != len)
+			w->werr++;
 	} while (0);
 #else
 #error Unknown sendfile() implementation
