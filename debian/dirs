@@ -3,4 +3,4 @@ usr/bin
 usr/lib
 usr/sbin
 var/log
-var/spool/varnish
+var/lib/varnish
