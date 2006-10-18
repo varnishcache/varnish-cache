@@ -99,5 +99,6 @@ AC_CONFIG_FILES([
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
     lib/libvcl/Makefile
+    man/Makefile
 ])
 AC_OUTPUT
