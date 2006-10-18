@@ -61,6 +61,7 @@ static struct logline {
 	char df_b[12];			/* Datafield for %b, Bytes	*/
 	char *df_R; 			/* Datafield for %{Referer}	*/
 	char *df_U; 			/* Datafield for %{User-agent}	*/
+	char *df_RU;				/* Datafield for %l, Remote user */
 	int bogus_req; 			/* bogus request		*/
 	struct vsb *sb;
 } *ll[65536];
@@ -87,6 +88,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	FILE *fo;
 	time_t t;
 	long l;
+	unsigned lu;
 	struct tm tm;
 	char tbuf[40];
 	struct logline *lp;
@@ -120,6 +122,8 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 			vsb_bcat(lp->sb, ptr, len);
 		} else if (ispfx(ptr, len, "GET")) {
 			vsb_bcat(lp->sb, ptr, len);
+		} else if (ispfx(ptr, len, "PURGE")) {
+			vsb_bcat(lp->sb, ptr, len);
 		} else {
 			lp->bogus_req = 1;
 		}
@@ -144,6 +148,8 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 			lp->df_U = strdup(ptr + 12);
 		else if (ispfx(ptr, len, "referer:"))
 			lp->df_R = strdup(ptr + 9);
+		else if (ispfx(ptr, len, "authorization:"))
+			lp->df_RU = strdup(ptr + 21);
 		break;
 
 	case SLT_Length:
@@ -163,10 +169,29 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	assert(1 == sscanf(ptr, "%*u %*u.%*u %ld.", &l));
 	t = l;
 	localtime_r(&t, &tm);
+	
+
+	
 	strftime(tbuf, sizeof tbuf, "%d/%b/%Y:%T %z", &tm);
-	fprintf(fo, "%s - - %s", lp->df_h, tbuf);
+	fprintf(fo, "%s", lp->df_h);
+	
+	if (lp->df_RU != NULL){
+		base64_init();
+		lu = sizeof lp->df_RU;
+		base64_decode(lp->df_RU, &lu, lp->df_RU);
+		q = strchr(lp->df_RU, ':');
+		*q = '\0';
+		fprintf(fo, " %s", lp->df_RU);
+		free(lp->df_RU);
+		lp->df_RU = NULL;
+	}
+	else{
+		fprintf(fo, " -");
+	}
+	fprintf(fo, " - [%s]", tbuf);
 	vsb_finish(lp->sb);
 	fprintf(fo, " \"%s\"", vsb_data(lp->sb));
+	fprintf(fo, " %s", lp->df_s);
 	fprintf(fo, " %s", lp->df_b);
 	if (lp->df_R != NULL) {
 		fprintf(fo, " \"%s\"", lp->df_R);
