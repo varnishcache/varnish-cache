@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 20, 2006
+.Dd October 5, 2006
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -49,9 +49,235 @@ management process translates the VCL code to C and compiles it to a
 shared object which is then dynamically linked into the server
 process.
 .Ss Syntax
-.Ss The State Machine
-.Ss Backend Definitions
-.Ss Access Control Lists
+The VCL syntax is very simple, and deliberately similar to C and Perl.
+Blocks are delimited by curly braces, statements end with semicolons,
+and comments may be written as in C, C++ or Perl according to your own
+preferences.
+.Pp
+In addition to the C-like assignment (=), comparison (==) and boolean
+(!, && and ||) operators, VCL supports regular expression and ACL
+matching using the ~ operator.
+.Pp
+Unlike C and Perl, the backslash (\\) character has no special meaning
+in strings in VCL,
+so it can be freely used in regular expressions without doubling.
+.Pp
+Assignments are introduced with the
+.Cm set
+keyword.
+There are no user-defined variables; values can only be assigned to
+variables attached to backend, request or document objects.
+Most of these are typed, and the values assigned to them must have a
+compatible unit suffix.
+.Pp
+VCL has
+.Cm if
+tests, but no loops.
+.Ss Backend declarations
+A backend declaration creates and initializes a named backend object:
+.Bd -literal -offset 4n
+backend www {
+    set backend.host = "www.example.com";
+    set backend.port = "http";
+}
+.Ed
+.Pp
+The backend object can later be used to select a backend at request
+time:
+.Bd -literal -offset 4n
+if (req.http.host ~ "^(www\.)?example.com$") {
+    set req.backend = www;
+}
+.Ed
+.Ss ACLs
+An ACL declaration creates and initializes a named access control list
+which can later be used to match client addresses:
+.Bd -literal -offset 4n
+acl local {
+    "locahost";         /* myself */
+    "10.0.0.1"/8;       /* and everyone on the local network */
+    ! "10.0.0.23";      /* except for the dialin router */
+}
+.Ed
+.Pp
+If an ACL entry specifies a host name which Varnish is unable to
+resolve, it will match any address it is compared to.
+Consequently, if it is preceded by a negation mark, it will reject any
+address it is compared to, which may not be what you intended.
+If the entry is enclosed in parentheses, however, it will simply be
+ignored.
+.Pp
+To match an IP address against an ACL, simply use the match operator:
+.Bd -literal -offset 4n
+if (client.ip ~ local) {
+    pipe;
+}
+.Ed
+.Ss Subroutines
+A subroutine is used to group code for legibility or reusability:
+.Bd -literal -offset 4n
+sub pipe_if_local {
+    if (client.ip ~ local) {
+        pipe;
+    }
+}
+.Ed
+.Pp
+Subroutines in VCL do not take arguments, nor do they return values.
+.Pp
+To call a subroutine, use the
+.Cm call
+keyword followed by the subroutine's name:
+.Bd -literal -offset 4n
+call pipe_if_local;
+.Ed
+.Pp
+There are five special subroutines which hook into the Varnish
+workflow:
+.Bl -tag -width "vcl_timeout"
+.It Cm vcl_recv
+Called at the beginning of a request, after the complete request has
+been received and parsed.
+Its purpose is to decide whether or not to serve the request, how to
+do it, and, if applicanle, which backend to use.
+.\" If the document is to be served from cache, however, backend selection
+.\" can be postponed until
+.\" .Cm vcl_miss .
+.It Cm vcl_hit
+Called after a cache lookup if the requested document was found in the
+cache.
+.\" Its purpose...
+.It Cm vcl_miss
+Called after a cache lookup if the requested document was not found in
+the cache.
+Its purpose is to decide whether or not to attempt to retrieve the
+document from the backend, and which backend to use.
+.It Cm vcl_fetch
+Called after a document has been retrieved from the backend, before it
+is inserted into the cache.
+.It Cm vcl_timeout
+Called by the reaper thread when a cached document has reached its
+expiry time.
+.\" Its purpose...
+.El
+.Pp
+If one of these subroutines is left undefined or terminates without
+reaching a handling decision, control will be handed over to the
+builtin default.
+See the
+.Sx EXAMPLES
+section for a listing of the default code.
+.Ss Objects
+Although subroutines take no arguments, the necessary information is
+made available to the handler subroutines through global objects.
+.\" Document these objects...
+.Sh EXAMPLES
+The following code is the equivalent of the default configuration with
+the backend address set to "backend.example.com" and no backend port
+specified.
+.\" Keep this in synch with bin/varnishd/mgt_vcc.c
+.Bd -literal -offset 4n
+backend default {
+    set backend.host = "backend.example.com";
+    set backend.port = "http";
+}
+
+sub vcl_recv {
+    if (req.request != "GET" && req.request != "HEAD") {
+        pipe;
+    }
+    if (req.http.Expect) {
+        pipe;
+    }
+    if (req.http.Authenticate || req.http.Cookie) {
+        pass;
+    }
+    lookup;
+}
+
+sub vcl_hit {
+    if (!obj.cacheable) {
+        pass;
+    }
+    deliver;
+}
+
+sub vcl_miss {
+    fetch;
+}
+
+sub vcl_fetch {
+    if (!obj.valid) {
+        error;
+    }
+    if (!obj.cacheable) {
+        insert_pass;
+    }
+    if (resp.http.Set-Cookie) {
+        insert_pass;
+    }
+    insert;
+}
+
+sub vcl_timeout {
+    discard;
+};
+.Ed
+.Pp
+The following example shows how to support multiple sites running on
+separate backends in the same Varnish instance, by selecting backends
+based on the request URL.
+.Bd -literal -offset 4n
+backend www {
+    set backend.host = "www.example.com";
+    set backend.port = "80";
+}
+
+backend images {
+    set backend.host = "images.example.com";
+    set backend.port = "80";
+}
+
+sub vcl_recv {
+    if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.backend = www;
+    } elsif (req.http.host ~ "^images\.example\.com") {
+        set req.backend = images;
+    } else {
+        error 404 "Unknown virtual host";
+    }
+}
+.Ed
+.Pp
+The following snippet demonstrates how to force a minimum TTL for all
+documents.
+Note that this is not the same as setting the
+.Va default_ttl
+run-time parameter, as that only affects document for which the
+backend did not specify a TTL.
+.Bd -literal -offset 4n
+sub vcl_fetch {
+    if (obj.ttl < 120s) {
+        set obj.ttl = 120s;
+    }
+}
+.Ed
+.Pp
+The following snippet demonstrates how to force Varnish to cache
+documents even when cookies are present.
+.Bd -literal -offset 4n
+sub vcl_recv {
+    if (req.request == "GET" && req.http.cookie) {
+        lookup;
+    }
+}
+
+sub vcl_fetch {
+    if (resp.http.Set-Cookie) {
+        insert;
+    }
+}
+.Ed
 .Sh SEE ALSO
 .Xr varnishd 1
 .Sh HISTORY
