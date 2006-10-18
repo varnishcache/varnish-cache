@@ -1,0 +1,67 @@
+#! /bin/sh
+#
+# skeleton      example file to build /etc/init.d/ scripts.
+#               This file should be used to construct scripts for /etc/init.d.
+#
+#               Written by Miquel van Smoorenburg <miquels@cistron.nl>.
+#               Modified for Debian 
+#               by Ian Murdock <imurdock@gnu.ai.mit.edu>.
+#
+# Version:      @(#)skeleton  1.9  26-Feb-2001  miquels@cistron.nl
+#
+
+NAME=varnish
+DESC="HTTPd accelerator"
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/varnishd
+
+test -x $DAEMON || exit 0
+
+# Include varnish defaults if available
+if [ -f /etc/default/varnish ] ; then
+        . /etc/default/varnish
+fi
+
+DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+		-h ${VARNISH_HASHOPTION} \
+		-f ${VARNISH_VCL_CONF} \
+		-T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+		-t ${VARNISH_TTL} \
+		-w ${VARNISH_MIN_WORKER_THREADS},${VARNISH_MAX_WORKER_THREADS},${VARNISH_WORKER_THREAD_TIMEOUT} \
+		-s ${VARNISH_BACKEND_STORAGE}"	
+
+set -e
+
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+                --exec $DAEMON -- $DAEMON_OPTS 2>&1 > /dev/null
+        echo "$NAME."
+        ;;
+  stop)
+        echo -n "Stopping $DESC: "
+		pkill varnishd
+        echo "$NAME."
+        ;;
+  restart|force-reload)
+        #
+        #       If the "reload" option is implemented, move the "force-reload"
+        #       option to the "reload" entry above. If not, "force-reload" is
+        #       just the same as "restart".
+        #
+        echo -n "Restarting $DESC: "
+                pkill varnishd
+        sleep 1
+		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+		--exec $DAEMON -- $DAEMON_OPTS 2>&1 > /dev/null
+        echo "$NAME."
+        ;;
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
