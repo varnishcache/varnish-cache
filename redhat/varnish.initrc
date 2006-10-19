@@ -1,0 +1,74 @@
+#! /bin/sh
+#
+# varnish	Control the varnish HTTP accelerator
+#
+# chkconfig: - 90 10
+# description: HTTP accelerator
+# processname: varnishd
+# config: /etc/varnish.conf
+# pidfile: /var/run/varnish/varnishd.pid
+
+# Source function library.
+. /etc/init.d/functions
+
+RETVAL=0
+PROCNAME=varnishd
+
+. /etc/sysconfig/varnish
+if [ "$DAEMON" = "" ]; then DAEMON="/usr/sbin/varnishd"; fi
+DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+		-h ${VARNISH_HASHOPTION} \
+		-f ${VARNISH_VCL_CONF} \
+		-T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+		-t ${VARNISH_TTL} \
+		-w ${VARNISH_MIN_WORKER_THREADS},${VARNISH_MAX_WORKER_THREADS},${VARNISH_WORKER_THREAD_TIMEOUT} \
+		-s ${VARNISH_BACKEND_STORAGE}"	
+
+
+mkdir -p /var/run/varnish 2>/dev/null
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting varnish HTTP accelerator: "
+	daemon $DAEMON "$DAEMON_OPTS"
+	sleep 1
+	pkill -0 $PROCNAME
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]
+	then
+		echo_success
+		touch /var/lock/subsys/varnishd
+	else
+		echo_failure
+	fi
+	echo
+	;;
+  stop)
+	echo -n "Stopping varnish HTTP accelerator: "
+	killproc $DAEMON
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]
+	then
+		echo_success
+		rm -f /var/lock/subsys/varnishd
+	else
+		echo_failure
+	fi
+	echo
+	;;
+  status)
+	status $PROCNAME
+	RETVAL=$?
+	;;
+  restart|reload)
+  	$0 stop
+	$0 start
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: $0 {start|stop|status|restart}"
+	exit 1
+esac
+
+exit $RETVAL
