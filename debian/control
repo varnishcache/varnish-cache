@@ -3,14 +3,14 @@ Section: web
 Priority: optional
 Maintainer: Stig Sandbeck Mathiesen <ssm@debian.org>
 Uploaders: Lars Bahner <bahner@debian.org>
-Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev
+Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, gcc (>= 4.1)
 Standards-Version: 3.7.2
 
 Package: varnish
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3)
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: A state-of-the-art, high-performance HTTP accelerator
- varnish is the server-side alternative to squid, written primarily with
+ Varnish is the server-side alternative to Squid, written primarily with
  speed in mind, and with a look to implementing full ESI-support in
  a future release.
  .
