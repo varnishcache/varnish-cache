@@ -1,3 +1,10 @@
+varnish (1.0.2-2) unstable; urgency=low
+
+  * Preliminary LSB compliabnce in init-script
+  * Lintian override
+
+ -- Lars Bahner <bahner@debian.org>  Mon, 23 Oct 2006 14:20:22 +0200
+
 varnish (1.0.2-1) unstable; urgency=low
 
   * New upstream release
