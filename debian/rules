@@ -68,6 +68,7 @@ install: build
 
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/varnish
 	install -m 644 $(CURDIR)/debian/vcl.conf $(CURDIR)/debian/varnish/etc/varnish/
+	install -m 644 $(CURDIR)/debian/lintian-override $(CURDIR)/debian/varnish/usr/share/lintian/overrides/varnish
 
 
 # Build architecture-independent files here.
