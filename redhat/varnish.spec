@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator.
 Name: varnish
 Version: 1.0.2
-Release: 6
+Release: 7
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -10,6 +10,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: gcc gcc-c++ ncurses-devel libtool autoconf automake
 Requires: gcc ncurses kernel >= 2.6.0
+Vendor: Linpro AS, http://www.linpro.no/
 
 %description
 This is the Varnish high-performance HTTP accelerator.
@@ -107,7 +108,9 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --list varnish
 
 %changelog
-* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.02-1
+* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.02-7
+- Added a Vendor tag
+* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.02-6
 - Added redhat subdir to svn
 - Removed default vcl config file. Used the new upstream variant instead.
 - Based build on svn. Running autogen.sh as start of build. Also added
