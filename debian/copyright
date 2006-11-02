@@ -4,6 +4,13 @@ Fri,  6 Oct 2006 16:26:57 +0200.
 It was pulled from the Subversion repository with
 svn co http://varnish.projects.linpro.no/svn/trunk
 
+Debianizations are an integral part of the main source for varnish,
+so the change for Debian are made before publication of releases, 
+and are as such checked.
+
+Files are downloadable from the following URL
+http://sourceforge.net/project/showfiles.php?group_id=155816
+
 Copyright: 	2006 Verdens Gang AS
 		2006 Linpro AS
 All rights reserved.
