@@ -1,3 +1,100 @@
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/include/compat/vis.h,
+   branches/1.0/lib/libcompat/vis.c:
+
+   r33651@cat (orig r1208): des | 2006-11-02 13:57:11 +0100
+   As per ftp://ftp.cs.berkeley.edu/pub/4bsd/README.Impt.License.Change,
+   remove the so-called advertising clause from these files' license,
+   making it compatible with the Debian Free Software Guidelines. As
+   these files were obtained from FreeBSD, this change was discussed
+   with and approved by the FreeBSD core team.
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/debian/changelog, branches/1.0/debian/dirs,
+   branches/1.0/debian/rules:
+
+   r33291@cat (orig r1207): bahner | 2006-10-23 14:21:17 +0200
+   Lintian overrides for debian-acceptance
+   
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/debian/TODO, branches/1.0/debian/varnish.init:
+
+   r33290@cat (orig r1206): bahner | 2006-10-23 14:12:07 +0200
+   Preliminary LSB compliance in init-scripts
+   
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/debian/changelog,
+   branches/1.0/debian/copyright:
+
+   r33289@cat (orig r1205): bahner | 2006-10-19 15:55:12 +0200
+   Bumped version to 1.0.2 proper
+   Added wording regarding the origination of the source of
+   varnish with relation to debian.
+   
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/debian/control:
+
+   r33288@cat (orig r1204): bahner | 2006-10-19 15:44:27 +0200
+   Reverted accidental reversion of dependencies
+   
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/redhat/varnish.spec:
+
+   r33287@cat (orig r1203): ingvar | 2006-10-19 14:55:20 +0200
+   Added a vendor tag to the rpm package.
+
+2006-11-02 12:57  des
+
+ * branches/1.0, branches/1.0/redhat, branches/1.0/redhat/README.redhat,
+   branches/1.0/redhat/TODO, branches/1.0/redhat/varnish.initrc,
+   branches/1.0/redhat/varnish.spec, branches/1.0/redhat/varnish.sysconfig:
+
+   r33286@cat (orig r1202): ingvar | 2006-10-19 14:43:29 +0200
+   Added build scripts for Red Hat rpm package
+
+2006-10-19 09:21  des
+
+ * branches/1.0, branches/1.0/debian/control:
+
+   r33282@cat (orig r1198): des | 2006-10-19 11:19:28 +0200
+   Capitalize.
+
+2006-10-19 09:21  des
+
+ * branches/1.0, branches/1.0/etc/vcl.conf:
+
+   r33281@cat (orig r1197): des | 2006-10-19 11:16:42 +0200
+   Additional commentary
+
+2006-10-19 09:21  des
+
+ * branches/1.0, branches/1.0/etc, branches/1.0/etc/vcl.conf:
+
+   r33280@cat (orig r1196): des | 2006-10-19 11:16:03 +0200
+   Add sample VCL config.
+
+2006-10-18 14:32  des
+
+ * branches/1.0/configure.ac:
+
+   Bump version number.
+
+2006-10-18 14:31  des
+
+ * branches/1.0/ChangeLog:
+
+   Regenerate.
+
 2006-10-18 14:27  des
 
  * branches/1.0, branches/1.0/man/vcl.7:
