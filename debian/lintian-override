@@ -1,0 +1,4 @@
+varnish: non-dev-pkg-with-shlib-symlink usr/lib/libvarnish.so.0.0.0 usr/lib/libvarnish.so
+varnish: non-dev-pkg-with-shlib-symlink usr/lib/libvarnishapi.so.0.0.0 usr/lib/libvarnishapi.so
+varnish: non-dev-pkg-with-shlib-symlink usr/lib/libvcl.so.0.0.0 usr/lib/libvcl.so
+varnish: package-name-doesnt-match-sonames libvarnishapi0 libvcl0 libvarnish0
