@@ -194,7 +194,7 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -w min,max");
 	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -w min,max,timeout [default: -w1,INF,10]");
+	    "  -w min,max,timeout [default: -w1,1000,120]");
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
@@ -211,21 +211,23 @@ usage(void)
 static void
 tackle_warg(const char *argv)
 {
-	int i;
-	unsigned ua, ub, uc;
+	unsigned int ua, ub, uc;
 
-	i = sscanf(argv, "%u,%u,%u", &ua, &ub, &uc);
-	if (i == 0)
-		usage();
-	if (ua < 1)
-		usage();
-	params->wthread_min = ua;
-	params->wthread_max = ua;
-	params->wthread_timeout = 10;
-	if (i >= 2)
-		params->wthread_max = ub;
-	if (i >= 3)
+	switch (sscanf(argv, "%u,%u,%u", &ua, &ub, &uc)) {
+	case 3:
 		params->wthread_timeout = uc;
+	case 2:
+		if (ub < ua)
+			usage();
+		params->wthread_max = ub;
+	case 1:
+		if (ua < 1)
+			usage();
+		params->wthread_min = ua;
+		break;
+	default:
+		usage();
+	}
 }
 
 /*--------------------------------------------------------------------
