@@ -39,7 +39,6 @@
 
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
-#define statfs statvfs
 #endif
 
 #ifdef HAVE_SYS_VFS_H
@@ -122,11 +121,20 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	char suff[2];
 	int i, expl;
 	off_t o;
-	struct statfs fsst;
 	struct stat st;
 
+	AN(sc != NULL);
 	AZ(fstat(sc->fd, &st));
+
+#ifdef HAVE_SYS_STATVFS_H
+	struct statfs fsst;
 	AZ(fstatfs(sc->fd, &fsst));
+#endif
+
+#ifdef HAVE_SYS_VFS_H
+	struct statfs fsst;
+	AZ(fstatfs(sc->fd, &fsst));
+#endif
 
 	/* We use units of the larger of filesystem blocksize and pagesize */
 	bs = sc->pagesize;
