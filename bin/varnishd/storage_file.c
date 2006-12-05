@@ -37,6 +37,11 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#define statfs statvfs
+#endif
+
 #ifdef HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
