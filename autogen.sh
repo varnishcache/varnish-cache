@@ -26,7 +26,12 @@ fi
 
 set -ex
 
-aclocal
+if [ "x`uname -s`" = "xFreeBSD" ] ; then
+	# Ask DES
+	aclocal -I /usr/local/share/aclocal
+else
+	aclocal 
+fi
 libtoolize --copy --force
 autoheader
 automake --add-missing --copy --foreign
