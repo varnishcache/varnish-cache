@@ -216,10 +216,12 @@ tackle_warg(const char *argv)
 	switch (sscanf(argv, "%u,%u,%u", &ua, &ub, &uc)) {
 	case 3:
 		params->wthread_timeout = uc;
+		/* FALLTHROUGH */
 	case 2:
 		if (ub < ua)
 			usage();
 		params->wthread_max = ub;
+		/* FALLTHROUGH */
 	case 1:
 		if (ua < 1)
 			usage();
@@ -386,6 +388,21 @@ main(int argc, char *argv[])
 	cli[0].result = CLIS_OK;
 
 	heritage.socket = -1;
+
+	/*
+	 * Set up a temporary param block until VSL_MgtInit() can
+	 * replace with shmem backed structure version.
+	 *
+	 * XXX: I wonder if it would be smarter to inform the child process
+	 * XXX: about param changes via CLI rather than keeping the param
+	 * XXX: block in shared memory.  It would give us the advantage
+	 * XXX: of having the CLI thread be able to take action on the
+	 * XXX: change.
+	 * XXX: For now live with the harmless flexelint warning this causes: 
+	 * XXX: varnishd.c 393 Info 789: Assigning address of auto variable 
+	 * XXX:    'param' to static
+	 */
+
 	memset(&param, 0, sizeof param);
 	params = &param;
 	mgt_vcc_init();
