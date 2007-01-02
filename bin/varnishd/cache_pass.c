@@ -29,6 +29,9 @@
  * $Id$
  *
  * XXX: charge bytes to srcaddr
+ * XXX: buffer to relieve backed ASAP.
+ * XXX: Check if response has any body
+ * XXX: Don't pass chunked to HTTP/1.0 client
  */
 
 #include <stdio.h>
