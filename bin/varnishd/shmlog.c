@@ -365,6 +365,6 @@ VSL_MgtInit(const char *fn, unsigned size)
 	xxxassert(loghead != MAP_FAILED);
 	VSL_stats = &loghead->stats;
 	pp = (void *)(loghead + 1);
-	memcpy(pp, params, sizeof *pp);
+	*pp = *params;
 	params = pp;
 }
