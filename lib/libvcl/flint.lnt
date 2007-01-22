@@ -6,6 +6,7 @@
 -printf_code( ju, long long unsigned)
 -printf_code( jx, long long unsigned)
 
++libh ../../config.h
 -header(../../config.h)
 -sem(lbv_assert, r_no)
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
