@@ -18,6 +18,10 @@ struct var vcc_be_vars[] = {
 	    "VRT_r_backend_port(backend)",
 	    "VRT_l_backend_port(backend, ",
 	},
+	{ "backend.dnsttl", TIME, 14,
+	    "VRT_r_backend_dnsttl(backend)",
+	    "VRT_l_backend_dnsttl(backend, ",
+	},
 	{ NULL }
 };
 
@@ -82,6 +86,8 @@ const char *vrt_obj_h =
 	"void VRT_l_backend_host(struct backend *, const char *);\n"
 	"const char * VRT_r_backend_port(struct backend *);\n"
 	"void VRT_l_backend_port(struct backend *, const char *);\n"
+	"double VRT_r_backend_dnsttl(struct backend *);\n"
+	"void VRT_l_backend_dnsttl(struct backend *, double);\n"
 	"const unsigned char * VRT_r_client_ip(struct sess *);\n"
 	"void VRT_l_client_ip(struct sess *, const unsigned char *);\n"
 	"const char * VRT_r_req_request(struct sess *);\n"
