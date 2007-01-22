@@ -104,7 +104,7 @@ struct params {
 	unsigned		client_http11;
 };
 
-extern struct params *params;
+extern volatile struct params *params;
 extern struct heritage heritage;
 
 void child_main(void);
