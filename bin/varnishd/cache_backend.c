@@ -64,9 +64,10 @@ static struct vbe_conn *
 vbe_new_conn(void)
 {
 	struct vbe_conn *vbc;
-	unsigned char *p;
+	unsigned char *p, space;
 
-	vbc = calloc(sizeof *vbc + params->mem_workspace * 2, 1);
+	space =  params->mem_workspace;
+	vbc = calloc(sizeof *vbc + space * 2, 1);
 	if (vbc == NULL)
 		return (NULL);
 	VSL_stats->n_vbe_conn++;
@@ -75,9 +76,9 @@ vbe_new_conn(void)
 	vbc->http2 = &vbc->http_mem[1];
 	vbc->fd = -1;
 	p = (void *)(vbc + 1);
-	http_Setup(vbc->http, p, params->mem_workspace);
-	p += params->mem_workspace;
-	http_Setup(vbc->http2, p, params->mem_workspace);
+	http_Setup(vbc->http, p, space);
+	p += space;
+	http_Setup(vbc->http2, p, space);
 	return (vbc);
 }
 
