@@ -32,6 +32,7 @@
  */
 
 #include <err.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -211,25 +212,47 @@ usage(void)
 static void
 tackle_warg(const char *argv)
 {
-	unsigned int ua, ub, uc;
+	unsigned int u;
+	char *ep, *eq;
 
-	switch (sscanf(argv, "%u,%u,%u", &ua, &ub, &uc)) {
-	case 3:
-		params->wthread_timeout = uc;
-		/* FALLTHROUGH */
-	case 2:
-		if (ub < ua)
-			usage();
-		params->wthread_max = ub;
-		/* FALLTHROUGH */
-	case 1:
-		if (ua < 1)
-			usage();
-		params->wthread_min = ua;
-		break;
-	default:
+	u = strtoul(argv, &ep, 0);
+	if (ep == argv)
 		usage();
+	while (isspace(*ep))
+		ep++;
+	if (u < 1)
+		usage();
+	params->wthread_min = u;
+
+	if (*ep == '\0') {
+		params->wthread_max = params->wthread_min;
+		return;
 	}
+
+	if (*ep != ',')
+		usage();
+	u = strtoul(++ep, &eq, 0);
+	if (eq == ep)
+		usage();
+	if (u < params->wthread_min)
+		usage();
+	while (isspace(*eq))
+		eq++;
+	params->wthread_max = u;
+
+	if (*eq == '\0')
+		return;
+
+	if (*eq != ',')
+		usage();
+	u = strtoul(++eq, &ep, 0);
+	if (ep == eq)
+		usage();
+	while (isspace(*ep))
+		ep++;
+	if (*ep != '\0')
+		usage();
+	params->wthread_timeout = u;
 }
 
 /*--------------------------------------------------------------------
