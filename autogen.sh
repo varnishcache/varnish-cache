@@ -15,12 +15,12 @@ if [ -z "$automake_version" ] ; then
     exit 1
 else
     case $automake_version in
-	1.9*|[23456789].*)
-	    ;;
-	*)
+	0.*|1.[0-8])
 	    echo "your version of automake ($automake_version) is too old;" \
 		"you need 1.9 or newer."
 	    exit 1
+	    ;;
+	*)
 	    ;;
     esac
 fi
