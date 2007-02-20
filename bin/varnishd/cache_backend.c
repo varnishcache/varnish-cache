@@ -214,9 +214,12 @@ vbe_connect(struct sess *sp, struct backend *bp)
 
 /* Get a backend connection ------------------------------------------
  *
- * First locate the backend shadow, if necessary by creating one.
- * If there are free connections, use the first, otherwise build a
- * new connection.
+ * Try all cached backend connections for this backend, and use the
+ * first one that is looks like it is still connected.
+ * If that fails to get us a connection, create a new one, reusing a
+ * connection from the freelist, if possible.
+ *
+ * This function is slightly complicated by optimizations on vbemtx.
  */
 
 static struct vbe_conn *
@@ -225,20 +228,17 @@ vbe_nextfd(struct sess *sp)
 	struct vbe_conn *vc, *vc2;
 	struct pollfd pfd;
 	struct backend *bp;
+	int reuse = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	bp = sp->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	vc2 = NULL;
 	while (1) {
-		/*
-		 * Try all connections on this backend until we find one
-		 * that works.  If that fails, grab a free connection
-		 * (if any) while we have the lock anyway.
-		 */
-		vc2 = NULL;
 		LOCK(&vbemtx);
 		vc = TAILQ_FIRST(&bp->connlist);
 		if (vc != NULL) {
+			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
 			TAILQ_REMOVE(&bp->connlist, vc, list);
 		} else {
@@ -256,8 +256,10 @@ vbe_nextfd(struct sess *sp)
 		pfd.fd = vc->fd;
 		pfd.events = POLLIN;
 		pfd.revents = 0;
-		if (!poll(&pfd, 1, 0))
+		if (!poll(&pfd, 1, 0)) {
+			reuse = 1;
 			break;
+		}
 		VBE_ClosedFd(sp->wrk, vc, 0);
 	}
 
@@ -266,34 +268,33 @@ vbe_nextfd(struct sess *sp)
 			vc = vbe_new_conn();
 		else
 			vc = vc2;
-		AN(vc);
-		assert(vc->fd == -1);
-		AZ(vc->backend);
-	}
-
-	/* If not connected yet, do so */
-	if (vc->fd < 0) {
-		AZ(vc->backend);
-		vc->fd = vbe_connect(sp, bp);
-		LOCK(&vbemtx);
-		if (vc->fd < 0) {
-			vc->backend = NULL;
-			TAILQ_INSERT_HEAD(&vbe_head, vc, list);
-			VSL_stats->backend_unused++;
-			vc = NULL;
-		} else {
-			vc->backend = bp;
+		if (vc != NULL) {
+			assert(vc->fd == -1);
+			AZ(vc->backend);
+			vc->fd = vbe_connect(sp, bp);
+			if (vc->fd < 0) {
+				LOCK(&vbemtx);
+				TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+				VSL_stats->backend_unused++;
+				UNLOCK(&vbemtx);
+				vc = NULL;
+			} else {
+				vc->backend = bp;
+			}
 		}
-		UNLOCK(&vbemtx);
+	}
+	LOCK(&vbemtx);
+	if (vc != NULL ) {
+		VSL_stats->backend_reuse += reuse;
+		VSL_stats->backend_conn++;
 	} else {
+		VSL_stats->backend_fail++;
+	}
+	UNLOCK(&vbemtx);
+	if (vc != NULL ) {
+		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
 		assert(vc->fd >= 0);
 		assert(vc->backend == bp);
-	}
-	if (vc != NULL ) {
-		assert(vc->fd >= 0);
-		VSL_stats->backend_conn++;
-		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
-		AN(vc->backend);
 	}
 	return (vc);
 }
@@ -348,9 +349,9 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
 	AN(vc->backend);
-	VSL_stats->backend_recycle++;
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vbemtx);
+	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
 	UNLOCK(&vbemtx);
 }

@@ -133,13 +133,14 @@ void
 VRT_free_backends(struct VCL_conf *cp)
 {
 
-	(void)cp;
+	(void)cp;	/* XXX */
 }
 
 void
 VRT_fini_backend(struct backend *be)
 {
-	(void)be;
+
+	(void)be;	/* XXX */
 }
 
 /*--------------------------------------------------------------------*/
