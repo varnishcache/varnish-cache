@@ -126,12 +126,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AN(sc != NULL);
 	AZ(fstat(sc->fd, &st));
 
-#ifdef HAVE_SYS_STATVFS_H
-	struct statfs fsst;
-	AZ(fstatfs(sc->fd, &fsst));
-#endif
-
-#ifdef HAVE_SYS_VFS_H
+#if defined(HAVE_SYS_STATVFS_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
 	AZ(fstatfs(sc->fd, &fsst));
 #endif
