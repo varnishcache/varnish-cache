@@ -6,6 +6,7 @@
 if [ -d /usr/local/gnu-autotools/bin ] ; then
 	PATH=/usr/local/gnu-autotools/bin:${PATH}
 	export PATH
+	FIX_BROKEN_FREEBSD_PORTS="-I /usr/local/share/aclocal"
 fi
 
 automake_version=$(automake --version | tr ' ' '\n' | egrep '^[0-9]\.[0-9a-z.-]+')
@@ -26,12 +27,7 @@ fi
 
 set -ex
 
-if [ "x`uname -s`" = "xFreeBSD" ] ; then
-	# Ask DES
-	aclocal -I /usr/local/share/aclocal
-else
-	aclocal 
-fi
+aclocal ${FIX_BROKEN_FREEBSD_PORTS}
 libtoolize --copy --force
 autoheader
 automake --add-missing --copy --foreign
