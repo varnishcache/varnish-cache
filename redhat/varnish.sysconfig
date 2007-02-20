@@ -20,6 +20,9 @@ VARNISH_LISTEN_PORT=6081
 VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
 VARNISH_ADMIN_LISTEN_PORT=6082
 
+# Note: The working set of threads is temporary broken in 
+# varnish-1.0.2. The following 3  entries will not be used.
+# This will be fixed in an upcoming release
 
 # The minimum number of threads to start
 VARNISH_MIN_WORKER_THREADS=1
