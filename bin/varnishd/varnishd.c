@@ -31,15 +31,16 @@
  * The management process and CLI handling
  */
 
-#include <string.h>
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -238,15 +239,12 @@ tackle_warg(const char *argv)
 
 static pid_t d_child;
 
-#include <err.h>
 
 static void
 DebugSigPass(int sig)
 {
-	int i;
 
-	i = kill(d_child, sig);
-	printf("sig %d i %d pid %d\n", sig, i, d_child);
+	kill(d_child, sig);
 }
 
 static void
@@ -261,27 +259,33 @@ DebugStunt(void)
 	AZ(pipe(pipes[0]));
 	AZ(pipe(pipes[1]));
 	d_child = fork();
+	xxxassert(d_child >= 0);
 	if (!d_child) {
-		assert(dup2(pipes[0][0], 0) >= 0);
-		assert(dup2(pipes[1][1], 1) >= 0);
-		assert(dup2(pipes[1][1], 2) >= 0);
+		/* stdin from parent, std{out,err} to parent */
+		assert(dup2(pipes[0][0], 0) == 0);
+		assert(dup2(pipes[1][1], 1) == 1);
+		assert(dup2(pipes[1][1], 2) == 2);
 		AZ(close(pipes[0][0]));
 		AZ(close(pipes[0][1]));
 		AZ(close(pipes[1][0]));
 		AZ(close(pipes[1][1]));
 		return;
 	}
+
+	/* set up parent's end of pipe to child's stdin */
 	AZ(close(pipes[0][0]));
-	assert(dup2(pipes[0][1], 3) >= 0);
 	pipes[0][0] = 0;
+	assert(dup2(pipes[0][1], 3) == 3);
 	pipes[0][1] = 3;
 
-	assert(dup2(pipes[1][0], 4) >= 0);
-	AZ(close(pipes[1][1]));
+	/* set up parent's end of pipe from child's std{out,err} */
+	assert(dup2(pipes[1][0], 4) == 4);
 	pipes[1][0] = 4;
+	AZ(close(pipes[1][1]));
 	pipes[1][1] = 1;
 
-	for (i = 5; i < 100; i++)
+	/* close the rest */
+	for (i = 5; i < getdtablesize(); i++)
 		close(i);
 
 	pfd[0].fd = pipes[0][0];
@@ -292,6 +296,7 @@ DebugStunt(void)
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, DebugSigPass);
 	i = read(pipes[1][0], buf, sizeof buf - 1);
+	xxxassert(i >= 0);
 	buf[i] = '\0';
 	d_child = strtoul(buf, &p, 0);
 	xxxassert(p != NULL);
