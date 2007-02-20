@@ -1,3 +1,224 @@
+2007-02-20 08:47  des
+
+ * branches/1.0, branches/1.0/redhat/varnish.initrc:
+
+   r36059@cat (orig r1243): des | 2007-02-20 09:46:24 +0100
+   Correct misunderstanding regarding -w.
+
+2007-02-20 08:47  des
+
+ * branches/1.0, branches/1.0/include/stat_field.h:
+
+   r35540@cat (orig r1240): phk | 2007-01-30 13:17:58 +0100
+   Forgotten commit:
+   
+   Update backend stats fields
+   
+
+2007-02-20 08:47  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.c:
+
+   r35539@cat (orig r1239): phk | 2007-01-29 23:06:33 +0100
+   Things you didn't know about C, #7212:
+   
+   There is no sane way to get sscanf to tell you how many characters
+   were consumed, if you want to allow a variable number of arguments.
+   
+   The special format %n is patently useless for this, because you
+   have to insert it at every conceiveable point in the string and
+   that presumes full explicit whitespace markup.
+   
+   Parse -w argument "by hand", to catch illegal input like "1,INF,15"
+   
+   Tripped over by: Stein Ove Rosseland <steinove@vg.no>
+   
+   Fixes: ticket #82
+   
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_backend.c,
+   branches/1.0/bin/varnishd/cache_vrt.c:
+
+   r34134@cat (orig r1238): phk | 2007-01-22 14:24:42 +0100
+   Expend a lock on keeping the backend statistics consistent.
+   Rename the fields to make more sense
+   
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache.h,
+   branches/1.0/bin/varnishd/cache_backend.c,
+   branches/1.0/bin/varnishd/cache_vrt.c, branches/1.0/include/vrt_obj.h,
+   branches/1.0/lib/libvcl/flint.lnt,
+   branches/1.0/lib/libvcl/vcc_compile.c,
+   branches/1.0/lib/libvcl/vcc_gen_obj.tcl,
+   branches/1.0/lib/libvcl/vcc_obj.c:
+
+   r34133@cat (orig r1237): phk | 2007-01-22 13:31:52 +0100
+   The getaddrinfo(3) API does not tell us the TTL value learned from DNS
+   so we have to add our own stuff for that.
+   
+   Without some kind of TTL, we would hit the DNS server once per failed
+   attempt to connect to the backend.
+   
+   If the backend were down, we could hit it a LOT.
+   
+   In the VCL code:
+   
+   backend foobar {
+   [...]
+   set backend.dnsttl = 20s;
+   }
+   
+   will assign a TTL for DNS lookups of this backends hostname+port
+   combination, we will not hit the DNS server more often that this.
+   
+   The default is set at 30 seconds, short enough to make things are
+   workable in a load-balancing-via-DNS setups, yet long enough to not
+   pound the DNS server flat in case of backend failures.
+   
+   NOTE that as long as we succeed in connecting to the backend we
+   do not perform new DNS lookups. That will have to be revisited
+   along with possible load-balancing schemes for the backend(s).
+   
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/shmlog.c:
+
+   r34132@cat (orig r1236): phk | 2007-01-22 12:46:25 +0100
+   Use struct assignment to overcome volatile poisoning.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_backend.c:
+
+   r34131@cat (orig r1235): phk | 2007-01-22 12:15:57 +0100
+   Cache the workspace size from params so it doesn't change under us.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/heritage.h,
+   branches/1.0/bin/varnishd/varnishd.c:
+
+   r34130@cat (orig r1234): phk | 2007-01-22 12:15:27 +0100
+   Make params volatile so changes are discovered.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/autogen.sh:
+
+   r34129@cat (orig r1233): phk | 2007-01-22 09:43:30 +0100
+   Allow automake version 1.10
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/cache_pass.c,
+   branches/1.0/bin/varnishd/common.h,
+   branches/1.0/bin/varnishd/storage_file.c,
+   branches/1.0/bin/varnishd/varnishd.c:
+
+   r34127@cat (orig r1231): phk | 2007-01-02 14:41:08 +0100
+   Polish as result of flexelint run and record a couple of thoughts.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/storage_file.c:
+
+   r34126@cat (orig r1230): knutroy | 2006-12-18 16:58:59 +0100
+   Fixed double declaraction error on systems having both
+   HAVE_SYS_STATVFS_H and HAVE_SYS_VFS_H.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/autogen.sh:
+
+   r34125@cat (orig r1229): des | 2006-12-05 12:42:39 +0100
+   Better workaround for FreeBSD autotools brokenness.
+   
+   Pointy hat to: {ade,portsmgr}@freebsd.org
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/storage_file.c:
+
+   r34124@cat (orig r1228): phk | 2006-12-05 10:41:16 +0100
+   Make the statfs(3)/statvfs(3) dictomy actually work.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/autogen.sh:
+
+   r34123@cat (orig r1227): phk | 2006-12-05 09:48:27 +0100
+   Add a FreeBSD workaround while des@ tries to get autocrap to DTRT under
+   FreeBSD also.
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/storage_file.c,
+   branches/1.0/configure.ac:
+
+   r34122@cat (orig r1226): phk | 2006-12-05 09:47:43 +0100
+   NetBSD Portability fix:
+   
+   Starting with 3.1, NetBSD uses statvfs and not statfs.
+   
+   Submitted by: Juan RP <juan@xtrarom.org>
+   
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/redhat/varnish.initrc,
+   branches/1.0/redhat/varnish.sysconfig:
+
+   r34107@cat (orig r1222): ingvar | 2006-11-08 10:03:40 +0100
+   Removed the usage of -w in the initscript until that bug is fixed in
+   varnishd
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.c:
+
+   r33742@cat (orig r1221): des | 2006-11-08 09:59:20 +0100
+   Rewrite tackle_warg(): don't override the default max or timeout unless
+   the user asks; bail if max < min; fix usage string.
+
+2007-02-20 08:46  des
+
+ * branches/1.0, branches/1.0/bin/varnishd/varnishd.c:
+
+   r33741@cat (orig r1220): des | 2006-11-08 09:49:57 +0100
+   Remove printf() from signal handler.
+   Make the pipe-juggling code slightly more readable.
+
+2006-11-06 12:19  des
+
+ * branches/1.0/ChangeLog:
+
+   Regenerate.
+
+2006-11-06 12:07  des
+
+ * branches/1.0, branches/1.0/debian/lintian-override:
+
+   r33659@cat (orig r1216): bahner | 2006-11-03 10:37:47 +0100
+   Adding lintian-overrides for debian acceptance
+   
+
 2006-11-02 12:57  des
 
  * branches/1.0, branches/1.0/include/compat/vis.h,
