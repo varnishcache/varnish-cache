@@ -302,6 +302,9 @@ struct backend {
 	struct addrinfo		*last_addr;
 
 	TAILQ_HEAD(,vbe_conn)	connlist;
+
+	double			dnsttl;
+	double			dnstime;
 #if 0
 	double			responsetime;
 	double			timeout;

@@ -10,6 +10,8 @@ const char * VRT_r_backend_host(struct backend *);
 void VRT_l_backend_host(struct backend *, const char *);
 const char * VRT_r_backend_port(struct backend *);
 void VRT_l_backend_port(struct backend *, const char *);
+double VRT_r_backend_dnsttl(struct backend *);
+void VRT_l_backend_dnsttl(struct backend *, double);
 const unsigned char * VRT_r_client_ip(struct sess *);
 void VRT_l_client_ip(struct sess *, const unsigned char *);
 const char * VRT_r_req_request(struct sess *);

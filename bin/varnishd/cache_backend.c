@@ -59,12 +59,25 @@ static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 static MTX vbemtx;
 
 /*--------------------------------------------------------------------*/
+/* XXX: belongs a more general place */
+
+static double
+Uptime(void)
+{
+	struct timespec ts;
+
+	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+	return (ts.tv_sec + ts.tv_nsec * 1e-9);
+}
+
+/*--------------------------------------------------------------------*/
 
 static struct vbe_conn *
 vbe_new_conn(void)
 {
 	struct vbe_conn *vbc;
-	unsigned char *p, space;
+	unsigned char *p;
+	unsigned space;
 
 	space =  params->mem_workspace;
 	vbc = calloc(sizeof *vbc + space * 2, 1);
@@ -93,6 +106,7 @@ vbe_lookup(struct backend *bp)
 	if (bp->addr != NULL) {
 		freeaddrinfo(bp->addr);
 		bp->addr = NULL;
+		bp->last_addr = NULL;
 	}
 
 	memset(&hint, 0, sizeof hint);
@@ -102,13 +116,14 @@ vbe_lookup(struct backend *bp)
 	error = getaddrinfo(bp->hostname,
 	    bp->portname == NULL ? "http" : bp->portname,
 	    &hint, &res);
+	bp->dnstime = Uptime();
 	if (error) {
 		if (res != NULL)
 			freeaddrinfo(res);
 		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
-		bp->addr = NULL;
 		return;
 	}
+	bp->last_addr = res;
 	bp->addr = res;
 }
 
@@ -120,9 +135,7 @@ vbe_sock_conn(const struct addrinfo *ai)
 	int s;
 
 	s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-	if (s < 0)
-		return (s);
-	else if (connect(s, ai->ai_addr, ai->ai_addrlen)) {
+	if (s >= 0 && connect(s, ai->ai_addr, ai->ai_addrlen)) {
 		AZ(close(s));
 		s = -1;
 	}
@@ -156,6 +169,9 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 			return (s);
 		}
 	}
+
+	if (bp->dnstime + bp->dnsttl >= Uptime())
+		return (-1);
 
 	/* Then do another lookup to catch DNS changes */
 	vbe_lookup(bp);

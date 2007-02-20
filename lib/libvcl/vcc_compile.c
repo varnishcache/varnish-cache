@@ -258,6 +258,7 @@ AddRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
 	t->e = strchr(s, '\0');
 	t->tok = METHOD;
 	AddRef(tl, t, type);
+	/* XXX: possibly leaking t */
 }
 
 void
@@ -931,6 +932,7 @@ CheckHostPort(const char *host, const char *port)
 static void
 Backend(struct tokenlist *tl)
 {
+	unsigned a;
 	struct var *vp;
 	struct token *t_be = NULL;
 	struct token *t_host = NULL;
@@ -983,6 +985,27 @@ Backend(struct tokenlist *tl)
 			EncString(tl->fc, t_port);
 			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
+			break;
+#if 0
+		case INT:
+		case SIZE:
+		case RATE:
+		case FLOAT:
+#endif
+		case TIME:
+			Fc(tl, 1, "\t%s ", vp->lname);
+			a = tl->t->tok;
+			if (a == T_MUL || a == T_DIV)
+				Fc(tl, 0, "%g", DoubleVal(tl));
+			else if (vp->fmt == TIME)
+				TimeVal(tl);
+			else if (vp->fmt == SIZE)
+				SizeVal(tl);
+			else if (vp->fmt == RATE)
+				RateVal(tl);
+			else
+				Fc(tl, 0, "%g", DoubleVal(tl));
+			Fc(tl, 0, ");\n");
 			break;
 		default:
 			vsb_printf(tl->sb,

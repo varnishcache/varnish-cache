@@ -32,24 +32,25 @@
 
 # Objects which operate on backends
 set beobj {
-	{ backend.host	HOSTNAME }
-	{ backend.port	PORTNAME }
+	{ backend.host		HOSTNAME }
+	{ backend.port		PORTNAME }
+	{ backend.dnsttl	TIME }
 }
 
 # Objects which operate on sessions
 
 set spobj {
-	{ client.ip	IP }
-	{ req.request	STRING }
-	{ req.host	STRING }
-        { req.url	STRING }
-        { req.proto	STRING }
-        { req.backend	BACKEND }
-        { obj.valid	BOOL }
-        { obj.cacheable	BOOL }
-        { obj.ttl	TIME }
-        { req.http.	HEADER }
-        { resp.http.	HEADER }
+	{ client.ip		IP }
+	{ req.request		STRING }
+	{ req.host		STRING }
+        { req.url		STRING }
+        { req.proto		STRING }
+        { req.backend		BACKEND }
+        { obj.valid		BOOL }
+        { obj.cacheable		BOOL }
+        { obj.ttl		TIME }
+        { req.http.		HEADER }
+        { resp.http.		HEADER }
 }
 
 set tt(IP)	"const unsigned char *"
