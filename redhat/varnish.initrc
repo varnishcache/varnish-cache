@@ -38,7 +38,7 @@ case "$1" in
 	if [ $RETVAL -eq 0 ]
 	then
 		echo_success
-		touch /var/lock/subsys/varnishd
+		touch /var/lock/subsys/varnish
 	else
 		echo_failure
 	fi
@@ -51,7 +51,7 @@ case "$1" in
 	if [ $RETVAL -eq 0 ]
 	then
 		echo_success
-		rm -f /var/lock/subsys/varnishd
+		rm -f /var/lock/subsys/varnish
 	else
 		echo_failure
 	fi
