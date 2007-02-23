@@ -7,7 +7,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.0.3
-Release: 1
+Release: 2
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -106,7 +106,7 @@ mv man/vcl.7.utf8 man/vcl.7
 %build
 ./autogen.sh
 %configure --sbindir=/usr/sbin
-%{__make} -j2
+%{__make}
 
 sed -e ' s/8080/80/g ' etc/vcl.conf > redhat/vcl.conf
 
@@ -208,20 +208,20 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/service varnish stop
 /sbin/chkconfig --del varnish
 
-%post -n %{lib_name}
-/sbin/ldconfig
+%post -n %{lib_name} -p /sbin/ldconfig
 
-%postun -n %{lib_name}
-/sbin/ldconfig
+%postun -n %{lib_name} -p /sbin/ldconfig
 
 %changelog
+* Fri Feb 23 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.3-2
+- A few other small changes to make rpmlint happy
 * Thu Feb 22 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.3-1
-- New release 1.0.3. See the general ChangeLog.
+- New release 1.0.3. See the general ChangeLog
 - Splitted the package into varnish, libvarnish1 and
-  libvarnish1-devel, to make rpmlint happy
-* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.02-7
+  libvarnish1-devel
+* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.0.2-7
 - Added a Vendor tag
-* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.02-6
+* Thu Oct 19 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.0.2-6
 - Added redhat subdir to svn
 - Removed default vcl config file. Used the new upstream variant instead.
 - Based build on svn. Running autogen.sh as start of build. Also added
@@ -230,7 +230,7 @@ rm -rf $RPM_BUILD_ROOT
 - Changed the sysconfig script to include a lot more nice features.
   Most of these were ripped from the Debian package. Updated initscript
   to reflect this.
-* Tue Oct 10 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.01-3
+* Tue Oct 10 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.0.1-3
 - Moved Red Hat specific files to its own subdirectory
 * Tue Sep 26 2006 Ingvar Hagelund <ingvar@linpro.no> - 1.0.1-2
 - Added gcc requirement.
