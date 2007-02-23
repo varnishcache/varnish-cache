@@ -2,4 +2,4 @@
 
 SUBDIRS = include lib bin man
 
-EXTRA_DIST = LICENSE autogen.sh
+EXTRA_DIST = LICENSE autogen.sh debian redhat
