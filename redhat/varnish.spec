@@ -1,8 +1,4 @@
-# Strange rpmlint needs...
-%define api 1.0
-%define major 1
-#%define lib_name %{name}%{api}_%{major}
-%define lib_name lib%{name}%{major}
+%define lib_name %{name}-libs
 
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
