@@ -19,7 +19,7 @@ VARNISH_MIN_WORKER_THREADS=1
 
 
 # Maximum number of worker threads or INF for unlimited
-VARNISH_MAX_WORKER_THREADS=INF
+VARNISH_MAX_WORKER_THREADS=2048
 
 
 # Timeout value in seconds for threads to return
