@@ -1,0 +1,44 @@
+#! /bin/sh -e
+
+set -e
+
+case "$1" in
+        remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+
+        if test -e /var/log/varnish && ! [ "$1" = upgrade ]; then
+
+            rm -rf /var/log/varnish 2>&1 > /dev/null || exit 78
+
+        fi
+
+        if test -e /var/lib/varnish; then
+        
+                rm -rf /var/lib/varnish 2>&1 > /dev/null || exit 78
+        fi
+
+        ;;
+
+        purge)
+
+        if test -e /var/log/varnish; then 
+
+                rm -rf /var/log/varnish 2>&1 > /dev/null || exit 78
+                
+        fi
+
+        if test -e /var/lib/varnish; then
+        
+                rm -rf /var/lib/varnish 2>&1 > /dev/null || exit 78
+        fi
+
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 64
+
+esac
+
+#DEBHELPER#
+
+exit 0
