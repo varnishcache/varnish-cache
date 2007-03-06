@@ -279,7 +279,6 @@ struct sess {
 
 	TAILQ_ENTRY(sess)	list;
 
-	struct vbe_conn		*vbc;
 	struct backend		*backend;
 	struct object		*obj;
 	struct VCL_conf		*vcl;
@@ -348,10 +347,10 @@ void EXP_Init(void);
 void EXP_TTLchange(struct object *o);
 
 /* cache_fetch.c */
-int FetchBody(struct sess *sp);
-int FetchHeaders(struct sess *sp);
+int Fetch(struct sess *sp);
 
 /* cache_hash.c */
+void HSH_Prealloc(struct sess *sp);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);
@@ -389,10 +388,6 @@ void http_DoConnection(struct sess *sp);
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
 #include "http_headers.h"
 #undef HTTPH
-
-/* cache_pass.c */
-int PassSession(struct sess *sp);
-void PassBody(struct sess *sp);
 
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);

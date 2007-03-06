@@ -44,14 +44,24 @@
 
 /*
 DOT digraph vcl_center {
-DOT	page="8.2,11.7"
-DOT	size="6.3,9.7"
-DOT	margin="1.0"
+xDOT	page="8.2,11.5"
+DOT	size="7.2,10.5"
+DOT	margin="0.5"
+DOT	center="1"
 DOT start [
 DOT	shape=hexagon
-DOT	label="Start"
+DOT	label="Request received"
 DOT ]
-DOT start -> RECV
+DOT RECV [shape=plaintext]
+DOT PIPE [shape=plaintext]
+DOT LOOKUP [shape=plaintext]
+DOT HIT [shape=plaintext]
+DOT MISS [shape=plaintext]
+DOT PASS [shape=plaintext]
+DOT FETCH [shape=plaintext]
+DOT DELIVER [shape=plaintext]
+DOT ERROR [shape=plaintext]
+DOT start -> RECV [style=bold,color=green,weight=4]
  */
 
 #include <stdio.h>
@@ -71,8 +81,13 @@ DOT start -> RECV
 static unsigned xids;
 
 /*--------------------------------------------------------------------
- * The very first request
+ * AGAIN
+ * We come here when we just completed a request and already have
+ * received (part of) the next one.  Instead taking the detour
+ * around the acceptor and then back to a worker, just stay in this
+ * worker and do what it takes.
  */
+
 static int
 cnt_again(struct sess *sp)
 {
@@ -101,19 +116,19 @@ cnt_again(struct sess *sp)
 /*--------------------------------------------------------------------
  * We have a refcounted object on the session, now deliver it.
  *
-DOT subgraph cluster_deliver {
+DOT subgraph xcluster_deliver {
 DOT 	deliver [
 DOT		shape=ellipse
 DOT		label="Build & send header"
 DOT	]
-DOT	DELIVER -> deliver [style=bold]
+DOT	DELIVER -> deliver [style=bold,color=green,weight=4]
 DOT	deliver2 [
 DOT		shape=ellipse
 DOT		label="Send object"
 DOT	]
-DOT	deliver -> deliver2 [style=bold]
+DOT	deliver -> deliver2 [style=bold,color=green,weight=4]
 DOT }
-DOT deliver2 -> DONE [style=bold]
+DOT deliver2 -> DONE [style=bold,color=green,weight=4]
  */
 
 static int
@@ -154,7 +169,6 @@ cnt_done(struct sess *sp)
 	double dh, dp, da;
 
 	AZ(sp->obj);
-	AZ(sp->vbc);
 	sp->backend = NULL;
 	if (sp->vcl != NULL) {
 		if (sp->wrk->vcl != NULL)
@@ -211,7 +225,7 @@ cnt_done(struct sess *sp)
 /*--------------------------------------------------------------------
  * Emit an error
  *
-DOT subgraph cluster_error {
+DOT subgraph xcluster_error {
 DOT	error [
 DOT		shape=ellipse
 DOT		label="Issue HTTP error"
@@ -237,99 +251,61 @@ cnt_error(struct sess *sp)
  * We have fetched the headers from the backend, ask the VCL code what
  * to do next, then head off in that direction.
  *
-DOT subgraph cluster_fetch {
+DOT subgraph xcluster_fetch {
 DOT	fetch [
 DOT		shape=ellipse
-DOT		label="find obj.ttl\nobj.cacheable"
+DOT		label="fetch from backend\n(find obj.ttl)"
 DOT	]
-DOT	FETCH -> fetch [style=bold]
+DOT	FETCH -> fetch [style=bold,color=blue,weight=2]
 DOT	vcl_fetch [
 DOT		shape=box
 DOT		label="vcl_fetch()"
 DOT	]
-DOT	fetch -> vcl_fetch [style=bold]
-DOT	fetch_lookup [
-DOT		shape=ellipse
-DOT		label="obj.cacheable=false\nunbusy obj\ndiscard body\n"
-DOT	]
-DOT	vcl_fetch -> fetch_lookup [label="lookup", style=dotted, weight=0]
+DOT	fetch -> vcl_fetch [style=bold,color=blue,weight=2]
 DOT	fetch_pass [
 DOT		shape=ellipse
-DOT		label="obj.cacheable=false\nunbusy obj"
+DOT		label="obj.pass=true"
 DOT	]
 DOT	vcl_fetch -> fetch_pass [label="pass"]
-DOT	fetch_ipass [
-DOT		shape=ellipse
-DOT		label="obj.cacheable=true\nobj.pass=true\nunbusy obj"
-DOT	]
-DOT	vcl_fetch -> fetch_ipass [label="insert_pass"]
-DOT	fetch_insert [
-DOT		shape=ellipse
-DOT		label="rcv body\nobj.cacheable=true\nunbusy"
-DOT	]
-DOT	vcl_fetch -> fetch_insert [label="insert", style=bold]
-DOT	fetch_error [
-DOT		shape=ellipse
-DOT		label="disc body\nobj.cacheable=false\nunbusy"
-DOT	]
-DOT	vcl_fetch -> fetch_error [label="error"]
 DOT }
-DOT fetch_lookup -> LOOKUP [style=dotted, weight=0]
-DOT fetch_pass -> PASSBODY
-DOT fetch_ipass -> PASSBODY
-DOT fetch_insert -> DELIVER [style=bold]
-DOT fetch_error -> ERROR
+DOT fetch_pass -> DELIVER
+DOT vcl_fetch -> DELIVER [label="insert",style=bold,color=blue,weight=2]
+DOT vcl_fetch -> errfetch [label="error"]
+DOT errfetch [label="ERROR",shape=plaintext]
  */
 
 static int
 cnt_fetch(struct sess *sp)
 {
 
-	CHECK_OBJ_NOTNULL(sp->vbc, VBE_CONN_MAGIC);
-	RFC2616_cache_policy(sp, sp->vbc->http);
 
-	VCL_fetch_method(sp);
-
-	if (sp->handling == VCL_RET_LOOKUP)
-		INCOMPL();
-	if (sp->handling == VCL_RET_PASS) {
+	if (Fetch(sp)) {
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp->obj);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
-		sp->step = STP_PASSBODY;
+		sp->step = STP_DONE;
+		RES_Error(sp, 503, NULL);
 		return (0);
 	}
-	if (sp->handling == VCL_RET_INSERT_PASS) {
-		sp->obj->pass = 1;
-		sp->obj->cacheable = 1;
-		HSH_Unbusy(sp->obj);
-		/* Don't HSH_Deref(sp->obj); we need the ref for storage */
-		sp->obj = NULL;
-		sp->step = STP_PASSBODY;
-		return (0);
-	}
-	if (sp->handling == VCL_RET_INSERT) {
-		if (FetchBody(sp)) {
-			sp->obj->cacheable = 0;
-			HSH_Unbusy(sp->obj);
-			HSH_Deref(sp->obj);
-			sp->obj = NULL;
-			RES_Error(sp, 503, NULL);
-			sp->step = STP_DONE;
-			return (0);
-		}
-		sp->obj->cacheable = 1;
-		AZ(sp->vbc);
-		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
-		HSH_Unbusy(sp->obj);
-		sp->wrk->acct.fetch++;
-		sp->step = STP_DELIVER;
-		return (0);
-	}
+
+	RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+
+	VCL_fetch_method(sp);
+
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
-	INCOMPL();
+
+	if (sp->handling == VCL_RET_PASS)
+		sp->obj->pass = 1;
+
+	sp->obj->cacheable = 1;
+	HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
+	if (sp->obj->objhead != NULL)
+		HSH_Unbusy(sp->obj);
+	sp->wrk->acct.fetch++;
+	sp->step = STP_DELIVER;
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -370,120 +346,96 @@ cnt_first(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
+ * HIT
  * We had a cache hit.  Ask VCL, then march off as instructed.
  *
-DOT subgraph cluster_hit {
+DOT subgraph xcluster_hit {
 DOT	hit [
 DOT		shape=box
 DOT		label="vcl_hit()"
 DOT	]
-DOT	HIT -> hit [style=bold]
-DOT	hit2 [
-DOT		shape=diamond
-DOT		label="obj.pass ?"
-DOT	]
-DOT	hit -> hit2 [label=deliver, style=bold]
-DOT	hit_lookup [
-DOT		shape=ellipse
-DOT		label="unbusy"
-DOT	]
-DOT	hit -> hit_lookup [label="lookup", style=dotted, weight=0]
-DOT	hit_error [
-DOT		shape=ellipse
-DOT		label="unbusy"
-DOT	]
-DOT	hit -> hit_error [label="error", weight=0]
-DOT	hit_pass [
-DOT		shape=ellipse
-DOT		label="unbusy"
-DOT	]
-DOT	hit -> hit_pass [label=pass]
-DOT	hit2 -> hit_pass
+DOT	HIT -> hit [style=bold,color=green,weight=4]
 DOT }
-DOT hit_error -> ERROR
-DOT hit_pass -> PASS
-DOT hit_lookup -> LOOKUP [style=dotted, weight=0]
-DOT hit2 -> DELIVER [style=bold]
+DOT hit -> err_hit [label="error"]
+DOT err_hit [label="ERROR",shape=plaintext]
+DOT hit -> PASS [label=pass]
+DOT hit -> DELIVER [label="deliver",style=bold,color=green,weight=4]
  */
 
 static int
 cnt_hit(struct sess *sp)
 {
 
-	VCL_hit_method(sp);
+	assert(!sp->obj->pass);
 
-	if (sp->handling == VCL_RET_DELIVER && sp->obj->pass)
-		sp->handling = VCL_RET_PASS;
+	VCL_hit_method(sp);
 
 	if (sp->handling == VCL_RET_DELIVER) {
 		sp->step = STP_DELIVER;
 		return (0);
 	}
+
+	/* Drop our object, we won't need it */
+	HSH_Deref(sp->obj);
+	sp->obj = NULL;
+
 	if (sp->handling == VCL_RET_PASS) {
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	}
 
 	if (sp->handling == VCL_RET_ERROR) {
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	}
 
-	if (sp->handling == VCL_RET_LOOKUP)
-		INCOMPL();
 
 	INCOMPL();
 }
 
 
 /*--------------------------------------------------------------------
- * Look up request in hash table
+ * LOOKUP
+ * Hash things together and look object up in hash-table.
  *
  * LOOKUP consists of two substates so that we can reenter if we
  * encounter a busy object.
  *
-DOT subgraph cluster_lookup {
+DOT subgraph xcluster_lookup {
+DOT	hash [
+DOT		shape=box
+DOT		label="vcl_hash()"
+DOT	]
 DOT	lookup [
 DOT		shape=ellipse
-DOT		label="find obj in cache"
+DOT		label="obj in cache ?"
 DOT	]
-DOT	LOOKUP -> lookup [style=bold]
-DOT	lookup3 [
+DOT	lookup2 [
 DOT		shape=ellipse
-DOT		label="Insert new busy object"
+DOT		label="obj.pass ?"
 DOT	]
-DOT	lookup -> lookup3 [style=bold]
+DOT	LOOKUP -> hash [style=bold,color=green,weight=4]
+DOT	hash -> lookup [label="hash",style=bold,color=green,weight=4]
+DOT	lookup -> lookup2 [label="yes",style=bold,color=green,weight=4]
 DOT }
-DOT lookup -> HIT [label="hit", style=bold]
-DOT lookup3 -> MISS [label="miss", style=bold]
+DOT lookup2 -> HIT [label="no", style=bold,color=green,weight=4]
+DOT lookup2 -> PASS [label="yes"]
+DOT lookup -> MISS [label="no",style=bold,color=blue,weight=2]
  */
 
 static int
 cnt_lookup(struct sess *sp)
 {
-
-	AZ(sp->obj);
-	sp->step = STP_LOOKUP2;
-	return (0);
-}
-
-static int
-cnt_lookup2(struct sess *sp)
-{
 	struct object *o;
 
-	/*
-	 * We don't assign to sp->obj directly because it is used
-	 * to cache state when we encounter a busy object.
-	 */
-	o = HSH_Lookup(sp);
+	VCL_hash_method(sp);		/* XXX: no-op for now */
 
-	/* If we encountered busy-object, disembark worker thread */
+	o = HSH_Lookup(sp);
 	if (o == NULL) {
+		/*
+		 * We hit a busy object, disembark worker thread and expect
+		 * hash code to restart us, still in STP_LOOKUP, later.
+		 */
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "on waiting list on obj %u", sp->obj->xid);
 		SES_Charge(sp);
@@ -499,14 +451,17 @@ cnt_lookup2(struct sess *sp)
 		return (0);
 	}
 
-	/* Account separately for pass and cache objects */
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
 		WSL(sp->wrk, SLT_HitPass, sp->fd, "%u", sp->obj->xid);
-	} else {
-		VSL_stats->cache_hit++;
-		WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
-	}
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_PASS;
+		return (0);
+	} 
+
+	VSL_stats->cache_hit++;
+	WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
 }
@@ -515,37 +470,21 @@ cnt_lookup2(struct sess *sp)
 /*--------------------------------------------------------------------
  * We had a miss, ask VCL, proceed as instructed
  *
-DOT subgraph cluster_miss {
+DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=box
 DOT		label="vcl_miss()"
 DOT	]
-DOT	MISS -> miss [style=bold]
-DOT	miss_error [
-DOT		shape=ellipse
-DOT		label="obj.cacheable=false\nunbusy"
+DOT	MISS -> miss [style=bold,color=blue,weight=2]
+DOT	miss_ins [
+DOT		label="insert new object"
 DOT	]
-DOT	miss -> miss_error [label="error"]
-DOT	miss_pass [
-DOT		shape=ellipse
-DOT		label="obj.cacheable=false\nunbusy"
-DOT	]
-DOT	miss -> miss_pass [label="pass"]
-DOT	miss_lookup [
-DOT		shape=ellipse
-DOT		label="obj.cacheable=false\nunbusy"
-DOT	]
-DOT	miss -> miss_lookup [label="lookup", style=dotted, weight=0]
-DOT	miss_fetch [
-DOT		shape=ellipse
-DOT		label="fetch obj headers\nfrom backend"
-DOT	]
-DOT	miss -> miss_fetch [label="fetch", style=bold]
+DOT	miss -> miss_ins [label="fetch",style=bold,color=blue,weight=2]
 DOT }
-DOT miss_error -> ERROR
-DOT miss_pass -> PASS
-DOT miss_fetch -> FETCH [style=bold]
-DOT miss_lookup -> LOOKUP [style=dotted, weight=0]
+DOT miss -> err_miss [label="error"]
+DOT err_miss [label="ERROR",shape=plaintext]
+DOT miss_ins -> FETCH [style=bold,color=blue,weight=2]
+DOT miss -> PASS [label="pass"]
 DOT
  */
 
@@ -570,21 +509,8 @@ cnt_miss(struct sess *sp)
 		sp->step = STP_PASS;
 		return (0);
 	}
-	if (sp->handling == VCL_RET_LOOKUP)
-		INCOMPL();
 	if (sp->handling == VCL_RET_FETCH) {
-		AZ(sp->vbc);
-		if (FetchHeaders(sp)) {
-			sp->obj->cacheable = 0;
-			HSH_Unbusy(sp->obj);
-			HSH_Deref(sp->obj);
-			sp->obj = NULL;
-			sp->step = STP_DONE;
-			RES_Error(sp, 503, NULL);
-			return (0);
-		}
 		sp->step = STP_FETCH;
-		AN(sp->vbc);
 		return (0);
 	}
 	INCOMPL();
@@ -595,69 +521,61 @@ cnt_miss(struct sess *sp)
  * Start pass processing by getting headers from backend, then
  * continue in passbody.
  *
-DOT subgraph cluster_pass {
+DOT subgraph xcluster_pass {
 DOT	pass [
+DOT		shape=box
+DOT		label="vcl_pass()"
+DOT	]
+DOT	pass_do [
 DOT		shape=ellipse
-DOT		label="send to bke\nrx bkehdr"
+DOT		label="create new object\n"
 DOT	]
 DOT	PASS -> pass
+DOT	pass -> pass_do [label="pass"]
 DOT }
-DOT pass -> PASSBODY
+DOT pass_do -> FETCH
+DOT pass -> err_pass [label="error"]
+DOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
 cnt_pass(struct sess *sp)
 {
 
-	AZ(sp->vbc);
-	if (!PassSession(sp)) {
-		AN(sp->vbc);
-		sp->step = STP_PASSBODY;
-	} else
-		sp->step = STP_DONE;
+	AZ(sp->obj);
+
+	VCL_pass_method(sp);
+	if (sp->handling == VCL_RET_ERROR) {
+		sp->step = STP_ERROR;
+		return (0);
+	}
+	HSH_Prealloc(sp);
+	sp->obj = sp->wrk->nobj;
+	sp->wrk->nobj = NULL;
+	sp->obj->busy = 1;
+	sp->step = STP_FETCH;
 	return (0);
 }
-
-
-/*--------------------------------------------------------------------
- * We get here when we have the backends headers, send them to client
- * and pass any body the backend may have on as well.
- *
-DOT subgraph cluster_passbody {
-DOT	passbody [
-DOT		shape=ellipse
-DOT		label="send hdrs\npass body\n"
-DOT	]
-DOT	PASSBODY -> passbody
-DOT }
-DOT passbody -> DONE
- */
-
-static int
-cnt_passbody(struct sess *sp)
-{
-
-	sp->wrk->acct.pass++;
-	AN(sp->vbc);
-	PassBody(sp);
-	AZ(sp->vbc);
-	sp->step = STP_DONE;
-	return (0);
-}
-
 
 /*--------------------------------------------------------------------
  * Ship the request header to the backend unchanged, then pipe
  * until one of the ends close the connection.
  *
-DOT subgraph cluster_pipe {
+DOT subgraph xcluster_pipe {
 DOT	pipe [
+DOT		shape=box
+DOT		label="vcl_pipe()"
+DOT	]
+DOT	pipe_do [
 DOT		shape=ellipse
 DOT		label="build&send hdr\npipe until close"
 DOT	]
 DOT	PIPE -> pipe
+DOT	pipe -> pipe_do [label="pipe"]
 DOT }
-DOT pipe -> DONE
+DOT pipe_do -> DONE
+DOT pipe -> err_pipe [label="error"]
+DOT err_pipe [label="ERROR",shape=plaintext]
  */
 
 static int
@@ -672,29 +590,22 @@ cnt_pipe(struct sess *sp)
 
 
 /*--------------------------------------------------------------------
- * Dispatch the request as instructed by VCL
+ * RECV
+ * We have a complete request, get a VCL reference and dispatch it
+ * as instructed by vcl_recv{}
  *
-DOT subgraph cluster_recv {
+DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=box
 DOT		label="vcl_recv()"
 DOT	]
-DOT	RECV -> recv
-DOT	recv_lookup [
-DOT		shape=ellipse
-DOT		label="discard any body"
-DOT	]
-DOT	recv -> recv_lookup [label="lookup"]
-DOT	recv_error [
-DOT		shape=ellipse
-DOT		label="discard any body"
-DOT	]
-DOT	recv -> recv_error [label="error"]
+DOT	RECV -> recv [style=bold,color=green,weight=4]
 DOT }
 DOT recv -> PIPE [label="pipe"]
 DOT recv -> PASS [label="pass"]
-DOT recv_lookup -> LOOKUP
-DOT recv_error -> ERROR
+DOT recv -> err_recv [label="error"]
+DOT err_recv [label="ERROR",shape=plaintext]
+DOT recv -> LOOKUP [label="lookup",style=bold,color=green,weight=4]
  */
 
 static int
@@ -702,43 +613,45 @@ cnt_recv(struct sess *sp)
 {
 	int done;
 
-	VSL_stats->client_req++;
+	AZ(sp->vcl);
+	AZ(sp->obj);
+
+	/* Update stats of various sorts */
+	VSL_stats->client_req++;			/* XXX not locked */
 	clock_gettime(CLOCK_REALTIME, &sp->t_req);
 	sp->wrk->idle = sp->t_req.tv_sec;
-	sp->xid = ++xids;
+	sp->wrk->acct.req++;
+
+	/* Assign XID and log */
+	sp->xid = ++xids;				/* XXX not locked */
 	WSL(sp->wrk, SLT_ReqStart, sp->fd,
 	    "%s %s %u", sp->addr, sp->port,  sp->xid);
 
-	AZ(sp->vcl);
+	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&sp->wrk->vcl);
 	sp->vcl = sp->wrk->vcl;
 	sp->wrk->vcl = NULL;
 
-	AZ(sp->obj);
-	AZ(sp->vbc);
-
-	sp->wrk->acct.req++;
 	done = http_DissectRequest(sp->wrk, sp->http, sp->fd);
 	if (done != 0) {
-		RES_Error(sp, done, NULL);
+		RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
 		sp->step = STP_DONE;
 		return (0);
 	}
 
 	http_DoConnection(sp);
 
+	/* By default we use the first backend */
 	sp->backend = sp->vcl->backend[0];
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
-	/* XXX: determine if request comes with body */
-
 	VCL_recv_method(sp);
 
+	sp->wantbody = !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET");
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */
-		sp->wantbody = !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET");
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
@@ -760,8 +673,7 @@ cnt_recv(struct sess *sp)
 /*--------------------------------------------------------------------
  * Central state engine dispatcher.
  *
- * We grab a VCL reference, and keeps kicking the session around until
- * it has had enough.
+ * Kick the session around until it has had enough.
  *
  */
 
@@ -776,6 +688,10 @@ CNT_Session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 	for (done = 0; !done; ) {
+		/*
+		 * This is a good place to be paranoid about the various
+		 * pointers still pointing to the things we expect.
+		 */
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		if (sp->obj != NULL)
 			CHECK_OBJ(sp->obj, OBJECT_MAGIC);
@@ -784,11 +700,9 @@ CNT_Session(struct sess *sp)
 			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 		if (w->nobjhead != NULL)
 			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+
 		switch (sp->step) {
-#define STEP(l,u) \
-		case STP_##u: \
-			done = cnt_##l(sp); \
-			break;
+#define STEP(l,u) case STP_##u: done = cnt_##l(sp); break;
 #include "steps.h"
 #undef STEP
 		default:	INCOMPL();

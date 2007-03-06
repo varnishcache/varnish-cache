@@ -64,23 +64,15 @@
 
 static struct hash_slinger      *hash;
 
-struct object *
-HSH_Lookup(struct sess *sp)
+/* Precreate an objhead and object for later use */
+void
+HSH_Prealloc(struct sess *sp)
 {
 	struct worker *w;
-	struct http *h;
-	struct objhead *oh;
-	struct object *o;
-	char *url, *host;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	AN(hash);
 	w = sp->wrk;
-	h = sp->http;
 
-	/* Precreate an objhead and object in case we need them */
 	if (w->nobjhead == NULL) {
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		XXXAN(w->nobjhead);
@@ -102,7 +94,25 @@ HSH_Lookup(struct sess *sp)
 		VSL_stats->n_object++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
+}
 
+struct object *
+HSH_Lookup(struct sess *sp)
+{
+	struct worker *w;
+	struct http *h;
+	struct objhead *oh;
+	struct object *o;
+	char *url, *host;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	AN(hash);
+	w = sp->wrk;
+	h = sp->http;
+
+	HSH_Prealloc(sp);
 	url = h->hd[HTTP_HDR_URL].b;
 	if (!http_GetHdr(h, H_Host, &host))
 		host = url;
@@ -189,11 +199,14 @@ HSH_Ref(struct object *o)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	LOCK(&oh->mtx);
+	if (oh != NULL) {
+		CHECK_OBJ(oh, OBJHEAD_MAGIC);
+		LOCK(&oh->mtx);
+	}
 	assert(o->refcnt > 0);
 	o->refcnt++;
-	UNLOCK(&oh->mtx);
+	if (oh != NULL)
+		UNLOCK(&oh->mtx);
 }
 
 void
@@ -205,7 +218,13 @@ HSH_Deref(struct object *o)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (oh == NULL) {
+		/* Pass object, not referenced anywhere */
+		free(o);
+		return;
+	}
+
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	/* drop ref on object */
 	LOCK(&oh->mtx);

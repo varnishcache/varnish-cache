@@ -228,14 +228,14 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_FETCH);
 		}
 		return (0);
-	case 'i':
-		if (p[0] == 'i' && p[1] == 'n' && p[2] == 's' && 
-		    p[3] == 'e' && p[4] == 'r' && p[5] == 't' && 
-		    p[6] == '_' && p[7] == 'p' && p[8] == 'a' && 
-		    p[9] == 's' && p[10] == 's' && !isvar(p[11])) {
-			*q = p + 11;
-			return (T_INSERT_PASS);
+	case 'h':
+		if (p[0] == 'h' && p[1] == 'a' && p[2] == 's' && 
+		    p[3] == 'h' && !isvar(p[4])) {
+			*q = p + 4;
+			return (T_HASH);
 		}
+		return (0);
+	case 'i':
 		if (p[0] == 'i' && p[1] == 'n' && p[2] == 's' && 
 		    p[3] == 'e' && p[4] == 'r' && p[5] == 't'
 		     && !isvar(p[6])) {
@@ -396,11 +396,11 @@ vcl_init_tnames(void)
 	vcl_tnames[T_FETCH] = "fetch";
 	vcl_tnames[T_FUNC] = "func";
 	vcl_tnames[T_GEQ] = ">=";
+	vcl_tnames[T_HASH] = "hash";
 	vcl_tnames[T_IF] = "if";
 	vcl_tnames[T_INC] = "++";
 	vcl_tnames[T_INCR] = "+=";
 	vcl_tnames[T_INSERT] = "insert";
-	vcl_tnames[T_INSERT_PASS] = "insert_pass";
 	vcl_tnames[T_LEQ] = "<=";
 	vcl_tnames[T_LOOKUP] = "lookup";
 	vcl_tnames[T_MUL] = "*=";
@@ -424,9 +424,9 @@ vcl_output_lang_h(FILE *f)
 {
 	fputs("#define VCL_RET_ERROR  (1 << 0)\n", f);
 	fputs("#define VCL_RET_LOOKUP  (1 << 1)\n", f);
-	fputs("#define VCL_RET_PIPE  (1 << 2)\n", f);
-	fputs("#define VCL_RET_PASS  (1 << 3)\n", f);
-	fputs("#define VCL_RET_INSERT_PASS  (1 << 4)\n", f);
+	fputs("#define VCL_RET_HASH  (1 << 2)\n", f);
+	fputs("#define VCL_RET_PIPE  (1 << 3)\n", f);
+	fputs("#define VCL_RET_PASS  (1 << 4)\n", f);
 	fputs("#define VCL_RET_FETCH  (1 << 5)\n", f);
 	fputs("#define VCL_RET_INSERT  (1 << 6)\n", f);
 	fputs("#define VCL_RET_DELIVER  (1 << 7)\n", f);
@@ -461,6 +461,9 @@ vcl_output_lang_h(FILE *f)
 	fputs("        vcl_fini_f      *fini_func;\n", f);
 	fputs("\n", f);
 	fputs("	vcl_func_f	*recv_func;\n", f);
+	fputs("	vcl_func_f	*pipe_func;\n", f);
+	fputs("	vcl_func_f	*pass_func;\n", f);
+	fputs("	vcl_func_f	*hash_func;\n", f);
 	fputs("	vcl_func_f	*miss_func;\n", f);
 	fputs("	vcl_func_f	*hit_func;\n", f);
 	fputs("	vcl_func_f	*fetch_func;\n", f);
