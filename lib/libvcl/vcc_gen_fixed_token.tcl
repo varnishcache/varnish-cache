@@ -35,9 +35,12 @@
 #
 set methods {
 	{recv		{error pass pipe lookup}}
-	{miss		{error pass pipe fetch}}
-	{hit		{error pass pipe deliver}}
-	{fetch		{error pass pipe insert insert_pass}}
+	{pipe		{error pipe}}
+	{pass		{error pass}}
+	{hash		{hash}}
+	{miss		{error pass fetch}}
+	{hit		{error pass deliver}}
+	{fetch		{error pass insert}}
 	{timeout	{fetch discard}}
 }
 
@@ -46,9 +49,9 @@ set methods {
 set returns {
 	error
 	lookup
+	hash
 	pipe
 	pass
-	insert_pass
 	fetch
 	insert
 	deliver
