@@ -96,6 +96,18 @@ HSH_Prealloc(struct sess *sp)
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
 
+void
+HSH_Freestore(struct object *o)
+{
+	struct storage *st, *stn;
+
+	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		TAILQ_REMOVE(&o->store, st, list);
+		st->stevedore->free(st);
+	}
+}
+
 struct object *
 HSH_Lookup(struct sess *sp)
 {
@@ -213,43 +225,37 @@ void
 HSH_Deref(struct object *o)
 {
 	struct objhead *oh;
-	struct storage *st, *stn;
 	unsigned r;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
-	if (oh == NULL) {
-		/* Pass object, not referenced anywhere */
-		free(o);
-		return;
+	if (oh != NULL) {
+		CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+		/* drop ref on object */
+		LOCK(&oh->mtx);
 	}
-
-	CHECK_OBJ(oh, OBJHEAD_MAGIC);
-
-	/* drop ref on object */
-	LOCK(&oh->mtx);
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
-	if (!r)
-		TAILQ_REMOVE(&oh->objects, o, list);
-	UNLOCK(&oh->mtx);
+	if (oh != NULL) {
+		if (!r)
+			TAILQ_REMOVE(&oh->objects, o, list);
+		UNLOCK(&oh->mtx);
+	}
 
 	/* If still referenced, done */
 	if (r != 0)
 		return;
 
-	if (o->http.s != NULL) {
+	if (o->http.s != NULL)
 		free(o->http.s);
-	}
 
-	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		TAILQ_REMOVE(&o->store, st, list);
-		st->stevedore->free(st);
-	}
+	HSH_Freestore(o);
 	free(o);
 	VSL_stats->n_object--;
 
+	if (oh == NULL)
+		return;
 	/* Drop our ref on the objhead */
 	if (hash->deref(oh))
 		return;
