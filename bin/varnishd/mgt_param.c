@@ -58,7 +58,7 @@ struct parspec {
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_generic_timeout(struct cli *cli, unsigned *dst, const char *arg)
+tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 {
 	unsigned u;
 
@@ -77,7 +77,7 @@ tweak_generic_timeout(struct cli *cli, unsigned *dst, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_generic_bool(struct cli *cli, unsigned *dest, const char *arg)
+tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 {
 	if (arg != NULL) {
 		if (!strcasecmp(arg, "off"))
@@ -104,7 +104,7 @@ tweak_generic_bool(struct cli *cli, unsigned *dest, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_generic_uint(struct cli *cli, unsigned *dest, const char *arg, unsigned min, unsigned max)
+tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, unsigned min, unsigned max)
 {
 	unsigned u;
 
