@@ -122,6 +122,38 @@ child_poker(struct ev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
+static int
+open_sockets(void)
+{
+	struct listen_sock *ls;
+
+	TAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock >= 0)
+			continue;
+		ls->sock = TCP_open(ls->host, ls->port, 1);
+		if (ls->sock < 0)
+			return (1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+close_sockets(void)
+{
+	struct listen_sock *ls;
+
+	TAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock < 0)
+			continue;
+		close(ls->sock);
+		ls->sock = -1;
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 start_child(void)
 {
@@ -133,12 +165,8 @@ start_child(void)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (heritage.socket < 0) {
-		heritage.socket =
-		    TCP_open(params->listen_host, params->listen_port, 1);
-		if (heritage.socket < 0)
-			return;
-	}
+	if (open_sockets())
+		return;	/* XXX ?? */
 
 	child_state = CH_STARTING;
 
@@ -219,8 +247,7 @@ stop_child(void)
 	if (child_state != CH_RUNNING)
 		return;
 
-	close(heritage.socket);
-	heritage.socket = -1;
+	close_sockets();
 	child_state = CH_STOPPING;
 
 	if (ev_poker != NULL) {
@@ -295,8 +322,7 @@ mgt_sigchld(struct ev *e, int what)
 	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
 	else if (child_state == CH_DIED) {
-		close(heritage.socket);
-		heritage.socket = -1;
+		close_sockets();
 		child_state = CH_STOPPED;
 	}
 	else if (child_state == CH_STOPPING)
