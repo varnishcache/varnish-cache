@@ -410,8 +410,6 @@ main(int argc, char *argv[])
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 
-	heritage.socket = -1;
-
 	/*
 	 * Set up a temporary param block until VSL_MgtInit() can
 	 * replace with shmem backed structure version.
@@ -426,6 +424,7 @@ main(int argc, char *argv[])
 	 * XXX:    'param' to static
 	 */
 
+	TAILQ_INIT(&heritage.socks);
 	memset(&param, 0, sizeof param);
 	params = &param;
 	mgt_vcc_init();

@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <poll.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -137,47 +138,65 @@ vca_acct(void *arg)
 	struct sess *sp;
 	socklen_t l;
 	struct sockaddr addr[2];	/* XXX: IPv6 hack */
-	int i;
+	int i, j;
+	struct pollfd *pfd;
+	struct listen_sock *ls;
 
 	(void)arg;
+
+	/* Set up the poll argument */
+	pfd = calloc(sizeof *pfd, heritage.nsocks);
+	AN(pfd);
+	i = 0;
+	TAILQ_FOREACH(ls, &heritage.socks, list) {
+		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
+		    &linger, sizeof linger));
+		pfd[i].events = POLLIN;
+		pfd[i++].fd = ls->sock;
+	}
+
 	need_test = 1;
-	AZ(setsockopt(heritage.socket, SOL_SOCKET, SO_LINGER,
-	    &linger, sizeof linger));
 	while (1) {
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
 			need_test = 1;
 			tv_sndtimeo.tv_sec = params->send_timeout;
-			AZ(setsockopt(heritage.socket, SOL_SOCKET,
-			    SO_SNDTIMEO, &tv_sndtimeo, sizeof tv_sndtimeo));
+			TAILQ_FOREACH(ls, &heritage.socks, list) 
+				AZ(setsockopt(ls->sock, SOL_SOCKET,
+				    SO_SNDTIMEO, &tv_sndtimeo, sizeof tv_sndtimeo));
 		}
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
-			AZ(setsockopt(heritage.socket, SOL_SOCKET,
-			    SO_RCVTIMEO, &tv_rcvtimeo, sizeof tv_rcvtimeo));
+			TAILQ_FOREACH(ls, &heritage.socks, list) 
+				AZ(setsockopt(ls->sock, SOL_SOCKET,
+				    SO_RCVTIMEO, &tv_rcvtimeo, sizeof tv_rcvtimeo));
 		}
-		VSL_stats->client_conn++;
-
-		l = sizeof addr;
-		i = accept(heritage.socket, addr, &l);
-		if (i < 0) {
-			if (errno != EAGAIN) {
-				VSL(SLT_Debug, heritage.socket,
-				    "Accept failed errno=%d", errno);
-				/* XXX: stats ? */
+		i = poll(pfd, heritage.nsocks, 1000);
+		for (j = 0; j < heritage.nsocks; j++) {
+			if (pfd[j].revents == 0)
+				continue;
+			VSL_stats->client_conn++;
+			l = sizeof addr;
+			i = accept(pfd[j].fd, addr, &l);
+			if (i < 0) {
+				if (errno != EAGAIN) {
+					VSL(SLT_Debug, pfd[j].fd,
+					    "Accept failed errno=%d", errno);
+					/* XXX: stats ? */
+				}
+				continue;
 			}
-			continue;
+			sp = SES_New(addr, l);
+			XXXAN(sp);
+
+			sp->fd = i;
+			sp->id = i;
+			(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+
+			http_RecvPrep(sp->http);
+			sp->step = STP_FIRST;
+			WRK_QueueSession(sp);
 		}
-		sp = SES_New(addr, l);
-		XXXAN(sp);
-
-		sp->fd = i;
-		sp->id = i;
-		(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
-
-		http_RecvPrep(sp->http);
-		sp->step = STP_FIRST;
-		WRK_QueueSession(sp);
 	}
 }
 
