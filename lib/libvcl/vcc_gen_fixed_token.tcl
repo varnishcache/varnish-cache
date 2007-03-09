@@ -61,6 +61,8 @@ set returns {
 # Language keywords
 #
 set keywords {
+	include 
+
 	if else elseif elsif
 
 	func proc sub
@@ -139,6 +141,10 @@ puts $fo {	unsigned        magic;
         struct vrt_ref  *ref;
         unsigned        nref;
         unsigned        busy;
+
+	unsigned	nsrc;
+	const char	**srcname;
+	const char	**srcbody;
 
         void            *priv;
 

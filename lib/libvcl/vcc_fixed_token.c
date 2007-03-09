@@ -242,6 +242,12 @@ vcl_fixed_token(const char *p, const char **q)
 			*q = p + 6;
 			return (T_INSERT);
 		}
+		if (p[0] == 'i' && p[1] == 'n' && p[2] == 'c' && 
+		    p[3] == 'l' && p[4] == 'u' && p[5] == 'd' && 
+		    p[6] == 'e' && !isvar(p[7])) {
+			*q = p + 7;
+			return (T_INCLUDE);
+		}
 		if (p[0] == 'i' && p[1] == 'f' && !isvar(p[2])) {
 			*q = p + 2;
 			return (T_IF);
@@ -399,6 +405,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_HASH] = "hash";
 	vcl_tnames[T_IF] = "if";
 	vcl_tnames[T_INC] = "++";
+	vcl_tnames[T_INCLUDE] = "include";
 	vcl_tnames[T_INCR] = "+=";
 	vcl_tnames[T_INSERT] = "insert";
 	vcl_tnames[T_LEQ] = "<=";
@@ -454,6 +461,10 @@ vcl_output_lang_h(FILE *f)
 	fputs("        struct vrt_ref  *ref;\n", f);
 	fputs("        unsigned        nref;\n", f);
 	fputs("        unsigned        busy;\n", f);
+	fputs("\n", f);
+	fputs("	unsigned	nsrc;\n", f);
+	fputs("	const char	**srcname;\n", f);
+	fputs("	const char	**srcbody;\n", f);
 	fputs("\n", f);
 	fputs("        void            *priv;\n", f);
 	fputs("\n", f);
@@ -511,7 +522,8 @@ vcl_output_lang_h(FILE *f)
 	fputs("struct VCL_conf;\n", f);
 	fputs("\n", f);
 	fputs("struct vrt_ref {\n", f);
-	fputs("	unsigned	file;\n", f);
+	fputs("	unsigned	source;\n", f);
+	fputs("	unsigned	offset;\n", f);
 	fputs("	unsigned	line;\n", f);
 	fputs("	unsigned	pos;\n", f);
 	fputs("	unsigned	count;\n", f);

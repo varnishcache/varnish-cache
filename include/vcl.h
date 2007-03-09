@@ -22,6 +22,10 @@ struct VCL_conf {
         unsigned        nref;
         unsigned        busy;
 
+	unsigned	nsrc;
+	const char	**srcname;
+	const char	**srcbody;
+
         void            *priv;
 
         vcl_init_f      *init_func;
