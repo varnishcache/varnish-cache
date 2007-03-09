@@ -86,8 +86,8 @@
 #include "libvcl.h"
 
 static struct method method_tab[] = {
-#define VCL_RET_MAC(a,b,c,d)
-#define VCL_MET_MAC(a,b,c)	{ "vcl_"#a, "default_vcl_"#a, c },
+#define VCL_RET_MAC(l,U,b,n)
+#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, "default_vcl_"#l, m },
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -170,21 +170,40 @@ Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-EncString(struct vsb *sb, struct token *t)
+EncString(struct vsb *sb, const char *b, const char *e)
 {
-	const char *p;
 
-	assert(t->tok == CSTR);
+	if (e == NULL)
+		e = strchr(b, '\0');
+
 	vsb_cat(sb, "\"");
-	for (p = t->dec; *p != '\0'; p++) {
-		if (*p == '\\' || *p == '"')
-			vsb_printf(sb, "\\%c", *p);
-		else if (isgraph(*p))
-			vsb_printf(sb, "%c", *p);
-		else
-			vsb_printf(sb, "\\%03o", *p);
+	for (; b < e; b++) {
+		switch (*b) {
+		case '\\':
+		case '"':
+			vsb_printf(sb, "\\%c", *b);
+			break;
+		case '\n': vsb_printf(sb, "\\n"); break;
+		case '\t': vsb_printf(sb, "\\t"); break;
+		case '\r': vsb_printf(sb, "\\r"); break;
+		case ' ': vsb_printf(sb, " "); break;
+		default:
+			if (isgraph(*b))
+				vsb_printf(sb, "%c", *b);
+			else
+				vsb_printf(sb, "\\%03o", *b);
+			break;
+		}
 	}
 	vsb_cat(sb, "\"");
+}
+
+void
+EncToken(struct vsb *sb, struct token *t)
+{
+
+	assert(t->tok == CSTR);
+	EncString(sb, t->dec, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -505,7 +524,7 @@ vcc_re(struct tokenlist *tl, const char *str, struct token *re)
 	Fc(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
 	Fh(tl, 0, "void *%s;\n", buf);
 	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
-	EncString(tl->fi, re);
+	EncToken(tl->fi, re);
 	Fi(tl, 0, ");\n");
 	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
 }
@@ -530,7 +549,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		EncString(tl->fc, tl->t);
+		EncToken(tl->fc, tl->t);
 		Fc(tl, 0, ")\n");
 		vcc_NextToken(tl);
 		break;
@@ -974,7 +993,7 @@ Backend(struct tokenlist *tl)
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
 			Fc(tl, 1, "\t%s ", vp->lname);
-			EncString(tl->fc, t_host);
+			EncToken(tl->fc, t_host);
 			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
 			break;
@@ -982,7 +1001,7 @@ Backend(struct tokenlist *tl)
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
 			Fc(tl, 1, "\t%s ", vp->lname);
-			EncString(tl->fc, t_port);
+			EncToken(tl->fc, t_port);
 			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
 			break;
@@ -1282,32 +1301,39 @@ CheckRefs(struct tokenlist *tl)
 	return (nerr);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Output the location/profiling table.  For each counted token, we
+ * record source+line+charpos for the first character in the token.
+ */
 
 static void
 LocTable(struct tokenlist *tl)
 {
 	struct token *t;
-	unsigned fil, lin, pos;
+	unsigned lin, pos;
+	struct source *sp;
 	const char *p;
 
 	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
 	Fh(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
 	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
-	fil = 0;
 	lin = 1;
 	pos = 0;
-	p = vcc_default_vcl_b;
+	sp = 0;
+	p = NULL;
 	TAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->cnt == 0)
 			continue;
+		assert(t->src != NULL);
+		if (t->src != sp) {
+			lin = 1;
+			pos = 0;
+			sp = t->src;
+			p = sp->b;
+		}
+		assert(sp != NULL);
+		assert(p != NULL);
 		for (;p < t->b; p++) {
-			if (p == vcc_default_vcl_e) {
-				p = tl->b;
-				fil = 1;
-				lin = 1;
-				pos = 0;
-			}
 			if (*p == '\n') {
 				lin++;
 				pos = 0;
@@ -1318,12 +1344,11 @@ LocTable(struct tokenlist *tl)
 				pos++;
 
 		}
-		Fc(tl, 0, "  [%3u] = { %d, %4u, %3u, 0, \"%.*s\" },\n",
-		    t->cnt, fil, lin, pos + 1, PF(t));
+		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, \"%.*s\" },\n",
+		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1, PF(t));
 	}
 	Fc(tl, 0, "};\n");
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -1352,6 +1377,23 @@ EmitFiniFunc(struct tokenlist *tl)
 static void
 EmitStruct(struct tokenlist *tl)
 {
+	struct source *sp;
+
+	Fc(tl, 0, "\nconst char *srcname[%u] = {\n", tl->nsources);
+	TAILQ_FOREACH(sp, &tl->sources, list) {
+		Fc(tl, 0, "\t");
+		EncString(tl->fc, sp->name, NULL);
+		Fc(tl, 0, ",\n");
+	}
+	Fc(tl, 0, "};\n");
+	
+	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
+	TAILQ_FOREACH(sp, &tl->sources, list) {
+		Fc(tl, 0, "\t");
+		EncString(tl->fc, sp->b, sp->e);
+		Fc(tl, 0, ",\n");
+	}
+	Fc(tl, 0, "};\n");
 
 	Fc(tl, 0, "\nstruct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
@@ -1360,6 +1402,9 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
+	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);
+	Fc(tl, 0, "\t.srcname = srcname,\n");
+	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
 	if (FindRefStr(tl, "vcl_" #l, R_FUNC)) { \
@@ -1377,10 +1422,112 @@ EmitStruct(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-char *
-VCC_Compile(struct vsb *sb, const char *b, const char *e)
+static struct source *
+vcc_new_source(const char *b, const char *e, const char *name)
 {
-	struct tokenlist tokens;
+	struct source *sp;
+
+	if (e == NULL)
+		e = strchr(b, '\0');
+	sp = calloc(sizeof *sp, 1);
+	assert(sp != NULL);
+	sp->name = strdup(name);
+	sp->b = b;
+	sp->e = e;
+	return (sp);
+}
+
+static void
+vcc_destroy_source(struct source *sp)
+{
+
+	free(sp->name);	
+	free(sp);
+}
+
+/*--------------------------------------------------------------------*/
+
+static struct source *
+vcc_file_source(struct vsb *sb, const char *fn)
+{
+	char *f;
+	int fd, i;
+	struct stat st;
+
+	fd = open(fn, O_RDONLY);
+	if (fd < 0) {
+		vsb_printf(sb, "Cannot open file '%s': %s\n",
+		    fn, strerror(errno));
+		return (NULL);
+	}
+	assert(0 == fstat(fd, &st));
+	f = malloc(st.st_size + 1);
+	assert(f != NULL);
+	i = read(fd, f, st.st_size);
+	assert(i == st.st_size);
+	close(fd);
+	f[i] = '\0';
+	return (vcc_new_source(f, f + i, fn));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vcc_resolve_includes(struct tokenlist *tl)
+{
+	struct token *t, *t1, *t2;
+	struct source *sp;
+
+	TAILQ_FOREACH(t, &tl->tokens, list) {
+		if (t->tok != T_INCLUDE)
+			continue;
+
+		t1 = TAILQ_NEXT(t, list);
+		assert(t1 != NULL);	/* There's always an EOI */
+		if (t1->tok != CSTR) {
+			vsb_printf(tl->sb,
+			    "include not followed by string constant.\n");
+			vcc_ErrWhere(tl, t1);
+			return;
+		}
+		t2 = TAILQ_NEXT(t1, list);
+		assert(t2 != NULL);	/* There's always an EOI */
+		if (t2->tok != ';') {
+			vsb_printf(tl->sb,
+			    "include <string> not followed by semicolon.\n");
+			vcc_ErrWhere(tl, t1);
+			return;
+		}
+		assert(t2 != NULL);
+
+		sp = vcc_file_source(tl->sb, t1->dec);
+		if (sp == NULL) {
+			vcc_ErrWhere(tl, t1);
+			return;
+		}
+		TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+		sp->idx = tl->nsources++;
+		tl->t = t2;
+		vcc_Lexer(tl, sp);
+
+		TAILQ_REMOVE(&tl->tokens, t, list);
+		TAILQ_REMOVE(&tl->tokens, t1, list);
+		TAILQ_REMOVE(&tl->tokens, t2, list);
+		vcc_FreeToken(t);
+		vcc_FreeToken(t1);
+		vcc_FreeToken(t2);
+		if (!tl->err)
+			vcc_resolve_includes(tl);
+		return;
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static char *
+vcc_CompileSource(struct vsb *sb, struct source *sp)
+{
+	struct tokenlist tokens, *tl;
 	struct ref *r;
 	struct token *t;
 	FILE *fo;
@@ -1389,10 +1536,14 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	int i;
 
 	memset(&tokens, 0, sizeof tokens);
-	TAILQ_INIT(&tokens.tokens);
-	TAILQ_INIT(&tokens.refs);
-	TAILQ_INIT(&tokens.procs);
+	tl = &tokens;
+	TAILQ_INIT(&tl->tokens);
+	TAILQ_INIT(&tl->refs);
+	TAILQ_INIT(&tl->procs);
+	TAILQ_INIT(&tl->sources);
 	tokens.sb = sb;
+
+	tl->nsources = 0;
 
 	tokens.fc = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.fc != NULL);
@@ -1406,38 +1557,52 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	tokens.ff = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	assert(tokens.ff != NULL);
 
-	Fh(&tokens, 0, "extern struct VCL_conf VCL_conf;\n");
+#define VCL_MET_MAC(l,U,m) \
+		tokens.fm_##l = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
+		assert(tokens.fm_##l != NULL);
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
 
-	Fi(&tokens, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
+	Fh(tl, 0, "extern struct VCL_conf VCL_conf;\n");
 
-	tokens.b = b;
-	if (e == NULL)
-		e = strchr(b, '\0');
-	assert(e != NULL);
-	tokens.e = e;
-	vcc_Lexer(&tokens, vcc_default_vcl_b, vcc_default_vcl_e);
-	vcc_Lexer(&tokens, b, e);
-	vcc_AddToken(&tokens, EOI, e, e);
+	Fi(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
+
+	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+	sp->idx = tl->nsources++;
+	vcc_Lexer(tl, sp);
 	if (tokens.err)
 		goto done;
-	tokens.t = TAILQ_FIRST(&tokens.tokens);
-	Parse(&tokens);
+
+	sp = vcc_new_source(vcc_default_vcl_b, vcc_default_vcl_e, "Default");
+	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+	sp->idx = tl->nsources++;
+	vcc_Lexer(tl, sp);
+	vcc_AddToken(tl, EOI, sp->e, sp->e);
 	if (tokens.err)
 		goto done;
-	Consistency(&tokens);
+
+	vcc_resolve_includes(tl);
 	if (tokens.err)
 		goto done;
-	LocTable(&tokens);
 
-	Ff(&tokens, 0, "\tVRT_free_backends(&VCL_conf);\n");
+	tokens.t = TAILQ_FIRST(&tl->tokens);
+	Parse(tl);
+	if (tokens.err)
+		goto done;
+	Consistency(tl);
+	if (tokens.err)
+		goto done;
+	LocTable(tl);
 
-	EmitInitFunc(&tokens);
+	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");
 
-	EmitFiniFunc(&tokens);
+	EmitInitFunc(tl);
 
-	EmitStruct(&tokens);
+	EmitFiniFunc(tl);
 
-	if (CheckRefs(&tokens))
+	EmitStruct(tl);
+
+	if (CheckRefs(tl))
 		goto done;
 
 	of = strdup("/tmp/vcl.XXXXXXXX");
@@ -1472,18 +1637,22 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	}
 done:
 
+#define VCL_MET_MAC(l,U,m) vsb_delete(tokens.fm_##l);
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+
 	/* Free References */
-	while (!TAILQ_EMPTY(&tokens.refs)) {
-		r = TAILQ_FIRST(&tokens.refs);
-		TAILQ_REMOVE(&tokens.refs, r, list);
+	while (!TAILQ_EMPTY(&tl->refs)) {
+		r = TAILQ_FIRST(&tl->refs);
+		TAILQ_REMOVE(&tl->refs, r, list);
 		free(r);
 	}
 
 	/* Free Tokens */
-	while (!TAILQ_EMPTY(&tokens.tokens)) {
-		t = TAILQ_FIRST(&tokens.tokens);
-		TAILQ_REMOVE(&tokens.tokens, t, list);
-		free(t);
+	while (!TAILQ_EMPTY(&tl->tokens)) {
+		t = TAILQ_FIRST(&tl->tokens);
+		TAILQ_REMOVE(&tl->tokens, t, list);
+		vcc_FreeToken(t);
 	}
 	return (of);
 }
@@ -1491,26 +1660,32 @@ done:
 /*--------------------------------------------------------------------*/
 
 char *
+VCC_Compile(struct vsb *sb, const char *b, const char *e)
+{
+	struct source *sp;
+	char *r;
+
+	sp = vcc_new_source(b, e, "input");
+	if (sp == NULL)
+		return (NULL);
+	r = vcc_CompileSource(sb, sp);
+	vcc_destroy_source(sp);
+	return (r);
+}
+
+/*--------------------------------------------------------------------*/
+
+char *
 VCC_CompileFile(struct vsb *sb, const char *fn)
 {
-	char *f, *r;
-	int fd, i;
-	struct stat st;
+	struct source *sp;
+	char *r;
 
-	fd = open(fn, O_RDONLY);
-	if (fd < 0) {
-		vsb_printf(sb, "Cannot open file '%s': %s",
-		    fn, strerror(errno));
+	sp = vcc_file_source(sb, fn);
+	if (sp == NULL)
 		return (NULL);
-	}
-	assert(0 == fstat(fd, &st));
-	f = malloc(st.st_size + 1);
-	assert(f != NULL);
-	i = read(fd, f, st.st_size);
-	assert(i == st.st_size);
-	f[i] = '\0';
-	r = VCC_Compile(sb, f, NULL);
-	free(f);
+	r = vcc_CompileSource(sb, sp);
+	vcc_destroy_source(sp);
 	return (r);
 }
 

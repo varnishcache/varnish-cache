@@ -34,23 +34,38 @@
 
 #define INDENT		2
 
+struct source {
+	TAILQ_ENTRY(source)	list;
+	char			*name;
+	const char		*b;
+	const char		*e;
+	unsigned		idx;
+};
+
 struct token {
 	unsigned		tok;
 	const char		*b;
 	const char		*e;
+	struct source		*src;
 	TAILQ_ENTRY(token)	list;
 	unsigned		cnt;
 	char			*dec;
 };
 
+TAILQ_HEAD(tokenhead, token);
+
 struct tokenlist {
-	TAILQ_HEAD(, token)	tokens;
-	const char		*b;
-	const char		*e;
+	struct tokenhead	tokens;
+	TAILQ_HEAD(, source)	sources;
+	unsigned		nsources;
+	struct source		*src;
 	struct token		*t;
 	int			indent;
 	unsigned		cnt;
 	struct vsb		*fc, *fh, *fi, *ff;
+#define VCL_MET_MAC(l,U,m) struct vsb *fm_##l;
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
 	TAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
@@ -138,7 +153,8 @@ void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
 unsigned UintVal(struct tokenlist *tl);
 void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
-void EncString(struct vsb *sb, struct token *t);
+void EncToken(struct vsb *sb, struct token *t);
+void EncString(struct vsb *sb, const char *b, const char *e);
 
 
 /* vcc_obj.c */
@@ -153,10 +169,11 @@ void vcc_ErrWhere(struct tokenlist *tl, struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
 int vcc_Teq(struct token *t1, struct token *t2);
 int vcc_IdIs(struct token *t, const char *p);
-void vcc_Lexer(struct tokenlist *tl, const char *b, const char *e);
+void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
+void vcc_FreeToken(struct token *t);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)

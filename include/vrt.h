@@ -40,7 +40,8 @@ struct backend;
 struct VCL_conf;
 
 struct vrt_ref {
-	unsigned	file;
+	unsigned	source;
+	unsigned	offset;
 	unsigned	line;
 	unsigned	pos;
 	unsigned	count;
