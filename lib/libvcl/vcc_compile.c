@@ -110,9 +110,9 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 	tl->indent -= INDENT;	\
 } while (0)
 
-#define C(tl, sep)	do {				\
+#define C(tl, sep)	do {					\
 	Fc(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
-	tl->t->cnt = tl->cnt; 				\
+	tl->t->cnt = tl->cnt; 					\
 } while (0)
 
 /*--------------------------------------------------------------------
@@ -1527,7 +1527,7 @@ vcc_resolve_includes(struct tokenlist *tl)
 static char *
 vcc_CompileSource(struct vsb *sb, struct source *sp)
 {
-	struct tokenlist tokens, *tl;
+	struct tokenlist tokenlist, *tl;
 	struct ref *r;
 	struct token *t;
 	FILE *fo;
@@ -1535,31 +1535,31 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	char buf[BUFSIZ];
 	int i;
 
-	memset(&tokens, 0, sizeof tokens);
-	tl = &tokens;
+	memset(&tokenlist, 0, sizeof tokenlist);
+	tl = &tokenlist;
 	TAILQ_INIT(&tl->tokens);
 	TAILQ_INIT(&tl->refs);
 	TAILQ_INIT(&tl->procs);
 	TAILQ_INIT(&tl->sources);
-	tokens.sb = sb;
+	tl->sb = sb;
 
 	tl->nsources = 0;
 
-	tokens.fc = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(tokens.fc != NULL);
+	tl->fc = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	assert(tl->fc != NULL);
 
-	tokens.fh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(tokens.fh != NULL);
+	tl->fh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	assert(tl->fh != NULL);
 
-	tokens.fi = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(tokens.fi != NULL);
+	tl->fi = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	assert(tl->fi != NULL);
 
-	tokens.ff = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	assert(tokens.ff != NULL);
+	tl->ff = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	assert(tl->ff != NULL);
 
 #define VCL_MET_MAC(l,U,m) \
-		tokens.fm_##l = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
-		assert(tokens.fm_##l != NULL);
+		tl->fm_##l = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
+		assert(tl->fm_##l != NULL);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 
@@ -1570,7 +1570,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
-	if (tokens.err)
+	if (tl->err)
 		goto done;
 
 	sp = vcc_new_source(vcc_default_vcl_b, vcc_default_vcl_e, "Default");
@@ -1578,19 +1578,19 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	vcc_AddToken(tl, EOI, sp->e, sp->e);
-	if (tokens.err)
+	if (tl->err)
 		goto done;
 
 	vcc_resolve_includes(tl);
-	if (tokens.err)
+	if (tl->err)
 		goto done;
 
-	tokens.t = TAILQ_FIRST(&tl->tokens);
+	tl->t = TAILQ_FIRST(&tl->tokens);
 	Parse(tl);
-	if (tokens.err)
+	if (tl->err)
 		goto done;
 	Consistency(tl);
-	if (tokens.err)
+	if (tl->err)
 		goto done;
 	LocTable(tl);
 
@@ -1619,13 +1619,13 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	vcl_output_lang_h(fo);
 	fputs(vrt_obj_h, fo);
 
-	vsb_finish(tokens.fh);
-	fputs(vsb_data(tokens.fh), fo);
-	vsb_delete(tokens.fh);
+	vsb_finish(tl->fh);
+	fputs(vsb_data(tl->fh), fo);
+	vsb_delete(tl->fh);
 
-	vsb_finish(tokens.fc);
-	fputs(vsb_data(tokens.fc), fo);
-	vsb_delete(tokens.fc);
+	vsb_finish(tl->fc);
+	fputs(vsb_data(tl->fc), fo);
+	vsb_delete(tl->fc);
 
 	i = pclose(fo);
 	fprintf(stderr, "pclose=%d\n", i);
@@ -1637,7 +1637,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	}
 done:
 
-#define VCL_MET_MAC(l,U,m) vsb_delete(tokens.fm_##l);
+#define VCL_MET_MAC(l,U,m) vsb_delete(tl->fm_##l);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 
