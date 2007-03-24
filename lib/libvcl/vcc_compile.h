@@ -155,13 +155,17 @@ void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void EncToken(struct vsb *sb, struct token *t);
 void EncString(struct vsb *sb, const char *b, const char *e);
-
+struct var *FindVar(struct tokenlist *tl, struct token *t, struct var *vl);
+void AddCall(struct tokenlist *tl, struct token *t);
+struct proc *AddProc(struct tokenlist *tl, struct token *t, int def);
 
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];
 extern struct var vcc_vars[];
 extern const char *vrt_obj_h;
 
+/* vcc_parse.c */
+void vcc_Parse(struct tokenlist *tl);
 
 /* vcc_token.c */
 void vcc_ErrToken(struct tokenlist *tl, struct token *t);

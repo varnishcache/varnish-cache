@@ -11,6 +11,7 @@ libvcl_la_SOURCES = \
 	\
 	vcc_acl.c \
 	vcc_compile.c \
+	vcc_parse.c \
 	vcc_fixed_token.c \
 	vcc_obj.c \
 	vcc_token.c
