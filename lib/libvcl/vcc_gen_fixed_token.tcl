@@ -185,6 +185,7 @@ puts $for "#define VCL_RET_MAX $i"
 puts $for "#endif"
 puts $for ""
 puts $for "#ifdef VCL_MET_MAC"
+set u 0
 foreach m $methods {
 	puts -nonewline $for "VCL_MET_MAC([lindex $m 0]"
 	puts -nonewline $for ",[string toupper [lindex $m 0]]"
@@ -195,8 +196,10 @@ foreach m $methods {
 	}
 	puts -nonewline $for ")"
 	puts $for ")"
+	incr u
 }
 puts $for "#endif"
+puts $for "#define N_METHODS $u"
 close $for
 
 #----------------------------------------------------------------------

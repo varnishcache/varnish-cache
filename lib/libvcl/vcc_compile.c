@@ -87,7 +87,7 @@
 
 static struct method method_tab[] = {
 #define VCL_RET_MAC(l,U,b,n)
-#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, "default_vcl_"#l, m },
+#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m },
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -96,7 +96,21 @@ static struct method method_tab[] = {
 
 /*--------------------------------------------------------------------*/
 
-const char *vcc_default_vcl_b, *vcc_default_vcl_e;
+static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
+
+/*--------------------------------------------------------------------*/
+
+int
+IsMethod(struct token *t)
+{
+	struct method *m;
+
+	for(m = method_tab; m->name != NULL; m++) {
+		if (vcc_IdIs(t, m->name))
+			return (m - method_tab);
+	}
+	return (-1);
+}
 
 /*--------------------------------------------------------------------
  * Printf output to the two vsbs, possibly indented
@@ -111,6 +125,19 @@ Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
 		vsb_printf(tl->fh, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
 	vsb_vprintf(tl->fh, fmt, ap);
+	va_end(ap);
+}
+
+void
+Fb(struct tokenlist *tl, int indent, const char *fmt, ...)
+{
+	va_list ap;
+
+	assert(tl->fb != NULL);
+	if (indent)
+		vsb_printf(tl->fb, "%*.*s", tl->indent, tl->indent, "");
+	va_start(ap, fmt);
+	vsb_vprintf(tl->fb, fmt, ap);
 	va_end(ap);
 }
 
@@ -152,8 +179,8 @@ Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
-EncString(struct vsb *sb, const char *b, const char *e)
+static void
+EncString(struct vsb *sb, const char *b, const char *e, int mode)
 {
 
 	if (e == NULL)
@@ -166,7 +193,11 @@ EncString(struct vsb *sb, const char *b, const char *e)
 		case '"':
 			vsb_printf(sb, "\\%c", *b);
 			break;
-		case '\n': vsb_printf(sb, "\\n"); break;
+		case '\n':
+			vsb_printf(sb, "\\n");
+			if (mode) 
+				vsb_printf(sb, "\"\n\t\"");
+			break;
 		case '\t': vsb_printf(sb, "\\t"); break;
 		case '\r': vsb_printf(sb, "\\r"); break;
 		case ' ': vsb_printf(sb, " "); break;
@@ -186,7 +217,7 @@ EncToken(struct vsb *sb, struct token *t)
 {
 
 	assert(t->tok == CSTR);
-	EncString(sb, t->dec, NULL);
+	EncString(sb, t->dec, NULL, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -212,39 +243,11 @@ FindRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 	return (r);
 }
 
-static int
-FindRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
-{
-	struct ref *r;
-
-	TAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->type != type)
-			continue;
-		if (vcc_IdIs(r->name, s))
-			return (1);
-	}
-	return (0);
-}
-
 void
 AddRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 {
 
 	FindRef(tl, t, type)->refcnt++;
-}
-
-static void
-AddRefStr(struct tokenlist *tl, const char *s, enum ref_type type)
-{
-	struct token *t;
-
-	t = calloc(sizeof *t, 1);
-	assert(t != NULL);
-	t->b = s;
-	t->e = strchr(s, '\0');
-	t->tok = METHOD;
-	AddRef(tl, t, type);
-	/* XXX: possibly leaking t */
 }
 
 void
@@ -407,8 +410,6 @@ Consistency(struct tokenlist *tl)
 
 	TAILQ_FOREACH(p, &tl->procs, list) {
 		for(m = method_tab; m->name != NULL; m++) {
-			if (vcc_IdIs(p->name, m->defname))
-				p->called = 1;
 			if (vcc_IdIs(p->name, m->name))
 				break;
 		}
@@ -564,15 +565,18 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\nconst char *srcname[%u] = {\n", tl->nsources);
 	TAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "\t");
-		EncString(tl->fc, sp->name, NULL);
+		EncString(tl->fc, sp->name, NULL, 0);
 		Fc(tl, 0, ",\n");
 	}
 	Fc(tl, 0, "};\n");
 	
 	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
 	TAILQ_FOREACH(sp, &tl->sources, list) {
+		Fc(tl, 0, "    /* ");
+		EncString(tl->fc, sp->name, NULL, 0);
+		Fc(tl, 0, "*/\n");
 		Fc(tl, 0, "\t");
-		EncString(tl->fc, sp->b, sp->e);
+		EncString(tl->fc, sp->b, sp->e, 1);
 		Fc(tl, 0, ",\n");
 	}
 	Fc(tl, 0, "};\n");
@@ -589,13 +593,7 @@ EmitStruct(struct tokenlist *tl)
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
-	if (FindRefStr(tl, "vcl_" #l, R_FUNC)) { \
-		Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); \
-		AddRefStr(tl, "vcl_" #l, R_FUNC); \
-	} else { \
-		Fc(tl, 0, "\t." #l "_func = VGC_function_default_vcl_" #l ",\n"); \
-	} \
-	AddRefStr(tl, "default_vcl_" #l, R_FUNC);
+	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); 
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -744,11 +742,10 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	assert(tl->ff != NULL);
 
 	/* body code of methods */
-#define VCL_MET_MAC(l,U,m) \
-		tl->fm_##l = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
-		assert(tl->fm_##l != NULL);
-#include "vcl_returns.h"
-#undef VCL_MET_MAC
+	for (i = 0; i < N_METHODS; i++) {
+		tl->fm[i] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
+		assert(tl->fm[i] != NULL);
+	}
 
 	Fh(tl, 0, "extern struct VCL_conf VCL_conf;\n");
 
@@ -779,6 +776,18 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	Consistency(tl);
 	if (tl->err)
 		goto done;
+
+	/* Emit method functions */
+	for (i = 0; i < N_METHODS; i++) {
+		Fc(tl, 1, "static int\n");
+		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
+		    method_tab[i].name);
+		vsb_finish(tl->fm[i]);
+		Fc(tl, 1, "{\n");
+		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
+		Fc(tl, 1, "}\n\n");
+	}
+
 	LocTable(tl);
 
 	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");
@@ -824,9 +833,8 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	}
 done:
 
-#define VCL_MET_MAC(l,U,m) vsb_delete(tl->fm_##l);
-#include "vcl_returns.h"
-#undef VCL_MET_MAC
+	for (i = 0; i < N_METHODS; i++)
+		vsb_delete(tl->fm[i]);
 
 	/* Free References */
 	while (!TAILQ_EMPTY(&tl->refs)) {
