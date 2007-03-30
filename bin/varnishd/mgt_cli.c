@@ -83,8 +83,9 @@ mcf_stats(struct cli *cli, char **av, void *priv)
 static void
 mcf_passthru(struct cli *cli, char **av, void *priv)
 {
-	char *p, *q, *r;
-	unsigned u, v;
+	struct vsb *sb;
+	char *p;
+	unsigned u;
 	int i;
 
 	(void)priv;
@@ -95,40 +96,35 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "Cache process not running");
 		return;
 	}
-	v = 64;
-	p = malloc(v);
-	XXXAN(p);
-	q = p;
+	sb = vsb_new(NULL, NULL, 64, VSB_AUTOEXTEND);
+	XXXAN(sb);
 	for (u = 1; av[u] != NULL; u++) {
-		if (v < (q - p) + 8) {
-			r = realloc(p, v + v);
-			XXXAN(r);
-			v += v;
-			q += r - p;
-			p = r;
-		}
-		/* v >= (q - p) + 8 */
 		if (u > 1)
-			*q++ = ' ';
-		*q++ = '"';
-		/* v >= (q - p) + 6 */
-		for (r = av[u]; *r; r++) {
-			switch (*r) {
-			case '\\':	*q++ = '\\'; *q++ = '\\'; break;
-			case '\n':	*q++ = '\\'; *q++ = 'n'; break;
-			case '"':	*q++ = '\\'; *q++ = '"'; break;
-			default:	*q++ = *r; break;
+			vsb_putc(sb, ' ');
+		vsb_putc(sb, '"');
+		for (p = av[u]; *p; p++) {
+			switch (*p) {
+			case '\\':
+				vsb_cat(sb, "\\\\");
+				break;
+			case '\n':
+				vsb_cat(sb, "\\n");
+				break;
+			case '"':
+				vsb_cat(sb, "\\\"");
+				break;
+			default:
+				vsb_putc(sb, *p);
 			}
 		}
-		/* v >= (q - p) + 4 */
-		*q++ = '"';
+		vsb_putc(sb, '"');
 	}
-	/* v >= (q - p) + 3 */
-	*q++ = '\n';
-	v = q - p;
-	i = write(cli_o, p, v);
-	xxxassert(i == v);
-	free(p);
+	vsb_putc(sb, '\n');
+	xxxassert(!vsb_overflowed(sb));
+	vsb_finish(sb);
+	i = write(cli_o, vsb_data(sb), vsb_len(sb));
+	xxxassert(i == vsb_len(sb));
+	vsb_delete(sb);
 
 	i = cli_readres(cli_i, &u, &p, 3.0);
 	cli_result(cli, u);
