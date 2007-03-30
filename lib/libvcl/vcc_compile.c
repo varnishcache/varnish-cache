@@ -100,6 +100,23 @@ static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
+void *
+TlAlloc(struct tokenlist *tl, unsigned len)
+{
+	struct membit *mb;
+	void *p;
+
+	p = calloc(len, 1);
+	assert(p != NULL);
+	mb = calloc(sizeof *mb, 1);
+	assert(mb != NULL);
+	mb->ptr = p;
+	TAILQ_INSERT_TAIL(&tl->membits, mb, list);
+	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 IsMethod(struct token *t)
 {
@@ -235,7 +252,7 @@ FindRef(struct tokenlist *tl, struct token *t, enum ref_type type)
 		if (vcc_Teq(r->name, t))
 			return (r);
 	}
-	r = calloc(sizeof *r, 1);
+	r = TlAlloc(tl, sizeof *r);
 	assert(r != NULL);
 	r->name = t;
 	r->type = type;
@@ -271,10 +288,10 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 
 	(void)tl;
 
-	v = calloc(sizeof *v, 1);
+	v = TlAlloc(tl, sizeof *v);
 	assert(v != NULL);
 	i = t->e - t->b;
-	p = malloc(i + 1);
+	p = TlAlloc(tl, i + 1);
 	assert(p != NULL);
 	memcpy(p, t->b, i);
 	p[i] = '\0';
@@ -332,7 +349,7 @@ AddProc(struct tokenlist *tl, struct token *t, int def)
 			p->name = t;
 		return (p);
 	}
-	p = calloc(sizeof *p, 1);
+	p = TlAlloc(tl, sizeof *p);
 	assert(p != NULL);
 	p->name = t;
 	TAILQ_INIT(&p->calls);
@@ -351,7 +368,7 @@ AddCall(struct tokenlist *tl, struct token *t)
 		if (pc->p == p)
 			return;
 	}
-	pc = calloc(sizeof *pc, 1);
+	pc = TlAlloc(tl, sizeof *pc);
 	assert(pc != NULL);
 	pc->p = p;
 	pc->t = t;
@@ -541,6 +558,7 @@ EmitInitFunc(struct tokenlist *tl)
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
 	vsb_finish(tl->fi);
+	/* XXX: check vsb_overflowed ? */
 	vsb_cat(tl->fc, vsb_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
@@ -551,6 +569,7 @@ EmitFiniFunc(struct tokenlist *tl)
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(void)\n{\n\n");
 	vsb_finish(tl->ff);
+	/* XXX: check vsb_overflowed ? */
 	vsb_cat(tl->fc, vsb_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
@@ -704,24 +723,19 @@ vcc_resolve_includes(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-static char *
-vcc_CompileSource(struct vsb *sb, struct source *sp)
+static struct tokenlist *
+vcc_NewTokenList(void)
 {
-	struct tokenlist tokenlist, *tl;
-	struct ref *r;
-	struct token *t;
-	FILE *fo;
-	char *of = NULL;
-	char buf[BUFSIZ];
+	struct tokenlist *tl;
 	int i;
 
-	memset(&tokenlist, 0, sizeof tokenlist);
-	tl = &tokenlist;
+	tl = calloc(sizeof *tl, 1);
+	assert(tl != NULL);
+	TAILQ_INIT(&tl->membits);
 	TAILQ_INIT(&tl->tokens);
 	TAILQ_INIT(&tl->refs);
 	TAILQ_INIT(&tl->procs);
 	TAILQ_INIT(&tl->sources);
-	tl->sb = sb;
 
 	tl->nsources = 0;
 
@@ -746,36 +760,187 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		tl->fm[i] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
 		assert(tl->fm[i] != NULL);
 	}
+	return (tl);
+}
 
+/*--------------------------------------------------------------------*/
+
+static char *
+vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
+{
+	struct membit *mb;
+	int i;
+
+	while (!TAILQ_EMPTY(&tl->membits)) {
+		mb = TAILQ_FIRST(&tl->membits);
+		TAILQ_REMOVE(&tl->membits, mb, list);
+		free(mb->ptr);
+		free(mb);
+	}
+		
+	vsb_delete(tl->fh);
+	vsb_delete(tl->fc);
+	vsb_delete(tl->fi);
+	vsb_delete(tl->ff);
+	for (i = 0; i < N_METHODS; i++)
+		vsb_delete(tl->fm[i]);
+
+	free(tl);
+	return (ret);
+}
+
+/*--------------------------------------------------------------------
+ * Invoke system C compiler on source and return resulting dlfile.
+ * Errors goes in sb;
+ */
+
+static char *
+vcc_CallCc(char *source, struct vsb *sb)
+{
+	FILE *fo, *fs;
+	char *of, *sf, buf[BUFSIZ];
+	int i, j, sfd;
+
+	/* Create temporary C source file */
+	sf = strdup("/tmp/vcl.XXXXXXXX");
+	assert(sf != NULL);
+	sfd = mkstemp(sf);
+	if (sfd < 0) {
+		vsb_printf(sb,
+		    "Cannot open temporary source file \"%s\": %s\n",
+		    sf, strerror(errno));
+		free(sf);
+		return (NULL);
+	}
+	fs = fdopen(sfd, "r+");
+	assert(fs != NULL);
+
+	if (fputs(source, fs) || fflush(fs)) {
+		vsb_printf(sb,
+		    "Write error to C source file: %s\n",
+		    strerror(errno));
+		unlink(sf);
+		fclose(fs);
+		return (NULL);
+	}
+	rewind(fs);
+
+	/* Name the output shared library */
+	of = strdup("/tmp/vcl.XXXXXXXX");
+	assert(of != NULL);
+	of = mktemp(of);
+	assert(of != NULL);
+
+	/* Attempt to open a pipe to the system C-compiler */
+	sprintf(buf,
+	    "ln -f %s /tmp/_.c ;"		/* XXX: for debugging */
+	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
+	    sf, of, sf);
+
+	fo = popen(buf, "r");
+	if (fo == NULL) {
+		vsb_printf(sb,
+		    "Internal error: Cannot execute cc(1): %s\n",
+		    strerror(errno));
+		free(of);
+		unlink(sf);
+		fclose(fs);
+		return (NULL);
+	}
+
+	/* If we get any output, it's bad */
+	j = 0;
+	while (1) {
+		if (fgets(buf, sizeof buf, fo) == NULL)
+			break;
+		if (!j) {
+			vsb_printf(sb, "Internal error: cc(1) complained:\n");
+			j++;
+		}
+		vsb_cat(sb, buf);
+	} 
+
+	i = pclose(fo);
+	if (j == 0 && i != 0)
+		vsb_printf(sb,
+		    "Internal error: cc(1) exit status 0x%04x\n", i);
+
+	/* If the compiler complained, or exited non-zero, fail */
+	if (i || j) {
+		unlink(of);
+		free(of);
+		of = NULL;
+	}
+
+	/* clean up and return */
+	unlink(sf);
+	free(sf);
+	fclose(fs);
+	return (of);
+}
+
+/*--------------------------------------------------------------------
+ * Compile the VCL code from the given source and return the filename
+ * of the resulting shared library.
+ */
+
+static char *
+vcc_CompileSource(struct vsb *sb, struct source *sp)
+{
+	struct tokenlist *tl;
+	char *of;
+	int i;
+
+	tl = vcc_NewTokenList();
+	tl->sb = sb;
+
+	vcl_output_lang_h(tl->fh);
 	Fh(tl, 0, "extern struct VCL_conf VCL_conf;\n");
 
 	Fi(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
 
+	/* Register and lex the main source */
 	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	if (tl->err)
-		goto done;
+		return (vcc_DestroyTokenList(tl, NULL));
 
+	/* Register and lex the default VCL */
 	sp = vcc_new_source(vcc_default_vcl_b, vcc_default_vcl_e, "Default");
+	assert(sp != NULL);
 	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
+	if (tl->err)
+		return (vcc_DestroyTokenList(tl, NULL));
+
+	/* Add "END OF INPUT" token */
 	vcc_AddToken(tl, EOI, sp->e, sp->e);
 	if (tl->err)
-		goto done;
+		return (vcc_DestroyTokenList(tl, NULL));
 
+	/* Expand and lex any includes in the token string */
 	vcc_resolve_includes(tl);
 	if (tl->err)
-		goto done;
+		return (vcc_DestroyTokenList(tl, NULL));
 
+	/* Parse the token string */
 	tl->t = TAILQ_FIRST(&tl->tokens);
 	vcc_Parse(tl);
 	if (tl->err)
-		goto done;
+		return (vcc_DestroyTokenList(tl, NULL));
+
+	/* Perform consistency checks */
 	Consistency(tl);
 	if (tl->err)
-		goto done;
+		return (vcc_DestroyTokenList(tl, NULL));
+
+	/* Check for orphans */
+	if (CheckRefs(tl))
+		return (vcc_DestroyTokenList(tl, NULL));
+
+	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");
 
 	/* Emit method functions */
 	for (i = 0; i < N_METHODS; i++) {
@@ -783,6 +948,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
 		vsb_finish(tl->fm[i]);
+		/* XXX: check vsb_overflowed ? */
 		Fc(tl, 1, "{\n");
 		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
 		Fc(tl, 1, "}\n\n");
@@ -790,69 +956,29 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 
 	LocTable(tl);
 
-	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");
-
 	EmitInitFunc(tl);
 
 	EmitFiniFunc(tl);
 
 	EmitStruct(tl);
 
-	if (CheckRefs(tl))
-		goto done;
-
-	of = strdup("/tmp/vcl.XXXXXXXX");
-	assert(of != NULL);
-	mktemp(of);
-
-	sprintf(buf,
-	    "tee /tmp/_.c |"
-	    "cc -fpic -shared -Wl,-x -o %s -x c - ", of);
-
-	fo = popen(buf, "w");
-	assert(fo != NULL);
-
-	vcl_output_lang_h(fo);
-	fputs(vrt_obj_h, fo);
-
-	vsb_finish(tl->fh);
-	fputs(vsb_data(tl->fh), fo);
-	vsb_delete(tl->fh);
-
+	/* Combine it all in the fh vsb */
 	vsb_finish(tl->fc);
-	fputs(vsb_data(tl->fc), fo);
-	vsb_delete(tl->fc);
+	/* XXX: check vsb_overflowed ? */
+	vsb_cat(tl->fh, vsb_data(tl->fc));
+	vsb_finish(tl->fh);
 
-	i = pclose(fo);
-	fprintf(stderr, "pclose=%d\n", i);
-	if (i) {
-		vsb_printf(sb, "Internal error: GCC returned 0x%04x\n", i);
-		unlink(of);
-		free(of);
-		return (NULL);
-	}
-done:
+	/* Grind it through cc(1) */
+	of = vcc_CallCc(vsb_data(tl->fh), sb);
 
-	for (i = 0; i < N_METHODS; i++)
-		vsb_delete(tl->fm[i]);
-
-	/* Free References */
-	while (!TAILQ_EMPTY(&tl->refs)) {
-		r = TAILQ_FIRST(&tl->refs);
-		TAILQ_REMOVE(&tl->refs, r, list);
-		free(r);
-	}
-
-	/* Free Tokens */
-	while (!TAILQ_EMPTY(&tl->tokens)) {
-		t = TAILQ_FIRST(&tl->tokens);
-		TAILQ_REMOVE(&tl->tokens, t, list);
-		vcc_FreeToken(t);
-	}
-	return (of);
+	/* done */
+	return (vcc_DestroyTokenList(tl, of));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Compile the VCL code in the argument.  Error messages, if any are
+ * formatted into the vsb.
+ */
 
 char *
 VCC_Compile(struct vsb *sb, const char *b, const char *e)
@@ -868,7 +994,10 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	return (r);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Compile the VCL code from the file named.  Error messages, if any
+ * are formatted into the vsb.
+ */
 
 char *
 VCC_CompileFile(struct vsb *sb, const char *fn)
@@ -884,7 +1013,10 @@ VCC_CompileFile(struct vsb *sb, const char *fn)
 	return (r);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Initialize the compiler and register the default VCL code for later
+ * compilation runs.
+ */
 
 void
 VCC_InitCompile(const char *default_vcl)

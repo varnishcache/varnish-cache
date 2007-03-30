@@ -214,6 +214,7 @@ warns $foh
 puts $fo "#include <stdio.h>"
 puts $fo "#include <ctype.h>"
 puts $fo "#include \"vcc_priv.h\""
+puts $fo "#include \"vsb.h\""
 
 set tn 128
 puts $foh "#define LOW_TOKEN $tn"
@@ -338,23 +339,24 @@ proc copy_include {n} {
 	set fi [open $n]
 	while {[gets $fi a] >= 0} {
 		regsub -all {\\} $a {\\\\} a
-		puts $fo "\tfputs(\"$a\\n\", f);"
+		puts $fo "\tvsb_cat(sb, \"$a\\n\");"
 	}
 	close $fi
 }
 
 puts $fo ""
 puts $fo "void"
-puts $fo "vcl_output_lang_h(FILE *f)"
+puts $fo "vcl_output_lang_h(struct vsb *sb)"
 puts $fo "{"
 set i 0
 foreach k $returns {
-	puts $fo "\tfputs(\"#define VCL_RET_[string toupper $k]  (1 << $i)\\n\", f);"
+	puts $fo "\tvsb_cat(sb, \"#define VCL_RET_[string toupper $k]  (1 << $i)\\n\");"
 	incr i
 }
 
 copy_include ../../include/vcl.h
 copy_include ../../include/vrt.h
+copy_include ../../include/vrt_obj.h
 
 puts $fo "}"
 
