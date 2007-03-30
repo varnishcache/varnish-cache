@@ -115,14 +115,3 @@ vars $spobj "struct sess *" "sp"
 puts $fo "};"
 
 close $fp
-set fp [open ../../include/vrt_obj.h]
-
-puts $fo ""
-puts $fo "const char *vrt_obj_h = "
-while {[gets $fp a] >= 0} {
-	puts $fo "\t\"$a\\n\""
-}
-puts $fo ";"
-
-close $fo
-close $fp
