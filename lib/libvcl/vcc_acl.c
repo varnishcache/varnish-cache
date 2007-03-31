@@ -60,7 +60,7 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 	case '~':
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
-		AddRef(tl, tl->t, R_ACL);
+		vcc_AddRef(tl, tl->t, R_ACL);
 		Fc(tl, 1, "VRT_acl_match(sp, \"%.*s\", acl_%.*s)\n",
 		    PF(tl->t), PF(tl->t));
 		vcc_NextToken(tl);
@@ -87,7 +87,7 @@ vcc_Acl(struct tokenlist *tl)
 	an = tl->t;
 	vcc_NextToken(tl);
 
-	AddDef(tl, an, R_ACL);
+	vcc_AddDef(tl, an, R_ACL);
 	Fh(tl, 0, "static struct vrt_acl acl_%.*s[];\n", PF(an));
 	Fc(tl, 1, "static struct vrt_acl acl_%.*s[] = {\n", PF(an));
 

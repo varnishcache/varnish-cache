@@ -120,26 +120,10 @@ struct var {
 
 struct method {
 	const char		*name;
-	unsigned		returns;
+	unsigned		actions;
 };
 
-struct proccall {
-	TAILQ_ENTRY(proccall)	list;
-	struct proc		*p;
-	struct token		*t;
-};
-
-struct proc {
-	TAILQ_ENTRY(proc)	list;
-	TAILQ_HEAD(,proccall)	calls;
-	struct token		*name;
-	unsigned		returns;
-	unsigned		exists;
-	unsigned		called;
-	unsigned		active;
-	struct token		*returnt[VCL_RET_MAX];
-};
-
+struct proc;
 
 /*--------------------------------------------------------------------*/
 
@@ -149,18 +133,15 @@ void vcc_Acl(struct tokenlist *tl);
 void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
 
 /* vcc_compile.c */
+extern struct method method_tab[];
 void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fb(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fi(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
 unsigned UintVal(struct tokenlist *tl);
-void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
-void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void EncToken(struct vsb *sb, struct token *t);
 struct var *FindVar(struct tokenlist *tl, struct token *t, struct var *vl);
-void AddCall(struct tokenlist *tl, struct token *t);
-struct proc *AddProc(struct tokenlist *tl, struct token *t, int def);
 int IsMethod(struct token *t);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
@@ -182,6 +163,16 @@ void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
 void vcc_FreeToken(struct token *t);
+
+/* vcc_expr.c */
+void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
+void vcc_AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
+int vcc_CheckReferences(struct tokenlist *tl);
+
+void vcc_AddCall(struct tokenlist *tl, struct token *t);
+struct proc *vcc_AddProc(struct tokenlist *tl, struct token *t);
+void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
+int vcc_CheckAction(struct tokenlist *tl);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
