@@ -85,7 +85,7 @@
 #include "vrt.h"
 #include "libvcl.h"
 
-static struct method method_tab[] = {
+struct method method_tab[] = {
 #define VCL_RET_MAC(l,U,b,n)
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m },
 #include "vcl_returns.h"
@@ -237,46 +237,6 @@ EncToken(struct vsb *sb, struct token *t)
 	EncString(sb, t->dec, NULL, 0);
 }
 
-/*--------------------------------------------------------------------
- * Keep track of definitions and references
- */
-
-static struct ref *
-FindRef(struct tokenlist *tl, struct token *t, enum ref_type type)
-{
-	struct ref *r;
-
-	TAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->type != type)
-			continue;
-		if (vcc_Teq(r->name, t))
-			return (r);
-	}
-	r = TlAlloc(tl, sizeof *r);
-	assert(r != NULL);
-	r->name = t;
-	r->type = type;
-	TAILQ_INSERT_TAIL(&tl->refs, r, list);
-	return (r);
-}
-
-void
-AddRef(struct tokenlist *tl, struct token *t, enum ref_type type)
-{
-
-	FindRef(tl, t, type)->refcnt++;
-}
-
-void
-AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
-{
-	struct ref *r;
-
-	r = FindRef(tl, t, type);
-	r->defcnt++;
-	r->name = t;
-}
-
 /*--------------------------------------------------------------------*/
 
 static struct var *
@@ -331,182 +291,6 @@ FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
 	vsb_cat(tl->sb, "\nAt: ");
 	vcc_ErrWhere(tl, t);
 	return (NULL);
-}
-
-/*--------------------------------------------------------------------
- * Consistency check
- */
-
-struct proc *
-AddProc(struct tokenlist *tl, struct token *t, int def)
-{
-	struct proc *p;
-
-	TAILQ_FOREACH(p, &tl->procs, list) {
-		if (!vcc_Teq(p->name, t))
-			continue;
-		if (def)
-			p->name = t;
-		return (p);
-	}
-	p = TlAlloc(tl, sizeof *p);
-	assert(p != NULL);
-	p->name = t;
-	TAILQ_INIT(&p->calls);
-	TAILQ_INSERT_TAIL(&tl->procs, p, list);
-	return (p);
-}
-
-void
-AddCall(struct tokenlist *tl, struct token *t)
-{
-	struct proccall *pc;
-	struct proc *p;
-
-	p = AddProc(tl, t, 0);
-	TAILQ_FOREACH(pc, &tl->curproc->calls, list) {
-		if (pc->p == p)
-			return;
-	}
-	pc = TlAlloc(tl, sizeof *pc);
-	assert(pc != NULL);
-	pc->p = p;
-	pc->t = t;
-	TAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
-}
-
-static int
-Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
-{
-	unsigned u;
-	struct proccall *pc;
-
-	if (!p->exists) {
-		vsb_printf(tl->sb, "Function %.*s does not exist\n",
-		    PF(p->name));
-		return (1);
-	}
-	if (p->active) {
-		vsb_printf(tl->sb, "Function recurses on\n");
-		vcc_ErrWhere(tl, p->name);
-		return (1);
-	}
-	u = p->returns & ~returns;
-	if (u) {
-#define VCL_RET_MAC(a, b, c, d) \
-		if (u & VCL_RET_##b) { \
-			vsb_printf(tl->sb, "Illegal action \"%s\"\n", #a); \
-			vcc_ErrWhere(tl, p->returnt[d]); \
-		}
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n", PF(p->name));
-		vcc_ErrWhere(tl, p->name);
-		return (1);
-	}
-	p->active = 1;
-	TAILQ_FOREACH(pc, &p->calls, list) {
-		if (Consist_Decend(tl, pc->p, returns)) {
-			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
-			    PF(p->name));
-			vcc_ErrWhere(tl, pc->t);
-			return (1);
-		}
-	}
-	p->active = 0;
-	p->called++;
-	return (0);
-}
-
-static int
-Consistency(struct tokenlist *tl)
-{
-	struct proc *p;
-	struct method *m;
-
-	TAILQ_FOREACH(p, &tl->procs, list) {
-		for(m = method_tab; m->name != NULL; m++) {
-			if (vcc_IdIs(p->name, m->name))
-				break;
-		}
-		if (m->name == NULL)
-			continue;
-		if (Consist_Decend(tl, p, m->returns)) {
-			vsb_printf(tl->sb,
-			    "\n...which is the \"%s\" method\n", m->name);
-			vsb_printf(tl->sb, "Legal actions are:");
-#define VCL_RET_MAC(a, b, c, d) \
-			if (m->returns & c) \
-				vsb_printf(tl->sb, " \"%s\"", #a);
-#define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
-			vsb_printf(tl->sb, "\n");
-			return (1);
-		}
-	}
-	TAILQ_FOREACH(p, &tl->procs, list) {
-		if (p->called)
-			continue;
-		vsb_printf(tl->sb, "Function unused\n");
-		vcc_ErrWhere(tl, p->name);
-		return (1);
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-CheckRefs(struct tokenlist *tl)
-{
-	struct ref *r;
-	const char *type;
-	int nerr = 0;
-
-	TAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->defcnt != 0 && r->refcnt != 0)
-			continue;
-		nerr++;
-
-		switch(r->type) {
-		case R_FUNC:
-			type = "function";
-			break;
-		case R_ACL:
-			type = "acl";
-			break;
-		case R_BACKEND:
-			type = "backend";
-			break;
-		default:
-			ErrInternal(tl);
-			vsb_printf(tl->sb, "Ref ");
-			vcc_ErrToken(tl, r->name);
-			vsb_printf(tl->sb, " has unknown type %d\n",
-			    r->type);
-			continue;
-		}
-		if (r->defcnt == 0 && r->name->tok == METHOD) {
-			vsb_printf(tl->sb,
-			    "No definition for method %.*s\n", PF(r->name));
-			continue;
-		}
-
-		if (r->defcnt == 0) {
-			vsb_printf(tl->sb,
-			    "Undefined %s %.*s, first reference:\n",
-			    type, PF(r->name));
-			vcc_ErrWhere(tl, r->name);
-			continue;
-		}
-
-		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
-		    type, PF(r->name));
-		vcc_ErrWhere(tl, r->name);
-	}
-	return (nerr);
 }
 
 /*--------------------------------------------------------------------
@@ -939,13 +723,13 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
-	/* Perform consistency checks */
-	Consistency(tl);
-	if (tl->err)
+	/* Check for orphans */
+	if (vcc_CheckReferences(tl))
 		return (vcc_DestroyTokenList(tl, NULL));
 
-	/* Check for orphans */
-	if (CheckRefs(tl))
+	/* Check that all action returns are legal */
+	vcc_CheckAction(tl);
+	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");

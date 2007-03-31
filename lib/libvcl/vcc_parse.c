@@ -527,8 +527,7 @@ Action(struct tokenlist *tl)
 		return;
 #define VCL_RET_MAC(a,b,c,d) case T_##b: \
 		Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
-		tl->curproc->returns |= VCL_RET_##b; \
-		tl->curproc->returnt[d] = at; \
+		vcc_ProcAction(tl->curproc, d, at); \
 		return;
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
@@ -554,8 +553,8 @@ Action(struct tokenlist *tl)
 		return;
 	case T_CALL:
 		ExpectErr(tl, ID);
-		AddCall(tl, tl->t);
-		AddRef(tl, tl->t, R_FUNC);
+		vcc_AddCall(tl, tl->t);
+		vcc_AddRef(tl, tl->t, R_FUNC);
 		Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
 		Fb(tl, 1, "\treturn (1);\n");
 		vcc_NextToken(tl);
@@ -620,7 +619,7 @@ Action(struct tokenlist *tl)
 		case BACKEND:
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
-				AddRef(tl, tl->t, R_BACKEND);
+				vcc_AddRef(tl, tl->t, R_BACKEND);
 				Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
 				vcc_NextToken(tl);
 				Fb(tl, 0, ");\n");
@@ -717,9 +716,9 @@ Backend(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	t_be = tl->t;
-	AddDef(tl, tl->t, R_BACKEND);
+	vcc_AddDef(tl, tl->t, R_BACKEND);
 	if (tl->nbackend == 0)
-		AddRef(tl, tl->t, R_BACKEND);
+		vcc_AddRef(tl, tl->t, R_BACKEND);
 	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
 	    PF(tl->t), tl->nbackend);
 	Fc(tl, 0, "\n");
@@ -837,17 +836,15 @@ Function(struct tokenlist *tl)
 		assert(m < N_METHODS);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
-			tl->mprocs[m] = AddProc(tl, tl->t, 1);
-			tl->mprocs[m]->exists++;
-			AddDef(tl, tl->t, R_FUNC);
-			AddRef(tl, tl->t, R_FUNC);
+			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
+			vcc_AddDef(tl, tl->t, R_FUNC);
+			vcc_AddRef(tl, tl->t, R_FUNC);
 		}
 		tl->curproc = tl->mprocs[m];
 	} else {
 		tl->fb = tl->fc;
-		tl->curproc = AddProc(tl, tl->t, 1);
-		tl->curproc->exists++;
-		AddDef(tl, tl->t, R_FUNC);
+		tl->curproc = vcc_AddProc(tl, tl->t);
+		vcc_AddDef(tl, tl->t, R_FUNC);
 		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
 		    PF(tl->t));
 		Fc(tl, 1, "static int\n");
