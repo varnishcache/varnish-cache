@@ -93,7 +93,7 @@ set magic {
 	{">>"	SHR}
 	{"<<"	SHL}
 	{"+="	INCR}
-	{"/="	DECR}
+	{"-="	DECR}
 	{"*="	MUL}
 	{"/="	DIV}
 }
