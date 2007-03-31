@@ -1,0 +1,192 @@
+# Manually maintained syntax description of VCL
+#
+# $Id$
+#
+
+vcl_program:
+	prog_element
+	vcl_program prog_element
+
+prog_element:
+	acl
+	function
+	backend
+
+function:
+	'sub' ident compound
+
+compound:
+	'{' statements '}'
+
+statements:
+	statement
+	statements statement
+
+statement:
+	compound
+	if_stmt
+	action
+
+if_stmt:
+	'if' conditional compound elseifparts elsepart
+
+elseifparts:
+	<none>
+	elseifpart
+	elseifparts elseifpart
+
+elseifpart:
+	'elseif' conditional compound
+
+elsepart:
+	<none>
+	'else' compound
+
+conditional:	
+	'(' cond_0 ')'
+
+cond_0:
+	cond_1
+	cond_0 '||' cond_1
+
+cond_1:
+	cond_2
+	cond_1 '&&' cond_2
+
+cond_2:
+	cond_3
+	'!' cond_3
+
+cond_3:
+	'(' cond_0 ')'
+	var_int cond_int
+	var_size cond_size
+	var_bool 
+	var_ip cond_ip
+	var_string cond_string
+	var_time cond_time
+	var_backend 
+
+cond_int:
+	'==' cnum
+	'!=' cnum
+	'<=' cnum
+	'>=' cnum
+	'<' cnum
+	'>' cnum
+
+cond_size:
+	cond_int size_unit
+
+conf_time:
+	cond_int time_unit
+
+time_unit:
+	's'
+	'm'
+	'h'
+	'd'
+
+size_unit:
+	'kb'
+	'mb'
+	'Mb'
+	'gb'
+	'Gb'
+
+cond_string:
+	'~' regexp
+	'==' cstr
+	'!=' cstr
+	
+cond_ip:
+
+regexp:
+	cstr
+
+backend:
+	'backend' ident '{' be_decls '}'
+
+be_decls:
+	be_decl
+	be_decls be_decl
+
+be_decl:
+	'set' be_string '=' cstr ';'
+	'set' be_time '=' cnum time_unit ';'
+
+action:
+	'no_new_cache' ';'
+	'no_cache' ';'
+	return_action ';'
+	'error' cnum cstr ';'
+	'error' cstr ';'
+	'error' cnum ';'
+	'error' ';'
+	'switch_config' ident ';'
+	'call' ident ';'
+	'rewrite' cstr cstr ';'
+	'set' assignment ';'
+
+# see variable 'returns' in vcc_gen_fixed_token.tcl
+return_action:
+	'lookup'
+	'hash'
+	'pipe'
+	'pass'
+	'fetch'
+	'insert'
+	'deliver'
+	'discard'
+
+assignment:
+	var_int ratio
+	var_int assign_int
+	var_size ratio
+	var_size assign_int size_unit 
+	var_rate ratio
+	var_rate assign_int size_unit '/' time_unit 
+	var_time ratio
+	var_time assign_int time_unit
+	var_float ratio
+	var_float '+=' double
+	var_float '-=' double
+	var_float '=' double
+	var_backend '=' ident
+
+assign_int:
+	'+=' cnum
+	'-=' cnum
+	'=' cnum
+
+ratio:
+	'*=' double
+	'/=' double
+
+acl:
+	'acl' ident '{' rules '}'
+
+rules:
+	rule
+	rules rule
+
+rule:
+	'(' not rule0 ')' ';'
+	not rule0 ';'
+
+not:
+	<nothing>
+	'!'
+
+rule0:
+	cstr
+	cstr '/' cnum
+	'!' cstr
+
+cstr:	(string constant)
+
+cnum:	(numeric constant)
+
+double:	(floating point constant)
+
+ident:	(identifier)
