@@ -395,21 +395,20 @@ Consist_Decend(struct tokenlist *tl, struct proc *p, unsigned returns)
 	if (u) {
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
-			vsb_printf(tl->sb, "Illegal return for method\n"); \
+			vsb_printf(tl->sb, "Illegal action \"%s\"\n", #a); \
 			vcc_ErrWhere(tl, p->returnt[d]); \
 		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-		vsb_printf(tl->sb, "In function\n");
+		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n", PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
 	p->active = 1;
 	TAILQ_FOREACH(pc, &p->calls, list) {
 		if (Consist_Decend(tl, pc->p, returns)) {
-			vsb_printf(tl->sb, "\nCalled from\n");
-			vcc_ErrWhere(tl, p->name);
-			vsb_printf(tl->sb, "at\n");
+			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -434,7 +433,16 @@ Consistency(struct tokenlist *tl)
 			continue;
 		if (Consist_Decend(tl, p, m->returns)) {
 			vsb_printf(tl->sb,
-			    "\nwhich is a %s method\n", m->name);
+			    "\n...which is the \"%s\" method\n", m->name);
+			vsb_printf(tl->sb, "Legal actions are:");
+#define VCL_RET_MAC(a, b, c, d) \
+			if (m->returns & c) \
+				vsb_printf(tl->sb, " \"%s\"", #a);
+#define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+#undef VCL_RET_MAC_E
+			vsb_printf(tl->sb, "\n");
 			return (1);
 		}
 	}
