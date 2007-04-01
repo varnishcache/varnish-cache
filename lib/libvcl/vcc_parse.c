@@ -487,6 +487,12 @@ Compound(struct tokenlist *tl)
 			tl->indent -= INDENT;
 			Fb(tl, 1, "}\n");
 			return;
+		case CSRC:
+			Fb(tl, 1, "%.*s\n",
+			    tl->t->e - (tl->t->b + 2),
+			    tl->t->b + 1);
+			vcc_NextToken(tl);
+			break;
 		case EOI:
 			vsb_printf(tl->sb,
 			    "End of input while in compound statement\n");
