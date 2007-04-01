@@ -282,7 +282,6 @@ void
 vcc_FreeToken(struct token *t)
 {
 
-	/* XXX: more */
 	if (t->dec != NULL)
 		free(t->dec);
 	free(t);
