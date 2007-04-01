@@ -65,16 +65,11 @@ set keywords {
 
 	if else elseif elsif
 
-	func proc sub
+	sub
 
 	acl
 
 	backend
-
-	no_cache
-	no_new_cache
-	rewrite
-	switch_config
 }
 
 # Non-word tokens

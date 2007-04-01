@@ -191,13 +191,6 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_ELSE);
 		}
 		return (0);
-	case 'f':
-		if (p[0] == 'f' && p[1] == 'u' && p[2] == 'n' && 
-		    p[3] == 'c' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_FUNC);
-		}
-		return (0);
 	case 'i':
 		if (p[0] == 'i' && p[1] == 'n' && p[2] == 'c' && 
 		    p[3] == 'l' && p[4] == 'u' && p[5] == 'd' && 
@@ -210,46 +203,7 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_IF);
 		}
 		return (0);
-	case 'n':
-		if (p[0] == 'n' && p[1] == 'o' && p[2] == '_' && 
-		    p[3] == 'n' && p[4] == 'e' && p[5] == 'w' && 
-		    p[6] == '_' && p[7] == 'c' && p[8] == 'a' && 
-		    p[9] == 'c' && p[10] == 'h' && p[11] == 'e'
-		     && !isvar(p[12])) {
-			*q = p + 12;
-			return (T_NO_NEW_CACHE);
-		}
-		if (p[0] == 'n' && p[1] == 'o' && p[2] == '_' && 
-		    p[3] == 'c' && p[4] == 'a' && p[5] == 'c' && 
-		    p[6] == 'h' && p[7] == 'e' && !isvar(p[8])) {
-			*q = p + 8;
-			return (T_NO_CACHE);
-		}
-		return (0);
-	case 'p':
-		if (p[0] == 'p' && p[1] == 'r' && p[2] == 'o' && 
-		    p[3] == 'c' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_PROC);
-		}
-		return (0);
-	case 'r':
-		if (p[0] == 'r' && p[1] == 'e' && p[2] == 'w' && 
-		    p[3] == 'r' && p[4] == 'i' && p[5] == 't' && 
-		    p[6] == 'e' && !isvar(p[7])) {
-			*q = p + 7;
-			return (T_REWRITE);
-		}
-		return (0);
 	case 's':
-		if (p[0] == 's' && p[1] == 'w' && p[2] == 'i' && 
-		    p[3] == 't' && p[4] == 'c' && p[5] == 'h' && 
-		    p[6] == '_' && p[7] == 'c' && p[8] == 'o' && 
-		    p[9] == 'n' && p[10] == 'f' && p[11] == 'i' && 
-		    p[12] == 'g' && !isvar(p[13])) {
-			*q = p + 13;
-			return (T_SWITCH_CONFIG);
-		}
 		if (p[0] == 's' && p[1] == 'u' && p[2] == 'b'
 		     && !isvar(p[3])) {
 			*q = p + 3;
@@ -329,7 +283,6 @@ vcl_init_tnames(void)
 	vcl_tnames[T_ELSEIF] = "elseif";
 	vcl_tnames[T_ELSIF] = "elsif";
 	vcl_tnames[T_EQ] = "==";
-	vcl_tnames[T_FUNC] = "func";
 	vcl_tnames[T_GEQ] = ">=";
 	vcl_tnames[T_IF] = "if";
 	vcl_tnames[T_INC] = "++";
@@ -338,14 +291,9 @@ vcl_init_tnames(void)
 	vcl_tnames[T_LEQ] = "<=";
 	vcl_tnames[T_MUL] = "*=";
 	vcl_tnames[T_NEQ] = "!=";
-	vcl_tnames[T_NO_CACHE] = "no_cache";
-	vcl_tnames[T_NO_NEW_CACHE] = "no_new_cache";
-	vcl_tnames[T_PROC] = "proc";
-	vcl_tnames[T_REWRITE] = "rewrite";
 	vcl_tnames[T_SHL] = "<<";
 	vcl_tnames[T_SHR] = ">>";
 	vcl_tnames[T_SUB] = "sub";
-	vcl_tnames[T_SWITCH_CONFIG] = "switch_config";
 	vcl_tnames[VAR] = "VAR";
 }
 
