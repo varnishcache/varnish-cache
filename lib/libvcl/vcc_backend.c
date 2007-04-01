@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <assert.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +40,7 @@
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
-
+#include "libvarnish.h"
 
 static const char *
 CheckHostPort(const char *host, const char *port)

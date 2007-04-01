@@ -140,14 +140,14 @@ void vcc_ParseBackend(struct tokenlist *tl);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
-void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fb(struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fi(struct tokenlist *tl, int indent, const char *fmt, ...);
-void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
-void EncToken(struct vsb *sb, struct token *t);
-struct var *FindVar(struct tokenlist *tl, struct token *t, struct var *vl);
-int IsMethod(struct token *t);
+void Fh(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fc(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fb(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fi(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void Ff(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void EncToken(struct vsb *sb, const struct token *t);
+struct var *FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
+int IsMethod(const struct token *t);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
 /* vcc_obj.c */
@@ -163,11 +163,11 @@ unsigned vcc_UintVal(struct tokenlist *tl);
 double vcc_DoubleVal(struct tokenlist *tl);
 
 /* vcc_token.c */
-void vcc_ErrToken(struct tokenlist *tl, struct token *t);
-void vcc_ErrWhere(struct tokenlist *tl, struct token *t);
+void vcc_ErrToken(const struct tokenlist *tl, const struct token *t);
+void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
-int vcc_Teq(struct token *t1, struct token *t2);
-int vcc_IdIs(struct token *t, const char *p);
+int vcc_Teq(const struct token *t1, const struct token *t2);
+int vcc_IdIs(const struct token *t, const char *p);
 void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);

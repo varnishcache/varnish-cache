@@ -29,13 +29,13 @@
  * $Id$
  */
 
-#include <assert.h>
 #include <stdio.h>
 
 #include "vsb.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "libvarnish.h"
 
 
 /*--------------------------------------------------------------------*/

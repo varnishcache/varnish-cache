@@ -44,7 +44,7 @@
 /*--------------------------------------------------------------------*/
 
 void
-vcc_ErrToken(struct tokenlist *tl, struct token *t)
+vcc_ErrToken(const struct tokenlist *tl, const struct token *t)
 {
 
 	if (t->tok == EOI)
@@ -65,7 +65,7 @@ vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line)
 }
 
 void
-vcc_ErrWhere(struct tokenlist *tl, struct token *t)
+vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
 {
 	unsigned lin, pos, x, y;
 	const char *p, *l, *f, *b, *e;
@@ -132,6 +132,7 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 void
 vcc_NextToken(struct tokenlist *tl)
 {
+
 	tl->t = TAILQ_NEXT(tl->t, list);
 	if (tl->t == NULL) {
 		vsb_printf(tl->sb,
@@ -158,7 +159,7 @@ vcc__Expect(struct tokenlist *tl, unsigned tok, int line)
  */
 
 int
-vcc_Teq(struct token *t1, struct token *t2)
+vcc_Teq(const struct token *t1, const struct token *t2)
 {
 	if (t1->e - t1->b != t2->e - t2->b)
 		return (0);
@@ -170,7 +171,7 @@ vcc_Teq(struct token *t1, struct token *t2)
  */
 
 int
-vcc_IdIs(struct token *t, const char *p)
+vcc_IdIs(const struct token *t, const char *p)
 {
 	const char *q;
 
@@ -187,7 +188,7 @@ vcc_IdIs(struct token *t, const char *p)
  * Decode %xx in a string
  */
 
-static int
+static int8_t
 vcc_xdig(const char c)
 {
 	static const char *xdigit =

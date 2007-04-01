@@ -29,7 +29,6 @@
  * $Id$
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,6 +36,7 @@
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "libvarnish.h"
 
 #include "vrt.h"
 
@@ -221,7 +221,7 @@ vcc_RateVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_re(struct tokenlist *tl, const char *str, struct token *re)
+vcc_re(struct tokenlist *tl, const char *str, const struct token *re)
 {
 	char buf[32];
 
@@ -244,7 +244,7 @@ vcc_re(struct tokenlist *tl, const char *str, struct token *re)
 /*--------------------------------------------------------------------*/
 
 static void
-Cond_String(struct var *vp, struct tokenlist *tl)
+Cond_String(const struct var *vp, struct tokenlist *tl)
 {
 
 	switch (tl->t->tok) {
@@ -271,7 +271,7 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_Int(struct var *vp, struct tokenlist *tl)
+Cond_Int(const struct var *vp, struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s ", vp->rname);
@@ -317,14 +317,14 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_Bool(struct var *vp, struct tokenlist *tl)
+Cond_Bool(const struct var *vp, const struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
 }
 
 static void
-Cond_Backend(struct var *vp, struct tokenlist *tl)
+Cond_Backend(const struct var *vp, const struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
