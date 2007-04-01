@@ -49,6 +49,8 @@ vcc_ErrToken(struct tokenlist *tl, struct token *t)
 
 	if (t->tok == EOI)
 		vsb_printf(tl->sb, "end of input");
+	else if (t->tok == CSRC)
+		vsb_printf(tl->sb, "C{ ... }C");
 	else
 		vsb_printf(tl->sb, "'%.*s'", PF(t));
 }
@@ -71,8 +73,6 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 
 	lin = 1;
 	pos = 0;
-	if (t->tok == METHOD)
-		return;
 	sp = t->src;
 	f = sp->name;
 	b = sp->b;
@@ -315,14 +315,18 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 
 		/* Skip C-style comments */
 		if (*p == '/' && p[1] == '*') {
-			p += 2;
-			for (p += 2; p < sp->e; p++) {
-				if (*p == '*' && p[1] == '/') {
-					p += 2;
+			for (q += 2; q < sp->e; q++) {
+				if (*q == '*' && q[1] == '/') {
+					p = q + 2;
 					break;
 				}
 			}
-			continue;
+			if (q < sp->e)
+				continue;
+			vcc_AddToken(tl, EOI, p, p + 2);
+			vsb_printf(tl->sb, "Unterminated /* ... */ comment, starting at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
 		}
 
 		/* Skip C++-style comments */
@@ -331,6 +335,25 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 				p++;
 			continue;
 		}
+
+		/* Recognize inline C-code */
+		if (*p == 'C' && p[1] == '{') {
+			for (q = p + 2; q < sp->e; q++) {
+				if (*q == '}' && q[1] == 'C') {
+					vcc_AddToken(tl, CSRC, p, q + 2);
+					p = q + 2;
+					break;
+				}
+			}
+			if (q < sp->e)
+				continue;
+			vcc_AddToken(tl, EOI, p, p + 2);
+			vsb_printf(tl->sb,
+			    "Unterminated inline C source, starting at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+	
 
 		/* Match for the fixed tokens (see token.tcl) */
 		u = vcl_fixed_token(p, &q);
