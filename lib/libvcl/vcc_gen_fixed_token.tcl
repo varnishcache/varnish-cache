@@ -74,7 +74,6 @@ set keywords {
 	call
 	no_cache
 	no_new_cache
-	set
 	rewrite
 	switch_config
 }
