@@ -132,6 +132,9 @@ struct proc;
 void vcc_Acl(struct tokenlist *tl);
 void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
 
+/* vcc_action.c */
+void vcc_ParseAction(struct tokenlist *tl);
+
 /* vcc_compile.c */
 extern struct method method_tab[];
 void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
@@ -139,7 +142,6 @@ void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fb(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fi(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
-unsigned UintVal(struct tokenlist *tl);
 void EncToken(struct vsb *sb, struct token *t);
 struct var *FindVar(struct tokenlist *tl, struct token *t, struct var *vl);
 int IsMethod(struct token *t);
@@ -151,6 +153,11 @@ extern struct var vcc_vars[];
 
 /* vcc_parse.c */
 void vcc_Parse(struct tokenlist *tl);
+void vcc_RateVal(struct tokenlist *tl);
+void vcc_TimeVal(struct tokenlist *tl);
+void vcc_SizeVal(struct tokenlist *tl);
+unsigned vcc_UintVal(struct tokenlist *tl);
+double vcc_DoubleVal(struct tokenlist *tl);
 
 /* vcc_token.c */
 void vcc_ErrToken(struct tokenlist *tl, struct token *t);

@@ -154,7 +154,7 @@ RateUnit(struct tokenlist *tl)
  */
 
 unsigned
-UintVal(struct tokenlist *tl)
+vcc_UintVal(struct tokenlist *tl)
 {
 	unsigned d = 0;
 	const char *p;
@@ -172,8 +172,8 @@ UintVal(struct tokenlist *tl)
  * Recognize and convert { CNUM [ '.' [ CNUM ] ] } to double value
  */
 
-static double
-DoubleVal(struct tokenlist *tl)
+double
+vcc_DoubleVal(struct tokenlist *tl)
 {
 	double d = 0.0, e = 0.1;
 	const char *p;
@@ -199,34 +199,34 @@ DoubleVal(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-TimeVal(struct tokenlist *tl)
+void
+vcc_TimeVal(struct tokenlist *tl)
 {
 	double v, sc;
 
-	v = DoubleVal(tl);
+	v = vcc_DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = TimeUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
-static void
-SizeVal(struct tokenlist *tl)
+void
+vcc_SizeVal(struct tokenlist *tl)
 {
 	double v, sc;
 
-	v = DoubleVal(tl);
+	v = vcc_DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = SizeUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
-static void
-RateVal(struct tokenlist *tl)
+void
+vcc_RateVal(struct tokenlist *tl)
 {
 	double v, sc;
 
-	v = DoubleVal(tl);
+	v = vcc_DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = RateUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
@@ -300,7 +300,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		switch(vp->fmt) {
 		case TIME:
-			TimeVal(tl);
+			vcc_TimeVal(tl);
 			break;
 		case INT:
 			ExpectErr(tl, CNUM);
@@ -308,7 +308,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 			vcc_NextToken(tl);
 			break;
 		case SIZE:
-			SizeVal(tl);
+			vcc_SizeVal(tl);
 			break;
 		default:
 			vsb_printf(tl->sb,
@@ -479,162 +479,6 @@ IfStmt(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-Action(struct tokenlist *tl)
-{
-	unsigned a;
-	struct var *vp;
-	struct token *at, *vt;
-
-	at = tl->t;
-	vcc_NextToken(tl);
-	switch (at->tok) {
-	case T_NO_NEW_CACHE:
-		Fb(tl, 1, "VCL_no_new_cache(sp);\n");
-		return;
-	case T_NO_CACHE:
-		Fb(tl, 1, "VCL_no_cache(sp);\n");
-		return;
-#define VCL_RET_MAC(a,b,c,d) case T_##b: \
-		Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
-		vcc_ProcAction(tl->curproc, d, at); \
-		return;
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-	case T_ERROR:
-		if (tl->t->tok == CNUM)
-			a = UintVal(tl);
-		else
-			a = 0;
-		Fb(tl, 1, "VRT_error(sp, %u", a);
-		if (tl->t->tok == CSTR) {
-			Fb(tl, 0, ", %.*s", PF(tl->t));
-			vcc_NextToken(tl);
-		} else {
-			Fb(tl, 0, ", (const char *)0");
-		}
-		Fb(tl, 0, ");\n");
-		Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
-		return;
-	case T_SWITCH_CONFIG:
-		ExpectErr(tl, ID);
-		Fb(tl, 1, "VCL_switch_config(\"%.*s\");\n", PF(tl->t));
-		vcc_NextToken(tl);
-		return;
-	case T_CALL:
-		ExpectErr(tl, ID);
-		vcc_AddCall(tl, tl->t);
-		vcc_AddRef(tl, tl->t, R_FUNC);
-		Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
-		Fb(tl, 1, "\treturn (1);\n");
-		vcc_NextToken(tl);
-		return;
-	case T_REWRITE:
-		ExpectErr(tl, CSTR);
-		Fb(tl, 1, "VCL_rewrite(%.*s", PF(tl->t));
-		vcc_NextToken(tl);
-		ExpectErr(tl, CSTR);
-		Fb(tl, 0, ", %.*s);\n", PF(tl->t));
-		vcc_NextToken(tl);
-		return;
-	case T_SET:
-		ExpectErr(tl, VAR);
-		vt = tl->t;
-		vp = FindVar(tl, tl->t, vcc_vars);
-		ERRCHK(tl);
-		assert(vp != NULL);
-		Fb(tl, 1, "%s", vp->lname);
-		vcc_NextToken(tl);
-		switch (vp->fmt) {
-		case INT:
-		case SIZE:
-		case RATE:
-		case TIME:
-		case FLOAT:
-			if (tl->t->tok != '=')
-				Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
-			at = tl->t;
-			vcc_NextToken(tl);
-			switch (at->tok) {
-			case T_MUL:
-			case T_DIV:
-				Fb(tl, 0, "%g", DoubleVal(tl));
-				break;
-			case T_INCR:
-			case T_DECR:
-			case '=':
-				if (vp->fmt == TIME)
-					TimeVal(tl);
-				else if (vp->fmt == SIZE)
-					SizeVal(tl);
-				else if (vp->fmt == RATE)
-					RateVal(tl);
-				else if (vp->fmt == FLOAT)
-					Fb(tl, 0, "%g", DoubleVal(tl));
-				else {
-					vsb_printf(tl->sb, "Cannot assign this variable type.\n");
-					vcc_ErrWhere(tl, vt);
-					return;
-				}
-				break;
-			default:
-				vsb_printf(tl->sb, "Illegal assignment operator.\n");
-				vcc_ErrWhere(tl, at);
-				return;
-			}
-			Fb(tl, 0, ");\n");
-			break;
-#if 0	/* XXX: enable if we find a legit use */
-		case IP:
-			if (tl->t->tok == '=') {
-				vcc_NextToken(tl);
-				u = vcc_IpVal(tl);
-				Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
-				    u,
-				    (u >> 24) & 0xff,
-				    (u >> 16) & 0xff,
-				    (u >> 8) & 0xff,
-				    u & 0xff);
-				break;
-			}
-			vsb_printf(tl->sb, "Illegal assignment operator ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb,
-			    " only '=' is legal for IP numbers\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-#endif
-		case BACKEND:
-			if (tl->t->tok == '=') {
-				vcc_NextToken(tl);
-				vcc_AddRef(tl, tl->t, R_BACKEND);
-				Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
-				vcc_NextToken(tl);
-				Fb(tl, 0, ");\n");
-				break;
-			}
-			vsb_printf(tl->sb, "Illegal assignment operator ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb,
-			    " only '=' is legal for backend\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		default:
-			vsb_printf(tl->sb,
-			    "Assignments not possible for '%s'\n", vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		return;
-	default:
-		vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");
-		vcc_ErrWhere(tl, at);
-		return;
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 Compound(struct tokenlist *tl)
 {
 
@@ -663,7 +507,7 @@ Compound(struct tokenlist *tl)
 			tl->err = 1;
 			return;
 		default:
-			Action(tl);
+			vcc_ParseAction(tl);
 			ERRCHK(tl);
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
@@ -757,15 +601,15 @@ Backend(struct tokenlist *tl)
 			Fc(tl, 1, "\t%s ", vp->lname);
 			a = tl->t->tok;
 			if (a == T_MUL || a == T_DIV)
-				Fc(tl, 0, "%g", DoubleVal(tl));
+				Fc(tl, 0, "%g", vcc_DoubleVal(tl));
 			else if (vp->fmt == TIME)
-				TimeVal(tl);
+				vcc_TimeVal(tl);
 			else if (vp->fmt == SIZE)
-				SizeVal(tl);
+				vcc_SizeVal(tl);
 			else if (vp->fmt == RATE)
-				RateVal(tl);
+				vcc_RateVal(tl);
 			else
-				Fc(tl, 0, "%g", DoubleVal(tl));
+				Fc(tl, 0, "%g", vcc_DoubleVal(tl));
 			Fc(tl, 0, ");\n");
 			break;
 		default:
