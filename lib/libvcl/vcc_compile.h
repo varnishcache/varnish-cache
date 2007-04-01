@@ -120,7 +120,7 @@ struct var {
 
 struct method {
 	const char		*name;
-	unsigned		actions;
+	unsigned		returns;
 };
 
 struct proc;
