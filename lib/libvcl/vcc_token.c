@@ -39,10 +39,7 @@
 
 #include "libvarnish.h"
 #include "vcc_priv.h"
-#include "vcl_returns.h"
 #include "vcc_compile.h"
-
-#include "libvcl.h"
 
 /*--------------------------------------------------------------------*/
 

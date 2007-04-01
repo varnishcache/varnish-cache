@@ -42,7 +42,7 @@
 
 -e785	// Too few initializers for aggregate 
 
--e766	//  Header file '../../include/libvarnish.h' not used in module
+// -e766	//  Header file '../../include/libvarnish.h' not used in module
 
 -e773	// Expression-like macro 'VCL_FARGS' not parenthesized
 

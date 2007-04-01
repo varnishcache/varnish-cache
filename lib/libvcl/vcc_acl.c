@@ -29,26 +29,12 @@
  * $Id$
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "vsb.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
-
-#include "libvcl.h"
 
 void
 vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
