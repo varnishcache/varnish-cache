@@ -71,7 +71,6 @@ set keywords {
 
 	backend
 
-	call
 	no_cache
 	no_new_cache
 	rewrite
@@ -234,7 +233,6 @@ proc mk_token {tok str alpha} {
 }
 
 foreach k $keywords { mk_token $k $k 1 }
-foreach k $returns { mk_token $k $k 1 }
 foreach k $magic { mk_token [lindex $k 1] [lindex $k 0] 0 }
 foreach k $extras {
 	set t [string toupper $k]

@@ -173,33 +173,7 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_BACKEND);
 		}
 		return (0);
-	case 'c':
-		if (p[0] == 'c' && p[1] == 'a' && p[2] == 'l' && 
-		    p[3] == 'l' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_CALL);
-		}
-		return (0);
-	case 'd':
-		if (p[0] == 'd' && p[1] == 'i' && p[2] == 's' && 
-		    p[3] == 'c' && p[4] == 'a' && p[5] == 'r' && 
-		    p[6] == 'd' && !isvar(p[7])) {
-			*q = p + 7;
-			return (T_DISCARD);
-		}
-		if (p[0] == 'd' && p[1] == 'e' && p[2] == 'l' && 
-		    p[3] == 'i' && p[4] == 'v' && p[5] == 'e' && 
-		    p[6] == 'r' && !isvar(p[7])) {
-			*q = p + 7;
-			return (T_DELIVER);
-		}
-		return (0);
 	case 'e':
-		if (p[0] == 'e' && p[1] == 'r' && p[2] == 'r' && 
-		    p[3] == 'o' && p[4] == 'r' && !isvar(p[5])) {
-			*q = p + 5;
-			return (T_ERROR);
-		}
 		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'i' && p[4] == 'f' && !isvar(p[5])) {
 			*q = p + 5;
@@ -223,26 +197,8 @@ vcl_fixed_token(const char *p, const char **q)
 			*q = p + 4;
 			return (T_FUNC);
 		}
-		if (p[0] == 'f' && p[1] == 'e' && p[2] == 't' && 
-		    p[3] == 'c' && p[4] == 'h' && !isvar(p[5])) {
-			*q = p + 5;
-			return (T_FETCH);
-		}
-		return (0);
-	case 'h':
-		if (p[0] == 'h' && p[1] == 'a' && p[2] == 's' && 
-		    p[3] == 'h' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_HASH);
-		}
 		return (0);
 	case 'i':
-		if (p[0] == 'i' && p[1] == 'n' && p[2] == 's' && 
-		    p[3] == 'e' && p[4] == 'r' && p[5] == 't'
-		     && !isvar(p[6])) {
-			*q = p + 6;
-			return (T_INSERT);
-		}
 		if (p[0] == 'i' && p[1] == 'n' && p[2] == 'c' && 
 		    p[3] == 'l' && p[4] == 'u' && p[5] == 'd' && 
 		    p[6] == 'e' && !isvar(p[7])) {
@@ -252,14 +208,6 @@ vcl_fixed_token(const char *p, const char **q)
 		if (p[0] == 'i' && p[1] == 'f' && !isvar(p[2])) {
 			*q = p + 2;
 			return (T_IF);
-		}
-		return (0);
-	case 'l':
-		if (p[0] == 'l' && p[1] == 'o' && p[2] == 'o' && 
-		    p[3] == 'k' && p[4] == 'u' && p[5] == 'p'
-		     && !isvar(p[6])) {
-			*q = p + 6;
-			return (T_LOOKUP);
 		}
 		return (0);
 	case 'n':
@@ -283,16 +231,6 @@ vcl_fixed_token(const char *p, const char **q)
 		    p[3] == 'c' && !isvar(p[4])) {
 			*q = p + 4;
 			return (T_PROC);
-		}
-		if (p[0] == 'p' && p[1] == 'i' && p[2] == 'p' && 
-		    p[3] == 'e' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_PIPE);
-		}
-		if (p[0] == 'p' && p[1] == 'a' && p[2] == 's' && 
-		    p[3] == 's' && !isvar(p[4])) {
-			*q = p + 4;
-			return (T_PASS);
 		}
 		return (0);
 	case 'r':
@@ -382,36 +320,26 @@ vcl_init_tnames(void)
 	vcl_tnames[METHOD] = "METHOD";
 	vcl_tnames[T_ACL] = "acl";
 	vcl_tnames[T_BACKEND] = "backend";
-	vcl_tnames[T_CALL] = "call";
 	vcl_tnames[T_CAND] = "&&";
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
 	vcl_tnames[T_DECR] = "-=";
-	vcl_tnames[T_DELIVER] = "deliver";
-	vcl_tnames[T_DISCARD] = "discard";
 	vcl_tnames[T_DIV] = "/=";
 	vcl_tnames[T_ELSE] = "else";
 	vcl_tnames[T_ELSEIF] = "elseif";
 	vcl_tnames[T_ELSIF] = "elsif";
 	vcl_tnames[T_EQ] = "==";
-	vcl_tnames[T_ERROR] = "error";
-	vcl_tnames[T_FETCH] = "fetch";
 	vcl_tnames[T_FUNC] = "func";
 	vcl_tnames[T_GEQ] = ">=";
-	vcl_tnames[T_HASH] = "hash";
 	vcl_tnames[T_IF] = "if";
 	vcl_tnames[T_INC] = "++";
 	vcl_tnames[T_INCLUDE] = "include";
 	vcl_tnames[T_INCR] = "+=";
-	vcl_tnames[T_INSERT] = "insert";
 	vcl_tnames[T_LEQ] = "<=";
-	vcl_tnames[T_LOOKUP] = "lookup";
 	vcl_tnames[T_MUL] = "*=";
 	vcl_tnames[T_NEQ] = "!=";
 	vcl_tnames[T_NO_CACHE] = "no_cache";
 	vcl_tnames[T_NO_NEW_CACHE] = "no_new_cache";
-	vcl_tnames[T_PASS] = "pass";
-	vcl_tnames[T_PIPE] = "pipe";
 	vcl_tnames[T_PROC] = "proc";
 	vcl_tnames[T_REWRITE] = "rewrite";
 	vcl_tnames[T_SHL] = "<<";
