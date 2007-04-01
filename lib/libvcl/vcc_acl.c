@@ -117,7 +117,7 @@ vcc_Acl(struct tokenlist *tl)
 		if (tl->t->tok == '/') {
 			vcc_NextToken(tl);
 			ExpectErr(tl, CNUM);
-			mask = UintVal(tl);
+			mask = vcc_UintVal(tl);
 		}
 		Fc(tl, 1, "{ %u, %u, %u, ", not, mask, para);
 		EncToken(tl->fc, t);
