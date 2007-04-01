@@ -26,6 +26,7 @@ statement:
 	compound
 	if_stmt
 	action
+	'C{' inline_c_src '}C'
 
 if_stmt:
 	'if' conditional compound elseifparts elsepart
