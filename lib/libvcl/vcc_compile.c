@@ -60,7 +60,6 @@
  *	and all the rest...
  */
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -79,6 +78,7 @@
 #include "vcc_compile.h"
 
 #include "libvcl.h"
+#include "libvarnish.h"
 
 struct method method_tab[] = {
 #define VCL_RET_MAC(l,U,b,n)
@@ -113,7 +113,7 @@ TlAlloc(struct tokenlist *tl, unsigned len)
 /*--------------------------------------------------------------------*/
 
 int
-IsMethod(struct token *t)
+IsMethod(const struct token *t)
 {
 	struct method *m;
 
@@ -129,7 +129,7 @@ IsMethod(struct token *t)
  */
 
 void
-Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
+Fh(const struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -141,7 +141,7 @@ Fh(struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fb(struct tokenlist *tl, int indent, const char *fmt, ...)
+Fb(const struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -154,7 +154,7 @@ Fb(struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
+Fc(const struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -166,7 +166,7 @@ Fc(struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fi(struct tokenlist *tl, int indent, const char *fmt, ...)
+Fi(const struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -178,7 +178,7 @@ Fi(struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Ff(struct tokenlist *tl, int indent, const char *fmt, ...)
+Ff(const struct tokenlist *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -225,7 +225,7 @@ EncString(struct vsb *sb, const char *b, const char *e, int mode)
 }
 
 void
-EncToken(struct vsb *sb, struct token *t)
+EncToken(struct vsb *sb, const struct token *t)
 {
 
 	assert(t->tok == CSTR);
@@ -235,7 +235,7 @@ EncToken(struct vsb *sb, struct token *t)
 /*--------------------------------------------------------------------*/
 
 static struct var *
-HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
+HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 {
 	char *p;
 	struct var *v;
@@ -266,12 +266,12 @@ HeaderVar(struct tokenlist *tl, struct token *t, struct var *vh)
 /*--------------------------------------------------------------------*/
 
 struct var *
-FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
+FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
 {
 	struct var *v;
 
 	for (v = vl; v->name != NULL; v++) {
-		if (v->fmt == HEADER  && t->e - t->b <= v->len)
+		if (v->fmt == HEADER  && (t->e - t->b) <= v->len)
 			continue;
 		if (v->fmt != HEADER  && t->e - t->b != v->len)
 			continue;
@@ -294,7 +294,7 @@ FindVar(struct tokenlist *tl, struct token *t, struct var *vl)
  */
 
 static void
-LocTable(struct tokenlist *tl)
+LocTable(const struct tokenlist *tl)
 {
 	struct token *t;
 	unsigned lin, pos;
@@ -340,7 +340,7 @@ LocTable(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-EmitInitFunc(struct tokenlist *tl)
+EmitInitFunc(const struct tokenlist *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
@@ -351,7 +351,7 @@ EmitInitFunc(struct tokenlist *tl)
 }
 
 static void
-EmitFiniFunc(struct tokenlist *tl)
+EmitFiniFunc(const struct tokenlist *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(void)\n{\n\n");
@@ -364,7 +364,7 @@ EmitFiniFunc(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-EmitStruct(struct tokenlist *tl)
+EmitStruct(const struct tokenlist *tl)
 {
 	struct source *sp;
 
@@ -582,7 +582,7 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
  */
 
 static char *
-vcc_CallCc(char *source, struct vsb *sb)
+vcc_CallCc(const char *source, struct vsb *sb)
 {
 	FILE *fo, *fs;
 	char *of, *sf, buf[BUFSIZ];

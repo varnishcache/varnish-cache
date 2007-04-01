@@ -39,11 +39,11 @@
  * they are called.
  */
 
-#include <assert.h>
 #include <stdio.h>
 
 #include "vsb.h"
 
+#include "libvarnish.h"
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 
@@ -238,12 +238,15 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 	}
 	u = p->returns & ~returns;
 	if (u) {
+/*lint -e525 */
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
 			vsb_printf(tl->sb, "Illegal return \"%s\"\n", #a); \
 			vcc_ErrWhere(tl, p->return_tok[d]); \
 		}
+/*lint -e525 */
 #include "vcl_returns.h"
+/*lint +e525 */
 #undef VCL_RET_MAC
 		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n", PF(p->name));
 		vcc_ErrWhere(tl, p->name);
@@ -283,7 +286,9 @@ vcc_CheckAction(struct tokenlist *tl)
 			if (m->returns & c) \
 				vsb_printf(tl->sb, " \"%s\"", #a);
 #define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
+/*lint -e525 */
 #include "vcl_returns.h"
+/*lint +e525 */
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
 			vsb_printf(tl->sb, "\n");
