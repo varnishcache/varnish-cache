@@ -69,12 +69,67 @@
 
 /*--------------------------------------------------------------------*/
 
+#define VCL_RET_MAC(l,u,b,i) 				\
+static void						\
+parse_##l(struct tokenlist *tl)				\
+{							\
+							\
+	Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #u); 	\
+	vcc_ProcAction(tl->curproc, i, tl->t); 		\
+	vcc_NextToken(tl);				\
+}
+
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_call(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	vcc_AddCall(tl, tl->t);
+	vcc_AddRef(tl, tl->t, R_FUNC);
+	Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
+	Fb(tl, 1, "\treturn (1);\n");
+	vcc_NextToken(tl);
+	return;
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_error(struct tokenlist *tl)
+{
+	unsigned a;
+
+	vcc_NextToken(tl);
+	if (tl->t->tok == CNUM)
+		a = vcc_UintVal(tl);
+	else
+		a = 0;
+	Fb(tl, 1, "VRT_error(sp, %u", a);
+	if (tl->t->tok == CSTR) {
+		Fb(tl, 0, ", %.*s", PF(tl->t));
+		vcc_NextToken(tl);
+	} else {
+		Fb(tl, 0, ", (const char *)0");
+	}
+	Fb(tl, 0, ");\n");
+	Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 parse_set(struct tokenlist *tl)
 {
 	struct var *vp;
 	struct token *at, *vt;
 
+	vcc_NextToken(tl);
 	ExpectErr(tl, VAR);
 	vt = tl->t;
 	vp = FindVar(tl, tl->t, vcc_vars);
@@ -166,12 +221,18 @@ parse_set(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-typedef action_f(struct tokenlist *tl);
+typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
 	const char		*name;
 	action_f		*func;
 } action_table[] = {
+#define VCL_RET_MAC(l, u, b, i) { #l, parse_##l },
+#define VCL_RET_MAC_E(l, u, b, i) VCL_RET_MAC(l, u, b, i) 
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+#undef VCL_RET_MAC_E
+	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ NULL,		NULL }
 };
@@ -180,12 +241,10 @@ static struct action_table {
 void
 vcc_ParseAction(struct tokenlist *tl)
 {
-	unsigned a;
 	struct token *at;
 	struct action_table *atp;
 
 	at = tl->t;
-	vcc_NextToken(tl);
 	if (at->tok == ID) {
 		for(atp = action_table; atp->name != NULL; atp++) {
 			if (vcc_IdIs(at, atp->name)) {
@@ -194,6 +253,7 @@ vcc_ParseAction(struct tokenlist *tl)
 			}
 		}
 	}
+	vcc_NextToken(tl);
 	switch (at->tok) {
 	case T_NO_NEW_CACHE:
 		Fb(tl, 1, "VCL_no_new_cache(sp);\n");
@@ -201,38 +261,9 @@ vcc_ParseAction(struct tokenlist *tl)
 	case T_NO_CACHE:
 		Fb(tl, 1, "VCL_no_cache(sp);\n");
 		return;
-#define VCL_RET_MAC(a,b,c,d) case T_##b: \
-		Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
-		vcc_ProcAction(tl->curproc, d, at); \
-		return;
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-	case T_ERROR:
-		if (tl->t->tok == CNUM)
-			a = vcc_UintVal(tl);
-		else
-			a = 0;
-		Fb(tl, 1, "VRT_error(sp, %u", a);
-		if (tl->t->tok == CSTR) {
-			Fb(tl, 0, ", %.*s", PF(tl->t));
-			vcc_NextToken(tl);
-		} else {
-			Fb(tl, 0, ", (const char *)0");
-		}
-		Fb(tl, 0, ");\n");
-		Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
-		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
 		Fb(tl, 1, "VCL_switch_config(\"%.*s\");\n", PF(tl->t));
-		vcc_NextToken(tl);
-		return;
-	case T_CALL:
-		ExpectErr(tl, ID);
-		vcc_AddCall(tl, tl->t);
-		vcc_AddRef(tl, tl->t, R_FUNC);
-		Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
-		Fb(tl, 1, "\treturn (1);\n");
 		vcc_NextToken(tl);
 		return;
 	case T_REWRITE:
