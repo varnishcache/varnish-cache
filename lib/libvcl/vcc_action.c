@@ -69,15 +69,131 @@
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_set(struct tokenlist *tl)
+{
+	struct var *vp;
+	struct token *at, *vt;
+
+	ExpectErr(tl, VAR);
+	vt = tl->t;
+	vp = FindVar(tl, tl->t, vcc_vars);
+	ERRCHK(tl);
+	assert(vp != NULL);
+	Fb(tl, 1, "%s", vp->lname);
+	vcc_NextToken(tl);
+	switch (vp->fmt) {
+	case INT:
+	case SIZE:
+	case RATE:
+	case TIME:
+	case FLOAT:
+		if (tl->t->tok != '=')
+			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
+		at = tl->t;
+		vcc_NextToken(tl);
+		switch (at->tok) {
+		case T_MUL:
+		case T_DIV:
+			Fb(tl, 0, "%g", vcc_DoubleVal(tl));
+			break;
+		case T_INCR:
+		case T_DECR:
+		case '=':
+			if (vp->fmt == TIME)
+				vcc_TimeVal(tl);
+			else if (vp->fmt == SIZE)
+				vcc_SizeVal(tl);
+			else if (vp->fmt == RATE)
+				vcc_RateVal(tl);
+			else if (vp->fmt == FLOAT)
+				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
+			else {
+				vsb_printf(tl->sb, "Cannot assign this variable type.\n");
+				vcc_ErrWhere(tl, vt);
+				return;
+			}
+			break;
+		default:
+			vsb_printf(tl->sb, "Illegal assignment operator.\n");
+			vcc_ErrWhere(tl, at);
+			return;
+		}
+		Fb(tl, 0, ");\n");
+		break;
+#if 0	/* XXX: enable if we find a legit use */
+	case IP:
+		if (tl->t->tok == '=') {
+			vcc_NextToken(tl);
+			u = vcc_vcc_IpVal(tl);
+			Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
+			    u,
+			    (u >> 24) & 0xff,
+			    (u >> 16) & 0xff,
+			    (u >> 8) & 0xff,
+			    u & 0xff);
+			break;
+		}
+		vsb_printf(tl->sb, "Illegal assignment operator ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb,
+		    " only '=' is legal for IP numbers\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+#endif
+	case BACKEND:
+		if (tl->t->tok == '=') {
+			vcc_NextToken(tl);
+			vcc_AddRef(tl, tl->t, R_BACKEND);
+			Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
+			vcc_NextToken(tl);
+			Fb(tl, 0, ");\n");
+			break;
+		}
+		vsb_printf(tl->sb, "Illegal assignment operator ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb,
+		    " only '=' is legal for backend\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	default:
+		vsb_printf(tl->sb,
+		    "Assignments not possible for '%s'\n", vp->name);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+typedef action_f(struct tokenlist *tl);
+
+static struct action_table {
+	const char		*name;
+	action_f		*func;
+} action_table[] = {
+	{ "set", 	parse_set },
+	{ NULL,		NULL }
+};
+
+
 void
 vcc_ParseAction(struct tokenlist *tl)
 {
 	unsigned a;
-	struct var *vp;
-	struct token *at, *vt;
+	struct token *at;
+	struct action_table *atp;
 
 	at = tl->t;
 	vcc_NextToken(tl);
+	if (at->tok == ID) {
+		for(atp = action_table; atp->name != NULL; atp++) {
+			if (vcc_IdIs(at, atp->name)) {
+				atp->func(tl);
+				return;
+			}
+		}
+	}
 	switch (at->tok) {
 	case T_NO_NEW_CACHE:
 		Fb(tl, 1, "VCL_no_new_cache(sp);\n");
@@ -126,95 +242,6 @@ vcc_ParseAction(struct tokenlist *tl)
 		ExpectErr(tl, CSTR);
 		Fb(tl, 0, ", %.*s);\n", PF(tl->t));
 		vcc_NextToken(tl);
-		return;
-	case T_SET:
-		ExpectErr(tl, VAR);
-		vt = tl->t;
-		vp = FindVar(tl, tl->t, vcc_vars);
-		ERRCHK(tl);
-		assert(vp != NULL);
-		Fb(tl, 1, "%s", vp->lname);
-		vcc_NextToken(tl);
-		switch (vp->fmt) {
-		case INT:
-		case SIZE:
-		case RATE:
-		case TIME:
-		case FLOAT:
-			if (tl->t->tok != '=')
-				Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
-			at = tl->t;
-			vcc_NextToken(tl);
-			switch (at->tok) {
-			case T_MUL:
-			case T_DIV:
-				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-				break;
-			case T_INCR:
-			case T_DECR:
-			case '=':
-				if (vp->fmt == TIME)
-					vcc_TimeVal(tl);
-				else if (vp->fmt == SIZE)
-					vcc_SizeVal(tl);
-				else if (vp->fmt == RATE)
-					vcc_RateVal(tl);
-				else if (vp->fmt == FLOAT)
-					Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-				else {
-					vsb_printf(tl->sb, "Cannot assign this variable type.\n");
-					vcc_ErrWhere(tl, vt);
-					return;
-				}
-				break;
-			default:
-				vsb_printf(tl->sb, "Illegal assignment operator.\n");
-				vcc_ErrWhere(tl, at);
-				return;
-			}
-			Fb(tl, 0, ");\n");
-			break;
-#if 0	/* XXX: enable if we find a legit use */
-		case IP:
-			if (tl->t->tok == '=') {
-				vcc_NextToken(tl);
-				u = vcc_vcc_IpVal(tl);
-				Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
-				    u,
-				    (u >> 24) & 0xff,
-				    (u >> 16) & 0xff,
-				    (u >> 8) & 0xff,
-				    u & 0xff);
-				break;
-			}
-			vsb_printf(tl->sb, "Illegal assignment operator ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb,
-			    " only '=' is legal for IP numbers\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-#endif
-		case BACKEND:
-			if (tl->t->tok == '=') {
-				vcc_NextToken(tl);
-				vcc_AddRef(tl, tl->t, R_BACKEND);
-				Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
-				vcc_NextToken(tl);
-				Fb(tl, 0, ");\n");
-				break;
-			}
-			vsb_printf(tl->sb, "Illegal assignment operator ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb,
-			    " only '=' is legal for backend\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		default:
-			vsb_printf(tl->sb,
-			    "Assignments not possible for '%s'\n", vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
 		return;
 	default:
 		vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");

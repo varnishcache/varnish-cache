@@ -317,11 +317,6 @@ vcl_fixed_token(const char *p, const char **q)
 			*q = p + 3;
 			return (T_SUB);
 		}
-		if (p[0] == 's' && p[1] == 'e' && p[2] == 't'
-		     && !isvar(p[3])) {
-			*q = p + 3;
-			return (T_SET);
-		}
 		return (0);
 	case '{':
 		if (p[0] == '{') {
@@ -419,7 +414,6 @@ vcl_init_tnames(void)
 	vcl_tnames[T_PIPE] = "pipe";
 	vcl_tnames[T_PROC] = "proc";
 	vcl_tnames[T_REWRITE] = "rewrite";
-	vcl_tnames[T_SET] = "set";
 	vcl_tnames[T_SHL] = "<<";
 	vcl_tnames[T_SHR] = ">>";
 	vcl_tnames[T_SUB] = "sub";
