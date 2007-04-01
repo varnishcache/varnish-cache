@@ -56,19 +56,6 @@
 
 /*--------------------------------------------------------------------*/
 
-#define L(tl, foo)	do {	\
-	tl->indent += INDENT;	\
-	foo;			\
-	tl->indent -= INDENT;	\
-} while (0)
-
-#define C(tl, sep)	do {					\
-	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
-	tl->t->cnt = tl->cnt; 					\
-} while (0)
-
-/*--------------------------------------------------------------------*/
-
 #define VCL_RET_MAC(l,u,b,i) 				\
 static void						\
 parse_##l(struct tokenlist *tl)				\
@@ -237,7 +224,6 @@ static struct action_table {
 	{ NULL,		NULL }
 };
 
-
 void
 vcc_ParseAction(struct tokenlist *tl)
 {
@@ -253,30 +239,6 @@ vcc_ParseAction(struct tokenlist *tl)
 			}
 		}
 	}
-	vcc_NextToken(tl);
-	switch (at->tok) {
-	case T_NO_NEW_CACHE:
-		Fb(tl, 1, "VCL_no_new_cache(sp);\n");
-		return;
-	case T_NO_CACHE:
-		Fb(tl, 1, "VCL_no_cache(sp);\n");
-		return;
-	case T_SWITCH_CONFIG:
-		ExpectErr(tl, ID);
-		Fb(tl, 1, "VCL_switch_config(\"%.*s\");\n", PF(tl->t));
-		vcc_NextToken(tl);
-		return;
-	case T_REWRITE:
-		ExpectErr(tl, CSTR);
-		Fb(tl, 1, "VCL_rewrite(%.*s", PF(tl->t));
-		vcc_NextToken(tl);
-		ExpectErr(tl, CSTR);
-		Fb(tl, 0, ", %.*s);\n", PF(tl->t));
-		vcc_NextToken(tl);
-		return;
-	default:
-		vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");
-		vcc_ErrWhere(tl, at);
-		return;
-	}
+	vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");
+	vcc_ErrWhere(tl, at);
 }
