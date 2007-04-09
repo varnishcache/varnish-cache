@@ -302,7 +302,6 @@ LocTable(const struct tokenlist *tl)
 	const char *p;
 
 	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
-	Fh(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS];\n");
 	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
@@ -334,6 +333,7 @@ LocTable(const struct tokenlist *tl)
 		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, \"%.*s\" },\n",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1, PF(t));
 	}
+	Fc(tl, 0, "  { 0, 0, 0, 0, 0, 0 }\n");
 	Fc(tl, 0, "};\n");
 }
 
