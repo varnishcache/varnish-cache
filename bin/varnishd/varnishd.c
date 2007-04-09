@@ -398,6 +398,7 @@ main(int argc, char *argv[])
 	const char *h_flag = "classic";
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
+	unsigned C_flag;
 	char *p;
 	struct params param;
 	struct cli cli[1];
@@ -432,7 +433,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:df:h:p:s:T:t:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:h:p:s:T:t:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -440,6 +441,9 @@ main(int argc, char *argv[])
 			break;
 		case 'b':
 			b_arg = optarg;
+			break;
+		case 'C':
+			C_flag = 1;
 			break;
 		case 'd':
 			d_flag++;
@@ -495,7 +499,7 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (mgt_vcc_default(b_arg, f_arg))
+	if (mgt_vcc_default(b_arg, f_arg, C_flag))
 		exit (2);
 
 	setup_storage(s_arg);
