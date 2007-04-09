@@ -213,7 +213,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 static char *
 mgt_VccCompile(struct vsb *sb, const char *b, const char *e)
 {
-	char *csrc, *vf;
+	char *csrc, *vf = NULL;
 
 	csrc = VCC_Compile(sb, b, e);
 	if (csrc != NULL) {
@@ -226,7 +226,7 @@ mgt_VccCompile(struct vsb *sb, const char *b, const char *e)
 static char *
 mgt_VccCompileFile(struct vsb *sb, const char *fn)
 {
-	char *csrc, *vf;
+	char *csrc, *vf = NULL;
 
 	csrc = VCC_CompileFile(sb, fn);
 	if (csrc != NULL) {
