@@ -88,7 +88,7 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 		} else
 			pos++;
 	}
-	vsb_printf(tl->sb, "(%s Line %d Pos %d)\n", f, lin, pos);
+	vsb_printf(tl->sb, "(%s Line %d Pos %d)\n", f, lin, pos + 1);
 	x = y = 0;
 	for (p = l; p < e && *p != '\n'; p++) {
 		if (*p == '\t') {
@@ -315,7 +315,7 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 
 		/* Skip C-style comments */
 		if (*p == '/' && p[1] == '*') {
-			for (q += 2; q < sp->e; q++) {
+			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '*' && q[1] == '/') {
 					p = q + 2;
 					break;
