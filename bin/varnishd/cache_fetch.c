@@ -113,7 +113,22 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 		/* If we didn't succeed, add to buffer, try again */
 		if (q == NULL || q == buf || *q != '\n') {
 			xxxassert(be > bp);
-			i = http_Read(hp, fd, bp, be - bp);
+			/*
+			 * The sematics we need here is "read until you have
+			 * received at least one character, but feel free to
+			 * return up to (be-bp) if they are available, but do
+			 * not wait for those extra characters.
+			 *
+			 * The canonical way to do that is to do a blocking
+			 * read(2) of one char, then change to nonblocking,
+			 * read as many as we find, then change back to 
+			 * blocking reads again.
+			 *
+			 * Hardly much more efficient and certainly a good
+			 * deal more complex than reading a single character
+			 * at a time.
+			 */
+			i = http_Read(hp, fd, bp, 1);
 			if (i <= 0)
 				return (-1);
 			bp += i;
