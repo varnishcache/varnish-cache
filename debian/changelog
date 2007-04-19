@@ -1,3 +1,9 @@
+varnish (1.0.3-2) unstable; urgency=low
+
+  * Added postrm to partially solve 400384 
+
+ -- Lars Bahner <bahner@debian.org>  Tue, 27 Feb 2007 20:41:10 +0100
+
 varnish (1.0.3-1) unstable; urgency=low
 
   * new upstream release
