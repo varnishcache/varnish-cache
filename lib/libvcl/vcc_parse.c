@@ -29,37 +29,6 @@
  * $Id$
  */
 
-/*
- * XXX:
- *	generate interface structure
- *
- * XXX:
- *	Better error messages, throughout.
- *	>It also accured to me that we could link the errors to the error
- *	>documentation.
- *	>
- *	>Unreferenced  function 'request_policy', first mention is
- *	>         Line 8 Pos 4
- *	>         sub request_policy {
- *	>         ----##############--
- *	>Read more about this type of error:
- *	>http://varnish/doc/error.html#Unreferenced%20function
- *	>
- *	>
- *	>         Unknown variable 'obj.bandwidth'
- *	>         At: Line 88 Pos 12
- *	>                 if (obj.bandwidth < 1 kb/h) {
- *	>         ------------#############------------
- *	>Read more about this type of error:
- *	>http://varnish/doc/error.html#Unknown%20variable
- *
- * XXX:
- *	Create proper tmp filenames for .h, .c and .o
- *
- * XXX:
- *	and all the rest...
- */
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -514,7 +483,7 @@ Action(struct tokenlist *tl)
 {
 	unsigned a;
 	struct var *vp;
-	struct token *at;
+	struct token *at, *vt;
 
 	at = tl->t;
 	vcc_NextToken(tl);
@@ -569,6 +538,7 @@ Action(struct tokenlist *tl)
 		return;
 	case T_SET:
 		ExpectErr(tl, VAR);
+		vt = tl->t;
 		vp = FindVar(tl, tl->t, vcc_vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
@@ -582,18 +552,35 @@ Action(struct tokenlist *tl)
 		case FLOAT:
 			if (tl->t->tok != '=')
 				Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
-			a = tl->t->tok;
+			at = tl->t;
 			vcc_NextToken(tl);
-			if (a == T_MUL || a == T_DIV)
+			switch (at->tok) {
+			case T_MUL:
+			case T_DIV:
 				Fb(tl, 0, "%g", DoubleVal(tl));
-			else if (vp->fmt == TIME)
-				TimeVal(tl);
-			else if (vp->fmt == SIZE)
-				SizeVal(tl);
-			else if (vp->fmt == RATE)
-				RateVal(tl);
-			else
-				Fb(tl, 0, "%g", DoubleVal(tl));
+				break;
+			case T_INCR:
+			case T_DECR:
+			case '=':
+				if (vp->fmt == TIME)
+					TimeVal(tl);
+				else if (vp->fmt == SIZE)
+					SizeVal(tl);
+				else if (vp->fmt == RATE)
+					RateVal(tl);
+				else if (vp->fmt == FLOAT)
+					Fb(tl, 0, "%g", DoubleVal(tl));
+				else {
+					vsb_printf(tl->sb, "Cannot assign this variable type.\n");
+					vcc_ErrWhere(tl, vt);
+					return;
+				}
+				break;
+			default:
+				vsb_printf(tl->sb, "Illegal assignment operator.\n");
+				vcc_ErrWhere(tl, at);
+				return;
+			}
 			Fb(tl, 0, ");\n");
 			break;
 #if 0	/* XXX: enable if we find a legit use */
