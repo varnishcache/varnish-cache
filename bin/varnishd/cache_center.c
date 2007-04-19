@@ -136,6 +136,10 @@ cnt_deliver(struct sess *sp)
 {
 
 	RES_WriteObj(sp);
+	if (sp->obj->objhead != NULL && sp->obj->pass) {
+		/* we will no longer need the storage */
+		HSH_Freestore(sp->obj);
+	}
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	sp->step = STP_DONE;
@@ -300,9 +304,10 @@ cnt_fetch(struct sess *sp)
 		sp->obj->pass = 1;
 
 	sp->obj->cacheable = 1;
-	HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
-	if (sp->obj->objhead != NULL)
+	if (sp->obj->objhead != NULL) {
+		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
+	}
 	sp->wrk->acct.fetch++;
 	sp->step = STP_DELIVER;
 	return (0);
