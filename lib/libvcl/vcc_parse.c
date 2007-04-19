@@ -565,7 +565,15 @@ Backend(struct tokenlist *tl)
 	while (1) {
 		if (tl->t->tok == '}')
 			break;
-		ExpectErr(tl, T_SET);
+		ExpectErr(tl, ID);
+		if (!vcc_IdIs(tl->t, "set")) {
+			vsb_printf(tl->sb,
+			    "Expected 'set', found ");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		vcc_NextToken(tl);
 		ExpectErr(tl, VAR);
 		vp = FindVar(tl, tl->t, vcc_be_vars);
