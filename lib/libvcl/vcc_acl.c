@@ -47,7 +47,7 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
-		Fc(tl, 1, "VRT_acl_match(sp, \"%.*s\", acl_%.*s)\n",
+		Fb(tl, 1, "VRT_acl_match(sp, \"%.*s\", acl_%.*s)\n",
 		    PF(tl->t), PF(tl->t));
 		vcc_NextToken(tl);
 		break;
