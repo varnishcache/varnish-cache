@@ -398,7 +398,7 @@ main(int argc, char *argv[])
 	const char *h_flag = "classic";
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
-	unsigned C_flag;
+	unsigned C_flag = 0;
 	char *p;
 	struct params param;
 	struct cli cli[1];
@@ -501,6 +501,8 @@ main(int argc, char *argv[])
 
 	if (mgt_vcc_default(b_arg, f_arg, C_flag))
 		exit (2);
+	if (C_flag)
+		exit (0);
 
 	setup_storage(s_arg);
 	setup_hash(h_flag);
