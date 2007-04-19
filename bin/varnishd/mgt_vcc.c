@@ -280,9 +280,9 @@ mgt_vcc_delbyname(const char *name)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_vcc_default(const char *b_arg, const char *f_arg)
+mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 {
-	char *addr, *port;
+	char *addr, *port, *csrc;
 	char *buf, *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
@@ -312,8 +312,17 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 		free(addr);
 		free(port);
 		AN(buf);
+		if (C_flag) {
+			csrc = VCC_Compile(sb, buf, NULL);
+			fputs(csrc, stdout);
+			exit (0);
+		}
 		vf = mgt_VccCompile(sb, buf, NULL);
 		free(buf);
+	} else if (C_flag) {
+		csrc = VCC_CompileFile(sb, f_arg);
+		fputs(csrc, stdout);
+		exit (0);
 	} else {
 		vf = mgt_VccCompileFile(sb, f_arg);
 	}
