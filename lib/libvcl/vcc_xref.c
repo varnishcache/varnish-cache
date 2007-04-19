@@ -59,11 +59,11 @@ struct proc {
 	TAILQ_ENTRY(proc)	list;
 	TAILQ_HEAD(,proccall)	calls;
 	struct token		*name;
-	unsigned		actions;
+	unsigned		returns;
 	unsigned		exists;
 	unsigned		called;
 	unsigned		active;
-	struct token		*action_tok[VCL_RET_MAX];
+	struct token		*return_tok[VCL_RET_MAX];
 };
 
 /*--------------------------------------------------------------------*/
@@ -171,7 +171,7 @@ vcc_CheckReferences(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------
- * Returned action checks
+ * Returns checks
  */
 
 static struct proc *
@@ -216,17 +216,17 @@ vcc_AddCall(struct tokenlist *tl, struct token *t)
 }
 
 void
-vcc_ProcAction(struct proc *p, unsigned action, struct token *t)
+vcc_ProcAction(struct proc *p, unsigned returns, struct token *t)
 {
 
-	p->actions |= (1 << action);
-	/* Record the first instance of this action */
-	if (p->action_tok[action] == NULL)
-		p->action_tok[action] = t;
+	p->returns |= (1 << returns);
+	/* Record the first instance of this return */
+	if (p->return_tok[returns] == NULL)
+		p->return_tok[returns] = t;
 }
 
 static int
-vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned actions)
+vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 {
 	unsigned u;
 	struct proccall *pc;
@@ -241,12 +241,12 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned actions)
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
-	u = p->actions & ~actions;
+	u = p->returns & ~returns;
 	if (u) {
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
-			vsb_printf(tl->sb, "Illegal action \"%s\"\n", #a); \
-			vcc_ErrWhere(tl, p->action_tok[d]); \
+			vsb_printf(tl->sb, "Illegal return \"%s\"\n", #a); \
+			vcc_ErrWhere(tl, p->return_tok[d]); \
 		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
@@ -256,7 +256,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned actions)
 	}
 	p->active = 1;
 	TAILQ_FOREACH(pc, &p->calls, list) {
-		if (vcc_CheckActionRecurse(tl, pc->p, actions)) {
+		if (vcc_CheckActionRecurse(tl, pc->p, returns)) {
 			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
@@ -280,12 +280,12 @@ vcc_CheckAction(struct tokenlist *tl)
 		if (i < 0)
 			continue;
 		m = method_tab + i;
-		if (vcc_CheckActionRecurse(tl, p, m->actions)) {
+		if (vcc_CheckActionRecurse(tl, p, m->returns)) {
 			vsb_printf(tl->sb,
 			    "\n...which is the \"%s\" method\n", m->name);
-			vsb_printf(tl->sb, "Legal actions are:");
+			vsb_printf(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(a, b, c, d) \
-			if (m->actions & c) \
+			if (m->returns & c) \
 				vsb_printf(tl->sb, " \"%s\"", #a);
 #define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
 #include "vcl_returns.h"
