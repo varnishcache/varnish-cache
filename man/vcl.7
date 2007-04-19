@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd October 5, 2006
+.Dd March 28, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -71,6 +71,11 @@ compatible unit suffix.
 VCL has
 .Cm if
 tests, but no loops.
+.Pp
+The contents of another VCL file may be inserted at any point in the
+code by using the
+.Cm include
+keyword followed by the name of the other file as a quoted string.
 .Ss Backend declarations
 A backend declaration creates and initializes a named backend object:
 .Bd -literal -offset 4n
@@ -123,6 +128,9 @@ sub pipe_if_local {
 .Pp
 Subroutines in VCL do not take arguments, nor do they return values.
 .Pp
+If multiple subroutines with the same name are defined, they are
+concatenated in the order in which the appear in the source.
+.Pp
 To call a subroutine, use the
 .Cm call
 keyword followed by the subroutine's name:
@@ -130,33 +138,165 @@ keyword followed by the subroutine's name:
 call pipe_if_local;
 .Ed
 .Pp
-There are five special subroutines which hook into the Varnish
-workflow:
+There are a number of special subroutines which hook into the Varnish
+workflow.
+These subroutines may inspect and manipulate HTTP headers and various
+other aspects of each request, and to a certain extent decide how the
+request should be handled.
+Each subroutine terminates by calling one of a small number of
+keywords which indicates the desired outcome.
 .Bl -tag -width "vcl_timeout"
+.\" vcl_recv
 .It Cm vcl_recv
 Called at the beginning of a request, after the complete request has
 been received and parsed.
 Its purpose is to decide whether or not to serve the request, how to
-do it, and, if applicanle, which backend to use.
-.\" If the document is to be served from cache, however, backend selection
-.\" can be postponed until
-.\" .Cm vcl_miss .
+do it, and, if applicable, which backend to use.
+.Pp
+The
+.Cm vcl_recv
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm pipe
+Switch to pipe mode.
+Control will eventually pass to
+.Cm vcl_pipe .
+.It Cm lookup
+Look up the requested object in the cache.
+Control will eventually pass to
+.Cm vcl_hit
+or
+.Cm vcl_miss ,
+depending on whether the object is in the cache.
+.El
+.\" vcl_pipe
+.It Cm vcl_pipe
+Called upon entering pipe mode.
+In this mode, the request is passed on to the backend, and any further
+data from either client or backend is passed on unaltered until either
+end closes the connection.
+.Pp
+The
+.Cm vcl_pipe
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pipe
+Proceed with pipe mode.
+.El
+.\" vcl_pass
+.It Cm vcl_pass
+Called upon entering pass mode.
+In this mode, the request is passed on to the backend, and the
+backend's response is passed on to the client, but is not entered into
+the cache.
+Subsequent requests submitted over the same client connection are
+handled normally.
+.Pp
+The
+.Cm vcl_pass
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Proceed with pass mode.
+.El
+.\" vcl_hash
+.It Cm vcl_hash
+Currently not used.
+The
+.Cm vcl_hash
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm hash
+Proceed.
+.El
+.\" vcl_hit
 .It Cm vcl_hit
 Called after a cache lookup if the requested document was found in the
 cache.
-.\" Its purpose...
+.Pp
+The
+.Cm vcl_hit
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm deliver
+Deliver the cached object to the client.
+.El
+.\" vcl_miss
 .It Cm vcl_miss
 Called after a cache lookup if the requested document was not found in
 the cache.
 Its purpose is to decide whether or not to attempt to retrieve the
 document from the backend, and which backend to use.
+.Pp
+The
+.Cm vcl_miss
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm fetch
+Retrieve the requested object from the backend.
+Control will eventually pass to
+.Cm vcl_fetch .
+.El
+.\" vcl_fetch
 .It Cm vcl_fetch
-Called after a document has been retrieved from the backend, before it
-is inserted into the cache.
+Called after a document has been successfully retrieved from the
+backend.
+.Pp
+The
+.Cm vcl_fetch
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm insert
+Insert the object into the cache, then deliver it to the client.
+.El
+.\" vcl_timeout
 .It Cm vcl_timeout
 Called by the reaper thread when a cached document has reached its
 expiry time.
-.\" Its purpose...
+.Pp
+The
+.Cm vcl_timeout
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm fetch
+Request a fresh copy of the object from the backend.
+.It Cm discard
+Discard the object.
+.El
 .El
 .Pp
 If one of these subroutines is left undefined or terminates without
@@ -230,6 +370,18 @@ sub vcl_recv {
         pass;
     }
     lookup;
+}
+
+sub vcl_pipe {
+    pipe;
+}
+
+sub vcl_pass {
+    pass;
+}
+
+sub vcl_hash {
+    hash;
 }
 
 sub vcl_hit {
