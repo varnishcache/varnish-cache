@@ -70,20 +70,16 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 {
 	unsigned lin, pos, x, y;
 	const char *p, *l, *f, *b, *e;
+	struct source *sp;
 
 	lin = 1;
 	pos = 0;
 	if (t->tok == METHOD)
 		return;
-	if (t->b >= vcc_default_vcl_b && t->b < vcc_default_vcl_e) {
-		f = "Default VCL code (compiled in)";
-		b = vcc_default_vcl_b;
-		e = vcc_default_vcl_e;
-	} else {
-		f = "VCL code";
-		b = tl->b;
-		e = tl->e;
-	}
+	sp = t->src;
+	f = sp->name;
+	b = sp->b;
+	e = sp->e;
 	for (l = p = b; p < t->b; p++) {
 		if (*p == '\n') {
 			lin++;
@@ -266,14 +262,30 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 	t->tok = tok;
 	t->b = b;
 	t->e = e;
-	TAILQ_INSERT_TAIL(&tl->tokens, t, list);
+	t->src = tl->src;
+	if (tl->t != NULL)
+		TAILQ_INSERT_AFTER(&tl->tokens, tl->t, t, list);
+	else
+		TAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
 	if (0) {
 		fprintf(stderr, "[%s %.*s] ",
-		    vcl_tnames[tok],(int)(e - b), b);
+		    vcl_tnames[tok], PF(t));
 		if (tok == EOI)
 			fprintf(stderr, "\n");
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Free a token
+ */
+
+void
+vcc_FreeToken(struct token *t)
+{
+
+	/* XXX: more */
+	free(t);
 }
 
 /*--------------------------------------------------------------------
@@ -281,12 +293,13 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
  */
 
 void
-vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
+vcc_Lexer(struct tokenlist *tl, struct source *sp)
 {
 	const char *p, *q;
 	unsigned u;
 
-	for (p = b; p < e; ) {
+	tl->src = sp;
+	for (p = sp->b; p < sp->e; ) {
 
 		/* Skip any whitespace */
 		if (isspace(*p)) {
@@ -296,7 +309,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 
 		/* Skip '#.*\n' comments */
 		if (*p == '#') {
-			while (p < e && *p != '\n')
+			while (p < sp->e && *p != '\n')
 				p++;
 			continue;
 		}
@@ -304,7 +317,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 		/* Skip C-style comments */
 		if (*p == '/' && p[1] == '*') {
 			p += 2;
-			for (p += 2; p < e; p++) {
+			for (p += 2; p < sp->e; p++) {
 				if (*p == '*' && p[1] == '/') {
 					p += 2;
 					break;
@@ -315,7 +328,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 
 		/* Skip C++-style comments */
 		if (*p == '/' && p[1] == '/') {
-			while (p < e && *p != '\n')
+			while (p < sp->e && *p != '\n')
 				p++;
 			continue;
 		}
@@ -330,7 +343,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 
 		/* Match strings, with \\ and \" escapes */
 		if (*p == '"') {
-			for (q = p + 1; q < e; q++) {
+			for (q = p + 1; q < sp->e; q++) {
 				if (*q == '"') {
 					q++;
 					break;
@@ -352,11 +365,11 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 
 		/* Match Identifiers */
 		if (isident1(*p)) {
-			for (q = p; q < e; q++)
+			for (q = p; q < sp->e; q++)
 				if (!isident(*q))
 					break;
 			if (isvar(*q)) {
-				for (; q < e; q++)
+				for (; q < sp->e; q++)
 					if (!isvar(*q))
 						break;
 				vcc_AddToken(tl, VAR, p, q);
@@ -369,7 +382,7 @@ vcc_Lexer(struct tokenlist *tl, const char *b, const char *e)
 
 		/* Match numbers { [0-9]+ } */
 		if (isdigit(*p)) {
-			for (q = p; q < e; q++)
+			for (q = p; q < sp->e; q++)
 				if (!isdigit(*q))
 					break;
 			vcc_AddToken(tl, CNUM, p, q);

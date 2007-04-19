@@ -120,14 +120,14 @@ vcc_Acl(struct tokenlist *tl)
 			mask = UintVal(tl);
 		}
 		Fc(tl, 1, "{ %u, %u, %u, ", not, mask, para);
-		EncString(tl->fc, t);
+		EncToken(tl->fc, t);
 		Fc(tl, 0, ", \"");
 		if (para)
 			Fc(tl, 0, "(");
 		if (not)
 			Fc(tl, 0, "!");
 		Fc(tl, 0, "\\\"\" ");
-		EncString(tl->fc, t);
+		EncToken(tl->fc, t);
 		Fc(tl, 0, " \"\\\"");
 		if (mask)
 			Fc(tl, 0, "/%u", mask);
