@@ -144,7 +144,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	fs = fdopen(sfd, "r+");
 	assert(fs != NULL);
 
-	if (fputs(source, fs) || fflush(fs)) {
+	if (fputs(source, fs) < 0 || fflush(fs)) {
 		vsb_printf(sb,
 		    "Write error to C source file: %s\n",
 		    strerror(errno));
