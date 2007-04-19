@@ -243,11 +243,12 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct sess *sp)
+Fetch(struct sess *sp)
 {
-	int cls;
 	struct vbe_conn *vc;
+	struct worker *w;
 	char *b;
+	int cls;
 	int body = 1;		/* XXX */
 	struct http *hp;
 	struct storage *st;
@@ -256,9 +257,53 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	assert(sp->obj->busy != 0);
+	w = sp->wrk;
 
-	vc = sp->vbc;
-	sp->vbc = NULL;
+	sp->obj->xid = sp->xid;
+
+	vc = VBE_GetFd(sp);
+	if (vc == NULL)
+		return (1);
+
+	http_ClrHeader(vc->http);
+	vc->http->logtag = HTTP_Tx;
+	http_GetReq(w, vc->fd, vc->http, sp->http);
+	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, vc->http,
+	    "X-Forwarded-for: %s", sp->addr);
+	if (!http_GetHdr(vc->http, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
+		    sp->backend->hostname);
+	}
+
+	WRK_Reset(w, &vc->fd);
+	http_Write(w, vc->http, 0);
+	if (WRK_Flush(w)) {
+		/* XXX: cleanup */
+		return (1);
+	}
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+
+	if (http_RecvHead(vc->http, vc->fd)) {
+		/* XXX: cleanup */
+		return (1);
+	}
+	if (http_DissectResponse(sp->wrk, vc->http, vc->fd)) {
+		/* XXX: cleanup */
+		return (1);
+	}
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+
+	sp->obj->entered = time(NULL);
+
+
+	assert(sp->obj->busy != 0);
 
 	if (http_GetHdr(vc->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
@@ -311,69 +356,6 @@ FetchBody(struct sess *sp)
 		VBE_ClosedFd(sp->wrk, vc, 0);
 	else
 		VBE_RecycleFd(sp->wrk, vc);
-
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-FetchHeaders(struct sess *sp)
-{
-	struct vbe_conn *vc;
-	struct worker *w;
-	char *b;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	assert(sp->obj->busy != 0);
-	w = sp->wrk;
-
-	sp->obj->xid = sp->xid;
-
-	vc = VBE_GetFd(sp);
-	if (vc == NULL)
-		return (1);
-
-	http_ClrHeader(vc->http);
-	vc->http->logtag = HTTP_Tx;
-	http_GetReq(w, vc->fd, vc->http, sp->http);
-	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, vc->http,
-	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(vc->http, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
-		    sp->backend->hostname);
-	}
-
-	WRK_Reset(w, &vc->fd);
-	http_Write(w, vc->http, 0);
-	if (WRK_Flush(w)) {
-		/* XXX: cleanup */
-		return (1);
-	}
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-
-	if (http_RecvHead(vc->http, vc->fd)) {
-		/* XXX: cleanup */
-		return (1);
-	}
-	if (http_DissectResponse(sp->wrk, vc->http, vc->fd)) {
-		/* XXX: cleanup */
-		return (1);
-	}
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	AZ(sp->vbc);
-	sp->vbc = vc;
-
-	sp->obj->entered = time(NULL);
 
 	return (0);
 }

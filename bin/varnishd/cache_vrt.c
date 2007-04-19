@@ -82,7 +82,7 @@ VRT_GetHdr(struct sess *sp, int where, const char *n)
 		hp = sp->http;
 		break;
 	case 2:
-		hp = sp->vbc->http;
+		hp = &sp->obj->http;
 		break;
 	default:
 		INCOMPL();

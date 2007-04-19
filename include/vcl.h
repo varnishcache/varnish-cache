@@ -28,6 +28,9 @@ struct VCL_conf {
         vcl_fini_f      *fini_func;
 
 	vcl_func_f	*recv_func;
+	vcl_func_f	*pipe_func;
+	vcl_func_f	*pass_func;
+	vcl_func_f	*hash_func;
 	vcl_func_f	*miss_func;
 	vcl_func_f	*hit_func;
 	vcl_func_f	*fetch_func;

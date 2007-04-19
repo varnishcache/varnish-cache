@@ -24,9 +24,9 @@
 #define T_SWITCH_CONFIG 142
 #define T_ERROR 143
 #define T_LOOKUP 144
-#define T_PIPE 145
-#define T_PASS 146
-#define T_INSERT_PASS 147
+#define T_HASH 145
+#define T_PIPE 146
+#define T_PASS 147
 #define T_FETCH 148
 #define T_INSERT 149
 #define T_DELIVER 150
