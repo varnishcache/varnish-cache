@@ -34,4 +34,4 @@
 #define CNUM 152
 #define CSTR 153
 #define EOI 154
-#define METHOD 155
+#define CSRC 155

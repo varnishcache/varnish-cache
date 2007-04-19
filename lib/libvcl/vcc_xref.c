@@ -149,11 +149,6 @@ vcc_CheckReferences(struct tokenlist *tl)
 		nerr++;
 
 		type = vcc_typename(tl, r);
-		if (r->defcnt == 0 && r->name->tok == METHOD) {
-			vsb_printf(tl->sb,
-			    "No definition for method %.*s\n", PF(r->name));
-			continue;
-		}
 
 		if (r->defcnt == 0) {
 			vsb_printf(tl->sb,
