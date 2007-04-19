@@ -31,27 +31,38 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
+#include "queue.h"
+
+struct listen_sock {
+	TAILQ_ENTRY(listen_sock)	list;
+	int				sock;
+	char				*host;
+	char				*port;
+};
+
+TAILQ_HEAD(listen_sock_head, listen_sock);
+
 struct heritage {
 
 	/*
 	 * Two pipe(2)'s for CLI connection between cache and mgt.
 	 * cache reads [2] and writes [1].  Mgt reads [0] and writes [3].
 	 */
-	int	fds[4];
+	int				fds[4];
 
-	/* Socket from which to accept connections */
-	int			socket;
+	/* Sockets from which to accept connections */
+	struct listen_sock_head		socks;
+	int				nsocks;
 
 	/* Share memory log fd and size (incl header) */
-	int			vsl_fd;
-	unsigned		vsl_size;
+	int				vsl_fd;
+	unsigned			vsl_size;
 
 	/* Storage method */
-	struct stevedore	*stevedore;
+	struct stevedore		*stevedore;
 
 	/* Hash method */
-	struct hash_slinger	*hash;
-
+	struct hash_slinger		*hash;
 };
 
 struct params {
@@ -89,8 +100,6 @@ struct params {
 
 	/* Listen address */
 	char			*listen_address;
-	char			*listen_host;
-	char			*listen_port;
 
 	/* Listen depth */
 	unsigned		listen_depth;

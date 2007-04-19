@@ -278,33 +278,86 @@ tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+clean_listen_sock_head(struct listen_sock_head *lsh)
+{
+	struct listen_sock *ls, *ls2;
+
+	TAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
+		TAILQ_REMOVE(lsh, ls, list);
+		free(ls->host);
+		free(ls->port);
+		free(ls);
+	}
+}
+
+static void
 tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 {
-	char *a, *p;
+	char **av;
+	int i;
+	struct listen_sock		*ls;
+	struct listen_sock_head		lsh;
 
 	(void)par;
-	if (arg != NULL) {
-		if (TCP_parse(arg, &a, &p) != 0) {
-			cli_out(cli, "Invalid listen address");
+	if (arg == NULL) {
+		/* Quote the string if we have more than one socket */
+		if (heritage.nsocks > 1)
+			cli_out(cli, "\"%s\"", params->listen_address);
+		else
+			cli_out(cli, "%s", params->listen_address);
+		return;
+	}
+
+	av = ParseArgv(arg, 0);
+	if (av[0] != NULL) {
+		cli_out(cli, "Parse error: %s", av[0]);
+		cli_result(cli, CLIS_PARAM);
+		FreeArgv(av);
+		return;
+	}
+	if (av[1] == NULL) {
+		cli_out(cli, "Empty listen address");
+		cli_result(cli, CLIS_PARAM);
+		FreeArgv(av);
+		return;
+	}
+	TAILQ_INIT(&lsh);
+	for (i = 1; av[i] != NULL; i++) {
+		ls = calloc(sizeof *ls, 1);
+		AN(ls);
+		ls->sock = -1;
+		TAILQ_INSERT_TAIL(&lsh, ls, list);
+		if (TCP_parse(av[i], &ls->host, &ls->port) != 0) {
+			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
 			cli_result(cli, CLIS_PARAM);
-			return;
+			break;
 		}
-		if (p == NULL) {
-			p = strdup("http");
-			AN(p);
-		}
-		TCP_check(cli, a, p);
+		if (ls->port == NULL)
+			ls->port = strdup("http");
+		AN(ls->port);
+		TCP_check(cli, ls->host, ls->port);
 		if (cli->result != CLIS_OK)
-			return;
-		free(params->listen_address);
-		free(params->listen_host);
-		free(params->listen_port);
-		params->listen_address = strdup(arg);
-		AN(params->listen_address);
-		params->listen_host = a;
-		params->listen_port = p;
-	} else
-		cli_out(cli, "%s", params->listen_address);
+			break;
+	}
+	FreeArgv(av);
+	if (cli->result != CLIS_OK) {
+		clean_listen_sock_head(&lsh);
+		return;
+	}
+
+	free(params->listen_address);
+	params->listen_address = strdup(arg);
+	AN(params->listen_address);
+
+	clean_listen_sock_head(&heritage.socks);
+	heritage.nsocks = 0;
+
+	while (!TAILQ_EMPTY(&lsh)) {
+		ls = TAILQ_FIRST(&lsh);
+		TAILQ_REMOVE(&lsh, ls, list);
+		TAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+		heritage.nsocks++;
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -477,9 +530,11 @@ static struct parspec parspec[] = {
 		"default. ",
 		"off", "bool" },
 	{ "listen_address", tweak_listen_address,
-		"The network address/port where Varnish services requests.\n"
+		"Whitespace separated list of network endpoints where "
+		"Varnish will accept requests.\n"
+		"Possible formats: host, host:port, :port\n"
 		MUST_RESTART,
-		"0.0.0.0:80" },
+		":80" },
 	{ "listen_depth", tweak_listen_depth,
 		"Listen(2) queue depth.\n"
 #if defined(__FreeBSD__)
