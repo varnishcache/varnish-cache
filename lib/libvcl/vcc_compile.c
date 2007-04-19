@@ -67,12 +67,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <queue.h>
 #include <unistd.h>
 
 #include <sys/stat.h>
 
 #include "vsb.h"
+#include "queue.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
