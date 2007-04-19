@@ -333,7 +333,6 @@ LocTable(const struct tokenlist *tl)
 		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, \"%.*s\" },\n",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1, PF(t));
 	}
-	Fc(tl, 0, "  { 0, 0, 0, 0, 0, 0 }\n");
 	Fc(tl, 0, "};\n");
 }
 
