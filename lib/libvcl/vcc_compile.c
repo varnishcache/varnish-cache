@@ -577,98 +577,7 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 }
 
 /*--------------------------------------------------------------------
- * Invoke system C compiler on source and return resulting dlfile.
- * Errors goes in sb;
- */
-
-static char *
-vcc_CallCc(const char *source, struct vsb *sb)
-{
-	FILE *fo, *fs;
-	char *of, *sf, buf[BUFSIZ];
-	int i, j, sfd;
-
-	/* Create temporary C source file */
-	sf = strdup("/tmp/vcl.XXXXXXXX");
-	assert(sf != NULL);
-	sfd = mkstemp(sf);
-	if (sfd < 0) {
-		vsb_printf(sb,
-		    "Cannot open temporary source file \"%s\": %s\n",
-		    sf, strerror(errno));
-		free(sf);
-		return (NULL);
-	}
-	fs = fdopen(sfd, "r+");
-	assert(fs != NULL);
-
-	if (fputs(source, fs) || fflush(fs)) {
-		vsb_printf(sb,
-		    "Write error to C source file: %s\n",
-		    strerror(errno));
-		unlink(sf);
-		fclose(fs);
-		return (NULL);
-	}
-	rewind(fs);
-
-	/* Name the output shared library */
-	of = strdup("/tmp/vcl.XXXXXXXX");
-	assert(of != NULL);
-	of = mktemp(of);
-	assert(of != NULL);
-
-	/* Attempt to open a pipe to the system C-compiler */
-	sprintf(buf,
-	    "ln -f %s /tmp/_.c ;"		/* XXX: for debugging */
-	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
-	    sf, of, sf);
-
-	fo = popen(buf, "r");
-	if (fo == NULL) {
-		vsb_printf(sb,
-		    "Internal error: Cannot execute cc(1): %s\n",
-		    strerror(errno));
-		free(of);
-		unlink(sf);
-		fclose(fs);
-		return (NULL);
-	}
-
-	/* If we get any output, it's bad */
-	j = 0;
-	while (1) {
-		if (fgets(buf, sizeof buf, fo) == NULL)
-			break;
-		if (!j) {
-			vsb_printf(sb, "Internal error: cc(1) complained:\n");
-			j++;
-		}
-		vsb_cat(sb, buf);
-	} 
-
-	i = pclose(fo);
-	if (j == 0 && i != 0)
-		vsb_printf(sb,
-		    "Internal error: cc(1) exit status 0x%04x\n", i);
-
-	/* If the compiler complained, or exited non-zero, fail */
-	if (i || j) {
-		unlink(of);
-		free(of);
-		of = NULL;
-	}
-
-	/* clean up and return */
-	unlink(sf);
-	free(sf);
-	fclose(fs);
-	return (of);
-}
-
-/*--------------------------------------------------------------------
- * Compile the VCL code from the given source and return the filename
- * of the resulting shared library.
+ * Compile the VCL code from the given source and return the C-source
  */
 
 static char *
@@ -755,8 +664,8 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	vsb_cat(tl->fh, vsb_data(tl->fc));
 	vsb_finish(tl->fh);
 
-	/* Grind it through cc(1) */
-	of = vcc_CallCc(vsb_data(tl->fh), sb);
+	of = strdup(vsb_data(tl->fh));
+	AN(of);
 
 	/* done */
 	return (vcc_DestroyTokenList(tl, of));

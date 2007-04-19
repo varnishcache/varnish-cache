@@ -118,6 +118,125 @@ static const char *default_vcl =
     "    discard;\n"
     "}\n";
 
+/*--------------------------------------------------------------------
+ * Invoke system C compiler on source and return resulting dlfile.
+ * Errors goes in sb;
+ */
+
+static char *
+mgt_CallCc(const char *source, struct vsb *sb)
+{
+	FILE *fo, *fs;
+	char *of, *sf, buf[BUFSIZ];
+	int i, j, sfd;
+
+	/* Create temporary C source file */
+	sf = strdup("/tmp/vcl.XXXXXXXX");
+	assert(sf != NULL);
+	sfd = mkstemp(sf);
+	if (sfd < 0) {
+		vsb_printf(sb,
+		    "Cannot open temporary source file \"%s\": %s\n",
+		    sf, strerror(errno));
+		free(sf);
+		return (NULL);
+	}
+	fs = fdopen(sfd, "r+");
+	assert(fs != NULL);
+
+	if (fputs(source, fs) || fflush(fs)) {
+		vsb_printf(sb,
+		    "Write error to C source file: %s\n",
+		    strerror(errno));
+		unlink(sf);
+		fclose(fs);
+		return (NULL);
+	}
+	rewind(fs);
+
+	/* Name the output shared library */
+	of = strdup("/tmp/vcl.XXXXXXXX");
+	assert(of != NULL);
+	of = mktemp(of);
+	assert(of != NULL);
+
+	/* Attempt to open a pipe to the system C-compiler */
+	sprintf(buf,
+	    "ln -f %s /tmp/_.c ;"		/* XXX: for debugging */
+	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
+	    sf, of, sf);
+
+	fo = popen(buf, "r");
+	if (fo == NULL) {
+		vsb_printf(sb,
+		    "Internal error: Cannot execute cc(1): %s\n",
+		    strerror(errno));
+		free(of);
+		unlink(sf);
+		fclose(fs);
+		return (NULL);
+	}
+
+	/* If we get any output, it's bad */
+	j = 0;
+	while (1) {
+		if (fgets(buf, sizeof buf, fo) == NULL)
+			break;
+		if (!j) {
+			vsb_printf(sb, "Internal error: cc(1) complained:\n");
+			j++;
+		}
+		vsb_cat(sb, buf);
+	} 
+
+	i = pclose(fo);
+	if (j == 0 && i != 0)
+		vsb_printf(sb,
+		    "Internal error: cc(1) exit status 0x%04x\n", i);
+
+	/* If the compiler complained, or exited non-zero, fail */
+	if (i || j) {
+		unlink(of);
+		free(of);
+		of = NULL;
+	}
+
+	/* clean up and return */
+	unlink(sf);
+	free(sf);
+	fclose(fs);
+	return (of);
+}
+
+/*--------------------------------------------------------------------*/
+
+static char *
+mgt_VccCompile(struct vsb *sb, const char *b, const char *e)
+{
+	char *csrc, *vf;
+
+	csrc = VCC_Compile(sb, b, e);
+	if (csrc != NULL) {
+		vf = mgt_CallCc(csrc, sb);
+		free(csrc);
+	}
+	return (vf);
+}
+
+static char *
+mgt_VccCompileFile(struct vsb *sb, const char *fn)
+{
+	char *csrc, *vf;
+
+	csrc = VCC_CompileFile(sb, fn);
+	if (csrc != NULL) {
+		vf = mgt_CallCc(csrc, sb);
+		free(csrc);
+	}
+	return (vf);
+}
+
+
 /*--------------------------------------------------------------------*/
 
 static struct vclprog *
@@ -193,10 +312,10 @@ mgt_vcc_default(const char *b_arg, const char *f_arg)
 		free(addr);
 		free(port);
 		AN(buf);
-		vf = VCC_Compile(sb, buf, NULL);
+		vf = mgt_VccCompile(sb, buf, NULL);
 		free(buf);
 	} else {
-		vf = VCC_CompileFile(sb, f_arg);
+		vf = mgt_VccCompileFile(sb, f_arg);
 	}
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
@@ -275,7 +394,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(sb);
-	vf = VCC_Compile(sb, av[3], NULL);
+	vf = mgt_VccCompile(sb, av[3], NULL);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
 		cli_out(cli, "%s", vsb_data(sb));
@@ -306,7 +425,7 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(sb);
-	vf = VCC_CompileFile(sb, av[3]);
+	vf = mgt_VccCompileFile(sb, av[3]);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
 		cli_out(cli, "%s", vsb_data(sb));
