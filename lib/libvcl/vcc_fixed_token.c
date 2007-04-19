@@ -85,6 +85,10 @@ vcl_fixed_token(const char *p, const char **q)
 		}
 		return (0);
 	case '-':
+		if (p[0] == '-' && p[1] == '=') {
+			*q = p + 2;
+			return (T_DECR);
+		}
 		if (p[0] == '-' && p[1] == '-') {
 			*q = p + 2;
 			return (T_DEC);
@@ -101,10 +105,6 @@ vcl_fixed_token(const char *p, const char **q)
 		}
 		return (0);
 	case '/':
-		if (p[0] == '/' && p[1] == '=') {
-			*q = p + 2;
-			return (T_DECR);
-		}
 		if (p[0] == '/' && p[1] == '=') {
 			*q = p + 2;
 			return (T_DIV);
@@ -391,7 +391,7 @@ vcl_init_tnames(void)
 	vcl_tnames[T_CAND] = "&&";
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
-	vcl_tnames[T_DECR] = "/=";
+	vcl_tnames[T_DECR] = "-=";
 	vcl_tnames[T_DELIVER] = "deliver";
 	vcl_tnames[T_DISCARD] = "discard";
 	vcl_tnames[T_DIV] = "/=";
