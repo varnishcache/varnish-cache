@@ -62,16 +62,15 @@ struct tokenlist {
 	struct token		*t;
 	int			indent;
 	unsigned		cnt;
-	struct vsb		*fc, *fh, *fi, *ff;
-#define VCL_MET_MAC(l,U,m) struct vsb *fm_##l;
-#include "vcl_returns.h"
-#undef VCL_MET_MAC
+	struct vsb		*fc, *fh, *fi, *ff, *fb;
+	struct vsb		*fm[N_METHODS];
 	TAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
 	int			nbackend;
 	TAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
+	struct proc		*mprocs[N_METHODS];
 
 	unsigned		recnt;
 };
@@ -115,7 +114,6 @@ struct var {
 
 struct method {
 	const char		*name;
-	const char		*defname;
 	unsigned		returns;
 };
 
@@ -145,19 +143,19 @@ void vcc_Acl(struct tokenlist *tl);
 void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
 
 /* vcc_compile.c */
-extern const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 void Fh(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fc(struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fb(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fi(struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(struct tokenlist *tl, int indent, const char *fmt, ...);
 unsigned UintVal(struct tokenlist *tl);
 void AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void EncToken(struct vsb *sb, struct token *t);
-void EncString(struct vsb *sb, const char *b, const char *e);
 struct var *FindVar(struct tokenlist *tl, struct token *t, struct var *vl);
 void AddCall(struct tokenlist *tl, struct token *t);
 struct proc *AddProc(struct tokenlist *tl, struct token *t, int def);
+int IsMethod(struct token *t);
 
 /* vcc_obj.c */
 extern struct var vcc_be_vars[];

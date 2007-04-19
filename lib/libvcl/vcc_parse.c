@@ -85,20 +85,10 @@
 #include "vrt.h"
 #include "libvcl.h"
 
-static struct method method_tab[] = {
-#define VCL_RET_MAC(l,U,b,n)
-#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, "default_vcl_"#l, m },
-#include "vcl_returns.h"
-#undef VCL_MET_MAC
-#undef VCL_RET_MAC
-	{ NULL, 0U }
-};
-
 /*--------------------------------------------------------------------*/
 
 static void Compound(struct tokenlist *tl);
 static void Cond_0(struct tokenlist *tl);
-const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
@@ -109,25 +99,9 @@ const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 } while (0)
 
 #define C(tl, sep)	do {					\
-	Fc(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
+	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt; 					\
 } while (0)
-
-/*--------------------------------------------------------------------*/
-
-static int
-IsMethod(struct token *t)
-{
-	struct method *m;
-
-	for(m = method_tab; m->name != NULL; m++) {
-		if (vcc_IdIs(t, m->defname))
-			return (2);
-		if (vcc_IdIs(t, m->name))
-			return (1);
-	}
-	return (0);
-}
 
 /*--------------------------------------------------------------------
  * Recognize and convert units of time, return seconds.
@@ -264,7 +238,7 @@ TimeVal(struct tokenlist *tl)
 	v = DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = TimeUnit(tl);
-	Fc(tl, 0, "(%g * %g)", v, sc);
+	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
 static void
@@ -275,7 +249,7 @@ SizeVal(struct tokenlist *tl)
 	v = DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = SizeUnit(tl);
-	Fc(tl, 0, "(%g * %g)", v, sc);
+	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
 static void
@@ -286,7 +260,7 @@ RateVal(struct tokenlist *tl)
 	v = DoubleVal(tl);
 	ExpectErr(tl, ID);
 	sc = RateUnit(tl);
-	Fc(tl, 0, "(%g * %g)", v, sc);
+	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
 /*--------------------------------------------------------------------*/
@@ -303,7 +277,7 @@ vcc_re(struct tokenlist *tl, const char *str, struct token *re)
 	}
 	sprintf(buf, "VGC_re_%u", tl->recnt++);
 
-	Fc(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
+	Fb(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
 	Fh(tl, 0, "void *%s;\n", buf);
 	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
 	EncToken(tl->fi, re);
@@ -327,16 +301,16 @@ Cond_String(struct var *vp, struct tokenlist *tl)
 		break;
 	case T_EQ:
 	case T_NEQ:
-		Fc(tl, 1, "%sstrcmp(%s, ",
+		Fb(tl, 1, "%sstrcmp(%s, ",
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		EncToken(tl->fc, tl->t);
-		Fc(tl, 0, ")\n");
+		EncToken(tl->fb, tl->t);
+		Fb(tl, 0, ")\n");
 		vcc_NextToken(tl);
 		break;
 	default:
-		Fc(tl, 1, "%s != (void*)0", vp->rname);
+		Fb(tl, 1, "%s != (void*)0\n", vp->rname);
 		break;
 	}
 }
@@ -345,7 +319,7 @@ static void
 Cond_Int(struct var *vp, struct tokenlist *tl)
 {
 
-	Fc(tl, 1, "%s ", vp->rname);
+	Fb(tl, 1, "%s ", vp->rname);
 	switch (tl->t->tok) {
 	case T_EQ:
 	case T_NEQ:
@@ -353,7 +327,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 	case T_GEQ:
 	case '>':
 	case '<':
-		Fc(tl, 0, "%.*s ", PF(tl->t));
+		Fb(tl, 0, "%.*s ", PF(tl->t));
 		vcc_NextToken(tl);
 		switch(vp->fmt) {
 		case TIME:
@@ -361,7 +335,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 			break;
 		case INT:
 			ExpectErr(tl, CNUM);
-			Fc(tl, 0, "%.*s ", PF(tl->t));
+			Fb(tl, 0, "%.*s ", PF(tl->t));
 			vcc_NextToken(tl);
 			break;
 		case SIZE:
@@ -374,7 +348,7 @@ Cond_Int(struct var *vp, struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		Fc(tl, 0, "\n");
+		Fb(tl, 0, "\n");
 		break;
 	default:
 		vsb_printf(tl->sb, "Illegal condition ");
@@ -391,14 +365,14 @@ static void
 Cond_Bool(struct var *vp, struct tokenlist *tl)
 {
 
-	Fc(tl, 1, "%s\n", vp->rname);
+	Fb(tl, 1, "%s\n", vp->rname);
 }
 
 static void
 Cond_Backend(struct var *vp, struct tokenlist *tl)
 {
 
-	Fc(tl, 1, "%s\n", vp->rname);
+	Fb(tl, 1, "%s\n", vp->rname);
 }
 
 static void
@@ -408,10 +382,10 @@ Cond_2(struct tokenlist *tl)
 
 	C(tl, ",");
 	if (tl->t->tok == '!') {
-		Fc(tl, 1, "!(\n");
+		Fb(tl, 1, "!(\n");
 		vcc_NextToken(tl);
 	} else {
-		Fc(tl, 1, "(\n");
+		Fb(tl, 1, "(\n");
 	}
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
@@ -448,35 +422,35 @@ Cond_2(struct tokenlist *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	Fc(tl, 1, ")\n");
+	Fb(tl, 1, ")\n");
 }
 
 static void
 Cond_1(struct tokenlist *tl)
 {
 
-	Fc(tl, 1, "(\n");
+	Fb(tl, 1, "(\n");
 	L(tl, Cond_2(tl));
 	while (tl->t->tok == T_CAND) {
 		vcc_NextToken(tl);
-		Fc(tl, 1, ") && (\n");
+		Fb(tl, 1, ") && (\n");
 		L(tl, Cond_2(tl));
 	}
-	Fc(tl, 1, ")\n");
+	Fb(tl, 1, ")\n");
 }
 
 static void
 Cond_0(struct tokenlist *tl)
 {
 
-	Fc(tl, 1, "(\n");
+	Fb(tl, 1, "(\n");
 	L(tl, Cond_1(tl));
 	while (tl->t->tok == T_COR) {
 		vcc_NextToken(tl);
-		Fc(tl, 1, ") || (\n");
+		Fb(tl, 1, ") || (\n");
 		L(tl, Cond_1(tl));
 	}
-	Fc(tl, 1, ")\n");
+	Fb(tl, 1, ")\n");
 }
 
 static void
@@ -485,10 +459,10 @@ Conditional(struct tokenlist *tl)
 
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
-	Fc(tl, 1, "(\n");
+	Fb(tl, 1, "(\n");
 	L(tl, Cond_0(tl));
 	ERRCHK(tl);
-	Fc(tl, 1, ")\n");
+	Fb(tl, 1, ")\n");
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 }
@@ -500,7 +474,7 @@ IfStmt(struct tokenlist *tl)
 {
 
 	ExpectErr(tl, T_IF);
-	Fc(tl, 1, "if \n");
+	Fb(tl, 1, "if \n");
 	vcc_NextToken(tl);
 	L(tl, Conditional(tl));
 	ERRCHK(tl);
@@ -511,7 +485,7 @@ IfStmt(struct tokenlist *tl)
 		case T_ELSE:
 			vcc_NextToken(tl);
 			if (tl->t->tok != T_IF) {
-				Fc(tl, 1, "else \n");
+				Fb(tl, 1, "else \n");
 				L(tl, Compound(tl));
 				ERRCHK(tl);
 				return;
@@ -519,7 +493,7 @@ IfStmt(struct tokenlist *tl)
 			/* FALLTHROUGH */
 		case T_ELSEIF:
 		case T_ELSIF:
-			Fc(tl, 1, "else if \n");
+			Fb(tl, 1, "else if \n");
 			vcc_NextToken(tl);
 			L(tl, Conditional(tl));
 			ERRCHK(tl);
@@ -546,13 +520,13 @@ Action(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	switch (at->tok) {
 	case T_NO_NEW_CACHE:
-		Fc(tl, 1, "VCL_no_new_cache(sp);\n");
+		Fb(tl, 1, "VCL_no_new_cache(sp);\n");
 		return;
 	case T_NO_CACHE:
-		Fc(tl, 1, "VCL_no_cache(sp);\n");
+		Fb(tl, 1, "VCL_no_cache(sp);\n");
 		return;
 #define VCL_RET_MAC(a,b,c,d) case T_##b: \
-		Fc(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
+		Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #b); \
 		tl->curproc->returns |= VCL_RET_##b; \
 		tl->curproc->returnt[d] = at; \
 		return;
@@ -563,35 +537,35 @@ Action(struct tokenlist *tl)
 			a = UintVal(tl);
 		else
 			a = 0;
-		Fc(tl, 1, "VRT_error(sp, %u", a);
+		Fb(tl, 1, "VRT_error(sp, %u", a);
 		if (tl->t->tok == CSTR) {
-			Fc(tl, 0, ", %.*s", PF(tl->t));
+			Fb(tl, 0, ", %.*s", PF(tl->t));
 			vcc_NextToken(tl);
 		} else {
-			Fc(tl, 0, ", (const char *)0");
+			Fb(tl, 0, ", (const char *)0");
 		}
-		Fc(tl, 0, ");\n");
-		Fc(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
+		Fb(tl, 0, ");\n");
+		Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
 		return;
 	case T_SWITCH_CONFIG:
 		ExpectErr(tl, ID);
-		Fc(tl, 1, "VCL_switch_config(\"%.*s\");\n", PF(tl->t));
+		Fb(tl, 1, "VCL_switch_config(\"%.*s\");\n", PF(tl->t));
 		vcc_NextToken(tl);
 		return;
 	case T_CALL:
 		ExpectErr(tl, ID);
 		AddCall(tl, tl->t);
 		AddRef(tl, tl->t, R_FUNC);
-		Fc(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
-		Fc(tl, 1, "\treturn (1);\n");
+		Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
+		Fb(tl, 1, "\treturn (1);\n");
 		vcc_NextToken(tl);
 		return;
 	case T_REWRITE:
 		ExpectErr(tl, CSTR);
-		Fc(tl, 1, "VCL_rewrite(%.*s", PF(tl->t));
+		Fb(tl, 1, "VCL_rewrite(%.*s", PF(tl->t));
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		Fc(tl, 0, ", %.*s);\n", PF(tl->t));
+		Fb(tl, 0, ", %.*s);\n", PF(tl->t));
 		vcc_NextToken(tl);
 		return;
 	case T_SET:
@@ -599,7 +573,7 @@ Action(struct tokenlist *tl)
 		vp = FindVar(tl, tl->t, vcc_vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
-		Fc(tl, 1, "%s", vp->lname);
+		Fb(tl, 1, "%s", vp->lname);
 		vcc_NextToken(tl);
 		switch (vp->fmt) {
 		case INT:
@@ -608,11 +582,11 @@ Action(struct tokenlist *tl)
 		case TIME:
 		case FLOAT:
 			if (tl->t->tok != '=')
-				Fc(tl, 0, "%s %c ", vp->rname, *tl->t->b);
+				Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 			a = tl->t->tok;
 			vcc_NextToken(tl);
 			if (a == T_MUL || a == T_DIV)
-				Fc(tl, 0, "%g", DoubleVal(tl));
+				Fb(tl, 0, "%g", DoubleVal(tl));
 			else if (vp->fmt == TIME)
 				TimeVal(tl);
 			else if (vp->fmt == SIZE)
@@ -620,15 +594,15 @@ Action(struct tokenlist *tl)
 			else if (vp->fmt == RATE)
 				RateVal(tl);
 			else
-				Fc(tl, 0, "%g", DoubleVal(tl));
-			Fc(tl, 0, ");\n");
+				Fb(tl, 0, "%g", DoubleVal(tl));
+			Fb(tl, 0, ");\n");
 			break;
 #if 0	/* XXX: enable if we find a legit use */
 		case IP:
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
 				u = vcc_IpVal(tl);
-				Fc(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
+				Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
 				    u,
 				    (u >> 24) & 0xff,
 				    (u >> 16) & 0xff,
@@ -647,9 +621,9 @@ Action(struct tokenlist *tl)
 			if (tl->t->tok == '=') {
 				vcc_NextToken(tl);
 				AddRef(tl, tl->t, R_BACKEND);
-				Fc(tl, 0, "VGC_backend_%.*s", PF(tl->t));
+				Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
 				vcc_NextToken(tl);
-				Fc(tl, 0, ");\n");
+				Fb(tl, 0, ");\n");
 				break;
 			}
 			vsb_printf(tl->sb, "Illegal assignment operator ");
@@ -679,7 +653,7 @@ Compound(struct tokenlist *tl)
 {
 
 	ExpectErr(tl, '{');
-	Fc(tl, 1, "{\n");
+	Fb(tl, 1, "{\n");
 	tl->indent += INDENT;
 	C(tl, ";");
 	vcc_NextToken(tl);
@@ -695,7 +669,7 @@ Compound(struct tokenlist *tl)
 		case '}':
 			vcc_NextToken(tl);
 			tl->indent -= INDENT;
-			Fc(tl, 1, "}\n");
+			Fb(tl, 1, "}\n");
 			return;
 		case EOI:
 			vsb_printf(tl->sb,
@@ -853,28 +827,40 @@ Backend(struct tokenlist *tl)
 static void
 Function(struct tokenlist *tl)
 {
-	struct token *tn;
+	int m;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	tl->curproc = AddProc(tl, tl->t, 1);
-	tl->curproc->exists++;
-	tn = tl->t;
-	AddDef(tl, tl->t, R_FUNC);
-	Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
-	    PF(tl->t));
-	Fc(tl, 1, "static int\n");
-	Fc(tl, 1, "VGC_function_%.*s (struct sess *sp)\n", PF(tl->t));
+
+	m = IsMethod(tl->t);
+	if (m != -1) {
+		assert(m < N_METHODS);
+		tl->fb = tl->fm[m];
+		if (tl->mprocs[m] == NULL) {
+			tl->mprocs[m] = AddProc(tl, tl->t, 1);
+			tl->mprocs[m]->exists++;
+			AddDef(tl, tl->t, R_FUNC);
+			AddRef(tl, tl->t, R_FUNC);
+		}
+		tl->curproc = tl->mprocs[m];
+	} else {
+		tl->fb = tl->fc;
+		tl->curproc = AddProc(tl, tl->t, 1);
+		tl->curproc->exists++;
+		AddDef(tl, tl->t, R_FUNC);
+		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
+		    PF(tl->t));
+		Fc(tl, 1, "static int\n");
+		Fc(tl, 1, "VGC_function_%.*s (struct sess *sp)\n", PF(tl->t));
+	}
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
-	Fc(tl, 1, "{\n");
+	Fb(tl, 1, "{\n");
 	L(tl, Compound(tl));
-	if (IsMethod(tn) == 1) {
-		Fc(tl, 1, "VGC_function_default_%.*s(sp);\n", PF(tn));
-	}
-	Fc(tl, 1, "}\n");
+	Fb(tl, 1, "}\n");
 	tl->indent -= INDENT;
-	Fc(tl, 0, "\n");
+	Fb(tl, 0, "\n");
+	tl->fb = NULL;
 }
 
 /*--------------------------------------------------------------------
