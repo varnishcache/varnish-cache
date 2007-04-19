@@ -95,14 +95,23 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "Cache process not running");
 		return;
 	}
-	v = 0;
-	for (u = 1; av[u] != NULL; u++)
-		v += strlen(av[u]) + 3;
+	v = 64;
 	p = malloc(v);
 	XXXAN(p);
 	q = p;
 	for (u = 1; av[u] != NULL; u++) {
+		if (v < (q - p) + 8) {
+			r = realloc(p, v + v);
+			XXXAN(r);
+			v += v;
+			q += r - p;
+			p = r;
+		}
+		/* v >= (q - p) + 8 */
+		if (u > 1)
+			*q++ = ' ';
 		*q++ = '"';
+		/* v >= (q - p) + 6 */
 		for (r = av[u]; *r; r++) {
 			switch (*r) {
 			case '\\':	*q++ = '\\'; *q++ = '\\'; break;
@@ -111,9 +120,10 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 			default:	*q++ = *r; break;
 			}
 		}
+		/* v >= (q - p) + 4 */
 		*q++ = '"';
-		*q++ = ' ';
 	}
+	/* v >= (q - p) + 3 */
 	*q++ = '\n';
 	v = q - p;
 	i = write(cli_o, p, v);
