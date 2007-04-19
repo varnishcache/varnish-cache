@@ -91,7 +91,7 @@ vcc_ErrWhere(struct tokenlist *tl, struct token *t)
 		} else
 			pos++;
 	}
-	vsb_printf(tl->sb, "In %s Line %d Pos %d\n", f, lin, pos);
+	vsb_printf(tl->sb, "(%s Line %d Pos %d)\n", f, lin, pos);
 	x = y = 0;
 	for (p = l; p < e && *p != '\n'; p++) {
 		if (*p == '\t') {
