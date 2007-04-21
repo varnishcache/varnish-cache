@@ -29,12 +29,22 @@
  *
  * $Id$
  *
- * Program that will get data from the shared memory log. When it has the data
- * it will order the data based on the sessionid. When the data is ordered
- * and session is finished it will write the data into disk. Logging will be
- * in NCSA extended/combined access log format.
+ * Obtain log data from the shared memory log, order it by session ID, and
+ * display it in Apache / NCSA combined log format:
  *
  *	"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""
+ *
+ * where the fields are defined as follows:
+ *
+ *	%h		Client host name or IP address (always the latter)
+ *	%l		Client user ID as reported by identd (always "-")
+ *	%u		User ID if using HTTP authentication, or "-"
+ *	%t		Date and time of request
+ *	%r		Request line
+ *	%s		Status code
+ *	%b		Length of reply body, or "-"
+ *	%{Referer}i	Contents of "Referer" request header
+ *	%{User-agent}i	Contents of "User-agent" request header
  *
  * TODO:	- Log in any format one wants
  *		- Maybe rotate/compress log
@@ -57,13 +67,13 @@
 #include "varnishapi.h"
 
 static struct logline {
-	char df_h[4 * (3 + 1)];		/* Datafield for %h (IP adress)	*/
-	char df_s[4]; 			/* Datafield for %s, Status	*/
-	char df_b[12];			/* Datafield for %b, Bytes	*/
-	char *df_R; 			/* Datafield for %{Referer}	*/
-	char *df_U; 			/* Datafield for %{User-agent}	*/
-	char *df_RU;				/* Datafield for %l, Remote user */
-	int bogus_req; 			/* bogus request		*/
+	char df_h[4 * (3 + 1)];		/* %h (host name / IP adress)*/
+	char df_s[4];			/* %s, Status */
+	char df_b[12];			/* %b, Bytes */
+	char *df_R;			/* %{Referer}i */
+	char *df_U;			/* %{User-agent}i */
+	char *df_RU;			/* %u, Remote user */
+	int bogus_req;			/* bogus request */
 	struct vsb *sb;
 } *ll[65536];
 
@@ -82,7 +92,8 @@ ispfx(const char *ptr, unsigned len, const char *pfx)
 }
 
 static int
-extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+extended_log_format(void *priv, unsigned tag, unsigned fd,
+    unsigned len, unsigned spec, const char *ptr)
 {
 	const char *p;
 	char *q;
@@ -164,6 +175,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	default:
 		break;
 	}
+
 	if (tag != SLT_ReqEnd)
 		return (0);
 
@@ -171,13 +183,11 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 	assert(1 == sscanf(ptr, "%*u %*u.%*u %ld.", &l));
 	t = l;
 	localtime_r(&t, &tm);
-	
 
-	
 	strftime(tbuf, sizeof tbuf, "%d/%b/%Y:%T %z", &tm);
 	fprintf(fo, "%s", lp->df_h);
-	
-	if (lp->df_RU != NULL){
+
+	if (lp->df_RU != NULL) {
 		base64_init();
 		lu = sizeof rubuf;
 		base64_decode(rubuf, lu, lp->df_RU);
@@ -188,8 +198,7 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 		fprintf(fo, " %s", rubuf);
 		free(lp->df_RU);
 		lp->df_RU = NULL;
-	}
-	else{
+	} else {
 		fprintf(fo, " -");
 	}
 	fprintf(fo, " - [%s]", tbuf);
@@ -201,17 +210,15 @@ extended_log_format(void *priv, unsigned tag, unsigned fd, unsigned len, unsigne
 		fprintf(fo, " \"%s\"", lp->df_R);
 		free(lp->df_R);
 		lp->df_R = NULL;
+	} else {
+		fprintf(fo, " \"-\"");
 	}
-	else {
-	        fprintf(fo, " \"-\"");
-				        }
 
 	if (lp->df_U != NULL) {
 		fprintf(fo, " \"%s\"", lp->df_U);
 		free(lp->df_U);
 		lp->df_U = NULL;
-	}
-	else {
+	} else {
 		fprintf(fo, " \"-\"");
 	}
 	fprintf(fo, "\n");
@@ -248,12 +255,13 @@ open_log(const char *ofn, int append)
 static void
 usage(void)
 {
+
 	fprintf(stderr, "usage: varnishncsa %s [-aV] [-w file]\n", VSL_ARGS);
 	exit(1);
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
 	int i, c;
 	struct VSL_data *vd;
@@ -311,4 +319,3 @@ main(int argc, char **argv)
 
 	exit(0);
 }
-
