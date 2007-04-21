@@ -32,7 +32,7 @@
  * Obtain log data from the shared memory log, order it by session ID, and
  * display it in Apache / NCSA combined log format:
  *
- *	"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""
+ *	%h %l %u %t "%r" %>s %b "%{Referer}i" "%{User-agent}i"
  *
  * where the fields are defined as follows:
  *
@@ -46,56 +46,126 @@
  *	%{Referer}i	Contents of "Referer" request header
  *	%{User-agent}i	Contents of "User-agent" request header
  *
+ * Actually, we cheat a little and replace "%r" with something close to
+ * "%m http://%{Host}i%U%q %H", where the additional fields are:
+ *
+ *	%m		Request method
+ *	%{Host}i	Contents of "Host" request header
+ *	%U		URL path
+ *	%q		Query string
+ *	%H		Protocol version
+ *
  * TODO:	- Log in any format one wants
  *		- Maybe rotate/compress log
  */
 
-#include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <signal.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <time.h>
-
-#include "compat/vis.h"
-
-#include "vsb.h"
+#include <unistd.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
+#include "vsb.h"
 
 static struct logline {
-	char df_h[4 * (3 + 1)];		/* %h (host name / IP adress)*/
-	char df_s[4];			/* %s, Status */
-	char df_b[12];			/* %b, Bytes */
-	char *df_R;			/* %{Referer}i */
-	char *df_U;			/* %{User-agent}i */
-	char *df_RU;			/* %u, Remote user */
-	int bogus_req;			/* bogus request */
-	struct vsb *sb;
+	char *df_H;			/* %H, Protocol version */
+	char *df_Host;			/* %{Host}i */
+	char *df_Referer;		/* %{Referer}i */
+	char *df_Uq;			/* %U%q, URL path and query string */
+	char *df_User_agent;		/* %{User-agent}i */
+	char *df_b;			/* %b, Bytes */
+	char *df_h;			/* %h (host name / IP adress)*/
+	char *df_m;			/* %m, Request method*/
+	char *df_s;			/* %s, Status */
+	char *df_u;			/* %u, Remote user */
+	int bogus;			/* bogus request */
 } *ll[65536];
 
-/* Check if string starts with pfx */
 static int
-ispfx(const char *ptr, unsigned len, const char *pfx)
+isprefix(const char *str, const char *prefix, const char *end, const char **next)
 {
-	unsigned l;
 
-	l = strlen(pfx);
-	if (l > len)
+	while (str < end && *str && *prefix &&
+	    tolower((int)*str) == tolower((int)*prefix))
+		++str, ++prefix;
+	if (*str && *str != ' ')
 		return (0);
-	if (strncasecmp(ptr, pfx, l))
-		return (0);
+	if (next) {
+		while (str < end && *str && *str == ' ')
+			++str;
+		*next = str;
+	}
 	return (1);
 }
 
+/*
+ * Returns a copy of the first consecutive sequence of non-space
+ * characters in the string.
+ */
+static char *
+trimfield(const char *str, const char *end)
+{
+	size_t len;
+	char *p;
+
+	/* skip leading space */
+	while (str < end && *str && *str == ' ')
+		++str;
+
+	/* seek to end of field */
+	for (len = 0; &str[len] < end && str[len]; ++len)
+		if (str[len] == ' ')
+			break;
+
+	/* copy and return */
+	p = malloc(len + 1);
+	assert(p != NULL);
+	memcpy(p, str, len);
+	p[len] = '\0';
+	return (p);
+}
+
+/*
+ * Returns a copy of the entire string with leading and trailing spaces
+ * trimmed.
+ */
+static char *
+trimline(const char *str, const char *end)
+{
+	size_t len;
+	char *p;
+
+	/* skip leading space */
+	while (str < end && *str && *str == ' ')
+		++str;
+
+	/* seek to end of string */
+	for (len = 0; &str[len] < end && str[len]; ++len)
+		 /* nothing */ ;
+
+	/* trim trailing space */
+	while (str[len - 1] == ' ')
+		--len;
+
+	/* copy and return */
+	p = malloc(len + 1);
+	assert(p != NULL);
+	memcpy(p, str, len);
+	p[len] = '\0';
+	return (p);
+}
+
 static int
-extended_log_format(void *priv, unsigned tag, unsigned fd,
+h_ncsa(void *priv, unsigned tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr)
 {
-	const char *p;
+	const char *end, *next;
 	char *q;
 	FILE *fo;
 	time_t t;
@@ -106,70 +176,70 @@ extended_log_format(void *priv, unsigned tag, unsigned fd,
 	char rubuf[128];
 	struct logline *lp;
 
+	end = ptr + len;
+
 	if (!(spec &VSL_S_CLIENT))
 		return (0);
 
 	if (ll[fd] == NULL) {
 		ll[fd] = calloc(sizeof *ll[fd], 1);
 		assert(ll[fd] != NULL);
-		ll[fd]->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-		assert(ll[fd]->sb != NULL);
-		strcpy(ll[fd]->df_h, "-");
 	}
 	lp = ll[fd];
 
 	switch (tag) {
-
-	case SLT_SessionOpen:
 	case SLT_ReqStart:
-		for (p = ptr, q = lp->df_h; *p && *p != ' ';)
-			*q++ = *p++;
-		*q = '\0';
-		vsb_clear(lp->sb);
+		if (lp->df_h != NULL)
+			lp->bogus = 1;
+		else
+			lp->df_h = trimfield(ptr, end);
 		break;
 
 	case SLT_RxRequest:
-		if (ispfx(ptr, len, "HEAD")) {
-			vsb_bcat(lp->sb, ptr, len);
-		} else if (ispfx(ptr, len, "POST")) {
-			vsb_bcat(lp->sb, ptr, len);
-		} else if (ispfx(ptr, len, "GET")) {
-			vsb_bcat(lp->sb, ptr, len);
-		} else if (ispfx(ptr, len, "PURGE")) {
-			vsb_bcat(lp->sb, ptr, len);
-		} else {
-			lp->bogus_req = 1;
-		}
+		if (lp->df_m != NULL)
+			lp->bogus = 1;
+		else
+			lp->df_m = trimline(ptr, end);
 		break;
 
 	case SLT_RxURL:
-		vsb_cat(lp->sb, " ");
-		vsb_bcat(lp->sb, ptr, len);
+		if (lp->df_Uq != NULL)
+			lp->bogus = 1;
+		else
+			lp->df_Uq = trimline(ptr, end);
 		break;
 
 	case SLT_RxProtocol:
-		vsb_cat(lp->sb, " ");
-		vsb_bcat(lp->sb, ptr, len);
+		if (lp->df_H != NULL)
+			lp->bogus = 1;
+		else
+			lp->df_H = trimline(ptr, end);
 		break;
 
 	case SLT_TxStatus:
-		strcpy(lp->df_s, ptr);
+		if (lp->df_s != NULL)
+			lp->bogus = 1;
+		else
+			lp->df_s = trimline(ptr, end);
 		break;
 
 	case SLT_RxHeader:
-		if (ispfx(ptr, len, "user-agent:"))
-			lp->df_U = strdup(ptr + 12);
-		else if (ispfx(ptr, len, "referer:"))
-			lp->df_R = strdup(ptr + 9);
-		else if (ispfx(ptr, len, "authorization:"))
-			lp->df_RU = strdup(ptr + 21);
+		if (isprefix(ptr, "user-agent:", end, &next))
+			lp->df_User_agent = trimline(next, end);
+		else if (isprefix(ptr, "referer:", end, &next))
+			lp->df_Referer = trimline(next, end);
+		else if (isprefix(ptr, "authorization:", end, &next) &&
+		    isprefix(next, "basic", end, &next))
+			lp->df_u = trimline(next, end);
+		else if (isprefix(ptr, "host:", end, &next))
+			lp->df_Host = trimline(next, end);
 		break;
 
 	case SLT_Length:
-		if (strcmp(ptr, "0"))
-			strcpy(lp->df_b, ptr);
+		if (lp->df_b != NULL)
+			lp->bogus = 1;
 		else
-			strcpy(lp->df_b, "-");
+			lp->df_b = trimline(ptr, end);
 		break;
 
 	default:
@@ -179,49 +249,80 @@ extended_log_format(void *priv, unsigned tag, unsigned fd,
 	if (tag != SLT_ReqEnd)
 		return (0);
 
-	fo = priv;
-	assert(1 == sscanf(ptr, "%*u %*u.%*u %ld.", &l));
-	t = l;
-	localtime_r(&t, &tm);
+	if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1)
+		lp->bogus = 1;
+	else
+		t = l;
 
-	strftime(tbuf, sizeof tbuf, "%d/%b/%Y:%T %z", &tm);
-	fprintf(fo, "%s", lp->df_h);
+	if (!lp->bogus) {
+		fo = priv;
 
-	if (lp->df_RU != NULL) {
-		base64_init();
-		lu = sizeof rubuf;
-		base64_decode(rubuf, lu, lp->df_RU);
-		q = strchr(rubuf, ':');
-		if (q != NULL){
-			*q = '\0';
+		/* %h */
+		fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
+
+		/* %l */
+		fprintf(fo, "- ");
+
+		/* %u: decode authorization string */
+		if (lp->df_u != NULL) {
+			base64_init();
+			lu = sizeof rubuf;
+			base64_decode(rubuf, lu, lp->df_u);
+			q = strchr(rubuf, ':');
+			if (q != NULL)
+				*q = '\0';
+			fprintf(fo, "%s ", rubuf);
+		} else {
+			fprintf(fo, "- ");
 		}
-		fprintf(fo, " %s", rubuf);
-		free(lp->df_RU);
-		lp->df_RU = NULL;
-	} else {
-		fprintf(fo, " -");
-	}
-	fprintf(fo, " - [%s]", tbuf);
-	vsb_finish(lp->sb);
-	fprintf(fo, " \"%s\"", vsb_data(lp->sb));
-	fprintf(fo, " %s", lp->df_s);
-	fprintf(fo, " %s", lp->df_b);
-	if (lp->df_R != NULL) {
-		fprintf(fo, " \"%s\"", lp->df_R);
-		free(lp->df_R);
-		lp->df_R = NULL;
-	} else {
-		fprintf(fo, " \"-\"");
+
+		/* %t */
+		localtime_r(&t, &tm);
+		strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &tm);
+		fprintf(fo, "%s ", tbuf);
+
+		/*
+		 * Fake "%r".  This would be a lot easier if Varnish
+		 * normalized the request URL.
+		 */
+		fprintf(fo, "\"%s ", lp->df_m);
+		if (lp->df_Host) {
+			if (strncmp(lp->df_Host, "http://", 7) != 0)
+				fprintf(fo, "http://");
+			fprintf(fo, lp->df_Host);
+		}
+		fprintf(fo, "%s ", lp->df_Uq);
+		fprintf(fo, "%s\" ", lp->df_H);
+
+		/* %s */
+		fprintf(fo, "%s ", lp->df_s);
+
+		/* %b */
+		fprintf(fo, "%s ", lp->df_b);
+
+		/* %{Referer}i */
+		fprintf(fo, "\"%s\" ",
+		    lp->df_Referer ? lp->df_Referer : "-");
+
+		/* %{User-agent}i */
+		fprintf(fo, "\"%s\"\n",
+		    lp->df_User_agent ? lp->df_User_agent : "-");
 	}
 
-	if (lp->df_U != NULL) {
-		fprintf(fo, " \"%s\"", lp->df_U);
-		free(lp->df_U);
-		lp->df_U = NULL;
-	} else {
-		fprintf(fo, " \"-\"");
-	}
-	fprintf(fo, "\n");
+	/* clean up */
+#define freez(x) do { if (x) free(x); x = NULL; } while (0);
+	freez(lp->df_H);
+	freez(lp->df_Host);
+	freez(lp->df_Referer);
+	freez(lp->df_Uq);
+	freez(lp->df_User_agent);
+	freez(lp->df_b);
+	freez(lp->df_h);
+	freez(lp->df_m);
+	freez(lp->df_s);
+	freez(lp->df_u);
+#undef freez
+	lp->bogus = 0;
 
 	return (0);
 }
@@ -305,7 +406,7 @@ main(int argc, char *argv[])
 		of = stdout;
 	}
 
-	while (VSL_Dispatch(vd, extended_log_format, of) == 0) {
+	while (VSL_Dispatch(vd, h_ncsa, of) == 0) {
 		if (fflush(of) != 0) {
 			perror(ofn);
 			exit(1);
