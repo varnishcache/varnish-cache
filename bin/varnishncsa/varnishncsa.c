@@ -85,7 +85,9 @@ static struct logline {
 	char *df_s;			/* %s, Status */
 	char *df_u;			/* %u, Remote user */
 	int bogus;			/* bogus request */
-} *ll[65536];
+} **ll;
+
+static size_t nll;
 
 static int
 isprefix(const char *str, const char *prefix, const char *end, const char **next)
@@ -170,10 +172,8 @@ h_ncsa(void *priv, unsigned tag, unsigned fd,
 	FILE *fo;
 	time_t t;
 	long l;
-	unsigned lu;
 	struct tm tm;
 	char tbuf[40];
-	char rubuf[128];
 	struct logline *lp;
 
 	end = ptr + len;
@@ -181,6 +181,18 @@ h_ncsa(void *priv, unsigned tag, unsigned fd,
 	if (!(spec &VSL_S_CLIENT))
 		return (0);
 
+	if (fd >= nll) {
+		struct logline **newll = ll;
+		size_t newnll = nll;
+
+		while (fd >= newnll)
+			newnll += newnll + 1;
+		newll = realloc(newll, newnll * sizeof *newll);
+		assert(newll != NULL);
+		memset(newll + nll, 0, (newnll - nll) * sizeof *newll);
+		ll = newll;
+		nll = newnll;
+	}
 	if (ll[fd] == NULL) {
 		ll[fd] = calloc(sizeof *ll[fd], 1);
 		assert(ll[fd] != NULL);
@@ -265,13 +277,19 @@ h_ncsa(void *priv, unsigned tag, unsigned fd,
 
 		/* %u: decode authorization string */
 		if (lp->df_u != NULL) {
+			char *rubuf;
+			size_t len;
+
 			base64_init();
-			lu = sizeof rubuf;
-			base64_decode(rubuf, lu, lp->df_u);
+			len = ((strlen(lp->df_u) + 3) * 4) / 3;
+			rubuf = malloc(len);
+			assert(rubuf != NULL);
+			base64_decode(rubuf, len, lp->df_u);
 			q = strchr(rubuf, ':');
 			if (q != NULL)
 				*q = '\0';
 			fprintf(fo, "%s ", rubuf);
+			free(rubuf);
 		} else {
 			fprintf(fo, "- ");
 		}
