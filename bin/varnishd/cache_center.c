@@ -74,6 +74,10 @@ DOT start -> RECV [style=bold,color=green,weight=4]
 #include "compat/clock_gettime.h"
 #endif
 
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
+
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"

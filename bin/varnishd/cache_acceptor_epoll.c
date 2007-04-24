@@ -70,13 +70,6 @@ vca_del(int fd)
 	AZ(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev));
 }
 
-static void
-vca_rcvhdev(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-}
-
 static void *
 vca_main(void *arg)
 {

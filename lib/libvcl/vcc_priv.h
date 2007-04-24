@@ -43,4 +43,4 @@ extern const char *vcl_tnames[256];
 void vcl_init_tnames(void);
 void vcl_output_lang_h(struct vsb *sb);
 
-#define PF(t)	((t)->e - (t)->b), (t)->b
+#define PF(t)	(int)((t)->e - (t)->b), (t)->b
