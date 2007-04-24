@@ -11,4 +11,5 @@ set -ex
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
+    --enable-werror \
     --prefix=/opt/varnish
