@@ -12,20 +12,6 @@ AC_LANG(C)
 
 AM_INIT_AUTOMAKE
 
-# Compiler flags (assume GCC).
-# This section *must* come before AC_PROG_CC / AC_PROG_CPP.
-CFLAGS="${CFLAGS:--O2 -pipe}"
-DEVELOPER_CFLAGS="-Wall -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
-AC_ARG_ENABLE(developer-warnings,
-	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
-	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
-AC_ARG_ENABLE(debugging-symbols,
-	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
-	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
-AC_ARG_ENABLE(werror,
-	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
-	CFLAGS="${CFLAGS} -Werror")
-
 # Checks for programs.
 AC_GNU_SOURCE
 AC_PROG_CC
@@ -113,6 +99,20 @@ AC_CHECK_FUNCS([kqueue])
 AC_CHECK_FUNCS([epoll_ctl])
 AC_CHECK_FUNCS([poll])
 
+# Now that we're done using the compiler to look for functions and
+# libraries, set CFLAGS to what we want them to be for our own code
+DEVELOPER_CFLAGS="-Wall -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
+AC_ARG_ENABLE(developer-warnings,
+	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
+	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
+AC_ARG_ENABLE(debugging-symbols,
+	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
+	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
+AC_ARG_ENABLE(werror,
+	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
+	CFLAGS="${CFLAGS} -Werror")
+
+# Generate output
 AC_CONFIG_FILES([
     Makefile
     bin/Makefile
