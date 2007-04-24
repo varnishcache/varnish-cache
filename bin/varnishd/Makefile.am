@@ -61,4 +61,5 @@ varnishd_LDFLAGS = -export-dynamic
 varnishd_LDADD = \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libvcl/libvcl.la
+	$(top_builddir)/lib/libvcl/libvcl.la \
+	${DL_LIBS} ${RT_LIBS} ${PTHREAD_LIBS}

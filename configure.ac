@@ -35,10 +35,33 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
+save_LIBS="${LIBS}"
+LIBS=""
 AC_CHECK_LIB(rt, clock_gettime)
+RT_LIBS="${LIBS}"
+LIBS="${save_LIBS}"
+AC_SUBST(RT_LIBS)
+
+save_LIBS="${LIBS}"
+LIBS=""
 AC_CHECK_LIB(dl, dlopen)
-#AC_SEARCH_LIBS(initscr, [curses ncurses])
+DL_LIBS="${LIBS}"
+LIBS="${save_LIBS}"
+AC_SUBST(DL_LIBS)
+
+save_LIBS="${LIBS}"
+LIBS=""
+AC_SEARCH_LIBS(initscr, [curses ncurses])
+CURSES_LIBS="${LIBS}"
+LIBS="${save_LIBS}"
+AC_SUBST(CURSES_LIBS)
+
+save_LIBS="${LIBS}"
+LIBS=""
 AC_SEARCH_LIBS(pthread_create, [thr pthread c_r])
+PTHREAD_LIBS="${LIBS}"
+LIBS="${save_LIBS}"
+AC_SUBST(PTHREAD_LIBS)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -79,7 +102,11 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
+
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${RT_LIBS}"
 AC_CHECK_FUNCS([clock_gettime])
+LIBS="${save_LIBS}"
 
 # Check which mechanism to use for the acceptor
 AC_CHECK_FUNCS([kqueue])
