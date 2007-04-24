@@ -278,13 +278,13 @@ h_ncsa(void *priv, unsigned tag, unsigned fd,
 		/* %u: decode authorization string */
 		if (lp->df_u != NULL) {
 			char *rubuf;
-			size_t len;
+			size_t rulen;
 
 			base64_init();
-			len = ((strlen(lp->df_u) + 3) * 4) / 3;
-			rubuf = malloc(len);
+			rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
+			rubuf = malloc(rulen);
 			assert(rubuf != NULL);
-			base64_decode(rubuf, len, lp->df_u);
+			base64_decode(rubuf, rulen, lp->df_u);
 			q = strchr(rubuf, ':');
 			if (q != NULL)
 				*q = '\0';
