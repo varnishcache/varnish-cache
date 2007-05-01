@@ -77,7 +77,7 @@ static enum shmlogtag logmtx[3][7] = {
 };
 
 static enum shmlogtag
-T(struct http *hp, enum httptag t)
+http2shmlog(struct http *hp, enum httptag t)
 {
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -86,8 +86,12 @@ T(struct http *hp, enum httptag t)
 	return (logmtx[hp->logtag][t]);
 }
 
-#define WSLH(wx, ax, bx, cx, dx) \
-	WSLR(wx, T((cx), (ax)), (bx), (cx)->hd[(dx)].b, (cx)->hd[(dx)].e);
+static void
+WSLH(struct worker *w, enum httptag t, unsigned xid, struct http *hp, int hdr)
+{
+
+	WSLR(w, http2shmlog(hp, t), xid, hp->hd[hdr].b, hp->hd[hdr].e);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -372,7 +376,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 			hp->nhd++;
 		} else {
 			VSL_stats->losthdr++;
-			WSLR(w, T(hp, HTTP_T_LostHeader), fd, p, q);
+			WSLR(w, http2shmlog(hp, HTTP_T_LostHeader), fd, p, q);
 		}
 	}
 	assert(hp->t <= hp->v);
@@ -803,7 +807,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
-		WSL(w, T(to, HTTP_T_LostHeader), fd, "%s", hdr);
+		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", hdr);
 		return;
 	}
 	http_seth(w, fd, to, to->nhd++, HTTP_T_Header, hdr);
@@ -823,7 +827,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 	n = vsnprintf(to->f, l, fmt, ap);
 	if (n + 1 > l || to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
-		WSL(w, T(to, HTTP_T_LostHeader), fd, "%s", to->f);
+		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", to->f);
 	} else {
 		assert(to->f < to->e);
 		to->hd[to->nhd].b = to->f;
