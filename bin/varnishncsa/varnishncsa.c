@@ -164,7 +164,7 @@ trimline(const char *str, const char *end)
 }
 
 static int
-h_ncsa(void *priv, unsigned tag, unsigned fd,
+h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr)
 {
 	const char *end, *next;

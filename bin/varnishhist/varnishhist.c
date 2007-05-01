@@ -112,7 +112,7 @@ r_hist(void)
 }
 
 static int
-h_hist(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 	double b;
 	int i, j;
