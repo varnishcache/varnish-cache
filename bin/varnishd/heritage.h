@@ -111,6 +111,9 @@ struct params {
 	/* HTTP proto behaviour */
 	unsigned		backend_http11;
 	unsigned		client_http11;
+
+	/* Ping interval */
+	unsigned		ping_interval;
 };
 
 extern volatile struct params *params;

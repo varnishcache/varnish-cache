@@ -407,6 +407,15 @@ tweak_client_http11(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_uint(cli, &params->ping_interval, arg, 0, UINT_MAX);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -566,6 +575,12 @@ static struct parspec parspec[] = {
 		"backend response."
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "ping_interval", tweak_ping_interval,
+		"Interval between pings from parent to child.\n"
+		"Zero will disable pinging entirely, which makes "
+		"it possible to attach a debugger to the child.\n"
+		MUST_RESTART,
+		"3", "seconds" },
 	{ NULL, NULL, NULL }
 };
 

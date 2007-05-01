@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd October 6, 2006
+.Dd May 1, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -351,7 +351,15 @@ If the overflow queue fills up,
 will start dropping new connections.
 .Pp
 The default is 100%.
+.It Va ping_interval
+The interval at which the parent process will ping the child process
+to ascertain that it is still present and functioning.
+.Pp
+The default is 3 seconds.
 .It Va pipe_timeout
+The time to wait before dropping an idle pipe mode connection.
+.Pp
+The default is 60 seconds.
 .It Va sendfile_threshold
 The size threshold beyond which documents are sent to the client using
 .Xr sendfile 2
