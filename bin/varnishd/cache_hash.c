@@ -185,6 +185,7 @@ HSH_Lookup(struct sess *sp)
 void
 HSH_Unbusy(struct object *o)
 {
+	struct objhead *oh;
 	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -192,9 +193,14 @@ HSH_Unbusy(struct object *o)
 	assert(o->refcnt > 0);
 	if (o->cacheable)
 		EXP_Insert(o);
-	LOCK(&o->objhead->mtx);
+	oh = o->objhead;
+	if (oh != NULL) {
+		CHECK_OBJ(oh, OBJHEAD_MAGIC);
+		LOCK(&oh->mtx);
+	}
 	o->busy = 0;
-	UNLOCK(&o->objhead->mtx);
+	if (oh != NULL)
+		UNLOCK(&oh->mtx);
 	while (1) {
 		sp = TAILQ_FIRST(&o->waitinglist);
 		if (sp == NULL)
