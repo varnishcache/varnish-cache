@@ -113,8 +113,11 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 		flg[fd] |= F_MATCH;
 	switch (tag) {
 	case SLT_VCL_call:
-		flg[fd] |= F_INVCL;
-		vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
+		if (flg[fd] & F_INVCL)
+			vsb_cat(ob[fd], "\n");
+		else
+			flg[fd] |= F_INVCL;
+		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag],
 		    ((spec & VSL_S_CLIENT) ? 'c' : \
 		    (spec & VSL_S_BACKEND) ? 'b' : '-'),
