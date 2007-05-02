@@ -148,7 +148,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n", expl);
 	vsb_printf(sb, "    <P>XID: %u</P>\r\n", sp->xid);
 	vsb_cat(sb,
-		"    <I><A href=\"http://varnish.linpro.no/\">Varnish</A></I>\r\n"
+		"    <I><A href=\"http://www.varnish-cache.org/\">Varnish</A></I>\r\n"
 		"  </BODY>\r\n"
 		"</HTML>\r\n");
 	vsb_finish(sb);
