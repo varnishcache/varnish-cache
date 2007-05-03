@@ -119,7 +119,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	uintmax_t l;
 	unsigned bs;
 	char suff[2];
-	int i, expl;
+	int i, explicit;
 	off_t o;
 	struct stat st;
 
@@ -140,7 +140,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
 
-	expl = i;
+	explicit = i;
 	if (i == 0) {
 		fprintf(stderr,
 		    "Error: (-sfile) size \"%s\" not understood\n", size);
@@ -215,7 +215,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		exit (2);
 	}
 
-	if (expl < 3 && sizeof(void *) == 4 && l > INT32_MAX) {
+	if (explicit < 3 && sizeof(void *) == 4 && l > INT32_MAX) {
 		fprintf(stderr,
 		    "NB: Limiting size to 2GB on 32 bit architecture to"
 		    " prevent running out of\naddress space."
