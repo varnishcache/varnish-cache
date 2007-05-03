@@ -275,7 +275,7 @@ struct sess {
 	unsigned 		handling;
 	unsigned char		wantbody;
 	int			err_code;
-	const char		*err_expl;
+	const char		*err_reason;
 
 	TAILQ_ENTRY(sess)	list;
 

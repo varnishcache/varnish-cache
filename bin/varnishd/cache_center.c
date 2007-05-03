@@ -247,9 +247,9 @@ static int
 cnt_error(struct sess *sp)
 {
 
-	RES_Error(sp, sp->err_code, sp->err_expl);
+	RES_Error(sp, sp->err_code, sp->err_reason);
 	sp->err_code = 0;
-	sp->err_expl = NULL;
+	sp->err_reason = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
