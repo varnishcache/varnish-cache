@@ -48,7 +48,7 @@
 static struct http_msg {
 	unsigned	nbr;
 	const char	*txt;
-	const char	*expl;
+	const char	*reason;
 } http_msg[] = {
 	{ 101, "Switching Protocols" },
 	{ 200, "OK" },
@@ -96,7 +96,7 @@ static struct http_msg {
 /*--------------------------------------------------------------------*/
 
 void
-RES_Error(struct sess *sp, int code, const char *expl)
+RES_Error(struct sess *sp, int code, const char *reason)
 {
 	char buf[40];
 	struct vsb *sb;
@@ -115,13 +115,13 @@ RES_Error(struct sess *sp, int code, const char *expl)
 		if (mp->nbr > code)
 			break;
 		msg = mp->txt;
-		if (expl == NULL)
-			expl = mp->expl;
+		if (reason == NULL)
+			reason = mp->reason;
 		break;
 	}
-	if (expl == NULL)
-		expl = msg;
-	AN(expl);
+	if (reason == NULL)
+		reason = msg;
+	AN(reason);
 	AN(msg);
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
@@ -144,8 +144,8 @@ RES_Error(struct sess *sp, int code, const char *expl)
 		"  </HEAD>\r\n"
 		"  <BODY>\r\n");
 	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", code, msg);
-	vsb_printf(sb, "    <P>%s</P>\r\n", expl);
-	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n", expl);
+	vsb_printf(sb, "    <P>%s</P>\r\n", reason);
+	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n", reason);
 	vsb_printf(sb, "    <P>XID: %u</P>\r\n", sp->xid);
 	vsb_cat(sb,
 		"    <I><A href=\"http://www.varnish-cache.org/\">Varnish</A></I>\r\n"
@@ -158,7 +158,7 @@ RES_Error(struct sess *sp, int code, const char *expl)
 	WSL(sp->wrk, SLT_TxStatus, sp->id, "%d", code);
 	WSL(sp->wrk, SLT_TxProtocol, sp->id, "HTTP/1.1");
 	WSL(sp->wrk, SLT_TxResponse, sp->id, msg);
-	vca_close_session(sp, expl);
+	vca_close_session(sp, reason);
 	vsb_delete(sb);
 }
 
