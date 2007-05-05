@@ -121,7 +121,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			 *
 			 * The canonical way to do that is to do a blocking
 			 * read(2) of one char, then change to nonblocking,
-			 * read as many as we find, then change back to 
+			 * read as many as we find, then change back to
 			 * blocking reads again.
 			 *
 			 * Hardly much more efficient and certainly a good
@@ -311,12 +311,12 @@ Fetch(struct sess *sp)
 		/* XXX: cleanup */
 		return (1);
 	}
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->obj->entered = time(NULL);
-
 
 	assert(sp->obj->busy != 0);
 
