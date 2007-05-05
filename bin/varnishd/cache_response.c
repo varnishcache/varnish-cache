@@ -145,7 +145,7 @@ RES_Error(struct sess *sp, int code, const char *reason)
 		"  <BODY>\r\n");
 	vsb_printf(sb, "    <H1>Error %03d %s</H1>\r\n", code, msg);
 	vsb_printf(sb, "    <P>%s</P>\r\n", reason);
-	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n", reason);
+	vsb_printf(sb, "    <H3>Guru Meditation:</H3>\r\n");
 	vsb_printf(sb, "    <P>XID: %u</P>\r\n", sp->xid);
 	vsb_cat(sb,
 		"    <I><A href=\"http://www.varnish-cache.org/\">Varnish</A></I>\r\n"
