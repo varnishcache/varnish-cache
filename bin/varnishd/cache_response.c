@@ -255,7 +255,7 @@ RES_WriteObj(struct sess *sp)
 			sp->wrk->acct.bodybytes += st->len;
 #ifdef HAVE_SENDFILE
 			/*
-			 * XXX: the overhead of setting up senddile is not
+			 * XXX: the overhead of setting up sendfile is not
 			 * XXX: epsilon and maybe not even delta, so avoid
 			 * XXX: engaging sendfile for small objects.
 			 * XXX: Should use getpagesize() ?
