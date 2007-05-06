@@ -400,17 +400,17 @@ sub vcl_fetch {
         error;
     }
     if (!obj.cacheable) {
-        insert_pass;
+        pass;
     }
     if (resp.http.Set-Cookie) {
-        insert_pass;
+        pass;
     }
     insert;
 }
 
 sub vcl_timeout {
     discard;
-};
+}
 .Ed
 .Pp
 The following example shows how to support multiple sites running on
