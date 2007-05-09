@@ -264,10 +264,10 @@ VRT_r_server_ip(struct sess *sp)
 {
 	socklen_t l;
 
-	if (sp->mysockaddr->sa_len == 0) {
+	if (sp->mysockaddrlen == 0) {
 		l = sizeof sp->mysockaddr;
 		AZ(getsockname(sp->fd, sp->mysockaddr, &l));
-		assert(l == sp->mysockaddr->sa_len);
+		sp->mysockaddrlen = l;
 	}
 
 	return (sp->mysockaddr);
