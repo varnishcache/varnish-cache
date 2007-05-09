@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 
+#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +59,6 @@ struct vclprog {
 	char			*fname;
 	int			active;
 };
-
 
 static TAILQ_HEAD(, vclprog) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
 
@@ -129,6 +129,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	FILE *fo, *fs;
 	char *of, *sf, buf[BUFSIZ];
 	int i, j, sfd;
+	void *p;
 
 	/* Create temporary C source file */
 	sf = strdup("/tmp/vcl.XXXXXXXX");
@@ -200,6 +201,17 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		free(of);
 		of = NULL;
 	}
+
+	/* Next, try to load the object into the management process */
+	p = dlopen(of, RTLD_NOW | RTLD_LOCAL);
+	if (p == NULL) {
+		vsb_printf(sb, "Problem loading compiled VCL program:\n\t%s\n",
+		    dlerror());
+		unlink(of);
+		free(of);
+		of = NULL;
+	} else
+		AZ(dlclose(p));
 
 	/* clean up and return */
 	unlink(sf);
