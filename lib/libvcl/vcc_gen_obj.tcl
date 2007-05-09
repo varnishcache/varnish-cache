@@ -41,6 +41,7 @@ set beobj {
 
 set spobj {
 	{ client.ip		IP }
+	{ server.ip		IP }
 	{ req.request		STRING }
 	{ req.host		STRING }
         { req.url		STRING }
@@ -53,7 +54,7 @@ set spobj {
         { resp.http.		HEADER }
 }
 
-set tt(IP)	"const unsigned char *"
+set tt(IP)	"struct sockaddr *"
 set tt(STRING)	"const char *"
 set tt(BOOL)	"double"
 set tt(BACKEND)	"struct backend *"

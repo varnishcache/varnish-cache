@@ -38,6 +38,7 @@ struct sess;
 struct vsb;
 struct backend;
 struct VCL_conf;
+struct sockaddr;
 
 struct vrt_ref {
 	unsigned	source;
@@ -58,7 +59,7 @@ struct vrt_acl {
 };
 
 /* ACL related */
-int VRT_acl_match(struct sess *, const char *, struct vrt_acl *);
+int VRT_acl_match(struct sess *, struct sockaddr *, const char *, struct vrt_acl *);
 void VRT_acl_init(struct vrt_acl *);
 void VRT_acl_fini(struct vrt_acl *);
 

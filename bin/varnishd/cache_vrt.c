@@ -250,3 +250,25 @@ VRT_r_req_##n1(struct sess *sp)				\
 VREQ(request, HTTP_HDR_REQ)
 VREQ(url, HTTP_HDR_URL)
 VREQ(proto, HTTP_HDR_PROTO)
+
+/*--------------------------------------------------------------------*/
+
+struct sockaddr *
+VRT_r_client_ip(struct sess *sp)
+{
+	return (sp->sockaddr);
+}
+
+struct sockaddr *
+VRT_r_server_ip(struct sess *sp)
+{
+	socklen_t l;
+
+	if (sp->mysockaddr->sa_len == 0) {
+		l = sizeof sp->mysockaddr;
+		AZ(getsockname(sp->fd, sp->mysockaddr, &l));
+		assert(l == sp->mysockaddr->sa_len);
+	}
+
+	return (sp->mysockaddr);
+}
