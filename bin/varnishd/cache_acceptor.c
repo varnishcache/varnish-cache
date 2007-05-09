@@ -113,7 +113,7 @@ void
 VCA_Prep(struct sess *sp)
 {
 
-	TCP_name(sp->sockaddr, sp->sockaddrlen,
+	TCP_name((struct sockaddr *)sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
 	sp->acct.first = sp->t_open.tv_sec;

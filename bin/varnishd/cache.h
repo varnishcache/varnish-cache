@@ -256,9 +256,9 @@ struct sess {
 	struct worker		*wrk;
 
 	unsigned		sockaddrlen;
-	struct sockaddr		sockaddr[2];
+	struct sockaddr_storage	sockaddr[1];
 	unsigned		mysockaddrlen;
-	struct sockaddr		mysockaddr[2];
+	struct sockaddr_storage	mysockaddr[1];
 
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFSIZE];

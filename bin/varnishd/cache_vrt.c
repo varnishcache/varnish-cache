@@ -256,7 +256,7 @@ VREQ(proto, HTTP_HDR_PROTO)
 struct sockaddr *
 VRT_r_client_ip(struct sess *sp)
 {
-	return (sp->sockaddr);
+	return ((struct sockaddr *)sp->sockaddr);
 }
 
 struct sockaddr *
@@ -266,9 +266,10 @@ VRT_r_server_ip(struct sess *sp)
 
 	if (sp->mysockaddrlen == 0) {
 		l = sizeof sp->mysockaddr;
-		AZ(getsockname(sp->fd, sp->mysockaddr, &l));
+		AZ(getsockname(sp->fd,
+		    (struct sockaddr*)sp->mysockaddr, &l));
 		sp->mysockaddrlen = l;
 	}
 
-	return (sp->mysockaddr);
+	return ((struct sockaddr*)sp->mysockaddr);
 }
