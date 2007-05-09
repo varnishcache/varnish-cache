@@ -257,6 +257,7 @@ struct sess {
 
 	unsigned		sockaddrlen;
 	struct sockaddr		sockaddr[2];
+	unsigned		mysockaddrlen;
 	struct sockaddr		mysockaddr[2];
 
 	/* formatted ascii client address */
