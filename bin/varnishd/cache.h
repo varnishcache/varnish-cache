@@ -31,6 +31,7 @@
 
 #include <sys/time.h>
 #include <sys/uio.h>
+#include <sys/socket.h>
 
 #include <pthread.h>
 #include <stdint.h>
@@ -255,7 +256,8 @@ struct sess {
 	struct worker		*wrk;
 
 	unsigned		sockaddrlen;
-	struct sockaddr		*sockaddr;
+	struct sockaddr		sockaddr[2];
+	struct sockaddr		mysockaddr[2];
 
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFSIZE];

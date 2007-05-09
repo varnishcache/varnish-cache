@@ -113,15 +113,13 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 	unsigned tcond;
 	char *acln;
 
-	(void)vp;	/* only client.ip at this time */
-
 	switch (tl->t->tok) {
 	case '~':
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
-		Fb(tl, 1, "VRT_acl_match(sp, \"%.*s\", acl_%.*s)\n",
-		    PF(tl->t), PF(tl->t));
+		Fb(tl, 1, "VRT_acl_match(sp, %s, \"%.*s\", acl_%.*s)\n",
+		    vp->rname, PF(tl->t), PF(tl->t));
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:
@@ -133,8 +131,8 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		vcc_acl_top(tl, acln);
 		vcc_acl_entry(tl);
 		vcc_acl_bot(tl, acln);
-		Fb(tl, 1, "%sVRT_acl_match(sp, \"%s\", acl_%s)\n",
-		    (tcond == T_NEQ ? "!" : ""), acln, acln);
+		Fb(tl, 1, "%sVRT_acl_match(sp, %s, 0, acl_%s)\n",
+		    (tcond == T_NEQ ? "!" : ""), vp->rname, acln);
 		free(acln);
 		break;
 	default:

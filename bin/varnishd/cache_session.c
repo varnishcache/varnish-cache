@@ -65,7 +65,6 @@ struct sessmem {
 
 	struct sess		sess;
 	struct http		http;
-	struct sockaddr		sockaddr[2];	/* INET6 hack */
 	unsigned		workspace;
 	TAILQ_ENTRY(sessmem)	list;
 };
@@ -298,8 +297,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sm->sess.mem = sm;
 	sm->sess.http = &sm->http;
 
-	sm->sess.sockaddr = sm->sockaddr;
-	assert(len < sizeof(sm->sockaddr));
+	assert(len < sizeof(sm->sess.sockaddr));
 	if (addr != NULL) {
 		memcpy(sm->sess.sockaddr, addr, len);
 		sm->sess.sockaddrlen = len;

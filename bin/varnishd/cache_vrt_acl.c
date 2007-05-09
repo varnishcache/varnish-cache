@@ -60,35 +60,37 @@ static uint32_t ipv4mask[] = {
 };
 
 static int
-vrt_acl_vsl(struct sess *sp, const char *acl, struct vrt_acl *ap, int r)
+vrt_acl_vsl(struct sess *sp, const char *acln, struct vrt_acl *ap, int r)
 {
 
 	AN(ap);
-	if (ap->name == NULL) {
-		assert(r == 0);
-		VSL(SLT_VCL_acl, sp->fd, "NO_MATCH %s", acl);
-		return (r);
-	}
-	if (ap->priv == NULL) {
-		assert(r == 0);
-		VSL(SLT_VCL_acl, sp->fd, "FAIL %s %s", acl, ap->desc);
-		return (r);
-	}
+	if (acln != NULL) {
+		if (ap->name == NULL) {
+			assert(r == 0);
+			VSL(SLT_VCL_acl, sp->fd, "NO_MATCH %s", acln);
+			return (r);
+		}
+		if (ap->priv == NULL) {
+			assert(r == 0);
+			VSL(SLT_VCL_acl, sp->fd, "FAIL %s %s", acln, ap->desc);
+			return (r);
+		}
 
-	VSL(SLT_VCL_acl, sp->fd, "%s %s %s",
-		r ? "MATCH" : "NEG_MATCH", acl, ap->desc);
+		VSL(SLT_VCL_acl, sp->fd, "%s %s %s",
+			r ? "MATCH" : "NEG_MATCH", acln, ap->desc);
+	}
 	return (r);
 }
 
 int
-VRT_acl_match(struct sess *sp, const char *acl, struct vrt_acl *ap)
+VRT_acl_match(struct sess *sp, struct sockaddr *sa, const char *acln, struct vrt_acl *ap)
 {
 	struct addrinfo *a1;
 	struct sockaddr_in *sin1, *sin2;
 
-	if (sp->sockaddr->sa_family == AF_INET) {
-		assert(sp->sockaddrlen >= sizeof *sin1);
-		sin1 = (void*)sp->sockaddr;
+	if (sa->sa_family == AF_INET) {
+		assert(sa->sa_len >= sizeof *sin1);
+		sin1 = (void*)sa;
 	} else {
 		sin1 = NULL;
 	}
@@ -97,7 +99,7 @@ VRT_acl_match(struct sess *sp, const char *acl, struct vrt_acl *ap)
 		if (ap->priv == NULL && ap->paren)
 			continue;
 		if (ap->priv == NULL && ap->not) {
-			return (vrt_acl_vsl(sp, acl, ap, 0));
+			return (vrt_acl_vsl(sp, acln, ap, 0));
 		}
 		if (ap->priv == NULL)
 			continue;
@@ -116,16 +118,16 @@ VRT_acl_match(struct sess *sp, const char *acl, struct vrt_acl *ap)
 				    htonl(sin2->sin_addr.s_addr)) &
 				    ipv4mask[ap->mask > 32 ? 32 : ap->mask]))
 					return (
-					    vrt_acl_vsl(sp, acl, ap, !ap->not));
+					    vrt_acl_vsl(sp, acln, ap, !ap->not));
 				continue;
 			}
 
 			/* Not rules for unknown protos match */
 			if (ap->not)
-				return (vrt_acl_vsl(sp, acl, ap, 0));
+				return (vrt_acl_vsl(sp, acln, ap, 0));
 		}
 	}
-	return (vrt_acl_vsl(sp, acl, ap, 0));
+	return (vrt_acl_vsl(sp, acln, ap, 0));
 }
 
 void
@@ -164,5 +166,3 @@ VRT_acl_fini(struct vrt_acl *ap)
 		freeaddrinfo(a1);
 	}
 }
-
-

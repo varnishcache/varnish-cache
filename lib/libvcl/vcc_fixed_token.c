@@ -391,6 +391,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct vsb;\n");
 	vsb_cat(sb, "struct backend;\n");
 	vsb_cat(sb, "struct VCL_conf;\n");
+	vsb_cat(sb, "struct sockaddr;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_ref {\n");
 	vsb_cat(sb, "	unsigned	source;\n");
@@ -411,7 +412,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* ACL related */\n");
-	vsb_cat(sb, "int VRT_acl_match(struct sess *, const char *, struct vrt_acl *);\n");
+	vsb_cat(sb, "int VRT_acl_match(struct sess *, struct sockaddr *, const char *, struct vrt_acl *);\n");
 	vsb_cat(sb, "void VRT_acl_init(struct vrt_acl *);\n");
 	vsb_cat(sb, "void VRT_acl_fini(struct vrt_acl *);\n");
 	vsb_cat(sb, "\n");
@@ -455,8 +456,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_backend_port(struct backend *, const char *);\n");
 	vsb_cat(sb, "double VRT_r_backend_dnsttl(struct backend *);\n");
 	vsb_cat(sb, "void VRT_l_backend_dnsttl(struct backend *, double);\n");
-	vsb_cat(sb, "const unsigned char * VRT_r_client_ip(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_client_ip(struct sess *, const unsigned char *);\n");
+	vsb_cat(sb, "struct sockaddr * VRT_r_client_ip(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_client_ip(struct sess *, struct sockaddr *);\n");
+	vsb_cat(sb, "struct sockaddr * VRT_r_server_ip(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_server_ip(struct sess *, struct sockaddr *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_request(struct sess *, const char *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_host(struct sess *);\n");
