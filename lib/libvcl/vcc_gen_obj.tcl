@@ -63,7 +63,7 @@ set tt(TIME)	"double"
 set tt(HEADER)	"const char *"
 set tt(HOSTNAME) "const char *"
 set tt(PORTNAME) "const char *"
-set tt(HASH) 	"int"
+set tt(HASH) 	"const char *"
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.
