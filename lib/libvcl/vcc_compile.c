@@ -134,7 +134,7 @@ Fh(const struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->fh, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->fh, "%*.*s", tl->hindent, tl->hindent, "");
 	va_start(ap, fmt);
 	vsb_vprintf(tl->fh, fmt, ap);
 	va_end(ap);
@@ -171,7 +171,7 @@ Fi(const struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->fi, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->fi, "%*.*s", tl->iindent, tl->iindent, "");
 	va_start(ap, fmt);
 	vsb_vprintf(tl->fi, fmt, ap);
 	va_end(ap);
@@ -183,7 +183,7 @@ Ff(const struct tokenlist *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->ff, "%*.*s", tl->indent, tl->indent, "");
+		vsb_printf(tl->ff, "%*.*s", tl->findent, tl->findent, "");
 	va_start(ap, fmt);
 	vsb_vprintf(tl->ff, fmt, ap);
 	va_end(ap);
@@ -301,8 +301,8 @@ LocTable(const struct tokenlist *tl)
 	struct source *sp;
 	const char *p;
 
-	Fh(tl, 0, "#define VGC_NREFS %u\n", tl->cnt + 1);
-	Fc(tl, 0, "static struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
+	Fh(tl, 0, "\n#define VGC_NREFS %u\n", tl->cnt + 1);
+	Fc(tl, 0, "\nstatic struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	sp = 0;
@@ -590,7 +590,8 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	tl->sb = sb;
 
 	vcl_output_lang_h(tl->fh);
-	Fh(tl, 0, "extern struct VCL_conf VCL_conf;\n");
+	Fh(tl, 0, "\n/* ---===### VCC generated below here ###===---*/\n");
+	Fh(tl, 0, "\nextern struct VCL_conf VCL_conf;\n");
 
 	Fi(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
 
@@ -639,14 +640,14 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 
 	/* Emit method functions */
 	for (i = 0; i < N_METHODS; i++) {
-		Fc(tl, 1, "static int\n");
+		Fc(tl, 1, "\nstatic int\n");
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
 		vsb_finish(tl->fm[i]);
 		/* XXX: check vsb_overflowed ? */
 		Fc(tl, 1, "{\n");
 		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
-		Fc(tl, 1, "}\n\n");
+		Fc(tl, 1, "}\n");
 	}
 
 	LocTable(tl);

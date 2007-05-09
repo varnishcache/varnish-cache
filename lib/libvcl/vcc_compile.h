@@ -67,6 +67,9 @@ struct tokenlist {
 	struct source		*src;
 	struct token		*t;
 	int			indent;
+	int			hindent;
+	int			iindent;
+	int			findent;
 	unsigned		cnt;
 	struct vsb		*fc, *fh, *fi, *ff, *fb;
 	struct vsb		*fm[N_METHODS];
