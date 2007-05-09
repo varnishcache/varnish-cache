@@ -627,6 +627,14 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
+	/* Check if we have any backends at all */
+	if (tl->nbackend == 0) {
+		vsb_printf(tl->sb,
+		    "No backends in VCL program, at least one is necessary.\n");
+		tl->err = 1;
+		return (vcc_DestroyTokenList(tl, NULL));
+	}
+
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))
 		return (vcc_DestroyTokenList(tl, NULL));
