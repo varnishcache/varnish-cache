@@ -37,6 +37,43 @@
 #include "vcc_compile.h"
 #include "libvarnish.h"
 
+/*--------------------------------------------------------------------*/
+
+static void
+StringVal(struct tokenlist *tl) 
+{
+	struct var *vp;
+	struct token *vt;
+
+	if (tl->t->tok == CSTR) {
+		EncToken(tl->fb, tl->t);
+		vcc_NextToken(tl);
+		return;
+	} 
+	ExpectErr(tl, VAR);
+	ERRCHK(tl);
+	vt = tl->t;
+	vp = FindVar(tl, tl->t, vcc_vars);
+	ERRCHK(tl);
+	if (!vp->has_string) {
+		vsb_printf(tl->sb,
+		    "No string representation of '%s'\n", vp->name);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	switch (vp->fmt) {
+	case STRING:
+		Fb(tl, 0, "%s", vp->rname);
+		break;
+	default:
+		vsb_printf(tl->sb,
+		    "String representation of '%s' not implemented yet.\n",
+			vp->name);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_NextToken(tl);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -181,6 +218,12 @@ parse_set(struct tokenlist *tl)
 		vsb_printf(tl->sb,
 		    " only '=' is legal for backend\n");
 		vcc_ErrWhere(tl, tl->t);
+		return;
+	case HASH:
+		ExpectErr(tl, T_INCR);
+		vcc_NextToken(tl);
+		StringVal(tl);
+		Fb(tl, 0, ");\n");
 		return;
 	default:
 		vsb_printf(tl->sb,

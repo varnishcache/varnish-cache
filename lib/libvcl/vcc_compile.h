@@ -96,6 +96,7 @@ enum var_type {
 	IP,
 	HOSTNAME,
 	PORTNAME,
+	HASH,
 	HEADER
 };
 
@@ -119,6 +120,7 @@ struct var {
 	unsigned		len;
 	const char		*rname;
 	const char		*lname;
+	unsigned		has_string;
 };
 
 struct method {
