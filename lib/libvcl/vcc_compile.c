@@ -252,6 +252,7 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
+	v->has_string = vh->has_string;
 	if (!memcmp(vh->name, "req.", 4))
 		w = 1;
 	else

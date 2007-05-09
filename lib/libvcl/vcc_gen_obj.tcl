@@ -32,26 +32,27 @@
 
 # Objects which operate on backends
 set beobj {
-	{ backend.host		HOSTNAME }
-	{ backend.port		PORTNAME }
-	{ backend.dnsttl	TIME }
+	{ backend.host		HOSTNAME	0 }
+	{ backend.port		PORTNAME	0 }
+	{ backend.dnsttl	TIME		0 }
 }
 
 # Objects which operate on sessions
 
 set spobj {
-	{ client.ip		IP }
-	{ server.ip		IP }
-	{ req.request		STRING }
-	{ req.host		STRING }
-        { req.url		STRING }
-        { req.proto		STRING }
-        { req.backend		BACKEND }
-        { obj.valid		BOOL }
-        { obj.cacheable		BOOL }
-        { obj.ttl		TIME }
-        { req.http.		HEADER }
-        { resp.http.		HEADER }
+	{ client.ip		IP 		1}
+	{ server.ip		IP 		1}
+	{ req.request		STRING 		1}
+	{ req.host		STRING 		1}
+        { req.url		STRING 		1}
+        { req.proto		STRING 		1}
+        { req.backend		BACKEND 	0}
+        { req.hash		HASH 		0}
+        { obj.valid		BOOL 		0}
+        { obj.cacheable		BOOL 		0}
+        { obj.ttl		TIME 		0}
+        { req.http.		HEADER 		1}
+        { resp.http.		HEADER 		1}
 }
 
 set tt(IP)	"struct sockaddr *"
@@ -62,6 +63,7 @@ set tt(TIME)	"double"
 set tt(HEADER)	"const char *"
 set tt(HOSTNAME) "const char *"
 set tt(PORTNAME) "const char *"
+set tt(HASH) 	"int"
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.
@@ -93,6 +95,7 @@ proc vars {v ty pa} {
 		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		puts $fo  "\t    \"VRT_r_${m}($pa)\","
 		puts $fo  "\t    \"VRT_l_${m}($pa, \","
+		puts $fo  "\t    [lindex $v 2]"
 		puts $fo "\t\},"
 
 		puts $fp  "$tt($t) VRT_r_${m}($ty);"

@@ -26,6 +26,8 @@ const char * VRT_r_req_proto(struct sess *);
 void VRT_l_req_proto(struct sess *, const char *);
 struct backend * VRT_r_req_backend(struct sess *);
 void VRT_l_req_backend(struct sess *, struct backend *);
+int VRT_r_req_hash(struct sess *);
+void VRT_l_req_hash(struct sess *, int);
 double VRT_r_obj_valid(struct sess *);
 void VRT_l_obj_valid(struct sess *, double);
 double VRT_r_obj_cacheable(struct sess *);
