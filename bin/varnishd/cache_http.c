@@ -540,6 +540,7 @@ http_header_complete(struct http *hp)
 	hp->t = p;
 	assert(hp->t > hp->s);
 	assert(hp->t <= hp->v);
+	hp->f = hp->v;
 	return (1);
 }
 

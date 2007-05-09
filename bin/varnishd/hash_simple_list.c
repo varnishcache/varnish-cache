@@ -44,8 +44,8 @@
 
 struct hsl_entry {
 	TAILQ_ENTRY(hsl_entry)	list;
-	char			*key1;
-	char			*key2;
+	char			*key;
+	int			keylen;
 	struct objhead		*obj;
 	unsigned		refcnt;
 };
@@ -73,19 +73,19 @@ hsl_start(void)
  */
 
 static struct objhead *
-hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
+hsl_lookup(const char *b, const char *e, struct objhead *nobj)
 {
 	struct hsl_entry *he, *he2;
-	int i;
+	int i, l;
 
+	l = e - b;
 	LOCK(&hsl_mutex);
 	TAILQ_FOREACH(he, &hsl_head, list) {
-		i = strcmp(key1, he->key1);
-		if (i < 0)
+		if (l > he->keylen)
 			continue;
-		if (i > 0)
-			break;
-		i = strcmp(key2, he->key2);
+		if (l < he->keylen)
+			break;;
+		i = memcmp(b, he->key, l);
 		if (i < 0)
 			continue;
 		if (i > 0)
@@ -100,14 +100,13 @@ hsl_lookup(const char *key1, const char *key2, struct objhead *nobj)
 		UNLOCK(&hsl_mutex);
 		return (NULL);
 	}
-	he2 = calloc(sizeof *he2, 1);
+	he2 = calloc(sizeof *he2 + l, 1);
 	XXXAN(he2);
 	he2->obj = nobj;
 	he2->refcnt = 1;
-	he2->key1 = strdup(key1);
-	XXXAN(he2->key1);
-	he2->key2 = strdup(key2);
-	XXXAN(he2->key2);
+	he2->key = (void*)(he2 + 1);
+	he2->keylen = l;
+	memcpy(he2->key, b, l);
 	nobj->hashpriv = he2;
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
@@ -131,8 +130,6 @@ hsl_deref(struct objhead *obj)
 	he = obj->hashpriv;
 	LOCK(&hsl_mutex);
 	if (--he->refcnt == 0) {
-		free(he->key1);
-		free(he->key2);
 		TAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
 		ret = 0;
