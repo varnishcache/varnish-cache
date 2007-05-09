@@ -121,22 +121,20 @@ hcl_start(void)
  */
 
 static struct objhead *
-hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
+hcl_lookup(const char *b, const char *e, struct objhead *noh)
 {
 	struct hcl_entry *he, *he2;
 	struct hcl_hd *hp;
-	unsigned u1, digest, kl1, kl2, kl, r;
+	unsigned u1, digest, kl, r;
 	int i;
 
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 
-	digest = crc32_2s(key1, key2);
+	digest = crc32_l(b, e - b);
 
 	u1 = digest % hcl_nhash;
 	hp = &hcl_head[u1];
-	kl1 = strlen(key1) + 1;		/* Incl '/0' */
-	kl2 = strlen(key2);
-	kl = kl1 + kl2;
+	kl = e - b;
 	he2 = NULL;
 
 	for (r = 0; r < 2; r++ ) {
@@ -151,9 +149,7 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 				continue;
 			if (he->digest > digest)
 				break;
-			if (memcmp(he->key, key1, kl1))
-				continue;
-			if (memcmp(he->key + kl1, key2, kl2))
+			if (memcmp(he->key, b, kl))
 				continue;
 			he->refcnt++;
 			noh = he->oh;
@@ -190,8 +186,7 @@ hcl_lookup(const char *key1, const char *key2, struct objhead *noh)
 		noh->hashpriv = he2;
 
 		he2->key = (void*)(he2 + 1);
-		memcpy(he2->key, key1, kl1);
-		memcpy(he2->key + kl1, key2, kl2);
+		memcpy(he2->key, b, kl);
 	}
 	assert(he2 == NULL);		/* FlexeLint */
 	INCOMPL();

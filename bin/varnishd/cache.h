@@ -291,6 +291,9 @@ struct sess {
 
 	struct workreq		workreq;
 	struct acct		acct;
+
+	char			*hash_b;	/* Start of hash string */
+	char			*hash_e;	/* End of hash string */
 };
 
 struct backend {

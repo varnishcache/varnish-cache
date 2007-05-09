@@ -273,3 +273,21 @@ VRT_r_server_ip(struct sess *sp)
 
 	return ((struct sockaddr*)sp->mysockaddr);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_req_hash(struct sess *sp, const char *str)
+{
+	int l;
+
+	if (str == NULL)
+		str = "";
+	l = strlen(str);
+	xxxassert (sp->hash_e == sp->http->f);
+	xxxassert (sp->hash_e + l + 1 <= sp->http->e);
+	memcpy(sp->hash_e, str, l);
+	sp->hash_e[l] = '#';
+	sp->hash_e += l + 1;
+	sp->http->f += l + 1;
+}

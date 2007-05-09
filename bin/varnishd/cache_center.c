@@ -437,9 +437,18 @@ cnt_lookup(struct sess *sp)
 {
 	struct object *o;
 
-	VCL_hash_method(sp);		/* XXX: no-op for now */
+	assert(sp->http->f > sp->http->s);
+	assert(sp->http->f >= sp->http->t);
+	if (sp->obj == NULL) {
+		sp->hash_b = sp->http->f;
+		sp->hash_e = sp->hash_b;
+		VCL_hash_method(sp);		/* XXX: no-op for now */
+
+		/* XXX check error */
+	}
 
 	o = HSH_Lookup(sp);
+
 	if (o == NULL) {
 		/*
 		 * We hit a busy object, disembark worker thread and expect
@@ -450,6 +459,14 @@ cnt_lookup(struct sess *sp)
 		SES_Charge(sp);
 		return (1);
 	}
+
+	xxxassert (sp->hash_e == sp->http->f);
+	if (sp->hash_e == sp->http->f) {
+		/* Nobody alloc'ed after us, free again */
+		sp->http->f = sp->hash_b;
+	}
+
+	sp->hash_b = sp->hash_e = NULL;
 
 	sp->obj = o;
 
