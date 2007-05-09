@@ -88,12 +88,10 @@ VRT_acl_match(struct sess *sp, struct sockaddr *sa, const char *acln, struct vrt
 	struct addrinfo *a1;
 	struct sockaddr_in *sin1, *sin2;
 
-	if (sa->sa_family == AF_INET) {
-		assert(sa->sa_len >= sizeof *sin1);
+	if (sa->sa_family == AF_INET)
 		sin1 = (void*)sa;
-	} else {
+	else
 		sin1 = NULL;
-	}
 
 	for ( ; ap->name != NULL; ap++) {
 		if (ap->priv == NULL && ap->paren)
