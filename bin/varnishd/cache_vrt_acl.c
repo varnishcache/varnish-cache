@@ -104,7 +104,7 @@ VRT_acl_match(struct sess *sp, struct sockaddr *sa, const char *acln, struct vrt
 		for (a1 = ap->priv; a1 != NULL; a1 = a1->ai_next) {
 
 			/* only match the right family */
-			if (a1->ai_family != sp->sockaddr->sa_family)
+			if (a1->ai_family != sp->sockaddr->ss_family)
 				continue;
 
 			if (a1->ai_family == AF_INET) {
