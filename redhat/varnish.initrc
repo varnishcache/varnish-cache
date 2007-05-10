@@ -5,7 +5,7 @@
 # chkconfig: - 90 10
 # description: HTTP accelerator
 # processname: varnishd
-# config: /etc/varnish.conf
+# config: /etc/varnish/vcl.conf
 # pidfile: /var/run/varnish/varnishd.pid
 
 # Source function library.
@@ -24,8 +24,11 @@ DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
 		-w ${VARNISH_MIN_WORKER_THREADS},${VARNISH_MAX_WORKER_THREADS},${VARNISH_WORKER_THREAD_TIMEOUT} \
 		-s ${VARNISH_BACKEND_STORAGE}"	
 
-
 mkdir -p /var/run/varnish 2>/dev/null
+
+# Open files (usually 1024, which is way too small for varnish)
+[ ! "${NFILES}" ] && NFILES="131072"
+ulimit -n ${NFILES}
 
 # See how we were called.
 case "$1" in
@@ -66,8 +69,15 @@ case "$1" in
 	$0 start
 	RETVAL=$?
 	;;
+  condrestart)
+        if [ -f /var/lock/subsys/varnish ]; then
+            $0 stop
+            $0 start
+            RETVAL=$?
+        fi
+	;;
   *)
-	echo "Usage: $0 {start|stop|status|restart}"
+	echo "Usage: $0 {start|stop|status|restart|condrestart}"
 	exit 1
 esac
 

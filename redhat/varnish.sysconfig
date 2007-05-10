@@ -49,3 +49,6 @@ VARNISH_BACKEND_STORAGE="file,${VARNISH_BACKEND_STORAGE_FILE},${VARNISH_BACKEND_
 # Set default ttl in secounds
 VARNISH_TTL=120
 
+# The Maximum number of open files (ulimit)
+# Default : 131072 (system default is usually 1024)
+NFILES=131072

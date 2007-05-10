@@ -8,7 +8,7 @@ License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Packager: Ingvar Hagelund <ingvar@linpro.no>
-Source0: %{name}-%{version}.tar.gz
+Source0: http://kent.dl.sourceforge.net/sourceforge/varnish/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: gcc gcc-c++ ncurses-devel libtool autoconf automake
 Requires: gcc ncurses kernel >= 2.6.0 %{lib_name} = %version-%{release}
