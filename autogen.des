@@ -7,8 +7,10 @@ set -ex
 
 ./autogen.sh
 
+CONFIG_SHELL=/bin/sh \
 ./configure \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
+    --enable-werror \
     --prefix=/opt/varnish

@@ -109,7 +109,8 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 	retirement_age = INT_MAX;
 
 	u1 = u2 = 0;
-	if (http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) {
+	if (http_GetHdrField(hp, H_Cache_Control, "s-maxage", &p) ||
+	    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) {
 		u1 = strtoul(p, NULL, 0);
 		u2 = 0;
 		if (http_GetHdr(hp, H_Age, &p)) {

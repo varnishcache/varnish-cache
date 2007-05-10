@@ -74,6 +74,10 @@ DOT start -> RECV [style=bold,color=green,weight=4]
 #include "compat/clock_gettime.h"
 #endif
 
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
+
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"
@@ -243,9 +247,9 @@ static int
 cnt_error(struct sess *sp)
 {
 
-	RES_Error(sp, sp->err_code, sp->err_expl);
+	RES_Error(sp, sp->err_code, sp->err_reason);
 	sp->err_code = 0;
-	sp->err_expl = NULL;
+	sp->err_reason = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -653,7 +657,8 @@ cnt_recv(struct sess *sp)
 
 	VCL_recv_method(sp);
 
-	sp->wantbody = !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET");
+	sp->wantbody = (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET") ||
+	    !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "POST"));
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */

@@ -94,7 +94,7 @@ clean_order(void)
 }
 
 static int
-h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 
 	(void)priv;
@@ -113,7 +113,10 @@ h_order(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, cons
 		flg[fd] |= F_MATCH;
 	switch (tag) {
 	case SLT_VCL_call:
-		flg[fd] |= F_INVCL;
+		if (flg[fd] & F_INVCL)
+			vsb_cat(ob[fd], "\n");
+		else
+			flg[fd] |= F_INVCL;
 		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag],
 		    ((spec & VSL_S_CLIENT) ? 'c' : \

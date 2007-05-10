@@ -14,4 +14,4 @@ varnishstat_LDADD = \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	-lcurses
+	${CURSES_LIBS} ${RT_LIBS}

@@ -314,15 +314,15 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 		AN(buf);
 		if (C_flag) {
 			csrc = VCC_Compile(sb, buf, NULL);
-			fputs(csrc, stdout);
-			return (0);
+			if (csrc != NULL)
+				fputs(csrc, stdout);
 		}
 		vf = mgt_VccCompile(sb, buf, NULL);
 		free(buf);
 	} else if (C_flag) {
 		csrc = VCC_CompileFile(sb, f_arg);
-		fputs(csrc, stdout);
-		return (0);
+		if (csrc != NULL)
+			fputs(csrc, stdout);
 	} else {
 		vf = mgt_VccCompileFile(sb, f_arg);
 	}
@@ -333,6 +333,8 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 		return (1);
 	}
 	vsb_delete(sb);
+	if (C_flag)
+		return (0);
 	vp = mgt_vcc_add("boot", vf);
 	vp->active = 1;
 	return (0);

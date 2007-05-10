@@ -47,13 +47,13 @@
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(struct sess *sp, unsigned code, const char *expl)
+VRT_error(struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, expl);
+	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason);
 	sp->err_code = code;
-	sp->err_expl = expl;
+	sp->err_reason = reason;
 }
 
 /*--------------------------------------------------------------------*/

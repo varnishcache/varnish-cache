@@ -33,6 +33,9 @@
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
+#ifndef SHMLOG_H_INCLUDED
+#define SHMLOG_H_INCLUDED
+
 #define SHMLOG_FILENAME		"/tmp/_.vsl"
 
 #include <time.h>
@@ -82,3 +85,5 @@ enum shmlogtag {
 #undef SLTM
 	SLT_WRAPMARKER = 255
 };
+
+#endif

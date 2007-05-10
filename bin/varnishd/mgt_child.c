@@ -214,13 +214,15 @@ start_child(void)
 	ev_listen = e;
 
 	AZ(ev_poker);
-	e = ev_new();
-	XXXAN(e);
-	e->timeout = 3.0;
-	e->callback = child_poker;
-	e->name = "child poker";
-	AZ(ev_add(mgt_evb, e));
-	ev_poker = e;
+	if (params->ping_interval > 0) {
+		e = ev_new();
+		XXXAN(e);
+		e->timeout = params->ping_interval;
+		e->callback = child_poker;
+		e->name = "child poker";
+		AZ(ev_add(mgt_evb, e));
+		ev_poker = e;
+	}
 
 	mgt_cli_start_child(heritage.fds[0], heritage.fds[3]);
 	AZ(close(heritage.fds[1]));

@@ -284,14 +284,14 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->regincl != NULL) {
 			rm.rm_so = 0;
 			rm.rm_eo = p[1];
-			i = regexec(vd->regincl, p + 4, 1, &rm, 0);
+			i = regexec(vd->regincl, (char *)p + 4, 1, &rm, 0);
 			if (i == REG_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
 			rm.rm_so = 0;
 			rm.rm_eo = p[1];
-			i = regexec(vd->regexcl, p + 4, 1, &rm, 0);
+			i = regexec(vd->regexcl, (char *)p + 4, 1, &rm, 0);
 			if (i != REG_NOMATCH)
 				continue;
 		}
@@ -318,7 +318,7 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 		if (func(priv,
 		    p[0], u, p[1],
 		    vd->map[u] & (VSL_S_CLIENT|VSL_S_BACKEND),
-		    p + 4))
+		    (char *)p + 4))
 			return (1);
 	}
 }
@@ -326,7 +326,7 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_H_Print(void *priv, unsigned tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 	FILE *fo = priv;
 
