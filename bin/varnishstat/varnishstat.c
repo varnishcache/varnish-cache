@@ -169,6 +169,5 @@ main(int argc, char **argv)
 #undef MAC_STAT
 	}
 
-	exit (0);
-
+	exit(0);
 }
