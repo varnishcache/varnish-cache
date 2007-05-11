@@ -223,29 +223,29 @@ sighup(int sig)
 }
 
 static int
-open_log(const char *w_opt, int a_flag)
+open_log(const char *w_arg, int a_flag)
 {
 	int fd, flags;
 
 	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
-	if (!strcmp(w_opt, "-"))
+	if (!strcmp(w_arg, "-"))
 		fd = STDOUT_FILENO;
 	else
-		fd = open(w_opt, flags, 0644);
+		fd = open(w_arg, flags, 0644);
 	if (fd < 0) {
-		perror(w_opt);
+		perror(w_arg);
 		exit (1);
 	}
 	return (fd);
 }
 
 static void
-do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
+do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i;
 	unsigned char *p;
 
-	fd = open_log(w_opt, a_flag);
+	fd = open_log(w_arg, a_flag);
 	signal(SIGHUP, sighup);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
@@ -254,13 +254,13 @@ do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
 		if (i > 0) {
 			i = write(fd, p, 5 + p[1]);
 			if (i < 0) {
-				perror(w_opt);
+				perror(w_arg);
 				exit(1);
 			}
 		}
 		if (reopen) {
 			close(fd);
-			fd = open_log(w_opt, a_flag);
+			fd = open_log(w_arg, a_flag);
 			reopen = 0;
 		}
 	}
@@ -282,8 +282,8 @@ main(int argc, char **argv)
 {
 	int i, c;
 	int a_flag = 0, D_flag = 0, o_flag = 0;
-	const char *P_opt = NULL;
-	const char *w_opt = NULL;
+	const char *P_arg = NULL;
+	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
 	struct VSL_data *vd;
 
@@ -301,13 +301,13 @@ main(int argc, char **argv)
 			o_flag = 1;
 			break;
 		case 'P':
-			P_opt = optarg;
+			P_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishlog");
 			exit(0);
 		case 'w':
-			w_opt = optarg;
+			w_arg = optarg;
 			break;
 		case 'c':
 			c_flag = 1;
@@ -326,14 +326,14 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (o_flag && w_opt != NULL)
+	if (o_flag && w_arg != NULL)
 		usage();
 
 	if (VSL_OpenLog(vd))
 		exit(1);
 
-	if (P_opt && (pfh = vpf_open(P_opt, 0600, NULL)) == NULL) {
-		perror(P_opt);
+	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+		perror(P_arg);
 		exit(1);
 	}
 
@@ -347,8 +347,8 @@ main(int argc, char **argv)
 	if (pfh != NULL)
 		vpf_write(pfh);
 
-	if (w_opt != NULL)
-		do_write(vd, w_opt, a_flag);
+	if (w_arg != NULL)
+		do_write(vd, w_arg, a_flag);
 
 	if (o_flag)
 		do_order(vd, argc - optind, argv + optind);
@@ -363,5 +363,5 @@ main(int argc, char **argv)
 
 	if (pfh != NULL)
 		vpf_remove(pfh);
-	return (0);
+	exit(0);
 }
