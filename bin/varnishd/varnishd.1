@@ -41,6 +41,7 @@
 .Op Fl d
 .Op Fl f Ar config
 .Op Fl h Ar type Ns Op , Ns Ar options
+.Op Fl P Ar file
 .Op Fl p Ar param Ns = Ns Ar value
 .Op Fl s Ar type Ns Op , Ns Ar options
 .Op Fl T Ar address Ns Op : Ns Ar port
@@ -111,6 +112,9 @@ Specifies the hash algorithm.
 See
 .Sx Hash Algorithms
 for a list of supported algorithms.
+.It Fl P Ar file
+Write the process's PID to the specified
+.Ar file .
 .It Fl p Ar param Ns = Ns Ar value
 Set the parameter specified by
 .Ar param

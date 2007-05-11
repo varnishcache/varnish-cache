@@ -45,7 +45,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifndef HAVE_DAEMON
+#include "compat/daemon.h"
+#endif
+
 #include "vsb.h"
+#include "vpf.h"
 
 #include "cli.h"
 #include "cli_priv.h"
@@ -163,7 +168,7 @@ usage(void)
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "   -b '<hostname_or_IP>:<port_or_service>'");
 	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
-	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL_file");
+	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL script");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-h kind[,hashoptions]", "Hash specification");
 	fprintf(stderr, "    %-28s # %s\n", "",
@@ -172,6 +177,7 @@ usage(void)
 	    "  -h classic  [default]");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>");
+	fprintf(stderr, "    %-28s # %s\n", "-P file", "PID file");
 	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
 	    "set parameter");
 	fprintf(stderr, "    %-28s # %s\n",
@@ -396,12 +402,14 @@ main(int argc, char *argv[])
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_flag = "classic";
+	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
 	unsigned C_flag = 0;
 	char *p;
 	struct params param;
 	struct cli cli[1];
+	struct pidfh *pfh = NULL;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -420,8 +428,8 @@ main(int argc, char *argv[])
 	 * XXX: block in shared memory.  It would give us the advantage
 	 * XXX: of having the CLI thread be able to take action on the
 	 * XXX: change.
-	 * XXX: For now live with the harmless flexelint warning this causes: 
-	 * XXX: varnishd.c 393 Info 789: Assigning address of auto variable 
+	 * XXX: For now live with the harmless flexelint warning this causes:
+	 * XXX: varnishd.c 393 Info 789: Assigning address of auto variable
 	 * XXX:    'param' to static
 	 */
 
@@ -433,7 +441,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:h:p:s:T:t:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:h:P:p:s:T:t:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -453,6 +461,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			h_flag = optarg;
+			break;
+		case 'P':
+			P_arg = optarg;
 			break;
 		case 'p':
 			p = strchr(optarg, '=');
@@ -499,6 +510,11 @@ main(int argc, char *argv[])
 		usage();
 	}
 
+	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+		perror(P_arg);
+		exit(1);
+	}
+
 	if (mgt_vcc_default(b_arg, f_arg, C_flag))
 		exit (2);
 	if (C_flag)
@@ -516,9 +532,14 @@ main(int argc, char *argv[])
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
+	if (pfh != NULL)
+		vpf_write(pfh);
+
 	mgt_cli_init();
 
 	mgt_run(d_flag, T_arg);
 
+	if (pfh != NULL)
+		vpf_remove(pfh);
 	exit(0);
 }
