@@ -81,8 +81,8 @@ http2shmlog(struct http *hp, enum httptag t)
 {
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(hp->logtag >= HTTP_Rx && hp->logtag <= HTTP_Obj);
-	assert(t >= HTTP_T_Request && t <= HTTP_T_LostHeader);
+	assert(/* hp->logtag >= HTTP_Rx && */hp->logtag <= HTTP_Obj);
+	assert(/* t >= HTTP_T_Request && */t <= HTTP_T_LostHeader);
 	return (logmtx[hp->logtag][t]);
 }
 
