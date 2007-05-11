@@ -32,7 +32,7 @@ fi
 
 if [ "$LOGFILE" = "" ]; then LOGFILE="/var/log/varnish/varnish.log"; fi
 
-DAEMON_OPTS="-a -w ${LOGFILE} -D -p $PIDFILE"
+DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
 
 mkdir -p /var/run/varnish 2>/dev/null
 
