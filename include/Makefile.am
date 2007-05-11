@@ -14,11 +14,13 @@ noinst_HEADERS = \
 	compat/strndup.h \
 	compat/vasprintf.h \
 	compat/vis.h \
+	flopen.h \
 	http_headers.h \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
 	queue.h \
+	vpf.h \
 	vsb.h \
 	shmlog.h \
 	shmlog_tags.h \
