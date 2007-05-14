@@ -199,5 +199,5 @@ main(int argc, char **argv)
 			TAILQ_INSERT_BEFORE(tp, tp2, list);
 		}
 	}
-	return (0);
+	exit(0);
 }
