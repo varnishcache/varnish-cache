@@ -435,6 +435,7 @@ void WSL_Flush(struct worker *w);
 
 /* cache_response.c */
 void RES_Error(struct sess *sp, int code, const char *reason);
+int Fake(struct sess *sp, int status, const char *reason, int ttl);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vcl.c */
