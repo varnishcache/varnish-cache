@@ -40,15 +40,24 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef HAVE_DAEMON
+#include "compat/daemon.h"
+#endif
+
+#ifdef HAVE_VIS_H
+#include <vis.h>
+#else
 #include "compat/vis.h"
+#endif
 
 #include "vsb.h"
+#include "vpf.h"
 
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
 
-static int	bflag, cflag;
+static int	b_flag, c_flag;
 
 /* -------------------------------------------------------------------*/
 
@@ -100,7 +109,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 	(void)priv;
 
 	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
-		if (!bflag && !cflag)
+		if (!b_flag && !c_flag)
 			VSL_H_Print(stdout, tag, fd, len, spec, ptr);
 		return (0);
 	}
@@ -179,12 +188,12 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 			exit (2);
 		}
 	}
-	if (!bflag) {
+	if (!b_flag) {
 		VSL_Select(vd, SLT_SessionOpen);
 		VSL_Select(vd, SLT_SessionClose);
 		VSL_Select(vd, SLT_ReqEnd);
 	}
-	if (!cflag) {
+	if (!c_flag) {
 		VSL_Select(vd, SLT_BackendOpen);
 		VSL_Select(vd, SLT_BackendClose);
 		VSL_Select(vd, SLT_BackendReuse);
@@ -214,29 +223,29 @@ sighup(int sig)
 }
 
 static int
-open_log(const char *w_opt, int a_flag)
+open_log(const char *w_arg, int a_flag)
 {
 	int fd, flags;
 
 	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
-	if (!strcmp(w_opt, "-"))
+	if (!strcmp(w_arg, "-"))
 		fd = STDOUT_FILENO;
 	else
-		fd = open(w_opt, flags, 0644);
+		fd = open(w_arg, flags, 0644);
 	if (fd < 0) {
-		perror(w_opt);
+		perror(w_arg);
 		exit (1);
 	}
 	return (fd);
 }
 
 static void
-do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
+do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i;
 	unsigned char *p;
 
-	fd = open_log(w_opt, a_flag);
+	fd = open_log(w_arg, a_flag);
 	signal(SIGHUP, sighup);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
@@ -245,13 +254,13 @@ do_write(struct VSL_data *vd, const char *w_opt, int a_flag)
 		if (i > 0) {
 			i = write(fd, p, 5 + p[1]);
 			if (i < 0) {
-				perror(w_opt);
+				perror(w_arg);
 				exit(1);
 			}
 		}
 		if (reopen) {
 			close(fd);
-			fd = open_log(w_opt, a_flag);
+			fd = open_log(w_arg, a_flag);
 			reopen = 0;
 		}
 	}
@@ -264,7 +273,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishlog %s [-aoV] [-w file]\n", VSL_USAGE);
+	    "usage: varnishlog %s [-aDoV] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -272,33 +281,41 @@ int
 main(int argc, char **argv)
 {
 	int i, c;
-	int a_flag = 0, o_flag = 0;
-	char *w_opt = NULL;
+	int a_flag = 0, D_flag = 0, o_flag = 0;
+	const char *P_arg = NULL;
+	const char *w_arg = NULL;
+	struct pidfh *pfh = NULL;
 	struct VSL_data *vd;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aoVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDoP:Vw:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
 			break;
+		case 'D':
+			D_flag = 1;
+			break;
 		case 'o':
 			o_flag = 1;
+			break;
+		case 'P':
+			P_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishlog");
 			exit(0);
 		case 'w':
-			w_opt = optarg;
+			w_arg = optarg;
 			break;
 		case 'c':
-			cflag = 1;
+			c_flag = 1;
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		case 'b':
-			bflag = 1;
+			b_flag = 1;
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
@@ -309,14 +326,29 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (o_flag && w_opt != NULL)
+	if (o_flag && w_arg != NULL)
 		usage();
 
 	if (VSL_OpenLog(vd))
-		exit (1);
+		exit(1);
 
-	if (w_opt != NULL)
-		do_write(vd, w_opt, a_flag);
+	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+		perror(P_arg);
+		exit(1);
+	}
+
+	if (D_flag && daemon(0, 0) == -1) {
+		perror("daemon()");
+		if (pfh != NULL)
+			vpf_remove(pfh);
+		exit(1);
+	}
+
+	if (pfh != NULL)
+		vpf_write(pfh);
+
+	if (w_arg != NULL)
+		do_write(vd, w_arg, a_flag);
 
 	if (o_flag)
 		do_order(vd, argc - optind, argv + optind);
@@ -329,5 +361,7 @@ main(int argc, char **argv)
 			break;
 	}
 
-	return (0);
+	if (pfh != NULL)
+		vpf_remove(pfh);
+	exit(0);
 }

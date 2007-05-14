@@ -41,8 +41,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/vis.h"
-
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
@@ -226,5 +224,5 @@ main(int argc, char **argv)
 			break;
 	}
 
-	return (0);
+	exit(0);
 }

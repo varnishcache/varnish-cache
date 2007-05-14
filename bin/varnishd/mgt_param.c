@@ -529,7 +529,7 @@ static struct parspec parspec[] = {
 		"may make sense to set this to \"unlimited\".\n"
 #endif
 		EXPERIMENTAL,
-		"8192", "bytes" },
+		"-1", "bytes" },
 #endif /* HAVE_SENDFILE */
 	{ "vcl_trace", tweak_vcl_trace,
 		"Trace VCL execution in the shmlog.\n"

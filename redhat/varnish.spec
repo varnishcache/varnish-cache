@@ -1,12 +1,11 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.0.3
-Release: 7%{?dist}
+Release: 8%{?dist}
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-Patch0: varnish-1.0.3.redhat.patch0
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: ncurses-devel 
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
@@ -47,14 +46,6 @@ Varnish is a high-performance HTTP accelerator.
 
 %prep
 %setup -q
-%patch0 -p0
-
-# Convert man pages to UTF-8
-for i in bin/*/*.1 man/*.7
-do
-   iconv -f iso-8859-1 -t utf-8 $i > $i.1.utf8
-   rm -f $i && mv $i.1.utf8 $i
-done
 
 %build
 
@@ -67,8 +58,7 @@ done
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
 sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
-#%{__make} %{?_smp_mflags}
-%{__make} 
+%{__make} %{?_smp_mflags}
 
 sed -e ' s/8080/80/g ' etc/vcl.conf > redhat/vcl.conf
 
@@ -124,6 +114,7 @@ rm -rf %{buildroot}
 
 %post
 /sbin/chkconfig --add varnish
+/sbin/chkconfig --add varnishlog
 
 %preun
 if [ $1 -lt 1 ]; then
@@ -144,6 +135,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri May 11 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070511
+- Threw latest changes into svn trunk
+- Removed the conversion of manpages into utf8. They are all utf8 in trunk
+
 * Wed May 09 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.3-7
 - Simplified the references to the subpackage names
 - Added init and logrotate scripts for varnishlog

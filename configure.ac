@@ -60,6 +60,7 @@ AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])
+AC_CHECK_HEADERS([vis.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -88,6 +89,7 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
+AC_CHECK_FUNCS([daemon])
 
 save_LIBS="${LIBS}"
 LIBS="${LIBS} ${RT_LIBS}"
@@ -101,7 +103,13 @@ AC_CHECK_FUNCS([poll])
 
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
-DEVELOPER_CFLAGS="-Wall -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
+
+# This corresponds to FreeBSD's WARNS level 6
+DEVELOPER_CFLAGS="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
+
+# Turn off warnings for two issues which occur frequently in our code
+#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
