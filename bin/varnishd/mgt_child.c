@@ -130,7 +130,7 @@ open_sockets(void)
 	TAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock >= 0)
 			continue;
-		ls->sock = TCP_open(ls->host, ls->port, 1);
+		ls->sock = TCP_open(ls->addr, 1);
 		if (ls->sock < 0)
 			return (1);
 	}

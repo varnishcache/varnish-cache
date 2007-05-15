@@ -29,11 +29,11 @@
  * $Id$
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "cli.h"
 #include "cli_priv.h"
@@ -284,8 +284,7 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 
 	TAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
 		TAILQ_REMOVE(lsh, ls, list);
-		free(ls->host);
-		free(ls->port);
+		free(ls->addr);
 		free(ls);
 	}
 }
@@ -323,21 +322,31 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 	}
 	TAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
-		ls = calloc(sizeof *ls, 1);
-		AN(ls);
-		ls->sock = -1;
-		TAILQ_INSERT_TAIL(&lsh, ls, list);
-		if (TCP_parse(av[i], &ls->host, &ls->port) != 0) {
+		struct tcp_addr **ta;
+		char *host, *port;
+		int j, n;
+
+		if (TCP_parse(av[i], &host, &port) != 0) {
 			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
 			cli_result(cli, CLIS_PARAM);
 			break;
 		}
-		if (ls->port == NULL)
-			ls->port = strdup("http");
-		AN(ls->port);
-		TCP_check(cli, ls->host, ls->port);
-		if (cli->result != CLIS_OK)
+		n = TCP_resolve(host, port ? port : "http", &ta);
+		free(host);
+		free(port);
+		if (n == 0) {
+			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
+			cli_result(cli, CLIS_PARAM);
 			break;
+		}
+		for (j = 0; j < n; ++j) {
+			ls = calloc(sizeof *ls, 1);
+			AN(ls);
+			ls->sock = -1;
+			ls->addr = ta[j];
+			TAILQ_INSERT_TAIL(&lsh, ls, list);
+		}
+		free(ta);
 	}
 	FreeArgv(av);
 	if (cli->result != CLIS_OK) {
