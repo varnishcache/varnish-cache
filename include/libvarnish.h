@@ -80,6 +80,6 @@ void lbv_xxxassert(const char *, const char *, int, const char *, int);
 
 /* Assert zero return value */
 #define AZ(foo)	do { assert((foo) == 0); } while (0)
-#define AN(foo)	do { assert((foo) != NULL); } while (0)
+#define AN(foo)	do { assert((foo) != 0); } while (0)
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
-#define XXXAN(foo)	do { xxxassert((foo) != NULL); } while (0)
+#define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
