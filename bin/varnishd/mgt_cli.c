@@ -55,8 +55,6 @@
 #include "shmlog.h"
 
 static int		cli_i = -1, cli_o = -1;
-static int		telnet_sock;
-static struct ev	*telnet_ev;
 
 /*--------------------------------------------------------------------*/
 
@@ -374,14 +372,13 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 static int
 telnet_accept(struct ev *ev, int what)
 {
-	socklen_t l;
-	struct sockaddr addr[2];	/* XXX IPv6 hack */
+	struct sockaddr_storage addr;
+	socklen_t addrlen;
 	int i;
 
-	(void)ev;
 	(void)what;
-	l = sizeof addr;
-	i = accept(telnet_sock, addr, &l);
+	addrlen = sizeof addr;
+	i = accept(ev->fd, (struct sockaddr *)&addr, &addrlen);
 	if (i < 0)
 		return (0);
 
@@ -392,21 +389,29 @@ telnet_accept(struct ev *ev, int what)
 int
 mgt_cli_telnet(const char *T_arg)
 {
+	struct tcp_addr **ta;
 	char *addr, *port;
+	int i, n;
 
-	TCP_parse(T_arg, &addr, &port);
-	telnet_sock = TCP_open(addr, port, 0);
+	XXXAZ(TCP_parse(T_arg, &addr, &port));
+	XXXAN(n = TCP_resolve(addr, port, &ta));
 	free(addr);
 	free(port);
-	if (telnet_sock < 0) {
+	if (n == 0) {
 		fprintf(stderr, "Could not open TELNET port\n");
-		exit (2);
+		exit(2);
 	}
-	telnet_ev = ev_new();
-	XXXAN(telnet_ev);
-	telnet_ev->fd = telnet_sock;
-	telnet_ev->fd_flags = POLLIN;
-	telnet_ev->callback = telnet_accept;
-	ev_add(mgt_evb, telnet_ev);
+	for (i = 0; i < n; ++i) {
+		int sock = TCP_open(ta[i], 0);
+		struct ev *ev = ev_new();
+		XXXAN(ev);
+		ev->fd = sock;
+		ev->fd_flags = POLLIN;
+		ev->callback = telnet_accept;
+		ev_add(mgt_evb, ev);
+		free(ta[i]);
+		ta[i] = NULL;
+	}
+	free(ta);
 	return (0);
 }

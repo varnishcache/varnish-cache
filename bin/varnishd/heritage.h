@@ -36,8 +36,7 @@
 struct listen_sock {
 	TAILQ_ENTRY(listen_sock)	list;
 	int				sock;
-	char				*host;
-	char				*port;
+	struct tcp_addr			*addr;
 };
 
 TAILQ_HEAD(listen_sock_head, listen_sock);
