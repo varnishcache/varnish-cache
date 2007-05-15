@@ -29,10 +29,10 @@
  * $Id$
  */
 
+#include <stdio.h>		/* XXX: for NULL ?? */
+#include <string.h>		/* XXX: for NULL ?? */
 #include <sys/types.h>
 #include <sys/time.h>
-
-#include <stdlib.h>
 
 #ifndef HAVE_CLOCK_GETTIME
 #include "compat/clock_gettime.h"
@@ -134,7 +134,7 @@ RES_Error(struct sess *sp, int code, const char *reason)
 	vsb_cat(sb,
 		"Server: Varnish\r\n"
 		"Connection: close\r\n"
-		"Content-Type: text/html; charset=utf-8\r\n"
+		"Content-Type: text/html; charset=iso-8859-1\r\n"
 		"\r\n"
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
 		"<HTML>\r\n"
@@ -162,117 +162,6 @@ RES_Error(struct sess *sp, int code, const char *reason)
 	vsb_delete(sb);
 }
 
-/*--------------------------------------------------------------------*/
-
-int
-Fake(struct sess *sp, int status, const char *reason, int ttl)
-{
-	struct storage *st;
-	struct object *o;
-	struct vsb vsb;
-	struct http_msg *mp;
-	const char *msg;
-	char buf[40];
-	time_t now;
-	size_t len;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(&sp->obj->http, HTTP_MAGIC);
-	assert(sp->obj->busy != 0);
-	o = sp->obj;
-	time(&now);
-
-	assert(status >= 100 && status <= 999);
-	msg = "Unknown error";
-	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= status; mp++)  {
-		if (mp->nbr < status)
-			continue;
-		if (mp->nbr > status)
-			break;
-		msg = mp->txt;
-		if (reason == NULL)
-			reason = mp->reason;
-		break;
-	}
-	if (reason == NULL)
-		reason = msg;
-	AN(reason);
-	AN(msg);
-
-	o->response = status;
-	o->valid = 1;
-	o->entered = now;
-	o->ttl = now + ttl;
-	o->last_modified = now;
-
-	/* generate body */
-	st = stevedore->alloc(stevedore, 1024);
-	XXXAN(st->stevedore);
-	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-
-	vsb_new(&vsb, (char *)st->ptr, st->space, VSB_FIXEDLEN);
-	vsb_cat(&vsb,
-	    "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
-	    "<HTML>\r\n"
-	    "  <HEAD>\r\n");
-	vsb_printf(&vsb,
-	    "    <TITLE>%03d %s</TITLE>\r\n", status, msg);
-	vsb_printf(&vsb,
-	    "  </HEAD>\r\n"
-	    "  <BODY>\r\n");
-	vsb_printf(&vsb,
-	    "    <H1>Error %03d %s</H1>\r\n", status, msg);
-	vsb_printf(&vsb,
-	    "    <P>%s</P>\r\n", reason);
-	vsb_printf(&vsb,
-	    "    <H3>Guru Meditation:</H3>\r\n");
-	vsb_printf(&vsb,
-	    "    <P>XID: %u</P>\r\n", sp->xid);
-	vsb_printf(&vsb,
-	    "    <I><A href=\"http://www.varnish-cache.org/\">Varnish</A></I>\r\n"
-	    "  </BODY>\r\n"
-	    "</HTML>\r\n");
-	vsb_finish(&vsb);
-	vsb_finish(&vsb);
-	o->len = st->len = vsb_len(&vsb);
-	vsb_delete(&vsb);
-
-	/* generate header */
-	o->http.s = calloc(len = 1024, 1);
-	XXXAN(o->http.s);
-	o->http.e = o->http.s + len;
-
-	/* XXX we could use a little less magic here */
-	vsb_new(&vsb, o->http.s, len, VSB_FIXEDLEN);
-	vsb_printf(&vsb, "\n");
-	vsb_printf(&vsb, "\n");
-	vsb_printf(&vsb, "HTTP/1.1\r\n");
-	vsb_printf(&vsb, "%d\n", status);
-	vsb_printf(&vsb, "%s\n", reason);
-	TIM_format(now, buf);
-	vsb_printf(&vsb, "Date: %s\n", buf);
-	vsb_printf(&vsb, "Server: Varnish\n");
-	vsb_printf(&vsb, "Retry-After: %ju\n", (uintmax_t)ttl);
-	vsb_printf(&vsb, "Content-Type: text/html; charset=utf-8\n");
-	vsb_printf(&vsb, "Content-Length: %ud\n", o->len);
-	vsb_finish(&vsb);
-	vsb_delete(&vsb);
-
-	/* XXX and here */
-	o->http.f = o->http.s;
-	o->http.nhd = 0;
-	do {
-		o->http.hd[o->http.nhd].b = o->http.f;
-		while (*o->http.f != '\n')
-			++o->http.f;
-		o->http.hd[o->http.nhd].e = o->http.f;
-		++o->http.nhd;
-		++o->http.f;
-	} while (*o->http.f);
-
-	return (0);
-}
 
 /*--------------------------------------------------------------------*/
 
