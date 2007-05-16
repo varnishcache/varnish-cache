@@ -1,34 +1,28 @@
 #! /bin/sh
 #
-# skeleton      example file to build /etc/init.d/ scripts.
-#               This file should be used to construct scripts for /etc/init.d.
-#
-#               Written by Miquel van Smoorenburg <miquels@cistron.nl>.
-#               Modified for Debian 
-#               by Ian Murdock <imurdock@gnu.ai.mit.edu>.
-#
-# Version:      @(#)skeleton  1.9  26-Feb-2001  miquels@cistron.nl
-#
+# varnish       Control the varnish HTTP accelerator
 
 ### BEGIN INIT INFO
 # Provides:          varnish
 # Required-Start:    $local_fs $network
 # Required-Stop:     $local_fs $network
-# Should-Start:      $remote_fs
-# Should-Stop:       $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start HTTPd accelerator
+# Short-Description: Start HTTP accelerator
 # Description:       This script provides a server-side cache
 #                    to be run in front of a httpd and should
-#		     listen on port 80 on a properly configured
+#                    listen on port 80 on a properly configured
 #                    system
 ### END INIT INFO
 
-NAME=varnish
-DESC="HTTPd accelerator"
+# Source function library
+. /lib/lsb/init-functions
+
+NAME=varnishd
+DESC="HTTP accelerator"
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/varnishd
+PIDFILE=/var/run/$NAME.pid
 
 test -x $DAEMON || exit 0
 
@@ -37,45 +31,44 @@ if [ -f /etc/default/varnish ] ; then
         . /etc/default/varnish
 fi
 
-DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
-		-h ${VARNISH_HASHOPTION} \
-		-f ${VARNISH_VCL_CONF} \
-		-T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
-		-t ${VARNISH_TTL} \
-		-w ${VARNISH_MIN_WORKER_THREADS},${VARNISH_MAX_WORKER_THREADS},${VARNISH_WORKER_THREAD_TIMEOUT} \
-		-s ${VARNISH_BACKEND_STORAGE}"	
-
-set -e
+# If $DAEMON_OPTS is not set at all in /etc/default/varnish, use minimal useful
+# defaults (Backend at localhost:8080, a common place to put a locally
+# installed application server.)
+DAEMON_OPTS=${DAEMON_OPTS:--b localhost}
 
 case "$1" in
-  start)
-        echo -n "Starting $DESC: "
-        start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-                --exec $DAEMON -- $DAEMON_OPTS 2>&1 > /dev/null
-        echo "$NAME."
-        ;;
-  stop)
-        echo -n "Stopping $DESC: "
-		pkill varnishd
-        echo "$NAME."
-        ;;
-  restart|force-reload)
-        #
-        #       If the "reload" option is implemented, move the "force-reload"
-        #       option to the "reload" entry above. If not, "force-reload" is
-        #       just the same as "restart".
-        #
-        echo -n "Restarting $DESC: "
-                pkill varnishd
-        sleep 1
-		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- $DAEMON_OPTS 2>&1 > /dev/null
-        echo "$NAME."
-        ;;
-  *)
-        N=/etc/init.d/$NAME
-        echo "Usage: $N {start|stop|restart|force-reload}" >&2
-        exit 1
+	start)
+		output=$(/bin/tempfile -s.varnish)
+		log_daemon_msg "Starting $DESC" 
+		log_progress_msg $NAME
+                if start-stop-daemon \
+		   --start --quiet --pidfile ${PIDFILE} --exec ${DAEMON} -- \
+                   -P ${PIDFILE} ${DAEMON_OPTS} > ${output} 2>&1; then
+			log_end_msg 0
+		else
+			log_end_msg 1
+			cat $output
+		fi
+		rm $output
+		;;
+	stop)
+		log_daemon_msg "Stopping $DESC"
+		log_progress_msg $NAME
+		if start-stop-daemon \
+		   --stop --quiet --pidfile $PIDFILE --oknodo --retry 10 \
+		   --exec $DAEMON; then
+			log_end_msg 0
+		else
+			log_end_msg 1
+		fi
+        	;;
+	restart|force-reload)
+		$0 stop
+		$0 start
+        	;;
+	*)
+        	log_success_msg "Usage: $0 {start|stop|restart|force-reload}"
+        	exit 1
         ;;
 esac
 
