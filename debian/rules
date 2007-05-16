@@ -67,7 +67,7 @@ install: build
 	dh_installdirs
 
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/varnish
-	install -m 644 $(CURDIR)/debian/vcl.conf $(CURDIR)/debian/varnish/etc/varnish/
+	install -m 644 $(CURDIR)/etc/default.vcl $(CURDIR)/debian/varnish/etc/varnish/
 	install -m 644 $(CURDIR)/debian/lintian-override $(CURDIR)/debian/varnish/usr/share/lintian/overrides/varnish
 
 
@@ -81,9 +81,10 @@ binary-arch: build install
 	dh_testroot
 	dh_installchangelogs ChangeLog
 	dh_installdocs
-	# Since varnish looses its cache on restart - we don't.
+	# Since varnish loses its cache on restart - we don't.
 	dh_installinit -r
 	dh_installman
+	dh_installexamples
 	dh_link
 	dh_strip
 	dh_compress
