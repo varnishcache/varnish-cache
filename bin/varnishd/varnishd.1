@@ -64,13 +64,17 @@ and
 .Ar port .
 The
 .Ar address
-can be a host name, an IPv4 dotted-quad, or an IPv6 address enclosed
-in square brackets.
+can be a host name
+.Pq Dq localhost ,
+an IPv4 dotted-quad
+.Pq Dq 127.0.0.1 ,
+or an IPv6 address enclosed in square brackets
+.Pq Dq [::1] .
 If
 .Ar address
 is not specified,
 .Nm
-will listen on all available interfaces.
+will listen on all available IPv4 and IPv6 interfaces.
 If
 .Ar port
 is not specified, the default HTTP port as listed in
@@ -107,6 +111,9 @@ terminating the parent process will also terminate the child.
 .It Fl f Ar config
 Use the specified VCL configuration file instead of the builtin
 default.
+See
+.Xr vcl 7
+for details on VCL syntax.
 .It Fl h Ar type Ns Op , Ns Ar options
 Specifies the hash algorithm.
 See
@@ -138,6 +145,9 @@ See
 for a list of management commands.
 .It Fl t Ar ttl
 Specifies a hard minimum time to live for cached documents.
+This is a shortcut for specifying the
+.Va default_ttl
+run-time parameter.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
@@ -146,31 +156,20 @@ Start at least
 but no more than
 .Ar max
 worker threads with the specified idle timeout.
-.Pp
-If only
-.Ar min
-is specified,
-.Nm
-will start
-.Ar min
-threads and will not kill idle threads.
-.Pp
-If both
-.Ar min
+This is a shortcut for specifying the
+.Va thread_pool_min ,
+.Va thread_pool_max
 and
-.Ar max
-are specified, the number of threads is allowed to vary within the
-specified range according to system load.
-Idle threads are killed after
-.Ar timeout
-seconds.
+.Va thread_pool_timeout
+run-time parameters.
 .Pp
-The default values are 1 for
-.Ar min ,
-1000 for
-.Ar max ,
-and 10 for
-.Ar timeout .
+If only one number is specified,
+.Va thread_pool_min
+and
+.Va thread_pool_max
+are both set to this number, and
+.Va thread_pool_timeout
+has no effect.
 .El
 .Ss Hash Algorithms
 The following hash algorithms are available:
@@ -439,7 +438,9 @@ restart.
 .Pp
 The default is 1.
 .It Va thread_pool_timeout
-The time to wait before killing an idle worker thread.
+The amount of time a worker thread can be idle before it is killed,
+when the number of worker threads exceeds
+.Va thread_pool_min .
 .Pp
 The default is 120 seconds.
 .It Va vcl_trace
