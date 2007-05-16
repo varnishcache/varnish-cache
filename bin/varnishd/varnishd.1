@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd May 14, 2007
+.Dd May 16, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -180,6 +180,8 @@ A simple doubly-linked list.
 Not recommended for production use.
 .It Cm classic Ns Op Ns , Ns Ar buckets
 A standard hash table.
+This is the default.
+.Pp
 The hash key is the CRC32 of the object's URL modulo the size of the
 hash table.
 Each table entry points to a list of elements which share the same
@@ -199,6 +201,7 @@ Storage for each object is allocated with
 Not recommended for production use.
 .It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size
 Storage for each object is allocated from an arena backed by a file.
+This is the default.
 .Pp
 The
 .Ar path
@@ -212,6 +215,24 @@ The default is
 The
 .Ar size
 parameter specifies the size of the backing file.
+The size is assumed to be in bytes, unless followed by one of the
+following suffixes:
+.Bl -tag -width indent
+.It K, k
+The size is expressed in kibibytes.
+.It M, m
+The size is expressed in mebibytes.
+.It G, g
+The size is expressed in gibibytes.
+.It T, t
+The size is expressed in tebibytes.
+.It %
+The size is expressed as a percentage of the free space on the file
+system where it resides.
+.El
+.Pp
+The default size is 50%.
+.Pp
 If the backing file already exists, it will be truncated or expanded
 to the specified size.
 .Pp

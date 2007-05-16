@@ -1,4 +1,4 @@
-# $Id: Makefile.am 347 2006-07-06 09:31:45Z des $
+# $Id$
 
 INCLUDES = -I$(top_srcdir)/include
 

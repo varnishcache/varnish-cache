@@ -1,44 +1,91 @@
 # Configuration file for varnish
+# 
+# /etc/init.d/varnish expects the variable $DAEMON_OPTS to be set from this
+# shell script fragment.
+#
+
+# This file contains 4 alternatives, please use only one.
+
+## Alternative 1, Minimal configuration, no VCL
+#
+# Listen on localhost:6081, administration on localhost:6082, and forward to
+# content server on localhost:8080.  Use a fixed size file storage.
+#
+DAEMON_OPTS="-a localhost:6081 \
+             -T localhost:6082 \
+	     -b localhost:8080 \
+	     -s file,/var/lib/varnish/varnish_storage.bin,10485760"
 
 
-# Main configuration file. You probably want to change it :)
-VARNISH_VCL_CONF=/etc/varnish/vcl.conf
-
-# Default address and port to bind to
-VARNISH_LISTEN_ADDRESS=0.0.0.0
-VARNISH_LISTEN_PORT=6081
-
-
-# Telnet admin interface listen address and port
-VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
-VARNISH_ADMIN_LISTEN_PORT=6082
-
-
-# The minimum number of threads to start
-VARNISH_MIN_WORKER_THREADS=1
+## Alternative 2, Configuration with VCL
+#
+# Listen on localhost:6081, administration on localhost:6082, and forward to
+# one content server selected by the vcl file, based on the request.  Use a
+# fixed size file storage.
+#
+# DAEMON_OPTS="-a localhost:6081 \
+#              -T localhost:6082 \
+#              -f /etc/varnish/default.vcl \
+#              -s file,/var/lib/varnish/varnish_storage.bin,10485760"
 
 
-# Maximum number of worker threads or INF for unlimited
-VARNISH_MAX_WORKER_THREADS=2048
+## Alternative 3, Advanced configuration
+#
+# See varnishd(1) for more information.
+# 
+# # Main configuration file. You probably want to change it :)
+# VARNISH_VCL_CONF=/etc/varnish/default.vcl
+# 
+# # Default address and port to bind to
+# VARNISH_LISTEN_ADDRESS=0.0.0.0
+# VARNISH_LISTEN_PORT=6081
+# 
+# 
+# # Telnet admin interface listen address and port
+# VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
+# VARNISH_ADMIN_LISTEN_PORT=6082
+# 
+# 
+# # The minimum number of threads to start
+# VARNISH_MIN_WORKER_THREADS=1
+# 
+# 
+# # Maximum number of worker threads or INF for unlimited
+# VARNISH_MAX_WORKER_THREADS=2048
+# 
+# 
+# # Timeout value in seconds for threads to return
+# VARNISH_WORKER_THREAD_TIMEOUT=10 
+# 
+# 
+# # Hash algorithm to be used
+# VARNISH_HASHOPTION=classic
+# 
+# 
+# # Maximum size of the backend storagefile in bytes
+# VARNISH_BACKEND_STORAGE_SIZE=10240000
+# VARNISH_BACKEND_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
+# 
+# 
+# # Backend storage specification
+# VARNISH_BACKEND_STORAGE="file,${VARNISH_BACKEND_STORAGE_FILE},${VARNISH_BACKEND_STORAGE_SIZE}"
+# 
+# 
+# # Set default ttl in secounds
+# VARNISH_TTL=120
+# 
+# # DAEMON_OPTS is used by the init script.  If you add or remove options, make
+# # sure you update this section, too.
+# DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+#              -h ${VARNISH_HASHOPTION} \
+#              -f ${VARNISH_VCL_CONF} \
+#              -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+#              -t ${VARNISH_TTL} \
+#              -w ${VARNISH_MIN_WORKER_THREADS},${VARNISH_MAX_WORKER_THREADS},${VARNISH_WORKER_THREAD_TIMEOUT} \
+#              -s ${VARNISH_BACKEND_STORAGE}"
+#
 
 
-# Timeout value in seconds for threads to return
-VARNISH_WORKER_THREAD_TIMEOUT=10 
-
-
-# Hash algorithm to be used
-VARNISH_HASHOPTION=classic
-
-
-# Maximum size of the backend storagefile in bytes
-VARNISH_BACKEND_STORAGE_SIZE=10240000
-VARNISH_BACKEND_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
-
-
-# Backend storage specification
-VARNISH_BACKEND_STORAGE="file,${VARNISH_BACKEND_STORAGE_FILE},${VARNISH_BACKEND_STORAGE_SIZE}"
-
-
-# Set default ttl in secounds
-VARNISH_TTL=120
-
+## Alternative 4, Do It Yourself
+#
+# DAEMON_OPTS=""

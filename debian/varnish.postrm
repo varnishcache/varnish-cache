@@ -3,9 +3,12 @@
 set -e
 
 case "$1" in
-        remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+	upgrade)
+	;;
 
-        if test -e /var/log/varnish && ! [ "$1" = upgrade ]; then
+        remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+
+        if test -e /var/log/varnish ; then
 
             rm -rf /var/log/varnish 2>&1 > /dev/null || exit 78
 
