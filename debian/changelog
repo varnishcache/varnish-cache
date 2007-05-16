@@ -1,3 +1,17 @@
+varnish (1.0.4-1) unstable; urgency=low
+
+  * New upstream version (Closes: #424560)
+  * Use the upstream default configuration file, renamed to default.vcl.
+    Default template in /etc/default/varnish does not use this, but a
+    commented-out alternative does.
+  * Changed init script.  Use lsb init library functions, move more defaults
+    to /etc/default/varnish, to make init script simpler.
+  * Changed postrm, /var/lib/varnish disappeared on upgrade, making varnish
+    non-startable.
+  * Added example vcl for zope and plone.
+
+ -- ssm <ssm@linpro.no>  Wed, 16 May 2007 13:50:08 +0200
+
 varnish (1.0.3-2) unstable; urgency=low
 
   * Added postrm to partially solve 400384 
