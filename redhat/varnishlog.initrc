@@ -14,23 +14,10 @@
 RETVAL=0
 PROCNAME=varnishlog
 
-. /etc/sysconfig/varnish
-
-if [ "$LOGDAEMON" = "" ]
-then
-    DAEMON="/usr/bin/varnishlog"
-else
-    DAEMON="$LOGDAEMON"
-fi
-
-if [ "$LOGPIDFILE" = "" ]
-then
-    PIDFILE="/var/run/varnish/varnishlog.pid"
-else
-    PIDFILE="$LOGPIDFILE"
-fi
-
-if [ "$LOGFILE" = "" ]; then LOGFILE="/var/log/varnish/varnish.log"; fi
+DAEMON="/usr/bin/varnishlog"
+PIDFILE="/var/run/varnish/varnishlog.pid"
+LOCKFILE="/var/lock/subsys/varnishlog"
+LOGFILE="/var/log/varnish/varnish.log"
 
 DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
 
@@ -40,14 +27,14 @@ mkdir -p /var/run/varnish 2>/dev/null
 case "$1" in
   start)
 	echo -n "Starting varnish logging daeon: "
-	daemon $DAEMON "$DAEMON_OPTS"
+	daemon --pidfile $PIDFILE $DAEMON "$DAEMON_OPTS"
 	sleep 1
 	pkill -0 $PROCNAME
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]
 	then
 		echo_success
-		touch /var/lock/subsys/varnishlog
+		touch $LOCKFILE
 	else
 		echo_failure
 	fi
@@ -55,19 +42,19 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping varnish logging daemon: "
-	killproc $DAEMON
+	killproc -p $PIDFILE $DAEMON
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]
 	then
 		echo_success
-		rm -f /var/lock/subsys/varnishlog
+		rm -f $LOCKFILE $PIDFILE
 	else
 		echo_failure
 	fi
 	echo
 	;;
   status)
-	status $PROCNAME
+	status -p $PIDFILE $PROCNAME
 	RETVAL=$?
 	;;
   restart|reload)
@@ -76,7 +63,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   condrestart)
-        if [ -f /var/lock/subsys/varnishlog ]; then
+        if [ -f $PIDFILE ]; then
             $0 stop
             $0 start
             RETVAL=$?
