@@ -19,6 +19,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
+AC_CHECK_PROGS(XSLTPROC, [xsltproc])
 
 # Checks for libraries.
 save_LIBS="${LIBS}"
@@ -130,6 +131,7 @@ AC_CONFIG_FILES([
     bin/varnishncsa/Makefile
     bin/varnishstat/Makefile
     bin/varnishtop/Makefile
+    doc/Makefile
     etc/Makefile
     include/Makefile
     lib/Makefile
