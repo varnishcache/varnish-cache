@@ -14,10 +14,10 @@ NFILES=131072
 # Listen on port 6081, administration on localhost:6082, and forward to
 # content server on localhost:8080.  Use a fixed-size cache file.
 #
-DAEMON_OPTS="-a :6081 \
-             -T localhost:6082 \
-	     -b localhost:8080 \
-	     -s file,/var/lib/varnish/varnish_storage.bin,1G"
+#DAEMON_OPTS="-a :6081 \
+#             -T localhost:6082 \
+#             -b localhost:8080 \
+#             -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
 ## Alternative 2, Configuration with VCL
@@ -26,10 +26,10 @@ DAEMON_OPTS="-a :6081 \
 # one content server selected by the vcl file, based on the request.  Use a
 # fixed-size cache file.
 #
-# DAEMON_OPTS="-a :6081 \
-#              -T localhost:6082 \
-#              -f /etc/varnish/default.vcl \
-#              -s file,/var/lib/varnish/varnish_storage.bin,1G"
+DAEMON_OPTS="-a :6081 \
+             -T localhost:6082 \
+             -f /etc/varnish/default.vcl \
+             -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
 ## Alternative 3, Advanced configuration
