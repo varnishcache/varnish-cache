@@ -24,8 +24,7 @@ DAEMON="/usr/sbin/varnishd"
 mkdir -p /var/run/varnish 2>/dev/null
 
 # Open files (usually 1024, which is way too small for varnish)
-[ ! "${NFILES}" ] && NFILES="131072"
-ulimit -n ${NFILES}
+ulimit -n ${NFILES:-131072}
 
 # See how we were called.
 case "$1" in
