@@ -60,7 +60,7 @@ sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 %{__make} %{?_smp_mflags}
 
-sed -e ' s/8080/80/g ' etc/vcl.conf > redhat/vcl.conf
+sed -e ' s/8080/80/g ' etc/default.vcl > redhat/default.vcl
 
 %install
 rm -rf %{buildroot}
@@ -75,7 +75,7 @@ find %{buildroot}/%{_libdir}/ -name '*.so' -type l -exec rm -f {} ';'
 mkdir -p %{buildroot}/var/lib/varnish
 mkdir -p %{buildroot}/var/log/varnish
 
-%{__install} -D -m 0644 redhat/vcl.conf %{buildroot}%{_sysconfdir}/varnish/vcl.conf
+%{__install} -D -m 0644 redhat/default.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
 %{__install} -D -m 0644 redhat/varnish.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/varnish
 %{__install} -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
 %{__install} -D -m 0755 redhat/varnish.initrc %{buildroot}%{_sysconfdir}/init.d/varnish
@@ -92,9 +92,9 @@ rm -rf %{buildroot}
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
 %{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat redhat/vcl.conf ChangeLog 
+%doc INSTALL LICENSE README redhat/README.redhat redhat/default.vcl ChangeLog 
 %dir %{_sysconfdir}/varnish/
-%config(noreplace) %{_sysconfdir}/varnish/vcl.conf
+%config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/sysconfig/varnish
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
 %{_sysconfdir}/init.d/varnish
@@ -135,6 +135,11 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed May 16 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070516
+- Wrapping up for 1.0.4
+- Changes in sysconfig and init scripts. Syncing with files in
+  trunk/debian
+
 * Fri May 11 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070511
 - Threw latest changes into svn trunk
 - Removed the conversion of manpages into utf8. They are all utf8 in trunk
