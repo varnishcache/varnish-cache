@@ -347,7 +347,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 
 /*--------------------------------------------------------------------*/
 
-static sig_atomic_t reopen;
+static volatile sig_atomic_t reopen;
 
 static void
 sighup(int sig)

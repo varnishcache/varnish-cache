@@ -51,7 +51,7 @@ Varnish is a high-performance HTTP accelerator.
 
 # Remove "--disable static" if you want to build static libraries 
 # (ie for the devel package)
-%configure --sbindir=/usr/sbin --disable-static
+%configure --disable-static
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
@@ -135,7 +135,7 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Wed May 16 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070516
+* Wed May 16 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070517
 - Wrapping up for 1.0.4
 - Changes in sysconfig and init scripts. Syncing with files in
   trunk/debian

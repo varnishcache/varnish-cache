@@ -21,34 +21,34 @@ LOCKFILE=/var/lock/subsys/varnish
 
 DAEMON="/usr/sbin/varnishd"
 
-# $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
-# have to set up a backend.
-if [ "$DAEMON_OPTS" = "" ]; then
-    echo "No values specified in DAEMON_OPTS. Please read the varnishd(1)"
-    echo "manpage and put configuration options in /etc/sysconfig/varnish"
-    exit 1
-fi
-
 mkdir -p /var/run/varnish 2>/dev/null
 
 # Open files (usually 1024, which is way too small for varnish)
-[ ! "${NFILES}" ] && NFILES="131072"
-ulimit -n ${NFILES}
+ulimit -n ${NFILES:-131072}
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting varnish HTTP accelerator: "
-	daemon --pidfile ${PIDFILE} ${DAEMON} "$DAEMON_OPTS" -P ${PIDFILE}
-	sleep 1
-	pkill -0 $PROCNAME
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]
-	then
+
+        # $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
+        # has to set up a backend, or /tmp will be used, which is a bad idea.
+	if [ "$DAEMON_OPTS" = "" ]; then
+	    echo "\$DAEMON_OPTS empty."
+	    echo -n "Please put configuration options in /etc/sysconfig/varnish"
+	    echo_failure
+	else
+	    daemon --pidfile ${PIDFILE} ${DAEMON} "$DAEMON_OPTS" -P ${PIDFILE} > /dev/null 2>&1
+	    sleep 1
+	    pkill -0 $PROCNAME
+	    RETVAL=$?
+	    if [ $RETVAL -eq 0 ]
+		then
 		echo_success
 		touch $LOCKFILE
-	else
+	    else
 		echo_failure
+	    fi	
 	fi
 	echo
 	;;
