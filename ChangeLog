@@ -85,6 +85,9 @@ varnishlog
   • New -D and -P command-line options have been added to daemonize and create
     a pidfile, respectively.
 
+  • The flag that is raised upon reception of a SIGHUP has been marked volatile
+    so it will not be optimized away by the compiler.
+
 varnishncsa
 
   • The formatting callback has been largely rewritten for clarity, robustness
@@ -93,6 +96,9 @@ varnishncsa
     If a request included a Host: header, construct and output an absolute URL.
     This makes varnishncsa output from servers which handle multiple virtual
     hosts far more useful.
+
+  • The flag that is raised upon reception of a SIGHUP has been marked volatile
+    so it will not be optimized away by the compiler.
 
 Documentation
 
