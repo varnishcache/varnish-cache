@@ -212,7 +212,7 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 
 /*--------------------------------------------------------------------*/
 
-static sig_atomic_t reopen;
+static volatile sig_atomic_t reopen;
 
 static void
 sighup(int sig)
