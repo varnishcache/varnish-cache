@@ -147,6 +147,12 @@
       options have been added to daemonize and create a pidfile,
       respectively.</para>
     </change>
+
+    <change type="bug" ref="1450">
+      <para>The flag that is raised upon reception of a
+      <code>SIGHUP</code> has been marked <code>volatile</code> so it
+      will not be optimized away by the compiler.</para>
+    </change>
   </subsystem>
 
   <subsystem>
@@ -160,6 +166,12 @@
       construct and output an absolute URL.  This makes
       <code>varnishncsa</code> output from servers which handle
       multiple virtual hosts far more useful.</para>
+    </change>
+
+    <change type="bug" ref="1450">
+      <para>The flag that is raised upon reception of a
+      <code>SIGHUP</code> has been marked <code>volatile</code> so it
+      will not be optimized away by the compiler.</para>
     </change>
   </subsystem>
 
