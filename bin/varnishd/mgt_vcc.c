@@ -345,6 +345,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 		csrc = VCC_CompileFile(sb, f_arg);
 		if (csrc != NULL)
 			fputs(csrc, stdout);
+		vf = NULL;
 	} else {
 		vf = mgt_VccCompileFile(sb, f_arg);
 	}
