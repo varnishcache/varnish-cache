@@ -3,6 +3,5 @@ usr/bin
 usr/lib
 usr/sbin
 var/log
-var/log/varnish
 var/lib/varnish
 usr/share/lintian/overrides/

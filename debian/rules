@@ -83,7 +83,6 @@ binary-arch: build install
 	dh_installdocs
 	# Since varnish loses its cache on restart - we don't.
 	dh_installinit -r
-	dh_installinit --name=varnishlog
 	dh_installman
 	dh_installexamples
 	dh_link

@@ -4,9 +4,6 @@
 # shell script fragment.
 #
 
-# Maximum number of open files (for ulimit -n)
-NFILES=131072
-
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
