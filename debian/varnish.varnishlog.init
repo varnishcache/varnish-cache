@@ -3,41 +3,28 @@
 # varnish       Control the varnish HTTP accelerator
 
 ### BEGIN INIT INFO
-# Provides:          varnish
+# Provides:          varnishlog
 # Required-Start:    $local_fs $network
 # Required-Stop:     $local_fs $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start HTTP accelerator
-# Description:       This script provides a server-side cache
-#                    to be run in front of a httpd and should
-#                    listen on port 80 on a properly configured
-#                    system
+# Short-Description: Start HTTP accelerator log daemon
+# Description:       This script provides logging for varnish
 ### END INIT INFO
 
 # Source function library
 . /lib/lsb/init-functions
 
-NAME=varnishd
-DESC="HTTP accelerator"
+NAME=varnishlog
+DESC="HTTP accelerator log deamon"
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/sbin/varnishd
+DAEMON=/usr/bin/$NAME
 PIDFILE=/var/run/$NAME.pid
+LOGFILE=/var/log/varnish/varnish.log
 
 test -x $DAEMON || exit 0
 
-# Include varnish defaults if available
-if [ -f /etc/default/varnish ] ; then
-        . /etc/default/varnish
-fi
-
-# Open files (usually 1024, which is way too small for varnish)
-ulimit -n ${NFILES:-131072}
-
-# If $DAEMON_OPTS is not set at all in /etc/default/varnish, use minimal useful
-# defaults (Backend at localhost:8080, a common place to put a locally
-# installed application server.)
-DAEMON_OPTS=${DAEMON_OPTS:--b localhost}
+DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
 
 case "$1" in
 	start)
@@ -46,7 +33,7 @@ case "$1" in
 		log_progress_msg $NAME
                 if start-stop-daemon \
 		   --start --quiet --pidfile ${PIDFILE} --exec ${DAEMON} -- \
-                   -P ${PIDFILE} ${DAEMON_OPTS} > ${output} 2>&1; then
+                   ${DAEMON_OPTS} > ${output} 2>&1; then
 			log_end_msg 0
 		else
 			log_end_msg 1
