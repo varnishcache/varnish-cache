@@ -1,7 +1,7 @@
 Source: varnish
 Section: web
 Priority: optional
-Maintainer: Stig Sandbeck Mathiesen <ssm@debian.org>
+Maintainer: Stig Sandbeck Mathisen <ssm@fnord.no>
 Uploaders: Lars Bahner <bahner@debian.org>
 Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev
 Standards-Version: 3.7.2
