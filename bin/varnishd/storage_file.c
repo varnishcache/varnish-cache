@@ -37,8 +37,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
 #endif
 
 #ifdef HAVE_SYS_VFS_H
@@ -126,7 +126,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AN(sc);
 	AZ(fstat(sc->fd, &st));
 
-#if defined(HAVE_SYS_STATVFS_H) || defined(HAVE_SYS_VFS_H)
+#if defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
 	AZ(fstatfs(sc->fd, &fsst));
 #endif
