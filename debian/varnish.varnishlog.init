@@ -38,6 +38,7 @@ case "$1" in
 		else
 			log_end_msg 1
 			cat $output
+			exit 1
 		fi
 		rm $output
 		;;
@@ -45,7 +46,7 @@ case "$1" in
 		log_daemon_msg "Stopping $DESC"
 		log_progress_msg $NAME
 		if start-stop-daemon \
-		   --stop --quiet --pidfile $PIDFILE --oknodo --retry 10 \
+		   --stop --quiet --pidfile $PIDFILE --retry 10 \
 		   --exec $DAEMON; then
 			log_end_msg 0
 		else
