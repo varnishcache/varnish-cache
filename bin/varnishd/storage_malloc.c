@@ -55,6 +55,7 @@ sma_alloc(struct stevedore *st, size_t size)
 	sma->s.space = size;
 	sma->s.fd = -1;
 	sma->s.stevedore = st;
+	sma->s.magic = STORAGE_MAGIC;
 	return (&sma->s);
 }
 
