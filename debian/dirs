@@ -1,4 +1,5 @@
 etc/varnish
+etc/logrotate.d
 usr/bin
 usr/lib
 usr/sbin

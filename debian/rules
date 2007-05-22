@@ -69,6 +69,7 @@ install: build
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/varnish
 	install -m 644 $(CURDIR)/etc/default.vcl $(CURDIR)/debian/varnish/etc/varnish/
 	install -m 644 $(CURDIR)/debian/lintian-override $(CURDIR)/debian/varnish/usr/share/lintian/overrides/varnish
+	install -m 644 $(CURDIR)/debian/varnish.logrotate $(CURDIR)/debian/varnish/etc/logrotate.d/varnish
 
 
 # Build architecture-independent files here.
