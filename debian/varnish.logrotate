@@ -1,0 +1,9 @@
+/var/log/varnish/varnish.log {
+  daily
+  rotate 7
+  compress
+  delaycompress
+  postrotate
+    /usr/sbin/invoke-rc.d varnishlog reload > /dev/null
+  endscript
+}

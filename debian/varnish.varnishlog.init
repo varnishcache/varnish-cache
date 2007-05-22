@@ -52,12 +52,22 @@ case "$1" in
 			log_end_msg 1
 		fi
         	;;
+	reload)
+		log_daemon_msg "Reloading $DESC"
+		log_progress_msg $NAME
+		if kill -HUP $(cat $PIDFILE) >/dev/null 2>&1; then
+			log_end_msg 0
+		else
+			log_end_msg 1
+			exit 1
+		fi
+        	;;
 	restart|force-reload)
 		$0 stop
 		$0 start
         	;;
 	*)
-        	log_success_msg "Usage: $0 {start|stop|restart|force-reload}"
+        	log_success_msg "Usage: $0 {start|stop|restart|force-reload|reload}"
         	exit 1
         ;;
 esac
