@@ -26,7 +26,7 @@
  *
  * $Id$
  * Derived from:
- * $FreeBSD: src/lib/libutil/flopen.c,v 1.4 2007/05/10 15:01:42 des Exp $
+ * $FreeBSD: src/lib/libutil/flopen.c,v 1.5 2007/05/23 08:12:34 des Exp $
  */
 
 #include <sys/file.h>
@@ -42,7 +42,7 @@
 int
 flopen(const char *path, int flags, ...)
 {
-	int fd, operation, serrno;
+	int fd, operation, serrno, truncate;
 	struct stat sb, fsb;
 	mode_t mode;
 
@@ -62,6 +62,9 @@ flopen(const char *path, int flags, ...)
 	operation = LOCK_EX;
 	if (flags & O_NONBLOCK)
 		operation |= LOCK_NB;
+
+	truncate = (flags & O_TRUNC);
+	flags |= ~O_TRUNC;
 
 	for (;;) {
 		if ((fd = open(path, flags, mode)) == -1)
@@ -91,6 +94,13 @@ flopen(const char *path, int flags, ...)
 			/* changed under our feet */
 			close(fd);
 			continue;
+		}
+		if (truncate && ftruncate(fd, 0) != 0) {
+			/* can't happen [tm] */
+			serrno = errno;
+			close(fd);
+			errno = serrno;
+			return (-1);
 		}
 		return (fd);
 	}
