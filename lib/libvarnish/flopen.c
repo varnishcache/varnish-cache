@@ -26,7 +26,7 @@
  *
  * $Id$
  * Derived from:
- * $FreeBSD: src/lib/libutil/flopen.c,v 1.5 2007/05/23 08:12:34 des Exp $
+ * $FreeBSD: src/lib/libutil/flopen.c,v 1.6 2007/05/23 10:06:03 des Exp $
  */
 
 #include <sys/file.h>
@@ -64,7 +64,7 @@ flopen(const char *path, int flags, ...)
 		operation |= LOCK_NB;
 
 	truncate = (flags & O_TRUNC);
-	flags |= ~O_TRUNC;
+	flags &= ~O_TRUNC;
 
 	for (;;) {
 		if ((fd = open(path, flags, mode)) == -1)
