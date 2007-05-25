@@ -4,6 +4,9 @@ Varnish uses the GNU autotools.  To build and install Varnish, simply
 run the 'configure' script in the top-level directory, then run 'make'
 and 'make install'.
 
+If you obtained the sources directly from the Subversion repository,
+you will need to run autogen.sh first to create the 'configure' script.
+
 Additional 'configure' options of interest:
 
   --enable-developer-warnings
