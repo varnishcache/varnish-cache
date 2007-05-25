@@ -43,6 +43,10 @@
 #include "shmlog.h"
 #include "cache.h"
 
+#ifndef HAVE_STRLCPY
+#include <compat/strlcpy.h>
+#endif
+
 #define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
 #include "http_headers.h"
 #undef HTTPH
@@ -91,6 +95,68 @@ WSLH(struct worker *w, enum httptag t, unsigned xid, struct http *hp, int hdr)
 {
 
 	WSLR(w, http2shmlog(hp, t), xid, hp->hd[hdr].b, hp->hd[hdr].e);
+}
+
+/*--------------------------------------------------------------------*/
+/* List of canonical HTTP response code names from RFC2616 */
+
+static struct http_msg {
+	unsigned	nbr;
+	const char	*txt;
+} http_msg[] = {
+	{ 101, "Switching Protocols" },
+	{ 200, "OK" },
+	{ 201, "Created" },
+	{ 202, "Accepted" },
+	{ 203, "Non-Authoritative Information" },
+	{ 204, "No Content" },
+	{ 205, "Reset Content" },
+	{ 206, "Partial Content" },
+	{ 300, "Multiple Choices" },
+	{ 301, "Moved Permanently" },
+	{ 302, "Found" },
+	{ 303, "See Other" },
+	{ 304, "Not Modified" },
+	{ 305, "Use Proxy" },
+	{ 306, "(Unused)" },
+	{ 307, "Temporary Redirect" },
+	{ 400, "Bad Request" },
+	{ 401, "Unauthorized" },
+	{ 402, "Payment Required" },
+	{ 403, "Forbidden" },
+	{ 404, "Not Found" },
+	{ 405, "Method Not Allowed" },
+	{ 406, "Not Acceptable" },
+	{ 407, "Proxy Authentication Required" },
+	{ 408, "Request Timeout" },
+	{ 409, "Conflict" },
+	{ 410, "Gone" },
+	{ 411, "Length Required" },
+	{ 412, "Precondition Failed" },
+	{ 413, "Request Entity Too Large" },
+	{ 414, "Request-URI Too Long" },
+	{ 415, "Unsupported Media Type" },
+	{ 416, "Requested Range Not Satisfiable" },
+	{ 417, "Expectation Failed" },
+	{ 500, "Internal Server Error" },
+	{ 501, "Not Implemented" },
+	{ 502, "Bad Gateway" },
+	{ 503, "Service Unavailable" },
+	{ 504, "Gateway Timeout" },
+	{ 505, "HTTP Version Not Supported" },
+	{ 0, NULL }
+};
+
+const char *
+http_StatusMessage(int status)
+{
+	struct http_msg *mp;
+
+	assert(status >= 100 && status <= 999);
+	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= status; mp++)
+		if (mp->nbr == status)
+			return (mp->txt);
+	return ("Unknown Error");
 }
 
 /*--------------------------------------------------------------------*/
@@ -817,16 +883,60 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 void
+http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
+{
+	int l;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	l = strlcpy(to->f, protocol, to->e - to->f);
+	xxxassert(to->f + l < to->e);
+	to->hd[HTTP_HDR_PROTO].b = to->f;
+	to->hd[HTTP_HDR_PROTO].e = to->f + l;
+	to->f += l + 1;
+	WSLH(w, HTTP_T_Protocol, fd, to, HTTP_HDR_PROTO);
+}
+
+void
+http_PutStatus(struct worker *w, int fd, struct http *to, int status)
+{
+	int l;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	assert(status >= 100 && status <= 999);
+	l = snprintf(to->f, to->e - to->f, "%d", status);
+	xxxassert(to->f + l < to->e);
+	to->hd[HTTP_HDR_STATUS].b = to->f;
+	to->hd[HTTP_HDR_STATUS].e = to->f + l;
+	to->f += l + 1;
+	WSLH(w, HTTP_T_Status, fd, to, HTTP_HDR_STATUS);
+}
+
+void
+http_PutResponse(struct worker *w, int fd, struct http *to, const char *response)
+{
+	int l;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	l = strlcpy(to->f, response, to->e - to->f);
+	xxxassert(to->f + l < to->e);
+	to->hd[HTTP_HDR_RESPONSE].b = to->f;
+	to->hd[HTTP_HDR_RESPONSE].e = to->f + l;
+	to->f += l + 1;
+	WSLH(w, HTTP_T_Response, fd, to, HTTP_HDR_RESPONSE);
+}
+
+void
 http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned l, n;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	va_start(ap, fmt);
 	l = to->e - to->f;
+	va_start(ap, fmt);
 	n = vsnprintf(to->f, l, fmt, ap);
-	if (n + 1 > l || to->nhd >= HTTP_HDR_MAX) {
+	va_end(ap);
+	if (n >= l || to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
 		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", to->f);
 	} else {
@@ -837,7 +947,6 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 		WSLH(w, HTTP_T_Header, fd, to, to->nhd);
 		to->nhd++;
 	}
-	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/

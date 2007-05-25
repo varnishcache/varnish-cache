@@ -286,26 +286,19 @@ static int
 cnt_fetch(struct sess *sp)
 {
 
-
 	if (Fetch(sp)) {
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp->obj);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
-		sp->step = STP_DONE;
-		RES_Error(sp, 503, NULL);
-		return (0);
+		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
+	} else {
+		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+
+		VCL_fetch_method(sp);
+
+		if (sp->handling == VCL_RET_ERROR)
+			INCOMPL();
+
+		if (sp->handling == VCL_RET_PASS)
+			sp->obj->pass = 1;
 	}
-
-	RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
-
-	VCL_fetch_method(sp);
-
-	if (sp->handling == VCL_RET_ERROR)
-		INCOMPL();
-
-	if (sp->handling == VCL_RET_PASS)
-		sp->obj->pass = 1;
 
 	sp->obj->cacheable = 1;
 	if (sp->obj->objhead != NULL) {

@@ -320,7 +320,6 @@ VBE_GetFd(struct sess *sp)
 		}
 		usleep(100000 * n);
 	}
-	RES_Error(sp, 503, "Backend did not respond.");
 	return (NULL);
 }
 
