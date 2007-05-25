@@ -140,10 +140,6 @@ cnt_deliver(struct sess *sp)
 {
 
 	RES_WriteObj(sp);
-	if (sp->obj->objhead != NULL && sp->obj->pass) {
-		/* we will no longer need the storage */
-		HSH_Freestore(sp->obj);
-	}
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	sp->step = STP_DONE;
