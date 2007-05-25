@@ -136,7 +136,7 @@ vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
 		free(acln);
 		break;
 	default:
-		vsb_printf(tl->sb, "Illegal condition ");
+		vsb_printf(tl->sb, "Invalid condition ");
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb, " on IP number variable\n");
 		vsb_printf(tl->sb, "  only '==', '!=' and '~' are legal\n");

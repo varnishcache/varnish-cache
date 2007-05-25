@@ -306,7 +306,7 @@ Cond_Int(const struct var *vp, struct tokenlist *tl)
 		Fb(tl, 0, "\n");
 		break;
 	default:
-		vsb_printf(tl->sb, "Illegal condition ");
+		vsb_printf(tl->sb, "Invalid condition ");
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb, " on integer variable\n");
 		vsb_printf(tl->sb,

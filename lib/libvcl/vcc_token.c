@@ -227,7 +227,7 @@ vcc_decstr(struct tokenlist *tl)
 		if (!isxdigit(p[1]) || !isxdigit(p[2])) {
 			vcc_AddToken(tl, CSTR, p, p + 3);
 			vsb_printf(tl->sb,
-			    "Illegal hex char in %%xx escape\n");
+			    "Invalid hex char in %%xx escape\n");
 			vcc_ErrWhere(tl, tl->t);
 			return(1);
 		}
