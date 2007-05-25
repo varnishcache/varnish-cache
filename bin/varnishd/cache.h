@@ -365,6 +365,7 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
+const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 void http_CopyHttp(struct http *to, struct http *fm);
@@ -374,6 +375,9 @@ void http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm);
 void http_CopyResp(struct worker *w, int fd, struct http *to, struct http *fm);
 void http_SetResp(struct worker *w, int fd, struct http *to, const char *proto, const char *status, const char *response);
 void http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
+void http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol);
+void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
+void http_PutResponse(struct worker *w, int fd, struct http *to, const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 void http_Setup(struct http *ht, void *space, unsigned len);
@@ -436,6 +440,9 @@ void WSL_Flush(struct worker *w);
 /* cache_response.c */
 void RES_Error(struct sess *sp, int code, const char *reason);
 void RES_WriteObj(struct sess *sp);
+
+/* cache_synthetic.c */
+void SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl);
 
 /* cache_vcl.c */
 void VCL_Init(void);
