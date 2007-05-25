@@ -178,7 +178,7 @@ parse_set(struct tokenlist *tl)
 			}
 			break;
 		default:
-			vsb_printf(tl->sb, "Illegal assignment operator.\n");
+			vsb_printf(tl->sb, "Invalid assignment operator.\n");
 			vcc_ErrWhere(tl, at);
 			return;
 		}
@@ -197,7 +197,7 @@ parse_set(struct tokenlist *tl)
 			    u & 0xff);
 			break;
 		}
-		vsb_printf(tl->sb, "Illegal assignment operator ");
+		vsb_printf(tl->sb, "Invalid assignment operator ");
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb,
 		    " only '=' is legal for IP numbers\n");
@@ -213,7 +213,7 @@ parse_set(struct tokenlist *tl)
 			Fb(tl, 0, ");\n");
 			break;
 		}
-		vsb_printf(tl->sb, "Illegal assignment operator ");
+		vsb_printf(tl->sb, "Invalid assignment operator ");
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb,
 		    " only '=' is legal for backend\n");

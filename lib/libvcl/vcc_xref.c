@@ -241,7 +241,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 /*lint -e525 */
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
-			vsb_printf(tl->sb, "Illegal return \"%s\"\n", #a); \
+			vsb_printf(tl->sb, "Invalid return \"%s\"\n", #a); \
 			vcc_ErrWhere(tl, p->return_tok[d]); \
 		}
 /*lint -e525 */

@@ -157,7 +157,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '\\') {
 				i = BackSlash(s, NULL);
 				if (i == 0) {
-					argv[0] = (void*)(uintptr_t)"Illegal backslash sequence";
+					argv[0] = (void*)(uintptr_t)"Invalid backslash sequence";
 					return (argv);
 				}
 				s += i;
