@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.0.svn
-Release: 20070517%{?dist}
+Release: 20070528%{?dist}
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -28,6 +28,7 @@ Summary: Libraries for %{name}
 Group: System Environment/Libraries
 BuildRequires: ncurses-devel
 #Requires: ncurses
+#Obsoletes: libvarnish1
 
 %description libs
 Libraries for %{name}.
@@ -65,6 +66,13 @@ sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 %{__make} %{?_smp_mflags}
 
 sed -e ' s/8080/80/g ' etc/default.vcl > redhat/default.vcl
+
+
+%if "%dist" >= "el4"
+    sed -i 's,daemon --pidfile \${PIDFILE},daemon,g' redhat/varnish.initrc
+    sed -i 's,status -p \$PIDFILE,status,g' redhat/varnish.initrc
+    sed -i 's,killproc -p \$PIDFILE,killproc,g' redhat/varnish.initrc
+%endif
 
 %install
 rm -rf %{buildroot}
@@ -139,6 +147,17 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
+- Fixed initrc-script bug only visible on el4 (fixes #107)
+
+* Sun May 20 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-2
+- Repack from unchanged 1.0.4 tarball
+- Final review request and CVS request for Fedora Extras
+- Repack with extra obsoletes for upgrading from older sf.net package
+
+* Fri May 18 2007 Dag-Erling Smørgrav <des@des.no> - 1.0.4-1
+- Bump Version and Release for 1.0.4
+
 * Wed May 16 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.svn-20070517
 - Wrapping up for 1.0.4
 - Changes in sysconfig and init scripts. Syncing with files in
