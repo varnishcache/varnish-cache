@@ -140,5 +140,7 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     lib/libvcl/Makefile
     man/Makefile
+    debian/Makefile
+    redhat/Makefile
 ])
 AC_OUTPUT
