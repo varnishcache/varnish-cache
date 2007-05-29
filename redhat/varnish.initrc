@@ -38,7 +38,7 @@ case "$1" in
 	    echo -n "Please put configuration options in /etc/sysconfig/varnish"
 	    echo_failure
 	else
-	    daemon --pidfile ${PIDFILE} ${DAEMON} "$DAEMON_OPTS" -P ${PIDFILE} > /dev/null 2>&1
+	    daemon ${DAEMON} "$DAEMON_OPTS" -P ${PIDFILE} > /dev/null 2>&1
 	    sleep 1
 	    pkill -0 $PROCNAME
 	    RETVAL=$?
@@ -54,7 +54,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping varnish HTTP accelerator: "
-	killproc -p $PIDFILE $DAEMON
+	killproc $DAEMON
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]
 	then
@@ -66,7 +66,7 @@ case "$1" in
 	echo
 	;;
   status)
-	status -p $PIDFILE $PROCNAME
+	status $PROCNAME
 	RETVAL=$?
 	;;
   restart|reload)
