@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.0.svn
-Release: 20070528%{?dist}
+Release: 20070529%{?dist}
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -60,18 +60,19 @@ Varnish is a high-performance HTTP accelerator.
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
-sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
-sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
+        s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 %{__make} %{?_smp_mflags}
 
 sed -e ' s/8080/80/g ' etc/default.vcl > redhat/default.vcl
 
 
-%if "%dist" >= "el4"
-    sed -i 's,daemon --pidfile \${PIDFILE},daemon,g' redhat/varnish.initrc
-    sed -i 's,status -p \$PIDFILE,status,g' redhat/varnish.initrc
-    sed -i 's,killproc -p \$PIDFILE,killproc,g' redhat/varnish.initrc
+%if "%dist" == "el4"
+    sed -i 's,daemon --pidfile \${\?PIDFILE}\?,daemon,g;
+            s,status -p \$PIDFILE,status,g;
+            s,killproc -p \$PIDFILE,killproc,g' \
+    redhat/varnish.initrc redhat/varnishlog.initrc
 %endif
 
 %install
