@@ -90,7 +90,7 @@ static struct logline {
 static size_t nll;
 
 static time_t t;
-	
+
 static int
 isprefix(const char *str, const char *prefix, const char *end, const char **next)
 {
@@ -178,7 +178,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	struct logline *lp;
 
 	end = ptr + len;
-	
+
 	if (!(spec & VSL_S_CLIENT || spec & VSL_S_BACKEND))
 		return (0);
 
@@ -226,7 +226,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	case SLT_RxRequest:
 		if (tag == SLT_RxRequest && (spec & VSL_S_BACKEND))
 			break;
-		
+
 		if (lp->df_m != NULL)
 			lp->bogus = 1;
 		else
@@ -239,7 +239,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	case SLT_RxURL:
 		if (tag == SLT_RxURL && (spec & VSL_S_BACKEND))
 			break;
-		
+
 		if (lp->df_Uq != NULL)
 			lp->bogus = 1;
 		else
@@ -252,7 +252,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	case SLT_RxProtocol:
 		if (tag == SLT_RxProtocol && (spec & VSL_S_BACKEND))
 			break;
-		
+
 		if (lp->df_H != NULL)
 			lp->bogus = 1;
 		else
@@ -265,7 +265,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	case SLT_TxStatus:
 		if (tag == SLT_TxStatus && (spec & VSL_S_BACKEND))
 			break;
-		
+
 		if (lp->df_s != NULL)
 			lp->bogus = 1;
 		else
@@ -282,7 +282,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 			} else if (isprefix(ptr, "date:", end, &next)) {
 				if (strptime(trimline(next, end), "%a, %d %b %Y %T", &tm))
 					t = mktime(&tm);
-			}	
+			}
 			break;
 		}
 		if (isprefix(ptr, "user-agent:", end, &next))
@@ -309,21 +309,21 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 
 	if ((spec & VSL_S_CLIENT) && tag != SLT_ReqEnd)
 		return (0);
-		 
+
 	if ((spec & VSL_S_BACKEND) && tag != SLT_BackendReuse &&
 	    (tag != SLT_BackendClose || lp->df_Uq))
 		return (0);
-	
+
 	if (tag == SLT_ReqEnd) {
 		if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1)
 			lp->bogus = 1;
 		else
 			t = l;
 	}
-	
+
 	if (!lp->bogus) {
-		
 		fo = priv;
+
 		/* %h */
 		if (!lp->df_h && spec & VSL_S_BACKEND)
 			fprintf(fo, "127.0.0.1 ");
