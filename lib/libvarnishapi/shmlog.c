@@ -265,6 +265,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			vd->map[u] &= ~M_BACKEND;
 			break;
 		case SLT_BackendOpen:
+		case SLT_BackendXID:
 			vd->map[u] |= M_BACKEND;
 			vd->map[u] &= ~M_CLIENT;
 			break;

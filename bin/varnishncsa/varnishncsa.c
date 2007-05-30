@@ -89,6 +89,8 @@ static struct logline {
 
 static size_t nll;
 
+static time_t t;
+	
 static int
 isprefix(const char *str, const char *prefix, const char *end, const char **next)
 {
@@ -170,15 +172,14 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	const char *end, *next;
 	char *q;
 	FILE *fo;
-	time_t t;
 	long l;
 	struct tm tm;
 	char tbuf[40];
 	struct logline *lp;
 
 	end = ptr + len;
-
-	if (!(spec &VSL_S_CLIENT))
+	
+	if (!(spec & VSL_S_CLIENT || spec & VSL_S_BACKEND))
 		return (0);
 
 	if (fd >= nll) {
@@ -200,6 +201,18 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	lp = ll[fd];
 
 	switch (tag) {
+	case SLT_BackendOpen:
+		if (!(spec & VSL_S_BACKEND))
+			break;
+		if (lp->df_h != NULL)
+			lp->bogus = 1;
+		else {
+			if (isprefix(ptr, "default", end, &next))
+				lp->df_h = trimfield(next, end);
+			else
+				lp->df_h = trimfield(ptr, end);
+		}
+		break;
 	case SLT_ReqStart:
 		if (lp->df_h != NULL)
 			lp->bogus = 1;
@@ -207,35 +220,71 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 			lp->df_h = trimfield(ptr, end);
 		break;
 
+	case SLT_TxRequest:
+		if (!(spec & VSL_S_BACKEND))
+			break;
 	case SLT_RxRequest:
+		if (tag == SLT_RxRequest && (spec & VSL_S_BACKEND))
+			break;
+		
 		if (lp->df_m != NULL)
 			lp->bogus = 1;
 		else
 			lp->df_m = trimline(ptr, end);
 		break;
 
+	case SLT_TxURL:
+		if (!(spec & VSL_S_BACKEND))
+			break;
 	case SLT_RxURL:
+		if (tag == SLT_RxURL && (spec & VSL_S_BACKEND))
+			break;
+		
 		if (lp->df_Uq != NULL)
 			lp->bogus = 1;
 		else
 			lp->df_Uq = trimline(ptr, end);
 		break;
 
+	case SLT_TxProtocol:
+		if (!(spec & VSL_S_BACKEND))
+			break;
 	case SLT_RxProtocol:
+		if (tag == SLT_RxProtocol && (spec & VSL_S_BACKEND))
+			break;
+		
 		if (lp->df_H != NULL)
 			lp->bogus = 1;
 		else
 			lp->df_H = trimline(ptr, end);
 		break;
 
+	case SLT_RxStatus:
+		if (!(spec & VSL_S_BACKEND))
+			break;
 	case SLT_TxStatus:
+		if (tag == SLT_TxStatus && (spec & VSL_S_BACKEND))
+			break;
+		
 		if (lp->df_s != NULL)
 			lp->bogus = 1;
 		else
 			lp->df_s = trimline(ptr, end);
 		break;
 
+	case SLT_TxHeader:
+		if (!(spec & VSL_S_BACKEND))
+			break;
 	case SLT_RxHeader:
+		if (tag == SLT_RxHeader && (spec & VSL_S_BACKEND)) {
+			if (isprefix(ptr, "content-length:", end, &next)) {
+				lp->df_b = trimline(next, end);
+			} else if (isprefix(ptr, "date:", end, &next)) {
+				if (strptime(trimline(next, end), "%a, %d %b %Y %T", &tm))
+					t = mktime(&tm);
+			}	
+			break;
+		}
 		if (isprefix(ptr, "user-agent:", end, &next))
 			lp->df_User_agent = trimline(next, end);
 		else if (isprefix(ptr, "referer:", end, &next))
@@ -258,19 +307,28 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 		break;
 	}
 
-	if (tag != SLT_ReqEnd)
+	if ((spec & VSL_S_CLIENT) && tag != SLT_ReqEnd)
 		return (0);
-
-	if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1)
-		lp->bogus = 1;
-	else
-		t = l;
-
+		 
+	if ((spec & VSL_S_BACKEND) && tag != SLT_BackendReuse &&
+	    (tag != SLT_BackendClose || lp->df_Uq))
+		return (0);
+	
+	if (tag == SLT_ReqEnd) {
+		if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1)
+			lp->bogus = 1;
+		else
+			t = l;
+	}
+	
 	if (!lp->bogus) {
+		
 		fo = priv;
-
 		/* %h */
-		fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
+		if (!lp->df_h && spec & VSL_S_BACKEND)
+			fprintf(fo, "127.0.0.1 ");
+		else
+			fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
 
 		/* %l */
 		fprintf(fo, "- ");
