@@ -66,6 +66,12 @@ struct heritage {
 
 struct params {
 
+	/* Unprivileged user / group */
+	char			*user;
+	uid_t			uid;
+	char			*group;
+	gid_t			gid;
+
 	/* TTL used for lack of anything better */
 	unsigned		default_ttl;
 
