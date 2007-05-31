@@ -367,7 +367,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " *    notice, this list of conditions and the following disclaimer in the\n");
 	vsb_cat(sb, " *    documentation and/or other materials provided with the distribution.\n");
 	vsb_cat(sb, " *\n");
-	vsb_cat(sb, " * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND\n");
+	vsb_cat(sb, " * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND\n");
 	vsb_cat(sb, " * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n");
 	vsb_cat(sb, " * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n");
 	vsb_cat(sb, " * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE\n");
