@@ -401,7 +401,7 @@ main(int argc, char *argv[])
 	unsigned d_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
-	const char *h_flag = "classic";
+	const char *h_arg = "classic";
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:h:P:p:s:T:t:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:g:h:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -459,8 +459,11 @@ main(int argc, char *argv[])
 		case 'f':
 			f_arg = optarg;
 			break;
+		case 'g':
+			MCF_ParamSet(cli, "group", optarg);
+			break;
 		case 'h':
-			h_flag = optarg;
+			h_arg = optarg;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -482,6 +485,9 @@ main(int argc, char *argv[])
 			break;
 		case 'T':
 			T_arg = optarg;
+			break;
+		case 'u':
+			MCF_ParamSet(cli, "user", optarg);
 			break;
 		case 'V':
 			varnish_version("varnishd");
@@ -521,7 +527,7 @@ main(int argc, char *argv[])
 		exit (0);
 
 	setup_storage(s_arg);
-	setup_hash(h_flag);
+	setup_hash(h_arg);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 

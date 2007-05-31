@@ -177,6 +177,11 @@ start_child(void)
 	if (i < 0)
 		errx(1, "Could not fork child");
 	if (i == 0) {
+		if (geteuid() == 0) {
+			XXXAZ(setgid(params->gid) == -1);
+			XXXAZ(setuid(params->uid) == -1);
+		}
+
 		/* Redirect stdin/out/err */
 		AZ(close(0));
 		i = open("/dev/null", O_RDONLY);

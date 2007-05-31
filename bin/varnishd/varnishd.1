@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd May 16, 2007
+.Dd May 30, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -40,12 +40,14 @@
 .Op Fl b Ar host Ns Op : Ns Ar port
 .Op Fl d
 .Op Fl f Ar config
+.Op Fl g Ar group
 .Op Fl h Ar type Ns Op , Ns Ar options
 .Op Fl P Ar file
 .Op Fl p Ar param Ns = Ns Ar value
 .Op Fl s Ar type Ns Op , Ns Ar options
 .Op Fl T Ar address Ns Op : Ns Ar port
 .Op Fl t Ar ttl
+.Op Fl u Ar user
 .Op Fl V
 .Op Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
 .Sh DESCRIPTION
@@ -114,6 +116,12 @@ default.
 See
 .Xr vcl 7
 for details on VCL syntax.
+.It Fl g Ar group
+Specifies the name of an unprivileged group to which the child process
+should switch before it starts accepting connections.
+This is a shortcut for specifying the
+.Va group
+run-time parameter.
 .It Fl h Ar type Ns Op , Ns Ar options
 Specifies the hash algorithm.
 See
@@ -148,6 +156,15 @@ Specifies a hard minimum time to live for cached documents.
 This is a shortcut for specifying the
 .Va default_ttl
 run-time parameter.
+.It Fl u Ar user
+Specifies the name of an unprivileged user to which the child process
+should switch before it starts accepting connections.
+This is a shortcut for specifying the
+.Va user
+run-time parameter.
+.Pp
+If specifying both a user and a group, the user should be specified
+first.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
@@ -349,6 +366,20 @@ The default chunk size used when retrieving documents for which the
 backend server does not specify a content length.
 .Pp
 The default is 128 kilobytes.
+.It Va group
+The name of an unprivileged group to which the child process should
+switch before it starts accepting connections.
+Note that setting
+.Va user
+will automatically set
+.Va group
+to the primary group of the specified user, so if both
+.Va user
+and
+.Va group
+are specified, the latter should be specified last.
+.Pp
+The default is "nogroup".
 .It Va http_workspace
 The size of the per-session workspace for HTTP protocol data.
 For performance reasons, this space is preallocated, so any change to
@@ -443,6 +474,20 @@ when the number of worker threads exceeds
 .Va thread_pool_min .
 .Pp
 The default is 120 seconds.
+.It Va user
+The name of an unprivileged user to which the child process should
+switch before it starts accepting connections.
+Note that setting
+.Va user
+will automatically set
+.Va group
+to the primary group of the specified user, so if both
+.Va user
+and
+.Va group
+are specified, the latter should be specified last.
+.Pp
+The default is "nobody".
 .It Va vcl_trace
 Whether to issue log entries for calls to VCL code and their results.
 Note that this will generate large amounts of log data.

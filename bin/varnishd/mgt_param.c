@@ -29,6 +29,10 @@
  * $Id$
  */
 
+#include <sys/types.h>
+
+#include <grp.h>
+#include <pwd.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -128,6 +132,70 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, un
 		cli_out(cli, "unlimited", *dest);
 	} else {
 		cli_out(cli, "%u", *dest);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_user(struct cli *cli, struct parspec *par, const char *arg)
+{
+	struct passwd *pw;
+	struct group *gr;
+
+	(void)par;
+	if (arg != NULL) {
+		if ((pw = getpwnam(arg)) == NULL) {
+			cli_out(cli, "Unknown user");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		if (params->user)
+			free(params->user);
+		params->user = strdup(pw->pw_name);
+		AN(params->user);
+		params->uid = pw->pw_uid;
+
+		/* set group to user's primary group */
+		if (params->group)
+			free(params->group);
+		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
+		    (gr = getgrnam(gr->gr_name)) != NULL &&
+		    gr->gr_gid == pw->pw_gid) {
+			params->group = strdup(gr->gr_name);
+			AN(params->group);
+		}
+		params->gid = pw->pw_gid;
+	} else if (params->user) {
+		cli_out(cli, "%s (%d)", params->user, (int)params->uid);
+	} else {
+		cli_out(cli, "%d", (int)params->uid);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_group(struct cli *cli, struct parspec *par, const char *arg)
+{
+	struct group *gr;
+
+	(void)par;
+	if (arg != NULL) {
+		if ((gr = getgrnam(arg)) == NULL) {
+			cli_out(cli, "Unknown group");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		if (params->group)
+			free(params->group);
+		params->group = strdup(gr->gr_name);
+		AN(params->group);
+		params->gid = gr->gr_gid;
+	} else if (params->group) {
+		cli_out(cli, "%s (%d)", params->group, (int)params->gid);
+	} else {
+		cli_out(cli, "%d", (int)params->gid);
 	}
 }
 
@@ -447,6 +515,15 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
  * change its default value.
  */
 static struct parspec parspec[] = {
+	{ "user", tweak_user,
+	        "The unprivileged user to run as.  Setting this will "
+		"also set \"group\" to the specified user's primary group.\n"
+		MUST_RESTART,
+		"nobody" },
+	{ "group", tweak_group,
+	        "The unprivileged group to run as.\n"
+		MUST_RESTART,
+		"nogroup" },
 	{ "default_ttl", tweak_default_ttl,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.\n"
