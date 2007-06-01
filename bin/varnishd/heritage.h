@@ -121,7 +121,7 @@ struct params {
 	unsigned		ping_interval;
 };
 
-extern volatile struct params *params;
+extern struct params * volatile params;
 extern struct heritage heritage;
 
 void child_main(void);

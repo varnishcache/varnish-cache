@@ -59,6 +59,8 @@ struct parspec {
 	const char	*units;
 };
 
+static struct params master;
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -150,26 +152,26 @@ tweak_user(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
-		if (params->user)
-			free(params->user);
-		params->user = strdup(pw->pw_name);
-		AN(params->user);
-		params->uid = pw->pw_uid;
+		if (master.user)
+			free(master.user);
+		master.user = strdup(pw->pw_name);
+		AN(master.user);
+		master.uid = pw->pw_uid;
 
 		/* set group to user's primary group */
-		if (params->group)
-			free(params->group);
+		if (master.group)
+			free(master.group);
 		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
 		    (gr = getgrnam(gr->gr_name)) != NULL &&
 		    gr->gr_gid == pw->pw_gid) {
-			params->group = strdup(gr->gr_name);
-			AN(params->group);
+			master.group = strdup(gr->gr_name);
+			AN(master.group);
 		}
-		params->gid = pw->pw_gid;
-	} else if (params->user) {
-		cli_out(cli, "%s (%d)", params->user, (int)params->uid);
+		master.gid = pw->pw_gid;
+	} else if (master.user) {
+		cli_out(cli, "%s (%d)", master.user, (int)master.uid);
 	} else {
-		cli_out(cli, "%d", (int)params->uid);
+		cli_out(cli, "%d", (int)master.uid);
 	}
 }
 
@@ -187,15 +189,15 @@ tweak_group(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
-		if (params->group)
-			free(params->group);
-		params->group = strdup(gr->gr_name);
-		AN(params->group);
-		params->gid = gr->gr_gid;
-	} else if (params->group) {
-		cli_out(cli, "%s (%d)", params->group, (int)params->gid);
+		if (master.group)
+			free(master.group);
+		master.group = strdup(gr->gr_name);
+		AN(master.group);
+		master.gid = gr->gr_gid;
+	} else if (master.group) {
+		cli_out(cli, "%s (%d)", master.group, (int)master.gid);
 	} else {
-		cli_out(cli, "%d", (int)params->gid);
+		cli_out(cli, "%d", (int)master.gid);
 	}
 }
 
@@ -206,7 +208,7 @@ tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->default_ttl, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.default_ttl, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -216,7 +218,7 @@ tweak_thread_pools(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->wthread_pools, arg,
+	tweak_generic_uint(cli, &master.wthread_pools, arg,
 	    1, UINT_MAX);
 }
 
@@ -228,8 +230,8 @@ tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->wthread_min, arg,
-	    0, params->wthread_max);
+	tweak_generic_uint(cli, &master.wthread_min, arg,
+	    0, master.wthread_max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -239,8 +241,8 @@ tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->wthread_max, arg,
-	    params->wthread_min, UINT_MAX);
+	tweak_generic_uint(cli, &master.wthread_max, arg,
+	    master.wthread_min, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -250,7 +252,7 @@ tweak_thread_pool_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_timeout(cli, &params->wthread_timeout, arg);
+	tweak_generic_timeout(cli, &master.wthread_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -260,7 +262,7 @@ tweak_overflow_max(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->overflow_max, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.overflow_max, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -270,7 +272,7 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->mem_workspace, arg,
+	tweak_generic_uint(cli, &master.mem_workspace, arg,
 	    1024, UINT_MAX);
 }
 
@@ -280,7 +282,7 @@ static void
 tweak_sess_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_timeout(cli, &params->sess_timeout, arg);
+	tweak_generic_timeout(cli, &master.sess_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -289,7 +291,7 @@ static void
 tweak_pipe_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_timeout(cli, &params->pipe_timeout, arg);
+	tweak_generic_timeout(cli, &master.pipe_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -298,7 +300,7 @@ static void
 tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_timeout(cli, &params->send_timeout, arg);
+	tweak_generic_timeout(cli, &master.send_timeout, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -308,7 +310,7 @@ tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_bool(cli, &params->auto_restart, arg);
+	tweak_generic_bool(cli, &master.auto_restart, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -318,7 +320,7 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->fetch_chunksize, arg,
+	tweak_generic_uint(cli, &master.fetch_chunksize, arg,
 	    4, UINT_MAX / 1024);
 }
 
@@ -330,7 +332,7 @@ tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &params->sendfile_threshold, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.sendfile_threshold, arg, 0, UINT_MAX);
 }
 #endif /* HAVE_SENDFILE */
 
@@ -340,7 +342,7 @@ static void
 tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_bool(cli, &params->vcl_trace, arg);
+	tweak_generic_bool(cli, &master.vcl_trace, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -369,9 +371,9 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 	if (arg == NULL) {
 		/* Quote the string if we have more than one socket */
 		if (heritage.nsocks > 1)
-			cli_out(cli, "\"%s\"", params->listen_address);
+			cli_out(cli, "\"%s\"", master.listen_address);
 		else
-			cli_out(cli, "%s", params->listen_address);
+			cli_out(cli, "%s", master.listen_address);
 		return;
 	}
 
@@ -422,9 +424,9 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 		return;
 	}
 
-	free(params->listen_address);
-	params->listen_address = strdup(arg);
-	AN(params->listen_address);
+	free(master.listen_address);
+	master.listen_address = strdup(arg);
+	AN(master.listen_address);
 
 	clean_listen_sock_head(&heritage.socks);
 	heritage.nsocks = 0;
@@ -443,7 +445,7 @@ static void
 tweak_listen_depth(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_uint(cli, &params->listen_depth, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.listen_depth, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -452,7 +454,7 @@ static void
 tweak_srcaddr_hash(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_uint(cli, &params->srcaddr_hash, arg, 63, UINT_MAX);
+	tweak_generic_uint(cli, &master.srcaddr_hash, arg, 63, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -461,7 +463,7 @@ static void
 tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_uint(cli, &params->srcaddr_ttl, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.srcaddr_ttl, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -470,7 +472,7 @@ static void
 tweak_backend_http11(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_bool(cli, &params->backend_http11, arg);
+	tweak_generic_bool(cli, &master.backend_http11, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -479,7 +481,7 @@ static void
 tweak_client_http11(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_bool(cli, &params->client_http11, arg);
+	tweak_generic_bool(cli, &master.client_http11, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -488,7 +490,7 @@ static void
 tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
-	tweak_generic_uint(cli, &params->ping_interval, arg, 0, UINT_MAX);
+	tweak_generic_uint(cli, &master.ping_interval, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -733,6 +735,15 @@ mcf_param_show(struct cli *cli, char **av, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
+MCF_ParamSync(void)
+{
+	if (params != &master)
+		*params = master;
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
 	struct parspec *pp;
@@ -745,6 +756,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	}
 	cli_result(cli, CLIS_PARAM);
 	cli_out(cli, "Unknown paramter \"%s\".", param);
+	MCF_ParamSync();
 }
 
 
@@ -771,4 +783,5 @@ MCF_ParamInit(struct cli *cli)
 		if (cli->result != CLIS_OK)
 			return;
 	}
+	params = &master;
 }

@@ -173,6 +173,7 @@ start_child(void)
 	AZ(pipe(&heritage.fds[0]));
 	AZ(pipe(&heritage.fds[2]));
 	AZ(pipe(child_fds));
+	MCF_ParamSync();
 	i = fork();
 	if (i < 0)
 		errx(1, "Could not fork child");
