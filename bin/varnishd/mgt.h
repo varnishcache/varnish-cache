@@ -52,6 +52,7 @@ void mgt_cli_stop_child(void);
 int mgt_cli_telnet(const char *T_arg);
 
 /* mgt_param.c */
+void MCF_ParamSync(void);
 void MCF_ParamInit(struct cli *);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 
