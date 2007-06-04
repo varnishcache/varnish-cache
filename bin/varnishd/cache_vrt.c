@@ -284,10 +284,8 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 	if (str == NULL)
 		str = "";
 	l = strlen(str);
-	xxxassert (sp->hash_e == sp->http->f);
-	xxxassert (sp->hash_e + l + 1 <= sp->http->e);
+	xxxassert (sp->hash_e + l + 1 <= sp->http->ws->e);
 	memcpy(sp->hash_e, str, l);
 	sp->hash_e[l] = '#';
 	sp->hash_e += l + 1;
-	sp->http->f += l + 1;
 }

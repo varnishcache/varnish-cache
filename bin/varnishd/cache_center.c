@@ -214,7 +214,7 @@ cnt_done(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	}
-	if (sp->http->t < sp->http->v) {
+	if (sp->http->pl_s < sp->http->pl_e) {
 		VSL_stats->sess_readahead++;
 		sp->step = STP_AGAIN;
 		return (0);
@@ -426,13 +426,12 @@ cnt_lookup(struct sess *sp)
 {
 	struct object *o;
 
-	assert(sp->http->f > sp->http->s);
-	assert(sp->http->f >= sp->http->t);
 	if (sp->obj == NULL) {
-		sp->hash_b = sp->http->f;
+		WS_Reserve(sp->http->ws, 0);
+		sp->hash_b = sp->http->ws->f;
 		sp->hash_e = sp->hash_b;
 		VCL_hash_method(sp);		/* XXX: no-op for now */
-
+		WS_ReleaseP(sp->http->ws, sp->hash_e);
 		/* XXX check error */
 	}
 
@@ -449,12 +448,7 @@ cnt_lookup(struct sess *sp)
 		return (1);
 	}
 
-	xxxassert (sp->hash_e == sp->http->f);
-	if (sp->hash_e == sp->http->f) {
-		/* Nobody alloc'ed after us, free again */
-		sp->http->f = sp->hash_b;
-	}
-
+	WS_Return(sp->http->ws, sp->hash_b, sp->hash_e);
 	sp->hash_b = sp->hash_e = NULL;
 
 	sp->obj = o;

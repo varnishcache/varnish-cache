@@ -57,7 +57,6 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	const char *msg;
 	char date[40];
 	time_t now;
-	size_t len;
 	int fd;
 
 	assert(status >= 100 && status <= 999);
@@ -122,10 +121,8 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	vsb_delete(&vsb);
 
 	/* allocate space for header */
-	/* XXX what if the object already has a header? */
-	h->v = h->s = calloc(len = 1024, 1);
-	XXXAN(h->s);
-	h->e = h->s + len;
+
+	WS_Init(h->ws, malloc(1024), 1024);
 
 	/* generate header */
 	http_ClrHeader(h);
