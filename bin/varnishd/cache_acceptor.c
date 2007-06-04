@@ -162,14 +162,16 @@ vca_acct(void *arg)
 			tv_sndtimeo.tv_sec = params->send_timeout;
 			TAILQ_FOREACH(ls, &heritage.socks, list) 
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
-				    SO_SNDTIMEO, &tv_sndtimeo, sizeof tv_sndtimeo));
+				    SO_SNDTIMEO,
+				    &tv_sndtimeo, sizeof tv_sndtimeo));
 		}
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
 			TAILQ_FOREACH(ls, &heritage.socks, list) 
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
-				    SO_RCVTIMEO, &tv_rcvtimeo, sizeof tv_rcvtimeo));
+				    SO_RCVTIMEO,
+				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 		}
 		i = poll(pfd, heritage.nsocks, 1000);
 		for (j = 0; j < heritage.nsocks; j++) {
