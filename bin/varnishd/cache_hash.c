@@ -251,8 +251,8 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (o->http.s != NULL)
-		free(o->http.s);
+	if (o->http.ws->s != NULL)
+		free(o->http.ws->s);
 
 	HSH_Freestore(o);
 	free(o);

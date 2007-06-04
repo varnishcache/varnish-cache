@@ -77,8 +77,29 @@ enum step {
 };
 
 /*--------------------------------------------------------------------
+ * Workspace structure for quick memory allocation.
+ */
+
+struct ws {
+	char			*s;		/* (S)tart of buffer */
+	char			*e;		/* (E)nd of buffer */
+	char			*f;		/* (F)ree pointer */
+	char			*r;		/* (R)eserved length */
+};
+
+void WS_Init(struct ws *ws, void *space, unsigned len);
+unsigned WS_Reserve(struct ws *ws, unsigned bytes);
+void WS_Release(struct ws *ws, unsigned bytes);
+void WS_ReleaseP(struct ws *ws, char *ptr);
+void WS_Assert(struct ws *ws);
+void WS_Reset(struct ws *ws);
+char *WS_Alloc(struct ws *ws, unsigned bytes);
+void WS_Return(struct ws *ws, char *b, char *e);
+
+
+
+/*--------------------------------------------------------------------
  * HTTP Request/Response/Header handling structure.
- * RSN: struct worker and struct session will have one of these embedded.
  */
 
 struct http_hdr {
@@ -90,11 +111,9 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	char			*s;		/* (S)tart of buffer */
-	char			*t;		/* start of (T)railing data */
-	char			*v;		/* end of (V)alid bytes */
-	char			*f;		/* first (F)ree byte */
-	char			*e;		/* (E)nd of buffer */
+	struct ws		ws[1];
+	char			*rx_s, *rx_e;	/* Received Request */
+	char			*pl_s, *pl_e;	/* Pipelined bytes */
 
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence {

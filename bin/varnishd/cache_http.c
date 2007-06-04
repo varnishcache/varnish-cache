@@ -164,16 +164,11 @@ http_StatusMessage(int status)
 void
 http_Setup(struct http *hp, void *space, unsigned len)
 {
-	char *sp = space;
 
 	assert(len > 0);
 	memset(hp, 0, sizeof *hp);
 	hp->magic = HTTP_MAGIC;
-	hp->s = sp;
-	hp->t = sp;
-	hp->v = sp;
-	hp->f = sp;
-	hp->e = sp + len;
+	WS_Init(hp->ws, space, len);
 	hp->nhd = HTTP_HDR_FIRST;
 }
 
@@ -329,20 +324,20 @@ int
 http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 {
 
-	if (hp->t >= hp->v)
+	if (hp->pl_s >= hp->pl_e)
 		return (0);
 
 	if (len == 0)
-		len = hp->v - hp->t;
+		len = hp->pl_e - hp->pl_e;
 
-	if (hp->t + len > hp->v)
-		len = hp->v - hp->t;
+	if (hp->pl_s + len > hp->pl_e)
+		len = hp->pl_e - hp->pl_s;
 	if (len == 0)
 		return (0);
-	*b = hp->t;
-	*e = hp->t + len;
-	hp->t += len;
-	assert(hp->t <= hp->v);
+	*b = hp->pl_s;
+	*e = hp->pl_s + len;
+	hp->pl_s += len;
+	assert(hp->pl_s <= hp->pl_e);
 	return (1);
 }
 
@@ -357,15 +352,16 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 	char *b = p;
 
 	u = 0;
-	if (hp->t < hp->v) {
-		u = hp->v - hp->t;
+	if (hp->pl_s < hp->pl_e) {
+		u = hp->pl_e - hp->pl_s;
 		if (u > len)
 			u = len;
-		memcpy(b, hp->t, u);
-		hp->t += u;
+		memcpy(b, hp->pl_s, u);
+		hp->pl_s += u;
 		b += u;
 		len -= u;
 	}
+	hp->pl_s = hp->pl_e = NULL;
 	if (len > 0) {
 		i = read(fd, b, len);
 		if (i < 0)
@@ -417,8 +413,8 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
-	assert(p < hp->v);	/* http_header_complete() guarantees this */
-	for (; p < hp->v; p = r) {
+	assert(p < hp->rx_e);	/* http_header_complete() guarantees this */
+	for (; p < hp->rx_e; p = r) {
 		/* XXX: handle continuation lines */
 		q = strchr(p, '\n');
 		assert(q != NULL);
@@ -445,8 +441,6 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 			WSLR(w, http2shmlog(hp, HTTP_T_LostHeader), fd, p, q);
 		}
 	}
-	assert(hp->t <= hp->v);
-	assert(hp->t == r);
 	return (0);
 }
 
@@ -458,12 +452,11 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	AN(hp->t);
-	assert(hp->s < hp->t);
-	assert(hp->t <= hp->v);
+	/* Assert a NUL at rx_e */
+	assert(hp->rx_s < hp->rx_e);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->s ; isspace(*p); p++)
+	for (p = hp->rx_s ; isspace(*p); p++)
 		continue;
 
 	/* First, the request type (GET/HEAD etc) */
@@ -478,7 +471,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_URL].b = p;
@@ -487,7 +480,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	hp->hd[HTTP_HDR_URL].e = p;
 	WSLH(w, HTTP_T_URL, fd, hp, HTTP_HDR_URL);
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
 		return (400);
 	}
 	*p++ = '\0';
@@ -496,7 +489,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_PROTO].b = p;
@@ -509,7 +502,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p != '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
 		return (400);
 	}
 	*p++ = '\0';
@@ -525,16 +518,15 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	AN(hp->t);
-	assert(hp->s < hp->t);
-	assert(hp->t <= hp->v);
+	/* Assert a NUL at rx_e */
+	assert(hp->rx_s < hp->rx_e);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->s ; isspace(*p); p++)
+	for (p = hp->rx_s ; isspace(*p); p++)
 		continue;
 
 	if (memcmp(p, "HTTP/1.", 7)) {
-		WSLR(w, SLT_HttpGarbage, fd, hp->s, hp->v);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
 		return (400);
 	}
 	/* First, protocol */
@@ -572,7 +564,9 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	return (http_dissect_hdrs(w, hp, fd, p));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Return nonzero if we have a complete HTTP request.
+ */
 
 static int
 http_header_complete(struct http *hp)
@@ -580,33 +574,33 @@ http_header_complete(struct http *hp)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(hp->v <= hp->e);
-	assert(*hp->v == '\0');
+	assert(*hp->rx_e == '\0');
 	/* Skip any leading white space */
-	for (p = hp->s ; p < hp->v && isspace(*p); p++)
+	for (p = hp->rx_s ; p < hp->rx_e && isspace(*p); p++)
 		continue;
-	if (p >= hp->v) {
-		hp->v = hp->s;
+	if (p >= hp->rx_e) {
+		hp->rx_e = hp->rx_s;
 		return (0);
 	}
 	while (1) {
 		/* XXX: we could save location of all linebreaks for later */
 		p = strchr(p, '\n');
 		if (p == NULL)
-			return (0);
+			return (0);	/* XXX: Could cache p */
 		p++;
 		if (*p == '\r')
 			p++;
-		if (*p != '\n')
-			continue;
-		break;
+		if (*p == '\n')
+			break;
 	}
-	if (++p > hp->v)
-		return (0);
-	hp->t = p;
-	assert(hp->t > hp->s);
-	assert(hp->t <= hp->v);
-	hp->f = hp->v;
+	p++;
+	WS_ReleaseP(hp->ws, hp->rx_e);
+	if (p != hp->rx_e) {
+		hp->pl_s = p;
+		hp->pl_e = hp->rx_e;
+		hp->rx_e = p;
+	}
+	/* XXX: Check this stuff... */
 	return (1);
 }
 
@@ -618,25 +612,26 @@ http_RecvPrep(struct http *hp)
 	unsigned l;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(hp->v <= hp->e);
-	assert(hp->t <= hp->v);
-	if (hp->t > hp->s && hp->t < hp->v) {
-		l = hp->v - hp->t;
-		memmove(hp->s, hp->t, l);
-		hp->v = hp->s + l;
-		hp->t = hp->s;
-		*hp->v = '\0';
-	} else  {
-		hp->v = hp->s;
-		hp->t = hp->s;
+	WS_Assert(hp->ws);
+	WS_Reset(hp->ws);
+	WS_Reserve(hp->ws, 0);
+	hp->rx_s = hp->ws->f;
+	hp->rx_e = hp->rx_s;
+	if (hp->pl_s != NULL) {
+		assert(hp->pl_s < hp->pl_e);
+		l = hp->pl_e - hp->pl_s;
+		memmove(hp->rx_s, hp->pl_s, l);
+		hp->rx_e = hp->rx_s + l;
+		hp->pl_s = hp->pl_e = NULL;
 	}
+	*hp->rx_e = '\0';
 }
 
 int
 http_RecvPrepAgain(struct http *hp)
 {
 	http_RecvPrep(hp);
-	if (hp->v == hp->s)
+	if (hp->rx_s == hp->rx_e)
 		return (0);
 	return (http_header_complete(hp));
 }
@@ -649,38 +644,35 @@ http_RecvSome(int fd, struct http *hp)
 	unsigned l;
 	int i;
 
-	l = (hp->e - hp->s) / 2;
-	if (l < hp->v - hp->s)
-		l = 0;
-	else
-		l -= hp->v - hp->s;
+	l = (hp->ws->e - hp->rx_e) - 1;
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
-		VSLR(SLT_HttpGarbage, fd, hp->s, hp->v);
-		hp->t = NULL;
+		VSLR(SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		hp->rx_s = hp->rx_e = NULL;
+		WS_Release(hp->ws, 0);
 		return (1);
 	}
 	errno = 0;
-	i = read(fd, hp->v, l - 1);
+	i = read(fd, hp->rx_e, l - 1);
 	if (i > 0) {
-		hp->v += i;
-		*hp->v = '\0';
+		hp->rx_e += i;
+		*hp->rx_e = '\0';
 		if (http_header_complete(hp))
 			return(0);
 		return (-1);
 	}
 
-	if (hp->v != hp->s) {
+	if (hp->rx_e != hp->rx_s) {
 		VSL(SLT_HttpError, fd,
 		    "Received (only) %d bytes, errno %d",
-		    hp->v - hp->s, errno);
-		VSLR(SLT_Debug, fd, hp->s, hp->v);
+		    hp->rx_e - hp->rx_s, errno);
+		VSLR(SLT_Debug, fd, hp->rx_s, hp->rx_e);
 	} else if (errno == 0)
 		VSL(SLT_HttpError, fd, "Received nothing");
 	else
-		VSL(SLT_HttpError, fd,
-		    "Received errno %d", errno);
-	hp->t = NULL;
+		VSL(SLT_HttpError, fd, "Received errno %d", errno);
+	hp->rx_s = hp->rx_e = NULL;
+	WS_Release(hp->ws, 0);
 	return(2);
 }
 
@@ -707,6 +699,7 @@ void
 http_CopyHttp(struct http *to, struct http *fm)
 {
 	unsigned u, l;
+	char *p;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -717,10 +710,10 @@ http_CopyHttp(struct http *to, struct http *fm)
 		AN(fm->hd[u].e);
 		l += (fm->hd[u].e - fm->hd[u].b) + 1;
 	}
-	to->s = malloc(l);
-	XXXAN(to->s);
-	to->e = to->s + l;
-	to->f = to->s;
+	p = malloc(l);
+	XXXAN(p);
+	WS_Init(to->ws, p, l);
+	WS_Reserve(to->ws, 0);
 	for (u = 0; u < fm->nhd; u++) {
 		if (fm->hd[u].b == NULL)
 			continue;
@@ -728,12 +721,13 @@ http_CopyHttp(struct http *to, struct http *fm)
 		assert(*fm->hd[u].e == '\0');
 		l = fm->hd[u].e - fm->hd[u].b;
 		assert(l == strlen(fm->hd[u].b));
-		memcpy(to->f, fm->hd[u].b, l);
-		to->hd[u].b = to->f;
-		to->hd[u].e = to->f + l;
+		memcpy(p, fm->hd[u].b, l);
+		to->hd[u].b = p;
+		to->hd[u].e = p + l;
 		*to->hd[u].e = '\0';
-		to->f += l + 1;
+		p += l + 1;
 	}
+	/* XXX: Leave to->ws reserved for now */
 	to->nhd = fm->nhd;
 }
 
@@ -860,7 +854,7 @@ http_ClrHeader(struct http *to)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	to->f = to->v;
+	/* XXX ??? to->f = to->v;  Not sure this is valid */
 	to->nhd = HTTP_HDR_FIRST;
 	memset(to->hd, 0, sizeof to->hd);
 }
@@ -882,46 +876,45 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 
 /*--------------------------------------------------------------------*/
 
-void
-http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
+static void
+http_PutField(struct http *to, int field, const char *string)
 {
+	char *e, *p;
 	int l;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = strlcpy(to->f, protocol, to->e - to->f);
-	xxxassert(to->f + l < to->e);
-	to->hd[HTTP_HDR_PROTO].b = to->f;
-	to->hd[HTTP_HDR_PROTO].e = to->f + l;
-	to->f += l + 1;
+	e = strchr(string, '\0');
+	l = (e - string);
+	p = WS_Alloc(to->ws, l + 1);
+	memcpy(p, string, l + 1);
+	to->hd[field].b = p;
+	to->hd[field].e = p + l;
+}
+
+void
+http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
+{
+
+	http_PutField(to, HTTP_HDR_PROTO, protocol);
 	WSLH(w, HTTP_T_Protocol, fd, to, HTTP_HDR_PROTO);
 }
 
 void
 http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 {
-	int l;
+	char stat[4];
 
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	assert(status >= 100 && status <= 999);
-	l = snprintf(to->f, to->e - to->f, "%d", status);
-	xxxassert(to->f + l < to->e);
-	to->hd[HTTP_HDR_STATUS].b = to->f;
-	to->hd[HTTP_HDR_STATUS].e = to->f + l;
-	to->f += l + 1;
+	assert(status >= 0 && status <= 999);
+	sprintf(stat, "%d", status);
+	http_PutField(to, HTTP_HDR_STATUS, stat);
 	WSLH(w, HTTP_T_Status, fd, to, HTTP_HDR_STATUS);
 }
 
 void
 http_PutResponse(struct worker *w, int fd, struct http *to, const char *response)
 {
-	int l;
 
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = strlcpy(to->f, response, to->e - to->f);
-	xxxassert(to->f + l < to->e);
-	to->hd[HTTP_HDR_RESPONSE].b = to->f;
-	to->hd[HTTP_HDR_RESPONSE].e = to->f + l;
-	to->f += l + 1;
+	http_PutField(to, HTTP_HDR_RESPONSE, response);
 	WSLH(w, HTTP_T_Response, fd, to, HTTP_HDR_RESPONSE);
 }
 
@@ -932,18 +925,18 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 	unsigned l, n;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = to->e - to->f;
+	l = WS_Reserve(to->ws, 0);
 	va_start(ap, fmt);
-	n = vsnprintf(to->f, l, fmt, ap);
+	n = vsnprintf(to->ws->f, l, fmt, ap);
 	va_end(ap);
-	if (n >= l || to->nhd >= HTTP_HDR_MAX) {
+	if (n + 1 >= l || to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
-		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", to->f);
+		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", to->ws->f);
+		WS_Release(to->ws, 0);
 	} else {
-		assert(to->f < to->e);
-		to->hd[to->nhd].b = to->f;
-		to->hd[to->nhd].e = to->f + n;
-		to->f += n + 1;
+		to->hd[to->nhd].b = to->ws->f;
+		to->hd[to->nhd].e = to->ws->f + n;
+		WS_Release(to->ws, n + 1);
 		WSLH(w, HTTP_T_Header, fd, to, to->nhd);
 		to->nhd++;
 	}
