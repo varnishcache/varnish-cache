@@ -5,12 +5,16 @@
 
 set -ex
 
-./autogen.sh
+. ./autogen.sh
 
-CONFIG_SHELL=/bin/sh \
+# autoconf prior to 2.62 has issues with zsh 4.2 and newer
+export CONFIG_SHELL=/bin/sh
+
 ./configure \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
+    --enable-extra-developer-warnings \
+    --enable-stack-protector \
     --enable-werror \
     --prefix=/opt/varnish
