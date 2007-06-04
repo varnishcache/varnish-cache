@@ -108,8 +108,8 @@ AC_CHECK_FUNCS([poll])
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
 
-# Turn off warnings for two issues which occur frequently in our code
-#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+# Additional flags for GCC 4
+EXTRA_DEVELOPER_CFLAGS="-Wextra -Wno-missing-field-initializers -Wno-sign-compare"
 
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
@@ -117,6 +117,12 @@ AC_ARG_ENABLE(developer-warnings,
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
 	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
+AC_ARG_ENABLE(extra-developer-warnings,
+	AS_HELP_STRING([--enable-extra-developer-warnings],[enable even stricter warnings (default is NO)]),
+	CFLAGS="${CFLAGS} ${EXTRA_DEVELOPER_CFLAGS}")
+AC_ARG_ENABLE(stack-protector,
+	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
+	CFLAGS="${CFLAGS} -fstack-protector-all")
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
