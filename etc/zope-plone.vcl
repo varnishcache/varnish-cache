@@ -20,25 +20,25 @@ acl purge {
 
 sub vcl_recv {
 	if (req.request != "GET" && req.request != "HEAD") {
+        	# PURGE request if zope asks nicely
+        	if (req.request == "PURGE") {
+        	        if (!client.ip ~ purge) {
+        	                error 405 "Not allowed.";
+        	        }
+        	        lookup;
+        	}
 		pipe;
 	}
 	if (req.http.Expect) {
 		pipe;
 	}
-	if (req.http.Authenticate) {
+	if (req.http.Authenticate || req.http.Authorization) {
 		pass;
 	}
 	# We only care about the "__ac.*" cookies, used for authentication
 	if (req.http.Cookie && req.http.Cookie ~ "__ac(|_(name|password|persistent))=") {
 		pass;
 	}
-        # PURGE request if zope asks nicely
-        if (req.request == "PURGE") {
-                if (!client.ip ~ purge) {
-                        error 405 "Not allowed.";
-                }
-                lookup;
-        }
 	lookup;
 }
 
