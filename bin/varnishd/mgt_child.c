@@ -54,6 +54,7 @@
 #include "cli_priv.h"
 #include "mgt_cli.h"
 #include "mgt_event.h"
+#include "vss.h"
 
 pid_t		mgt_pid;
 pid_t		child_pid = -1;
@@ -130,7 +131,8 @@ open_sockets(void)
 	TAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock >= 0)
 			continue;
-		ls->sock = TCP_open(ls->addr, 1);
+		ls->sock = VSS_listen(ls->addr, params->listen_depth);
+		TCP_filter_http(ls->sock);
 		if (ls->sock < 0)
 			return (1);
 	}
