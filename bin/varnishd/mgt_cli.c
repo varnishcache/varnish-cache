@@ -54,6 +54,8 @@
 #include "mgt_event.h"
 #include "shmlog.h"
 
+#include "vss.h"
+
 static int		cli_i = -1, cli_o = -1;
 
 /*--------------------------------------------------------------------*/
@@ -389,12 +391,12 @@ telnet_accept(struct ev *ev, int what)
 int
 mgt_cli_telnet(const char *T_arg)
 {
-	struct tcp_addr **ta;
+	struct vss_addr **ta;
 	char *addr, *port;
 	int i, n;
 
-	XXXAZ(TCP_parse(T_arg, &addr, &port));
-	XXXAN(n = TCP_resolve(addr, port, &ta));
+	XXXAZ(VSS_parse(T_arg, &addr, &port));
+	XXXAN(n = VSS_resolve(addr, port, &ta));
 	free(addr);
 	free(port);
 	if (n == 0) {
@@ -402,7 +404,7 @@ mgt_cli_telnet(const char *T_arg)
 		exit(2);
 	}
 	for (i = 0; i < n; ++i) {
-		int sock = TCP_open(ta[i], 0);
+		int sock = VSS_listen(ta[i], 1);
 		struct ev *ev = ev_new();
 		XXXAN(ev);
 		ev->fd = sock;

@@ -30,5 +30,5 @@ noinst_HEADERS = \
 	vcl.h \
 	vcl_returns.h \
 	vrt.h \
-	vrt_obj.h
-
+	vrt_obj.h \
+	vss.h

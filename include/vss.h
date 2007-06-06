@@ -3,8 +3,6 @@
  * Copyright (c) 2006 Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -29,20 +27,10 @@
  * $Id$
  */
 
-struct cli;
-struct sockaddr;
+/* vss.c */
+struct vss_addr;
 
-/* shmlog.c */
-void VSL_MgtInit(const char *fn, unsigned size);
-extern struct varnish_stats *VSL_stats;
-
-/* tcp.c */
-/* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
-#define TCP_ADDRBUFSIZE		64
-#define TCP_PORTBUFSIZE		16
-
-struct tcp_addr;
-
-void TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-int TCP_filter_http(int sock);
+int VSS_parse(const char *str, char **addr, char **port);
+int VSS_resolve(const char *addr, const char *port, struct vss_addr ***ta);
+int VSS_listen(const struct vss_addr *addr, int depth);
+int VSS_connect(const struct vss_addr *addr);

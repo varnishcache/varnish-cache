@@ -47,6 +47,8 @@
 
 #include "heritage.h"
 
+#include "vss.h"
+
 struct parspec;
 
 typedef void tweak_t(struct cli *, struct parspec *, const char *arg);
@@ -392,16 +394,16 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 	}
 	TAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
-		struct tcp_addr **ta;
+		struct vss_addr **ta;
 		char *host, *port;
 		int j, n;
 
-		if (TCP_parse(av[i], &host, &port) != 0) {
+		if (VSS_parse(av[i], &host, &port) != 0) {
 			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
 			cli_result(cli, CLIS_PARAM);
 			break;
 		}
-		n = TCP_resolve(host, port ? port : "http", &ta);
+		n = VSS_resolve(host, port ? port : "http", &ta);
 		free(host);
 		free(port);
 		if (n == 0) {
