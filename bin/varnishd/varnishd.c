@@ -66,7 +66,7 @@
 #endif
 
 struct heritage heritage;
-struct params * volatile params;
+volatile struct params *params;
 
 /*--------------------------------------------------------------------*/
 
