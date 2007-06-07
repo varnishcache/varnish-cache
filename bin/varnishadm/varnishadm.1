@@ -1,0 +1,72 @@
+.\"-
+.\" Copyright (c) 2006 Verdens Gang AS
+.\" Copyright (c) 2006 Linpro AS
+.\" All rights reserved.
+.\"
+.\" Author: Cecilie Fritzvold <cecilihf@linpro.no>
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $Id$
+.\"
+.Dd June 06, 2007
+.Dt VARNISHADM 1
+.Os
+.Sh NAME
+.Nm varnishadm
+.Sh SYNOPSIS
+.Nm
+.Fl T Ar address:port <command>
+.Sh DESCRIPTION
+The
+.Nm
+utility sends the given command to the
+.Xr varnishd 1
+instance at address:port and prints the results. 0 is returned on success, 1
+on failure.
+.Pp
+The following options are available:
+.Bl -tag -width Fl
+.It Fl T Ar address:port
+Connect via telnet to this address and port.
+.Sh EXAMPLES
+The following command lists all available commands provided by the
+management interface of
+.Ed
+.Xr varnishd 1
+.Bd -literal -offset 4n
+$ varnishadm -T 127.0.0.1:23 help
+.Ed
+.Sh SEE ALSO
+.Xr varnishd 1 ,
+.Xr varnishhist 1 ,
+.Xr varnishncsa 1 ,
+.Xr varnishstat 1 ,
+.Xr varnishtop 1
+.Sh HISTORY
+The
+.Nm
+utility was developed by
+.An Cecilie Fritzvold Aq cecilihf@linpro.no .
+
+This manual page was written by
+.An Cecilie Fritzvold Aq cecilihf@linpro.no .
