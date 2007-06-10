@@ -361,7 +361,8 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 		b += u;
 		len -= u;
 	}
-	hp->pl_s = hp->pl_e = NULL;
+	if (hp->pl_e == hp->pl_s)
+		hp->pl_s = hp->pl_e = NULL;
 	if (len > 0) {
 		i = read(fd, b, len);
 		if (i < 0)
