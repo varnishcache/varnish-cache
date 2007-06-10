@@ -148,7 +148,6 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 			return (NULL);
 		}
 	were_back:
-		/* XXX: check Vary: */
 		if (!o->cacheable) {
 			/* ignore */
 		} else if (o->ttl == 0) {
@@ -159,7 +158,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			EXP_TTLchange(o);
-		} else
+		} else if (VRY_Match(sp, o->vary))
 			break;
 		o->refcnt--;
 	}
@@ -253,6 +252,9 @@ HSH_Deref(struct object *o)
 
 	if (o->http.ws->s != NULL)
 		free(o->http.ws->s);
+
+	if (o->vary != NULL)
+		free(o->vary);
 
 	HSH_Freestore(o);
 	free(o);

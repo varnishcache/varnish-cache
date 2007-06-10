@@ -225,6 +225,8 @@ struct object {
 	unsigned		xid;
 	struct objhead		*objhead;
 
+	unsigned char		*vary;
+
 	unsigned		heap_idx;
 	unsigned		ban_seq;
 
@@ -462,6 +464,10 @@ void RES_WriteObj(struct sess *sp);
 
 /* cache_synthetic.c */
 void SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl);
+
+/* cache_vary.c */
+void VRY_Create(struct sess *sp);
+int VRY_Match(struct sess *sp, unsigned char *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);
