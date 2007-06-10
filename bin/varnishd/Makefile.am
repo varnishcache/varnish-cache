@@ -25,6 +25,7 @@ varnishd_SOURCES = \
 	cache_response.c \
 	cache_session.c \
 	cache_synthetic.c \
+	cache_vary.c \
 	cache_vcl.c \
 	cache_vrt.c \
 	cache_vrt_acl.c \

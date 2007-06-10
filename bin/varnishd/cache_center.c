@@ -298,6 +298,7 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->cacheable = 1;
 	if (sp->obj->objhead != NULL) {
+		VRY_Create(sp);
 		HSH_Ref(sp->obj); /* get another, STP_DELIVER will deref */
 		HSH_Unbusy(sp->obj);
 	}
