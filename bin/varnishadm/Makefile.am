@@ -14,4 +14,3 @@ varnishadm_CFLAGS = -include config.h
 varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libcompat/libcompat.a
-	
