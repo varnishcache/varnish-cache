@@ -131,6 +131,7 @@ AC_ARG_ENABLE(werror,
 AC_CONFIG_FILES([
     Makefile
     bin/Makefile
+    bin/varnishadm/Makefile
     bin/varnishd/Makefile
     bin/varnishlog/Makefile
     bin/varnishhist/Makefile
