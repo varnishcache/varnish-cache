@@ -50,7 +50,7 @@
 struct pidfh {
 	int	pf_fd;
 	char	pf_path[MAXPATHLEN + 1];
-	__dev_t	pf_dev;
+	dev_t	pf_dev;
 	ino_t	pf_ino;
 };
 
