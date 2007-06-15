@@ -526,7 +526,7 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 					return;
 				}
 			} else {
-				if (mkdir(path, 0600)) {
+				if (mkdir(path, 0755)) {
 					fprintf(stderr,
 					    "Error: Directory %s could not be created",
 					    path);
