@@ -285,7 +285,7 @@ main(int argc, char **argv)
 	int a_flag = 0, D_flag = 0, o_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	char *n_arg = NULL;
+	const char *n_arg = NULL;
 	struct pidfh *pfh = NULL;
 	struct VSL_data *vd;
 
@@ -333,11 +333,6 @@ main(int argc, char **argv)
 
 	if (o_flag && w_arg != NULL)
 		usage();
-
-	if (n_arg == NULL) {
-		n_arg = malloc(HOST_NAME_MAX+1);
-		gethostname(n_arg, HOST_NAME_MAX+1);
-	}
 
 	if (VSL_OpenLog(vd, n_arg))
 		exit(1);

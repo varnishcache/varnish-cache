@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd May 11, 2007
+.Dd June 15, 2007
 .Dt VARNISHLOG 1
 .Os
 .Sh NAME
@@ -108,11 +108,12 @@ nor
 .Fl i
 is specified, all log entries are included.
 .It Fl n
-Specify the name of the varnishd to get logs from. If 
+Specifies the name of the
+.Nm varnishd
+instance to get logs from.
+If
 .Fl n
-is not specified, hostname is used. If varnishd was started with
-.Fl n
-the option must be specified.
+is not specified, the host name is used.
 .It Fl o
 Group log entries by request ID.
 This has no effect when writing to a file using the

@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 20, 2006
+.Dd June 15, 2007
 .Dt VARNISHSTAT 1
 .Os
 .Sh NAME
@@ -53,11 +53,12 @@ The following options are available:
 Instead of presenting of a continuously updated display, print the
 statistics once and exit.
 .It Fl n
-Specify the name of the varnishd to get logs from. If 
+Specifies the name of the
+.Nm varnishd
+instance to get logs from.
+If
 .Fl n
-is not specified, hostname is used. If varnishd was started with
-.Fl n
-the option must be specified.
+is not specified, the host name is used.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar delay

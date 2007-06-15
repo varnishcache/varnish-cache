@@ -141,7 +141,7 @@ main(int argc, char **argv)
 	int c;
 	struct varnish_stats *VSL_stats;
 	int delay = 1, once = 0;
-	char *n_arg = NULL;
+	const char *n_arg = NULL;
 
 	while ((c = getopt(argc, argv, "1n:Vw:")) != -1) {
 		switch (c) {
@@ -161,15 +161,9 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-	
-	if (n_arg == NULL) {
-		n_arg = malloc(HOST_NAME_MAX+1);
-		gethostname(n_arg, HOST_NAME_MAX+1);
-	}
 
-	if (!(VSL_stats = VSL_OpenStats(n_arg))) {
+	if ((VSL_stats = VSL_OpenStats(n_arg)) == NULL)
 		exit(1);
-	}
 
 	if (!once) {
 		do_curses(VSL_stats, delay);

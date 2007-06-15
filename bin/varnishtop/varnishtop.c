@@ -113,7 +113,7 @@ main(int argc, char **argv)
 	unsigned u, v;
 	struct top *tp, *tp2;
 	int f_flag = 0;
-	char *n_arg = NULL;
+	const char *n_arg = NULL;
 
 	vd = VSL_New();
 
@@ -139,11 +139,6 @@ main(int argc, char **argv)
 		default:
 			usage();
 		}
-	}
-	
-	if (n_arg == NULL) {
-		n_arg = malloc(HOST_NAME_MAX+1);
-		gethostname(n_arg, HOST_NAME_MAX+1);
 	}
 
 	if (VSL_OpenLog(vd, n_arg))

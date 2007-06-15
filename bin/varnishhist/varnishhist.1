@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 20, 2006
+.Dd June 15, 2007
 .Dt VARNISHHIST 1
 .Os
 .Sh NAME
@@ -102,11 +102,12 @@ nor
 .Fl i
 is specified, all log entries are included.
 .It Fl n
-Specify the name of the varnishd to get logs from. If 
+Specifies the name of the
+.Nm varnishd
+instance to get logs from.
+If
 .Fl n
-is not specified, hostname is used. If varnishd was started with
-.Fl n
-the option must be specified.
+is not specified, the host name is used.
 .It Fl r Ar file
 Read log entries from
 .Ar file
