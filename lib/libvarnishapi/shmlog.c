@@ -102,29 +102,32 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_shmem_map(void)
+vsl_shmem_map(char* varnish_name)
 {
 	int i;
 	struct shmloghead slh;
+	char buf[BUFSIZ];
 
 	if (vsl_lh != NULL)
 		return (0);
 
-	vsl_fd = open(SHMLOG_FILENAME, O_RDONLY);
+	sprintf(buf, "/tmp/%s/%s", varnish_name, SHMLOG_FILENAME);
+
+	vsl_fd = open(buf, O_RDONLY);
 	if (vsl_fd < 0) {
 		fprintf(stderr, "Cannot open %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
+		    buf, strerror(errno));
 		return (1);
 	}
 	i = read(vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		fprintf(stderr, "Cannot read %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
+		    buf, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
 		fprintf(stderr, "Wrong magic number in file %s\n",
-		    SHMLOG_FILENAME);
+		    buf);
 		return (1);
 	}
 
@@ -132,7 +135,7 @@ vsl_shmem_map(void)
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vsl_fd, 0);
 	if (vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    SHMLOG_FILENAME, strerror(errno));
+		    buf, strerror(errno));
 		return (1);
 	}
 	return (0);
@@ -167,7 +170,7 @@ VSL_Select(struct VSL_data *vd, unsigned tag)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_OpenLog(struct VSL_data *vd)
+VSL_OpenLog(struct VSL_data *vd, char *varnish_name)
 {
 	unsigned char *p;
 
@@ -175,7 +178,7 @@ VSL_OpenLog(struct VSL_data *vd)
 	if (vd->fi != NULL)
 		return (0);
 
-	if (vsl_shmem_map())
+	if (vsl_shmem_map(varnish_name))
 		return (1);
 
 	vd->head = vsl_lh;
@@ -474,10 +477,10 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 }
 
 struct varnish_stats *
-VSL_OpenStats(void)
+VSL_OpenStats(char *varnish_name)
 {
 
-	if (vsl_shmem_map())
+	if (vsl_shmem_map(varnish_name))
 		return (NULL);
 	return (&vsl_lh->stats);
 }

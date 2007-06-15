@@ -46,6 +46,7 @@
 .Op Fl i Ar tag
 .Op Fl o
 .Op Fl P Ar file
+.Op Fl n Ar varnish_name
 .Op Fl r Ar file
 .Op Fl V
 .Op Fl w Ar file
@@ -106,6 +107,12 @@ If neither
 nor
 .Fl i
 is specified, all log entries are included.
+.It Fl n
+Specify the name of the varnishd to get logs from. If 
+.Fl n
+is not specified, hostname is used. If varnishd was started with
+.Fl n
+the option must be specified.
 .It Fl o
 Group log entries by request ID.
 This has no effect when writing to a file using the

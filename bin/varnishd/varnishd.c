@@ -150,7 +150,7 @@ setup_storage(const char *s_arg)
 	heritage.stevedore = malloc(sizeof *heritage.stevedore);
 	*heritage.stevedore = *stp;
 	if (stp->init != NULL)
-		stp->init(heritage.stevedore, q);
+		stp->init(heritage.stevedore, q, params->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -177,6 +177,7 @@ usage(void)
 	    "  -h classic  [default]");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>");
+	fprintf(stderr, "    %-28s # %s\n", "-n name", "varnishd instance name");
 	fprintf(stderr, "    %-28s # %s\n", "-P file", "PID file");
 	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
 	    "set parameter");
@@ -402,6 +403,7 @@ main(int argc, char *argv[])
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_arg = "classic";
+	char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
@@ -409,6 +411,7 @@ main(int argc, char *argv[])
 	char *p;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
+	char buf[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -424,7 +427,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:g:h:P:p:s:T:t:u:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:g:h:n:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -447,6 +450,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			h_arg = optarg;
+			break;
+		case 'n':
+			n_arg = optarg;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -498,7 +504,13 @@ main(int argc, char *argv[])
 		fprintf(stderr, "One of -b or -f must be specified\n");
 		usage();
 	}
-
+	
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
+	MCF_ParamSet(cli, "name", n_arg);
+	
 	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
@@ -512,7 +524,8 @@ main(int argc, char *argv[])
 	setup_storage(s_arg);
 	setup_hash(h_arg);
 
-	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
+	sprintf(buf, "/tmp/%s/%s", params->name, SHMLOG_FILENAME);
+	VSL_MgtInit(buf, 8*1024*1024);
 
 	if (d_flag == 1)
 		DebugStunt();

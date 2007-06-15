@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <curses.h>
 #include <time.h>
+#include <limits.h>
 
 #ifndef HAVE_CLOCK_GETTIME
 #include "compat/clock_gettime.h"
@@ -130,7 +131,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishstat [-1V] [-w delay]\n");
+	fprintf(stderr, "usage: varnishstat [-1V] [-n varnish_name] [-w delay]\n");
 	exit(1);
 }
 
@@ -140,13 +141,15 @@ main(int argc, char **argv)
 	int c;
 	struct varnish_stats *VSL_stats;
 	int delay = 1, once = 0;
+	char *n_arg = NULL;
 
-	VSL_stats = VSL_OpenStats();
-
-	while ((c = getopt(argc, argv, "1Vw:")) != -1) {
+	while ((c = getopt(argc, argv, "1n:Vw:")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
+			break;
+		case 'n':
+			n_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishstat");
@@ -157,6 +160,15 @@ main(int argc, char **argv)
 		default:
 			usage();
 		}
+	}
+	
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
+
+	if (!(VSL_stats = VSL_OpenStats(n_arg))) {
+		exit(1);
 	}
 
 	if (!once) {

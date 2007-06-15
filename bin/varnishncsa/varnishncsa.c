@@ -67,6 +67,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -433,7 +434,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishncsa %s [-aV] [-w file]\n", VSL_ARGS);
+	fprintf(stderr, "usage: varnishncsa %s [-aV] [-n varnish_name] [-w file]\n", VSL_ARGS);
 	exit(1);
 }
 
@@ -443,12 +444,13 @@ main(int argc, char *argv[])
 	int i, c;
 	struct VSL_data *vd;
 	const char *ofn = NULL;
+	char *n_arg = NULL;
 	int append = 0;
 	FILE *of;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "an:Vw:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -457,6 +459,9 @@ main(int argc, char *argv[])
 		switch (c) {
 		case 'a':
 			append = 1;
+			break;
+		case 'n':
+			n_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishncsa");
@@ -470,8 +475,13 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
+	
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
 
-	if (VSL_OpenLog(vd))
+	if (VSL_OpenLog(vd, n_arg))
 		exit(1);
 
 	if (ofn) {

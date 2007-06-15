@@ -37,6 +37,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl 1
+.Op Fl n Ar varnish_name
 .Op Fl V
 .Op Fl w Ar delay
 .Sh DESCRIPTION
@@ -51,6 +52,12 @@ The following options are available:
 .It Fl 1
 Instead of presenting of a continuously updated display, print the
 statistics once and exit.
+.It Fl n
+Specify the name of the varnishd to get logs from. If 
+.Fl n
+is not specified, hostname is used. If varnishd was started with
+.Fl n
+the option must be specified.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar delay

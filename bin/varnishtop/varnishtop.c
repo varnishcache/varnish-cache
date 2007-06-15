@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "vsb.h"
 
@@ -63,7 +64,7 @@ static unsigned ntop;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtop %s [-1V]\n", VSL_USAGE);
+	fprintf(stderr, "usage: varnishtop %s [-1V] [-n varnish_name]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -112,11 +113,11 @@ main(int argc, char **argv)
 	unsigned u, v;
 	struct top *tp, *tp2;
 	int f_flag = 0;
-
+	char *n_arg = NULL;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "1fn:V")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -125,6 +126,9 @@ main(int argc, char **argv)
 		switch (c) {
 		case '1':
 			VSL_NonBlocking(vd, 1);
+			break;
+		case 'n':
+			n_arg = optarg;
 			break;
 		case 'f':
 			f_flag = 1;
@@ -136,8 +140,13 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
+	
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
 
-	if (VSL_OpenLog(vd))
+	if (VSL_OpenLog(vd, n_arg))
 		exit (1);
 
 	initscr();

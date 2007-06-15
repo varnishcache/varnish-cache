@@ -30,6 +30,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <grp.h>
 #include <pwd.h>
@@ -497,6 +498,65 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_name(struct cli *cli, struct parspec *par, const char* arg)
+{
+	struct stat st;
+	struct stat st_old;
+	char *path;
+	char *old_path;
+	int renaming;
+	(void)par;
+	
+	if (arg != NULL) {
+		/* Check that the new name follows hostname convention */
+		/* [a-zA-Z0-9.-] */
+		asprintf(&old_path, "/tmp/%s", master.name);
+		master.name = strdup(arg);
+		/* Create/rename the temporary varnish directory */
+		asprintf(&path, "/tmp/%s", arg);
+		renaming = (!stat(old_path, &st_old) && S_ISDIR(st_old.st_mode));
+		if (stat(path, &st)) {
+			if (renaming) {
+				if (renaming && rename(old_path, path)) {
+					cli_out(cli, 
+					    "Error: Directory %s could not be "
+					    "renamed to %s",
+					    old_path, path);
+					cli_result(cli, CLIS_PARAM);
+					return;
+				}
+			} else {
+				if (mkdir(path, 0600)) {
+					fprintf(stderr,
+					    "Error: Directory %s could not be created",
+					    path);
+					exit (2);
+				}
+			}
+		} else if (renaming) {
+			cli_out(cli, "Error: Directory %s could not be "
+			    "renamed to %s", old_path, path);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		stat(path, &st);
+		/* /tmp/varnishname should now be a directory */
+		if (!S_ISDIR(st.st_mode)) {
+			fprintf(stderr,
+			    "Error: \"%s\" "
+			    "is not a directory\n", path);
+			exit (2);
+		}
+		/* Everything is fine, store the (new) name */
+		master.name = strdup(arg);
+	}
+	else
+		cli_out(cli, "\"%s\"", master.name);
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -512,7 +572,6 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 #define EXPERIMENTAL \
 	"\nNB: We don't know yet if it is a good idea to change " \
 	"this parameter.  Caution advised.\n"
-
 
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
@@ -671,6 +730,12 @@ static struct parspec parspec[] = {
 		"it possible to attach a debugger to the child.\n"
 		MUST_RESTART,
 		"3", "seconds" },
+	{ "name", tweak_name,
+		"Name of varnishd instance. Must follow hostname "
+		"naming conventions. Makes it possible to run "
+		"multiple varnishd instances on one server.\n"
+		EXPERIMENTAL,
+		"hostname"}, 
 	{ NULL, NULL, NULL }
 };
 

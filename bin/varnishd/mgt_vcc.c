@@ -52,6 +52,7 @@
 
 #include "mgt.h"
 #include "mgt_cli.h"
+#include "heritage.h"
 
 #include "vss.h"
 
@@ -144,7 +145,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	void *p;
 
 	/* Create temporary C source file */
-	sf = strdup("/tmp/vcl.XXXXXXXX");
+	asprintf(&sf, "/tmp/%s/vcl.XXXXXXXX", params->name);
 	assert(sf != NULL);
 	sfd = mkstemp(sf);
 	if (sfd < 0) {
@@ -168,16 +169,16 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	rewind(fs);
 
 	/* Name the output shared library */
-	of = strdup("/tmp/vcl.XXXXXXXX");
+	asprintf(&of, "/tmp/%s/vcl.XXXXXXXX", params->name);
 	assert(of != NULL);
 	of = mktemp(of);
 	assert(of != NULL);
 
 	/* Attempt to open a pipe to the system C-compiler */
 	sprintf(buf,
-	    "ln -f %s /tmp/_.c ;"		/* XXX: for debugging */
+	    "ln -f %s /tmp/%s/_.c ;"		/* XXX: for debugging */
 	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
-	    sf, of, sf);
+	    sf, params->name, of, sf);
 
 	fo = popen(buf, "r");
 	if (fo == NULL) {

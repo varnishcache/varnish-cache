@@ -119,6 +119,9 @@ struct params {
 
 	/* Ping interval */
 	unsigned		ping_interval;
+
+	/* Varnishd name */
+	char			*name;
 };
 
 extern volatile struct params *params;

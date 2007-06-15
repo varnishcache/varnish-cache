@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -170,7 +171,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishhist %s [-V] [-w delay]\n", VSL_USAGE);
+	    "usage: varnishhist %s [-n varnish_name] [-V] [-w delay]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -179,11 +180,15 @@ main(int argc, char **argv)
 {
 	int i, c, x;
 	struct VSL_data *vd;
+	char *n_arg = NULL;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "n:Vw:")) != -1) {
 		switch (c) {
+		case 'n':
+			n_arg = optarg;
+			break;
 		case 'V':
 			varnish_version("varnishhist");
 			exit(0);
@@ -197,7 +202,12 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_OpenLog(vd))
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
+	
+	if (VSL_OpenLog(vd, n_arg))
 		exit (1);
 
 	c_hist = 10.0 / log(10.0);
