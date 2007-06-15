@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #ifndef HAVE_DAEMON
 #include "compat/daemon.h"
@@ -273,7 +274,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishlog %s [-aDoV] [-P file] [-w file]\n", VSL_USAGE);
+	    "usage: varnishlog %s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -284,18 +285,22 @@ main(int argc, char **argv)
 	int a_flag = 0, D_flag = 0, o_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
+	char *n_arg = NULL;
 	struct pidfh *pfh = NULL;
 	struct VSL_data *vd;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDoP:Vw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDon:P:Vw:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
 			break;
 		case 'D':
 			D_flag = 1;
+			break;
+		case 'n':
+			n_arg = optarg;
 			break;
 		case 'o':
 			o_flag = 1;
@@ -329,7 +334,12 @@ main(int argc, char **argv)
 	if (o_flag && w_arg != NULL)
 		usage();
 
-	if (VSL_OpenLog(vd))
+	if (n_arg == NULL) {
+		n_arg = malloc(HOST_NAME_MAX+1);
+		gethostname(n_arg, HOST_NAME_MAX+1);
+	}
+
+	if (VSL_OpenLog(vd, n_arg))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {

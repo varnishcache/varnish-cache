@@ -42,6 +42,7 @@
 .Op Fl f Ar config
 .Op Fl g Ar group
 .Op Fl h Ar type Ns Op , Ns Ar options
+.Op Fl n Ar name
 .Op Fl P Ar file
 .Op Fl p Ar param Ns = Ns Ar value
 .Op Fl s Ar type Ns Op , Ns Ar options
@@ -127,6 +128,10 @@ Specifies the hash algorithm.
 See
 .Sx Hash Algorithms
 for a list of supported algorithms.
+.It Fl n
+Specify a name for this instance. If 
+.Fl n
+is not specified, hostname is used. Files will be stored in /tmp/<name>/
 .It Fl P Ar file
 Write the process's PID to the specified
 .Ar file .
@@ -494,6 +499,11 @@ Note that this will generate large amounts of log data.
 .Pp
 The default is
 .Dv off .
+.It Va name
+The name if this varnishd instance. All temporary files are stored in
+/tmp/<name>/
+.Pp
+The default is the hostname
 .El
 .Sh SEE ALSO
 .Xr varnishlog 1 ,

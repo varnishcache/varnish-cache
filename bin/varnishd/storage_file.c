@@ -242,7 +242,7 @@ smf_initfile(struct smf_sc *sc, const char *size, int newfile)
 }
 
 static void
-smf_init(struct stevedore *parent, const char *spec)
+smf_init(struct stevedore *parent, const char *spec, const char *varnish_name)
 {
 	char *size;
 	char *p, *q;
@@ -262,9 +262,8 @@ smf_init(struct stevedore *parent, const char *spec)
 
 	/* If no size specified, use 50% of filesystem free space */
 	if (spec == NULL || *spec == '\0')
-		spec = "/tmp,50%";
-
-	if (strchr(spec, ',') == NULL)
+		asprintf(&p, "/tmp/%s,50%%", varnish_name);
+	else if (strchr(spec, ',') == NULL)
 		asprintf(&p, "%s,", spec);
 	else
 		p = strdup(spec);

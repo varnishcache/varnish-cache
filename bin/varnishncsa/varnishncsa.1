@@ -43,6 +43,7 @@
 .Op Fl d
 .Op Fl I Ar regex
 .Op Fl i Ar tag
+.Op Fl n Ar varnish_name
 .Op Fl r Ar file
 .Op Fl V
 .Op Fl w Ar file
@@ -101,6 +102,12 @@ If neither
 nor
 .Fl i
 is specified, all log entries are included.
+.It Fl n
+Specify the name of the varnishd to get logs from. If 
+.Fl n
+is not specified, hostname is used. If varnishd was started with
+.Fl n
+the option must be specified.
 .It Fl r Ar file
 Read log entries from
 .Ar file

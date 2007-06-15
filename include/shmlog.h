@@ -36,7 +36,7 @@
 #ifndef SHMLOG_H_INCLUDED
 #define SHMLOG_H_INCLUDED
 
-#define SHMLOG_FILENAME		"/tmp/_.vsl"
+#define SHMLOG_FILENAME		"_.vsl"
 
 #include <time.h>
 
