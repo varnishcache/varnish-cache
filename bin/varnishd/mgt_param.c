@@ -512,7 +512,6 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 		/* Check that the new name follows hostname convention */
 		/* [a-zA-Z0-9.-] */
 		asprintf(&old_path, "/tmp/%s", master.name);
-		master.name = strdup(arg);
 		/* Create/rename the temporary varnish directory */
 		asprintf(&path, "/tmp/%s", arg);
 		renaming = (!stat(old_path, &st_old) && S_ISDIR(st_old.st_mode));
