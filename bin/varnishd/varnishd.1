@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd May 30, 2007
+.Dd June 15, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -129,9 +129,10 @@ See
 .Sx Hash Algorithms
 for a list of supported algorithms.
 .It Fl n
-Specify a name for this instance. If 
-.Fl n
-is not specified, hostname is used. Files will be stored in /tmp/<name>/
+Specify a name for this instance.
+This is a shortcut for specifying the
+.Va name
+run-time parameter.
 .It Fl P Ar file
 Write the process's PID to the specified
 .Ar file .
@@ -401,6 +402,14 @@ The default is 0.0.0.0:80.
 The depth of the TCP listen queue.
 .Pp
 The default is 512.
+.It Va name
+The name of this
+.Nm
+instance.
+All temporary files are stored in
+.Pa /tmp/ Ns Va name .
+.Pp
+The default is the hostname.
 .It Va overflow_max
 The maximum depth of the overflow queue as a percentage of
 .Va thread_pool_max .
@@ -499,11 +508,6 @@ Note that this will generate large amounts of log data.
 .Pp
 The default is
 .Dv off .
-.It Va name
-The name if this varnishd instance. All temporary files are stored in
-/tmp/<name>/
-.Pp
-The default is the hostname
 .El
 .Sh SEE ALSO
 .Xr varnishlog 1 ,

@@ -507,7 +507,7 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 	char *old_path;
 	int renaming;
 	(void)par;
-	
+
 	if (arg != NULL) {
 		/* Check that the new name follows hostname convention */
 		/* [a-zA-Z0-9.-] */
@@ -518,7 +518,7 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 		if (stat(path, &st)) {
 			if (renaming) {
 				if (renaming && rename(old_path, path)) {
-					cli_out(cli, 
+					cli_out(cli,
 					    "Error: Directory %s could not be "
 					    "renamed to %s",
 					    old_path, path);
@@ -578,12 +578,12 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
  */
 static struct parspec parspec[] = {
 	{ "user", tweak_user,
-	        "The unprivileged user to run as.  Setting this will "
+		"The unprivileged user to run as.  Setting this will "
 		"also set \"group\" to the specified user's primary group.\n"
 		MUST_RESTART,
 		"nobody" },
 	{ "group", tweak_group,
-	        "The unprivileged group to run as.\n"
+		"The unprivileged group to run as.\n"
 		MUST_RESTART,
 		"nogroup" },
 	{ "default_ttl", tweak_default_ttl,
@@ -734,7 +734,7 @@ static struct parspec parspec[] = {
 		"naming conventions. Makes it possible to run "
 		"multiple varnishd instances on one server.\n"
 		EXPERIMENTAL,
-		"hostname"}, 
+		"hostname" },
 	{ NULL, NULL, NULL }
 };
 

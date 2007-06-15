@@ -403,7 +403,6 @@ main(int argc, char *argv[])
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_arg = "classic";
-	char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
@@ -452,7 +451,7 @@ main(int argc, char *argv[])
 			h_arg = optarg;
 			break;
 		case 'n':
-			n_arg = optarg;
+			MCF_ParamSet(cli, "name", optarg);
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -504,13 +503,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "One of -b or -f must be specified\n");
 		usage();
 	}
-	
-	if (n_arg == NULL) {
-		n_arg = malloc(HOST_NAME_MAX+1);
-		gethostname(n_arg, HOST_NAME_MAX+1);
-	}
-	MCF_ParamSet(cli, "name", n_arg);
-	
+
 	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);

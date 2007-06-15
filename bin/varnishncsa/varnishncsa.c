@@ -444,7 +444,7 @@ main(int argc, char *argv[])
 	int i, c;
 	struct VSL_data *vd;
 	const char *ofn = NULL;
-	char *n_arg = NULL;
+	const char *n_arg = NULL;
 	int append = 0;
 	FILE *of;
 
@@ -474,11 +474,6 @@ main(int argc, char *argv[])
 				break;
 			usage();
 		}
-	}
-	
-	if (n_arg == NULL) {
-		n_arg = malloc(HOST_NAME_MAX+1);
-		gethostname(n_arg, HOST_NAME_MAX+1);
 	}
 
 	if (VSL_OpenLog(vd, n_arg))

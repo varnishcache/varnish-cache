@@ -102,7 +102,7 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_shmem_map(char* varnish_name)
+vsl_shmem_map(const char *varnish_name)
 {
 	int i;
 	struct shmloghead slh;
@@ -170,16 +170,21 @@ VSL_Select(struct VSL_data *vd, unsigned tag)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_OpenLog(struct VSL_data *vd, char *varnish_name)
+VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 {
+	char hostname[1024];
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fi != NULL)
 		return (0);
 
+	if (varnish_name == NULL) {
+		gethostname(hostname, sizeof hostname);
+		varnish_name = hostname;
+	}
 	if (vsl_shmem_map(varnish_name))
-		return (1);
+		return (-1);
 
 	vd->head = vsl_lh;
 	vd->logstart = (unsigned char *)vsl_lh + vsl_lh->start;
@@ -477,7 +482,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 }
 
 struct varnish_stats *
-VSL_OpenStats(char *varnish_name)
+VSL_OpenStats(const char *varnish_name)
 {
 
 	if (vsl_shmem_map(varnish_name))
