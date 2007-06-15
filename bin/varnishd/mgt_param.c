@@ -506,18 +506,31 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 	char *path;
 	char *old_path;
 	int renaming;
+	char hostname[1024];
+	char valid_chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	    "abcdefghijklmnopqrstuvwxyz"
+	    "0123456789.-";
 	(void)par;
 
 	if (arg != NULL) {
+		if (strlen(arg) == 0) {
+			gethostname(hostname, sizeof hostname);
+			arg = hostname;
+		}
 		/* Check that the new name follows hostname convention */
-		/* [a-zA-Z0-9.-] */
+		if (strspn(arg, valid_chars) != strlen(arg)) {
+			cli_out(cli, "Error: %s is an invalid name\n", arg);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}		
 		asprintf(&old_path, "/tmp/%s", master.name);
 		/* Create/rename the temporary varnish directory */
 		asprintf(&path, "/tmp/%s", arg);
-		renaming = (!stat(old_path, &st_old) && S_ISDIR(st_old.st_mode));
+		renaming = (master.name && !stat(old_path, &st_old) && 
+		    S_ISDIR(st_old.st_mode));
 		if (stat(path, &st)) {
 			if (renaming) {
-				if (renaming && rename(old_path, path)) {
+				if (rename(old_path, path)) {
 					cli_out(cli,
 					    "Error: Directory %s could not be "
 					    "renamed to %s",
@@ -548,6 +561,7 @@ tweak_name(struct cli *cli, struct parspec *par, const char* arg)
 			exit (2);
 		}
 		/* Everything is fine, store the (new) name */
+		free(master.name);
 		master.name = strdup(arg);
 	}
 	else
@@ -734,7 +748,7 @@ static struct parspec parspec[] = {
 		"naming conventions. Makes it possible to run "
 		"multiple varnishd instances on one server.\n"
 		EXPERIMENTAL,
-		"hostname" },
+		"", "hostname" }, 
 	{ NULL, NULL, NULL }
 };
 

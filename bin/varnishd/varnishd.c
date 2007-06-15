@@ -411,7 +411,10 @@ main(int argc, char *argv[])
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
 	char buf[BUFSIZ];
-
+	char valid_chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	    "abcdefghijklmnopqrstuvwxyz"
+	    "0123456789.-";
+	
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
@@ -451,6 +454,10 @@ main(int argc, char *argv[])
 			h_arg = optarg;
 			break;
 		case 'n':
+			if (strspn(optarg, valid_chars) != strlen(optarg)) {
+				fprintf(stderr, "%s is not a valid name\n", optarg);
+				exit(1);
+			}
 			MCF_ParamSet(cli, "name", optarg);
 			break;
 		case 'P':
