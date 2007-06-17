@@ -155,7 +155,7 @@ trimline(const char *str, const char *end)
 		 /* nothing */ ;
 
 	/* trim trailing space */
-	while (str[len - 1] == ' ')
+	while (len && str[len - 1] == ' ')
 		--len;
 
 	/* copy and return */
