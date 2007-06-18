@@ -150,7 +150,7 @@ setup_storage(const char *s_arg)
 	heritage.stevedore = malloc(sizeof *heritage.stevedore);
 	*heritage.stevedore = *stp;
 	if (stp->init != NULL)
-		stp->init(heritage.stevedore, q, params->name);
+		stp->init(heritage.stevedore, q);
 }
 
 /*--------------------------------------------------------------------*/
@@ -410,7 +410,6 @@ main(int argc, char *argv[])
 	char *p;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
-	char buf[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -524,8 +523,7 @@ main(int argc, char *argv[])
 	setup_storage(s_arg);
 	setup_hash(h_arg);
 
-	sprintf(buf, "/tmp/%s/%s", params->name, SHMLOG_FILENAME);
-	VSL_MgtInit(buf, 8*1024*1024);
+	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
 
 	if (d_flag == 1)
 		DebugStunt();
