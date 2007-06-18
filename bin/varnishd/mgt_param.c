@@ -33,8 +33,9 @@
 #include <sys/stat.h>
 
 #include <grp.h>
-#include <pwd.h>
 #include <limits.h>
+#include <pwd.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -498,74 +499,68 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+#define NAME_RE "^([0-9A-Za-z-]+)(\\.[0-9A-Za-z-]+)*$"
+static regex_t *name_re;
+
 static void
-tweak_name(struct cli *cli, struct parspec *par, const char* arg)
+tweak_name(struct cli *cli, struct parspec *par, const char *arg)
 {
-	struct stat st;
-	struct stat st_old;
-	char *path;
-	char *old_path;
-	int renaming;
-	char hostname[1024];
-	char valid_chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	    "abcdefghijklmnopqrstuvwxyz"
-	    "0123456789.-";
+	char hostname[1024], path[1024];
+	int error;
+
 	(void)par;
 
-	if (arg != NULL) {
-		if (strlen(arg) == 0) {
-			gethostname(hostname, sizeof hostname);
-			arg = hostname;
-		}
-		/* Check that the new name follows hostname convention */
-		if (strspn(arg, valid_chars) != strlen(arg)) {
-			cli_out(cli, "Error: %s is an invalid name\n", arg);
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}		
-		asprintf(&old_path, "/tmp/%s", master.name);
-		/* Create/rename the temporary varnish directory */
-		asprintf(&path, "/tmp/%s", arg);
-		renaming = (master.name && !stat(old_path, &st_old) && 
-		    S_ISDIR(st_old.st_mode));
-		if (stat(path, &st)) {
-			if (renaming) {
-				if (rename(old_path, path)) {
-					cli_out(cli,
-					    "Error: Directory %s could not be "
-					    "renamed to %s",
-					    old_path, path);
-					cli_result(cli, CLIS_PARAM);
-					return;
-				}
-			} else {
-				if (mkdir(path, 0755)) {
-					fprintf(stderr,
-					    "Error: Directory %s could not be created",
-					    path);
-					exit (2);
-				}
-			}
-		} else if (renaming) {
-			cli_out(cli, "Error: Directory %s could not be "
-			    "renamed to %s", old_path, path);
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
-		stat(path, &st);
-		/* /tmp/varnishname should now be a directory */
-		if (!S_ISDIR(st.st_mode)) {
-			fprintf(stderr,
-			    "Error: \"%s\" "
-			    "is not a directory\n", path);
-			exit (2);
-		}
-		/* Everything is fine, store the (new) name */
-		free(master.name);
-		master.name = strdup(arg);
-	}
-	else
+	if (arg == NULL) {
 		cli_out(cli, "\"%s\"", master.name);
+		return;
+	}
+
+	/* empty string -> hostname */
+	if (*arg == '\0') {
+		if (gethostname(hostname, sizeof hostname) == 0)
+			arg = hostname;
+		else
+			arg = "localhost";
+	}
+
+	/* check that the new name follows hostname convention */
+	if (name_re == NULL) {
+		name_re = malloc(sizeof *name_re);
+		AN(name_re);
+		AZ(regcomp(name_re, NAME_RE, REG_EXTENDED|REG_NOSUB));
+	}
+	if (regexec(name_re, arg, 0, NULL, 0) != 0) {
+		cli_out(cli, "Invalid instance name");
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+
+	error = 0;
+	snprintf(path, sizeof path, "/tmp/%s", arg); /* XXX overflow */
+	if (master.name && *master.name) {
+		struct stat old_st;
+		char old_path[1024];
+
+		/* rename old directory */
+		snprintf(old_path, sizeof old_path, "/tmp/%s", master.name); /* XXX overflow */
+		if (stat(old_path, &old_st) == 0 && S_ISDIR(old_st.st_mode)) {
+			error = rename(old_path, path);
+		} else {
+			error = (mkdir(path, 0755) != 0 && errno != EEXIST);
+		}
+	} else {
+		error = (mkdir(path, 0755) != 0 && errno != EEXIST);
+	}
+
+	if (error || chdir(path) != 0) {
+		cli_out(cli, "could not create %s: %s", path, strerror(errno));
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+
+	/* Everything is fine, store the (new) name */
+	master.name = strdup(arg);
+	XXXAN(master.name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -748,7 +743,7 @@ static struct parspec parspec[] = {
 		"naming conventions. Makes it possible to run "
 		"multiple varnishd instances on one server.\n"
 		EXPERIMENTAL,
-		"", "hostname" }, 
+		"" },
 	{ NULL, NULL, NULL }
 };
 

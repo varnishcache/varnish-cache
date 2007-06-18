@@ -411,10 +411,7 @@ main(int argc, char *argv[])
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
 	char buf[BUFSIZ];
-	char valid_chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	    "abcdefghijklmnopqrstuvwxyz"
-	    "0123456789.-";
-	
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
@@ -454,10 +451,6 @@ main(int argc, char *argv[])
 			h_arg = optarg;
 			break;
 		case 'n':
-			if (strspn(optarg, valid_chars) != strlen(optarg)) {
-				fprintf(stderr, "%s is not a valid name\n", optarg);
-				exit(1);
-			}
 			MCF_ParamSet(cli, "name", optarg);
 			break;
 		case 'P':
@@ -500,6 +493,13 @@ main(int argc, char *argv[])
 	if (argc != 0) {
 		fprintf(stderr, "Too many arguments\n");
 		usage();
+	}
+
+	if (cli[0].result != CLIS_OK) {
+		fprintf(stderr, "Parameter errors:\n");
+		vsb_finish(cli[0].sb);
+		fprintf(stderr, "%s\n", vsb_data(cli[0].sb));
+		exit(1);
 	}
 
 	if (b_arg != NULL && f_arg != NULL) {
