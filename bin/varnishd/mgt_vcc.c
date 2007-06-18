@@ -140,13 +140,13 @@ static char *
 mgt_CallCc(const char *source, struct vsb *sb)
 {
 	FILE *fo, *fs;
-	char *of, *sf, buf[BUFSIZ];
-	int i, j, sfd;
+	char sf[] = "./vcl.XXXXXXXX";
+	char *of;
+	char buf[BUFSIZ];
+	int i, j, len, sfd;
 	void *p;
 
 	/* Create temporary C source file */
-	asprintf(&sf, "/tmp/%s/vcl.XXXXXXXX", params->name);
-	assert(sf != NULL);
 	sfd = mkstemp(sf);
 	if (sfd < 0) {
 		vsb_printf(sb,
@@ -156,7 +156,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		return (NULL);
 	}
 	fs = fdopen(sfd, "r+");
-	assert(fs != NULL);
+	AN(fs);
 
 	if (fputs(source, fs) < 0 || fflush(fs)) {
 		vsb_printf(sb,
@@ -169,16 +169,16 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	rewind(fs);
 
 	/* Name the output shared library */
-	asprintf(&of, "/tmp/%s/vcl.XXXXXXXX", params->name);
-	assert(of != NULL);
-	of = mktemp(of);
-	assert(of != NULL);
+	of = strdup(sf);
+	AN(of);
+	memcpy(of, "./bin", 5);
 
 	/* Attempt to open a pipe to the system C-compiler */
-	sprintf(buf,
-	    "ln -f %s /tmp/%s/_.c ;"		/* XXX: for debugging */
+	len = snprintf(buf, sizeof buf,
+            "ln -f %s _.c ;"			/* XXX: for debugging */
 	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
-	    sf, params->name, of, sf);
+	    sf, of, sf);
+	xxxassert(len < sizeof buf);
 
 	fo = popen(buf, "r");
 	if (fo == NULL) {
@@ -201,7 +201,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 			j++;
 		}
 		vsb_cat(sb, buf);
-	} 
+	}
 
 	i = pclose(fo);
 	if (j == 0 && i != 0)
@@ -228,7 +228,6 @@ mgt_CallCc(const char *source, struct vsb *sb)
 
 	/* clean up and return */
 	unlink(sf);
-	free(sf);
 	fclose(fs);
 	return (of);
 }
