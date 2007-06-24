@@ -433,7 +433,7 @@ ev_schedule_one(struct evbase *evb)
 		t = ev_now();
 		if (e->__when <= t)
 			return (ev_sched_timeout(evb, e, t));
-		tmo = (e->__when - t) * 1e3;
+		tmo = (int)((e->__when - t) * 1e3);
 		if (tmo == 0)
 			tmo = 1;
 	} else
