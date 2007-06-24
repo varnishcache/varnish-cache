@@ -44,14 +44,9 @@
 #ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
 #endif
-#ifndef HAVE_STRNDUP
-#include "compat/strndup.h"
-#endif
 
 #include "heritage.h"
 #include "mgt.h"
-#include "cli.h"
-#include "cli_priv.h"
 
 /*--------------------------------------------------------------------*/
 
