@@ -137,7 +137,8 @@ vca_acct(void *arg)
 {
 	struct sess *sp;
 	socklen_t l;
-	struct sockaddr addr[2];	/* XXX: IPv6 hack */
+	struct sockaddr_storage addr_s;
+	struct sockaddr *addr;
 	int i, j;
 	struct pollfd *pfd;
 	struct listen_sock *ls;
@@ -178,7 +179,8 @@ vca_acct(void *arg)
 			if (pfd[j].revents == 0)
 				continue;
 			VSL_stats->client_conn++;
-			l = sizeof addr;
+			l = sizeof addr_s;
+			addr = (void*)&addr_s;
 			i = accept(pfd[j].fd, addr, &l);
 			if (i < 0) {
 				if (errno != EAGAIN) {
