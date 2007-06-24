@@ -10,6 +10,7 @@
 
 -sem(lbv_assert, r_no)
 -sem(lbv_xxxassert, r_no)
+-sem(WS_Init, custodial(2))
 
 -ffc	// No automatic custody
 
