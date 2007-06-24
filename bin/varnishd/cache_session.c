@@ -67,6 +67,7 @@ struct sessmem {
 	struct http		http;
 	unsigned		workspace;
 	TAILQ_ENTRY(sessmem)	list;
+	struct sockaddr_storage	sockaddr[2];
 };
 
 static TAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
@@ -255,6 +256,7 @@ struct sess *
 SES_New(struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
+	struct sess *sp;
 	volatile unsigned u;
 
 	/*
@@ -295,20 +297,26 @@ SES_New(struct sockaddr *addr, unsigned len)
 		return (NULL);
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	VSL_stats->n_sess++;
-	memset(&sm->sess, 0, sizeof sm->sess);
-	sm->sess.magic = SESS_MAGIC;
-	sm->sess.mem = sm;
-	sm->sess.http = &sm->http;
+	sp = &sm->sess;
+	memset(sp, 0, sizeof *sp);
+	sp->magic = SESS_MAGIC;
+	sp->mem = sm;
+	sp->http = &sm->http;
+	sp->sockaddr = (void*)(&sm->sockaddr[0]);
+	sp->sockaddrlen = sizeof(sm->sockaddr[0]);
+	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
+	sp->mysockaddrlen = sizeof(sm->sockaddr[1]);
+	sp->sockaddr->sa_family = sp->mysockaddr->sa_family = PF_UNSPEC;
 
-	assert(len < sizeof(sm->sess.sockaddr));
+	assert(len <= sp->sockaddrlen);
 	if (addr != NULL) {
-		memcpy(sm->sess.sockaddr, addr, len);
-		sm->sess.sockaddrlen = len;
+		memcpy(sp->sockaddr, addr, len);
+		sp->sockaddrlen = len;
 	}
 
 	http_Setup(&sm->http, (void *)(sm + 1), sm->workspace);
 
-	return (&sm->sess);
+	return (sp);
 }
 
 void

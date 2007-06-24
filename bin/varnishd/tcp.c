@@ -76,7 +76,8 @@ TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbu
 void
 TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
-	struct sockaddr addr[2];	/* XXX: IPv6 hack */
+	struct sockaddr_storage addr_s;
+	struct sockaddr	*addr = (void*)&addr_s;
 	socklen_t l;
 
 	l = sizeof addr;

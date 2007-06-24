@@ -276,10 +276,10 @@ struct sess {
 
 	struct worker		*wrk;
 
-	unsigned		sockaddrlen;
-	struct sockaddr_storage	sockaddr[1];
-	unsigned		mysockaddrlen;
-	struct sockaddr_storage	mysockaddr[1];
+	socklen_t		sockaddrlen;
+	socklen_t		mysockaddrlen;
+	struct sockaddr		*sockaddr;
+	struct sockaddr		*mysockaddr;
 
 	/* formatted ascii client address */
 	char			addr[TCP_ADDRBUFSIZE];

@@ -257,22 +257,17 @@ struct sockaddr *
 VRT_r_client_ip(struct sess *sp)
 {
 
-	return ((struct sockaddr *)sp->sockaddr);
+	return (sp->sockaddr);
 }
 
 struct sockaddr *
 VRT_r_server_ip(struct sess *sp)
 {
-	socklen_t l;
 
-	if (sp->mysockaddrlen == 0) {
-		l = sizeof sp->mysockaddr;
-		AZ(getsockname(sp->fd,
-		    (struct sockaddr*)sp->mysockaddr, &l));
-		sp->mysockaddrlen = l;
-	}
+	if (sp->mysockaddr->sa_family == AF_UNSPEC)
+		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
 
-	return ((struct sockaddr*)sp->mysockaddr);
+	return (sp->mysockaddr);
 }
 
 /*--------------------------------------------------------------------*/

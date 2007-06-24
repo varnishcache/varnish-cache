@@ -380,7 +380,7 @@ telnet_accept(struct ev *ev, int what)
 
 	(void)what;
 	addrlen = sizeof addr;
-	i = accept(ev->fd, (struct sockaddr *)&addr, &addrlen);
+	i = accept(ev->fd, (void *)&addr, &addrlen);
 	if (i < 0)
 		return (0);
 
