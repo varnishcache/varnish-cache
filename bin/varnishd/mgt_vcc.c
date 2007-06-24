@@ -152,7 +152,6 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		vsb_printf(sb,
 		    "Cannot open temporary source file \"%s\": %s\n",
 		    sf, strerror(errno));
-		free(sf);
 		return (NULL);
 	}
 	fs = fdopen(sfd, "r+");
