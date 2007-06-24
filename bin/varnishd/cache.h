@@ -378,7 +378,6 @@ int Fetch(struct sess *sp);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
-void HSH_Freestore(struct object *o);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);
