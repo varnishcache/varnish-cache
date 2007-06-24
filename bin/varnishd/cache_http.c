@@ -865,7 +865,8 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 static void
 http_PutField(struct http *to, int field, const char *string)
 {
-	char *e, *p;
+	const char *e;
+	char *p;
 	int l;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
