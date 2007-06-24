@@ -154,6 +154,8 @@ assignment:
 	var_float '-=' double
 	var_float '=' double
 	var_backend '=' ident
+	var_string '=' stringval
+	var_string '+=' stringval
 
 assign_int:
 	'+=' cnum
@@ -183,6 +185,10 @@ rule0:
 	cstr
 	cstr '/' cnum
 	'!' cstr
+
+stringval:
+	cstr
+	var_string
 
 cstr:	(string constant)
 
