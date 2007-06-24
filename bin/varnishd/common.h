@@ -41,8 +41,6 @@ extern struct varnish_stats *VSL_stats;
 #define TCP_ADDRBUFSIZE		64
 #define TCP_PORTBUFSIZE		16
 
-struct tcp_addr;
-
 void TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
