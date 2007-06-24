@@ -255,8 +255,7 @@ struct sess *
 SES_New(struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
-	unsigned u;
-
+	volatile unsigned u;
 
 	/*
 	 * One of the two queues is unlocked because only one
@@ -279,6 +278,10 @@ SES_New(struct sockaddr *addr, unsigned len)
 	} else {
 		/*
 		 * If that fails, alloc new one.
+		 *
+		 * It is not necessary to lock mem_workspace, but we
+		 * need to cache it locally, to make sure we get a
+		 * consistent view of it.
 		 */
 		u = params->mem_workspace;
 		sm = malloc(sizeof *sm + u);
