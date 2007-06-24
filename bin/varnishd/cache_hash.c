@@ -96,7 +96,7 @@ HSH_Prealloc(struct sess *sp)
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
 
-void
+static void
 HSH_Freestore(struct object *o)
 {
 	struct storage *st, *stn;
