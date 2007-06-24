@@ -217,8 +217,8 @@ VRT_r_obj_##onm(struct sess *sp)					\
 	return (sp->obj->field);					\
 }
 
-VOBJ(double, valid, valid)
-VOBJ(double, cacheable, cacheable)
+VOBJ(unsigned, valid, valid)
+VOBJ(unsigned, cacheable, cacheable)
 
 /*--------------------------------------------------------------------*/
 
