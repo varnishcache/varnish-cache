@@ -181,8 +181,8 @@ start_child(void)
 		errx(1, "Could not fork child");
 	if (i == 0) {
 		if (geteuid() == 0) {
-			XXXAZ(setgid(params->gid) == -1);
-			XXXAZ(setuid(params->uid) == -1);
+			XXXAZ(setgid(params->gid));
+			XXXAZ(setuid(params->uid));
 		}
 
 		/* Redirect stdin/out/err */
