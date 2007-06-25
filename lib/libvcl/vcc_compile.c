@@ -82,7 +82,7 @@
 
 struct method method_tab[] = {
 #define VCL_RET_MAC(l,U,b,n)
-#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m },
+#define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -278,6 +278,7 @@ FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
 			continue;
 		if (memcmp(t->b, v->name, v->len))
 			continue;
+		vcc_AddUses(tl, v);
 		if (v->fmt != HEADER)
 			return (v);
 		return (HeaderVar(tl, t, v));
@@ -642,6 +643,11 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 
 	/* Check that all action returns are legal */
 	vcc_CheckAction(tl);
+	if (tl->err)
+		return (vcc_DestroyTokenList(tl, NULL));
+
+	/* Check that all variable uses are legal */
+	vcc_CheckUses(tl);
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 

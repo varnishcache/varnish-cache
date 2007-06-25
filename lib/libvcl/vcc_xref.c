@@ -55,9 +55,16 @@ struct proccall {
 	struct token		*t;
 };
 
+struct procuse {
+	TAILQ_ENTRY(procuse)	list;
+	struct token		*t;
+	struct var		*v;
+};
+
 struct proc {
 	TAILQ_ENTRY(proc)	list;
 	TAILQ_HEAD(,proccall)	calls;
+	TAILQ_HEAD(,procuse)	uses;
 	struct token		*name;
 	unsigned		returns;
 	unsigned		exists;
@@ -180,6 +187,7 @@ vcc_findproc(struct tokenlist *tl, struct token *t)
 	p = TlAlloc(tl, sizeof *p);
 	assert(p != NULL);
 	TAILQ_INIT(&p->calls);
+	TAILQ_INIT(&p->uses);
 	TAILQ_INSERT_TAIL(&tl->procs, p, list);
 	p->name = t;
 	return (p);
@@ -194,6 +202,20 @@ vcc_AddProc(struct tokenlist *tl, struct token *t)
 	p->name = t;	/* make sure the name matches the definition */
 	p->exists++;
 	return (p);
+}
+
+void
+vcc_AddUses(struct tokenlist *tl, struct var *v)
+{
+	struct procuse *pu;
+
+	if (tl->curproc == NULL)	/* backend */
+		return;
+	pu = TlAlloc(tl, sizeof *pu);
+	assert(pu != NULL);
+	pu->v = v;
+	pu->t = tl->t;
+	TAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 }
 
 void
@@ -301,6 +323,76 @@ vcc_CheckAction(struct tokenlist *tl)
 		vsb_printf(tl->sb, "Function unused\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
+	}
+	return (0);
+}
+
+static struct procuse *
+vcc_FindIllegalUse(struct proc *p, struct method *m)
+{
+	struct procuse *pu;
+
+	TAILQ_FOREACH(pu, &p->uses, list)
+		if (!(pu->v->methods & m->bitval)) 
+			return (pu);
+	return (NULL);
+}
+
+static int
+vcc_CheckUseRecurse(struct tokenlist *tl, struct proc *p, struct method *m)
+{
+	struct proccall *pc;
+	struct procuse *pu;
+
+	pu = vcc_FindIllegalUse(p, m);
+	if (pu != NULL) {
+		vsb_printf(tl->sb,
+		    "Variable \"%.*s\" is not available in %s\n",
+		    PF(pu->t), m->name);
+		vcc_ErrWhere(tl, pu->t); 
+		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n",
+		    PF(p->name));
+		vcc_ErrWhere(tl, p->name);
+		return (1);
+	}
+	TAILQ_FOREACH(pc, &p->calls, list) {
+		if (vcc_CheckUseRecurse(tl, pc->p, m)) {
+			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			    PF(p->name));
+			vcc_ErrWhere(tl, pc->t);
+			return (1);
+		}
+	}
+	return (0);
+}
+
+int
+vcc_CheckUses(struct tokenlist *tl)
+{
+	struct proc *p;
+	struct method *m;
+	struct procuse *pu;
+	int i;
+
+	TAILQ_FOREACH(p, &tl->procs, list) {
+		i = IsMethod(p->name);
+		if (i < 0)
+			continue;
+		m = method_tab + i;
+		pu = vcc_FindIllegalUse(p, m);
+		if (pu != NULL) {
+			vsb_printf(tl->sb,
+			    "Variable '%.*s' not accessible in method '%.*s'.",
+			    PF(pu->t), PF(p->name));
+			vsb_cat(tl->sb, "\nAt: ");
+			vcc_ErrWhere(tl, pu->t);
+			return (1);
+		}
+		if (vcc_CheckUseRecurse(tl, p, m)) {
+			vsb_printf(tl->sb,
+			    "\n...which is the \"%s\" method\n", m->name);
+			return (1);
+		}
 	}
 	return (0);
 }
