@@ -442,7 +442,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 }
 
 /*--------------------------------------------------------------------
- * Free a range.  Attemt merge forward and backward, then sort into
+ * Free a range.  Attempt merge forward and backward, then sort into
  * free list according to age.
  */
 
@@ -613,6 +613,8 @@ smf_open(struct stevedore *st)
 	if (sum < MINPAGES * (uintmax_t)getpagesize())
 		exit (2);
 	MTX_INIT(&sc->mtx);
+
+	VSL_stats->sm_bfree += sc->filesize;
 }
 
 /*--------------------------------------------------------------------*/
@@ -627,8 +629,12 @@ smf_alloc(struct stevedore *st, size_t size)
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
 	LOCK(&sc->mtx);
+	VSL_stats->sm_nreq++;
 	smf = alloc_smf(sc, size);
 	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
+	VSL_stats->sm_nobj++;
+	VSL_stats->sm_balloc += smf->size;
+	VSL_stats->sm_bfree -= smf->size;
 	UNLOCK(&sc->mtx);
 	XXXAN(smf);
 	assert(smf->size == size);
@@ -662,6 +668,8 @@ smf_trim(struct storage *s, size_t size)
 	size &= ~(sc->pagesize - 1);
 	if (smf->size > size) {
 		LOCK(&sc->mtx);
+		VSL_stats->sm_balloc -= (smf->size - size);
+		VSL_stats->sm_bfree += (smf->size - size);
 		trim_smf(smf, size);
 		assert(smf->size == size);
 		UNLOCK(&sc->mtx);
@@ -681,6 +689,9 @@ smf_free(struct storage *s)
 	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	sc = smf->sc;
 	LOCK(&sc->mtx);
+	VSL_stats->sm_nobj--;
+	VSL_stats->sm_balloc -= smf->size;
+	VSL_stats->sm_bfree += smf->size;
 	free_smf(smf);
 	UNLOCK(&sc->mtx);
 }
