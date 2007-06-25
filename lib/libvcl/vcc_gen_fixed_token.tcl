@@ -192,6 +192,12 @@ foreach m $methods {
 	puts $for ")"
 	incr u
 }
+puts $for "#else"
+set u 0
+foreach m $methods {
+	puts $for "#define VCL_MET_[string toupper [lindex $m 0]]\t(1 << $u)"
+	incr u
+}
 puts $for "#endif"
 puts $for "#define N_METHODS $u"
 close $for
