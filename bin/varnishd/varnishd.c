@@ -506,6 +506,11 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (d_flag && F_flag) {
+		fprintf(stderr, "Only one of -d or -F can be specified\n");
+		usage();
+	}
+
 	if (b_arg != NULL && f_arg != NULL) {
 		fprintf(stderr, "Only one of -b or -f can be specified\n");
 		usage();
