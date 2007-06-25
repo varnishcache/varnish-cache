@@ -428,7 +428,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_error(struct sess *, unsigned, const char *);\n");
 	vsb_cat(sb, "int VRT_switch_config(const char *);\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "char *VRT_GetHdr(struct sess *, int where, const char *);\n");
+	vsb_cat(sb, "enum gethdr_e { HDR_REQ, HDR_RESP };\n");
+	vsb_cat(sb, "char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);\n");
 	vsb_cat(sb, "void VRT_handling(struct sess *sp, unsigned hand);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
@@ -471,6 +472,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_req_proto(struct sess *, const char *);\n");
 	vsb_cat(sb, "struct backend * VRT_r_req_backend(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_backend(struct sess *, struct backend *);\n");
+	vsb_cat(sb, "const char * VRT_r_req_http_(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_http_(struct sess *, const char *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_hash(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_hash(struct sess *, const char *);\n");
 	vsb_cat(sb, "unsigned VRT_r_obj_valid(struct sess *);\n");
@@ -479,8 +482,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_cacheable(struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(struct sess *, double);\n");
-	vsb_cat(sb, "const char * VRT_r_req_http_(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_req_http_(struct sess *, const char *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_http_(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_http_(struct sess *, const char *);\n");
 }

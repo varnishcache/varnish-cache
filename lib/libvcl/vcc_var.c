@@ -56,12 +56,6 @@ vcc_StringVal(struct tokenlist *tl)
 	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
-	if (!vp->has_string) {
-		vsb_printf(tl->sb,
-		    "No string representation of '%s'\n", vp->name);
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
 	switch (vp->fmt) {
 	case STRING:
 		Fb(tl, 0, "%s", vp->rname);
@@ -82,8 +76,9 @@ static struct var *
 HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 {
 	char *p;
+	const char *wh;
 	struct var *v;
-	int i, w;
+	int i;
 
 	(void)tl;
 
@@ -96,12 +91,14 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->fmt = STRING;
-	v->has_string = vh->has_string;
+	v->methods = vh->methods;
 	if (!memcmp(vh->name, "req.", 4))
-		w = 1;
+		wh = "HDR_REQ";
+	else if (!memcmp(vh->name, "resp.", 5))
+		wh = "HDR_RESP";
 	else
-		w = 2;
-	asprintf(&p, "VRT_GetHdr(sp, %d, \"\\%03o%s:\")", w,
+		assert(0 == 1);
+	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", wh,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	assert(p != NULL);
 	v->rname = p;

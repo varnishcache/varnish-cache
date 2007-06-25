@@ -74,7 +74,8 @@ int VRT_rewrite(const char *, const char *);
 void VRT_error(struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-char *VRT_GetHdr(struct sess *, int where, const char *);
+enum gethdr_e { HDR_REQ, HDR_RESP };
+char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);
 void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Backend related */

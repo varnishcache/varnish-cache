@@ -71,17 +71,17 @@ VRT_count(struct sess *sp, unsigned u)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_GetHdr(struct sess *sp, int where, const char *n)
+VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
 {
 	char *p;
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	switch (where) {
-	case 1:
+	case HDR_REQ:
 		hp = sp->http;
 		break;
-	case 2:
+	case HDR_RESP:
 		hp = &sp->obj->http;
 		break;
 	default:
