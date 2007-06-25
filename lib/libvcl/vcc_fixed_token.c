@@ -350,6 +350,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	vcl_func_f	*hit_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*fetch_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*timeout_func;\n");
+	vsb_cat(sb, "	vcl_func_f	*discard_func;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "/*-\n");
 	vsb_cat(sb, " * Copyright (c) 2006 Verdens Gang AS\n");
@@ -470,10 +471,12 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_req_proto(struct sess *, const char *);\n");
 	vsb_cat(sb, "struct backend * VRT_r_req_backend(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_backend(struct sess *, struct backend *);\n");
-	vsb_cat(sb, "double VRT_r_obj_valid(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_valid(struct sess *, double);\n");
-	vsb_cat(sb, "double VRT_r_obj_cacheable(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_cacheable(struct sess *, double);\n");
+	vsb_cat(sb, "const char * VRT_r_req_hash(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_hash(struct sess *, const char *);\n");
+	vsb_cat(sb, "unsigned VRT_r_obj_valid(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_valid(struct sess *, unsigned);\n");
+	vsb_cat(sb, "unsigned VRT_r_obj_cacheable(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_cacheable(struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_req_http_(struct sess *);\n");
