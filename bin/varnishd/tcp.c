@@ -80,7 +80,7 @@ TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 	struct sockaddr	*addr = (void*)&addr_s;
 	socklen_t l;
 
-	l = sizeof addr;
+	l = sizeof addr_s;
 	AZ(getsockname(sock, addr, &l));
 	TCP_name(addr, l, abuf, alen, pbuf, plen);
 }
