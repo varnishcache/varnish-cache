@@ -258,7 +258,7 @@ HSH_Deref(struct object *o)
 		free(o->vary);
 
 	HSH_Freestore(o);
-	free(o);
+	FREE_OBJ(o);
 	VSL_stats->n_object--;
 
 	if (oh == NULL)
@@ -269,7 +269,7 @@ HSH_Deref(struct object *o)
 	assert(TAILQ_EMPTY(&oh->objects));
 	MTX_DESTROY(&oh->mtx);
 	VSL_stats->n_objecthead--;
-	free(oh);
+	FREE_OBJ(oh);
 }
 
 void
