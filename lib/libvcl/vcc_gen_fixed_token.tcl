@@ -42,6 +42,7 @@ set methods {
 	{hit		{error pass deliver}}
 	{fetch		{error pass insert}}
 	{timeout	{fetch discard}}
+	{discard	{discard pass}}
 }
 
 # These are the return actions

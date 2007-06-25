@@ -127,6 +127,9 @@ static const char *default_vcl =
     "    }\n"
     "    insert;\n"
     "}\n"
+    "sub vcl_discard {\n"
+    "    discard;\n"
+    "}\n"
     "sub vcl_timeout {\n"
     "    discard;\n"
     "}\n";
