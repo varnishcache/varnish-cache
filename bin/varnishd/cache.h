@@ -254,6 +254,9 @@ struct object {
 	TAILQ_HEAD(, storage)	store;
 
 	TAILQ_HEAD(, sess)	waitinglist;
+
+	time_t			lru_stamp;
+	TAILQ_ENTRY(object)	lru;
 };
 
 struct objhead {
@@ -372,6 +375,7 @@ void CLI_Init(void);
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
 void EXP_TTLchange(struct object *o);
+void EXP_Retire(struct object *o);
 
 /* cache_fetch.c */
 int Fetch(struct sess *sp);
@@ -472,6 +476,12 @@ void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Get(struct VCL_conf **vcc);
+
+/* cache_lru.c */
+void LRU_Enter(struct object *o, time_t stamp);
+void LRU_Remove(struct object *o);
+void LRU_DiscardSpace(struct sess *sp, uint64_t quota);
+void LRU_DiscardTime(struct sess *sp, time_t cutoff);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
