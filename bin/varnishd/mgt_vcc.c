@@ -258,7 +258,7 @@ mgt_VccCompileFile(struct vsb *sb, const char *fn, int C_flag)
 {
 	char *csrc, *vf = NULL;
 
-	csrc = VCC_CompileFile(sb, fn);
+	csrc = VCC_CompileFile(sb, fn, -1);
 	if (csrc != NULL) {
 		if (C_flag)
 			fputs(csrc, stdout);
