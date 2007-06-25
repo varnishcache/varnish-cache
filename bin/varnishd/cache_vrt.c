@@ -253,6 +253,32 @@ VREQ(proto, HTTP_HDR_PROTO)
 
 /*--------------------------------------------------------------------*/
 
+const char *
+VRT_r_resp_proto(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	return (sp->obj->http.hd[HTTP_HDR_PROTO].b);
+}
+
+const char *
+VRT_r_resp_response(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	return (sp->obj->http.hd[HTTP_HDR_RESPONSE].b);
+}
+
+int
+VRT_r_resp_status(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	return (atoi(sp->obj->http.hd[HTTP_HDR_STATUS].b));
+}
+
+/*--------------------------------------------------------------------*/
+
 struct sockaddr *
 VRT_r_client_ip(struct sess *sp)
 {
