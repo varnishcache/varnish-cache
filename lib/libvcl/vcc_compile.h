@@ -127,9 +127,8 @@ struct var {
 struct method {
 	const char		*name;
 	unsigned		returns;
+	unsigned		bitval;
 };
-
-struct proc;
 
 /*--------------------------------------------------------------------*/
 
@@ -180,7 +179,7 @@ void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
 void vcc_FreeToken(struct token *t);
 
-/* vcc_expr.c */
+/* vcc_xref.c */
 void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
 void vcc_AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
 int vcc_CheckReferences(struct tokenlist *tl);
@@ -189,6 +188,8 @@ void vcc_AddCall(struct tokenlist *tl, struct token *t);
 struct proc *vcc_AddProc(struct tokenlist *tl, struct token *t);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct tokenlist *tl);
+void vcc_AddUses(struct tokenlist *tl, struct var *v);
+int vcc_CheckUses(struct tokenlist *tl);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)

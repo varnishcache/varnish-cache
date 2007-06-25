@@ -545,6 +545,7 @@ Function(struct tokenlist *tl)
 	tl->indent -= INDENT;
 	Fb(tl, 0, "\n");
 	tl->fb = NULL;
+	tl->curproc = NULL;
 }
 
 /*--------------------------------------------------------------------
