@@ -89,6 +89,21 @@ struct var vcc_vars[] = {
 	    "VRT_l_obj_ttl(sp, ",
 	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
+	{ "resp.proto", STRING, 10,
+	    "VRT_r_resp_proto(sp)",
+	    "VRT_l_resp_proto(sp, ",
+	    VCL_MET_FETCH
+	},
+	{ "resp.status", INT, 11,
+	    "VRT_r_resp_status(sp)",
+	    "VRT_l_resp_status(sp, ",
+	    VCL_MET_FETCH
+	},
+	{ "resp.response", STRING, 13,
+	    "VRT_r_resp_response(sp)",
+	    "VRT_l_resp_response(sp, ",
+	    VCL_MET_FETCH
+	},
 	{ "resp.http.", HEADER, 10,
 	    "VRT_r_resp_http_(sp)",
 	    "VRT_l_resp_http_(sp, ",

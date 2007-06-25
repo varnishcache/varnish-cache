@@ -52,6 +52,9 @@ set spobj {
   { obj.valid		BOOL	{                         hit fetch discard timeout} }
   { obj.cacheable	BOOL	{                         hit fetch discard timeout} }
   { obj.ttl		TIME	{                         hit fetch discard timeout} }
+  { resp.proto		STRING	{                             fetch                } }
+  { resp.status		INT	{                             fetch                } }
+  { resp.response	STRING	{                             fetch                } }
   { resp.http.		HEADER	{                             fetch                } }
 }
 
@@ -60,6 +63,7 @@ set tt(STRING)	"const char *"
 set tt(BOOL)	"unsigned"
 set tt(BACKEND)	"struct backend *"
 set tt(TIME)	"double"
+set tt(INT)	"int"
 set tt(HEADER)	"const char *"
 set tt(HOSTNAME) "const char *"
 set tt(PORTNAME) "const char *"
