@@ -158,7 +158,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			EXP_TTLchange(o);
-		} else if (VRY_Match(sp, o->vary))
+		} else if (o->vary != NULL && VRY_Match(sp, o->vary))
 			break;
 		o->refcnt--;
 	}
