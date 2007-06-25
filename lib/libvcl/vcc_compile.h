@@ -151,7 +151,6 @@ void Fb(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fi(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
-struct var *FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
@@ -178,6 +177,10 @@ void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
 void vcc_FreeToken(struct token *t);
+
+/* vcc_var.c */
+void vcc_StringVal(struct tokenlist *tl);
+struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
 
 /* vcc_xref.c */
 void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);

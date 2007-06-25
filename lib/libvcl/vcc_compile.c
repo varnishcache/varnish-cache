@@ -232,64 +232,6 @@ EncToken(struct vsb *sb, const struct token *t)
 	EncString(sb, t->dec, NULL, 0);
 }
 
-/*--------------------------------------------------------------------*/
-
-static struct var *
-HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
-{
-	char *p;
-	struct var *v;
-	int i, w;
-
-	(void)tl;
-
-	v = TlAlloc(tl, sizeof *v);
-	assert(v != NULL);
-	i = t->e - t->b;
-	p = TlAlloc(tl, i + 1);
-	assert(p != NULL);
-	memcpy(p, t->b, i);
-	p[i] = '\0';
-	v->name = p;
-	v->fmt = STRING;
-	v->has_string = vh->has_string;
-	if (!memcmp(vh->name, "req.", 4))
-		w = 1;
-	else
-		w = 2;
-	asprintf(&p, "VRT_GetHdr(sp, %d, \"\\%03o%s:\")", w,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
-	assert(p != NULL);
-	v->rname = p;
-	return (v);
-}
-
-/*--------------------------------------------------------------------*/
-
-struct var *
-FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
-{
-	struct var *v;
-
-	for (v = vl; v->name != NULL; v++) {
-		if (v->fmt == HEADER  && (t->e - t->b) <= v->len)
-			continue;
-		if (v->fmt != HEADER  && t->e - t->b != v->len)
-			continue;
-		if (memcmp(t->b, v->name, v->len))
-			continue;
-		vcc_AddUses(tl, v);
-		if (v->fmt != HEADER)
-			return (v);
-		return (HeaderVar(tl, t, v));
-	}
-	vsb_printf(tl->sb, "Unknown variable ");
-	vcc_ErrToken(tl, t);
-	vsb_cat(tl->sb, "\nAt: ");
-	vcc_ErrWhere(tl, t);
-	return (NULL);
-}
-
 /*--------------------------------------------------------------------
  * Output the location/profiling table.  For each counted token, we
  * record source+line+charpos for the first character in the token.

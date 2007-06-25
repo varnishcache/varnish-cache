@@ -348,7 +348,7 @@ Cond_2(struct tokenlist *tl)
 		ExpectErr(tl, ')');
 		vcc_NextToken(tl);
 	} else if (tl->t->tok == VAR) {
-		vp = FindVar(tl, tl->t, vcc_vars);
+		vp = vcc_FindVar(tl, tl->t, vcc_vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
 		vcc_NextToken(tl);

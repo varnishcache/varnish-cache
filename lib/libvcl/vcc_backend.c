@@ -100,7 +100,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 		}
 		vcc_NextToken(tl);
 		ExpectErr(tl, VAR);
-		vp = FindVar(tl, tl->t, vcc_be_vars);
+		vp = vcc_FindVar(tl, tl->t, vcc_be_vars);
 		ERRCHK(tl);
 		assert(vp != NULL);
 		vcc_NextToken(tl);
