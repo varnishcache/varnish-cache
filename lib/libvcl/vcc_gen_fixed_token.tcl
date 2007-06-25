@@ -42,7 +42,7 @@ set methods {
 	{hit		{error pass deliver}}
 	{fetch		{error pass insert}}
 	{timeout	{fetch discard}}
-	{discard	{discard pass}}
+	{discard	{discard keep}}
 }
 
 # These are the return actions
@@ -57,6 +57,7 @@ set returns {
 	insert
 	deliver
 	discard
+	keep
 }
 
 # Language keywords

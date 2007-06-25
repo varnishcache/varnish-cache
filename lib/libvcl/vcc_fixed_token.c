@@ -309,6 +309,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_RET_INSERT  (1 << 6)\n");
 	vsb_cat(sb, "#define VCL_RET_DELIVER  (1 << 7)\n");
 	vsb_cat(sb, "#define VCL_RET_DISCARD  (1 << 8)\n");
+	vsb_cat(sb, "#define VCL_RET_KEEP  (1 << 9)\n");
 	vsb_cat(sb, "/*\n");
 	vsb_cat(sb, " * $Id$\n");
 	vsb_cat(sb, " *\n");
@@ -482,6 +483,12 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_cacheable(struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(struct sess *, double);\n");
+	vsb_cat(sb, "const char * VRT_r_resp_proto(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_proto(struct sess *, const char *);\n");
+	vsb_cat(sb, "int VRT_r_resp_status(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_status(struct sess *, int);\n");
+	vsb_cat(sb, "const char * VRT_r_resp_response(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_response(struct sess *, const char *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_http_(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_http_(struct sess *, const char *);\n");
 }
