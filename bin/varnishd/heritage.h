@@ -62,6 +62,8 @@ struct heritage {
 
 	/* Hash method */
 	struct hash_slinger		*hash;
+
+	const char			*n_arg;
 };
 
 struct params {
