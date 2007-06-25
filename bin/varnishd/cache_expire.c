@@ -74,6 +74,15 @@ EXP_TTLchange(struct object *o)
 	UNLOCK(&exp_mtx);
 }
 
+void
+EXP_Retire(struct object *o)
+{
+	LOCK(&exp_mtx);
+	TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+	VSL_stats->n_deathrow++;
+	UNLOCK(&exp_mtx);
+}
+
 /*--------------------------------------------------------------------
  * This thread monitors deathrow and kills objects when they time out.
  */
@@ -174,10 +183,7 @@ exp_prefetch(void *arg)
 		VCL_timeout_method(sp);
 
 		if (sp->handling == VCL_RET_DISCARD) {
-			LOCK(&exp_mtx);
-			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
-			VSL_stats->n_deathrow++;
-			UNLOCK(&exp_mtx);
+			EXP_Retire(o);
 			continue;
 		}
 		assert(sp->handling == VCL_RET_DISCARD);

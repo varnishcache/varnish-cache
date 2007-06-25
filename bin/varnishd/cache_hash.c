@@ -166,6 +166,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 	if (o != NULL) {
 		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
+		LRU_Enter(o, sp->t_req.tv_sec);
 		return (o);
 	}
 
@@ -177,6 +178,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 	/* NB: do not deref objhead the new object inherits our reference */
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
+	LRU_Enter(o, sp->t_req.tv_sec);
 	return (o);
 }
 
@@ -258,6 +260,7 @@ HSH_Deref(struct object *o)
 		free(o->vary);
 
 	HSH_Freestore(o);
+	LRU_Remove(o);
 	FREE_OBJ(o);
 	VSL_stats->n_object--;
 
