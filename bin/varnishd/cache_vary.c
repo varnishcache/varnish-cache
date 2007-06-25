@@ -110,8 +110,8 @@ VRY_Create(struct sess *sp)
 			/* Mark as "not present" */
 			vsb_printf(sb, "%c%c", 0xff, 0xff);
 		}
-		
-		while (isspace(*q)) 
+
+		while (isspace(*q))
 			q++;
 		if (*q == '\0')
 			break;
