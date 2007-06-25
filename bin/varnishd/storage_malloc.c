@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 
+#include "shmlog.h"
 #include "cache.h"
 
 struct sma {
@@ -46,6 +47,7 @@ sma_alloc(struct stevedore *st, size_t size)
 {
 	struct sma *sma;
 
+	VSL_stats->sm_nreq++;
 	sma = calloc(sizeof *sma, 1);
 	XXXAN(sma);
 	sma->s.priv = sma;
@@ -56,6 +58,8 @@ sma_alloc(struct stevedore *st, size_t size)
 	sma->s.fd = -1;
 	sma->s.stevedore = st;
 	sma->s.magic = STORAGE_MAGIC;
+	VSL_stats->sm_nobj++;
+	VSL_stats->sm_balloc += sma->s.space;
 	return (&sma->s);
 }
 
@@ -65,6 +69,8 @@ sma_free(struct storage *s)
 	struct sma *sma;
 
 	sma = s->priv;
+	VSL_stats->sm_nobj--;
+	VSL_stats->sm_balloc -= sma->s.space;
 	free(sma->s.ptr);
 	free(sma);
 }
