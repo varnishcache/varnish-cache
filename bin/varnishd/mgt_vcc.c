@@ -237,26 +237,34 @@ mgt_CallCc(const char *source, struct vsb *sb)
 /*--------------------------------------------------------------------*/
 
 static char *
-mgt_VccCompile(struct vsb *sb, const char *b, const char *e)
+mgt_VccCompile(struct vsb *sb, const char *b, const char *e, int C_flag)
 {
 	char *csrc, *vf = NULL;
 
 	csrc = VCC_Compile(sb, b, e);
 	if (csrc != NULL) {
+		if (C_flag)
+			fputs(csrc, stdout);
 		vf = mgt_CallCc(csrc, sb);
+		if (C_flag && vf != NULL)
+			AZ(unlink(vf));
 		free(csrc);
 	}
 	return (vf);
 }
 
 static char *
-mgt_VccCompileFile(struct vsb *sb, const char *fn)
+mgt_VccCompileFile(struct vsb *sb, const char *fn, int C_flag)
 {
 	char *csrc, *vf = NULL;
 
 	csrc = VCC_CompileFile(sb, fn);
 	if (csrc != NULL) {
+		if (C_flag)
+			fputs(csrc, stdout);
 		vf = mgt_CallCc(csrc, sb);
+		if (C_flag && vf != NULL)
+			AZ(unlink(vf));
 		free(csrc);
 	}
 	return (vf);
@@ -308,7 +316,7 @@ mgt_vcc_delbyname(const char *name)
 int
 mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 {
-	char *addr, *port, *csrc;
+	char *addr, *port;
 	char *buf, *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
@@ -338,20 +346,10 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int C_flag)
 		free(addr);
 		free(port);
 		AN(buf);
-		if (C_flag) {
-			csrc = VCC_Compile(sb, buf, NULL);
-			if (csrc != NULL)
-				fputs(csrc, stdout);
-		}
-		vf = mgt_VccCompile(sb, buf, NULL);
+		vf = mgt_VccCompile(sb, buf, NULL, C_flag);
 		free(buf);
-	} else if (C_flag) {
-		csrc = VCC_CompileFile(sb, f_arg);
-		if (csrc != NULL)
-			fputs(csrc, stdout);
-		vf = NULL;
 	} else {
-		vf = mgt_VccCompileFile(sb, f_arg);
+		vf = mgt_VccCompileFile(sb, f_arg, C_flag);
 	}
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
@@ -432,7 +430,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(sb);
-	vf = mgt_VccCompile(sb, av[3], NULL);
+	vf = mgt_VccCompile(sb, av[3], NULL, 0);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
 		cli_out(cli, "%s", vsb_data(sb));
@@ -463,7 +461,7 @@ mcf_config_load(struct cli *cli, char **av, void *priv)
 
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(sb);
-	vf = mgt_VccCompileFile(sb, av[3]);
+	vf = mgt_VccCompileFile(sb, av[3], 0);
 	vsb_finish(sb);
 	if (vsb_len(sb) > 0) {
 		cli_out(cli, "%s", vsb_data(sb));
