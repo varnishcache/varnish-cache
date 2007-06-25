@@ -32,53 +32,27 @@
 
 # Objects which operate on backends
 set beobj {
-	{ backend.host		HOSTNAME	0 }
-	{ backend.port		PORTNAME	0 }
-	{ backend.dnsttl	TIME		0 }
+  { backend.host		HOSTNAME }
+  { backend.port		PORTNAME }
+  { backend.dnsttl	TIME	 }
 }
 
 # Objects which operate on sessions
 
 set spobj {
-	{ client.ip		IP 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-	{ server.ip		IP 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-	{ req.request		STRING 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-	{ req.host		STRING 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-        { req.url		STRING 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-        { req.proto		STRING 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-        { req.backend		BACKEND 	0
-	    {recv pipe pass hash miss hit fetch}
-	}
-        { req.http.		HEADER 		1
-	    {recv pipe pass hash miss hit fetch}
-	}
-        { req.hash		HASH 		0
-	    {hash}
-	}
-        { obj.valid		BOOL 		0
-	    {hit fetch}
-	}
-        { obj.cacheable		BOOL 		0
-	    {hit fetch}
-	}
-        { obj.ttl		TIME 		0
-	    {hit fetch}
-	}
-        { resp.http.		HEADER 		1
-	    {fetch}
-	}
+  { client.ip		IP	{recv pipe pass hash miss hit fetch                } }
+  { server.ip		IP	{recv pipe pass hash miss hit fetch                } }
+  { req.request		STRING	{recv pipe pass hash miss hit fetch                } }
+  { req.host		STRING	{recv pipe pass hash miss hit fetch                } }
+  { req.url		STRING	{recv pipe pass hash miss hit fetch                } }
+  { req.proto		STRING	{recv pipe pass hash miss hit fetch                } }
+  { req.backend		BACKEND	{recv pipe pass hash miss hit fetch                } }
+  { req.http.		HEADER	{recv pipe pass hash miss hit fetch                } }
+  { req.hash		HASH	{               hash                               } }
+  { obj.valid		BOOL	{                         hit fetch discard timeout} }
+  { obj.cacheable	BOOL	{                         hit fetch discard timeout} }
+  { obj.ttl		TIME	{                         hit fetch discard timeout} }
+  { resp.http.		HEADER	{                             fetch                } }
 }
 
 set tt(IP)	"struct sockaddr *"
@@ -131,8 +105,7 @@ proc vars {v ty pa} {
 		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		puts $fo  "\t    \"VRT_r_${m}($pa)\","
 		puts $fo  "\t    \"VRT_l_${m}($pa, \","
-		puts $fo  "\t    [lindex $v 2], "
-		puts $fo  "\t    [method_map [lindex $v 3]]"
+		puts $fo  "\t    [method_map [lindex $v 2]]"
 		puts $fo "\t\},"
 
 		puts $fp  "$tt($t) VRT_r_${m}($ty);"

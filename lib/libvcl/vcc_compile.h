@@ -120,7 +120,6 @@ struct var {
 	unsigned		len;
 	const char		*rname;
 	const char		*lname;
-	unsigned		has_string;
 	unsigned		methods;
 };
 
