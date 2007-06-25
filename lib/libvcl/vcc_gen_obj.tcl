@@ -40,19 +40,45 @@ set beobj {
 # Objects which operate on sessions
 
 set spobj {
-	{ client.ip		IP 		1}
-	{ server.ip		IP 		1}
-	{ req.request		STRING 		1}
-	{ req.host		STRING 		1}
-        { req.url		STRING 		1}
-        { req.proto		STRING 		1}
-        { req.backend		BACKEND 	0}
-        { req.hash		HASH 		0}
-        { obj.valid		BOOL 		0}
-        { obj.cacheable		BOOL 		0}
-        { obj.ttl		TIME 		0}
-        { req.http.		HEADER 		1}
-        { resp.http.		HEADER 		1}
+	{ client.ip		IP 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+	{ server.ip		IP 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+	{ req.request		STRING 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+	{ req.host		STRING 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+        { req.url		STRING 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+        { req.proto		STRING 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+        { req.backend		BACKEND 	0
+	    {recv pipe pass hash miss hit fetch}
+	}
+        { req.http.		HEADER 		1
+	    {recv pipe pass hash miss hit fetch}
+	}
+        { req.hash		HASH 		0
+	    {hash}
+	}
+        { obj.valid		BOOL 		0
+	    {hit fetch}
+	}
+        { obj.cacheable		BOOL 		0
+	    {hit fetch}
+	}
+        { obj.ttl		TIME 		0
+	    {hit fetch}
+	}
+        { resp.http.		HEADER 		1
+	    {fetch}
+	}
 }
 
 set tt(IP)	"struct sockaddr *"
@@ -85,6 +111,16 @@ warns $fo
 set fp [open ../../include/vrt_obj.h w]
 warns $fp
 
+proc method_map {m} {
+
+	set l ""
+	foreach i $m {
+		append l " | "
+		append l VCL_MET_[string toupper $i]
+	}
+	return [string range $l 3 end]
+}
+
 proc vars {v ty pa} {
 	global tt fo fp
 
@@ -95,7 +131,8 @@ proc vars {v ty pa} {
 		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		puts $fo  "\t    \"VRT_r_${m}($pa)\","
 		puts $fo  "\t    \"VRT_l_${m}($pa, \","
-		puts $fo  "\t    [lindex $v 2]"
+		puts $fo  "\t    [lindex $v 2], "
+		puts $fo  "\t    [method_map [lindex $v 3]]"
 		puts $fo "\t\},"
 
 		puts $fp  "$tt($t) VRT_r_${m}($ty);"
