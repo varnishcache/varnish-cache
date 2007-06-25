@@ -157,7 +157,8 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 		} else if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b)) {
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
-			EXP_TTLchange(o);
+			if (o->heap_idx != 0)
+				EXP_TTLchange(o);
 		} else if (o->vary == NULL || VRY_Match(sp, o->vary))
 			break;
 		o->refcnt--;
