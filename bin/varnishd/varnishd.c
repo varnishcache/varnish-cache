@@ -44,6 +44,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #ifndef HAVE_DAEMON
 #include "compat/daemon.h"
@@ -178,7 +179,8 @@ usage(void)
 	    "  -h classic  [default]");
 	fprintf(stderr, "    %-28s # %s\n", "",
 	    "  -h classic,<buckets>");
-	fprintf(stderr, "    %-28s # %s\n", "-n name", "varnishd instance name");
+	fprintf(stderr, "    %-28s # %s\n", "-n dir",
+	    "varnishd working directory");
 	fprintf(stderr, "    %-28s # %s\n", "-P file", "PID file");
 	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
 	    "set parameter");
@@ -405,7 +407,9 @@ main(int argc, char *argv[])
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
+	int f_fd = -1;
 	const char *h_arg = "classic";
+	const char *n_arg = "/tmp";
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
@@ -455,7 +459,7 @@ main(int argc, char *argv[])
 			h_arg = optarg;
 			break;
 		case 'n':
-			MCF_ParamSet(cli, "name", optarg);
+			n_arg = optarg;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -499,6 +503,7 @@ main(int argc, char *argv[])
 		usage();
 	}
 
+	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
 		vsb_finish(cli[0].sb);
@@ -519,14 +524,39 @@ main(int argc, char *argv[])
 		fprintf(stderr, "One of -b or -f must be specified\n");
 		usage();
 	}
+	
+	if (f_arg != NULL) {
+		f_fd = open(f_arg, O_RDONLY);
+		if (f_fd < 0) {
+			fprintf(stderr, "Cannot open '%s': %s\n",
+			    f_arg, strerror(errno));
+			exit(1);
+		}
+	}
 
+	if (mkdir(n_arg, 0755) < 0 && errno != EEXIST) {
+		fprintf(stderr, "Cannot create working directory '%s': %s\n",
+		    n_arg, strerror(errno));
+		exit(1);
+	}
+
+	if (chdir(n_arg) < 0) {
+		fprintf(stderr, "Cannot change to working directory '%s': %s\n",
+		    n_arg, strerror(errno));
+		exit(1);
+	}
+
+	heritage.n_arg = n_arg;
+
+	/* XXX: should this be relative to the -n arg ? */
 	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
 
-	if (mgt_vcc_default(b_arg, f_arg, C_flag))
+	if (mgt_vcc_default(b_arg, f_arg, f_fd, C_flag))
 		exit (2);
+
 	if (C_flag)
 		exit (0);
 
@@ -538,7 +568,7 @@ main(int argc, char *argv[])
 	if (d_flag == 1)
 		DebugStunt();
 	if (d_flag < 2 && !F_flag)
-		daemon(d_flag, d_flag);
+		daemon(1, d_flag);
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
