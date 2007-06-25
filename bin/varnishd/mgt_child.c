@@ -126,16 +126,23 @@ child_poker(struct ev *e, int what)
 static int
 open_sockets(void)
 {
-	struct listen_sock *ls;
+	struct listen_sock *ls, *ls2;
+	int good = 0;
 
-	TAILQ_FOREACH(ls, &heritage.socks, list) {
+	TAILQ_FOREACH_SAFE(ls, &heritage.socks, list, ls2) {
 		if (ls->sock >= 0)
 			continue;
 		ls->sock = VSS_listen(ls->addr, params->listen_depth);
+		if (ls->sock < 0) {
+			TAILQ_REMOVE(&heritage.socks, ls, list);
+			free(ls);
+			continue;
+		}
 		TCP_filter_http(ls->sock);
-		if (ls->sock < 0)
-			return (1);
+		good++;
 	}
+	if (!good)
+		return (1);
 	return (0);
 }
 
