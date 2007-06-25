@@ -377,17 +377,19 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(struct vsb *sb, const char *fn)
+vcc_file_source(struct vsb *sb, const char *fn, int fd)
 {
 	char *f;
-	int fd, i;
+	int i;
 	struct stat st;
 
-	fd = open(fn, O_RDONLY);
 	if (fd < 0) {
-		vsb_printf(sb, "Cannot open file '%s': %s\n",
-		    fn, strerror(errno));
-		return (NULL);
+		fd = open(fn, O_RDONLY);
+		if (fd < 0) {
+			vsb_printf(sb, "Cannot open file '%s': %s\n",
+			    fn, strerror(errno));
+			return (NULL);
+		}
 	}
 	assert(0 == fstat(fd, &st));
 	f = malloc(st.st_size + 1);
@@ -429,7 +431,7 @@ vcc_resolve_includes(struct tokenlist *tl)
 		}
 		assert(t2 != NULL);
 
-		sp = vcc_file_source(tl->sb, t1->dec);
+		sp = vcc_file_source(tl->sb, t1->dec, -1);
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -653,12 +655,12 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
  */
 
 char *
-VCC_CompileFile(struct vsb *sb, const char *fn)
+VCC_CompileFile(struct vsb *sb, const char *fn, int fd)
 {
 	struct source *sp;
 	char *r;
 
-	sp = vcc_file_source(sb, fn);
+	sp = vcc_file_source(sb, fn, fd);
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
