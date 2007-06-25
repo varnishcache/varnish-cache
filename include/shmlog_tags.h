@@ -33,6 +33,9 @@
  *
  * REMEMBER to update the documentation (especially the varnishlog(1) man
  * page) whenever this list changes.
+ *
+ * XXX: Please add new entries a the end to not break saved log-segments.
+ * XXX: we can resort them when we have a major release.
  */
 
 SLTM(Debug)
