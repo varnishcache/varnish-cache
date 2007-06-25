@@ -169,6 +169,7 @@ usage(void)
 	    "   -b '<hostname_or_IP>:<port_or_service>'");
 	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
 	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL script");
+	fprintf(stderr, "    %-28s # %s\n", "-F", "Run in foreground");
 	fprintf(stderr, "    %-28s # %s\n",
 	    "-h kind[,hashoptions]", "Hash specification");
 	fprintf(stderr, "    %-28s # %s\n", "",
@@ -399,14 +400,15 @@ int
 main(int argc, char *argv[])
 {
 	int o;
+	unsigned C_flag = 0;
 	unsigned d_flag = 0;
+	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *h_arg = "classic";
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
-	unsigned C_flag = 0;
 	char *p;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
@@ -425,7 +427,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:g:h:n:P:p:s:T:t:u:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:Fg:h:n:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -435,13 +437,16 @@ main(int argc, char *argv[])
 			b_arg = optarg;
 			break;
 		case 'C':
-			C_flag = 1;
+			C_flag = 1 - C_flag;
 			break;
 		case 'd':
 			d_flag++;
 			break;
 		case 'f':
 			f_arg = optarg;
+			break;
+		case 'F':
+			F_flag = 1 - F_flag;
 			break;
 		case 'g':
 			MCF_ParamSet(cli, "group", optarg);
@@ -527,7 +532,7 @@ main(int argc, char *argv[])
 
 	if (d_flag == 1)
 		DebugStunt();
-	if (d_flag < 2)
+	if (d_flag < 2 && !F_flag)
 		daemon(d_flag, d_flag);
 	if (d_flag == 1)
 		printf("%d\n", getpid());
