@@ -127,7 +127,7 @@ SES_RefSrcAddr(struct sess *sp)
 		return;
 	}
 	AZ(sp->srcaddr);
-	u = crc32_2s(sp->addr, "");
+	u = crc32_l(sp->addr, strlen(sp->addr));
 	v = u % nsrchash;
 	ch = &srchash[v];
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
