@@ -152,13 +152,6 @@ VRT_l_backend_##onm(struct backend *be, type a)		\
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);		\
 	be->field = a;					\
 }							\
-							\
-type							\
-VRT_r_backend_##onm(struct backend *be)			\
-{							\
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);		\
-	return (be->field);				\
-}
 
 VBACKEND(const char *,	host,	hostname)
 VBACKEND(const char *,	port,	portname)

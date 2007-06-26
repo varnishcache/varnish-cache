@@ -105,6 +105,12 @@ parse_set(struct tokenlist *tl)
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
 	assert(vp != NULL);
+	if (vp->access != V_RW && vp->access != V_WO) {
+		vsb_printf(tl->sb, "Variable %.*s cannot be written.\n",
+		    PF(vt));
+		vcc_ErrWhere(tl, vt);
+		return;
+	}
 	Fb(tl, 1, "%s", vp->lname);
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
