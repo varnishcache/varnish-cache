@@ -42,7 +42,6 @@ void FreeArgv(char **argv);
 char **ParseArgv(const char *s, int comment);
 
 /* from libvarnish/crc32.c */
-uint32_t crc32_2s(const char *p1, const char *p2);
 uint32_t crc32_l(const void *p1, unsigned l);
 
 /* from libvarnish/time.c */

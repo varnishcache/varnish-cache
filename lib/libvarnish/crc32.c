@@ -82,22 +82,6 @@ static uint32_t crc32bits[] = {
 };
 
 uint32_t
-crc32_2s(const char *p1, const char *p2)
-{
-	const unsigned char *p;
-	uint32_t crc;
-
-	crc = ~0U;
-
-	for (p = (const unsigned char*)p1; *p != '\0'; p++)
-		crc = (crc >> 8) ^ crc32bits[(crc ^ *p) & 0xff];
-	for (p = (const unsigned char*)p2; *p != '\0'; p++)
-		crc = (crc >> 8) ^ crc32bits[(crc ^ *p) & 0xff];
-
-	return (crc ^ ~0U);
-}
-
-uint32_t
 crc32_l(const void *p1, unsigned l)
 {
 	const unsigned char *p;
