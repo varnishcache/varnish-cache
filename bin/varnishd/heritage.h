@@ -63,7 +63,7 @@ struct heritage {
 	/* Hash method */
 	struct hash_slinger		*hash;
 
-	const char			*n_arg;
+	char				name[1024];
 };
 
 struct params {
@@ -128,3 +128,5 @@ extern volatile struct params *params;
 extern struct heritage heritage;
 
 void child_main(void);
+
+int varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir, size_t dirlen);

@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2007 Linpro AS
+ * Copyright (c) 2007 Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,36 +28,38 @@
  * $Id$
  */
 
-#ifndef VARNISHAPI_H_INCLUDED
-#define VARNISHAPI_H_INCLUDED
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
 
-#include "shmlog.h"
+#include "varnishapi.h"
 
-#define V_DEAD __attribute__ ((noreturn))
+int
+varnish_instance(const char *n_arg,
+    char *name, size_t namelen,
+    char *dir, size_t dirlen)
+{
+	size_t len;
 
-/* base64.c */
-void base64_init(void);
-int base64_decode(char *d, unsigned dlen, const char *s);
+	if (n_arg == NULL) {
+		if (gethostname(name, namelen) != 0)
+			return (-1);
+	} else {
+		len = snprintf(name, namelen, "%s", n_arg);
+		if (len >= namelen) {
+			errno = ENAMETOOLONG;
+			return (-1);
+		}
+	}
 
-/* shmlog.c */
-typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr);
-#define VSL_S_CLIENT	(1 << 0)
-#define VSL_S_BACKEND	(1 << 1)
-#define VSL_ARGS	"bCcdI:i:r:X:x:"
-#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-r file] [-X regexp] [-x tag]"
-vsl_handler VSL_H_Print;
-struct VSL_data;
-struct VSL_data *VSL_New(void);
-void VSL_Select(struct VSL_data *vd, unsigned tag);
-int VSL_OpenLog(struct VSL_data *vd, const char *varnish_name);
-void VSL_NonBlocking(struct VSL_data *vd, int nb);
-int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
-int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
-int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
-struct varnish_stats *VSL_OpenStats(const char *varnish_name);
-extern const char *VSL_tags[256];
+	if (*name == '/')
+		len = snprintf(dir, dirlen, "%s", name);
+	else
+		len = snprintf(dir, dirlen, "%s/%s", VARNISH_STATE_DIR, name);
 
-/* instance.c */
-int		 varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir, size_t dirlen);
-
-#endif
+	if (len >= dirlen) {
+		errno = ENAMETOOLONG;
+		return (-1);
+	}
+	return (0);
+}

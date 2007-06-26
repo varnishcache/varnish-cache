@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 15, 2007
+.Dd June 26, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -130,9 +130,13 @@ See
 for a list of supported algorithms.
 .It Fl n
 Specify a name for this instance.
-This is a shortcut for specifying the
-.Va name
-run-time parameter.
+Amonst other things, this name is used to construct the name of the
+directory in which
+.Nm
+keeps temporary files and persistent state.
+If the specified name begins with a forward slash, it is interpreted
+as the absolute path to the directory which should be used for this
+purpose.
 .It Fl P Ar file
 Write the process's PID to the specified
 .Ar file .
@@ -402,14 +406,6 @@ The default is 0.0.0.0:80.
 The depth of the TCP listen queue.
 .Pp
 The default is 512.
-.It Va name
-The name of this
-.Nm
-instance.
-All temporary files are stored in
-.Pa /tmp/ Ns Va name .
-.Pp
-The default is the hostname.
 .It Va overflow_max
 The maximum depth of the overflow queue as a percentage of
 .Va thread_pool_max .
