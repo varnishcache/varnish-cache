@@ -138,6 +138,7 @@ AC_CONFIG_FILES([
     bin/varnishncsa/Makefile
     bin/varnishstat/Makefile
     bin/varnishtop/Makefile
+    bin/varnishreplay/Makefile
     doc/Makefile
     etc/Makefile
     include/Makefile
