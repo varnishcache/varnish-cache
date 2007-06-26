@@ -44,7 +44,6 @@ void
 vcc_StringVal(struct tokenlist *tl) 
 {
 	struct var *vp;
-	struct token *vt;
 
 	if (tl->t->tok == CSTR) {
 		EncToken(tl->fb, tl->t);
@@ -53,7 +52,6 @@ vcc_StringVal(struct tokenlist *tl)
 	} 
 	ExpectErr(tl, VAR);
 	ERRCHK(tl);
-	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
 	switch (vp->fmt) {

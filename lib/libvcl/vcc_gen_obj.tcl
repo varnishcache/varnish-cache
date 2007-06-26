@@ -32,30 +32,74 @@
 
 # Objects which operate on backends
 set beobj {
-  { backend.host		HOSTNAME }
-  { backend.port		PORTNAME }
-  { backend.dnsttl	TIME	 }
+  { backend.host	WO HOSTNAME }
+  { backend.port	WO PORTNAME }
+  { backend.dnsttl	WO TIME	 }
 }
 
 # Objects which operate on sessions
 
 set spobj {
-  { client.ip		IP	{recv pipe pass hash miss hit fetch                } }
-  { server.ip		IP	{recv pipe pass hash miss hit fetch                } }
-  { req.request		STRING	{recv pipe pass hash miss hit fetch                } }
-  { req.host		STRING	{recv pipe pass hash miss hit fetch                } }
-  { req.url		STRING	{recv pipe pass hash miss hit fetch                } }
-  { req.proto		STRING	{recv pipe pass hash miss hit fetch                } }
-  { req.backend		BACKEND	{recv pipe pass hash miss hit fetch                } }
-  { req.http.		HEADER	{recv pipe pass hash miss hit fetch                } }
-  { req.hash		HASH	{               hash                               } }
-  { obj.valid		BOOL	{                         hit fetch discard timeout} }
-  { obj.cacheable	BOOL	{                         hit fetch discard timeout} }
-  { obj.ttl		TIME	{                         hit fetch discard timeout} }
-  { resp.proto		STRING	{                             fetch                } }
-  { resp.status		INT	{                             fetch                } }
-  { resp.response	STRING	{                             fetch                } }
-  { resp.http.		HEADER	{                             fetch                } }
+	{ client.ip
+		RO IP
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ server.ip
+		RO IP
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.request
+		RO STRING
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.url
+		RO STRING
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.proto
+		RO STRING
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.backend
+		RW BACKEND
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.http.
+		RO HEADER
+		{recv pipe pass hash miss hit fetch                }
+	}
+	{ req.hash
+		WO HASH
+		{               hash                               }
+	}
+	{ obj.valid
+		RW BOOL
+		{                         hit fetch discard timeout}
+	}
+	{ obj.cacheable
+		RW BOOL
+		{                         hit fetch discard timeout}
+	}
+	{ obj.ttl
+		RW TIME
+		{                         hit fetch discard timeout}
+	}
+	{ resp.proto
+		RO STRING
+		{                             fetch                }
+	}
+	{ resp.status
+		RO INT
+		{                             fetch                }
+	}
+	{ resp.response
+		RO STRING
+		{                             fetch                }
+	}
+	{ resp.http.
+		RO HEADER
+		{                             fetch                }
+	}
 }
 
 set tt(IP)	"struct sockaddr *"
@@ -105,15 +149,25 @@ proc vars {v ty pa} {
 	foreach v $v {
 		set n [lindex $v 0]
 		regsub -all {[.]} $n "_" m
-		set t [lindex $v 1]
+		set a [lindex $v 1]
+		set t [lindex $v 2]
 		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
-		puts $fo  "\t    \"VRT_r_${m}($pa)\","
-		puts $fo  "\t    \"VRT_l_${m}($pa, \","
-		puts $fo  "\t    [method_map [lindex $v 2]]"
+		if {$a == "RO" || $a == "RW"} {
+			puts $fo  "\t    \"VRT_r_${m}($pa)\","
+			puts $fp  "$tt($t) VRT_r_${m}($ty);"
+		} else {
+			puts $fo  "\t    NULL,"
+		}
+		if {$a == "WO" || $a == "RW"} {
+			puts $fo  "\t    \"VRT_l_${m}($pa, \","
+			puts $fp  "void VRT_l_${m}($ty, $tt($t));"
+		} else {
+			puts $fo  "\t    NULL,"
+		}
+		puts $fo  "\t    V_$a,"
+		puts $fo  "\t    [method_map [lindex $v 3]]"
 		puts $fo "\t\},"
 
-		puts $fp  "$tt($t) VRT_r_${m}($ty);"
-		puts $fp  "void VRT_l_${m}($ty, $tt($t));"
 	}
 	puts $fo "\t{ NULL }"
 }
