@@ -29,16 +29,18 @@
  * $Id$
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <regex.h>
 #include <sys/mman.h>
+
 #include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <regex.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "shmlog.h"
 #include "miniobj.h"
@@ -106,28 +108,36 @@ vsl_shmem_map(const char *varnish_name)
 {
 	int i;
 	struct shmloghead slh;
-	char buf[BUFSIZ];
+	char name[PATH_MAX], dirname[PATH_MAX], logname[PATH_MAX];
 
 	if (vsl_lh != NULL)
 		return (0);
 
-	sprintf(buf, "/tmp/%s/%s", varnish_name, SHMLOG_FILENAME);
+	if (varnish_instance(varnish_name, name,
+	    sizeof name, dirname, sizeof dirname) != 0) {
+		fprintf(stderr, "Invalid instance name: %s\n",
+		    strerror(errno));
+		return (1);
+	}
 
-	vsl_fd = open(buf, O_RDONLY);
+	/* XXX check overflow */
+	snprintf(logname, sizeof logname, "%s/%s", dirname, SHMLOG_FILENAME);
+
+	vsl_fd = open(logname, O_RDONLY);
 	if (vsl_fd < 0) {
 		fprintf(stderr, "Cannot open %s: %s\n",
-		    buf, strerror(errno));
+		    logname, strerror(errno));
 		return (1);
 	}
 	i = read(vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		fprintf(stderr, "Cannot read %s: %s\n",
-		    buf, strerror(errno));
+		    logname, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
 		fprintf(stderr, "Wrong magic number in file %s\n",
-		    buf);
+		    logname);
 		return (1);
 	}
 
@@ -135,7 +145,7 @@ vsl_shmem_map(const char *varnish_name)
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vsl_fd, 0);
 	if (vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    buf, strerror(errno));
+		    logname, strerror(errno));
 		return (1);
 	}
 	return (0);
@@ -172,17 +182,12 @@ VSL_Select(struct VSL_data *vd, unsigned tag)
 int
 VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 {
-	char hostname[1024];
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fi != NULL)
 		return (0);
 
-	if (varnish_name == NULL) {
-		gethostname(hostname, sizeof hostname);
-		varnish_name = hostname;
-	}
 	if (vsl_shmem_map(varnish_name))
 		return (-1);
 

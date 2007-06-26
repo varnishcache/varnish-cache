@@ -204,7 +204,7 @@ start_child(void)
 		AZ(close(heritage.fds[0]));
 		AZ(close(heritage.fds[3]));
 
-		setproctitle("Varnish-Chld %s", heritage.n_arg);
+		setproctitle("Varnish-Chld %s", heritage.name);
 
 		signal(SIGINT, SIG_DFL);
 		signal(SIGTERM, SIG_DFL);
@@ -408,7 +408,7 @@ mgt_run(int dflag, const char *T_arg)
 	e->name = "mgt_sigchild";
 	AZ(ev_add(mgt_evb, e));
 
-	setproctitle("Varnish-Mgr %s", heritage.n_arg);
+	setproctitle("Varnish-Mgr %s", heritage.name);
 
 	sac.sa_handler = SIG_IGN;
 	sac.sa_flags = SA_RESTART;

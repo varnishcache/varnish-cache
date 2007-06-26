@@ -50,6 +50,10 @@
 #include "compat/daemon.h"
 #endif
 
+#ifndef HAVE_STRLCPY
+#include "compat/strlcpy.h"
+#endif
+
 #include "vsb.h"
 #include "vpf.h"
 
@@ -409,13 +413,14 @@ main(int argc, char *argv[])
 	const char *f_arg = NULL;
 	int f_fd = -1;
 	const char *h_arg = "classic";
-	const char *n_arg = "/tmp";
+	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	const char *T_arg = NULL;
 	char *p;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
+	char dirname[1024];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -524,7 +529,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "One of -b or -f must be specified\n");
 		usage();
 	}
-	
+
 	if (f_arg != NULL) {
 		f_fd = open(f_arg, O_RDONLY);
 		if (f_fd < 0) {
@@ -534,19 +539,24 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (mkdir(n_arg, 0755) < 0 && errno != EEXIST) {
+	if (varnish_instance(n_arg, heritage.name, sizeof heritage.name,
+	    dirname, sizeof dirname) != 0) {
+		fprintf(stderr, "Invalid instance name: %s\n",
+		    strerror(errno));
+		exit(1);
+	}
+
+	if (mkdir(dirname, 0755) < 0 && errno != EEXIST) {
 		fprintf(stderr, "Cannot create working directory '%s': %s\n",
-		    n_arg, strerror(errno));
+		    dirname, strerror(errno));
 		exit(1);
 	}
 
-	if (chdir(n_arg) < 0) {
+	if (chdir(dirname) < 0) {
 		fprintf(stderr, "Cannot change to working directory '%s': %s\n",
-		    n_arg, strerror(errno));
+		    dirname, strerror(errno));
 		exit(1);
 	}
-
-	heritage.n_arg = n_arg;
 
 	/* XXX: should this be relative to the -n arg ? */
 	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {

@@ -34,6 +34,7 @@ varnishd_SOURCES = \
 	cache_ws.c \
 	hash_simple_list.c \
 	hash_classic.c \
+	instance.c \
 	mgt_child.c \
 	mgt_cli.c \
 	mgt_event.c \
