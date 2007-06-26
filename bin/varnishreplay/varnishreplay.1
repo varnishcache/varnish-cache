@@ -1,6 +1,5 @@
 .\"-
-.\" Copyright (c) 2006 Verdens Gang AS
-.\" Copyright (c) 2006-2007 Linpro AS
+.\" Copyright (c) 2007 Linpro AS
 .\" All rights reserved.
 .\"
 .\" Author: Cecilie Fritzvold <cecilihf@linpro.no>
@@ -35,9 +34,9 @@
 .Nm varnishreplay
 .Sh SYNOPSIS
 .Nm
+.Op Fl D
 .Fl a Ar address:port
 .Fl r Ar file
-.Op Fl D
 .Sh DESCRIPTION
 The
 .Nm
@@ -48,21 +47,16 @@ The following options are available:
 .It Fl a Ar address:port
 Send the traffic over tcp to this address and port.
 This option is mandatory.
-.It Fl r Ar file
-Parse logs from this file. This option is mandatory.
 .It Fl D
 Turn on debugging mode.
+.It Fl r Ar file
+Parse logs from this file.
+This option is mandatory.
 .Sh SEE ALSO
 .Xr varnishd 1 ,
-.Xr varnishhist 1 ,
-.Xr varnishncsa 1 ,
-.Xr varnishstat 1 ,
-.Xr varnishtop 1
+.Xr varnishlog 1
 .Sh HISTORY
 The
 .Nm
-utility was developed by
-.An Cecilie Fritzvold Aq cecilihf@linpro.no .
-
-This manual page was written by
+utility and this manual page were written by
 .An Cecilie Fritzvold Aq cecilihf@linpro.no .
