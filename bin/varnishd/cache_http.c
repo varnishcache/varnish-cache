@@ -631,6 +631,7 @@ http_RecvSome(int fd, struct http *hp)
 	int i;
 
 	l = (hp->ws->e - hp->rx_e) - 1;
+	l /= 2;		/* Don't fill all of workspace with read-ahead */
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
 		VSLR(SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
