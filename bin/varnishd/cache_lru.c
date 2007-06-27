@@ -40,8 +40,31 @@
  */
 #define LRU_DELAY 2
 
+TAILQ_HEAD(lru_head, object);
+
+static struct lru_head lru_list = TAILQ_HEAD_INITIALIZER(lru_list);
 static pthread_mutex_t lru_mtx = PTHREAD_MUTEX_INITIALIZER;
-static TAILQ_HEAD(lru_head, object) lru_list;
+static struct sess *lru_session;
+static struct worker lru_worker;
+
+/*
+ * Initialize the LRU data structures.
+ */
+static inline void
+LRU_Init(void)
+{
+	if (lru_session == NULL) {
+		lru_session = SES_New(NULL, 0);
+		XXXAN(lru_session);
+		lru_session->wrk = &lru_worker;
+		lru_worker.magic = WORKER_MAGIC;
+		lru_worker.wlp = lru_worker.wlog;
+		lru_worker.wle = lru_worker.wlog + sizeof lru_worker.wlog;
+		VCL_Get(&lru_session->vcl);
+	} else {
+		VCL_Refresh(&lru_session->vcl);
+	}
+}
 
 /*
  * Enter an object into the LRU list, or move it to the head of the list
@@ -55,12 +78,12 @@ LRU_Enter(struct object *o, time_t stamp)
 	assert(stamp > 0);
 	if (o->lru_stamp < stamp - LRU_DELAY && o != lru_list.tqh_first) {
 		// VSL(SLT_LRU_enter, 0, "%u %u %u", o->xid, o->lru_stamp, stamp);
-		pthread_mutex_lock(&lru_mtx);
+		LOCK(&lru_mtx);
 		if (o->lru_stamp != 0)
 			TAILQ_REMOVE(&lru_list, o, lru);
 		TAILQ_INSERT_HEAD(&lru_list, o, lru);
 		o->lru_stamp = stamp;
-		pthread_mutex_unlock(&lru_mtx);
+		UNLOCK(&lru_mtx);
 	}
 }
 
@@ -74,74 +97,123 @@ LRU_Remove(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	if (o->lru_stamp != 0) {
 		// VSL(SLT_LRU_remove, 0, "%u", o->xid);
-		pthread_mutex_lock(&lru_mtx);
+		LOCK(&lru_mtx);
 		TAILQ_REMOVE(&lru_list, o, lru);
-		pthread_mutex_unlock(&lru_mtx);
+		UNLOCK(&lru_mtx);
 	}
 }
 
 /*
- * Walk through the LRU list, starting at the back, and retire objects
- * until our quota is reached or we run out of objects to retire.
+ * With the LRU lock held, call VCL_discard().  Depending on the result,
+ * either insert the object at the head of the list or dereference it.
  */
-void
-LRU_DiscardSpace(struct sess *sp, uint64_t quota)
+static int
+LRU_DiscardLocked(struct object *o)
 {
-	struct object *o, *so;
+	struct object *so;
 
-	pthread_mutex_lock(&lru_mtx);
-	while ((o = TAILQ_LAST(&lru_list, lru_head))) {
-		TAILQ_REMOVE(&lru_list, o, lru);
-		so = sp->obj;
-		sp->obj = o;
-		VCL_discard_method(sp);
-		sp->obj = so;
-		if (sp->handling == VCL_RET_DISCARD) {
-			/* discard: place on deathrow */
-			EXP_Retire(o);
-			o->lru_stamp = 0;
-			if (o->len > quota)
-				break;
-			quota -= o->len;
-		} else {
-			/* keep: move to front of list */
-			if ((so = TAILQ_FIRST(&lru_list)))
-				o->lru_stamp = so->lru_stamp;
-			TAILQ_INSERT_HEAD(&lru_list, o, lru);
-		}
+	if (o->busy)
+		return (0);
+
+	/* XXX this is a really bad place to do this */
+	LRU_Init();
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	TAILQ_REMOVE(&lru_list, o, lru);
+
+	lru_session->obj = o;
+	VCL_discard_method(lru_session);
+
+	if (lru_session->handling == VCL_RET_DISCARD) {
+		/* discard: release object */
+		VSL(SLT_ExpKill, 0, "%u %d", o->xid, o->lru_stamp);
+		o->lru_stamp = 0;
+		EXP_Terminate(o);
+		return (1);
+	} else {
+		/* keep: move to front of list */
+		if ((so = TAILQ_FIRST(&lru_list)))
+			o->lru_stamp = so->lru_stamp;
+		TAILQ_INSERT_HEAD(&lru_list, o, lru);
+		return (0);
 	}
-	pthread_mutex_unlock(&lru_mtx);
 }
 
 /*
- * Walk through the LRU list, starting at the back, and retire objects
- * that haven't been accessed since the specified cutoff date.
+ * Walk through the LRU list, starting at the back, and check each object
+ * until we find one that can be retired.  Return the number of objects
+ * that were discarded.
  */
-void
-LRU_DiscardTime(struct sess *sp, time_t cutoff)
+int
+LRU_DiscardOne(void)
 {
-	struct object *o, *so;
+	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *o;
+	int count = 0;
 
-	pthread_mutex_lock(&lru_mtx);
-	while ((o = TAILQ_LAST(&lru_list, lru_head))) {
-		if (o->lru_stamp >= cutoff)
+	LOCK(&lru_mtx);
+	while (!count && (o = TAILQ_LAST(&lru_list, lru_head))) {
+		if (LRU_DiscardLocked(o))
+			++count;
+		if (o == first) {
+			/* full circle */
 			break;
-		TAILQ_REMOVE(&lru_list, o, lru);
-		so = sp->obj;
-		sp->obj = o;
-		VCL_discard_method(sp);
-		sp->obj = so;
-		if (sp->handling == VCL_RET_DISCARD) {
-			/* discard: place on deathrow */
-			EXP_Retire(o);
-		} else {
-			/* keep: move to front of list */
-			if ((so = TAILQ_FIRST(&lru_list)) && so->lru_stamp > cutoff)
-				o->lru_stamp = so->lru_stamp;
-			else
-				o->lru_stamp = cutoff;
-			TAILQ_INSERT_HEAD(&lru_list, o, lru);
 		}
 	}
-	pthread_mutex_unlock(&lru_mtx);
+	UNLOCK(&lru_mtx);
+	return (0);
+}
+
+/*
+ * Walk through the LRU list, starting at the back, and retire objects
+ * until our quota is reached or we run out of objects to retire.  Return
+ * the number of objects that were discarded.
+ */
+int
+LRU_DiscardSpace(int64_t quota)
+{
+	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *o;
+	unsigned int len;
+	int count = 0;
+
+	LOCK(&lru_mtx);
+	while (quota > 0 && (o = TAILQ_LAST(&lru_list, lru_head))) {
+		len = o->len;
+		if (LRU_DiscardLocked(o)) {
+			quota -= len;
+			++count;
+		}
+		if (o == first) {
+			/* full circle */
+			break;
+		}
+	}
+	UNLOCK(&lru_mtx);
+	return (count);
+}
+
+/*
+ * Walk through the LRU list, starting at the back, and retire objects
+ * that haven't been accessed since the specified cutoff date.  Return the
+ * number of objects that were discarded.
+ */
+int
+LRU_DiscardTime(time_t cutoff)
+{
+	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *o;
+	int count = 0;
+
+	LOCK(&lru_mtx);
+	while ((o = TAILQ_LAST(&lru_list, lru_head)) && o->lru_stamp <= cutoff) {
+		if (LRU_DiscardLocked(o))
+			++count;
+		if (o == first) {
+			/* full circle */
+			break;
+		}
+	}
+	UNLOCK(&lru_mtx);
+	return (count);
 }

@@ -59,8 +59,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	if (cl == 0)
 		return (0);
 
-	st = stevedore->alloc(stevedore, cl);
-	XXXAN(st->stevedore);
+	st = STV_alloc(cl);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
@@ -147,11 +146,9 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 			/* Get some storage if we don't have any */
 			if (st == NULL || st->len == st->space) {
 				v = u;
-				if (u < params->fetch_chunksize * 1024 &&
-				    stevedore->trim != NULL)
+				if (u < params->fetch_chunksize * 1024)
 					v = params->fetch_chunksize * 1024;
-				st = stevedore->alloc(stevedore, v);
-				XXXAN(st->stevedore);
+				st = STV_alloc(v);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			}
 			v = st->space - st->len;
@@ -198,9 +195,9 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 
 	if (st != NULL && st->len == 0) {
 		TAILQ_REMOVE(&sp->obj->store, st, list);
-		stevedore->free(st);
-	} else if (st != NULL && stevedore->trim != NULL)
-		stevedore->trim(st, st->len);
+		STV_free(st);
+	} else if (st != NULL)
+		STV_trim(st, st->len);
 	return (0);
 }
 
@@ -226,9 +223,7 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	st = NULL;
 	while (1) {
 		if (v == 0) {
-			st = stevedore->alloc(stevedore,
-			    params->fetch_chunksize * 1024);
-			XXXAN(st->stevedore);
+			st = STV_alloc(params->fetch_chunksize * 1024);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
@@ -248,9 +243,9 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 
 	if (st->len == 0) {
 		TAILQ_REMOVE(&sp->obj->store, st, list);
-		stevedore->free(st);
-	} else if (stevedore->trim != NULL)
-		stevedore->trim(st, st->len);
+		STV_free(st);
+	} else
+		STV_trim(st, st->len);
 
 	return (1);
 }
@@ -345,7 +340,7 @@ Fetch(struct sess *sp)
 		while (!TAILQ_EMPTY(&sp->obj->store)) {
 			st = TAILQ_FIRST(&sp->obj->store);
 			TAILQ_REMOVE(&sp->obj->store, st, list);
-			stevedore->free(st);
+			STV_free(st);
 		}
 		close(vc->fd);
 		VBE_ClosedFd(sp->wrk, vc, 1);

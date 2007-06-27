@@ -42,6 +42,7 @@ varnishd_SOURCES = \
 	mgt_vcc.c \
 	rfc2616.c \
 	shmlog.c \
+	stevedore.c \
 	storage_file.c \
 	storage_malloc.c \
 	tcp.c \
