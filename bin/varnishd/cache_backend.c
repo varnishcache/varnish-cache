@@ -81,7 +81,7 @@ vbe_new_conn(void)
 {
 	struct vbe_conn *vbc;
 	unsigned char *p;
-	unsigned space;
+	volatile unsigned space;
 
 	space =  params->mem_workspace;
 	vbc = calloc(sizeof *vbc + space * 2, 1);
@@ -353,6 +353,8 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
+	WS_Reset(vc->http->ws);
+	WS_Reset(vc->http2->ws);
 	LOCK(&vbemtx);
 	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
