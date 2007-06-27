@@ -631,6 +631,10 @@ smf_alloc(struct stevedore *st, size_t size)
 	LOCK(&sc->mtx);
 	VSL_stats->sm_nreq++;
 	smf = alloc_smf(sc, size);
+	if (smf == NULL) {
+		UNLOCK(&sc->mtx);
+		return (NULL);
+	}
 	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
 	VSL_stats->sm_nobj++;
 	VSL_stats->sm_balloc += smf->size;

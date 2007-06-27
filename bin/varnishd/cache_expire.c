@@ -74,13 +74,25 @@ EXP_TTLchange(struct object *o)
 	UNLOCK(&exp_mtx);
 }
 
+/*
+ * Immediately destroy an object.  Do not wait for it to expire or trickle
+ * through death row; yank it
+ */
 void
-EXP_Retire(struct object *o)
+EXP_Terminate(struct object *o)
 {
 	LOCK(&exp_mtx);
-	TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
-	VSL_stats->n_deathrow++;
+	if (o->lru_stamp)
+		LRU_Remove(o);
+	if (o->heap_idx)
+		binheap_delete(exp_heap, o->heap_idx);
+	if (o->deathrow.tqe_next) {
+		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		VSL_stats->n_deathrow--;
+	}
 	UNLOCK(&exp_mtx);
+	VSL(SLT_Terminate, 0, "%u", o->xid);
+	HSH_Deref(o);
 }
 
 /*--------------------------------------------------------------------
@@ -183,7 +195,10 @@ exp_prefetch(void *arg)
 		VCL_timeout_method(sp);
 
 		if (sp->handling == VCL_RET_DISCARD) {
-			EXP_Retire(o);
+			LOCK(&exp_mtx);
+			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+			VSL_stats->n_deathrow++;
+			UNLOCK(&exp_mtx);
 			continue;
 		}
 		assert(sp->handling == VCL_RET_DISCARD);

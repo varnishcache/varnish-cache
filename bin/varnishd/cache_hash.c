@@ -104,7 +104,7 @@ HSH_Freestore(struct object *o)
 	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		TAILQ_REMOVE(&o->store, st, list);
-		st->stevedore->free(st);
+		STV_free(st);
 	}
 }
 
@@ -260,7 +260,6 @@ HSH_Deref(struct object *o)
 		free(o->vary);
 
 	HSH_Freestore(o);
-	LRU_Remove(o);
 	FREE_OBJ(o);
 	VSL_stats->n_object--;
 

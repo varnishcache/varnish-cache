@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2007 Linpro AS
+ * Copyright (c) 2007 Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,69 +26,38 @@
  * SUCH DAMAGE.
  *
  * $Id$
- *
- * Define the tags in the shared memory in a reusable format.
- * Whoever includes this get to define what the SLTM macro does.
- *
- * REMEMBER to update the documentation (especially the varnishlog(1) man
- * page) whenever this list changes.
- *
- * XXX: Please add new entries a the end to not break saved log-segments.
- * XXX: we can resort them when we have a major release.
  */
 
-SLTM(Debug)
-SLTM(Error)
-SLTM(CLI)
-SLTM(StatAddr)
-SLTM(StatSess)
-SLTM(ReqEnd)
-SLTM(SessionOpen)
-SLTM(SessionClose)
-SLTM(BackendOpen)
-SLTM(BackendXID)
-SLTM(BackendReuse)
-SLTM(BackendClose)
-SLTM(HttpError)
-SLTM(HttpGarbage)
-SLTM(ClientAddr)
-SLTM(Backend)
-SLTM(Length)
+#include "cache.h"
 
-SLTM(RxRequest)
-SLTM(RxResponse)
-SLTM(RxStatus)
-SLTM(RxURL)
-SLTM(RxProtocol)
-SLTM(RxHeader)
-SLTM(RxLostHeader)
+struct storage *
+STV_alloc(size_t size)
+{
+	struct storage *st;
 
-SLTM(TxRequest)
-SLTM(TxResponse)
-SLTM(TxStatus)
-SLTM(TxURL)
-SLTM(TxProtocol)
-SLTM(TxHeader)
-SLTM(TxLostHeader)
+	AN(stevedore);
+	AN(stevedore->alloc);
+	do {
+		if ((st = stevedore->alloc(stevedore, size)) == NULL)
+			LRU_DiscardOne();
+	} while (st == NULL);
+	return (st);
+}
 
-SLTM(ObjRequest)
-SLTM(ObjResponse)
-SLTM(ObjStatus)
-SLTM(ObjURL)
-SLTM(ObjProtocol)
-SLTM(ObjHeader)
-SLTM(ObjLostHeader)
+void
+STV_trim(struct storage *st, size_t size)
+{
 
-SLTM(TTL)
-SLTM(VCL_acl)
-SLTM(VCL_call)
-SLTM(VCL_trace)
-SLTM(VCL_return)
-SLTM(ReqStart)
-SLTM(Hit)
-SLTM(HitPass)
-SLTM(ExpBan)
-SLTM(ExpPick)
-SLTM(ExpKill)
-SLTM(WorkThread)
-SLTM(Terminate)
+	AN(st->stevedore);
+	if (st->stevedore->trim)
+		st->stevedore->trim(st, size);
+}
+
+void
+STV_free(struct storage *st)
+{
+
+	AN(st->stevedore);
+	AN(stevedore->free);
+	st->stevedore->free(st);
+}

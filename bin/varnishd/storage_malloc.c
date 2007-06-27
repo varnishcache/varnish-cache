@@ -49,7 +49,8 @@ sma_alloc(struct stevedore *st, size_t size)
 
 	VSL_stats->sm_nreq++;
 	sma = calloc(sizeof *sma, 1);
-	XXXAN(sma);
+	if (sma == NULL)
+		return (NULL);
 	sma->s.priv = sma;
 	sma->s.ptr = malloc(size);
 	XXXAN(sma->s.ptr);
@@ -68,6 +69,7 @@ sma_free(struct storage *s)
 {
 	struct sma *sma;
 
+	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	sma = s->priv;
 	VSL_stats->sm_nobj--;
 	VSL_stats->sm_balloc -= sma->s.space;
@@ -75,8 +77,25 @@ sma_free(struct storage *s)
 	free(sma);
 }
 
+static void
+sma_trim(struct storage *s, size_t size)
+{
+	struct sma *sma;
+	void *p;
+
+	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
+	sma = s->priv;
+	if ((p = realloc(sma->s.ptr, size)) != NULL) {
+		VSL_stats->sm_balloc -= sma->s.space;
+		sma->s.ptr = p;
+		sma->s.space = size;
+		VSL_stats->sm_balloc += sma->s.space;
+	}
+}
+
 struct stevedore sma_stevedore = {
 	.name =		"malloc",
 	.alloc =	sma_alloc,
-	.free =		sma_free
+	.free =		sma_free,
+	.trim =		sma_trim,
 };
