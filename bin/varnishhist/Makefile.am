@@ -15,4 +15,4 @@ varnishhist_LDADD = \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lm \
-	${CURSES_LIBS}
+	${CURSES_LIBS} ${PTHREAD_LIBS}
