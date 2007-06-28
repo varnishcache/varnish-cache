@@ -4,6 +4,7 @@
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,81 +34,113 @@
 
 #include <curses.h>
 #include <errno.h>
+#include <limits.h>
 #include <math.h>
+#include <pthread.h>
 #include <regex.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
 
-#define HIST_LOW -50
-#define HIST_HIGH 25
-#define HIST_W (1 + (HIST_HIGH - HIST_LOW))
-#define HIST_N 2000
+#define HIST_N 2000 /* how far back we remember */
+#define HIST_LOW -6 /* low end of log range */
+#define HIST_HIGH 3 /* high end of log range */
+#define HIST_RANGE (HIST_HIGH - HIST_LOW)
+#define HIST_RES 100 /* bucket resolution */
+#define HIST_BUCKETS (HIST_RANGE * HIST_RES)
+
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int delay = 1;
-static volatile sig_atomic_t redraw;
-static char rr_hist[HIST_N];
+static unsigned rr_hist[HIST_N];
+static unsigned nhist;
 static unsigned next_hist;
-static unsigned bucket_miss[HIST_W];
-static unsigned bucket_hit[HIST_W];
-static unsigned char hh[65536];
-static double scale = 10;
-static double c_hist;
+static unsigned bucket_miss[HIST_BUCKETS];
+static unsigned bucket_hit[HIST_BUCKETS];
+static unsigned char hh[FD_SETSIZE];
+
+static double log_ten;
+
+static int scales[] = {
+	1,
+	2,
+	3,
+	4,
+	5,
+	10,
+	15,
+	20,
+	25,
+	50,
+	100,
+	250,
+	500,
+	1000,
+	2500,
+	5000,
+	10000,
+	25000,
+	50000,
+	100000,
+	INT_MAX
+};
 
 static void
-sigalrm(int sig)
+update(void)
 {
+	int w = COLS / HIST_RANGE;
+	int n = w * HIST_RANGE;
+	unsigned bm[n], bh[n];
+	unsigned max;
+	int i, j, scale;
 
-	(void)sig;
-	redraw = 1;
-}
+	erase();
 
-static void
-r_hist(void)
-{
-	int x, y;
-	double m, r;
-
-	m = 0;
-	r = 0;
-	for (x = 1; x < HIST_W; x++) {
-		if (bucket_hit[x] + bucket_miss[x] > m)
-			m = bucket_hit[x] + bucket_miss[x];
-		r += bucket_hit[x];
-		r += bucket_miss[x];
+	/* Draw horizontal axis */
+	w = COLS / HIST_RANGE;
+	n = w * HIST_RANGE;
+	for (i = 0; i < n; ++i)
+		mvaddch(LINES - 2, i, '-');
+	for (i = 0, j = HIST_LOW; i < HIST_RANGE; ++i, ++j) {
+		mvaddch(LINES - 2, w * i, '+');
+		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
-	while (m > HIST_N / scale)
-		scale--;
+	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
 
-	mvprintw(0, 0, "Max %.0f Scale %.0f Tot: %.0f", m, HIST_N / scale, r);
-	m = (HIST_N / scale) / (LINES - 3);
-	move(1,0);
-	for (y = LINES - 3; y > 0; y--) {
-		if (y == 1)
-			r = 0;
-		else
-			r = y * m;
-		for (x = 0; x < HIST_W; x++) {
-			if (bucket_miss[x] > r)
-				addch('#');
-			else if (bucket_hit[x] + bucket_miss[x] > r)
-				addch('|');
-			else
-				addch(' ');
-		}
-		addch('\n');
+	/* count our flock */
+	for (i = 0; i < n; ++i)
+		bm[i] = bh[i] = 0;
+	for (i = 0, max = 1; i < HIST_BUCKETS; ++i) {
+		j = i * n / HIST_BUCKETS;
+		bm[j] += bucket_miss[i];
+		bh[j] += bucket_hit[i];
+		if (bm[j] + bh[j] > max)
+			max = bm[j] + bh[j];
 	}
+
+	/* scale */
+	for (i = 0; max / scales[i] > LINES - 3; ++i)
+		/* nothing */ ;
+	scale = scales[i];
+
+	mvprintw(0, 0, "1:%d, n = %d", scale, nhist);
+
+	/* show them */
+	for (i = 0; i < n; ++i) {
+		for (j = 0; j < bm[i] / scale; ++j)
+			mvaddch(LINES - 3 - j, i, '#');
+		for (; j < (bm[i] + bh[i]) / scale; ++j)
+			mvaddch(LINES - 3 - j, i, '|');
+	}
+
 	refresh();
-	redraw = 0;
-	alarm(delay);
 }
 
 static int
@@ -117,38 +150,55 @@ h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec,
 	int i, j;
 
 	(void)priv;
-	(void)fd;
 	(void)len;
 	(void)spec;
+
+	if (fd >= FD_SETSIZE)
+		/* oops */
+		return (0);
+
 	if (tag == SLT_Hit) {
 		hh[fd] = 1;
 		return (0);
 	}
 	if (tag != SLT_ReqEnd)
 		return (0);
+
+	/* determine processing time */
 #if 1
 	i = sscanf(ptr, "%*d %*f %*f %*f %lf", &b);
 #else
 	i = sscanf(ptr, "%*d %*f %*f %lf", &b);
 #endif
 	assert(i == 1);
-	i = log(b) * c_hist;
-	if (i < HIST_LOW)
-		i = HIST_LOW;
-	if (i > HIST_HIGH)
-		i = HIST_HIGH;
-	i -= HIST_LOW;
-	assert(i < HIST_W);
 
-	j = rr_hist[next_hist];
-	if (j < 0)  {
-		assert(bucket_miss[-j] > 0);
-		bucket_miss[-j]--;
+	/* select bucket */
+	i = HIST_RES * (log(b) / log_ten);
+	if (i < HIST_LOW * HIST_RES)
+		i = HIST_LOW * HIST_RES;
+	if (i >= HIST_HIGH * HIST_RES)
+		i = HIST_HIGH * HIST_RES - 1;
+	i -= HIST_LOW * HIST_RES;
+	assert(i >= 0);
+	assert(i < HIST_BUCKETS);
+
+	pthread_mutex_lock(&mtx);
+
+	/* phase out old data */
+	if (nhist == HIST_N) {
+		j = rr_hist[next_hist];
+		if (j < 0)  {
+			assert(bucket_miss[-j] > 0);
+			bucket_miss[-j]--;
+		} else {
+			assert(bucket_hit[j] > 0);
+			bucket_hit[j]--;
+		}
 	} else {
-		assert(bucket_hit[j] > 0);
-		bucket_hit[j]--;
+		++nhist;
 	}
 
+	/* phase in new data */
 	if (hh[fd] || i == 0) {
 		bucket_hit[i]++;
 		rr_hist[next_hist] = i;
@@ -160,9 +210,80 @@ h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec,
 		next_hist = 0;
 	}
 	hh[fd] = 0;
-	if (redraw)
-		r_hist();
+
+	pthread_mutex_unlock(&mtx);
+
 	return (0);
+}
+
+static void *
+accumulate_thread(void *arg)
+{
+	struct VSL_data *vd = arg;
+	int i;
+
+	for (;;) {
+		i = VSL_Dispatch(vd, h_hist, NULL);
+		if (i < 0)
+			break;
+		if (i == 0)
+			usleep(50000);
+	}
+	return (arg);
+}
+
+static void
+do_curses(struct VSL_data *vd)
+{
+	pthread_t thr;
+	int ch;
+
+	if (pthread_create(&thr, NULL, accumulate_thread, vd) != 0) {
+		fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
+		exit(1);
+	}
+
+	initscr();
+	raw();
+	noecho();
+	nonl();
+	intrflush(stdscr, false);
+	curs_set(0);
+	erase();
+	for (;;) {
+		pthread_mutex_lock(&mtx);
+		update();
+		pthread_mutex_unlock(&mtx);
+
+		timeout(delay * 1000);
+		switch ((ch = getch())) {
+		case ERR:
+			break;
+		case KEY_RESIZE:
+			erase();
+			break;
+		case '\014': /* Ctrl-L */
+		case '\024': /* Ctrl-T */
+			redrawwin(stdscr);
+			refresh();
+			break;
+		case '\003': /* Ctrl-C */
+			raise(SIGINT);
+			break;
+		case '\032': /* Ctrl-Z */
+			endwin();
+			raise(SIGTSTP);
+			break;
+		case '\021': /* Ctrl-Q */
+		case 'Q':
+		case 'q':
+			endwin();
+			return;
+		default:
+			beep();
+			break;
+		}
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -178,14 +299,14 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	int i, c, x;
+	int o;
 	struct VSL_data *vd;
 	const char *n_arg = NULL;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "n:Vw:")) != -1) {
-		switch (c) {
+	while ((o = getopt(argc, argv, VSL_ARGS "n:Vw:")) != -1) {
+		switch (o) {
 		case 'n':
 			n_arg = optarg;
 			break;
@@ -196,38 +317,17 @@ main(int argc, char **argv)
 			delay = atoi(optarg);
 			break;
 		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
+			if (VSL_Arg(vd, o, optarg) > 0)
 				break;
 			usage();
 		}
 	}
 
 	if (VSL_OpenLog(vd, n_arg))
-		exit (1);
+		exit(1);
 
-	c_hist = 10.0 / log(10.0);
-	initscr();
-	erase();
+	log_ten = log(10.0);
 
-	bucket_hit[0] = HIST_N;
-	move(LINES - 2, 0);
-	for (x = 0; x < HIST_W; x++)
-		addch('-');
-
-	for (x = 0; x < HIST_W; x++) {
-		if ((x + HIST_LOW) % 10 != 0)
-			continue;
-		mvprintw(LINES - 2, x, "+");
-		mvprintw(LINES - 1, x, "|1e%d", (x + HIST_LOW) / 10);
-	}
-
-	signal(SIGALRM, sigalrm);
-	redraw = 1;
-	while (1) {
-		i = VSL_Dispatch(vd, h_hist, NULL);
-		if (i < 0)
-			break;
-	}
-
+	do_curses(vd);
 	exit(0);
 }
