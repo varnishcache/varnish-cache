@@ -90,6 +90,7 @@ struct VSL_data {
 
 static int vsl_fd;
 static struct shmloghead *vsl_lh;
+static char vsl_name[PATH_MAX];
 
 static int vsl_nextlog(struct VSL_data *vd, unsigned char **pp);
 
@@ -108,13 +109,13 @@ vsl_shmem_map(const char *varnish_name)
 {
 	int i;
 	struct shmloghead slh;
-	char name[PATH_MAX], dirname[PATH_MAX], logname[PATH_MAX];
+	char dirname[PATH_MAX], logname[PATH_MAX];
 
 	if (vsl_lh != NULL)
 		return (0);
 
-	if (varnish_instance(varnish_name, name,
-	    sizeof name, dirname, sizeof dirname) != 0) {
+	if (varnish_instance(varnish_name, vsl_name,
+	    sizeof vsl_name, dirname, sizeof dirname) != 0) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		return (1);
@@ -495,3 +496,9 @@ VSL_OpenStats(const char *varnish_name)
 	return (&vsl_lh->stats);
 }
 
+const char *
+VSL_Name(void)
+{
+
+	return (vsl_name);
+}
