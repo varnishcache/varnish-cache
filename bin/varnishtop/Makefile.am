@@ -14,4 +14,4 @@ varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libcompat/libcompat.a \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	${CURSES_LIBS}
+	${CURSES_LIBS} ${PTHREAD_LIBS}

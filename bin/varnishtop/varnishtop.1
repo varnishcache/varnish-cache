@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 15, 2007
+.Dd June 28, 2007
 .Dt VARNISHTOP 1
 .Os
 .Sh NAME
@@ -71,6 +71,8 @@ The following options are available:
 .It Fl 1
 Instead of presenting of a continuously updated display, print the
 statistics once and exit.
+Implies
+.Fl d .
 .It Fl b
 Include log entries which result from communication with a backend
 server.
@@ -98,7 +100,7 @@ Normally,
 .Nm
 will only process entries which are written to the log after it
 starts.
-.Op Fl f
+.It Fl f
 Sort and group only on the first field of each log entry.
 This is useful when displaying e.g.
 .Dv stataddr
@@ -135,6 +137,18 @@ Exclude log entries which match the specified regular expression.
 .It Fl x Ar tag
 Exclude log entries with the specified tag.
 .El
+.Sh EXAMPLES
+The following example displays a continuously updated list of the most
+frequently requested URLs:
+.Bd -literal
+varnishtop -i RxURL
+.Ed
+.Pp
+The following example displays a continuously updated list of the most
+commonly used user agents:
+.Bd -literal
+varnishtop -i RxHeader -C -I \\^User-Agent
+.Ed
 .Sh SEE ALSO
 .Xr varnishd 1 ,
 .Xr varnishhist 1 ,
@@ -144,12 +158,10 @@ Exclude log entries with the specified tag.
 .Sh HISTORY
 The
 .Nm
-utility was developed by
+utility was originally developed by
 .An Poul-Henning Kamp Aq phk@phk.freebsd.dk
-in cooperation with Verdens Gang AS and Linpro AS.
+in cooperation with Verdens Gang AS and Linpro AS, and later
+substantially rewritten by
+.An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
 This manual page was written by
 .An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
-.Sh BUGS
-The
-.Fl 1
-option currently does not work very well.
