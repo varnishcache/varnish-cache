@@ -115,17 +115,44 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
 		printw("\n");
 
-#define MAC_STAT(n,t,f,d) \
+#define MAC_STAT(n, t, f, d) \
+	do { \
 		ju = VSL_stats->n; \
-		printw("%12ju %12.2f %12.2f " d "\n", \
-		    ju, (ju - (intmax_t)copy.n)/lt, ju / up); \
-		copy.n = ju;
+		if (f == 'a') { \
+			printw("%12ju %12.2f %12.2f %s\n", \
+			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d); \
+			copy.n = ju; \
+		} else { \
+			printw("%12ju %12s %12s %s\n", ju, ".  ", ".  ", d); \
+		} \
+	} while (0);
 #include "stat_field.h"
 #undef MAC_STAT
 		lt = tt;
 		refresh();
 		sleep(delay);
 	}
+}
+
+static void
+do_once(struct varnish_stats *VSL_stats)
+{
+	struct timespec ts;
+	double up;
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	up = ts.tv_sec - VSL_stats->start_time;
+
+#define MAC_STAT(n, t, f, d) \
+	do { \
+		intmax_t ju = VSL_stats->n; \
+		if (f == 'a') \
+			printf("%-16s %12ju %12.2f %s\n", #n, ju, ju / up, d); \
+		else \
+			printf("%-16s %12ju %12s %s\n", #n, ju, ".  ", d); \
+	} while (0);
+#include "stat_field.h"
+#undef MAC_STAT
 }
 
 static void
@@ -165,15 +192,10 @@ main(int argc, char **argv)
 	if ((VSL_stats = VSL_OpenStats(n_arg)) == NULL)
 		exit(1);
 
-	if (!once) {
+	if (once)
+		do_once(VSL_stats);
+	else
 		do_curses(VSL_stats, delay);
-	} else {
-
-#define MAC_STAT(n,t,f,d) \
-		printf("%12ju  " d "\n", (VSL_stats->n));
-#include "stat_field.h"
-#undef MAC_STAT
-	}
 
 	exit(0);
 }
