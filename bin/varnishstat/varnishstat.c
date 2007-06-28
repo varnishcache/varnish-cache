@@ -4,6 +4,7 @@
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,6 +81,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 	noecho();
 	nonl();
 	intrflush(stdscr, false);
+	curs_set(0);
 	erase();
 
 	lt = 0;
@@ -91,23 +93,12 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		rt = ts.tv_sec - VSL_stats->start_time;
 		up = rt;
 
-		move(0, 0);
-		printw("%*s\n", COLS - 1, VSL_Name());
-		move(0, 0);
-		if (rt > 86400) {
-			printw("%dd+", rt / 86400);
-			rt %= 86400;
-		}
-		printw("%02d:", rt / 3600);
-		rt %= 3600;
-		printw("%02d:", rt / 60);
-		rt %= 60;
-		printw("%02d", rt);
-		move(1, 0);
-		hit = (intmax_t)VSL_stats->cache_hit -
-		    (intmax_t)copy.cache_hit;
-		miss = (intmax_t)VSL_stats->cache_miss -
-		    (intmax_t)copy.cache_miss;
+		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
+		mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
+		    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60);
+
+		hit = VSL_stats->cache_hit - copy.cache_hit;
+		miss = VSL_stats->cache_miss - copy.cache_miss;
 		hit /= lt;
 		miss /= lt;
 		if (hit + miss != 0) {
@@ -116,20 +107,20 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 			myexp(&a2, ratio, &n2, 100);
 			myexp(&a3, ratio, &n3, 1000);
 		}
-		printw("Hitrate ratio: %8u %8u %8u\n", n1, n2, n3);
-		printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
-		printw("\n");
+		mvprintw(1, 0, "Hitrate ratio: %8u %8u %8u", n1, n2, n3);
+		mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3);
 
-		line = 0;
+		line = 3;
 #define MAC_STAT(n, t, f, d) \
-	if (++line < LINES - 4) { \
+	if (++line < LINES) { \
 		ju = VSL_stats->n; \
 		if (f == 'a') { \
-			printw("%12ju %12.2f %12.2f %s\n", \
+			mvprintw(line, 0, "%12ju %12.2f %12.2f %s\n", \
 			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d); \
 			copy.n = ju; \
 		} else { \
-			printw("%12ju %12s %12s %s\n", ju, ".  ", ".  ", d); \
+			mvprintw(line, 0, "%12ju %12s %12s %s\n", \
+			    ju, ".  ", ".  ", d); \
 		} \
 	}
 #include "stat_field.h"
