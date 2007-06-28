@@ -31,14 +31,14 @@
  * Log tailer for Varnish
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <curses.h>
-#include <time.h>
+#include <errno.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #ifndef HAVE_CLOCK_GETTIME
 #include "compat/clock_gettime.h"
@@ -67,8 +67,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 	double a1, a2, a3;
 	unsigned n1, n2, n3;
 	time_t rt;
-	int i;
-
+	int ch, line;
 
 	memset(&copy, 0, sizeof copy);
 
@@ -76,6 +75,10 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 	n1 = n2 = n3 = 0;
 
 	initscr();
+	raw();
+	noecho();
+	nonl();
+	intrflush(stdscr, false);
 	erase();
 
 	lt = 0;
@@ -87,18 +90,19 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		rt = ts.tv_sec - VSL_stats->start_time;
 		up = rt;
 
-		move(0,0);
-		i = 0;
+		move(0, 0);
+		printw("%*s\n", COLS - 1, VSL_Name());
+		move(0, 0);
 		if (rt > 86400) {
 			printw("%dd+", rt / 86400);
 			rt %= 86400;
-			i++;
 		}
 		printw("%02d:", rt / 3600);
 		rt %= 3600;
 		printw("%02d:", rt / 60);
 		rt %= 60;
-		printw("%02d\n", rt);
+		printw("%02d", rt);
+		move(1, 0);
 		hit = (intmax_t)VSL_stats->cache_hit -
 		    (intmax_t)copy.cache_hit;
 		miss = (intmax_t)VSL_stats->cache_miss -
@@ -115,8 +119,9 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		printw("Hitrate avg:   %8.4f %8.4f %8.4f\n", a1, a2, a3);
 		printw("\n");
 
+		line = 0;
 #define MAC_STAT(n, t, f, d) \
-	do { \
+	if (++line < LINES - 4) { \
 		ju = VSL_stats->n; \
 		if (f == 'a') { \
 			printw("%12ju %12.2f %12.2f %s\n", \
@@ -125,12 +130,31 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		} else { \
 			printw("%12ju %12s %12s %s\n", ju, ".  ", ".  ", d); \
 		} \
-	} while (0);
+	}
 #include "stat_field.h"
 #undef MAC_STAT
 		lt = tt;
 		refresh();
-		sleep(delay);
+		timeout(delay * 1000);
+		switch ((ch = getch())) {
+		case ERR:
+			break;
+		case KEY_RESIZE:
+			erase();
+			break;
+		case '\014':
+			redrawwin(stdscr);
+			refresh();
+			break;
+		case '\003': /* Ctrl-C */
+		case '\021': /* Ctrl-Q */
+		case 'Q':
+		case 'q':
+			endwin();
+			return;
+		default:
+			break;
+		}
 	}
 }
 
