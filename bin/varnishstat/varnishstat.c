@@ -34,6 +34,7 @@
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -142,17 +143,24 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		case KEY_RESIZE:
 			erase();
 			break;
-		case '\014':
+		case '\014': /* Ctrl-L */
+		case '\024': /* Ctrl-T */
 			redrawwin(stdscr);
 			refresh();
 			break;
 		case '\003': /* Ctrl-C */
+			raise(SIGINT);
+			break;
+		case '\032': /* Ctrl-Z */
+			raise(SIGTSTP);
+			break;
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
 			endwin();
-			return;
+			exit(0);
 		default:
+			beep();
 			break;
 		}
 	}
