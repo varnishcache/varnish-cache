@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 15, 2007
+.Dd June 28, 2007
 .Dt VARNISHSTAT 1
 .Os
 .Sh NAME
@@ -71,11 +71,28 @@ The default is 1.
 The columns in the main display are, from left to right:
 .Bl -enum
 .It
-Total since startup
+Value
 .It
-Per-second average in the period since last update
+Per-second average in the period since last update, or a period if the
+value can not be averaged
 .It
-Per-second average over process lifetime
+Per-second average over process lifetime, or a period if the value can
+not be averaged
+.It
+Descriptive text
+.El
+.Pp
+When using the
+.Fl 1
+option, the columns in the output are, from left to right:
+.Bl -enum
+.It
+Symbolic entry name
+.It
+Value
+.It
+Per-second average over process lifetime, or a period if the value can
+not be averaged
 .It
 Descriptive text
 .El
@@ -89,8 +106,10 @@ Descriptive text
 .Sh HISTORY
 The
 .Nm
-utility was developed by
+utility was originally developed by
 .An Poul-Henning Kamp Aq phk@phk.freebsd.dk
-in cooperation with Verdens Gang AS and Linpro AS.
+in cooperation with Verdens Gang AS and Linpro AS, and later
+substantially rewritten by
+.An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
 This manual page was written by
 .An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
