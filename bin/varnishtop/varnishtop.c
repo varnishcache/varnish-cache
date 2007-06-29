@@ -276,16 +276,11 @@ main(int argc, char **argv)
 {
 	struct VSL_data *vd;
 	const char *n_arg = NULL;
-	int i, o, once = 0;
+	int o, once = 0;
 
 	vd = VSL_New();
 
 	while ((o = getopt(argc, argv, VSL_ARGS "1fn:V")) != -1) {
-		i = VSL_Arg(vd, o, optarg);
-		if (i < 0)
-			exit (1);
-		if (i > 0)
-			continue;
 		switch (o) {
 		case '1':
 			VSL_Arg(vd, 'd', NULL);
@@ -301,6 +296,8 @@ main(int argc, char **argv)
 			varnish_version("varnishtop");
 			exit(0);
 		default:
+			if (VSL_Arg(vd, o, optarg) > 0)
+				break;
 			usage();
 		}
 	}
