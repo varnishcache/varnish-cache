@@ -27,7 +27,7 @@
  *
  * $Id$
  */
- 
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -126,7 +126,7 @@ init_connection(const char* address)
 	struct vss_addr *tap;
 	char *addr, *port;
 	int i, n;
-	
+
 	XXXAZ(VSS_parse(address, &addr, &port));
 	XXXAN(n = VSS_resolve(addr, port, &ta));
 	free(addr);
@@ -141,8 +141,8 @@ init_connection(const char* address)
 	}
 	tap = ta[0];
 	free(ta);
-	
-	return tap;	
+
+	return tap;
 }
 
 /* Read a line from the socket and return the number of bytes read.
@@ -176,7 +176,7 @@ read_line(char **line)
 		nbuf += i;
 		if (buf[nbuf-2] == '\r' && buf[nbuf-1] == '\n')
 			break;
-		
+
 	}
 	buf[nbuf] = '\0';
 	*line = buf;
@@ -192,11 +192,11 @@ read_block(int length)
 {
 	char *buf;
 	int n, nbuf;
-	
+
 	buf = malloc(length);
 	nbuf = 0;
 	while (nbuf < length) {
-		n = read(sock, buf + nbuf, 
+		n = read(sock, buf + nbuf,
 		    (2048 < length - nbuf ? 2048 : length - nbuf));
 		if (n <= 0) {
 			perror("failed reading the block\n");
@@ -205,7 +205,7 @@ read_block(int length)
 		nbuf += n;
 	}
 	free(buf);
-	return nbuf;	
+	return nbuf;
 }
 
 /* Receive the response after sending a request.
@@ -223,35 +223,35 @@ receive_response(void)
 	int n;
 	long block_len;
 	int status;
-	
+
 	/* Read header */
 	while (1) {
 		line_len = read_line(&line);
 		end = line + line_len;
-		
+
 		if (*line == '\r' && *(line + 1) == '\n') {
 			free(line);
 			break;
 		}
-		
+
 		if (strncmp(line, "HTTP", 4) == 0) {
 			sscanf(line, "%*s %d %*s\r\n", &status);
 			req_failed = (status != 200);
 		} else if (isprefix(line, "content-length:", end, &next))
 			content_length = strtol(next, &end, 10);
-		else if (isprefix(line, "encoding:", end, &next) || 
+		else if (isprefix(line, "encoding:", end, &next) ||
 		    isprefix(line, "transfer-encoding:", end, &next))
 			chunked = (strstr(next, "chunked") != NULL);
 		else if (isprefix(line, "connection:", end, &next))
 			close_connection = (strstr(next, "close") != NULL);
-		
+
 		free(line);
 	}
-	
+
 	if (debug)
 		fprintf(stderr, "status: %d\n", status);
-			
-	
+
+
 	/* Read body */
 	if (content_length > 0 && !chunked) {
 		/* Fixed body size, read content_length bytes */
@@ -378,7 +378,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 
 	if (!rp->bogus) {
 		fo = priv;
-		
+
 		/* If the method is supported (GET or HEAD), send the request out
 		 * on the socket. If the socket needs reopening, reopen it first.
 		 * When the request is sent, call the function for receiving
@@ -388,7 +388,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 			if (reopen)
 				sock = VSS_connect(adr_info);
 			reopen = 0;
-		
+
 			if (debug) {
 				fprintf(fo, "%s ", rp->df_m);
 				fprintf(fo, "%s ", rp->df_Uq);
@@ -403,10 +403,10 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 			write(sock, rp->df_H, strlen(rp->df_H));
 			write(sock, " ", 1);
 			write(sock, "\r\n", 2);
-			
+
 			if (strncmp(rp->df_H, "HTTP/1.0", 8))
 				reopen = 1;
-						
+
 			write(sock, "Host: ", 6);
 			if (rp->df_Host) {
 				if (debug)
@@ -444,7 +444,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 	freez(rp->df_c);
 #undef freez
 	rp->bogus = 0;
-	
+
 	return (0);
 }
 
@@ -470,7 +470,7 @@ send_test_request(char *file, const char *address)
 		last = *buf;
 	}
 	close(sock);
-	
+
 }
 
 /*--------------------------------------------------------------------*/
@@ -512,7 +512,7 @@ main(int argc, char *argv[])
 			break;
 		case 't':
 			/* This option is for testing only. The test file must contain
-			 * a sequence of valid HTTP-requests that can be sent 
+			 * a sequence of valid HTTP-requests that can be sent
 			 * unchanged to the adress given with -a
 			 */
 			test_file = optarg;
@@ -523,12 +523,12 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
-	
+
 	if (test_file != NULL) {
 		send_test_request(test_file, address);
 		exit(0);
 	}
-	
+
 	if (address == NULL) {
 		usage();
 	}
@@ -538,7 +538,7 @@ main(int argc, char *argv[])
 
 	ofn = "stdout";
 	of = stdout;
-	
+
 	adr_info = init_connection(address);
 	reopen = 1;
 
@@ -551,4 +551,3 @@ main(int argc, char *argv[])
 
 	exit(0);
 }
-
