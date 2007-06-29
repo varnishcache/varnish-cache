@@ -489,7 +489,7 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	int i, c;
+	int c;
 	struct VSL_data *vd;
 	const char *ofn = NULL;
 	const char *address = NULL;
