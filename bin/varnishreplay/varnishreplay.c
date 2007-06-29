@@ -501,11 +501,6 @@ main(int argc, char *argv[])
 	debug = 0;
 
 	while ((c = getopt(argc, argv, "a:Dr:t:")) != -1) {
-		i = VSL_Arg(vd, c, optarg);
-		if (i < 0)
-			exit (1);
-		if (i > 0)
-			continue;
 		switch (c) {
 		case 'a':
 			address = optarg;
