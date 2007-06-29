@@ -119,20 +119,23 @@ trimline(const char *str, const char *end)
  * hostname and returning a struct with necessary
  * connection info.
  */
-static struct vss_addr*
-init_connection(const char* address)
+static struct vss_addr *
+init_connection(const char *address)
 {
 	struct vss_addr **ta;
 	struct vss_addr *tap;
 	char *addr, *port;
 	int i, n;
 
-	XXXAZ(VSS_parse(address, &addr, &port));
-	XXXAN(n = VSS_resolve(addr, port, &ta));
+	if (VSS_parse(address, &addr, &port) != 0) {
+		fprintf(stderr, "Invalid address\n");
+		exit(2);
+	}
+	n = VSS_resolve(addr, port, &ta);
 	free(addr);
 	free(port);
 	if (n == 0) {
-		fprintf(stderr, "Could not open TELNET port\n");
+		fprintf(stderr, "Could not connect to server\n");
 		exit(2);
 	}
 	for (i = 1; i < n; ++i) {
@@ -174,7 +177,7 @@ read_line(char **line)
 			exit(1);
 		}
 		nbuf += i;
-		if (buf[nbuf-2] == '\r' && buf[nbuf-1] == '\n')
+		if (nbuf >= 2 && buf[nbuf-2] == '\r' && buf[nbuf-1] == '\n')
 			break;
 
 	}
