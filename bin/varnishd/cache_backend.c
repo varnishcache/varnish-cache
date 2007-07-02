@@ -337,6 +337,8 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
 		AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
+	WS_Reset(vc->http->ws);
+	WS_Reset(vc->http2->ws);
 	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
