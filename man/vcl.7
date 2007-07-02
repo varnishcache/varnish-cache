@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 25, 2007
+.Dd July 2, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -240,6 +240,8 @@ Control will eventually pass to
 .Cm vcl_pass .
 .It Cm deliver
 Deliver the cached object to the client.
+Control will eventually pass to
+.Cm vcl_deliver .
 .El
 .\" vcl_miss
 .It Cm vcl_miss
@@ -282,6 +284,22 @@ Control will eventually pass to
 .Cm vcl_pass .
 .It Cm insert
 Insert the object into the cache, then deliver it to the client.
+Control will eventually pass to
+.Cm vcl_deliver .
+.El
+.\" vcl_deliver
+.It Cm vcl_deliver
+Called before a cached object is delivered to the client.
+.Pp
+The
+.Cm vcl_deliver
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width "discard"
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm deliver
+Deliver the object to the client.
 .El
 .\" vcl_timeout
 .It Cm vcl_timeout
@@ -421,6 +439,10 @@ sub vcl_fetch {
         pass;
     }
     insert;
+}
+
+sub vcl_deliver {
+    deliver;
 }
 
 sub vcl_discard {
