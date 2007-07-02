@@ -155,5 +155,6 @@ AC_CONFIG_FILES([
     man/Makefile
     debian/Makefile
     redhat/Makefile
+    varnishapi.pc
 ])
 AC_OUTPUT

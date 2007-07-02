@@ -1,5 +1,12 @@
 # $Id$
 
+pkginclude_HEADERS = \
+	shmlog.h \
+	shmlog_tags.h \
+	stat_field.h \
+	stats.h \
+	varnishapi.h
+
 noinst_HEADERS = \
 	binary_heap.h \
 	cli.h \
@@ -22,11 +29,6 @@ noinst_HEADERS = \
 	queue.h \
 	vpf.h \
 	vsb.h \
-	shmlog.h \
-	shmlog_tags.h \
-	stat_field.h \
-	stats.h \
-	varnishapi.h \
 	vcl.h \
 	vcl_returns.h \
 	vrt.h \
