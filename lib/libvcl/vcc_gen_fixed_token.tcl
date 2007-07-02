@@ -41,6 +41,7 @@ set methods {
 	{miss		{error pass fetch}}
 	{hit		{error pass deliver}}
 	{fetch		{error pass insert}}
+	{deliver	{error deliver}}
 	{timeout	{fetch discard}}
 	{discard	{discard keep}}
 }
