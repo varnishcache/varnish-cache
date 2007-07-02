@@ -462,10 +462,21 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char * VRT_r_req_request(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_url(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_proto(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_hash(struct sess *, const char *);\n");
 	vsb_cat(sb, "struct backend * VRT_r_req_backend(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_backend(struct sess *, struct backend *);\n");
-	vsb_cat(sb, "const char * VRT_r_req_http_(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_req_hash(struct sess *, const char *);\n");
+	vsb_cat(sb, "const char * VRT_r_bereq_request(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_bereq_request(struct sess *, const char *);\n");
+	vsb_cat(sb, "const char * VRT_r_bereq_url(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_bereq_url(struct sess *, const char *);\n");
+	vsb_cat(sb, "const char * VRT_r_bereq_proto(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_bereq_proto(struct sess *, const char *);\n");
+	vsb_cat(sb, "const char * VRT_r_obj_proto(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_proto(struct sess *, const char *);\n");
+	vsb_cat(sb, "int VRT_r_obj_status(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_status(struct sess *, int);\n");
+	vsb_cat(sb, "const char * VRT_r_obj_response(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_response(struct sess *, const char *);\n");
 	vsb_cat(sb, "unsigned VRT_r_obj_valid(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_valid(struct sess *, unsigned);\n");
 	vsb_cat(sb, "unsigned VRT_r_obj_cacheable(struct sess *);\n");
@@ -473,7 +484,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "double VRT_r_obj_ttl(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_proto(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_proto(struct sess *, const char *);\n");
 	vsb_cat(sb, "int VRT_r_resp_status(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_status(struct sess *, int);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_response(struct sess *);\n");
-	vsb_cat(sb, "const char * VRT_r_resp_http_(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_resp_response(struct sess *, const char *);\n");
 }
