@@ -430,7 +430,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_error(struct sess *, unsigned, const char *);\n");
 	vsb_cat(sb, "int VRT_switch_config(const char *);\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "enum gethdr_e { HDR_REQ, HDR_RESP };\n");
+	vsb_cat(sb, "enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ };\n");
 	vsb_cat(sb, "char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);\n");
 	vsb_cat(sb, "void VRT_handling(struct sess *sp, unsigned hand);\n");
 	vsb_cat(sb, "\n");

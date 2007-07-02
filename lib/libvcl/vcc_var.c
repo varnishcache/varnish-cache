@@ -49,8 +49,11 @@ vcc_StringVal(struct tokenlist *tl)
 		EncToken(tl->fb, tl->t);
 		vcc_NextToken(tl);
 		return;
-	} 
-	ExpectErr(tl, VAR);
+	} else if (tl->t->tok != VAR) {
+		vsb_printf(tl->sb, "Expected string variable or constant\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	ERRCHK(tl);
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
@@ -88,18 +91,27 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	memcpy(p, t->b, i);
 	p[i] = '\0';
 	v->name = p;
+	v->access = V_RW;
 	v->fmt = STRING;
 	v->methods = vh->methods;
 	if (!memcmp(vh->name, "req.", 4))
 		wh = "HDR_REQ";
 	else if (!memcmp(vh->name, "resp.", 5))
 		wh = "HDR_RESP";
+	else if (!memcmp(vh->name, "obj.", 4))
+		wh = "HDR_OBJ";
+	else if (!memcmp(vh->name, "bereq.", 6))
+		wh = "HDR_BEREQ";
 	else
 		assert(0 == 1);
 	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", wh,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
-	assert(p != NULL);
+	AN(p);
 	v->rname = p;
+	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\")", wh,
+	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
+	AN(p);
+	v->lname = p;
 	return (v);
 }
 
