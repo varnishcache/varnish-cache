@@ -94,6 +94,16 @@ parse_error(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+illegal_assignment(struct tokenlist *tl, const char *type)
+{
+
+	vsb_printf(tl->sb, "Invalid assignment operator ");
+	vcc_ErrToken(tl, tl->t);
+	vsb_printf(tl->sb,
+	    " only '=' is legal for %s\n", type);
+}
+
+static void
 parse_set(struct tokenlist *tl)
 {
 	struct var *vp;
@@ -154,38 +164,31 @@ parse_set(struct tokenlist *tl)
 		break;
 #if 0	/* XXX: enable if we find a legit use */
 	case IP:
-		if (tl->t->tok == '=') {
-			vcc_NextToken(tl);
-			u = vcc_vcc_IpVal(tl);
-			Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
-			    u,
-			    (u >> 24) & 0xff,
-			    (u >> 16) & 0xff,
-			    (u >> 8) & 0xff,
-			    u & 0xff);
-			break;
+		if (tl->t->tok != '=') {
+			illegal_assignment(tl, "IP numbers");
+			return;
 		}
-		vsb_printf(tl->sb, "Invalid assignment operator ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb,
-		    " only '=' is legal for IP numbers\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
+		vcc_NextToken(tl);
+		u = vcc_vcc_IpVal(tl);
+		Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
+		    u,
+		    (u >> 24) & 0xff,
+		    (u >> 16) & 0xff,
+		    (u >> 8) & 0xff,
+		    u & 0xff);
+		break;
 #endif
 	case BACKEND:
-		if (tl->t->tok == '=') {
-			vcc_NextToken(tl);
-			vcc_AddRef(tl, tl->t, R_BACKEND);
-			Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
-			vcc_NextToken(tl);
-			Fb(tl, 0, ");\n");
-			break;
+		if (tl->t->tok != '=') {
+			illegal_assignment(tl, "backend");
+			return;
 		}
-		vsb_printf(tl->sb, "Invalid assignment operator ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb,
-		    " only '=' is legal for backend\n");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_NextToken(tl);
+		vcc_AddRef(tl, tl->t, R_BACKEND);
+		Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
+		vcc_NextToken(tl);
+		Fb(tl, 0, ");\n");
+		break;
 		return;
 	case HASH:
 		ExpectErr(tl, T_INCR);
@@ -193,6 +196,15 @@ parse_set(struct tokenlist *tl)
 		vcc_StringVal(tl);
 		Fb(tl, 0, ");\n");
 		return;
+	case STRING:
+		if (tl->t->tok != '=') {
+			illegal_assignment(tl, "strings");
+			return;
+		}
+		vcc_NextToken(tl);
+		vcc_StringVal(tl);
+		Fb(tl, 0, ");\n");
+		break;
 	default:
 		vsb_printf(tl->sb,
 		    "Assignments not possible for '%s'\n", vp->name);
