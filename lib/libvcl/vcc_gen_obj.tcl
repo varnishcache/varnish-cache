@@ -30,75 +30,123 @@
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
 
-# Objects which operate on backends
+# Objects available in backends
 set beobj {
   { backend.host	WO HOSTNAME }
   { backend.port	WO PORTNAME }
   { backend.dnsttl	WO TIME	 }
 }
 
-# Objects which operate on sessions
-
+# Variables available in sessions
+# Comments are stripped from #...\n
 set spobj {
+
+	# Connection related parameters
 	{ client.ip
 		RO IP
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
+	}
+	{ client.bandwidth				 # Not implemented yet
+		NO
 	}
 	{ server.ip
 		RO IP
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
 	}
+
+	# Request paramters
 	{ req.request
 		RO STRING
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.url
 		RO STRING
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.proto
 		RO STRING
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
+	}
+	{ req.http.
+		RW HEADER
+		{recv pipe pass hash miss hit fetch                        }
+	}
+
+	# Possibly misnamed, not really part of the request
+	{ req.hash
+		WO HASH
+		{               hash                                       }
 	}
 	{ req.backend
 		RW BACKEND
-		{recv pipe pass hash miss hit fetch                }
+		{recv pipe pass hash miss hit fetch                        }
 	}
-	{ req.http.
-		RO HEADER
-		{recv pipe pass hash miss hit fetch                }
+
+	# Request sent to backend
+	{ bereq.request
+		RW STRING
+		{     pipe pass      miss                                  }
 	}
-	{ req.hash
-		WO HASH
-		{               hash                               }
+	{ bereq.url
+		RW STRING
+		{     pipe pass      miss                                  }
 	}
+	{ bereq.proto
+		RW STRING
+		{     pipe pass      miss                                  }
+	}
+	{ bereq.http.
+		RW HEADER
+		{     pipe pass      miss                                  }
+	}
+
+	# The (possibly) cached object
+	{ obj.proto
+		RW STRING
+		{                         hit fetch deliver                }
+	}
+	{ obj.status
+		RW INT
+		{                             fetch                        }
+	}
+	{ obj.response
+		RW STRING
+		{                             fetch                        }
+	}
+	{ obj.http.
+		RW HEADER
+		{                         hit fetch deliver                }
+	}
+
 	{ obj.valid
 		RW BOOL
-		{                         hit fetch discard timeout}
+		{                         hit fetch         discard timeout}
 	}
 	{ obj.cacheable
 		RW BOOL
-		{                         hit fetch discard timeout}
+		{                         hit fetch         discard timeout}
 	}
 	{ obj.ttl
 		RW TIME
-		{                         hit fetch discard timeout}
+		{                         hit fetch         discard timeout}
 	}
+
+	# The response we send back
 	{ resp.proto
-		RO STRING
-		{                             fetch                }
+		RW STRING
+		{                             fetch                        }
 	}
 	{ resp.status
-		RO INT
-		{                             fetch                }
+		RW INT
+		{                             fetch                        }
 	}
 	{ resp.response
-		RO STRING
-		{                             fetch                }
+		RW STRING
+		{                             fetch                        }
 	}
 	{ resp.http.
-		RO HEADER
-		{                             fetch                }
+		RW HEADER
+		{                             fetch                        }
 	}
 }
 
@@ -146,21 +194,27 @@ proc method_map {m} {
 proc vars {v ty pa} {
 	global tt fo fp
 
+	regsub -all "#\[^\n\]*\n" $v "" v
 	foreach v $v {
 		set n [lindex $v 0]
 		regsub -all {[.]} $n "_" m
 		set a [lindex $v 1]
+		if {$a == "NO"} continue
 		set t [lindex $v 2]
 		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		if {$a == "RO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_r_${m}($pa)\","
-			puts $fp  "$tt($t) VRT_r_${m}($ty);"
+			if {$t != "HEADER"} {
+				puts $fp  "$tt($t) VRT_r_${m}($ty);"
+			}
 		} else {
 			puts $fo  "\t    NULL,"
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
-			puts $fp  "void VRT_l_${m}($ty, $tt($t));"
+			if {$t != "HEADER"} {
+				puts $fp  "void VRT_l_${m}($ty, $tt($t));"
+			}
 		} else {
 			puts $fo  "\t    NULL,"
 		}
