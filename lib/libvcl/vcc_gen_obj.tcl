@@ -44,14 +44,14 @@ set spobj {
 	# Connection related parameters
 	{ client.ip
 		RO IP
-		{recv pipe pass hash miss hit fetch                        }
+		{recv pipe pass hash miss hit fetch deliver                }
 	}
 	{ client.bandwidth				 # Not implemented yet
 		NO
 	}
 	{ server.ip
 		RO IP
-		{recv pipe pass hash miss hit fetch                        }
+		{recv pipe pass hash miss hit fetch deliver                }
 	}
 
 	# Request paramters
@@ -103,7 +103,7 @@ set spobj {
 	# The (possibly) cached object
 	{ obj.proto
 		RW STRING
-		{                         hit fetch deliver                }
+		{                         hit fetch                        }
 	}
 	{ obj.status
 		RW INT
@@ -115,7 +115,7 @@ set spobj {
 	}
 	{ obj.http.
 		RW HEADER
-		{                         hit fetch deliver                }
+		{                         hit fetch 			   }
 	}
 
 	{ obj.valid
@@ -138,22 +138,24 @@ set spobj {
 	# The response we send back
 	{ resp.proto
 		RW STRING
-		{                             fetch                        }
+		{                                   deliver                }
 	}
 	{ resp.status
 		RW INT
-		{                             fetch                        }
+		{                                   deliver                }
 	}
 	{ resp.response
 		RW STRING
-		{                             fetch                        }
+		{                                   deliver                }
 	}
 	{ resp.http.
 		RW HEADER
-		{                             fetch                        }
+		{                                   deliver                }
 	}
 
 	# Miscellaneous
+	# XXX: I'm not happy about this one.  All times should be relative
+	# XXX: or delta times in VCL programs, so this shouldn't be needed /phk
 	{ now
 		RO TIME
 		{recv pipe pass hash miss hit fetch deliver discard timeout}

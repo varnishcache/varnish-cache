@@ -471,6 +471,7 @@ void WSL_Flush(struct worker *w);
 #endif
 
 /* cache_response.c */
+void RES_BuildHttp(struct sess *sp);
 void RES_Error(struct sess *sp, int code, const char *reason);
 void RES_WriteObj(struct sess *sp);
 
