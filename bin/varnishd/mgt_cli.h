@@ -42,3 +42,4 @@ cli_func_t mcf_config_inline;
 cli_func_t mcf_config_use;
 cli_func_t mcf_config_discard;
 cli_func_t mcf_config_list;
+cli_func_t mcf_config_show;
