@@ -165,9 +165,14 @@ struct worker {
 	struct VCL_conf		*vcl;
 	struct srcaddr		*srcaddr;
 	struct acct		acct;
-	unsigned char		wlog[WLOGSPACE];
+
+	/* Backend connection space */
+	struct http		bereq[1];
+	struct http		beresp[1];
+
 	unsigned char		*wlp, *wle;
 	unsigned		wlr;
+	unsigned char		wlog[WLOGSPACE];
 };
 
 struct workreq {
