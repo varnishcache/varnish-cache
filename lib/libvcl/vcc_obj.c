@@ -36,13 +36,13 @@ struct var vcc_vars[] = {
 	    "VRT_r_client_ip(sp)",
 	    NULL,
 	    V_RO,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	},
 	{ "server.ip", IP, 9,
 	    "VRT_r_server_ip(sp)",
 	    NULL,
 	    V_RO,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	},
 	{ "req.request", STRING, 11,
 	    "VRT_r_req_request(sp)",
@@ -108,7 +108,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_obj_proto(sp)",
 	    "VRT_l_obj_proto(sp, ",
 	    V_RW,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_HIT | VCL_MET_FETCH
 	},
 	{ "obj.status", INT, 10,
 	    "VRT_r_obj_status(sp)",
@@ -126,7 +126,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_obj_http_(sp)",
 	    "VRT_l_obj_http_(sp, ",
 	    V_RW,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_HIT | VCL_MET_FETCH
 	},
 	{ "obj.valid", BOOL, 9,
 	    "VRT_r_obj_valid(sp)",
@@ -156,25 +156,25 @@ struct var vcc_vars[] = {
 	    "VRT_r_resp_proto(sp)",
 	    "VRT_l_resp_proto(sp, ",
 	    V_RW,
-	    VCL_MET_FETCH
+	    VCL_MET_DELIVER
 	},
 	{ "resp.status", INT, 11,
 	    "VRT_r_resp_status(sp)",
 	    "VRT_l_resp_status(sp, ",
 	    V_RW,
-	    VCL_MET_FETCH
+	    VCL_MET_DELIVER
 	},
 	{ "resp.response", STRING, 13,
 	    "VRT_r_resp_response(sp)",
 	    "VRT_l_resp_response(sp, ",
 	    V_RW,
-	    VCL_MET_FETCH
+	    VCL_MET_DELIVER
 	},
 	{ "resp.http.", HEADER, 10,
 	    "VRT_r_resp_http_(sp)",
 	    "VRT_l_resp_http_(sp, ",
 	    V_RW,
-	    VCL_MET_FETCH
+	    VCL_MET_DELIVER
 	},
 	{ "now", TIME, 3,
 	    "VRT_r_now(sp)",

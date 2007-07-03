@@ -119,7 +119,7 @@ DOT		label="Filter obj.->resp."
 DOT	]
 DOT	vcl_deliver [
 DOT		shape=record
-DOT		label="vcl_deliver()|req.\nresp."
+DOT		label="vcl_deliver()|resp."
 DOT	]
 DOT	deliver2 [
 DOT		shape=ellipse
@@ -131,11 +131,28 @@ DOT     vcl_deliver -> errdeliver [label="error"]
 DOT     errdeliver [label="ERROR",shape=plaintext]
 DOT }
 DOT deliver2 -> DONE [style=bold,color=green,weight=4]
+ *
+ * XXX: Ideally we should make the req. available in vcl_deliver() but for
+ * XXX: reasons of economy we don't, since that allows us to reuse the space
+ * XXX: in sp->req for the response.
+ * 
+ * XXX: Rather than allocate two http's and workspaces for all sessions to
+ * XXX: address this deficiency, we could make the VCL compiler set a flag
+ * XXX: if req. is used in vcl_deliver().  When the flag is set we would
+ * XXX: take the memory overhead, for instance by borrowing a struct bereq
+ * XXX: or similar.
+ *
+ * XXX: For now, wait until somebody asks for it.
  */
 
 static int
 cnt_deliver(struct sess *sp)
 {
+
+	RES_BuildHttp(sp);
+	VCL_deliver_method(sp);
+	if (sp->handling != VCL_RET_DELIVER) 
+		INCOMPL();
 
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
@@ -171,6 +188,7 @@ cnt_done(struct sess *sp)
 	double dh, dp, da;
 
 	AZ(sp->obj);
+	AZ(sp->bereq);
 	sp->backend = NULL;
 	if (sp->vcl != NULL) {
 		if (sp->wrk->vcl != NULL)

@@ -114,13 +114,9 @@ res_do_conds(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-RES_WriteObj(struct sess *sp)
+RES_BuildHttp(struct sess *sp)
 {
-	struct storage *st;
-	unsigned u = 0;
-
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
@@ -136,12 +132,26 @@ RES_WriteObj(struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
 	else
-		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+		    "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %u",
 	    sp->obj->age + sp->t_resp.tv_sec - sp->obj->entered);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+RES_WriteObj(struct sess *sp)
+{
+	struct storage *st;
+	unsigned u = 0;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
