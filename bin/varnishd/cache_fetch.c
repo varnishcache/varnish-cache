@@ -270,32 +270,19 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	assert(sp->obj->busy != 0);
 	w = sp->wrk;
+	bereq = sp->bereq;
+	hp = bereq->http;
 
 	sp->obj->xid = sp->xid;
 
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return (1);
-
-	bereq = vbe_new_bereq();
-	AN(bereq);
-	hp = bereq->http;
-	hp->logtag = HTTP_Tx;
-
-	http_GetReq(w, vc->fd, hp, sp->http);
-	http_FilterHeader(w, vc->fd, hp, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(w, vc->fd, hp, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, hp,
-	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(hp, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, hp, "Host: %s",
-		    sp->backend->hostname);
-	}
-
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
 	if (WRK_Flush(w)) {
 		/* XXX: cleanup */
+		
 		return (1);
 	}
 
@@ -377,7 +364,6 @@ Fetch(struct sess *sp)
 		VBE_ClosedFd(sp->wrk, vc, 0);
 	else
 		VBE_RecycleFd(sp->wrk, vc);
-	vbe_free_bereq(bereq);
 
 	return (0);
 }
