@@ -72,14 +72,12 @@ rdf(struct pollfd *fds, int idx)
 }
 
 void
-PipeSession(struct sess *sp)
+PipeSession(struct sess *sp, struct bereq *bereq)
 {
 	struct vbe_conn *vc;
 	char *b, *e;
 	struct worker *w;
 	struct pollfd fds[2];
-	struct bereq *bereq;
-	struct http *hp;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -90,30 +88,8 @@ PipeSession(struct sess *sp)
 	if (vc == NULL)
 		return;
 
-	bereq = vbe_new_bereq();
-	AN(bereq);
-	hp = bereq->http;
-	hp->logtag = HTTP_Tx;
-
-	http_CopyReq(w, vc->fd, hp, sp->http);
-	http_FilterHeader(w, vc->fd, hp, sp->http, HTTPH_R_PIPE);
-	http_PrintfHeader(w, vc->fd, hp, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, hp,
-	    "X-Forwarded-for: %s", sp->addr);
-
-	/* XXX: does this belong in VCL ? */
-	if (!http_GetHdr(hp, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, hp, "Host: %s",
-		    sp->backend->hostname);
-	}
-
-	VCL_pipe_method(sp);
-
-	if (sp->handling == VCL_RET_ERROR)
-		INCOMPL();
-
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, hp, 0);
+	http_Write(w, bereq->http, 0);
 
 	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
 		WRK_Write(w, b, e - b);
@@ -126,7 +102,6 @@ PipeSession(struct sess *sp)
 
 	vbe_free_bereq(bereq);
 	bereq = NULL;
-	hp = NULL;
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 
