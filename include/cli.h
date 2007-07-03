@@ -79,14 +79,14 @@
 	"\tCompile and load the VCL file under the name provided.",	\
 	2, 2
 
-#define CLI_VCL_INLINE						\
-	"vcl.inline",						\
-	"vcl.inline <configname> <quoted_VCLstring>",		\
+#define CLI_VCL_INLINE							\
+	"vcl.inline",							\
+	"vcl.inline <configname> <quoted_VCLstring>",			\
 	"\tCompile and load the VCL data under the name provided.",	\
 	2, 2
 
-#define CLI_VCL_DISCARD						\
-	"vcl.discard",						\
+#define CLI_VCL_DISCARD							\
+	"vcl.discard",							\
 	"vcl.discard <configname>",					\
 	"\tUnload the named configuration (when possible).",		\
 	1, 1
@@ -97,9 +97,15 @@
 	"\tList all loaded configuration.",				\
 	0, 0
 
+#define CLI_VCL_SHOW							\
+	"vcl.show",							\
+	"vcl.show <configname>",					\
+	"\tDisplay the source code for the specified configuration.",	\
+	1, 1
+
 #define CLI_VCL_USE							\
 	"vcl.use",							\
-	"vcl.use <configname>",					\
+	"vcl.use <configname>",						\
 	"\tSwitch to the named configuration immediately.",		\
 	1, 1
 
