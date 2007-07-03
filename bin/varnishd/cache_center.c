@@ -600,9 +600,34 @@ DOT err_pipe [label="ERROR",shape=plaintext]
 static int
 cnt_pipe(struct sess *sp)
 {
+	struct bereq *bereq;
+	struct http *hp;
+	char *b;
 
 	sp->wrk->acct.pipe++;
-	PipeSession(sp);
+
+	bereq = vbe_new_bereq();
+	XXXAN(bereq);
+	hp = bereq->http;
+	hp->logtag = HTTP_Tx;
+
+	http_CopyReq(sp->wrk, sp->fd, hp, sp->http);
+	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_PIPE);
+	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Forwarded-for: %s", sp->addr);
+
+	/* XXX: does this belong in VCL ? */
+	if (!http_GetHdr(hp, H_Host, &b)) {
+		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
+		    sp->backend->hostname);
+	}
+
+	VCL_pipe_method(sp);
+
+	if (sp->handling == VCL_RET_ERROR)
+		INCOMPL();
+
+	PipeSession(sp, bereq);
 	sp->step = STP_DONE;
 	return (0);
 }
