@@ -801,6 +801,7 @@ void
 http_CopyHome(struct worker *w, int fd, struct http *hp)
 {
 	unsigned u, l;
+	enum httptag htt;
 	char *p;
 
 	for (u = 0; u < hp->nhd; u++) {
@@ -808,25 +809,34 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			continue;
 		switch (u) {
 		case HTTP_HDR_PROTO:
-			WSLH(w, HTTP_T_Protocol, fd, hp, u);
+			htt = HTTP_T_Protocol;
 			break;
 		case HTTP_HDR_STATUS:
-			WSLH(w, HTTP_T_Status, fd, hp, u);
+			htt = HTTP_T_Status;
 			break;
 		case HTTP_HDR_RESPONSE:
-			WSLH(w, HTTP_T_Response, fd, hp, u);
+			htt = HTTP_T_Response;
 			break;
 		default:
-			WSLH(w, HTTP_T_Header, fd, hp, u);
+			htt = HTTP_T_Header;
 			break;
 		}
-		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
+		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e) {
+			WSLH(w, htt, fd, hp, u);
 			continue;
+		}
 		l = hp->hd[u].e - hp->hd[u].b;
 		p = WS_Alloc(hp->ws, l + 1);
-		memcpy(p, hp->hd[u].b, l + 1);
-		hp->hd[u].b = p;
-		hp->hd[u].e = p + l;
+		if (p != NULL) {
+			WSLH(w, htt, fd, hp, u);
+			memcpy(p, hp->hd[u].b, l + 1);
+			hp->hd[u].b = p;
+			hp->hd[u].e = p + l;
+		} else {
+			WSLH(w, HTTP_T_LostHeader, fd, hp, u);
+			hp->hd[u].b = NULL;
+			hp->hd[u].e = NULL;
+		}
 	}
 }
 
@@ -860,7 +870,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct http *to, int field, const char *string)
+http_PutField(struct worker *w, int fd, struct http *to, int field, const char *string)
 {
 	const char *e;
 	char *p;
@@ -870,18 +880,22 @@ http_PutField(struct http *to, int field, const char *string)
 	e = strchr(string, '\0');
 	l = (e - string);
 	p = WS_Alloc(to->ws, l + 1);
-	memcpy(p, string, l + 1);
-	to->hd[field].b = p;
-	to->hd[field].e = p + l;
+	if (p == NULL) {
+		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", string);
+		to->hd[field].b = NULL;
+		to->hd[field].e = NULL;
+	} else {
+		memcpy(p, string, l + 1);
+		to->hd[field].b = p;
+		to->hd[field].e = p + l;
+	}
 }
 
 void
 http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
 {
 
-	(void)w; 	/* should be used to report losthdr */
-	(void)fd; 	/* should be used to report losthdr */
-	http_PutField(to, HTTP_HDR_PROTO, protocol);
+	http_PutField(w, fd, to, HTTP_HDR_PROTO, protocol);
 }
 
 void
@@ -889,20 +903,16 @@ http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 {
 	char stat[4];
 
-	(void)w; 	/* should be used to report losthdr */
-	(void)fd; 	/* should be used to report losthdr */
 	assert(status >= 0 && status <= 999);
 	sprintf(stat, "%d", status);
-	http_PutField(to, HTTP_HDR_STATUS, stat);
+	http_PutField(w, fd, to, HTTP_HDR_STATUS, stat);
 }
 
 void
 http_PutResponse(struct worker *w, int fd, struct http *to, const char *response)
 {
 
-	(void)w; 	/* should be used to report losthdr */
-	(void)fd; 	/* should be used to report losthdr */
-	http_PutField(to, HTTP_HDR_RESPONSE, response);
+	http_PutField(w, fd, to, HTTP_HDR_RESPONSE, response);
 }
 
 void
