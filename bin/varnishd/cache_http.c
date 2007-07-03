@@ -773,7 +773,7 @@ http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsi
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how)
+http_FilterFields(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how)
 {
 	unsigned u;
 
@@ -790,6 +790,32 @@ http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, un
 #undef HTTPH
 		http_copyheader(w, fd, to, fm, u);
 	}
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_FilterHeader(struct sess *sp, unsigned how)
+{
+	struct bereq *bereq;
+	struct http *hp;
+	char *b;
+
+        bereq = vbe_new_bereq();
+        AN(bereq);
+        hp = bereq->http;
+        hp->logtag = HTTP_Tx;
+
+	http_GetReq(hp, sp->http);
+	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
+	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, hp,
+	    "X-Forwarded-for: %s", sp->addr);
+	if (!http_GetHdr(hp, H_Host, &b)) {
+		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
+		    sp->backend->hostname);
+	}
+	sp->bereq = bereq;
 }
 
 /*--------------------------------------------------------------------

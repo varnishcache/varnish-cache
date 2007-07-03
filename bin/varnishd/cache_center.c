@@ -278,27 +278,9 @@ DOT errfetch [label="ERROR",shape=plaintext]
 static int
 cnt_fetch(struct sess *sp)
 {
-	struct bereq *bereq;
-	struct http *hp;
-	char *b;
 	int i;
 
-	bereq = vbe_new_bereq();
-	AN(bereq);
-	hp = bereq->http;
-	hp->logtag = HTTP_Tx;
-
-	http_GetReq(hp, sp->http);
-	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->wrk, sp->fd, hp,
-	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(hp, H_Host, &b)) {
-		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
-		    sp->backend->hostname);
-	}
-	sp->bereq = bereq;
-
+	AN(sp->bereq);
 	i = Fetch(sp);
 	vbe_free_bereq(sp->bereq);
 	sp->bereq = NULL;
@@ -527,6 +509,7 @@ static int
 cnt_miss(struct sess *sp)
 {
 
+	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
 		sp->obj->cacheable = 0;
@@ -542,6 +525,8 @@ cnt_miss(struct sess *sp)
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASS;
+		vbe_free_bereq(sp->bereq);
+		sp->bereq = NULL;
 		return (0);
 	}
 	if (sp->handling == VCL_RET_FETCH) {
@@ -582,6 +567,8 @@ cnt_pass(struct sess *sp)
 {
 
 	AZ(sp->obj);
+
+	http_FilterHeader(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
@@ -624,34 +611,15 @@ DOT err_pipe [label="ERROR",shape=plaintext]
 static int
 cnt_pipe(struct sess *sp)
 {
-	struct bereq *bereq;
-	struct http *hp;
-	char *b;
 
 	sp->wrk->acct.pipe++;
-
-	bereq = vbe_new_bereq();
-	XXXAN(bereq);
-	hp = bereq->http;
-	hp->logtag = HTTP_Tx;
-
-	http_CopyReq(hp, sp->http);
-	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_PIPE);
-	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Forwarded-for: %s", sp->addr);
-
-	/* XXX: does this belong in VCL ? */
-	if (!http_GetHdr(hp, H_Host, &b)) {
-		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
-		    sp->backend->hostname);
-	}
+	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);
 
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
 
-	sp->bereq = bereq;
 	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
