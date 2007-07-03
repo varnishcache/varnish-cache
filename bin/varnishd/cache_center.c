@@ -288,7 +288,7 @@ cnt_fetch(struct sess *sp)
 	hp = bereq->http;
 	hp->logtag = HTTP_Tx;
 
-	http_GetReq(sp->wrk, sp->fd, hp, sp->http);
+	http_GetReq(hp, sp->http);
 	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_FETCH);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
@@ -635,7 +635,7 @@ cnt_pipe(struct sess *sp)
 	hp = bereq->http;
 	hp->logtag = HTTP_Tx;
 
-	http_CopyReq(sp->wrk, sp->fd, hp, sp->http);
+	http_CopyReq(hp, sp->http);
 	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_PIPE);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Forwarded-for: %s", sp->addr);

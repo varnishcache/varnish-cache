@@ -73,7 +73,7 @@ res_do_304(struct sess *sp)
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_SetResp(sp->wrk, sp->fd, sp->http,
+	http_SetResp(sp->http,
 	    "HTTP/1.1", "304", "Not Modified");
 	TIM_format(sp->t_req.tv_sec, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
@@ -129,7 +129,7 @@ RES_WriteObj(struct sess *sp)
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_CopyResp(sp->wrk, sp->fd, sp->http, &sp->obj->http);
+	http_CopyResp(sp->http, &sp->obj->http);
 	http_FilterHeader(sp->wrk, sp->fd, sp->http, &sp->obj->http, HTTPH_A_DELIVER);
 	if (sp->xid != sp->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,

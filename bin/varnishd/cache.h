@@ -407,10 +407,10 @@ const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
-void http_GetReq(struct worker *w, int fd, struct http *to, struct http *fm);
-void http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm);
-void http_CopyResp(struct worker *w, int fd, struct http *to, struct http *fm);
-void http_SetResp(struct worker *w, int fd, struct http *to, const char *proto, const char *status, const char *response);
+void http_GetReq(struct http *to, struct http *fm);
+void http_CopyReq(struct http *to, struct http *fm);
+void http_CopyResp(struct http *to, struct http *fm);
+void http_SetResp(struct http *to, const char *proto, const char *status, const char *response);
 void http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
 void http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol);
 void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
@@ -431,7 +431,7 @@ int http_RecvHead(struct http *hp, int fd);
 int http_DissectRequest(struct worker *w, struct http *sp, int fd);
 int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
-void http_CopyHome(struct http *hp);
+void http_CopyHome(struct worker *w, int fd, struct http *hp);
 
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
