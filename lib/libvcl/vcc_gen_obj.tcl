@@ -130,6 +130,10 @@ set spobj {
 		RW TIME
 		{                         hit fetch         discard timeout}
 	}
+	{ obj.lastuse
+		RO TIME
+		{                         hit fetch deliver discard timeout}
+	}
 
 	# The response we send back
 	{ resp.proto
@@ -147,6 +151,12 @@ set spobj {
 	{ resp.http.
 		RW HEADER
 		{                             fetch                        }
+	}
+
+	# Miscellaneous
+	{ now
+		RO TIME
+		{recv pipe pass hash miss hit fetch deliver discard timeout}
 	}
 }
 
