@@ -59,6 +59,7 @@
 /* A backend IP */
 
 static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
+static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
 
 static MTX vbemtx;
 
@@ -72,6 +73,43 @@ Uptime(void)
 
 	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
 	return (ts.tv_sec + ts.tv_nsec * 1e-9);
+}
+
+/*--------------------------------------------------------------------*/
+
+struct bereq *
+vbe_new_bereq(void)
+{
+	struct bereq *bereq;
+	volatile unsigned space;
+
+	LOCK(&vbemtx);
+	bereq = TAILQ_FIRST(&bereq_head);
+	if (bereq != NULL)
+		TAILQ_REMOVE(&bereq_head, bereq, list);
+	UNLOCK(&vbemtx);
+	if (bereq == NULL) {
+		space =  params->mem_workspace;
+		bereq = calloc(sizeof *bereq + space, 1);
+		if (bereq == NULL)
+			return (NULL);
+		bereq->magic = BEREQ_MAGIC;
+		WS_Init(bereq->ws, bereq + 1, space);
+	}
+	WS_Reset(bereq->ws);
+	return (bereq);
+}
+
+/*--------------------------------------------------------------------*/
+/* XXX: no backpressure on pool size */
+
+void
+vbe_free_bereq(struct bereq *bereq)
+{
+
+	LOCK(&vbemtx);
+	TAILQ_INSERT_HEAD(&bereq_head, bereq, list);
+	UNLOCK(&vbemtx);
 }
 
 /*--------------------------------------------------------------------*/
