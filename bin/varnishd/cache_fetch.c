@@ -320,9 +320,9 @@ Fetch(struct sess *sp)
 	http_Setup(hp2, b, len);
 
 	hp2->logtag = HTTP_Obj;
-	http_CopyResp(sp->wrk, sp->fd, hp2, hp);
+	http_CopyResp(hp2, hp);
 	http_FilterHeader(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
-	http_CopyHome(hp2);
+	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (body) {
 		if (http_GetHdr(hp, H_Content_Length, &b))

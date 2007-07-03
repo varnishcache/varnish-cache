@@ -681,7 +681,7 @@ http_RecvHead(struct http *hp, int fd)
 /*--------------------------------------------------------------------*/
 
 static void
-http_seth(struct worker *w, int fd, struct http *to, unsigned n, enum httptag tag, const char *fm)
+http_seth(struct http *to, unsigned n, const char *fm)
 {
 
 	assert(n < HTTP_HDR_MAX);
@@ -689,11 +689,10 @@ http_seth(struct worker *w, int fd, struct http *to, unsigned n, enum httptag ta
 	to->hd[n].b = (void*)(uintptr_t)fm;
 	to->hd[n].e = (void*)(uintptr_t)strchr(fm, '\0');
 	to->hdf[n] = 0;
-	WSLH(w, tag, fd, to, n);
 }
 
 static void
-http_copyh(struct worker *w, int fd, struct http *to, struct http *fm, unsigned n, enum httptag tag)
+http_copyh(struct http *to, struct http *fm, unsigned n)
 {
 
 	assert(n < HTTP_HDR_MAX);
@@ -701,56 +700,56 @@ http_copyh(struct worker *w, int fd, struct http *to, struct http *fm, unsigned 
 	to->hd[n].b = fm->hd[n].b;
 	to->hd[n].e = fm->hd[n].e;
 	to->hdf[n] = fm->hdf[n];
-	WSLH(w, tag, fd, to, n);
 }
 
 void
-http_GetReq(struct worker *w, int fd, struct http *to, struct http *fm)
+http_GetReq(struct http *to, struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_seth(w, fd, to, HTTP_HDR_REQ, HTTP_T_Request, "GET");
-	http_copyh(w, fd, to, fm, HTTP_HDR_URL, HTTP_T_URL);
-	http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, "HTTP/1.1");
+	http_seth(to, HTTP_HDR_REQ, "GET");
+	http_copyh(to, fm, HTTP_HDR_URL);
+	http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
 }
 
 void
-http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm)
+http_CopyReq(struct http *to, struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_copyh(w, fd, to, fm, HTTP_HDR_REQ, HTTP_T_Request);
-	http_copyh(w, fd, to, fm, HTTP_HDR_URL, HTTP_T_URL);
+	http_copyh(to, fm, HTTP_HDR_REQ);
+	http_copyh(to, fm, HTTP_HDR_URL);
 	if (params->backend_http11)
-		http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, "HTTP/1.1");
+		http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
+		http_copyh(to, fm, HTTP_HDR_PROTO);
 }
 
 
 void
-http_CopyResp(struct worker *w, int fd, struct http *to, struct http *fm)
+http_CopyResp(struct http *to, struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (params->client_http11)
-		http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, "HTTP/1.1");
+		http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_copyh(w, fd, to, fm, HTTP_HDR_PROTO, HTTP_T_Protocol);
-	http_copyh(w, fd, to, fm, HTTP_HDR_STATUS, HTTP_T_Status);
-	http_copyh(w, fd, to, fm, HTTP_HDR_RESPONSE, HTTP_T_Response);
+		http_copyh(to, fm, HTTP_HDR_PROTO);
+	http_copyh(to, fm, HTTP_HDR_STATUS);
+	http_copyh(to, fm, HTTP_HDR_RESPONSE);
 }
 
 void
-http_SetResp(struct worker *w, int fd, struct http *to, const char *proto, const char *status, const char *response)
+http_SetResp(struct http *to, const char *proto, const char *status, const char *response)
 {
+
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_seth(w, fd, to, HTTP_HDR_PROTO, HTTP_T_Protocol, proto);
-	http_seth(w, fd, to, HTTP_HDR_STATUS, HTTP_T_Status, status);
-	http_seth(w, fd, to, HTTP_HDR_RESPONSE, HTTP_T_Response, response);
+	http_seth(to, HTTP_HDR_PROTO, proto);
+	http_seth(to, HTTP_HDR_STATUS, status);
+	http_seth(to, HTTP_HDR_RESPONSE, response);
 }
 
 static void
@@ -764,7 +763,6 @@ http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsi
 	if (to->nhd < HTTP_HDR_MAX) {
 		to->hd[to->nhd].b = fm->hd[n].b;
 		to->hd[to->nhd].e = fm->hd[n].e;
-		WSLH(w, HTTP_T_Header, fd, to, to->nhd);
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
@@ -800,7 +798,7 @@ http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, un
  */
 
 void
-http_CopyHome(struct http *hp)
+http_CopyHome(struct worker *w, int fd, struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -808,6 +806,20 @@ http_CopyHome(struct http *hp)
 	for (u = 0; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
 			continue;
+		switch (u) {
+		case HTTP_HDR_PROTO:
+			WSLH(w, HTTP_T_Protocol, fd, hp, u);
+			break;
+		case HTTP_HDR_STATUS:
+			WSLH(w, HTTP_T_Status, fd, hp, u);
+			break;
+		case HTTP_HDR_RESPONSE:
+			WSLH(w, HTTP_T_Response, fd, hp, u);
+			break;
+		default:
+			WSLH(w, HTTP_T_Header, fd, hp, u);
+			break;
+		}
 		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
 			continue;
 		l = hp->hd[u].e - hp->hd[u].b;
@@ -842,7 +854,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", hdr);
 		return;
 	}
-	http_seth(w, fd, to, to->nhd++, HTTP_T_Header, hdr);
+	http_seth(to, to->nhd++, hdr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -867,8 +879,9 @@ void
 http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
 {
 
+	(void)w; 	/* should be used to report losthdr */
+	(void)fd; 	/* should be used to report losthdr */
 	http_PutField(to, HTTP_HDR_PROTO, protocol);
-	WSLH(w, HTTP_T_Protocol, fd, to, HTTP_HDR_PROTO);
 }
 
 void
@@ -876,18 +889,20 @@ http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 {
 	char stat[4];
 
+	(void)w; 	/* should be used to report losthdr */
+	(void)fd; 	/* should be used to report losthdr */
 	assert(status >= 0 && status <= 999);
 	sprintf(stat, "%d", status);
 	http_PutField(to, HTTP_HDR_STATUS, stat);
-	WSLH(w, HTTP_T_Status, fd, to, HTTP_HDR_STATUS);
 }
 
 void
 http_PutResponse(struct worker *w, int fd, struct http *to, const char *response)
 {
 
+	(void)w; 	/* should be used to report losthdr */
+	(void)fd; 	/* should be used to report losthdr */
 	http_PutField(to, HTTP_HDR_RESPONSE, response);
-	WSLH(w, HTTP_T_Response, fd, to, HTTP_HDR_RESPONSE);
 }
 
 void
@@ -909,7 +924,6 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 		to->hd[to->nhd].b = to->ws->f;
 		to->hd[to->nhd].e = to->ws->f + n;
 		WS_Release(to->ws, n + 1);
-		WSLH(w, HTTP_T_Header, fd, to, to->nhd);
 		to->nhd++;
 	}
 }
@@ -924,18 +938,25 @@ http_Write(struct worker *w, struct http *hp, int resp)
 	if (resp) {
 		AN(hp->hd[HTTP_HDR_STATUS].b);
 		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
+		WSLH(w, HTTP_T_Protocol, *w->wfd, hp, HTTP_HDR_PROTO);
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
+		WSLH(w, HTTP_T_Status, *w->wfd, hp, HTTP_HDR_STATUS);
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
+		WSLH(w, HTTP_T_Response, *w->wfd, hp, HTTP_HDR_RESPONSE);
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRK_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
+		WSLH(w, HTTP_T_Request, *w->wfd, hp, HTTP_HDR_REQ);
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
+		WSLH(w, HTTP_T_URL, *w->wfd, hp, HTTP_HDR_URL);
 		l += WRK_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
+		WSLH(w, HTTP_T_Protocol, *w->wfd, hp, HTTP_HDR_PROTO);
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		AN(hp->hd[u].b);
 		AN(hp->hd[u].e);
 		l += WRK_WriteH(w, &hp->hd[u], "\r\n");
+		WSLH(w, HTTP_T_Header, *w->wfd, hp, u);
 	}
 	l += WRK_Write(w, "\r\n", -1);
 	return (l);
