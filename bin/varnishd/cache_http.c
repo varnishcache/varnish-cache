@@ -678,46 +678,6 @@ http_RecvHead(struct http *hp, int fd)
 	return (i);
 }
 
-/*--------------------------------------------------------------------
- * Copy HTTP headers into malloc'ed space.
- */
-
-void
-http_CopyHttp(struct http *to, struct http *fm)
-{
-	unsigned u, l;
-	char *p;
-
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	l = 0;
-	for (u = 0; u < fm->nhd; u++) {
-		if (fm->hd[u].b == NULL)
-			continue;
-		AN(fm->hd[u].e);
-		l += (fm->hd[u].e - fm->hd[u].b) + 1;
-	}
-	p = malloc(l);
-	XXXAN(p);
-	WS_Init(to->ws, p, l);
-	WS_Reserve(to->ws, 0);
-	for (u = 0; u < fm->nhd; u++) {
-		if (fm->hd[u].b == NULL)
-			continue;
-		AN(fm->hd[u].e);
-		assert(*fm->hd[u].e == '\0');
-		l = fm->hd[u].e - fm->hd[u].b;
-		assert(l == strlen(fm->hd[u].b));
-		memcpy(p, fm->hd[u].b, l);
-		to->hd[u].b = p;
-		to->hd[u].e = p + l;
-		*to->hd[u].e = '\0';
-		p += l + 1;
-	}
-	/* XXX: Leave to->ws reserved for now */
-	to->nhd = fm->nhd;
-}
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -831,6 +791,30 @@ http_FilterHeader(struct worker *w, int fd, struct http *to, struct http *fm, un
 #include "http_headers.h"
 #undef HTTPH
 		http_copyheader(w, fd, to, fm, u);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * This function copies any header fields which reference foreign
+ * storage into our own WS.
+ */
+
+void
+http_CopyHome(struct http *hp)
+{
+	unsigned u, l;
+	char *p;
+
+	for (u = 0; u < hp->nhd; u++) {
+		if (hp->hd[u].b == NULL)
+			continue;
+		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
+			continue;
+		l = hp->hd[u].e - hp->hd[u].b;
+		p = WS_Alloc(hp->ws, l + 1);
+		memcpy(p, hp->hd[u].b, l + 1);
+		hp->hd[u].b = p;
+		hp->hd[u].e = p + l;
 	}
 }
 

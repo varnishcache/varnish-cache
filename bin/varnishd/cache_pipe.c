@@ -78,7 +78,8 @@ PipeSession(struct sess *sp)
 	char *b, *e;
 	struct worker *w;
 	struct pollfd fds[2];
-	char wsspc[8192];
+	struct bereq *bereq;
+	struct http *hp;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -88,19 +89,21 @@ PipeSession(struct sess *sp)
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return;
-	w->bereq->logtag = HTTP_Tx;
 
-	http_Setup(w->bereq, wsspc, sizeof wsspc);
+	bereq = vbe_new_bereq();
+	AN(bereq);
+	hp = bereq->http;
+	hp->logtag = HTTP_Tx;
 
-	http_CopyReq(w, vc->fd, w->bereq, sp->http);
-	http_FilterHeader(w, vc->fd, w->bereq, sp->http, HTTPH_R_PIPE);
-	http_PrintfHeader(w, vc->fd, w->bereq, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, w->bereq,
+	http_CopyReq(w, vc->fd, hp, sp->http);
+	http_FilterHeader(w, vc->fd, hp, sp->http, HTTPH_R_PIPE);
+	http_PrintfHeader(w, vc->fd, hp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, hp,
 	    "X-Forwarded-for: %s", sp->addr);
 
 	/* XXX: does this belong in VCL ? */
-	if (!http_GetHdr(w->bereq, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, w->bereq, "Host: %s",
+	if (!http_GetHdr(hp, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, hp, "Host: %s",
 		    sp->backend->hostname);
 	}
 
@@ -110,7 +113,7 @@ PipeSession(struct sess *sp)
 		INCOMPL();
 
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, w->bereq, 0);
+	http_Write(w, hp, 0);
 
 	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
 		WRK_Write(w, b, e - b);
@@ -120,6 +123,10 @@ PipeSession(struct sess *sp)
 		VBE_ClosedFd(sp->wrk, vc, 0);
 		return;
 	}
+
+	vbe_free_bereq(bereq);
+	bereq = NULL;
+	hp = NULL;
 
 	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
 

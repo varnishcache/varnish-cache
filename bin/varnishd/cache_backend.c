@@ -81,22 +81,25 @@ struct bereq *
 vbe_new_bereq(void)
 {
 	struct bereq *bereq;
-	volatile unsigned space;
+	volatile unsigned len;
 
 	LOCK(&vbemtx);
 	bereq = TAILQ_FIRST(&bereq_head);
 	if (bereq != NULL)
 		TAILQ_REMOVE(&bereq_head, bereq, list);
 	UNLOCK(&vbemtx);
-	if (bereq == NULL) {
-		space =  params->mem_workspace;
-		bereq = calloc(sizeof *bereq + space, 1);
+	if (bereq != NULL) {
+		CHECK_OBJ(bereq, BEREQ_MAGIC);
+	} else {
+		len =  params->mem_workspace;
+		bereq = calloc(sizeof *bereq + len, 1);
 		if (bereq == NULL)
 			return (NULL);
 		bereq->magic = BEREQ_MAGIC;
-		WS_Init(bereq->ws, bereq + 1, space);
+		bereq->space = bereq + 1;
+		bereq->len = len;
 	}
-	WS_Reset(bereq->ws);
+	http_Setup(bereq->http, bereq->space, bereq->len);
 	return (bereq);
 }
 
@@ -107,6 +110,7 @@ void
 vbe_free_bereq(struct bereq *bereq)
 {
 
+	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
 	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&bereq_head, bereq, list);
 	UNLOCK(&vbemtx);
@@ -118,22 +122,13 @@ static struct vbe_conn *
 vbe_new_conn(void)
 {
 	struct vbe_conn *vbc;
-	unsigned char *p;
-	volatile unsigned space;
 
-	space =  params->mem_workspace;
-	vbc = calloc(sizeof *vbc + space * 2, 1);
+	vbc = calloc(sizeof *vbc, 1);
 	if (vbc == NULL)
 		return (NULL);
 	VSL_stats->n_vbe_conn++;
 	vbc->magic = VBE_CONN_MAGIC;
-	vbc->bereq = &vbc->http_mem[0];
-	vbc->beresp = &vbc->http_mem[1];
 	vbc->fd = -1;
-	p = (void *)(vbc + 1);
-	http_Setup(vbc->bereq, p, space);
-	p += space;
-	http_Setup(vbc->beresp, p, space);
 	return (vbc);
 }
 
@@ -375,8 +370,6 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
 		AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
-	WS_Reset(vc->bereq->ws);
-	WS_Reset(vc->beresp->ws);
 	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
@@ -393,8 +386,6 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	WS_Reset(vc->bereq->ws);
-	WS_Reset(vc->beresp->ws);
 	LOCK(&vbemtx);
 	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
