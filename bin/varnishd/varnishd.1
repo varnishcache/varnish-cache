@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 26, 2007
+.Dd July 3, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -336,6 +336,8 @@ The active configuration is indicated with an asterisk ("*").
 Create a new configuration named
 .Ar configname
 with the contents of the specified file.
+.It Cm vcl.show Ar configname
+Display the source code for the specified configuration.
 .It Cm vcl.use Ar configname
 Start using the configuration specified by
 .Ar configname
