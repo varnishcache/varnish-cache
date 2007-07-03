@@ -72,17 +72,20 @@ rdf(struct pollfd *fds, int idx)
 }
 
 void
-PipeSession(struct sess *sp, struct bereq *bereq)
+PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
 	char *b, *e;
 	struct worker *w;
+	struct bereq *bereq;
 	struct pollfd fds[2];
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
+	bereq = sp->bereq;
+	sp->bereq = NULL;
 
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)

@@ -439,7 +439,7 @@ void http_CopyHome(struct worker *w, int fd, struct http *hp);
 #undef HTTPH
 
 /* cache_pipe.c */
-void PipeSession(struct sess *sp, struct bereq *bereq);
+void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);
