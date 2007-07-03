@@ -89,7 +89,8 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	xxxassert(ws->f + bytes <= ws->e);
+	if (ws->f + bytes > ws->e)
+		return(NULL);
 	r = ws->f;
 	ws->f += bytes;
 	return (r);
