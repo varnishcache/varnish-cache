@@ -87,19 +87,19 @@ PipeSession(struct sess *sp)
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return;
-	vc->http->logtag = HTTP_Tx;
+	vc->bereq->logtag = HTTP_Tx;
 
-	http_CopyReq(w, vc->fd, vc->http, sp->http);
-	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_PIPE);
-	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, vc->http,
+	http_CopyReq(w, vc->fd, vc->bereq, sp->http);
+	http_FilterHeader(w, vc->fd, vc->bereq, sp->http, HTTPH_R_PIPE);
+	http_PrintfHeader(w, vc->fd, vc->bereq, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, vc->bereq,
 	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(vc->http, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
+	if (!http_GetHdr(vc->bereq, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, vc->bereq, "Host: %s",
 		    sp->backend->hostname);
 	}
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, vc->http, 0);
+	http_Write(w, vc->bereq, 0);
 
 	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
 		WRK_Write(w, b, e - b);

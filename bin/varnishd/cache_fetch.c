@@ -275,20 +275,20 @@ Fetch(struct sess *sp)
 	if (vc == NULL)
 		return (1);
 
-	http_ClrHeader(vc->http);
-	vc->http->logtag = HTTP_Tx;
-	http_GetReq(w, vc->fd, vc->http, sp->http);
-	http_FilterHeader(w, vc->fd, vc->http, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(w, vc->fd, vc->http, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, vc->http,
+	http_ClrHeader(vc->bereq);
+	vc->bereq->logtag = HTTP_Tx;
+	http_GetReq(w, vc->fd, vc->bereq, sp->http);
+	http_FilterHeader(w, vc->fd, vc->bereq, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(w, vc->fd, vc->bereq, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, vc->bereq,
 	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(vc->http, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, vc->http, "Host: %s",
+	if (!http_GetHdr(vc->bereq, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, vc->bereq, "Host: %s",
 		    sp->backend->hostname);
 	}
 
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, vc->http, 0);
+	http_Write(w, vc->bereq, 0);
 	if (WRK_Flush(w)) {
 		/* XXX: cleanup */
 		return (1);
@@ -298,11 +298,11 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
-	if (http_RecvHead(vc->http, vc->fd)) {
+	if (http_RecvHead(vc->bereq, vc->fd)) {
 		/* XXX: cleanup */
 		return (1);
 	}
-	if (http_DissectResponse(sp->wrk, vc->http, vc->fd)) {
+	if (http_DissectResponse(sp->wrk, vc->bereq, vc->fd)) {
 		/* XXX: cleanup */
 		return (1);
 	}
@@ -315,22 +315,22 @@ Fetch(struct sess *sp)
 
 	assert(sp->obj->busy != 0);
 
-	if (http_GetHdr(vc->http, H_Last_Modified, &b))
+	if (http_GetHdr(vc->bereq, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
-	hp = vc->http2;
+	hp = vc->beresp;
 	http_ClrHeader(hp);
 	hp->logtag = HTTP_Obj;
-	http_CopyResp(sp->wrk, sp->fd, hp, vc->http);
-	http_FilterHeader(sp->wrk, sp->fd, hp, vc->http, HTTPH_A_INS);
+	http_CopyResp(sp->wrk, sp->fd, hp, vc->bereq);
+	http_FilterHeader(sp->wrk, sp->fd, hp, vc->bereq, HTTPH_A_INS);
 
 	if (body) {
-		if (http_GetHdr(vc->http, H_Content_Length, &b))
-			cls = fetch_straight(sp, vc->fd, vc->http, b);
-		else if (http_HdrIs(vc->http, H_Transfer_Encoding, "chunked"))
-			cls = fetch_chunked(sp, vc->fd, vc->http);
+		if (http_GetHdr(vc->bereq, H_Content_Length, &b))
+			cls = fetch_straight(sp, vc->fd, vc->bereq, b);
+		else if (http_HdrIs(vc->bereq, H_Transfer_Encoding, "chunked"))
+			cls = fetch_chunked(sp, vc->fd, vc->bereq);
 		else
-			cls = fetch_eof(sp, vc->fd, vc->http);
+			cls = fetch_eof(sp, vc->fd, vc->bereq);
 		http_PrintfHeader(sp->wrk, sp->fd, hp,
 		    "Content-Length: %u", sp->obj->len);
 	} else
@@ -359,7 +359,7 @@ Fetch(struct sess *sp)
 
 	http_CopyHttp(&sp->obj->http, hp);
 
-	if (http_GetHdr(vc->http, H_Connection, &b) && !strcasecmp(b, "close"))
+	if (http_GetHdr(vc->bereq, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)
