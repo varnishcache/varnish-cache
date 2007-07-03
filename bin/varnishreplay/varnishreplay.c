@@ -385,12 +385,14 @@ receive_response(int sock)
 	int status;
 
 	/* Read header */
-	while (1) {
+	for (;;) {
 		line_len = read_line(&line, sock);
+		if (line_len < 0)
+			return (-1);
 		end = line + line_len;
 
-		if (*line == '\r' && *(line + 1) == '\n') {
-			free(line);
+		if (line_len >= 2 && line[0] == '\r' && line[1] == '\n') {
+			freez(line);
 			break;
 		}
 
@@ -405,7 +407,7 @@ receive_response(int sock)
 		else if (isprefix(line, "connection:", end, &next))
 			close_connection = (strstr(next, "close") != NULL);
 
-		free(line);
+		freez(line);
 	}
 
 	thread_log(1, "status: %d\n", status);
@@ -422,30 +424,32 @@ receive_response(int sock)
 	} else if (chunked) {
 		/* Chunked encoding, read size and bytes until no more */
 		thread_log(1, "chunked encoding\n");
-		while (1) {
-			line_len = read_line(&line, sock);
+		for (;;) {
+			if ((line_len = read_line(&line, sock)) < 0)
+				return (-1);
 			end = line + line_len;
 			block_len = strtol(line, &end, 16);
-			if (block_len == 0) {
+			freez(line);
+			if (block_len == 0)
 				break;
-			}
-			n = read_block(block_len, sock);
+			if ((n = read_block(block_len, sock)) < 0)
+				return (-1);
 			thread_log(1, "size of body: %d\n", (int)block_len);
 			thread_log(1, "bytes read: %d\n", n);
-			free(line);
-			n = read_line(&line, sock);
-			free(line);
+			if ((n = read_line(&line, sock)) < 0)
+				return (-1);
+			freez(line);
 		}
 		n = read_line(&line, sock);
-		free(line);
+		freez(line);
 	} else if ((content_length <= 0 && !chunked) || req_failed) {
 		/* No body --> stop reading. */
 		thread_log(1, "no body\n");
-		return (1);
+		return (-1);
 	} else {
 		/* Unhandled case. */
 		thread_log(0, "An error occured\n");
-		return (1);
+		return (-1);
 	}
 
 	return close_connection;
