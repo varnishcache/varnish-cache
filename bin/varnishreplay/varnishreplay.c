@@ -522,7 +522,7 @@ replay_thread(void *arg)
 			 * When the request is sent, call the function for receiving
 			 * the answer.
 			 */
-			if (!(strncmp(df_m, "GET", 3) && strncmp(df_m, "HEAD", 4))) {
+			if (!(strcmp(df_m, "GET") && strcmp(df_m, "HEAD"))) {
 				if (reopen)
 					sock = VSS_connect(addr_info);
 				reopen = 0;
