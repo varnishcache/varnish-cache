@@ -702,8 +702,8 @@ http_copyh(struct http *to, struct http *fm, unsigned n)
 	to->hdf[n] = fm->hdf[n];
 }
 
-void
-http_GetReq(struct http *to, struct http *fm)
+static void
+http_getreq(struct http *to, struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -712,21 +712,6 @@ http_GetReq(struct http *to, struct http *fm)
 	http_copyh(to, fm, HTTP_HDR_URL);
 	http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
 }
-
-void
-http_CopyReq(struct http *to, struct http *fm)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_copyh(to, fm, HTTP_HDR_REQ);
-	http_copyh(to, fm, HTTP_HDR_URL);
-	if (params->backend_http11)
-		http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	else
-		http_copyh(to, fm, HTTP_HDR_PROTO);
-}
-
 
 void
 http_CopyResp(struct http *to, struct http *fm)
@@ -806,7 +791,7 @@ http_FilterHeader(struct sess *sp, unsigned how)
         hp = bereq->http;
         hp->logtag = HTTP_Tx;
 
-	http_GetReq(hp, sp->http);
+	http_getreq(hp, sp->http);
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,

@@ -166,10 +166,6 @@ struct worker {
 	struct srcaddr		*srcaddr;
 	struct acct		acct;
 
-	/* Backend connection space */
-	struct http		bereq[1];
-	struct http		beresp[1];
-
 	unsigned char		*wlp, *wle;
 	unsigned		wlr;
 	unsigned char		wlog[WLOGSPACE];
@@ -407,8 +403,6 @@ const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
-void http_GetReq(struct http *to, struct http *fm);
-void http_CopyReq(struct http *to, struct http *fm);
 void http_CopyResp(struct http *to, struct http *fm);
 void http_SetResp(struct http *to, const char *proto, const char *status, const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
