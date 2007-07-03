@@ -304,3 +304,28 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 	sp->hash_e[l] = '#';
 	sp->hash_e += l + 1;
 }
+
+/*--------------------------------------------------------------------*/
+
+double
+VRT_r_now(struct sess *sp)
+{
+	struct timespec now;
+
+	(void)sp;
+	/* XXX use of clock_gettime() needs review */
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (now.tv_sec);
+}
+
+double
+VRT_r_obj_lastuse(struct sess *sp)
+{
+	struct timespec now;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	/* XXX use of clock_gettime() needs review */
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (now.tv_sec - sp->obj->lru_stamp);
+}
