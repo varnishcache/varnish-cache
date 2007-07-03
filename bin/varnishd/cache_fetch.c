@@ -321,7 +321,7 @@ Fetch(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterHeader(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
+	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (body) {
