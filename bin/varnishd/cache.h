@@ -188,7 +188,8 @@ struct bereq {
 	unsigned		magic;
 #define BEREQ_MAGIC		0x3b6d250c
 	TAILQ_ENTRY(bereq)	list;
-	struct ws		ws[1];
+	void			*space;
+	unsigned		len;
 	struct http		http[1];
 };
 
@@ -198,9 +199,6 @@ struct vbe_conn {
 	TAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
-	struct http		*bereq;
-	struct http		*beresp;
-	struct http		http_mem[2];
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -407,7 +405,6 @@ void HSH_Init(void);
 const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-void http_CopyHttp(struct http *to, struct http *fm);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
 void http_GetReq(struct worker *w, int fd, struct http *to, struct http *fm);
 void http_CopyReq(struct worker *w, int fd, struct http *to, struct http *fm);
@@ -433,6 +430,8 @@ int http_RecvHead(struct http *hp, int fd);
 int http_DissectRequest(struct worker *w, struct http *sp, int fd);
 int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
+void http_CopyHome(struct http *hp);
+
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
 #include "http_headers.h"

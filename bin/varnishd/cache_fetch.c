@@ -260,8 +260,10 @@ Fetch(struct sess *sp)
 	char *b;
 	int cls;
 	int body = 1;		/* XXX */
-	struct http *hp;
+	struct http *hp, *hp2;
 	struct storage *st;
+	struct bereq *bereq;
+	int len;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -275,20 +277,23 @@ Fetch(struct sess *sp)
 	if (vc == NULL)
 		return (1);
 
-	http_ClrHeader(vc->bereq);
-	vc->bereq->logtag = HTTP_Tx;
-	http_GetReq(w, vc->fd, vc->bereq, sp->http);
-	http_FilterHeader(w, vc->fd, vc->bereq, sp->http, HTTPH_R_FETCH);
-	http_PrintfHeader(w, vc->fd, vc->bereq, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(w, vc->fd, vc->bereq,
+	bereq = vbe_new_bereq();
+	AN(bereq);
+	hp = bereq->http;
+	hp->logtag = HTTP_Tx;
+
+	http_GetReq(w, vc->fd, hp, sp->http);
+	http_FilterHeader(w, vc->fd, hp, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(w, vc->fd, hp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, vc->fd, hp,
 	    "X-Forwarded-for: %s", sp->addr);
-	if (!http_GetHdr(vc->bereq, H_Host, &b)) {
-		http_PrintfHeader(w, vc->fd, vc->bereq, "Host: %s",
+	if (!http_GetHdr(hp, H_Host, &b)) {
+		http_PrintfHeader(w, vc->fd, hp, "Host: %s",
 		    sp->backend->hostname);
 	}
 
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, vc->bereq, 0);
+	http_Write(w, hp, 0);
 	if (WRK_Flush(w)) {
 		/* XXX: cleanup */
 		return (1);
@@ -298,11 +303,11 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
-	if (http_RecvHead(vc->bereq, vc->fd)) {
+	if (http_RecvHead(hp, vc->fd)) {
 		/* XXX: cleanup */
 		return (1);
 	}
-	if (http_DissectResponse(sp->wrk, vc->bereq, vc->fd)) {
+	if (http_DissectResponse(sp->wrk, hp, vc->fd)) {
 		/* XXX: cleanup */
 		return (1);
 	}
@@ -315,23 +320,31 @@ Fetch(struct sess *sp)
 
 	assert(sp->obj->busy != 0);
 
-	if (http_GetHdr(vc->bereq, H_Last_Modified, &b))
+	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
-	hp = vc->beresp;
-	http_ClrHeader(hp);
-	hp->logtag = HTTP_Obj;
-	http_CopyResp(sp->wrk, sp->fd, hp, vc->bereq);
-	http_FilterHeader(sp->wrk, sp->fd, hp, vc->bereq, HTTPH_A_INS);
+	/* Filter into object */
+	hp2 = &sp->obj->http;
+	len = hp->rx_e - hp->rx_s;
+	len += 256;		/* margin for content-length etc */
+
+	b = malloc(len);
+	AN(b);
+	http_Setup(hp2, b, len);
+
+	hp2->logtag = HTTP_Obj;
+	http_CopyResp(sp->wrk, sp->fd, hp2, hp);
+	http_FilterHeader(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
+	http_CopyHome(hp2);
 
 	if (body) {
-		if (http_GetHdr(vc->bereq, H_Content_Length, &b))
-			cls = fetch_straight(sp, vc->fd, vc->bereq, b);
-		else if (http_HdrIs(vc->bereq, H_Transfer_Encoding, "chunked"))
-			cls = fetch_chunked(sp, vc->fd, vc->bereq);
+		if (http_GetHdr(hp, H_Content_Length, &b))
+			cls = fetch_straight(sp, vc->fd, hp, b);
+		else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
+			cls = fetch_chunked(sp, vc->fd, hp);
 		else
-			cls = fetch_eof(sp, vc->fd, vc->bereq);
-		http_PrintfHeader(sp->wrk, sp->fd, hp,
+			cls = fetch_eof(sp, vc->fd, hp);
+		http_PrintfHeader(sp->wrk, sp->fd, hp2,
 		    "Content-Length: %u", sp->obj->len);
 	} else
 		cls = 0;
@@ -357,15 +370,14 @@ Fetch(struct sess *sp)
 		assert(uu == sp->obj->len);
 	}
 
-	http_CopyHttp(&sp->obj->http, hp);
-
-	if (http_GetHdr(vc->bereq, H_Connection, &b) && !strcasecmp(b, "close"))
+	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
 	if (cls)
 		VBE_ClosedFd(sp->wrk, vc, 0);
 	else
 		VBE_RecycleFd(sp->wrk, vc);
+	vbe_free_bereq(bereq);
 
 	return (0);
 }
