@@ -278,8 +278,32 @@ DOT errfetch [label="ERROR",shape=plaintext]
 static int
 cnt_fetch(struct sess *sp)
 {
+	struct bereq *bereq;
+	struct http *hp;
+	char *b;
+	int i;
 
-	if (Fetch(sp)) {
+	bereq = vbe_new_bereq();
+	AN(bereq);
+	hp = bereq->http;
+	hp->logtag = HTTP_Tx;
+
+	http_GetReq(sp->wrk, sp->fd, hp, sp->http);
+	http_FilterHeader(sp->wrk, sp->fd, hp, sp->http, HTTPH_R_FETCH);
+	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, hp,
+	    "X-Forwarded-for: %s", sp->addr);
+	if (!http_GetHdr(hp, H_Host, &b)) {
+		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
+		    sp->backend->hostname);
+	}
+	sp->bereq = bereq;
+
+	i = Fetch(sp);
+	vbe_free_bereq(sp->bereq);
+	sp->bereq = NULL;
+
+	if (i) {
 		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
 	} else {
 		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */

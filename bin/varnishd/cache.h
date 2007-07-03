@@ -318,6 +318,7 @@ struct sess {
 	TAILQ_ENTRY(sess)	list;
 
 	struct backend		*backend;
+	struct bereq		*bereq;
 	struct object		*obj;
 	struct VCL_conf		*vcl;
 
