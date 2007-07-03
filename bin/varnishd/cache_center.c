@@ -651,7 +651,8 @@ cnt_pipe(struct sess *sp)
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
 
-	PipeSession(sp, bereq);
+	sp->bereq = bereq;
+	PipeSession(sp);
 	sp->step = STP_DONE;
 	return (0);
 }
