@@ -185,8 +185,8 @@ struct vbe_conn {
 	TAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
-	struct http		*http;
-	struct http		*http2;
+	struct http		*bereq;
+	struct http		*beresp;
 	struct http		http_mem[2];
 };
 

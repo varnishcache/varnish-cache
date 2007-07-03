@@ -89,13 +89,13 @@ vbe_new_conn(void)
 		return (NULL);
 	VSL_stats->n_vbe_conn++;
 	vbc->magic = VBE_CONN_MAGIC;
-	vbc->http = &vbc->http_mem[0];
-	vbc->http2 = &vbc->http_mem[1];
+	vbc->bereq = &vbc->http_mem[0];
+	vbc->beresp = &vbc->http_mem[1];
 	vbc->fd = -1;
 	p = (void *)(vbc + 1);
-	http_Setup(vbc->http, p, space);
+	http_Setup(vbc->bereq, p, space);
 	p += space;
-	http_Setup(vbc->http2, p, space);
+	http_Setup(vbc->beresp, p, space);
 	return (vbc);
 }
 
@@ -337,8 +337,8 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
 		AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
-	WS_Reset(vc->http->ws);
-	WS_Reset(vc->http2->ws);
+	WS_Reset(vc->bereq->ws);
+	WS_Reset(vc->beresp->ws);
 	LOCK(&vbemtx);
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
@@ -355,8 +355,8 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	WS_Reset(vc->http->ws);
-	WS_Reset(vc->http2->ws);
+	WS_Reset(vc->bereq->ws);
+	WS_Reset(vc->beresp->ws);
 	LOCK(&vbemtx);
 	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
