@@ -146,6 +146,12 @@ struct var vcc_vars[] = {
 	    V_RW,
 	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
+	{ "obj.lastuse", TIME, 11,
+	    "VRT_r_obj_lastuse(sp)",
+	    NULL,
+	    V_RO,
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	},
 	{ "resp.proto", STRING, 10,
 	    "VRT_r_resp_proto(sp)",
 	    "VRT_l_resp_proto(sp, ",
@@ -169,6 +175,12 @@ struct var vcc_vars[] = {
 	    "VRT_l_resp_http_(sp, ",
 	    V_RW,
 	    VCL_MET_FETCH
+	},
+	{ "now", TIME, 3,
+	    "VRT_r_now(sp)",
+	    NULL,
+	    V_RO,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
 	{ NULL }
 };
