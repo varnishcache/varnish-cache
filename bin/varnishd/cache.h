@@ -184,6 +184,14 @@ struct workreq {
 
 /* Backend Connection ------------------------------------------------*/
 
+struct bereq {
+	unsigned		magic;
+#define BEREQ_MAGIC		0x3b6d250c
+	TAILQ_ENTRY(bereq)	list;
+	struct ws		ws[1];
+	struct http		http[1];
+};
+
 struct vbe_conn {
 	unsigned		magic;
 #define VBE_CONN_MAGIC		0x0c5e6592
@@ -362,6 +370,8 @@ void VBE_Init(void);
 struct vbe_conn *VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
+struct bereq *vbe_new_bereq(void);
+void vbe_free_bereq(struct bereq *bereq);
 
 /* cache_ban.c */
 void BAN_Init(void);
