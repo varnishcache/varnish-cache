@@ -1,3 +1,9 @@
+varnish (1.1-1) unstable; urgency=low
+
+  * New upstream version
+
+ -- des <des@linpro.no>  Thu,  5 Jul 2007 13:13:54 +0200
+
 varnish (1.0.4-1) unstable; urgency=low
 
   * New upstream version (Closes: #424560)
