@@ -121,7 +121,7 @@ struct var {
 	const char		*rname;
 	const char		*lname;
 	enum {V_RO, V_RW, V_WO}	access;
-	char			ishdr;
+	const char		*hdr;
 	unsigned		methods;
 };
 
@@ -136,7 +136,7 @@ struct method {
 /* vcc_acl.c */
 
 void vcc_Acl(struct tokenlist *tl);
-void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
+void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
 
 /* vcc_action.c */
 void vcc_ParseAction(struct tokenlist *tl);

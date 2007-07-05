@@ -94,7 +94,7 @@ parse_error(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-illegal_assignment(struct tokenlist *tl, const char *type)
+illegal_assignment(const struct tokenlist *tl, const char *type)
 {
 
 	vsb_printf(tl->sb, "Invalid assignment operator ");
@@ -104,7 +104,7 @@ illegal_assignment(struct tokenlist *tl, const char *type)
 }
 
 static void
-check_writebit(struct tokenlist *tl, struct var *vp)
+check_writebit(struct tokenlist *tl, const struct var *vp)
 {
 
 	if (vp->access == V_RW || vp->access == V_WO)
@@ -195,13 +195,12 @@ parse_set(struct tokenlist *tl)
 		vcc_NextToken(tl);
 		Fb(tl, 0, ");\n");
 		break;
-		return;
 	case HASH:
 		ExpectErr(tl, T_INCR);
 		vcc_NextToken(tl);
 		vcc_StringVal(tl);
 		Fb(tl, 0, ");\n");
-		return;
+		break;
 	case STRING:
 		if (tl->t->tok != '=') {
 			illegal_assignment(tl, "strings");
@@ -209,7 +208,7 @@ parse_set(struct tokenlist *tl)
 		}
 		vcc_NextToken(tl);
 		vcc_StringVal(tl);
-		if (vp->ishdr) {
+		if (vp->hdr != NULL) {
 			while (tl->t->tok != ';') {
 				Fb(tl, 0, ", ");
 				vcc_StringVal(tl);
@@ -232,13 +231,13 @@ static void
 parse_remove(struct tokenlist *tl)
 {
 	struct var *vp;
-	struct token *vt;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, VAR);
-	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
-	if (vp->fmt != STRING || !vp->ishdr) {
+	ERRCHK(tl);
+	assert(vp != NULL);
+	if (vp->fmt != STRING || vp->hdr == NULL) {
 		vsb_printf(tl->sb, "Only http header lines can be removed.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;

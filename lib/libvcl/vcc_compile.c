@@ -86,7 +86,7 @@ struct method method_tab[] = {
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
-	{ NULL, 0U }
+	{ NULL, 0U, 0}
 };
 
 /*--------------------------------------------------------------------*/
