@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 2, 2007
+.Dd July 5, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -342,6 +342,12 @@ section for a listing of the default code.
 Although subroutines take no arguments, the necessary information is
 made available to the handler subroutines through global variables.
 .Pp
+The following variables are always available:
+.Bl -tag -width 4n
+.It Va now
+The current time, in seconds since the epoch.
+.El
+.Pp
 The following variables are available in backend declarations:
 .Bl -tag -width 4n
 .It Va backend.host
@@ -363,24 +369,80 @@ The HTTP protocol version used by the client.
 .It Va req.backend
 The backend to use to service the request.
 .It Va req.http. Ns Ar header
-The corresponding
-.Ar header
-from the HTTP request.
+The corresponding HTTP
+.Ar header .
+.El
+.Pp
+The following variables are available while preparing a backend
+request (either for a cache miss or for pass or pipe mode):
+.Bl -tag -width 4n
+.It Va bereq.request
+The request type (e.g. "GET", "HEAD").
+.It Va bereq.url
+The requested URL.
+.It Va bereq.proto
+The HTTP protocol version used to talk to the server.
+.It Va bereq.http. Ns Ar header
+The corresponding HTTP
+.Ar header .
 .El
 .Pp
 The following variables are available after the requested object has
 been retrieved from cache or from the backend:
 .Bl -tag -width 4n
+.It Va obj.proto
+The HTTP protocol version used when the object was retrieved.
+.It Va obj.status
+The HTTP status code returned by the server.
+.It Va obj.response
+The HTTP status message returned by the server.
 .It Va obj.valid
 True if the object was successfully retrieved.
 .It Va obj.cacheable
 True if the object is cacheable.
 .\" XXX what are the criteria?
 .It Va obj.ttl
-The object's time to live.
-.\" .It Va resp.http. Ns Ar header
-.\" XXX not implemented?
+The object's remaining time to live, in seconds.
+.It Va obj.lastuse
+The approximate time elapsed since the object was last requests, in
+seconds.
 .El
+.Pp
+The following variables are available while preparing a response to
+the client:
+.Bl -tag -width 4n
+.It Va resp.proto
+The HTTP protocol version to use for the response.
+.It Va resp.status
+The HTTP status code that will be returned.
+.It Va resp.response
+The HTTP status message that will be returned.
+.It Va resp.http. Ns Ar header
+The corresponding HTTP
+.Ar header .
+.El
+.Pp
+Values may be assigned to variables using the
+.Cm set
+keyword:
+.Bd -literal -offset 4n
+sub vcl_recv {
+    # Normalize the Host: header
+    if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.http.host = "www.example.com";
+    }
+}
+.Ed
+.Pp
+HTTP headers can be removed entirely using the
+.Cm remove
+keyword:
+.Bd -literal -offset 4n
+sub vcl_fetch {
+    # Don't cache cookies
+    remove obj.http.Set-Cookie;
+}
+.Ed
 .Sh EXAMPLES
 The following code is the equivalent of the default configuration with
 the backend address set to "backend.example.com" and no backend port
@@ -435,7 +497,7 @@ sub vcl_fetch {
     if (!obj.cacheable) {
         pass;
     }
-    if (resp.http.Set-Cookie) {
+    if (obj.http.Set-Cookie) {
         pass;
     }
     insert;
@@ -503,7 +565,7 @@ sub vcl_recv {
 }
 
 sub vcl_fetch {
-    if (resp.http.Set-Cookie) {
+    if (obj.http.Set-Cookie) {
         insert;
     }
 }
