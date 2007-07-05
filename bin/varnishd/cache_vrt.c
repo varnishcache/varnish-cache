@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "shmlog.h"
 #include "heritage.h"
@@ -70,10 +71,9 @@ VRT_count(struct sess *sp, unsigned u)
 
 /*--------------------------------------------------------------------*/
 
-char *
-VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
+static struct http *
+vrt_selecthttp(struct sess *sp, enum gethdr_e where)
 {
-	char *p;
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -94,9 +94,41 @@ VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
 		INCOMPL();
 	}
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	return (hp);
+}
+
+char *
+VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
+{
+	char *p;
+	struct http *hp;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	hp = vrt_selecthttp(sp, where);
 	if (!http_GetHdr(hp, n, &p))
 		return (NULL);
 	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, ...)
+{
+	struct http *hp;
+	va_list ap;
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	hp = vrt_selecthttp(sp, where);
+	va_start(ap, hdr);
+	p = va_arg(ap, const char *);
+	if (p == NULL) {
+		http_Unset(hp, hdr);
+	} else {
+		INCOMPL();
+	}
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/

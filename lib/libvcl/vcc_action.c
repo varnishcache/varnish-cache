@@ -104,6 +104,16 @@ illegal_assignment(struct tokenlist *tl, const char *type)
 }
 
 static void
+check_writebit(struct tokenlist *tl, struct var *vp)
+{
+
+	if (vp->access == V_RW || vp->access == V_WO)
+		return;
+	vsb_printf(tl->sb, "Variable %.*s cannot be modified.\n", PF(tl->t));
+	vcc_ErrWhere(tl, tl->t);
+}
+
+static void
 parse_set(struct tokenlist *tl)
 {
 	struct var *vp;
@@ -115,12 +125,8 @@ parse_set(struct tokenlist *tl)
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
 	assert(vp != NULL);
-	if (vp->access != V_RW && vp->access != V_WO) {
-		vsb_printf(tl->sb, "Variable %.*s cannot be written.\n",
-		    PF(vt));
-		vcc_ErrWhere(tl, vt);
-		return;
-	}
+	check_writebit(tl, vp);
+	ERRCHK(tl);
 	Fb(tl, 1, "%s", vp->lname);
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
@@ -215,6 +221,31 @@ parse_set(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_remove(struct tokenlist *tl)
+{
+	struct var *vp;
+	struct token *vt;
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, VAR);
+	vt = tl->t;
+	vp = vcc_FindVar(tl, tl->t, vcc_vars);
+	if (vp->fmt != STRING) {
+		vsb_printf(tl->sb,
+		    "Only STRING variables can be removed.\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	check_writebit(tl, vp);
+	ERRCHK(tl);
+	Fb(tl, 1, "%s, 0);\n", vp->lname);
+	vcc_NextToken(tl);
+	ExpectErr(tl, ';');
+}
+
+/*--------------------------------------------------------------------*/
+
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
@@ -228,6 +259,7 @@ static struct action_table {
 #undef VCL_RET_MAC_E
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
+	{ "remove", 	parse_remove },
 	{ NULL,		NULL }
 };
 
