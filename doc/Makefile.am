@@ -1,6 +1,6 @@
 # $Id$
 
-CHANGELOGS = changes-1.0.4.html
+CHANGELOGS = changes-1.0.4.html changes-1.1.html
 
 EXTRA_DIST = ${CHANGELOGS}
 
