@@ -15,6 +15,7 @@
     <html>
       <head>
 	<title><xsl:call-template name="title"/></title>
+	<link rel="stylesheet" type="text/css" href="changes.css"/>
       </head>
       <body>
 	<h1><xsl:call-template name="title"/></h1>
