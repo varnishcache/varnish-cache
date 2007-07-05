@@ -91,10 +91,16 @@ http2shmlog(struct http *hp, enum httptag t)
 }
 
 static void
-WSLH(struct worker *w, enum httptag t, unsigned xid, struct http *hp, int hdr)
+WSLH(struct worker *w, enum httptag t, unsigned fd, struct http *hp, int hdr)
 {
 
-	WSLR(w, http2shmlog(hp, t), xid, hp->hd[hdr].b, hp->hd[hdr].e);
+	WSLR(w, http2shmlog(hp, t), fd, hp->hd[hdr].b, hp->hd[hdr].e);
+}
+
+void
+http_LogLostHeader(struct worker *w, int fd, struct http *hp, const char *hdr)
+{
+	WSLR(w, http2shmlog(hp, HTTP_T_LostHeader), fd, hdr + 1, hdr + hdr[0]);
 }
 
 /*--------------------------------------------------------------------*/

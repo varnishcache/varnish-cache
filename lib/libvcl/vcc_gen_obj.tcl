@@ -231,6 +231,7 @@ proc vars {v ty pa} {
 			puts $fo  "\t    NULL,"
 		}
 		puts $fo  "\t    V_$a,"
+		puts $fo  "\t    0,"
 		puts $fo  "\t    [method_map [lindex $v 3]]"
 		puts $fo "\t\},"
 

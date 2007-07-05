@@ -93,6 +93,7 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	v->name = p;
 	v->access = V_RW;
 	v->fmt = STRING;
+	v->ishdr = 1;
 	v->methods = vh->methods;
 	if (!memcmp(vh->name, "req.", 4))
 		wh = "HDR_REQ";
@@ -108,7 +109,7 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->rname = p;
-	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\"", wh,
+	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", wh,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->lname = p;

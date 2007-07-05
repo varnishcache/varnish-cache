@@ -121,6 +121,7 @@ struct var {
 	const char		*rname;
 	const char		*lname;
 	enum {V_RO, V_RW, V_WO}	access;
+	char			ishdr;
 	unsigned		methods;
 };
 
