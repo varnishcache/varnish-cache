@@ -81,7 +81,13 @@ VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
 	case HDR_REQ:
 		hp = sp->http;
 		break;
+	case HDR_BEREQ:
+		hp = sp->bereq->http;
+		break;
 	case HDR_RESP:
+		hp = sp->http;
+		break;
+	case HDR_OBJ:
 		hp = &sp->obj->http;
 		break;
 	default:
