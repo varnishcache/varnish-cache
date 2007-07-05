@@ -328,7 +328,7 @@ vcc_CheckAction(struct tokenlist *tl)
 }
 
 static struct procuse *
-vcc_FindIllegalUse(struct proc *p, struct method *m)
+vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 {
 	struct procuse *pu;
 
@@ -339,7 +339,7 @@ vcc_FindIllegalUse(struct proc *p, struct method *m)
 }
 
 static int
-vcc_CheckUseRecurse(struct tokenlist *tl, struct proc *p, struct method *m)
+vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p, struct method *m)
 {
 	struct proccall *pc;
 	struct procuse *pu;

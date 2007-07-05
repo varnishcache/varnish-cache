@@ -15,21 +15,21 @@ struct var vcc_be_vars[] = {
 	    "VRT_l_backend_host(backend, ",
 	    V_WO,
 	    0,
-	    
+	    0
 	},
 	{ "backend.port", PORTNAME, 12,
 	    NULL,
 	    "VRT_l_backend_port(backend, ",
 	    V_WO,
 	    0,
-	    
+	    0
 	},
 	{ "backend.dnsttl", TIME, 14,
 	    NULL,
 	    "VRT_l_backend_dnsttl(backend, ",
 	    V_WO,
 	    0,
-	    
+	    0
 	},
 	{ NULL }
 };
@@ -74,7 +74,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_http_(sp)",
 	    "VRT_l_req_http_(sp, ",
 	    V_RW,
-	    0,
+	    "HDR_REQ",
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
 	},
 	{ "req.hash", HASH, 8,
@@ -116,7 +116,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_bereq_http_(sp)",
 	    "VRT_l_bereq_http_(sp, ",
 	    V_RW,
-	    0,
+	    "HDR_BEREQ",
 	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS
 	},
 	{ "obj.proto", STRING, 9,
@@ -144,7 +144,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_obj_http_(sp)",
 	    "VRT_l_obj_http_(sp, ",
 	    V_RW,
-	    0,
+	    "HDR_OBJ",
 	    VCL_MET_HIT | VCL_MET_FETCH
 	},
 	{ "obj.valid", BOOL, 9,
@@ -200,7 +200,7 @@ struct var vcc_vars[] = {
 	    "VRT_r_resp_http_(sp)",
 	    "VRT_l_resp_http_(sp, ",
 	    V_RW,
-	    0,
+	    "HDR_RESP",
 	    VCL_MET_DELIVER
 	},
 	{ "now", TIME, 3,

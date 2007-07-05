@@ -57,6 +57,7 @@ vcc_StringVal(struct tokenlist *tl)
 	ERRCHK(tl);
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
 	ERRCHK(tl);
+	assert(vp != NULL);
 	switch (vp->fmt) {
 	case STRING:
 		Fb(tl, 0, "%s", vp->rname);
@@ -77,7 +78,6 @@ static struct var *
 HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 {
 	char *p;
-	const char *wh;
 	struct var *v;
 	int i;
 
@@ -93,23 +93,13 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	v->name = p;
 	v->access = V_RW;
 	v->fmt = STRING;
-	v->ishdr = 1;
+	v->hdr = vh->hdr;
 	v->methods = vh->methods;
-	if (!memcmp(vh->name, "req.", 4))
-		wh = "HDR_REQ";
-	else if (!memcmp(vh->name, "resp.", 5))
-		wh = "HDR_RESP";
-	else if (!memcmp(vh->name, "obj.", 4))
-		wh = "HDR_OBJ";
-	else if (!memcmp(vh->name, "bereq.", 6))
-		wh = "HDR_BEREQ";
-	else
-		assert(0 == 1);
-	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", wh,
+	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->rname = p;
-	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", wh,
+	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->lname = p;
