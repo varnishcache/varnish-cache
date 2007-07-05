@@ -209,6 +209,13 @@ parse_set(struct tokenlist *tl)
 		}
 		vcc_NextToken(tl);
 		vcc_StringVal(tl);
+		if (vp->ishdr) {
+			while (tl->t->tok != ';') {
+				Fb(tl, 0, ", ");
+				vcc_StringVal(tl);
+			}
+			Fb(tl, 0, ", 0");
+		}
 		Fb(tl, 0, ");\n");
 		break;
 	default:
@@ -231,17 +238,15 @@ parse_remove(struct tokenlist *tl)
 	ExpectErr(tl, VAR);
 	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, vcc_vars);
-	if (vp->fmt != STRING) {
-		vsb_printf(tl->sb,
-		    "Only STRING variables can be removed.\n");
+	if (vp->fmt != STRING || !vp->ishdr) {
+		vsb_printf(tl->sb, "Only http header lines can be removed.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	check_writebit(tl, vp);
 	ERRCHK(tl);
-	Fb(tl, 1, "%s, 0);\n", vp->lname);
+	Fb(tl, 1, "%s0);\n", vp->lname);
 	vcc_NextToken(tl);
-	ExpectErr(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/

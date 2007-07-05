@@ -428,6 +428,7 @@ int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
+void http_LogLostHeader(struct worker *w, int fd, struct http *hp, const char *hdr);
 
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];

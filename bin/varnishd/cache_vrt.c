@@ -118,6 +118,8 @@ VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, ...)
 	struct http *hp;
 	va_list ap;
 	const char *p;
+	char *b, *e;
+	unsigned u, x;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	hp = vrt_selecthttp(sp, where);
@@ -126,7 +128,32 @@ VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, ...)
 	if (p == NULL) {
 		http_Unset(hp, hdr);
 	} else {
-		INCOMPL();
+		u = WS_Reserve(hp->ws, 0);
+		e = b = hp->ws->f;
+		*e = '\0';
+		x = strlen(hdr + 1);
+		if (x + 1 < u)
+			memcpy(e, hdr + 1, x);
+		e += x;
+		if (1 + 1 < u)
+			*e++ = ' ';
+		while (p != NULL) {
+			x = strlen(p);
+			if (x + 1 < u)
+				memcpy(e, p, x);
+			e += x;
+			p = va_arg(ap, const char *);
+		}
+		*e = '\0';
+		if (e > b + u) {
+			http_LogLostHeader(sp->wrk, sp->fd, hp, hdr);
+			WS_Release(hp->ws, 0);
+			
+		} else {
+			WS_Release(hp->ws, 1 + e - b);
+			http_Unset(hp, hdr);
+			http_SetHeader(sp->wrk, sp->fd, hp, b);
+		}
 	}
 	va_end(ap);
 }
