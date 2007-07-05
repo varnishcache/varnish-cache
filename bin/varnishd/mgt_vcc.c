@@ -122,7 +122,7 @@ static const char *default_vcl =
     "    if (!obj.cacheable) {\n"
     "        pass;\n"
     "    }\n"
-    "    if (resp.http.Set-Cookie) {\n"
+    "    if (obj.http.Set-Cookie) {\n"
     "        pass;\n"
     "    }\n"
     "    insert;\n"
