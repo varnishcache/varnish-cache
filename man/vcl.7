@@ -360,6 +360,9 @@ The following variables are available while processing a request:
 .Bl -tag -width 4n
 .It Va client.ip
 The client's IP address.
+.It Va server.ip
+The IP address of the socket on which the client connection was
+received.
 .It Va req.request
 The request type (e.g. "GET", "HEAD").
 .It Va req.url
