@@ -176,7 +176,7 @@ http_Setup(struct http *hp, void *space, unsigned len)
 
 
 static int
-http_IsHdr(struct http_hdr *hh, char *hdr)
+http_IsHdr(struct http_hdr *hh, const char *hdr)
 {
 	unsigned l;
 
@@ -947,6 +947,22 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 		WS_Release(to->ws, n + 1);
 		to->nhd++;
 	}
+}
+/*--------------------------------------------------------------------*/
+
+void
+http_Unset(struct http *hp, const char *hdr)
+{
+	unsigned u, v;
+
+	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		if (http_IsHdr(&hp->hd[u], hdr)) 
+			continue;
+		if (v != u)
+			memcpy(&hp->hd[v], &hp->hd[u], sizeof hp->hd[v]);
+		v++;
+	}
+	hp->nhd = v;
 }
 
 /*--------------------------------------------------------------------*/

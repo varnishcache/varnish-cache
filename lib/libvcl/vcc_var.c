@@ -108,7 +108,7 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->rname = p;
-	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\")", wh,
+	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\"", wh,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
 	v->lname = p;
