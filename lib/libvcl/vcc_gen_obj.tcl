@@ -56,15 +56,15 @@ set spobj {
 
 	# Request paramters
 	{ req.request
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.url
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.proto
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.http.
@@ -231,7 +231,10 @@ proc vars {v ty pa} {
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
-			if {$t != "HEADER"} {
+			if {$t == "HEADER"} {
+			} elseif {$t == "STRING"} {
+				puts $fp  "void VRT_l_${m}($ty, $tt($t), ...);"
+			} else {
 				puts $fp  "void VRT_l_${m}($ty, $tt($t));"
 			}
 		} else {
