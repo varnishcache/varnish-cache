@@ -155,6 +155,8 @@ parse_set(struct tokenlist *tl)
 				vcc_RateVal(tl);
 			else if (vp->fmt == FLOAT)
 				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
+			else if (vp->fmt == INT)
+				Fb(tl, 0, "%u", vcc_UintVal(tl));
 			else {
 				vsb_printf(tl->sb, "Cannot assign this variable type.\n");
 				vcc_ErrWhere(tl, vt);
