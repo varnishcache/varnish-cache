@@ -205,13 +205,37 @@ VRT_DO_HDR(bereq, url,		sp->bereq->http,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	sp->bereq->http,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	&sp->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	&sp->obj->http,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(resp,  proto,	sp->bereq->http,	HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,  response,	sp->bereq->http,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
 
-#if 0
-VRT_DO_HDR(obj,   status,	&sp->obj->http,		HTTP_HDR_STATUS)
-VRT_DO_HDR(resp,  status,	sp->bereq->http,	HTTP_HDR_STATUS)
-#endif
+void
+VRT_l_obj_status(struct sess *sp, int num)
+{
+	char *p;
+
+	assert(num >= 100 && num <= 999);
+	p = WS_Alloc(sp->obj->http.ws, 4);
+	if (p == NULL)
+		WSL(sp->wrk, SLT_LostHeader, sp->fd, "obj.status");
+	else
+		sprintf(p, "%d", num);
+	http_SetH(&sp->obj->http, HTTP_HDR_STATUS, p);
+}
+
+void
+VRT_l_resp_status(struct sess *sp, int num)
+{
+	char *p;
+
+	assert(num >= 100 && num <= 999);
+	p = WS_Alloc(sp->http->ws, 4);
+	if (p == NULL)
+		WSL(sp->wrk, SLT_LostHeader, sp->fd, "resp.status");
+	else
+		sprintf(p, "%d", num);
+	http_SetH(sp->http, HTTP_HDR_STATUS, p);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
