@@ -208,14 +208,11 @@ parse_set(struct tokenlist *tl)
 		}
 		vcc_NextToken(tl);
 		vcc_StringVal(tl);
-		if (vp->hdr != NULL) {
-			while (tl->t->tok != ';') {
-				Fb(tl, 0, ", ");
-				vcc_StringVal(tl);
-			}
-			Fb(tl, 0, ", 0");
+		while (tl->t->tok != ';') {
+			Fb(tl, 0, ", ");
+			vcc_StringVal(tl);
 		}
-		Fb(tl, 0, ");\n");
+		Fb(tl, 0, ", 0);\n");
 		break;
 	default:
 		vsb_printf(tl->sb,

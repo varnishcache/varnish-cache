@@ -58,7 +58,6 @@ enum httptag {
 	HTTP_T_URL,
 	HTTP_T_Protocol,
 	HTTP_T_Header,
-	HTTP_T_LostHeader,
 };
 
 #define LOGMTX2(ax, bx) 	\
@@ -71,7 +70,6 @@ enum httptag {
 	LOGMTX2(ax, URL),	\
 	LOGMTX2(ax, Protocol),	\
 	LOGMTX2(ax, Header),	\
-	LOGMTX2(ax, LostHeader)	\
 	}
 
 static enum shmlogtag logmtx[3][7] = {
@@ -86,7 +84,7 @@ http2shmlog(struct http *hp, enum httptag t)
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(/* hp->logtag >= HTTP_Rx && */hp->logtag <= HTTP_Obj);
-	assert(/* t >= HTTP_T_Request && */t <= HTTP_T_LostHeader);
+	assert(/* t >= HTTP_T_Request && */t <= HTTP_T_Header);
 	return (logmtx[hp->logtag][t]);
 }
 
@@ -95,12 +93,6 @@ WSLH(struct worker *w, enum httptag t, unsigned fd, struct http *hp, int hdr)
 {
 
 	WSLR(w, http2shmlog(hp, t), fd, hp->hd[hdr].b, hp->hd[hdr].e);
-}
-
-void
-http_LogLostHeader(struct worker *w, int fd, struct http *hp, const char *hdr)
-{
-	WSLR(w, http2shmlog(hp, HTTP_T_LostHeader), fd, hdr + 1, hdr + hdr[0]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -430,7 +422,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 			hp->nhd++;
 		} else {
 			VSL_stats->losthdr++;
-			WSLR(w, http2shmlog(hp, HTTP_T_LostHeader), fd, p, q);
+			WSLR(w, SLT_LostHeader, fd, p, q);
 		}
 	}
 	return (0);
@@ -686,8 +678,8 @@ http_RecvHead(struct http *hp, int fd)
 
 /*--------------------------------------------------------------------*/
 
-static void
-http_seth(struct http *to, unsigned n, const char *fm)
+void
+http_SetH(struct http *to, unsigned n, const char *fm)
 {
 
 	assert(n < HTTP_HDR_MAX);
@@ -715,11 +707,11 @@ http_copyreq(struct http *to, struct http *fm, int forceget)
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (forceget)
-		http_seth(to, HTTP_HDR_REQ, "GET");
+		http_SetH(to, HTTP_HDR_REQ, "GET");
 	else
 		http_copyh(to, fm, HTTP_HDR_REQ);
 	http_copyh(to, fm, HTTP_HDR_URL);
-	http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 }
 
 void
@@ -729,7 +721,7 @@ http_CopyResp(struct http *to, struct http *fm)
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (params->client_http11)
-		http_seth(to, HTTP_HDR_PROTO, "HTTP/1.1");
+		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
 		http_copyh(to, fm, HTTP_HDR_PROTO);
 	http_copyh(to, fm, HTTP_HDR_STATUS);
@@ -741,9 +733,9 @@ http_SetResp(struct http *to, const char *proto, const char *status, const char 
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_seth(to, HTTP_HDR_PROTO, proto);
-	http_seth(to, HTTP_HDR_STATUS, status);
-	http_seth(to, HTTP_HDR_RESPONSE, response);
+	http_SetH(to, HTTP_HDR_PROTO, proto);
+	http_SetH(to, HTTP_HDR_STATUS, status);
+	http_SetH(to, HTTP_HDR_RESPONSE, response);
 }
 
 static void
@@ -760,7 +752,7 @@ http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsi
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
-		WSLH(w, HTTP_T_LostHeader, fd, fm, n);
+		WSLH(w, SLT_LostHeader, fd, fm, n);
 	}
 }
 
@@ -853,7 +845,7 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
-			WSLH(w, HTTP_T_LostHeader, fd, hp, u);
+			WSLH(w, SLT_LostHeader, fd, hp, u);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
@@ -881,10 +873,10 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
-		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", hdr);
+		WSL(w, SLT_LostHeader, fd, "%s", hdr);
 		return;
 	}
-	http_seth(to, to->nhd++, hdr);
+	http_SetH(to, to->nhd++, hdr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -901,7 +893,7 @@ http_PutField(struct worker *w, int fd, struct http *to, int field, const char *
 	l = (e - string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
-		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", string);
+		WSL(w, SLT_LostHeader, fd, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 	} else {
@@ -948,7 +940,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= HTTP_HDR_MAX) {
 		VSL_stats->losthdr++;
-		WSL(w, http2shmlog(to, HTTP_T_LostHeader), fd, "%s", to->ws->f);
+		WSL(w, SLT_LostHeader, fd, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {
 		to->hd[to->nhd].b = to->ws->f;

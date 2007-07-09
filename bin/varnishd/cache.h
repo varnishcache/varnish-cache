@@ -412,6 +412,7 @@ void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
 void http_PutResponse(struct worker *w, int fd, struct http *to, const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
+void http_SetH(struct http *to, unsigned n, const char *fm);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
@@ -428,7 +429,6 @@ int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
-void http_LogLostHeader(struct worker *w, int fd, struct http *hp, const char *hdr);
 
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
