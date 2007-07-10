@@ -200,7 +200,11 @@ parse_set(struct tokenlist *tl)
 	case HASH:
 		ExpectErr(tl, T_INCR);
 		vcc_NextToken(tl);
-		vcc_StringVal(tl);
+		if (!vcc_StringVal(tl)) {
+			ERRCHK(tl);
+			vcc_ExpectedStringval(tl);
+			return;
+		}
 		Fb(tl, 0, ");\n");
 		break;
 	case STRING:
@@ -209,12 +213,22 @@ parse_set(struct tokenlist *tl)
 			return;
 		}
 		vcc_NextToken(tl);
-		vcc_StringVal(tl);
-		while (tl->t->tok != ';') {
-			Fb(tl, 0, ", ");
-			vcc_StringVal(tl);
+		if (!vcc_StringVal(tl)) {
+			ERRCHK(tl);
+			vcc_ExpectedStringval(tl);
+			return;
 		}
-		Fb(tl, 0, ", 0);\n");
+		do 
+			Fb(tl, 0, ", ");
+		while (vcc_StringVal(tl));
+		if (tl->t->tok != ';') {
+			ERRCHK(tl);
+			vsb_printf(tl->sb,
+			    "Expected variable, string or semicolon\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		Fb(tl, 0, "0);\n");
 		break;
 	default:
 		vsb_printf(tl->sb,
