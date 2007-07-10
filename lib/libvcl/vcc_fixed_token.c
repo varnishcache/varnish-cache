@@ -441,6 +441,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_free_backends(struct VCL_conf *cp);\n");
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *be);\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "#define VRT_done(sp, hand)			\\\n");
 	vsb_cat(sb, "	do {					\\\n");

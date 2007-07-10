@@ -66,6 +66,9 @@ vcc_StringVal(struct tokenlist *tl)
 		case STRING:
 			Fb(tl, 0, "%s", vp->rname);
 			break;
+		case IP:
+			Fb(tl, 0, "VRT_IP_string(sp, %s)", vp->rname);
+			break;
 		default:
 			vsb_printf(tl->sb,
 			    "String representation of '%s' not implemented yet.\n",
