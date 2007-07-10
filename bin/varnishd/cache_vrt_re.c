@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <regex.h>
 
@@ -100,13 +101,72 @@ VRT_re_test(struct vsb *sb, const char *re, int sub)
 	return (1);
 }
 
-char *
+const char *
 VRT_regsub(struct sess *sp, const char *str, void *re, const char *sub)
 {
-	static char foo[4] = "FOO";
-	(void)sp;
-	(void)str;
-	(void)re;
-	(void)sub;
-	return (foo);
+	regmatch_t pm[10];
+	regex_t *t;
+	int i, l;
+	char *b, *p, *e;
+	unsigned u, x;
+
+	AN(re);
+	t = re;
+	i = regexec(t, str, 10, pm, 0);
+
+	/* If it didn't match, we can return the original string */
+	if (i == REG_NOMATCH)
+		return(str);
+
+	u = WS_Reserve(sp->http->ws, 0);
+	e = p = b = sp->http->ws->f;
+	e += u;
+
+	/* Copy prefix to match */
+	if (pm[0].rm_so > 0) {
+		if (p + pm[0].rm_so < e)
+			memcpy(p, str, pm[0].rm_so);
+		p += pm[0].rm_so;
+	}
+
+	for ( ; *sub != '\0'; sub++ ) {
+		if (*sub == '&') {
+			l = pm[0].rm_eo - pm[0].rm_so;
+			if (l > 0) {
+				if (p + l < e)
+					memcpy(p, str + pm[0].rm_so, l);
+				p += l;
+			}
+		} else if (*sub == '$' && isdigit(sub[1])) {
+			x = sub[1] - '0';
+			sub++;
+			l = pm[x].rm_eo - pm[x].rm_so;
+			if (l > 0) {
+				if (p + l < e)
+					memcpy(p, str + pm[x].rm_so, l);
+				p += l;
+			}
+		} else {
+			if (p + 1 < e)
+				*p = *sub;
+			p++;
+		}
+	}
+
+	/* Copy suffix to match */
+	l = strlen(str + pm[0].rm_eo);
+	if (l > 0) {
+		if (p + l < e)
+			memcpy(p, str + pm[0].rm_eo, l);
+		p += l;
+	}
+	if (p + 1 < e)
+		*p++ = '\0';
+	xxxassert(p <= e);
+	if (p > e) {
+		WS_Release(sp->http->ws, 0);
+		return (str);
+	} 
+	WS_Release(sp->http->ws, p - b);
+	return (b);
 }
