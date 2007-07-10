@@ -68,7 +68,7 @@ void VRT_re_init(void **, const char *, int sub);
 void VRT_re_fini(void *);
 int VRT_re_match(const char *, void *re);
 int VRT_re_test(struct vsb *, const char *, int sub);
-char *VRT_regsub(struct sess *sp, const char *, void *, const char *);
+const char *VRT_regsub(struct sess *sp, const char *, void *, const char *);
 
 void VRT_count(struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
