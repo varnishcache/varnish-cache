@@ -45,14 +45,14 @@
 #include "cache.h"
 
 void
-VRT_re_init(void **rep, const char *re)
+VRT_re_init(void **rep, const char *re, int sub)
 {
 	regex_t	*t;
 
 	t = calloc(sizeof *t, 1);
 	XXXAN(t);
 	/* This was already check-compiled by the VCL compiler */
-	AZ(regcomp(t, re, REG_EXTENDED | REG_NOSUB));
+	AZ(regcomp(t, re, REG_EXTENDED | (sub ? 0 : REG_NOSUB)));
 	*rep = t;
 }
 
@@ -82,14 +82,14 @@ VRT_re_match(const char *s, void *re)
 }
 
 int
-VRT_re_test(struct vsb *sb, const char *re)
+VRT_re_test(struct vsb *sb, const char *re, int sub)
 {
 	int i;
 	regex_t	t;
 	char buf[BUFSIZ];
 
 	memset(&t, 0, sizeof t);
-	i = regcomp(&t, re, REG_EXTENDED | REG_NOSUB);
+	i = regcomp(&t, re, REG_EXTENDED | (sub ? 0 : REG_NOSUB));
 	if (i == 0) {
 		regfree(&t);
 		return (0);
@@ -98,4 +98,15 @@ VRT_re_test(struct vsb *sb, const char *re)
 	vsb_printf(sb, "Regexp compilation error:\n\n%s\n\n", buf);
 	regfree(&t);
 	return (1);
+}
+
+char *
+VRT_regsub(struct sess *sp, const char *str, void *re, const char *sub)
+{
+	static char foo[4] = "FOO";
+	(void)sp;
+	(void)str;
+	(void)re;
+	(void)sub;
+	return (foo);
 }

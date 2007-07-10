@@ -221,38 +221,16 @@ vcc_RateVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_re(struct tokenlist *tl, const char *str, const struct token *re)
-{
-	char buf[32];
-
-	assert(re->tok == CSTR);
-	if (VRT_re_test(tl->sb, re->dec)) {
-		vcc_ErrWhere(tl, re);
-		return;
-	}
-	sprintf(buf, "VGC_re_%u", tl->recnt++);
-
-	Fb(tl, 1, "VRT_re_match(%s, %s)\n", str, buf);
-	Fh(tl, 0, "void *%s;\n", buf);
-	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
-	EncToken(tl->fi, re);
-	Fi(tl, 0, ");\n");
-	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-static void
 Cond_String(const struct var *vp, struct tokenlist *tl)
 {
+	char *p;
 
 	switch (tl->t->tok) {
 	case '~':
 		vcc_NextToken(tl);
-		ExpectErr(tl, CSTR);
-		vcc_re(tl, vp->rname, tl->t);
+		p = vcc_regexp(tl, 0);
 		vcc_NextToken(tl);
+		Fb(tl, 1, "VRT_re_match(%s, %s)\n", vp->rname, p);
 		break;
 	case T_EQ:
 	case T_NEQ:

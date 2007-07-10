@@ -38,6 +38,75 @@
 #include "vcc_compile.h"
 #include "libvarnish.h"
 
+#include "vrt.h"
+
+/*--------------------------------------------------------------------*/
+
+char *
+vcc_regexp(struct tokenlist *tl, int sub)
+{
+	char buf[32], *p;
+
+	Expect(tl, CSTR);
+	if (VRT_re_test(tl->sb, tl->t->dec, sub)) {
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+	sprintf(buf, "VGC_re_%u", tl->recnt++);
+	p = TlAlloc(tl, strlen(buf) + 1);
+	strcpy(p, buf);
+
+	Fh(tl, 0, "void *%s;\n", buf);
+	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
+	EncToken(tl->fi, tl->t);
+	Fi(tl, 0, ", %d);\n", sub);
+	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
+	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vcc_regsub(struct tokenlist *tl)
+{
+	char *p;
+
+	vcc_NextToken(tl);
+
+	Fb(tl, 0, "VRT_regsub(sp, ");
+
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return (0);
+	}
+
+	Expect(tl, ',');
+	vcc_NextToken(tl);
+	
+	Expect(tl, CSTR);
+	p = vcc_regexp(tl, 1);
+	vcc_NextToken(tl);
+	Fb(tl, 0, ", %s, ", p);
+
+	Expect(tl, ',');
+	vcc_NextToken(tl);
+	
+	Expect(tl, CSTR);
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return (0);
+	}
+
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 0, ")");
+
+	return (1);
+}
+
 /*--------------------------------------------------------------------
  * Parse a string value and emit something that results in a usable
  * "const char *".
@@ -57,6 +126,8 @@ vcc_StringVal(struct tokenlist *tl)
 		vcc_NextToken(tl);
 		return (1);
 	}
+	if (tl->t->tok == ID && vcc_IdIs(tl->t, "regsub"))
+		return (vcc_regsub(tl));
 	if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars);
 		if (tl->err)
