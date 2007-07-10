@@ -85,6 +85,7 @@ void VRT_alloc_backends(struct VCL_conf *cp);
 void VRT_free_backends(struct VCL_conf *cp);
 void VRT_fini_backend(struct backend *be);
 
+char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);
 
 #define VRT_done(sp, hand)			\
 	do {					\

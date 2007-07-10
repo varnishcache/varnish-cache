@@ -472,3 +472,19 @@ VRT_r_obj_lastuse(struct sess *sp)
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	return (now.tv_sec - sp->obj->lru_stamp);
 }
+
+/*--------------------------------------------------------------------*/
+
+char *
+VRT_IP_string(struct sess *sp, struct sockaddr *sa)
+{
+	char h[64], p[8], *q;
+
+	TCP_name(sa, sa->sa_len, h, sizeof h, p, sizeof p);
+	q = WS_Alloc(sp->http->ws, strlen(h) + strlen(p) + 2);
+	AN(q);
+	strcpy(q, h);
+	strcat(q, ":");
+	strcat(q, p);
+	return (q);
+}
