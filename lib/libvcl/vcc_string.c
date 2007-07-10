@@ -38,63 +38,53 @@
 #include "vcc_compile.h"
 #include "libvarnish.h"
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Parse a string value and emit something that results in a usable
+ * "const char *".
+ * There are three possible outcomes:
+ *	tl->err != 0 means something bad happened and a message is emitted.
+ *	return (0) means "could not use this token"
+ *	return (1) means "done"
+ */
 
-static struct var *
-HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
+int
+vcc_StringVal(struct tokenlist *tl) 
 {
-	char *p;
-	struct var *v;
-	int i;
+	struct var *vp;
 
-	(void)tl;
-
-	v = TlAlloc(tl, sizeof *v);
-	assert(v != NULL);
-	i = t->e - t->b;
-	p = TlAlloc(tl, i + 1);
-	assert(p != NULL);
-	memcpy(p, t->b, i);
-	p[i] = '\0';
-	v->name = p;
-	v->access = V_RW;
-	v->fmt = STRING;
-	v->hdr = vh->hdr;
-	v->methods = vh->methods;
-	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
-	AN(p);
-	v->rname = p;
-	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
-	AN(p);
-	v->lname = p;
-	return (v);
-}
-
-/*--------------------------------------------------------------------*/
-
-struct var *
-vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
-{
-	struct var *v;
-
-	for (v = vl; v->name != NULL; v++) {
-		if (v->fmt == HEADER  && (t->e - t->b) <= v->len)
-			continue;
-		if (v->fmt != HEADER  && t->e - t->b != v->len)
-			continue;
-		if (memcmp(t->b, v->name, v->len))
-			continue;
-		vcc_AddUses(tl, v);
-		if (v->fmt != HEADER)
-			return (v);
-		return (HeaderVar(tl, t, v));
+	if (tl->t->tok == CSTR) {
+		EncToken(tl->fb, tl->t);
+		vcc_NextToken(tl);
+		return (1);
 	}
-	vsb_printf(tl->sb, "Unknown variable ");
-	vcc_ErrToken(tl, t);
-	vsb_cat(tl->sb, "\nAt: ");
-	vcc_ErrWhere(tl, t);
-	return (NULL);
+	if (tl->t->tok == VAR) {
+		vp = vcc_FindVar(tl, tl->t, vcc_vars);
+		if (tl->err)
+			return (0);
+		assert(vp != NULL);
+		switch (vp->fmt) {
+		case STRING:
+			Fb(tl, 0, "%s", vp->rname);
+			break;
+		default:
+			vsb_printf(tl->sb,
+			    "String representation of '%s' not implemented yet.\n",
+				vp->name);
+			vcc_ErrWhere(tl, tl->t);
+			return (0);
+		}
+		vcc_NextToken(tl);
+		return (1);
+	}
+	return (0);
 }
 
+void
+vcc_ExpectedStringval(struct tokenlist *tl)
+{
+
+	if (!tl->err) {
+		vsb_printf(tl->sb, "Expected string variable or constant\n");
+		vcc_ErrWhere(tl, tl->t);
+	}
+}
