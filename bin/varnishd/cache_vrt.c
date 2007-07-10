@@ -113,7 +113,7 @@ VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
 /*--------------------------------------------------------------------*/
 
 static char *
-vrt_assemble_string(struct http *hp, const char *p, va_list ap)
+vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 {
 	char *b, *e;
 	unsigned u, x;
@@ -121,6 +121,15 @@ vrt_assemble_string(struct http *hp, const char *p, va_list ap)
 	u = WS_Reserve(hp->ws, 0);
 	e = b = hp->ws->f;
 	*e = '\0';
+	if (h != NULL) {
+		x = strlen(h);
+		if (x + 2 < u) {
+			memcpy(e, h, x);
+			e[x] = ' ';
+			e[x + 1] = '\0';
+		}
+		e += x + 1;
+	}
 	while (p != NULL) {
 		x = strlen(p);
 		if (x + 1 < u)
@@ -141,21 +150,19 @@ vrt_assemble_string(struct http *hp, const char *p, va_list ap)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, ...)
+VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, const char *p, ...)
 {
 	struct http *hp;
 	va_list ap;
-	const char *p;
 	char *b;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	hp = vrt_selecthttp(sp, where);
-	va_start(ap, hdr);
-	p = va_arg(ap, const char *);
+	va_start(ap, p);
 	if (p == NULL) {
 		http_Unset(hp, hdr);
 	} else {
-		b = vrt_assemble_string(hp, p, ap);
+		b = vrt_assemble_string(hp, hdr + 1, p, ap);
 		if (b == NULL) {
 			VSL(SLT_LostHeader, sp->fd, hdr + 1);
 		} else {
@@ -175,7 +182,7 @@ vrt_do_string(struct worker *w, int fd, struct http *hp, int fld, const char *er
 
 	AN(p);
 	AN(hp);
-	b = vrt_assemble_string(hp, p, ap);
+	b = vrt_assemble_string(hp, NULL, p, ap);
 	if (b == NULL) {
 		WSL(w, SLT_LostHeader, fd, err);
 	} else {
