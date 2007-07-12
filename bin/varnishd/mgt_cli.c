@@ -140,6 +140,7 @@ static struct cli_proto *cli_proto;
 /* XXX: what order should this list be in ? */
 static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_PING,		cli_func_ping },
+	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
 	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
 	{ CLI_STATS,		mcf_stats, NULL },

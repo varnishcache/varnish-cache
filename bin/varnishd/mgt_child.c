@@ -445,3 +445,13 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "Child in state %s", ch_state[child_state]);
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+mcf_server_status(struct cli *cli, char **av, void *priv)
+{
+	(void)av;
+	(void)priv;
+	cli_out(cli, "Child is state %s", ch_state[child_state]);
+}

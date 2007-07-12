@@ -211,6 +211,12 @@
 	"\tClose connection",						\
 	0, 0
 
+# define CLI_SERVER_STATUS						\
+	"status",							\
+	"status",							\
+	"\tCheck status of Varnish cache process.",			\
+	0, 0
+
 /*
  * Status/return codes in the CLI protocol
  */
