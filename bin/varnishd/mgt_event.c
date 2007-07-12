@@ -37,10 +37,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "mgt.h"
 #include "mgt_event.h"
 #include "miniobj.h"
@@ -73,19 +69,6 @@ struct evbase {
 	unsigned char		disturbed;
 	unsigned		psig;
 };
-
-/*--------------------------------------------------------------------*/
-
-static double
-ev_now(void)
-{
-	double t;
-	struct timespec ts;
-
-	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
-	t = ts.tv_sec + ts.tv_nsec * 1e-9;
-	return (t);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -265,7 +248,7 @@ ev_add(struct evbase *evb, struct ev *e)
 	e->magic = EV_MAGIC;	/* before binheap_insert() */
 
 	if (e->timeout != 0.0) {
-		e->__when += ev_now() + e->timeout;
+		e->__when += TIM_mono() + e->timeout;
 		binheap_insert(evb->binheap, e);
 		assert(e->__binheap_idx > 0);
 	} else {
@@ -430,7 +413,7 @@ ev_schedule_one(struct evbase *evb)
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, EV_MAGIC);
 		assert(e->__binheap_idx == 1);
-		t = ev_now();
+		t = TIM_mono();
 		if (e->__when <= t)
 			return (ev_sched_timeout(evb, e, t));
 		tmo = (int)((e->__when - t) * 1e3);
@@ -453,7 +436,7 @@ ev_schedule_one(struct evbase *evb)
 		return (ev_sched_signal(evb));
 	if (i == 0) {
 		assert(e != NULL);
-		t = ev_now();
+		t = TIM_mono();
 		if (e->__when <= t)
 			return (ev_sched_timeout(evb, e, t));
 	}
