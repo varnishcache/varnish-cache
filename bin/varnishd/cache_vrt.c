@@ -32,6 +32,9 @@
  */
 
 #include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -480,8 +483,19 @@ char *
 VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 {
 	char h[64], p[8], *q;
+	socklen_t len = 0;
 
-	TCP_name(sa, sa->sa_len, h, sizeof h, p, sizeof p);
+	/* XXX can't rely on sockaddr.sa_len */
+	switch (sa->sa_family) {
+	case AF_INET:
+		len = sizeof(struct sockaddr_in);
+		break;
+	case AF_INET6:
+		len = sizeof(struct sockaddr_in6);
+		break;
+	}
+	XXXAN(len);
+	TCP_name(sa, len, h, sizeof h, p, sizeof p);
 	q = WS_Alloc(sp->http->ws, strlen(h) + strlen(p) + 2);
 	AN(q);
 	strcpy(q, h);
