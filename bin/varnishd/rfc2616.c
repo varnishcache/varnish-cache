@@ -98,12 +98,12 @@
 	ttd = min(ttd, our_clock + hard_upper_ttl)
 #endif
 
-static time_t
+static double
 RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;
-	time_t h_date, h_expires, ttd;
+	double h_date, h_expires, ttd;
 	char *p;
 
 	retirement_age = INT_MAX;

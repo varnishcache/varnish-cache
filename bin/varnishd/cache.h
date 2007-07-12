@@ -131,7 +131,7 @@ struct http {
 /*--------------------------------------------------------------------*/
 
 struct acct {
-	time_t			first;
+	double			first;
 	uint64_t		sess;
 	uint64_t		req;
 	uint64_t		pipe;
@@ -149,7 +149,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
-	time_t			idle;
+	double			idle;
 
 	int			pipe[2];
 
@@ -247,11 +247,11 @@ struct object {
 	unsigned		busy;
 	unsigned		len;
 
-	time_t			age;
-	time_t			entered;
-	time_t			ttl;
+	double			age;
+	double			entered;
+	double			ttl;
 
-	time_t			last_modified;
+	double			last_modified;
 
 	struct http		http;
 	TAILQ_ENTRY(object)	list;
@@ -262,7 +262,7 @@ struct object {
 
 	TAILQ_HEAD(, sess)	waitinglist;
 
-	time_t			lru_stamp;
+	double			lru_stamp;
 	TAILQ_ENTRY(object)	lru;
 };
 
@@ -300,10 +300,10 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 
-	struct timespec		t_open;
-	struct timespec		t_req;
-	struct timespec		t_resp;
-	struct timespec		t_end;
+	double			t_open;
+	double			t_req;
+	double			t_resp;
+	double			t_end;
 
 	enum step		step;
 	unsigned 		handling;
@@ -492,11 +492,11 @@ void VCL_Get(struct VCL_conf **vcc);
 
 /* cache_lru.c */
 // void LRU_Init(void);
-void LRU_Enter(struct object *o, time_t stamp);
+void LRU_Enter(struct object *o, double stamp);
 void LRU_Remove(struct object *o);
 int LRU_DiscardOne(void);
 int LRU_DiscardSpace(int64_t quota);
-int LRU_DiscardTime(time_t cutoff);
+int LRU_DiscardTime(double cutoff);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

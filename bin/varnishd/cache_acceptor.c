@@ -44,10 +44,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
@@ -116,7 +112,7 @@ VCA_Prep(struct sess *sp)
 	TCP_name(sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
-	sp->acct.first = sp->t_open.tv_sec;
+	sp->acct.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
@@ -195,7 +191,7 @@ vca_acct(void *arg)
 
 			sp->fd = i;
 			sp->id = i;
-			(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+			sp->t_open = TIM_real();
 
 			http_RecvPrep(sp->http);
 			sp->step = STP_FIRST;

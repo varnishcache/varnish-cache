@@ -32,10 +32,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"
@@ -75,7 +71,7 @@ res_do_304(struct sess *sp)
 	sp->http->logtag = HTTP_Tx;
 	http_SetResp(sp->http,
 	    "HTTP/1.1", "304", "Not Modified");
-	TIM_format(sp->t_req.tv_sec, lm);
+	TIM_format(sp->t_req, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
@@ -95,12 +91,12 @@ static int
 res_do_conds(struct sess *sp)
 {
 	char *p;
-	time_t ims;
+	double ims;
 
 	if (sp->obj->last_modified > 0 &&
 	    http_GetHdr(sp->http, H_If_Modified_Since, &p)) {
 		ims = TIM_parse(p);
-		if (ims > sp->t_req.tv_sec)	/* [RFC2616 14.25] */
+		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
 		if (sp->obj->last_modified > ims) {
 			return (0);
@@ -134,8 +130,8 @@ RES_BuildHttp(struct sess *sp)
 	else
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %u",
-	    sp->obj->age + sp->t_resp.tv_sec - sp->obj->entered);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %.0f",
+	    sp->obj->age + sp->t_resp - sp->obj->entered);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
@@ -151,7 +147,7 @@ RES_WriteObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
+	sp->t_resp = TIM_real();
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
