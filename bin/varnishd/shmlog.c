@@ -289,7 +289,7 @@ VSL_Init(void)
 	/* XXX more check sanity of loghead  ? */
 	logstart = (unsigned char *)loghead + loghead->start;
 	MTX_INIT(&vsl_mtx);
-	loghead->starttime = time(NULL);
+	loghead->starttime = TIM_real();
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 }
 

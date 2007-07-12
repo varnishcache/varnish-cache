@@ -127,7 +127,7 @@ exp_hangman(void *arg)
 		if (o == NULL) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
-			t = time(NULL);
+			t = TIM_real();
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
@@ -178,7 +178,7 @@ exp_prefetch(void *arg)
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
-			t = time(NULL);
+			t = TIM_real();
 			continue;
 		}
 		binheap_delete(exp_heap, o->heap_idx);
