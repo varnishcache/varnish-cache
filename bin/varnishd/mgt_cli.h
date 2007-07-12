@@ -31,6 +31,7 @@
 
 /* mgt_child.c */
 cli_func_t mcf_server_startstop;
+cli_func_t mcf_server_status;
 
 /* mgt_param.c */
 cli_func_t mcf_param_show;
