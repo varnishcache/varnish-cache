@@ -91,6 +91,7 @@ struct srcaddr {
 	char			addr[TCP_ADDRBUFSIZE];
 	unsigned		nref;
 
+	/* How long to keep entry around.  Inherits timescale from t_open */
 	double			ttl;
 
 	struct acct		acct;
