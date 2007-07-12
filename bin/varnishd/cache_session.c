@@ -91,7 +91,7 @@ struct srcaddr {
 	char			addr[TCP_ADDRBUFSIZE];
 	unsigned		nref;
 
-	time_t			ttl;
+	double			ttl;
 
 	struct acct		acct;
 };
@@ -120,7 +120,7 @@ SES_RefSrcAddr(struct sess *sp)
 	unsigned u, v;
 	struct srcaddr *c, *c2, *c3;
 	struct srcaddrhead *ch;
-	time_t now;
+	double now;
 
 	if (params->srcaddr_ttl == 0) {
 		sp->srcaddr = NULL;
@@ -131,7 +131,7 @@ SES_RefSrcAddr(struct sess *sp)
 	v = u % nsrchash;
 	ch = &srchash[v];
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
-	now = sp->t_open.tv_sec;
+	now = sp->t_open;
 	if (sp->wrk->srcaddr == NULL) {
 		sp->wrk->srcaddr = calloc(sizeof *sp->wrk->srcaddr, 1);
 		XXXAN(sp->wrk->srcaddr);
@@ -233,8 +233,8 @@ SES_Charge(struct sess *sp)
 		b = sp->srcaddr->acct;
 		UNLOCK(&sp->srcaddr->sah->mtx);
 		WSL(sp->wrk, SLT_StatAddr, 0,
-		    "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
-		    sp->srcaddr->addr, sp->t_end.tv_sec - b.first,
+		    "%s 0 %.0f %ju %ju %ju %ju %ju %ju %ju",
+		    sp->srcaddr->addr, sp->t_end - b.first,
 		    b.sess, b.req, b.pipe, b.pass,
 		    b.fetch, b.hdrbytes, b.bodybytes);
 	}
@@ -333,8 +333,8 @@ SES_Delete(struct sess *sp)
 	AZ(sp->vcl);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
-	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port, sp->t_end.tv_sec - b->first,
+	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
+	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->mem_workspace) {

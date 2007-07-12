@@ -381,7 +381,7 @@ wrk_addpools(unsigned t)
 static void *
 wrk_reaperthread(void *priv)
 {
-	time_t	now;
+	double	now;
 	struct worker *w;
 	struct wq *qp;
 	unsigned u;
@@ -392,7 +392,7 @@ wrk_reaperthread(void *priv)
 		sleep(1);
 		if (VSL_stats->n_wrk <= params->wthread_min)
 			continue;
-		now = time(NULL);
+		now = TIM_real();
 		for (u = 0; u < nwq; u++) {
 			qp = wq[u];
 			LOCK(&qp->mtx);

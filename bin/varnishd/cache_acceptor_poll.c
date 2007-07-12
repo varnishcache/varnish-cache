@@ -42,10 +42,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -108,7 +104,7 @@ vca_main(void *arg)
 {
 	unsigned v;
 	struct sess *sp, *sp2;
-	struct timespec ts;
+	double deadline;
 	int i, fd;
 
 	(void)arg;
@@ -125,8 +121,7 @@ vca_main(void *arg)
 			TAILQ_INSERT_TAIL(&sesshead, sp, list);
 			vca_poll(sp->fd);
 		}
-		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec -= params->sess_timeout;
+		deadline = TIM_real() - params->sess_timeout;
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			if (v == 0)
 				break;
@@ -145,10 +140,7 @@ vca_main(void *arg)
 					SES_Delete(sp);
 				continue;
 			}
-			if (sp->t_open.tv_sec > ts.tv_sec)
-				continue;
-			if (sp->t_open.tv_sec == ts.tv_sec &&
-			    sp->t_open.tv_nsec > ts.tv_nsec)
+			if (sp->t_open > deadline)
 				continue;
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_unpoll(fd);

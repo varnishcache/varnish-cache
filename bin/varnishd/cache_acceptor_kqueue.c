@@ -43,10 +43,6 @@
 
 #include <sys/event.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -129,7 +125,7 @@ vca_kqueue_main(void *arg)
 {
 	struct kevent ke[NKEV], *kp;
 	int j, n, dotimer;
-	struct timespec ts;
+	double deadline;
 	struct sess *sp;
 
 	(void)arg;
@@ -160,16 +156,12 @@ vca_kqueue_main(void *arg)
 		}
 		if (!dotimer)
 			continue;
-		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec -= params->sess_timeout;
+		deadline = TIM_real() - params->sess_timeout;
 		for (;;) {
 			sp = TAILQ_FIRST(&sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open.tv_sec > ts.tv_sec)
-				break;
-			if (sp->t_open.tv_sec == ts.tv_sec &&
-			    sp->t_open.tv_nsec > ts.tv_nsec)
+			if (sp->t_open > deadline)
 				break;
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_close_session(sp, "timeout");

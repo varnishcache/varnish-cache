@@ -41,10 +41,6 @@
 
 #include <sys/epoll.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -74,7 +70,7 @@ static void *
 vca_main(void *arg)
 {
 	struct epoll_event ev;
-	struct timespec ts;
+	double deadline;
 	struct sess *sp, *sp2;
 	int i;
 
@@ -108,14 +104,10 @@ vca_main(void *arg)
 			}
 		}
 		/* check for timeouts */
-		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec -= params->sess_timeout;
+		deadline = TIM_real() - params->sess_timeout
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			if (sp->t_open.tv_sec > ts.tv_sec)
-				continue;
-			if (sp->t_open.tv_sec == ts.tv_sec &&
-			    sp->t_open.tv_nsec > ts.tv_nsec)
+			if (sp->t_open > deadline)
 				continue;
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_del(sp->fd);

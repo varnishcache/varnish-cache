@@ -324,11 +324,11 @@ VRT_l_obj_ttl(struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %u",
-	    sp->obj->xid, a, sp->t_req.tv_sec);
+	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %.0f",
+	    sp->obj->xid, a, sp->t_req);
 	if (a < 0)
 		a = 0;
-	sp->obj->ttl = sp->t_req.tv_sec + (int)a;
+	sp->obj->ttl = sp->t_req + a;
 	if (sp->obj->heap_idx != 0)
 		EXP_TTLchange(sp->obj);
 }
@@ -338,7 +338,7 @@ VRT_r_obj_ttl(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->ttl - sp->t_req.tv_sec);
+	return (sp->obj->ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -460,24 +460,18 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 double
 VRT_r_now(struct sess *sp)
 {
-	struct timespec now;
 
 	(void)sp;
-	/* XXX use of clock_gettime() needs review */
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return (now.tv_sec);
+	return (TIM_mono());
 }
 
 double
 VRT_r_obj_lastuse(struct sess *sp)
 {
-	struct timespec now;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	/* XXX use of clock_gettime() needs review */
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return (now.tv_sec - sp->obj->lru_stamp);
+	return (TIM_mono() - sp->obj->lru_stamp);
 }
 
 /*--------------------------------------------------------------------*/
