@@ -50,7 +50,29 @@
 #include <string.h>
 #include <time.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "compat/clock_gettime.h"
+#endif
+
 #include "libvarnish.h"
+
+double
+TIM_mono(void)
+{
+	struct timespec ts;
+
+	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
+}
+
+double
+TIM_real(void)
+{
+	struct timespec ts;
+
+	assert(clock_gettime(CLOCK_REALTIME, &ts) == 0);
+	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
+}
 
 void
 TIM_format(time_t t, char *p)
