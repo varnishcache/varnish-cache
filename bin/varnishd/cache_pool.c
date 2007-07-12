@@ -207,7 +207,7 @@ wrk_thread(void *priv)
 	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
-	w->idle = time(NULL);
+	w->idle = TIM_real();
 	w->wlp = w->wlog;
 	w->wle = w->wlog + sizeof w->wlog;
 	AZ(pipe(w->pipe));

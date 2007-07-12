@@ -303,7 +303,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
-	sp->obj->entered = time(NULL);
+	sp->obj->entered = TIM_real();
 
 	assert(sp->obj->busy != 0);
 
