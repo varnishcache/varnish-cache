@@ -104,7 +104,7 @@ vca_main(void *arg)
 			}
 		}
 		/* check for timeouts */
-		deadline = TIM_real() - params->sess_timeout
+		deadline = TIM_real() - params->sess_timeout;
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			if (sp->t_open > deadline)
