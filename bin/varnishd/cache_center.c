@@ -185,7 +185,7 @@ cnt_done(struct sess *sp)
 	}
 
 	sp->t_end = TIM_real();
-	sp->wrk->idle = sp->t_end;
+	sp->wrk->used = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
@@ -332,7 +332,7 @@ cnt_first(struct sess *sp)
 
 	assert(sp->xid == 0);
 	VCA_Prep(sp);
-	sp->wrk->idle = sp->t_open;
+	sp->wrk->used = sp->t_open;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
@@ -660,7 +660,7 @@ cnt_recv(struct sess *sp)
 	/* Update stats of various sorts */
 	VSL_stats->client_req++;			/* XXX not locked */
 	sp->t_req = TIM_real();
-	sp->wrk->idle = sp->t_req;
+	sp->wrk->used = sp->t_req;
 	sp->wrk->acct.req++;
 
 	/* Assign XID and log */
