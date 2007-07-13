@@ -859,7 +859,7 @@ http_ClrHeader(struct http *to)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	/* XXX ??? to->f = to->v;  Not sure this is valid */
+	/* XXX: don't to->f = to->v;  it would kill pipelining */
 	to->nhd = HTTP_HDR_FIRST;
 	memset(to->hd, 0, sizeof to->hd);
 }
