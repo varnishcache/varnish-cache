@@ -149,7 +149,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
-	double			idle;
+	double			used;
 
 	int			pipe[2];
 

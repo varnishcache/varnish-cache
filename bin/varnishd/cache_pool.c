@@ -46,6 +46,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -181,6 +182,7 @@ wrk_do_one(struct worker *w)
 	struct workreq *wrq;
 
 	AN(w->wrq);
+	w->used = NAN;
 	wrq = w->wrq;
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
@@ -193,6 +195,7 @@ wrk_do_one(struct worker *w)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+	assert(!isnan(w->used));
 	w->wrq = NULL;
 }
 
@@ -207,7 +210,7 @@ wrk_thread(void *priv)
 	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
-	w->idle = TIM_real();
+	w->used = TIM_real();
 	w->wlp = w->wlog;
 	w->wle = w->wlog + sizeof w->wlog;
 	AZ(pipe(w->pipe));
@@ -236,10 +239,10 @@ wrk_thread(void *priv)
 
 		LOCK(&qp->mtx);
 		TAILQ_INSERT_HEAD(&qp->idle, w, list);
-		assert(w->idle != 0);
+		assert(!isnan(w->used));
 		UNLOCK(&qp->mtx);
 		assert(1 == read(w->pipe[0], &c, 1));
-		if (w->idle == 0)
+		if (w->wrq == NULL)
 			break;
 		wrk_do_one(w);
 	}
@@ -398,7 +401,7 @@ wrk_reaperthread(void *priv)
 			LOCK(&qp->mtx);
 			w = TAILQ_LAST(&qp->idle, workerhead);
 			if (w != NULL &&
-			   (w->idle + params->wthread_timeout < now ||
+			   (w->used + params->wthread_timeout < now ||
 			    VSL_stats->n_wrk > params->wthread_max))
 				TAILQ_REMOVE(&qp->idle, w, list);
 			else
@@ -406,7 +409,7 @@ wrk_reaperthread(void *priv)
 			UNLOCK(&qp->mtx);
 			if (w == NULL)
 				continue;
-			w->idle = 0;
+			AZ(w->wrq);
 			assert(1 == write(w->pipe[1], w, 1));
 		}
 	}
