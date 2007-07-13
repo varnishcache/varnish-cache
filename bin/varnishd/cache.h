@@ -360,6 +360,7 @@ void vca_return_session(struct sess *sp);
 void vca_close_session(struct sess *sp, const char *why);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
+extern int vca_pipes[2];
 
 /* cache_backend.c */
 void VBE_Init(void);

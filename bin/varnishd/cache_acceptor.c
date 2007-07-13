@@ -76,6 +76,8 @@ static struct linger	linger;
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
 
+int vca_pipes[2];
+
 static void
 sock_test(int fd)
 {
@@ -255,7 +257,10 @@ vca_return_session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	vca_act->recycle(sp);
+	if (sp->fd < 0)
+		SES_Delete(sp);
+	else
+		 assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 }
 
 
@@ -273,6 +278,7 @@ VCA_Init(void)
 		fprintf(stderr, "No acceptor in program\n");
 		exit (2);
 	}
+	AZ(pipe(vca_pipes));
 	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 }

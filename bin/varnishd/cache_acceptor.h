@@ -32,12 +32,10 @@
 struct sess;
 
 typedef void acceptor_init_f(void);
-typedef void acceptor_recycle_f(struct sess *);
 
 struct acceptor {
 	const char 		*name;
 	acceptor_init_f		*init;
-	acceptor_recycle_f	*recycle;
 };
 
 #if defined(HAVE_EPOLL_CTL)

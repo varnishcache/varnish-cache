@@ -52,7 +52,6 @@ static pthread_t vca_kqueue_thread;
 static int kq = -1;
 
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
-static int pipes[2];
 
 #define NKEV	100
 
@@ -81,9 +80,9 @@ vca_kev(struct kevent *kp)
 	struct sess *ss[NKEV];
 
 	AN(kp->udata);
-	if (kp->udata == pipes) {
+	if (kp->udata == vca_pipes) {
 		j = 0;
-		i = read(pipes[0], ss, sizeof ss);
+		i = read(vca_pipes[0], ss, sizeof ss);
 		if (i == -1 && errno == EAGAIN)
 			return;
 		while (i >= sizeof ss[0]) {
@@ -135,7 +134,7 @@ vca_kqueue_main(void *arg)
 
 	j = 0;
 	EV_SET(&ke[j++], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
-	EV_SET(&ke[j++], pipes[0], EVFILT_READ, EV_ADD, 0, 0, pipes);
+	EV_SET(&ke[j++], vca_pipes[0], EVFILT_READ, EV_ADD, 0, 0, vca_pipes);
 	AZ(kevent(kq, ke, j, NULL, 0, NULL));
 
 	nki = 0;
@@ -173,24 +172,13 @@ vca_kqueue_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_kqueue_recycle(struct sess *sp)
-{
-
-	if (sp->fd < 0)
-		SES_Delete(sp);
-	else
-		assert(write(pipes[1], &sp, sizeof sp) == sizeof sp);
-}
-
-static void
 vca_kqueue_init(void)
 {
 	int i;
 
-	AZ(pipe(pipes));
-	i = fcntl(pipes[0], F_GETFL);
+	i = fcntl(vca_pipes[0], F_GETFL);
 	i |= O_NONBLOCK;
-	i = fcntl(pipes[0], F_SETFL, i);
+	i = fcntl(vca_pipes[0], F_SETFL, i);
 
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
 }
@@ -198,7 +186,6 @@ vca_kqueue_init(void)
 struct acceptor acceptor_kqueue = {
 	.name =		"kqueue",
 	.init =		vca_kqueue_init,
-	.recycle =	vca_kqueue_recycle,
 };
 
 #endif /* defined(HAVE_KQUEUE) */

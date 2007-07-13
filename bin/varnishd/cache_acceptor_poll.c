@@ -51,8 +51,6 @@ static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
 static unsigned npoll;
 
-static int pipes[2];
-
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
 
 /*--------------------------------------------------------------------*/
@@ -109,13 +107,13 @@ vca_main(void *arg)
 
 	(void)arg;
 
-	vca_poll(pipes[0]);
+	vca_poll(vca_pipes[0]);
 
 	while (1) {
 		v = poll(pollfd, npoll, 100);
-		if (v && pollfd[pipes[0]].revents) {
+		if (v && pollfd[vca_pipes[0]].revents) {
 			v--;
-			i = read(pipes[0], &sp, sizeof sp);
+			i = read(vca_pipes[0], &sp, sizeof sp);
 			assert(i == sizeof sp);
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			TAILQ_INSERT_TAIL(&sesshead, sp, list);
@@ -153,26 +151,15 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_poll_recycle(struct sess *sp)
-{
-
-	if (sp->fd < 0)
-		SES_Delete(sp);
-	else
-		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
-}
-
-static void
 vca_poll_init(void)
 {
-	AZ(pipe(pipes));
+
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 
 struct acceptor acceptor_poll = {
 	.name =		"poll",
 	.init =		vca_poll_init,
-	.recycle =	vca_poll_recycle,
 };
 
 #endif /* defined(HAVE_POLL) */
