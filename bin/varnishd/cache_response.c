@@ -147,7 +147,6 @@ RES_WriteObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	sp->t_resp = TIM_real();
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
