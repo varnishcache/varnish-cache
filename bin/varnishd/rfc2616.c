@@ -121,6 +121,14 @@ RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
 			retirement_age = u1 - u2;
 	}
 
+	/*
+	 * XXX: if the backends time is too skewed relative to our own
+	 * XXX: we should blacklist the backend, to avoid getting totally
+	 * XXX: bogus results further down.  Exactly what "too skewed" means
+	 * XXX: in this context is a good question.  It could be determined
+	 * XXX: out according to the backends headers, but a simple fixed
+	 * XXX: tolerance of a minute either way would be more predictable.
+	 */
 	h_date = 0;
 	if (http_GetHdr(hp, H_Date, &p))
 		h_date = TIM_parse(p);
