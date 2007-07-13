@@ -48,7 +48,6 @@
 
 static pthread_t vca_epoll_thread;
 static int epfd = -1;
-static int pipes[2];
 
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
 
@@ -79,12 +78,12 @@ vca_main(void *arg)
 	epfd = epoll_create(16);
 	assert(epfd >= 0);
 
-	vca_add(pipes[0], pipes);
+	vca_add(vca_pipes[0], vca_pipes);
 
 	while (1) {
 		if (epoll_wait(epfd, &ev, 1, 100) > 0) {
-			if (ev.data.ptr == pipes) {
-				i = read(pipes[0], &sp, sizeof sp);
+			if (ev.data.ptr == vca_pipes) {
+				i = read(vca_pipes[0], &sp, sizeof sp);
 				assert(i == sizeof sp);
 				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 				TAILQ_INSERT_TAIL(&sesshead, sp, list);
@@ -120,27 +119,15 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_epoll_recycle(struct sess *sp)
-{
-
-	if (sp->fd < 0)
-		SES_Delete(sp);
-	else
-		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
-}
-
-static void
 vca_epoll_init(void)
 {
 
-	AZ(pipe(pipes));
 	AZ(pthread_create(&vca_epoll_thread, NULL, vca_main, NULL));
 }
 
 struct acceptor acceptor_epoll = {
 	.name =		"epoll",
 	.init =		vca_epoll_init,
-	.recycle =	vca_epoll_recycle,
 };
 
 #endif /* defined(HAVE_EPOLL_CTL) */
