@@ -58,6 +58,7 @@ DOT start -> recv [style=bold,color=green,weight=4]
 
 #include <stdio.h>
 #include <errno.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -196,8 +197,11 @@ cnt_done(struct sess *sp)
 	    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 
 	sp->xid = 0;
-	sp->t_open = sp->t_end;
 	SES_Charge(sp);
+	sp->t_open = sp->t_end;
+	sp->t_req = NAN;
+	sp->t_resp = NAN;
+	sp->t_end = NAN;
 	WSL_Flush(sp->wrk);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);

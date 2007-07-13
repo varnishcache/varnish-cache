@@ -229,6 +229,7 @@ SES_Charge(struct sess *sp)
 
 	ses_sum_acct(&sp->acct, a);
 	if (sp->srcaddr != NULL) {
+		/* XXX: only report once per second ? */
 		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 		LOCK(&sp->srcaddr->sah->mtx);
 		ses_sum_acct(&sp->srcaddr->acct, a);
