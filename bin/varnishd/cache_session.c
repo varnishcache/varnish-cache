@@ -50,6 +50,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
 
@@ -308,6 +309,10 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
 	sp->mysockaddrlen = sizeof(sm->sockaddr[1]);
 	sp->sockaddr->sa_family = sp->mysockaddr->sa_family = PF_UNSPEC;
+	sp->t_open = NAN;
+	sp->t_req = NAN;
+	sp->t_resp = NAN;
+	sp->t_end = NAN;
 
 	assert(len <= sp->sockaddrlen);
 	if (addr != NULL) {
