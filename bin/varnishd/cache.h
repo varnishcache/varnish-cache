@@ -300,6 +300,7 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 
+	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;
 	double			t_req;
 	double			t_resp;
