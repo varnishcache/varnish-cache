@@ -78,8 +78,6 @@ res_do_304(struct sess *sp)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
 	if (sp->doclose != NULL)
 		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
-	WRK_Reset(sp->wrk, &sp->fd);
-	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	sp->wantbody = 0;
 }
 
