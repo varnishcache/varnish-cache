@@ -189,6 +189,12 @@
       <command>varnishncsa</command> can now also process log data
       from backend traffic.</para>
     </change>
+
+    <change type="bug" ref="1531">
+      <para>A bug that would cause <command>varnishncsa</command> to
+      segfault when it encountered an empty HTTP header in the log
+      file has been fixed.</para>
+    </change>
   </subsystem>
 
   <subsystem>
