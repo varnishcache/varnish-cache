@@ -32,6 +32,9 @@
  */
 
 #include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -112,50 +115,135 @@ VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, ...)
+static char *
+vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 {
-	struct http *hp;
-	va_list ap;
-	const char *p;
 	char *b, *e;
 	unsigned u, x;
 
+	u = WS_Reserve(hp->ws, 0);
+	e = b = hp->ws->f;
+	*e = '\0';
+	if (h != NULL) {
+		x = strlen(h);
+		if (x + 2 < u) {
+			memcpy(e, h, x);
+			e[x] = ' ';
+			e[x + 1] = '\0';
+		}
+		e += x + 1;
+	}
+	while (p != NULL) {
+		x = strlen(p);
+		if (x + 1 < u)
+			memcpy(e, p, x);
+		e += x;
+		p = va_arg(ap, const char *);
+	}
+	*e = '\0';
+	if (e > b + u) {
+		WS_Release(hp->ws, 0);
+		return (NULL);
+	} else {
+		WS_Release(hp->ws, 1 + e - b);
+		return (b);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, const char *p, ...)
+{
+	struct http *hp;
+	va_list ap;
+	char *b;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	hp = vrt_selecthttp(sp, where);
-	va_start(ap, hdr);
-	p = va_arg(ap, const char *);
+	va_start(ap, p);
 	if (p == NULL) {
 		http_Unset(hp, hdr);
 	} else {
-		u = WS_Reserve(hp->ws, 0);
-		e = b = hp->ws->f;
-		*e = '\0';
-		x = strlen(hdr + 1);
-		if (x + 1 < u)
-			memcpy(e, hdr + 1, x);
-		e += x;
-		if (1 + 1 < u)
-			*e++ = ' ';
-		while (p != NULL) {
-			x = strlen(p);
-			if (x + 1 < u)
-				memcpy(e, p, x);
-			e += x;
-			p = va_arg(ap, const char *);
-		}
-		*e = '\0';
-		if (e > b + u) {
-			http_LogLostHeader(sp->wrk, sp->fd, hp, hdr);
-			WS_Release(hp->ws, 0);
-			
+		b = vrt_assemble_string(hp, hdr + 1, p, ap);
+		if (b == NULL) {
+			VSL(SLT_LostHeader, sp->fd, hdr + 1);
 		} else {
-			WS_Release(hp->ws, 1 + e - b);
 			http_Unset(hp, hdr);
 			http_SetHeader(sp->wrk, sp->fd, hp, b);
 		}
 	}
 	va_end(ap);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vrt_do_string(struct worker *w, int fd, struct http *hp, int fld, const char *err, const char *p, va_list ap)
+{
+	char *b;
+
+	AN(p);
+	AN(hp);
+	b = vrt_assemble_string(hp, NULL, p, ap);
+	if (b == NULL) {
+		WSL(w, SLT_LostHeader, fd, err);
+	} else {
+		http_SetH(hp, fld, b);
+	}
+	va_end(ap);
+}
+
+#define VRT_DO_HDR(obj, hdr, http, fld)				\
+void								\
+VRT_l_##obj##_##hdr(struct sess *sp, const char *p, ...)	\
+{								\
+	va_list ap;						\
+								\
+	AN(p);							\
+	va_start(ap, p);					\
+	vrt_do_string(sp->wrk, sp->fd,				\
+	    http, fld, #obj "." #hdr, p, ap);			\
+	va_end(ap);						\
+}
+
+VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
+VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
+VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(bereq, request,	sp->bereq->http,	HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, url,		sp->bereq->http,	HTTP_HDR_URL)
+VRT_DO_HDR(bereq, proto,	sp->bereq->http,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,   proto,	&sp->obj->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,   response,	&sp->obj->http,		HTTP_HDR_RESPONSE)
+VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
+
+void
+VRT_l_obj_status(struct sess *sp, int num)
+{
+	char *p;
+
+	assert(num >= 100 && num <= 999);
+	p = WS_Alloc(sp->obj->http.ws, 4);
+	if (p == NULL)
+		WSL(sp->wrk, SLT_LostHeader, sp->fd, "obj.status");
+	else
+		sprintf(p, "%d", num);
+	http_SetH(&sp->obj->http, HTTP_HDR_STATUS, p);
+}
+
+void
+VRT_l_resp_status(struct sess *sp, int num)
+{
+	char *p;
+
+	assert(num >= 100 && num <= 999);
+	p = WS_Alloc(sp->http->ws, 4);
+	if (p == NULL)
+		WSL(sp->wrk, SLT_LostHeader, sp->fd, "resp.status");
+	else
+		sprintf(p, "%d", num);
+	http_SetH(sp->http, HTTP_HDR_STATUS, p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -239,11 +327,11 @@ VRT_l_obj_ttl(struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %u",
-	    sp->obj->xid, a, sp->t_req.tv_sec);
+	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %.0f",
+	    sp->obj->xid, a, sp->t_req);
 	if (a < 0)
 		a = 0;
-	sp->obj->ttl = sp->t_req.tv_sec + (int)a;
+	sp->obj->ttl = sp->t_req + a;
 	if (sp->obj->heap_idx != 0)
 		EXP_TTLchange(sp->obj);
 }
@@ -253,7 +341,7 @@ VRT_r_obj_ttl(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->ttl - sp->t_req.tv_sec);
+	return (sp->obj->ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -375,22 +463,43 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 double
 VRT_r_now(struct sess *sp)
 {
-	struct timespec now;
 
 	(void)sp;
-	/* XXX use of clock_gettime() needs review */
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return (now.tv_sec);
+	return (TIM_mono());
 }
 
 double
 VRT_r_obj_lastuse(struct sess *sp)
 {
-	struct timespec now;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	/* XXX use of clock_gettime() needs review */
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return (now.tv_sec - sp->obj->lru_stamp);
+	return (TIM_mono() - sp->obj->lru_stamp);
+}
+
+/*--------------------------------------------------------------------*/
+
+char *
+VRT_IP_string(struct sess *sp, struct sockaddr *sa)
+{
+	char h[64], p[8], *q;
+	socklen_t len = 0;
+
+	/* XXX can't rely on sockaddr.sa_len */
+	switch (sa->sa_family) {
+	case AF_INET:
+		len = sizeof(struct sockaddr_in);
+		break;
+	case AF_INET6:
+		len = sizeof(struct sockaddr_in6);
+		break;
+	}
+	XXXAN(len);
+	TCP_name(sa, len, h, sizeof h, p, sizeof p);
+	q = WS_Alloc(sp->http->ws, strlen(h) + strlen(p) + 2);
+	AN(q);
+	strcpy(q, h);
+	strcat(q, ":");
+	strcat(q, p);
+	return (q);
 }

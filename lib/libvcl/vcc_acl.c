@@ -30,13 +30,13 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 
 #include "vsb.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "libvarnish.h"
 
 static void
 vcc_acl_top(struct tokenlist *tl, const char *acln)
@@ -108,7 +108,7 @@ vcc_acl_bot(struct tokenlist *tl, const char *acln)
 }
 
 void
-vcc_Cond_Ip(struct var *vp, struct tokenlist *tl)
+vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 {
 	unsigned tcond;
 	char *acln;

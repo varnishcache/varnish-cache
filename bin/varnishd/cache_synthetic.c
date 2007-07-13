@@ -33,10 +33,6 @@
 
 #include <stdlib.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"
@@ -56,7 +52,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	struct vsb vsb;
 	const char *msg;
 	char date[40];
-	time_t now;
+	double now;
 	int fd;
 
 	assert(status >= 100 && status <= 999);
@@ -71,7 +67,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	fd = sp->fd;
 	o = sp->obj;
 	h = &o->http;
-	time(&now);
+	now = TIM_real();
 
 	/* look up HTTP response */
 	msg = http_StatusMessage(status);

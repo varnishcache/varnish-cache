@@ -121,7 +121,7 @@ struct var {
 	const char		*rname;
 	const char		*lname;
 	enum {V_RO, V_RW, V_WO}	access;
-	char			ishdr;
+	const char		*hdr;
 	unsigned		methods;
 };
 
@@ -136,7 +136,7 @@ struct method {
 /* vcc_acl.c */
 
 void vcc_Acl(struct tokenlist *tl);
-void vcc_Cond_Ip(struct var *vp, struct tokenlist *tl);
+void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
 
 /* vcc_action.c */
 void vcc_ParseAction(struct tokenlist *tl);
@@ -167,6 +167,11 @@ void vcc_SizeVal(struct tokenlist *tl);
 unsigned vcc_UintVal(struct tokenlist *tl);
 double vcc_DoubleVal(struct tokenlist *tl);
 
+/* vcc_string.c */
+char *vcc_regexp(struct tokenlist *tl, int sub);
+int vcc_StringVal(struct tokenlist *tl);
+void vcc_ExpectedStringval(struct tokenlist *tl);
+
 /* vcc_token.c */
 void vcc_ErrToken(const struct tokenlist *tl, const struct token *t);
 void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
@@ -180,7 +185,6 @@ void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char 
 void vcc_FreeToken(struct token *t);
 
 /* vcc_var.c */
-void vcc_StringVal(struct tokenlist *tl);
 struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
 
 /* vcc_xref.c */

@@ -50,6 +50,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
 
@@ -91,7 +92,8 @@ struct srcaddr {
 	char			addr[TCP_ADDRBUFSIZE];
 	unsigned		nref;
 
-	time_t			ttl;
+	/* How long to keep entry around.  Inherits timescale from t_open */
+	double			ttl;
 
 	struct acct		acct;
 };
@@ -120,7 +122,7 @@ SES_RefSrcAddr(struct sess *sp)
 	unsigned u, v;
 	struct srcaddr *c, *c2, *c3;
 	struct srcaddrhead *ch;
-	time_t now;
+	double now;
 
 	if (params->srcaddr_ttl == 0) {
 		sp->srcaddr = NULL;
@@ -131,7 +133,7 @@ SES_RefSrcAddr(struct sess *sp)
 	v = u % nsrchash;
 	ch = &srchash[v];
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
-	now = sp->t_open.tv_sec;
+	now = sp->t_open;
 	if (sp->wrk->srcaddr == NULL) {
 		sp->wrk->srcaddr = calloc(sizeof *sp->wrk->srcaddr, 1);
 		XXXAN(sp->wrk->srcaddr);
@@ -227,14 +229,15 @@ SES_Charge(struct sess *sp)
 
 	ses_sum_acct(&sp->acct, a);
 	if (sp->srcaddr != NULL) {
+		/* XXX: only report once per second ? */
 		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 		LOCK(&sp->srcaddr->sah->mtx);
 		ses_sum_acct(&sp->srcaddr->acct, a);
 		b = sp->srcaddr->acct;
 		UNLOCK(&sp->srcaddr->sah->mtx);
 		WSL(sp->wrk, SLT_StatAddr, 0,
-		    "%s 0 %d %ju %ju %ju %ju %ju %ju %ju",
-		    sp->srcaddr->addr, sp->t_end.tv_sec - b.first,
+		    "%s 0 %.0f %ju %ju %ju %ju %ju %ju %ju",
+		    sp->srcaddr->addr, sp->t_end - b.first,
 		    b.sess, b.req, b.pipe, b.pass,
 		    b.fetch, b.hdrbytes, b.bodybytes);
 	}
@@ -307,6 +310,10 @@ SES_New(struct sockaddr *addr, unsigned len)
 	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
 	sp->mysockaddrlen = sizeof(sm->sockaddr[1]);
 	sp->sockaddr->sa_family = sp->mysockaddr->sa_family = PF_UNSPEC;
+	sp->t_open = NAN;
+	sp->t_req = NAN;
+	sp->t_resp = NAN;
+	sp->t_end = NAN;
 
 	assert(len <= sp->sockaddrlen);
 	if (addr != NULL) {
@@ -333,8 +340,8 @@ SES_Delete(struct sess *sp)
 	AZ(sp->vcl);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
-	VSL(SLT_StatSess, sp->id, "%s %s %d %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port, sp->t_end.tv_sec - b->first,
+	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
+	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->mem_workspace) {

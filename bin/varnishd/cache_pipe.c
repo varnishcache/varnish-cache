@@ -38,10 +38,6 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"
@@ -106,7 +102,7 @@ PipeSession(struct sess *sp)
 	vbe_free_bereq(bereq);
 	bereq = NULL;
 
-	clock_gettime(CLOCK_REALTIME, &sp->t_resp);
+	sp->t_resp = TIM_real();
 
 	memset(fds, 0, sizeof fds);
 	fds[0].fd = vc->fd;

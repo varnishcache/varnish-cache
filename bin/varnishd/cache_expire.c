@@ -103,11 +103,11 @@ static void *
 exp_hangman(void *arg)
 {
 	struct object *o;
-	time_t t;
+	double t;
 
 	(void)arg;
 
-	t = time(NULL);
+	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
 		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
@@ -127,7 +127,7 @@ exp_hangman(void *arg)
 		if (o == NULL) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
-			t = time(NULL);
+			t = TIM_real();
 			continue;
 		}
 		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
@@ -153,7 +153,7 @@ exp_prefetch(void *arg)
 {
 	struct worker ww;
 	struct object *o;
-	time_t t;
+	double t;
 	struct sess *sp;
 	struct object *o2;
 
@@ -168,7 +168,7 @@ exp_prefetch(void *arg)
 
 	sleep(10);		/* Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
-	t = time(NULL);
+	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
 		o = binheap_root(exp_heap);
@@ -178,7 +178,7 @@ exp_prefetch(void *arg)
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
-			t = time(NULL);
+			t = TIM_real();
 			continue;
 		}
 		binheap_delete(exp_heap, o->heap_idx);

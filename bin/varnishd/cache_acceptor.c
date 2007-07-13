@@ -44,10 +44,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
@@ -79,6 +75,8 @@ static struct timeval	tv_rcvtimeo;
 static struct linger	linger;
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+
+int vca_pipes[2];
 
 static void
 sock_test(int fd)
@@ -116,7 +114,7 @@ VCA_Prep(struct sess *sp)
 	TCP_name(sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
-	sp->acct.first = sp->t_open.tv_sec;
+	sp->acct.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
@@ -195,7 +193,7 @@ vca_acct(void *arg)
 
 			sp->fd = i;
 			sp->id = i;
-			(void)clock_gettime(CLOCK_REALTIME, &sp->t_open);
+			sp->t_open = TIM_real();
 
 			http_RecvPrep(sp->http);
 			sp->step = STP_FIRST;
@@ -259,7 +257,10 @@ vca_return_session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	vca_act->recycle(sp);
+	if (sp->fd < 0)
+		SES_Delete(sp);
+	else
+		 assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 }
 
 
@@ -277,6 +278,7 @@ VCA_Init(void)
 		fprintf(stderr, "No acceptor in program\n");
 		exit (2);
 	}
+	AZ(pipe(vca_pipes));
 	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 }

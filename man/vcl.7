@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 5, 2007
+.Dd July 13, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -116,6 +116,27 @@ if (client.ip ~ local) {
     pipe;
 }
 .Ed
+.Ss Functions
+The following built-in functions are available:
+.Bl -tag -width indent
+.It Fn regsub "str" "regex" "sub"
+Returns a copy of
+.Fa str
+with all occurrences of the regular expression
+.Fa regex
+replaced with
+.Fa sub .
+Within
+.Fa sub ,
+.Va $0
+(which can also be spelled
+.Va & )
+is replaced with the entire matched string, and
+.Va $n
+is replaced with the contents of subgroup
+.Ar n
+in the matched string.
+.El
 .Ss Subroutines
 A subroutine is used to group code for legibility or reusability:
 .Bd -literal -offset 4n
@@ -145,7 +166,7 @@ other aspects of each request, and to a certain extent decide how the
 request should be handled.
 Each subroutine terminates by calling one of a small number of
 keywords which indicates the desired outcome.
-.Bl -tag -width "vcl_timeout"
+.Bl -tag -width indent
 .\" vcl_recv
 .It Cm vcl_recv
 Called at the beginning of a request, after the complete request has
@@ -156,7 +177,7 @@ do it, and, if applicable, which backend to use.
 The
 .Cm vcl_recv
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -186,7 +207,7 @@ end closes the connection.
 The
 .Cm vcl_pipe
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -205,7 +226,7 @@ handled normally.
 The
 .Cm vcl_pass
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -218,7 +239,7 @@ Currently not used.
 The
 .Cm vcl_hash
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm hash
 Proceed.
 .El
@@ -230,7 +251,7 @@ cache.
 The
 .Cm vcl_hit
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -253,7 +274,7 @@ document from the backend, and which backend to use.
 The
 .Cm vcl_miss
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -274,7 +295,7 @@ backend.
 The
 .Cm vcl_fetch
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -294,7 +315,7 @@ Called before a cached object is delivered to the client.
 The
 .Cm vcl_deliver
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm error Ar code Op Ar reason
 Return the specified error code to the client and abandon the
 request.
@@ -309,7 +330,7 @@ its expiry time.
 The
 .Cm vcl_timeout
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm fetch
 Request a fresh copy of the object from the backend.
 .It Cm discard
@@ -324,7 +345,7 @@ low.
 The
 .Cm vcl_discard
 subroutine may terminate with one of the following keywords:
-.Bl -tag -width "discard"
+.Bl -tag -width indent
 .It Cm discard
 Discard the object.
 .It Cm keep

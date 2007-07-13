@@ -131,7 +131,7 @@ struct http {
 /*--------------------------------------------------------------------*/
 
 struct acct {
-	time_t			first;
+	double			first;
 	uint64_t		sess;
 	uint64_t		req;
 	uint64_t		pipe;
@@ -149,7 +149,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
-	time_t			idle;
+	double			used;
 
 	int			pipe[2];
 
@@ -247,11 +247,11 @@ struct object {
 	unsigned		busy;
 	unsigned		len;
 
-	time_t			age;
-	time_t			entered;
-	time_t			ttl;
+	double			age;
+	double			entered;
+	double			ttl;
 
-	time_t			last_modified;
+	double			last_modified;
 
 	struct http		http;
 	TAILQ_ENTRY(object)	list;
@@ -262,7 +262,7 @@ struct object {
 
 	TAILQ_HEAD(, sess)	waitinglist;
 
-	time_t			lru_stamp;
+	double			lru_stamp;
 	TAILQ_ENTRY(object)	lru;
 };
 
@@ -300,10 +300,11 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 
-	struct timespec		t_open;
-	struct timespec		t_req;
-	struct timespec		t_resp;
-	struct timespec		t_end;
+	/* Timestamps, all on TIM_real() timescale */
+	double			t_open;
+	double			t_req;
+	double			t_resp;
+	double			t_end;
 
 	enum step		step;
 	unsigned 		handling;
@@ -359,6 +360,7 @@ void vca_return_session(struct sess *sp);
 void vca_close_session(struct sess *sp, const char *why);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
+extern int vca_pipes[2];
 
 /* cache_backend.c */
 void VBE_Init(void);
@@ -412,6 +414,7 @@ void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
 void http_PutResponse(struct worker *w, int fd, struct http *to, const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
+void http_SetH(struct http *to, unsigned n, const char *fm);
 void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
@@ -428,7 +431,6 @@ int http_DissectResponse(struct worker *w, struct http *sp, int fd);
 void http_DoConnection(struct sess *sp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
-void http_LogLostHeader(struct worker *w, int fd, struct http *hp, const char *hdr);
 
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
@@ -492,11 +494,11 @@ void VCL_Get(struct VCL_conf **vcc);
 
 /* cache_lru.c */
 // void LRU_Init(void);
-void LRU_Enter(struct object *o, time_t stamp);
+void LRU_Enter(struct object *o, double stamp);
 void LRU_Remove(struct object *o);
 int LRU_DiscardOne(void);
 int LRU_DiscardSpace(int64_t quota);
-int LRU_DiscardTime(time_t cutoff);
+int LRU_DiscardTime(double cutoff);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

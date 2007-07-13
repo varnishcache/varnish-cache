@@ -42,10 +42,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -54,8 +50,6 @@
 static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
 static unsigned npoll;
-
-static int pipes[2];
 
 static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
 
@@ -108,25 +102,24 @@ vca_main(void *arg)
 {
 	unsigned v;
 	struct sess *sp, *sp2;
-	struct timespec ts;
+	double deadline;
 	int i, fd;
 
 	(void)arg;
 
-	vca_poll(pipes[0]);
+	vca_poll(vca_pipes[0]);
 
 	while (1) {
 		v = poll(pollfd, npoll, 100);
-		if (v && pollfd[pipes[0]].revents) {
+		if (v && pollfd[vca_pipes[0]].revents) {
 			v--;
-			i = read(pipes[0], &sp, sizeof sp);
+			i = read(vca_pipes[0], &sp, sizeof sp);
 			assert(i == sizeof sp);
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			TAILQ_INSERT_TAIL(&sesshead, sp, list);
 			vca_poll(sp->fd);
 		}
-		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec -= params->sess_timeout;
+		deadline = TIM_real() - params->sess_timeout;
 		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			if (v == 0)
 				break;
@@ -145,10 +138,7 @@ vca_main(void *arg)
 					SES_Delete(sp);
 				continue;
 			}
-			if (sp->t_open.tv_sec > ts.tv_sec)
-				continue;
-			if (sp->t_open.tv_sec == ts.tv_sec &&
-			    sp->t_open.tv_nsec > ts.tv_nsec)
+			if (sp->t_open > deadline)
 				continue;
 			TAILQ_REMOVE(&sesshead, sp, list);
 			vca_unpoll(fd);
@@ -161,26 +151,15 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_poll_recycle(struct sess *sp)
-{
-
-	if (sp->fd < 0)
-		SES_Delete(sp);
-	else
-		assert(sizeof sp == write(pipes[1], &sp, sizeof sp));
-}
-
-static void
 vca_poll_init(void)
 {
-	AZ(pipe(pipes));
+
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 
 struct acceptor acceptor_poll = {
 	.name =		"poll",
 	.init =		vca_poll_init,
-	.recycle =	vca_poll_recycle,
 };
 
 #endif /* defined(HAVE_POLL) */

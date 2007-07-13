@@ -32,9 +32,9 @@
 
 # Objects available in backends
 set beobj {
-  { backend.host	WO HOSTNAME }
-  { backend.port	WO PORTNAME }
-  { backend.dnsttl	WO TIME	 }
+  { backend.host	WO HOSTNAME	{} }
+  { backend.port	WO PORTNAME	{} }
+  { backend.dnsttl	WO TIME		{} }
 }
 
 # Variables available in sessions
@@ -56,20 +56,21 @@ set spobj {
 
 	# Request paramters
 	{ req.request
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.url
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.proto
-		RO STRING
+		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
 	}
 	{ req.http.
 		RW HEADER
 		{recv pipe pass hash miss hit fetch                        }
+		HDR_REQ
 	}
 
 	# Possibly misnamed, not really part of the request
@@ -98,6 +99,7 @@ set spobj {
 	{ bereq.http.
 		RW HEADER
 		{     pipe pass      miss                                  }
+		HDR_BEREQ
 	}
 
 	# The (possibly) cached object
@@ -116,6 +118,7 @@ set spobj {
 	{ obj.http.
 		RW HEADER
 		{                         hit fetch 			   }
+		HDR_OBJ
 	}
 
 	{ obj.valid
@@ -151,6 +154,7 @@ set spobj {
 	{ resp.http.
 		RW HEADER
 		{                                   deliver                }
+		HDR_RESP
 	}
 
 	# Miscellaneous
@@ -200,6 +204,9 @@ proc method_map {m} {
 		append l " | "
 		append l VCL_MET_[string toupper $i]
 	}
+	if {$l == ""} {
+		return "0"
+	}
 	return [string range $l 3 end]
 }
 
@@ -224,14 +231,21 @@ proc vars {v ty pa} {
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
-			if {$t != "HEADER"} {
+			if {$t == "HEADER"} {
+			} elseif {$t == "STRING"} {
+				puts $fp  "void VRT_l_${m}($ty, $tt($t), ...);"
+			} else {
 				puts $fp  "void VRT_l_${m}($ty, $tt($t));"
 			}
 		} else {
 			puts $fo  "\t    NULL,"
 		}
 		puts $fo  "\t    V_$a,"
-		puts $fo  "\t    0,"
+		if {$t != "HEADER"} {
+			puts $fo  "\t    0,"
+		} else {
+			puts $fo  "\t    \"[lindex $v 4]\","
+		}
 		puts $fo  "\t    [method_map [lindex $v 3]]"
 		puts $fo "\t\},"
 

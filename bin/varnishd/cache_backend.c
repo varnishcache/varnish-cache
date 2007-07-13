@@ -48,10 +48,6 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
-
 #include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
@@ -62,18 +58,6 @@ static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
 
 static MTX vbemtx;
-
-/*--------------------------------------------------------------------*/
-/* XXX: belongs a more general place */
-
-static double
-Uptime(void)
-{
-	struct timespec ts;
-
-	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
-	return (ts.tv_sec + ts.tv_nsec * 1e-9);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -153,7 +137,7 @@ vbe_lookup(struct backend *bp)
 	error = getaddrinfo(bp->hostname,
 	    bp->portname == NULL ? "http" : bp->portname,
 	    &hint, &res);
-	bp->dnstime = Uptime();
+	bp->dnstime = TIM_mono();
 	if (error) {
 		if (res != NULL)
 			freeaddrinfo(res);
@@ -207,7 +191,7 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 		}
 	}
 
-	if (bp->dnstime + bp->dnsttl >= Uptime())
+	if (bp->dnstime + bp->dnsttl >= TIM_mono())
 		return (-1);
 
 	/* Then do another lookup to catch DNS changes */

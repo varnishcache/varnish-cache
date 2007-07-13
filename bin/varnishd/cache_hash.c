@@ -152,7 +152,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 			/* ignore */
 		} else if (o->ttl == 0) {
 			/* Object banned but not reaped yet */
-		} else if (o->ttl <= sp->t_req.tv_sec) {
+		} else if (o->ttl <= sp->t_req) {
 			/* Object expired */
 		} else if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b)) {
 			o->ttl = 0;
@@ -166,7 +166,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 	if (o != NULL) {
 		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
-		LRU_Enter(o, sp->t_req.tv_sec);
+		LRU_Enter(o, sp->t_req);
 		return (o);
 	}
 
@@ -178,7 +178,7 @@ VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 	/* NB: do not deref objhead the new object inherits our reference */
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
-	LRU_Enter(o, sp->t_req.tv_sec);
+	LRU_Enter(o, sp->t_req);
 	return (o);
 }
 

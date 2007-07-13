@@ -58,13 +58,10 @@ DOT start -> recv [style=bold,color=green,weight=4]
 
 #include <stdio.h>
 #include <errno.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -149,6 +146,7 @@ static int
 cnt_deliver(struct sess *sp)
 {
 
+	sp->t_resp = TIM_real();
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	if (sp->handling != VCL_RET_DELIVER) 
@@ -172,16 +170,6 @@ DOT		label="Request completed"
 DOT	]
  */
 
-static double
-cnt_dt(struct timespec *t1, struct timespec *t2)
-{
-	double dt;
-
-	dt = (t2->tv_sec - t1->tv_sec);
-	dt += (t2->tv_nsec - t1->tv_nsec) * 1e-9;
-	return (dt);
-}
-
 static int
 cnt_done(struct sess *sp)
 {
@@ -197,24 +185,24 @@ cnt_done(struct sess *sp)
 		sp->vcl = NULL;
 	}
 
-	clock_gettime(CLOCK_REALTIME, &sp->t_end);
-	sp->wrk->idle = sp->t_end.tv_sec;
+	sp->t_end = TIM_real();
+	sp->wrk->used = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
 	}
-	dp = cnt_dt(&sp->t_req, &sp->t_resp);
-	da = cnt_dt(&sp->t_resp, &sp->t_end);
-	dh = cnt_dt(&sp->t_open, &sp->t_req);
-	WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %ld.%09ld %ld.%09ld %.9f %.9f %.9f",
-	    sp->xid,
-	    (long)sp->t_req.tv_sec, (long)sp->t_req.tv_nsec,
-	    (long)sp->t_end.tv_sec, (long)sp->t_end.tv_nsec,
-	    dh, dp, da);
+	dp = sp->t_resp - sp->t_req;
+	da = sp->t_end - sp->t_resp;
+	dh = sp->t_req - sp->t_open;
+	WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
+	    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 
 	sp->xid = 0;
-	sp->t_open = sp->t_end;
 	SES_Charge(sp);
+	sp->t_open = sp->t_end;
+	sp->t_req = NAN;
+	sp->t_resp = NAN;
+	sp->t_end = NAN;
 	WSL_Flush(sp->wrk);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
@@ -345,7 +333,7 @@ cnt_first(struct sess *sp)
 
 	assert(sp->xid == 0);
 	VCA_Prep(sp);
-	sp->wrk->idle = sp->t_open.tv_sec;
+	sp->wrk->used = sp->t_open;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
@@ -672,8 +660,8 @@ cnt_recv(struct sess *sp)
 
 	/* Update stats of various sorts */
 	VSL_stats->client_req++;			/* XXX not locked */
-	clock_gettime(CLOCK_REALTIME, &sp->t_req);
-	sp->wrk->idle = sp->t_req.tv_sec;
+	sp->t_req = TIM_real();
+	sp->wrk->used = sp->t_req;
 	sp->wrk->acct.req++;
 
 	/* Assign XID and log */

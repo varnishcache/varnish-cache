@@ -155,6 +155,29 @@
       corresponding variable, and strip an HTTP header by using the
       <command>remove</command> keyword.</para>
     </change>
+
+    <change type="enh" ref="1661,1662">
+      <para>VCL scripts can now modify the HTTP status code of cached
+      objects (<varname>obj.status</varname>) and responses
+      (<varname>resp.status</varname>)</para>
+    </change>
+
+    <change type="enh" ref="1663">
+      <para>Numeric and other non-textual variables in VCL can now be
+      assigned to textual variables; they will be converted as
+      needed.</para>
+    </change>
+
+    <change type="enh" ref="1666,1667">
+      <para>VCL scripts can now apply regular expression substitutions
+      to textual variables using the <function>regsub</function>
+      function.</para>
+    </change>
+
+    <change type="enh" ref="1674,1675">
+      <para>A new management command, <command>status</command>,
+      returns the state of the child.</para>
+    </change>
   </subsystem>
 
   <subsystem>
@@ -188,6 +211,12 @@
       <para>In addition to client traffic,
       <command>varnishncsa</command> can now also process log data
       from backend traffic.</para>
+    </change>
+
+    <change type="bug" ref="1531">
+      <para>A bug that would cause <command>varnishncsa</command> to
+      segfault when it encountered an empty HTTP header in the log
+      file has been fixed.</para>
     </change>
   </subsystem>
 

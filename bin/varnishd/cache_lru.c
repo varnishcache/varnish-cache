@@ -71,7 +71,7 @@ LRU_Init(void)
  * if it's already in it and hasn't moved in a while.
  */
 void
-LRU_Enter(struct object *o, time_t stamp)
+LRU_Enter(struct object *o, double stamp)
 {
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -199,7 +199,7 @@ LRU_DiscardSpace(int64_t quota)
  * number of objects that were discarded.
  */
 int
-LRU_DiscardTime(time_t cutoff)
+LRU_DiscardTime(double cutoff)
 {
 	struct object *first = TAILQ_FIRST(&lru_list);
 	struct object *o;

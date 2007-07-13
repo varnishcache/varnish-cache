@@ -64,10 +64,11 @@ void VRT_acl_init(struct vrt_acl *);
 void VRT_acl_fini(struct vrt_acl *);
 
 /* Regexp related */
-void VRT_re_init(void **, const char *);
+void VRT_re_init(void **, const char *, int sub);
 void VRT_re_fini(void *);
 int VRT_re_match(const char *, void *re);
-int VRT_re_test(struct vsb *, const char *);
+int VRT_re_test(struct vsb *, const char *, int sub);
+const char *VRT_regsub(struct sess *sp, const char *, void *, const char *);
 
 void VRT_count(struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
@@ -76,7 +77,7 @@ int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ };
 char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);
-void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, ...);
+void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, const char *, ...);
 void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Backend related */
@@ -85,6 +86,7 @@ void VRT_alloc_backends(struct VCL_conf *cp);
 void VRT_free_backends(struct VCL_conf *cp);
 void VRT_fini_backend(struct backend *be);
 
+char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);
 
 #define VRT_done(sp, hand)			\
 	do {					\
