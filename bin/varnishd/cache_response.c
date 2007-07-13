@@ -69,8 +69,7 @@ res_do_304(struct sess *sp)
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_SetResp(sp->http,
-	    "HTTP/1.1", "304", "Not Modified");
+	http_SetResp(sp->http, "HTTP/1.1", "304", "Not Modified");
 	TIM_format(sp->t_req, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
@@ -81,8 +80,7 @@ res_do_304(struct sess *sp)
 		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
 	WRK_Reset(sp->wrk, &sp->fd);
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
-	if (WRK_Flush(sp->wrk))
-		vca_close_session(sp, "remote closed");
+	sp->wantbody = 0;
 }
 
 /*--------------------------------------------------------------------*/
