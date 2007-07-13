@@ -146,6 +146,7 @@ static int
 cnt_deliver(struct sess *sp)
 {
 
+	sp->t_resp = TIM_real();
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	if (sp->handling != VCL_RET_DELIVER) 
