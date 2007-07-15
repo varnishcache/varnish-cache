@@ -3,6 +3,12 @@
 +libh mgt_event.h
 +libh ../../config.h
 
+-emacro((???),va_arg)   // the va_arg() macro can yield 415, 416, 661, 662
+                        // 796 and 797 (out-of-bounds errors).
+-elib(123)  // size is both a variable and a macro with args
+-emacro(736, isnan)  // isnanf
+
+
 -header(../../config.h)
 
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
