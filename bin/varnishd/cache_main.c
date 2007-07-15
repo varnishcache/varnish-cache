@@ -71,7 +71,7 @@ child_main(void)
 		stevedore->open(stevedore);
 
 	printf("Ready\n");
-	VSL_stats->start_time = TIM_real();
+	VSL_stats->start_time = (time_t)TIM_real();
 
 	CLI_Init();
 
