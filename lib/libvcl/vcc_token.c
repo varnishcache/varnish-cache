@@ -209,7 +209,7 @@ vcc_decstr(struct tokenlist *tl)
 	unsigned char u;
 
 	assert(tl->t->tok == CSTR);
-	tl->t->dec = malloc((tl->t->e - tl->t->b) - 1);
+	tl->t->dec = TlAlloc(tl, (tl->t->e - tl->t->b) - 1);
 	assert(tl->t->dec != NULL);
 	q = tl->t->dec;
 	for (p = tl->t->b + 1; p < tl->t->e - 1; ) {
