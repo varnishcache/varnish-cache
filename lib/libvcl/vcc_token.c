@@ -255,7 +255,7 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 {
 	struct token *t;
 
-	t = calloc(sizeof *t, 1);
+	t = TlAlloc(tl, sizeof *t);
 	assert(t != NULL);
 	t->tok = tok;
 	t->b = b;
