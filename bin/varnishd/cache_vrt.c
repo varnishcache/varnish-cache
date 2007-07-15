@@ -123,28 +123,30 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 
 	u = WS_Reserve(hp->ws, 0);
 	e = b = hp->ws->f;
-	*e = '\0';
+	e += u;
 	if (h != NULL) {
 		x = strlen(h);
-		if (x + 2 < u) {
-			memcpy(e, h, x);
-			e[x] = ' ';
-			e[x + 1] = '\0';
-		}
-		e += x + 1;
+		if (b + x < e)
+			memcpy(b, h, x);
+		b += x;
+		if (b + 1 < e) 
+			*b++ = ' ';
 	}
 	while (p != NULL) {
 		x = strlen(p);
-		if (x + 1 < u)
-			memcpy(e, p, x);
-		e += x;
+		if (b + x < e)
+			memcpy(b, p, x);
+		b += x;
 		p = va_arg(ap, const char *);
 	}
-	*e = '\0';
-	if (e > b + u) {
+	if (b + 1 < e) 
+		*b++ = '\0';
+	if (b > e) {
 		WS_Release(hp->ws, 0);
 		return (NULL);
 	} else {
+		e = b;
+		b = hp->ws->f;
 		WS_Release(hp->ws, 1 + e - b);
 		return (b);
 	}
