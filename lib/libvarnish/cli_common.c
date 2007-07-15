@@ -154,6 +154,7 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	assert(i == CLI_LINE0_LEN);
 	assert(res[3] == ' ');
 	assert(res[CLI_LINE0_LEN - 1] == '\n');
+	res[CLI_LINE0_LEN - 1] = '\0';
 	j = sscanf(res, "%u %u\n", &u, &v);
 	assert(j == 2);
 	if (status != NULL)
