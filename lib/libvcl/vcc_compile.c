@@ -378,6 +378,8 @@ static void
 vcc_destroy_source(struct source *sp)
 {
 
+	if (sp->freeit != NULL)
+		free(sp->freeit);
 	free(sp->name);	
 	free(sp);
 }
@@ -390,6 +392,7 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 	char *f;
 	int i;
 	struct stat st;
+	struct source *sp;
 
 	if (fd < 0) {
 		fd = open(fn, O_RDONLY);
@@ -406,7 +409,9 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 	assert(i == st.st_size);
 	close(fd);
 	f[i] = '\0';
-	return (vcc_new_source(f, f + i, fn));
+	sp = vcc_new_source(f, f + i, fn);
+	sp->freeit = f;
+	return (sp);
 }
 
 /*--------------------------------------------------------------------*/

@@ -45,6 +45,7 @@ struct source {
 	const char		*b;
 	const char		*e;
 	unsigned		idx;
+	char			*freeit;
 };
 
 struct token {
