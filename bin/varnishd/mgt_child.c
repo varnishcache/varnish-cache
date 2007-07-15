@@ -410,6 +410,7 @@ mgt_run(int dflag, const char *T_arg)
 
 	setproctitle("Varnish-Mgr %s", heritage.name);
 
+	memset(&sac, 0, sizeof sac);
 	sac.sa_handler = SIG_IGN;
 	sac.sa_flags = SA_RESTART;
 
