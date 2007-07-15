@@ -317,6 +317,7 @@ smf_init(struct stevedore *parent, const char *spec)
 		return;
 	}
 
+
 	asprintf(&q, "%s/varnish.XXXXXX", p);
 	XXXAN(q);
 	sc->fd = mkstemp(q);
@@ -331,6 +332,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	XXXAN(sc->filename);
 	free(q);
 	smf_initfile(sc, size, 1);
+	free(p);
 }
 
 /*--------------------------------------------------------------------
