@@ -514,6 +514,7 @@ static char *
 vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 {
 	struct membit *mb;
+	struct source *sp;
 	int i;
 
 	while (!TAILQ_EMPTY(&tl->membits)) {
@@ -521,6 +522,11 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 		TAILQ_REMOVE(&tl->membits, mb, list);
 		free(mb->ptr);
 		free(mb);
+	}
+	while (!TAILQ_EMPTY(&tl->sources)) {
+		sp = TAILQ_FIRST(&tl->sources);
+		TAILQ_REMOVE(&tl->sources, sp, list);
+		vcc_destroy_source(sp);
 	}
 		
 	vsb_delete(tl->fh);
@@ -658,7 +664,6 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
-	vcc_destroy_source(sp);
 	return (r);
 }
 
@@ -677,7 +682,6 @@ VCC_CompileFile(struct vsb *sb, const char *fn, int fd)
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
-	vcc_destroy_source(sp);
 	return (r);
 }
 
