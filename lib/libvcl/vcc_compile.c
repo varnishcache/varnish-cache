@@ -95,18 +95,26 @@ static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
-void *
-TlAlloc(struct tokenlist *tl, unsigned len)
+void
+TlFree(struct tokenlist *tl, void *p)
 {
 	struct membit *mb;
-	void *p;
 
-	p = calloc(len, 1);
-	assert(p != NULL);
 	mb = calloc(sizeof *mb, 1);
 	assert(mb != NULL);
 	mb->ptr = p;
 	TAILQ_INSERT_TAIL(&tl->membits, mb, list);
+}
+
+
+void *
+TlAlloc(struct tokenlist *tl, unsigned len)
+{
+	void *p;
+
+	p = calloc(len, 1);
+	assert(p != NULL);
+	TlFree(tl, p);
 	return (p);
 }
 
