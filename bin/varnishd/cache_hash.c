@@ -259,6 +259,7 @@ HSH_Deref(struct object *o)
 	if (o->vary != NULL)
 		free(o->vary);
 
+	LRU_Remove(o);
 	HSH_Freestore(o);
 	FREE_OBJ(o);
 	VSL_stats->n_object--;
