@@ -161,7 +161,7 @@ LRU_DiscardOne(void)
 		}
 	}
 	UNLOCK(&lru_mtx);
-	return (0);
+	return (count);
 }
 
 /*
