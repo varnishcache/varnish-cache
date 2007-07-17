@@ -95,18 +95,26 @@ static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
-void *
-TlAlloc(struct tokenlist *tl, unsigned len)
+void
+TlFree(struct tokenlist *tl, void *p)
 {
 	struct membit *mb;
-	void *p;
 
-	p = calloc(len, 1);
-	assert(p != NULL);
 	mb = calloc(sizeof *mb, 1);
 	assert(mb != NULL);
 	mb->ptr = p;
 	TAILQ_INSERT_TAIL(&tl->membits, mb, list);
+}
+
+
+void *
+TlAlloc(struct tokenlist *tl, unsigned len)
+{
+	void *p;
+
+	p = calloc(len, 1);
+	assert(p != NULL);
+	TlFree(tl, p);
 	return (p);
 }
 
@@ -370,6 +378,8 @@ static void
 vcc_destroy_source(struct source *sp)
 {
 
+	if (sp->freeit != NULL)
+		free(sp->freeit);
 	free(sp->name);	
 	free(sp);
 }
@@ -382,6 +392,7 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 	char *f;
 	int i;
 	struct stat st;
+	struct source *sp;
 
 	if (fd < 0) {
 		fd = open(fn, O_RDONLY);
@@ -398,7 +409,9 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 	assert(i == st.st_size);
 	close(fd);
 	f[i] = '\0';
-	return (vcc_new_source(f, f + i, fn));
+	sp = vcc_new_source(f, f + i, fn);
+	sp->freeit = f;
+	return (sp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -501,6 +514,7 @@ static char *
 vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 {
 	struct membit *mb;
+	struct source *sp;
 	int i;
 
 	while (!TAILQ_EMPTY(&tl->membits)) {
@@ -508,6 +522,11 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 		TAILQ_REMOVE(&tl->membits, mb, list);
 		free(mb->ptr);
 		free(mb);
+	}
+	while (!TAILQ_EMPTY(&tl->sources)) {
+		sp = TAILQ_FIRST(&tl->sources);
+		TAILQ_REMOVE(&tl->sources, sp, list);
+		vcc_destroy_source(sp);
 	}
 		
 	vsb_delete(tl->fh);
@@ -645,7 +664,6 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
-	vcc_destroy_source(sp);
 	return (r);
 }
 
@@ -664,7 +682,6 @@ VCC_CompileFile(struct vsb *sb, const char *fn, int fd)
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
-	vcc_destroy_source(sp);
 	return (r);
 }
 

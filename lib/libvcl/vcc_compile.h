@@ -45,6 +45,7 @@ struct source {
 	const char		*b;
 	const char		*e;
 	unsigned		idx;
+	char			*freeit;
 };
 
 struct token {
@@ -153,6 +154,7 @@ void Fi(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
+void TlFree(struct tokenlist *tl, void *p);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
 /* vcc_obj.c */

@@ -64,10 +64,12 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
+	TlFree(tl, p);
 	v->rname = p;
 	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
 	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
 	AN(p);
+	TlFree(tl, p);
 	v->lname = p;
 	return (v);
 }
