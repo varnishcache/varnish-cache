@@ -130,8 +130,10 @@ open_sockets(void)
 	int good = 0;
 
 	TAILQ_FOREACH_SAFE(ls, &heritage.socks, list, ls2) {
-		if (ls->sock >= 0)
+		if (ls->sock >= 0) {
+			good++;
 			continue;
+		}
 		ls->sock = VSS_listen(ls->addr, params->listen_depth);
 		if (ls->sock < 0) {
 			TAILQ_REMOVE(&heritage.socks, ls, list);
@@ -174,7 +176,7 @@ start_child(void)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (open_sockets()) {
+	if (open_sockets() != 0) {
 		child_state = CH_STOPPED;
 		return;	/* XXX ?? */
 	}
@@ -338,12 +340,12 @@ mgt_sigchld(struct ev *e, int what)
 	child_fds[0] = -1;
 	fprintf(stderr, "Child cleaned\n");
 
-	close_sockets();
 	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
-	else if (child_state == CH_DIED)
+	else if (child_state == CH_DIED) {
+		close_sockets();
 		child_state = CH_STOPPED;
-	else if (child_state == CH_STOPPING)
+	} else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
 	return (0);
 }
