@@ -13,7 +13,6 @@ noinst_HEADERS = \
 	cli_common.h \
 	cli_priv.h \
 	compat/asprintf.h \
-	compat/clock_gettime.h \
 	compat/setproctitle.h \
 	compat/srandomdev.h \
 	compat/strlcat.h \

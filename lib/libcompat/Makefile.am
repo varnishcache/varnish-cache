@@ -6,7 +6,6 @@ noinst_LIBRARIES = libcompat.a
 
 libcompat_a_SOURCES = \
 	asprintf.c \
-	clock_gettime.c \
 	vasprintf.c \
 	setproctitle.c \
 	srandomdev.c \
