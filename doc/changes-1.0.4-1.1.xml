@@ -178,6 +178,10 @@
       <para>A new management command, <command>status</command>,
       returns the state of the child.</para>
     </change>
+
+    <change type="enh" ref="1719-1721">
+      <para>Varnish will now build and run on Mac OS X.</para>
+    </change>
   </subsystem>
 
   <subsystem>
