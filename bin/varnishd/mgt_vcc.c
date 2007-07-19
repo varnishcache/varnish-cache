@@ -181,7 +181,11 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	/* Attempt to open a pipe to the system C-compiler */
 	len = snprintf(buf, sizeof buf,
             "ln -f %s _.c ;"			/* XXX: for debugging */
+#ifdef __APPLE__
+	    "exec cc -dynamiclib -Wl,-flat_namespace,-undefined,suppress -o %s -x c - < %s 2>&1",
+#else
 	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
+#endif
 	    sf, of, sf);
 	xxxassert(len < sizeof buf);
 
@@ -229,7 +233,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		free(of);
 		of = NULL;
 	} else
-		AZ(dlclose(p));
+		(void)dlclose(p);
 
 	/* clean up and return */
 	unlink(sf);

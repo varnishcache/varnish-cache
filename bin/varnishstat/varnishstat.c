@@ -32,6 +32,8 @@
  * Log tailer for Varnish
  */
 
+#include <sys/time.h>
+
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
@@ -41,10 +43,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
 
 #include "libvarnish.h"
 #include "shmlog.h"
@@ -64,7 +62,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 {
 	struct varnish_stats copy;
 	intmax_t ju;
-	struct timespec ts;
+	struct timeval tv;
 	double tt, lt, hit, miss, ratio, up;
 	double a1, a2, a3;
 	unsigned n1, n2, n3;
@@ -86,11 +84,11 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 
 	lt = 0;
 	while (1) {
-		clock_gettime(CLOCK_REALTIME, &ts);
-		tt = ts.tv_nsec * 1e-9 + ts.tv_sec;
+		gettimeofday(&tv, NULL);
+		tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 		lt = tt - lt;
 
-		rt = ts.tv_sec - VSL_stats->start_time;
+		rt = tv.tv_sec - VSL_stats->start_time;
 		up = rt;
 
 		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
@@ -160,11 +158,11 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 static void
 do_once(struct varnish_stats *VSL_stats)
 {
-	struct timespec ts;
+	struct timeval tv;
 	double up;
 
-	clock_gettime(CLOCK_REALTIME, &ts);
-	up = ts.tv_sec - VSL_stats->start_time;
+	gettimeofday(&tv, NULL);
+	up = tv.tv_sec - VSL_stats->start_time;
 
 #define MAC_STAT(n, t, f, d) \
 	do { \

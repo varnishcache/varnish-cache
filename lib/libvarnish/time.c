@@ -46,32 +46,44 @@
  *
  */
 
+#include <sys/time.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
 
 #include "libvarnish.h"
 
 double
 TIM_mono(void)
 {
+#ifdef HAVE_CLOCK_GETTIME
 	struct timespec ts;
 
 	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
+#else
+	struct timeval tv;
+
+	assert(gettimeofday(&tv, NULL) == 0);
+	return (tv.tv_sec + 1e-6 * tv.tv_usec);
+#endif
 }
 
 double
 TIM_real(void)
 {
+#ifdef HAVE_CLOCK_GETTIME
 	struct timespec ts;
 
 	assert(clock_gettime(CLOCK_REALTIME, &ts) == 0);
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
+#else
+	struct timeval tv;
+
+	assert(gettimeofday(&tv, NULL) == 0);
+	return (tv.tv_sec + 1e-6 * tv.tv_usec);
+#endif
 }
 
 void
@@ -85,9 +97,10 @@ TIM_format(time_t t, char *p)
 
 /* XXX: add statistics ? */
 static const char *fmts[] = {
-	"%a, %d %b %Y %T GMT",	/* RFC 822 & RFC1123 */
-	"%A, %d-%b-%y %T GMT",	/* RFC850 */
+	"%a, %d %b %Y %T GMT",	/* RFC 822 & RFC 1123 */
+	"%A, %d-%b-%y %T GMT",	/* RFC 850 */
 	"%a %b %d %T %Y",	/* ANSI-C asctime() */
+	"%F %T",		/* ISO 8601 */
 	NULL
 };
 

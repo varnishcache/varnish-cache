@@ -56,7 +56,7 @@ vcc_regexp(struct tokenlist *tl, int sub)
 	p = TlAlloc(tl, strlen(buf) + 1);
 	strcpy(p, buf);
 
-	Fh(tl, 0, "void *%s;\n", buf);
+	Fh(tl, 0, "static void *%s;\n", buf);
 	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
 	EncToken(tl->fi, tl->t);
 	Fi(tl, 0, ", %d);\n", sub);

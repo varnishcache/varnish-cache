@@ -39,7 +39,7 @@ STV_alloc(size_t size)
 	AN(stevedore->alloc);
 	do {
 		if ((st = stevedore->alloc(stevedore, size)) == NULL)
-			LRU_DiscardOne();
+			AN(LRU_DiscardOne());
 	} while (st == NULL);
 	return (st);
 }
