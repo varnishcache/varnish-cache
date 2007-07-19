@@ -158,11 +158,11 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 static void
 do_once(struct varnish_stats *VSL_stats)
 {
-	struct timespec ts;
+	struct timeval tv;
 	double up;
 
-	clock_gettime(CLOCK_REALTIME, &ts);
-	up = ts.tv_sec - VSL_stats->start_time;
+	gettimeofday(&tv, NULL);
+	up = tv.tv_sec - VSL_stats->start_time;
 
 #define MAC_STAT(n, t, f, d) \
 	do { \
