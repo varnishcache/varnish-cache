@@ -40,6 +40,7 @@ struct listen_sock {
 };
 
 TAILQ_HEAD(listen_sock_head, listen_sock);
+TAILQ_HEAD(stevedore_head, stevedore);
 
 struct heritage {
 
@@ -58,7 +59,7 @@ struct heritage {
 	unsigned			vsl_size;
 
 	/* Storage method */
-	struct stevedore		*stevedore;
+	struct stevedore_head		stevedore_h;
 
 	/* Hash method */
 	struct hash_slinger		*hash;

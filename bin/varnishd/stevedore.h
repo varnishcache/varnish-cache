@@ -28,6 +28,9 @@
  *
  * $Id$
  */
+ 
+
+#include "queue.h"
 
 struct stevedore;
 struct sess;
@@ -49,8 +52,10 @@ struct stevedore {
 
 	/* private fields */
 	void			*priv;
+	TAILQ_ENTRY(stevedore)	stevedore_list;
 };
 
 struct storage *STV_alloc(size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
+void STV_add(const char *spec);

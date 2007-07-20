@@ -38,7 +38,7 @@
 #include "shmlog.h"
 #include "cache.h"
 
-struct stevedore	*stevedore;
+struct stevedore_head		*stevedore_h;
 
 /*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
@@ -47,6 +47,7 @@ struct stevedore	*stevedore;
 void
 child_main(void)
 {
+	struct stevedore *st;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -66,9 +67,11 @@ child_main(void)
 	HSH_Init();
 	BAN_Init();
 
-	stevedore = heritage.stevedore;
-	if (stevedore->open != NULL)
-		stevedore->open(stevedore);
+	stevedore_h = &heritage.stevedore_h;
+	TAILQ_FOREACH(st, stevedore_h, stevedore_list) {
+		if (st->open != NULL)
+			st->open(st);
+	}
 
 	printf("Ready\n");
 	VSL_stats->start_time = (time_t)TIM_real();
