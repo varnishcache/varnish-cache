@@ -59,8 +59,9 @@
 #include <fcntl.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "cache.h"
+#include "heritage.h"
+#include "stevedore.h"
 
 static struct hash_slinger      *hash;
 

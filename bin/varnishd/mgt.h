@@ -61,13 +61,7 @@ void mgt_vcc_init(void);
 int mgt_vcc_default(const char *bflag, const char *fflag, int f_fd, int Cflag);
 int mgt_push_vcls_and_start(unsigned *status, char **p);
 
-#include "stevedore.h"
-
-extern struct stevedore sma_stevedore;
-extern struct stevedore smf_stevedore;
-
 #include "hash_slinger.h"
 
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
-

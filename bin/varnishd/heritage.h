@@ -41,7 +41,6 @@ struct listen_sock {
 };
 
 TAILQ_HEAD(listen_sock_head, listen_sock);
-TAILQ_HEAD(stevedore_head, stevedore);
 
 struct heritage {
 
@@ -58,10 +57,6 @@ struct heritage {
 	/* Share memory log fd and size (incl header) */
 	int				vsl_fd;
 	unsigned			vsl_size;
-
-	/* Storage method */
-	struct stevedore_head		stevedore_h;
-	pthread_mutex_t stevedore_lock;
 
 	/* Hash method */
 	struct hash_slinger		*hash;

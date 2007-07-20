@@ -34,8 +34,9 @@
 #include <stdlib.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "cache.h"
+#include "heritage.h"
+#include "stevedore.h"
 
 /*
  * Synthesize an error page.  This assumes the session already has an
@@ -87,7 +88,6 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	/* allocate space for body */
 	/* XXX what if the object already has a body? */
 	st = STV_alloc(1024);
-	XXXAN(st->stevedore);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 
 	/* generate body */

@@ -61,9 +61,10 @@
 #include "cli_priv.h"
 #include "cli_common.h"
 
-#include "mgt.h"
-#include "heritage.h"
 #include "shmlog.h"
+#include "heritage.h"
+#include "mgt.h"
+#include "stevedore.h"
 
 /* INFTIM indicates an infinite timeout for poll(2) */
 #ifndef INFTIM
@@ -392,8 +393,7 @@ main(int argc, char *argv[])
 	cli[0].result = CLIS_OK;
 
 	TAILQ_INIT(&heritage.socks);
-	TAILQ_INIT(&heritage.stevedore_h);
-	
+
 	mgt_vcc_init();
 
 	MCF_ParamInit(cli);
@@ -536,7 +536,7 @@ main(int argc, char *argv[])
 
 	if (!s_arg_given)
 		STV_add(s_arg);
-	
+
 	setup_hash(h_arg);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
