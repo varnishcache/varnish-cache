@@ -1,0 +1,8 @@
+etc/varnish
+etc/logrotate.d
+usr/bin
+usr/sbin
+var/log
+var/log/varnish
+var/lib/varnish
+usr/share/lintian/overrides/
