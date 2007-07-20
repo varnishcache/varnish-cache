@@ -34,10 +34,10 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
-
+#include "heritage.h"
+#include "stevedore.h"
 
 /*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
@@ -46,6 +46,7 @@
 void
 child_main(void)
 {
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
@@ -65,7 +66,7 @@ child_main(void)
 	BAN_Init();
 
 	STV_open();
-	
+
 	printf("Ready\n");
 	VSL_stats->start_time = (time_t)TIM_real();
 

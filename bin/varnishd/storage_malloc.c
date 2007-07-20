@@ -37,6 +37,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
+#include "stevedore.h"
 
 struct sma {
 	struct storage		s;

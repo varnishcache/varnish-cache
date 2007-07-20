@@ -57,8 +57,10 @@
 #ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
 #endif
+
 #include "shmlog.h"
 #include "cache.h"
+#include "stevedore.h"
 
 #ifndef MAP_NOCORE
 #define MAP_NOCORE 0 /* XXX Linux */

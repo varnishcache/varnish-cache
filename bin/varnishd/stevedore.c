@@ -34,46 +34,43 @@
 
 #include "cache.h"
 #include "heritage.h"
+#include "stevedore.h"
 
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
 
+static TAILQ_HEAD(stevedore_head, stevedore) stevedores;
 
 struct storage *
 STV_alloc(size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv, *stv_first;
-	struct stevedore_head *stevedore_h = &heritage.stevedore_h;
 
 	/* Simple round robin selecting of a stevedore. */
-	pthread_mutex_lock(&heritage.stevedore_lock);
-	stv_first = TAILQ_FIRST(stevedore_h);
+	stv_first = TAILQ_FIRST(&stevedores);
 	stv = stv_first;
 	do {
 		AN(stv->alloc);
 		st = stv->alloc(stv, size);
-		TAILQ_REMOVE(stevedore_h, stv, stevedore_list);
-		TAILQ_INSERT_TAIL(stevedore_h, stv, stevedore_list);
-		if (st != NULL) {
-			pthread_mutex_unlock(&heritage.stevedore_lock);
+		TAILQ_REMOVE(&stevedores, stv, stevedore_list);
+		TAILQ_INSERT_TAIL(&stevedores, stv, stevedore_list);
+		if (st != NULL)
 			return (st);
-		}
-	} while ((stv = TAILQ_FIRST(stevedore_h)) != stv_first);
-	
+	} while ((stv = TAILQ_FIRST(&stevedores)) != stv_first);
+
 	/* No stevedore with enough space is found. Make room in the first
 	 * one in the list, and move it to the end. Ensuring the round-robin.
 	 */
-	stv = TAILQ_FIRST(stevedore_h);
-	TAILQ_REMOVE(stevedore_h, stv, stevedore_list);
-	TAILQ_INSERT_TAIL(stevedore_h, stv, stevedore_list);
-	pthread_mutex_unlock(&heritage.stevedore_lock);
-	
+	stv = TAILQ_FIRST(&stevedores);
+	TAILQ_REMOVE(&stevedores, stv, stevedore_list);
+	TAILQ_INSERT_TAIL(&stevedores, stv, stevedore_list);
+
 	do {
 		if ((st = stv->alloc(stv, size)) == NULL)
 			AN(LRU_DiscardOne());
 	} while (st == NULL);
-	
+
 	return (st);
 }
 
@@ -118,9 +115,9 @@ STV_add(const char *spec)
 		q = p + 1;
 	xxxassert(p != NULL);
 	xxxassert(q != NULL);
-	
+
 	stp = malloc(sizeof *stp);
-	
+
 	if (!cmp_storage(&sma_stevedore, spec, p)) {
 		*stp = sma_stevedore;
 	} else if (!cmp_storage(&smf_stevedore, spec, p)) {
@@ -130,21 +127,18 @@ STV_add(const char *spec)
 		    (int)(p - spec), spec);
 		exit (2);
 	}
-	TAILQ_INSERT_HEAD(&heritage.stevedore_h, stp, stevedore_list);
+	TAILQ_INSERT_HEAD(&stevedores, stp, stevedore_list);
 	if (stp->init != NULL)
 		stp->init(stp, q);
 }
 
-void 
+void
 STV_open(void)
 {
-	struct stevedore_head *stevedore_h;
 	struct stevedore *st;
-	
-	stevedore_h = &heritage.stevedore_h;
-	TAILQ_FOREACH(st, stevedore_h, stevedore_list) {
+
+	TAILQ_FOREACH(st, &stevedores, stevedore_list) {
 		if (st->open != NULL)
 			st->open(st);
 	}
-	pthread_mutex_init(&heritage.stevedore_lock, NULL);
 }

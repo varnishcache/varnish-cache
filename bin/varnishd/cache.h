@@ -214,8 +214,6 @@ struct storage {
 	off_t			where;
 };
 
-#include "stevedore.h"
-
 /* -------------------------------------------------------------------*/
 
 struct object {
