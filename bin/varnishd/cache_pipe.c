@@ -46,7 +46,7 @@ static void
 rdf(struct pollfd *fds, int idx)
 {
 	int i, j;
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *p;
 
 	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0 || fds[1-idx].events == 0) {
@@ -55,14 +55,17 @@ rdf(struct pollfd *fds, int idx)
 		shutdown(fds[idx].fd, SHUT_RD);
 		shutdown(fds[1-idx].fd, SHUT_WR);
 		fds[idx].events = 0;
-	} else {
-		j = write(fds[1-idx].fd, buf, i);
-		if (i != j) {
+		return;
+	}
+	for (p = buf; i > 0; i -= j, p += j) {
+		j = write(fds[1-idx].fd, p, i);
+		if (j < 0) {
 			VSL(SLT_Debug, fds[idx].fd, "Pipe Shut write(write)");
 			VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut read(write)");
 			shutdown(fds[idx].fd, SHUT_WR);
 			shutdown(fds[1-idx].fd, SHUT_RD);
 			fds[1-idx].events = 0;
+			return;
 		}
 	}
 }
