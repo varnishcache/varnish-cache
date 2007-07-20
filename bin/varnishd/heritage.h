@@ -31,6 +31,7 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
+#include <pthread.h>
 #include "queue.h"
 
 struct listen_sock {
@@ -60,6 +61,7 @@ struct heritage {
 
 	/* Storage method */
 	struct stevedore_head		stevedore_h;
+	pthread_mutex_t stevedore_lock;
 
 	/* Hash method */
 	struct hash_slinger		*hash;

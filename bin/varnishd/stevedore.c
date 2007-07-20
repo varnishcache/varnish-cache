@@ -46,8 +46,8 @@ STV_alloc(size_t size)
 	struct stevedore *stv, *stv_first;
 	struct stevedore_head *stevedore_h = &heritage.stevedore_h;
 
-	/* Simple round robin selecting of a stevedore.
-	 */
+	/* Simple round robin selecting of a stevedore. */
+	pthread_mutex_lock(&heritage.stevedore_lock);
 	stv_first = TAILQ_FIRST(stevedore_h);
 	stv = stv_first;
 	do {
@@ -55,8 +55,10 @@ STV_alloc(size_t size)
 		st = stv->alloc(stv, size);
 		TAILQ_REMOVE(stevedore_h, stv, stevedore_list);
 		TAILQ_INSERT_TAIL(stevedore_h, stv, stevedore_list);
-		if (st != NULL)
+		if (st != NULL) {
+			pthread_mutex_unlock(&heritage.stevedore_lock);
 			return (st);
+		}
 	} while ((stv = TAILQ_FIRST(stevedore_h)) != stv_first);
 	
 	/* No stevedore with enough space is found. Make room in the first
@@ -65,6 +67,7 @@ STV_alloc(size_t size)
 	stv = TAILQ_FIRST(stevedore_h);
 	TAILQ_REMOVE(stevedore_h, stv, stevedore_list);
 	TAILQ_INSERT_TAIL(stevedore_h, stv, stevedore_list);
+	pthread_mutex_unlock(&heritage.stevedore_lock);
 	
 	do {
 		if ((st = stv->alloc(stv, size)) == NULL)
@@ -143,4 +146,5 @@ STV_open(void)
 		if (st->open != NULL)
 			st->open(st);
 	}
+	pthread_mutex_init(&heritage.stevedore_lock, NULL);
 }
