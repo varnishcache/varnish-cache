@@ -1,114 +1,150 @@
-Change log for Varnish 1.0.4
+Change log for Varnish 1.1
 
-Changes between 1.0.3 and 1.0.4
+Changes between 1.0.4 and 1.1
 
 varnishd
 
-  • The request workflow has been redesigned to simplify request processing and
-    eliminate code duplication. All codepaths which need to speak HTTP now
-    share a single implementation of the protocol. Some new VCL hooks have been
-    added, though they aren't much use yet. The only real user-visible change
-    should be that Varnish now handles persistent backend connections correctly
-    (see ticket #56).
+  • Readability of the C source code generated from VCL code has been improved.
 
-  • Support for multiple listen addresses has been added.
+  • Equality (==) and inequality (!=) operators have been implemented for IP
+    addresses (which previously could only be compared using ACLs).
 
-  • An "include" facility has been added to VCL, allowing VCL code to pull in
-    code fragments from multiple files.
+  • The address of the listening socket on which the client connection was
+    received is now available to VCL as the server.ip variable.
 
-  • Multiple definitions of the same VCL function are now concatenated into one
-    in the order in which they appear in the source. This simplifies the
-    mechanism for falling back to the built-in default for cases which aren't
-    handled in custom code, and facilitates modularization.
+  • Each object's hash key is now computed based on a string which is available
+    to VCL as req.hash. A VCL hook named vcl_hash has been added to allow VCL
+    scripts to control hash generation (for instance, whether or not to include
+    the value of the Host: header in the hash).
 
-  • The code used to format management command arguments before passing them on
-    to the child process would underestimate the amount of space needed to hold
-    each argument once quotes and special characters were properly escaped,
-    resulting in a buffer overflow. This has been corrected.
+  • The setup code for listening sockets has been modified to detect and handle
+    situations where a host name resolves to multiple IP addresses. It will now
+    attempt to bind to each IP address separately, and report a failure only if
+    none of them worked.
 
-  • The VCL compiler has been overhauled. Several memory leaks have been
-    plugged, and error detection and reporting has been improved throughout.
-    Parts of the compiler have been refactored to simplify future extension of
-    the language.
+  • Network or protocol errors that occur while retrieving an object from a
+    backend server now result in a synthetic error page being inserted into the
+    cache with a 30-second TTL. This should help avoid driving an overburdened
+    backend server into the ground by repeatedly requesting the same object.
 
-  • A bug in the VCL compiler which resulted in incorrect parsing of the
-    decrement (-=) operator has been fixed.
+  • The child process will now drop root privileges immediately upon startup.
+    The user and group to use are specified with the user and group run-time
+    parameters, which default to nobody and nogroup, respectively. Other
+    changes have been made in an effort to increase the isolation between
+    parent and child, and reduce the impact of a compromise of the child
+    process.
 
-  • A new -C command-line option has been added which causes varnishd to
-    compile the VCL code (either from a file specified with -f or the built-in
-    default), print the resulting C code and exit.
+  • Objects which are received from the backend with a Vary: header are now
+    stored separately according to the values of the headers specified in
+    Vary:. This allows Varnish to correctly cache e.g. compressed and
+    uncompressed versions of the same object.
 
-  • When processing a backend response using chunked encoding, if a chunk
-    header crosses a read buffer boundary, read additional bytes from the
-    backend connection until the chunk header is complete.
+  • Each Varnish instance now has a name, which by default is the host name of
+    the machine it runs on, but can be any string that would be valid as a
+    relative or absolute directory name. It is used to construct the name of a
+    directory in which the server state as well as all temporary files are
+    stored. This makes it possible to run multiple Varnish instances on the
+    same machine without conflict.
 
-  • A new ping_interval run-time parameter controls how often the management
-    process checks that the worker process is alive.
+  • When invoked with the -C option, varnishd will now not just translate the
+    VCL code to C, but also compile the C code and attempt to load the
+    resulting shared object.
 
-  • A bug which would cause the worker process to dereference a NULL pointer
-    and crash if the backend did not respond has been fixed.
+  • Attempts by VCL code to reference a variable outside its scope or to assign
+    a value to a read-only variable will now result in compile-time rather than
+    run-time errors.
 
-  • In some cases, such as when they are used by AJAX applications to
-    circumvent Internet Explorer's over-eager disk cache, it may be desirable
-    to cache POST requests. However, the code path responsible for delivering
-    objects from cache would only transmit the response body when replying to a
-    GET request. This has been extended to also apply to POST.
+  • The new command-line option -F will make varnishd run in the foreground,
+    without enabling debugging.
 
-    This should be revisited at a later date to allow VCL code to control
-    whether the body is delivered.
+  • New VCL variables have been introduced to allow inspection and manipulation
+    of the request sent to the backend (bereq.request, bereq.url, bereq.proto
+    and bereq.http) and the response to the client (resp.proto, resp.status,
+    resp.response and resp.http).
 
-  • Varnish now respects Cache-control: s-maxage, and prefers it to
-    Cache-control: max-age if both are present.
+  • Statistics from the storage code (including the amount of data and free
+    space in the cache) are now available to varnishstat and other
+    statistics-gathering tools.
 
-    This should be revisited at a later date to allow VCL code to control which
-    headers are used and how they are interpreted.
+  • Objects are now kept on an LRU list which is kept loosely up-to-date (to
+    within a few seconds). When cache runs out, the objects at the tail end of
+    the LRU list are discarded one by one until there is enough space for the
+    freshly requested object(s). A VCL hook, vcl_discard, is allowed to inspect
+    each object and determine its fate by returning either keep or discard.
 
-  • When loading a new VCL script, the management process will now load the
-    compiled object to verify that it links correctly before instructing the
-    worker process to load it.
+  • A new VCL hook, vcl_deliver, provides a chance to adjust the response
+    before it is sent to the client.
 
-  • A new -P command-line options has been added which causes varnishd to
-    create a PID file.
+  • A new management command, vcl.show, displays the VCL source code of any
+    loaded configuration.
 
-  • The sendfile_threshold run-time parameter's default value has been set to
-    infinity after a variety of sendfile()-related bugs were discovered on
-    several platforms.
+  • A new VCL variable, now, provides VCL scripts with the current time in
+    seconds since the epoch.
 
-varnishlog
+  • A new VCL variable, obj.lastuse, reflects the time in seconds since the
+    object in question was last used.
 
-  • When grouping log entries by request, varnishlog attempts to collapse the
-    log entry for a call to a VCL function with the log entry for the
-    corresponding return from VCL. When two VCL calls were made in succession,
-    varnishlog would incorrectly omit the newline between the two calls (see
-    ticket #95).
+  • VCL scripts can now add an HTTP header (or modify the value of an existing
+    one) by assigning a value to the corresponding variable, and strip an HTTP
+    header by using the remove keyword.
 
-  • New -D and -P command-line options have been added to daemonize and create
-    a pidfile, respectively.
+  • VCL scripts can now modify the HTTP status code of cached objects
+    (obj.status) and responses (resp.status)
+
+  • Numeric and other non-textual variables in VCL can now be assigned to
+    textual variables; they will be converted as needed.
+
+  • VCL scripts can now apply regular expression substitutions to textual
+    variables using the regsub function.
+
+  • A new management command, status, returns the state of the child.
+
+  • Varnish will now build and run on Mac OS X.
+
+varnishadm
+
+  • This is a new utility which sends a single command to a Varnish server's
+    management port and prints the result to stdout, greatly simplifying the
+    use of the management port from scripts.
+
+varnishhist
+
+  • The user interface has been greatly improved; the histogram will be
+    automatically rescaled and redrawn when the window size changes, and it is
+    updated regularly rather than at a rate dependent on the amount of log data
+    gathered. In addition, the name of the Varnish instance being watched is
+    displayed in the upper right corner.
 
 varnishncsa
 
-  • The formatting callback has been largely rewritten for clarity, robustness
-    and efficiency.
+  • In addition to client traffic, varnishncsa can now also process log data
+    from backend traffic.
 
-    If a request included a Host: header, construct and output an absolute URL.
-    This makes varnishncsa output from servers which handle multiple virtual
-    hosts far more useful.
+  • A bug that would cause varnishncsa to segfault when it encountered an empty
+    HTTP header in the log file has been fixed.
 
-Documentation
+varnishreplay
 
-  • The documentation—especially the VCL documentation—has been greatly
-    extended and improved.
+  • This new utility will attempt to recreate the HTTP traffic which resulted
+    in the raw Varnish log data which it is fed.
 
-Build system
+varnishstat
 
-  • The name and location of the curses or ncurses library is now correctly
-    detected by the configure script instead of being hardcoded into affected
-    Makefiles. This allows Varnish to build correctly on a wider range of
-    platforms.
+  • Don't print lifetime averages when it doesn't make any sense—for instance,
+    there is no point in dividing the amount in bytes of free cache space by
+    the lifetime in seconds of the varnishd process.
 
-  • Compatibility shims for clock_gettime() are now correctly applied where
-    needed, allowing Varnish to build on MacOS X.
+  • The user interface has been greatly improved; varnishstat will no longer
+    print more than fits in the terminal, and will respond correctly to window
+    resize events. The output produced in one-shot mode has been modified to
+    include symbolic names for each entry. In addition, the name of the Varnish
+    instance being watched is displayed in the upper right corner in curses
+    mode.
 
-  • The autogen.sh script will now correctly detect and warn about automake
-    versions which are known not to work correctly.
+varnishtop
+
+  • The user interface has been greatly improved; varnishtop will now respond
+    correctly to window resize events, and one-shot mode (-1) actually works.
+    In addition, the name of the Varnish instance being watched is displayed in
+    the upper right corner in curses mode.
 
