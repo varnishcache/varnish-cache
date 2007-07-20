@@ -96,8 +96,6 @@ void WS_Reset(struct ws *ws);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 void WS_Return(struct ws *ws, char *b, char *e);
 
-
-
 /*--------------------------------------------------------------------
  * HTTP Request/Response/Header handling structure.
  */
