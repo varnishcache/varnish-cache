@@ -24,7 +24,7 @@ LOGFILE=/var/log/varnish/varnish.log
 
 test -x $DAEMON || exit 0
 
-DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
+DAEMON_OPTS="-a -n /var/lib/varnish -w ${LOGFILE} -D -P $PIDFILE"
 
 case "$1" in
 	start)
