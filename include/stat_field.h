@@ -89,3 +89,5 @@ MAC_STAT(sm_nreq,		uint64_t, 'a', "allocator requests")
 MAC_STAT(sm_nobj,		uint64_t, 'i', "outstanding allocations")
 MAC_STAT(sm_balloc,		uint64_t, 'i', "bytes allocated")
 MAC_STAT(sm_bfree,		uint64_t, 'i', "bytes free")
+
+MAC_STAT(backend_req,		uint64_t, 'a', "Backend requests made")
