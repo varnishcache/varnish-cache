@@ -126,10 +126,8 @@ STV_add(const char *spec)
 		stv->init(stv, q);
 
 	if (!stevedores) {
-		fprintf(stderr, "first stevedore\n");
 		stevedores = stv->next = stv->prev = stv;
 	} else {
-		fprintf(stderr, "additional stevedore\n");
 		stv->next = stevedores;
 		stv->prev = stevedores->prev;
 		stv->next->prev = stv;
