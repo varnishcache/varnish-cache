@@ -44,6 +44,7 @@ STV_alloc(size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv, *stv_first;
+	struct stevedore_head *stevedore_h = &heritage.stevedore_h;
 
 	/* Simple round robin selecting of a stevedore.
 	 */
@@ -101,7 +102,6 @@ cmp_storage(struct stevedore *s, const char *p, const char *q)
 	return (0);
 }
 
-
 void
 STV_add(const char *spec)
 {
@@ -130,4 +130,17 @@ STV_add(const char *spec)
 	TAILQ_INSERT_HEAD(&heritage.stevedore_h, stp, stevedore_list);
 	if (stp->init != NULL)
 		stp->init(stp, q);
+}
+
+void 
+STV_open(void)
+{
+	struct stevedore_head *stevedore_h;
+	struct stevedore *st;
+	
+	stevedore_h = &heritage.stevedore_h;
+	TAILQ_FOREACH(st, stevedore_h, stevedore_list) {
+		if (st->open != NULL)
+			st->open(st);
+	}
 }

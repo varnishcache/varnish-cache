@@ -216,13 +216,6 @@ struct storage {
 
 #include "stevedore.h"
 
-/*
- * XXX: in the longer term, we want to support multiple stevedores,
- * XXX: selected by some kind of heuristics based on size, lifetime
- * XXX: etc etc.  For now we support only one.
- */
-extern struct stevedore_head *stevedore_h;
-
 /* -------------------------------------------------------------------*/
 
 struct object {

@@ -59,3 +59,4 @@ struct storage *STV_alloc(size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_add(const char *spec);
+void STV_open(void);
