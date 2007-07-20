@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 5, 2007
+.Dd July 20, 2007
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -155,8 +155,9 @@ for a list of parameters.
 Use the specified storage backend.
 See
 .Sx Storage Types
-for a list of supported storage types. Multiple files can be specified
-by using this flag for each file.
+for a list of supported storage types.
+This option can be used multiple times to specify multiple storage
+files.
 .It Fl T Ar address Ns Op : Ns Ar port
 Offer a management interface on the specified
 .Ar address
