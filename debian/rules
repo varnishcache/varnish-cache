@@ -32,7 +32,7 @@ config.status: configure
 	# The boilerplate linker flags won't allow varnish to compile :(
 	# There are circular dependencies in the varnish libraries, but
 	# the core developers have OK'ed that we don't check.
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)"
+	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" --localstatedir=/var
 
 
 build: build-stamp
