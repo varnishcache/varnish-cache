@@ -28,7 +28,6 @@
  *
  * $Id$
  */
- 
 
 #include "queue.h"
 
@@ -52,7 +51,8 @@ struct stevedore {
 
 	/* private fields */
 	void			*priv;
-	TAILQ_ENTRY(stevedore)	stevedore_list;
+
+	struct stevedore	*next, *prev;
 };
 
 struct storage *STV_alloc(size_t size);

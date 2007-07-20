@@ -36,48 +36,42 @@
 #include "heritage.h"
 #include "stevedore.h"
 
+/*
+ * Stevedores are kept in a circular list with the head pointer
+ * continuously moving from one element to the next.
+ */
+
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
 
-static TAILQ_HEAD(stevedore_head, stevedore) stevedores;
+static struct stevedore * volatile stevedores;
 
 struct storage *
 STV_alloc(size_t size)
 {
 	struct storage *st;
-	struct stevedore *stv, *stv_first;
+	struct stevedore *stv;
 
-	/* Simple round robin selecting of a stevedore. */
-	stv_first = TAILQ_FIRST(&stevedores);
-	stv = stv_first;
-	do {
-		AN(stv->alloc);
-		st = stv->alloc(stv, size);
-		TAILQ_REMOVE(&stevedores, stv, stevedore_list);
-		TAILQ_INSERT_TAIL(&stevedores, stv, stevedore_list);
-		if (st != NULL)
+	for (;;) {
+		/* pick a stevedore and bump the head along */
+		stv = stevedores = stevedores->next;
+
+		/* try to allocate from it */
+		if ((st = stv->alloc(stv, size)) != NULL) {
+			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 			return (st);
-	} while ((stv = TAILQ_FIRST(&stevedores)) != stv_first);
+		}
 
-	/* No stevedore with enough space is found. Make room in the first
-	 * one in the list, and move it to the end. Ensuring the round-robin.
-	 */
-	stv = TAILQ_FIRST(&stevedores);
-	TAILQ_REMOVE(&stevedores, stv, stevedore_list);
-	TAILQ_INSERT_TAIL(&stevedores, stv, stevedore_list);
-
-	do {
-		if ((st = stv->alloc(stv, size)) == NULL)
-			AN(LRU_DiscardOne());
-	} while (st == NULL);
-
-	return (st);
+		/* no luck; free some space and keep trying */
+		AN(LRU_DiscardOne());
+	}
 }
 
 void
 STV_trim(struct storage *st, size_t size)
 {
 
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	AN(st->stevedore);
 	if (st->stevedore->trim)
 		st->stevedore->trim(st, size);
@@ -87,6 +81,7 @@ void
 STV_free(struct storage *st)
 {
 
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	AN(st->stevedore);
 	AN(st->stevedore->free);
 	st->stevedore->free(st);
@@ -106,7 +101,7 @@ void
 STV_add(const char *spec)
 {
 	const char *p, *q;
-	struct stevedore *stp;
+	struct stevedore *stv;
 
 	p = strchr(spec, ',');
 	if (p == NULL)
@@ -116,29 +111,42 @@ STV_add(const char *spec)
 	xxxassert(p != NULL);
 	xxxassert(q != NULL);
 
-	stp = malloc(sizeof *stp);
+	stv = malloc(sizeof *stv);
 
 	if (!cmp_storage(&sma_stevedore, spec, p)) {
-		*stp = sma_stevedore;
+		*stv = sma_stevedore;
 	} else if (!cmp_storage(&smf_stevedore, spec, p)) {
-		*stp = smf_stevedore;
+		*stv = smf_stevedore;
 	} else {
 		fprintf(stderr, "Unknown storage method \"%.*s\"\n",
 		    (int)(p - spec), spec);
 		exit (2);
 	}
-	TAILQ_INSERT_HEAD(&stevedores, stp, stevedore_list);
-	if (stp->init != NULL)
-		stp->init(stp, q);
+	if (stv->init != NULL)
+		stv->init(stv, q);
+
+	if (!stevedores) {
+		fprintf(stderr, "first stevedore\n");
+		stevedores = stv->next = stv->prev = stv;
+	} else {
+		fprintf(stderr, "additional stevedore\n");
+		stv->next = stevedores;
+		stv->prev = stevedores->prev;
+		stv->next->prev = stv;
+		stv->prev->next = stv;
+		stevedores = stv;
+	}
 }
 
 void
 STV_open(void)
 {
-	struct stevedore *st;
+	struct stevedore *stv;
 
-	TAILQ_FOREACH(st, &stevedores, stevedore_list) {
-		if (st->open != NULL)
-			st->open(st);
-	}
+	stv = stevedores;
+	do {
+		if (stv->open != NULL)
+			stv->open(stv);
+		stv = stv->next;
+	} while (stv != stevedores);
 }
