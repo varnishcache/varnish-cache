@@ -148,7 +148,7 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Thu Jul 05 2006 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
+* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
 - Bump Version and Release for 1.1
 
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
