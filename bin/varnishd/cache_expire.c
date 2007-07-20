@@ -82,8 +82,7 @@ void
 EXP_Terminate(struct object *o)
 {
 	LOCK(&exp_mtx);
-	if (o->lru_stamp)
-		LRU_Remove(o);
+	LRU_Remove(o);
 	if (o->heap_idx)
 		binheap_delete(exp_heap, o->heap_idx);
 	if (o->deathrow.tqe_next) {
