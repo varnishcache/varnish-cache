@@ -221,7 +221,7 @@ struct storage {
  * XXX: selected by some kind of heuristics based on size, lifetime
  * XXX: etc etc.  For now we support only one.
  */
-extern struct stevedore *stevedore;
+extern struct stevedore_head *stevedore_h;
 
 /* -------------------------------------------------------------------*/
 

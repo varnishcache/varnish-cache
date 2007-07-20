@@ -120,46 +120,6 @@ setup_hash(const char *s_arg)
 
 /*--------------------------------------------------------------------*/
 
-static int
-cmp_storage(struct stevedore *s, const char *p, const char *q)
-{
-	if (strlen(s->name) != q - p)
-		return (1);
-	if (strncmp(s->name, p, q - p))
-		return (1);
-	return (0);
-}
-
-static void
-setup_storage(const char *s_arg)
-{
-	const char *p, *q;
-	struct stevedore *stp;
-
-	p = strchr(s_arg, ',');
-	if (p == NULL)
-		q = p = strchr(s_arg, '\0');
-	else
-		q = p + 1;
-	xxxassert(p != NULL);
-	xxxassert(q != NULL);
-	if (!cmp_storage(&sma_stevedore, s_arg, p)) {
-		stp = &sma_stevedore;
-	} else if (!cmp_storage(&smf_stevedore, s_arg, p)) {
-		stp = &smf_stevedore;
-	} else {
-		fprintf(stderr, "Unknown storage method \"%.*s\"\n",
-		    (int)(p - s_arg), s_arg);
-		exit (2);
-	}
-	heritage.stevedore = malloc(sizeof *heritage.stevedore);
-	*heritage.stevedore = *stp;
-	if (stp->init != NULL)
-		stp->init(heritage.stevedore, q);
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 usage(void)
 {
@@ -416,6 +376,7 @@ main(int argc, char *argv[])
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
+	int s_arg_given = 0;
 	const char *T_arg = NULL;
 	char *p;
 	struct cli cli[1];
@@ -431,6 +392,8 @@ main(int argc, char *argv[])
 	cli[0].result = CLIS_OK;
 
 	TAILQ_INIT(&heritage.socks);
+	TAILQ_INIT(&heritage.stevedore_h);
+	
 	mgt_vcc_init();
 
 	MCF_ParamInit(cli);
@@ -479,7 +442,8 @@ main(int argc, char *argv[])
 			cli_check(cli);
 			break;
 		case 's':
-			s_arg = optarg;
+			s_arg_given = 1;
+			STV_add(optarg);
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
@@ -570,7 +534,9 @@ main(int argc, char *argv[])
 	if (C_flag)
 		exit (0);
 
-	setup_storage(s_arg);
+	if (!s_arg_given)
+		STV_add(s_arg);
+	
 	setup_hash(h_arg);
 
 	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
