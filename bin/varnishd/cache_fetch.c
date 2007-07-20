@@ -286,6 +286,9 @@ Fetch(struct sess *sp)
 		return (1);
 	}
 
+	/* XXX is this the right place? */
+	VSL_stats->backend_req++;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
