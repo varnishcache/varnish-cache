@@ -78,7 +78,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 	raw();
 	noecho();
 	nonl();
-	intrflush(stdscr, false);
+	intrflush(stdscr, FALSE);
 	curs_set(0);
 	erase();
 
