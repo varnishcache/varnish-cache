@@ -234,6 +234,14 @@ VRT_l_obj_status(struct sess *sp, int num)
 	http_SetH(&sp->obj->http, HTTP_HDR_STATUS, p);
 }
 
+int
+VRT_r_obj_status(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	return (atoi(sp->obj->http.hd[HTTP_HDR_STATUS].b));
+}
+
 void
 VRT_l_resp_status(struct sess *sp, int num)
 {
