@@ -201,7 +201,7 @@ do_curses(struct VSL_data *vd)
 	raw();
 	noecho();
 	nonl();
-	intrflush(stdscr, false);
+	intrflush(stdscr, FALSE);
 	curs_set(0);
 	erase();
 	for (;;) {
