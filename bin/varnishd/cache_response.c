@@ -50,6 +50,7 @@ RES_Error(struct sess *sp, int code, const char *reason)
 
 	/* synthesize error page and send it */
 	SYN_ErrorPage(sp, code, reason, 0);
+	RES_BuildHttp(sp);
 	RES_WriteObj(sp);
 
 	/* GC the error page */
