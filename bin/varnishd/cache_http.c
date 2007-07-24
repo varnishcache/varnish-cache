@@ -884,13 +884,11 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 static void
 http_PutField(struct worker *w, int fd, struct http *to, int field, const char *string)
 {
-	const char *e;
 	char *p;
 	int l;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	e = strchr(string, '\0');
-	l = (e - string);
+	l = strlen(string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
 		WSL(w, SLT_LostHeader, fd, "%s", string);
