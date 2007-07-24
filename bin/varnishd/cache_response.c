@@ -76,8 +76,8 @@ res_do_304(struct sess *sp)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	TIM_format(sp->obj->last_modified, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
-	if (sp->doclose != NULL)
-		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Connection: %s",
+	    sp->doclose ? "close" : "keep-alive");
 	sp->wantbody = 0;
 }
 
@@ -129,8 +129,8 @@ RES_BuildHttp(struct sess *sp)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %.0f",
 	    sp->obj->age + sp->t_resp - sp->obj->entered);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
-	if (sp->doclose != NULL)
-		http_SetHeader(sp->wrk, sp->fd, sp->http, "Connection: close");
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Connection: %s",
+	    sp->doclose ? "close" : "keep-alive");
 }
 
 /*--------------------------------------------------------------------*/
