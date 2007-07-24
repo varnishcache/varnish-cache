@@ -131,5 +131,5 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	http_PrintfHeader(w, fd, h, "Retry-After: %ju", (uintmax_t)ttl);
 	http_PrintfHeader(w, fd, h, "Content-Type: text/html; charset=utf-8");
 	http_PrintfHeader(w, fd, h, "Content-Length: %u", o->len);
-	/* DO NOT generate X-Varnish header, RES_WriteObj will */
+	/* DO NOT generate X-Varnish header, RES_BuildHttp will */
 }
