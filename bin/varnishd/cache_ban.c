@@ -40,7 +40,6 @@
 #include "shmlog.h"
 #include "cli_priv.h"
 #include "cache.h"
-#include "vrt.h"
 
 struct ban {
 	TAILQ_ENTRY(ban)	list;
@@ -53,7 +52,7 @@ static TAILQ_HEAD(,ban) ban_head = TAILQ_HEAD_INITIALIZER(ban_head);
 static unsigned ban_next;
 static struct ban *ban_start;
 
-static void
+void
 AddBan(const char *regexp)
 {
 	struct ban *b;
@@ -114,10 +113,4 @@ BAN_Init(void)
 {
 
 	AddBan("a");
-}
-
-void
-VRT_repurge(const char *regexp)
-{
-	AddBan(regexp);
 }
