@@ -263,6 +263,28 @@ parse_remove(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_repurge(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+	
+	Fb(tl, 0, "VRT_repurge(");
+	
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+	
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+	}
+	
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 0, ");");
+}
+
+
+/*--------------------------------------------------------------------*/
+
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
@@ -277,6 +299,7 @@ static struct action_table {
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ "remove", 	parse_remove },
+	{ "purge",	parse_repurge },
 	{ NULL,		NULL }
 };
 
