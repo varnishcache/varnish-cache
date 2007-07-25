@@ -40,6 +40,7 @@
 #include "shmlog.h"
 #include "cli_priv.h"
 #include "cache.h"
+#include "vrt.h"
 
 struct ban {
 	TAILQ_ENTRY(ban)	list;
@@ -113,4 +114,10 @@ BAN_Init(void)
 {
 
 	AddBan("a");
+}
+
+void
+VRT_repurge(const char *regexp)
+{
+	AddBan(regexp);
 }
