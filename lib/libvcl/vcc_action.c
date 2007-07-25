@@ -266,6 +266,7 @@ parse_remove(struct tokenlist *tl)
 static void
 parse_purge(struct tokenlist *tl)
 {
+
 	vcc_NextToken(tl);
 	
 	Fb(tl, 0, "VRT_purge(");
