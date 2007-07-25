@@ -513,3 +513,12 @@ VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 	strcat(q, p);
 	return (q);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_purge(const char *regexp)
+{
+	
+	AddBan(regexp);
+}

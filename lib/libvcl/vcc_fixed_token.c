@@ -426,7 +426,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "int VRT_re_test(struct vsb *, const char *, int sub);\n");
 	vsb_cat(sb, "const char *VRT_regsub(struct sess *sp, const char *, void *, const char *);\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "void VRT_repurge(const char *);\n");
+	vsb_cat(sb, "void VRT_purge(const char *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "void VRT_count(struct sess *, unsigned);\n");
 	vsb_cat(sb, "int VRT_rewrite(const char *, const char *);\n");

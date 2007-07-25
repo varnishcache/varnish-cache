@@ -360,6 +360,7 @@ struct bereq *vbe_new_bereq(void);
 void vbe_free_bereq(struct bereq *bereq);
 
 /* cache_ban.c */
+void AddBan(const char *);
 void BAN_Init(void);
 void cli_func_url_purge(struct cli *cli, char **av, void *priv);
 void BAN_NewObj(struct object *o);

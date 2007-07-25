@@ -264,11 +264,11 @@ parse_remove(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_repurge(struct tokenlist *tl)
+parse_purge(struct tokenlist *tl)
 {
 	vcc_NextToken(tl);
 	
-	Fb(tl, 0, "VRT_repurge(");
+	Fb(tl, 0, "VRT_purge(");
 	
 	Expect(tl, '(');
 	vcc_NextToken(tl);
@@ -299,7 +299,7 @@ static struct action_table {
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ "remove", 	parse_remove },
-	{ "purge",	parse_repurge },
+	{ "purge",	parse_purge },
 	{ NULL,		NULL }
 };
 
