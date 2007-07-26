@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="1.1" to="1.1.1">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="1745">
+      <para>The code required to allow VCL to read
+      <varname>obj.status</varname>, which had accidentally been left
+      out, has now been added.</para>
+    </change>
+
+    <change type="bug" ref="1750">
+      <para>Varnish will now always include a
+      <literal>Connection:</literal> header in its reply to the
+      client, to avoid possible misunderstandings.</para>
+    </change>
+
+    <change type="buf" ref="1751">
+      <para>A bug that triggered an assertion failure when generating
+      synthetic error documents has been corrected.</para>
+    </change>
+  </subsystem>
+</group>
