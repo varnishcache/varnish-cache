@@ -164,6 +164,10 @@ set spobj {
 		RO TIME
 		{recv pipe pass hash miss hit fetch deliver discard timeout}
 	}
+	{ backend.health	RO INT
+  		{recv pipe pass hash miss hit fetch deliver discard timeout}
+  	}
+
 }
 
 set tt(IP)	"struct sockaddr *"

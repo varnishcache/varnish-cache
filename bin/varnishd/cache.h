@@ -332,6 +332,11 @@ struct backend {
 
 	double			dnsttl;
 	double			dnstime;
+
+	int			health;
+	double			last_check;
+	int			minute_limit;
+	
 #if 0
 	double			responsetime;
 	double			timeout;

@@ -445,6 +445,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *be);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);\n");
+	vsb_cat(sb, "char *VRT_int_string(struct sess *sp, int);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "#define VRT_done(sp, hand)			\\\n");
 	vsb_cat(sb, "	do {					\\\n");
@@ -499,4 +500,5 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char * VRT_r_resp_response(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_response(struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "double VRT_r_now(struct sess *);\n");
+	vsb_cat(sb, "int VRT_r_backend_health(struct sess *);\n");
 }
