@@ -289,6 +289,9 @@ VRT_alloc_backends(struct VCL_conf *cp)
 		cp->backend[i]->magic = BACKEND_MAGIC;
 		cp->backend[i]->dnsttl = 30;
 		TAILQ_INIT(&cp->backend[i]->connlist);
+		cp->backend[i]->health = 0;
+		cp->backend[i]->last_check = TIM_mono();
+		cp->backend[i]->minute_limit = 1;
 	}
 }
 
@@ -319,6 +322,7 @@ VRT_l_backend_##onm(struct backend *be, type a)		\
 VBACKEND(const char *,	host,	hostname)
 VBACKEND(const char *,	port,	portname)
 VBACKEND(double,	dnsttl,	dnsttl)
+
 
 /*--------------------------------------------------------------------
  * XXX: Working relative to t_req is maybe not the right thing, we could
@@ -487,6 +491,15 @@ VRT_r_obj_lastuse(struct sess *sp)
 	return (TIM_mono() - sp->obj->lru_stamp);
 }
 
+int
+VRT_r_backend_health(struct sess *sp)
+{
+	
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	return sp->backend->health;
+}
+
 /*--------------------------------------------------------------------*/
 
 char *
@@ -512,6 +525,18 @@ VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 	strcat(q, ":");
 	strcat(q, p);
 	return (q);
+}
+
+char *
+VRT_int_string(struct sess *sp, int num)
+{
+	char *p;
+	int size = 10;
+	
+	p = WS_Alloc(sp->http->ws, size);
+	AN(p);
+	snprintf(p, size, "%d", num);
+	return (p);
 }
 
 /*--------------------------------------------------------------------*/

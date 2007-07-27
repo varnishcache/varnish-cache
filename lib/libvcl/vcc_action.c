@@ -84,6 +84,9 @@ parse_error(struct tokenlist *tl)
 	if (tl->t->tok == CSTR) {
 		Fb(tl, 0, ", %.*s", PF(tl->t));
 		vcc_NextToken(tl);
+	} else if (tl->t->tok == VAR) {
+		Fb(tl, 0, ", ");
+		vcc_StringVal(tl);
 	} else {
 		Fb(tl, 0, ", (const char *)0");
 	}

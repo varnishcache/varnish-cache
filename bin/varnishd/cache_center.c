@@ -288,10 +288,35 @@ cnt_fetch(struct sess *sp)
 
 	AN(sp->bereq);
 	i = Fetch(sp);
+	
+	/* Experimental. Set time for last check of backend health.
+	 * If the backend replied with 200, it is obviously up and running,
+	 * increase health parameter. If we got a 504 back, it would imply
+	 * that the backend is not reachable. Decrease health parameter.
+	 */
+	sp->backend->last_check = TIM_mono();
+	sp->backend->minute_limit = 1;
+	if (!i){
+		if (http_GetStatus(sp->bereq->http) == 200) {
+			if (sp->backend->health < 10000)
+				sp->backend->health++;
+		} else if(http_GetStatus(sp->bereq->http) == 504) {
+			if (sp->backend->health > -10000)
+				sp->backend->health--;
+		}
+	}
+	
+		
 	vbe_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
 	if (i) {
+		/* Experimental. If the fetch failed, it would also seem
+		 * to be a backend problem, so decrease the health parameter.
+		 */
+		if (sp->backend->health > -10000)
+			sp->backend->health--;
+		
 		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
 	} else {
 		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
@@ -372,8 +397,19 @@ DOT hit -> deliver [label="deliver",style=bold,color=green,weight=4]
 static int
 cnt_hit(struct sess *sp)
 {
+	double time_diff;
+	double minutes;
 
 	assert(!sp->obj->pass);
+	
+	/* Experimental. Reduce health parameter of backend towards zero
+	 * if it has been more than a minute since it was checked. */
+	time_diff = TIM_mono() - sp->backend->last_check;
+	minutes = time_diff / 60;
+	if (minutes > sp->backend->minute_limit) {
+		sp->backend->minute_limit++;
+		sp->backend->health = (int)((double)sp->backend->health / 2);
+	}
 
 	VCL_hit_method(sp);
 

@@ -46,3 +46,4 @@ void VRT_l_resp_status(struct sess *, int);
 const char * VRT_r_resp_response(struct sess *);
 void VRT_l_resp_response(struct sess *, const char *, ...);
 double VRT_r_now(struct sess *);
+int VRT_r_backend_health(struct sess *);
