@@ -726,8 +726,7 @@ cnt_recv(struct sess *sp)
 
 	VCL_recv_method(sp);
 
-	sp->wantbody = (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET") ||
-	    !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "POST"));
+	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */
