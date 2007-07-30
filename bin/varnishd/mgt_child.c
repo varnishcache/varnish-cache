@@ -197,8 +197,7 @@ start_child(void)
 
 		/* Redirect stdin/out/err */
 		AZ(close(0));
-		i = open("/dev/null", O_RDONLY);
-		xxxassert(i == 0);
+		assert(open("/dev/null", O_RDONLY) == 0);
 		assert(dup2(child_fds[1], 1) == 1);
 		assert(dup2(child_fds[1], 2) == 2);
 		AZ(close(child_fds[0]));
@@ -213,7 +212,7 @@ start_child(void)
 		signal(SIGTERM, SIG_DFL);
 		child_main();
 
-		exit (1);
+		exit(1);
 	}
 
 	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
@@ -247,7 +246,7 @@ start_child(void)
 	heritage.fds[1] = -1;
 	AZ(close(heritage.fds[2]));
 	heritage.fds[2] = -1;
-	child_pid = i;
+	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
