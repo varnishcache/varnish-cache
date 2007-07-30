@@ -50,7 +50,9 @@ struct vsb {
 	int		 s_flags;	/* flags */
 };
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * API functions
  */
@@ -73,6 +75,8 @@ char		*vsb_data(struct vsb *);
 int		 vsb_len(struct vsb *);
 int		 vsb_done(struct vsb *);
 void		 vsb_delete(struct vsb *);
-__END_DECLS
+#ifdef __cplusplus
+};
+#endif
 
 #endif
