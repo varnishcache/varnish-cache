@@ -37,7 +37,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <err.h>
 #include <errno.h>
 
 #ifndef HAVE_STRLCPY
