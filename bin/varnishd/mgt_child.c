@@ -166,7 +166,7 @@ close_sockets(void)
 static void
 start_child(void)
 {
-	int i;
+	pid_t pid;
 	unsigned u;
 	char *p;
 	struct ev *e;
@@ -185,12 +185,11 @@ start_child(void)
 	AZ(pipe(&heritage.fds[2]));
 	AZ(pipe(child_fds));
 	MCF_ParamSync();
-	i = fork();
-	if (i < 0) {
+	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
 		exit(1);
 	}
-	if (i == 0) {
+	if (pid == 0) {
 		if (geteuid() == 0) {
 			XXXAZ(setgid(params->gid));
 			XXXAZ(setuid(params->uid));
@@ -217,7 +216,7 @@ start_child(void)
 		exit (1);
 	}
 
-	fprintf(stderr, "start child pid %d\n", i);
+	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
 
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
