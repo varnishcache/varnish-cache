@@ -113,7 +113,7 @@ TIM_parse(const char *p)
 	for (r = fmts; *r != NULL; r++) {
 		memset(&tm, 0, sizeof tm);
 		if (strptime(p, *r, &tm) != NULL)
-			return(timegm(&tm));
+			return (mktime(&tm));
 	}
 	return (0);
 }
