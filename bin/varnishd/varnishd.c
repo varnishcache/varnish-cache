@@ -387,6 +387,9 @@ main(int argc, char *argv[])
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	setenv("TZ", "GMT", 1);
+	tzset();
+
 	memset(cli, 0, sizeof cli);
 	cli[0].sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli[0].sb);
