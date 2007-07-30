@@ -42,8 +42,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <err.h>		/* XXX */
-
 #ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
 #endif
@@ -188,8 +186,10 @@ start_child(void)
 	AZ(pipe(child_fds));
 	MCF_ParamSync();
 	i = fork();
-	if (i < 0)
-		errx(1, "Could not fork child");
+	if (i < 0) {
+		perror("Could not fork child");
+		exit(1);
+	}
 	if (i == 0) {
 		if (geteuid() == 0) {
 			XXXAZ(setgid(params->gid));

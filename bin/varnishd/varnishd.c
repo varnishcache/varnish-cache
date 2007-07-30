@@ -31,7 +31,8 @@
  * The management process and CLI handling
  */
 
-#include <err.h>
+#include <sys/stat.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -44,7 +45,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 #ifndef HAVE_DAEMON
 #include "compat/daemon.h"
