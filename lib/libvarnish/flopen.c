@@ -60,7 +60,7 @@ flopen(const char *path, int flags, ...)
 		va_end(ap);
 	}
 
-	lock.l_type = (flags & O_WRONLY || flags & O_RDWR) ? F_WRLCK : F_RDLCK;
+	lock.l_type = (flags & O_RDONLY) ? F_RDLCK : F_WRLCK;
 	lock.l_start = 0;
 	lock.l_whence = SEEK_SET;
 	lock.l_len = 0;
