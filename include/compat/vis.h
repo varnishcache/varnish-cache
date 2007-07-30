@@ -71,15 +71,17 @@
  */
 #define	UNVIS_END	1	/* no more characters */
 
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 char	*vis(char *, int, int, int);
 int	strvis(char *, const char *, int);
 int	strvisx(char *, const char *, size_t, int);
 int	strunvis(char *, const char *);
 int	strunvisx(char *, const char *, int);
 int	unvis(char *, int, int *, int);
-__END_DECLS
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* !_VIS_H_ */
