@@ -56,6 +56,7 @@ enum {
 	HTTP_HDR_MAX = 32
 };
 
+/* Note: intentionally not IOV_MAX */
 #define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
 /* Amount of per-worker logspace */
