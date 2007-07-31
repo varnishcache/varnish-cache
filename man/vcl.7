@@ -559,8 +559,9 @@ backend images {
 
 sub vcl_recv {
     if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.http.host = "www.example.com";
         set req.backend = www;
-    } elsif (req.http.host ~ "^images\.example\.com") {
+    } elsif (req.http.host ~ "^images\.example\.com$") {
         set req.backend = images;
     } else {
         error 404 "Unknown virtual host";
