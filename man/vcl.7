@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 13, 2007
+.Dd August 3, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -474,7 +474,7 @@ sub vcl_fetch {
 The following code is the equivalent of the default configuration with
 the backend address set to "backend.example.com" and no backend port
 specified.
-.\" Keep this in synch with bin/varnishd/mgt_vcc.c
+.\" Keep this in synch with bin/varnishd/mgt_vcc.c and etc/default.vcl
 .Bd -literal -offset 4n
 backend default {
     set backend.host = "backend.example.com";
@@ -534,11 +534,11 @@ sub vcl_deliver {
     deliver;
 }
 
-sub vcl_discard {
+sub vcl_timeout {
     discard;
 }
 
-sub vcl_timeout {
+sub vcl_discard {
     discard;
 }
 .Ed

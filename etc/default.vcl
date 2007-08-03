@@ -75,14 +75,27 @@ backend default {
 #	if (!obj.cacheable) {
 #		pass;
 #	}
-#	if (resp.http.Set-Cookie) {
+#	if (obj.http.Set-Cookie) {
 #		pass;
 #	}
 #	insert;
+#}
+#
+#
+## Called before a cached object is delivered to the client
+#
+#sub vcl_deliver {
+#    deliver;
 #}
 #
 ## Called when an object nears its expiry time
 #
 #sub vcl_timeout {
 #	discard;
+#}
+#
+## Called when an object is about to be discarded
+#
+#sub vcl_discard {
+#    discard;
 #}
