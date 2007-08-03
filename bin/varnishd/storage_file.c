@@ -118,7 +118,7 @@ struct smf_sc {
 static void
 smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 {
-	uintmax_t l;
+	uintmax_t l, fssize;
 	unsigned bs;
 	char suff[2];
 	int i, explicit;
@@ -127,6 +127,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 	AN(sc);
 	AZ(fstat(sc->fd, &st));
+	xxxassert(S_ISREG(st.st_mode));
 
 #if defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
@@ -137,8 +138,9 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	bs = sc->pagesize;
 	if (bs < fsst.f_bsize)
 		bs = fsst.f_bsize;
-
-	xxxassert(S_ISREG(st.st_mode));
+	xxxassert(bs % sc->pagesize == 0);
+	xxxassert(bs % fsst.f_bsize == 0);
+	fssize = fsst.f_bsize * fsst.f_bavail;
 
 	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
 
@@ -179,7 +181,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 				l *= (uintmax_t)(1024UL * 1024UL) *
 				    (uintmax_t)(1024UL * 1024UL);
 			else if (suff[0] == '%') {
-				l *= fsst.f_bsize * fsst.f_bavail;
+				l *= fssize;
 				l /= 100;
 			}
 		}
@@ -200,14 +202,14 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 		if (l < st.st_size) {
 			AZ(ftruncate(sc->fd, l));
-		} else if (l - st.st_size > fsst.f_bsize * fsst.f_bavail) {
-			l = ((uintmax_t)fsst.f_bsize * fsst.f_bavail * 80) / 100;
+		} else if (l - st.st_size > fssize) {
+			l = fssize * 80 / 100;
 			fprintf(stderr, "WARNING: storage file size reduced"
 			    " to %ju (80%% of available disk space)\n", l);
 		}
 	}
 
-	/* round down to of filesystem blocksize or pagesize */
+	/* round down to multiple of filesystem blocksize or pagesize */
 	l -= (l % bs);
 
 	if (l < MINPAGES * (uintmax_t)sc->pagesize) {
