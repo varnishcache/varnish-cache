@@ -279,6 +279,7 @@ parse_purge(struct tokenlist *tl)
 	
 	if (!vcc_StringVal(tl)) {
 		vcc_ExpectedStringval(tl);
+		return;
 	}
 	
 	Expect(tl, ')');
