@@ -754,12 +754,12 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (!strcmp(pp->name, param)) {
 			pp->func(cli, pp, val);
+			MCF_ParamSync();
 			return;
 		}
 	}
 	cli_result(cli, CLIS_PARAM);
 	cli_out(cli, "Unknown paramter \"%s\".", param);
-	MCF_ParamSync();
 }
 
 
