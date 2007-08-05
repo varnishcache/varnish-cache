@@ -112,6 +112,7 @@ STV_add(const char *spec)
 	xxxassert(q != NULL);
 
 	stv = malloc(sizeof *stv);
+	AN(stv);
 
 	if (!cmp_storage(&sma_stevedore, spec, p)) {
 		*stv = sma_stevedore;
