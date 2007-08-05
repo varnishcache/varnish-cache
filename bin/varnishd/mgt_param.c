@@ -51,6 +51,8 @@
 
 #include "vss.h"
 
+#define MAGIC_INIT_STRING	"\001"
+
 struct parspec;
 
 typedef void tweak_t(struct cli *, struct parspec *, const char *arg);
@@ -153,7 +155,13 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, un
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: slightly magic.  We want to initialize to "nobody" (XXX: shouldn't
+ * XXX: that be something autocrap found for us ?) but we don't want to
+ * XXX: fail initialization if that user doesn't exists, even though we
+ * XXX: do want to fail it, in subsequent sets.
+ * XXX: The magic init string is a hack for this.
+ */
 
 static void
 tweak_user(struct cli *cli, struct parspec *par, const char *arg)
@@ -163,20 +171,28 @@ tweak_user(struct cli *cli, struct parspec *par, const char *arg)
 
 	(void)par;
 	if (arg != NULL) {
-		if ((pw = getpwnam(arg)) == NULL) {
+		if (!strcmp(arg, MAGIC_INIT_STRING)) {
+			pw = getpwnam("nobody");
+			if (pw == NULL) {
+				master.uid = getuid();
+				return;
+			}
+		} else 
+			pw = getpwnam(arg);
+		if (pw == NULL) {
 			cli_out(cli, "Unknown user");
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
 		replace(&master.user, pw->pw_name);
 		master.uid = pw->pw_uid;
+		master.gid = pw->pw_gid;
 
 		/* set group to user's primary group */
 		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
 		    (gr = getgrnam(gr->gr_name)) != NULL &&
 		    gr->gr_gid == pw->pw_gid) 
 			replace(&master.group, gr->gr_name);
-		master.gid = pw->pw_gid;
 	} else if (master.user) {
 		cli_out(cli, "%s (%d)", master.user, (int)master.uid);
 	} else {
@@ -184,7 +200,9 @@ tweak_user(struct cli *cli, struct parspec *par, const char *arg)
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: see comment for tweak_user, same thing here.
+ */
 
 static void
 tweak_group(struct cli *cli, struct parspec *par, const char *arg)
@@ -193,7 +211,17 @@ tweak_group(struct cli *cli, struct parspec *par, const char *arg)
 
 	(void)par;
 	if (arg != NULL) {
-		if ((gr = getgrnam(arg)) == NULL) {
+		if (!strcmp(arg, MAGIC_INIT_STRING)) {
+			gr = getgrnam("nogroup");
+			if (gr == NULL) {
+				/* Only replace if tweak_user didn't */
+				if (master.gid == 0)
+					master.gid = getgid();
+				return;
+			}
+		} else
+			gr = getgrnam(arg);
+		if (gr == NULL) {
 			cli_out(cli, "Unknown group");
 			cli_result(cli, CLIS_PARAM);
 			return;
@@ -524,11 +552,11 @@ static struct parspec parspec[] = {
 		"The unprivileged user to run as.  Setting this will "
 		"also set \"group\" to the specified user's primary group.\n"
 		MUST_RESTART,
-		"nobody" },
+		MAGIC_INIT_STRING },
 	{ "group", tweak_group,
 		"The unprivileged group to run as.\n"
 		MUST_RESTART,
-		"nogroup" },
+		MAGIC_INIT_STRING },
 	{ "default_ttl", tweak_default_ttl,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.\n"
