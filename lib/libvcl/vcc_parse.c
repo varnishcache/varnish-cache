@@ -38,8 +38,6 @@
 #include "vcc_compile.h"
 #include "libvarnish.h"
 
-#include "vrt.h"
-
 /*--------------------------------------------------------------------*/
 
 static void Compound(struct tokenlist *tl);
