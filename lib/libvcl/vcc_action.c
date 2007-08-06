@@ -209,6 +209,12 @@ parse_set(struct tokenlist *tl)
 			return;
 		}
 		Fb(tl, 0, ");\n");
+		/*
+		 * We count the number of operations on the req.hash
+		 * variable, so that varnishd can preallocate the worst case
+		 * number of slots for composing the hash string.
+		 */
+		tl->nhashcount++;
 		break;
 	case STRING:
 		if (tl->t->tok != '=') {
