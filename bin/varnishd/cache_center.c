@@ -469,15 +469,26 @@ static int
 cnt_lookup(struct sess *sp)
 {
 	struct object *o;
+	char *p;
+	uintptr_t u;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->obj == NULL) {
-		WS_Reserve(sp->http->ws, 0);
-		sp->hash_b = sp->http->ws->f;
-		sp->hash_e = sp->hash_b;
+
+		/* Allocate the pointers we need, align properly. */
+		sp->lhashptr = 1;	/* space for NUL */
+		sp->ihashptr = 0;
+		sp->nhashptr = sp->vcl->nhashcount * 2;
+		p = WS_Alloc(sp->http->ws, 
+		    sizeof(const char *) * (sp->nhashptr + 1));
+		u = (uintptr_t)p;
+		u &= sizeof(const char *) - 1;
+		if (u)
+			p += sizeof(const char *) - u;
+		sp->hashptr = (void*)p;
+
 		VCL_hash_method(sp);		/* XXX: no-op for now */
-		WS_ReleaseP(sp->http->ws, sp->hash_e);
 		/* XXX check error */
 	}
 
@@ -493,9 +504,6 @@ cnt_lookup(struct sess *sp)
 		SES_Charge(sp);
 		return (1);
 	}
-
-	WS_Return(sp->http->ws, sp->hash_b, sp->hash_e);
-	sp->hash_b = sp->hash_e = NULL;
 
 	sp->obj = o;
 

@@ -315,8 +315,11 @@ struct sess {
 	struct workreq		workreq;
 	struct acct		acct;
 
-	char			*hash_b;	/* Start of hash string */
-	char			*hash_e;	/* End of hash string */
+	/* pointers to hash string components */
+	unsigned		nhashptr;
+	unsigned		ihashptr;
+	unsigned		lhashptr;
+	const char		**hashptr;
 };
 
 struct backend {
@@ -390,6 +393,8 @@ int Fetch(struct sess *sp);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
+int HSH_Compare(struct sess *sp, const char *b, const char *e);
+void HSH_Copy(struct sess *sp, char *b, const char *e);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);

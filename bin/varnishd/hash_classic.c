@@ -121,36 +121,44 @@ hcl_start(void)
  */
 
 static struct objhead *
-hcl_lookup(const char *b, const char *e, struct objhead *noh)
+hcl_lookup(struct sess *sp, struct objhead *noh)
 {
 	struct hcl_entry *he, *he2;
 	struct hcl_hd *hp;
-	unsigned u1, digest, kl, r;
+	unsigned u1, digest, r;
+	unsigned u, v;
 	int i;
 
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 
-	digest = crc32_l(b, e - b);
+	digest = ~0U;
+	for (u = 0; u < sp->ihashptr; u += 2) {
+		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		digest = crc32(digest, sp->hashptr[u], v);
+	}
+	digest ^= ~0U;
 
 	u1 = digest % hcl_nhash;
 	hp = &hcl_head[u1];
-	kl = e - b;
 	he2 = NULL;
 
 	for (r = 0; r < 2; r++ ) {
 		LOCK(&hp->mtx);
 		TAILQ_FOREACH(he, &hp->head, list) {
 			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
-			if (kl < he->klen)
+			if (sp->lhashptr < he->klen)
 				continue;
-			if (kl > he->klen)
+			if (sp->lhashptr > he->klen)
 				break;
 			if (he->digest < digest)
 				continue;
 			if (he->digest > digest)
 				break;
-			if (memcmp(he->key, b, kl))
+			i = HSH_Compare(sp, he->key, he->key + he->klen);
+			if (i < 0)
 				continue;
+			if (i > 0)
+				break;
 			he->refcnt++;
 			noh = he->oh;
 			UNLOCK(&hp->mtx);
@@ -174,7 +182,7 @@ hcl_lookup(const char *b, const char *e, struct objhead *noh)
 		}
 		UNLOCK(&hp->mtx);
 
-		i = sizeof *he2 + kl;
+		i = sizeof *he2 + sp->lhashptr;
 		he2 = calloc(i, 1);
 		XXXAN(he2);
 		he2->magic = HCL_ENTRY_MAGIC;
@@ -182,11 +190,11 @@ hcl_lookup(const char *b, const char *e, struct objhead *noh)
 		he2->digest = digest;
 		he2->hash = u1;
 		he2->head = hp;
-		he2->klen = kl;
+		he2->klen = sp->lhashptr;
 		noh->hashpriv = he2;
 
 		he2->key = (void*)(he2 + 1);
-		memcpy(he2->key, b, kl);
+		HSH_Copy(sp, he2->key, he2->key + sp->lhashptr);
 	}
 	assert(he2 == NULL);		/* FlexeLint */
 	INCOMPL();
