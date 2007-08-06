@@ -129,6 +129,8 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 	ws->r = NULL;
 }
 
+#if 0
+/* XXX: not used anywhere (yet) */
 void
 WS_Return(struct ws *ws, char *s, char *e)
 {
@@ -137,3 +139,4 @@ WS_Return(struct ws *ws, char *s, char *e)
 	if (e == ws->f)
 		ws->f = s;
 }
+#endif
