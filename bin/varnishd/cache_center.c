@@ -482,6 +482,7 @@ cnt_lookup(struct sess *sp)
 		sp->nhashptr = sp->vcl->nhashcount * 2;
 		p = WS_Alloc(sp->http->ws, 
 		    sizeof(const char *) * (sp->nhashptr + 1));
+		XXXAN(p);
 		u = (uintptr_t)p;
 		u &= sizeof(const char *) - 1;
 		if (u)
