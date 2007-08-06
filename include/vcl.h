@@ -26,6 +26,8 @@ struct VCL_conf {
 	const char	**srcname;
 	const char	**srcbody;
 
+	unsigned	nhashcount;
+
         void            *priv;
 
         vcl_init_f      *init_func;

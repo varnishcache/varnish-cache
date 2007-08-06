@@ -348,6 +348,7 @@ EmitStruct(const struct tokenlist *tl)
 	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
+	Fc(tl, 0, "\t.nhashcount = %u,\n", tl->nhashcount);
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); 

@@ -338,6 +338,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	const char	**srcname;\n");
 	vsb_cat(sb, "	const char	**srcbody;\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "	unsigned	nhashcount;\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "        void            *priv;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "        vcl_init_f      *init_func;\n");
