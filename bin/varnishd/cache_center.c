@@ -149,8 +149,17 @@ cnt_deliver(struct sess *sp)
 	sp->t_resp = TIM_real();
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
-	if (sp->handling != VCL_RET_DELIVER) 
+	switch (sp->handling) {
+	case VCL_RET_DELIVER:
+		break;
+	case VCL_RET_ERROR:
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_ERROR;
+		return (0);
+	default:
 		INCOMPL();
+	}
 
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
@@ -323,11 +332,23 @@ cnt_fetch(struct sess *sp)
 
 		VCL_fetch_method(sp);
 
-		if (sp->handling == VCL_RET_ERROR)
-			INCOMPL();
-
-		if (sp->handling == VCL_RET_PASS)
+		switch (sp->handling) {
+		case VCL_RET_ERROR:
+			sp->obj->ttl = 0;
+			sp->obj->cacheable = 0;
+			HSH_Unbusy(sp->obj);
+			HSH_Deref(sp->obj);
+			sp->obj = NULL;
+			sp->step = STP_ERROR;
+			return (0);
+		case VCL_RET_PASS:
 			sp->obj->pass = 1;
+			break;
+		case VCL_RET_INSERT:
+			break;
+		default:
+			INCOMPL();
+		}
 	}
 
 	sp->obj->cacheable = 1;
