@@ -116,19 +116,19 @@ vbe_new_conn(void)
 	return (vbc);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: There is a race here, we need to lock the replacement of the
+ * XXX: resolved addresses, or some other thread might try to access
+ * XXX: them while/during/after we changed them.
+ * XXX: preferably, we should make a copy to the vbe while we hold a
+ * XXX: lock anyway.
+ */
 
 static void
 vbe_lookup(struct backend *bp)
 {
-	struct addrinfo *res, hint;
+	struct addrinfo *res, hint, *old;
 	int error;
-
-	if (bp->addr != NULL) {
-		freeaddrinfo(bp->addr);
-		bp->addr = NULL;
-		bp->last_addr = NULL;
-	}
 
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
@@ -144,8 +144,11 @@ vbe_lookup(struct backend *bp)
 		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
 		return;
 	}
+	old = bp->addr;
 	bp->last_addr = res;
 	bp->addr = res;
+	if (old != NULL)
+		freeaddrinfo(old);
 }
 
 /*--------------------------------------------------------------------*/
