@@ -9,19 +9,17 @@ warn() {
 
 case `uname -s` in
 Darwin)
-	LIBTOOLIZE=glibtoolize
-	;;
+    LIBTOOLIZE=glibtoolize
+    ;;
 FreeBSD)
-	LIBTOOLIZE=libtoolize
-	if [ -d /usr/local/gnu-autotools/bin ] ; then
-		PATH=/usr/local/gnu-autotools/bin:${PATH}
-		export PATH
-		FIX_BROKEN_FREEBSD_PORTS="-I /usr/local/share/aclocal"
-	fi
-	;;
+    LIBTOOLIZE=libtoolize
+    ;;
 Linux)
-	LIBTOOLIZE=libtoolize
-	;;
+    LIBTOOLIZE=libtoolize
+    ;;
+*)
+    warn "unrecognized platform:" `uname -s`
+    LIBTOOLIZE=libtoolize
 esac
 
 automake_version=$(automake --version | tr ' ' '\n' | egrep '^[0-9]\.[0-9a-z.-]+')
@@ -39,7 +37,7 @@ fi
 
 set -ex
 
-aclocal ${FIX_BROKEN_FREEBSD_PORTS}
+aclocal
 $LIBTOOLIZE --copy --force
 autoheader
 automake --add-missing --copy --foreign
