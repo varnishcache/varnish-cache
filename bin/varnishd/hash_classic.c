@@ -46,8 +46,6 @@ struct hcl_entry {
 #define HCL_ENTRY_MAGIC		0x0ba707bf
 	TAILQ_ENTRY(hcl_entry)	list;
 	struct hcl_hd		*head;
-	char			*key;
-	unsigned		klen;
 	struct objhead		*oh;
 	unsigned		refcnt;
 	unsigned		digest;
@@ -146,15 +144,15 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 		LOCK(&hp->mtx);
 		TAILQ_FOREACH(he, &hp->head, list) {
 			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
-			if (sp->lhashptr < he->klen)
+			if (sp->lhashptr < he->oh->hashlen)
 				continue;
-			if (sp->lhashptr > he->klen)
+			if (sp->lhashptr > he->oh->hashlen)
 				break;
 			if (he->digest < digest)
 				continue;
 			if (he->digest > digest)
 				break;
-			i = HSH_Compare(sp, he->key, he->key + he->klen);
+			i = HSH_Compare(sp, he->oh);
 			if (i < 0)
 				continue;
 			if (i > 0)
@@ -182,19 +180,19 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 		}
 		UNLOCK(&hp->mtx);
 
-		i = sizeof *he2 + sp->lhashptr;
-		he2 = calloc(i, 1);
+		he2 = calloc(sizeof *he2, 1);
 		XXXAN(he2);
 		he2->magic = HCL_ENTRY_MAGIC;
 		he2->oh = noh;
 		he2->digest = digest;
 		he2->hash = u1;
 		he2->head = hp;
-		he2->klen = sp->lhashptr;
-		noh->hashpriv = he2;
 
-		he2->key = (void*)(he2 + 1);
-		HSH_Copy(sp, he2->key, he2->key + sp->lhashptr);
+		noh->hashpriv = he2;
+		noh->hash = malloc(sp->lhashptr);
+		XXXAN(noh->hash);
+		noh->hashlen = sp->lhashptr;
+		HSH_Copy(sp, noh);
 	}
 	assert(he2 == NULL);		/* FlexeLint */
 	INCOMPL();

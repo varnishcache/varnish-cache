@@ -44,8 +44,6 @@
 
 struct hsl_entry {
 	TAILQ_ENTRY(hsl_entry)	list;
-	char			*key;
-	int			keylen;
 	struct objhead		*obj;
 	unsigned		refcnt;
 };
@@ -80,7 +78,7 @@ hsl_lookup(struct sess *sp, struct objhead *nobj)
 
 	LOCK(&hsl_mutex);
 	TAILQ_FOREACH(he, &hsl_head, list) {
-		i = HSH_Compare(sp, he->key, he->key + he->keylen);
+		i = HSH_Compare(sp, he->obj);
 		if (i < 0)
 			continue;
 		if (i > 0)
@@ -94,14 +92,17 @@ hsl_lookup(struct sess *sp, struct objhead *nobj)
 		UNLOCK(&hsl_mutex);
 		return (NULL);
 	}
-	he2 = calloc(sizeof *he2 + sp->lhashptr, 1);
+	he2 = calloc(sizeof *he2, 1);
 	XXXAN(he2);
 	he2->obj = nobj;
 	he2->refcnt = 1;
-	he2->key = (void*)(he2 + 1);
-	he2->keylen = sp->lhashptr;
-	HSH_Copy(sp, he2->key, he2->key + he2->keylen);
+
 	nobj->hashpriv = he2;
+	nobj->hash = malloc(sp->lhashptr);
+	XXXAN(nobj->hash);
+	nobj->hashlen = sp->lhashptr;
+	HSH_Copy(sp, nobj);
+
 	if (he != NULL)
 		TAILQ_INSERT_BEFORE(he, he2, list);
 	else

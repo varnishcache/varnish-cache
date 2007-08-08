@@ -46,6 +46,7 @@ struct ban {
 	unsigned		gen;
 	regex_t			regexp;
 	char			*ban;
+	int			hash;
 };
 
 static TAILQ_HEAD(,ban) ban_head = TAILQ_HEAD_INITIALIZER(ban_head);
@@ -53,7 +54,7 @@ static unsigned ban_next;
 static struct ban *ban_start;
 
 void
-AddBan(const char *regexp)
+AddBan(const char *regexp, int hash)
 {
 	struct ban *b;
 	int i;
@@ -68,6 +69,7 @@ AddBan(const char *regexp)
 		(void)regerror(i, &b->regexp, buf, sizeof buf);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
 	}
+	b->hash = hash;
 	b->gen = ++ban_next;
 	b->ban = strdup(regexp);
 	TAILQ_INSERT_HEAD(&ban_head, b, list);
@@ -82,7 +84,7 @@ BAN_NewObj(struct object *o)
 }
 
 int
-BAN_CheckObject(struct object *o, const char *url)
+BAN_CheckObject(struct object *o, const char *url, const char *hash)
 {
 	struct ban *b, *b0;
 	int i;
@@ -91,7 +93,7 @@ BAN_CheckObject(struct object *o, const char *url)
 	for (b = b0;
 	    b != NULL && b->gen > o->ban_seq;
 	    b = TAILQ_NEXT(b, list)) {
-		i = regexec(&b->regexp, url, 0, NULL, 0);
+		i = regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0);
 		if (!i)
 			return (1);
 	}
@@ -104,7 +106,16 @@ cli_func_url_purge(struct cli *cli, char **av, void *priv)
 {
 
 	(void)priv;
-	AddBan(av[2]);
+	AddBan(av[2], 0);
+	cli_out(cli, "PURGE %s\n", av[2]);
+}
+
+void
+cli_func_hash_purge(struct cli *cli, char **av, void *priv)
+{
+
+	(void)priv;
+	AddBan(av[2], 1);
 	cli_out(cli, "PURGE %s\n", av[2]);
 }
 
@@ -112,5 +123,5 @@ void
 BAN_Init(void)
 {
 
-	AddBan("a");
+	AddBan("\001", 0);
 }
