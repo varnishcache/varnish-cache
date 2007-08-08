@@ -552,8 +552,8 @@ VRT_int_string(struct sess *sp, int num)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_purge(const char *regexp)
+VRT_purge(const char *regexp, int hash)
 {
 	
-	AddBan(regexp);
+	AddBan(regexp, hash);
 }

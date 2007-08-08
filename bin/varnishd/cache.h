@@ -262,6 +262,8 @@ struct objhead {
 
 	pthread_mutex_t		mtx;
 	TAILQ_HEAD(,object)	objects;
+	char			*hash;
+	unsigned		hashlen;
 };
 
 /* -------------------------------------------------------------------*/
@@ -368,11 +370,12 @@ struct bereq *vbe_new_bereq(void);
 void vbe_free_bereq(struct bereq *bereq);
 
 /* cache_ban.c */
-void AddBan(const char *);
+void AddBan(const char *, int hash);
 void BAN_Init(void);
 void cli_func_url_purge(struct cli *cli, char **av, void *priv);
+void cli_func_hash_purge(struct cli *cli, char **av, void *priv);
 void BAN_NewObj(struct object *o);
-int BAN_CheckObject(struct object *o, const char *url);
+int BAN_CheckObject(struct object *o, const char *url, const char *hash);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
@@ -392,8 +395,8 @@ int Fetch(struct sess *sp);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
-int HSH_Compare(struct sess *sp, const char *b, const char *e);
-void HSH_Copy(struct sess *sp, char *b, const char *e);
+int HSH_Compare(struct sess *sp, struct objhead *o);
+void HSH_Copy(struct sess *sp, struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);

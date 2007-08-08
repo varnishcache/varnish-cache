@@ -63,8 +63,15 @@
 #define CLI_URL_PURGE							\
 	"url.purge",							\
 	"url.purge <regexp>",						\
-	"\tAll urls matching regexp will consider currently cached\n"	\
-	    "\tobjects obsolete",					\
+	"\tAll objects where the urls matches regexp will be "		\
+	    "marked obsolete.",						\
+	1, 1
+
+#define CLI_HASH_PURGE							\
+	"hash.purge",							\
+	"hash.purge <regexp>",						\
+	"\tAll objects where the hash string matches regexp will be "	\
+	    "marked obsolete.",						\
 	1, 1
 
 #define CLI_URL_STATUS							\

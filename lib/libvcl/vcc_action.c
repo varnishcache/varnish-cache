@@ -273,12 +273,12 @@ parse_remove(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge(struct tokenlist *tl)
+parse_purge_url(struct tokenlist *tl)
 {
 
 	vcc_NextToken(tl);
 	
-	Fb(tl, 0, "VRT_purge(");
+	Fb(tl, 1, "VRT_purge(");
 	
 	Expect(tl, '(');
 	vcc_NextToken(tl);
@@ -290,7 +290,31 @@ parse_purge(struct tokenlist *tl)
 	
 	Expect(tl, ')');
 	vcc_NextToken(tl);
-	Fb(tl, 0, ");");
+	Fb(tl, 0, ", 0);\n");
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_purge_hash(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	
+	Fb(tl, 1, "VRT_purge(");
+	
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+	
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 0, ", 1);\n");
 }
 
 
@@ -310,7 +334,12 @@ static struct action_table {
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ "remove", 	parse_remove },
-	{ "purge",	parse_purge },
+	{ "purge_url",	parse_purge_url },
+	{ "purge_hash",	parse_purge_hash },
+
+	/* XXX: Compat remove in 1.2/2.0 */
+	{ "purge",	parse_purge_url },
+
 	{ NULL,		NULL }
 };
 

@@ -110,14 +110,16 @@ HSH_Freestore(struct object *o)
 }
 
 int
-HSH_Compare(struct sess *sp, const char *b, const char *e)
+HSH_Compare(struct sess *sp, struct objhead *obj)
 {
 	int i;
 	unsigned u, v;
+	const char *b;
 
-	i = sp->lhashptr - (e - b);
+	i = sp->lhashptr - obj->hashlen;
 	if (i)
 		return (i);
+	b = obj->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = sp->hashptr[u + 1] - sp->hashptr[u];
 		i = memcmp(sp->hashptr[u], b, v);
@@ -130,16 +132,19 @@ HSH_Compare(struct sess *sp, const char *b, const char *e)
 	}
 	assert(*b == '\0');
 	b++;
-	assert(b == e);
+	assert(b == obj->hash + obj->hashlen);
+	VSL(SLT_Debug, sp->fd, "Hash Match: %s", obj->hash);
 	return (0);
 }
 
 void
-HSH_Copy(struct sess *sp, char *b, const char *e)
+HSH_Copy(struct sess *sp, struct objhead *obj)
 {
 	unsigned u, v;
+	char *b;
 
-	assert((e - b) >= sp->lhashptr);
+	assert(obj->hashlen >= sp->lhashptr);
+	b = obj->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = sp->hashptr[u + 1] - sp->hashptr[u];
 		memcpy(b, sp->hashptr[u], v);
@@ -147,7 +152,8 @@ HSH_Copy(struct sess *sp, char *b, const char *e)
 		*b++ = '#';
 	}
 	*b++ = '\0';
-	assert(b <= e);
+	VSL(SLT_Debug, sp->fd, "Hash: %s", obj->hash);
+	assert(b <= obj->hash + obj->hashlen);
 }
 
 struct object *
@@ -195,7 +201,8 @@ HSH_Lookup(struct sess *sp)
 			/* Object banned but not reaped yet */
 		} else if (o->ttl <= sp->t_req) {
 			/* Object expired */
-		} else if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b)) {
+		} else if (BAN_CheckObject(o,
+		    h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
 			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
 			if (o->heap_idx != 0)

@@ -67,6 +67,7 @@ struct cli_proto CLI_cmds[] = {
 	{ CLI_URL_QUERY,	cli_func_url_query },
 #endif
 	{ CLI_URL_PURGE,	cli_func_url_purge },
+	{ CLI_HASH_PURGE,	cli_func_hash_purge },
 	{ CLI_VCL_LOAD,		cli_func_config_load },
 	{ CLI_VCL_LIST,		cli_func_config_list },
 	{ CLI_VCL_DISCARD,	cli_func_config_discard },

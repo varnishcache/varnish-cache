@@ -70,7 +70,7 @@ int VRT_re_match(const char *, void *re);
 int VRT_re_test(struct vsb *, const char *, int sub);
 const char *VRT_regsub(struct sess *sp, const char *, void *, const char *);
 
-void VRT_purge(const char *);
+void VRT_purge(const char *, int hash);
 
 void VRT_count(struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
