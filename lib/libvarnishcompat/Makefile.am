@@ -2,9 +2,9 @@
 
 INCLUDES = -I$(top_srcdir)/include
 
-noinst_LIBRARIES = libcompat.a
+lib_LTLIBRARIES = libvarnishcompat.la
 
-libcompat_a_SOURCES = \
+libvarnishcompat_la_SOURCES = \
 	asprintf.c \
 	vasprintf.c \
 	setproctitle.c \
@@ -14,4 +14,4 @@ libcompat_a_SOURCES = \
 	strndup.c \
 	vis.c
 
-libcompat_a_CFLAGS = -include config.h
+libvarnishcompat_la_CFLAGS = -include config.h
