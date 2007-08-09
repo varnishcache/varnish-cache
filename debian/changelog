@@ -1,8 +1,9 @@
-varnish (1.1-1) unstable; urgency=low
+varnish (1.1) unstable; urgency=low
 
-  * New upstream version
+  * New upstream release
+  * Split package into varnish, libvarnish and libvarnish-dev
 
- -- des <des@linpro.no>  Thu,  5 Jul 2007 13:13:54 +0200
+ -- Stig Sandbeck Mathisen <ssm@linpro.no>  Fri, 20 Jul 2007 14:37:36 +0200
 
 varnish (1.0.4-1) unstable; urgency=low
 

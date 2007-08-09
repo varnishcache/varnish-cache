@@ -13,7 +13,7 @@ varnishreplay_CFLAGS = -include config.h
 
 varnishreplay_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libcompat/libcompat.a \
+	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	${PTHREAD_LIBS}
 

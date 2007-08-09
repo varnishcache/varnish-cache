@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd July 13, 2007
+.Dd August 3, 2007
 .Dt VCL 7
 .Os
 .Sh NAME
@@ -136,6 +136,9 @@ is replaced with the entire matched string, and
 is replaced with the contents of subgroup
 .Ar n
 in the matched string.
+.It Fn purge "regex"
+Purge all objects in cache matching 
+.Fa regex .
 .El
 .Ss Subroutines
 A subroutine is used to group code for legibility or reusability:
@@ -471,7 +474,7 @@ sub vcl_fetch {
 The following code is the equivalent of the default configuration with
 the backend address set to "backend.example.com" and no backend port
 specified.
-.\" Keep this in synch with bin/varnishd/mgt_vcc.c
+.\" Keep this in synch with bin/varnishd/mgt_vcc.c and etc/default.vcl
 .Bd -literal -offset 4n
 backend default {
     set backend.host = "backend.example.com";
@@ -531,11 +534,11 @@ sub vcl_deliver {
     deliver;
 }
 
-sub vcl_discard {
+sub vcl_timeout {
     discard;
 }
 
-sub vcl_timeout {
+sub vcl_discard {
     discard;
 }
 .Ed
@@ -556,8 +559,9 @@ backend images {
 
 sub vcl_recv {
     if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.http.host = "www.example.com";
         set req.backend = www;
-    } elsif (req.http.host ~ "^images\.example\.com") {
+    } elsif (req.http.host ~ "^images\.example\.com$") {
         set req.backend = images;
     } else {
         error 404 "Unknown virtual host";

@@ -17,6 +17,7 @@ NFILES=131072
 DAEMON_OPTS="-a :6081 \
              -T localhost:6082 \
 	     -b localhost:8080 \
+	     -n /var/lib/varnish \
 	     -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
@@ -29,6 +30,7 @@ DAEMON_OPTS="-a :6081 \
 # DAEMON_OPTS="-a :6081 \
 #              -T localhost:6082 \
 #              -f /etc/varnish/default.vcl \
+#              -n /var/lib/varnish \
 #              -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
@@ -58,6 +60,9 @@ DAEMON_OPTS="-a :6081 \
 # # Idle timeout for worker threads
 # VARNISH_THREAD_TIMEOUT=120
 #
+# # Home dir for this varnish instance
+# VARNISH_HOMEDIR=/var/lib/varnish
+#
 # # Cache file location
 # VARNISH_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
 #
@@ -78,6 +83,7 @@ DAEMON_OPTS="-a :6081 \
 #              -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
 #              -t ${VARNISH_TTL} \
 #              -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
+#              -n ${VARNISH_HOMEDIR} \
 #              -s ${VARNISH_STORAGE}"
 #
 

@@ -206,6 +206,12 @@ parse_set(struct tokenlist *tl)
 			return;
 		}
 		Fb(tl, 0, ");\n");
+		/*
+		 * We count the number of operations on the req.hash
+		 * variable, so that varnishd can preallocate the worst case
+		 * number of slots for composing the hash string.
+		 */
+		tl->nhashcount++;
 		break;
 	case STRING:
 		if (tl->t->tok != '=') {
@@ -263,6 +269,30 @@ parse_remove(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_purge(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	
+	Fb(tl, 0, "VRT_purge(");
+	
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+	
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 0, ");");
+}
+
+
+/*--------------------------------------------------------------------*/
+
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
@@ -277,6 +307,7 @@ static struct action_table {
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ "remove", 	parse_remove },
+	{ "purge",	parse_purge },
 	{ NULL,		NULL }
 };
 

@@ -66,7 +66,9 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/varnish
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+	dh_install --sourcedir=$(CURDIR)/debian/tmp
+
 	install -m 644 $(CURDIR)/etc/default.vcl $(CURDIR)/debian/varnish/etc/varnish/
 	install -m 644 $(CURDIR)/debian/lintian-override $(CURDIR)/debian/varnish/usr/share/lintian/overrides/varnish
 	install -m 644 $(CURDIR)/debian/varnish.logrotate $(CURDIR)/debian/varnish/etc/logrotate.d/varnish

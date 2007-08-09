@@ -149,8 +149,17 @@ cnt_deliver(struct sess *sp)
 	sp->t_resp = TIM_real();
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
-	if (sp->handling != VCL_RET_DELIVER) 
+	switch (sp->handling) {
+	case VCL_RET_DELIVER:
+		break;
+	case VCL_RET_ERROR:
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		sp->step = STP_ERROR;
+		return (0);
+	default:
 		INCOMPL();
+	}
 
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
@@ -298,11 +307,23 @@ cnt_fetch(struct sess *sp)
 
 		VCL_fetch_method(sp);
 
-		if (sp->handling == VCL_RET_ERROR)
-			INCOMPL();
-
-		if (sp->handling == VCL_RET_PASS)
+		switch (sp->handling) {
+		case VCL_RET_ERROR:
+			sp->obj->ttl = 0;
+			sp->obj->cacheable = 0;
+			HSH_Unbusy(sp->obj);
+			HSH_Deref(sp->obj);
+			sp->obj = NULL;
+			sp->step = STP_ERROR;
+			return (0);
+		case VCL_RET_PASS:
 			sp->obj->pass = 1;
+			break;
+		case VCL_RET_INSERT:
+			break;
+		default:
+			INCOMPL();
+		}
 	}
 
 	sp->obj->cacheable = 1;
@@ -433,15 +454,27 @@ static int
 cnt_lookup(struct sess *sp)
 {
 	struct object *o;
+	char *p;
+	uintptr_t u;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->obj == NULL) {
-		WS_Reserve(sp->http->ws, 0);
-		sp->hash_b = sp->http->ws->f;
-		sp->hash_e = sp->hash_b;
+
+		/* Allocate the pointers we need, align properly. */
+		sp->lhashptr = 1;	/* space for NUL */
+		sp->ihashptr = 0;
+		sp->nhashptr = sp->vcl->nhashcount * 2;
+		p = WS_Alloc(sp->http->ws, 
+		    sizeof(const char *) * (sp->nhashptr + 1));
+		XXXAN(p);
+		u = (uintptr_t)p;
+		u &= sizeof(const char *) - 1;
+		if (u)
+			p += sizeof(const char *) - u;
+		sp->hashptr = (void*)p;
+
 		VCL_hash_method(sp);		/* XXX: no-op for now */
-		WS_ReleaseP(sp->http->ws, sp->hash_e);
 		/* XXX check error */
 	}
 
@@ -457,9 +490,6 @@ cnt_lookup(struct sess *sp)
 		SES_Charge(sp);
 		return (1);
 	}
-
-	WS_Return(sp->http->ws, sp->hash_b, sp->hash_e);
-	sp->hash_b = sp->hash_e = NULL;
 
 	sp->obj = o;
 
@@ -522,6 +552,8 @@ cnt_miss(struct sess *sp)
 		HSH_Unbusy(sp->obj);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
+		vbe_free_bereq(sp->bereq);
+		sp->bereq = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -690,8 +722,7 @@ cnt_recv(struct sess *sp)
 
 	VCL_recv_method(sp);
 
-	sp->wantbody = (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "GET") ||
-	    !strcmp(sp->http->hd[HTTP_HDR_REQ].b, "POST"));
+	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */

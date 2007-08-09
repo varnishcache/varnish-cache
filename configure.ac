@@ -50,6 +50,9 @@ PTHREAD_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(PTHREAD_LIBS)
 
+AC_CHECK_LIBM
+AC_SUBST(LIBM)
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
@@ -148,9 +151,9 @@ AC_CONFIG_FILES([
     etc/Makefile
     include/Makefile
     lib/Makefile
-    lib/libcompat/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
+    lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     man/Makefile
     debian/Makefile

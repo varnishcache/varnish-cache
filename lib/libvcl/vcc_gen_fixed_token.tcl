@@ -142,6 +142,8 @@ puts $fo {	unsigned        magic;
 	const char	**srcname;
 	const char	**srcbody;
 
+	unsigned	nhashcount;
+
         void            *priv;
 
         vcl_init_f      *init_func;

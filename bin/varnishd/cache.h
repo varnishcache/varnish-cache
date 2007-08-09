@@ -56,6 +56,7 @@ enum {
 	HTTP_HDR_MAX = 32
 };
 
+/* Note: intentionally not IOV_MAX */
 #define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
 /* Amount of per-worker logspace */
@@ -94,7 +95,6 @@ void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(struct ws *ws);
 void WS_Reset(struct ws *ws);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
-void WS_Return(struct ws *ws, char *b, char *e);
 
 
 
@@ -325,8 +325,11 @@ struct sess {
 	struct workreq		workreq;
 	struct acct		acct;
 
-	char			*hash_b;	/* Start of hash string */
-	char			*hash_e;	/* End of hash string */
+	/* pointers to hash string components */
+	unsigned		nhashptr;
+	unsigned		ihashptr;
+	unsigned		lhashptr;
+	const char		**hashptr;
 };
 
 struct backend {
@@ -371,6 +374,7 @@ struct bereq *vbe_new_bereq(void);
 void vbe_free_bereq(struct bereq *bereq);
 
 /* cache_ban.c */
+void AddBan(const char *);
 void BAN_Init(void);
 void cli_func_url_purge(struct cli *cli, char **av, void *priv);
 void BAN_NewObj(struct object *o);
@@ -394,6 +398,8 @@ int Fetch(struct sess *sp);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
+int HSH_Compare(struct sess *sp, const char *b, const char *e);
+void HSH_Copy(struct sess *sp, char *b, const char *e);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);

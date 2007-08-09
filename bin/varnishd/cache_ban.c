@@ -52,7 +52,7 @@ static TAILQ_HEAD(,ban) ban_head = TAILQ_HEAD_INITIALIZER(ban_head);
 static unsigned ban_next;
 static struct ban *ban_start;
 
-static void
+void
 AddBan(const char *regexp)
 {
 	struct ban *b;

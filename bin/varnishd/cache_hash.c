@@ -108,6 +108,47 @@ HSH_Freestore(struct object *o)
 	}
 }
 
+int
+HSH_Compare(struct sess *sp, const char *b, const char *e)
+{
+	int i;
+	unsigned u, v;
+
+	i = sp->lhashptr - (e - b);
+	if (i)
+		return (i);
+	for (u = 0; u < sp->ihashptr; u += 2) {
+		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		i = memcmp(sp->hashptr[u], b, v);
+		if (i)
+			return (i);
+		b += v;
+		i = '#' - *b++;
+		if (i)
+			return (i);
+	}
+	assert(*b == '\0');
+	b++;
+	assert(b == e);
+	return (0);
+}
+
+void
+HSH_Copy(struct sess *sp, char *b, const char *e)
+{
+	unsigned u, v;
+
+	assert((e - b) >= sp->lhashptr);
+	for (u = 0; u < sp->ihashptr; u += 2) {
+		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		memcpy(b, sp->hashptr[u], v);
+		b += v;
+		*b++ = '#';
+	}
+	*b++ = '\0';
+	assert(b <= e);
+}
+
 struct object *
 HSH_Lookup(struct sess *sp)
 {
@@ -132,9 +173,8 @@ HSH_Lookup(struct sess *sp)
 		LOCK(&oh->mtx);
 		goto were_back;
 	}
-VSLR(SLT_Debug, sp->fd, sp->hash_b, sp->hash_e);
 
-	oh = hash->lookup(sp->hash_b, sp->hash_e, w->nobjhead);
+	oh = hash->lookup(sp, w->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;

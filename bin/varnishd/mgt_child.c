@@ -42,8 +42,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <err.h>		/* XXX */
-
 #ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
 #endif
@@ -168,7 +166,7 @@ close_sockets(void)
 static void
 start_child(void)
 {
-	int i;
+	pid_t pid;
 	unsigned u;
 	char *p;
 	struct ev *e;
@@ -187,10 +185,11 @@ start_child(void)
 	AZ(pipe(&heritage.fds[2]));
 	AZ(pipe(child_fds));
 	MCF_ParamSync();
-	i = fork();
-	if (i < 0)
-		errx(1, "Could not fork child");
-	if (i == 0) {
+	if ((pid = fork()) < 0) {
+		perror("Could not fork child");
+		exit(1);
+	}
+	if (pid == 0) {
 		if (geteuid() == 0) {
 			XXXAZ(setgid(params->gid));
 			XXXAZ(setuid(params->uid));
@@ -198,8 +197,7 @@ start_child(void)
 
 		/* Redirect stdin/out/err */
 		AZ(close(0));
-		i = open("/dev/null", O_RDONLY);
-		xxxassert(i == 0);
+		assert(open("/dev/null", O_RDONLY) == 0);
 		assert(dup2(child_fds[1], 1) == 1);
 		assert(dup2(child_fds[1], 2) == 2);
 		AZ(close(child_fds[0]));
@@ -214,10 +212,10 @@ start_child(void)
 		signal(SIGTERM, SIG_DFL);
 		child_main();
 
-		exit (1);
+		exit(1);
 	}
 
-	fprintf(stderr, "start child pid %d\n", i);
+	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
 
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
@@ -248,7 +246,7 @@ start_child(void)
 	heritage.fds[1] = -1;
 	AZ(close(heritage.fds[2]));
 	heritage.fds[2] = -1;
-	child_pid = i;
+	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
@@ -307,6 +305,8 @@ mgt_sigchld(struct ev *e, int what)
 	ev_poker = NULL;
 
 	r = wait4(-1, &status, WNOHANG, NULL);
+	if (r == 0)
+		return (0);
 	if (r != child_pid || r == -1) {
 		fprintf(stderr, "Unknown child died pid=%d status=0x%x\n",
 		    r, status);

@@ -83,6 +83,7 @@ struct tokenlist {
 	struct proc		*mprocs[N_METHODS];
 
 	unsigned		recnt;
+	unsigned		nhashcount;
 };
 
 enum var_type {

@@ -98,7 +98,7 @@ static const char *default_vcl =
     "    if (req.http.host) {\n"
     "        set req.hash += req.http.host;\n"
     "    } else {\n"
-    "        set req.hash += server.ip;\n"
+    "        set req.hash += server.ip;\n"	/* XXX: see ticket 137 */
     "    }\n"
 #endif
     "    hash;\n"

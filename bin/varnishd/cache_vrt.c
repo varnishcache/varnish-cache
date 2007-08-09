@@ -452,7 +452,9 @@ VRT_r_server_ip(struct sess *sp)
 	return (sp->mysockaddr);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Add an element to the array/list of hash bits.
+ */
 
 void
 VRT_l_req_hash(struct sess *sp, const char *str)
@@ -462,10 +464,18 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 	if (str == NULL)
 		str = "";
 	l = strlen(str);
-	xxxassert (sp->hash_e + l + 1 <= sp->http->ws->e);
-	memcpy(sp->hash_e, str, l);
-	sp->hash_e[l] = '#';
-	sp->hash_e += l + 1;
+
+	/*
+	 * XXX: handle this by bouncing sp->vcl->nhashcount when it fails
+	 * XXX: and dispose of this request either by reallocating the
+	 * XXX: hashptr (if possible) or restarting/error the request
+	 */
+	xxxassert(sp->ihashptr < sp->nhashptr);
+
+	sp->hashptr[sp->ihashptr] = str;
+	sp->hashptr[sp->ihashptr + 1] = str + l;
+	sp->ihashptr += 2;
+	sp->lhashptr += l + 1;
 }
 
 /*--------------------------------------------------------------------*/
@@ -512,4 +522,13 @@ VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 	strcat(q, ":");
 	strcat(q, p);
 	return (q);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_purge(const char *regexp)
+{
+	
+	AddBan(regexp);
 }
