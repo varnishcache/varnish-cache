@@ -151,9 +151,9 @@ AC_CONFIG_FILES([
     etc/Makefile
     include/Makefile
     lib/Makefile
-    lib/libcompat/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
+    lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     man/Makefile
     debian/Makefile

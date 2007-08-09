@@ -1,7 +1,7 @@
 # $Id$
 
 SUBDIRS = \
-	libcompat \
 	libvarnish \
 	libvarnishapi \
+	libvarnishcompat \
 	libvcl
