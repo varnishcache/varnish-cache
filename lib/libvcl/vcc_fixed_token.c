@@ -446,6 +446,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, const char *, ...);\n");
 	vsb_cat(sb, "void VRT_handling(struct sess *sp, unsigned hand);\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "/* Simple stuff */\n");
+	vsb_cat(sb, "int VRT_strcmp(const char *s1, const char *s2);\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
 	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);\n");
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *);\n");
