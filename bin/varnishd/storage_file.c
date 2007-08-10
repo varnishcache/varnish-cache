@@ -116,7 +116,8 @@ struct smf_sc {
 static void
 smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 {
-	uintmax_t l;
+	struct statfs fsst;
+	uintmax_t l, fssize;
 	unsigned bs;
 	char suff[2];
 	int i, explicit;
@@ -126,10 +127,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AN(sc);
 	AZ(fstat(sc->fd, &st));
 
-#if defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
-	struct statfs fsst;
 	AZ(fstatfs(sc->fd, &fsst));
-#endif
 
 	/* We use units of the larger of filesystem blocksize and pagesize */
 	bs = sc->pagesize;

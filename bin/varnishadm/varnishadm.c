@@ -51,6 +51,7 @@ telnet_mgt(const char* T_arg, int argc, char* argv[])
 	struct vss_addr **ta;
 	char *addr, *port;
 	int i, n;
+       int sock;
 	long status, bytes;
 	char *answer = NULL;
 	char buf[13];
@@ -65,7 +66,7 @@ telnet_mgt(const char* T_arg, int argc, char* argv[])
 		exit(2);
 	}
 	
-	int sock = VSS_connect(ta[0]);
+       sock = VSS_connect(ta[0]);
 	
 	for (i = 0; i < n; ++i) {
 		free(ta[i]);
