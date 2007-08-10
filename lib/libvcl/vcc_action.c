@@ -337,9 +337,6 @@ static struct action_table {
 	{ "purge_url",	parse_purge_url },
 	{ "purge_hash",	parse_purge_hash },
 
-	/* XXX: Compat remove in 1.2/2.0 */
-	{ "purge",	parse_purge_url },
-
 	{ NULL,		NULL }
 };
 
