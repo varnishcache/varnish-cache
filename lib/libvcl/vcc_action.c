@@ -270,7 +270,7 @@ parse_remove(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge(struct tokenlist *tl)
+parse_purge_url(struct tokenlist *tl)
 {
 
 	vcc_NextToken(tl);
@@ -307,7 +307,8 @@ static struct action_table {
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
 	{ "remove", 	parse_remove },
-	{ "purge",	parse_purge },
+	{ "purge_url",	parse_purge_url },
+
 	{ NULL,		NULL }
 };
 
