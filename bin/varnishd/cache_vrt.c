@@ -267,63 +267,6 @@ VRT_handling(struct sess *sp, unsigned hand)
 	sp->handling = hand;
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-VRT_set_backend_name(struct backend *be, const char *p)
-{
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	be->vcl_name = p;
-}
-
-void
-VRT_alloc_backends(struct VCL_conf *cp)
-{
-	int i;
-
-	cp->backend = calloc(sizeof *cp->backend, cp->nbackend);
-	XXXAN(cp->backend);
-	for (i = 0; i < cp->nbackend; i++) {
-		cp->backend[i] = calloc(sizeof *cp->backend[i], 1);
-		XXXAN(cp->backend[i]);
-		cp->backend[i]->magic = BACKEND_MAGIC;
-		cp->backend[i]->dnsttl = 30;
-		TAILQ_INIT(&cp->backend[i]->connlist);
-		cp->backend[i]->health = 0;
-		cp->backend[i]->last_check = TIM_mono();
-		cp->backend[i]->minute_limit = 1;
-	}
-}
-
-void
-VRT_free_backends(struct VCL_conf *cp)
-{
-
-	(void)cp;	/* XXX */
-}
-
-void
-VRT_fini_backend(struct backend *be)
-{
-
-	(void)be;	/* XXX */
-}
-
-/*--------------------------------------------------------------------*/
-
-#define VBACKEND(type,onm,field)			\
-void							\
-VRT_l_backend_##onm(struct backend *be, type a)		\
-{							\
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);		\
-	be->field = a;					\
-}							\
-
-VBACKEND(const char *,	host,	hostname)
-VBACKEND(const char *,	port,	portname)
-VBACKEND(double,	dnsttl,	dnsttl)
-
-
 /*--------------------------------------------------------------------
  * XXX: Working relative to t_req is maybe not the right thing, we could
  * XXX: have spent a long time talking to the backend since then.
@@ -556,4 +499,41 @@ VRT_purge(const char *regexp, int hash)
 {
 	
 	AddBan(regexp, hash);
+}
+
+/*--------------------------------------------------------------------
+ * Backend stuff, should probably move to its own file eventually
+ */
+void
+VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
+{
+	struct backend *b;
+	
+	b = calloc(sizeof *b, 1);
+	XXXAN(b);
+	b->magic = BACKEND_MAGIC;
+	b->dnsttl = 300;
+	TAILQ_INIT(&b->connlist);
+	b->last_check = TIM_mono();
+	b->minute_limit = 1;
+
+	AN(t->name);
+	b->vcl_name = strdup(t->name);
+	XXXAN(b->vcl_name);
+
+	AN(t->port);
+	b->portname = strdup(t->port);
+	XXXAN(b->portname);
+
+	AN(t->host);
+	b->hostname = strdup(t->host);
+	XXXAN(b->hostname);
+
+	*bp = b;
+}
+
+void
+VRT_fini_backend(struct backend *b)
+{
+	(void)b;
 }

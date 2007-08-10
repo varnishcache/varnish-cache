@@ -338,11 +338,14 @@ EmitStruct(const struct tokenlist *tl)
 	}
 	Fc(tl, 0, "};\n");
 
+	Fc(tl, 0, "\nstatic struct backend\t*backends[%d];\n", tl->nbackend);
+
 	Fc(tl, 0, "\nstruct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
 	Fc(tl, 0, "\t.fini_func = VGC_Fini,\n");
 	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
+	Fc(tl, 0, "\t.backend = backends,\n");
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);
@@ -559,8 +562,6 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	Fh(tl, 0, "\n/* ---===### VCC generated below here ###===---*/\n");
 	Fh(tl, 0, "\nextern struct VCL_conf VCL_conf;\n");
 
-	Fi(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
-
 	/* Register and lex the main source */
 	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -614,8 +615,6 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	vcc_CheckUses(tl);
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
-
-	Ff(tl, 0, "\tVRT_free_backends(&VCL_conf);\n");
 
 	/* Emit method functions */
 	for (i = 0; i < N_METHODS; i++) {

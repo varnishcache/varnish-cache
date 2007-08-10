@@ -398,6 +398,12 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct VCL_conf;\n");
 	vsb_cat(sb, "struct sockaddr;\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_simple_backend {\n");
+	vsb_cat(sb, "	const char	*name;\n");
+	vsb_cat(sb, "	const char	*port;\n");
+	vsb_cat(sb, "	const char	*host;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_ref {\n");
 	vsb_cat(sb, "	unsigned	source;\n");
 	vsb_cat(sb, "	unsigned	offset;\n");
@@ -441,10 +447,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_handling(struct sess *sp, unsigned hand);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
-	vsb_cat(sb, "void VRT_set_backend_name(struct backend *, const char *);\n");
-	vsb_cat(sb, "void VRT_alloc_backends(struct VCL_conf *cp);\n");
-	vsb_cat(sb, "void VRT_free_backends(struct VCL_conf *cp);\n");
-	vsb_cat(sb, "void VRT_fini_backend(struct backend *be);\n");
+	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);\n");
+	vsb_cat(sb, "void VRT_fini_backend(struct backend *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);\n");
 	vsb_cat(sb, "char *VRT_int_string(struct sess *sp, int);\n");

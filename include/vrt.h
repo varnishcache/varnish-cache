@@ -40,6 +40,12 @@ struct backend;
 struct VCL_conf;
 struct sockaddr;
 
+struct vrt_simple_backend {
+	const char	*name;
+	const char	*port;
+	const char	*host;
+};
+
 struct vrt_ref {
 	unsigned	source;
 	unsigned	offset;
@@ -83,10 +89,8 @@ void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, const char *, 
 void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Backend related */
-void VRT_set_backend_name(struct backend *, const char *);
-void VRT_alloc_backends(struct VCL_conf *cp);
-void VRT_free_backends(struct VCL_conf *cp);
-void VRT_fini_backend(struct backend *be);
+void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);
+void VRT_fini_backend(struct backend *);
 
 char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);
 char *VRT_int_string(struct sess *sp, int);
