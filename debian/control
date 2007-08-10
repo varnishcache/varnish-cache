@@ -8,7 +8,7 @@ Standards-Version: 3.7.2
 
 Package: varnish
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3), libvarnish
+Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3), libvarnish, libc6-dev | libc-dev
 Description: A state-of-the-art, high-performance HTTP accelerator
  varnish is the server-side alternative to Squid, written primarily with
  speed in mind, and with a look to implementing full ESI-support in
