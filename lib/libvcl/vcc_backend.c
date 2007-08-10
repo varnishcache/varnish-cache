@@ -61,7 +61,6 @@ CheckHostPort(const char *host, const char *port)
 void
 vcc_ParseBackend(struct tokenlist *tl)
 {
-	unsigned a;
 	struct var *vp;
 	struct token *t_be = NULL;
 	struct token *t_host = NULL;
@@ -72,17 +71,17 @@ vcc_ParseBackend(struct tokenlist *tl)
 	ExpectErr(tl, ID);
 	t_be = tl->t;
 	vcc_AddDef(tl, tl->t, R_BACKEND);
+	/*
+	 * The first backend is always referenced because that is the default
+	 * at the beginning of vcl_recv
+	 */
 	if (tl->nbackend == 0)
 		vcc_AddRef(tl, tl->t, R_BACKEND);
+
+	/* In the compiled vcl we use these macros to refer to backends */
 	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
 	    PF(tl->t), tl->nbackend);
-	Fc(tl, 0, "\n");
-	Fc(tl, 0, "static void\n");
-	Fc(tl, 1, "VGC_init_backend_%.*s (void)\n", PF(tl->t));
-	Fc(tl, 1, "{\n");
-	Fc(tl, 1, "\tstruct backend *backend = VGC_backend_%.*s;\n", PF(tl->t));
-	Fc(tl, 1, "\n");
-	Fc(tl, 1, "\tVRT_set_backend_name(backend, \"%.*s\");\n", PF(tl->t));
+
 	vcc_NextToken(tl);
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
@@ -110,39 +109,12 @@ vcc_ParseBackend(struct tokenlist *tl)
 		case HOSTNAME:
 			ExpectErr(tl, CSTR);
 			t_host = tl->t;
-			Fc(tl, 1, "\t%s ", vp->lname);
-			EncToken(tl->fc, t_host);
-			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
 			break;
 		case PORTNAME:
 			ExpectErr(tl, CSTR);
 			t_port = tl->t;
-			Fc(tl, 1, "\t%s ", vp->lname);
-			EncToken(tl->fc, t_port);
-			Fc(tl, 0, ");\n");
 			vcc_NextToken(tl);
-			break;
-#if 0
-		case INT:
-		case SIZE:
-		case RATE:
-		case FLOAT:
-#endif
-		case TIME:
-			Fc(tl, 1, "\t%s ", vp->lname);
-			a = tl->t->tok;
-			if (a == T_MUL || a == T_DIV)
-				Fc(tl, 0, "%g", vcc_DoubleVal(tl));
-			else if (vp->fmt == TIME)
-				vcc_TimeVal(tl);
-			else if (vp->fmt == SIZE)
-				vcc_SizeVal(tl);
-			else if (vp->fmt == RATE)
-				vcc_RateVal(tl);
-			else
-				Fc(tl, 0, "%g", vcc_DoubleVal(tl));
-			Fc(tl, 0, ");\n");
 			break;
 		default:
 			vsb_printf(tl->sb,
@@ -177,9 +149,14 @@ vcc_ParseBackend(struct tokenlist *tl)
 	}
 
 	vcc_NextToken(tl);
-	Fc(tl, 1, "}\n");
-	Fc(tl, 0, "\n");
-	Fi(tl, 0, "\tVGC_init_backend_%.*s();\n", PF(t_be));
+	Fc(tl, 0, "\nstatic struct vrt_simple_backend sbe_%.*s = {\n",
+	    PF(t_be));
+	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+	Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
+	Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
+	Fc(tl, 0, "};\n");
+	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
+	    PF(t_be), PF(t_be));
 	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
 	tl->nbackend++;
 }
