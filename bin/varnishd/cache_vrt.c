@@ -502,6 +502,17 @@ VRT_purge(const char *regexp, int hash)
 }
 
 /*--------------------------------------------------------------------
+ * Simple stuff
+ */
+
+int
+VRT_strcmp(const char *s1, const char *s2)
+{
+	return (strcmp(s1, s2));
+}
+
+
+/*--------------------------------------------------------------------
  * Backend stuff, should probably move to its own file eventually
  */
 void

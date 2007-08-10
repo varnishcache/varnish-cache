@@ -88,6 +88,10 @@ char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);
 void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, const char *, ...);
 void VRT_handling(struct sess *sp, unsigned hand);
 
+/* Simple stuff */
+int VRT_strcmp(const char *s1, const char *s2);
+
+
 /* Backend related */
 void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);
 void VRT_fini_backend(struct backend *);
