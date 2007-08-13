@@ -326,7 +326,7 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 		return (0);
 
 	if (len == 0)
-		len = hp->pl_e - hp->pl_e;
+		len = hp->pl_e - hp->pl_s;
 
 	if (hp->pl_s + len > hp->pl_e)
 		len = hp->pl_e - hp->pl_s;
