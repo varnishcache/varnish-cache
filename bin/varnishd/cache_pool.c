@@ -135,8 +135,9 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 	if (w->niov == MAX_IOVS)
 		WRK_Flush(w);
 	w->iov[w->niov].iov_base = (void*)(uintptr_t)ptr;
-	w->iov[w->niov++].iov_len = len;
+	w->iov[w->niov].iov_len = len;
 	w->liov += len;
+	w->niov++;
 	return (len);
 }
 
