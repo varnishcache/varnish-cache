@@ -17,6 +17,7 @@ NFILES=131072
 #DAEMON_OPTS="-a :6081 \
 #             -T localhost:6082 \
 #             -b localhost:8080 \
+#             -u varnish -g varnish \
 #             -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
@@ -29,6 +30,7 @@ NFILES=131072
 DAEMON_OPTS="-a :6081 \
              -T localhost:6082 \
              -f /etc/varnish/default.vcl \
+             -u varnish -g varnish \
              -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
@@ -78,6 +80,7 @@ DAEMON_OPTS="-a :6081 \
 #              -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
 #              -t ${VARNISH_TTL} \
 #              -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
+#              -u varnish -g varnish \
 #              -s ${VARNISH_STORAGE}"
 #
 
