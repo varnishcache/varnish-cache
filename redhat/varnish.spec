@@ -10,6 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: ncurses-devel 
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
+Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
@@ -34,16 +35,15 @@ BuildRequires: ncurses-devel
 Libraries for %{name}.
 Varnish is a high-performance HTTP accelerator.
 
-## Removed the -devel package for now
-#%package devel
-#Summary: Development libraries for %{name}
-#Group: System Environment/Libraries
-#BuildRequires: ncurses-devel
-#Requires: kernel >= 2.6.0  varnish-libs = %{version}-%{release}
-#
-#%description devel
-#Development libraries for %{name}.
-#Varnish is a high-performance HTTP accelerator
+%package libs-devel
+Summary: Development files for %{name}-libs
+Group: System Environment/Libraries
+BuildRequires: ncurses-devel
+Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
+
+%description libs-devel
+Development files for %{name}-libs
+Varnish is a high-performance HTTP accelerator
 
 %prep
 %setup -q
@@ -55,8 +55,7 @@ Varnish is a high-performance HTTP accelerator.
 %build
 
 # Remove "--disable static" if you want to build static libraries 
-# (ie for the devel package)
-%configure --disable-static
+%configure --disable-static --localstatedir=/var/lib
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
@@ -82,8 +81,8 @@ make install DESTDIR=%{buildroot} INSTALL="install -p"
 # None of these for fedora
 find %{buildroot}/%{_libdir}/ -name '*.la' -exec rm -f {} ';'
 
-# Remove this line to build the devel package
-find %{buildroot}/%{_libdir}/ -name '*.so' -type l -exec rm -f {} ';'
+# Remove this line to build a devel package with symlinks
+#find %{buildroot}/%{_libdir}/ -name '*.so' -type l -exec rm -f {} ';'
 
 mkdir -p %{buildroot}/var/lib/varnish
 mkdir -p %{buildroot}/var/log/varnish
@@ -118,12 +117,29 @@ rm -rf %{buildroot}
 %{_libdir}/*.so.*
 %doc LICENSE
 
-## Removed the -devel package for now
-#%files devel
-#%defattr(-,root,root,-)
-#%{_libdir}/libvarnish.so
-#%{_libdir}/libvarnishapi.so
-#%{_libdir}/libvcl.so
+%files libs-devel
+%defattr(-,root,root,-)
+%{_libdir}/libvarnish.so
+%{_libdir}/libvarnishapi.so
+%{_libdir}/libvcl.so
+%{_includedir}/varnish/shmlog.h
+%{_includedir}/varnish/shmlog_tags.h
+%{_includedir}/varnish/stat_field.h
+%{_includedir}/varnish/stats.h
+%{_includedir}/varnish/varnishapi.h
+%{_libdir}/pkgconfig/varnishapi.pc
+#%{_libdir}/libvarnish.a
+#%{_libdir}/libvarnishapi.a
+#%{_libdir}/libvarnishcompat.a
+#%{_libdir}/libvcl.a
+%doc LICENSE
+
+%pre
+getent group varnish >/dev/null || groupadd -r varnish
+getent passwd varnish >/dev/null || \
+useradd -r -g varnish -d /var/lib/varnish -s /sbin/nologin \
+    -c "Varnish http accelerator user" varnish
+exit 0
 
 %post
 /sbin/chkconfig --add varnish
@@ -148,9 +164,17 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+<<<<<<< .working
 * Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
 - Bump Version and Release for 1.1
 
+=======
+* Tue Aug 14 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.svn
+- Update for 1.1 branch
+- Added the devel package for the header files and static library files
+- Added a varnish user, and fixed the init script accordingly
+
+>>>>>>> .merge-right.r1846
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
 - Fixed initrc-script bug only visible on el4 (fixes #107)
 
