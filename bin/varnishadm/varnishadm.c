@@ -46,12 +46,12 @@
  * returned
  */
 static void
-telnet_mgt(const char* T_arg, int argc, char* argv[])
+telnet_mgt(const char *T_arg, int argc, char *argv[])
 {
 	struct vss_addr **ta;
 	char *addr, *port;
 	int i, n;
-       int sock;
+	int sock;
 	long status, bytes;
 	char *answer = NULL;
 	char buf[13];
@@ -62,11 +62,11 @@ telnet_mgt(const char* T_arg, int argc, char* argv[])
 	free(addr);
 	free(port);
 	if (n == 0) {
-		fprintf(stderr, "Could not open TELNET port\n");
+		fprintf(stderr, "Could not resolve '%s'\n", T_arg);
 		exit(2);
 	}
 
-       sock = VSS_connect(ta[0]);
+	sock = VSS_connect(ta[0]);
 
 	for (i = 0; i < n; ++i) {
 		free(ta[i]);
@@ -121,36 +121,34 @@ telnet_mgt(const char* T_arg, int argc, char* argv[])
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishadm -T address:port <command> \n");
+	fprintf(stderr,
+	    "usage: varnishadm -T [address]:port command [...]\n");
 	exit(1);
 }
 
 int
 main(int argc, char *argv[])
 {
-	int c;
-	const char *address = NULL;
-	int T_arg = 0;
+	const char *T_arg = NULL;
+	int opt;
 
-	if (argc < 2)
-		usage();
-
-	while ((c = getopt(argc, argv, "T:")) != -1) {
-		switch (c) {
+	while ((opt = getopt(argc, argv, "T:")) != -1) {
+		switch (opt) {
 		case 'T':
-			T_arg = 1;
-			address = optarg;
+			T_arg = optarg;
 			break;
 		default:
 			usage();
 		}
 	}
 
-	if (T_arg) {
-		if (optind == argc)
-			usage();
-		telnet_mgt(address, argc - optind, &argv[optind]);
-	}
+	argc -= optind;
+	argv += optind;
+
+	if (T_arg == NULL || argc < 1)
+		usage();
+
+	telnet_mgt(T_arg, argc, argv);
 
 	exit(0);
 }
