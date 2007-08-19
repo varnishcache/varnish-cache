@@ -438,7 +438,6 @@ void
 mcf_server_startstop(struct cli *cli, char **av, void *priv)
 {
 
-	(void)cli;
 	(void)av;
 	if (priv != NULL && child_state == CH_RUNNING)
 		stop_child();
