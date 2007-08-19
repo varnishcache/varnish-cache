@@ -110,7 +110,7 @@ cnt_again(struct sess *sp)
  * We have a refcounted object on the session, now deliver it.
  *
 DOT subgraph xcluster_deliver {
-DOT 	deliver [
+DOT	deliver [
 DOT		shape=ellipse
 DOT		label="Filter obj.->resp."
 DOT	]
@@ -132,7 +132,7 @@ DOT deliver2 -> DONE [style=bold,color=green,weight=4]
  * XXX: Ideally we should make the req. available in vcl_deliver() but for
  * XXX: reasons of economy we don't, since that allows us to reuse the space
  * XXX: in sp->req for the response.
- * 
+ *
  * XXX: Rather than allocate two http's and workspaces for all sessions to
  * XXX: address this deficiency, we could make the VCL compiler set a flag
  * XXX: if req. is used in vcl_deliver().  When the flag is set we would
@@ -297,7 +297,7 @@ cnt_fetch(struct sess *sp)
 
 	AN(sp->bereq);
 	i = Fetch(sp);
-	
+
 	/* Experimental. Set time for last check of backend health.
 	 * If the backend replied with 200, it is obviously up and running,
 	 * increase health parameter. If we got a 504 back, it would imply
@@ -314,8 +314,8 @@ cnt_fetch(struct sess *sp)
 				sp->backend->health--;
 		}
 	}
-	
-		
+
+
 	vbe_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
@@ -325,7 +325,7 @@ cnt_fetch(struct sess *sp)
 		 */
 		if (sp->backend->health > -10000)
 			sp->backend->health--;
-		
+
 		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
 	} else {
 		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
@@ -422,7 +422,7 @@ cnt_hit(struct sess *sp)
 	double minutes;
 
 	assert(!sp->obj->pass);
-	
+
 	/* Experimental. Reduce health parameter of backend towards zero
 	 * if it has been more than a minute since it was checked. */
 	time_diff = TIM_mono() - sp->backend->last_check;
@@ -501,7 +501,7 @@ cnt_lookup(struct sess *sp)
 		sp->lhashptr = 1;	/* space for NUL */
 		sp->ihashptr = 0;
 		sp->nhashptr = sp->vcl->nhashcount * 2;
-		p = WS_Alloc(sp->http->ws, 
+		p = WS_Alloc(sp->http->ws,
 		    sizeof(const char *) * (sp->nhashptr + 1));
 		XXXAN(p);
 		u = (uintptr_t)p;
@@ -543,7 +543,7 @@ cnt_lookup(struct sess *sp)
 		sp->obj = NULL;
 		sp->step = STP_PASS;
 		return (0);
-	} 
+	}
 
 	VSL_stats->cache_hit++;
 	WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
@@ -675,7 +675,7 @@ DOT		shape=ellipse
 DOT		label="send bereq.\npipe until close"
 DOT	]
 DOT	vcl_pipe -> pipe_do [label="pipe"]
-DOT	pipe -> vcl_pipe 
+DOT	pipe -> vcl_pipe
 DOT }
 DOT pipe_do -> DONE
 DOT vcl_pipe -> err_pipe [label="error"]
