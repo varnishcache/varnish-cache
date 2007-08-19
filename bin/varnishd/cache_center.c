@@ -110,7 +110,7 @@ cnt_again(struct sess *sp)
  * We have a refcounted object on the session, now deliver it.
  *
 DOT subgraph xcluster_deliver {
-DOT 	deliver [
+DOT	deliver [
 DOT		shape=ellipse
 DOT		label="Filter obj.->resp."
 DOT	]
@@ -132,7 +132,7 @@ DOT deliver2 -> DONE [style=bold,color=green,weight=4]
  * XXX: Ideally we should make the req. available in vcl_deliver() but for
  * XXX: reasons of economy we don't, since that allows us to reuse the space
  * XXX: in sp->req for the response.
- * 
+ *
  * XXX: Rather than allocate two http's and workspaces for all sessions to
  * XXX: address this deficiency, we could make the VCL compiler set a flag
  * XXX: if req. is used in vcl_deliver().  When the flag is set we would
@@ -465,7 +465,7 @@ cnt_lookup(struct sess *sp)
 		sp->lhashptr = 1;	/* space for NUL */
 		sp->ihashptr = 0;
 		sp->nhashptr = sp->vcl->nhashcount * 2;
-		p = WS_Alloc(sp->http->ws, 
+		p = WS_Alloc(sp->http->ws,
 		    sizeof(const char *) * (sp->nhashptr + 1));
 		XXXAN(p);
 		u = (uintptr_t)p;
@@ -507,7 +507,7 @@ cnt_lookup(struct sess *sp)
 		sp->obj = NULL;
 		sp->step = STP_PASS;
 		return (0);
-	} 
+	}
 
 	VSL_stats->cache_hit++;
 	WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
@@ -639,7 +639,7 @@ DOT		shape=ellipse
 DOT		label="send bereq.\npipe until close"
 DOT	]
 DOT	vcl_pipe -> pipe_do [label="pipe"]
-DOT	pipe -> vcl_pipe 
+DOT	pipe -> vcl_pipe
 DOT }
 DOT pipe_do -> DONE
 DOT vcl_pipe -> err_pipe [label="error"]

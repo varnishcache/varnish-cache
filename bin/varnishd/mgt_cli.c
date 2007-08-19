@@ -337,7 +337,8 @@ mgt_cli_callback(struct ev *e, int what)
 		assert(q == cp->buf + cp->nbuf);
 		cp->nbuf -= (p - cp->buf);
 		memmove(cp->buf, p, cp->nbuf);
-	}
+	} else
+		cp->nbuf = 0;
 	return (0);
 
 cli_close:
