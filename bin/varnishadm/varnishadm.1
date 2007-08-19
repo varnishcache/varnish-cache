@@ -28,45 +28,36 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 06, 2007
+.Dd August 19, 2007
 .Dt VARNISHADM 1
 .Os
 .Sh NAME
 .Nm varnishadm
 .Sh SYNOPSIS
 .Nm
-.Fl T Ar address:port <command>
+.Fl T Ar address:port
+.Cm Ar command
+.Op Ar ...
 .Sh DESCRIPTION
 The
 .Nm
-utility sends the given command to the
+utility sends the given command and arguments to the
 .Xr varnishd 1
-instance at address:port and prints the results. 0 is returned on success, 1
-on failure.
+instance at address:port and prints the results.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
 .It Fl T Ar address:port
-Connect via telnet to this address and port.
-.Sh EXAMPLES
-The following command lists all available commands provided by the
-management interface of
-.Ed
-.Xr varnishd 1
-.Bd -literal -offset 4n
-$ varnishadm -T 127.0.0.1:23 help
-.Ed
+Connect to the management interface at the specified address and port.
+.El
+.Sh EXIT STATUS
+The exit status of the
+.Nm
+utility is zero if the command succeeded, and non-zero otherwise.
 .Sh SEE ALSO
-.Xr varnishd 1 ,
-.Xr varnishhist 1 ,
-.Xr varnishncsa 1 ,
-.Xr varnishstat 1 ,
-.Xr varnishtop 1
+.Xr varnishd 1
 .Sh HISTORY
 The
 .Nm
-utility was developed by
-.An Cecilie Fritzvold Aq cecilihf@linpro.no .
-
-This manual page was written by
+utility and this manual page were written by
 .An Cecilie Fritzvold Aq cecilihf@linpro.no .

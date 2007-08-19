@@ -284,8 +284,8 @@ struct cli_port {
 	int			fdo;
 	int			verbose;
 	char			*buf;
-	unsigned		nbuf;
-	unsigned		lbuf;
+	int			nbuf; /* next free position in buf */
+	int			lbuf; /* length of buf */
 	struct cli		cli[1];
 	char			name[30];
 };
@@ -294,39 +294,53 @@ static int
 mgt_cli_callback(struct ev *e, int what)
 {
 	struct cli_port *cp;
-	char *p;
+	char *p, *q;
 	int i;
 
 	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
 
-	while (!(what & (EV_ERR | EV_HUP))) {
-		if (cp->nbuf == cp->lbuf) {
-			cp->lbuf += cp->lbuf;
-			cp->buf = realloc(cp->buf, cp->lbuf);
-			XXXAN(cp->buf);
-		}
-		i = read(cp->fdi, cp->buf + cp->nbuf, cp->lbuf - cp->nbuf);
-		if (i <= 0)
-			break;
-		cp->nbuf += i;
-		p = strchr(cp->buf, '\n');
-		if (p == NULL)
-			return (0);
-		*p = '\0';
-		fprintf(stderr, "CLI <%s>\n", cp->buf);
-		vsb_clear(cp->cli->sb);
-		cli_dispatch(cp->cli, cli_proto, cp->buf);
-		vsb_finish(cp->cli->sb);
-		/* XXX: cp->verbose */
-		if (cli_writeres(cp->fdo, cp->cli))
-			break;
-		i = ++p - cp->buf;
-		assert(i <= cp->nbuf);
-		if (i < cp->nbuf)
-			memcpy(cp->buf, p, cp->nbuf - i);
-		cp->nbuf -= i;
-		return (0);
+	if (what & (EV_ERR | EV_HUP))
+		goto cli_close;
+
+	/* grow the buffer if it is full */
+	if (cp->nbuf == cp->lbuf) {
+		cp->lbuf += cp->lbuf;
+		cp->buf = realloc(cp->buf, cp->lbuf);
+		XXXAN(cp->buf);
 	}
+
+	/* read more data into the buffer */
+	i = read(cp->fdi, cp->buf + cp->nbuf, cp->lbuf - cp->nbuf);
+	if (i <= 0)
+		goto cli_close;
+	cp->nbuf += i;
+
+	for (p = q = cp->buf; q < cp->buf + cp->nbuf; ++q) {
+		if (*q != '\n')
+			continue;
+		/* got a newline == got a command */
+		*q = '\0';
+		vsb_clear(cp->cli->sb);
+		cli_dispatch(cp->cli, cli_proto, p);
+		vsb_finish(cp->cli->sb);
+
+		/* send the result back */
+		if (cli_writeres(cp->fdo, cp->cli))
+			goto cli_close;
+
+		/* ready for next command */
+		p = q + 1;
+	}
+
+	/* see if there's any data left in the buffer */
+	if (p != q) {
+		assert(q == cp->buf + cp->nbuf);
+		cp->nbuf -= (p - cp->buf);
+		memmove(cp->buf, p, cp->nbuf);
+	}
+	return (0);
+
+cli_close:
 	vsb_delete(cp->cli->sb);
 	free(cp->buf);
 	close(cp->fdi);
@@ -402,7 +416,7 @@ mgt_cli_telnet(const char *T_arg)
 	free(addr);
 	free(port);
 	if (n == 0) {
-		fprintf(stderr, "Could not open TELNET port\n");
+		fprintf(stderr, "Could not open management port\n");
 		exit(2);
 	}
 	for (i = 0; i < n; ++i) {
