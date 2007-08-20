@@ -98,9 +98,10 @@ VBE_NewBackend(struct backend_method *method)
 	b = calloc(sizeof *b, 1);
 	XXXAN(b);
 	b->magic = BACKEND_MAGIC;
-	TAILQ_INIT(&b->connlist);
 	b->method = method;
 	b->refcount = 1;
+	b->last_check = TIM_mono();
+	b->minute_limit = 1;
 	TAILQ_INSERT_TAIL(&backendlist, b, list);
 	return (b);
 }
@@ -117,9 +118,8 @@ VBE_DropRef(struct backend *b)
 	if (b->refcount > 0)
 		return;
 	TAILQ_REMOVE(&backendlist, b, list);
+	b->method->cleanup(b);
 	free(b->vcl_name);
-	free(b->portname);
-	free(b->hostname);
 	free(b);
 }
 

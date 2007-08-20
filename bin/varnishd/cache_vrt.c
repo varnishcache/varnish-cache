@@ -513,51 +513,8 @@ VRT_strcmp(const char *s1, const char *s2)
 
 
 /*--------------------------------------------------------------------
- * Backend stuff, should probably move to its own file eventually
+ * Backend stuff
  */
-void
-VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
-{
-	struct backend *b;
-	
-	/*
-	 * Scan existing backends to see if we can recycle one of them.
-	 */
-	TAILQ_FOREACH(b, &backendlist, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (b->method != &backend_method_simple)
-			continue;
-		if (strcmp(b->vcl_name, t->name))
-			continue;
-		if (strcmp(b->portname, t->port))
-			continue;
-		if (strcmp(b->hostname, t->host))
-			continue;
-		b->refcount++;
-		*bp = b;
-		return;
-	}
-
-	b = VBE_NewBackend(&backend_method_simple);
-
-	b->dnsttl = 300;
-	b->last_check = TIM_mono();
-	b->minute_limit = 1;
-
-	AN(t->name);
-	b->vcl_name = strdup(t->name);
-	XXXAN(b->vcl_name);
-
-	AN(t->port);
-	b->portname = strdup(t->port);
-	XXXAN(b->portname);
-
-	AN(t->host);
-	b->hostname = strdup(t->host);
-	XXXAN(b->hostname);
-
-	*bp = b;
-}
 
 void
 VRT_fini_backend(struct backend *b)
