@@ -787,7 +787,7 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	struct http *hp;
 	char *b;
 
-        bereq = vbe_new_bereq();
+        bereq = VBE_new_bereq();
         AN(bereq);
         hp = bereq->http;
         hp->logtag = HTTP_Tx;

@@ -28,6 +28,12 @@
  *
  * $Id$
  *
+ * NB: This file is in transition:
+ *   In the future it will contain the central part of the backend handling,
+ *   refcounting, functions for DNS lookup and connection revalidation etc.
+ *   The actual policies will be put in separate files, cache_backend_simple.c,
+ *   cache_backend_round_robin.c etc etc.
+ *
  * Manage backend connections.
  *
  * XXX: When we switch VCL we can have vbe_conn's dangling from
@@ -62,7 +68,7 @@ static MTX vbemtx;
 /*--------------------------------------------------------------------*/
 
 struct bereq *
-vbe_new_bereq(void)
+VBE_new_bereq(void)
 {
 	struct bereq *bereq;
 	volatile unsigned len;
@@ -91,7 +97,7 @@ vbe_new_bereq(void)
 /* XXX: no backpressure on pool size */
 
 void
-vbe_free_bereq(struct bereq *bereq)
+VBE_free_bereq(struct bereq *bereq)
 {
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
