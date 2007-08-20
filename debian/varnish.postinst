@@ -25,4 +25,4 @@ varnish_setup_user() {
         fi
 }
 
-
+varnish_setup_user
