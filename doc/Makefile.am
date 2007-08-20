@@ -7,7 +7,7 @@ CHANGELOGS = \
 
 all: ${CHANGELOGS}
 
-EXTRA_DIST = ${CHANGELOGS}
+EXTRA_DIST = ${CHANGELOGS} changes.css changes-html.xsl
 
 CLEANFILES = ${CHANGELOGS}
 
@@ -15,3 +15,5 @@ SUFFIXES = .xml .html
 
 .xml.html:
 	${XSLTPROC} --xinclude -o $@ $<
+
+${CHANGELOGS}:  changes-html.xsl
