@@ -527,6 +527,30 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	if (arg == NULL) {
+		cli_out(cli, "%s", mgt_cc_cmd);
+	} else {
+#if defined(HAVE_FMTCHECK)
+		if (arg != fmtcheck(arg, "%s %s")) {
+			cli_out(cli,
+			    "Parameter has dangerous %%-string expansions.");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		} 
+#endif
+		free(mgt_cc_cmd);
+		mgt_cc_cmd = strdup(arg);
+		XXXAN(mgt_cc_cmd);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -538,6 +562,10 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 #define MUST_RESTART \
 	"\nNB: This parameter will not take any effect until the " \
 	"child process has been restarted.\n"
+
+#define MUST_RELOAD \
+	"\nNB: This parameter will not take any effect until the " \
+	"VCL programs have been reloaded.\n"
 
 #define EXPERIMENTAL \
 	"\nNB: We don't know yet if it is a good idea to change " \
@@ -700,6 +728,20 @@ static struct parspec parspec[] = {
 		"it possible to attach a debugger to the child.\n"
 		MUST_RESTART,
 		"3", "seconds" },
+	{ "cc_command", tweak_cc_command,
+		"Command used for compiling the C source code to a "
+		"dlopen(3) loadable object.\n"
+		"NB: The string must contain two %%s sequences which "
+		"will be replaced by the binary and source file names "
+		"respectively.\n"
+		MUST_RELOAD,
+#ifdef __APPLE__
+		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %s -x c"
+		" - < %s"
+#else
+		"exec cc -nostdinc -fpic -shared -Wl,-x -o %s -x c - < %s"
+#endif
+		, NULL },
 	{ NULL, NULL, NULL }
 };
 
