@@ -2,7 +2,7 @@
 
 varnish_setup_user() {
         if ! id varnish > /dev/null 2>&1 ; then
-                adduser --system --no-create-home varnish 2>&1 > /dev/null || exit 78
+                adduser --system --no-create-home --group varnish 2>&1 > /dev/null || exit 78
         fi
 }
 
