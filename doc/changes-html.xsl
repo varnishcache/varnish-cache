@@ -74,9 +74,12 @@
   </xsl:template>
 
   <xsl:template match="code">
-    <tt>
+    <span>
+      <xsl:attribute name="class">
+	<xsl:value-of select="name()"/>
+      </xsl:attribute>
       <xsl:apply-templates/>
-    </tt>
+    </span>
   </xsl:template>
 
   <xsl:template match="*" priority="-1">
