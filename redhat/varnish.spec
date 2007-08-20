@@ -121,6 +121,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_libdir}/libvarnish.so
 %{_libdir}/libvarnishapi.so
+%{_libdir}/libvarnishcompat.so
 %{_libdir}/libvcl.so
 %{_includedir}/varnish/shmlog.h
 %{_includedir}/varnish/shmlog_tags.h
@@ -164,17 +165,14 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-<<<<<<< .working
-* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
-- Bump Version and Release for 1.1
-
-=======
 * Tue Aug 14 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.svn
 - Update for 1.1 branch
 - Added the devel package for the header files and static library files
 - Added a varnish user, and fixed the init script accordingly
 
->>>>>>> .merge-right.r1846
+* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
+- Bump Version and Release for 1.1
+
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
 - Fixed initrc-script bug only visible on el4 (fixes #107)
 
