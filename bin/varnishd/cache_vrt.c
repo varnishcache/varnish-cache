@@ -520,11 +520,27 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 {
 	struct backend *b;
 	
-	b = calloc(sizeof *b, 1);
-	XXXAN(b);
-	b->magic = BACKEND_MAGIC;
+	/*
+	 * Scan existing backends to see if we can recycle one of them.
+	 */
+	TAILQ_FOREACH(b, &backendlist, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		if (b->method != &backend_method_simple)
+			continue;
+		if (strcmp(b->vcl_name, t->name))
+			continue;
+		if (strcmp(b->portname, t->port))
+			continue;
+		if (strcmp(b->hostname, t->host))
+			continue;
+		b->refcount++;
+		*bp = b;
+		return;
+	}
+
+	b = VBE_NewBackend(&backend_method_simple);
+
 	b->dnsttl = 300;
-	TAILQ_INIT(&b->connlist);
 	b->last_check = TIM_mono();
 	b->minute_limit = 1;
 
@@ -540,13 +556,12 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 	b->hostname = strdup(t->host);
 	XXXAN(b->hostname);
 
-	b->method = &backend_method_simple;
-
 	*bp = b;
 }
 
 void
 VRT_fini_backend(struct backend *b)
 {
-	(void)b;
+
+	VBE_DropRef(b);	
 }

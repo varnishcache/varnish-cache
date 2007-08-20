@@ -41,7 +41,9 @@
 
 static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
 
-static MTX vbemtx;
+static MTX VBE_mtx;
+
+struct backendlist backendlist = TAILQ_HEAD_INITIALIZER(backendlist);
 
 /*--------------------------------------------------------------------
  * Get a http structure for talking to the backend.
@@ -53,11 +55,11 @@ VBE_new_bereq(void)
 	struct bereq *bereq;
 	volatile unsigned len;
 
-	LOCK(&vbemtx);
+	LOCK(&VBE_mtx);
 	bereq = TAILQ_FIRST(&bereq_head);
 	if (bereq != NULL)
 		TAILQ_REMOVE(&bereq_head, bereq, list);
-	UNLOCK(&vbemtx);
+	UNLOCK(&VBE_mtx);
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
 	} else {
@@ -81,9 +83,44 @@ VBE_free_bereq(struct bereq *bereq)
 {
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
-	LOCK(&vbemtx);
+	LOCK(&VBE_mtx);
 	TAILQ_INSERT_HEAD(&bereq_head, bereq, list);
-	UNLOCK(&vbemtx);
+	UNLOCK(&VBE_mtx);
+}
+
+/*--------------------------------------------------------------------*/
+
+struct backend *
+VBE_NewBackend(struct backend_method *method)
+{
+	struct backend *b;
+
+	b = calloc(sizeof *b, 1);
+	XXXAN(b);
+	b->magic = BACKEND_MAGIC;
+	TAILQ_INIT(&b->connlist);
+	b->method = method;
+	b->refcount = 1;
+	TAILQ_INSERT_TAIL(&backendlist, b, list);
+	return (b);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VBE_DropRef(struct backend *b)
+{
+
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+	b->refcount--;
+	if (b->refcount > 0)
+		return;
+	TAILQ_REMOVE(&backendlist, b, list);
+	free(b->vcl_name);
+	free(b->portname);
+	free(b->hostname);
+	free(b);
 }
 
 /*--------------------------------------------------------------------*/
@@ -119,6 +156,6 @@ void
 VBE_Init(void)
 {
 
-	MTX_INIT(&vbemtx);
+	MTX_INIT(&VBE_mtx);
 	backend_method_simple.init();
 }
