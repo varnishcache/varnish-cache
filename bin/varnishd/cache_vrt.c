@@ -540,6 +540,8 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 	b->hostname = strdup(t->host);
 	XXXAN(b->hostname);
 
+	b->method = &backend_method_simple;
+
 	*bp = b;
 }
 

@@ -178,7 +178,7 @@ struct workreq {
 
 #include "hash_slinger.h"
 
-/* Backend Connection ------------------------------------------------*/
+/* Backend Request ---------------------------------------------------*/
 
 struct bereq {
 	unsigned		magic;
@@ -187,14 +187,6 @@ struct bereq {
 	void			*space;
 	unsigned		len;
 	struct http		http[1];
-};
-
-struct vbe_conn {
-	unsigned		magic;
-#define VBE_CONN_MAGIC		0x0c5e6592
-	TAILQ_ENTRY(vbe_conn)	list;
-	struct backend		*backend;
-	int			fd;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -325,10 +317,40 @@ struct sess {
 	const char		**hashptr;
 };
 
+/* -------------------------------------------------------------------*/
+
+/* Backend connection */
+struct vbe_conn {
+	unsigned		magic;
+#define VBE_CONN_MAGIC		0x0c5e6592
+	TAILQ_ENTRY(vbe_conn)	list;
+	struct backend		*backend;
+	int			fd;
+};
+
+
+/* Backend method */
+typedef struct vbe_conn *vbe_getfd_f(struct sess *sp);
+typedef void vbe_close_f(struct worker *w, struct vbe_conn *vc);
+typedef void vbe_recycle_f(struct worker *w, struct vbe_conn *vc);
+typedef void vbe_init_f(void);
+
+struct backend_method {
+	const char		*name;
+	vbe_getfd_f		*getfd;
+	vbe_close_f		*close;
+	vbe_recycle_f		*recycle;
+	vbe_init_f		*init;
+};
+
+/* Backend indstance */
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
 	const char		*vcl_name;
+
+	struct backend_method	*method;
+
 	const char		*hostname;
 	const char		*portname;
 
@@ -364,12 +386,16 @@ void VCA_Init(void);
 extern int vca_pipes[2];
 
 /* cache_backend.c */
+
 void VBE_Init(void);
 struct vbe_conn *VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
+
+/* cache_backend_simple.c */
+extern struct backend_method	backend_method_simple;
 
 /* cache_ban.c */
 void AddBan(const char *, int hash);
