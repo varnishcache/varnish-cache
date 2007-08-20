@@ -27,11 +27,11 @@
 
     <change type="enh" ref="1395,1397,1398">
       <para>Each object's hash key is now computed based on a string
-      which is available to VCL as <code>req.hash</code>.  A VCL
-      hook named <code>vcl_hash</code> has been added to allow
-      VCL scripts to control hash generation (for instance, whether or
-      not to include the value of the <code>Host:</code> header
-      in the hash).</para>
+      which is available to VCL as <code>req.hash</code>.  A VCL hook
+      named <code>vcl_hash</code> has been added to allow VCL scripts
+      to control hash generation (for instance, whether or not to
+      include the value of the <code>Host:</code> header in the
+      hash).</para>
     </change>
 
     <change type="bug" ref="1423,1559">
@@ -53,21 +53,20 @@
     <change type="enh" ref="1482">
       <para>The child process will now drop root privileges
       immediately upon startup.  The user and group to use are
-      specified with the <code>user</code> and
-      <code>group</code> run-time parameters, which default to
-      <code>nobody</code> and <code>nogroup</code>,
-      respectively.  Other changes have been made in an effort to
-      increase the isolation between parent and child, and reduce the
-      impact of a compromise of the child process.</para>
+      specified with the <code>user</code> and <code>group</code>
+      run-time parameters, which default to <code>nobody</code> and
+      <code>nogroup</code>, respectively.  Other changes have been
+      made in an effort to increase the isolation between parent and
+      child, and reduce the impact of a compromise of the child
+      process.</para>
     </change>
 
     <change type="enh" ref="1506">
       <para>Objects which are received from the backend with a
-      <code>Vary:</code> header are now stored separately
-      according to the values of the headers specified in
-      <code>Vary:</code>.  This allows Varnish to correctly
-      cache e.g. compressed and uncompressed versions of the same
-      object.</para>
+      <code>Vary:</code> header are now stored separately according to
+      the values of the headers specified in <code>Vary:</code>.  This
+      allows Varnish to correctly cache e.g. compressed and
+      uncompressed versions of the same object.</para>
     </change>
 
     <change type="enh" ref="1521,1524,1525,1526,1528,1532,1533,1572,1573,1581">
@@ -82,8 +81,8 @@
 
     <change type="enh" ref="1549">
       <para>When invoked with the <code>-C</code> option,
-      <code>varnishd</code> will now not just translate the VCL
-      code to C, but also compile the C code and attempt to load the
+      <code>varnishd</code> will now not just translate the VCL code
+      to C, but also compile the C code and attempt to load the
       resulting shared object.</para>
     </change>
 
@@ -95,18 +94,17 @@
 
     <change type="enh" ref="1557,1558">
       <para>The new command-line option <code>-F</code> will make
-      <code>varnishd</code> run in the foreground, without
-      enabling debugging.</para>
+      <code>varnishd</code> run in the foreground, without enabling
+      debugging.</para>
     </change>
 
     <change type="enh" ref="1560">
       <para>New VCL variables have been introduced to allow inspection
       and manipulation of the request sent to the backend
       (<code>bereq.request</code>, <code>bereq.url</code>,
-      <code>bereq.proto</code> and
-      <code>bereq.http</code>) and the response to the client
-      (<code>resp.proto</code>, <code>resp.status</code>,
-      <code>resp.response</code> and
+      <code>bereq.proto</code> and <code>bereq.http</code>) and the
+      response to the client (<code>resp.proto</code>,
+      <code>resp.status</code>, <code>resp.response</code> and
       <code>resp.http</code>).</para>
     </change>
 
@@ -122,31 +120,31 @@
       up-to-date (to within a few seconds).  When cache runs out, the
       objects at the tail end of the LRU list are discarded one by one
       until there is enough space for the freshly requested object(s).
-      A VCL hook, <code>vcl_discard</code>, is allowed to
-      inspect each object and determine its fate by returning either
+      A VCL hook, <code>vcl_discard</code>, is allowed to inspect each
+      object and determine its fate by returning either
       <code>keep</code> or <code>discard</code>.</para>
     </change>
 
     <change type="enh" ref="1612,1640">
-      <para>A new VCL hook, <code>vcl_deliver</code>, provides
-      a chance to adjust the response before it is sent to the
+      <para>A new VCL hook, <code>vcl_deliver</code>, provides a
+      chance to adjust the response before it is sent to the
       client.</para>
     </change>
 
     <change type="enh" ref="1626">
-      <para>A new management command, <code>vcl.show</code>,
-      displays the VCL source code of any loaded configuration.</para>
+      <para>A new management command, <code>vcl.show</code>, displays
+      the VCL source code of any loaded configuration.</para>
     </change>
 
     <change type="enh" ref="1628">
-      <para>A new VCL variable, <code>now</code>, provides VCL
-      scripts with the current time in seconds since the epoch.</para>
+      <para>A new VCL variable, <code>now</code>, provides VCL scripts
+      with the current time in seconds since the epoch.</para>
     </change>
 
     <change type="enh" ref="1628,1629,1630">
-      <para>A new VCL variable, <code>obj.lastuse</code>,
-      reflects the time in seconds since the object in question was
-      last used.</para>
+      <para>A new VCL variable, <code>obj.lastuse</code>, reflects the
+      time in seconds since the object in question was last
+      used.</para>
     </change>
 
     <change type="enh" ref="1645,1646,1648">
@@ -175,8 +173,8 @@
     </change>
 
     <change type="enh" ref="1674,1675">
-      <para>A new management command, <code>status</code>,
-      returns the state of the child.</para>
+      <para>A new management command, <code>status</code>, returns the
+      state of the child.</para>
     </change>
 
     <change type="enh" ref="1719-1721">
@@ -212,9 +210,8 @@
     <name>varnishncsa</name>
 
     <change type="enh" ref="1479">
-      <para>In addition to client traffic,
-      <code>varnishncsa</code> can now also process log data
-      from backend traffic.</para>
+      <para>In addition to client traffic, <code>varnishncsa</code>
+      can now also process log data from backend traffic.</para>
     </change>
 
     <change type="bug" ref="1531">
@@ -246,12 +243,12 @@
 
     <change type="enh" ref="1589,1590,1591">
       <para>The user interface has been greatly improved;
-      <code>varnishstat</code> will no longer print more than
-      fits in the terminal, and will respond correctly to window
-      resize events.  The output produced in one-shot mode has been
-      modified to include symbolic names for each entry.  In addition,
-      the name of the Varnish instance being watched is displayed in
-      the upper right corner in curses mode.</para>
+      <code>varnishstat</code> will no longer print more than fits in
+      the terminal, and will respond correctly to window resize
+      events.  The output produced in one-shot mode has been modified
+      to include symbolic names for each entry.  In addition, the name
+      of the Varnish instance being watched is displayed in the upper
+      right corner in curses mode.</para>
     </change>
   </subsystem>
 
@@ -260,10 +257,10 @@
 
     <change type="enh" ref="1592,1596">
       <para>The user interface has been greatly improved;
-      <code>varnishtop</code> will now respond correctly to
-      window resize events, and one-shot mode (<code>-1</code>)
-      actually works.  In addition, the name of the Varnish instance
-      being watched is displayed in the upper right corner in curses
+      <code>varnishtop</code> will now respond correctly to window
+      resize events, and one-shot mode (<code>-1</code>) actually
+      works.  In addition, the name of the Varnish instance being
+      watched is displayed in the upper right corner in curses
       mode.</para>
     </change>
   </subsystem>
