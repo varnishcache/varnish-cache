@@ -105,6 +105,12 @@ struct http_hdr {
 	char			*e;
 };
 
+enum httpwhence {
+	HTTP_Rx,
+	HTTP_Tx,
+	HTTP_Obj
+};
+
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
@@ -114,11 +120,7 @@ struct http {
 	char			*pl_s, *pl_e;	/* Pipelined bytes */
 
 	unsigned char		conds;		/* If-* headers present */
-	enum httpwhence {
-		HTTP_Rx,
-		HTTP_Tx,
-		HTTP_Obj
-	}			logtag;
+	enum httpwhence 	logtag;
 
 	struct http_hdr		hd[HTTP_HDR_MAX];
 	unsigned char		hdf[HTTP_HDR_MAX];
