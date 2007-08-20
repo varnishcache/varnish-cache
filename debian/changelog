@@ -1,3 +1,10 @@
+varnish (1.1.1) unstable; urgency=low
+
+  * New upstream release
+  * User and Group id added to default DAEMON_OPTS
+
+ -- Lars Bahner <bahner@linpro.no>  Mon, 20 Aug 2007 10:32:00 +0200
+
 varnish (1.1) unstable; urgency=low
 
   * New upstream release

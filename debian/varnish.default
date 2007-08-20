@@ -17,6 +17,7 @@ NFILES=131072
 DAEMON_OPTS="-a :6081 \
              -T localhost:6082 \
 	     -b localhost:8080 \
+	     -u varnish -g varnish \
 	     -n /var/lib/varnish \
 	     -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
