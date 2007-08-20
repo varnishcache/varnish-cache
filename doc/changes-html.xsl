@@ -72,4 +72,18 @@
       <xsl:value-of select="@ref"/>
     </a>
   </xsl:template>
+
+  <xsl:template match="code">
+    <tt>
+      <xsl:apply-templates/>
+    </tt>
+  </xsl:template>
+
+  <xsl:template match="*" priority="-1">
+    <xsl:message>Warning: no template for element <xsl:value-of select="name(
+)"/></xsl:message>
+    <xsl:value-of select="concat('&lt;', name(), '&gt;')"/>
+    <xsl:apply-templates/>
+    <xsl:value-of select="concat('&lt;/', name(), '&gt;')"/>
+  </xsl:template>
 </xsl:stylesheet>
