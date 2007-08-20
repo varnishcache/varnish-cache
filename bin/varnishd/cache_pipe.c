@@ -50,8 +50,6 @@ rdf(struct pollfd *fds, int idx)
 
 	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0 || fds[1-idx].events == 0) {
-		VSL(SLT_Debug, fds[idx].fd, "Pipe Shut read(read)");
-		VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut write(read)");
 		shutdown(fds[idx].fd, SHUT_RD);
 		shutdown(fds[1-idx].fd, SHUT_WR);
 		fds[idx].events = 0;
@@ -59,9 +57,7 @@ rdf(struct pollfd *fds, int idx)
 	}
 	for (p = buf; i > 0; i -= j, p += j) {
 		j = write(fds[1-idx].fd, p, i);
-		if (j < 0) {
-			VSL(SLT_Debug, fds[idx].fd, "Pipe Shut write(write)");
-			VSL(SLT_Debug, fds[1-idx].fd, "Pipe Shut read(write)");
+		if (j != i) {
 			shutdown(fds[idx].fd, SHUT_WR);
 			shutdown(fds[1-idx].fd, SHUT_RD);
 			fds[1-idx].events = 0;
@@ -98,7 +94,7 @@ PipeSession(struct sess *sp)
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");
-		VBE_ClosedFd(sp->wrk, vc, 0);
+		VBE_ClosedFd(sp->wrk, vc);
 		return;
 	}
 
@@ -125,6 +121,5 @@ PipeSession(struct sess *sp)
 			rdf(fds, 1);
 	}
 	vca_close_session(sp, "pipe");
-	(void)close (vc->fd);
-	VBE_ClosedFd(sp->wrk, vc, 1);
+	VBE_ClosedFd(sp->wrk, vc);
 }

@@ -290,7 +290,7 @@ vbe_nextfd(struct sess *sp)
 			reuse = 1;
 			break;
 		}
-		VBE_ClosedFd(sp->wrk, vc, 0);
+		VBE_ClosedFd(sp->wrk, vc);
 	}
 
 	if (vc == NULL) {
@@ -352,15 +352,14 @@ VBE_GetFd(struct sess *sp)
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
+VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
-	if (!already)
-		AZ(close(vc->fd));
+	AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
 	LOCK(&vbemtx);
