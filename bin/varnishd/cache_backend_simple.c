@@ -50,12 +50,12 @@
 
 static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
-static MTX vbemtx;
+static MTX besmtx;
 
 /*--------------------------------------------------------------------*/
 
 static struct vbe_conn *
-vbe_new_conn(void)
+bes_new_conn(void)
 {
 	struct vbe_conn *vbc;
 
@@ -77,7 +77,7 @@ vbe_new_conn(void)
  */
 
 static void
-vbe_lookup(struct backend *bp)
+bes_lookup(struct backend *bp)
 {
 	struct addrinfo *res, hint, *old;
 	int error;
@@ -106,7 +106,7 @@ vbe_lookup(struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 static int
-vbe_sock_conn(const struct addrinfo *ai)
+bes_sock_conn(const struct addrinfo *ai)
 {
 	int s;
 
@@ -121,14 +121,14 @@ vbe_sock_conn(const struct addrinfo *ai)
 /*--------------------------------------------------------------------*/
 
 static int
-vbe_conn_try(struct backend *bp, struct addrinfo **pai)
+bes_conn_try(struct backend *bp, struct addrinfo **pai)
 {
 	struct addrinfo *ai;
 	int s;
 
 	/* First try the cached good address, and any following it */
 	for (ai = bp->last_addr; ai != NULL; ai = ai->ai_next) {
-		s = vbe_sock_conn(ai);
+		s = bes_sock_conn(ai);
 		if (s >= 0) {
 			bp->last_addr = ai;
 			*pai = ai;
@@ -138,7 +138,7 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 
 	/* Then try the list until the cached last good address */
 	for (ai = bp->addr; ai != bp->last_addr; ai = ai->ai_next) {
-		s = vbe_sock_conn(ai);
+		s = bes_sock_conn(ai);
 		if (s >= 0) {
 			bp->last_addr = ai;
 			*pai = ai;
@@ -150,11 +150,11 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 		return (-1);
 
 	/* Then do another lookup to catch DNS changes */
-	vbe_lookup(bp);
+	bes_lookup(bp);
 
 	/* And try the entire list */
 	for (ai = bp->addr; ai != NULL; ai = ai->ai_next) {
-		s = vbe_sock_conn(ai);
+		s = bes_sock_conn(ai);
 		if (s >= 0) {
 			bp->last_addr = ai;
 			*pai = ai;
@@ -166,7 +166,7 @@ vbe_conn_try(struct backend *bp, struct addrinfo **pai)
 }
 
 static int
-vbe_connect(struct sess *sp, struct backend *bp)
+bes_connect(struct sess *sp, struct backend *bp)
 {
 	int s;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
@@ -176,7 +176,7 @@ vbe_connect(struct sess *sp, struct backend *bp)
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->hostname);
 
-	s = vbe_conn_try(bp, &ai);
+	s = bes_conn_try(bp, &ai);
 	if (s < 0)
 		return (s);
 
@@ -195,11 +195,11 @@ vbe_connect(struct sess *sp, struct backend *bp)
  * If that fails to get us a connection, create a new one, reusing a
  * connection from the freelist, if possible.
  *
- * This function is slightly complicated by optimizations on vbemtx.
+ * This function is slightly complicated by optimizations on besmtx.
  */
 
 static struct vbe_conn *
-vbe_nextfd(struct sess *sp)
+bes_nextfd(struct sess *sp)
 {
 	struct vbe_conn *vc, *vc2;
 	struct pollfd pfd;
@@ -211,7 +211,7 @@ vbe_nextfd(struct sess *sp)
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	vc2 = NULL;
 	while (1) {
-		LOCK(&vbemtx);
+		LOCK(&besmtx);
 		vc = TAILQ_FIRST(&bp->connlist);
 		if (vc != NULL) {
 			assert(vc->backend == bp);
@@ -224,7 +224,7 @@ vbe_nextfd(struct sess *sp)
 				TAILQ_REMOVE(&vbe_head, vc2, list);
 			}
 		}
-		UNLOCK(&vbemtx);
+		UNLOCK(&besmtx);
 		if (vc == NULL)
 			break;
 
@@ -241,32 +241,32 @@ vbe_nextfd(struct sess *sp)
 
 	if (vc == NULL) {
 		if (vc2 == NULL)
-			vc = vbe_new_conn();
+			vc = bes_new_conn();
 		else
 			vc = vc2;
 		if (vc != NULL) {
 			assert(vc->fd == -1);
 			AZ(vc->backend);
-			vc->fd = vbe_connect(sp, bp);
+			vc->fd = bes_connect(sp, bp);
 			if (vc->fd < 0) {
-				LOCK(&vbemtx);
+				LOCK(&besmtx);
 				TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 				VSL_stats->backend_unused++;
-				UNLOCK(&vbemtx);
+				UNLOCK(&besmtx);
 				vc = NULL;
 			} else {
 				vc->backend = bp;
 			}
 		}
 	}
-	LOCK(&vbemtx);
+	LOCK(&besmtx);
 	if (vc != NULL ) {
 		VSL_stats->backend_reuse += reuse;
 		VSL_stats->backend_conn++;
 	} else {
 		VSL_stats->backend_fail++;
 	}
-	UNLOCK(&vbemtx);
+	UNLOCK(&besmtx);
 	if (vc != NULL ) {
 		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
 		assert(vc->fd >= 0);
@@ -284,7 +284,7 @@ bes_GetFd(struct sess *sp)
 	unsigned n;
 
 	for (n = 1; n < 5; n++) {
-		vc = vbe_nextfd(sp);
+		vc = bes_nextfd(sp);
 		if (vc != NULL) {
 			WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
 			    sp->backend->vcl_name);
@@ -308,10 +308,10 @@ bes_ClosedFd(struct worker *w, struct vbe_conn *vc)
 	AZ(close(vc->fd));
 	vc->fd = -1;
 	vc->backend = NULL;
-	LOCK(&vbemtx);
+	LOCK(&besmtx);
 	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
-	UNLOCK(&vbemtx);
+	UNLOCK(&besmtx);
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -324,10 +324,10 @@ bes_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	LOCK(&vbemtx);
+	LOCK(&besmtx);
 	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
-	UNLOCK(&vbemtx);
+	UNLOCK(&besmtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -336,7 +336,7 @@ static void
 bes_Init(void)
 {
 
-	MTX_INIT(&vbemtx);
+	MTX_INIT(&besmtx);
 }
 
 
