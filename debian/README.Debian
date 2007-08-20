@@ -1,3 +1,10 @@
+Important change for 1.1.1
+==========================
+
+Varnish now features use of ``-u'' and ``-g'' in the default
+configuration. If you have customized the defaults you may wish to
+make these changes yourself.
+
 GCC
 ===
 Varnish requires a GCC-compiler compatible with the compiler used to
