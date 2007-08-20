@@ -211,12 +211,12 @@ cnt_done(struct sess *sp)
 	sp->t_open = sp->t_end;
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
-	sp->t_end = NAN;
 	WSL_Flush(sp->wrk);
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	if (sp->fd < 0) {
 		VSL_stats->sess_closed++;
+		assert(!isnan(sp->wrk->used));
 		sp->wrk = NULL;
 		vca_return_session(sp);
 		return (1);
@@ -233,6 +233,7 @@ cnt_done(struct sess *sp)
 		return (0);
 	}
 	VSL_stats->sess_herd++;
+	assert(!isnan(sp->wrk->used));
 	sp->wrk = NULL;
 	vca_return_session(sp);
 	return (1);
@@ -523,6 +524,7 @@ cnt_lookup(struct sess *sp)
 		 */
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "on waiting list on obj %u", sp->obj->xid);
+		assert(!isnan(sp->wrk->used));
 		SES_Charge(sp);
 		return (1);
 	}
@@ -822,6 +824,7 @@ CNT_Session(struct sess *sp)
 		if (w->nobjhead != NULL)
 			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 	}
+	assert(!isnan(w->used));
 	WSL_Flush(w);
 }
 
