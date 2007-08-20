@@ -731,7 +731,7 @@ static struct parspec parspec[] = {
 	{ "cc_command", tweak_cc_command,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.\n"
-		"NB: The string must contain two %%s sequences which "
+		"NB: The string must contain two %s sequences which "
 		"will be replaced by the binary and source file names "
 		"respectively.\n"
 		MUST_RELOAD,
