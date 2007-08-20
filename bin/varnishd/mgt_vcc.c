@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
@@ -64,6 +65,8 @@ struct vclprog {
 };
 
 static TAILQ_HEAD(, vclprog) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
+
+char *mgt_cc_cmd;
 
 /*--------------------------------------------------------------------*/
 
@@ -148,8 +151,9 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	FILE *fo, *fs;
 	char sf[] = "./vcl.XXXXXXXX";
 	char *of;
-	char buf[BUFSIZ];
-	int i, j, len, sfd;
+	struct vsb *cccmd;
+	char buf[128];
+	int i, j, sfd;
 	void *p;
 
 	/* Create temporary C source file */
@@ -161,7 +165,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		return (NULL);
 	}
 	fs = fdopen(sfd, "r+");
-	AN(fs);
+	XXXAN(fs);
 
 	if (fputs(source, fs) < 0 || fflush(fs)) {
 		vsb_printf(sb,
@@ -173,55 +177,92 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	}
 	rewind(fs);
 
-	/* Name the output shared library */
+	/* Name the output shared library by brutally overwriting "./vcl." */
 	of = strdup(sf);
-	AN(of);
+	XXXAN(of);
 	memcpy(of, "./bin", 5);
 
-	/* Attempt to open a pipe to the system C-compiler */
-	len = snprintf(buf, sizeof buf,
-            "ln -f %s _.c ;"			/* XXX: for debugging */
-#ifdef __APPLE__
-	    "exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %s -x c - < %s 2>&1",
-#else
-	    "env -i cc -nostdinc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
-#endif
-	    sf, of, sf);
-	xxxassert(len < sizeof buf);
+	cccmd = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	XXXAN(cccmd);
 
-	fo = popen(buf, "r");
+	/*
+	 * Attempt to open a pipe to the system C-compiler.
+	 * ------------------------------------------------
+ 	 *
+	 * The arguments to the C-compiler must be whatever it takes to
+	 * create a dlopen(3) compatible object file named $of from a
+	 * source file named $sf.
+	 *
+	 * The source code is entirely selfcontained, so options should be
+	 * specified to prevent the C-compiler from doing any DWITYW 
+	 * processing.  For GCC this amounts to at least "-nostdinc".
+ 	 *
+	 * We wrap the entire command in a 'sh -c "..." 2>&1' to get any
+	 * errors from popen(3)'s shell redirected to our stderr as well.
+	 * 
+	 */
+	vsb_printf(cccmd, "exec /bin/sh -c \"" );
+	vsb_printf(cccmd, mgt_cc_cmd, of, sf);
+	vsb_printf(cccmd, "\" 2>&1");
+	vsb_finish(cccmd);
+	/* XXX: check that vsb is happy about cccmd */
+
+	fo = popen(vsb_data(cccmd), "r");
 	if (fo == NULL) {
 		vsb_printf(sb,
-		    "Internal error: Cannot execute cc(1): %s\n",
-		    strerror(errno));
+		    "System error: Cannot execute C-compiler: %s\n"
+		    "\tcommand attempted: %s\n",
+		    strerror(errno), vsb_data(cccmd));
 		free(of);
 		unlink(sf);
 		fclose(fs);
+		vsb_delete(cccmd);
 		return (NULL);
 	}
 
-	/* If we get any output, it's bad */
+	/* Any output is considered fatal */
 	j = 0;
 	while (1) {
-		if (fgets(buf, sizeof buf, fo) == NULL)
+		i  = fread(buf, 1, sizeof buf, fo);
+		if (i == 0)
 			break;
 		if (!j) {
-			vsb_printf(sb, "Internal error: cc(1) complained:\n");
+			vsb_printf(sb,
+			    "System error:\n"
+			    "C-compiler command complained.\n"
+			    "Command attempted: %s\nMessage:\n",
+			    vsb_data(cccmd));
 			j++;
 		}
-		vsb_cat(sb, buf);
+		vsb_bcat(sb, buf, i);
 	}
 
 	i = pclose(fo);
-	if (j == 0 && i != 0)
+
+	unlink(sf);
+	fclose(fs);
+
+	if (j == 0 && i != 0) {
 		vsb_printf(sb,
-		    "Internal error: cc(1) exit status 0x%04x\n", i);
+		    "System error:\n"
+		    "C-compiler command failed");
+		if (WIFEXITED(i)) 
+		    vsb_printf(sb, ", exit %d", WEXITSTATUS(i));
+		if (WIFSIGNALED(i))
+		    vsb_printf(sb, ", signal %d", WTERMSIG(i));
+		if (WCOREDUMP(i))
+		    vsb_printf(sb, ", core dumped");
+		vsb_printf(sb,
+		    "\nCommand attempted: %s\n", vsb_data(cccmd));
+	}
+
+	vsb_delete(cccmd);
 
 	/* If the compiler complained, or exited non-zero, fail */
 	if (i || j) {
 		unlink(of);
 		free(of);
-		of = NULL;
+		return (NULL);
 	}
 
 	/* Next, try to load the object into the management process */
@@ -231,13 +272,10 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		    dlerror());
 		unlink(of);
 		free(of);
-		of = NULL;
-	} else
-		(void)dlclose(p);
+		return (NULL);
+	} 
 
-	/* clean up and return */
-	unlink(sf);
-	fclose(fs);
+	(void)dlclose(p);
 	return (of);
 }
 
