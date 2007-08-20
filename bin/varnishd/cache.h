@@ -347,12 +347,15 @@ struct backend_method {
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
-	const char		*vcl_name;
+	char			*vcl_name;
+
+	TAILQ_ENTRY(backend)	list;
+	int			refcount;
 
 	struct backend_method	*method;
 
-	const char		*hostname;
-	const char		*portname;
+	char			*hostname;
+	char			*portname;
 
 	struct addrinfo		*addr;
 	struct addrinfo		*last_addr;
@@ -375,6 +378,12 @@ struct backend {
 
 };
 
+/*
+ * NB: This list is not locked, it is only ever manipulated from the
+ * cachers CLI thread.
+ */
+TAILQ_HEAD(backendlist, backend);
+
 /* Prototypes etc ----------------------------------------------------*/
 
 
@@ -393,6 +402,9 @@ void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
+extern struct backendlist backendlist;
+void VBE_DropRef(struct backend *);
+struct backend *VBE_NewBackend(struct backend_method *method);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;
