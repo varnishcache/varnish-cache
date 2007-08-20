@@ -23,5 +23,117 @@
       <para>A bug that triggered an assertion failure when generating
       synthetic error documents has been corrected.</para>
     </change>
+
+    <change type="enh" ref="1761,1762,1765,1828">
+      <para>A new VCL function, <function>purge_url</function>,
+      provides the same functionality as the
+      <command>url.purge</command> management command.</para>
+    </change>
+
+    <change type="enh" ref="1780">
+      <para>Previously, Varnish assumed that the response body should
+      be sent only if the request method was <literal>GET</literal>.
+      This was a problem for custom request methods (such as
+      <literal>PURGE</literal>), so the logic has been changed to
+      always send the response body except in the specific case of a
+      <literal>HEAD</literal> request.</para>
+    </change>
+
+    <change type="bug" ref="1795">
+      <para>Changes to run-time parameters are now correctly
+      propagated to the child process.</para>
+    </change>
+
+    <change type="bug" ref="1797">
+      <para>Due to the way run-time parameters are initialized at
+      startup, <command>varnishd</command> previously required the
+      <literal>nobody</literal> user and the
+      <literal>nogroup</literal> group to exist even if a different
+      user and group were specified on the command line.  This has
+      been corrected.</para>
+    </change>
+
+    <change type="bug" ref="1800">
+      <para>Under certain conditions, the VCL compiler would carry on
+      after a syntax error instead of exiting after reporting the
+      error.  This has been corrected.</para>
+    </change>
+
+    <change type="enh" ref="1803-1806">
+      <para>The manner in which the hash string is assembled has been
+      modified to reduce memory usage and memory-to-memory
+      copying.</para>
+    </change>
+
+    <change type="bug" ref="1807">
+      <para>Before calling <function>vcl_miss</function>, Varnish
+      assembles a tentative request object for the backend request
+      which will usually follow.  This object would be leaked if
+      <function>vcl_miss</function> returned anything else than
+      <command>fetch</command>.  This has been corrected.</para>
+    </change>
+
+    <change type="bug" ref="1808">
+      <para>The code necessary to handle an <command>error</command>
+      return from <function>vcl_fetch</function> and
+      <function>vcl_deliver</function> had inadvertantly been left
+      out.  This has been corrected.</para>
+    </change>
+
+    <change type="bug" ref="1810">
+      <para>Varnish no longer prints a spurious "child died" message
+      (the result of reaping the compiler process) after compiling a
+      new VCL configuration.</para>
+    </change>
+
+    <change type="bug" ref="1838">
+      <para>Under some circumstances, due to an error in the workspace
+      management code, Varnish would lose the "tail" of a request,
+      i.e. the part of the request that has been received from the
+      client but not yet processed.  The most obvious symptom of this
+      was that POST requests would work with some browsers but not
+      others, depending on details of the browser's HTTP
+      implementation.  This has been corrected.</para>
+    </change>
+
+    <change type="bug" ref="1855,1859">
+      <para>On some platforms, due to incorrect assumptions in the CLI
+      code, the management process would crash while processing
+      commands received over the management port.  This has been
+      corrected.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Build system</name>
+
+    <change type="bug" ref="1752">
+      <para>The top-level Makefile will now honor
+      <varname>$DESTDIR</varname> when creating the state
+      directory.</para>
+    </change>
+
+    <change type="enh" ref="1743,1846">
+      <para>The Debian and RedHat packages are now split into three
+      (main / lib / devel) as is customary.</para>
+    </change>
+
+    <change type="enh" ref="1753,1754,1783-1791,1798,1823,1794">
+      <para>A number of compile-time and run-time portability issues
+      have been addressed.</para>
+    </change>
+
+    <change type="enh" ref="1811">
+      <para>The <filename>autogen.sh</filename> script had workarounds
+      for problems with the GNU autotools on FreeBSD; these are no
+      longer needed and have been removed.</para>
+    </change>
+
+    <change type="enh" ref="1817">
+      <para>The <filename>libcompat</filename> library has been
+      renamed to <filename>libvarnishcompat</filename> and is now
+      dynamic rather than static.  This simplifies the build process
+      and resolves an issue with the Mac OS X linker.</para>
+    </change>
   </subsystem>
 </group>
