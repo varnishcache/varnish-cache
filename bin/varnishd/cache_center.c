@@ -317,7 +317,7 @@ cnt_fetch(struct sess *sp)
 	}
 
 
-	vbe_free_bereq(sp->bereq);
+	VBE_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
 	if (i) {
@@ -590,7 +590,7 @@ cnt_miss(struct sess *sp)
 		HSH_Unbusy(sp->obj);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
-		vbe_free_bereq(sp->bereq);
+		VBE_free_bereq(sp->bereq);
 		sp->bereq = NULL;
 		sp->step = STP_ERROR;
 		return (0);
@@ -601,7 +601,7 @@ cnt_miss(struct sess *sp)
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASS;
-		vbe_free_bereq(sp->bereq);
+		VBE_free_bereq(sp->bereq);
 		sp->bereq = NULL;
 		return (0);
 	}
