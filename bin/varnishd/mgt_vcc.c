@@ -184,7 +184,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 #ifdef __APPLE__
 	    "exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %s -x c - < %s 2>&1",
 #else
-	    "exec cc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
+	    "env -i cc -nostdinc -fpic -shared -Wl,-x -o %s -x c - < %s 2>&1",
 #endif
 	    sf, of, sf);
 	xxxassert(len < sizeof buf);
