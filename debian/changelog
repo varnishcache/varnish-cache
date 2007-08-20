@@ -2,7 +2,7 @@ varnish (1.1.1) unstable; urgency=low
 
   * New upstream release
   * User and Group id added to default DAEMON_OPTS
-  * Added user-creation to postinst
+  * Added user and group creation to postinst
   * Added missing man pages
 
  -- Lars Bahner <bahner@debian.org>  Mon, 20 Aug 2007 11:29:33 +0200
