@@ -334,12 +334,16 @@ typedef struct vbe_conn *vbe_getfd_f(struct sess *sp);
 typedef void vbe_close_f(struct worker *w, struct vbe_conn *vc);
 typedef void vbe_recycle_f(struct worker *w, struct vbe_conn *vc);
 typedef void vbe_init_f(void);
+typedef const char *vbe_gethostname_f(struct backend *);
+typedef void vbe_cleanup_f(struct backend *);
 
 struct backend_method {
 	const char		*name;
 	vbe_getfd_f		*getfd;
 	vbe_close_f		*close;
 	vbe_recycle_f		*recycle;
+	vbe_cleanup_f		*cleanup;
+	vbe_gethostname_f	*gethostname;
 	vbe_init_f		*init;
 };
 
@@ -353,29 +357,11 @@ struct backend {
 	int			refcount;
 
 	struct backend_method	*method;
-
-	char			*hostname;
-	char			*portname;
-
-	struct addrinfo		*addr;
-	struct addrinfo		*last_addr;
-
-	TAILQ_HEAD(,vbe_conn)	connlist;
-
-	double			dnsttl;
-	double			dnstime;
+	void			*priv;
 
 	int			health;
 	double			last_check;
 	int			minute_limit;
-	
-#if 0
-	double			responsetime;
-	double			timeout;
-	double			bandwidth;
-	int			down;
-#endif
-
 };
 
 /*

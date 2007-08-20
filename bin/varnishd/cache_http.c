@@ -800,9 +800,11 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
 	    "X-Forwarded-for: %s", sp->addr);
+
+	/* XXX: This really ought to go into the default VCL */
 	if (!http_GetHdr(hp, H_Host, &b)) {
 		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
-		    sp->backend->hostname);
+		    sp->backend->method->gethostname(sp->backend));
 	}
 	sp->bereq = bereq;
 }

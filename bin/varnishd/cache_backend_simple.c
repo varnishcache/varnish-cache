@@ -47,10 +47,23 @@
 
 #include "shmlog.h"
 #include "cache.h"
+#include "vrt.h"
 
 static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
 static MTX besmtx;
+
+struct bes {
+	unsigned		magic;
+#define BES_MAGIC		0x015e17ac
+	char			*hostname;
+	char			*portname;
+	struct addrinfo		*addr;
+	struct addrinfo		*last_addr;
+	double			dnsttl;
+	double			dnstime;
+	TAILQ_HEAD(, vbe_conn)	connlist;
+};
 
 /*--------------------------------------------------------------------*/
 
@@ -81,24 +94,27 @@ bes_lookup(struct backend *bp)
 {
 	struct addrinfo *res, hint, *old;
 	int error;
+	struct bes *bes;
+
+	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
 
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
 	res = NULL;
-	error = getaddrinfo(bp->hostname,
-	    bp->portname == NULL ? "http" : bp->portname,
+	error = getaddrinfo(bes->hostname,
+	    bes->portname == NULL ? "http" : bes->portname,
 	    &hint, &res);
-	bp->dnstime = TIM_mono();
+	bes->dnstime = TIM_mono();
 	if (error) {
 		if (res != NULL)
 			freeaddrinfo(res);
 		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
 		return;
 	}
-	old = bp->addr;
-	bp->last_addr = res;
-	bp->addr = res;
+	old = bes->addr;
+	bes->last_addr = res;
+	bes->addr = res;
 	if (old != NULL)
 		freeaddrinfo(old);
 }
@@ -125,38 +141,41 @@ bes_conn_try(struct backend *bp, struct addrinfo **pai)
 {
 	struct addrinfo *ai;
 	int s;
+	struct bes *bes;
+
+	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
 
 	/* First try the cached good address, and any following it */
-	for (ai = bp->last_addr; ai != NULL; ai = ai->ai_next) {
+	for (ai = bes->last_addr; ai != NULL; ai = ai->ai_next) {
 		s = bes_sock_conn(ai);
 		if (s >= 0) {
-			bp->last_addr = ai;
+			bes->last_addr = ai;
 			*pai = ai;
 			return (s);
 		}
 	}
 
 	/* Then try the list until the cached last good address */
-	for (ai = bp->addr; ai != bp->last_addr; ai = ai->ai_next) {
+	for (ai = bes->addr; ai != bes->last_addr; ai = ai->ai_next) {
 		s = bes_sock_conn(ai);
 		if (s >= 0) {
-			bp->last_addr = ai;
+			bes->last_addr = ai;
 			*pai = ai;
 			return (s);
 		}
 	}
 
-	if (bp->dnstime + bp->dnsttl >= TIM_mono())
+	if (bes->dnstime + bes->dnsttl >= TIM_mono())
 		return (-1);
 
 	/* Then do another lookup to catch DNS changes */
 	bes_lookup(bp);
 
 	/* And try the entire list */
-	for (ai = bp->addr; ai != NULL; ai = ai->ai_next) {
+	for (ai = bes->addr; ai != NULL; ai = ai->ai_next) {
 		s = bes_sock_conn(ai);
 		if (s >= 0) {
-			bp->last_addr = ai;
+			bes->last_addr = ai;
 			*pai = ai;
 			return (s);
 		}
@@ -172,9 +191,12 @@ bes_connect(struct sess *sp, struct backend *bp)
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 	struct addrinfo *ai;
+	struct bes *bes;
+
 
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	AN(bp->hostname);
+	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
+	AN(bes->hostname);
 
 	s = bes_conn_try(bp, &ai);
 	if (s < 0)
@@ -205,18 +227,20 @@ bes_nextfd(struct sess *sp)
 	struct pollfd pfd;
 	struct backend *bp;
 	int reuse = 0;
+	struct bes *bes;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	bp = sp->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
 	vc2 = NULL;
 	while (1) {
 		LOCK(&besmtx);
-		vc = TAILQ_FIRST(&bp->connlist);
+		vc = TAILQ_FIRST(&bes->connlist);
 		if (vc != NULL) {
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
-			TAILQ_REMOVE(&bp->connlist, vc, list);
+			TAILQ_REMOVE(&bes->connlist, vc, list);
 		} else {
 			vc2 = TAILQ_FIRST(&vbe_head);
 			if (vc2 != NULL) {
@@ -319,15 +343,55 @@ bes_ClosedFd(struct worker *w, struct vbe_conn *vc)
 static void
 bes_RecycleFd(struct worker *w, struct vbe_conn *vc)
 {
+	struct bes *bes;
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	CAST_OBJ_NOTNULL(bes, vc->backend->priv, BES_MAGIC);
+
 	assert(vc->fd >= 0);
 	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&besmtx);
 	VSL_stats->backend_recycle++;
-	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
+	TAILQ_INSERT_HEAD(&bes->connlist, vc, list);
 	UNLOCK(&besmtx);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+bes_Cleanup(struct backend *b)
+{
+	struct bes *bes;
+	struct vbe_conn *vbe;
+
+	CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
+	free(bes->portname);
+	free(bes->hostname);
+	freeaddrinfo(bes->addr);
+	while (1) {
+		vbe = TAILQ_FIRST(&bes->connlist);
+		if (vbe == NULL)
+			break;
+		TAILQ_REMOVE(&bes->connlist, vbe, list);
+		if (vbe->fd >= 0)
+			close(vbe->fd);
+		free(vbe);
+	}
+	free(bes);
+}
+
+/*--------------------------------------------------------------------*/
+
+static const char *
+bes_GetHostname(struct backend *b)
+{
+	struct bes *bes;
+
+	CHECK_OBJ_NOTNULL(b, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
+	return (bes->hostname);
 }
 
 /*--------------------------------------------------------------------*/
@@ -339,14 +403,66 @@ bes_Init(void)
 	MTX_INIT(&besmtx);
 }
 
-
 /*--------------------------------------------------------------------*/
-
 
 struct backend_method backend_method_simple = {
 	.name =			"simple",
 	.getfd =		bes_GetFd,
 	.close =		bes_ClosedFd,
 	.recycle =		bes_RecycleFd,
+	.gethostname =		bes_GetHostname,
+	.cleanup =		bes_Cleanup,
 	.init =			bes_Init
 };
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
+{
+	struct backend *b;
+	struct bes *bes;
+	
+	/*
+	 * Scan existing backends to see if we can recycle one of them.
+	 */
+	TAILQ_FOREACH(b, &backendlist, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		if (b->method != &backend_method_simple)
+			continue;
+		if (strcmp(b->vcl_name, t->name))
+			continue;
+		CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
+		if (strcmp(bes->portname, t->port))
+			continue;
+		if (strcmp(bes->hostname, t->host))
+			continue;
+		b->refcount++;
+		*bp = b;
+		return;
+	}
+
+	b = VBE_NewBackend(&backend_method_simple);
+
+	bes = calloc(sizeof *bes, 1);
+	XXXAN(bes);
+	bes->magic = BES_MAGIC;
+
+	b->priv = bes;
+
+	bes->dnsttl = 300;
+
+	AN(t->name);
+	b->vcl_name = strdup(t->name);
+	XXXAN(b->vcl_name);
+
+	AN(t->port);
+	bes->portname = strdup(t->port);
+	XXXAN(bes->portname);
+
+	AN(t->host);
+	bes->hostname = strdup(t->host);
+	XXXAN(bes->hostname);
+
+	*bp = b;
+}
