@@ -103,8 +103,6 @@ sock_test(int fd)
 	if (memcmp(&tv, &tv_rcvtimeo, l))
 		need_rcvtimeo = 1;
 	need_test = 0;
-	printf("socktest: linger=%d sndtimeo=%d rcvtimeo=%d\n",
-	    need_linger, need_sndtimeo, need_rcvtimeo);
 }
 
 void
