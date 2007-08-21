@@ -355,6 +355,7 @@ struct backend {
 
 	TAILQ_ENTRY(backend)	list;
 	int			refcount;
+	pthread_mutex_t		mtx;
 
 	struct backend_method	*method;
 	void			*priv;
@@ -390,7 +391,10 @@ struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
 extern struct backendlist backendlist;
 void VBE_DropRef(struct backend *);
+void VBE_DropRefLocked(struct backend *);
 struct backend *VBE_NewBackend(struct backend_method *method);
+struct vbe_conn *VBE_NewConn(void);
+void VBE_ReleaseConn(struct vbe_conn *);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;
