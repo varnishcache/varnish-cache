@@ -276,11 +276,14 @@ Fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	vc = VBE_GetFd(sp);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (vc == NULL)
 		return (1);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (WRK_Flush(w)) {
 		/* XXX: cleanup */
 		
@@ -294,6 +297,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (http_RecvHead(hp, vc->fd)) {
 		/* XXX: cleanup */
 		return (1);
@@ -302,6 +306,7 @@ Fetch(struct sess *sp)
 		/* XXX: cleanup */
 		return (1);
 	}
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -311,23 +316,28 @@ Fetch(struct sess *sp)
 
 	assert(sp->obj->busy != 0);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	/* Filter into object */
 	hp2 = &sp->obj->http;
 	len = hp->rx_e - hp->rx_s;
 	len += 256;		/* margin for content-length etc */
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	b = malloc(len);
 	AN(b);
 	http_Setup(hp2, b, len);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
 	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (body) {
 		if (http_GetHdr(hp, H_Content_Length, &b))
 			cls = fetch_straight(sp, vc->fd, hp, b);
@@ -340,6 +350,7 @@ Fetch(struct sess *sp)
 	} else
 		cls = 0;
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (cls < 0) {
 		while (!TAILQ_EMPTY(&sp->obj->store)) {
 			st = TAILQ_FIRST(&sp->obj->store);
@@ -350,6 +361,7 @@ Fetch(struct sess *sp)
 		return (-1);
 	}
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	{
 	/* Sanity check fetch methods accounting */
 		unsigned uu;
@@ -360,13 +372,16 @@ Fetch(struct sess *sp)
 		assert(uu == sp->obj->len);
 	}
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (cls)
 		VBE_ClosedFd(sp->wrk, vc);
 	else
 		VBE_RecycleFd(sp->wrk, vc);
 
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	return (0);
 }

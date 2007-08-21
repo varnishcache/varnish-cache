@@ -49,10 +49,6 @@
 #include "cache.h"
 #include "vrt.h"
 
-static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
-
-static MTX besmtx;
-
 struct bes {
 	unsigned		magic;
 #define BES_MAGIC		0x015e17ac
@@ -62,41 +58,99 @@ struct bes {
 	struct addrinfo		*last_addr;
 	double			dnsttl;
 	double			dnstime;
+	unsigned		dnsseq;
 	TAILQ_HEAD(, vbe_conn)	connlist;
 };
 
 /*--------------------------------------------------------------------*/
 
-static struct vbe_conn *
-bes_new_conn(void)
-{
-	struct vbe_conn *vbc;
 
-	vbc = calloc(sizeof *vbc, 1);
-	if (vbc == NULL)
-		return (NULL);
-	VSL_stats->n_vbe_conn++;
-	vbc->magic = VBE_CONN_MAGIC;
-	vbc->fd = -1;
-	return (vbc);
+static int
+bes_conn_try_list(struct sess *sp, struct bes *bes)
+{
+	struct addrinfo *ai, *from;
+	struct sockaddr_storage ss;
+	int fam, sockt, proto;
+	socklen_t alen;
+	int s, loops;
+	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
+	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+	unsigned myseq;
+
+	/* Called with lock held */
+	myseq = bes->dnsseq;
+	loops = 0;
+	from = bes->last_addr;
+	for (ai = from; ai != NULL && (loops != 1 || ai != from);) {
+		fam = ai->ai_family;
+		sockt = ai->ai_socktype;
+		proto = ai->ai_protocol;
+		alen = ai->ai_addrlen;
+		assert(alen <= sizeof ss);
+		memcpy(&ss, ai->ai_addr, alen);
+		UNLOCK(&sp->backend->mtx);
+		s = socket(fam, sockt, proto);
+		if (s >= 0 && connect(s, (void *)&ss, alen)) {
+			AZ(close(s));
+			s = -1;
+		}
+		if (s >= 0) {
+			TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+			TCP_name((void*)&ss, alen,
+			    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+			WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
+			    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+		}
+		LOCK(&sp->backend->mtx);
+		if (s >= 0) {
+			if (myseq == bes->dnsseq)
+				bes->last_addr = ai;
+			return (s);
+		}
+		if (myseq != bes->dnsseq) {
+			loops = 0;
+			from = bes->last_addr;
+			ai = from;
+		} else {
+			ai = ai->ai_next;
+			if (ai == NULL) {
+				loops++;
+				ai = bes->addr;
+			}
+		}
+	}
+	return (-1);
 }
 
-/*--------------------------------------------------------------------
- * XXX: There is a race here, we need to lock the replacement of the
- * XXX: resolved addresses, or some other thread might try to access
- * XXX: them while/during/after we changed them.
- * XXX: preferably, we should make a copy to the vbe while we hold a
- * XXX: lock anyway.
- */
+/*--------------------------------------------------------------------*/
 
-static void
-bes_lookup(struct backend *bp)
+static int
+bes_conn_try(struct sess *sp, struct backend *bp)
 {
+	int s;
+	struct bes *bes;
 	struct addrinfo *res, hint, *old;
 	int error;
-	struct bes *bes;
 
 	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
+
+	LOCK(&bp->mtx);
+
+	s = bes_conn_try_list(sp, bes);
+	if (s >= 0) {
+		bp->refcount++;
+		UNLOCK(&bp->mtx);
+		return (s);
+	}
+
+	if (bes->dnstime + bes->dnsttl >= TIM_mono()) {
+		UNLOCK(&bp->mtx);
+		return (-1);
+	}
+
+	/* Then do another lookup to catch DNS changes */
+	bes->dnstime = TIM_mono();
+	UNLOCK(&bp->mtx);
 
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
@@ -105,109 +159,31 @@ bes_lookup(struct backend *bp)
 	error = getaddrinfo(bes->hostname,
 	    bes->portname == NULL ? "http" : bes->portname,
 	    &hint, &res);
-	bes->dnstime = TIM_mono();
 	if (error) {
 		if (res != NULL)
 			freeaddrinfo(res);
 		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
-		return;
+		LOCK(&bp->mtx);
+	} else {
+		LOCK(&bp->mtx);
+		bes->dnsseq++;
+		old = bes->addr;
+		bes->last_addr = res;
+		bes->addr = res;
+		if (old != NULL)
+			freeaddrinfo(old);
 	}
-	old = bes->addr;
-	bes->last_addr = res;
-	bes->addr = res;
-	if (old != NULL)
-		freeaddrinfo(old);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-bes_sock_conn(const struct addrinfo *ai)
-{
-	int s;
-
-	s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-	if (s >= 0 && connect(s, ai->ai_addr, ai->ai_addrlen)) {
-		AZ(close(s));
-		s = -1;
-	}
-	return (s);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-bes_conn_try(struct backend *bp, struct addrinfo **pai)
-{
-	struct addrinfo *ai;
-	int s;
-	struct bes *bes;
-
-	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
-
-	/* First try the cached good address, and any following it */
-	for (ai = bes->last_addr; ai != NULL; ai = ai->ai_next) {
-		s = bes_sock_conn(ai);
-		if (s >= 0) {
-			bes->last_addr = ai;
-			*pai = ai;
-			return (s);
-		}
-	}
-
-	/* Then try the list until the cached last good address */
-	for (ai = bes->addr; ai != bes->last_addr; ai = ai->ai_next) {
-		s = bes_sock_conn(ai);
-		if (s >= 0) {
-			bes->last_addr = ai;
-			*pai = ai;
-			return (s);
-		}
-	}
-
-	if (bes->dnstime + bes->dnsttl >= TIM_mono())
-		return (-1);
-
-	/* Then do another lookup to catch DNS changes */
-	bes_lookup(bp);
 
 	/* And try the entire list */
-	for (ai = bes->addr; ai != NULL; ai = ai->ai_next) {
-		s = bes_sock_conn(ai);
-		if (s >= 0) {
-			bes->last_addr = ai;
-			*pai = ai;
-			return (s);
-		}
+	s = bes_conn_try_list(sp, bes);
+	if (s >= 0) {
+		bp->refcount++;
+		UNLOCK(&bp->mtx);
+		return (s);
 	}
 
+	UNLOCK(&bp->mtx);
 	return (-1);
-}
-
-static int
-bes_connect(struct sess *sp, struct backend *bp)
-{
-	int s;
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
-	struct addrinfo *ai;
-	struct bes *bes;
-
-
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
-	AN(bes->hostname);
-
-	s = bes_conn_try(bp, &ai);
-	if (s < 0)
-		return (s);
-
-	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name(ai->ai_addr, ai->ai_addrlen,
-	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
-	return (s);
 }
 
 /* Get a backend connection ------------------------------------------
@@ -223,32 +199,26 @@ bes_connect(struct sess *sp, struct backend *bp)
 static struct vbe_conn *
 bes_nextfd(struct sess *sp)
 {
-	struct vbe_conn *vc, *vc2;
+	struct vbe_conn *vc;
 	struct pollfd pfd;
 	struct backend *bp;
 	int reuse = 0;
 	struct bes *bes;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	bp = sp->backend;
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
-	vc2 = NULL;
 	while (1) {
-		LOCK(&besmtx);
+		LOCK(&bp->mtx);
 		vc = TAILQ_FIRST(&bes->connlist);
 		if (vc != NULL) {
+			bp->refcount++;
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
 			TAILQ_REMOVE(&bes->connlist, vc, list);
-		} else {
-			vc2 = TAILQ_FIRST(&vbe_head);
-			if (vc2 != NULL) {
-				VSL_stats->backend_unused--;
-				TAILQ_REMOVE(&vbe_head, vc2, list);
-			}
 		}
-		UNLOCK(&besmtx);
+		UNLOCK(&bp->mtx);
 		if (vc == NULL)
 			break;
 
@@ -257,45 +227,25 @@ bes_nextfd(struct sess *sp)
 		pfd.events = POLLIN;
 		pfd.revents = 0;
 		if (!poll(&pfd, 1, 0)) {
-			reuse = 1;
-			break;
+			/* XXX locking of stats */
+			VSL_stats->backend_reuse += reuse;
+			VSL_stats->backend_conn++;
+			return (vc);
 		}
 		VBE_ClosedFd(sp->wrk, vc);
 	}
 
-	if (vc == NULL) {
-		if (vc2 == NULL)
-			vc = bes_new_conn();
-		else
-			vc = vc2;
-		if (vc != NULL) {
-			assert(vc->fd == -1);
-			AZ(vc->backend);
-			vc->fd = bes_connect(sp, bp);
-			if (vc->fd < 0) {
-				LOCK(&besmtx);
-				TAILQ_INSERT_HEAD(&vbe_head, vc, list);
-				VSL_stats->backend_unused++;
-				UNLOCK(&besmtx);
-				vc = NULL;
-			} else {
-				vc->backend = bp;
-			}
-		}
-	}
-	LOCK(&besmtx);
-	if (vc != NULL ) {
-		VSL_stats->backend_reuse += reuse;
-		VSL_stats->backend_conn++;
-	} else {
+	vc = VBE_NewConn();
+	assert(vc->fd == -1);
+	AZ(vc->backend);
+	vc->fd = bes_conn_try(sp, bp);
+	if (vc->fd < 0) {
+		VBE_ReleaseConn(vc);
 		VSL_stats->backend_fail++;
-	}
-	UNLOCK(&besmtx);
-	if (vc != NULL ) {
-		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
-		assert(vc->fd >= 0);
-		assert(vc->backend == bp);
-	}
+		return (NULL);
+	} 
+	vc->backend = bp;
+	VSL_stats->backend_conn++;
 	return (vc);
 }
 
@@ -306,15 +256,18 @@ bes_GetFd(struct sess *sp)
 {
 	struct vbe_conn *vc;
 	unsigned n;
-
 	for (n = 1; n < 5; n++) {
 		vc = bes_nextfd(sp);
-		if (vc != NULL) {
-			WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
-			    sp->backend->vcl_name);
-			return (vc);
+		if (vc == NULL) {
+			usleep(100000 * n);
+			continue;
 		}
-		usleep(100000 * n);
+		assert(vc->fd >= 0);
+		assert(vc->backend == sp->backend);
+		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
+		WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
+		    sp->backend->vcl_name);
+		return (vc);
 	}
 	return (NULL);
 }
@@ -326,16 +279,14 @@ bes_ClosedFd(struct worker *w, struct vbe_conn *vc)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	assert(vc->fd >= 0);
-	AN(vc->backend);
 	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	AZ(close(vc->fd));
 	vc->fd = -1;
+	VBE_DropRef(vc->backend);
 	vc->backend = NULL;
-	LOCK(&besmtx);
-	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
-	VSL_stats->backend_unused++;
-	UNLOCK(&besmtx);
+	VBE_ReleaseConn(vc);
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -350,12 +301,11 @@ bes_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	CAST_OBJ_NOTNULL(bes, vc->backend->priv, BES_MAGIC);
 
 	assert(vc->fd >= 0);
-	AN(vc->backend);
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	LOCK(&besmtx);
+	LOCK(&vc->backend->mtx);
 	VSL_stats->backend_recycle++;
 	TAILQ_INSERT_HEAD(&bes->connlist, vc, list);
-	UNLOCK(&besmtx);
+	VBE_DropRefLocked(vc->backend);
 }
 
 /*--------------------------------------------------------------------*/
@@ -366,6 +316,7 @@ bes_Cleanup(struct backend *b)
 	struct bes *bes;
 	struct vbe_conn *vbe;
 
+	assert(b->refcount == 0);
 	CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
 	free(bes->portname);
 	free(bes->hostname);
@@ -400,7 +351,6 @@ static void
 bes_Init(void)
 {
 
-	MTX_INIT(&besmtx);
 }
 
 /*--------------------------------------------------------------------*/
