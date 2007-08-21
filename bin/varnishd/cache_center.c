@@ -297,7 +297,9 @@ cnt_fetch(struct sess *sp)
 	int i;
 
 	AN(sp->bereq);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	i = Fetch(sp);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	/* Experimental. Set time for last check of backend health.
 	 * If the backend replied with 200, it is obviously up and running,
@@ -426,6 +428,7 @@ cnt_hit(struct sess *sp)
 
 	/* Experimental. Reduce health parameter of backend towards zero
 	 * if it has been more than a minute since it was checked. */
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	time_diff = TIM_mono() - sp->backend->last_check;
 	minutes = time_diff / 60;
 	if (minutes > sp->backend->minute_limit) {
@@ -759,7 +762,9 @@ cnt_recv(struct sess *sp)
 	http_DoConnection(sp);
 
 	/* By default we use the first backend */
+	AZ(sp->backend);
 	sp->backend = sp->vcl->backend[0];
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
@@ -817,6 +822,8 @@ CNT_Session(struct sess *sp)
 			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 		if (w->nobjhead != NULL)
 			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+		if (sp->backend != NULL)
+			CHECK_OBJ(sp->backend, BACKEND_MAGIC);
 
 		switch (sp->step) {
 #define STEP(l,u) case STP_##u: done = cnt_##l(sp); break;
