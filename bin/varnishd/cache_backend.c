@@ -40,6 +40,7 @@
 #include "cache.h"
 
 static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
+static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 
 static MTX VBE_mtx;
 
@@ -90,6 +91,50 @@ VBE_free_bereq(struct bereq *bereq)
 
 /*--------------------------------------------------------------------*/
 
+struct vbe_conn *
+VBE_NewConn(void)
+{
+	struct vbe_conn *vc;
+
+	vc = TAILQ_FIRST(&vbe_head);
+	if (vc != NULL) {
+		LOCK(&VBE_mtx);
+		vc = TAILQ_FIRST(&vbe_head);
+		if (vc != NULL) {
+			VSL_stats->backend_unused--;
+			TAILQ_REMOVE(&vbe_head, vc, list);
+		} else {
+			VSL_stats->n_vbe_conn++;
+		}
+		UNLOCK(&VBE_mtx);
+	}
+	if (vc != NULL)
+		return (vc);
+
+	vc = calloc(sizeof *vc, 1);
+	XXXAN(vc);
+	vc->magic = VBE_CONN_MAGIC;
+	vc->fd = -1;
+	return (vc);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VBE_ReleaseConn(struct vbe_conn *vc)
+{
+
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	assert(vc->backend == NULL);
+	assert(vc->fd < 0);
+	LOCK(&VBE_mtx);
+	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+	VSL_stats->backend_unused++;
+	UNLOCK(&VBE_mtx);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct backend *
 VBE_NewBackend(struct backend_method *method)
 {
@@ -99,9 +144,13 @@ VBE_NewBackend(struct backend_method *method)
 	XXXAN(b);
 	b->magic = BACKEND_MAGIC;
 	b->method = method;
+
+	MTX_INIT(&b->mtx);
 	b->refcount = 1;
+
 	b->last_check = TIM_mono();
 	b->minute_limit = 1;
+
 	TAILQ_INSERT_TAIL(&backendlist, b, list);
 	return (b);
 }
@@ -109,18 +158,32 @@ VBE_NewBackend(struct backend_method *method)
 /*--------------------------------------------------------------------*/
 
 void
+VBE_DropRefLocked(struct backend *b)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+	i = --b->refcount;
+	if (i == 0)
+		TAILQ_REMOVE(&backendlist, b, list);
+	UNLOCK(&b->mtx);
+	if (i)
+		return;
+	b->magic = 0;
+	b->method->cleanup(b);
+	free(b->vcl_name);
+	free(b);
+}
+
+void
 VBE_DropRef(struct backend *b)
 {
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	b->refcount--;
-	if (b->refcount > 0)
-		return;
-	TAILQ_REMOVE(&backendlist, b, list);
-	b->method->cleanup(b);
-	free(b->vcl_name);
-	free(b);
+	LOCK(&b->mtx);
+	VBE_DropRefLocked(b);
 }
 
 /*--------------------------------------------------------------------*/
@@ -129,6 +192,10 @@ struct vbe_conn *
 VBE_GetFd(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	AN(sp->backend->method);
+	AN(sp->backend->method->getfd);
 	return(sp->backend->method->getfd(sp));
 }
 
@@ -137,8 +204,15 @@ VBE_GetFd(struct sess *sp)
 void
 VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 {
+	struct backend *b;
 
-	vc->backend->method->close(w, vc);
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	b = vc->backend;
+	AN(b->method);
+	AN(b->method->close);
+	b->method->close(w, vc);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -146,8 +220,15 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 void
 VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 {
+	struct backend *b;
 
-	vc->backend->method->recycle(w, vc);
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	b = vc->backend;
+	AN(b->method);
+	AN(b->method->recycle);
+	b->method->recycle(w, vc);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 }
 
 /*--------------------------------------------------------------------*/
