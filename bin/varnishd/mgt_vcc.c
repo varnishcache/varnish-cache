@@ -67,7 +67,9 @@ static TAILQ_HEAD(, vclprog) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
 
 /*--------------------------------------------------------------------*/
 
-/* keep this in synch with man/vcl.7 */
+/*
+ * Keep this in synch with man/vcl.7 and etc/default.vcl!
+ */
 static const char *default_vcl =
     "sub vcl_recv {\n"
     "    if (req.request != \"GET\" && req.request != \"HEAD\") {\n"

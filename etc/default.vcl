@@ -47,6 +47,8 @@ backend default {
 ## Called when entering an object into the cache
 #
 #sub vcl_hash {
+#	set req.hash += req.url;
+#	set req.hash += req.http.host;
 #	hash;
 #}
 #

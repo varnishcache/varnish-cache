@@ -510,6 +510,8 @@ sub vcl_pass {
 }
 
 sub vcl_hash {
+    set req.hash += req.url;
+    set req.hash += req.http.host;
     hash;
 }
 

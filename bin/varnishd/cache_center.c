@@ -488,7 +488,12 @@ cnt_lookup(struct sess *sp)
 		 */
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "on waiting list on obj %u", sp->obj->xid);
-		assert(!isnan(sp->wrk->used));
+		/*
+		 * There is a non-zero risk that we come here more than once
+		 * before we get through, in that case cnt_recv must be set
+		 */
+		if (isnan(sp->wrk->used))
+			sp->wrk->used = TIM_real();
 		SES_Charge(sp);
 		return (1);
 	}
