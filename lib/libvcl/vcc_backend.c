@@ -59,7 +59,7 @@ CheckHostPort(const char *host, const char *port)
 }
 
 void
-vcc_ParseBackend(struct tokenlist *tl)
+vcc_ParseSimpleBackend(struct tokenlist *tl)
 {
 	struct var *vp;
 	struct token *t_be = NULL;
@@ -85,6 +85,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
+	
 	while (1) {
 		if (tl->t->tok == '}')
 			break;
@@ -160,3 +161,177 @@ vcc_ParseBackend(struct tokenlist *tl)
 	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
 	tl->nbackend++;
 }
+
+void
+vcc_ParseBalancedBackend(struct tokenlist *tl)
+{
+	struct var *vp;
+	struct token *t_be = NULL;
+	struct token *t_host = NULL;
+	struct token *t_port = NULL;
+	double t_weight = 0;
+	const char *ep;
+	int cnt = 0;
+	int weighted = 0;
+	double weight = 0;
+	unsigned backend_type = tl->t->tok;
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	t_be = tl->t;
+	vcc_AddDef(tl, tl->t, R_BACKEND);
+	/*
+	 * The first backend is always referenced because that is the default
+	 * at the beginning of vcl_recv
+	 */
+	if (tl->nbackend == 0)
+		vcc_AddRef(tl, tl->t, R_BACKEND);
+
+	/* In the compiled vcl we use these macros to refer to backends */
+	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
+	    PF(tl->t), tl->nbackend);
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, '{');
+	vcc_NextToken(tl);
+	
+	while (1) {
+		if (tl->t->tok == '}')
+			break;
+		ExpectErr(tl, ID);
+		if (!vcc_IdIs(tl->t, "set")) {
+			vsb_printf(tl->sb,
+			    "Expected 'set', found ");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_NextToken(tl);
+		ExpectErr(tl, VAR);
+		vp = vcc_FindVar(tl, tl->t, vcc_be_vars);
+		ERRCHK(tl);
+		assert(vp != NULL);
+		vcc_NextToken(tl);
+		ExpectErr(tl, '=');
+		vcc_NextToken(tl);
+		if (vp->fmt != SET) {
+			vsb_printf(tl->sb,
+			    "Assignments not possible for '%s'\n", vp->name);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		
+		ExpectErr(tl, '{');
+		vcc_NextToken(tl);
+		
+		while (1) {
+			if (tl->t->tok == '}')
+				break;
+				
+			ExpectErr(tl, '{');
+			vcc_NextToken(tl);
+			
+			// Host
+			ExpectErr(tl, CSTR);
+			t_host = tl->t;
+			vcc_NextToken(tl);
+		
+			ep = CheckHostPort(t_host->dec, "80");
+			if (ep != NULL) {
+				vsb_printf(tl->sb, "Backend '%.*s': %s\n", PF(t_be), ep);
+				vcc_ErrWhere(tl, t_host);
+				return;
+			}
+			
+			if (tl->t->tok == ',') {
+				vcc_NextToken(tl);
+				
+				// Port
+				
+				ExpectErr(tl, CSTR);
+				t_port = tl->t;
+				vcc_NextToken(tl);
+				
+				ep = CheckHostPort(t_host->dec, t_port->dec);
+				if (ep != NULL) {
+					vsb_printf(tl->sb,
+					    "Backend '%.*s': %s\n", PF(t_be), ep);
+					vcc_ErrWhere(tl, t_port);
+					return;
+				}
+				
+				if (tl->t->tok == ',') {
+				
+					vcc_NextToken(tl);
+					
+					// Weight
+					t_weight = vcc_DoubleVal(tl);
+					weighted = 1;
+					weight += t_weight;
+				}
+			}
+						
+			ExpectErr(tl, '}');
+			vcc_NextToken(tl);
+		
+			Fc(tl, 0, "\nstatic struct vrt_backend_entry bentry_%.*s_%d = {\n",
+				PF(t_be), cnt);
+			Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
+			Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
+			Fc(tl, 0, "\t.weight = %f,\n", t_weight);
+			if (cnt > 0) {
+				Fc(tl, 0, "\t.next = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
+			} /*else {
+				Fc(tl, 0, "\t.next = NULL\n");
+			}*/
+			Fc(tl, 0, "};\n");
+			t_weight = 0;
+			cnt++;
+		}
+		ExpectErr(tl, '}');
+		vcc_NextToken(tl);
+		ExpectErr(tl, ';');
+		vcc_NextToken(tl);
+		
+		if (t_host == NULL) {
+			vsb_printf(tl->sb, "Backend '%.*s' has no hostname\n",
+			PF(t_be));
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		
+		if (weighted && (int)weight != 1) {
+			vsb_printf(tl->sb, "Total weight must be 1\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		
+		if (backend_type == T_BACKEND_ROUND_ROBIN) {
+			Fc(tl, 0, "\nstatic struct vrt_round_robin_backend sbe_%.*s = {\n",
+			    PF(t_be));
+			Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+			Fc(tl, 0, "\t.bentry = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
+			Fc(tl, 0, "};\n");
+			Fi(tl, 0, "\tVRT_init_round_robin_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
+			    PF(t_be), PF(t_be));
+		} else if (backend_type == T_BACKEND_RANDOM) {
+			Fc(tl, 0, "\nstatic struct vrt_random_backend sbe_%.*s = {\n",
+			    PF(t_be));
+			Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+			Fc(tl, 0, "\t.weighted = %d,\n", weighted);
+			Fc(tl, 0, "\t.count = %d,\n", cnt);
+			Fc(tl, 0, "\t.bentry = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
+			Fc(tl, 0, "};\n");
+			Fi(tl, 0, "\tVRT_init_random_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
+			    PF(t_be), PF(t_be));
+		}
+		Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
+
+	}
+	ExpectErr(tl, '}');
+
+	vcc_NextToken(tl);
+	tl->nbackend++;
+}
+

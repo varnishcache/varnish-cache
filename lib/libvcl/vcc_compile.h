@@ -99,7 +99,8 @@ enum var_type {
 	HOSTNAME,
 	PORTNAME,
 	HASH,
-	HEADER
+	HEADER,
+	SET
 };
 
 enum ref_type {
@@ -144,7 +145,8 @@ void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
 void vcc_ParseAction(struct tokenlist *tl);
 
 /* vcc_backend.c */
-void vcc_ParseBackend(struct tokenlist *tl);
+void vcc_ParseSimpleBackend(struct tokenlist *tl);
+void vcc_ParseBalancedBackend(struct tokenlist *tl);
 
 /* vcc_compile.c */
 extern struct method method_tab[];

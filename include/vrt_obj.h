@@ -9,6 +9,7 @@
 void VRT_l_backend_host(struct backend *, const char *);
 void VRT_l_backend_port(struct backend *, const char *);
 void VRT_l_backend_dnsttl(struct backend *, double);
+void VRT_l_backend_set(struct backend *, struct vrt_backend_entry *);
 struct sockaddr * VRT_r_client_ip(struct sess *);
 struct sockaddr * VRT_r_server_ip(struct sess *);
 const char * VRT_r_req_request(struct sess *);
