@@ -73,6 +73,10 @@ set keywords {
 	acl
 
 	backend
+	
+	backend_round_robin
+
+	backend_random
 }
 
 # Non-word tokens
@@ -137,7 +141,7 @@ puts $fo {	unsigned        magic;
         struct vrt_ref  *ref;
         unsigned        nref;
         unsigned        busy;
-
+        
 	unsigned	nsrc;
 	const char	**srcname;
 	const char	**srcbody;

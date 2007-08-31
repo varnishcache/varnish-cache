@@ -31,6 +31,13 @@ struct var vcc_be_vars[] = {
 	    0,
 	    0
 	},
+	{ "backend.set", SET, 11,
+	    NULL,
+	    "VRT_l_backend_set(backend, ",
+	    V_WO,
+	    0,
+	    0
+	},
 	{ NULL }
 };
 

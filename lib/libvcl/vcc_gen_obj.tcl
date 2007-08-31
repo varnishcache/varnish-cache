@@ -35,6 +35,7 @@ set beobj {
   { backend.host	WO HOSTNAME	{} }
   { backend.port	WO PORTNAME	{} }
   { backend.dnsttl	WO TIME		{} }
+  { backend.set		WO SET		{} }
 }
 
 # Variables available in sessions
@@ -180,6 +181,7 @@ set tt(HEADER)	"const char *"
 set tt(HOSTNAME) "const char *"
 set tt(PORTNAME) "const char *"
 set tt(HASH) 	"const char *"
+set tt(SET) "struct vrt_backend_entry *"
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.

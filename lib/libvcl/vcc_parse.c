@@ -545,7 +545,11 @@ vcc_Parse(struct tokenlist *tl)
 			Function(tl);
 			break;
 		case T_BACKEND:
-			vcc_ParseBackend(tl);
+			vcc_ParseSimpleBackend(tl);
+			break;
+		case T_BACKEND_RANDOM:
+		case T_BACKEND_ROUND_ROBIN:
+			vcc_ParseBalancedBackend(tl);
 			break;
 		case EOI:
 			break;

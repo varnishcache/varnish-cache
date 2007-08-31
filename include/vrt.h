@@ -46,6 +46,26 @@ struct vrt_simple_backend {
 	const char	*host;
 };
 
+struct vrt_backend_entry {
+	const char	*port;
+	const char	*host;
+	double		weight;
+	struct vrt_backend_entry *next;
+};
+
+struct vrt_round_robin_backend {
+	const char	*name;
+	struct vrt_backend_entry *bentry;
+};
+
+struct vrt_random_backend {
+	const char	*name;
+	unsigned	weighted;
+	unsigned	count;
+	struct vrt_backend_entry *bentry;
+};
+
+
 struct vrt_ref {
 	unsigned	source;
 	unsigned	offset;
@@ -94,6 +114,8 @@ int VRT_strcmp(const char *s1, const char *s2);
 
 /* Backend related */
 void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);
+void VRT_init_round_robin_backend(struct backend **, struct vrt_round_robin_backend *);
+void VRT_init_random_backend(struct backend **, struct vrt_random_backend *);
 void VRT_fini_backend(struct backend *);
 
 char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);

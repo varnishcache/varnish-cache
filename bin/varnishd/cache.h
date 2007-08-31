@@ -326,6 +326,7 @@ struct vbe_conn {
 	TAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
+	void			*priv;
 };
 
 

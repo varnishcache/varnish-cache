@@ -168,6 +168,24 @@ vcl_fixed_token(const char *p, const char **q)
 	case 'b':
 		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
 		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
+		    p[6] == 'd' && p[7] == '_' && p[8] == 'r' && 
+		    p[9] == 'o' && p[10] == 'u' && p[11] == 'n' && 
+		    p[12] == 'd' && p[13] == '_' && p[14] == 'r' && 
+		    p[15] == 'o' && p[16] == 'b' && p[17] == 'i' && 
+		    p[18] == 'n' && !isvar(p[19])) {
+			*q = p + 19;
+			return (T_BACKEND_ROUND_ROBIN);
+		}
+		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
+		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
+		    p[6] == 'd' && p[7] == '_' && p[8] == 'r' && 
+		    p[9] == 'a' && p[10] == 'n' && p[11] == 'd' && 
+		    p[12] == 'o' && p[13] == 'm' && !isvar(p[14])) {
+			*q = p + 14;
+			return (T_BACKEND_RANDOM);
+		}
+		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
+		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
 		    p[6] == 'd' && !isvar(p[7])) {
 			*q = p + 7;
 			return (T_BACKEND);
@@ -274,6 +292,8 @@ vcl_init_tnames(void)
 	vcl_tnames[ID] = "ID";
 	vcl_tnames[T_ACL] = "acl";
 	vcl_tnames[T_BACKEND] = "backend";
+	vcl_tnames[T_BACKEND_RANDOM] = "backend_random";
+	vcl_tnames[T_BACKEND_ROUND_ROBIN] = "backend_round_robin";
 	vcl_tnames[T_CAND] = "&&";
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
@@ -333,7 +353,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "        struct vrt_ref  *ref;\n");
 	vsb_cat(sb, "        unsigned        nref;\n");
 	vsb_cat(sb, "        unsigned        busy;\n");
-	vsb_cat(sb, "\n");
+	vsb_cat(sb, "        \n");
 	vsb_cat(sb, "	unsigned	nsrc;\n");
 	vsb_cat(sb, "	const char	**srcname;\n");
 	vsb_cat(sb, "	const char	**srcbody;\n");
@@ -404,6 +424,26 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	const char	*host;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_backend_entry {\n");
+	vsb_cat(sb, "	const char	*port;\n");
+	vsb_cat(sb, "	const char	*host;\n");
+	vsb_cat(sb, "	double		weight;\n");
+	vsb_cat(sb, "	struct vrt_backend_entry *next;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_round_robin_backend {\n");
+	vsb_cat(sb, "	const char	*name;\n");
+	vsb_cat(sb, "	struct vrt_backend_entry *bentry;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_random_backend {\n");
+	vsb_cat(sb, "	const char	*name;\n");
+	vsb_cat(sb, "	unsigned	weighted;\n");
+	vsb_cat(sb, "	unsigned	count;\n");
+	vsb_cat(sb, "	struct vrt_backend_entry *bentry;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_ref {\n");
 	vsb_cat(sb, "	unsigned	source;\n");
 	vsb_cat(sb, "	unsigned	offset;\n");
@@ -452,6 +492,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
 	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);\n");
+	vsb_cat(sb, "void VRT_init_round_robin_backend(struct backend **, struct vrt_round_robin_backend *);\n");
+	vsb_cat(sb, "void VRT_init_random_backend(struct backend **, struct vrt_random_backend *);\n");
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);\n");
@@ -473,6 +515,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_backend_host(struct backend *, const char *);\n");
 	vsb_cat(sb, "void VRT_l_backend_port(struct backend *, const char *);\n");
 	vsb_cat(sb, "void VRT_l_backend_dnsttl(struct backend *, double);\n");
+	vsb_cat(sb, "void VRT_l_backend_set(struct backend *, struct vrt_backend_entry *);\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_client_ip(struct sess *);\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_server_ip(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(struct sess *);\n");
