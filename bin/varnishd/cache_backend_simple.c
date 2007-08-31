@@ -340,7 +340,7 @@ bes_GetHostname(struct backend *b)
 {
 	struct bes *bes;
 
-	CHECK_OBJ_NOTNULL(b, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
 	return (bes->hostname);
 }
