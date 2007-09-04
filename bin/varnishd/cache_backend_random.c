@@ -48,7 +48,7 @@
 
 struct ber {
 	unsigned		magic;
-#define BER_MAGIC		0x66f05894
+#define BER_MAGIC		0x645b3f4
 	struct brspec 		*blist;
 #if 0
 	/* Store a hash of the backend info given in
@@ -61,7 +61,7 @@ struct ber {
 
 struct brspec {
 	unsigned		magic;
-#define BRSPEC_MAGIC		0x761d69c2
+#define BRSPEC_MAGIC		0x5aa072a7
 	struct brspec		*next;
 	double			limit;
 	char			*hostname;
