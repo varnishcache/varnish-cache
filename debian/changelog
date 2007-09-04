@@ -1,13 +1,19 @@
-varnish (1.1.1) unstable; urgency=low
+varnish (1.1.1-1) unstable; urgency=low
 
+  [Lars Bahner]
   * New upstream release
   * User and Group id added to default DAEMON_OPTS
   * Added user and group creation to postinst
   * Added missing man pages
 
- -- Lars Bahner <bahner@debian.org>  Mon, 20 Aug 2007 11:29:33 +0200
+  [Stig Sandbeck Mathisen]
+  * Set statedir to /var/lib
+  * Removed -n switch from varnish defaults file and varnishlog init script.
+    Use the default instance name instead.
 
-varnish (1.1) unstable; urgency=low
+ -- Stig Sandbeck Mathisen <ssm@linpro.no>  Tue, 04 Sep 2007 12:27:09 +0200
+
+varnish (1.1-1) unstable; urgency=low
 
   * New upstream release
   * Split package into varnish, libvarnish and libvarnish-dev
