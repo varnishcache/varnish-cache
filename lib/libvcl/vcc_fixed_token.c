@@ -433,6 +433,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_round_robin_backend {\n");
 	vsb_cat(sb, "	const char	*name;\n");
+	vsb_cat(sb, "	unsigned	count;\n");
 	vsb_cat(sb, "	struct vrt_backend_entry *bentry;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");

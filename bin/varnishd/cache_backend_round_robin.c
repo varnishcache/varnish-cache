@@ -50,6 +50,7 @@ struct brr {
 	unsigned		magic;
 #define BRR_MAGIC		0x66f05894
 	struct bspec 		*blist;
+	int			count;
 #if 0
 	/* Store a hash of the backend info given in
 	 * vcl for comparison when a new vcl file is 
@@ -71,6 +72,7 @@ struct bspec {
 	double			dnstime;
 	unsigned		dnsseq;
 	TAILQ_HEAD(, vbe_conn)	connlist;
+	int			health;
 };
 
 /*--------------------------------------------------------------------*/
@@ -215,13 +217,22 @@ brr_nextfd(struct sess *sp)
 	int reuse = 0;
 	struct brr *brr;
 	struct bspec *bs;
+	int min_health = -10;
+	int num = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	bp = sp->backend;
 	CAST_OBJ_NOTNULL(brr, bp->priv, BRR_MAGIC);
 	
-	bs = brr->blist = brr->blist->next;
+	do {
+		bs = brr->blist = brr->blist->next;
+		num++;
+		if (num > brr->count) {
+			min_health *= 10;
+			num = 0;
+		}
+	} while (bs->health < min_health);
 	
 	while (1) {
 		LOCK(&bp->mtx);
@@ -372,6 +383,31 @@ brr_GetHostname(struct backend *b)
 /*--------------------------------------------------------------------*/
 
 static void
+brr_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
+{
+	struct bspec *bs, *first;
+	struct brr *brr;
+	
+	if (vc != NULL) {
+	
+		CAST_OBJ_NOTNULL(bs, vc->priv, BSPEC_MAGIC);
+	
+		if (bs->health + add >= -10000 || bs->health + add <= 10000)
+			bs->health += add;
+	} else {
+		CAST_OBJ_NOTNULL(brr, sp->backend->priv, BSPEC_MAGIC);
+		first = brr->blist;
+		bs = first;
+		do {
+			bs = bs->next;
+			bs->health = (int)((double)bs->health / 2);
+		} while (bs != first);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 brr_Init(void)
 {
 
@@ -385,6 +421,7 @@ struct backend_method backend_method_round_robin = {
 	.close =		brr_ClosedFd,
 	.recycle =		brr_RecycleFd,
 	.gethostname =		brr_GetHostname,
+	.updatehealth =		brr_UpdateHealth,
 	.cleanup =		brr_Cleanup,
 	.init =			brr_Init
 };
@@ -417,6 +454,7 @@ VRT_init_round_robin_backend(struct backend **bp, struct vrt_round_robin_backend
 	brr = calloc(sizeof *brr, 1);
 	XXXAN(brr);
 	brr->magic = BRR_MAGIC;
+	brr->count = t->count;
 
 	b->priv = brr;
 
@@ -437,6 +475,7 @@ VRT_init_round_robin_backend(struct backend **bp, struct vrt_round_robin_backend
 		XXXAN(bs->hostname);
 		
 		bs->dnsttl = 300;
+		bs->health = 0;
 		
 		if (bs_first == NULL)
 			bs_first = bs;

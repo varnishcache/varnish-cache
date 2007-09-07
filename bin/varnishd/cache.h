@@ -337,6 +337,7 @@ typedef void vbe_recycle_f(struct worker *w, struct vbe_conn *vc);
 typedef void vbe_init_f(void);
 typedef const char *vbe_gethostname_f(struct backend *);
 typedef void vbe_cleanup_f(struct backend *);
+typedef void vbe_updatehealth_f(struct sess *sp, struct vbe_conn *vc, int);
 
 struct backend_method {
 	const char		*name;
@@ -345,6 +346,7 @@ struct backend_method {
 	vbe_recycle_f		*recycle;
 	vbe_cleanup_f		*cleanup;
 	vbe_gethostname_f	*gethostname;
+	vbe_updatehealth_f	*updatehealth;
 	vbe_init_f		*init;
 };
 
@@ -396,6 +398,7 @@ void VBE_DropRefLocked(struct backend *);
 struct backend *VBE_NewBackend(struct backend_method *method);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
+void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;

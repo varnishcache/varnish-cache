@@ -231,6 +231,22 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 }
 
+/* Update health ----------------------------------------------*/
+
+void
+VBE_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int a)
+{
+	struct backend *b;
+
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	b = vc->backend;
+	AN(b->method);
+	AN(b->method->updatehealth);
+	b->method->updatehealth(sp, vc, a);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+}
+
 /*--------------------------------------------------------------------*/
 
 void

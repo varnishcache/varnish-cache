@@ -50,6 +50,7 @@ struct ber {
 	unsigned		magic;
 #define BER_MAGIC		0x645b03f4
 	struct brspec 		*blist;
+	int			count;
 #if 0
 	/* Store a hash of the backend info given in
 	 * vcl for comparison when a new vcl file is 
@@ -72,6 +73,7 @@ struct brspec {
 	double			dnstime;
 	unsigned		dnsseq;
 	TAILQ_HEAD(, vbe_conn)	connlist;
+	int			health;
 };
 
 /*--------------------------------------------------------------------*/
@@ -217,6 +219,8 @@ ber_nextfd(struct sess *sp)
 	struct ber *ber;
 	struct brspec *bs;
 	double r;
+	int min_health = -10;
+	int num = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
@@ -230,6 +234,19 @@ ber_nextfd(struct sess *sp)
 		bs = bs->next;
 		CHECK_OBJ_NOTNULL(bs, BRSPEC_MAGIC);
 	}
+
+	/* If health is low (bad), use round-robin to find
+	 * a server with better health (if possible).
+	 */
+	while (bs->health < min_health) {
+		bs = bs->next;
+		num++;
+		if (num > ber->count) {
+			min_health *= 10;
+			num = 0;
+		}
+	}	
+
 	while (1) {
 		LOCK(&bp->mtx);
 		vc = TAILQ_FIRST(&bs->connlist);
@@ -379,6 +396,30 @@ ber_GetHostname(struct backend *b)
 /*--------------------------------------------------------------------*/
 
 static void
+ber_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
+{
+	struct brspec *bs, *first;
+	struct ber *ber;
+	
+	if (vc != NULL) {
+		CAST_OBJ_NOTNULL(bs, vc->priv, BRSPEC_MAGIC);
+	
+		if (bs->health + add >= -10000 || bs->health + add <= 10000)
+			bs->health += add;
+	} else {
+		CAST_OBJ_NOTNULL(ber, sp->backend->priv, BRSPEC_MAGIC);
+		first = ber->blist;
+		bs = first;
+		do {
+			bs = bs->next;
+			bs->health = (int)((double)bs->health / 2);
+		} while (bs != first);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 ber_Init(void)
 {
 
@@ -392,6 +433,7 @@ struct backend_method backend_method_random = {
 	.close =		ber_ClosedFd,
 	.recycle =		ber_RecycleFd,
 	.gethostname =		ber_GetHostname,
+	.updatehealth =		ber_UpdateHealth,
 	.cleanup =		ber_Cleanup,
 	.init =			ber_Init
 };
@@ -426,6 +468,7 @@ VRT_init_random_backend(struct backend **bp, struct vrt_random_backend *t)
 	ber = calloc(sizeof *ber, 1);
 	XXXAN(ber);
 	ber->magic = BER_MAGIC;
+	ber->count = t->count;
 
 	b->priv = ber;
 
@@ -454,6 +497,7 @@ VRT_init_random_backend(struct backend **bp, struct vrt_random_backend *t)
 		bs->limit = limit;
 		
 		bs->dnsttl = 300;
+		bs->health = 0;
 		
 		if (bs_first == NULL)
 			bs_first = bs;

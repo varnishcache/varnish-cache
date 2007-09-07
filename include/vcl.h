@@ -21,7 +21,7 @@ struct VCL_conf {
         struct vrt_ref  *ref;
         unsigned        nref;
         unsigned        busy;
-
+        
 	unsigned	nsrc;
 	const char	**srcname;
 	const char	**srcbody;

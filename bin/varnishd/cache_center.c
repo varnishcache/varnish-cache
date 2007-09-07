@@ -434,6 +434,7 @@ cnt_hit(struct sess *sp)
 	if (minutes > sp->backend->minute_limit) {
 		sp->backend->minute_limit++;
 		sp->backend->health = (int)((double)sp->backend->health / 2);
+		VBE_UpdateHealth(sp, NULL, 0);
 	}
 
 	VCL_hit_method(sp);

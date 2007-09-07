@@ -377,6 +377,12 @@ Fetch(struct sess *sp)
 		cls = 1;
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	
+	if (http_GetStatus(sp->bereq->http) == 200)
+		VBE_UpdateHealth(sp, vc, 1);
+	else if(http_GetStatus(sp->bereq->http) == 504)
+		VBE_UpdateHealth(sp, vc, -1);
+	
 	if (cls)
 		VBE_ClosedFd(sp->wrk, vc);
 	else

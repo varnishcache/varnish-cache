@@ -311,6 +311,7 @@ vcc_ParseBalancedBackend(struct tokenlist *tl)
 			Fc(tl, 0, "\nstatic struct vrt_round_robin_backend sbe_%.*s = {\n",
 			    PF(t_be));
 			Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+			Fc(tl, 0, "\t.count = %d,\n", cnt);
 			Fc(tl, 0, "\t.bentry = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
 			Fc(tl, 0, "};\n");
 			Fi(tl, 0, "\tVRT_init_round_robin_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
