@@ -55,6 +55,7 @@ struct vrt_backend_entry {
 
 struct vrt_round_robin_backend {
 	const char	*name;
+	unsigned	count;
 	struct vrt_backend_entry *bentry;
 };
 

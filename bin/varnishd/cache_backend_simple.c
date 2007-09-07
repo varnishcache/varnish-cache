@@ -348,6 +348,21 @@ bes_GetHostname(struct backend *b)
 /*--------------------------------------------------------------------*/
 
 static void
+bes_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int a)
+{
+	(void)sp;
+	(void)vc;
+	(void)a;
+	
+	/* 
+	 * Not of any use for simple backend. The global health
+	 * parameter of the backend should be enough.
+	 */
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 bes_Init(void)
 {
 
@@ -361,6 +376,7 @@ struct backend_method backend_method_simple = {
 	.close =		bes_ClosedFd,
 	.recycle =		bes_RecycleFd,
 	.gethostname =		bes_GetHostname,
+	.updatehealth =		bes_UpdateHealth,
 	.cleanup =		bes_Cleanup,
 	.init =			bes_Init
 };
