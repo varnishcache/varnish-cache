@@ -1,3 +1,9 @@
+varnish (1.1.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Stig Sandbeck Mathisen <ssm@linpro.no>  Wed, 12 Sep 2007 15:16:30 +0200
+
 varnish (1.1.1-1) unstable; urgency=low
 
   [Lars Bahner]
