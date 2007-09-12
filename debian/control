@@ -8,7 +8,7 @@ Standards-Version: 3.7.2
 
 Package: varnish
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3), libvarnish, libc6-dev | libc-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3), libc6-dev | libc-dev, adduser
 Description: A state-of-the-art, high-performance HTTP accelerator
  varnish is the server-side alternative to Squid, written primarily with
  speed in mind, and with a look to implementing full ESI-support in
@@ -21,26 +21,16 @@ Description: A state-of-the-art, high-performance HTTP accelerator
  will take full advantage of the advanced I/O features offered by these
  operating systems. 
 
-Package: libvarnish
+Package: libvarnish0
+Replaces: libvarnish
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Shared library for Varnish
- Shared library for Varnish.
- .
- Varnish is the server-side alternative to Squid, written primarily
- with speed in mind.
- .
- The goal of the Varnish project is to develop a state-of-the-art,
- high-performance HTTP accelerator.
+Description: Shared libraries for Varnish
+ Shared libraries for the Varnish HTTP accelerator.
 
-Package: libvarnish-dev
+Package: libvarnish0-dev
+Replaces: libvarnish-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libvarnish
+Depends: ${shlibs:Depends}, ${misc:Depends}, libvarnish0
 Description: Shared library for Varnish
  Development files for the Varnish library.
- .
- Varnish is the server-side alternative to Squid, written primarily
- with speed in mind.
- .
- The goal of the Varnish project is to develop a state-of-the-art,
- high-performance HTTP accelerator.

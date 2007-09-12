@@ -1,8 +1,9 @@
 varnish (1.1.2-1) unstable; urgency=low
 
   * New upstream release
+  * Renamed library and development packages to reflect sonames
 
- -- Stig Sandbeck Mathisen <ssm@linpro.no>  Wed, 12 Sep 2007 15:16:30 +0200
+ -- Stig Sandbeck Mathisen <ssm@fnord.no>  Wed, 12 Sep 2007 16:05:22 +0200
 
 varnish (1.1.1-1) unstable; urgency=low
 
