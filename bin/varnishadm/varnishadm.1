@@ -28,14 +28,14 @@
 .\"
 .\" $Id$
 .\"
-.Dd August 19, 2007
+.Dd September 12, 2007
 .Dt VARNISHADM 1
 .Os
 .Sh NAME
 .Nm varnishadm
 .Sh SYNOPSIS
 .Nm
-.Fl T Ar address:port
+.Fl T Ar address Ns : Ns Ar port
 .Cm command
 .Op Ar ...
 .Sh DESCRIPTION
@@ -43,11 +43,11 @@ The
 .Nm
 utility sends the given command and arguments to the
 .Xr varnishd 1
-instance at address:port and prints the results.
+instance at the specified address and port and prints the results.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
-.It Fl T Ar address:port
+.It Fl T Ar address Ns : Ns Ar port
 Connect to the management interface at the specified address and port.
 .El
 .Sh EXIT STATUS
