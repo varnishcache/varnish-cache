@@ -7,6 +7,10 @@
 # Maximum number of open files (for ulimit -n)
 NFILES=131072
 
+# Default varnish instance name is the local nodename.  Can be overridden with
+# the -n switch, to have more instances on a single server.
+INSTANCE=$(uname -n)
+
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
@@ -18,8 +22,7 @@ DAEMON_OPTS="-a :6081 \
              -T localhost:6082 \
 	     -b localhost:8080 \
 	     -u varnish -g varnish \
-	     -n /var/lib/varnish \
-	     -s file,/var/lib/varnish/varnish_storage.bin,1G"
+	     -s file,/var/lib/varnish/$INSTANCE/varnish_storage.bin,1G"
 
 
 ## Alternative 2, Configuration with VCL
@@ -32,7 +35,7 @@ DAEMON_OPTS="-a :6081 \
 #              -T localhost:6082 \
 #              -f /etc/varnish/default.vcl \
 #              -n /var/lib/varnish \
-#              -s file,/var/lib/varnish/varnish_storage.bin,1G"
+#              -s file,/var/lib/varnish/$INSTANCE/varnish_storage.bin,1G"
 
 
 ## Alternative 3, Advanced configuration
@@ -65,7 +68,7 @@ DAEMON_OPTS="-a :6081 \
 # VARNISH_HOMEDIR=/var/lib/varnish
 #
 # # Cache file location
-# VARNISH_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
+# VARNISH_STORAGE_FILE=/var/lib/varnish/$INSTANCE/varnish_storage.bin
 #
 # # Cache file size: in bytes, optionally using k / M / G / T suffix,
 # # or in percentage of available disk space using the % suffix.
@@ -84,7 +87,6 @@ DAEMON_OPTS="-a :6081 \
 #              -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
 #              -t ${VARNISH_TTL} \
 #              -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
-#              -n ${VARNISH_HOMEDIR} \
 #              -s ${VARNISH_STORAGE}"
 #
 
