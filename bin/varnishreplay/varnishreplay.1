@@ -27,7 +27,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 25, 2007
+.Dd September 12, 2007
 .Dt VARNISHREPLAY 1
 .Os
 .Sh NAME
@@ -36,7 +36,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl D
-.Fl a Ar address:port
+.Fl a Ar address Ns : Ns Ar port
 .Fl r Ar file
 .Sh DESCRIPTION
 The
@@ -45,7 +45,7 @@ utility parses varnish logs and attempts to reproduce the traffic.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
-.It Fl a Ar address:port
+.It Fl a Ar address Ns : Ns Ar port
 Send the traffic over tcp to this address and port.
 This option is mandatory.
 .It Fl D
