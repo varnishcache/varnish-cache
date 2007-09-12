@@ -17,4 +17,5 @@ export CONFIG_SHELL=/bin/sh
     --enable-extra-developer-warnings \
     --enable-stack-protector \
     --enable-werror \
-    --prefix=/opt/varnish
+    --prefix=/opt/varnish \
+    --mandir=/opt/varnish/man
