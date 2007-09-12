@@ -310,6 +310,7 @@ WRK_QueueSession(struct sess *sp)
 	    (params->wthread_max * params->overflow_max) / 100)) {
 		VSL_stats->n_wrk_drop++;
 		UNLOCK(&tmtx);
+		sp->t_end = TIM_real();
 		vca_close_session(sp, "dropped");
 		vca_return_session(sp);
 		return;
