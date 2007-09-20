@@ -33,7 +33,11 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
+#include <sys/socket.h>
+#include <netdb.h>
 
 #include "heritage.h"
 #include "shmlog.h"
@@ -45,6 +49,64 @@ static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
 static MTX VBE_mtx;
 
 struct backendlist backendlist = TAILQ_HEAD_INITIALIZER(backendlist);
+
+
+/*--------------------------------------------------------------------
+ * Attempt to connect to a given addrinfo entry.
+ *
+ * Must be called with locked backend, but will release the backend
+ * lock during the slow/sleeping stuff, so that other worker threads
+ * can have a go, while we ponder.
+ *
+ */
+
+int
+VBE_TryConnect(struct sess *sp, struct addrinfo *ai)
+{
+	struct sockaddr_storage ss;
+	int fam, sockt, proto;
+	socklen_t alen;
+	int s;
+	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
+	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+
+	/*
+	 * ai is only valid with the lock held, so copy out the bits
+	 * we need to make the connection
+	 */
+	fam = ai->ai_family;
+	sockt = ai->ai_socktype;
+	proto = ai->ai_protocol;
+	alen = ai->ai_addrlen;
+	assert(alen <= sizeof ss);
+	memcpy(&ss, ai->ai_addr, alen);
+
+	/* release lock during stuff that can take a long time */
+	UNLOCK(&sp->backend->mtx);
+
+	s = socket(fam, sockt, proto);
+	if (s < 0) {
+		LOCK(&sp->backend->mtx);
+		return (s);
+	}
+
+	if (connect(s, (void *)&ss, alen) != 0) {
+		close(s);
+		LOCK(&sp->backend->mtx);
+		return (-1);
+	}
+
+	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	TCP_name((void*)&ss, alen,
+	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
+	    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+
+	LOCK(&sp->backend->mtx);
+	return (s);
+}
+
+
 
 /*--------------------------------------------------------------------
  * Get a http structure for talking to the backend.

@@ -68,6 +68,7 @@ struct sess;
 struct object;
 struct objhead;
 struct workreq;
+struct addrinfo;
 
 /*--------------------------------------------------------------------*/
 
@@ -399,6 +400,7 @@ struct backend *VBE_NewBackend(struct backend_method *method);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
+int VBE_TryConnect(struct sess *sp, struct addrinfo *ai);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;
