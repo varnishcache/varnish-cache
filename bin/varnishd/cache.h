@@ -402,6 +402,8 @@ void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;
+extern struct backend_method	backend_method_random;
+extern struct backend_method	backend_method_round_robin;
 
 /* cache_ban.c */
 void AddBan(const char *, int hash);
