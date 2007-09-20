@@ -263,7 +263,7 @@ Fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	struct storage *st;
 	struct bereq *bereq;
-	int len;
+	int len, mklen;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -340,11 +340,14 @@ Fetch(struct sess *sp)
 
 	/* Determine if we have a body or not */
 	cls = 0;
-	if (http_GetHdr(hp, H_Content_Length, &b))
+	mklen = 0;
+	if (http_GetHdr(hp, H_Content_Length, &b)) {
 		cls = fetch_straight(sp, vc->fd, hp, b);
-	else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
+		mklen = 1;
+	} else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
 		cls = fetch_chunked(sp, vc->fd, hp);
-	else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		mklen = 1;
+	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
 		VSL(SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_ClosedFd(sp->wrk, vc);
@@ -353,13 +356,14 @@ Fetch(struct sess *sp)
 		switch (http_GetStatus(hp)) {
 			case 200:
 				cls = fetch_eof(sp, vc->fd, hp);
+				mklen = 1;
 				break;
 			default:
 				break;
 		}
 	}
 
-	if (cls > 0) 
+	if (mklen > 0) 
 		http_PrintfHeader(sp->wrk, sp->fd, hp2,
 		    "Content-Length: %u", sp->obj->len);
 
