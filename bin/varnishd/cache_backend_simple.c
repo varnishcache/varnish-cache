@@ -39,7 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <poll.h>
 
 #include "shmlog.h"
 #include "cache.h"
@@ -203,7 +202,6 @@ static struct vbe_conn *
 bes_nextfd(struct sess *sp)
 {
 	struct vbe_conn *vc;
-	struct pollfd pfd;
 	struct backend *bp;
 	int reuse = 0;
 	struct bes *bes;
@@ -225,11 +223,7 @@ bes_nextfd(struct sess *sp)
 		if (vc == NULL)
 			break;
 
-		/* Test the connection for remote close before we use it */
-		pfd.fd = vc->fd;
-		pfd.events = POLLIN;
-		pfd.revents = 0;
-		if (!poll(&pfd, 1, 0)) {
+		if (VBE_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSL_stats->backend_reuse += reuse;
 			VSL_stats->backend_conn++;
