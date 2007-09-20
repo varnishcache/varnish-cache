@@ -275,19 +275,6 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 }
 
 /*--------------------------------------------------------------------
- * Free a token
- */
-
-void
-vcc_FreeToken(struct token *t)
-{
-
-	if (t->dec != NULL)
-		free(t->dec);
-	free(t);
-}
-
-/*--------------------------------------------------------------------
  * Lexical analysis and token generation
  */
 
