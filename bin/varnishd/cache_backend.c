@@ -255,4 +255,6 @@ VBE_Init(void)
 
 	MTX_INIT(&VBE_mtx);
 	backend_method_simple.init();
+	backend_method_random.init();
+	backend_method_round_robin.init();
 }
