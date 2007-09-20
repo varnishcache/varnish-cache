@@ -328,9 +328,9 @@ bes_Cleanup(struct backend *b)
 		TAILQ_REMOVE(&bes->connlist, vbe, list);
 		if (vbe->fd >= 0)
 			close(vbe->fd);
-		free(vbe);
+		FREE_OBJ(vbe);
 	}
-	free(bes);
+	FREE_OBJ(bes);
 }
 
 /*--------------------------------------------------------------------*/
@@ -419,16 +419,13 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 	bes->dnsttl = 300;
 
 	AN(t->name);
-	b->vcl_name = strdup(t->name);
-	XXXAN(b->vcl_name);
+	REPLACE(b->vcl_name, t->name);
 
 	AN(t->port);
-	bes->portname = strdup(t->port);
-	XXXAN(bes->portname);
+	REPLACE(bes->portname, t->port);
 
 	AN(t->host);
-	bes->hostname = strdup(t->host);
-	XXXAN(bes->hostname);
+	REPLACE(bes->hostname, t->host);
 
 	*bp = b;
 }
