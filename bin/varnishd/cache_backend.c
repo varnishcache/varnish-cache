@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <sys/socket.h>
 #include <netdb.h>
@@ -106,7 +107,22 @@ VBE_TryConnect(struct sess *sp, struct addrinfo *ai)
 	return (s);
 }
 
+/*--------------------------------------------------------------------
+ * Check that there is still something at the far end of a given fd.
+ * We poll the fd with instant timeout, if there are any events we can't
+ * use it (backends are not allowed to pipeline).
+ */
 
+int
+VBE_CheckFd(int fd)
+{
+	struct pollfd pfd;
+
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	return(poll(&pfd, 1, 0) == 0);
+}
 
 /*--------------------------------------------------------------------
  * Get a http structure for talking to the backend.

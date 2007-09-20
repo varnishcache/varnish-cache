@@ -400,7 +400,10 @@ struct backend *VBE_NewBackend(struct backend_method *method);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
+
+/* convenience functions for backend methods */
 int VBE_TryConnect(struct sess *sp, struct addrinfo *ai);
+int VBE_CheckFd(int fd);
 
 /* cache_backend_simple.c */
 extern struct backend_method	backend_method_simple;
