@@ -465,6 +465,7 @@ VRT_init_round_robin_backend(struct backend **bp, struct vrt_round_robin_backend
 	be = t->bentry;
 	while (be != NULL) {
 		bs = calloc(sizeof *bs, 1);
+		XXXAN(bs);
 		bs->magic = BSPEC_MAGIC;
 		AN(be->port);
 		bs->portname = strdup(be->port);
@@ -485,6 +486,7 @@ VRT_init_round_robin_backend(struct backend **bp, struct vrt_round_robin_backend
 		be = be->next;
 	}
 	
+	XXXAN(bs_first);
 	bs_first->next = bs;
 	brr->blist = bs;
 	

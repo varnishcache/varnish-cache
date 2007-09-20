@@ -132,6 +132,7 @@ RES_BuildHttp(struct sess *sp)
 	 */
 	http_Unset(sp->http, H_Date);
 	time_str = malloc(50);
+	XXXAN(time_str);
 	sprintf(time_str, "Date: ");
 	TIM_format(TIM_real(), &(time_str[6]));
 	http_SetHeader(sp->wrk, sp->fd, sp->http, time_str);
