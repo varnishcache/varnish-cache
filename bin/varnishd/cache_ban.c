@@ -62,7 +62,7 @@ AddBan(const char *regexp, int hash)
 	b = calloc(sizeof *b, 1);
 	XXXAN(b);
 
-	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_NOSUB);
+	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
 	if (i) {
 		char buf[512];
 
