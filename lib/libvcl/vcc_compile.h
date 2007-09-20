@@ -103,6 +103,12 @@ enum var_type {
 	SET
 };
 
+enum var_access {
+	V_RO,
+	V_RW,
+	V_WO
+};
+
 enum ref_type {
 	R_FUNC,
 	R_ACL,
@@ -123,7 +129,7 @@ struct var {
 	unsigned		len;
 	const char		*rname;
 	const char		*lname;
-	enum {V_RO, V_RW, V_WO}	access;
+	enum var_access		access;
 	const char		*hdr;
 	unsigned		methods;
 };
@@ -187,7 +193,6 @@ void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
 void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
-void vcc_FreeToken(struct token *t);
 
 /* vcc_var.c */
 struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
