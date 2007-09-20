@@ -461,9 +461,6 @@ vcc_resolve_includes(struct tokenlist *tl)
 		TAILQ_REMOVE(&tl->tokens, t, list);
 		TAILQ_REMOVE(&tl->tokens, t1, list);
 		TAILQ_REMOVE(&tl->tokens, t2, list);
-		vcc_FreeToken(t);
-		vcc_FreeToken(t1);
-		vcc_FreeToken(t2);
 		if (!tl->err)
 			vcc_resolve_includes(tl);
 		return;
