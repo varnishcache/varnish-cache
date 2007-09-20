@@ -30,10 +30,21 @@
 			CHECK_OBJ((to), (type_magic));			\
 	} while (0);
 
-#define CAST_OBJ_NOTNULL(to, from, type_magic)					\
+#define CAST_OBJ_NOTNULL(to, from, type_magic)				\
 	do {								\
 		(to) = (from);						\
 		assert((to) != NULL);					\
 		CHECK_OBJ((to), (type_magic));				\
 	} while (0);
 
+#define REPLACE(ptr, val)						\
+	do {								\
+		if ((ptr) != NULL)					\
+			free(ptr);					\
+		if ((val) != NULL) {					\
+			ptr = strdup(val);				\
+			AN((ptr));					\
+		} else {						\
+			ptr = NULL;					\
+		}							\
+	} while (0);
