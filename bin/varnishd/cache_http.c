@@ -381,6 +381,13 @@ http_GetStatus(struct http *hp)
 	    NULL /* XXX */, 10));
 }
 
+const char *
+http_GetProto(struct http *hp)
+{
+	AN(hp->hd[HTTP_HDR_PROTO].b);
+	return (hp->hd[HTTP_HDR_PROTO].b);
+}
+
 /*--------------------------------------------------------------------
  * Dissect the headers of the HTTP protocol message.
  * Detect conditionals (headers which start with '^[Ii][Ff]-')

@@ -463,6 +463,7 @@ void http_Setup(struct http *ht, void *space, unsigned len);
 int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetStatus(struct http *hp);
+const char *http_GetProto(struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_Read(struct http *hp, int fd, void *b, unsigned len);
