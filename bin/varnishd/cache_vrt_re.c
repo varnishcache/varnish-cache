@@ -53,7 +53,7 @@ VRT_re_init(void **rep, const char *re, int sub)
 	t = calloc(sizeof *t, 1);
 	XXXAN(t);
 	/* This was already check-compiled by the VCL compiler */
-	AZ(regcomp(t, re, REG_EXTENDED | (sub ? 0 : REG_NOSUB)));
+	AZ(regcomp(t, re, REG_EXTENDED | REG_ICASE | (sub ? 0 : REG_NOSUB)));
 	*rep = t;
 }
 
