@@ -260,7 +260,6 @@ Fetch(struct sess *sp)
 	struct worker *w;
 	char *b;
 	int cls;
-	int body = 1;		/* XXX */
 	struct http *hp, *hp2;
 	struct storage *st;
 	struct bereq *bereq;
@@ -338,17 +337,31 @@ Fetch(struct sess *sp)
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	if (body) {
-		if (http_GetHdr(hp, H_Content_Length, &b))
-			cls = fetch_straight(sp, vc->fd, hp, b);
-		else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
-			cls = fetch_chunked(sp, vc->fd, hp);
-		else
-			cls = fetch_eof(sp, vc->fd, hp);
+
+	/* Determine if we have a body or not */
+	cls = 0;
+	if (http_GetHdr(hp, H_Content_Length, &b))
+		cls = fetch_straight(sp, vc->fd, hp, b);
+	else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
+		cls = fetch_chunked(sp, vc->fd, hp);
+	else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		/* XXX: AUGH! */
+		VSL(SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
+		VBE_ClosedFd(sp->wrk, vc);
+		return (-1);
+	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
+		switch (http_GetStatus(hp)) {
+			case 200:
+				cls = fetch_eof(sp, vc->fd, hp);
+				break;
+			default:
+				break;
+		}
+	}
+
+	if (cls > 0) 
 		http_PrintfHeader(sp->wrk, sp->fd, hp2,
 		    "Content-Length: %u", sp->obj->len);
-	} else
-		cls = 0;
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (cls < 0) {
