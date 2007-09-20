@@ -481,6 +481,7 @@ VRT_init_random_backend(struct backend **bp, struct vrt_random_backend *t)
 	be = t->bentry;
 	while (be != NULL) {
 		bs = calloc(sizeof *bs, 1);
+		XXXAN(bs);
 		bs->magic = BRSPEC_MAGIC;
 		AN(be->port);
 		bs->portname = strdup(be->port);
@@ -506,7 +507,7 @@ VRT_init_random_backend(struct backend **bp, struct vrt_random_backend *t)
 		bs_prev = bs;
 		be = be->next;
 	}
-	
+	XXXAN(bs_first);
 	bs_first->next = bs;
 	ber->blist = bs;
 	
