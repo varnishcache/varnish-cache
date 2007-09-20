@@ -347,14 +347,6 @@ bes_GetHostname(struct backend *b)
 
 /*--------------------------------------------------------------------*/
 
-static void
-bes_Init(void)
-{
-
-}
-
-/*--------------------------------------------------------------------*/
-
 struct backend_method backend_method_simple = {
 	.name =			"simple",
 	.getfd =		bes_GetFd,
@@ -362,7 +354,6 @@ struct backend_method backend_method_simple = {
 	.recycle =		bes_RecycleFd,
 	.gethostname =		bes_GetHostname,
 	.cleanup =		bes_Cleanup,
-	.init =			bes_Init
 };
 
 /*--------------------------------------------------------------------*/
