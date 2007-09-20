@@ -249,12 +249,22 @@ VBE_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int a)
 
 /*--------------------------------------------------------------------*/
 
+static void
+VBE_AddBackendMethod(struct backend_method *bem)
+{
+
+	if (bem->init != NULL)
+		bem->init();
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VBE_Init(void)
 {
 
 	MTX_INIT(&VBE_mtx);
-	backend_method_simple.init();
-	backend_method_random.init();
-	backend_method_round_robin.init();
+	VBE_AddBackendMethod(&backend_method_simple);
+	VBE_AddBackendMethod(&backend_method_random);
+	VBE_AddBackendMethod(&backend_method_round_robin);
 }
