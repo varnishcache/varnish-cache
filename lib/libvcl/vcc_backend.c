@@ -71,12 +71,6 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	ExpectErr(tl, ID);
 	t_be = tl->t;
 	vcc_AddDef(tl, tl->t, R_BACKEND);
-	/*
-	 * The first backend is always referenced because that is the default
-	 * at the beginning of vcl_recv
-	 */
-	if (tl->nbackend == 0)
-		vcc_AddRef(tl, tl->t, R_BACKEND);
 
 	/* In the compiled vcl we use these macros to refer to backends */
 	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
@@ -153,7 +147,10 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	Fc(tl, 0, "\nstatic struct vrt_simple_backend sbe_%.*s = {\n",
 	    PF(t_be));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
-	Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
+	if (t_port != NULL)
+		Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
+	else
+		Fc(tl, 0, "\t.port = \"http\",\n");
 	Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
 	Fc(tl, 0, "};\n");
 	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
@@ -180,12 +177,6 @@ vcc_ParseBalancedBackend(struct tokenlist *tl)
 	ExpectErr(tl, ID);
 	t_be = tl->t;
 	vcc_AddDef(tl, tl->t, R_BACKEND);
-	/*
-	 * The first backend is always referenced because that is the default
-	 * at the beginning of vcl_recv
-	 */
-	if (tl->nbackend == 0)
-		vcc_AddRef(tl, tl->t, R_BACKEND);
 
 	/* In the compiled vcl we use these macros to refer to backends */
 	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
