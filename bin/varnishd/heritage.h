@@ -120,6 +120,9 @@ struct params {
 	/* Ping interval */
 	unsigned		ping_interval;
 
+	/* LRU list ordering interval */
+	unsigned		lru_timeout;
+
 };
 
 extern volatile struct params *params;

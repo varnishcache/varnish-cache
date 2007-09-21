@@ -328,6 +328,15 @@ tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_lru_timeout(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_timeout(cli, &master.lru_timeout, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
 {
 
@@ -716,6 +725,14 @@ static struct parspec parspec[] = {
 		"it possible to attach a debugger to the child.\n"
 		MUST_RESTART,
 		"3", "seconds" },
+	{ "lru_interval", tweak_lru_timeout,
+		"Grace period before object moves on LRU list.\n"
+		"Objects are only moved to the front of the LRU "
+		"list if they have not been moved there already inside "
+		"this timeout period.  This reduces the amount of lock "
+		"operations necessary for LRU list access.\n"
+		EXPERIMENTAL,
+		"2", "seconds" },
 	{ "cc_command", tweak_cc_command,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.\n"
