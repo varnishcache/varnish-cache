@@ -32,7 +32,7 @@
  * b	session field name
  * c	Request(1)/Response(2) bitfield
  * d	(obsolete)
- * e	Supress header in pass from client to backend
+ * e	Supress header in filter ops
  * f	unused
  * g	unused
  *
@@ -70,7 +70,7 @@ HTTPH("Content-Location",	H_Content_Location,	2, 0, 0, 0, 0)  /* RFC2616 14.14 *
 HTTPH("Content-MD5",		H_Content_MD5,		2, 0, 0, 0, 0)  /* RFC2616 14.15 */
 HTTPH("Content-Range",		H_Content_Range,	2, 3, HTTPH_R_PASS|HTTPH_A_PASS|HTTPH_R_FETCH|HTTPH_A_INS, 0, 0)  /* RFC2616 14.16 */
 HTTPH("Content-Type",		H_Content_Type,		2, 0, 0, 0, 0)  /* RFC2616 14.17 */
-HTTPH("Date",			H_Date,			2, 0, 0, 0, 0)  /* RFC2616 14.18 */
+HTTPH("Date",			H_Date,			2, 0, HTTPH_A_DELIVER, 0, 0)  /* RFC2616 14.18 */
 HTTPH("ETag", 			H_ETag,			2, 0, 0, 0, 0)	/* RFC2616 14.19 */
 HTTPH("Expect",			H_Expect,		1, 0, 0, 0, 0)	/* RFC2616 14.20 */
 HTTPH("Expires",		H_Expires,		2, 0, 0, 0, 0)	/* RFC2616 14.21 */
