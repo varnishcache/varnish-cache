@@ -111,7 +111,7 @@ res_do_conds(struct sess *sp)
 void
 RES_BuildHttp(struct sess *sp)
 {
-	char *time_str;
+	char time_str[30];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
@@ -126,16 +126,8 @@ RES_BuildHttp(struct sess *sp)
 	http_FilterFields(sp->wrk, sp->fd, sp->http, &sp->obj->http,
 	    HTTPH_A_DELIVER);
 	
-	/* Replace Date header with current date instead of keeping the date
-	 * originally given by the backend when the object was fetched (which
-	 * could be a long time ago).
-	 */
-	http_Unset(sp->http, H_Date);
-	time_str = malloc(50);
-	XXXAN(time_str);
-	sprintf(time_str, "Date: ");
-	TIM_format(TIM_real(), &(time_str[6]));
-	http_SetHeader(sp->wrk, sp->fd, sp->http, time_str);
+	TIM_format(TIM_real(), time_str);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
 	
 	if (sp->xid != sp->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
