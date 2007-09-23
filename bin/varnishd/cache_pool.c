@@ -186,17 +186,13 @@ wrk_do_one(struct worker *w)
 	wrq = w->wrq;
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
-	if (w->nobj != NULL)
-		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
-	if (w->nobjhead != NULL)
-		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
+	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	w->used = NAN;
 	CNT_Session(wrq->sess);
 	assert(!isnan(w->used));
-	if (w->nobj != NULL)
-		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
-	if (w->nobjhead != NULL)
-		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
+	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	w->wrq = NULL;
 }
 
