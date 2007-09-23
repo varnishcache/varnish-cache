@@ -161,6 +161,10 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 			he->refcnt++;
 			roh = he->oh;
 			UNLOCK(&hp->mtx);
+			/*
+			 * If we loose the race, we need to clean up
+			 * the work we did for our second attempt.
+			 */
 			if (he2 != NULL)
 				free(he2);
 			if (noh->hash != NULL) {
