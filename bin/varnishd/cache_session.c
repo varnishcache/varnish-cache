@@ -340,6 +340,8 @@ SES_Delete(struct sess *sp)
 	AZ(sp->vcl);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
+	assert(!isnan(b->first));
+	assert(!isnan(sp->t_end));
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
