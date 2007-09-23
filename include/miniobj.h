@@ -23,6 +23,12 @@
 		assert((ptr)->magic == type_magic);			\
 	} while (0)
 
+#define CHECK_OBJ_ORNULL(ptr, type_magic)				\
+	do {								\
+		if ((ptr) != NULL)					\
+			assert((ptr)->magic == type_magic);		\
+	} while (0)
+
 #define CAST_OBJ(to, from, type_magic)					\
 	do {								\
 		(to) = (from);						\
