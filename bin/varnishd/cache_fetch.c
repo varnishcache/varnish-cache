@@ -345,8 +345,7 @@ Fetch(struct sess *sp)
 			TAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		close(vc->fd);
-		VBE_ClosedFd(sp->wrk, vc, 1);
+		VBE_ClosedFd(sp->wrk, vc, 0);
 		return (-1);
 	}
 
