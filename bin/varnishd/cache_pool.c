@@ -256,8 +256,10 @@ wrk_thread(void *priv)
 	AZ(close(w->pipe[1]));
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
-	if (w->nobjhead != NULL)
+	if (w->nobjhead != NULL) {
+		MTX_DESTROY(&w->nobjhead->mtx);
 		FREE_OBJ(w->nobjhead);
+	}
 	if (w->nobj!= NULL)
 		FREE_OBJ(w->nobj);
 	return (NULL);
