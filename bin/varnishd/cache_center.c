@@ -511,13 +511,14 @@ cnt_lookup(struct sess *sp)
 		p = WS_Alloc(sp->http->ws,
 		    sizeof(const char *) * (sp->nhashptr + 1));
 		XXXAN(p);
+		/* Align pointer properly (?) */
 		u = (uintptr_t)p;
 		u &= sizeof(const char *) - 1;
 		if (u)
 			p += sizeof(const char *) - u;
 		sp->hashptr = (void*)p;
 
-		VCL_hash_method(sp);		/* XXX: no-op for now */
+		VCL_hash_method(sp);
 		/* XXX check error */
 	}
 
@@ -818,15 +819,11 @@ CNT_Session(struct sess *sp)
 		 * pointers still pointing to the things we expect.
 		 */
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		if (sp->obj != NULL)
-			CHECK_OBJ(sp->obj, OBJECT_MAGIC);
+		CHECK_OBJ_ORNULL(sp->obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-		if (w->nobj != NULL)
-			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
-		if (w->nobjhead != NULL)
-			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
-		if (sp->backend != NULL)
-			CHECK_OBJ(sp->backend, BACKEND_MAGIC);
+		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
+		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_ORNULL(sp->backend, BACKEND_MAGIC);
 
 		switch (sp->step) {
 #define STEP(l,u) case STP_##u: done = cnt_##l(sp); break;
@@ -834,10 +831,8 @@ CNT_Session(struct sess *sp)
 #undef STEP
 		default:	INCOMPL();
 		}
-		if (w->nobj != NULL)
-			CHECK_OBJ(w->nobj, OBJECT_MAGIC);
-		if (w->nobjhead != NULL)
-			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
+		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	assert(!isnan(w->used));
 	WSL_Flush(w);
