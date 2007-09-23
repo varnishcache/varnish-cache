@@ -221,21 +221,24 @@ wrk_thread(void *priv)
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 		assert(!isnan(w->used));
 
-		LOCK(&tmtx);
-
-		/* Process overflow requests, if any */
 		w->wrq = TAILQ_FIRST(&overflow);
 		if (w->wrq != NULL) {
-			VSL_stats->n_wrk_queue--;
-			TAILQ_REMOVE(&overflow, w->wrq, list);
-		} else {
+			LOCK(&tmtx);
+
+			/* Process overflow requests, if any */
+			w->wrq = TAILQ_FIRST(&overflow);
+			if (w->wrq != NULL) {
+				VSL_stats->n_wrk_queue--;
+				TAILQ_REMOVE(&overflow, w->wrq, list);
+			}
+			UNLOCK(&tmtx);
+		} 
+		if (w->wrq == NULL) {
+			LOCK(&qp->mtx);
 			TAILQ_INSERT_HEAD(&qp->idle, w, list);
-		}
-
-		UNLOCK(&qp->mtx);
-
-		if (w->wrq == NULL)
+			UNLOCK(&qp->mtx);
 			assert(1 == read(w->pipe[0], &c, 1));
+		}
 		if (w->wrq == NULL)
 			break;
 		wrk_do_one(w);
