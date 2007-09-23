@@ -258,8 +258,10 @@ wrk_thread(void *priv)
 	close(w->pipe[1]);
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
-	if (w->nobjhead != NULL)
+	if (w->nobjhead != NULL) {
+		MTX_DESTROY(&w->nobjhead->mtx);
 		free(w->nobjhead);
+	}
 	if (w->nobj!= NULL)
 		free(w->nobj);
 	return (NULL);
