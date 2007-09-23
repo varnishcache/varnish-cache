@@ -121,13 +121,14 @@ hcl_start(void)
 static struct objhead *
 hcl_lookup(struct sess *sp, struct objhead *noh)
 {
+	struct objhead *roh;
 	struct hcl_entry *he, *he2;
 	struct hcl_hd *hp;
 	unsigned u1, digest, r;
 	unsigned u, v;
 	int i;
 
-	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	CHECK_OBJ_ORNULL(noh, OBJHEAD_MAGIC);
 
 	digest = ~0U;
 	for (u = 0; u < sp->ihashptr; u += 2) {
@@ -158,11 +159,15 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 			if (i > 0)
 				break;
 			he->refcnt++;
-			noh = he->oh;
+			roh = he->oh;
 			UNLOCK(&hp->mtx);
 			if (he2 != NULL)
 				free(he2);
-			return (noh);
+			if (noh->hash != NULL) {
+				free(noh->hash);
+				noh->hash = NULL;
+			}
+			return (roh);
 		}
 		if (noh == NULL) {
 			UNLOCK(&hp->mtx);
@@ -189,6 +194,7 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 		he2->head = hp;
 
 		noh->hashpriv = he2;
+		AZ(noh->hash);
 		noh->hash = malloc(sp->lhashptr);
 		XXXAN(noh->hash);
 		noh->hashlen = sp->lhashptr;
