@@ -183,7 +183,6 @@ wrk_do_one(struct worker *w)
 	struct workreq *wrq;
 
 	AN(w->wrq);
-	w->used = NAN;
 	wrq = w->wrq;
 	CHECK_OBJ_NOTNULL(wrq->sess, SESS_MAGIC);
 	wrq->sess->wrk = w;
@@ -191,12 +190,13 @@ wrk_do_one(struct worker *w)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
+	w->used = NAN;
 	CNT_Session(wrq->sess);
+	assert(!isnan(w->used));
 	if (w->nobj != NULL)
 		CHECK_OBJ(w->nobj, OBJECT_MAGIC);
 	if (w->nobjhead != NULL)
 		CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
-	assert(!isnan(w->used));
 	w->wrq = NULL;
 }
 
@@ -220,48 +220,47 @@ wrk_thread(void *priv)
 	LOCK(&tmtx);
 	VSL_stats->n_wrk_create++;
 	UNLOCK(&tmtx);
+
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+		assert(!isnan(w->used));
+
+		LOCK(&tmtx);
 
 		/* Process overflow requests, if any */
 		w->wrq = TAILQ_FIRST(&overflow);
 		if (w->wrq != NULL) {
-			LOCK(&tmtx);
-			w->wrq = TAILQ_FIRST(&overflow);
-			if (w->wrq != NULL) {
-				VSL_stats->n_wrk_queue--;
-				TAILQ_REMOVE(&overflow, w->wrq, list);
-				UNLOCK(&tmtx);
-				wrk_do_one(w);
-				continue;
-			}
-			UNLOCK(&tmtx);
+			VSL_stats->n_wrk_queue--;
+			TAILQ_REMOVE(&overflow, w->wrq, list);
+		} else {
+			TAILQ_INSERT_HEAD(&qp->idle, w, list);
 		}
 
-		LOCK(&qp->mtx);
-		TAILQ_INSERT_HEAD(&qp->idle, w, list);
-		assert(!isnan(w->used));
 		UNLOCK(&qp->mtx);
-		assert(1 == read(w->pipe[0], &c, 1));
+
+		if (w->wrq == NULL)
+			assert(1 == read(w->pipe[0], &c, 1));
 		if (w->wrq == NULL)
 			break;
 		wrk_do_one(w);
 	}
+
 	LOCK(&tmtx);
 	VSL_stats->n_wrk--;
 	qp->nwrk--;
 	UNLOCK(&tmtx);
+
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
-	close(w->pipe[0]);
-	close(w->pipe[1]);
+	AZ(close(w->pipe[0]));
+	AZ(close(w->pipe[1]));
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
 	if (w->nobjhead != NULL)
-		free(w->nobjhead);
+		FREE_OBJ(w->nobjhead);
 	if (w->nobj!= NULL)
-		free(w->nobj);
+		FREE_OBJ(w->nobj);
 	return (NULL);
 }
 
