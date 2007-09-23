@@ -32,6 +32,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "shmlog.h"
 #include "heritage.h"
 #include "cache.h"
@@ -109,6 +112,8 @@ res_do_conds(struct sess *sp)
 void
 RES_BuildHttp(struct sess *sp)
 {
+	char *time_str;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
@@ -121,6 +126,17 @@ RES_BuildHttp(struct sess *sp)
 	http_CopyResp(sp->http, &sp->obj->http);
 	http_FilterFields(sp->wrk, sp->fd, sp->http, &sp->obj->http,
 	    HTTPH_A_DELIVER);
+	
+	/* Replace Date header with current date instead of keeping the date
+	 * originally given by the backend when the object was fetched (which
+	 * could be a long time ago).
+	 */
+	http_Unset(sp->http, H_Date);
+	time_str = malloc(50);
+	sprintf(time_str, "Date: ");
+	TIM_format(TIM_real(), &(time_str[6]));
+	http_SetHeader(sp->wrk, sp->fd, sp->http, time_str);
+	
 	if (sp->xid != sp->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
