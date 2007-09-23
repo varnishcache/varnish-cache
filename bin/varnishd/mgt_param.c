@@ -67,6 +67,18 @@ struct parspec {
 
 static struct params master;
 
+/* XXX: Far too generic to live here ? */
+static void
+replace(char **p, const char *q)
+{
+
+	AN(*q);
+	if (*p != NULL)
+		free(*p);
+	*p = strdup(q);
+	AN(*p);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -172,22 +184,15 @@ tweak_user(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
-		if (master.user)
-			free(master.user);
-		master.user = strdup(pw->pw_name);
-		AN(master.user);
+		replace(&master.user, pw->pw_name);
 		master.uid = pw->pw_uid;
 		master.gid = pw->pw_gid;
 
 		/* set group to user's primary group */
-		if (master.group)
-			free(master.group);
 		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
 		    (gr = getgrnam(gr->gr_name)) != NULL &&
-		    gr->gr_gid == pw->pw_gid) {
-			master.group = strdup(gr->gr_name);
-			AN(master.group);
-		}
+		    gr->gr_gid == pw->pw_gid) 
+			replace(&master.group, gr->gr_name);
 	} else if (master.user) {
 		cli_out(cli, "%s (%d)", master.user, (int)master.uid);
 	} else {
@@ -221,10 +226,7 @@ tweak_group(struct cli *cli, struct parspec *par, const char *arg)
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
-		if (master.group)
-			free(master.group);
-		master.group = strdup(gr->gr_name);
-		AN(master.group);
+		replace(&master.group, gr->gr_name);
 		master.gid = gr->gr_gid;
 	} else if (master.group) {
 		cli_out(cli, "%s (%d)", master.group, (int)master.gid);
@@ -456,9 +458,7 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 		return;
 	}
 
-	free(master.listen_address);
-	master.listen_address = strdup(arg);
-	AN(master.listen_address);
+	replace(&master.listen_address, arg);
 
 	clean_listen_sock_head(&heritage.socks);
 	heritage.nsocks = 0;
