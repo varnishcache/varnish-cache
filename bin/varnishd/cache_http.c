@@ -388,6 +388,13 @@ http_GetProto(struct http *hp)
 	return (hp->hd[HTTP_HDR_PROTO].b);
 }
 
+const char *
+http_GetReq(struct http *hp)
+{
+	AN(hp->hd[HTTP_HDR_REQ].b);
+	return (hp->hd[HTTP_HDR_REQ].b);
+}
+
 /*--------------------------------------------------------------------
  * Dissect the headers of the HTTP protocol message.
  * Detect conditionals (headers which start with '^[Ii][Ff]-')
@@ -802,7 +809,8 @@ http_FilterHeader(struct sess *sp, unsigned how)
         hp = bereq->http;
         hp->logtag = HTTP_Tx;
 
-	http_copyreq(hp, sp->http, how == HTTPH_R_PIPE);
+	http_copyreq(hp, sp->http,
+	    (how == HTTPH_R_PIPE) || (how == HTTPH_R_PASS));
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
