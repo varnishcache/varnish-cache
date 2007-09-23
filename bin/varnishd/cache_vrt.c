@@ -532,3 +532,13 @@ VRT_purge(const char *regexp)
 	
 	AddBan(regexp);
 }
+
+/*--------------------------------------------------------------------
+ * Simple stuff
+ */
+
+int
+VRT_strcmp(const char *s1, const char *s2)
+{
+	return (strcmp(s1, s2));
+}

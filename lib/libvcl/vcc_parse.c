@@ -232,7 +232,7 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 		break;
 	case T_EQ:
 	case T_NEQ:
-		Fb(tl, 1, "%sstrcmp(%s, ",
+		Fb(tl, 1, "%sVRT_strcmp(%s, ",
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
