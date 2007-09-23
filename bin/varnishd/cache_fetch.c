@@ -263,7 +263,7 @@ Fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	struct storage *st;
 	struct bereq *bereq;
-	int len, mklen, is_get;
+	int len, mklen, is_head;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -272,7 +272,7 @@ Fetch(struct sess *sp)
 	w = sp->wrk;
 	bereq = sp->bereq;
 	hp = bereq->http;
-	is_get = !strcasecmp(http_GetReq(hp), "get");
+	is_head = (strcasecmp(http_GetReq(hp), "head") == 0);
 
 	sp->obj->xid = sp->xid;
 
@@ -286,7 +286,6 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (WRK_Flush(w)) {
 		/* XXX: cleanup */
-		
 		return (1);
 	}
 
@@ -342,7 +341,7 @@ Fetch(struct sess *sp)
 	/* Determine if we have a body or not */
 	cls = 0;
 	mklen = 0;
-	if (!is_get) {
+	if (is_head) {
 		/* nothing */
 	} else if (http_GetHdr(hp, H_Content_Length, &b)) {
 		cls = fetch_straight(sp, vc->fd, hp, b);
@@ -366,7 +365,7 @@ Fetch(struct sess *sp)
 		}
 	}
 
-	if (mklen > 0) 
+	if (mklen > 0)
 		http_PrintfHeader(sp->wrk, sp->fd, hp2,
 		    "Content-Length: %u", sp->obj->len);
 
@@ -397,12 +396,12 @@ Fetch(struct sess *sp)
 		cls = 1;
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	
+
 	if (http_GetStatus(sp->bereq->http) == 200)
 		VBE_UpdateHealth(sp, vc, 1);
 	else if(http_GetStatus(sp->bereq->http) == 504)
 		VBE_UpdateHealth(sp, vc, -1);
-	
+
 	if (cls)
 		VBE_ClosedFd(sp->wrk, vc);
 	else
