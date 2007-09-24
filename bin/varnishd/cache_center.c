@@ -431,7 +431,6 @@ cnt_hit(struct sess *sp)
 	/* Experimental. Reduce health parameter of backend towards zero
 	 * if it has been more than a minute since it was checked. */
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-if (0) {
 	time_diff = TIM_mono() - sp->backend->last_check;
 	minutes = time_diff / 60;
 	if (minutes > sp->backend->minute_limit) {
@@ -439,7 +438,6 @@ if (0) {
 		sp->backend->health = (int)((double)sp->backend->health / 2);
 		VBE_UpdateHealth(sp, NULL, 0);
 	}
-}
 
 	VCL_hit_method(sp);
 
