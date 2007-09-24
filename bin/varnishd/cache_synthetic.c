@@ -87,7 +87,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 
 	/* allocate space for body */
 	/* XXX what if the object already has a body? */
-	st = STV_alloc(1024);
+	st = STV_alloc(sp, 1024);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 
 	/* generate body */

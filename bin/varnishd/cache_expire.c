@@ -45,12 +45,21 @@
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
+#include "heritage.h"
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static MTX exp_mtx;
 static unsigned expearly = 30;
 static TAILQ_HEAD(,object) exp_deathrow = TAILQ_HEAD_INITIALIZER(exp_deathrow);
+static TAILQ_HEAD(,object) exp_lru = TAILQ_HEAD_INITIALIZER(exp_lru);
+
+/*
+ * This is a magic marker for the objects currently on the SIOP [look it up]
+ * so that other users of the object will not stumble trying to change the
+ * ttl or lru position.
+ */
+static const unsigned lru_target = (unsigned)(-3);
 
 /*--------------------------------------------------------------------*/
 
@@ -58,40 +67,42 @@ void
 EXP_Insert(struct object *o)
 {
 
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->heap_idx == 0);
 	LOCK(&exp_mtx);
 	binheap_insert(exp_heap, o);
+	TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
 	UNLOCK(&exp_mtx);
+}
+
+void
+EXP_Touch(struct object *o, double now)
+{
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	if (o->lru_stamp + params->lru_timeout < now) {
+		LOCK(&exp_mtx);	/* XXX: should be ..._TRY */
+		if (o->heap_idx != lru_target) {
+			assert(o->heap_idx != 0);
+			TAILQ_REMOVE(&exp_lru, o, deathrow);
+			TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+			o->lru_stamp = now;
+		}
+		UNLOCK(&exp_mtx);
+	}
 }
 
 void
 EXP_TTLchange(struct object *o)
 {
-	assert(o->heap_idx != 0);
-	LOCK(&exp_mtx);
-	binheap_delete(exp_heap, o->heap_idx);
-	binheap_insert(exp_heap, o);
-	UNLOCK(&exp_mtx);
-}
 
-/*
- * Immediately destroy an object.  Do not wait for it to expire or trickle
- * through death row; yank it
- */
-void
-EXP_Terminate(struct object *o)
-{
 	LOCK(&exp_mtx);
-	LRU_Remove(o);
-	if (o->heap_idx)
+	if (o->heap_idx != lru_target) {
+		assert(o->heap_idx != 0);
 		binheap_delete(exp_heap, o->heap_idx);
-	if (o->deathrow.tqe_next) {
-		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
-		VSL_stats->n_deathrow--;
+		binheap_insert(exp_heap, o);
 	}
 	UNLOCK(&exp_mtx);
-	VSL(SLT_Terminate, 0, "%u", o->xid);
-	HSH_Deref(o);
 }
 
 /*--------------------------------------------------------------------
@@ -181,6 +192,7 @@ exp_prefetch(void *arg)
 			continue;
 		}
 		binheap_delete(exp_heap, o->heap_idx);
+		assert(o->heap_idx == 0);
 
 		/* Sanity check */
 		o2 = binheap_root(exp_heap);
@@ -195,6 +207,7 @@ exp_prefetch(void *arg)
 
 		if (sp->handling == VCL_RET_DISCARD) {
 			LOCK(&exp_mtx);
+			TAILQ_REMOVE(&exp_lru, o, deathrow);
 			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
 			VSL_stats->n_deathrow++;
 			UNLOCK(&exp_mtx);
@@ -225,6 +238,69 @@ object_update(void *priv, void *p, unsigned u)
 
 	(void)priv;
 	o->heap_idx = u;
+}
+
+/*--------------------------------------------------------------------
+ * Attempt to make space by nuking, with VCLs permission, the oldest
+ * object on the LRU list which isn't in use.
+ * Returns: 1: did, 0: didn't, -1: can't
+ */
+
+int
+EXP_NukeOne(struct sess *sp)
+{
+	struct object *o, *o2;
+
+	/* Find the first currently unused object on the LRU */
+	LOCK(&exp_mtx);
+	TAILQ_FOREACH(o, &exp_lru, deathrow)
+		if (o->refcnt == 1)
+			break;
+	if (o != NULL) {
+		/*
+		 * Take it off the binheap while we chew.  This effectively
+		 * means that we own the EXP refcnt on this object.
+		 */
+		TAILQ_REMOVE(&exp_lru, o, deathrow);
+		binheap_delete(exp_heap, o->heap_idx);
+		assert(o->heap_idx == 0);
+		o->heap_idx = lru_target;
+		VSL_stats->n_lru_nuked++; 	/* May be premature */
+	}
+	UNLOCK(&exp_mtx);
+
+	if (o == NULL)
+		return (-1);
+
+	/*
+	 * Ask VCL in the context of the requestors session, in order to
+	 * allow client QoS considerations to inform the decision.
+	 * Temporarily substitute the object we want to nuke for the sessions
+	 * own object.
+	 */
+	o2 = sp->obj;
+	sp->obj = o;
+	VCL_discard_method(sp);
+	sp->obj = o2;
+
+	if (sp->handling == VCL_RET_DISCARD) {
+		VSL(SLT_ExpKill, 0, "%u LRU", o->xid);
+		HSH_Deref(o);
+		return (1);
+	}
+
+	assert(sp->handling == VCL_RET_KEEP);
+
+	/* Insert in binheap and lru again */
+	LOCK(&exp_mtx);
+	VSL_stats->n_lru_nuked--; 		/* It was premature */
+	VSL_stats->n_lru_saved++;
+	o->heap_idx = 0;
+	o->lru_stamp = sp->wrk->used;
+	binheap_insert(exp_heap, o);
+	TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+	UNLOCK(&exp_mtx);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
