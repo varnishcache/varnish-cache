@@ -117,7 +117,8 @@ struct params {
 	unsigned		backend_http11;
 	unsigned		client_http11;
 
-	/* Ping interval */
+	/* CLI related */
+	unsigned		cli_timeout;
 	unsigned		ping_interval;
 
 	/* LRU list ordering interval */
