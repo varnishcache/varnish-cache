@@ -419,6 +419,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct sockaddr;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_simple_backend {\n");
+	vsb_cat(sb, "	const char	*ident;\n");
 	vsb_cat(sb, "	const char	*name;\n");
 	vsb_cat(sb, "	const char	*port;\n");
 	vsb_cat(sb, "	const char	*host;\n");
