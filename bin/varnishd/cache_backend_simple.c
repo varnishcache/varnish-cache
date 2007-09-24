@@ -49,6 +49,7 @@ struct bes {
 #define BES_MAGIC		0x015e17ac
 	char			*hostname;
 	char			*portname;
+	char			*ident;
 	struct addrinfo		*addr;
 	struct addrinfo		*last_addr;
 	double			dnsttl;
@@ -369,12 +370,8 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (b->method != &backend_method_simple)
 			continue;
-		if (strcmp(b->vcl_name, t->name))
-			continue;
 		CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
-		if (strcmp(bes->portname, t->port))
-			continue;
-		if (strcmp(bes->hostname, t->host))
+		if (strcmp(bes->ident, t->ident))
 			continue;
 		b->refcount++;
 		*bp = b;
@@ -390,6 +387,9 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 	b->priv = bes;
 
 	bes->dnsttl = 300;
+
+	AN(t->ident);
+	REPLACE(bes->ident, t->ident);
 
 	AN(t->name);
 	REPLACE(b->vcl_name, t->name);

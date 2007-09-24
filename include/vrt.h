@@ -41,6 +41,7 @@ struct VCL_conf;
 struct sockaddr;
 
 struct vrt_simple_backend {
+	const char	*ident;
 	const char	*name;
 	const char	*port;
 	const char	*host;

@@ -58,6 +58,32 @@ CheckHostPort(const char *host, const char *port)
 	return (NULL);
 }
 
+/*--------------------------------------------------------------------
+ * When a new VCL is loaded, it is likely to contain backend declarations
+ * identical to other loaded VCL programs, and we want to reuse the state
+ * of those in order to not have to relearn statistics, DNS etc.
+ *
+ * This function emits a space separated text-string of the tokens which
+ * define a given backend which can be used to determine "identical backend"
+ * in that context.
+ */
+
+static void
+vcc_EmitBeIdent(struct tokenlist *tl, struct token *first, struct token *last)
+{
+
+	Fc(tl, 0, "\t.ident =");
+	while (first != last) {
+		if (first->dec != NULL)
+			Fc(tl, 0, "\n\t    \"\\\"\" %.*s \"\\\" \"",
+			    PF(first));
+		else
+			Fc(tl, 0, "\n\t    \"%.*s \"", PF(first));
+		first = TAILQ_NEXT(first, list);
+	}
+	Fc(tl, 0, ",\n");
+}
+
 void
 vcc_ParseSimpleBackend(struct tokenlist *tl)
 {
@@ -65,8 +91,10 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	struct token *t_be = NULL;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
+	struct token *t_first;
 	const char *ep;
 
+	t_first = tl->t;
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	t_be = tl->t;
@@ -152,6 +180,7 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	else
 		Fc(tl, 0, "\t.port = \"http\",\n");
 	Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
+	vcc_EmitBeIdent(tl, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
 	    PF(t_be), PF(t_be));
