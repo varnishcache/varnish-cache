@@ -382,6 +382,10 @@ brr_GetHostname(struct backend *b)
 
 /*--------------------------------------------------------------------*/
 
+/* This should maybe be divided into two separate functions. One for 
+ * increasing/decreasing health, and one for "pulling" the health
+ * towards neutral (0) as time passes
+ */
 static void
 brr_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
 {
