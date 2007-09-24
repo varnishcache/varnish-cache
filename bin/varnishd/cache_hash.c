@@ -214,7 +214,6 @@ HSH_Lookup(struct sess *sp)
 	if (o != NULL) {
 		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
-		LRU_Enter(o, sp->t_req);
 		return (o);
 	}
 
@@ -226,7 +225,11 @@ HSH_Lookup(struct sess *sp)
 	/* NB: do not deref objhead the new object inherits our reference */
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
-	LRU_Enter(o, sp->t_req);
+	/*
+	 * It's cheaper to copy the timestamp here, than to get a new one
+	 * in EXP_Insert().
+	 */
+	o->lru_stamp = w->used;
 	return (o);
 }
 
@@ -307,7 +310,6 @@ HSH_Deref(struct object *o)
 	if (o->vary != NULL)
 		free(o->vary);
 
-	LRU_Remove(o);
 	HSH_Freestore(o);
 	FREE_OBJ(o);
 	VSL_stats->n_object--;

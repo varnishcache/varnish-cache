@@ -49,7 +49,7 @@
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
+fetch_straight(struct sess *sp, int fd, struct http *hp, char *b)
 {
 	int i;
 	unsigned char *p;
@@ -60,7 +60,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 	if (cl == 0)
 		return (0);
 
-	st = STV_alloc(cl);
+	st = STV_alloc(sp, cl);
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
@@ -84,7 +84,7 @@ fetch_straight(const struct sess *sp, int fd, struct http *hp, char *b)
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
 static int
-fetch_chunked(const struct sess *sp, int fd, struct http *hp)
+fetch_chunked(struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	char *q;
@@ -149,7 +149,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 				v = u;
 				if (u < params->fetch_chunksize * 1024)
 					v = params->fetch_chunksize * 1024;
-				st = STV_alloc(v);
+				st = STV_alloc(sp, v);
 				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			}
 			v = st->space - st->len;
@@ -208,7 +208,7 @@ fetch_chunked(const struct sess *sp, int fd, struct http *hp)
 #include <errno.h>
 
 static int
-fetch_eof(const struct sess *sp, int fd, struct http *hp)
+fetch_eof(struct sess *sp, int fd, struct http *hp)
 {
 	int i;
 	unsigned char *p;
@@ -224,7 +224,7 @@ fetch_eof(const struct sess *sp, int fd, struct http *hp)
 	st = NULL;
 	while (1) {
 		if (v == 0) {
-			st = STV_alloc(params->fetch_chunksize * 1024);
+			st = STV_alloc(sp, params->fetch_chunksize * 1024);
 			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;

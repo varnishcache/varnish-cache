@@ -47,24 +47,28 @@ extern struct stevedore smf_stevedore;
 static struct stevedore * volatile stevedores;
 
 struct storage *
-STV_alloc(size_t size)
+STV_alloc(struct sess *sp, size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv;
 
 	for (;;) {
+
 		/* pick a stevedore and bump the head along */
+		/* XXX: only safe as long as pointer writes are atomic */
 		stv = stevedores = stevedores->next;
 
 		/* try to allocate from it */
-		if ((st = stv->alloc(stv, size)) != NULL) {
-			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-			return (st);
-		}
+		st = stv->alloc(stv, size);
+		if (st != NULL)
+			break;
 
-		/* no luck; free some space and keep trying */
-		AN(LRU_DiscardOne());
+		/* no luck; try to free some space and keep trying */
+		if (EXP_NukeOne(sp) == -1)
+			break;
 	}
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	return (st);
 }
 
 void

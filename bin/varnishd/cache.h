@@ -247,7 +247,6 @@ struct object {
 	TAILQ_HEAD(, sess)	waitinglist;
 
 	double			lru_stamp;
-	TAILQ_ENTRY(object)	lru;
 };
 
 struct objhead {
@@ -429,7 +428,8 @@ void CLI_Init(void);
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
 void EXP_TTLchange(struct object *o);
-void EXP_Terminate(struct object *o);
+void EXP_Touch(struct object *o, double now);
+int EXP_NukeOne(struct sess *sp);
 
 /* cache_fetch.c */
 int Fetch(struct sess *sp);
@@ -537,14 +537,6 @@ void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Get(struct VCL_conf **vcc);
-
-/* cache_lru.c */
-// void LRU_Init(void);
-void LRU_Enter(struct object *o, double stamp);
-void LRU_Remove(struct object *o);
-int LRU_DiscardOne(void);
-int LRU_DiscardSpace(int64_t quota);
-int LRU_DiscardTime(double cutoff);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

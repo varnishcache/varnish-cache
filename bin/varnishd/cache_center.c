@@ -147,6 +147,8 @@ cnt_deliver(struct sess *sp)
 {
 
 	sp->t_resp = TIM_real();
+	if (sp->obj->objhead != NULL)
+		EXP_Touch(sp->obj, sp->t_resp);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (sp->handling) {
