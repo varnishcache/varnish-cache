@@ -39,7 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <poll.h>
 
 #include "shmlog.h"
 #include "cache.h"
@@ -76,63 +75,96 @@ struct brspec {
 	int			health;
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Try to get a socket connected to one of the addresses on the list.
+ * We start from the cached "last good" address and try all items on
+ * the list exactly once.
+ * If a new DNS lookup is made while we try, we start over and try the
+ * new list exactly once.
+ */
 
 static int
 ber_conn_try_list(struct sess *sp, struct brspec *bs)
 {
 	struct addrinfo *ai, *from;
-	struct sockaddr_storage ss;
-	int fam, sockt, proto;
-	socklen_t alen;
 	int s, loops;
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 	unsigned myseq;
+
+	CHECK_OBJ_NOTNULL(bs, BRSPEC_MAGIC);
+	if (bs->addr == NULL)
+		return (-1);
+	AN(bs->last_addr);
 
 	/* Called with lock held */
 	myseq = bs->dnsseq;
 	loops = 0;
-	from = bs->last_addr;
-	for (ai = from; ai != NULL && (loops != 1 || ai != from);) {
-		fam = ai->ai_family;
-		sockt = ai->ai_socktype;
-		proto = ai->ai_protocol;
-		alen = ai->ai_addrlen;
-		assert(alen <= sizeof ss);
-		memcpy(&ss, ai->ai_addr, alen);
-		UNLOCK(&sp->backend->mtx);
-		s = socket(fam, sockt, proto);
-		if (s >= 0 && connect(s, (void *)&ss, alen)) {
-			AZ(close(s));
-			s = -1;
-		}
-		if (s >= 0) {
-			TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-			TCP_name((void*)&ss, alen,
-			    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-			WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-			    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
-		}
-		LOCK(&sp->backend->mtx);
-		if (s >= 0) {
+	ai = from = bs->last_addr;
+	while (1) {
+
+		/* NB: releases/acquires lock */
+		s = VBE_TryConnect(sp, ai);
+
+		if (s >= 0) { 
+			/* Update cached "last good" if still valid */
 			if (myseq == bs->dnsseq)
 				bs->last_addr = ai;
 			return (s);
 		}
+
 		if (myseq != bs->dnsseq) {
+			/* A DNS-lookup happended, try again from start */
 			loops = 0;
 			from = bs->last_addr;
 			ai = from;
 		} else {
+			/* Try next one */
 			ai = ai->ai_next;
 			if (ai == NULL) {
 				loops++;
 				ai = bs->addr;
 			}
 		}
+		if (loops == 1 && ai == from)
+			return (-1);
 	}
-	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static const char *
+ber_dns_lookup(struct backend *bp, struct brspec *bs)
+{
+	struct addrinfo *res, hint, *old;
+	int error;
+
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(bs, BRSPEC_MAGIC);
+
+	bs->dnstime = TIM_mono();
+
+	/* Let go of lock while we do sleepable stuff */
+	UNLOCK(&bp->mtx);
+
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+	res = NULL;
+	error = getaddrinfo(bs->hostname,
+	    bs->portname == NULL ? "http" : bs->portname,
+	    &hint, &res);
+	LOCK(&bp->mtx);
+	if (error) {
+		if (res != NULL)
+			freeaddrinfo(res);
+		return(gai_strerror(error));
+	} 
+	bs->dnsseq++;
+	old = bs->addr;
+	bs->last_addr = res;
+	bs->addr = res;
+	if (old != NULL)
+		freeaddrinfo(old);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -141,8 +173,6 @@ static int
 ber_conn_try(struct sess *sp, struct backend *bp, struct brspec *bs)
 {
 	int s;
-	struct addrinfo *res, hint, *old;
-	int error;
 
 	LOCK(&bp->mtx);
 
@@ -158,31 +188,7 @@ ber_conn_try(struct sess *sp, struct backend *bp, struct brspec *bs)
 		return (-1);
 	}
 
-	/* Then do another lookup to catch DNS changes */
-	bs->dnstime = TIM_mono();
-	UNLOCK(&bp->mtx);
-
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
-	res = NULL;
-	error = getaddrinfo(bs->hostname,
-	    bs->portname == NULL ? "http" : bs->portname,
-	    &hint, &res);
-	if (error) {
-		if (res != NULL)
-			freeaddrinfo(res);
-		printf("getaddrinfo: %s\n", gai_strerror(error)); /* XXX */
-		LOCK(&bp->mtx);
-	} else {
-		LOCK(&bp->mtx);
-		bs->dnsseq++;
-		old = bs->addr;
-		bs->last_addr = res;
-		bs->addr = res;
-		if (old != NULL)
-			freeaddrinfo(old);
-	}
+	(void)ber_dns_lookup(bp, bs);
 
 	/* And try the entire list */
 	s = ber_conn_try_list(sp, bs);
@@ -194,6 +200,7 @@ ber_conn_try(struct sess *sp, struct backend *bp, struct brspec *bs)
 
 	UNLOCK(&bp->mtx);
 	return (-1);
+
 }
 
 
@@ -213,14 +220,13 @@ static struct vbe_conn *
 ber_nextfd(struct sess *sp)
 {
 	struct vbe_conn *vc;
-	struct pollfd pfd;
 	struct backend *bp;
 	int reuse = 0;
 	struct ber *ber;
 	struct brspec *bs;
-	double r;
 	int min_health = -10;
 	int num = 0;
+	double r = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
@@ -245,8 +251,8 @@ ber_nextfd(struct sess *sp)
 			min_health *= 10;
 			num = 0;
 		}
-	}	
-
+	}
+		
 	while (1) {
 		LOCK(&bp->mtx);
 		vc = TAILQ_FIRST(&bs->connlist);
@@ -255,17 +261,12 @@ ber_nextfd(struct sess *sp)
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
 			TAILQ_REMOVE(&bs->connlist, vc, list);
-			vc->priv = bs;
 		}
 		UNLOCK(&bp->mtx);
 		if (vc == NULL)
 			break;
 
-		/* Test the connection for remote close before we use it */
-		pfd.fd = vc->fd;
-		pfd.events = POLLIN;
-		pfd.revents = 0;
-		if (!poll(&pfd, 1, 0)) {
+		if (VBE_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSL_stats->backend_reuse += reuse;
 			VSL_stats->backend_conn++;
@@ -287,6 +288,7 @@ ber_nextfd(struct sess *sp)
 	vc->priv = bs;
 	VSL_stats->backend_conn++;
 	return (vc);
+	
 }
 
 static struct vbe_conn *
@@ -419,14 +421,6 @@ ber_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
 
 /*--------------------------------------------------------------------*/
 
-static void
-ber_Init(void)
-{
-
-}
-
-/*--------------------------------------------------------------------*/
-
 struct backend_method backend_method_random = {
 	.name =			"random",
 	.getfd =		ber_GetFd,
@@ -435,7 +429,6 @@ struct backend_method backend_method_random = {
 	.gethostname =		ber_GetHostname,
 	.updatehealth =		ber_UpdateHealth,
 	.cleanup =		ber_Cleanup,
-	.init =			ber_Init
 };
 
 /*--------------------------------------------------------------------*/
