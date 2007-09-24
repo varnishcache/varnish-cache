@@ -49,6 +49,7 @@
 #include "cli.h"
 #include "vsb.h"
 #include "cli_common.h"
+#include "heritage.h"
 #include "mgt.h"
 #include "mgt_cli.h"
 #include "mgt_event.h"
@@ -126,7 +127,7 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	xxxassert(i == vsb_len(sb));
 	vsb_delete(sb);
 
-	i = cli_readres(cli_i, &u, &p, 3.0);
+	i = cli_readres(cli_i, &u, &p, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", p);
 	free(p);
@@ -247,7 +248,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 		return (CLIS_COMMS);
 	}
 
-	i = cli_readres(cli_i, &u, resp, 5.0);
+	i = cli_readres(cli_i, &u, resp, params->cli_timeout);
 	if (status != NULL)
 		*status = u;
 	return (u == CLIS_OK ? 0 : u);

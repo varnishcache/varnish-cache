@@ -516,6 +516,15 @@ tweak_client_http11(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_cli_timeout(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_timeout(cli, &master.cli_timeout, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 {
 	(void)par;
@@ -719,6 +728,10 @@ static struct parspec parspec[] = {
 		"backend response."
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "cli_timeout", tweak_cli_timeout,
+		"Timeout for the childs replies to CLI requests from "
+		"the master.\n",
+		"5", "seconds" },
 	{ "ping_interval", tweak_ping_interval,
 		"Interval between pings from parent to child.\n"
 		"Zero will disable pinging entirely, which makes "
