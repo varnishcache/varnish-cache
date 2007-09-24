@@ -167,7 +167,7 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 			 */
 			if (he2 != NULL)
 				free(he2);
-			if (noh->hash != NULL) {
+			if (noh != NULL && noh->hash != NULL) {
 				free(noh->hash);
 				noh->hash = NULL;
 			}
