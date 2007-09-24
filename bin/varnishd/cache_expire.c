@@ -82,7 +82,7 @@ EXP_Touch(struct object *o, double now)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	if (o->lru_stamp + params->lru_timeout < now) {
 		LOCK(&exp_mtx);	/* XXX: should be ..._TRY */
-		if (o->heap_idx != lru_target) {
+		if (o->heap_idx != lru_target && o->heap_idx != 0) {
 			TAILQ_REMOVE(&exp_lru, o, deathrow);
 			TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
 			o->lru_stamp = now;
