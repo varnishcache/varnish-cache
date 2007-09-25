@@ -209,7 +209,7 @@ ses_relsrcaddr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-ses_sum_acct(struct acct *sum, struct acct *inc)
+ses_sum_acct(struct acct *sum, const struct acct *inc)
 {
 
 	sum->sess += inc->sess;
@@ -256,7 +256,7 @@ SES_Charge(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 struct sess *
-SES_New(struct sockaddr *addr, unsigned len)
+SES_New(const struct sockaddr *addr, unsigned len)
 {
 	struct sessmem *sm;
 	struct sess *sp;

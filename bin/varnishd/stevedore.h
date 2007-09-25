@@ -36,7 +36,7 @@ struct sess;
 struct iovec;
 
 typedef void storage_init_f(struct stevedore *, const char *spec);
-typedef void storage_open_f(struct stevedore *);
+typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(const struct storage *, size_t size);
 typedef void storage_free_f(const struct storage *);
@@ -56,7 +56,7 @@ struct stevedore {
 };
 
 struct storage *STV_alloc(struct sess *sp, size_t size);
-void STV_trim(struct storage *st, size_t size);
-void STV_free(struct storage *st);
+void STV_trim(const struct storage *st, size_t size);
+void STV_free(const struct storage *st);
 void STV_add(const char *spec);
 void STV_open(void);

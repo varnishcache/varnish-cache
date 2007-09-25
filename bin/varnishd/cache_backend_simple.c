@@ -67,7 +67,7 @@ struct bes {
  */
 
 static int
-bes_conn_try_list(struct sess *sp, struct bes *bes)
+bes_conn_try_list(const struct sess *sp, struct bes *bes)
 {
 	struct addrinfo *ai, *from;
 	int s, loops;
@@ -154,7 +154,7 @@ bes_dns_lookup(struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 static int
-bes_conn_try(struct sess *sp, struct backend *bp)
+bes_conn_try(const struct sess *sp, struct backend *bp)
 {
 	int s;
 	struct bes *bes;
@@ -200,7 +200,7 @@ bes_conn_try(struct sess *sp, struct backend *bp)
  */
 
 static struct vbe_conn *
-bes_nextfd(struct sess *sp)
+bes_nextfd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	struct backend *bp;
@@ -250,7 +250,7 @@ bes_nextfd(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static struct vbe_conn *
-bes_GetFd(struct sess *sp)
+bes_GetFd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	unsigned n;
@@ -309,7 +309,7 @@ bes_RecycleFd(struct worker *w, struct vbe_conn *vc)
 /*--------------------------------------------------------------------*/
 
 static void
-bes_Cleanup(struct backend *b)
+bes_Cleanup(const struct backend *b)
 {
 	struct bes *bes;
 	struct vbe_conn *vbe;
@@ -334,7 +334,7 @@ bes_Cleanup(struct backend *b)
 /*--------------------------------------------------------------------*/
 
 static const char *
-bes_GetHostname(struct backend *b)
+bes_GetHostname(const struct backend *b)
 {
 	struct bes *bes;
 
@@ -357,7 +357,7 @@ struct backend_method backend_method_simple = {
 /*--------------------------------------------------------------------*/
 
 void
-VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
+VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 {
 	struct backend *b;
 	struct bes *bes;

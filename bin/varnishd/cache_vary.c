@@ -61,7 +61,7 @@
 #include "cache.h"
 
 void
-VRY_Create(struct sess *sp)
+VRY_Create(const struct sess *sp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
@@ -129,7 +129,7 @@ VRY_Create(struct sess *sp)
 }
 
 int
-VRY_Match(struct sess *sp, unsigned char *vary)
+VRY_Match(const struct sess *sp, const unsigned char *vary)
 {
 	char *h, *e;
 	int i, l, lh;
@@ -137,7 +137,7 @@ VRY_Match(struct sess *sp, unsigned char *vary)
 	while (*vary) {
 
 		/* Look for header */
-		i = http_GetHdr(sp->http, (char*)vary, &h);
+		i = http_GetHdr(sp->http, (const char*)vary, &h);
 		vary += *vary + 2;
 
 		/* Expected length of header (or 0xffff) */

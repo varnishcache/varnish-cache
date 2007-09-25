@@ -115,9 +115,9 @@ int VRT_strcmp(const char *s1, const char *s2);
 
 
 /* Backend related */
-void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);
-void VRT_init_round_robin_backend(struct backend **, struct vrt_round_robin_backend *);
-void VRT_init_random_backend(struct backend **, struct vrt_random_backend *);
+void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);
+void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robin_backend *);
+void VRT_init_random_backend(struct backend **, const struct vrt_random_backend *);
 void VRT_fini_backend(struct backend *);
 
 char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);

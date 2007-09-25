@@ -267,7 +267,7 @@ VBE_DropRef(struct backend *b)
 /*--------------------------------------------------------------------*/
 
 struct vbe_conn *
-VBE_GetFd(struct sess *sp)
+VBE_GetFd(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -314,7 +314,7 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
  * details and comments about this function. 
  */
 void
-VBE_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int a)
+VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int a)
 {
 	struct backend *b;
 

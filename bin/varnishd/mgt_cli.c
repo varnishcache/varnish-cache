@@ -293,7 +293,7 @@ struct cli_port {
 };
 
 static int
-mgt_cli_callback(struct ev *e, int what)
+mgt_cli_callback(const struct ev *e, int what)
 {
 	struct cli_port *cp;
 	char *p, *q;
@@ -391,7 +391,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 }
 
 static int
-telnet_accept(struct ev *ev, int what)
+telnet_accept(const struct ev *ev, int what)
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen;

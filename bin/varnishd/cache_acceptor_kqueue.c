@@ -73,7 +73,7 @@ vca_kq_sess(struct sess *sp, short arm)
 }
 
 static void
-vca_kev(struct kevent *kp)
+vca_kev(const struct kevent *kp)
 {
 	int i, j;
 	struct sess *sp;

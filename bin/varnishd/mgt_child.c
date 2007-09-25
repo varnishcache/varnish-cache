@@ -81,7 +81,7 @@ static struct ev	*ev_listen;
 /*--------------------------------------------------------------------*/
 
 static int
-child_listener(struct ev *e, int what)
+child_listener(const struct ev *e, int what)
 {
 	int i;
 	char buf[BUFSIZ];
@@ -105,7 +105,7 @@ child_listener(struct ev *e, int what)
 /*--------------------------------------------------------------------*/
 
 static int
-child_poker(struct ev *e, int what)
+child_poker(const struct ev *e, int what)
 {
 
 	(void)e;
@@ -290,7 +290,7 @@ stop_child(void)
 /*--------------------------------------------------------------------*/
 
 static int
-mgt_sigchld(struct ev *e, int what)
+mgt_sigchld(const struct ev *e, int what)
 {
 	int status;
 	pid_t r;
@@ -353,7 +353,7 @@ mgt_sigchld(struct ev *e, int what)
 /*--------------------------------------------------------------------*/
 
 static int
-mgt_sigint(struct ev *e, int what)
+mgt_sigint(const struct ev *e, int what)
 {
 
 	(void)e;

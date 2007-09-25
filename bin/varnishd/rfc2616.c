@@ -99,7 +99,7 @@
 #endif
 
 static double
-RFC2616_Ttl(const struct sess *sp, struct http *hp, struct object *obj)
+RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;
@@ -163,7 +163,7 @@ RFC2616_Ttl(const struct sess *sp, struct http *hp, struct object *obj)
 }
 
 int
-RFC2616_cache_policy(struct sess *sp, struct http *hp)
+RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 {
 	int body = 0;
 

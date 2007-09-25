@@ -986,7 +986,7 @@ http_Unset(struct http *hp, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 unsigned
-http_Write(struct worker *w, struct http *hp, int resp)
+http_Write(struct worker *w, const struct http *hp, int resp)
 {
 	unsigned u, l;
 
