@@ -484,11 +484,11 @@ char *
 VRT_int_string(struct sess *sp, int num)
 {
 	char *p;
-	int size = 10;
+	int size = 12;
 	
 	p = WS_Alloc(sp->http->ws, size);
 	AN(p);
-	snprintf(p, size, "%d", num);
+	assert(snprintf(p, size, "%d", num) < size);
 	return (p);
 }
 
