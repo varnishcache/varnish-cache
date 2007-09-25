@@ -146,7 +146,7 @@ HSH_Copy(const struct sess *sp, const struct objhead *obj)
 	assert(obj->hashlen >= sp->lhashptr);
 	b = obj->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
 		memcpy(b, sp->hashptr[u], v);
 		b += v;
 		*b++ = '#';

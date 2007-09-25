@@ -91,7 +91,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 
 	/* generate body */
-	vsb_new(&vsb, (char *)st->ptr, st->space, VSB_FIXEDLEN);
+	AN(vsb_new(&vsb, (char *)st->ptr, st->space, VSB_FIXEDLEN));
 	vsb_printf(&vsb,
 	    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 	    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"

@@ -94,9 +94,12 @@ STV_free(struct storage *st)
 static int
 cmp_storage(const struct stevedore *s, const char *p, const char *q)
 {
-	if (strlen(s->name) != q - p)
+	unsigned u;
+
+	u = pdiff(p, q);
+	if (strlen(s->name) != u)
 		return (1);
-	if (strncmp(s->name, p, q - p))
+	if (strncmp(s->name, p, u))
 		return (1);
 	return (0);
 }

@@ -277,6 +277,11 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		return (NULL);
 	} 
 
+	/*
+	 * XXX: we should look up and check the handle in the loaded
+	 * object
+	 */
+
 	AZ(dlclose(p));
 	return (of);
 }
@@ -618,6 +623,9 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
 	}
 }
 
+/*
+ * XXX: This should take an option argument to show all (include) files
+ */
 void
 mcf_config_show(struct cli *cli, char **av, void *priv)
 {
@@ -635,12 +643,12 @@ mcf_config_show(struct cli *cli, char **av, void *priv)
 			cli_out(cli, "failed to locate source for %s: %s\n",
 			    vp->name, dlerror());
 			cli_result(cli, CLIS_CANT);
-			dlclose(dlh);
+			AZ(dlclose(dlh));
 		} else {
 			src = sym;
 			cli_out(cli, src[0]);
 			/* cli_out(cli, src[1]); */
-			dlclose(dlh);
+			AZ(dlclose(dlh));
 		}
 	}
 }
