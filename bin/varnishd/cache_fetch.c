@@ -49,7 +49,7 @@
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct sess *sp, int fd, struct http *hp, char *b)
+fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
 {
 	int i;
 	unsigned char *p;

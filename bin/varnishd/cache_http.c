@@ -79,7 +79,7 @@ static enum shmlogtag logmtx[3][7] = {
 };
 
 static enum shmlogtag
-http2shmlog(struct http *hp, enum httptag t)
+http2shmlog(const struct http *hp, enum httptag t)
 {
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -89,7 +89,7 @@ http2shmlog(struct http *hp, enum httptag t)
 }
 
 static void
-WSLH(struct worker *w, enum httptag t, unsigned fd, struct http *hp, int hdr)
+WSLH(struct worker *w, enum httptag t, unsigned fd, const struct http *hp, int hdr)
 {
 
 	WSLR(w, http2shmlog(hp, t), fd, hp->hd[hdr].b, hp->hd[hdr].e);
@@ -174,7 +174,7 @@ http_Setup(struct http *hp, void *space, unsigned len)
 
 
 static int
-http_IsHdr(struct http_hdr *hh, const char *hdr)
+http_IsHdr(const struct http_hdr *hh, const char *hdr)
 {
 	unsigned l;
 
@@ -191,7 +191,7 @@ http_IsHdr(struct http_hdr *hh, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static unsigned
-http_findhdr(struct http *hp, unsigned l, const char *hdr)
+http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 {
 	unsigned u;
 
@@ -210,7 +210,7 @@ http_findhdr(struct http *hp, unsigned l, const char *hdr)
 }
 
 int
-http_GetHdr(struct http *hp, const char *hdr, char **ptr)
+http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 {
 	unsigned u, l;
 	char *p;
@@ -234,7 +234,7 @@ http_GetHdr(struct http *hp, const char *hdr, char **ptr)
 /*--------------------------------------------------------------------*/
 
 int
-http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr)
+http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr)
 {
 	char *h;
 	int fl;
@@ -373,7 +373,7 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 /*--------------------------------------------------------------------*/
 
 int
-http_GetStatus(struct http *hp)
+http_GetStatus(const struct http *hp)
 {
 
 	AN(hp->hd[HTTP_HDR_STATUS].b);
@@ -382,14 +382,14 @@ http_GetStatus(struct http *hp)
 }
 
 const char *
-http_GetProto(struct http *hp)
+http_GetProto(const struct http *hp)
 {
 	AN(hp->hd[HTTP_HDR_PROTO].b);
 	return (hp->hd[HTTP_HDR_PROTO].b);
 }
 
 const char *
-http_GetReq(struct http *hp)
+http_GetReq(const struct http *hp)
 {
 	AN(hp->hd[HTTP_HDR_REQ].b);
 	return (hp->hd[HTTP_HDR_REQ].b);
@@ -704,7 +704,7 @@ http_SetH(struct http *to, unsigned n, const char *fm)
 }
 
 static void
-http_copyh(struct http *to, struct http *fm, unsigned n)
+http_copyh(struct http *to, const struct http *fm, unsigned n)
 {
 
 	assert(n < HTTP_HDR_MAX);
@@ -715,7 +715,7 @@ http_copyh(struct http *to, struct http *fm, unsigned n)
 }
 
 static void
-http_copyreq(struct http *to, struct http *fm, int transparent)
+http_copyreq(struct http *to, const struct http *fm, int transparent)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -732,7 +732,7 @@ http_copyreq(struct http *to, struct http *fm, int transparent)
 }
 
 void
-http_CopyResp(struct http *to, struct http *fm)
+http_CopyResp(struct http *to, const struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -756,7 +756,7 @@ http_SetResp(struct http *to, const char *proto, const char *status, const char 
 }
 
 static void
-http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsigned n)
+http_copyheader(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned n)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -776,7 +776,7 @@ http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsi
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterFields(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how)
+http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned how)
 {
 	unsigned u;
 
