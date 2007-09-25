@@ -437,7 +437,7 @@ int Fetch(struct sess *sp);
 /* cache_hash.c */
 void HSH_Prealloc(const struct sess *sp);
 int HSH_Compare(const struct sess *sp, const struct objhead *o);
-void HSH_Copy(struct sess *sp, const struct objhead *o);
+void HSH_Copy(const struct sess *sp, const struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);
@@ -465,7 +465,7 @@ int http_GetHdrField(const struct http *hp, const char *hdr, const char *field, 
 int http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 const char *http_GetProto(const struct http *hp);
-int http_HdrIs(struct http *hp, const char *hdr, const char *val);
+int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_Read(struct http *hp, int fd, void *b, unsigned len);
 void http_RecvPrep(struct http *hp);
