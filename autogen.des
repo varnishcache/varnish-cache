@@ -11,6 +11,7 @@ set -ex
 export CONFIG_SHELL=/bin/sh
 
 ./configure \
+    --config-cache \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
