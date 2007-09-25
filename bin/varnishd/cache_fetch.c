@@ -61,7 +61,7 @@ fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
 		return (0);
 
 	st = STV_alloc(sp, cl);
-	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	st->len = cl;
 	sp->obj->len = cl;
 	p = st->ptr;
@@ -150,7 +150,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 				if (u < params->fetch_chunksize * 1024)
 					v = params->fetch_chunksize * 1024;
 				st = STV_alloc(sp, v);
-				TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+				VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			}
 			v = st->space - st->len;
 			if (v > u)
@@ -195,7 +195,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 	}
 
 	if (st != NULL && st->len == 0) {
-		TAILQ_REMOVE(&sp->obj->store, st, list);
+		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
 	} else if (st != NULL)
 		STV_trim(st, st->len);
@@ -225,7 +225,7 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 	while (1) {
 		if (v == 0) {
 			st = STV_alloc(sp, params->fetch_chunksize * 1024);
-			TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
 		}
@@ -243,7 +243,7 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 	}
 
 	if (st->len == 0) {
-		TAILQ_REMOVE(&sp->obj->store, st, list);
+		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
 	} else
 		STV_trim(st, st->len);
@@ -371,9 +371,9 @@ Fetch(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (cls < 0) {
-		while (!TAILQ_EMPTY(&sp->obj->store)) {
-			st = TAILQ_FIRST(&sp->obj->store);
-			TAILQ_REMOVE(&sp->obj->store, st, list);
+		while (!VTAILQ_EMPTY(&sp->obj->store)) {
+			st = VTAILQ_FIRST(&sp->obj->store);
+			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
 		VBE_ClosedFd(sp->wrk, vc);
@@ -386,7 +386,7 @@ Fetch(struct sess *sp)
 		unsigned uu;
 
 		uu = 0;
-		TAILQ_FOREACH(st, &sp->obj->store, list)
+		VTAILQ_FOREACH(st, &sp->obj->store, list)
 			uu += st->len;
 		assert(uu == sp->obj->len);
 	}

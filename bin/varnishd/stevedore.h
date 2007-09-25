@@ -29,11 +29,7 @@
  * $Id$
  */
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 struct stevedore;
 struct sess;

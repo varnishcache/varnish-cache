@@ -71,7 +71,7 @@ struct brspec {
 	double			dnsttl;
 	double			dnstime;
 	unsigned		dnsseq;
-	TAILQ_HEAD(, vbe_conn)	connlist;
+	VTAILQ_HEAD(, vbe_conn)	connlist;
 	int			health;
 };
 
@@ -255,12 +255,12 @@ ber_nextfd(struct sess *sp)
 		
 	while (1) {
 		LOCK(&bp->mtx);
-		vc = TAILQ_FIRST(&bs->connlist);
+		vc = VTAILQ_FIRST(&bs->connlist);
 		if (vc != NULL) {
 			bp->refcount++;
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
-			TAILQ_REMOVE(&bs->connlist, vc, list);
+			VTAILQ_REMOVE(&bs->connlist, vc, list);
 		}
 		UNLOCK(&bp->mtx);
 		if (vc == NULL)
@@ -343,7 +343,7 @@ ber_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vc->backend->mtx);
 	VSL_stats->backend_recycle++;
-	TAILQ_INSERT_HEAD(&bs->connlist, vc, list);
+	VTAILQ_INSERT_HEAD(&bs->connlist, vc, list);
 	VBE_DropRefLocked(vc->backend);
 }
 
@@ -366,10 +366,10 @@ ber_Cleanup(struct backend *b)
 		free(bs->hostname);
 		freeaddrinfo(bs->addr);
 		while (1) {
-			vbe = TAILQ_FIRST(&bs->connlist);
+			vbe = VTAILQ_FIRST(&bs->connlist);
 			if (vbe == NULL)
 				break;
-			TAILQ_REMOVE(&bs->connlist, vbe, list);
+			VTAILQ_REMOVE(&bs->connlist, vbe, list);
 			if (vbe->fd >= 0)
 				close(vbe->fd);
 			free(vbe);

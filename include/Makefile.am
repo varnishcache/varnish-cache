@@ -25,7 +25,7 @@ noinst_HEADERS = \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
-	queue.h \
+	vqueue.h \
 	vpf.h \
 	vsb.h \
 	vcl.h \

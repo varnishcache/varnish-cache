@@ -38,11 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 #include "libvarnish.h"
 #include "varnishapi.h"
@@ -65,21 +61,21 @@ struct message {
 	enum shmlogtag tag;
 	size_t len;
 	char *ptr;
-	STAILQ_ENTRY(message) list;
+	VSTAILQ_ENTRY(message) list;
 };
 
 struct mailbox {
 	pthread_mutex_t lock;
 	pthread_cond_t has_mail;
 	int open;
-	STAILQ_HEAD(msgq_head, message) messages;
+	VSTAILQ_HEAD(msgq_head, message) messages;
 };
 
 static void
 mailbox_create(struct mailbox *mbox)
 {
 
-	STAILQ_INIT(&mbox->messages);
+	VSTAILQ_INIT(&mbox->messages);
 	pthread_mutex_init(&mbox->lock, NULL);
 	pthread_cond_init(&mbox->has_mail, NULL);
 	mbox->open = 1;
@@ -90,8 +86,8 @@ mailbox_destroy(struct mailbox *mbox)
 {
 	struct message *msg;
 
-	while ((msg = STAILQ_FIRST(&mbox->messages))) {
-		STAILQ_REMOVE_HEAD(&mbox->messages, list);
+	while ((msg = VSTAILQ_FIRST(&mbox->messages))) {
+		VSTAILQ_REMOVE_HEAD(&mbox->messages, list);
 		free(msg);
 	}
 	pthread_cond_destroy(&mbox->has_mail);
@@ -103,7 +99,7 @@ mailbox_put(struct mailbox *mbox, struct message *msg)
 {
 
 	pthread_mutex_lock(&mbox->lock);
-	STAILQ_INSERT_TAIL(&mbox->messages, msg, list);
+	VSTAILQ_INSERT_TAIL(&mbox->messages, msg, list);
 	pthread_cond_signal(&mbox->has_mail);
 	pthread_mutex_unlock(&mbox->lock);
 }
@@ -114,10 +110,10 @@ mailbox_get(struct mailbox *mbox)
 	struct message *msg;
 
 	pthread_mutex_lock(&mbox->lock);
-	while ((msg = STAILQ_FIRST(&mbox->messages)) == NULL && mbox->open)
+	while ((msg = VSTAILQ_FIRST(&mbox->messages)) == NULL && mbox->open)
 		pthread_cond_wait(&mbox->has_mail, &mbox->lock);
 	if (msg != NULL)
-		STAILQ_REMOVE_HEAD(&mbox->messages, list);
+		VSTAILQ_REMOVE_HEAD(&mbox->messages, list);
 	pthread_mutex_unlock(&mbox->lock);
 	return msg;
 }

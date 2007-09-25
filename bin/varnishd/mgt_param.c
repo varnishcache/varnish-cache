@@ -383,8 +383,8 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 {
 	struct listen_sock *ls, *ls2;
 
-	TAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
-		TAILQ_REMOVE(lsh, ls, list);
+	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
+		VTAILQ_REMOVE(lsh, ls, list);
 		free(ls->addr);
 		free(ls);
 	}
@@ -421,7 +421,7 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 		FreeArgv(av);
 		return;
 	}
-	TAILQ_INIT(&lsh);
+	VTAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
 		struct vss_addr **ta;
 		char *host, *port;
@@ -445,7 +445,7 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 			AN(ls);
 			ls->sock = -1;
 			ls->addr = ta[j];
-			TAILQ_INSERT_TAIL(&lsh, ls, list);
+			VTAILQ_INSERT_TAIL(&lsh, ls, list);
 		}
 		free(ta);
 	}
@@ -460,10 +460,10 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 	clean_listen_sock_head(&heritage.socks);
 	heritage.nsocks = 0;
 
-	while (!TAILQ_EMPTY(&lsh)) {
-		ls = TAILQ_FIRST(&lsh);
-		TAILQ_REMOVE(&lsh, ls, list);
-		TAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+	while (!VTAILQ_EMPTY(&lsh)) {
+		ls = VTAILQ_FIRST(&lsh);
+		VTAILQ_REMOVE(&lsh, ls, list);
+		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 		heritage.nsocks++;
 	}
 }

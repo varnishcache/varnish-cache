@@ -44,7 +44,7 @@
 struct hcl_entry {
 	unsigned		magic;
 #define HCL_ENTRY_MAGIC		0x0ba707bf
-	TAILQ_ENTRY(hcl_entry)	list;
+	VTAILQ_ENTRY(hcl_entry)	list;
 	struct hcl_hd		*head;
 	struct objhead		*oh;
 	unsigned		refcnt;
@@ -55,7 +55,7 @@ struct hcl_entry {
 struct hcl_hd {
 	unsigned		magic;
 #define HCL_HEAD_MAGIC		0x0f327016
-	TAILQ_HEAD(, hcl_entry)	head;
+	VTAILQ_HEAD(, hcl_entry)	head;
 	MTX			mtx;
 };
 
@@ -103,7 +103,7 @@ hcl_start(void)
 	XXXAN(hcl_head);
 
 	for (u = 0; u < hcl_nhash; u++) {
-		TAILQ_INIT(&hcl_head[u].head);
+		VTAILQ_INIT(&hcl_head[u].head);
 		MTX_INIT(&hcl_head[u].mtx);
 		hcl_head[u].magic = HCL_HEAD_MAGIC;
 	}
@@ -143,7 +143,7 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 
 	for (r = 0; r < 2; r++ ) {
 		LOCK(&hp->mtx);
-		TAILQ_FOREACH(he, &hp->head, list) {
+		VTAILQ_FOREACH(he, &hp->head, list) {
 			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
 			if (sp->lhashptr < he->oh->hashlen)
 				continue;
@@ -179,9 +179,9 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 		}
 		if (he2 != NULL) {
 			if (he != NULL)
-				TAILQ_INSERT_BEFORE(he, he2, list);
+				VTAILQ_INSERT_BEFORE(he, he2, list);
 			else
-				TAILQ_INSERT_TAIL(&hp->head, he2, list);
+				VTAILQ_INSERT_TAIL(&hp->head, he2, list);
 			he2->refcnt++;
 			noh = he2->oh;
 			UNLOCK(&hp->mtx);
@@ -227,7 +227,7 @@ hcl_deref(struct objhead *oh)
 	assert(hp == &hcl_head[he->hash]);
 	LOCK(&hp->mtx);
 	if (--he->refcnt == 0)
-		TAILQ_REMOVE(&hp->head, he, list);
+		VTAILQ_REMOVE(&hp->head, he, list);
 	else
 		he = NULL;
 	UNLOCK(&hp->mtx);

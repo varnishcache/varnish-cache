@@ -31,11 +31,7 @@
 
 #include <poll.h>
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 struct ev;
 struct evbase;
@@ -63,7 +59,7 @@ struct ev {
 
 	/* priv */
 	double		__when;
-	TAILQ_ENTRY(ev)	__list;
+	VTAILQ_ENTRY(ev)	__list;
 	unsigned	__binheap_idx;
 	unsigned	__privflags;
 	struct evbase	*__evb;

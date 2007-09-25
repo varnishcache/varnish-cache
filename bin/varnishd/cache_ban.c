@@ -42,14 +42,14 @@
 #include "cache.h"
 
 struct ban {
-	TAILQ_ENTRY(ban)	list;
+	VTAILQ_ENTRY(ban)	list;
 	unsigned		gen;
 	regex_t			regexp;
 	char			*ban;
 	int			hash;
 };
 
-static TAILQ_HEAD(,ban) ban_head = TAILQ_HEAD_INITIALIZER(ban_head);
+static VTAILQ_HEAD(,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static unsigned ban_next;
 static struct ban *ban_start;
 
@@ -72,7 +72,7 @@ AddBan(const char *regexp, int hash)
 	b->hash = hash;
 	b->gen = ++ban_next;
 	b->ban = strdup(regexp);
-	TAILQ_INSERT_HEAD(&ban_head, b, list);
+	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
 }
 
@@ -92,7 +92,7 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	b0 = ban_start;
 	for (b = b0;
 	    b != NULL && b->gen > o->ban_seq;
-	    b = TAILQ_NEXT(b, list)) {
+	    b = VTAILQ_NEXT(b, list)) {
 		i = regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0);
 		if (!i)
 			return (1);

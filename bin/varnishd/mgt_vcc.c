@@ -45,11 +45,7 @@
 #endif
 #include "vsb.h"
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 #include "libvcl.h"
 #include "cli.h"
@@ -63,13 +59,13 @@
 #include "vss.h"
 
 struct vclprog {
-	TAILQ_ENTRY(vclprog)	list;
+	VTAILQ_ENTRY(vclprog)	list;
 	char 			*name;
 	char			*fname;
 	int			active;
 };
 
-static TAILQ_HEAD(, vclprog) vclhead = TAILQ_HEAD_INITIALIZER(vclhead);
+static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 
 char *mgt_cc_cmd;
 
@@ -340,14 +336,14 @@ mgt_vcc_add(const char *name, char *file)
 	vp->name = strdup(name);
 	XXXAN(vp->name);
 	vp->fname = file;
-	TAILQ_INSERT_TAIL(&vclhead, vp, list);
+	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
 	return (vp);
 }
 
 static void
 mgt_vcc_del(struct vclprog *vp)
 {
-	TAILQ_REMOVE(&vclhead, vp, list);
+	VTAILQ_REMOVE(&vclhead, vp, list);
 	printf("unlink %s\n", vp->fname);
 	XXXAZ(unlink(vp->fname));
 	free(vp->fname);
@@ -360,7 +356,7 @@ mgt_vcc_delbyname(const char *name)
 {
 	struct vclprog *vp;
 
-	TAILQ_FOREACH(vp, &vclhead, list) {
+	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (!strcmp(name, vp->name)) {
 			mgt_vcc_del(vp);
 			return (0);
@@ -430,7 +426,7 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 {
 	struct vclprog *vp;
 
-	TAILQ_FOREACH(vp, &vclhead, list) {
+	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p,
 		    "vcl.load %s %s\n", vp->name, vp->fname))
 			return (1);
@@ -460,7 +456,7 @@ mgt_vcc_atexit(void)
 	if (getpid() != mgt_pid)
 		return;
 	while (1) {
-		vp = TAILQ_FIRST(&vclhead);
+		vp = VTAILQ_FIRST(&vclhead);
 		if (vp == NULL)
 			break;
 		mgt_vcc_del(vp);
@@ -543,7 +539,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 {
 	struct vclprog *vp;
 
-	TAILQ_FOREACH(vp, &vclhead, list)
+	VTAILQ_FOREACH(vp, &vclhead, list)
 		if (!strcmp(vp->name, name))
 			break;
 	if (vp == NULL) {
@@ -570,7 +566,7 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 			free(p);
 		} else {
 			vp->active = 2;
-			TAILQ_FOREACH(vp, &vclhead, list) {
+			VTAILQ_FOREACH(vp, &vclhead, list) {
 				if (vp->active == 1)
 					vp->active = 0;
 				else if (vp->active == 2)
@@ -620,7 +616,7 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
 		cli_out(cli, "%s", p);
 		free(p);
 	} else {
-		TAILQ_FOREACH(vp, &vclhead, list) {
+		VTAILQ_FOREACH(vp, &vclhead, list) {
 			cli_out(cli, "%s %6s %s\n",
 			    vp->active ? "*" : " ",
 			    "N/A", vp->name);

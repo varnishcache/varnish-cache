@@ -36,11 +36,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 #include "vsb.h"
 
@@ -159,7 +155,7 @@ struct worker {
 
 	int			pipe[2];
 
-	TAILQ_ENTRY(worker)	list;
+	VTAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
 
 	int			*wfd;
@@ -178,7 +174,7 @@ struct worker {
 };
 
 struct workreq {
-	TAILQ_ENTRY(workreq)	list;
+	VTAILQ_ENTRY(workreq)	list;
 	struct sess		*sess;
 };
 
@@ -189,7 +185,7 @@ struct workreq {
 struct bereq {
 	unsigned		magic;
 #define BEREQ_MAGIC		0x3b6d250c
-	TAILQ_ENTRY(bereq)	list;
+	VTAILQ_ENTRY(bereq)	list;
 	void			*space;
 	unsigned		len;
 	struct http		http[1];
@@ -200,7 +196,7 @@ struct bereq {
 struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
-	TAILQ_ENTRY(storage)	list;
+	VTAILQ_ENTRY(storage)	list;
 	struct stevedore	*stevedore;
 	void			*priv;
 
@@ -243,13 +239,13 @@ struct object {
 	double			last_modified;
 
 	struct http		http;
-	TAILQ_ENTRY(object)	list;
+	VTAILQ_ENTRY(object)	list;
 
-	TAILQ_ENTRY(object)	deathrow;
+	VTAILQ_ENTRY(object)	deathrow;
 
-	TAILQ_HEAD(, storage)	store;
+	VTAILQ_HEAD(, storage)	store;
 
-	TAILQ_HEAD(, sess)	waitinglist;
+	VTAILQ_HEAD(, sess)	waitinglist;
 
 	double			lru_stamp;
 };
@@ -260,7 +256,7 @@ struct objhead {
 	void			*hashpriv;
 
 	pthread_mutex_t		mtx;
-	TAILQ_HEAD(,object)	objects;
+	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
 };
@@ -302,7 +298,7 @@ struct sess {
 	int			err_code;
 	const char		*err_reason;
 
-	TAILQ_ENTRY(sess)	list;
+	VTAILQ_ENTRY(sess)	list;
 
 	struct backend		*backend;
 	struct bereq		*bereq;
@@ -328,7 +324,7 @@ struct sess {
 struct vbe_conn {
 	unsigned		magic;
 #define VBE_CONN_MAGIC		0x0c5e6592
-	TAILQ_ENTRY(vbe_conn)	list;
+	VTAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
 	void			*priv;
@@ -361,7 +357,7 @@ struct backend {
 #define BACKEND_MAGIC		0x64c4c7c6
 	char			*vcl_name;
 
-	TAILQ_ENTRY(backend)	list;
+	VTAILQ_ENTRY(backend)	list;
 	int			refcount;
 	pthread_mutex_t		mtx;
 
@@ -377,7 +373,7 @@ struct backend {
  * NB: This list is not locked, it is only ever manipulated from the
  * cachers CLI thread.
  */
-TAILQ_HEAD(backendlist, backend);
+VTAILQ_HEAD(backendlist, backend);
 
 /* Prototypes etc ----------------------------------------------------*/
 

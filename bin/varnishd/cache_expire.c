@@ -51,8 +51,8 @@ static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static MTX exp_mtx;
 static unsigned expearly = 30;
-static TAILQ_HEAD(,object) exp_deathrow = TAILQ_HEAD_INITIALIZER(exp_deathrow);
-static TAILQ_HEAD(,object) exp_lru = TAILQ_HEAD_INITIALIZER(exp_lru);
+static VTAILQ_HEAD(,object) exp_deathrow = VTAILQ_HEAD_INITIALIZER(exp_deathrow);
+static VTAILQ_HEAD(,object) exp_lru = VTAILQ_HEAD_INITIALIZER(exp_lru);
 
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
@@ -71,7 +71,7 @@ EXP_Insert(struct object *o)
 	assert(o->heap_idx == 0);
 	LOCK(&exp_mtx);
 	binheap_insert(exp_heap, o);
-	TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+	VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
 	UNLOCK(&exp_mtx);
 }
 
@@ -83,8 +83,8 @@ EXP_Touch(struct object *o, double now)
 	if (o->lru_stamp + params->lru_timeout < now) {
 		LOCK(&exp_mtx);	/* XXX: should be ..._TRY */
 		if (o->heap_idx != lru_target && o->heap_idx != 0) {
-			TAILQ_REMOVE(&exp_lru, o, deathrow);
-			TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+			VTAILQ_REMOVE(&exp_lru, o, deathrow);
+			VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
 			o->lru_stamp = now;
 		}
 		UNLOCK(&exp_mtx);
@@ -119,7 +119,7 @@ exp_hangman(void *arg)
 	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
-		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
+		VTAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
 				o = NULL;
@@ -139,7 +139,7 @@ exp_hangman(void *arg)
 			t = TIM_real();
 			continue;
 		}
-		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		VTAILQ_REMOVE(&exp_deathrow, o, deathrow);
 		VSL_stats->n_deathrow--;
 		VSL_stats->n_expired++;
 		UNLOCK(&exp_mtx);
@@ -206,8 +206,8 @@ exp_prefetch(void *arg)
 
 		if (sp->handling == VCL_RET_DISCARD) {
 			LOCK(&exp_mtx);
-			TAILQ_REMOVE(&exp_lru, o, deathrow);
-			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+			VTAILQ_REMOVE(&exp_lru, o, deathrow);
+			VTAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
 			VSL_stats->n_deathrow++;
 			UNLOCK(&exp_mtx);
 			continue;
@@ -252,7 +252,7 @@ EXP_NukeOne(struct sess *sp)
 
 	/* Find the first currently unused object on the LRU */
 	LOCK(&exp_mtx);
-	TAILQ_FOREACH(o, &exp_lru, deathrow)
+	VTAILQ_FOREACH(o, &exp_lru, deathrow)
 		if (o->refcnt == 1)
 			break;
 	if (o != NULL) {
@@ -260,7 +260,7 @@ EXP_NukeOne(struct sess *sp)
 		 * Take it off the binheap while we chew.  This effectively
 		 * means that we own the EXP refcnt on this object.
 		 */
-		TAILQ_REMOVE(&exp_lru, o, deathrow);
+		VTAILQ_REMOVE(&exp_lru, o, deathrow);
 		binheap_delete(exp_heap, o->heap_idx);
 		assert(o->heap_idx == 0);
 		o->heap_idx = lru_target;
@@ -297,7 +297,7 @@ EXP_NukeOne(struct sess *sp)
 	o->heap_idx = 0;
 	o->lru_stamp = sp->wrk->used;
 	binheap_insert(exp_heap, o);
-	TAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+	VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
 	UNLOCK(&exp_mtx);
 	return (0);
 }
