@@ -44,7 +44,12 @@
 #include "compat/asprintf.h"
 #endif
 #include "vsb.h"
+
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
 
 #include "libvcl.h"
 #include "cli.h"

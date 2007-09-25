@@ -43,11 +43,16 @@
 #include <unistd.h>
 #include <limits.h>
 
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
+
 #include "vsb.h"
 
 #include "libvarnish.h"
 #include "shmlog.h"
-#include "queue.h"
 #include "varnishapi.h"
 
 struct top {

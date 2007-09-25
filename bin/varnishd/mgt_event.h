@@ -30,7 +30,12 @@
  */
 
 #include <poll.h>
+
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
 
 struct ev;
 struct evbase;
