@@ -91,7 +91,7 @@ WRK_Reset(struct worker *w, int *fd)
 	w->wfd = fd;
 }
 
-int
+unsigned
 WRK_Flush(struct worker *w)
 {
 	int i;
