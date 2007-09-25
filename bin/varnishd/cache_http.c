@@ -616,7 +616,7 @@ http_RecvPrep(struct http *hp)
 	hp->rx_s = hp->ws->f;
 	hp->rx_e = hp->rx_s;
 	if (hp->pl_s != NULL) {
-		l = pdiff(hp->pl_s, hp->pl_s);
+		l = pdiff(hp->pl_s, hp->pl_e);
 		memmove(hp->rx_s, hp->pl_s, l);
 		hp->rx_e = hp->rx_s + l;
 		hp->pl_s = hp->pl_e = NULL;
