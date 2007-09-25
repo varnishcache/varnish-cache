@@ -493,9 +493,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
-	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, struct vrt_simple_backend *);\n");
-	vsb_cat(sb, "void VRT_init_round_robin_backend(struct backend **, struct vrt_round_robin_backend *);\n");
-	vsb_cat(sb, "void VRT_init_random_backend(struct backend **, struct vrt_random_backend *);\n");
+	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);\n");
+	vsb_cat(sb, "void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robin_backend *);\n");
+	vsb_cat(sb, "void VRT_init_random_backend(struct backend **, const struct vrt_random_backend *);\n");
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);\n");

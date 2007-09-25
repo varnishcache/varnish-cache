@@ -83,7 +83,7 @@ struct bspec {
  */
 
 static int
-brr_conn_try_list(struct sess *sp, struct bspec *bs)
+brr_conn_try_list(const struct sess *sp, struct bspec *bs)
 {
 	struct addrinfo *ai, *from;
 	int s, loops;
@@ -169,7 +169,7 @@ brr_dns_lookup(struct backend *bp, struct bspec *bs)
 /*--------------------------------------------------------------------*/
 
 static int
-brr_conn_try(struct sess *sp, struct backend *bp, struct bspec *bs)
+brr_conn_try(const struct sess *sp, struct backend *bp, struct bspec *bs)
 {
 	int s;
 
@@ -215,7 +215,7 @@ brr_conn_try(struct sess *sp, struct backend *bp, struct bspec *bs)
  */
 
 static struct vbe_conn *
-brr_nextfd(struct sess *sp)
+brr_nextfd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	struct backend *bp;
@@ -277,7 +277,7 @@ brr_nextfd(struct sess *sp)
 }
 
 static struct vbe_conn *
-brr_GetFd(struct sess *sp)
+brr_GetFd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	unsigned n;
@@ -335,7 +335,7 @@ brr_RecycleFd(struct worker *w, struct vbe_conn *vc)
 /*--------------------------------------------------------------------*/
 
 static void
-brr_Cleanup(struct backend *b)
+brr_Cleanup(const struct backend *b)
 {
 	struct brr *brr;
 	struct vbe_conn *vbe;
@@ -371,7 +371,7 @@ brr_Cleanup(struct backend *b)
 
 /* Will return the hostname of the first backend in the list */
 static const char *
-brr_GetHostname(struct backend *b)
+brr_GetHostname(const struct backend *b)
 {
 	struct brr *brr;
 
@@ -387,7 +387,7 @@ brr_GetHostname(struct backend *b)
  * towards neutral (0) as time passes
  */
 static void
-brr_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
+brr_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int add)
 {
 	struct bspec *bs, *first;
 	struct brr *brr;
@@ -424,7 +424,7 @@ struct backend_method backend_method_round_robin = {
 /*--------------------------------------------------------------------*/
 
 void
-VRT_init_round_robin_backend(struct backend **bp, struct vrt_round_robin_backend *t)
+VRT_init_round_robin_backend(struct backend **bp, const struct vrt_round_robin_backend *t)
 {
 	struct backend *b;
 	struct brr *brr;

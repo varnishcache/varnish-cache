@@ -172,7 +172,7 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	}
 
 	vcc_NextToken(tl);
-	Fc(tl, 0, "\nstatic struct vrt_simple_backend sbe_%.*s = {\n",
+	Fc(tl, 0, "\nstatic const struct vrt_simple_backend sbe_%.*s = {\n",
 	    PF(t_be));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
 	if (t_port != NULL)

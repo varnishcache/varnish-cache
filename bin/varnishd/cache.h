@@ -94,7 +94,7 @@ void WS_Init(struct ws *ws, void *space, unsigned len);
 unsigned WS_Reserve(struct ws *ws, unsigned bytes);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
-void WS_Assert(struct ws *ws);
+void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 
@@ -332,13 +332,13 @@ struct vbe_conn {
 
 
 /* Backend method */
-typedef struct vbe_conn *vbe_getfd_f(struct sess *sp);
+typedef struct vbe_conn *vbe_getfd_f(const struct sess *sp);
 typedef void vbe_close_f(struct worker *w, struct vbe_conn *vc);
 typedef void vbe_recycle_f(struct worker *w, struct vbe_conn *vc);
 typedef void vbe_init_f(void);
-typedef const char *vbe_gethostname_f(struct backend *);
-typedef void vbe_cleanup_f(struct backend *);
-typedef void vbe_updatehealth_f(struct sess *sp, struct vbe_conn *vc, int);
+typedef const char *vbe_gethostname_f(const struct backend *);
+typedef void vbe_cleanup_f(const struct backend *);
+typedef void vbe_updatehealth_f(const struct sess *sp, const struct vbe_conn *vc, int);
 
 struct backend_method {
 	const char		*name;
@@ -388,7 +388,7 @@ extern int vca_pipes[2];
 /* cache_backend.c */
 
 void VBE_Init(void);
-struct vbe_conn *VBE_GetFd(struct sess *sp);
+struct vbe_conn *VBE_GetFd(const struct sess *sp);
 void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
@@ -399,7 +399,7 @@ void VBE_DropRefLocked(struct backend *);
 struct backend *VBE_NewBackend(struct backend_method *method);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
-void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
+void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
 
 /* convenience functions for backend methods */
 int VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai);
@@ -449,7 +449,7 @@ void HSH_Init(void);
 const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, struct http *hp, int resp);
+unsigned http_Write(struct worker *w, const struct http *hp, int resp);
 void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, const char *status, const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned how);
@@ -493,14 +493,14 @@ void WRK_QueueSession(struct sess *sp);
 void WRK_Reset(struct worker *w, int *fd);
 unsigned WRK_Flush(struct worker *w);
 unsigned WRK_Write(struct worker *w, const void *ptr, int len);
-unsigned WRK_WriteH(struct worker *w, struct http_hdr *hh, const char *suf);
+unsigned WRK_WriteH(struct worker *w, const struct http_hdr *hh, const char *suf);
 #ifdef HAVE_SENDFILE
 void WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* HAVE_SENDFILE */
 
 /* cache_session.c [SES] */
 void SES_Init(void);
-struct sess *SES_New(struct sockaddr *addr, unsigned len);
+struct sess *SES_New(const struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
 void SES_RefSrcAddr(struct sess *sp);
 void SES_Charge(struct sess *sp);
@@ -530,8 +530,8 @@ void RES_WriteObj(struct sess *sp);
 void SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl);
 
 /* cache_vary.c */
-void VRY_Create(struct sess *sp);
-int VRY_Match(struct sess *sp, unsigned char *vary);
+void VRY_Create(const struct sess *sp);
+int VRY_Match(const struct sess *sp, const unsigned char *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);
@@ -554,7 +554,7 @@ cli_func_t	cli_func_dump_pool;
 #endif
 
 /* rfc2616.c */
-int RFC2616_cache_policy(struct sess *sp, struct http *hp);
+int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 
 #if 1
 #define MTX			pthread_mutex_t

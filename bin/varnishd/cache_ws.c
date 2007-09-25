@@ -46,7 +46,7 @@
 #include "cache.h"
 
 void
-WS_Assert(struct ws *ws)
+WS_Assert(const struct ws *ws)
 {
 
 	assert(ws != NULL);

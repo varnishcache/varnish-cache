@@ -119,7 +119,7 @@ hcl_start(void)
  */
 
 static struct objhead *
-hcl_lookup(struct sess *sp, struct objhead *noh)
+hcl_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *roh;
 	struct hcl_entry *he, *he2;
@@ -213,7 +213,7 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
  */
 
 static int
-hcl_deref(struct objhead *oh)
+hcl_deref(const struct objhead *oh)
 {
 	struct hcl_entry *he;
 	struct hcl_hd *hp;

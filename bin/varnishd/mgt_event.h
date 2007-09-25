@@ -36,7 +36,7 @@
 struct ev;
 struct evbase;
 
-typedef int ev_cb_f(struct ev *, int what);
+typedef int ev_cb_f(const struct ev *, int what);
 
 struct ev {
 	unsigned	magic;

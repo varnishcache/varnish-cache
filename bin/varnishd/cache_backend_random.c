@@ -84,7 +84,7 @@ struct brspec {
  */
 
 static int
-ber_conn_try_list(struct sess *sp, struct brspec *bs)
+ber_conn_try_list(const struct sess *sp, struct brspec *bs)
 {
 	struct addrinfo *ai, *from;
 	int s, loops;
@@ -170,7 +170,7 @@ ber_dns_lookup(struct backend *bp, struct brspec *bs)
 /*--------------------------------------------------------------------*/
 
 static int
-ber_conn_try(struct sess *sp, struct backend *bp, struct brspec *bs)
+ber_conn_try(const struct sess *sp, struct backend *bp, struct brspec *bs)
 {
 	int s;
 
@@ -217,7 +217,7 @@ ber_conn_try(struct sess *sp, struct backend *bp, struct brspec *bs)
  */
 
 static struct vbe_conn *
-ber_nextfd(struct sess *sp)
+ber_nextfd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	struct backend *bp;
@@ -292,7 +292,7 @@ ber_nextfd(struct sess *sp)
 }
 
 static struct vbe_conn *
-ber_GetFd(struct sess *sp)
+ber_GetFd(const struct sess *sp)
 {
 	struct vbe_conn *vc;
 	unsigned n;
@@ -350,7 +350,7 @@ ber_RecycleFd(struct worker *w, struct vbe_conn *vc)
 /*--------------------------------------------------------------------*/
 
 static void
-ber_Cleanup(struct backend *b)
+ber_Cleanup(const struct backend *b)
 {
 	struct ber *ber;
 	struct vbe_conn *vbe;
@@ -386,7 +386,7 @@ ber_Cleanup(struct backend *b)
 
 /* Will return the hostname of the first backend in the list */
 static const char *
-ber_GetHostname(struct backend *b)
+ber_GetHostname(const struct backend *b)
 {
 	struct ber *ber;
 
@@ -402,7 +402,7 @@ ber_GetHostname(struct backend *b)
  * towards neutral (0) as time passes
  */
 static void
-ber_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int add)
+ber_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int add)
 {
 	struct brspec *bs, *first;
 	struct ber *ber;
@@ -438,7 +438,7 @@ struct backend_method backend_method_random = {
 /*--------------------------------------------------------------------*/
 
 void
-VRT_init_random_backend(struct backend **bp, struct vrt_random_backend *t)
+VRT_init_random_backend(struct backend **bp, const struct vrt_random_backend *t)
 {
 	struct backend *b;
 	struct ber *ber;

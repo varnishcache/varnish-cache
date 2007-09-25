@@ -373,7 +373,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 }
 
 static void
-remfree(struct smf_sc *sc, struct smf *sp)
+remfree(const struct smf_sc *sc, struct smf *sp)
 {
 	size_t b;
 
@@ -601,7 +601,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 }
 
 static void
-smf_open(struct stevedore *st)
+smf_open(const struct stevedore *st)
 {
 	struct smf_sc *sc;
 	off_t fail = 1 << 30;	/* XXX: where is OFF_T_MAX ? */

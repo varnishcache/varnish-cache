@@ -77,7 +77,7 @@ volatile struct params *params;
 /*--------------------------------------------------------------------*/
 
 static int
-cmp_hash(struct hash_slinger *s, const char *p, const char *q)
+cmp_hash(const struct hash_slinger *s, const char *p, const char *q)
 {
 	if (strlen(s->name) != q - p)
 		return (1);
@@ -350,7 +350,7 @@ DebugStunt(void)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_check(struct cli *cli)
+cli_check(const struct cli *cli)
 {
 	if (cli->result == CLIS_OK) {
 		vsb_clear(cli->sb);

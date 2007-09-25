@@ -71,7 +71,7 @@ hsl_start(void)
  */
 
 static struct objhead *
-hsl_lookup(struct sess *sp, struct objhead *nobj)
+hsl_lookup(const struct sess *sp, struct objhead *nobj)
 {
 	struct hsl_entry *he, *he2;
 	int i;
@@ -116,7 +116,7 @@ hsl_lookup(struct sess *sp, struct objhead *nobj)
  */
 
 static int
-hsl_deref(struct objhead *obj)
+hsl_deref(const struct objhead *obj)
 {
 	struct hsl_entry *he;
 	int ret;
