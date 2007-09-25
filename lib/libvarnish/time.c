@@ -87,11 +87,13 @@ TIM_real(void)
 }
 
 void
-TIM_format(time_t t, char *p)
+TIM_format(double t, char *p)
 {
 	struct tm tm;
+	time_t tt;
 
-	gmtime_r(&t, &tm);
+	tt = (time_t) t;
+	gmtime_r(&tt, &tm);
 	strftime(p, 30, "%a, %d %b %Y %T GMT", &tm);
 }
 

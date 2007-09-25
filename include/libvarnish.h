@@ -46,7 +46,7 @@ uint32_t crc32(uint32_t crc, const void *p1, unsigned l);
 uint32_t crc32_l(const void *p1, unsigned l);
 
 /* from libvarnish/time.c */
-void TIM_format(time_t t, char *p);
+void TIM_format(double t, char *p);
 time_t TIM_parse(const char *p);
 double TIM_mono(void);
 double TIM_real(void);
