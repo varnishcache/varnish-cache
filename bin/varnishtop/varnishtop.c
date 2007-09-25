@@ -43,11 +43,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 #include "vsb.h"
 
@@ -59,11 +55,11 @@ struct top {
 	unsigned char		rec[4 + 255];
 	unsigned		clen;
 	unsigned		hash;
-	TAILQ_ENTRY(top)	list;
+	VTAILQ_ENTRY(top)	list;
 	double			count;
 };
 
-static TAILQ_HEAD(tophead, top) top_head = TAILQ_HEAD_INITIALIZER(top_head);
+static VTAILQ_HEAD(tophead, top) top_head = VTAILQ_HEAD_INITIALIZER(top_head);
 
 static unsigned ntop;
 
@@ -91,7 +87,7 @@ accumulate(const unsigned char *p)
 		u += *q;
 	}
 
-	TAILQ_FOREACH(tp, &top_head, list) {
+	VTAILQ_FOREACH(tp, &top_head, list) {
 		if (tp->hash != u)
 			continue;
 		if (tp->rec[0] != p[0])
@@ -110,22 +106,22 @@ accumulate(const unsigned char *p)
 		tp->hash = u;
 		tp->count = 1.0;
 		tp->clen = q - p;
-		TAILQ_INSERT_TAIL(&top_head, tp, list);
+		VTAILQ_INSERT_TAIL(&top_head, tp, list);
 	}
 	memcpy(tp->rec, p, 4 + p[1]);
 	while (1) {
-		tp2 = TAILQ_PREV(tp, tophead, list);
+		tp2 = VTAILQ_PREV(tp, tophead, list);
 		if (tp2 == NULL || tp2->count >= tp->count)
 			break;
-		TAILQ_REMOVE(&top_head, tp2, list);
-		TAILQ_INSERT_AFTER(&top_head, tp, tp2, list);
+		VTAILQ_REMOVE(&top_head, tp2, list);
+		VTAILQ_INSERT_AFTER(&top_head, tp, tp2, list);
 	}
 	while (1) {
-		tp2 = TAILQ_NEXT(tp, list);
+		tp2 = VTAILQ_NEXT(tp, list);
 		if (tp2 == NULL || tp2->count <= tp->count)
 			break;
-		TAILQ_REMOVE(&top_head, tp2, list);
-		TAILQ_INSERT_BEFORE(tp, tp2, list);
+		VTAILQ_REMOVE(&top_head, tp2, list);
+		VTAILQ_INSERT_BEFORE(tp, tp2, list);
 	}
 }
 
@@ -147,7 +143,7 @@ update(void)
 	l = 1;
 	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
 	mvprintw(0, 0, "list length %u", ntop);
-	TAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
+	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
 			int len = tp->rec[1];
 			if (len > COLS - 20)
@@ -159,7 +155,7 @@ update(void)
 		}
 		tp->count *= .999;
 		if (tp->count * 10 < t || l > LINES * 10) {
-			TAILQ_REMOVE(&top_head, tp, list);
+			VTAILQ_REMOVE(&top_head, tp, list);
 			free(tp);
 			ntop--;
 		}
@@ -251,7 +247,7 @@ dump(void)
 	struct top *tp, *tp2;
 	int len;
 
-	TAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
+	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (tp->count <= 1.0)
 			break;
 		len = tp->rec[1];

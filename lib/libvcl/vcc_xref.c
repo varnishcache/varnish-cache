@@ -50,21 +50,21 @@
 /*--------------------------------------------------------------------*/
 
 struct proccall {
-	TAILQ_ENTRY(proccall)	list;
+	VTAILQ_ENTRY(proccall)	list;
 	struct proc		*p;
 	struct token		*t;
 };
 
 struct procuse {
-	TAILQ_ENTRY(procuse)	list;
+	VTAILQ_ENTRY(procuse)	list;
 	struct token		*t;
 	struct var		*v;
 };
 
 struct proc {
-	TAILQ_ENTRY(proc)	list;
-	TAILQ_HEAD(,proccall)	calls;
-	TAILQ_HEAD(,procuse)	uses;
+	VTAILQ_ENTRY(proc)	list;
+	VTAILQ_HEAD(,proccall)	calls;
+	VTAILQ_HEAD(,procuse)	uses;
 	struct token		*name;
 	unsigned		returns;
 	unsigned		exists;
@@ -101,7 +101,7 @@ vcc_findref(struct tokenlist *tl, struct token *t, enum ref_type type)
 {
 	struct ref *r;
 
-	TAILQ_FOREACH(r, &tl->refs, list) {
+	VTAILQ_FOREACH(r, &tl->refs, list) {
 		if (r->type != type)
 			continue;
 		if (vcc_Teq(r->name, t))
@@ -111,7 +111,7 @@ vcc_findref(struct tokenlist *tl, struct token *t, enum ref_type type)
 	assert(r != NULL);
 	r->name = t;
 	r->type = type;
-	TAILQ_INSERT_TAIL(&tl->refs, r, list);
+	VTAILQ_INSERT_TAIL(&tl->refs, r, list);
 	return (r);
 }
 
@@ -154,7 +154,7 @@ vcc_CheckReferences(struct tokenlist *tl)
 	const char *type;
 	int nerr = 0;
 
-	TAILQ_FOREACH(r, &tl->refs, list) {
+	VTAILQ_FOREACH(r, &tl->refs, list) {
 		if (r->defcnt != 0 && r->refcnt != 0)
 			continue;
 		nerr++;
@@ -185,14 +185,14 @@ vcc_findproc(struct tokenlist *tl, struct token *t)
 {
 	struct proc *p;
 
-	TAILQ_FOREACH(p, &tl->procs, list)
+	VTAILQ_FOREACH(p, &tl->procs, list)
 		if (vcc_Teq(p->name, t))
 			return (p);
 	p = TlAlloc(tl, sizeof *p);
 	assert(p != NULL);
-	TAILQ_INIT(&p->calls);
-	TAILQ_INIT(&p->uses);
-	TAILQ_INSERT_TAIL(&tl->procs, p, list);
+	VTAILQ_INIT(&p->calls);
+	VTAILQ_INIT(&p->uses);
+	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
 	p->name = t;
 	return (p);
 }
@@ -219,7 +219,7 @@ vcc_AddUses(struct tokenlist *tl, struct var *v)
 	assert(pu != NULL);
 	pu->v = v;
 	pu->t = tl->t;
-	TAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
+	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 }
 
 void
@@ -233,7 +233,7 @@ vcc_AddCall(struct tokenlist *tl, struct token *t)
 	assert(pc != NULL);
 	pc->p = p;
 	pc->t = t;
-	TAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
+	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
 }
 
 void
@@ -279,7 +279,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 		return (1);
 	}
 	p->active = 1;
-	TAILQ_FOREACH(pc, &p->calls, list) {
+	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckActionRecurse(tl, pc->p, returns)) {
 			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
@@ -299,7 +299,7 @@ vcc_CheckAction(struct tokenlist *tl)
 	struct method *m;
 	int i;
 
-	TAILQ_FOREACH(p, &tl->procs, list) {
+	VTAILQ_FOREACH(p, &tl->procs, list) {
 		i = IsMethod(p->name);
 		if (i < 0)
 			continue;
@@ -321,7 +321,7 @@ vcc_CheckAction(struct tokenlist *tl)
 			return (1);
 		}
 	}
-	TAILQ_FOREACH(p, &tl->procs, list) {
+	VTAILQ_FOREACH(p, &tl->procs, list) {
 		if (p->called)
 			continue;
 		vsb_printf(tl->sb, "Function unused\n");
@@ -336,7 +336,7 @@ vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 {
 	struct procuse *pu;
 
-	TAILQ_FOREACH(pu, &p->uses, list)
+	VTAILQ_FOREACH(pu, &p->uses, list)
 		if (!(pu->v->methods & m->bitval)) 
 			return (pu);
 	return (NULL);
@@ -359,7 +359,7 @@ vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p, struct method *m
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
-	TAILQ_FOREACH(pc, &p->calls, list) {
+	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->p, m)) {
 			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
@@ -378,7 +378,7 @@ vcc_CheckUses(struct tokenlist *tl)
 	struct procuse *pu;
 	int i;
 
-	TAILQ_FOREACH(p, &tl->procs, list) {
+	VTAILQ_FOREACH(p, &tl->procs, list) {
 		i = IsMethod(p->name);
 		if (i < 0)
 			continue;

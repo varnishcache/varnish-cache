@@ -29,23 +29,19 @@
  * $Id$
  */
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 #include "vcl_returns.h"
 
 #define INDENT		2
 
 struct membit {
-	TAILQ_ENTRY(membit)	list;
+	VTAILQ_ENTRY(membit)	list;
 	void			*ptr;
 };
 
 struct source {
-	TAILQ_ENTRY(source)	list;
+	VTAILQ_ENTRY(source)	list;
 	char			*name;
 	const char		*b;
 	const char		*e;
@@ -58,17 +54,17 @@ struct token {
 	const char		*b;
 	const char		*e;
 	struct source		*src;
-	TAILQ_ENTRY(token)	list;
+	VTAILQ_ENTRY(token)	list;
 	unsigned		cnt;
 	char			*dec;
 };
 
-TAILQ_HEAD(tokenhead, token);
+VTAILQ_HEAD(tokenhead, token);
 
 struct tokenlist {
 	struct tokenhead	tokens;
-	TAILQ_HEAD(, source)	sources;
-	TAILQ_HEAD(, membit)	membits;
+	VTAILQ_HEAD(, source)	sources;
+	VTAILQ_HEAD(, membit)	membits;
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;
@@ -79,11 +75,11 @@ struct tokenlist {
 	unsigned		cnt;
 	struct vsb		*fc, *fh, *fi, *ff, *fb;
 	struct vsb		*fm[N_METHODS];
-	TAILQ_HEAD(, ref)	refs;
+	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
 	int			nbackend;
-	TAILQ_HEAD(, proc)	procs;
+	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
 	struct proc		*mprocs[N_METHODS];
 
@@ -125,7 +121,7 @@ struct ref {
 	struct token		*name;
 	unsigned		defcnt;
 	unsigned		refcnt;
-	TAILQ_ENTRY(ref)	list;
+	VTAILQ_ENTRY(ref)	list;
 };
 
 struct var {

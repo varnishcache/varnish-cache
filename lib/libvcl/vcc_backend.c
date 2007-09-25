@@ -79,7 +79,7 @@ vcc_EmitBeIdent(struct tokenlist *tl, struct token *first, struct token *last)
 			    PF(first));
 		else
 			Fc(tl, 0, "\n\t    \"%.*s \"", PF(first));
-		first = TAILQ_NEXT(first, list);
+		first = VTAILQ_NEXT(first, list);
 	}
 	Fc(tl, 0, ",\n");
 }

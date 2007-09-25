@@ -44,12 +44,12 @@
 #include "shmlog.h"
 #include "cache.h"
 
-static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
-static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
+static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
+static VTAILQ_HEAD(,vbe_conn) vbe_head = VTAILQ_HEAD_INITIALIZER(vbe_head);
 
 static MTX VBE_mtx;
 
-struct backendlist backendlist = TAILQ_HEAD_INITIALIZER(backendlist);
+struct backendlist backendlist = VTAILQ_HEAD_INITIALIZER(backendlist);
 
 
 /*--------------------------------------------------------------------
@@ -135,9 +135,9 @@ VBE_new_bereq(void)
 	volatile unsigned len;
 
 	LOCK(&VBE_mtx);
-	bereq = TAILQ_FIRST(&bereq_head);
+	bereq = VTAILQ_FIRST(&bereq_head);
 	if (bereq != NULL)
-		TAILQ_REMOVE(&bereq_head, bereq, list);
+		VTAILQ_REMOVE(&bereq_head, bereq, list);
 	UNLOCK(&VBE_mtx);
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
@@ -163,7 +163,7 @@ VBE_free_bereq(struct bereq *bereq)
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
 	LOCK(&VBE_mtx);
-	TAILQ_INSERT_HEAD(&bereq_head, bereq, list);
+	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
 	UNLOCK(&VBE_mtx);
 }
 
@@ -174,13 +174,13 @@ VBE_NewConn(void)
 {
 	struct vbe_conn *vc;
 
-	vc = TAILQ_FIRST(&vbe_head);
+	vc = VTAILQ_FIRST(&vbe_head);
 	if (vc != NULL) {
 		LOCK(&VBE_mtx);
-		vc = TAILQ_FIRST(&vbe_head);
+		vc = VTAILQ_FIRST(&vbe_head);
 		if (vc != NULL) {
 			VSL_stats->backend_unused--;
-			TAILQ_REMOVE(&vbe_head, vc, list);
+			VTAILQ_REMOVE(&vbe_head, vc, list);
 		} else {
 			VSL_stats->n_vbe_conn++;
 		}
@@ -206,7 +206,7 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
 	LOCK(&VBE_mtx);
-	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+	VTAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
 	UNLOCK(&VBE_mtx);
 }
@@ -229,7 +229,7 @@ VBE_NewBackend(struct backend_method *method)
 	b->last_check = TIM_mono();
 	b->minute_limit = 1;
 
-	TAILQ_INSERT_TAIL(&backendlist, b, list);
+	VTAILQ_INSERT_TAIL(&backendlist, b, list);
 	return (b);
 }
 
@@ -244,7 +244,7 @@ VBE_DropRefLocked(struct backend *b)
 
 	i = --b->refcount;
 	if (i == 0)
-		TAILQ_REMOVE(&backendlist, b, list);
+		VTAILQ_REMOVE(&backendlist, b, list);
 	UNLOCK(&b->mtx);
 	if (i)
 		return;

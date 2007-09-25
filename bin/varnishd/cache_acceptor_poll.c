@@ -51,7 +51,7 @@ static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
 static unsigned npoll;
 
-static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
+static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
 /*--------------------------------------------------------------------*/
 
@@ -116,11 +116,11 @@ vca_main(void *arg)
 			i = read(vca_pipes[0], &sp, sizeof sp);
 			assert(i == sizeof sp);
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			TAILQ_INSERT_TAIL(&sesshead, sp, list);
+			VTAILQ_INSERT_TAIL(&sesshead, sp, list);
 			vca_poll(sp->fd);
 		}
 		deadline = TIM_real() - params->sess_timeout;
-		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
+		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			if (v == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -130,7 +130,7 @@ vca_main(void *arg)
 				i = vca_pollsession(sp);
 				if (i < 0)
 					continue;
-				TAILQ_REMOVE(&sesshead, sp, list);
+				VTAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(fd);
 				if (i == 0)
 					vca_handover(sp, i);
@@ -140,7 +140,7 @@ vca_main(void *arg)
 			}
 			if (sp->t_open > deadline)
 				continue;
-			TAILQ_REMOVE(&sesshead, sp, list);
+			VTAILQ_REMOVE(&sesshead, sp, list);
 			vca_unpoll(fd);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);

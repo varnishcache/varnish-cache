@@ -67,13 +67,13 @@ struct sessmem {
 	struct sess		sess;
 	struct http		http;
 	unsigned		workspace;
-	TAILQ_ENTRY(sessmem)	list;
+	VTAILQ_ENTRY(sessmem)	list;
 	struct sockaddr_storage	sockaddr[2];
 };
 
-static TAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
-    TAILQ_HEAD_INITIALIZER(ses_free_mem[0]),
-    TAILQ_HEAD_INITIALIZER(ses_free_mem[1]),
+static VTAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
+    VTAILQ_HEAD_INITIALIZER(ses_free_mem[0]),
+    VTAILQ_HEAD_INITIALIZER(ses_free_mem[1]),
 };
 
 static unsigned ses_qp;
@@ -86,7 +86,7 @@ struct srcaddr {
 #define SRCADDR_MAGIC		0x375111db
 
 	unsigned		hash;
-	TAILQ_ENTRY(srcaddr)	list;
+	VTAILQ_ENTRY(srcaddr)	list;
 	struct srcaddrhead	*sah;
 
 	char			addr[TCP_ADDRBUFSIZE];
@@ -101,7 +101,7 @@ struct srcaddr {
 static struct srcaddrhead {
 	unsigned		magic;
 #define SRCADDRHEAD_MAGIC	0x38231a8b
-	TAILQ_HEAD(,srcaddr)	head;
+	VTAILQ_HEAD(,srcaddr)	head;
 	MTX			mtx;
 } *srchash;
 
@@ -141,17 +141,17 @@ SES_RefSrcAddr(struct sess *sp)
 
 	LOCK(&ch->mtx);
 	c3 = NULL;
-	TAILQ_FOREACH_SAFE(c, &ch->head, list, c2) {
+	VTAILQ_FOREACH_SAFE(c, &ch->head, list, c2) {
 		if (c->hash == u && !strcmp(c->addr, sp->addr)) {
 			if (c->nref == 0)
 				VSL_stats->n_srcaddr_act++;
 			c->nref++;
 			c->ttl = now + params->srcaddr_ttl;
 			sp->srcaddr = c;
-			TAILQ_REMOVE(&ch->head, c, list);
-			TAILQ_INSERT_TAIL(&ch->head, c, list);
+			VTAILQ_REMOVE(&ch->head, c, list);
+			VTAILQ_INSERT_TAIL(&ch->head, c, list);
 			if (c3 != NULL) {
-				TAILQ_REMOVE(&ch->head, c3, list);
+				VTAILQ_REMOVE(&ch->head, c3, list);
 				VSL_stats->n_srcaddr--;
 			}
 			UNLOCK(&ch->mtx);
@@ -169,7 +169,7 @@ SES_RefSrcAddr(struct sess *sp)
 		sp->wrk->srcaddr = NULL;
 		VSL_stats->n_srcaddr++;
 	} else
-		TAILQ_REMOVE(&ch->head, c3, list);
+		VTAILQ_REMOVE(&ch->head, c3, list);
 	AN(c3);
 	memset(c3, 0, sizeof *c3);
 	c3->magic = SRCADDR_MAGIC;
@@ -180,7 +180,7 @@ SES_RefSrcAddr(struct sess *sp)
 	c3->nref = 1;
 	c3->sah = ch;
 	VSL_stats->n_srcaddr_act++;
-	TAILQ_INSERT_TAIL(&ch->head, c3, list);
+	VTAILQ_INSERT_TAIL(&ch->head, c3, list);
 	sp->srcaddr = c3;
 	UNLOCK(&ch->mtx);
 }
@@ -267,7 +267,7 @@ SES_New(struct sockaddr *addr, unsigned len)
 	 * thread ever gets here to empty it.
 	 */
 	assert(ses_qp <= 1);
-	sm = TAILQ_FIRST(&ses_free_mem[ses_qp]);
+	sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
 	if (sm == NULL) {
 		/*
 		 * If that queue is empty, flip queues holding the lock
@@ -276,10 +276,10 @@ SES_New(struct sockaddr *addr, unsigned len)
 		LOCK(&ses_mem_mtx);
 		ses_qp = 1 - ses_qp;
 		UNLOCK(&ses_mem_mtx);
-		sm = TAILQ_FIRST(&ses_free_mem[ses_qp]);
+		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
 	}
 	if (sm != NULL) {
-		TAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
+		VTAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
 	} else {
 		/*
 		 * If that fails, alloc new one.
@@ -349,7 +349,7 @@ SES_Delete(struct sess *sp)
 		free(sm);
 	} else {
 		LOCK(&ses_mem_mtx);
-		TAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
+		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
 		UNLOCK(&ses_mem_mtx);
 	}
 }
@@ -366,7 +366,7 @@ SES_Init()
 	XXXAN(srchash);
 	for (i = 0; i < nsrchash; i++) {
 		srchash[i].magic = SRCADDRHEAD_MAGIC;
-		TAILQ_INIT(&srchash[i].head);
+		VTAILQ_INIT(&srchash[i].head);
 		MTX_INIT(&srchash[i].mtx);
 	}
 	MTX_INIT(&stat_mtx);

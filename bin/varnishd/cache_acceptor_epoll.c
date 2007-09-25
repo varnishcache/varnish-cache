@@ -49,7 +49,7 @@
 static pthread_t vca_epoll_thread;
 static int epfd = -1;
 
-static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
+static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
 static void
 vca_add(int fd, void *data)
@@ -86,13 +86,13 @@ vca_main(void *arg)
 				i = read(vca_pipes[0], &sp, sizeof sp);
 				assert(i == sizeof sp);
 				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-				TAILQ_INSERT_TAIL(&sesshead, sp, list);
+				VTAILQ_INSERT_TAIL(&sesshead, sp, list);
 				vca_add(sp->fd, sp);
 			} else {
 				CAST_OBJ_NOTNULL(sp, ev.data.ptr, SESS_MAGIC);
 				i = vca_pollsession(sp);
 				if (i >= 0) {
-					TAILQ_REMOVE(&sesshead, sp, list);
+					VTAILQ_REMOVE(&sesshead, sp, list);
 					if (sp->fd != -1)
 						vca_del(sp->fd);
 					if (i == 0)
@@ -104,11 +104,11 @@ vca_main(void *arg)
 		}
 		/* check for timeouts */
 		deadline = TIM_real() - params->sess_timeout;
-		TAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
+		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			if (sp->t_open > deadline)
 				continue;
-			TAILQ_REMOVE(&sesshead, sp, list);
+			VTAILQ_REMOVE(&sesshead, sp, list);
 			vca_del(sp->fd);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);

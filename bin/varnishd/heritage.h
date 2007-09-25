@@ -33,19 +33,15 @@
 
 #include <pthread.h>
 
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#else
-#include "queue.h"
-#endif
+#include "vqueue.h"
 
 struct listen_sock {
-	TAILQ_ENTRY(listen_sock)	list;
+	VTAILQ_ENTRY(listen_sock)	list;
 	int				sock;
 	struct vss_addr			*addr;
 };
 
-TAILQ_HEAD(listen_sock_head, listen_sock);
+VTAILQ_HEAD(listen_sock_head, listen_sock);
 
 struct heritage {
 

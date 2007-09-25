@@ -145,7 +145,7 @@ vca_acct(void *arg)
 	pfd = calloc(sizeof *pfd, heritage.nsocks);
 	AN(pfd);
 	i = 0;
-	TAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 		pfd[i].events = POLLIN;
@@ -157,7 +157,7 @@ vca_acct(void *arg)
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
 			need_test = 1;
 			tv_sndtimeo.tv_sec = params->send_timeout;
-			TAILQ_FOREACH(ls, &heritage.socks, list) 
+			VTAILQ_FOREACH(ls, &heritage.socks, list) 
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
 				    SO_SNDTIMEO,
 				    &tv_sndtimeo, sizeof tv_sndtimeo));
@@ -165,7 +165,7 @@ vca_acct(void *arg)
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
-			TAILQ_FOREACH(ls, &heritage.socks, list) 
+			VTAILQ_FOREACH(ls, &heritage.socks, list) 
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
 				    SO_RCVTIMEO,
 				    &tv_rcvtimeo, sizeof tv_rcvtimeo));

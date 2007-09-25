@@ -55,7 +55,7 @@ struct bes {
 	double			dnsttl;
 	double			dnstime;
 	unsigned		dnsseq;
-	TAILQ_HEAD(, vbe_conn)	connlist;
+	VTAILQ_HEAD(, vbe_conn)	connlist;
 };
 
 /*--------------------------------------------------------------------
@@ -213,12 +213,12 @@ bes_nextfd(struct sess *sp)
 	CAST_OBJ_NOTNULL(bes, bp->priv, BES_MAGIC);
 	while (1) {
 		LOCK(&bp->mtx);
-		vc = TAILQ_FIRST(&bes->connlist);
+		vc = VTAILQ_FIRST(&bes->connlist);
 		if (vc != NULL) {
 			bp->refcount++;
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
-			TAILQ_REMOVE(&bes->connlist, vc, list);
+			VTAILQ_REMOVE(&bes->connlist, vc, list);
 		}
 		UNLOCK(&bp->mtx);
 		if (vc == NULL)
@@ -302,7 +302,7 @@ bes_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vc->backend->mtx);
 	VSL_stats->backend_recycle++;
-	TAILQ_INSERT_HEAD(&bes->connlist, vc, list);
+	VTAILQ_INSERT_HEAD(&bes->connlist, vc, list);
 	VBE_DropRefLocked(vc->backend);
 }
 
@@ -320,10 +320,10 @@ bes_Cleanup(struct backend *b)
 	free(bes->hostname);
 	freeaddrinfo(bes->addr);
 	while (1) {
-		vbe = TAILQ_FIRST(&bes->connlist);
+		vbe = VTAILQ_FIRST(&bes->connlist);
 		if (vbe == NULL)
 			break;
-		TAILQ_REMOVE(&bes->connlist, vbe, list);
+		VTAILQ_REMOVE(&bes->connlist, vbe, list);
 		if (vbe->fd >= 0)
 			AZ(close(vbe->fd));
 		FREE_OBJ(vbe);
@@ -366,7 +366,7 @@ VRT_init_simple_backend(struct backend **bp, struct vrt_simple_backend *t)
 	/*
 	 * Scan existing backends to see if we can recycle one of them.
 	 */
-	TAILQ_FOREACH(b, &backendlist, list) {
+	VTAILQ_FOREACH(b, &backendlist, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (b->method != &backend_method_simple)
 			continue;
