@@ -51,7 +51,7 @@
 static pthread_t vca_kqueue_thread;
 static int kq = -1;
 
-static TAILQ_HEAD(,sess) sesshead = TAILQ_HEAD_INITIALIZER(sesshead);
+static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
 #define NKEV	100
 
@@ -88,7 +88,7 @@ vca_kev(struct kevent *kp)
 		while (i >= sizeof ss[0]) {
 			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 			assert(ss[j]->fd >= 0);
-			TAILQ_INSERT_TAIL(&sesshead, ss[j], list);
+			VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
 			vca_kq_sess(ss[j], EV_ADD);
 			j++;
 			i -= sizeof ss[0];
@@ -101,7 +101,7 @@ vca_kev(struct kevent *kp)
 		i = vca_pollsession(sp);
 		if (i == -1)
 			return;
-		TAILQ_REMOVE(&sesshead, sp, list);
+		VTAILQ_REMOVE(&sesshead, sp, list);
 		if (i == 0) {
 			vca_kq_sess(sp, EV_DELETE);
 			vca_handover(sp, i);
@@ -110,7 +110,7 @@ vca_kev(struct kevent *kp)
 		}
 		return;
 	} else if (kp->flags == EV_EOF) {
-		TAILQ_REMOVE(&sesshead, sp, list);
+		VTAILQ_REMOVE(&sesshead, sp, list);
 		vca_close_session(sp, "EOF");
 		SES_Delete(sp);
 		return;
@@ -157,12 +157,12 @@ vca_kqueue_main(void *arg)
 			continue;
 		deadline = TIM_real() - params->sess_timeout;
 		for (;;) {
-			sp = TAILQ_FIRST(&sesshead);
+			sp = VTAILQ_FIRST(&sesshead);
 			if (sp == NULL)
 				break;
 			if (sp->t_open > deadline)
 				break;
-			TAILQ_REMOVE(&sesshead, sp, list);
+			VTAILQ_REMOVE(&sesshead, sp, list);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
 		}

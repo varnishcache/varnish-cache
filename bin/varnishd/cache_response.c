@@ -158,7 +158,7 @@ RES_WriteObj(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wantbody) {
-		TAILQ_FOREACH(st, &sp->obj->store, list) {
+		VTAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 			AN(st->stevedore);

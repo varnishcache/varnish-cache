@@ -433,7 +433,7 @@ main(int argc, char *argv[])
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 
-	TAILQ_INIT(&heritage.socks);
+	VTAILQ_INIT(&heritage.socks);
 	mgt_vcc_init();
 
 	MCF_ParamInit(cli);

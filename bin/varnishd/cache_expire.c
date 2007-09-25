@@ -50,7 +50,7 @@ static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static MTX exp_mtx;
 static unsigned expearly = 30;
-static TAILQ_HEAD(,object) exp_deathrow = TAILQ_HEAD_INITIALIZER(exp_deathrow);
+static VTAILQ_HEAD(,object) exp_deathrow = VTAILQ_HEAD_INITIALIZER(exp_deathrow);
 
 /*--------------------------------------------------------------------*/
 
@@ -85,8 +85,8 @@ EXP_Terminate(struct object *o)
 	LRU_Remove(o);
 	if (o->heap_idx)
 		binheap_delete(exp_heap, o->heap_idx);
-	if (o->deathrow.tqe_next) {
-		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+	if (o->deathrow.vtqe_next) {
+		VTAILQ_REMOVE(&exp_deathrow, o, deathrow);
 		VSL_stats->n_deathrow--;
 	}
 	UNLOCK(&exp_mtx);
@@ -109,7 +109,7 @@ exp_hangman(void *arg)
 	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
-		TAILQ_FOREACH(o, &exp_deathrow, deathrow) {
+		VTAILQ_FOREACH(o, &exp_deathrow, deathrow) {
 			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
 				o = NULL;
@@ -129,7 +129,7 @@ exp_hangman(void *arg)
 			t = TIM_real();
 			continue;
 		}
-		TAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		VTAILQ_REMOVE(&exp_deathrow, o, deathrow);
 		VSL_stats->n_deathrow--;
 		VSL_stats->n_expired++;
 		UNLOCK(&exp_mtx);
@@ -195,7 +195,7 @@ exp_prefetch(void *arg)
 
 		if (sp->handling == VCL_RET_DISCARD) {
 			LOCK(&exp_mtx);
-			TAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
+			VTAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
 			VSL_stats->n_deathrow++;
 			UNLOCK(&exp_mtx);
 			continue;

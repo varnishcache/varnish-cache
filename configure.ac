@@ -50,6 +50,14 @@ PTHREAD_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(PTHREAD_LIBS)
 
+save_LIBS="${LIBS}"
+LIBS=""
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(getaddrinfo, ns)
+NET_LIBS="${LIBS}"
+LIBS="${save_LIBS}"
+AC_SUBST(NET_LIBS)
+
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
 

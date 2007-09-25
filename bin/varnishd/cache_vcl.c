@@ -46,7 +46,7 @@
 #include "cache.h"
 
 struct vcls {
-	TAILQ_ENTRY(vcls)	list;
+	VTAILQ_ENTRY(vcls)	list;
 	const char		*name;
 	void			*dlh;
 	struct VCL_conf		*conf;
@@ -57,8 +57,8 @@ struct vcls {
  * XXX: Presently all modifications to this list happen from the
  * CLI event-engine, so no locking is necessary
  */
-static TAILQ_HEAD(, vcls)	vcl_head =
-    TAILQ_HEAD_INITIALIZER(vcl_head);
+static VTAILQ_HEAD(, vcls)	vcl_head =
+    VTAILQ_HEAD_INITIALIZER(vcl_head);
 
 
 static struct vcls		*vcl_active; /* protected by vcl_mtx */
@@ -106,7 +106,7 @@ VCL_Rel(struct VCL_conf **vcc)
 		/* XXX: purge backends */
 	}
 	if (vc->busy == 0 && vcl->discard) {
-		TAILQ_REMOVE(&vcl_head, vcl, list);
+		VTAILQ_REMOVE(&vcl_head, vcl, list);
 	} else {
 		vcl = NULL;
 	}
@@ -123,7 +123,7 @@ vcl_find(const char *name)
 {
 	struct vcls *vcl;
 
-	TAILQ_FOREACH(vcl, &vcl_head, list)
+	VTAILQ_FOREACH(vcl, &vcl_head, list)
 		if (!strcmp(vcl->name, name))
 			return (vcl);
 	return (NULL);
@@ -179,7 +179,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	vcl->conf->priv = vcl;
 	vcl->name = strdup(name);
 	XXXAN(vcl->name);
-	TAILQ_INSERT_TAIL(&vcl_head, vcl, list);
+	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	LOCK(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
@@ -201,7 +201,7 @@ cli_func_config_list(struct cli *cli, char **av, void *priv)
 
 	(void)av;
 	(void)priv;
-	TAILQ_FOREACH(vcl, &vcl_head, list) {
+	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		cli_out(cli, "%s %6u %s\n",
 		    vcl == vcl_active ? "* " : "  ",
 		    vcl->conf->busy,
@@ -247,7 +247,7 @@ cli_func_config_discard(struct cli *cli, char **av, void *priv)
 	}
 	vcl->discard = 1;
 	if (vcl->conf->busy == 0)
-		TAILQ_REMOVE(&vcl_head, vcl, list);
+		VTAILQ_REMOVE(&vcl_head, vcl, list);
 	else
 		vcl = NULL;
 	UNLOCK(&vcl_mtx);

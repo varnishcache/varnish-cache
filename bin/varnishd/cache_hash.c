@@ -77,7 +77,7 @@ HSH_Prealloc(struct sess *sp)
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		XXXAN(w->nobjhead);
 		w->nobjhead->magic = OBJHEAD_MAGIC;
-		TAILQ_INIT(&w->nobjhead->objects);
+		VTAILQ_INIT(&w->nobjhead->objects);
 		MTX_INIT(&w->nobjhead->mtx);
 		VSL_stats->n_objecthead++;
 	} else
@@ -89,8 +89,8 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj->http.magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
-		TAILQ_INIT(&w->nobj->store);
-		TAILQ_INIT(&w->nobj->waitinglist);
+		VTAILQ_INIT(&w->nobj->store);
+		VTAILQ_INIT(&w->nobj->waitinglist);
 		VSL_stats->n_object++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
@@ -101,9 +101,9 @@ HSH_Freestore(struct object *o)
 {
 	struct storage *st, *stn;
 
-	TAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+	VTAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		TAILQ_REMOVE(&o->store, st, list);
+		VTAILQ_REMOVE(&o->store, st, list);
 		STV_free(st);
 	}
 }
@@ -179,10 +179,10 @@ HSH_Lookup(struct sess *sp)
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	LOCK(&oh->mtx);
-	TAILQ_FOREACH(o, &oh->objects, list) {
+	VTAILQ_FOREACH(o, &oh->objects, list) {
 		o->refcnt++;
 		if (o->busy) {
-			TAILQ_INSERT_TAIL(&o->waitinglist, sp, list);
+			VTAILQ_INSERT_TAIL(&o->waitinglist, sp, list);
 			sp->obj = o;
 			UNLOCK(&oh->mtx);
 			return (NULL);
@@ -214,7 +214,7 @@ HSH_Lookup(struct sess *sp)
 	o = w->nobj;
 	w->nobj = NULL;
 	o->objhead = oh;
-	TAILQ_INSERT_TAIL(&oh->objects, o, list);
+	VTAILQ_INSERT_TAIL(&oh->objects, o, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
@@ -242,10 +242,10 @@ HSH_Unbusy(struct object *o)
 	if (oh != NULL)
 		UNLOCK(&oh->mtx);
 	while (1) {
-		sp = TAILQ_FIRST(&o->waitinglist);
+		sp = VTAILQ_FIRST(&o->waitinglist);
 		if (sp == NULL)
 			break;
-		TAILQ_REMOVE(&o->waitinglist, sp, list);
+		VTAILQ_REMOVE(&o->waitinglist, sp, list);
 		WRK_QueueSession(sp);
 	}
 }
@@ -285,7 +285,7 @@ HSH_Deref(struct object *o)
 	r = --o->refcnt;
 	if (oh != NULL) {
 		if (!r)
-			TAILQ_REMOVE(&oh->objects, o, list);
+			VTAILQ_REMOVE(&oh->objects, o, list);
 		UNLOCK(&oh->mtx);
 	}
 
@@ -309,7 +309,7 @@ HSH_Deref(struct object *o)
 	/* Drop our ref on the objhead */
 	if (hash->deref(oh))
 		return;
-	assert(TAILQ_EMPTY(&oh->objects));
+	assert(VTAILQ_EMPTY(&oh->objects));
 	MTX_DESTROY(&oh->mtx);
 	VSL_stats->n_objecthead--;
 	FREE_OBJ(oh);

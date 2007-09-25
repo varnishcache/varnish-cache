@@ -72,7 +72,7 @@
 #include <sys/stat.h>
 
 #include "vsb.h"
-#include "queue.h"
+#include "vqueue.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
@@ -103,7 +103,7 @@ TlFree(struct tokenlist *tl, void *p)
 	mb = calloc(sizeof *mb, 1);
 	assert(mb != NULL);
 	mb->ptr = p;
-	TAILQ_INSERT_TAIL(&tl->membits, mb, list);
+	VTAILQ_INSERT_TAIL(&tl->membits, mb, list);
 }
 
 
@@ -259,7 +259,7 @@ LocTable(const struct tokenlist *tl)
 	pos = 0;
 	sp = 0;
 	p = NULL;
-	TAILQ_FOREACH(t, &tl->tokens, list) {
+	VTAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->cnt == 0)
 			continue;
 		assert(t->src != NULL);
@@ -320,7 +320,7 @@ EmitStruct(const struct tokenlist *tl)
 	struct source *sp;
 
 	Fc(tl, 0, "\nconst char *srcname[%u] = {\n", tl->nsources);
-	TAILQ_FOREACH(sp, &tl->sources, list) {
+	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "\t");
 		EncString(tl->fc, sp->name, NULL, 0);
 		Fc(tl, 0, ",\n");
@@ -328,7 +328,7 @@ EmitStruct(const struct tokenlist *tl)
 	Fc(tl, 0, "};\n");
 	
 	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
-	TAILQ_FOREACH(sp, &tl->sources, list) {
+	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "    /* ");
 		EncString(tl->fc, sp->name, NULL, 0);
 		Fc(tl, 0, "*/\n");
@@ -423,11 +423,11 @@ vcc_resolve_includes(struct tokenlist *tl)
 	struct token *t, *t1, *t2;
 	struct source *sp;
 
-	TAILQ_FOREACH(t, &tl->tokens, list) {
+	VTAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->tok != T_INCLUDE)
 			continue;
 
-		t1 = TAILQ_NEXT(t, list);
+		t1 = VTAILQ_NEXT(t, list);
 		assert(t1 != NULL);	/* There's always an EOI */
 		if (t1->tok != CSTR) {
 			vsb_printf(tl->sb,
@@ -435,7 +435,7 @@ vcc_resolve_includes(struct tokenlist *tl)
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		t2 = TAILQ_NEXT(t1, list);
+		t2 = VTAILQ_NEXT(t1, list);
 		assert(t2 != NULL);	/* There's always an EOI */
 		if (t2->tok != ';') {
 			vsb_printf(tl->sb,
@@ -450,14 +450,14 @@ vcc_resolve_includes(struct tokenlist *tl)
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 		sp->idx = tl->nsources++;
 		tl->t = t2;
 		vcc_Lexer(tl, sp);
 
-		TAILQ_REMOVE(&tl->tokens, t, list);
-		TAILQ_REMOVE(&tl->tokens, t1, list);
-		TAILQ_REMOVE(&tl->tokens, t2, list);
+		VTAILQ_REMOVE(&tl->tokens, t, list);
+		VTAILQ_REMOVE(&tl->tokens, t1, list);
+		VTAILQ_REMOVE(&tl->tokens, t2, list);
 		if (!tl->err)
 			vcc_resolve_includes(tl);
 		return;
@@ -474,11 +474,11 @@ vcc_NewTokenList(void)
 
 	tl = calloc(sizeof *tl, 1);
 	assert(tl != NULL);
-	TAILQ_INIT(&tl->membits);
-	TAILQ_INIT(&tl->tokens);
-	TAILQ_INIT(&tl->refs);
-	TAILQ_INIT(&tl->procs);
-	TAILQ_INIT(&tl->sources);
+	VTAILQ_INIT(&tl->membits);
+	VTAILQ_INIT(&tl->tokens);
+	VTAILQ_INIT(&tl->refs);
+	VTAILQ_INIT(&tl->procs);
+	VTAILQ_INIT(&tl->sources);
 
 	tl->nsources = 0;
 
@@ -515,15 +515,15 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 	struct source *sp;
 	int i;
 
-	while (!TAILQ_EMPTY(&tl->membits)) {
-		mb = TAILQ_FIRST(&tl->membits);
-		TAILQ_REMOVE(&tl->membits, mb, list);
+	while (!VTAILQ_EMPTY(&tl->membits)) {
+		mb = VTAILQ_FIRST(&tl->membits);
+		VTAILQ_REMOVE(&tl->membits, mb, list);
 		free(mb->ptr);
 		free(mb);
 	}
-	while (!TAILQ_EMPTY(&tl->sources)) {
-		sp = TAILQ_FIRST(&tl->sources);
-		TAILQ_REMOVE(&tl->sources, sp, list);
+	while (!VTAILQ_EMPTY(&tl->sources)) {
+		sp = VTAILQ_FIRST(&tl->sources);
+		VTAILQ_REMOVE(&tl->sources, sp, list);
 		vcc_destroy_source(sp);
 	}
 		
@@ -559,7 +559,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	Fi(tl, 0, "\tVRT_alloc_backends(&VCL_conf);\n");
 
 	/* Register and lex the main source */
-	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	if (tl->err)
@@ -568,7 +568,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	/* Register and lex the default VCL */
 	sp = vcc_new_source(vcc_default_vcl_b, vcc_default_vcl_e, "Default");
 	assert(sp != NULL);
-	TAILQ_INSERT_TAIL(&tl->sources, sp, list);
+	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	if (tl->err)
@@ -585,7 +585,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Parse the token string */
-	tl->t = TAILQ_FIRST(&tl->tokens);
+	tl->t = VTAILQ_FIRST(&tl->tokens);
 	vcc_Parse(tl);
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));

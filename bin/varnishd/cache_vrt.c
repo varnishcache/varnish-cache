@@ -288,7 +288,7 @@ VRT_alloc_backends(struct VCL_conf *cp)
 		XXXAN(cp->backend[i]);
 		cp->backend[i]->magic = BACKEND_MAGIC;
 		cp->backend[i]->dnsttl = 30;
-		TAILQ_INIT(&cp->backend[i]->connlist);
+		VTAILQ_INIT(&cp->backend[i]->connlist);
 	}
 }
 

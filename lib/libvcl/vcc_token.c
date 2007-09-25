@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include "vsb.h"
-#include "queue.h"
+#include "vqueue.h"
 
 #include "libvarnish.h"
 #include "vcc_priv.h"
@@ -133,7 +133,7 @@ void
 vcc_NextToken(struct tokenlist *tl)
 {
 
-	tl->t = TAILQ_NEXT(tl->t, list);
+	tl->t = VTAILQ_NEXT(tl->t, list);
 	if (tl->t == NULL) {
 		vsb_printf(tl->sb,
 		    "Ran out of input, something is missing or"
@@ -262,9 +262,9 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 	t->e = e;
 	t->src = tl->src;
 	if (tl->t != NULL)
-		TAILQ_INSERT_AFTER(&tl->tokens, tl->t, t, list);
+		VTAILQ_INSERT_AFTER(&tl->tokens, tl->t, t, list);
 	else
-		TAILQ_INSERT_TAIL(&tl->tokens, t, list);
+		VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
 	if (0) {
 		fprintf(stderr, "[%s %.*s] ",

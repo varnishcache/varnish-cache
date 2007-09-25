@@ -43,14 +43,14 @@
 /*--------------------------------------------------------------------*/
 
 struct hsl_entry {
-	TAILQ_ENTRY(hsl_entry)	list;
+	VTAILQ_ENTRY(hsl_entry)	list;
 	char			*key;
 	int			keylen;
 	struct objhead		*obj;
 	unsigned		refcnt;
 };
 
-static TAILQ_HEAD(, hsl_entry)	hsl_head = TAILQ_HEAD_INITIALIZER(hsl_head);
+static VTAILQ_HEAD(, hsl_entry)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
 static MTX hsl_mutex;
 
 /*--------------------------------------------------------------------
@@ -79,7 +79,7 @@ hsl_lookup(struct sess *sp, struct objhead *nobj)
 	int i;
 
 	LOCK(&hsl_mutex);
-	TAILQ_FOREACH(he, &hsl_head, list) {
+	VTAILQ_FOREACH(he, &hsl_head, list) {
 		i = HSH_Compare(sp, he->key, he->key + he->keylen);
 		if (i < 0)
 			continue;
@@ -103,9 +103,9 @@ hsl_lookup(struct sess *sp, struct objhead *nobj)
 	HSH_Copy(sp, he2->key, he2->key + he2->keylen);
 	nobj->hashpriv = he2;
 	if (he != NULL)
-		TAILQ_INSERT_BEFORE(he, he2, list);
+		VTAILQ_INSERT_BEFORE(he, he2, list);
 	else
-		TAILQ_INSERT_TAIL(&hsl_head, he2, list);
+		VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	UNLOCK(&hsl_mutex);
 	return (nobj);
 }
@@ -124,7 +124,7 @@ hsl_deref(struct objhead *obj)
 	he = obj->hashpriv;
 	LOCK(&hsl_mutex);
 	if (--he->refcnt == 0) {
-		TAILQ_REMOVE(&hsl_head, he, list);
+		VTAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
 		ret = 0;
 	} else

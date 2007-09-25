@@ -81,7 +81,7 @@
 
 /*--------------------------------------------------------------------*/
 
-TAILQ_HEAD(smfhead, smf);
+VTAILQ_HEAD(smfhead, smf);
 
 struct smf {
 	unsigned		magic;
@@ -95,8 +95,8 @@ struct smf {
 	off_t			offset;
 	unsigned char		*ptr;
 
-	TAILQ_ENTRY(smf)	order;
-	TAILQ_ENTRY(smf)	status;
+	VTAILQ_ENTRY(smf)	order;
+	VTAILQ_ENTRY(smf)	status;
 	struct smfhead		*flist;
 };
 
@@ -252,10 +252,10 @@ smf_init(struct stevedore *parent, const char *spec)
 
 	sc = calloc(sizeof *sc, 1);
 	XXXAN(sc);
-	TAILQ_INIT(&sc->order);
+	VTAILQ_INIT(&sc->order);
 	for (u = 0; u < NBUCKET; u++)
-		TAILQ_INIT(&sc->free[u]);
-	TAILQ_INIT(&sc->used);
+		VTAILQ_INIT(&sc->free[u]);
+	VTAILQ_INIT(&sc->used);
 	sc->pagesize = getpagesize();
 
 	parent->priv = sc;
@@ -357,7 +357,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	}
 	sp->flist = &sc->free[b];
 	ns = b * sc->pagesize;
-	TAILQ_FOREACH(sp2, sp->flist, status) {
+	VTAILQ_FOREACH(sp2, sp->flist, status) {
 		assert(sp2->size >= ns);
 		assert(sp2->alloc == 0);
 		assert(sp2->flist == sp->flist);
@@ -365,9 +365,9 @@ insfree(struct smf_sc *sc, struct smf *sp)
 			break;
 	}
 	if (sp2 == NULL)
-		TAILQ_INSERT_TAIL(sp->flist, sp, status);
+		VTAILQ_INSERT_TAIL(sp->flist, sp, status);
 	else
-		TAILQ_INSERT_BEFORE(sp2, sp, status);
+		VTAILQ_INSERT_BEFORE(sp2, sp, status);
 }
 
 static void
@@ -385,7 +385,7 @@ remfree(struct smf_sc *sc, struct smf *sp)
 		VSL_stats->n_smf_frag--;
 	}
 	assert(sp->flist == &sc->free[b]);
-	TAILQ_REMOVE(sp->flist, sp, status);
+	VTAILQ_REMOVE(sp->flist, sp, status);
 	sp->flist = NULL;
 }
 
@@ -404,12 +404,12 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	if (b >= NBUCKET)
 		b = NBUCKET - 1;
 	for (sp = NULL; b < NBUCKET - 1; b++) {
-		sp = TAILQ_FIRST(&sc->free[b]);
+		sp = VTAILQ_FIRST(&sc->free[b]);
 		if (sp != NULL)
 			break;
 	}
 	if (sp == NULL) {
-		TAILQ_FOREACH(sp, &sc->free[NBUCKET -1], status)
+		VTAILQ_FOREACH(sp, &sc->free[NBUCKET -1], status)
 			if (sp->size >= bytes)
 				break;
 	}
@@ -421,7 +421,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 
 	if (sp->size == bytes) {
 		sp->alloc = 1;
-		TAILQ_INSERT_TAIL(&sc->used, sp, status);
+		VTAILQ_INSERT_TAIL(&sc->used, sp, status);
 		return (sp);
 	}
 
@@ -437,8 +437,8 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 
 	sp2->size = bytes;
 	sp2->alloc = 1;
-	TAILQ_INSERT_BEFORE(sp, sp2, order);
-	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
+	VTAILQ_INSERT_BEFORE(sp, sp2, order);
+	VTAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	insfree(sc, sp);
 	return (sp2);
 }
@@ -458,29 +458,29 @@ free_smf(struct smf *sp)
 	assert(sp->alloc != 0);
 	assert(sp->size > 0);
 	assert(!(sp->size % sc->pagesize));
-	TAILQ_REMOVE(&sc->used, sp, status);
+	VTAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
 
-	sp2 = TAILQ_NEXT(sp, order);
+	sp2 = VTAILQ_NEXT(sp, order);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp2->ptr == sp->ptr + sp->size) &&
 	    (sp2->offset == sp->offset + sp->size)) {
 		sp->size += sp2->size;
-		TAILQ_REMOVE(&sc->order, sp2, order);
+		VTAILQ_REMOVE(&sc->order, sp2, order);
 		remfree(sc, sp2);
 		free(sp2);
 		VSL_stats->n_smf--;
 	}
 
-	sp2 = TAILQ_PREV(sp, smfhead, order);
+	sp2 = VTAILQ_PREV(sp, smfhead, order);
 	if (sp2 != NULL &&
 	    sp2->alloc == 0 &&
 	    (sp->ptr == sp2->ptr + sp2->size) &&
 	    (sp->offset == sp2->offset + sp2->size)) {
 		remfree(sc, sp2);
 		sp2->size += sp->size;
-		TAILQ_REMOVE(&sc->order, sp, order);
+		VTAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
 		VSL_stats->n_smf--;
 		sp = sp2;
@@ -514,8 +514,8 @@ trim_smf(struct smf *sp, size_t bytes)
 	sp->size = bytes;
 	sp2->ptr += bytes;
 	sp2->offset += bytes;
-	TAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
-	TAILQ_INSERT_TAIL(&sc->used, sp2, status);
+	VTAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
+	VTAILQ_INSERT_TAIL(&sc->used, sp2, status);
 	free_smf(sp2);
 }
 
@@ -541,16 +541,16 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	sp->offset = off;
 	sp->alloc = 1;
 
-	TAILQ_FOREACH(sp2, &sc->order, order) {
+	VTAILQ_FOREACH(sp2, &sc->order, order) {
 		if (sp->ptr < sp2->ptr) {
-			TAILQ_INSERT_BEFORE(sp2, sp, order);
+			VTAILQ_INSERT_BEFORE(sp2, sp, order);
 			break;
 		}
 	}
 	if (sp2 == NULL)
-		TAILQ_INSERT_TAIL(&sc->order, sp, order);
+		VTAILQ_INSERT_TAIL(&sc->order, sp, order);
 
-	TAILQ_INSERT_HEAD(&sc->used, sp, status);
+	VTAILQ_INSERT_HEAD(&sc->used, sp, status);
 
 	free_smf(sp);
 }
@@ -732,17 +732,17 @@ dumpit(void)
 	return (0);
 	printf("----------------\n");
 	printf("Order:\n");
-	TAILQ_FOREACH(s, &sc->order, order) {
+	VTAILQ_FOREACH(s, &sc->order, order) {
 		printf("%10p %12ju %12ju %12ju\n",
 		    s, s->offset, s->size, s->offset + s->size);
 	}
 	printf("Used:\n");
-	TAILQ_FOREACH(s, &sc->used, status) {
+	VTAILQ_FOREACH(s, &sc->used, status) {
 		printf("%10p %12ju %12ju %12ju\n",
 		    s, s->offset, s->size, s->offset + s->size);
 	}
 	printf("Free:\n");
-	TAILQ_FOREACH(s, &sc->free, status) {
+	VTAILQ_FOREACH(s, &sc->free, status) {
 		printf("%10p %12ju %12ju %12ju\n",
 		    s, s->offset, s->size, s->offset + s->size);
 	}

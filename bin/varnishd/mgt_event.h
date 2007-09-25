@@ -30,7 +30,7 @@
  */
 
 #include <poll.h>
-#include "queue.h"
+#include "vqueue.h"
 
 struct ev;
 struct evbase;
@@ -58,7 +58,7 @@ struct ev {
 
 	/* priv */
 	double		__when;
-	TAILQ_ENTRY(ev)	__list;
+	VTAILQ_ENTRY(ev)	__list;
 	unsigned	__binheap_idx;
 	unsigned	__privflags;
 	struct evbase	*__evb;

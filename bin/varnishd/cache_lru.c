@@ -30,7 +30,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "queue.h"
+#include "vqueue.h"
 
 /*
  * For performance reasons, objects are only moved to the head of the LRU
@@ -40,9 +40,9 @@
  */
 #define LRU_DELAY 2
 
-TAILQ_HEAD(lru_head, object);
+VTAILQ_HEAD(lru_head, object);
 
-static struct lru_head lru_list = TAILQ_HEAD_INITIALIZER(lru_list);
+static struct lru_head lru_list = VTAILQ_HEAD_INITIALIZER(lru_list);
 static pthread_mutex_t lru_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct sess *lru_session;
 static struct worker lru_worker;
@@ -76,12 +76,12 @@ LRU_Enter(struct object *o, double stamp)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(stamp > 0);
-	if (o->lru_stamp < stamp - LRU_DELAY && o != lru_list.tqh_first) {
+	if (o->lru_stamp < stamp - LRU_DELAY && o != lru_list.vtqh_first) {
 		// VSL(SLT_LRU_enter, 0, "%u %u %u", o->xid, o->lru_stamp, stamp);
 		LOCK(&lru_mtx);
 		if (o->lru_stamp != 0)
-			TAILQ_REMOVE(&lru_list, o, lru);
-		TAILQ_INSERT_HEAD(&lru_list, o, lru);
+			VTAILQ_REMOVE(&lru_list, o, lru);
+		VTAILQ_INSERT_HEAD(&lru_list, o, lru);
 		o->lru_stamp = stamp;
 		UNLOCK(&lru_mtx);
 	}
@@ -98,7 +98,7 @@ LRU_Remove(struct object *o)
 	if (o->lru_stamp != 0) {
 		// VSL(SLT_LRU_remove, 0, "%u", o->xid);
 		LOCK(&lru_mtx);
-		TAILQ_REMOVE(&lru_list, o, lru);
+		VTAILQ_REMOVE(&lru_list, o, lru);
 		UNLOCK(&lru_mtx);
 	}
 }
@@ -119,7 +119,7 @@ LRU_DiscardLocked(struct object *o)
 	LRU_Init();
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	TAILQ_REMOVE(&lru_list, o, lru);
+	VTAILQ_REMOVE(&lru_list, o, lru);
 
 	lru_session->obj = o;
 	VCL_discard_method(lru_session);
@@ -132,9 +132,9 @@ LRU_DiscardLocked(struct object *o)
 		return (1);
 	} else {
 		/* keep: move to front of list */
-		if ((so = TAILQ_FIRST(&lru_list)))
+		if ((so = VTAILQ_FIRST(&lru_list)))
 			o->lru_stamp = so->lru_stamp;
-		TAILQ_INSERT_HEAD(&lru_list, o, lru);
+		VTAILQ_INSERT_HEAD(&lru_list, o, lru);
 		return (0);
 	}
 }
@@ -147,12 +147,12 @@ LRU_DiscardLocked(struct object *o)
 int
 LRU_DiscardOne(void)
 {
-	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *first = VTAILQ_FIRST(&lru_list);
 	struct object *o;
 	int count = 0;
 
 	LOCK(&lru_mtx);
-	while (!count && (o = TAILQ_LAST(&lru_list, lru_head))) {
+	while (!count && (o = VTAILQ_LAST(&lru_list, lru_head))) {
 		if (LRU_DiscardLocked(o))
 			++count;
 		if (o == first) {
@@ -172,13 +172,13 @@ LRU_DiscardOne(void)
 int
 LRU_DiscardSpace(int64_t quota)
 {
-	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *first = VTAILQ_FIRST(&lru_list);
 	struct object *o;
 	unsigned int len;
 	int count = 0;
 
 	LOCK(&lru_mtx);
-	while (quota > 0 && (o = TAILQ_LAST(&lru_list, lru_head))) {
+	while (quota > 0 && (o = VTAILQ_LAST(&lru_list, lru_head))) {
 		len = o->len;
 		if (LRU_DiscardLocked(o)) {
 			quota -= len;
@@ -201,12 +201,12 @@ LRU_DiscardSpace(int64_t quota)
 int
 LRU_DiscardTime(double cutoff)
 {
-	struct object *first = TAILQ_FIRST(&lru_list);
+	struct object *first = VTAILQ_FIRST(&lru_list);
 	struct object *o;
 	int count = 0;
 
 	LOCK(&lru_mtx);
-	while ((o = TAILQ_LAST(&lru_list, lru_head)) && o->lru_stamp <= cutoff) {
+	while ((o = VTAILQ_LAST(&lru_list, lru_head)) && o->lru_stamp <= cutoff) {
 		if (LRU_DiscardLocked(o))
 			++count;
 		if (o == first) {

@@ -57,7 +57,7 @@
 #include "cli_priv.h"
 #include "cache.h"
 
-TAILQ_HEAD(workerhead, worker);
+VTAILQ_HEAD(workerhead, worker);
 
 /* Number of work requests queued in excess of worker threads available */
 
@@ -68,7 +68,7 @@ struct wq {
 };
 
 static MTX			tmtx;
-static TAILQ_HEAD(, workreq)	overflow = TAILQ_HEAD_INITIALIZER(overflow);
+static VTAILQ_HEAD(, workreq)	overflow = VTAILQ_HEAD_INITIALIZER(overflow);
 
 static struct wq		**wq;
 static unsigned			nwq;
@@ -224,13 +224,13 @@ wrk_thread(void *priv)
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process overflow requests, if any */
-		w->wrq = TAILQ_FIRST(&overflow);
+		w->wrq = VTAILQ_FIRST(&overflow);
 		if (w->wrq != NULL) {
 			LOCK(&tmtx);
-			w->wrq = TAILQ_FIRST(&overflow);
+			w->wrq = VTAILQ_FIRST(&overflow);
 			if (w->wrq != NULL) {
 				VSL_stats->n_wrk_queue--;
-				TAILQ_REMOVE(&overflow, w->wrq, list);
+				VTAILQ_REMOVE(&overflow, w->wrq, list);
 				UNLOCK(&tmtx);
 				wrk_do_one(w);
 				continue;
@@ -239,7 +239,7 @@ wrk_thread(void *priv)
 		}
 
 		LOCK(&qp->mtx);
-		TAILQ_INSERT_HEAD(&qp->idle, w, list);
+		VTAILQ_INSERT_HEAD(&qp->idle, w, list);
 		assert(!isnan(w->used));
 		UNLOCK(&qp->mtx);
 		assert(1 == read(w->pipe[0], &c, 1));
@@ -288,9 +288,9 @@ WRK_QueueSession(struct sess *sp)
 	LOCK(&qp->mtx);
 
 	/* If there are idle threads, we tickle the first one into action */
-	w = TAILQ_FIRST(&qp->idle);
+	w = VTAILQ_FIRST(&qp->idle);
 	if (w != NULL) {
-		TAILQ_REMOVE(&qp->idle, w, list);
+		VTAILQ_REMOVE(&qp->idle, w, list);
 		UNLOCK(&qp->mtx);
 		w->wrq = &sp->workreq;
 		assert(1 == write(w->pipe[1], w, 1));
@@ -323,7 +323,7 @@ WRK_QueueSession(struct sess *sp)
 	 * XXX: Not sure how though.  Simply closing may be the better
 	 * XXX: compromise.
 	 */
-	TAILQ_INSERT_TAIL(&overflow, &sp->workreq, list);
+	VTAILQ_INSERT_TAIL(&overflow, &sp->workreq, list);
 	VSL_stats->n_wrk_overflow++;
 	VSL_stats->n_wrk_queue++;
 	/* Can we create more threads ? */
@@ -377,7 +377,7 @@ wrk_addpools(unsigned t)
 		wq[u] = calloc(sizeof *wq[u], 1);
 		XXXAN(wq[u]);
 		MTX_INIT(&wq[u]->mtx);
-		TAILQ_INIT(&wq[u]->idle);
+		VTAILQ_INIT(&wq[u]->idle);
 	}
 	free(owq);
 	nwq = t;
@@ -403,11 +403,11 @@ wrk_reaperthread(void *priv)
 		for (u = 0; u < nwq; u++) {
 			qp = wq[u];
 			LOCK(&qp->mtx);
-			w = TAILQ_LAST(&qp->idle, workerhead);
+			w = VTAILQ_LAST(&qp->idle, workerhead);
 			if (w != NULL &&
 			   (w->used + params->wthread_timeout < now ||
 			    VSL_stats->n_wrk > params->wthread_max))
-				TAILQ_REMOVE(&qp->idle, w, list);
+				VTAILQ_REMOVE(&qp->idle, w, list);
 			else
 				w = NULL;
 			UNLOCK(&qp->mtx);

@@ -88,7 +88,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	/* XXX what if the object already has a body? */
 	st = STV_alloc(1024);
 	XXXAN(st->stevedore);
-	TAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 
 	/* generate body */
 	vsb_new(&vsb, (char *)st->ptr, st->space, VSB_FIXEDLEN);

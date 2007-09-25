@@ -60,7 +60,7 @@ static unsigned			ev_nsig;
 struct evbase {
 	unsigned		magic;
 #define EVBASE_MAGIC		0x0cfd976f
-	TAILQ_HEAD(,ev)		events;
+	VTAILQ_HEAD(,ev)		events;
 	struct pollfd		*pfd;
 	unsigned		npfd;
 	unsigned		lpfd;
@@ -173,7 +173,7 @@ ev_new_base(void)
 		return (NULL);
 	}
 	evb->magic = EVBASE_MAGIC;
-	TAILQ_INIT(&evb->events);
+	VTAILQ_INIT(&evb->events);
 	evb->binheap = binheap_new(evb, ev_bh_cmp, ev_bh_update);
 	return (evb);
 }
@@ -259,9 +259,9 @@ ev_add(struct evbase *evb, struct ev *e)
 	e->__evb = evb;
 	e->__privflags = 0;
 	if (e->fd < 0)
-		TAILQ_INSERT_TAIL(&evb->events, e, __list);
+		VTAILQ_INSERT_TAIL(&evb->events, e, __list);
 	else
-		TAILQ_INSERT_HEAD(&evb->events, e, __list);
+		VTAILQ_INSERT_HEAD(&evb->events, e, __list);
 
 	if (e->sig > 0) {
 		assert(es != NULL);
@@ -307,7 +307,7 @@ ev_del(struct evbase *evb, struct ev *e)
 		es->happened = 0;
 	}
 
-	TAILQ_REMOVE(&evb->events, e, __list);
+	VTAILQ_REMOVE(&evb->events, e, __list);
 
 	e->magic = 0;
 	e->__evb = NULL;
@@ -339,11 +339,11 @@ ev_compact_pfd(struct evbase *evb)
 	struct ev *ep;
 
 	p = evb->pfd;
-	ep = TAILQ_FIRST(&evb->events);
+	ep = VTAILQ_FIRST(&evb->events);
 	for (u = 0; u < evb->lpfd; u++, p++) {
 		if (p->fd >= 0)
 			continue;
-		for(; ep != NULL; ep = TAILQ_NEXT(ep, __list)) {
+		for(; ep != NULL; ep = VTAILQ_NEXT(ep, __list)) {
 			if (ep->fd >= 0 && ep->__poll_idx > u)
 				break;
 		}
@@ -441,7 +441,7 @@ ev_schedule_one(struct evbase *evb)
 			return (ev_sched_timeout(evb, e, t));
 	}
 	evb->disturbed = 0;
-	TAILQ_FOREACH_SAFE(e, &evb->events, __list, e2) {
+	VTAILQ_FOREACH_SAFE(e, &evb->events, __list, e2) {
 		if (i == 0)
 			break;
 		if (e->fd < 0)
@@ -454,9 +454,9 @@ ev_schedule_one(struct evbase *evb)
 		j = e->callback(e, pfd->revents);
 		i--;
 		if (evb->disturbed) {
-			TAILQ_FOREACH(e3, &evb->events, __list) {
+			VTAILQ_FOREACH(e3, &evb->events, __list) {
 				if (e3 == e) {
-					e3 = TAILQ_NEXT(e, __list);
+					e3 = VTAILQ_NEXT(e, __list);
 					break;
 				} else if (e3 == e2)
 					break;

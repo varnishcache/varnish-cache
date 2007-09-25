@@ -54,8 +54,8 @@
 
 /* A backend IP */
 
-static TAILQ_HEAD(,vbe_conn) vbe_head = TAILQ_HEAD_INITIALIZER(vbe_head);
-static TAILQ_HEAD(,bereq) bereq_head = TAILQ_HEAD_INITIALIZER(bereq_head);
+static VTAILQ_HEAD(,vbe_conn) vbe_head = VTAILQ_HEAD_INITIALIZER(vbe_head);
+static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
 
 static MTX vbemtx;
 
@@ -68,9 +68,9 @@ vbe_new_bereq(void)
 	volatile unsigned len;
 
 	LOCK(&vbemtx);
-	bereq = TAILQ_FIRST(&bereq_head);
+	bereq = VTAILQ_FIRST(&bereq_head);
 	if (bereq != NULL)
-		TAILQ_REMOVE(&bereq_head, bereq, list);
+		VTAILQ_REMOVE(&bereq_head, bereq, list);
 	UNLOCK(&vbemtx);
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
@@ -96,7 +96,7 @@ vbe_free_bereq(struct bereq *bereq)
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
 	LOCK(&vbemtx);
-	TAILQ_INSERT_HEAD(&bereq_head, bereq, list);
+	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
 	UNLOCK(&vbemtx);
 }
 
@@ -257,16 +257,16 @@ vbe_nextfd(struct sess *sp)
 	vc2 = NULL;
 	while (1) {
 		LOCK(&vbemtx);
-		vc = TAILQ_FIRST(&bp->connlist);
+		vc = VTAILQ_FIRST(&bp->connlist);
 		if (vc != NULL) {
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
-			TAILQ_REMOVE(&bp->connlist, vc, list);
+			VTAILQ_REMOVE(&bp->connlist, vc, list);
 		} else {
-			vc2 = TAILQ_FIRST(&vbe_head);
+			vc2 = VTAILQ_FIRST(&vbe_head);
 			if (vc2 != NULL) {
 				VSL_stats->backend_unused--;
-				TAILQ_REMOVE(&vbe_head, vc2, list);
+				VTAILQ_REMOVE(&vbe_head, vc2, list);
 			}
 		}
 		UNLOCK(&vbemtx);
@@ -295,7 +295,7 @@ vbe_nextfd(struct sess *sp)
 			vc->fd = vbe_connect(sp, bp);
 			if (vc->fd < 0) {
 				LOCK(&vbemtx);
-				TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+				VTAILQ_INSERT_HEAD(&vbe_head, vc, list);
 				VSL_stats->backend_unused++;
 				UNLOCK(&vbemtx);
 				vc = NULL;
@@ -355,7 +355,7 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already)
 	vc->fd = -1;
 	vc->backend = NULL;
 	LOCK(&vbemtx);
-	TAILQ_INSERT_HEAD(&vbe_head, vc, list);
+	VTAILQ_INSERT_HEAD(&vbe_head, vc, list);
 	VSL_stats->backend_unused++;
 	UNLOCK(&vbemtx);
 }
@@ -372,7 +372,7 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vbemtx);
 	VSL_stats->backend_recycle++;
-	TAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
+	VTAILQ_INSERT_HEAD(&vc->backend->connlist, vc, list);
 	UNLOCK(&vbemtx);
 }
 
