@@ -296,8 +296,6 @@ SES_New(struct sockaddr *addr, unsigned len)
 		sm->workspace = u;
 		VSL_stats->n_sess_mem++;
 	}
-	if (sm == NULL)
-		return (NULL);
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	VSL_stats->n_sess++;
 	sp = &sm->sess;
