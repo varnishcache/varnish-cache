@@ -83,7 +83,7 @@ vsl_wrap(void)
 /*--------------------------------------------------------------------*/
 
 void
-VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
+VSLR(enum shmlogtag tag, int id, const char *b, const char *e)
 {
 	unsigned char *p;
 	unsigned l;
@@ -93,7 +93,7 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 		e = strchr(b, '\0');
 
 	/* Truncate */
-	l = e - b;
+	l = pdiff(b, e);
 	if (l > 255) {
 		l = 255;
 		e = b + l;
@@ -126,12 +126,13 @@ VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e)
 /*--------------------------------------------------------------------*/
 
 void
-VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
+VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned char *p;
 	unsigned n;
 
+	AN(fmt);
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
@@ -150,11 +151,9 @@ VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	p = logstart + loghead->ptr;
 	n = 0;
-	if (fmt != NULL) {
-		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
-		if (n > 255)
-			n = 255; 	/* we truncate long fields */
-	}
+	n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+	if (n > 255)
+		n = 255; 	/* we truncate long fields */
 	p[1] = n & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
@@ -181,7 +180,7 @@ WSL_Flush(struct worker *w)
 
 	if (w->wlp == w->wlog)
 		return;
-	l = w->wlp - w->wlog;
+	l = pdiff(w->wlog, w->wlp);
 	LOCKSHM(&vsl_mtx);
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
@@ -201,7 +200,7 @@ WSL_Flush(struct worker *w)
 /*--------------------------------------------------------------------*/
 
 void
-WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const char *e)
+WSLR(struct worker *w, enum shmlogtag tag, int id, const char *b, const char *e)
 {
 	unsigned char *p;
 	unsigned l;
@@ -211,7 +210,7 @@ WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const cha
 		e = strchr(b, '\0');
 
 	/* Truncate */
-	l = e - b;
+	l = pdiff(b, e);
 	if (l > 255) {
 		l = 255;
 		e = b + l;
@@ -239,12 +238,13 @@ WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const cha
 /*--------------------------------------------------------------------*/
 
 void
-WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...)
+WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned char *p;
 	unsigned n;
 
+	AN(fmt);
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
@@ -260,11 +260,9 @@ WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...)
 
 	p = w->wlp;
 	n = 0;
-	if (fmt != NULL) {
-		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
-		if (n > 255)
-			n = 255; 	/* we truncate long fields */
-	}
+	n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+	if (n > 255)
+		n = 255; 	/* we truncate long fields */
 	p[1] = n & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;

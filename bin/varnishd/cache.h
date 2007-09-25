@@ -508,10 +508,10 @@ void SES_Charge(struct sess *sp);
 
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
-void VSLR(enum shmlogtag tag, unsigned id, const char *b, const char *e);
-void VSL(enum shmlogtag tag, unsigned id, const char *fmt, ...);
-void WSLR(struct worker *w, enum shmlogtag tag, unsigned id, const char *b, const char *e);
-void WSL(struct worker *w, enum shmlogtag tag, unsigned id, const char *fmt, ...);
+void VSLR(enum shmlogtag tag, int id, const char *b, const char *e);
+void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
+void WSLR(struct worker *w, enum shmlogtag tag, int id, const char *b, const char *e);
+void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w);
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
