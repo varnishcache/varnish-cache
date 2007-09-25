@@ -161,8 +161,8 @@ struct worker {
 	int			*wfd;
 	unsigned		werr;	/* valid after WRK_Flush() */
 	struct iovec		iov[MAX_IOVS];
-	unsigned		niov;
-	size_t			liov;
+	int			niov;
+	ssize_t			liov;
 
 	struct VCL_conf		*vcl;
 	struct srcaddr		*srcaddr;
@@ -446,7 +446,7 @@ void HSH_Deref(struct object *o);
 void HSH_Init(void);
 
 /* cache_http.c */
-const char *http_StatusMessage(int);
+const char *http_StatusMessage(unsigned);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);

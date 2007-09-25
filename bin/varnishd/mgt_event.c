@@ -55,7 +55,7 @@ struct evsig {
 };
 
 static struct evsig		*ev_sigs;
-static unsigned			ev_nsig;
+static int			ev_nsig;
 
 struct evbase {
 	unsigned		magic;

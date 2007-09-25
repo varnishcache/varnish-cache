@@ -79,9 +79,9 @@ volatile struct params *params;
 static int
 cmp_hash(const struct hash_slinger *s, const char *p, const char *q)
 {
-	if (strlen(s->name) != q - p)
+	if (strlen(s->name) != (q - p))
 		return (1);
-	if (strncmp(s->name, p, q - p))
+	if (strncmp(s->name, p, (q - p)))
 		return (1);
 	return (0);
 }
@@ -288,7 +288,7 @@ DebugStunt(void)
 
 	/* close the rest */
 	for (i = 5; i < getdtablesize(); i++)
-		close(i);
+		(void)close(i);
 
 	pfd[0].fd = pipes[0][0];
 	pfd[0].events = POLLIN;

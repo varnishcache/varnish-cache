@@ -297,7 +297,7 @@ mgt_VccCompile(struct vsb *sb, const char *b, const char *e, int C_flag)
 	csrc = VCC_Compile(sb, b, e);
 	if (csrc != NULL) {
 		if (C_flag)
-			fputs(csrc, stdout);
+			(void)fputs(csrc, stdout);
 		vf = mgt_CallCc(csrc, sb);
 		if (C_flag && vf != NULL)
 			AZ(unlink(vf));
@@ -500,7 +500,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 		return;
 	}
-	mgt_vcc_add(av[2], vf);
+	(void)mgt_vcc_add(av[2], vf);
 }
 
 void
@@ -531,7 +531,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 		return;
 	}
-	mgt_vcc_add(av[2], vf);
+	(void)mgt_vcc_add(av[2], vf);
 }
 
 static struct vclprog *

@@ -135,9 +135,10 @@ vca_acct(void *arg)
 	socklen_t l;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
-	int i, j;
+	int i;
 	struct pollfd *pfd;
 	struct listen_sock *ls;
+	unsigned u;
 
 	(void)arg;
 
@@ -171,16 +172,16 @@ vca_acct(void *arg)
 				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 		}
 		i = poll(pfd, heritage.nsocks, 1000);
-		for (j = 0; j < heritage.nsocks; j++) {
-			if (pfd[j].revents == 0)
+		for (u = 0; u < heritage.nsocks; u++) {
+			if (pfd[u].revents == 0)
 				continue;
 			VSL_stats->client_conn++;
 			l = sizeof addr_s;
 			addr = (void*)&addr_s;
-			i = accept(pfd[j].fd, addr, &l);
+			i = accept(pfd[u].fd, addr, &l);
 			if (i < 0) {
 				if (errno != EAGAIN) {
-					VSL(SLT_Debug, pfd[j].fd,
+					VSL(SLT_Debug, pfd[u].fd,
 					    "Accept failed errno=%d", errno);
 					/* XXX: stats ? */
 				}
