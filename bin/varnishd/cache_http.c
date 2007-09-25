@@ -89,7 +89,7 @@ http2shmlog(const struct http *hp, enum httptag t)
 }
 
 static void
-WSLH(struct worker *w, enum httptag t, unsigned fd, const struct http *hp, int hdr)
+WSLH(struct worker *w, enum httptag t, int fd, const struct http *hp, int hdr)
 {
 
 	WSLR(w, http2shmlog(hp, t), fd, hp->hd[hdr].b, hp->hd[hdr].e);
