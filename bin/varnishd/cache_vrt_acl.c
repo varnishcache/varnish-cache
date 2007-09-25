@@ -60,7 +60,7 @@ static uint32_t ipv4mask[] = {
 };
 
 static int
-vrt_acl_vsl(struct sess *sp, const char *acln, struct vrt_acl *ap, int r)
+vrt_acl_vsl(const struct sess *sp, const char *acln, const struct vrt_acl *ap, int r)
 {
 
 	AN(ap);
@@ -83,7 +83,7 @@ vrt_acl_vsl(struct sess *sp, const char *acln, struct vrt_acl *ap, int r)
 }
 
 int
-VRT_acl_match(struct sess *sp, struct sockaddr *sa, const char *acln, struct vrt_acl *ap)
+VRT_acl_match(const struct sess *sp, struct sockaddr *sa, const char *acln, const struct vrt_acl *ap)
 {
 	struct addrinfo *a1;
 	struct sockaddr_in *sin1, *sin2;

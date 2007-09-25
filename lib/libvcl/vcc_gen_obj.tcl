@@ -32,10 +32,10 @@
 
 # Objects available in backends
 set beobj {
-  { backend.host	WO HOSTNAME	{} }
-  { backend.port	WO PORTNAME	{} }
-  { backend.dnsttl	WO TIME		{} }
-  { backend.set		WO SET		{} }
+  { backend.host	WO HOSTNAME	{} "struct backend *"}
+  { backend.port	WO PORTNAME	{} "struct backend *"}
+  { backend.dnsttl	WO TIME		{} "struct backend *"}
+  { backend.set		WO SET		{} "struct backend *"}
 }
 
 # Variables available in sessions
@@ -46,116 +46,138 @@ set spobj {
 	{ client.ip
 		RO IP
 		{recv pipe pass hash miss hit fetch deliver                }
+		"const struct sess *"
 	}
 	{ client.bandwidth				 # Not implemented yet
 		NO
+		{ }
+		"const struct sess *"
 	}
 	{ server.ip
 		RO IP
 		{recv pipe pass hash miss hit fetch deliver                }
+		"struct sess *"
 	}
 
 	# Request paramters
 	{ req.request
 		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
+		"const struct sess *"
 	}
 	{ req.url
 		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
+		"const struct sess *"
 	}
 	{ req.proto
 		RW STRING
 		{recv pipe pass hash miss hit fetch                        }
+		"const struct sess *"
 	}
 	{ req.http.
-		RW HEADER
+		RW HDR_REQ
 		{recv pipe pass hash miss hit fetch                        }
-		HDR_REQ
+		"const struct sess *"
 	}
 
 	# Possibly misnamed, not really part of the request
 	{ req.hash
 		WO HASH
 		{               hash                                       }
+		"struct sess *"
 	}
 	{ req.backend
 		RW BACKEND
 		{recv pipe pass hash miss hit fetch                        }
+		"struct sess *"
 	}
 
 	# Request sent to backend
 	{ bereq.request
 		RW STRING
 		{     pipe pass      miss                                  }
+		"const struct sess *"
 	}
 	{ bereq.url
 		RW STRING
 		{     pipe pass      miss                                  }
+		"const struct sess *"
 	}
 	{ bereq.proto
 		RW STRING
 		{     pipe pass      miss                                  }
+		"const struct sess *"
 	}
 	{ bereq.http.
-		RW HEADER
+		RW HDR_BEREQ
 		{     pipe pass      miss                                  }
-		HDR_BEREQ
+		"const struct sess *"
 	}
 
 	# The (possibly) cached object
 	{ obj.proto
 		RW STRING
 		{                         hit fetch                        }
+		"const struct sess *"
 	}
 	{ obj.status
 		RW INT
 		{                             fetch                        }
+		"const struct sess *"
 	}
 	{ obj.response
 		RW STRING
 		{                             fetch                        }
+		"const struct sess *"
 	}
 	{ obj.http.
-		RW HEADER
+		RW HDR_OBJ
 		{                         hit fetch 			   }
-		HDR_OBJ
+		"const struct sess *"
 	}
 
 	{ obj.valid
 		RW BOOL
 		{                         hit fetch         discard timeout}
+		"const struct sess *"
 	}
 	{ obj.cacheable
 		RW BOOL
 		{                         hit fetch         discard timeout}
+		"const struct sess *"
 	}
 	{ obj.ttl
 		RW TIME
 		{                         hit fetch         discard timeout}
+		"const struct sess *"
 	}
 	{ obj.lastuse
 		RO TIME
 		{                         hit fetch deliver discard timeout}
+		"const struct sess *"
 	}
 
 	# The response we send back
 	{ resp.proto
 		RW STRING
 		{                                   deliver                }
+		"const struct sess *"
 	}
 	{ resp.status
 		RW INT
 		{                                   deliver                }
+		"const struct sess *"
 	}
 	{ resp.response
 		RW STRING
 		{                                   deliver                }
+		"const struct sess *"
 	}
 	{ resp.http.
-		RW HEADER
+		RW HDR_RESP
 		{                                   deliver                }
-		HDR_RESP
+		"const struct sess *"
 	}
 
 	# Miscellaneous
@@ -164,24 +186,29 @@ set spobj {
 	{ now
 		RO TIME
 		{recv pipe pass hash miss hit fetch deliver discard timeout}
+		"const struct sess *"
 	}
 	{ backend.health	RO INT
   		{recv pipe pass hash miss hit fetch deliver discard timeout}
+		"const struct sess *"
   	}
 
 }
 
-set tt(IP)	"struct sockaddr *"
-set tt(STRING)	"const char *"
-set tt(BOOL)	"unsigned"
-set tt(BACKEND)	"struct backend *"
-set tt(TIME)	"double"
-set tt(INT)	"int"
-set tt(HEADER)	"const char *"
-set tt(HOSTNAME) "const char *"
-set tt(PORTNAME) "const char *"
-set tt(HASH) 	"const char *"
-set tt(SET) "struct vrt_backend_entry *"
+set tt(IP)		"struct sockaddr *"
+set tt(STRING)		"const char *"
+set tt(BOOL)		"unsigned"
+set tt(BACKEND)		"struct backend *"
+set tt(TIME)		"double"
+set tt(INT)		"int"
+set tt(HDR_RESP)	"const char *"
+set tt(HDR_OBJ)		"const char *"
+set tt(HDR_REQ)		"const char *"
+set tt(HDR_BEREQ)	"const char *"
+set tt(HOSTNAME) 	"const char *"
+set tt(PORTNAME) 	"const char *"
+set tt(HASH) 		"const char *"
+set tt(SET) 		"struct vrt_backend_entry *"
 
 #----------------------------------------------------------------------
 # Boilerplate warning for all generated files.
@@ -216,7 +243,7 @@ proc method_map {m} {
 	return [string range $l 3 end]
 }
 
-proc vars {v ty pa} {
+proc vars {v pa} {
 	global tt fo fp
 
 	regsub -all "#\[^\n\]*\n" $v "" v
@@ -226,10 +253,15 @@ proc vars {v ty pa} {
 		set a [lindex $v 1]
 		if {$a == "NO"} continue
 		set t [lindex $v 2]
-		puts $fo  "\t\{ \"$n\", $t, [string length $n],"
+		set ty [lindex $v 4]
+		if {[regexp HDR_ $t]} {
+			puts $fo  "\t\{ \"$n\", HEADER, [string length $n],"
+		} else {
+			puts $fo  "\t\{ \"$n\", $t, [string length $n],"
+		}
 		if {$a == "RO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_r_${m}($pa)\","
-			if {$t != "HEADER"} {
+			if {![regexp HDR_ $t]} {
 				puts $fp  "$tt($t) VRT_r_${m}($ty);"
 			}
 		} else {
@@ -237,7 +269,7 @@ proc vars {v ty pa} {
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
-			if {$t == "HEADER"} {
+			if {[regexp HDR_ $t]} {
 			} elseif {$t == "STRING"} {
 				puts $fp  "void VRT_l_${m}($ty, $tt($t), ...);"
 			} else {
@@ -247,10 +279,10 @@ proc vars {v ty pa} {
 			puts $fo  "\t    NULL,"
 		}
 		puts $fo  "\t    V_$a,"
-		if {$t != "HEADER"} {
+		if {![regexp HDR_ $t]} {
 			puts $fo  "\t    0,"
 		} else {
-			puts $fo  "\t    \"[lindex $v 4]\","
+			puts $fo  "\t    \"$t\","
 		}
 		puts $fo  "\t    [method_map [lindex $v 3]]"
 		puts $fo "\t\},"
@@ -264,13 +296,13 @@ puts $fo "#include \"vcc_compile.h\""
 puts $fo ""
 
 puts $fo "struct var vcc_be_vars\[\] = {"
-vars $beobj "struct backend *" "backend"
+vars $beobj "backend"
 puts $fo "};"
 
 puts $fo ""
 
 puts $fo "struct var vcc_vars\[\] = {"
-vars $spobj "struct sess *" "sp"
+vars $spobj "sp"
 puts $fo "};"
 
 close $fp
