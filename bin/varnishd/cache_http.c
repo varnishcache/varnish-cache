@@ -769,7 +769,7 @@ http_copyheader(struct worker *w, int fd, struct http *to, struct http *fm, unsi
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
-		WSLH(w, SLT_LostHeader, fd, fm, n);
+		WSLR(w, SLT_LostHeader, fd, fm->hd[n].b, fm->hd[n].e);
 	}
 }
 
@@ -865,7 +865,7 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
-			WSLH(w, SLT_LostHeader, fd, hp, u);
+			WSLR(w, SLT_LostHeader, fd, hp->hd[u].b, hp->hd[u].e);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
