@@ -289,7 +289,7 @@ http_DoConnection(struct sess *sp)
 		for (q = p + 1; *q; q++)
 			if (*q == ',' || isspace(*q))
 				break;
-		i = q - p;
+		i = pdiff(p, q);
 		if (i == 5 && !strncasecmp(p, "close", i))
 			sp->doclose = "Connection: close";
 		u = http_findhdr(hp, i, p);
@@ -326,10 +326,10 @@ http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 		return (0);
 
 	if (len == 0)
-		len = hp->pl_e - hp->pl_s;
+		len = pdiff(hp->pl_s, hp->pl_e);
 
 	if (hp->pl_s + len > hp->pl_e)
-		len = hp->pl_e - hp->pl_s;
+		len = pdiff(hp->pl_s, hp->pl_e);
 	if (len == 0)
 		return (0);
 	*b = hp->pl_s;
@@ -351,7 +351,7 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 
 	u = 0;
 	if (hp->pl_s < hp->pl_e) {
-		u = hp->pl_e - hp->pl_s;
+		u = pdiff(hp->pl_s, hp->pl_e);
 		if (u > len)
 			u = len;
 		memcpy(b, hp->pl_s, u);
@@ -617,7 +617,7 @@ http_RecvPrep(struct http *hp)
 	hp->rx_e = hp->rx_s;
 	if (hp->pl_s != NULL) {
 		assert(hp->pl_s < hp->pl_e);
-		l = hp->pl_e - hp->pl_s;
+		l = pdiff(hp->pl_s, hp->pl_s);
 		memmove(hp->rx_s, hp->pl_s, l);
 		hp->rx_e = hp->rx_s + l;
 		hp->pl_s = hp->pl_e = NULL;
@@ -642,7 +642,7 @@ http_RecvSome(int fd, struct http *hp)
 	unsigned l;
 	int i;
 
-	l = (hp->ws->e - hp->rx_e) - 1;
+	l = pdiff(hp->rx_e, hp->ws->e) - 1;
 	l /= 2;		/* Don't fill all of workspace with read-ahead */
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
@@ -857,7 +857,7 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			WSLH(w, htt, fd, hp, u);
 			continue;
 		}
-		l = hp->hd[u].e - hp->hd[u].b;
+		l = pdiff(hp->hd[u].b,  hp->hd[u].e);
 		p = WS_Alloc(hp->ws, l + 1);
 		if (p != NULL) {
 			WSLH(w, htt, fd, hp, u);

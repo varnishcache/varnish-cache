@@ -157,7 +157,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 				v = u;
 
 			/* Handle anything left in our buffer first */
-			i = bp - q;
+			i = pdiff(q, bp);
 			assert(i >= 0);
 			if (i > v)
 				i = v;
@@ -188,7 +188,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 		assert(u == 0);
 
 		/* We might still have stuff in our buffer */
-		v = bp - q;
+		v = pdiff(q, bp);
 		if (v > 0)
 			memcpy(buf, q, v);
 		q = bp = buf + v;
@@ -322,7 +322,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	/* Filter into object */
 	hp2 = &sp->obj->http;
-	len = hp->rx_e - hp->rx_s;
+	len = pdiff(hp->rx_s, hp->rx_e);
 	len += 256;		/* margin for content-length etc */
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);

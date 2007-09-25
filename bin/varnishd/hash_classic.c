@@ -132,7 +132,7 @@ hcl_lookup(struct sess *sp, struct objhead *noh)
 
 	digest = ~0U;
 	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
 		digest = crc32(digest, sp->hashptr[u], v);
 	}
 	digest ^= ~0U;
