@@ -53,7 +53,7 @@ struct heritage {
 
 	/* Sockets from which to accept connections */
 	struct listen_sock_head		socks;
-	int				nsocks;
+	unsigned			nsocks;
 
 	/* Share memory log fd and size (incl header) */
 	int				vsl_fd;

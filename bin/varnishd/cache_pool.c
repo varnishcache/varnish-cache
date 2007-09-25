@@ -94,7 +94,7 @@ WRK_Reset(struct worker *w, int *fd)
 unsigned
 WRK_Flush(struct worker *w)
 {
-	int i;
+	ssize_t i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	if (*w->wfd < 0 || w->niov == 0 || w->werr)
@@ -133,7 +133,7 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 	if (len == -1)
 		len = strlen(ptr);
 	if (w->niov == MAX_IOVS)
-		WRK_Flush(w);
+		(void)WRK_Flush(w);
 	w->iov[w->niov].iov_base = (void*)(uintptr_t)ptr;
 	w->iov[w->niov].iov_len = len;
 	w->liov += len;
@@ -394,7 +394,7 @@ wrk_reaperthread(void *priv)
 	(void)priv;
 	while (1) {
 		wrk_addpools(params->wthread_pools);
-		sleep(1);
+		AZ(sleep(1));
 		if (VSL_stats->n_wrk <= params->wthread_min)
 			continue;
 		now = TIM_real();
@@ -415,7 +415,6 @@ wrk_reaperthread(void *priv)
 			assert(1 == write(w->pipe[1], w, 1));
 		}
 	}
-	INCOMPL();
 }
 
 /*--------------------------------------------------------------------*/

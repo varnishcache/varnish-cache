@@ -56,7 +56,7 @@ static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 /*--------------------------------------------------------------------*/
 
 static void
-vca_pollspace(int fd)
+vca_pollspace(unsigned fd)
 {
 	struct pollfd *p;
 	unsigned u, v;
@@ -82,7 +82,9 @@ vca_pollspace(int fd)
 static void
 vca_poll(int fd)
 {
-	vca_pollspace(fd);
+
+	assert(fd >= 0);
+	vca_pollspace((unsigned)fd);
 	pollfd[fd].fd = fd;
 	pollfd[fd].events = POLLIN;
 }
@@ -90,7 +92,9 @@ vca_poll(int fd)
 static void
 vca_unpoll(int fd)
 {
-	vca_pollspace(fd);
+
+	assert(fd >= 0);
+	vca_pollspace((unsigned)fd);
 	pollfd[fd].fd = -1;
 	pollfd[fd].events = 0;
 }

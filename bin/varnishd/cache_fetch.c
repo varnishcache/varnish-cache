@@ -53,12 +53,16 @@ fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
 {
 	int i;
 	unsigned char *p;
-	off_t	cl;
+	uintmax_t cll;
+	unsigned cl;
 	struct storage *st;
 
-	cl = strtoumax(b, NULL, 0);
-	if (cl == 0)
+	cll = strtoumax(b, NULL, 0);
+	if (cll == 0)
 		return (0);
+
+	cl = (unsigned)cll;
+	assert((uintmax_t)cl == cll); /* Protect against bogusly large values */
 
 	st = STV_alloc(sp, cl);
 	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
@@ -89,7 +93,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 	int i;
 	char *q;
 	struct storage *st;
-	unsigned u, v;
+	unsigned u, v, w;
 	char buf[20];		/* XXX: arbitrary */
 	char *bp, *be;
 
@@ -157,17 +161,16 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 				v = u;
 
 			/* Handle anything left in our buffer first */
-			i = pdiff(q, bp);
-			assert(i >= 0);
-			if (i > v)
-				i = v;
-			if (i != 0) {
-				memcpy(st->ptr + st->len, q, i);
-				st->len += i;
-				sp->obj->len += i;
-				u -= i;
-				v -= i;
-				q += i;
+			w = pdiff(q, bp);
+			if (w > v)
+				w = v;
+			if (w != 0) {
+				memcpy(st->ptr + st->len, q, w);
+				st->len += w;
+				sp->obj->len += w;
+				u -= w;
+				v -= w;
+				q += w;
 			}
 			if (u == 0)
 				break;
@@ -263,7 +266,8 @@ Fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	struct storage *st;
 	struct bereq *bereq;
-	int len, mklen, is_head;
+	int mklen, is_head;
+	unsigned len;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);

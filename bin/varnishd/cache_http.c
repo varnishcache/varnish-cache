@@ -89,7 +89,7 @@ http2shmlog(const struct http *hp, enum httptag t)
 }
 
 static void
-WSLH(struct worker *w, enum httptag t, int fd, const struct http *hp, int hdr)
+WSLH(struct worker *w, enum httptag t, int fd, const struct http *hp, unsigned hdr)
 {
 
 	WSLR(w, http2shmlog(hp, t), fd, hp->hd[hdr].b, hp->hd[hdr].e);
@@ -146,7 +146,7 @@ static struct http_msg {
 };
 
 const char *
-http_StatusMessage(int status)
+http_StatusMessage(unsigned status)
 {
 	struct http_msg *mp;
 
@@ -237,7 +237,7 @@ int
 http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr)
 {
 	char *h;
-	int fl;
+	unsigned fl;
 
 	if (!http_GetHdr(hp, hdr, &h))
 		return (0);
@@ -273,7 +273,6 @@ http_DoConnection(struct sess *sp)
 {
 	struct http *hp = sp->http;
 	char *p, *q;
-	int i;
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
@@ -289,10 +288,10 @@ http_DoConnection(struct sess *sp)
 		for (q = p + 1; *q; q++)
 			if (*q == ',' || isspace(*q))
 				break;
-		i = pdiff(p, q);
-		if (i == 5 && !strncasecmp(p, "close", i))
+		u = pdiff(p, q);
+		if (u == 5 && !strncasecmp(p, "close", u))
 			sp->doclose = "Connection: close";
-		u = http_findhdr(hp, i, p);
+		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;
 		if (!*q)
@@ -346,7 +345,7 @@ int
 http_Read(struct http *hp, int fd, void *p, unsigned len)
 {
 	int i;
-	int u;
+	unsigned u;
 	char *b = p;
 
 	u = 0;
@@ -363,7 +362,7 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 		hp->pl_s = hp->pl_e = NULL;
 	if (len > 0) {
 		i = read(fd, b, len);
-		if (i < 0)
+		if (i < 0)		/* XXX i == 0 ?? */
 			return (i);
 		u += i;
 	}
@@ -904,7 +903,7 @@ static void
 http_PutField(struct worker *w, int fd, struct http *to, int field, const char *string)
 {
 	char *p;
-	int l;
+	unsigned l;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	l = strlen(string);

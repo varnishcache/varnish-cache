@@ -284,7 +284,7 @@ brr_GetFd(const struct sess *sp)
 	for (n = 1; n < 5; n++) {
 		vc = brr_nextfd(sp);
 		if (vc == NULL) {
-			usleep(100000 * n);
+			AZ(usleep(100000 * n));
 			continue;
 		}
 		assert(vc->fd >= 0);
@@ -356,7 +356,7 @@ brr_Cleanup(const struct backend *b)
 				break;
 			VTAILQ_REMOVE(&bs->connlist, vbe, list);
 			if (vbe->fd >= 0)
-				close(vbe->fd);
+				AZ(close(vbe->fd));
 			free(vbe);
 		}
 		bstmp = bs;
