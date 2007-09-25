@@ -660,7 +660,7 @@ smf_alloc(struct stevedore *st, size_t size)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_trim(struct storage *s, size_t size)
+smf_trim(const struct storage *s, size_t size)
 {
 	struct smf *smf;
 	struct smf_sc *sc;
@@ -688,7 +688,7 @@ smf_trim(struct storage *s, size_t size)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_free(struct storage *s)
+smf_free(const struct storage *s)
 {
 	struct smf *smf;
 	struct smf_sc *sc;
