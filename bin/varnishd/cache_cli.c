@@ -47,7 +47,7 @@
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_start(struct cli *cli, char **av, void *priv)
+cli_func_start(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)cli;

@@ -766,7 +766,7 @@ static struct parspec parspec[] = {
 /*--------------------------------------------------------------------*/
 
 void
-mcf_param_show(struct cli *cli, char **av, void *priv)
+mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct parspec *pp;
 	const char *p, *q;
@@ -854,7 +854,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_param_set(struct cli *cli, char **av, void *priv)
+mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;

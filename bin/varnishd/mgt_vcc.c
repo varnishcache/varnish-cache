@@ -474,7 +474,7 @@ mgt_vcc_init(void)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_config_inline(struct cli *cli, char **av, void *priv)
+mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 {
 	char *vf, *p;
 	struct vsb *sb;
@@ -504,7 +504,7 @@ mcf_config_inline(struct cli *cli, char **av, void *priv)
 }
 
 void
-mcf_config_load(struct cli *cli, char **av, void *priv)
+mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 {
 	char *vf;
 	struct vsb *sb;
@@ -550,7 +550,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 }
 
 void
-mcf_config_use(struct cli *cli, char **av, void *priv)
+mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
@@ -577,7 +577,7 @@ mcf_config_use(struct cli *cli, char **av, void *priv)
 }
 
 void
-mcf_config_discard(struct cli *cli, char **av, void *priv)
+mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
@@ -602,7 +602,7 @@ mcf_config_discard(struct cli *cli, char **av, void *priv)
 }
 
 void
-mcf_config_list(struct cli *cli, char **av, void *priv)
+mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
@@ -628,7 +628,7 @@ mcf_config_list(struct cli *cli, char **av, void *priv)
  * XXX: This should take an option argument to show all (include) files
  */
 void
-mcf_config_show(struct cli *cli, char **av, void *priv)
+mcf_config_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
 	void *dlh, *sym;

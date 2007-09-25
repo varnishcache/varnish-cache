@@ -434,7 +434,7 @@ WRK_Init(void)
 /*--------------------------------------------------------------------*/
 
 void
-cli_func_dump_pool(struct cli *cli, char **av, void *priv)
+cli_func_dump_pool(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)cli;

@@ -46,7 +46,7 @@
  */
 
 void
-cli_func_help(struct cli *cli, char **av, void *priv)
+cli_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *cp;
 
@@ -123,7 +123,7 @@ cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 			break;
 		}
 
-		cp->func(cli, av, cp->priv);
+		cp->func(cli, (const char * const *)av, cp->priv);
 
 	} while (0);
 	FreeArgv(av);

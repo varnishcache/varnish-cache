@@ -179,7 +179,7 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 /*--------------------------------------------------------------------*/
 
 void
-cli_func_ping(struct cli *cli, char **av, void *priv)
+cli_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
 

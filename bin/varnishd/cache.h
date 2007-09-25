@@ -413,8 +413,8 @@ extern struct backend_method	backend_method_round_robin;
 /* cache_ban.c */
 void AddBan(const char *, int hash);
 void BAN_Init(void);
-void cli_func_url_purge(struct cli *cli, char **av, void *priv);
-void cli_func_hash_purge(struct cli *cli, char **av, void *priv);
+void cli_func_url_purge(struct cli *cli, const char * const *av, void *priv);
+void cli_func_hash_purge(struct cli *cli, const char * const *av, void *priv);
 void BAN_NewObj(struct object *o);
 int BAN_CheckObject(struct object *o, const char *url, const char *hash);
 
