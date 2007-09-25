@@ -32,7 +32,12 @@
  */
 
 #include <pthread.h>
+
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
 
 struct listen_sock {
 	TAILQ_ENTRY(listen_sock)	list;

@@ -38,8 +38,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
+
+#include "libvarnish.h"
 #include "varnishapi.h"
 #include "vss.h"
 

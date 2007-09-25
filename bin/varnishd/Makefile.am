@@ -70,4 +70,4 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
-	${DL_LIBS} ${PTHREAD_LIBS} ${LIBM}
+	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}

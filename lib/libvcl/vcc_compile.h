@@ -29,7 +29,12 @@
  * $Id$
  */
 
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
+
 #include "vcl_returns.h"
 
 #define INDENT		2

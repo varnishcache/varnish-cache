@@ -60,6 +60,8 @@
  *	and all the rest...
  */
 
+#include <sys/stat.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -69,10 +71,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/stat.h>
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
 
 #include "vsb.h"
-#include "queue.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"

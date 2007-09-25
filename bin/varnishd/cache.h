@@ -36,7 +36,12 @@
 #include <pthread.h>
 #include <stdint.h>
 
+#ifdef HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
 #include "queue.h"
+#endif
+
 #include "vsb.h"
 
 #include "libvarnish.h"
