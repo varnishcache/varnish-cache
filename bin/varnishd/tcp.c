@@ -51,7 +51,7 @@
 /*--------------------------------------------------------------------*/
 
 void
-TCP_name(struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen)
+TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	int i;
 
