@@ -263,7 +263,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 
 	/* If the compiler complained, or exited non-zero, fail */
 	if (i || j) {
-		AZ(unlink(of));
+		(void)unlink(of);	/* May or may not have created file */
 		free(of);
 		return (NULL);
 	}
