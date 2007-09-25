@@ -66,7 +66,7 @@ sma_alloc(struct stevedore *st, size_t size)
 }
 
 static void
-sma_free(struct storage *s)
+sma_free(const struct storage *s)
 {
 	struct sma *sma;
 
@@ -79,7 +79,7 @@ sma_free(struct storage *s)
 }
 
 static void
-sma_trim(struct storage *s, size_t size)
+sma_trim(const struct storage *s, size_t size)
 {
 	struct sma *sma;
 	void *p;
