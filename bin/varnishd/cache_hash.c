@@ -121,7 +121,7 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 		return (i);
 	b = obj->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = sp->hashptr[u + 1] - sp->hashptr[u];
+		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
 		i = memcmp(sp->hashptr[u], b, v);
 		if (i)
 			return (i);
