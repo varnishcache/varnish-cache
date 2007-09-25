@@ -99,7 +99,7 @@
 #endif
 
 static double
-RFC2616_Ttl(struct sess *sp, struct http *hp, struct object *obj)
+RFC2616_Ttl(const struct sess *sp, struct http *hp, struct object *obj)
 {
 	int retirement_age;
 	unsigned u1, u2;

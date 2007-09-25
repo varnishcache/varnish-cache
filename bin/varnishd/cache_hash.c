@@ -67,7 +67,7 @@ static struct hash_slinger      *hash;
 
 /* Precreate an objhead and object for later use */
 void
-HSH_Prealloc(struct sess *sp)
+HSH_Prealloc(const struct sess *sp)
 {
 	struct worker *w;
 
@@ -110,7 +110,7 @@ HSH_Freestore(struct object *o)
 }
 
 int
-HSH_Compare(struct sess *sp, struct objhead *obj)
+HSH_Compare(const struct sess *sp, const struct objhead *obj)
 {
 	int i;
 	unsigned u, v;
@@ -138,7 +138,7 @@ HSH_Compare(struct sess *sp, struct objhead *obj)
 }
 
 void
-HSH_Copy(struct sess *sp, struct objhead *obj)
+HSH_Copy(struct sess *sp, const struct objhead *obj)
 {
 	unsigned u, v;
 	char *b;

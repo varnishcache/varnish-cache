@@ -401,7 +401,7 @@ void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(struct sess *sp, struct vbe_conn *, int);
 
 /* convenience functions for backend methods */
-int VBE_TryConnect(struct sess *sp, struct addrinfo *ai);
+int VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai);
 int VBE_CheckFd(int fd);
 
 /* cache_backend_simple.c */
@@ -435,9 +435,9 @@ int EXP_NukeOne(struct sess *sp);
 int Fetch(struct sess *sp);
 
 /* cache_hash.c */
-void HSH_Prealloc(struct sess *sp);
-int HSH_Compare(struct sess *sp, struct objhead *o);
-void HSH_Copy(struct sess *sp, struct objhead *o);
+void HSH_Prealloc(const struct sess *sp);
+int HSH_Compare(const struct sess *sp, const struct objhead *o);
+void HSH_Copy(struct sess *sp, const struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct object *o);
 void HSH_Ref(struct object *o);
@@ -449,9 +449,9 @@ const char *http_StatusMessage(int);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, struct http *hp, int resp);
-void http_CopyResp(struct http *to, struct http *fm);
+void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, const char *status, const char *response);
-void http_FilterFields(struct worker *w, int fd, struct http *to, struct http *fm, unsigned how);
+void http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned how);
 void http_FilterHeader(struct sess *sp, unsigned how);
 void http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol);
 void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
@@ -460,11 +460,11 @@ void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fm
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 void http_SetH(struct http *to, unsigned n, const char *fm);
 void http_Setup(struct http *ht, void *space, unsigned len);
-int http_GetHdr(struct http *hp, const char *hdr, char **ptr);
-int http_GetHdrField(struct http *hp, const char *hdr, const char *field, char **ptr);
-int http_GetStatus(struct http *hp);
-const char *http_GetReq(struct http *hp);
-const char *http_GetProto(struct http *hp);
+int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
+int http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr);
+int http_GetStatus(const struct http *hp);
+const char *http_GetReq(const struct http *hp);
+const char *http_GetProto(const struct http *hp);
 int http_HdrIs(struct http *hp, const char *hdr, const char *val);
 int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
 int http_Read(struct http *hp, int fd, void *b, unsigned len);

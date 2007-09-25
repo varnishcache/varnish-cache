@@ -62,7 +62,7 @@ struct backendlist backendlist = TAILQ_HEAD_INITIALIZER(backendlist);
  */
 
 int
-VBE_TryConnect(struct sess *sp, struct addrinfo *ai)
+VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 {
 	struct sockaddr_storage ss;
 	int fam, sockt, proto;
@@ -337,7 +337,7 @@ VBE_UpdateHealth(struct sess *sp, struct vbe_conn *vc, int a)
 /*--------------------------------------------------------------------*/
 
 static void
-VBE_AddBackendMethod(struct backend_method *bem)
+VBE_AddBackendMethod(const struct backend_method *bem)
 {
 
 	if (bem->init != NULL)

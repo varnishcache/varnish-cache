@@ -75,7 +75,7 @@ VRT_count(struct sess *sp, unsigned u)
 /*--------------------------------------------------------------------*/
 
 static struct http *
-vrt_selecthttp(struct sess *sp, enum gethdr_e where)
+vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 {
 	struct http *hp;
 
