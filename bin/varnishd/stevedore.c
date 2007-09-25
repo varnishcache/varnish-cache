@@ -92,7 +92,7 @@ STV_free(struct storage *st)
 }
 
 static int
-cmp_storage(const struct stevedore *s, const const char *p, const char *q)
+cmp_storage(const struct stevedore *s, const char *p, const char *q)
 {
 	if (strlen(s->name) != q - p)
 		return (1);

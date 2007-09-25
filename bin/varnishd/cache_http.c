@@ -304,7 +304,7 @@ http_DoConnection(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-http_HdrIs(struct http *hp, const char *hdr, const char *val)
+http_HdrIs(const struct http *hp, const const char *hdr, const char *val)
 {
 	char *p;
 

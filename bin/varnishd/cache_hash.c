@@ -138,7 +138,7 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 }
 
 void
-HSH_Copy(struct sess *sp, const struct objhead *obj)
+HSH_Copy(const struct sess *sp, const struct objhead *obj)
 {
 	unsigned u, v;
 	char *b;
