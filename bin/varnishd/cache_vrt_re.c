@@ -102,7 +102,7 @@ VRT_re_test(struct vsb *sb, const char *re, int sub)
 }
 
 const char *
-VRT_regsub(struct sess *sp, const char *str, void *re, const char *sub)
+VRT_regsub(const struct sess *sp, const char *str, void *re, const char *sub)
 {
 	regmatch_t pm[10];
 	regex_t *t;

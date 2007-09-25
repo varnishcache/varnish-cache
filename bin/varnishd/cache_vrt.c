@@ -63,7 +63,7 @@ VRT_error(struct sess *sp, unsigned code, const char *reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_count(struct sess *sp, unsigned u)
+VRT_count(const struct sess *sp, unsigned u)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -101,7 +101,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 }
 
 char *
-VRT_GetHdr(struct sess *sp, enum gethdr_e where, const char *n)
+VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 {
 	char *p;
 	struct http *hp;
@@ -155,7 +155,7 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(struct sess *sp , enum gethdr_e where, const char *hdr, const char *p, ...)
+VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr, const char *p, ...)
 {
 	struct http *hp;
 	va_list ap;
@@ -198,7 +198,7 @@ vrt_do_string(struct worker *w, int fd, struct http *hp, int fld, const char *er
 
 #define VRT_DO_HDR(obj, hdr, http, fld)				\
 void								\
-VRT_l_##obj##_##hdr(struct sess *sp, const char *p, ...)	\
+VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 {								\
 	va_list ap;						\
 								\
@@ -221,7 +221,7 @@ VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
 
 void
-VRT_l_obj_status(struct sess *sp, int num)
+VRT_l_obj_status(const struct sess *sp, int num)
 {
 	char *p;
 
@@ -235,7 +235,7 @@ VRT_l_obj_status(struct sess *sp, int num)
 }
 
 int
-VRT_r_obj_status(struct sess *sp)
+VRT_r_obj_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -243,7 +243,7 @@ VRT_r_obj_status(struct sess *sp)
 }
 
 void
-VRT_l_resp_status(struct sess *sp, int num)
+VRT_l_resp_status(const struct sess *sp, int num)
 {
 	char *p;
 
@@ -279,7 +279,7 @@ VRT_handling(struct sess *sp, unsigned hand)
  */
 
 void
-VRT_l_obj_ttl(struct sess *sp, double a)
+VRT_l_obj_ttl(const struct sess *sp, double a)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -294,7 +294,7 @@ VRT_l_obj_ttl(struct sess *sp, double a)
 }
 
 double
-VRT_r_obj_ttl(struct sess *sp)
+VRT_r_obj_ttl(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
@@ -305,7 +305,7 @@ VRT_r_obj_ttl(struct sess *sp)
 
 #define VOBJ(type,onm,field)						\
 void									\
-VRT_l_obj_##onm(struct sess *sp, type a)				\
+VRT_l_obj_##onm(const struct sess *sp, type a)				\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
@@ -313,7 +313,7 @@ VRT_l_obj_##onm(struct sess *sp, type a)				\
 }									\
 									\
 type									\
-VRT_r_obj_##onm(struct sess *sp)					\
+VRT_r_obj_##onm(const struct sess *sp)					\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
@@ -343,7 +343,7 @@ VRT_r_req_backend(struct sess *sp)
 
 #define  VREQ(n1, n2)					\
 const char *						\
-VRT_r_req_##n1(struct sess *sp)				\
+VRT_r_req_##n1(const struct sess *sp)				\
 {							\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);		\
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);	\
@@ -357,7 +357,7 @@ VREQ(proto, HTTP_HDR_PROTO)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_resp_proto(struct sess *sp)
+VRT_r_resp_proto(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -365,7 +365,7 @@ VRT_r_resp_proto(struct sess *sp)
 }
 
 const char *
-VRT_r_resp_response(struct sess *sp)
+VRT_r_resp_response(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -373,7 +373,7 @@ VRT_r_resp_response(struct sess *sp)
 }
 
 int
-VRT_r_resp_status(struct sess *sp)
+VRT_r_resp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -383,7 +383,7 @@ VRT_r_resp_status(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 struct sockaddr *
-VRT_r_client_ip(struct sess *sp)
+VRT_r_client_ip(const struct sess *sp)
 {
 
 	return (sp->sockaddr);
@@ -428,7 +428,7 @@ VRT_l_req_hash(struct sess *sp, const char *str)
 /*--------------------------------------------------------------------*/
 
 double
-VRT_r_now(struct sess *sp)
+VRT_r_now(const struct sess *sp)
 {
 
 	(void)sp;
@@ -436,7 +436,7 @@ VRT_r_now(struct sess *sp)
 }
 
 double
-VRT_r_obj_lastuse(struct sess *sp)
+VRT_r_obj_lastuse(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -445,18 +445,18 @@ VRT_r_obj_lastuse(struct sess *sp)
 }
 
 int
-VRT_r_backend_health(struct sess *sp)
+VRT_r_backend_health(const struct sess *sp)
 {
 	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	return sp->backend->health;
+	return (sp->backend->health);
 }
 
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(struct sess *sp, struct sockaddr *sa)
+VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 {
 	char h[64], p[8], *q;
 	socklen_t len = 0;
@@ -483,7 +483,7 @@ VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 }
 
 char *
-VRT_int_string(struct sess *sp, int num)
+VRT_int_string(const struct sess *sp, int num)
 {
 	char *p;
 	int size = 12;

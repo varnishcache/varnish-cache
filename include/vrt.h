@@ -87,7 +87,7 @@ struct vrt_acl {
 };
 
 /* ACL related */
-int VRT_acl_match(struct sess *, struct sockaddr *, const char *, struct vrt_acl *);
+int VRT_acl_match(const struct sess *, struct sockaddr *, const char *, const struct vrt_acl *);
 void VRT_acl_init(struct vrt_acl *);
 void VRT_acl_fini(struct vrt_acl *);
 
@@ -96,18 +96,18 @@ void VRT_re_init(void **, const char *, int sub);
 void VRT_re_fini(void *);
 int VRT_re_match(const char *, void *re);
 int VRT_re_test(struct vsb *, const char *, int sub);
-const char *VRT_regsub(struct sess *sp, const char *, void *, const char *);
+const char *VRT_regsub(const struct sess *sp, const char *, void *, const char *);
 
 void VRT_purge(const char *, int hash);
 
-void VRT_count(struct sess *, unsigned);
+void VRT_count(const struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
 void VRT_error(struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ };
-char *VRT_GetHdr(struct sess *, enum gethdr_e where, const char *);
-void VRT_SetHdr(struct sess *, enum gethdr_e where, const char *, const char *, ...);
+char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
+void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *, const char *, ...);
 void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Simple stuff */
@@ -120,8 +120,8 @@ void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robi
 void VRT_init_random_backend(struct backend **, const struct vrt_random_backend *);
 void VRT_fini_backend(struct backend *);
 
-char *VRT_IP_string(struct sess *sp, struct sockaddr *sa);
-char *VRT_int_string(struct sess *sp, int);
+char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
+char *VRT_int_string(const struct sess *sp, int);
 
 #define VRT_done(sp, hand)			\
 	do {					\
