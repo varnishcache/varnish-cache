@@ -178,9 +178,9 @@ WSL_Flush(struct worker *w)
 	unsigned char *p;
 	unsigned l;
 
-	if (w->wlp == w->wlog)
-		return;
 	l = pdiff(w->wlog, w->wlp);
+	if (l == 0)
+		return;
 	LOCKSHM(&vsl_mtx);
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
