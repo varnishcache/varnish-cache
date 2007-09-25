@@ -616,7 +616,6 @@ http_RecvPrep(struct http *hp)
 	hp->rx_s = hp->ws->f;
 	hp->rx_e = hp->rx_s;
 	if (hp->pl_s != NULL) {
-		assert(hp->pl_s < hp->pl_e);
 		l = pdiff(hp->pl_s, hp->pl_s);
 		memmove(hp->rx_s, hp->pl_s, l);
 		hp->rx_e = hp->rx_s + l;
@@ -857,7 +856,7 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			WSLH(w, htt, fd, hp, u);
 			continue;
 		}
-		l = pdiff(hp->hd[u].b,  hp->hd[u].e);
+		l = pdiff(hp->hd[u].b, hp->hd[u].e);
 		p = WS_Alloc(hp->ws, l + 1);
 		if (p != NULL) {
 			WSLH(w, htt, fd, hp, u);
