@@ -345,14 +345,14 @@ mgt_cli_callback(struct ev *e, int what)
 cli_close:
 	vsb_delete(cp->cli->sb);
 	free(cp->buf);
-	close(cp->fdi);
+	AZ(close(cp->fdi));
 	if (cp->fdi == 0)
-		open("/dev/null", O_RDONLY);
-	close(cp->fdo);
+		assert(open("/dev/null", O_RDONLY) == 0);
+	AZ(close(cp->fdo));
 	if (cp->fdo == 1) {
+		assert(open("/dev/null", O_WRONLY) == 1);
 		close(2);
-		open("/dev/null", O_WRONLY);
-		open("/dev/null", O_WRONLY);
+		assert(open("/dev/null", O_WRONLY) == 2);
 	}
 	free(cp);
 	return (1);

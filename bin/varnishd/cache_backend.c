@@ -92,7 +92,7 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	}
 
 	if (connect(s, (void *)&ss, alen) != 0) {
-		close(s);
+		AZ(close(s));
 		LOCK(&sp->backend->mtx);
 		return (-1);
 	}

@@ -257,7 +257,7 @@ bes_GetFd(struct sess *sp)
 	for (n = 1; n < 5; n++) {
 		vc = bes_nextfd(sp);
 		if (vc == NULL) {
-			usleep(100000 * n);
+			AZ(usleep(100000 * n));
 			continue;
 		}
 		assert(vc->fd >= 0);
@@ -325,7 +325,7 @@ bes_Cleanup(struct backend *b)
 			break;
 		TAILQ_REMOVE(&bes->connlist, vbe, list);
 		if (vbe->fd >= 0)
-			close(vbe->fd);
+			AZ(close(vbe->fd));
 		FREE_OBJ(vbe);
 	}
 	FREE_OBJ(bes);

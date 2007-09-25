@@ -173,8 +173,8 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		vsb_printf(sb,
 		    "Write error to C source file: %s\n",
 		    strerror(errno));
-		unlink(sf);
-		fclose(fs);
+		AZ(unlink(sf));
+		AZ(fclose(fs));
 		return (NULL);
 	}
 	rewind(fs);
@@ -216,8 +216,8 @@ mgt_CallCc(const char *source, struct vsb *sb)
 		    "\tcommand attempted: %s\n",
 		    strerror(errno), vsb_data(cccmd));
 		free(of);
-		unlink(sf);
-		fclose(fs);
+		AZ(unlink(sf));
+		AZ(fclose(fs));
 		vsb_delete(cccmd);
 		return (NULL);
 	}
@@ -241,8 +241,8 @@ mgt_CallCc(const char *source, struct vsb *sb)
 
 	i = pclose(fo);
 
-	unlink(sf);
-	fclose(fs);
+	AZ(unlink(sf));
+	AZ(fclose(fs));
 
 	if (j == 0 && i != 0) {
 		vsb_printf(sb,
@@ -262,7 +262,7 @@ mgt_CallCc(const char *source, struct vsb *sb)
 
 	/* If the compiler complained, or exited non-zero, fail */
 	if (i || j) {
-		unlink(of);
+		AZ(unlink(of));
 		free(of);
 		return (NULL);
 	}
@@ -272,12 +272,12 @@ mgt_CallCc(const char *source, struct vsb *sb)
 	if (p == NULL) {
 		vsb_printf(sb, "Problem loading compiled VCL program:\n\t%s\n",
 		    dlerror());
-		unlink(of);
+		AZ(unlink(of));
 		free(of);
 		return (NULL);
 	} 
 
-	(void)dlclose(p);
+	AZ(dlclose(p));
 	return (of);
 }
 
@@ -328,6 +328,7 @@ mgt_vcc_add(const char *name, char *file)
 	vp = calloc(sizeof *vp, 1);
 	XXXAN(vp);
 	vp->name = strdup(name);
+	XXXAN(vp->name);
 	vp->fname = file;
 	TAILQ_INSERT_TAIL(&vclhead, vp, list);
 	return (vp);
