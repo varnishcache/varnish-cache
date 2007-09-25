@@ -62,7 +62,7 @@ static int		cli_i = -1, cli_o = -1;
 /*--------------------------------------------------------------------*/
 
 static void
-mcf_stats(struct cli *cli, char **av, void *priv)
+mcf_stats(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
@@ -82,10 +82,11 @@ mcf_stats(struct cli *cli, char **av, void *priv)
  */
 
 static void
-mcf_passthru(struct cli *cli, char **av, void *priv)
+mcf_passthru(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vsb *sb;
-	char *p;
+	const char *p;
+	char *q;
 	unsigned u;
 	int i;
 
@@ -127,10 +128,10 @@ mcf_passthru(struct cli *cli, char **av, void *priv)
 	xxxassert(i == vsb_len(sb));
 	vsb_delete(sb);
 
-	i = cli_readres(cli_i, &u, &p, params->cli_timeout);
+	i = cli_readres(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
-	cli_out(cli, "%s", p);
-	free(p);
+	cli_out(cli, "%s", q);
+	free(q);
 
 }
 

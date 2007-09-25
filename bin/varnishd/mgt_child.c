@@ -435,7 +435,7 @@ mgt_run(int dflag, const char *T_arg)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_server_startstop(struct cli *cli, char **av, void *priv)
+mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
@@ -452,7 +452,7 @@ mcf_server_startstop(struct cli *cli, char **av, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_server_status(struct cli *cli, char **av, void *priv)
+mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
 	(void)priv;
