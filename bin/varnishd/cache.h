@@ -509,9 +509,9 @@ void SES_Charge(struct sess *sp);
 
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
-void VSLR(enum shmlogtag tag, int id, const char *b, const char *e);
+void VSLR(enum shmlogtag tag, int id, txt t);
 void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
-void WSLR(struct worker *w, enum shmlogtag tag, int id, const char *b, const char *e);
+void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w);
 #define INCOMPL() do {							\
@@ -601,4 +601,26 @@ pdiff(const void *b, const void *e)
 	assert(b <= e);
 	return
 	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
+}
+
+static inline void
+Tcheck(const txt t)
+{
+
+	AN(t.b);
+	AN(t.e);
+	assert(t.b <= t.e);
+}
+
+/*
+ * unsigned length of a txt
+ */
+
+static inline unsigned
+Tlen(const txt t)
+{
+
+	Tcheck(t);
+	return
+	    ((unsigned)(t.e - t.b));
 }

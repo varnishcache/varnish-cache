@@ -83,20 +83,18 @@ vsl_wrap(void)
 /*--------------------------------------------------------------------*/
 
 void
-VSLR(enum shmlogtag tag, int id, const char *b, const char *e)
+VSLR(enum shmlogtag tag, int id, txt t)
 {
 	unsigned char *p;
 	unsigned l;
 
-	assert(b != NULL);
-	if (e == NULL)
-		e = strchr(b, '\0');
+	Tcheck(t);
 
 	/* Truncate */
-	l = pdiff(b, e);
+	l = Tlen(t);
 	if (l > 255) {
 		l = 255;
-		e = b + l;
+		t.e = t.b + l;
 	}
 
 	/* Only hold the lock while we find our space */
@@ -117,7 +115,7 @@ VSLR(enum shmlogtag tag, int id, const char *b, const char *e)
 	p[1] = l & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
-	memcpy(p + 4, b, l);
+	memcpy(p + 4, t.b, l);
 	p[4 + l] = '\0';
 	/* XXX: memory barrier */
 	p[0] = tag;
@@ -131,12 +129,15 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 	va_list ap;
 	unsigned char *p;
 	unsigned n;
+	txt t;
 
 	AN(fmt);
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		VSLR(tag, id, fmt, NULL);
+		t.b = (void*)(uintptr_t)fmt;
+		t.e = strchr(fmt, '\0');
+		VSLR(tag, id, t);
 		return;
 	}
 
@@ -200,20 +201,18 @@ WSL_Flush(struct worker *w)
 /*--------------------------------------------------------------------*/
 
 void
-WSLR(struct worker *w, enum shmlogtag tag, int id, const char *b, const char *e)
+WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 {
 	unsigned char *p;
 	unsigned l;
 
-	assert(b != NULL);
-	if (e == NULL)
-		e = strchr(b, '\0');
+	Tcheck(t);
 
 	/* Truncate */
-	l = pdiff(b, e);
+	l = Tlen(t);
 	if (l > 255) {
 		l = 255;
-		e = b + l;
+		t.e = t.b + l;
 	}
 
 	assert(w->wlp < w->wle);
@@ -229,7 +228,7 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, const char *b, const char *e)
 	p[1] = l & 0xff;
 	p[2] = (id >> 8) & 0xff;
 	p[3] = id & 0xff;
-	memcpy(p + 4, b, l);
+	memcpy(p + 4, t.b, l);
 	p[4 + l] = '\0';
 	p[0] = tag;
 	w->wlr++;
@@ -243,12 +242,15 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 	va_list ap;
 	unsigned char *p;
 	unsigned n;
+	txt t;
 
 	AN(fmt);
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		WSLR(w, tag, id, fmt, NULL);
+		t.b = (void*)(uintptr_t)fmt;
+		t.e = strchr(fmt, '\0');
+		WSLR(w, tag, id, t);
 		return;
 	}
 
