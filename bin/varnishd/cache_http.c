@@ -321,20 +321,20 @@ int
 http_GetTail(struct http *hp, unsigned len, char **b, char **e)
 {
 
-	if (hp->pl_s >= hp->pl_e)
+	if (hp->pl.b >= hp->pl.e)
 		return (0);
 
 	if (len == 0)
-		len = pdiff(hp->pl_s, hp->pl_e);
+		len = pdiff(hp->pl.b, hp->pl.e);
 
-	if (hp->pl_s + len > hp->pl_e)
-		len = pdiff(hp->pl_s, hp->pl_e);
+	if (hp->pl.b + len > hp->pl.e)
+		len = pdiff(hp->pl.b, hp->pl.e);
 	if (len == 0)
 		return (0);
-	*b = hp->pl_s;
-	*e = hp->pl_s + len;
-	hp->pl_s += len;
-	assert(hp->pl_s <= hp->pl_e);
+	*b = hp->pl.b;
+	*e = hp->pl.b + len;
+	hp->pl.b += len;
+	assert(hp->pl.b <= hp->pl.e);
 	return (1);
 }
 
@@ -349,17 +349,17 @@ http_Read(struct http *hp, int fd, void *p, unsigned len)
 	char *b = p;
 
 	u = 0;
-	if (hp->pl_s < hp->pl_e) {
-		u = pdiff(hp->pl_s, hp->pl_e);
+	if (hp->pl.b < hp->pl.e) {
+		u = pdiff(hp->pl.b, hp->pl.e);
 		if (u > len)
 			u = len;
-		memcpy(b, hp->pl_s, u);
-		hp->pl_s += u;
+		memcpy(b, hp->pl.b, u);
+		hp->pl.b += u;
 		b += u;
 		len -= u;
 	}
-	if (hp->pl_e == hp->pl_s)
-		hp->pl_s = hp->pl_e = NULL;
+	if (hp->pl.e == hp->pl.b)
+		hp->pl.b = hp->pl.e = NULL;
 	if (len > 0) {
 		i = read(fd, b, len);
 		if (i < 0)		/* XXX i == 0 ?? */
@@ -410,8 +410,8 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
-	assert(p < hp->rx_e);	/* http_header_complete() guarantees this */
-	for (; p < hp->rx_e; p = r) {
+	assert(p < hp->rx.e);	/* http_header_complete() guarantees this */
+	for (; p < hp->rx.e; p = r) {
 		/* XXX: handle continuation lines */
 		q = strchr(p, '\n');
 		assert(q != NULL);
@@ -449,11 +449,11 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	/* Assert a NUL at rx_e */
-	assert(hp->rx_s < hp->rx_e);
+	/* Assert a NUL at rx.e */
+	assert(hp->rx.b < hp->rx.e);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->rx_s ; isspace(*p); p++)
+	for (p = hp->rx.b ; isspace(*p); p++)
 		continue;
 
 	/* First, the request type (GET/HEAD etc) */
@@ -468,7 +468,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_URL].b = p;
@@ -477,7 +477,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	hp->hd[HTTP_HDR_URL].e = p;
 	WSLH(w, HTTP_T_URL, fd, hp, HTTP_HDR_URL);
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
 		return (400);
 	}
 	*p++ = '\0';
@@ -486,7 +486,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_PROTO].b = p;
@@ -499,7 +499,7 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p != '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
 		return (400);
 	}
 	*p++ = '\0';
@@ -515,15 +515,15 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	/* Assert a NUL at rx_e */
-	assert(hp->rx_s < hp->rx_e);
+	/* Assert a NUL at rx.e */
+	assert(hp->rx.b < hp->rx.e);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->rx_s ; isspace(*p); p++)
+	for (p = hp->rx.b ; isspace(*p); p++)
 		continue;
 
 	if (memcmp(p, "HTTP/1.", 7)) {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
+		WSLR(w, SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
 		return (400);
 	}
 	/* First, protocol */
@@ -571,12 +571,12 @@ http_header_complete(struct http *hp)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(*hp->rx_e == '\0');
+	assert(*hp->rx.e == '\0');
 	/* Skip any leading white space */
-	for (p = hp->rx_s ; p < hp->rx_e && isspace(*p); p++)
+	for (p = hp->rx.b ; p < hp->rx.e && isspace(*p); p++)
 		continue;
-	if (p >= hp->rx_e) {
-		hp->rx_e = hp->rx_s;
+	if (p >= hp->rx.e) {
+		hp->rx.e = hp->rx.b;
 		return (0);
 	}
 	while (1) {
@@ -591,11 +591,11 @@ http_header_complete(struct http *hp)
 			break;
 	}
 	p++;
-	WS_ReleaseP(hp->ws, hp->rx_e);
-	if (p != hp->rx_e) {
-		hp->pl_s = p;
-		hp->pl_e = hp->rx_e;
-		hp->rx_e = p;
+	WS_ReleaseP(hp->ws, hp->rx.e);
+	if (p != hp->rx.e) {
+		hp->pl.b = p;
+		hp->pl.e = hp->rx.e;
+		hp->rx.e = p;
 	}
 	/* XXX: Check this stuff... */
 	return (1);
@@ -612,22 +612,22 @@ http_RecvPrep(struct http *hp)
 	WS_Assert(hp->ws);
 	WS_Reset(hp->ws);
 	WS_Reserve(hp->ws, 0);
-	hp->rx_s = hp->ws->f;
-	hp->rx_e = hp->rx_s;
-	if (hp->pl_s != NULL) {
-		l = pdiff(hp->pl_s, hp->pl_e);
-		memmove(hp->rx_s, hp->pl_s, l);
-		hp->rx_e = hp->rx_s + l;
-		hp->pl_s = hp->pl_e = NULL;
+	hp->rx.b = hp->ws->f;
+	hp->rx.e = hp->rx.b;
+	if (hp->pl.b != NULL) {
+		l = pdiff(hp->pl.b, hp->pl.e);
+		memmove(hp->rx.b, hp->pl.b, l);
+		hp->rx.e = hp->rx.b + l;
+		hp->pl.b = hp->pl.e = NULL;
 	}
-	*hp->rx_e = '\0';
+	*hp->rx.e = '\0';
 }
 
 int
 http_RecvPrepAgain(struct http *hp)
 {
 	http_RecvPrep(hp);
-	if (hp->rx_s == hp->rx_e)
+	if (hp->rx.b == hp->rx.e)
 		return (0);
 	return (http_header_complete(hp));
 }
@@ -640,35 +640,35 @@ http_RecvSome(int fd, struct http *hp)
 	unsigned l;
 	int i;
 
-	l = pdiff(hp->rx_e, hp->ws->e) - 1;
+	l = pdiff(hp->rx.e, hp->ws->e) - 1;
 	l /= 2;		/* Don't fill all of workspace with read-ahead */
 	if (l <= 1) {
 		VSL(SLT_HttpError, fd, "Received too much");
-		VSLR(SLT_HttpGarbage, fd, hp->rx_s, hp->rx_e);
-		hp->rx_s = hp->rx_e = NULL;
+		VSLR(SLT_HttpGarbage, fd, hp->rx.b, hp->rx.e);
+		hp->rx.b = hp->rx.e = NULL;
 		WS_Release(hp->ws, 0);
 		return (1);
 	}
 	errno = 0;
-	i = read(fd, hp->rx_e, l - 1);
+	i = read(fd, hp->rx.e, l - 1);
 	if (i > 0) {
-		hp->rx_e += i;
-		*hp->rx_e = '\0';
+		hp->rx.e += i;
+		*hp->rx.e = '\0';
 		if (http_header_complete(hp))
 			return(0);
 		return (-1);
 	}
 
-	if (hp->rx_e != hp->rx_s) {
+	if (hp->rx.e != hp->rx.b) {
 		VSL(SLT_HttpError, fd,
 		    "Received (only) %d bytes, errno %d",
-		    hp->rx_e - hp->rx_s, errno);
-		VSLR(SLT_Debug, fd, hp->rx_s, hp->rx_e);
+		    hp->rx.e - hp->rx.b, errno);
+		VSLR(SLT_Debug, fd, hp->rx.b, hp->rx.e);
 	} else if (errno == 0)
 		VSL(SLT_HttpError, fd, "Received nothing");
 	else
 		VSL(SLT_HttpError, fd, "Received errno %d", errno);
-	hp->rx_s = hp->rx_e = NULL;
+	hp->rx.b = hp->rx.e = NULL;
 	WS_Release(hp->ws, 0);
 	return(2);
 }
