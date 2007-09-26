@@ -42,7 +42,7 @@ static void
 vcc_acl_top(struct tokenlist *tl, const char *acln)
 {
 
-	Fh(tl, 1, "\nstatic const struct vrt_acl acl_%s[] = {\n", acln);
+	Fh(tl, 1, "\nstatic struct vrt_acl acl_%s[] = {\n", acln);
 	tl->hindent += INDENT;
 
 }
