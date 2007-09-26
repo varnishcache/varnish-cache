@@ -326,7 +326,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	/* Filter into object */
 	hp2 = &sp->obj->http;
-	len = pdiff(hp->rx.b, hp->rx.e);
+	len = Tlen(hp->rx);
 	len += 256;		/* margin for content-length etc */
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
