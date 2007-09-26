@@ -174,7 +174,7 @@ http_Setup(struct http *hp, void *space, unsigned len)
 
 
 static int
-http_IsHdr(const struct http_hdr *hh, const char *hdr)
+http_IsHdr(const txt *hh, const char *hdr)
 {
 	unsigned l;
 
