@@ -102,10 +102,10 @@ char *WS_Alloc(struct ws *ws, unsigned bytes);
  * HTTP Request/Response/Header handling structure.
  */
 
-struct http_hdr {
+typedef struct {
 	char			*b;
 	char			*e;
-};
+} txt;
 
 enum httpwhence {
 	HTTP_Rx,
@@ -124,7 +124,7 @@ struct http {
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence 	logtag;
 
-	struct http_hdr		hd[HTTP_HDR_MAX];
+	txt 			hd[HTTP_HDR_MAX];
 	unsigned char		hdf[HTTP_HDR_MAX];
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 	unsigned		nhd;
@@ -493,7 +493,7 @@ void WRK_QueueSession(struct sess *sp);
 void WRK_Reset(struct worker *w, int *fd);
 unsigned WRK_Flush(struct worker *w);
 unsigned WRK_Write(struct worker *w, const void *ptr, int len);
-unsigned WRK_WriteH(struct worker *w, const struct http_hdr *hh, const char *suf);
+unsigned WRK_WriteH(struct worker *w, const txt *hh, const char *suf);
 #ifdef HAVE_SENDFILE
 void WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* HAVE_SENDFILE */

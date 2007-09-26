@@ -108,7 +108,7 @@ WRK_Flush(struct worker *w)
 }
 
 unsigned
-WRK_WriteH(struct worker *w, const struct http_hdr *hh, const char *suf)
+WRK_WriteH(struct worker *w, const txt *hh, const char *suf)
 {
 	unsigned u;
 
