@@ -118,8 +118,8 @@ struct http {
 #define HTTP_MAGIC		0x6428b5c9
 
 	struct ws		ws[1];
-	char			*rx_s, *rx_e;	/* Received Request */
-	char			*pl_s, *pl_e;	/* Pipelined bytes */
+	txt			rx;		/* Received Request */
+	txt			pl;		/* Pipelined bytes */
 
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence 	logtag;

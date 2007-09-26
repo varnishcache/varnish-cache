@@ -229,7 +229,7 @@ cnt_done(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	}
-	if (sp->http->pl_s < sp->http->pl_e) {
+	if (sp->http->pl.b < sp->http->pl.e) {
 		VSL_stats->sess_readahead++;
 		sp->step = STP_AGAIN;
 		return (0);
