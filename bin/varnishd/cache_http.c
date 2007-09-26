@@ -178,8 +178,7 @@ http_IsHdr(const txt *hh, const char *hdr)
 {
 	unsigned l;
 
-	AN(hh->b);
-	AN(hh->e);
+	Tcheck(*hh);
 	AN(hdr);
 	l = hdr[0];
 	assert(l == strlen(hdr + 1));
@@ -196,8 +195,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 	unsigned u;
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		AN(hp->hd[u].b);
-		AN(hp->hd[u].e);
+		Tcheck(hp->hd[u]);
 		if (hp->hd[u].e < hp->hd[u].b + l + 1)
 			continue;
 		if (hp->hd[u].b[l] != ':')
@@ -375,7 +373,7 @@ int
 http_GetStatus(const struct http *hp)
 {
 
-	AN(hp->hd[HTTP_HDR_STATUS].b);
+	Tcheck(hp->hd[HTTP_HDR_STATUS]);
 	return (strtoul(hp->hd[HTTP_HDR_STATUS].b,
 	    NULL /* XXX */, 10));
 }
@@ -383,14 +381,16 @@ http_GetStatus(const struct http *hp)
 const char *
 http_GetProto(const struct http *hp)
 {
-	AN(hp->hd[HTTP_HDR_PROTO].b);
+
+	Tcheck(hp->hd[HTTP_HDR_PROTO]);
 	return (hp->hd[HTTP_HDR_PROTO].b);
 }
 
 const char *
 http_GetReq(const struct http *hp)
 {
-	AN(hp->hd[HTTP_HDR_REQ].b);
+
+	Tcheck(hp->hd[HTTP_HDR_REQ]);
 	return (hp->hd[HTTP_HDR_REQ].b);
 }
 
@@ -626,6 +626,7 @@ http_RecvPrep(struct http *hp)
 int
 http_RecvPrepAgain(struct http *hp)
 {
+
 	http_RecvPrep(hp);
 	if (hp->rx.b == hp->rx.e)
 		return (0);
@@ -706,9 +707,8 @@ http_copyh(struct http *to, const struct http *fm, unsigned n)
 {
 
 	assert(n < HTTP_HDR_MAX);
-	AN(fm->hd[n].b);
-	to->hd[n].b = fm->hd[n].b;
-	to->hd[n].e = fm->hd[n].e;
+	Tcheck(fm->hd[n]);
+	to->hd[n] = fm->hd[n];
 	to->hdf[n] = fm->hdf[n];
 }
 
@@ -760,10 +760,9 @@ http_copyheader(struct worker *w, int fd, struct http *to, const struct http *fm
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	assert(n < HTTP_HDR_MAX);
-	AN(fm->hd[n].b);
+	Tcheck(fm->hd[n]);
 	if (to->nhd < HTTP_HDR_MAX) {
-		to->hd[to->nhd].b = fm->hd[n].b;
-		to->hd[to->nhd].e = fm->hd[n].e;
+		to->hd[to->nhd] = fm->hd[n];
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
