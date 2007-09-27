@@ -181,8 +181,7 @@ exp_prefetch(void *arg)
 	while (1) {
 		LOCK(&exp_mtx);
 		o = binheap_root(exp_heap);
-		if (o != NULL)
-			CHECK_OBJ(o, OBJECT_MAGIC);
+		CHECK_OBJ_ORNULL(o, OBJECT_MAGIC);
 		if (o == NULL || o->ttl > t + expearly) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
