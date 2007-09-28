@@ -563,28 +563,33 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 }
 
 /*--------------------------------------------------------------------
- * Return nonzero if we have a complete HTTP request.
+ * Check if we have a complete HTTP request or response yet between the
+ * two pointers given.
+ *
+ * Return values:
+ *	-1  No, and you can nuke the (white-space) content.
+ *	 0  No, keep trying
+ *	>0  Yes, it is this many bytes long.
  */
 
 static int
-http_header_complete(struct http *hp)
+http_header_complete(const char *b, const char *e)
 {
-	char *p;
+	const char *p;
 
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	assert(*hp->rx.e == '\0');
+	AN(b);
+	AN(e);
+	assert(b <= e);
+	assert(*e == '\0');
 	/* Skip any leading white space */
-	for (p = hp->rx.b ; p < hp->rx.e && isspace(*p); p++)
+	for (p = b ; isspace(*p); p++)
 		continue;
-	if (p >= hp->rx.e) {
-		hp->rx.e = hp->rx.b;
-		return (0);
-	}
+	if (*p == '\0')
+		return (-1);
 	while (1) {
-		/* XXX: we could save location of all linebreaks for later */
 		p = strchr(p, '\n');
 		if (p == NULL)
-			return (0);	/* XXX: Could cache p */
+			return (0);
 		p++;
 		if (*p == '\r')
 			p++;
@@ -592,14 +597,7 @@ http_header_complete(struct http *hp)
 			break;
 	}
 	p++;
-	WS_ReleaseP(hp->ws, hp->rx.e);
-	if (p != hp->rx.e) {
-		hp->pl.b = p;
-		hp->pl.e = hp->rx.e;
-		hp->rx.e = p;
-	}
-	/* XXX: Check this stuff... */
-	return (1);
+	return (p - b);
 }
 
 /*--------------------------------------------------------------------*/
@@ -627,11 +625,23 @@ http_RecvPrep(struct http *hp)
 int
 http_RecvPrepAgain(struct http *hp)
 {
+	int i;
 
 	http_RecvPrep(hp);
 	if (hp->rx.b == hp->rx.e)
 		return (0);
-	return (http_header_complete(hp));
+	i = http_header_complete(hp->rx.b, hp->rx.e);
+	if (i == -1)
+		hp->rx.e = hp->rx.b;
+	if (i <= 0)
+		return (0);
+	WS_ReleaseP(hp->ws, hp->rx.e);
+	if (hp->rx.e != hp->rx.b + i) {
+		hp->pl.b = hp->rx.b + i;
+		hp->pl.e = hp->rx.e;
+		hp->rx.e = hp->pl.b;
+	}
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
@@ -656,9 +666,18 @@ http_RecvSome(int fd, struct http *hp)
 	if (i > 0) {
 		hp->rx.e += i;
 		*hp->rx.e = '\0';
-		if (http_header_complete(hp))
-			return(0);
-		return (-1);
+		i = http_header_complete(hp->rx.b, hp->rx.e);
+		if (i == -1)
+			hp->rx.e = hp->rx.b;
+		if (i == 0)
+			return (-1);
+		WS_ReleaseP(hp->ws, hp->rx.e);
+		if (hp->rx.e != hp->rx.b + i) {
+			hp->pl.b = hp->rx.b + i;
+			hp->pl.e = hp->rx.e;
+			hp->rx.e = hp->pl.b;
+		}
+		return (0);
 	}
 
 	if (hp->rx.e != hp->rx.b) {
