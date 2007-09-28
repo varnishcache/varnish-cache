@@ -160,13 +160,12 @@ http_StatusMessage(unsigned status)
 /*--------------------------------------------------------------------*/
 
 void
-http_Setup(struct http *hp, void *space, unsigned len)
+http_Setup(struct http *hp, struct ws *ws)
 {
 
-	assert(len > 0);
 	memset(hp, 0, sizeof *hp);
 	hp->magic = HTTP_MAGIC;
-	WS_Init(hp->ws, space, len);
+	hp->ws = ws;
 	hp->nhd = HTTP_HDR_FIRST;
 }
 
@@ -266,18 +265,19 @@ http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char
 
 /*--------------------------------------------------------------------*/
 
-void
-http_DoConnection(struct sess *sp)
+const char *
+http_DoConnection(struct http *hp)
 {
-	struct http *hp = sp->http;
 	char *p, *q;
+	const char *ret;
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-			sp->doclose = "not HTTP/1.1";
-		return;
+			return ("not HTTP/1.1");
+		return (NULL);
 	}
+	ret = NULL;
 	for (; *p; p++) {
 		if (isspace(*p))
 			continue;
@@ -288,7 +288,7 @@ http_DoConnection(struct sess *sp)
 				break;
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
-			sp->doclose = "Connection: close";
+			ret = "Connection: close";
 		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;
@@ -296,6 +296,7 @@ http_DoConnection(struct sess *sp)
 			break;
 		p = q;
 	}
+	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

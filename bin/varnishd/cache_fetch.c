@@ -332,7 +332,8 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	b = malloc(len);
 	AN(b);
-	http_Setup(hp2, b, len);
+	WS_Init(sp->obj->ws_o, b, len);
+	http_Setup(hp2, sp->obj->ws_o);
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	hp2->logtag = HTTP_Obj;
