@@ -117,7 +117,7 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	struct ws		ws[1];
+	struct ws		*ws;
 	txt			rx;		/* Received Request */
 	txt			pl;		/* Pipelined bytes */
 
@@ -186,8 +186,7 @@ struct bereq {
 	unsigned		magic;
 #define BEREQ_MAGIC		0x3b6d250c
 	VTAILQ_ENTRY(bereq)	list;
-	void			*space;
-	unsigned		len;
+	struct ws		ws[1];
 	struct http		http[1];
 };
 
@@ -217,6 +216,7 @@ struct object {
 	unsigned		xid;
 	struct objhead		*objhead;
 
+	struct ws		ws_o[1];
 	unsigned char		*vary;
 
 	unsigned		heap_idx;
@@ -285,6 +285,7 @@ struct sess {
 	/* HTTP request */
 	const char		*doclose;
 	struct http		*http;
+	struct ws		ws[1];
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;
@@ -460,7 +461,7 @@ void http_PutResponse(struct worker *w, int fd, struct http *to, const char *res
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 void http_SetH(struct http *to, unsigned n, const char *fm);
-void http_Setup(struct http *ht, void *space, unsigned len);
+void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr);
 int http_GetStatus(const struct http *hp);
@@ -475,7 +476,7 @@ int http_RecvSome(int fd, struct http *hp);
 int http_RecvHead(struct http *hp, int fd);
 int http_DissectRequest(struct worker *w, struct http *sp, int fd);
 int http_DissectResponse(struct worker *w, struct http *sp, int fd);
-void http_DoConnection(struct sess *sp);
+const char *http_DoConnection(struct http *hp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 

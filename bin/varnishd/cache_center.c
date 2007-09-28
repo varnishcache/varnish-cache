@@ -763,7 +763,7 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	http_DoConnection(sp);
+	sp->doclose = http_DoConnection(sp->http);
 
 	/* By default we use the first backend */
 	AZ(sp->backend);

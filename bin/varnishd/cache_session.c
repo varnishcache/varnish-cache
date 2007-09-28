@@ -302,7 +302,6 @@ SES_New(const struct sockaddr *addr, unsigned len)
 	memset(sp, 0, sizeof *sp);
 	sp->magic = SESS_MAGIC;
 	sp->mem = sm;
-	sp->http = &sm->http;
 	sp->sockaddr = (void*)(&sm->sockaddr[0]);
 	sp->sockaddrlen = sizeof(sm->sockaddr[0]);
 	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
@@ -319,7 +318,9 @@ SES_New(const struct sockaddr *addr, unsigned len)
 		sp->sockaddrlen = len;
 	}
 
-	http_Setup(&sm->http, (void *)(sm + 1), sm->workspace);
+	WS_Init(sp->ws, (void *)(sm + 1), sm->workspace);
+	sp->http = &sm->http;
+	http_Setup(sp->http, sp->ws);
 
 	return (sp);
 }
