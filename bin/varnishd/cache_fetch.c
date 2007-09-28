@@ -49,7 +49,7 @@
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
+fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 {
 	int i;
 	unsigned char *p;
@@ -70,12 +70,12 @@ fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
 	sp->obj->len = cl;
 	p = st->ptr;
 
-	i = fcntl(fd, F_GETFL);		/* XXX ? */
+	i = fcntl(htc->fd, F_GETFL);		/* XXX ? */
 	i &= ~O_NONBLOCK;
-	i = fcntl(fd, F_SETFL, i);
+	i = fcntl(htc->fd, F_SETFL, i);
 
 	while (cl > 0) {
-		i = http_Read(hp, fd, p, cl);
+		i = HTC_Read(htc, p, cl);
 		if (i <= 0)
 			return (-1);
 		p += i;
@@ -88,7 +88,7 @@ fetch_straight(struct sess *sp, int fd, struct http *hp, const char *b)
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
 static int
-fetch_chunked(struct sess *sp, int fd, struct http *hp)
+fetch_chunked(struct sess *sp, struct http_conn *htc)
 {
 	int i;
 	char *q;
@@ -132,7 +132,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 			 * deal more complex than reading a single character
 			 * at a time.
 			 */
-			i = http_Read(hp, fd, bp, 1);
+			i = HTC_Read(htc, bp, 1);
 			if (i <= 0)
 				return (-1);
 			bp += i;
@@ -179,7 +179,7 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 
 			/* Pick up the rest of this chunk */
 			while (v > 0) {
-				i = http_Read(hp, fd, st->ptr + st->len, v);
+				i = HTC_Read(htc, st->ptr + st->len, v);
 				if (i <= 0)
 					return (-1);
 				st->len += i;
@@ -211,16 +211,16 @@ fetch_chunked(struct sess *sp, int fd, struct http *hp)
 #include <errno.h>
 
 static int
-fetch_eof(struct sess *sp, int fd, struct http *hp)
+fetch_eof(struct sess *sp, struct http_conn *htc)
 {
 	int i;
 	unsigned char *p;
 	struct storage *st;
 	unsigned v;
 
-	i = fcntl(fd, F_GETFL);		/* XXX ? */
+	i = fcntl(htc->fd, F_GETFL);		/* XXX ? */
 	i &= ~O_NONBLOCK;
-	i = fcntl(fd, F_SETFL, i);
+	i = fcntl(htc->fd, F_SETFL, i);
 
 	p = NULL;
 	v = 0;
@@ -234,7 +234,7 @@ fetch_eof(struct sess *sp, int fd, struct http *hp)
 		}
 		AN(p);
 		AN(st);
-		i = http_Read(hp, fd, p, v);
+		i = HTC_Read(htc, p, v);
 		if (i < 0)
 			return (-1);
 		if (i == 0)
@@ -268,6 +268,8 @@ Fetch(struct sess *sp)
 	struct bereq *bereq;
 	int mklen, is_head;
 	unsigned len;
+	struct http_conn htc[1];
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -300,12 +302,12 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	if (http_RecvHead(hp, vc->fd)) {
-		/* XXX: cleanup */
-		return (1);
-	}
-	if (http_DissectResponse(sp->wrk, hp, vc->fd)) {
+	HTC_Init(htc, bereq->ws, vc->fd);
+	do
+		i = HTC_Rx(htc);
+	while (i == 0);
+
+	if (http_DissectResponse(sp->wrk, htc, hp)) {
 		/* XXX: cleanup */
 		return (1);
 	}
@@ -326,8 +328,8 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	/* Filter into object */
 	hp2 = &sp->obj->http;
-	len = Tlen(hp->rx);
-	len += 256;		/* margin for content-length etc */
+	len = Tlen(htc->rxbuf);
+	len += 256;	/* XXX: margin for content-length etc */
 
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	b = malloc(len);
@@ -349,10 +351,10 @@ Fetch(struct sess *sp)
 	if (is_head) {
 		/* nothing */
 	} else if (http_GetHdr(hp, H_Content_Length, &b)) {
-		cls = fetch_straight(sp, vc->fd, hp, b);
+		cls = fetch_straight(sp, htc, b);
 		mklen = 1;
 	} else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		cls = fetch_chunked(sp, vc->fd, hp);
+		cls = fetch_chunked(sp, htc);
 		mklen = 1;
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
@@ -362,7 +364,7 @@ Fetch(struct sess *sp)
 	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
 		switch (http_GetStatus(hp)) {
 			case 200:
-				cls = fetch_eof(sp, vc->fd, hp);
+				cls = fetch_eof(sp, htc);
 				mklen = 1;
 				break;
 			default:

@@ -110,8 +110,6 @@ struct http {
 #define HTTP_MAGIC		0x6428b5c9
 
 	struct ws		*ws;
-	txt			rx;		/* Received Request */
-	txt			pl;		/* Pipelined bytes */
 
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence 	logtag;
@@ -126,7 +124,7 @@ struct http_conn {
 	unsigned		magic;
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
-	struct http		*http;
+	int			fd;
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
@@ -288,6 +286,8 @@ struct sess {
 	const char		*doclose;
 	struct http		*http;
 	struct ws		ws[1];
+
+	struct http_conn	htc[1];
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;
@@ -470,18 +470,17 @@ int http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 const char *http_GetProto(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-int http_GetTail(struct http *hp, unsigned len, char **b, char **e);
-int http_Read(struct http *hp, int fd, void *b, unsigned len);
-void http_RecvPrep(struct http *hp);
-int http_RecvPrepAgain(struct http *hp);
-int http_RecvSome(int fd, struct http *hp);
-int http_RecvHead(struct http *hp, int fd);
-int http_DissectRequest(struct worker *w, struct http *sp, int fd);
-int http_DissectResponse(struct worker *w, struct http *sp, int fd);
+int http_DissectRequest(struct sess *sp);
+int http_DissectResponse(struct worker *w, struct http_conn *htc, struct http *sp);
 const char *http_DoConnection(struct http *hp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 
+/* cache_httpconn.c */
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd);
+int HTC_Reinit(struct http_conn *htc);
+int HTC_Rx(struct http_conn *htc);
+int HTC_Read(struct http_conn *htc, void *d, unsigned len);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
 #include "http_headers.h"

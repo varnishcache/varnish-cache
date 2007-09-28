@@ -194,7 +194,7 @@ vca_acct(void *arg)
 			sp->id = i;
 			sp->t_open = TIM_real();
 
-			http_RecvPrep(sp->http);
+			HTC_Init(sp->htc, sp->ws, sp->fd);
 			sp->step = STP_FIRST;
 			WRK_QueueSession(sp);
 		}
@@ -224,13 +224,13 @@ vca_pollsession(struct sess *sp)
 {
 	int i;
 
-	i = http_RecvSome(sp->fd, sp->http);
-	if (i < 1)
-		return (i);
+	i = HTC_Rx(sp->htc);
+	/* XXX: fix retval */
+	if (i == 0)
+		return (-1);
 	if (i == 1)
-		vca_close_session(sp, "overflow");
-	else if (i == 2)
-		vca_close_session(sp, "no request");
+		return (0);
+	vca_close_session(sp, "err/poll");
 	return (1);
 }
 

@@ -88,20 +88,15 @@ cnt_again(struct sess *sp)
 
 	assert(sp->xid == 0);
 
-	do
-		i = http_RecvSome(sp->fd, sp->http);
-	while (i == -1);
-	if (i == 0) {
+	do 
+		i = HTC_Rx(sp->htc);
+	while (i == 0);
+	if (i == 1) {
 		sp->step = STP_RECV;
-		return (0);
-	}
-	if (i == 1)
+	} else {
 		vca_close_session(sp, "overflow");
-	else if (i == 2)
-		vca_close_session(sp, "no request");
-	else
-		INCOMPL();
-	sp->step = STP_DONE;
+		sp->step = STP_DONE;
+	}
 	return (0);
 }
 
@@ -185,6 +180,7 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
+	int i;
 
 	AZ(sp->obj);
 	AZ(sp->bereq);
@@ -224,12 +220,13 @@ cnt_done(struct sess *sp)
 		return (1);
 	}
 
-	if (http_RecvPrepAgain(sp->http)) {
+	i = HTC_Reinit(sp->htc);
+	if (i == 1) {
 		VSL_stats->sess_pipeline++;
 		sp->step = STP_RECV;
 		return (0);
 	}
-	if (sp->http->pl.b < sp->http->pl.e) {
+	if (Tlen(sp->htc->rxbuf)) {
 		VSL_stats->sess_readahead++;
 		sp->step = STP_AGAIN;
 		return (0);
@@ -388,13 +385,13 @@ cnt_first(struct sess *sp)
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
-		i = http_RecvSome(sp->fd, sp->http);
-	while (i == -1);
-	if (i == 0) {
+		i = HTC_Rx(sp->htc);
+	while (i == 0);
+	if (i == 1) {
 		sp->step = STP_RECV;
 		return (0);
 	}
-	if (i == 1)
+	if (i == -1)
 		vca_close_session(sp, "blast");
 	else if (i == 2)
 		vca_close_session(sp, "silent");
@@ -756,7 +753,7 @@ cnt_recv(struct sess *sp)
 	sp->vcl = sp->wrk->vcl;
 	sp->wrk->vcl = NULL;
 
-	done = http_DissectRequest(sp->wrk, sp->http, sp->fd);
+	done = http_DissectRequest(sp);
 	if (done != 0) {
 		RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
 		sp->step = STP_DONE;
