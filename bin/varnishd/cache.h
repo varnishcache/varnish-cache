@@ -90,14 +90,6 @@ struct ws {
 	char			*r;		/* (R)eserved length */
 };
 
-void WS_Init(struct ws *ws, void *space, unsigned len);
-unsigned WS_Reserve(struct ws *ws, unsigned bytes);
-void WS_Release(struct ws *ws, unsigned bytes);
-void WS_ReleaseP(struct ws *ws, char *ptr);
-void WS_Assert(const struct ws *ws);
-void WS_Reset(struct ws *ws);
-char *WS_Alloc(struct ws *ws, unsigned bytes);
-
 /*--------------------------------------------------------------------
  * HTTP Request/Response/Header handling structure.
  */
@@ -553,6 +545,16 @@ cli_func_t	cli_func_config_discard;
 cli_func_t	cli_func_config_use;
 cli_func_t	cli_func_dump_pool;
 #endif
+
+/* cache_ws.c */
+
+void WS_Init(struct ws *ws, void *space, unsigned len);
+unsigned WS_Reserve(struct ws *ws, unsigned bytes);
+void WS_Release(struct ws *ws, unsigned bytes);
+void WS_ReleaseP(struct ws *ws, char *ptr);
+void WS_Assert(const struct ws *ws);
+void WS_Reset(struct ws *ws);
+char *WS_Alloc(struct ws *ws, unsigned bytes);
 
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
