@@ -122,6 +122,16 @@ struct http {
 	unsigned		nhd;
 };
 
+struct http_conn {
+	unsigned		magic;
+#define HTTP_CONN_MAGIC		0x3e19edd1
+
+	struct http		*http;
+	struct ws		*ws;
+	txt			rxbuf;
+	txt			pipeline;
+};
+
 /*--------------------------------------------------------------------*/
 
 struct acct {
