@@ -31,6 +31,8 @@
  * HTTP protocol requests
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -39,8 +41,7 @@
 #include "cache.h"
 
 /*--------------------------------------------------------------------
- * Check if we have a complete HTTP request or response yet between the
- * two pointers given.
+ * Check if we have a complete HTTP request or response yet
  *
  * Return values:
  *	-1  No, and you can nuke the (white-space) content.
@@ -49,19 +50,19 @@
  */
 
 static int
-http_header_complete(const char *b, const char *e)
+htc_header_complete(txt *t)
 {
 	const char *p;
 
-	AN(b);
-	AN(e);
-	assert(b <= e);
-	assert(*e == '\0');
+	Tcheck(*t);
+	assert(*t->e == '\0');
 	/* Skip any leading white space */
-	for (p = b ; isspace(*p); p++)
+	for (p = t->b ; isspace(*p); p++)
 		continue;
-	if (*p == '\0')
-		return (-1);
+	if (*p == '\0') {
+		t->e = t->b;
+		return (0);
+	}
 	while (1) {
 		p = strchr(p, '\n');
 		if (p == NULL)
@@ -73,169 +74,109 @@ http_header_complete(const char *b, const char *e)
 			break;
 	}
 	p++;
-	return (p - b);
+	return (p - t->b);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-http_RecvPrep(struct http *hp)
+HTC_Init(struct http_conn *htc, struct ws *ws, int fd)
 {
-	unsigned l;
 
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	WS_Assert(hp->ws);
-	WS_Reset(hp->ws);
-	WS_Reserve(hp->ws, 0);
-	hp->rx.b = hp->ws->f;
-	hp->rx.e = hp->rx.b;
-	if (hp->pl.b != NULL) {
-		l = Tlen(hp->pl);
-		memmove(hp->rx.b, hp->pl.b, l);
-		hp->rx.e = hp->rx.b + l;
-		hp->pl.b = hp->pl.e = NULL;
-	}
-	*hp->rx.e = '\0';
+	htc->magic = HTTP_CONN_MAGIC;
+	htc->ws = ws;
+	htc->fd = fd;
+	WS_Reset(htc->ws);
+	WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
+	htc->rxbuf.b = ws->f;
+	htc->rxbuf.e = ws->f;
+	htc->pipeline.b = NULL;
+	htc->pipeline.e = NULL;
 }
 
+/*--------------------------------------------------------------------
+ * Start over, and recycle any pipelined input.
+ * The WS_Reset is safe, even though the pipelined input is stored in
+ * the ws somewhere, because WS_Reset only fiddles pointers.
+ */
+
 int
-http_RecvPrepAgain(struct http *hp)
+HTC_Reinit(struct http_conn *htc)
 {
+	unsigned l;
 	int i;
 
-	http_RecvPrep(hp);
-	if (hp->rx.b == hp->rx.e)
-		return (0);
-	i = http_header_complete(hp->rx.b, hp->rx.e);
-	if (i == -1)
-		hp->rx.e = hp->rx.b;
-	if (i <= 0)
-		return (0);
-	WS_ReleaseP(hp->ws, hp->rx.e);
-	if (hp->rx.e != hp->rx.b + i) {
-		hp->pl.b = hp->rx.b + i;
-		hp->pl.e = hp->rx.e;
-		hp->rx.e = hp->pl.b;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	WS_Reset(htc->ws);
+	WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
+	htc->rxbuf.b = htc->ws->f;
+	htc->rxbuf.e = htc->ws->f;
+	if (htc->pipeline.b != NULL) {
+		l = Tlen(htc->pipeline);
+		memmove(htc->rxbuf.b, htc->pipeline.b, l);
+		htc->rxbuf.e += l;
+		htc->pipeline.b = NULL;
+		htc->pipeline.e = NULL;
 	}
+	*htc->rxbuf.e = '\0';
+	i = htc_header_complete(&htc->rxbuf);
 	return (i);
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-http_RecvSome(int fd, struct http *hp)
-{
-	unsigned l;
-	int i;
-
-	l = pdiff(hp->rx.e, hp->ws->e) - 1;
-	l /= 2;		/* Don't fill all of workspace with read-ahead */
-	if (l <= 1) {
-		VSL(SLT_HttpError, fd, "Received too much");
-		VSLR(SLT_HttpGarbage, fd, hp->rx);
-		hp->rx.b = hp->rx.e = NULL;
-		WS_Release(hp->ws, 0);
-		return (1);
-	}
-	errno = 0;
-	i = read(fd, hp->rx.e, l - 1);
-	if (i > 0) {
-		hp->rx.e += i;
-		*hp->rx.e = '\0';
-		i = http_header_complete(hp->rx.b, hp->rx.e);
-		if (i == -1)
-			hp->rx.e = hp->rx.b;
-		if (i == 0)
-			return (-1);
-		WS_ReleaseP(hp->ws, hp->rx.e);
-		if (hp->rx.e != hp->rx.b + i) {
-			hp->pl.b = hp->rx.b + i;
-			hp->pl.e = hp->rx.e;
-			hp->rx.e = hp->pl.b;
-		}
-		return (0);
-	}
-
-	if (hp->rx.e != hp->rx.b) {
-		VSL(SLT_HttpError, fd,
-		    "Received (only) %d bytes, errno %d",
-		    hp->rx.e - hp->rx.b, errno);
-		VSLR(SLT_Debug, fd, hp->rx);
-	} else if (errno == 0)
-		VSL(SLT_HttpError, fd, "Received nothing");
-	else
-		VSL(SLT_HttpError, fd, "Received errno %d", errno);
-	hp->rx.b = hp->rx.e = NULL;
-	WS_Release(hp->ws, 0);
-	return(2);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-http_RecvHead(struct http *hp, int fd)
+HTC_Rx(struct http_conn *htc)
 {
 	int i;
 
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	http_RecvPrep(hp);
-	do
-		i = http_RecvSome(fd, hp);
-	while (i == -1);
-	return (i);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-http_GetTail(struct http *hp, unsigned len, char **b, char **e)
-{
-
-	if (hp->pl.b >= hp->pl.e)
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
+	assert(i > 0);
+	i = read(htc->fd, htc->rxbuf.e, i);
+	if (i < 0) {
+		WS_ReleaseP(htc->ws, htc->rxbuf.b);
+		return (-1);
+	}
+	htc->rxbuf.e += i;
+	*htc->rxbuf.e = '\0';
+	i = htc_header_complete(&htc->rxbuf);
+	if (i == 0)
 		return (0);
-
-	if (len == 0)
-		len = Tlen(hp->pl);
-
-	if (hp->pl.b + len > hp->pl.e)
-		len = Tlen(hp->pl);
-	if (len == 0)
-		return (0);
-	*b = hp->pl.b;
-	*e = hp->pl.b + len;
-	hp->pl.b += len;
-	Tcheck(hp->pl);
+	WS_ReleaseP(htc->ws, htc->rxbuf.e);
+	if (htc->rxbuf.b + i < htc->rxbuf.e) {
+		htc->pipeline.b = htc->rxbuf.b + i;
+		htc->pipeline.e = htc->rxbuf.e;
+		htc->rxbuf.e = htc->pipeline.b;
+	}
 	return (1);
 }
 
-/*--------------------------------------------------------------------*/
-/* Read from fd, but soak up any tail first */
-
 int
-http_Read(struct http *hp, int fd, void *p, unsigned len)
+HTC_Read(struct http_conn *htc, void *d, unsigned len)
 {
+	unsigned l;
+	unsigned char *p;
 	int i;
-	unsigned u;
-	char *b = p;
 
-	u = 0;
-	if (hp->pl.b < hp->pl.e) {
-		u = Tlen(hp->pl);
-		if (u > len)
-			u = len;
-		memcpy(b, hp->pl.b, u);
-		hp->pl.b += u;
-		b += u;
-		len -= u;
+	l = 0;
+	p = d;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	if (htc->pipeline.b) {
+		l = Tlen(htc->pipeline);
+		if (l > len)
+			l = len;
+		memcpy(p, htc->pipeline.b, l);
+		p += l;
+		len -= l;
+		htc->pipeline.b += l;
+		if (htc->pipeline.b == htc->pipeline.e) 
+			htc->pipeline.b = htc->pipeline.e = NULL;
 	}
-	if (hp->pl.e == hp->pl.b)
-		hp->pl.b = hp->pl.e = NULL;
-	if (len > 0) {
-		i = read(fd, b, len);
-		if (i < 0)		/* XXX i == 0 ?? */
-			return (i);
-		u += i;
-	}
-	return (u);
+	if (len == 0)
+		return (l);
+	i = read(htc->fd, p, len);
+	if (i < 0)
+		return (i);
+	return (i + l);
 }
-

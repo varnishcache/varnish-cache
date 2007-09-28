@@ -70,7 +70,6 @@ void
 PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
-	char *b, *e;
 	struct worker *w;
 	struct bereq *bereq;
 	struct pollfd fds[2];
@@ -89,8 +88,8 @@ PipeSession(struct sess *sp)
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, bereq->http, 0);
 
-	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
-		WRK_Write(w, b, e - b);
+	if (sp->htc->pipeline.b != NULL)
+		WRK_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");

@@ -347,7 +347,7 @@ http_GetReq(const struct http *hp)
  */
 
 static int
-http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
+http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 {
 	char *q, *r;
 
@@ -357,8 +357,8 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
-	assert(p < hp->rx.e);	/* http_header_complete() guarantees this */
-	for (; p < hp->rx.e; p = r) {
+	assert(p < t.e);	/* http_header_complete() guarantees this */
+	for (; p < t.e; p = r) {
 		/* XXX: handle continuation lines */
 		q = strchr(p, '\n');
 		assert(q != NULL);
@@ -391,16 +391,23 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p)
 /*--------------------------------------------------------------------*/
 
 int
-http_DissectRequest(struct worker *w, struct http *hp, int fd)
+http_DissectRequest(struct sess *sp)
 {
 	char *p;
+	struct http_conn *htc;
+	struct http *hp;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	htc = sp->htc;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	hp = sp->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
 	/* Assert a NUL at rx.e */
-	Tcheck(hp->rx);
+	Tcheck(htc->rxbuf);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->rx.b ; isspace(*p); p++)
+	for (p = htc->rxbuf.b ; isspace(*p); p++)
 		continue;
 
 	/* First, the request type (GET/HEAD etc) */
@@ -408,23 +415,23 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	for (; isalpha(*p); p++)
 		;
 	hp->hd[HTTP_HDR_REQ].e = p;
-	WSLH(w, HTTP_T_Request, fd, hp, HTTP_HDR_REQ);
+	WSLH(sp->wrk, HTTP_T_Request, sp->fd, hp, HTTP_HDR_REQ);
 	*p++ = '\0';
 
 	/* Next find the URI */
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx);
+		WSLR(sp->wrk, SLT_HttpGarbage, sp->fd, htc->rxbuf);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_URL].b = p;
 	while (!isspace(*p))
 		p++;
 	hp->hd[HTTP_HDR_URL].e = p;
-	WSLH(w, HTTP_T_URL, fd, hp, HTTP_HDR_URL);
+	WSLH(sp->wrk, HTTP_T_URL, sp->fd, hp, HTTP_HDR_URL);
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx);
+		WSLR(sp->wrk, SLT_HttpGarbage, sp->fd, htc->rxbuf);
 		return (400);
 	}
 	*p++ = '\0';
@@ -433,44 +440,45 @@ http_DissectRequest(struct worker *w, struct http *hp, int fd)
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p == '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx);
+		WSLR(sp->wrk, SLT_HttpGarbage, sp->fd, htc->rxbuf);
 		return (400);
 	}
 	hp->hd[HTTP_HDR_PROTO].b = p;
 	while (!isspace(*p))
 		p++;
 	hp->hd[HTTP_HDR_PROTO].e = p;
-	WSLH(w, HTTP_T_Protocol, fd, hp, HTTP_HDR_PROTO);
+	WSLH(sp->wrk, HTTP_T_Protocol, sp->fd, hp, HTTP_HDR_PROTO);
 	if (*p != '\n')
 		*p++ = '\0';
 	while (isspace(*p) && *p != '\n')
 		p++;
 	if (*p != '\n') {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx);
+		WSLR(sp->wrk, SLT_HttpGarbage, sp->fd, htc->rxbuf);
 		return (400);
 	}
 	*p++ = '\0';
 
-	return (http_dissect_hdrs(w, hp, fd, p));
+	return (http_dissect_hdrs(sp->wrk, hp, sp->fd, p, htc->rxbuf));
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-http_DissectResponse(struct worker *w, struct http *hp, int fd)
+http_DissectResponse(struct worker *w, struct http_conn *htc, struct http *hp)
 {
 	char *p, *q;
 
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	/* Assert a NUL at rx.e */
-	Tcheck(hp->rx);
+	/* Assert a NUL at rx.e (?) */
+	Tcheck(htc->rxbuf);
 	hp->logtag = HTTP_Rx;
 
-	for (p = hp->rx.b ; isspace(*p); p++)
+	for (p = htc->rxbuf.b ; isspace(*p); p++)
 		continue;
 
 	if (memcmp(p, "HTTP/1.", 7)) {
-		WSLR(w, SLT_HttpGarbage, fd, hp->rx);
+		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
 		return (400);
 	}
 	/* First, protocol */
@@ -478,7 +486,7 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	while (!isspace(*p))
 		p++;
 	hp->hd[HTTP_HDR_PROTO].e = p;
-	WSLH(w, HTTP_T_Protocol, fd, hp, HTTP_HDR_PROTO);
+	WSLH(w, HTTP_T_Protocol, htc->fd, hp, HTTP_HDR_PROTO);
 	*p++ = '\0';
 
 	/* Next find the status */
@@ -488,7 +496,7 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 	while (!isspace(*p))
 		p++;
 	hp->hd[HTTP_HDR_STATUS].e = p;
-	WSLH(w, HTTP_T_Status, fd, hp, HTTP_HDR_STATUS);
+	WSLH(w, HTTP_T_Status, htc->fd, hp, HTTP_HDR_STATUS);
 	*p++ = '\0';
 
 	/* Next find the response */
@@ -502,11 +510,12 @@ http_DissectResponse(struct worker *w, struct http *hp, int fd)
 		continue;
 	*q = '\0';
 	hp->hd[HTTP_HDR_RESPONSE].e = q;
-	WSLH(w, HTTP_T_Response, fd, hp, HTTP_HDR_RESPONSE);
+	WSLH(w, HTTP_T_Response, htc->fd, hp, HTTP_HDR_RESPONSE);
 	p++;
 
-	return (http_dissect_hdrs(w, hp, fd, p));
+	return (http_dissect_hdrs(w, hp, htc->fd, p, htc->rxbuf));
 }
+
 /*--------------------------------------------------------------------*/
 
 void
