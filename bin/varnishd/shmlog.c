@@ -66,10 +66,6 @@ static struct shmloghead *loghead;
 static unsigned char *logstart;
 static MTX vsl_mtx;
 
-/*
- * This variant copies a byte-range directly to the log, without
- * taking the detour over sprintf()
- */
 
 static void
 vsl_wrap(void)
@@ -80,7 +76,23 @@ vsl_wrap(void)
 	loghead->ptr = 0;
 }
 
-/*--------------------------------------------------------------------*/
+static void
+vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, int id)
+{
+
+	p[1] = len & 0xff;
+	p[2] = (id >> 8) & 0xff;
+	p[3] = id & 0xff;
+	p[4 + len] = '\0';
+	p[5 + len] = SLT_ENDMARKER;	
+	/* XXX: Write barrier here */
+	p[0] = tag;
+}
+
+/*--------------------------------------------------------------------
+ * This variant copies a byte-range directly to the log, without
+ * taking the detour over sprintf()
+ */
 
 void
 VSLR(enum shmlogtag tag, int id, txt t)
@@ -108,17 +120,11 @@ VSLR(enum shmlogtag tag, int id, txt t)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
 	loghead->ptr += 5 + l;
-	p[5 + l] = SLT_ENDMARKER;
 	assert(loghead->ptr < loghead->size);
 	UNLOCKSHM(&vsl_mtx);
 
-	p[1] = l & 0xff;
-	p[2] = (id >> 8) & 0xff;
-	p[3] = id & 0xff;
 	memcpy(p + 4, t.b, l);
-	p[4 + l] = '\0';
-	/* XXX: memory barrier */
-	p[0] = tag;
+	vsl_hdr(tag, p, l, id);
 }
 
 /*--------------------------------------------------------------------*/
@@ -138,35 +144,25 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 		t.b = (void*)(uintptr_t)fmt;
 		t.e = strchr(fmt, '\0');
 		VSLR(tag, id, t);
-		return;
+	} else {
+		LOCKSHM(&vsl_mtx);
+		VSL_stats->shm_writes++;
+		VSL_stats->shm_records++;
+		assert(loghead->ptr < loghead->size);
+
+		/* Wrap if we cannot fit a full size record */
+		if (loghead->ptr + 5 + 255 + 1 >= loghead->size)
+			vsl_wrap();
+
+		p = logstart + loghead->ptr;
+		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+		if (n > 255)
+			n = 255; 	/* we truncate long fields */
+		vsl_hdr(tag, p, n, id);
+		loghead->ptr += 5 + n;
+		assert(loghead->ptr < loghead->size);
+		UNLOCKSHM(&vsl_mtx);
 	}
-
-	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_writes++;
-	VSL_stats->shm_records++;
-	assert(loghead->ptr < loghead->size);
-
-	/* Wrap if we cannot fit a full size record */
-	if (loghead->ptr + 5 + 255 + 1 >= loghead->size)
-		vsl_wrap();
-
-	p = logstart + loghead->ptr;
-	n = 0;
-	n = vsnprintf((char *)(p + 4), 256, fmt, ap);
-	if (n > 255)
-		n = 255; 	/* we truncate long fields */
-	p[1] = n & 0xff;
-	p[2] = (id >> 8) & 0xff;
-	p[3] = id & 0xff;
-	p[4 + n] = '\0';;
-	p[5 + n] = SLT_ENDMARKER;
-	p[0] = tag;
-
-	loghead->ptr += 5 + n;
-	assert(loghead->ptr < loghead->size);
-
-	UNLOCKSHM(&vsl_mtx);
-
 	va_end(ap);
 }
 
@@ -192,6 +188,7 @@ WSL_Flush(struct worker *w)
 	p[l] = SLT_ENDMARKER;
 	loghead->ptr += l;
 	assert(loghead->ptr < loghead->size);
+	/* XXX: memory barrier here */
 	p[0] = w->wlog[0];
 	UNLOCKSHM(&vsl_mtx);
 	w->wlp = w->wlog;
@@ -223,14 +220,8 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 	p = w->wlp;
 	w->wlp += 5 + l;
 	assert(w->wlp < w->wle);
-	p[5 + l] = SLT_ENDMARKER;
-
-	p[1] = l & 0xff;
-	p[2] = (id >> 8) & 0xff;
-	p[3] = id & 0xff;
 	memcpy(p + 4, t.b, l);
-	p[4 + l] = '\0';
-	p[0] = tag;
+	vsl_hdr(tag, p, l, id);
 	w->wlr++;
 }
 
@@ -251,30 +242,22 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		t.b = (void*)(uintptr_t)fmt;
 		t.e = strchr(fmt, '\0');
 		WSLR(w, tag, id, t);
-		return;
+	} else {
+		assert(w->wlp < w->wle);
+
+		/* Wrap if we cannot fit a full size record */
+		if (w->wlp + 5 + 255 + 1 >= w->wle)
+			WSL_Flush(w);
+
+		p = w->wlp;
+		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+		if (n > 255)
+			n = 255; 	/* we truncate long fields */
+		vsl_hdr(tag, p, n, id);
+		w->wlp += 5 + n;
+		assert(w->wlp < w->wle);
+		w->wlr++;
 	}
-
-	assert(w->wlp < w->wle);
-
-	/* Wrap if we cannot fit a full size record */
-	if (w->wlp + 5 + 255 + 1 >= w->wle)
-		WSL_Flush(w);
-
-	p = w->wlp;
-	n = 0;
-	n = vsnprintf((char *)(p + 4), 256, fmt, ap);
-	if (n > 255)
-		n = 255; 	/* we truncate long fields */
-	p[1] = n & 0xff;
-	p[2] = (id >> 8) & 0xff;
-	p[3] = id & 0xff;
-	p[4 + n] = '\0';;
-	p[5 + n] = SLT_ENDMARKER;
-	p[0] = tag;
-
-	w->wlp += 5 + n;
-	assert(w->wlp < w->wle);
-	w->wlr++;
 	va_end(ap);
 }
 

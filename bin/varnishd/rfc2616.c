@@ -155,7 +155,7 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSL(sp->wrk, SLT_TTL, sp->fd, "%u RFC %d %d %d %d %d %d", sp->xid,
+	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %d %d", sp->xid,
 	    (int)(ttd - obj->entered), (int)obj->entered, (int)h_date,
 	    (int)h_expires, (int)u1, (int)u2);
 

@@ -69,7 +69,7 @@ res_do_304(struct sess *sp)
 {
 	char lm[64];
 
-	WSL(sp->wrk, SLT_Length, sp->fd, "%u", 0);
+	WSP(sp, SLT_Length, "%u", 0);
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
@@ -119,7 +119,7 @@ RES_BuildHttp(struct sess *sp)
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
 
-	WSL(sp->wrk, SLT_Length, sp->fd, "%u", sp->obj->len);
+	WSP(sp, SLT_Length, "%u", sp->obj->len);
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;

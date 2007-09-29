@@ -47,21 +47,22 @@
 #include "miniobj.h"
 
 enum {
+	/* Fields from the first line of HTTP proto */
 	HTTP_HDR_REQ,
 	HTTP_HDR_URL,
 	HTTP_HDR_PROTO,
 	HTTP_HDR_STATUS,
 	HTTP_HDR_RESPONSE,
-	/* add more here */
+	/* HTTP header lines */
 	HTTP_HDR_FIRST,
-	HTTP_HDR_MAX = 32
+	HTTP_HDR_MAX = 32		/* XXX: should be #defined */
 };
 
 /* Note: intentionally not IOV_MAX */
 #define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
 /* Amount of per-worker logspace */
-#define WLOGSPACE	8192
+#define WLOGSPACE	8192		/* XXX: param ? */
 
 struct cli;
 struct vsb;
@@ -70,6 +71,13 @@ struct object;
 struct objhead;
 struct workreq;
 struct addrinfo;
+
+/*--------------------------------------------------------------------*/
+
+typedef struct {
+	char			*b;
+	char			*e;
+} txt;
 
 /*--------------------------------------------------------------------*/
 
@@ -85,24 +93,19 @@ enum step {
 
 struct ws {
 	char			*s;		/* (S)tart of buffer */
-	char			*e;		/* (E)nd of buffer */
 	char			*f;		/* (F)ree pointer */
 	char			*r;		/* (R)eserved length */
+	char			*e;		/* (E)nd of buffer */
 };
 
 /*--------------------------------------------------------------------
  * HTTP Request/Response/Header handling structure.
  */
 
-typedef struct {
-	char			*b;
-	char			*e;
-} txt;
-
 enum httpwhence {
-	HTTP_Rx,
-	HTTP_Tx,
-	HTTP_Obj
+	HTTP_Rx	 = 1,
+	HTTP_Tx  = 2,
+	HTTP_Obj = 3
 };
 
 struct http {
@@ -119,6 +122,10 @@ struct http {
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 	unsigned		nhd;
 };
+
+/*--------------------------------------------------------------------
+ * HTTP Protocol connection structure
+ */
 
 struct http_conn {
 	unsigned		magic;
@@ -471,7 +478,7 @@ const char *http_GetReq(const struct http *hp);
 const char *http_GetProto(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_DissectRequest(struct sess *sp);
-int http_DissectResponse(struct worker *w, struct http_conn *htc, struct http *sp);
+int http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http *sp);
 const char *http_DoConnection(struct http *hp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
@@ -516,6 +523,11 @@ void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w);
+#define WSP(sess, tag, fmt, ...) \
+	WSL((sess)->wrk, tag, (sess)->fd, fmt, __VA_ARGS__)
+#define WSPR(sess, tag, txt) \
+	WSLR((sess)->wrk, tag, (sess)->fd, txt)
+
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
 	fprintf(stderr,"INCOMPLETE AT: %s(%d)\n", (const char *)__func__, __LINE__);	\

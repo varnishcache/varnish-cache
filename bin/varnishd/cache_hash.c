@@ -133,7 +133,7 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 	assert(*b == '\0');
 	b++;
 	assert(b == obj->hash + obj->hashlen);
-	VSL(SLT_Debug, sp->fd, "Hash Match: %s", obj->hash);
+	WSP(sp, SLT_Debug, "Hash Match: %s", obj->hash);
 	return (0);
 }
 
@@ -152,7 +152,7 @@ HSH_Copy(const struct sess *sp, const struct objhead *obj)
 		*b++ = '#';
 	}
 	*b++ = '\0';
-	VSL(SLT_Debug, sp->fd, "Hash: %s", obj->hash);
+	WSP(sp, SLT_Debug, "Hash: %s", obj->hash);
 	assert(b <= obj->hash + obj->hashlen);
 }
 
@@ -204,7 +204,7 @@ HSH_Lookup(struct sess *sp)
 		} else if (BAN_CheckObject(o,
 		    h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
-			VSL(SLT_ExpBan, 0, "%u was banned", o->xid);
+			WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 			if (o->heap_idx != 0)
 				EXP_TTLchange(o);
 		} else if (o->vary == NULL || VRY_Match(sp, o->vary))

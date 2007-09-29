@@ -70,20 +70,21 @@
 
 // Review all below this line ///////////////////////////////////////////////
 
+-e732   // Loss of sign (arg. no. 2) (int to unsigned
+-e737	// [45]  Loss of sign in promotion from int to unsigned
+-e713	// Loss of precision (assignment) (unsigned long long to long long)
+-e574	// Signed-unsigned mix with relational
+-e712	// Loss of precision (assignment) (long long to
+-e747	// Significant prototype coercion (arg. no. 2) long
+
 /*
 
 -e767	// Macro redef (system queue.h vs ours )
 
--e574	// Signed-unsigned mix with relational
--e712	// Loss of precision (assignment) (long long to
--e747	// Significant prototype coercion (arg. no. 2) long
--e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e506	// Constant value boolean
 -e818	// Pointer parameter '...' could be declared as pointing to const
 -e774	// Boolean within 'if' always evaluates to False
 -e534	// Ignoring return value of function
 -e557	// unrecog format
--e732   // Loss of sign (arg. no. 2) (int to unsigned
--e737	// [45]  Loss of sign in promotion from int to unsigned
 
 */

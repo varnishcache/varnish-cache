@@ -67,17 +67,17 @@ vrt_acl_vsl(const struct sess *sp, const char *acln, const struct vrt_acl *ap, i
 	if (acln != NULL) {
 		if (ap->name == NULL) {
 			assert(r == 0);
-			VSL(SLT_VCL_acl, sp->fd, "NO_MATCH %s", acln);
+			WSP(sp, SLT_VCL_acl, "NO_MATCH %s", acln);
 			return (r);
 		}
 		if (ap->priv == NULL) {
 			assert(r == 0);
-			VSL(SLT_VCL_acl, sp->fd, "FAIL %s %s", acln, ap->desc);
+			WSP(sp, SLT_VCL_acl, "FAIL %s %s", acln, ap->desc);
 			return (r);
 		}
 
-		VSL(SLT_VCL_acl, sp->fd, "%s %s %s",
-			r ? "MATCH" : "NEG_MATCH", acln, ap->desc);
+		WSP(sp, SLT_VCL_acl, "%s %s %s",
+		    r ? "MATCH" : "NEG_MATCH", acln, ap->desc);
 	}
 	return (r);
 }

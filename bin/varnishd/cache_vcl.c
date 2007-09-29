@@ -304,10 +304,9 @@ VCL_##func##_method(struct sess *sp)					\
 {									\
 									\
 	sp->handling = 0;						\
-	WSL(sp->wrk, SLT_VCL_call, sp->fd, "%s", #func); 		\
+	WSP(sp, SLT_VCL_call, "%s", #func); 				\
 	sp->vcl->func##_func(sp);					\
-	WSL(sp->wrk, SLT_VCL_return, sp->fd, "%s",			\
-	     vcl_handlingname(sp->handling));				\
+	WSP(sp, SLT_VCL_return, "%s", vcl_handlingname(sp->handling));	\
 	assert(sp->handling & bitmap);					\
 	assert(!(sp->handling & ~bitmap));				\
 }

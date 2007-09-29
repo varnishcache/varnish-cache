@@ -526,8 +526,7 @@ cnt_lookup(struct sess *sp)
 		 * We hit a busy object, disembark worker thread and expect
 		 * hash code to restart us, still in STP_LOOKUP, later.
 		 */
-		WSL(sp->wrk, SLT_Debug, sp->fd,
-		    "on waiting list on obj %u", sp->obj->xid);
+		WSP(sp, SLT_Debug, "on waiting list on obj %u", sp->obj->xid);
 		/*
 		 * There is a non-zero risk that we come here more than once
 		 * before we get through, in that case cnt_recv must be set
@@ -549,7 +548,7 @@ cnt_lookup(struct sess *sp)
 
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
-		WSL(sp->wrk, SLT_HitPass, sp->fd, "%u", sp->obj->xid);
+		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASS;
@@ -557,7 +556,7 @@ cnt_lookup(struct sess *sp)
 	}
 
 	VSL_stats->cache_hit++;
-	WSL(sp->wrk, SLT_Hit, sp->fd, "%u", sp->obj->xid);
+	WSP(sp, SLT_Hit, "%u", sp->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
 }
@@ -745,8 +744,7 @@ cnt_recv(struct sess *sp)
 
 	/* Assign XID and log */
 	sp->xid = ++xids;				/* XXX not locked */
-	WSL(sp->wrk, SLT_ReqStart, sp->fd,
-	    "%s %s %u", sp->addr, sp->port,  sp->xid);
+	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&sp->wrk->vcl);
