@@ -68,7 +68,7 @@ VRT_count(const struct sess *sp, unsigned u)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (params->vcl_trace)
-		WSL(sp->wrk, SLT_VCL_trace, sp->fd, "%u %d.%d", u,
+		WSP(sp, SLT_VCL_trace, "%u %d.%d", u,
 		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
 }
 
@@ -169,7 +169,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr, const c
 	} else {
 		b = vrt_assemble_string(hp, hdr + 1, p, ap);
 		if (b == NULL) {
-			VSL(SLT_LostHeader, sp->fd, hdr + 1);
+			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
 			http_SetHeader(sp->wrk, sp->fd, hp, b);
@@ -228,7 +228,7 @@ VRT_l_obj_status(const struct sess *sp, int num)
 	assert(num >= 100 && num <= 999);
 	p = WS_Alloc(sp->obj->http.ws, 4);
 	if (p == NULL)
-		WSL(sp->wrk, SLT_LostHeader, sp->fd, "obj.status");
+		WSP(sp, SLT_LostHeader, "%s", "obj.status");
 	else
 		sprintf(p, "%d", num);
 	http_SetH(&sp->obj->http, HTTP_HDR_STATUS, p);
@@ -250,7 +250,7 @@ VRT_l_resp_status(const struct sess *sp, int num)
 	assert(num >= 100 && num <= 999);
 	p = WS_Alloc(sp->http->ws, 4);
 	if (p == NULL)
-		WSL(sp->wrk, SLT_LostHeader, sp->fd, "resp.status");
+		WSP(sp, SLT_LostHeader, "%s", "resp.status");
 	else
 		sprintf(p, "%d", num);
 	http_SetH(sp->http, HTTP_HDR_STATUS, p);
@@ -284,7 +284,7 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	WSL(sp->wrk, SLT_TTL, sp->fd, "%u VCL %.0f %.0f",
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f",
 	    sp->obj->xid, a, sp->t_req);
 	if (a < 0)
 		a = 0;

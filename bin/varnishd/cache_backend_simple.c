@@ -263,8 +263,7 @@ bes_GetFd(const struct sess *sp)
 		assert(vc->fd >= 0);
 		assert(vc->backend == sp->backend);
 		WSL(sp->wrk, SLT_BackendXID, vc->fd, "%u", sp->xid);
-		WSL(sp->wrk, SLT_Backend, sp->fd, "%d %s", vc->fd,
-		    sp->backend->vcl_name);
+		WSP(sp, SLT_Backend, "%d %s", vc->fd, sp->backend->vcl_name);
 		return (vc);
 	}
 	return (NULL);

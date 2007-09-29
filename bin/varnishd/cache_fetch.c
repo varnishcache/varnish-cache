@@ -358,7 +358,7 @@ Fetch(struct sess *sp)
 		mklen = 1;
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
-		VSL(SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
+		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_ClosedFd(sp->wrk, vc);
 		return (-1);
 	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {

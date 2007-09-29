@@ -241,7 +241,7 @@ vca_close_session(struct sess *sp, const char *why)
 {
 	int i;
 
-	VSL(SLT_SessionClose, sp->fd, why);
+	WSP(sp, SLT_SessionClose, "%s", why);
 	if (sp->fd >= 0) {
 		i = close(sp->fd);
 		assert(i == 0 || errno != EBADF);	/* XXX EINVAL seen */
