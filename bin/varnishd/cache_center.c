@@ -300,24 +300,6 @@ cnt_fetch(struct sess *sp)
 	i = Fetch(sp);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
-	/* Experimental. Set time for last check of backend health.
-	 * If the backend replied with 200, it is obviously up and running,
-	 * increase health parameter. If we got a 504 back, it would imply
-	 * that the backend is not reachable. Decrease health parameter.
-	 */
-	sp->backend->last_check = TIM_mono();
-	sp->backend->minute_limit = 1;
-	if (!i){
-		if (http_GetStatus(sp->bereq->http) == 200) {
-			if (sp->backend->health < 10000)
-				sp->backend->health++;
-		} else if(http_GetStatus(sp->bereq->http) == 504) {
-			if (sp->backend->health > -10000)
-				sp->backend->health--;
-		}
-	}
-
-
 	VBE_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
