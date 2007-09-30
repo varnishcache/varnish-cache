@@ -199,12 +199,11 @@ wrk_do_one(struct worker *w)
 static void *
 wrk_thread(void *priv)
 {
-	struct worker *w, ww;
+	struct worker w[1];
 	struct wq *qp;
 	char c;
 
 	qp = priv;
-	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->used = TIM_real();
