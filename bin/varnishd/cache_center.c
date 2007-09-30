@@ -304,12 +304,6 @@ cnt_fetch(struct sess *sp)
 	sp->bereq = NULL;
 
 	if (i) {
-		/* Experimental. If the fetch failed, it would also seem
-		 * to be a backend problem, so decrease the health parameter.
-		 */
-		if (sp->backend->health > -10000)
-			sp->backend->health--;
-
 		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
 	} else {
 		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
@@ -402,21 +396,8 @@ DOT hit -> deliver [label="deliver",style=bold,color=green,weight=4]
 static int
 cnt_hit(struct sess *sp)
 {
-	double time_diff;
-	double minutes;
 
 	assert(!sp->obj->pass);
-
-	/* Experimental. Reduce health parameter of backend towards zero
-	 * if it has been more than a minute since it was checked. */
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	time_diff = TIM_mono() - sp->backend->last_check;
-	minutes = time_diff / 60;
-	if (minutes > sp->backend->minute_limit) {
-		sp->backend->minute_limit++;
-		sp->backend->health = (int)((double)sp->backend->health / 2);
-		VBE_UpdateHealth(sp, NULL, 0);
-	}
 
 	VCL_hit_method(sp);
 
