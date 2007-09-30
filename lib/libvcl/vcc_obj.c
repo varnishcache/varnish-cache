@@ -98,6 +98,13 @@ struct var vcc_vars[] = {
 	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
 	},
+	{ "req.restarts", INT, 12,
+	    "VRT_r_req_restarts(sp)",
+	    NULL,
+	    V_RO,
+	    0,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	},
 	{ "bereq.request", STRING, 13,
 	    "VRT_r_bereq_request(sp)",
 	    "VRT_l_bereq_request(sp, ",

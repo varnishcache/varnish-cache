@@ -530,6 +530,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_req_hash(struct sess *, const char *);\n");
 	vsb_cat(sb, "struct backend * VRT_r_req_backend(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_backend(struct sess *, struct backend *);\n");
+	vsb_cat(sb, "int VRT_r_req_restarts(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_bereq_request(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_url(const struct sess *);\n");
