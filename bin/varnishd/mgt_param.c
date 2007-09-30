@@ -555,6 +555,14 @@ tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
 	}
 }
 
+static void
+tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	tweak_generic_uint(cli, &master.max_restarts, arg, 0, UINT_MAX);
+}
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -760,6 +768,14 @@ static struct parspec parspec[] = {
 		"exec cc -nostdinc -fpic -shared -Wl,-x -o %s -x c - < %s"
 #endif
 		, NULL },
+	{ "max_restarts", tweak_max_restarts,
+		"Upper limit on how many times a request can restart."
+#ifdef NOT_YET
+		"  ESI:include counts as a restart in this context."
+#endif
+		"\nBe aware that restarts are likely to cause a hit against "
+		"the backend, so don't increase thoughtlessly.\n",
+		"4", "restarts" },
 	{ NULL, NULL, NULL }
 };
 

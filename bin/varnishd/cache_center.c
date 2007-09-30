@@ -69,6 +69,7 @@ DOT start -> recv [style=bold,color=green,weight=4]
 
 #include "shmlog.h"
 #include "vcl.h"
+#include "heritage.h"
 #include "cache.h"
 
 static unsigned xids;
@@ -707,6 +708,10 @@ cnt_recv(struct sess *sp)
 
 	AZ(sp->obj);
 
+	if (sp->restarts > params->max_restarts) {
+		sp->step = STP_ERROR;
+		return (0);
+	}
 	if (sp->restarts == 0) {
 		AZ(sp->vcl);
 		/* Update stats of various sorts */
