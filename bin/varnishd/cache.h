@@ -116,6 +116,7 @@ struct http {
 
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence 	logtag;
+	int			status;
 
 	txt 			hd[HTTP_HDR_MAX];
 	unsigned char		hdf[HTTP_HDR_MAX];

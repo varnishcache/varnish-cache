@@ -327,8 +327,10 @@ http_GetStatus(const struct http *hp)
 {
 
 	Tcheck(hp->hd[HTTP_HDR_STATUS]);
-	return (strtoul(hp->hd[HTTP_HDR_STATUS].b,
-	    NULL /* XXX */, 10));
+	if (hp->status == 0)
+		hp->status = strtoul(hp->hd[HTTP_HDR_STATUS].b,
+		    NULL /* XXX */, 10));
+	return (hp->status);
 }
 
 const char *
