@@ -239,6 +239,9 @@ VRT_r_obj_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	/* XXX: use http_GetStatus() */
+	if (sp->obj->http.status)
+		return (sp->obj->http.status);
 	return (atoi(sp->obj->http.hd[HTTP_HDR_STATUS].b));
 }
 
@@ -353,6 +356,16 @@ VRT_r_req_##n1(const struct sess *sp)				\
 VREQ(request, HTTP_HDR_REQ)
 VREQ(url, HTTP_HDR_URL)
 VREQ(proto, HTTP_HDR_PROTO)
+
+/*--------------------------------------------------------------------*/
+
+int
+VRT_r_req_restarts(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (sp->restarts);
+}
 
 /*--------------------------------------------------------------------*/
 

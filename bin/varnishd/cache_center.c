@@ -303,21 +303,30 @@ cnt_fetch(struct sess *sp)
 	VBE_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
-	if (i) {
+	if (0 && i) {
 		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
 	} else {
-		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+		if (!i)
+			RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+		else
+			sp->obj->http.status = 503;
 
 		VCL_fetch_method(sp);
 
 		switch (sp->handling) {
 		case VCL_RET_ERROR:
+		case VCL_RET_RESTART:
 			sp->obj->ttl = 0;
 			sp->obj->cacheable = 0;
 			HSH_Unbusy(sp->obj);
 			HSH_Deref(sp->obj);
 			sp->obj = NULL;
-			sp->step = STP_ERROR;
+			if (sp->handling == VCL_RET_ERROR)
+				sp->step = STP_ERROR;
+			else {
+				sp->restarts++;
+				sp->step = STP_RECV;
+			}
 			return (0);
 		case VCL_RET_PASS:
 			sp->obj->pass = 1;
@@ -696,39 +705,41 @@ cnt_recv(struct sess *sp)
 {
 	int done;
 
-	AZ(sp->vcl);
 	AZ(sp->obj);
 
-	/* Update stats of various sorts */
-	VSL_stats->client_req++;			/* XXX not locked */
-	sp->t_req = TIM_real();
-	sp->wrk->used = sp->t_req;
-	sp->wrk->acct.req++;
+	if (sp->restarts == 0) {
+		AZ(sp->vcl);
+		/* Update stats of various sorts */
+		VSL_stats->client_req++;			/* XXX not locked */
+		sp->t_req = TIM_real();
+		sp->wrk->used = sp->t_req;
+		sp->wrk->acct.req++;
 
-	/* Assign XID and log */
-	sp->xid = ++xids;				/* XXX not locked */
-	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
+		/* Assign XID and log */
+		sp->xid = ++xids;				/* XXX not locked */
+		WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
-	/* Borrow VCL reference from worker thread */
-	VCL_Refresh(&sp->wrk->vcl);
-	sp->vcl = sp->wrk->vcl;
-	sp->wrk->vcl = NULL;
+		/* Borrow VCL reference from worker thread */
+		VCL_Refresh(&sp->wrk->vcl);
+		sp->vcl = sp->wrk->vcl;
+		sp->wrk->vcl = NULL;
 
-	done = http_DissectRequest(sp);
-	if (done != 0) {
-		RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
-		sp->step = STP_DONE;
-		return (0);
+		done = http_DissectRequest(sp);
+		if (done != 0) {
+			RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
+			sp->step = STP_DONE;
+			return (0);
+		}
+
+		sp->doclose = http_DoConnection(sp->http);
+
+		/* By default we use the first backend */
+		AZ(sp->backend);
+		sp->backend = sp->vcl->backend[0];
+		CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+
+		/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 	}
-
-	sp->doclose = http_DoConnection(sp->http);
-
-	/* By default we use the first backend */
-	AZ(sp->backend);
-	sp->backend = sp->vcl->backend[0];
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-
-	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
 	VCL_recv_method(sp);
 
