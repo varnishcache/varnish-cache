@@ -92,6 +92,11 @@ set spobj {
 		{recv pipe pass hash miss hit fetch                        }
 		"struct sess *"
 	}
+	{ req.restarts
+		RO INT
+		{recv pipe pass hash miss hit fetch deliver                }
+		"const struct sess *"
+	}
 
 	# Request sent to backend
 	{ bereq.request
