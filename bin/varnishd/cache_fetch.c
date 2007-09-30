@@ -202,8 +202,6 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
-#include <errno.h>
-
 static int
 fetch_eof(struct sess *sp, struct http_conn *htc)
 {
@@ -268,6 +266,8 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	assert(sp->obj->busy != 0);
 	w = sp->wrk;
 	bereq = sp->bereq;
@@ -276,25 +276,19 @@ Fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	vc = VBE_GetFd(sp);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (vc == NULL)
 		return (1);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (WRK_Flush(w)) {
-		/* XXX: cleanup */
+		VBE_ClosedFd(sp->wrk, vc);
+		/* XXX: other cleanup ? */
 		return (1);
 	}
 
 	/* XXX is this the right place? */
 	VSL_stats->backend_req++;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	HTC_Init(htc, bereq->ws, vc->fd);
 	do
@@ -302,42 +296,30 @@ Fetch(struct sess *sp)
 	while (i == 0);
 
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
-		/* XXX: cleanup */
+		VBE_ClosedFd(sp->wrk, vc);
+		/* XXX: other cleanup ? */
 		return (1);
 	}
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->obj->entered = TIM_real();
 
-	assert(sp->obj->busy != 0);
-
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	/* Filter into object */
 	hp2 = &sp->obj->http;
 	len = Tlen(htc->rxbuf);
 	len += 256;	/* XXX: margin for content-length etc */
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	b = malloc(len);
 	AN(b);
 	WS_Init(sp->obj->ws_o, b, len);
 	http_Setup(hp2, sp->obj->ws_o);
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
 	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
-
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	/* Determine if we have a body or not */
 	cls = 0;
@@ -366,12 +348,8 @@ Fetch(struct sess *sp)
 		}
 	}
 
-	if (mklen > 0)
-		http_PrintfHeader(sp->wrk, sp->fd, hp2,
-		    "Content-Length: %u", sp->obj->len);
-
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	if (cls < 0) {
+		/* XXX: Wouldn't this store automatically be released ? */
 		while (!VTAILQ_EMPTY(&sp->obj->store)) {
 			st = VTAILQ_FIRST(&sp->obj->store);
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
@@ -381,7 +359,6 @@ Fetch(struct sess *sp)
 		return (-1);
 	}
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	{
 	/* Sanity check fetch methods accounting */
 		unsigned uu;
@@ -392,11 +369,12 @@ Fetch(struct sess *sp)
 		assert(uu == sp->obj->len);
 	}
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	if (mklen > 0)
+		http_PrintfHeader(sp->wrk, sp->fd, hp2,
+		    "Content-Length: %u", sp->obj->len);
+
 	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
-
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	if (http_GetStatus(sp->bereq->http) == 200)
 		VBE_UpdateHealth(sp, vc, 1);
@@ -408,6 +386,5 @@ Fetch(struct sess *sp)
 	else
 		VBE_RecycleFd(sp->wrk, vc);
 
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	return (0);
 }
