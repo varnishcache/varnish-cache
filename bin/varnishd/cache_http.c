@@ -327,9 +327,6 @@ http_GetStatus(const struct http *hp)
 {
 
 	Tcheck(hp->hd[HTTP_HDR_STATUS]);
-	if (hp->status == 0)
-		hp->status = strtoul(hp->hd[HTTP_HDR_STATUS].b,
-		    NULL /* XXX */, 10));
 	return (hp->status);
 }
 
@@ -506,6 +503,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http 
 
 	if (i != 0 || memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
 		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
+	hp->status = strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
 	return (i);
 }
 
@@ -738,6 +736,7 @@ http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 	assert(status >= 0 && status <= 999);
 	sprintf(stat, "%d", status);
 	http_PutField(w, fd, to, HTTP_HDR_STATUS, stat);
+	to->status = status;
 }
 
 void
