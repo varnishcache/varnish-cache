@@ -34,6 +34,7 @@ varnishd_SOURCES = \
 	cache_vrt.c \
 	cache_vrt_acl.c \
 	cache_vrt_re.c \
+	cache_vrt_esi.c \
 	cache_ws.c \
 	hash_simple_list.c \
 	hash_classic.c \
