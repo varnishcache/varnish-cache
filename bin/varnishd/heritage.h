@@ -125,6 +125,9 @@ struct params {
 	/* LRU list ordering interval */
 	unsigned		lru_timeout;
 
+	/* Maximum restarts allowed */
+	unsigned		max_restarts;
+
 };
 
 extern volatile struct params *params;
