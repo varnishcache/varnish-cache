@@ -278,6 +278,8 @@ struct sess {
 	int			id;
 	unsigned		xid;
 
+	int			restarts;
+
 	struct worker		*wrk;
 
 	socklen_t		sockaddrlen;

@@ -304,7 +304,7 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (o->http.ws->s != NULL)
+	if (o->http.ws != NULL && o->http.ws->s != NULL)
 		free(o->http.ws->s);
 
 	if (o->vary != NULL)
