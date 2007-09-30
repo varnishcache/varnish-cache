@@ -317,6 +317,15 @@ parse_purge_hash(struct tokenlist *tl)
 	Fb(tl, 0, ", 1);\n");
 }
 
+static void
+parse_esi(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_ESI(sp);\n");
+	Expect(tl, ';');
+	vcc_NextToken(tl);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -336,6 +345,7 @@ static struct action_table {
 	{ "remove", 	parse_remove },
 	{ "purge_url",	parse_purge_url },
 	{ "purge_hash",	parse_purge_hash },
+	{ "esi",	parse_esi },
 
 	{ NULL,		NULL }
 };
