@@ -52,6 +52,7 @@ rdf(struct pollfd *fds, int idx)
 	if (i <= 0 || fds[1-idx].events == 0) {
 		AZ(shutdown(fds[idx].fd, SHUT_RD));
 		AZ(shutdown(fds[1-idx].fd, SHUT_WR));
+		fds[idx].fd = -1;
 		fds[idx].events = 0;
 		return;
 	}
@@ -60,6 +61,7 @@ rdf(struct pollfd *fds, int idx)
 		if (j != i) {
 			AZ(shutdown(fds[idx].fd, SHUT_WR));
 			AZ(shutdown(fds[1-idx].fd, SHUT_RD));
+			fds[1-idx].fd = -1;
 			fds[1-idx].events = 0;
 			return;
 		}
