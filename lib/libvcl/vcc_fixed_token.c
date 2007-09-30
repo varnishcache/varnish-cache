@@ -330,6 +330,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_RET_DELIVER  (1 << 7)\n");
 	vsb_cat(sb, "#define VCL_RET_DISCARD  (1 << 8)\n");
 	vsb_cat(sb, "#define VCL_RET_KEEP  (1 << 9)\n");
+	vsb_cat(sb, "#define VCL_RET_RESTART  (1 << 10)\n");
 	vsb_cat(sb, "/*\n");
 	vsb_cat(sb, " * $Id$\n");
 	vsb_cat(sb, " *\n");
