@@ -43,15 +43,15 @@
 #include "cache.h"
 
 static void
-rdf(struct pollfd *fds, int idx)
+rdf(struct pollfd *fds, int idx, int fd0, int fd1)
 {
 	int i, j;
 	char buf[BUFSIZ], *p;
 
 	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0 || fds[1-idx].events == 0) {
-		AZ(shutdown(fds[idx].fd, SHUT_RD));
-		AZ(shutdown(fds[1-idx].fd, SHUT_WR));
+		AZ(shutdown(fd0, SHUT_RD));
+		AZ(shutdown(fd1, SHUT_WR));
 		fds[idx].fd = -1;
 		fds[idx].events = 0;
 		return;
@@ -59,10 +59,10 @@ rdf(struct pollfd *fds, int idx)
 	for (p = buf; i > 0; i -= j, p += j) {
 		j = write(fds[1-idx].fd, p, i);
 		if (j != i) {
-			AZ(shutdown(fds[idx].fd, SHUT_WR));
-			AZ(shutdown(fds[1-idx].fd, SHUT_RD));
-			fds[1-idx].fd = -1;
-			fds[1-idx].events = 0;
+			AZ(shutdown(fd0, SHUT_RD));
+			AZ(shutdown(fd1, SHUT_WR));
+			fds[idx].fd = -1;
+			fds[idx].events = 0;
 			return;
 		}
 	}
@@ -114,12 +114,20 @@ PipeSession(struct sess *sp)
 		fds[0].revents = 0;
 		fds[1].revents = 0;
 		i = poll(fds, 2, params->pipe_timeout * 1000);
-		if (i != 1)
+		if (i < 1) 
 			break;
 		if (fds[0].revents)
-			rdf(fds, 0);
+			rdf(fds, 0, vc->fd, sp->fd);
 		if (fds[1].revents)
-			rdf(fds, 1);
+			rdf(fds, 1, sp->fd, vc->fd);
+	}
+	if (fds[0].fd >= 0) {
+		AZ(shutdown(fds[0].fd, SHUT_RD));
+		AZ(shutdown(fds[1].fd, SHUT_WR));
+	}
+	if (fds[1].fd >= 0) {
+		AZ(shutdown(fds[1].fd, SHUT_RD));
+		AZ(shutdown(fds[0].fd, SHUT_WR));
 	}
 	vca_close_session(sp, "pipe");
 	VBE_ClosedFd(sp->wrk, vc);
