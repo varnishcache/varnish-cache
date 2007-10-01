@@ -310,7 +310,6 @@ cnt_fetch(struct sess *sp)
 		http_PutStatus(sp->wrk, sp->fd, sp->obj->http, 503);
 
 	sp->err_code = http_GetStatus(sp->obj->http);
-WSP(sp, SLT_Debug, "i %d err %d v %d c %d", i, sp->err_code, sp->obj->valid, sp->obj->cacheable);
 	VCL_fetch_method(sp);
 
 	switch (sp->handling) {
