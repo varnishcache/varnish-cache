@@ -60,14 +60,14 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(&sp->obj->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
 	assert(sp->obj->busy > 0);
 
 	/* shortcuts */
 	w = sp->wrk;
 	fd = sp->fd;
 	o = sp->obj;
-	h = &o->http;
+	h = o->http;
 	now = TIM_real();
 
 	/* look up HTTP response */

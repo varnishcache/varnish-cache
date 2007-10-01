@@ -123,8 +123,8 @@ RES_BuildHttp(struct sess *sp)
 
 	http_ClrHeader(sp->http);
 	sp->http->logtag = HTTP_Tx;
-	http_CopyResp(sp->http, &sp->obj->http);
-	http_FilterFields(sp->wrk, sp->fd, sp->http, &sp->obj->http,
+	http_CopyResp(sp->http, sp->obj->http);
+	http_FilterFields(sp->wrk, sp->fd, sp->http, sp->obj->http,
 	    HTTPH_A_DELIVER);
 	
 	TIM_format(TIM_real(), time_str);

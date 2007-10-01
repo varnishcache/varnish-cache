@@ -309,7 +309,7 @@ Fetch(struct sess *sp)
 		sp->obj->last_modified = TIM_parse(b);
 
 	/* Filter into object */
-	hp2 = &sp->obj->http;
+	hp2 = sp->obj->http;
 	len = Tlen(htc->rxbuf);
 	len += 256;	/* XXX: margin for content-length etc */
 

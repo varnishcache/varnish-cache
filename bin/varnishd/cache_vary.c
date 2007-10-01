@@ -76,7 +76,7 @@ VRY_Create(const struct sess *sp)
 	AN(sbh);
 
 	/* No Vary: header, no worries */
-	if (!http_GetHdr(&sp->obj->http, H_Vary, &v))
+	if (!http_GetHdr(sp->obj->http, H_Vary, &v))
 		return;
 
 	for (p = v; *p; p++) {

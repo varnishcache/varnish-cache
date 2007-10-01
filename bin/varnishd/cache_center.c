@@ -305,9 +305,9 @@ cnt_fetch(struct sess *sp)
 	sp->bereq = NULL;
 
 	if (!i)
-		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
 	else
-		http_PutStatus(sp->wrk, sp->fd, &sp->obj->http, 503);
+		http_PutStatus(sp->wrk, sp->fd, sp->obj->http, 503);
 
 	VCL_fetch_method(sp);
 
