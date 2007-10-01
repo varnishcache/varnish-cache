@@ -70,6 +70,13 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	h = o->http;
 	now = TIM_real();
 
+	/* Set up obj's workspace */
+	st = o->objstore;
+	WS_Init(o->ws_o, st->ptr + st->len, st->space - st->len);
+	st->len = st->space;
+	WS_Assert(o->ws_o);
+	http_Setup(o->http, o->ws_o);
+
 	/* look up HTTP response */
 	msg = http_StatusMessage(status);
 	if (reason == NULL)
