@@ -284,14 +284,14 @@ Fetch(struct sess *sp)
 
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
-		return (1);
+		return (__LINE__);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
 	if (WRK_Flush(w)) {
 		VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
 		/* XXX: other cleanup ? */
-		return (1);
+		return (__LINE__);
 	}
 
 	/* XXX is this the right place? */
@@ -306,7 +306,7 @@ Fetch(struct sess *sp)
 		VBE_UpdateHealth(sp, vc, -2);
 		VBE_ClosedFd(sp->wrk, vc);
 		/* XXX: other cleanup ? */
-		return (1);
+		return (__LINE__);
 	}
 
 	sp->obj->entered = TIM_real();
@@ -338,7 +338,7 @@ Fetch(struct sess *sp)
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_UpdateHealth(sp, vc, -3);
 		VBE_ClosedFd(sp->wrk, vc);
-		return (-1);
+		return (__LINE__);
 	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
 		switch (http_GetStatus(hp)) {
 			case 200:
@@ -359,7 +359,7 @@ Fetch(struct sess *sp)
 		}
 		VBE_UpdateHealth(sp, vc, -4);
 		VBE_ClosedFd(sp->wrk, vc);
-		return (-1);
+		return (__LINE__);
 	}
 
 	{

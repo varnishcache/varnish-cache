@@ -98,15 +98,11 @@ static const char *default_vcl =
     "\n"
     "sub vcl_hash {\n"
     "    set req.hash += req.url;\n"
-#if 1
-    "    set req.hash += req.http.host;\n"
-#else
     "    if (req.http.host) {\n"
     "        set req.hash += req.http.host;\n"
     "    } else {\n"
-    "        set req.hash += server.ip;\n"	/* XXX: see ticket 137 */
+    "        set req.hash += server.ip;\n"
     "    }\n"
-#endif
     "    hash;\n"
     "}\n"
     "\n"

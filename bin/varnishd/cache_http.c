@@ -598,6 +598,7 @@ http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	to->nhd = HTTP_HDR_FIRST;
+	to->status = fm->status;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;

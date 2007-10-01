@@ -172,6 +172,7 @@ RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 	 * We do not support ranges yet, so 206 is out.
 	 */
 	sp->obj->response = http_GetStatus(hp);
+WSP(sp, SLT_Debug, "resp: %d", sp->obj->response);
 	switch (sp->obj->response) {
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
