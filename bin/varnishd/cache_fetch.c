@@ -259,7 +259,6 @@ Fetch(struct sess *sp)
 	struct storage *st;
 	struct bereq *bereq;
 	int mklen, is_head;
-	unsigned len;
 	struct http_conn htc[1];
 	int i;
 
@@ -275,6 +274,13 @@ Fetch(struct sess *sp)
 	is_head = (strcasecmp(http_GetReq(hp), "head") == 0);
 
 	sp->obj->xid = sp->xid;
+
+	/* Set up obj's workspace */
+	st = sp->obj->objstore;
+	WS_Init(sp->obj->ws_o, st->ptr + st->len, st->space - st->len);
+	st->len = st->space;
+	WS_Assert(sp->obj->ws_o);
+	http_Setup(sp->obj->http, sp->obj->ws_o);
 
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
@@ -310,13 +316,6 @@ Fetch(struct sess *sp)
 
 	/* Filter into object */
 	hp2 = sp->obj->http;
-	len = Tlen(htc->rxbuf);
-	len += 256;	/* XXX: margin for content-length etc */
-
-	b = malloc(len);
-	AN(b);
-	WS_Init(sp->obj->ws_o, b, len);
-	http_Setup(hp2, sp->obj->ws_o);
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);

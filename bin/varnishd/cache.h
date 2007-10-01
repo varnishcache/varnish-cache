@@ -222,6 +222,7 @@ struct object {
 	unsigned 		refcnt;
 	unsigned		xid;
 	struct objhead		*objhead;
+	struct storage		*objstore;
 
 	struct ws		ws_o[1];
 	unsigned char		*vary;
@@ -448,7 +449,7 @@ int EXP_NukeOne(struct sess *sp);
 int Fetch(struct sess *sp);
 
 /* cache_hash.c */
-void HSH_Prealloc(const struct sess *sp);
+void HSH_Prealloc(struct sess *sp);
 int HSH_Compare(const struct sess *sp, const struct objhead *o);
 void HSH_Copy(const struct sess *sp, const struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);

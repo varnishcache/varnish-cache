@@ -56,6 +56,7 @@
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"
+#include "stevedore.h"
 
 VTAILQ_HEAD(workerhead, worker);
 
@@ -261,7 +262,7 @@ wrk_thread(void *priv)
 		FREE_OBJ(w->nobjhead);
 	}
 	if (w->nobj!= NULL)
-		FREE_OBJ(w->nobj);
+		STV_free(w->nobj->objstore);
 	return (NULL);
 }
 
