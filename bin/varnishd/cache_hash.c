@@ -67,9 +67,10 @@ static struct hash_slinger      *hash;
 
 /* Precreate an objhead and object for later use */
 void
-HSH_Prealloc(const struct sess *sp)
+HSH_Prealloc(struct sess *sp)
 {
 	struct worker *w;
+	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	w = sp->wrk;
@@ -84,8 +85,12 @@ HSH_Prealloc(const struct sess *sp)
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 	if (w->nobj == NULL) {
-		w->nobj = calloc(sizeof *w->nobj, 1);
-		XXXAN(w->nobj);
+		st = STV_alloc(sp, params->mem_workspace);
+		XXXAN(st);
+		w->nobj = (void *)st->ptr;
+		st->len = sizeof *w->nobj;
+		memset(w->nobj, 0, sizeof *w->nobj);
+		w->nobj->objstore = st;
 		w->nobj->magic = OBJECT_MAGIC;
 		w->nobj->http->magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
@@ -304,14 +309,11 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (o->http->ws != NULL && o->http->ws->s != NULL)
-		free(o->http->ws->s);
-
 	if (o->vary != NULL)
 		free(o->vary);
 
 	HSH_Freestore(o);
-	FREE_OBJ(o);
+	STV_free(o->objstore);
 	VSL_stats->n_object--;
 
 	if (oh == NULL)
