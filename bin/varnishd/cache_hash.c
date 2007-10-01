@@ -87,7 +87,7 @@ HSH_Prealloc(const struct sess *sp)
 		w->nobj = calloc(sizeof *w->nobj, 1);
 		XXXAN(w->nobj);
 		w->nobj->magic = OBJECT_MAGIC;
-		w->nobj->http.magic = HTTP_MAGIC;
+		w->nobj->http->magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
 		VTAILQ_INIT(&w->nobj->store);
@@ -304,8 +304,8 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (o->http.ws != NULL && o->http.ws->s != NULL)
-		free(o->http.ws->s);
+	if (o->http->ws != NULL && o->http->ws->s != NULL)
+		free(o->http->ws->s);
 
 	if (o->vary != NULL)
 		free(o->vary);

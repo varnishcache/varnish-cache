@@ -246,7 +246,7 @@ struct object {
 
 	double			last_modified;
 
-	struct http		http;
+	struct http		http[1];
 	VTAILQ_ENTRY(object)	list;
 
 	VTAILQ_ENTRY(object)	deathrow;

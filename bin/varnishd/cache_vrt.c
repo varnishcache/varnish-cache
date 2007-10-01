@@ -91,7 +91,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->http;
 		break;
 	case HDR_OBJ:
-		hp = &sp->obj->http;
+		hp = sp->obj->http;
 		break;
 	default:
 		INCOMPL();
@@ -215,8 +215,8 @@ VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(bereq, request,	sp->bereq->http,	HTTP_HDR_REQ)
 VRT_DO_HDR(bereq, url,		sp->bereq->http,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	sp->bereq->http,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   proto,	&sp->obj->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   response,	&sp->obj->http,		HTTP_HDR_RESPONSE)
+VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
 
@@ -226,12 +226,12 @@ VRT_l_obj_status(const struct sess *sp, int num)
 	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->obj->http.ws, 4);
+	p = WS_Alloc(sp->obj->http->ws, 4);
 	if (p == NULL)
 		WSP(sp, SLT_LostHeader, "%s", "obj.status");
 	else
 		sprintf(p, "%d", num);
-	http_SetH(&sp->obj->http, HTTP_HDR_STATUS, p);
+	http_SetH(sp->obj->http, HTTP_HDR_STATUS, p);
 }
 
 int
@@ -240,9 +240,9 @@ VRT_r_obj_status(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	/* XXX: use http_GetStatus() */
-	if (sp->obj->http.status)
-		return (sp->obj->http.status);
-	return (atoi(sp->obj->http.hd[HTTP_HDR_STATUS].b));
+	if (sp->obj->http->status)
+		return (sp->obj->http->status);
+	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
 }
 
 void
@@ -374,7 +374,7 @@ VRT_r_resp_proto(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (sp->obj->http.hd[HTTP_HDR_PROTO].b);
+	return (sp->obj->http->hd[HTTP_HDR_PROTO].b);
 }
 
 const char *
@@ -382,7 +382,7 @@ VRT_r_resp_response(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (sp->obj->http.hd[HTTP_HDR_RESPONSE].b);
+	return (sp->obj->http->hd[HTTP_HDR_RESPONSE].b);
 }
 
 int
@@ -390,7 +390,7 @@ VRT_r_resp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (atoi(sp->obj->http.hd[HTTP_HDR_STATUS].b));
+	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
 }
 
 /*--------------------------------------------------------------------*/
