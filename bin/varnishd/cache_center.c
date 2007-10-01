@@ -304,39 +304,35 @@ cnt_fetch(struct sess *sp)
 	VBE_free_bereq(sp->bereq);
 	sp->bereq = NULL;
 
-	if (0 && i) {
-		SYN_ErrorPage(sp, 503, "Error talking to backend", 30);
-	} else {
-		if (!i)
-			RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
-		else
-			sp->obj->http.status = 503;
+	if (!i)
+		RFC2616_cache_policy(sp, &sp->obj->http);	/* XXX -> VCL */
+	else
+		http_PutStatus(sp->wrk, sp->fd, &sp->obj->http, 503);
 
-		VCL_fetch_method(sp);
+	VCL_fetch_method(sp);
 
-		switch (sp->handling) {
-		case VCL_RET_ERROR:
-		case VCL_RET_RESTART:
-			sp->obj->ttl = 0;
-			sp->obj->cacheable = 0;
-			HSH_Unbusy(sp->obj);
-			HSH_Deref(sp->obj);
-			sp->obj = NULL;
-			if (sp->handling == VCL_RET_ERROR)
-				sp->step = STP_ERROR;
-			else {
-				sp->restarts++;
-				sp->step = STP_RECV;
-			}
-			return (0);
-		case VCL_RET_PASS:
-			sp->obj->pass = 1;
-			break;
-		case VCL_RET_INSERT:
-			break;
-		default:
-			INCOMPL();
+	switch (sp->handling) {
+	case VCL_RET_ERROR:
+	case VCL_RET_RESTART:
+		sp->obj->ttl = 0;
+		sp->obj->cacheable = 0;
+		HSH_Unbusy(sp->obj);
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		if (sp->handling == VCL_RET_ERROR)
+			sp->step = STP_ERROR;
+		else {
+			sp->restarts++;
+			sp->step = STP_RECV;
 		}
+		return (0);
+	case VCL_RET_PASS:
+		sp->obj->pass = 1;
+		break;
+	case VCL_RET_INSERT:
+		break;
+	default:
+		INCOMPL();
 	}
 
 	sp->obj->cacheable = 1;
