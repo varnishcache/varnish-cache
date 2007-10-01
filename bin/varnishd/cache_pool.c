@@ -202,13 +202,14 @@ wrk_thread(void *priv)
 	struct worker w[1];
 	struct wq *qp;
 	char c;
+	unsigned char wlog[8192]; 	/* XXX: size */
 
 	qp = priv;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->used = TIM_real();
-	w->wlp = w->wlog;
-	w->wle = w->wlog + sizeof w->wlog;
+	w->wlb = w->wlp = wlog;
+	w->wle = wlog + sizeof wlog;
 	AZ(pipe(w->pipe));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);

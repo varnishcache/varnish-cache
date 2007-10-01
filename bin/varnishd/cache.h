@@ -176,9 +176,8 @@ struct worker {
 	struct srcaddr		*srcaddr;
 	struct acct		acct;
 
-	unsigned char		*wlp, *wle;
+	unsigned char		*wlb, *wlp, *wle;
 	unsigned		wlr;
-	unsigned char		wlog[WLOGSPACE];
 };
 
 struct workreq {
