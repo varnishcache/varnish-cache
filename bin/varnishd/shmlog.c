@@ -175,7 +175,7 @@ WSL_Flush(struct worker *w)
 	unsigned char *p;
 	unsigned l;
 
-	l = pdiff(w->wlog, w->wlp);
+	l = pdiff(w->wlb, w->wlp);
 	if (l == 0)
 		return;
 	LOCKSHM(&vsl_mtx);
@@ -184,14 +184,14 @@ WSL_Flush(struct worker *w)
 	if (loghead->ptr + l + 1 >= loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
-	memcpy(p + 1, w->wlog + 1, l - 1);
+	memcpy(p + 1, w->wlb + 1, l - 1);
 	p[l] = SLT_ENDMARKER;
 	loghead->ptr += l;
 	assert(loghead->ptr < loghead->size);
 	/* XXX: memory barrier here */
-	p[0] = w->wlog[0];
+	p[0] = w->wlb[0];
 	UNLOCKSHM(&vsl_mtx);
-	w->wlp = w->wlog;
+	w->wlp = w->wlb;
 	w->wlr = 0;
 }
 

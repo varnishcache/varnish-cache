@@ -165,6 +165,7 @@ exp_prefetch(void *arg)
 	double t;
 	struct sess *sp;
 	struct object *o2;
+	unsigned char log[1024];		/* XXX size ? */
 
 	(void)arg;
 
@@ -172,8 +173,8 @@ exp_prefetch(void *arg)
 	XXXAN(sp);
 	sp->wrk = &ww;
 	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlog;
-	ww.wle = ww.wlog + sizeof ww.wlog;
+	ww.wlp = ww.wlb = log;
+	ww.wle = log + sizeof log;
 
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);

@@ -51,6 +51,22 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+#define SZOF(foo)	printf("sizeof(%s) = %d\n", #foo, sizeof(foo));
+	SZOF(struct ws);
+	SZOF(struct http);
+	SZOF(struct http_conn);
+	SZOF(struct acct);
+	SZOF(struct worker);
+	SZOF(struct workreq);
+	SZOF(struct bereq);
+	SZOF(struct storage);
+	SZOF(struct object);
+	SZOF(struct objhead);
+	SZOF(struct sess);
+	SZOF(struct vbe_conn);
+	SZOF(struct backend);
+
+
 	CNT_Init();
 	VCL_Init();
 
