@@ -138,6 +138,7 @@ HTC_Rx(struct http_conn *htc)
 	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AN(htc->ws->r);
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
 	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);

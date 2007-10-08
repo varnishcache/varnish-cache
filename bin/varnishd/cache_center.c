@@ -789,6 +789,7 @@ CNT_Session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 	for (done = 0; !done; ) {
+		assert(sp->wrk == w);
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.
