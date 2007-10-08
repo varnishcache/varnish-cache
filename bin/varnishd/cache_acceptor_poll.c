@@ -131,15 +131,12 @@ vca_main(void *arg)
 			fd = sp->fd;
 			if (pollfd[fd].revents) {
 				v--;
-				i = vca_pollsession(sp);
-				if (i < 0)
+				i = HTC_Rx(sp->htc);
+				if (i == 0)
 					continue;
 				VTAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(fd);
-				if (i == 0)
-					vca_handover(sp, i);
-				else
-					SES_Delete(sp);
+				vca_handover(sp, i);
 				continue;
 			}
 			if (sp->t_open > deadline)

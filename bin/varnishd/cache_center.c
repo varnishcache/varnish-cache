@@ -370,17 +370,21 @@ cnt_first(struct sess *sp)
 	do
 		i = HTC_Rx(sp->htc);
 	while (i == 0);
-	if (i == 1) {
+	switch (i) {
+	case 1:
 		sp->step = STP_RECV;
-		return (0);
-	}
-	if (i == -1)
+		break;
+	case -1:
+		vca_close_session(sp, "error");
+		sp->step = STP_DONE;
+		break;
+	case -2:
 		vca_close_session(sp, "blast");
-	else if (i == 2)
-		vca_close_session(sp, "silent");
-	else
+		sp->step = STP_DONE;
+		break;
+	default:
 		INCOMPL();
-	sp->step = STP_DONE;
+	}
 	return (0);
 }
 
