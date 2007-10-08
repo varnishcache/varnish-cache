@@ -88,6 +88,7 @@ vca_kev(const struct kevent *kp)
 		while (i >= sizeof ss[0]) {
 			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 			assert(ss[j]->fd >= 0);
+			AZ(ss[j]->obj);
 			VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
 			vca_kq_sess(ss[j], EV_ADD);
 			j++;
