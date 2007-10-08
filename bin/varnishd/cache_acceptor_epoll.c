@@ -91,7 +91,7 @@ vca_main(void *arg)
 			} else {
 				CAST_OBJ_NOTNULL(sp, ev.data.ptr, SESS_MAGIC);
 				i = HTC_Rx(sp->htc);
-				if (i != 0)
+				if (i != 0) {
 					VTAILQ_REMOVE(&sesshead, sp, list);
 					vca_del(sp->fd);
 					vca_handover(sp, i);
