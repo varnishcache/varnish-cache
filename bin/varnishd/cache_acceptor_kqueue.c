@@ -98,14 +98,15 @@ vca_kev(const struct kevent *kp)
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
 	if (kp->data > 0) {
-		i = vca_pollsession(sp);
-		if (i == -1)
-			return;
+		i = HTC_Rx(sp->htc);
+		if (i == 0)
+			return;	/* more needed */
 		VTAILQ_REMOVE(&sesshead, sp, list);
-		if (i == 0) {
+		if (i > 0) {
 			vca_kq_sess(sp, EV_DELETE);
 			vca_handover(sp, i);
 		} else {
+			vca_close_session(sp, "err/poll");
 			SES_Delete(sp);
 		}
 		return;
