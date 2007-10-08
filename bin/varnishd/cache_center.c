@@ -217,7 +217,7 @@ cnt_done(struct sess *sp)
 		VSL_stats->sess_closed++;
 		assert(!isnan(sp->wrk->used));
 		sp->wrk = NULL;
-		vca_return_session(sp);
+		SES_Delete(sp);
 		return (1);
 	}
 

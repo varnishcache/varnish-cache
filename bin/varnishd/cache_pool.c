@@ -313,7 +313,7 @@ WRK_QueueSession(struct sess *sp)
 		UNLOCK(&tmtx);
 		sp->t_end = TIM_real();
 		vca_close_session(sp, "dropped");
-		vca_return_session(sp);
+		SES_Delete(sp);
 		return;
 	}
 	/*
