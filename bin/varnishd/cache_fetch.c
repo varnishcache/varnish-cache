@@ -339,7 +339,7 @@ Fetch(struct sess *sp)
 		VBE_UpdateHealth(sp, vc, -3);
 		VBE_ClosedFd(sp->wrk, vc);
 		return (__LINE__);
-	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
+	} else {
 		switch (http_GetStatus(hp)) {
 			case 200:
 				cls = fetch_eof(sp, htc);
