@@ -126,6 +126,7 @@ HTC_Reinit(struct http_conn *htc)
 /*--------------------------------------------------------------------
  * Receive more HTTP protocol bytes
  * Returns:
+ *	-2 overflow
  *	-1 error
  *	 0 more needed
  *	 1 got complete HTTP header
@@ -138,9 +139,12 @@ HTC_Rx(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
-	if (i > 0)
-		i = read(htc->fd, htc->rxbuf.e, i);
 	if (i <= 0) {
+		WS_ReleaseP(htc->ws, htc->rxbuf.b);
+		return (-2);
+	}
+	i = read(htc->fd, htc->rxbuf.e, i);
+	if (i < 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
 		return (-1);
 	}

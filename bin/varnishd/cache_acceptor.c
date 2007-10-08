@@ -53,7 +53,6 @@
 #include "cache.h"
 #include "cache_acceptor.h"
 
-
 static struct acceptor *vca_acceptors[] = {
 #if defined(HAVE_KQUEUE)
 	&acceptor_kqueue,
@@ -204,34 +203,25 @@ vca_acct(void *arg)
 /*--------------------------------------------------------------------*/
 
 void
-vca_handover(struct sess *sp, int bad)
+vca_handover(struct sess *sp, int status)
 {
 
-	if (bad) {
-		vca_close_session(sp,
-		    bad == 1 ? "overflow" : "no request");
+	switch (status) {
+	case -2:
+		vca_close_session(sp, "blast");
 		SES_Delete(sp);
-		return;
+		break;
+	case -1:
+		vca_close_session(sp, "no request");
+		SES_Delete(sp);
+		break;
+	case 1:
+		sp->step = STP_RECV;
+		WRK_QueueSession(sp);
+		break;
+	default:
+		INCOMPL();
 	}
-	sp->step = STP_RECV;
-	WRK_QueueSession(sp);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-vca_pollsession(struct sess *sp)
-{
-	int i;
-
-	i = HTC_Rx(sp->htc);
-	/* XXX: fix retval */
-	if (i == 0)	/* more needed */
-		return (-1);
-	if (i == 1)	/* Yes, done */
-		return (0);
-	vca_close_session(sp, "err/poll");
-	return (1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -280,4 +270,5 @@ VCA_Init(void)
 	AZ(pipe(vca_pipes));
 	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
+	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
 }

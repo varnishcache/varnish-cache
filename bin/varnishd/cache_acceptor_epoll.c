@@ -90,15 +90,11 @@ vca_main(void *arg)
 				vca_add(sp->fd, sp);
 			} else {
 				CAST_OBJ_NOTNULL(sp, ev.data.ptr, SESS_MAGIC);
-				i = vca_pollsession(sp);
-				if (i >= 0) {
+				i = HTC_Rx(sp->htc);
+				if (i != 0)
 					VTAILQ_REMOVE(&sesshead, sp, list);
-					if (sp->fd != -1)
-						vca_del(sp->fd);
-					if (i == 0)
-						vca_handover(sp, i);
-					else
-						SES_Delete(sp);
+					vca_del(sp->fd);
+					vca_handover(sp, i);
 				}
 			}
 		}
