@@ -123,7 +123,13 @@ HTC_Reinit(struct http_conn *htc)
 	return (i);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Receive more HTTP protocol bytes
+ * Returns:
+ *	-1 error
+ *	 0 more needed
+ *	 1 got complete HTTP header
+ */
 
 int
 HTC_Rx(struct http_conn *htc)
@@ -132,16 +138,18 @@ HTC_Rx(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
-	assert(i > 0);
-	i = read(htc->fd, htc->rxbuf.e, i);
-	if (i < 0) {
+	if (i > 0)
+		i = read(htc->fd, htc->rxbuf.e, i);
+	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
 		return (-1);
 	}
 	htc->rxbuf.e += i;
 	*htc->rxbuf.e = '\0';
 	i = htc_header_complete(&htc->rxbuf);
-	if (i == 0)
+	if (i < 0) 
+		htc->rxbuf.e = htc->rxbuf.b;
+	if (i <= 0)
 		return (0);
 	WS_ReleaseP(htc->ws, htc->rxbuf.e);
 	if (htc->rxbuf.b + i < htc->rxbuf.e) {
