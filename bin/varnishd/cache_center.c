@@ -306,8 +306,12 @@ cnt_fetch(struct sess *sp)
 
 	if (!i)
 		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
-	else
+	else {
 		http_PutStatus(sp->wrk, sp->fd, sp->obj->http, 503);
+		http_PutProtocol(sp->wrk, sp->fd, sp->obj->http, "HTTP/1.1");
+		http_PutResponse(sp->wrk, sp->fd, sp->obj->http,
+		    "Backend error");
+	}
 
 	sp->err_code = http_GetStatus(sp->obj->http);
 	VCL_fetch_method(sp);
