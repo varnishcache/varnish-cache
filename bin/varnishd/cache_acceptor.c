@@ -246,10 +246,8 @@ vca_return_session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	if (sp->fd < 0)
-		SES_Delete(sp);
-	else
-		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+	assert(sp->fd >= 0);
+	assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 }
 
 
