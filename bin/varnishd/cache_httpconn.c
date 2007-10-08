@@ -144,7 +144,7 @@ HTC_Rx(struct http_conn *htc)
 		return (-2);
 	}
 	i = read(htc->fd, htc->rxbuf.e, i);
-	if (i < 0) {
+	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
 		return (-1);
 	}
