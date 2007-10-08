@@ -226,9 +226,9 @@ vca_pollsession(struct sess *sp)
 
 	i = HTC_Rx(sp->htc);
 	/* XXX: fix retval */
-	if (i == 0)
+	if (i == 0)	/* more needed */
 		return (-1);
-	if (i == 1)
+	if (i == 1)	/* Yes, done */
 		return (0);
 	vca_close_session(sp, "err/poll");
 	return (1);
@@ -259,7 +259,7 @@ vca_return_session(struct sess *sp)
 	if (sp->fd < 0)
 		SES_Delete(sp);
 	else
-		 assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 }
 
 
