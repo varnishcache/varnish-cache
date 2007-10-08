@@ -28,9 +28,6 @@
  *
  * $Id$
  *
- * XXX: We need to pass sessions back into the event engine when they are
- * reused.  Not sure what the most efficient way is for that.  For now
- * write the session pointer to a pipe which the event engine monitors.
  */
 
 #if defined(HAVE_POLL)
@@ -132,9 +129,11 @@ vca_main(void *arg)
 			if (pollfd[fd].revents) {
 				v--;
 				i = HTC_Rx(sp->htc);
-				if (i == 0)
-					continue;
 				VTAILQ_REMOVE(&sesshead, sp, list);
+				if (i == 0) {
+					VTAILQ_INSERT_HEAD(&sesshead, sp, list);
+					continue;
+				}
 				vca_unpoll(fd);
 				vca_handover(sp, i);
 				continue;
