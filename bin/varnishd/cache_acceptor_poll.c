@@ -46,7 +46,7 @@
 
 static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
-static unsigned npoll;
+static unsigned npoll, hpoll;
 
 static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
@@ -82,6 +82,8 @@ vca_poll(int fd)
 
 	assert(fd >= 0);
 	vca_pollspace((unsigned)fd);
+	if (hpoll < fd)
+		hpoll = fd;
 	pollfd[fd].fd = fd;
 	pollfd[fd].events = POLLIN;
 }
@@ -94,6 +96,10 @@ vca_unpoll(int fd)
 	vca_pollspace((unsigned)fd);
 	pollfd[fd].fd = -1;
 	pollfd[fd].events = 0;
+	if (hpoll == fd) {
+		while (pollfd[--hpoll].fd == -1)
+			continue;
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -111,7 +117,7 @@ vca_main(void *arg)
 	vca_poll(vca_pipes[0]);
 
 	while (1) {
-		v = poll(pollfd, npoll, 100);
+		v = poll(pollfd, hpoll + 1, 100);
 		if (v && pollfd[vca_pipes[0]].revents) {
 			v--;
 			i = read(vca_pipes[0], &sp, sizeof sp);
