@@ -53,7 +53,7 @@ AC_SUBST(PTHREAD_LIBS)
 save_LIBS="${LIBS}"
 LIBS=""
 AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(getaddrinfo, ns)
+AC_CHECK_LIB(nsl, getaddrinfo)
 NET_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(NET_LIBS)
