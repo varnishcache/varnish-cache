@@ -57,4 +57,3 @@ lbv_assert(const char *func, const char *file, int line, const char *cond, int e
 	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
 	abort();
 }
-
