@@ -51,7 +51,7 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
-#define SZOF(foo)	printf("sizeof(%s) = %d\n", #foo, sizeof(foo));
+#define SZOF(foo)	printf("sizeof(%s) = %zd\n", #foo, sizeof(foo));
 	SZOF(struct ws);
 	SZOF(struct http);
 	SZOF(struct http_conn);
