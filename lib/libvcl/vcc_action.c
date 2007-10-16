@@ -323,8 +323,6 @@ parse_esi(struct tokenlist *tl)
 
 	vcc_NextToken(tl);
 	Fb(tl, 1, "VRT_ESI(sp);\n");
-	Expect(tl, ';');
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------*/
