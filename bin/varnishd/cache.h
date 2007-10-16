@@ -61,9 +61,6 @@ enum {
 /* Note: intentionally not IOV_MAX */
 #define MAX_IOVS	(HTTP_HDR_MAX * 2)
 
-/* Amount of per-worker logspace */
-#define WLOGSPACE	8192		/* XXX: param ? */
-
 struct cli;
 struct vsb;
 struct sess;
