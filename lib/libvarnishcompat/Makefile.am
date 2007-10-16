@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libvarnishcompat.la
 
 libvarnishcompat_la_SOURCES = \
 	asprintf.c \
+	daemon.c \
 	vasprintf.c \
 	setproctitle.c \
 	srandomdev.c \
