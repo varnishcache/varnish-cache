@@ -122,7 +122,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	uintmax_t l, fssize;
 	unsigned bs;
 	char suff[2];
-	int i, explicit;
+	int i;
 	off_t o;
 	struct stat st;
 
@@ -142,7 +142,6 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
 
-	explicit = i;
 	if (i == 0) {
 		fprintf(stderr,
 		    "Error: (-sfile) size \"%s\" not understood\n", size);
@@ -217,18 +216,17 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		exit (2);
 	}
 
-	if (explicit < 3 && sizeof(void *) == 4 && l > INT32_MAX) {
+	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 */
 		fprintf(stderr,
-		    "NB: Limiting size to 2GB on 32 bit architecture to"
-		    " prevent running out of\naddress space."
-		    "  Specifiy explicit size to override.\n"
+		    "NB: Storage size limited to 2GB on 32 bit architecture,\n"
+		    "NB: otherwise we could run out of address space.\n"
 		);
 		l = INT32_MAX;
 		l -= (l % bs);
 	}
 
-	printf("file %s size %ju bytes (%ju fs-blocks, %ju pages)\n",
-	    sc->filename, l, l / fsst.f_bsize, l / sc->pagesize);
+	printf("storage_file: filename: %s size %ju MegaBytes.\n",
+	    sc->filename, l / (1024 * 1024));
 
 	sc->filesize = l;
 }
@@ -644,6 +642,7 @@ smf_alloc(struct stevedore *st, size_t size)
 	VSL_stats->sm_balloc += smf->size;
 	VSL_stats->sm_bfree -= smf->size;
 	UNLOCK(&sc->mtx);
+	CHECK_OBJ_NOTNULL(&smf->s, STORAGE_MAGIC);	/*lint !e774 */
 	XXXAN(smf);
 	assert(smf->size == size);
 	smf->s.space = size;
@@ -653,7 +652,6 @@ smf_alloc(struct stevedore *st, size_t size)
 	smf->s.stevedore = st;
 	smf->s.fd = smf->sc->fd;
 	smf->s.where = smf->offset;
-	CHECK_OBJ_NOTNULL(&smf->s, STORAGE_MAGIC);
 	return (&smf->s);
 }
 
