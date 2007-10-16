@@ -200,11 +200,12 @@ wrk_do_one(struct worker *w)
 static void *
 wrk_thread(void *priv)
 {
-	struct worker w[1];
+	struct worker *w, ww;
 	struct wq *qp;
 	char c;
 	unsigned char wlog[8192]; 	/* XXX: size */
 
+	w = &ww;
 	qp = priv;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
