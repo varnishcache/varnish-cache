@@ -138,6 +138,7 @@ vca_acct(void *arg)
 	struct pollfd *pfd;
 	struct listen_sock *ls;
 	unsigned u;
+	double now;
 
 	(void)arg;
 
@@ -171,6 +172,7 @@ vca_acct(void *arg)
 				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 		}
 		i = poll(pfd, heritage.nsocks, 1000);
+		now = TIM_real();
 		for (u = 0; u < heritage.nsocks; u++) {
 			if (pfd[u].revents == 0)
 				continue;
@@ -191,7 +193,7 @@ vca_acct(void *arg)
 
 			sp->fd = i;
 			sp->id = i;
-			sp->t_open = TIM_real();
+			sp->t_open = now;
 
 			HTC_Init(sp->htc, sp->ws, sp->fd);
 			sp->step = STP_FIRST;
