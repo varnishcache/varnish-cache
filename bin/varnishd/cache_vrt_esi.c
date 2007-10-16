@@ -28,7 +28,16 @@
  *
  * $Id: cache_vrt.c 2067 2007-09-30 20:57:30Z phk $
  *
- * Runtime support for compiled VCL programs
+ * Runtime support for compiled VCL programs ESI processing.
+ *
+ * The basic ESI 1.0 is a very simple specification:
+ *	http://www.w3.org/TR/esi-lang
+ * But it seems that Oracle and Akamai has embrodiered it to be almost a new
+ * layer of scripting language in HTTP transmission chains.
+ *
+ * It is not obvious how much help the "advanced" features of ESI really
+ * are to users, so our aim is to pick the fruit starting with the lowest
+ * hanging, esi:include
  */
 
 #include <stdio.h>
@@ -41,12 +50,235 @@
 #include "vcl.h"
 #include "cache.h"
 
+/*--------------------------------------------------------------------
+ * Add one piece to the output, either verbatim or include
+ */
+
+static void
+add_piece(txt t, int kind)
+{
+
+	printf("K%d \"%.*s\"\n", kind, t.e - t.b, t.b);
+}
+
+/*--------------------------------------------------------------------
+ * Zoom over a piece of object and dike out all releveant esi: pieces.
+ * The entire txt may not be processed because an interesting part 
+ * could possibly span into the next chunk of storage.
+ * Return value: number of bytes processed.
+ */
+
+static int
+vxml(txt t)
+{
+	char *p, *q, *r;
+	txt o;
+	int celem;		/* closing element */
+	int remflg;		/* inside <esi:remove> </esi:remove> */
+	int incmt;		/* inside <!--esi ... --> comment */
+	int i;
+
+	o.b = t.b;
+	remflg = 0;
+	incmt = 0;
+	for (p = t.b; p < t.e; ) {
+		if (incmt && *p == '-') {
+			/*
+			 * We are inside an <!--esi comment and need to zap
+			 * the end comment marker --> when we see it.
+			 */
+			if (p + 2 >= t.e) {
+				/* XXX: need to return pending incmt  */
+				return (p - t.b);
+			}
+			if (!memcmp(p, "-->", 3)) {
+				incmt = 0;
+				o.e = p;
+				add_piece(o, 0);
+				p += 3;
+				o.b = p;
+			} else
+				p++;
+			continue;
+		}
+
+		if (*p != '<') {
+			/* nothing happens until next element or comment */
+			p++;
+			continue;
+		}
+
+		i = t.e - p;
+
+		if (i < 2)
+			return (p - t.b);
+
+		if (remflg == 0 && !memcmp(p, "<!--esi", i > 7 ? 7 : i)) {
+			/*
+			 * ESI comment. <!--esi...-->
+			 * at least 10 char, but we only test on the
+			 * first seven because the tail is handled
+			 * by the incmt flag.
+			 */
+			if (i < 7)
+				return (p - t.b);
+
+			o.e = p;
+			add_piece(o, 0);
+
+			p += 7;
+			o.b = p;
+			incmt = 1;
+			continue;
+		}
+
+		if (!memcmp(p, "<!--", i > 4 ? 4 : i)) {
+			/*
+			 * plain comment <!--...--> at least 7 char
+			 */
+			if (i < 7)
+				return (p - t.b);
+			for (q = p + 4; ; q++) {
+				if (q + 2 >= t.e)
+					return (p - t.b);
+				if (!memcmp(q, "-->", 3))
+					break;
+			}
+			p = q + 3;
+			continue;
+		}
+
+		if (!memcmp(p, "<![CDATA[", i > 9 ? 9 : i)) {
+			/*
+			 * cdata <![CDATA[...]]> at least 12 char
+			 */
+			if (i < 12)
+				return (p - t.b);
+			for (q = p + 9; ; q++) {
+				if (q + 2 >= t.e)
+					return (p - t.b);
+				if (!memcmp(q, "]]>", 3))
+					break;
+			}
+			p = q + 3;
+			continue;
+		} 
+
+		if (p[1] == '!') {
+			/* Ignore unrecognized <! sequence */
+			p += 2;
+			continue;
+		}
+
+		/* Find end of this element */
+		for (q = p + 1; q < t.e && *q != '>'; q++)
+			continue;
+		if (*q != '>')
+			return (p - t.b);
+
+		/* Opening/empty or closing element ? */
+		if (p[1] == '/') {
+			celem = 1;
+			r = p + 2;
+			if (q[-1] == '/') {
+				/* XML violation, ignore this ? */
+			}
+		} else {
+			celem = 0;
+			r = p + 1;
+		}
+
+		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
+
+			if (celem != remflg) {
+				/* ESI 1.0 violation, ignore this element */
+				if (!remflg) {
+					o.e = p;
+					add_piece(o, 0);
+				}
+			} else if (!celem && q[-1] == '/') {
+				/* empty element */
+				o.e = p;
+				add_piece(o, 0);
+			} else if (!celem) {
+				/* open element */
+				o.e = p;
+				add_piece(o, 0);
+				remflg = !celem;
+			} else {
+				/* close element */
+				remflg = !celem;
+			}
+			p = q + 1;
+			o.b = p;
+			continue;
+		}
+
+		if (remflg && r + 3 < q && !memcmp(r, "esi:", 4)) {
+			/* ESI 1.0 violation, no nesting in esi:remove */
+			p = q + 1;
+			continue;
+		}
+
+		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
+			
+			o.e = p;
+			add_piece(o, 0);
+
+			if (celem == 0) {
+				o.b = r + 11;
+				o.e = q;
+				add_piece(o, 1);
+				if (q[-1] != '/') {
+					/* ESI 1.0 violation */
+				}
+			} else {
+				/* ESI 1.0 violation */
+			}
+			p = q + 1;
+			o.b = p;
+			continue;
+		}
+
+		if (r + 3 < q && !memcmp(r, "esi:", 4)) {
+			/*
+			 * Unimplemented ESI element, ignore
+			 */
+			o.e = p;
+			add_piece(o, 0);
+			p = q + 1;
+			o.b = p;
+			continue;
+		}
+
+		/* Not an element we care about */
+		p = q + 1;
+	}
+	o.e = p;
+	add_piece(o, 0);
+	return (p - t.b);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
 VRT_ESI(struct sess *sp)
 {
+	struct storage *st;
+	txt t;
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	INCOMPL();
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		t.b = (void*)st->ptr;
+		t.e = t.b + st->len;
+		i = vxml(t);
+		printf("VXML(%p+%d) = %d", st->ptr, st->len, i);
+		if (i < st->len) 
+			printf(" \"%.*s\"", st->len - i, st->ptr + i);
+		printf("\n");
+	}
 }
+
+/*--------------------------------------------------------------------*/
