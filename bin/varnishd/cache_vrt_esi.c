@@ -61,6 +61,54 @@ add_piece(txt t, int kind)
 	printf("K%d \"%.*s\"\n", kind, t.e - t.b, t.b);
 }
 
+static void
+vxml_error(struct sess *sp, const char *p, txt t, size_t off, int i, const char *err)
+{
+	int ellipsis = 0;
+	char buf[256], *q;
+
+	if (i == 0) {
+		i = t.e - p;
+	}
+	if (i > 20) {
+		i = 20;
+		ellipsis = 1;
+	}
+	q = buf;
+	q += sprintf(buf, "at %d: %s \"", off + (p - t.b), err);
+	while (i > 0) {
+		if (*p >= ' ' && *p <= '~') {
+			*q++ = *p;
+		} else if (*p == '\n') {
+			*q++ = '\\';
+			*q++ = 'n';
+		} else if (*p == '\r') {
+			*q++ = '\\';
+			*q++ = 'r';
+		} else if (*p == '\t') {
+			*q++ = '\\';
+			*q++ = 't';
+		} else {
+			/* XXX: use %%%02x instead ? */
+			q += sprintf(q, "\\x%02x", *p);
+		}
+		p++;
+		i--;
+	}
+	if (ellipsis) {
+		*q++ = '[';
+		*q++ = '.';
+		*q++ = '.';
+		*q++ = '.';
+		*q++ = ']';
+	}
+	*q++ = '"';
+	*q++ = '\0';
+	t.b = buf;
+	t.e = q;
+	WSPR(sp, SLT_ESI_xmlerror, t);
+}
+
 /*--------------------------------------------------------------------
  * Zoom over a piece of object and dike out all releveant esi: pieces.
  * The entire txt may not be processed because an interesting part 
@@ -69,7 +117,7 @@ add_piece(txt t, int kind)
  */
 
 static int
-vxml(txt t)
+vxml(struct sess *sp, txt t, size_t off)
 {
 	char *p, *q, *r;
 	txt o;
@@ -165,7 +213,11 @@ vxml(txt t)
 		} 
 
 		if (p[1] == '!') {
-			/* Ignore unrecognized <! sequence */
+			/*
+			 * Unrecognized <! sequence, ignore
+			 */
+			vxml_error(sp, p, t, off, i,
+			    "XML 1.0 Unknown <! sequence");
 			p += 2;
 			continue;
 		}
@@ -181,7 +233,8 @@ vxml(txt t)
 			celem = 1;
 			r = p + 2;
 			if (q[-1] == '/') {
-				/* XML violation, ignore this ? */
+				vxml_error(sp, p, t, off, 1 + q - p,
+				    "XML 1.0 empty and closing element");
 			}
 		} else {
 			celem = 0;
@@ -191,7 +244,13 @@ vxml(txt t)
 		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
 
 			if (celem != remflg) {
-				/* ESI 1.0 violation, ignore this element */
+				/*
+				 * ESI 1.0 violation, ignore element
+				 */
+				vxml_error(sp, p, t, off, 1 + q - p,
+				    remflg ? "ESI 1.0 forbids nested esi:remove"
+				    : "ESI 1.0 esi:remove not opened");
+					
 				if (!remflg) {
 					o.e = p;
 					add_piece(o, 0);
@@ -215,7 +274,11 @@ vxml(txt t)
 		}
 
 		if (remflg && r + 3 < q && !memcmp(r, "esi:", 4)) {
-			/* ESI 1.0 violation, no nesting in esi:remove */
+			/*
+			 * ESI 1.0 violation, no esi: elements in esi:remove
+			 */
+			vxml_error(sp, p, t, off, 1 + q - p,
+			    "ESI 1.0 forbids esi: elements inside esi:remove");
 			p = q + 1;
 			continue;
 		}
@@ -230,10 +293,12 @@ vxml(txt t)
 				o.e = q;
 				add_piece(o, 1);
 				if (q[-1] != '/') {
-					/* ESI 1.0 violation */
+					vxml_error(sp, p, t, off, 1 + q - p,
+					    "ESI 1.0 wants emtpy esi:include");
 				}
 			} else {
-				/* ESI 1.0 violation */
+				vxml_error(sp, p, t, off, 1 + q - p,
+				    "ESI 1.0 closing esi:include illegal");
 			}
 			p = q + 1;
 			o.b = p;
@@ -244,6 +309,8 @@ vxml(txt t)
 			/*
 			 * Unimplemented ESI element, ignore
 			 */
+			vxml_error(sp, p, t, off, 1 + q - p,
+			    "ESI 1.0 unimplemented element");
 			o.e = p;
 			add_piece(o, 0);
 			p = q + 1;
@@ -267,13 +334,16 @@ VRT_ESI(struct sess *sp)
 	struct storage *st;
 	txt t;
 	int i;
+	size_t o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	o = 1;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		t.b = (void*)st->ptr;
 		t.e = t.b + st->len;
-		i = vxml(t);
+		i = vxml(sp, t, o);
+		o += st->len;
 		printf("VXML(%p+%d) = %d", st->ptr, st->len, i);
 		if (i < st->len) 
 			printf(" \"%.*s\"", st->len - i, st->ptr + i);
