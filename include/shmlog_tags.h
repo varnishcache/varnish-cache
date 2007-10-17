@@ -92,3 +92,6 @@ SLTM(ExpPick)
 SLTM(ExpKill)
 SLTM(WorkThread)
 SLTM(Terminate)
+
+SLTM(ESItrace)
+SLTM(ESI_xmlerror)
