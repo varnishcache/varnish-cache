@@ -127,14 +127,14 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	struct vss_addr **va;
 	int i, ret;
 
-        memset(&hints, 0, sizeof hints);
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE;
-        ret = getaddrinfo(addr, port, &hints, &res0);
-        if (ret != 0) {
-                fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ret));
-                return (0);
-        }
+	memset(&hints, 0, sizeof hints);
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	ret = getaddrinfo(addr, port, &hints, &res0);
+	if (ret != 0) {
+		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ret));
+		return (0);
+	}
 	for (res = res0, i = 0; res != NULL; res = res->ai_next)
 		++i;
 	va = calloc(i, sizeof *va);

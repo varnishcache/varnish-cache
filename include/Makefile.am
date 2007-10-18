@@ -7,12 +7,13 @@ pkginclude_HEADERS = \
 	stats.h \
 	varnishapi.h
 
-noinst_HEADERS = \
+nobase_noinst_HEADERS = \
 	binary_heap.h \
 	cli.h \
 	cli_common.h \
 	cli_priv.h \
 	compat/asprintf.h \
+	compat/daemon.h \
 	compat/setproctitle.h \
 	compat/srandomdev.h \
 	compat/strlcat.h \

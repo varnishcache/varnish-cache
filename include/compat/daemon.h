@@ -3,7 +3,7 @@
  * Copyright (c) 2006-2007 Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dag-Erling Smørgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,31 +29,11 @@
  * $Id$
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
+#ifndef COMPAT_DAEMON_H_INCLUDED
+#define COMPAT_DAEMON_H_INCLUDED
 
-#include "libvarnish.h"
+#ifndef HAVE_DAEMON
+int daemon(int nochdir, int noclose);
+#endif
 
-void
-lbv_xxxassert(const char *func, const char *file, int line, const char *cond, int err)
-{
-
-	fprintf(stderr,
-	    "Missing errorhandling code in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n"
-	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
-	abort();
-}
-
-void
-lbv_assert(const char *func, const char *file, int line, const char *cond, int err)
-{
-
-	fprintf(stderr,
-	    "Assert error in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n"
-	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
-	abort();
-}
+#endif

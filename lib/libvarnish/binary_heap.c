@@ -298,7 +298,7 @@ main(int argc, char **argv)
 #else
 
 struct foo {
-	unsigned 	idx;
+	unsigned	idx;
 	unsigned	key;
 };
 
