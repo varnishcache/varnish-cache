@@ -115,9 +115,8 @@ AC_CHECK_FUNCS([epoll_ctl])
 AC_CHECK_FUNCS([poll])
 
 # Run-time directory
-VARNISH_STATE_DIR=`eval "echo $localstatedir/varnish"`
-AC_DEFINE_UNQUOTED(VARNISH_STATE_DIR, "$VARNISH_STATE_DIR",
-  [Base directory for run-time state])
+VARNISH_STATE_DIR="${localstatedir}/varnish"
+AC_SUBST(VARNISH_STATE_DIR)
 
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code

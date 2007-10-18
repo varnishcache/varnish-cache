@@ -64,7 +64,8 @@ noinst_HEADERS = \
 	steps.h \
 	stevedore.h
 
-varnishd_CFLAGS = -include config.h
+varnishd_CFLAGS = -include config.h \
+        -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 
 varnishd_LDFLAGS = -export-dynamic
 

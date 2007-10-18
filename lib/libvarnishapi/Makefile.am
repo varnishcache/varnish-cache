@@ -9,4 +9,5 @@ libvarnishapi_la_SOURCES = \
 	instance.c \
 	shmlog.c
 
-libvarnishapi_la_CFLAGS = -include config.h
+libvarnishapi_la_CFLAGS = -include config.h \
+	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
