@@ -261,6 +261,9 @@ Fetch(struct sess *sp)
 	int mklen, is_head;
 	struct http_conn htc[1];
 	int i;
+	int content_length;
+	char hdr[20];
+	char *ptr;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -287,6 +290,17 @@ Fetch(struct sess *sp)
 		return (__LINE__);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
+	
+	/* If a POST request was passed to fetch, we must send
+	 * any pipelined bytes to the backend as well */
+	if (!strcmp(http_GetReq(sp->http), "POST")) {
+		sprintf(hdr, "%ccontent-length:", 15);
+		assert(http_GetHdr(sp->http, hdr, &ptr));
+		content_length = atoi(ptr);
+		if (sp->htc->pipeline.b != NULL && content_length > 0)
+			WRK_Write(w, sp->htc->pipeline.b, content_length);
+	}
+	
 	if (WRK_Flush(w)) {
 		VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
