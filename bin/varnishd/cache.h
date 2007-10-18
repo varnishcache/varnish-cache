@@ -68,6 +68,7 @@ struct object;
 struct objhead;
 struct workreq;
 struct addrinfo;
+struct esi_bit;
 
 /*--------------------------------------------------------------------*/
 
@@ -251,6 +252,8 @@ struct object {
 	VTAILQ_HEAD(, storage)	store;
 
 	VTAILQ_HEAD(, sess)	waitinglist;
+
+	VTAILQ_HEAD(, esi_bit)	esibits;
 
 	double			lru_stamp;
 };
@@ -566,6 +569,11 @@ cli_func_t	cli_func_config_discard;
 cli_func_t	cli_func_config_use;
 cli_func_t	cli_func_dump_pool;
 #endif
+
+/* cache_vrt_esi.c */
+
+void ESI_Deliver(struct sess *);
+void ESI_Destroy(struct object *);
 
 /* cache_ws.c */
 
