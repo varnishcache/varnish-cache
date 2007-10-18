@@ -58,7 +58,7 @@ static void
 add_piece(txt t, int kind)
 {
 
-	printf("K%d \"%.*s\"\n", kind, t.e - t.b, t.b);
+	printf("K%d \"%.*s\"\n", kind, (int)(t.e - t.b), t.b);
 }
 
 static void
@@ -75,7 +75,7 @@ vxml_error(struct sess *sp, const char *p, txt t, size_t off, int i, const char 
 		ellipsis = 1;
 	}
 	q = buf;
-	q += sprintf(buf, "at %d: %s \"", off + (p - t.b), err);
+	q += sprintf(buf, "at %d: %s \"", (int)(off + (p - t.b)), err);
 	while (i > 0) {
 		if (*p >= ' ' && *p <= '~') {
 			*q++ = *p;
