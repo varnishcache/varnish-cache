@@ -50,32 +50,104 @@
 #include "vcl.h"
 #include "cache.h"
 
+#define NDEFELEM		10
+
+/*--------------------------------------------------------------------*/
+
+struct esi_bit {
+	VTAILQ_ENTRY(esi_bit)	list;
+	char			chunk_length[20];
+	txt			verbatim;
+	txt			include;
+	int			free_this;
+};
+
+VTAILQ_HEAD(esibithead, esi_bit);
+
+struct esi_work {
+	struct sess		*sp;
+	size_t			off;
+	struct storage		*st;
+	txt			dst;
+	struct esi_bit		*eb;
+	struct esi_bit		*ebl;	/* list of */
+	int			neb;
+};
+
+/*--------------------------------------------------------------------
+ * Add ESI bit to object
+ */
+
+static void
+esi_addbit(struct esi_work *ew)
+{
+
+	if (ew->neb == 0) {
+		ew->ebl = calloc(NDEFELEM, sizeof(struct esi_bit));
+		XXXAN(ew->ebl);
+		ew->neb = NDEFELEM;
+		ew->ebl->free_this = 1;
+	}
+	ew->eb = ew->ebl;
+	ew->ebl++;
+	ew->neb--;
+
+printf("FIRST: %p\n", VTAILQ_FIRST(&ew->sp->obj->esibits));
+printf("ADD %p->%p\n", ew->sp->obj, ew->eb);
+
+	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
+	ew->eb->verbatim = ew->dst;
+	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
+	VSL(SLT_Debug, ew->sp->fd, "AddBit: %.*s", Tlen(ew->dst), ew->dst.b);
+}
+
+
+/*--------------------------------------------------------------------
+ * Add verbatim piece to output
+ */
+
+static void
+esi_addverbatim(struct esi_work *ew, txt t)
+{
+
+	if (t.b != ew->dst.e)
+		memmove(ew->dst.e, t.b, Tlen(t));
+	ew->dst.e += Tlen(t);
+}
+
 /*--------------------------------------------------------------------
  * Add one piece to the output, either verbatim or include
  */
 
 static void
-add_piece(txt t, int kind)
+esi_addinclude(struct esi_work *ew, txt t)
 {
 
-	printf("K%d \"%.*s\"\n", kind, (int)(t.e - t.b), t.b);
+	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
+	esi_addbit(ew);
+	ew->eb->include = t;
 }
 
+/*--------------------------------------------------------------------
+ * Report a parsing error
+ */
+
 static void
-vxml_error(struct sess *sp, const char *p, txt t, size_t off, int i, const char *err)
+esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 {
 	int ellipsis = 0;
 	char buf[256], *q;
+	txt t;
 
-	if (i == 0) {
-		i = t.e - p;
-	}
+	if (i == 0) 
+		i = p - ((char *)ew->st->ptr + ew->st->len);
 	if (i > 20) {
 		i = 20;
 		ellipsis = 1;
 	}
 	q = buf;
-	q += sprintf(buf, "at %d: %s \"", (int)(off + (p - t.b)), err);
+	q += sprintf(buf, "at %zd: %s \"",
+	    ew->off + (p - (char*)ew->st->ptr), err);
 	while (i > 0) {
 		if (*p >= ' ' && *p <= '~') {
 			*q++ = *p;
@@ -106,7 +178,7 @@ vxml_error(struct sess *sp, const char *p, txt t, size_t off, int i, const char 
 	*q++ = '\0';
 	t.b = buf;
 	t.e = q;
-	WSPR(sp, SLT_ESI_xmlerror, t);
+	WSPR(ew->sp, SLT_ESI_xmlerror, t);
 }
 
 /*--------------------------------------------------------------------
@@ -117,18 +189,22 @@ vxml_error(struct sess *sp, const char *p, txt t, size_t off, int i, const char 
  */
 
 static int
-vxml(struct sess *sp, txt t, size_t off)
+esi_parse(struct esi_work *ew)
 {
 	char *p, *q, *r;
-	txt o;
+	txt t, o;
 	int celem;		/* closing element */
 	int remflg;		/* inside <esi:remove> </esi:remove> */
 	int incmt;		/* inside <!--esi ... --> comment */
 	int i;
 
-	o.b = t.b;
+	t.b = (char *)ew->st->ptr;
+	t.e = t.b + ew->st->len;
+	ew->dst.b = t.b;
+	ew->dst.e = t.b;
 	remflg = 0;
 	incmt = 0;
+	o.b = t.b;
 	for (p = t.b; p < t.e; ) {
 		if (incmt && *p == '-') {
 			/*
@@ -142,7 +218,7 @@ vxml(struct sess *sp, txt t, size_t off)
 			if (!memcmp(p, "-->", 3)) {
 				incmt = 0;
 				o.e = p;
-				add_piece(o, 0);
+				esi_addverbatim(ew, o);
 				p += 3;
 				o.b = p;
 			} else
@@ -172,7 +248,7 @@ vxml(struct sess *sp, txt t, size_t off)
 				return (p - t.b);
 
 			o.e = p;
-			add_piece(o, 0);
+			esi_addverbatim(ew, o);
 
 			p += 7;
 			o.b = p;
@@ -216,7 +292,7 @@ vxml(struct sess *sp, txt t, size_t off)
 			/*
 			 * Unrecognized <! sequence, ignore
 			 */
-			vxml_error(sp, p, t, off, i,
+			esi_error(ew, p, i,
 			    "XML 1.0 Unknown <! sequence");
 			p += 2;
 			continue;
@@ -233,7 +309,7 @@ vxml(struct sess *sp, txt t, size_t off)
 			celem = 1;
 			r = p + 2;
 			if (q[-1] == '/') {
-				vxml_error(sp, p, t, off, 1 + q - p,
+				esi_error(ew, p, 1 + q - p,
 				    "XML 1.0 empty and closing element");
 			}
 		} else {
@@ -247,22 +323,22 @@ vxml(struct sess *sp, txt t, size_t off)
 				/*
 				 * ESI 1.0 violation, ignore element
 				 */
-				vxml_error(sp, p, t, off, 1 + q - p,
+				esi_error(ew, p, 1 + q - p,
 				    remflg ? "ESI 1.0 forbids nested esi:remove"
 				    : "ESI 1.0 esi:remove not opened");
 					
 				if (!remflg) {
 					o.e = p;
-					add_piece(o, 0);
+					esi_addverbatim(ew, o);
 				}
 			} else if (!celem && q[-1] == '/') {
 				/* empty element */
 				o.e = p;
-				add_piece(o, 0);
+				esi_addverbatim(ew, o);
 			} else if (!celem) {
 				/* open element */
 				o.e = p;
-				add_piece(o, 0);
+				esi_addverbatim(ew, o);
 				remflg = !celem;
 			} else {
 				/* close element */
@@ -277,7 +353,7 @@ vxml(struct sess *sp, txt t, size_t off)
 			/*
 			 * ESI 1.0 violation, no esi: elements in esi:remove
 			 */
-			vxml_error(sp, p, t, off, 1 + q - p,
+			esi_error(ew, p, 1 + q - p,
 			    "ESI 1.0 forbids esi: elements inside esi:remove");
 			p = q + 1;
 			continue;
@@ -286,18 +362,20 @@ vxml(struct sess *sp, txt t, size_t off)
 		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
 			
 			o.e = p;
-			add_piece(o, 0);
+			esi_addverbatim(ew, o);
 
 			if (celem == 0) {
 				o.b = r + 11;
 				o.e = q;
-				add_piece(o, 1);
+				esi_addinclude(ew, o);
 				if (q[-1] != '/') {
-					vxml_error(sp, p, t, off, 1 + q - p,
+					esi_error(ew, p, 1 + q - p,
 					    "ESI 1.0 wants emtpy esi:include");
 				}
+				ew->dst.b = q + 1;
+				ew->dst.e = q + 1;
 			} else {
-				vxml_error(sp, p, t, off, 1 + q - p,
+				esi_error(ew, p, 1 + q - p,
 				    "ESI 1.0 closing esi:include illegal");
 			}
 			p = q + 1;
@@ -309,10 +387,10 @@ vxml(struct sess *sp, txt t, size_t off)
 			/*
 			 * Unimplemented ESI element, ignore
 			 */
-			vxml_error(sp, p, t, off, 1 + q - p,
+			esi_error(ew, p, 1 + q - p,
 			    "ESI 1.0 unimplemented element");
 			o.e = p;
-			add_piece(o, 0);
+			esi_addverbatim(ew, o);
 			p = q + 1;
 			o.b = p;
 			continue;
@@ -322,7 +400,7 @@ vxml(struct sess *sp, txt t, size_t off)
 		p = q + 1;
 	}
 	o.e = p;
-	add_piece(o, 0);
+	esi_addverbatim(ew, o);
 	return (p - t.b);
 }
 
@@ -332,23 +410,76 @@ void
 VRT_ESI(struct sess *sp)
 {
 	struct storage *st;
-	txt t;
+	struct esi_work *ew, eww[1];
 	int i;
-	size_t o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	o = 1;
+	ew = eww;
+	memset(eww, 0, sizeof eww);
+	ew->sp = sp;
+	ew->off = 1;
+
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		t.b = (void*)st->ptr;
-		t.e = t.b + st->len;
-		i = vxml(sp, t, o);
-		o += st->len;
+		ew->st = st;
+		i = esi_parse(ew);
+		ew->off += st->len;
 		printf("VXML(%p+%d) = %d", st->ptr, st->len, i);
-		if (i < st->len) 
+		if (i < st->len) {
+			/* XXX: Handle complications */
 			printf(" \"%.*s\"", st->len - i, st->ptr + i);
+			if (VTAILQ_NEXT(st, list))
+				INCOMPL();
+		}
 		printf("\n");
+		i = Tlen(ew->dst);
+	}
+	if (Tlen(ew->dst))
+		esi_addbit(ew);
+
+	/*
+	 * Our ESI implementation needs chunked encoding
+	 * XXX: We should only do this if we find any ESI directives
+	 */
+	http_Unset(sp->obj->http, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
+	    "Transfer-Encoding: chunked");
+
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+ESI_Deliver(struct sess *sp)
+{
+
+	struct esi_bit *eb;
+
+	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
+		WRK_Write(sp->wrk, eb->chunk_length, -1);
+		WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
+		if (VTAILQ_NEXT(eb, list))
+			WRK_Write(sp->wrk, "\r\n", -1);
+		else
+			WRK_Write(sp->wrk, "\r\n0\r\n", -1);
 	}
 }
 
 /*--------------------------------------------------------------------*/
+
+void
+ESI_Destroy(struct object *o)
+{
+	struct esi_bit *eb;
+
+	/*
+	 * Delete esi_bits from behind and free(3) the ones that want to be.
+	 */
+	while (!VTAILQ_EMPTY(&o->esibits)) {
+		eb = VTAILQ_LAST(&o->esibits, esibithead);
+		VTAILQ_REMOVE(&o->esibits, eb, list);
+		if (eb->free_this)
+			free(eb);
+	}
+}
+

@@ -157,7 +157,10 @@ RES_WriteObj(struct sess *sp)
 	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	if (sp->wantbody) {
+	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
+		ESI_Deliver(sp);
+	} else if (sp->wantbody) {
+		
 		VTAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);

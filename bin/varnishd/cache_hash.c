@@ -97,6 +97,7 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj->refcnt = 1;
 		VTAILQ_INIT(&w->nobj->store);
 		VTAILQ_INIT(&w->nobj->waitinglist);
+		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
@@ -312,6 +313,7 @@ HSH_Deref(struct object *o)
 	if (o->vary != NULL)
 		free(o->vary);
 
+	ESI_Destroy(o);
 	HSH_Freestore(o);
 	STV_free(o->objstore);
 	VSL_stats->n_object--;
