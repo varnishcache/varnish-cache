@@ -513,6 +513,8 @@ VRT_IP_string(struct sess *sp, struct sockaddr *sa)
 	case AF_INET6:
 		len = sizeof(struct sockaddr_in6);
 		break;
+	default:
+		INCOMPL();
 	}
 	XXXAN(len);
 	TCP_name(sa, len, h, sizeof h, p, sizeof p);
