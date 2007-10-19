@@ -50,16 +50,16 @@ rdf(struct pollfd *fds, int idx)
 
 	i = read(fds[idx].fd, buf, sizeof buf);
 	if (i <= 0 || fds[1-idx].events == 0) {
-		shutdown(fds[idx].fd, SHUT_RD);
-		shutdown(fds[1-idx].fd, SHUT_WR);
+		AZ(shutdown(fds[idx].fd, SHUT_RD));
+		AZ(shutdown(fds[1-idx].fd, SHUT_WR));
 		fds[idx].events = 0;
 		return;
 	}
 	for (p = buf; i > 0; i -= j, p += j) {
 		j = write(fds[1-idx].fd, p, i);
 		if (j != i) {
-			shutdown(fds[idx].fd, SHUT_WR);
-			shutdown(fds[1-idx].fd, SHUT_RD);
+			AZ(shutdown(fds[idx].fd, SHUT_WR));
+			AZ(shutdown(fds[1-idx].fd, SHUT_RD));
 			fds[1-idx].events = 0;
 			return;
 		}
