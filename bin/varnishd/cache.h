@@ -368,7 +368,7 @@ extern int vca_pipes[2];
 /* cache_backend.c */
 void VBE_Init(void);
 struct vbe_conn *VBE_GetFd(struct sess *sp);
-void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc, int already);
+void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq *vbe_new_bereq(void);
 void vbe_free_bereq(struct bereq *bereq);

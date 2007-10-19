@@ -341,7 +341,7 @@ Fetch(struct sess *sp)
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
 		VSL(SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
-		VBE_ClosedFd(sp->wrk, vc, 0);
+		VBE_ClosedFd(sp->wrk, vc);
 		return (-1);
 	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
 		switch (http_GetStatus(hp)) {
@@ -364,7 +364,7 @@ Fetch(struct sess *sp)
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		VBE_ClosedFd(sp->wrk, vc, 0);
+		VBE_ClosedFd(sp->wrk, vc);
 		return (-1);
 	}
 
@@ -382,7 +382,7 @@ Fetch(struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_ClosedFd(sp->wrk, vc, 0);
+		VBE_ClosedFd(sp->wrk, vc);
 	else
 		VBE_RecycleFd(sp->wrk, vc);
 
