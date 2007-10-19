@@ -89,9 +89,9 @@ cnt_again(struct sess *sp)
 
 	assert(sp->xid == 0);
 
-	do 
+	i = HTC_Complete(sp->htc);
+	while (i == 0)
 		i = HTC_Rx(sp->htc);
-	while (i == 0);
 	if (i == 1) {
 		sp->step = STP_RECV;
 	} else {

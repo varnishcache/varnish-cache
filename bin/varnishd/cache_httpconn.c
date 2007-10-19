@@ -124,6 +124,30 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
+ *
+ */
+
+int
+HTC_Complete(struct http_conn *htc)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	i = htc_header_complete(&htc->rxbuf);
+	if (i < 0) 
+		htc->rxbuf.e = htc->rxbuf.b;
+	if (i <= 0)
+		return (0);
+	WS_ReleaseP(htc->ws, htc->rxbuf.e);
+	if (htc->rxbuf.b + i < htc->rxbuf.e) {
+		htc->pipeline.b = htc->rxbuf.b + i;
+		htc->pipeline.e = htc->rxbuf.e;
+		htc->rxbuf.e = htc->pipeline.b;
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------
  * Receive more HTTP protocol bytes
  * Returns:
  *	-2 overflow
@@ -151,18 +175,7 @@ HTC_Rx(struct http_conn *htc)
 	}
 	htc->rxbuf.e += i;
 	*htc->rxbuf.e = '\0';
-	i = htc_header_complete(&htc->rxbuf);
-	if (i < 0) 
-		htc->rxbuf.e = htc->rxbuf.b;
-	if (i <= 0)
-		return (0);
-	WS_ReleaseP(htc->ws, htc->rxbuf.e);
-	if (htc->rxbuf.b + i < htc->rxbuf.e) {
-		htc->pipeline.b = htc->rxbuf.b + i;
-		htc->pipeline.e = htc->rxbuf.e;
-		htc->rxbuf.e = htc->pipeline.b;
-	}
-	return (1);
+	return (HTC_Complete(htc));
 }
 
 int
