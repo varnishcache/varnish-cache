@@ -42,28 +42,25 @@
 #include "heritage.h"
 #include "cache.h"
 
-static void
-rdf(struct pollfd *fds, int idx)
+static int
+rdf(int fd0, int fd1)
 {
 	int i, j;
 	char buf[BUFSIZ], *p;
 
-	i = read(fds[idx].fd, buf, sizeof buf);
-	if (i <= 0 || fds[1-idx].events == 0) {
-		AZ(shutdown(fds[idx].fd, SHUT_RD));
-		AZ(shutdown(fds[1-idx].fd, SHUT_WR));
-		fds[idx].events = 0;
-		return;
-	}
+	i = read(fd0, buf, sizeof buf);
+	if (i <= 0)
+		return (1);
 	for (p = buf; i > 0; i -= j, p += j) {
-		j = write(fds[1-idx].fd, p, i);
-		if (j != i) {
-			AZ(shutdown(fds[idx].fd, SHUT_WR));
-			AZ(shutdown(fds[1-idx].fd, SHUT_RD));
-			fds[1-idx].events = 0;
-			return;
+		j = write(fd1, p, i);
+		if (j <= 0)
+			return (1);
+		if (i != j) {
+			printf("flunk %d %d\n", i, j);
+			usleep(100000);		/* XXX hack */
 		}
 	}
+	return (0);
 }
 
 void
@@ -109,16 +106,32 @@ PipeSession(struct sess *sp)
 	fds[1].fd = sp->fd;
 	fds[1].events = POLLIN | POLLERR;
 
-	while (fds[0].events || fds[1].events) {
+	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;
 		fds[1].revents = 0;
 		i = poll(fds, 2, params->pipe_timeout * 1000);
-		if (i != 1)
+		if (i < 1) 
 			break;
-		if (fds[0].revents)
-			rdf(fds, 0);
-		if (fds[1].revents)
-			rdf(fds, 1);
+		if (fds[0].revents && rdf(vc->fd, sp->fd)) {
+			shutdown(vc->fd, SHUT_RD);
+			shutdown(sp->fd, SHUT_WR);
+			fds[0].events = 0;
+			fds[0].fd = -1;
+		}
+		if (fds[1].revents && rdf(sp->fd, vc->fd)) {
+			shutdown(sp->fd, SHUT_RD);
+			shutdown(vc->fd, SHUT_WR);
+			fds[1].events = 0;
+			fds[1].fd = -1;
+		}
+	}
+	if (fds[0].fd >= 0) {
+		shutdown(vc->fd, SHUT_RD);
+		shutdown(sp->fd, SHUT_WR);
+	}
+	if (fds[1].fd >= 0) {
+		shutdown(sp->fd, SHUT_RD);
+		shutdown(vc->fd, SHUT_WR);
 	}
 	vca_close_session(sp, "pipe");
 	VBE_ClosedFd(sp->wrk, vc);
