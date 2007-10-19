@@ -55,6 +55,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	double now;
 	int fd;
 
+	WSL_Flush(sp->wrk);
 	assert(status >= 100 && status <= 999);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
