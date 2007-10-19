@@ -298,18 +298,19 @@ Fetch(struct sess *sp)
 	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
+		p = malloc(content_length);
 		while (content_length) {
-			p = malloc(content_length);
 			read = HTC_Read(sp->htc, p, content_length);
 			WRK_Write(w, p, read);
 			if (WRK_Flush(w)) {
 				VBE_UpdateHealth(sp, vc, -1);
 				VBE_ClosedFd(sp->wrk, vc);
+				free(p);
 				return (__LINE__);
 			}
 			content_length -= read;
-			free(p);
 		}
+		free(p);
 	}
 
 	if (WRK_Flush(w)) {
