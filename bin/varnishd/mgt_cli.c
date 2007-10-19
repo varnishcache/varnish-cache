@@ -346,10 +346,10 @@ mgt_cli_callback(const struct ev *e, int what)
 cli_close:
 	vsb_delete(cp->cli->sb);
 	free(cp->buf);
-	AZ(close(cp->fdi));
+	(void)close(cp->fdi);
 	if (cp->fdi == 0)
 		assert(open("/dev/null", O_RDONLY) == 0);
-	AZ(close(cp->fdo));
+	(void)close(cp->fdo);
 	if (cp->fdo == 1) {
 		assert(open("/dev/null", O_WRONLY) == 1);
 		close(2);
