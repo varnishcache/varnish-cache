@@ -503,8 +503,9 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http 
 
 	if (i != 0 || memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
 		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
-	if (i != 0 && hp->status == 0) {
-		hp->status = i;
+	if (i != 0) {
+		if (hp->status == 0)
+			hp->status = i;
 	} else {
 		hp->status = 
 		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
