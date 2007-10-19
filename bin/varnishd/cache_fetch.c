@@ -291,10 +291,12 @@ Fetch(struct sess *sp)
 		return (__LINE__);
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
-	
-	/* If a POST request was passed to fetch, we must send
-	 * any pipelined bytes to the backend as well */
-	if(http_GetHdr(sp->http, H_Content_Length, &ptr)) {
+
+	/*
+	 * If a POST request was passed to fetch, we must send any
+	 * pipelined bytes to the backend as well
+	 */
+	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
 		endp = ptr + strlen(ptr);
 		content_length = (int)strtol(ptr, &endp, 10);
 		content_written = 0;
@@ -310,7 +312,7 @@ Fetch(struct sess *sp)
 			free(p);
 		}
 	}
-	
+
 	if (WRK_Flush(w)) {
 		VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
