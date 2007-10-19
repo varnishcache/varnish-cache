@@ -260,9 +260,8 @@ Fetch(struct sess *sp)
 	struct bereq *bereq;
 	int mklen, is_head;
 	struct http_conn htc[1];
-	int i;
-	int content_length, content_written;
-	int read;
+	unsigned long content_length;
+	int i, read;
 	char *ptr, *endp;
 	char *p = NULL;
 
@@ -297,18 +296,18 @@ Fetch(struct sess *sp)
 	 * pipelined bytes to the backend as well
 	 */
 	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
-		endp = ptr + strlen(ptr);
-		content_length = (int)strtol(ptr, &endp, 10);
-		content_written = 0;
-		while (content_written < content_length) {
+		content_length = strtoul(ptr, &endp, 10);
+		/* XXX should check result of conversion */
+		while (content_length) {
 			p = malloc(content_length);
 			read = HTC_Read(sp->htc, p, content_length);
-			content_written += WRK_Write(w, p, read);
+			WRK_Write(w, p, read);
 			if (WRK_Flush(w)) {
 				VBE_UpdateHealth(sp, vc, -1);
 				VBE_ClosedFd(sp->wrk, vc);
 				return (__LINE__);
 			}
+			content_length -= read;
 			free(p);
 		}
 	}
