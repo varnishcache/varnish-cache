@@ -715,17 +715,20 @@ http_copyh(struct http *to, struct http *fm, unsigned n)
 }
 
 static void
-http_copyreq(struct http *to, struct http *fm, int forceget)
+http_copyreq(struct http *to, struct http *fm, int transparent)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	if (forceget)
-		http_SetH(to, HTTP_HDR_REQ, "GET");
-	else
+	if (transparent)
 		http_copyh(to, fm, HTTP_HDR_REQ);
+	else
+		http_SetH(to, HTTP_HDR_REQ, "GET");
 	http_copyh(to, fm, HTTP_HDR_URL);
-	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	if (transparent)
+		http_copyh(to, fm, HTTP_HDR_PROTO);
+	else
+		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 }
 
 void
