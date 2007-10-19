@@ -99,4 +99,3 @@ crc32_l(const void *p1, unsigned l)
 	crc = crc32(~0U, p1, l);
 	return (crc ^ ~0U);
 }
-
