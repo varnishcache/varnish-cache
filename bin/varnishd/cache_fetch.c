@@ -331,6 +331,13 @@ Fetch(struct sess *sp)
 		i = HTC_Rx(htc);
 	while (i == 0);
 
+	if (i < 0) {
+		VBE_UpdateHealth(sp, vc, -1);
+		VBE_ClosedFd(sp->wrk, vc);
+		/* XXX: other cleanup ? */
+		return (__LINE__);
+	}
+
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
 		VBE_UpdateHealth(sp, vc, -2);
 		VBE_ClosedFd(sp->wrk, vc);
