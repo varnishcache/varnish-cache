@@ -304,14 +304,10 @@ mgt_sigchld(const struct ev *e, int what)
 	}
 	ev_poker = NULL;
 
-	r = wait4(-1, &status, WNOHANG, NULL);
-	if (r == 0)
+	r = wait4(child_pid, &status, WNOHANG, NULL);
+	if (r == 0 || (r == -1 && errno == ECHILD))
 		return (0);
-	if (r != child_pid || r == -1) {
-		fprintf(stderr, "Unknown child died pid=%d status=0x%x\n",
-		    r, status);
-		return (0);
-	}
+	assert(r == child_pid);
 	fprintf(stderr, "Cache child died pid=%d status=0x%x\n", r, status);
 	child_pid = -1;
 
