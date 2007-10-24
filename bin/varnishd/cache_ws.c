@@ -96,6 +96,19 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	return (r);
 }
 
+char *
+WS_Dup(struct ws *ws, const char *s)
+{
+	unsigned l;
+	char *p;
+
+	l = strlen(s) + 1;
+	p = WS_Alloc(ws, l);
+	if (p != NULL)
+		memcpy(p, s, l);
+	return (p);
+}
+
 unsigned
 WS_Reserve(struct ws *ws, unsigned bytes)
 {
