@@ -221,6 +221,9 @@ cnt_done(struct sess *sp)
 		return (1);
 	}
 
+	/* Reset the workspace to the session-watermark */
+	WS_Reset(sp->ws, sp->ws_ses);
+
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
 		VSL_stats->sess_pipeline++;
@@ -368,12 +371,19 @@ cnt_first(struct sess *sp)
 
 	assert(sp->xid == 0);
 	VCA_Prep(sp);
+
+	/* Record the session watermark */
+	sp->ws_ses = WS_Snapshot(sp->ws);
+
+	/* Receive a HTTP protocol request */
+	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->used = sp->t_open;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
 		i = HTC_Rx(sp->htc);
 	while (i == 0);
+
 	switch (i) {
 	case 1:
 		sp->step = STP_RECV;
@@ -734,7 +744,15 @@ cnt_recv(struct sess *sp)
 		sp->vcl = sp->wrk->vcl;
 		sp->wrk->vcl = NULL;
 
+		http_Setup(sp->http, sp->ws);
 		done = http_DissectRequest(sp);
+
+		/* Catch request snapshot */
+		sp->ws_req = WS_Snapshot(sp->ws);
+
+		/* Catch original request, before modification */
+		*sp->http0 = *sp->http;
+
 		if (done != 0) {
 			RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
 			sp->step = STP_DONE;

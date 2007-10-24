@@ -55,6 +55,25 @@ parse_##l(struct tokenlist *tl)				\
 /*--------------------------------------------------------------------*/
 
 static void
+parse_restart_real(struct tokenlist *tl)
+{
+	struct token *t1;
+	
+	t1 = VTAILQ_NEXT(tl->t, list);
+	if (t1->tok == ID && vcc_IdIs(t1, "rollback")) {
+		Fb(tl, 1, "VRT_Rollback(sp);\n");
+		vcc_NextToken(tl);
+	} else if (t1->tok != ';') {
+		vsb_printf(tl->sb, "Expected \"rollback\" or semicolon.\n");
+		vcc_ErrWhere(tl, t1);
+		ERRCHK(tl);
+	}
+	parse_restart(tl);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_call(struct tokenlist *tl)
 {
 
@@ -333,6 +352,7 @@ static struct action_table {
 	const char		*name;
 	action_f		*func;
 } action_table[] = {
+	{ "restart",	parse_restart_real },
 #define VCL_RET_MAC(l, u, b, i) { #l, parse_##l },
 #define VCL_RET_MAC_E(l, u, b, i) VCL_RET_MAC(l, u, b, i) 
 #include "vcl_returns.h"

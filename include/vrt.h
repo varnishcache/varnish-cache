@@ -114,7 +114,7 @@ void VRT_handling(struct sess *sp, unsigned hand);
 int VRT_strcmp(const char *s1, const char *s2);
 
 void VRT_ESI(struct sess *sp);
-
+void VRT_Rollback(struct sess *sp);
 
 /* Backend related */
 void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);

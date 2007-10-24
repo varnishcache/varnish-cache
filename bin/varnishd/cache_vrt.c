@@ -510,6 +510,16 @@ VRT_int_string(const struct sess *sp, int num)
 /*--------------------------------------------------------------------*/
 
 void
+VRT_Rollback(struct sess *sp)
+{
+
+	*sp->http = *sp->http0;
+	WS_Reset(sp->ws, sp->ws_req);
+}
+	
+/*--------------------------------------------------------------------*/
+
+void
 VRT_purge(const char *regexp, int hash)
 {
 	
