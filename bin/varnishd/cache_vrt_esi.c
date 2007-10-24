@@ -256,16 +256,18 @@ esi_addinclude(struct esi_work *ew, txt t)
 {
 	struct esi_bit *eb;
 	txt tag;
-	txt cont;
+	txt val;
 
+	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
 	eb = esi_addbit(ew);
-	while (esi_attrib(ew, &t, &tag, &cont) == 1) {
+	while (esi_attrib(ew, &t, &tag, &val) == 1) {
 		VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
 		    tag.e - tag.b, tag.b,
-		    cont.e - cont.b, cont.b);
+		    val.e - val.b, val.b);
+		if (Tlen(tag) != 3 && memcmp(tag.b, "src", 3))
+			continue;
+		eb->include = val;
 	}
-	eb->include = t;
-	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
 }
 
 /*--------------------------------------------------------------------
@@ -543,14 +545,38 @@ ESI_Deliver(struct sess *sp)
 {
 
 	struct esi_bit *eb;
+	struct object *obj;
 
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
 		WRK_Write(sp->wrk, eb->chunk_length, -1);
 		WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
-		if (VTAILQ_NEXT(eb, list))
-			WRK_Write(sp->wrk, "\r\n", -1);
-		else
-			WRK_Write(sp->wrk, "\r\n0\r\n", -1);
+		WRK_Write(sp->wrk, "\r\n", -1);
+		if (eb->include.b != NULL) {
+			/*
+			 * We flush here, because the next transaction is
+			 * quite likely to take some time, so we should get
+			 * as many bits to the client as we can already
+			 */
+			WRK_Flush(sp->wrk);
+			/*
+			 * XXX: Must edit url relative to the one we have
+			 * XXX: at this point, and not the http0 url.
+			 */
+			printf("INCL: %.*s\n",
+				Tlen(eb->include), eb->include.b);
+			*eb->include.e = '\0'; /* XXX ! */
+			sp->esis++;
+			obj = sp->obj;
+			sp->obj = NULL;
+			*sp->http = *sp->http0;
+			http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
+			sp->step = STP_RECV;
+			CNT_Session(sp);
+			sp->esis--;
+			sp->obj = obj;
+		}
+		if (!VTAILQ_NEXT(eb, list))
+			WRK_Write(sp->wrk, "0\r\n", -1);
 	}
 }
 

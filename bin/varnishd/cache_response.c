@@ -150,11 +150,17 @@ RES_WriteObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
+	char lenbuf[20];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	WRK_Reset(sp->wrk, &sp->fd);
-	sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
+	if (sp->esis == 0) {
+		sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
+	} else {
+		sprintf(lenbuf, "%x\r\n", sp->obj->len);
+		sp->wrk->acct.hdrbytes += WRK_Write(sp->wrk, lenbuf, -1);
+	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
@@ -186,6 +192,8 @@ RES_WriteObj(struct sess *sp)
 		}
 		assert(u == sp->obj->len);
 	}
+	if (sp->esis > 0) 
+		WRK_Write(sp->wrk, "\r\n", -1);
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }
