@@ -41,6 +41,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -73,60 +74,6 @@ struct esi_work {
 	struct esi_bit		*ebl;	/* list of */
 	int			neb;
 };
-
-/*--------------------------------------------------------------------
- * Add ESI bit to object
- */
-
-static void
-esi_addbit(struct esi_work *ew)
-{
-
-	if (ew->neb == 0) {
-		ew->ebl = calloc(NDEFELEM, sizeof(struct esi_bit));
-		XXXAN(ew->ebl);
-		ew->neb = NDEFELEM;
-		ew->ebl->free_this = 1;
-	}
-	ew->eb = ew->ebl;
-	ew->ebl++;
-	ew->neb--;
-
-printf("FIRST: %p\n", VTAILQ_FIRST(&ew->sp->obj->esibits));
-printf("ADD %p->%p\n", ew->sp->obj, ew->eb);
-
-	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
-	ew->eb->verbatim = ew->dst;
-	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
-	VSL(SLT_Debug, ew->sp->fd, "AddBit: %.*s", Tlen(ew->dst), ew->dst.b);
-}
-
-
-/*--------------------------------------------------------------------
- * Add verbatim piece to output
- */
-
-static void
-esi_addverbatim(struct esi_work *ew, txt t)
-{
-
-	if (t.b != ew->dst.e)
-		memmove(ew->dst.e, t.b, Tlen(t));
-	ew->dst.e += Tlen(t);
-}
-
-/*--------------------------------------------------------------------
- * Add one piece to the output, either verbatim or include
- */
-
-static void
-esi_addinclude(struct esi_work *ew, txt t)
-{
-
-	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
-	esi_addbit(ew);
-	ew->eb->include = t;
-}
 
 /*--------------------------------------------------------------------
  * Report a parsing error
@@ -179,6 +126,146 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 	t.b = buf;
 	t.e = q;
 	WSPR(ew->sp, SLT_ESI_xmlerror, t);
+}
+
+/*--------------------------------------------------------------------
+ * Add ESI bit to object
+ */
+
+static struct esi_bit *
+esi_addbit(struct esi_work *ew)
+{
+
+	if (ew->neb == 0) {
+		ew->ebl = calloc(NDEFELEM, sizeof(struct esi_bit));
+		XXXAN(ew->ebl);
+		ew->neb = NDEFELEM;
+		ew->ebl->free_this = 1;
+	}
+	ew->eb = ew->ebl;
+	ew->ebl++;
+	ew->neb--;
+
+printf("FIRST: %p\n", VTAILQ_FIRST(&ew->sp->obj->esibits));
+printf("ADD %p->%p\n", ew->sp->obj, ew->eb);
+
+	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
+	ew->eb->verbatim = ew->dst;
+	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
+	VSL(SLT_Debug, ew->sp->fd, "AddBit: %.*s", Tlen(ew->dst), ew->dst.b);
+	return(ew->eb);
+}
+
+
+/*--------------------------------------------------------------------
+ * Add verbatim piece to output
+ */
+
+static void
+esi_addverbatim(struct esi_work *ew, txt t)
+{
+
+	if (t.b != ew->dst.e)
+		memmove(ew->dst.e, t.b, Tlen(t));
+	ew->dst.e += Tlen(t);
+}
+
+/*--------------------------------------------------------------------
+ * Tease the next attribute and value out of an XML element.
+ *
+ * XXX: is the syntax correct ?
+ */
+
+static int
+esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
+{
+
+	/* Skip leading blanks */
+	while(in->b < in->e && isspace(*in->b))
+		in->b++;
+
+	/* Nothing found */
+	if (in->b >= in->e)
+		return (0);
+
+	if (!isalpha(*in->b)) {
+		/* XXX error */
+		esi_error(ew, in->b, 1, "XML 1.0 Illegal attribute character");
+		return (-1);
+	}
+
+	/* Attribute name until '=' or space */
+	*attrib = *in;
+	while(in->b < in->e && *in->b != '=' && !isspace(*in->b)) {
+		if (!isalnum(*in->b)) {
+			esi_error(ew, attrib->b, 1 + (in->b - attrib->b),
+			    "XML 1.0 Illegal attribute character");
+			return (-1);
+		}
+		in->b++;
+	}
+	attrib->e = in->b;
+
+	if (in->b >= in->e || isspace(*in->b)) {
+		/* Attribute without value */
+		val->b = val->e = in->b;
+		return (1);
+	}
+
+	/* skip '=' */
+	in->b++;
+
+	/* Value, if any ? */
+	*val = *in;
+	if (in->b >= in->e) 
+		return (1);
+
+	if (*in->b == '"') {
+		/* Skip quote */
+		in->b++;
+		val->b++;
+
+		/* Anything goes, until next quote */
+		while(in->b < in->e && *in->b != '"')
+			in->b++;
+		val->e = in->b;
+
+		if (in->b >= in->e) {
+			esi_error(ew, val->b, in->e - val->b,
+			    "XML 1.0 missing ending quote");
+			return (-1);
+		}
+
+		/* Skip quote */
+		in->b++;
+	} else {
+		/* Anything until whitespace */
+		while(in->b < in->e && !isspace(*in->b))
+			in->b++;
+		val->e = in->b;
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Add one piece to the output, either verbatim or include
+ */
+
+static void
+esi_addinclude(struct esi_work *ew, txt t)
+{
+	struct esi_bit *eb;
+	txt tag;
+	txt cont;
+
+	eb = esi_addbit(ew);
+	while (esi_attrib(ew, &t, &tag, &cont) == 1) {
+		VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
+		    tag.e - tag.b, tag.b,
+		    cont.e - cont.b, cont.b);
+	}
+	eb->include = t;
+	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
 }
 
 /*--------------------------------------------------------------------
@@ -366,12 +453,14 @@ esi_parse(struct esi_work *ew)
 
 			if (celem == 0) {
 				o.b = r + 11;
-				o.e = q;
-				esi_addinclude(ew, o);
 				if (q[-1] != '/') {
 					esi_error(ew, p, 1 + q - p,
 					    "ESI 1.0 wants emtpy esi:include");
+					o.e = q;
+				} else {
+					o.e = q - 1;
 				}
+				esi_addinclude(ew, o);
 				ew->dst.b = q + 1;
 				ew->dst.e = q + 1;
 			} else {
