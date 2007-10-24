@@ -222,7 +222,7 @@ vca_handover(struct sess *sp, int status)
 		SES_Delete(sp);
 		break;
 	case 1:
-		sp->step = STP_RECV;
+		sp->step = STP_START;
 		WRK_QueueSession(sp);
 		break;
 	default:
