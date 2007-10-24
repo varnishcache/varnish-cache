@@ -279,6 +279,7 @@ struct sess {
 	unsigned		xid;
 
 	int			restarts;
+	int			esis;
 
 	struct worker		*wrk;
 

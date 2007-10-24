@@ -211,6 +211,11 @@ cnt_done(struct sess *sp)
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk);
+
+	/* If we did an ESI include, don't mess up our state */
+	if (sp->esis > 0)
+		return (1);
+
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	if (sp->fd < 0) {
