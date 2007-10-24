@@ -65,7 +65,7 @@ struct sessmem {
 #define SESSMEM_MAGIC		0x555859c5
 
 	struct sess		sess;
-	struct http		http;
+	struct http		http[2];
 	unsigned		workspace;
 	VTAILQ_ENTRY(sessmem)	list;
 	struct sockaddr_storage	sockaddr[2];
@@ -319,8 +319,8 @@ SES_New(const struct sockaddr *addr, unsigned len)
 	}
 
 	WS_Init(sp->ws, (void *)(sm + 1), sm->workspace);
-	sp->http = &sm->http;
-	http_Setup(sp->http, sp->ws);
+	sp->http = &sm->http[0];
+	sp->http0 = &sm->http[1];
 
 	return (sp);
 }

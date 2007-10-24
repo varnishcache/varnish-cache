@@ -74,12 +74,18 @@ WS_Init(struct ws *ws, void *space, unsigned len)
 }
 
 void
-WS_Reset(struct ws *ws)
+WS_Reset(struct ws *ws, char *p)
 {
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	ws->f = ws->s;
+	if (p == NULL)
+		ws->f = ws->s;
+	else {
+		assert(p >= ws->s);
+		assert(p < ws->e);
+		ws->f = p;
+	}
 }
 
 char *
@@ -107,6 +113,14 @@ WS_Dup(struct ws *ws, const char *s)
 	if (p != NULL)
 		memcpy(p, s, l);
 	return (p);
+}
+
+char *
+WS_Snapshot(struct ws *ws)
+{
+
+	assert(ws->r == NULL);
+	return (ws->f);
 }
 
 unsigned
