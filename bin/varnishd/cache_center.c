@@ -48,12 +48,12 @@ xDOT	page="8.2,11.5"
 DOT	size="7.2,10.5"
 DOT	margin="0.5"
 DOT	center="1"
-DOT start [
+DOT acceptor [
 DOT	shape=hexagon
 DOT	label="Request received"
 DOT ]
 DOT ERROR [shape=plaintext]
-DOT start -> recv [style=bold,color=green,weight=4]
+DOT acceptor -> start [style=bold,color=green,weight=4]
  */
 
 #include <stdio.h>
@@ -93,7 +93,7 @@ cnt_again(struct sess *sp)
 	while (i == 0)
 		i = HTC_Rx(sp->htc);
 	if (i == 1) {
-		sp->step = STP_RECV;
+		sp->step = STP_START;
 	} else {
 		vca_close_session(sp, "overflow");
 		sp->step = STP_DONE;
@@ -227,7 +227,7 @@ cnt_done(struct sess *sp)
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
 		VSL_stats->sess_pipeline++;
-		sp->step = STP_RECV;
+		sp->step = STP_START;
 		return (0);
 	}
 	if (Tlen(sp->htc->rxbuf)) {
@@ -290,6 +290,7 @@ DOT	vcl_fetch -> fetch_pass [label="pass"]
 DOT }
 DOT fetch_pass -> deliver
 DOT vcl_fetch -> deliver [label="insert",style=bold,color=blue,weight=2]
+DOT vcl_fetch -> recv [label="restart"]
 DOT vcl_fetch -> errfetch [label="error"]
 DOT errfetch [label="ERROR",shape=plaintext]
  */
@@ -386,7 +387,7 @@ cnt_first(struct sess *sp)
 
 	switch (i) {
 	case 1:
-		sp->step = STP_RECV;
+		sp->step = STP_START;
 		break;
 	case -1:
 		vca_close_session(sp, "error");
@@ -700,8 +701,7 @@ cnt_pipe(struct sess *sp)
 
 /*--------------------------------------------------------------------
  * RECV
- * We have a complete request, get a VCL reference and dispatch it
- * as instructed by vcl_recv{}
+ * We have a complete request, set everything up and start it.
  *
 DOT subgraph xcluster_recv {
 DOT	recv [
@@ -719,55 +719,9 @@ DOT recv -> hash [label="lookup",style=bold,color=green,weight=4]
 static int
 cnt_recv(struct sess *sp)
 {
-	int done;
 
 	AZ(sp->obj);
-
-	if (sp->restarts > params->max_restarts) {
-		sp->step = STP_ERROR;
-		return (0);
-	}
-	if (sp->restarts == 0) {
-		AZ(sp->vcl);
-		/* Update stats of various sorts */
-		VSL_stats->client_req++;			/* XXX not locked */
-		sp->t_req = TIM_real();
-		sp->wrk->used = sp->t_req;
-		sp->wrk->acct.req++;
-
-		/* Assign XID and log */
-		sp->xid = ++xids;				/* XXX not locked */
-		WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
-
-		/* Borrow VCL reference from worker thread */
-		VCL_Refresh(&sp->wrk->vcl);
-		sp->vcl = sp->wrk->vcl;
-		sp->wrk->vcl = NULL;
-
-		http_Setup(sp->http, sp->ws);
-		done = http_DissectRequest(sp);
-
-		/* Catch request snapshot */
-		sp->ws_req = WS_Snapshot(sp->ws);
-
-		/* Catch original request, before modification */
-		*sp->http0 = *sp->http;
-
-		if (done != 0) {
-			RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
-			sp->step = STP_DONE;
-			return (0);
-		}
-
-		sp->doclose = http_DoConnection(sp->http);
-
-		/* By default we use the first backend */
-		AZ(sp->backend);
-		sp->backend = sp->vcl->backend[0];
-		CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-
-		/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
-	}
+	AN(sp->vcl);
 
 	VCL_recv_method(sp);
 
@@ -792,6 +746,65 @@ cnt_recv(struct sess *sp)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * START
+ * Handle a request, wherever it came from recv/restart.
+ *
+DOT start [shape=box,label="Dissect request"]
+DOT start -> recv 
+ */
+
+static int
+cnt_start(struct sess *sp)
+{
+	int done;
+
+	AZ(sp->restarts);
+	AZ(sp->obj);
+	AZ(sp->vcl);
+
+	/* Update stats of various sorts */
+	VSL_stats->client_req++;			/* XXX not locked */
+	sp->t_req = TIM_real();
+	sp->wrk->used = sp->t_req;
+	sp->wrk->acct.req++;
+
+	/* Assign XID and log */
+	sp->xid = ++xids;				/* XXX not locked */
+	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
+
+	/* Borrow VCL reference from worker thread */
+	VCL_Refresh(&sp->wrk->vcl);
+	sp->vcl = sp->wrk->vcl;
+	sp->wrk->vcl = NULL;
+
+	http_Setup(sp->http, sp->ws);
+	done = http_DissectRequest(sp);
+
+	/* Catch request snapshot */
+	sp->ws_req = WS_Snapshot(sp->ws);
+
+	/* Catch original request, before modification */
+	*sp->http0 = *sp->http;
+
+	if (done != 0) {
+		RES_Error(sp, done, NULL);		/* XXX: STP_ERROR ? */
+		sp->step = STP_DONE;
+		return (0);
+	}
+
+	sp->doclose = http_DoConnection(sp->http);
+
+	/* By default we use the first backend */
+	AZ(sp->backend);
+	sp->backend = sp->vcl->backend[0];
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+
+	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
+
+	sp->step = STP_RECV;
+	return (0);
+}
 
 /*--------------------------------------------------------------------
  * Central state engine dispatcher.
