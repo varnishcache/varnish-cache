@@ -153,19 +153,20 @@ RES_WriteObj(struct sess *sp)
 	char lenbuf[20];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	WRK_Reset(sp->wrk, &sp->fd);
-	if (sp->esis == 0) {
+	if (sp->esis == 0)
 		sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
-	} else {
-		sprintf(lenbuf, "%x\r\n", sp->obj->len);
-		sp->wrk->acct.hdrbytes += WRK_Write(sp->wrk, lenbuf, -1);
-	}
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
 		ESI_Deliver(sp);
 	} else if (sp->wantbody) {
+		if (sp->esis > 0) {
+			sprintf(lenbuf, "%x\r\n", sp->obj->len);
+			sp->wrk->acct.hdrbytes +=
+			    WRK_Write(sp->wrk, lenbuf, -1);
+		}
 		
 		VTAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -191,9 +192,9 @@ RES_WriteObj(struct sess *sp)
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
+		if (sp->esis > 0) 
+			WRK_Write(sp->wrk, "\r\n", -1);
 	}
-	if (sp->esis > 0) 
-		WRK_Write(sp->wrk, "\r\n", -1);
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }

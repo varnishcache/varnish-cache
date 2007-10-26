@@ -605,7 +605,8 @@ ESI_Deliver(struct sess *sp)
 		sp->obj = obj;
 
 	}
-	WRK_Write(sp->wrk, "0\r\n", -1);
+	if (sp->esis == 0)
+		WRK_Write(sp->wrk, "0\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
