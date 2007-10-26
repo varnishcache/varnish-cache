@@ -737,6 +737,12 @@ cnt_recv(struct sess *sp)
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
+		if (sp->esis > 0) {
+			/* XXX: VSL something */
+			INCOMPL();
+			sp->step = STP_DONE;
+			return (1);
+		}
 		sp->step = STP_PIPE;
 		return (0);
 	case VCL_RET_PASS:

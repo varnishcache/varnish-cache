@@ -563,6 +563,14 @@ tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
 	tweak_generic_uint(cli, &master.max_restarts, arg, 0, UINT_MAX);
 }
 
+static void
+tweak_max_esi_includes(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	tweak_generic_uint(cli, &master.max_esi_includes, arg, 0, UINT_MAX);
+}
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -770,12 +778,14 @@ static struct parspec parspec[] = {
 		, NULL },
 	{ "max_restarts", tweak_max_restarts,
 		"Upper limit on how many times a request can restart."
-#ifdef NOT_YET
-		"  ESI:include counts as a restart in this context."
-#endif
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
 		"4", "restarts" },
+	{ "max_esi_includes", tweak_max_esi_includes,
+		"Maximum depth of esi:include processing."
+		"\nBe aware that restarts are likely to cause a hit against "
+		"the backend, so don't increase thoughtlessly.\n",
+		"5", "restarts" },
 	{ NULL, NULL, NULL }
 };
 

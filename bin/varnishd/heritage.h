@@ -128,6 +128,9 @@ struct params {
 	/* Maximum restarts allowed */
 	unsigned		max_restarts;
 
+	/* Maximum esi:include depth allowed */
+	unsigned		max_esi_includes;
+
 };
 
 extern volatile struct params *params;
