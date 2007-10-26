@@ -41,12 +41,14 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
 #include "shmlog.h"
+#include "heritage.h"
 #include "vrt.h"
 #include "vcl.h"
 #include "cache.h"
@@ -59,6 +61,7 @@ struct esi_bit {
 	VTAILQ_ENTRY(esi_bit)	list;
 	char			chunk_length[20];
 	txt			verbatim;
+	txt			host;
 	txt			include;
 	int			free_this;
 };
@@ -146,8 +149,6 @@ esi_addbit(struct esi_work *ew)
 	ew->ebl++;
 	ew->neb--;
 
-printf("FIRST: %p\n", VTAILQ_FIRST(&ew->sp->obj->esibits));
-printf("ADD %p->%p\n", ew->sp->obj, ew->eb);
 
 	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
 	ew->eb->verbatim = ew->dst;
@@ -244,6 +245,7 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 			in->b++;
 		val->e = in->b;
 	}
+	*val->e = '\0';
 	return (1);
 }
 
@@ -255,6 +257,7 @@ static void
 esi_addinclude(struct esi_work *ew, txt t)
 {
 	struct esi_bit *eb;
+	char *p, *q;
 	txt tag;
 	txt val;
 
@@ -266,7 +269,32 @@ esi_addinclude(struct esi_work *ew, txt t)
 		    val.e - val.b, val.b);
 		if (Tlen(tag) != 3 && memcmp(tag.b, "src", 3))
 			continue;
-		eb->include = val;
+
+		assert(Tlen(val) > 0);	/* XXX */
+
+		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
+			/*  Rewrite to Host: header inplace */
+			eb->host.b = val.b;
+			memcpy(eb->host.b, "Host: ", 6);
+			q = eb->host.b + 6;
+			for (p = eb->host.b + 7; p < val.e && *p != '/'; p++)
+				*q++ = *p;
+			*q++ = '\0';
+			eb->host.e = q;
+			assert(*p == '/');	/* XXX */
+			/* The rest is the URL */
+			eb->include.b = p;
+			eb->include.e = val.e;
+		} else if (Tlen(val) > 0 && *val.b == '/') {
+			/* Absolute on this host */
+			eb->include = val;
+		} else {
+			/* Relative to current URL */
+			/* XXX: search forward to '?' use previous / */
+			/* XXX: where to store edited result ? */
+			eb->include = val;
+			INCOMPL();
+		}
 	}
 }
 
@@ -506,6 +534,8 @@ VRT_ESI(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+
+	/* XXX: only if GET ? */
 	ew = eww;
 	memset(eww, 0, sizeof eww);
 	ew->sp = sp;
@@ -515,14 +545,11 @@ VRT_ESI(struct sess *sp)
 		ew->st = st;
 		i = esi_parse(ew);
 		ew->off += st->len;
-		printf("VXML(%p+%d) = %d", st->ptr, st->len, i);
 		if (i < st->len) {
 			/* XXX: Handle complications */
-			printf(" \"%.*s\"", st->len - i, st->ptr + i);
 			if (VTAILQ_NEXT(st, list))
 				INCOMPL();
 		}
-		printf("\n");
 		i = Tlen(ew->dst);
 	}
 	if (Tlen(ew->dst))
@@ -551,33 +578,34 @@ ESI_Deliver(struct sess *sp)
 		WRK_Write(sp->wrk, eb->chunk_length, -1);
 		WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
 		WRK_Write(sp->wrk, "\r\n", -1);
-		if (eb->include.b != NULL) {
-			/*
-			 * We flush here, because the next transaction is
-			 * quite likely to take some time, so we should get
-			 * as many bits to the client as we can already
-			 */
-			WRK_Flush(sp->wrk);
-			/*
-			 * XXX: Must edit url relative to the one we have
-			 * XXX: at this point, and not the http0 url.
-			 */
-			printf("INCL: %.*s\n",
-				Tlen(eb->include), eb->include.b);
-			*eb->include.e = '\0'; /* XXX ! */
-			sp->esis++;
-			obj = sp->obj;
-			sp->obj = NULL;
-			*sp->http = *sp->http0;
-			http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
-			sp->step = STP_RECV;
-			CNT_Session(sp);
-			sp->esis--;
-			sp->obj = obj;
+		if (eb->include.b == NULL ||
+		    sp->esis >= params->max_esi_includes)
+			continue;
+
+		/*
+		 * We flush here, because the next transaction is
+		 * quite likely to take some time, so we should get
+		 * as many bits to the client as we can already
+		 */
+		WRK_Flush(sp->wrk);
+
+		sp->esis++;
+		obj = sp->obj;
+		sp->obj = NULL;
+		*sp->http = *sp->http0;
+		/* XXX: reset sp->ws */
+		http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
+		if (eb->host.b != NULL)  {
+			http_Unset(sp->http, H_Host);
+			http_SetHeader(sp->wrk, sp->fd, sp->http, eb->host.b);
 		}
-		if (!VTAILQ_NEXT(eb, list))
-			WRK_Write(sp->wrk, "0\r\n", -1);
+		sp->step = STP_RECV;
+		CNT_Session(sp);
+		sp->esis--;
+		sp->obj = obj;
+
 	}
+	WRK_Write(sp->wrk, "0\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
