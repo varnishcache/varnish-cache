@@ -261,6 +261,8 @@ esi_addinclude(struct esi_work *ew, txt t)
 	char *p, *q;
 	txt tag;
 	txt val;
+	unsigned u, v;
+	struct ws *ws;
 
 	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
 	eb = esi_addbit(ew);
@@ -290,11 +292,40 @@ esi_addinclude(struct esi_work *ew, txt t)
 			/* Absolute on this host */
 			eb->include = val;
 		} else {
-			/* Relative to current URL */
-			/* XXX: search forward to '?' use previous / */
-			/* XXX: where to store edited result ? */
-			eb->include = val;
-			INCOMPL();
+
+			/*
+			 * Decision:  We interpret the relative URL against
+			 * the actual URL we asked the backend for.
+			 * The client's request URL may be entirely
+			 * different and have been rewritten underway.
+			 */
+			CHECK_OBJ_NOTNULL(ew->sp, SESS_MAGIC);
+			CHECK_OBJ_NOTNULL(ew->sp->bereq, BEREQ_MAGIC);
+			CHECK_OBJ_NOTNULL(ew->sp->bereq->http, HTTP_MAGIC);
+			tag = ew->sp->bereq->http->hd[HTTP_HDR_URL];
+
+			/* Use the objects WS to store the result */
+			CHECK_OBJ_NOTNULL(ew->sp->obj, OBJECT_MAGIC);
+			ws = ew->sp->obj->ws_o;
+			WS_Assert(ws);
+
+			/* Look for the last '/' before a '?' */
+			q = NULL;
+			for (p = tag.b; p < tag.e && *p != '?'; p++)
+				if (*p == '/')
+					q = p;
+			if (q != NULL)
+				tag.e = q + 1;
+
+			u = WS_Reserve(ws, 0);
+			v = snprintf(ws->f, u - 1, "%.*s%.*s",
+			    tag.e - tag.b, tag.b,
+			    val.e - val.b, val.b);
+			v++;
+			xxxassert(v < u);
+			eb->include.b = ws->f;
+			eb->include.e = ws->f + v;
+			WS_Release(ws, v);
 		}
 	}
 }
