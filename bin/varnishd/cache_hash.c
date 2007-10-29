@@ -88,7 +88,7 @@ HSH_Prealloc(struct sess *sp)
 	if (w->nobj == NULL) {
 		st = STV_alloc(sp, params->mem_workspace);
 		XXXAN(st);
-		assert(st->size > sizeof *w->nobj);
+		assert(st->space > sizeof *w->nobj);
 		w->nobj = (void *)st->ptr; /* XXX: align ? */
 		st->len = sizeof *w->nobj;
 		memset(w->nobj, 0, sizeof *w->nobj);
