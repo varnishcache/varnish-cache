@@ -76,6 +76,7 @@ struct esi_work {
 	struct esi_bit		*eb;
 	struct esi_bit		*ebl;	/* list of */
 	int			neb;
+	int			is_esi;
 };
 
 /*--------------------------------------------------------------------
@@ -361,6 +362,7 @@ esi_parse(struct esi_work *ew)
 			 * first seven because the tail is handled
 			 * by the incmt flag.
 			 */
+			ew->is_esi++;
 			if (i < 7)
 				return (p - t.b);
 
@@ -426,6 +428,8 @@ esi_parse(struct esi_work *ew)
 
 		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
 
+			ew->is_esi++;
+
 			if (celem != remflg) {
 				/*
 				 * ESI 1.0 violation, ignore element
@@ -468,6 +472,8 @@ esi_parse(struct esi_work *ew)
 
 		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
 			
+			ew->is_esi++;
+
 			o.e = p;
 			esi_addverbatim(ew, o);
 
@@ -547,10 +553,14 @@ VRT_ESI(struct sess *sp)
 			if (VTAILQ_NEXT(st, list))
 				INCOMPL();
 		}
-		i = Tlen(ew->dst);
 	}
 	if (Tlen(ew->dst))
 		esi_addbit(ew);
+
+	if (!ew->is_esi) {
+		ESI_Destroy(sp->obj);
+		return;
+	}
 
 	/*
 	 * Our ESI implementation needs chunked encoding
