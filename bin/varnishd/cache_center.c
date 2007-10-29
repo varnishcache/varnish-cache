@@ -87,6 +87,9 @@ cnt_again(struct sess *sp)
 {
 	int i;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	AZ(sp->obj);
 	assert(sp->xid == 0);
 
 	i = HTC_Complete(sp->htc);
@@ -142,6 +145,10 @@ static int
 cnt_deliver(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+
 	sp->t_resp = TIM_real();
 	if (sp->obj->objhead != NULL)
 		EXP_Touch(sp->obj, sp->t_resp);
@@ -182,6 +189,9 @@ cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
 	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
 	AZ(sp->bereq);
@@ -304,6 +314,9 @@ static int
 cnt_fetch(struct sess *sp)
 {
 	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->bereq);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
@@ -428,6 +441,10 @@ static int
 cnt_hit(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+
 	assert(!sp->obj->pass);
 
 	VCL_hit_method(sp);
@@ -492,6 +509,7 @@ cnt_lookup(struct sess *sp)
 	uintptr_t u;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	if (sp->obj == NULL) {
 
@@ -585,6 +603,10 @@ static int
 cnt_miss(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
@@ -644,6 +666,8 @@ static int
 cnt_pass(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
 	http_FilterHeader(sp, HTTPH_R_PASS);
@@ -690,6 +714,9 @@ static int
 cnt_pipe(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+
 	sp->wrk->acct.pipe++;
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
@@ -725,8 +752,9 @@ static int
 cnt_recv(struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
-	AN(sp->vcl);
 
 	VCL_recv_method(sp);
 
@@ -770,6 +798,7 @@ cnt_start(struct sess *sp)
 {
 	int done;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->restarts);
 	AZ(sp->obj);
 	AZ(sp->vcl);
