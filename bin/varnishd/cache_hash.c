@@ -73,6 +73,7 @@ HSH_Prealloc(struct sess *sp)
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
 	if (w->nobjhead == NULL) {
@@ -87,7 +88,8 @@ HSH_Prealloc(struct sess *sp)
 	if (w->nobj == NULL) {
 		st = STV_alloc(sp, params->mem_workspace);
 		XXXAN(st);
-		w->nobj = (void *)st->ptr;
+		assert(st->size > sizeof *w->nobj);
+		w->nobj = (void *)st->ptr; /* XXX: align ? */
 		st->len = sizeof *w->nobj;
 		memset(w->nobj, 0, sizeof *w->nobj);
 		w->nobj->objstore = st;
@@ -122,6 +124,9 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 	unsigned u, v;
 	const char *b;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, OBJHEAD_MAGIC);
 	i = sp->lhashptr - obj->hashlen;
 	if (i)
 		return (i);
