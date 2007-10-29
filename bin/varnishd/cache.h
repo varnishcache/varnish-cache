@@ -90,6 +90,8 @@ enum step {
  */
 
 struct ws {
+	unsigned		magic;
+#define WS_MAGIC		0x35fac554
 	const char		*id;		/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree pointer */
