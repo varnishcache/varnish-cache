@@ -310,9 +310,6 @@ cnt_fetch(struct sess *sp)
 	i = Fetch(sp);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
-	VBE_free_bereq(sp->bereq);
-	sp->bereq = NULL;
-
 	if (!i)
 		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
 	else {
@@ -324,6 +321,9 @@ cnt_fetch(struct sess *sp)
 
 	sp->err_code = http_GetStatus(sp->obj->http);
 	VCL_fetch_method(sp);
+
+	VBE_free_bereq(sp->bereq);
+	sp->bereq = NULL;
 
 	switch (sp->handling) {
 	case VCL_RET_ERROR:
