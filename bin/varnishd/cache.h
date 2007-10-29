@@ -311,6 +311,7 @@ struct sess {
 	double			t_end;
 
 	enum step		step;
+	unsigned		cur_method;
 	unsigned 		handling;
 	unsigned char		wantbody;
 	int			err_code;
