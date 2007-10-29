@@ -278,7 +278,7 @@ Fetch(struct sess *sp)
 
 	/* Set up obj's workspace */
 	st = sp->obj->objstore;
-	WS_Init(sp->obj->ws_o, st->ptr + st->len, st->space - st->len);
+	WS_Init(sp->obj->ws_o, "obj", st->ptr + st->len, st->space - st->len);
 	st->len = st->space;
 	WS_Assert(sp->obj->ws_o);
 	http_Setup(sp->obj->http, sp->obj->ws_o);
