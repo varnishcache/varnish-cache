@@ -405,16 +405,6 @@ esi_parse(struct esi_work *ew)
 			continue;
 		} 
 
-		if (p[1] == '!') {
-			/*
-			 * Unrecognized <! sequence, ignore
-			 */
-			esi_error(ew, p, i,
-			    "XML 1.0 Unknown <! sequence");
-			p += 2;
-			continue;
-		}
-
 		/* Find end of this element */
 		for (q = p + 1; q < t.e && *q != '>'; q++)
 			continue;
