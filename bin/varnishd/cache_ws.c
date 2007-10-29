@@ -57,8 +57,8 @@ WS_Assert(const struct ws *ws)
 {
 
 	assert(ws != NULL);
-	WS_DEBUG((SLT_Debug, 0, "WS(%p = (%p %u %u %u)",
-	    ws, ws->s, pdiff(ws->s, ws->f),
+	WS_DEBUG((SLT_Debug, 0, "WS(%p = (%s, %p %u %u %u)",
+	    ws, ws->id, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e)));
 	assert(ws->s != NULL);
@@ -73,15 +73,16 @@ WS_Assert(const struct ws *ws)
 }
 
 void
-WS_Init(struct ws *ws, void *space, unsigned len)
+WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
 
-	WS_DEBUG((SLT_Debug, 0, "WS_Init(%p, %p, %u)", ws, space, len));
+	WS_DEBUG((SLT_Debug, 0, "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len));
 	assert(space != NULL);
 	memset(ws, 0, sizeof *ws);
 	ws->s = space;
 	ws->e = ws->s + len;
 	ws->f = ws->s;
+	ws->id = id;
 	WS_Assert(ws);
 }
 

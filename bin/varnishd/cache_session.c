@@ -318,7 +318,7 @@ SES_New(const struct sockaddr *addr, unsigned len)
 		sp->sockaddrlen = len;
 	}
 
-	WS_Init(sp->ws, (void *)(sm + 1), sm->workspace);
+	WS_Init(sp->ws, "sess", (void *)(sm + 1), sm->workspace);
 	sp->http = &sm->http[0];
 	sp->http0 = &sm->http[1];
 

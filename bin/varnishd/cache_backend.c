@@ -147,7 +147,7 @@ VBE_new_bereq(void)
 		if (bereq == NULL)
 			return (NULL);
 		bereq->magic = BEREQ_MAGIC;
-		WS_Init(bereq->ws, bereq + 1, len);
+		WS_Init(bereq->ws, "bereq", bereq + 1, len);
 	}
 	http_Setup(bereq->http, bereq->ws);
 	return (bereq);
