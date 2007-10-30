@@ -128,6 +128,9 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 	unsigned u, v;
 	int i;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	CHECK_OBJ_ORNULL(noh, OBJHEAD_MAGIC);
 
 	digest = ~0U;
