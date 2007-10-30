@@ -880,10 +880,11 @@ CNT_Session(struct sess *sp)
 #ifdef DIAGNOSTICS
 #define STEP(l,u) \
 		    case STP_##u: \
-			WSL(sp->wrk, SLT_Debug, sp->id, \
-			    "cnt_%s(%p) xid %x obj %p vcl %p", \
-			    #l, sp, sp->xid, sp->obj, sp->vcl);	\
-			WSL_Flush(sp->wrk); \
+			if (sp->wrk) \
+				WSL_Flush(sp->wrk); \
+			VSL(SLT_Debug, sp->id, \
+			    "thr %p STP_%s sp %p obj %p vcl %p", \
+			    pthread_self(), #u, sp, sp->obj, sp->vcl); \
 			done = cnt_##l(sp); \
 			break;
 #else
