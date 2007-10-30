@@ -353,7 +353,7 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned 
 			if (*ptr >= ' ' && *ptr <= '~')
 				fprintf(fo, "%c", *ptr);
 			else
-				fprintf(fo, "%%%02x", (*ptr) & 0xff);
+				fprintf(fo, "%%%02x", (unsigned char)*ptr);
 			ptr++;
 		}
 		fprintf(fo, "\"\n");
