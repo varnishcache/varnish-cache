@@ -101,22 +101,22 @@ set spobj {
 	# Request sent to backend
 	{ bereq.request
 		RW STRING
-		{     pipe pass      miss                                  }
+		{     pipe pass      miss     fetch                        }
 		"const struct sess *"
 	}
 	{ bereq.url
 		RW STRING
-		{     pipe pass      miss                                  }
+		{     pipe pass      miss     fetch                        }
 		"const struct sess *"
 	}
 	{ bereq.proto
 		RW STRING
-		{     pipe pass      miss                                  }
+		{     pipe pass      miss     fetch                        }
 		"const struct sess *"
 	}
 	{ bereq.http.
 		RW HDR_BEREQ
-		{     pipe pass      miss                                  }
+		{     pipe pass      miss     fetch                        }
 		"const struct sess *"
 	}
 

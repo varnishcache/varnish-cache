@@ -110,28 +110,28 @@ struct var vcc_vars[] = {
 	    "VRT_l_bereq_request(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS
+	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
 	{ "bereq.url", STRING, 9,
 	    "VRT_r_bereq_url(sp)",
 	    "VRT_l_bereq_url(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS
+	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
 	{ "bereq.proto", STRING, 11,
 	    "VRT_r_bereq_proto(sp)",
 	    "VRT_l_bereq_proto(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS
+	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
 	{ "bereq.http.", HEADER, 11,
 	    "VRT_r_bereq_http_(sp)",
 	    "VRT_l_bereq_http_(sp, ",
 	    V_RW,
 	    "HDR_BEREQ",
-	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS
+	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
 	{ "obj.proto", STRING, 9,
 	    "VRT_r_obj_proto(sp)",

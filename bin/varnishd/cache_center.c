@@ -279,7 +279,7 @@ DOT		label="fetch from backend\n(find obj.ttl)"
 DOT	]
 DOT	vcl_fetch [
 DOT		shape=record
-DOT		label="vcl_fetch()|req.\nobj."
+DOT		label="vcl_fetch()|req.\nobj.\nbereq."
 DOT	]
 DOT	fetch -> vcl_fetch [style=bold,color=blue,weight=2]
 DOT	fetch_pass [
@@ -305,9 +305,6 @@ cnt_fetch(struct sess *sp)
 	i = Fetch(sp);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
-	VBE_free_bereq(sp->bereq);
-	sp->bereq = NULL;
-
 	if (!i)
 		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
 	else {
@@ -319,6 +316,9 @@ cnt_fetch(struct sess *sp)
 
 	sp->err_code = http_GetStatus(sp->obj->http);
 	VCL_fetch_method(sp);
+
+	VBE_free_bereq(sp->bereq);
+	sp->bereq = NULL;
 
 	switch (sp->handling) {
 	case VCL_RET_ERROR:
