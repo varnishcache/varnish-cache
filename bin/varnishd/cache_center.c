@@ -866,7 +866,21 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(sp->backend, BACKEND_MAGIC);
 
 		switch (sp->step) {
-#define STEP(l,u) case STP_##u: done = cnt_##l(sp); break;
+#ifdef DIAGNOSTICS
+#define STEP(l,u) \
+		    case STP_##u: \
+			WSL(sp->wrk, SLT_Debug, sp->id, \
+			    "cnt_%s(%p) xid %x obj %p vcl %p", \
+			    #l, sp, sp->xid, sp->obj, sp->vcl);	\
+			WSL_Flush(sp->wrk); \
+			done = cnt_##l(sp); \
+			break;
+#else
+#define STEP(l,u) \
+		    case STP_##u: \
+			done = cnt_##l(sp); \
+		        break;
+#endif
 #include "steps.h"
 #undef STEP
 		default:	INCOMPL();
