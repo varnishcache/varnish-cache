@@ -32,6 +32,7 @@
 STEP(again,	AGAIN)
 STEP(first,	FIRST)
 STEP(recv,	RECV)
+STEP(start,	START)
 STEP(pipe,	PIPE)
 STEP(pass,	PASS)
 STEP(lookup,	LOOKUP)
