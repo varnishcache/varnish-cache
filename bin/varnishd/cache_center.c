@@ -88,7 +88,7 @@ cnt_again(struct sess *sp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	AZ(sp->vcl);
 	AZ(sp->obj);
 	assert(sp->xid == 0);
 
@@ -191,7 +191,7 @@ cnt_done(struct sess *sp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
 	AZ(sp->bereq);
