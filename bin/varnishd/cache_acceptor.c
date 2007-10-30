@@ -107,9 +107,14 @@ sock_test(int fd)
 void
 VCA_Prep(struct sess *sp)
 {
+	char addr[TCP_ADDRBUFSIZE];
+	char port[TCP_PORTBUFSIZE];
+
 
 	TCP_name(sp->sockaddr, sp->sockaddrlen,
-	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	    addr, sizeof addr, port, sizeof port);
+	sp->addr = WS_Dup(sp->ws, addr);
+	sp->port = WS_Dup(sp->ws, port);
 	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
 	sp->acct.first = sp->t_open;
 	if (need_test)
@@ -195,7 +200,6 @@ vca_acct(void *arg)
 			sp->id = i;
 			sp->t_open = now;
 
-			HTC_Init(sp->htc, sp->ws, sp->fd);
 			sp->step = STP_FIRST;
 			WRK_QueueSession(sp);
 		}

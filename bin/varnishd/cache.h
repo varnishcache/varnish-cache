@@ -285,14 +285,18 @@ struct sess {
 	struct sockaddr		*mysockaddr;
 
 	/* formatted ascii client address */
-	char			addr[TCP_ADDRBUFSIZE];
-	char			port[TCP_PORTBUFSIZE];
+	char			*addr;
+	char			*port;
 	struct srcaddr		*srcaddr;
 
 	/* HTTP request */
 	const char		*doclose;
 	struct http		*http;
+	struct http		*http0;
+
 	struct ws		ws[1];
+	char			*ws_ses;	/* WS above session data */
+	char			*ws_req;	/* WS above request data */
 
 	struct http_conn	htc[1];
 
@@ -576,9 +580,10 @@ unsigned WS_Reserve(struct ws *ws, unsigned bytes);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
-void WS_Reset(struct ws *ws);
+void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Dup(struct ws *ws, const char *);
+char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
