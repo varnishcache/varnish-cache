@@ -298,15 +298,17 @@ vcl_handlingname(unsigned u)
 
 #define VCL_RET_MAC(l,u,b,n)
 
-#define VCL_MET_MAC(func, xxx, bitmap) 					\
+#define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
 VCL_##func##_method(struct sess *sp)					\
 {									\
 									\
 	sp->handling = 0;						\
+	sp->cur_method = VCL_MET_ ## upper;				\
 	WSP(sp, SLT_VCL_call, "%s", #func); 				\
 	sp->vcl->func##_func(sp);					\
 	WSP(sp, SLT_VCL_return, "%s", vcl_handlingname(sp->handling));	\
+	sp->cur_method = 0;						\
 	assert(sp->handling & bitmap);					\
 	assert(!(sp->handling & ~bitmap));				\
 }
