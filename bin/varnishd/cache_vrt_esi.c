@@ -319,8 +319,8 @@ esi_addinclude(struct esi_work *ew, txt t)
 
 			u = WS_Reserve(ws, 0);
 			v = snprintf(ws->f, u - 1, "%.*s%.*s",
-			    tag.e - tag.b, tag.b,
-			    val.e - val.b, val.b);
+			    pdiff(tag.b, tag.e), tag.b,
+			    pdiff(val.b, val.e), val.b);
 			v++;
 			xxxassert(v < u);
 			eb->include.b = ws->f;
