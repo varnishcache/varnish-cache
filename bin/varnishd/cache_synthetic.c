@@ -73,7 +73,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 
 	/* Set up obj's workspace */
 	st = o->objstore;
-	WS_Init(o->ws_o, st->ptr + st->len, st->space - st->len);
+	WS_Init(o->ws_o, "obj", st->ptr + st->len, st->space - st->len);
 	st->len = st->space;
 	WS_Assert(o->ws_o);
 	http_Setup(o->http, o->ws_o);
@@ -126,7 +126,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 
 	/* allocate space for header */
 
-	WS_Init(h->ws, malloc(1024), 1024);
+	WS_Init(h->ws, "error", malloc(1024), 1024);
 
 	/* generate header */
 	http_ClrHeader(h);

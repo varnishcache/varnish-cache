@@ -89,6 +89,7 @@ enum step {
  */
 
 struct ws {
+	const char		*id;		/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree pointer */
 	char			*r;		/* (R)eserved length */
@@ -575,7 +576,7 @@ cli_func_t	cli_func_dump_pool;
 
 /* cache_ws.c */
 
-void WS_Init(struct ws *ws, void *space, unsigned len);
+void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
 unsigned WS_Reserve(struct ws *ws, unsigned bytes);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
