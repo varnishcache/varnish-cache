@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="1.1.1" to="1.1.2">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="1809,1913">
+      <para>When switching to a new VCL configuration, a race
+      condition exists which may cause Varnish to reference a backend
+      which no longer exists (see <ticket ref="144"/>).  This race
+      condition has not been entirely eliminated, but it should occur
+      less frequently.</para>
+    </change>
+
+    <change type="bug" ref="1942">
+      <para>When dropping a TCP session before any requests were
+      processed, an assertion would be triggered due to an
+      uninitialized timestamp (see <ticket ref="132"/>).  The
+      timestamp is now correctly initialized.</para>
+    </change>
+
+    <change type="bug" ref="1955,1976,1977">
+      <para>Varnish will now correctly generate a <code>Date:</code>
+      header for every response instead of copying the one it got from
+      the backend (see <ticket ref="157"/>).</para>
+    </change>
+
+    <change type="bug" ref="1971">
+      <para>Comparisons in VCL which involve a non-existent string
+      (usually a header which is not present in the request or object
+      being processed) would cause a NULL pointer dereference; now the
+      comparison will simply fail.</para>
+    </change>
+
+    <change type="bug" ref="1972">
+      <para>A bug in the VCL compiler which would cause a double-free
+      when processing <literal>include</literal> directives has been
+      fixed.</para>
+    </change>
+
+    <change type="bug" ref="1991">
+      <para></para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Build system</name>
+
+  </subsystem>
+</group>
