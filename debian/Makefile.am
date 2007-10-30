@@ -9,10 +9,10 @@ EXTRA_DIST =			\
 	copyright		\
 	dirs			\
 	docs			\
-	libvarnish-dev.dirs	\
-	libvarnish-dev.install	\
-	libvarnish.dirs		\
-	libvarnish.install	\
+	libvarnish0-dev.dirs	\
+	libvarnish0-dev.install	\
+	libvarnish0.dirs	\
+	libvarnish0.install	\
 	lintian-override	\
 	rules			\
 	varnish.default		\
