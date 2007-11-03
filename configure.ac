@@ -129,7 +129,7 @@ struct timeval tv = { 1, 0 };
 return !!setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
     ]])],
     [ac_cv_so_rcvtimeo_works=yes],
-    [ac_cv_so_rcvtime_works=no])
+    [ac_cv_so_rcvtimeo_works=no])
   ])
 if test "$ac_cv_so_rcvtimeo_works" = yes; then
    AC_DEFINE([SO_RCVTIMEO_WORKS], [1], [Define if SO_RCVTIMEO works])
@@ -148,7 +148,7 @@ struct timeval tv = { 1, 0 };
 return !!setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv);
     ]])],
     [ac_cv_so_sndtimeo_works=yes],
-    [ac_cv_so_sndtime_works=no])
+    [ac_cv_so_sndtimeo_works=no])
   ])
 if test "$ac_cv_so_sndtimeo_works" = yes; then
    AC_DEFINE([SO_SNDTIMEO_WORKS], [1], [Define if SO_SNDTIMEO works])
