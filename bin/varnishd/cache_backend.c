@@ -95,7 +95,7 @@ vbe_free_bereq(struct bereq *bereq)
 {
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
-	WS_Reset(bereq->ws, NULL);
+	WS_Reset(bereq->http->ws);
 	LOCK(&vbemtx);
 	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
 	UNLOCK(&vbemtx);
