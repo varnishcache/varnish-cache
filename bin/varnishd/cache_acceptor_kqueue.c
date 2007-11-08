@@ -66,8 +66,8 @@ vca_kq_sess(struct sess *sp, short arm)
 	if (sp->fd < 0)
 		return;
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	if (++nki == NKEV) {
-		assert(kevent(kq, ki, nki, NULL, 0, NULL) <= 0);
+	if (++nki == NKEV || arm == EV_DELETE) {
+		AZ(kevent(kq, ki, nki, NULL, 0, NULL));
 		nki = 0;
 	}
 }
