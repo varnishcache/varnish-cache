@@ -283,9 +283,9 @@ main(int argc, char **argv)
 {
 	int i, c;
 	int a_flag = 0, D_flag = 0, o_flag = 0;
+	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	const char *n_arg = NULL;
 	struct pidfh *pfh = NULL;
 	struct VSL_data *vd;
 

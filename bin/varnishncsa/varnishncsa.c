@@ -69,10 +69,16 @@
 #include <unistd.h>
 #include <limits.h>
 
+#ifndef HAVE_DAEMON
+#include "compat/daemon.h"
+#endif
+
+#include "vsb.h"
+#include "vpf.h"
+
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
-#include "vsb.h"
 
 static struct logline {
 	char *df_H;			/* %H, Protocol version */
@@ -434,7 +440,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishncsa %s [-aV] [-n varnish_name] [-w file]\n", VSL_ARGS);
+	fprintf(stderr, "usage: varnishncsa %s [-aDV] [-n varnish_name] [-P file] [-w file]\n", VSL_ARGS);
 	exit(1);
 }
 
@@ -442,15 +448,17 @@ int
 main(int argc, char *argv[])
 {
 	int i, c;
-	struct VSL_data *vd;
-	const char *ofn = NULL;
+	int a_flag = 0, D_flag = 0;
 	const char *n_arg = NULL;
-	int append = 0;
+	const char *P_arg = NULL;
+	const char *w_arg = NULL;
+	struct pidfh *pfh = NULL;
+	struct VSL_data *vd;
 	FILE *of;
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "an:Vw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDn:P:Vw:")) != -1) {
 		i = VSL_Arg(vd, c, optarg);
 		if (i < 0)
 			exit (1);
@@ -458,16 +466,22 @@ main(int argc, char *argv[])
 			continue;
 		switch (c) {
 		case 'a':
-			append = 1;
+			a_flag = 1;
+			break;
+		case 'D':
+			D_flag = 1;
 			break;
 		case 'n':
 			n_arg = optarg;
+			break;
+		case 'P':
+			P_arg = optarg;
 			break;
 		case 'V':
 			varnish_version("varnishncsa");
 			exit(0);
 		case 'w':
-			ofn = optarg;
+			w_arg = optarg;
 			break;
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
@@ -479,22 +493,37 @@ main(int argc, char *argv[])
 	if (VSL_OpenLog(vd, n_arg))
 		exit(1);
 
-	if (ofn) {
-		of = open_log(ofn, append);
+	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+		perror(P_arg);
+		exit(1);
+	}
+
+	if (D_flag && daemon(0, 0) == -1) {
+		perror("daemon()");
+		if (pfh != NULL)
+			vpf_remove(pfh);
+		exit(1);
+	}
+
+	if (pfh != NULL)
+		vpf_write(pfh);
+
+	if (w_arg) {
+		of = open_log(w_arg, a_flag);
 		signal(SIGHUP, sighup);
 	} else {
-		ofn = "stdout";
+		w_arg = "stdout";
 		of = stdout;
 	}
 
 	while (VSL_Dispatch(vd, h_ncsa, of) == 0) {
 		if (fflush(of) != 0) {
-			perror(ofn);
+			perror(w_arg);
 			exit(1);
 		}
 		if (reopen && of != stdout) {
 			fclose(of);
-			of = open_log(ofn, append);
+			of = open_log(w_arg, a_flag);
 			reopen = 0;
 		}
 	}

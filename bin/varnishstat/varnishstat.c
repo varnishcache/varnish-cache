@@ -148,6 +148,18 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		case 'q':
 			endwin();
 			exit(0);
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			delay = 1 << (ch - '0');
+			break;
 		default:
 			beep();
 			break;
