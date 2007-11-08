@@ -114,6 +114,45 @@ AC_CHECK_FUNCS([kqueue])
 AC_CHECK_FUNCS([epoll_ctl])
 AC_CHECK_FUNCS([poll])
 
+# Solaris defines SO_{RCV,SND}TIMEO, but does not implement them
+AC_CACHE_CHECK([whether SO_RCVTIMEO works],
+  [ac_cv_so_rcvtimeo_works],
+  [AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+    ]],[[
+int sd = socket(AF_INET, SOCK_STREAM, 0);
+struct timeval tv = { 1, 0 };
+return !!setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    ]])],
+    [ac_cv_so_rcvtimeo_works=yes],
+    [ac_cv_so_rcvtimeo_works=no])
+  ])
+if test "$ac_cv_so_rcvtimeo_works" = yes; then
+   AC_DEFINE([SO_RCVTIMEO_WORKS], [1], [Define if SO_RCVTIMEO works])
+fi
+
+AC_CACHE_CHECK([whether SO_SNDTIMEO works],
+  [ac_cv_so_sndtimeo_works],
+  [AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+    ]],[[
+int sd = socket(AF_INET, SOCK_STREAM, 0);
+struct timeval tv = { 1, 0 };
+return !!setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv);
+    ]])],
+    [ac_cv_so_sndtimeo_works=yes],
+    [ac_cv_so_sndtimeo_works=no])
+  ])
+if test "$ac_cv_so_sndtimeo_works" = yes; then
+   AC_DEFINE([SO_SNDTIMEO_WORKS], [1], [Define if SO_SNDTIMEO works])
+fi
+
 # Run-time directory
 VARNISH_STATE_DIR='${localstatedir}/varnish'
 AC_SUBST(VARNISH_STATE_DIR)
