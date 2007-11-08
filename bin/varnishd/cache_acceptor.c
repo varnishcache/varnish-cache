@@ -90,17 +90,22 @@ sock_test(int fd)
 	if (memcmp(&lin, &linger, l))
 		need_linger = 1;
 
+#ifdef SO_SNDTIMEO_WORKS
 	l = sizeof tv;
 	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l));
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_sndtimeo, l))
 		need_sndtimeo = 1;
+#endif
 
+#ifdef SO_RCVTIMEO_WORKS
 	l = sizeof tv;
 	AZ(getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l));
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_rcvtimeo, l))
 		need_rcvtimeo = 1;
+#endif
+
 	need_test = 0;
 }
 
@@ -122,12 +127,16 @@ VCA_Prep(struct sess *sp)
 	if (need_linger)
 		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
+#ifdef SO_SNDTIMEO_WORKS
 	if (need_sndtimeo)
 		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 		    &tv_sndtimeo, sizeof tv_sndtimeo));
+#endif
+#ifdef SO_RCVTIMEO_WORKS
 	if (need_rcvtimeo)
 		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
+#endif
 }
 
 /*--------------------------------------------------------------------*/
@@ -160,6 +169,7 @@ vca_acct(void *arg)
 
 	need_test = 1;
 	while (1) {
+#ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
 			need_test = 1;
 			tv_sndtimeo.tv_sec = params->send_timeout;
@@ -168,6 +178,8 @@ vca_acct(void *arg)
 				    SO_SNDTIMEO,
 				    &tv_sndtimeo, sizeof tv_sndtimeo));
 		}
+#endif
+#ifdef SO_RCVTIMEO_WORKS
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
@@ -176,6 +188,7 @@ vca_acct(void *arg)
 				    SO_RCVTIMEO,
 				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 		}
+#endif
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
 		for (u = 0; u < heritage.nsocks; u++) {

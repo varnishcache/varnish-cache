@@ -33,7 +33,6 @@
 
 #include <sys/param.h>
 #include <sys/mman.h>
-#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
@@ -122,7 +121,13 @@ struct smf_sc {
 static void
 smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 {
+#if defined(HAVE_SYS_STATVFS_H)
+	struct statvfs fsst;
+#elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
+#else
+#error no struct statfs / struct statvfs
+#endif
 	uintmax_t l, fssize;
 	unsigned bs;
 	char suff[2];
@@ -134,7 +139,13 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AZ(fstat(sc->fd, &st));
 	xxxassert(S_ISREG(st.st_mode));
 
+#if defined(HAVE_SYS_STATVFS_H)
+	AZ(fstatvfs(sc->fd, &fsst));
+#elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	AZ(fstatfs(sc->fd, &fsst));
+#else
+#error no struct statfs / struct statvfs
+#endif
 
 	/* We use units of the larger of filesystem blocksize and pagesize */
 	bs = sc->pagesize;

@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"

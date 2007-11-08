@@ -31,13 +31,14 @@
  * HTTP request storage and manipulation
  */
 
-#include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <strings.h>
 
 #include "heritage.h"
 #include "shmlog.h"
