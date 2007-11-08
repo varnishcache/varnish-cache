@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd June 15, 2007
+.Dd November 8, 2007
 .Dt VARNISHNCSA 1
 .Os
 .Sh NAME
@@ -40,10 +40,12 @@
 .Op Fl b
 .Op Fl C
 .Op Fl c
+.Op Fl D
 .Op Fl d
 .Op Fl I Ar regex
 .Op Fl i Ar tag
 .Op Fl n Ar varnish_name
+.Op Fl P Ar file
 .Op Fl r Ar file
 .Op Fl V
 .Op Fl w Ar file
@@ -82,6 +84,8 @@ nor
 is specified,
 .Nm
 acts as if they both were.
+.It Fl D
+Daemonize.
 .It Fl d
 Process old log entries on startup.
 Normally,
@@ -109,6 +113,9 @@ instance to get logs from.
 If
 .Fl n
 is not specified, the host name is used.
+.It Fl P Ar file
+Write the process's PID to the specified
+.Ar file .
 .It Fl r Ar file
 Read log entries from
 .Ar file
