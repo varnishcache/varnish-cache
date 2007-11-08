@@ -783,7 +783,22 @@ CNT_Session(struct sess *sp)
 			CHECK_OBJ(w->nobjhead, OBJHEAD_MAGIC);
 
 		switch (sp->step) {
-#define STEP(l,u) case STP_##u: done = cnt_##l(sp); break;
+#ifdef DIAGNOSTICS
+#define STEP(l,u) \
+		    case STP_##u: \
+			if (sp->wrk) \
+				WSL_Flush(sp->wrk); \
+			VSL(SLT_Debug, sp->id, \
+			    "thr %p STP_%s sp %p obj %p vcl %p", \
+			    pthread_self(), #u, sp, sp->obj, sp->vcl); \
+			done = cnt_##l(sp); \
+			break;
+#else
+#define STEP(l,u) \
+		    case STP_##u: \
+			done = cnt_##l(sp); \
+		        break;
+#endif
 #include "steps.h"
 #undef STEP
 		default:	INCOMPL();
