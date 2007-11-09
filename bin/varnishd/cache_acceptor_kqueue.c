@@ -98,6 +98,11 @@ vca_kev(const struct kevent *kp)
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
+#ifdef DIAGNOSTICS
+	VSL(SLT_Debug, sp->id, "sp %p kev data %lu flags 0x%x%s",
+	    sp, (unsigned long)kp->data, kp->flags,
+	    (kp->flags & EV_EOF) ? " EOF" : "");
+#endif
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0)
