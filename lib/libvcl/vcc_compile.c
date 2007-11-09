@@ -216,7 +216,7 @@ EncString(struct vsb *sb, const char *b, const char *e, int mode)
 			break;
 		case '\n':
 			vsb_printf(sb, "\\n");
-			if (mode) 
+			if (mode)
 				vsb_printf(sb, "\"\n\t\"");
 			break;
 		case '\t': vsb_printf(sb, "\\t"); break;
@@ -327,7 +327,7 @@ EmitStruct(const struct tokenlist *tl)
 		Fc(tl, 0, ",\n");
 	}
 	Fc(tl, 0, "};\n");
-	
+
 	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "    /* ");
@@ -355,7 +355,7 @@ EmitStruct(const struct tokenlist *tl)
 	Fc(tl, 0, "\t.nhashcount = %u,\n", tl->nhashcount);
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
-	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n"); 
+	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
@@ -385,7 +385,7 @@ vcc_destroy_source(struct source *sp)
 
 	if (sp->freeit != NULL)
 		free(sp->freeit);
-	free(sp->name);	
+	free(sp->name);
 	free(sp);
 }
 
@@ -530,7 +530,7 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 		VTAILQ_REMOVE(&tl->sources, sp, list);
 		vcc_destroy_source(sp);
 	}
-		
+
 	vsb_delete(tl->fh);
 	vsb_delete(tl->fc);
 	vsb_delete(tl->fi);
