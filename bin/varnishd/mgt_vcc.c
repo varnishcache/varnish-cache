@@ -32,13 +32,14 @@
  */
 
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 
 #ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
@@ -119,7 +120,7 @@ static const char *default_vcl =
     "\n"
     "sub vcl_fetch {\n"
     "    if (!obj.valid) {\n"
-    "        error;\n"
+    "        error obj.status;\n"
     "    }\n"
     "    if (!obj.cacheable) {\n"
     "        pass;\n"
@@ -139,147 +140,154 @@ static const char *default_vcl =
     "    discard;\n"
     "}\n";
 
+/*
+ * Prepare the compiler command line
+ */
+static void
+mgt_make_cc_cmd(struct vsb *sb, const char *sf, const char *of)
+{
+	int pct;
+	char *p;
+
+	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
+		if (pct) {
+			switch (*p) {
+			case 's':
+				vsb_cat(sb, sf);
+				break;
+			case 'o':
+				vsb_cat(sb, of);
+				break;
+			case '%':
+				vsb_putc(sb, '%');
+				break;
+			default:
+				vsb_putc(sb, '%');
+				vsb_putc(sb, *p);
+				break;
+			}
+			pct = 0;
+		} else if (*p == '%') {
+			pct = 1;
+		} else {
+			vsb_putc(sb, *p);
+		}
+	}
+	if (pct)
+		vsb_putc(sb, '%');
+}
+
 /*--------------------------------------------------------------------
  * Invoke system C compiler on source and return resulting dlfile.
  * Errors goes in sb;
  */
 
 static char *
-mgt_CallCc(const char *source, struct vsb *sb)
+mgt_run_cc(const char *source, struct vsb *sb)
 {
-	FILE *fo, *fs;
-	char sf[] = "./vcl.XXXXXXXX";
+	char cmdline[1024];
+	struct vsb cmdsb;
+	char sf[] = "./vcl.########.c";
 	char *of;
-	struct vsb *cccmd;
 	char buf[128];
-	int i, j, sfd;
-	void *p;
+	int p[2], sfd, srclen, status;
+	pid_t pid;
+	void *dlh;
 
 	/* Create temporary C source file */
-	sfd = mkstemp(sf);
+	sfd = vtmpfile(sf);
 	if (sfd < 0) {
 		vsb_printf(sb,
-		    "Cannot open temporary source file \"%s\": %s\n",
-		    sf, strerror(errno));
+		    "%s(): failed to create %s: %s",
+		    __func__, sf, strerror(errno));
 		return (NULL);
 	}
-	fs = fdopen(sfd, "r+");
-	XXXAN(fs);
-
-	if (fputs(source, fs) < 0 || fflush(fs)) {
+	srclen = strlen(source);
+	if (write(sfd, source, srclen) != srclen) {
 		vsb_printf(sb,
-		    "Write error to C source file: %s\n",
+		    "Failed to write C source to file: %s",
 		    strerror(errno));
 		AZ(unlink(sf));
-		AZ(fclose(fs));
+		AZ(close(sfd));
 		return (NULL);
 	}
-	rewind(fs);
+	AZ(close(sfd));
 
-	/* Name the output shared library by brutally overwriting "./vcl." */
+	/* Name the output shared library by overwriting the final 'c' */
 	of = strdup(sf);
 	XXXAN(of);
-	memcpy(of, "./bin", 5);
+	of[sizeof sf - 2] = 'o';
+	vsb_new(&cmdsb, cmdline, sizeof cmdline, 0);
+	mgt_make_cc_cmd(&cmdsb, sf, of);
+	vsb_finish(&cmdsb);
+	/* XXX check vsb state */
 
-	cccmd = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
-	XXXAN(cccmd);
-
-	/*
-	 * Attempt to open a pipe to the system C-compiler.
-	 * ------------------------------------------------
- 	 *
-	 * The arguments to the C-compiler must be whatever it takes to
-	 * create a dlopen(3) compatible object file named $of from a
-	 * source file named $sf.
-	 *
-	 * The source code is entirely selfcontained, so options should be
-	 * specified to prevent the C-compiler from doing any DWITYW 
-	 * processing.  For GCC this amounts to at least "-nostdinc".
- 	 *
-	 * We wrap the entire command in a 'sh -c "..." 2>&1' to get any
-	 * errors from popen(3)'s shell redirected to our stderr as well.
-	 * 
-	 */
-	vsb_printf(cccmd, "exec /bin/sh -c \"" );
-	vsb_printf(cccmd, mgt_cc_cmd, of, sf);
-	vsb_printf(cccmd, "\" 2>&1");
-	vsb_finish(cccmd);
-	/* XXX: check that vsb is happy about cccmd */
-
-	fo = popen(vsb_data(cccmd), "r");
-	if (fo == NULL) {
-		vsb_printf(sb,
-		    "System error: Cannot execute C-compiler: %s\n"
-		    "\tcommand attempted: %s\n",
-		    strerror(errno), vsb_data(cccmd));
+	if (pipe(p) < 0) {
+		vsb_printf(sb, "%s(): pipe() failed: %s",
+		    __func__, strerror(errno));
+		unlink(sf);
 		free(of);
-		AZ(unlink(sf));
-		AZ(fclose(fs));
-		vsb_delete(cccmd);
 		return (NULL);
 	}
-
-	/* Any output is considered fatal */
-	j = 0;
-	while (1) {
-		i  = fread(buf, 1, sizeof buf, fo);
-		if (i == 0)
-			break;
-		if (!j) {
-			vsb_printf(sb,
-			    "System error:\n"
-			    "C-compiler command complained.\n"
-			    "Command attempted: %s\nMessage:\n",
-			    vsb_data(cccmd));
-			j++;
-		}
-		vsb_bcat(sb, buf, i);
+	if ((pid = fork()) < 0) {
+		vsb_printf(sb, "%s(): fork() failed: %s",
+		    __func__, strerror(errno));
+		close(p[0]);
+		close(p[1]);
+		unlink(sf);
+		free(of);
+		return (NULL);
 	}
-
-	i = pclose(fo);
-
-	AZ(unlink(sf));
-	AZ(fclose(fs));
-
-	if (j == 0 && i != 0) {
-		vsb_printf(sb,
-		    "System error:\n"
-		    "C-compiler command failed");
-		if (WIFEXITED(i)) 
-		    vsb_printf(sb, ", exit %d", WEXITSTATUS(i));
-		if (WIFSIGNALED(i))
-		    vsb_printf(sb, ", signal %d", WTERMSIG(i));
-		if (WCOREDUMP(i))
-		    vsb_printf(sb, ", core dumped");
-		vsb_printf(sb,
-		    "\nCommand attempted: %s\n", vsb_data(cccmd));
+	if (pid == 0) {
+		close(p[0]);
+		close(STDIN_FILENO);
+		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
+		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
+		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
+		execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
+		_exit(1);
 	}
-
-	vsb_delete(cccmd);
-
-	/* If the compiler complained, or exited non-zero, fail */
-	if (i || j) {
-		(void)unlink(of);	/* May or may not have created file */
+	close(p[1]);
+	while (read(p[0], buf, sizeof buf) > 0)
+		/* XXX nothing */ ;
+	close(p[0]);
+	unlink(sf);
+	if (waitpid(pid, &status, 0) < 0) {
+		vsb_printf(sb, "%s(): waitpid() failed: %s",
+		    __func__, strerror(errno));
+		unlink(of);
+		free(of);
+		return (NULL);
+	}
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		vsb_printf(sb, "%s(): Compiler failed", __func__);
+		if (WIFEXITED(status))
+			vsb_printf(sb, ", exit %d", WEXITSTATUS(status));
+		if (WIFSIGNALED(status))
+			vsb_printf(sb, ", signal %d", WTERMSIG(status));
+		if (WCOREDUMP(status))
+			vsb_printf(sb, ", core dumped");
+		unlink(of);
 		free(of);
 		return (NULL);
 	}
 
 	/* Next, try to load the object into the management process */
-	p = dlopen(of, RTLD_NOW | RTLD_LOCAL);
-	if (p == NULL) {
-		vsb_printf(sb, "Problem loading compiled VCL program:\n\t%s\n",
-		    dlerror());
-		AZ(unlink(of));
+	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
+		vsb_printf(sb,
+		    "%s(): failed to load compiled VCL program: %s",
+		    __func__, dlerror());
+		unlink(of);
 		free(of);
 		return (NULL);
-	} 
+	}
 
 	/*
 	 * XXX: we should look up and check the handle in the loaded
 	 * object
 	 */
 
-	AZ(dlclose(p));
+	AZ(dlclose(dlh));
 	return (of);
 }
 
@@ -294,7 +302,7 @@ mgt_VccCompile(struct vsb *sb, const char *b, const char *e, int C_flag)
 	if (csrc != NULL) {
 		if (C_flag)
 			(void)fputs(csrc, stdout);
-		vf = mgt_CallCc(csrc, sb);
+		vf = mgt_run_cc(csrc, sb);
 		if (C_flag && vf != NULL)
 			AZ(unlink(vf));
 		free(csrc);
@@ -311,7 +319,7 @@ mgt_VccCompileFile(struct vsb *sb, const char *fn, int C_flag, int fd)
 	if (csrc != NULL) {
 		if (C_flag)
 			fputs(csrc, stdout);
-		vf = mgt_CallCc(csrc, sb);
+		vf = mgt_run_cc(csrc, sb);
 		if (C_flag && vf != NULL)
 			AZ(unlink(vf));
 		free(csrc);
