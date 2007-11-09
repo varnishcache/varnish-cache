@@ -16,7 +16,8 @@ libvarnish_la_SOURCES = \
 	version.c \
 	vpf.c \
 	vsb.c \
-	vss.c
+	vss.c \
+	vtmpfile.c
 
 libvarnish_la_CFLAGS = -include config.h
 
