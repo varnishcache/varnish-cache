@@ -54,7 +54,8 @@ double TIM_real(void);
 /* from libvarnish/version.c */
 void varnish_version(const char *);
 
-/* from libvarnish/assert.c */
+/* from libvarnish/vtmpfile.c */
+int vtmpfile(char *);
 
 /*
  * assert(), AN() and AZ() are static checks that should not happen.
