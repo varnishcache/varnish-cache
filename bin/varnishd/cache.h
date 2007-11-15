@@ -668,3 +668,17 @@ Tlen(const txt t)
 	return
 	    ((unsigned)(t.e - t.b));
 }
+
+#ifdef WITHOUT_ASSERTS
+#define spassert(cond) ((void)0)
+#else
+void panic(const char *, int, const char *,
+    const struct sess *, const char *, ...);
+#define spassert(cond)						\
+	do {							\
+		int ok = !!(cond);				\
+		if (!ok)					\
+			panic(__FILE__, __LINE__, __func__, sp,	\
+			    "assertion failed: %s\n", #cond);	\
+	} while (0)
+#endif
