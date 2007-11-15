@@ -191,7 +191,7 @@ RES_WriteObj(struct sess *sp)
 			VSL_stats->n_objwrite++;
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
-		assert(u == sp->obj->len);
+		spassert(u == sp->obj->len);
 		if (sp->esis > 0)
 			WRK_Write(sp->wrk, "\r\n", -1);
 	}
