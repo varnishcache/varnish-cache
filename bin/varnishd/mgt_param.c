@@ -541,14 +541,6 @@ tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
 	if (arg == NULL) {
 		cli_out(cli, "%s", mgt_cc_cmd);
 	} else {
-#if defined(HAVE_FMTCHECK)
-		if (arg != fmtcheck(arg, "%s %s")) {
-			cli_out(cli,
-			    "Parameter has dangerous %%-string expansions.");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		} 
-#endif
 		free(mgt_cc_cmd);
 		mgt_cc_cmd = strdup(arg);
 		XXXAN(mgt_cc_cmd);
@@ -756,16 +748,14 @@ static struct parspec parspec[] = {
 		"2", "seconds" },
 	{ "cc_command", tweak_cc_command,
 		"Command used for compiling the C source code to a "
-		"dlopen(3) loadable object.\n"
-		"NB: The string must contain two %s sequences which "
-		"will be replaced by the binary and source file names "
-		"respectively.\n"
+		"dlopen(3) loadable object.  Any occurrence of %s in "
+		"the string will be replaced with the source file name, "
+		"and %o will be replaced with the output file name.\n"
 		MUST_RELOAD,
 #ifdef __APPLE__
-		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %s -x c"
-		" - < %s"
+		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 #else
-		"exec cc -nostdinc -fpic -shared -Wl,-x -o %s -x c - < %s"
+		"exec cc -fpic -shared -Wl,-x -o %o %s"
 #endif
 		, NULL },
 	{ "max_restarts", tweak_max_restarts,
