@@ -126,10 +126,10 @@ RES_BuildHttp(struct sess *sp)
 	http_CopyResp(sp->http, sp->obj->http);
 	http_FilterFields(sp->wrk, sp->fd, sp->http, sp->obj->http,
 	    HTTPH_A_DELIVER);
-	
+
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
-	
+
 	if (sp->xid != sp->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
@@ -181,7 +181,7 @@ RES_WriteObj(struct sess *sp)
 			VSL_stats->n_objwrite++;
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
-		assert(u == sp->obj->len);
+		spassert(u == sp->obj->len);
 	}
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
