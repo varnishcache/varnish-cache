@@ -12,6 +12,9 @@
 		free(to);						\
 	} while (0)
 
+#define VALID_OBJ(ptr, type_magic)					\
+	((ptr) != NULL && (ptr)->magic == (type_magic))
+
 #define CHECK_OBJ(ptr, type_magic)					\
 	do {								\
 		assert((ptr)->magic == type_magic);			\
