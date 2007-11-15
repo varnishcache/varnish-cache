@@ -61,6 +61,11 @@ struct parspec {
 	const char	*name;
 	tweak_t		*func;
 	const char	*descr;
+	int		 flags;
+#define DELAYED_EFFECT 1
+#define EXPERIMENTAL   2
+#define MUST_RESTART   4
+#define MUST_RELOAD    8
 	const char	*def;
 	const char	*units;
 };
@@ -537,6 +542,7 @@ static void
 tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
 {
 
+	/* XXX should have tweak_generic_string */
 	(void)par;
 	if (arg == NULL) {
 		cli_out(cli, "%s", mgt_cc_cmd);
@@ -562,20 +568,20 @@ tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
  * formatting will go haywire.
  */
 
-#define DELAYED_EFFECT \
-	"\nNB: This parameter will take some time to take effect.\n"
+#define DELAYED_EFFECT_TEXT \
+	"NB: This parameter will take some time to take effect."
 
-#define MUST_RESTART \
-	"\nNB: This parameter will not take any effect until the " \
-	"child process has been restarted.\n"
+#define MUST_RESTART_TEXT \
+	"NB: This parameter will not take any effect until the " \
+	"child process has been restarted."
 
-#define MUST_RELOAD \
-	"\nNB: This parameter will not take any effect until the " \
-	"VCL programs have been reloaded.\n"
+#define MUST_RELOAD_TEXT \
+	"NB: This parameter will not take any effect until the " \
+	"VCL programs have been reloaded."
 
-#define EXPERIMENTAL \
-	"\nNB: We don't know yet if it is a good idea to change " \
-	"this parameter.  Caution advised.\n"
+#define EXPERIMENTAL_TEXT \
+	"NB: We don't know yet if it is a good idea to change " \
+	"this parameter.  Caution advised."
 
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
@@ -584,11 +590,11 @@ tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
 static struct parspec parspec[] = {
 	{ "user", tweak_user,
 		"The unprivileged user to run as.  Setting this will "
-		"also set \"group\" to the specified user's primary group.\n"
+		"also set \"group\" to the specified user's primary group.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
 	{ "group", tweak_group,
-		"The unprivileged group to run as.\n"
+		"The unprivileged group to run as.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
 	{ "default_ttl", tweak_default_ttl,
@@ -598,89 +604,77 @@ static struct parspec parspec[] = {
 		"made until they are fetched from the backend again.\n"
 		"To force an immediate effect at the expense of a total "
 		"flush of the cache use \"url.purge .\"",
+		0,
 		"120", "seconds" },
 	{ "thread_pools", tweak_thread_pools,
 		"Number of worker pools. "
 		"Increasing number of worker pools decreases lock "
 		"contention but increases the number of threads as well. "
 		"Can be increased on the fly, but decreases require a "
-		"restart to take effect.\n"
+		"restart to take effect.",
 		EXPERIMENTAL,
 		"1", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max,
 		"The maximum number of threads in the total worker pool.\n"
-		"-1 is unlimited.\n"
-		EXPERIMENTAL
-		DELAYED_EFFECT,
+		"-1 is unlimited.",
+		EXPERIMENTAL | DELAYED_EFFECT,
 		"1000", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min,
 		"The minimum number of threads in the worker pool.\n"
-		"Minimum is 1 thread. "
-		EXPERIMENTAL
-		DELAYED_EFFECT,
+		"Minimum is 1 thread.",
+		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "threads" },
 	{ "thread_pool_timeout", tweak_thread_pool_timeout,
 		"Thread dies after this many seconds of inactivity.\n"
-		"Minimum is 1 second. "
-		EXPERIMENTAL
-		DELAYED_EFFECT,
+		"Minimum is 1 second.",
+		EXPERIMENTAL | DELAYED_EFFECT,
 		"120", "seconds" },
 	{ "overflow_max", tweak_overflow_max,
 		"Limit on overflow queue length in percent of "
-		"thread_pool_max parameter.\n"
+		"thread_pool_max parameter.",
 		EXPERIMENTAL,
 		"100", "%" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
-		"Minimum is 1024 bytes. "
+		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
 	{ "sess_timeout", tweak_sess_timeout,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
-		"seconds, the session is closed.\n",
+		"seconds, the session is closed.",
+		0,
 		"5", "seconds" },
 	{ "pipe_timeout", tweak_pipe_timeout,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
 		"this many seconds, the session is closed.\n",
+		0,
 		"60", "seconds" },
 	{ "send_timeout", tweak_send_timeout,
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
-		"See setsockopt(2) under SO_SNDTIMEO for more information.\n"
+		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
 	{ "auto_restart", tweak_auto_restart,
 		"Restart child process automatically if it dies.\n",
+		0,
 		"on", "bool" },
 	{ "fetch_chunksize", tweak_fetch_chunksize,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
 		"short TTLs.\n"
 		"Internal limits in the storage_file module makes increases "
-		"above 128kb a dubious idea.\n"
+		"above 128kb a dubious idea.",
 		EXPERIMENTAL,
 		"128", "kilobytes" },
 #ifdef HAVE_SENDFILE
 	{ "sendfile_threshold", tweak_sendfile_threshold,
-		"The minimum size of objects transmitted with sendfile.\n"
-#if defined(__FreeBSD__)
-		"In \"plenty-of-RAM\" scenarios this is unlikely to "
-		"have any effect.  Once disk-I/O becomes frequent "
-		"we guess smaller values are likely to be better.\n"
-#elif defined(__Linux__)
-		"Linux sendfile(2) does not allow for inclusion of "
-		"header data and therefore using sendfile(2) means "
-		"an extra system call, compared to using writev(2) for "
-		"both the header and body.\n"
-		"We suspect that sendfile(2) on Linux will only start "
-		"to be beneficial in low-ram scenarios.  Therefore it "
-		"may make sense to set this to \"unlimited\".\n"
-#endif
+		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
 		"-1", "bytes" },
 #endif /* HAVE_SENDFILE */
@@ -689,53 +683,50 @@ static struct parspec parspec[] = {
 		"Enabling this will allow you to see the path each "
 		"request has taken through the VCL program.\n"
 		"This generates a lot of logrecords so it is off by "
-		"default. ",
+		"default.",
+		0,
 		"off", "bool" },
 	{ "listen_address", tweak_listen_address,
 		"Whitespace separated list of network endpoints where "
 		"Varnish will accept requests.\n"
-		"Possible formats: host, host:port, :port\n"
+		"Possible formats: host, host:port, :port",
 		MUST_RESTART,
 		":80" },
 	{ "listen_depth", tweak_listen_depth,
-		"Listen(2) queue depth.\n"
-#if defined(__FreeBSD__)
-		"Please see FreeBSDs tuning(7) manual page for more "
-		"information.\n"
-#endif
+		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
 	{ "srcaddr_hash", tweak_srcaddr_hash,
 		"Number of source address hash buckets.\n"
-		"Powers of two are bad, prime numbers are good.\n"
-		EXPERIMENTAL
-		MUST_RESTART,
+		"Powers of two are bad, prime numbers are good.",
+		EXPERIMENTAL | MUST_RESTART,
 		"1049", "buckets" },
 	{ "srcaddr_ttl", tweak_srcaddr_ttl,
 		"Lifetime of srcaddr entries.\n"
-		"Zero will disable srcaddr accounting entirely.\n"
+		"Zero will disable srcaddr accounting entirely.",
 		EXPERIMENTAL,
 		"30", "seconds" },
 	{ "backend_http11", tweak_backend_http11,
 		"Force all backend requests to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
-		"incoming client request."
+		"incoming client request.",
 		EXPERIMENTAL,
 		"off", "bool" },
 	{ "client_http11", tweak_client_http11,
 		"Force all client responses to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
-		"backend response."
+		"backend response.",
 		EXPERIMENTAL,
 		"off", "bool" },
 	{ "cli_timeout", tweak_cli_timeout,
 		"Timeout for the childs replies to CLI requests from "
-		"the master.\n",
+		"the master.",
+		0,
 		"5", "seconds" },
 	{ "ping_interval", tweak_ping_interval,
 		"Interval between pings from parent to child.\n"
 		"Zero will disable pinging entirely, which makes "
-		"it possible to attach a debugger to the child.\n"
+		"it possible to attach a debugger to the child.",
 		MUST_RESTART,
 		"3", "seconds" },
 	{ "lru_interval", tweak_lru_timeout,
@@ -743,14 +734,14 @@ static struct parspec parspec[] = {
 		"Objects are only moved to the front of the LRU "
 		"list if they have not been moved there already inside "
 		"this timeout period.  This reduces the amount of lock "
-		"operations necessary for LRU list access.\n"
+		"operations necessary for LRU list access.",
 		EXPERIMENTAL,
 		"2", "seconds" },
 	{ "cc_command", tweak_cc_command,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
-		"and %o will be replaced with the output file name.\n"
+		"and %o will be replaced with the output file name.",
 		MUST_RELOAD,
 #ifdef __APPLE__
 		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
@@ -765,17 +756,43 @@ static struct parspec parspec[] = {
 #endif
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
+		0,
 		"4", "restarts" },
 	{ NULL, NULL, NULL }
 };
 
 /*--------------------------------------------------------------------*/
 
+#define WIDTH 76
+#define MARGIN 20
+
+static void
+mcf_wrap(struct cli *cli, const char *text)
+{
+	const char *p, *q;
+
+	/* Format text to COLUMNS width */
+	for (p = text; *p != '\0'; ) {
+		q = strchr(p, '\n');
+		if (q == NULL)
+			q = strchr(p, '\0');
+		if (q > p + WIDTH - MARGIN) {
+			q = p + WIDTH - MARGIN;
+			while (q > p && *q != ' ')
+				q--;
+			AN(q);
+		}
+		cli_out(cli, "%*s %.*s\n", MARGIN, "", (int)(q - p), p);
+		p = q;
+		if (*p == ' ' || *p == '\n')
+			p++;
+	}
+}
+
 void
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct parspec *pp;
-	const char *p, *q;
 	int lfmt;
 
 	(void)priv;
@@ -786,7 +803,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
-		cli_out(cli, "%-20s ", pp->name);
+		cli_out(cli, "%-*s ", MARGIN, pp->name);
 		if (pp->func == NULL) {
 			cli_out(cli, "Not implemented.\n");
 			if (av[2] != NULL && !lfmt)
@@ -800,23 +817,17 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		else
 			cli_out(cli, "\n");
 		if (av[2] != NULL) {
-			cli_out(cli, "%-20s Default is %s\n", "", pp->def);
-			/* Format text to 72 col width */
-			for (p = pp->descr; *p != '\0'; ) {
-				q = strchr(p, '\n');
-				if (q == NULL)
-					q = strchr(p, '\0');
-				if (q > p + 52) {
-					q = p + 52;
-					while (q > p && *q != ' ')
-						q--;
-					AN(q);
-				}
-				cli_out(cli, "%20s %.*s\n", "", q - p, p);
-				p = q;
-				if (*p == ' ' || *p == '\n')
-					p++;
-			}
+			cli_out(cli, "%-*s Default is %s\n",
+			    MARGIN, "", pp->def);
+			mcf_wrap(cli, pp->descr);
+			if (pp->flags & DELAYED_EFFECT)
+				mcf_wrap(cli, DELAYED_EFFECT_TEXT);
+			if (pp->flags & EXPERIMENTAL)
+				mcf_wrap(cli, EXPERIMENTAL_TEXT);
+			if (pp->flags & MUST_RELOAD)
+				mcf_wrap(cli, MUST_RELOAD_TEXT);
+			if (pp->flags & MUST_RESTART)
+				mcf_wrap(cli, MUST_RESTART_TEXT);
 			if (!lfmt)
 				return;
 			else
@@ -825,7 +836,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	}
 	if (av[2] != NULL && !lfmt) {
 		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "Unknown paramter \"%s\".", av[2]);
+		cli_out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
 }
 
@@ -848,12 +859,18 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (!strcmp(pp->name, param)) {
 			pp->func(cli, pp, val);
+			if (pp->flags & MUST_RESTART)
+				cli_out(cli, "change will take effect"
+				    " when child is restarted");
+			if (pp->flags & MUST_RELOAD)
+				cli_out(cli, "change will take effect"
+				    " when VCL script is reloaded");
 			MCF_ParamSync();
 			return;
 		}
 	}
 	cli_result(cli, CLIS_PARAM);
-	cli_out(cli, "Unknown paramter \"%s\".", param);
+	cli_out(cli, "Unknown parameter \"%s\".", param);
 }
 
 
