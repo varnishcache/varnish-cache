@@ -126,10 +126,10 @@ RES_BuildHttp(struct sess *sp)
 	http_CopyResp(sp->http, sp->obj->http);
 	http_FilterFields(sp->wrk, sp->fd, sp->http, sp->obj->http,
 	    HTTPH_A_DELIVER);
-	
+
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
-	
+
 	if (sp->xid != sp->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
@@ -167,7 +167,7 @@ RES_WriteObj(struct sess *sp)
 			sp->wrk->acct.hdrbytes +=
 			    WRK_Write(sp->wrk, lenbuf, -1);
 		}
-		
+
 		VTAILQ_FOREACH(st, &sp->obj->store, list) {
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -192,7 +192,7 @@ RES_WriteObj(struct sess *sp)
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
-		if (sp->esis > 0) 
+		if (sp->esis > 0)
 			WRK_Write(sp->wrk, "\r\n", -1);
 	}
 	if (WRK_Flush(sp->wrk))
