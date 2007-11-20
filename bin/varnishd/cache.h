@@ -550,11 +550,10 @@ void WSL_Flush(struct worker *w);
 
 /* cache_response.c */
 void RES_BuildHttp(struct sess *sp);
-void RES_Error(struct sess *sp, int code, const char *reason);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_synthetic.c */
-void SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl);
+void SYN_ErrorPage(struct sess *sp, int status, const char *reason);
 
 /* cache_vary.c */
 void VRY_Create(const struct sess *sp);
