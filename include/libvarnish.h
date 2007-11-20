@@ -63,7 +63,7 @@ int vtmpfile(char *);
  */
 
 #ifdef WITHOUT_ASSERTS
-#define assert(e)	((void)0)
+#define assert(e)	((void)(e))
 #else /* WITH_ASSERTS */
 #define assert(e)							\
 do { 									\
