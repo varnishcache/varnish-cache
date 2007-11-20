@@ -72,6 +72,7 @@ struct esi_work {
 	struct sess		*sp;
 	size_t			off;
 	txt			t;
+	txt			o;
 	txt			dst;
 	struct esi_bit		*eb;
 	struct esi_bit		*ebl;	/* list of */
@@ -165,12 +166,12 @@ esi_addbit(struct esi_work *ew)
  */
 
 static void
-esi_addverbatim(struct esi_work *ew, txt t)
+esi_addverbatim(struct esi_work *ew)
 {
 
-	if (t.b != ew->dst.e)
-		memmove(ew->dst.e, t.b, Tlen(t));
-	ew->dst.e += Tlen(t);
+	if (ew->o.b != ew->dst.e)
+		memmove(ew->dst.e, ew->o.b, Tlen(ew->o));
+	ew->dst.e += Tlen(ew->o);
 }
 
 /*--------------------------------------------------------------------
@@ -338,18 +339,18 @@ esi_addinclude(struct esi_work *ew, txt t)
  * Return value: number of bytes processed.
  */
 
-static int
-esi_parse(struct esi_work *ew)
+static char *
+esi_parse2(struct esi_work *ew)
 {
 	char *p, *q, *r;
-	txt t, o;
+	txt t;
 	int celem;		/* closing element */
 	int i;
 
 	t = ew->t;
 	ew->dst.b = t.b;
 	ew->dst.e = t.b;
-	o.b = t.b;
+	ew->o.b = t.b;
 	for (p = t.b; p < t.e; ) {
 		if (ew->incmt && *p == '-') {
 			/*
@@ -358,14 +359,14 @@ esi_parse(struct esi_work *ew)
 			 */
 			if (p + 2 >= t.e) {
 				/* XXX: need to return pending ew->incmt  */
-				return (p - t.b);
+				return (p);
 			}
 			if (!memcmp(p, "-->", 3)) {
 				ew->incmt = 0;
-				o.e = p;
-				esi_addverbatim(ew, o);
+				ew->o.e = p;
+				esi_addverbatim(ew);
 				p += 3;
-				o.b = p;
+				ew->o.b = p;
 			} else
 				p++;
 			continue;
@@ -380,7 +381,7 @@ esi_parse(struct esi_work *ew)
 		i = t.e - p;
 
 		if (i < 2)
-			return (p - t.b);
+			return (p);
 
 		if (ew->remflg == 0 && !memcmp(p, "<!--esi", i > 7 ? 7 : i)) {
 			/*
@@ -391,13 +392,13 @@ esi_parse(struct esi_work *ew)
 			 */
 			ew->is_esi++;
 			if (i < 7)
-				return (p - t.b);
+				return (p);
 
-			o.e = p;
-			esi_addverbatim(ew, o);
+			ew->o.e = p;
+			esi_addverbatim(ew);
 
 			p += 7;
-			o.b = p;
+			ew->o.b = p;
 			ew->incmt = 1;
 			continue;
 		}
@@ -407,10 +408,10 @@ esi_parse(struct esi_work *ew)
 			 * plain comment <!--...--> at least 7 char
 			 */
 			if (i < 7)
-				return (p - t.b);
+				return (p);
 			for (q = p + 4; ; q++) {
 				if (q + 2 >= t.e)
-					return (p - t.b);
+					return (p);
 				if (!memcmp(q, "-->", 3))
 					break;
 			}
@@ -421,12 +422,13 @@ esi_parse(struct esi_work *ew)
 		if (!memcmp(p, "<![CDATA[", i > 9 ? 9 : i)) {
 			/*
 			 * cdata <![CDATA[...]]> at least 12 char
+			 * XXX: can span multiple chunks
 			 */
 			if (i < 12)
-				return (p - t.b);
+				return (p);
 			for (q = p + 9; ; q++) {
 				if (q + 2 >= t.e)
-					return (p - t.b);
+					return (p);
 				if (!memcmp(q, "]]>", 3))
 					break;
 			}
@@ -438,7 +440,7 @@ esi_parse(struct esi_work *ew)
 		for (q = p + 1; q < t.e && *q != '>'; q++)
 			continue;
 		if (*q != '>')
-			return (p - t.b);
+			return (p);
 
 		/* Opening/empty or closing element ? */
 		if (p[1] == '/') {
@@ -466,24 +468,24 @@ esi_parse(struct esi_work *ew)
 				    : "ESI 1.0 esi:remove not opened");
 					
 				if (!ew->remflg) {
-					o.e = p;
-					esi_addverbatim(ew, o);
+					ew->o.e = p;
+					esi_addverbatim(ew);
 				}
 			} else if (!celem && q[-1] == '/') {
 				/* empty element */
-				o.e = p;
-				esi_addverbatim(ew, o);
+				ew->o.e = p;
+				esi_addverbatim(ew);
 			} else if (!celem) {
 				/* open element */
-				o.e = p;
-				esi_addverbatim(ew, o);
+				ew->o.e = p;
+				esi_addverbatim(ew);
 				ew->remflg = !celem;
 			} else {
 				/* close element */
 				ew->remflg = !celem;
 			}
 			p = q + 1;
-			o.b = p;
+			ew->o.b = p;
 			continue;
 		}
 
@@ -501,19 +503,19 @@ esi_parse(struct esi_work *ew)
 			
 			ew->is_esi++;
 
-			o.e = p;
-			esi_addverbatim(ew, o);
+			ew->o.e = p;
+			esi_addverbatim(ew);
 
 			if (celem == 0) {
-				o.b = r + 11;
+				ew->o.b = r + 11;
 				if (q[-1] != '/') {
 					esi_error(ew, p, 1 + q - p,
 					    "ESI 1.0 wants emtpy esi:include");
-					o.e = q;
+					ew->o.e = q;
 				} else {
-					o.e = q - 1;
+					ew->o.e = q - 1;
 				}
-				esi_addinclude(ew, o);
+				esi_addinclude(ew, ew->o);
 				ew->dst.b = q + 1;
 				ew->dst.e = q + 1;
 			} else {
@@ -521,7 +523,7 @@ esi_parse(struct esi_work *ew)
 				    "ESI 1.0 closing esi:include illegal");
 			}
 			p = q + 1;
-			o.b = p;
+			ew->o.b = p;
 			continue;
 		}
 
@@ -531,19 +533,29 @@ esi_parse(struct esi_work *ew)
 			 */
 			esi_error(ew, p, 1 + q - p,
 			    "ESI 1.0 unimplemented element");
-			o.e = p;
-			esi_addverbatim(ew, o);
+			ew->o.e = p;
+			esi_addverbatim(ew);
 			p = q + 1;
-			o.b = p;
+			ew->o.b = p;
 			continue;
 		}
 
 		/* Not an element we care about */
 		p = q + 1;
 	}
-	o.e = p;
-	esi_addverbatim(ew, o);
-	return (p - t.b);
+	return (p);
+}
+
+static int
+esi_parse(struct esi_work *ew)
+{
+	char *p;
+
+	p = esi_parse2(ew);
+	ew->o.e = p;
+	if (Tlen(ew->o))
+		esi_addverbatim(ew);
+	return (p - ew->t.b);
 }
 
 /*--------------------------------------------------------------------*/
