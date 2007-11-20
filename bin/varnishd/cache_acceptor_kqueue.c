@@ -148,13 +148,17 @@ vca_kq_sess(struct sess *sp, short arm)
 		assert(i <= 0);
 		if (i < 0) {
 			/* 
-			 * We do not push kevents into the kernel before passing the session off
-			 * to a worker thread, so by the time we get around to delete the event
-			 * the fd may be closed and we get an ENOENT back once we do flush.
-			 *
-			 * XXX: Can we get EBADF if the client closes during this window ?
+			 * We do not push kevents into the kernel before 
+			 * passing the session off to a worker thread, so
+			 * by the time we get around to delete the event
+			 * the fd may be closed and we get an ENOENT back
+			 * once we do flush.
+			 * We can get EBADF the same way if the client closes
+			 * on us.  In that case, we get no kevent on that
+			 * socket, but the TAILQ still has it, and it will
+			 * be GC'ed there after the timeout.
 			 */
-			assert(errno == ENOENT);
+			assert(errno == ENOENT || errno == EBADF);
 		}
 		nki = 0;
 	}
