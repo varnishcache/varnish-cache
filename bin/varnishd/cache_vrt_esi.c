@@ -156,7 +156,8 @@ esi_addbit(struct esi_work *ew)
 	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
 	ew->eb->verbatim = ew->dst;
 	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
-	VSL(SLT_Debug, ew->sp->fd, "AddBit: %.*s", Tlen(ew->dst), ew->dst.b);
+	VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
+	    Tlen(ew->dst), Tlen(ew->dst), ew->dst.b);
 	return(ew->eb);
 }
 
@@ -169,6 +170,8 @@ static void
 esi_addverbatim(struct esi_work *ew)
 {
 
+	VSL(SLT_Debug, ew->sp->fd, "AddVer: %d <%.*s>",
+	    Tlen(ew->o), Tlen(ew->o), ew->o.b);
 	if (ew->o.b != ew->dst.e)
 		memmove(ew->dst.e, ew->o.b, Tlen(ew->o));
 	ew->dst.e += Tlen(ew->o);
@@ -543,19 +546,27 @@ esi_parse2(struct esi_work *ew)
 		/* Not an element we care about */
 		p = q + 1;
 	}
+	assert(p == t.e);
 	return (p);
 }
 
-static int
+static char *
 esi_parse(struct esi_work *ew)
 {
 	char *p;
 
+	VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
+	    Tlen(ew->t), Tlen(ew->t), ew->t.b);
 	p = esi_parse2(ew);
+	assert(ew->o.b >= ew->t.b);
+	assert(ew->o.e <= ew->t.e);
 	ew->o.e = p;
 	if (Tlen(ew->o))
 		esi_addverbatim(ew);
-	return (p - ew->t.b);
+	if (Tlen(ew->dst))
+		esi_addbit(ew);
+	ew->off += (p - ew->t.b);
+	return (p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -563,11 +574,14 @@ esi_parse(struct esi_work *ew)
 void
 VRT_ESI(struct sess *sp)
 {
-	struct storage *st;
+	struct storage *st, *st2;
 	struct esi_work *ew, eww[1];
-	int i;
+	txt t;
+	unsigned u;
+	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(sp->obj->busy);
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
 		WSP(sp, SLT_VCL_error,
@@ -583,19 +597,64 @@ VRT_ESI(struct sess *sp)
 	ew->sp = sp;
 	ew->off = 1;
 
+	p = NULL;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		ew->t.b = (void *)st->ptr;
-		ew->t.e = ew->t.b + st->len;
-		i = esi_parse(ew);
-		ew->off += st->len;
-		if (i < st->len) {
-			/* XXX: Handle complications */
-			if (VTAILQ_NEXT(st, list))
-				INCOMPL();
+		if (p != NULL) {
+			assert ((void*)p > (void *)st->ptr);
+			assert ((void*)p <= (void *)(st->ptr + st->len));
+			if (p == (void*)(st->ptr + st->len))
+				break;
+			ew->t.b = p;
+			p = NULL;
+		} else
+			ew->t.b = (void *)st->ptr;
+		ew->t.e = (void *)(st->ptr + st->len);
+		p = esi_parse(ew);
+		if (p == ew->t.e) {
+			p = NULL;
+			continue;
 		}
+
+		if (VTAILQ_NEXT(st, list) == NULL) {
+			/*
+			 * XXX: illegal XML input, but did we handle
+			 * XXX: all of it, or do we leave the final
+			 * XXX: element dangling ?
+			 */
+			INCOMPL();
+		}
+
+		/* Move remainder to workspace */
+		u = ew->t.e - p;
+		t.b = sp->obj->ws_o->f;
+		t.e = t.b + WS_Reserve(sp->obj->ws_o, 0);
+		assert(t.e > t.b + u); 	/* XXX incredibly long element ? */
+		memcpy(t.b, p, u);
+
+		/* Peel start off next chunk, until and including '<' */
+		st2 = VTAILQ_NEXT(st, list);
+		AN(st2);
+		q = t.b + u;
+		p = (void*)st2->ptr;
+		while (1) {
+			if (p >= (char *)st2->ptr + st2->len)
+				INCOMPL();
+			if (q >= t.e)
+				INCOMPL();
+			*q = *p++;
+			if (*q++ == '>')
+				break;
+		}
+		WS_ReleaseP(sp->obj->ws_o, q);
+		t.e = q;
+
+		/* Parse this bit */
+		ew->t = t;
+		q = esi_parse(ew);
+		assert(q == ew->t.e);	/* XXX */
+	
+		/* 'p' is cached starting point for next storage part */
 	}
-	if (Tlen(ew->dst))
-		esi_addbit(ew);
 
 	if (!ew->is_esi) {
 		ESI_Destroy(sp->obj);
