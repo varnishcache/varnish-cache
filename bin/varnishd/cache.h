@@ -669,7 +669,7 @@ Tlen(const txt t)
 }
 
 #ifdef WITHOUT_ASSERTS
-#define spassert(cond) ((void)0)
+#define spassert(cond) ((void)(cond))
 #else
 void panic(const char *, int, const char *,
     const struct sess *, const char *, ...);
