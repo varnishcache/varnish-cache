@@ -275,6 +275,7 @@ static int
 cnt_error(struct sess *sp)
 {
 
+	AZ(sp->obj);
 	RES_Error(sp, sp->err_code, sp->err_reason);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
