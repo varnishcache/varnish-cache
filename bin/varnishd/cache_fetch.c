@@ -395,6 +395,7 @@ Fetch(struct sess *sp)
 		}
 		VBE_UpdateHealth(sp, vc, -4);
 		VBE_ClosedFd(sp->wrk, vc);
+		sp->obj->len = 0;
 		return (__LINE__);
 	}
 
