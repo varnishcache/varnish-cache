@@ -274,12 +274,14 @@ bes_GetFd(const struct sess *sp)
 static void
 bes_ClosedFd(struct worker *w, struct vbe_conn *vc)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	assert(vc->fd >= 0);
 	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
-	AZ(close(vc->fd));
+	i = close(vc->fd);
+	assert(i == 0 || errno == ECONNRESET);
 	vc->fd = -1;
 	VBE_DropRef(vc->backend);
 	vc->backend = NULL;
