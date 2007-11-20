@@ -459,8 +459,6 @@ esi_parse2(struct esi_work *ew)
 		if (q >= t.e || *q != '>')
 			return (p);
 
-	
-VSL(SLT_Debug, ew->sp->fd, "Element: [%.*s]", q - p, p);
 		/* Opening/empty or closing element ? */
 		if (p[1] == '/') {
 			celem = 1;
@@ -473,6 +471,9 @@ VSL(SLT_Debug, ew->sp->fd, "Element: [%.*s]", q - p, p);
 			celem = 0;
 			r = p + 1;
 		}
+
+		VSL(SLT_Debug, ew->sp->fd, "Element: clos=%d [%.*s]",
+		    celem, q - r, r);
 
 		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
 
@@ -517,11 +518,26 @@ VSL(SLT_Debug, ew->sp->fd, "Element: [%.*s]", q - p, p);
 			p = q + 1;
 			continue;
 		}
+		ew->is_esi++;
 
+		if (r + 10 < q && !memcmp(r, "esi:comment", 11)) {
+
+			ew->o.e = p;
+			esi_addverbatim(ew);
+
+			if (celem == 1) {
+				esi_error(ew, p, 1 + q - p,
+				    "ESI 1.0 closing esi:comment illegal");
+			} else if (q[-1] != '/') {
+				esi_error(ew, p, 1 + q - p,
+				    "ESI 1.0 wants emtpy esi:comment");
+			}
+			p = q + 1;
+			ew->o.b = p;
+			continue;
+		}
 		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
 			
-			ew->is_esi++;
-
 			ew->o.e = p;
 			esi_addverbatim(ew);
 
@@ -696,6 +712,13 @@ VRT_ESI(struct sess *sp)
 		/* 'p' is cached starting point for next storage part */
 	}
 
+	/*
+	 * XXX: we could record the starting point of these elements
+	 * XXX: so that the char-index were more useful, but we are
+	 * XXX: not trivially able to print their contents, so leave
+	 * XXX: it like this for now, pending more thought about the
+	 * XXX: proper way to report these errors.
+	 */
 	if (ew->incdata)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <![CDATA[ element");
