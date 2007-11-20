@@ -125,7 +125,7 @@ vbit_test(struct vbitmap *vb, unsigned bit)
 static pthread_t vca_kqueue_thread;
 static int kq = -1;
 
-struct vbitmap *vca_kqueue_bits;
+static struct vbitmap *vca_kqueue_bits;
 
 static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
@@ -137,13 +137,25 @@ static unsigned nki;
 static void
 vca_kq_sess(struct sess *sp, short arm)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->fd < 0)
 		return;
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++nki == NKEV) {
-		AZ(kevent(kq, ki, nki, NULL, 0, NULL));
+		i = kevent(kq, ki, nki, NULL, 0, NULL);
+		assert(i <= 0);
+		if (i < 0) {
+			/* 
+			 * We do not push kevents into the kernel before passing the session off
+			 * to a worker thread, so by the time we get around to delete the event
+			 * the fd may be closed and we get an ENOENT back once we do flush.
+			 *
+			 * XXX: Can we get EBADF if the client closes during this window ?
+			 */
+			assert(errno == ENOENT);
+		}
 		nki = 0;
 	}
 }
@@ -188,6 +200,7 @@ vca_kev(const struct kevent *kp)
 	    sp, (unsigned long)kp->data, kp->flags,
 	    (kp->flags & EV_EOF) ? " EOF" : "");
 #endif
+	assert(sp->fd == kp->ident);
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0)
@@ -233,8 +246,10 @@ vca_kqueue_main(void *arg)
 		assert(n >= 1 && n <= NKEV);
 		nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
-			if (kp->flags & EV_ERROR)
+			if (kp->flags & EV_ERROR) {
+				/* See comment in vca_kq_sess() */
 				continue;
+			}
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
 				continue;
