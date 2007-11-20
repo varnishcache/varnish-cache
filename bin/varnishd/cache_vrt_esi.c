@@ -625,7 +625,12 @@ VRT_ESI(struct sess *sp)
 			 * XXX: all of it, or do we leave the final
 			 * XXX: element dangling ?
 			 */
-			INCOMPL();
+			esi_error(ew, p, ew->t.e -p,
+			    "XML 1.0 incomplete language element");
+			ew->dst.b = p;
+			ew->dst.e = ew->t.e;
+			esi_addbit(ew);
+			break;
 		}
 
 		/* Move remainder to workspace */
@@ -659,6 +664,13 @@ VRT_ESI(struct sess *sp)
 	
 		/* 'p' is cached starting point for next storage part */
 	}
+
+	if (ew->remflg)
+		esi_error(ew, NULL, 0,
+		    "ESI 1.0 unterminated <esi:remove> element");
+	if (ew->incmt)
+		esi_error(ew, NULL, 0,
+		    "ESI 1.0 unterminated <!--esi comment");
 
 	if (!ew->is_esi) {
 		ESI_Destroy(sp->obj);
