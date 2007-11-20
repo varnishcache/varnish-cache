@@ -77,6 +77,8 @@ struct esi_work {
 	struct esi_bit		*ebl;	/* list of */
 	int			neb;
 	int			is_esi;
+	int			remflg;	/* inside <esi:remove> </esi:remove> */
+	int			incmt;	/* inside <!--esi ... --> comment */
 };
 
 /*--------------------------------------------------------------------
@@ -343,29 +345,25 @@ esi_parse(struct esi_work *ew)
 	char *p, *q, *r;
 	txt t, o;
 	int celem;		/* closing element */
-	int remflg;		/* inside <esi:remove> </esi:remove> */
-	int incmt;		/* inside <!--esi ... --> comment */
 	int i;
 
 	t.b = (char *)ew->st->ptr;
 	t.e = t.b + ew->st->len;
 	ew->dst.b = t.b;
 	ew->dst.e = t.b;
-	remflg = 0;
-	incmt = 0;
 	o.b = t.b;
 	for (p = t.b; p < t.e; ) {
-		if (incmt && *p == '-') {
+		if (ew->incmt && *p == '-') {
 			/*
 			 * We are inside an <!--esi comment and need to zap
 			 * the end comment marker --> when we see it.
 			 */
 			if (p + 2 >= t.e) {
-				/* XXX: need to return pending incmt  */
+				/* XXX: need to return pending ew->incmt  */
 				return (p - t.b);
 			}
 			if (!memcmp(p, "-->", 3)) {
-				incmt = 0;
+				ew->incmt = 0;
 				o.e = p;
 				esi_addverbatim(ew, o);
 				p += 3;
@@ -386,12 +384,12 @@ esi_parse(struct esi_work *ew)
 		if (i < 2)
 			return (p - t.b);
 
-		if (remflg == 0 && !memcmp(p, "<!--esi", i > 7 ? 7 : i)) {
+		if (ew->remflg == 0 && !memcmp(p, "<!--esi", i > 7 ? 7 : i)) {
 			/*
 			 * ESI comment. <!--esi...-->
 			 * at least 10 char, but we only test on the
 			 * first seven because the tail is handled
-			 * by the incmt flag.
+			 * by the ew->incmt flag.
 			 */
 			ew->is_esi++;
 			if (i < 7)
@@ -402,7 +400,7 @@ esi_parse(struct esi_work *ew)
 
 			p += 7;
 			o.b = p;
-			incmt = 1;
+			ew->incmt = 1;
 			continue;
 		}
 
@@ -461,15 +459,15 @@ esi_parse(struct esi_work *ew)
 
 			ew->is_esi++;
 
-			if (celem != remflg) {
+			if (celem != ew->remflg) {
 				/*
 				 * ESI 1.0 violation, ignore element
 				 */
-				esi_error(ew, p, 1 + q - p,
-				    remflg ? "ESI 1.0 forbids nested esi:remove"
+				esi_error(ew, p, 1 + q - p, ew->remflg ?
+				    "ESI 1.0 forbids nested esi:remove"
 				    : "ESI 1.0 esi:remove not opened");
 					
-				if (!remflg) {
+				if (!ew->remflg) {
 					o.e = p;
 					esi_addverbatim(ew, o);
 				}
@@ -481,17 +479,17 @@ esi_parse(struct esi_work *ew)
 				/* open element */
 				o.e = p;
 				esi_addverbatim(ew, o);
-				remflg = !celem;
+				ew->remflg = !celem;
 			} else {
 				/* close element */
-				remflg = !celem;
+				ew->remflg = !celem;
 			}
 			p = q + 1;
 			o.b = p;
 			continue;
 		}
 
-		if (remflg && r + 3 < q && !memcmp(r, "esi:", 4)) {
+		if (ew->remflg && r + 3 < q && !memcmp(r, "esi:", 4)) {
 			/*
 			 * ESI 1.0 violation, no esi: elements in esi:remove
 			 */
