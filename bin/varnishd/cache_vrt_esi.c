@@ -637,6 +637,16 @@ VRT_ESI(struct sess *sp)
 		u = ew->t.e - p;
 		t.b = sp->obj->ws_o->f;
 		t.e = t.b + WS_Reserve(sp->obj->ws_o, 0);
+		if (t.b + u >= t.e) {
+			esi_error(ew, p, ew->t.e - p,
+			    "XML 1.0 unreasonably long element");
+			WS_Release(sp->obj->ws_o, 0);
+			ew->dst.b = p;
+			ew->dst.e = ew->t.e;
+			esi_addbit(ew);
+			p = NULL;
+			continue;
+		}
 		assert(t.e > t.b + u); 	/* XXX incredibly long element ? */
 		memcpy(t.b, p, u);
 
@@ -646,14 +656,22 @@ VRT_ESI(struct sess *sp)
 		q = t.b + u;
 		p = (void*)st2->ptr;
 		while (1) {
-			if (p >= (char *)st2->ptr + st2->len)
-				INCOMPL();
-			if (q >= t.e)
-				INCOMPL();
+			if (p >= (char *)st2->ptr + st2->len || q >= t.e) {
+				esi_error(ew, t.b, q - t.b,
+				    "XML 1.0 unreasonably long element");
+				WS_Release(sp->obj->ws_o, 0);
+				ew->dst.b = t.b;
+				ew->dst.e = q;
+				esi_addbit(ew);
+				p = NULL;
+				break;
+			}
 			*q = *p++;
 			if (*q++ == '>')
 				break;
 		}
+		if (p == NULL)
+			continue;
 		WS_ReleaseP(sp->obj->ws_o, q);
 		t.e = q;
 
@@ -666,10 +684,10 @@ VRT_ESI(struct sess *sp)
 	}
 
 	if (ew->remflg)
-		esi_error(ew, NULL, 0,
+		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <esi:remove> element");
 	if (ew->incmt)
-		esi_error(ew, NULL, 0,
+		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <!--esi comment");
 
 	if (!ew->is_esi) {
