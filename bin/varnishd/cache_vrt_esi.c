@@ -80,6 +80,7 @@ struct esi_work {
 	int			is_esi;
 	int			remflg;	/* inside <esi:remove> </esi:remove> */
 	int			incmt;	/* inside <!--esi ... --> comment */
+	int			incdata; /* inside <![CCDATA[ ... ]]> */
 };
 
 /*--------------------------------------------------------------------
@@ -356,15 +357,33 @@ esi_parse2(struct esi_work *ew)
 	ew->o.b = t.b;
 	ew->o.e = t.b;
 	for (p = t.b; p < t.e; ) {
+		assert(p >= t.b);
+		assert(p < t.e);
+		if (ew->incdata) {
+			/*
+			 * We are inside an <![CDATA[ constuct and mus skip
+			 * to the end marker ]]>.
+			 */
+			if (*p != ']') {
+				p++;
+			} else {
+				if (p + 2 >= t.e)
+					return (p);
+				if (!memcmp(p, "]]>", 3)) {
+					ew->incdata = 0;
+					p += 3;
+				} else 
+					p++;
+			}
+			continue;
+		}
 		if (ew->incmt && *p == '-') {
 			/*
 			 * We are inside an <!--esi comment and need to zap
 			 * the end comment marker --> when we see it.
 			 */
-			if (p + 2 >= t.e) {
-				/* XXX: need to return pending ew->incmt  */
+			if (p + 2 >= t.e)
 				return (p);
-			}
 			if (!memcmp(p, "-->", 3)) {
 				ew->incmt = 0;
 				ew->o.e = p;
@@ -425,18 +444,12 @@ esi_parse2(struct esi_work *ew)
 
 		if (!memcmp(p, "<![CDATA[", i > 9 ? 9 : i)) {
 			/*
-			 * cdata <![CDATA[...]]> at least 12 char
-			 * XXX: can span multiple chunks
+			 * cdata <![CDATA[ at least 9 char
 			 */
-			if (i < 12)
+			if (i < 9)
 				return (p);
-			for (q = p + 9; ; q++) {
-				if (q + 2 >= t.e)
-					return (p);
-				if (!memcmp(q, "]]>", 3))
-					break;
-			}
-			p = q + 3;
+			ew->incdata = 1;
+			p += 9;
 			continue;
 		} 
 
@@ -683,6 +696,9 @@ VRT_ESI(struct sess *sp)
 		/* 'p' is cached starting point for next storage part */
 	}
 
+	if (ew->incdata)
+		esi_error(ew, ew->t.e, -1,
+		    "ESI 1.0 unterminated <![CDATA[ element");
 	if (ew->remflg)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <esi:remove> element");
