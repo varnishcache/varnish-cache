@@ -179,14 +179,14 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 		match_tag = name2tag(argv[0]);
 		if (match_tag < 0) {
 			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
-			exit (2);
+			exit(2);
 		}
 		i = regcomp(&match_re, argv[1], REG_EXTENDED | REG_NOSUB);
 		if (i) {
 			char buf[BUFSIZ];
 			regerror(i, &match_re, buf, sizeof buf);
 			fprintf(stderr, "%s\n", buf);
-			exit (2);
+			exit(2);
 		}
 	}
 	if (!b_flag) {
@@ -235,7 +235,7 @@ open_log(const char *w_arg, int a_flag)
 		fd = open(w_arg, flags, 0644);
 	if (fd < 0) {
 		perror(w_arg);
-		exit (1);
+		exit(1);
 	}
 	return (fd);
 }
@@ -265,7 +265,7 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 			reopen = 0;
 		}
 	}
-	exit (0);
+	exit(0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -281,7 +281,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	int i, c;
+	int c;
 	int a_flag = 0, D_flag = 0, o_flag = 0;
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
@@ -358,12 +358,11 @@ main(int argc, char **argv)
 	if (o_flag)
 		do_order(vd, argc - optind, argv + optind);
 
-	while (1) {
-		i = VSL_Dispatch(vd, VSL_H_Print, stdout);
-		if (i == 0)
-			fflush(stdout);
-		else if (i < 0)
+	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
+		if (fflush(stdout) != 0) {
+			perror("stdout");
 			break;
+		}
 	}
 
 	if (pfh != NULL)
