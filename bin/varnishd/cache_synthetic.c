@@ -39,67 +39,64 @@
 #include "stevedore.h"
 
 /*
- * Synthesize an error page.  This assumes the session already has an
- * object - if it doesn't, you need to either call HSH_Lookup(), or call
- * HSH_Prealloc() and grab sp->obj->nobj, before calling this.
+ * Synthesize an error page including headers.
+ * XXX: For now close the connection.  Long term that should probably
+ * XXX: be either a paramter or VCL decision.
+ * XXX: VCL should get a shot at generating the page.
  */
+
 void
-SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
+SYN_ErrorPage(struct sess *sp, int status, const char *reason)
 {
-	struct storage *st;
-	struct object *o;
-	struct worker *w;
 	struct http *h;
-	struct vsb vsb;
+	struct worker *w;
 	const char *msg;
 	char date[40];
 	double now;
+	unsigned u;
+	struct vsb vsb;
 	int fd;
+	int ttl = 0;				/* XXX: ?? */
 
 	WSL_Flush(sp->wrk);
 	assert(status >= 100 && status <= 999);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
-	assert(sp->obj->busy > 0);
 
 	/* shortcuts */
 	w = sp->wrk;
+	h = sp->http;
 	fd = sp->fd;
-	o = sp->obj;
-	h = o->http;
-	now = TIM_real();
+	now = TIM_real();		/* XXX: use cached val ? */
 
-	/* Set up obj's workspace */
-	st = o->objstore;
-	WS_Init(o->ws_o, "obj", st->ptr + st->len, st->space - st->len);
-	st->len = st->space;
-	WS_Assert(o->ws_o);
-	http_Setup(o->http, o->ws_o);
+	WRK_Reset(w, &sp->fd);
 
 	/* look up HTTP response */
 	msg = http_StatusMessage(status);
+	AN(msg);
 	if (reason == NULL)
 		reason = msg;
-	AN(reason);
-	AN(msg);
 
-	/* populate metadata */
-	o->response = status;
-	o->valid = 1;
-	o->entered = now;
-	o->ttl = now + ttl;
-	o->last_modified = now;
-	o->xid = sp->xid;
+	/* generate header */
+	http_ClrHeader(h);
+	h->logtag = HTTP_Tx;
+	http_PutProtocol(w, fd, h, "HTTP/1.0"); /* XXX */
+	http_PutStatus(w, fd, h, status);
+	http_PutResponse(w, fd, h, msg);
+	TIM_format(now, date);
+	http_PrintfHeader(w, fd, h, "Date: %s", date);
+	http_PrintfHeader(w, fd, h, "Server: Varnish");
+	http_PrintfHeader(w, fd, h, "Retry-After: %d", ttl);
+	http_PrintfHeader(w, fd, h, "Content-Type: text/html; charset=utf-8");
+	http_PrintfHeader(w, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(w, fd, h, "Connection: close");
 
-	/* allocate space for body */
-	/* XXX what if the object already has a body? */
-	st = STV_alloc(sp, 1024);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	w->acct.hdrbytes += http_Write(w, h, 1);
 
 	/* generate body */
-	AN(vsb_new(&vsb, (char *)st->ptr, st->space, VSB_FIXEDLEN));
+	/* XXX: VCL should do this */
+	u = WS_Reserve(h->ws, 0);
+	AN(vsb_new(&vsb, h->ws->f, u, VSB_FIXEDLEN));
 	vsb_printf(&vsb,
 	    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 	    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
@@ -121,23 +118,8 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	    "  </body>\n"
 	    "</html>\n");
 	vsb_finish(&vsb);
-	o->len = st->len = vsb_len(&vsb);
+	w->acct.hdrbytes = WRK_Write(w, vsb_data(&vsb), vsb_len(&vsb));
+	(void)WRK_Flush(w);
 	vsb_delete(&vsb);
-
-	/* allocate space for header */
-
-	WS_Init(h->ws, "error", malloc(1024), 1024);
-
-	/* generate header */
-	http_ClrHeader(h);
-	http_PutProtocol(w, fd, h, "HTTP/1.0"); /* XXX */
-	http_PutStatus(w, fd, h, status);
-	http_PutResponse(w, fd, h, msg);
-	TIM_format(now, date);
-	http_PrintfHeader(w, fd, h, "Date: %s", date);
-	http_PrintfHeader(w, fd, h, "Server: Varnish");
-	http_PrintfHeader(w, fd, h, "Retry-After: %ju", (uintmax_t)ttl);
-	http_PrintfHeader(w, fd, h, "Content-Type: text/html; charset=utf-8");
-	http_PrintfHeader(w, fd, h, "Content-Length: %u", o->len);
-	/* DO NOT generate X-Varnish header, RES_BuildHttp will */
+	vca_close_session(sp, "error returned");
 }

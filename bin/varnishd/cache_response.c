@@ -41,29 +41,6 @@
 
 /*--------------------------------------------------------------------*/
 
-void
-RES_Error(struct sess *sp, int code, const char *reason)
-{
-
-	/* get a pristine object */
-	HSH_Prealloc(sp);
-	sp->obj = sp->wrk->nobj;
-	sp->wrk->nobj = NULL;
-	sp->obj->busy = 1;
-
-	/* synthesize error page and send it */
-	SYN_ErrorPage(sp, code, reason, 0);
-	RES_BuildHttp(sp);
-	RES_WriteObj(sp);
-
-	/* GC the error page */
-	HSH_Unbusy(sp->obj);
-	HSH_Deref(sp->obj);
-	sp->obj = NULL;
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 res_do_304(struct sess *sp)
 {
