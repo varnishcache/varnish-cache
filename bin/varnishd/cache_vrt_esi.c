@@ -354,6 +354,7 @@ esi_parse2(struct esi_work *ew)
 	ew->dst.b = t.b;
 	ew->dst.e = t.b;
 	ew->o.b = t.b;
+	ew->o.e = t.b;
 	for (p = t.b; p < t.e; ) {
 		if (ew->incmt && *p == '-') {
 			/*
@@ -442,9 +443,11 @@ esi_parse2(struct esi_work *ew)
 		/* Find end of this element */
 		for (q = p + 1; q < t.e && *q != '>'; q++)
 			continue;
-		if (*q != '>')
+		if (q >= t.e || *q != '>')
 			return (p);
 
+	
+VSL(SLT_Debug, ew->sp->fd, "Element: [%.*s]", q - p, p);
 		/* Opening/empty or closing element ? */
 		if (p[1] == '/') {
 			celem = 1;
@@ -544,6 +547,7 @@ esi_parse2(struct esi_work *ew)
 		}
 
 		/* Not an element we care about */
+		assert(q < t.e);
 		p = q + 1;
 	}
 	assert(p == t.e);
@@ -561,7 +565,7 @@ esi_parse(struct esi_work *ew)
 	assert(ew->o.b >= ew->t.b);
 	assert(ew->o.e <= ew->t.e);
 	ew->o.e = p;
-	if (Tlen(ew->o))
+	if (Tlen(ew->o) && !ew->remflg)
 		esi_addverbatim(ew);
 	if (Tlen(ew->dst))
 		esi_addbit(ew);
