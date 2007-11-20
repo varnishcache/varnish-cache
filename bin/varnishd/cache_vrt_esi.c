@@ -71,7 +71,7 @@ VTAILQ_HEAD(esibithead, esi_bit);
 struct esi_work {
 	struct sess		*sp;
 	size_t			off;
-	struct storage		*st;
+	txt			t;
 	txt			dst;
 	struct esi_bit		*eb;
 	struct esi_bit		*ebl;	/* list of */
@@ -93,14 +93,13 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 	txt t;
 
 	if (i == 0) 
-		i = p - ((char *)ew->st->ptr + ew->st->len);
+		i = p - ew->t.b;
 	if (i > 20) {
 		i = 20;
 		ellipsis = 1;
 	}
 	q = buf;
-	q += sprintf(buf, "at %zd: %s \"",
-	    ew->off + (p - (char*)ew->st->ptr), err);
+	q += sprintf(buf, "at %zd: %s \"", ew->off + (p - ew->t.b), err);
 	while (i > 0) {
 		if (*p >= ' ' && *p <= '~') {
 			*q++ = *p;
@@ -347,8 +346,7 @@ esi_parse(struct esi_work *ew)
 	int celem;		/* closing element */
 	int i;
 
-	t.b = (char *)ew->st->ptr;
-	t.e = t.b + ew->st->len;
+	t = ew->t;
 	ew->dst.b = t.b;
 	ew->dst.e = t.b;
 	o.b = t.b;
@@ -574,7 +572,8 @@ VRT_ESI(struct sess *sp)
 	ew->off = 1;
 
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		ew->st = st;
+		ew->t.b = (void *)st->ptr;
+		ew->t.e = ew->t.b + st->len;
 		i = esi_parse(ew);
 		ew->off += st->len;
 		if (i < st->len) {
