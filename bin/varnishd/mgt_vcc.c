@@ -232,25 +232,28 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	if ((pid = fork()) < 0) {
 		vsb_printf(sb, "%s(): fork() failed: %s",
 		    __func__, strerror(errno));
-		close(p[0]);
-		close(p[1]);
-		unlink(sf);
+		AZ(close(p[0]));
+		AZ(close(p[1]));
+		(void)unlink(sf);
 		free(of);
 		return (NULL);
 	}
 	if (pid == 0) {
-		close(p[0]);
-		close(STDIN_FILENO);
+		AZ(close(p[0]));
+		AZ(close(STDIN_FILENO));
 		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
 		_exit(1);
 	}
-	close(p[1]);
-	while (read(p[0], buf, sizeof buf) > 0)
-		/* XXX nothing */ ;
-	close(p[0]);
+	AZ(close(p[1]));
+	do {
+		status = read(p[0], buf, sizeof buf);
+		if (status > 0)
+			vsb_printf(sb, "C-Compiler said: %.*s", status, buf);
+	} while (status > 0);
+	AZ(close(p[0]));
 	unlink(sf);
 	if (waitpid(pid, &status, 0) < 0) {
 		vsb_printf(sb, "%s(): waitpid() failed: %s",
@@ -410,14 +413,15 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 		vf = mgt_VccCompileFile(sb, f_arg, C_flag, f_fd);
 	}
 	vsb_finish(sb);
-	if (vsb_len(sb) > 0) {
+	if (vsb_len(sb) > 0)
 		fprintf(stderr, "%s", vsb_data(sb));
-		vsb_delete(sb);
-		return (1);
-	}
 	vsb_delete(sb);
 	if (C_flag)
 		return (0);
+	if (vf == NULL) {
+		fprintf(stderr, "VCL compilation failed");
+		return (1);
+	}
 	vp = mgt_vcc_add("boot", vf);
 	vp->active = 1;
 	return (0);
@@ -490,13 +494,15 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 	XXXAN(sb);
 	vf = mgt_VccCompile(sb, av[3], NULL, 0);
 	vsb_finish(sb);
-	if (vsb_len(sb) > 0) {
+	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
-		vsb_delete(sb);
+	vsb_delete(sb);
+	if (vf == NULL) {
+		cli_out(cli, "VCL compilation failed");
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	vsb_delete(sb);
+	cli_out(cli, "VCL compiled.");
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
@@ -521,13 +527,15 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	XXXAN(sb);
 	vf = mgt_VccCompileFile(sb, av[3], 0, -1);
 	vsb_finish(sb);
-	if (vsb_len(sb) > 0) {
+	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
-		vsb_delete(sb);
+	vsb_delete(sb);
+	if (vf == NULL) {
+		cli_out(cli, "VCL compilation failed");
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	vsb_delete(sb);
+	cli_out(cli, "VCL compiled.");
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
