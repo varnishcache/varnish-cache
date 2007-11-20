@@ -80,6 +80,8 @@
 #include "shmlog.h"
 #include "varnishapi.h"
 
+static volatile sig_atomic_t reopen;
+
 static struct logline {
 	char *df_H;			/* %H, Protocol version */
 	char *df_Host;			/* %{Host}i */
@@ -187,7 +189,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	end = ptr + len;
 
 	if (!(spec & VSL_S_CLIENT || spec & VSL_S_BACKEND))
-		return (0);
+		return (reopen);
 
 	if (fd >= nll) {
 		struct logline **newll = ll;
@@ -315,11 +317,11 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 	}
 
 	if ((spec & VSL_S_CLIENT) && tag != SLT_ReqEnd)
-		return (0);
+		return (reopen);
 
 	if ((spec & VSL_S_BACKEND) && tag != SLT_BackendReuse &&
 	    (tag != SLT_BackendClose || lp->df_Uq))
-		return (0);
+		return (reopen);
 
 	if (tag == SLT_ReqEnd) {
 		if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1)
@@ -407,12 +409,10 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 #undef freez
 	lp->bogus = 0;
 
-	return (0);
+	return (reopen);
 }
 
 /*--------------------------------------------------------------------*/
-
-static volatile sig_atomic_t reopen;
 
 static void
 sighup(int sig)
@@ -447,7 +447,7 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	int i, c;
+	int c;
 	int a_flag = 0, D_flag = 0;
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
@@ -459,11 +459,6 @@ main(int argc, char *argv[])
 	vd = VSL_New();
 
 	while ((c = getopt(argc, argv, VSL_ARGS "aDn:P:Vw:")) != -1) {
-		i = VSL_Arg(vd, c, optarg);
-		if (i < 0)
-			exit (1);
-		if (i > 0)
-			continue;
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -516,7 +511,7 @@ main(int argc, char *argv[])
 		of = stdout;
 	}
 
-	while (VSL_Dispatch(vd, h_ncsa, of) == 0) {
+	while (VSL_Dispatch(vd, h_ncsa, of) >= 0) {
 		if (fflush(of) != 0) {
 			perror(w_arg);
 			exit(1);
