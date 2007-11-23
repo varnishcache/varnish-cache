@@ -420,6 +420,9 @@ mgt_run(int dflag, const char *T_arg)
 	fprintf(stderr, "rolling(2)...\n");
 	if (!dflag)
 		start_child();
+	else
+		fprintf(stderr,
+		    "Debugging mode, enter \"start\" to start child\n");
 
 	i = ev_schedule(mgt_evb);
 	fprintf(stderr, "ev_schedule = %d\n", i);
