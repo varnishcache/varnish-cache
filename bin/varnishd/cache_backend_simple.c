@@ -281,7 +281,7 @@ bes_ClosedFd(struct worker *w, struct vbe_conn *vc)
 	assert(vc->fd >= 0);
 	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	i = close(vc->fd);
-	assert(i == 0 || errno == ECONNRESET);
+	assert(i == 0 || errno == ECONNRESET || errno == ENOTCONN);
 	vc->fd = -1;
 	VBE_DropRef(vc->backend);
 	vc->backend = NULL;
