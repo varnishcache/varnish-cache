@@ -243,7 +243,7 @@ open_log(const char *w_arg, int a_flag)
 static void
 do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 {
-	int fd, i;
+	int fd, i, l;
 	unsigned char *p;
 
 	fd = open_log(w_arg, a_flag);
@@ -253,7 +253,8 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 		if (i < 0)
 			break;
 		if (i > 0) {
-			i = write(fd, p, 5 + p[1]);
+			l = SHMLOG_LEN(p);
+			i = write(fd, p, SHMLOG_NEXTTAG + l);
 			if (i < 0) {
 				perror(w_arg);
 				exit(1);
