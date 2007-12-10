@@ -74,14 +74,15 @@ accumulate(const unsigned char *p)
 {
 	struct top *tp, *tp2;
 	const unsigned char *q;
-	unsigned int u;
+	unsigned int u, l;
 	int i;
 
 	// fprintf(stderr, "%*.*s\n", p[1], p[1], p + 4);
 
 	u = 0;
-	q = p + 4;
-	for (i = 0; i < p[1]; i++, q++) {
+	q = p + SHMLOG_DATA;
+	l = SHMLOG_LEN(p);
+	for (i = 0; i < l; i++, q++) {
 		if (f_flag && (*q == ':' || isspace(*q)))
 			break;
 		u += *q;
@@ -90,11 +91,12 @@ accumulate(const unsigned char *p)
 	VTAILQ_FOREACH(tp, &top_head, list) {
 		if (tp->hash != u)
 			continue;
-		if (tp->rec[0] != p[0])
+		if (tp->rec[SHMLOG_TAG] != p[SHMLOG_TAG])
 			continue;
 		if (tp->clen != q - p)
 			continue;
-		if (memcmp(p + 4, tp->rec + 4, q - (p + 4)))
+		if (memcmp(p + SHMLOG_DATA, tp->rec + SHMLOG_DATA,
+		    q - (p + SHMLOG_DATA)))
 			continue;
 		tp->count += 1.0;
 		break;
@@ -108,7 +110,7 @@ accumulate(const unsigned char *p)
 		tp->clen = q - p;
 		VTAILQ_INSERT_TAIL(&top_head, tp, list);
 	}
-	memcpy(tp->rec, p, 4 + p[1]);
+	memcpy(tp->rec, p, SHMLOG_DATA + l);
 	while (1) {
 		tp2 = VTAILQ_PREV(tp, tophead, list);
 		if (tp2 == NULL || tp2->count >= tp->count)
@@ -129,7 +131,7 @@ static void
 update(void)
 {
 	struct top *tp, *tp2;
-	int l;
+	int l, len;
 	double t = 0;
 	static time_t last;
 	time_t now;
@@ -145,12 +147,12 @@ update(void)
 	mvprintw(0, 0, "list length %u", ntop);
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
-			int len = tp->rec[1];
+			len = SHMLOG_LEN(tp->rec);
 			if (len > COLS - 20)
 				len = COLS - 20;
 			mvprintw(l, 0, "%9.2f %-9.9s %*.*s\n",
-			    tp->count, VSL_tags[tp->rec[0]],
-			    len, len, tp->rec + 4);
+			    tp->count, VSL_tags[tp->rec[SHMLOG_TAG]],
+			    len, len, tp->rec + SHMLOG_DATA);
 			t = tp->count;
 		}
 		tp->count *= .999;

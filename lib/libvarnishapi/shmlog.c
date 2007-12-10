@@ -63,7 +63,7 @@ struct VSL_data {
 
 	/* for -r option */
 	FILE			*fi;
-	unsigned char		rbuf[5 + 255 + 1];
+	unsigned char		rbuf[SHMLOG_NEXTTAG + 255 + 1];
 
 	int			b_opt;
 	int			c_opt;
@@ -199,7 +199,7 @@ VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 
 	if (!vd->d_opt && vd->fi == NULL) {
 		for (p = vd->ptr; *p != SLT_ENDMARKER; )
-			p += p[1] + 5;
+			p += SHMLOG_LEN(p) + SHMLOG_NEXTTAG;
 		vd->ptr = p;
 	}
 	return (0);
@@ -222,15 +222,16 @@ static int
 vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
-	unsigned w;
+	unsigned w, l;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fi != NULL) {
-		i = fread(vd->rbuf, 4, 1, vd->fi);
+		i = fread(vd->rbuf, SHMLOG_DATA, 1, vd->fi);
 		if (i != 1)
 			return (-1);
-		i = fread(vd->rbuf + 4, vd->rbuf[1] + 1, 1, vd->fi);
+		i = fread(vd->rbuf + SHMLOG_DATA,
+		    SHMLOG_LEN(vd->rbuf) + 1, 1, vd->fi);
 		if (i != 1)
 			return (-1);
 		*pp = vd->rbuf;
@@ -250,7 +251,8 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 			usleep(SLEEP_USEC);
 			continue;
 		}
-		vd->ptr = p + p[1] + 5;
+		l = SHMLOG_LEN(p);
+		vd->ptr = p + l + SHMLOG_NEXTTAG;
 		*pp = p;
 		return (1);
 	}
@@ -263,7 +265,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
 	regmatch_t rm;
-	unsigned u;
+	unsigned u, l;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -271,8 +273,9 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		i = vsl_nextlog(vd, &p);
 		if (i != 1)
 			return (i);
-		u = (p[2] << 8) | p[3];
-		switch(p[0]) {
+		u = SHMLOG_ID(p);
+		l = SHMLOG_LEN(p);
+		switch(p[SHMLOG_TAG]) {
 		case SLT_SessionOpen:
 		case SLT_ReqStart:
 			vd->map[u] |= M_CLIENT;
@@ -286,11 +289,11 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		default:
 			break;
 		}
-		if (vd->map[p[0]] & M_SELECT) {
+		if (vd->map[p[SHMLOG_TAG]] & M_SELECT) {
 			*pp = p;
 			return (1);
 		}
-		if (vd->map[p[0]] & M_SUPPRESS)
+		if (vd->map[p[SHMLOG_TAG]] & M_SUPPRESS)
 			continue;
 		if (vd->b_opt && !(vd->map[u] & M_BACKEND))
 			continue;
@@ -298,15 +301,17 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			continue;
 		if (vd->regincl != NULL) {
 			rm.rm_so = 0;
-			rm.rm_eo = p[1];
-			i = regexec(vd->regincl, (char *)p + 4, 1, &rm, 0);
+			rm.rm_eo = l;
+			i = regexec(vd->regincl,
+			    (char *)p + SHMLOG_DATA, 1, &rm, 0);
 			if (i == REG_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
 			rm.rm_so = 0;
-			rm.rm_eo = p[1];
-			i = regexec(vd->regexcl, (char *)p + 4, 1, &rm, 0);
+			rm.rm_eo = l;
+			i = regexec(vd->regexcl,
+			    (char *)p + SHMLOG_DATA, 1, &rm, 0);
 			if (i != REG_NOMATCH)
 				continue;
 		}
@@ -321,7 +326,7 @@ int
 VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 {
 	int i;
-	unsigned u;
+	unsigned u, l;
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -329,11 +334,12 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 		i = VSL_NextLog(vd, &p);
 		if (i <= 0)
 			return (i);
-		u = (p[2] << 8) | p[3];
+		u = SHMLOG_ID(p);
+		l = SHMLOG_LEN(p);
 		if (func(priv,
-		    p[0], u, p[1],
+		    p[SHMLOG_TAG], u, l,
 		    vd->map[u] & (VSL_S_CLIENT|VSL_S_BACKEND),
-		    (char *)p + 4))
+		    (char *)p + SHMLOG_DATA))
 			return (1);
 	}
 }

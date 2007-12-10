@@ -80,13 +80,14 @@ static void
 vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, int id)
 {
 
-	p[1] = len & 0xff;
-	p[2] = (id >> 8) & 0xff;
-	p[3] = id & 0xff;
-	p[4 + len] = '\0';
-	p[5 + len] = SLT_ENDMARKER;	
+	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
+	p[__SHMLOG_LEN_LOW] = len & 0xff;
+	p[__SHMLOG_ID_HIGH] = (id >> 8) & 0xff;
+	p[__SHMLOG_ID_LOW] = id & 0xff;
+	p[SHMLOG_DATA + len] = '\0';
+	p[SHMLOG_NEXTTAG + len] = SLT_ENDMARKER;	
 	/* XXX: Write barrier here */
-	p[0] = tag;
+	p[SHMLOG_TAG] = tag;
 }
 
 /*--------------------------------------------------------------------
@@ -116,14 +117,14 @@ VSLR(enum shmlogtag tag, int id, txt t)
 	assert(loghead->ptr < loghead->size);
 
 	/* Wrap if necessary */
-	if (loghead->ptr + 5 + l + 1 >= loghead->size)
+	if (loghead->ptr + SHMLOG_NEXTTAG + l + 1 >= loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
-	loghead->ptr += 5 + l;
+	loghead->ptr += SHMLOG_NEXTTAG + l;
 	assert(loghead->ptr < loghead->size);
 	UNLOCKSHM(&vsl_mtx);
 
-	memcpy(p + 4, t.b, l);
+	memcpy(p + SHMLOG_DATA, t.b, l);
 	vsl_hdr(tag, p, l, id);
 }
 
@@ -151,21 +152,20 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(loghead->ptr < loghead->size);
 
 		/* Wrap if we cannot fit a full size record */
-		if (loghead->ptr + 5 + 255 + 1 >= loghead->size)
+		if (loghead->ptr + SHMLOG_NEXTTAG + 255 + 1 >= loghead->size)
 			vsl_wrap();
 
 		p = logstart + loghead->ptr;
-		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
 		if (n > 255)
 			n = 255; 	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
-		loghead->ptr += 5 + n;
+		loghead->ptr += SHMLOG_NEXTTAG + n;
 		assert(loghead->ptr < loghead->size);
 		UNLOCKSHM(&vsl_mtx);
 	}
 	va_end(ap);
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -215,12 +215,12 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 	assert(w->wlp < w->wle);
 
 	/* Wrap if necessary */
-	if (w->wlp + 5 + l + 1 >= w->wle)
+	if (w->wlp + SHMLOG_NEXTTAG + l + 1 >= w->wle)
 		WSL_Flush(w);
 	p = w->wlp;
-	w->wlp += 5 + l;
+	w->wlp += SHMLOG_NEXTTAG + l;
 	assert(w->wlp < w->wle);
-	memcpy(p + 4, t.b, l);
+	memcpy(p + SHMLOG_DATA, t.b, l);
 	vsl_hdr(tag, p, l, id);
 	w->wlr++;
 }
@@ -246,15 +246,15 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(w->wlp < w->wle);
 
 		/* Wrap if we cannot fit a full size record */
-		if (w->wlp + 5 + 255 + 1 >= w->wle)
+		if (w->wlp + SHMLOG_NEXTTAG + 255 + 1 >= w->wle)
 			WSL_Flush(w);
 
 		p = w->wlp;
-		n = vsnprintf((char *)(p + 4), 256, fmt, ap);
+		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
 		if (n > 255)
 			n = 255; 	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
-		w->wlp += 5 + n;
+		w->wlp += SHMLOG_NEXTTAG + n;
 		assert(w->wlp < w->wle);
 		w->wlr++;
 	}
