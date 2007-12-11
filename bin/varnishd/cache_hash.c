@@ -244,11 +244,26 @@ HSH_Lookup(struct sess *sp)
 	return (o);
 }
 
+static void
+hsh_rush(struct object *o)
+{
+	unsigned u;
+	struct sess *sp;
+
+	for (u = 0; u < params->rush_exponent; u++) {
+		sp = VTAILQ_FIRST(&o->waitinglist);
+		if (sp == NULL)
+			return;
+		VTAILQ_REMOVE(&o->waitinglist, sp, list);
+		VSL(SLT_Debug, sp->id, "of waiting list");
+		WRK_QueueSession(sp);
+	}
+}
+
 void
 HSH_Unbusy(struct object *o)
 {
 	struct objhead *oh;
-	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
@@ -261,15 +276,9 @@ HSH_Unbusy(struct object *o)
 		LOCK(&oh->mtx);
 	}
 	o->busy = 0;
+	hsh_rush(o);
 	if (oh != NULL)
 		UNLOCK(&oh->mtx);
-	while (1) {
-		sp = VTAILQ_FIRST(&o->waitinglist);
-		if (sp == NULL)
-			break;
-		VTAILQ_REMOVE(&o->waitinglist, sp, list);
-		WRK_QueueSession(sp);
-	}
 }
 
 void
@@ -305,6 +314,7 @@ HSH_Deref(struct object *o)
 	}
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
+	hsh_rush(o);
 	if (oh != NULL) {
 		if (!r)
 			VTAILQ_REMOVE(&oh->objects, o, list);
