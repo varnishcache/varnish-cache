@@ -154,6 +154,7 @@ vca_acct(void *arg)
 	unsigned u;
 	double now;
 
+	THR_Name("cache-acceptor");
 	(void)arg;
 
 	/* Set up the poll argument */

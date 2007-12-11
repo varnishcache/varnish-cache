@@ -114,6 +114,7 @@ exp_hangman(void *arg)
 	struct object *o;
 	double t;
 
+	THR_Name("cache-hangman");
 	(void)arg;
 
 	t = TIM_real();
@@ -167,6 +168,7 @@ exp_prefetch(void *arg)
 	struct object *o2;
 	unsigned char log[1024];		/* XXX size ? */
 
+	THR_Name("cache-timeout");
 	(void)arg;
 
 	sp = SES_New(NULL, 0);

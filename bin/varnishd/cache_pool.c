@@ -205,6 +205,7 @@ wrk_thread(void *priv)
 	char c;
 	unsigned char wlog[8192]; 	/* XXX: size */
 
+	THR_Name("cache-worker");
 	w = &ww;
 	qp = priv;
 	memset(w, 0, sizeof *w);

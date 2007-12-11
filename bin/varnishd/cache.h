@@ -506,6 +506,9 @@ int HTC_Complete(struct http_conn *htc);
 #include "http_headers.h"
 #undef HTTPH
 
+/* cache_main.c */
+void THR_Name(const char *name);
+
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);
 
