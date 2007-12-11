@@ -47,6 +47,8 @@ save_LIBS="${LIBS}"
 LIBS=""
 AC_SEARCH_LIBS(pthread_create, [thr pthread c_r])
 PTHREAD_LIBS="${LIBS}"
+# Check for thread naming function
+AC_CHECK_FUNCS([pthread_set_name_np])
 LIBS="${save_LIBS}"
 AC_SUBST(PTHREAD_LIBS)
 
@@ -74,6 +76,7 @@ AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([vis.h])
+AC_CHECK_HEADERS([pthread_np.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
