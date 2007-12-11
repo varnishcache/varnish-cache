@@ -112,6 +112,7 @@ vca_main(void *arg)
 	double deadline;
 	int i, fd;
 
+	THR_Name("cache-poll");
 	(void)arg;
 
 	vca_poll(vca_pipes[0]);

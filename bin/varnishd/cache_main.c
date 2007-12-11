@@ -40,6 +40,27 @@
 #include "stevedore.h"
 
 /*--------------------------------------------------------------------
+ * Name threads if our pthreads implementation supports it.
+ */
+
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+
+void
+THR_Name(const char *name)
+{
+#ifdef HAVE_PTHREAD_SET_NAME_NP
+	pthread_set_name_np(pthread_self(), name);
+#else
+	/*
+	 * XXX: we could stash it somewhere else (TLS ?)
+	 */
+	(void)name;
+#endif
+}
+
+/*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
  */
 
@@ -50,6 +71,8 @@ child_main(void)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
+
+	THR_Name("cache-main");
 
 #define SZOF(foo)	printf("sizeof(%s) = %zd\n", #foo, sizeof(foo));
 	SZOF(struct ws);
