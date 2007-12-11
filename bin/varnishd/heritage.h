@@ -131,6 +131,8 @@ struct params {
 	/* Maximum esi:include depth allowed */
 	unsigned		max_esi_includes;
 
+	/* Rush exponent */
+	unsigned		rush_exponent;
 };
 
 extern volatile struct params *params;

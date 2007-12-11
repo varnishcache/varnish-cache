@@ -295,6 +295,17 @@ tweak_overflow_max(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_rush_exponent(struct cli *cli, struct parspec *par, const char *arg)
+{
+
+	(void)par;
+	tweak_generic_uint(cli, &master.rush_exponent, arg,
+	    2, UINT_MAX);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 {
 
@@ -642,6 +653,14 @@ static struct parspec parspec[] = {
 		"thread_pool_max parameter.",
 		EXPERIMENTAL,
 		"100", "%" },
+	{ "rush_exponent", tweak_rush_exponent,
+		"How many parked request we start for each completed "
+		"request on the object.\n"
+		"NB: Even with the implict delay of delivery, "
+		"this parameter controls an exponential increase in "
+		"number of worker threads.  ",
+		EXPERIMENTAL,
+		"3", "requests per request" },
 	{ "http_workspace", tweak_http_workspace,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
