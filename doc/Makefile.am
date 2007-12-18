@@ -1,11 +1,13 @@
 # $Id$
 
 CHANGELOGS = \
+	changes-1.1.2.html \
 	changes-1.1.1.html \
 	changes-1.1.html \
 	changes-1.0.4.html
 
 XML = \
+	changes-1.1.1-1.1.2.xml \
 	changes-1.1-1.1.1.xml \
 	changes-1.0.4-1.1.xml \
 	changes-1.0.3-1.0.4.xml \
