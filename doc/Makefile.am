@@ -1,14 +1,14 @@
 # $Id$
 
 CHANGELOGS = \
-	changes-1.0.4.html \
+	changes-1.1.1.html \
 	changes-1.1.html \
-	changes-1.1.1.html
+	changes-1.0.4.html
 
 XML = \
-	changes-1.0.3-1.0.4.xml \
-	changes-1.0.4-1.1.xml \
 	changes-1.1-1.1.1.xml \
+	changes-1.0.4-1.1.xml \
+	changes-1.0.3-1.0.4.xml \
 	${CHANGELOGS:.html=.xml}
 
 all: ${CHANGELOGS}
