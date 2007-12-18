@@ -299,7 +299,7 @@ mgt_cli_callback(struct ev *e, int what)
 
 	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
 
-	if (what & (EV_ERR | EV_HUP))
+	if (what & (EV_ERR | EV_HUP | EV_GONE))
 		goto cli_close;
 
 	/* grow the buffer if it is full */
