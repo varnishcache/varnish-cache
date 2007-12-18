@@ -240,7 +240,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		l -= (l % bs);
 	}
 
-	printf("storage_file: filename: %s size %ju MegaBytes.\n",
+	printf("storage_file: filename: %s size %ju MB.\n",
 	    sc->filename, l / (1024 * 1024));
 
 	sc->filesize = l;
