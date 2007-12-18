@@ -37,7 +37,12 @@
 
 #ifndef WITHOUT_ASSERTS
 
-/* panic string */
+/*
+ * The panic string is constructed in memory, then printed to stderr.  It
+ * can be extracted post-mortem from a core dump using gdb:
+ *
+ * (gdb) printf "%s", panicstr
+ */
 char panicstr[65536];
 static char *pstr = panicstr;
 
@@ -67,8 +72,9 @@ dump_storage(const struct storage *st)
 #define MAX_BYTES (4*16)
 #define show(ch) (((ch) > 31 && (ch) < 127) ? (ch) : '.')
 
+	fp("      %u {\n", st->len);
 	for (i = 0; i < MAX_BYTES && i < st->len; i += 16) {
-		fp("      ");
+		fp("        ");
 		for (j = 0; j < 16; ++j) {
 			if (i + j < st->len)
 				fp("%02x ", st->ptr[i + j]);
@@ -82,7 +88,8 @@ dump_storage(const struct storage *st)
 		fp("|\n");
 	}
 	if (st->len > MAX_BYTES)
-		fp("      [%u more]\n", st->len - MAX_BYTES);
+		fp("        [%u more]\n", st->len - MAX_BYTES);
+	fp("      },\n");
 
 #undef show
 #undef MAX_BYTES
@@ -115,6 +122,7 @@ dump_object(const struct object *o)
 	fp("  obj = %p {\n", o);
 	fp("    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
 	dump_http(o->http);
+	fp("    len = %u,\n", o->len);
 	fp("    store = {\n");
 	VTAILQ_FOREACH(st, &o->store, list) {
 		dump_storage(st);
