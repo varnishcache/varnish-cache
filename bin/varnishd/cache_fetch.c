@@ -365,6 +365,7 @@ Fetch(struct sess *sp)
 			STV_free(st);
 		}
 		VBE_ClosedFd(sp->wrk, vc);
+		sp->obj->len = 0;
 		return (-1);
 	}
 
