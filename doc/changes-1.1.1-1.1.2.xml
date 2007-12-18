@@ -91,6 +91,14 @@
       by Varnish when a problem arises while retrieving an object from
       the backend.</para>
     </change>
+
+    <change type="bug" ref="2285,2286">
+      <para>Some socket-related system calls may return unexpected
+      error codes when operating on a TCP connection that has been
+      shut down at the other end.  These error codes would previously
+      cause assertion failures, but are now recognized as harmless
+      conditions.</para>
+    </change>
   </subsystem>
 
   <subsystem>
