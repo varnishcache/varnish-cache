@@ -2,7 +2,7 @@ Source: varnish
 Section: web
 Priority: optional
 Maintainer: Stig Sandbeck Mathisen <ssm@fnord.no>
-Uploaders: Lars Bahner <bahner@debian.org>
+Uploaders: Lars Bahner <bahner@debian.org>, Fabio Tranchitella <kobold@debian.org>
 Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev, xsltproc
 XS-Vcs-Browser: http://varnish.projects.linpro.no/browser/trunk/varnish-cache
 XS-Vcs-Svn: http://varnish.projects.linpro.no/svn/trunk/varnish-cache
