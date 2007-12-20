@@ -1,13 +1,13 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
-Version: 1.1.1
-Release: 1%{?dist}
+Version: 1.1.2
+Release: 1
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: ncurses-devel 
+BuildRequires: ncurses-devel automake autoconf libtool libxslt
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires(pre): shadow-utils
@@ -50,7 +50,7 @@ Varnish is a high-performance HTTP accelerator
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-# ./autogen.sh
+./autogen.sh
 
 %build
 
@@ -121,7 +121,6 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_libdir}/libvarnish.so
 %{_libdir}/libvarnishapi.so
-%{_libdir}/libvarnishcompat.so
 %{_libdir}/libvcl.so
 %{_includedir}/varnish/shmlog.h
 %{_includedir}/varnish/shmlog_tags.h
@@ -165,15 +164,17 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Thu Dec 20 2007 Stig Sandbeck Mathisen <ssm@linpro.no> - 1.1.2-1
+- Bumped the version number to 1.1.2.
+- Addeed build dependency on libxslt
+
 * Mon Aug 20 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-1
 - Bumped the version number to 1.1.1.
+
 * Tue Aug 14 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.svn
 - Update for 1.1 branch
 - Added the devel package for the header files and static library files
 - Added a varnish user, and fixed the init script accordingly
-
-* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
-- Bump Version and Release for 1.1
 
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
 - Fixed initrc-script bug only visible on el4 (fixes #107)
