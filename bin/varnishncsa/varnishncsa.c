@@ -392,6 +392,10 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 		/* %{User-agent}i */
 		fprintf(fo, "\"%s\"\n",
 		    lp->df_User_agent ? lp->df_User_agent : "-");
+
+		/* hack: flush after every line if writing to file */
+		if (fo != stdout)
+			fflush(fo);
 	}
 
 	/* clean up */
