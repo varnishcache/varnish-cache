@@ -92,7 +92,16 @@ AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
-AC_CHECK_FUNCS([sendfile])
+
+# This one is tricky, there are multiple versions
+case $host in
+*-*-freebsd*|*-*-linux*)
+	AC_CHECK_FUNCS([sendfile])
+ 	;;
+*)
+	AC_MSG_WARN([won't look for sendfile() on $host])
+	;;
+esac
 
 # These functions are provided by libcompat on platforms where they
 # are not available
