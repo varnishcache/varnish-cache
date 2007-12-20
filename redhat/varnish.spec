@@ -50,7 +50,7 @@ Varnish is a high-performance HTTP accelerator
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-./autogen.sh
+# ./autogen.sh
 
 %build
 
