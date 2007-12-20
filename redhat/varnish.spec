@@ -1,13 +1,16 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.1.2
-Release: 1
+Release: 1%{?dist}
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: ncurses-devel automake autoconf libtool libxslt
+# The svn sources needs autoconf, automake and libtoolto generate a suitable
+# configure script. Release tarballs would not need this
+# BuildRequires: ncurses-devel automake autoconf libtool libxslt
+BuildRequires: ncurses-devel libxslt
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires(pre): shadow-utils
@@ -121,6 +124,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_libdir}/libvarnish.so
 %{_libdir}/libvarnishapi.so
+%{_libdir}/libvarnishcompat.so
 %{_libdir}/libvcl.so
 %{_includedir}/varnish/shmlog.h
 %{_includedir}/varnish/shmlog_tags.h
