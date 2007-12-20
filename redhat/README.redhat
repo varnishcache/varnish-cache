@@ -24,12 +24,14 @@ port to port 80, and your webserver to 8080 or similar.
 
 
 Builing a RPM package from SVN
-===============================
+==============================
 You may build the package from a svn checkout. Follow the instructions
 at http://varnish.projects.linpro.no/wiki/Repository to get the
 source. Then enter the trunk directory and edit
 varnish-cache/redhat/varnish.spec. At least bump the version and/or
-release numbers. Then use something like this to build the rpm package:
+release numbers, and uncomment the autogen call. You need to install
+the autoconf and automake packages. Then use something like this to
+build the rpm package:
 
 #!/bin/bash
 VERSION=$( awk ' /^Version:/ { print $2 } ' varnish-cache/redhat/varnish.spec )
@@ -41,6 +43,10 @@ tar $(
             done
 ) -cvzf varnish-$VERSION.tar.gz varnish-$VERSION/*
 rm varnish-$VERSION
-rpmbuild -tb varnish-$VERSION.tar.gz
+rpmbuild -ts varnish-$VERSION.tar.gz
+# End of script
 
+This builds a source rpm. Then you can, for example on a RHEL4 system,
+do something like this:
 
+rpmbuild --define "dist el4" --rebuild /path/to/varnish-1.1.2.src.rpm
