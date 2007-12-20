@@ -1,13 +1,13 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
-Version: 1.1.1
-Release: 200708142344%{?dist}
+Version: 1.1.2
+Release: 1
 License: BSD-like
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: ncurses-devel automake autoconf libtool
+BuildRequires: ncurses-devel automake autoconf libtool libxslt
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires(pre): shadow-utils
@@ -164,8 +164,13 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Thu Dec 20 2007 Stig Sandbeck Mathisen <ssm@linpro.no> - 1.1.2-1
+- Bumped the version number to 1.1.2.
+- Addeed build dependency on libxslt
+
 * Mon Aug 20 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-1
 - Bumped the version number to 1.1.1.
+
 * Tue Aug 14 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.svn
 - Update for 1.1 branch
 - Added the devel package for the header files and static library files
