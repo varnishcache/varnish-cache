@@ -1,15 +1,15 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 1.1.2
-Release: 1%{?dist}
-License: BSD-like
+Release: 5%{?dist}
+License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtoolto generate a suitable
 # configure script. Release tarballs would not need this
-# BuildRequires: ncurses-devel automake autoconf libtool libxslt
+#BuildRequires: automake autoconf libtool
 BuildRequires: ncurses-devel libxslt
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
@@ -54,6 +54,9 @@ Varnish is a high-performance HTTP accelerator
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
 # ./autogen.sh
+
+mkdir examples
+cp etc/default.vcl etc/zope-plone.vcl examples
 
 %build
 
@@ -107,7 +110,8 @@ rm -rf %{buildroot}
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
 %{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat redhat/default.vcl ChangeLog 
+%doc INSTALL LICENSE README redhat/README.redhat ChangeLog 
+%doc examples
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/sysconfig/varnish
@@ -168,9 +172,26 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Sat Dec 29 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.2-5
+- Added missing configuration examples
+- Corrected the license to "BSD"
+
+* Fri Dec 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.2-4
+- Build for fedora update
+
+* Fri Dec 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.2-2
+- Added missing changelog items
+
 * Thu Dec 20 2007 Stig Sandbeck Mathisen <ssm@linpro.no> - 1.1.2-1
 - Bumped the version number to 1.1.2.
 - Addeed build dependency on libxslt
+
+* Wed Sep 08 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-3
+- Added a patch, changeset 1913 from svn trunk. This makes varnish
+  more stable under specific loads. 
+
+* Tue Sep 06 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-2
+- Removed autogen call (only diff from relase tarball)
 
 * Mon Aug 20 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-1
 - Bumped the version number to 1.1.1.
@@ -179,6 +200,9 @@ fi
 - Update for 1.1 branch
 - Added the devel package for the header files and static library files
 - Added a varnish user, and fixed the init script accordingly
+
+* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
+- Bump Version and Release for 1.1
 
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
 - Fixed initrc-script bug only visible on el4 (fixes #107)
