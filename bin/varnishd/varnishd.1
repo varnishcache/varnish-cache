@@ -43,6 +43,7 @@
 .Op Fl f Ar config
 .Op Fl g Ar group
 .Op Fl h Ar type Ns Op , Ns Ar options
+.Op Fl l Ar shmlogsize
 .Op Fl n Ar name
 .Op Fl P Ar file
 .Op Fl p Ar param Ns = Ns Ar value
@@ -131,6 +132,11 @@ Specifies the hash algorithm.
 See
 .Sx Hash Algorithms
 for a list of supported algorithms.
+.It Fl l Ar shmlogsize
+Specify size of shmlog file.
+Scaling suffixes like 'k', 'm' can be used up to (e)tabytes.
+Default is 80 Megabytes.
+Specifying less than 8 Megabytes is unwise.
 .It Fl n
 Specify a name for this instance.
 Amonst other things, this name is used to construct the name of the
