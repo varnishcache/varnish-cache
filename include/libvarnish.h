@@ -45,6 +45,9 @@ char **ParseArgv(const char *s, int comment);
 uint32_t crc32(uint32_t crc, const void *p1, unsigned l);
 uint32_t crc32_l(const void *p1, unsigned l);
 
+/* from libvarnish/num.c */
+const char *str2bytes(const char *p, uintmax_t *r);
+
 /* from libvarnish/time.c */
 void TIM_format(double t, char *p);
 time_t TIM_parse(const char *p);
