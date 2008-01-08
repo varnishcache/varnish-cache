@@ -97,15 +97,18 @@ AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
 
-# This one is tricky, there are multiple versions
-case $host in
-*-*-freebsd*|*-*-linux*)
-	AC_CHECK_FUNCS([sendfile])
- 	;;
-*)
-	AC_MSG_WARN([won't look for sendfile() on $host])
-	;;
-esac
+# Don't look for sendfile at all, none of them work
+# anyway. (don't tell when done with passed mem-range)
+#
+## This one is tricky, there are multiple versions
+#case $host in
+#*-*-freebsd*|*-*-linux*)
+#	AC_CHECK_FUNCS([sendfile])
+# 	;;
+#*)
+#	AC_MSG_WARN([won't look for sendfile() on $host])
+#	;;
+#esac
 
 # These functions are provided by libcompat on platforms where they
 # are not available
