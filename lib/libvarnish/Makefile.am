@@ -12,6 +12,7 @@ libvarnish_la_SOURCES = \
 	cli_common.c \
 	crc32.c \
 	flopen.c \
+	num.c \
 	time.c \
 	version.c \
 	vpf.c \
