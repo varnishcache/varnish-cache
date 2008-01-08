@@ -466,7 +466,7 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	q = str2bytes(l_arg, &l_size);
+	q = str2bytes(l_arg, &l_size, 0);
 	if (q != NULL) {
 		fprintf(stderr, "Parameter error:\n");
 		fprintf(stderr, "\t-l ...:  %s\n", q);

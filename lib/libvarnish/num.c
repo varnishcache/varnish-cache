@@ -37,7 +37,7 @@
 #include <libvarnish.h>
 
 const char *
-str2bytes(const char *p, uintmax_t *r)
+str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
 	int i;
 	double l;
@@ -62,6 +62,13 @@ str2bytes(const char *p, uintmax_t *r)
 		case 't': l *= ((uintmax_t)1 << 40); break;
 		case 'p': l *= ((uintmax_t)1 << 50); break;
 		case 'e': l *= ((uintmax_t)1 << 60); break;
+		case '%':
+			/* Percentage of 'rel' arg */
+			if (rel != 0) {
+				l *= 1e-2 * rel;
+				break;
+			}
+			/*FALLTHROUGH*/
 		default:
 			return ("Unknown scaling suffix [bkmgtpe] allowed");
 		}
