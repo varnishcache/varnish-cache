@@ -551,6 +551,11 @@ vcc_Parse(struct tokenlist *tl)
 		case T_BACKEND_ROUND_ROBIN:
 			vcc_ParseBalancedBackend(tl);
 			break;
+		case CSRC:
+			Fc(tl, 0, "%.*s\n",
+			    tl->t->e - (tl->t->b + 4), tl->t->b + 2);
+			vcc_NextToken(tl);
+			break;
 		case EOI:
 			break;
 		default:
