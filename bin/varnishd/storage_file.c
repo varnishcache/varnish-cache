@@ -118,19 +118,37 @@ struct smf_sc {
 
 /*--------------------------------------------------------------------*/
 
-static void
-smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
+static uintmax_t
+smf_fsspace(int fd, unsigned *bs)
 {
 #if defined(HAVE_SYS_STATVFS_H)
 	struct statvfs fsst;
+
+	AZ(fstatvfs(fd, &fsst));
 #elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
+
+	AZ(fstatfs(sc->fd, &fsst));
 #else
 #error no struct statfs / struct statvfs
 #endif
+
+	/* We use units of the larger of filesystem blocksize and pagesize */
+	if (*bs < fsst.f_bsize)
+		*bs = fsst.f_bsize;
+	xxxassert(*bs % fsst.f_bsize == 0);
+	return (fsst.f_bsize * fsst.f_bavail);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
+{
 	uintmax_t l, fssize;
 	unsigned bs;
-	char suff[2];
+	const char *q;
 	int i;
 	off_t o;
 	struct stat st;
@@ -139,86 +157,48 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	AZ(fstat(sc->fd, &st));
 	xxxassert(S_ISREG(st.st_mode));
 
-#if defined(HAVE_SYS_STATVFS_H)
-	AZ(fstatvfs(sc->fd, &fsst));
-#elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
-	AZ(fstatfs(sc->fd, &fsst));
-#else
-#error no struct statfs / struct statvfs
-#endif
-
-	/* We use units of the larger of filesystem blocksize and pagesize */
 	bs = sc->pagesize;
-	if (bs < fsst.f_bsize)
-		bs = fsst.f_bsize;
+	fssize = smf_fsspace(sc->fd, &bs);
 	xxxassert(bs % sc->pagesize == 0);
-	xxxassert(bs % fsst.f_bsize == 0);
-	fssize = fsst.f_bsize * fsst.f_bavail;
 
-	i = sscanf(size, "%ju%1s", &l, suff); /* can return -1, 0, 1 or 2 */
-
-	if (i == 0) {
-		fprintf(stderr,
-		    "Error: (-sfile) size \"%s\" not understood\n", size);
-		exit (2);
-	}
-
-	if (i >= 1 && l == 0) {
-		fprintf(stderr,
-		    "Error: (-sfile) zero size not permitted\n");
-		exit (2);
-	}
-
-	if (i == -1 && !newfile) /* Use the existing size of the file */
-		l = st.st_size;
-
-	/* We must have at least one block */
-	if (l < bs) {
-		if (i == -1) {
-			fprintf(stderr,
-			    "Info: (-sfile) default to 80%% size\n");
-			l = 80;
-			suff[0] = '%';
-			i = 2;
-		}
-
-		if (i == 2) {
-			if (suff[0] == 'k' || suff[0] == 'K')
-				l *= 1024UL;
-			else if (suff[0] == 'm' || suff[0] == 'M')
-				l *= 1024UL * 1024UL;
-			else if (suff[0] == 'g' || suff[0] == 'G')
-				l *= 1024UL * 1024UL * 1024UL;
-			else if (suff[0] == 't' || suff[0] == 'T')
-				l *= (uintmax_t)(1024UL * 1024UL) *
-				    (uintmax_t)(1024UL * 1024UL);
-			else if (suff[0] == '%') {
-				l *= fssize;
-				l /= 100;
-			}
-		}
-
+	if ((size == NULL || *size == '\0') && !newfile) {
 		/*
-		 * This trickery wouldn't be necessary if X/Open would
-		 * just add OFF_MAX to <limits.h>...
+		 * We have no size specification, but an existing file,
+		 * use it's existing size.
 		 */
-		o = l;
-		if (o != l || o < 0) {
-			do {
-				l >>= 1;
-				o = l;
-			} while (o != l || o < 0);
-			fprintf(stderr, "WARNING: storage file size reduced"
-			    " to %ju due to system limitations\n", l);
-		}
+		l = st.st_size;
+	} else {
+		q = str2bytes(size, &l, fssize);
 
-		if (l < st.st_size) {
-			AZ(ftruncate(sc->fd, l));
-		} else if (l - st.st_size > fssize) {
-			l = fssize * 80 / 100;
-			fprintf(stderr, "WARNING: storage file size reduced"
-			    " to %ju (80%% of available disk space)\n", l);
+		if (q != NULL) {
+			fprintf(stderr,
+			    "Error: (-sfile) size \"%s\": %s \n", size, q);
+			exit (2);
 		}
+	}
+
+	/*
+	 * This trickery wouldn't be necessary if X/Open would
+	 * just add OFF_MAX to <limits.h>...
+	 */
+	i = 0;
+	while(1) {
+		o = l;
+		if (o == l && o > 0) 
+			break;
+		l >>= 1;
+		i++;
+	}
+	if (i)
+		fprintf(stderr, "WARNING: storage file size reduced"
+		    " to %ju due to system limitations\n", l);
+
+	if (l < st.st_size) {
+		AZ(ftruncate(sc->fd, l));
+	} else if (l - st.st_size > fssize) {
+		l = fssize * 80 / 100;
+		fprintf(stderr, "WARNING: storage file size reduced"
+		    " to %ju (80%% of available disk space)\n", l);
 	}
 
 	/* round down to multiple of filesystem blocksize or pagesize */
