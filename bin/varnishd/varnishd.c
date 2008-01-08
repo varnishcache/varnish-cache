@@ -124,57 +124,42 @@ setup_hash(const char *s_arg)
 static void
 usage(void)
 {
+#define FMT "    %-28s # %s\n"
+
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, "    %-28s # %s\n", "-a address:port",
-	    "HTTP listen address and port");
-	fprintf(stderr, "    %-28s # %s\n", "-b address:port",
-	    "backend address and port");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "   -b <hostname_or_IP>");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "   -b '<hostname_or_IP>:<port_or_service>'");
-	fprintf(stderr, "    %-28s # %s\n", "-d", "debug");
-	fprintf(stderr, "    %-28s # %s\n", "-f file", "VCL script");
-	fprintf(stderr, "    %-28s # %s\n", "-F", "Run in foreground");
-	fprintf(stderr, "    %-28s # %s\n",
-	    "-h kind[,hashoptions]", "Hash specification");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -h simple_list");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -h classic  [default]");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -h classic,<buckets>");
-	fprintf(stderr, "    %-28s # %s\n", "-n dir",
-	    "varnishd working directory");
-	fprintf(stderr, "    %-28s # %s\n", "-P file", "PID file");
-	fprintf(stderr, "    %-28s # %s\n", "-p param=value",
-	    "set parameter");
-	fprintf(stderr, "    %-28s # %s\n",
+	fprintf(stderr, FMT, "-a address:port", "HTTP listen address and port");
+	fprintf(stderr, FMT, "-b address:port", "backend address and port");
+	fprintf(stderr, FMT, "", "   -b <hostname_or_IP>");
+	fprintf(stderr, FMT, "", "   -b '<hostname_or_IP>:<port_or_service>'");
+	fprintf(stderr, FMT, "-d", "debug");
+	fprintf(stderr, FMT, "-f file", "VCL script");
+	fprintf(stderr, FMT, "-F", "Run in foreground");
+	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
+	fprintf(stderr, FMT, "", "  -h simple_list");
+	fprintf(stderr, FMT, "", "  -h classic  [default]");
+	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
+	fprintf(stderr, FMT, "-l bytesize", "Size of shared memory log");
+	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
+	fprintf(stderr, FMT, "-P file", "PID file");
+	fprintf(stderr, FMT, "-p param=value", "set parameter");
+	fprintf(stderr, FMT,
 	    "-s kind[,storageoptions]", "Backend storage specification");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -s malloc");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -s file  [default: use /tmp]");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -s file,<dir_or_file>");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -s file,<dir_or_file>,<size>");
-	fprintf(stderr, "    %-28s # %s\n", "-t", "Default TTL");
-	fprintf(stderr, "    %-28s # %s\n", "-T address:port",
+	fprintf(stderr, FMT, "", "  -s malloc");
+	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
+	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
+	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
+	fprintf(stderr, FMT, "-t", "Default TTL");
+	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
-	fprintf(stderr, "    %-28s # %s\n", "-V", "version");
-	fprintf(stderr, "    %-28s # %s\n", "-w int[,int[,int]]",
-	    "Number of worker threads");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -w <fixed_count>");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -w min,max");
-	fprintf(stderr, "    %-28s # %s\n", "",
-	    "  -w min,max,timeout [default: -w1,1000,120]");
+	fprintf(stderr, FMT, "-V", "version");
+	fprintf(stderr, FMT, "-w int[,int[,int]]", "Number of worker threads");
+	fprintf(stderr, FMT, "", "  -w <fixed_count>");
+	fprintf(stderr, FMT, "", "  -w min,max");
+	fprintf(stderr, FMT, "", "  -w min,max,timeout [default: -w1,1000,120]");
+#undef FMT
 #if 0
 	-c clusterid@cluster_controller
 	-m memory_limit
-	-l logfile,logsize
 	-u uid
 	-a CLI_port
 #endif
@@ -372,6 +357,9 @@ main(int argc, char *argv[])
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
+	const char *l_arg = "80m";
+	uintmax_t l_size;
+	const char *q;
 	int f_fd = -1;
 	const char *h_arg = "classic";
 	const char *n_arg = NULL;
@@ -402,7 +390,7 @@ main(int argc, char *argv[])
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:Fg:h:n:P:p:s:T:t:u:Vw:")) != -1)
+	while ((o = getopt(argc, argv, "a:b:Cdf:Fg:h:l:n:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -428,6 +416,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			h_arg = optarg;
+			break;
+		case 'l':
+			l_arg = optarg;
 			break;
 		case 'n':
 			n_arg = optarg;
@@ -473,6 +464,13 @@ main(int argc, char *argv[])
 	if (argc != 0) {
 		fprintf(stderr, "Too many arguments\n");
 		usage();
+	}
+
+	q = str2bytes(l_arg, &l_size);
+	if (q != NULL) {
+		fprintf(stderr, "Parameter error:\n");
+		fprintf(stderr, "\t-l ...:  %s\n", q);
+		exit (1);
 	}
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
@@ -542,7 +540,7 @@ main(int argc, char *argv[])
 
 	setup_hash(h_arg);
 
-	VSL_MgtInit(SHMLOG_FILENAME, 8*1024*1024);
+	VSL_MgtInit(SHMLOG_FILENAME, l_size);
 
 	if (d_flag == 1)
 		DebugStunt();
