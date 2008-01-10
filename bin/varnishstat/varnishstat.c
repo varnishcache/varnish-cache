@@ -129,9 +129,11 @@ do_curses(struct varnish_stats *VSL_stats, int delay)
 		switch ((ch = getch())) {
 		case ERR:
 			break;
+#ifdef KEY_RESIZE
 		case KEY_RESIZE:
 			erase();
 			break;
+#endif
 		case '\014': /* Ctrl-L */
 		case '\024': /* Ctrl-T */
 			redrawwin(stdscr);
