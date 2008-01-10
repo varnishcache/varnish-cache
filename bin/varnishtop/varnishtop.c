@@ -216,9 +216,11 @@ do_curses(struct VSL_data *vd)
 		switch ((ch = getch())) {
 		case ERR:
 			break;
+#ifdef KEY_RESIZE
 		case KEY_RESIZE:
 			erase();
 			break;
+#endif
 		case '\014': /* Ctrl-L */
 		case '\024': /* Ctrl-T */
 			redrawwin(stdscr);
