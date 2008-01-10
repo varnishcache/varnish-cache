@@ -58,8 +58,12 @@ enum {
 	HTTP_HDR_MAX = 32		/* XXX: should be #defined */
 };
 
-/* Note: intentionally not IOV_MAX */
-#define MAX_IOVS	(HTTP_HDR_MAX * 2)
+/* Note: intentionally not IOV_MAX unless it has to be */
+#if (IOV_MAX < (HTTP_HDR_MAX * 2))
+#  define MAX_IOVS	IOV_MAX
+#else
+#  define MAX_IOVS	(HTTP_HDR_MAX * 2)
+#endif
 
 struct cli;
 struct vsb;
