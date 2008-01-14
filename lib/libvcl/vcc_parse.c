@@ -184,6 +184,23 @@ vcc_DoubleVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 void
+vcc_RTimeVal(struct tokenlist *tl)
+{
+	double v, sc;
+	int sign = 1;
+
+	if (tl->t->tok == '-') {
+		sign *= -1;
+		vcc_NextToken(tl);
+	}
+	v = vcc_DoubleVal(tl);
+	ERRCHK(tl);
+	ExpectErr(tl, ID);
+	sc = TimeUnit(tl);
+	Fb(tl, 0, "(%d * %g * %g)", sign, v, sc);
+}
+
+void
 vcc_TimeVal(struct tokenlist *tl)
 {
 	double v, sc;

@@ -156,6 +156,7 @@ parse_set(struct tokenlist *tl)
 	case SIZE:
 	case RATE:
 	case TIME:
+	case RTIME:
 	case FLOAT:
 		if (tl->t->tok != '=')
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
@@ -171,6 +172,8 @@ parse_set(struct tokenlist *tl)
 		case '=':
 			if (vp->fmt == TIME)
 				vcc_TimeVal(tl);
+			else if (vp->fmt == RTIME)
+				vcc_RTimeVal(tl);
 			else if (vp->fmt == SIZE)
 				vcc_SizeVal(tl);
 			else if (vp->fmt == RATE)

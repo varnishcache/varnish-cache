@@ -95,6 +95,7 @@ enum var_type {
 	SIZE,
 	RATE,
 	TIME,
+	RTIME,
 	STRING,
 	IP,
 	HOSTNAME,
@@ -174,6 +175,7 @@ extern struct var vcc_vars[];
 /* vcc_parse.c */
 void vcc_Parse(struct tokenlist *tl);
 void vcc_RateVal(struct tokenlist *tl);
+void vcc_RTimeVal(struct tokenlist *tl);
 void vcc_TimeVal(struct tokenlist *tl);
 void vcc_SizeVal(struct tokenlist *tl);
 unsigned vcc_UintVal(struct tokenlist *tl);

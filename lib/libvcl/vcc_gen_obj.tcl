@@ -157,6 +157,11 @@ set spobj {
 		{                         hit fetch         discard timeout}
 		"const struct sess *"
 	}
+	{ obj.prefetch
+		RW RTIME
+		{ fetch prefetch }
+		"const struct sess *"
+	}
 	{ obj.lastuse
 		RO TIME
 		{                         hit fetch deliver discard timeout}
@@ -205,6 +210,7 @@ set tt(STRING)		"const char *"
 set tt(BOOL)		"unsigned"
 set tt(BACKEND)		"struct backend *"
 set tt(TIME)		"double"
+set tt(RTIME)		"double"
 set tt(INT)		"int"
 set tt(HDR_RESP)	"const char *"
 set tt(HDR_OBJ)		"const char *"

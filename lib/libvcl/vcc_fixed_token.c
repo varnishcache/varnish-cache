@@ -374,6 +374,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	vcl_func_f	*hit_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*fetch_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*deliver_func;\n");
+	vsb_cat(sb, "	vcl_func_f	*prefetch_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*timeout_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*discard_func;\n");
 	vsb_cat(sb, "};\n");
@@ -551,6 +552,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_cacheable(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(const struct sess *, double);\n");
+	vsb_cat(sb, "double VRT_r_obj_prefetch(const struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_prefetch(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_lastuse(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_proto(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_proto(const struct sess *, const char *, ...);\n");
