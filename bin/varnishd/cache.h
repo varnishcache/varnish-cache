@@ -232,7 +232,13 @@ struct object {
 	struct ws		ws_o[1];
 	unsigned char		*vary;
 
-	unsigned		heap_idx;
+	double			timer_when;
+	enum {
+	    TIMER_TTL,
+	    TIMER_PREFETCH
+	}			timer_what;
+	unsigned		timer_idx;
+
 	unsigned		ban_seq;
 
 	unsigned		pass;
