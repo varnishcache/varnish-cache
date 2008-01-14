@@ -40,6 +40,8 @@ unsigned VRT_r_obj_cacheable(const struct sess *);
 void VRT_l_obj_cacheable(const struct sess *, unsigned);
 double VRT_r_obj_ttl(const struct sess *);
 void VRT_l_obj_ttl(const struct sess *, double);
+double VRT_r_obj_prefetch(const struct sess *);
+void VRT_l_obj_prefetch(const struct sess *, double);
 double VRT_r_obj_lastuse(const struct sess *);
 const char * VRT_r_resp_proto(const struct sess *);
 void VRT_l_resp_proto(const struct sess *, const char *, ...);

@@ -182,6 +182,13 @@ struct var vcc_vars[] = {
 	    0,
 	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
+	{ "obj.prefetch", RTIME, 12,
+	    "VRT_r_obj_prefetch(sp)",
+	    "VRT_l_obj_prefetch(sp, ",
+	    V_RW,
+	    0,
+	    VCL_MET_FETCH | VCL_MET_PREFETCH
+	},
 	{ "obj.lastuse", TIME, 11,
 	    "VRT_r_obj_lastuse(sp)",
 	    NULL,
