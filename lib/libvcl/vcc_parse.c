@@ -189,6 +189,7 @@ vcc_TimeVal(struct tokenlist *tl)
 	double v, sc;
 
 	v = vcc_DoubleVal(tl);
+	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = TimeUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
@@ -200,6 +201,7 @@ vcc_SizeVal(struct tokenlist *tl)
 	double v, sc;
 
 	v = vcc_DoubleVal(tl);
+	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = SizeUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
@@ -211,6 +213,7 @@ vcc_RateVal(struct tokenlist *tl)
 	double v, sc;
 
 	v = vcc_DoubleVal(tl);
+	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = RateUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
