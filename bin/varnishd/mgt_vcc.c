@@ -128,6 +128,7 @@ static const char *default_vcl =
     "    if (obj.http.Set-Cookie) {\n"
     "        pass;\n"
     "    }\n"
+    "	 set obj.prefetch =  -30s;"
     "    insert;\n"
     "}\n"
     "sub vcl_deliver {\n"
@@ -135,6 +136,9 @@ static const char *default_vcl =
     "}\n"
     "sub vcl_discard {\n"
     "    discard;\n"
+    "}\n"
+    "sub vcl_prefetch {\n"
+    "    fetch;\n"
     "}\n"
     "sub vcl_timeout {\n"
     "    discard;\n"
@@ -278,7 +282,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	/* Next, try to load the object into the management process */
 	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
 		vsb_printf(sb,
-		    "%s(): failed to load compiled VCL program: %s",
+		    "%s(): failed to load compiled VCL program:\n  %s",
 		    __func__, dlerror());
 		unlink(of);
 		free(of);
@@ -419,7 +423,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 	if (C_flag)
 		return (0);
 	if (vf == NULL) {
-		fprintf(stderr, "VCL compilation failed");
+		fprintf(stderr, "\nVCL compilation failed\n");
 		return (1);
 	}
 	vp = mgt_vcc_add("boot", vf);
