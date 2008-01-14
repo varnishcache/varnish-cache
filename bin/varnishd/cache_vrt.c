@@ -306,6 +306,27 @@ VRT_r_obj_ttl(const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_l_obj_prefetch(const struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	sp->obj->prefetch = a;
+	if (a > 0.0)
+		sp->obj->prefetch += sp->t_req;
+}
+
+double
+VRT_r_obj_prefetch(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->prefetch - sp->t_req);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define VOBJ(type,onm,field)						\
 void									\
 VRT_l_obj_##onm(const struct sess *sp, type a)				\
