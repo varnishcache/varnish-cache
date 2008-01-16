@@ -522,8 +522,8 @@ http_SetH(struct http *to, unsigned n, const char *fm)
 
 	assert(n < HTTP_HDR_MAX);
 	AN(fm);
-	to->hd[n].b = (void*)(uintptr_t)fm;
-	to->hd[n].e = (void*)(uintptr_t)strchr(fm, '\0');
+	to->hd[n].b = TRUST_ME(fm);
+	to->hd[n].e = strchr(to->hd[n].b, '\0');
 	to->hdf[n] = 0;
 }
 
