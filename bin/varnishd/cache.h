@@ -221,6 +221,11 @@ struct storage {
 
 /* -------------------------------------------------------------------*/
 
+enum e_objtimer {
+	TIMER_TTL,
+	TIMER_PREFETCH
+};
+
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
@@ -233,10 +238,7 @@ struct object {
 	unsigned char		*vary;
 
 	double			timer_when;
-	enum {
-	    TIMER_TTL,
-	    TIMER_PREFETCH
-	}			timer_what;
+	enum e_objtimer		timer_what;
 	unsigned		timer_idx;
 
 	unsigned		ban_seq;
