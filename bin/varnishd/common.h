@@ -44,3 +44,5 @@ extern struct varnish_stats *VSL_stats;
 void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
+
+#define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))

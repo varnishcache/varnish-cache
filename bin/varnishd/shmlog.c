@@ -77,7 +77,7 @@ vsl_wrap(void)
 }
 
 static void
-vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, int id)
+vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 {
 
 	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
@@ -142,8 +142,8 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		t.b = (void*)(uintptr_t)fmt;
-		t.e = strchr(fmt, '\0');
+		t.b = TRUST_ME(fmt);
+		t.e = strchr(t.b, '\0');
 		VSLR(tag, id, t);
 	} else {
 		LOCKSHM(&vsl_mtx);
@@ -239,8 +239,8 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		t.b = (void*)(uintptr_t)fmt;
-		t.e = strchr(fmt, '\0');
+		t.b = TRUST_ME(fmt);
+		t.e = strchr(t.b, '\0');
 		WSLR(w, tag, id, t);
 	} else {
 		assert(w->wlp < w->wle);
