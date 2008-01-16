@@ -64,7 +64,7 @@ static unsigned char vctyptab[256] = {
 	[' ']	=	C_SP,
 };
 
-#define vctyp(x, y)	(vctyptab[(int)(x)] & (y))
+#define vctyp(x, y)	(vctyptab[(unsigned)(x) & 0xff] & (y))
 
 #define LOGMTX2(ax, bx, cx) 	[bx] = SLT_##ax##cx
 
