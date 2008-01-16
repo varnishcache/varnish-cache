@@ -230,7 +230,8 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	hdr++;
 	u = http_findhdr(hp, l - 1, hdr);
 	if (u == 0) {
-		*ptr = NULL;
+		if (ptr != NULL)
+			*ptr = NULL;
 		return (0);
 	}
 	if (ptr != NULL) {
