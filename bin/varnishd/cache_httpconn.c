@@ -86,7 +86,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd)
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->fd = fd;
-	WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
+	(void)WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
 	htc->rxbuf.b = ws->f;
 	htc->rxbuf.e = ws->f;
 	htc->pipeline.b = NULL;
@@ -106,7 +106,7 @@ HTC_Reinit(struct http_conn *htc)
 	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
+	(void)WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
 	htc->rxbuf.b = htc->ws->f;
 	htc->rxbuf.e = htc->ws->f;
 	if (htc->pipeline.b != NULL) {
