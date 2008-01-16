@@ -246,6 +246,49 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	return (1);
 }
 
+/*--------------------------------------------------------------------
+ * Fetch any body attached to the incoming request, and either write it
+ * to the backend (if we pass) or discard it (anything else).
+ * This is mainly a separate function to isolate the stack buffer and
+ * to contain the complexity when we start handling chunked encoding.
+ */
+
+int
+FetchReqBody(struct sess *sp)
+{
+	unsigned long content_length;
+	char buf[8192];
+	char *ptr, *endp;
+	int read;
+
+	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
+
+		content_length = strtoul(ptr, &endp, 10);
+		/* XXX should check result of conversion */
+		while (content_length) {
+			if (content_length > sizeof buf)
+				read = sizeof buf;
+			else
+				read = content_length;
+			read = HTC_Read(sp->htc, buf, read);
+			if (read < 0)
+				return (1);
+			content_length -= read;
+			if (!sp->sendbody)
+				continue;
+			WRK_Write(sp->wrk, buf, read);
+			if (WRK_Flush(sp->wrk))
+				return (2);
+		}
+	}
+	if (http_GetHdr(sp->http, H_Transfer_Encoding, NULL)) {
+		/* XXX: Handle chunked encoding. */
+		WSL(sp->wrk, SLT_Debug, sp->fd, "Transfer-Encoding in request");
+		return (1);
+	}
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -261,7 +304,6 @@ Fetch(struct sess *sp)
 	int mklen, is_head;
 	struct http_conn htc[1];
 	int i;
-	char *ptr, *endp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -289,31 +331,13 @@ Fetch(struct sess *sp)
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
 
-	/*
-	 * If a POST request was passed to fetch, we must send any
-	 * pipelined bytes to the backend as well
-	 */
-	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
-		unsigned long content_length;
-		char buf[8192];
-		int read;
-
-		content_length = strtoul(ptr, &endp, 10);
-		/* XXX should check result of conversion */
-		while (content_length) {
-			if (content_length > sizeof buf)
-				read = sizeof buf;
-			else
-				read = content_length;
-			read = HTC_Read(sp->htc, buf, read);
-			WRK_Write(w, buf, read);
-			if (WRK_Flush(w)) {
-				VBE_UpdateHealth(sp, vc, -1);
-				VBE_ClosedFd(sp->wrk, vc);
-				return (__LINE__);
-			}
-			content_length -= read;
-		}
+	/* Deal with any message-body the request might have */
+	i = FetchReqBody(sp);
+	if (i > 0) {
+		if (i > 1)
+			VBE_UpdateHealth(sp, vc, -1);
+		VBE_ClosedFd(sp->wrk, vc);
+		return (__LINE__);
 	}
 
 	if (WRK_Flush(w)) {
