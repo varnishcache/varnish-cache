@@ -233,10 +233,12 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 		*ptr = NULL;
 		return (0);
 	}
-	p = hp->hd[u].b + l;
-	while (isspace(*p))
-		p++;
-	*ptr = p;
+	if (ptr != NULL) {
+		p = hp->hd[u].b + l;
+		while (isspace(*p))
+			p++;
+		*ptr = p;
+	}
 	return (1);
 }
 
