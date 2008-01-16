@@ -451,6 +451,8 @@ cnt_hit(struct sess *sp)
 	VCL_hit_method(sp);
 
 	if (sp->handling == VCL_RET_DELIVER) {
+		/* Dispose of any body part of the request */
+		FetchReqBody(sp);
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -682,6 +684,7 @@ cnt_pass(struct sess *sp)
 	sp->obj = sp->wrk->nobj;
 	sp->wrk->nobj = NULL;
 	sp->obj->busy = 1;
+	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
 }
@@ -760,6 +763,7 @@ cnt_recv(struct sess *sp)
 	VCL_recv_method(sp);
 
 	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
+	sp->sendbody = 0;
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */

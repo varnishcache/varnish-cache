@@ -329,6 +329,7 @@ struct sess {
 	enum step		step;
 	unsigned		cur_method;
 	unsigned 		handling;
+	unsigned char		sendbody;
 	unsigned char		wantbody;
 	int			err_code;
 	const char		*err_reason;
@@ -469,6 +470,7 @@ int EXP_NukeOne(struct sess *sp);
 
 /* cache_fetch.c */
 int Fetch(struct sess *sp);
+int FetchReqBody(struct sess *sp);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
