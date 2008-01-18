@@ -98,8 +98,8 @@ which can later be used to match client addresses:
 .Bd -literal -offset 4n
 acl local {
     "localhost";         /* myself */
-    "10.0.0.1"/8;       /* and everyone on the local network */
-    ! "10.0.0.23";      /* except for the dialin router */
+    "192.0.2.0"/24;      /* and everyone on the local network */
+    ! "192.0.2.23";      /* except for the dialin router */
 }
 .Ed
 .Pp
@@ -616,7 +616,7 @@ for object invalidation:
 .Bd -literal -offset 4n
 acl purge {
         "localhost";
-        "10.0.0.1"/8;
+        "192.0.2.1"/24;
 }
 
 sub vcl_recv {
