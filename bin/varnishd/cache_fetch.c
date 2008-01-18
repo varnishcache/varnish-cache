@@ -271,7 +271,7 @@ FetchReqBody(struct sess *sp)
 			else
 				read = content_length;
 			read = HTC_Read(sp->htc, buf, read);
-			if (read < 0)
+			if (read <= 0)
 				return (1);
 			content_length -= read;
 			if (!sp->sendbody)
