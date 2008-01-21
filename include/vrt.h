@@ -40,11 +40,15 @@ struct backend;
 struct VCL_conf;
 struct sockaddr;
 
+struct vrt_backend_host {
+	const char	*portname;
+	const char	*hostname;
+};
+
 struct vrt_simple_backend {
-	const char	*ident;
-	const char	*name;
-	const char	*port;
-	const char	*host;
+	const char			*ident;
+	const char			*name;
+	const struct vrt_backend_host	*host;
 };
 
 struct vrt_backend_entry {

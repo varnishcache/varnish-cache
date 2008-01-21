@@ -78,6 +78,7 @@ struct tokenlist {
 	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
+	int			nbackend_host;
 	int			nbackend;
 	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;

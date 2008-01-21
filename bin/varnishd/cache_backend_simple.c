@@ -395,11 +395,11 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	AN(t->name);
 	REPLACE(b->vcl_name, t->name);
 
-	AN(t->port);
-	REPLACE(bes->portname, t->port);
+	AN(t->host->portname);
+	REPLACE(bes->portname, t->host->portname);
 
-	AN(t->host);
-	REPLACE(bes->hostname, t->host);
+	AN(t->host->hostname);
+	REPLACE(bes->hostname, t->host->hostname);
 
 	/*
 	 * The VCL compiler already did a lookup, but we'll do another one
@@ -410,7 +410,7 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	UNLOCK(&b->mtx);
 	if (p != NULL)
 		printf("Warning: could not lookup backend %s (%s:%s): %s",
-		    t->name, t->host, t->port, p);
+		    b->vcl_name, bes->hostname, bes->portname, p);
 
 	*bp = b;
 }
