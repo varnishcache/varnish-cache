@@ -418,8 +418,8 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 		buf = NULL;
 		asprintf(&buf,
 		    "backend default {\n"
-		    "    set backend.host = \"%s\";\n"
-		    "    set backend.port = \"%s\";\n"
+		    "    .host = \"%s\";\n"
+		    "    .port = \"%s\";\n"
 		    "}\n", addr, port ? port : "http");
 		free(addr);
 		free(port);

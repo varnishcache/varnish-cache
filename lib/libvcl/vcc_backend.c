@@ -84,107 +84,162 @@ vcc_EmitBeIdent(struct tokenlist *tl, struct token *first, struct token *last)
 	Fc(tl, 0, ",\n");
 }
 
-void
-vcc_ParseSimpleBackend(struct tokenlist *tl)
+/*--------------------------------------------------------------------
+ * Parse and emit a backend specification.
+ *
+ * The syntax is the following:
+ *
+ * backend_spec:
+ *	name_of_backend		# by reference
+ *	'{' be_elements '}'	# by specification
+ *
+ * be_elements:
+ *	be_element
+ *	be_element be_elements
+ *
+ * be_element:
+ *	'.' name '=' value ';'
+ *
+ * The struct vrt_backend_host is emitted to Fh().
+ */
+
+static void
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 {
-	struct var *vp;
-	struct token *t_be = NULL;
+	struct token *t_field;
+	struct token *t_first;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
-	struct token *t_first;
 	const char *ep;
 
 	t_first = tl->t;
-	vcc_NextToken(tl);
-	ExpectErr(tl, ID);
-	t_be = tl->t;
-	vcc_AddDef(tl, tl->t, R_BACKEND);
+	*nbh = tl->nbackend_host++;
 
-	/* In the compiled vcl we use these macros to refer to backends */
-	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
-	    PF(tl->t), tl->nbackend);
-
-	vcc_NextToken(tl);
+	if (tl->t->tok == ID) {
+		ErrInternal(tl);	/* Reference by name */
+		return;
+	}
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
-	
-	while (1) {
-		if (tl->t->tok == '}')
-			break;
-		ExpectErr(tl, ID);
-		if (!vcc_IdIs(tl->t, "set")) {
-			vsb_printf(tl->sb,
-			    "Expected 'set', found ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_NextToken(tl);
-		ExpectErr(tl, VAR);
-		vp = vcc_FindVar(tl, tl->t, vcc_be_vars);
-		ERRCHK(tl);
-		assert(vp != NULL);
-		vcc_NextToken(tl);
-		ExpectErr(tl, '=');
-		vcc_NextToken(tl);
-		switch (vp->fmt) {
-		case HOSTNAME:
-			ExpectErr(tl, CSTR);
-			t_host = tl->t;
-			vcc_NextToken(tl);
-			break;
-		case PORTNAME:
-			ExpectErr(tl, CSTR);
-			t_port = tl->t;
-			vcc_NextToken(tl);
-			break;
-		default:
-			vsb_printf(tl->sb,
-			    "Assignments not possible for '%s'\n", vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
-	}
-	ExpectErr(tl, '}');
-	if (t_host == NULL) {
-		vsb_printf(tl->sb, "Backend '%.*s' has no hostname\n",
-		    PF(t_be));
+
+	Fh(tl, 0, "\nstatic const struct vrt_backend_host bh_%d = {\n",
+	    *nbh);
+
+	/* Check for old syntax */
+	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
+		vsb_printf(tl->sb,
+		    "NB: Backend Syntax has changed:\n"
+		    "Remove \"set\" and \"backend\" in front"
+		    " of backend fields.\n" );
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " at\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+
+	while (tl->t->tok == '.') {
+		vcc_NextToken(tl);
+
+		ExpectErr(tl, ID);		/* name */
+		t_field = tl->t;
+		vcc_NextToken(tl);
+
+		ExpectErr(tl, '=');
+		vcc_NextToken(tl);
+
+		if (vcc_IdIs(t_field, "host")) {
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_host = tl->t;
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "port")) {
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_port = tl->t;
+			vcc_NextToken(tl);
+		} else {
+			vsb_printf(tl->sb,
+			    "Unknown field in backend host specification: ");
+			vcc_ErrToken(tl, t_field);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, t_field);
+			return;
+		}
+
+		ExpectErr(tl, ';');
+		vcc_NextToken(tl);
+	}
+	if (t_host == NULL) {
+		vsb_printf(tl->sb, "Backend has no hostname\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	/* Check that the hostname makes sense */
 	ep = CheckHostPort(t_host->dec, "80");
 	if (ep != NULL) {
-		vsb_printf(tl->sb, "Backend '%.*s': %s\n", PF(t_be), ep);
+		vsb_printf(tl->sb, "Backend host '%.*s': %s\n", PF(t_host), ep);
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
+	Fh(tl, 0, "\t.hostname = ");
+	EncToken(tl->fh, t_host);
+	Fh(tl, 0, ",\n");
+
+	/* Check that the hostname makes sense */
 	if (t_port != NULL) {
 		ep = CheckHostPort(t_host->dec, t_port->dec);
 		if (ep != NULL) {
 			vsb_printf(tl->sb,
-			    "Backend '%.*s': %s\n", PF(t_be), ep);
+			    "Backend port '%.*s': %s\n", PF(t_port), ep);
 			vcc_ErrWhere(tl, t_port);
 			return;
 		}
+		Fh(tl, 0, "\t.portname = ");
+		EncToken(tl->fh, t_port);
+		Fh(tl, 0, ",\n");
 	}
 
+	ExpectErr(tl, '}');
+	Fh(tl, 0, "};\n");
 	vcc_NextToken(tl);
-	Fc(tl, 0, "\nstatic const struct vrt_simple_backend sbe_%.*s = {\n",
-	    PF(t_be));
-	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
-	if (t_port != NULL)
-		Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
-	else
-		Fc(tl, 0, "\t.port = \"http\",\n");
-	Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
-	vcc_EmitBeIdent(tl, t_first, tl->t);
-	Fc(tl, 0, "};\n");
+}
+
+void
+vcc_ParseSimpleBackend(struct tokenlist *tl)
+{
+	struct token *t_be = NULL;
+	struct token *t_first;
+	int nbh;
+
+	t_first = tl->t;		/* T_BACKEND */
+
+	vcc_NextToken(tl);
+
+	ExpectErr(tl, ID);		/* name */
+	t_be = tl->t;
+	vcc_NextToken(tl);
+
+	vcc_ParseBackendHost(tl, &nbh);
+	ERRCHK(tl);
+
+	/* In the compiled vcl we use these macros to refer to backends */
+	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
+	    PF(t_be), tl->nbackend);
+
+	vcc_AddDef(tl, t_be, R_BACKEND);
+
 	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
 	    PF(t_be), PF(t_be));
 	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
+
+	Fc(tl, 0, "\nstatic const struct vrt_simple_backend sbe_%.*s = {\n",
+	    PF(t_be));
+	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+	Fc(tl, 0, "\t.host = &bh_%d,\n", nbh);
+	vcc_EmitBeIdent(tl, t_first, tl->t);
+	Fc(tl, 0, "};\n");
+
 	tl->nbackend++;
 }
 
