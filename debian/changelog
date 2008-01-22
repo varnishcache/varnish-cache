@@ -1,8 +1,10 @@
 varnish (1.1.2-1) unstable; urgency=low
 
   * Add debian revision
+  * Check if varnishlog is running before attempting reload from
+    logrotate postscript (Closes: #462029)
 
- -- Stig Sandbeck Mathisen <ssm@fnord.no>  Mon, 21 Jan 2008 20:00:54 +0100
+ -- Stig Sandbeck Mathisen <ssm@fnord.no>  Tue, 22 Jan 2008 09:35:05 +0100
 
 varnish (1.1.2) unstable; urgency=low
 
