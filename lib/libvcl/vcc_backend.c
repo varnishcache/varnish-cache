@@ -108,8 +108,8 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 {
 	struct token *t_field;
 	struct token *t_first;
-	struct token *t_host = NULL;
-	struct token *t_port = NULL;
+	struct token *t_host = NULL, *t_fhost = NULL;
+	struct token *t_port = NULL, *t_fport = NULL;
 	const char *ep;
 
 	t_first = tl->t;
@@ -150,11 +150,33 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 		if (vcc_IdIs(t_field, "host")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
+			if (t_host != NULL) {
+				vsb_printf(tl->sb,
+				    "Multiple .host fields in backend: ");
+				vcc_ErrToken(tl, t_field);
+				vsb_printf(tl->sb, " at\n");
+				vcc_ErrWhere(tl, t_fhost);
+				vsb_printf(tl->sb, " and\n");
+				vcc_ErrWhere(tl, t_field);
+				return;
+			}
+			t_fhost = t_field;
 			t_host = tl->t;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "port")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
+			if (t_port != NULL) {
+				vsb_printf(tl->sb,
+				    "Multiple .port fields in backend: ");
+				vcc_ErrToken(tl, t_field);
+				vsb_printf(tl->sb, " at\n");
+				vcc_ErrWhere(tl, t_fport);
+				vsb_printf(tl->sb, " and\n");
+				vcc_ErrWhere(tl, t_field);
+				return;
+			}
+			t_fport = t_field;
 			t_port = tl->t;
 			vcc_NextToken(tl);
 		} else {
