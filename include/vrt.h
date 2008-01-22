@@ -43,6 +43,7 @@ struct sockaddr;
 struct vrt_backend_host {
 	const char	*portname;
 	const char	*hostname;
+	const char	*ident;
 };
 
 struct vrt_simple_backend {

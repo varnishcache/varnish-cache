@@ -69,19 +69,19 @@ CheckHostPort(const char *host, const char *port)
  */
 
 static void
-vcc_EmitBeIdent(struct tokenlist *tl, struct token *first, struct token *last)
+vcc_EmitBeIdent(struct vsb *v, const struct token *first, const struct token *last)
 {
 
-	Fc(tl, 0, "\t.ident =");
+	vsb_printf(v, "\t.ident =");
 	while (first != last) {
 		if (first->dec != NULL)
-			Fc(tl, 0, "\n\t    \"\\\"\" %.*s \"\\\" \"",
+			vsb_printf(v, "\n\t    \"\\\"\" %.*s \"\\\" \"",
 			    PF(first));
 		else
-			Fc(tl, 0, "\n\t    \"%.*s \"", PF(first));
+			vsb_printf(v, "\n\t    \"%.*s \"", PF(first));
 		first = VTAILQ_NEXT(first, list);
 	}
-	Fc(tl, 0, ",\n");
+	vsb_printf(v, ",\n");
 }
 
 /*--------------------------------------------------------------------
@@ -111,12 +111,27 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	struct token *t_host = NULL, *t_fhost = NULL;
 	struct token *t_port = NULL, *t_fport = NULL;
 	const char *ep;
+	struct host *h;
 
 	t_first = tl->t;
 	*nbh = tl->nbackend_host++;
 
 	if (tl->t->tok == ID) {
-		ErrInternal(tl);	/* Reference by name */
+		VTAILQ_FOREACH(h, &tl->hosts, list) {
+			if (vcc_Teq(h->name, tl->t))
+				break;
+		}
+		if (h == NULL) {
+			vsb_printf(tl->sb, "Reference to unknown backend ");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_NextToken(tl);
+		ExpectErr(tl, ';');
+		vcc_NextToken(tl);
+		*nbh = h->hnum;
 		return;
 	}
 	ExpectErr(tl, '{');
@@ -151,6 +166,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			if (t_host != NULL) {
+				assert(t_fhost != NULL);
 				vsb_printf(tl->sb,
 				    "Multiple .host fields in backend: ");
 				vcc_ErrToken(tl, t_field);
@@ -167,6 +183,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			if (t_port != NULL) {
+				assert(t_fport != NULL);
 				vsb_printf(tl->sb,
 				    "Multiple .port fields in backend: ");
 				vcc_ErrToken(tl, t_field);
@@ -223,6 +240,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	}
 
 	ExpectErr(tl, '}');
+	vcc_EmitBeIdent(tl->fh, t_first, tl->t);
 	Fh(tl, 0, "};\n");
 	vcc_NextToken(tl);
 }
@@ -230,36 +248,40 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 void
 vcc_ParseSimpleBackend(struct tokenlist *tl)
 {
-	struct token *t_be = NULL;
 	struct token *t_first;
+	struct host *h;
 	int nbh;
 
+	h = TlAlloc(tl, sizeof *h);
 	t_first = tl->t;		/* T_BACKEND */
 
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);		/* name */
-	t_be = tl->t;
+	h->name = tl->t;
 	vcc_NextToken(tl);
 
 	vcc_ParseBackendHost(tl, &nbh);
 	ERRCHK(tl);
 
+	h->hnum = nbh;
+	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
+
 	/* In the compiled vcl we use these macros to refer to backends */
 	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
-	    PF(t_be), tl->nbackend);
+	    PF(h->name), tl->nbackend);
 
-	vcc_AddDef(tl, t_be, R_BACKEND);
+	vcc_AddDef(tl, h->name, R_BACKEND);
 
 	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
-	    PF(t_be), PF(t_be));
-	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
+	    PF(h->name), PF(h->name));
+	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(h->name));
 
 	Fc(tl, 0, "\nstatic const struct vrt_simple_backend sbe_%.*s = {\n",
-	    PF(t_be));
-	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
+	    PF(h->name));
+	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(h->name));
 	Fc(tl, 0, "\t.host = &bh_%d,\n", nbh);
-	vcc_EmitBeIdent(tl, t_first, tl->t);
+	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 
 	tl->nbackend++;
