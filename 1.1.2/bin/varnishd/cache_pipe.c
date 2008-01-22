@@ -1,0 +1,138 @@
+/*-
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2007 Linpro AS
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $Id$
+ *
+ * XXX: charge bytes to srcaddr
+ */
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <poll.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
+#include "shmlog.h"
+#include "heritage.h"
+#include "cache.h"
+
+static int
+rdf(int fd0, int fd1)
+{
+	int i, j;
+	char buf[BUFSIZ], *p;
+
+	i = read(fd0, buf, sizeof buf);
+	if (i <= 0)
+		return (1);
+	for (p = buf; i > 0; i -= j, p += j) {
+		j = write(fd1, p, i);
+		if (j <= 0)
+			return (1);
+		if (i != j) {
+			printf("flunk %d %d\n", i, j);
+			usleep(100000);		/* XXX hack */
+		}
+	}
+	return (0);
+}
+
+void
+PipeSession(struct sess *sp)
+{
+	struct vbe_conn *vc;
+	char *b, *e;
+	struct worker *w;
+	struct bereq *bereq;
+	struct pollfd fds[2];
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
+	bereq = sp->bereq;
+	sp->bereq = NULL;
+
+	vc = VBE_GetFd(sp);
+	if (vc == NULL)
+		return;
+
+	WRK_Reset(w, &vc->fd);
+	http_Write(w, bereq->http, 0);
+
+	if (http_GetTail(sp->http, 0, &b, &e) && b != e)
+		WRK_Write(w, b, e - b);
+
+	if (WRK_Flush(w)) {
+		vca_close_session(sp, "pipe");
+		VBE_ClosedFd(sp->wrk, vc);
+		return;
+	}
+
+	vbe_free_bereq(bereq);
+	bereq = NULL;
+
+	sp->t_resp = TIM_real();
+
+	memset(fds, 0, sizeof fds);
+	fds[0].fd = vc->fd;
+	fds[0].events = POLLIN | POLLERR;
+	fds[1].fd = sp->fd;
+	fds[1].events = POLLIN | POLLERR;
+
+	while (fds[0].fd > -1 || fds[1].fd > -1) {
+		fds[0].revents = 0;
+		fds[1].revents = 0;
+		i = poll(fds, 2, params->pipe_timeout * 1000);
+		if (i < 1) 
+			break;
+		if (fds[0].revents && rdf(vc->fd, sp->fd)) {
+			shutdown(vc->fd, SHUT_RD);
+			shutdown(sp->fd, SHUT_WR);
+			fds[0].events = 0;
+			fds[0].fd = -1;
+		}
+		if (fds[1].revents && rdf(sp->fd, vc->fd)) {
+			shutdown(sp->fd, SHUT_RD);
+			shutdown(vc->fd, SHUT_WR);
+			fds[1].events = 0;
+			fds[1].fd = -1;
+		}
+	}
+	if (fds[0].fd >= 0) {
+		shutdown(vc->fd, SHUT_RD);
+		shutdown(sp->fd, SHUT_WR);
+	}
+	if (fds[1].fd >= 0) {
+		shutdown(sp->fd, SHUT_RD);
+		shutdown(vc->fd, SHUT_WR);
+	}
+	vca_close_session(sp, "pipe");
+	VBE_ClosedFd(sp->wrk, vc);
+}

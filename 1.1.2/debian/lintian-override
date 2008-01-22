@@ -1,0 +1,3 @@
+varnish: duplicate-updaterc.d-calls-in-postinst varnish
+varnish: duplicate-updaterc.d-calls-in-postinst varnishlog
+

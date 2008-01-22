@@ -1,0 +1,52 @@
+GCC
+===
+Varnish requires a GCC-compiler compatible with the compiler used to
+build varnish with. This means GCC 3.4.6 on a standard RHEL4 system.
+
+Varnish should work fine with GCC 3.3 and above.
+
+
+Configuration of addresses and ports
+====================================
+In this package, varnish is configured to make the accelerator daemon
+listen to port 6081. The administration interface listens to port 6082
+on 127.0.0.1. Addresses and ports can be changed in
+/etc/sysconfig/varnish.
+
+The admin interface can be accessed by standard telnet.
+
+The default config will try to forward http requests to
+localhost:80. You may change this in /etc/varnish/vcl.conf. Please
+read the vcl(7) man page for more information on the vcl language.
+
+To gain actual value from varnish, you may want to move the listening
+port to port 80, and your webserver to 8080 or similar.
+
+
+Builing a RPM package from SVN
+==============================
+You may build the package from a svn checkout. Follow the instructions
+at http://varnish.projects.linpro.no/wiki/Repository to get the
+source. Then enter the trunk directory and edit
+varnish-cache/redhat/varnish.spec. At least bump the version and/or
+release numbers, and uncomment the autogen call. You need to install
+the autoconf and automake packages. Then use something like this to
+build the rpm package:
+
+#!/bin/bash
+VERSION=$( awk ' /^Version:/ { print $2 } ' varnish-cache/redhat/varnish.spec )
+ln -s varnish-cache varnish-$VERSION
+tar $(
+    find varnish-$VERSION/ -type d -name .svn | \
+        while read i; do 
+            echo -n "--exclude $i "
+            done
+) -cvzf varnish-$VERSION.tar.gz varnish-$VERSION/*
+rm varnish-$VERSION
+rpmbuild -ts varnish-$VERSION.tar.gz
+# End of script
+
+This builds a source rpm. Then you can, for example on a RHEL4 system,
+do something like this:
+
+rpmbuild --define "dist el4" --rebuild /path/to/varnish-1.1.2.src.rpm

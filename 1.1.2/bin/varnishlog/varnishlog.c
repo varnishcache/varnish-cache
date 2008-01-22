@@ -1,0 +1,371 @@
+/*-
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2007 Linpro AS
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $Id$
+ *
+ * Log tailer for Varnish
+ */
+
+#include <errno.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <limits.h>
+
+#ifndef HAVE_DAEMON
+#include "compat/daemon.h"
+#endif
+
+#ifdef HAVE_VIS_H
+#include <vis.h>
+#else
+#include "compat/vis.h"
+#endif
+
+#include "vsb.h"
+#include "vpf.h"
+
+#include "libvarnish.h"
+#include "shmlog.h"
+#include "varnishapi.h"
+
+static int	b_flag, c_flag;
+
+/* -------------------------------------------------------------------*/
+
+static int
+name2tag(const char *n)
+{
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (!strcasecmp(n, VSL_tags[i]))
+			return (i);
+	}
+	return (-1);
+}
+
+/* Ordering-----------------------------------------------------------*/
+
+static struct vsb	*ob[65536];
+static unsigned char	flg[65536];
+#define F_INVCL		(1 << 0)
+#define F_MATCH		(1 << 1)
+
+static int		match_tag = -1;
+static regex_t		match_re;
+
+static void
+clean_order(void)
+{
+	unsigned u;
+
+	for (u = 0; u < 65536; u++) {
+		if (ob[u] == NULL)
+			continue;
+		vsb_finish(ob[u]);
+		if (vsb_len(ob[u]) > 1 &&
+		    (match_tag == -1 || flg[u] & F_MATCH))
+			printf("%s\n", vsb_data(ob[u]));
+		flg[u] = 0;
+		vsb_clear(ob[u]);
+	}
+}
+
+static int
+h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+{
+
+	(void)priv;
+
+	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
+		if (!b_flag && !c_flag)
+			VSL_H_Print(stdout, tag, fd, len, spec, ptr);
+		return (0);
+	}
+	if (ob[fd] == NULL) {
+		ob[fd] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+		assert(ob[fd] != NULL);
+	}
+	if (tag == match_tag &&
+	    !regexec(&match_re, ptr, 0, NULL, 0))
+		flg[fd] |= F_MATCH;
+	switch (tag) {
+	case SLT_VCL_call:
+		if (flg[fd] & F_INVCL)
+			vsb_cat(ob[fd], "\n");
+		else
+			flg[fd] |= F_INVCL;
+		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
+		    fd, VSL_tags[tag],
+		    ((spec & VSL_S_CLIENT) ? 'c' : \
+		    (spec & VSL_S_BACKEND) ? 'b' : '-'),
+		    len, ptr);
+		return (0);
+	case SLT_VCL_trace:
+	case SLT_VCL_return:
+		if (flg[fd] & F_INVCL) {
+			vsb_cat(ob[fd], " ");
+			vsb_bcat(ob[fd], ptr, len);
+			return (0);
+		}
+		break;
+	default:
+		break;
+	}
+	if (flg[fd] & F_INVCL) {
+		vsb_cat(ob[fd], "\n");
+		flg[fd] &= ~F_INVCL;
+	}
+	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
+	    fd, VSL_tags[tag],
+	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : '-'),
+	    len, ptr);
+	switch (tag) {
+	case SLT_ReqEnd:
+	case SLT_BackendClose:
+	case SLT_BackendReuse:
+	case SLT_StatSess:
+		vsb_finish(ob[fd]);
+		if (vsb_len(ob[fd]) > 1 &&
+		    (match_tag == -1 || flg[fd] & F_MATCH))
+			printf("%s\n", vsb_data(ob[fd]));
+		flg[fd] &= ~F_MATCH;
+		vsb_clear(ob[fd]);
+		break;
+	default:
+		break;
+	}
+	return (0);
+}
+
+static void
+do_order(struct VSL_data *vd, int argc, char **argv)
+{
+	int i;
+
+	if (argc == 2) {
+		match_tag = name2tag(argv[0]);
+		if (match_tag < 0) {
+			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
+			exit(2);
+		}
+		i = regcomp(&match_re, argv[1], REG_EXTENDED | REG_NOSUB);
+		if (i) {
+			char buf[BUFSIZ];
+			regerror(i, &match_re, buf, sizeof buf);
+			fprintf(stderr, "%s\n", buf);
+			exit(2);
+		}
+	}
+	if (!b_flag) {
+		VSL_Select(vd, SLT_SessionOpen);
+		VSL_Select(vd, SLT_SessionClose);
+		VSL_Select(vd, SLT_ReqEnd);
+	}
+	if (!c_flag) {
+		VSL_Select(vd, SLT_BackendOpen);
+		VSL_Select(vd, SLT_BackendClose);
+		VSL_Select(vd, SLT_BackendReuse);
+	}
+	while (1) {
+		i = VSL_Dispatch(vd, h_order, NULL);
+		if (i == 0) {
+			clean_order();
+			fflush(stdout);
+		}
+		else if (i < 0)
+			break;
+	}
+	clean_order();
+}
+
+/*--------------------------------------------------------------------*/
+
+static volatile sig_atomic_t reopen;
+
+static void
+sighup(int sig)
+{
+
+	(void)sig;
+	reopen = 1;
+}
+
+static int
+open_log(const char *w_arg, int a_flag)
+{
+	int fd, flags;
+
+	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
+	if (!strcmp(w_arg, "-"))
+		fd = STDOUT_FILENO;
+	else
+		fd = open(w_arg, flags, 0644);
+	if (fd < 0) {
+		perror(w_arg);
+		exit(1);
+	}
+	return (fd);
+}
+
+static void
+do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
+{
+	int fd, i;
+	unsigned char *p;
+
+	fd = open_log(w_arg, a_flag);
+	signal(SIGHUP, sighup);
+	while (1) {
+		i = VSL_NextLog(vd, &p);
+		if (i < 0)
+			break;
+		if (i > 0) {
+			i = write(fd, p, 5 + p[1]);
+			if (i < 0) {
+				perror(w_arg);
+				exit(1);
+			}
+		}
+		if (reopen) {
+			close(fd);
+			fd = open_log(w_arg, a_flag);
+			reopen = 0;
+		}
+	}
+	exit(0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+usage(void)
+{
+	fprintf(stderr,
+	    "usage: varnishlog %s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	exit(1);
+}
+
+int
+main(int argc, char **argv)
+{
+	int c;
+	int a_flag = 0, D_flag = 0, o_flag = 0;
+	const char *n_arg = NULL;
+	const char *P_arg = NULL;
+	const char *w_arg = NULL;
+	struct pidfh *pfh = NULL;
+	struct VSL_data *vd;
+
+	vd = VSL_New();
+
+	while ((c = getopt(argc, argv, VSL_ARGS "aDon:P:Vw:")) != -1) {
+		switch (c) {
+		case 'a':
+			a_flag = 1;
+			break;
+		case 'D':
+			D_flag = 1;
+			break;
+		case 'n':
+			n_arg = optarg;
+			break;
+		case 'o':
+			o_flag = 1;
+			break;
+		case 'P':
+			P_arg = optarg;
+			break;
+		case 'V':
+			varnish_version("varnishlog");
+			exit(0);
+		case 'w':
+			w_arg = optarg;
+			break;
+		case 'c':
+			c_flag = 1;
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
+		case 'b':
+			b_flag = 1;
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
+		default:
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
+		}
+	}
+
+	if (o_flag && w_arg != NULL)
+		usage();
+
+	if (VSL_OpenLog(vd, n_arg))
+		exit(1);
+
+	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+		perror(P_arg);
+		exit(1);
+	}
+
+	if (D_flag && daemon(0, 0) == -1) {
+		perror("daemon()");
+		if (pfh != NULL)
+			vpf_remove(pfh);
+		exit(1);
+	}
+
+	if (pfh != NULL)
+		vpf_write(pfh);
+
+	if (w_arg != NULL)
+		do_write(vd, w_arg, a_flag);
+
+	if (o_flag)
+		do_order(vd, argc - optind, argv + optind);
+
+	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
+		if (fflush(stdout) != 0) {
+			perror("stdout");
+			break;
+		}
+	}
+
+	if (pfh != NULL)
+		vpf_remove(pfh);
+	exit(0);
+}

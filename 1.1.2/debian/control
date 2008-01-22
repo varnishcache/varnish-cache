@@ -1,0 +1,38 @@
+Source: varnish
+Section: web
+Priority: optional
+Maintainer: Stig Sandbeck Mathisen <ssm@fnord.no>
+Uploaders: Lars Bahner <bahner@debian.org>, Fabio Tranchitella <kobold@debian.org>
+Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev, xsltproc
+XS-Vcs-Browser: http://varnish.projects.linpro.no/browser/trunk/varnish-cache
+XS-Vcs-Svn: http://varnish.projects.linpro.no/svn/trunk/varnish-cache
+Standards-Version: 3.7.3
+
+Package: varnish
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, gcc ( >= 3.3), libc6-dev | libc-dev, adduser
+Description: A state-of-the-art, high-performance HTTP accelerator
+ varnish is the server-side alternative to Squid, written primarily with
+ speed in mind, and with a look to implementing full ESI-support in
+ a future release.
+ .
+ The goal of the Varnish project is to develop a state-of-the-art,
+ high-performance HTTP accelerator.
+ .
+ Varnish is targeted primarily at the FreeBSD 6 and Linux 2.6 platforms, and
+ will take full advantage of the advanced I/O features offered by these
+ operating systems. 
+
+Package: libvarnish0
+Replaces: libvarnish
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Shared libraries for Varnish
+ Shared libraries for the Varnish HTTP accelerator.
+
+Package: libvarnish0-dev
+Replaces: libvarnish-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libvarnish0
+Description: Shared library for Varnish
+ Development files for the Varnish library.

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+varnish_setup_user() {
+        if ! id varnish > /dev/null 2>&1 ; then
+                adduser --system --no-create-home --group varnish 2>&1 > /dev/null || exit 78
+        fi
+}
+varnish_create_storagedir() {
+	install -o varnish -g varnish -d /var/lib/varnish/$(uname -n) || exit 78
+}
+
+varnish_setup_user
+varnish_create_storagedir
+
+#DEBHELPER#

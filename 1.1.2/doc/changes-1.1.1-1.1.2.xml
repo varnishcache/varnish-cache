@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="1.1.1" to="1.1.2">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="1809,1913">
+      <para>When switching to a new VCL configuration, a race
+      condition exists which may cause Varnish to reference a backend
+      which no longer exists (see <ticket ref="144"/>).  This race
+      condition has not been entirely eliminated, but it should occur
+      less frequently.</para>
+    </change>
+
+    <change type="bug" ref="1942">
+      <para>When dropping a TCP session before any requests were
+      processed, an assertion would be triggered due to an
+      uninitialized timestamp (see <ticket ref="132"/>).  The
+      timestamp is now correctly initialized.</para>
+    </change>
+
+    <change type="bug" ref="1955,1976,1977">
+      <para>Varnish will now correctly generate a <code>Date:</code>
+      header for every response instead of copying the one it got from
+      the backend (see <ticket ref="157"/>).</para>
+    </change>
+
+    <change type="bug" ref="1971">
+      <para>Comparisons in VCL which involve a non-existent string
+      (usually a header which is not present in the request or object
+      being processed) would cause a NULL pointer dereference; now the
+      comparison will simply fail.</para>
+    </change>
+
+    <change type="bug" ref="1972">
+      <para>A bug in the VCL compiler which would cause a double-free
+      when processing <code>include</code> directives has been
+      fixed.</para>
+    </change>
+
+    <change type="bug" ref="1991">
+      <para>A resource leak in the worker thread management code has
+      been fixed.</para>
+    </change>
+
+    <change type="bug" ref="1809">
+      <para>When connecting to a backend, Varnish will usually get the
+      address from a cache.  When the cache is refreshed, existing
+      connections may end up with a reference to an address structure
+      which no longer exists, resulting in a crash.  This race
+      condition has been somewhat mitigated, but not entirely
+      eliminated (see <ticket ref="144"/>.)</para>
+    </change>
+
+    <change type="bug" ref="1888">
+      <para>Varnish will now pass the correct protocol version in pipe
+      mode: the backend will get what the client sent, and vice
+      versa.</para>
+    </change>
+
+    <change type="bug" ref="2057,2077,2080,2086">
+      <para>The core of the pipe mode code has been rewritten to
+      increase robustness and eliminate spurious error messages when
+      either end closes the connection in a manner Varnish did not
+      anticipate.</para>
+    </change>
+
+    <change type="bug" ref="2181">
+      <para>A memory leak in the backend code has been plugged.</para>
+    </change>
+
+    <change type="bug" ref="2232">
+      <para>When using the <code>kqueue</code> acceptor, if a client
+      shuts down the request side of the connection (as many clients
+      do after sending their final request), it was possible for the
+      acceptor code to receive the <code>EOF</code> event and recycle
+      the session while the last request was still being serviced,
+      resulting in a assertion failure and a crash when the worker
+      thread later tried to delete the session.  This should no longer
+      happen (see <ticket ref="162"/>.)</para>
+    </change>
+
+    <change type="bug" ref="2275">
+      <para>A mismatch between the recorded length of a cached object
+      and the amount of data actually present in cache for that object
+      can occasionally occur (see <ticket ref="167"/>.)  This has been
+      partially fixed, but may still occur for error pages generated
+      by Varnish when a problem arises while retrieving an object from
+      the backend.</para>
+    </change>
+
+    <change type="bug" ref="2285,2286">
+      <para>Some socket-related system calls may return unexpected
+      error codes when operating on a TCP connection that has been
+      shut down at the other end.  These error codes would previously
+      cause assertion failures, but are now recognized as harmless
+      conditions.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishhist</name>
+
+    <change type="enh">
+      <para>Pressing <code>0</code> though <code>9</code> while
+      <code>varnishhist</code> is running will change the refresh
+      interval to the corresponding power of two, in seconds.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishncsa</name>
+
+    <change type="enh">
+      <para>The <code>varnishncsa</code> tool can now daemonize and
+      write a PID file like <code>varnishlog</code>, using the same
+      command-line options.  It will also reopen its output upon receipt
+      of a <code>SIGHUP</code> if invoked with <code>-w</code>.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishstat</name>
+
+    <change type="enh">
+      <para>Pressing <code>0</code> though <code>9</code> while
+      <code>varnishstat</code> is running will change the refresh
+      interval to the corresponding power of two, in seconds.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Build system</name>
+
+    <change type="enh" ref="2033">
+      <para>Varnish's <code>&lt;queue.h&gt;</code> has been modified
+      to avoid conflicts with <code>&lt;sys/queue.h&gt;</code> on
+      platforms where the latter is included indirectly through system
+      headers.</para>
+    </change>
+
+    <change type="enh" ref="2032,2133,2097,2106,2222-2228">
+      <para>Several steps have been taken towards Solaris
+      support, but this is not yet complete.</para>
+    </change>
+
+    <change type="bug" ref="2116,2154">
+      <para>When <code>configure</code> was run without an explicit
+      prefix, Varnish's idea of the default state directory would be
+      garbage and a state directory would have to be specified
+      manually with <code>-n</code>.  This has been corrected.</para>
+    </change>
+  </subsystem>
+</group>

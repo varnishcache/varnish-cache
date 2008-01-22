@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+# varnishlog	Control the varnish HTTP accelerator logging daemon
+#
+# chkconfig: - 90 10
+# description: HTTP accelerator logging daemon
+# processname: varnishlog
+# config: 
+# pidfile: /var/run/varnish/varnishlog.pid
+
+# Source function library.
+. /etc/init.d/functions
+
+RETVAL=0
+PROCNAME=varnishlog
+
+DAEMON="/usr/bin/varnishlog"
+PIDFILE="/var/run/varnish/varnishlog.pid"
+LOCKFILE="/var/lock/subsys/varnishlog"
+LOGFILE="/var/log/varnish/varnish.log"
+
+DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
+
+mkdir -p /var/run/varnish 2>/dev/null
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting varnish logging daeon: "
+	daemon --pidfile $PIDFILE $DAEMON "$DAEMON_OPTS"
+	sleep 1
+	pkill -0 $PROCNAME
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]
+	then
+		echo_success
+		touch $LOCKFILE
+	else
+		echo_failure
+	fi
+	echo
+	;;
+  stop)
+	echo -n "Stopping varnish logging daemon: "
+	killproc -p $PIDFILE $DAEMON
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]
+	then
+		echo_success
+		rm -f $LOCKFILE $PIDFILE
+	else
+		echo_failure
+	fi
+	echo
+	;;
+  status)
+	status -p $PIDFILE $PROCNAME
+	RETVAL=$?
+	;;
+  restart|reload)
+  	$0 stop
+	$0 start
+	RETVAL=$?
+	;;
+  condrestart)
+        if [ -f $PIDFILE ]; then
+            $0 stop
+            $0 start
+            RETVAL=$?
+        fi
+	;;
+  *)
+	echo "Usage: $0 {start|stop|status|restart|condrestart}"
+	exit 1
+esac
+
+exit $RETVAL

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="1.0.3" to="1.0.4">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="enh,bug" ref="1277">
+      <para>The request workflow has been redesigned to simplify
+      request processing and eliminate code duplication.  All
+      codepaths which need to speak HTTP now share a single
+      implementation of the protocol.  Some new VCL hooks have been
+      added, though they aren't much use yet.  The only real
+      user-visible change should be that Varnish now handles
+      persistent backend connections correctly (see <ticket
+      ref="56"/>).</para>
+    </change>
+
+    <change type="enh" ref="1280">
+      <para>Support for multiple listen addresses has been
+      added.</para>
+    </change>
+
+    <change type="enh" ref="1281">
+      <para>An "include" facility has been added to VCL, allowing
+      VCL code to pull in code fragments from multiple files.</para>
+    </change>
+
+    <change type="enh" ref="1284">
+      <para>Multiple definitions of the same VCL function are now
+      concatenated into one in the order in which they appear in the
+      source.  This simplifies the mechanism for falling back to the
+      built-in default for cases which aren't handled in custom
+      code, and facilitates modularization.</para>
+    </change>
+
+    <change type="bug" ref="1287,1288">
+      <para>The code used to format management command arguments
+      before passing them on to the child process would
+      underestimate the amount of space needed to hold each argument
+      once quotes and special characters were properly escaped,
+      resulting in a buffer overflow.  This has been
+      corrected.</para>
+    </change>
+
+    <change type="enh,bug" ref="1289-1291,1294,1296-1303,1306">
+      <para>The VCL compiler has been overhauled.  Several memory
+      leaks have been plugged, and error detection and reporting has
+      been improved throughout.  Parts of the compiler have been
+      refactored to simplify future extension of the
+      language.</para>
+    </change>
+
+    <change type="bug" ref="1293">
+      <para>A bug in the VCL compiler which resulted in incorrect
+      parsing of the decrement (<code>-=</code>) operator has been
+      fixed.</para>
+    </change>
+
+    <change type="enh" ref="1309,1312,1381">
+      <para>A new <code>-C</code> command-line option has been added
+      which causes <code>varnishd</code> to compile the VCL code
+      (either from a file specified with <code>-f</code> or the
+      built-in default), print the resulting C code and exit.</para>
+    </change>
+
+    <change type="bug" ref="1359">
+      <para>When processing a backend response using chunked
+      encoding, if a chunk header crosses a read buffer boundary,
+      read additional bytes from the backend connection until the
+      chunk header is complete.</para>
+    </change>
+
+    <change type="enh" ref="1373">
+      <para>A new <code>ping_interval</code> run-time parameter
+      controls how often the management process checks that the
+      worker process is alive.</para>
+    </change>
+
+    <change type="bug" ref="1376">
+      <para>A bug which would cause the worker process to
+      dereference a <code>NULL</code> pointer and crash if the
+      backend did not respond has been fixed.</para>
+    </change>
+
+    <change type="bug" ref="1382">
+      <para>In some cases, such as when they are used by AJAX
+      applications to circumvent Internet Explorer's over-eager disk
+      cache, it may be desirable to cache <code>POST</code>
+      requests.  However, the code path responsible for delivering
+      objects from cache would only transmit the response body when
+      replying to a <code>GET</code> request.  This has been
+      extended to also apply to <code>POST</code>.</para>
+
+      <para>This should be revisited at a later date to allow VCL
+      code to control whether the body is delivered.</para>
+    </change>
+
+    <change type="bug" ref="1386">
+      <para>Varnish now respects <code>Cache-control:
+      s-maxage</code>, and prefers it to <code>Cache-control:
+      max-age</code> if both are present.</para>
+
+      <para>This should be revisited at a later date to allow VCL
+      code to control which headers are used and how they are
+      interpreted.</para>
+    </change>
+
+    <change type="enh" ref="1394">
+      <para>When loading a new VCL script, the management process
+      will now load the compiled object to verify that it links
+      correctly before instructing the worker process to load
+      it.</para>
+    </change>
+
+    <change type="enh" ref="1415">
+      <para>A new <code>-P</code> command-line options has been
+      added which causes <code>varnishd</code> to create a PID
+      file.</para>
+    </change>
+
+    <change type="bug" ref="1417">
+      <para>The <code>sendfile_threshold</code> run-time parameter's
+      default value has been set to infinity after a variety of
+      <code>sendfile()</code>-related bugs were discovered on
+      several platforms.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishlog</name>
+
+    <change type="bug" ref="1372,1374">
+      <para>When grouping log entries by request,
+      <code>varnishlog</code> attempts to collapse the log entry for
+      a call to a VCL function with the log entry for the
+      corresponding return from VCL.  When two VCL calls were made
+      in succession, <code>varnishlog</code> would incorrectly omit
+      the newline between the two calls (see <ticket
+      ref="95"/>).</para>
+    </change>
+
+    <change type="enh" ref="1411">
+      <para>New <code>-D</code> and <code>-P</code> command-line
+      options have been added to daemonize and create a pidfile,
+      respectively.</para>
+    </change>
+
+    <change type="bug" ref="1450">
+      <para>The flag that is raised upon reception of a
+      <code>SIGHUP</code> has been marked <code>volatile</code> so it
+      will not be optimized away by the compiler.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishncsa</name>
+
+    <change type="enh,bug" ref="1361-1363">
+      <para>The formatting callback has been largely rewritten for
+      clarity, robustness and efficiency.</para>
+
+      <para>If a request included a <code>Host:</code> header,
+      construct and output an absolute URL.  This makes
+      <code>varnishncsa</code> output from servers which handle
+      multiple virtual hosts far more useful.</para>
+    </change>
+
+    <change type="bug" ref="1450">
+      <para>The flag that is raised upon reception of a
+      <code>SIGHUP</code> has been marked <code>volatile</code> so it
+      will not be optimized away by the compiler.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Documentation</name>
+
+    <change type="enh">
+      <para>The documentation&mdash;especially the VCL
+      documentation&mdash;has been greatly extended and improved.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Build system</name>
+
+    <change type="bug" ref="1364">
+      <para>The name and location of the <code>curses</code> or
+      <code>ncurses</code> library is now correctly detected by the
+      <code>configure</code> script instead of being hardcoded into
+      affected Makefiles.  This allows Varnish to build correctly on
+      a wider range of platforms.</para>
+    </change>
+
+    <change type="enh" ref="1368">
+      <para>Compatibility shims for <code>clock_gettime()</code> are
+      now correctly applied where needed, allowing Varnish to build
+      on MacOS X.</para>
+    </change>
+
+    <change type="bug" ref="1399">
+      <para>The <code>autogen.sh</code> script will now correctly
+      detect and warn about <code>automake</code> versions which are
+      known not to work correctly.</para>
+    </change>
+  </subsystem>
+
+  <!--subsystem>
+    <name>Packaging</name>
+
+    <change type="enh">
+      <para>XXX</para>
+    </change>
+  </subsystem-->
+</group>

@@ -1,0 +1,31 @@
+/* $Id$ */
+
+body {
+	background-color: white;
+	color: black;
+	font-family: sans-serif;
+	max-width: 40em;
+	margin: 1in auto 1in auto;
+}
+
+h1 {
+	font-size: 200%;
+	font-weight: bold;
+	color: maroon;
+}
+
+h2 {
+	font-size: 160%;
+	font-weight: bold;
+	color: maroon;
+}
+
+h3 {
+	font-size: 120%;
+	font-weight: bold;
+	color: maroon;
+}
+
+.code {
+	font-family: monospace;
+}

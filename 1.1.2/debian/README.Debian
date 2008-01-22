@@ -1,0 +1,33 @@
+Important change for 1.1.1
+==========================
+
+Varnish now features use of ``-u'' and ``-g'' in the default
+configuration. If you have customized the defaults you may wish to
+make these changes yourself.
+
+GCC
+===
+Varnish requires a GCC-compiler compatible with the compiler used to
+build varnish with. This means GCC 4.1 on a standard Debian 4.0 system.
+
+Io. to be able to backport varnish however, I will remove the
+dependency on version 4.1 of the compiler and just require gcc, as 
+varnish should work fine with GCC 3.3 and above.
+
+
+Standard ports
+==============
+
+I have configured varnish to simply put up an accelerator on port 6081
+pointing request at the local webserver. Varnish can then be 
+administered via port 6082. You probably want to change these ;)
+
+Of course to gain actual value from installing varnish, you want to move 
+varnishes listening port to port 80, and your webserver to 8080 or
+something.
+
+By setting varnish on port 6081 by default you will be able to take it
+for a spin right-out-of-the-box(tm).
+
+
+2006-10-12 Lars Bahner <bahner@debian.org>

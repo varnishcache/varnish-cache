@@ -1,0 +1,650 @@
+.\"-
+.\" Copyright (c) 2006 Verdens Gang AS
+.\" Copyright (c) 2006-2007 Linpro AS
+.\" All rights reserved.
+.\"
+.\" Author: Dag-Erling Smørgrav <des@linpro.no>
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $Id$
+.\"
+.Dd August 3, 2007
+.Dt VCL 7
+.Os
+.Sh NAME
+.Nm VCL
+.Nd Varnish Configuration Language
+.Sh DESCRIPTION
+The
+.Nm
+language is a small domain-specific language designed to be used to
+define request handling and document caching policies for the Varnish
+HTTP accelerator.
+.Pp
+When a new configuration is loaded, the
+.Nm varnishd
+management process translates the VCL code to C and compiles it to a
+shared object which is then dynamically linked into the server
+process.
+.Ss Syntax
+The VCL syntax is very simple, and deliberately similar to C and Perl.
+Blocks are delimited by curly braces, statements end with semicolons,
+and comments may be written as in C, C++ or Perl according to your own
+preferences.
+.Pp
+In addition to the C-like assignment (=), comparison (==) and boolean
+(!, && and ||) operators, VCL supports regular expression and ACL
+matching using the ~ operator.
+.Pp
+Unlike C and Perl, the backslash (\\) character has no special meaning
+in strings in VCL,
+so it can be freely used in regular expressions without doubling.
+.Pp
+Assignments are introduced with the
+.Cm set
+keyword.
+There are no user-defined variables; values can only be assigned to
+variables attached to backend, request or document objects.
+Most of these are typed, and the values assigned to them must have a
+compatible unit suffix.
+.Pp
+VCL has
+.Cm if
+tests, but no loops.
+.Pp
+The contents of another VCL file may be inserted at any point in the
+code by using the
+.Cm include
+keyword followed by the name of the other file as a quoted string.
+.Ss Backend declarations
+A backend declaration creates and initializes a named backend object:
+.Bd -literal -offset 4n
+backend www {
+    set backend.host = "www.example.com";
+    set backend.port = "http";
+}
+.Ed
+.Pp
+The backend object can later be used to select a backend at request
+time:
+.Bd -literal -offset 4n
+if (req.http.host ~ "^(www\.)?example.com$") {
+    set req.backend = www;
+}
+.Ed
+.Ss ACLs
+An ACL declaration creates and initializes a named access control list
+which can later be used to match client addresses:
+.Bd -literal -offset 4n
+acl local {
+    "locahost";         /* myself */
+    "10.0.0.1"/8;       /* and everyone on the local network */
+    ! "10.0.0.23";      /* except for the dialin router */
+}
+.Ed
+.Pp
+If an ACL entry specifies a host name which Varnish is unable to
+resolve, it will match any address it is compared to.
+Consequently, if it is preceded by a negation mark, it will reject any
+address it is compared to, which may not be what you intended.
+If the entry is enclosed in parentheses, however, it will simply be
+ignored.
+.Pp
+To match an IP address against an ACL, simply use the match operator:
+.Bd -literal -offset 4n
+if (client.ip ~ local) {
+    pipe;
+}
+.Ed
+.Ss Functions
+The following built-in functions are available:
+.Bl -tag -width indent
+.It Fn regsub "str" "regex" "sub"
+Returns a copy of
+.Fa str
+with all occurrences of the regular expression
+.Fa regex
+replaced with
+.Fa sub .
+Within
+.Fa sub ,
+.Va $0
+(which can also be spelled
+.Va & )
+is replaced with the entire matched string, and
+.Va $n
+is replaced with the contents of subgroup
+.Ar n
+in the matched string.
+.It Fn purge_url "regex"
+Purge all objects in cache whose URLs match
+.Fa regex .
+.El
+.Ss Subroutines
+A subroutine is used to group code for legibility or reusability:
+.Bd -literal -offset 4n
+sub pipe_if_local {
+    if (client.ip ~ local) {
+        pipe;
+    }
+}
+.Ed
+.Pp
+Subroutines in VCL do not take arguments, nor do they return values.
+.Pp
+If multiple subroutines with the same name are defined, they are
+concatenated in the order in which the appear in the source.
+.Pp
+To call a subroutine, use the
+.Cm call
+keyword followed by the subroutine's name:
+.Bd -literal -offset 4n
+call pipe_if_local;
+.Ed
+.Pp
+There are a number of special subroutines which hook into the Varnish
+workflow.
+These subroutines may inspect and manipulate HTTP headers and various
+other aspects of each request, and to a certain extent decide how the
+request should be handled.
+Each subroutine terminates by calling one of a small number of
+keywords which indicates the desired outcome.
+.Bl -tag -width indent
+.\" vcl_recv
+.It Cm vcl_recv
+Called at the beginning of a request, after the complete request has
+been received and parsed.
+Its purpose is to decide whether or not to serve the request, how to
+do it, and, if applicable, which backend to use.
+.Pp
+The
+.Cm vcl_recv
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm pipe
+Switch to pipe mode.
+Control will eventually pass to
+.Cm vcl_pipe .
+.It Cm lookup
+Look up the requested object in the cache.
+Control will eventually pass to
+.Cm vcl_hit
+or
+.Cm vcl_miss ,
+depending on whether the object is in the cache.
+.El
+.\" vcl_pipe
+.It Cm vcl_pipe
+Called upon entering pipe mode.
+In this mode, the request is passed on to the backend, and any further
+data from either client or backend is passed on unaltered until either
+end closes the connection.
+.Pp
+The
+.Cm vcl_pipe
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pipe
+Proceed with pipe mode.
+.El
+.\" vcl_pass
+.It Cm vcl_pass
+Called upon entering pass mode.
+In this mode, the request is passed on to the backend, and the
+backend's response is passed on to the client, but is not entered into
+the cache.
+Subsequent requests submitted over the same client connection are
+handled normally.
+.Pp
+The
+.Cm vcl_pass
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Proceed with pass mode.
+.El
+.\" vcl_hash
+.It Cm vcl_hash
+Currently not used.
+The
+.Cm vcl_hash
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm hash
+Proceed.
+.El
+.\" vcl_hit
+.It Cm vcl_hit
+Called after a cache lookup if the requested document was found in the
+cache.
+.Pp
+The
+.Cm vcl_hit
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm deliver
+Deliver the cached object to the client.
+Control will eventually pass to
+.Cm vcl_deliver .
+.El
+.\" vcl_miss
+.It Cm vcl_miss
+Called after a cache lookup if the requested document was not found in
+the cache.
+Its purpose is to decide whether or not to attempt to retrieve the
+document from the backend, and which backend to use.
+.Pp
+The
+.Cm vcl_miss
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm fetch
+Retrieve the requested object from the backend.
+Control will eventually pass to
+.Cm vcl_fetch .
+.El
+.\" vcl_fetch
+.It Cm vcl_fetch
+Called after a document has been successfully retrieved from the
+backend.
+.Pp
+The
+.Cm vcl_fetch
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm pass
+Switch to pass mode.
+Control will eventually pass to
+.Cm vcl_pass .
+.It Cm insert
+Insert the object into the cache, then deliver it to the client.
+Control will eventually pass to
+.Cm vcl_deliver .
+.El
+.\" vcl_deliver
+.It Cm vcl_deliver
+Called before a cached object is delivered to the client.
+.Pp
+The
+.Cm vcl_deliver
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm error Ar code Op Ar reason
+Return the specified error code to the client and abandon the
+request.
+.It Cm deliver
+Deliver the object to the client.
+.El
+.\" vcl_timeout
+.It Cm vcl_timeout
+Called by the reaper thread shortly before a cached document reaches
+its expiry time.
+.Pp
+The
+.Cm vcl_timeout
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm fetch
+Request a fresh copy of the object from the backend.
+.It Cm discard
+Discard the object.
+.El
+.\" vcl_discard
+.It Cm vcl_discard
+Called by the reaper thread when a cached document is about to be
+discarded, either because it has expired or because space is running
+low.
+.Pp
+The
+.Cm vcl_discard
+subroutine may terminate with one of the following keywords:
+.Bl -tag -width indent
+.It Cm discard
+Discard the object.
+.It Cm keep
+Keep the object in cache.
+.El
+.El
+.Pp
+If one of these subroutines is left undefined or terminates without
+reaching a handling decision, control will be handed over to the
+builtin default.
+See the
+.Sx EXAMPLES
+section for a listing of the default code.
+.Ss Variables
+Although subroutines take no arguments, the necessary information is
+made available to the handler subroutines through global variables.
+.Pp
+The following variables are always available:
+.Bl -tag -width 4n
+.It Va now
+The current time, in seconds since the epoch.
+.El
+.Pp
+The following variables are available in backend declarations:
+.Bl -tag -width 4n
+.It Va backend.host
+Host name or IP address of a backend.
+.It Va backend.port
+Service name or port number of a backend.
+.El
+.Pp
+The following variables are available while processing a request:
+.Bl -tag -width 4n
+.It Va client.ip
+The client's IP address.
+.It Va server.ip
+The IP address of the socket on which the client connection was
+received.
+.It Va req.request
+The request type (e.g. "GET", "HEAD").
+.It Va req.url
+The requested URL.
+.It Va req.proto
+The HTTP protocol version used by the client.
+.It Va req.backend
+The backend to use to service the request.
+.It Va req.http. Ns Ar header
+The corresponding HTTP
+.Ar header .
+.El
+.Pp
+The following variables are available while preparing a backend
+request (either for a cache miss or for pass or pipe mode):
+.Bl -tag -width 4n
+.It Va bereq.request
+The request type (e.g. "GET", "HEAD").
+.It Va bereq.url
+The requested URL.
+.It Va bereq.proto
+The HTTP protocol version used to talk to the server.
+.It Va bereq.http. Ns Ar header
+The corresponding HTTP
+.Ar header .
+.El
+.Pp
+The following variables are available after the requested object has
+been retrieved from cache or from the backend:
+.Bl -tag -width 4n
+.It Va obj.proto
+The HTTP protocol version used when the object was retrieved.
+.It Va obj.status
+The HTTP status code returned by the server.
+.It Va obj.response
+The HTTP status message returned by the server.
+.It Va obj.valid
+True if the request resulted in a valid HTTP response.
+.It Va obj.cacheable
+True if the request resulted in a cacheable response.
+.\" see cache_center.c and rfc2616.c for details
+A response is considered cacheable if it is valid (see above), the
+HTTP status code is 200, 203, 300, 301, 302, 404 or 410 and it has a
+non-zero time-to-live when
+.Cm Expires
+and
+.Cm Cache-Control
+headers are taken into account.
+.It Va obj.ttl
+The object's remaining time to live, in seconds.
+.It Va obj.lastuse
+The approximate time elapsed since the object was last requests, in
+seconds.
+.El
+.Pp
+The following variables are available while preparing a response to
+the client:
+.Bl -tag -width 4n
+.It Va resp.proto
+The HTTP protocol version to use for the response.
+.It Va resp.status
+The HTTP status code that will be returned.
+.It Va resp.response
+The HTTP status message that will be returned.
+.It Va resp.http. Ns Ar header
+The corresponding HTTP
+.Ar header .
+.El
+.Pp
+Values may be assigned to variables using the
+.Cm set
+keyword:
+.Bd -literal -offset 4n
+sub vcl_recv {
+    # Normalize the Host: header
+    if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.http.host = "www.example.com";
+    }
+}
+.Ed
+.Pp
+HTTP headers can be removed entirely using the
+.Cm remove
+keyword:
+.Bd -literal -offset 4n
+sub vcl_fetch {
+    # Don't cache cookies
+    remove obj.http.Set-Cookie;
+}
+.Ed
+.Sh EXAMPLES
+The following code is the equivalent of the default configuration with
+the backend address set to "backend.example.com" and no backend port
+specified.
+.\" Keep this in synch with bin/varnishd/mgt_vcc.c and etc/default.vcl
+.Bd -literal -offset 4n
+backend default {
+    set backend.host = "backend.example.com";
+    set backend.port = "http";
+}
+
+sub vcl_recv {
+    if (req.request != "GET" && req.request != "HEAD") {
+        pipe;
+    }
+    if (req.http.Expect) {
+        pipe;
+    }
+    if (req.http.Authenticate || req.http.Cookie) {
+        pass;
+    }
+    lookup;
+}
+
+sub vcl_pipe {
+    pipe;
+}
+
+sub vcl_pass {
+    pass;
+}
+
+sub vcl_hash {
+    set req.hash += req.url;
+    set req.hash += req.http.host;
+    hash;
+}
+
+sub vcl_hit {
+    if (!obj.cacheable) {
+        pass;
+    }
+    deliver;
+}
+
+sub vcl_miss {
+    fetch;
+}
+
+sub vcl_fetch {
+    if (!obj.valid) {
+        error;
+    }
+    if (!obj.cacheable) {
+        pass;
+    }
+    if (obj.http.Set-Cookie) {
+        pass;
+    }
+    insert;
+}
+
+sub vcl_deliver {
+    deliver;
+}
+
+sub vcl_timeout {
+    discard;
+}
+
+sub vcl_discard {
+    discard;
+}
+.Ed
+.Pp
+The following example shows how to support multiple sites running on
+separate backends in the same Varnish instance, by selecting backends
+based on the request URL.
+.Bd -literal -offset 4n
+backend www {
+    set backend.host = "www.example.com";
+    set backend.port = "80";
+}
+
+backend images {
+    set backend.host = "images.example.com";
+    set backend.port = "80";
+}
+
+sub vcl_recv {
+    if (req.http.host ~ "^(www\.)?example\.com$") {
+        set req.http.host = "www.example.com";
+        set req.backend = www;
+    } elsif (req.http.host ~ "^images\.example\.com$") {
+        set req.backend = images;
+    } else {
+        error 404 "Unknown virtual host";
+    }
+}
+.Ed
+.Pp
+The following snippet demonstrates how to force a minimum TTL for all
+documents.
+Note that this is not the same as setting the
+.Va default_ttl
+run-time parameter, as that only affects document for which the
+backend did not specify a TTL.
+.Bd -literal -offset 4n
+sub vcl_fetch {
+    if (obj.ttl < 120s) {
+        set obj.ttl = 120s;
+    }
+}
+.Ed
+.Pp
+The following snippet demonstrates how to force Varnish to cache
+documents even when cookies are present.
+.Bd -literal -offset 4n
+sub vcl_recv {
+    if (req.request == "GET" && req.http.cookie) {
+        lookup;
+    }
+}
+
+sub vcl_fetch {
+    if (obj.http.Set-Cookie) {
+        insert;
+    }
+}
+.Ed
+.Pp
+The following code implements the HTTP PURGE method as used by Squid
+for object invalidation:
+.Bd -literal -offset 4n
+acl purge {
+        "localhost";
+        "10.0.0.1"/8;
+}
+
+sub vcl_recv {
+    if (req.request == "PURGE") {
+        if (!client.ip ~ purge) {
+            error 405 "Not allowed.";
+        }
+        lookup;
+    }
+}
+
+sub vcl_hit {
+    if (req.request == "PURGE") {
+        set obj.ttl = 0s;
+        error 200 "Purged.";
+    }
+}
+
+sub vcl_miss {
+    if (req.request == "PURGE") {
+        error 404 "Not in cache.";
+    }
+}
+.Ed
+.Sh SEE ALSO
+.Xr varnishd 1
+.Sh HISTORY
+The
+.Nm
+language was developed by
+.An Poul-Henning Kamp Aq phk@phk.freebsd.dk
+in cooperation with Verdens Gang AS and Linpro AS.
+This manual page was written by
+.An Dag-Erling Sm\(/orgrav Aq des@linpro.no .
