@@ -85,7 +85,7 @@ vcc_EmitBeIdent(struct vsb *v, const struct token *first, const struct token *la
 }
 
 /*--------------------------------------------------------------------
- * Parse and emit a backend specification.
+ * Parse and emit a backend host specification.
  *
  * The syntax is the following:
  *
@@ -245,8 +245,12 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	vcc_NextToken(tl);
 }
 
+/*--------------------------------------------------------------------
+ * Parse a plain backend
+ */
+
 void
-vcc_ParseSimpleBackend(struct tokenlist *tl)
+vcc_ParseBackend(struct tokenlist *tl)
 {
 	struct token *t_first;
 	struct host *h;
@@ -287,171 +291,102 @@ vcc_ParseSimpleBackend(struct tokenlist *tl)
 	tl->nbackend++;
 }
 
-void
-vcc_ParseBalancedBackend(struct tokenlist *tl)
+/*--------------------------------------------------------------------
+ * Parse directors
+ */
+
+static void
+vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_first, struct token *t_dir)
 {
-	struct var *vp;
-	struct token *t_be = NULL;
-	struct token *t_host = NULL;
-	struct token *t_port = NULL;
-	double t_weight = 0;
-	const char *ep;
-	int cnt = 0;
-	int weighted = 0;
-	double weight = 0;
-	unsigned backend_type = tl->t->tok;
+	struct token *t_field, *tb, *tw;
+	int nbh, nelem;
 
-	vcc_NextToken(tl);
-	ExpectErr(tl, ID);
-	t_be = tl->t;
-	vcc_AddDef(tl, tl->t, R_BACKEND);
+	(void)t_first;
+	(void)t_dir;
 
-	/* In the compiled vcl we use these macros to refer to backends */
-	Fh(tl, 1, "#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
-	    PF(tl->t), tl->nbackend);
+	vcc_NextToken(tl);		/* ID: policy (= random) */
 
-	vcc_NextToken(tl);
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
-	
-	while (1) {
-		if (tl->t->tok == '}')
-			break;
-		ExpectErr(tl, ID);
-		if (!vcc_IdIs(tl->t, "set")) {
-			vsb_printf(tl->sb,
-			    "Expected 'set', found ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_NextToken(tl);
-		ExpectErr(tl, VAR);
-		vp = vcc_FindVar(tl, tl->t, vcc_be_vars);
-		ERRCHK(tl);
-		assert(vp != NULL);
-		vcc_NextToken(tl);
-		ExpectErr(tl, '=');
-		vcc_NextToken(tl);
-		if (vp->fmt != SET) {
-			vsb_printf(tl->sb,
-			    "Assignments not possible for '%s'\n", vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		
+
+	Fc(tl, 0,
+	    "\nstatic const struct vrt_dir_random_entry vdre_%.*s[] = {\n",
+	    PF(t_dir));
+
+	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
+		tb = NULL;
+		tw = NULL;
+		nbh = -1;
+
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
-		
-		while (1) {
-			if (tl->t->tok == '}')
-				break;
-				
-			ExpectErr(tl, '{');
+	
+		while (tl->t->tok != '}') {	/* Member fields */
+			ExpectErr(tl, '.');
 			vcc_NextToken(tl);
-			
-			// Host
-			ExpectErr(tl, CSTR);
-			t_host = tl->t;
+			ExpectErr(tl, ID);
+			t_field = tl->t;
 			vcc_NextToken(tl);
-		
-			ep = CheckHostPort(t_host->dec, "80");
-			if (ep != NULL) {
-				vsb_printf(tl->sb, "Backend '%.*s': %s\n", PF(t_be), ep);
-				vcc_ErrWhere(tl, t_host);
-				return;
-			}
-			
-			if (tl->t->tok == ',') {
+			ExpectErr(tl, '=');
+			vcc_NextToken(tl);
+			if (vcc_IdIs(t_field, "backend")) {
+				assert(tb == NULL);
+				tb = t_field;
+				vcc_ParseBackendHost(tl, &nbh);
+			} else if (vcc_IdIs(t_field, "weight")) {
+				assert(tw == NULL);
+				ExpectErr(tl, CNUM);
+				tw = tl->t;
 				vcc_NextToken(tl);
-				
-				// Port
-				
-				ExpectErr(tl, CSTR);
-				t_port = tl->t;
+				ExpectErr(tl, ';');
 				vcc_NextToken(tl);
-				
-				ep = CheckHostPort(t_host->dec, t_port->dec);
-				if (ep != NULL) {
-					vsb_printf(tl->sb,
-					    "Backend '%.*s': %s\n", PF(t_be), ep);
-					vcc_ErrWhere(tl, t_port);
-					return;
-				}
-				
-				if (tl->t->tok == ',') {
-				
-					vcc_NextToken(tl);
-					
-					// Weight
-					t_weight = vcc_DoubleVal(tl);
-					weighted = 1;
-					weight += t_weight;
-				}
+			} else {
+				ExpectErr(tl, '?');
 			}
-						
-			ExpectErr(tl, '}');
-			vcc_NextToken(tl);
-		
-			Fc(tl, 0, "\nstatic struct vrt_backend_entry bentry_%.*s_%d = {\n",
-				PF(t_be), cnt);
-			Fc(tl, 0, "\t.port = %.*s,\n", PF(t_port));
-			Fc(tl, 0, "\t.host = %.*s,\n", PF(t_host));
-			Fc(tl, 0, "\t.weight = %f,\n", t_weight);
-			if (cnt > 0) {
-				Fc(tl, 0, "\t.next = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
-			} /*else {
-				Fc(tl, 0, "\t.next = NULL\n");
-			}*/
-			Fc(tl, 0, "};\n");
-			t_weight = 0;
-			cnt++;
 		}
-		ExpectErr(tl, '}');
+		assert(tb != NULL);
+		Fc(tl, 0, "\t{");
+		Fc(tl, 0, ".host = &bh_%d", nbh);
+		if (tw != NULL)
+			Fc(tl, 0, ", .weight = %.*s", PF(tw));
+		Fc(tl, 0, "},\n");
 		vcc_NextToken(tl);
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
-		
-		if (t_host == NULL) {
-			vsb_printf(tl->sb, "Backend '%.*s' has no hostname\n",
-			PF(t_be));
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		
-		if (weighted && (int)weight != 1) {
-			vsb_printf(tl->sb, "Total weight must be 1\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		
-		if (backend_type == T_BACKEND_ROUND_ROBIN) {
-			Fc(tl, 0, "\nstatic struct vrt_round_robin_backend sbe_%.*s = {\n",
-			    PF(t_be));
-			Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
-			Fc(tl, 0, "\t.count = %d,\n", cnt);
-			Fc(tl, 0, "\t.bentry = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
-			Fc(tl, 0, "};\n");
-			Fi(tl, 0, "\tVRT_init_round_robin_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
-			    PF(t_be), PF(t_be));
-		} else if (backend_type == T_BACKEND_RANDOM) {
-			Fc(tl, 0, "\nstatic struct vrt_random_backend sbe_%.*s = {\n",
-			    PF(t_be));
-			Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_be));
-			Fc(tl, 0, "\t.weighted = %d,\n", weighted);
-			Fc(tl, 0, "\t.count = %d,\n", cnt);
-			Fc(tl, 0, "\t.bentry = &bentry_%.*s_%d\n", PF(t_be), cnt-1);
-			Fc(tl, 0, "};\n");
-			Fi(tl, 0, "\tVRT_init_random_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
-			    PF(t_be), PF(t_be));
-		}
-		Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_be));
-
 	}
-	ExpectErr(tl, '}');
-
+	Fc(tl, 0, "\t{ .host = 0 }\n");
+	Fc(tl, 0, "}\n");
+	Fc(tl, 0,
+	    "\nstatic const struct vrt_dir_random vdr_%.*s[] = {\n",
+	    PF(t_dir));
+	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
+	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
+	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
 	vcc_NextToken(tl);
-	tl->nbackend++;
 }
 
+/*--------------------------------------------------------------------
+ * Parse directors
+ */
+
+void
+vcc_ParseDirector(struct tokenlist *tl)
+{
+	struct token *t_dir, *t_first;
+
+	vcc_NextToken(tl);		/* ID: director */
+	t_first = tl->t;
+
+	ExpectErr(tl, ID);		/* ID: name */
+	t_dir = tl->t;
+	vcc_NextToken(tl);
+
+	ExpectErr(tl, ID);		/* ID: policy */
+	if (vcc_IdIs(tl->t, "random")) 
+		vcc_ParseRandomDirector(tl, t_first, t_dir);
+	else {
+		vsb_printf(tl->sb, "Unknown director policy: ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " at\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}

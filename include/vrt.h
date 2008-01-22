@@ -65,6 +65,17 @@ struct vrt_round_robin_backend {
 	struct vrt_backend_entry *bentry;
 };
 
+struct vrt_dir_random_entry {
+	const struct vrt_backend_host	*host;
+	double				weight;
+};
+
+struct vrt_dir_random {
+	unsigned 			nmember;
+	struct vrt_dir_random_entry	*members;
+	const char 			*ident;
+};
+
 struct vrt_random_backend {
 	const char	*name;
 	unsigned	weighted;

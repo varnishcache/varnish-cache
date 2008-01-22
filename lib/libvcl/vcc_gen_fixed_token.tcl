@@ -73,12 +73,6 @@ set keywords {
 	sub
 
 	acl
-
-	backend
-	
-	backend_round_robin
-
-	backend_random
 }
 
 # Non-word tokens

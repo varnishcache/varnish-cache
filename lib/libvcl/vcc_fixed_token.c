@@ -165,32 +165,6 @@ vcl_fixed_token(const char *p, const char **q)
 			return (T_ACL);
 		}
 		return (0);
-	case 'b':
-		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
-		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
-		    p[6] == 'd' && p[7] == '_' && p[8] == 'r' && 
-		    p[9] == 'o' && p[10] == 'u' && p[11] == 'n' && 
-		    p[12] == 'd' && p[13] == '_' && p[14] == 'r' && 
-		    p[15] == 'o' && p[16] == 'b' && p[17] == 'i' && 
-		    p[18] == 'n' && !isvar(p[19])) {
-			*q = p + 19;
-			return (T_BACKEND_ROUND_ROBIN);
-		}
-		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
-		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
-		    p[6] == 'd' && p[7] == '_' && p[8] == 'r' && 
-		    p[9] == 'a' && p[10] == 'n' && p[11] == 'd' && 
-		    p[12] == 'o' && p[13] == 'm' && !isvar(p[14])) {
-			*q = p + 14;
-			return (T_BACKEND_RANDOM);
-		}
-		if (p[0] == 'b' && p[1] == 'a' && p[2] == 'c' && 
-		    p[3] == 'k' && p[4] == 'e' && p[5] == 'n' && 
-		    p[6] == 'd' && !isvar(p[7])) {
-			*q = p + 7;
-			return (T_BACKEND);
-		}
-		return (0);
 	case 'e':
 		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'i' && p[4] == 'f' && !isvar(p[5])) {
@@ -291,9 +265,6 @@ vcl_init_tnames(void)
 	vcl_tnames[EOI] = "EOI";
 	vcl_tnames[ID] = "ID";
 	vcl_tnames[T_ACL] = "acl";
-	vcl_tnames[T_BACKEND] = "backend";
-	vcl_tnames[T_BACKEND_RANDOM] = "backend_random";
-	vcl_tnames[T_BACKEND_ROUND_ROBIN] = "backend_round_robin";
 	vcl_tnames[T_CAND] = "&&";
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
@@ -443,6 +414,17 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	const char	*name;\n");
 	vsb_cat(sb, "	unsigned	count;\n");
 	vsb_cat(sb, "	struct vrt_backend_entry *bentry;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_dir_random_entry {\n");
+	vsb_cat(sb, "	const struct vrt_backend_host	*host;\n");
+	vsb_cat(sb, "	double				weight;\n");
+	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "struct vrt_dir_random {\n");
+	vsb_cat(sb, "	unsigned 			nmember;\n");
+	vsb_cat(sb, "	struct vrt_dir_random_entry	*members;\n");
+	vsb_cat(sb, "	const char 			*ident;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_random_backend {\n");
