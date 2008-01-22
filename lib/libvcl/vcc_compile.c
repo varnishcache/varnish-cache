@@ -478,6 +478,7 @@ vcc_NewTokenList(void)
 
 	tl = calloc(sizeof *tl, 1);
 	assert(tl != NULL);
+	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->refs);

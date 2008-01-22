@@ -423,6 +423,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct vrt_backend_host {\n");
 	vsb_cat(sb, "	const char	*portname;\n");
 	vsb_cat(sb, "	const char	*hostname;\n");
+	vsb_cat(sb, "	const char	*ident;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_simple_backend {\n");

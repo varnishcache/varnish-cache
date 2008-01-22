@@ -59,12 +59,19 @@ struct token {
 	char			*dec;
 };
 
+struct host {
+	VTAILQ_ENTRY(host) 	list;
+	unsigned		hnum;
+	struct token		*name;
+};
+
 VTAILQ_HEAD(tokenhead, token);
 
 struct tokenlist {
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
 	VTAILQ_HEAD(, membit)	membits;
+	VTAILQ_HEAD(, host)	hosts;
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;
