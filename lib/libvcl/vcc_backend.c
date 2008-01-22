@@ -34,6 +34,7 @@
 
 #include <netdb.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "vsb.h"
@@ -85,6 +86,106 @@ vcc_EmitBeIdent(struct vsb *v, const struct token *first, const struct token *la
 }
 
 /*--------------------------------------------------------------------
+ * Helper functions to complain about duplicate and missing fields
+ */
+
+struct fld_spec {
+	const char	*name;
+	struct token	*found;
+};
+
+static void
+vcc_ResetFldSpec(struct fld_spec *f)
+{
+
+	for (; f->name != NULL; f++)
+		f->found = NULL;
+}
+
+static struct fld_spec *
+vcc_FldSpec(struct tokenlist *tl, const char *first, ...)
+{
+	struct fld_spec f[100], *r;
+	int n = 0;
+	va_list ap;
+	const char *p;
+
+	f[n++].name = first;
+	va_start(ap, first);
+	while (1) {
+		p = va_arg(ap, const char *);
+		if (p == NULL)
+			break;
+		f[n++].name = p;
+		assert(n < 100);
+	}
+	va_end(ap);
+	f[n++].name = NULL;
+
+	vcc_ResetFldSpec(f);
+
+	r = TlAlloc(tl, sizeof *r * n);
+	memcpy(r, f, n * sizeof *r);
+	return (r);
+}
+
+
+static void
+vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
+{
+	struct token *t_field;
+
+	ExpectErr(tl, '.');
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	t_field = tl->t;
+	*t = t_field;
+	vcc_NextToken(tl);
+	ExpectErr(tl, '=');
+	vcc_NextToken(tl);
+
+	for (; fs->name != NULL; fs++) {
+		if (!vcc_IdIs(t_field, fs->name + 1)) 
+			continue;
+		if (fs->found == NULL) {
+			fs->found = t_field;
+			return;
+		}
+		vsb_printf(tl->sb, "Field ");
+		vcc_ErrToken(tl, t_field);
+		vsb_printf(tl->sb, " redefined at:\n");
+		vcc_ErrWhere(tl, t_field);
+		vsb_printf(tl->sb, "\nFirst defined at:\n");
+		vcc_ErrWhere(tl, fs->found);
+		return;
+	}
+	vsb_printf(tl->sb, "Unknown field: ");
+	vcc_ErrToken(tl, t_field);
+	vsb_printf(tl->sb, " at\n");
+	vcc_ErrWhere(tl, t_field);
+	return;
+}
+
+static void
+vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
+{
+	int ok = 1;
+
+	for (; fs->name != NULL; fs++) {
+		if (*fs->name == '!' && fs->found == NULL) {
+			vsb_printf(tl->sb,
+			    "Mandatory field .'%s' missing.\n", fs->name + 1);
+			ok = 0;
+		}
+	}
+	if (!ok) {
+		vcc_ErrWhere(tl, tl->t);
+	}
+	return;
+}
+
+
+/*--------------------------------------------------------------------
  * Parse and emit a backend host specification.
  *
  * The syntax is the following:
@@ -108,11 +209,13 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 {
 	struct token *t_field;
 	struct token *t_first;
-	struct token *t_host = NULL, *t_fhost = NULL;
-	struct token *t_port = NULL, *t_fport = NULL;
+	struct token *t_host = NULL;
+	struct token *t_port = NULL;
 	const char *ep;
 	struct host *h;
+	struct fld_spec *fs;
 
+	fs = vcc_FldSpec(tl, "!host", "?port", NULL);
 	t_first = tl->t;
 	*nbh = tl->nbackend_host++;
 
@@ -152,69 +255,40 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 		return;
 	}
 
-	while (tl->t->tok == '.') {
-		vcc_NextToken(tl);
+	while (tl->t->tok != '}') {
 
-		ExpectErr(tl, ID);		/* name */
-		t_field = tl->t;
-		vcc_NextToken(tl);
-
-		ExpectErr(tl, '=');
-		vcc_NextToken(tl);
-
+		vcc_IsField(tl, &t_field, fs);
+		if (tl->err)
+			break;
 		if (vcc_IdIs(t_field, "host")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
-			if (t_host != NULL) {
-				assert(t_fhost != NULL);
-				vsb_printf(tl->sb,
-				    "Multiple .host fields in backend: ");
-				vcc_ErrToken(tl, t_field);
-				vsb_printf(tl->sb, " at\n");
-				vcc_ErrWhere(tl, t_fhost);
-				vsb_printf(tl->sb, " and\n");
-				vcc_ErrWhere(tl, t_field);
-				return;
-			}
-			t_fhost = t_field;
 			t_host = tl->t;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "port")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
-			if (t_port != NULL) {
-				assert(t_fport != NULL);
-				vsb_printf(tl->sb,
-				    "Multiple .port fields in backend: ");
-				vcc_ErrToken(tl, t_field);
-				vsb_printf(tl->sb, " at\n");
-				vcc_ErrWhere(tl, t_fport);
-				vsb_printf(tl->sb, " and\n");
-				vcc_ErrWhere(tl, t_field);
-				return;
-			}
-			t_fport = t_field;
 			t_port = tl->t;
 			vcc_NextToken(tl);
 		} else {
-			vsb_printf(tl->sb,
-			    "Unknown field in backend host specification: ");
-			vcc_ErrToken(tl, t_field);
-			vsb_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, t_field);
+			ErrInternal(tl);
 			return;
 		}
 
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
-	if (t_host == NULL) {
-		vsb_printf(tl->sb, "Backend has no hostname\n");
-		vcc_ErrWhere(tl, tl->t);
+	if (!tl->err)
+		vcc_FieldsOk(tl, fs);
+	if (tl->err) {
+		vsb_printf(tl->sb,
+		    "\nIn backend host specfication starting at:\n");
+		vcc_ErrWhere(tl, t_first);
 		return;
 	}
 
 	/* Check that the hostname makes sense */
+	assert(t_host != NULL);
 	ep = CheckHostPort(t_host->dec, "80");
 	if (ep != NULL) {
 		vsb_printf(tl->sb, "Backend host '%.*s': %s\n", PF(t_host), ep);
@@ -296,13 +370,13 @@ vcc_ParseBackend(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_first, struct token *t_dir)
+vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, const struct token *t_dir)
 {
-	struct token *t_field, *tb, *tw;
+	struct token *t_field;
 	int nbh, nelem;
+	struct fld_spec *fs;
 
-	(void)t_first;
-	(void)t_dir;
+	fs = vcc_FldSpec(tl, "!backend", "?weight", NULL);
 
 	vcc_NextToken(tl);		/* ID: policy (= random) */
 
@@ -314,42 +388,33 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_first, struct toke
 	    PF(t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
-		tb = NULL;
-		tw = NULL;
+		vcc_ResetFldSpec(fs);
 		nbh = -1;
 
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
+		Fc(tl, 0, "\t{");
 	
 		while (tl->t->tok != '}') {	/* Member fields */
-			ExpectErr(tl, '.');
-			vcc_NextToken(tl);
-			ExpectErr(tl, ID);
-			t_field = tl->t;
-			vcc_NextToken(tl);
-			ExpectErr(tl, '=');
-			vcc_NextToken(tl);
+			vcc_IsField(tl, &t_field, fs);
+			ERRCHK(tl);
 			if (vcc_IdIs(t_field, "backend")) {
-				assert(tb == NULL);
-				tb = t_field;
 				vcc_ParseBackendHost(tl, &nbh);
+				Fc(tl, 0, " .host = &bh_%d,", nbh);
+				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {
-				assert(tw == NULL);
 				ExpectErr(tl, CNUM);
-				tw = tl->t;
+				Fc(tl, 0, " .weight = %.*s,", PF(tl->t));
 				vcc_NextToken(tl);
 				ExpectErr(tl, ';');
 				vcc_NextToken(tl);
 			} else {
-				ExpectErr(tl, '?');
+				ErrInternal(tl);
 			}
 		}
-		assert(tb != NULL);
-		Fc(tl, 0, "\t{");
-		Fc(tl, 0, ".host = &bh_%d", nbh);
-		if (tw != NULL)
-			Fc(tl, 0, ", .weight = %.*s", PF(tw));
-		Fc(tl, 0, "},\n");
+		vcc_FieldsOk(tl, fs);
+		ERRCHK(tl);
+		Fc(tl, 0, " },\n");
 		vcc_NextToken(tl);
 	}
 	Fc(tl, 0, "\t{ .host = 0 }\n");
@@ -372,8 +437,8 @@ vcc_ParseDirector(struct tokenlist *tl)
 {
 	struct token *t_dir, *t_first;
 
-	vcc_NextToken(tl);		/* ID: director */
 	t_first = tl->t;
+	vcc_NextToken(tl);		/* ID: director */
 
 	ExpectErr(tl, ID);		/* ID: name */
 	t_dir = tl->t;
@@ -387,6 +452,13 @@ vcc_ParseDirector(struct tokenlist *tl)
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb, " at\n");
 		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	if (tl->err) {
+		vsb_printf(tl->sb,
+		    "\nIn director specfication starting at:\n",
+		    PF(t_first));
+		vcc_ErrWhere(tl, t_first);
 		return;
 	}
 }
