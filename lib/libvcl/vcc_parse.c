@@ -564,13 +564,6 @@ vcc_Parse(struct tokenlist *tl)
 		case T_SUB:
 			Function(tl);
 			break;
-		case T_BACKEND:
-			vcc_ParseSimpleBackend(tl);
-			break;
-		case T_BACKEND_RANDOM:
-		case T_BACKEND_ROUND_ROBIN:
-			vcc_ParseBalancedBackend(tl);
-			break;
 		case CSRC:
 			Fc(tl, 0, "%.*s\n",
 			    tl->t->e - (tl->t->b + 4), tl->t->b + 2);
@@ -578,6 +571,16 @@ vcc_Parse(struct tokenlist *tl)
 			break;
 		case EOI:
 			break;
+		case ID:
+			if (vcc_IdIs(tl->t, "backend")) {
+				vcc_ParseBackend(tl);
+				break;
+			}
+			if (vcc_IdIs(tl->t, "director")) {
+				vcc_ParseDirector(tl);
+				break;
+			}
+			/* FALLTHROUGH */
 		default:
 			vsb_printf(tl->sb,
 			    "Expected 'acl', 'sub' or 'backend', found ");
