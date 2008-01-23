@@ -503,7 +503,7 @@ mgt_vcc_init(void)
 void
 mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 {
-	char *vf, *p;
+	char *vf, *p = NULL;
 	struct vsb *sb;
 	unsigned status;
 
@@ -527,10 +527,10 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
-		free(p);
-		return;
+	} else {
+		(void)mgt_vcc_add(av[2], vf);
 	}
-	(void)mgt_vcc_add(av[2], vf);
+	free(p);
 }
 
 void
@@ -539,7 +539,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	char *vf;
 	struct vsb *sb;
 	unsigned status;
-	char *p;
+	char *p = NULL;
 
 	(void)priv;
 
@@ -561,10 +561,10 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		cli_result(cli, status);
 		cli_out(cli, "%s", p);
-		free(p);
-		return;
+	} else {
+		(void)mgt_vcc_add(av[2], vf);
 	}
-	(void)mgt_vcc_add(av[2], vf);
+	free(p);
 }
 
 static struct vclprog *
@@ -586,19 +586,16 @@ void
 mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
-	char *p;
+	char *p = NULL;
 	struct vclprog *vp;
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active == 0) {
-		if (child_pid >= 0) {
-			if (mgt_cli_askchild(&status, &p,
-			    "vcl.use %s\n", av[2])) {
-				cli_result(cli, status);
-				cli_out(cli, "%s", p);
-			}
-			free(p);
+		if (child_pid >= 0 &&
+		    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
+			cli_result(cli, status);
+			cli_out(cli, "%s", p);
 		} else {
 			vp->active = 2;
 			VTAILQ_FOREACH(vp, &vclhead, list) {
@@ -609,13 +606,14 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 			}
 		}
 	}
+	free(p);
 }
 
 void
 mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
-	char *p;
+	char *p = NULL;
 	struct vclprog *vp;
 
 	(void)priv;
@@ -629,11 +627,11 @@ mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		    "vcl.discard %s\n", av[2])) {
 			cli_result(cli, status);
 			cli_out(cli, "%s", p);
-			free(p);
 		} else {
 			AZ(mgt_vcc_delbyname(av[2]));
 		}
 	}
+	free(p);
 }
 
 void
