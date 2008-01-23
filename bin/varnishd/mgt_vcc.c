@@ -592,10 +592,12 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active == 0) {
-		if (child_pid >= 0 &&
-		    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
-			cli_result(cli, status);
-			cli_out(cli, "%s", p);
+		if (child_pid >= 0) {
+			if (mgt_cli_askchild(&status, &p,
+			    "vcl.use %s\n", av[2])) {
+				cli_result(cli, status);
+				cli_out(cli, "%s", p);
+			}
 			free(p);
 		} else {
 			vp->active = 2;
