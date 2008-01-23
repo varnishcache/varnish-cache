@@ -135,8 +135,13 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ret));
 		return (0);
 	}
-	for (res = res0, i = 0; res != NULL; res = res->ai_next)
-		++i;
+	XXXAN(res0);
+	for (res = res0, i = 0; res != NULL; res = res->ai_next, ++i)
+		/* nothing */ ;
+	if (i == 0) {
+		freeaddrinfo(res0);
+		return (0);
+	}
 	va = calloc(i, sizeof *va);
 	XXXAN(va);
 	*vap = va;
