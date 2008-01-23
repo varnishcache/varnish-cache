@@ -98,11 +98,11 @@ WRK_Flush(struct worker *w)
 	ssize_t i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	if (*w->wfd < 0 || w->niov == 0 || w->werr)
-		return (w->werr);
-	i = writev(*w->wfd, w->iov, w->niov);
-	if (i != w->liov)
-		w->werr++;
+	if (*w->wfd >= 0 && w->niov > 0 && w->werr == 0) {
+		i = writev(*w->wfd, w->iov, w->niov);
+		if (i != w->liov)
+			w->werr++;
+	}
 	w->liov = 0;
 	w->niov = 0;
 	return (w->werr);
