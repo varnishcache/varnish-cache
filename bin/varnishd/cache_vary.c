@@ -91,6 +91,7 @@ VRY_Create(const struct sess *sp)
 		vsb_clear(sbh);
 		vsb_printf(sbh, "%c%.*s:%c", 1 + (q - p), q - p, p, 0);
 		vsb_finish(sbh);
+		AZ(vsb_overflowed(sbh));
 
 		/* Append to vary matching string */
 		vsb_bcat(sb, vsb_data(sbh), vsb_len(sbh));
@@ -122,6 +123,7 @@ VRY_Create(const struct sess *sp)
 	vsb_printf(sb, "%c", 0);
 
 	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
 	l = vsb_len(sb);
 	sp->obj->vary = malloc(l);
 	AN(sp->obj->vary);

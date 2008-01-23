@@ -118,6 +118,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason)
 	    "  </body>\n"
 	    "</html>\n");
 	vsb_finish(&vsb);
+	AZ(vsb_overflowed(&vsb));
 	w->acct.hdrbytes = WRK_Write(w, vsb_data(&vsb), vsb_len(&vsb));
 	(void)WRK_Flush(w);
 	vsb_delete(&vsb);

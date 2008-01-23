@@ -124,6 +124,7 @@ mcf_passthru(struct cli *cli, const char * const *av, void *priv)
 	vsb_putc(sb, '\n');
 	xxxassert(!vsb_overflowed(sb));
 	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
 	i = write(cli_o, vsb_data(sb), vsb_len(sb));
 	xxxassert(i == vsb_len(sb));
 	vsb_delete(sb);
@@ -325,6 +326,7 @@ mgt_cli_callback(const struct ev *e, int what)
 		vsb_clear(cp->cli->sb);
 		cli_dispatch(cp->cli, cli_proto, p);
 		vsb_finish(cp->cli->sb);
+		AZ(vsb_overflowed(cp->cli->sb));
 
 		/* send the result back */
 		if (cli_writeres(cp->fdo, cp->cli))
