@@ -412,6 +412,14 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 		 * XXX: again: we should check it here in the "trivial" case.
 		 */
 		if (VSS_parse(b_arg, &addr, &port) != 0 || addr == NULL) {
+			/*
+			 * (addr == NULL && port != NULL) is possible if
+			 * the user incorrectly specified an address such
+			 * as ":80", which is a valid listening address.
+			 * In the future, we may want to interpret this as
+			 * a shortcut for "localhost:80".
+			 */
+			free(port);
 			fprintf(stderr, "invalid backend address\n");
 			return (1);
 		}
