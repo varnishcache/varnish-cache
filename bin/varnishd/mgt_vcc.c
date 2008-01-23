@@ -237,6 +237,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	vsb_new(&cmdsb, cmdline, sizeof cmdline, 0);
 	mgt_make_cc_cmd(&cmdsb, sf, of);
 	vsb_finish(&cmdsb);
+	AZ(vsb_overflowed(&cmdsb));
 	/* XXX check vsb state */
 
 	if (pipe(p) < 0) {
@@ -430,6 +431,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 		vf = mgt_VccCompileFile(sb, f_arg, C_flag, f_fd);
 	}
 	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
 	if (vsb_len(sb) > 0)
 		fprintf(stderr, "%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -511,6 +513,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 	XXXAN(sb);
 	vf = mgt_VccCompile(sb, av[3], NULL, 0);
 	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
 	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -544,6 +547,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	XXXAN(sb);
 	vf = mgt_VccCompileFile(sb, av[3], 0, -1);
 	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
 	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
 	vsb_delete(sb);

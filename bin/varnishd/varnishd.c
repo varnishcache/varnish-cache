@@ -342,6 +342,7 @@ cli_check(const struct cli *cli)
 		return;
 	}
 	vsb_finish(cli->sb);
+	AZ(vsb_overflowed(cli->sb));
 	fprintf(stderr, "Error:\n%s\n", vsb_data(cli->sb));
 	exit (2);
 }
@@ -477,6 +478,7 @@ main(int argc, char *argv[])
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
 		vsb_finish(cli[0].sb);
+		AZ(vsb_overflowed(cli[0].sb));
 		fprintf(stderr, "%s\n", vsb_data(cli[0].sb));
 		exit(1);
 	}

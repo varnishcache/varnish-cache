@@ -125,6 +125,7 @@ CLI_Init(void)
 		vsb_clear(cli->sb);
 		cli_dispatch(cli, CLI_cmds, buf);
 		vsb_finish(cli->sb);
+		AZ(vsb_overflowed(cli->sb));
 		i = cli_writeres(heritage.fds[1], cli);
 		if (i) {
 			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
