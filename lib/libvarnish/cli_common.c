@@ -143,6 +143,8 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	unsigned u, v;
 	char *p;
 
+	if (ptr != NULL)
+		*ptr = NULL;
 	i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
 	if (i != CLI_LINE0_LEN) {
 		if (status != NULL)
