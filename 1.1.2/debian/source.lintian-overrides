@@ -1,0 +1,2 @@
+# This is a false positive, upstream Makefile removes config.* with "distclean"
+varnish source: configure-generated-file-in-source config.log
