@@ -42,8 +42,11 @@ lbv_xxxassert(const char *func, const char *file, int line, const char *cond, in
 
 	fprintf(stderr,
 	    "Missing errorhandling code in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n"
-	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
+	    "  Condition(%s) not true.\n",
+	    func, file, line, cond);
+	if (err)
+		fprintf(stderr,
+		    "  errno = %d (%s)\n", err, strerror(err));
 	abort();
 }
 
@@ -53,7 +56,10 @@ lbv_assert(const char *func, const char *file, int line, const char *cond, int e
 
 	fprintf(stderr,
 	    "Assert error in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n"
-	    "  errno = %d (%s)\n", func, file, line, cond, err, strerror(err));
+	    "  Condition(%s) not true.\n",
+	    func, file, line, cond);
+	if (err)
+		fprintf(stderr,
+		    "  errno = %d (%s)\n", err, strerror(err));
 	abort();
 }
