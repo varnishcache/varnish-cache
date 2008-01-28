@@ -185,44 +185,44 @@ HSH_Lookup(struct sess *sp)
 	HSH_Prealloc(sp);
 	if (sp->obj != NULL) {
 		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		o = sp->obj;
-		oh = o->objhead;
+		oh = sp->obj->objhead;
+		HSH_Deref(sp->obj);
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		LOCK(&oh->mtx);
-		goto were_back;
+	} else {
+		oh = hash->lookup(sp, w->nobjhead);
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+		if (oh == w->nobjhead)
+			w->nobjhead = NULL;
+		LOCK(&oh->mtx);
 	}
 
-	oh = hash->lookup(sp, w->nobjhead);
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	if (oh == w->nobjhead)
-		w->nobjhead = NULL;
-	LOCK(&oh->mtx);
 	VTAILQ_FOREACH(o, &oh->objects, list) {
-		o->refcnt++;
 		if (o->busy) {
 			VTAILQ_INSERT_TAIL(&o->waitinglist, sp, list);
 			sp->obj = o;
+			o->refcnt++;
 			UNLOCK(&oh->mtx);
 			return (NULL);
 		}
-	were_back:
-		if (!o->cacheable) {
-			/* ignore */
-		} else if (o->ttl == 0) {
-			/* Object banned but not reaped yet */
-		} else if (o->ttl <= sp->t_req) {
-			/* Object expired */
-		} else if (BAN_CheckObject(o,
-		    h->hd[HTTP_HDR_URL].b, oh->hash)) {
+		if (!o->cacheable)
+			continue;
+		if (o->ttl == 0) 
+			continue;
+		if (o->ttl <= sp->t_req) 
+			continue;
+		if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
 			WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 			if (o->timer_idx != 0)
 				EXP_TTLchange(o);
-		} else if (o->vary == NULL || VRY_Match(sp, o->vary))
+			continue;
+		}
+		if (o->vary == NULL || VRY_Match(sp, o->vary))
 			break;
-		o->refcnt--;
 	}
 	if (o != NULL) {
+		o->refcnt++;
 		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
 		return (o);
