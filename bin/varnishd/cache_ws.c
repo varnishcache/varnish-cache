@@ -46,7 +46,7 @@
 #include "cache.h"
 
 /* Enable this to get detailed logging of WS usage */
-#ifdef DIAGNOSTICS
+#ifdef DIAGNOSTICS0
 #  define WS_DEBUG(fmt, ...)	VSL(SLT_Debug, 0, fmt, __VA_ARGS__)
 #else
 #  define WS_DEBUG(fmt, ...)	/* nothing */

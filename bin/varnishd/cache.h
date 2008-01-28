@@ -220,7 +220,6 @@ struct storage {
 };
 
 /* -------------------------------------------------------------------*/
-
 enum e_objtimer {
 	TIMER_TTL,
 	TIMER_PREFETCH
@@ -271,6 +270,10 @@ struct object {
 	VTAILQ_HEAD(, esi_bit)	esibits;
 
 	double			lru_stamp;
+
+	/* Prefetch */
+	struct object		*parent;
+	struct object		*child;
 };
 
 struct objhead {
@@ -325,6 +328,9 @@ struct sess {
 	double			t_req;
 	double			t_resp;
 	double			t_end;
+
+	/* Acceptable grace period */
+	double			grace;
 
 	enum step		step;
 	unsigned		cur_method;
