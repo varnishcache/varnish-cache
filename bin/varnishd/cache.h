@@ -267,8 +267,6 @@ struct object {
 
 	VTAILQ_HEAD(, storage)	store;
 
-	VTAILQ_HEAD(, sess)	waitinglist;
-
 	VTAILQ_HEAD(, esi_bit)	esibits;
 
 	double			lru_stamp;
@@ -283,6 +281,7 @@ struct objhead {
 	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
+	VTAILQ_HEAD(, sess)	waitinglist;
 };
 
 /* -------------------------------------------------------------------*/
@@ -339,6 +338,7 @@ struct sess {
 	struct backend		*backend;
 	struct bereq		*bereq;
 	struct object		*obj;
+	struct objhead		*objhead;
 	struct VCL_conf		*vcl;
 
 	/* Various internal stuff */
