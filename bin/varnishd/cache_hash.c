@@ -81,6 +81,7 @@ HSH_Prealloc(struct sess *sp)
 		XXXAN(w->nobjhead);
 		w->nobjhead->magic = OBJHEAD_MAGIC;
 		VTAILQ_INIT(&w->nobjhead->objects);
+		VTAILQ_INIT(&w->nobjhead->waitinglist);
 		MTX_INIT(&w->nobjhead->mtx);
 		VSL_stats->n_objecthead++;
 	} else
@@ -98,7 +99,6 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
 		VTAILQ_INIT(&w->nobj->store);
-		VTAILQ_INIT(&w->nobj->waitinglist);
 		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
 	} else
@@ -183,10 +183,10 @@ HSH_Lookup(struct sess *sp)
 	h = sp->http;
 
 	HSH_Prealloc(sp);
-	if (sp->obj != NULL) {
-		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		oh = sp->obj->objhead;
-		HSH_Deref(sp->obj);
+	if (sp->objhead != NULL) {
+		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+		oh = sp->objhead;
+		sp->objhead = NULL;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		LOCK(&oh->mtx);
 	} else {
@@ -199,9 +199,8 @@ HSH_Lookup(struct sess *sp)
 
 	VTAILQ_FOREACH(o, &oh->objects, list) {
 		if (o->busy) {
-			VTAILQ_INSERT_TAIL(&o->waitinglist, sp, list);
-			sp->obj = o;
-			o->refcnt++;
+			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
+			sp->objhead = oh;
 			UNLOCK(&oh->mtx);
 			return (NULL);
 		}
@@ -245,16 +244,16 @@ HSH_Lookup(struct sess *sp)
 }
 
 static void
-hsh_rush(struct object *o)
+hsh_rush(struct objhead *oh)
 {
 	unsigned u;
 	struct sess *sp;
 
 	for (u = 0; u < params->rush_exponent; u++) {
-		sp = VTAILQ_FIRST(&o->waitinglist);
+		sp = VTAILQ_FIRST(&oh->waitinglist);
 		if (sp == NULL)
 			return;
-		VTAILQ_REMOVE(&o->waitinglist, sp, list);
+		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
 		VSL(SLT_Debug, sp->id, "of waiting list");
 		WRK_QueueSession(sp);
 	}
@@ -276,7 +275,7 @@ HSH_Unbusy(struct object *o)
 		LOCK(&oh->mtx);
 	}
 	o->busy = 0;
-	hsh_rush(o);
+	hsh_rush(oh);
 	if (oh != NULL)
 		UNLOCK(&oh->mtx);
 }
@@ -314,7 +313,7 @@ HSH_Deref(struct object *o)
 	}
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
-	hsh_rush(o);
+	hsh_rush(oh);
 	if (oh != NULL) {
 		if (!r)
 			VTAILQ_REMOVE(&oh->objects, o, list);

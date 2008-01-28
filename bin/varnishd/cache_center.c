@@ -541,7 +541,7 @@ cnt_lookup(struct sess *sp)
 		 * We hit a busy object, disembark worker thread and expect
 		 * hash code to restart us, still in STP_LOOKUP, later.
 		 */
-		WSP(sp, SLT_Debug, "on waiting list on obj %u", sp->obj->xid);
+		WSP(sp, SLT_Debug, "on waiting list <%s>", sp->objhead->hash);
 		/*
 		 * There is a non-zero risk that we come here more than once
 		 * before we get through, in that case cnt_recv must be set
