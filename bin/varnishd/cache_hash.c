@@ -173,7 +173,7 @@ HSH_Lookup(struct sess *sp)
 	struct worker *w;
 	struct http *h;
 	struct objhead *oh;
-	struct object *o, *busy_o;
+	struct object *o, *busy_o, *grace_o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -198,6 +198,7 @@ HSH_Lookup(struct sess *sp)
 	}
 
 	busy_o = NULL;
+	grace_o = NULL;
 	VTAILQ_FOREACH(o, &oh->objects, list) {
 		if (o->busy) {
 			busy_o = o;
@@ -207,8 +208,6 @@ HSH_Lookup(struct sess *sp)
 			continue;
 		if (o->ttl == 0) 
 			continue;
-		if (o->ttl <= sp->t_req) 
-			continue;
 		if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
 			WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
@@ -216,9 +215,27 @@ HSH_Lookup(struct sess *sp)
 				EXP_TTLchange(o);
 			continue;
 		}
-		if (o->vary == NULL || VRY_Match(sp, o->vary))
+		if (o->vary != NULL && !VRY_Match(sp, o->vary))
+			continue;
+
+		/* If still valid, use it */
+		if (o->ttl >= sp->t_req)
 			break;
+
+		/* Remember any matching objects inside their grace period */
+		if (o->ttl + o->grace >= sp->t_req)
+			grace_o = o;
 	}
+
+	/*
+	 * If we have a object in grace and being fetched,
+	 * use it, if req.grace is also satisified.
+	 */
+	if (o == NULL && grace_o != NULL &&
+	    grace_o->child != NULL &&
+	    grace_o->ttl + sp->grace >= sp->t_req)
+		o = grace_o;
+
 	if (o != NULL) {
 		/* We found an object we like */
 		o->refcnt++;
@@ -239,8 +256,14 @@ HSH_Lookup(struct sess *sp)
 	o = w->nobj;
 	w->nobj = NULL;
 	o->objhead = oh;
+	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objects, o, list);
 	/* NB: do not deref objhead the new object inherits our reference */
+	if (grace_o != NULL) {
+		grace_o->child = o;
+		o->parent = grace_o;
+		grace_o->refcnt++;
+	}
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
 	/*
@@ -271,6 +294,7 @@ void
 HSH_Unbusy(struct object *o)
 {
 	struct objhead *oh;
+	struct object *parent;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
@@ -284,8 +308,14 @@ HSH_Unbusy(struct object *o)
 	}
 	o->busy = 0;
 	hsh_rush(oh);
+	parent = o->parent;
+	o->parent = NULL;
+	if (parent != NULL)
+		parent->child = NULL;
 	if (oh != NULL)
 		UNLOCK(&oh->mtx);
+	if (parent != NULL)
+		HSH_Deref(parent);
 }
 
 void

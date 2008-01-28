@@ -97,6 +97,11 @@ set spobj {
 		{recv pipe pass hash miss hit fetch deliver                }
 		"const struct sess *"
 	}
+	{ req.grace
+		RW TIME
+		{recv pipe pass hash miss hit fetch deliver		   }
+		"struct sess *"
+	}
 
 	# Request sent to backend
 	{ bereq.request

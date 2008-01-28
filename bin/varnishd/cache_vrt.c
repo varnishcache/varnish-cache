@@ -317,6 +317,8 @@ VRT_l_obj_grace(const struct sess *sp, double a)
 	if (a < 0)
 		a = 0;
 	sp->obj->grace = a;
+	if (sp->obj->timer_idx != 0)
+		EXP_TTLchange(sp->obj);
 }
 
 double
@@ -425,6 +427,27 @@ VRT_r_req_restarts(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp->restarts);
+}
+
+/*--------------------------------------------------------------------
+ * req.grace
+ */
+
+void
+VRT_l_req_grace(struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (a < 0)
+		a = 0;
+	sp->grace = a;
+}
+
+double
+VRT_r_req_grace(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (sp->grace);
 }
 
 /*--------------------------------------------------------------------*/

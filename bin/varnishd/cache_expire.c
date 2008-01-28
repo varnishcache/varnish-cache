@@ -79,7 +79,7 @@ update_object_when(struct object *o)
 		o->timer_when = o->prefetch;
 		o->timer_what = TIMER_PREFETCH;
 	} else {
-		o->timer_when = o->ttl;
+		o->timer_when = o->ttl + o->grace;
 		o->timer_what = TIMER_TTL;
 	}
 }
