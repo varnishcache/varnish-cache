@@ -173,7 +173,7 @@ HSH_Lookup(struct sess *sp)
 	struct worker *w;
 	struct http *h;
 	struct objhead *oh;
-	struct object *o;
+	struct object *o, *busy_o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -197,12 +197,11 @@ HSH_Lookup(struct sess *sp)
 		LOCK(&oh->mtx);
 	}
 
+	busy_o = NULL;
 	VTAILQ_FOREACH(o, &oh->objects, list) {
 		if (o->busy) {
-			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
-			sp->objhead = oh;
-			UNLOCK(&oh->mtx);
-			return (NULL);
+			busy_o = o;
+			continue;
 		}
 		if (!o->cacheable)
 			continue;
@@ -221,10 +220,19 @@ HSH_Lookup(struct sess *sp)
 			break;
 	}
 	if (o != NULL) {
+		/* We found an object we like */
 		o->refcnt++;
 		UNLOCK(&oh->mtx);
 		(void)hash->deref(oh);
 		return (o);
+	}
+
+	if (busy_o != NULL) {
+		/* There are one or more busy objects, wait for them */
+		VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
+		sp->objhead = oh;
+		UNLOCK(&oh->mtx);
+		return (NULL);
 	}
 
 	/* Insert (precreated) object in objecthead */
