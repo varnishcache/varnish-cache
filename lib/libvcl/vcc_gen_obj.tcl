@@ -157,6 +157,11 @@ set spobj {
 		{                         hit fetch         discard timeout}
 		"const struct sess *"
 	}
+	{ obj.grace
+		RW TIME
+		{                         hit fetch         discard timeout}
+		"const struct sess *"
+	}
 	{ obj.prefetch
 		RW RTIME
 		{ fetch prefetch }

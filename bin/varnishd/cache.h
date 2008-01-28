@@ -256,6 +256,7 @@ struct object {
 	double			age;
 	double			entered;
 	double			ttl;
+	double			grace;
 	double			prefetch;
 
 	double			last_modified;

@@ -539,6 +539,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_cacheable(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_ttl(const struct sess *, double);\n");
+	vsb_cat(sb, "double VRT_r_obj_grace(const struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_obj_grace(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_prefetch(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_prefetch(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_lastuse(const struct sess *);\n");
