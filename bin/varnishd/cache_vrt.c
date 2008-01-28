@@ -304,6 +304,29 @@ VRT_r_obj_ttl(const struct sess *sp)
 	return (sp->obj->ttl - sp->t_req);
 }
 
+/*--------------------------------------------------------------------
+ * obj.grace is relative to obj.ttl, so no special magic is necessary.
+ */
+
+void
+VRT_l_obj_grace(const struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (a < 0)
+		a = 0;
+	sp->obj->grace = a;
+}
+
+double
+VRT_r_obj_grace(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->grace);
+}
+
 /*--------------------------------------------------------------------*/
 
 /* XXX: the VCL_info messages has unexpected fractions on the ttl */
