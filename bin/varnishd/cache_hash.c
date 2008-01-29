@@ -352,7 +352,8 @@ HSH_Deref(struct object *o)
 	}
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
-	hsh_rush(oh);
+	if (oh != NULL)
+		hsh_rush(oh);
 	if (oh != NULL) {
 		if (!r)
 			VTAILQ_REMOVE(&oh->objects, o, list);
