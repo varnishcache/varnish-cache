@@ -294,6 +294,24 @@ struct cli_port {
 };
 
 static int
+mgt_cli_close(const struct cli_port *cp)
+{
+
+	vsb_delete(cp->cli->sb);
+	free(cp->buf);
+	(void)close(cp->fdi);
+	if (cp->fdi == 0)
+		assert(open("/dev/null", O_RDONLY) == 0);
+	(void)close(cp->fdo);
+	if (cp->fdo == 1) {
+		assert(open("/dev/null", O_WRONLY) == 1);
+		(void)close(2);
+		assert(open("/dev/null", O_WRONLY) == 2);
+	}
+	return (1);
+}
+
+static int
 mgt_cli_callback(const struct ev *e, int what)
 {
 	struct cli_port *cp;
@@ -303,7 +321,7 @@ mgt_cli_callback(const struct ev *e, int what)
 	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
 
 	if (what & (EV_ERR | EV_HUP | EV_GONE))
-		goto cli_close;
+		return (mgt_cli_close(cp));
 
 	/* grow the buffer if it is full */
 	if (cp->nbuf == cp->lbuf) {
@@ -315,7 +333,7 @@ mgt_cli_callback(const struct ev *e, int what)
 	/* read more data into the buffer */
 	i = read(cp->fdi, cp->buf + cp->nbuf, cp->lbuf - cp->nbuf);
 	if (i <= 0)
-		goto cli_close;
+		return (mgt_cli_close(cp));
 	cp->nbuf += i;
 
 	for (p = q = cp->buf; q < cp->buf + cp->nbuf; ++q) {
@@ -330,7 +348,7 @@ mgt_cli_callback(const struct ev *e, int what)
 
 		/* send the result back */
 		if (cli_writeres(cp->fdo, cp->cli))
-			goto cli_close;
+			return (mgt_cli_close(cp));
 
 		/* ready for next command */
 		p = q + 1;
@@ -344,21 +362,6 @@ mgt_cli_callback(const struct ev *e, int what)
 	} else
 		cp->nbuf = 0;
 	return (0);
-
-cli_close:
-	vsb_delete(cp->cli->sb);
-	free(cp->buf);
-	(void)close(cp->fdi);
-	if (cp->fdi == 0)
-		assert(open("/dev/null", O_RDONLY) == 0);
-	(void)close(cp->fdo);
-	if (cp->fdo == 1) {
-		assert(open("/dev/null", O_WRONLY) == 1);
-		close(2);
-		assert(open("/dev/null", O_WRONLY) == 2);
-	}
-	free(cp);
-	return (1);
 }
 
 void
@@ -389,7 +392,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose)
 	cp->ev->fd_flags = EV_RD;
 	cp->ev->callback = mgt_cli_callback;
 	cp->ev->priv = cp;
-	ev_add(mgt_evb, cp->ev);
+	AZ(ev_add(mgt_evb, cp->ev));
 }
 
 static int
@@ -417,7 +420,7 @@ mgt_cli_telnet(const char *T_arg)
 	int i, n;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
-	XXXAN(n = VSS_resolve(addr, port, &ta));
+	n = VSS_resolve(addr, port, &ta);
 	free(addr);
 	free(port);
 	if (n == 0) {
@@ -431,7 +434,7 @@ mgt_cli_telnet(const char *T_arg)
 		ev->fd = sock;
 		ev->fd_flags = POLLIN;
 		ev->callback = telnet_accept;
-		ev_add(mgt_evb, ev);
+		AZ(ev_add(mgt_evb, ev));
 		free(ta[i]);
 		ta[i] = NULL;
 	}
