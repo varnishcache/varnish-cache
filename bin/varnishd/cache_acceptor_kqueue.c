@@ -140,33 +140,41 @@ static struct kevent ki[NKEV];
 static unsigned nki;
 
 static void
-vca_kq_sess(struct sess *sp, short arm)
+vca_kq_flush(void)
 {
 	int i;
+
+	if (nki == 0)
+		return;
+	i = kevent(kq, ki, nki, NULL, 0, NULL);
+	assert(i <= 0);
+	if (i < 0) {
+		/* 
+		 * We do not push kevents into the kernel before 
+		 * passing the session off to a worker thread, so
+		 * by the time we get around to delete the event
+		 * the fd may be closed and we get an ENOENT back
+		 * once we do flush.
+		 * We can get EBADF the same way if the client closes
+		 * on us.  In that case, we get no kevent on that
+		 * socket, but the TAILQ still has it, and it will
+		 * be GC'ed there after the timeout.
+		 */
+		assert(errno == ENOENT || errno == EBADF);
+	}
+	nki = 0;
+}
+
+static void
+vca_kq_sess(struct sess *sp, short arm)
+{
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->fd < 0)
 		return;
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	if (++nki == NKEV) {
-		i = kevent(kq, ki, nki, NULL, 0, NULL);
-		assert(i <= 0);
-		if (i < 0) {
-			/* 
-			 * We do not push kevents into the kernel before 
-			 * passing the session off to a worker thread, so
-			 * by the time we get around to delete the event
-			 * the fd may be closed and we get an ENOENT back
-			 * once we do flush.
-			 * We can get EBADF the same way if the client closes
-			 * on us.  In that case, we get no kevent on that
-			 * socket, but the TAILQ still has it, and it will
-			 * be GC'ed there after the timeout.
-			 */
-			assert(errno == ENOENT || errno == EBADF);
-		}
-		nki = 0;
-	}
+	if (++nki == NKEV) 
+		vca_kq_flush();
 }
 
 static void
@@ -269,6 +277,14 @@ vca_kqueue_main(void *arg)
 		}
 		if (!dotimer)
 			continue;
+		/*
+		 * Make sure we have no pending changes for the fd's
+		 * we are about to close, in case the accept(2) in the
+		 * other thread creates new fd's betwen our close and
+		 * the kevent(2) at the top of this loop, the kernel
+		 * would not know we meant "the old fd of this number".
+		 */
+		vca_kq_flush();
 		deadline = TIM_real() - params->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&sesshead);
