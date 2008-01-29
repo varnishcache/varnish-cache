@@ -86,8 +86,13 @@ vbit_init(unsigned initial)
 
 	vb = calloc(sizeof *vb, 1);
 	AN(vb);
-	if (initial == 0)
+	if (initial == 0) {
+#ifdef HAVE_GETDTABLESIZE
+		initial = getdtablesize();
+#else
 		initial = VBITMAP_LUMP;
+#endif
+	}
 	vbit_expand(vb, initial);
 	return (vb);
 }
