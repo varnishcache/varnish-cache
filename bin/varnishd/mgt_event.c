@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "mgt.h"
 #include "mgt_event.h"
@@ -68,6 +69,7 @@ struct evbase {
 	unsigned char		compact_pfd;
 	unsigned char		disturbed;
 	unsigned		psig;
+	pthread_t		thread;
 };
 
 /*--------------------------------------------------------------------*/
@@ -175,6 +177,7 @@ ev_new_base(void)
 	evb->magic = EVBASE_MAGIC;
 	VTAILQ_INIT(&evb->events);
 	evb->binheap = binheap_new(evb, ev_bh_cmp, ev_bh_update);
+	evb->thread = pthread_self();
 	return (evb);
 }
 
@@ -184,6 +187,7 @@ void
 ev_destroy_base(struct evbase *evb)
 {
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
+	assert(evb->thread == pthread_self());
 	evb->magic = 0;
 	free(evb);
 }
@@ -215,6 +219,7 @@ ev_add(struct evbase *evb, struct ev *e)
 	assert(e->sig >= 0);
 	assert(e->timeout >= 0.0);
 	assert(e->fd < 0 || e->fd_flags);
+	assert(evb->thread == pthread_self());
 
 	if (e->sig > 0 && ev_get_sig(e->sig))
 		return (ENOMEM);
@@ -281,6 +286,7 @@ ev_del(struct evbase *evb, struct ev *e)
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	CHECK_OBJ_NOTNULL(e, EV_MAGIC);
 	assert(evb == e->__evb);
+	assert(evb->thread == pthread_self());
 
 	if (e->__binheap_idx != 0)
 		binheap_delete(evb->binheap, e->__binheap_idx);
@@ -323,6 +329,7 @@ ev_schedule(struct evbase *evb)
 	int i;
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
+	assert(evb->thread == pthread_self());
 	do
 		i = ev_schedule_one(evb);
 	while (i == 1);
@@ -409,6 +416,7 @@ ev_schedule_one(struct evbase *evb)
 	struct pollfd *pfd;
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
+	assert(evb->thread == pthread_self());
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, EV_MAGIC);
