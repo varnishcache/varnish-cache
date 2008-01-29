@@ -114,7 +114,7 @@ child_poker(const struct ev *e, int what)
 		return (1);
 	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n")) {
 		fprintf(stderr, "Child not responding to ping\n");
-		kill(child_pid, SIGKILL);
+		(void)kill(child_pid, SIGKILL);
 	}
 	return (0);
 }
@@ -156,7 +156,7 @@ close_sockets(void)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
-		close(ls->sock);
+		(void)close(ls->sock);
 		ls->sock = -1;
 	}
 }
@@ -208,8 +208,8 @@ start_child(void)
 
 		setproctitle("Varnish-Chld %s", heritage.name);
 
-		signal(SIGINT, SIG_DFL);
-		signal(SIGTERM, SIG_DFL);
+		(void)signal(SIGINT, SIG_DFL);
+		(void)signal(SIGTERM, SIG_DFL);
 		child_main();
 
 		exit(1);
@@ -355,7 +355,7 @@ mgt_sigint(const struct ev *e, int what)
 	(void)e;
 	(void)what;
 	fprintf(stderr, "Manager got SIGINT\n");
-	fflush(stdout);
+	(void)fflush(stdout);
 	if (child_pid >= 0)
 		stop_child();
 	exit (2);
