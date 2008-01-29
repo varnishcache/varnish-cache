@@ -101,6 +101,7 @@ AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
+AC_CHECK_FUNCS([getdtablesize])
 
 # Don't look for sendfile at all, none of them work
 # anyway. (don't tell when done with passed mem-range)
