@@ -98,8 +98,10 @@ struct params {
 	/* Fetcher hints */
 	unsigned		fetch_chunksize;
 
+#ifdef HAVE_SENDFILE
 	/* Sendfile object minimum size */
 	unsigned		sendfile_threshold;
+#endif
 
 	/* VCL traces */
 	unsigned		vcl_trace;
