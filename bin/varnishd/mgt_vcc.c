@@ -234,7 +234,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	of = strdup(sf);
 	XXXAN(of);
 	of[sizeof sf - 2] = 'o';
-	vsb_new(&cmdsb, cmdline, sizeof cmdline, 0);
+	AN(vsb_new(&cmdsb, cmdline, sizeof cmdline, 0));
 	mgt_make_cc_cmd(&cmdsb, sf, of);
 	vsb_finish(&cmdsb);
 	AZ(vsb_overflowed(&cmdsb));
@@ -243,7 +243,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	if (pipe(p) < 0) {
 		vsb_printf(sb, "%s(): pipe() failed: %s",
 		    __func__, strerror(errno));
-		unlink(sf);
+		(void)unlink(sf);
 		free(of);
 		return (NULL);
 	}
@@ -262,7 +262,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
-		execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
+		(void)execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
 		_exit(1);
 	}
 	AZ(close(p[1]));
@@ -272,11 +272,11 @@ mgt_run_cc(const char *source, struct vsb *sb)
 			vsb_printf(sb, "C-Compiler said: %.*s", status, buf);
 	} while (status > 0);
 	AZ(close(p[0]));
-	unlink(sf);
+	(void)unlink(sf);
 	if (waitpid(pid, &status, 0) < 0) {
 		vsb_printf(sb, "%s(): waitpid() failed: %s",
 		    __func__, strerror(errno));
-		unlink(of);
+		(void)unlink(of);
 		free(of);
 		return (NULL);
 	}
@@ -288,7 +288,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 			vsb_printf(sb, ", signal %d", WTERMSIG(status));
 		if (WCOREDUMP(status))
 			vsb_printf(sb, ", core dumped");
-		unlink(of);
+		(void)unlink(of);
 		free(of);
 		return (NULL);
 	}
@@ -298,7 +298,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		vsb_printf(sb,
 		    "%s(): failed to load compiled VCL program:\n  %s",
 		    __func__, dlerror());
-		unlink(of);
+		(void)unlink(of);
 		free(of);
 		return (NULL);
 	}
@@ -339,7 +339,7 @@ mgt_VccCompileFile(struct vsb *sb, const char *fn, int C_flag, int fd)
 	csrc = VCC_CompileFile(sb, fn, fd);
 	if (csrc != NULL) {
 		if (C_flag)
-			fputs(csrc, stdout);
+			(void)fputs(csrc, stdout);
 		vf = mgt_run_cc(csrc, sb);
 		if (C_flag && vf != NULL)
 			AZ(unlink(vf));
@@ -582,12 +582,10 @@ mcf_find_vcl(struct cli *cli, const char *name)
 
 	VTAILQ_FOREACH(vp, &vclhead, list)
 		if (!strcmp(vp->name, name))
-			break;
-	if (vp == NULL) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "No configuration named %s known.", name);
-	}
-	return (vp);
+			return (vp);
+	cli_result(cli, CLIS_PARAM);
+	cli_out(cli, "No configuration named %s known.", name);
+	return (NULL);
 }
 
 void
@@ -599,19 +597,21 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
-	if (vp != NULL && vp->active == 0) {
-		if (child_pid >= 0 &&
-		    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
-			cli_result(cli, status);
-			cli_out(cli, "%s", p);
-		} else {
-			vp->active = 2;
-			VTAILQ_FOREACH(vp, &vclhead, list) {
-				if (vp->active == 1)
-					vp->active = 0;
-				else if (vp->active == 2)
-					vp->active = 1;
-			}
+	if (vp == NULL)
+		return;
+	if (vp->active != 0) 
+		return;
+	if (child_pid >= 0 &&
+	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
+		cli_result(cli, status);
+		cli_out(cli, "%s", p);
+	} else {
+		vp->active = 2;
+		VTAILQ_FOREACH(vp, &vclhead, list) {
+			if (vp->active == 1)
+				vp->active = 0;
+			else if (vp->active == 2)
+				vp->active = 1;
 		}
 	}
 	free(p);
@@ -652,9 +652,10 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	if (child_pid >= 0) {
-		mgt_cli_askchild(&status, &p, "vcl.list\n");
-		cli_result(cli, status);
-		cli_out(cli, "%s", p);
+		if (!mgt_cli_askchild(&status, &p, "vcl.list\n")) {
+			cli_result(cli, status);
+			cli_out(cli, "%s", p);
+		}
 		free(p);
 	} else {
 		VTAILQ_FOREACH(vp, &vclhead, list) {
