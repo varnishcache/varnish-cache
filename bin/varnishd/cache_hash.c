@@ -307,7 +307,8 @@ HSH_Unbusy(struct object *o)
 		LOCK(&oh->mtx);
 	}
 	o->busy = 0;
-	hsh_rush(oh);
+	if (oh != NULL)
+		hsh_rush(oh);
 	parent = o->parent;
 	o->parent = NULL;
 	if (parent != NULL)
