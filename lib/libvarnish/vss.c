@@ -58,7 +58,10 @@ struct vss_addr {
 	int			 va_socktype;
 	int			 va_protocol;
 	socklen_t		 va_addrlen;
-	struct sockaddr_storage	 va_addr;
+	union {
+		struct sockaddr_storage	 _storage;
+		struct sockaddr		 sa;
+	} va_addr;
 };
 
 /*
@@ -179,7 +182,7 @@ VSS_listen(const struct vss_addr *va, int depth)
 	val = 1;
 	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
 		perror("setsockopt(SO_REUSEADDR, 1)");
-		close(sd);
+		(void)close(sd);
 		return (-1);
 	}
 #ifdef IPV6_V6ONLY
@@ -188,18 +191,18 @@ VSS_listen(const struct vss_addr *va, int depth)
 	if (va->va_family == AF_INET6 &&
 	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
 		perror("setsockopt(IPV6_V6ONLY, 1)");
-		close(sd);
+		(void)close(sd);
 		return (-1);
 	}
 #endif
-	if (bind(sd, (const struct sockaddr *)&va->va_addr, va->va_addrlen) != 0) {
+	if (bind(sd, &va->va_addr.sa, va->va_addrlen) != 0) {
 		perror("bind()");
-		close(sd);
+		(void)close(sd);
 		return (-1);
 	}
 	if (listen(sd, depth) != 0) {
 		perror("listen()");
-		close(sd);
+		(void)close(sd);
 		return (-1);
 	}
 	return (sd);
@@ -219,9 +222,9 @@ VSS_connect(const struct vss_addr *va)
 		perror("socket()");
 		return (-1);
 	}
-	if (connect(sd, (const struct sockaddr *)&va->va_addr, va->va_addrlen) != 0) {
+	if (connect(sd, &va->va_addr.sa, va->va_addrlen) != 0) {
 		perror("connect()");
-		close(sd);
+		(void)close(sd);
 		return (-1);
 	}
 	return (sd);
