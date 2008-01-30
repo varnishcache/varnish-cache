@@ -40,7 +40,8 @@ int
 vtmpfile(char *template)
 {
 	char *b, *e, *p;
-	int fd, ran;
+	int fd;
+	char ran;
 
 	for (b = template; *b != '#'; ++b)
 		/* nothing */ ;
