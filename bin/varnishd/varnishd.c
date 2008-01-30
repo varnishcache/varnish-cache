@@ -231,7 +231,7 @@ static void
 DebugSigPass(int sig)
 {
 
-	kill(d_child, sig);
+	(void)kill(d_child, sig);
 }
 
 static void
@@ -280,8 +280,8 @@ DebugStunt(void)
 	pfd[1].fd = pipes[1][0];
 	pfd[1].events = POLLIN;
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGINT, DebugSigPass);
+	(void)signal(SIGPIPE, SIG_IGN);
+	(void)signal(SIGINT, DebugSigPass);
 	i = read(pipes[1][0], buf, sizeof buf - 1);
 	xxxassert(i >= 0);
 	buf[i] = '\0';
@@ -376,7 +376,7 @@ main(int argc, char *argv[])
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
-	setenv("TZ", "GMT", 1);
+	AZ(setenv("TZ", "GMT", 1));
 	tzset();
 
 	memset(cli, 0, sizeof cli);
@@ -547,18 +547,18 @@ main(int argc, char *argv[])
 	if (d_flag == 1)
 		DebugStunt();
 	if (d_flag < 2 && !F_flag)
-		daemon(1, d_flag);
+		AZ(daemon(1, d_flag));
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
 	if (pfh != NULL)
-		vpf_write(pfh);
+		vpf_write(pfh);		/* XXX: Warn or Err if fail ? */
 
 	mgt_cli_init();
 
 	mgt_run(d_flag, T_arg);
 
 	if (pfh != NULL)
-		vpf_remove(pfh);
+		(void)vpf_remove(pfh);
 	exit(0);
 }
