@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <poll.h>
@@ -47,20 +46,22 @@
 
 #include "vsb.h"
 
+#include "libvarnish.h"
+
 #include "cli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 
 void
-cli_out(struct cli *cli, const char *fmt, ...)
+cli_out(const struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
 	if (cli != NULL)
-		vsb_vprintf(cli->sb, fmt, ap);
+		(void)vsb_vprintf(cli->sb, fmt, ap);
 	else
-		vfprintf(stdout, fmt, ap);
+		(void)vfprintf(stdout, fmt, ap);
 	va_end(ap);
 }
 
@@ -84,7 +85,7 @@ cli_param(struct cli *cli)
 }
 
 int
-cli_writeres(int fd, struct cli *cli)
+cli_writeres(int fd, const struct cli *cli)
 {
 	int i, l;
 	struct iovec iov[3];
