@@ -34,7 +34,7 @@ struct cli {
 	enum cli_status_e	result;
 };
 
-int cli_writeres(int fd, struct cli *cli);
+int cli_writeres(int fd, const struct cli *cli);
 int cli_readres(int fd, unsigned *status, char **ptr, double tmo);
 extern struct cli_proto CLI_cmds[];
 
