@@ -56,7 +56,7 @@ flopen(const char *path, int flags, ...)
 		va_list ap;
 
 		va_start(ap, flags);
-		mode = va_arg(ap, int); /* mode_t promoted to int */
+		mode = (mode_t)va_arg(ap, int); /* mode_t promoted to int */
 		va_end(ap);
 	}
 
@@ -76,32 +76,32 @@ flopen(const char *path, int flags, ...)
 		if (fcntl(fd, operation, &lock) == -1) {
 			/* unsupported or interrupted */
 			serrno = errno;
-			close(fd);
+			(void)close(fd);
 			errno = serrno;
 			return (-1);
 		}
 		if (stat(path, &sb) == -1) {
 			/* disappeared from under our feet */
-			close(fd);
+			(void)close(fd);
 			continue;
 		}
 		if (fstat(fd, &fsb) == -1) {
 			/* can't happen [tm] */
 			serrno = errno;
-			close(fd);
+			(void)close(fd);
 			errno = serrno;
 			return (-1);
 		}
 		if (sb.st_dev != fsb.st_dev ||
 		    sb.st_ino != fsb.st_ino) {
 			/* changed under our feet */
-			close(fd);
+			(void)close(fd);
 			continue;
 		}
 		if (trunc && ftruncate(fd, 0) != 0) {
 			/* can't happen [tm] */
 			serrno = errno;
-			close(fd);
+			(void)close(fd);
 			errno = serrno;
 			return (-1);
 		}
