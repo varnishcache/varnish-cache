@@ -75,6 +75,7 @@ cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 	cli_result(cli, CLIS_OK);
 	/* XXX: syslog commands */
 	av = ParseArgv(line, 0);
+	AN(av);
 	do {
 		if (av[0] != NULL) {
 			cli_out(cli, "Syntax Error: %s\n", av[0]);
