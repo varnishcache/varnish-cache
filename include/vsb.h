@@ -69,11 +69,11 @@ int		 vsb_vprintf(struct vsb *, const char *, va_list) /* __printflike(2, 0) */;
 #endif
 int		 vsb_putc(struct vsb *, int);
 int		 vsb_trim(struct vsb *);
-int		 vsb_overflowed(struct vsb *);
+int		 vsb_overflowed(const struct vsb *);
 void		 vsb_finish(struct vsb *);
 char		*vsb_data(struct vsb *);
 int		 vsb_len(struct vsb *);
-int		 vsb_done(struct vsb *);
+int		 vsb_done(const struct vsb *);
 void		 vsb_delete(struct vsb *);
 #ifdef __cplusplus
 };

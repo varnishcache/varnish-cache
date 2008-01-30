@@ -51,7 +51,7 @@
 #define	VSB_ISFINISHED(s)	((s)->s_flags & VSB_FINISHED)
 #define	VSB_HASOVERFLOWED(s)	((s)->s_flags & VSB_OVERFLOWED)
 #define	VSB_HASROOM(s)		((s)->s_len < (s)->s_size - 1)
-#define	VSB_FREESPACE(s)	((s)->s_size - (s)->s_len - 1)
+#define	VSB_FREESPACE(s)	((s)->s_size - ((s)->s_len + 1))
 #define	VSB_CANEXTEND(s)	((s)->s_flags & VSB_AUTOEXTEND)
 
 /*
@@ -373,7 +373,7 @@ vsb_putc(struct vsb *s, int c)
 		return (-1);
 	}
 	if (c != '\0')
-	    s->s_buf[s->s_len++] = c;
+	    s->s_buf[s->s_len++] = (char)c;
 	return (0);
 }
 
@@ -399,7 +399,7 @@ vsb_trim(struct vsb *s)
  * Check if an vsb overflowed
  */
 int
-vsb_overflowed(struct vsb *s)
+vsb_overflowed(const struct vsb *s)
 {
     return VSB_HASOVERFLOWED(s);
 }
@@ -467,7 +467,7 @@ vsb_delete(struct vsb *s)
  * Check if an vsb has been finished.
  */
 int
-vsb_done(struct vsb *s)
+vsb_done(const struct vsb *s)
 {
 
 	return(VSB_ISFINISHED(s));
