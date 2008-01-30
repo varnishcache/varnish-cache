@@ -43,6 +43,7 @@
 #include "compat/strlcpy.h"
 #endif
 
+#include "libvarnish.h"		/* XXX: for assert() */
 #include "flopen.h"
 #include "vpf.h"
 
@@ -56,7 +57,7 @@ struct pidfh {
 static int _vpf_remove(struct pidfh *pfh, int freeit);
 
 static int
-vpf_verify(struct pidfh *pfh)
+vpf_verify(const struct pidfh *pfh)
 {
 	struct stat sb;
 
@@ -84,7 +85,7 @@ vpf_read(const char *path, pid_t *pidptr)
 
 	i = read(fd, buf, sizeof(buf) - 1);
 	error = errno;	/* Remember errno in case close() wants to change it. */
-	close(fd);
+	(void)close(fd);
 	if (i == -1)
 		return (error);
 	buf[i] = '\0';
@@ -113,8 +114,11 @@ vpf_open(const char *path, mode_t mode, pid_t *pidptr)
 		    "/var/run/%s.pid", getprogname());
 	else
 #endif
+	{
+		assert(path != NULL);
 		len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
 		    "%s", path);
+	}
 	if (len >= (int)sizeof(pfh->pf_path)) {
 		free(pfh);
 		errno = ENAMETOOLONG;
@@ -144,8 +148,8 @@ vpf_open(const char *path, mode_t mode, pid_t *pidptr)
 	 */
 	if (fstat(fd, &sb) == -1) {
 		error = errno;
-		unlink(pfh->pf_path);
-		close(fd);
+		(void)unlink(pfh->pf_path);
+		(void)close(fd);
 		free(pfh);
 		errno = error;
 		return (NULL);
@@ -182,15 +186,16 @@ vpf_write(struct pidfh *pfh)
 	 */
 	if (ftruncate(fd, 0) == -1) {
 		error = errno;
-		_vpf_remove(pfh, 0);
+		(void)_vpf_remove(pfh, 0);
 		errno = error;
 		return (-1);
 	}
 
-	snprintf(pidstr, sizeof(pidstr), "%u", getpid());
+	error = snprintf(pidstr, sizeof(pidstr), "%u", getpid());
+	assert(error < sizeof pidstr);
 	if (pwrite(fd, pidstr, strlen(pidstr), 0) != (ssize_t)strlen(pidstr)) {
 		error = errno;
-		_vpf_remove(pfh, 0);
+		(void)_vpf_remove(pfh, 0);
 		errno = error;
 		return (-1);
 	}
