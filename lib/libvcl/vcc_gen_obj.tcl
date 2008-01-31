@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 #-
 # Copyright (c) 2006 Verdens Gang AS
-# Copyright (c) 2006-2007 Linpro AS
+# Copyright (c) 2006-2008 Linpro AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
