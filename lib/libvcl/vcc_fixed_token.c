@@ -351,7 +351,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "/*-\n");
 	vsb_cat(sb, " * Copyright (c) 2006 Verdens Gang AS\n");
-	vsb_cat(sb, " * Copyright (c) 2006-2007 Linpro AS\n");
+	vsb_cat(sb, " * Copyright (c) 2006-2008 Linpro AS\n");
 	vsb_cat(sb, " * All rights reserved.\n");
 	vsb_cat(sb, " *\n");
 	vsb_cat(sb, " * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>\n");
