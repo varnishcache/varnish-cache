@@ -657,6 +657,12 @@ do {							\
 } while (0);
 #endif
 
+#ifdef DIAGNOSTICS
+#define ALOCKED(foo)		AN(pthread_mutex_trylock(foo))
+#else
+#define ALOCKED(foo)		(void)(foo)
+#endif
+
 /*
  * A normal pointer difference is signed, but we never want a negative value
  * so this little tool will make sure we don't get that.
