@@ -34,6 +34,9 @@
 #include <sys/socket.h>
 
 #include <pthread.h>
+#ifdef HAVE_PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
 #include <stdint.h>
 
 #include "vqueue.h"
@@ -657,10 +660,12 @@ do {							\
 } while (0);
 #endif
 
-#ifdef DIAGNOSTICS
-#define ALOCKED(foo)		AN(pthread_mutex_trylock(foo))
+#if defined(HAVE_PTHREAD_MUTEX_ISLOCKED_NP)
+#define ALOCKED(mutex)		AN(pthread_mutex_islocked_np((mutex)))
+#elif defined(DIAGNOSTICS)
+#define ALOCKED(mutex)		AN(pthread_mutex_trylock((mutex)))
 #else
-#define ALOCKED(foo)		(void)(foo)
+#define ALOCKED(mutex)		(void)(mutex)
 #endif
 
 /*
