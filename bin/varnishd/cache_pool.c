@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 #if defined(__FreeBSD__)
 #include <sys/socket.h>
 #elif defined(__linux__)
@@ -42,7 +42,7 @@
 #else
 #error Unknown sendfile() implementation
 #endif
-#endif /* HAVE_SENDFILE */
+#endif /* SENDFILE_WORKS */
 
 #include <errno.h>
 #include <stdio.h>
@@ -142,7 +142,7 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 	return (len);
 }
 
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 void
 WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 {
@@ -174,7 +174,7 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 #error Unknown sendfile() implementation
 #endif
 }
-#endif /* HAVE_SENDFILE */
+#endif /* SENDFILE_WORKS */
 
 /*--------------------------------------------------------------------*/
 

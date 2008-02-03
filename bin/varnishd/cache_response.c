@@ -150,7 +150,7 @@ RES_WriteObj(struct sess *sp)
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 			u += st->len;
 			sp->wrk->acct.bodybytes += st->len;
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 			/*
 			 * XXX: the overhead of setting up sendfile is not
 			 * XXX: epsilon and maybe not even delta, so avoid
@@ -164,7 +164,7 @@ RES_WriteObj(struct sess *sp)
 				    st->where, st->len);
 				continue;
 			}
-#endif /* HAVE_SENDFILE */
+#endif /* SENDFILE_WORKS */
 			VSL_stats->n_objwrite++;
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}

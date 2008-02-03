@@ -371,7 +371,7 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 	    4, UINT_MAX / 1024);
 }
 
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 /*--------------------------------------------------------------------*/
 
 static void
@@ -381,7 +381,7 @@ tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
 	(void)par;
 	tweak_generic_uint(cli, &master.sendfile_threshold, arg, 0, UINT_MAX);
 }
-#endif /* HAVE_SENDFILE */
+#endif /* SENDFILE_WORKS */
 
 /*--------------------------------------------------------------------*/
 
@@ -699,12 +699,12 @@ static struct parspec parspec[] = {
 		"above 128kb a dubious idea.",
 		EXPERIMENTAL,
 		"128", "kilobytes" },
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 	{ "sendfile_threshold", tweak_sendfile_threshold,
 		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
 		"-1", "bytes" },
-#endif /* HAVE_SENDFILE */
+#endif /* SENDFILE_WORKS */
 	{ "vcl_trace", tweak_vcl_trace,
 		"Trace VCL execution in the shmlog.\n"
 		"Enabling this will allow you to see the path each "
