@@ -43,10 +43,6 @@
  * Name threads if our pthreads implementation supports it.
  */
 
-#ifdef HAVE_PTHREAD_NP_H
-#include <pthread_np.h>
-#endif
-
 void
 THR_Name(const char *name)
 {
