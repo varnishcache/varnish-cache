@@ -103,18 +103,30 @@ AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
 AC_CHECK_FUNCS([getdtablesize])
 
-# Don't look for sendfile at all, none of them work
-# anyway. (don't tell when done with passed mem-range)
-#
 ## This one is tricky, there are multiple versions
-#case $host in
-#*-*-freebsd*|*-*-linux*)
-#	AC_CHECK_FUNCS([sendfile])
-# 	;;
-#*)
-#	AC_MSG_WARN([won't look for sendfile() on $host])
-#	;;
-#esac
+case $host in
+*-*-freebsd*)
+	AC_CACHE_CHECK([whether sendfile works],
+	  [ac_cv_so_sendfile_works],
+	  [AC_RUN_IFELSE(
+	    [AC_LANG_PROGRAM([[
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <sys/uio.h>
+	    ]],[[
+		return (SF_SYNC == 0);
+	    ]])],
+	    [ac_cv_so_sendfile_works=yes],
+	    [ac_cv_so_sendfile_works=no])
+	  ])
+	if test "$ac_cv_so_sendfile_works" = yes; then
+	   AC_DEFINE([SENDFILE_WORKS], [1], [Define if SENDFILE works])
+	fi
+ 	;;
+*)
+	AC_MSG_WARN([won't look for sendfile() on $host])
+	;;
+esac
 
 # These functions are provided by libcompat on platforms where they
 # are not available

@@ -98,7 +98,7 @@ struct params {
 	/* Fetcher hints */
 	unsigned		fetch_chunksize;
 
-#ifdef HAVE_SENDFILE
+#ifdef SENDFILE_WORKS
 	/* Sendfile object minimum size */
 	unsigned		sendfile_threshold;
 #endif
