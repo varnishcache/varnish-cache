@@ -432,7 +432,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 	vcc_NextToken(tl);
 	Fi(tl, 0, "\tVRT_init_random_backend(&VGC_backend_%.*s , &vdr_%.*s);\n",
 	    PF(t_dir), PF(t_dir));
-	Ff(tl, 0, "\tVRT_fini_random_backend(VGC_backend_%.*s);\n", PF(t_dir));
+	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_dir));
 }
 
 /*--------------------------------------------------------------------
