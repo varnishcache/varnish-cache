@@ -445,6 +445,13 @@ The approximate time elapsed since the object was last requests, in
 seconds.
 .El
 .Pp
+The following variables are available while determining the hash key
+of an object:
+.Bl -tag -width 4n
+.It Va req.hash
+The hash key used to store or fetched an object in the cache.
+.El
+.Pp
 The following variables are available while preparing a response to
 the client:
 .Bl -tag -width 4n
