@@ -692,15 +692,10 @@ VCC_CompileFile(struct vsb *sb, const char *fn, int fd)
 void
 VCC_InitCompile(const char *default_vcl)
 {
-	struct var *v;
 
 	vcc_default_vcl_b = default_vcl;
 	vcc_default_vcl_e = strchr(default_vcl, '\0');
 	assert(vcc_default_vcl_e != NULL);
 
 	vcl_init_tnames();
-	for (v = vcc_vars; v->name != NULL; v++)
-		v->len = strlen(v->name);
-	for (v = vcc_be_vars; v->name != NULL; v++)
-		v->len = strlen(v->name);
 }

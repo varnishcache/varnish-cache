@@ -30,13 +30,6 @@
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
 
-# Objects available in backends
-set beobj {
-  { backend.host	WO HOSTNAME	{} "struct backend *"}
-  { backend.port	WO PORTNAME	{} "struct backend *"}
-  { backend.dnsttl	WO TIME		{} "struct backend *"}
-  { backend.set		WO SET		{} "struct backend *"}
-}
 
 # Variables available in sessions
 # Comments are stripped from #...\n
@@ -314,12 +307,6 @@ proc vars {v pa} {
 
 puts $fo "#include <stdio.h>"
 puts $fo "#include \"vcc_compile.h\""
-puts $fo ""
-
-puts $fo "struct var vcc_be_vars\[\] = {"
-vars $beobj "backend"
-puts $fo "};"
-
 puts $fo ""
 
 puts $fo "struct var vcc_vars\[\] = {"

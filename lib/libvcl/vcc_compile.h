@@ -106,11 +106,8 @@ enum var_type {
 	RTIME,
 	STRING,
 	IP,
-	HOSTNAME,
-	PORTNAME,
 	HASH,
-	HEADER,
-	SET
+	HEADER
 };
 
 enum var_access {
@@ -177,7 +174,6 @@ void TlFree(struct tokenlist *tl, void *p);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
 /* vcc_obj.c */
-extern struct var vcc_be_vars[];
 extern struct var vcc_vars[];
 
 /* vcc_parse.c */
