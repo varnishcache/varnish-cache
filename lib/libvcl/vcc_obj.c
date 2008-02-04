@@ -9,38 +9,6 @@
 #include <stdio.h>
 #include "vcc_compile.h"
 
-struct var vcc_be_vars[] = {
-	{ "backend.host", HOSTNAME, 12,
-	    NULL,
-	    "VRT_l_backend_host(backend, ",
-	    V_WO,
-	    0,
-	    0
-	},
-	{ "backend.port", PORTNAME, 12,
-	    NULL,
-	    "VRT_l_backend_port(backend, ",
-	    V_WO,
-	    0,
-	    0
-	},
-	{ "backend.dnsttl", TIME, 14,
-	    NULL,
-	    "VRT_l_backend_dnsttl(backend, ",
-	    V_WO,
-	    0,
-	    0
-	},
-	{ "backend.set", SET, 11,
-	    NULL,
-	    "VRT_l_backend_set(backend, ",
-	    V_WO,
-	    0,
-	    0
-	},
-	{ NULL }
-};
-
 struct var vcc_vars[] = {
 	{ "client.ip", IP, 9,
 	    "VRT_r_client_ip(sp)",

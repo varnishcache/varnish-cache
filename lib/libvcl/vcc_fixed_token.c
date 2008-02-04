@@ -505,10 +505,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "void VRT_l_backend_host(struct backend *, const char *);\n");
-	vsb_cat(sb, "void VRT_l_backend_port(struct backend *, const char *);\n");
-	vsb_cat(sb, "void VRT_l_backend_dnsttl(struct backend *, double);\n");
-	vsb_cat(sb, "void VRT_l_backend_set(struct backend *, struct vrt_backend_entry *);\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_client_ip(const struct sess *);\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_server_ip(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
@@ -521,8 +517,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct backend * VRT_r_req_backend(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_backend(struct sess *, struct backend *);\n");
 	vsb_cat(sb, "int VRT_r_req_restarts(const struct sess *);\n");
-	vsb_cat(sb, "double VRT_r_req_grace(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_req_grace(const struct sess *, double);\n");
+	vsb_cat(sb, "double VRT_r_req_grace(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_grace(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_bereq_request(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_url(const struct sess *);\n");
