@@ -217,7 +217,6 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 
 	fs = vcc_FldSpec(tl, "!host", "?port", NULL);
 	t_first = tl->t;
-	*nbh = tl->nbackend_host++;
 
 	if (tl->t->tok == ID) {
 		VTAILQ_FOREACH(h, &tl->hosts, list) {
@@ -240,8 +239,8 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
 
-	Fh(tl, 0, "\nstatic const struct vrt_backend_host bh_%d = {\n",
-	    *nbh);
+	*nbh = tl->nbackend_host++;
+	Fh(tl, 0, "\nstatic const struct vrt_backend_host bh_%d = {\n", *nbh);
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
@@ -376,6 +375,9 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, const
 	int nbh, nelem;
 	struct fld_spec *fs;
 
+	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
+	    PF(t_dir), tl->nbackend);
+
 	fs = vcc_FldSpec(tl, "!backend", "?weight", NULL);
 
 	vcc_NextToken(tl);		/* ID: policy (= random) */
@@ -418,14 +420,18 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, const
 		vcc_NextToken(tl);
 	}
 	Fc(tl, 0, "\t{ .host = 0 }\n");
-	Fc(tl, 0, "}\n");
+	Fc(tl, 0, "};\n");
 	Fc(tl, 0,
-	    "\nstatic const struct vrt_dir_random vdr_%.*s[] = {\n",
+	    "\nstatic const struct vrt_dir_random vdr_%.*s = {\n",
 	    PF(t_dir));
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
 	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
+	Fc(tl, 0, "};\n");
 	vcc_NextToken(tl);
+	Fi(tl, 0, "\tVRT_init_random_backend(&VGC_backend_%.*s , &vdr_%.*s);\n",
+	    PF(t_dir), PF(t_dir));
+	Ff(tl, 0, "\tVRT_fini_random_backend(VGC_backend_%.*s);\n", PF(t_dir));
 }
 
 /*--------------------------------------------------------------------

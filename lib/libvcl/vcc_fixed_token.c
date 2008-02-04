@@ -423,7 +423,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_dir_random {\n");
 	vsb_cat(sb, "	unsigned 			nmember;\n");
-	vsb_cat(sb, "	struct vrt_dir_random_entry	*members;\n");
+	vsb_cat(sb, "	const struct vrt_dir_random_entry	*members;\n");
 	vsb_cat(sb, "	const char 			*ident;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
@@ -486,7 +486,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "/* Backend related */\n");
 	vsb_cat(sb, "void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);\n");
 	vsb_cat(sb, "void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robin_backend *);\n");
-	vsb_cat(sb, "void VRT_init_random_backend(struct backend **, const struct vrt_random_backend *);\n");
+	vsb_cat(sb, "void VRT_init_random_backend(struct backend **, const struct vrt_dir_random *);\n");
 	vsb_cat(sb, "void VRT_fini_backend(struct backend *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);\n");

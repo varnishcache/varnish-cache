@@ -437,8 +437,11 @@ struct backend_method backend_method_random = {
 /*--------------------------------------------------------------------*/
 
 void
-VRT_init_random_backend(struct backend **bp, const struct vrt_random_backend *t)
+VRT_init_random_backend(struct backend **bp, const struct vrt_dir_random *t)
 {
+	(void)bp;
+	(void)t;
+#if 0
 	struct backend *b;
 	struct ber *ber;
 	struct vrt_backend_entry *be;
@@ -508,5 +511,6 @@ VRT_init_random_backend(struct backend **bp, const struct vrt_random_backend *t)
 	ber->blist = bs;
 	
 	*bp = b;
+#endif
 }
 

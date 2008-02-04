@@ -72,7 +72,7 @@ struct vrt_dir_random_entry {
 
 struct vrt_dir_random {
 	unsigned 			nmember;
-	struct vrt_dir_random_entry	*members;
+	const struct vrt_dir_random_entry	*members;
 	const char 			*ident;
 };
 
@@ -135,7 +135,7 @@ void VRT_Rollback(struct sess *sp);
 /* Backend related */
 void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);
 void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robin_backend *);
-void VRT_init_random_backend(struct backend **, const struct vrt_random_backend *);
+void VRT_init_random_backend(struct backend **, const struct vrt_dir_random *);
 void VRT_fini_backend(struct backend *);
 
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
