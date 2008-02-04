@@ -369,7 +369,7 @@ vcc_ParseBackend(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, const struct token *t_dir)
+vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struct token *t_dir)
 {
 	struct token *t_field;
 	int nbh, nelem;
@@ -377,6 +377,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, const
 
 	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
 	    PF(t_dir), tl->nbackend);
+	vcc_AddDef(tl, t_dir, R_BACKEND);
 
 	fs = vcc_FldSpec(tl, "!backend", "?weight", NULL);
 
