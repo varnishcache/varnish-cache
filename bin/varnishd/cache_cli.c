@@ -106,8 +106,10 @@ CLI_Init(void)
 		pfd[0].fd = heritage.fds[2];
 		pfd[0].events = POLLIN;
 		i = poll(pfd, 1, 5000);
-		if (i == 0)
+		if (i == 0) {
+			VCL_Idle();
 			continue;
+		}
 		if ((nbuf + 2) >= lbuf) {
 			lbuf += lbuf;
 			buf = realloc(buf, lbuf);

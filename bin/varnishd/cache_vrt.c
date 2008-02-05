@@ -630,5 +630,6 @@ void
 VRT_fini_backend(struct backend *b)
 {
 
+	ASSERT_CLI();
 	VBE_DropRef(b);	
 }

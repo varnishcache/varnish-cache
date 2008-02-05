@@ -47,10 +47,9 @@
 
 struct vcls {
 	VTAILQ_ENTRY(vcls)	list;
-	const char		*name;
+	char			*name;
 	void			*dlh;
 	struct VCL_conf		*conf;
-	int			discard;
 };
 
 /*
@@ -61,9 +60,8 @@ static VTAILQ_HEAD(, vcls)	vcl_head =
     VTAILQ_HEAD_INITIALIZER(vcl_head);
 
 
-static struct vcls		*vcl_active; /* protected by vcl_mtx */
-
 static MTX			vcl_mtx;
+static struct vcls		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
 
@@ -85,6 +83,7 @@ VCL_Get(struct VCL_conf **vcc)
 	AN(vcl_active);
 	*vcc = vcl_active->conf;
 	AN(*vcc);
+	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	UNLOCK(&vcl_mtx);
 }
@@ -92,7 +91,6 @@ VCL_Get(struct VCL_conf **vcc)
 void
 VCL_Rel(struct VCL_conf **vcc)
 {
-	struct vcls *vcl;
 	struct VCL_conf *vc;
 
 	vc = *vcc;
@@ -101,19 +99,11 @@ VCL_Rel(struct VCL_conf **vcc)
 	LOCK(&vcl_mtx);
 	assert(vc->busy > 0);
 	vc->busy--;
-	vcl = vc->priv;	/* XXX miniobj */
-	if (vc->busy == 0 && vcl_active != vcl) {
-		/* XXX: purge backends */
-	}
-	if (vc->busy == 0 && vcl->discard) {
-		VTAILQ_REMOVE(&vcl_head, vcl, list);
-	} else {
-		vcl = NULL;
-	}
+	/*
+	 * We do not garbage collect discarded VCL's here, that happens
+	 * in VCL_Idle() which is called from the CLI thread.
+	 */
 	UNLOCK(&vcl_mtx);
-	if (vcl != NULL) {
-		/* XXX: dispose of vcl */
-	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -123,9 +113,13 @@ vcl_find(const char *name)
 {
 	struct vcls *vcl;
 
-	VTAILQ_FOREACH(vcl, &vcl_head, list)
+	ASSERT_CLI();
+	VTAILQ_FOREACH(vcl, &vcl_head, list) {
+		if (vcl->conf->discard)
+			continue;
 		if (!strcmp(vcl->name, name))
 			return (vcl);
+	}
 	return (NULL);
 }
 
@@ -134,6 +128,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 {
 	struct vcls *vcl;
 
+	ASSERT_CLI();
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
 		cli_out(cli, "Config '%s' already loaded", name);
@@ -177,6 +172,38 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	return (0);
 }
 
+/*--------------------------------------------------------------------
+ * This function is polled from the CLI thread to dispose of any non-busy
+ * VCLs * which have been discarded.
+ */
+
+static void
+VCL_Nuke(struct vcls *vcl)
+{
+
+	ASSERT_CLI();
+	assert(vcl != vcl_active);
+	assert(vcl->conf->discard);
+	assert(vcl->conf->busy == 0);
+	VTAILQ_REMOVE(&vcl_head, vcl, list);
+	vcl->conf->fini_func();
+	free(vcl->name);
+	free(vcl);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCL_Idle(void)
+{
+	struct vcls *vcl, *vcl2;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) 
+		if (vcl->conf->discard && vcl->conf->busy == 0) 
+			VCL_Nuke(vcl);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -186,6 +213,7 @@ cli_func_config_list(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	(void)priv;
+	ASSERT_CLI();
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		cli_out(cli, "%s %6u %s\n",
 		    vcl == vcl_active ? "* " : "  ",
@@ -200,6 +228,7 @@ cli_func_config_load(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	(void)priv;
+	ASSERT_CLI();
 	if (VCL_Load(av[3], av[2], cli))
 		cli_result(cli, CLIS_PARAM);
 	return;
@@ -210,17 +239,13 @@ cli_func_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 
+	ASSERT_CLI();
 	(void)av;
 	(void)priv;
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
 		cli_result(cli, CLIS_PARAM);
 		cli_out(cli, "VCL '%s' unknown", av[2]);
-		return;
-	}
-	if (vcl->discard) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "VCL %s already discarded", av[2]);
 		return;
 	}
 	LOCK(&vcl_mtx);
@@ -230,15 +255,10 @@ cli_func_config_discard(struct cli *cli, const char * const *av, void *priv)
 		cli_out(cli, "VCL %s is the active VCL", av[2]);
 		return;
 	}
-	vcl->discard = 1;
-	if (vcl->conf->busy == 0)
-		VTAILQ_REMOVE(&vcl_head, vcl, list);
-	else
-		vcl = NULL;
+	vcl->conf->discard = 1;
 	UNLOCK(&vcl_mtx);
-	if (vcl != NULL) {
-		/* XXX dispose of vcl */
-	}
+	if (vcl->conf->busy == 0)
+		VCL_Nuke(vcl);
 }
 
 void
@@ -251,11 +271,6 @@ cli_func_config_use(struct cli *cli, const char * const *av, void *priv)
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
 		cli_out(cli, "No VCL named '%s'", av[2]);
-		cli_result(cli, CLIS_PARAM);
-		return;
-	}
-	if (vcl->discard) {
-		cli_out(cli, "VCL '%s' has been discarded", av[2]);
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
