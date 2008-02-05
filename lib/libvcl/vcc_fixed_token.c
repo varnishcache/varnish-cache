@@ -325,6 +325,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "        struct vrt_ref  *ref;\n");
 	vsb_cat(sb, "        unsigned        nref;\n");
 	vsb_cat(sb, "        unsigned        busy;\n");
+	vsb_cat(sb, "        unsigned        discard;\n");
 	vsb_cat(sb, "        \n");
 	vsb_cat(sb, "	unsigned	nsrc;\n");
 	vsb_cat(sb, "	const char	**srcname;\n");
