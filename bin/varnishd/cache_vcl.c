@@ -136,10 +136,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
-		if (cli == NULL)
-			fprintf(stderr, "Config '%s' already loaded", name);
-		else
-			cli_out(cli, "Config '%s' already loaded", name);
+		cli_out(cli, "Config '%s' already loaded", name);
 		return (1);
 	}
 
@@ -149,29 +146,20 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
 	if (vcl->dlh == NULL) {
-		if (cli == NULL)
-			fprintf(stderr, "dlopen(%s): %s\n", fn, dlerror());
-		else
-			cli_out(cli, "dlopen(%s): %s\n", fn, dlerror());
+		cli_out(cli, "dlopen(%s): %s\n", fn, dlerror());
 		free(vcl);
 		return (1);
 	}
 	vcl->conf = dlsym(vcl->dlh, "VCL_conf");
 	if (vcl->conf == NULL) {
-		if (cli == NULL)
-			fprintf(stderr, "No VCL_conf symbol\n");
-		else
-			cli_out(cli, "No VCL_conf symbol\n");
+		cli_out(cli, "No VCL_conf symbol\n");
 		(void)dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
 	}
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		if (cli == NULL)
-			fprintf(stderr, "Wrong VCL_CONF_MAGIC\n");
-		else
-			cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
+		cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
 		(void)dlclose(vcl->dlh);
 		free(vcl);
 		return (1);
@@ -184,10 +172,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	if (vcl_active == NULL)
 		vcl_active = vcl;
 	UNLOCK(&vcl_mtx);
-	if (cli == NULL)
-		fprintf(stderr, "Loaded \"%s\" as \"%s\"\n", fn , name);
-	else
-		cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
+	cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
 	vcl->conf->init_func();
 	return (0);
 }
