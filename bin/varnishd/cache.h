@@ -470,6 +470,8 @@ void CNT_Init(void);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
+extern pthread_t cli_thread;
+#define ASSERT_CLI() do {assert(phtread_self() == cli_thread);} while (0)
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
