@@ -44,6 +44,8 @@
 #include "vsb.h"
 #include "heritage.h"
 
+pthread_t	cli_thread;
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -92,6 +94,7 @@ CLI_Init(void)
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
 
+	cli_thread = pthread_self();
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli->sb);
 	lbuf = 4096;
