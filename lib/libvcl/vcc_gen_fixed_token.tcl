@@ -137,6 +137,7 @@ puts $fo {	unsigned        magic;
         struct vrt_ref  *ref;
         unsigned        nref;
         unsigned        busy;
+        unsigned        discard;
         
 	unsigned	nsrc;
 	const char	**srcname;
