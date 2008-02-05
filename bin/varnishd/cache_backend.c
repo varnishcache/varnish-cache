@@ -211,27 +211,6 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	UNLOCK(&VBE_mtx);
 }
 
-/*--------------------------------------------------------------------*/
-
-struct backend *
-VBE_NewBackend(struct backend_method *method)
-{
-	struct backend *b;
-
-	b = calloc(sizeof *b, 1);
-	XXXAN(b);
-	b->magic = BACKEND_MAGIC;
-	b->method = method;
-
-	MTX_INIT(&b->mtx);
-	b->refcount = 1;
-
-	b->last_check = TIM_mono();
-	b->minute_limit = 1;
-
-	VTAILQ_INSERT_TAIL(&backendlist, b, list);
-	return (b);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -344,6 +323,46 @@ VBE_AddBackendMethod(const struct backend_method *bem)
 		bem->init();
 }
 
+/*--------------------------------------------------------------------
+ * Add a backend/director instance when loading a VCL.
+ * If an existing backend is matched, grab a refcount and return NULL.
+ * Else create a new backend structure and return that with reference
+ * initialized to one.
+ */
+
+struct backend *
+VBE_AddBackend(struct backend_method *method, const char *ident)
+{
+	struct backend *b;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH(b, &backendlist, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		if (b->method != method)
+			continue;
+		if (strcmp(b->ident, ident))
+			continue;
+		b->refcount++;
+		return (NULL);
+	}
+
+	b = calloc(sizeof *b, 1);
+	XXXAN(b);
+	b->magic = BACKEND_MAGIC;
+	b->method = method;
+	b->ident = strdup(ident);
+	XXXAN(b->ident);
+
+	MTX_INIT(&b->mtx);
+	b->refcount = 1;
+
+	b->last_check = TIM_mono();
+	b->minute_limit = 1;
+
+	VTAILQ_INSERT_TAIL(&backendlist, b, list);
+	return (b);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -353,5 +372,7 @@ VBE_Init(void)
 	MTX_INIT(&VBE_mtx);
 	VBE_AddBackendMethod(&backend_method_simple);
 	VBE_AddBackendMethod(&backend_method_random);
+#if 0
 	VBE_AddBackendMethod(&backend_method_round_robin);
+#endif
 }

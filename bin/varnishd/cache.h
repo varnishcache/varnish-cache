@@ -408,6 +408,7 @@ struct backend {
 	pthread_mutex_t		mtx;
 
 	struct backend_method	*method;
+	const char 		*ident;
 	void			*priv;
 
 	int			health;
@@ -442,7 +443,7 @@ void VBE_free_bereq(struct bereq *bereq);
 extern struct backendlist backendlist;
 void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *);
-struct backend *VBE_NewBackend(struct backend_method *method);
+struct backend *VBE_AddBackend(struct backend_method *method, const char *ident);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
@@ -471,7 +472,7 @@ void CNT_Init(void);
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
 extern pthread_t cli_thread;
-#define ASSERT_CLI() do {assert(phtread_self() == cli_thread);} while (0)
+#define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);

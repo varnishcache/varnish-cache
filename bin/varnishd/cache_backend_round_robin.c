@@ -30,6 +30,8 @@
  *
  */
 
+#if 0
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -487,3 +489,4 @@ VRT_init_round_robin_backend(struct backend **bp, const struct vrt_round_robin_b
 	*bp = b;
 }
 
+#endif

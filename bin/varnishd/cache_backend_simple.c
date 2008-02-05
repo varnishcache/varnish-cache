@@ -364,22 +364,9 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	struct bes *bes;
 	const char *p;
 	
-	/*
-	 * Scan existing backends to see if we can recycle one of them.
-	 */
-	VTAILQ_FOREACH(b, &backendlist, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (b->method != &backend_method_simple)
-			continue;
-		CAST_OBJ_NOTNULL(bes, b->priv, BES_MAGIC);
-		if (strcmp(bes->ident, t->ident))
-			continue;
-		b->refcount++;
-		*bp = b;
-		return;
-	}
-
-	b = VBE_NewBackend(&backend_method_simple);
+	b = VBE_AddBackend(&backend_method_simple, t->ident);
+	if (b == NULL)
+		return;		/* ref to existing backend */
 
 	bes = calloc(sizeof *bes, 1);
 	XXXAN(bes);
