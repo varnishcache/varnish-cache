@@ -51,7 +51,6 @@ static MTX VBE_mtx;
 
 struct backendlist backendlist = VTAILQ_HEAD_INITIALIZER(backendlist);
 
-
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
  *
@@ -222,8 +221,10 @@ VBE_DropRefLocked(struct backend *b)
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
 	i = --b->refcount;
-	if (i == 0)
+	if (i == 0) {
+		ASSERT_CLI();	/* XXX: ?? */
 		VTAILQ_REMOVE(&backendlist, b, list);
+	}
 	UNLOCK(&b->mtx);
 	if (i)
 		return;
