@@ -70,10 +70,16 @@ CheckHostPort(const char *host, const char *port)
  */
 
 static void
-vcc_EmitBeIdent(struct vsb *v, const struct token *first, const struct token *last)
+vcc_EmitBeIdent(struct vsb *v, const struct token *qual, int serial, const struct token *first, const struct token *last)
 {
 
 	vsb_printf(v, "\t.ident =");
+	if (qual != NULL) {
+		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
+		qual = VTAILQ_NEXT(qual, list);
+		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
+		vsb_printf(v, "\n\t    \":: %d :: \"", serial);
+	}
 	while (first != last) {
 		if (first->dec != NULL)
 			vsb_printf(v, "\n\t    \"\\\"\" %.*s \"\\\" \"",
@@ -201,11 +207,11 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
  * be_element:
  *	'.' name '=' value ';'
  *
- * The struct vrt_backend_host is emitted to Fh().
+ * The struct vrt_backend is emitted to Fh().
  */
 
 static void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, int serial)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -240,7 +246,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	vcc_NextToken(tl);
 
 	*nbh = tl->nbackend_host++;
-	Fh(tl, 0, "\nstatic const struct vrt_backend_host bh_%d = {\n", *nbh);
+	Fh(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
@@ -298,7 +304,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 	EncToken(tl->fh, t_host);
 	Fh(tl, 0, ",\n");
 
-	/* Check that the hostname makes sense */
+	/* Check that the portname makes sense */
 	if (t_port != NULL) {
 		ep = CheckHostPort(t_host->dec, t_port->dec);
 		if (ep != NULL) {
@@ -310,10 +316,12 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh)
 		Fh(tl, 0, "\t.portname = ");
 		EncToken(tl->fh, t_port);
 		Fh(tl, 0, ",\n");
+	} else {
+		Fh(tl, 0, "\t.portname = \"80\",\n");
 	}
 
 	ExpectErr(tl, '}');
-	vcc_EmitBeIdent(tl->fh, t_first, tl->t);
+	vcc_EmitBeIdent(tl->fh, qual, serial, t_first, tl->t);
 	Fh(tl, 0, "};\n");
 	vcc_NextToken(tl);
 }
@@ -338,27 +346,28 @@ vcc_ParseBackend(struct tokenlist *tl)
 	h->name = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_ParseBackendHost(tl, &nbh);
+	vcc_ParseBackendHost(tl, &nbh, NULL, 0);
 	ERRCHK(tl);
 
 	h->hnum = nbh;
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
 
 	/* In the compiled vcl we use these macros to refer to backends */
-	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
+	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
 	    PF(h->name), tl->nbackend);
 
 	vcc_AddDef(tl, h->name, R_BACKEND);
 
-	Fi(tl, 0, "\tVRT_init_simple_backend(&VGC_backend_%.*s , &sbe_%.*s);\n",
+	Fi(tl, 0,
+	    "\tVRT_init_dir_simple(cli, &VGC_backend_%.*s , &sbe_%.*s);\n",
 	    PF(h->name), PF(h->name));
-	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(h->name));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(h->name));
 
-	Fc(tl, 0, "\nstatic const struct vrt_simple_backend sbe_%.*s = {\n",
+	Fc(tl, 0, "\nstatic const struct vrt_dir_simple sbe_%.*s = {\n",
 	    PF(h->name));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(h->name));
 	Fc(tl, 0, "\t.host = &bh_%d,\n", nbh);
-	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
+	vcc_EmitBeIdent(tl->fc, NULL, 0, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 
 	tl->nbackend++;
@@ -375,7 +384,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 	int nbh, nelem;
 	struct fld_spec *fs;
 
-	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.backend[%d])\n",
+	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
 	    PF(t_dir), tl->nbackend);
 	vcc_AddDef(tl, t_dir, R_BACKEND);
 
@@ -402,7 +411,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 			vcc_IsField(tl, &t_field, fs);
 			ERRCHK(tl);
 			if (vcc_IdIs(t_field, "backend")) {
-				vcc_ParseBackendHost(tl, &nbh);
+				vcc_ParseBackendHost(tl, &nbh, t_dir, nelem);
 				Fc(tl, 0, " .host = &bh_%d,", nbh);
 				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {
@@ -428,12 +437,13 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_dir));
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
-	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
+	vcc_EmitBeIdent(tl->fc, NULL, 0, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 	vcc_NextToken(tl);
-	Fi(tl, 0, "\tVRT_init_random_backend(&VGC_backend_%.*s , &vdr_%.*s);\n",
+	Fi(tl, 0,
+	    "\tVRT_init_dir_random(cli, &VGC_backend_%.*s , &vdr_%.*s);\n",
 	    PF(t_dir), PF(t_dir));
-	Ff(tl, 0, "\tVRT_fini_backend(VGC_backend_%.*s);\n", PF(t_dir));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(t_dir));
 }
 
 /*--------------------------------------------------------------------

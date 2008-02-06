@@ -195,7 +195,12 @@ cnt_done(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->bereq);
-	sp->backend = NULL;
+	sp->director = NULL;
+	sp->backend = NULL;		/*
+					 * XXX: we may want to leave this
+					 * behind to hint directors ?
+					 */
+					
 	if (sp->vcl != NULL) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
@@ -320,9 +325,9 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->bereq);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	i = Fetch(sp);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 
 	if (!i)
 		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
@@ -841,9 +846,9 @@ cnt_start(struct sess *sp)
 	sp->doclose = http_DoConnection(sp->http);
 
 	/* By default we use the first backend */
-	AZ(sp->backend);
-	sp->backend = sp->vcl->backend[0];
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	AZ(sp->director);
+	sp->director = sp->vcl->director[0];
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
@@ -879,7 +884,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-		CHECK_OBJ_ORNULL(sp->backend, BACKEND_MAGIC);
+		CHECK_OBJ_ORNULL(sp->director, DIRECTOR_MAGIC);
 
 		switch (sp->step) {
 #ifdef DIAGNOSTICS

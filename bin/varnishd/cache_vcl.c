@@ -168,7 +168,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		vcl_active = vcl;
 	UNLOCK(&vcl_mtx);
 	cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
-	vcl->conf->init_func();
+	vcl->conf->init_func(cli);
 	return (0);
 }
 
@@ -186,7 +186,7 @@ VCL_Nuke(struct vcls *vcl)
 	assert(vcl->conf->discard);
 	assert(vcl->conf->busy == 0);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	vcl->conf->fini_func();
+	vcl->conf->fini_func(NULL);
 	free(vcl->name);
 	free(vcl);
 }

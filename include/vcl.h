@@ -7,17 +7,18 @@
  */
 
 struct sess;
+struct cli;
 
-typedef void vcl_init_f(void);
-typedef void vcl_fini_f(void);
+typedef void vcl_init_f(struct cli *);
+typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 
 struct VCL_conf {
 	unsigned        magic;
 #define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */
 
-        struct backend  **backend;
-        unsigned        nbackend;
+        struct director  **director;
+        unsigned        ndirector;
         struct vrt_ref  *ref;
         unsigned        nref;
         unsigned        busy;

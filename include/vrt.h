@@ -36,54 +36,50 @@
 
 struct sess;
 struct vsb;
-struct backend;
+struct cli;
+struct director;
 struct VCL_conf;
 struct sockaddr;
 
-struct vrt_backend_host {
+/*
+ * A backend is a host+port somewhere on the network
+ */
+struct vrt_backend {
 	const char	*portname;
 	const char	*hostname;
 	const char	*ident;
 };
 
-struct vrt_simple_backend {
-	const char			*ident;
-	const char			*name;
-	const struct vrt_backend_host	*host;
+/*
+ * A director with a predictable reply
+ */
+
+struct vrt_dir_simple {
+	const char				*ident;
+	const char				*name;
+	const struct vrt_backend		*host;
 };
 
-struct vrt_backend_entry {
-	const char	*port;
-	const char	*host;
-	double		weight;
-	struct vrt_backend_entry *next;
-};
-
-struct vrt_round_robin_backend {
-	const char	*name;
-	unsigned	count;
-	struct vrt_backend_entry *bentry;
-};
+/*
+ * A director with an unpredictable reply
+ */
 
 struct vrt_dir_random_entry {
-	const struct vrt_backend_host	*host;
-	double				weight;
+	const struct vrt_backend		*host;
+	double					weight;
 };
 
 struct vrt_dir_random {
-	const char 			*ident;
-	const char 			*name;
-	unsigned 			nmember;
+	const char 				*ident;
+	const char 				*name;
+	unsigned 				nmember;
 	const struct vrt_dir_random_entry	*members;
 };
 
-struct vrt_random_backend {
-	const char	*name;
-	unsigned	weighted;
-	unsigned	count;
-	struct vrt_backend_entry *bentry;
-};
-
+/*
+ * other stuff.
+ * XXX: document when bored
+ */
 
 struct vrt_ref {
 	unsigned	source;
@@ -134,10 +130,9 @@ void VRT_ESI(struct sess *sp);
 void VRT_Rollback(struct sess *sp);
 
 /* Backend related */
-void VRT_init_simple_backend(struct backend **, const struct vrt_simple_backend *);
-void VRT_init_round_robin_backend(struct backend **, const struct vrt_round_robin_backend *);
-void VRT_init_random_backend(struct backend **, const struct vrt_dir_random *);
-void VRT_fini_backend(struct backend *);
+void VRT_init_dir_simple(struct cli *, struct director **, const struct vrt_dir_simple *);
+void VRT_init_dir_random(struct cli *, struct director **, const struct vrt_dir_random *);
+void VRT_fini_dir(struct cli *, struct director *);
 
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
 char *VRT_int_string(const struct sess *sp, int);

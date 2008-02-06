@@ -391,17 +391,17 @@ VOBJ(unsigned, cacheable, cacheable)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_backend(struct sess *sp, struct backend *be)
+VRT_l_req_backend(struct sess *sp, struct director *be)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->backend = be;
+	sp->director = be;
 }
 
-struct backend *
+struct director *
 VRT_r_req_backend(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->backend);
+	return (sp->director);
 }
 
 /*--------------------------------------------------------------------*/
@@ -543,10 +543,14 @@ VRT_r_obj_lastuse(const struct sess *sp)
 int
 VRT_r_backend_health(const struct sess *sp)
 {
-	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+#if 0	
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	return (sp->backend->health);
+#else
+	INCOMPL();
+	return (0);
+#endif
 }
 
 /*--------------------------------------------------------------------*/
@@ -621,15 +625,3 @@ VRT_strcmp(const char *s1, const char *s2)
 	return (strcmp(s1, s2));
 }
 
-
-/*--------------------------------------------------------------------
- * Backend stuff
- */
-
-void
-VRT_fini_backend(struct backend *b)
-{
-
-	ASSERT_CLI();
-	VBE_DropRef(b);	
-}

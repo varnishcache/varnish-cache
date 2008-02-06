@@ -211,7 +211,7 @@ set spobj {
 set tt(IP)		"struct sockaddr *"
 set tt(STRING)		"const char *"
 set tt(BOOL)		"unsigned"
-set tt(BACKEND)		"struct backend *"
+set tt(BACKEND)		"struct director *"
 set tt(TIME)		"double"
 set tt(RTIME)		"double"
 set tt(INT)		"int"
