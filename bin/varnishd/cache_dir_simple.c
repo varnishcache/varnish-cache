@@ -27,84 +27,70 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <errno.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "shmlog.h"
 #include "cache.h"
-#include "heritage.h"
-#include "stevedore.h"
+#include "vrt.h"
 
-/*--------------------------------------------------------------------
- * Name threads if our pthreads implementation supports it.
- */
+/*--------------------------------------------------------------------*/
 
-void
-THR_Name(const char *name)
+struct vdi_simple {
+	unsigned		magic;
+#define VDI_SIMPLE_MAGIC	0x476d25b7
+	struct director		dir;
+	struct backend		*backend;
+};
+
+static struct backend *
+vdi_simple_choose(struct sess *sp)
 {
-#ifdef HAVE_PTHREAD_SET_NAME_NP
-	pthread_set_name_np(pthread_self(), name);
-#else
-	/*
-	 * XXX: we could stash it somewhere else (TLS ?)
-	 */
-	(void)name;
-#endif
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
+	return (vs->backend);
 }
 
-/*--------------------------------------------------------------------
- * XXX: Think more about which order we start things
- */
+static void
+vdi_simple_fini(struct director *d)
+{
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+	
+	VBE_DropRef(vs->backend);
+	free(vs);
+}
 
 void
-child_main(void)
+VRT_init_dir_simple(struct cli *cli, struct director **bp, const struct vrt_dir_simple *t)
 {
+	struct vdi_simple *vs;
+	
+	(void)cli;
 
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
-	printf("Child starts\n");
+	vs = calloc(sizeof *vs, 1);
+	XXXAN(vs);
+	vs->magic = VDI_SIMPLE_MAGIC;
+	vs->dir.magic = DIRECTOR_MAGIC;
+	vs->dir.priv = vs;
+	vs->dir.name = "simple";
+	vs->dir.choose = vdi_simple_choose;
+	vs->dir.fini = vdi_simple_fini;
 
-	THR_Name("cache-main");
+	vs->backend = VBE_AddBackend(cli, t->host);
 
-#define SZOF(foo)	printf("sizeof(%s) = %zd\n", #foo, sizeof(foo));
-	SZOF(struct ws);
-	SZOF(struct http);
-	SZOF(struct http_conn);
-	SZOF(struct acct);
-	SZOF(struct worker);
-	SZOF(struct workreq);
-	SZOF(struct bereq);
-	SZOF(struct storage);
-	SZOF(struct object);
-	SZOF(struct objhead);
-	SZOF(struct sess);
-	SZOF(struct vbe_conn);
-
-
-	CNT_Init();
-	VCL_Init();
-
-	HTTP_Init();
-	SES_Init();
-
-	VBE_Init();
-	VSL_Init();
-	WRK_Init();
-
-	EXP_Init();
-	HSH_Init();
-	BAN_Init();
-
-	STV_open();
-
-	printf("Ready\n");
-	VSL_stats->start_time = (time_t)TIM_real();
-
-	CLI_Init();
-
-	printf("Child dies\n");
+	*bp = &vs->dir;
 }

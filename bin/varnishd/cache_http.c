@@ -649,8 +649,11 @@ http_FilterHeader(struct sess *sp, unsigned how)
 
 	/* XXX: This really ought to go into the default VCL */
 	if (!http_GetHdr(hp, H_Host, &b)) {
+#if 0
 		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
 		    sp->backend->method->gethostname(sp->backend));
+#endif
+		INCOMPL();
 	}
 	sp->bereq = bereq;
 }

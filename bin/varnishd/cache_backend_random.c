@@ -45,6 +45,7 @@
 #include "vrt.h"
 
 
+#if 0
 struct ber {
 	unsigned		magic;
 #define BER_MAGIC		0x645b03f4
@@ -434,22 +435,27 @@ struct backend_method backend_method_random = {
 	.cleanup =		ber_Cleanup,
 };
 
+#endif
+
 /*--------------------------------------------------------------------*/
 
 void
-VRT_init_random_backend(struct backend **bp, const struct vrt_dir_random *t)
+VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_random *t)
 {
-	struct backend *b;
+	(void)cli;
 	(void)bp;
 	(void)t;
+	
+
+#if 0
+	struct backend *b;
 
 	if (VBE_AddBackend(&backend_method_random, t->ident, bp))
 		return;		/* reuse existing backend */
 
-	b = *bp;
+	bp = *bp;
 	AN(t->name);
 	REPLACE(b->vcl_name, t->name);
-#if 0
 	struct backend *b;
 	struct ber *ber;
 	struct vrt_backend_entry *be;

@@ -131,6 +131,7 @@ dump_object(const struct object *o)
 	fp("  },\n");
 }
 
+#if 0
 /* dump a struct backend */
 static void
 dump_backend(const struct backend *be)
@@ -141,12 +142,15 @@ dump_backend(const struct backend *be)
 	    be->vcl_name ? be->vcl_name : "(null)");
 	fp("  },\n");
 }
+#endif
 
 /* dump a struct sess */
 static void
 dump_sess(const struct sess *sp)
 {
+#if 0
 	const struct backend *be = sp->backend;
+#endif
 	const struct object *obj = sp->obj;
 
 	fp("sp = %p {\n", sp);
@@ -162,8 +166,11 @@ dump_sess(const struct sess *sp)
 		fp("  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
 
+#if 0
 	if (VALID_OBJ(be, BACKEND_MAGIC))
 		dump_backend(be);
+	INCOMPL():
+#endif
 
 	if (VALID_OBJ(obj, OBJECT_MAGIC))
 		dump_object(obj);

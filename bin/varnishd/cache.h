@@ -76,6 +76,7 @@ struct objhead;
 struct workreq;
 struct addrinfo;
 struct esi_bit;
+struct vrt_backend;
 
 /*--------------------------------------------------------------------*/
 
@@ -345,6 +346,7 @@ struct sess {
 
 	VTAILQ_ENTRY(sess)	list;
 
+	struct director		*director;
 	struct backend		*backend;
 	struct bereq		*bereq;
 	struct object		*obj;
@@ -364,6 +366,23 @@ struct sess {
 	const char		**hashptr;
 };
 
+/* -------------------------------------------------------------------
+ * A director is a piece of code which selects one of possibly multiple
+ * backends to use.
+ */
+
+typedef struct backend *vdi_choose_f(struct sess *sp);
+typedef void vdi_fini_f(struct director *d);
+
+struct director {
+	unsigned		magic;
+#define DIRECTOR_MAGIC		0x3336351d
+	const char		*name;
+	vdi_choose_f		*choose;
+	vdi_fini_f		*fini;
+	void			*priv;
+};
+
 /* -------------------------------------------------------------------*/
 
 /* Backend connection */
@@ -374,46 +393,6 @@ struct vbe_conn {
 	struct backend		*backend;
 	int			fd;
 	void			*priv;
-};
-
-
-/* Backend method */
-typedef struct vbe_conn *vbe_getfd_f(const struct sess *sp);
-typedef void vbe_close_f(struct worker *w, struct vbe_conn *vc);
-typedef void vbe_recycle_f(struct worker *w, struct vbe_conn *vc);
-typedef void vbe_init_f(void);
-typedef const char *vbe_gethostname_f(const struct backend *);
-typedef void vbe_cleanup_f(const struct backend *);
-typedef void vbe_updatehealth_f(const struct sess *sp, const struct vbe_conn *vc, int);
-
-struct backend_method {
-	const char		*name;
-	vbe_getfd_f		*getfd;
-	vbe_close_f		*close;
-	vbe_recycle_f		*recycle;
-	vbe_cleanup_f		*cleanup;
-	vbe_gethostname_f	*gethostname;
-	vbe_updatehealth_f	*updatehealth;
-	vbe_init_f		*init;
-};
-
-/* Backend indstance */
-struct backend {
-	unsigned		magic;
-#define BACKEND_MAGIC		0x64c4c7c6
-	char			*vcl_name;
-
-	VTAILQ_ENTRY(backend)	list;
-	int			refcount;
-	pthread_mutex_t		mtx;
-
-	struct backend_method	*method;
-	const char 		*ident;
-	void			*priv;
-
-	int			health;
-	double			last_check;
-	int			minute_limit;
 };
 
 /*
@@ -435,7 +414,7 @@ extern int vca_pipes[2];
 /* cache_backend.c */
 
 void VBE_Init(void);
-struct vbe_conn *VBE_GetFd(const struct sess *sp);
+struct vbe_conn *VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
@@ -443,7 +422,7 @@ void VBE_free_bereq(struct bereq *bereq);
 extern struct backendlist backendlist;
 void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *);
-int VBE_AddBackend(struct backend_method *method, const char *ident, struct backend **be);
+struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
@@ -451,11 +430,6 @@ void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
 /* convenience functions for backend methods */
 int VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai);
 int VBE_CheckFd(int fd);
-
-/* cache_backend_simple.c */
-extern struct backend_method	backend_method_simple;
-extern struct backend_method	backend_method_random;
-extern struct backend_method	backend_method_round_robin;
 
 /* cache_ban.c */
 void AddBan(const char *, int hash);

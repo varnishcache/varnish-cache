@@ -295,7 +295,7 @@ static void
 EmitInitFunc(const struct tokenlist *tl)
 {
 
-	Fc(tl, 0, "\nstatic void\nVGC_Init(void)\n{\n\n");
+	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
 	vsb_finish(tl->fi);
 	/* XXX: check vsb_overflowed ? */
 	vsb_cat(tl->fc, vsb_data(tl->fi));
@@ -306,7 +306,7 @@ static void
 EmitFiniFunc(const struct tokenlist *tl)
 {
 
-	Fc(tl, 0, "\nstatic void\nVGC_Fini(void)\n{\n\n");
+	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
 	vsb_finish(tl->ff);
 	/* XXX: check vsb_overflowed ? */
 	vsb_cat(tl->fc, vsb_data(tl->ff));
@@ -339,14 +339,14 @@ EmitStruct(const struct tokenlist *tl)
 	}
 	Fc(tl, 0, "};\n");
 
-	Fc(tl, 0, "\nstatic struct backend\t*backends[%d];\n", tl->nbackend);
+	Fc(tl, 0, "\nstatic struct director\t*directors[%d];\n", tl->nbackend);
 
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
 	Fc(tl, 0, "\t.fini_func = VGC_Fini,\n");
-	Fc(tl, 0, "\t.nbackend = %d,\n", tl->nbackend);
-	Fc(tl, 0, "\t.backend = backends,\n");
+	Fc(tl, 0, "\t.ndirector = %d,\n", tl->nbackend);
+	Fc(tl, 0, "\t.director = directors,\n");
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);

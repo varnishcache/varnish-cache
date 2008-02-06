@@ -44,6 +44,8 @@
 #include "cache.h"
 #include "vrt.h"
 
+#if 0
+
 struct bes {
 	unsigned		magic;
 #define BES_MAGIC		0x015e17ac
@@ -343,55 +345,5 @@ bes_GetHostname(const struct backend *b)
 	return (bes->hostname);
 }
 
-/*--------------------------------------------------------------------*/
 
-struct backend_method backend_method_simple = {
-	.name =			"simple",
-	.getfd =		bes_GetFd,
-	.close =		bes_ClosedFd,
-	.recycle =		bes_RecycleFd,
-	.gethostname =		bes_GetHostname,
-	.cleanup =		bes_Cleanup,
-};
-
-/*--------------------------------------------------------------------*/
-
-void
-VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
-{
-	struct backend *b;
-	struct bes *bes;
-	const char *p;
-	
-	if (VBE_AddBackend(&backend_method_simple, t->ident, bp))
-		return;		/* ref to existing backend */
-
-	b = *bp;
-	AN(t->name);
-	REPLACE(b->vcl_name, t->name);
-
-	bes = calloc(sizeof *bes, 1);
-	XXXAN(bes);
-	bes->magic = BES_MAGIC;
-
-	b->priv = bes;
-
-	bes->dnsttl = 300;
-
-	AN(t->host->portname);
-	REPLACE(bes->portname, t->host->portname);
-
-	AN(t->host->hostname);
-	REPLACE(bes->hostname, t->host->hostname);
-
-	/*
-	 * The VCL compiler already did a lookup, but we'll do another one
-	 * here, just in case...
-	 */
-	LOCK(&b->mtx);
-	p = bes_dns_lookup(b);
-	UNLOCK(&b->mtx);
-	if (p != NULL)
-		printf("Warning: could not lookup backend %s (%s:%s): %s",
-		    b->vcl_name, bes->hostname, bes->portname, p);
-}
+#endif

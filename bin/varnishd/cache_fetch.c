@@ -309,7 +309,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	assert(sp->obj->busy != 0);
 	w = sp->wrk;
 	bereq = sp->bereq;

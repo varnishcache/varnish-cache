@@ -18,6 +18,7 @@ varnishd_SOURCES = \
 	cache_ban.c \
 	cache_center.c \
 	cache_cli.c \
+	cache_dir_simple.c \
 	cache_expire.c \
 	cache_fetch.c \
 	cache_hash.c \
