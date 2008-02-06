@@ -71,9 +71,10 @@ struct vrt_dir_random_entry {
 };
 
 struct vrt_dir_random {
+	const char 			*ident;
+	const char 			*name;
 	unsigned 			nmember;
 	const struct vrt_dir_random_entry	*members;
-	const char 			*ident;
 };
 
 struct vrt_random_backend {
