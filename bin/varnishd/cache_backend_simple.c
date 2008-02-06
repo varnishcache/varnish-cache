@@ -49,7 +49,6 @@ struct bes {
 #define BES_MAGIC		0x015e17ac
 	char			*hostname;
 	char			*portname;
-	char			*ident;
 	struct addrinfo		*addr;
 	struct addrinfo		*last_addr;
 	double			dnsttl;
@@ -364,9 +363,12 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	struct bes *bes;
 	const char *p;
 	
-	b = VBE_AddBackend(&backend_method_simple, t->ident);
-	if (b == NULL)
+	if (VBE_AddBackend(&backend_method_simple, t->ident, bp))
 		return;		/* ref to existing backend */
+
+	b = *bp;
+	AN(t->name);
+	REPLACE(b->vcl_name, t->name);
 
 	bes = calloc(sizeof *bes, 1);
 	XXXAN(bes);
@@ -375,12 +377,6 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	b->priv = bes;
 
 	bes->dnsttl = 300;
-
-	AN(t->ident);
-	REPLACE(bes->ident, t->ident);
-
-	AN(t->name);
-	REPLACE(b->vcl_name, t->name);
 
 	AN(t->host->portname);
 	REPLACE(bes->portname, t->host->portname);
@@ -398,6 +394,4 @@ VRT_init_simple_backend(struct backend **bp, const struct vrt_simple_backend *t)
 	if (p != NULL)
 		printf("Warning: could not lookup backend %s (%s:%s): %s",
 		    b->vcl_name, bes->hostname, bes->portname, p);
-
-	*bp = b;
 }
