@@ -443,7 +443,7 @@ void VBE_free_bereq(struct bereq *bereq);
 extern struct backendlist backendlist;
 void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *);
-struct backend *VBE_AddBackend(struct backend_method *method, const char *ident);
+int VBE_AddBackend(struct backend_method *method, const char *ident, struct backend **be);
 struct vbe_conn *VBE_NewConn(void);
 void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);

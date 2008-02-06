@@ -326,13 +326,13 @@ VBE_AddBackendMethod(const struct backend_method *bem)
 
 /*--------------------------------------------------------------------
  * Add a backend/director instance when loading a VCL.
- * If an existing backend is matched, grab a refcount and return NULL.
- * Else create a new backend structure and return that with reference
- * initialized to one.
+ * If an existing backend is matched, grab a refcount and return one.
+ * Else create a new backend structure with reference initialized to one
+ * and return zero.
  */
 
-struct backend *
-VBE_AddBackend(struct backend_method *method, const char *ident)
+int
+VBE_AddBackend(struct backend_method *method, const char *ident, struct backend **be)
 {
 	struct backend *b;
 
@@ -344,7 +344,8 @@ VBE_AddBackend(struct backend_method *method, const char *ident)
 		if (strcmp(b->ident, ident))
 			continue;
 		b->refcount++;
-		return (NULL);
+		*be = b;
+		return (1);
 	}
 
 	b = calloc(sizeof *b, 1);
@@ -361,7 +362,8 @@ VBE_AddBackend(struct backend_method *method, const char *ident)
 	b->minute_limit = 1;
 
 	VTAILQ_INSERT_TAIL(&backendlist, b, list);
-	return (b);
+	*be = b;
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

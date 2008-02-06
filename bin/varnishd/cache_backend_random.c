@@ -439,8 +439,16 @@ struct backend_method backend_method_random = {
 void
 VRT_init_random_backend(struct backend **bp, const struct vrt_dir_random *t)
 {
+	struct backend *b;
 	(void)bp;
 	(void)t;
+
+	if (VBE_AddBackend(&backend_method_random, t->ident, bp))
+		return;		/* reuse existing backend */
+
+	b = *bp;
+	AN(t->name);
+	REPLACE(b->vcl_name, t->name);
 #if 0
 	struct backend *b;
 	struct ber *ber;
