@@ -423,9 +423,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_dir_random {\n");
+	vsb_cat(sb, "	const char 			*ident;\n");
+	vsb_cat(sb, "	const char 			*name;\n");
 	vsb_cat(sb, "	unsigned 			nmember;\n");
 	vsb_cat(sb, "	const struct vrt_dir_random_entry	*members;\n");
-	vsb_cat(sb, "	const char 			*ident;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_random_backend {\n");

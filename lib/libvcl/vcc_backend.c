@@ -425,6 +425,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 	Fc(tl, 0,
 	    "\nstatic const struct vrt_dir_random vdr_%.*s = {\n",
 	    PF(t_dir));
+	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_dir));
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
 	vcc_EmitBeIdent(tl->fc, t_first, tl->t);
