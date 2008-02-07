@@ -74,7 +74,7 @@ vcc_EmitBeIdent(struct vsb *v, const struct token *qual, int serial, const struc
 {
 
 	vsb_printf(v, "\t.ident =");
-	if (qual != NULL) {
+	if (serial != 0 && qual != NULL) {
 		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
 		qual = VTAILQ_NEXT(qual, list);
 		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
@@ -322,7 +322,10 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 
 	ExpectErr(tl, '}');
 	vcc_EmitBeIdent(tl->fh, qual, serial, t_first, tl->t);
-	Fh(tl, 0, "};\n");
+	Fh(tl, 0, "\t.vcl_name = \"%.*s", PF(qual));
+	if (serial)
+		Fh(tl, 0, "[%d]", serial);
+	Fh(tl, 0, "\"\n};\n");
 	vcc_NextToken(tl);
 }
 
@@ -333,12 +336,10 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 void
 vcc_ParseBackend(struct tokenlist *tl)
 {
-	struct token *t_first;
 	struct host *h;
 	int nbh;
 
 	h = TlAlloc(tl, sizeof *h);
-	t_first = tl->t;		/* T_BACKEND */
 
 	vcc_NextToken(tl);
 
@@ -346,7 +347,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 	h->name = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_ParseBackendHost(tl, &nbh, NULL, 0);
+	vcc_ParseBackendHost(tl, &nbh, h->name, 0);
 	ERRCHK(tl);
 
 	h->hnum = nbh;
@@ -367,7 +368,6 @@ vcc_ParseBackend(struct tokenlist *tl)
 	    PF(h->name));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(h->name));
 	Fc(tl, 0, "\t.host = &bh_%d,\n", nbh);
-	vcc_EmitBeIdent(tl->fc, NULL, 0, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 
 	tl->nbackend++;
@@ -378,7 +378,7 @@ vcc_ParseBackend(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struct token *t_dir)
+vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 {
 	struct token *t_field;
 	int nbh, nelem;
@@ -437,7 +437,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_first, struc
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_dir));
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
-	vcc_EmitBeIdent(tl->fc, NULL, 0, t_first, tl->t);
 	Fc(tl, 0, "};\n");
 	vcc_NextToken(tl);
 	Fi(tl, 0,
@@ -464,7 +463,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 
 	ExpectErr(tl, ID);		/* ID: policy */
 	if (vcc_IdIs(tl->t, "random")) 
-		vcc_ParseRandomDirector(tl, t_first, t_dir);
+		vcc_ParseRandomDirector(tl, t_dir);
 	else {
 		vsb_printf(tl->sb, "Unknown director policy: ");
 		vcc_ErrToken(tl, tl->t);
