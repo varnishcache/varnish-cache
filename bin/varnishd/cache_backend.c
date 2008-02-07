@@ -59,7 +59,6 @@ struct backend {
 	int			refcount;
 	pthread_mutex_t		mtx;
 
-	const char 		*ident;
 	struct addrinfo		*ai;
 	struct addrinfo		*last_ai;
 
@@ -519,7 +518,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backendlist, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (strcmp(b->ident, vb->ident))
+		if (strcmp(b->vrt->ident, vb->ident))
 			continue;
 		b->refcount++;
 		return (b);
@@ -548,8 +547,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	vbe_dns_lookup(cli, b);
 
 	b->last_check = TIM_mono();
-
-	vbe_dns_lookup(cli, b);
 
 	VTAILQ_INSERT_TAIL(&backendlist, b, list);
 	return (b);
