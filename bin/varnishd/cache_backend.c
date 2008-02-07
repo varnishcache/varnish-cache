@@ -51,7 +51,6 @@
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
-	char			*vcl_name;
 
 	struct vrt_backend	vrt[1];
 
@@ -124,7 +123,7 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	TCP_name((void*)&ss, alen,
 	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+	    sp->backend->vrt->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
 	LOCK(&sp->backend->mtx);
 	return (s);
@@ -399,7 +398,7 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	b = vc->backend;
 	assert(vc->fd >= 0);
-	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
+	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vrt->vcl_name);
 	i = close(vc->fd);
 	assert(i == 0 || errno == ECONNRESET || errno == ENOTCONN);
 	vc->fd = -1;
@@ -420,7 +419,7 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	assert(vc->fd >= 0);
 	bp = vc->backend;
-	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
+	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vrt->vcl_name);
 	LOCK(&vc->backend->mtx);
 	VSL_stats->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
@@ -540,6 +539,8 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	XXXAN(b->vrt->hostname);
 	b->vrt->portname = strdup(vb->portname);
 	XXXAN(b->vrt->portname);
+	b->vrt->vcl_name = strdup(vb->vcl_name);
+	XXXAN(b->vrt->vcl_name);
 
 	MTX_INIT(&b->mtx);
 	b->refcount = 1;
