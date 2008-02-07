@@ -104,7 +104,7 @@ AC_CHECK_FUNCS([getdtablesize])
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
 AC_CHECK_FUNCS([pthread_set_name_np])
-AC_CHECK_FUNCS([pthread_mutex_islocked_np])
+AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 LIBS="${save_LIBS}"
 
 ## This one is tricky, there are multiple versions

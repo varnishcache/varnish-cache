@@ -638,8 +638,8 @@ do {							\
 } while (0);
 #endif
 
-#if defined(HAVE_PTHREAD_MUTEX_ISLOCKED_NP)
-#define ALOCKED(mutex)		AN(pthread_mutex_islocked_np((mutex)))
+#if defined(HAVE_PTHREAD_MUTEX_ISOWNED_NP)
+#define ALOCKED(mutex)		AN(pthread_mutex_isowned_np((mutex)))
 #elif defined(DIAGNOSTICS)
 #define ALOCKED(mutex)		AN(pthread_mutex_trylock((mutex)))
 #else
