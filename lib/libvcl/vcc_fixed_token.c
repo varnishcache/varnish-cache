@@ -400,6 +400,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct vrt_backend {\n");
 	vsb_cat(sb, "	const char	*portname;\n");
 	vsb_cat(sb, "	const char	*hostname;\n");
+	vsb_cat(sb, "	const char	*vcl_name;\n");
 	vsb_cat(sb, "	const char	*ident;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
@@ -408,7 +409,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " */\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_dir_simple {\n");
-	vsb_cat(sb, "	const char				*ident;\n");
 	vsb_cat(sb, "	const char				*name;\n");
 	vsb_cat(sb, "	const struct vrt_backend		*host;\n");
 	vsb_cat(sb, "};\n");
@@ -423,7 +423,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_dir_random {\n");
-	vsb_cat(sb, "	const char 				*ident;\n");
 	vsb_cat(sb, "	const char 				*name;\n");
 	vsb_cat(sb, "	unsigned 				nmember;\n");
 	vsb_cat(sb, "	const struct vrt_dir_random_entry	*members;\n");

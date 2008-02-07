@@ -47,6 +47,7 @@ struct sockaddr;
 struct vrt_backend {
 	const char	*portname;
 	const char	*hostname;
+	const char	*vcl_name;
 	const char	*ident;
 };
 
@@ -55,7 +56,6 @@ struct vrt_backend {
  */
 
 struct vrt_dir_simple {
-	const char				*ident;
 	const char				*name;
 	const struct vrt_backend		*host;
 };
@@ -70,7 +70,6 @@ struct vrt_dir_random_entry {
 };
 
 struct vrt_dir_random {
-	const char 				*ident;
 	const char 				*name;
 	unsigned 				nmember;
 	const struct vrt_dir_random_entry	*members;
