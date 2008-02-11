@@ -9,8 +9,8 @@
 # server.
 
 backend default {
-	set backend.host = "127.0.0.1";
-	set backend.port = "8080";
+	.host = "127.0.0.1";
+	.port = "8080";
 }
 
 # Below is a commented-out copy of the default VCL logic.  If you
