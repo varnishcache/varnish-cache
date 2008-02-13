@@ -60,6 +60,8 @@
  *	and all the rest...
  */
 
+#include "config.h"
+
 #include <sys/stat.h>
 
 #include <ctype.h>

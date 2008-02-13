@@ -30,6 +30,8 @@
  *
  */
 
+#include "config.h"
+
 #ifndef HAVE_ASPRINTF
 
 #include <stdarg.h>

@@ -20,8 +20,6 @@ libvarnish_la_SOURCES = \
 	vss.c \
 	vtmpfile.c
 
-libvarnish_la_CFLAGS = -include config.h
-
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS}
 
 TESTS = num_c_test

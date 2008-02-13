@@ -59,6 +59,8 @@
  *		- Maybe rotate/compress log
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>

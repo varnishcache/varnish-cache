@@ -8,8 +8,6 @@ dist_man_MANS = varnishreplay.1
 
 varnishreplay_SOURCES = \
 	varnishreplay.c
-	
-varnishreplay_CFLAGS = -include config.h
 
 varnishreplay_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \

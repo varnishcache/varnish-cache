@@ -6,6 +6,8 @@
  * Edit vcc_gen_fixed_token.tcl instead
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <ctype.h>
 #include "vcc_priv.h"

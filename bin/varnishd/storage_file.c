@@ -31,6 +31,8 @@
  * Storage method based on mmap'ed file
  */
 
+#include "config.h"
+
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/socket.h>

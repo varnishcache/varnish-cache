@@ -305,6 +305,7 @@ proc vars {v pa} {
 	puts $fo "\t{ NULL }"
 }
 
+puts $fo "#include \"config.h\""
 puts $fo "#include <stdio.h>"
 puts $fo "#include \"vcc_compile.h\""
 puts $fo ""

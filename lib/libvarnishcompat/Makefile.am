@@ -14,5 +14,3 @@ libvarnishcompat_la_SOURCES = \
 	strlcpy.c \
 	strndup.c \
 	vis.c
-
-libvarnishcompat_la_CFLAGS = -include config.h

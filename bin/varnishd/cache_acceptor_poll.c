@@ -30,6 +30,8 @@
  *
  */
 
+#include "config.h"
+
 #if defined(HAVE_POLL)
 
 #include <stdio.h>

@@ -40,6 +40,8 @@
  * hanging, esi:include
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>

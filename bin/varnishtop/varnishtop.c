@@ -32,6 +32,8 @@
  * Log tailer for Varnish
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
