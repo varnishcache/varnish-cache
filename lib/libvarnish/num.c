@@ -30,8 +30,9 @@
  * Deal with numbers with data storage suffix scaling
  */
 
-#include <ctype.h>
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 #include <libvarnish.h>
@@ -39,41 +40,135 @@
 const char *
 str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
-	int i;
-	double l;
-	char suff[2];
+	double fval;
+	char *end;
 
-	i = sscanf(p, "%lg%1s", &l, suff);
+	fval = strtod(p, &end);
+	if (end == p || !isfinite(fval))
+		return ("Invalid number");
 
-	assert(i >= -1 && i <= 2);
-
-	if (i < 1)
-		return ("Could not find any number");
-
-	if (l < 0.0)
-		return ("Negative numbers not allowed");
-
-	if (i == 2) {
-		switch (tolower(*suff)) {
-		case 'b': break;
-		case 'k': l *= ((uintmax_t)1 << 10); break;
-		case 'm': l *= ((uintmax_t)1 << 20); break;
-		case 'g': l *= ((uintmax_t)1 << 30); break;
-		case 't': l *= ((uintmax_t)1 << 40); break;
-		case 'p': l *= ((uintmax_t)1 << 50); break;
-		case 'e': l *= ((uintmax_t)1 << 60); break;
-		case '%':
-			/* Percentage of 'rel' arg */
-			if (rel != 0) {
-				l *= 1e-2 * rel;
-				break;
-			}
-			/*FALLTHROUGH*/
-		default:
-			return ("Unknown scaling suffix [bkmgtpe] allowed");
-		}
+	if (*end == '\0') {
+		*r = (uintmax_t)fval;
+		return (NULL);
 	}
-	*r = (uintmax_t)(l + .5);
+
+	if (end[0] == '%' && end[1] == '\0') {
+		if (rel == 0)
+			return ("Absolute number required");
+		fval *= rel / 100.0;
+	} else {
+		/* accept a space before the multiplier */
+		if (end[0] == ' ' && end[1] != '\0')
+			++end;
+
+		switch (end[0]) {
+		case 'k': case 'K':
+			fval *= (uintmax_t)1 << 10;
+			++end;
+			break;
+		case 'm': case 'M':
+			fval *= (uintmax_t)1 << 20;
+			++end;
+			break;
+		case 'g': case 'G':
+			fval *= (uintmax_t)1 << 30;
+			++end;
+			break;
+		case 't': case 'T':
+			fval *= (uintmax_t)1 << 40;
+			++end;
+			break;
+		case 'p': case 'P':
+			fval *= (uintmax_t)1 << 50;
+			++end;
+			break;
+		case 'e': case 'E':
+			fval *= (uintmax_t)1 << 60;
+			++end;
+			break;
+		}
+
+		/* accept 'b' for 'bytes' */
+		if (end[0] == 'b' || end[0] == 'B')
+			++end;
+
+		if (end[0] != '\0')
+			return ("Invalid suffix");
+	}
+
+	/* intentionally not round(fval) to avoid need for -lm */
+	*r = (uintmax_t)(fval + 0.5);
 	return (NULL);
 }
 
+#ifdef NUM_C_TEST
+#include <assert.h>
+#include <err.h>
+#include <stdio.h>
+#include <string.h>
+
+struct test_case {
+	const char *str;
+	uintmax_t rel;
+	uintmax_t val;
+} test_cases[] = {
+	{ "1",			(uintmax_t)0,		(uintmax_t)1 },
+	{ "1B",			(uintmax_t)0,		(uintmax_t)1<<0 },
+	{ "1 B",		(uintmax_t)0,		(uintmax_t)1<<0 },
+	{ "1.3B",		(uintmax_t)0,		(uintmax_t)1 },
+	{ "1.7B",		(uintmax_t)0,		(uintmax_t)2 },
+
+	{ "1024",		(uintmax_t)0,		(uintmax_t)1024 },
+	{ "1k",			(uintmax_t)0,		(uintmax_t)1<<10 },
+	{ "1kB",		(uintmax_t)0,		(uintmax_t)1<<10 },
+	{ "1.3kB",		(uintmax_t)0,		(uintmax_t)1331 },
+	{ "1.7kB",		(uintmax_t)0,		(uintmax_t)1741 },
+
+	{ "1048576",		(uintmax_t)0,		(uintmax_t)1048576 },
+	{ "1M",			(uintmax_t)0,		(uintmax_t)1<<20 },
+	{ "1MB",		(uintmax_t)0,		(uintmax_t)1<<20 },
+	{ "1.3MB",		(uintmax_t)0,		(uintmax_t)1363149 },
+	{ "1.7MB",		(uintmax_t)0,		(uintmax_t)1782579 },
+
+	{ "1073741824",		(uintmax_t)0,		(uintmax_t)1073741824 },
+	{ "1G",			(uintmax_t)0,		(uintmax_t)1<<30 },
+	{ "1GB",		(uintmax_t)0,		(uintmax_t)1<<30 },
+	{ "1.3GB",		(uintmax_t)0,		(uintmax_t)1395864371 },
+	{ "1.7GB",		(uintmax_t)0,		(uintmax_t)1825361101 },
+
+	{ "1099511627776",	(uintmax_t)0,		(uintmax_t)1099511627776 },
+	{ "1T",			(uintmax_t)0,		(uintmax_t)1<<40 },
+	{ "1TB",		(uintmax_t)0,		(uintmax_t)1<<40 },
+	{ "1.3TB",		(uintmax_t)0,		(uintmax_t)1429365116109 },
+	{ "1.7TB",		(uintmax_t)0,		(uintmax_t)1869169767219 },
+
+	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
+	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
+	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
+	/* TODO: add more */
+
+	{ 0, 0, 0 },
+};
+
+int
+main(int argc, char *argv[])
+{
+	struct test_case *tc;
+	uintmax_t val;
+	int ec;
+
+	(void)argc;
+	for (ec = 0, tc = test_cases; tc->str; ++tc) {
+		str2bytes(tc->str, &val, tc->rel);
+		if (val != tc->val) {
+			printf("%s: str2bytes(\"%s\", %ju) %ju != %ju\n",
+			    *argv, tc->str, tc->rel, val, tc->val);
+			++ec;
+		}
+	}
+	/* TODO: test invalid strings */
+	if (!ec)
+		printf("OK\n");
+	return (ec > 0);
+}
+#endif
