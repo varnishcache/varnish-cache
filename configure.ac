@@ -293,6 +293,11 @@ AC_ARG_ENABLE(stack-protector,
 	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
 	CFLAGS="${CFLAGS} -fstack-protector-all")
 
+# --enable-tests
+AC_ARG_ENABLE(tests,
+	AS_HELP_STRING([--enable-tests],[build test programs (default is NO)]))
+AM_CONDITIONAL([ENABLE_TESTS], [test x$enable_tests = xyes])
+
 # --enable-werror
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
