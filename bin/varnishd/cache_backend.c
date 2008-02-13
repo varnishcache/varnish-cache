@@ -260,8 +260,6 @@ VBE_NewConn(void)
 		if (vc != NULL) {
 			VSL_stats->backend_unused--;
 			VTAILQ_REMOVE(&vbe_conns, vc, list);
-		} else {
-			VSL_stats->n_vbe_conn++;
 		}
 		UNLOCK(&VBE_mtx);
 	}
@@ -271,6 +269,7 @@ VBE_NewConn(void)
 	XXXAN(vc);
 	vc->magic = VBE_CONN_MAGIC;
 	vc->fd = -1;
+	VSL_stats->n_vbe_conn++;
 	return (vc);
 }
 
