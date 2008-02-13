@@ -98,8 +98,7 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 			return ("Invalid suffix");
 	}
 
-	/* intentionally not round(fval) to avoid need for -lm */
-	*r = (uintmax_t)(fval + 0.5);
+	*r = (uintmax_t)round(fval);
 	return (NULL);
 }
 
