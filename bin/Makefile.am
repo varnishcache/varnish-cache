@@ -1,4 +1,7 @@
 # $Id$
 
-SUBDIRS = varnishadm varnishd varnishhist varnishlog varnishncsa \
-	varnishreplay varnishstat varnishtop
+SUBDIRS = varnishadm varnishd varnishlog varnishncsa varnishreplay
+
+if HAVE_CURSES
+SUBDIRS += varnishhist varnishstat varnishtop
+endif
