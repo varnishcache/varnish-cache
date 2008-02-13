@@ -7,7 +7,6 @@
  */
 
 #include "config.h"
-
 #include <stdio.h>
 #include <ctype.h>
 #include "vcc_priv.h"
