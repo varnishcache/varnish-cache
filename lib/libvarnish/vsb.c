@@ -29,6 +29,8 @@
  * $FreeBSD: src/sys/kern/subr_sbuf.c,v 1.30 2005/12/23 11:49:53 phk Exp $
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>

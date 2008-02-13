@@ -36,6 +36,8 @@
  * XXX: the array is not scaled back when items are deleted.
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <stdlib.h>
 

@@ -30,6 +30,8 @@
  * Deal with numbers with data storage suffix scaling
  */
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

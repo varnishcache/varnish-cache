@@ -8,8 +8,6 @@ dist_man_MANS = varnishhist.1
 
 varnishhist_SOURCES = varnishhist.c
 
-varnishhist_CFLAGS = -include config.h
-
 varnishhist_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \

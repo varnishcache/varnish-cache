@@ -39,6 +39,8 @@
  * they are called.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 
 #include "vsb.h"
