@@ -28,7 +28,41 @@
  *
  * $Id$
  *
- * Manage backend connections and requests.
+ * This is the central switch-board for backend connections and it is
+ * slightly complicated by a number of optimizations.
+ *
+ * The data structures:
+ *
+ *    A backend is a TCP destination, possibly multi-homed and it has a
+ *    number of associated properties and statistics.
+ *
+ *    A vbe_conn is an open TCP connection to a backend.
+ *
+ *    A bereq is a memory carrier for handling a HTTP transaction with
+ *    a backend over a vbe_conn.
+ *
+ *    A director is a piece of code that selects which backend to use,
+ *    by whatever method or metric it chooses.
+ *
+ * The relationships:
+ *
+ *    Backends and directors get instantiated when VCL's are loaded,
+ *    and this always happen in the CLI thread.
+ *
+ *    When a VCL tries to instantiate a backend, any existing backend
+ *    with the same identity (== definition in VCL) will be used instead
+ *    so that vbe_conn's can be reused across VCL changes.
+ *
+ *    Directors disapper with the VCL that created them.
+ *
+ *    Backends disappear when their reference count drop to zero.
+ *
+ *    Backends have their host/port name looked up to addrinfo structures
+ *    when they are instantiated, and we just cache that result and cycle
+ *    through the entries (for multihomed backends) on failure only.
+ *    XXX: add cli command to redo lookup.
+ *
+ *    bereq is sort of a step-child here, we just manage the pool of them.
  *
  */
 
@@ -67,12 +101,24 @@ struct backend {
 	double			last_check;
 };
 
-static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
-static VTAILQ_HEAD(,vbe_conn) vbe_head = VTAILQ_HEAD_INITIALIZER(vbe_head);
-
 static MTX VBE_mtx;
 
-struct backendlist backendlist = VTAILQ_HEAD_INITIALIZER(backendlist);
+/*
+ * List of cached vbe_conns, used if enabled in params/heritage
+ */
+static VTAILQ_HEAD(,vbe_conn) vbe_conns = VTAILQ_HEAD_INITIALIZER(vbe_conns);
+
+/*
+ * List of cached bereq's
+ */
+static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
+
+/*
+ * The list of backends is not locked, it is only ever accessed from
+ * the CLI thread, so there is no need.
+ */
+static VTAILQ_HEAD(, backend) backends =
+    VTAILQ_HEAD_INITIALIZER(backends);
 
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
@@ -83,7 +129,7 @@ struct backendlist backendlist = VTAILQ_HEAD_INITIALIZER(backendlist);
  *
  */
 
-int
+static int
 VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 {
 	struct sockaddr_storage ss;
@@ -92,6 +138,9 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	int s;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	/*
 	 * ai is only valid with the lock held, so copy out the bits
@@ -120,8 +169,7 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	}
 
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name((void*)&ss, alen,
-	    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	TCP_name((void*)&ss, alen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
 	    sp->backend->vrt->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
@@ -130,12 +178,12 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 }
 
 /*--------------------------------------------------------------------
- * Check that there is still something at the far end of a given fd.
+ * Check that there is still something at the far end of a given socket.
  * We poll the fd with instant timeout, if there are any events we can't
  * use it (backends are not allowed to pipeline).
  */
 
-int
+static int
 VBE_CheckFd(int fd)
 {
 	struct pollfd pfd;
@@ -147,7 +195,10 @@ VBE_CheckFd(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Get a http structure for talking to the backend.
+ * Get a bereq structure for talking HTTP with the backend.
+ * First attempt to pick one from our stash, else make a new.
+ *
+ * Can fail with NULL.
  */
 
 struct bereq *
@@ -170,13 +221,15 @@ VBE_new_bereq(void)
 			return (NULL);
 		bereq->magic = BEREQ_MAGIC;
 		WS_Init(bereq->ws, "bereq", bereq + 1, len);
+		VSL_stats->n_bereq++;
 	}
 	http_Setup(bereq->http, bereq->ws);
 	return (bereq);
 }
 
-/*--------------------------------------------------------------------*/
-/* XXX: no backpressure on pool size */
+/*--------------------------------------------------------------------
+ * Return a bereq to the stash.
+ */
 
 void
 VBE_free_bereq(struct bereq *bereq)
@@ -189,20 +242,24 @@ VBE_free_bereq(struct bereq *bereq)
 	UNLOCK(&VBE_mtx);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Manage a pool of vbe_conn structures.
+ * XXX: as an experiment, make this caching controled by a parameter
+ * XXX: so we can see if it has any effect.
+ */
 
-struct vbe_conn *
+static struct vbe_conn *
 VBE_NewConn(void)
 {
 	struct vbe_conn *vc;
 
-	vc = VTAILQ_FIRST(&vbe_head);
+	vc = VTAILQ_FIRST(&vbe_conns);
 	if (vc != NULL) {
 		LOCK(&VBE_mtx);
-		vc = VTAILQ_FIRST(&vbe_head);
+		vc = VTAILQ_FIRST(&vbe_conns);
 		if (vc != NULL) {
 			VSL_stats->backend_unused--;
-			VTAILQ_REMOVE(&vbe_head, vc, list);
+			VTAILQ_REMOVE(&vbe_conns, vc, list);
 		} else {
 			VSL_stats->n_vbe_conn++;
 		}
@@ -210,7 +267,6 @@ VBE_NewConn(void)
 	}
 	if (vc != NULL)
 		return (vc);
-
 	vc = calloc(sizeof *vc, 1);
 	XXXAN(vc);
 	vc->magic = VBE_CONN_MAGIC;
@@ -218,50 +274,59 @@ VBE_NewConn(void)
 	return (vc);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
+static void
 VBE_ReleaseConn(struct vbe_conn *vc)
 {
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
-	LOCK(&VBE_mtx);
-	VTAILQ_INSERT_HEAD(&vbe_head, vc, list);
-	VSL_stats->backend_unused++;
-	UNLOCK(&VBE_mtx);
+
+	if (params->cache_vbe_conns) {
+		LOCK(&VBE_mtx);
+		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
+		VSL_stats->backend_unused++;
+		UNLOCK(&VBE_mtx);
+	} else {
+		VSL_stats->n_vbe_conn--;
+		free(vc);
+	}
 }
 
+/*--------------------------------------------------------------------
+ * Drop a reference to a backend.
+ * The last reference must come from the watcher in the CLI thread,
+ * as only that thread is allowed to clean up the backend list.
+ */
 
-/*--------------------------------------------------------------------*/
-
-void
+static void
 VBE_DropRefLocked(struct backend *b)
 {
 	int i;
 	struct vbe_conn *vbe, *vbe2;
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	assert(b->refcount > 0);
 
 	i = --b->refcount;
 	UNLOCK(&b->mtx);
-	if (i)
+	if (i > 0)
 		return;
 
-	ASSERT_CLI();	/* XXX: ?? */
-	VTAILQ_REMOVE(&backendlist, b, list);
+	ASSERT_CLI();
+	VTAILQ_REMOVE(&backends, b, list);
 	VTAILQ_FOREACH_SAFE(vbe, &b->connlist, list, vbe2) {
 		VTAILQ_REMOVE(&b->connlist, vbe, list);
 		if (vbe->fd >= 0)
 			AZ(close(vbe->fd));
-		FREE_OBJ(vbe);
+		VBE_ReleaseConn(vbe);
 	}
 	free(TRUST_ME(b->vrt->ident));
 	free(TRUST_ME(b->vrt->hostname));
 	free(TRUST_ME(b->vrt->portname));
 	b->magic = 0;
 	free(b);
+	VSL_stats->n_backend--;
 }
 
 void
@@ -278,8 +343,10 @@ VBE_DropRef(struct backend *b)
  * Try to get a socket connected to one of the addresses on the list.
  * We start from the cached "last good" address and try all items on
  * the list exactly once.
- * If a new DNS lookup is made while we try, we start over and try the
- * new list exactly once.
+ *
+ * Called with backend mutex held, but will release/acquire it.
+ *
+ * XXX: Not ready for DNS re-lookups
  */
 
 static int
@@ -289,14 +356,16 @@ bes_conn_try_list(const struct sess *sp, struct backend *bp)
 	int s, loops;
 
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	if (bp->last_ai == NULL)
+
+	/* No addrinfo, no connection */
+	if (bp->ai == NULL)
 		return (-1);
-	AN(bp->ai);
+	AN(bp->last_ai);
 
 	/* Called with lock held */
 	loops = 0;
 	ai = from = bp->last_ai;
-	while (1) {
+	while (loops == 0 || ai != from) {
 
 		/* NB: releases/acquires backend lock */
 		s = VBE_TryConnect(sp, ai);
@@ -312,9 +381,9 @@ bes_conn_try_list(const struct sess *sp, struct backend *bp)
 			loops++;
 			ai = bp->ai;
 		}
-		if (loops == 1 && ai == from)
-			return (-1);
 	}
+	/* We have tried them all, fail */
+	return (-1);
 }
 
 
@@ -326,15 +395,12 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 	int s;
 
 	LOCK(&bp->mtx);
-
-	s = bes_conn_try_list(sp, bp);
-	if (s >= 0) {
-		bp->refcount++;
-		UNLOCK(&bp->mtx);
-		return (s);
-	}
+	bp->refcount++;
+	s = bes_conn_try_list(sp, bp);	/* releases/acquires backend lock */
+	if (s < 0)
+		bp->refcount--;		/* Only keep ref on success */
 	UNLOCK(&bp->mtx);
-	return (-1);
+	return (s);
 }
 
 /*--------------------------------------------------------------------*/
@@ -351,6 +417,7 @@ VBE_GetFd(struct sess *sp)
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	sp->backend = bp;
 
+	/* first look for vbe_conn's we can recycle */
 	while (1) {
 		LOCK(&bp->mtx);
 		vc = VTAILQ_FIRST(&bp->connlist);
@@ -515,7 +582,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	AN(vb->ident);
 	(void)cli;
 	ASSERT_CLI();
-	VTAILQ_FOREACH(b, &backendlist, list) {
+	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (strcmp(b->vrt->ident, vb->ident))
 			continue;
@@ -549,7 +616,8 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 
 	b->last_check = TIM_mono();
 
-	VTAILQ_INSERT_TAIL(&backendlist, b, list);
+	VTAILQ_INSERT_TAIL(&backends, b, list);
+	VSL_stats->n_backend++;
 	return (b);
 }
 
