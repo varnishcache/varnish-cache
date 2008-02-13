@@ -243,13 +243,6 @@ collect_backend(struct logline *lp, enum shmlogtag tag, unsigned spec,
 			lp->df_Host = trimline(next, end);
 		break;
 
-	case SLT_Length:
-		if (lp->df_b != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_b = trimline(ptr, end);
-		break;
-
 	case SLT_BackendReuse:
 	case SLT_BackendClose:
 		/* got it all */
