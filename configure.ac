@@ -38,15 +38,15 @@ AC_SUBST(DL_LIBS)
 
 save_LIBS="${LIBS}"
 LIBS=""
-AC_SEARCH_LIBS(initscr, [curses ncurses])
+AC_SEARCH_LIBS(initscr, [curses ncurses],
+	[have_curses=yes], [have_curses=no])
 CURSES_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(CURSES_LIBS)
-
-# people tend to forget about curses until the build breaks
-if test "$ac_cv_search_initscr" = no; then
-	AC_MSG_ERROR([curses or ncurses is required])
+if test "$have_curses" = no; then
+	AC_MSG_WARN([curses not found; some tools will not be built])
 fi
+AM_CONDITIONAL([HAVE_CURSES], [test x$have_curses = xyes])
 
 save_LIBS="${LIBS}"
 LIBS=""
