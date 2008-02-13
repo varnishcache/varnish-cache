@@ -580,6 +580,13 @@ tweak_max_esi_includes(struct cli *cli, struct parspec *par, const char *arg)
 	tweak_generic_uint(cli, &master.max_esi_includes, arg, 0, UINT_MAX);
 }
 
+static void
+tweak_cache_vbe_conns(struct cli *cli, struct parspec *par, const char *arg)
+{
+	(void)par;
+	tweak_generic_bool(cli, &master.cache_vbe_conns, arg);
+}
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -788,6 +795,10 @@ static struct parspec parspec[] = {
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"5", "restarts" },
+	{ "cache_vbe_conns", tweak_cache_vbe_conns,
+		"Cache vbe_conn's or rely on malloc, that's the question.",
+		EXPERIMENTAL,
+		"off", "bool" },
 	{ NULL, NULL, NULL }
 };
 

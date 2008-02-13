@@ -135,6 +135,9 @@ struct params {
 
 	/* Rush exponent */
 	unsigned		rush_exponent;
+
+	/* Cache vbe_conns */
+	unsigned		cache_vbe_conns;
 };
 
 extern volatile struct params *params;
