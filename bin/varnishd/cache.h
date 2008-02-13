@@ -392,14 +392,7 @@ struct vbe_conn {
 	VTAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
-	void			*priv;
 };
-
-/*
- * NB: This list is not locked, it is only ever manipulated from the
- * cachers CLI thread.
- */
-VTAILQ_HEAD(backendlist, backend);
 
 /* Prototypes etc ----------------------------------------------------*/
 
@@ -419,17 +412,9 @@ void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
-extern struct backendlist backendlist;
 void VBE_DropRef(struct backend *);
-void VBE_DropRefLocked(struct backend *);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
-struct vbe_conn *VBE_NewConn(void);
-void VBE_ReleaseConn(struct vbe_conn *);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
-
-/* convenience functions for backend methods */
-int VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai);
-int VBE_CheckFd(int fd);
 
 /* cache_ban.c */
 void AddBan(const char *, int hash);
