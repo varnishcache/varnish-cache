@@ -229,7 +229,7 @@ start_child(void)
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
 
-	vlu = VLU_New(NULL, child_line);
+	vlu = VLU_New(NULL, child_line, 0);
 	AN(vlu);
 
 	AZ(ev_listen);
