@@ -100,6 +100,7 @@ AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
 AC_CHECK_FUNCS([getdtablesize])
+AC_CHECK_FUNCS([abort2])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"

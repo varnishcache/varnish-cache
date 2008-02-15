@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache.h"
 
@@ -48,14 +49,19 @@
 char panicstr[65536];
 static char *pstr = panicstr;
 
-#define fp(...)						\
-	pstr += snprintf(pstr,				\
-	    (panicstr + sizeof panicstr) - pstr,	\
-	    __VA_ARGS__)
-#define vfp(fmt, ap)					\
-	pstr += vsnprintf(pstr,				\
-	    (panicstr + sizeof panicstr) - pstr,	\
-	    (fmt), (ap))
+#define fp(...)							\
+	do {							\
+		pstr += snprintf(pstr,				\
+		    (panicstr + sizeof panicstr) - pstr,	\
+		    __VA_ARGS__);				\
+	} while (0)
+
+#define vfp(fmt, ap)						\
+	do {							\
+		pstr += vsnprintf(pstr,				\
+		    (panicstr + sizeof panicstr) - pstr,	\
+		    (fmt), (ap));				\
+	} while (0)
 
 /* step names */
 static const char *steps[] = {
@@ -195,11 +201,23 @@ panic(const char *file, int line, const char *func,
 	if (VALID_OBJ(sp, SESS_MAGIC))
 		dump_sess(sp);
 
-	fputs(panicstr, stderr);
+	(void)fputs(panicstr, stderr);
 
 	/* I wish there was a way to flush the log buffers... */
-	signal(SIGABRT, SIG_DFL);
-	raise(SIGABRT);
+	(void)signal(SIGABRT, SIG_DFL);
+#ifdef HAVE_ABORT2
+	{
+	void *arg[1];
+	char *p;
+
+	for (p = panicstr; *p; p++)
+		if (*p == '\n')
+			*p = ' ';
+	arg[0] = panicstr;
+	abort2(panicstr, 1, arg);
+	}
+#endif
+	(void)raise(SIGABRT);
 }
 
 #endif
