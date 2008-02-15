@@ -219,7 +219,13 @@ vca_kev(const struct kevent *kp)
 	    sp, (unsigned long)kp->data, kp->flags,
 	    (kp->flags & EV_EOF) ? " EOF" : "");
 #endif
-	assert(sp->fd == kp->ident);
+	spassert(sp->id == kp->ident);
+	spassert(sp->fd == sp->id || sp->fd == -1);
+	if (sp->fd == -1) {
+		VSL(SLT_Debug, sp->id, "%s(): got event 0x%04x on closed fd",
+		    __func__, kp->fflags);
+		return;
+	}
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0)
