@@ -6,6 +6,13 @@
  * $Id$
  */
 
+#define ALLOC_OBJ(to, type_magic)					\
+	do {								\
+		(to) = calloc(sizeof *(to), 1);				\
+		if ((to) != NULL)					\
+			(to)->magic = (type_magic);			\
+	} while (0)
+
 #define FREE_OBJ(to)							\
 	do {								\
 		(to)->magic = (0);					\
