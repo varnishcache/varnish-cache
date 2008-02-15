@@ -70,9 +70,7 @@ static const unsigned lru_target = (unsigned)(-3);
 static void
 update_object_when(struct object *o)
 {
-	double w;
 
-	w = o->ttl;
 	if (o->prefetch < 0.0) {
 		o->timer_when = o->ttl + o->prefetch;
 		o->timer_what = TIMER_PREFETCH;
