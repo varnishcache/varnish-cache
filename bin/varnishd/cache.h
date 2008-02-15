@@ -569,7 +569,6 @@ cli_func_t	cli_func_config_list;
 cli_func_t	cli_func_config_load;
 cli_func_t	cli_func_config_discard;
 cli_func_t	cli_func_config_use;
-cli_func_t	cli_func_dump_pool;
 #endif
 
 /* cache_vrt_esi.c */
