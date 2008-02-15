@@ -15,6 +15,7 @@ libvarnish_la_SOURCES = \
 	num.c \
 	time.c \
 	version.c \
+	vlu.c \
 	vpf.c \
 	vsb.c \
 	vss.c \
