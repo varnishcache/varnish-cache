@@ -415,6 +415,8 @@ void VBE_free_bereq(struct bereq *bereq);
 void VBE_DropRef(struct backend *);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
+void VBE_AddHostHeader(struct sess *sp);
+void VBE_SelectBackend(struct sess *sp);
 
 /* cache_ban.c */
 void AddBan(const char *, int hash);
