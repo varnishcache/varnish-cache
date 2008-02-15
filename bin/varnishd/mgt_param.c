@@ -57,11 +57,12 @@
 
 struct parspec;
 
-typedef void tweak_t(struct cli *, struct parspec *, const char *arg);
+typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
 
 struct parspec {
 	const char	*name;
 	tweak_t		*func;
+	volatile void	*priv;
 	const char	*descr;
 	int		 flags;
 #define DELAYED_EFFECT 1
@@ -96,6 +97,18 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *dest;
+
+	dest = par->priv;
+	tweak_generic_timeout(cli, dest, arg);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 {
 	if (arg != NULL) {
@@ -118,6 +131,17 @@ tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 		}
 	} else
 		cli_out(cli, *dest ? "on" : "off");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *dest;
+
+	dest = par->priv;
+	tweak_generic_bool(cli, dest, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -159,7 +183,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, un
  */
 
 static void
-tweak_user(struct cli *cli, struct parspec *par, const char *arg)
+tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	struct passwd *pw;
 	struct group *gr;
@@ -200,7 +224,7 @@ tweak_user(struct cli *cli, struct parspec *par, const char *arg)
  */
 
 static void
-tweak_group(struct cli *cli, struct parspec *par, const char *arg)
+tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	struct group *gr;
 
@@ -233,7 +257,7 @@ tweak_group(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
+tweak_default_ttl(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -243,7 +267,7 @@ tweak_default_ttl(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pools(struct cli *cli, struct parspec *par, const char *arg)
+tweak_thread_pools(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -255,7 +279,7 @@ tweak_thread_pools(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
+tweak_thread_pool_min(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -266,7 +290,7 @@ tweak_thread_pool_min(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
+tweak_thread_pool_max(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -277,17 +301,7 @@ tweak_thread_pool_max(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pool_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_timeout(cli, &master.wthread_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_overflow_max(struct cli *cli, struct parspec *par, const char *arg)
+tweak_overflow_max(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -297,7 +311,7 @@ tweak_overflow_max(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_rush_exponent(struct cli *cli, struct parspec *par, const char *arg)
+tweak_rush_exponent(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -308,7 +322,7 @@ tweak_rush_exponent(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
+tweak_http_workspace(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -319,53 +333,7 @@ tweak_http_workspace(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_sess_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_timeout(cli, &master.sess_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_pipe_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_timeout(cli, &master.pipe_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_send_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_timeout(cli, &master.send_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_lru_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_timeout(cli, &master.lru_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_auto_restart(struct cli *cli, struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_bool(cli, &master.auto_restart, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
+tweak_fetch_chunksize(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -377,7 +345,7 @@ tweak_fetch_chunksize(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
+tweak_sendfile_threshold(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -386,13 +354,6 @@ tweak_sendfile_threshold(struct cli *cli, struct parspec *par, const char *arg)
 #endif /* SENDFILE_WORKS */
 
 /*--------------------------------------------------------------------*/
-
-static void
-tweak_vcl_trace(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_bool(cli, &master.vcl_trace, arg);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -409,7 +370,7 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 }
 
 static void
-tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
+tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	char **av;
 	int i;
@@ -489,7 +450,7 @@ tweak_listen_address(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_listen_depth(struct cli *cli, struct parspec *par, const char *arg)
+tweak_listen_depth(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	(void)par;
 	tweak_generic_uint(cli, &master.listen_depth, arg, 0, UINT_MAX);
@@ -498,7 +459,7 @@ tweak_listen_depth(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_srcaddr_hash(struct cli *cli, struct parspec *par, const char *arg)
+tweak_srcaddr_hash(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	(void)par;
 	tweak_generic_uint(cli, &master.srcaddr_hash, arg, 63, UINT_MAX);
@@ -507,7 +468,7 @@ tweak_srcaddr_hash(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
+tweak_srcaddr_ttl(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	(void)par;
 	tweak_generic_uint(cli, &master.srcaddr_ttl, arg, 0, UINT_MAX);
@@ -516,34 +477,7 @@ tweak_srcaddr_ttl(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_backend_http11(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_bool(cli, &master.backend_http11, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_client_http11(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_bool(cli, &master.client_http11, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_cli_timeout(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_timeout(cli, &master.cli_timeout, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
+tweak_ping_interval(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	(void)par;
 	tweak_generic_uint(cli, &master.ping_interval, arg, 0, UINT_MAX);
@@ -552,7 +486,7 @@ tweak_ping_interval(struct cli *cli, struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
+tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	/* XXX should have tweak_generic_string */
@@ -567,7 +501,7 @@ tweak_cc_command(struct cli *cli, struct parspec *par, const char *arg)
 }
 
 static void
-tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
+tweak_max_restarts(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
@@ -575,18 +509,11 @@ tweak_max_restarts(struct cli *cli, struct parspec *par, const char *arg)
 }
 
 static void
-tweak_max_esi_includes(struct cli *cli, struct parspec *par, const char *arg)
+tweak_max_esi_includes(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	(void)par;
 	tweak_generic_uint(cli, &master.max_esi_includes, arg, 0, UINT_MAX);
-}
-
-static void
-tweak_cache_vbe_conns(struct cli *cli, struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_bool(cli, &master.cache_vbe_conns, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -615,17 +542,17 @@ tweak_cache_vbe_conns(struct cli *cli, struct parspec *par, const char *arg)
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
  */
-static struct parspec parspec[] = {
-	{ "user", tweak_user,
+static const struct parspec parspec[] = {
+	{ "user", tweak_user, NULL,
 		"The unprivileged user to run as.  Setting this will "
 		"also set \"group\" to the specified user's primary group.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
-	{ "group", tweak_group,
+	{ "group", tweak_group, NULL,
 		"The unprivileged group to run as.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
-	{ "default_ttl", tweak_default_ttl,
+	{ "default_ttl", tweak_default_ttl, NULL,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.\n"
 		"Objects already cached will not be affected by changes "
@@ -634,7 +561,7 @@ static struct parspec parspec[] = {
 		"flush of the cache use \"url.purge .\"",
 		0,
 		"120", "seconds" },
-	{ "thread_pools", tweak_thread_pools,
+	{ "thread_pools", tweak_thread_pools, NULL,
 		"Number of worker pools. "
 		"Increasing number of worker pools decreases lock "
 		"contention but increases the number of threads as well. "
@@ -642,27 +569,27 @@ static struct parspec parspec[] = {
 		"restart to take effect.",
 		EXPERIMENTAL,
 		"1", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max,
+	{ "thread_pool_max", tweak_thread_pool_max, NULL,
 		"The maximum number of threads in the total worker pool.\n"
 		"-1 is unlimited.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1000", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min,
+	{ "thread_pool_min", tweak_thread_pool_min, NULL,
 		"The minimum number of threads in the worker pool.\n"
 		"Minimum is 1 thread.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "threads" },
-	{ "thread_pool_timeout", tweak_thread_pool_timeout,
+	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout,
 		"Thread dies after this many seconds of inactivity.\n"
 		"Minimum is 1 second.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"120", "seconds" },
-	{ "overflow_max", tweak_overflow_max,
+	{ "overflow_max", tweak_overflow_max, NULL,
 		"Limit on overflow queue length in percent of "
 		"thread_pool_max parameter.",
 		EXPERIMENTAL,
 		"100", "%" },
-	{ "rush_exponent", tweak_rush_exponent,
+	{ "rush_exponent", tweak_rush_exponent, NULL,
 		"How many parked request we start for each completed "
 		"request on the object.\n"
 		"NB: Even with the implict delay of delivery, "
@@ -670,37 +597,37 @@ static struct parspec parspec[] = {
 		"number of worker threads.  ",
 		EXPERIMENTAL,
 		"3", "requests per request" },
-	{ "http_workspace", tweak_http_workspace,
+	{ "http_workspace", tweak_http_workspace, NULL,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
-	{ "sess_timeout", tweak_sess_timeout,
+	{ "sess_timeout", tweak_timeout, &master.sess_timeout,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
 		"seconds, the session is closed.",
 		0,
 		"5", "seconds" },
-	{ "pipe_timeout", tweak_pipe_timeout,
+	{ "pipe_timeout", tweak_timeout, &master.pipe_timeout,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
 		"this many seconds, the session is closed.\n",
 		0,
 		"60", "seconds" },
-	{ "send_timeout", tweak_send_timeout,
+	{ "send_timeout", tweak_timeout, &master.send_timeout,
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
-	{ "auto_restart", tweak_auto_restart,
+	{ "auto_restart", tweak_bool, &master.auto_restart,
 		"Restart child process automatically if it dies.\n",
 		0,
 		"on", "bool" },
-	{ "fetch_chunksize", tweak_fetch_chunksize,
+	{ "fetch_chunksize", tweak_fetch_chunksize, NULL,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
 		"short TTLs.\n"
@@ -709,12 +636,12 @@ static struct parspec parspec[] = {
 		EXPERIMENTAL,
 		"128", "kilobytes" },
 #ifdef SENDFILE_WORKS
-	{ "sendfile_threshold", tweak_sendfile_threshold,
+	{ "sendfile_threshold", tweak_sendfile_threshold, NULL,
 		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
 		"-1", "bytes" },
 #endif /* SENDFILE_WORKS */
-	{ "vcl_trace", tweak_vcl_trace,
+	{ "vcl_trace", tweak_bool,  &master.vcl_trace,
 		"Trace VCL execution in the shmlog.\n"
 		"Enabling this will allow you to see the path each "
 		"request has taken through the VCL program.\n"
@@ -722,50 +649,50 @@ static struct parspec parspec[] = {
 		"default.",
 		0,
 		"off", "bool" },
-	{ "listen_address", tweak_listen_address,
+	{ "listen_address", tweak_listen_address, NULL,
 		"Whitespace separated list of network endpoints where "
 		"Varnish will accept requests.\n"
 		"Possible formats: host, host:port, :port",
 		MUST_RESTART,
 		":80" },
-	{ "listen_depth", tweak_listen_depth,
+	{ "listen_depth", tweak_listen_depth, NULL,
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "srcaddr_hash", tweak_srcaddr_hash,
+	{ "srcaddr_hash", tweak_srcaddr_hash, NULL,
 		"Number of source address hash buckets.\n"
 		"Powers of two are bad, prime numbers are good.",
 		EXPERIMENTAL | MUST_RESTART,
 		"1049", "buckets" },
-	{ "srcaddr_ttl", tweak_srcaddr_ttl,
+	{ "srcaddr_ttl", tweak_srcaddr_ttl, NULL,
 		"Lifetime of srcaddr entries.\n"
 		"Zero will disable srcaddr accounting entirely.",
 		EXPERIMENTAL,
 		"30", "seconds" },
-	{ "backend_http11", tweak_backend_http11,
+	{ "backend_http11", tweak_bool, &master.backend_http11,
 		"Force all backend requests to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
 		"incoming client request.",
 		EXPERIMENTAL,
 		"off", "bool" },
-	{ "client_http11", tweak_client_http11,
+	{ "client_http11", tweak_bool, &master.client_http11,
 		"Force all client responses to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
 		"backend response.",
 		EXPERIMENTAL,
 		"off", "bool" },
-	{ "cli_timeout", tweak_cli_timeout,
+	{ "cli_timeout", tweak_timeout, &master.cli_timeout,
 		"Timeout for the childs replies to CLI requests from "
 		"the master.",
 		0,
 		"5", "seconds" },
-	{ "ping_interval", tweak_ping_interval,
+	{ "ping_interval", tweak_ping_interval, NULL,
 		"Interval between pings from parent to child.\n"
 		"Zero will disable pinging entirely, which makes "
 		"it possible to attach a debugger to the child.",
 		MUST_RESTART,
 		"3", "seconds" },
-	{ "lru_interval", tweak_lru_timeout,
+	{ "lru_interval", tweak_timeout, &master.lru_timeout,
 		"Grace period before object moves on LRU list.\n"
 		"Objects are only moved to the front of the LRU "
 		"list if they have not been moved there already inside "
@@ -773,7 +700,7 @@ static struct parspec parspec[] = {
 		"operations necessary for LRU list access.",
 		EXPERIMENTAL,
 		"2", "seconds" },
-	{ "cc_command", tweak_cc_command,
+	{ "cc_command", tweak_cc_command, NULL,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
@@ -785,19 +712,19 @@ static struct parspec parspec[] = {
 		"exec cc -fpic -shared -Wl,-x -o %o %s"
 #endif
 		, NULL },
-	{ "max_restarts", tweak_max_restarts,
+	{ "max_restarts", tweak_max_restarts, NULL,
 		"Upper limit on how many times a request can restart."
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"4", "restarts" },
-	{ "max_esi_includes", tweak_max_esi_includes,
+	{ "max_esi_includes", tweak_max_esi_includes, NULL,
 		"Maximum depth of esi:include processing."
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"5", "restarts" },
-	{ "cache_vbe_conns", tweak_cache_vbe_conns,
+	{ "cache_vbe_conns", tweak_bool,  &master.cache_vbe_conns,
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
 		"off", "bool" },
@@ -835,7 +762,7 @@ mcf_wrap(struct cli *cli, const char *text)
 void
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
-	struct parspec *pp;
+	const struct parspec *pp;
 	int lfmt;
 
 	(void)priv;
@@ -897,7 +824,7 @@ MCF_ParamSync(void)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
-	struct parspec *pp;
+	const struct parspec *pp;
 
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (!strcmp(pp->name, param)) {
@@ -932,7 +859,7 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 void
 MCF_ParamInit(struct cli *cli)
 {
-	struct parspec *pp;
+	const struct parspec *pp;
 
 	for (pp = parspec; pp->name != NULL; pp++) {
 		cli_out(cli, "Set Default for %s = %s\n", pp->name, pp->def);
