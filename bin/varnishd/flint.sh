@@ -6,6 +6,7 @@ flexelint \
 	-I. \
 	-I../../include \
 	-I../.. \
+	-DVARNISH_STATE_DIR=\"foo\" \
 	flint.lnt \
 	*.c > $T 2>&1
 
