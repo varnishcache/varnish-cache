@@ -617,6 +617,7 @@ cnt_miss(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	VBE_SelectBackend(sp);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
@@ -680,6 +681,7 @@ cnt_pass(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
+	VBE_SelectBackend(sp);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -729,6 +731,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	sp->wrk->acct.pipe++;
+	VBE_SelectBackend(sp);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);

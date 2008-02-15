@@ -123,6 +123,21 @@ static VTAILQ_HEAD(, backend) backends =
     VTAILQ_HEAD_INITIALIZER(backends);
 
 /*--------------------------------------------------------------------
+ * Create default Host: header for backend request
+ */
+void
+VBE_AddHostHeader(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->bereq->http,
+	    "Host: %s", sp->backend->vrt->hostname);
+}
+
+/*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
  *
  * Must be called with locked backend, but will release the backend
@@ -406,6 +421,20 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 /*--------------------------------------------------------------------*/
 
+void
+VBE_SelectBackend(struct sess *sp)
+{
+	struct backend *bp;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	bp = sp->director->choose(sp);
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	sp->backend = bp;
+}
+
+/*--------------------------------------------------------------------*/
+
 struct vbe_conn *
 VBE_GetFd(struct sess *sp)
 {
@@ -413,10 +442,7 @@ VBE_GetFd(struct sess *sp)
 	struct vbe_conn *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	bp = sp->director->choose(sp);
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	sp->backend = bp;
+	bp = sp->backend;
 
 	/* first look for vbe_conn's we can recycle */
 	while (1) {

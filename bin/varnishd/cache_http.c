@@ -649,15 +649,11 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
 	    "X-Forwarded-for: %s", sp->addr);
 
-	/* XXX: This really ought to go into the default VCL */
-	if (!http_GetHdr(hp, H_Host, &b)) {
-#if 0
-		http_PrintfHeader(sp->wrk, sp->fd, hp, "Host: %s",
-		    sp->backend->method->gethostname(sp->backend));
-#endif
-		INCOMPL();
-	}
 	sp->bereq = bereq;
+
+	/* XXX: This possibly ought to go into the default VCL */
+	if (!http_GetHdr(hp, H_Host, &b)) 
+		VBE_AddHostHeader(sp);
 }
 
 /*--------------------------------------------------------------------
