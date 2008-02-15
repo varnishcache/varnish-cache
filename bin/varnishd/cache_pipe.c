@@ -57,10 +57,8 @@ rdf(int fd0, int fd1)
 		j = write(fd1, p, i);
 		if (j <= 0)
 			return (1);
-		if (i != j) {
-			printf("flunk %d %d\n", i, j);
-			usleep(100000);		/* XXX hack */
-		}
+		if (i != j)
+			(void)usleep(100000);		/* XXX hack */
 	}
 	return (0);
 }
@@ -85,10 +83,11 @@ PipeSession(struct sess *sp)
 		return;
 
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, bereq->http, 0);
+	w->acct.hdrbytes += http_Write(w, bereq->http, 0);
 
 	if (sp->htc->pipeline.b != NULL)
-		WRK_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
+		w->acct.bodybytes +=
+		    WRK_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");
@@ -114,25 +113,25 @@ PipeSession(struct sess *sp)
 		if (i < 1) 
 			break;
 		if (fds[0].revents && rdf(vc->fd, sp->fd)) {
-			shutdown(vc->fd, SHUT_RD);
-			shutdown(sp->fd, SHUT_WR);
+			(void)shutdown(vc->fd, SHUT_RD);
+			(void)shutdown(sp->fd, SHUT_WR);
 			fds[0].events = 0;
 			fds[0].fd = -1;
 		}
 		if (fds[1].revents && rdf(sp->fd, vc->fd)) {
-			shutdown(sp->fd, SHUT_RD);
-			shutdown(vc->fd, SHUT_WR);
+			(void)shutdown(sp->fd, SHUT_RD);
+			(void)shutdown(vc->fd, SHUT_WR);
 			fds[1].events = 0;
 			fds[1].fd = -1;
 		}
 	}
 	if (fds[0].fd >= 0) {
-		shutdown(vc->fd, SHUT_RD);
-		shutdown(sp->fd, SHUT_WR);
+		(void)shutdown(vc->fd, SHUT_RD);
+		(void)shutdown(sp->fd, SHUT_WR);
 	}
 	if (fds[1].fd >= 0) {
-		shutdown(sp->fd, SHUT_RD);
-		shutdown(vc->fd, SHUT_WR);
+		(void)shutdown(sp->fd, SHUT_RD);
+		(void)shutdown(vc->fd, SHUT_WR);
 	}
 	vca_close_session(sp, "pipe");
 	VBE_ClosedFd(sp->wrk, vc);
