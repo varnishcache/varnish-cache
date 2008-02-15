@@ -97,9 +97,10 @@ parse_error(struct tokenlist *tl)
 	unsigned a;
 
 	vcc_NextToken(tl);
-	if (tl->t->tok == CNUM)
+	if (tl->t->tok == CNUM) {
 		a = vcc_UintVal(tl);
-	else
+		vcc_NextToken(tl);
+	} else
 		a = 0;
 	Fb(tl, 1, "VRT_error(sp, %u", a);
 	if (tl->t->tok == CSTR) {
@@ -182,9 +183,10 @@ parse_set(struct tokenlist *tl)
 				vcc_RateVal(tl);
 			else if (vp->fmt == FLOAT)
 				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-			else if (vp->fmt == INT)
+			else if (vp->fmt == INT) {
 				Fb(tl, 0, "%u", vcc_UintVal(tl));
-			else {
+				vcc_NextToken(tl);
+			} else {
 				vsb_printf(tl->sb, "Cannot assign this variable type.\n");
 				vcc_ErrWhere(tl, vt);
 				return;

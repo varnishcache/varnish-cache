@@ -75,6 +75,7 @@ vcc_acl_entry(struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, CNUM);
 		mask = vcc_UintVal(tl);
+		vcc_NextToken(tl);
 	}
 	Fh(tl, 1, "{ %u, %u, %u, ", not, mask, para);
 	EncToken(tl->fh, t);
