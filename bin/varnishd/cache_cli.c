@@ -51,6 +51,30 @@ pthread_t	cli_thread;
 /*--------------------------------------------------------------------*/
 
 static void
+cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+#define SZOF(foo)       cli_out(cli, \
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+        SZOF(struct ws);
+        SZOF(struct http);
+        SZOF(struct http_conn);
+        SZOF(struct acct);
+        SZOF(struct worker);
+        SZOF(struct workreq);
+        SZOF(struct bereq);
+        SZOF(struct storage);
+        SZOF(struct object);
+        SZOF(struct objhead);
+        SZOF(struct sess);
+        SZOF(struct vbe_conn);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 cli_func_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -77,6 +101,10 @@ struct cli_proto CLI_cmds[] = {
 	{ CLI_VCL_DISCARD,	cli_func_config_discard },
 	{ CLI_VCL_USE,		cli_func_config_use },
 
+	/* Undocumented functions for debugging */
+	{ "debug.sizeof", "debug.sizeof",
+		"\tDump sizeof various data structures\n",
+		0, 0, cli_debug_sizeof },
 	{ NULL }
 };
 
