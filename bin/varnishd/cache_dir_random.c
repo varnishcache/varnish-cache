@@ -131,7 +131,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	assert(s > 0.0);
 	for (te = t->members; te->host != NULL; te++, i++) {
 		/* First normalize the specified weight in FP */
-		b = te->weight / s;
+		b = te->weight / s;	/*lint !e795 not zero division */
 		/* Then accumulate to eliminate rounding errors */
 		a += b;
 		/* Convert to unsigned in random() range */
