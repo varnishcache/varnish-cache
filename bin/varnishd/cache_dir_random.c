@@ -56,7 +56,6 @@ struct vdi_random {
 #define VDI_RANDOM_MAGIC	0x476d25b7
 	struct director		dir;
 	struct backend		*backend;
-	unsigned		nhosts;
 	struct vdi_random_host	*hosts;
 };
 
@@ -121,6 +120,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vh = vs->hosts;
 	te = t->members;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
+		assert(te->weight > 0.0);
 		s += te->weight;
 		vh->backend = VBE_AddBackend(cli, te->host);
 	}
@@ -128,6 +128,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	/* Normalize weights */
 	i = 0;
 	a = 0.0;
+	assert(s > 0.0);
 	for (te = t->members; te->host != NULL; te++, i++) {
 		/* First normalize the specified weight in FP */
 		b = te->weight / s;
