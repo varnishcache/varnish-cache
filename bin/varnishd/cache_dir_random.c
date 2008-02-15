@@ -75,7 +75,7 @@ vdi_random_choose(struct sess *sp)
 	for (vh = vs->hosts; ; vh++)
 		if (r < vh->weight)
 			return (vh->backend);
-	assert(0 != __LINE__);
+	assert(0 == __LINE__);
 	return (NULL);
 }
 
