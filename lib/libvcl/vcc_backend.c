@@ -385,12 +385,13 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 	struct token *t_field;
 	int nbh, nelem;
 	struct fld_spec *fs;
+	unsigned u;
 
 	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
 	    PF(t_dir), tl->nbackend);
 	vcc_AddDef(tl, t_dir, R_BACKEND);
 
-	fs = vcc_FldSpec(tl, "!backend", "?weight", NULL);
+	fs = vcc_FldSpec(tl, "!backend", "!weight", NULL);
 
 	vcc_NextToken(tl);		/* ID: policy (= random) */
 
@@ -418,7 +419,16 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {
 				ExpectErr(tl, CNUM);
-				Fc(tl, 0, " .weight = %.*s,", PF(tl->t));
+				u = vcc_UintVal(tl);
+				if (u == 0) {
+					vsb_printf(tl->sb,
+					    "The .weight must be higher than zero.");
+					vcc_ErrToken(tl, tl->t);
+					vsb_printf(tl->sb, " at\n");
+					vcc_ErrWhere(tl, tl->t);
+					return;
+				}
+				Fc(tl, 0, " .weight = %u", u);
 				vcc_NextToken(tl);
 				ExpectErr(tl, ';');
 				vcc_NextToken(tl);
