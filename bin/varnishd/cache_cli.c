@@ -43,6 +43,7 @@
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "cache.h"
+#include "vlu.h"
 #include "vsb.h"
 #include "heritage.h"
 
@@ -108,13 +109,33 @@ struct cli_proto CLI_cmds[] = {
 	{ NULL }
 };
 
+static int
+cli_vlu(void *priv, const char *p)
+{
+	struct cli *cli;
+	int i;
+
+	cli = priv;
+	VSL(SLT_CLI, 0, "Rd %s", p);
+	vsb_clear(cli->sb);
+	cli_dispatch(cli, CLI_cmds, p);
+	vsb_finish(cli->sb);
+	AZ(vsb_overflowed(cli->sb));
+	i = cli_writeres(heritage.fds[1], cli);
+	if (i)
+		VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
+	else
+		VSL(SLT_CLI, 0, "Wr %d %d %s",
+		    i, cli->result, vsb_data(cli->sb));
+	return (0);
+}
+
 void
 CLI_Init(void)
 {
 	struct pollfd pfd[1];
-	char *buf, *p;
-	unsigned nbuf, lbuf;
 	struct cli *cli, clis;
+	struct vlu *vlu;
 	int i;
 
 	cli = &clis;
@@ -123,11 +144,9 @@ CLI_Init(void)
 	cli_thread = pthread_self();
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli->sb);
-	lbuf = 4096;
-	buf = malloc(lbuf);
-	XXXAN(buf);
-	nbuf = 0;
-	printf("CLI ready\n");
+	vlu = VLU_New(cli, cli_vlu, 0);
+	XXXAN(vlu);
+	printf("Ready\n");
 	while (1) {
 		pfd[0].fd = heritage.fds[2];
 		pfd[0].events = POLLIN;
@@ -136,39 +155,18 @@ CLI_Init(void)
 			VCL_Idle();
 			continue;
 		}
-		if ((nbuf + 2) >= lbuf) {
-			lbuf += lbuf;
-			buf = realloc(buf, lbuf);
-			XXXAN(buf);
+		if (pfd[0].revents & POLLHUP) {
+			fprintf(stderr,
+			    "EOF on CLI connection, exiting\n");
+			break;
 		}
-		i = read(heritage.fds[2], buf + nbuf, lbuf - nbuf);
-		if (i <= 0) {
-			VSL(SLT_Error, 0, "CLI read %d (errno=%d)", i, errno);
-			free(buf);
-			return;
-		}
-		nbuf += i;
-		p = strchr(buf, '\n');
-		if (p == NULL)
-			continue;
-		*p = '\0';
-		VSL(SLT_CLI, 0, "Rd %s", buf);
-		vsb_clear(cli->sb);
-		cli_dispatch(cli, CLI_cmds, buf);
-		vsb_finish(cli->sb);
-		AZ(vsb_overflowed(cli->sb));
-		i = cli_writeres(heritage.fds[1], cli);
+		i = VLU_Fd(heritage.fds[2], vlu);
 		if (i) {
-			VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
-			free(buf);
-			return;
+			fprintf(stderr,
+			    "Error on CLI connection, exiting "
+			    "(VLU_Fd %d ev: %x)\n",
+				i, pfd[0].revents);
+			break;
 		}
-		VSL(SLT_CLI, 0, "Wr %d %d %s",
-		    i, cli->result, vsb_data(cli->sb));
-		i = ++p - buf;
-		assert(i <= nbuf);
-		if (i < nbuf)
-			memcpy(buf, p, nbuf - i);
-		nbuf -= i;
 	}
 }
