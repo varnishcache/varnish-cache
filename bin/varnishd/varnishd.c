@@ -553,8 +553,8 @@ main(int argc, char *argv[])
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
-	if (pfh != NULL)
-		vpf_write(pfh);		/* XXX: Warn or Err if fail ? */
+	if (pfh != NULL && vpf_write(pfh) 
+		fprintf(stderr, "NOTE: Could not write PID file\n");
 
 	mgt_cli_init();
 
