@@ -63,6 +63,8 @@ struct parspec {
 	const char	*name;
 	tweak_t		*func;
 	volatile void	*priv;
+	unsigned	umin;
+	unsigned	umax;
 	const char	*descr;
 	int		 flags;
 #define DELAYED_EFFECT 1
@@ -174,6 +176,17 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, un
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *dest;
+
+	dest = par->priv;
+	tweak_generic_uint(cli, dest, arg, par->umin, par->umax);
+}
+
 /*--------------------------------------------------------------------
  * XXX: slightly magic.  We want to initialize to "nobody" (XXX: shouldn't
  * XXX: that be something autocrap found for us ?) but we don't want to
@@ -257,28 +270,6 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_default_ttl(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.default_ttl, arg, 0, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_thread_pools(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.wthread_pools, arg,
-	    1, UINT_MAX);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-static void
 tweak_thread_pool_min(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
@@ -297,63 +288,6 @@ tweak_thread_pool_max(struct cli *cli, const struct parspec *par, const char *ar
 	tweak_generic_uint(cli, &master.wthread_max, arg,
 	    master.wthread_min, UINT_MAX);
 }
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_overflow_max(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.overflow_max, arg, 0, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_rush_exponent(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.rush_exponent, arg,
-	    2, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_http_workspace(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.mem_workspace, arg,
-	    1024, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_fetch_chunksize(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.fetch_chunksize, arg,
-	    4, UINT_MAX / 1024);
-}
-
-#ifdef SENDFILE_WORKS
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_sendfile_threshold(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.sendfile_threshold, arg, 0, UINT_MAX);
-}
-#endif /* SENDFILE_WORKS */
-
-/*--------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------*/
 
@@ -450,42 +384,6 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_listen_depth(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_uint(cli, &master.listen_depth, arg, 0, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_srcaddr_hash(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_uint(cli, &master.srcaddr_hash, arg, 63, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_srcaddr_ttl(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_uint(cli, &master.srcaddr_ttl, arg, 0, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_ping_interval(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	(void)par;
-	tweak_generic_uint(cli, &master.ping_interval, arg, 0, UINT_MAX);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
@@ -498,22 +396,6 @@ tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 		mgt_cc_cmd = strdup(arg);
 		XXXAN(mgt_cc_cmd);
 	}
-}
-
-static void
-tweak_max_restarts(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.max_restarts, arg, 0, UINT_MAX);
-}
-
-static void
-tweak_max_esi_includes(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.max_esi_includes, arg, 0, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -543,16 +425,16 @@ tweak_max_esi_includes(struct cli *cli, const struct parspec *par, const char *a
  * change its default value.
  */
 static const struct parspec parspec[] = {
-	{ "user", tweak_user, NULL,
+	{ "user", tweak_user, NULL, 0, 0,
 		"The unprivileged user to run as.  Setting this will "
 		"also set \"group\" to the specified user's primary group.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
-	{ "group", tweak_group, NULL,
+	{ "group", tweak_group, NULL, 0, 0,
 		"The unprivileged group to run as.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
-	{ "default_ttl", tweak_default_ttl, NULL,
+	{ "default_ttl", tweak_uint, &master.default_ttl, 0, UINT_MAX,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.\n"
 		"Objects already cached will not be affected by changes "
@@ -561,7 +443,7 @@ static const struct parspec parspec[] = {
 		"flush of the cache use \"url.purge .\"",
 		0,
 		"120", "seconds" },
-	{ "thread_pools", tweak_thread_pools, NULL,
+	{ "thread_pools", tweak_uint, &master.wthread_pools, 1, UINT_MAX,
 		"Number of worker pools. "
 		"Increasing number of worker pools decreases lock "
 		"contention but increases the number of threads as well. "
@@ -569,27 +451,27 @@ static const struct parspec parspec[] = {
 		"restart to take effect.",
 		EXPERIMENTAL,
 		"1", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL,
+	{ "thread_pool_max", tweak_thread_pool_max, NULL, 0, 0,
 		"The maximum number of threads in the total worker pool.\n"
 		"-1 is unlimited.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1000", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL,
+	{ "thread_pool_min", tweak_thread_pool_min, NULL, 0, 0,
 		"The minimum number of threads in the worker pool.\n"
 		"Minimum is 1 thread.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout,
+	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 0, 0,
 		"Thread dies after this many seconds of inactivity.\n"
 		"Minimum is 1 second.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"120", "seconds" },
-	{ "overflow_max", tweak_overflow_max, NULL,
+	{ "overflow_max", tweak_uint, &master.overflow_max, 0, UINT_MAX,
 		"Limit on overflow queue length in percent of "
 		"thread_pool_max parameter.",
 		EXPERIMENTAL,
 		"100", "%" },
-	{ "rush_exponent", tweak_rush_exponent, NULL,
+	{ "rush_exponent", tweak_uint, &master.rush_exponent, 2, UINT_MAX,
 		"How many parked request we start for each completed "
 		"request on the object.\n"
 		"NB: Even with the implict delay of delivery, "
@@ -597,37 +479,38 @@ static const struct parspec parspec[] = {
 		"number of worker threads.  ",
 		EXPERIMENTAL,
 		"3", "requests per request" },
-	{ "http_workspace", tweak_http_workspace, NULL,
+	{ "http_workspace", tweak_uint, &master.mem_workspace, 1024, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
-	{ "sess_timeout", tweak_timeout, &master.sess_timeout,
+	{ "sess_timeout", tweak_timeout, &master.sess_timeout, 0, 0,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
 		"seconds, the session is closed.",
 		0,
 		"5", "seconds" },
-	{ "pipe_timeout", tweak_timeout, &master.pipe_timeout,
+	{ "pipe_timeout", tweak_timeout, &master.pipe_timeout, 0, 0,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
 		"this many seconds, the session is closed.\n",
 		0,
 		"60", "seconds" },
-	{ "send_timeout", tweak_timeout, &master.send_timeout,
+	{ "send_timeout", tweak_timeout, &master.send_timeout, 0, 0,
 		"Send timeout for client connections. "
 		"If no data has been sent to the client in this many seconds, "
 		"the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
-	{ "auto_restart", tweak_bool, &master.auto_restart,
+	{ "auto_restart", tweak_bool, &master.auto_restart, 0, 0,
 		"Restart child process automatically if it dies.\n",
 		0,
 		"on", "bool" },
-	{ "fetch_chunksize", tweak_fetch_chunksize, NULL,
+	{ "fetch_chunksize",
+		tweak_uint, &master.fetch_chunksize, 4, UINT_MAX / 1024,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
 		"short TTLs.\n"
@@ -636,12 +519,13 @@ static const struct parspec parspec[] = {
 		EXPERIMENTAL,
 		"128", "kilobytes" },
 #ifdef SENDFILE_WORKS
-	{ "sendfile_threshold", tweak_sendfile_threshold, NULL,
+	{ "sendfile_threshold",
+		tweak_uint, &master.sendfile_threshold, 0, UINT_MAX,
 		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
 		"-1", "bytes" },
 #endif /* SENDFILE_WORKS */
-	{ "vcl_trace", tweak_bool,  &master.vcl_trace,
+	{ "vcl_trace", tweak_bool,  &master.vcl_trace, 0, 0,
 		"Trace VCL execution in the shmlog.\n"
 		"Enabling this will allow you to see the path each "
 		"request has taken through the VCL program.\n"
@@ -649,50 +533,50 @@ static const struct parspec parspec[] = {
 		"default.",
 		0,
 		"off", "bool" },
-	{ "listen_address", tweak_listen_address, NULL,
+	{ "listen_address", tweak_listen_address, NULL, 0, 0,
 		"Whitespace separated list of network endpoints where "
 		"Varnish will accept requests.\n"
 		"Possible formats: host, host:port, :port",
 		MUST_RESTART,
 		":80" },
-	{ "listen_depth", tweak_listen_depth, NULL,
+	{ "listen_depth", tweak_uint, &master.listen_depth, 0, UINT_MAX,
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "srcaddr_hash", tweak_srcaddr_hash, NULL,
+	{ "srcaddr_hash", tweak_uint, &master.srcaddr_hash, 63, UINT_MAX,
 		"Number of source address hash buckets.\n"
 		"Powers of two are bad, prime numbers are good.",
 		EXPERIMENTAL | MUST_RESTART,
 		"1049", "buckets" },
-	{ "srcaddr_ttl", tweak_srcaddr_ttl, NULL,
+	{ "srcaddr_ttl", tweak_uint, &master.srcaddr_ttl, 0, UINT_MAX,
 		"Lifetime of srcaddr entries.\n"
 		"Zero will disable srcaddr accounting entirely.",
 		EXPERIMENTAL,
 		"30", "seconds" },
-	{ "backend_http11", tweak_bool, &master.backend_http11,
+	{ "backend_http11", tweak_bool, &master.backend_http11, 0, 0,
 		"Force all backend requests to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
 		"incoming client request.",
 		EXPERIMENTAL,
 		"off", "bool" },
-	{ "client_http11", tweak_bool, &master.client_http11,
+	{ "client_http11", tweak_bool, &master.client_http11, 0, 0,
 		"Force all client responses to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
 		"backend response.",
 		EXPERIMENTAL,
 		"off", "bool" },
-	{ "cli_timeout", tweak_timeout, &master.cli_timeout,
+	{ "cli_timeout", tweak_timeout, &master.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the master.",
 		0,
 		"5", "seconds" },
-	{ "ping_interval", tweak_ping_interval, NULL,
+	{ "ping_interval", tweak_uint, &master.ping_interval, 0, UINT_MAX,
 		"Interval between pings from parent to child.\n"
 		"Zero will disable pinging entirely, which makes "
 		"it possible to attach a debugger to the child.",
 		MUST_RESTART,
 		"3", "seconds" },
-	{ "lru_interval", tweak_timeout, &master.lru_timeout,
+	{ "lru_interval", tweak_timeout, &master.lru_timeout, 0, 0,
 		"Grace period before object moves on LRU list.\n"
 		"Objects are only moved to the front of the LRU "
 		"list if they have not been moved there already inside "
@@ -700,7 +584,7 @@ static const struct parspec parspec[] = {
 		"operations necessary for LRU list access.",
 		EXPERIMENTAL,
 		"2", "seconds" },
-	{ "cc_command", tweak_cc_command, NULL,
+	{ "cc_command", tweak_cc_command, NULL, 0, 0,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
@@ -712,19 +596,20 @@ static const struct parspec parspec[] = {
 		"exec cc -fpic -shared -Wl,-x -o %o %s"
 #endif
 		, NULL },
-	{ "max_restarts", tweak_max_restarts, NULL,
+	{ "max_restarts", tweak_uint, &master.max_restarts, 0, UINT_MAX,
 		"Upper limit on how many times a request can restart."
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"4", "restarts" },
-	{ "max_esi_includes", tweak_max_esi_includes, NULL,
+	{ "max_esi_includes",
+		tweak_uint, &master.max_esi_includes, 0, UINT_MAX,
 		"Maximum depth of esi:include processing."
 		"\nBe aware that restarts are likely to cause a hit against "
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"5", "restarts" },
-	{ "cache_vbe_conns", tweak_bool,  &master.cache_vbe_conns,
+	{ "cache_vbe_conns", tweak_bool,  &master.cache_vbe_conns, 0, 0,
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
 		"off", "bool" },
