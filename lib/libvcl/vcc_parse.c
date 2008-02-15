@@ -150,7 +150,6 @@ vcc_UintVal(struct tokenlist *tl)
 		d *= 10;
 		d += *p - '0';
 	}
-	vcc_NextToken(tl);
 	return (d);
 }
 
