@@ -138,6 +138,9 @@ struct params {
 
 	/* Cache vbe_conns */
 	unsigned		cache_vbe_conns;
+
+	/* CLI buffer size */
+	unsigned		cli_buffer;
 };
 
 extern volatile struct params *params;

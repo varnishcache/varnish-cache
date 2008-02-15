@@ -613,6 +613,13 @@ static const struct parspec parspec[] = {
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "cli_buffer", tweak_uint, &master.cli_buffer, 4096, UINT_MAX,
+		"Size of buffer for CLI input."
+		"\nYou may need to increase this if you have big VCL files "
+		"and use the vcl.inline CLI command.\n"
+		"NB: Must be specified with -p to have effect.\n",
+		0,
+		"8192", "bytes" },
 	{ NULL, NULL, NULL }
 };
 
