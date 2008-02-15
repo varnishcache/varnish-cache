@@ -434,14 +434,3 @@ WRK_Init(void)
 	AZ(pthread_create(&tp, NULL, wrk_reaperthread, NULL));
 	AZ(pthread_detach(tp));
 }
-
-/*--------------------------------------------------------------------*/
-
-void
-cli_func_dump_pool(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)cli;
-	(void)av;
-	(void)priv;
-}
