@@ -88,7 +88,6 @@ child_main(void)
 
 	STV_open();
 
-	printf("Ready\n");
 	VSL_stats->start_time = (time_t)TIM_real();
 
 	CLI_Init();
