@@ -137,11 +137,11 @@ struct test_case {
 	{ "1.3GB",		(uintmax_t)0,		(uintmax_t)1395864371 },
 	{ "1.7GB",		(uintmax_t)0,		(uintmax_t)1825361101 },
 
-	{ "1099511627776",	(uintmax_t)0,		(uintmax_t)1099511627776 },
+	{ "1099511627776",	(uintmax_t)0,		(uintmax_t)1099511627776ULL },
 	{ "1T",			(uintmax_t)0,		(uintmax_t)1<<40 },
 	{ "1TB",		(uintmax_t)0,		(uintmax_t)1<<40 },
-	{ "1.3TB",		(uintmax_t)0,		(uintmax_t)1429365116109 },
-	{ "1.7TB",		(uintmax_t)0,		(uintmax_t)1869169767219 },
+	{ "1.3TB",		(uintmax_t)0,		(uintmax_t)1429365116109ULL },
+	{ "1.7TB",		(uintmax_t)0,		(uintmax_t)1869169767219ULL },
 
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
