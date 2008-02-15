@@ -107,7 +107,10 @@ child_listener(const struct ev *e, int what)
 		ev_listen = NULL;
 		return (1);
 	}
-	VLU_Fd(child_fds[0], vlu);
+	if (VLU_Fd(child_fds[0], vlu)) {
+		ev_listen = NULL;
+		return (1);
+	}
 	return (0);
 }
 
