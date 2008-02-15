@@ -144,7 +144,7 @@ CLI_Init(void)
 	cli_thread = pthread_self();
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli->sb);
-	vlu = VLU_New(cli, cli_vlu, 0);
+	vlu = VLU_New(cli, cli_vlu, params->cli_buffer);
 	XXXAN(vlu);
 	printf("Ready\n");
 	while (1) {

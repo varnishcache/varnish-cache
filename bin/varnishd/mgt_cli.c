@@ -57,6 +57,7 @@
 #include "mgt_event.h"
 #include "shmlog.h"
 
+#include "vlu.h"
 #include "vss.h"
 
 static int		cli_i = -1, cli_o = -1;
@@ -288,19 +289,20 @@ struct cli_port {
 	int			fdi;
 	int			fdo;
 	int			verbose;
-	char			*buf;
-	int			nbuf; /* next free position in buf */
-	int			lbuf; /* length of buf */
+	struct vlu		*vlu;
 	struct cli		cli[1];
-	char			name[30];
+	char			*name;
 };
 
 static int
 mgt_cli_close(const struct cli_port *cp)
 {
 
+	CHECK_OBJ_NOTNULL(cp, CLI_PORT_MAGIC);
+	fprintf(stderr, "CLI closing: %s\n", cp->name);
 	vsb_delete(cp->cli->sb);
-	free(cp->buf);
+	VLU_Destroy(cp->vlu);
+	free(cp->name);
 	(void)close(cp->fdi);
 	if (cp->fdi == 0)
 		assert(open("/dev/null", O_RDONLY) == 0);
@@ -314,10 +316,26 @@ mgt_cli_close(const struct cli_port *cp)
 }
 
 static int
+mgt_cli_vlu(void *priv, const char *p)
+{
+	struct cli_port *cp;
+
+	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
+	vsb_clear(cp->cli->sb);
+	cli_dispatch(cp->cli, cli_proto, p);
+	vsb_finish(cp->cli->sb);
+	AZ(vsb_overflowed(cp->cli->sb));
+
+	/* send the result back */
+	if (cli_writeres(cp->fdo, cp->cli))
+		return (mgt_cli_close(cp));
+	return (0);
+}
+
+static int
 mgt_cli_callback(const struct ev *e, int what)
 {
 	struct cli_port *cp;
-	char *p, *q;
 	int i;
 
 	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
@@ -325,65 +343,31 @@ mgt_cli_callback(const struct ev *e, int what)
 	if (what & (EV_ERR | EV_HUP | EV_GONE))
 		return (mgt_cli_close(cp));
 
-	/* grow the buffer if it is full */
-	if (cp->nbuf == cp->lbuf) {
-		cp->lbuf += cp->lbuf;
-		cp->buf = realloc(cp->buf, cp->lbuf);
-		XXXAN(cp->buf);
+	i = VLU_Fd(cp->fdi, cp->vlu);
+	if (i != 0) {
+		mgt_cli_close(cp);
+		return (1);
 	}
-
-	/* read more data into the buffer */
-	i = read(cp->fdi, cp->buf + cp->nbuf, cp->lbuf - cp->nbuf);
-	if (i <= 0)
-		return (mgt_cli_close(cp));
-	cp->nbuf += i;
-
-	for (p = q = cp->buf; q < cp->buf + cp->nbuf; ++q) {
-		if (*q != '\n')
-			continue;
-		/* got a newline == got a command */
-		*q = '\0';
-		vsb_clear(cp->cli->sb);
-		cli_dispatch(cp->cli, cli_proto, p);
-		vsb_finish(cp->cli->sb);
-		AZ(vsb_overflowed(cp->cli->sb));
-
-		/* send the result back */
-		if (cli_writeres(cp->fdo, cp->cli))
-			return (mgt_cli_close(cp));
-
-		/* ready for next command */
-		p = q + 1;
-	}
-
-	/* see if there's any data left in the buffer */
-	if (p != q) {
-		assert(q == cp->buf + cp->nbuf);
-		cp->nbuf -= (p - cp->buf);
-		memmove(cp->buf, p, cp->nbuf);
-	} else
-		cp->nbuf = 0;
 	return (0);
 }
 
 void
-mgt_cli_setup(int fdi, int fdo, int verbose)
+mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 {
 	struct cli_port *cp;
 
 	cp = calloc(sizeof *cp, 1);
 	XXXAN(cp);
+	cp->vlu = VLU_New(cp, mgt_cli_vlu, params->cli_buffer);
 
-	sprintf(cp->name, "cli %d->%d", fdi, fdo);
+	asprintf(&cp->name, "cli %s fds{%d,%d}", ident, fdi, fdo);
+	XXXAN(cp->name);
+	fprintf(stderr, "CLI opened: %s\n", cp->name);
 	cp->magic = CLI_PORT_MAGIC;
 
 	cp->fdi = fdi;
 	cp->fdo = fdo;
 	cp->verbose = verbose;
-
-	cp->lbuf = 4096;
-	cp->buf = malloc(cp->lbuf);
-	XXXAN(cp->buf);
 
 	cp->cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cp->cli->sb);
@@ -403,6 +387,9 @@ telnet_accept(const struct ev *ev, int what)
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
 	int i;
+	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
+	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+	char *p;
 
 	(void)what;
 	addrlen = sizeof addr;
@@ -410,7 +397,14 @@ telnet_accept(const struct ev *ev, int what)
 	if (i < 0)
 		return (0);
 
-	mgt_cli_setup(i, i, 0);
+	TCP_myname(ev->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	TCP_name((void*)&addr, addrlen, abuf2, sizeof abuf2,
+	    pbuf2, sizeof pbuf2);
+	asprintf(&p, "telnet{%s:%s,%s:%s}", abuf2, pbuf2, abuf1, pbuf1);
+	XXXAN(p);
+
+	mgt_cli_setup(i, i, 0, p);
+	free(p);
 	return (0);
 }
 

@@ -392,7 +392,7 @@ mgt_run(int dflag, const char *T_arg)
 	XXXAN(mgt_evb);
 
 	if (dflag)
-		mgt_cli_setup(0, 1, 1);
+		mgt_cli_setup(0, 1, 1, "debug");
 
 	if (T_arg)
 		mgt_cli_telnet(T_arg);
