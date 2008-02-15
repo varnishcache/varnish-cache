@@ -72,21 +72,6 @@ child_main(void)
 
 	THR_Name("cache-main");
 
-#define SZOF(foo)	printf("sizeof(%s) = %zd\n", #foo, sizeof(foo));
-	SZOF(struct ws);
-	SZOF(struct http);
-	SZOF(struct http_conn);
-	SZOF(struct acct);
-	SZOF(struct worker);
-	SZOF(struct workreq);
-	SZOF(struct bereq);
-	SZOF(struct storage);
-	SZOF(struct object);
-	SZOF(struct objhead);
-	SZOF(struct sess);
-	SZOF(struct vbe_conn);
-
-
 	CNT_Init();
 	VCL_Init();
 
