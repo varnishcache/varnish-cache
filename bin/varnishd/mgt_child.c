@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <syslog.h>
 #include <errno.h>
 #include <poll.h>
 #include <sys/types.h>
@@ -54,6 +55,7 @@
 #include "cli_priv.h"
 #include "mgt_cli.h"
 #include "mgt_event.h"
+#include "vlu.h"
 #include "vss.h"
 
 pid_t		mgt_pid;
@@ -79,28 +81,33 @@ static const char *ch_state[] = {
 struct evbase		*mgt_evb;
 static struct ev	*ev_poker;
 static struct ev	*ev_listen;
+static struct vlu	*vlu;
+
+/*--------------------------------------------------------------------*/
+
+static int
+child_line(void *priv, const char *p)
+{
+	(void)priv;
+
+	fprintf(stderr, "Child said (%d, %d): <<%s>>\n",
+	    child_state, child_pid, p);
+	syslog(LOG_NOTICE, "Child (%d) said <<%s>>", child_pid, p);
+	return (0);
+}
 
 /*--------------------------------------------------------------------*/
 
 static int
 child_listener(const struct ev *e, int what)
 {
-	int i;
-	char buf[BUFSIZ];
 
 	(void)e;
 	if ((what & ~EV_RD)) {
 		ev_listen = NULL;
 		return (1);
 	}
-	i = read(child_fds[0], buf, sizeof buf - 1);
-	if (i <= 0) {
-		ev_listen = NULL;
-		return (1);
-	}
-	buf[i] = '\0';
-	fprintf(stderr, "Child said (%d, %d): <<%s>>\n",
-	    child_state, child_pid, buf);
+	VLU_Fd(child_fds[0], vlu);
 	return (0);
 }
 
@@ -221,6 +228,9 @@ start_child(void)
 
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
+
+	vlu = VLU_New(NULL, child_line);
+	AN(vlu);
 
 	AZ(ev_listen);
 	e = ev_new();
