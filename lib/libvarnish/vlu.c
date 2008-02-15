@@ -48,15 +48,17 @@ struct vlu {
 };
 
 struct vlu *
-VLU_New(void *priv, vlu_f *func)
+VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 {
 	struct vlu *l;
 
+	if (bufsize == 0)
+		bufsize = BUFSIZ;
 	ALLOC_OBJ(l, LINEUP_MAGIC);
 	if (l != NULL) {
 		l->func = func;
 		l->priv = priv;
-		l->bufl = BUFSIZ - 1;
+		l->bufl = bufsize - 1;
 		l->buf = malloc(l->bufl + 1);
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
