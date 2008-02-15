@@ -609,7 +609,7 @@ smf_open(const struct stevedore *st)
 	    (uintmax_t)sum, sc->filesize);
 
 	/* XXX */
-	if (sum < MINPAGES * (uintmax_t)getpagesize())
+	if (sum < MINPAGES * (off_t)getpagesize())
 		exit (2);
 	MTX_INIT(&sc->mtx);
 
