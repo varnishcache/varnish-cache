@@ -221,9 +221,9 @@ vca_kev(const struct kevent *kp)
 #endif
 	spassert(sp->id == kp->ident);
 	spassert(sp->fd == sp->id || sp->fd == -1);
-	if (sp->fd == -1) {
-		VSL(SLT_Debug, sp->id, "%s(): got event 0x%04x on closed fd",
-		    __func__, kp->fflags);
+	if (sp->fd == -1 || kp->fflags == 0) {
+		VSL(SLT_Debug, sp->id, "%s(): got event 0x%04x on fd %d",
+		    __func__, kp->fflags, sp->fd);
 		return;
 	}
 	if (kp->data > 0) {
