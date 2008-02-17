@@ -115,7 +115,7 @@ mailbox_get(struct mailbox *mbox)
 	if (msg != NULL)
 		VSTAILQ_REMOVE_HEAD(&mbox->messages, list);
 	pthread_mutex_unlock(&mbox->lock);
-	return msg;
+	return (msg);
 }
 
 static void
@@ -139,7 +139,7 @@ struct thread {
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void
-thread_log(int lvl, const char *fmt, ...)
+thread_log(int lvl, int errcode, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -150,6 +150,9 @@ thread_log(int lvl, const char *fmt, ...)
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
+	if (errcode)
+		fprintf(stderr, ": %s", strerror(errcode));
+	fprintf(stderr, "\n");
 	pthread_mutex_unlock(&log_mutex);
 }
 
@@ -180,11 +183,11 @@ thread_get(int fd, void *(*thread_main)(void *))
 		mailbox_create(&threads[fd]->mbox);
 		if (pthread_create(&threads[fd]->thread_id, NULL,
 		    thread_main, threads[fd]) != 0) {
-			thread_log(0, "thread creation failed\n");
+			thread_log(0, errno, "pthread_create()");
 			mailbox_destroy(&threads[fd]->mbox);
 			freez(threads[fd]);
 		}
-		thread_log(1, "thread %p started\n",
+		thread_log(1, 0, "thread %p started",
 		    (void *)threads[fd]->thread_id);
 	}
 	return (threads[fd]);
@@ -194,7 +197,7 @@ static void
 thread_close(int fd)
 {
 
-	assert(fd < nthreads);
+	assert(fd == 0 || fd < nthreads);
 	if (fd == 0) {
 		for (fd = 1; fd < nthreads; ++fd)
 			thread_close(fd);
@@ -205,7 +208,7 @@ thread_close(int fd)
 		return;
 	mailbox_close(&threads[fd]->mbox);
 	pthread_join(threads[fd]->thread_id, NULL);
-	thread_log(1, "thread %p stopped\n",
+	thread_log(1, 0, "thread %p stopped",
 	    (void *)threads[fd]->thread_id);
 	mailbox_destroy(&threads[fd]->mbox);
 	freez(threads[fd]);
@@ -287,14 +290,14 @@ init_connection(const char *address)
 	int i, n;
 
 	if (VSS_parse(address, &addr, &port) != 0) {
-		thread_log(0, "Invalid address\n");
+		thread_log(0, 0, "Invalid address");
 		exit(2);
 	}
 	n = VSS_resolve(addr, port, &ta);
 	free(addr);
 	free(port);
 	if (n == 0) {
-		thread_log(0, "Could not connect to server\n");
+		thread_log(0, 0, "Could not connect to server");
 		exit(2);
 	}
 	for (i = 1; i < n; ++i) {
@@ -304,7 +307,7 @@ init_connection(const char *address)
 	tap = ta[0];
 	free(ta);
 
-	return tap;
+	return (tap);
 }
 
 /* Read a line from the socket and return the number of bytes read.
@@ -323,25 +326,31 @@ read_line(char **line, int sock)
 	XXXAN(buf);
 	nbuf = 0;
 	while (1) {
-		if ((nbuf + 2) >= lbuf) {
+		if (nbuf + 2 >= lbuf) {
 			lbuf += lbuf;
 			buf = realloc(buf, lbuf);
 			XXXAN(buf);
 		}
 		i = read(sock, buf + nbuf, 1);
-		if (i <= 0) {
-			thread_log(0, "read(): %s\n", strerror(errno));
+		if (i < 0) {
+			thread_log(0, errno, "read(%d, %p, %d)",
+			    sock, buf + nbuf, 1);
 			free(buf);
 			return (-1);
 		}
-		nbuf += i;
-		if (nbuf >= 2 && buf[nbuf-2] == '\r' && buf[nbuf-1] == '\n')
+		if (i == 0) {
+			buf[nbuf] = '\0';
 			break;
+		}
+		nbuf += i;
+		if (nbuf >= 2 && buf[nbuf-2] == '\r' && buf[nbuf-1] == '\n') {
+			buf[nbuf-2] = '\0';
+			break;
+		}
 
 	}
-	buf[nbuf] = '\0';
 	*line = buf;
-	return nbuf+1;
+	return (nbuf - 2);
 }
 
 /* Read a block of data from the socket, and do nothing with it.
@@ -352,22 +361,25 @@ static int
 read_block(int length, int sock)
 {
 	char *buf;
-	int n, nbuf;
+	int len, n, nbuf;
 
 	buf = malloc(length);
 	nbuf = 0;
 	while (nbuf < length) {
-		n = read(sock, buf + nbuf,
-		    (2048 < length - nbuf ? 2048 : length - nbuf));
-		if (n <= 0) {
-			thread_log(0, "failed reading the block\n");
+		len = 2048 < length - nbuf ? 2048 : length - nbuf;
+		n = read(sock, buf + nbuf, len);
+		if (n < 0) {
+			thread_log(0, errno, "read(%d, %p, %d)",
+			    sock, buf + nbuf, len);
 			nbuf = -1;
 			break;
 		}
+		if (n == 0)
+			break;
 		nbuf += n;
 	}
 	free(buf);
-	return nbuf;
+	return (nbuf);
 }
 
 /* Receive the response after sending a request.
@@ -378,13 +390,12 @@ receive_response(int sock)
 	char *line, *end;
 	const char *next;
 	int line_len;
-	long content_length = -1;
-	int chunked = 0;
-	int close_connection = 0;
-	int req_failed = 1;
-	int n;
-	long block_len;
-	int status;
+	long chunk_length, content_length;
+	int chunked, connclose, failed;
+	int n, status;
+
+	content_length = 0;
+	chunked = connclose = failed = 0;
 
 	/* Read header */
 	for (;;) {
@@ -392,69 +403,70 @@ receive_response(int sock)
 		if (line_len < 0)
 			return (-1);
 		end = line + line_len;
-
-		if (line_len >= 2 && line[0] == '\r' && line[1] == '\n') {
+		if (line_len == 0) {
 			freez(line);
 			break;
 		}
-
 		if (strncmp(line, "HTTP", 4) == 0) {
 			sscanf(line, "%*s %d %*s\r\n", &status);
-			req_failed = (status != 200);
-		} else if (isprefix(line, "content-length:", end, &next))
-			content_length = strtol(next, &end, 10);
-		else if (isprefix(line, "encoding:", end, &next) ||
-		    isprefix(line, "transfer-encoding:", end, &next))
-			chunked = (strstr(next, "chunked") != NULL);
-		else if (isprefix(line, "connection:", end, &next))
-			close_connection = (strstr(next, "close") != NULL);
-
+			failed = (status != 200);
+		} else if (isprefix(line, "content-length:", end, &next)) {
+			content_length = strtol(next, NULL, 10);
+		} else if (isprefix(line, "transfer-encoding:", end, &next)) {
+			chunked = (strcasecmp(next, "chunked") == 0);
+		} else if (isprefix(line, "connection:", end, &next)) {
+			connclose = (strcasecmp(next, "close") == 0);
+		}
 		freez(line);
 	}
 
-	thread_log(1, "status: %d\n", status);
-
+	thread_log(1, 0, "status: %d", status);
 
 	/* Read body */
-	if (content_length > 0 && !chunked) {
-		/* Fixed body size, read content_length bytes */
-		thread_log(1, "fixed length\n");
-		thread_log(1, "size of body: %ld\n", content_length);
-		if ((n = read_block(content_length, sock)) < 0)
-			return (1);
-		thread_log(1, "bytes read: %d\n", n);
-	} else if (chunked) {
+	if (chunked) {
 		/* Chunked encoding, read size and bytes until no more */
-		thread_log(1, "chunked encoding\n");
+		thread_log(1, 0, "chunked encoding");
 		for (;;) {
 			if ((line_len = read_line(&line, sock)) < 0)
 				return (-1);
 			end = line + line_len;
-			block_len = strtol(line, &end, 16);
+			/* read_line() guarantees null-termination */
+			chunk_length = strtol(line, NULL, 16);
 			freez(line);
-			if (block_len == 0)
+			if (chunk_length == 0)
 				break;
-			if ((n = read_block(block_len, sock)) < 0)
+			if ((n = read_block(chunk_length, sock)) < 0)
 				return (-1);
-			thread_log(1, "size of body: %d\n", (int)block_len);
-			thread_log(1, "bytes read: %d\n", n);
+			if (n < chunk_length)
+				thread_log(0, 0, "short read: %d/%ld",
+				    n, chunk_length);
+			thread_log(1, 0, "chunk length: %ld", chunk_length);
+			thread_log(1, 0, "bytes read: %d", n);
+			/* trainling CR LF */
 			if ((n = read_line(&line, sock)) < 0)
 				return (-1);
 			freez(line);
 		}
+		/* trailing CR LF */
 		n = read_line(&line, sock);
 		freez(line);
-	} else if ((content_length <= 0 && !chunked) || req_failed) {
-		/* No body --> stop reading. */
-		thread_log(1, "no body\n");
-		return (-1);
+	} else if (content_length > 0) {
+		/* Fixed body size, read content_length bytes */
+		thread_log(1, 0, "fixed length");
+		thread_log(1, 0, "content length: %ld", content_length);
+		if ((n = read_block(content_length, sock)) < 0)
+			return (1);
+		if (n < content_length)
+			thread_log(0, 0, "short read: %d/%ld",
+			    n, content_length);
+		thread_log(1, 0, "bytes read: %d", n);
 	} else {
-		/* Unhandled case. */
-		thread_log(0, "An error occured\n");
+		/* No body --> stop reading. */
+		thread_log(1, 0, "no body");
 		return (-1);
 	}
 
-	return close_connection;
+	return (connclose);
 }
 
 static void *
@@ -482,7 +494,7 @@ replay_thread(void *arg)
 		ptr = msg->ptr;
 		end = ptr + len;
 
-		thread_log(2, "%s(%s)\n", VSL_tags[tag], msg->ptr);
+		thread_log(2, 0, "%s(%s)", VSL_tags[tag], msg->ptr);
 
 		switch (tag) {
 		case SLT_RxRequest:
@@ -524,7 +536,7 @@ replay_thread(void *arg)
 			bogus = 1;
 
 		if (bogus) {
-			thread_log(1, "bogus\n");
+			thread_log(1, 0, "bogus");
 		} else {
 			/* If the method is supported (GET or HEAD), send the request out
 			 * on the socket. If the socket needs reopening, reopen it first.
@@ -536,7 +548,7 @@ replay_thread(void *arg)
 					sock = VSS_connect(addr_info);
 				reopen = 0;
 
-				thread_log(1, "%s %s %s\n", df_m, df_Uq, df_H);
+				thread_log(1, 0, "%s %s %s", df_m, df_Uq, df_H);
 
 				write(sock, df_m, strlen(df_m));
 				write(sock, " ", 1);
@@ -551,20 +563,18 @@ replay_thread(void *arg)
 
 				write(sock, "Host: ", 6);
 				if (df_Host) {
-					thread_log(1, "Host: %s\n", df_Host);
+					thread_log(1, 0, "Host: %s", df_Host);
 					write(sock, df_Host, strlen(df_Host));
 				}
 				write(sock, "\r\n", 2);
 				if (df_c) {
-					thread_log(1, "Connection: %s\n", df_c);
+					thread_log(1, 0, "Connection: %s", df_c);
 					write(sock, "Connection: ", 12);
 					write(sock, df_c, strlen(df_c));
 					write(sock, "\r\n", 2);
 					if (isequal(df_c, "keep-alive", df_c + strlen(df_c)))
 						reopen = 0;
 				}
-				if (debug)
-					thread_log(0, "\n");
 				write(sock, "\r\n", 2);
 				if (!reopen)
 					reopen = receive_response(sock);
@@ -612,7 +622,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 	if (fd == 0 || !(spec & VSL_S_CLIENT))
 		return (0);
 
-	thread_log(2, "%d %s\n", fd, VSL_tags[tag]);
+	thread_log(2, 0, "%d %s", fd, VSL_tags[tag]);
 	thr = thread_get(fd, replay_thread);
 	msg = malloc(sizeof (struct message));
 	msg->tag = tag;
@@ -620,35 +630,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 	msg->ptr = strndup(ptr, len);
 	mailbox_put(&thr->mbox, msg);
 
-	return 0;
-}
-
-
-/* This function is for testing only, and only sends
- * the raw data from the file to the address.
- * The receive function is called for each blank line.
- */
-static void
-send_test_request(char *file, const char *address)
-{
-	int fd = open(file, O_RDONLY);
-	char buf[2];
-	char last = ' ';
-	int sock, reopen = 1;
-
-	addr_info = init_connection(address);
-	sock = VSS_connect(addr_info);
-	while (read(fd, buf, 1)) {
-		write(sock, buf, 1);
-		thread_log(0, "%s", buf);
-		if (*buf == '\n' && last == '\n'){
-			thread_log(0, "receive\n");
-			reopen = receive_response(sock);
-		}
-		last = *buf;
-	}
-	close(sock);
-
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -657,7 +639,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishreplay -a address:port -r logfile [-D]\n");
+	fprintf(stderr, "usage: varnishreplay [-D] -a address:port -r logfile\n");
 	exit(1);
 }
 
@@ -668,13 +650,11 @@ main(int argc, char *argv[])
 	struct VSL_data *vd;
 	const char *address = NULL;
 
-	char *test_file = NULL;
-
 	vd = VSL_New();
 	debug = 0;
 
 	VSL_Arg(vd, 'c', NULL);
-	while ((c = getopt(argc, argv, "a:Dr:t:")) != -1) {
+	while ((c = getopt(argc, argv, "a:Dr:")) != -1) {
 		switch (c) {
 		case 'a':
 			address = optarg;
@@ -682,23 +662,11 @@ main(int argc, char *argv[])
 		case 'D':
 			++debug;
 			break;
-		case 't':
-			/* This option is for testing only. The test file must contain
-			 * a sequence of valid HTTP-requests that can be sent
-			 * unchanged to the adress given with -a
-			 */
-			test_file = optarg;
-			break;
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}
-	}
-
-	if (test_file != NULL) {
-		send_test_request(test_file, address);
-		exit(0);
 	}
 
 	if (address == NULL) {
