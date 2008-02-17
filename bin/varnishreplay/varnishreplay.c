@@ -585,6 +585,16 @@ replay_thread(void *arg)
 		freez(df_c);
 		bogus = 0;
 	}
+
+	/* leftovers */
+	freez(msg->ptr);
+	freez(msg);
+	freez(df_H);
+	freez(df_Host);
+	freez(df_Uq);
+	freez(df_m);
+	freez(df_c);
+
 	return (0);
 }
 
