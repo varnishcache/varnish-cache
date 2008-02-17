@@ -521,6 +521,9 @@ replay_thread(void *arg)
 		if (tag != SLT_ReqEnd)
 			continue;
 
+		if (!df_m || !df_Uq || !df_H)
+			bogus = 1;
+
 		if (bogus) {
 			thread_log(1, "bogus\n");
 		} else {
