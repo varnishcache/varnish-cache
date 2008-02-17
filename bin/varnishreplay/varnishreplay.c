@@ -363,7 +363,8 @@ read_block(int length, int sock)
 		    (2048 < length - nbuf ? 2048 : length - nbuf));
 		if (n <= 0) {
 			thread_log(0, "failed reading the block\n");
-			return (-1);
+			nbuf = -1;
+			break;
 		}
 		nbuf += n;
 	}
