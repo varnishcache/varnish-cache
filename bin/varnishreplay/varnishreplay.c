@@ -361,7 +361,8 @@ read_block(int length, int sock)
 		    (2048 < length - nbuf ? 2048 : length - nbuf));
 		if (n <= 0) {
 			thread_log(0, "failed reading the block\n");
-			return (-1);
+			nbuf = -1;
+			break;
 		}
 		nbuf += n;
 	}
@@ -519,6 +520,9 @@ replay_thread(void *arg)
 		if (tag != SLT_ReqEnd)
 			continue;
 
+		if (!df_m || !df_Uq || !df_H)
+			bogus = 1;
+
 		if (bogus) {
 			thread_log(1, "bogus\n");
 		} else {
@@ -579,6 +583,16 @@ replay_thread(void *arg)
 		freez(df_c);
 		bogus = 0;
 	}
+
+	/* leftovers */
+	freez(msg->ptr);
+	freez(msg);
+	freez(df_H);
+	freez(df_Host);
+	freez(df_Uq);
+	freez(df_m);
+	freez(df_c);
+
 	return (0);
 }
 

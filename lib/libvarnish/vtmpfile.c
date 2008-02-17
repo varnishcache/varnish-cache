@@ -1,9 +1,9 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2007 Linpro AS
+ * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
  *
- * Author: Dag-Erling Smørgrav <des@linpro.no>
+ * Author: Dag-Erling SmÃ¸rgrav <des@linpro.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
