@@ -196,7 +196,7 @@ static void
 thread_close(int fd)
 {
 
-	assert(fd < nthreads);
+	assert(fd == 0 || fd < nthreads);
 	if (fd == 0) {
 		for (fd = 1; fd < nthreads; ++fd)
 			thread_close(fd);
