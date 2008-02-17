@@ -1,6 +1,6 @@
 .\"-
 .\" Copyright (c) 2006 Verdens Gang AS
-.\" Copyright (c) 2006-2007 Linpro AS
+.\" Copyright (c) 2006-2008 Linpro AS
 .\" All rights reserved.
 .\"
 .\" Author: Cecilie Fritzvold <cecilihf@linpro.no>
@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd September 12, 2007
+.Dd January 31, 2008
 .Dt VARNISHADM 1
 .Os
 .Sh NAME
@@ -50,6 +50,15 @@ The following options are available:
 .It Fl T Ar address Ns : Ns Ar port
 Connect to the management interface at the specified address and port.
 .El
+.Pp
+Available commands and parameters are documented in the
+.Xr varnishd 1
+manual page.
+Additionally, a summary of commands can be obtained by issuing the
+.Cm help
+command, and a summary of parameters can be obtained by issuing the
+.Cm param.show
+command.
 .Sh EXIT STATUS
 The exit status of the
 .Nm
