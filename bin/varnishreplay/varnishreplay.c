@@ -392,13 +392,12 @@ receive_response(int sock)
 	char *line, *end;
 	const char *next;
 	int line_len;
-	long content_length = -1;
-	int chunked = 0;
-	int close_connection = 0;
-	int req_failed = 1;
-	int n;
-	long chunk_len;
-	int status;
+	long chunk_length, content_length;
+	int chunked, connclose, failed;
+	int n, status;
+
+	content_length = 0;
+	chunked = connclose = failed = 0;
 
 	/* Read header */
 	for (;;) {
@@ -412,19 +411,18 @@ receive_response(int sock)
 		}
 		if (strncmp(line, "HTTP", 4) == 0) {
 			sscanf(line, "%*s %d %*s\r\n", &status);
-			req_failed = (status != 200);
+			failed = (status != 200);
 		} else if (isprefix(line, "content-length:", end, &next)) {
 			content_length = strtol(next, NULL, 10);
 		} else if (isprefix(line, "transfer-encoding:", end, &next)) {
 			chunked = (strcasecmp(next, "chunked") == 0);
 		} else if (isprefix(line, "connection:", end, &next)) {
-			close_connection = (strcasecmp(next, "close") == 0);
+			connclose = (strcasecmp(next, "close") == 0);
 		}
 		freez(line);
 	}
 
 	thread_log(1, 0, "status: %d", status);
-
 
 	/* Read body */
 	if (chunked) {
@@ -435,16 +433,16 @@ receive_response(int sock)
 				return (-1);
 			end = line + line_len;
 			/* read_line() guarantees null-termination */
-			chunk_len = strtol(line, NULL, 16);
+			chunk_length = strtol(line, NULL, 16);
 			freez(line);
-			if (chunk_len == 0)
+			if (chunk_length == 0)
 				break;
-			if ((n = read_block(chunk_len, sock)) < 0)
+			if ((n = read_block(chunk_length, sock)) < 0)
 				return (-1);
-			if (n < chunk_len)
+			if (n < chunk_length)
 				thread_log(0, 0, "short read: %d/%ld",
-				    n, chunk_len);
-			thread_log(1, 0, "chunk length: %ld", chunk_len);
+				    n, chunk_length);
+			thread_log(1, 0, "chunk length: %ld", chunk_length);
 			thread_log(1, 0, "bytes read: %d", n);
 			/* trainling CR LF */
 			if ((n = read_line(&line, sock)) < 0)
@@ -460,6 +458,9 @@ receive_response(int sock)
 		thread_log(1, 0, "content length: %ld", content_length);
 		if ((n = read_block(content_length, sock)) < 0)
 			return (1);
+		if (n < content_length)
+			thread_log(0, 0, "short read: %d/%ld",
+			    n, content_length);
 		thread_log(1, 0, "bytes read: %d", n);
 	} else {
 		/* No body --> stop reading. */
@@ -467,7 +468,7 @@ receive_response(int sock)
 		return (-1);
 	}
 
-	return (close_connection);
+	return (connclose);
 }
 
 static void *
