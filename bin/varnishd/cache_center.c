@@ -868,6 +868,21 @@ cnt_start(struct sess *sp)
  *
  */
 
+static void
+cnt_diag(struct sess *sp, const char *state)
+{
+	if (sp->wrk != NULL) {
+		WSL(sp->wrk, SLT_Debug, sp->id,
+		    "thr %p STP_%s sp %p obj %p vcl %p",
+		    pthread_self(), state, sp, sp->obj, sp->vcl);
+		WSL_Flush(sp->wrk);
+	} else {
+		VSL(SLT_Debug, sp->id,
+		    "thr %p STP_%s sp %p obj %p vcl %p",
+		    pthread_self(), state, sp, sp->obj, sp->vcl);
+	}
+}
+
 void
 CNT_Session(struct sess *sp)
 {
@@ -892,22 +907,12 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(sp->director, DIRECTOR_MAGIC);
 
 		switch (sp->step) {
-#ifdef DIAGNOSTICS
 #define STEP(l,u) \
 		    case STP_##u: \
-			if (sp->wrk) \
-				WSL_Flush(sp->wrk); \
-			VSL(SLT_Debug, sp->id, \
-			    "thr %p STP_%s sp %p obj %p vcl %p", \
-			    pthread_self(), #u, sp, sp->obj, sp->vcl); \
-			done = cnt_##l(sp); \
-			break;
-#else
-#define STEP(l,u) \
-		    case STP_##u: \
+			if (params->diag_bitmap & 0x01) \
+				cnt_diag(sp, #u); \
 			done = cnt_##l(sp); \
 		        break;
-#endif
 #include "steps.h"
 #undef STEP
 		default:	INCOMPL();
