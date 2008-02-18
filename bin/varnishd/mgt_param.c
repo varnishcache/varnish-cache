@@ -639,6 +639,7 @@ static const struct parspec parspec[] = {
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling DIAGNOSTICS code:\n"
 		"  0x00000001 - CNT_Session states.\n"
+		"  0x00000002 - workspace debugging.\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
