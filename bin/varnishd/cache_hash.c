@@ -146,7 +146,6 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 	assert(*b == '\0');
 	b++;
 	assert(b == obj->hash + obj->hashlen);
-	WSP(sp, SLT_Debug, "Hash Match: %s", obj->hash);
 	return (0);
 }
 
@@ -165,7 +164,6 @@ HSH_Copy(const struct sess *sp, const struct objhead *obj)
 		*b++ = '#';
 	}
 	*b++ = '\0';
-	WSP(sp, SLT_Debug, "Hash: %s", obj->hash);
 	assert(b <= obj->hash + obj->hashlen);
 }
 
