@@ -65,6 +65,7 @@ MAC_STAT(n_backend,		uint64_t, 'i', "N backends")
 MAC_STAT(n_expired,		uint64_t, 'i', "N expired objects")
 MAC_STAT(n_lru_nuked,		uint64_t, 'i', "N LRU nuked objects")
 MAC_STAT(n_lru_saved,		uint64_t, 'i', "N LRU saved objects")
+MAC_STAT(n_lru_moved,		uint64_t, 'i', "N LRU moved objects")
 MAC_STAT(n_deathrow,		uint64_t, 'i', "N objects on deathrow")
 
 MAC_STAT(losthdr,		uint64_t, 'a', "HTTP header overflows")

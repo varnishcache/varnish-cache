@@ -106,6 +106,7 @@ EXP_Touch(struct object *o, double now)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	if (o->lru_stamp + params->lru_timeout < now) {
 		LOCK(&exp_mtx);	/* XXX: should be ..._TRY */
+		VSL_stats->n_lru_moved++;
 		if (o->timer_idx != lru_target && o->timer_idx != 0) {
 			VTAILQ_REMOVE(&exp_lru, o, deathrow);
 			VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
