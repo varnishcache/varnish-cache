@@ -637,7 +637,7 @@ static const struct parspec parspec[] = {
 		0,
 		"8192", "bytes" },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
-		"Bitmap controlling DIAGNOSTICS code:\n"
+		"Bitmap controlling diagnostics code:\n"
 		"  0x00000001 - CNT_Session states.\n"
 		"  0x00000002 - workspace debugging.\n"
 		"  0x00000004 - kqueue debugging.\n"
