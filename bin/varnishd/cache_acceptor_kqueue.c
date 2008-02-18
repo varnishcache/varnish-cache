@@ -207,23 +207,24 @@ vca_kev(const struct kevent *kp)
 		return;
 	}
 	if (!vbit_test(vca_kqueue_bits, kp->ident)) {
-		VSL(SLT_Debug, kp->ident,
-		    "KQ: not my fd %d, sp %p kev data %lu flags 0x%x%s",
-		    kp->ident, kp->udata, (unsigned long)kp->data, kp->flags,
-		    (kp->flags & EV_EOF) ? " EOF" : "");
+		if (params->diag_bitmap & 0x4)
+			VSL(SLT_Debug, kp->ident,
+			    "KQ: not my fd %d, sp %p kev data %lu flags 0x%x%s",
+			    kp->ident, kp->udata, (unsigned long)kp->data,
+			    kp->flags, (kp->flags & EV_EOF) ? " EOF" : "");
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
-#ifdef DIAGNOSTICS
-	VSL(SLT_Debug, sp->id, "sp %p kev data %lu flags 0x%x%s",
-	    sp, (unsigned long)kp->data, kp->flags,
-	    (kp->flags & EV_EOF) ? " EOF" : "");
-#endif
+	if (params->diag_bitmap & 0x4)
+		VSL(SLT_Debug, sp->id, "sp %p kev data %lu flags 0x%x%s",
+		    sp, (unsigned long)kp->data, kp->flags,
+		    (kp->flags & EV_EOF) ? " EOF" : "");
 	spassert(sp->id == kp->ident);
 	spassert(sp->fd == sp->id || sp->fd == -1);
 	if (sp->fd == -1 || kp->fflags == 0) {
-		VSL(SLT_Debug, sp->id, "%s(): got event 0x%04x on fd %d",
-		    __func__, kp->fflags, sp->fd);
+		if (params->diag_bitmap & 0x4)
+			VSL(SLT_Debug, sp->id, "KQ: got event 0x%04x on fd %d",
+			    kp->fflags, sp->fd);
 		return;
 	}
 	if (kp->data > 0) {
