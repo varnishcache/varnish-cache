@@ -48,11 +48,11 @@
 #include "cache.h"
 
 /* Enable this to get detailed logging of WS usage */
-#ifdef DIAGNOSTICS0
-#  define WS_DEBUG(fmt, ...)	VSL(SLT_Debug, 0, fmt, __VA_ARGS__)
-#else
-#  define WS_DEBUG(fmt, ...)	/* nothing */
-#endif
+#define WS_DEBUG(fmt, ...)					\
+	do {							\
+		if (params->diag_bitmap & 0x2)			\
+			VSL(SLT_Debug, 0, fmt, __VA_ARGS__);	\
+	} while (0)
 
 void
 WS_Assert(const struct ws *ws)
