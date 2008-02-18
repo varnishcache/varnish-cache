@@ -219,14 +219,14 @@ vca_kev(const struct kevent *kp)
 		VSL(SLT_Debug, sp->id, "sp %p kev data %lu flags 0x%x%s",
 		    sp, (unsigned long)kp->data, kp->flags,
 		    (kp->flags & EV_EOF) ? " EOF" : "");
-	spassert(sp->id == kp->ident);
-	spassert(sp->fd == sp->id || sp->fd == -1);
 	if (sp->fd == -1 || kp->fflags == 0) {
 		if (params->diag_bitmap & 0x4)
 			VSL(SLT_Debug, sp->id, "KQ: got event 0x%04x on fd %d",
-			    kp->fflags, sp->fd);
+			    kp->fflags, kp->ident);
 		return;
 	}
+	spassert(sp->id == kp->ident);
+	spassert(sp->fd == sp->id);
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0)
