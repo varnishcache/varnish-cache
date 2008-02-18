@@ -400,6 +400,22 @@ tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	unsigned u;
+
+	(void)par;
+	if (arg != NULL) {
+		u = strtoul(arg, NULL, 0);
+		master.diag_bitmap = u;
+	} else {
+		cli_out(cli, "0x%x", master.diag_bitmap);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -620,6 +636,12 @@ static const struct parspec parspec[] = {
 		"NB: Must be specified with -p to have effect.\n",
 		0,
 		"8192", "bytes" },
+	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
+		"Bitmap controlling DIAGNOSTICS code:\n"
+		"  0x00000001 - CNT_Session states.\n"
+		"Use 0x notation and do the bitor in your head :-)\n",
+		0,
+		"0", "bitmap" },
 	{ NULL, NULL, NULL }
 };
 

@@ -141,6 +141,9 @@ struct params {
 
 	/* CLI buffer size */
 	unsigned		cli_buffer;
+
+	/* Control diagnostic code */
+	unsigned		diag_bitmap;
 };
 
 extern volatile struct params *params;
