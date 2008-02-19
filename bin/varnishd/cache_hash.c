@@ -386,6 +386,7 @@ void
 HSH_Init(void)
 {
 
+	hash = heritage.hash;
 	if (hash->start != NULL)
 		hash->start();
 }
