@@ -641,6 +641,8 @@ static const struct parspec parspec[] = {
 		"  0x00000001 - CNT_Session states.\n"
 		"  0x00000002 - workspace debugging.\n"
 		"  0x00000004 - kqueue debugging.\n"
+		"  0x00000008 - mutex logging.\n"
+		"  0x00000010 - mutex contests.\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
