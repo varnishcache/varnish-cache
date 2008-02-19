@@ -38,7 +38,6 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "heritage.h"
 #include "stevedore.h"
 
 /*--------------------------------------------------------------------

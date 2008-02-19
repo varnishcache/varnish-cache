@@ -45,7 +45,6 @@
 #include "cache.h"
 #include "vlu.h"
 #include "vsb.h"
-#include "heritage.h"
 
 pthread_t	cli_thread;
 

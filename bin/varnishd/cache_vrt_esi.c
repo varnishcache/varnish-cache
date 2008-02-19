@@ -50,7 +50,6 @@
 #include <stdarg.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "vrt.h"
 #include "vcl.h"
 #include "cache.h"

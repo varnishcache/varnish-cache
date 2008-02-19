@@ -77,7 +77,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 #include "vrt.h"

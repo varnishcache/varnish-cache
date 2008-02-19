@@ -71,7 +71,6 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 
 #include "shmlog.h"
 #include "vcl.h"
-#include "heritage.h"
 #include "cache.h"
 
 static unsigned xids;

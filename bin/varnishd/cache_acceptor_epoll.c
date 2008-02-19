@@ -43,7 +43,6 @@
 
 #include <sys/epoll.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 #include "cache_acceptor.h"

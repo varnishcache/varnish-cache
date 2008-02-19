@@ -44,7 +44,6 @@
 #include <stdarg.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 #include "vcl.h"

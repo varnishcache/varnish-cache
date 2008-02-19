@@ -47,7 +47,6 @@
 #include "compat/strlcpy.h"
 #endif
 
-#include "heritage.h"
 #include "mgt.h"
 
 /*--------------------------------------------------------------------*/

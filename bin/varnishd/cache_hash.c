@@ -62,7 +62,6 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "heritage.h"
 #include "stevedore.h"
 
 static struct hash_slinger      *hash;
@@ -387,7 +386,6 @@ void
 HSH_Init(void)
 {
 
-	hash = heritage.hash;
 	if (hash->start != NULL)
 		hash->start();
 }
