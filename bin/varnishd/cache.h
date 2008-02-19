@@ -592,24 +592,19 @@ char *WS_Snapshot(struct ws *ws);
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 
-#if 1
-#define MTX			pthread_mutex_t
-#define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
-#define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
-#define LOCK(foo)		AZ(pthread_mutex_lock(foo))
-#define UNLOCK(foo)		AZ(pthread_mutex_unlock(foo))
-#else
 #define MTX			pthread_mutex_t
 #define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
 #define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
 #define LOCK(foo) 					\
 do { 							\
-	if (pthread_mutex_trylock(foo)) {		\
+	if (!(params->diag_bitmap & 0x18)) {		\
+		AZ(pthread_mutex_lock(foo)); 		\
+	} else if (pthread_mutex_trylock(foo)) {	\
 		VSL(SLT_Debug, 0,			\
 		    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
 		    __func__, __FILE__, __LINE__);	\
 		AZ(pthread_mutex_lock(foo)); 		\
-	} else if (1) {					\
+	} else if (params->diag_bitmap & 0x8) {		\
 		VSL(SLT_Debug, 0,			\
 		    "MTX_LOCK(%s,%s,%d," #foo ")",	\
 		    __func__, __FILE__, __LINE__); 	\
@@ -618,12 +613,11 @@ do { 							\
 #define UNLOCK(foo)					\
 do {							\
 	AZ(pthread_mutex_unlock(foo));			\
-	if (1)						\
+	if (params->diag_bitmap & 0x8)			\
 		VSL(SLT_Debug, 0,			\
 		    "MTX_UNLOCK(%s,%s,%d," #foo ")",	\
 		    __func__, __FILE__, __LINE__);	\
 } while (0);
-#endif
 
 #if defined(HAVE_PTHREAD_MUTEX_ISOWNED_NP)
 #define ALOCKED(mutex)		AN(pthread_mutex_isowned_np((mutex)))
