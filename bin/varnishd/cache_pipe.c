@@ -41,7 +41,6 @@
 #include <sys/socket.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "cache.h"
 
 static int

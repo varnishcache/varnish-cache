@@ -47,6 +47,7 @@
 
 #include "vcl_returns.h"
 #include "common.h"
+#include "heritage.h"
 #include "miniobj.h"
 
 enum {

@@ -47,7 +47,6 @@
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
-#include "heritage.h"
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;

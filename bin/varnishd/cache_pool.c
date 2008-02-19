@@ -53,7 +53,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "vcl.h"
 #include "cli_priv.h"

@@ -42,7 +42,6 @@
 #include <string.h>
 #include <strings.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 

@@ -56,7 +56,6 @@
 #include <sys/uio.h>
 #include <sys/socket.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 

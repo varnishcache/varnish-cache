@@ -38,7 +38,6 @@
 #include <stdlib.h>
 
 #include "shmlog.h"
-#include "heritage.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------*/

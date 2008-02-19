@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include "heritage.h"
 #include "shmlog.h"
 #include "cache.h"
 #include "cache_acceptor.h"

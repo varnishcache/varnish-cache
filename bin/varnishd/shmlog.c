@@ -43,8 +43,6 @@
 #include "shmlog.h"
 #include "cache.h"
 
-#include "heritage.h"
-
 #define LOCKSHM(foo)					\
 	do {						\
 		if (pthread_mutex_trylock(foo)) {	\
