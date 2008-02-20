@@ -83,7 +83,11 @@ If
 .Ar port
 is not specified, the default HTTP port as listed in
 .Pa /etc/services
-is used.
+is used.  To listen on multiple hosts or ports, the argument to 
+.Fl a
+can be a (quoted) whitespace separated list of
+.Ar address Ns Op : Ns Ar port
+tokens.
 .It Fl b Ar host Ns Op : Ns Ar port
 Use the specified
 .Ar host
