@@ -490,4 +490,5 @@ vcc_ParseDirector(struct tokenlist *tl)
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
+	tl->nbackend++;
 }
