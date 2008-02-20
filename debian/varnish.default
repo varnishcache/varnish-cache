@@ -11,6 +11,10 @@ NFILES=131072
 # the -n switch, to have more instances on a single server.
 INSTANCE=$(uname -n)
 
+# Uncomment this to enable varnishlog.  Please sure you have enough disk space
+# for significant amounts of log data.
+# VARNISHLOG_ENABLE=1
+
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
