@@ -22,6 +22,16 @@ DAEMON=/usr/bin/$NAME
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/varnish/varnish.log
 
+# Include varnish defaults if available
+if [ -f /etc/default/varnish ] ; then
+        . /etc/default/varnish
+fi
+
+# If unset or not 1, exit
+if [ -z "${VARNISHLOG_ENABLED}" -o "${VARNISHLOG_ENABLED}" -ne "1" ]; then
+  exit 0;
+fi
+
 test -x $DAEMON || exit 0
 
 DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
