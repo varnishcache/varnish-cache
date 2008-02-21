@@ -37,6 +37,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vcl.h"
 
 #ifndef WITHOUT_ASSERTS
 
@@ -70,6 +71,20 @@ static const char *steps[] = {
 #undef STEP
 };
 static int nsteps = sizeof steps / sizeof *steps;
+
+/* dump a struct VCL_conf */
+static void
+dump_vcl(const struct VCL_conf *vcl)
+{
+	int i;
+
+	fp("    vcl = {\n");
+	fp("      srcname = {\n");
+	for (i = 0; i < vcl->nsrc; ++i)
+		fp("        \"%s\",\n", vcl->srcname[i]);
+	fp("      },\n");
+	fp("    },\n");
+}
 
 /* dump a struct storage */
 static void
@@ -160,6 +175,7 @@ dump_sess(const struct sess *sp)
 	const struct backend *be = sp->backend;
 #endif
 	const struct object *obj = sp->obj;
+	const struct VCL_conf *vcl = sp->vcl;
 
 	fp("sp = %p {\n", sp);
 	fp("  fd = %d, id = %d, xid = %u,\n", sp->fd, sp->id, sp->xid);
@@ -173,6 +189,9 @@ dump_sess(const struct sess *sp)
 	if (sp->err_code)
 		fp("  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
+
+	if (VALID_OBJ(vcl, VCL_CONF_MAGIC))
+		dump_vcl(vcl);
 
 #if 0
 	if (VALID_OBJ(be, BACKEND_MAGIC))
