@@ -665,6 +665,8 @@ Tlen(const txt t)
 
 #ifdef WITHOUT_ASSERTS
 #define spassert(cond) ((void)(cond))
+#define SPAZ(val) ((void)(val) == 0)
+#define SPAN(val) ((void)(val) != 0)
 #else
 void panic(const char *, int, const char *,
     const struct sess *, const char *, ...);
@@ -675,4 +677,6 @@ void panic(const char *, int, const char *,
 			panic(__FILE__, __LINE__, __func__, sp,	\
 			    "assertion failed: %s\n", #cond);	\
 	} while (0)
+#define SPAZ(val) spassert((val) == 0)
+#define SPAN(val) spassert((val) != 0)
 #endif
