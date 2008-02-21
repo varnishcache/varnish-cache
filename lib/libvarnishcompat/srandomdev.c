@@ -49,13 +49,13 @@ srandomdev(void)
 	unsigned int seed;
 	int fd;
 
-	if ((fd = open("/dev/random", O_RDONLY)) >= 0) {
+	if ((fd = open("/dev/urandom", O_RDONLY)) >= 0 ||
+	    (fd = open("/dev/random", O_RDONLY)) >= 0) {
 		read(fd, &seed, sizeof seed);
 		close(fd);
 	} else {
 		gettimeofday(&tv, NULL);
-		/* NOTE: intentional use of uninitialized variable */
-		seed ^= (getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec;
+		seed = (getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec;
 	}
 	srandom(seed);
 }
