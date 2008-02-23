@@ -99,7 +99,6 @@ struct backend {
 	VTAILQ_HEAD(, vbe_conn)	connlist;
 
 	int			health;
-	double			last_check;
 };
 
 static MTX VBE_mtx;
@@ -639,8 +638,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->refcount = 1;
 
 	vbe_dns_lookup(cli, b);
-
-	b->last_check = TIM_mono();
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSL_stats->n_backend++;
