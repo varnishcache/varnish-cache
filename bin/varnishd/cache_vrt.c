@@ -526,7 +526,7 @@ VRT_r_now(const struct sess *sp)
 {
 
 	(void)sp;
-	return (TIM_mono());
+	return (TIM_real());
 }
 
 double
@@ -535,7 +535,7 @@ VRT_r_obj_lastuse(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (TIM_mono() - sp->obj->lru_stamp);
+	return (TIM_real() - sp->obj->lru_stamp);
 }
 
 int
