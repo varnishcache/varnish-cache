@@ -98,21 +98,33 @@ EXP_Insert(struct object *o)
 	UNLOCK(&exp_mtx);
 }
 
+/*--------------------------------------------------------------------
+ * Object was used, move to tail of LRU list.
+ *
+ * To avoid the exp_mtx becoming a hotspot, we only attempt to move
+ * objects if they have not been moved recently and if the lock is available.
+ * This optimization obviously leaves the LRU list imperfectly sorted, but
+ * that can be worked around by examining obj.last_use in vcl_discard{}
+ */
+
 void
 EXP_Touch(struct object *o, double now)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	if (o->lru_stamp + params->lru_timeout < now) {
-		LOCK(&exp_mtx);	/* XXX: should be ..._TRY */
+	if (o->lru_stamp + params->lru_timeout > now) 
+		return;
+	TRYLOCK(&exp_mtx, i);
+	if (i)
+		return;
+	if (o->timer_idx != lru_target && o->timer_idx != 0) {
+		VTAILQ_REMOVE(&exp_lru, o, deathrow);
+		VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+		o->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
-		if (o->timer_idx != lru_target && o->timer_idx != 0) {
-			VTAILQ_REMOVE(&exp_lru, o, deathrow);
-			VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
-			o->lru_stamp = now;
-		}
-		UNLOCK(&exp_mtx);
 	}
+	UNLOCK(&exp_mtx);
 }
 
 /*--------------------------------------------------------------------
