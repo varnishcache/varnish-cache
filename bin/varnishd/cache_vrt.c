@@ -293,8 +293,7 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	if (a < 0)
 		a = 0;
 	sp->obj->ttl = sp->t_req + a;
-	if (sp->obj->timer_idx != 0)
-		EXP_TTLchange(sp->obj);
+	EXP_Rearm(sp->obj);
 }
 
 double
@@ -318,8 +317,7 @@ VRT_l_obj_grace(const struct sess *sp, double a)
 	if (a < 0)
 		a = 0;
 	sp->obj->grace = a;
-	if (sp->obj->timer_idx != 0)
-		EXP_TTLchange(sp->obj);
+	EXP_Rearm(sp->obj);
 }
 
 double
@@ -355,8 +353,7 @@ VRT_l_obj_prefetch(const struct sess *sp, double a)
 		WSL(sp->wrk, SLT_VCL_info, sp->id,
 		    "XID %u: obj.prefetch (%g) less than ttl (%g), ignored.",
 		    sp->obj->xid, a, sp->obj->ttl - sp->t_req);
-	if (sp->obj->timer_idx != 0)
-		EXP_TTLchange(sp->obj);
+	EXP_Rearm(sp->obj);
 }
 
 double

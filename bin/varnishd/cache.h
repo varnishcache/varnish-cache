@@ -439,7 +439,7 @@ extern pthread_t cli_thread;
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
-void EXP_TTLchange(struct object *o);
+void EXP_Rearm(struct object *o);
 void EXP_Touch(struct object *o, double now);
 int EXP_NukeOne(struct sess *sp);
 

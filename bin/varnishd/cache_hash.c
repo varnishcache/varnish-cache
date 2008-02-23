@@ -210,8 +210,7 @@ HSH_Lookup(struct sess *sp)
 		if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
 			WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
-			if (o->timer_idx != 0)
-				EXP_TTLchange(o);
+			EXP_Rearm(o);
 			continue;
 		}
 		if (o->vary != NULL && !VRY_Match(sp, o->vary))

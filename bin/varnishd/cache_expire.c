@@ -115,10 +115,21 @@ EXP_Touch(struct object *o, double now)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * We have changed one or more of the object timers, shuffle it 
+ * accordingly in the binheap
+ *
+ * The VCL code can send us here on a non-cached object, just return.
+ *
+ * XXX: special case check for ttl = 0 ?
+ */
+
 void
-EXP_TTLchange(struct object *o)
+EXP_Rearm(struct object *o)
 {
 
+	if (o->timer_idx == 0)
+		return;
 	LOCK(&exp_mtx);
 	if (o->timer_idx != lru_target) {
 		assert(o->timer_idx != 0);	/* XXX: symbolic zero ? */
