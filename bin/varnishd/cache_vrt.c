@@ -535,7 +535,7 @@ VRT_r_obj_lastuse(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (TIM_real() - sp->obj->lru_stamp);
+	return (TIM_real() - sp->obj->last_use);
 }
 
 int

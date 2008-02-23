@@ -275,6 +275,7 @@ struct object {
 	VTAILQ_HEAD(, esi_bit)	esibits;
 
 	double			lru_stamp;
+	double			last_use;
 
 	/* Prefetch */
 	struct object		*parent;
