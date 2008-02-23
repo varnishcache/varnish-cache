@@ -42,48 +42,112 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
 
+/*
+ * Objects have sideways references in the binary heap and the LRU list
+ * and we want to avoid paging in a lot of objects just to move them up
+ * or down the binheap or to move a unrelated object on the LRU list.
+ * To avoid this we use a proxy object, objexp, to hold the relevant 
+ * housekeeping fields parts of an object.
+ */
+
+enum e_objtimer {
+	TIMER_TTL,
+	TIMER_PREFETCH
+};
+
+struct objexp {
+	unsigned		magic;
+#define OBJEXP_MAGIC		0x4d301302
+	struct object		*obj;
+	double			timer_when;
+	enum e_objtimer		timer_what;
+	unsigned		timer_idx;
+	VTAILQ_ENTRY(objexp)	list;
+	double			lru_stamp;
+};
+
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static MTX exp_mtx;
-static VTAILQ_HEAD(,object) exp_deathrow = VTAILQ_HEAD_INITIALIZER(exp_deathrow);
-static VTAILQ_HEAD(,object) exp_lru = VTAILQ_HEAD_INITIALIZER(exp_lru);
+static VTAILQ_HEAD(,objexp) deathrow = VTAILQ_HEAD_INITIALIZER(deathrow);
+static VTAILQ_HEAD(,objexp) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
  * so that other users of the object will not stumble trying to change the
  * ttl or lru position.
  */
+#define BINHEAP_NOIDX 0
 static const unsigned lru_target = (unsigned)(-3);
 
 /*--------------------------------------------------------------------
- * Figure out which object timer fires next
+ * Add and Remove objexp's from objects.
  */
 
-/* When does the timer fire for this object ? */
 static void
-update_object_when(struct object *o)
+add_objexp(struct object *o)
 {
 
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	AZ(o->objexp);
+	assert(o->busy);
+	o->objexp = calloc(sizeof *o->objexp, 1);
+	AN(o->objexp);
+	o->objexp->magic = OBJEXP_MAGIC;
+	o->objexp->timer_idx = BINHEAP_NOIDX;
+}
+
+static void
+del_objexp(struct object *o)
+{
+	struct objexp *oe;
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	oe = o->objexp;
+	o->objexp = NULL;
+	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	assert(oe->timer_idx == BINHEAP_NOIDX);
+	free(oe);
+}
+
+/*--------------------------------------------------------------------
+ * When & why does the timer fire for this object ?
+ */
+
+static void
+update_object_when(const struct object *o)
+{
+	struct objexp *oe;
+
+	oe = o->objexp;
+	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+
 	if (o->prefetch < 0.0) {
-		o->timer_when = o->ttl + o->prefetch;
-		o->timer_what = TIMER_PREFETCH;
+		oe->timer_when = o->ttl + o->prefetch;
+		oe->timer_what = TIMER_PREFETCH;
 	} else if (o->prefetch > 0.0) {
 		assert(o->prefetch <= o->ttl);
-		o->timer_when = o->prefetch;
-		o->timer_what = TIMER_PREFETCH;
+		oe->timer_when = o->prefetch;
+		oe->timer_what = TIMER_PREFETCH;
 	} else {
-		o->timer_when = o->ttl + o->grace;
-		o->timer_what = TIMER_TTL;
+		oe->timer_when = o->ttl + o->grace;
+		oe->timer_what = TIMER_TTL;
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Object has been added to cache, record in lru & binheap.
+ *
+ * We grab a reference to the object, which will keep it around until
+ * we decide its time to let it go.
+ */
 
 void
 EXP_Insert(struct object *o, double now)
@@ -93,12 +157,12 @@ EXP_Insert(struct object *o, double now)
 	assert(o->busy);
 	assert(o->cacheable);
 	HSH_Ref(o);
-	assert(o->timer_idx == 0);
+	add_objexp(o);
+	o->objexp->lru_stamp = now;
 	update_object_when(o);
-	o->lru_stamp = now;
 	LOCK(&exp_mtx);
-	binheap_insert(exp_heap, o);
-	VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+	binheap_insert(exp_heap, o->objexp);
+	VTAILQ_INSERT_TAIL(&lru, o->objexp, list);
 	UNLOCK(&exp_mtx);
 }
 
@@ -112,20 +176,24 @@ EXP_Insert(struct object *o, double now)
  */
 
 void
-EXP_Touch(struct object *o, double now)
+EXP_Touch(const struct object *o, double now)
 {
 	int i;
+	struct objexp *oe;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	if (o->lru_stamp + params->lru_timeout > now) 
+	oe = o->objexp;
+	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	if (oe->lru_stamp + params->lru_timeout > now)
 		return;
 	TRYLOCK(&exp_mtx, i);
 	if (i)
 		return;
-	if (o->timer_idx != lru_target && o->timer_idx != 0) {
-		VTAILQ_REMOVE(&exp_lru, o, deathrow);
-		VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
-		o->lru_stamp = now;
+	assert(oe->timer_idx != BINHEAP_NOIDX);
+	if (oe->timer_idx != lru_target) {
+		VTAILQ_REMOVE(&lru, oe, list);
+		VTAILQ_INSERT_TAIL(&lru, oe, list);
+		oe->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
 	}
 	UNLOCK(&exp_mtx);
@@ -141,17 +209,21 @@ EXP_Touch(struct object *o, double now)
  */
 
 void
-EXP_Rearm(struct object *o)
+EXP_Rearm(const struct object *o)
 {
+	struct objexp *oe;
 
-	if (o->timer_idx == 0)
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	oe = o->objexp;
+	if (oe == NULL)
 		return;
+	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	update_object_when(o);
 	LOCK(&exp_mtx);
-	if (o->timer_idx != lru_target) {
-		assert(o->timer_idx != 0);	/* XXX: symbolic zero ? */
-		update_object_when(o);
-		binheap_delete(exp_heap, o->timer_idx);
-		binheap_insert(exp_heap, o);
+	if (oe->timer_idx != lru_target) {
+		assert(oe->timer_idx != BINHEAP_NOIDX);
+		binheap_delete(exp_heap, oe->timer_idx);
+		binheap_insert(exp_heap, oe);
 	}
 	UNLOCK(&exp_mtx);
 }
@@ -163,6 +235,7 @@ EXP_Rearm(struct object *o)
 static void *
 exp_hangman(void *arg)
 {
+	struct objexp *oe;
 	struct object *o;
 	double t;
 
@@ -172,7 +245,9 @@ exp_hangman(void *arg)
 	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
-		VTAILQ_FOREACH(o, &exp_deathrow, deathrow) {
+		VTAILQ_FOREACH(oe, &deathrow, list) {
+			CHECK_OBJ(oe, OBJEXP_MAGIC);
+			o = oe->obj;
 			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
 				o = NULL;
@@ -186,17 +261,19 @@ exp_hangman(void *arg)
 			if (o->refcnt == 1)
 				break;
 		}
-		if (o == NULL) {
+		if (oe == NULL) {
 			UNLOCK(&exp_mtx);
 			AZ(sleep(1));
 			t = TIM_real();
 			continue;
 		}
-		VTAILQ_REMOVE(&exp_deathrow, o, deathrow);
+		VTAILQ_REMOVE(&deathrow, oe, list);
 		VSL_stats->n_deathrow--;
 		VSL_stats->n_expired++;
 		UNLOCK(&exp_mtx);
+		o = oe->obj;
 		VSL(SLT_ExpKill, 0, "%u %d", o->xid, (int)(o->ttl - t));
+		del_objexp(o);
 		HSH_Deref(o);
 	}
 }
@@ -214,10 +291,10 @@ static void *
 exp_prefetch(void *arg)
 {
 	struct worker ww;
+	struct objexp *oe, *oe2;
 	struct object *o;
 	double t;
 	struct sess *sp;
-	struct object *o2;
 	unsigned char log[1024];		/* XXX size ? */
 
 	THR_Name("cache-timeout");
@@ -235,9 +312,9 @@ exp_prefetch(void *arg)
 	t = TIM_real();
 	while (1) {
 		LOCK(&exp_mtx);
-		o = binheap_root(exp_heap);
-		CHECK_OBJ_ORNULL(o, OBJECT_MAGIC);
-		if (o == NULL || o->timer_when > t) {	/* XXX: >= ? */
+		oe = binheap_root(exp_heap);
+		CHECK_OBJ_ORNULL(oe, OBJEXP_MAGIC);
+		if (oe == NULL || oe->timer_when > t) {	/* XXX: >= ? */
 			UNLOCK(&exp_mtx);
 			WSL_Flush(&ww);
 			AZ(sleep(1));
@@ -245,20 +322,21 @@ exp_prefetch(void *arg)
 			t = TIM_real();
 			continue;
 		}
-		binheap_delete(exp_heap, o->timer_idx);
-		assert(o->timer_idx == 0);
+		binheap_delete(exp_heap, oe->timer_idx);
+		assert(oe->timer_idx == BINHEAP_NOIDX);
 
 		/* Sanity check */
-		o2 = binheap_root(exp_heap);
-		if (o2 != NULL)
-			assert(o2->timer_when >= o->timer_when);
+		oe2 = binheap_root(exp_heap);
+		if (oe2 != NULL)
+			assert(oe2->timer_when >= oe->timer_when);
 
 		UNLOCK(&exp_mtx);
 
-		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid,
-		    o->timer_what == TIMER_PREFETCH ? "prefetch" : "ttl");
+		WSL(&ww, SLT_ExpPick, 0, "%u %s", oe->obj->xid,
+		    oe->timer_what == TIMER_PREFETCH ? "prefetch" : "ttl");
 
-		if (o->timer_what == TIMER_PREFETCH) {
+		o = oe->obj;
+		if (oe->timer_what == TIMER_PREFETCH) {
 			o->prefetch = 0.0;
 			update_object_when(o);
 			LOCK(&exp_mtx);
@@ -274,40 +352,38 @@ exp_prefetch(void *arg)
 			sp->obj = o;
 			VCL_timeout_method(sp);
 
-			if (sp->handling == VCL_RET_DISCARD) {
-				LOCK(&exp_mtx);
-				VTAILQ_REMOVE(&exp_lru, o, deathrow);
-				VTAILQ_INSERT_TAIL(&exp_deathrow, o, deathrow);
-				VSL_stats->n_deathrow++;
-				UNLOCK(&exp_mtx);
-			}
 			assert(sp->handling == VCL_RET_DISCARD);
+			LOCK(&exp_mtx);
+			VTAILQ_REMOVE(&lru, o->objexp, list);
+			VTAILQ_INSERT_TAIL(&deathrow, o->objexp, list);
+			VSL_stats->n_deathrow++;
+			UNLOCK(&exp_mtx);
 		}
 	}
 }
 
 /*--------------------------------------------------------------------
- * BinHeap helper functions for objects.
+ * BinHeap helper functions for objexp.
  */
 
 static int
 object_cmp(void *priv, void *a, void *b)
 {
-	struct object *aa, *bb;
+	struct objexp *aa, *bb;
 
 	(void)priv;
-	CAST_OBJ_NOTNULL(aa, a, OBJECT_MAGIC);
-	CAST_OBJ_NOTNULL(bb, b, OBJECT_MAGIC);
+	CAST_OBJ_NOTNULL(aa, a, OBJEXP_MAGIC);
+	CAST_OBJ_NOTNULL(bb, b, OBJEXP_MAGIC);
 	return (aa->timer_when < bb->timer_when);
 }
 
 static void
 object_update(void *priv, void *p, unsigned u)
 {
-	struct object *o;
+	struct objexp *o;
 
 	(void)priv;
-	CAST_OBJ_NOTNULL(o, p, OBJECT_MAGIC);
+	CAST_OBJ_NOTNULL(o, p, OBJEXP_MAGIC);
 	o->timer_idx = u;
 }
 
@@ -320,56 +396,69 @@ object_update(void *priv, void *p, unsigned u)
 int
 EXP_NukeOne(struct sess *sp)
 {
-	struct object *o, *o2;
+	struct objexp *oe;
+	struct object *o2;
 
-	/* Find the first currently unused object on the LRU */
+	/*
+	 * Find the first currently unused object on the LRU.
+	 *
+	 * Ideally we would have the refcnt in the objexp so we the object does
+	 * not need to get paged in for this check, but it does not pay off
+	 * the complexity:  The chances of an object being in front of the LRU,
+	 * with active references, likely means that it is already in core. An
+	 * object with no active references will be prodded further anyway.
+	 *
+	 * NB: Checking refcount here is no guarantee that it does not gain 
+	 * another ref while we ponder its destiny without the lock held.
+	 */
 	LOCK(&exp_mtx);
-	VTAILQ_FOREACH(o, &exp_lru, deathrow)
-		if (o->refcnt == 1)
+	VTAILQ_FOREACH(oe, &lru, list)
+		if (oe->obj->refcnt == 1)
 			break;
-	if (o != NULL) {
+	if (oe != NULL) {
 		/*
-		 * Take it off the binheap while we chew.  This effectively
-		 * means that we own the EXP refcnt on this object.
+		 * Take it off the binheap and LRU while we chew, so we can
+		 * release the lock while we ask VCL.
 		 */
-		VTAILQ_REMOVE(&exp_lru, o, deathrow);
-		binheap_delete(exp_heap, o->timer_idx);
-		assert(o->timer_idx == 0);
-		o->timer_idx = lru_target;
-		VSL_stats->n_lru_nuked++; 	/* May be premature */
+		VTAILQ_REMOVE(&lru, oe, list);
+		binheap_delete(exp_heap, oe->timer_idx);
+		assert(oe->timer_idx == BINHEAP_NOIDX);
+		oe->timer_idx = lru_target;	/* Magic marker */
+		VSL_stats->n_lru_nuked++; 	/* Fixed up below if false */
 	}
 	UNLOCK(&exp_mtx);
 
-	if (o == NULL)
+	if (oe == NULL)
 		return (-1);
 
 	/*
-	 * Ask VCL in the context of the requestors session, in order to
-	 * allow client QoS considerations to inform the decision.
-	 * Temporarily substitute the object we want to nuke for the sessions
-	 * own object.
+	 * Ask VCL in the context of the clients session, in order to allow
+	 * client QoS considerations to inform the decision. Temporarily
+	 * substitute the object we want to nuke for the sessions own object.
 	 */
 	o2 = sp->obj;
-	sp->obj = o;
+	sp->obj = oe->obj;
 	VCL_discard_method(sp);
 	sp->obj = o2;
+	o2 = oe->obj;
 
 	if (sp->handling == VCL_RET_DISCARD) {
-		VSL(SLT_ExpKill, 0, "%u LRU", o->xid);
-		HSH_Deref(o);
+		VSL(SLT_ExpKill, 0, "%u LRU", o2->xid);
+		del_objexp(o2);
+		HSH_Deref(o2);
 		return (1);
 	}
 
 	assert(sp->handling == VCL_RET_KEEP);
 
 	/* Insert in binheap and lru again */
+	oe->timer_idx = BINHEAP_NOIDX;
+	oe->lru_stamp = sp->wrk->used;
 	LOCK(&exp_mtx);
 	VSL_stats->n_lru_nuked--; 		/* It was premature */
 	VSL_stats->n_lru_saved++;
-	o->timer_idx = 0;
-	o->lru_stamp = sp->wrk->used;
-	binheap_insert(exp_heap, o);
-	VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);
+	binheap_insert(exp_heap, oe);
+	VTAILQ_INSERT_TAIL(&lru, oe, list);
 	UNLOCK(&exp_mtx);
 	return (0);
 }

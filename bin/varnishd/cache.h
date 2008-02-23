@@ -74,6 +74,7 @@ struct vsb;
 struct sess;
 struct object;
 struct objhead;
+struct objexp;
 struct workreq;
 struct addrinfo;
 struct esi_bit;
@@ -224,11 +225,7 @@ struct storage {
 	off_t			where;
 };
 
-/* -------------------------------------------------------------------*/
-enum e_objtimer {
-	TIMER_TTL,
-	TIMER_PREFETCH
-};
+/* Object structure --------------------------------------------------*/
 
 struct object {
 	unsigned		magic;
@@ -237,13 +234,10 @@ struct object {
 	unsigned		xid;
 	struct objhead		*objhead;
 	struct storage		*objstore;
+	struct objexp		*objexp;
 
 	struct ws		ws_o[1];
 	unsigned char		*vary;
-
-	double			timer_when;
-	enum e_objtimer		timer_what;
-	unsigned		timer_idx;
 
 	unsigned		ban_seq;
 
@@ -268,13 +262,10 @@ struct object {
 	struct http		http[1];
 	VTAILQ_ENTRY(object)	list;
 
-	VTAILQ_ENTRY(object)	deathrow;
-
 	VTAILQ_HEAD(, storage)	store;
 
 	VTAILQ_HEAD(, esi_bit)	esibits;
 
-	double			lru_stamp;
 	double			last_use;
 
 	/* Prefetch */
@@ -440,8 +431,8 @@ extern pthread_t cli_thread;
 /* cache_expiry.c */
 void EXP_Insert(struct object *o, double now);
 void EXP_Init(void);
-void EXP_Rearm(struct object *o);
-void EXP_Touch(struct object *o, double now);
+void EXP_Rearm(const struct object *o);
+void EXP_Touch(const struct object *o, double now);
 int EXP_NukeOne(struct sess *sp);
 
 /* cache_fetch.c */
