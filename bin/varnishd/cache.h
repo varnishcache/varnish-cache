@@ -595,29 +595,39 @@ int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 #define MTX			pthread_mutex_t
 #define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
 #define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
-#define LOCK(foo) 					\
-do { 							\
-	if (!(params->diag_bitmap & 0x18)) {		\
-		AZ(pthread_mutex_lock(foo)); 		\
-	} else if (pthread_mutex_trylock(foo)) {	\
-		VSL(SLT_Debug, 0,			\
-		    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
-		    __func__, __FILE__, __LINE__);	\
-		AZ(pthread_mutex_lock(foo)); 		\
-	} else if (params->diag_bitmap & 0x8) {		\
-		VSL(SLT_Debug, 0,			\
-		    "MTX_LOCK(%s,%s,%d," #foo ")",	\
-		    __func__, __FILE__, __LINE__); 	\
-	}						\
-} while (0);
-#define UNLOCK(foo)					\
-do {							\
-	AZ(pthread_mutex_unlock(foo));			\
-	if (params->diag_bitmap & 0x8)			\
-		VSL(SLT_Debug, 0,			\
-		    "MTX_UNLOCK(%s,%s,%d," #foo ")",	\
-		    __func__, __FILE__, __LINE__);	\
-} while (0);
+#define TRYLOCK(foo, r)						\
+do {								\
+	(r) = pthread_mutex_trylock(foo);			\
+	assert((r) == 0 || errno == EBUSY);			\
+	if (params->diag_bitmap & 0x8) {			\
+		VSL(SLT_Debug, 0,				\
+		    "MTX_TRYLOCK(%s,%s,%d," #foo ") = %d",	\
+		    __func__, __FILE__, __LINE__, (r));		\
+	}							\
+} while (0)
+#define LOCK(foo) 						\
+do { 								\
+	if (!(params->diag_bitmap & 0x18)) {			\
+		AZ(pthread_mutex_lock(foo)); 			\
+	} else if (pthread_mutex_trylock(foo)) {		\
+		VSL(SLT_Debug, 0,				\
+		    "MTX_CONTEST(%s,%s,%d," #foo ")",		\
+		    __func__, __FILE__, __LINE__);		\
+		AZ(pthread_mutex_lock(foo)); 			\
+	} else if (params->diag_bitmap & 0x8) {			\
+		VSL(SLT_Debug, 0,				\
+		    "MTX_LOCK(%s,%s,%d," #foo ")",		\
+		    __func__, __FILE__, __LINE__); 		\
+	}							\
+} while (0)
+#define UNLOCK(foo)						\
+do {								\
+	AZ(pthread_mutex_unlock(foo));				\
+	if (params->diag_bitmap & 0x8)				\
+		VSL(SLT_Debug, 0,				\
+		    "MTX_UNLOCK(%s,%s,%d," #foo ")",		\
+		    __func__, __FILE__, __LINE__);		\
+} while (0)
 
 #if defined(HAVE_PTHREAD_MUTEX_ISOWNED_NP)
 #define ALOCKED(mutex)		AN(pthread_mutex_isowned_np((mutex)))
