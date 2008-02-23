@@ -86,12 +86,16 @@ update_object_when(struct object *o)
 /*--------------------------------------------------------------------*/
 
 void
-EXP_Insert(struct object *o)
+EXP_Insert(struct object *o, double now)
 {
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	assert(o->busy);
+	assert(o->cacheable);
+	HSH_Ref(o);
 	assert(o->timer_idx == 0);
 	update_object_when(o);
+	o->lru_stamp = now;
 	LOCK(&exp_mtx);
 	binheap_insert(exp_heap, o);
 	VTAILQ_INSERT_TAIL(&exp_lru, o, deathrow);

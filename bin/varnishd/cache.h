@@ -438,7 +438,7 @@ extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
 /* cache_expiry.c */
-void EXP_Insert(struct object *o);
+void EXP_Insert(struct object *o, double now);
 void EXP_Init(void);
 void EXP_Rearm(struct object *o);
 void EXP_Touch(struct object *o, double now);

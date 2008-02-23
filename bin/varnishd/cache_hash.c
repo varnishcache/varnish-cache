@@ -264,11 +264,6 @@ HSH_Lookup(struct sess *sp)
 	}
 	UNLOCK(&oh->mtx);
 	BAN_NewObj(o);
-	/*
-	 * It's cheaper to copy the timestamp here, than to get a new one
-	 * in EXP_Insert().
-	 */
-	o->lru_stamp = w->used;
 	return (o);
 }
 
@@ -297,8 +292,6 @@ HSH_Unbusy(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
 	assert(o->refcnt > 0);
-	if (o->cacheable)
-		EXP_Insert(o);
 	oh = o->objhead;
 	if (oh != NULL) {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
