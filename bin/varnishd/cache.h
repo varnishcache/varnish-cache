@@ -589,6 +589,7 @@ int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 #define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
 #define TRYLOCK(foo, r)						\
 do {								\
+	errno = 0;						\
 	(r) = pthread_mutex_trylock(foo);			\
 	assert((r) == 0 || errno == EBUSY);			\
 	if (params->diag_bitmap & 0x8) {			\
@@ -599,6 +600,7 @@ do {								\
 } while (0)
 #define LOCK(foo) 						\
 do { 								\
+	errno = 0;						\
 	if (!(params->diag_bitmap & 0x18)) {			\
 		AZ(pthread_mutex_lock(foo)); 			\
 	} else if (pthread_mutex_trylock(foo)) {		\
@@ -614,6 +616,7 @@ do { 								\
 } while (0)
 #define UNLOCK(foo)						\
 do {								\
+	errno = 0;						\
 	AZ(pthread_mutex_unlock(foo));				\
 	if (params->diag_bitmap & 0x8)				\
 		VSL(SLT_Debug, 0,				\
