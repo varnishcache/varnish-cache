@@ -53,7 +53,7 @@ struct vdi_random_host {
 
 struct vdi_random {
 	unsigned		magic;
-#define VDI_RANDOM_MAGIC	0x476d25b7
+#define VDI_RANDOM_MAGIC	0x3771ae23
 	struct director		dir;
 	struct backend		*backend;
 	struct vdi_random_host	*hosts;
