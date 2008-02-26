@@ -590,6 +590,7 @@ int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 #define TRYLOCK(foo, r)						\
 do {								\
 	(r) = pthread_mutex_trylock(foo);			\
+	assert(r == 0 || r == EBUSY);				\
 	if (params->diag_bitmap & 0x8) {			\
 		VSL(SLT_Debug, 0,				\
 		    "MTX_TRYLOCK(%s,%s,%d," #foo ") = %d",	\
@@ -600,15 +601,19 @@ do {								\
 do { 								\
 	if (!(params->diag_bitmap & 0x18)) {			\
 		AZ(pthread_mutex_lock(foo)); 			\
-	} else if (pthread_mutex_trylock(foo)) {		\
-		VSL(SLT_Debug, 0,				\
-		    "MTX_CONTEST(%s,%s,%d," #foo ")",		\
-		    __func__, __FILE__, __LINE__);		\
-		AZ(pthread_mutex_lock(foo)); 			\
-	} else if (params->diag_bitmap & 0x8) {			\
-		VSL(SLT_Debug, 0,				\
-		    "MTX_LOCK(%s,%s,%d," #foo ")",		\
-		    __func__, __FILE__, __LINE__); 		\
+	} else {						\
+		int ixjd = pthread_mutex_trylock(foo);		\
+		assert(ixjd == 0 || ixjd == EBUSY);		\
+		if (ixjd) {					\
+			VSL(SLT_Debug, 0,			\
+			    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
+			    __func__, __FILE__, __LINE__);	\
+			AZ(pthread_mutex_lock(foo)); 		\
+		} else if (params->diag_bitmap & 0x8) {		\
+			VSL(SLT_Debug, 0,			\
+			    "MTX_LOCK(%s,%s,%d," #foo ")",	\
+			    __func__, __FILE__, __LINE__); 	\
+		}						\
 	}							\
 } while (0)
 #define UNLOCK(foo)						\
