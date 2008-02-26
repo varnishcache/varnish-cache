@@ -98,6 +98,7 @@ add_objexp(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AZ(o->objexp);
 	assert(o->busy);
+	assert(o->cacheable);
 	o->objexp = calloc(sizeof *o->objexp, 1);
 	AN(o->objexp);
 	o->objexp->magic = OBJEXP_MAGIC;
@@ -126,6 +127,7 @@ update_object_when(const struct object *o)
 {
 	struct objexp *oe;
 
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oe = o->objexp;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 
@@ -250,7 +252,7 @@ exp_hangman(void *arg)
 			o = oe->obj;
 			CHECK_OBJ(o, OBJECT_MAGIC);
 			if (o->ttl >= t) {
-				o = NULL;
+				oe = NULL;
 				break;
 			}
 			if (o->busy) {
