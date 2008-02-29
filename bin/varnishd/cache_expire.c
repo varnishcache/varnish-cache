@@ -198,6 +198,8 @@ EXP_Touch(const struct object *o, double now)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oe = o->objexp;
+	if (oe == NULL)
+		return;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 	if (oe->lru_stamp + params->lru_timeout > now)
 		return;
