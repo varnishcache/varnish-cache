@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -556,39 +557,50 @@ VRT_r_backend_health(const struct sess *sp)
 char *
 VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 {
-	char h[64], p[8], *q;
-	socklen_t len = 0;
+	char *p;
+	const void *addr;
+	int len;
 
-	/* XXX can't rely on sockaddr.sa_len */
 	switch (sa->sa_family) {
 	case AF_INET:
-		len = sizeof(struct sockaddr_in);
+		len = INET_ADDRSTRLEN;
+		addr = &((const struct sockaddr_in *)sa)->sin_addr;
 		break;
 	case AF_INET6:
-		len = sizeof(struct sockaddr_in6);
+		len = INET_ADDRSTRLEN;
+		addr = &((const struct sockaddr_in6 *)sa)->sin6_addr;
 		break;
 	default:
 		INCOMPL();
 	}
 	XXXAN(len);
-	TCP_name(sa, len, h, sizeof h, p, sizeof p);
-	q = WS_Alloc(sp->http->ws, strlen(h) + strlen(p) + 2);
-	AN(q);
-	strcpy(q, h);
-	strcat(q, ":");
-	strcat(q, p);
-	return (q);
+	AN(p = WS_Alloc(sp->http->ws, len));
+	AN(inet_ntop(sa->sa_family, addr, p, len));
+	return (p);
 }
 
 char *
 VRT_int_string(const struct sess *sp, int num)
 {
 	char *p;
-	int size = 12;
-	
-	p = WS_Alloc(sp->http->ws, size);
-	AN(p);
+	int size;
+
+	size = snprintf(NULL, 0, "%d", num) + 1;
+	AN(p = WS_Alloc(sp->http->ws, size));
 	assert(snprintf(p, size, "%d", num) < size);
+	return (p);
+}
+
+char *
+VRT_double_string(const struct sess *sp, double num)
+{
+	char *p;
+	int size;
+
+	size = snprintf(NULL, 0, "%.3f", num) + 1;
+	AN(p = WS_Alloc(sp->http->ws, size));
+	assert((p = malloc(size)) != 0);
+	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
 
