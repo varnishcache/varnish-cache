@@ -343,7 +343,7 @@ Fetch(struct sess *sp)
 		VSL(SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_ClosedFd(sp->wrk, vc);
 		return (-1);
-	} else if (strcmp(http_GetProto(hp), "HTTP/1.1")) {
+	} else {
 		switch (http_GetStatus(hp)) {
 			case 200:
 				cls = fetch_eof(sp, vc->fd, hp);
