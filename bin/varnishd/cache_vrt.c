@@ -599,7 +599,6 @@ VRT_double_string(const struct sess *sp, double num)
 
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
 	AN(p = WS_Alloc(sp->http->ws, size));
-	assert((p = malloc(size)) != 0);
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
