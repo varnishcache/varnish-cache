@@ -540,11 +540,15 @@ VRT_r_obj_lastuse(const struct sess *sp)
 }
 
 const char *
-VRT_r_obj_hash(struct sess *sp)
+VRT_r_obj_hash(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->obj == NULL)
+		return (NULL);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	if (sp->obj->objhead == NULL)
+		return (NULL);
 	CHECK_OBJ_NOTNULL(sp->obj->objhead, OBJHEAD_MAGIC);
 	return (sp->obj->objhead->hash);
 }
