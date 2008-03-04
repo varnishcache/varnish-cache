@@ -179,6 +179,13 @@ struct var vcc_vars[] = {
 	    0,
 	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
+	{ "obj.hash", HASH, 8,
+	    NULL,
+	    "VRT_l_req_hash(sp, ",
+	    V_RO,
+	    0,
+	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	},
 	{ "resp.proto", STRING, 10,
 	    "VRT_r_resp_proto(sp)",
 	    "VRT_l_resp_proto(sp, ",
