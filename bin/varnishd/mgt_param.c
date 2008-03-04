@@ -159,12 +159,12 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, un
 		else
 			u = strtoul(arg, NULL, 0);
 		if (u < min) {
-			cli_out(cli, "Must be at least %u", min);
+			cli_out(cli, "Must be at least %u\n", min);
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
 		if (u > max) {
-			cli_out(cli, "Must be no more than %u", max);
+			cli_out(cli, "Must be no more than %u\n", max);
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
@@ -747,12 +747,14 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (!strcmp(pp->name, param)) {
 			pp->func(cli, pp, val);
-			if (pp->flags & MUST_RESTART)
-				cli_out(cli, "change will take effect"
+			if (cli->result != CLIS_OK) {
+			} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
+				cli_out(cli, "Change will take effect"
 				    " when child is restarted");
-			if (pp->flags & MUST_RELOAD)
-				cli_out(cli, "change will take effect"
+			} else if (pp->flags & MUST_RELOAD) {
+				cli_out(cli, "Change will take effect"
 				    " when VCL script is reloaded");
+			}
 			MCF_ParamSync();
 			return;
 		}
