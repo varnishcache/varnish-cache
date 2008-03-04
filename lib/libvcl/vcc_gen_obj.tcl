@@ -170,6 +170,10 @@ set spobj {
 		{                         hit fetch deliver discard timeout}
 		"const struct sess *"
 	}
+	{ obj.hash
+		RO STRING
+		{                    miss hit fetch deliver                }
+	}
 
 	# The response we send back
 	{ resp.proto
