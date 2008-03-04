@@ -539,6 +539,16 @@ VRT_r_obj_lastuse(const struct sess *sp)
 	return (TIM_real() - sp->obj->last_use);
 }
 
+const char *
+VRT_r_obj_hash(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objhead, OBJHEAD_MAGIC);
+	return (sp->obj->objhead->hash);
+}
+
 int
 VRT_r_backend_health(const struct sess *sp)
 {
