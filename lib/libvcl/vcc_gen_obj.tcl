@@ -173,6 +173,7 @@ set spobj {
 	{ obj.hash
 		RO STRING
 		{                    miss hit fetch deliver                }
+		"const struct sess *"
 	}
 
 	# The response we send back
