@@ -132,7 +132,7 @@ vca_kev(const struct kevent *kp)
 		VTAILQ_REMOVE(&sesshead, sp, list);
 		vca_handover(sp, i);
 		return;
-	} else if (kp->flags == EV_EOF) {
+	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&sesshead, sp, list);
 		vca_close_session(sp, "EOF");
 		SES_Delete(sp);
