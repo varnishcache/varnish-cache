@@ -347,6 +347,10 @@ VSL_MgtInit(const char *fn, unsigned size)
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    heritage.vsl_fd, 0);
 	xxxassert(loghead != MAP_FAILED);
+	i = mlock(loghead, heritage.vsl_size);
+	if (i != 0)
+		fprintf(stderr, "Notice: locking SHMFILE in core failed: %s\n",
+		    strerror(errno));
 	VSL_stats = &loghead->stats;
 	pp = (void *)(loghead + 1);
 	*pp = *params;
