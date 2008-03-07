@@ -107,6 +107,7 @@ struct ws {
 	char			*f;		/* (F)ree pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
+	int			overflow;	/* workspace overflowed */
 };
 
 /*--------------------------------------------------------------------
@@ -444,7 +445,7 @@ void HSH_Prealloc(struct sess *sp);
 int HSH_Compare(const struct sess *sp, const struct objhead *o);
 void HSH_Copy(const struct sess *sp, const struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
-void HSH_Unbusy(struct object *o);
+void HSH_Unbusy(struct sess *sp);
 void HSH_Ref(struct object *o);
 void HSH_Deref(struct object *o);
 void HSH_Init(void);
@@ -580,6 +581,7 @@ void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Dup(struct ws *ws, const char *);
 char *WS_Snapshot(struct ws *ws);
+unsigned WS_Used(struct ws *ws);
 
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);

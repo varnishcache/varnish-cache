@@ -352,7 +352,7 @@ cnt_fetch(struct sess *sp)
 	case VCL_RET_RESTART:
 		sp->obj->ttl = 0;
 		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp->obj);
+		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		if (sp->handling == VCL_RET_ERROR)
@@ -375,7 +375,7 @@ cnt_fetch(struct sess *sp)
 	if (sp->obj->objhead != NULL) {
 		VRY_Create(sp);
 		EXP_Insert(sp->obj, sp->wrk->used);
-		HSH_Unbusy(sp->obj);
+		HSH_Unbusy(sp);
 	}
 	sp->wrk->acct.fetch++;
 	sp->step = STP_DELIVER;
@@ -626,7 +626,7 @@ cnt_miss(struct sess *sp)
 	VCL_miss_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
 		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp->obj);
+		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		VBE_free_bereq(sp->bereq);
@@ -636,7 +636,7 @@ cnt_miss(struct sess *sp)
 	}
 	if (sp->handling == VCL_RET_PASS) {
 		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp->obj);
+		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
 		sp->step = STP_PASS;
