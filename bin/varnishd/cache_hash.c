@@ -300,7 +300,7 @@ HSH_Unbusy(struct sess *sp)
 		VSL_stats->n_objoverflow++;
 	if (params->diag_bitmap & 0x40)
 		WSP(sp, SLT_Debug, 
-		    "Object workspace used %u", WS_Used(o->ws_o));
+		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 	
 	oh = o->objhead;
 	if (oh != NULL) {
@@ -366,8 +366,8 @@ HSH_Deref(struct object *o)
 		return;
 
 	if (params->diag_bitmap & 0x40)
-		VSL(SLT_Debug, 0, 
-		    "Object workspace max used %u", WS_Used(o->ws_o));
+		VSL(SLT_Debug, 0, "Object %u workspace min free %u",
+		    o->xid, WS_Free(o->ws_o));
 
 	if (o->vary != NULL)
 		free(o->vary);

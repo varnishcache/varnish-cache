@@ -136,11 +136,11 @@ WS_Dup(struct ws *ws, const char *s)
 }
 
 unsigned
-WS_Used(struct ws *ws)
+WS_Free(struct ws *ws)
 {
 
 	WS_Assert(ws);
-	return(ws->f - ws->s);
+	return(ws->e - ws->f);
 }
 
 char *
