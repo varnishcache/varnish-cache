@@ -285,14 +285,23 @@ hsh_rush(struct objhead *oh)
 }
 
 void
-HSH_Unbusy(struct object *o)
+HSH_Unbusy(struct sess *sp)
 {
+	struct object *o;
 	struct objhead *oh;
 	struct object *parent;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
 	assert(o->refcnt > 0);
+	if (o->ws_o->overflow)
+		VSL_stats->n_objoverflow++;
+	if (params->diag_bitmap & 0x40)
+		WSP(sp, SLT_Debug, 
+		    "Object workspace used %u", WS_Used(o->ws_o));
+	
 	oh = o->objhead;
 	if (oh != NULL) {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
@@ -355,6 +364,10 @@ HSH_Deref(struct object *o)
 	/* If still referenced, done */
 	if (r != 0)
 		return;
+
+	if (params->diag_bitmap & 0x40)
+		VSL(SLT_Debug, 0, 
+		    "Object workspace max used %u", WS_Used(o->ws_o));
 
 	if (o->vary != NULL)
 		free(o->vary);

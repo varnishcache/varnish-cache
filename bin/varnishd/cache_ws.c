@@ -111,8 +111,10 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	if (ws->f + bytes > ws->e)
+	if (ws->f + bytes > ws->e) {
+		ws->overflow++;
 		return(NULL);
+	}
 	r = ws->f;
 	ws->f += bytes;
 	WS_DEBUG("WS_Alloc(%p, %u) = %p", ws, bytes, r);
@@ -131,6 +133,14 @@ WS_Dup(struct ws *ws, const char *s)
 		memcpy(p, s, l);
 	WS_DEBUG("WS_Dup(%p, \"%s\") = %p", ws, s, p);
 	return (p);
+}
+
+unsigned
+WS_Used(struct ws *ws)
+{
+
+	WS_Assert(ws);
+	return(ws->f - ws->s);
 }
 
 char *
