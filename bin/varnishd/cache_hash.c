@@ -278,7 +278,8 @@ hsh_rush(struct objhead *oh)
 		if (sp == NULL)
 			return;
 		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
-		VSL(SLT_Debug, sp->id, "of waiting list");
+		if (params->diag_bitmap & 0x20)
+			VSL(SLT_Debug, sp->id, "off waiting list");
 		WRK_QueueSession(sp);
 	}
 }

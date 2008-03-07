@@ -550,7 +550,9 @@ cnt_lookup(struct sess *sp)
 		 * hash code to restart us, still in STP_LOOKUP, later.
 		 */
 		spassert(sp->objhead != NULL);
-		WSP(sp, SLT_Debug, "on waiting list <%s>", sp->objhead->hash);
+		if (params->diag_bitmap & 0x20)
+			WSP(sp, SLT_Debug,
+			    "on waiting list <%s>", sp->objhead->hash);
 		/*
 		 * There is a non-zero risk that we come here more than once
 		 * before we get through, in that case cnt_recv must be set
