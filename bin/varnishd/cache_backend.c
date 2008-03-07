@@ -230,7 +230,7 @@ VBE_new_bereq(void)
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
 	} else {
-		len =  params->mem_workspace;
+		len =  params->sess_workspace;
 		bereq = calloc(sizeof *bereq + len, 1);
 		if (bereq == NULL)
 			return (NULL);

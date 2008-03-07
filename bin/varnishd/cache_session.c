@@ -289,7 +289,7 @@ SES_New(const struct sockaddr *addr, unsigned len)
 		 * need to cache it locally, to make sure we get a
 		 * consistent view of it.
 		 */
-		u = params->mem_workspace;
+		u = params->sess_workspace;
 		sm = malloc(sizeof *sm + u);
 		if (sm == NULL)
 			return (NULL);
@@ -346,7 +346,7 @@ SES_Delete(struct sess *sp)
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
-	if (sm->workspace != params->mem_workspace) {
+	if (sm->workspace != params->sess_workspace) {
 		VSL_stats->n_sess_mem--;
 		free(sm);
 	} else {
