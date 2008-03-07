@@ -88,7 +88,7 @@ HSH_Prealloc(struct sess *sp)
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 	if (w->nobj == NULL) {
-		st = STV_alloc(sp, params->mem_workspace);
+		st = STV_alloc(sp, params->obj_workspace);
 		XXXAN(st);
 		assert(st->space > sizeof *w->nobj);
 		w->nobj = (void *)st->ptr; /* XXX: align ? */

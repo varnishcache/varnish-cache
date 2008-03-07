@@ -85,7 +85,8 @@ struct params {
 	unsigned		overflow_max;
 
 	/* Memory allocation hints */
-	unsigned		mem_workspace;
+	unsigned		sess_workspace;
+	unsigned		obj_workspace;
 
 	/* Acceptor hints */
 	unsigned		sess_timeout;
