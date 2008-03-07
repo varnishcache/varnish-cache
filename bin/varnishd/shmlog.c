@@ -170,7 +170,7 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-WSL_Flush(struct worker *w)
+WSL_Flush(struct worker *w, int overflow)
 {
 	unsigned char *p;
 	unsigned l;
@@ -179,6 +179,7 @@ WSL_Flush(struct worker *w)
 	if (l == 0)
 		return;
 	LOCKSHM(&vsl_mtx);
+	VSL_stats->shm_flushes += overflow;
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
 	if (loghead->ptr + l + 1 >= loghead->size)
@@ -216,7 +217,7 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 
 	/* Wrap if necessary */
 	if (w->wlp + SHMLOG_NEXTTAG + l + 1 >= w->wle)
-		WSL_Flush(w);
+		WSL_Flush(w, 1);
 	p = w->wlp;
 	w->wlp += SHMLOG_NEXTTAG + l;
 	assert(w->wlp < w->wle);
@@ -247,7 +248,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 
 		/* Wrap if we cannot fit a full size record */
 		if (w->wlp + SHMLOG_NEXTTAG + 255 + 1 >= w->wle)
-			WSL_Flush(w);
+			WSL_Flush(w, 1);
 
 		p = w->wlp;
 		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);

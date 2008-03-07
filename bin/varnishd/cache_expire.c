@@ -280,7 +280,7 @@ exp_timer(void *arg)
 		CHECK_OBJ_ORNULL(oe, OBJEXP_MAGIC);
 		if (oe == NULL || oe->timer_when > t) { /* XXX: > or >= ? */
 			UNLOCK(&exp_mtx);
-			WSL_Flush(&ww);
+			WSL_Flush(&ww, 0);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
 			t = TIM_real();

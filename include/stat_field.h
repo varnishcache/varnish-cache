@@ -88,6 +88,7 @@ MAC_STAT(sess_herd,		uint64_t, 'a', "Session herd")
 
 MAC_STAT(shm_records,		uint64_t, 'a', "SHM records")
 MAC_STAT(shm_writes,		uint64_t, 'a', "SHM writes")
+MAC_STAT(shm_flushes,		uint64_t, 'a', "SHM flushes due to overflow")
 MAC_STAT(shm_cont,		uint64_t, 'a', "SHM MTX contention")
 
 MAC_STAT(sm_nreq,		uint64_t, 'a', "allocator requests")

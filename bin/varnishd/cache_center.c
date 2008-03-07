@@ -228,7 +228,7 @@ cnt_done(struct sess *sp)
 	sp->t_open = sp->t_end;
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
-	WSL_Flush(sp->wrk);
+	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
 	if (sp->esis > 0)
@@ -879,7 +879,7 @@ cnt_diag(struct sess *sp, const char *state)
 		WSL(sp->wrk, SLT_Debug, sp->id,
 		    "thr %p STP_%s sp %p obj %p vcl %p",
 		    pthread_self(), state, sp, sp->obj, sp->vcl);
-		WSL_Flush(sp->wrk);
+		WSL_Flush(sp->wrk, 0);
 	} else {
 		VSL(SLT_Debug, sp->id,
 		    "thr %p STP_%s sp %p obj %p vcl %p",
@@ -925,7 +925,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	assert(!isnan(w->used));
-	WSL_Flush(w);
+	WSL_Flush(w, 0);
 }
 
 /*
