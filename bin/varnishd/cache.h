@@ -520,7 +520,7 @@ void VSLR(enum shmlogtag tag, int id, txt t);
 void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
-void WSL_Flush(struct worker *w);
+void WSL_Flush(struct worker *w, int overflow);
 #define WSP(sess, tag, fmt, ...) \
 	WSL((sess)->wrk, tag, (sess)->fd, fmt, __VA_ARGS__)
 #define WSPR(sess, tag, txt) \
