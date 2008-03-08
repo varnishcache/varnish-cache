@@ -82,11 +82,24 @@ name2tag(const char *n)
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
+static enum shmlogtag   last[65536];
 #define F_INVCL		(1 << 0)
 #define F_MATCH		(1 << 1)
 
 static int		match_tag = -1;
 static regex_t		match_re;
+
+static void
+h_order_finish(int fd)
+{
+
+	vsb_finish(ob[fd]);
+	if (vsb_len(ob[fd]) > 1 &&
+	    (match_tag == -1 || flg[fd] & F_MATCH))
+		printf("%s\n", vsb_data(ob[fd]));
+	flg[fd] &= ~F_MATCH;
+	vsb_clear(ob[fd]);
+}
 
 static void
 clean_order(void)
@@ -108,8 +121,12 @@ clean_order(void)
 static int
 h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
+	char type;
 
 	(void)priv;
+
+	type = (spec & VSL_S_CLIENT) ? 'c' :
+	    (spec & VSL_S_BACKEND) ? 'b' : '-';
 
 	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
 		if (!b_flag && !c_flag)
@@ -123,6 +140,27 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 	if (tag == match_tag &&
 	    !regexec(&match_re, ptr, 0, NULL, 0))
 		flg[fd] |= F_MATCH;
+
+	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
+		(tag == SLT_ReqStart &&
+		    last[fd] != SLT_SessionOpen &&
+		    last[fd] != SLT_VCL_acl) ||
+		(tag == SLT_BackendXID &&
+		    last[fd] != SLT_BackendOpen)) &&
+	    vsb_len(ob[fd]) != 0) {
+		/*
+		 * This is the start of a new request, yet we haven't seen
+		 * the end of the previous one.  Spit it out anyway before
+		 * starting on the new one.
+		 */
+		if (last[fd] != SLT_SessionClose)
+			vsb_printf(ob[fd], "%5d %-12s %c %s\n",
+			    fd, "Interrupted", type, VSL_tags[tag]);
+		h_order_finish(fd);
+	}
+
+	last[fd] = tag;
+
 	switch (tag) {
 	case SLT_VCL_call:
 		if (flg[fd] & F_INVCL)
@@ -130,10 +168,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 		else
 			flg[fd] |= F_INVCL;
 		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
-		    fd, VSL_tags[tag],
-		    ((spec & VSL_S_CLIENT) ? 'c' : \
-		    (spec & VSL_S_BACKEND) ? 'b' : '-'),
-		    len, ptr);
+		    fd, VSL_tags[tag], type, len, ptr);
 		return (0);
 	case SLT_VCL_trace:
 	case SLT_VCL_return:
@@ -151,20 +186,13 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 		flg[fd] &= ~F_INVCL;
 	}
 	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
-	    fd, VSL_tags[tag],
-	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : '-'),
-	    len, ptr);
+	    fd, VSL_tags[tag], type, len, ptr);
 	switch (tag) {
 	case SLT_ReqEnd:
 	case SLT_BackendClose:
 	case SLT_BackendReuse:
 	case SLT_StatSess:
-		vsb_finish(ob[fd]);
-		if (vsb_len(ob[fd]) > 1 &&
-		    (match_tag == -1 || flg[fd] & F_MATCH))
-			printf("%s\n", vsb_data(ob[fd]));
-		flg[fd] &= ~F_MATCH;
-		vsb_clear(ob[fd]);
+		h_order_finish(fd);
 		break;
 	default:
 		break;
