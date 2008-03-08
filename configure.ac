@@ -97,8 +97,20 @@ AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
-AC_CHECK_FUNCS([sendfile])
 AC_CHECK_FUNCS([fmtcheck])
+
+# Don't look for sendfile at all, none of them work
+# anyway. (don't tell when done with passed mem-range)
+#
+## This one is tricky, there are multiple versions
+#case $host in
+#*-*-freebsd*|*-*-linux*)
+#	AC_CHECK_FUNCS([sendfile])
+# 	;;
+#*)
+#	AC_MSG_WARN([won't look for sendfile() on $host])
+#	;;
+#esac
 
 # These functions are provided by libcompat on platforms where they
 # are not available
@@ -115,12 +127,71 @@ LIBS="${LIBS} ${RT_LIBS}"
 AC_CHECK_FUNCS([clock_gettime])
 LIBS="${save_LIBS}"
 
-# Check which mechanism to use for the acceptor
-AC_CHECK_FUNCS([kqueue])
-AC_CHECK_FUNCS([epoll_ctl])
-AC_CHECK_FUNCS([poll])
+# Check which mechanism to use for the acceptor.  We look for kqueue
+# only on platforms on which we know that it works, because there are
+# platforms where a simple AC_CHECK_FUNCS([kqueue]) would succeed but
+# the build would fail.  We also allow the user to disable mechanisms
+# he doesn't want to use.
 
-# Solaris defines SO_{RCV,SND}TIMEO, but does not implement them
+# --enable-kqueue
+AC_ARG_ENABLE(kqueue,
+    AS_HELP_STRING([--enable-kqueue],
+	[use kqueue if available (default is YES)]),
+    ,
+    [enable_kqueue=yes])
+
+if test "$enable_kqueue" = yes; then
+	case $host in
+	*-*-freebsd*)
+		AC_CHECK_FUNCS([kqueue])
+		;;
+	*-*-bsd*)
+		# No other BSD has a sufficiently recent implementation
+		AC_MSG_WARN([won't look for kqueue() on $host])
+		ac_cv_func_kqueue=no
+		;;
+	esac
+else
+	ac_cv_func_kqueue=no
+fi
+
+# --enable-epoll
+AC_ARG_ENABLE(epoll,
+    AS_HELP_STRING([--enable-epoll],
+	[use epoll if available (default is YES)]),
+    ,
+    [enable_epoll=yes])
+
+if test "$enable_epoll" = yes; then
+	AC_CHECK_FUNCS([epoll_ctl])
+else
+	ac_cv_func_epoll_ctl=no
+fi
+
+# --enable-poll
+AC_ARG_ENABLE(poll,
+    AS_HELP_STRING([--enable-poll],
+	[use poll if available (default is YES)]),
+    ,
+    [enable_poll=yes])
+
+if test "$enable_poll" = yes; then
+	AC_CHECK_FUNCS([poll])
+else
+	ac_cv_func_poll=no
+fi
+
+if test "$ac_cv_func_kqueue" != yes &&
+   test "$ac_cv_func_epoll_ctl" != yes &&
+   test "$ac_cv_func_poll" != yes; then
+	AC_MSG_ERROR([no usable acceptor mechanism])
+fi
+
+# Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
+# Varnish will build and run without these, but connections will not
+# time out, which may leave Varnish vulnerable to denail-of-service
+# attacks which would not be possible on other platforms.
+
 AC_CACHE_CHECK([whether SO_RCVTIMEO works],
   [ac_cv_so_rcvtimeo_works],
   [AC_RUN_IFELSE(
@@ -159,6 +230,11 @@ if test "$ac_cv_so_sndtimeo_works" = yes; then
    AC_DEFINE([SO_SNDTIMEO_WORKS], [1], [Define if SO_SNDTIMEO works])
 fi
 
+if test "$ac_cv_so_rcvtimeo_works" = no ||
+   test "$ac_cv_so_sndtimeo_works" = no; then
+	AC_MSG_WARN([connection timeouts will not work])
+fi
+
 # Run-time directory
 VARNISH_STATE_DIR='${localstatedir}/varnish'
 AC_SUBST(VARNISH_STATE_DIR)
@@ -172,26 +248,37 @@ DEVELOPER_CFLAGS="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 # Additional flags for GCC 4
 EXTRA_DEVELOPER_CFLAGS="-Wextra -Wno-missing-field-initializers -Wno-sign-compare"
 
+# --enable-developer-warnings
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
+
+# --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
 	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
+
+# --enable-diagnostics
 AC_ARG_ENABLE(diagnostics,
 	AS_HELP_STRING([--enable-diagnostics],[enable run-time diagnostics (default is NO)]),
 	CFLAGS="${CFLAGS} -DDIAGNOSTICS")
+
+# --enable-extra-developer-warnings
 AC_ARG_ENABLE(extra-developer-warnings,
 	AS_HELP_STRING([--enable-extra-developer-warnings],[enable even stricter warnings (default is NO)]),
 	CFLAGS="${CFLAGS} ${EXTRA_DEVELOPER_CFLAGS}")
+
+# --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
 	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
 	CFLAGS="${CFLAGS} -fstack-protector-all")
 
+# --enable-tests
 AC_ARG_ENABLE(tests,
 	AS_HELP_STRING([--enable-tests],[build test programs (default is NO)]))
 AM_CONDITIONAL([ENABLE_TESTS], [test x$enable_tests = xyes])
 
+# --enable-werror
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
