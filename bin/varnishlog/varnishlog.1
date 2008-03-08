@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd November 8, 2007
+.Dd March 8, 2008
 .Dt VARNISHLOG 1
 .Os
 .Sh NAME
@@ -48,6 +48,7 @@
 .Op Fl o
 .Op Fl P Ar file
 .Op Fl r Ar file
+.Op Fl s Ar num
 .Op Fl V
 .Op Fl w Ar file
 .Op Fl X Ar regex
@@ -126,6 +127,10 @@ Write the process's PID to the specified
 Read log entries from
 .Ar file
 instead of shared memory.
+.It Fl s Ar num
+Skip the first
+.Ar num
+log records.
 .It Fl V
 Display the version number and exit.
 .It Fl w Ar file
