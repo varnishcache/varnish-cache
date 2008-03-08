@@ -31,6 +31,8 @@
  * XXX: charge bytes to srcaddr
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

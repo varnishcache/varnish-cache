@@ -31,6 +31,8 @@
  * The management process and CLI handling
  */
 
+#include "config.h"
+
 #include <sys/stat.h>
 
 #include <ctype.h>

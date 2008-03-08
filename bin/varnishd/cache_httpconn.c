@@ -31,6 +31,8 @@
  * HTTP protocol requests
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>

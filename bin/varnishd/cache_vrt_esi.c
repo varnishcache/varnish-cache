@@ -31,6 +31,8 @@
  * Runtime support for compiled VCL programs
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

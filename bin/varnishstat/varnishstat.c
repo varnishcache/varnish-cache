@@ -32,6 +32,8 @@
  * Log tailer for Varnish
  */
 
+#include "config.h"
+
 #include <sys/time.h>
 
 #include <curses.h>

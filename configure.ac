@@ -38,10 +38,15 @@ AC_SUBST(DL_LIBS)
 
 save_LIBS="${LIBS}"
 LIBS=""
-AC_SEARCH_LIBS(initscr, [curses ncurses])
+AC_SEARCH_LIBS(initscr, [curses ncurses],
+	[have_curses=yes], [have_curses=no])
 CURSES_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(CURSES_LIBS)
+if test "$have_curses" = no; then
+	AC_MSG_WARN([curses not found; some tools will not be built])
+fi
+AM_CONDITIONAL([HAVE_CURSES], [test x$have_curses = xyes])
 
 save_LIBS="${LIBS}"
 LIBS=""
@@ -182,6 +187,11 @@ AC_ARG_ENABLE(extra-developer-warnings,
 AC_ARG_ENABLE(stack-protector,
 	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
 	CFLAGS="${CFLAGS} -fstack-protector-all")
+
+AC_ARG_ENABLE(tests,
+	AS_HELP_STRING([--enable-tests],[build test programs (default is NO)]))
+AM_CONDITIONAL([ENABLE_TESTS], [test x$enable_tests = xyes])
+
 AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")

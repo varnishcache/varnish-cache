@@ -31,6 +31,8 @@
  * The mechanics of handling the child process
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>

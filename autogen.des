@@ -18,6 +18,8 @@ export CONFIG_SHELL=/bin/sh
     --enable-diagnostics \
     --enable-extra-developer-warnings \
     --enable-stack-protector \
+    --enable-tests \
     --enable-werror \
     --prefix=/opt/varnish \
-    --mandir=/opt/varnish/man
+    --mandir=/opt/varnish/man \
+    "$@"

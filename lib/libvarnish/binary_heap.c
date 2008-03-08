@@ -36,11 +36,13 @@
  * XXX: the array is not scaled back when items are deleted.
  */
 
-#include <assert.h>
+#include "config.h"
+
 #include <unistd.h>
 #include <stdlib.h>
 
 #include "binary_heap.h"
+#include "libvarnish.h"
 
 /* Private definitions -----------------------------------------------*/
 
@@ -186,7 +188,7 @@ binheap_insert(struct binheap *bh, void *p)
 }
 
 void *
-binheap_root(struct binheap *bh)
+binheap_root(const struct binheap *bh)
 {
 
 	assert(bh != NULL);

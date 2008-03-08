@@ -30,6 +30,8 @@
  *
  */
 
+#include "config.h"
+
 #ifndef HAVE_VASPRINTF
 
 #include <stdarg.h>

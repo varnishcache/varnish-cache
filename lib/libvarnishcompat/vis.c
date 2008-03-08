@@ -31,6 +31,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #if !defined(HAVE_VIS) || !defined(HAVE_STRVIS) || !defined(HAVE_STRVISX)
 
 #include <sys/types.h>

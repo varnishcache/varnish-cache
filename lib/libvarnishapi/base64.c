@@ -6,6 +6,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <stdint.h>
 #include "varnishapi.h"

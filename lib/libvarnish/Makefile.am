@@ -19,6 +19,17 @@ libvarnish_la_SOURCES = \
 	vss.c \
 	vtmpfile.c
 
-libvarnish_la_CFLAGS = -include config.h
+libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
-libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS}
+TESTS = num_c_test
+
+if ENABLE_TESTS
+noinst_PROGRAMS = ${TESTS}
+
+num_c_test_SOURCES = num.c
+num_c_test_CFLAGS = -DNUM_C_TEST -include config.h
+num_c_test_LDADD = ${LIBM}
+
+test: ${TESTS}
+	@for test in ${TESTS} ; do ./$${test} ; done
+endif

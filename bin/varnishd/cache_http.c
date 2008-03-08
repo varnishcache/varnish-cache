@@ -31,6 +31,8 @@
  * HTTP request storage and manipulation
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>

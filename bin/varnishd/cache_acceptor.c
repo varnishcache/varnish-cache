@@ -33,6 +33,8 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <poll.h>

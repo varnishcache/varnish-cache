@@ -31,6 +31,8 @@
  * This is the reference hash(/lookup) implementation
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <stdio.h>

@@ -220,6 +220,7 @@ warns $fo
 set foh [open "vcc_token_defs.h" w]
 warns $foh
 
+puts $fo "#include \"config.h\""
 puts $fo "#include <stdio.h>"
 puts $fo "#include <ctype.h>"
 puts $fo "#include \"vcc_priv.h\""
