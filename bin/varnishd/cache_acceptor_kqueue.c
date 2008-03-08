@@ -33,6 +33,8 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+#include "config.h"
+
 #if defined(HAVE_KQUEUE)
 
 #include <stdio.h>

@@ -69,7 +69,7 @@ void binheap_delete(struct binheap *, unsigned idx);
 	 * The root item has 'idx' zero
 	 */
 
-void *binheap_root(struct binheap *);
+void *binheap_root(const struct binheap *);
 	/*
 	 * Return the root item
 	 */

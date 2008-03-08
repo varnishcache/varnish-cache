@@ -29,6 +29,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -72,10 +74,6 @@ struct cli_proto CLI_cmds[] = {
 	{ CLI_VCL_DISCARD,	cli_func_config_discard },
 	{ CLI_VCL_USE,		cli_func_config_use },
 
-	/* Undocumented */
-	{ "dump.pool", "dump.pool",
-	    "\tDump the worker thread pool state\n",
-	    0, 0, cli_func_dump_pool },
 	{ NULL }
 };
 

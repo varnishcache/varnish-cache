@@ -31,6 +31,8 @@
  * XXX: automatic thread-pool size adaptation.
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/uio.h>
 
@@ -431,15 +433,4 @@ WRK_Init(void)
 	MTX_INIT(&tmtx);
 	AZ(pthread_create(&tp, NULL, wrk_reaperthread, NULL));
 	AZ(pthread_detach(tp));
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-cli_func_dump_pool(struct cli *cli, char **av, void *priv)
-{
-
-	(void)cli;
-	(void)av;
-	(void)priv;
 }

@@ -33,6 +33,8 @@
  * The interface *from* the compiled VCL code is in cache_vrt.c.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

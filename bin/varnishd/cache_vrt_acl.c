@@ -34,6 +34,8 @@
  * XXX: a refresh facility.
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <stdio.h>

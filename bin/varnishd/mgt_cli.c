@@ -31,6 +31,8 @@
  * The management process' CLI handling
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <stdarg.h>

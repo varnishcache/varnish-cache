@@ -48,6 +48,8 @@
  * XXX: we still have to do the source-addr lookup.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

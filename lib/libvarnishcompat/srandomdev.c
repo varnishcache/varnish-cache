@@ -29,6 +29,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #ifndef HAVE_SRANDOMDEV
 
 #include <sys/time.h>

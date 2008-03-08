@@ -36,11 +36,13 @@
  * XXX: the array is not scaled back when items are deleted.
  */
 
-#include <assert.h>
+#include "config.h"
+
 #include <unistd.h>
 #include <stdlib.h>
 
 #include "binary_heap.h"
+#include "libvarnish.h"
 
 /* Private definitions -----------------------------------------------*/
 
@@ -66,7 +68,7 @@ struct binheap {
 /* Implementation ----------------------------------------------------*/
 
 static void
-binheap_update(struct binheap *bh, unsigned u)
+binheap_update(const struct binheap *bh, unsigned u)
 {
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(u < bh->next);
@@ -97,7 +99,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 }
 
 static void
-binhead_swap(struct binheap *bh, unsigned u, unsigned v)
+binhead_swap(const struct binheap *bh, unsigned u, unsigned v)
 {
 	void *p;
 
@@ -112,7 +114,7 @@ binhead_swap(struct binheap *bh, unsigned u, unsigned v)
 }
 
 static unsigned
-binheap_trickleup(struct binheap *bh, unsigned u)
+binheap_trickleup(const struct binheap *bh, unsigned u)
 {
 	unsigned v;
 
@@ -129,7 +131,7 @@ binheap_trickleup(struct binheap *bh, unsigned u)
 }
 
 static void
-binheap_trickledown(struct binheap *bh, unsigned u)
+binheap_trickledown(const struct binheap *bh, unsigned u)
 {
 	unsigned v1, v2;
 
@@ -182,11 +184,11 @@ binheap_insert(struct binheap *bh, void *p)
 	u = bh->next++;
 	bh->array[u] = p;
 	binheap_update(bh, u);
-	binheap_trickleup(bh, u);
+	(void)binheap_trickleup(bh, u);
 }
 
 void *
-binheap_root(struct binheap *bh)
+binheap_root(const struct binheap *bh)
 {
 
 	assert(bh != NULL);

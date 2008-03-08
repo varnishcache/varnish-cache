@@ -31,6 +31,8 @@
  * VCL compiler stuff
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <dlfcn.h>

@@ -31,6 +31,8 @@
  * Runtime support for compiled VCL programs, regexps
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <stdio.h>

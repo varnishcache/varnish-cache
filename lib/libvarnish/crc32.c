@@ -31,6 +31,8 @@
  * This CRC32 implementation is in the public domain.
  */
 
+#include "config.h"
+
 #include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/

@@ -31,6 +31,8 @@
  * Storage method based on malloc(3)
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <stdlib.h>

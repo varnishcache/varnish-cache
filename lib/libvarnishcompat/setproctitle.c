@@ -29,6 +29,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #ifndef HAVE_SETPROCTITLE
 
 #include <stdarg.h>

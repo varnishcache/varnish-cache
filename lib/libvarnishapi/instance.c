@@ -28,6 +28,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>

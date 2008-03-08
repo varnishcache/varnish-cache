@@ -29,6 +29,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <ctype.h>
 #include <inttypes.h>

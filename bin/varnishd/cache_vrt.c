@@ -31,6 +31,8 @@
  * Runtime support for compiled VCL programs
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 

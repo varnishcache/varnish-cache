@@ -56,6 +56,8 @@ DOT ERROR [shape=plaintext]
 DOT start -> recv [style=bold,color=green,weight=4]
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>

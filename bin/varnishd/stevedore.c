@@ -28,6 +28,8 @@
  * $Id$
  */
 
+#include "config.h"
+
 #include "cache.h"
 
 struct storage *

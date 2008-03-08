@@ -6,6 +6,7 @@
  * Edit vcc_gen_obj.tcl instead
  */
 
+#include "config.h"
 #include <stdio.h>
 #include "vcc_compile.h"
 

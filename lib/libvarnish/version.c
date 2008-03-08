@@ -31,6 +31,8 @@
  * Display a standardized version message.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 
 #include "libvarnish.h"

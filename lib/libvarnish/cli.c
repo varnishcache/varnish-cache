@@ -31,6 +31,8 @@
  * Stuff for handling the CLI protocol
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>

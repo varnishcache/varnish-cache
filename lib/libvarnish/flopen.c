@@ -29,6 +29,8 @@
  * $FreeBSD: src/lib/libutil/flopen.c,v 1.7 2007/05/23 12:09:33 des Exp $
  */
 
+#include "config.h"
+
 #include <sys/file.h>
 #include <sys/stat.h>
 

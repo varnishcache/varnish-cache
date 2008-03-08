@@ -18,6 +18,4 @@ libvarnish_la_SOURCES = \
 	vsb.c \
 	vss.c
 
-libvarnish_la_CFLAGS = -include config.h
-
-libvarnish_la_LIBADD = ${RT_LIBS}
+libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
