@@ -44,8 +44,8 @@ int base64_decode(char *d, unsigned dlen, const char *s);
 typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-#define VSL_ARGS	"bCcdI:i:r:s:X:x:"
-#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-r file] [-s skip] [-X regexp] [-x tag]"
+#define VSL_ARGS	"bCcdI:i:k:r:s:X:x:"
+#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep] [-r file] [-s skip] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;
 struct VSL_data;
 struct VSL_data *VSL_New(void);
