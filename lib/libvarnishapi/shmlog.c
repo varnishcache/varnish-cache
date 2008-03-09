@@ -87,6 +87,7 @@ struct VSL_data {
 	regex_t			*regexcl;
 
 	unsigned long		skip;
+	unsigned long		keep;
 };
 
 #ifndef MAP_HASSEMAPHORE
@@ -294,6 +295,9 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->skip) {
 			--vd->skip;
 			continue;
+		} else if (vd->keep) {
+			if (--vd->keep == 0)
+				return (0);
 		}
 		if (vd->map[p[0]] & M_SELECT) {
 			*pp = p;
@@ -495,6 +499,25 @@ vsl_s_arg(struct VSL_data *vd, const char *opt)
 	}
 	return (1);
 }
+/*--------------------------------------------------------------------*/
+
+static int
+vsl_k_arg(struct VSL_data *vd, const char *opt)
+{
+	char *end;
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (*opt == '\0') {
+		fprintf(stderr, "number required for -k\n");
+		return (-1);
+	}
+	vd->keep = strtoul(opt, &end, 10);
+	if (*end != '\0') {
+		fprintf(stderr, "invalid number for -k\n");
+		return (-1);
+	}
+	return (1);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -512,6 +535,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
 	case 'C': vd->regflags = REG_ICASE; return (1);
 	case 's': return (vsl_s_arg(vd, opt));
+	case 'k': return (vsl_k_arg(vd, opt));
 	default:
 		return (0);
 	}

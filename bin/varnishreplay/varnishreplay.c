@@ -30,6 +30,9 @@
 
 #include "config.h"
 
+#include <sys/signal.h>
+#include <sys/uio.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -173,7 +176,7 @@ thread_get(int fd, void *(*thread_main)(void *))
 		while (fd >= newnthreads)
 			newnthreads += newnthreads + 1;
 		newthreads = realloc(newthreads, newnthreads * sizeof *newthreads);
-		assert(newthreads != NULL);
+		XXXAN(newthreads != NULL);
 		memset(newthreads + nthreads, 0,
 		    (newnthreads - nthreads) * sizeof *newthreads);
 		threads = newthreads;
@@ -189,7 +192,7 @@ thread_get(int fd, void *(*thread_main)(void *))
 			mailbox_destroy(&threads[fd]->mbox);
 			freez(threads[fd]);
 		}
-		thread_log(1, 0, "thread %p started",
+		thread_log(0, 0, "thread %p started",
 		    (void *)threads[fd]->thread_id);
 	}
 	return (threads[fd]);
@@ -210,7 +213,7 @@ thread_close(int fd)
 		return;
 	mailbox_close(&threads[fd]->mbox);
 	pthread_join(threads[fd]->thread_id, NULL);
-	thread_log(1, 0, "thread %p stopped",
+	thread_log(0, 0, "thread %p stopped",
 	    (void *)threads[fd]->thread_id);
 	mailbox_destroy(&threads[fd]->mbox);
 	freez(threads[fd]);
@@ -237,6 +240,7 @@ isprefix(const char *str, const char *prefix, const char *end, const char **next
 	return (1);
 }
 
+#if 0
 static int
 isequal(const char *str, const char *reference, const char *end)
 {
@@ -248,6 +252,7 @@ isequal(const char *str, const char *reference, const char *end)
 		return (0);
 	return (1);
 }
+#endif
 
 /*
  * Returns a copy of the entire string with leading and trailing spaces
@@ -404,6 +409,7 @@ receive_response(int sock)
 		line_len = read_line(&line, sock);
 		if (line_len < 0)
 			return (-1);
+		thread_log(2, 0, "< %.*s", line_len, line);
 		end = line + line_len;
 		if (line_len == 0) {
 			freez(line);
@@ -474,6 +480,8 @@ receive_response(int sock)
 static void *
 replay_thread(void *arg)
 {
+	struct iovec iov[6];
+	char space[1] = " ", crlf[2] = "\r\n";
 	struct thread *thr = arg;
 	struct message *msg;
 	enum shmlogtag tag;
@@ -481,14 +489,20 @@ replay_thread(void *arg)
 	char *ptr;
 	const char *end, *next;
 
-	char *df_H = NULL;			/* %H, Protocol version */
-	char *df_Host = NULL;			/* %{Host}i */
-	char *df_Uq = NULL;			/* %U%q, URL path and query string */
-	char *df_m = NULL;			/* %m, Request method*/
-	char *df_c = NULL;			/* Connection info (keep-alive, close) */
+	char *df_method = NULL;			/* Request method*/
+	char *df_proto = NULL;			/* Protocol version */
+	char *df_url = NULL;			/* URL and query string */
+	char *df_conn = NULL;			/* Connection info (keep-alive, close) */
+	char **df_hdr = NULL;			/* Headers */
+	size_t df_hdrsz = 0;			/* Size of df_hdr */
+	int df_nhdr = 0;			/* Number of headers */
 	int bogus = 0;				/* bogus request */
+	int i;
 
-	int sock, reopen = 1;
+	int sock = -1, reopen = 1;
+
+	df_hdrsz = 16;
+	df_hdr = malloc(df_hdrsz * sizeof *df_hdr);
 
 	while ((msg = mailbox_get(&thr->mbox)) != NULL) {
 		tag = msg->tag;
@@ -500,114 +514,133 @@ replay_thread(void *arg)
 
 		switch (tag) {
 		case SLT_RxRequest:
-			if (df_m != NULL)
+			if (df_method != NULL)
 				bogus = 1;
 			else
-				df_m = trimline(ptr, end);
+				df_method = trimline(ptr, end);
 			break;
 
 		case SLT_RxURL:
-			if (df_Uq != NULL)
+			if (df_url != NULL)
 				bogus = 1;
 			else
-				df_Uq = trimline(ptr, end);
+				df_url = trimline(ptr, end);
 			break;
 
 		case SLT_RxProtocol:
-			if (df_H != NULL)
+			if (df_proto != NULL)
 				bogus = 1;
 			else
-				df_H = trimline(ptr, end);
+				df_proto = trimline(ptr, end);
 			break;
 
 		case SLT_RxHeader:
-			if (isprefix(ptr, "host:", end, &next))
-				df_Host = trimline(next, end);
+			while (df_hdrsz <= df_nhdr) {
+				df_hdrsz *= 2;
+				df_hdr = realloc(df_hdr, df_hdrsz * sizeof *df_hdr);
+				XXXAN(df_hdr);
+			}
+			df_hdr[df_nhdr++] = trimline(ptr, end);
 			if (isprefix(ptr, "connection:", end, &next))
-				df_c = trimline(next, end);
+				df_conn = trimline(next, end);
 			break;
 
 		default:
 			break;
 		}
 
+		freez(msg->ptr);
+		freez(msg);
+
 		if (tag != SLT_ReqEnd)
 			continue;
 
-		if (!df_m || !df_Uq || !df_H)
+		if (!df_method || !df_url || !df_proto) {
 			bogus = 1;
+		} else if (strcmp(df_method, "GET") != 0 && strcmp(df_method, "HEAD") != 0) {
+			bogus = 1;
+		} else if (strcmp(df_proto, "HTTP/1.0") == 0) {
+			reopen = !(df_conn && strcasecmp(df_conn, "keep-alive") == 0);
+		} else if (strcmp(df_proto, "HTTP/1.1") == 0) {
+			reopen = (df_conn && strcasecmp(df_conn, "close") == 0);
+		} else {
+			bogus = 1;
+		}
 
 		if (bogus) {
 			thread_log(1, 0, "bogus");
 		} else {
-			/* If the method is supported (GET or HEAD), send the request out
-			 * on the socket. If the socket needs reopening, reopen it first.
-			 * When the request is sent, call the function for receiving
-			 * the answer.
-			 */
-			if (!(strcmp(df_m, "GET") && strcmp(df_m, "HEAD"))) {
-				if (reopen)
-					sock = VSS_connect(addr_info);
-				reopen = 0;
+			if (sock == -1) {
+				thread_log(1, 0, "open");
+				sock = VSS_connect(addr_info);
+				assert(sock != -1);
+			}
 
-				thread_log(1, 0, "%s %s %s", df_m, df_Uq, df_H);
+			thread_log(1, 0, "%s %s %s", df_method, df_url, df_proto);
 
-				write(sock, df_m, strlen(df_m));
-				write(sock, " ", 1);
-				write(sock, df_Uq, strlen(df_Uq));
-				write(sock, " ", 1);
-				write(sock, df_H, strlen(df_H));
-				write(sock, " ", 1);
-				write(sock, "\r\n", 2);
+			iov[0].iov_base = df_method;
+			iov[0].iov_len = strlen(df_method);
+			iov[2].iov_base = df_url;
+			iov[2].iov_len = strlen(df_url);
+			iov[4].iov_base = df_proto;
+			iov[4].iov_len = strlen(df_proto);
+			iov[1].iov_base = iov[3].iov_base = space;
+			iov[1].iov_len = iov[3].iov_len = 1;
+			iov[5].iov_base = crlf;
+			iov[5].iov_len = 2;
+			if (writev(sock, iov, 6) == -1) {
+				thread_log(0, errno, "writev()");
+				goto close;
+			}
 
-				if (strncmp(df_H, "HTTP/1.0", 8))
-					reopen = 1;
-
-				write(sock, "Host: ", 6);
-				if (df_Host) {
-					thread_log(1, 0, "Host: %s", df_Host);
-					write(sock, df_Host, strlen(df_Host));
+			for (i = 0; i < df_nhdr; ++i) {
+				thread_log(2, 0, "%d %s", i, df_hdr[i]);
+				iov[0].iov_base = df_hdr[i];
+				iov[0].iov_len = strlen(df_hdr[i]);
+				iov[1].iov_base = crlf;
+				iov[1].iov_len = 2;
+				if (writev(sock, iov, 2) == -1) {
+					thread_log(0, errno, "writev()");
+					goto close;
 				}
-				write(sock, "\r\n", 2);
-				if (df_c) {
-					thread_log(1, 0, "Connection: %s", df_c);
-					write(sock, "Connection: ", 12);
-					write(sock, df_c, strlen(df_c));
-					write(sock, "\r\n", 2);
-					if (isequal(df_c, "keep-alive", df_c + strlen(df_c)))
-						reopen = 0;
-				}
-				write(sock, "\r\n", 2);
-				if (!reopen)
-					reopen = receive_response(sock);
-				if (reopen)
-					close(sock);
+			}
+			if (write(sock, crlf, 2) == -1) {
+				thread_log(0, errno, "writev()");
+				goto close;
+			}
+			if (receive_response(sock) || reopen) {
+close:
+				thread_log(1, 0, "close");
+				close(sock);
+				sock = -1;
 			}
 		}
 
 		/* clean up */
-		freez(msg->ptr);
-		freez(msg);
-		freez(df_H);
-		freez(df_Host);
-		freez(df_Uq);
-		freez(df_m);
-		freez(df_c);
+		freez(df_method);
+		freez(df_url);
+		freez(df_proto);
+		freez(df_conn);
+		while (df_nhdr) {
+			--df_nhdr;
+			freez(df_hdr[df_nhdr]);
+		}
 		bogus = 0;
 	}
 
 	/* leftovers */
-	freez(msg->ptr);
-	freez(msg);
-	freez(df_H);
-	freez(df_Host);
-	freez(df_Uq);
-	freez(df_m);
-	freez(df_c);
+	freez(df_method);
+	freez(df_url);
+	freez(df_proto);
+	freez(df_conn);
+	while (df_nhdr) {
+		--df_nhdr;
+		freez(df_hdr[df_nhdr]);
+	}
+	freez(df_hdr);
 
 	return (0);
 }
-
 
 static int
 gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
@@ -624,7 +657,7 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 	if (fd == 0 || !(spec & VSL_S_CLIENT))
 		return (0);
 
-	thread_log(2, 0, "%d %s", fd, VSL_tags[tag]);
+	thread_log(3, 0, "%d %s", fd, VSL_tags[tag]);
 	thr = thread_get(fd, replay_thread);
 	msg = malloc(sizeof (struct message));
 	msg->tag = tag;
@@ -679,6 +712,8 @@ main(int argc, char *argv[])
 		exit(1);
 
 	addr_info = init_connection(address);
+
+	signal(SIGPIPE, SIG_IGN);
 
 	while (VSL_Dispatch(vd, gen_traffic, NULL) == 0)
 		/* nothing */ ;
