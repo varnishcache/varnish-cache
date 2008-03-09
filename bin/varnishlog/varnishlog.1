@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd March 8, 2008
+.Dd March 9, 2008
 .Dt VARNISHLOG 1
 .Os
 .Sh NAME
@@ -44,6 +44,7 @@
 .Op Fl d
 .Op Fl I Ar regex
 .Op Fl i Ar tag
+.Op Fl k Ar keep
 .Op Fl n Ar varnish_name
 .Op Fl o
 .Op Fl P Ar file
@@ -108,6 +109,10 @@ If neither
 nor
 .Fl i
 is specified, all log entries are included.
+.It Fl k Ar num
+Only show the first
+.Nm num
+log records.
 .It Fl n
 Specifies the name of the
 .Nm varnishd
