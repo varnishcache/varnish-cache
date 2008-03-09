@@ -649,7 +649,6 @@ gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
 	struct thread *thr;
 	const char *end;
 	struct message *msg;
-	int i;
 
 	(void)priv;
 
