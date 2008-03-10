@@ -185,13 +185,13 @@ WSL_Flush(struct worker *w, int overflow)
 	if (loghead->ptr + l + 1 >= loghead->size)
 		vsl_wrap();
 	p = logstart + loghead->ptr;
-	memcpy(p + 1, w->wlb + 1, l - 1);
 	p[l] = SLT_ENDMARKER;
 	loghead->ptr += l;
 	assert(loghead->ptr < loghead->size);
+	UNLOCKSHM(&vsl_mtx);
+	memcpy(p + 1, w->wlb + 1, l - 1);
 	/* XXX: memory barrier here */
 	p[0] = w->wlb[0];
-	UNLOCKSHM(&vsl_mtx);
 	w->wlp = w->wlb;
 	w->wlr = 0;
 }
