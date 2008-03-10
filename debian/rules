@@ -49,7 +49,7 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub config.sub
 endif
@@ -70,7 +70,6 @@ install: build
 	dh_install --sourcedir=$(CURDIR)/debian/tmp
 
 	install -m 644 $(CURDIR)/etc/default.vcl $(CURDIR)/debian/varnish/etc/varnish/
-	install -m 644 $(CURDIR)/debian/lintian-override $(CURDIR)/debian/varnish/usr/share/lintian/overrides/varnish
 	install -m 644 $(CURDIR)/debian/varnish.logrotate $(CURDIR)/debian/varnish/etc/logrotate.d/varnish
 
 

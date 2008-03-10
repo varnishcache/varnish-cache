@@ -11,6 +11,10 @@ NFILES=131072
 # the -n switch, to have more instances on a single server.
 INSTANCE=$(uname -n)
 
+# Uncomment this to enable varnishlog.  Please make sure you have
+# enough disk space for significant amounts of log data.
+# VARNISHLOG_ENABLE=1
+
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
@@ -34,7 +38,6 @@ DAEMON_OPTS="-a :6081 \
 # DAEMON_OPTS="-a :6081 \
 #              -T localhost:6082 \
 #              -f /etc/varnish/default.vcl \
-#              -n /var/lib/varnish \
 #              -s file,/var/lib/varnish/$INSTANCE/varnish_storage.bin,1G"
 
 
@@ -63,9 +66,6 @@ DAEMON_OPTS="-a :6081 \
 #
 # # Idle timeout for worker threads
 # VARNISH_THREAD_TIMEOUT=120
-#
-# # Home dir for this varnish instance
-# VARNISH_HOMEDIR=/var/lib/varnish
 #
 # # Cache file location
 # VARNISH_STORAGE_FILE=/var/lib/varnish/$INSTANCE/varnish_storage.bin

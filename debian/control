@@ -2,9 +2,11 @@ Source: varnish
 Section: web
 Priority: optional
 Maintainer: Stig Sandbeck Mathisen <ssm@fnord.no>
-Uploaders: Lars Bahner <bahner@debian.org>
-Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev
-Standards-Version: 3.7.2
+Uploaders: Lars Bahner <bahner@debian.org>, Fabio Tranchitella <kobold@debian.org>
+Build-Depends: debhelper (>= 5), autotools-dev, automake1.9, libtool, autoconf, libncurses-dev, xsltproc
+XS-Vcs-Browser: http://varnish.projects.linpro.no/browser/trunk/varnish-cache
+XS-Vcs-Svn: http://varnish.projects.linpro.no/svn/trunk/varnish-cache
+Standards-Version: 3.7.3
 
 Package: varnish
 Architecture: any
@@ -22,6 +24,7 @@ Description: A state-of-the-art, high-performance HTTP accelerator
  operating systems. 
 
 Package: libvarnish0
+Section: libs
 Replaces: libvarnish
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -29,6 +32,7 @@ Description: Shared libraries for Varnish
  Shared libraries for the Varnish HTTP accelerator.
 
 Package: libvarnish0-dev
+Section: libdevel
 Replaces: libvarnish-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libvarnish0
