@@ -27,8 +27,9 @@ if [ -f /etc/default/varnish ] ; then
         . /etc/default/varnish
 fi
 
-# If unset or not 1, exit
-if [ -z "${VARNISHLOG_ENABLED}" -o "${VARNISHLOG_ENABLED}" -ne "1" ]; then
+# If unset, or set to "0" or "no", exit
+if [ -z "${VARNISHLOG_ENABLED}" -o "${VARNISHLOG_ENABLED}" == "0" \
+     -o "${VARNISHLOG_ENABLED}" == "no" ]; then
   exit 0;
 fi
 

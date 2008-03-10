@@ -12,8 +12,9 @@ NFILES=131072
 INSTANCE=$(uname -n)
 
 # Uncomment this to enable varnishlog.  Please make sure you have
-# enough disk space for significant amounts of log data.
-# VARNISHLOG_ENABLE=1
+# enough disk space for significant amounts of log data.  To disable
+# varnishlog, set the variable to "0", "no", or leave it unset.
+# VARNISHLOG_ENABLED=1
 
 # This file contains 4 alternatives, please use only one.
 
