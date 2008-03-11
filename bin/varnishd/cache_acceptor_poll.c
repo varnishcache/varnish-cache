@@ -56,23 +56,21 @@ static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 static void
 vca_pollspace(unsigned fd)
 {
-	struct pollfd *p;
-	unsigned u, v;
+	struct pollfd *newpollfd;
+	unsigned newnpoll;
 
 	if (fd < npoll)
 		return;
-	if (npoll == 0)
-		npoll = 16;
-	for (u = npoll; fd >= u; )
-		u += u;
-	VSL(SLT_Debug, 0, "Acceptor Pollspace %u", u);
-	p = realloc(pollfd, u * sizeof *p);
-	XXXAN(p);	/* close offending fd */
-	memset(p + npoll, 0, (u - npoll) * sizeof *p);
-	for (v = npoll ; v <= u; v++)
-		p->fd = -1;
-	pollfd = p;
-	npoll = u;
+	newnpoll = npoll;
+	while (fd >= newnpoll)
+		newnpoll = newnpoll * 2 + 1;
+	VSL(SLT_Debug, 0, "Acceptor poll space increased to %u", newnpoll);
+	newpollfd = realloc(pollfd, newnpoll * sizeof *pollfd);
+	XXXAN(newpollfd);	/* close offending fd */
+	pollfd = newpollfd;
+	memset(pollfd + npoll, 0, (newnpoll - npoll) * sizeof *pollfd);
+	while (npoll < newnpoll)
+		pollfd[npoll++].fd = -1;
 }
 
 /*--------------------------------------------------------------------*/
