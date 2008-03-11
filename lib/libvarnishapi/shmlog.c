@@ -363,11 +363,15 @@ int
 VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
 {
 	FILE *fo = priv;
+	int type;
 
 	assert(fo != NULL);
+
+	type = (spec & VSL_S_CLIENT) ? 'c' :
+	    (spec & VSL_S_BACKEND) ? 'b' : '-';
+
 	if (tag == SLT_Debug) {
-		fprintf(fo, "%5d %-12s %c \"", fd, VSL_tags[tag],
-		    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '));
+		fprintf(fo, "%5d %-12s %c \"", fd, VSL_tags[tag], type);
 		while (len-- > 0) {
 			if (*ptr >= ' ' && *ptr <= '~')
 				fprintf(fo, "%c", *ptr);
@@ -378,10 +382,7 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned 
 		fprintf(fo, "\"\n");
 		return (0);
 	}
-	fprintf(fo, "%5d %-12s %c %.*s\n",
-	    fd, VSL_tags[tag],
-	    ((spec & VSL_S_CLIENT) ? 'c' : (spec & VSL_S_BACKEND) ? 'b' : ' '),
-	    len, ptr);
+	fprintf(fo, "%5d %-12s %c %.*s\n", fd, VSL_tags[tag], type, len, ptr);
 	return (0);
 }
 
