@@ -415,8 +415,8 @@ void VBE_SelectBackend(struct sess *sp);
 /* cache_ban.c */
 void AddBan(const char *, int hash);
 void BAN_Init(void);
-void cli_func_url_purge(struct cli *cli, const char * const *av, void *priv);
-void cli_func_hash_purge(struct cli *cli, const char * const *av, void *priv);
+void ccf_url_purge(struct cli *cli, const char * const *av, void *priv);
+void ccf_hash_purge(struct cli *cli, const char * const *av, void *priv);
 void BAN_NewObj(struct object *o);
 int BAN_CheckObject(struct object *o, const char *url, const char *hash);
 
@@ -559,10 +559,10 @@ void VCL_Idle(void);
 #undef VCL_RET_MAC
 
 #ifdef CLI_PRIV_H
-cli_func_t	cli_func_config_list;
-cli_func_t	cli_func_config_load;
-cli_func_t	cli_func_config_discard;
-cli_func_t	cli_func_config_use;
+cli_func_t	ccf_config_list;
+cli_func_t	ccf_config_load;
+cli_func_t	ccf_config_discard;
+cli_func_t	ccf_config_use;
 #endif
 
 /* cache_vrt_esi.c */
