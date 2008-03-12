@@ -79,6 +79,7 @@ struct workreq;
 struct addrinfo;
 struct esi_bit;
 struct vrt_backend;
+struct cli_proto;
 
 /*--------------------------------------------------------------------*/
 
@@ -415,8 +416,6 @@ void VBE_SelectBackend(struct sess *sp);
 /* cache_ban.c */
 void AddBan(const char *, int hash);
 void BAN_Init(void);
-void ccf_url_purge(struct cli *cli, const char * const *av, void *priv);
-void ccf_hash_purge(struct cli *cli, const char * const *av, void *priv);
 void BAN_NewObj(struct object *o);
 int BAN_CheckObject(struct object *o, const char *url, const char *hash);
 
@@ -426,6 +425,9 @@ void CNT_Init(void);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
+void CLI_Run(void);
+enum cli_set_e {MASTER_CLI, PUBLIC_CLI, DEBUG_CLI};
+void CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p);
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
@@ -557,13 +559,6 @@ void VCL_Idle(void);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
 #undef VCL_RET_MAC
-
-#ifdef CLI_PRIV_H
-cli_func_t	ccf_config_list;
-cli_func_t	ccf_config_load;
-cli_func_t	ccf_config_discard;
-cli_func_t	ccf_config_use;
-#endif
 
 /* cache_vrt_esi.c */
 

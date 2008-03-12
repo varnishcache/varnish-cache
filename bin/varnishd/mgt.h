@@ -44,7 +44,6 @@ extern pid_t mgt_pid, child_pid;
 
 /* mgt_cli.c */
 
-void mgt_cli_init(void);
 void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);

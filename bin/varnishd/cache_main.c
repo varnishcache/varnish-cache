@@ -71,6 +71,8 @@ child_main(void)
 
 	THR_Name("cache-main");
 
+	CLI_Init();
+
 	CNT_Init();
 	VCL_Init();
 
@@ -85,11 +87,13 @@ child_main(void)
 	HSH_Init();
 	BAN_Init();
 
+	VCA_Init();
+
 	STV_open();
 
 	VSL_stats->start_time = (time_t)TIM_real();
 
-	CLI_Init();
+	CLI_Run();
 
 	printf("Child dies\n");
 }

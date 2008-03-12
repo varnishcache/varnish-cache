@@ -40,6 +40,7 @@
 #include <regex.h>
 
 #include "shmlog.h"
+#include "cli.h"
 #include "cli_priv.h"
 #include "cache.h"
 
@@ -103,7 +104,7 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	return (0);
 }
 
-void
+static void
 ccf_url_purge(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -112,7 +113,7 @@ ccf_url_purge(struct cli *cli, const char * const *av, void *priv)
 	cli_out(cli, "PURGE %s\n", av[2]);
 }
 
-void
+static void
 ccf_hash_purge(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -121,9 +122,16 @@ ccf_hash_purge(struct cli *cli, const char * const *av, void *priv)
 	cli_out(cli, "PURGE %s\n", av[2]);
 }
 
+static struct cli_proto ban_cmds[] = {
+	{ CLI_URL_PURGE,	ccf_url_purge },
+	{ CLI_HASH_PURGE,	ccf_hash_purge },
+	{ NULL }
+};
+
 void
 BAN_Init(void)
 {
 
+	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 	AddBan("\001", 0);
 }
