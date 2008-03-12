@@ -60,3 +60,4 @@ void cli_result(struct cli *cli, unsigned r);
 /* From libvarnish/cli.c */
 void cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line);
 cli_func_t	cli_func_help;
+struct cli_proto *cli_concat(struct cli_proto *, struct cli_proto *);

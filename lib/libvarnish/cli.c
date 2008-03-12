@@ -35,6 +35,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <cli.h>
@@ -131,3 +132,28 @@ cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 	} while (0);
 	FreeArgv(av);
 }
+
+struct cli_proto *
+cli_concat(struct cli_proto *c1, struct cli_proto *c2)
+{
+	struct cli_proto *c;
+	int i1, i2;
+
+	i1 = 0;
+	for(c = c1; c != NULL && c->request != NULL; c++)
+		i1++;
+	i2 = 0;
+	for(c = c2; c != NULL && c->request != NULL; c++)
+		i2++;
+
+	c = malloc(sizeof(*c) * (i1 + i2 + 1));
+	if (c == NULL)
+		return (c);
+	if (c1 != NULL)
+		memcpy(c, c1, sizeof(*c1) * i1);
+	if (c2 != NULL)
+		memcpy(c + i1, c2, sizeof(*c2) * i2);
+	memset(c + i1 + i2, 0, sizeof(*c));
+	return (c);
+}
+
