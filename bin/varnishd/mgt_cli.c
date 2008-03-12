@@ -78,73 +78,30 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 #undef MAC_STAT
 }
 
-
-/*--------------------------------------------------------------------
- * Passthru of cli commands.  It is more or less just undoing what
- * the cli parser did, but such is life...
- */
-
 static void
-mcf_passthru(struct cli *cli, const char * const *av, void *priv)
+mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vsb *sb;
-	const char *p;
-	char *q;
 	unsigned u;
-	int i;
+	char *p;
 
-	(void)priv;
-
-	/* Request */
-	if (cli_o <= 0) {
-		cli_result(cli, CLIS_CANT);
-		cli_out(cli, "Cache process not running");
-		return;
+	cli_func_help(cli, av, priv);
+	if (cli_o >= 0 && (av[2] == NULL || *av[2] == '-')) {
+		p = NULL;
+		if (!mgt_cli_askchild(&u, &p,
+		    "help %s\n", av[2] != NULL ? av[2] : "")) {
+			cli_out(cli, "%s", p);
+			cli_result(cli, u);
+		} 
+		free(p);
 	}
-	sb = vsb_new(NULL, NULL, 64, VSB_AUTOEXTEND);
-	XXXAN(sb);
-	for (u = 1; av[u] != NULL; u++) {
-		if (u > 1)
-			vsb_putc(sb, ' ');
-		vsb_putc(sb, '"');
-		for (p = av[u]; *p; p++) {
-			switch (*p) {
-			case '\\':
-				vsb_cat(sb, "\\\\");
-				break;
-			case '\n':
-				vsb_cat(sb, "\\n");
-				break;
-			case '"':
-				vsb_cat(sb, "\\\"");
-				break;
-			default:
-				vsb_putc(sb, *p);
-			}
-		}
-		vsb_putc(sb, '"');
-	}
-	vsb_putc(sb, '\n');
-	xxxassert(!vsb_overflowed(sb));
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
-	i = write(cli_o, vsb_data(sb), vsb_len(sb));
-	xxxassert(i == vsb_len(sb));
-	vsb_delete(sb);
-
-	i = cli_readres(cli_i, &u, &q, params->cli_timeout);
-	cli_result(cli, u);
-	cli_out(cli, "%s", q);
-	free(q);
-
 }
 
 /*--------------------------------------------------------------------*/
 
-static struct cli_proto *cli_proto;
 
 /* XXX: what order should this list be in ? */
-static struct cli_proto mgt_cli_proto[] = {
+static struct cli_proto cli_proto[] = {
+	{ CLI_HELP,		mcf_help, cli_proto },
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
@@ -158,7 +115,6 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ CLI_VCL_SHOW,		mcf_config_show, NULL },
 	{ CLI_PARAM_SHOW,	mcf_param_show, NULL },
 	{ CLI_PARAM_SET,	mcf_param_set, NULL },
-	{ CLI_HELP,		cli_func_help, NULL },
 #if 0
 	{ CLI_SERVER_RESTART },
 	{ CLI_ZERO },
@@ -170,59 +126,13 @@ static struct cli_proto mgt_cli_proto[] = {
 	{ NULL }
 };
 
-
-/*--------------------------------------------------------------------*/
-
-void
-mgt_cli_init(void)
-{
-	struct cli_proto *cp;
-	unsigned u, v;
-
-	/*
-	 * Build the joint cli_proto by combining the manager process
-	 * entries with with the cache process entries.  The latter
-	 * get a "passthough" function in the joint list
-	 */
-	u = 0;
-	for (cp = mgt_cli_proto; cp->request != NULL; cp++)
-		u++;
-	for (cp = CLI_cmds; cp->request != NULL; cp++)
-		u++;
-	cli_proto = calloc(sizeof *cli_proto, u + 1);
-	XXXAN(cli_proto);
-	u = 0;
-	for (cp = mgt_cli_proto; cp->request != NULL; cp++)
-		cli_proto[u++] = *cp;
-	for (cp = CLI_cmds; cp->request != NULL; cp++) {
-		/* Skip any cache commands we already have in the manager */
-		for (v = 0; v < u; v++)
-			if (!strcmp(cli_proto[v].request, cp->request))
-				break;
-		if (v < u)
-			continue;
-		cli_proto[u] = *cp;
-		cli_proto[u].func = mcf_passthru;
-		u++;
-	}
-
-	/* Fixup the entry for 'help' entry */
-	for (u = 0; cli_proto[u].request != NULL; u++) {
-		if (!strcmp(cli_proto[u].request, "help")) {
-			cli_proto[u].priv = cli_proto;
-			break;
-		}
-	}
-}
-
 /*--------------------------------------------------------------------
  * Ask the child something over CLI, return zero only if everything is
  * happy happy.
  */
 
 int
-mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
-{
+mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 	char *p;
 	int i, j;
 	va_list ap;
@@ -319,12 +229,41 @@ static int
 mgt_cli_vlu(void *priv, const char *p)
 {
 	struct cli_port *cp;
+	char *q;
+	unsigned u;
+	int i;
 
 	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
 	vsb_clear(cp->cli->sb);
 	cli_dispatch(cp->cli, cli_proto, p);
 	vsb_finish(cp->cli->sb);
 	AZ(vsb_overflowed(cp->cli->sb));
+	if (cp->cli->result == CLIS_UNKNOWN) {
+		/*
+		 * Command not recognized in master, try cacher if it is
+		 * running.
+		 */
+		vsb_clear(cp->cli->sb);
+		cp->cli->result = CLIS_OK;
+		if (cli_o <= 0) {
+			cli_result(cp->cli, CLIS_UNKNOWN);
+			cli_out(cp->cli,
+			    "Unknown request in manager process "
+			    "(child not running).\n"
+			    "Type 'help' for more info.");
+		} else {
+			i = write(cli_o, p, strlen(p));
+			xxxassert(i == strlen(p));
+			i = write(cli_o, "\n", 1);
+			xxxassert(i == 1);
+			i = cli_readres(cli_i, &u, &q, params->cli_timeout);
+			cli_result(cp->cli, u);
+			cli_out(cp->cli, "%s", q);
+			free(q);
+		}
+		vsb_finish(cp->cli->sb);
+		AZ(vsb_overflowed(cp->cli->sb));
+	}
 
 	/* send the result back */
 	if (cli_writeres(cp->fdo, cp->cli))
