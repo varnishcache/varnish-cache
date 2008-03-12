@@ -556,8 +556,6 @@ main(int argc, char *argv[])
 	if (pfh != NULL && vpf_write(pfh)) 
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
-	mgt_cli_init();
-
 	mgt_run(d_flag, T_arg);
 
 	if (pfh != NULL)

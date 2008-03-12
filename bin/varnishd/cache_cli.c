@@ -85,28 +85,68 @@ cli_func_start(struct cli *cli, const char * const *av, void *priv)
 	return;
 }
 
-
 /*--------------------------------------------------------------------*/
 
-struct cli_proto CLI_cmds[] = {
+static void ccf_help(struct cli *cli, const char * const *av, void *priv);
+
+/*--------------------------------------------------------------------
+ * The CLI commandlist is split in three:
+ *	Commands we get from/share with the manager
+ *	Cache process commands
+ *	Undocumented commands
+ */
+
+static struct cli_proto master_cmds[] = {
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_START,	cli_func_start },
-#if 0
-	{ CLI_URL_QUERY,	cli_func_url_query },
-#endif
-	{ CLI_URL_PURGE,	cli_func_url_purge },
-	{ CLI_HASH_PURGE,	cli_func_hash_purge },
 	{ CLI_VCL_LOAD,		cli_func_config_load },
 	{ CLI_VCL_LIST,		cli_func_config_list },
 	{ CLI_VCL_DISCARD,	cli_func_config_discard },
 	{ CLI_VCL_USE,		cli_func_config_use },
+	{ NULL }
+};
 
-	/* Undocumented functions for debugging */
+static struct cli_proto cacher_cmds[] = {
+	{ CLI_HELP,             ccf_help, NULL },
+	{ CLI_URL_PURGE,	cli_func_url_purge },
+	{ CLI_HASH_PURGE,	cli_func_hash_purge },
+#if 0
+	{ CLI_URL_QUERY,	cli_func_url_query },
+#endif
+	{ NULL }
+};
+
+static struct cli_proto undoc_cmds[] = {
 	{ "debug.sizeof", "debug.sizeof",
 		"\tDump sizeof various data structures\n",
 		0, 0, cli_debug_sizeof },
 	{ NULL }
 };
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+ccf_help(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	/* "+1" to skip "help" entry, manager already did that. */
+	cli_func_help(cli, av, cacher_cmds + 1);
+
+	if (av[2] != NULL && !strcmp(av[2], "-d")) {
+		/* Also list undocumented commands */
+		cli_out(cli, "\nDebugging commands:\n");
+		cli_func_help(cli, av, undoc_cmds);
+	} else if (cli->result == CLIS_UNKNOWN) {
+		/* Otherwise, try the undocumented list */
+		vsb_clear(cli->sb);
+		cli->result = CLIS_OK;
+		cli_func_help(cli, av, undoc_cmds);
+	}
+}
+
+/*--------------------------------------------------------------------*/
 
 static int
 cli_vlu(void *priv, const char *p)
@@ -117,7 +157,17 @@ cli_vlu(void *priv, const char *p)
 	cli = priv;
 	VSL(SLT_CLI, 0, "Rd %s", p);
 	vsb_clear(cli->sb);
-	cli_dispatch(cli, CLI_cmds, p);
+	cli_dispatch(cli, master_cmds, p);
+	if (cli->result == CLIS_UNKNOWN) {
+		vsb_clear(cli->sb);
+		cli->result = CLIS_OK;
+		cli_dispatch(cli, cacher_cmds, p);
+	}
+	if (cli->result == CLIS_UNKNOWN) {
+		vsb_clear(cli->sb);
+		cli->result = CLIS_OK;
+		cli_dispatch(cli, undoc_cmds, p);
+	}
 	vsb_finish(cli->sb);
 	AZ(vsb_overflowed(cli->sb));
 	i = cli_writeres(heritage.fds[1], cli);
