@@ -208,7 +208,7 @@ VCL_Idle(void)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
@@ -224,7 +224,7 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-void
+static void
 ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -236,7 +236,7 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 	return;
 }
 
-void
+static void
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
@@ -263,7 +263,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		VCL_Nuke(vcl);
 }
 
-void
+static void
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
@@ -321,9 +321,18 @@ VCL_##func##_method(struct sess *sp)					\
 
 /*--------------------------------------------------------------------*/
 
+static struct cli_proto vcl_cmds[] = {
+	{ CLI_VCL_LOAD,         ccf_config_load },
+	{ CLI_VCL_LIST,         ccf_config_list },
+	{ CLI_VCL_DISCARD,      ccf_config_discard },
+	{ CLI_VCL_USE,          ccf_config_use },
+	{ NULL }        
+};
+
 void
 VCL_Init()
 {
 
+	CLI_AddFuncs(MASTER_CLI, vcl_cmds);
 	MTX_INIT(&vcl_mtx);
 }

@@ -50,6 +50,8 @@
 #include "compat/srandomdev.h"
 #endif
 
+#include "cli.h"
+#include "cli_priv.h"
 #include "shmlog.h"
 #include "cache.h"
 #include "cache_acceptor.h"
@@ -274,11 +276,13 @@ vca_return_session(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-void
-VCA_Init(void)
+static void
+ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 
-
+	(void)cli;
+	(void)av;
+	(void)priv;
 	/* XXX: Add selector mechanism at some point */
 	vca_act = vca_acceptors[0];
 
@@ -290,4 +294,16 @@ VCA_Init(void)
 	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
+}
+
+static struct cli_proto vca_cmds[] = {
+	{ CLI_SERVER_START,	ccf_start },
+	{ NULL }
+};
+
+void
+VCA_Init(void)
+{
+
+	CLI_AddFuncs(MASTER_CLI, vca_cmds);
 }

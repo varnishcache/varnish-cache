@@ -27,6 +27,13 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * Caching process CLI handling.
+ *
+ * We only have one CLI source, the stdin/stdout pipes from the manager
+ * process, but we complicate things by having undocumented commands that
+ * we do not want to show in a plain help, and by having commands that the
+ * manager has already shown in help before asking us.
  */
 
 #include "config.h"
@@ -47,106 +54,45 @@
 #include "vsb.h"
 
 pthread_t	cli_thread;
+static MTX	cli_mtx;
 
-/*--------------------------------------------------------------------*/
-
-static void
-cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)av;
-	(void)priv;
-
-#define SZOF(foo)       cli_out(cli, \
-    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
-        SZOF(struct ws);
-        SZOF(struct http);
-        SZOF(struct http_conn);
-        SZOF(struct acct);
-        SZOF(struct worker);
-        SZOF(struct workreq);
-        SZOF(struct bereq);
-        SZOF(struct storage);
-        SZOF(struct object);
-        SZOF(struct objhead);
-        SZOF(struct sess);
-        SZOF(struct vbe_conn);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-ccf_start(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)cli;
-	(void)av;
-	(void)priv;
-	VCA_Init();
-	return;
-}
-
-/*--------------------------------------------------------------------*/
-
-static void ccf_help(struct cli *cli, const char * const *av, void *priv);
-
-/*--------------------------------------------------------------------
+/*
  * The CLI commandlist is split in three:
- *	Commands we get from/share with the manager
- *	Cache process commands
- *	Undocumented commands
+ *  - Commands we get from/share with the manager, we don't show these
+ *	in help, as the manager already did that.
+ *  - Cache process commands, show in help
+ *  - Undocumented debug commands, show in undocumented "help -d"
  */
 
-static struct cli_proto master_cmds[] = {
-	{ CLI_PING,		cli_func_ping },
-	{ CLI_SERVER_START,	ccf_start },
-	{ CLI_VCL_LOAD,		ccf_config_load },
-	{ CLI_VCL_LIST,		ccf_config_list },
-	{ CLI_VCL_DISCARD,	ccf_config_discard },
-	{ CLI_VCL_USE,		ccf_config_use },
-	{ NULL }
-};
+static struct cli_proto *ccf_master_cli, *ccf_public_cli, *ccf_debug_cli;
 
-static struct cli_proto cacher_cmds[] = {
-	{ CLI_HELP,             ccf_help, NULL },
-	{ CLI_URL_PURGE,	ccf_url_purge },
-	{ CLI_HASH_PURGE,	ccf_hash_purge },
-#if 0
-	{ CLI_URL_QUERY,	ccf_url_query },
-#endif
-	{ NULL }
-};
+/*--------------------------------------------------------------------
+ * Add CLI functions to the appropriate command set
+ */
 
-static struct cli_proto undoc_cmds[] = {
-	{ "debug.sizeof", "debug.sizeof",
-		"\tDump sizeof various data structures\n",
-		0, 0, cli_debug_sizeof },
-	{ NULL }
-};
-
-
-/*--------------------------------------------------------------------*/
-
-static void
-ccf_help(struct cli *cli, const char * const *av, void *priv)
+void
+CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 {
+	struct cli_proto *c, **cp;
 
-	(void)priv;
-	/* "+1" to skip "help" entry, manager already did that. */
-	cli_func_help(cli, av, cacher_cmds + 1);
-
-	if (av[2] != NULL && !strcmp(av[2], "-d")) {
-		/* Also list undocumented commands */
-		cli_out(cli, "\nDebugging commands:\n");
-		cli_func_help(cli, av, undoc_cmds);
-	} else if (cli->result == CLIS_UNKNOWN) {
-		/* Otherwise, try the undocumented list */
-		vsb_clear(cli->sb);
-		cli->result = CLIS_OK;
-		cli_func_help(cli, av, undoc_cmds);
+	switch (which) {
+	case MASTER_CLI: cp = &ccf_master_cli; break;
+	case PUBLIC_CLI: cp = &ccf_public_cli; break;
+	case DEBUG_CLI:	 cp = &ccf_debug_cli;  break;
+	default: INCOMPL();
 	}
+	LOCK(&cli_mtx);
+	c = cli_concat(*cp, p);
+	AN(c);
+	free(*cp);
+	*cp = c;
+	UNLOCK(&cli_mtx);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Called when we have a full line, look through all three command 
+ * lists to find it.
+ */
 
 static int
 cli_vlu(void *priv, const char *p)
@@ -157,17 +103,19 @@ cli_vlu(void *priv, const char *p)
 	cli = priv;
 	VSL(SLT_CLI, 0, "Rd %s", p);
 	vsb_clear(cli->sb);
-	cli_dispatch(cli, master_cmds, p);
+	LOCK(&cli_mtx);
+	cli_dispatch(cli, ccf_master_cli, p);
 	if (cli->result == CLIS_UNKNOWN) {
 		vsb_clear(cli->sb);
 		cli->result = CLIS_OK;
-		cli_dispatch(cli, cacher_cmds, p);
+		cli_dispatch(cli, ccf_public_cli, p);
 	}
 	if (cli->result == CLIS_UNKNOWN) {
 		vsb_clear(cli->sb);
 		cli->result = CLIS_OK;
-		cli_dispatch(cli, undoc_cmds, p);
+		cli_dispatch(cli, ccf_debug_cli, p);
 	}
+	UNLOCK(&cli_mtx);
 	vsb_finish(cli->sb);
 	AZ(vsb_overflowed(cli->sb));
 	i = cli_writeres(heritage.fds[1], cli);
@@ -179,8 +127,12 @@ cli_vlu(void *priv, const char *p)
 	return (0);
 }
 
+/*--------------------------------------------------------------------
+ * Run CLI on stdin/stdout pipe from manager
+ */
+
 void
-CLI_Init(void)
+CLI_Run(void)
 {
 	struct pollfd pfd[1];
 	struct cli *cli, clis;
@@ -190,7 +142,6 @@ CLI_Init(void)
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
 
-	cli_thread = pthread_self();
 	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	XXXAN(cli->sb);
 	vlu = VLU_New(cli, cli_vlu, params->cli_buffer);
@@ -219,3 +170,80 @@ CLI_Init(void)
 		}
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+#define SZOF(foo)       cli_out(cli, \
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+        SZOF(struct ws);
+        SZOF(struct http);
+        SZOF(struct http_conn);
+        SZOF(struct acct);
+        SZOF(struct worker);
+        SZOF(struct workreq);
+        SZOF(struct bereq);
+        SZOF(struct storage);
+        SZOF(struct object);
+        SZOF(struct objhead);
+        SZOF(struct sess);
+        SZOF(struct vbe_conn);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+ccf_help(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	cli_func_help(cli, av, ccf_public_cli);
+
+	if (av[2] != NULL && !strcmp(av[2], "-d")) {
+		/* Also list undocumented commands */
+		cli_out(cli, "\nDebugging commands:\n");
+		cli_func_help(cli, av, ccf_debug_cli);
+	} else if (cli->result == CLIS_UNKNOWN) {
+		/* Otherwise, try the undocumented list */
+		vsb_clear(cli->sb);
+		cli->result = CLIS_OK;
+		cli_func_help(cli, av, ccf_debug_cli);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static struct cli_proto master_cmds[] = {
+	{ CLI_PING,		cli_func_ping },
+	{ CLI_HELP,             ccf_help, NULL },
+	{ NULL }
+};
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.sizeof", "debug.sizeof",
+		"\tDump sizeof various data structures\n",
+		0, 0, cli_debug_sizeof },
+	{ NULL }
+};
+
+
+/*--------------------------------------------------------------------
+ * Initialize the CLI subsystem
+ */
+
+void
+CLI_Init(void)
+{
+
+	MTX_INIT(&cli_mtx);
+	cli_thread = pthread_self();
+
+	CLI_AddFuncs(MASTER_CLI, master_cmds);
+	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+}
+
