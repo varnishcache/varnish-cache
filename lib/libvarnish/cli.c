@@ -52,8 +52,7 @@ cli_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *cp;
 
-	if (av[2] == NULL) {
-		cli_out(cli, "Available commands:\n");
+	if (av[2] == NULL || *av[2] == '-') {
 		for (cp = priv; cp->request != NULL; cp++)
 			cli_out(cli, "%s\n", cp->syntax);
 		return;
@@ -64,7 +63,8 @@ cli_func_help(struct cli *cli, const char * const *av, void *priv)
 			return;
 		}
 	}
-	cli_param(cli);
+	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
+	cli_result(cli, CLIS_UNKNOWN);
 }
 
 void
@@ -97,7 +97,7 @@ cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 				break;
 		if (cp->request == NULL) {
 			cli_out(cli,
-			    "Unknown request, type 'help' for more info.\n");
+			    "Unknown request.\nType 'help' for more info.\n");
 			cli_result(cli, CLIS_UNKNOWN);
 			break;
 		}
