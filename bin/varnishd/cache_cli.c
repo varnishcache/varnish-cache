@@ -75,7 +75,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-cli_func_start(struct cli *cli, const char * const *av, void *priv)
+ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)cli;
@@ -98,20 +98,20 @@ static void ccf_help(struct cli *cli, const char * const *av, void *priv);
 
 static struct cli_proto master_cmds[] = {
 	{ CLI_PING,		cli_func_ping },
-	{ CLI_SERVER_START,	cli_func_start },
-	{ CLI_VCL_LOAD,		cli_func_config_load },
-	{ CLI_VCL_LIST,		cli_func_config_list },
-	{ CLI_VCL_DISCARD,	cli_func_config_discard },
-	{ CLI_VCL_USE,		cli_func_config_use },
+	{ CLI_SERVER_START,	ccf_start },
+	{ CLI_VCL_LOAD,		ccf_config_load },
+	{ CLI_VCL_LIST,		ccf_config_list },
+	{ CLI_VCL_DISCARD,	ccf_config_discard },
+	{ CLI_VCL_USE,		ccf_config_use },
 	{ NULL }
 };
 
 static struct cli_proto cacher_cmds[] = {
 	{ CLI_HELP,             ccf_help, NULL },
-	{ CLI_URL_PURGE,	cli_func_url_purge },
-	{ CLI_HASH_PURGE,	cli_func_hash_purge },
+	{ CLI_URL_PURGE,	ccf_url_purge },
+	{ CLI_HASH_PURGE,	ccf_hash_purge },
 #if 0
-	{ CLI_URL_QUERY,	cli_func_url_query },
+	{ CLI_URL_QUERY,	ccf_url_query },
 #endif
 	{ NULL }
 };

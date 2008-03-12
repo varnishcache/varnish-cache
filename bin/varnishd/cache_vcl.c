@@ -209,7 +209,7 @@ VCL_Idle(void)
 /*--------------------------------------------------------------------*/
 
 void
-cli_func_config_list(struct cli *cli, const char * const *av, void *priv)
+ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 
@@ -225,7 +225,7 @@ cli_func_config_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-cli_func_config_load(struct cli *cli, const char * const *av, void *priv)
+ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
@@ -237,7 +237,7 @@ cli_func_config_load(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-cli_func_config_discard(struct cli *cli, const char * const *av, void *priv)
+ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 
@@ -264,7 +264,7 @@ cli_func_config_discard(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-cli_func_config_use(struct cli *cli, const char * const *av, void *priv)
+ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 

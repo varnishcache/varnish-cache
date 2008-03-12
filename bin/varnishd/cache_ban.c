@@ -104,7 +104,7 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 }
 
 void
-cli_func_url_purge(struct cli *cli, const char * const *av, void *priv)
+ccf_url_purge(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
@@ -113,7 +113,7 @@ cli_func_url_purge(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-cli_func_hash_purge(struct cli *cli, const char * const *av, void *priv)
+ccf_hash_purge(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
