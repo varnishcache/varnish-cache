@@ -203,7 +203,7 @@ vca_acct(void *arg)
 			addr = (void*)&addr_s;
 			i = accept(pfd[u].fd, addr, &l);
 			if (i < 0) {
-				if (errno != EAGAIN) {
+				if (errno != EAGAIN && errno != ECONNABORTED) {
 					VSL(SLT_Debug, pfd[u].fd,
 					    "Accept failed errno=%d", errno);
 					/* XXX: stats ? */
