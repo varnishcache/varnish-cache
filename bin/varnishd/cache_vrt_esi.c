@@ -619,7 +619,7 @@ VRT_ESI(struct sess *sp)
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
 		WSP(sp, SLT_VCL_error,
-		    "esi can only be called from vcl_fetch", "");
+		    "esi can only be called from vcl_fetch");
 		return;
 	}
 

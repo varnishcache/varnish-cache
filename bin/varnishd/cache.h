@@ -524,9 +524,17 @@ void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
-#define WSP(sess, tag, fmt, ...) \
-	WSL((sess)->wrk, tag, (sess)->fd, fmt, __VA_ARGS__)
-#define WSPR(sess, tag, txt) \
+
+#define DSL(flag, tag, id, ...) 				\
+	do {							\
+		if (params->diag_bitmap & (flag))		\
+			VSL((tag), (id), __VA_ARGS__);		\
+	} while (0)
+
+#define WSP(sess, tag, ...) 					\
+	WSL((sess)->wrk, tag, (sess)->fd, __VA_ARGS__)
+
+#define WSPR(sess, tag, txt) 					\
 	WSLR((sess)->wrk, tag, (sess)->fd, txt)
 
 #define INCOMPL() do {							\

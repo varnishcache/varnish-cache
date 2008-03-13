@@ -83,8 +83,7 @@ vca_kq_sess(struct sess *sp, short arm)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp->fd >= 0);
-	if (params->diag_bitmap & 4)
-		VSL(SLT_Debug, sp->fd, "KQ: EV_SET sp %p arm %x", sp, arm);
+	DSL(0x04, SLT_Debug, sp->fd, "KQ: EV_SET sp %p arm %x", sp, arm);
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++nki == NKEV) 
 		vca_kq_flush();
@@ -116,10 +115,9 @@ vca_kev(const struct kevent *kp)
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
-	if (params->diag_bitmap & 0x4)
-		VSL(SLT_Debug, sp->id, "KQ: sp %p kev data %lu flags 0x%x%s",
-		    sp, (unsigned long)kp->data, kp->flags,
-		    (kp->flags & EV_EOF) ? " EOF" : "");
+	DSL(0x04, SLT_Debug, sp->id, "KQ: sp %p kev data %lu flags 0x%x%s",
+	    sp, (unsigned long)kp->data, kp->flags,
+	    (kp->flags & EV_EOF) ? " EOF" : "");
 
 	spassert(sp->id == kp->ident);
 	spassert(sp->fd == sp->id);

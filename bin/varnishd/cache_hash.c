@@ -278,8 +278,7 @@ hsh_rush(struct objhead *oh)
 		if (sp == NULL)
 			return;
 		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
-		if (params->diag_bitmap & 0x20)
-			VSL(SLT_Debug, sp->id, "off waiting list");
+		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
 		WRK_QueueSession(sp);
 	}
 }
@@ -365,9 +364,8 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
-	if (params->diag_bitmap & 0x40)
-		VSL(SLT_Debug, 0, "Object %u workspace min free %u",
-		    o->xid, WS_Free(o->ws_o));
+	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
+	    o->xid, WS_Free(o->ws_o));
 
 	if (o->vary != NULL)
 		free(o->vary);
