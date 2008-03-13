@@ -46,19 +46,12 @@
 #include "cli_priv.h"
 #include "cache.h"
 
-/* Enable this to get detailed logging of WS usage */
-#define WS_DEBUG(fmt, ...)					\
-	do {							\
-		if (params->diag_bitmap & 0x2)			\
-			VSL(SLT_Debug, 0, fmt, __VA_ARGS__);	\
-	} while (0)
-
 void
 WS_Assert(const struct ws *ws)
 {
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	WS_DEBUG("WS(%p = (%s, %p %u %u %u)",
+	DSL(0x02, SLT_Debug, 0, "WS(%p = (%s, %p %u %u %u)",
 	    ws, ws->id, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
@@ -77,7 +70,8 @@ void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
 
-	WS_DEBUG("WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
+	DSL(0x02, SLT_Debug, 0,
+	    "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
 	assert(space != NULL);
 	memset(ws, 0, sizeof *ws);
 	ws->magic = WS_MAGIC;
@@ -93,7 +87,7 @@ WS_Reset(struct ws *ws, char *p)
 {
 
 	WS_Assert(ws);
-	WS_DEBUG("WS_Reset(%p, %p)", ws, p);
+	DSL(0x02, SLT_Debug, 0, "WS_Reset(%p, %p)", ws, p);
 	assert(ws->r == NULL);
 	if (p == NULL)
 		ws->f = ws->s;
@@ -117,7 +111,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	}
 	r = ws->f;
 	ws->f += bytes;
-	WS_DEBUG("WS_Alloc(%p, %u) = %p", ws, bytes, r);
+	DSL(0x02, SLT_Debug, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
 	return (r);
 }
 
@@ -131,7 +125,7 @@ WS_Dup(struct ws *ws, const char *s)
 	p = WS_Alloc(ws, l);
 	if (p != NULL)
 		memcpy(p, s, l);
-	WS_DEBUG("WS_Dup(%p, \"%s\") = %p", ws, s, p);
+	DSL(0x02, SLT_Debug, 0, "WS_Dup(%p, \"%s\") = %p", ws, s, p);
 	return (p);
 }
 
@@ -149,7 +143,7 @@ WS_Snapshot(struct ws *ws)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	WS_DEBUG("WS_Snapshot(%p) = %p", ws, ws->f);
+	DSL(0x02, SLT_Debug, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
 	return (ws->f);
 }
 
@@ -164,7 +158,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 		b2 = ws->e - ws->f;
 	xxxassert(ws->f + b2 <= ws->e);
 	ws->r = ws->f + b2;
-	WS_DEBUG("WS_Reserve(%p, %u/%u) = %u",
+	DSL(0x02, SLT_Debug, 0, "WS_Reserve(%p, %u/%u) = %u",
 	    ws, b2, bytes, pdiff(ws->f, ws->r));
 	return (pdiff(ws->f, ws->r));
 }
@@ -173,7 +167,7 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
-	WS_DEBUG("WS_Release(%p, %u)", ws, bytes);
+	DSL(0x02, SLT_Debug, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
 	ws->f += bytes;
@@ -184,7 +178,7 @@ void
 WS_ReleaseP(struct ws *ws, char *ptr)
 {
 	WS_Assert(ws);
-	WS_DEBUG("WS_ReleaseP(%p, %p)", ws, ptr);
+	DSL(0x02, SLT_Debug, 0, "WS_ReleaseP(%p, %p)", ws, ptr);
 	assert(ws->r != NULL);
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);

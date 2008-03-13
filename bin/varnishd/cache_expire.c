@@ -402,7 +402,7 @@ EXP_NukeOne(struct sess *sp)
 	o = oe->obj;
 
 	if (sp->handling == VCL_RET_DISCARD) {
-		VSL(SLT_ExpKill, 0, "%u LRU", o->xid);
+		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
 		del_objexp(o);
 		HSH_Deref(o);
 		return (1);
