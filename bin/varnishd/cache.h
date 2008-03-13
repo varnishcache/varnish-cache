@@ -519,7 +519,6 @@ void SES_Charge(struct sess *sp);
 
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
-void VSLR(enum shmlogtag tag, int id, txt t);
 void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
