@@ -95,7 +95,7 @@ vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
  * taking the detour over sprintf()
  */
 
-void
+static void
 VSLR(enum shmlogtag tag, int id, txt t)
 {
 	unsigned char *p;
