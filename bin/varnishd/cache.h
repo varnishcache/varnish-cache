@@ -174,7 +174,7 @@ struct worker {
 
 	double			used;
 
-	int			pipe[2];
+	pthread_cond_t		cond;
 
 	VTAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
