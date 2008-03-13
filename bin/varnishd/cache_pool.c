@@ -203,7 +203,6 @@ wrk_thread(void *priv)
 {
 	struct worker *w, ww;
 	struct wq *qp;
-	char c;
 	unsigned char wlog[8192]; 	/* XXX: size */
 
 	THR_Name("cache-worker");
@@ -214,7 +213,7 @@ wrk_thread(void *priv)
 	w->used = TIM_real();
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
-	AZ(pipe(w->pipe));
+	AZ(pthread_cond_init(&w->cond, NULL));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 	LOCK(&tmtx);
@@ -240,8 +239,8 @@ wrk_thread(void *priv)
 		if (w->wrq == NULL) {
 			LOCK(&qp->mtx);
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
+			AZ(pthread_cond_wait(&w->cond, &qp->mtx));
 			UNLOCK(&qp->mtx);
-			assert(1 == read(w->pipe[0], &c, 1));
 		}
 		if (w->wrq == NULL)
 			break;
@@ -256,8 +255,7 @@ wrk_thread(void *priv)
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
-	AZ(close(w->pipe[0]));
-	AZ(close(w->pipe[1]));
+	AZ(pthread_cond_destroy(&w->cond));
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
 	if (w->nobjhead != NULL) {
@@ -295,7 +293,7 @@ WRK_QueueSession(struct sess *sp)
 		VTAILQ_REMOVE(&qp->idle, w, list);
 		UNLOCK(&qp->mtx);
 		w->wrq = &sp->workreq;
-		assert(1 == write(w->pipe[1], w, 1));
+		AZ(pthread_cond_signal(&w->cond));
 		return;
 	}
 
@@ -423,7 +421,7 @@ wrk_reaperthread(void *priv)
 			if (w == NULL)
 				continue;
 			AZ(w->wrq);
-			assert(1 == write(w->pipe[1], w, 1));
+			AZ(pthread_cond_signal(&w->cond));
 		}
 	}
 }
