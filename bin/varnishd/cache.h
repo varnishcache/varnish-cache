@@ -38,6 +38,7 @@
 #include <pthread_np.h>
 #endif
 #include <stdint.h>
+#include <limits.h>
 
 #include "vqueue.h"
 
@@ -50,6 +51,8 @@
 #include "heritage.h"
 #include "miniobj.h"
 
+#define HTTP_HDR_MAX_VAL 32
+
 enum {
 	/* Fields from the first line of HTTP proto */
 	HTTP_HDR_REQ,
@@ -59,14 +62,14 @@ enum {
 	HTTP_HDR_RESPONSE,
 	/* HTTP header lines */
 	HTTP_HDR_FIRST,
-	HTTP_HDR_MAX = 32		/* XXX: should be #defined */
+	HTTP_HDR_MAX = HTTP_HDR_MAX_VAL
 };
 
 /* Note: intentionally not IOV_MAX unless it has to be */
-#if (IOV_MAX < (HTTP_HDR_MAX * 2))
+#if (IOV_MAX < (HTTP_HDR_MAX_VAL * 2))
 #  define MAX_IOVS	IOV_MAX
 #else
-#  define MAX_IOVS	(HTTP_HDR_MAX * 2)
+#  define MAX_IOVS	(HTTP_HDR_MAX_VAL * 2)
 #endif
 
 struct cli;
