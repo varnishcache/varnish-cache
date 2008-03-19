@@ -276,7 +276,7 @@ parse_set(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_remove(struct tokenlist *tl)
+parse_unset(struct tokenlist *tl)
 {
 	struct var *vp;
 
@@ -286,7 +286,7 @@ parse_remove(struct tokenlist *tl)
 	ERRCHK(tl);
 	assert(vp != NULL);
 	if (vp->fmt != STRING || vp->hdr == NULL) {
-		vsb_printf(tl->sb, "Only http header lines can be removed.\n");
+		vsb_printf(tl->sb, "Only http header lines can be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
@@ -367,7 +367,8 @@ static struct action_table {
 #undef VCL_RET_MAC_E
 	{ "call", 	parse_call },
 	{ "set", 	parse_set },
-	{ "remove", 	parse_remove },
+	{ "unset", 	parse_unset },
+	{ "remove", 	parse_unset }, /* backward compatibility */
 	{ "purge_url",	parse_purge_url },
 	{ "purge_hash",	parse_purge_hash },
 	{ "esi",	parse_esi },
