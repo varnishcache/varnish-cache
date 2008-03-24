@@ -32,32 +32,31 @@ config.status: configure
 	# The boilerplate linker flags won't allow varnish to compile :(
 	# There are circular dependencies in the varnish libraries, but
 	# the core developers have OK'ed that we don't check.
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" --localstatedir=/var/lib
-
+	[ -r /usr/share/misc/config.sub ] && \
+	    cp -f /usr/share/misc/config.sub config.sub || true
+	[ -r /usr/share/misc/config.guess ] && \
+	    cp -f /usr/share/misc/config.guess config.guess || true
+	./configure \
+	    --host=$(DEB_HOST_GNU_TYPE) \
+	    --build=$(DEB_BUILD_GNU_TYPE) \
+	    --prefix=/usr \
+		--mandir=\$${prefix}/share/man \
+		--infodir=\$${prefix}/share/info \
+		CFLAGS="$(CFLAGS)" --localstatedir=/var/lib
 
 build: build-stamp
 
 build-stamp:  config.status
 	dh_testdir
-
 	$(MAKE)
-
 	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
-
-	[ ! -f Makefile ] || $(MAKE) distclean
-ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-	cp -f /usr/share/misc/config.sub config.sub
-endif
-ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-	cp -f /usr/share/misc/config.guess config.guess
-endif
-
-
+	[ -f config.sub.orig ] && mv config.sub.orig config.sub || true
+	[ -f config.guess.orig ] && mv config.sub.orig config.guess || true
 	dh_clean 
 
 install: build
@@ -65,13 +64,10 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
-
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	dh_install --sourcedir=$(CURDIR)/debian/tmp
-
 	install -m 644 $(CURDIR)/etc/default.vcl $(CURDIR)/debian/varnish/etc/varnish/
 	install -m 644 $(CURDIR)/debian/varnish.logrotate $(CURDIR)/debian/varnish/etc/logrotate.d/varnish
-
 
 # Build architecture-independent files here.
 binary-indep: build install
