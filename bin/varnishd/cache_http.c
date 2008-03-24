@@ -451,6 +451,9 @@ http_splitline(struct worker *w, int fd, struct http *hp, const struct http_conn
 			if (vctyp(*p, C_CTL))
 				return (400);
 		hp->hd[h3].e = p;
+	} else {
+		hp->hd[h3].b = p;
+		hp->hd[h3].e = p;
 	}
 
 	/* Skip CRLF */
@@ -519,6 +522,13 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http 
 	} else {
 		hp->status = 
 		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
+	}
+	if (!Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
+		/* Backend didn't send a response string, use the standard */
+		hp->hd[HTTP_HDR_RESPONSE].b = 
+		    TRUST_ME(http_StatusMessage(hp->status));
+		hp->hd[HTTP_HDR_RESPONSE].e =
+		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
 	}
 	return (i);
 }
