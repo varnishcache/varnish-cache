@@ -1,16 +1,17 @@
 varnish (1.2-0) unstable; urgency=low
 
-  * New upstream release
-
- -- Stig Sandbeck Mathisen <ssm@linpro.no>  Mon, 10 Mar 2008 06:58:19 +0100
-
-varnish (1.1.2-1) unstable; urgency=low
-
-  * Add debian revision
+  [ Stig Sandbeck Mathisen ]
+  * New upstream release.
   * Check if varnishlog is running before attempting reload from
-    logrotate postscript (Closes: #462029)
+    logrotate postscript. (Closes: #462029)
 
- -- Stig Sandbeck Mathisen <ssm@fnord.no>  Tue, 22 Jan 2008 09:35:05 +0100
+  [ Fabio Tranchitella ]
+  * debian/varnish.dirs: removed unused lintian overrides dir.
+  * debian/rules: backup and restore of config.sub and config.guess to not
+    include them into the diff.gz in case of multiple builds from the same
+    working directory.
+
+ -- Fabio Tranchitella <kobold@debian.org>  Mon, 24 Mar 2008 08:30:02 +0100
 
 varnish (1.1.2) unstable; urgency=low
 
