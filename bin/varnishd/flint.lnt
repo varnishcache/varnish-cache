@@ -14,6 +14,8 @@
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
 
+-sem(vsb_new, @p == malloc(1))
+-sem(vsb_delete, custodial(1))
 -sem(lbv_assert, r_no)
 -sem(lbv_xxxassert, r_no)
 -sem(WS_Init, custodial(2))
