@@ -383,6 +383,7 @@ HSH_Deref(struct object *o)
 	assert(VTAILQ_EMPTY(&oh->objects));
 	MTX_DESTROY(&oh->mtx);
 	VSL_stats->n_objecthead--;
+	free(oh->hash);
 	FREE_OBJ(oh);
 }
 
