@@ -169,6 +169,12 @@ cnt_deliver(struct sess *sp)
 		INCOMPL();
 	}
 
+	sp->director = NULL;
+	sp->backend = NULL;		/*
+					 * XXX: we may want to leave this
+					 * behind to hint directors ?
+					 */
+					
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
@@ -204,7 +210,7 @@ cnt_done(struct sess *sp)
 					 * behind to hint directors ?
 					 */
 					
-	if (sp->vcl != NULL) {
+	if (sp->vcl != NULL && sp->esis == 0) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
 		sp->wrk->vcl = sp->vcl;
@@ -774,6 +780,11 @@ cnt_recv(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
+	/* By default we use the first backend */
+	AZ(sp->director);
+	sp->director = sp->vcl->director[0];
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+
 	VCL_recv_method(sp);
 
 	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
@@ -853,11 +864,6 @@ cnt_start(struct sess *sp)
 	}
 
 	sp->doclose = http_DoConnection(sp->http);
-
-	/* By default we use the first backend */
-	AZ(sp->director);
-	sp->director = sp->vcl->director[0];
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
