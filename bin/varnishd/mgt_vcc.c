@@ -423,6 +423,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 			 */
 			free(port);
 			fprintf(stderr, "invalid backend address\n");
+			vsb_delete(sb);
 			return (1);
 		}
 

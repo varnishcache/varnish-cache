@@ -69,6 +69,10 @@ VRY_Create(const struct sess *sp)
 	struct vsb *sb, *sbh;
 	unsigned l;
 
+	/* No Vary: header, no worries */
+	if (!http_GetHdr(sp->obj->http, H_Vary, &v))
+		return;
+
 	/* For vary matching string */
 	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	AN(sb);
@@ -76,10 +80,6 @@ VRY_Create(const struct sess *sp)
 	/* For header matching strings */
 	sbh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	AN(sbh);
-
-	/* No Vary: header, no worries */
-	if (!http_GetHdr(sp->obj->http, H_Vary, &v))
-		return;
 
 	for (p = v; *p; p++) {
 
@@ -130,6 +130,9 @@ VRY_Create(const struct sess *sp)
 	sp->obj->vary = malloc(l);
 	AN(sp->obj->vary);
 	memcpy(sp->obj->vary, vsb_data(sb), l);
+
+	vsb_delete(sb);
+	vsb_delete(sbh);
 }
 
 int
