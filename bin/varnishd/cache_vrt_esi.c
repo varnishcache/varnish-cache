@@ -786,7 +786,7 @@ ESI_Deliver(struct sess *sp)
 
 	}
 	if (sp->esis == 0)
-		WRK_Write(sp->wrk, "0\r\n", -1);
+		WRK_Write(sp->wrk, "0\r\n\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
