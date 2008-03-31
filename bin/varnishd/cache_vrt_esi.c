@@ -531,7 +531,7 @@ esi_parse2(struct esi_work *ew)
 				    "ESI 1.0 closing esi:comment illegal");
 			} else if (q[-1] != '/') {
 				esi_error(ew, p, 1 + q - p,
-				    "ESI 1.0 wants emtpy esi:comment");
+				    "ESI 1.0 wants empty esi:comment");
 			}
 			p = q + 1;
 			ew->o.b = p;
@@ -546,7 +546,7 @@ esi_parse2(struct esi_work *ew)
 				ew->o.b = r + 11;
 				if (q[-1] != '/') {
 					esi_error(ew, p, 1 + q - p,
-					    "ESI 1.0 wants emtpy esi:include");
+					    "ESI 1.0 wants empty esi:include");
 					ew->o.e = q;
 				} else {
 					ew->o.e = q - 1;
