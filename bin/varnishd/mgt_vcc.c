@@ -97,7 +97,7 @@ static const char *default_vcl =
     "        /* We only deal with GET and HEAD by default */\n"
     "        pass;\n"
     "    }\n"
-    "    if (req.http.Authenticate || req.http.Cookie) {\n"
+    "    if (req.http.Authorization || req.http.Cookie) {\n"
     "        /* Not cacheable by default */\n"
     "        pass;\n"
     "    }\n"
