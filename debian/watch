@@ -1,4 +1,0 @@
-version=3
-
-# New versions of Varnish are available at SourceForge
-http://sf.net/varnish/varnish-(.*)\.tar\.gz

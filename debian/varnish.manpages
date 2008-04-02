@@ -1,9 +1,0 @@
-bin/varnishncsa/varnishncsa.1
-bin/varnishhist/varnishhist.1
-bin/varnishstat/varnishstat.1
-bin/varnishreplay/varnishreplay.1
-bin/varnishadm/varnishadm.1
-bin/varnishlog/varnishlog.1
-bin/varnishtop/varnishtop.1
-bin/varnishd/varnishd.1
-man/vcl.7
