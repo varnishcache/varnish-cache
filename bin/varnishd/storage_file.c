@@ -174,7 +174,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 
 		if (q != NULL) {
 			fprintf(stderr,
-			    "Error: (-sfile) size \"%s\": %s \n", size, q);
+			    "Error: (-sfile) size \"%s\": %s\n", size, q);
 			exit (2);
 		}
 	}
