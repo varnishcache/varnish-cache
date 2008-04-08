@@ -35,14 +35,20 @@
 
 #include <sys/types.h>
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 
+static size_t			sma_max = SIZE_T_MAX;
+static MTX			sma_mtx;
+
 struct sma {
 	struct storage		s;
+	size_t			sz;
 };
 
 static struct storage *
@@ -50,10 +56,24 @@ sma_alloc(struct stevedore *st, size_t size)
 {
 	struct sma *sma;
 
-	VSL_stats->sm_nreq++;
+	LOCK(&sma_mtx);
+	VSL_stats->sma_nreq++;
+	if (VSL_stats->sma_nbytes + size > sma_max)
+		size = 0;
+	else {
+		VSL_stats->sma_nobj++;
+		VSL_stats->sma_nbytes += size;
+		VSL_stats->sma_balloc += size;
+	}
+	UNLOCK(&sma_mtx);
+
+	if (size == 0)
+		return (NULL);
+
 	sma = calloc(sizeof *sma, 1);
 	if (sma == NULL)
 		return (NULL);
+	sma->sz = size;
 	sma->s.priv = sma;
 	sma->s.ptr = malloc(size);
 	XXXAN(sma->s.ptr);
@@ -62,8 +82,6 @@ sma_alloc(struct stevedore *st, size_t size)
 	sma->s.fd = -1;
 	sma->s.stevedore = st;
 	sma->s.magic = STORAGE_MAGIC;
-	VSL_stats->sm_nobj++;
-	VSL_stats->sm_balloc += sma->s.space;
 	return (&sma->s);
 }
 
@@ -74,8 +92,12 @@ sma_free(const struct storage *s)
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	sma = s->priv;
-	VSL_stats->sm_nobj--;
-	VSL_stats->sm_balloc -= sma->s.space;
+	assert(sma->sz == sma->s.space);
+	LOCK(&sma_mtx);
+	VSL_stats->sma_nobj--;
+	VSL_stats->sma_nbytes -= sma->sz;
+	VSL_stats->sma_bfree += sma->sz;
+	UNLOCK(&sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
 }
@@ -88,16 +110,52 @@ sma_trim(const struct storage *s, size_t size)
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	sma = s->priv;
+	assert(sma->sz == sma->s.space);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
-		VSL_stats->sm_balloc -= sma->s.space;
+		LOCK(&sma_mtx);
+		VSL_stats->sma_nbytes -= (sma->sz - size);
+		VSL_stats->sma_bfree += sma->sz - size;
+		sma->sz = size;
+		UNLOCK(&sma_mtx);
 		sma->s.ptr = p;
 		sma->s.space = size;
-		VSL_stats->sm_balloc += sma->s.space;
 	}
+}
+
+static void
+sma_init(struct stevedore *parent, const char *spec)
+{
+	const char *e;
+	uintmax_t u;
+
+	(void)parent;
+	if (spec != NULL && *spec != '\0') {
+		e = str2bytes(spec, &u, 0);
+		if (e != NULL) {
+			fprintf(stderr,
+			    "Error: (-smalloc) size \"%s\": %s\n", spec, e);
+			exit(2);
+		}
+		if ((u != (uintmax_t)(size_t)u)) {
+			fprintf(stderr,
+			    "Error: (-smalloc) size \"%s\": too big\n", spec);
+			exit(2);
+		}
+		sma_max = u;
+	}
+}
+
+static void
+sma_open(const struct stevedore *st)
+{
+	(void)st;
+	AZ(pthread_mutex_init(&sma_mtx, NULL));
 }
 
 struct stevedore sma_stevedore = {
 	.name =		"malloc",
+	.init =		sma_init,
+	.open =		sma_open,
 	.alloc =	sma_alloc,
 	.free =		sma_free,
 	.trim =		sma_trim,

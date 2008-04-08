@@ -97,4 +97,10 @@ MAC_STAT(sm_nobj,		uint64_t, 'i', "outstanding allocations")
 MAC_STAT(sm_balloc,		uint64_t, 'i', "bytes allocated")
 MAC_STAT(sm_bfree,		uint64_t, 'i', "bytes free")
 
+MAC_STAT(sma_nreq,		uint64_t, 'a', "SMA allocator requests")
+MAC_STAT(sma_nobj,		uint64_t, 'i', "SMA outstanding allocations")
+MAC_STAT(sma_nbytes,		uint64_t, 'i', "SMA outstanding bytes")
+MAC_STAT(sma_balloc,		uint64_t, 'i', "SMA bytes allocated")
+MAC_STAT(sma_bfree,		uint64_t, 'i', "SMA bytes free")
+
 MAC_STAT(backend_req,		uint64_t, 'a', "Backend requests made")
