@@ -314,7 +314,8 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 			if (q < sp->e)
 				continue;
 			vcc_AddToken(tl, EOI, p, p + 2);
-			vsb_printf(tl->sb, "Unterminated /* ... */ comment, starting at\n");
+			vsb_printf(tl->sb,
+			    "Unterminated /* ... */ comment, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
