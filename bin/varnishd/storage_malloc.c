@@ -43,7 +43,7 @@
 #include "cache.h"
 #include "stevedore.h"
 
-static size_t			sma_max = SIZE_T_MAX;
+static size_t			sma_max = SIZE_MAX;
 static MTX			sma_mtx;
 
 struct sma {
