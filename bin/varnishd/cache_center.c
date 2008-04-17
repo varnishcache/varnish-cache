@@ -170,6 +170,7 @@ cnt_deliver(struct sess *sp)
 	}
 
 	sp->director = NULL;
+	sp->restarts = 0;
 	sp->backend = NULL;		/*
 					 * XXX: we may want to leave this
 					 * behind to hint directors ?
@@ -205,6 +206,7 @@ cnt_done(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->bereq);
 	sp->director = NULL;
+	sp->restarts = 0;
 	sp->backend = NULL;		/*
 					 * XXX: we may want to leave this
 					 * behind to hint directors ?
@@ -364,6 +366,7 @@ cnt_fetch(struct sess *sp)
 		if (sp->handling == VCL_RET_ERROR)
 			sp->step = STP_ERROR;
 		else {
+			sp->director = NULL;
 			sp->restarts++;
 			sp->step = STP_RECV;
 		}
