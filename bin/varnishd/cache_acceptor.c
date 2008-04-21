@@ -270,7 +270,10 @@ vca_return_session(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->vcl);
 	assert(sp->fd >= 0);
-	assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+	if (vca_act->pass == NULL)
+		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+	else
+		vca_act->pass(sp);
 }
 
 
@@ -290,7 +293,8 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		fprintf(stderr, "No acceptor in program\n");
 		exit (2);
 	}
-	AZ(pipe(vca_pipes));
+	if (vca_act->pass == NULL)
+		AZ(pipe(vca_pipes));
 	vca_act->init();
 	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
