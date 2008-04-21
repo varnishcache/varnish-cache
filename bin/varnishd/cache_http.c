@@ -372,7 +372,6 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
-	assert(p <= t.e);	/* http_header_complete() guarantees this */
 	for (; p < t.e; p = r) {
 		/* XXX: handle continuation lines */
 		q = strchr(p, '\n');
