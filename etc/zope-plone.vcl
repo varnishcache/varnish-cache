@@ -1,13 +1,18 @@
 #
-# This is a basic VCL configuration file for varnish.  See the vcl(7)
-# man page for details on VCL syntax and semantics.
+# This is an example VCL configuration file for varnish, meant for the
+# Plone CMS running within Zope.  It defines a "default" backend for
+# serving static content from a normal web server, and a "zope"
+# backend for requests to the Zope CMS
 #
-# $Id: default.vcl 1424 2007-05-15 19:38:56Z des $
+# See the vcl(7) man page for details on VCL syntax and semantics.
+#
+# $Id$
 #
 
 # Default backend definition.  Set this to point to your content
 # server.
 
+# Default backend is the Zope CMS
 backend default {
 	set backend.host = "127.0.0.1";
 	set backend.port = "9673";
@@ -19,28 +24,49 @@ acl purge {
 }
 
 sub vcl_recv {
-	if (req.request != "GET" && req.request != "HEAD") {
-        	# PURGE request if zope asks nicely
-        	if (req.request == "PURGE") {
-        	        if (!client.ip ~ purge) {
-        	                error 405 "Not allowed.";
-        	        }
-        	        lookup;
-        	}
-		pipe;
-	}
-	if (req.http.Expect) {
-		pipe;
-	}
-	if (req.http.Authenticate || req.http.Authorization) {
-		pass;
-	}
-	# We only care about the "__ac.*" cookies, used for authentication
-	if (req.http.Cookie && req.http.Cookie ~ "__ac(|_(name|password|persistent))=") {
-		pass;
-	}
-	lookup;
-}
+
+	# Normalize host headers, and do rewriting for the zope sites.  Reject
+	# requests for unknown hosts
+        if (req.http.host ~ "(www.)?example.com") {
+                set req.http.host = "example.com";
+                set req.url = "/VirtualHostBase/http/example.com:80/example.com/VirtualHostRoot" req.url;
+        } elsif (req.http.host ~ "(www.)?example.org") {
+                set req.http.host = "example.org";
+                set req.url = "/VirtualHostBase/http/example.org:80/example.org/VirtualHostRoot" req.url;
+        } else {
+                error 404 "Unknown virtual host.";
+        }
+
+        # Handle special requests
+        if (req.request != "GET" && req.request != "HEAD") {
+
+                # POST - Logins and edits
+                if (req.request == "POST") {
+                        pass;
+                }
+                
+                # PURGE - The CacheFu product can invalidate updated URLs
+                if (req.request == "PURGE") {
+                        if (!client.ip ~ purge) {
+                                error 405 "Not allowed.";
+                        }
+                        lookup;
+                }
+        }
+
+        # Don't cache authenticated requests
+        if (req.http.Cookie && req.http.Cookie ~ "__ac(|_(name|password|persistent))=") {
+
+		# Force lookup of specific urls unlikely to need protection
+		if (req.url ~ "\.(js|css)") {
+                        remove req.http.cookie;
+                        lookup;
+                }
+                pass;
+        }
+
+        # The default vcl_recv is used from here.
+ }
 
 # Do the PURGE thing
 sub vcl_hit {
@@ -55,83 +81,11 @@ sub vcl_miss {
         }
 }
 
-# Enforce a minimum TTL, since we PURGE changed objects actively from Zope.
+# Enforce a minimum TTL, since we can PURGE changed objects actively
+# from Zope by using the CacheFu product
+
 sub vcl_fetch {
         if (obj.ttl < 3600s) {
                 set obj.ttl = 3600s;
         }
 }
-
-# Below is a commented-out copy of the default VCL logic.  If you
-# redefine any of these subroutines, the built-in logic will be
-# appended to your code.
-
-## Called when a client request is received
-#
-#sub vcl_recv {
-#	if (req.request != "GET" && req.request != "HEAD") {
-#		pipe;
-#	}
-#	if (req.http.Expect) {
-#		pipe;
-#	}
-#	if (req.http.Authenticate || req.http.Cookie) {
-#		pass;
-#	}
-#	lookup;
-#}
-#
-## Called when entering pipe mode
-#
-#sub vcl_pipe {
-#	pipe;
-#}
-#
-## Called when entering pass mode
-#
-#sub vcl_pass {
-#	pass;
-#}
-#
-## Called when entering an object into the cache
-#
-#sub vcl_hash {
-#	hash;
-#}
-#
-## Called when the requested object was found in the cache
-#
-#sub vcl_hit {
-#	if (!obj.cacheable) {
-#		pass;
-#	}
-#	deliver;
-#}
-#
-## Called when the requested object was not found in the cache
-#
-#sub vcl_miss {
-#	fetch;
-#}
-#
-## Called when the requested object has been retrieved from the
-## backend, or the request to the backend has failed
-#
-#sub vcl_fetch {
-#	if (!obj.valid) {
-#		error;
-#	}
-#	if (!obj.cacheable) {
-#		pass;
-#	}
-#	if (resp.http.Set-Cookie) {
-#		pass;
-#	}
-#	insert;
-#}
-#
-## Called when an object nears its expiry time
-#
-#sub vcl_timeout {
-#	discard;
-#}
