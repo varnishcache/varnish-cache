@@ -906,6 +906,16 @@ CNT_Session(struct sess *sp)
 	w = sp->wrk;
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
+	/*
+	 * Whenever we come in from the acceptor we need to set blocking
+	 * mode, but there is no point in setting it when we come from
+	 * ESI or when a parked sessions returns.
+	 * It would be simpler to do this in the acceptor, but we'd rather
+	 * do the syscall in the worker thread.
+ 	 */
+	if (sp->step == STP_FIRST || sp->step == STP_START)
+		TCP_blocking(sp->fd);
+
 	for (done = 0; !done; ) {
 		assert(sp->wrk == w);
 		/*

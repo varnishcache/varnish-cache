@@ -37,7 +37,7 @@
 #include <netinet/in.h>
 
 #include <errno.h>
-#include <fcntl.h>
+#include <sys/ioctl.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,18 +112,22 @@ TCP_filter_http(int sock)
 #endif
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Functions for controlling NONBLOCK mode.
+ * 
+ * We use FIONBIO because it is cheaper than fcntl(2), which requires
+ * us to do two syscalls, one to get and one to set, the latter of
+ * which mucks about a bit before it ends up calling ioctl(FIONBIO),
+ * at least on FreeBSD.
+ */
 
 void
 TCP_blocking(int sock)
 {
 	int i;
 
-	i = fcntl(sock, F_GETFL);
-	assert(i != -1);
-	i &= ~O_NONBLOCK;
-	i = fcntl(sock, F_SETFL, i);
-	assert(i != -1);
+	i = 0;
+	AZ(ioctl(sock, FIONBIO, &i));
 }
 
 void
@@ -131,9 +135,6 @@ TCP_nonblocking(int sock)
 {
 	int i;
 
-	i = fcntl(sock, F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(sock, F_SETFL, i);
-	assert(i != -1);
+	i = 1;
+	AZ(ioctl(sock, FIONBIO, &i));
 }
