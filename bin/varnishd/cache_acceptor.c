@@ -270,6 +270,11 @@ vca_return_session(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->vcl);
 	assert(sp->fd >= 0);
+	/*
+	 * Set nonblocking in the worker-thread, before passing to the
+	 * acceptor thread, to reduce syscall density of the latter.
+	 */
+	TCP_nonblocking(sp->fd);
 	if (vca_act->pass == NULL)
 		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 	else
