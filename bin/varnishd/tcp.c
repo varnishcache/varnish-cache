@@ -37,6 +37,7 @@
 #include <netinet/in.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,4 +110,30 @@ TCP_filter_http(int sock)
 	(void)sock;
 	return (0);
 #endif
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+TCP_blocking(int sock)
+{
+	int i;
+
+	i = fcntl(sock, F_GETFL);
+	assert(i != -1);
+	i &= ~O_NONBLOCK;
+	i = fcntl(sock, F_SETFL, i);
+	assert(i != -1);
+}
+
+void
+TCP_nonblocking(int sock)
+{
+	int i;
+
+	i = fcntl(sock, F_GETFL);
+	assert(i != -1);
+	i |= O_NONBLOCK;
+	i = fcntl(sock, F_SETFL, i);
+	assert(i != -1);
 }

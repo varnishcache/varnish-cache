@@ -65,9 +65,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	sp->obj->len = cl;
 	p = st->ptr;
 
-	i = fcntl(htc->fd, F_GETFL);		/* XXX ? */
-	i &= ~O_NONBLOCK;
-	i = fcntl(htc->fd, F_SETFL, i);
+	TCP_blocking(htc->fd);
 
 	while (cl > 0) {
 		i = HTC_Read(htc, p, cl);
@@ -211,9 +209,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	struct storage *st;
 	unsigned v;
 
-	i = fcntl(htc->fd, F_GETFL);		/* XXX ? */
-	i &= ~O_NONBLOCK;
-	i = fcntl(htc->fd, F_SETFL, i);
+	TCP_blocking(htc->fd);
 
 	p = NULL;
 	v = 0;
