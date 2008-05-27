@@ -122,7 +122,7 @@ The following built-in functions are available:
 .It Fn regsub "str" "regex" "sub"
 Returns a copy of
 .Fa str
-with all occurrences of the regular expression
+with the first occurrence of the regular expression
 .Fa regex
 replaced with
 .Fa sub .
@@ -136,6 +136,10 @@ is replaced with the entire matched string, and
 is replaced with the contents of subgroup
 .Ar n
 in the matched string.
+.It Fn regsuball "str" "regex" "sub"
+As
+.Fn regsuball
+but this replaces all occurrences.
 .It Fn purge_hash "regex"
 Purge all objects in cache whose hash strings match
 .Fa regex .

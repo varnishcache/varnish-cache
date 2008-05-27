@@ -104,12 +104,13 @@ VRT_re_test(struct vsb *sb, const char *re, int sub)
 }
 
 const char *
-VRT_regsub(const struct sess *sp, const char *str, void *re, const char *sub)
+VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char *sub)
 {
 	regmatch_t pm[10];
 	regex_t *t;
 	int i, l;
 	char *b, *p, *e;
+	const char *s;
 	unsigned u, x;
 
 	AN(re);
@@ -124,42 +125,48 @@ VRT_regsub(const struct sess *sp, const char *str, void *re, const char *sub)
 	e = p = b = sp->http->ws->f;
 	e += u;
 
-	/* Copy prefix to match */
-	if (pm[0].rm_so > 0) {
-		if (p + pm[0].rm_so < e)
-			memcpy(p, str, pm[0].rm_so);
-		p += pm[0].rm_so;
-	}
-
-	for ( ; *sub != '\0'; sub++ ) {
-		if (*sub == '&') {
-			l = pm[0].rm_eo - pm[0].rm_so;
-			if (l > 0) {
-				if (p + l < e)
-					memcpy(p, str + pm[0].rm_so, l);
-				p += l;
-			}
-		} else if (*sub == '$' && isdigit(sub[1])) {
-			x = sub[1] - '0';
-			sub++;
-			l = pm[x].rm_eo - pm[x].rm_so;
-			if (l > 0) {
-				if (p + l < e)
-					memcpy(p, str + pm[x].rm_so, l);
-				p += l;
-			}
-		} else {
-			if (p + 1 < e)
-				*p = *sub;
-			p++;
+	do {
+		/* Copy prefix to match */
+		if (pm[0].rm_so > 0) {
+			if (p + pm[0].rm_so < e)
+				memcpy(p, str, pm[0].rm_so);
+			p += pm[0].rm_so;
 		}
-	}
+
+		for (s = sub ; *s != '\0'; s++ ) {
+			if (*s == '&') {
+				l = pm[0].rm_eo - pm[0].rm_so;
+				if (l > 0) {
+					if (p + l < e)
+						memcpy(p, str + pm[0].rm_so, l);
+					p += l;
+				}
+			} else if (*s == '$' && isdigit(s[1])) {
+				x = sub[1] - '0';
+				sub++;
+				l = pm[x].rm_eo - pm[x].rm_so;
+				if (l > 0) {
+					if (p + l < e)
+						memcpy(p, str + pm[x].rm_so, l);
+					p += l;
+				}
+			} else {
+				if (p + 1 < e)
+					*p = *s;
+				p++;
+			}
+		}
+		str += pm[0].rm_eo;
+		if (!all)
+			break;
+		i = regexec(t, str, 10, pm, 0);
+	} while (i != REG_NOMATCH);
 
 	/* Copy suffix to match */
-	l = strlen(str + pm[0].rm_eo);
+	l = strlen(str);
 	if (l > 0) {
 		if (p + l < e)
-			memcpy(p, str + pm[0].rm_eo, l);
+			memcpy(p, str, l);
 		p += l;
 	}
 	if (p + 1 < e)

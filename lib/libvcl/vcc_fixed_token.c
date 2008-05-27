@@ -462,7 +462,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_re_fini(void *);\n");
 	vsb_cat(sb, "int VRT_re_match(const char *, void *re);\n");
 	vsb_cat(sb, "int VRT_re_test(struct vsb *, const char *, int sub);\n");
-	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, const char *, void *, const char *);\n");
+	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all, const char *, void *, const char *);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "void VRT_purge(const char *, int hash);\n");
 	vsb_cat(sb, "\n");
@@ -541,7 +541,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "double VRT_r_obj_prefetch(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_prefetch(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_lastuse(const struct sess *);\n");
-	vsb_cat(sb, "const char *VRT_r_obj_hash(struct sess *sp);\n");
+	vsb_cat(sb, "const char * VRT_r_obj_hash(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_proto(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_proto(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "int VRT_r_resp_status(const struct sess *);\n");

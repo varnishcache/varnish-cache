@@ -69,13 +69,13 @@ vcc_regexp(struct tokenlist *tl, int sub)
 /*--------------------------------------------------------------------*/
 
 static int
-vcc_regsub(struct tokenlist *tl)
+vcc_regsub(struct tokenlist *tl, int all)
 {
 	char *p;
 
 	vcc_NextToken(tl);
 
-	Fb(tl, 0, "VRT_regsub(sp, ");
+	Fb(tl, 0, "VRT_regsub(sp, %d, ", all);
 
 	Expect(tl, '(');
 	vcc_NextToken(tl);
@@ -96,7 +96,6 @@ vcc_regsub(struct tokenlist *tl)
 	Expect(tl, ',');
 	vcc_NextToken(tl);
 	
-	Expect(tl, CSTR);
 	if (!vcc_StringVal(tl)) {
 		vcc_ExpectedStringval(tl);
 		return (0);
@@ -129,7 +128,9 @@ vcc_StringVal(struct tokenlist *tl)
 		return (1);
 	}
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "regsub"))
-		return (vcc_regsub(tl));
+		return (vcc_regsub(tl, 0));
+	if (tl->t->tok == ID && vcc_IdIs(tl->t, "regsuball"))
+		return (vcc_regsub(tl, 1));
 	if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars);
 		if (tl->err)
