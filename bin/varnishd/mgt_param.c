@@ -639,6 +639,14 @@ static const struct parspec parspec[] = {
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "connect_timeout", tweak_uint,
+		&master.connect_timeout,0, UINT_MAX,
+		"Default connection timeout for backend connections.  "
+		"We only try to connect to the backend for this many "
+		"milliseconds before giving up.  "
+		"VCL can override this default value for each backend.",
+		0,
+		"400", "ms" },
 	{ "cli_buffer", tweak_uint, &master.cli_buffer, 4096, UINT_MAX,
 		"Size of buffer for CLI input."
 		"\nYou may need to increase this if you have big VCL files "

@@ -223,7 +223,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 	struct host *h;
 	struct fld_spec *fs;
 
-	fs = vcc_FldSpec(tl, "!host", "?port", NULL);
+	fs = vcc_FldSpec(tl, "!host", "?port", "?connect_timeout", NULL);
 	t_first = tl->t;
 
 	if (tl->t->tok == ID) {
@@ -273,10 +273,16 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 			t_host = tl->t;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "port")) {
-			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_port = tl->t;
 			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "connect_timeout")) {
+			Fh(tl, 0, "\t.connect_timeout = ");
+			tl->fb = tl->fh;
+			vcc_TimeVal(tl);
+			tl->fb = NULL;
+			ERRCHK(tl);
+			Fh(tl, 0, ",\n");
 		} else {
 			ErrInternal(tl);
 			return;

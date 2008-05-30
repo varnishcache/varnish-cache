@@ -49,6 +49,7 @@ struct vrt_backend {
 	const char	*hostname;
 	const char	*vcl_name;
 	const char	*ident;
+	double		connect_timeout;
 };
 
 /*

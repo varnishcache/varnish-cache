@@ -140,6 +140,9 @@ struct params {
 	/* Cache vbe_conns */
 	unsigned		cache_vbe_conns;
 
+	/* Default connection_timeout */
+	unsigned		connect_timeout;
+
 	/* CLI buffer size */
 	unsigned		cli_buffer;
 
