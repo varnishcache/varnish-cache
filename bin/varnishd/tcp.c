@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,4 +138,56 @@ TCP_nonblocking(int sock)
 
 	i = 1;
 	AZ(ioctl(sock, FIONBIO, &i));
+}
+
+/*--------------------------------------------------------------------
+ * On TCP a connect(2) can block for a looong time, and we don't want that.
+ * Unfortunately, the SocketWizards back in those days were happy to wait
+ * any amount of time for a connection, so the connect(2) syscall does not
+ * take an argument for patience.
+ *
+ * There is a little used work-around, and we employ it at our peril.
+ *
+ */
+
+int
+TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
+{
+	int i, k;
+	socklen_t l;
+	struct pollfd fds[1];
+
+	assert(s >= 0);
+
+	/* Set the socket non-blocking */
+	TCP_nonblocking(s);
+
+	/* Attempt the connect */
+	i = connect(s, name, namelen);
+	if (i == 0 || errno != EINPROGRESS)
+		return (i);
+
+	/* Exercise our patience, polling for write */
+	fds[0].fd = s;
+	fds[0].events = POLLWRNORM;
+	fds[0].revents = 0;
+	i = poll(fds, 1, msec);
+
+	if (i == 0) {
+		/* Timeout, close and give up */
+		errno = ETIMEDOUT;
+		return (-1);
+	}
+
+	/* Find out if we got a connection */
+	l = sizeof k;
+	AZ(getsockopt(s, SOL_SOCKET, SO_ERROR, &k, &l));
+
+	/* An error means no connection established */
+	errno = k;
+	if (k)
+		return (-1);
+
+	TCP_blocking(s);
+	return (0);
 }
