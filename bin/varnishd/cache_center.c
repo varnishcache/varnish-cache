@@ -234,13 +234,14 @@ cnt_done(struct sess *sp)
 	sp->xid = 0;
 	SES_Charge(sp);
 	sp->t_open = sp->t_end;
-	sp->t_req = NAN;
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
 	if (sp->esis > 0)
 		return (1);
+
+	sp->t_req = NAN;
 
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
