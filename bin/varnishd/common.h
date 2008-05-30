@@ -46,5 +46,8 @@ void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
 void TCP_blocking(int sock);
 void TCP_nonblocking(int sock);
+#ifdef SOL_SOCKET
+int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec);
+#endif
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
