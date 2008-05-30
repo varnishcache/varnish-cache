@@ -150,7 +150,7 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	struct sockaddr_storage ss;
 	int fam, sockt, proto;
 	socklen_t alen;
-	int s;
+	int s, i, tmo;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
@@ -177,7 +177,16 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 		return (s);
 	}
 
-	if (connect(s, (void *)&ss, alen) != 0) {
+	tmo = params->connect_timeout;
+	if (sp->backend->vrt->connect_timeout > 10e-3)
+		tmo = sp->backend->vrt->connect_timeout * 1000;
+
+	if (tmo > 0)
+		i = TCP_connect(s, (void *)&ss, alen, tmo);
+	else
+		i = connect(s, (void *)&ss, alen);
+
+	if (i != 0) {
 		AZ(close(s));
 		LOCK(&sp->backend->mtx);
 		return (-1);

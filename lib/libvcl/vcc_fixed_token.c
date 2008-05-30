@@ -403,6 +403,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	const char	*hostname;\n");
 	vsb_cat(sb, "	const char	*vcl_name;\n");
 	vsb_cat(sb, "	const char	*ident;\n");
+	vsb_cat(sb, "	double		connect_timeout;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/*\n");
