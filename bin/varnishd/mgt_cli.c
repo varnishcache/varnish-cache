@@ -37,8 +37,10 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -78,6 +80,8 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 #undef MAC_STAT
 }
 
+/*--------------------------------------------------------------------*/
+
 static void
 mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
@@ -98,6 +102,17 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mcf_close(struct cli *cli, const char *const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	cli_out(cli, "Closing CLI connection");
+	cli_result(cli, CLIS_CLOSE);
+}
+
+/*--------------------------------------------------------------------*/
 
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
@@ -115,13 +130,12 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_VCL_SHOW,		mcf_config_show, NULL },
 	{ CLI_PARAM_SHOW,	mcf_param_show, NULL },
 	{ CLI_PARAM_SET,	mcf_param_set, NULL },
+
+	{ CLI_QUIT, 		mcf_close, NULL},
 #if 0
 	{ CLI_SERVER_RESTART },
 	{ CLI_ZERO },
 	{ CLI_VERBOSE,		m_cli_func_verbose, NULL },
-	{ CLI_EXIT, 		m_cli_func_exit, NULL},
-	{ CLI_QUIT },
-	{ CLI_BYE },
 #endif
 	{ NULL }
 };
@@ -205,27 +219,6 @@ struct cli_port {
 };
 
 static int
-mgt_cli_close(const struct cli_port *cp)
-{
-
-	CHECK_OBJ_NOTNULL(cp, CLI_PORT_MAGIC);
-	fprintf(stderr, "CLI closing: %s\n", cp->name);
-	vsb_delete(cp->cli->sb);
-	VLU_Destroy(cp->vlu);
-	free(cp->name);
-	(void)close(cp->fdi);
-	if (cp->fdi == 0)
-		assert(open("/dev/null", O_RDONLY) == 0);
-	(void)close(cp->fdo);
-	if (cp->fdo == 1) {
-		assert(open("/dev/null", O_WRONLY) == 1);
-		(void)close(2);
-		assert(open("/dev/null", O_WRONLY) == 2);
-	}
-	return (1);
-}
-
-static int
 mgt_cli_vlu(void *priv, const char *p)
 {
 	struct cli_port *cp;
@@ -235,6 +228,17 @@ mgt_cli_vlu(void *priv, const char *p)
 
 	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
 	vsb_clear(cp->cli->sb);
+
+	/* Remove trailing whitespace */
+	q = strchr(p, '\0');
+	while (q > p && isspace(q[-1]))
+		q--;
+	*q = '\0';
+
+	/* Ignore empty lines */
+	if (*p == 0)
+		return (0);
+
 	cli_dispatch(cp->cli, cli_proto, p);
 	vsb_finish(cp->cli->sb);
 	AZ(vsb_overflowed(cp->cli->sb));
@@ -266,29 +270,70 @@ mgt_cli_vlu(void *priv, const char *p)
 	}
 
 	/* send the result back */
-	if (cli_writeres(cp->fdo, cp->cli))
-		return (mgt_cli_close(cp));
+	syslog(LOG_INFO, "CLI %d result %d \"%s\"",
+	    cp->fdi, cp->cli->result, p);
+	if (cli_writeres(cp->fdo, cp->cli) || cp->cli->result == CLIS_CLOSE)
+		return (1);
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * Get rid of a CLI session.
+ *
+ * Always and only called from mgt_cli_callback().
+ *
+ * We must get rid of everything but the event, which gets GC'ed by
+ * ev_schdule_one() when mgt_cli_callback, through our return value
+ * returns non-zero.
+ */
+
+static int
+mgt_cli_close(struct cli_port *cp)
+{
+
+	CHECK_OBJ_NOTNULL(cp, CLI_PORT_MAGIC);
+	syslog(LOG_NOTICE, "CLI %d closed", cp->fdi);
+	free(cp->name);
+	vsb_delete(cp->cli->sb);
+	VLU_Destroy(cp->vlu);
+
+	(void)close(cp->fdi);
+	if (cp->fdo != cp->fdi)
+		(void)close(cp->fdo);
+
+	/* Special case for stdin/out/err */
+	if (cp->fdi == 0)
+		assert(open("/dev/null", O_RDONLY) == 0);
+	if (cp->fdo == 1) {
+		assert(open("/dev/null", O_WRONLY) == 1);
+		(void)close(2);
+		assert(open("/dev/null", O_WRONLY) == 2);
+	}
+
+	free(cp);
+	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Callback whenever something happens to the input fd of the session.
+ */
 
 static int
 mgt_cli_callback(const struct ev *e, int what)
 {
 	struct cli_port *cp;
-	int i;
 
 	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
 
 	if (what & (EV_ERR | EV_HUP | EV_GONE))
 		return (mgt_cli_close(cp));
 
-	i = VLU_Fd(cp->fdi, cp->vlu);
-	if (i != 0) {
-		mgt_cli_close(cp);
-		return (1);
-	}
+	if (VLU_Fd(cp->fdi, cp->vlu))
+		return (mgt_cli_close(cp));
 	return (0);
 }
+
+/*--------------------------------------------------------------------*/
 
 void
 mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
@@ -299,9 +344,9 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	XXXAN(cp);
 	cp->vlu = VLU_New(cp, mgt_cli_vlu, params->cli_buffer);
 
-	asprintf(&cp->name, "cli %s fds{%d,%d}", ident, fdi, fdo);
+	cp->name = strdup(ident);
 	XXXAN(cp->name);
-	fprintf(stderr, "CLI opened: %s\n", cp->name);
+	syslog(LOG_NOTICE, "CLI %d open from %s", fdi, cp->name);
 	cp->magic = CLI_PORT_MAGIC;
 
 	cp->fdi = fdi;
@@ -339,7 +384,7 @@ telnet_accept(const struct ev *ev, int what)
 	TCP_myname(ev->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name((void*)&addr, addrlen, abuf2, sizeof abuf2,
 	    pbuf2, sizeof pbuf2);
-	asprintf(&p, "telnet{%s:%s,%s:%s}", abuf2, pbuf2, abuf1, pbuf1);
+	asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1);
 	XXXAN(p);
 
 	mgt_cli_setup(i, i, 0, p);
@@ -363,7 +408,7 @@ mgt_cli_telnet(const char *T_arg)
 		exit(2);
 	}
 	for (i = 0; i < n; ++i) {
-		int sock = VSS_listen(ta[i], 1);
+		int sock = VSS_listen(ta[i], 10);
 		struct ev *ev = ev_new();
 		XXXAN(ev);
 		ev->fd = sock;

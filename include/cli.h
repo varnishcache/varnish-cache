@@ -200,21 +200,9 @@
 	"\tEnable/Disable verbosity",					\
 	0, 0
 
-#define CLI_EXIT							\
-	"exit",								\
-	"exit",								\
-	"\tClose connection",						\
-	0, 0
-
 #define CLI_QUIT							\
 	"quit",								\
 	"quit",								\
-	"\tClose connection",						\
-	0, 0
-
-#define CLI_BYE								\
-	"bye",								\
-	"bye",								\
 	"\tClose connection",						\
 	0, 0
 
@@ -237,7 +225,8 @@ enum cli_status_e {
 	CLIS_PARAM	= 106,
 	CLIS_OK		= 200,
 	CLIS_CANT	= 300,
-	CLIS_COMMS	= 400
+	CLIS_COMMS	= 400,
+	CLIS_CLOSE	= 500
 };
 
 /* Length of first line of response */

@@ -107,13 +107,13 @@ ev_get_pfd(struct evbase *evb)
 	unsigned u;
 	void *p;
 
-	if (evb->lpfd < evb->npfd)
+	if (evb->lpfd + 1 < evb->npfd)
 		return (0);
 
-	if (evb->npfd > 256)
-		u = evb->npfd + 256;
-	else if (evb->npfd < 8)
+	if (evb->npfd < 8)
 		u = 8;
+	else if (evb->npfd > 256)
+		u = evb->npfd + 256;
 	else
 		u = evb->npfd * 2;
 	p = realloc(evb->pfd, sizeof *evb->pfd * u);
