@@ -60,19 +60,25 @@
 	    "\tReturns the TTL, size and checksum of the object.", 	\
 	1, 1
 
-#define CLI_URL_PURGE							\
-	"url.purge",							\
-	"url.purge <regexp>",						\
+#define CLI_PURGE_URL							\
+	"purge.url",							\
+	"purge.url <regexp>",						\
 	"\tAll objects where the urls matches regexp will be "		\
 	    "marked obsolete.",						\
 	1, 1
 
-#define CLI_HASH_PURGE							\
-	"hash.purge",							\
-	"hash.purge <regexp>",						\
+#define CLI_PURGE_HASH							\
+	"purge.hash",							\
+	"purge.hash <regexp>",						\
 	"\tAll objects where the hash string matches regexp will be "	\
 	    "marked obsolete.",						\
 	1, 1
+
+#define CLI_PURGE_LIST							\
+	"purge.list",							\
+	"purge.list",							\
+	"\tList the active purges.",					\
+	0, 0
 
 #define CLI_URL_STATUS							\
 	"url.status",							\
@@ -206,11 +212,14 @@
 	"\tClose connection",						\
 	0, 0
 
-# define CLI_SERVER_STATUS						\
+#define CLI_SERVER_STATUS						\
 	"status",							\
 	"status",							\
 	"\tCheck status of Varnish cache process.",			\
 	0, 0
+
+#define CLI_HIDDEN(foo, min_arg, max_arg)				\
+	foo, NULL, NULL, min_arg, max_arg,
 
 /*
  * Status/return codes in the CLI protocol

@@ -263,6 +263,10 @@ HSH_Lookup(struct sess *sp)
 		grace_o->refcnt++;
 	}
 	UNLOCK(&oh->mtx);
+	/*
+	 * XXX: This may be too early, relative to pass objects.
+	 * XXX: possibly move to when we commit to have it in the cache.
+	 */
 	BAN_NewObj(o);
 	return (o);
 }
@@ -364,6 +368,7 @@ HSH_Deref(struct object *o)
 	if (r != 0)
 		return;
 
+	BAN_DestroyObj(o);
 	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 	    o->xid, WS_Free(o->ws_o));
 
