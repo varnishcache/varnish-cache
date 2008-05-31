@@ -28,7 +28,7 @@
  *
  * $Id$
  *
- * Ban processing
+ * Ban ("purge") processing
  */
 
 #include "config.h"
@@ -45,16 +45,25 @@
 #include "cache.h"
 
 struct ban {
+	unsigned		magic;
+#define BAN_MAGIC		0x700b08ea
 	VTAILQ_ENTRY(ban)	list;
-	unsigned		gen;
+	unsigned		refcount;
 	regex_t			regexp;
 	char			*ban;
 	int			hash;
 };
 
-static VTAILQ_HEAD(,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
-static unsigned ban_next;
-static struct ban *ban_start;
+static VTAILQ_HEAD(banhead,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
+static MTX ban_mtx;
+
+/*
+ * We maintain ban_start as a pointer to the first element of the list
+ * as a separate variable from the VTAILQ, to avoid depending on the
+ * internals of the VTAILQ macros.  We tacitly assume that a pointer
+ * write is always atomic in doing so.
+ */
+static struct ban * volatile ban_start;
 
 void
 AddBan(const char *regexp, int hash)
@@ -62,7 +71,7 @@ AddBan(const char *regexp, int hash)
 	struct ban *b;
 	int i;
 
-	b = calloc(sizeof *b, 1);
+	ALLOC_OBJ(b, BAN_MAGIC);
 	XXXAN(b);
 
 	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
@@ -71,60 +80,152 @@ AddBan(const char *regexp, int hash)
 
 		(void)regerror(i, &b->regexp, buf, sizeof buf);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
+		return;
 	}
 	b->hash = hash;
-	b->gen = ++ban_next;
 	b->ban = strdup(regexp);
+	AN(b->ban);
+	LOCK(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
+	UNLOCK(&ban_mtx);
 }
 
 void
 BAN_NewObj(struct object *o)
 {
 
-	o->ban_seq = ban_next;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	AZ(o->ban);
+	LOCK(&ban_mtx);
+	o->ban = ban_start;
+	ban_start->refcount++;
+	UNLOCK(&ban_mtx);
+}
+
+void
+BAN_DestroyObj(struct object *o)
+{
+	struct ban *b;
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	if (o->ban == NULL)
+		return;
+	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
+	LOCK(&ban_mtx);
+	o->ban->refcount--;
+	o->ban = NULL;
+
+	/* Check if we can purge the last ban entry */
+	b = VTAILQ_LAST(&ban_head, banhead);
+	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) 
+		VTAILQ_REMOVE(&ban_head, b, list);
+	else
+		b = NULL;
+	UNLOCK(&ban_mtx);
+	if (b != NULL) {
+		free(b->ban);
+		regfree(&b->regexp);
+		FREE_OBJ(b);
+	}
+
 }
 
 int
 BAN_CheckObject(struct object *o, const char *url, const char *hash)
 {
-	struct ban *b, *b0;
-	int i;
+	struct ban *b;
+	struct ban * volatile b0;
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
 
 	b0 = ban_start;
-	for (b = b0;
-	    b != NULL && b->gen > o->ban_seq;
-	    b = VTAILQ_NEXT(b, list)) {
-		i = regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0);
-		if (!i)
-			return (1);
+
+	if (b0 == o->ban)
+		return (0);
+
+	/*
+	 * This loop is safe without locks, because we know we hold
+	 * a refcount on a ban somewhere in the list and we do not
+	 * inspect the list past that ban.
+	 */
+	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
+		if (!regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0))
+			break;
 	}
-	o->ban_seq = b0->gen;
-	return (0);
+
+	LOCK(&ban_mtx);
+	o->ban->refcount--;
+	if (b == o->ban)	/* not banned */
+		b0->refcount++;
+	UNLOCK(&ban_mtx);
+
+	if (b == o->ban) {	/* not banned */
+		o->ban = b0;
+		return (0);
+	} else {
+		o->ban = NULL;
+		return (1);
+	}
 }
 
+/*--------------------------------------------------------------------
+ * CLI functions to add bans
+ */
+
 static void
-ccf_url_purge(struct cli *cli, const char * const *av, void *priv)
+ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
 	AddBan(av[2], 0);
-	cli_out(cli, "PURGE %s\n", av[2]);
+	cli_out(cli, "URL_PURGE %s\n", av[2]);
 }
 
 static void
-ccf_hash_purge(struct cli *cli, const char * const *av, void *priv)
+ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
 	AddBan(av[2], 1);
-	cli_out(cli, "PURGE %s\n", av[2]);
+	cli_out(cli, "HASH_PURGE %s\n", av[2]);
+}
+
+static void
+ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban * volatile b0;
+
+	(void)av;
+	(void)priv;
+	/*
+ 	 * XXX: Strictly speaking, this loop traversal is not lock-safe
+	 * XXX: because we might inspect the last ban while it gets
+	 * XXX: destroyed.  To properly fix this, we would need to either
+ 	 * XXX: hold the lock over the entire loop, or grab refcounts
+	 * XXX: under lock for each element of the list.
+	 * XXX: We do neither, and hope for the best.
+	 */
+	for (b0 = ban_start; b0 != NULL; b0 = VTAILQ_NEXT(b0, list)) {
+		if (b0->refcount == 0 && VTAILQ_NEXT(b0, list) == NULL)
+			break;
+		cli_out(cli, "%5u %s \"%s\"\n",
+		    b0->refcount, b0->hash ? "hash" : "url ", b0->ban);
+	}
 }
 
 static struct cli_proto ban_cmds[] = {
-	{ CLI_URL_PURGE,	ccf_url_purge },
-	{ CLI_HASH_PURGE,	ccf_hash_purge },
+	/*
+	 * XXX: COMPAT: Retain these two entries for entire 2.x series
+	 * XXX: COMPAT: to stay compatible with 1.x series syntax.
+	 */
+	{ CLI_HIDDEN("url.purge", 1, 1)		ccf_purge_url },
+	{ CLI_HIDDEN("hash.purge", 1, 1)	ccf_purge_hash },
+
+	{ CLI_PURGE_URL,			ccf_purge_url },
+	{ CLI_PURGE_HASH,			ccf_purge_hash },
+	{ CLI_PURGE_LIST,			ccf_purge_list },
 	{ NULL }
 };
 
@@ -132,6 +233,7 @@ void
 BAN_Init(void)
 {
 
+	MTX_INIT(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
-	AddBan("\001", 0);
+	AddBan("^\001$", 0);
 }

@@ -83,6 +83,7 @@ struct addrinfo;
 struct esi_bit;
 struct vrt_backend;
 struct cli_proto;
+struct ban;
 
 /*--------------------------------------------------------------------*/
 
@@ -244,7 +245,7 @@ struct object {
 	struct ws		ws_o[1];
 	unsigned char		*vary;
 
-	unsigned		ban_seq;
+	struct ban		*ban;
 
 	unsigned		pass;
 
@@ -420,6 +421,7 @@ void VBE_SelectBackend(struct sess *sp);
 void AddBan(const char *, int hash);
 void BAN_Init(void);
 void BAN_NewObj(struct object *o);
+void BAN_DestroyObj(struct object *o);
 int BAN_CheckObject(struct object *o, const char *url, const char *hash);
 
 /* cache_center.c [CNT] */

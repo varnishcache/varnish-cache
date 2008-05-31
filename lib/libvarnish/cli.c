@@ -55,10 +55,13 @@ cli_func_help(struct cli *cli, const char * const *av, void *priv)
 
 	if (av[2] == NULL || *av[2] == '-') {
 		for (cp = priv; cp->request != NULL; cp++)
-			cli_out(cli, "%s\n", cp->syntax);
+			if (cp->syntax != NULL)
+				cli_out(cli, "%s\n", cp->syntax);
 		return;
 	}
 	for (cp = priv; cp->request != NULL; cp++) {
+		if (cp->syntax == NULL)
+			continue;
 		if (!strcmp(cp->request, av[2])) {
 			cli_out(cli, "%s\n%s\n", cp->syntax, cp->help);
 			return;
