@@ -71,6 +71,8 @@ vca_main(void *arg)
 {
 	struct epoll_event ev;
 	double deadline;
+	int dotimer = 0;
+	double last_timeout = 0, tmp_timeout;
 	struct sess *sp, *sp2;
 	int i;
 
@@ -83,7 +85,7 @@ vca_main(void *arg)
 	vca_add(vca_pipes[0], vca_pipes);
 
 	while (1) {
-		if (epoll_wait(epfd, &ev, 1, 100) > 0) {
+		if ((dotimer = epoll_wait(epfd, &ev, 1, 100)) > 0) {
 			if (ev.data.ptr == vca_pipes) {
 				i = read(vca_pipes[0], &sp, sizeof sp);
 				assert(i == sizeof sp);
@@ -100,6 +102,14 @@ vca_main(void *arg)
 				}
 			}
 		}
+		tmp_timeout = TIM_mono();
+		if ((tmp_timeout - last_timeout) > 60) {
+			last_timeout = tmp_timeout;
+		} else {
+			if (dotimer > 0)
+				continue;
+		}
+
 		/* check for timeouts */
 		deadline = TIM_real() - params->sess_timeout;
 		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
