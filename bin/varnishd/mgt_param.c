@@ -56,6 +56,7 @@
 #define MAGIC_INIT_STRING	"\001"
 
 struct parspec;
+static int margin;
 
 typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
 
@@ -422,19 +423,20 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 #define DELAYED_EFFECT_TEXT \
-	"NB: This parameter will take some time to take effect."
+	"\nNB: This parameter may take quite some time to take (full) effect."
 
 #define MUST_RESTART_TEXT \
-	"NB: This parameter will not take any effect until the " \
+	"\nNB: This parameter will not take any effect until the " \
 	"child process has been restarted."
 
 #define MUST_RELOAD_TEXT \
-	"NB: This parameter will not take any effect until the " \
+	"\nNB: This parameter will not take any effect until the " \
 	"VCL programs have been reloaded."
 
 #define EXPERIMENTAL_TEXT \
-	"NB: We don't know yet if it is a good idea to change " \
-	"this parameter.  Caution advised."
+	"\nNB: We do not know yet if it is a good idea to change " \
+	"this parameter, or if the default value is even sensible.  " \
+	"Caution is advised, and feedback is most welcome."
 
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
@@ -672,7 +674,6 @@ static const struct parspec parspec[] = {
 /*--------------------------------------------------------------------*/
 
 #define WIDTH 76
-#define MARGIN 20
 
 static void
 mcf_wrap(struct cli *cli, const char *text)
@@ -684,13 +685,13 @@ mcf_wrap(struct cli *cli, const char *text)
 		q = strchr(p, '\n');
 		if (q == NULL)
 			q = strchr(p, '\0');
-		if (q > p + WIDTH - MARGIN) {
-			q = p + WIDTH - MARGIN;
+		if (q > p + WIDTH - margin) {
+			q = p + WIDTH - margin;
 			while (q > p && *q != ' ')
 				q--;
 			AN(q);
 		}
-		cli_out(cli, "%*s %.*s\n", MARGIN, "", (int)(q - p), p);
+		cli_out(cli, "%*s %.*s\n", margin, "", (int)(q - p), p);
 		p = q;
 		if (*p == ' ' || *p == '\n')
 			p++;
@@ -711,7 +712,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	for (pp = parspec; pp->name != NULL; pp++) {
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
-		cli_out(cli, "%-*s ", MARGIN, pp->name);
+		cli_out(cli, "%-*s ", margin, pp->name);
 		if (pp->func == NULL) {
 			cli_out(cli, "Not implemented.\n");
 			if (av[2] != NULL && !lfmt)
@@ -726,7 +727,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			cli_out(cli, "\n");
 		if (av[2] != NULL) {
 			cli_out(cli, "%-*s Default is %s\n",
-			    MARGIN, "", pp->def);
+			    margin, "", pp->def);
 			mcf_wrap(cli, pp->descr);
 			if (pp->flags & DELAYED_EFFECT)
 				mcf_wrap(cli, DELAYED_EFFECT_TEXT);
@@ -803,6 +804,8 @@ MCF_ParamInit(struct cli *cli)
 
 	for (pp = parspec; pp->name != NULL; pp++) {
 		cli_out(cli, "Set Default for %s = %s\n", pp->name, pp->def);
+		if (strlen(pp->name) + 1 > margin)
+			margin = strlen(pp->name) + 1;
 		pp->func(cli, pp, pp->def);
 		if (cli->result != CLIS_OK)
 			return;
