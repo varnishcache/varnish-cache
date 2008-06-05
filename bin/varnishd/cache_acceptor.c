@@ -46,10 +46,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
-
 #include "cli.h"
 #include "cli_priv.h"
 #include "shmlog.h"
@@ -294,10 +290,9 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	/* XXX: Add selector mechanism at some point */
 	vca_act = vca_acceptors[0];
 
-	if (vca_act->name == NULL) {
-		fprintf(stderr, "No acceptor in program\n");
-		exit (2);
-	}
+	AN(vca_act);
+	AN(vca_act->name);
+
 	if (vca_act->pass == NULL)
 		AZ(pipe(vca_pipes));
 	vca_act->init();
