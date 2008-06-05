@@ -441,6 +441,7 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
+ * XXX: we should generate the relevant section of varnishd.1 from here.
  */
 static const struct parspec parspec[] = {
 	{ "user", tweak_user, NULL, 0, 0,
