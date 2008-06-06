@@ -127,7 +127,7 @@ TCP_blocking(int sock)
 {
 	int i;
 
-	i = 1;
+	i = 0;
 	AZ(ioctl(sock, FIONBIO, &i));
 }
 
@@ -136,7 +136,7 @@ TCP_nonblocking(int sock)
 {
 	int i;
 
-	i = 0;
+	i = 1;
 	AZ(ioctl(sock, FIONBIO, &i));
 }
 
