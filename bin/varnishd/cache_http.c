@@ -655,7 +655,7 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
-	    "X-Forwarded-for: %s", sp->addr);
+	    "X-Forwarded-For: %s", sp->addr);
 
 	sp->bereq = bereq;
 
