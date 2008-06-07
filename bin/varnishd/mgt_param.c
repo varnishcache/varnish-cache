@@ -463,31 +463,96 @@ static const struct parspec parspec[] = {
 		0,
 		"120", "seconds" },
 	{ "thread_pools", tweak_uint, &master.wthread_pools, 1, UINT_MAX,
-		"Number of worker pools. "
+		"Number of worker thread pools.\n"
+		"\n"
 		"Increasing number of worker pools decreases lock "
-		"contention but increases the number of threads as well. "
+		"contention.\n"
+		"\n"
+		"Too many pools waste CPU and RAM resources, and more than "
+		"one pool for each CPU is probably detrimal to performance.\n"
+		"\n"
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
-		EXPERIMENTAL,
-		"1", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL, 0, 0,
-		"The maximum number of threads in the total worker pool.\n"
-		"-1 is unlimited.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"1000", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL, 0, 0,
-		"The minimum number of threads in the worker pool.\n"
+		"1", "pools" },
+	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
+		"The maximum number of worker threads in all pools combined.\n"
+		"\n"
+		"Do not set this higher than you have to, since excess "
+		"worker threads soak up RAM and CPU and generally just get "
+		"in the way of getting work done.\n",
+		EXPERIMENTAL | DELAYED_EFFECT,
+		"100", "threads" },
+	{ "thread_pool_min", tweak_thread_pool_min, NULL, 1, 0,
+		"The minimum number of threads in all worker pools combined.\n"
+		"\n"
+		"Increasing this may help ramp up faster from low load "
+		"situations where threads have expired.\n"
+		"\n"
 		"Minimum is 1 thread.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 0, 0,
-		"Thread dies after this many seconds of inactivity.\n"
+	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 1, 0,
+		"Thread idle threshold.\n"
+		"\n"
+		"Threads in excess of thread_pool_min, which have been idle "
+		"for at least this long are candidates for purging.\n"
+		"\n"
 		"Minimum is 1 second.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"120", "seconds" },
+	{ "thread_pool_purge_delay",
+		tweak_timeout, &master.wthread_purge_delay, 100, 0,
+		"Wait this long between purging threads.\n"
+		"\n"
+		"This controls the decay of thread pools when idle(-ish).\n"
+		"\n"
+		"Minimum is 100 milliseconds.",
+		EXPERIMENTAL | DELAYED_EFFECT,
+		"1000", "milliseconds" },
+	{ "thread_pool_add_threshold",
+		tweak_uint, &master.wthread_add_threshold, 0, UINT_MAX,
+		"Overflow threshold for worker thread creation.\n"
+		"\n"
+		"Setting this too low, will result in excess worker threads, "
+		"which is generally a bad idea.\n"
+		"\n"
+		"Setting it too high results in insuffient worker threads.\n",
+		EXPERIMENTAL,
+		"2", "requests" },
+	{ "thread_pool_add_delay",
+		tweak_timeout, &master.wthread_add_delay, 0, UINT_MAX,
+		"Wait at least this long between creating threads.\n"
+		"\n"
+		"Setting this too long results in insuffient worker threads.\n"
+		"\n"
+		"Setting this too short increases the risk of worker "
+		"thread pile-up.\n",
+		EXPERIMENTAL,
+		"10", "milliseconds" },
+	{ "thread_pool_fail_delay",
+		tweak_timeout, &master.wthread_fail_delay, 100, UINT_MAX,
+		"Wait at least this long after a failed thread creation "
+		"before trying to create another thread.\n"
+		"\n"
+		"Failure to create a worker thread is often a sign that "
+		" the end is near, because the process is running out of "
+		"RAM resources for thread stacks.\n"
+		"This delay tries to not rush it on needlessly.\n"
+		"\n"
+		"If thread creation failures are a problem, check that "
+		"thread_pool_max is not too high.\n"
+		"\n"
+		"It may also help to increase thread_pool_timeout and "
+		"thread_pool_min, to reduce the rate at which treads are "
+		"destroyed and later recreated.\n",
+		EXPERIMENTAL,
+		"200", "milliseconds" },
 	{ "overflow_max", tweak_uint, &master.overflow_max, 0, UINT_MAX,
-		"Limit on overflow queue length in percent of "
-		"thread_pool_max parameter.",
+		"Percentage permitted overflow queue length.\n"
+		"\n"
+		"This sets the ratio of queued requests to worker threads, "
+		"above which sessions will be dropped instead of queued.\n",
 		EXPERIMENTAL,
 		"100", "%" },
 	{ "rush_exponent", tweak_uint, &master.rush_exponent, 2, UINT_MAX,

@@ -76,11 +76,15 @@ struct params {
 	/* TTL used for lack of anything better */
 	unsigned		default_ttl;
 
-	/* Worker threads */
+	/* Worker threads and pool */
 	unsigned		wthread_min;
 	unsigned		wthread_max;
 	unsigned		wthread_timeout;
 	unsigned		wthread_pools;
+	unsigned		wthread_add_threshold;
+	unsigned		wthread_add_delay;
+	unsigned		wthread_fail_delay;
+	unsigned		wthread_purge_delay;
 
 	unsigned		overflow_max;
 

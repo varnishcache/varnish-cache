@@ -197,9 +197,19 @@ struct worker {
 	unsigned		wlr;
 };
 
+/* Work Request for worker thread ------------------------------------*/
+
+/*
+ * This is a worker-function.
+ * XXX: typesafety is probably not worth fighting for
+ */
+
+typedef void workfunc(struct worker *, void *priv);
+
 struct workreq {
 	VTAILQ_ENTRY(workreq)	list;
-	struct sess		*sess;
+	workfunc		*func;
+	void			*priv;
 };
 
 #include "hash_slinger.h"
@@ -504,6 +514,7 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);
+int WRK_Queue(struct workreq *wrq);
 void WRK_QueueSession(struct sess *sp);
 void WRK_Reset(struct worker *w, int *fd);
 unsigned WRK_Flush(struct worker *w);
