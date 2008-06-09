@@ -165,14 +165,15 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 }
 
 /*
- * Given a struct vss_addr, open a socket of the appropriate type, bind it
- * to the requested address, and start listening.
+ * Given a struct vss_addr, open a socket of the appropriate type, and bind
+ * it to the requested address.
  *
  * If the address is an IPv6 address, the IPV6_V6ONLY option is set to
  * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
  */
+
 int
-VSS_listen(const struct vss_addr *va, int depth)
+VSS_bind(const struct vss_addr *va)
 {
 	int sd, val;
 
@@ -202,10 +203,28 @@ VSS_listen(const struct vss_addr *va, int depth)
 		(void)close(sd);
 		return (-1);
 	}
-	if (listen(sd, depth) != 0) {
-		perror("listen()");
-		(void)close(sd);
-		return (-1);
+	return (sd);
+}
+
+/*
+ * Given a struct vss_addr, open a socket of the appropriate type, bind it
+ * to the requested address, and start listening.
+ *
+ * If the address is an IPv6 address, the IPV6_V6ONLY option is set to
+ * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
+ */
+int
+VSS_listen(const struct vss_addr *va, int depth)
+{
+	int sd;
+
+	sd = VSS_bind(va);
+	if (sd >= 0)  {
+		if (listen(sd, depth) != 0) {
+			perror("listen()");
+			(void)close(sd);
+			return (-1);
+		}
 	}
 	return (sd);
 }
