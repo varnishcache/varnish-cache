@@ -319,6 +319,7 @@ struct sess {
 	socklen_t		mysockaddrlen;
 	struct sockaddr		*sockaddr;
 	struct sockaddr		*mysockaddr;
+	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */
 	char			*addr;

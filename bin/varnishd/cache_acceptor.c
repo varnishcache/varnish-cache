@@ -119,7 +119,8 @@ VCA_Prep(struct sess *sp)
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
-	VSL(SLT_SessionOpen, sp->fd, "%s %s", sp->addr, sp->port);
+	VSL(SLT_SessionOpen, sp->fd, "%s %s %s",
+	    sp->addr, sp->port, sp->mylsock->name);
 	sp->acct.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
@@ -194,16 +195,19 @@ vca_acct(void *arg)
 #endif
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
-		for (u = 0; u < heritage.nsocks; u++) {
-			if (pfd[u].revents == 0)
+		u = 0;
+		VTAILQ_FOREACH(ls, &heritage.socks, list) {
+			if (ls->sock < 0)
+				continue;
+			if (pfd[u++].revents == 0)
 				continue;
 			VSL_stats->client_conn++;
 			l = sizeof addr_s;
 			addr = (void*)&addr_s;
-			i = accept(pfd[u].fd, addr, &l);
+			i = accept(ls->sock, addr, &l);
 			if (i < 0) {
 				if (errno != EAGAIN && errno != ECONNABORTED) {
-					VSL(SLT_Debug, pfd[u].fd,
+					VSL(SLT_Debug, ls->sock,
 					    "Accept failed errno=%d", errno);
 					/* XXX: stats ? */
 				}
@@ -215,6 +219,7 @@ vca_acct(void *arg)
 			sp->fd = i;
 			sp->id = i;
 			sp->t_open = now;
+			sp->mylsock = ls;
 
 			sp->step = STP_FIRST;
 			WRK_QueueSession(sp);
