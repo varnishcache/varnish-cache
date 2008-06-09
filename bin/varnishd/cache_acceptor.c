@@ -161,6 +161,9 @@ vca_acct(void *arg)
 	AN(pfd);
 	i = 0;
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock < 0)
+			continue;
+		AZ(listen(ls->sock, params->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 		pfd[i].events = POLLIN;

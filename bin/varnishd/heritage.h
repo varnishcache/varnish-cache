@@ -38,6 +38,8 @@
 struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	list;
 	int				sock;
+	char				*hname;
+	char				*pname;
 	struct vss_addr			*addr;
 };
 

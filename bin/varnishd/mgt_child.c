@@ -138,18 +138,21 @@ open_sockets(void)
 {
 	struct listen_sock *ls, *ls2;
 	int good = 0;
+	char hbuf[TCP_ADDRBUFSIZE];
+	char pbuf[TCP_PORTBUFSIZE];
 
 	VTAILQ_FOREACH_SAFE(ls, &heritage.socks, list, ls2) {
 		if (ls->sock >= 0) {
 			good++;
 			continue;
 		}
-		ls->sock = VSS_listen(ls->addr, params->listen_depth);
-		if (ls->sock < 0) {
-			VTAILQ_REMOVE(&heritage.socks, ls, list);
-			free(ls);
+		ls->sock = VSS_bind(ls->addr);
+		if (ls->sock < 0) 
 			continue;
-		}
+
+		TCP_myname(ls->sock, hbuf, sizeof hbuf, pbuf, sizeof pbuf);
+		REPLACE(ls->hname, hbuf);
+		REPLACE(ls->pname, pbuf);
 		/*
 		 * Set nonblocking mode to avoid a race where a client
 		 * closes before we call accept(2) and nobody else are in
@@ -174,8 +177,10 @@ close_sockets(void)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
-		(void)close(ls->sock);
+		AZ(close(ls->sock));
 		ls->sock = -1;
+		REPLACE(ls->hname, NULL);
+		REPLACE(ls->pname, NULL);
 	}
 }
 
