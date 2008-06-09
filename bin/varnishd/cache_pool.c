@@ -29,7 +29,6 @@
  * $Id$
  *
  * XXX: automatic thread-pool size adaptation.
- * XXX: unlocked stats variables: consider summing over pools in timer thread.
  */
 
 #include "config.h"
@@ -72,7 +71,8 @@ struct wq {
 	VTAILQ_HEAD(, workreq)	overflow;
 	unsigned		nthr;
 	unsigned		nqueue;
-	uintmax_t		drops;
+	uintmax_t		ndrop;
+	uintmax_t		noverflow;
 };
 
 static struct wq		**wq;
@@ -226,30 +226,33 @@ wrk_thread(void *priv)
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
+	LOCK(&qp->mtx);
+	qp->nthr++;
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 		assert(!isnan(w->used));
 
 		/* Process overflow requests, if any */
-		LOCK(&qp->mtx);
 		w->wrq = VTAILQ_FIRST(&qp->overflow);
 		if (w->wrq != NULL) {
 			VTAILQ_REMOVE(&qp->overflow, w->wrq, list);
 			qp->nqueue--;
-			VSL_stats->n_wrk_queue--;	/* XXX: unlocked */
 		} else {
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
 			AZ(pthread_cond_wait(&w->cond, &qp->mtx));
 		}
-		UNLOCK(&qp->mtx);
 		if (w->wrq == NULL)
 			break;
+		UNLOCK(&qp->mtx);
 		AN(w->wrq);
 		wrq = w->wrq;
 		AN(wrq->func);
 		wrq->func(w, wrq->priv);
 		w->wrq = NULL;
+		LOCK(&qp->mtx);
 	}
+	qp->nthr--;
+	UNLOCK(&qp->mtx);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
@@ -302,15 +305,13 @@ WRK_Queue(struct workreq *wrq)
 	/* If we have too much in the overflow already, refuse */
 
 	if (qp->nqueue > ovfl_max) {
-		qp->drops++;
-		VSL_stats->n_wrk_drop++;	/* XXX: unlocked */
+		qp->ndrop++;
 		UNLOCK(&qp->mtx);
 		return (-1);
 	}
 
 	VTAILQ_INSERT_TAIL(&qp->overflow, wrq, list);
-	VSL_stats->n_wrk_queue++;	/* XXX: unlocked */
-	VSL_stats->n_wrk_overflow++;	/* XXX: unlocked */
+	qp->noverflow++;
 	qp->nqueue++;
 	UNLOCK(&qp->mtx);
 	AZ(pthread_cond_signal(&herder_cond));
@@ -373,11 +374,11 @@ wrk_addpools(const unsigned pools)
 }
 
 /*--------------------------------------------------------------------
- * If a thread is idle or excess, pick it out of the pool...
+ * If a thread is idle or excess, pick it out of the pool.
  */
 
 static void
-wrk_decimate_flock(struct wq *qp, double t_idle)
+wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 {
 	struct worker *w;
 
@@ -390,14 +391,16 @@ wrk_decimate_flock(struct wq *qp, double t_idle)
 		VTAILQ_REMOVE(&qp->idle, w, list);
 	else
 		w = NULL;
+	vs->n_wrk += qp->nthr;
+	vs->n_wrk_queue += qp->nqueue;
+	vs->n_wrk_drop += qp->ndrop;
+	vs->n_wrk_overflow += qp->noverflow;
 	UNLOCK(&qp->mtx);
 
 	/* And give it a kiss on the cheek... */
 	if (w != NULL) {
 		AZ(w->wrq);
 		AZ(pthread_cond_signal(&w->cond));
-		qp->nthr--;
-		VSL_stats->n_wrk--;	/* XXX: unlocked */
 		(void)usleep(params->wthread_purge_delay * 1000);
 	}
 }
@@ -409,6 +412,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle)
  *  Add pools
  *  Scale constants
  *  Get rid of excess threads
+ *  Aggregate stats across pools
  */
 
 static void *
@@ -416,8 +420,12 @@ wrk_herdtimer_thread(void *priv)
 {
 	volatile unsigned u;
 	double t_idle;
+	struct varnish_stats vsm, *vs;
 
 	THR_Name("wrk_herdtimer");
+
+	memset(&vsm, 0, sizeof vsm);
+	vs = &vsm;
 
 	(void)priv;
 	while (1) {
@@ -439,9 +447,19 @@ wrk_herdtimer_thread(void *priv)
 
 		ovfl_max = (nthr_max * params->overflow_max) / 100;
 
+		vs->n_wrk = 0;
+		vs->n_wrk_queue = 0;
+		vs->n_wrk_drop = 0;
+		vs->n_wrk_overflow = 0;
+
 		t_idle = TIM_real() - params->wthread_timeout;
 		for (u = 0; u < nwq; u++)
-			wrk_decimate_flock(wq[u], t_idle);
+			wrk_decimate_flock(wq[u], t_idle, vs);
+
+		VSL_stats->n_wrk= vs->n_wrk;
+		VSL_stats->n_wrk_queue = vs->n_wrk_queue;
+		VSL_stats->n_wrk_drop = vs->n_wrk_drop;
+		VSL_stats->n_wrk_overflow = vs->n_wrk_overflow;
 
 		(void)usleep(params->wthread_purge_delay * 1000);
 	}
@@ -470,9 +488,7 @@ wrk_breed_flock(struct wq *qp)
 			VSL_stats->n_wrk_failed++;
 			(void)usleep(params->wthread_fail_delay * 1000);
 		} else {
-			qp->nthr++;
 			AZ(pthread_detach(tp));
-			VSL_stats->n_wrk++;	/* XXX: unlocked */
 			VSL_stats->n_wrk_create++;
 			(void)usleep(params->wthread_add_delay * 1000);
 		}
