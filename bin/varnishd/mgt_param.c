@@ -299,6 +299,7 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 
 	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
 		VTAILQ_REMOVE(lsh, ls, list);
+		free(ls->name);
 		free(ls->addr);
 		free(ls);
 	}
@@ -359,6 +360,8 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 			AN(ls);
 			ls->sock = -1;
 			ls->addr = ta[j];
+			ls->name = strdup(av[i]);
+			AN(ls->name);
 			VTAILQ_INSERT_TAIL(&lsh, ls, list);
 		}
 		free(ta);

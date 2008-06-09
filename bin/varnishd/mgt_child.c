@@ -138,8 +138,6 @@ open_sockets(void)
 {
 	struct listen_sock *ls, *ls2;
 	int good = 0;
-	char hbuf[TCP_ADDRBUFSIZE];
-	char pbuf[TCP_PORTBUFSIZE];
 
 	VTAILQ_FOREACH_SAFE(ls, &heritage.socks, list, ls2) {
 		if (ls->sock >= 0) {
@@ -150,9 +148,6 @@ open_sockets(void)
 		if (ls->sock < 0) 
 			continue;
 
-		TCP_myname(ls->sock, hbuf, sizeof hbuf, pbuf, sizeof pbuf);
-		REPLACE(ls->hname, hbuf);
-		REPLACE(ls->pname, pbuf);
 		/*
 		 * Set nonblocking mode to avoid a race where a client
 		 * closes before we call accept(2) and nobody else are in
@@ -179,8 +174,6 @@ close_sockets(void)
 			continue;
 		AZ(close(ls->sock));
 		ls->sock = -1;
-		REPLACE(ls->hname, NULL);
-		REPLACE(ls->pname, NULL);
 	}
 }
 
@@ -213,6 +206,7 @@ start_child(void)
 		exit(1);
 	}
 	if (pid == 0) {
+		/* XXX: We should close things like syslog & telnet sockets */
 		if (geteuid() == 0) {
 			XXXAZ(setgid(params->gid));
 			XXXAZ(setuid(params->uid));
@@ -239,6 +233,8 @@ start_child(void)
 	}
 
 	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
+
+	close_sockets();
 
 	AZ(close(child_fds[1]));
 	child_fds[1] = -1;
@@ -292,7 +288,6 @@ stop_child(void)
 	if (child_state != CH_RUNNING)
 		return;
 
-	close_sockets();
 	child_state = CH_STOPPING;
 
 	if (ev_poker != NULL) {
@@ -365,7 +360,6 @@ mgt_sigchld(const struct ev *e, int what)
 	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
 	else if (child_state == CH_DIED) {
-		close_sockets();
 		child_state = CH_STOPPED;
 	} else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
