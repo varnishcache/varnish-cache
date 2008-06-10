@@ -159,13 +159,9 @@ struct http_conn {
 
 struct acct {
 	double			first;
-	uint64_t		sess;
-	uint64_t		req;
-	uint64_t		pipe;
-	uint64_t		pass;
-	uint64_t		fetch;
-	uint64_t		hdrbytes;
-	uint64_t		bodybytes;
+#define ACCT(foo)	uint64_t	foo;
+#include "acct_fields.h"
+#undef ACCT
 };
 
 /*--------------------------------------------------------------------*/
