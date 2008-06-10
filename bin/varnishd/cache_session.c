@@ -213,13 +213,9 @@ static void
 ses_sum_acct(struct acct *sum, const struct acct *inc)
 {
 
-	sum->sess += inc->sess;
-	sum->req += inc->req;
-	sum->pipe += inc->pipe;
-	sum->pass += inc->pass;
-	sum->fetch += inc->fetch;
-	sum->hdrbytes += inc->hdrbytes;
-	sum->bodybytes += inc->bodybytes;
+#define ACCT(foo)	sum->foo += inc->foo;
+#include "acct_fields.h"
+#undef ACCT
 }
 
 void
@@ -243,13 +239,9 @@ SES_Charge(struct sess *sp)
 		    b.fetch, b.hdrbytes, b.bodybytes);
 	}
 	LOCK(&stat_mtx);
-	VSL_stats->s_sess += a->sess;
-	VSL_stats->s_req += a->req;
-	VSL_stats->s_pipe += a->pipe;
-	VSL_stats->s_pass += a->pass;
-	VSL_stats->s_fetch += a->fetch;
-	VSL_stats->s_hdrbytes += a->hdrbytes;
-	VSL_stats->s_bodybytes += a->bodybytes;
+#define ACCT(foo)	VSL_stats->s_##foo += a->foo;
+#include "acct_fields.h"
+#undef ACCT
 	UNLOCK(&stat_mtx);
 	memset(a, 0, sizeof *a);
 }
