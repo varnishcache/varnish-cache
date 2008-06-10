@@ -687,7 +687,7 @@ static const struct parspec parspec[] = {
 		MUST_RELOAD,
 #ifdef __APPLE__
 		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
-#elseif defined(__SOLARIS__)
+#elif defined(__SOLARIS__)
 		"exec cc -shared -fpic -c %o %s"
 #else /* default: GCC on Linux & FreeBSD */
 		"exec cc -fpic -shared -Wl,-x -o %o %s"
