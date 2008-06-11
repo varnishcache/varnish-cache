@@ -232,7 +232,6 @@ cnt_done(struct sess *sp)
 	    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 
 	sp->xid = 0;
-	SES_Charge(sp);
 	sp->t_open = sp->t_end;
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
@@ -246,6 +245,7 @@ cnt_done(struct sess *sp)
 	if (sp->fd >= 0 && sp->doclose != NULL)
 		vca_close_session(sp, sp->doclose);
 	if (sp->fd < 0) {
+		SES_Charge(sp);
 		VSL_stats->sess_closed++;
 		assert(!isnan(sp->wrk->used));
 		sp->wrk = NULL;
@@ -268,6 +268,7 @@ cnt_done(struct sess *sp)
 		return (0);
 	}
 	VSL_stats->sess_herd++;
+	SES_Charge(sp);
 	assert(!isnan(sp->wrk->used));
 	sp->wrk = NULL;
 	vca_return_session(sp);
