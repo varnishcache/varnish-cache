@@ -148,6 +148,9 @@ struct params {
 	/* Default connection_timeout */
 	unsigned		connect_timeout;
 
+	/* How long to linger on sessions */
+	unsigned		session_linger;
+
 	/* CLI buffer size */
 	unsigned		cli_buffer;
 

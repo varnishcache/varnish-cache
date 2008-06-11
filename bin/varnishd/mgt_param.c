@@ -718,6 +718,18 @@ static const struct parspec parspec[] = {
 		"VCL can override this default value for each backend.",
 		0,
 		"400", "ms" },
+	{ "session_linger", tweak_uint,
+		&master.session_linger,0, UINT_MAX,
+		"How long time the workerthread lingers on the session "
+		"to see if a new request appears right away.\n"
+		"If sessions are reused, as much as half of all reuses "
+		"happen within the first 100 msec of the previous request "
+		"completing.\n"
+		"Setting this too high results in worker threads not doing "
+		"anything for their keep, setting it too low just means that "
+		"more sessions take a detour around the acceptor.",
+		EXPERIMENTAL,
+		"0", "ms" },
 	{ "cli_buffer", tweak_uint, &master.cli_buffer, 4096, UINT_MAX,
 		"Size of buffer for CLI input."
 		"\nYou may need to increase this if you have big VCL files "

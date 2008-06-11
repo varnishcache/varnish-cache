@@ -85,6 +85,7 @@ MAC_STAT(s_bodybytes,		uint64_t, 'a', "Total body bytes")
 MAC_STAT(sess_closed,		uint64_t, 'a', "Session Closed")
 MAC_STAT(sess_pipeline,		uint64_t, 'a', "Session Pipeline")
 MAC_STAT(sess_readahead,	uint64_t, 'a', "Session Read Ahead")
+MAC_STAT(sess_linger,		uint64_t, 'a', "Session Linger")
 MAC_STAT(sess_herd,		uint64_t, 'a', "Session herd")
 
 MAC_STAT(shm_records,		uint64_t, 'a', "SHM records")
