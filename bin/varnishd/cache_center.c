@@ -61,6 +61,7 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -198,6 +199,7 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
+	struct pollfd pfd[1];
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -266,6 +268,17 @@ cnt_done(struct sess *sp)
 		VSL_stats->sess_readahead++;
 		sp->step = STP_AGAIN;
 		return (0);
+	}
+	if (params->session_linger > 0) {
+		pfd[0].fd = sp->fd;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		i = poll(pfd, 1, params->session_linger);
+		if (i > 0) {
+			VSL_stats->sess_linger++;
+			sp->step = STP_AGAIN;
+			return (0);
+		}
 	}
 	VSL_stats->sess_herd++;
 	SES_Charge(sp);
