@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -326,6 +327,8 @@ VRT_r_obj_grace(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (isnan(sp->obj->grace))
+		return ((double)params->default_grace);
 	return (sp->obj->grace);
 }
 
@@ -446,6 +449,8 @@ double
 VRT_r_req_grace(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (isnan(sp->grace))
+		return ((double)params->default_grace);
 	return (sp->grace);
 }
 

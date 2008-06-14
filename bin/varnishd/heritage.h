@@ -156,6 +156,9 @@ struct params {
 
 	/* Control diagnostic code */
 	unsigned		diag_bitmap;
+
+	/* Default grace period */
+	unsigned		default_grace;
 };
 
 extern volatile struct params *params;

@@ -56,6 +56,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -65,6 +66,14 @@
 #include "stevedore.h"
 
 static struct hash_slinger      *hash;
+
+static double
+HSH_Grace(double g)
+{
+	if (isnan(g))
+		return (double)(params->default_grace);
+	return (g);
+}
 
 /* Precreate an objhead and object for later use */
 void
@@ -99,6 +108,7 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj->http->magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
+		w->nobj->grace = NAN;
 		VTAILQ_INIT(&w->nobj->store);
 		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
@@ -221,7 +231,7 @@ HSH_Lookup(struct sess *sp)
 			break;
 
 		/* Remember any matching objects inside their grace period */
-		if (o->ttl + o->grace >= sp->t_req)
+		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req)
 			grace_o = o;
 	}
 
@@ -231,7 +241,7 @@ HSH_Lookup(struct sess *sp)
 	 */
 	if (o == NULL && grace_o != NULL &&
 	    grace_o->child != NULL &&
-	    grace_o->ttl + sp->grace >= sp->t_req)
+	    grace_o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 		o = grace_o;
 
 	if (o != NULL) {
