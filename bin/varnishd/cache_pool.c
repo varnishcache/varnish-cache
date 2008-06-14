@@ -82,6 +82,7 @@ struct wq {
 	VTAILQ_HEAD(, workreq)	overflow;
 	unsigned		nthr;
 	unsigned		nqueue;
+	unsigned		lqueue;
 	uintmax_t		ndrop;
 	uintmax_t		noverflow;
 };
@@ -494,8 +495,9 @@ wrk_breed_flock(struct wq *qp)
 	 * If we need more threads, and have space, create
 	 * one more thread.
 	 */
-	if (qp->nqueue > params->wthread_add_threshold ||
-	    qp->nthr < nthr_min) {
+	if (qp->nthr < nthr_min ||	/* Not enough threads yet */
+	    (qp->nqueue > params->wthread_add_threshold && /* more needed */
+	    qp->nqueue > qp->lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
 			VSL_stats->n_wrk_max++;
 		} else if (pthread_create(&tp, NULL, wrk_thread, qp)) {
@@ -509,6 +511,7 @@ wrk_breed_flock(struct wq *qp)
 			(void)usleep(params->wthread_add_delay * 1000);
 		}
 	}
+	qp->lqueue = qp->nqueue;
 }
 
 /*--------------------------------------------------------------------
