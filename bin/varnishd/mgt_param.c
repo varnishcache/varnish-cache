@@ -503,7 +503,7 @@ static const struct parspec parspec[] = {
 		"\n"
 		"Minimum is 1 second.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"120", "seconds" },
+		"300", "seconds" },
 	{ "thread_pool_purge_delay",
 		tweak_timeout, &master.wthread_purge_delay, 100, 0,
 		"Wait this long between purging threads.\n"
@@ -532,7 +532,7 @@ static const struct parspec parspec[] = {
 		"Setting this too short increases the risk of worker "
 		"thread pile-up.\n",
 		EXPERIMENTAL,
-		"10", "milliseconds" },
+		"20", "milliseconds" },
 	{ "thread_pool_fail_delay",
 		tweak_timeout, &master.wthread_fail_delay, 100, UINT_MAX,
 		"Wait at least this long after a failed thread creation "
@@ -581,6 +581,12 @@ static const struct parspec parspec[] = {
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
+	{ "default_grace", tweak_uint, &master.default_grace, 0, UINT_MAX,
+		"Default grace period.  We will deliver an object "
+		"this long after it has expired, provided another thread "
+		"is attempting to get a new copy.",
+		DELAYED_EFFECT,
+		"10" "seconds" },
 	{ "sess_timeout", tweak_timeout, &master.sess_timeout, 0, 0,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "

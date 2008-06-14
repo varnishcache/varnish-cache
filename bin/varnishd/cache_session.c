@@ -304,6 +304,7 @@ SES_New(const struct sockaddr *addr, unsigned len)
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
 	sp->t_end = NAN;
+	sp->grace = NAN;
 
 	assert(len <= sp->sockaddrlen);
 	if (addr != NULL) {
