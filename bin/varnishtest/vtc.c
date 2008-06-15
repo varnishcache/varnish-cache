@@ -76,7 +76,7 @@ void
 parse_string(char *buf, const struct cmds *cmd, void *priv)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
-	char *p;
+	char *p, *q;
 	int nest_brace;
 	int tn;
 	const struct cmds *cp;
@@ -101,6 +101,31 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 			if (*p == '\n') { /* End on NL */
 				break;
 			} else if (isspace(*p)) { /* Inter-token whitespace */
+				p++;
+			} else if (*p == '\\' && p[1] == '\n') {
+				p += 2;
+			} else if (*p == '"') { /* quotes */
+				token_s[tn] = ++p;
+				q = p;
+				for (; *p != '\0'; p++) {
+					if (*p == '"')
+						break;
+
+					if (*p == '\\' && p[1] == 'n') {
+						*q++ = '\n';
+						p++;
+					} else if (*p == '\\' && p[1] == '\\') {
+						*q++ = '\\';
+						p++;
+					} else if (*p == '\\' && p[1] == '"') {
+						*q++ = '"';
+						p++;
+					} else {
+						assert(*p != '\n');
+						*q++ = *p;
+					}
+				}
+				token_e[tn++] = q;
 				p++;
 			} else if (*p == '{') { /* Braces */
 				nest_brace = 0;
