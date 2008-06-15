@@ -62,18 +62,79 @@ struct http {
  * Expect
  */
 
+static char *
+cmd_var_resolve(struct http *hp, char *spec)
+{
+	char **hh, *hdr;
+	int n, l;
+
+	if (!strcmp(spec, "req.request"))
+		return(hp->req[0]);
+	if (!strcmp(spec, "req.url"))
+		return(hp->req[1]);
+	if (!strcmp(spec, "req.proto"))
+		return(hp->req[2]);
+	if (!strcmp(spec, "resp.proto"))
+		return(hp->resp[0]);
+	if (!strcmp(spec, "resp.status"))
+		return(hp->resp[1]);
+	if (!strcmp(spec, "resp.msg"))
+		return(hp->resp[2]);
+	if (!memcmp(spec, "req.http.", 9)) {
+		hh = hp->req;
+		hdr = spec + 9;
+	} else if (!memcmp(spec, "resp.http.", 10)) {
+		hh = hp->resp;
+		hdr = spec + 10;
+	} else
+		return (spec);
+	l = strlen(hdr);
+	for (n = 3; hh[n] != NULL; n++) {
+		if (strncasecmp(hdr, hh[n], l) || hh[n][l] != ':')
+			continue;
+		hdr = hh[n] + l + 1;
+		while (vct_issp(*hdr))
+			hdr++;
+		return (hdr);
+	}
+	return (spec);
+}
+
 static void
 cmd_http_expect(char **av, void *priv)
 {
 	struct http *hp;
+	char *lhs;
+	char *cmp;
+	char *rhs;
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	assert(!strcmp(av[0], "expect"));
 	av++;
 
-	for(; *av != NULL; av++) {
-		fprintf(stderr, "Unknown http expect spec: %s\n", *av);
-		// exit (1);
+	AN(av[0]);
+	AN(av[1]);
+	AN(av[2]);
+	AZ(av[3]);
+	lhs = cmd_var_resolve(hp, av[0]);
+	cmp = av[1];
+	rhs = cmd_var_resolve(hp, av[2]);
+	if (!strcmp(cmp, "==")) {
+		if (strcmp(lhs, rhs)) {
+			fprintf(stderr, 
+			    "---- %-4s EXPECT %s (%s) %s %s (%s) failed\n",
+			    hp->ident, av[0], lhs, av[1], av[2], rhs);
+			exit (1);
+		} else {
+			printf(
+			    "#### %-4s EXPECT %s (%s) %s %s (%s) match\n",
+			    hp->ident, av[0], lhs, av[1], av[2], rhs);
+		}
+	} else {
+		fprintf(stderr, 
+		    "---- %-4s EXPECT %s (%s) %s %s (%s) not implemented\n",
+		    hp->ident, av[0], lhs, av[1], av[2], rhs);
+		exit (1);
 	}
 }
 
