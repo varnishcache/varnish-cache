@@ -244,8 +244,10 @@ exec_file(const char *fn)
 {
 	char *buf;
 
+	printf("#    TEST %s starting\n", fn);
 	buf = read_file(fn);
 	parse_string(buf, cmds, NULL);
+	printf("#    TEST %s completed\n", fn);
 }
 
 /**********************************************************************
