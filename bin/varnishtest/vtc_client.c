@@ -119,7 +119,7 @@ client_start(struct client *c)
 {
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	printf("Starting client %s\n", c->name);
+	printf("##   %-4s Starting client\n", c->name);
 	AZ(pthread_create(&c->tp, NULL, client_thread, c));
 }
 
