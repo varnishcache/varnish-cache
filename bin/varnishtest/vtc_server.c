@@ -165,6 +165,8 @@ server_wait(struct server *s)
 		exit (1);
 	}
 	s->tp = NULL;
+	AZ(close(s->sock));
+	s->sock = -1;
 }
 
 /**********************************************************************
@@ -174,9 +176,20 @@ server_wait(struct server *s)
 void
 cmd_server(char **av, void *priv)
 {
-	struct server *s;
+	struct server *s, *s2;
 
 	(void)priv;
+
+	if (av == NULL) {
+		/* Reset and free */
+		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
+			VTAILQ_REMOVE(&servers, s, list);
+			FREE_OBJ(s);
+			/* XXX: MEMLEAK */
+		}
+		return;
+	}
+
 	assert(!strcmp(av[0], "server"));
 	av++;
 
