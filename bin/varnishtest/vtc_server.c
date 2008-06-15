@@ -128,7 +128,7 @@ server_start(struct server *s)
 	int naddr;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	printf("Starting server %s\n", s->name);
+	printf("##   %-4s Starting server\n", s->name);
 	if (s->sock < 0) {
 		AZ(VSS_parse(s->listen, &s->addr, &s->port));
 		naddr = VSS_resolve(s->addr, s->port, &s->vss_addr);
@@ -142,7 +142,7 @@ server_start(struct server *s)
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
 	}
-	printf("#### Server %s listen on %s (fd %d)\n",
+	printf("###  %-4s listen on %s (fd %d)\n",
 	    s->name, s->listen, s->sock);
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
