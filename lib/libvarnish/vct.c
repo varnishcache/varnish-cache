@@ -32,6 +32,8 @@
 
 #include <libvarnish.h>
 
+/* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
+
 unsigned char vct_typtab[256] = {
 	[0x00]	=	VCT_CTL,
 	[0x01]	=	VCT_CTL,

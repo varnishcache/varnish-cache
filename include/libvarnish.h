@@ -78,6 +78,9 @@ vct_is(unsigned char x, unsigned char y)
 #define vct_islws(x) vct_is(x, VCT_LWS)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
 
+/* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
+#define vct_skipcrlf(p) (p[0] == 0x0d && p[1] == 0x0a ? 2 : 1)
+
 /* from libvarnish/version.c */
 void varnish_version(const char *);
 
