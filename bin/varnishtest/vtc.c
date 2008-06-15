@@ -218,6 +218,21 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 }
 
 /**********************************************************************
+ * Output test description
+ */
+
+static void
+cmd_test(char **av, void *priv)
+{
+	(void)priv;
+	assert(!strcmp(av[0], "test"));
+
+	printf("#    TEST %s\n", av[1]);
+	AZ(av[2]);
+}
+
+
+/**********************************************************************
  * Execute a file
  */
 
@@ -236,6 +251,7 @@ static struct cmds cmds[] = {
 	{ "vcl", 	cmd_vcl },
 	{ "stats", 	cmd_stats },
 	{ "varnish", 	cmd_varnish },
+	{ "test", 	cmd_test },
 	{ NULL, 	NULL }
 };
 
