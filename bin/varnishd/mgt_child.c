@@ -438,7 +438,9 @@ mgt_run(int dflag, const char *T_arg)
 
 	printf("rolling(1)...\n");
 	fprintf(stderr, "rolling(2)...\n");
-	if (!dflag)
+	if (!dflag && !mgt_has_vcl()) 
+		fprintf(stderr, "No VCL loaded yet\n");
+	else if (!dflag)
 		start_child();
 	else
 		fprintf(stderr,
@@ -460,9 +462,14 @@ mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	if (priv != NULL && child_state == CH_RUNNING)
 		stop_child();
-	else if (priv == NULL && child_state == CH_STOPPED)
-		start_child();
-	else {
+	else if (priv == NULL && child_state == CH_STOPPED) {
+		if (mgt_has_vcl())
+			start_child();
+		else {
+			cli_result(cli, CLIS_CANT);
+			cli_out(cli, "No VCL available");
+		}
+	} else {
 		cli_result(cli, CLIS_CANT);
 		cli_out(cli, "Child in state %s", ch_state[child_state]);
 	}

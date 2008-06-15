@@ -494,10 +494,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "Only one of -b or -f can be specified\n");
 		usage();
 	}
-	if (b_arg == NULL && f_arg == NULL) {
-		fprintf(stderr, "One of -b or -f must be specified\n");
-		usage();
-	}
 
 	if (f_arg != NULL) {
 		f_fd = open(f_arg, O_RDONLY);
@@ -533,8 +529,9 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (mgt_vcc_default(b_arg, f_arg, f_fd, C_flag))
-		exit (2);
+	if (b_arg != NULL || f_arg != NULL)
+		if (mgt_vcc_default(b_arg, f_arg, f_fd, C_flag))
+			exit (2);
 
 	if (C_flag)
 		exit (0);
