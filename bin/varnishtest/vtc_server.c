@@ -138,7 +138,8 @@ server_start(struct server *s)
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
 	}
-	printf("\tsocket fd is %d\n", s->sock);
+	printf("#### Server %s listen on %s (fd %d)\n",
+	    s->name, s->listen, s->sock);
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
 
