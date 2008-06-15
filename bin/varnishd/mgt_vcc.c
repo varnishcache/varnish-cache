@@ -460,6 +460,15 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 /*--------------------------------------------------------------------*/
 
 int
+mgt_has_vcl()
+{
+
+	return (!VTAILQ_EMPTY(&vclhead));
+}
+
+/*--------------------------------------------------------------------*/
+
+int
 mgt_push_vcls_and_start(unsigned *status, char **p)
 {
 	struct vclprog *vp;
