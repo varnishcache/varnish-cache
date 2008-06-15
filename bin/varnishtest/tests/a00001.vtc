@@ -1,0 +1,25 @@
+# Quis custodiet ipsos custodes?
+#
+# $Id$
+
+server s1 -listen :9080 {
+	rxreq
+	expect req.request == GET
+	expect req.proto == HTTP/1.1
+	expect req.url == "/"
+	txresp -body "0123456789"
+}
+
+server s1 -start 
+
+client c1 -connect localhost:9080 {
+	txreq 
+	rxresp
+	expect resp.proto == HTTP/1.1
+	expect resp.status == 200
+	expect resp.msg == Ok
+}
+
+client c1 -run
+
+server s1 -wait
