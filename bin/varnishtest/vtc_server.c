@@ -91,7 +91,7 @@ server_thread(void *priv)
 		fd = accept(s->sock, addr, &l);
 		printf("#### Accepted socket %d\n", fd);
 		http_process(s->spec, fd, 0);
-		close(fd);
+		AZ(close(fd));
 	}
 	printf("### Server %s ending\n", s->name);
 
@@ -108,6 +108,7 @@ server_new(char *name)
 	struct server *s;
 
 	ALLOC_OBJ(s, SERVER_MAGIC);
+	AN(s);
 	s->name = name;
 	s->listen = ":9080";
 	s->repeat = 1;
