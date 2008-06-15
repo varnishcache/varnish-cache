@@ -1,0 +1,45 @@
+# $Id$
+
+test "dual shared client HTTP transactions"
+
+server s1 -listen :9080 {
+	rxreq
+	expect req.request == PUT
+	expect req.proto == HTTP/1.0
+	expect req.url == "/foo"
+	txresp -proto HTTP/1.2 -status 201 -msg Foo
+}
+
+server s2 -listen :9081 {
+	rxreq
+	expect req.request == GET
+	expect req.proto == HTTP/1.1
+	expect req.url == "/"
+	txresp 
+}
+
+server s1 -start 
+server s2 -start 
+
+client c1 -connect localhost:9080 {
+	txreq -req PUT -proto HTTP/1.0 -url /foo
+	rxresp
+	expect resp.proto == HTTP/1.2
+	expect resp.status == 201
+	expect resp.msg == Foo
+}
+
+client c1 -run
+
+client c1 -connect localhost:9081 {
+	txreq 
+	rxresp
+	expect resp.proto == HTTP/1.1
+	expect resp.status == 200
+	expect resp.msg == Ok
+}
+
+client c1 -run
+
+server s1 -wait
+server s2 -wait
