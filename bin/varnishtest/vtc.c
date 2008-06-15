@@ -56,28 +56,29 @@ vct_dump(const char *ident, const char *pfx, const char *str)
 	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	if (str == NULL) 
 		vsb_printf(vsb, "#### %-4s %s(null)\n", ident, pfx);
-	for(; *str; str++) {
-		if (nl) {
-			vsb_printf(vsb, "#### %-4s %s| ", ident, pfx);
-			nl = 0;
+	else
+		for(; *str; str++) {
+			if (nl) {
+				vsb_printf(vsb, "#### %-4s %s| ", ident, pfx);
+				nl = 0;
+			}
+			if (*str == '\r')
+				vsb_printf(vsb, "\\r");
+			else if (*str == '\t')
+				vsb_printf(vsb, "\\t");
+			else if (*str == '\n') {
+				vsb_printf(vsb, "\\n\n");
+				nl = 1;
+			} else if (*str < 0x20 || *str > 0x7e)
+				vsb_printf(vsb, "\\x%02x", *str);
+			else
+				vsb_printf(vsb, "%c", *str);
 		}
-		if (*str == '\r')
-			vsb_printf(vsb, "\\r");
-		else if (*str == '\t')
-			vsb_printf(vsb, "\\t");
-		else if (*str == '\n') {
-			vsb_printf(vsb, "\\n\n");
-			nl = 1;
-		} else if (*str < 0x20 || *str > 0x7e)
-			vsb_printf(vsb, "\\x%02x", *str);
-		else
-			vsb_printf(vsb, "%c", *str);
-	}
 	if (!nl)
 		vsb_printf(vsb, "\n");
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
-	fputs(vsb_data(vsb), stdout);
+	(void)fputs(vsb_data(vsb), stdout);
 	vsb_delete(vsb);
 }
 
