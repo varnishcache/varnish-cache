@@ -76,7 +76,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 				p++;
 			} else if (*p == '{') { /* Braces */
 				nest_brace = 0;
-				token_s[tn] = p + 1;
+				token_s[tn] = p;
 				for (; *p != '\0'; p++) {
 					if (*p == '{')
 						nest_brace++;
@@ -86,8 +86,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 					}
 				}
 				assert(*p == '}');
-				token_e[tn++] = p;
-				p++;	/* Swallow closing brace */
+				token_e[tn++] = ++p;
 			} else { /* other tokens */
 				token_s[tn] = p;
 				for (; *p != '\0' && !isspace(*p); p++)
@@ -119,20 +118,21 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
  * Execute a file
  */
 
-static void
-cmd_bogo(char **av, void *priv)
+void
+cmd_dump(char **av, void *priv)
 {
-	printf("cmd_bogo(%p)\n", priv);
+
+	printf("cmd_dump(%p)\n", priv);
 	while (*av)
 		printf("\t<%s>\n", *av++);
 }
 
 static struct cmds cmds[] = {
 	{ "server", 	cmd_server },
-	{ "client", 	cmd_bogo },
-	{ "vcl", 	cmd_bogo },
-	{ "stats", 	cmd_bogo },
-	{ "varnish", 	cmd_bogo },
+	{ "client", 	cmd_client },
+	{ "vcl", 	cmd_vcl },
+	{ "stats", 	cmd_stats },
+	{ "varnish", 	cmd_varnish },
 	{ NULL, 	NULL }
 };
 
