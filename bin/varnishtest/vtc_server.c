@@ -88,6 +88,7 @@ server_thread(void *priv)
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
 		printf("#### Accepted socket %d\n", fd);
+		http_process(s->spec, fd, 0);
 		close(fd);
 	}
 	printf("### Server %s ending\n", s->name);

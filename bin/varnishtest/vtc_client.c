@@ -84,7 +84,7 @@ client_thread(void *priv)
 	assert(fd >= 0);
 	printf("#### Client %s connected to %s fd is %d\n",
 	    c->name, c->connect, fd);
-	sleep (1);
+	http_process(c->spec, fd, 1);
 	close(fd);
 	printf("### Client %s ending\n", c->name);
 
