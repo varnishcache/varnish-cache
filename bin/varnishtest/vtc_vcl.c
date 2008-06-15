@@ -4,7 +4,7 @@
 #include "vtc.h"
 
 void
-cmd_server(char **av, void *priv)
+cmd_vcl(char **av, void *priv)
 {
 
 	cmd_dump(av, priv);
