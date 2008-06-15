@@ -109,7 +109,7 @@ cmd_http_rxresp(char **av, void *priv)
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(hp->client);
-	assert(!strcmp(av[0], "rxresponse"));
+	assert(!strcmp(av[0], "rxresp"));
 	av++;
 
 	for(; *av != NULL; av++) {
@@ -118,6 +118,84 @@ cmd_http_rxresp(char **av, void *priv)
 	}
 	http_rxhdr(hp);
 	hp->resp = hp->rxbuf;
+}
+
+/**********************************************************************
+ * Transmit a response
+ */
+
+static void
+cmd_http_txresp(char **av, void *priv)
+{
+	struct http *hp;
+	struct vsb *vsb;
+	const char *proto = "HTTP/1.1";
+	const char *status = "200";
+	const char *msg = "Ok";
+	const char *body = NULL;
+	int dohdr = 0;
+	const char *nl = "\r\n";
+	int l;
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(hp->client);
+	assert(!strcmp(av[0], "txresp"));
+	av++;
+
+	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+
+	for(; *av != NULL; av++) {
+		if (!strcmp(*av, "-proto")) {
+			AZ(dohdr);
+			proto = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-status")) {
+			AZ(dohdr);
+			status = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-msg")) {
+			AZ(dohdr);
+			msg = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-body")) {
+			body = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-hdr")) {
+			if (dohdr == 0) {
+				vsb_printf(vsb, "%s %s %s%s", 
+				    proto, status, msg, nl);
+				dohdr = 1;
+			}
+			vsb_printf(vsb, "%s%s", av[1], nl);
+			av++;
+			continue;
+		}
+		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
+		exit (1);
+	}
+	if (dohdr == 0) {
+		vsb_printf(vsb, "%s %s %s%s", 
+		    proto, status, msg, nl);
+		dohdr = 1;
+	}
+	vsb_cat(vsb, nl);
+	if (body != NULL) {
+		vsb_cat(vsb, body);
+		vsb_cat(vsb, nl);
+	}
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
+	assert(l == vsb_len(vsb));
+	vsb_delete(vsb);
 }
 
 /**********************************************************************
@@ -217,8 +295,8 @@ cmd_http_txreq(char **av, void *priv)
 static struct cmds http_cmds[] = {
 	{ "txreq",	cmd_http_txreq },
 	{ "rxreq",	cmd_http_rxreq },
-	{ "txresponse",	cmd_dump },
-	{ "rxresponse",	cmd_http_rxresp },
+	{ "txresp",	cmd_http_txresp },
+	{ "rxresp",	cmd_http_rxresp },
 	{ "expect",	cmd_dump },
 	{ NULL,		NULL }
 };
