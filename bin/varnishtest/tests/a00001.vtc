@@ -1,13 +1,13 @@
-# Quis custodiet ipsos custodes?
-#
 # $Id$
+
+test "basic default HTTP transactions with expect"
 
 server s1 -listen :9080 {
 	rxreq
 	expect req.request == GET
 	expect req.proto == HTTP/1.1
 	expect req.url == "/"
-	txresp -body "0123456789"
+	txresp 
 }
 
 server s1 -start 
