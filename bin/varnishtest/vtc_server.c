@@ -31,6 +31,9 @@
 #include <string.h>
 #include <pthread.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include "vtc.h"
 
 #include "vqueue.h"
@@ -68,11 +71,25 @@ static void *
 server_thread(void *priv)
 {
 	struct server *s;
+	int i, fd;
+	struct sockaddr_storage addr_s;
+	struct sockaddr *addr;
+	socklen_t l;
+
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
+	assert(s->sock >= 0);
 
 	printf("### Server %s started\n", s->name);
-	sleep(3);
+	for (i = 0; i < s->repeat; i++) {
+		if (s->repeat > 1)
+			printf("#### Server %s iteration %d\n", s->name, i);
+		addr = (void*)&addr_s;
+		l = sizeof addr_s;
+		fd = accept(s->sock, addr, &l);
+		printf("#### Accepted socket %d\n", fd);
+		close(fd);
+	}
 	printf("### Server %s ending\n", s->name);
 
 	return (NULL);
@@ -90,6 +107,7 @@ server_new(char *name)
 	ALLOC_OBJ(s, SERVER_MAGIC);
 	s->name = name;
 	s->listen = ":9080";
+	s->repeat = 1;
 	s->depth = 1;
 	s->sock = -1;
 	VTAILQ_INSERT_TAIL(&servers, s, list);
