@@ -1,0 +1,19 @@
+# Quis custodiet ipsos custodes?
+#
+# $Id$
+
+server s1 -listen :9080 {
+	rxreq
+	txresp 
+}
+
+server s1 -start 
+
+client c1 -connect localhost:9080 {
+	txreq 
+	rxresp
+}
+
+client c1 -run
+
+server s1 -wait
