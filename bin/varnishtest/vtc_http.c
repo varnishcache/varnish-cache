@@ -32,13 +32,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "libvarnish.h"
+#include "vct.h"
 #include "miniobj.h"
 #include "vsb.h"
 
 #include "vtc.h"
 
+#define MAX_HDR		50
 
 struct http {
 	unsigned		magic;
@@ -46,13 +49,112 @@ struct http {
 	int			fd;
 	int			client;
 	int			timeout;
+	const char		*ident;
 
 	int			nrxbuf;
 	char			*rxbuf;
 
-	char			*req;
-	char			*resp;
+	char			*req[MAX_HDR];
+	char			*resp[MAX_HDR];
 };
+
+/**********************************************************************
+ * Expect
+ */
+
+static void
+cmd_http_expect(char **av, void *priv)
+{
+	struct http *hp;
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	assert(!strcmp(av[0], "expect"));
+	av++;
+
+	for(; *av != NULL; av++) {
+		fprintf(stderr, "Unknown http expect spec: %s\n", *av);
+		// exit (1);
+	}
+}
+
+/**********************************************************************
+ * Split a HTTP protocol header
+ */
+
+static void
+http_splitheader(struct http *hp, int req)
+{
+	char *p, *q, **hh;
+	int n;
+	char buf[20];
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	if (req) {
+		memset(hp->req, 0, sizeof hp->req);
+		hh = hp->req;
+	} else {
+		memset(hp->resp, 0, sizeof hp->resp);
+		hh = hp->resp;
+	}
+
+	n = 0;
+	p = hp->rxbuf;
+
+	/* REQ/PROTO */
+	while (vct_islws(*p))
+		p++;
+	hh[n++] = p;
+	while (!vct_islws(*p))
+		p++;
+	assert(!vct_iscrlf(*p));
+	*p++ = '\0';
+
+	/* URL/STATUS */
+	while (vct_issp(*p))		/* XXX: H space only */
+		p++;
+	assert(!vct_iscrlf(*p));
+	hh[n++] = p;
+	while (!vct_islws(*p))
+		p++;
+	if (vct_iscrlf(*p)) {
+		hh[n++] = NULL;
+		q = p;
+		p += vct_skipcrlf(p);
+		*q = '\0';
+	} else {
+		*p++ = '\0';
+		/* PROTO/MSG */
+		while (vct_issp(*p))		/* XXX: H space only */
+			p++;
+		hh[n++] = p;
+		while (!vct_iscrlf(*p))
+			p++;
+		q = p;
+		p += vct_skipcrlf(p);
+		*q = '\0';
+	}
+	assert(n == 3);
+
+	while (*p != '\0') {
+		assert(n < MAX_HDR);
+		if (vct_iscrlf(*p))
+			break;
+		hh[n++] = p++;
+		while (*p != '\0' && !vct_iscrlf(*p))
+			p++;
+		q = p;
+		p += vct_skipcrlf(p);
+		*q = '\0';
+	}
+	p += vct_skipcrlf(p);
+	assert(*p == '\0');
+
+	for (n = 0; n < 3 || hh[n] != NULL; n++) {
+		sprintf(buf, "http[%2d] ", n);
+		vct_dump(hp->ident, buf, hh[n]);
+	}
+}
+
 
 /**********************************************************************
  * Receive a HTTP protocol header
@@ -94,7 +196,7 @@ http_rxhdr(struct http *hp)
 		if (i == 2)
 			break;
 	}
-printf("<<<%s>>>\n", hp->rxbuf);
+	vct_dump(hp->ident, NULL, hp->rxbuf);
 }
 
 
@@ -116,8 +218,9 @@ cmd_http_rxresp(char **av, void *priv)
 		fprintf(stderr, "Unknown http rxresp spec: %s\n", *av);
 		exit (1);
 	}
+	printf("###  %-4s rxresp\n", hp->ident);
 	http_rxhdr(hp);
-	hp->resp = hp->rxbuf;
+	http_splitheader(hp, 0);
 }
 
 /**********************************************************************
@@ -193,6 +296,7 @@ cmd_http_txresp(char **av, void *priv)
 	}
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
+	vct_dump(hp->ident, NULL, vsb_data(vsb));
 	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
 	assert(l == vsb_len(vsb));
 	vsb_delete(vsb);
@@ -216,8 +320,9 @@ cmd_http_rxreq(char **av, void *priv)
 		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
 		exit (1);
 	}
+	printf("###  %-4s rxreq\n", hp->ident);
 	http_rxhdr(hp);
-	hp->req = hp->rxbuf;
+	http_splitheader(hp, 1);
 }
 
 /**********************************************************************
@@ -283,6 +388,7 @@ cmd_http_txreq(char **av, void *priv)
 	vsb_cat(vsb, nl);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
+	vct_dump(hp->ident, NULL, vsb_data(vsb));
 	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
 	assert(l == vsb_len(vsb));
 	vsb_delete(vsb);
@@ -297,12 +403,12 @@ static struct cmds http_cmds[] = {
 	{ "rxreq",	cmd_http_rxreq },
 	{ "txresp",	cmd_http_txresp },
 	{ "rxresp",	cmd_http_rxresp },
-	{ "expect",	cmd_dump },
+	{ "expect",	cmd_http_expect },
 	{ NULL,		NULL }
 };
 
 void
-http_process(const char *spec, int sock, int client)
+http_process(const char *ident, const char *spec, int sock, int client)
 {
 	struct http *hp;
 	char *s, *q;
@@ -310,6 +416,7 @@ http_process(const char *spec, int sock, int client)
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
+	hp->ident = ident;
 	hp->client = client;
 	hp->timeout = 1000;
 	hp->nrxbuf = 8192;

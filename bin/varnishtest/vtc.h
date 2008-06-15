@@ -42,4 +42,6 @@ void cmd_vcl(char **av, void *priv);
 void cmd_stats(char **av, void *priv);
 void cmd_varnish(char **av, void *priv);
 
-void http_process(const char *spec, int sock, int client);
+void http_process(const char *ident, const char *spec, int sock, int client);
+
+void vct_dump(const char *ident, const char *pfx, const char *str);

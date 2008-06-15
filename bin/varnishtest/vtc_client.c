@@ -76,19 +76,19 @@ client_thread(void *priv)
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	assert(c->naddr > 0);
 
-	printf("### Client %s started\n", c->name);
-	printf("#### Client %s connect to %s\n", c->name, c->connect);
+	printf("##   %-4s started\n", c->name);
+	printf("###  %-4s connect to %s\n", c->name, c->connect);
 	for (i = 0; i < c->naddr; i++) {
 		fd = VSS_connect(c->vss_addr[i]);
 		if (fd >= 0)
 			break;
 	}
 	assert(fd >= 0);
-	printf("#### Client %s connected to %s fd is %d\n",
+	printf("###  %-4s connected to %s fd is %d\n",
 	    c->name, c->connect, fd);
-	http_process(c->spec, fd, 1);
+	http_process(c->name, c->spec, fd, 1);
 	AZ(close(fd));
-	printf("### Client %s ending\n", c->name);
+	printf("##   %-4s ending\n", c->name);
 
 	return (NULL);
 }
@@ -133,7 +133,7 @@ client_wait(struct client *c)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	printf("Waiting for client %s\n", c->name);
+	printf("##   %-4s Waiting for client\n", c->name);
 	AZ(pthread_join(c->tp, &res));
 	if (res != NULL) {
 		fprintf(stderr, "Server %s returned \"%s\"\n",
