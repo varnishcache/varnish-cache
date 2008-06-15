@@ -24,9 +24,6 @@
  * SUCH DAMAGE.
  */
 
-
-
-
 typedef void cmd_f(char **av, void *priv);
 
 struct cmds {

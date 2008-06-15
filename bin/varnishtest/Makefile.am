@@ -14,4 +14,5 @@ varnishtest_SOURCES = \
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.la \
-		$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la 
+		$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
+		${PTHREAD_LIBS}
