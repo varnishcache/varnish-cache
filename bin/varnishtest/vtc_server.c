@@ -170,6 +170,11 @@ cmd_server(char **av, void *priv)
 			av++;
 			continue;
 		}
+		if (!strcmp(*av, "-listen")) {
+			s->listen = av[1];
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-start")) {
 			server_start(s);
 			continue;
