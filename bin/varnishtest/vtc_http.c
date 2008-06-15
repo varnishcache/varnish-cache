@@ -24,20 +24,53 @@
  * SUCH DAMAGE.
  */
 
-typedef void cmd_f(char **av, void *priv);
 
-struct cmds {
-	const char	*name;
-	cmd_f		*cmd;
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "libvarnish.h"
+#include "miniobj.h"
+
+#include "vtc.h"
+
+
+struct http {
+	unsigned		magic;
+#define HTTP_MAGIC		0x2f02169c
+	int			fd;
+	int			client;
 };
 
-void parse_string(char *buf, const struct cmds *cmd, void *priv);
 
-void cmd_dump(char **av, void *priv);
-void cmd_server(char **av, void *priv);
-void cmd_client(char **av, void *priv);
-void cmd_vcl(char **av, void *priv);
-void cmd_stats(char **av, void *priv);
-void cmd_varnish(char **av, void *priv);
+static struct cmds http_cmds[] = {
+	{ "txreq",	cmd_dump },
+	{ "rxreq",	cmd_dump },
+	{ "txresponse",	cmd_dump },
+	{ "rxresponse",	cmd_dump },
+	{ "expect",	cmd_dump },
+	{ NULL,		NULL }
+};
 
-void http_process(const char *spec, int sock, int client);
+void
+http_process(const char *spec, int sock, int client)
+{
+	struct http *hp;
+	char *s, *q;
+
+	ALLOC_OBJ(hp, HTTP_MAGIC);
+	hp->fd = sock;
+	hp->client = client;
+	(void)spec;
+	(void)sock;
+	(void)client;
+
+	s = strdup(spec + 1);
+	q = strchr(s, '\0');
+	assert(q > s);
+	q--;
+	assert(*q == '}');
+	*q = '\0';
+	AN(s);
+	parse_string(s, http_cmds, hp);
+}

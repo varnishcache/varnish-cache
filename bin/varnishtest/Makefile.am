@@ -7,6 +7,7 @@ bin_PROGRAMS =	varnishtest
 varnishtest_SOURCES = \
 		vtc.c \
 		vtc_client.c \
+		vtc_http.c \
 		vtc_server.c \
 		vtc_stats.c \
 		vtc_varnish.c \
