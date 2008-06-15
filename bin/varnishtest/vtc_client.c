@@ -71,7 +71,7 @@ client_thread(void *priv)
 {
 	struct client *c;
 	int i;
-	int fd;
+	int fd = -1;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	assert(c->naddr > 0);
@@ -87,7 +87,7 @@ client_thread(void *priv)
 	printf("#### Client %s connected to %s fd is %d\n",
 	    c->name, c->connect, fd);
 	http_process(c->spec, fd, 1);
-	close(fd);
+	AZ(close(fd));
 	printf("### Client %s ending\n", c->name);
 
 	return (NULL);
@@ -103,6 +103,7 @@ client_new(char *name)
 	struct client *c;
 
 	ALLOC_OBJ(c, CLIENT_MAGIC);
+	AN(c);
 	c->name = name;
 	c->connect = ":8080";
 	VTAILQ_INSERT_TAIL(&clients, c, list);

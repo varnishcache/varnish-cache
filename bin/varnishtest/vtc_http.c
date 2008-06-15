@@ -308,6 +308,7 @@ http_process(const char *spec, int sock, int client)
 	char *s, *q;
 
 	ALLOC_OBJ(hp, HTTP_MAGIC);
+	AN(hp);
 	hp->fd = sock;
 	hp->client = client;
 	hp->timeout = 1000;
@@ -321,4 +322,5 @@ http_process(const char *spec, int sock, int client)
 	*q = '\0';
 	AN(s);
 	parse_string(s, http_cmds, hp);
+	free(hp);
 }

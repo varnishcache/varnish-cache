@@ -30,10 +30,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <err.h>
+
+#include "libvarnish.h"
 
 #include "vtc.h"
 
@@ -61,7 +62,7 @@ read_file(const char *fn)
 	if (s <= 0) 
 		err(1, "Cannot read %s", fn);
 	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
-	close (fd);
+	AZ(close (fd));
 	buf[s] = '\0';
 	buf = realloc(buf, s + 1);
 	assert(buf != NULL);
@@ -100,11 +101,16 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 			assert(tn < MAX_TOKENS);
 			if (*p == '\n') { /* End on NL */
 				break;
-			} else if (isspace(*p)) { /* Inter-token whitespace */
+			}
+			if (isspace(*p)) { /* Inter-token whitespace */
 				p++;
-			} else if (*p == '\\' && p[1] == '\n') {
+				continue;
+			}
+			if (*p == '\\' && p[1] == '\n') { /* line-cont */
 				p += 2;
-			} else if (*p == '"') { /* quotes */
+				continue;
+			}
+			if (*p == '"') { /* quotes */
 				token_s[tn] = ++p;
 				q = p;
 				for (; *p != '\0'; p++) {
@@ -149,8 +155,10 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 		}
 		assert(tn < MAX_TOKENS);
 		token_s[tn] = NULL;
-		for (tn = 0; token_s[tn] != NULL; tn++)
-			*token_e[tn] = '\0';
+		for (tn = 0; token_s[tn] != NULL; tn++) {
+			AN(token_e[tn]);	/*lint !e771 */
+			*token_e[tn] = '\0';	/*lint !e771 */
+		}
 
 		for (cp = cmd; cp->name != NULL; cp++)
 			if (!strcmp(token_s[0], cp->name))
