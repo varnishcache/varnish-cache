@@ -1,0 +1,23 @@
+# $Id$
+
+Test-scripts for varnishtest
+============================
+
+Naming scheme
+-------------
+
+	The intent is to be able to run all script sin lexicographic
+	order and get a sensible failure mode.
+
+	This requires more basic tests to be earlier and more complex
+	tests to be later in the test sequence, we do this with the
+	prefix/id letter:
+
+		[id]%05d.vtc
+
+	id ~ [a] --> varnishtester(1) tests
+	id ~ [b] --> Basic functionality tests
+	id ~ [c] --> Complex functionality tests
+	id ~ [e] --> ESI tests
+	id ~ [r] --> Regression tests.
+	id ~ [t] --> Ticket regression tests, number same as ticket.
