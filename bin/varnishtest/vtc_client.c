@@ -185,6 +185,14 @@ cmd_client(char **av, void *priv)
 			assert(c->naddr > 0);
 			continue;
 		}
+		if (!strcmp(*av, "-start")) {
+			client_start(c);
+			continue;
+		}
+		if (!strcmp(*av, "-wait")) {
+			client_wait(c);
+			continue;
+		}
 		if (!strcmp(*av, "-run")) {
 			client_run(c);
 			continue;
