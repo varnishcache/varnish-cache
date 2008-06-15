@@ -218,13 +218,29 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 }
 
 /**********************************************************************
+ * Reset commands (between tests)
+ */
+
+static void
+reset_cmds(const struct cmds *cmd)
+{
+
+	for (; cmd->name != NULL; cmd++)
+		cmd->cmd(NULL, NULL);
+}
+
+/**********************************************************************
  * Output test description
  */
 
 static void
 cmd_test(char **av, void *priv)
 {
+
 	(void)priv;
+
+	if (av == NULL)
+		return;
 	assert(!strcmp(av[0], "test"));
 
 	printf("#    TEST %s\n", av[1]);
@@ -240,6 +256,8 @@ void
 cmd_dump(char **av, void *priv)
 {
 
+	if (av == NULL)
+		return;
 	printf("cmd_dump(%p)\n", priv);
 	while (*av)
 		printf("\t<%s>\n", *av++);
@@ -264,6 +282,7 @@ exec_file(const char *fn)
 	buf = read_file(fn);
 	parse_string(buf, cmds, NULL);
 	printf("#    TEST %s completed\n", fn);
+	reset_cmds(cmds);
 }
 
 /**********************************************************************

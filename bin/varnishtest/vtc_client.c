@@ -163,9 +163,20 @@ client_run(struct client *c)
 void
 cmd_client(char **av, void *priv)
 {
-	struct client *c;
+	struct client *c, *c2;
 
 	(void)priv;
+
+	if (av == NULL) {
+		/* Reset and free */
+		VTAILQ_FOREACH_SAFE(c, &clients, list, c2) {
+			VTAILQ_REMOVE(&clients, c, list);
+			FREE_OBJ(c);
+			/* XXX: MEMLEAK */
+		}
+		return;
+	}
+
 	assert(!strcmp(av[0], "client"));
 	av++;
 
