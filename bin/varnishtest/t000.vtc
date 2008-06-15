@@ -1,7 +1,7 @@
-# Test that we get anything through at all
+# Quis custodiet ipsos custodes?
 #
 
-server s1 -repeat 3 {
+server s1 -listen :9080 {
 	rxreq
 	expect url == "/"
 	txresponse -body "0123456789"
@@ -9,67 +9,13 @@ server s1 -repeat 3 {
 
 server s1 -start 
 
-client c1 {
+client c1 -connect localhost:9080 {
 	txreq -url "/"
 	rxresponse
 	expect status == 200
 	expect length == 10
 }
 
-
-#######################################################################
-# Test trivial pipe mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-		pipe;
-	}
-}
-
-client c1 -run
-
-#######################################################################
-# Test trivial pass mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-		pass;
-	}
-}
-
-client c1 -run
-
-#######################################################################
-# Test trivial cache mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-	}
-}
-
 client c1 -run
 
 server s1 -wait
-
-#######################################################################
-# And see that it stuck in cache
-
-client c1 -run
-
-varnish stop
-
-stats {
-	expect client_conn == 4
-	expect client_req == 4
-	expect cache_hit == 1
-	expect cache_miss == 1
-	expect s_pipe == 1
-	expect s_pass == 1
-	expect s_fetch == 2
-}
