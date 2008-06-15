@@ -1,5 +1,6 @@
 # Test that we get anything through at all
 #
+# $Id$
 
 server s1 -repeat 3 {
 	rxreq
