@@ -30,9 +30,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "libvarnish.h"
 #include "miniobj.h"
+#include "vsb.h"
 
 #include "vtc.h"
 
@@ -44,9 +46,80 @@ struct http {
 	int			client;
 };
 
+/**********************************************************************
+ * Transmit a request
+ */
+
+static void
+cmd_http_txreq(char **av, void *priv)
+{
+	struct http *hp;
+	struct vsb *vsb;
+	const char *req = "GET";
+	const char *url = "/";
+	const char *proto = "HTTP/1.1";
+	int dohdr = 0;
+	const char *nl = "\r\n";
+	int l;
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(hp->client);
+	assert(!strcmp(av[0], "txreq"));
+	av++;
+
+	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+
+	for(; *av != NULL; av++) {
+		if (!strcmp(*av, "-url")) {
+			AZ(dohdr);
+			url = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-proto")) {
+			AZ(dohdr);
+			proto = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-req")) {
+			AZ(dohdr);
+			req = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-hdr")) {
+			if (dohdr == 0) {
+				vsb_printf(vsb, "%s %s %s%s", 
+				    req, url, proto, nl);
+				dohdr = 1;
+			}
+			vsb_printf(vsb, "%s%s", av[1], nl);
+			av++;
+			continue;
+		}
+		fprintf(stderr, "Unknown http spec: %s\n", *av);
+		exit (1);
+	}
+	if (dohdr == 0) {
+		vsb_printf(vsb, "%s %s %s%s", 
+		    req, url, proto, nl);
+		dohdr = 1;
+	}
+	vsb_cat(vsb, nl);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
+	assert(l == vsb_len(vsb));
+	vsb_delete(vsb);
+}
+
+/**********************************************************************
+ * Execute HTTP specifications
+ */
 
 static struct cmds http_cmds[] = {
-	{ "txreq",	cmd_dump },
+	{ "txreq",	cmd_http_txreq },
 	{ "rxreq",	cmd_dump },
 	{ "txresponse",	cmd_dump },
 	{ "rxresponse",	cmd_dump },
@@ -63,9 +136,6 @@ http_process(const char *spec, int sock, int client)
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	hp->fd = sock;
 	hp->client = client;
-	(void)spec;
-	(void)sock;
-	(void)client;
 
 	s = strdup(spec + 1);
 	q = strchr(s, '\0');

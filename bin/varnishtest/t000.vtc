@@ -11,7 +11,7 @@ server s1 -listen :9080 -repeat 2 {
 server s1 -start 
 
 client c1 -connect localhost:9080 {
-	txreq -url "/"
+	txreq 
 	rxresponse
 	expect resp.status == 200
 	expect resp.length == 10
