@@ -82,18 +82,18 @@ server_thread(void *priv)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
 
-	printf("### Server %s started\n", s->name);
+	printf("##   %-4s started\n", s->name);
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
-			printf("#### Server %s iteration %d\n", s->name, i);
+			printf("###  %-4s iteration %d\n", s->name, i);
 		addr = (void*)&addr_s;
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
-		printf("#### Accepted socket %d\n", fd);
-		http_process(s->spec, fd, 0);
+		printf("#### %-4s Accepted socket %d\n", s->name, fd);
+		http_process(s->name, s->spec, fd, 0);
 		AZ(close(fd));
 	}
-	printf("### Server %s ending\n", s->name);
+	printf("##   %-4s ending\n", s->name);
 
 	return (NULL);
 }
@@ -157,7 +157,7 @@ server_wait(struct server *s)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	printf("Waiting for server %s\n", s->name);
+	printf("##   %-4s Waiting for server\n", s->name);
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL) {
 		fprintf(stderr, "Server %s returned \"%s\"\n",

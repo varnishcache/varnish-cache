@@ -5,7 +5,7 @@
 server s1 -listen :9080 -repeat 2 {
 	rxreq
 	expect req.url == "/"
-	txresp -body "0123456789"
+	txresp -hdr "Foobar: barf" -body "0123456789"
 }
 
 server s1 -start 
