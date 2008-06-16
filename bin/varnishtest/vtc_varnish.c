@@ -43,6 +43,8 @@
 #include "vqueue.h"
 #include "miniobj.h"
 #include "libvarnish.h"
+#include "cli.h"
+#include "cli_common.h"
 #include "vss.h"
 #include "vsb.h"
 
@@ -74,6 +76,33 @@ static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
 
 /**********************************************************************
+ * Ask a question over CLI
+ */
+
+static unsigned
+varnish_ask_cli(struct varnish *v, const char *cmd, char **repl)
+{
+	int i;
+	unsigned retval;
+	char *r;
+
+	vct_dump(v->name, "CLI TX", cmd);
+	i = write(v->cli_fd, cmd, strlen(cmd));
+	assert(i == strlen(cmd));
+	i = write(v->cli_fd, "\n", 1);
+	assert(i == 1);
+	i = cli_readres(v->cli_fd, &retval, &r, 1000);
+	assert(i == 0);
+	printf("###  %-4s CLI %u <%s>\n", v->name, retval, cmd);
+	vct_dump(v->name, "CLI RX", r);
+	if (repl != NULL)
+		*repl = r;
+	else
+		free(r);
+	return (retval);
+}
+
+/**********************************************************************
  * Allocate and initialize a varnish
  */
 
@@ -92,7 +121,7 @@ varnish_new(char *name)
 	v->name = name;
 	v->args = "";
 	v->telnet = ":9001";
-	v->accept = ":9002";
+	v->accept = ":9081";
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 	return (v);
 }
@@ -132,7 +161,7 @@ varnish_launch(struct varnish *v)
 	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
-	vsb_printf(vsb, "./varnishd -d -d -n %s", v->name);
+	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->name);
 	vsb_printf(vsb, " -a %s -T %s", v->accept, v->telnet);
 	vsb_printf(vsb, " %s", v->args);
 	vsb_finish(vsb);
@@ -144,10 +173,12 @@ varnish_launch(struct varnish *v)
 	assert(v->pid >= 0);
 	if (v->pid == 0) {
 		assert(dup2(v->fds[0], 0) == 0);
-		AZ(close(v->fds[1]));
-		AZ(close(v->fds[2]));
 		assert(dup2(v->fds[3], 1) == 1);
 		assert(dup2(1, 2) == 2);
+		AZ(close(v->fds[0]));
+		AZ(close(v->fds[1]));
+		AZ(close(v->fds[2]));
+		AZ(close(v->fds[3]));
 		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
 		exit(1);
 	}
@@ -182,6 +213,24 @@ varnish_start(struct varnish *v)
 {
 
 	varnish_launch(v);
+	varnish_ask_cli(v, "start", NULL);
+}
+
+/**********************************************************************
+ * Stop a Varnish
+ */
+
+static void
+varnish_stop(struct varnish *v)
+{
+	void *p;
+
+	varnish_ask_cli(v, "stop", NULL);
+	AZ(kill(v->pid, SIGKILL));
+	AZ(pthread_cancel(v->tp));
+	AZ(pthread_join(v->tp, &p));
+	close(v->fds[0]);
+	close(v->fds[1]);
 }
 
 /**********************************************************************
@@ -237,6 +286,10 @@ cmd_varnish(char **av, void *priv)
 		}
 		if (!strcmp(*av, "-start")) {
 			varnish_start(v);
+			continue;
+		}
+		if (!strcmp(*av, "-stop")) {
+			varnish_stop(v);
 			continue;
 		}
 		fprintf(stderr, "Unknown client argument: %s\n", *av);
