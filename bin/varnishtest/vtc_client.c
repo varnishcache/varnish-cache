@@ -51,10 +51,6 @@ struct client {
 	char			*spec;
 	
 	const char		*connect;
-	int			naddr;
-	struct vss_addr		**vss_addr;
-	char			*addr;
-	char			*port;
 
 	pthread_t		tp;
 };
@@ -70,19 +66,14 @@ static void *
 client_thread(void *priv)
 {
 	struct client *c;
-	int i;
 	int fd = -1;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
-	assert(c->naddr > 0);
+	AN(c->connect);
 
 	printf("##   %-4s started\n", c->name);
 	printf("###  %-4s connect to %s\n", c->name, c->connect);
-	for (i = 0; i < c->naddr; i++) {
-		fd = VSS_connect(c->vss_addr[i]);
-		if (fd >= 0)
-			break;
-	}
+	fd = VSS_open(c->connect);
 	assert(fd >= 0);
 	printf("###  %-4s connected to %s fd is %d\n",
 	    c->name, c->connect, fd);
@@ -196,9 +187,6 @@ cmd_client(char **av, void *priv)
 		if (!strcmp(*av, "-connect")) {
 			c->connect = av[1];
 			av++;
-			AZ(VSS_parse(c->connect, &c->addr, &c->port));
-			c->naddr = VSS_resolve(c->addr, c->port, &c->vss_addr);
-			assert(c->naddr > 0);
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {
