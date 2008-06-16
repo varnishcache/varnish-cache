@@ -29,11 +29,217 @@
 
 #include <stdio.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <pthread.h>
+#include <signal.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+
+#include "vqueue.h"
+#include "miniobj.h"
+#include "libvarnish.h"
+#include "vss.h"
+#include "vsb.h"
+
 #include "vtc.h"
+
+struct varnish {
+	unsigned		magic;
+#define VARNISH_MAGIC		0x208cd8e3
+	char			*name;
+	VTAILQ_ENTRY(varnish)	list;
+
+	const char		*args;
+	int			fds[4];
+	pid_t			pid;
+	const char		*telnet;
+	const char		*accept;
+
+	pthread_t		tp;
+
+	char			*addr;
+	char			*port;
+	int			naddr;
+	struct vss_addr		**vss_addr;
+
+	int			cli_fd;
+};
+
+static VTAILQ_HEAD(, varnish)	varnishes =
+    VTAILQ_HEAD_INITIALIZER(varnishes);
+
+/**********************************************************************
+ * Allocate and initialize a varnish
+ */
+
+static struct varnish *
+varnish_new(char *name)
+{
+	struct varnish *v;
+
+	if (*name != 'v') {
+		fprintf(stderr,
+		    "---- %-4s Varnish name must start with 'v'\n", name);
+		exit (1);
+	}
+	ALLOC_OBJ(v, VARNISH_MAGIC);
+	AN(v);
+	v->name = name;
+	v->args = "";
+	v->telnet = ":9001";
+	v->accept = ":9002";
+	VTAILQ_INSERT_TAIL(&varnishes, v, list);
+	return (v);
+}
+
+/**********************************************************************
+ * Varnish listener
+ */
+
+static void *
+varnish_thread(void *priv)
+{
+	struct varnish *v;
+	char buf[BUFSIZ];
+	int i;
+
+	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
+	while (1) {
+		i = read(v->fds[0], buf, sizeof buf - 1);
+		if (i <= 0)
+			break;
+		buf[i] = '\0';
+		vct_dump(v->name, "debug", buf);
+	}
+	return (NULL);
+}
+
+/**********************************************************************
+ * Launch a Varnish
+ */
+
+static void
+varnish_launch(struct varnish *v)
+{
+	struct vsb *vsb;
+	int i;
+
+	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	AN(vsb);
+	vsb_printf(vsb, "cd ../varnishd &&");
+	vsb_printf(vsb, "./varnishd -d -d -n %s", v->name);
+	vsb_printf(vsb, " -a %s -T %s", v->accept, v->telnet);
+	vsb_printf(vsb, " %s", v->args);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	printf("###  %-4s CMD: %s\n", v->name, vsb_data(vsb));
+	AZ(pipe(&v->fds[0]));
+	AZ(pipe(&v->fds[2]));
+	v->pid = fork();
+	assert(v->pid >= 0);
+	if (v->pid == 0) {
+		assert(dup2(v->fds[0], 0) == 0);
+		AZ(close(v->fds[1]));
+		AZ(close(v->fds[2]));
+		assert(dup2(v->fds[3], 1) == 1);
+		assert(dup2(1, 2) == 2);
+		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
+		exit(1);
+	}
+	AZ(close(v->fds[0]));
+	AZ(close(v->fds[3]));
+	v->fds[0] = v->fds[2];
+	v->fds[2] = v->fds[3] = -1;
+	vsb_delete(vsb);
+	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
+
+	printf("###  %-4s opening CLI connection\n", v->name);
+	for (i = 0; i < 10; i++) {
+		usleep(200000);
+		v->cli_fd = VSS_open(v->telnet);
+		if (v->cli_fd >= 0)
+			break;
+	}
+	if (v->cli_fd < 0) {
+		fprintf(stderr, "---- %-4s FAIL no CLI connection\n", v->name);
+		kill(v->pid, SIGKILL);
+		exit (1);
+	}
+	printf("###  %-4s CLI connection fd = %d\n", v->name, v->cli_fd);
+}
+
+/**********************************************************************
+ * Start a Varnish
+ */
+
+static void
+varnish_start(struct varnish *v)
+{
+
+	varnish_launch(v);
+}
+
+/**********************************************************************
+ * Varnish server cmd dispatch
+ */
 
 void
 cmd_varnish(char **av, void *priv)
 {
+	struct varnish *v, *v2;
 
-	cmd_dump(av, priv);
+	(void)priv;
+
+	if (av == NULL) {
+		/* Reset and free */
+		VTAILQ_FOREACH_SAFE(v, &varnishes, list, v2) {
+			VTAILQ_REMOVE(&varnishes, v, list);
+			FREE_OBJ(v);
+			/* XXX: MEMLEAK */
+		}
+		return;
+	}
+
+	assert(!strcmp(av[0], "varnish"));
+	av++;
+
+	VTAILQ_FOREACH(v, &varnishes, list)
+		if (!strcmp(v->name, av[0]))
+			break;
+	if (v == NULL) 
+		v = varnish_new(av[0]);
+	av++;
+
+	for (; *av != NULL; av++) {
+		if (!strcmp(*av, "-telnet")) {
+			v->telnet = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-accept")) {
+			v->accept = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-arg")) {
+			v->args = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-launch")) {
+			varnish_launch(v);
+			continue;
+		}
+		if (!strcmp(*av, "-start")) {
+			varnish_start(v);
+			continue;
+		}
+		fprintf(stderr, "Unknown client argument: %s\n", *av);
+		exit (1);
+	}
 }
