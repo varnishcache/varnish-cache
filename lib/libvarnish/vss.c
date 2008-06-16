@@ -124,6 +124,8 @@ VSS_parse(const char *str, char **addr, char **port)
  * freeing each individual struct vss_addr as well as the array.
  *
  * The return value is the number of addresses resoved, or zero.
+ *
+ * XXX: We need a function to free the allocated addresses.
  */
 int
 VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
@@ -240,7 +242,8 @@ VSS_connect(const struct vss_addr *va)
 
 	sd = socket(va->va_family, va->va_socktype, va->va_protocol);
 	if (sd < 0) {
-		perror("socket()");
+		if (errno != EPROTONOSUPPORT)
+			perror("socket()");
 		return (-1);
 	}
 	if (connect(sd, &va->va_addr.sa, va->va_addrlen) != 0) {
@@ -249,4 +252,38 @@ VSS_connect(const struct vss_addr *va)
 		return (-1);
 	}
 	return (sd);
+}
+
+/*
+ * And the totally brutal version: Give me connection to this address
+ */
+
+int
+VSS_open(const char *str)
+{
+	int retval;
+	char *addr = NULL, *port = NULL;
+	int nvaddr, n;
+	struct vss_addr **vaddr;
+
+	retval = VSS_parse(str, &addr, &port);
+	if (retval < 0)
+		return (retval);
+	nvaddr = VSS_resolve(addr, port, &vaddr);
+	if (nvaddr <= 0) {
+		free(addr);
+		free(port);
+		return (-1);
+	}
+	for (n = 0; n < nvaddr; n++) {
+		retval = VSS_connect(vaddr[n]);
+		if (retval >= 0)
+			break;
+	}
+	for (n = 0; n < nvaddr; n++) 
+		free(vaddr[n]);
+	free(vaddr);
+	free(addr);
+	free(port);
+	return (retval);
 }
