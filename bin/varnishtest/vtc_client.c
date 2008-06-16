@@ -101,7 +101,7 @@ client_new(char *name)
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
 	c->name = name;
-	c->connect = ":8080";
+	c->connect = ":9081";
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
 }
