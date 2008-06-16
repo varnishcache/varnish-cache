@@ -102,6 +102,11 @@ client_new(char *name)
 {
 	struct client *c;
 
+	if (*name != 'c') {
+		fprintf(stderr, "---- %-4s Client name must start with 'c'\n",
+		    name);
+		exit (1);
+	}
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
 	c->name = name;

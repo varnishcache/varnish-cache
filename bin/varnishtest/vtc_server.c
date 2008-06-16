@@ -107,6 +107,11 @@ server_new(char *name)
 {
 	struct server *s;
 
+	if (*name != 's') {
+		fprintf(stderr, "---- %-4s Server name must start with 's'\n",
+		    name);
+		exit (1);
+	}
 	ALLOC_OBJ(s, SERVER_MAGIC);
 	AN(s);
 	s->name = name;
