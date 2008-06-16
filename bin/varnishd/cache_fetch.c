@@ -317,10 +317,10 @@ Fetch(struct sess *sp)
 	st->len = st->space;
 	WS_Assert(sp->obj->ws_o);
 	http_Setup(sp->obj->http, sp->obj->ws_o);
-
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return (__LINE__);
+	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);
 

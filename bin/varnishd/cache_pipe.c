@@ -80,6 +80,7 @@ PipeSession(struct sess *sp)
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return;
+	TCP_blocking(vc->fd);
 
 	WRK_Reset(w, &vc->fd);
 	w->acct.hdrbytes += http_Write(w, bereq->http, 0);
