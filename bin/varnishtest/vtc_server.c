@@ -82,7 +82,7 @@ server_thread(void *priv)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
 
-	printf("##   %-4s started\n", s->name);
+	printf("##   %-4s started on %s\n", s->name, s->listen);
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
 			printf("###  %-4s iteration %d\n", s->name, i);
