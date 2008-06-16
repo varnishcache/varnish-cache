@@ -4,7 +4,7 @@
 
 varnish v1 -arg "-b localhost:9080" -start
 
-server s1 -repeat 1 {
+server s1 {
 	rxreq 
 	txresp -hdr "Connection: close" -body "012345\n"
 }
