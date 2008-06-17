@@ -1,0 +1,26 @@
+# $Id$
+
+test "Check that a pipe transaction works"
+
+server s1 -repeat 1 {
+	rxreq 
+	txresp \
+		-hdr "Connection: close" \
+		-body "012345\n"
+}
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		pipe;
+	}
+} -start
+
+server s1 -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
