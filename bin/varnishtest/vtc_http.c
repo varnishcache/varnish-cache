@@ -234,7 +234,7 @@ http_rxhdr(struct http *hp)
 	l = 0;
 	while (1) {
 		pfd[0].fd = hp->fd;
-		pfd[0].events = POLLRDNORM;
+		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
 		assert(i > 0);
