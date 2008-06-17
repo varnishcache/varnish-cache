@@ -250,11 +250,21 @@ varnish_vcl(struct varnish *v, char *vcl)
 
 	v->vcl_nbr++;
 	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
-	for (; *vcl != '\0'; vcl++) {
-		if (isgraph(*vcl) || *vcl == '\\' || *vcl == '"')
-			vsb_putc(vsb, *vcl);
-		else
-			vsb_printf(vsb, "\\x%02x", *vcl);
+	for (vcl++; vcl[1] != '\0'; vcl++) {
+		switch (*vcl) {
+		case '\\':
+		case '"':
+			vsb_printf(vsb, "\\%c", *vcl); break;
+		case '\n':
+			vsb_printf(vsb, "\\n"); break;
+		case '\t':
+			vsb_printf(vsb, "\\t"); break;
+		default:
+			if (isgraph(*vcl) || *vcl == ' ')
+				vsb_putc(vsb, *vcl);
+			else
+				vsb_printf(vsb, "\\x%02x", *vcl);
+		}
 	}
 	vsb_printf(vsb, "\"", *vcl);
 	vsb_finish(vsb);
@@ -263,7 +273,7 @@ varnish_vcl(struct varnish *v, char *vcl)
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
 	assert(u == CLIS_OK);
 	vsb_clear(vsb);
-	vsb_printf(vsb, "vcl.use vcl%d \"", v->vcl_nbr);
+	vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
