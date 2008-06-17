@@ -295,6 +295,8 @@ varnish_vcl(struct varnish *v, char *vcl)
 	struct vsb *vsb;
 	unsigned u;
 
+	if (v->cli_fd < 0)
+		varnish_launch(v);
 	vsb = vsb_newauto();
 	AN(vsb);
 
@@ -342,6 +344,8 @@ varnish_vclbackend(struct varnish *v, char *vcl)
 	char *p;
 	unsigned u;
 
+	if (v->cli_fd < 0)
+		varnish_launch(v);
 	vsb = vsb_newauto();
 	AN(vsb);
 
