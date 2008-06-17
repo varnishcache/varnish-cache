@@ -307,8 +307,9 @@ exec_file(const char *fn)
 	printf("#    TEST %s starting\n", fn);
 	buf = read_file(fn);
 	parse_string(buf, cmds, NULL);
-	printf("#    TEST %s completed\n", fn);
+	printf("#    RESETTING after %s\n", fn);
 	reset_cmds(cmds);
+	printf("#    TEST %s completed\n", fn);
 }
 
 /**********************************************************************
