@@ -40,6 +40,7 @@
 
 #include "vqueue.h"
 #include "miniobj.h"
+#include "vsb.h"
 #include "vss.h"
 #include "libvarnish.h"
 
@@ -116,6 +117,7 @@ server_new(char *name)
 	AN(s);
 	s->name = name;
 	s->listen = ":9080";
+	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
 	s->depth = 1;
 	s->sock = -1;
@@ -135,7 +137,6 @@ server_start(struct server *s)
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	printf("##   %-4s Starting server\n", s->name);
 	if (s->sock < 0) {
-		AZ(VSS_parse(s->listen, &s->addr, &s->port));
 		naddr = VSS_resolve(s->addr, s->port, &s->vss_addr);
 		if (naddr != 1) {
 			fprintf(stderr,
@@ -173,6 +174,25 @@ server_wait(struct server *s)
 	AZ(close(s->sock));
 	s->sock = -1;
 }
+
+/**********************************************************************
+ * Generate VCL backend decls for our servers
+ */
+
+void
+cmd_server_genvcl(struct vsb *vsb)
+{
+	struct server *s;
+
+	VTAILQ_FOREACH(s, &servers, list) {
+		vsb_printf(vsb,
+		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
+		    s->name,
+		    s->addr == NULL ? "localhost" : s->addr,
+		    s->port);
+	}
+}
+
 
 /**********************************************************************
  * Server command dispatch
@@ -213,6 +233,7 @@ cmd_server(char **av, void *priv)
 		}
 		if (!strcmp(*av, "-listen")) {
 			s->listen = av[1];
+			AZ(VSS_parse(s->listen, &s->addr, &s->port));
 			av++;
 			continue;
 		}

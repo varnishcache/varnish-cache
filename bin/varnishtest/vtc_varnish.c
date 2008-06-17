@@ -104,6 +104,28 @@ varnish_ask_cli(struct varnish *v, const char *cmd, char **repl)
 	return (retval);
 }
 
+static void
+varnish_cli_encode(struct vsb *vsb, const char *str)
+{
+
+	for (; *str != '\0'; str++) {
+		switch (*str) {
+		case '\\':
+		case '"':
+			vsb_printf(vsb, "\\%c", *str); break;
+		case '\n':
+			vsb_printf(vsb, "\\n"); break;
+		case '\t':
+			vsb_printf(vsb, "\\t"); break;
+		default:
+			if (isgraph(*str) || *str == ' ')
+				vsb_putc(vsb, *str);
+			else
+				vsb_printf(vsb, "\\x%02x", *str);
+		}
+	}
+}
+
 /**********************************************************************
  * Allocate and initialize a varnish
  */
@@ -282,6 +304,55 @@ varnish_vcl(struct varnish *v, char *vcl)
 }
 
 /**********************************************************************
+ * Load a VCL program prefixed by backend decls for our servers
+ */
+
+static void
+varnish_vclbackend(struct varnish *v, char *vcl)
+{
+	struct vsb *vsb, *vsb2;
+	char *p;
+	unsigned u;
+
+	vsb = vsb_newauto();
+	AN(vsb);
+
+	vsb2 = vsb_newauto();
+	AN(vsb2);
+
+	cmd_server_genvcl(vsb2);
+	vsb_finish(vsb2);
+	AZ(vsb_overflowed(vsb2));
+
+	v->vcl_nbr++;
+	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
+
+	varnish_cli_encode(vsb, vsb_data(vsb2));
+
+	if (*vcl == '{') {
+		p = strchr(++vcl, '\0');
+		if (p > vcl && p[-1] == '}')
+			p[-1] = '\0';
+	}
+	varnish_cli_encode(vsb, vcl);
+
+	vsb_printf(vsb, "\"", *vcl);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+
+	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	assert(u == CLIS_OK);
+	vsb_clear(vsb);
+	vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	assert(u == CLIS_OK);
+	vsb_delete(vsb);
+	vsb_delete(vsb2);
+}
+
+/**********************************************************************
  * Varnish server cmd dispatch
  */
 
@@ -334,6 +405,11 @@ cmd_varnish(char **av, void *priv)
 		}
 		if (!strcmp(*av, "-start")) {
 			varnish_start(v);
+			continue;
+		}
+		if (!strcmp(*av, "-vcl+backend")) {
+			varnish_vclbackend(v, av[1]);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-vcl")) {

@@ -28,6 +28,8 @@
 
 typedef void cmd_f(char **av, void *priv);
 
+struct vsb;
+
 struct cmds {
 	const char	*name;
 	cmd_f		*cmd;
@@ -47,3 +49,5 @@ void cmd_varnish(char **av, void *priv);
 void http_process(const char *ident, const char *spec, int sock, int client);
 
 void vct_dump(const char *ident, const char *pfx, const char *str);
+
+void cmd_server_genvcl(struct vsb *vsb);
