@@ -403,7 +403,7 @@ mgt_run(int dflag, const char *T_arg)
 		mgt_cli_setup(0, 1, 1, "debug");
 
 	if (T_arg)
-		mgt_cli_telnet(T_arg);
+		mgt_cli_telnet(dflag, T_arg);
 
 	e = ev_new();
 	XXXAN(e);
