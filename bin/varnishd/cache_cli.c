@@ -142,7 +142,7 @@ CLI_Run(void)
 	cli = &clis;
 	memset(cli, 0, sizeof *cli);
 
-	cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	cli->sb = vsb_newauto();
 	XXXAN(cli->sb);
 	vlu = VLU_New(cli, cli_vlu, params->cli_buffer);
 	XXXAN(vlu);

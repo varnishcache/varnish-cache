@@ -53,7 +53,7 @@ vct_dump(const char *ident, const char *pfx, const char *str)
 
 	if (pfx == NULL)
 		pfx = "";
-	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	vsb = vsb_newauto();
 	if (str == NULL) 
 		vsb_printf(vsb, "#### %-4s %s(null)\n", ident, pfx);
 	else

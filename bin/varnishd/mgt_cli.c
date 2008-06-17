@@ -353,7 +353,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	cp->fdo = fdo;
 	cp->verbose = verbose;
 
-	cp->cli->sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	cp->cli->sb = vsb_newauto();
 	XXXAN(cp->cli->sb);
 
 	cp->ev = calloc(sizeof *cp->ev, 1);

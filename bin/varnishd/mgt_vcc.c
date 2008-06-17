@@ -402,7 +402,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 	struct vsb *sb;
 	struct vclprog *vp;
 
-	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	sb = vsb_newauto();
 	XXXAN(sb);
 	if (b_arg != NULL) {
 		/*
@@ -529,7 +529,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 
-	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	sb = vsb_newauto();
 	XXXAN(sb);
 	vf = mgt_VccCompile(sb, av[3], NULL, 0);
 	vsb_finish(sb);
@@ -563,7 +563,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 
-	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	sb = vsb_newauto();
 	XXXAN(sb);
 	vf = mgt_VccCompileFile(sb, av[3], 0, -1);
 	vsb_finish(sb);

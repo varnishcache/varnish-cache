@@ -382,7 +382,7 @@ main(int argc, char *argv[])
 	tzset();
 
 	memset(cli, 0, sizeof cli);
-	cli[0].sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	cli[0].sb = vsb_newauto();
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 

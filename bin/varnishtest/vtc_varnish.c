@@ -160,7 +160,7 @@ varnish_launch(struct varnish *v)
 	struct vsb *vsb;
 	int i;
 
-	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	vsb = vsb_newauto();
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->name);

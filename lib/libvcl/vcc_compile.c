@@ -490,24 +490,24 @@ vcc_NewTokenList(void)
 	tl->nsources = 0;
 
 	/* General C code */
-	tl->fc = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	tl->fc = vsb_newauto();
 	assert(tl->fc != NULL);
 
 	/* Forward decls (.h like) */
-	tl->fh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	tl->fh = vsb_newauto();
 	assert(tl->fh != NULL);
 
 	/* Init C code */
-	tl->fi = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	tl->fi = vsb_newauto();
 	assert(tl->fi != NULL);
 
 	/* Finish C code */
-	tl->ff = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	tl->ff = vsb_newauto();
 	assert(tl->ff != NULL);
 
 	/* body code of methods */
 	for (i = 0; i < N_METHODS; i++) {
-		tl->fm[i] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND); \
+		tl->fm[i] = vsb_newauto();
 		assert(tl->fm[i] != NULL);
 	}
 	return (tl);
