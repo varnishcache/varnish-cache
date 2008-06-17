@@ -1,0 +1,23 @@
+# $Id$
+
+test "Check that a cache fetch + hit transaction works"
+
+server s1 {
+	rxreq 
+	txresp \
+		-hdr "Connection: close" \
+		-body "012345\n"
+}
+
+varnish v1 -vcl+backend { } -start
+
+server s1 -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
+client c1 -run
