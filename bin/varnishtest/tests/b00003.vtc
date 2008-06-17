@@ -9,7 +9,7 @@ server s1 {
 		-body "012345\n"
 }
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend { } -start 
 
 server s1 -start 
 
@@ -17,7 +17,15 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+}
+
+client c2 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1002 1001"
 }
 
 client c1 -run
-client c1 -run
+client c2 -run
