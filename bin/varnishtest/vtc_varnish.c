@@ -146,6 +146,7 @@ varnish_new(char *name)
 	v->args = "";
 	v->telnet = ":9001";
 	v->accept = ":9081";
+	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 	return (v);
 }
@@ -182,6 +183,7 @@ varnish_launch(struct varnish *v)
 	struct vsb *vsb;
 	int i;
 
+	printf("##   %-4s Launch\n", v->name);
 	vsb = vsb_newauto();
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
@@ -226,6 +228,7 @@ varnish_launch(struct varnish *v)
 		exit (1);
 	}
 	printf("###  %-4s CLI connection fd = %d\n", v->name, v->cli_fd);
+	assert(v->cli_fd >= 0);
 }
 
 /**********************************************************************
@@ -236,7 +239,9 @@ static void
 varnish_start(struct varnish *v)
 {
 
-	varnish_launch(v);
+	if (v->cli_fd < 0)
+		varnish_launch(v);
+	printf("##   %-4s Start\n", v->name);
 	varnish_ask_cli(v, "start", NULL);
 }
 
@@ -247,14 +252,33 @@ varnish_start(struct varnish *v)
 static void
 varnish_stop(struct varnish *v)
 {
+
+	if (v->cli_fd < 0)
+		varnish_launch(v);
+	printf("##   %-4s Stop\n", v->name);
+	varnish_ask_cli(v, "stop", NULL);
+}
+
+/**********************************************************************
+ * Wait for a Varnish
+ */
+
+static void
+varnish_wait(struct varnish *v)
+{
 	void *p;
 
-	varnish_ask_cli(v, "stop", NULL);
+	if (v->cli_fd < 0)
+		return;
+	varnish_stop(v);
+	printf("##   %-4s Wait\n", v->name);
 	AZ(kill(v->pid, SIGKILL));
 	AZ(pthread_cancel(v->tp));
 	AZ(pthread_join(v->tp, &p));
 	close(v->fds[0]);
 	close(v->fds[1]);
+	close(v->cli_fd);
+	v->cli_fd = -1;
 }
 
 /**********************************************************************
@@ -366,6 +390,8 @@ cmd_varnish(char **av, void *priv)
 	if (av == NULL) {
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(v, &varnishes, list, v2) {
+			if (v->cli_fd >= 0)
+				varnish_wait(v);
 			VTAILQ_REMOVE(&varnishes, v, list);
 			FREE_OBJ(v);
 			/* XXX: MEMLEAK */
@@ -419,6 +445,10 @@ cmd_varnish(char **av, void *priv)
 		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
+			continue;
+		}
+		if (!strcmp(*av, "-wait")) {
+			varnish_wait(v);
 			continue;
 		}
 		fprintf(stderr, "Unknown varnish argument: %s\n", *av);
