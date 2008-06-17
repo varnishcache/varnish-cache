@@ -392,7 +392,7 @@ telnet_close_one(int fd)
 		if (tn->fd != fd)
 			continue;
 		VTAILQ_REMOVE(&telnets, tn, list);
-		AZ(close(tn->fd));
+		(void)close(tn->fd);
 		free(tn);
 		break;
 	}
