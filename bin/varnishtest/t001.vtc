@@ -4,19 +4,15 @@
 
 varnish v1 -launch
 
-delay 1
-
 varnish v1 -vcl {
 	backend s1 {
 		.host = "localhost";
 		.port = "9080";
 	}
-	vcl_recv {
+	sub vcl_recv {
 		pipe;
 	}
 }
-
-delay 1
 
 varnish v1 -start
 
