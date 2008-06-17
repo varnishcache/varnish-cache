@@ -72,7 +72,21 @@ struct evbase {
 	unsigned char		disturbed;
 	unsigned		psig;
 	pthread_t		thread;
+	FILE			*debug;
 };
+
+/*--------------------------------------------------------------------*/
+
+#undef DEBUG_EVENTS
+
+#ifdef DEBUG_EVENTS
+#define DBG(evb, ...) do {				\
+	if ((evb)->debug != NULL)			\
+		fprintf((evb)->debug, __VA_ARGS__);	\
+	} while (0);
+#else
+#define DBG(evb, ...)	/* ... */
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -180,6 +194,12 @@ ev_new_base(void)
 	VTAILQ_INIT(&evb->events);
 	evb->binheap = binheap_new(evb, ev_bh_cmp, ev_bh_update);
 	evb->thread = pthread_self();
+#ifdef DEBUG_EVENTS
+	evb->debug = fopen("/tmp/_.events", "w");
+	AN(evb->debug);
+	setbuf(evb->debug, NULL);
+	DBG(evb, "\n\nStart debugging\n");
+#endif
 	return (evb);
 }
 
@@ -222,6 +242,7 @@ ev_add(struct evbase *evb, struct ev *e)
 	assert(e->timeout >= 0.0);
 	assert(e->fd < 0 || e->fd_flags);
 	assert(evb->thread == pthread_self());
+	DBG(evb, "ev_add(%p) fd = %d\n", e, e->fd);
 
 	if (e->sig > 0 && ev_get_sig(e->sig))
 		return (ENOMEM);
@@ -249,6 +270,8 @@ ev_add(struct evbase *evb, struct ev *e)
 		    e->fd_flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
 		e->__poll_idx = evb->lpfd;
 		evb->lpfd++;
+		DBG(evb, "... pidx = %d lpfd = %d\n",
+		    e->__poll_idx, evb->lpfd);
 	} else
 		e->__poll_idx = -1;
 
@@ -258,6 +281,7 @@ ev_add(struct evbase *evb, struct ev *e)
 		e->__when += TIM_mono() + e->timeout;
 		binheap_insert(evb->binheap, e);
 		assert(e->__binheap_idx > 0);
+		DBG(evb, "... bidx = %d\n", e->__binheap_idx);
 	} else {
 		e->__when = 0.0;
 		e->__binheap_idx = 0;
@@ -287,6 +311,7 @@ ev_del(struct evbase *evb, struct ev *e)
 
 	CHECK_OBJ_NOTNULL(evb, EVBASE_MAGIC);
 	CHECK_OBJ_NOTNULL(e, EV_MAGIC);
+	DBG(evb, "ev_del(%p) fd = %d\n", e, e->fd);
 	assert(evb == e->__evb);
 	assert(evb->thread == pthread_self());
 
@@ -295,12 +320,14 @@ ev_del(struct evbase *evb, struct ev *e)
 	assert(e->__binheap_idx == 0);
 
 	if (e->fd >= 0) {
+		DBG(evb, "... pidx = %d\n", e->__poll_idx);
 		evb->pfd[e->__poll_idx].fd = -1;
 		if (e->__poll_idx == evb->lpfd - 1)
 			evb->lpfd--;
 		else
 			evb->compact_pfd++;
 		e->fd = -1;
+		DBG(evb, "... lpfd = %d\n", evb->lpfd);
 	}
 
 	if (e->sig > 0) {
@@ -461,6 +488,8 @@ ev_schedule_one(struct evbase *evb)
 		assert(pfd->fd == e->fd);
 		if (!pfd->revents)
 			continue;
+		DBG(evb, "callback(%p) fd = %d what = 0x%x pidx = %d\n",
+		    e, e->fd, pfd->revents, e->__poll_idx);
 		j = e->callback(e, pfd->revents);
 		i--;
 		if (evb->disturbed) {
