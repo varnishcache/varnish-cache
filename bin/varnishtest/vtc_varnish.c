@@ -239,11 +239,15 @@ varnish_launch(struct varnish *v)
 static void
 varnish_start(struct varnish *v)
 {
+	unsigned u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
 	printf("##   %-4s Start\n", v->name);
-	varnish_ask_cli(v, "start", NULL);
+	u = varnish_ask_cli(v, "start", NULL);
+	assert(u == CLIS_OK);
+	u = varnish_ask_cli(v, "debug.xid 1000", NULL);
+	assert(u == CLIS_OK);
 }
 
 /**********************************************************************
@@ -283,6 +287,21 @@ varnish_wait(struct varnish *v)
 	AZ(close(v->fds[0]));
 	r = wait4(v->pid, &status, 0, NULL);
 	printf("##   %-4s R %d Status: %04x\n", v->name, r, status);
+}
+
+/**********************************************************************
+ * Ask a CLI question
+ */
+
+static void
+varnish_cli(struct varnish *v, const char *cli)
+{
+	unsigned u;
+
+	if (v->cli_fd < 0)
+		varnish_launch(v);
+	u = varnish_ask_cli(v, cli, NULL);
+	printf("##   %-4s CLI %03u <%s>\n", v->name, u, cli);
 }
 
 /**********************************************************************
@@ -430,6 +449,11 @@ cmd_varnish(char **av, void *priv)
 		}
 		if (!strcmp(*av, "-arg")) {
 			v->args = av[1];
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-cli")) {
+			varnish_cli(v, av[1]);
 			av++;
 			continue;
 		}
