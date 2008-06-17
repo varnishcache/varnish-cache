@@ -209,6 +209,8 @@ cmd_server(char **av, void *priv)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
 			VTAILQ_REMOVE(&servers, s, list);
+			if (s->sock >= 0) 
+				server_wait(s);
 			FREE_OBJ(s);
 			/* XXX: MEMLEAK */
 		}

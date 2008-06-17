@@ -167,6 +167,8 @@ cmd_client(char **av, void *priv)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(c, &clients, list, c2) {
 			VTAILQ_REMOVE(&clients, c, list);
+			if (c->tp != NULL)
+				client_wait(c);
 			FREE_OBJ(c);
 			/* XXX: MEMLEAK */
 		}

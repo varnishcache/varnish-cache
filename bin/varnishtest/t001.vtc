@@ -2,20 +2,6 @@
 #
 # $Id$
 
-varnish v1 -launch
-
-varnish v1 -vcl {
-	backend s1 {
-		.host = "localhost";
-		.port = "9080";
-	}
-	sub vcl_recv {
-		pipe;
-	}
-}
-
-varnish v1 -start
-
 server s1 -repeat 1 {
 	rxreq 
 	txresp \
@@ -24,6 +10,16 @@ server s1 -repeat 1 {
 		-hdr "Test2: foobar" \
 		-body "012345\n"
 }
+
+varnish v1 -launch
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		pipe;
+	}
+}
+
+varnish v1 -start
 
 server s1 -start 
 
@@ -35,6 +31,6 @@ client c1 {
 
 client c1 -run
 
-server s1 -wait
+# server s1 -wait
 
-varnish v1 -stop
+# varnish v1 -wait
