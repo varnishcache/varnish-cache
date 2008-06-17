@@ -64,6 +64,18 @@
 
 static int		cli_i = -1, cli_o = -1;
 
+struct telnet {
+	int 			fd;
+	struct ev 		*ev;
+	VTAILQ_ENTRY(telnet)	list;
+};
+
+static VTAILQ_HEAD(,telnet)	telnets = VTAILQ_HEAD_INITIALIZER(telnets);
+static void telnet_close_all(void);
+static void telnet_close_one(int fd);
+
+static int			dflag_copy;
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -302,12 +314,16 @@ mgt_cli_close(struct cli_port *cp)
 		(void)close(cp->fdo);
 
 	/* Special case for stdin/out/err */
-	if (cp->fdi == 0)
+	if (cp->fdi == 0) {
 		assert(open("/dev/null", O_RDONLY) == 0);
-	if (cp->fdo == 1) {
 		assert(open("/dev/null", O_WRONLY) == 1);
 		(void)close(2);
 		assert(open("/dev/null", O_WRONLY) == 2);
+
+		if (dflag_copy == 2)
+			telnet_close_all();
+	} else {
+		telnet_close_one(cp->fdi);
 	}
 
 	free(cp);
@@ -365,6 +381,48 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	AZ(ev_add(mgt_evb, cp->ev));
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+telnet_close_one(int fd)
+{
+	struct telnet *tn, *tn2;
+
+	VTAILQ_FOREACH_SAFE(tn, &telnets, list, tn2) {
+		if (tn->fd != fd)
+			continue;
+		VTAILQ_REMOVE(&telnets, tn, list);
+		AZ(close(tn->fd));
+		free(tn);
+		break;
+	}
+}
+
+
+static void
+telnet_close_all()
+{
+	struct telnet *tn, *tn2;
+
+	VTAILQ_FOREACH_SAFE(tn, &telnets, list, tn2) {
+		VTAILQ_REMOVE(&telnets, tn, list);
+		AZ(close(tn->fd));
+		free(tn);
+	}
+}
+
+static struct telnet *
+telnet_new(int fd)
+{
+	struct telnet *tn;
+
+	tn = calloc(sizeof *tn, 1);
+	AN(tn);
+	tn->fd = fd;
+	VTAILQ_INSERT_TAIL(&telnets, tn, list);
+	return (tn);
+}
+
 static int
 telnet_accept(const struct ev *ev, int what)
 {
@@ -378,6 +436,8 @@ telnet_accept(const struct ev *ev, int what)
 	(void)what;
 	addrlen = sizeof addr;
 	i = accept(ev->fd, (void *)&addr, &addrlen);
+	if (i < 0 && errno == EBADF)
+		return (1);
 	if (i < 0)
 		return (0);
 
@@ -387,17 +447,22 @@ telnet_accept(const struct ev *ev, int what)
 	asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1);
 	XXXAN(p);
 
+	telnet_new(i);
+
 	mgt_cli_setup(i, i, 0, p);
 	free(p);
 	return (0);
 }
 
 int
-mgt_cli_telnet(const char *T_arg)
+mgt_cli_telnet(int dflag, const char *T_arg)
 {
 	struct vss_addr **ta;
 	char *addr, *port;
-	int i, n;
+	int i, n, sock;
+	struct telnet *tn;
+
+	dflag_copy = dflag;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
 	n = VSS_resolve(addr, port, &ta);
@@ -408,13 +473,15 @@ mgt_cli_telnet(const char *T_arg)
 		exit(2);
 	}
 	for (i = 0; i < n; ++i) {
-		int sock = VSS_listen(ta[i], 10);
-		struct ev *ev = ev_new();
-		XXXAN(ev);
-		ev->fd = sock;
-		ev->fd_flags = POLLIN;
-		ev->callback = telnet_accept;
-		AZ(ev_add(mgt_evb, ev));
+		sock = VSS_listen(ta[i], 10);
+		assert(sock >= 0);
+		tn = telnet_new(sock);
+		tn->ev = ev_new();
+		XXXAN(tn->ev);
+		tn->ev->fd = sock;
+		tn->ev->fd_flags = POLLIN;
+		tn->ev->callback = telnet_accept;
+		AZ(ev_add(mgt_evb, tn->ev));
 		free(ta[i]);
 		ta[i] = NULL;
 	}
