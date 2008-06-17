@@ -266,7 +266,6 @@ cmd_dump(char **av, void *priv)
 static struct cmds cmds[] = {
 	{ "server", 	cmd_server },
 	{ "client", 	cmd_client },
-	{ "vcl", 	cmd_vcl },
 	{ "stats", 	cmd_stats },
 	{ "varnish", 	cmd_varnish },
 	{ "test", 	cmd_test },

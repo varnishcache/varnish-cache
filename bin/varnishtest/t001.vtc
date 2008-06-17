@@ -2,75 +2,37 @@
 #
 # $Id$
 
-server s1 -repeat 3 {
-	rxreq
-	expect url == "/"
-	txresponse -body "0123456789"
+varnish v1 -arg -launch
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "localhost";
+		.port = "9080";
+	}
+	vcl_recv {
+		pipe;
+	}
+}
+
+server s1 -repeat 1 {
+	rxreq 
+	txresp \
+		-hdr "Connection: close" \
+		-hdr "Test1: foobar" \
+		-hdr "Test2: foobar" \
+		-body "012345\n"
 }
 
 server s1 -start 
 
 client c1 {
 	txreq -url "/"
-	rxresponse
-	expect status == 200
-	expect length == 10
-}
-
-
-#######################################################################
-# Test trivial pipe mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-		pipe;
-	}
-}
-
-client c1 -run
-
-#######################################################################
-# Test trivial pass mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-		pass;
-	}
-}
-
-client c1 -run
-
-#######################################################################
-# Test trivial cache mode
-
-vcl {
-	$s1;
-	sub vcl_recv {
-		set req.backend = s1;
-	}
+	rxresp
+	expect resp.status == 200
 }
 
 client c1 -run
 
 server s1 -wait
 
-#######################################################################
-# And see that it stuck in cache
-
-client c1 -run
-
-varnish stop
-
-stats {
-	expect client_conn == 4
-	expect client_req == 4
-	expect cache_hit == 1
-	expect cache_miss == 1
-	expect s_pipe == 1
-	expect s_pass == 1
-	expect s_fetch == 2
-}
+varnish v1 -stop

@@ -10,8 +10,7 @@ varnishtest_SOURCES = \
 		vtc_http.c \
 		vtc_server.c \
 		vtc_stats.c \
-		vtc_varnish.c \
-		vtc_vcl.c
+		vtc_varnish.c
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.la \
