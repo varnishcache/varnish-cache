@@ -373,23 +373,26 @@ ev_compact_pfd(struct evbase *evb)
 	unsigned u;
 	struct pollfd *p;
 	struct ev *ep;
+	int lfd;
 
+	DBG(evb, "compact_pfd() lpfd = %d\n", evb->lpfd);
 	p = evb->pfd;
-	ep = VTAILQ_FIRST(&evb->events);
 	for (u = 0; u < evb->lpfd; u++, p++) {
+		DBG(evb, "...[%d] fd = %d\n", u, p->fd);
 		if (p->fd >= 0)
 			continue;
-		for(; ep != NULL; ep = VTAILQ_NEXT(ep, __list)) {
-			if (ep->fd >= 0 && ep->__poll_idx > u)
+		lfd = evb->pfd[evb->lpfd - 1].fd;
+		VTAILQ_FOREACH(ep, &evb->events, __list)
+			if (ep->fd == lfd)
 				break;
-		}
-		if (ep == NULL)
-			break;
-		*p = evb->pfd[ep->__poll_idx];
+		AN(ep);
+		DBG(evb, "...[%d] move %p pidx %d\n", u, ep, ep->__poll_idx);
+		*p = evb->pfd[--evb->lpfd];
 		ep->__poll_idx = u;
 	}
 	evb->lpfd = u;
 	evb->compact_pfd = 0;
+	DBG(evb, "... lpfd = %d\n", evb->lpfd);
 }
 
 /*--------------------------------------------------------------------*/
