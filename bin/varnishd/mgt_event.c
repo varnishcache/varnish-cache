@@ -381,6 +381,8 @@ ev_compact_pfd(struct evbase *evb)
 		DBG(evb, "...[%d] fd = %d\n", u, p->fd);
 		if (p->fd >= 0)
 			continue;
+		if (u == evb->lpfd - 1)
+			break;
 		lfd = evb->pfd[evb->lpfd - 1].fd;
 		VTAILQ_FOREACH(ep, &evb->events, __list)
 			if (ep->fd == lfd)
