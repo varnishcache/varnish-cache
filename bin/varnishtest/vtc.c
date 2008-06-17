@@ -249,7 +249,29 @@ cmd_test(char **av, void *priv)
 
 
 /**********************************************************************
- * Execute a file
+ * Dump command arguments
+ */
+
+void
+cmd_delay(char **av, void *priv)
+{
+	double f;
+
+	(void)priv;
+	if (av == NULL)
+		return;
+	AN(av[1]);
+	AZ(av[2]);
+	f = strtod(av[1], NULL);
+	if (f > 100.) {
+		sleep((int)f);
+	} else {
+		usleep((int)(f * 1e6));
+	}
+}
+
+/**********************************************************************
+ * Dump command arguments
  */
 
 void
@@ -263,11 +285,16 @@ cmd_dump(char **av, void *priv)
 		printf("\t<%s>\n", *av++);
 }
 
+/**********************************************************************
+ * Execute a file
+ */
+
 static struct cmds cmds[] = {
 	{ "server", 	cmd_server },
 	{ "client", 	cmd_client },
 	{ "stats", 	cmd_stats },
 	{ "varnish", 	cmd_varnish },
+	{ "delay", 	cmd_delay },
 	{ "test", 	cmd_test },
 	{ NULL, 	NULL }
 };
@@ -294,6 +321,7 @@ main(int argc, char **argv)
 	int ch;
 
 	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
 	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
 		case '?':
