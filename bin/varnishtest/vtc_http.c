@@ -465,6 +465,7 @@ static struct cmds http_cmds[] = {
 	{ "txresp",	cmd_http_txresp },
 	{ "rxresp",	cmd_http_rxresp },
 	{ "expect",	cmd_http_expect },
+	{ "delay",	cmd_delay },
 	{ NULL,		NULL }
 };
 
