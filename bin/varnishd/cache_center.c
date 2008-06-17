@@ -72,6 +72,8 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 
 #include "shmlog.h"
 #include "vcl.h"
+#include "cli.h"
+#include "cli_priv.h"
 #include "cache.h"
 
 static unsigned xids;
@@ -966,10 +968,36 @@ CNT_Session(struct sess *sp)
 DOT }
 */
 
+/*--------------------------------------------------------------------
+ * Debugging aids
+ */
+
+static void
+cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
+{
+        (void)priv;
+	if (av[2] != NULL) 
+		xids = strtoul(av[2], NULL, 0);
+	cli_out(cli, "XID is %u\n", xids);
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.xid", "debug.xid",
+		"\tExamine or set XID\n", 0, 1, cli_debug_xid },
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------
+ *
+ */
+
 void
 CNT_Init(void)
 {
 
 	srandomdev();
 	xids = random();
+	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }
+
+
