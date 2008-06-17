@@ -480,5 +480,6 @@ ev_schedule_one(struct evbase *evb)
 			free(e);
 		}
 	}
+	assert(i == 0);
 	return (1);
 }
