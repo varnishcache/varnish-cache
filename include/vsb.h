@@ -57,6 +57,7 @@ extern "C" {
  * API functions
  */
 struct vsb	*vsb_new(struct vsb *, char *, int, int);
+#define vsb_newauto()	vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND)
 void		 vsb_clear(struct vsb *);
 int		 vsb_setpos(struct vsb *, int);
 int		 vsb_bcat(struct vsb *, const void *, size_t);

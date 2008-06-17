@@ -30,6 +30,7 @@
 #include <stdio.h>
 
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -70,6 +71,7 @@ struct varnish {
 	struct vss_addr		**vss_addr;
 
 	int			cli_fd;
+	int			vcl_nbr;
 };
 
 static VTAILQ_HEAD(, varnish)	varnishes =
@@ -234,6 +236,42 @@ varnish_stop(struct varnish *v)
 }
 
 /**********************************************************************
+ * Load a VCL program
+ */
+
+static void
+varnish_vcl(struct varnish *v, char *vcl)
+{
+	struct vsb *vsb;
+	unsigned u;
+
+	vsb = vsb_newauto();
+	AN(vsb);
+
+	v->vcl_nbr++;
+	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
+	for (; *vcl != '\0'; vcl++) {
+		if (isgraph(*vcl) || *vcl == '\\' || *vcl == '"')
+			vsb_putc(vsb, *vcl);
+		else
+			vsb_printf(vsb, "\\x%02x", *vcl);
+	}
+	vsb_printf(vsb, "\"", *vcl);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+
+	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	assert(u == CLIS_OK);
+	vsb_clear(vsb);
+	vsb_printf(vsb, "vcl.use vcl%d \"", v->vcl_nbr);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	assert(u == CLIS_OK);
+	vsb_delete(vsb);
+}
+
+/**********************************************************************
  * Varnish server cmd dispatch
  */
 
@@ -288,11 +326,16 @@ cmd_varnish(char **av, void *priv)
 			varnish_start(v);
 			continue;
 		}
+		if (!strcmp(*av, "-vcl")) {
+			varnish_vcl(v, av[1]);
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
 			continue;
 		}
-		fprintf(stderr, "Unknown client argument: %s\n", *av);
+		fprintf(stderr, "Unknown varnish argument: %s\n", *av);
 		exit (1);
 	}
 }
