@@ -306,7 +306,7 @@ cmd_http_txresp(char **av, void *priv)
 	assert(!strcmp(av[0], "txresp"));
 	av++;
 
-	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	vsb = vsb_newauto();
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-proto")) {
@@ -407,7 +407,7 @@ cmd_http_txreq(char **av, void *priv)
 	assert(!strcmp(av[0], "txreq"));
 	av++;
 
-	vsb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	vsb = vsb_newauto();
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {

@@ -134,7 +134,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec
 		return (0);
 	}
 	if (ob[fd] == NULL) {
-		ob[fd] = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+		ob[fd] = vsb_newauto();
 		assert(ob[fd] != NULL);
 	}
 	if (tag == match_tag &&

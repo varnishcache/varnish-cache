@@ -74,11 +74,11 @@ VRY_Create(const struct sess *sp)
 		return;
 
 	/* For vary matching string */
-	sb = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	sb = vsb_newauto();
 	AN(sb);
 
 	/* For header matching strings */
-	sbh = vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND);
+	sbh = vsb_newauto();
 	AN(sbh);
 
 	for (p = v; *p; p++) {
