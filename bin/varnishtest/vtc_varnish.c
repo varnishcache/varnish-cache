@@ -38,6 +38,7 @@
 #include <signal.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 
 
@@ -267,18 +268,21 @@ static void
 varnish_wait(struct varnish *v)
 {
 	void *p;
+	int status, r;
 
 	if (v->cli_fd < 0)
 		return;
 	varnish_stop(v);
 	printf("##   %-4s Wait\n", v->name);
-	AZ(kill(v->pid, SIGKILL));
-	AZ(pthread_cancel(v->tp));
-	AZ(pthread_join(v->tp, &p));
-	close(v->fds[0]);
-	close(v->fds[1]);
-	close(v->cli_fd);
+	AZ(close(v->cli_fd));
 	v->cli_fd = -1;
+
+	AZ(close(v->fds[1]));
+
+	AZ(pthread_join(v->tp, &p));
+	AZ(close(v->fds[0]));
+	r = wait4(v->pid, &status, 0, NULL);
+	printf("##   %-4s R %d Status: %04x\n", v->name, r, status);
 }
 
 /**********************************************************************
