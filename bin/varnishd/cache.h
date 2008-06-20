@@ -38,6 +38,7 @@
 #include <pthread_np.h>
 #endif
 #include <stdint.h>
+#include <string.h>
 #include <limits.h>
 
 #include "vqueue.h"
@@ -685,6 +686,18 @@ Tlen(const txt t)
 	Tcheck(t);
 	return
 	    ((unsigned)(t.e - t.b));
+}
+
+static inline void
+Tadd(txt *t, const char *p, int l)
+{
+	if (l <= 0) {
+	} if (t->b + l < t->e) {
+		memcpy(t->b, p, l);
+		t->b += l;
+	} else {
+		t->b = t->e;
+	}
 }
 
 #ifdef WITHOUT_ASSERTS
