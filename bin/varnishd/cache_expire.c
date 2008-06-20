@@ -147,7 +147,7 @@ update_object_when(const struct object *o)
 		oe->timer_when = o->prefetch;
 		oe->timer_what = tmr_prefetch;
 	} else {
-		oe->timer_when = o->ttl + o->grace;
+		oe->timer_when = o->ttl + HSH_Grace(o->grace);
 		oe->timer_what = tmr_ttl;
 	}
 }

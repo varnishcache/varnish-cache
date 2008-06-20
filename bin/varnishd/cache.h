@@ -462,6 +462,7 @@ struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(struct sess *sp);
 void HSH_Ref(struct object *o);
 void HSH_Deref(struct object *o);
+double HSH_Grace(double g);
 void HSH_Init(void);
 
 /* cache_http.c */
