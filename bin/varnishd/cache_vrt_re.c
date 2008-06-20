@@ -131,20 +131,17 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 		Tadd(&res, str, pm[0].rm_so);
 
 		for (s = sub ; *s != '\0'; s++ ) {
-			if (*s == '\\') {
+			if (*s != '\\' || s[1] == '\0') {
 				if (res.b < res.e)
-					*res.b++ = *++s;
-			} else if (*s == '&') {
-				l = pm[0].rm_eo - pm[0].rm_so;
-				Tadd(&res, str + pm[0].rm_so, l);
-			} else if (*s == '$' && s[1] == '$') {
-				l = pm[0].rm_eo - pm[0].rm_so;
-				Tadd(&res, str + pm[0].rm_so, l);
-				s++;
-			} else if (*s == '$' && isdigit(s[1])) {
-				x = digittoint(*++s);
+					*res.b++ = *s;
+				continue;
+			}
+			s++;
+			if (isdigit(*s)) {
+				x = digittoint(*s);
 				l = pm[x].rm_eo - pm[x].rm_so;
 				Tadd(&res, str + pm[x].rm_so, l);
+				continue;
 			} else {
 				if (res.b < res.e)
 					*res.b++ = *s;
