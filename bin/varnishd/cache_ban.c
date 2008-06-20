@@ -65,22 +65,29 @@ static MTX ban_mtx;
  */
 static struct ban * volatile ban_start;
 
-void
-BAN_Add(const char *regexp, int hash)
+int
+BAN_Add(struct cli *cli, const char *regexp, int hash)
 {
 	struct ban *b;
+	char buf[512];
 	int i;
 
 	ALLOC_OBJ(b, BAN_MAGIC);
-	XXXAN(b);
+	if (b == NULL) {
+		cli_out(cli, "Out of Memory");
+		cli_result(cli, CLIS_CANT);
+		return (-1);
+	}
 
 	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
 	if (i) {
-		char buf[512];
-
 		(void)regerror(i, &b->regexp, buf, sizeof buf);
+		regfree(&b->regexp);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
-		return;
+		cli_out(cli, "%s", buf);
+		cli_result(cli, CLIS_PARAM);
+		FREE_OBJ(b);
+		return (-1);
 	}
 	b->hash = hash;
 	b->ban = strdup(regexp);
@@ -89,6 +96,7 @@ BAN_Add(const char *regexp, int hash)
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
 	UNLOCK(&ban_mtx);
+	return (0);
 }
 
 void
@@ -179,8 +187,7 @@ ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	BAN_Add(av[2], 0);
-	cli_out(cli, "URL_PURGE %s\n", av[2]);
+	(void)BAN_Add(cli, av[2], 0);
 }
 
 static void
@@ -188,8 +195,7 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	BAN_Add(av[2], 1);
-	cli_out(cli, "HASH_PURGE %s\n", av[2]);
+	(void)BAN_Add(cli, av[2], 1);
 }
 
 static void
@@ -211,7 +217,9 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 		if (b0->refcount == 0 && VTAILQ_NEXT(b0, list) == NULL)
 			break;
 		cli_out(cli, "%5u %s \"%s\"\n",
-		    b0->refcount, b0->hash ? "hash" : "url ", b0->ban);
+		    b0->refcount,
+		    b0->hash ? "hash" : "url ",
+		    b0->ban);
 	}
 }
 
@@ -236,5 +244,5 @@ BAN_Init(void)
 	MTX_INIT(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 	/* Add an initial ban, since the list can never be empty */
-	BAN_Add(".", 0);
+	(void)BAN_Add(NULL, ".", 0);
 }
