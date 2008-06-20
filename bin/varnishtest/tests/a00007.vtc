@@ -5,18 +5,20 @@ test "TCP reuse"
 server s1 -listen :9080 {
 	rxreq
 	expect req.url == "/1"
-	txresp -hdr "Length: 10" -body "123456789\n"
+	txresp -hdr "Content-Length: 10" -body "123456789\n"
 	rxreq
 	expect req.url == "/2"
-	txresp -hdr "Length: 10" -body "987654321\n"
+	txresp -hdr "Content-Length: 10" -body "987654321\n"
 }
 
 server s1 -start 
 
 client c1 -connect localhost:9080 {
-	txreq -url "/1" -req "POST" -hdr "Length: 10" -body "abcdefghi\n"
+	txreq -url "/1" -req "POST" \
+	    -hdr "Content-Length: 10" -body "abcdefghi\n"
 	rxresp
-	txreq -url "/2" -req "POST" -hdr "Length: 10" -body "ihgfedcba\n"
+	txreq -url "/2" -req "POST" \
+	    -hdr "Content-Length: 10" -body "ihgfedcba\n"
 	rxresp
 }
 
