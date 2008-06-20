@@ -638,7 +638,7 @@ void
 VRT_purge(const char *regexp, int hash)
 {
 	
-	AddBan(regexp, hash);
+	BAN_Add(regexp, hash);
 }
 
 /*--------------------------------------------------------------------

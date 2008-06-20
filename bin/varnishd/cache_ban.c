@@ -66,7 +66,7 @@ static MTX ban_mtx;
 static struct ban * volatile ban_start;
 
 void
-AddBan(const char *regexp, int hash)
+BAN_Add(const char *regexp, int hash)
 {
 	struct ban *b;
 	int i;
@@ -179,7 +179,7 @@ ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	AddBan(av[2], 0);
+	BAN_Add(av[2], 0);
 	cli_out(cli, "URL_PURGE %s\n", av[2]);
 }
 
@@ -188,7 +188,7 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	AddBan(av[2], 1);
+	BAN_Add(av[2], 1);
 	cli_out(cli, "HASH_PURGE %s\n", av[2]);
 }
 
@@ -235,5 +235,6 @@ BAN_Init(void)
 
 	MTX_INIT(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
-	AddBan("^\001$", 0);
+	/* Add an initial ban, since the list can never be empty */
+	BAN_Add(".", 0);
 }
