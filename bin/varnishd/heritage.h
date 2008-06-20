@@ -162,6 +162,9 @@ struct params {
 
 	/* Log hash string to shm */
 	unsigned		log_hash;
+
+	/* Log local socket address to shm */
+	unsigned		log_local_addr;
 };
 
 extern volatile struct params *params;

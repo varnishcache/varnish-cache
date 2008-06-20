@@ -119,8 +119,16 @@ VCA_Prep(struct sess *sp)
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
-	VSL(SLT_SessionOpen, sp->fd, "%s %s %s",
-	    sp->addr, sp->port, sp->mylsock->name);
+	if (params->log_local_addr) {
+		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
+		TCP_name(sp->mysockaddr, sp->mysockaddrlen,
+		    addr, sizeof addr, port, sizeof port);
+		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
+		    sp->addr, sp->port, addr, port);
+	} else {
+		VSL(SLT_SessionOpen, sp->fd, "%s %s %s",
+		    sp->addr, sp->port, sp->mylsock->name);
+	}
 	sp->acct.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
