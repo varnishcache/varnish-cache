@@ -1,6 +1,6 @@
 # $Id$
 
-test "dual shared client HTTP transactions"
+test "bidirectional message bodies"
 
 server s1 -listen :9080 {
 	rxreq
@@ -25,13 +25,5 @@ client c1 -connect localhost:9080 {
 }
 
 client c1 -run
-
-client c1 -connect localhost:9081 {
-	txreq 
-	rxresp
-	expect resp.proto == HTTP/1.1
-	expect resp.status == 200
-	expect resp.msg == Ok
-}
 
 server s1 -wait
