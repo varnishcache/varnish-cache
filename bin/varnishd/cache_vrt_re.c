@@ -109,7 +109,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 	regmatch_t pm[10];
 	regex_t *t;
 	int i, l;
-	char *b, *p, *e;
+	txt res;
+	char *p;
 	const char *s;
 	unsigned u, x;
 
@@ -122,38 +123,31 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 		return(str);
 
 	u = WS_Reserve(sp->http->ws, 0);
-	e = p = b = sp->http->ws->f;
-	e += u;
+	res.e = res.b = p = sp->http->ws->f;
+	res.e += u;
 
 	do {
 		/* Copy prefix to match */
-		if (pm[0].rm_so > 0) {
-			if (p + pm[0].rm_so < e)
-				memcpy(p, str, pm[0].rm_so);
-			p += pm[0].rm_so;
-		}
+		Tadd(&res, str, pm[0].rm_so);
 
 		for (s = sub ; *s != '\0'; s++ ) {
-			if (*s == '&') {
+			if (*s == '\\') {
+				if (res.b < res.e)
+					*res.b++ = *++s;
+			} else if (*s == '&') {
 				l = pm[0].rm_eo - pm[0].rm_so;
-				if (l > 0) {
-					if (p + l < e)
-						memcpy(p, str + pm[0].rm_so, l);
-					p += l;
-				}
+				Tadd(&res, str + pm[0].rm_so, l);
+			} else if (*s == '$' && s[1] == '$') {
+				l = pm[0].rm_eo - pm[0].rm_so;
+				Tadd(&res, str + pm[0].rm_so, l);
+				s++;
 			} else if (*s == '$' && isdigit(s[1])) {
-				x = sub[1] - '0';
-				sub++;
+				x = digittoint(*++s);
 				l = pm[x].rm_eo - pm[x].rm_so;
-				if (l > 0) {
-					if (p + l < e)
-						memcpy(p, str + pm[x].rm_so, l);
-					p += l;
-				}
+				Tadd(&res, str + pm[x].rm_so, l);
 			} else {
-				if (p + 1 < e)
-					*p = *s;
-				p++;
+				if (res.b < res.e)
+					*res.b++ = *s;
 			}
 		}
 		str += pm[0].rm_eo;
@@ -163,19 +157,13 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 	} while (i != REG_NOMATCH);
 
 	/* Copy suffix to match */
-	l = strlen(str);
-	if (l > 0) {
-		if (p + l < e)
-			memcpy(p, str, l);
-		p += l;
-	}
-	if (p + 1 < e)
-		*p++ = '\0';
-	xxxassert(p <= e);
-	if (p > e) {
+	l = strlen(str) + 1;
+	Tadd(&res, str, l);
+	if (res.b >= res.e) {
 		WS_Release(sp->http->ws, 0);
 		return (str);
 	} 
-	WS_Release(sp->http->ws, p - b);
-	return (b);
+	Tcheck(res);
+	WS_Release(sp->http->ws, p - res.b);
+	return (p);
 }
