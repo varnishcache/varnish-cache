@@ -5,22 +5,24 @@ test "Test VCL regsub()"
 server s1 {
 	rxreq 
 	txresp \
-		-hdr "Foobar: barf" \
+		-hdr "Foobar: _barf_" \
 		-hdr "Connection: close" \
 		-body "012345\n"
 }
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
-		set obj.http.Snafu1 = regsub(obj.http.Foobar, "ar", "&&");
+		set obj.http.Snafu1 = regsub(obj.http.Foobar, "ar", "\0\0");
 		set obj.http.Snafu2 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "$4$3$2p");
+		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\3\2p");
 		set obj.http.Snafu3 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "$4\$$3$2p");
+		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\\\3\2p");
 		set obj.http.Snafu4 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "$4\&$3$2p");
+		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p");
 		set obj.http.Snafu5 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "$$$4$3$2\$p");
+		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\0\4\3\2\\p");
+		set obj.http.Snafu6 =
+		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p\");
 	}
 } -start 
 
@@ -31,12 +33,14 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1001"
-	expect resp.http.foobar == "barf"
-	expect resp.http.snafu1 == "bararf"
-	expect resp.http.snafu2 == "frap"
-	expect resp.http.snafu3 == "f$rap"
-	expect resp.http.snafu4 == "f&rap"
-	expect resp.http.snafu5 == "barffra$p"
+	expect resp.http.foobar == "_barf_"
+	expect resp.http.snafu1 == "_bararf_"
+	expect resp.http.snafu2 == "_frap_"
+	expect resp.http.snafu3 == "_f\rap_"
+	expect resp.http.snafu4 == "_f&rap_"
+	expect resp.http.snafu5 == "_barffra\p_"
+	# NB: have to escape the \\ in the next line
+	expect resp.http.snafu6 == "_f&rap\\_"
 }
 
 client c1 -run
