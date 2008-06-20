@@ -46,6 +46,7 @@ struct client {
 	unsigned		magic;
 #define CLIENT_MAGIC		0x6242397c
 	char			*name;
+	struct vtclog		*vl;
 	VTAILQ_ENTRY(client)	list;
 
 	char			*spec;
@@ -66,20 +67,22 @@ static void *
 client_thread(void *priv)
 {
 	struct client *c;
+	struct vtclog *vl;
 	int fd = -1;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(c->connect);
 
-	printf("##   %-4s started\n", c->name);
-	printf("###  %-4s connect to %s\n", c->name, c->connect);
+	vl = vtc_logopen(c->name);
+
+	vtc_log(vl, 2, "Started");
+	vtc_log(vl, 3, "Connect to %s", c->connect);
 	fd = VSS_open(c->connect);
 	assert(fd >= 0);
-	printf("###  %-4s connected to %s fd is %d\n",
-	    c->name, c->connect, fd);
-	http_process(c->name, c->spec, fd, 1);
+	vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
+	http_process(vl, c->spec, fd, 1);
 	AZ(close(fd));
-	printf("##   %-4s ending\n", c->name);
+	vtc_log(vl, 2, "Ending");
 
 	return (NULL);
 }
@@ -93,14 +96,16 @@ client_new(char *name)
 {
 	struct client *c;
 
-	if (*name != 'c') {
-		fprintf(stderr, "---- %-4s Client name must start with 'c'\n",
-		    name);
-		exit (1);
-	}
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
 	c->name = name;
+	c->vl = vtc_logopen(name);
+	AN(c->vl);
+	if (*name != 'c') {
+		vtc_log(c->vl, 0, "Client name must start with 'c'");
+		exit (1);
+	}
+
 	c->connect = ":9081";
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
@@ -115,7 +120,7 @@ client_start(struct client *c)
 {
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	printf("##   %-4s Starting client\n", c->name);
+	vtc_log(c->vl, 2, "Starting client");
 	AZ(pthread_create(&c->tp, NULL, client_thread, c));
 }
 
@@ -129,11 +134,10 @@ client_wait(struct client *c)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	printf("##   %-4s Waiting for client\n", c->name);
+	vtc_log(c->vl, 2, "Waiting for client");
 	AZ(pthread_join(c->tp, &res));
 	if (res != NULL) {
-		fprintf(stderr, "Server %s returned \"%s\"\n",
-		    c->name, (char *)res);
+		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
 		exit (1);
 	}
 	c->tp = NULL;
@@ -207,7 +211,7 @@ cmd_client(char **av, void *priv)
 			c->spec = *av;
 			continue;
 		}
-		fprintf(stderr, "Unknown client argument: %s\n", *av);
+		vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
 		exit (1);
 	}
 }

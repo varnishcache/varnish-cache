@@ -48,6 +48,7 @@ struct server {
 	unsigned		magic;
 #define SERVER_MAGIC		0x55286619
 	char			*name;
+	struct vtclog		*vl;
 	VTAILQ_ENTRY(server)	list;
 
 	unsigned		repeat;
@@ -74,6 +75,7 @@ static void *
 server_thread(void *priv)
 {
 	struct server *s;
+	struct vtclog *vl;
 	int i, fd;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
@@ -83,19 +85,20 @@ server_thread(void *priv)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
 
-	printf("##   %-4s started on %s\n", s->name, s->listen);
+	vl = vtc_logopen(s->name);
+
+	vtc_log(vl, 2, "Started on %s", s->listen);
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
-			printf("###  %-4s iteration %d\n", s->name, i);
+			vtc_log(vl, 3, "Iteration %d", i);
 		addr = (void*)&addr_s;
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
-		printf("#### %-4s Accepted socket %d\n", s->name, fd);
-		http_process(s->name, s->spec, fd, 0);
+		vtc_log(vl, 3, "Accepted socket fd is %d", fd);
+		http_process(vl, s->spec, fd, 0);
 		AZ(close(fd));
 	}
-	printf("##   %-4s ending\n", s->name);
-
+	vtc_log(vl, 2, "Ending");
 	return (NULL);
 }
 
@@ -108,14 +111,15 @@ server_new(char *name)
 {
 	struct server *s;
 
-	if (*name != 's') {
-		fprintf(stderr, "---- %-4s Server name must start with 's'\n",
-		    name);
-		exit (1);
-	}
 	ALLOC_OBJ(s, SERVER_MAGIC);
 	AN(s);
 	s->name = name;
+	s->vl = vtc_logopen(name);
+	AN(s->vl);
+	if (*name != 's') {
+		vtc_log(s->vl, 0, "Server name must start with 's'");
+		exit (1);
+	}
 	s->listen = ":9080";
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
@@ -135,21 +139,21 @@ server_start(struct server *s)
 	int naddr;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	printf("##   %-4s Starting server\n", s->name);
+	vtc_log(s->vl, 2, "Starting server");
 	if (s->sock < 0) {
 		naddr = VSS_resolve(s->addr, s->port, &s->vss_addr);
 		if (naddr != 1) {
-			fprintf(stderr,
-			    "Server %s listen address not unique\n"
-			    "   \"%s\" resolves to (%d) sockets\n",
-			    s->name, s->listen, naddr);
+			vtc_log(s->vl, 0,
+			    "Server s listen address not unique"
+			    " \"%s\" resolves to (%d) sockets",
+			    s->listen, naddr);
 			exit (1);
 		}
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
 	}
-	printf("###  %-4s listen on %s (fd %d)\n",
-	    s->name, s->listen, s->sock);
+	vtc_log(s->vl, 3, "listen on %s (fd %d)",
+	    s->listen, s->sock);
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
 
@@ -163,11 +167,11 @@ server_wait(struct server *s)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	printf("##   %-4s Waiting for server\n", s->name);
+	vtc_log(s->vl, 2, "Waiting for server");
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL) {
-		fprintf(stderr, "Server %s returned \"%s\"\n",
-		    s->name, (char *)res);
+		vtc_log(s->vl, 0, "Server returned \"%s\"",
+		    (char *)res);
 		exit (1);
 	}
 	s->tp = NULL;
@@ -251,7 +255,7 @@ cmd_server(char **av, void *priv)
 			s->spec = *av;
 			continue;
 		}
-		fprintf(stderr, "Unknown server argument: %s\n", *av);
+		vtc_log(s->vl, 0, "Unknown server argument: %s", *av);
 		exit (1);
 	}
 }

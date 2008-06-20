@@ -49,7 +49,7 @@ struct http {
 	int			fd;
 	int			client;
 	int			timeout;
-	const char		*ident;
+	struct vtclog		*vl;
 
 	int			nrxbuf;
 	char			*rxbuf;
@@ -121,19 +121,16 @@ cmd_http_expect(char **av, void *priv)
 	rhs = cmd_var_resolve(hp, av[2]);
 	if (!strcmp(cmp, "==")) {
 		if (strcmp(lhs, rhs)) {
-			fprintf(stderr, 
-			    "---- %-4s EXPECT %s (%s) %s %s (%s) failed\n",
-			    hp->ident, av[0], lhs, av[1], av[2], rhs);
+			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
+			    av[0], lhs, av[1], av[2], rhs);
 			exit (1);
 		} else {
-			printf(
-			    "#### %-4s EXPECT %s (%s) %s %s (%s) match\n",
-			    hp->ident, av[0], lhs, av[1], av[2], rhs);
+			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
+			    av[0], lhs, av[1], av[2], rhs);
 		}
 	} else {
-		fprintf(stderr, 
-		    "---- %-4s EXPECT %s (%s) %s %s (%s) not implemented\n",
-		    hp->ident, av[0], lhs, av[1], av[2], rhs);
+		vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) not implemented",
+		    av[0], lhs, av[1], av[2], rhs);
 		exit (1);
 	}
 }
@@ -212,7 +209,7 @@ http_splitheader(struct http *hp, int req)
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
 		sprintf(buf, "http[%2d] ", n);
-		vct_dump(hp->ident, buf, hh[n]);
+		vtc_dump(hp->vl, 4, buf, hh[n]);
 	}
 }
 
@@ -257,7 +254,7 @@ http_rxhdr(struct http *hp)
 		if (i == 2)
 			break;
 	}
-	vct_dump(hp->ident, NULL, hp->rxbuf);
+	vtc_dump(hp->vl, 4, NULL, hp->rxbuf);
 }
 
 
@@ -279,7 +276,7 @@ cmd_http_rxresp(char **av, void *priv)
 		fprintf(stderr, "Unknown http rxresp spec: %s\n", *av);
 		exit (1);
 	}
-	printf("###  %-4s rxresp\n", hp->ident);
+	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
 }
@@ -357,7 +354,7 @@ cmd_http_txresp(char **av, void *priv)
 	}
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
-	vct_dump(hp->ident, NULL, vsb_data(vsb));
+	vtc_dump(hp->vl, 4, NULL, vsb_data(vsb));
 	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
 	assert(l == vsb_len(vsb));
 	vsb_delete(vsb);
@@ -381,7 +378,7 @@ cmd_http_rxreq(char **av, void *priv)
 		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
 		exit (1);
 	}
-	printf("###  %-4s rxreq\n", hp->ident);
+	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 }
@@ -449,7 +446,7 @@ cmd_http_txreq(char **av, void *priv)
 	vsb_cat(vsb, nl);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
-	vct_dump(hp->ident, NULL, vsb_data(vsb));
+	vtc_dump(hp->vl, 4, NULL, vsb_data(vsb));
 	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
 	assert(l == vsb_len(vsb));
 	vsb_delete(vsb);
@@ -470,7 +467,7 @@ static struct cmds http_cmds[] = {
 };
 
 void
-http_process(const char *ident, const char *spec, int sock, int client)
+http_process(struct vtclog *vl, const char *spec, int sock, int client)
 {
 	struct http *hp;
 	char *s, *q;
@@ -478,7 +475,7 @@ http_process(const char *ident, const char *spec, int sock, int client)
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
-	hp->ident = ident;
+	hp->vl = vl;
 	hp->client = client;
 	hp->timeout = 1000;
 	hp->nrxbuf = 8192;

@@ -56,6 +56,7 @@ struct varnish {
 	unsigned		magic;
 #define VARNISH_MAGIC		0x208cd8e3
 	char			*name;
+	struct vtclog		*vl;
 	VTAILQ_ENTRY(varnish)	list;
 
 	const char		*args;
@@ -65,11 +66,6 @@ struct varnish {
 	const char		*accept;
 
 	pthread_t		tp;
-
-	char			*addr;
-	char			*port;
-	int			naddr;
-	struct vss_addr		**vss_addr;
 
 	int			cli_fd;
 	int			vcl_nbr;
@@ -82,27 +78,27 @@ static VTAILQ_HEAD(, varnish)	varnishes =
  * Ask a question over CLI
  */
 
-static unsigned
-varnish_ask_cli(struct varnish *v, const char *cmd, char **repl)
+static enum cli_status_e
+varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 {
 	int i;
 	unsigned retval;
 	char *r;
 
-	vct_dump(v->name, "CLI TX", cmd);
+	vtc_dump(v->vl, 4, "CLI TX", cmd);
 	i = write(v->cli_fd, cmd, strlen(cmd));
 	assert(i == strlen(cmd));
 	i = write(v->cli_fd, "\n", 1);
 	assert(i == 1);
 	i = cli_readres(v->cli_fd, &retval, &r, 1000);
 	assert(i == 0);
-	printf("###  %-4s CLI %u <%s>\n", v->name, retval, cmd);
-	vct_dump(v->name, "CLI RX", r);
+	vtc_log(v->vl, 3, "CLI %u <%s>", retval, cmd);
+	vtc_dump(v->vl, 4, "CLI RX", r);
 	if (repl != NULL)
 		*repl = r;
 	else
 		free(r);
-	return (retval);
+	return ((enum cli_status_e)retval);
 }
 
 static void
@@ -136,14 +132,16 @@ varnish_new(char *name)
 {
 	struct varnish *v;
 
-	if (*name != 'v') {
-		fprintf(stderr,
-		    "---- %-4s Varnish name must start with 'v'\n", name);
-		exit (1);
-	}
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
 	v->name = name;
+	v->vl = vtc_logopen(name);
+	AN(v->vl);
+	if (*name != 'v') {
+		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
+		exit (1);
+	}
+
 	v->args = "";
 	v->telnet = ":9001";
 	v->accept = ":9081";
@@ -169,7 +167,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vct_dump(v->name, "debug", buf);
+		vtc_dump(v->vl, 4, "debug", buf);
 	}
 	return (NULL);
 }
@@ -184,7 +182,7 @@ varnish_launch(struct varnish *v)
 	struct vsb *vsb;
 	int i;
 
-	printf("##   %-4s Launch\n", v->name);
+	vtc_log(v->vl, 2, "Launch");
 	vsb = vsb_newauto();
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
@@ -193,7 +191,7 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " %s", v->args);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
-	printf("###  %-4s CMD: %s\n", v->name, vsb_data(vsb));
+	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
 	AZ(pipe(&v->fds[0]));
 	AZ(pipe(&v->fds[2]));
 	v->pid = fork();
@@ -216,19 +214,19 @@ varnish_launch(struct varnish *v)
 	vsb_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
-	printf("###  %-4s opening CLI connection\n", v->name);
+	vtc_log(v->vl, 3, "opening CLI connection");
 	for (i = 0; i < 10; i++) {
-		usleep(200000);
+		(void)usleep(200000);
 		v->cli_fd = VSS_open(v->telnet);
 		if (v->cli_fd >= 0)
 			break;
 	}
 	if (v->cli_fd < 0) {
-		fprintf(stderr, "---- %-4s FAIL no CLI connection\n", v->name);
-		kill(v->pid, SIGKILL);
+		vtc_log(v->vl, 0, "FAIL no CLI connection");
+		(void)kill(v->pid, SIGKILL);
 		exit (1);
 	}
-	printf("###  %-4s CLI connection fd = %d\n", v->name, v->cli_fd);
+	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
 }
 
@@ -239,11 +237,11 @@ varnish_launch(struct varnish *v)
 static void
 varnish_start(struct varnish *v)
 {
-	unsigned u;
+	enum cli_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
-	printf("##   %-4s Start\n", v->name);
+	vtc_log(v->vl, 2, "Start");
 	u = varnish_ask_cli(v, "start", NULL);
 	assert(u == CLIS_OK);
 	u = varnish_ask_cli(v, "debug.xid 1000", NULL);
@@ -260,8 +258,8 @@ varnish_stop(struct varnish *v)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
-	printf("##   %-4s Stop\n", v->name);
-	varnish_ask_cli(v, "stop", NULL);
+	vtc_log(v->vl, 2, "Stop");
+	(void)varnish_ask_cli(v, "stop", NULL);
 }
 
 /**********************************************************************
@@ -277,7 +275,7 @@ varnish_wait(struct varnish *v)
 	if (v->cli_fd < 0)
 		return;
 	varnish_stop(v);
-	printf("##   %-4s Wait\n", v->name);
+	vtc_log(v->vl, 2, "Wait");
 	AZ(close(v->cli_fd));
 	v->cli_fd = -1;
 
@@ -286,7 +284,7 @@ varnish_wait(struct varnish *v)
 	AZ(pthread_join(v->tp, &p));
 	AZ(close(v->fds[0]));
 	r = wait4(v->pid, &status, 0, NULL);
-	printf("##   %-4s R %d Status: %04x\n", v->name, r, status);
+	vtc_log(v->vl, 2, "R %d Status: %04x", r, status);
 }
 
 /**********************************************************************
@@ -296,12 +294,12 @@ varnish_wait(struct varnish *v)
 static void
 varnish_cli(struct varnish *v, const char *cli)
 {
-	unsigned u;
+	enum cli_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
 	u = varnish_ask_cli(v, cli, NULL);
-	printf("##   %-4s CLI %03u <%s>\n", v->name, u, cli);
+	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 }
 
 /**********************************************************************
@@ -309,10 +307,10 @@ varnish_cli(struct varnish *v, const char *cli)
  */
 
 static void
-varnish_vcl(struct varnish *v, char *vcl)
+varnish_vcl(struct varnish *v, const char *vcl)
 {
 	struct vsb *vsb;
-	unsigned u;
+	enum cli_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -361,7 +359,7 @@ varnish_vclbackend(struct varnish *v, char *vcl)
 {
 	struct vsb *vsb, *vsb2;
 	char *p;
-	unsigned u;
+	enum cli_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -483,7 +481,7 @@ cmd_varnish(char **av, void *priv)
 			varnish_wait(v);
 			continue;
 		}
-		fprintf(stderr, "Unknown varnish argument: %s\n", *av);
+		vtc_log(v->vl, 0, "Unknown varnish argument: %s", *av);
 		exit (1);
 	}
 }
