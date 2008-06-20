@@ -59,6 +59,28 @@ struct http {
 };
 
 /**********************************************************************
+ * find header
+ */
+
+static char *
+http_find_header(char **hh, const char *hdr)
+{
+	int n, l;
+	char *r;
+
+	l = strlen(hdr);
+
+	for (n = 3; hh[n] != NULL; n++) {
+		if (strncasecmp(hdr, hh[n], l) || hh[n][l] != ':')
+			continue;
+		for (r = hh[n] + l + 1; vct_issp(*r); r++)
+			continue;
+		return (r);
+	}
+	return (NULL);
+}
+
+/**********************************************************************
  * Expect
  */
 
@@ -66,7 +88,6 @@ static char *
 cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
-	int n, l;
 
 	if (!strcmp(spec, "req.request"))
 		return(hp->req[0]);
@@ -88,15 +109,9 @@ cmd_var_resolve(struct http *hp, char *spec)
 		hdr = spec + 10;
 	} else
 		return (spec);
-	l = strlen(hdr);
-	for (n = 3; hh[n] != NULL; n++) {
-		if (strncasecmp(hdr, hh[n], l) || hh[n][l] != ':')
-			continue;
-		hdr = hh[n] + l + 1;
-		while (vct_issp(*hdr))
-			hdr++;
+	hdr = http_find_header(hh, hdr);
+	if (hdr != NULL)
 		return (hdr);
-	}
 	return (spec);
 }
 
@@ -215,6 +230,33 @@ http_splitheader(struct http *hp, int req)
 
 
 /**********************************************************************
+ * Swallow a HTTP message body
+ */
+
+static void
+http_swallow_body(struct http *hp, char **hh)
+{
+	char *p, b[BUFSIZ + 1];
+	int l, i;
+	
+
+	p = http_find_header(hh, "length");
+	if (p == NULL)
+		return;
+	l = strtoul(p, NULL, 0);
+	while (l > 0) {
+		i = sizeof b - 1;
+		if (i > l)
+			i = l;
+		i = read(hp->fd, b, i);
+		assert(i > 0);
+		b[i] = '\0';
+		vtc_dump(hp->vl, 4, "body", b);
+		l -= i;
+	}
+}
+
+/**********************************************************************
  * Receive a HTTP protocol header
  */
 
@@ -279,6 +321,7 @@ cmd_http_rxresp(char **av, void *priv)
 	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
+	http_swallow_body(hp, hp->resp);
 }
 
 /**********************************************************************
@@ -381,6 +424,7 @@ cmd_http_rxreq(char **av, void *priv)
 	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
+	http_swallow_body(hp, hp->req);
 }
 
 /**********************************************************************
@@ -395,6 +439,7 @@ cmd_http_txreq(char **av, void *priv)
 	const char *req = "GET";
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
+	const char *body = NULL;
 	int dohdr = 0;
 	const char *nl = "\r\n";
 	int l;
@@ -435,6 +480,11 @@ cmd_http_txreq(char **av, void *priv)
 			av++;
 			continue;
 		}
+		if (!strcmp(*av, "-body")) {
+			body = av[1];
+			av++;
+			continue;
+		}
 		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
 		exit (1);
 	}
@@ -444,6 +494,10 @@ cmd_http_txreq(char **av, void *priv)
 		dohdr = 1;
 	}
 	vsb_cat(vsb, nl);
+	if (body != NULL) {
+		vsb_cat(vsb, body);
+		vsb_cat(vsb, nl);
+	}
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 	vtc_dump(hp->vl, 4, NULL, vsb_data(vsb));
