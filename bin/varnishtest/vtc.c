@@ -43,47 +43,6 @@
 #define		MAX_TOKENS		20
 
 /**********************************************************************
- * Dump a string
- */
-void
-vct_dump(const char *ident, const char *pfx, const char *str)
-{
-	int nl = 1;
-	struct vsb *vsb;
-
-	if (pfx == NULL)
-		pfx = "";
-	vsb = vsb_newauto();
-	if (str == NULL) 
-		vsb_printf(vsb, "#### %-4s %s(null)\n", ident, pfx);
-	else
-		for(; *str; str++) {
-			if (nl) {
-				vsb_printf(vsb, "#### %-4s %s| ", ident, pfx);
-				nl = 0;
-			}
-			if (*str == '\r')
-				vsb_printf(vsb, "\\r");
-			else if (*str == '\t')
-				vsb_printf(vsb, "\\t");
-			else if (*str == '\n') {
-				vsb_printf(vsb, "\\n\n");
-				nl = 1;
-			} else if (*str < 0x20 || *str > 0x7e)
-				vsb_printf(vsb, "\\x%02x", *str);
-			else
-				vsb_printf(vsb, "%c", *str);
-		}
-	if (!nl)
-		vsb_printf(vsb, "\n");
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
-	(void)fputs(vsb_data(vsb), stdout);
-	vsb_delete(vsb);
-}
-
-
-/**********************************************************************
  * Read a file into memory
  */
 
@@ -264,9 +223,9 @@ cmd_delay(char **av, void *priv)
 	AZ(av[2]);
 	f = strtod(av[1], NULL);
 	if (f > 100.) {
-		sleep((int)f);
+		(void)sleep((int)f);
 	} else {
-		usleep((int)(f * 1e6));
+		(void)usleep((int)(f * 1e6));
 	}
 }
 
@@ -323,8 +282,14 @@ main(int argc, char **argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "")) != -1) {
+	while ((ch = getopt(argc, argv, "qv")) != -1) {
 		switch (ch) {
+		case 'q':
+			vtc_verbosity--;
+			break;
+		case 'v':
+			vtc_verbosity++;
+			break;
 		case '?':
 		default:
 			errx(1, "Usage");
