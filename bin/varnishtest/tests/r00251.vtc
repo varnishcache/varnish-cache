@@ -1,0 +1,33 @@
+# $Id$
+
+test "Regression test for #251: segfault on regsub on missing http header"
+
+server s1 {
+	rxreq 
+	txresp \
+		-hdr "Foobar: _barf_" \
+		-hdr "Connection: close" \
+		-body "012345\n"
+}
+
+varnish v1 -vcl+backend { 
+	sub vcl_fetch {
+		set obj.http.Snafu1 =
+		    "zoom"
+		    regsub(obj.http.Foomble, "ar", "\0\0")
+		    "box";
+	}
+} -start 
+
+server s1 -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foobar == "_barf_"
+	expect resp.http.snafu1 == "zoombox"
+}
+
+client c1 -run
