@@ -743,6 +743,10 @@ static const struct parspec parspec[] = {
 		"NB: Must be specified with -p to have effect.\n",
 		0,
 		"8192", "bytes" },
+	{ "log_hashstring", tweak_bool, &master.log_hash, 0, 0,
+		"Log the hash string to shared memory log.\n",
+		0,
+		"off", "bool" },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling diagnostics code:\n"
 		"  0x00000001 - CNT_Session states.\n"

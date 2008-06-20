@@ -159,6 +159,9 @@ struct params {
 
 	/* Default grace period */
 	unsigned		default_grace;
+
+	/* Log hash string to shm */
+	unsigned		log_hash;
 };
 
 extern volatile struct params *params;
