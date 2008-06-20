@@ -67,7 +67,7 @@
 
 static struct hash_slinger      *hash;
 
-static double
+double
 HSH_Grace(double g)
 {
 	if (isnan(g))
