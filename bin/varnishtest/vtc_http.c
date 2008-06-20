@@ -240,7 +240,7 @@ http_swallow_body(struct http *hp, char **hh)
 	int l, i;
 	
 
-	p = http_find_header(hh, "length");
+	p = http_find_header(hh, "content-length");
 	if (p == NULL)
 		return;
 	l = strtoul(p, NULL, 0);
