@@ -426,7 +426,7 @@ void VBE_AddHostHeader(struct sess *sp);
 void VBE_SelectBackend(struct sess *sp);
 
 /* cache_ban.c */
-void BAN_Add(const char *, int hash);
+int BAN_Add(struct cli *cli, const char *regexp, int hash);
 void BAN_Init(void);
 void BAN_NewObj(struct object *o);
 void BAN_DestroyObj(struct object *o);
