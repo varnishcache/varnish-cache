@@ -248,6 +248,8 @@ HSH_Lookup(struct sess *sp)
 		/* We found an object we like */
 		o->refcnt++;
 		UNLOCK(&oh->mtx);
+		if (params->log_hash)
+			WSP(sp, SLT_Hash, "%s", oh->hash);
 		(void)hash->deref(oh);
 		return (o);
 	}
@@ -273,6 +275,8 @@ HSH_Lookup(struct sess *sp)
 		grace_o->refcnt++;
 	}
 	UNLOCK(&oh->mtx);
+	if (params->log_hash)
+		WSP(sp, SLT_Hash, "%s", oh->hash);
 	/*
 	 * XXX: This may be too early, relative to pass objects.
 	 * XXX: possibly move to when we commit to have it in the cache.
