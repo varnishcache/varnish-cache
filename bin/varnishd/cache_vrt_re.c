@@ -115,6 +115,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 	unsigned u, x;
 
 	AN(re);
+	if (str == NULL)
+		return ("");
 	t = re;
 	i = regexec(t, str, 10, pm, 0);
 
