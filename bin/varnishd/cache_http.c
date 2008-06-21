@@ -207,7 +207,7 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	char *p;
 
 	l = hdr[0];
-	assert(l == strlen(hdr + 1));
+	diagnostic(l == strlen(hdr + 1));
 	assert(hdr[l] == ':');
 	hdr++;
 	u = http_findhdr(hp, l - 1, hdr);
