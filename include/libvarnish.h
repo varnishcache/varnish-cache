@@ -62,7 +62,12 @@ int vtmpfile(char *);
 
 /*
  * assert(), AN() and AZ() are static checks that should not happen.
- * xxxassert(), XXXAN() and XXXAZ() are markers for missing code.
+ *	In general asserts should be cheap, such as checking return
+ *	values and similar.
+ * diagnostic() are asserts which are so expensive that we may want
+ *	to compile them out for performance at a later date.
+ * xxxassert(), XXXAN() and XXXAZ() marks conditions we ought to
+ *	handle gracefully, such as malloc failure.
  */
 
 #ifdef WITHOUT_ASSERTS
@@ -89,3 +94,4 @@ void lbv_xxxassert(const char *, const char *, int, const char *, int);
 #define AN(foo)	do { assert((foo) != 0); } while (0)
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
 #define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
+#define diagnostic(foo)	assert(foo)
