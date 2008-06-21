@@ -157,14 +157,9 @@ usage(void)
 	fprintf(stderr, FMT, "-w int[,int[,int]]", "Number of worker threads");
 	fprintf(stderr, FMT, "", "  -w <fixed_count>");
 	fprintf(stderr, FMT, "", "  -w min,max");
-	fprintf(stderr, FMT, "", "  -w min,max,timeout [default: -w1,1000,120]");
+	fprintf(stderr, FMT, "", "  -w min,max,timeout [default: -w2,500,300]");
+	fprintf(stderr, FMT, "-u user", "Priviledge separation user id");
 #undef FMT
-#if 0
-	-c clusterid@cluster_controller
-	-m memory_limit
-	-u uid
-	-a CLI_port
-#endif
 	exit(1);
 }
 

@@ -477,7 +477,7 @@ static const struct parspec parspec[] = {
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"1", "pools" },
+		"2", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
 		"The maximum number of worker threads in all pools combined.\n"
 		"\n"
@@ -485,7 +485,7 @@ static const struct parspec parspec[] = {
 		"worker threads soak up RAM and CPU and generally just get "
 		"in the way of getting work done.\n",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"100", "threads" },
+		"500", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, NULL, 1, 0,
 		"The minimum number of threads in all worker pools combined.\n"
 		"\n"
