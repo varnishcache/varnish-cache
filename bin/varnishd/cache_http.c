@@ -269,22 +269,25 @@ http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char
 			h++;
 			continue;
 		}
+		/* Check for substrings before memcmp() */
 		if ((h + fl == e || vct_issepctl(h[fl])) &&
 		    !memcmp(h, field, fl)) {
 			/* got it */
 			h += fl;
 			if (ptr != NULL) {
-				while (vct_issp(*h))
+				/* Skip whitespace, looking for '=' */
+				while (*h && vct_issp(*h))
 					h++;
 				if (*h == '=') {
 					h++;
-					while (vct_issp(*h))
+					while (*h && vct_issp(*h))
 						h++;
 					*ptr = h;
 				}
 			}
 			return (1);
 		}
+		/* Skip token */
 		while (*h && !vct_issepctl(*h)) 
 			h++;
 	}
