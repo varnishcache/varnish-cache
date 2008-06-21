@@ -35,8 +35,8 @@
 #define VCT_CRLF  	(1<<1)
 #define VCT_LWS   	(VCT_CRLF | VCT_SP)
 #define VCT_CTL   	(1<<2)
-#define VCT_UALPHA	(1<<3)
-#define VCT_LOALPHA	(1<<4)
+#define VCT_ALPHA	(1<<3)
+#define VCT_SEPARATOR	(1<<4)
 #define VCT_DIGIT	(1<<5)
 #define VCT_HEX		(1<<6)
 
@@ -53,6 +53,8 @@ vct_is(unsigned char x, unsigned char y)
 #define vct_iscrlf(x) vct_is(x, VCT_CRLF)
 #define vct_islws(x) vct_is(x, VCT_LWS)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
+#define vct_isalpha(x) vct_is(x, VCT_ALPHA)
+#define vct_issep(x) vct_is(x, VCT_SEPARATOR)
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
 #define vct_skipcrlf(p) (p[0] == 0x0d && p[1] == 0x0a ? 2 : 1)
