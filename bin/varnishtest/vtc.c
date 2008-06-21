@@ -40,7 +40,7 @@
 #include "vtc.h"
 
 #define		MAX_FILESIZE		(1024 * 1024)
-#define		MAX_TOKENS		20
+#define		MAX_TOKENS		100
 
 /**********************************************************************
  * Read a file into memory
