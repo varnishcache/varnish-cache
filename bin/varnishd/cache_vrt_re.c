@@ -140,7 +140,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 			}
 			s++;
 			if (isdigit(*s)) {
-				x = digittoint(*s);
+				x = *s - '0';
 				l = pm[x].rm_eo - pm[x].rm_so;
 				Tadd(&res, str + pm[x].rm_so, l);
 				continue;
