@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "shmlog.h"
 #include "binary_heap.h"
@@ -150,6 +151,7 @@ update_object_when(const struct object *o)
 		oe->timer_when = o->ttl + HSH_Grace(o->grace);
 		oe->timer_what = tmr_ttl;
 	}
+	assert(!isnan(oe->timer_when));
 }
 
 /*--------------------------------------------------------------------
@@ -259,7 +261,7 @@ exp_timer(void *arg)
 	struct object *o;
 	double t;
 	struct sess *sp;
-	unsigned char log[1024];		/* XXX size ? */
+	unsigned char logbuf[1024];		/* XXX size ? */
 
 	THR_Name("cache-timeout");
 	(void)arg;
@@ -268,8 +270,8 @@ exp_timer(void *arg)
 	XXXAN(sp);
 	sp->wrk = &ww;
 	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlb = log;
-	ww.wle = log + sizeof log;
+	ww.wlp = ww.wlb = logbuf;
+	ww.wle = logbuf + sizeof logbuf;
 
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
