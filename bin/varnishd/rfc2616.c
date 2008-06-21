@@ -112,6 +112,7 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 	u1 = u2 = 0;
 	if (http_GetHdrField(hp, H_Cache_Control, "s-maxage", &p) ||
 	    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) {
+		AN(p);
 		u1 = strtoul(p, NULL, 0);
 		u2 = 0;
 		if (http_GetHdr(hp, H_Age, &p)) {

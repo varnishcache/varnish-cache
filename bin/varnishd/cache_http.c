@@ -43,6 +43,7 @@
 #include <strings.h>
 
 #include "shmlog.h"
+#include "vct.h"
 #include "cache.h"
 
 #ifndef HAVE_STRLCPY
@@ -244,37 +245,48 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	return (1);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Find a given headerfield, and if present and wanted, the beginning 
+ * of its value.
+ */
 
 int
 http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr)
 {
-	char *h;
+	char *h, *e;
 	unsigned fl;
 
+	if (ptr != NULL)
+		*ptr = NULL;
 	if (!http_GetHdr(hp, hdr, &h))
 		return (0);
+	AN(h);
+	e = strchr(h, '\0');
 	fl = strlen(field);
-	while (*h) {
-		if (isspace(*h)) {
+	while (h + fl <= e) {
+		/* Skip leading separators */
+		if (vct_issepctl(*h)) {
 			h++;
 			continue;
 		}
-		if (*h == ',') {
+		if ((h + fl == e || vct_issepctl(h[fl])) &&
+		    !memcmp(h, field, fl)) {
+			/* got it */
+			h += fl;
+			if (ptr != NULL) {
+				while (vct_issp(*h))
+					h++;
+				if (*h == '=') {
+					h++;
+					while (vct_issp(*h))
+						h++;
+					*ptr = h;
+				}
+			}
+			return (1);
+		}
+		while (*h && !vct_issepctl(*h)) 
 			h++;
-			continue;
-		}
-		if (memcmp(h, field, fl) ||
-		    isalpha(h[fl]) || h[fl] == '-') {
-			while (*h && !(isspace(*h) || *h == ','))
-				h++;
-			continue;
-		}
-		if (h[fl] == '=')
-			*ptr = &h[fl + 1];
-		else
-			*ptr = NULL;
-		return (1);
 	}
 	return (0);
 }

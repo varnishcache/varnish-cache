@@ -55,6 +55,7 @@ vct_is(unsigned char x, unsigned char y)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
 #define vct_isalpha(x) vct_is(x, VCT_ALPHA)
 #define vct_issep(x) vct_is(x, VCT_SEPARATOR)
+#define vct_issepctl(x) vct_is(x, VCT_SEPARATOR | VCT_CTL)
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
 #define vct_skipcrlf(p) (p[0] == 0x0d && p[1] == 0x0a ? 2 : 1)
