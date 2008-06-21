@@ -54,25 +54,6 @@
 #include "http_headers.h"
 #undef HTTPH
 
-#define C_SP	(1<<0)
-#define C_CRLF	(1<<1)
-#define C_LWS	(C_CRLF | C_SP)
-#define C_CTL	(1<<2)
-
-static unsigned char vctyptab[256] = {
-	['\t']	=	C_SP,
-	['\n']	=	C_CRLF,
-	['\r']	=	C_CRLF,
-	[' ']	=	C_SP,
-};
-
-static int
-vctyp(unsigned char x, unsigned char y)
-{
-
-	return (vctyptab[x] & (y));
-}
-
 #define LOGMTX2(ax, bx, cx) 	[bx] = SLT_##ax##cx
 
 #define LOGMTX1(ax) { 		\
@@ -433,36 +414,36 @@ http_splitline(struct worker *w, int fd, struct http *hp, const struct http_conn
 	Tcheck(htc->rxbuf);
 
 	/* Skip leading LWS */
-	for (p = htc->rxbuf.b ; vctyp(*p, C_LWS); p++)
+	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
 		continue;
 
 	/* First field cannot contain SP, CRLF or CTL */
 	hp->hd[h1].b = p;
-	for (; !vctyp(*p, C_SP); p++)
-		if (vctyp(*p, C_CRLF | C_CTL))
+	for (; !vct_issp(*p); p++)
+		if (vct_isctl(*p))
 			return (400);
 	hp->hd[h1].e = p;
 
 	/* Skip SP */
-	for (; vctyp(*p, C_SP); p++)
+	for (; vct_issp(*p); p++)
 		;
 
 	/* Second field cannot contain SP, CRLF or CTL */
 	hp->hd[h2].b = p;
-	for (; !vctyp(*p, C_SP); p++)
-		if (vctyp(*p, C_CRLF | C_CTL))
+	for (; !vct_issp(*p); p++)
+		if (vct_isctl(*p))
 			return (400);
 	hp->hd[h2].e = p;
 
 	/* Skip SP */
-	for (; vctyp(*p, C_SP); p++)
+	for (; vct_issp(*p); p++)
 		;
 
 	/* Third field is optional and cannot contain CTL */
-	if (!vctyp(*p, C_CRLF)) {
+	if (!vct_iscrlf(*p)) {
 		hp->hd[h3].b = p;
-		for (; !vctyp(*p, C_CRLF); p++)
-			if (vctyp(*p, C_CTL))
+		for (; !vct_iscrlf(*p); p++)
+			if (vct_isctl(*p))
 				return (400);
 		hp->hd[h3].e = p;
 	} else {
@@ -471,9 +452,7 @@ http_splitline(struct worker *w, int fd, struct http *hp, const struct http_conn
 	}
 
 	/* Skip CRLF */
-	for (; vctyp(*p, C_CRLF); p++)
-		if (vctyp(*p, C_CTL))
-			return (400);
+	p += vct_skipcrlf(p);
 
 	*hp->hd[h1].e = '\0';
 	WSLH(w, fd, hp, h1);
@@ -864,13 +843,8 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 void
 HTTP_Init(void)
 {
-	int i;
+
 #define HTTPH(a, b, c, d, e, f, g) b[0] = (char)strlen(b + 1);
 #include "http_headers.h"
 #undef HTTPH
-
-	for (i = 1; i < 32; i++)
-		if (vctyptab[i] == 0)
-			vctyptab[i] = C_CTL;
-	vctyptab[127] = C_CTL;
 }
