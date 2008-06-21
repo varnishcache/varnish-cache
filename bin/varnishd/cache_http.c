@@ -33,7 +33,6 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -219,7 +218,7 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	}
 	if (ptr != NULL) {
 		p = hp->hd[u].b + l;
-		while (isspace(*p))
+		while (vct_issp(*p))
 			p++;
 		*ptr = p;
 	}
@@ -275,7 +274,9 @@ http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: redo with http_GetHdrField() ?
+ */
 
 const char *
 http_DoConnection(struct http *hp)
@@ -291,12 +292,12 @@ http_DoConnection(struct http *hp)
 	}
 	ret = NULL;
 	for (; *p; p++) {
-		if (isspace(*p))
+		if (vct_issp(*p))
 			continue;
 		if (*p == ',')
 			continue;
 		for (q = p + 1; *q; q++)
-			if (*q == ',' || isspace(*q))
+			if (*q == ',' || vct_issp(*q))
 				break;
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
