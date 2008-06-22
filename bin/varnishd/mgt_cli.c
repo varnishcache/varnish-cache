@@ -320,8 +320,10 @@ mgt_cli_close(struct cli_port *cp)
 		(void)close(2);
 		assert(open("/dev/null", O_WRONLY) == 2);
 
-		if (dflag_copy == 2)
+		if (dflag_copy == 2) {
+			mgt_stop_child();
 			telnet_close_all();
+		}
 	} else {
 		telnet_close_one(cp->fdi);
 	}
