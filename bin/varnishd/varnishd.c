@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -505,6 +506,11 @@ main(int argc, char *argv[])
 		    strerror(errno));
 		exit(1);
 	}
+
+	if (n_arg != NULL) 
+		openlog(n_arg, LOG_PID, LOG_LOCAL0);
+	else
+		openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
 	if (mkdir(dirname, 0755) < 0 && errno != EEXIST) {
 		fprintf(stderr, "Cannot create working directory '%s': %s\n",
