@@ -329,6 +329,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	XXXAN(sc->filename);
 	free(q);
 	smf_initfile(sc, size, 1);
+	mgt_child_inherit(sc->fd, "storage_file");
 	free(p);
 }
 

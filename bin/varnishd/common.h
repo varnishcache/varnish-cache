@@ -51,3 +51,6 @@ int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 #endif
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
+
+/* Really belongs in mgt.h, but storage_file chokes on both */
+void mgt_child_inherit(int fd, const char *what);

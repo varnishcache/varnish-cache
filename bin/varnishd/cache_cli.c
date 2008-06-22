@@ -118,7 +118,7 @@ cli_vlu(void *priv, const char *p)
 	UNLOCK(&cli_mtx);
 	vsb_finish(cli->sb);
 	AZ(vsb_overflowed(cli->sb));
-	i = cli_writeres(heritage.fds[1], cli);
+	i = cli_writeres(heritage.cli_out, cli);
 	if (i)
 		VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
 	else
@@ -148,7 +148,7 @@ CLI_Run(void)
 	XXXAN(vlu);
 	printf("Ready\n");
 	while (1) {
-		pfd[0].fd = heritage.fds[2];
+		pfd[0].fd = heritage.cli_in;
 		pfd[0].events = POLLIN;
 		i = poll(pfd, 1, 5000);
 		if (i == 0) {
@@ -160,7 +160,7 @@ CLI_Run(void)
 			    "EOF on CLI connection, exiting\n");
 			break;
 		}
-		i = VLU_Fd(heritage.fds[2], vlu);
+		i = VLU_Fd(heritage.cli_in, vlu);
 		if (i) {
 			fprintf(stderr,
 			    "Error on CLI connection, exiting "
