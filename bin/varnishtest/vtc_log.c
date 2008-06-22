@@ -49,6 +49,7 @@ struct vtclog {
 #define VTCLOG_MAGIC	0x82731202
 	const char	*id;
 	struct vsb	*vsb;
+	pthread_mutex_t	mtx;
 };
 
 struct vtclog *
@@ -60,6 +61,7 @@ vtc_logopen(const char *id)
 	AN(vl);	
 	vl->id = id;
 	vl->vsb = vsb_newauto();
+	AZ(pthread_mutex_init(&vl->mtx, NULL));
 	return (vl);
 }
 
@@ -80,6 +82,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	assert(lvl < NLEAD);
 	if (lvl > vtc_verbosity)
 		return;
+	AZ(pthread_mutex_lock(&vl->mtx));
 	vsb_printf(vl->vsb, "%s %-4s ", lead[lvl], vl->id);
 	va_list ap;
 	va_start(ap, fmt);
@@ -90,6 +93,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	AZ(vsb_overflowed(vl->vsb));
 	(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
+	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0)
 		exit (1);
 }
@@ -108,6 +112,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 		return;
 	if (pfx == NULL)
 		pfx = "";
+	AZ(pthread_mutex_lock(&vl->mtx));
 	if (str == NULL) 
 		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
 		    lead[lvl], vl->id, pfx);
@@ -136,6 +141,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	AZ(vsb_overflowed(vl->vsb));
 	(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
+	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0)
 		exit (1);
 }
