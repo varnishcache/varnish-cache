@@ -32,8 +32,8 @@
 #include "vtc.h"
 
 void
-cmd_stats(char **av, void *priv)
+cmd_stats(CMD_ARGS)
 {
 
-	cmd_dump(av, priv);
+	cmd_dump(av, priv, cmd);
 }

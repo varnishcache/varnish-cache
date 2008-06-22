@@ -161,11 +161,12 @@ client_run(struct client *c)
  */
 
 void
-cmd_client(char **av, void *priv)
+cmd_client(CMD_ARGS)
 {
 	struct client *c, *c2;
 
 	(void)priv;
+	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

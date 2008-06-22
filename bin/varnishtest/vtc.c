@@ -172,7 +172,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 		}
 	
 		assert(cp->cmd != NULL);
-		cp->cmd(token_s, priv);
+		cp->cmd(token_s, priv, cmd);
 	}
 }
 
@@ -185,7 +185,7 @@ reset_cmds(const struct cmds *cmd)
 {
 
 	for (; cmd->name != NULL; cmd++)
-		cmd->cmd(NULL, NULL);
+		cmd->cmd(NULL, NULL, NULL);
 }
 
 /**********************************************************************
@@ -193,10 +193,11 @@ reset_cmds(const struct cmds *cmd)
  */
 
 static void
-cmd_test(char **av, void *priv)
+cmd_test(CMD_ARGS)
 {
 
 	(void)priv;
+	(void)cmd;
 
 	if (av == NULL)
 		return;
@@ -212,11 +213,12 @@ cmd_test(char **av, void *priv)
  */
 
 void
-cmd_delay(char **av, void *priv)
+cmd_delay(CMD_ARGS)
 {
 	double f;
 
 	(void)priv;
+	(void)cmd;
 	if (av == NULL)
 		return;
 	AN(av[1]);
@@ -234,9 +236,10 @@ cmd_delay(char **av, void *priv)
  */
 
 void
-cmd_dump(char **av, void *priv)
+cmd_dump(CMD_ARGS)
 {
 
+	(void)cmd;
 	if (av == NULL)
 		return;
 	printf("cmd_dump(%p)\n", priv);
