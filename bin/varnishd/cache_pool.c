@@ -530,12 +530,19 @@ wrk_breed_flock(struct wq *qp)
 static void *
 wrk_herder_thread(void *priv)
 {
-	unsigned u;
+	unsigned u, w;
 
 	THR_Name("wrk_herder");
 	(void)priv;
 	while (1) {
 		for (u = 0 ; u < nwq; u++) {
+			/*
+			 * Make sure all pools have their minimum complement
+			 */
+			for (w = 0 ; w < nwq; w++) {
+				if (wq[w]->nthr < nthr_min)
+					wrk_breed_flock(wq[w]);
+			}
 			/*
 			 * We cannot avoid getting a mutex, so we have a
 			 * bogo mutex just for POSIX_STUPIDITY
