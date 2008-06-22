@@ -203,11 +203,12 @@ cmd_server_genvcl(struct vsb *vsb)
  */
 
 void
-cmd_server(char **av, void *priv)
+cmd_server(CMD_ARGS)
 {
 	struct server *s, *s2;
 
 	(void)priv;
+	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

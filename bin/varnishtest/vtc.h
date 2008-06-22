@@ -26,10 +26,12 @@
  * $Id$
  */
 
-typedef void cmd_f(char **av, void *priv);
-
 struct vsb;
 struct vtclog;
+struct cmds;
+
+#define CMD_ARGS char **av, void *priv, const struct cmds *cmd
+typedef void cmd_f(CMD_ARGS);
 
 struct cmds {
 	const char	*name;

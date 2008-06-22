@@ -116,13 +116,14 @@ cmd_var_resolve(struct http *hp, char *spec)
 }
 
 static void
-cmd_http_expect(char **av, void *priv)
+cmd_http_expect(CMD_ARGS)
 {
 	struct http *hp;
 	char *lhs;
 	char *cmp;
 	char *rhs;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	assert(!strcmp(av[0], "expect"));
 	av++;
@@ -305,10 +306,11 @@ http_rxhdr(struct http *hp)
  */
 
 static void
-cmd_http_rxresp(char **av, void *priv)
+cmd_http_rxresp(CMD_ARGS)
 {
 	struct http *hp;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(hp->client);
 	assert(!strcmp(av[0], "rxresp"));
@@ -329,7 +331,7 @@ cmd_http_rxresp(char **av, void *priv)
  */
 
 static void
-cmd_http_txresp(char **av, void *priv)
+cmd_http_txresp(CMD_ARGS)
 {
 	struct http *hp;
 	struct vsb *vsb;
@@ -341,6 +343,7 @@ cmd_http_txresp(char **av, void *priv)
 	const char *nl = "\r\n";
 	int l;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(hp->client);
 	assert(!strcmp(av[0], "txresp"));
@@ -408,10 +411,11 @@ cmd_http_txresp(char **av, void *priv)
  */
 
 static void
-cmd_http_rxreq(char **av, void *priv)
+cmd_http_rxreq(CMD_ARGS)
 {
 	struct http *hp;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(hp->client);
 	assert(!strcmp(av[0], "rxreq"));
@@ -432,7 +436,7 @@ cmd_http_rxreq(char **av, void *priv)
  */
 
 static void
-cmd_http_txreq(char **av, void *priv)
+cmd_http_txreq(CMD_ARGS)
 {
 	struct http *hp;
 	struct vsb *vsb;
@@ -444,6 +448,7 @@ cmd_http_txreq(char **av, void *priv)
 	const char *nl = "\r\n";
 	int l;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(hp->client);
 	assert(!strcmp(av[0], "txreq"));
