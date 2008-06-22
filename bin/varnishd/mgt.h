@@ -41,6 +41,7 @@ extern struct evbase	*mgt_evb;
 /* mgt_child.c */
 void mgt_run(int dflag, const char *T_arg);
 extern pid_t mgt_pid, child_pid;
+void mgt_stop_child(void);
 
 /* mgt_cli.c */
 
@@ -66,3 +67,16 @@ extern char *mgt_cc_cmd;
 
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
+
+#define REPORT0(pri, fmt)				\
+	do {						\
+		fprintf(stderr, fmt "\n");		\
+		syslog(pri, fmt);			\
+	} while (0)
+
+#define REPORT(pri, fmt, ...)				\
+	do {						\
+		fprintf(stderr, fmt "\n", __VA_ARGS__);	\
+		syslog(pri, fmt, __VA_ARGS__);		\
+	} while (0)
+

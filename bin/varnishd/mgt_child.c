@@ -56,6 +56,7 @@
 #include "mgt_cli.h"
 #include "mgt_event.h"
 #include "vlu.h"
+#include "vsb.h"
 #include "vss.h"
 #include "vbm.h"
 
@@ -90,6 +91,19 @@ static struct ev	*ev_listen;
 static struct vlu	*vlu;
 
 /*--------------------------------------------------------------------
+ * A handy little function
+ */
+
+static inline void
+closex(int *fd)
+{
+
+	assert(*fd >= 0);
+	AZ(close(*fd));
+	*fd = -1;
+}
+
+/*--------------------------------------------------------------------
  * Keep track of which filedescriptors the child should inherit and
  * which should be closed after fork()
  */
@@ -98,7 +112,6 @@ void
 mgt_child_inherit(int fd, const char *what)
 {
 
-	printf("Inherit %d %s\n", fd, what);
 	assert(fd >= 0);
 	if(fd_map == NULL)
 		fd_map = vbit_init(128);
@@ -116,9 +129,7 @@ child_line(void *priv, const char *p)
 {
 	(void)priv;
 
-	fprintf(stderr, "Child said (%d, %d): <<%s>>\n",
-	    child_state, child_pid, p);
-	syslog(LOG_NOTICE, "Child (%d) said <<%s>>", child_pid, p);
+	REPORT(LOG_NOTICE, "Child (%d) said %s", child_pid, p);
 	return (0);
 }
 
@@ -150,10 +161,14 @@ child_poker(const struct ev *e, int what)
 	(void)what;
 	if (child_state != CH_RUNNING)
 		return (1);
-	if (child_pid > 0 && mgt_cli_askchild(NULL, NULL, "ping\n")) {
-		fprintf(stderr, "Child not responding to ping\n");
-		(void)kill(child_pid, SIGKILL);
-	}
+	if (child_pid < 0)
+		return (0);
+	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
+		return (0);
+	REPORT(LOG_ERR,
+	    "Child (%d) not responding to ping, killing it.",
+	    child_pid);
+	(void)kill(child_pid, SIGKILL);
 	return (0);
 }
 
@@ -201,8 +216,7 @@ close_sockets(void)
 		if (ls->sock < 0)
 			continue;
 		mgt_child_inherit(ls->sock, NULL);
-		AZ(close(ls->sock));
-		ls->sock = -1;
+		closex(&ls->sock);
 	}
 }
 
@@ -221,6 +235,8 @@ start_child(void)
 		return;
 
 	if (open_sockets() != 0) {
+		REPORT0(LOG_ERR,
+		    "Child start failed: could not open sockets");
 		child_state = CH_STOPPED;
 		return;	/* XXX ?? */
 	}
@@ -283,19 +299,16 @@ start_child(void)
 
 		exit(1);
 	}
-	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
+	REPORT(LOG_NOTICE, "child (%d) Started", pid);
 
 	/* Close stuff the child got */
-	AZ(close(heritage.std_fd));
-	heritage.std_fd = -1;
+	closex(&heritage.std_fd);
 
 	mgt_child_inherit(heritage.cli_in, NULL);
-	AZ(close(heritage.cli_in));
-	heritage.cli_in = -1;
+	closex(&heritage.cli_in);
 
 	mgt_child_inherit(heritage.cli_out, NULL);
-	AZ(close(heritage.cli_out));
-	heritage.cli_out = -1;
+	closex(&heritage.cli_out);
 
 	close_sockets();
 
@@ -326,7 +339,7 @@ start_child(void)
 	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
-		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
+		REPORT(LOG_ERR, "Pushing vcls failed: %s", p);
 		free(p);
 		/* Pick up any stuff lingering on stdout/stderr */
 		(void)child_listener(NULL, EV_RD);
@@ -337,8 +350,8 @@ start_child(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
-stop_child(void)
+void
+mgt_stop_child(void)
 {
 
 	if (child_state != CH_RUNNING)
@@ -346,22 +359,18 @@ stop_child(void)
 
 	child_state = CH_STOPPING;
 
+	REPORT0(LOG_DEBUG, "Stopping Child");
 	if (ev_poker != NULL) {
 		ev_del(mgt_evb, ev_poker);
 		free(ev_poker);
 	}
 	ev_poker = NULL;
 
-	fprintf(stderr, "Clean child\n");
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
-	AZ(close(child_cli_out));
-	child_cli_out= -1;
-	AZ(close(child_cli_in));
-	child_cli_in = -1;
-
-	fprintf(stderr, "Child stopping\n");
+	closex(&child_cli_out);
+	closex(&child_cli_in);
 }
 
 /*--------------------------------------------------------------------*/
@@ -370,6 +379,7 @@ static int
 mgt_sigchld(const struct ev *e, int what)
 {
 	int status;
+	struct vsb *vsb;
 	pid_t r;
 
 	(void)e;
@@ -381,37 +391,45 @@ mgt_sigchld(const struct ev *e, int what)
 	}
 	ev_poker = NULL;
 
-	r = wait4(child_pid, &status, WNOHANG, NULL);
+	r = waitpid(child_pid, &status, WNOHANG);
 	if (r == 0 || (r == -1 && errno == ECHILD))
 		return (0);
 	assert(r == child_pid);
-	fprintf(stderr, "Cache child died pid=%d status=0x%x\n", r, status);
-	child_pid = -1;
+	vsb = vsb_newauto();
+	XXXAN(vsb);
+	vsb_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
+	if (!WIFEXITED(status) && WEXITSTATUS(status))
+		vsb_printf(vsb, " status=%d", WEXITSTATUS(status));
+	if (WIFSIGNALED(status))
+		vsb_printf(vsb, " signal=%d", WTERMSIG(status));
+#ifdef WCOREDUMP
+	if (WCOREDUMP(status))
+		vsb_printf(vsb, " (core dumped)");
+#endif
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	REPORT(LOG_INFO, "%s", vsb_data(vsb));
+	vsb_delete(vsb);
 
-	/* Pick up any stuff lingering on stdout/stderr */
-	(void)child_listener(NULL, EV_RD);
+	child_pid = -1;
 
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
-		fprintf(stderr, "Clean child\n");
 		mgt_cli_stop_child();
-
-		/* We tell the child to die gracefully by closing the CLI */
-		AZ(close(child_cli_out));
-		child_cli_out = -1;
-		AZ(close(child_cli_in));
-		child_cli_in = -1;
+		closex(&child_cli_out);
+		closex(&child_cli_in);
 	}
 
 	if (ev_listen != NULL) {
 		ev_del(mgt_evb, ev_listen);
 		free(ev_listen);
+		ev_listen = NULL;
 	}
-	ev_listen = NULL;
+	/* Pick up any stuff lingering on stdout/stderr */
+	(void)child_listener(NULL, EV_RD);
+	closex(&child_output);
 
-	AZ(close(child_output));
-	child_output = -1;
-	fprintf(stderr, "Child cleaned\n");
+	REPORT0(LOG_DEBUG, "Child cleanup complete");
 
 	if (child_state == CH_DIED && params->auto_restart)
 		start_child();
@@ -430,10 +448,10 @@ mgt_sigint(const struct ev *e, int what)
 
 	(void)e;
 	(void)what;
-	fprintf(stderr, "Manager got SIGINT\n");
+	REPORT0(LOG_ERR, "Manager got SIGINT");
 	(void)fflush(stdout);
 	if (child_pid >= 0)
-		stop_child();
+		mgt_stop_child();
 	exit (2);
 }
 
@@ -492,10 +510,8 @@ mgt_run(int dflag, const char *T_arg)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	printf("rolling(1)...\n");
-	fprintf(stderr, "rolling(2)...\n");
 	if (!dflag && !mgt_has_vcl()) 
-		fprintf(stderr, "No VCL loaded yet\n");
+		REPORT0(LOG_ERR, "No VCL loaded yet");
 	else if (!dflag)
 		start_child();
 	else
@@ -503,9 +519,10 @@ mgt_run(int dflag, const char *T_arg)
 		    "Debugging mode, enter \"start\" to start child\n");
 
 	i = ev_schedule(mgt_evb);
-	fprintf(stderr, "ev_schedule = %d\n", i);
+	if (i != 0)
+		REPORT(LOG_ERR, "ev_schedule() = %d", i);
 
-	fprintf(stderr, "manager dies\n");
+	REPORT0(LOG_ERR, "manager dies");
 	exit(2);
 }
 
@@ -517,7 +534,7 @@ mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	if (priv != NULL && child_state == CH_RUNNING)
-		stop_child();
+		mgt_stop_child();
 	else if (priv == NULL && child_state == CH_STOPPED) {
 		if (mgt_has_vcl())
 			start_child();

@@ -128,7 +128,7 @@ cli_vlu(void *priv, const char *p)
 }
 
 /*--------------------------------------------------------------------
- * Run CLI on stdin/stdout pipe from manager
+ * Run CLI on cli pipes from manager
  */
 
 void
@@ -158,7 +158,7 @@ CLI_Run(void)
 		if (pfd[0].revents & POLLHUP) {
 			fprintf(stderr,
 			    "EOF on CLI connection, exiting\n");
-			break;
+			exit(0);
 		}
 		i = VLU_Fd(heritage.cli_in, vlu);
 		if (i) {
