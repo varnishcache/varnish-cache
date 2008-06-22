@@ -57,6 +57,7 @@ struct varnish {
 #define VARNISH_MAGIC		0x208cd8e3
 	char			*name;
 	struct vtclog		*vl;
+	struct vtclog		*vl1;
 	VTAILQ_ENTRY(varnish)	list;
 
 	const char		*args;
@@ -92,8 +93,8 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	assert(i == 1);
 	i = cli_readres(v->cli_fd, &retval, &r, 1000);
 	assert(i == 0);
-	vtc_log(v->vl, 3, "CLI %u <%s>", retval, cmd);
 	vtc_dump(v->vl, 4, "CLI RX", r);
+	vtc_log(v->vl, 3, "CLI STATUS %u", retval);
 	if (repl != NULL)
 		*repl = r;
 	else
@@ -137,6 +138,8 @@ varnish_new(char *name)
 	v->name = name;
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
+	v->vl1 = vtc_logopen(name);
+	AN(v->vl1);
 	if (*name != 'v') {
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 		exit (1);
@@ -167,7 +170,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vtc_dump(v->vl, 4, "debug", buf);
+		vtc_dump(v->vl1, 4, "debug", buf);
 	}
 	return (NULL);
 }
