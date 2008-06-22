@@ -477,7 +477,7 @@ static const struct parspec parspec[] = {
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"1", "pools" },
+		"2", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
 		"The maximum number of worker threads in all pools combined.\n"
 		"\n"
