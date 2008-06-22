@@ -47,6 +47,7 @@
 #include "compat/asprintf.h"
 #endif
 #include "vsb.h"
+#include "vlu.h"
 
 #include "vqueue.h"
 
@@ -201,6 +202,16 @@ mgt_make_cc_cmd(struct vsb *sb, const char *sf, const char *of)
  * Errors goes in sb;
  */
 
+static int
+mgt_cc_vlu(void *priv, const char *str)
+{
+	struct vsb *vsb;
+
+	vsb = priv;
+	vsb_printf(vsb, "C-compiler said: %s\n", str);
+	return (0);
+}
+
 static char *
 mgt_run_cc(const char *source, struct vsb *sb)
 {
@@ -208,10 +219,10 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	struct vsb cmdsb;
 	char sf[] = "./vcl.########.c";
 	char *of;
-	char buf[128];
 	int p[2], sfd, srclen, status;
 	pid_t pid;
 	void *dlh;
+	struct vlu *vlu;
 
 	/* Create temporary C source file */
 	sfd = vtmpfile(sf);
@@ -235,6 +246,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	/* Name the output shared library by overwriting the final 'c' */
 	of = strdup(sf);
 	XXXAN(of);
+	assert(of[sizeof sf - 2] == 'c');
 	of[sizeof sf - 2] = 'o';
 	AN(vsb_new(&cmdsb, cmdline, sizeof cmdline, 0));
 	mgt_make_cc_cmd(&cmdsb, sf, of);
@@ -249,6 +261,8 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		free(of);
 		return (NULL);
 	}
+	assert(p[0] > STDERR_FILENO);
+	assert(p[1] > STDERR_FILENO);
 	if ((pid = fork()) < 0) {
 		vsb_printf(sb, "%s(): fork() failed: %s",
 		    __func__, strerror(errno));
@@ -259,21 +273,22 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		return (NULL);
 	}
 	if (pid == 0) {
-		AZ(close(p[0]));
 		AZ(close(STDIN_FILENO));
 		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
+		/* Close all other fds */
+		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
+			(void)close(sfd);
 		(void)execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
 		_exit(1);
 	}
 	AZ(close(p[1]));
-	do {
-		status = read(p[0], buf, sizeof buf);
-		if (status > 0)
-			vsb_printf(sb, "C-Compiler said: %.*s", status, buf);
-	} while (status > 0);
+	vlu = VLU_New(sb, mgt_cc_vlu, 0);
+	while (!VLU_Fd(p[0], vlu))
+		continue;
 	AZ(close(p[0]));
+	VLU_Destroy(vlu);
 	(void)unlink(sf);
 	if (waitpid(pid, &status, 0) < 0) {
 		vsb_printf(sb, "%s(): waitpid() failed: %s",
