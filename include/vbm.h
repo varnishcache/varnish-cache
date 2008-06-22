@@ -38,7 +38,7 @@
  */
 
 #define VBITMAP_TYPE	unsigned	/* Our preferred wordsize */
-#define VBITMAP_LUMP	(32*1024)	/* How many bits we alloc at a time */
+#define VBITMAP_LUMP	(1024)		/* How many bits we alloc at a time */
 #define VBITMAP_WORD	(sizeof(VBITMAP_TYPE) * 8)
 #define VBITMAP_IDX(n)	(n / VBITMAP_WORD)
 #define VBITMAP_BIT(n)	(1U << (n % VBITMAP_WORD))
@@ -88,9 +88,8 @@ static inline void
 vbit_clr(struct vbitmap *vb, unsigned bit)
 {
 
-	if (bit >= vb->nbits)
-		vbit_expand(vb, bit);
-	vb->bits[VBITMAP_IDX(bit)] &= ~VBITMAP_BIT(bit);
+	if (bit < vb->nbits)
+		vb->bits[VBITMAP_IDX(bit)] &= ~VBITMAP_BIT(bit);
 }
 
 static inline int
@@ -98,6 +97,6 @@ vbit_test(struct vbitmap *vb, unsigned bit)
 {
 
 	if (bit >= vb->nbits)
-		vbit_expand(vb, bit);
+		return (0);
 	return (vb->bits[VBITMAP_IDX(bit)] & VBITMAP_BIT(bit));
 }
