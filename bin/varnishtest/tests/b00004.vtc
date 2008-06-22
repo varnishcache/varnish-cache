@@ -1,0 +1,28 @@
+# $Id$
+
+test "Torture Varnish with start/stop commands"
+
+server s1 {
+	rxreq
+}
+
+varnish v1 -vcl+backend { } 
+
+varnish v1 -cli start
+varnish v1 -cli start
+varnish v1 -cli start
+
+varnish v1 -cli stop
+varnish v1 -cli stop
+varnish v1 -cli stop
+
+varnish v1 -cli start
+varnish v1 -cli stop
+
+varnish v1 -cli start
+varnish v1 -cli stop
+
+varnish v1 -cli start
+varnish v1 -cli stop
+
+varnish v1 -wait
