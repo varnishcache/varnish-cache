@@ -46,11 +46,12 @@ VTAILQ_HEAD(listen_sock_head, listen_sock);
 
 struct heritage {
 
-	/*
-	 * Two pipe(2)'s for CLI connection between cache and mgt.
-	 * cache reads [2] and writes [1].  Mgt reads [0] and writes [3].
-	 */
-	int				fds[4];
+	/* Two pipe(2)'s for CLI connection between cache and mgt.  */
+	int				cli_in;
+	int				cli_out;
+
+	/* File descriptor for stdout/stderr */
+	int				std_fd;
 
 	/* Sockets from which to accept connections */
 	struct listen_sock_head		socks;

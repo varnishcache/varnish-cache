@@ -57,11 +57,17 @@
 #include "mgt_event.h"
 #include "vlu.h"
 #include "vss.h"
+#include "vbm.h"
 
 pid_t		mgt_pid;
 pid_t		child_pid = -1;
 
-static int		child_fds[2];
+static struct vbitmap	*fd_map;
+
+static int		child_cli_in = -1;
+static int		child_cli_out = -1;
+static int		child_output = -1;
+
 static enum {
 	CH_STOPPED = 0,
 	CH_STARTING = 1,
@@ -82,6 +88,26 @@ struct evbase		*mgt_evb;
 static struct ev	*ev_poker;
 static struct ev	*ev_listen;
 static struct vlu	*vlu;
+
+/*--------------------------------------------------------------------
+ * Keep track of which filedescriptors the child should inherit and
+ * which should be closed after fork()
+ */
+
+void
+mgt_child_inherit(int fd, const char *what)
+{
+
+	printf("Inherit %d %s\n", fd, what);
+	assert(fd >= 0);
+	if(fd_map == NULL)
+		fd_map = vbit_init(128);
+	AN(fd_map);
+	if (what != NULL)
+		vbit_set(fd_map, fd);
+	else
+		vbit_clr(fd_map, fd);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -107,7 +133,7 @@ child_listener(const struct ev *e, int what)
 		ev_listen = NULL;
 		return (1);
 	}
-	if (VLU_Fd(child_fds[0], vlu)) {
+	if (VLU_Fd(child_output, vlu)) {
 		ev_listen = NULL;
 		return (1);
 	}
@@ -148,13 +174,15 @@ open_sockets(void)
 		if (ls->sock < 0) 
 			continue;
 
+		mgt_child_inherit(ls->sock, "sock");
+
 		/*
 		 * Set nonblocking mode to avoid a race where a client
 		 * closes before we call accept(2) and nobody else are in
 		 * the listen queue to release us.
 		 */
 		TCP_nonblocking(ls->sock);
-		TCP_filter_http(ls->sock);
+		(void)TCP_filter_http(ls->sock);
 		good++;
 	}
 	if (!good)
@@ -172,6 +200,7 @@ close_sockets(void)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
+		mgt_child_inherit(ls->sock, NULL);
 		AZ(close(ls->sock));
 		ls->sock = -1;
 	}
@@ -186,6 +215,7 @@ start_child(void)
 	unsigned u;
 	char *p;
 	struct ev *e;
+	int i, cp[2];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -197,31 +227,53 @@ start_child(void)
 
 	child_state = CH_STARTING;
 
-	AZ(pipe(&heritage.fds[0]));
-	AZ(pipe(&heritage.fds[2]));
-	AZ(pipe(child_fds));
+	/* Open pipe for mgr->child CLI */
+	AZ(pipe(cp));
+	heritage.cli_in = cp[0];
+	mgt_child_inherit(heritage.cli_in, "cli_in");
+	child_cli_out = cp[1];
+
+	/* Open pipe for child->mgr CLI */
+	AZ(pipe(cp));
+	heritage.cli_out = cp[1];
+	mgt_child_inherit(heritage.cli_out, "cli_out");
+	child_cli_in = cp[0];
+
+	/*
+	 * Open pipe for child stdout/err 
+	 * NB: not inherited, because we dup2() it to stdout/stderr in child
+	 */
+	AZ(pipe(cp));
+	heritage.std_fd = cp[1];
+	child_output = cp[0];
+
 	MCF_ParamSync();
 	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
 		exit(1);
 	}
 	if (pid == 0) {
-		/* XXX: We should close things like syslog & telnet sockets */
 		if (geteuid() == 0) {
 			XXXAZ(setgid(params->gid));
 			XXXAZ(setuid(params->uid));
 		}
 
 		/* Redirect stdin/out/err */
-		AZ(close(0));
-		assert(open("/dev/null", O_RDONLY) == 0);
-		assert(dup2(child_fds[1], 1) == 1);
-		assert(dup2(child_fds[1], 2) == 2);
-		AZ(close(child_fds[0]));
-		AZ(close(child_fds[1]));
+		AZ(close(STDIN_FILENO));
+		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
+		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
+		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
 
-		AZ(close(heritage.fds[0]));
-		AZ(close(heritage.fds[3]));
+		/* Close anything we shouldn't know about */
+		closelog();
+		printf("Closed fds:");
+		for (i = STDERR_FILENO + 1; i < getdtablesize(); i++) {
+			if (vbit_test(fd_map, i))
+				continue;
+			if (close(i) == 0)
+				printf(" %d", i);
+		}
+		printf("\n");
 
 		setproctitle("Varnish-Chld %s", heritage.name);
 
@@ -231,13 +283,21 @@ start_child(void)
 
 		exit(1);
 	}
-
 	fprintf(stderr, "start child pid %jd\n", (intmax_t)pid);
 
-	close_sockets();
+	/* Close stuff the child got */
+	AZ(close(heritage.std_fd));
+	heritage.std_fd = -1;
 
-	AZ(close(child_fds[1]));
-	child_fds[1] = -1;
+	mgt_child_inherit(heritage.cli_in, NULL);
+	AZ(close(heritage.cli_in));
+	heritage.cli_in = -1;
+
+	mgt_child_inherit(heritage.cli_out, NULL);
+	AZ(close(heritage.cli_out));
+	heritage.cli_out = -1;
+
+	close_sockets();
 
 	vlu = VLU_New(NULL, child_line, 0);
 	AN(vlu);
@@ -245,7 +305,7 @@ start_child(void)
 	AZ(ev_listen);
 	e = ev_new();
 	XXXAN(e);
-	e->fd = child_fds[0];
+	e->fd = child_output;
 	e->fd_flags = EV_RD;
 	e->name = "Child listener";
 	e->callback = child_listener;
@@ -263,17 +323,13 @@ start_child(void)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(heritage.fds[0], heritage.fds[3]);
-	AZ(close(heritage.fds[1]));
-	heritage.fds[1] = -1;
-	AZ(close(heritage.fds[2]));
-	heritage.fds[2] = -1;
+	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		fprintf(stderr, "Pushing vcls failed:\n%s\n", p);
 		free(p);
 		/* Pick up any stuff lingering on stdout/stderr */
-		child_listener(NULL, EV_RD);
+		(void)child_listener(NULL, EV_RD);
 		exit(2);
 	}
 	child_state = CH_RUNNING;
@@ -300,10 +356,10 @@ stop_child(void)
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
-	AZ(close(heritage.fds[0]));
-	heritage.fds[0] = -1;
-	AZ(close(heritage.fds[3]));
-	heritage.fds[3] = -1;
+	AZ(close(child_cli_out));
+	child_cli_out= -1;
+	AZ(close(child_cli_in));
+	child_cli_in = -1;
 
 	fprintf(stderr, "Child stopping\n");
 }
@@ -333,7 +389,7 @@ mgt_sigchld(const struct ev *e, int what)
 	child_pid = -1;
 
 	/* Pick up any stuff lingering on stdout/stderr */
-	child_listener(NULL, EV_RD);
+	(void)child_listener(NULL, EV_RD);
 
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
@@ -341,10 +397,10 @@ mgt_sigchld(const struct ev *e, int what)
 		mgt_cli_stop_child();
 
 		/* We tell the child to die gracefully by closing the CLI */
-		AZ(close(heritage.fds[0]));
-		heritage.fds[0] = -1;
-		AZ(close(heritage.fds[3]));
-		heritage.fds[3] = -1;
+		AZ(close(child_cli_out));
+		child_cli_out = -1;
+		AZ(close(child_cli_in));
+		child_cli_in = -1;
 	}
 
 	if (ev_listen != NULL) {
@@ -353,8 +409,8 @@ mgt_sigchld(const struct ev *e, int what)
 	}
 	ev_listen = NULL;
 
-	AZ(close(child_fds[0]));
-	child_fds[0] = -1;
+	AZ(close(child_output));
+	child_output = -1;
 	fprintf(stderr, "Child cleaned\n");
 
 	if (child_state == CH_DIED && params->auto_restart)
