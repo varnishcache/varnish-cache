@@ -2,7 +2,7 @@
 
 SUBDIRS = include lib bin man etc doc
 
-SUBDIRS += debian redhat
+SUBDIRS += redhat
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
