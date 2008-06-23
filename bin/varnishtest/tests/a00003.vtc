@@ -2,7 +2,7 @@
 
 test "dual independent HTTP transactions"
 
-server s1 -listen :9080 {
+server s1 -listen localhost:9080 {
 	rxreq
 	expect req.request == PUT
 	expect req.proto == HTTP/1.0
@@ -10,7 +10,7 @@ server s1 -listen :9080 {
 	txresp -proto HTTP/1.2 -status 201 -msg Foo
 }
 
-server s2 -listen :9081 {
+server s2 -listen localhost:9081 {
 	rxreq
 	expect req.request == GET
 	expect req.proto == HTTP/1.1

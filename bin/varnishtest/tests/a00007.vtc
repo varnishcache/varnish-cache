@@ -2,7 +2,7 @@
 
 test "TCP reuse"
 
-server s1 -listen :9080 {
+server s1 -listen localhost:9080 {
 	rxreq
 	expect req.url == "/1"
 	txresp -hdr "Content-Length: 10" -body "123456789\n"
