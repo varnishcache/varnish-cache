@@ -2,7 +2,7 @@
 
 test "bidirectional message bodies"
 
-server s1 -listen localhost:9080 {
+server s1 -listen 127.0.0.1:9080 {
 	rxreq
 	expect req.request == PUT
 	expect req.proto == HTTP/1.0
@@ -14,7 +14,7 @@ server s1 -listen localhost:9080 {
 
 server s1 -start 
 
-client c1 -connect localhost:9080 {
+client c1 -connect 127.0.0.1:9080 {
 	txreq -req PUT -proto HTTP/1.0 -url /foo \
 		-hdr "Content-Length: 10" \
 		-body "123456789\n"

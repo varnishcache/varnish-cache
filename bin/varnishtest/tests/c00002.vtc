@@ -4,7 +4,7 @@
 
 test "Check that multiple thread pools all get started"
 
-varnish v1 -arg "-b localhost:9080 -p thread_pools=9" -start
+varnish v1 -arg "-b 127.0.0.1:9080 -p thread_pools=9" -start
 
 server s1 {
 	rxreq 

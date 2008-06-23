@@ -2,7 +2,7 @@
 #
 # $Id$
 
-varnish v1 -arg "-b localhost:9080" -start
+varnish v1 -arg "-b 127.0.0.1:9080" -start
 
 server s1 {
 	rxreq 
