@@ -120,7 +120,7 @@ server_new(char *name)
 		vtc_log(s->vl, 0, "Server name must start with 's'");
 		exit (1);
 	}
-	s->listen = ":9080";
+	s->listen = "localhost:9080";
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
 	s->depth = 1;

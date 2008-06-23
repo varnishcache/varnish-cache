@@ -2,7 +2,7 @@
 
 test "basic default HTTP transactions with expect"
 
-server s1 -listen :9080 {
+server s1 -listen localhost:9080 {
 	rxreq
 	expect req.request == GET
 	expect req.proto == HTTP/1.1
