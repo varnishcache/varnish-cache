@@ -120,7 +120,7 @@ server_new(char *name)
 		vtc_log(s->vl, 0, "Server name must start with 's'");
 		exit (1);
 	}
-	s->listen = "localhost:9080";
+	s->listen = "127.0.0.1:9080";
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
 	s->depth = 1;
@@ -192,7 +192,7 @@ cmd_server_genvcl(struct vsb *vsb)
 		vsb_printf(vsb,
 		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
 		    s->name,
-		    s->addr == NULL ? "localhost" : s->addr,
+		    s->addr == NULL ? "127.0.0.1" : s->addr,
 		    s->port);
 	}
 }
