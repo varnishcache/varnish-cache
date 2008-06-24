@@ -124,7 +124,6 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re, const char
 	if (i == REG_NOMATCH)
 		return(str);
 
-VSL(SLT_Debug, sp->fd, "REGSUB {");
 	u = WS_Reserve(sp->http->ws, 0);
 	res.e = res.b = b0 = sp->http->ws->f;
 	res.e += u;
@@ -164,7 +163,6 @@ VSL(SLT_Debug, sp->fd, "REGSUB {");
 		return (str);
 	} 
 	Tcheck(res);
-	WS_Release(sp->http->ws, b0 - res.b);
-VSL(SLT_Debug, sp->fd, "REGSUB }");
+	WS_ReleaseP(sp->http->ws, res.b);
 	return (b0);
 }
