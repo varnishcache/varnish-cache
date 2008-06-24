@@ -550,7 +550,7 @@ main(int argc, char *argv[])
 	if (VSL_OpenLog(vd, n_arg))
 		exit(1);
 
-	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
