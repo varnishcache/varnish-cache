@@ -53,6 +53,7 @@ varnishd_SOURCES = \
 	varnishd.c
 
 noinst_HEADERS = \
+	acct_fields.h \
 	cache.h \
 	cache_acceptor.h \
 	common.h \
