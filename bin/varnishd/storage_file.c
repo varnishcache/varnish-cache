@@ -274,6 +274,7 @@ smf_init(struct stevedore *parent, const char *spec)
 	sc->fd = open(p, O_RDWR | O_CREAT | O_EXCL, 0600);
 	if (sc->fd >= 0) {
 		sc->filename = p;
+		mgt_child_inherit(sc->fd, "storage_file");
 		smf_initfile(sc, size, 1);
 		return;
 	}
@@ -310,6 +311,7 @@ smf_init(struct stevedore *parent, const char *spec)
 			exit (2);
 		}
 		sc->filename = p;
+		mgt_child_inherit(sc->fd, "storage_file");
 		smf_initfile(sc, size, 0);
 		return;
 	}
