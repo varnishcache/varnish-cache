@@ -24,9 +24,10 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
-TESTS = num_c_test
 
 if ENABLE_TESTS
+TESTS = num_c_test
+
 noinst_PROGRAMS = ${TESTS}
 
 num_c_test_SOURCES = num.c
