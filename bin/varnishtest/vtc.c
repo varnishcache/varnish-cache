@@ -42,6 +42,8 @@
 #define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		100
 
+static struct vtclog	*vl;
+
 /**********************************************************************
  * Read a file into memory
  */
@@ -207,6 +209,22 @@ cmd_test(CMD_ARGS)
 	AZ(av[2]);
 }
 
+/**********************************************************************
+ * Shell command execution
+ */
+
+static void
+cmd_shell(CMD_ARGS)
+{
+
+	(void)priv;
+	(void)cmd;
+
+	AN(av[1]);
+	AZ(av[2]);
+	vtc_dump(vl, 4, "shell", av[1]);
+	system(av[1]);
+}
 
 /**********************************************************************
  * Dump command arguments
@@ -258,6 +276,7 @@ static struct cmds cmds[] = {
 	{ "varnish", 	cmd_varnish },
 	{ "delay", 	cmd_delay },
 	{ "test", 	cmd_test },
+	{ "shell", 	cmd_shell },
 	{ NULL, 	NULL }
 };
 
@@ -285,6 +304,8 @@ main(int argc, char **argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+	vl = vtc_logopen("");
+	AN(vl);
 	while ((ch = getopt(argc, argv, "qv")) != -1) {
 		switch (ch) {
 		case 'q':
