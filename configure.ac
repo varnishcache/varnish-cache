@@ -326,7 +326,6 @@ AC_CONFIG_FILES([
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     man/Makefile
-    debian/Makefile
     redhat/Makefile
     varnishapi.pc
 ])
