@@ -525,7 +525,7 @@ main(int argc, char *argv[])
 	}
 
 	/* XXX: should this be relative to the -n arg ? */
-	if (P_arg && (pfh = vpf_open(P_arg, 0600, NULL)) == NULL) {
+	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
