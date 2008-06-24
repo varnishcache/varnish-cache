@@ -1,0 +1,22 @@
+# Test that we get anything through at all
+#
+# $Id$
+
+test "Check that we start if one listen address works"
+
+varnish v1 -accept ":9081 127.0.0.2:9082" -arg "-b 127.0.0.1:9080"  -start
+
+server s1 {
+	rxreq 
+	txresp -hdr "Connection: close" -body "012345\n"
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+
+server s1 -wait
+
+varnish v1 -stop

@@ -190,7 +190,7 @@ varnish_launch(struct varnish *v)
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->name);
-	vsb_printf(vsb, " -a %s -T %s", v->accept, v->telnet);
+	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
 	vsb_printf(vsb, " %s", v->args);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
