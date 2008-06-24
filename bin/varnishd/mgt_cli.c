@@ -132,7 +132,7 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
-	{ CLI_SERVER_STOP,	mcf_server_startstop, &cli_proto },
+	{ CLI_SERVER_STOP,	mcf_server_startstop, cli_proto },
 	{ CLI_STATS,		mcf_stats, NULL },
 	{ CLI_VCL_LOAD,		mcf_config_load, NULL },
 	{ CLI_VCL_INLINE,	mcf_config_inline, NULL },
@@ -241,14 +241,12 @@ mgt_cli_vlu(void *priv, const char *p)
 	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
 	vsb_clear(cp->cli->sb);
 
-	/* Remove trailing whitespace */
-	q = strchr(p, '\0');
-	while (q > p && isspace(q[-1]))
-		q--;
-	*q = '\0';
+	/* Skip whitespace */
+	for (; isspace(*p); p++)
+		continue;
 
 	/* Ignore empty lines */
-	if (*p == 0)
+	if (*p == '\0')
 		return (0);
 
 	cli_dispatch(cp->cli, cli_proto, p);
@@ -449,7 +447,7 @@ telnet_accept(const struct ev *ev, int what)
 	asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1);
 	XXXAN(p);
 
-	telnet_new(i);
+	(void)telnet_new(i);
 
 	mgt_cli_setup(i, i, 0, p);
 	free(p);
