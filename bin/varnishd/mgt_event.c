@@ -45,6 +45,8 @@
 #include "miniobj.h"
 #include "binary_heap.h"
 
+#undef DEBUG_EVENTS
+
 /* INFTIM indicates an infinite timeout for poll(2) */
 #ifndef INFTIM
 #define INFTIM -1
@@ -72,12 +74,12 @@ struct evbase {
 	unsigned char		disturbed;
 	unsigned		psig;
 	pthread_t		thread;
+#ifdef DEBUG_EVENTS
 	FILE			*debug;
+#endif
 };
 
 /*--------------------------------------------------------------------*/
-
-#undef DEBUG_EVENTS
 
 #ifdef DEBUG_EVENTS
 #define DBG(evb, ...) do {				\
