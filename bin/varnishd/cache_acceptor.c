@@ -185,20 +185,26 @@ vca_acct(void *arg)
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
 			need_test = 1;
 			tv_sndtimeo.tv_sec = params->send_timeout;
-			VTAILQ_FOREACH(ls, &heritage.socks, list) 
+			VTAILQ_FOREACH(ls, &heritage.socks, list) {
+				if (ls->sock < 0)
+					continue;
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
 				    SO_SNDTIMEO,
 				    &tv_sndtimeo, sizeof tv_sndtimeo));
+			}
 		}
 #endif
 #ifdef SO_RCVTIMEO_WORKS
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
-			VTAILQ_FOREACH(ls, &heritage.socks, list) 
+			VTAILQ_FOREACH(ls, &heritage.socks, list)  {
+				if (ls->sock < 0)
+					continue;
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
 				    SO_RCVTIMEO,
 				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
+			}
 		}
 #endif
 		i = poll(pfd, heritage.nsocks, 1000);
