@@ -691,6 +691,8 @@ Tlen(const txt t)
 static inline void
 Tadd(txt *t, const char *p, int l)
 {
+	Tcheck(*t);
+
 	if (l <= 0) {
 	} if (t->b + l < t->e) {
 		memcpy(t->b, p, l);

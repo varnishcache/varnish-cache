@@ -167,6 +167,7 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
+	assert(bytes <= ws->e - ws->f);
 	DSL(0x02, SLT_Debug, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
