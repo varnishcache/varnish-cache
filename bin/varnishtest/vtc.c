@@ -220,6 +220,8 @@ cmd_shell(CMD_ARGS)
 	(void)priv;
 	(void)cmd;
 
+	if (av == NULL)
+		return;
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1]);
