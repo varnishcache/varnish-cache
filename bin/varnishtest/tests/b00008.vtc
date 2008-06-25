@@ -1,0 +1,19 @@
+# $Id$
+
+test "Test CLI help and parameter functions"
+
+varnish v1 -arg "-b localhost:9080" 
+
+varnish v1 -cli "help"
+
+varnish v1 -cli "param.show"
+
+varnish v1 -cli "param.show diag_bitmap"
+
+varnish v1 -cli "param.set diag_bitmap 0x40"
+
+varnish v1 -cli "param.set diag_bitmap 0x0"
+
+varnish v1 -start
+
+varnish v1 -cli "help"
