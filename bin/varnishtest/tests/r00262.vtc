@@ -1,0 +1,29 @@
+# $Id$
+
+test "Test that inter-request whitespace trimming works"
+
+server s1 {
+	rxreq 
+	txresp \
+		-hdr "Connection: close" \
+		-body "012345\n"
+}
+
+varnish v1 -arg "-p session_linger=20" -vcl+backend { } -start 
+
+server s1 -start 
+
+client c1 {
+	send "GET / HTTP/1.1\r\n\r\n\r\n"
+
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+
+	send "GET / HTTP/1.1\r\n\r\n"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1002 1001"
+}
+
+client c1 -run
