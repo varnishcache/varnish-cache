@@ -63,6 +63,7 @@ htc_header_complete(txt *t)
 		continue;
 	if (*p == '\0') {
 		t->e = t->b;
+		*t->e = '\0';
 		return (0);
 	}
 	while (1) {
