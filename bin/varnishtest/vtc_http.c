@@ -512,6 +512,27 @@ cmd_http_txreq(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Send a string
+ */
+
+static void
+cmd_http_send(CMD_ARGS)
+{
+	struct http *hp;
+	int i;
+
+	(void)cmd;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	vtc_dump(hp->vl, 4, "send", av[1]);
+	i = write(hp->fd, av[1], strlen(av[1]));
+	assert(i == strlen(av[1]));
+
+}
+
+
+/**********************************************************************
  * Execute HTTP specifications
  */
 
@@ -521,6 +542,7 @@ static struct cmds http_cmds[] = {
 	{ "txresp",	cmd_http_txresp },
 	{ "rxresp",	cmd_http_rxresp },
 	{ "expect",	cmd_http_expect },
+	{ "send",	cmd_http_send },
 	{ "delay",	cmd_delay },
 	{ NULL,		NULL }
 };
