@@ -1,0 +1,43 @@
+# $Id$
+
+test "Check chunked encoding from backend works"
+
+varnish v1 -arg "-s malloc -b 127.0.0.1:9080" -start
+
+server s1 {
+	rxreq 
+	expect req.url == "/bar"
+	send "HTTP/1.1 200 Ok\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send "00000004\r\n1234\r\n"
+	send "00000000\r\n"
+
+	rxreq 
+	expect req.url == "/foo"
+	send "HTTP/1.1 200 Ok\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send "00000004\r\n1234\r\n"
+	send "00000004\r\n1234\r\n"
+	send "00000000\r\n"
+}
+
+server s1 -start 
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "8"
+}
+
+client c1 -run
+
+server s1 -wait
+
+varnish v1 -stop
