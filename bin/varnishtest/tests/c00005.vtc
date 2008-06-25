@@ -1,0 +1,46 @@
+# $Id$
+
+test "Test simple ACL"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Content-Length: 5" -body "1111\n"
+	rxreq
+	expect req.url == "foo"
+	txresp -hdr "Content-Length: 5" -body "2222\n"
+} -start
+
+varnish v1 -vcl+backend {
+	acl acl1 {
+		"127.0.0.1";
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {
+			set req.url = "/";
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "foo"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
+
+varnish v1 -vcl+backend {
+	acl acl1 {
+		"!127.0.0.1";
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {
+			set req.url = "/";
+		}
+	}
+}
+
+client c1 -run
