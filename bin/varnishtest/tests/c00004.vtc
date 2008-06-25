@@ -1,0 +1,55 @@
+# $Id$
+
+test "Test Vary functionality"
+
+varnish v1 -arg "-b 127.0.0.1:9080" -start
+
+server s1 {
+	rxreq
+	expect req.http.foobar == "1"
+	txresp -hdr "Vary: Foobar" -hdr "Snafu: 1" -hdr "Content-Length: 5" -body "1111\n"
+	rxreq
+	expect req.http.foobar == "2"
+	txresp -hdr "Vary: Foobar" -hdr "Snafu: 2" -hdr "Content-Length: 5" -body "2222\n"
+	rxreq
+	expect req.http.foobar == "3"
+	txresp -hdr "Vary: Foobar" -hdr "Snafu: 3" -hdr "Content-Length: 5" -body "3333\n"
+	rxreq
+	expect req.http.foobar == "4"
+	txresp -hdr "Vary: Foobar" -hdr "Snafu: 4" -hdr "Content-Length: 5" -body "4444\n"
+} -start
+
+client c1 {
+	txreq -hdr "Foobar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.snafu == "1"
+
+	txreq -hdr "Foobar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1002"
+	expect resp.http.snafu == "2"
+
+	txreq -hdr "Foobar: 3"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1003"
+	expect resp.http.snafu == "3"
+
+	txreq -hdr "Foobar: 4"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1004"
+	expect resp.http.snafu == "4"
+
+	txreq -hdr "Foobar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1005 1001"
+	expect resp.http.snafu == "1"
+
+}
+
+client c1 -run
