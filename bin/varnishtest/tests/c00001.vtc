@@ -36,7 +36,7 @@ client c1 {
 	expect resp.http.foobar == "_barf_"
 	expect resp.http.snafu1 == "_bararf_"
 	expect resp.http.snafu2 == "_frap_"
-	expect resp.http.snafu3 == "_f\rap_"
+	expect resp.http.snafu3 == "_f\\rap_"
 	expect resp.http.snafu4 == "_f&rap_"
 	expect resp.http.snafu5 == "_barffra\p_"
 	# NB: have to escape the \\ in the next line
