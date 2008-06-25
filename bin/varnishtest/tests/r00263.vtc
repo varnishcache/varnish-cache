@@ -1,0 +1,21 @@
+# $Id$
+
+test "Test refcounting backends from director"
+
+varnish v1  -vcl+backend {
+	backend node1 { .host = "10.0.0.1"; .port = "80"; }
+	backend node2 { .host = "10.0.0.2"; .port = "80"; }
+	backend node3 { .host = "10.0.0.3"; .port = "80"; }
+
+	director cluster random {
+		{ .backend = node1; .weight = 1; }
+		{ .backend = node2; .weight = 1; }
+		{ .backend = node3; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = cluster;
+	}
+} -start 
+
+varnish v1 -wait
