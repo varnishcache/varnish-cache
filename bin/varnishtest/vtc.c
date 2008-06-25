@@ -123,6 +123,9 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 					if (*p == '\\' && p[1] == 'n') {
 						*q++ = '\n';
 						p++;
+					} else if (*p == '\\' && p[1] == 'r') {
+						*q++ = '\r';
+						p++;
 					} else if (*p == '\\' && p[1] == '\\') {
 						*q++ = '\\';
 						p++;
