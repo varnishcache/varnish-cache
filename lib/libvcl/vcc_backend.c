@@ -238,6 +238,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
+		vcc_AddRef(tl, h->name, R_BACKEND);
 		vcc_NextToken(tl);
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
