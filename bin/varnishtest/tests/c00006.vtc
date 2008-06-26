@@ -1,0 +1,34 @@
+# $Id$
+
+test "Test banning a url"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "1111\n"
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "11111\n"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 5
+} 
+
+client c1 -run
+
+varnish v1 -cli "purge.url foo"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 6
+}
+
+client c1 -run
