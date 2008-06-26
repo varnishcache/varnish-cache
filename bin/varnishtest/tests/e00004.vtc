@@ -1,0 +1,32 @@
+# $Id$
+
+test "ESI commented include"
+
+
+server s1 {
+	rxreq 
+	txresp -body {
+		Before include
+		<!--esi <esi:include src="/body"> -->
+		After include
+	}
+	rxreq 
+	expect req.url == "/body"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
