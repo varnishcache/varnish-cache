@@ -6,7 +6,6 @@ server s1 {
 	rxreq 
 	txresp \
 	    -hdr "Date: Thu, 19 Jun 2008 21:14:49 GMT" \
-	    -hdr "Content-Length: 7" \
 	    -hdr "Expires: Thu, 19 Jun 2008 21:14:49 GMT" \
 	    -hdr "Last-Modified: Sun, 27 Nov 2005 05:41:47 GMT" \
 	    -hdr "Cache-Control: max-age =0" \

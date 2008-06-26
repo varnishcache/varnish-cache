@@ -8,7 +8,6 @@ server s1 -listen 127.0.0.1:9080 {
 	expect req.proto == HTTP/1.0
 	expect req.url == "/foo"
 	txresp -proto HTTP/1.2 -status 201 -msg Foo \
-		-hdr "Content-Length: 10" \
 		-body "987654321\n"
 }
 
@@ -16,7 +15,6 @@ server s1 -start
 
 client c1 -connect 127.0.0.1:9080 {
 	txreq -req PUT -proto HTTP/1.0 -url /foo \
-		-hdr "Content-Length: 10" \
 		-body "123456789\n"
 	rxresp
 	expect resp.proto == HTTP/1.2
