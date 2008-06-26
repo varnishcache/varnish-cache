@@ -37,7 +37,3 @@ client c1 {
 }
 
 client c1 -run
-
-server s1 -wait
-
-varnish v1 -stop

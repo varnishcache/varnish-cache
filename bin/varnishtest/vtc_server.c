@@ -80,8 +80,6 @@ server_thread(void *priv)
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
 	socklen_t l;
-	char c;
-
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
@@ -99,10 +97,7 @@ server_thread(void *priv)
 		http_process(vl, s->spec, fd, 0);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		AZ(shutdown(fd, SHUT_WR));
-		while (1 == read(fd, &c, 1))
-			continue;
-		vtc_log(vl, 3, "closing fd %d", fd);
-		AZ(close(fd));
+		AZ(shutdown(fd, SHUT_RD));
 	}
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
@@ -176,7 +171,7 @@ server_wait(struct server *s)
 	vtc_log(s->vl, 2, "Waiting for server");
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL) {
-		vtc_log(s->vl, 0, "Server returned \"%s\"",
+		vtc_log(s->vl, 0, "Server returned \"%p\"",
 		    (char *)res);
 		exit (1);
 	}
