@@ -1,0 +1,32 @@
+# $Id$
+
+test "ESI spanning storage bits"
+
+
+server s1 {
+	rxreq 
+	expect req.url == "/foo/bar"
+	txresp -hdr "Connection: close"
+	send {
+		This is before the test
+		<![CDATA[fooooooobar]]>
+		<esi:remove>
+		This is a test: Unseen University
+		</esi:remove>
+		This is a test: Hello world
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start -cli "debug.fragfetch 32"
+
+client c1 {
+	txreq -url /foo/bar -hdr "Host: froboz"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
