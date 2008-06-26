@@ -5,10 +5,10 @@ test "Test simple ACL"
 server s1 {
 	rxreq
 	expect req.url == "/"
-	txresp -hdr "Content-Length: 5" -body "1111\n"
+	txresp -body "1111\n"
 	rxreq
 	expect req.url == "foo"
-	txresp -hdr "Content-Length: 5" -body "2222\n"
+	txresp -body "2222\n"
 } -start
 
 varnish v1 -vcl+backend {

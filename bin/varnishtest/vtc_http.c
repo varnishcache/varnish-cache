@@ -359,7 +359,6 @@ cmd_http_txresp(CMD_ARGS)
 	const char *status = "200";
 	const char *msg = "Ok";
 	const char *body = NULL;
-	int dohdr = 0;
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -371,46 +370,42 @@ cmd_http_txresp(CMD_ARGS)
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-proto")) {
-			AZ(dohdr);
 			proto = av[1];
 			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-status")) {
-			AZ(dohdr);
+		} else if (!strcmp(*av, "-status")) {
 			status = av[1];
 			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-msg")) {
-			AZ(dohdr);
+		} else if (!strcmp(*av, "-msg")) {
 			msg = av[1];
 			av++;
 			continue;
-		}
-		if (!strcmp(*av, "-body")) {
-			body = av[1];
-			av++;
-			continue;
-		}
+		} else
+			break;
+	}
+
+	vsb_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
+
+	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-hdr")) {
-			if (dohdr == 0) {
-				vsb_printf(hp->vsb, "%s %s %s%s", 
-				    proto, status, msg, nl);
-				dohdr = 1;
-			}
 			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
-			continue;
-		}
-		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
+		} else 
+			break;
+	}
+	for(; *av != NULL; av++) {
+		if (!strcmp(*av, "-body")) {
+			AZ(body);
+			body = av[1];
+			av++;
+		} else
+			break;
+	}
+	if (*av != NULL) {
+		fprintf(stderr, "Unknown http txresp spec: %s\n", *av);
 		exit (1);
 	}
-	if (dohdr == 0) {
-		vsb_printf(hp->vsb, "%s %s %s%s", 
-		    proto, status, msg, nl);
-		dohdr = 1;
-	}
+	if (body != NULL) 
+		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
 		vsb_cat(hp->vsb, body);
@@ -456,7 +451,6 @@ cmd_http_txreq(CMD_ARGS)
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
 	const char *body = NULL;
-	int dohdr = 0;
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -468,46 +462,39 @@ cmd_http_txreq(CMD_ARGS)
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {
-			AZ(dohdr);
 			url = av[1];
 			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-proto")) {
-			AZ(dohdr);
+		} else if (!strcmp(*av, "-proto")) {
 			proto = av[1];
 			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-req")) {
-			AZ(dohdr);
+		} else if (!strcmp(*av, "-req")) {
 			req = av[1];
 			av++;
-			continue;
-		}
+		} else
+			break;
+	}
+	vsb_printf(hp->vsb, "%s %s %s%s", req, url, proto, nl);
+	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-hdr")) {
-			if (dohdr == 0) {
-				vsb_printf(hp->vsb, "%s %s %s%s", 
-				    req, url, proto, nl);
-				dohdr = 1;
-			}
 			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
-			continue;
-		}
+		} else
+			break;
+	}
+	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-body")) {
+			AZ(body);
 			body = av[1];
 			av++;
-			continue;
-		}
+		} else
+			break;
+	}
+	if (*av != NULL) {
 		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
 		exit (1);
 	}
-	if (dohdr == 0) {
-		vsb_printf(hp->vsb, "%s %s %s%s", 
-		    req, url, proto, nl);
-		dohdr = 1;
-	}
+	if (body != NULL) 
+		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
 		vsb_cat(hp->vsb, body);
