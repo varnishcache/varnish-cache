@@ -1,0 +1,28 @@
+# $Id$
+
+test "ESI:remove"
+
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<esi:remove>
+		This is a test: Unseen University
+		</esi:remove>
+		This is a test: Hello world
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
