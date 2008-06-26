@@ -308,6 +308,7 @@ int
 main(int argc, char * const *argv)
 {
 	int ch;
+	FILE *fok;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -330,5 +331,8 @@ main(int argc, char * const *argv)
 	argv += optind;
 	for (ch = 0; ch < argc; ch++)
 		exec_file(argv[ch]);
+	fok = fopen("_.ok", "w");
+	if (fok != NULL)
+		fclose(fok);
 	return (0);
 }
