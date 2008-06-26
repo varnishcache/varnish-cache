@@ -1,0 +1,44 @@
+# $Id$
+
+test "ESI include with http://"
+
+
+server s1 {
+	rxreq 
+	expect req.url == "/foo/bar"
+	txresp -body {
+		Before include
+		<!--esi <esi:include src="http://bozz/body"> -->
+		After include
+	}
+} -start
+
+
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	expect req.url == "/body"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.host == "bozz") {
+			set req.backend = s2;
+		} else {
+			set req.backend = s1;
+		}
+	}
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq -url /foo/bar -hdr "Host: froboz"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
