@@ -1,0 +1,33 @@
+# $Id$
+
+test "Simple expiry test (fully reaped object)"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Cache-control: max-age = 1" -body "1111\n"
+	delay 20
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Cache-control: max-age = 1" -body "22222\n"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.content-length == 5
+	expect resp.http.x-varnish == "1001"
+	expect resp.status == 200
+} -run
+
+delay 20
+
+client c2 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == "1002"
+	expect resp.http.content-length == 6
+} -run
