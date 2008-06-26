@@ -8,7 +8,7 @@ server s1 {
 	expect req.url == "/foo/bar"
 	txresp -body {
 		Before include
-		<!--esi <esi:include src="http://bozz/body"> -->
+		<!--esi <esi:include src="http://bozz/body"/> -->
 		After include
 	}
 } -start
