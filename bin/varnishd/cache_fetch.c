@@ -232,7 +232,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
-			if (v > fetchfrag)
+			if (fetchfrag > 0 && v > fetchfrag)
 				v = fetchfrag;
 		}
 		AN(p);
