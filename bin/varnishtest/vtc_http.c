@@ -55,6 +55,8 @@ struct http {
 
 	int			nrxbuf;
 	char			*rxbuf;
+	int			prxbuf;
+	char			*body;
 
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
@@ -252,29 +254,74 @@ http_splitheader(struct http *hp, int req)
 
 
 /**********************************************************************
+ * Receive another character
+ */
+
+static void
+http_rxchar(struct http *hp, int n)
+{
+	int i;
+	struct pollfd pfd[1];
+
+	while (n > 0) {
+		pfd[0].fd = hp->fd;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		i = poll(pfd, 1, hp->timeout);
+		assert(i > 0);
+		assert(hp->prxbuf < hp->nrxbuf);
+		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
+		assert(i > 0);
+		hp->prxbuf += i;
+		hp->rxbuf[hp->prxbuf] = '\0';
+		n -= i;
+	}
+}
+
+/**********************************************************************
  * Swallow a HTTP message body
  */
 
 static void
-http_swallow_body(const struct http *hp, char * const *hh)
+http_swallow_body(struct http *hp, char * const *hh)
 {
-	char *p, b[BUFSIZ + 1];
-	int l, i;
+	char *p, *q;
+	int i, l;
 	
 
 	p = http_find_header(hh, "content-length");
-	if (p == NULL)
-		return;
-	l = strtoul(p, NULL, 0);
-	while (l > 0) {
-		i = sizeof b - 1;
-		if (i > l)
-			i = l;
-		i = read(hp->fd, b, i);
-		assert(i > 0);
-		b[i] = '\0';
-		vtc_dump(hp->vl, 4, "body", b);
-		l -= i;
+	if (p != NULL) {
+		l = strtoul(p, NULL, 0);
+		hp->body = q = hp->rxbuf + hp->prxbuf;
+		http_rxchar(hp, l);
+		vtc_dump(hp->vl, 4, "body", hp->body);
+	}
+	p = http_find_header(hh, "transfer-encoding");
+	if (p != NULL && !strcmp(p, "chunked")) {
+		hp->body = hp->rxbuf + hp->prxbuf;
+		while (1) {
+			l = hp->prxbuf;
+			do
+				http_rxchar(hp, 1);
+			while (hp->rxbuf[hp->prxbuf - 1] != '\n');
+			vtc_dump(hp->vl, 4, "len", hp->rxbuf + l);
+			i = strtoul(hp->rxbuf + l, &q, 16);
+			assert(q != hp->rxbuf + l);
+			assert(*q == '\0' || vct_islws(*q));
+			hp->prxbuf = l;
+			if (i > 0) {
+				http_rxchar(hp, i);
+				vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l);
+			}
+			l = hp->prxbuf;
+			http_rxchar(hp, 2);
+			assert(vct_iscrlf(hp->rxbuf[l]));
+			assert(vct_iscrlf(hp->rxbuf[l + 1]));
+			hp->prxbuf = l;
+			if (i == 0)
+				break;
+		}
+		vtc_dump(hp->vl, 4, "body", hp->body);
 	}
 }
 
@@ -285,27 +332,15 @@ http_swallow_body(const struct http *hp, char * const *hh)
 static void
 http_rxhdr(struct http *hp)
 {
-	int l, n, i;
-	struct pollfd pfd[1];
+	int i;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
-	AN(hp->rxbuf);
-	l = 0;
+	hp->prxbuf = 0;
+	hp->body = NULL;
 	while (1) {
-		pfd[0].fd = hp->fd;
-		pfd[0].events = POLLIN;
-		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout);
-		assert(i > 0);
-		assert(l < hp->nrxbuf);
-		n = read(hp->fd, hp->rxbuf + l, 1);
-		assert(n == 1);
-		l += n;
-		hp->rxbuf[l] = '\0';
-		assert(n > 0);
-		p = hp->rxbuf + l - 1;
+		http_rxchar(hp, 1);
+		p = hp->rxbuf + hp->prxbuf - 1;
 		i = 0;
 		for (i = 0; p > hp->rxbuf; p--) {
 			if (*p != '\n') 
@@ -318,7 +353,7 @@ http_rxhdr(struct http *hp)
 		if (i == 2)
 			break;
 	}
-	vtc_dump(hp->vl, 4, NULL, hp->rxbuf);
+	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf);
 }
 
 
@@ -572,6 +607,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	hp->timeout = 1000;
 	hp->nrxbuf = 8192;
 	hp->vsb = vsb_newauto();
+	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
+	AN(hp->rxbuf);
 	AN(hp->vsb);
 
 	s = strdup(spec);
@@ -580,5 +617,6 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	AN(s);
 	parse_string(s, http_cmds, hp);
 	vsb_delete(hp->vsb);
+	free(hp->rxbuf);
 	free(hp);
 }
