@@ -7,38 +7,44 @@
                         // 796 and 797 (out-of-bounds errors).
 -elib(123)  // size is both a variable and a macro with args
 -emacro(736, isnan)  // isnanf
+-efile(766, ../../config.h)
 
 
+// -header(../../config.h)
+
+// Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
-
--sem(vsb_new, @p == malloc(1))
--sem(vsb_delete, custodial(1))
+// 
+// -sem(vsb_new, @p == malloc(1))
+// -sem(vsb_delete, custodial(1))
 -sem(lbv_assert, r_no)
 -sem(lbv_xxxassert, r_no)
-
--ffc	// No automatic custody
-
+// -sem(WS_Init, custodial(2))
+// -sem(http_Setup, custodial(2))
+// 
+// -ffc	// No automatic custody
+// 
 -e763	// Redundant declaration for symbol '...' previously declared
--e726	// Extraneous comma ignored
--e728	// Symbol ... not explicitly initialized
+// -e726	// Extraneous comma ignored
+// -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ... 
--e785	// Too few initializers for aggregate 
--e786	// String concatenation within initializer
-
--emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
--emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
--emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
--emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
+// -e785	// Too few initializers for aggregate 
+// -e786	// String concatenation within initializer
+// 
+// -emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
+// -emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
+// -emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
+// -emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
-
+// 
 -esym(534, sprintf)	// Ignoring return value of function
--esym(534, asprintf)	// Ignoring return value of function
+// -esym(534, asprintf)	// Ignoring return value of function
 -esym(534, printf)	// Ignoring return value of function
 -esym(534, fprintf)	// Ignoring return value of function
 -esym(534, memset)	// Ignoring return value of function
--esym(534, memcpy)	// Ignoring return value of function
--esym(534, memmove)	// Ignoring return value of function
--esym(534, strcpy)	// Ignoring return value of function
+// -esym(534, memcpy)	// Ignoring return value of function
+// -esym(534, memmove)	// Ignoring return value of function
+// -esym(534, strcpy)	// Ignoring return value of function
 -esym(534, vsb_printf)	// Ignoring return value of function
 -esym(534, vsb_cat)	// Ignoring return value of function
 -esym(534, vsb_bcat)	// Ignoring return value of function
@@ -46,33 +52,44 @@
 -esym(534, strcat)	// Ignoring return value of function
 -esym(534, strcpy)	// Ignoring return value of function
 -esym(534, strlcpy)	// Ignoring return value of function
-
--emacro(506, isnan)	// constant value boolean
--emacro(747, isnan)	// significant coersion
--emacro(506, assert)	// constant value boolean
--emacro(827, assert)	// loop not reachable
--emacro(774, assert)	// booelan always true
-
-// cache.h
--emacro(506, INCOMPL) // Constant value Boolean
-
-// Review all below this line ///////////////////////////////////////////////
-
+// 
+// -emacro(506, isnan)	// constant value boolean
+// -emacro(747, isnan)	// significant coersion
+// -emacro(506, assert)	// constant value boolean
+// -emacro(827, assert)	// loop not reachable
+// -emacro(774, assert)	// booelan always true
+// -emacro(774, HTTPH)	// always false
+// 
+// // cache.h
+// -emacro(506, INCOMPL) // Constant value Boolean
+// 
+// // cache_center.c
+// -efunc(525, CNT_Session)	// Negative indentation from line
+// -efunc(525, http_FilterFields)	// Negative indentation from line
+// -efunc(539, http_FilterFields)	// Positive indentation from line
+// 
+// // cache_vcl.c
+// -efunc(525, vcl_handlingname)	// Negative indentation from line
+// -esym(528, vcl_handlingname)	// Not referenced
+// -e641	// Converting enum 'cli_status_e' to int
+// 
+// // Review all below this line ///////////////////////////////////////////////
+// 
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
 -e737	// [45]  Loss of sign in promotion from int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e574	// Signed-unsigned mix with relational
--e712	// Loss of precision (assignment) (long long to
--e747	// Significant prototype coercion (arg. no. 2) long
-
-/*
-
--e767	// Macro redef (system queue.h vs ours )
-
--e506	// Constant value boolean
--e818	// Pointer parameter '...' could be declared as pointing to const
--e774	// Boolean within 'if' always evaluates to False
--e534	// Ignoring return value of function
--e557	// unrecog format
-
-*/
+// -e712	// Loss of precision (assignment) (long long to
+// -e747	// Significant prototype coercion (arg. no. 2) long
+// 
+// /*
+// 
+// -e767	// Macro redef (system queue.h vs ours )
+// 
+// -e506	// Constant value boolean
+// -e818	// Pointer parameter '...' could be declared as pointing to const
+// -e774	// Boolean within 'if' always evaluates to False
+// -e534	// Ignoring return value of function
+// -e557	// unrecog format
+// 
+// */

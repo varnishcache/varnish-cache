@@ -6,11 +6,10 @@ flexelint \
 	-I. \
 	-I../../include \
 	-I../.. \
-	-DVARNISH_STATE_DIR=\"foo\" \
 	flint.lnt \
 	*.c > $T 2>&1
 
-for t in Error Warning Info
+for t in Error Warning Info Note
 do
 	sed -n "/$t [0-9][0-9][0-9]:/s/.*\($t [0-9][0-9][0-9]\).*/\1/p" $T
 done | awk '

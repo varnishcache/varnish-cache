@@ -252,11 +252,10 @@ cmd_server(CMD_ARGS)
 			server_wait(s);
 			continue;
 		}
-		if (**av == '{') {
-			s->spec = *av;
-			continue;
+		if (**av == '-') {
+			vtc_log(s->vl, 0, "Unknown server argument: %s", *av);
+			exit (1);
 		}
-		vtc_log(s->vl, 0, "Unknown server argument: %s", *av);
-		exit (1);
+		s->spec = *av;
 	}
 }

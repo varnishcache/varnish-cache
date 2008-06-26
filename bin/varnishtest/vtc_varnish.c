@@ -29,18 +29,16 @@
 
 #include <stdio.h>
 
-#include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
-
 
 #include "vqueue.h"
 #include "miniobj.h"
@@ -91,7 +89,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	assert(i == strlen(cmd));
 	i = write(v->cli_fd, "\n", 1);
 	assert(i == 1);
-	i = cli_readres(v->cli_fd, &retval, &r, 1000);
+	i = cli_readres(v->cli_fd, &retval, &r, 1.0);
 	assert(i == 0);
 	vtc_dump(v->vl, 4, "CLI RX", r);
 	vtc_log(v->vl, 3, "CLI STATUS %u", retval);
@@ -358,10 +356,9 @@ varnish_vcl(struct varnish *v, const char *vcl)
  */
 
 static void
-varnish_vclbackend(struct varnish *v, char *vcl)
+varnish_vclbackend(struct varnish *v, const char *vcl)
 {
 	struct vsb *vsb, *vsb2;
-	char *p;
 	enum cli_status_e u;
 
 	if (v->cli_fd < 0)
@@ -381,11 +378,6 @@ varnish_vclbackend(struct varnish *v, char *vcl)
 
 	varnish_cli_encode(vsb, vsb_data(vsb2));
 
-	if (*vcl == '{') {
-		p = strchr(++vcl, '\0');
-		if (p > vcl && p[-1] == '}')
-			p[-1] = '\0';
-	}
 	varnish_cli_encode(vsb, vcl);
 
 	vsb_printf(vsb, "\"", *vcl);

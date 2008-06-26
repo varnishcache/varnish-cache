@@ -51,6 +51,8 @@ struct http {
 	int			timeout;
 	struct vtclog		*vl;
 
+	struct vsb		*vsb;
+
 	int			nrxbuf;
 	char			*rxbuf;
 
@@ -58,12 +60,31 @@ struct http {
 	char			*resp[MAX_HDR];
 };
 
+/* XXX: we may want to vary this */
+static const char *nl = "\r\n";
+
+/**********************************************************************
+ * Finish and write the vsb to the fd
+ */
+
+static void
+http_write(const struct http *hp, int lvl, const char *pfx)
+{
+	int l;
+
+	vsb_finish(hp->vsb);
+	AZ(vsb_overflowed(hp->vsb));
+	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb));
+	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
+	assert(l == vsb_len(hp->vsb));
+}
+
 /**********************************************************************
  * find header
  */
 
 static char *
-http_find_header(char **hh, const char *hdr)
+http_find_header(char * const *hh, const char *hdr)
 {
 	int n, l;
 	char *r;
@@ -235,7 +256,7 @@ http_splitheader(struct http *hp, int req)
  */
 
 static void
-http_swallow_body(struct http *hp, char **hh)
+http_swallow_body(const struct http *hp, char * const *hh)
 {
 	char *p, b[BUFSIZ + 1];
 	int l, i;
@@ -334,14 +355,11 @@ static void
 cmd_http_txresp(CMD_ARGS)
 {
 	struct http *hp;
-	struct vsb *vsb;
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
 	const char *msg = "Ok";
 	const char *body = NULL;
 	int dohdr = 0;
-	const char *nl = "\r\n";
-	int l;
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -349,7 +367,7 @@ cmd_http_txresp(CMD_ARGS)
 	assert(!strcmp(av[0], "txresp"));
 	av++;
 
-	vsb = vsb_newauto();
+	vsb_clear(hp->vsb);
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-proto")) {
@@ -377,11 +395,11 @@ cmd_http_txresp(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-hdr")) {
 			if (dohdr == 0) {
-				vsb_printf(vsb, "%s %s %s%s", 
+				vsb_printf(hp->vsb, "%s %s %s%s", 
 				    proto, status, msg, nl);
 				dohdr = 1;
 			}
-			vsb_printf(vsb, "%s%s", av[1], nl);
+			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 			continue;
 		}
@@ -389,21 +407,16 @@ cmd_http_txresp(CMD_ARGS)
 		exit (1);
 	}
 	if (dohdr == 0) {
-		vsb_printf(vsb, "%s %s %s%s", 
+		vsb_printf(hp->vsb, "%s %s %s%s", 
 		    proto, status, msg, nl);
 		dohdr = 1;
 	}
-	vsb_cat(vsb, nl);
+	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
-		vsb_cat(vsb, body);
-		vsb_cat(vsb, nl);
+		vsb_cat(hp->vsb, body);
+		vsb_cat(hp->vsb, nl);
 	}
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
-	vtc_dump(hp->vl, 4, NULL, vsb_data(vsb));
-	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
-	assert(l == vsb_len(vsb));
-	vsb_delete(vsb);
+	http_write(hp, 4, "txresp");
 }
 
 /**********************************************************************
@@ -439,14 +452,11 @@ static void
 cmd_http_txreq(CMD_ARGS)
 {
 	struct http *hp;
-	struct vsb *vsb;
 	const char *req = "GET";
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
 	const char *body = NULL;
 	int dohdr = 0;
-	const char *nl = "\r\n";
-	int l;
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -454,7 +464,7 @@ cmd_http_txreq(CMD_ARGS)
 	assert(!strcmp(av[0], "txreq"));
 	av++;
 
-	vsb = vsb_newauto();
+	vsb_clear(hp->vsb);
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {
@@ -477,11 +487,11 @@ cmd_http_txreq(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-hdr")) {
 			if (dohdr == 0) {
-				vsb_printf(vsb, "%s %s %s%s", 
+				vsb_printf(hp->vsb, "%s %s %s%s", 
 				    req, url, proto, nl);
 				dohdr = 1;
 			}
-			vsb_printf(vsb, "%s%s", av[1], nl);
+			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 			continue;
 		}
@@ -494,21 +504,16 @@ cmd_http_txreq(CMD_ARGS)
 		exit (1);
 	}
 	if (dohdr == 0) {
-		vsb_printf(vsb, "%s %s %s%s", 
+		vsb_printf(hp->vsb, "%s %s %s%s", 
 		    req, url, proto, nl);
 		dohdr = 1;
 	}
-	vsb_cat(vsb, nl);
+	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
-		vsb_cat(vsb, body);
-		vsb_cat(vsb, nl);
+		vsb_cat(hp->vsb, body);
+		vsb_cat(hp->vsb, nl);
 	}
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
-	vtc_dump(hp->vl, 4, NULL, vsb_data(vsb));
-	l = write(hp->fd, vsb_data(vsb), vsb_len(vsb));
-	assert(l == vsb_len(vsb));
-	vsb_delete(vsb);
+	http_write(hp, 4, "txreq");
 }
 
 /**********************************************************************
@@ -531,6 +536,24 @@ cmd_http_send(CMD_ARGS)
 
 }
 
+/**********************************************************************
+ * Send a string as chunked encoding
+ */
+
+static void
+cmd_http_chunked(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	vsb_clear(hp->vsb);
+	vsb_printf(hp->vsb, "%x%s%s%s", strlen(av[1]), nl, av[1], nl);
+	http_write(hp, 4, "chunked");
+}
+
 
 /**********************************************************************
  * Execute HTTP specifications
@@ -543,6 +566,7 @@ static struct cmds http_cmds[] = {
 	{ "rxresp",	cmd_http_rxresp },
 	{ "expect",	cmd_http_expect },
 	{ "send",	cmd_http_send },
+	{ "chunked",	cmd_http_chunked },
 	{ "delay",	cmd_delay },
 	{ NULL,		NULL }
 };
@@ -560,14 +584,14 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	hp->client = client;
 	hp->timeout = 1000;
 	hp->nrxbuf = 8192;
+	hp->vsb = vsb_newauto();
+	AN(hp->vsb);
 
-	s = strdup(spec + 1);
+	s = strdup(spec);
 	q = strchr(s, '\0');
 	assert(q > s);
-	q--;
-	assert(*q == '}');
-	*q = '\0';
 	AN(s);
 	parse_string(s, http_cmds, hp);
+	vsb_delete(hp->vsb);
 	free(hp);
 }

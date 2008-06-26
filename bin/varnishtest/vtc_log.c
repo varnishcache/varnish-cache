@@ -73,6 +73,7 @@ static const char *lead[] = {
 
 #define NLEAD (sizeof(lead)/sizeof(lead[0]))
 
+//lint -e{818}
 void
 vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 {
@@ -98,6 +99,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
  * Dump a string
  */
 
+//lint -e{818}
 void
 vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 {
