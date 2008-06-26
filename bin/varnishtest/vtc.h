@@ -30,7 +30,7 @@ struct vsb;
 struct vtclog;
 struct cmds;
 
-#define CMD_ARGS char **av, void *priv, const struct cmds *cmd
+#define CMD_ARGS char * const *av, void *priv, const struct cmds *cmd
 typedef void cmd_f(CMD_ARGS);
 
 struct cmds {

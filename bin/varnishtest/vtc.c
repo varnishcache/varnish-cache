@@ -61,11 +61,11 @@ read_file(const char *fn)
 		err(1, "Cannot open %s", fn);
 	buf = malloc(sz);
 	assert(buf != NULL);
-	s = read(fd, buf, sz);
+	s = read(fd, buf, sz - 1);
 	if (s <= 0) 
 		err(1, "Cannot read %s", fn);
-	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
 	AZ(close (fd));
+	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
 	buf[s] = '\0';
 	buf = realloc(buf, s + 1);
 	assert(buf != NULL);
@@ -141,7 +141,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 				p++;
 			} else if (*p == '{') { /* Braces */
 				nest_brace = 0;
-				token_s[tn] = p;
+				token_s[tn] = p + 1;
 				for (; *p != '\0'; p++) {
 					if (*p == '{')
 						nest_brace++;
@@ -151,7 +151,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 					}
 				}
 				assert(*p == '}');
-				token_e[tn++] = ++p;
+				token_e[tn++] = p++;
 			} else { /* other tokens */
 				token_s[tn] = p;
 				for (; *p != '\0' && !isspace(*p); p++)
@@ -228,7 +228,7 @@ cmd_shell(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1]);
-	system(av[1]);
+	(void)system(av[1]);	/* XXX: assert ? */
 }
 
 /**********************************************************************
@@ -303,7 +303,7 @@ exec_file(const char *fn)
  */
 
 int
-main(int argc, char **argv)
+main(int argc, char * const *argv)
 {
 	int ch;
 

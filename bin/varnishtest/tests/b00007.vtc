@@ -19,8 +19,8 @@ server s1 {
 	send "Transfer-encoding: chunked\r\n"
 	send "\r\n"
 	send "00000004\r\n1234\r\n"
-	send "00000004\r\n1234\r\n"
-	send "00000000\r\n"
+	chunked "1234"
+	chunked ""
 }
 
 server s1 -start 

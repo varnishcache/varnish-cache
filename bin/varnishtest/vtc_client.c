@@ -208,11 +208,10 @@ cmd_client(CMD_ARGS)
 			client_run(c);
 			continue;
 		}
-		if (**av == '{') {
-			c->spec = *av;
-			continue;
+		if (**av == '-') {
+			vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
+			exit (1);
 		}
-		vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
-		exit (1);
+		c->spec = *av;
 	}
 }
