@@ -40,6 +40,10 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
+#include "cli.h"
+#include "cli_priv.h"
+
+static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------*/
 
@@ -199,6 +203,16 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+dump_st(struct sess *sp, struct storage *st)
+{
+	txt t;
+
+	t.b = (void*)st->ptr;
+	t.e = (void*)(st->ptr + st->len);
+	WSLR(sp->wrk, SLT_Debug, sp->fd, t);
+}
+
 static int
 fetch_eof(struct sess *sp, struct http_conn *htc)
 {
@@ -212,10 +226,14 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	st = NULL;
 	while (1) {
 		if (v == 0) {
+			if (st != NULL && fetchfrag > 0)
+				dump_st(sp, st);
 			st = STV_alloc(sp, params->fetch_chunksize * 1024);
 			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
+			if (v > fetchfrag)
+				v = fetchfrag;
 		}
 		AN(p);
 		AN(st);
@@ -229,6 +247,8 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		st->len += i;
 		sp->obj->len += i;
 	}
+	if (st != NULL && fetchfrag > 0)
+		dump_st(sp, st);
 
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&sp->obj->store, st, list);
@@ -442,3 +462,34 @@ Fetch(struct sess *sp)
 
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * Debugging aids
+ */
+
+static void
+debug_fragfetch(struct cli *cli, const char * const *av, void *priv)
+{
+        (void)priv;
+        (void)cli;
+	fetchfrag = strtoul(av[2], NULL, 0);
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.fragfetch", "debug.fragfetch",
+		"\tEnable fetch fragmentation\n", 1, 1, debug_fragfetch },
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------
+ *
+ */
+
+void
+Fetch_Init(void)
+{
+
+	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+}
+
+
