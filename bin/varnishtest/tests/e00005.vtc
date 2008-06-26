@@ -1,0 +1,33 @@
+# $Id$
+
+test "ESI relative include"
+
+
+server s1 {
+	rxreq 
+	expect req.url == "/foo/bar"
+	txresp -body {
+		Before include
+		<!--esi <esi:include src="body"> -->
+		After include
+	}
+	rxreq 
+	expect req.url == "/foo/body"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq -url /foo/bar
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
