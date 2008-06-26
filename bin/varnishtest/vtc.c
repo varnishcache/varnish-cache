@@ -133,7 +133,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 						*q++ = '"';
 						p++;
 					} else {
-						fprintf(stderr, "Unterminated quoted string\n");
+						if (*p == '\n')
+							fprintf(stderr, "Unterminated quoted string\n");
 						assert(*p != '\n');
 						*q++ = *p;
 					}
