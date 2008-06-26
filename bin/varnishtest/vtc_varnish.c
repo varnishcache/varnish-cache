@@ -205,6 +205,8 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[1]));
 		AZ(close(v->fds[2]));
 		AZ(close(v->fds[3]));
+		for (i = 3; i <getdtablesize(); i++)
+			close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
 		exit(1);
 	}

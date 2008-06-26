@@ -97,7 +97,7 @@ server_thread(void *priv)
 		http_process(vl, s->spec, fd, 0);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		AZ(shutdown(fd, SHUT_WR));
-		AZ(shutdown(fd, SHUT_RD));
+		AZ(close(fd));
 	}
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
