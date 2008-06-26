@@ -405,6 +405,17 @@ tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+tweak_acceptor(struct cli *cli, const struct parspec *par, const char *arg)
+{
+
+	/* XXX should have tweak_generic_string */
+	(void)par;
+	VCA_tweak_acceptor(cli, arg);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	unsigned u;
@@ -752,6 +763,10 @@ static const struct parspec parspec[] = {
 		"SessionOpen shared memory record.\n",
 		0,
 		"off", "bool" },
+	{ "acceptor", tweak_acceptor, NULL, 0, 0,
+		"Select the acceptor kernel interface.\n",
+		EXPERIMENTAL | MUST_RESTART,
+		"default", NULL },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling diagnostics code:\n"
 		"  0x00000001 - CNT_Session states.\n"

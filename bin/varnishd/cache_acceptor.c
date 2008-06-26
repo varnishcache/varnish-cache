@@ -309,8 +309,9 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
-	/* XXX: Add selector mechanism at some point */
-	vca_act = vca_acceptors[0];
+	
+	if (vca_act == NULL)
+		vca_act = vca_acceptors[0];
 
 	AN(vca_act);
 	AN(vca_act->name);
@@ -332,4 +333,36 @@ VCA_Init(void)
 {
 
 	CLI_AddFuncs(MASTER_CLI, vca_cmds);
+}
+
+void
+VCA_tweak_acceptor(struct cli *cli, const char *arg)
+{
+	int i;
+
+	if (arg == NULL) {
+		if (vca_act == NULL)
+			cli_out(cli, "default");
+		else
+			cli_out(cli, "%s", vca_act->name);
+		
+		cli_out(cli, " (");
+		for (i = 0; vca_acceptors[i] != NULL; i++)
+			cli_out(cli, "%s%s", i == 0 ? "" : ", ",
+			    vca_acceptors[i]->name);
+		cli_out(cli, ")");
+		return;
+	}
+	if (!strcmp(arg, "default")) {
+		vca_act = NULL;
+		return;
+	} 
+	for (i = 0; vca_acceptors[i]->name; i++) {
+		if (!strcmp(arg, vca_acceptors[i]->name)) {
+			vca_act = vca_acceptors[i];
+			return;
+		}
+	}
+	cli_out(cli, "Unknown acceptor");
+	cli_result(cli, CLIS_PARAM);
 }

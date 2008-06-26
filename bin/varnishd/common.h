@@ -32,6 +32,10 @@
 struct cli;
 struct sockaddr;
 
+/* cache_acceptor.c */
+void VCA_tweak_acceptor(struct cli *cli, const char *arg);
+
+
 /* shmlog.c */
 void VSL_MgtInit(const char *fn, unsigned size);
 extern struct varnish_stats *VSL_stats;
