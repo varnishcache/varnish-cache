@@ -80,6 +80,7 @@ server_thread(void *priv)
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
 	socklen_t l;
+	char c;
 
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
@@ -96,6 +97,11 @@ server_thread(void *priv)
 		fd = accept(s->sock, addr, &l);
 		vtc_log(vl, 3, "Accepted socket fd is %d", fd);
 		http_process(vl, s->spec, fd, 0);
+		vtc_log(vl, 3, "shutting fd %d", fd);
+		AZ(shutdown(fd, SHUT_WR));
+		while (1 == read(fd, &c, 1))
+			continue;
+		vtc_log(vl, 3, "closing fd %d", fd);
 		AZ(close(fd));
 	}
 	vtc_log(vl, 2, "Ending");
