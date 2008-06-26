@@ -72,6 +72,7 @@ child_main(void)
 	THR_Name("cache-main");
 
 	CLI_Init();
+	Fetch_Init();
 
 	CNT_Init();
 	VCL_Init();

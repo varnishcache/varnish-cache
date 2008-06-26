@@ -454,6 +454,7 @@ int EXP_NukeOne(struct sess *sp);
 /* cache_fetch.c */
 int Fetch(struct sess *sp);
 int FetchReqBody(struct sess *sp);
+void Fetch_Init(void);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
