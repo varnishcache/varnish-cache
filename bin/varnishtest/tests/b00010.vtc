@@ -1,0 +1,28 @@
+# $Id$
+
+test "Check simple list hasher"
+
+varnish v1 -arg "-h simple_list -b 127.0.0.1:9080" -start
+
+server s1 {
+	rxreq 
+	txresp -hdr "Connection: close" -body "012345\n"
+}
+
+server s1 -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == "1002 1001"
+}
+
+client c1 -run
+
+server s1 -wait
+
+varnish v1 -stop
