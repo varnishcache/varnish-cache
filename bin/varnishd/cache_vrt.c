@@ -210,6 +210,14 @@ VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 	vrt_do_string(sp->wrk, sp->fd,				\
 	    http, fld, #obj "." #hdr, p, ap);			\
 	va_end(ap);						\
+}								\
+								\
+const char *							\
+VRT_r_##obj##_##hdr(const struct sess *sp)			\
+{								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);			\
+	return (http->hd[fld].b);				\
 }
 
 VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
@@ -222,6 +230,10 @@ VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
+
+/*--------------------------------------------------------------------*/
+
+/* XXX: review this */
 
 void
 VRT_l_obj_status(const struct sess *sp, int num)
@@ -260,6 +272,14 @@ VRT_l_resp_status(const struct sess *sp, int num)
 	else
 		sprintf(p, "%d", num);
 	http_SetH(sp->http, HTTP_HDR_STATUS, p);
+}
+
+int
+VRT_r_resp_status(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
 }
 
 /*--------------------------------------------------------------------*/
@@ -408,21 +428,6 @@ VRT_r_req_backend(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#define  VREQ(n1, n2)					\
-const char *						\
-VRT_r_req_##n1(const struct sess *sp)				\
-{							\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);		\
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);	\
-	return (sp->http->hd[n2].b);			\
-}
-
-VREQ(request, HTTP_HDR_REQ)
-VREQ(url, HTTP_HDR_URL)
-VREQ(proto, HTTP_HDR_PROTO)
-
-/*--------------------------------------------------------------------*/
-
 int
 VRT_r_req_restarts(const struct sess *sp)
 {
@@ -452,32 +457,6 @@ VRT_r_req_grace(struct sess *sp)
 	if (isnan(sp->grace))
 		return ((double)params->default_grace);
 	return (sp->grace);
-}
-
-/*--------------------------------------------------------------------*/
-
-const char *
-VRT_r_resp_proto(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (sp->obj->http->hd[HTTP_HDR_PROTO].b);
-}
-
-const char *
-VRT_r_resp_response(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (sp->obj->http->hd[HTTP_HDR_RESPONSE].b);
-}
-
-int
-VRT_r_resp_status(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
 }
 
 /*--------------------------------------------------------------------*/
