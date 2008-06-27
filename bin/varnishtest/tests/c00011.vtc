@@ -1,0 +1,33 @@
+# $Id$
+
+test "Test hit for pass (pass from fetch)"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body foobar
+	rxreq
+	expect req.url == "/foo"
+	txresp -body foobar1
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_fetch {
+		pass;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 6
+	expect resp.http.x-varnish == "1001"
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 7
+	expect resp.http.x-varnish == "1002"
+} 
+
+client c1 -run
