@@ -1,0 +1,56 @@
+# $Id$
+
+test "Test switching VCLs"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foobar"
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foobar1"
+} -start
+
+varnish v1 -vcl+backend { 
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		pass;
+	}
+} 
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.use vcl1"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 6
+	expect resp.http.x-varnish == "1001"
+} -start
+
+varnish v1 -cli "vcl.use vcl2"
+
+client c2 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 7
+	expect resp.http.x-varnish == "1002"
+} -start
+
+varnish v1 -cli "vcl.use vcl1"
+
+client c3 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 6
+	expect resp.http.x-varnish == "1003 1001"
+} -start
+
+varnish v1 -cli "vcl.show vcl2"
+varnish v1 -cli "vcl.discard vcl2"
+varnish v1 -cli "vcl.list"
