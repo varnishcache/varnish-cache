@@ -1,0 +1,40 @@
+# $Id$
+
+test "Test restarts"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 404 
+} -start
+
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_recv {
+		if (req.restarts == 0) {
+			set req.backend = s1;
+		} else {
+			set req.backend = s2;
+		}
+	}
+
+	sub vcl_fetch {
+		if (obj.status != 200) {
+			restart;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == 6
+} 
+
+client c1 -run
