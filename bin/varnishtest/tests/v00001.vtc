@@ -1,6 +1,6 @@
 # $Id$
 
-test "VCL/VRT: misc"
+test "VCL/VRT: url/request/proto/response/status"
 
 
 server s1 {
@@ -30,9 +30,10 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_fetch {
 		set obj.http.foobar =
-		    obj.proto obj.response;
+		    obj.proto obj.response obj.status;
 		set obj.proto = "HTTP/1.2";
 		set obj.response = "For circular files";
+		set obj.status = 903;
 	}
 	sub vcl_deliver {
 		set resp.proto = "HTTP/1.2";
