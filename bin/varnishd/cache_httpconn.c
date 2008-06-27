@@ -106,7 +106,6 @@ int
 HTC_Reinit(struct http_conn *htc)
 {
 	unsigned l;
-	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	(void)WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
@@ -120,8 +119,7 @@ HTC_Reinit(struct http_conn *htc)
 		htc->pipeline.e = NULL;
 	}
 	*htc->rxbuf.e = '\0';
-	i = htc_header_complete(&htc->rxbuf);
-	return (i);
+	return (HTC_Complete(htc));
 }
 
 /*--------------------------------------------------------------------
