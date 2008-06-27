@@ -1,6 +1,6 @@
 # $Id$
 
-test "VCL/VRT: obj.ttl and obj.grace"
+test "VCL/VRT: req.grace, obj.ttl and obj.grace"
 
 
 server s1 {
@@ -11,9 +11,12 @@ server s1 {
 server s1 -start 
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.grace += 1 s;
+	}
 	sub vcl_fetch {
 		set obj.ttl += 1 m;
-		set obj.grace += 1 m;
+		set obj.grace += 1 h;
 	}
 } -start
 
