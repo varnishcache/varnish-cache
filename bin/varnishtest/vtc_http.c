@@ -604,7 +604,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	hp->fd = sock;
 	hp->vl = vl;
 	hp->client = client;
-	hp->timeout = 1000;
+	hp->timeout = 3000;
 	hp->nrxbuf = 8192;
 	hp->vsb = vsb_newauto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
