@@ -1,0 +1,57 @@
+# $Id$
+
+test "VCL/VRT: misc"
+
+
+server s1 {
+	rxreq 
+	txresp -hdr "Connection: close" -body "012345\n"
+}
+
+server s1 -start 
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.foobar =
+		    req.url
+		    req.request
+		    req.proto;
+		set req.url = "/";
+		set req.proto = "HTTP/1.2";
+		set req.request = "GET";
+	}
+	sub vcl_miss {
+		set bereq.http.foobar =
+		    bereq.url
+		    bereq.proto;
+		set bereq.url = "/";
+		set bereq.proto = "HTTP/1.2";
+		set bereq.request = "GET";
+	}
+	sub vcl_fetch {
+		set obj.http.foobar =
+		    obj.proto obj.response;
+		set obj.proto = "HTTP/1.2";
+		set obj.response = "For circular files";
+	}
+	sub vcl_deliver {
+		set resp.proto = "HTTP/1.2";
+		set resp.response = "Naah, lets fail it";
+		set resp.http.foobar =
+		    resp.proto
+		    resp.status;
+		error 904 "because I say so:";
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 904
+}
+
+client c1 -run
+
+server s1 -wait
+
+varnish v1 -stop
