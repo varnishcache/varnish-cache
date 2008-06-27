@@ -21,3 +21,4 @@ Naming scheme
 	id ~ [e] --> ESI tests
 	id ~ [r] --> Regression tests, same number as ticket
 	id ~ [s] --> Slow tests, expiry, grace etc.
+	id ~ [v] --> VCL tests: execute VRT functions
