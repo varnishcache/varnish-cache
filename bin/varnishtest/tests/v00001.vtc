@@ -38,6 +38,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.proto = "HTTP/1.2";
 		set resp.response = "Naah, lets fail it";
+		set resp.status = 903;
 		set resp.http.foobar =
 		    resp.proto
 		    resp.status;
