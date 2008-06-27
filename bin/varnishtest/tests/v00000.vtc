@@ -1,0 +1,30 @@
+# $Id$
+
+test "VCL/VRT: obj.ttl and obj.grace"
+
+
+server s1 {
+	rxreq 
+	txresp -hdr "Connection: close" -body "012345\n"
+}
+
+server s1 -start 
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set obj.ttl += 1 m;
+		set obj.grace += 1 m;
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
+
+server s1 -wait
+
+varnish v1 -stop
