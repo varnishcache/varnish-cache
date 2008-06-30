@@ -201,7 +201,7 @@ fi
 - Added the devel package for the header files and static library files
 - Added a varnish user, and fixed the init script accordingly
 
-* Thu Jul 05 2007 Dag-Erling Smørgrav <des@linpro.no> - 1.1-1
+* Thu Jul 05 2007 Dag-Erling Smørgrav <des@des.no> - 1.1-1
 - Bump Version and Release for 1.1
 
 * Mon May 28 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.0.4-3
