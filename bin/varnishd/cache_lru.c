@@ -2,7 +2,7 @@
  * Copyright (c) 2007 Linpro AS
  * All rights reserved.
  *
- * Author: Dag-Erling Smørgav <des@linpro.no>
+ * Author: Dag-Erling Smørgav <des@des.no>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
