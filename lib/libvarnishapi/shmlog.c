@@ -65,7 +65,7 @@ struct VSL_data {
 	unsigned char		*ptr;
 
 	/* for -r option */
-	FILE			*fi;
+	int			fd;
 	unsigned char		rbuf[5 + 255 + 1];
 
 	int			b_opt;
@@ -171,6 +171,7 @@ VSL_New(void)
 	assert(vd != NULL);
 	vd->regflags = REG_EXTENDED | REG_NOSUB;
 	vd->magic = VSL_MAGIC;
+	vd->fd = -1;
 	return (vd);
 }
 
@@ -192,7 +193,7 @@ VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->fi != NULL)
+	if (vd->fd != -1)
 		return (0);
 
 	if (vsl_shmem_map(varnish_name))
@@ -203,7 +204,7 @@ VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 	vd->logend = vd->logstart + vsl_lh->size;
 	vd->ptr = vd->logstart;
 
-	if (!vd->d_opt && vd->fi == NULL) {
+	if (!vd->d_opt && vd->fd == -1) {
 		for (p = vd->ptr; *p != SLT_ENDMARKER; )
 			p += p[1] + 5;
 		vd->ptr = p;
@@ -232,12 +233,12 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->fi != NULL) {
-		i = fread(vd->rbuf, 4, 1, vd->fi);
-		if (i != 1)
+	if (vd->fd != -1) {
+		i = read(vd->fd, vd->rbuf, 4);
+		if (i != 4)
 			return (-1);
-		i = fread(vd->rbuf + 4, vd->rbuf[1] + 1, 1, vd->fi);
-		if (i != 1)
+		i = read(vd->fd, vd->rbuf + 4, vd->rbuf[1] + 1);
+		if (i != vd->rbuf[1] + 1)
 			return (-1);
 		*pp = vd->rbuf;
 		return (1);
@@ -387,13 +388,14 @@ vsl_r_arg(struct VSL_data *vd, const char *opt)
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (!strcmp(opt, "-"))
-		vd->fi = stdin;
+		vd->fd = STDIN_FILENO;
 	else
-		vd->fi = fopen(opt, "r");
-	if (vd->fi != NULL)
-		return (1);
-	perror(opt);
-	return (-1);
+		vd->fd = open(opt, O_RDONLY);
+	if (vd->fd < 0) {
+		perror(opt);
+		return (-1);
+	}
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/
