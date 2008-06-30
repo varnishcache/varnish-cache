@@ -300,7 +300,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			continue;
 		} else if (vd->keep) {
 			if (--vd->keep == 0)
-				return (0);
+				return (-1);
 		}
 		if (vd->map[p[SHMLOG_TAG]] & M_SELECT) {
 			*pp = p;
