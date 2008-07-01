@@ -48,6 +48,8 @@
 #include "cache.h"
 
 struct vcls {
+	unsigned		magic;
+#define VCLS_MAGIC		0x214188f2
 	VTAILQ_ENTRY(vcls)	list;
 	char			*name;
 	void			*dlh;
@@ -73,7 +75,7 @@ VCL_Refresh(struct VCL_conf **vcc)
 	if (*vcc == vcl_active->conf)
 		return;
 	if (*vcc != NULL)
-		VCL_Rel(vcc);
+		VCL_Rel(vcc);	/* XXX: optimize locking */
 	VCL_Get(vcc);
 }
 
@@ -137,33 +139,32 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		return (1);
 	}
 
-	vcl = calloc(sizeof *vcl, 1);
+	ALLOC_OBJ(vcl, VCLS_MAGIC);
 	XXXAN(vcl);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
 	if (vcl->dlh == NULL) {
 		cli_out(cli, "dlopen(%s): %s\n", fn, dlerror());
-		free(vcl);
+		FREE_OBJ(vcl);
 		return (1);
 	}
 	vcl->conf = dlsym(vcl->dlh, "VCL_conf");
 	if (vcl->conf == NULL) {
 		cli_out(cli, "No VCL_conf symbol\n");
 		(void)dlclose(vcl->dlh);
-		free(vcl);
+		FREE_OBJ(vcl);
 		return (1);
 	}
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
 		cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
 		(void)dlclose(vcl->dlh);
-		free(vcl);
+		FREE_OBJ(vcl);
 		return (1);
 	}
 	vcl->conf->priv = vcl;
-	vcl->name = strdup(name);
-	XXXAN(vcl->name);
+	REPLACE(vcl->name, name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	LOCK(&vcl_mtx);
 	if (vcl_active == NULL)
@@ -176,7 +177,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 
 /*--------------------------------------------------------------------
  * This function is polled from the CLI thread to dispose of any non-busy
- * VCLs * which have been discarded.
+ * VCLs which have been discarded.
  */
 
 static void
@@ -190,7 +191,8 @@ VCL_Nuke(struct vcls *vcl)
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	vcl->conf->fini_func(NULL);
 	free(vcl->name);
-	free(vcl);
+	(void)dlclose(vcl->dlh);
+	FREE_OBJ(vcl);
 }
 
 /*--------------------------------------------------------------------*/
