@@ -33,6 +33,8 @@
  *
  * The data structures:
  *
+ *    A vrt_backend is a definition of a backend in a VCL program.
+ *
  *    A backend is a TCP destination, possibly multi-homed and it has a
  *    number of associated properties and statistics.
  *
@@ -88,6 +90,7 @@ struct backend {
 #define BACKEND_MAGIC		0x64c4c7c6
 
 	struct vrt_backend	vrt[1];
+	uint32_t		hash;
 
 	VTAILQ_ENTRY(backend)	list;
 	int			refcount;
@@ -117,8 +120,7 @@ static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
  * The list of backends is not locked, it is only ever accessed from
  * the CLI thread, so there is no need.
  */
-static VTAILQ_HEAD(, backend) backends =
-    VTAILQ_HEAD_INITIALIZER(backends);
+static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 
 /*--------------------------------------------------------------------
  * Create default Host: header for backend request
@@ -601,47 +603,49 @@ vbe_dns_lookup(struct cli *cli, struct backend *bp)
 
 /*--------------------------------------------------------------------
  * Add a backend/director instance when loading a VCL.
- * If an existing backend is matched, grab a refcount and return one.
- * Else create a new backend structure with reference initialized to one
- * and return zero.
+ * If an existing backend is matched, grab a refcount and return.
+ * Else create a new backend structure with reference initialized to one.
  */
 
 struct backend *
 VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 {
 	struct backend *b;
+	uint32_t u;
 
 	AN(vb->hostname);
 	AN(vb->portname);
 	AN(vb->ident);
 	(void)cli;
 	ASSERT_CLI();
+	u = crc32_l(vb->ident, strlen(vb->ident));
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		if (u != b->hash)
+			continue;
 		if (strcmp(b->vrt->ident, vb->ident))
 			continue;
 		b->refcount++;
 		return (b);
 	}
 
-	b = calloc(sizeof *b, 1);
+	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
 	b->magic = BACKEND_MAGIC;
-	VTAILQ_INIT(&b->connlist);
 
-	memcpy(b->vrt, vb, sizeof *vb);
+	VTAILQ_INIT(&b->connlist);
+	b->hash = u;
+
 	/*
 	 * This backend may live longer than the VCL that instantiated it
-	 * so we cannot simply reference the VCL's copy of the strings.
+	 * so we cannot simply reference the VCL's copy of things.
 	 */
-	b->vrt->ident = strdup(vb->ident);
-	XXXAN(b->vrt->ident);
-	b->vrt->hostname = strdup(vb->hostname);
-	XXXAN(b->vrt->hostname);
-	b->vrt->portname = strdup(vb->portname);
-	XXXAN(b->vrt->portname);
-	b->vrt->vcl_name = strdup(vb->vcl_name);
-	XXXAN(b->vrt->vcl_name);
+	REPLACE(b->vrt->ident, vb->ident);
+	REPLACE(b->vrt->hostname, vb->hostname);
+	REPLACE(b->vrt->portname, vb->portname);
+	REPLACE(b->vrt->vcl_name, vb->vcl_name);
+
+	b->vrt->connect_timeout = vb->connect_timeout;
 
 	MTX_INIT(&b->mtx);
 	b->refcount = 1;
