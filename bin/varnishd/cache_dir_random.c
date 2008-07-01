@@ -57,12 +57,14 @@ struct vdi_random {
 	struct director		dir;
 	struct backend		*backend;
 	struct vdi_random_host	*hosts;
+	unsigned		nhosts;
 };
 
 
 static struct backend *
 vdi_random_choose(struct sess *sp)
 {
+	int i;
 	struct vdi_random *vs;
 	uint32_t r;
 	struct vdi_random_host *vh;
@@ -72,7 +74,7 @@ vdi_random_choose(struct sess *sp)
 	r = random();
 	r &= 0x7fffffff;
 
-	for (vh = vs->hosts; ; vh++)
+	for (vh = vs->hosts; i < vs->nhosts; vh++)
 		if (r < vh->weight)
 			return (vh->backend);
 	assert(0 == __LINE__);
@@ -82,14 +84,19 @@ vdi_random_choose(struct sess *sp)
 static void
 vdi_random_fini(struct director *d)
 {
+	int i;
 	struct vdi_random *vs;
+	struct vdi_random_host *vh;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 	
-	VBE_DropRef(vs->backend);
+	vh = vs->hosts;
+	for (i = 0; i < vs->nhosts; i++, vh++)
+		VBE_DropRef(vh->backend);
 	free(vs->hosts);
-	free(vs);
+	vs->dir.magic = 0;
+	FREE_OBJ(vs);
 }
 
 void
@@ -104,12 +111,11 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	
 	(void)cli;
 
-	vs = calloc(sizeof *vs, 1);
+	ALLOC_OBJ(vs, VDI_RANDOM_MAGIC);
 	XXXAN(vs);
 	vs->hosts = calloc(sizeof *vh, t->nmember);
 	XXXAN(vs->hosts);
 
-	vs->magic = VDI_RANDOM_MAGIC;
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "random";
@@ -124,6 +130,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 		s += te->weight;
 		vh->backend = VBE_AddBackend(cli, te->host);
 	}
+	vs->nhosts = t->nmember;
 
 	/* Normalize weights */
 	i = 0;
