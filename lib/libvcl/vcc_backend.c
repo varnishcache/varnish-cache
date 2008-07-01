@@ -72,16 +72,14 @@ CheckHostPort(const char *host, const char *port)
  */
 
 static void
-vcc_EmitBeIdent(struct vsb *v, const struct token *qual, int serial, const struct token *first, const struct token *last)
+vcc_EmitBeIdent(struct vsb *v, const struct token *name, const char *qual, int serial, const struct token *first, const struct token *last)
 {
 
 	vsb_printf(v, "\t.ident =");
-	if (serial != 0 && qual != NULL) {
-		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
-		qual = VTAILQ_NEXT(qual, list);
-		vsb_printf(v, "\n\t    \"%.*s \"", PF(qual));
-		vsb_printf(v, "\n\t    \":: %d :: \"", serial);
-	}
+	AN(qual);
+	vsb_printf(v, "\n\t    \"%s %.*s\"", qual, PF(name));
+	if (serial != 0)
+		vsb_printf(v, "\n\t    \"[%d]\"", serial);
 	while (first != last) {
 		if (first->dec != NULL)
 			vsb_printf(v, "\n\t    \"\\\"\" %.*s \"\\\" \"",
@@ -213,7 +211,7 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
  */
 
 static void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, int serial)
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -274,6 +272,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 			t_host = tl->t;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "port")) {
+			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_port = tl->t;
 			vcc_NextToken(tl);
@@ -330,8 +329,8 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *qual, i
 	}
 
 	ExpectErr(tl, '}');
-	vcc_EmitBeIdent(tl->fh, qual, serial, t_first, tl->t);
-	Fh(tl, 0, "\t.vcl_name = \"%.*s", PF(qual));
+	vcc_EmitBeIdent(tl->fh, name, qual, serial, t_first, tl->t);
+	Fh(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
 	if (serial)
 		Fh(tl, 0, "[%d]", serial);
 	Fh(tl, 0, "\"\n};\n");
@@ -356,7 +355,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 	h->name = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_ParseBackendHost(tl, &nbh, h->name, 0);
+	vcc_ParseBackendHost(tl, &nbh, h->name, "backend", 0);
 	ERRCHK(tl);
 
 	h->hnum = nbh;
@@ -421,7 +420,8 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 			vcc_IsField(tl, &t_field, fs);
 			ERRCHK(tl);
 			if (vcc_IdIs(t_field, "backend")) {
-				vcc_ParseBackendHost(tl, &nbh, t_dir, nelem);
+				vcc_ParseBackendHost(tl, &nbh,
+				    t_dir, "random", nelem);
 				Fc(tl, 0, " .host = &bh_%d,", nbh);
 				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {

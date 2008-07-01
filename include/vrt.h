@@ -45,10 +45,10 @@ struct sockaddr;
  * A backend is a host+port somewhere on the network
  */
 struct vrt_backend {
-	const char	*portname;
-	const char	*hostname;
-	const char	*vcl_name;
-	const char	*ident;
+	char		*portname;
+	char		*hostname;
+	char		*vcl_name;
+	char		*ident;
 	double		connect_timeout;
 };
 
