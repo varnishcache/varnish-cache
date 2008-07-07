@@ -1,0 +1,67 @@
+# $Id$
+
+test "VCL: test creation/destruction of backends"
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+	}
+} -start
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+	}
+}
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -vcl {
+	backend b2 {
+		.host = "127.0.0.1";
+	}
+}
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -cli "vcl.discard vcl1"
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -cli "vcl.discard vcl2"
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -vcl {
+	backend b2 {
+		.host = "127.0.0.1";
+	}
+	director r1 random {
+		{ .backend = { .host = "127.0.0.1"; } .weight = 1; }
+		{ .backend = b2 ; .weight = 1; }
+	}
+	sub vcl_recv {
+		set req.backend = r1;
+	}
+}
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -cli "vcl.use vcl3"
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
+varnish v1 -cli "vcl.discard vcl4"
+
+varnish v1 -cli vcl.list
+varnish v1 -cli debug.backend
+
