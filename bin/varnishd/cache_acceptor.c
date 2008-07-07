@@ -198,7 +198,7 @@ vca_acct(void *arg)
 		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
 			need_test = 1;
 			tv_rcvtimeo.tv_sec = params->sess_timeout;
-			VTAILQ_FOREACH(ls, &heritage.socks, list)  {
+			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
 				AZ(setsockopt(ls->sock, SOL_SOCKET,
@@ -356,7 +356,7 @@ VCA_tweak_acceptor(struct cli *cli, const char *arg)
 	if (!strcmp(arg, "default")) {
 		vca_act = NULL;
 		return;
-	} 
+	}
 	for (i = 0; vca_acceptors[i]->name; i++) {
 		if (!strcmp(arg, vca_acceptors[i]->name)) {
 			vca_act = vca_acceptors[i];
