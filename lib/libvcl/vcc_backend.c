@@ -172,7 +172,7 @@ vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 	return;
 }
 
-static void
+static int
 vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 {
 	int ok = 1;
@@ -180,14 +180,11 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 	for (; fs->name != NULL; fs++) {
 		if (*fs->name == '!' && fs->found == NULL) {
 			vsb_printf(tl->sb,
-			    "Mandatory field .'%s' missing.\n", fs->name + 1);
+			    "Mandatory field '%s' missing.\n", fs->name + 1);
 			ok = 0;
 		}
 	}
-	if (!ok) {
-		vcc_ErrWhere(tl, tl->t);
-	}
-	return;
+	return (ok);
 }
 
 
@@ -291,9 +288,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, c
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
-	if (!tl->err)
-		vcc_FieldsOk(tl, fs);
-	if (tl->err) {
+	if (tl->err || !vcc_FieldsOk(tl, fs)) {
 		vsb_printf(tl->sb,
 		    "\nIn backend host specfication starting at:\n");
 		vcc_ErrWhere(tl, t_first);
