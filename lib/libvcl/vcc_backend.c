@@ -375,7 +375,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 	h->name = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_ParseBackendHost(tl, &nbh, h->name, "backend", 0);
+	vcc_ParseHostDef(tl, &nbh, h->name, "backend", 0);
 	ERRCHK(tl);
 
 	h->hnum = nbh;
