@@ -200,19 +200,17 @@ vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 	return;
 }
 
-int
+void
 vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 {
-	int ok = 1;
 
 	for (; fs->name != NULL; fs++) {
 		if (*fs->name == '!' && fs->found == NULL) {
 			vsb_printf(tl->sb,
 			    "Mandatory field '%s' missing.\n", fs->name + 1);
-			ok = 0;
+			tl->err = 1;
 		}
 	}
-	return (ok);
 }
 
 /*--------------------------------------------------------------------
@@ -267,6 +265,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
+		ERRCHK(tl);
 		if (tl->err)
 			break;
 		if (vcc_IdIs(t_field, "host")) {
@@ -294,12 +293,9 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
-	if (tl->err || !vcc_FieldsOk(tl, fs)) {
-		vsb_printf(tl->sb,
-		    "\nIn backend host specfication starting at:\n");
-		vcc_ErrWhere(tl, t_first);
-		return;
-	}
+
+	vcc_FieldsOk(tl, fs);
+	ERRCHK(tl);
 
 	/* Check that the hostname makes sense */
 	assert(t_host != NULL);
@@ -354,6 +350,7 @@ void
 vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial)
 {
 	struct host *h;
+	struct token *t;
 
 	if (tl->t->tok == ID) {
 		VTAILQ_FOREACH(h, &tl->hosts, list) {
@@ -373,11 +370,18 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, c
 		vcc_NextToken(tl);
 		*nbh = h->hnum;
 	} else if (tl->t->tok == '{') {
+		t = tl->t;
 		vcc_ParseHostDef(tl, nbh, name, qual, serial);
+		if (tl->err) {
+			vsb_printf(tl->sb,
+			    "\nIn backend host specfication starting at:\n");
+			vcc_ErrWhere(tl, t);
+		}
+		return;
 	} else {
 		vsb_printf(tl->sb,
-		    "Expected a backend specification here, either by name "
-		    "or by {...}\n");
+		    "Expected a backend host specification here, "
+		    "either by name or by {...}\n");
 		vcc_ErrToken(tl, tl->t);
 		vsb_printf(tl->sb, " at\n");
 		vcc_ErrWhere(tl, tl->t);
@@ -404,7 +408,12 @@ vcc_ParseBackend(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	vcc_ParseHostDef(tl, &h->hnum, h->name, "backend", 0);
-	ERRCHK(tl);
+	if (tl->err) {
+		vsb_printf(tl->sb,
+		    "\nIn backend specfication starting at:\n");
+		vcc_ErrWhere(tl, h->name);
+		return;
+	}
 
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
 
