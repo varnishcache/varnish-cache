@@ -158,7 +158,7 @@ void vcc_ParseDirector(struct tokenlist *tl);
 struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
 void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
-int vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
+void vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
 void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr, const struct token *name, const char *qual, int serial);
 
 /* vcc_compile.c */

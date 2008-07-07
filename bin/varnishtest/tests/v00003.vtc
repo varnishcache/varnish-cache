@@ -1,0 +1,31 @@
+# $Id$
+
+test "VCL: test syntax/semantic checks on director decls."
+
+# syntax in inline backend
+varnish v1 -badvcl {
+	director r1 random {
+		{ .backend = { .foo = 2; }; .weight = 1;}
+	}
+}
+
+# reference to unknown backend host
+varnish v1 -badvcl {
+	director r1 random {
+		{ .backend = b2; .weight = 1; }
+	}
+}
+
+# missing backend
+varnish v1 -badvcl {
+	director r1 random {
+		{ .weight = 1; }
+	}
+}
+
+# invalid weight
+varnish v1 -badvcl {
+	director r1 random {
+		{ .backend = {.host = "127.0.0.1";}  .weight = k; }
+	}
+}

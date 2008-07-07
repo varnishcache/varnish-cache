@@ -94,7 +94,8 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 				u = vcc_UintVal(tl);
 				if (u == 0) {
 					vsb_printf(tl->sb,
-					    "The .weight must be higher than zero.");
+					    "The .weight must be higher "
+					    "than zero.");
 					vcc_ErrToken(tl, tl->t);
 					vsb_printf(tl->sb, " at\n");
 					vcc_ErrWhere(tl, tl->t);
@@ -108,7 +109,8 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 				ErrInternal(tl);
 			}
 		}
-		if (!vcc_FieldsOk(tl, fs)) {
+		vcc_FieldsOk(tl, fs);
+		if (tl->err) {
 			vsb_printf(tl->sb,
 			    "\nIn member host specfication starting at:\n");
 			vcc_ErrWhere(tl, t_be);

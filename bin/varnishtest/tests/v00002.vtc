@@ -92,3 +92,17 @@ varnish v1 -badvcl {
 		set host = "localhost";
 	}
 }
+
+# Too many .connect_timeout
+varnish v1 -badvcl {
+	backend b1 {
+		.host = k"foo";
+		.connect_timeout = 1 q;
+	}
+}
+
+# Two clashing backends
+varnish v1 -badvcl {
+	backend b1 { .host = "127.0.0.1"; }
+	backend b1 { .host = "127.0.0.1"; }
+}
