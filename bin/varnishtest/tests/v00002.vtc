@@ -49,6 +49,14 @@ varnish v1 -badvcl {
 	}
 }
 
+# unknown field
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "localhost";
+		.foobar = 123;
+	}
+}
+
 # Check backend reference by name
 varnish v1 -badvcl {
 	backend b1 { .host = "127.0.0.2"; }
@@ -79,7 +87,6 @@ varnish v1 -badvcl {
 }
 
 # Old backend syntax
-
 varnish v1 -badvcl {
 	backend b1 {
 		set host = "localhost";
