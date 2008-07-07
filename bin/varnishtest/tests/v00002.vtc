@@ -34,3 +34,13 @@ varnish v1 -badvcl {
 		.connect_timeout = 1m;
 	}
 }
+
+# Check backend reference by name
+varnish v1 -badvcl {
+	backend b1 { .host = "127.0.0.2"; }
+	director r1 random {
+		{ .weight = 1; .backend = b1; }
+		{ .weight = 1; .backend = { .host = "127.0.0.3"; } }
+		{ .weight = 1; .backend = 3745; }  // Brownie points for getting the joke
+	}
+}
