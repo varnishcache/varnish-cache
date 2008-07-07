@@ -552,19 +552,27 @@ Function(struct tokenlist *tl)
  *	End of input
  */
 
+typedef void parse_f(struct tokenlist *tl);
+
+static struct toplev {
+	const char	*name;
+	parse_f		*func;
+} toplev[] = {
+	{ "acl",		vcc_Acl },
+	{ "sub",		Function },
+	{ "backend",		vcc_ParseBackend },
+	{ "director",		vcc_ParseDirector },
+	{ NULL, NULL }
+};
+
 void
 vcc_Parse(struct tokenlist *tl)
 {
+	struct toplev *tp;
 
 	while (tl->t->tok != EOI) {
 		ERRCHK(tl);
 		switch (tl->t->tok) {
-		case T_ACL:
-			vcc_Acl(tl);
-			break;
-		case T_SUB:
-			Function(tl);
-			break;
 		case CSRC:
 			Fc(tl, 0, "%.*s\n",
 			    tl->t->e - (tl->t->b + 4), tl->t->b + 2);
@@ -573,18 +581,25 @@ vcc_Parse(struct tokenlist *tl)
 		case EOI:
 			break;
 		case ID:
-			if (vcc_IdIs(tl->t, "backend")) {
-				vcc_ParseBackend(tl);
+			for (tp = toplev; tp->name != NULL; tp++) {
+				if (!vcc_IdIs(tl->t, tp->name)) 
+					continue;
+				tp->func(tl);
 				break;
 			}
-			if (vcc_IdIs(tl->t, "director")) {
-				vcc_ParseDirector(tl);
+			if (tp->name != NULL)
 				break;
-			}
 			/* FALLTHROUGH */
 		default:
-			vsb_printf(tl->sb,
-			    "Expected 'acl', 'sub' or 'backend', found ");
+			vsb_printf(tl->sb, "Expected one of\n\t");
+			for (tp = toplev; tp->name != NULL; tp++) {
+				if (tp[1].name == NULL)
+					vsb_printf(tl->sb, " or ");
+				vsb_printf(tl->sb, "'%s'", tp->name);
+				if (tp[1].name != NULL)
+					vsb_printf(tl->sb, ", ");
+			}
+			vsb_printf(tl->sb, "\nFound: ");
 			vcc_ErrToken(tl, tl->t);
 			vsb_printf(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);

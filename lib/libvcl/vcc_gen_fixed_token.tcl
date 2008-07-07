@@ -69,10 +69,6 @@ set keywords {
 	include 
 
 	if else elseif elsif
-
-	sub
-
-	acl
 }
 
 # Non-word tokens

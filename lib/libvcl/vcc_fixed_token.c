@@ -159,13 +159,6 @@ vcl_fixed_token(const char *p, const char **q)
 			return ('>');
 		}
 		return (0);
-	case 'a':
-		if (p[0] == 'a' && p[1] == 'c' && p[2] == 'l'
-		     && !isvar(p[3])) {
-			*q = p + 3;
-			return (T_ACL);
-		}
-		return (0);
 	case 'e':
 		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'i' && p[4] == 'f' && !isvar(p[5])) {
@@ -194,13 +187,6 @@ vcl_fixed_token(const char *p, const char **q)
 		if (p[0] == 'i' && p[1] == 'f' && !isvar(p[2])) {
 			*q = p + 2;
 			return (T_IF);
-		}
-		return (0);
-	case 's':
-		if (p[0] == 's' && p[1] == 'u' && p[2] == 'b'
-		     && !isvar(p[3])) {
-			*q = p + 3;
-			return (T_SUB);
 		}
 		return (0);
 	case '{':
@@ -265,7 +251,6 @@ vcl_init_tnames(void)
 	vcl_tnames[CSTR] = "CSTR";
 	vcl_tnames[EOI] = "EOI";
 	vcl_tnames[ID] = "ID";
-	vcl_tnames[T_ACL] = "acl";
 	vcl_tnames[T_CAND] = "&&";
 	vcl_tnames[T_COR] = "||";
 	vcl_tnames[T_DEC] = "--";
@@ -285,7 +270,6 @@ vcl_init_tnames(void)
 	vcl_tnames[T_NEQ] = "!=";
 	vcl_tnames[T_SHL] = "<<";
 	vcl_tnames[T_SHR] = ">>";
-	vcl_tnames[T_SUB] = "sub";
 	vcl_tnames[VAR] = "VAR";
 }
 
