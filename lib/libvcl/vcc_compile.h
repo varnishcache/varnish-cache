@@ -158,8 +158,14 @@ void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
 void vcc_ParseAction(struct tokenlist *tl);
 
 /* vcc_backend.c */
+struct fld_spec;
 void vcc_ParseBackend(struct tokenlist *tl);
 void vcc_ParseDirector(struct tokenlist *tl);
+struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
+void vcc_ResetFldSpec(struct fld_spec *f);
+void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
+int vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
+void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr, const struct token *name, const char *qual, int serial);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
@@ -172,6 +178,9 @@ void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void TlFree(struct tokenlist *tl, void *p);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
+
+/* vcc_dir_random.c */
+void vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir);
 
 /* vcc_obj.c */
 extern struct var vcc_vars[];
