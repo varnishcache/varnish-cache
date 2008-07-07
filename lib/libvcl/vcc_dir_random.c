@@ -119,7 +119,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 		Fc(tl, 0, " },\n");
 		vcc_NextToken(tl);
 	}
-	Fc(tl, 0, "\t{ .host = 0 }\n");
 	Fc(tl, 0, "};\n");
 	Fc(tl, 0,
 	    "\nstatic const struct vrt_dir_random vdr_%.*s = {\n",
