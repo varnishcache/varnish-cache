@@ -322,22 +322,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 
 	v->vcl_nbr++;
 	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
-	for (vcl++; vcl[1] != '\0'; vcl++) {
-		switch (*vcl) {
-		case '\\':
-		case '"':
-			vsb_printf(vsb, "\\%c", *vcl); break;
-		case '\n':
-			vsb_printf(vsb, "\\n"); break;
-		case '\t':
-			vsb_printf(vsb, "\\t"); break;
-		default:
-			if (isgraph(*vcl) || *vcl == ' ')
-				vsb_putc(vsb, *vcl);
-			else
-				vsb_printf(vsb, "\\x%02x", *vcl);
-		}
-	}
+	varnish_cli_encode(vsb, vcl);
 	vsb_printf(vsb, "\"", *vcl);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
