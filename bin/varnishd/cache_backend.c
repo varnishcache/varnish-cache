@@ -664,14 +664,39 @@ void
 VRT_fini_dir(struct cli *cli, struct director *b)
 {
 
-	ASSERT_CLI();
-#if 0
-	VBE_DropRef(b);	
-#else
-	(void)b;
 	(void)cli;
-#endif
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(b, DIRECTOR_MAGIC);
+	b->fini(b);
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
+{
+	struct backend *b;
+
+	(void)av;
+	(void)priv;
+	ASSERT_CLI();
+	VTAILQ_FOREACH(b, &backends, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		cli_out(cli, "%p %s/%s/%s %d\n",
+		    b,
+		    b->vrt->vcl_name,
+		    b->vrt->hostname,
+		    b->vrt->portname,
+		    b->refcount);
+	}
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.backend", "debug.backend",
+	    "\tExamine Backend internals\n", 0, 0, cli_debug_backend },
+	{ NULL }
+};
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -679,4 +704,5 @@ VBE_Init(void)
 {
 
 	MTX_INIT(&VBE_mtx);
+	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }
