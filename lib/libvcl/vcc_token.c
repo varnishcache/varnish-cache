@@ -188,6 +188,38 @@ vcc_IdIs(const struct token *t, const char *p)
 }
 
 /*--------------------------------------------------------------------
+ * Check that we have a C-identifier
+ */
+
+int
+vcc_isCid(struct token *t)
+{
+	const char *q;
+
+	assert(t->tok == ID);
+	for (q = t->b; q < t->e; q++) {
+		if (!isalnum(*q) && *q != '_') 
+			return (0);
+	}
+	return (1);
+}
+
+void
+vcc_ExpectCid(struct tokenlist *tl)
+{
+
+	ExpectErr(tl, ID);
+	ERRCHK(tl);
+	if (vcc_isCid(tl->t))
+		return;
+	vsb_printf(tl->sb, "Identifier ");
+	vcc_ErrToken(tl, tl->t);
+	vsb_printf(tl->sb,
+	    " contains illegal characters, use [0-9a-zA-Z_] only.\n");
+	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------
  * Decode %xx in a string
  */
 

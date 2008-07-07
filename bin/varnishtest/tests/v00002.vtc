@@ -2,6 +2,20 @@
 
 test "VCL: test syntax/semantic checks on backend decls."
 
+# Missing backend
+varnish v1 -badvcl {
+}
+
+# Reference to non-existent backend
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "localhost";
+	}
+	sub vcl_recv {
+		set req.backend = b2;
+	}
+}
+
 # Missing .host
 varnish v1 -badvcl {
 	backend b1 {
@@ -42,5 +56,25 @@ varnish v1 -badvcl {
 		{ .weight = 1; .backend = b1; }
 		{ .weight = 1; .backend = { .host = "127.0.0.3"; } }
 		{ .weight = 1; .backend = 3745; }  // Brownie points for getting the joke
+	}
+}
+
+# Check backend reference by name
+varnish v1 -badvcl {
+	backend b1 { .host = "127.0.0.2"; }
+	backend b2 b1;
+}
+
+# Check backend reference by non-C-compat name
+varnish v1 -badvcl {
+	backend b-1 { .host = "127.0.0.2"; }
+}
+
+# Assign backend by non-C-compat name
+# Check backend reference by non-C-compat name
+varnish v1 -badvcl {
+	backend b1 { .host = "127.0.0.2"; }
+	sub vcl_recv {
+		set req.backend = b-1;
 	}
 }
