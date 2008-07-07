@@ -34,6 +34,8 @@
 #include "vcc_token_defs.h"
 
 struct vsb;
+struct tokenlist;
+struct token;
 
 #define isident1(c) (isalpha(c))
 #define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
@@ -44,3 +46,18 @@ void vcl_init_tnames(void);
 void vcl_output_lang_h(struct vsb *sb);
 
 #define PF(t)	(int)((t)->e - (t)->b), (t)->b
+
+/* vcc_backend.c */
+struct fld_spec;
+struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
+void vcc_ResetFldSpec(struct fld_spec *f);
+void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
+int vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
+void vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial);
+
+
+
+
+/* vcc_dir_random.c */
+void vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir);
+
