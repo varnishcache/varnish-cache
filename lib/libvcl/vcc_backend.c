@@ -259,7 +259,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 		    "Remove \"set\" and \"backend\" in front"
 		    " of backend fields.\n" );
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " at\n");
+		vsb_printf(tl->sb, " at ");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
