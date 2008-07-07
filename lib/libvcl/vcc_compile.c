@@ -341,13 +341,14 @@ EmitStruct(const struct tokenlist *tl)
 	}
 	Fc(tl, 0, "};\n");
 
-	Fc(tl, 0, "\nstatic struct director\t*directors[%d];\n", tl->nbackend);
+	Fc(tl, 0, "\nstatic struct director\t*directors[%d];\n",
+	    tl->ndirector);
 
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
 	Fc(tl, 0, "\t.fini_func = VGC_Fini,\n");
-	Fc(tl, 0, "\t.ndirector = %d,\n", tl->nbackend);
+	Fc(tl, 0, "\t.ndirector = %d,\n", tl->ndirector);
 	Fc(tl, 0, "\t.director = directors,\n");
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
@@ -596,9 +597,10 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Check if we have any backends at all */
-	if (tl->nbackend == 0) {
+	if (tl->ndirector == 0) {
 		vsb_printf(tl->sb,
-		    "No backends in VCL program, at least one is necessary.\n");
+		    "No backends or directors found in VCL program, "
+		    "at least one is necessary.\n");
 		tl->err = 1;
 		return (vcc_DestroyTokenList(tl, NULL));
 	}

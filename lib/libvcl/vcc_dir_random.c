@@ -58,7 +58,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 	unsigned u;
 
 	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
-	    PF(t_dir), tl->nbackend);
+	    PF(t_dir), tl->ndirector);
 	vcc_AddDef(tl, t_dir, R_BACKEND);
 
 	fs = vcc_FldSpec(tl, "!backend", "!weight", NULL);

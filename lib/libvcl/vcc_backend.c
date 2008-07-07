@@ -27,6 +27,27 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * A necessary explanation of a convoluted policy:
+ *
+ * In VCL we have backends and directors.
+ *
+ * In VRT we have directors which reference (a number of) backend hosts.
+ *
+ * A VCL backend therefore has an implicit director of type "simple" created
+ * by the compiler, but not visible in VCL.
+ *
+ * A VCL backend is a "named host", these can be referenced by name form
+ * VCL directors, but not from VCL backends.
+ *
+ * The reason for this quasimadness is that we want to collect statistics
+ * for each actual kickable hardware backend machine, but we want to be
+ * able to refer to them multiple times in different directors.
+ *
+ * At the same time, we do not want to force users to declare each backend
+ * host with a name, if all they want to do is put it into a director, so
+ * backend hosts can be declared inline in the director, in which case
+ * its identity is the director and its numerical index therein.
  */
 
 #include "config.h"
@@ -44,6 +65,13 @@
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
+
+struct host {
+	VTAILQ_ENTRY(host)      list;
+	int	                hnum;
+	struct token            *name;
+};
+
 
 static const char *
 CheckHostPort(const char *host, const char *port)
@@ -365,25 +393,24 @@ void
 vcc_ParseBackend(struct tokenlist *tl)
 {
 	struct host *h;
-	int nbh;
 
 	h = TlAlloc(tl, sizeof *h);
 
 	vcc_NextToken(tl);
 
-	ExpectErr(tl, ID);		/* name */
+	vcc_ExpectCid(tl);		/* ID: name */
+	ERRCHK(tl);
 	h->name = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_ParseHostDef(tl, &nbh, h->name, "backend", 0);
+	vcc_ParseHostDef(tl, &h->hnum, h->name, "backend", 0);
 	ERRCHK(tl);
 
-	h->hnum = nbh;
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
 
 	/* In the compiled vcl we use these macros to refer to backends */
 	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
-	    PF(h->name), tl->nbackend);
+	    PF(h->name), tl->ndirector);
 
 	vcc_AddDef(tl, h->name, R_BACKEND);
 
@@ -395,10 +422,10 @@ vcc_ParseBackend(struct tokenlist *tl)
 	Fc(tl, 0, "\nstatic const struct vrt_dir_simple sbe_%.*s = {\n",
 	    PF(h->name));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(h->name));
-	Fc(tl, 0, "\t.host = &bh_%d,\n", nbh);
+	Fc(tl, 0, "\t.host = &bh_%d,\n", h->hnum);
 	Fc(tl, 0, "};\n");
 
-	tl->nbackend++;
+	tl->ndirector++;
 }
 
 /*--------------------------------------------------------------------
@@ -413,7 +440,8 @@ vcc_ParseDirector(struct tokenlist *tl)
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: director */
 
-	ExpectErr(tl, ID);		/* ID: name */
+	vcc_ExpectCid(tl);		/* ID: name */
+	ERRCHK(tl);
 	t_dir = tl->t;
 	vcc_NextToken(tl);
 
@@ -434,5 +462,5 @@ vcc_ParseDirector(struct tokenlist *tl)
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
-	tl->nbackend++;
+	tl->ndirector++;
 }

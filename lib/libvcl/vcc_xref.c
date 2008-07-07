@@ -143,7 +143,7 @@ vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
 	r->name = t;
 
 	/* The first backend is the default and thus has an implicit ref */
-	if (type == R_BACKEND && tl->nbackend == 0)
+	if (type == R_BACKEND && tl->ndirector == 0)
 		r->refcnt++;
 }
 

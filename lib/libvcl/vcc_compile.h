@@ -59,12 +59,6 @@ struct token {
 	char			*dec;
 };
 
-struct host {
-	VTAILQ_ENTRY(host) 	list;
-	unsigned		hnum;
-	struct token		*name;
-};
-
 VTAILQ_HEAD(tokenhead, token);
 
 struct tokenlist {
@@ -86,7 +80,7 @@ struct tokenlist {
 	struct vsb		*sb;
 	int			err;
 	int			nbackend_host;
-	int			nbackend;
+	int			ndirector;
 	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
 	struct proc		*mprocs[N_METHODS];
@@ -205,6 +199,8 @@ void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
 int vcc_Teq(const struct token *t1, const struct token *t2);
 int vcc_IdIs(const struct token *t, const char *p);
+int vcc_isCid(struct token *t);
+void vcc_ExpectCid(struct tokenlist *tl);
 void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
 void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
