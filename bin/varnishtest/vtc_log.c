@@ -114,7 +114,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
 		    lead[lvl], vl->id, pfx);
 	else
-		for(; *str; str++) {
+		for(; *str != '\0'; str++) {
 			if (nl) {
 				vsb_printf(vl->vsb, "%s %-4s %s| ",
 				    lead[lvl], vl->id, pfx);
