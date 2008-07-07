@@ -1,0 +1,36 @@
+# $Id$
+
+test "VCL: test syntax/semantic checks on backend decls."
+
+# Missing .host
+varnish v1 -badvcl {
+	backend b1 {
+		.port = "http";
+	}
+}
+
+# Too many .host
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "foo";
+		.host = "bar";
+	}
+}
+
+# Too many .port
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "foo";
+		.port = "http";
+		.port = "https";
+	}
+}
+
+# Too many .connect_timeout
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "foo";
+		.connect_timeout = 1m;
+		.connect_timeout = 1m;
+	}
+}
