@@ -351,6 +351,8 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 		AZ(vsb_overflowed(vsb));
 		u = varnish_ask_cli(v, vsb_data(vsb), NULL);
 		assert(u == CLIS_OK);
+	} else {
+		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	}
 	vsb_delete(vsb);
 }
