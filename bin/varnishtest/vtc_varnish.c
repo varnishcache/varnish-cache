@@ -310,7 +310,7 @@ varnish_cli(struct varnish *v, const char *cli)
  */
 
 static void
-varnish_vcl(struct varnish *v, const char *vcl)
+varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 {
 	struct vsb *vsb;
 	enum cli_status_e u;
@@ -343,13 +343,15 @@ varnish_vcl(struct varnish *v, const char *vcl)
 	AZ(vsb_overflowed(vsb));
 
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
-	assert(u == CLIS_OK);
-	vsb_clear(vsb);
-	vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
-	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
-	assert(u == CLIS_OK);
+	assert(u == expect);
+	if (u == CLIS_OK) {
+		vsb_clear(vsb);
+		vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
+		vsb_finish(vsb);
+		AZ(vsb_overflowed(vsb));
+		u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+		assert(u == CLIS_OK);
+	}
 	vsb_delete(vsb);
 }
 
@@ -466,8 +468,13 @@ cmd_varnish(CMD_ARGS)
 			av++;
 			continue;
 		}
+		if (!strcmp(*av, "-badvcl")) {
+			varnish_vcl(v, av[1], CLIS_PARAM);
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-vcl")) {
-			varnish_vcl(v, av[1]);
+			varnish_vcl(v, av[1], CLIS_OK);
 			av++;
 			continue;
 		}
