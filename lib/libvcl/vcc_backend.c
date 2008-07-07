@@ -187,15 +187,13 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 	return (ok);
 }
 
-
 /*--------------------------------------------------------------------
- * Parse and emit a backend host specification.
+ * Parse and emit a backend host definition 
  *
  * The syntax is the following:
  *
- * backend_spec:
- *	name_of_backend		# by reference
- *	'{' be_elements '}'	# by specification
+ * backend_host_def:
+ *	'{' be_elements '}'
  *
  * be_elements:
  *	be_element
@@ -208,38 +206,18 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
  */
 
 static void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial)
+vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial)
 {
 	struct token *t_field;
 	struct token *t_first;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	const char *ep;
-	struct host *h;
 	struct fld_spec *fs;
 
 	fs = vcc_FldSpec(tl, "!host", "?port", "?connect_timeout", NULL);
 	t_first = tl->t;
 
-	if (tl->t->tok == ID) {
-		VTAILQ_FOREACH(h, &tl->hosts, list) {
-			if (vcc_Teq(h->name, tl->t))
-				break;
-		}
-		if (h == NULL) {
-			vsb_printf(tl->sb, "Reference to unknown backend ");
-			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_AddRef(tl, h->name, R_BACKEND);
-		vcc_NextToken(tl);
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
-		*nbh = h->hnum;
-		return;
-	}
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
 
@@ -333,6 +311,53 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, c
 }
 
 /*--------------------------------------------------------------------
+ * Parse and emit a backend host specification.
+ *
+ * The syntax is the following:
+ *
+ * backend_spec:
+ *	name_of_backend		# by reference
+ *	'{' be_elements '}'	# by specification
+ *
+ * The struct vrt_backend is emitted to Fh().
+ */
+
+static void
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const char *qual, int serial)
+{
+	struct host *h;
+
+	if (tl->t->tok == ID) {
+		VTAILQ_FOREACH(h, &tl->hosts, list) {
+			if (vcc_Teq(h->name, tl->t))
+				break;
+		}
+		if (h == NULL) {
+			vsb_printf(tl->sb, "Reference to unknown backend ");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_AddRef(tl, h->name, R_BACKEND);
+		vcc_NextToken(tl);
+		ExpectErr(tl, ';');
+		vcc_NextToken(tl);
+		*nbh = h->hnum;
+	} else if (tl->t->tok == '{') {
+		vcc_ParseHostDef(tl, nbh, name, qual, serial);
+	} else {
+		vsb_printf(tl->sb,
+		    "Expected a backend specification here, either by name "
+		    "or by {...}\n");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " at\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}
+
+/*--------------------------------------------------------------------
  * Parse a plain backend
  */
 
@@ -383,7 +408,7 @@ vcc_ParseBackend(struct tokenlist *tl)
 static void
 vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 {
-	struct token *t_field;
+	struct token *t_field, *t_be;
 	int nbh, nelem;
 	struct fld_spec *fs;
 	unsigned u;
@@ -404,6 +429,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 	    PF(t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
+		t_be = tl->t;
 		vcc_ResetFldSpec(fs);
 		nbh = -1;
 
@@ -438,8 +464,12 @@ vcc_ParseRandomDirector(struct tokenlist *tl, struct token *t_dir)
 				ErrInternal(tl);
 			}
 		}
-		vcc_FieldsOk(tl, fs);
-		ERRCHK(tl);
+		if (!vcc_FieldsOk(tl, fs)) {
+			vsb_printf(tl->sb,
+			    "\nIn member host specfication starting at:\n");
+			vcc_ErrWhere(tl, t_be);
+			return;
+		}
 		Fc(tl, 0, " },\n");
 		vcc_NextToken(tl);
 	}
