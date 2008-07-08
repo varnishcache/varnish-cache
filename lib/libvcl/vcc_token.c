@@ -192,7 +192,7 @@ vcc_IdIs(const struct token *t, const char *p)
  */
 
 int
-vcc_isCid(struct token *t)
+vcc_isCid(const struct token *t)
 {
 	const char *q;
 

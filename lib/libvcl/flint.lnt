@@ -12,6 +12,10 @@
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
 -sem(vcc_new_source, custodial(1))
 
+-emacro((???),va_arg)	// the va_arg() macro can yield 415, 416, 661, 662
+			// 796 and 797 (out-of-bounds errors).
+
+
 // -ffc    // No automatic custody
 
 -esym(534, vsb_printf)	// Ignoring return value of function
