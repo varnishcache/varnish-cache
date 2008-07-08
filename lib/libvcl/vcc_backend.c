@@ -124,6 +124,12 @@ vcc_EmitBeIdent(struct vsb *v, const struct token *name, const struct token *qua
 
 /*--------------------------------------------------------------------
  * Helper functions to complain about duplicate and missing fields
+ *
+ * XXX: idea: add groups to check for exclusivity, such that
+ * XXX:    ("!foo", "?bar", "!{", "this", "that", "}", NULL)
+ * XXX: means exactly one of "this" or "that", and
+ * XXX:    ("!foo", "?bar", "?{", "this", "that", "}", NULL)
+ * XXX: means at most one of "this" or "that".
  */
 
 struct fld_spec {
