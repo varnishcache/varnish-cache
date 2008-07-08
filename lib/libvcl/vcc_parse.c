@@ -560,7 +560,7 @@ static struct toplev {
 } toplev[] = {
 	{ "acl",		vcc_Acl },
 	{ "sub",		Function },
-	{ "backend",		vcc_ParseBackend },
+	{ "backend",		vcc_ParseDirector },
 	{ "director",		vcc_ParseDirector },
 	{ NULL, NULL }
 };
