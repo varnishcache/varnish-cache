@@ -299,7 +299,7 @@ EmitInitFunc(const struct tokenlist *tl)
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
 	vsb_finish(tl->fi);
-	/* XXX: check vsb_overflowed ? */
+	AZ(vsb_overflowed(tl->fi));
 	vsb_cat(tl->fc, vsb_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
@@ -310,7 +310,7 @@ EmitFiniFunc(const struct tokenlist *tl)
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
 	vsb_finish(tl->ff);
-	/* XXX: check vsb_overflowed ? */
+	AZ(vsb_overflowed(tl->ff));
 	vsb_cat(tl->fc, vsb_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
@@ -625,7 +625,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
 		vsb_finish(tl->fm[i]);
-		/* XXX: check vsb_overflowed ? */
+		AZ(vsb_overflowed(tl->fm[i]));
 		Fc(tl, 1, "{\n");
 		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
 		Fc(tl, 1, "}\n");
@@ -641,9 +641,10 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 
 	/* Combine it all in the fh vsb */
 	vsb_finish(tl->fc);
-	/* XXX: check vsb_overflowed ? */
+	AZ(vsb_overflowed(tl->fc));
 	vsb_cat(tl->fh, vsb_data(tl->fc));
 	vsb_finish(tl->fh);
+	AZ(vsb_overflowed(tl->fh));
 
 	of = strdup(vsb_data(tl->fh));
 	AN(of);
