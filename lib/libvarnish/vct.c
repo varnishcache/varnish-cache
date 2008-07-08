@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: vpf.h 1410 2007-05-11 11:17:09Z des $
+ * $Id$
  *
  * ctype(3) like functions, according to RFC2616
  */

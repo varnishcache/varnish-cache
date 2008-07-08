@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: cache_vrt.c 2067 2007-09-30 20:57:30Z phk $
+ * $Id$
  *
  * Runtime support for compiled VCL programs ESI processing.
  *
