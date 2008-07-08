@@ -413,17 +413,19 @@ extern int vca_pipes[2];
 
 /* cache_backend.c */
 
-void VBE_Init(void);
-struct vbe_conn *VBE_GetFd(struct sess *sp);
+struct vbe_conn *VBE_GetFd(const struct sess *sp);
 void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
-void VBE_DropRef(struct backend *);
-struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
-void VBE_AddHostHeader(struct sess *sp);
+void VBE_AddHostHeader(const struct sess *sp);
+
+/* cache_backend_cfg.c */
+void VBE_Init(void);
+void VBE_DropRef(struct backend *);
 void VBE_SelectBackend(struct sess *sp);
+struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 
 /* cache_ban.c */
 int BAN_Add(struct cli *cli, const char *regexp, int hash);

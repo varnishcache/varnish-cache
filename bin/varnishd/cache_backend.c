@@ -28,43 +28,7 @@
  *
  * $Id$
  *
- * This is the central switch-board for backend connections and it is
- * slightly complicated by a number of optimizations.
- *
- * The data structures:
- *
- *    A vrt_backend is a definition of a backend in a VCL program.
- *
- *    A backend is a TCP destination, possibly multi-homed and it has a
- *    number of associated properties and statistics.
- *
- *    A vbe_conn is an open TCP connection to a backend.
- *
- *    A bereq is a memory carrier for handling a HTTP transaction with
- *    a backend over a vbe_conn.
- *
- *    A director is a piece of code that selects which backend to use,
- *    by whatever method or metric it chooses.
- *
- * The relationships:
- *
- *    Backends and directors get instantiated when VCL's are loaded,
- *    and this always happen in the CLI thread.
- *
- *    When a VCL tries to instantiate a backend, any existing backend
- *    with the same identity (== definition in VCL) will be used instead
- *    so that vbe_conn's can be reused across VCL changes.
- *
- *    Directors disapper with the VCL that created them.
- *
- *    Backends disappear when their reference count drop to zero.
- *
- *    Backends have their host/port name looked up to addrinfo structures
- *    when they are instantiated, and we just cache that result and cycle
- *    through the entries (for multihomed backends) on failure only.
- *    XXX: add cli command to redo lookup.
- *
- *    bereq is sort of a step-child here, we just manage the pool of them.
+ * Handle backend connections and backend request structures.
  *
  */
 
@@ -82,29 +46,7 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "vrt.h"
-#include "cli_priv.h"
-
-/* Backend indstance */
-struct backend {
-	unsigned		magic;
-#define BACKEND_MAGIC		0x64c4c7c6
-
-	struct vrt_backend	vrt[1];
-	uint32_t		hash;
-
-	VTAILQ_ENTRY(backend)	list;
-	int			refcount;
-	pthread_mutex_t		mtx;
-
-	struct addrinfo		*ai;
-	struct addrinfo		*last_ai;
-
-	VTAILQ_HEAD(, vbe_conn)	connlist;
-
-	int			health;
-};
-
-static MTX VBE_mtx;
+#include "cache_backend.h"
 
 /*
  * List of cached vbe_conns, used if enabled in params/heritage
@@ -116,17 +58,11 @@ static VTAILQ_HEAD(,vbe_conn) vbe_conns = VTAILQ_HEAD_INITIALIZER(vbe_conns);
  */
 static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
 
-/*
- * The list of backends is not locked, it is only ever accessed from
- * the CLI thread, so there is no need.
- */
-static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
-
 /*--------------------------------------------------------------------
  * Create default Host: header for backend request
  */
 void
-VBE_AddHostHeader(struct sess *sp)
+VBE_AddHostHeader(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -299,7 +235,7 @@ VBE_NewConn(void)
 	return (vc);
 }
 
-static void
+void
 VBE_ReleaseConn(struct vbe_conn *vc)
 {
 
@@ -316,52 +252,6 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 		VSL_stats->n_vbe_conn--;
 		free(vc);
 	}
-}
-
-/*--------------------------------------------------------------------
- * Drop a reference to a backend.
- * The last reference must come from the watcher in the CLI thread,
- * as only that thread is allowed to clean up the backend list.
- */
-
-static void
-VBE_DropRefLocked(struct backend *b)
-{
-	int i;
-	struct vbe_conn *vbe, *vbe2;
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	assert(b->refcount > 0);
-
-	i = --b->refcount;
-	UNLOCK(&b->mtx);
-	if (i > 0)
-		return;
-
-	ASSERT_CLI();
-	VTAILQ_REMOVE(&backends, b, list);
-	VTAILQ_FOREACH_SAFE(vbe, &b->connlist, list, vbe2) {
-		VTAILQ_REMOVE(&b->connlist, vbe, list);
-		if (vbe->fd >= 0)
-			AZ(close(vbe->fd));
-		VBE_ReleaseConn(vbe);
-	}
-	free(TRUST_ME(b->vrt->ident));
-	free(TRUST_ME(b->vrt->hostname));
-	free(TRUST_ME(b->vrt->portname));
-	b->magic = 0;
-	free(b);
-	VSL_stats->n_backend--;
-}
-
-void
-VBE_DropRef(struct backend *b)
-{
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-
-	LOCK(&b->mtx);
-	VBE_DropRefLocked(b);
 }
 
 /*--------------------------------------------------------------------
@@ -430,22 +320,8 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 /*--------------------------------------------------------------------*/
 
-void
-VBE_SelectBackend(struct sess *sp)
-{
-	struct backend *bp;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	bp = sp->director->choose(sp);
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	sp->backend = bp;
-}
-
-/*--------------------------------------------------------------------*/
-
 struct vbe_conn *
-VBE_GetFd(struct sess *sp)
+VBE_GetFd(const struct sess *sp)
 {
 	struct backend *bp;
 	struct vbe_conn *vc;
@@ -559,150 +435,4 @@ VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int a)
 		b->method->updatehealth(sp, vc, a);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 #endif
-}
-
-/*--------------------------------------------------------------------
- * DNS lookup of backend host/port
- */
-
-static void
-vbe_dns_lookup(struct cli *cli, struct backend *bp)
-{
-	int error;
-	struct addrinfo *res, hint, *old;
-
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
-	res = NULL;
-	error = getaddrinfo(bp->vrt->hostname, bp->vrt->portname,
-	    &hint, &res);
-	if (error) {
-		if (res != NULL)
-			freeaddrinfo(res);
-		/*
-		 * We cannot point to the source code any more, it may
-		 * be long gone from memory.   We already checked over in
-		 * the VCL compiler, so this is only relevant for refreshes.
-		 * XXX: which we do when exactly ?
-		 */
-		cli_out(cli, "DNS(/hosts) lookup failed for (%s/%s): %s",
-		    bp->vrt->hostname, bp->vrt->portname, gai_strerror(error));
-		return;
-	}
-	LOCK(&bp->mtx);
-	old = bp->ai;
-	bp->ai = res;
-	bp->last_ai = res;
-	UNLOCK(&bp->mtx);
-	if (old != NULL)
-		freeaddrinfo(old);
-}
-
-/*--------------------------------------------------------------------
- * Add a backend/director instance when loading a VCL.
- * If an existing backend is matched, grab a refcount and return.
- * Else create a new backend structure with reference initialized to one.
- */
-
-struct backend *
-VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
-{
-	struct backend *b;
-	uint32_t u;
-
-	AN(vb->hostname);
-	AN(vb->portname);
-	AN(vb->ident);
-	(void)cli;
-	ASSERT_CLI();
-	u = crc32_l(vb->ident, strlen(vb->ident));
-	VTAILQ_FOREACH(b, &backends, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (u != b->hash)
-			continue;
-		if (strcmp(b->vrt->ident, vb->ident))
-			continue;
-		b->refcount++;
-		return (b);
-	}
-
-	ALLOC_OBJ(b, BACKEND_MAGIC);
-	XXXAN(b);
-	b->magic = BACKEND_MAGIC;
-
-	VTAILQ_INIT(&b->connlist);
-	b->hash = u;
-
-	/*
-	 * This backend may live longer than the VCL that instantiated it
-	 * so we cannot simply reference the VCL's copy of things.
-	 */
-	REPLACE(b->vrt->ident, vb->ident);
-	REPLACE(b->vrt->hostname, vb->hostname);
-	REPLACE(b->vrt->portname, vb->portname);
-	REPLACE(b->vrt->vcl_name, vb->vcl_name);
-
-	b->vrt->connect_timeout = vb->connect_timeout;
-
-	MTX_INIT(&b->mtx);
-	b->refcount = 1;
-
-	vbe_dns_lookup(cli, b);
-
-	VTAILQ_INSERT_TAIL(&backends, b, list);
-	VSL_stats->n_backend++;
-	return (b);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-void
-VRT_fini_dir(struct cli *cli, struct director *b)
-{
-
-	(void)cli;
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(b, DIRECTOR_MAGIC);
-	b->fini(b);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
-{
-	struct backend *b;
-
-	(void)av;
-	(void)priv;
-	ASSERT_CLI();
-	VTAILQ_FOREACH(b, &backends, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s/%s/%s %d\n",
-		    b,
-		    b->vrt->vcl_name,
-		    b->vrt->hostname,
-		    b->vrt->portname,
-		    b->refcount);
-	}
-}
-
-static struct cli_proto debug_cmds[] = {
-	{ "debug.backend", "debug.backend",
-	    "\tExamine Backend internals\n", 0, 0, cli_debug_backend },
-	{ NULL }
-};
-
-/*--------------------------------------------------------------------*/
-
-void
-VBE_Init(void)
-{
-
-	MTX_INIT(&VBE_mtx);
-	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }

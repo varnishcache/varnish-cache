@@ -12,6 +12,7 @@ varnishd_SOURCES = \
 	cache_acceptor_poll.c \
 	cache_acceptor_kqueue.c \
 	cache_backend.c \
+	cache_backend_cfg.c \
 	cache_ban.c \
 	cache_center.c \
 	cache_cli.c \
