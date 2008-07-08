@@ -48,6 +48,7 @@ struct sockaddr;
 struct vrt_backend_probe {
 	char		*request;
 	double		timeout;
+	double		rate;
 };
 
 /*

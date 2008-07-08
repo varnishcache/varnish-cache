@@ -242,7 +242,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	struct token *t_field;
 	struct token *t_did = NULL;
 
-	fs = vcc_FldSpec(tl, "?url", "?request", "?timeout", NULL);
+	fs = vcc_FldSpec(tl, "?url", "?request", "?timeout", "?rate", NULL);
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
@@ -279,6 +279,13 @@ vcc_ParseProbe(struct tokenlist *tl)
 			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
 		} else if (vcc_IdIs(t_field, "timeout")) {
 			Fh(tl, 0, "\t\t.timeout = ");
+			tl->fb = tl->fh;
+			vcc_TimeVal(tl);
+			tl->fb = NULL;
+			ERRCHK(tl);
+			Fh(tl, 0, ",\n");
+		} else if (vcc_IdIs(t_field, "rate")) {
+			Fh(tl, 0, "\t\t.rate = ");
 			tl->fb = tl->fh;
 			vcc_TimeVal(tl);
 			tl->fb = NULL;

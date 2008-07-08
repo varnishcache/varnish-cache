@@ -386,6 +386,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct vrt_backend_probe {\n");
 	vsb_cat(sb, "	char		*request;\n");
 	vsb_cat(sb, "	double		timeout;\n");
+	vsb_cat(sb, "	double		rate;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/*\n");
