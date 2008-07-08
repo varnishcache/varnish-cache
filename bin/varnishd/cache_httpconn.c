@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: cache_http.c 2052 2007-09-28 11:07:14Z phk $
+ * $Id$
  *
  * HTTP protocol requests
  */
