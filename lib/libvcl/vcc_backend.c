@@ -217,6 +217,89 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 }
 
 /*--------------------------------------------------------------------
+ * Parse a backend probe specification
+ */
+
+static void
+vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did, struct token *t_field)
+{
+	if (*t_did != NULL) {
+		vsb_printf(tl->sb,
+		    "Probe request redefinition at:\n");
+		vcc_ErrWhere(tl, t_field);
+		vsb_printf(tl->sb,
+		    "Previous definition:\n");
+		vcc_ErrWhere(tl, *t_did);
+		return;
+	}
+	*t_did = t_field;
+}
+
+static void
+vcc_ParseProbe(struct tokenlist *tl)
+{
+	struct fld_spec *fs;
+	struct token *t_field;
+	struct token *t_did = NULL;
+
+	fs = vcc_FldSpec(tl, "?url", "?request", "?timeout", NULL);
+
+	ExpectErr(tl, '{');
+	vcc_NextToken(tl);
+
+	Fh(tl, 0, "\t.probe = {\n");
+	while (tl->t->tok != '}') {
+
+		vcc_IsField(tl, &t_field, fs);
+		ERRCHK(tl);
+		if (tl->err)
+			break;
+		if (vcc_IdIs(t_field, "url")) {
+			vcc_ProbeRedef(tl, &t_did, t_field);
+			ERRCHK(tl);
+			ExpectErr(tl, CSTR);
+			Fh(tl, 0, "\t\t.request =\n");
+			Fh(tl, 0, "\t\t\t\"GET \" ");
+			EncToken(tl->fh, tl->t);
+			Fh(tl, 0, " \" /HTTP/1.1\\r\\n\"\n");
+			Fh(tl, 0, "\t\t\t\"Connection: close\\r\\n\"\n");
+			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "request")) {
+			vcc_ProbeRedef(tl, &t_did, t_field);
+			ERRCHK(tl);
+			ExpectErr(tl, CSTR);
+			Fh(tl, 0, "\t\t.request =\n");
+			while (tl->t->tok == CSTR) {
+				Fh(tl, 0, "\t\t\t");
+				EncToken(tl->fh, tl->t);
+				Fh(tl, 0, " \"\\r\\n\"\n");
+				vcc_NextToken(tl);
+			}
+			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
+		} else if (vcc_IdIs(t_field, "timeout")) {
+			Fh(tl, 0, "\t\t.timeout = ");
+			tl->fb = tl->fh;
+			vcc_TimeVal(tl);
+			tl->fb = NULL;
+			ERRCHK(tl);
+			Fh(tl, 0, ",\n");
+		} else {
+			vcc_ErrToken(tl, t_field);
+			vcc_ErrWhere(tl, t_field);
+			ErrInternal(tl);
+			return;
+		}
+
+		ExpectErr(tl, ';');
+		vcc_NextToken(tl);
+	}
+	Fh(tl, 0, "\t},\n");
+	ExpectErr(tl, '}');
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------
  * Parse and emit a backend host definition 
  *
  * The syntax is the following:
@@ -244,7 +327,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	const char *ep;
 	struct fld_spec *fs;
 
-	fs = vcc_FldSpec(tl, "!host", "?port", "?connect_timeout", NULL);
+	fs = vcc_FldSpec(tl,
+	    "!host", "?port", "?connect_timeout", "?probe", NULL);
 	t_first = tl->t;
 
 	ExpectErr(tl, '{');
@@ -276,10 +360,14 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			assert(tl->t->dec != NULL);
 			t_host = tl->t;
 			vcc_NextToken(tl);
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "port")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_port = tl->t;
+			vcc_NextToken(tl);
+			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fh(tl, 0, "\t.connect_timeout = ");
@@ -288,13 +376,16 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			tl->fb = NULL;
 			ERRCHK(tl);
 			Fh(tl, 0, ",\n");
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "probe")) {
+			vcc_ParseProbe(tl);
+			ERRCHK(tl);
 		} else {
 			ErrInternal(tl);
 			return;
 		}
 
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
 	}
 
 	vcc_FieldsOk(tl, fs);

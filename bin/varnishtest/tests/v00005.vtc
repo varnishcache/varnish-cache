@@ -1,0 +1,51 @@
+# $Id$
+
+test "VCL: test backend probe syntax"
+
+# Check url definition
+varnish v1 -vcl {
+	backend b1 {
+		.host = "localhost";
+		.probe = {
+			.url = "/";
+		}
+	}
+}
+
+# Check request definition
+varnish v1 -vcl {
+	backend b1 {
+		.host = "localhost";
+		.probe = {
+			.request = 
+			    "GET / HTTP/1.1"
+			    "Host: foo.bar" ;
+		}
+	}
+}
+
+# Check redefinition
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "localhost";
+		.probe = {
+			.url = "/";
+			.request = 
+			    "GET / HTTP/1.1"
+			    "Host: foo.bar" ;
+		}
+	}
+}
+
+# Check redefinition the other way
+varnish v1 -badvcl {
+	backend b1 {
+		.host = "localhost";
+		.probe = {
+			.request = 
+			    "GET / HTTP/1.1"
+			    "Host: foo.bar" ;
+			.url = "/";
+		}
+	}
+}

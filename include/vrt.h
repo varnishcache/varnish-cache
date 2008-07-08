@@ -42,14 +42,24 @@ struct VCL_conf;
 struct sockaddr;
 
 /*
+ * A backend probe specification
+ */
+
+struct vrt_backend_probe {
+	char		*request;
+	double		timeout;
+};
+
+/*
  * A backend is a host+port somewhere on the network
  */
 struct vrt_backend {
-	char		*portname;
-	char		*hostname;
-	char		*vcl_name;
-	char		*ident;
-	double		connect_timeout;
+	char				*portname;
+	char				*hostname;
+	char				*vcl_name;
+	char				*ident;
+	double				connect_timeout;
+	struct vrt_backend_probe 	probe;
 };
 
 /*
