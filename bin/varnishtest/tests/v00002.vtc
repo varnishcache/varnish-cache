@@ -106,3 +106,8 @@ varnish v1 -badvcl {
 	backend b1 { .host = "127.0.0.1"; }
 	backend b1 { .host = "127.0.0.1"; }
 }
+
+# Unknown director policy
+varnish v1 -badvcl {
+	director r1 anarchy { .host = "127.0.0.1"; }
+}
