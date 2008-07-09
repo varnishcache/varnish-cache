@@ -105,7 +105,7 @@ VCL_Rel(struct VCL_conf **vcc)
 	vc->busy--;
 	/*
 	 * We do not garbage collect discarded VCL's here, that happens
-	 * in VCL_Idle() which is called from the CLI thread.
+	 * in VCL_Poll() which is called from the CLI thread.
 	 */
 	UNLOCK(&vcl_mtx);
 }
@@ -198,7 +198,7 @@ VCL_Nuke(struct vcls *vcl)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Idle(void)
+VCL_Poll(void)
 {
 	struct vcls *vcl, *vcl2;
 

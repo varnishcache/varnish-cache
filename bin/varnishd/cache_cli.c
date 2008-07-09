@@ -102,6 +102,7 @@ cli_vlu(void *priv, const char *p)
 
 	cli = priv;
 	VSL(SLT_CLI, 0, "Rd %s", p);
+	VCL_Poll();
 	vsb_clear(cli->sb);
 	LOCK(&cli_mtx);
 	cli_dispatch(cli, ccf_master_cli, p);
@@ -150,11 +151,8 @@ CLI_Run(void)
 	while (1) {
 		pfd[0].fd = heritage.cli_in;
 		pfd[0].events = POLLIN;
-		i = poll(pfd, 1, 5000);
-		if (i == 0) {
-			VCL_Idle();
-			continue;
-		}
+		i = poll(pfd, 1, INFTIM);
+		assert(i == 1);
 		if (pfd[0].revents & POLLHUP) {
 			fprintf(stderr,
 			    "EOF on CLI connection, exiting\n");

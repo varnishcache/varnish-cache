@@ -577,7 +577,7 @@ void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Get(struct VCL_conf **vcc);
-void VCL_Idle(void);
+void VCL_Poll(void);
 
 #define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
