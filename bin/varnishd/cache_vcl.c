@@ -214,13 +214,20 @@ static void
 ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
+	const char *flg;
 
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
-		cli_out(cli, "%s %6u %s\n",
-		    vcl == vcl_active ? "* " : "  ",
+		if (vcl == vcl_active) {
+			flg = "active";
+		} else if (vcl->conf->discard) {
+			flg = "discarded";
+		} else
+			flg = "available";
+		cli_out(cli, "%-10s %6u %s\n",
+		    flg,
 		    vcl->conf->busy,
 		    vcl->name);
 	}
