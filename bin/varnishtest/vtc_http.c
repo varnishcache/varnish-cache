@@ -576,12 +576,28 @@ cmd_http_chunked(CMD_ARGS)
 	http_write(hp, 4, "chunked");
 }
 
+/**********************************************************************
+ * set the timeout
+ */
+
+static void
+cmd_http_timeout(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	hp->timeout = strtof(av[1], NULL) * 1000.0;
+}
 
 /**********************************************************************
  * Execute HTTP specifications
  */
 
 static struct cmds http_cmds[] = {
+	{ "timeout",	cmd_http_timeout },
 	{ "txreq",	cmd_http_txreq },
 	{ "rxreq",	cmd_http_rxreq },
 	{ "txresp",	cmd_http_txresp },
