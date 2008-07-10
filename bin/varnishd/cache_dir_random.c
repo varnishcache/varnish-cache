@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,7 +75,7 @@ vdi_random_choose(struct sess *sp)
 	r = random();
 	r &= 0x7fffffff;
 
-	for (vh = vs->hosts; i < vs->nhosts; vh++)
+	for (i = 0, vh = vs->hosts; i < vs->nhosts; vh++) 
 		if (r < vh->weight)
 			return (vh->backend);
 	assert(0 == __LINE__);
@@ -136,7 +137,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	i = 0;
 	a = 0.0;
 	assert(s > 0.0);
-	for (te = t->members; te->host != NULL; te++, i++) {
+	for (te = t->members; i < t->nmember; te++, i++) {
 		/* First normalize the specified weight in FP */
 		b = te->weight / s;	/*lint !e795 not zero division */
 		/* Then accumulate to eliminate rounding errors */
@@ -145,5 +146,6 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 		v = (unsigned)((1U<<31) * a);
 		vs->hosts[i].weight = v;
 	}
+	assert(vs->hosts[t->nmember - 1].weight > 0x7fffffff);
 	*bp = &vs->dir;
 }
