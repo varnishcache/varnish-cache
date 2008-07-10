@@ -4,17 +4,26 @@ test "Check -f command line arg"
 
 shell "echo 'backend foo { .host = \"127.0.0.1\"; .port = \"9080\"; }' > /tmp/_b00013.vcl" 
 varnish v1 -arg "-h simple_list -f /tmp/_b00013.vcl" -start
-shell "rm -f /tmp/_b00013.vcl" 
 
 server s1 {
 	rxreq 
 	expect req.url == "/foo"
 	txresp -body "foo"
+	rxreq 
+	expect req.url == "/bar"
+	txresp -body "bar"
 } -start
 
 client c1 {
 	txreq -url /foo
 	rxresp
-}
+} -run
 
-client c1 -run
+varnish v1 -cli "vcl.load foo /tmp/_b00013.vcl" -cli "vcl.use foo"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+} -run
+
+shell "rm -f /tmp/_b00013.vcl" 
