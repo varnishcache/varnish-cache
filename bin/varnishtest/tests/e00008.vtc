@@ -43,11 +43,15 @@ server s1 {
 	expect req.url == "/body"
 	txresp -body {
 		Included file
+		<esi:remove>
+		<Aaa
 	}
 	rxreq 
 	expect req.url == "/body2"
 	txresp -body {
 		Included file 2
+		<!--esi
+		<![CDATA[fooo
 	}
 } -start
 
