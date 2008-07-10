@@ -1,0 +1,29 @@
+# $Id$
+
+test "Test random director"
+
+server s1 {
+	rxreq
+	txresp -body "foo1"
+	rxreq
+	txresp -body "bar1"
+} -start
+
+varnish v1 -vcl+backend {
+	director foo random {
+		{ .backend = s1; .weight = 1; }
+		{ .backend = s1; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = foo;
+	}
+} -start
+
+client c1 {
+	timeout 10
+	txreq -url "/foo"
+	rxresp
+	txreq -url "/bar"
+	rxresp
+} -run
