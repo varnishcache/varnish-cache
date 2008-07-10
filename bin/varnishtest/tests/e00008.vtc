@@ -26,6 +26,13 @@ server s1 {
 		</esi:remove>
 		</>
 		<esi:remove/>
+
+		<esi:include
+	
+                                                             >
+
+		<esi:include  aaa />
+		<esi:include  src />
 	}
 	rxreq 
 	expect req.url == "/body"
