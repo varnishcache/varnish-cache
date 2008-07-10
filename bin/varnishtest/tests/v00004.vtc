@@ -6,10 +6,11 @@ varnish v1 -vcl {
 	backend b1 {
 		.host = "127.0.0.1";
 	}
-} -start
+}
 
 varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -start
+varnish v1 -expect n_backend == 1
 
 varnish v1 -vcl {
 	backend b1 {
@@ -17,8 +18,9 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 1
+varnish v1 -expect n_vcl == 2
+
 
 varnish v1 -vcl {
 	backend b2 {
@@ -26,18 +28,20 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl == 3
+
 
 varnish v1 -cli "vcl.discard vcl1"
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl == 2
 
 varnish v1 -cli "vcl.discard vcl2"
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 1
+varnish v1 -expect n_vcl == 1
+
 
 varnish v1 -vcl {
 	backend b2 {
@@ -52,16 +56,15 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl == 2
 
 varnish v1 -cli "vcl.use vcl3"
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl == 2
 
 varnish v1 -cli "vcl.discard vcl4"
 
-varnish v1 -cli vcl.list
-varnish v1 -cli debug.backend
-
+varnish v1 -expect n_backend == 1
+varnish v1 -expect n_vcl == 1
