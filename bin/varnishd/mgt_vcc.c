@@ -674,6 +674,7 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
+	const char *flg;
 	struct vclprog *vp;
 
 	(void)av;
@@ -686,9 +687,12 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 	} else {
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			cli_out(cli, "%s %6s %s\n",
-			    vp->active ? "*" : " ",
-			    "N/A", vp->name);
+			if (vp->active) {
+				flg = "active";
+			} else
+				flg = "available";
+			cli_out(cli, "%-10s %6s %s\n",
+			    flg, "N/A", vp->name);
 		}
 	}
 }
