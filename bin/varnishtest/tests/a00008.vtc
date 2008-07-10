@@ -1,0 +1,51 @@
+# $Id: a00007.vtc 2906 2008-07-08 10:29:07Z phk $
+
+test "Sema operations"
+
+server s1 -listen 127.0.0.1:9080 {
+	rxreq
+	sema r1 sync 4
+	delay .9
+	txresp
+} -start
+
+server s2 -listen 127.0.0.1:9081 {
+	rxreq
+	sema r1 sync 4
+	delay .6
+	txresp
+} -start
+
+server s3 -listen 127.0.0.1:9082 {
+	rxreq
+	sema r1 sync 4
+	delay .2
+	txresp
+} -start
+
+client c1 -connect 127.0.0.1:9080 {
+	delay .2
+	txreq
+	rxresp
+	sema r1 sync 4
+} -start
+
+client c2 -connect 127.0.0.1:9081 {
+	delay .6
+	txreq
+	rxresp
+	sema r1 sync 4
+} -start
+
+client c3 -connect 127.0.0.1:9082 {
+	delay .9
+	txreq
+	rxresp
+	sema r1 sync 4
+} -start
+
+# Wait for all servers to have received requests
+sema r1 sync 4
+
+# Wait for all clients to have received responses
+sema r1 sync 4
