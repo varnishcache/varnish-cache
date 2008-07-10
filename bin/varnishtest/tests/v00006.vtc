@@ -1,0 +1,74 @@
+# $Id: v00006.vtc 2906 2008-07-08 10:29:07Z phk $
+
+test "VCL: Test backend retirement"
+
+# First do one request to get a work-thread that holds a VCL reference
+
+server s1 -listen 127.0.0.1:9080 {
+	rxreq
+	txresp
+} -start
+
+# Only one pool, to avoid getting more than one work thread
+varnish v1 -arg "-p thread_pools=1" -vcl {
+	backend b1 {
+		.host = "localhost";
+		.port = "9080";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+server s1 -wait
+client c1 -wait
+
+varnish v1 -expect n_backend == 1
+varnish v1 -expect n_vcl_avail == 1
+varnish v1 -expect n_vcl_discard == 0
+
+# Set up a new VCL and backend
+
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend b2 {
+		.host = "localhost";
+		.port = "9180";
+	}
+}
+
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl_avail == 2
+varnish v1 -expect n_vcl_discard == 0
+
+varnish v1 -cli "debug.backend" -cli "vcl.list"
+
+# Discard the first VCL
+
+varnish v1 -cli "vcl.discard vcl1"
+
+# It won't go away as long as the workthread holds a VCL reference
+varnish v1 -expect n_backend == 2
+varnish v1 -expect n_vcl_avail == 1
+varnish v1 -expect n_vcl_discard == 1
+
+# Do another request through the new VCL to the new backend
+client c1 {
+	txreq -url /foo
+	rxresp
+} -start
+
+# The workthread should have released its VCL reference now
+# but we need to tickle the CLI to notice
+
+varnish v1 -cli "debug.backend" -cli "vcl.list"
+
+varnish v1 -expect n_backend == 1
+varnish v1 -expect n_vcl_avail == 1
+varnish v1 -expect n_vcl_discard == 0
