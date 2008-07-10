@@ -32,7 +32,10 @@ server s1 {
                                                              >
 
 		<esi:include  aaa />
-		<esi:include  src />
+		<esi:include  k.=./>
+		<esi:include  src/>
+		<esi:include  src=/>
+		<esi:include  src= />
 	}
 	rxreq 
 	expect req.url == "/body"
