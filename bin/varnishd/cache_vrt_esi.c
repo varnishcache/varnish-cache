@@ -189,6 +189,7 @@ static int
 esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 {
 
+	AN(*in->b);
 	/* Skip leading blanks */
 	while(in->b < in->e && isspace(*in->b))
 		in->b++;
@@ -223,6 +224,13 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 
 	/* skip '=' */
 	in->b++;
+
+	if (isspace(*in->b)) {
+		val->e = val->b = in->b;;
+		*val->e = '\0';
+		in->b++;
+		return (1);
+	}
 
 	/* Value, if any ? */
 	*val = *in;
