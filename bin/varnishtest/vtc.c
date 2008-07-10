@@ -279,7 +279,6 @@ cmd_dump(CMD_ARGS)
 static struct cmds cmds[] = {
 	{ "server", 	cmd_server },
 	{ "client", 	cmd_client },
-	{ "stats", 	cmd_stats },
 	{ "varnish", 	cmd_varnish },
 	{ "delay", 	cmd_delay },
 	{ "test", 	cmd_test },
