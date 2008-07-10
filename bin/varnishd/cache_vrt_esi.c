@@ -260,6 +260,7 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 		while(in->b < in->e && !isspace(*in->b))
 			in->b++;
 		val->e = in->b;
+		in->b++;
 	}
 	*val->e = '\0';
 	return (1);
