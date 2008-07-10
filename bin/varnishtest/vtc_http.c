@@ -606,6 +606,7 @@ static struct cmds http_cmds[] = {
 	{ "send",	cmd_http_send },
 	{ "chunked",	cmd_http_chunked },
 	{ "delay",	cmd_delay },
+	{ "sema",	cmd_sema },
 	{ NULL,		NULL }
 };
 
