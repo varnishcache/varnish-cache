@@ -277,10 +277,13 @@ esi_addinclude(struct esi_work *ew, txt t)
 		VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
 		    tag.e - tag.b, tag.b,
 		    val.e - val.b, val.b);
-		if (Tlen(tag) != 3 && memcmp(tag.b, "src", 3))
+		if (Tlen(tag) != 3 || memcmp(tag.b, "src", 3))
+			continue; 
+		if (Tlen(val) == 0) {
+			esi_error(ew, tag.b, Tlen(tag),
+			    "ESI esi:include src attribute withou value");
 			continue;
-
-		assert(Tlen(val) > 0);	/* XXX */
+		}
 
 		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
 			/*  Rewrite to Host: header inplace */
