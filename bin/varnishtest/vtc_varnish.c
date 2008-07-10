@@ -43,6 +43,7 @@
 #include "vqueue.h"
 #include "miniobj.h"
 #include "libvarnish.h"
+#include "varnishapi.h"
 #include "cli.h"
 #include "cli_common.h"
 #include "vss.h"
@@ -57,6 +58,8 @@ struct varnish {
 	struct vtclog		*vl;
 	struct vtclog		*vl1;
 	VTAILQ_ENTRY(varnish)	list;
+
+	struct varnish_stats	*stats;
 
 	const char		*args;
 	int			fds[4];
@@ -216,6 +219,8 @@ varnish_launch(struct varnish *v)
 	v->fds[2] = v->fds[3] = -1;
 	vsb_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
+
+	v->stats = VSL_OpenStats(v->name);
 
 	vtc_log(v->vl, 3, "opening CLI connection");
 	for (i = 0; i < 10; i++) {
