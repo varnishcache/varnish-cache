@@ -10,6 +10,22 @@ server s1 {
 		After include
 		<!-- normal comment -->
 		<esi:bogosity/>
+		<esi:comment>	
+		 foo
+		 </esi:comment>
+		<esi:comment bar />
+
+		<esi:remove>
+			<esi:comment foo/>
+		</esi:remove>
+
+		<esi:remove>
+			<esi:remove>
+			bar
+			</esi:remove>
+		</esi:remove>
+		</>
+		<esi:remove/>
 	}
 	rxreq 
 	expect req.url == "/body"
