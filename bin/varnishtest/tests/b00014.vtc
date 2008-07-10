@@ -1,0 +1,20 @@
+# $Id$
+
+test "Check -f command line arg"
+
+shell "echo 'backend foo { .host = \"127.0.0.1\"; .port = \"9080\"; }' > /tmp/_b00013.vcl" 
+varnish v1 -arg "-h simple_list -f /tmp/_b00013.vcl" -start
+shell "rm -f /tmp/_b00013.vcl" 
+
+server s1 {
+	rxreq 
+	expect req.url == "/foo"
+	txresp -body "foo"
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+}
+
+client c1 -run
