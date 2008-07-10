@@ -35,6 +35,7 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -393,6 +394,47 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 }
 
 /**********************************************************************
+ * Check statistics
+ */
+
+static void
+varnish_expect(struct varnish *v, char * const *av) {
+	uint64_t	val, ref;
+	int good;
+	char *p;
+
+#define MAC_STAT(n, t, f, d) 					\
+	if (!strcmp(av[0], #n)) {				\
+		val = v->stats->n;				\
+	} else 
+#include "stat_field.h"
+#undef MAC_STAT
+		{
+		vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
+	}
+
+	ref = strtoumax(av[2], &p, 0);
+	if (ref == UINTMAX_MAX || *p) 
+		vtc_log(v->vl, 0, "Syntax error in number (%s)", av[2]);
+	good = 0;
+	if      (!strcmp(av[1], "==")) { if (val == ref) good = 1; }
+	else if (!strcmp(av[1], "!=")) { if (val != ref) good = 1; }
+	else if (!strcmp(av[1], ">"))  { if (val > ref)  good = 1; }
+	else if (!strcmp(av[1], "<"))  { if (val < ref)  good = 1; }
+	else if (!strcmp(av[1], ">=")) { if (val >= ref) good = 1; }
+	else if (!strcmp(av[1], "<=")) { if (val <= ref) good = 1; }
+	else {
+		vtc_log(v->vl, 0, "comparison %s unknown", av[1]);
+	}
+	if (good)
+		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
+		    av[0], val, av[1], av[2]);
+	else
+		vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
+		    av[0], val, av[1], av[2], ref);
+}
+
+/**********************************************************************
  * Varnish server cmd dispatch
  */
 
@@ -476,6 +518,12 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-wait")) {
 			varnish_wait(v);
+			continue;
+		}
+		if (!strcmp(*av, "-expect")) {
+			av++;
+			varnish_expect(v, av);
+			av += 2;
 			continue;
 		}
 		vtc_log(v->vl, 0, "Unknown varnish argument: %s", *av);
