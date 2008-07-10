@@ -105,3 +105,7 @@ MAC_STAT(sma_balloc,		uint64_t, 'i', "SMA bytes allocated")
 MAC_STAT(sma_bfree,		uint64_t, 'i', "SMA bytes free")
 
 MAC_STAT(backend_req,		uint64_t, 'a', "Backend requests made")
+
+MAC_STAT(n_vcl,			uint64_t, 'a', "N vcl total")
+MAC_STAT(n_vcl_avail,		uint64_t, 'a', "N vcl available")
+MAC_STAT(n_vcl_discard,		uint64_t, 'a', "N vcl discarded")
