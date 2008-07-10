@@ -36,11 +36,18 @@ server s1 {
 		<esi:include  src/>
 		<esi:include  src=/>
 		<esi:include  src= />
+		<esi:include  src="foofof />
+		<esi:include  foo=bar src=/body2 />
 	}
 	rxreq 
 	expect req.url == "/body"
 	txresp -body {
 		Included file
+	}
+	rxreq 
+	expect req.url == "/body2"
+	txresp -body {
+		Included file 2
 	}
 } -start
 
