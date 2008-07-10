@@ -46,6 +46,9 @@ cmd_f cmd_server;
 cmd_f cmd_client;
 cmd_f cmd_stats;
 cmd_f cmd_varnish;
+cmd_f cmd_sema;
+
+void init_sema(void);
 
 void http_process(struct vtclog *vl, const char *spec, int sock, int client);
 

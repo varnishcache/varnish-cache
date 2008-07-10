@@ -10,6 +10,7 @@ varnishtest_SOURCES = \
 		vtc_client.c \
 		vtc_http.c \
 		vtc_log.c \
+		vtc_sema.c \
 		vtc_server.c \
 		vtc_varnish.c
 

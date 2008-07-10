@@ -283,6 +283,7 @@ static struct cmds cmds[] = {
 	{ "delay", 	cmd_delay },
 	{ "test", 	cmd_test },
 	{ "shell", 	cmd_shell },
+	{ "sema", 	cmd_sema },
 	{ NULL, 	NULL }
 };
 
@@ -328,6 +329,7 @@ main(int argc, char * const *argv)
 	}
 	argc -= optind;
 	argv += optind;
+	init_sema();
 	for (ch = 0; ch < argc; ch++)
 		exec_file(argv[ch]);
 	fok = fopen("_.ok", "w");
