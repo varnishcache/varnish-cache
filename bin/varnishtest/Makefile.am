@@ -11,7 +11,6 @@ varnishtest_SOURCES = \
 		vtc_http.c \
 		vtc_log.c \
 		vtc_server.c \
-		vtc_stats.c \
 		vtc_varnish.c
 
 varnishtest_LDADD = \
