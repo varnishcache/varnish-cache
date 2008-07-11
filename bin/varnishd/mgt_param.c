@@ -735,6 +735,11 @@ static const struct parspec parspec[] = {
 		"VCL can override this default value for each backend.",
 		0,
 		"400", "ms" },
+	{ "prefer_ipv6", tweak_bool, &master.prefer_ipv6, 0, 0,
+		"Prefer IPv6 address when connecting to backends which "
+		"have both IPv4 and IPv6 addresses.",
+		0,
+		"off", "bool" },
 	{ "session_linger", tweak_uint,
 		&master.session_linger,0, UINT_MAX,
 		"How long time the workerthread lingers on the session "
