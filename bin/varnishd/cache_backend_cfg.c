@@ -71,6 +71,37 @@ VBE_SelectBackend(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+VBE_Nuke(struct backend *b)
+{
+	VTAILQ_REMOVE(&backends, b, list);
+	free(b->ident);
+	free(b->hosthdr);
+	free(b->ipv4);
+	free(b->ipv6);
+	b->magic = 0;
+	free(b);
+	VSL_stats->n_backend--;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+VBE_Poll(void)
+{
+	struct backend *b, *b2;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH_SAFE(b, &backends, list, b2) {
+		if (b->refcount == 0 && b->probe == NULL)
+			VBE_Nuke(b);
+	}
+}
+
+/*--------------------------------------------------------------------
  * Drop a reference to a backend.
  * The last reference must come from the watcher in the CLI thread,
  * as only that thread is allowed to clean up the backend list.
@@ -91,20 +122,16 @@ VBE_DropRefLocked(struct backend *b)
 		return;
 
 	ASSERT_CLI();
-	VTAILQ_REMOVE(&backends, b, list);
 	VTAILQ_FOREACH_SAFE(vbe, &b->connlist, list, vbe2) {
 		VTAILQ_REMOVE(&b->connlist, vbe, list);
 		if (vbe->fd >= 0)
 			AZ(close(vbe->fd));
 		VBE_ReleaseConn(vbe);
 	}
-	free(b->ident);
-	free(b->hosthdr);
-	free(b->ipv4);
-	free(b->ipv6);
-	b->magic = 0;
-	free(b);
-	VSL_stats->n_backend--;
+	if (b->probe != NULL)
+		VBP_Stop(b);
+	else
+		VBE_Nuke(b);
 }
 
 void
@@ -206,6 +233,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
+	VBP_Start(b, &vb->probe);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSL_stats->n_backend++;
 	return (b);
