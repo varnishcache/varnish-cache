@@ -1,0 +1,44 @@
+# $Id$
+
+test "Test host header specification"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.host == "snafu"
+	txresp -body "foo1"
+
+	rxreq
+	expect req.url == "/bar"
+	expect req.http.host == "127.0.0.1"
+	txresp -body "foo1"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/foo" -hdr "Host: snafu"
+	rxresp
+	txreq -url "/bar"
+	rxresp
+} -run
+
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	expect req.url == "/barf"
+	expect req.http.host == "FOObar"
+	txresp -body "foo1"
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+		.port = "9180";
+		.host_header = "FOObar";
+	}
+} 
+
+client c1 {
+	txreq -url "/barf"
+	rxresp
+} -run

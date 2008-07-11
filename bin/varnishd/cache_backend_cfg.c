@@ -219,7 +219,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 */
 	REPLACE(b->ident, vb->ident);
 	REPLACE(b->vcl_name, vb->vcl_name);
-	REPLACE(b->hosthdr, vb->hostname);
+	REPLACE(b->hosthdr, vb->hosthdr);
 
 	b->connect_timeout = vb->connect_timeout;
 
