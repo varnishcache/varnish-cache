@@ -54,7 +54,7 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
-#include "mgt_event.h"
+#include "vev.h"
 #include "vlu.h"
 #include "vsb.h"
 #include "vss.h"
@@ -85,9 +85,9 @@ static const char *ch_state[] = {
 	[CH_DIED] =	"died, (restarting)",
 };
 
-struct evbase		*mgt_evb;
-static struct ev	*ev_poker;
-static struct ev	*ev_listen;
+struct vev_base		*mgt_evb;
+static struct vev	*ev_poker;
+static struct vev	*ev_listen;
 static struct vlu	*vlu;
 
 /*--------------------------------------------------------------------
@@ -136,7 +136,7 @@ child_line(void *priv, const char *p)
 /*--------------------------------------------------------------------*/
 
 static int
-child_listener(const struct ev *e, int what)
+child_listener(const struct vev *e, int what)
 {
 
 	(void)e;
@@ -154,7 +154,7 @@ child_listener(const struct ev *e, int what)
 /*--------------------------------------------------------------------*/
 
 static int
-child_poker(const struct ev *e, int what)
+child_poker(const struct vev *e, int what)
 {
 
 	(void)e;
@@ -228,7 +228,7 @@ start_child(void)
 	pid_t pid;
 	unsigned u;
 	char *p;
-	struct ev *e;
+	struct vev *e;
 	int i, cp[2];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
@@ -316,23 +316,23 @@ start_child(void)
 	AN(vlu);
 
 	AZ(ev_listen);
-	e = ev_new();
+	e = vev_new();
 	XXXAN(e);
 	e->fd = child_output;
 	e->fd_flags = EV_RD;
 	e->name = "Child listener";
 	e->callback = child_listener;
-	AZ(ev_add(mgt_evb, e));
+	AZ(vev_add(mgt_evb, e));
 	ev_listen = e;
 
 	AZ(ev_poker);
 	if (params->ping_interval > 0) {
-		e = ev_new();
+		e = vev_new();
 		XXXAN(e);
 		e->timeout = params->ping_interval;
 		e->callback = child_poker;
 		e->name = "child poker";
-		AZ(ev_add(mgt_evb, e));
+		AZ(vev_add(mgt_evb, e));
 		ev_poker = e;
 	}
 
@@ -361,7 +361,7 @@ mgt_stop_child(void)
 
 	REPORT0(LOG_DEBUG, "Stopping Child");
 	if (ev_poker != NULL) {
-		ev_del(mgt_evb, ev_poker);
+		vev_del(mgt_evb, ev_poker);
 		free(ev_poker);
 	}
 	ev_poker = NULL;
@@ -376,7 +376,7 @@ mgt_stop_child(void)
 /*--------------------------------------------------------------------*/
 
 static int
-mgt_sigchld(const struct ev *e, int what)
+mgt_sigchld(const struct vev *e, int what)
 {
 	int status;
 	struct vsb *vsb;
@@ -386,7 +386,7 @@ mgt_sigchld(const struct ev *e, int what)
 	(void)what;
 
 	if (ev_poker != NULL) {
-		ev_del(mgt_evb, ev_poker);
+		vev_del(mgt_evb, ev_poker);
 		free(ev_poker);
 	}
 	ev_poker = NULL;
@@ -421,7 +421,7 @@ mgt_sigchld(const struct ev *e, int what)
 	}
 
 	if (ev_listen != NULL) {
-		ev_del(mgt_evb, ev_listen);
+		vev_del(mgt_evb, ev_listen);
 		free(ev_listen);
 		ev_listen = NULL;
 	}
@@ -443,7 +443,7 @@ mgt_sigchld(const struct ev *e, int what)
 /*--------------------------------------------------------------------*/
 
 static int
-mgt_sigint(const struct ev *e, int what)
+mgt_sigint(const struct vev *e, int what)
 {
 
 	(void)e;
@@ -465,12 +465,12 @@ void
 mgt_run(int dflag, const char *T_arg)
 {
 	struct sigaction sac;
-	struct ev *e;
+	struct vev *e;
 	int i;
 
 	mgt_pid = getpid();
 
-	mgt_evb = ev_new_base();
+	mgt_evb = vev_new_base();
 	XXXAN(mgt_evb);
 
 	if (dflag)
@@ -479,27 +479,27 @@ mgt_run(int dflag, const char *T_arg)
 	if (T_arg)
 		mgt_cli_telnet(dflag, T_arg);
 
-	e = ev_new();
+	e = vev_new();
 	XXXAN(e);
 	e->sig = SIGTERM;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigterm";
-	AZ(ev_add(mgt_evb, e));
+	AZ(vev_add(mgt_evb, e));
 
-	e = ev_new();
+	e = vev_new();
 	XXXAN(e);
 	e->sig = SIGINT;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigint";
-	AZ(ev_add(mgt_evb, e));
+	AZ(vev_add(mgt_evb, e));
 
-	e = ev_new();
+	e = vev_new();
 	XXXAN(e);
 	e->sig = SIGCHLD;
 	e->sig_flags = SA_NOCLDSTOP;
 	e->callback = mgt_sigchld;
 	e->name = "mgt_sigchild";
-	AZ(ev_add(mgt_evb, e));
+	AZ(vev_add(mgt_evb, e));
 
 	setproctitle("Varnish-Mgr %s", heritage.name);
 
@@ -518,9 +518,9 @@ mgt_run(int dflag, const char *T_arg)
 		fprintf(stderr,
 		    "Debugging mode, enter \"start\" to start child\n");
 
-	i = ev_schedule(mgt_evb);
+	i = vev_schedule(mgt_evb);
 	if (i != 0)
-		REPORT(LOG_ERR, "ev_schedule() = %d", i);
+		REPORT(LOG_ERR, "vev_schedule() = %d", i);
 
 	REPORT0(LOG_ERR, "manager dies");
 	exit(2);

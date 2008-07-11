@@ -56,7 +56,7 @@
 #include "heritage.h"
 #include "mgt.h"
 #include "mgt_cli.h"
-#include "mgt_event.h"
+#include "vev.h"
 #include "shmlog.h"
 
 #include "vlu.h"
@@ -66,7 +66,7 @@ static int		cli_i = -1, cli_o = -1;
 
 struct telnet {
 	int 			fd;
-	struct ev 		*ev;
+	struct vev 		*ev;
 	VTAILQ_ENTRY(telnet)	list;
 };
 
@@ -221,7 +221,7 @@ mgt_cli_stop_child(void)
 struct cli_port {
 	unsigned		magic;
 #define CLI_PORT_MAGIC		0x5791079f
-	struct ev		*ev;
+	struct vev		*ev;
 	int			fdi;
 	int			fdo;
 	int			verbose;
@@ -335,7 +335,7 @@ mgt_cli_close(struct cli_port *cp)
  */
 
 static int
-mgt_cli_callback(const struct ev *e, int what)
+mgt_cli_callback(const struct vev *e, int what)
 {
 	struct cli_port *cp;
 
@@ -378,7 +378,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	cp->ev->fd_flags = EV_RD;
 	cp->ev->callback = mgt_cli_callback;
 	cp->ev->priv = cp;
-	AZ(ev_add(mgt_evb, cp->ev));
+	AZ(vev_add(mgt_evb, cp->ev));
 }
 
 /*--------------------------------------------------------------------*/
@@ -424,7 +424,7 @@ telnet_new(int fd)
 }
 
 static int
-telnet_accept(const struct ev *ev, int what)
+telnet_accept(const struct vev *ev, int what)
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
@@ -476,12 +476,12 @@ mgt_cli_telnet(int dflag, const char *T_arg)
 		sock = VSS_listen(ta[i], 10);
 		assert(sock >= 0);
 		tn = telnet_new(sock);
-		tn->ev = ev_new();
+		tn->ev = vev_new();
 		XXXAN(tn->ev);
 		tn->ev->fd = sock;
 		tn->ev->fd_flags = POLLIN;
 		tn->ev->callback = telnet_accept;
-		AZ(ev_add(mgt_evb, tn->ev));
+		AZ(vev_add(mgt_evb, tn->ev));
 		free(ta[i]);
 		ta[i] = NULL;
 	}
