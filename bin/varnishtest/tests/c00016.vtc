@@ -11,7 +11,7 @@ server s1 {
 	rxreq
 	expect req.url == "/bar"
 	expect req.http.Foo == "req.http.Foo"
-	txresp -hdr "Bar: foo" -hdr "Connection: bar" -body "foobar" 
+	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar" 
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -21,7 +21,7 @@ client c1 {
 	rxresp
 	expect resp.http.Bar == "foo"
 
-	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: Foo"
+	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: foo, close"
 	rxresp
 	expect req.http.Bar == "req.http.Bar"
 } -start
