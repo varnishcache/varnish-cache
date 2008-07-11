@@ -43,7 +43,6 @@ varnishd_SOURCES = \
 	instance.c \
 	mgt_child.c \
 	mgt_cli.c \
-	mgt_event.c \
 	mgt_param.c \
 	mgt_vcc.c \
 	rfc2616.c \
@@ -63,7 +62,6 @@ noinst_HEADERS = \
 	heritage.h \
 	mgt.h \
 	mgt_cli.h \
-	mgt_event.h \
 	steps.h \
 	stevedore.h
 

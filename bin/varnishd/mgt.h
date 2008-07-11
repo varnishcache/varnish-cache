@@ -36,7 +36,7 @@
 
 struct cli;
 
-extern struct evbase	*mgt_evb;
+extern struct vev_base	*mgt_evb;
 
 /* mgt_child.c */
 void mgt_run(int dflag, const char *T_arg);

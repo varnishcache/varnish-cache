@@ -49,7 +49,6 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "mgt_event.h"
 #include "vrt.h"
 #include "cache_backend.h"
 
