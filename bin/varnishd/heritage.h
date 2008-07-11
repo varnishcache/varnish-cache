@@ -166,6 +166,9 @@ struct params {
 
 	/* Log local socket address to shm */
 	unsigned		log_local_addr;
+
+	/* Prefer IPv6 connections to backend*/
+	unsigned		prefer_ipv6;
 };
 
 extern volatile struct params *params;

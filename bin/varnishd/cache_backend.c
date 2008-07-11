@@ -41,11 +41,9 @@
 #include <poll.h>
 
 #include <sys/socket.h>
-#include <netdb.h>
 
 #include "shmlog.h"
 #include "cache.h"
-#include "vrt.h"
 #include "cache_backend.h"
 
 /*
@@ -70,7 +68,7 @@ VBE_AddHostHeader(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->bereq->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->bereq->http,
-	    "Host: %s", sp->backend->vrt->hostname);
+	    "Host: %s", sp->backend->hosthdr);
 }
 
 /*--------------------------------------------------------------------
@@ -83,11 +81,8 @@ VBE_AddHostHeader(const struct sess *sp)
  */
 
 static int
-VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
+VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen_t salen)
 {
-	struct sockaddr_storage ss;
-	int fam, sockt, proto;
-	socklen_t alen;
 	int s, i, tmo;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
@@ -95,47 +90,31 @@ VBE_TryConnect(const struct sess *sp, const struct addrinfo *ai)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
-	/*
-	 * ai is only valid with the lock held, so copy out the bits
-	 * we need to make the connection
-	 */
-	fam = ai->ai_family;
-	sockt = ai->ai_socktype;
-	proto = ai->ai_protocol;
-	alen = ai->ai_addrlen;
-	assert(alen <= sizeof ss);
-	memcpy(&ss, ai->ai_addr, alen);
-
-	/* release lock during stuff that can take a long time */
-	UNLOCK(&sp->backend->mtx);
-
-	s = socket(fam, sockt, proto);
+	s = socket(pf, SOCK_STREAM, 0);
 	if (s < 0) {
 		LOCK(&sp->backend->mtx);
 		return (s);
 	}
 
 	tmo = params->connect_timeout;
-	if (sp->backend->vrt->connect_timeout > 10e-3)
-		tmo = sp->backend->vrt->connect_timeout * 1000;
+	if (sp->backend->connect_timeout > 10e-3)
+		tmo = sp->backend->connect_timeout * 1000;
 
 	if (tmo > 0)
-		i = TCP_connect(s, (void *)&ss, alen, tmo);
+		i = TCP_connect(s, sa, salen, tmo);
 	else
-		i = connect(s, (void *)&ss, alen);
+		i = connect(s, sa, salen);
 
 	if (i != 0) {
 		AZ(close(s));
-		LOCK(&sp->backend->mtx);
 		return (-1);
 	}
 
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name((void*)&ss, alen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	TCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    sp->backend->vrt->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+	    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
-	LOCK(&sp->backend->mtx);
 	return (s);
 }
 
@@ -254,54 +233,6 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	}
 }
 
-/*--------------------------------------------------------------------
- * Try to get a socket connected to one of the addresses on the list.
- * We start from the cached "last good" address and try all items on
- * the list exactly once.
- *
- * Called with backend mutex held, but will release/acquire it.
- *
- * XXX: Not ready for DNS re-lookups
- */
-
-static int
-bes_conn_try_list(const struct sess *sp, struct backend *bp)
-{
-	struct addrinfo *ai, *from;
-	int s, loops;
-
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-
-	/* No addrinfo, no connection */
-	if (bp->ai == NULL)
-		return (-1);
-	AN(bp->last_ai);
-
-	/* Called with lock held */
-	loops = 0;
-	ai = from = bp->last_ai;
-	while (loops == 0 || ai != from) {
-
-		/* NB: releases/acquires backend lock */
-		s = VBE_TryConnect(sp, ai);
-
-		if (s >= 0) { 
-			bp->last_ai = ai;
-			return (s);
-		}
-
-		/* Try next one */
-		ai = ai->ai_next;
-		if (ai == NULL) {
-			loops++;
-			ai = bp->ai;
-		}
-	}
-	/* We have tried them all, fail */
-	return (-1);
-}
-
-
 /*--------------------------------------------------------------------*/
 
 static int
@@ -311,10 +242,25 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 	LOCK(&bp->mtx);
 	bp->refcount++;
-	s = bes_conn_try_list(sp, bp);	/* releases/acquires backend lock */
-	if (s < 0)
+	UNLOCK(&sp->backend->mtx);
+
+	s = -1;
+	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
+
+	/* release lock during stuff that can take a long time */
+
+	if (params->prefer_ipv6 && bp->ipv6 != NULL)
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len);
+	if (s == -1 && bp->ipv4 != NULL)
+		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len);
+	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len);
+
+	if (s < 0) {
+		LOCK(&sp->backend->mtx);
 		bp->refcount--;		/* Only keep ref on success */
-	UNLOCK(&bp->mtx);
+		UNLOCK(&bp->mtx);
+	}
 	return (s);
 }
 
@@ -377,7 +323,7 @@ VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	b = vc->backend;
 	assert(vc->fd >= 0);
-	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vrt->vcl_name);
+	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
 	i = close(vc->fd);
 	assert(i == 0 || errno == ECONNRESET || errno == ENOTCONN);
 	vc->fd = -1;
@@ -398,7 +344,7 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	assert(vc->fd >= 0);
 	bp = vc->backend;
-	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vrt->vcl_name);
+	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
 	LOCK(&vc->backend->mtx);
 	VSL_stats->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);

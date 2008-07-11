@@ -41,7 +41,6 @@
 #include <poll.h>
 
 #include <sys/socket.h>
-#include <netdb.h>
 
 #include "shmlog.h"
 #include "cache.h"
@@ -99,9 +98,10 @@ VBE_DropRefLocked(struct backend *b)
 			AZ(close(vbe->fd));
 		VBE_ReleaseConn(vbe);
 	}
-	free(TRUST_ME(b->vrt->ident));
-	free(TRUST_ME(b->vrt->hostname));
-	free(TRUST_ME(b->vrt->portname));
+	free(b->ident);
+	free(b->hosthdr);
+	free(b->ipv4);
+	free(b->ipv6);
 	b->magic = 0;
 	free(b);
 	VSL_stats->n_backend--;
@@ -117,44 +117,17 @@ VBE_DropRef(struct backend *b)
 	VBE_DropRefLocked(b);
 }
 
-/*--------------------------------------------------------------------
- * DNS lookup of backend host/port
- */
+/*--------------------------------------------------------------------*/
 
 static void
-vbe_dns_lookup(const struct cli *cli, struct backend *bp)
+copy_sockaddr(struct sockaddr **sa, socklen_t *len, const unsigned char *src)
 {
-	int error;
-	struct addrinfo *res, hint, *old;
 
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
-	res = NULL;
-	error = getaddrinfo(bp->vrt->hostname, bp->vrt->portname,
-	    &hint, &res);
-	if (error) {
-		if (res != NULL)
-			freeaddrinfo(res);
-		/*
-		 * We cannot point to the source code any more, it may
-		 * be long gone from memory.   We already checked over in
-		 * the VCL compiler, so this is only relevant for refreshes.
-		 * XXX: which we do when exactly ?
-		 */
-		cli_out(cli, "DNS(/hosts) lookup failed for (%s/%s): %s",
-		    bp->vrt->hostname, bp->vrt->portname, gai_strerror(error));
-		return;
-	}
-	LOCK(&bp->mtx);
-	old = bp->ai;
-	bp->ai = res;
-	bp->last_ai = res;
-	UNLOCK(&bp->mtx);
-	if (old != NULL)
-		freeaddrinfo(old);
+	assert(*src > 0);
+	*sa = malloc(*src);
+	AN(*sa);
+	memcpy(*sa, src + 1, *src);
+	*len = *src;
 }
 
 /*--------------------------------------------------------------------
@@ -169,25 +142,46 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	struct backend *b;
 	uint32_t u;
 
-	AN(vb->hostname);
-	AN(vb->portname);
 	AN(vb->ident);
+	assert(vb->ipv4_sockaddr != NULL || vb->ipv6_sockaddr != NULL);
 	(void)cli;
 	ASSERT_CLI();
-	u = crc32_l(vb->ident, strlen(vb->ident));
+
+	/* calculate a hash of (ident + ipv4_sockaddr + ipv6_sockaddr) */
+	u = crc32(~0U, vb->ident, strlen(vb->ident));
+	if (vb->ipv4_sockaddr != NULL)
+		u = crc32(u, vb->ipv4_sockaddr + 1, vb->ipv4_sockaddr[0]);
+	if (vb->ipv6_sockaddr != NULL)
+		u = crc32(u, vb->ipv6_sockaddr + 1, vb->ipv6_sockaddr[0]);
+
+	/* Run through the list and see if we already have this backend */
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (u != b->hash)
 			continue;
-		if (strcmp(b->vrt->ident, vb->ident))
+		if (strcmp(b->ident, vb->ident))
+			continue;
+		if (vb->ipv4_sockaddr != NULL &&
+		    b->ipv4len != vb->ipv4_sockaddr[0])
+			continue;
+		if (vb->ipv6_sockaddr != NULL &&
+		    b->ipv6len != vb->ipv6_sockaddr[0])
+			continue;
+		if (b->ipv4len != 0 &&
+		    memcmp(b->ipv4, vb->ipv4_sockaddr + 1, b->ipv4len))
+			continue;
+		if (b->ipv6len != 0 &&
+		    memcmp(b->ipv6, vb->ipv6_sockaddr + 1, b->ipv6len))
 			continue;
 		b->refcount++;
 		return (b);
 	}
 
+	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
-	b->magic = BACKEND_MAGIC;
+	MTX_INIT(&b->mtx);
+	b->refcount = 1;
 
 	VTAILQ_INIT(&b->connlist);
 	b->hash = u;
@@ -196,17 +190,21 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 * This backend may live longer than the VCL that instantiated it
 	 * so we cannot simply reference the VCL's copy of things.
 	 */
-	REPLACE(b->vrt->ident, vb->ident);
-	REPLACE(b->vrt->hostname, vb->hostname);
-	REPLACE(b->vrt->portname, vb->portname);
-	REPLACE(b->vrt->vcl_name, vb->vcl_name);
+	REPLACE(b->ident, vb->ident);
+	REPLACE(b->vcl_name, vb->vcl_name);
+	REPLACE(b->hosthdr, vb->hostname);
 
-	b->vrt->connect_timeout = vb->connect_timeout;
+	b->connect_timeout = vb->connect_timeout;
 
-	MTX_INIT(&b->mtx);
-	b->refcount = 1;
+	/*
+	 * Copy over the sockaddrs
+	 */
+	if (vb->ipv4_sockaddr != NULL) 
+		copy_sockaddr(&b->ipv4, &b->ipv4len, vb->ipv4_sockaddr);
+	if (vb->ipv6_sockaddr != NULL) 
+		copy_sockaddr(&b->ipv6, &b->ipv6len, vb->ipv6_sockaddr);
 
-	vbe_dns_lookup(cli, b);
+	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSL_stats->n_backend++;
@@ -238,11 +236,9 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s/%s/%s %d\n",
+		cli_out(cli, "%p %s %d\n",
 		    b,
-		    b->vrt->vcl_name,
-		    b->vrt->hostname,
-		    b->vrt->portname,
+		    b->vcl_name,
 		    b->refcount);
 	}
 }

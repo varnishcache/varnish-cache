@@ -73,15 +73,21 @@ struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
 
-	struct vrt_backend	vrt[1];
+	char			*hosthdr;
+	char			*ident;
+	char			*vcl_name;
+	double			connect_timeout;
+
 	uint32_t		hash;
 
 	VTAILQ_ENTRY(backend)	list;
 	int			refcount;
 	pthread_mutex_t		mtx;
 
-	struct addrinfo		*ai;
-	struct addrinfo		*last_ai;
+	struct sockaddr		*ipv4;
+	socklen_t		ipv4len;
+	struct sockaddr		*ipv6;
+	socklen_t		ipv6len;
 
 	VTAILQ_HEAD(, vbe_conn)	connlist;
 
