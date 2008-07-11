@@ -57,6 +57,10 @@ struct vrt_backend_probe {
 struct vrt_backend {
 	char				*portname;
 	char				*hostname;
+
+	const unsigned char		*ipv4_sockaddr;
+	const unsigned char		*ipv6_sockaddr;
+
 	char				*vcl_name;
 	char				*ident;
 	double				connect_timeout;
