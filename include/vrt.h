@@ -48,21 +48,21 @@ struct sockaddr;
 struct vrt_backend_probe {
 	char		*request;
 	double		timeout;
-	double		rate;
+	double		interval;
 };
 
 /*
  * A backend is a host+port somewhere on the network
  */
 struct vrt_backend {
-	char				*portname;
-	char				*hostname;
+	char				*vcl_name;
+	char				*ident;
+
+	char				*hosthdr;
 
 	const unsigned char		*ipv4_sockaddr;
 	const unsigned char		*ipv6_sockaddr;
 
-	char				*vcl_name;
-	char				*ident;
 	double				connect_timeout;
 	struct vrt_backend_probe 	probe;
 };

@@ -336,7 +336,12 @@ vcc_ParseProbe(struct tokenlist *tl)
 	struct token *t_field;
 	struct token *t_did = NULL;
 
-	fs = vcc_FldSpec(tl, "?url", "?request", "?timeout", "?rate", NULL);
+	fs = vcc_FldSpec(tl,
+	    "?url",
+	    "?request",
+	    "?timeout",
+	    "?interval",
+	    NULL);
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
@@ -376,8 +381,8 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
-		} else if (vcc_IdIs(t_field, "rate")) {
-			Fb(tl, 0, "\t\t.rate = ");
+		} else if (vcc_IdIs(t_field, "interval")) {
+			Fb(tl, 0, "\t\t.interval = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
@@ -421,12 +426,17 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	struct token *t_first;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
+	struct token *t_hosthdr = NULL;
 	const char *ep;
 	struct fld_spec *fs;
 	struct vsb *vsb;
 
 	fs = vcc_FldSpec(tl,
-	    "!host", "?port", "?connect_timeout", "?probe", NULL);
+	    "!host",
+	    "?port",
+	    "?host_header",
+	    "?connect_timeout",
+	    "?probe", NULL);
 	t_first = tl->t;
 
 	ExpectErr(tl, '{');
@@ -438,6 +448,11 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 
 	*nbh = tl->nbackend_host++;
 	Fb(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
+
+	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
+	if (serial)
+		Fb(tl, 0, "[%d]", serial);
+	Fb(tl, 0, "\",\n");
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
@@ -471,6 +486,13 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			vcc_NextToken(tl);
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "host_header")) {
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_hosthdr = tl->t;
+			vcc_NextToken(tl);
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fb(tl, 0, "\t.connect_timeout = ");
 			vcc_TimeVal(tl);
@@ -499,9 +521,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
-	Fb(tl, 0, "\t.hostname = ");
-	EncToken(tl->fb, t_host);
-	Fb(tl, 0, ",\n");
 
 	/* Check that the portname makes sense */
 	if (t_port != NULL) {
@@ -512,22 +531,28 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			vcc_ErrWhere(tl, t_port);
 			return;
 		}
-		Fb(tl, 0, "\t.portname = ");
-		EncToken(tl->fb, t_port);
-		Fb(tl, 0, ",\n");
 		Emit_Sockaddr(tl, t_host, t_port->dec);
 	} else {
-		Fb(tl, 0, "\t.portname = \"80\",\n");
 		Emit_Sockaddr(tl, t_host, "80");
 	}
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
+
+	/* We have parsed it all, emit the ident string */
 	vcc_EmitBeIdent(tl->fb, name, qual, serial, t_first, tl->t);
-	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
-	if (serial)
-		Fb(tl, 0, "[%d]", serial);
-	Fb(tl, 0, "\"\n};\n");
+
+	/* Emit the hosthdr field, fall back to .host if not specified */
+	Fb(tl, 0, "\t.hosthdr = ");
+	if (t_hosthdr != NULL)
+		EncToken(tl->fb, t_hosthdr);
+	else
+		EncToken(tl->fb, t_host);
+	Fb(tl, 0, ",\n");
+
+	/* Close the struct */
+	Fb(tl, 0, "};\n");
+
 	vcc_NextToken(tl);
 
 	tl->fb = NULL;
