@@ -395,6 +395,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "struct vrt_backend {\n");
 	vsb_cat(sb, "	char				*portname;\n");
 	vsb_cat(sb, "	char				*hostname;\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "	const unsigned char		*ipv4_sockaddr;\n");
+	vsb_cat(sb, "	const unsigned char		*ipv6_sockaddr;\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "	char				*vcl_name;\n");
 	vsb_cat(sb, "	char				*ident;\n");
 	vsb_cat(sb, "	double				connect_timeout;\n");

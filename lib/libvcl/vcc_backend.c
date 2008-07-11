@@ -89,6 +89,94 @@ CheckHostPort(const char *host, const char *port)
 }
 
 /*--------------------------------------------------------------------
+ * Struct sockaddr is not really designed to be a compile time 
+ * initialized data structure, so we encode it as a byte-string
+ * and put it in an official sockaddr when we load the VCL.
+ */
+
+static void
+Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port)
+{
+	struct addrinfo *res, *res0, hint;
+	int n4, n6, len, error, retval;
+	const char *emit, *multiple;
+	unsigned char *u;
+	char hbuf[NI_MAXHOST];
+
+	AN(t_host->dec);
+	retval = 0;
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+	error = getaddrinfo(t_host->dec, port, &hint, &res0);
+	AZ(error);
+	n4 = n6 = 0;
+	multiple = NULL;
+	for (res = res0; res; res = res->ai_next) {
+		emit = NULL;
+		if (res->ai_family == PF_INET) {
+			if (n4++ == 0)
+				emit = "ipv4_sockaddr";
+			else 
+				multiple = "IPv4";
+		} else if (res->ai_family == PF_INET6) {
+			if (n6++ == 0)
+				emit = "ipv6_sockaddr";
+			else
+				multiple = "IPv6";
+		} else
+			continue;
+
+		if (multiple != NULL) {
+			vsb_printf(tl->sb,
+			    "Backend host %.*s: resolves to "
+			    "multiple %s addresses.\n"
+			    "Only one address is allowed.\n"
+			    "Please specify which exact address "
+			    "you want to use, we found these:\n",
+			    PF(t_host), multiple);
+			for (res = res0; res; res = res->ai_next) {
+				error = getnameinfo(res->ai_addr,
+				    res->ai_addrlen, hbuf, sizeof hbuf,
+				    NULL, 0, NI_NUMERICHOST);
+				AZ(error);
+				vsb_printf(tl->sb, "\t%s\n", hbuf);
+			}
+			vcc_ErrWhere(tl, t_host);
+			return;
+		}
+		AN(emit);
+		AN(res->ai_addr);
+		AN(res->ai_addrlen);
+		assert(res->ai_addrlen < 256);
+		Fh(tl, 0, "\nstatic const unsigned char sockaddr%u[%d] = {\n",
+		    tl->nsockaddr, res->ai_addrlen + 1);
+		Fh(tl, 0, "    %3u, /* Length */\n",  res->ai_addrlen);
+		u = (void*)res->ai_addr;
+		for (len = 0; len < res->ai_addrlen; len++) {
+			if ((len % 8) == 0) 
+				Fh(tl, 0, "   ");
+			Fh(tl, 0, " %3u", u[len]);
+			if (len + 1 < res->ai_addrlen)
+				Fh(tl, 0, ",");
+			if ((len % 8) == 7) 
+				Fh(tl, 0, "\n");
+		}
+		Fh(tl, 0, "\n};\n");
+		Fb(tl, 0, "\t.%s = sockaddr%u,\n", emit, tl->nsockaddr++);
+		retval++;
+	}
+	freeaddrinfo(res0);
+	if (retval == 0) {
+		vsb_printf(tl->sb,
+		    "Backend host '%.*s': resolves to "
+		    "neither IPv4 nor IPv6 addresses.\n",
+		    PF(t_host) );
+		vcc_ErrWhere(tl, t_host);
+	}
+}
+
+/*--------------------------------------------------------------------
  * When a new VCL is loaded, it is likely to contain backend declarations
  * identical to other loaded VCL programs, and we want to reuse the state
  * of those in order to not have to relearn statistics, DNS etc.
@@ -266,7 +354,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 			ExpectErr(tl, CSTR);
 			Fh(tl, 0, "\t\t.request =\n");
 			Fh(tl, 0, "\t\t\t\"GET \" ");
-			EncToken(tl->fh, tl->t);
+			EncToken(tl->fb, tl->t);
 			Fh(tl, 0, " \" /HTTP/1.1\\r\\n\"\n");
 			Fh(tl, 0, "\t\t\t\"Connection: close\\r\\n\"\n");
 			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
@@ -278,23 +366,19 @@ vcc_ParseProbe(struct tokenlist *tl)
 			Fh(tl, 0, "\t\t.request =\n");
 			while (tl->t->tok == CSTR) {
 				Fh(tl, 0, "\t\t\t");
-				EncToken(tl->fh, tl->t);
+				EncToken(tl->fb, tl->t);
 				Fh(tl, 0, " \"\\r\\n\"\n");
 				vcc_NextToken(tl);
 			}
 			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
 		} else if (vcc_IdIs(t_field, "timeout")) {
 			Fh(tl, 0, "\t\t.timeout = ");
-			tl->fb = tl->fh;
 			vcc_TimeVal(tl);
-			tl->fb = NULL;
 			ERRCHK(tl);
 			Fh(tl, 0, ",\n");
 		} else if (vcc_IdIs(t_field, "rate")) {
 			Fh(tl, 0, "\t\t.rate = ");
-			tl->fb = tl->fh;
 			vcc_TimeVal(tl);
-			tl->fb = NULL;
 			ERRCHK(tl);
 			Fh(tl, 0, ",\n");
 		} else {
@@ -339,6 +423,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	struct token *t_port = NULL;
 	const char *ep;
 	struct fld_spec *fs;
+	struct vsb *vsb;
 
 	fs = vcc_FldSpec(tl,
 	    "!host", "?port", "?connect_timeout", "?probe", NULL);
@@ -347,8 +432,12 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
 
+	vsb = vsb_newauto();
+	AN(vsb);
+	tl->fb = vsb;
+
 	*nbh = tl->nbackend_host++;
-	Fh(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
+	Fb(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
@@ -383,12 +472,10 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
-			Fh(tl, 0, "\t.connect_timeout = ");
-			tl->fb = tl->fh;
+			Fb(tl, 0, "\t.connect_timeout = ");
 			vcc_TimeVal(tl);
-			tl->fb = NULL;
 			ERRCHK(tl);
-			Fh(tl, 0, ",\n");
+			Fb(tl, 0, ",\n");
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "probe")) {
@@ -412,33 +499,42 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
-	Fh(tl, 0, "\t.hostname = ");
-	EncToken(tl->fh, t_host);
-	Fh(tl, 0, ",\n");
+	Fb(tl, 0, "\t.hostname = ");
+	EncToken(tl->fb, t_host);
+	Fb(tl, 0, ",\n");
 
 	/* Check that the portname makes sense */
 	if (t_port != NULL) {
-		ep = CheckHostPort(t_host->dec, t_port->dec);
+		ep = CheckHostPort("localhost", t_port->dec);
 		if (ep != NULL) {
 			vsb_printf(tl->sb,
 			    "Backend port '%.*s': %s\n", PF(t_port), ep);
 			vcc_ErrWhere(tl, t_port);
 			return;
 		}
-		Fh(tl, 0, "\t.portname = ");
-		EncToken(tl->fh, t_port);
-		Fh(tl, 0, ",\n");
+		Fb(tl, 0, "\t.portname = ");
+		EncToken(tl->fb, t_port);
+		Fb(tl, 0, ",\n");
+		Emit_Sockaddr(tl, t_host, t_port->dec);
 	} else {
-		Fh(tl, 0, "\t.portname = \"80\",\n");
+		Fb(tl, 0, "\t.portname = \"80\",\n");
+		Emit_Sockaddr(tl, t_host, "80");
 	}
+	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
-	vcc_EmitBeIdent(tl->fh, name, qual, serial, t_first, tl->t);
-	Fh(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
+	vcc_EmitBeIdent(tl->fb, name, qual, serial, t_first, tl->t);
+	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
 	if (serial)
-		Fh(tl, 0, "[%d]", serial);
-	Fh(tl, 0, "\"\n};\n");
+		Fb(tl, 0, "[%d]", serial);
+	Fb(tl, 0, "\"\n};\n");
 	vcc_NextToken(tl);
+
+	tl->fb = NULL;
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	Fh(tl, 0, "%s", vsb_data(vsb));
+	vsb_delete(vsb);
 }
 
 /*--------------------------------------------------------------------

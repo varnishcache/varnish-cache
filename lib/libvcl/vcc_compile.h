@@ -87,6 +87,7 @@ struct tokenlist {
 
 	unsigned		recnt;
 	unsigned		nhashcount;
+	unsigned		nsockaddr;
 };
 
 enum var_type {
