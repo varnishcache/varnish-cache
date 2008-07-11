@@ -68,6 +68,9 @@
  *
  */
 
+struct vbp_target;
+struct vrt_backend_probe;
+
 /* Backend indstance */
 struct backend {
 	unsigned		magic;
@@ -91,12 +94,17 @@ struct backend {
 
 	VTAILQ_HEAD(, vbe_conn)	connlist;
 
+	struct vbp_target	*probe;
 	int			health;
 };
+
+/* cache_backend.c */
+void VBE_ReleaseConn(struct vbe_conn *vc);
 
 /* cache_backend_cfg.c */
 extern MTX VBE_mtx;
 void VBE_DropRefLocked(struct backend *b);
 
-/* cache_backend.c */
-void VBE_ReleaseConn(struct vbe_conn *vc);
+/* cache_backend_poll.c */
+void VBP_Start(struct backend *b, struct vrt_backend_probe const *p);
+void VBP_Stop(struct backend *b);

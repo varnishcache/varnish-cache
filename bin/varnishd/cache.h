@@ -420,6 +420,7 @@ struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
 void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
 void VBE_AddHostHeader(const struct sess *sp);
+void VBE_Poll(void);
 
 /* cache_backend_cfg.c */
 void VBE_Init(void);

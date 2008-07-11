@@ -103,6 +103,7 @@ cli_vlu(void *priv, const char *p)
 	cli = priv;
 	VSL(SLT_CLI, 0, "Rd %s", p);
 	VCL_Poll();
+	VBE_Poll();
 	vsb_clear(cli->sb);
 	LOCK(&cli_mtx);
 	cli_dispatch(cli, ccf_master_cli, p);
