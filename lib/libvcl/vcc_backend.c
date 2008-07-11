@@ -341,7 +341,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
 
-	Fh(tl, 0, "\t.probe = {\n");
+	Fb(tl, 0, "\t.probe = {\n");
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -352,35 +352,35 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
-			Fh(tl, 0, "\t\t.request =\n");
-			Fh(tl, 0, "\t\t\t\"GET \" ");
+			Fb(tl, 0, "\t\t.request =\n");
+			Fb(tl, 0, "\t\t\t\"GET \" ");
 			EncToken(tl->fb, tl->t);
-			Fh(tl, 0, " \" /HTTP/1.1\\r\\n\"\n");
-			Fh(tl, 0, "\t\t\t\"Connection: close\\r\\n\"\n");
-			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
+			Fb(tl, 0, " \" /HTTP/1.1\\r\\n\"\n");
+			Fb(tl, 0, "\t\t\t\"Connection: close\\r\\n\"\n");
+			Fb(tl, 0, "\t\t\t\"\\r\\n\",\n");
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "request")) {
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
-			Fh(tl, 0, "\t\t.request =\n");
+			Fb(tl, 0, "\t\t.request =\n");
 			while (tl->t->tok == CSTR) {
-				Fh(tl, 0, "\t\t\t");
+				Fb(tl, 0, "\t\t\t");
 				EncToken(tl->fb, tl->t);
-				Fh(tl, 0, " \"\\r\\n\"\n");
+				Fb(tl, 0, " \"\\r\\n\"\n");
 				vcc_NextToken(tl);
 			}
-			Fh(tl, 0, "\t\t\t\"\\r\\n\",\n");
+			Fb(tl, 0, "\t\t\t\"\\r\\n\",\n");
 		} else if (vcc_IdIs(t_field, "timeout")) {
-			Fh(tl, 0, "\t\t.timeout = ");
+			Fb(tl, 0, "\t\t.timeout = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
-			Fh(tl, 0, ",\n");
+			Fb(tl, 0, ",\n");
 		} else if (vcc_IdIs(t_field, "rate")) {
-			Fh(tl, 0, "\t\t.rate = ");
+			Fb(tl, 0, "\t\t.rate = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
-			Fh(tl, 0, ",\n");
+			Fb(tl, 0, ",\n");
 		} else {
 			vcc_ErrToken(tl, t_field);
 			vcc_ErrWhere(tl, t_field);
@@ -391,7 +391,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
-	Fh(tl, 0, "\t},\n");
+	Fb(tl, 0, "\t},\n");
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
 }
