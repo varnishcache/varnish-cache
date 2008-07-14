@@ -54,7 +54,6 @@ struct vdi_round_robin {
 	unsigned		magic;
 #define VDI_ROUND_ROBIN_MAGIC	0x2114a178
 	struct director		dir;
-	struct backend		*backend;
 	struct vdi_round_robin_host	*hosts;
 	unsigned		nhosts;
 	unsigned		next_host;
@@ -62,7 +61,7 @@ struct vdi_round_robin {
 
 
 static struct backend *
-vdi_round_robin_choose(struct sess *sp)
+vdi_round_robin_choose(const struct sess *sp)
 {
 	struct vdi_round_robin *vs;
 	struct backend *backend;
@@ -77,7 +76,7 @@ vdi_round_robin_choose(struct sess *sp)
 }
 
 static void
-vdi_round_robin_fini(struct director *d)
+vdi_round_robin_fini(const struct director *d)
 {
 	int i;
 	struct vdi_round_robin *vs;
