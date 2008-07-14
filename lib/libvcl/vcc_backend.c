@@ -656,6 +656,7 @@ static const struct dirlist {
 	parsedirector_f	*func;
 } dirlist[] = {
 	{ "random", 	vcc_ParseRandomDirector },
+	{ "round-robin", 	vcc_ParseRoundRobinDirector },
 	{ NULL,		NULL }
 };
 
