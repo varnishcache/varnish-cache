@@ -61,7 +61,7 @@ struct vdi_round_robin {
 
 
 static struct backend *
-vdi_round_robin_choose(const struct sess *sp)
+vdi_round_robin_choose(struct sess *sp)
 {
 	struct vdi_round_robin *vs;
 	struct backend *backend;
@@ -76,7 +76,7 @@ vdi_round_robin_choose(const struct sess *sp)
 }
 
 static void
-vdi_round_robin_fini(const struct director *d)
+vdi_round_robin_fini(struct director *d)
 {
 	int i;
 	struct vdi_round_robin *vs;
