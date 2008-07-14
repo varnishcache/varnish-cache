@@ -1,0 +1,67 @@
+# $Id$
+
+test "Test round robin director"
+
+server s1 -listen 127.0.0.1:2000 {
+	rxreq
+	txresp -body "1"
+} -start
+
+server s2 -listen 127.0.0.1:3000 {
+	rxreq
+	txresp -body "22"
+} -start
+
+
+server s3 -listen 127.0.0.1:4000 {
+	rxreq
+	txresp -body "333"
+} -start
+
+server s4 -listen 127.0.0.1:5000 {
+	rxreq
+	txresp -body "4444"
+} -start
+
+
+varnish v1 -vcl+backend {
+	director batman round-robin {
+		{ .backend = s1; }
+		{ .backend = s2; }
+		{ .backend = s3; }
+		{ .backend = s4; }
+	}
+
+	sub vcl_recv {
+		set req.backend = batman;
+	}
+} -start
+
+client c1 {
+	timeout 3
+	txreq -url "/foo1"
+	rxresp
+	expect resp.http.content-length == 1
+	txreq -url "/foo2"
+	rxresp
+	expect resp.http.content-length == 2
+	txreq -url "/foo3"
+	rxresp
+	expect resp.http.content-length == 3
+	txreq -url "/foo4"
+	rxresp
+	expect resp.http.content-length == 4
+} -run
+
+server s1 -start
+server s2 -start
+
+client c2 {
+	timeout 3
+	txreq -url "/foo11"
+	rxresp
+	expect resp.http.content-length == 1
+	txreq -url "/foo22"
+	rxresp
+	expect resp.http.content-length == 2
+} -run

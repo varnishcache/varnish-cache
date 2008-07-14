@@ -178,6 +178,9 @@ void *TlAlloc(struct tokenlist *tl, unsigned len);
 /* vcc_dir_random.c */
 parsedirector_f vcc_ParseRandomDirector;
 
+/* vcc_dir_round_robin.c */
+parsedirector_f vcc_ParseRoundRobinDirector;
+
 /* vcc_obj.c */
 extern struct var vcc_vars[];
 
