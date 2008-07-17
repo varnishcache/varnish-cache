@@ -37,6 +37,8 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl 1
+.Op Fl f Ar field_list
+.Op Fl l
 .Op Fl n Ar varnish_name
 .Op Fl V
 .Op Fl w Ar delay
@@ -52,6 +54,13 @@ The following options are available:
 .It Fl 1
 Instead of presenting of a continuously updated display, print the
 statistics once and exit.
+.It Fl f
+A comma separated list of the fields to display.
+If it starts with '^' it is used as an exclusion list.
+.It Fl l
+Lists the available fields to use with the
+.Fl f
+option.
 .It Fl n
 Specifies the name of the
 .Nm varnishd
