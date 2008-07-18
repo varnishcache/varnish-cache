@@ -47,7 +47,7 @@
  */
 
 void
-SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
+SYN_ErrorPage(struct sess *sp, int status, const char *reason)
 {
 	struct http *h;
 	struct worker *w;
@@ -86,7 +86,7 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 	TIM_format(now, date);
 	http_PrintfHeader(w, fd, h, "Date: %s", date);
 	http_PrintfHeader(w, fd, h, "Server: Varnish");
-	http_PrintfHeader(w, fd, h, "Retry-After: %d", ttl);
+	http_PrintfHeader(w, fd, h, "Retry-After: %d", params->err_ttl);
 	http_PrintfHeader(w, fd, h, "Content-Type: text/html; charset=utf-8");
 	http_PrintfHeader(w, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(w, fd, h, "Connection: close");
