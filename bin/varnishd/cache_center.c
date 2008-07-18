@@ -309,7 +309,7 @@ cnt_error(struct sess *sp)
 {
 
 	AZ(sp->obj);
-	SYN_ErrorPage(sp, sp->err_code, sp->err_reason);
+	SYN_ErrorPage(sp, sp->err_code, sp->err_reason, params->err_ttl);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
 	sp->step = STP_DONE;
@@ -878,7 +878,7 @@ cnt_start(struct sess *sp)
 	*sp->http0 = *sp->http;
 
 	if (done != 0) {
-		SYN_ErrorPage(sp, done, NULL);		/* XXX: STP_ERROR ? */
+		SYN_ErrorPage(sp, done, NULL, params->err_ttl);		/* XXX: STP_ERROR ? */
 		sp->step = STP_DONE;
 		return (0);
 	}

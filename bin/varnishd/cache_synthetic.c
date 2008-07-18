@@ -47,7 +47,7 @@
  */
 
 void
-SYN_ErrorPage(struct sess *sp, int status, const char *reason)
+SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl)
 {
 	struct http *h;
 	struct worker *w;
@@ -57,7 +57,6 @@ SYN_ErrorPage(struct sess *sp, int status, const char *reason)
 	unsigned u;
 	struct vsb vsb;
 	int fd;
-	int ttl = 0;				/* XXX: ?? */
 
 	WSL_Flush(sp->wrk, 0);
 	assert(status >= 100 && status <= 999);

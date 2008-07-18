@@ -567,7 +567,7 @@ void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_synthetic.c */
-void SYN_ErrorPage(struct sess *sp, int status, const char *reason);
+void SYN_ErrorPage(struct sess *sp, int status, const char *reason, int ttl);
 
 /* cache_vary.c */
 void VRY_Create(const struct sess *sp);
