@@ -784,6 +784,10 @@ static const struct parspec parspec[] = {
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
+	{ "err_ttl", tweak_uint, &master.err_ttl, 0, UINT_MAX,
+		"The TTL assigned to the synthesized error pages\n",
+		0,
+		"0", "seconds" },
 	{ NULL, NULL, NULL }
 };
 
