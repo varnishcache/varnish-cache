@@ -18,205 +18,148 @@ vcl_fixed_token(const char *p, const char **q)
 
 	switch (p[0]) {
 	case '!':
-		if (p[0] == '!' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_NEQ);
 		}
-		if (p[0] == '!') {
-			*q = p + 1;
-			return ('!');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '%':
-		if (p[0] == '%') {
-			*q = p + 1;
-			return ('%');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '&':
-		if (p[0] == '&' && p[1] == '&') {
+		if (p[1] == '&') {
 			*q = p + 2;
 			return (T_CAND);
 		}
-		if (p[0] == '&') {
-			*q = p + 1;
-			return ('&');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '(':
-		if (p[0] == '(') {
-			*q = p + 1;
-			return ('(');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case ')':
-		if (p[0] == ')') {
-			*q = p + 1;
-			return (')');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '*':
-		if (p[0] == '*' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_MUL);
 		}
-		if (p[0] == '*') {
-			*q = p + 1;
-			return ('*');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '+':
-		if (p[0] == '+' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_INCR);
 		}
-		if (p[0] == '+' && p[1] == '+') {
+		if (p[1] == '+') {
 			*q = p + 2;
 			return (T_INC);
 		}
-		if (p[0] == '+') {
-			*q = p + 1;
-			return ('+');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case ',':
-		if (p[0] == ',') {
-			*q = p + 1;
-			return (',');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '-':
-		if (p[0] == '-' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_DECR);
 		}
-		if (p[0] == '-' && p[1] == '-') {
+		if (p[1] == '-') {
 			*q = p + 2;
 			return (T_DEC);
 		}
-		if (p[0] == '-') {
-			*q = p + 1;
-			return ('-');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '.':
-		if (p[0] == '.') {
-			*q = p + 1;
-			return ('.');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '/':
-		if (p[0] == '/' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_DIV);
 		}
-		if (p[0] == '/') {
-			*q = p + 1;
-			return ('/');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case ';':
-		if (p[0] == ';') {
-			*q = p + 1;
-			return (';');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '<':
-		if (p[0] == '<' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_LEQ);
 		}
-		if (p[0] == '<' && p[1] == '<') {
+		if (p[1] == '<') {
 			*q = p + 2;
 			return (T_SHL);
 		}
-		if (p[0] == '<') {
-			*q = p + 1;
-			return ('<');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '=':
-		if (p[0] == '=' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_EQ);
 		}
-		if (p[0] == '=') {
-			*q = p + 1;
-			return ('=');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '>':
-		if (p[0] == '>' && p[1] == '>') {
+		if (p[1] == '>') {
 			*q = p + 2;
 			return (T_SHR);
 		}
-		if (p[0] == '>' && p[1] == '=') {
+		if (p[1] == '=') {
 			*q = p + 2;
 			return (T_GEQ);
 		}
-		if (p[0] == '>') {
-			*q = p + 1;
-			return ('>');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case 'e':
-		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
+		if (p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'i' && p[4] == 'f' && !isvar(p[5])) {
 			*q = p + 5;
 			return (T_ELSIF);
 		}
-		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
+		if (p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'e' && p[4] == 'i' && p[5] == 'f'
 		     && !isvar(p[6])) {
 			*q = p + 6;
 			return (T_ELSEIF);
 		}
-		if (p[0] == 'e' && p[1] == 'l' && p[2] == 's' && 
+		if (p[1] == 'l' && p[2] == 's' && 
 		    p[3] == 'e' && !isvar(p[4])) {
 			*q = p + 4;
 			return (T_ELSE);
 		}
 		return (0);
 	case 'i':
-		if (p[0] == 'i' && p[1] == 'n' && p[2] == 'c' && 
+		if (p[1] == 'n' && p[2] == 'c' && 
 		    p[3] == 'l' && p[4] == 'u' && p[5] == 'd' && 
 		    p[6] == 'e' && !isvar(p[7])) {
 			*q = p + 7;
 			return (T_INCLUDE);
 		}
-		if (p[0] == 'i' && p[1] == 'f' && !isvar(p[2])) {
+		if (p[1] == 'f' && !isvar(p[2])) {
 			*q = p + 2;
 			return (T_IF);
 		}
 		return (0);
 	case '{':
-		if (p[0] == '{') {
-			*q = p + 1;
-			return ('{');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '|':
-		if (p[0] == '|' && p[1] == '|') {
+		if (p[1] == '|') {
 			*q = p + 2;
 			return (T_COR);
 		}
-		if (p[0] == '|') {
-			*q = p + 1;
-			return ('|');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '}':
-		if (p[0] == '}') {
-			*q = p + 1;
-			return ('}');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	case '~':
-		if (p[0] == '~') {
-			*q = p + 1;
-			return ('~');
-		}
-		return (0);
+		*q = p + 1;
+		return (p[0]);
 	default:
 		return (0);
 	}

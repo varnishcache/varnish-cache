@@ -260,8 +260,6 @@ foreach t $fixed {
 }
 set seq [lsort [array names xx]]
 
-set ll 0
-
 puts $fo {
 unsigned
 vcl_fixed_token(const char *p, const char **q)}
@@ -280,19 +278,18 @@ foreach ch "$seq" {
 	# And do then in reverse order to match longest first
 	set l [lsort -index 0 -decreasing $l]
 	scan "$ch" "%c" cx
-	if {$cx != $ll} {
-		if {$ll} {
-			puts $fo "		return (0);"
-		}
-	
-		puts $fo "	case '$ch':"
-		set ll $cx
-	}
+	puts $fo "	case '$ch':"
+	set retval "0"
 	foreach tt $l {
 		set k [lindex $tt 0]
+		if {[string length $k] == 1} {
+			puts $fo "\t\t*q = p + 1;"
+			set retval {p[0]}
+			continue;
+		}
 		puts -nonewline $fo "		if ("
-		for {set i 0} {$i < [string length $k]} {incr i} {
-			if {$i > 0} {
+		for {set i 1} {$i < [string length $k]} {incr i} {
+			if {$i > 1} {
 				puts -nonewline $fo " && "
 				if {![expr $i % 3]} {
 					puts -nonewline $fo "\n\t\t    "
@@ -307,12 +304,13 @@ foreach ch "$seq" {
 			puts -nonewline $fo " && !isvar(p\[$i\])"
 		}
 		puts $fo ") {"
-		puts $fo "			*q = p + [string length $k];"
-		puts $fo "			return ([lindex $tt 1]);"
-		puts $fo "		}"
+		puts $fo "\t\t\t*q = p + [string length $k];"
+		puts $fo "\t\t\treturn ([lindex $tt 1]);"
+		puts $fo "\t\t}"
 	}
+	puts $fo "\t\treturn ($retval);"
 } 
-puts $fo "		return (0);"
+
 puts $fo "	default:"
 puts $fo "		return (0);"
 puts $fo "	}"
