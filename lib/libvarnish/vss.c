@@ -66,6 +66,8 @@ struct vss_addr {
 	} va_addr;
 };
 
+/*lint -esym(754, _storage) not ref */
+
 /*
  * Take a string provided by the user and break it up into address and
  * port parts.  Examples of acceptable input include:
