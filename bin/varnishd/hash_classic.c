@@ -68,15 +68,19 @@ static struct hcl_hd		*hcl_head;
  * The ->init method allows the management process to pass arguments
  */
 
-static int
-hcl_init(const char *p)
+static void
+hcl_init(int ac, char * const *av)
 {
 	int i;
 	unsigned u;
 
-	i = sscanf(p, "%u", &u);
+	if (ac == 0)
+		return;
+	if (ac > 1)
+		ARGV_ERR("(-hclassic) too many arguments\n");
+	i = sscanf(av[0], "%u", &u);
 	if (i <= 0 || u == 0)
-		return (0);
+		return;
 	if (u > 2 && !(u & (u - 1))) {
 		fprintf(stderr,
 		    "NOTE:\n"
@@ -88,7 +92,7 @@ hcl_init(const char *p)
 	}
 	hcl_nhash = u;
 	fprintf(stderr, "Classic hash: %u buckets\n", hcl_nhash);
-	return (0);
+	return;
 }
 
 /*--------------------------------------------------------------------
@@ -245,9 +249,10 @@ hcl_deref(const struct objhead *oh)
 /*--------------------------------------------------------------------*/
 
 struct hash_slinger hcl_slinger = {
-	"classic",
-	hcl_init,
-	hcl_start,
-	hcl_lookup,
-	hcl_deref,
+	.magic	= 	SLINGER_MAGIC,
+	.name	=	"classic",
+	.init	=	hcl_init,
+	.start	=	hcl_start,
+	.lookup =	hcl_lookup,
+	.deref	=	hcl_deref,
 };

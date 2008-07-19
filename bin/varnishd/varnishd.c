@@ -67,6 +67,7 @@
 #include "shmlog.h"
 #include "heritage.h"
 #include "mgt.h"
+#include "hash_slinger.h"
 #include "stevedore.h"
 
 /* INFTIM indicates an infinite timeout for poll(2) */
@@ -79,47 +80,97 @@ volatile struct params *params;
 
 /*--------------------------------------------------------------------*/
 
-static int
-cmp_hash(const struct hash_slinger *s, const char *p, const char *q)
+struct choice {
+	const char	*name;
+	void		*ptr;
+};
+
+static void *
+pick(const struct choice *cp, const char *which, const char *kind)
 {
-	if (strlen(s->name) != (q - p))
-		return (1);
-	if (strncmp(s->name, p, (q - p)))
-		return (1);
-	return (0);
+
+	for(; cp->name != NULL; cp++) {
+		if (!strcmp(cp->name, which))
+			return (cp->ptr);
+	}
+	ARGV_ERR("Unknown %s method \"%s\"\n", kind, which);
 }
 
+/*--------------------------------------------------------------------*/
+
+extern struct stevedore sma_stevedore;
+extern struct stevedore smf_stevedore;
+
+static struct choice stv_choice[] = {
+	{ "file",	&smf_stevedore },
+	{ "malloc",	&sma_stevedore },
+	{ NULL,		NULL }
+};
+
 static void
-setup_hash(const char *s_arg)
+setup_storage(const char *spec)
 {
-	const char *p, *q;
+	char **av;
+	void *priv;
+	int ac;
+
+	av = ParseArgv(spec, ARGV_COMMA);
+
+	if (av[0] != NULL) 
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL)
+		ARGV_ERR("-s argument is empty\n");
+
+	for (ac = 0; av[ac + 2] != NULL; ac++)
+		continue;
+
+	priv = pick(stv_choice, av[1], "storage");
+	AN(priv);
+
+	STV_add(priv, ac, av + 2);
+
+	/* We do not free av, to make life simpler for stevedores */
+}
+
+/*--------------------------------------------------------------------*/
+
+extern struct hash_slinger hsl_slinger;
+extern struct hash_slinger hcl_slinger;
+
+static struct choice hsh_choice[] = {
+	{ "classic",		&hcl_slinger },
+	{ "simple",		&hsl_slinger },
+	{ "simple_list",	&hsl_slinger },	/* backwards compat */
+	{ NULL,			NULL }
+};
+
+static void
+setup_hash(const char *h_arg)
+{
+	char **av;
+	int ac;
 	struct hash_slinger *hp;
 
-	p = strchr(s_arg, ',');
-	if (p == NULL)
-		q = p = strchr(s_arg, '\0');
-	else
-		q = p + 1;
-	xxxassert(p != NULL);
-	xxxassert(q != NULL);
-	if (!cmp_hash(&hcl_slinger, s_arg, p)) {
-		hp = &hcl_slinger;
-	} else if (!cmp_hash(&hsl_slinger, s_arg, p)) {
-		hp = &hsl_slinger;
-	} else {
-		fprintf(stderr, "Unknown hash method \"%.*s\"\n",
-		    (int)(p - s_arg), s_arg);
-		exit (2);
-	}
+	av = ParseArgv(h_arg, ARGV_COMMA);
+
+	if (av[0] != NULL) 
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL)
+		ARGV_ERR("-h argument is empty\n");
+
+	for (ac = 0; av[ac + 2] != NULL; ac++)
+		continue;
+
+	hp = pick(hsh_choice, av[1], "hash");
+	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
 	heritage.hash = hp;
-	if (hp->init != NULL) {
-		if (hp->init(q))
-			exit (1);
-	} else if (*q) {
-		fprintf(stderr, "Hash method \"%s\" takes no arguments\n",
+	if (hp->init != NULL)
+		hp->init(ac, av + 2);
+	else if (ac > 0)
+		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
 		    hp->name);
-		exit (1);
-	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -436,7 +487,7 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			s_arg_given = 1;
-			STV_add(optarg);
+			setup_storage(optarg);
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
@@ -538,7 +589,7 @@ main(int argc, char *argv[])
 		exit (0);
 
 	if (!s_arg_given)
-		STV_add(s_arg);
+		setup_storage(s_arg);
 
 	setup_hash(h_arg);
 
