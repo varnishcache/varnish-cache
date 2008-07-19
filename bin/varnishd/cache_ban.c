@@ -201,7 +201,7 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
-	struct ban * volatile b0;
+	struct ban *b0;
 
 	(void)av;
 	(void)priv;
