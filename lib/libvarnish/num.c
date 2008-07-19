@@ -45,6 +45,9 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	double fval;
 	char *end;
 
+	if (p == NULL || *p == '\0')
+		return ("missing number");
+
 	fval = strtod(p, &end);
 	if (end == p || !isfinite(fval))
 		return ("Invalid number");
@@ -88,11 +91,12 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 			fval *= (uintmax_t)1 << 60;
 			++end;
 			break;
-		}
-
-		/* accept 'b' for 'bytes' */
-		if (end[0] == 'b' || end[0] == 'B')
+		case 'b': case 'B':
 			++end;
+			break;
+		default:
+			break;
+		}
 
 		if (end[0] != '\0')
 			return ("Invalid suffix");
