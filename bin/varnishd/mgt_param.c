@@ -324,6 +324,11 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 	}
 
 	av = ParseArgv(arg, 0);
+	if (av == NULL) {
+		cli_out(cli, "Parse error: out of memory");
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
 	if (av[0] != NULL) {
 		cli_out(cli, "Parse error: %s", av[0]);
 		cli_result(cli, CLIS_PARAM);

@@ -115,6 +115,7 @@ setup_storage(const char *spec)
 	int ac;
 
 	av = ParseArgv(spec, ARGV_COMMA);
+	AN(av);
 
 	if (av[0] != NULL) 
 		ARGV_ERR("%s\n", av[0]);
@@ -153,6 +154,7 @@ setup_hash(const char *h_arg)
 	struct hash_slinger *hp;
 
 	av = ParseArgv(h_arg, ARGV_COMMA);
+	AN(av);
 
 	if (av[0] != NULL) 
 		ARGV_ERR("%s\n", av[0]);
