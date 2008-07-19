@@ -8,7 +8,7 @@ flexelint \
 	-I../.. \
 	-DVARNISH_STATE_DIR=\"foo\" \
 	flint.lnt \
-	*.c > $T 2>&1
+	*.c ../../lib/libvarnish/*.c > $T 2>&1
 
 for t in Error Warning Info Note
 do

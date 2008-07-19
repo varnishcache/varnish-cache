@@ -67,7 +67,7 @@ VRY_Create(const struct sess *sp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
-	unsigned l;
+	int l;
 
 	/* No Vary: header, no worries */
 	if (!http_GetHdr(sp->obj->http, H_Vary, &v))
@@ -127,6 +127,7 @@ VRY_Create(const struct sess *sp)
 	vsb_finish(sb);
 	AZ(vsb_overflowed(sb));
 	l = vsb_len(sb);
+	assert(l >= 0);
 	sp->obj->vary = malloc(l);
 	AN(sp->obj->vary);
 	memcpy(sp->obj->vary, vsb_data(sb), l);

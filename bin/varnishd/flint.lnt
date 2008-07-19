@@ -53,7 +53,8 @@
 -esym(534, strcpy)	// Ignoring return value of function
 -esym(534, strlcpy)	// Ignoring return value of function
 
--emacro(506, isnan)	// constant value boolean
+-emacro(506, isnan, isfinite)	// constant value boolean
+-emacro(736, isfinite)	// loss of precision
 -emacro(747, isnan)	// significant coersion
 -emacro(506, assert)	// constant value boolean
 -emacro(827, assert)	// loop not reachable
