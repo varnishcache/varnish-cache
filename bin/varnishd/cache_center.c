@@ -72,7 +72,6 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 
 #include "shmlog.h"
 #include "vcl.h"
-#include "cli.h"
 #include "cli_priv.h"
 #include "cache.h"
 

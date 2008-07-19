@@ -60,6 +60,7 @@ struct vdi_round_robin {
 };
 
 
+/*lint -e{818} not const-able */
 static struct backend *
 vdi_round_robin_choose(struct sess *sp)
 {
@@ -75,6 +76,7 @@ vdi_round_robin_choose(struct sess *sp)
 	return (backend);
 }
 
+/*lint -e{818} not const-able */
 static void
 vdi_round_robin_fini(struct director *d)
 {

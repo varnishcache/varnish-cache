@@ -61,6 +61,7 @@ struct vdi_random {
 };
 
 
+/*lint -e{818} not const-able */
 static struct backend *
 vdi_random_choose(struct sess *sp)
 {
@@ -81,6 +82,7 @@ vdi_random_choose(struct sess *sp)
 	return (NULL);
 }
 
+/*lint -e{818} not const-able */
 static void
 vdi_random_fini(struct director *d)
 {

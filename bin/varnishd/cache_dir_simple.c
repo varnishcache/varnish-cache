@@ -54,6 +54,7 @@ struct vdi_simple {
 	struct backend		*backend;
 };
 
+/*lint -e{818} not const-able */
 static struct backend *
 vdi_simple_choose(struct sess *sp)
 {
@@ -64,6 +65,7 @@ vdi_simple_choose(struct sess *sp)
 	return (vs->backend);
 }
 
+/*lint -e{818} not const-able */
 static void
 vdi_simple_fini(struct director *d)
 {

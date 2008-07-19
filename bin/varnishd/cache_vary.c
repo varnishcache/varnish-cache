@@ -107,7 +107,8 @@ VRY_Create(const struct sess *sp)
 				e--;
 			/* Encode two byte length and contents */
 			l = e - h;
-			vsb_printf(sb, "%c%c", l >> 8, l & 0xff);
+			assert(!(l & ~0xffff));
+			vsb_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
 			vsb_bcat(sb, h, e - h);
 		} else {
 			/* Mark as "not present" */
