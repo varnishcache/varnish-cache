@@ -124,8 +124,11 @@ BackSlashDecode(const char *s, const char *e)
 	return (p);
 }
 
+static char err_invalid_backslash[] = "Invalid backslash sequence";
+static char err_missing_quote[] = "Missing '\"'";
+
 char **
-ParseArgv(const char *s, int comment)
+ParseArgv(const char *s, int flag)
 {
 	char **argv;
 	const char *p;
@@ -146,7 +149,7 @@ ParseArgv(const char *s, int comment)
 			s++;
 			continue;
 		}
-		if (comment && *s == '#')
+		if ((flag & ARGV_COMMENT) && *s == '#')
 			break;
 		if (*s == '"') {
 			p = ++s;
@@ -159,7 +162,7 @@ ParseArgv(const char *s, int comment)
 			if (*s == '\\') {
 				i = BackSlash(s, NULL);
 				if (i == 0) {
-					argv[0] = (void*)(uintptr_t)"Invalid backslash sequence";
+					argv[0] = err_invalid_backslash;
 					return (argv);
 				}
 				s += i;
@@ -168,13 +171,15 @@ ParseArgv(const char *s, int comment)
 			if (!quote) {
 				if (*s == '\0' || isspace(*s))
 					break;
+				if ((flag & ARGV_COMMA) && *s == ',')
+					break;
 				s++;
 				continue;
 			}
 			if (*s == '"')
 				break;
 			if (*s == '\0') {
-				argv[0] = (void*)(uintptr_t)"Missing '\"'";
+				argv[0] = err_missing_quote;
 				return (argv);
 			}
 			s++;
