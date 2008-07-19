@@ -54,6 +54,7 @@
 #include "cli_priv.h"
 #include "cli_common.h"
 
+/*lint -e{818} cli could be const */
 void
 cli_out(struct cli *cli, const char *fmt, ...)
 {
@@ -72,7 +73,7 @@ cli_result(struct cli *cli, unsigned res)
 {
 
 	if (cli != NULL)
-		cli->result = res;
+		cli->result = res;	/*lint !e64 type mismatch */
 	else
 		printf("CLI result = %d\n", res);
 }
@@ -97,7 +98,7 @@ cli_writeres(int fd, const struct cli *cli)
 					 */
 
 	assert(cli->result >= 100);
-	assert(cli->result <= 999);
+	assert(cli->result <= 999);	/*lint !e650 const out of range */
 	i = snprintf(res, sizeof res,
 	    "%-3d %-8d\n", cli->result, vsb_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
