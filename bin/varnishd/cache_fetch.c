@@ -113,7 +113,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		if (q == NULL || q == buf || *q != '\n') {
 			xxxassert(be > bp);
 			/*
-			 * The sematics we need here is "read until you have
+			 * The semantics we need here is "read until you have
 			 * received at least one character, but feel free to
 			 * return up to (be-bp) if they are available, but do
 			 * not wait for those extra characters.
