@@ -170,6 +170,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		 */
 		l = st.st_size;
 	} else {
+		AN(size);
 		q = str2bytes(size, &l, fssize);
 
 		if (q != NULL)

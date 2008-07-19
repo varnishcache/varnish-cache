@@ -401,7 +401,7 @@ cli_check(const struct cli *cli)
 /*--------------------------------------------------------------------*/
 
 int
-main(int argc, char *argv[])
+main(int argc, char * const *argv)
 {
 	int o;
 	unsigned C_flag = 0;

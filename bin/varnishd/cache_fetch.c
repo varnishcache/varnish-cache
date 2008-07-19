@@ -40,7 +40,6 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
-#include "cli.h"
 #include "cli_priv.h"
 
 static unsigned fetchfrag;
@@ -204,7 +203,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 /*--------------------------------------------------------------------*/
 
 static void
-dump_st(struct sess *sp, struct storage *st)
+dump_st(const struct sess *sp, const struct storage *st)
 {
 	txt t;
 
@@ -247,7 +246,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		st->len += i;
 		sp->obj->len += i;
 	}
-	if (st != NULL && fetchfrag > 0)
+	if (fetchfrag > 0)
 		dump_st(sp, st);
 
 	if (st->len == 0) {
@@ -272,7 +271,7 @@ FetchReqBody(struct sess *sp)
 	unsigned long content_length;
 	char buf[8192];
 	char *ptr, *endp;
-	int read;
+	int rdcnt;
 
 	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
 
@@ -280,16 +279,16 @@ FetchReqBody(struct sess *sp)
 		/* XXX should check result of conversion */
 		while (content_length) {
 			if (content_length > sizeof buf)
-				read = sizeof buf;
+				rdcnt = sizeof buf;
 			else
-				read = content_length;
-			read = HTC_Read(sp->htc, buf, read);
-			if (read <= 0)
+				rdcnt = content_length;
+			rdcnt = HTC_Read(sp->htc, buf, rdcnt);
+			if (rdcnt <= 0)
 				return (1);
-			content_length -= read;
+			content_length -= rdcnt;
 			if (!sp->sendbody)
 				continue;
-			WRK_Write(sp->wrk, buf, read);
+			WRK_Write(sp->wrk, buf, rdcnt);	/* XXX: stats ? */
 			if (WRK_Flush(sp->wrk))
 				return (2);
 		}
@@ -342,7 +341,7 @@ Fetch(struct sess *sp)
 		return (__LINE__);
 	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRK_Reset(w, &vc->fd);
-	http_Write(w, hp, 0);
+	http_Write(w, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
