@@ -53,6 +53,7 @@
 #include "http_headers.h"
 #undef HTTPH
 
+/*lint -save -e773 not () */
 #define LOGMTX2(ax, bx, cx) 	[bx] = SLT_##ax##cx
 
 #define LOGMTX1(ax) { 		\
@@ -69,6 +70,7 @@ static enum shmlogtag logmtx[][HTTP_HDR_FIRST + 1] = {
 	[HTTP_Tx] = LOGMTX1(Tx),
 	[HTTP_Obj] = LOGMTX1(Obj)
 };
+/*lint -restore */
 
 static enum shmlogtag
 http2shmlog(const struct http *hp, int t)
@@ -551,20 +553,20 @@ http_copyh(struct http *to, const struct http *fm, unsigned n)
 }
 
 static void
-http_copyreq(struct http *to, const struct http *fm, int transparent)
+http_copyreq(struct http *to, const struct http *fm, int how)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	if (transparent)
+
+	if ((how == HTTPH_R_PIPE) || (how == HTTPH_R_PASS)) {
 		http_copyh(to, fm, HTTP_HDR_REQ);
-	else
-		http_SetH(to, HTTP_HDR_REQ, "GET");
-	http_copyh(to, fm, HTTP_HDR_URL);
-	if (transparent)
 		http_copyh(to, fm, HTTP_HDR_PROTO);
-	else
+	} else {
+		http_SetH(to, HTTP_HDR_REQ, "GET");
 		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	}
+	http_copyh(to, fm, HTTP_HDR_URL);
 }
 
 void
@@ -645,8 +647,7 @@ http_FilterHeader(struct sess *sp, unsigned how)
         hp = bereq->http;
         hp->logtag = HTTP_Tx;
 
-	http_copyreq(hp, sp->http,
-	    (how == HTTPH_R_PIPE) || (how == HTTPH_R_PASS));
+	http_copyreq(hp, sp->http, how);
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,

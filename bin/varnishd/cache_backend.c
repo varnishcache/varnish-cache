@@ -98,7 +98,7 @@ VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen
 
 	tmo = params->connect_timeout;
 	if (sp->backend->connect_timeout > 10e-3)
-		tmo = sp->backend->connect_timeout * 1000;
+		tmo = (int)(sp->backend->connect_timeout * 1000);
 
 	if (tmo > 0)
 		i = TCP_connect(s, sa, salen, tmo);
