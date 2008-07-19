@@ -66,7 +66,7 @@ static char *pstr = panicstr;
 
 /* step names */
 static const char *steps[] = {
-#define STEP(l, u) "STP_" #u,
+#define STEP(l, u) [STP_##u] = "STP_" #u,
 #include "steps.h"
 #undef STEP
 };
