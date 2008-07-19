@@ -191,5 +191,5 @@ cli_func_ping(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	(void)av;
 	t = time(NULL);
-	cli_out(cli, "PONG %ld", t);
+	cli_out(cli, "PONG %ld 1.0", t);
 }
