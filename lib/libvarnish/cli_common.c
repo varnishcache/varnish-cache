@@ -55,7 +55,7 @@
 #include "cli_common.h"
 
 void
-cli_out(const struct cli *cli, const char *fmt, ...)
+cli_out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
