@@ -130,7 +130,7 @@ WS_Dup(struct ws *ws, const char *s)
 }
 
 unsigned
-WS_Free(struct ws *ws)
+WS_Free(const struct ws *ws)
 {
 
 	WS_Assert(ws);

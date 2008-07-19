@@ -602,7 +602,7 @@ void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Dup(struct ws *ws, const char *);
 char *WS_Snapshot(struct ws *ws);
-unsigned WS_Free(struct ws *ws);
+unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
