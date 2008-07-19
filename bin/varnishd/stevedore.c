@@ -37,15 +37,13 @@
 #include "cache.h"
 #include "stevedore.h"
 
-/*
- * Stevedores are kept in a circular list with the head pointer
- * continuously moving from one element to the next.
- */
-
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
 
-static struct stevedore * volatile stevedores;
+static VTAILQ_HEAD(, stevedore)	stevedores =
+    VTAILQ_HEAD_INITIALIZER(stevedores);
+
+static struct stevedore * volatile stv_next;
 
 struct storage *
 STV_alloc(struct sess *sp, size_t size)
@@ -56,8 +54,13 @@ STV_alloc(struct sess *sp, size_t size)
 	for (;;) {
 
 		/* pick a stevedore and bump the head along */
-		/* XXX: only safe as long as pointer writes are atomic */
-		stv = stevedores = stevedores->next;
+		stv = VTAILQ_NEXT(stv_next, list);
+		if (stv == NULL)
+			stv = VTAILQ_FIRST(&stevedores);
+		AN(stv);
+
+		 /* XXX: only safe as long as pointer writes are atomic */
+		stv_next = stv;
 
 		/* try to allocate from it */
 		st = stv->alloc(stv, size);
@@ -134,15 +137,10 @@ STV_add(const char *spec)
 	if (stv->init != NULL)
 		stv->init(stv, q);
 
-	if (!stevedores) {
-		stevedores = stv->next = stv->prev = stv;
-	} else {
-		stv->next = stevedores;
-		stv->prev = stevedores->prev;
-		stv->next->prev = stv;
-		stv->prev->next = stv;
-		stevedores = stv;
-	}
+	VTAILQ_INSERT_TAIL(&stevedores, stv, list);
+
+	if (!stv_next)
+		stv_next = VTAILQ_FIRST(&stevedores);
 }
 
 void
@@ -150,10 +148,8 @@ STV_open(void)
 {
 	struct stevedore *stv;
 
-	stv = stevedores;
-	do {
+	VTAILQ_FOREACH(stv, &stevedores, list) {
 		if (stv->open != NULL)
 			stv->open(stv);
-		stv = stv->next;
-	} while (stv != stevedores);
+	}
 }

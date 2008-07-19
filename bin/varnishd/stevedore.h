@@ -52,7 +52,7 @@ struct stevedore {
 	/* private fields */
 	void			*priv;
 
-	struct stevedore	*next, *prev;
+	VTAILQ_ENTRY(stevedore)	list;
 };
 
 struct storage *STV_alloc(struct sess *sp, size_t size);
