@@ -58,3 +58,9 @@ int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void mgt_child_inherit(int fd, const char *what);
+
+#define ARGV_ERR(...)						\
+	do {							\
+		fprintf(stderr, "Error: " __VA_ARGS__);		\
+		exit(2);					\
+	} while (0);

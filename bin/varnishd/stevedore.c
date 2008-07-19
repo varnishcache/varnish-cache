@@ -37,9 +37,6 @@
 #include "cache.h"
 #include "stevedore.h"
 
-extern struct stevedore sma_stevedore;
-extern struct stevedore smf_stevedore;
-
 static VTAILQ_HEAD(, stevedore)	stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
 
@@ -95,47 +92,21 @@ STV_free(const struct storage *st)
 	st->stevedore->free(st);
 }
 
-static int
-cmp_storage(const struct stevedore *s, const char *p, const char *q)
-{
-	unsigned u;
-
-	u = pdiff(p, q);
-	if (strlen(s->name) != u)
-		return (1);
-	if (strncmp(s->name, p, u))
-		return (1);
-	return (0);
-}
-
 void
-STV_add(const char *spec)
+STV_add(const struct stevedore *stv2, int ac, char * const *av)
 {
-	const char *p, *q;
 	struct stevedore *stv;
 
-	p = strchr(spec, ',');
-	if (p == NULL)
-		q = p = strchr(spec, '\0');
-	else
-		q = p + 1;
-	xxxassert(p != NULL);
-	xxxassert(q != NULL);
-
-	stv = malloc(sizeof *stv);
+	CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
+	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
 	AN(stv);
 
-	if (!cmp_storage(&sma_stevedore, spec, p)) {
-		*stv = sma_stevedore;
-	} else if (!cmp_storage(&smf_stevedore, spec, p)) {
-		*stv = smf_stevedore;
-	} else {
-		fprintf(stderr, "Unknown storage method \"%.*s\"\n",
-		    (int)(p - spec), spec);
-		exit (2);
-	}
+	*stv = *stv2;
+
 	if (stv->init != NULL)
-		stv->init(stv, q);
+		stv->init(stv, ac, av);
+	else if (ac != 0) 
+		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
 	VTAILQ_INSERT_TAIL(&stevedores, stv, list);
 

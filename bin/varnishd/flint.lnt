@@ -59,6 +59,7 @@
 -emacro(827, assert)	// loop not reachable
 -emacro(774, assert)	// booelan always true
 -emacro(774, HTTPH)	// always false
+-emacro(527, ARGV_ERR)	// unreachable
 
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean

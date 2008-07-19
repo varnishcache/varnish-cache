@@ -63,10 +63,6 @@ int mgt_push_vcls_and_start(unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
 
-#include "hash_slinger.h"
-
-extern struct hash_slinger hsl_slinger;
-extern struct hash_slinger hcl_slinger;
 
 #define REPORT0(pri, fmt)				\
 	do {						\

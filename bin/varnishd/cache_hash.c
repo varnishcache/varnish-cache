@@ -302,7 +302,7 @@ hsh_rush(struct objhead *oh)
 }
 
 void
-HSH_Unbusy(struct sess *sp)
+HSH_Unbusy(const struct sess *sp)
 {
 	struct object *o;
 	struct objhead *oh;

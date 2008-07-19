@@ -139,9 +139,9 @@ hsl_deref(const struct objhead *obj)
 /*--------------------------------------------------------------------*/
 
 struct hash_slinger hsl_slinger = {
-	"simple_list",
-	NULL,
-	hsl_start,
-	hsl_lookup,
-	hsl_deref,
+	.magic	=	SLINGER_MAGIC,
+	.name	=	"simple",
+	.start	=	hsl_start,
+	.lookup =	hsl_lookup,
+	.deref 	=	hsl_deref,
 };

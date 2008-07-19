@@ -108,7 +108,7 @@ struct smf {
 };
 
 struct smf_sc {
-	char			*filename;
+	const char		*filename;
 	int			fd;
 	unsigned		pagesize;
 	uintmax_t		filesize;
@@ -172,11 +172,8 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	} else {
 		q = str2bytes(size, &l, fssize);
 
-		if (q != NULL) {
-			fprintf(stderr,
-			    "Error: (-sfile) size \"%s\": %s\n", size, q);
-			exit (2);
-		}
+		if (q != NULL)
+			ARGV_ERR("(-sfile) size \"%s\": %s\n", size, q);
 	}
 
 	/*
@@ -206,12 +203,9 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	/* round down to multiple of filesystem blocksize or pagesize */
 	l -= (l % bs);
 
-	if (l < MINPAGES * (uintmax_t)sc->pagesize) {
-		fprintf(stderr,
-		    "Error: size too small, at least %ju needed\n",
+	if (l < MINPAGES * (uintmax_t)sc->pagesize)
+		ARGV_ERR("size too small, at least %ju needed\n",
 		    (uintmax_t)MINPAGES * sc->pagesize);
-		exit (2);
-	}
 
 	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 */
 		fprintf(stderr,
@@ -238,14 +232,32 @@ smf_initfile(struct smf_sc *sc, const char *size, int newfile)
 	/* XXX: force block allocation here or in open ? */
 }
 
+static char default_size[] = "50%";
+static char default_filename[] = ".";
+
 static void
-smf_init(struct stevedore *parent, const char *spec)
+smf_init(struct stevedore *parent, int ac, char * const *av)
 {
-	char *size;
-	char *p, *q;
+	const char *size, *fn;
+	char *q, *p;
 	struct stat st;
 	struct smf_sc *sc;
 	unsigned u;
+
+	AZ(av[ac]);
+
+	fn = default_filename;
+	size = default_size;
+
+	if (ac > 2)
+		ARGV_ERR("(-sfile) too many arguments\n");
+	if (ac > 0 && *av[0] != '\0')
+		fn = av[0];
+	if (ac > 1 && *av[1] != '\0')
+		size = av[1];
+
+	AN(fn);
+	AN(size);
 
 	sc = calloc(sizeof *sc, 1);
 	XXXAN(sc);
@@ -257,82 +269,52 @@ smf_init(struct stevedore *parent, const char *spec)
 
 	parent->priv = sc;
 
-	/* If no size specified, use 50% of filesystem free space */
-	if (spec == NULL || *spec == '\0')
-		asprintf(&p, ".,50%%");
-	else if (strchr(spec, ',') == NULL)
-		asprintf(&p, "%s,", spec);
-	else
-		p = strdup(spec);
-	XXXAN(p);
-	size = strchr(p, ',');
-	XXXAN(size);
-
-	*size++ = '\0';
-
 	/* try to create a new file of this name */
-	sc->fd = open(p, O_RDWR | O_CREAT | O_EXCL, 0600);
+	sc->fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0600);
 	if (sc->fd >= 0) {
-		sc->filename = p;
+		sc->filename = fn;
 		mgt_child_inherit(sc->fd, "storage_file");
 		smf_initfile(sc, size, 1);
 		return;
 	}
 
 	/* it must exist then */
-	if (stat(p, &st)) {
-		fprintf(stderr,
-		    "Error: (-sfile) \"%s\" "
-		    "does not exist and could not be created\n", p);
-		exit (2);
-	}
+	if (stat(fn, &st))
+		ARGV_ERR("(-sfile) \"%s\" "
+		    "does not exist and could not be created\n", fn);
 
 	/* and it should be a file or directory */
-	if (!(S_ISREG(st.st_mode) || S_ISDIR(st.st_mode))) {
-		fprintf(stderr,
-		    "Error: (-sfile) \"%s\" "
-		    "is neither file nor directory\n", p);
-		exit (2);
-	}
+	if (!(S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)))
+		ARGV_ERR("(-sfile) \"%s\" is neither file nor directory\n", fn);
 
 	if (S_ISREG(st.st_mode)) {
-		sc->fd = open(p, O_RDWR);
-		if (sc->fd < 0) {
-			fprintf(stderr,
-			    "Error: (-sfile) \"%s\" "
-			    "could not open (%s)\n", p, strerror(errno));
-			exit (2);
-		}
+		sc->fd = open(fn, O_RDWR);
+		if (sc->fd < 0) 
+			ARGV_ERR("(-sfile) \"%s\" could not open (%s)\n",
+			    fn, strerror(errno));
 		AZ(fstat(sc->fd, &st));
-		if (!S_ISREG(st.st_mode)) {
-			fprintf(stderr,
-			    "Error: (-sfile) \"%s\" "
-			    "was not a file after opening\n", p);
-			exit (2);
-		}
-		sc->filename = p;
+		if (!S_ISREG(st.st_mode))
+			ARGV_ERR("(-sfile) \"%s\" "
+			    "was not a file after opening\n", fn);
+		sc->filename = fn;
 		mgt_child_inherit(sc->fd, "storage_file");
 		smf_initfile(sc, size, 0);
 		return;
 	}
 
-
-	asprintf(&q, "%s/varnish.XXXXXX", p);
+	asprintf(&q, "%s/varnish.XXXXXX", fn);
 	XXXAN(q);
 	sc->fd = mkstemp(q);
-	if (sc->fd < 0) {
-		fprintf(stderr,
-		    "Error: (-sfile) \"%s\" "
-		    "mkstemp(%s) failed (%s)\n", p, q, strerror(errno));
-		exit (2);
-	}
+	if (sc->fd < 0)
+		ARGV_ERR("(-sfile) \"%s\" "
+		    "mkstemp(%s) failed (%s)\n", fn, q, strerror(errno));
 	AZ(unlink(q));
-	asprintf(&sc->filename, "%s (unlinked)", q);
-	XXXAN(sc->filename);
+	asprintf(&p, "%s (unlinked)", q);
+	XXXAN(p);
+	sc->filename = p;
 	free(q);
 	smf_initfile(sc, size, 1);
 	mgt_child_inherit(sc->fd, "storage_file");
-	free(p);
 }
 
 /*--------------------------------------------------------------------
@@ -705,12 +687,13 @@ smf_free(const struct storage *s)
 /*--------------------------------------------------------------------*/
 
 struct stevedore smf_stevedore = {
-	.name =		"file",
-	.init =		smf_init,
-	.open =		smf_open,
-	.alloc =	smf_alloc,
-	.trim =		smf_trim,
-	.free =		smf_free,
+	.magic	=	STEVEDORE_MAGIC,
+	.name	=	"file",
+	.init	=	smf_init,
+	.open	=	smf_open,
+	.alloc	=	smf_alloc,
+	.trim	=	smf_trim,
+	.free	=	smf_free,
 };
 
 #ifdef INCLUDE_TEST_DRIVER
