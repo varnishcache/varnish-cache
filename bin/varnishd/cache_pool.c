@@ -208,7 +208,7 @@ wrk_thread(void *priv)
 	unsigned char wlog[8192]; 	/* XXX: size */
 	struct workreq *wrq;
 
-	THR_Name("cache-worker");
+	THR_SetName("cache-worker");
 	w = &ww;
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	memset(w, 0, sizeof *w);
@@ -441,7 +441,7 @@ wrk_herdtimer_thread(void *priv)
 	double t_idle;
 	struct varnish_stats vsm, *vs;
 
-	THR_Name("wrk_herdtimer");
+	THR_SetName("wrk_herdtimer");
 
 	memset(&vsm, 0, sizeof vsm);
 	vs = &vsm;
@@ -534,7 +534,7 @@ wrk_herder_thread(void *priv)
 {
 	unsigned u, w;
 
-	THR_Name("wrk_herder");
+	THR_SetName("wrk_herder");
 	(void)priv;
 	while (1) {
 		for (u = 0 ; u < nwq; u++) {

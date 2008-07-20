@@ -152,7 +152,7 @@ vca_kqueue_main(void *arg)
 	double deadline;
 	struct sess *sp;
 
-	THR_Name("cache-kqueue");
+	THR_SetName("cache-kqueue");
 	(void)arg;
 
 	kq = kqueue();

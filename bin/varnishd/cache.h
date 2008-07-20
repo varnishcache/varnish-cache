@@ -510,7 +510,8 @@ int HTC_Complete(struct http_conn *htc);
 #undef HTTPH
 
 /* cache_main.c */
-void THR_Name(const char *name);
+void THR_SetName(const char *name);
+const char* THR_GetName(void);
 void THR_SetSession(const struct sess *sp);
 const struct sess * THR_GetSession(void);
 

@@ -263,7 +263,7 @@ exp_timer(void *arg)
 	struct sess *sp;
 	unsigned char logbuf[1024];		/* XXX size ? */
 
-	THR_Name("cache-timeout");
+	THR_SetName("cache-timeout");
 	(void)arg;
 
 	sp = SES_New(NULL, 0);

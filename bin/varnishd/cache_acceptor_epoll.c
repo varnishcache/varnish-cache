@@ -76,7 +76,7 @@ vca_main(void *arg)
 	struct sess *sp, *sp2;
 	int i;
 
-	THR_Name("cache-epoll");
+	THR_SetName("cache-epoll");
 	(void)arg;
 
 	epfd = epoll_create(16);
