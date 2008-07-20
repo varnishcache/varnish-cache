@@ -63,6 +63,9 @@ struct shmloghead {
 	unsigned		ptr;
 
 	struct varnish_stats	stats;
+
+	/* Panic message buffer */
+	char			panicstr[64 * 1024];
 };
 
 /*

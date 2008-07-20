@@ -94,6 +94,7 @@ child_main(void)
 
 	THR_Name("cache-main");
 
+	PAN_Init();
 	CLI_Init();
 	Fetch_Init();
 

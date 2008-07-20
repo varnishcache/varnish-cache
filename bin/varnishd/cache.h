@@ -514,6 +514,9 @@ void THR_Name(const char *name);
 void THR_SetSession(const struct sess *sp);
 const struct sess * THR_GetSession(void);
 
+/* cache_panic.c */
+void PAN_Init(void);
+
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);
 
@@ -537,7 +540,6 @@ void SES_RefSrcAddr(struct sess *sp);
 void SES_Charge(struct sess *sp);
 
 /* cache_shmlog.c */
-
 void VSL_Init(void);
 #ifdef SHMLOGHEAD_MAGIC
 void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
