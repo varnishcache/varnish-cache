@@ -574,7 +574,7 @@ cnt_lookup(struct sess *sp)
 		 * We hit a busy object, disembark worker thread and expect
 		 * hash code to restart us, still in STP_LOOKUP, later.
 		 */
-		spassert(sp->objhead != NULL);
+		assert(sp->objhead != NULL);
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 			    "on waiting list <%s>", sp->objhead->hash);
