@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * This is the default backend function for libvarnish' assert facilities.
  */
 
 #include "config.h"
@@ -37,30 +39,25 @@
 
 #include "libvarnish.h"
 
-void
-lbv_xxxassert(const char *func, const char *file, int line, const char *cond, int err)
+static void
+lbv_assert_default(const char *func, const char *file, int line, const char *cond, int err, int xxx)
 {
 
-	fprintf(stderr,
-	    "Missing errorhandling code in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n",
-	    func, file, line, cond);
+	if (xxx) {
+		fprintf(stderr,
+		    "Missing errorhandling code in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	} else {
+		fprintf(stderr,
+		    "Assert error in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	}
 	if (err)
 		fprintf(stderr,
 		    "  errno = %d (%s)\n", err, strerror(err));
 	abort();
 }
 
-void
-lbv_assert(const char *func, const char *file, int line, const char *cond, int err)
-{
-
-	fprintf(stderr,
-	    "Assert error in %s(), %s line %d:\n"
-	    "  Condition(%s) not true.\n",
-	    func, file, line, cond);
-	if (err)
-		fprintf(stderr,
-		    "  errno = %d (%s)\n", err, strerror(err));
-	abort();
-}
+lbv_assert_f *lbv_assert = lbv_assert_default;

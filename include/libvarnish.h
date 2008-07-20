@@ -72,24 +72,25 @@ int vtmpfile(char *);
  *	handle gracefully, such as malloc failure.
  */
 
+typedef void lbv_assert_f(const char *, const char *, int, const char *, int, int);
+
+extern lbv_assert_f *lbv_assert;
+
 #ifdef WITHOUT_ASSERTS
 #define assert(e)	((void)(e))
 #else /* WITH_ASSERTS */
 #define assert(e)							\
 do { 									\
 	if (!(e))							\
-		lbv_assert(__func__, __FILE__, __LINE__, #e, errno);	\
+		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 0);	\
 } while (0)
 #endif
 
 #define xxxassert(e)							\
 do { 									\
 	if (!(e))							\
-		lbv_xxxassert(__func__, __FILE__, __LINE__, #e, errno); \
+		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 1); \
 } while (0)
-
-void lbv_assert(const char *, const char *, int, const char *, int);
-void lbv_xxxassert(const char *, const char *, int, const char *, int);
 
 /* Assert zero return value */
 #define AZ(foo)	do { assert((foo) == 0); } while (0)
