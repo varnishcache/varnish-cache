@@ -35,6 +35,8 @@ struct sockaddr;
 /* cache_acceptor.c */
 void VCA_tweak_acceptor(struct cli *cli, const char *arg);
 
+/* shmlog.c */
+void VSL_Panic(int *len, char **ptr);
 
 /* shmlog.c */
 void VSL_MgtInit(const char *fn, unsigned size);

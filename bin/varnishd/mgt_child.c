@@ -375,6 +375,20 @@ mgt_stop_child(void)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mgt_report_panic(pid_t r)
+{
+	int l;
+	char *p;
+
+	VSL_Panic(&l, &p);
+	if (*p == '\0')
+		return;
+	REPORT(LOG_ERR, "Child (%d) Panic message: %s", r, p);
+}
+
+/*--------------------------------------------------------------------*/
+
 static int
 mgt_sigchld(const struct vev *e, int what)
 {
@@ -410,6 +424,8 @@ mgt_sigchld(const struct vev *e, int what)
 	AZ(vsb_overflowed(vsb));
 	REPORT(LOG_INFO, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
+
+	mgt_report_panic(r);
 
 	child_pid = -1;
 

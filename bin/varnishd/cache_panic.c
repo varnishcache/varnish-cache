@@ -48,6 +48,8 @@
  * (gdb) printf "%s", panicstr
  */
 char panicstr[65536];
+static struct vsb vsps, *vsp;
+
 static char *pstr = panicstr;
 
 #define fp(...)							\
@@ -240,3 +242,41 @@ panic(const char *file, int line, const char *func,
 }
 
 #endif
+
+static void
+pan_ic(const char *func, const char *file, int line, const char *cond, int err, int xxx)
+{
+	int l;
+	char *p;
+
+	if (xxx) {
+		vsb_printf(vsp,
+		    "Missing errorhandling code in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	} else {
+		vsb_printf(vsp,
+		    "Assert error in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	}
+	if (err)
+		vsb_printf(vsp,
+		    "  errno = %d (%s)\n", err, strerror(err));
+
+	VSL_Panic(&l, &p);
+	if (l < vsb_len(vsp))
+		l = vsb_len(vsp);
+	memcpy(p, panicstr, l);
+	abort();
+}
+
+
+void
+PAN_Init(void)
+{
+
+	lbv_assert = pan_ic;
+	vsp = &vsps;
+	AN(vsb_new(vsp, panicstr, sizeof panicstr, VSB_FIXEDLEN));
+}
