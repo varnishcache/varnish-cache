@@ -323,6 +323,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 	struct sess *sess;
 
 	CAST_OBJ_NOTNULL(sess, priv, SESS_MAGIC);
+	THR_SetSession(sess);
 	sess->wrk = w;
 	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
@@ -331,6 +332,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 	assert(!isnan(w->used));
 	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+	THR_SetSession(NULL);
 }
 
 /*--------------------------------------------------------------------*/

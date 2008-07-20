@@ -41,6 +41,27 @@
 #include "stevedore.h"
 
 /*--------------------------------------------------------------------
+ * Per thread storage for the session currently being processed by
+ * the thread.  This is used for panic messages.
+ */
+
+static pthread_key_t sp_key;
+
+void
+THR_SetSession(const struct sess *sp)
+{
+
+	AZ(pthread_setspecific(sp_key, sp));
+}
+
+const struct sess *
+THR_GetSession(void)
+{
+
+	return (pthread_getspecific(sp_key));
+}
+
+/*--------------------------------------------------------------------
  * Name threads if our pthreads implementation supports it.
  */
 
@@ -68,6 +89,8 @@ child_main(void)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
+
+	AZ(pthread_key_create(&sp_key, NULL));
 
 	THR_Name("cache-main");
 
