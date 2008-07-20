@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "cache.h"
 #include "cache_backend.h"
@@ -51,43 +52,6 @@
 
 char panicstr[65536];
 static struct vsb vsps, *vsp;
-
-#if 0
-
-void
-panic(const char *file, int line, const char *func,
-    const struct sess *sp, const char *fmt, ...)
-{
-	va_list ap;
-
-	vsb_printf(vsp, "panic in %s() at %s:%d\n", func, file, line);
-	va_start(ap, fmt);
-	vvsb_printf(vsp, fmt, ap);
-	va_end(ap);
-
-	if (VALID_OBJ(sp, SESS_MAGIC))
-		dump_sess(sp);
-
-	(void)fputs(panicstr, stderr);
-
-	/* I wish there was a way to flush the log buffers... */
-	(void)signal(SIGABRT, SIG_DFL);
-#ifdef HAVE_ABORT2
-	{
-	void *arg[1];
-	char *p;
-
-	for (p = panicstr; *p; p++)
-		if (*p == '\n')
-			*p = ' ';
-	arg[0] = panicstr;
-	abort2(panicstr, 1, arg);
-	}
-#endif
-	(void)raise(SIGABRT);
-}
-
-#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -255,15 +219,35 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	q = THR_GetName();
 	if (q != NULL)
 		vsb_printf(vsp, "  thread = (%s)", q);
-	sp = THR_GetSession();
-	if (sp != NULL) 
-		pan_sess(sp);
+	if (!(params->diag_bitmap & 0x2000)) {
+		sp = THR_GetSession();
+		if (sp != NULL) 
+			pan_sess(sp);
+	}
 	vsb_printf(vsp, "\n");
+	vsb_bcat(vsp, "", 1);	/* NUL termination */
 	VSL_Panic(&l, &p);
 	if (l < sizeof(panicstr))
 		l = sizeof(panicstr);
 	memcpy(p, panicstr, l);
-	abort();
+	if (params->diag_bitmap & 0x4000)
+		fputs(panicstr, stderr);
+		
+#ifdef HAVE_ABORT2
+	if (params->diag_bitmap & 0x8000) {
+		void *arg[1];
+
+		for (p = panicstr; *p; p++)
+			if (*p == '\n')
+				*p = ' ';
+		arg[0] = panicstr;
+		abort2(panicstr, 1, arg);
+	}
+#endif
+	if (params->diag_bitmap & 0x1000)
+		kill(getpid(), SIGUSR1);
+	else
+		abort();
 }
 
 /*--------------------------------------------------------------------*/

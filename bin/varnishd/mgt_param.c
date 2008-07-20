@@ -786,6 +786,12 @@ static const struct parspec parspec[] = {
 		"  0x00000010 - mutex contests.\n"
 		"  0x00000020 - waiting list.\n"
 		"  0x00000040 - object workspace.\n"
+		"  0x00001000 - do not core-dump child process.\n"
+		"  0x00002000 - only short panic message.\n"
+		"  0x00004000 - panic to stderr.\n"
+#ifdef HAVE_ABORT2
+		"  0x00008000 - panic to abort2().\n"
+#endif
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
