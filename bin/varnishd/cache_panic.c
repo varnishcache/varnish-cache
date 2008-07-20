@@ -37,186 +37,32 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_backend.h"
 #include "vcl.h"
 
-#ifndef WITHOUT_ASSERTS
-
 /*
- * The panic string is constructed in memory, then printed to stderr.  It
- * can be extracted post-mortem from a core dump using gdb:
+ * The panic string is constructed in memory, then copied to the
+ * shared memory.
+ *
+ * It can be extracted post-mortem from a core dump using gdb:
  *
  * (gdb) printf "%s", panicstr
  */
+
 char panicstr[65536];
 static struct vsb vsps, *vsp;
 
-static char *pstr = panicstr;
-
-#define fp(...)							\
-	do {							\
-		pstr += snprintf(pstr,				\
-		    (panicstr + sizeof panicstr) - pstr,	\
-		    __VA_ARGS__);				\
-	} while (0)
-
-#define vfp(fmt, ap)						\
-	do {							\
-		pstr += vsnprintf(pstr,				\
-		    (panicstr + sizeof panicstr) - pstr,	\
-		    (fmt), (ap));				\
-	} while (0)
-
-/* step names */
-static const char *steps[] = {
-#define STEP(l, u) [STP_##u] = "STP_" #u,
-#include "steps.h"
-#undef STEP
-};
-static int nsteps = sizeof steps / sizeof *steps;
-
-/* dump a struct VCL_conf */
-static void
-dump_vcl(const struct VCL_conf *vcl)
-{
-	int i;
-
-	fp("    vcl = {\n");
-	fp("      srcname = {\n");
-	for (i = 0; i < vcl->nsrc; ++i)
-		fp("        \"%s\",\n", vcl->srcname[i]);
-	fp("      },\n");
-	fp("    },\n");
-}
-
-/* dump a struct storage */
-static void
-dump_storage(const struct storage *st)
-{
-	int i, j;
-
-#define MAX_BYTES (4*16)
-#define show(ch) (((ch) > 31 && (ch) < 127) ? (ch) : '.')
-
-	fp("      %u {\n", st->len);
-	for (i = 0; i < MAX_BYTES && i < st->len; i += 16) {
-		fp("        ");
-		for (j = 0; j < 16; ++j) {
-			if (i + j < st->len)
-				fp("%02x ", st->ptr[i + j]);
-			else
-				fp("   ");
-		}
-		fp("|");
-		for (j = 0; j < 16; ++j)
-			if (i + j < st->len)
-				fp("%c", show(st->ptr[i + j]));
-		fp("|\n");
-	}
-	if (st->len > MAX_BYTES)
-		fp("        [%u more]\n", st->len - MAX_BYTES);
-	fp("      },\n");
-
-#undef show
-#undef MAX_BYTES
-}
-
-/* dump a struct http */
-static void
-dump_http(const struct http *h)
-{
-	int i;
-
-	fp("    http = {\n");
-	if (h->nhd > HTTP_HDR_FIRST) {
-		fp("      hd = {\n");
-		for (i = HTTP_HDR_FIRST; i < h->nhd; ++i)
-			fp("        \"%.*s\",\n",
-			    (int)(h->hd[i].e - h->hd[i].b),
-			    h->hd[i].b);
-		fp("      },\n");
-	}
-	fp("    },\n");
-}
-
-/* dump a struct object */
-static void
-dump_object(const struct object *o)
-{
-	const struct storage *st;
-
-	fp("  obj = %p {\n", o);
-	fp("    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
-	dump_http(o->http);
-	fp("    len = %u,\n", o->len);
-	fp("    store = {\n");
-	VTAILQ_FOREACH(st, &o->store, list) {
-		dump_storage(st);
-	}
-	fp("    },\n");
-	fp("  },\n");
-}
-
 #if 0
-/* dump a struct backend */
-static void
-dump_backend(const struct backend *be)
-{
 
-	fp("  backend = %p {\n", be);
-	fp("    vcl_name = \"%s\",\n",
-	    be->vcl_name ? be->vcl_name : "(null)");
-	fp("  },\n");
-}
-#endif
-
-/* dump a struct sess */
-static void
-dump_sess(const struct sess *sp)
-{
-#if 0
-	const struct backend *be = sp->backend;
-#endif
-	const struct object *obj = sp->obj;
-	const struct VCL_conf *vcl = sp->vcl;
-
-	fp("sp = %p {\n", sp);
-	fp("  fd = %d, id = %d, xid = %u,\n", sp->fd, sp->id, sp->xid);
-	fp("  client = %s:%s,\n",
-	    sp->addr ? sp->addr : "?.?.?.?",
-	    sp->port ? sp->port : "?");
-	if (sp->step < nsteps)
-		fp("  step = %s,\n", steps[sp->step]);
-	else
-		fp("  step = %d,\n", sp->step);
-	if (sp->err_code)
-		fp("  err_code = %d, err_reason = %s,\n", sp->err_code,
-		    sp->err_reason ? sp->err_reason : "(null)");
-
-	if (VALID_OBJ(vcl, VCL_CONF_MAGIC))
-		dump_vcl(vcl);
-
-#if 0
-	if (VALID_OBJ(be, BACKEND_MAGIC))
-		dump_backend(be);
-	INCOMPL():
-#endif
-
-	if (VALID_OBJ(obj, OBJECT_MAGIC))
-		dump_object(obj);
-
-	fp("},\n");
-}
-
-/* report as much information as we can before we croak */
 void
 panic(const char *file, int line, const char *func,
     const struct sess *sp, const char *fmt, ...)
 {
 	va_list ap;
 
-	fp("panic in %s() at %s:%d\n", func, file, line);
+	vsb_printf(vsp, "panic in %s() at %s:%d\n", func, file, line);
 	va_start(ap, fmt);
-	vfp(fmt, ap);
+	vvsb_printf(vsp, fmt, ap);
 	va_end(ap);
 
 	if (VALID_OBJ(sp, SESS_MAGIC))
@@ -242,6 +88,147 @@ panic(const char *file, int line, const char *func,
 }
 
 #endif
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_backend(const struct backend *be)
+{
+
+	vsb_printf(vsp, "  backend = %p {\n", be);
+	vsb_printf(vsp, "    vcl_name = \"%s\",\n", be->vcl_name);
+	vsb_printf(vsp, "  },\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_storage(const struct storage *st)
+{
+	int i, j;
+
+#define MAX_BYTES (4*16)
+#define show(ch) (((ch) > 31 && (ch) < 127) ? (ch) : '.')
+
+	vsb_printf(vsp, "      %u {\n", st->len);
+	for (i = 0; i < MAX_BYTES && i < st->len; i += 16) {
+		vsb_printf(vsp, "        ");
+		for (j = 0; j < 16; ++j) {
+			if (i + j < st->len)
+				vsb_printf(vsp, "%02x ", st->ptr[i + j]);
+			else
+				vsb_printf(vsp, "   ");
+		}
+		vsb_printf(vsp, "|");
+		for (j = 0; j < 16; ++j)
+			if (i + j < st->len)
+				vsb_printf(vsp, "%c", show(st->ptr[i + j]));
+		vsb_printf(vsp, "|\n");
+	}
+	if (st->len > MAX_BYTES)
+		vsb_printf(vsp, "        [%u more]\n", st->len - MAX_BYTES);
+	vsb_printf(vsp, "      },\n");
+
+#undef show
+#undef MAX_BYTES
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_http(const struct http *h)
+{
+	int i;
+
+	vsb_printf(vsp, "    http = {\n");
+	if (h->nhd > HTTP_HDR_FIRST) {
+		vsb_printf(vsp, "      hd = {\n");
+		for (i = HTTP_HDR_FIRST; i < h->nhd; ++i)
+			vsb_printf(vsp, "        \"%.*s\",\n",
+			    (int)(h->hd[i].e - h->hd[i].b),
+			    h->hd[i].b);
+		vsb_printf(vsp, "      },\n");
+	}
+	vsb_printf(vsp, "    },\n");
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_object(const struct object *o)
+{
+	const struct storage *st;
+
+	vsb_printf(vsp, "  obj = %p {\n", o);
+	vsb_printf(vsp, "    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
+	pan_http(o->http);
+	vsb_printf(vsp, "    len = %u,\n", o->len);
+	vsb_printf(vsp, "    store = {\n");
+	VTAILQ_FOREACH(st, &o->store, list)
+		pan_storage(st);
+	vsb_printf(vsp, "    },\n");
+	vsb_printf(vsp, "  },\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_vcl(const struct VCL_conf *vcl)
+{
+	int i;
+
+	vsb_printf(vsp, "    vcl = {\n");
+	vsb_printf(vsp, "      srcname = {\n");
+	for (i = 0; i < vcl->nsrc; ++i)
+		vsb_printf(vsp, "        \"%s\",\n", vcl->srcname[i]);
+	vsb_printf(vsp, "      },\n");
+	vsb_printf(vsp, "    },\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_sess(const struct sess *sp)
+{
+	const char *stp;
+
+	vsb_printf(vsp, "sp = %p {\n", sp);
+	vsb_printf(vsp,
+	    "  fd = %d, id = %d, xid = %u,\n", sp->fd, sp->id, sp->xid);
+	vsb_printf(vsp, "  client = %s:%s,\n",
+	    sp->addr ? sp->addr : "?.?.?.?",
+	    sp->port ? sp->port : "?");
+	switch (sp->step) {
+/*lint -save -e525 */
+#define STEP(l, u) case STP_##u: stp = "STP_" #u; break;
+#include "steps.h"
+#undef STEP
+/*lint -restore */
+		default: stp = NULL;
+	}
+	if (stp != NULL)
+		vsb_printf(vsp, "  step = %s,\n", stp);
+	else
+		vsb_printf(vsp, "  step = 0x%x,\n", sp->step);
+	if (sp->err_code)
+		vsb_printf(vsp,
+		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
+		    sp->err_reason ? sp->err_reason : "(null)");
+
+	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
+		pan_vcl(sp->vcl);
+
+	if (VALID_OBJ(sp->backend, BACKEND_MAGIC))
+		pan_backend(sp->backend);
+
+	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
+		pan_object(sp->obj);
+
+	vsb_printf(vsp, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 pan_ic(const char *func, const char *file, int line, const char *cond, int err, int xxx)
@@ -269,16 +256,17 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	if (q != NULL)
 		vsb_printf(vsp, "  thread = (%s)", q);
 	sp = THR_GetSession();
-	if (sp != NULL)
-		vsb_printf(vsp, "  sess = (%p)", sp);
+	if (sp != NULL) 
+		pan_sess(sp);
 	vsb_printf(vsp, "\n");
 	VSL_Panic(&l, &p);
-	if (l < vsb_len(vsp))
-		l = vsb_len(vsp);
+	if (l < sizeof(panicstr))
+		l = sizeof(panicstr);
 	memcpy(p, panicstr, l);
 	abort();
 }
 
+/*--------------------------------------------------------------------*/
 
 void
 PAN_Init(void)
