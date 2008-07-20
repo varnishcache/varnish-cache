@@ -56,6 +56,32 @@ static struct vsb vsps, *vsp;
 /*--------------------------------------------------------------------*/
 
 static void
+pan_ws(const struct ws *ws, int indent)
+{
+
+	vsb_printf(vsp, "%*sws = %p { %s\n", indent, "",
+	    ws, ws->overflow ? "overflow" : "");
+	vsb_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
+	vsb_printf(vsp, "%*s{s,f,r,e} = {%p,", indent + 2, "", ws->s);
+	if (ws->f > ws->s) 
+		vsb_printf(vsp, ",+%d", ws->f - ws->s);
+	else
+		vsb_printf(vsp, ",%p", ws->f);
+	if (ws->r > ws->s) 
+		vsb_printf(vsp, ",+%d", ws->r - ws->s);
+	else
+		vsb_printf(vsp, ",%p", ws->r);
+	if (ws->e > ws->s) 
+		vsb_printf(vsp, ",+%d", ws->e - ws->s);
+	else
+		vsb_printf(vsp, ",%p", ws->e);
+	vsb_printf(vsp, "},\n");
+	vsb_printf(vsp, "%*s},\n", indent, "" );
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 pan_backend(const struct backend *be)
 {
 
@@ -105,6 +131,7 @@ pan_http(const struct http *h)
 	int i;
 
 	vsb_printf(vsp, "    http = {\n");
+	pan_ws(h->ws, 6);
 	if (h->nhd > HTTP_HDR_FIRST) {
 		vsb_printf(vsp, "      hd = {\n");
 		for (i = HTTP_HDR_FIRST; i < h->nhd; ++i)
@@ -126,6 +153,7 @@ pan_object(const struct object *o)
 
 	vsb_printf(vsp, "  obj = %p {\n", o);
 	vsb_printf(vsp, "    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
+	pan_ws(o->ws_o, 4);
 	pan_http(o->http);
 	vsb_printf(vsp, "    len = %u,\n", o->len);
 	vsb_printf(vsp, "    store = {\n");
@@ -147,6 +175,17 @@ pan_vcl(const struct VCL_conf *vcl)
 	for (i = 0; i < vcl->nsrc; ++i)
 		vsb_printf(vsp, "        \"%s\",\n", vcl->srcname[i]);
 	vsb_printf(vsp, "      },\n");
+	vsb_printf(vsp, "    },\n");
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_wrk(const struct worker *wrk)
+{
+
+	vsb_printf(vsp, "    worker = %p {\n", wrk);
 	vsb_printf(vsp, "    },\n");
 }
 
@@ -179,6 +218,11 @@ pan_sess(const struct sess *sp)
 		vsb_printf(vsp,
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
+
+	pan_ws(sp->ws, 2);
+
+	if (sp->wrk != NULL)
+		pan_wrk(sp->wrk);
 
 	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
 		pan_vcl(sp->vcl);
