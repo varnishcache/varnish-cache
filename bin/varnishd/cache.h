@@ -511,6 +511,8 @@ int HTC_Complete(struct http_conn *htc);
 
 /* cache_main.c */
 void THR_Name(const char *name);
+void THR_SetSession(const struct sess *sp);
+const struct sess * THR_GetSession(void);
 
 /* cache_pipe.c */
 void PipeSession(struct sess *sp);
@@ -708,8 +710,6 @@ Tadd(txt *t, const char *p, int l)
 
 #ifdef WITHOUT_ASSERTS
 #define spassert(cond) ((void)(cond))
-#define SPAZ(val) ((void)(val) == 0)
-#define SPAN(val) ((void)(val) != 0)
 #else
 void panic(const char *, int, const char *,
     const struct sess *, const char *, ...);
@@ -720,6 +720,6 @@ void panic(const char *, int, const char *,
 			panic(__FILE__, __LINE__, __func__, sp,	\
 			    "assertion failed: %s\n", #cond);	\
 	} while (0)
+#endif
 #define SPAZ(val) spassert((val) == 0)
 #define SPAN(val) spassert((val) != 0)
-#endif
