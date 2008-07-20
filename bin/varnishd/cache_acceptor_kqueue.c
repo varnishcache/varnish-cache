@@ -119,8 +119,8 @@ vca_kev(const struct kevent *kp)
 	    sp, (unsigned long)kp->data, kp->flags,
 	    (kp->flags & EV_EOF) ? " EOF" : "");
 
-	spassert(sp->id == kp->ident);
-	spassert(sp->fd == sp->id);
+	assert(sp->id == kp->ident);
+	assert(sp->fd == sp->id);
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0) {

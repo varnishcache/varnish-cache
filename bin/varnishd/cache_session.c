@@ -129,7 +129,7 @@ SES_RefSrcAddr(struct sess *sp)
 		sp->srcaddr = NULL;
 		return;
 	}
-	SPAZ(sp->srcaddr);
+	AZ(sp->srcaddr);
 	u = crc32_l(sp->addr, strlen(sp->addr));
 	v = u % nsrchash;
 	ch = &srchash[v];
@@ -329,8 +329,8 @@ SES_Delete(struct sess *sp)
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 
-	SPAZ(sp->obj);
-	SPAZ(sp->vcl);
+	AZ(sp->obj);
+	AZ(sp->vcl);
 	VSL_stats->n_sess--;
 	ses_relsrcaddr(sp);
 	assert(!isnan(b->first));

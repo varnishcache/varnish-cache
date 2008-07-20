@@ -710,19 +710,3 @@ Tadd(txt *t, const char *p, int l)
 		t->b = t->e;
 	}
 }
-
-#ifdef WITHOUT_ASSERTS
-#define spassert(cond) ((void)(cond))
-#else
-void panic(const char *, int, const char *,
-    const struct sess *, const char *, ...);
-#define spassert(cond)						\
-	do {							\
-		int ok = !!(cond);				\
-		if (!ok)					\
-			panic(__FILE__, __LINE__, __func__, sp,	\
-			    "assertion failed: %s\n", #cond);	\
-	} while (0)
-#endif
-#define SPAZ(val) spassert((val) == 0)
-#define SPAN(val) spassert((val) != 0)
