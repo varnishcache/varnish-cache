@@ -68,7 +68,7 @@ vbp_wrk_poll_backend(struct worker *w, void *priv)
 
 	(void)w;
 	CAST_OBJ_NOTNULL(vt, priv, VBP_TARGET_MAGIC);
-	THR_Name("backend poll");
+	THR_SetName("backend poll");
 
 	while (!vt->stop) {
 		printf("Poke backend %s\n", vt->backend->vcl_name);
@@ -76,7 +76,7 @@ vbp_wrk_poll_backend(struct worker *w, void *priv)
 	}
 	vt->backend->probe = NULL;
 	FREE_OBJ(vt);
-	THR_Name("cache-worker");
+	THR_SetName("cache-worker");
 }
 
 void

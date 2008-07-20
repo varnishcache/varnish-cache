@@ -65,17 +65,23 @@ THR_GetSession(void)
  * Name threads if our pthreads implementation supports it.
  */
 
+static pthread_key_t name_key;
+
 void
-THR_Name(const char *name)
+THR_SetName(const char *name)
 {
+
+	AZ(pthread_setspecific(name_key, name));
 #ifdef HAVE_PTHREAD_SET_NAME_NP
 	pthread_set_name_np(pthread_self(), name);
-#else
-	/*
-	 * XXX: we could stash it somewhere else (TLS ?)
-	 */
-	(void)name;
 #endif
+}
+
+const char *
+THR_GetName(void)
+{
+
+	return (pthread_getspecific(name_key));
 }
 
 /*--------------------------------------------------------------------
@@ -91,8 +97,9 @@ child_main(void)
 	printf("Child starts\n");
 
 	AZ(pthread_key_create(&sp_key, NULL));
+	AZ(pthread_key_create(&name_key, NULL));
 
-	THR_Name("cache-main");
+	THR_SetName("cache-main");
 
 	PAN_Init();
 	CLI_Init();

@@ -248,22 +248,30 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 {
 	int l;
 	char *p;
+	const char *q;
+	const struct sess *sp;
 
 	if (xxx) {
 		vsb_printf(vsp,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.\n",
+		    "  Condition(%s) not true.",
 		    func, file, line, cond);
 	} else {
 		vsb_printf(vsp,
 		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.\n",
+		    "  Condition(%s) not true.",
 		    func, file, line, cond);
 	}
 	if (err)
-		vsb_printf(vsp,
-		    "  errno = %d (%s)\n", err, strerror(err));
+		vsb_printf(vsp, "  errno = %d (%s)", err, strerror(err));
 
+	q = THR_GetName();
+	if (q != NULL)
+		vsb_printf(vsp, "  thread = (%s)", q);
+	sp = THR_GetSession();
+	if (sp != NULL)
+		vsb_printf(vsp, "  sess = (%p)", sp);
+	vsb_printf(vsp, "\n");
 	VSL_Panic(&l, &p);
 	if (l < vsb_len(vsp))
 		l = vsb_len(vsp);
