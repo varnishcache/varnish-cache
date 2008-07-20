@@ -52,6 +52,7 @@
 -esym(534, strcat)	// Ignoring return value of function
 -esym(534, strcpy)	// Ignoring return value of function
 -esym(534, strlcpy)	// Ignoring return value of function
+-esym(765, panicstr)	// Could be static
 
 -emacro(506, isnan, isfinite)	// constant value boolean
 -emacro(736, isfinite)	// loss of precision
