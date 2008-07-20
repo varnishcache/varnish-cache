@@ -17,3 +17,5 @@ varnish v1 -cli "param.set diag_bitmap 0x0"
 varnish v1 -start
 
 varnish v1 -cli "help"
+
+varnish v1 -cli "stats"
