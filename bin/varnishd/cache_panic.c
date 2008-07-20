@@ -231,7 +231,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 		l = sizeof(panicstr);
 	memcpy(p, panicstr, l);
 	if (params->diag_bitmap & 0x4000)
-		fputs(panicstr, stderr);
+		(void)fputs(panicstr, stderr);
 		
 #ifdef HAVE_ABORT2
 	if (params->diag_bitmap & 0x8000) {
@@ -245,7 +245,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	}
 #endif
 	if (params->diag_bitmap & 0x1000)
-		kill(getpid(), SIGUSR1);
+		(void)kill(getpid(), SIGUSR1);
 	else
 		abort();
 }
