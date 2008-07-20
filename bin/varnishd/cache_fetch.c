@@ -317,7 +317,6 @@ Fetch(struct sess *sp)
 	struct http_conn htc[1];
 	int i;
 
-AZ(sp);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
