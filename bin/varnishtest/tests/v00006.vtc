@@ -10,7 +10,7 @@ server s1 -listen 127.0.0.1:9080 {
 } -start
 
 # Only one pool, to avoid getting more than one work thread
-varnish v1 -arg "-p thread_pools=1" -vcl {
+varnish v1 -arg "-p thread_pools=1 -w1,1,300" -vcl {
 	backend b1 {
 		.host = "localhost";
 		.port = "9080";
