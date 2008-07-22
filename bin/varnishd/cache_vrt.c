@@ -478,6 +478,19 @@ VRT_r_server_ip(struct sess *sp)
 	return (sp->mysockaddr);
 }
 
+int
+VRT_r_server_port(struct sess *sp)
+{
+	char abuf[TCP_ADDRBUFSIZE];
+	char pbuf[TCP_PORTBUFSIZE];
+
+	if (sp->mysockaddr->sa_family == AF_UNSPEC)
+		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
+	TCP_name(sp->mysockaddr, sp->mysockaddrlen, abuf, sizeof abuf, pbuf, sizeof pbuf);
+
+	return (atoi(pbuf));
+}
+
 /*--------------------------------------------------------------------
  * Add an element to the array/list of hash bits.
  */

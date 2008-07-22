@@ -8,6 +8,7 @@
 
 struct sockaddr * VRT_r_client_ip(const struct sess *);
 struct sockaddr * VRT_r_server_ip(struct sess *);
+int VRT_r_server_port(struct sess *);
 const char * VRT_r_req_request(const struct sess *);
 void VRT_l_req_request(const struct sess *, const char *, ...);
 const char * VRT_r_req_url(const struct sess *);

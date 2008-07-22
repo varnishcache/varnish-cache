@@ -465,6 +465,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_client_ip(const struct sess *);\n");
 	vsb_cat(sb, "struct sockaddr * VRT_r_server_ip(struct sess *);\n");
+	vsb_cat(sb, "int VRT_r_server_port(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_request(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "const char * VRT_r_req_url(const struct sess *);\n");
