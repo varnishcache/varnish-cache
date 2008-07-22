@@ -98,6 +98,19 @@ pick(const struct choice *cp, const char *which, const char *kind)
 
 /*--------------------------------------------------------------------*/
 
+static unsigned long
+arg_ul(const char *p)
+{
+	char *q;
+	unsigned long ul;
+
+	ul = strtoul(p, &q, 0);
+	if (*q != '\0')
+		ARGV_ERR("Invalid number: \"%s\"\n", p);
+	return (ul);
+}
+
+/*--------------------------------------------------------------------*/
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
 
@@ -224,47 +237,35 @@ usage(void)
 static void
 tackle_warg(const char *argv)
 {
+	char **av;
 	unsigned int u;
-	char *ep, *eq;
 
-	u = strtoul(argv, &ep, 0);
-	if (ep == argv)
+	av = ParseArgv(argv, ARGV_COMMA);
+	AN(av);
+
+	if (av[0] != NULL) 
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL) 
 		usage();
-	while (isspace(*ep))
-		ep++;
+
+	u = arg_ul(av[1]);
 	if (u < 1)
 		usage();
-	params->wthread_min = u;
+	params->wthread_max = params->wthread_min = u;
 
-	if (*ep == '\0') {
-		params->wthread_max = params->wthread_min;
-		return;
+	if (av[2] != NULL) {
+		u = arg_ul(av[2]);
+		if (u < params->wthread_min)
+			usage();
+		params->wthread_max = u;
+
+		if (av[3] != NULL) {
+			u = arg_ul(av[3]);
+			params->wthread_timeout = u;
+		}
 	}
-
-	if (*ep != ',')
-		usage();
-	u = strtoul(++ep, &eq, 0);
-	if (eq == ep)
-		usage();
-	if (u < params->wthread_min)
-		usage();
-	while (isspace(*eq))
-		eq++;
-	params->wthread_max = u;
-
-	if (*eq == '\0')
-		return;
-
-	if (*eq != ',')
-		usage();
-	u = strtoul(++eq, &ep, 0);
-	if (ep == eq)
-		usage();
-	while (isspace(*ep))
-		ep++;
-	if (*ep != '\0')
-		usage();
-	params->wthread_timeout = u;
+	FreeArgv(av);
 }
 
 /*--------------------------------------------------------------------
