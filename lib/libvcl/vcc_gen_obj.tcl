@@ -1,4 +1,4 @@
-#!/usr/local/bin/tclsh8.4
+#!/usr/bin/tclsh8.4
 #-
 # Copyright (c) 2006 Verdens Gang AS
 # Copyright (c) 2006-2008 Linpro AS
@@ -51,7 +51,11 @@ set spobj {
 		{recv pipe pass hash miss hit fetch deliver                }
 		"struct sess *"
 	}
-
+	{ server.port
+		RO INT
+		{recv pipe pass hash miss hit fetch deliver                }
+		"struct sess *"
+	}
 	# Request paramters
 	{ req.request
 		RW STRING
