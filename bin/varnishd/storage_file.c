@@ -244,18 +244,26 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	struct stat st;
 	struct smf_sc *sc;
 	unsigned u;
+	uintmax_t page_size;
 
 	AZ(av[ac]);
 
 	fn = default_filename;
 	size = default_size;
+	page_size = getpagesize();
 
-	if (ac > 2)
+	if (ac > 3)
 		ARGV_ERR("(-sfile) too many arguments\n");
 	if (ac > 0 && *av[0] != '\0')
 		fn = av[0];
 	if (ac > 1 && *av[1] != '\0')
 		size = av[1];
+	if (ac > 2 && *av[2] != '\0') {
+
+		q = str2bytes(av[2], &page_size, 0);
+		if (q != NULL)
+			ARGV_ERR("(-sfile) granularity \"%s\": %s\n", av[2], q);
+	}
 
 	AN(fn);
 	AN(size);
@@ -266,7 +274,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	for (u = 0; u < NBUCKET; u++)
 		VTAILQ_INIT(&sc->free[u]);
 	VTAILQ_INIT(&sc->used);
-	sc->pagesize = getpagesize();
+	sc->pagesize = page_size;
 
 	parent->priv = sc;
 

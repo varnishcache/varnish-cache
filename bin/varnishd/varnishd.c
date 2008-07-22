@@ -204,6 +204,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
+	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>,<granularity>");
 	fprintf(stderr, FMT, "-t", "Default TTL");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
