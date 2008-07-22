@@ -297,7 +297,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	}
 #endif
 	if (params->diag_bitmap & 0x1000)
-		(void)kill(getpid(), SIGUSR1);
+		(void)exit(4);
 	else
 		abort();
 }
