@@ -92,6 +92,7 @@ MAC_STAT(shm_records,		uint64_t, 'a', "SHM records")
 MAC_STAT(shm_writes,		uint64_t, 'a', "SHM writes")
 MAC_STAT(shm_flushes,		uint64_t, 'a', "SHM flushes due to overflow")
 MAC_STAT(shm_cont,		uint64_t, 'a', "SHM MTX contention")
+MAC_STAT(shm_cycles,		uint64_t, 'a', "SHM cycles through buffer")
 
 MAC_STAT(sm_nreq,		uint64_t, 'a', "allocator requests")
 MAC_STAT(sm_nobj,		uint64_t, 'i', "outstanding allocations")
