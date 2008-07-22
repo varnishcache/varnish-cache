@@ -1,0 +1,41 @@
+# $Id: v00005.vtc 2906 2008-07-08 10:29:07Z phk $
+
+test "VCL: check panic and restart"
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: bar" -body "abcdef\n"
+	rxreq
+	txresp -hdr "Panic: please" -body "012345\n"
+	sema r1 sync 2
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_fetch {
+		if (obj.http.panic) {
+			panic "Had Panic header: " obj.http.panic;
+		}
+	}
+} -start -cli "param.set diag_bitmap 0x00001000"
+
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	txreq -url "/foo"
+	# Don't expect answer, the server crashed.
+	sema r1 sync 2
+	delay .5
+} -run
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: foo" -body "abcdef\n"
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.foo == "foo"
+} -run
