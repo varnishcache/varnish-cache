@@ -627,6 +627,20 @@ VRT_Rollback(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
+VRT_panic(struct sess *sp, const char *str, ...)
+{
+	va_list ap;
+	char *b;
+
+	va_start(ap, str);
+	b = vrt_assemble_string(sp->http, "PANIC: ", str, ap);
+	va_end(ap);
+	lbv_assert("VCL", "", 0, b, 0, 2);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 VRT_purge(const char *regexp, int hash)
 {
 	

@@ -422,6 +422,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "int VRT_re_test(struct vsb *, const char *, int sub);\n");
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all, const char *, void *, const char *);\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "void VRT_panic(struct sess *sp,  const char *, ...);\n");
 	vsb_cat(sb, "void VRT_purge(const char *, int hash);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "void VRT_count(const struct sess *, unsigned);\n");

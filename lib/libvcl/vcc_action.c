@@ -355,6 +355,24 @@ parse_esi(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_panic(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+	
+	Fb(tl, 1, "VRT_panic(sp, ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	do 
+		Fb(tl, 0, ", ");
+	while (vcc_StringVal(tl));
+	Fb(tl, 0, " 0);\n");
+}
+
+/*--------------------------------------------------------------------*/
+
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
@@ -367,15 +385,17 @@ static struct action_table {
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
-	{ "call", 	parse_call },
-	{ "set", 	parse_set },
-	{ "unset", 	parse_unset },
-	{ "remove", 	parse_unset }, /* backward compatibility */
-	{ "purge_url",	parse_purge_url },
-	{ "purge_hash",	parse_purge_hash },
-	{ "esi",	parse_esi },
 
-	{ NULL,		NULL }
+	/* Keep list sorted from here */
+	{ "call", 		parse_call },
+	{ "esi",		parse_esi },
+	{ "panic",		parse_panic },
+	{ "purge_hash",		parse_purge_hash },
+	{ "purge_url",		parse_purge_url },
+	{ "remove", 		parse_unset }, /* backward compatibility */
+	{ "set", 		parse_set },
+	{ "unset", 		parse_unset },
+	{ NULL,			NULL }
 };
 
 void
