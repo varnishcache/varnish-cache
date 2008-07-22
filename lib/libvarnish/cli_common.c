@@ -69,6 +69,53 @@ cli_out(struct cli *cli, const char *fmt, ...)
 }
 
 void
+cli_quote(struct cli *cli, const char *s)
+{
+	const char *q;
+	int quote = 0;
+
+	for (q = s; *q != '\0'; q++) {
+		if (!isgraph(*q) || *q == '"') {
+			quote++;
+			break;
+		}
+	}
+	if (!quote) {
+		(void)vsb_cat(cli->sb, s);
+		return;
+	}
+	(void)vsb_putc(cli->sb, '"');
+	for (q = s; *q != '\0'; q++) {
+		switch (*q) {
+		case ' ':
+			(void)vsb_putc(cli->sb, *q);
+			break;
+		case '\\':
+		case '"':
+			(void)vsb_putc(cli->sb, '\\');
+			(void)vsb_putc(cli->sb, *q);
+			break;
+		case '\n':
+			(void)vsb_cat(cli->sb, "\\n");
+			break;
+		case '\r':
+			(void)vsb_cat(cli->sb, "\\r");
+			break;
+		case '\t':
+			(void)vsb_cat(cli->sb, "\\t");
+			break;
+		default:
+			if (isgraph(*q))
+				(void)vsb_putc(cli->sb, *q);
+			else
+				(void)vsb_printf(cli->sb, "\\%o", *q);
+			break;
+		}
+	}
+	(void)vsb_putc(cli->sb, '"');
+}
+
+void
 cli_result(struct cli *cli, unsigned res)
 {
 
@@ -77,7 +124,6 @@ cli_result(struct cli *cli, unsigned res)
 	else
 		printf("CLI result = %d\n", res);
 }
-
 
 void
 cli_param(struct cli *cli)

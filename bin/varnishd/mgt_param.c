@@ -315,11 +315,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 
 	(void)par;
 	if (arg == NULL) {
-		/* Quote the string if we have more than one socket */
-		if (heritage.nsocks > 1)
-			cli_out(cli, "\"%s\"", master.listen_address);
-		else
-			cli_out(cli, "%s", master.listen_address);
+		cli_quote(cli, master.listen_address);
 		return;
 	}
 
@@ -348,7 +344,8 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 		int j, n;
 
 		if (VSS_parse(av[i], &host, &port) != 0) {
-			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
+			cli_out(cli, "Invalid listen address ");
+			cli_quote(cli, av[i]);
 			cli_result(cli, CLIS_PARAM);
 			break;
 		}
@@ -356,7 +353,8 @@ tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg
 		free(host);
 		free(port);
 		if (n == 0) {
-			cli_out(cli, "Invalid listen address \"%s\"", av[i]);
+			cli_out(cli, "Invalid listen address ");
+			cli_quote(cli, av[i]);
 			cli_result(cli, CLIS_PARAM);
 			break;
 		}
@@ -399,7 +397,7 @@ tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 	/* XXX should have tweak_generic_string */
 	(void)par;
 	if (arg == NULL) {
-		cli_out(cli, "%s", mgt_cc_cmd);
+		cli_quote(cli, mgt_cc_cmd);
 	} else {
 		free(mgt_cc_cmd);
 		mgt_cc_cmd = strdup(arg);
