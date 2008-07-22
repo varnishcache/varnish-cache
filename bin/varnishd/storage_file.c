@@ -239,7 +239,7 @@ static char default_filename[] = ".";
 static void
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
-	const char *size, *fn;
+	const char *size, *fn, *r;
 	char *q, *p;
 	struct stat st;
 	struct smf_sc *sc;
@@ -260,9 +260,9 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 		size = av[1];
 	if (ac > 2 && *av[2] != '\0') {
 
-		q = str2bytes(av[2], &page_size, 0);
-		if (q != NULL)
-			ARGV_ERR("(-sfile) granularity \"%s\": %s\n", av[2], q);
+		r = str2bytes(av[2], &page_size, 0);
+		if (r != NULL)
+			ARGV_ERR("(-sfile) granularity \"%s\": %s\n", av[2], r);
 	}
 
 	AN(fn);
