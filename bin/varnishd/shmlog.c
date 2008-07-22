@@ -74,6 +74,7 @@ vsl_wrap(void)
 	*logstart = SLT_ENDMARKER;
 	logstart[loghead->ptr] = SLT_WRAPMARKER;
 	loghead->ptr = 0;
+	VSL_stats->shm_cycles++;
 }
 
 static void
