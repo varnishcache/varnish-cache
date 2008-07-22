@@ -240,7 +240,7 @@ The following storage types are available:
 Storage for each object is allocated with
 .Xr malloc 3 .
 Not recommended for production use.
-.It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size
+.It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size Ns Op Ns , Ns Ar granularity
 Storage for each object is allocated from an arena backed by a file.
 This is the default.
 .Pp
@@ -285,6 +285,15 @@ performance.
 Pre-creating the storage file using
 .Xr dd 1
 will reduce fragmentation to a minimum.
+.Pp
+The
+.Ar granularity
+parameter specifies the granularity of allocation. All allocations are rounded up to this size.
+The size is assumed to be in bytes, unless followed by one of the suffixes described for
+.Ar size
+except for %.
+.Pp
+The default size is the VM page size. The size should be reduced if you have many small objects.
 .El
 .Ss Management Interface
 If the
