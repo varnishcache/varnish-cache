@@ -246,16 +246,24 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	const char *q;
 	const struct sess *sp;
 
-	if (xxx) {
+	switch(xxx) {
+	case 2:
+		vsb_printf(vsp,
+		    "Panic from VCL:\n%s\n", cond);
+		break;
+	case 1:
 		vsb_printf(vsp,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.",
 		    func, file, line, cond);
-	} else {
+		break;
+	default:
+	case 0:
 		vsb_printf(vsp,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.",
 		    func, file, line, cond);
+		break;
 	}
 	if (err)
 		vsb_printf(vsp, "  errno = %d (%s)", err, strerror(err));
