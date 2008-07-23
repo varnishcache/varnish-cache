@@ -214,8 +214,8 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 			break;
 		case PF_INET6:
 			sin6 = (void*)res->ai_addr;
-			assert(sizeof(sin4->sin_family) == 1);
-			assert(sizeof(sin4->sin_addr) == 16);
+			assert(sizeof(sin6->sin6_family) == 1);
+			assert(sizeof(sin6->sin6_addr) == 16);
 			u = (void*)&sin6->sin6_addr;
 			if (ae->t_mask == NULL)
 				ae->mask = 128;
