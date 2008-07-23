@@ -8,6 +8,7 @@
 -elib(123)  // size is both a variable and a macro with args
 -emacro(736, isnan)  // isnanf
 -efile(766, ../../config.h)
+-emacro(413, offsetof)	// likely null pointer
 
 
 // -header(../../config.h)
@@ -46,6 +47,7 @@
 -esym(534, memmove)	// Ignoring return value of function
 -esym(534, strcpy)	// Ignoring return value of function
 -esym(534, vsb_printf)	// Ignoring return value of function
+-esym(534, vsb_vprintf)	// Ignoring return value of function
 -esym(534, vsb_cat)	// Ignoring return value of function
 -esym(534, vsb_bcat)	// Ignoring return value of function
 -esym(534, vsb_putc)	// Ignoring return value of function
@@ -62,6 +64,8 @@
 -emacro(774, assert)	// booelan always true
 -emacro(774, HTTPH)	// always false
 -emacro(527, ARGV_ERR)	// unreachable
+
+-e788			// enum value not used in defaulted switch
 
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean

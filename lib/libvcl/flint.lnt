@@ -16,6 +16,8 @@
 			// 796 and 797 (out-of-bounds errors).
 
 
+-emacro(413, offsetof)	// likely null pointer
+
 // -ffc    // No automatic custody
 
 -esym(534, vsb_printf)	// Ignoring return value of function
