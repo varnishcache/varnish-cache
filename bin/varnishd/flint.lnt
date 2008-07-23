@@ -10,6 +10,8 @@
 -efile(766, ../../config.h)
 -emacro(413, offsetof)	// likely null pointer
 
+-emacro(702, WEXITSTATUS)	// signed shift right 
+
 
 // -header(../../config.h)
 
@@ -37,6 +39,10 @@
 -emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
+
+-esym(765, vcc_ProcAction) // could be made static
+-esym(759, vcc_ProcAction) // could be moved to module
+-esym(714, vcc_ProcAction) // not ref.
 
 -esym(534, sprintf)	// Ignoring return value of function
 -esym(534, asprintf)	// Ignoring return value of function

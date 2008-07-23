@@ -155,7 +155,7 @@ vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l, const un
 	AN(ae2);
 	*ae2 = *ae;
 
-	ae2->data[0] = fam;
+	ae2->data[0] = fam & 0xff;
 	ae2->mask += 8;	/* family matching */
 
 	memcpy(ae2->data + 1, u, l);
@@ -171,7 +171,7 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 	struct sockaddr_in *sin4;
 	struct sockaddr_in6 *sin6;
 	unsigned char *u, i4, i6;
-	int error, l;
+	int error;
 
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
@@ -204,21 +204,23 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 		switch(res->ai_family) {
 		case PF_INET:
 			sin4 = (void*)res->ai_addr;
+			assert(sizeof(sin4->sin_family) == 1);
+			assert(sizeof(sin4->sin_addr) == 4);
 			u = (void*)&sin4->sin_addr;
-			l = 4;
 			if (ae->t_mask == NULL)
 				ae->mask = 32;
 			i4++;
-			vcc_acl_emit_entry(tl, ae, l, u, res->ai_family);
+			vcc_acl_emit_entry(tl, ae, 4, u, res->ai_family);
 			break;
 		case PF_INET6:
 			sin6 = (void*)res->ai_addr;
+			assert(sizeof(sin4->sin_family) == 1);
+			assert(sizeof(sin4->sin_addr) == 16);
 			u = (void*)&sin6->sin6_addr;
-			l = 16;
 			if (ae->t_mask == NULL)
 				ae->mask = 128;
 			i6++;
-			vcc_acl_emit_entry(tl, ae, l, u, res->ai_family);
+			vcc_acl_emit_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
 			vsb_printf(tl->sb,

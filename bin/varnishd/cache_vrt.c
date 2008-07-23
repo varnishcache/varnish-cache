@@ -118,6 +118,7 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 
 /*--------------------------------------------------------------------*/
 
+/*lint -e{818} ap,hp could be const */
 static char *
 vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 {
@@ -419,6 +420,7 @@ VRT_l_req_backend(struct sess *sp, struct director *be)
 	sp->director = be;
 }
 
+/*lint -e{818} sp could be const */
 struct director *
 VRT_r_req_backend(struct sess *sp)
 {
@@ -450,6 +452,7 @@ VRT_l_req_grace(struct sess *sp, double a)
 	sp->grace = a;
 }
 
+/*lint -e{818} sp could be const */
 double
 VRT_r_req_grace(struct sess *sp)
 {
@@ -626,6 +629,7 @@ VRT_Rollback(struct sess *sp)
 	
 /*--------------------------------------------------------------------*/
 
+/*lint -e{818} sp could be const */
 void
 VRT_panic(struct sess *sp, const char *str, ...)
 {

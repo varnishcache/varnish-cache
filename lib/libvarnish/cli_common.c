@@ -68,6 +68,7 @@ cli_out(struct cli *cli, const char *fmt, ...)
 	va_end(ap);
 }
 
+/*lint -e{818} cli could be const */
 void
 cli_quote(struct cli *cli, const char *s)
 {

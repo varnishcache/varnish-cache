@@ -242,7 +242,7 @@ void
 vcc_ProcAction(struct proc *p, unsigned returns, struct token *t)
 {
 
-	p->returns |= (1 << returns);
+	p->returns |= (1U << returns);
 	/* Record the first instance of this return */
 	if (p->return_tok[returns] == NULL)
 		p->return_tok[returns] = t;
@@ -266,16 +266,15 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 	}
 	u = p->returns & ~returns;
 	if (u) {
-/*lint -e525 */
+/*lint -save -e525 -e539 */
 #define VCL_RET_MAC(a, b, c, d) \
 		if (u & VCL_RET_##b) { \
 			vsb_printf(tl->sb, "Invalid return \"%s\"\n", #a); \
 			vcc_ErrWhere(tl, p->return_tok[d]); \
 		}
-/*lint -e525 */
 #include "vcl_returns.h"
-/*lint +e525 */
 #undef VCL_RET_MAC
+/*lint -restore */
 		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n", PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
@@ -314,11 +313,12 @@ vcc_CheckAction(struct tokenlist *tl)
 			if (m->returns & c) \
 				vsb_printf(tl->sb, " \"%s\"", #a);
 #define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
-/*lint -e525 */
+/*lint -save -e525 -e539 */
 #include "vcl_returns.h"
 /*lint +e525 */
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
+/*lint -restore */
 			vsb_printf(tl->sb, "\n");
 			return (1);
 		}

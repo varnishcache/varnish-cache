@@ -191,7 +191,7 @@ vcc_IdIs(const struct token *t, const char *p)
  * Check that we have a C-identifier
  */
 
-int
+static int
 vcc_isCid(const struct token *t)
 {
 	const char *q;
@@ -266,7 +266,7 @@ vcc_decstr(struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return(1);
 		}
-		u = vcc_xdig(p[1]) * 16 + vcc_xdig(p[2]);
+		u = (vcc_xdig(p[1]) * 16 + vcc_xdig(p[2])) & 0xff;
 		if (!isgraph(u)) {
 			vcc_AddToken(tl, CSTR, p, p + 3);
 			vsb_printf(tl->sb,
@@ -301,12 +301,6 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
 	else
 		VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
-	if (0) {
-		fprintf(stderr, "[%s %.*s] ",
-		    vcl_tnames[tok], PF(t));
-		if (tok == EOI)
-			fprintf(stderr, "\n");
-	}
 }
 
 /*--------------------------------------------------------------------

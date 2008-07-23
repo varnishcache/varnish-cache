@@ -544,6 +544,7 @@ mgt_run(int dflag, const char *T_arg)
 
 /*--------------------------------------------------------------------*/
 
+/*lint -e{818} priv could be const */
 void
 mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 {
