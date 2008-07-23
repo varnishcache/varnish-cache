@@ -319,7 +319,7 @@ vcc_acl_entry(struct tokenlist *tl)
 }
 
 static void
-vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent)
+vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char *pfx)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -327,7 +327,8 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent)
 	const char *oc;
 
 	Fh(tl, 0, "\nstatic int\n");
-	Fh(tl, 0, "match_acl_%s(const struct sess *sp, const void *p)\n", acln);
+	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
+	    pfx, acln);
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tunsigned fam;\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
@@ -421,7 +422,7 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
-		Fb(tl, 1, "match_acl_%.*s(sp, %s)\n", PF(tl->t), vp->rname);
+		Fb(tl, 1, "match_acl_named_%.*s(sp, %s)\n", PF(tl->t), vp->rname);
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:
@@ -430,11 +431,11 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		VTAILQ_INIT(&tl->acl);
 		tcond = tl->t->tok;
 		vcc_NextToken(tl);
-		asprintf(&acln, "acl_%u", tl->cnt);
+		asprintf(&acln, "%u", tl->cnt);
 		assert(acln != NULL);
 		vcc_acl_entry(tl);
-		vcc_acl_bot(tl, acln, 1);
-		Fb(tl, 1, "%smatch_acl_%s(sp, %s)\n",
+		vcc_acl_bot(tl, acln, 1, "anon");
+		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
 		    (tcond == T_NEQ ? "!" : ""), acln, vp->rname);
 		free(acln);
 		break;
@@ -477,7 +478,7 @@ vcc_Acl(struct tokenlist *tl)
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
 
-	vcc_acl_bot(tl, acln, 0);
+	vcc_acl_bot(tl, acln, 0, "named");
 
 	free(acln);
 }
