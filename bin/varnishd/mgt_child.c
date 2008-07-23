@@ -168,7 +168,10 @@ child_poker(const struct vev *e, int what)
 	REPORT(LOG_ERR,
 	    "Child (%d) not responding to ping, killing it.",
 	    child_pid);
-	(void)kill(child_pid, SIGKILL);
+	if (params->diag_bitmap & 0x1000)
+		(void)kill(child_pid, SIGKILL);
+	else
+		(void)kill(child_pid, SIGQUIT);
 	return (0);
 }
 
