@@ -175,7 +175,7 @@ server_wait(struct server *s)
 		    (char *)res);
 		exit (1);
 	}
-	s->tp = NULL;
+	s->tp = 0;
 	AZ(close(s->sock));
 	s->sock = -1;
 }
