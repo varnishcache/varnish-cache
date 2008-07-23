@@ -140,7 +140,7 @@ client_wait(struct client *c)
 		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
 		exit (1);
 	}
-	c->tp = NULL;
+	c->tp = 0;
 }
 
 /**********************************************************************
@@ -172,7 +172,7 @@ cmd_client(CMD_ARGS)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(c, &clients, list, c2) {
 			VTAILQ_REMOVE(&clients, c, list);
-			if (c->tp != NULL)
+			if (c->tp != 0)
 				client_wait(c);
 			FREE_OBJ(c);
 			/* XXX: MEMLEAK */
