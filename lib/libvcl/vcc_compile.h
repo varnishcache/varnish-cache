@@ -35,6 +35,8 @@
 
 #define INDENT		2
 
+struct acl_e;
+
 struct membit {
 	VTAILQ_ENTRY(membit)	list;
 	void			*ptr;
@@ -84,6 +86,8 @@ struct tokenlist {
 	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
 	struct proc		*mprocs[N_METHODS];
+
+	VTAILQ_HEAD(, acl_e)	acl;
 
 	unsigned		recnt;
 	unsigned		nhashcount;

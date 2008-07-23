@@ -33,81 +33,381 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "vsb.h"
+#include "vrt.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
 
-static void
-vcc_acl_top(struct tokenlist *tl, const char *acln)
+struct acl_e {
+	VTAILQ_ENTRY(acl_e)	list;
+	unsigned char		data[VRT_ACL_MAXADDR + 1];
+	unsigned 		mask;
+	unsigned		not;
+	unsigned		para;
+	struct token		*t_addr;
+	struct token		*t_mask;
+};
+
+/* Compare two acl rules for ordering */
+
+static int
+vcl_acl_cmp(struct tokenlist *tl, struct acl_e *ae1, struct acl_e *ae2)
 {
+	unsigned char *p1, *p2;
+	unsigned m;
 
-	Fh(tl, 1, "\nstatic struct vrt_acl acl_%s[] = {\n", acln);
-	tl->hindent += INDENT;
+	(void)tl;
+	p1 = ae1->data;
+	p2 = ae2->data;
+	m = ae1->mask;
+	if (ae2->mask < m)
+		m = ae2->mask;
+	for (; m >= 8; m -= 8) {
+		if (*p1 < *p2)	
+			return (-1);
+		if (*p1 > *p2)	
+			return (1);
+		p1++;
+		p2++;
+	}
+	if (m) {
+		m = 0xff00 >> m;
+		m &= 0xff;
+		if ((*p1 & m) < (*p2 & m))
+			return (-1);
+		if ((*p1 & m) > (*p2 & m))
+			return (1);
+	}
+	if (ae1->mask > ae2->mask)
+		return (-1);
+	if (ae1->mask < ae2->mask)
+		return (1);
 
+	return (0);
+}
+
+
+static void
+vcl_acl_add_entry(struct tokenlist *tl, struct acl_e *ae)
+{
+	struct acl_e *ae2;
+	int i;
+
+	VTAILQ_FOREACH(ae2, &tl->acl, list) {
+		i = vcl_acl_cmp(tl, ae, ae2);
+		if (i == 0) {
+			/* If the two rules agree, silently ignore it */
+			if (ae->not == ae2->not)
+				return;
+			vsb_printf(tl->sb, "Conflicting ACL entries:\n");
+			vcc_ErrWhere(tl, ae2->t_addr);
+			vsb_printf(tl->sb, "vs:\n");
+			vcc_ErrWhere(tl, ae->t_addr);
+			return;
+		}
+		/*
+		 * We could eliminate pointless rules here, for instance in:
+		 *	"10.1.0.1";
+		 *	"10.1";
+		 * The first rule is clearly pointless, as the second one
+		 * covers it.
+		 *
+		 * We do not do this however, because the shmlog may
+		 * be used to gather statistics.
+		 */
+		if (i < 0) {
+			VTAILQ_INSERT_BEFORE(ae2, ae, list);
+			return;
+		}
+	}
+	VTAILQ_INSERT_TAIL(&tl->acl, ae, list);
+}
+
+static void
+vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l, const unsigned char *u, int fam)
+{
+	struct acl_e *ae2;
+
+	if (fam == PF_INET && ae->mask > 32) {
+		vsb_printf(tl->sb,
+		    "Too wide mask (%u) for IPv4 address", ae->mask);
+		vcc_ErrWhere(tl, ae->t_mask);
+		return;
+	}
+	if (fam == PF_INET6 && ae->mask > 128) {
+		vsb_printf(tl->sb,
+		    "Too wide mask (%u) for IPv6 address", ae->mask);
+		vcc_ErrWhere(tl, ae->t_mask);
+		return;
+	}
+
+	ae2 = TlAlloc(tl, sizeof *ae2);
+	AN(ae2);
+	*ae2 = *ae;
+
+	ae2->data[0] = fam;
+	ae2->mask += 8;	/* family matching */
+
+	memcpy(ae2->data + 1, u, l);
+
+	vcl_acl_add_entry(tl, ae2);
+
+}
+
+static void
+vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
+{
+	struct addrinfo *res0, *res, hint;
+	struct sockaddr_in *sin4;
+	struct sockaddr_in6 *sin6;
+	unsigned char *u, i4, i6;
+	int error, l;
+
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+	error = getaddrinfo(ae->t_addr->dec, "0", &hint, &res0);
+	if (error) {
+		if (ae->para) {
+			vsb_printf(tl->sb,
+			    "Warning: %s ignored\n  -- %s\n",
+			    ae->t_addr->dec, gai_strerror(error));
+			Fh(tl, 1, "/* Ignored ACL entry: %s%s",
+			    ae->para ? "\"(\" " : "", ae->not ? "\"!\" " : "");
+			EncToken(tl->fh, ae->t_addr);
+			if (ae->t_mask) 
+				Fh(tl, 0, "/%u", ae->mask);
+			Fh(tl, 0, "%s\n", ae->para ? " \")\"" : "");
+			Fh(tl, 1, " * getaddrinfo:  %s */\n",
+			     gai_strerror(error));
+		} else {
+			vsb_printf(tl->sb,
+			    "DNS lookup(%s): %s\n",
+			    ae->t_addr->dec, gai_strerror(error));
+			vcc_ErrWhere(tl, ae->t_addr);
+		}
+		return;
+	}
+
+	i4 = i6 = 0;
+	for(res = res0; res != NULL; res = res->ai_next) {
+		switch(res->ai_family) {
+		case PF_INET:
+			sin4 = (void*)res->ai_addr;
+			u = (void*)&sin4->sin_addr;
+			l = 4;
+			if (ae->t_mask == NULL)
+				ae->mask = 32;
+			i4++;
+			vcc_acl_emit_entry(tl, ae, l, u, res->ai_family);
+			break;
+		case PF_INET6:
+			sin6 = (void*)res->ai_addr;
+			u = (void*)&sin6->sin6_addr;
+			l = 16;
+			if (ae->t_mask == NULL)
+				ae->mask = 128;
+			i6++;
+			vcc_acl_emit_entry(tl, ae, l, u, res->ai_family);
+			break;
+		default:
+			vsb_printf(tl->sb,
+			    "Ignoring unknown protocol family (%d) for %.*s\n",
+				res->ai_family, PF(ae->t_addr));
+			continue;
+		}
+		ERRCHK(tl);
+	}
+	freeaddrinfo(res0);
+
+	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
+		vsb_printf(tl->sb,
+		    "Mask (%u) specified, but string resolves to"
+		    " both IPv4 and IPv6 addresses.\n", ae->mask);
+		vcc_ErrWhere(tl, ae->t_mask);
+		return;
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Ancient stupidity on the part of X/Open and other standards orgs
+ * dictate that "192.168" be translated to 192.0.0.168.  Ever since
+ * CIDR happened, "192.168/16" notation has been used, but appearantly
+ * no API supports parsing this, so roll our own.
+ */
+
+static int
+vcc_acl_try_netnotation(struct tokenlist *tl, struct acl_e *ae)
+{
+	unsigned char b[4];
+	int i, j, k;
+	const char *p;
+
+	memset(b, 0, sizeof b);
+	p = ae->t_addr->dec;
+	for (i = 0; i < 4; i++) {
+		j = sscanf(p, "%hhu%n", &b[i], &k);
+		if (j != 1)
+			return (0);
+		if (p[k] == '\0')
+			break;
+		if (p[k] != '.')
+			return (0);
+		p += k + 1;
+	}
+	if (ae->t_mask == NULL)
+		ae->mask = 8 + 8 * i;
+	vcc_acl_emit_entry(tl, ae, 4, b, AF_INET);
+	return (1);
 }
 
 static void
 vcc_acl_entry(struct tokenlist *tl)
 {
-	unsigned mask, para, not;
-	struct token *t;
+	struct acl_e *ae;
 
-	not = para = mask = 0;
+	ae = TlAlloc(tl, sizeof *ae);
+	AN(ae);
 
-	if (tl->t->tok == '(') {
-		para = 1;
+	if (tl->t->tok == '!') {
+		ae->not = 1;
 		vcc_NextToken(tl);
 	}
 
-	if (tl->t->tok == '!') {
-		not = 1;
+	if (tl->t->tok == '(') {
+		ae->para = 1;
+		vcc_NextToken(tl);
+	}
+
+	if (!ae->not && tl->t->tok == '!') {
+		ae->not = 1;
 		vcc_NextToken(tl);
 	}
 
 	ExpectErr(tl, CSTR);
-	/* XXX: try to look it up, warn if failure */
-	t = tl->t;
+	ae->t_addr = tl->t;
 	vcc_NextToken(tl);
+
 	if (tl->t->tok == '/') {
 		vcc_NextToken(tl);
+		ae->t_mask = tl->t;
 		ExpectErr(tl, CNUM);
-		mask = vcc_UintVal(tl);
+		ae->mask = vcc_UintVal(tl);
 		vcc_NextToken(tl);
 	}
-	Fh(tl, 1, "{ %u, %u, %u, ", not, mask, para);
-	EncToken(tl->fh, t);
-	Fh(tl, 0, ", \"");
-	if (para)
-		Fh(tl, 0, "(");
-	if (not)
-		Fh(tl, 0, "!");
-	Fh(tl, 0, "\\\"\" ");
-	EncToken(tl->fh, t);
-	Fh(tl, 0, " \"\\\"");
-	if (mask)
-		Fh(tl, 0, "/%u", mask);
-	if (para)
-		Fh(tl, 0, ")");
-	Fh(tl, 0, "\" },\n");
 
-	if (para) {
+	if (ae->para) {
 		ExpectErr(tl, ')');
 		vcc_NextToken(tl);
 	}
+
+	if (!vcc_acl_try_netnotation(tl, ae)) {
+		ERRCHK(tl);
+		vcc_acl_try_getaddrinfo(tl, ae);
+	}
+	ERRCHK(tl);
 }
 
 static void
-vcc_acl_bot(struct tokenlist *tl, const char *acln)
+vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent)
 {
+	struct acl_e *ae;
+	int depth, l, m, i;
+	unsigned at[VRT_ACL_MAXADDR + 1];
+	const char *oc;
 
-	Fh(tl, 1, "{ 0, 0, 0, (void*)0, ""}\n", 0, 0);
-	tl->hindent -= INDENT;
-	Fh(tl, 1, "};\n");
-	Fi(tl, 1, "\tVRT_acl_init(acl_%s);\n", acln);
-	Ff(tl, 1, "\tVRT_acl_fini(acl_%s);\n", acln);
+	Fh(tl, 0, "\nstatic int\n");
+	Fh(tl, 0, "match_acl_%s(const struct sess *sp, const void *p)\n", acln);
+	Fh(tl, 0, "{\n");
+	Fh(tl, 0, "\tunsigned fam;\n");
+	Fh(tl, 0, "\tconst unsigned char *a;\n");
+	Fh(tl, 0, "\n");
+	Fh(tl, 0, "\ta = p;\n");
+	Fh(tl, 0, "\tfam = a[%d];\n", offsetof(struct sockaddr, sa_family));
+	Fh(tl, 0, "\tif (fam == %d)\n", PF_INET);
+	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in, sin_addr));
+	Fh(tl, 0, "\telse if (fam == %d)\n", PF_INET6);
+	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in6, sin6_addr));
+	Fh(tl, 0, "\telse\n");
+	Fh(tl, 0, "\t\treturn(0);\n");
+	Fh(tl, 0, "\n");
+	depth = -1;
+	oc = 0;
+	at[0] = 256;
+	VTAILQ_FOREACH(ae, &tl->acl, list) {
+
+		/* Find how much common prefix we have */
+		for (l = 0; l <= depth && l * 8 < ae->mask; l++) {
+			assert(l >= 0);
+			if (ae->data[l] != at[l])
+				break;
+		}
+
+		/* Back down, if necessary */
+		oc = "";
+		while (l <= depth) {
+			Fh(tl, 0, "\t%*s}\n",
+			    -depth, "");
+			depth--;
+			oc = "else ";
+		}
+		m = ae->mask;
+		m -= l * 8;
+		for (i = l; m >= 8; m -= 8, i++) {
+			if (i == 0) {
+				Fh(tl, 0, "\t%*s%sif (fam == %d) {\n",
+				    -i, "", oc, ae->data[i]);
+			} else {
+				Fh(tl, 0, "\t%*s%sif (a[%d] == %d) {\n",
+				    -i, "", oc, i - 1, ae->data[i]);
+			}
+			at[i] = ae->data[i];
+			depth = i;
+			oc = "";
+		}
+		if (m > 0) {
+			Fh(tl, 0, "\t%*s%sif ((a[%d] & 0x%x) == %d) {\n",
+			    -i, "",
+			    oc,
+			    i, (0xff00 >> m) & 0xff,
+			    ae->data[i] & ((0xff00 >> m) & 0xff));
+			at[i] = 256;
+			depth = i;
+			oc = "";
+		}
+
+		i = (ae->mask + 7) / 8;
+
+		if (!silent) {
+			Fh(tl, 0, "\t%*sVRT_acl_log(sp, \"%sMATCH %s \" ",
+			    -i, "",
+			    ae->not ? "NEG_" : "",
+			    acln,
+			    PF(ae->t_addr));
+			EncToken(tl->fh, ae->t_addr);
+			if (ae->t_mask != NULL)
+				Fh(tl, 0, " \"/%.*s\" ", PF(ae->t_mask));
+			Fh(tl, 0, ");\n");
+		}
+
+		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
+	}
+
+	for (; 0 <= depth; depth--) 
+		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
+	if (!silent)
+		Fh(tl, 0, "\tVRT_acl_log(sp, \"NO_MATCH %s\");\n", acln);
+	Fh(tl, 0, "\treturn (0);\n}\n");
 }
 
 void
@@ -121,21 +421,21 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
-		Fb(tl, 1, "VRT_acl_match(sp, %s, \"%.*s\", acl_%.*s)\n",
-		    vp->rname, PF(tl->t), PF(tl->t));
+		Fb(tl, 1, "match_acl_%.*s(sp, %s)\n", PF(tl->t), vp->rname);
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:
 	case T_NEQ:
+
+		VTAILQ_INIT(&tl->acl);
 		tcond = tl->t->tok;
 		vcc_NextToken(tl);
 		asprintf(&acln, "acl_%u", tl->cnt);
 		assert(acln != NULL);
-		vcc_acl_top(tl, acln);
 		vcc_acl_entry(tl);
-		vcc_acl_bot(tl, acln);
-		Fb(tl, 1, "%sVRT_acl_match(sp, %s, 0, acl_%s)\n",
-		    (tcond == T_NEQ ? "!" : ""), vp->rname, acln);
+		vcc_acl_bot(tl, acln, 1);
+		Fb(tl, 1, "%smatch_acl_%s(sp, %s)\n",
+		    (tcond == T_NEQ ? "!" : ""), acln, vp->rname);
 		free(acln);
 		break;
 	default:
@@ -155,6 +455,7 @@ vcc_Acl(struct tokenlist *tl)
 	char *acln;
 
 	vcc_NextToken(tl);
+	VTAILQ_INIT(&tl->acl);
 
 	ExpectErr(tl, ID);
 	an = tl->t;
@@ -163,8 +464,6 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_AddDef(tl, an, R_ACL);
 	asprintf(&acln, "%.*s", PF(an));
 	assert(acln != NULL);
-
-	vcc_acl_top(tl, acln);
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
@@ -178,7 +477,7 @@ vcc_Acl(struct tokenlist *tl)
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
 
-	vcc_acl_bot(tl, acln);
+	vcc_acl_bot(tl, acln, 0);
 
 	free(acln);
 }

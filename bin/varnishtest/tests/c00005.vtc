@@ -33,7 +33,7 @@ client c1 -run
 
 varnish v1 -vcl+backend {
 	acl acl1 {
-		"!127.0.0.1";
+		! "127.0.0.1";
 	}
 
 	sub vcl_recv {

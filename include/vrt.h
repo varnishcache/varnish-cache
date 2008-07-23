@@ -120,19 +120,10 @@ struct vrt_ref {
 	const char	*token;
 };
 
-struct vrt_acl {
-	unsigned char	not;
-	unsigned char	mask;
-	unsigned char	paren;
-	const char	*name;
-	const char	*desc;
-	void		*priv;
-};
-
 /* ACL related */
-int VRT_acl_match(const struct sess *, struct sockaddr *, const char *, const struct vrt_acl *);
-void VRT_acl_init(struct vrt_acl *);
-void VRT_acl_fini(struct vrt_acl *);
+#define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
+
+void VRT_acl_log(const struct sess *, const char *msg);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *, int sub);
