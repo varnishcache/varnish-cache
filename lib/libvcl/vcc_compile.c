@@ -415,7 +415,7 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 	assert(f != NULL);
 	i = read(fd, f, st.st_size);
 	assert(i == st.st_size);
-	close(fd);
+	AZ(close(fd));
 	f[i] = '\0';
 	sp = vcc_new_source(f, f + i, fn);
 	sp->freeit = f;
@@ -610,13 +610,11 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Check that all action returns are legal */
-	vcc_CheckAction(tl);
-	if (tl->err)
+	if (vcc_CheckAction(tl) || tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Check that all variable uses are legal */
-	vcc_CheckUses(tl);
-	if (tl->err)
+	if (vcc_CheckUses(tl) || tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Emit method functions */
