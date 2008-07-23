@@ -221,8 +221,6 @@ varnish_launch(struct varnish *v)
 	vsb_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
-	v->stats = VSL_OpenStats(v->name);
-
 	vtc_log(v->vl, 3, "opening CLI connection");
 	for (i = 0; i < 10; i++) {
 		(void)usleep(200000);
@@ -237,6 +235,8 @@ varnish_launch(struct varnish *v)
 	}
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
+	v->stats = VSL_OpenStats(v->name);
+
 }
 
 /**********************************************************************
