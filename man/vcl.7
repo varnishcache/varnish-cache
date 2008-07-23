@@ -507,13 +507,22 @@ backend default {
 }
 
 sub vcl_recv {
-    if (req.request != "GET" && req.request != "HEAD") {
+    if (req.request != "GET" &&
+      req.request != "HEAD" &&
+      req.request != "PUT" &&
+      req.request != "POST" &&
+      req.request != "TRACE" &&
+      req.request != "OPTIONS" &&
+      req.request != "DELETE") {
         pipe;
     }
     if (req.http.Expect) {
         pipe;
     }
-    if (req.http.Authenticate || req.http.Cookie) {
+    if (req.request != "GET" && req.request != "HEAD") {
+        pass;
+    }
+    if (req.http.Authorization || req.http.Cookie) {
         pass;
     }
     lookup;
@@ -529,7 +538,11 @@ sub vcl_pass {
 
 sub vcl_hash {
     set req.hash += req.url;
-    set req.hash += req.http.host;
+    if (req.http.host) {
+        set req.hash += req.http.host;
+    } else {
+        set req.hash += server.ip;
+    }
     hash;
 }
 
@@ -546,7 +559,7 @@ sub vcl_miss {
 
 sub vcl_fetch {
     if (!obj.valid) {
-        error;
+        error obj.status;
     }
     if (!obj.cacheable) {
         pass;
@@ -554,18 +567,18 @@ sub vcl_fetch {
     if (obj.http.Set-Cookie) {
         pass;
     }
-    insert;
+	 set obj.prefetch =  -30s;    insert;
 }
 
 sub vcl_deliver {
     deliver;
 }
 
-sub vcl_timeout {
+sub vcl_discard {
     discard;
 }
 
-sub vcl_discard {
+sub vcl_timeout {
     discard;
 }
 .Ed
