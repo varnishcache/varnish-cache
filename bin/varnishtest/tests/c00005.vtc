@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test simple ACL"
+test "Test simple ACL (May fail on Linux)"
 
 server s1 {
 	rxreq
