@@ -208,7 +208,6 @@ void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
 int vcc_Teq(const struct token *t1, const struct token *t2);
 int vcc_IdIs(const struct token *t, const char *p);
-int vcc_isCid(const struct token *t);
 void vcc_ExpectCid(struct tokenlist *tl);
 void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
