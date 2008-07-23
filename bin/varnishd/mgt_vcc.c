@@ -393,16 +393,27 @@ mgt_vcc_del(struct vclprog *vp)
 	free(vp);
 }
 
+static struct vclprog *
+mgt_vcc_byname(const char *name)
+{
+	struct vclprog *vp;
+
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		if (!strcmp(name, vp->name))
+			return (vp);
+	return (NULL);
+}
+
+
 static int
 mgt_vcc_delbyname(const char *name)
 {
 	struct vclprog *vp;
 
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (!strcmp(name, vp->name)) {
-			mgt_vcc_del(vp);
-			return (0);
-		}
+	vp = mgt_vcc_byname(name);
+	if (vp != NULL) {
+		mgt_vcc_del(vp);
+		return (0);
 	}
 	return (1);
 }
@@ -541,9 +552,17 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 	char *vf, *p = NULL;
 	struct vsb *sb;
 	unsigned status;
+	struct vclprog *vp;
 
 	(void)priv;
 
+	vp = mgt_vcc_byname(av[2]);
+	if (vp != NULL) {
+		cli_out(cli, "Already a VCL program named %s", av[2]);
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+	
 	sb = vsb_newauto();
 	XXXAN(sb);
 	vf = mgt_VccCompile(sb, av[3], NULL, 0);
@@ -575,8 +594,15 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	struct vsb *sb;
 	unsigned status;
 	char *p = NULL;
+	struct vclprog *vp;
 
 	(void)priv;
+	vp = mgt_vcc_byname(av[2]);
+	if (vp != NULL) {
+		cli_out(cli, "Already a VCL program named %s", av[2]);
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
 
 	sb = vsb_newauto();
 	XXXAN(sb);
@@ -607,9 +633,9 @@ mcf_find_vcl(struct cli *cli, const char *name)
 {
 	struct vclprog *vp;
 
-	VTAILQ_FOREACH(vp, &vclhead, list)
-		if (!strcmp(vp->name, name))
-			return (vp);
+	vp = mgt_vcc_byname(name);
+	if (vp != NULL)
+		return (vp);
 	cli_result(cli, CLIS_PARAM);
 	cli_out(cli, "No configuration named %s known.", name);
 	return (NULL);
