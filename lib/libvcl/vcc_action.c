@@ -108,7 +108,11 @@ parse_error(struct tokenlist *tl)
 		vcc_NextToken(tl);
 	} else if (tl->t->tok == VAR) {
 		Fb(tl, 0, ", ");
-		vcc_StringVal(tl);
+		if (!vcc_StringVal(tl)) {
+			ERRCHK(tl);
+			vcc_ExpectedStringval(tl);
+			return;
+		}
 	} else {
 		Fb(tl, 0, ", (const char *)0");
 	}
