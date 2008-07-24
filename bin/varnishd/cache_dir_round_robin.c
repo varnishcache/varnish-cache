@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2008 Linpro AS
  * All rights reserved.
  *
  * Author: Petter Knudsen <petter@linpro.no>
