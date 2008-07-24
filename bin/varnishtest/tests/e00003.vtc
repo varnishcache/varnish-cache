@@ -6,6 +6,7 @@ test "ESI include"
 server s1 {
 	rxreq 
 	txresp -body {
+		<html>
 		Before include
 		<esi:include src="/body"/>
 		After include

@@ -7,6 +7,7 @@ server s1 {
 	rxreq 
 	expect req.url == "/foo/bar"
 	txresp -body {
+		<html>
 		Before include
 		<!--esi <esi:include src="body"/> -->
 		After include
