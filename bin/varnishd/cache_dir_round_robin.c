@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: cache_dir_round_robin.c 2906 2008-07-08 10:29:07Z phk $
+ * $Id$
  *
  */
 

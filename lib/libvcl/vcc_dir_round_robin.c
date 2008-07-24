@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: vcc_dir_random.c 2900 2008-07-08 07:30:42Z phk $
+ * $Id$
  */
 
 #include "config.h"
