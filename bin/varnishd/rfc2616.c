@@ -60,106 +60,101 @@
  * choice.
  *
  * Varnish implements a policy which is RFC2616 compliant when there
- * is no clockskew, and falls back to a new "clockless cache" mode otherwise.
+ * is no clockskew, and falls as gracefully as possible otherwise.
  * Our "clockless cache" model is syntehsized from the bits of RFC2616
  * that talks about how a cache should react to a clockless origin server,
- * and more or uses the inverse logic for the opposite relationship.
+ * and more or less uses the inverse logic for the opposite relationship.
  *
  */
-
-#if PSEUDO_CODE
-	/* Marker for no retirement age determined */
-	retirement_age = INT_MAX
-
-	/* If we have a max-age directive, respect it */
-	if (max-age)
-		retirement_age = max(0,min(retirement_age, max-age - Age:))
-
-	/* If Date: is not in future and Expires: looks sensible, use it */
-	if ((!date || date < our_clock) && expires > our_clock) {
-		ttd = min(our_clock + retirement_age, Expires:)
-
-	/* Otherwise we have clock-skew */
-	} else {
-		/* If we have both date and expires, infer max-age */
-		if (date && expires)
-			retirement_age =
-			    max(0, min(retirement_age, Expires: - Date:)
-
-		/* Apply default_ttl if nothing better found */
-		if (retirement_age == INT_MAX)
-			retirement_age = default_ttl
-
-		/* Apply the max-age we can up with */
-		ttd = our_clock + retirement_age
-	}
-
-	/* Apply hard limits */
-	ttd = max(ttd, our_clock + hard_lower_ttl)
-	ttd = min(ttd, our_clock + hard_upper_ttl)
-#endif
 
 static double
 RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 {
-	int retirement_age;
-	unsigned u1, u2;
+	int ttl;
+	unsigned max_age, age;
 	double h_date, h_expires, ttd;
 	char *p;
 
-	retirement_age = INT_MAX;
+	/* If all else fails, cache using default ttl */
+	ttl = params->default_ttl;
 
-	u1 = u2 = 0;
-	if ((http_GetHdrField(hp, H_Cache_Control, "s-maxage", &p) ||
-	    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) &&
-	    p != NULL) {
-		u1 = strtoul(p, NULL, 0);
-		u2 = 0;
-		if (http_GetHdr(hp, H_Age, &p)) {
-			u2 = strtoul(p, NULL, 0);
-			obj->age = u2;
-		}
-		if (u2 <= u1)
-			retirement_age = u1 - u2;
-	}
-
-	/*
-	 * XXX: if the backends time is too skewed relative to our own
-	 * XXX: we should blacklist the backend, to avoid getting totally
-	 * XXX: bogus results further down.  Exactly what "too skewed" means
-	 * XXX: in this context is a good question.  It could be determined
-	 * XXX: out according to the backends headers, but a simple fixed
-	 * XXX: tolerance of a minute either way would be more predictable.
-	 */
-	h_date = 0;
-	if (http_GetHdr(hp, H_Date, &p))
-		h_date = TIM_parse(p);
-
+	max_age = age = 0;
+	ttd = 0;
 	h_expires = 0;
-	if (http_GetHdr(hp, H_Expires, &p))
-		h_expires = TIM_parse(p);
+	h_date = 0;
 
-	if (h_date < obj->entered && h_expires > obj->entered) {
-		ttd = h_expires;
-		if (retirement_age != INT_MAX &&
-		    obj->entered + retirement_age < ttd)
-			ttd = obj->entered + retirement_age;
-	} else {
-		if (h_date != 0 && h_expires != 0) {
-			if (h_date < h_expires &&
-			    h_expires - h_date < retirement_age)
-				retirement_age = h_expires - h_date;
+	do {	/* Allows us to break when we want out */
+
+		/*
+		 * First find any relative specification from the backend
+		 * These take precedence according to RFC2616, 13.2.4
+		 */
+
+		if ((http_GetHdrField(hp, H_Cache_Control, "s-maxage", &p) ||
+		    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) &&
+		    p != NULL) {
+
+			max_age = strtoul(p, NULL, 0);
+			if (http_GetHdr(hp, H_Age, &p)) {
+				age = strtoul(p, NULL, 0);
+				obj->age = age;
+			}
+
+			if (age > max_age)
+				ttl = 0;
+			else
+				ttl = max_age - age;
+			break;
 		}
-		if (retirement_age == INT_MAX)
-			retirement_age = params->default_ttl;
 
-		ttd = obj->entered + retirement_age;
-	}
+		/* Next look for absolute specifications from backend */
+
+		if (http_GetHdr(hp, H_Expires, &p))
+			h_expires = TIM_parse(p);
+		if (h_expires == 0)
+			break;
+
+		if (http_GetHdr(hp, H_Date, &p))
+			h_date = TIM_parse(p);
+
+		/* If backend told us it is expired already, don't cache. */
+		if (h_expires < h_date) {
+			ttl = 0;
+			break;
+		}
+
+		if (h_date == 0 ||
+		    (h_date < obj->entered + params->clock_skew &&
+		    h_date + params->clock_skew > obj->entered)) {
+			/*
+			 * If we have no Date: header or if it is
+			 * sufficiently close to our clock we will
+			 * trust Expires: relative to our own clock.
+			 */
+			if (h_expires < obj->entered)
+				ttl = 0;
+			else
+				ttd = h_expires;
+			break;
+		}
+
+		/*
+		 * But even if the clocks are out of whack we can still
+		 * derive a relative time from the two headers.
+		 * (the negative ttl case is caught above)
+		 */
+		ttl = (h_expires - h_date);
+
+	} while (0);
+
+	if (ttl > 0 && ttd == 0)
+		ttd = obj->entered + ttl;
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %d %d", sp->xid,
-	    (int)(ttd - obj->entered), (int)obj->entered, (int)h_date,
-	    (int)h_expires, (int)u1, (int)u2);
+	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %u %u", sp->xid,
+	    ttd ? (int)(ttd - obj->entered) : 0,
+	    (int)obj->entered, (int)h_date,
+	    (int)h_expires, max_age, age);
 
 	return (ttd);
 }
@@ -194,9 +189,8 @@ RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 	}
 
 	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->obj);
-	if (sp->obj->ttl == 0) {
+	if (sp->obj->ttl == 0)
 		sp->obj->cacheable = 0;
-	}
 
 	return (body);
 }

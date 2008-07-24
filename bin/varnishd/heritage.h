@@ -175,6 +175,9 @@ struct params {
 
 	/* Prefer IPv6 connections to backend*/
 	unsigned		prefer_ipv6;
+
+	/* Acceptable clockskew with backends */
+	unsigned		clock_skew;
 };
 
 extern volatile struct params *params;

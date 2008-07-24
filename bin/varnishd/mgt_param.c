@@ -745,6 +745,11 @@ static const struct parspec parspec[] = {
 		"VCL can override this default value for each backend.",
 		0,
 		"400", "ms" },
+	{ "clock_skew", tweak_uint, &master.clock_skew, 0, UINT_MAX,
+		"How much clockskew we are willing to accept between the "
+		"backend and our own clock.",
+		0,
+		"10", "s" },
 	{ "prefer_ipv6", tweak_bool, &master.prefer_ipv6, 0, 0,
 		"Prefer IPv6 address when connecting to backends which "
 		"have both IPv4 and IPv6 addresses.",
