@@ -719,6 +719,13 @@ static const struct parspec parspec[] = {
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"4", "restarts" },
+	{ "esi_syntax",
+		tweak_uint, &master.esi_syntax, 0, UINT_MAX,
+		"Bitmap controlling ESI parsing code:\n"
+		"  0x00000001 - Don't check if it looks like XML\n"
+		"Use 0x notation and do the bitor in your head :-)\n",
+		0,
+		"0", "restarts" },
 	{ "max_esi_includes",
 		tweak_uint, &master.max_esi_includes, 0, UINT_MAX,
 		"Maximum depth of esi:include processing."
