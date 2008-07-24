@@ -203,8 +203,8 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 	for(res = res0; res != NULL; res = res->ai_next) {
 		switch(res->ai_family) {
 		case PF_INET:
+			assert(PF_INET < 256);
 			sin4 = (void*)res->ai_addr;
-			assert(sizeof(sin4->sin_family) == 1);
 			assert(sizeof(sin4->sin_addr) == 4);
 			u = (void*)&sin4->sin_addr;
 			if (ae->t_mask == NULL)
@@ -213,8 +213,8 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 			vcc_acl_emit_entry(tl, ae, 4, u, res->ai_family);
 			break;
 		case PF_INET6:
+			assert(PF_INET6 < 256);
 			sin6 = (void*)res->ai_addr;
-			assert(sizeof(sin6->sin6_family) == 1);
 			assert(sizeof(sin6->sin6_addr) == 16);
 			u = (void*)&sin6->sin6_addr;
 			if (ae->t_mask == NULL)
