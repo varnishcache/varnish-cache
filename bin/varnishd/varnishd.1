@@ -288,12 +288,15 @@ will reduce fragmentation to a minimum.
 .Pp
 The
 .Ar granularity
-parameter specifies the granularity of allocation. All allocations are rounded up to this size.
-The size is assumed to be in bytes, unless followed by one of the suffixes described for
+parameter specifies the granularity of allocation.
+All allocations are rounded up to this size.
+The size is assumed to be in bytes, unless followed by one of the
+suffixes described for
 .Ar size
 except for %.
 .Pp
-The default size is the VM page size. The size should be reduced if you have many small objects.
+The default size is the VM page size.
+The size should be reduced if you have many small objects.
 .El
 .Ss Management Interface
 If the
