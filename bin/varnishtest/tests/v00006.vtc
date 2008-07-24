@@ -1,4 +1,4 @@
-# $Id: v00006.vtc 2906 2008-07-08 10:29:07Z phk $
+# $Id$
 
 test "VCL: Test backend retirement"
 
