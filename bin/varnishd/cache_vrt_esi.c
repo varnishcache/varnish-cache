@@ -637,6 +637,26 @@ VRT_ESI(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
+	if (!(params->esi_syntax & 0x00000001)) {
+		/*
+		 * By default, we will not ESI process an object where
+		 *  the first non-space character is different from '<'
+		 */
+		st = VTAILQ_FIRST(&sp->obj->store);
+		AN(st);
+		for (u = 0; u < st->len; u++) {
+			if (isspace(st->ptr[u]))
+				continue;
+			if (st->ptr[u] == '<')
+				break;
+			WSP(sp, SLT_ESI_xmlerror,
+			    "No ESI processing, "
+			    "binary object: 0x%02x at pos %u.",
+			    st->ptr[u], u);
+			return;
+		}
+	}
+
 	/* XXX: only if GET ? */
 	ew = eww;
 	memset(eww, 0, sizeof eww);
