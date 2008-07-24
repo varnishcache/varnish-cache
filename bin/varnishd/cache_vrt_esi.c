@@ -117,7 +117,7 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 			*q++ = 't';
 		} else {
 			/* XXX: use %%%02x instead ? */
-			q += sprintf(q, "\\x%02x", *p);
+			q += sprintf(q, "\\x%02x", *p & 0xff);
 		}
 		p++;
 		i--;
