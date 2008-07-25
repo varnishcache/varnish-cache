@@ -38,13 +38,16 @@
 #include <string.h>
 #include <strings.h>
 
+#include "libvarnish.h"
 #include "vsb.h"
+#include "miniobj.h"
 
-#define	KASSERT(e, m)
+#define	KASSERT(e, m)		assert(e)
 #define	SBMALLOC(size)		malloc(size)
 #define	SBFREE(buf)		free(buf)
 #define	min(x,y)		(x < y ? x : y)
 
+#define VSB_MAGIC		0x4a82dd8a
 /*
  * Predicates
  */
@@ -77,6 +80,8 @@ _vsb_assert_integrity(const char *fun, struct vsb *s)
 	(void)s;
 	KASSERT(s != NULL,
 	    ("%s called with a NULL vsb pointer", fun));
+	KASSERT(s->s_magic == VSB_MAGIC,
+	    ("%s called wih an unintialized vsb pointer", fun));
 	KASSERT(s->s_buf != NULL,
 	    ("%s called with uninitialized or corrupt vsb", fun));
 	KASSERT(s->s_len < s->s_size,
@@ -163,10 +168,12 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 			return (NULL);
 		bzero(s, sizeof *s);
 		s->s_flags = flags;
+		s->s_magic = VSB_MAGIC;
 		VSB_SETFLAG(s, VSB_DYNSTRUCT);
 	} else {
 		bzero(s, sizeof *s);
 		s->s_flags = flags;
+		s->s_magic = VSB_MAGIC;
 	}
 	s->s_size = length;
 	if (buf) {
