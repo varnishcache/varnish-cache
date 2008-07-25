@@ -504,7 +504,6 @@ cnt_hit(struct sess *sp)
 		return (0);
 	}
 
-
 	INCOMPL();
 }
 
@@ -625,16 +624,12 @@ DOT	vcl_miss [
 DOT		shape=record
 DOT		label="vcl_miss()|req.\nbereq."
 DOT	]
-DOT	miss_ins [
-DOT		label="obj.pass=true"
-DOT	]
 DOT	miss -> vcl_miss [style=bold,color=blue,weight=2]
 DOT }
 DOT vcl_miss -> err_miss [label="error"]
 DOT err_miss [label="ERROR",shape=plaintext]
 DOT vcl_miss -> fetch [label="fetch",style=bold,color=blue,weight=2]
-DOT miss_ins -> pass
-DOT vcl_miss -> miss_ins [label="pass"]
+DOT vcl_miss -> pass [label="pass"]
 DOT
  */
 
@@ -684,7 +679,11 @@ cnt_miss(struct sess *sp)
 DOT subgraph xcluster_pass {
 DOT	pass [
 DOT		shape=ellipse
-DOT		label="deref obj\nfilter req.->bereq."
+DOT		label="deref obj."
+DOT	]
+DOT	pass2 [
+DOT		shape=ellipse
+DOT		label="filter req.->bereq."
 DOT	]
 DOT	vcl_pass [
 DOT		shape=record
@@ -694,7 +693,8 @@ DOT	pass_do [
 DOT		shape=ellipse
 DOT		label="create anon object\n"
 DOT	]
-DOT	pass -> vcl_pass
+DOT	pass -> pass2
+DOT	pass2 -> vcl_pass
 DOT	vcl_pass -> pass_do [label="pass"]
 DOT }
 DOT pass_do -> fetch
@@ -785,7 +785,7 @@ DOT		label="vcl_recv()|req."
 DOT	]
 DOT }
 DOT recv -> pipe [label="pipe"]
-DOT recv -> pass [label="pass"]
+DOT recv -> pass2 [label="pass"]
 DOT recv -> err_recv [label="error"]
 DOT err_recv [label="ERROR",shape=plaintext]
 DOT recv -> hash [label="lookup",style=bold,color=green,weight=4]
@@ -839,7 +839,7 @@ cnt_recv(struct sess *sp)
  * Handle a request, wherever it came from recv/restart.
  *
 DOT start [shape=box,label="Dissect request"]
-DOT start -> recv 
+DOT start -> recv [style=bold,color=green,weight=4]
  */
 
 static int
