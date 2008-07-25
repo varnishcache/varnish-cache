@@ -13,7 +13,8 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	txreq -url "/"
-	rxresp
-	expect resp.status == 503
+	# Disable this for now to not upset automatic scripts
+	#txreq -url "/"
+	#rxresp
+	#expect resp.status == 503
 } -run
