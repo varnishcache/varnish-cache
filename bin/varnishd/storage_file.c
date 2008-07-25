@@ -681,7 +681,7 @@ smf_trim(const struct storage *s, size_t size)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_free(const struct storage *s)
+smf_free(struct storage *s)
 {
 	struct smf *smf;
 	struct smf_sc *sc;

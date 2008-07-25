@@ -121,6 +121,7 @@ child_main(void)
 
 	VCA_Init();
 
+	SMS_Init();
 	STV_open();
 
 	VSL_stats->start_time = (time_t)TIM_real();
