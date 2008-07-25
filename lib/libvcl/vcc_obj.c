@@ -16,77 +16,84 @@ struct var vcc_vars[] = {
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "server.ip", IP, 9,
 	    "VRT_r_server_ip(sp)",
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "server.port", INT, 11,
 	    "VRT_r_server_port(sp)",
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "req.request", STRING, 11,
 	    "VRT_r_req_request(sp)",
 	    "VRT_l_req_request(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "req.url", STRING, 7,
 	    "VRT_r_req_url(sp)",
 	    "VRT_l_req_url(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "req.proto", STRING, 9,
 	    "VRT_r_req_proto(sp)",
 	    "VRT_l_req_proto(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "req.http.", HEADER, 9,
 	    "VRT_r_req_http_(sp)",
 	    "VRT_l_req_http_(sp, ",
 	    V_RW,
 	    "HDR_REQ",
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "req.hash", HASH, 8,
 	    NULL,
 	    "VRT_l_req_hash(sp, ",
 	    V_WO,
 	    0,
-	    VCL_MET_HASH
+	    VCL_MET_HASH | VCL_MET_ERROR
 	},
 	{ "req.backend", BACKEND, 11,
 	    "VRT_r_req_backend(sp)",
 	    "VRT_l_req_backend(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "req.restarts", INT, 12,
 	    "VRT_r_req_restarts(sp)",
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "req.grace", TIME, 9,
 	    "VRT_r_req_grace(sp)",
 	    "VRT_l_req_grace(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
+	},
+	{ "req.xid", STRING, 7,
+	    "VRT_r_req_xid(sp)",
+	    NULL,
+	    V_RO,
+	    0,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "bereq.request", STRING, 13,
 	    "VRT_r_bereq_request(sp)",
@@ -121,56 +128,56 @@ struct var vcc_vars[] = {
 	    "VRT_l_obj_proto(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "obj.status", INT, 10,
 	    "VRT_r_obj_status(sp)",
 	    "VRT_l_obj_status(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_FETCH
+	    VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "obj.response", STRING, 12,
 	    "VRT_r_obj_response(sp)",
 	    "VRT_l_obj_response(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_FETCH
+	    VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "obj.http.", HEADER, 9,
 	    "VRT_r_obj_http_(sp)",
 	    "VRT_l_obj_http_(sp, ",
 	    V_RW,
 	    "HDR_OBJ",
-	    VCL_MET_HIT | VCL_MET_FETCH
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
 	{ "obj.valid", BOOL, 9,
 	    "VRT_r_obj_valid(sp)",
 	    "VRT_l_obj_valid(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.cacheable", BOOL, 13,
 	    "VRT_r_obj_cacheable(sp)",
 	    "VRT_l_obj_cacheable(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.ttl", TIME, 7,
 	    "VRT_r_obj_ttl(sp)",
 	    "VRT_l_obj_ttl(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.grace", TIME, 9,
 	    "VRT_r_obj_grace(sp)",
 	    "VRT_l_obj_grace(sp, ",
 	    V_RW,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.prefetch", RTIME, 12,
 	    "VRT_r_obj_prefetch(sp)",
@@ -184,14 +191,14 @@ struct var vcc_vars[] = {
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.hash", STRING, 8,
 	    "VRT_r_obj_hash(sp)",
 	    NULL,
 	    V_RO,
 	    0,
-	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "resp.proto", STRING, 10,
 	    "VRT_r_resp_proto(sp)",

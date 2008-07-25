@@ -306,12 +306,40 @@ DOT error -> DONE
 static int
 cnt_error(struct sess *sp)
 {
+	struct worker *w;
+	struct http *h;
+	time_t now;
+	char date[40];
 
-	AZ(sp->obj);
-	SYN_ErrorPage(sp, sp->err_code, sp->err_reason);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	w = sp->wrk;
+	if (sp->obj == NULL) {
+		HSH_Prealloc(sp);
+		sp->obj = sp->wrk->nobj;
+		sp->wrk->nobj = NULL;
+	} else {
+		/* XXX: Null the headers ? */
+	}
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	h = sp->obj->http;
+
+	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
+	http_PutStatus(w, sp->fd, h, sp->err_code);
+	now = TIM_real();
+	TIM_format(now, date);
+        http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
+        http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
+        http_PrintfHeader(w, sp->fd, h, "Retry-After: %d", params->err_ttl);
+
+	if (sp->err_reason != NULL)
+		http_PutResponse(w, sp->fd, h, sp->err_reason);
+	else
+		http_PutResponse(w, sp->fd, h,
+		    http_StatusMessage(sp->err_code));
+	VCL_error_method(sp);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
-	sp->step = STP_DONE;
+	sp->step = STP_DELIVER;
 	return (0);
 }
 
@@ -877,8 +905,8 @@ cnt_start(struct sess *sp)
 	*sp->http0 = *sp->http;
 
 	if (done != 0) {
-		SYN_ErrorPage(sp, done, NULL);		/* XXX: STP_ERROR ? */
-		sp->step = STP_DONE;
+		sp->err_code = done;
+		sp->step = STP_ERROR;
 		return (0);
 	}
 

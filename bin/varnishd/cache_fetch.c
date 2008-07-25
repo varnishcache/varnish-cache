@@ -331,11 +331,7 @@ Fetch(struct sess *sp)
 	sp->obj->xid = sp->xid;
 
 	/* Set up obj's workspace */
-	st = sp->obj->objstore;
-	WS_Init(sp->obj->ws_o, "obj", st->ptr + st->len, st->space - st->len);
-	st->len = st->space;
 	WS_Assert(sp->obj->ws_o);
-	http_Setup(sp->obj->http, sp->obj->ws_o);
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return (__LINE__);

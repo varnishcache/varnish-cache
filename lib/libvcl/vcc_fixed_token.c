@@ -278,6 +278,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	vcl_func_f	*prefetch_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*timeout_func;\n");
 	vsb_cat(sb, "	vcl_func_f	*discard_func;\n");
+	vsb_cat(sb, "	vcl_func_f	*error_func;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "/*-\n");
 	vsb_cat(sb, " * Copyright (c) 2006 Verdens Gang AS\n");
@@ -475,6 +476,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "int VRT_r_req_restarts(const struct sess *);\n");
 	vsb_cat(sb, "double VRT_r_req_grace(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_grace(struct sess *, double);\n");
+	vsb_cat(sb, "const char * VRT_r_req_xid(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_bereq_request(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_url(const struct sess *);\n");

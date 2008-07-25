@@ -94,15 +94,22 @@ parse_call(struct tokenlist *tl)
 static void
 parse_error(struct tokenlist *tl)
 {
-	unsigned a;
+	struct var *vp;
 
 	vcc_NextToken(tl);
-	if (tl->t->tok == CNUM) {
-		a = vcc_UintVal(tl);
+	if (tl->t->tok == VAR) {
+		vp = vcc_FindVar(tl, tl->t, vcc_vars);
+		if (vp->fmt == INT) {
+			Fb(tl, 1, "VRT_error(sp, %s", vp->rname);
+			vcc_NextToken(tl);
+		} else {
+			Fb(tl, 1, "VRT_error(sp, 0");
+		}
+	} else if (tl->t->tok == CNUM) {
+		Fb(tl, 1, "VRT_error(sp, %u", vcc_UintVal(tl));
 		vcc_NextToken(tl);
 	} else
-		a = 0;
-	Fb(tl, 1, "VRT_error(sp, %u", a);
+		Fb(tl, 1, "VRT_error(sp, 0");
 	if (tl->t->tok == CSTR) {
 		Fb(tl, 0, ", %.*s", PF(tl->t));
 		vcc_NextToken(tl);
