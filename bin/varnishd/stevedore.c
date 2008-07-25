@@ -83,7 +83,7 @@ STV_trim(const struct storage *st, size_t size)
 }
 
 void
-STV_free(const struct storage *st)
+STV_free(struct storage *st)
 {
 
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);

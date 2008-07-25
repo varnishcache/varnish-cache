@@ -51,6 +51,7 @@ varnishd_SOURCES = \
 	stevedore.c \
 	storage_file.c \
 	storage_malloc.c \
+	storage_synth.c \
 	tcp.c \
 	varnishd.c
 

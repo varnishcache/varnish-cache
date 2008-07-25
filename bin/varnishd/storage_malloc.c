@@ -86,7 +86,7 @@ sma_alloc(struct stevedore *st, size_t size)
 }
 
 static void
-sma_free(const struct storage *s)
+sma_free(struct storage *s)
 {
 	struct sma *sma;
 
