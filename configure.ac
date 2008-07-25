@@ -142,6 +142,7 @@ AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([vis strvis strvisx])
 AC_CHECK_FUNCS([daemon])
+AC_SYS_LARGEFILE
 
 save_LIBS="${LIBS}"
 LIBS="${LIBS} ${RT_LIBS}"

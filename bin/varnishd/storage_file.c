@@ -194,7 +194,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 		    " to %ju due to system limitations\n", l);
 
 	if (l < st.st_size) {
-		AZ(ftruncate(sc->fd, l));
+		AZ(ftruncate(sc->fd, (off_t)l));
 	} else if (l - st.st_size > fssize) {
 		l = fssize * 80 / 100;
 		fprintf(stderr, "WARNING: storage file size reduced"
@@ -228,7 +228,7 @@ smf_initfile(struct smf_sc *sc, const char *size, int newfile)
 {
 	smf_calcsize(sc, size, newfile);
 
-	AZ(ftruncate(sc->fd, sc->filesize));
+	AZ(ftruncate(sc->fd, (off_t)sc->filesize));
 
 	/* XXX: force block allocation here or in open ? */
 }
@@ -279,7 +279,11 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	parent->priv = sc;
 
 	/* try to create a new file of this name */
+#ifdef O_LARGEFILE
+	sc->fd = open(fn, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0600);
+#else
 	sc->fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0600);
+#endif
 	if (sc->fd >= 0) {
 		sc->filename = fn;
 		mgt_child_inherit(sc->fd, "storage_file");
