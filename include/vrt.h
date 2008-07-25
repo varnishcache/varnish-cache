@@ -45,6 +45,8 @@ struct sockaddr;
  * A backend probe specification
  */
 
+extern void *vrt_magic_string_end;
+
 struct vrt_backend_probe {
 	char		*request;
 	double		timeout;
@@ -150,6 +152,9 @@ int VRT_strcmp(const char *s1, const char *s2);
 
 void VRT_ESI(struct sess *sp);
 void VRT_Rollback(struct sess *sp);
+
+/* Synthetic pages */
+void VRT_synth_page(struct sess *sp, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir_simple(struct cli *, struct director **, const struct vrt_dir_simple *);

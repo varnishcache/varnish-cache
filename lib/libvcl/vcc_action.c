@@ -269,7 +269,7 @@ parse_set(struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		Fb(tl, 0, "0);\n");
+		Fb(tl, 0, "vrt_magic_string_end);\n");
 		break;
 	default:
 		vsb_printf(tl->sb,
@@ -372,7 +372,25 @@ parse_panic(struct tokenlist *tl)
 	do 
 		Fb(tl, 0, ", ");
 	while (vcc_StringVal(tl));
-	Fb(tl, 0, " 0);\n");
+	Fb(tl, 0, " vrt_magic_string_end);\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_synthetic(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+	
+	Fb(tl, 1, "VRT_synth_page(sp, 0, ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	do 
+		Fb(tl, 0, ", ");
+	while (vcc_StringVal(tl));
+	Fb(tl, 0, " vrt_magic_string_end);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -398,6 +416,7 @@ static struct action_table {
 	{ "purge_url",		parse_purge_url },
 	{ "remove", 		parse_unset }, /* backward compatibility */
 	{ "set", 		parse_set },
+	{ "synthetic", 		parse_synthetic },
 	{ "unset", 		parse_unset },
 	{ NULL,			NULL }
 };

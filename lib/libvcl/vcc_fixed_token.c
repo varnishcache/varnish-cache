@@ -326,6 +326,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * A backend probe specification\n");
 	vsb_cat(sb, " */\n");
 	vsb_cat(sb, "\n");
+	vsb_cat(sb, "extern void *vrt_magic_string_end;\n");
+	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_backend_probe {\n");
 	vsb_cat(sb, "	char		*request;\n");
 	vsb_cat(sb, "	double		timeout;\n");
@@ -431,6 +433,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "void VRT_ESI(struct sess *sp);\n");
 	vsb_cat(sb, "void VRT_Rollback(struct sess *sp);\n");
+	vsb_cat(sb, "\n");
+	vsb_cat(sb, "/* Synthetic pages */\n");
+	vsb_cat(sb, "void VRT_synth_page(struct sess *sp, unsigned flags, const char *, ...);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Backend related */\n");
 	vsb_cat(sb, "void VRT_init_dir_simple(struct cli *, struct director **, const struct vrt_dir_simple *);\n");

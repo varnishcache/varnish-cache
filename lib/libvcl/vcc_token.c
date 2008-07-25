@@ -371,6 +371,29 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 			return;
 		}
 	
+		/* Recognize long-strings */
+		if (*p == '{' && p[1] == '"') {
+			for (q = p + 2; q < sp->e; q++) {
+				if (*q == '"' && q[1] == '}') {
+					vcc_AddToken(tl, CSTR, p, q + 2);
+					p = q + 2;
+					break;
+				}
+			}
+			u = tl->t->e - tl->t->b;
+			u -= 4; 	/* {" ... "} */
+			tl->t->dec = TlAlloc(tl, u + 1 );
+			AN(tl->t->dec);
+			memcpy(tl->t->dec, tl->t->b + 2, u);
+			tl->t->dec[u] = '\0';
+			if (q < sp->e)
+				continue;
+			vcc_AddToken(tl, EOI, p, p + 2);
+			vsb_printf(tl->sb,
+			    "Unterminated long-string, starting at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 
 		/* Match for the fixed tokens (see token.tcl) */
 		u = vcl_fixed_token(p, &q);
