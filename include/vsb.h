@@ -36,6 +36,7 @@
  * Structure definition
  */
 struct vsb {
+	unsigned	s_magic;
 	char		*s_buf;		/* storage buffer */
 	void		*s_unused;	/* binary compatibility. */
 	int		 s_size;	/* size of storage buffer */
