@@ -41,10 +41,11 @@ set methods {
 	{miss		{error restart pass fetch}}
 	{hit		{error restart pass deliver}}
 	{fetch		{error restart pass insert}}
-	{deliver	{error restart deliver}}
+	{deliver	{restart deliver}}
 	{prefetch	{fetch pass}}
 	{timeout	{fetch discard}}
 	{discard	{discard keep}}
+	{error		{deliver}}
 }
 
 # These are the return actions

@@ -104,6 +104,11 @@ HSH_Prealloc(struct sess *sp)
 		st->len = sizeof *w->nobj;
 		memset(w->nobj, 0, sizeof *w->nobj);
 		w->nobj->objstore = st;
+		WS_Init(w->nobj->ws_o, "obj",
+		    st->ptr + st->len, st->space - st->len);
+		st->len = st->space;
+		WS_Assert(w->nobj->ws_o);
+		http_Setup(w->nobj->http, w->nobj->ws_o);
 		w->nobj->magic = OBJECT_MAGIC;
 		w->nobj->http->magic = HTTP_MAGIC;
 		w->nobj->busy = 1;
@@ -112,6 +117,7 @@ HSH_Prealloc(struct sess *sp)
 		VTAILQ_INIT(&w->nobj->store);
 		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
+		
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }

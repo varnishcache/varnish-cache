@@ -21,6 +21,7 @@ void VRT_l_req_backend(struct sess *, struct director *);
 int VRT_r_req_restarts(const struct sess *);
 double VRT_r_req_grace(struct sess *);
 void VRT_l_req_grace(struct sess *, double);
+const char * VRT_r_req_xid(struct sess *);
 const char * VRT_r_bereq_request(const struct sess *);
 void VRT_l_bereq_request(const struct sess *, const char *, ...);
 const char * VRT_r_bereq_url(const struct sess *);

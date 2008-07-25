@@ -467,6 +467,24 @@ VRT_r_req_grace(struct sess *sp)
 	return (sp->grace);
 }
 
+/*--------------------------------------------------------------------
+ * req.xid
+ */
+
+/*lint -e{818} sp could be const */
+const char *
+VRT_r_req_xid(struct sess *sp)
+{
+	char *p;
+	int size;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	size = snprintf(NULL, 0, "%u", sp->xid) + 1;
+	AN(p = WS_Alloc(sp->http->ws, size));
+	assert(snprintf(p, size, "%d", sp->xid) < size);
+	return (p);
+}
+
 /*--------------------------------------------------------------------*/
 
 struct sockaddr *

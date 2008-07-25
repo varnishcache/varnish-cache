@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh8.4
+#!/usr/local/bin/tclsh8.4
 #-
 # Copyright (c) 2006 Verdens Gang AS
 # Copyright (c) 2006-2008 Linpro AS
@@ -35,185 +35,191 @@
 # Comments are stripped from #...\n
 set spobj {
 
-	# Connection related parameters
-	{ client.ip
-		RO IP
-		{recv pipe pass hash miss hit fetch deliver                }
-		"const struct sess *"
-	}
-	{ client.bandwidth				 # Not implemented yet
-		NO
-		{ }
-		"const struct sess *"
-	}
-	{ server.ip
-		RO IP
-		{recv pipe pass hash miss hit fetch deliver                }
-		"struct sess *"
-	}
-	{ server.port
-		RO INT
-		{recv pipe pass hash miss hit fetch deliver                }
-		"struct sess *"
-	}
-	# Request paramters
-	{ req.request
-		RW STRING
-		{recv pipe pass hash miss hit fetch                        }
-		"const struct sess *"
-	}
-	{ req.url
-		RW STRING
-		{recv pipe pass hash miss hit fetch                        }
-		"const struct sess *"
-	}
-	{ req.proto
-		RW STRING
-		{recv pipe pass hash miss hit fetch                        }
-		"const struct sess *"
-	}
-	{ req.http.
-		RW HDR_REQ
-		{recv pipe pass hash miss hit fetch                        }
-		"const struct sess *"
-	}
+    # Connection related parameters
+    { client.ip
+	RO IP
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { client.bandwidth				 # Not implemented yet
+	NO
+	{ }
+	"const struct sess *"
+    }
+    { server.ip
+	RO IP
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    { server.port
+	RO INT
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    # Request paramters
+    { req.request
+	RW STRING
+	{recv pipe pass hash miss hit fetch                        error }
+	"const struct sess *"
+    }
+    { req.url
+	RW STRING
+	{recv pipe pass hash miss hit fetch                        error }
+	"const struct sess *"
+    }
+    { req.proto
+	RW STRING
+	{recv pipe pass hash miss hit fetch                        error }
+	"const struct sess *"
+    }
+    { req.http.
+	RW HDR_REQ
+	{recv pipe pass hash miss hit fetch                        error }
+	"const struct sess *"
+    }
 
-	# Possibly misnamed, not really part of the request
-	{ req.hash
-		WO HASH
-		{               hash                                       }
-		"struct sess *"
-	}
-	{ req.backend
-		RW BACKEND
-		{recv pipe pass hash miss hit fetch                        }
-		"struct sess *"
-	}
-	{ req.restarts
-		RO INT
-		{recv pipe pass hash miss hit fetch deliver                }
-		"const struct sess *"
-	}
-	{ req.grace
-		RW TIME
-		{recv pipe pass hash miss hit fetch deliver		   }
-		"struct sess *"
-	}
+    # Possibly misnamed, not really part of the request
+    { req.hash
+	WO HASH
+	{               hash                                       error }
+	"struct sess *"
+    }
+    { req.backend
+	RW BACKEND
+	{recv pipe pass hash miss hit fetch                        error }
+	"struct sess *"
+    }
+    { req.restarts
+	RO INT
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { req.grace
+	RW TIME
+	{recv pipe pass hash miss hit fetch deliver		   error }
+	"struct sess *"
+    }
 
-	# Request sent to backend
-	{ bereq.request
-		RW STRING
-		{     pipe pass      miss     fetch                        }
-		"const struct sess *"
-	}
-	{ bereq.url
-		RW STRING
-		{     pipe pass      miss     fetch                        }
-		"const struct sess *"
-	}
-	{ bereq.proto
-		RW STRING
-		{     pipe pass      miss     fetch                        }
-		"const struct sess *"
-	}
-	{ bereq.http.
-		RW HDR_BEREQ
-		{     pipe pass      miss     fetch                        }
-		"const struct sess *"
-	}
+    { req.xid
+	RO STRING
+	{recv pipe pass hash miss hit fetch deliver		   error}
+	"struct sess *"
+    }
 
-	# The (possibly) cached object
-	{ obj.proto
-		RW STRING
-		{                         hit fetch                        }
-		"const struct sess *"
-	}
-	{ obj.status
-		RW INT
-		{                             fetch                        }
-		"const struct sess *"
-	}
-	{ obj.response
-		RW STRING
-		{                             fetch                        }
-		"const struct sess *"
-	}
-	{ obj.http.
-		RW HDR_OBJ
-		{                         hit fetch 			   }
-		"const struct sess *"
-	}
+    # Request sent to backend
+    { bereq.request
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.url
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.proto
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.http.
+	RW HDR_BEREQ
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
 
-	{ obj.valid
-		RW BOOL
-		{                         hit fetch         discard timeout}
-		"const struct sess *"
-	}
-	{ obj.cacheable
-		RW BOOL
-		{                         hit fetch         discard timeout}
-		"const struct sess *"
-	}
-	{ obj.ttl
-		RW TIME
-		{                         hit fetch         discard timeout}
-		"const struct sess *"
-	}
-	{ obj.grace
-		RW TIME
-		{                         hit fetch         discard timeout}
-		"const struct sess *"
-	}
-	{ obj.prefetch
-		RW RTIME
-		{ fetch prefetch }
-		"const struct sess *"
-	}
-	{ obj.lastuse
-		RO TIME
-		{                         hit fetch deliver discard timeout}
-		"const struct sess *"
-	}
-	{ obj.hash
-		RO STRING
-		{                    miss hit fetch deliver                }
-		"const struct sess *"
-	}
+    # The (possibly) cached object
+    { obj.proto
+	RW STRING
+	{                         hit fetch                         error}
+	"const struct sess *"
+    }
+    { obj.status
+	RW INT
+	{                             fetch                         error}
+	"const struct sess *"
+    }
+    { obj.response
+	RW STRING
+	{                             fetch                         error}
+	"const struct sess *"
+    }
+    { obj.http.
+	RW HDR_OBJ
+	{                         hit fetch 			    error}
+	"const struct sess *"
+    }
 
-	# The response we send back
-	{ resp.proto
-		RW STRING
-		{                                   deliver                }
-		"const struct sess *"
-	}
-	{ resp.status
-		RW INT
-		{                                   deliver                }
-		"const struct sess *"
-	}
-	{ resp.response
-		RW STRING
-		{                                   deliver                }
-		"const struct sess *"
-	}
-	{ resp.http.
-		RW HDR_RESP
-		{                                   deliver                }
-		"const struct sess *"
-	}
+    { obj.valid
+	RW BOOL
+	{                         hit fetch         discard timeout error}
+	"const struct sess *"
+    }
+    { obj.cacheable
+	RW BOOL
+	{                         hit fetch         discard timeout error}
+	"const struct sess *"
+    }
+    { obj.ttl
+	RW TIME
+	{                         hit fetch         discard timeout error}
+	"const struct sess *"
+    }
+    { obj.grace
+	RW TIME
+	{                         hit fetch         discard timeout error}
+	"const struct sess *"
+    }
+    { obj.prefetch
+	RW RTIME
+	{ fetch prefetch }
+	"const struct sess *"
+    }
+    { obj.lastuse
+	RO TIME
+	{                         hit fetch deliver discard timeout error}
+	"const struct sess *"
+    }
+    { obj.hash
+	RO STRING
+	{                    miss hit fetch deliver                 error}
+	"const struct sess *"
+    }
 
-	# Miscellaneous
-	# XXX: I'm not happy about this one.  All times should be relative
-	# XXX: or delta times in VCL programs, so this shouldn't be needed /phk
-	{ now
-		RO TIME
-		{recv pipe pass hash miss hit fetch deliver discard timeout}
-		"const struct sess *"
-	}
-	{ backend.health	RO INT
-  		{recv pipe pass hash miss hit fetch deliver discard timeout}
-		"const struct sess *"
-  	}
+    # The response we send back
+    { resp.proto
+	RW STRING
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.status
+	RW INT
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.response
+	RW STRING
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.http.
+	RW HDR_RESP
+	{                                   deliver                }
+	"const struct sess *"
+    }
+
+    # Miscellaneous
+    # XXX: I'm not happy about this one.  All times should be relative
+    # XXX: or delta times in VCL programs, so this shouldn't be needed /phk
+    { now
+	    RO TIME
+	    {recv pipe pass hash miss hit fetch deliver discard timeout}
+	    "const struct sess *"
+    }
+    { backend.health	RO INT
+	    {recv pipe pass hash miss hit fetch deliver discard timeout}
+	    "const struct sess *"
+    }
 
 }
 
