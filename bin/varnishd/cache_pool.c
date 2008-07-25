@@ -91,7 +91,6 @@ static struct wq		**wq;
 static unsigned			nwq;
 static unsigned			ovfl_max;
 static unsigned			nthr_max;
-static unsigned			nthr_min;
 
 static pthread_cond_t		herder_cond;
 static MTX			herder_mtx;
@@ -401,7 +400,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 {
 	struct worker *w;
 
-	if (qp->nthr <= nthr_min)
+	if (qp->nthr <= params->wthread_min)
 		return;
 
 	LOCK(&qp->mtx);
@@ -454,14 +453,10 @@ wrk_herdtimer_thread(void *priv)
 			wrk_addpools(u);
 
 		/* Scale parameters */
-		u = params->wthread_min / nwq;
-		if (u < 1)
-			u = 1;
-		nthr_min = u;
 
 		u = params->wthread_max / nwq;
-		if (u < nthr_min)
-			u = nthr_min;
+		if (u < params->wthread_min)
+			u = params->wthread_min;
 		nthr_max = u;
 
 		ovfl_max = (nthr_max * params->overflow_max) / 100;
@@ -497,7 +492,7 @@ wrk_breed_flock(struct wq *qp)
 	 * If we need more threads, and have space, create
 	 * one more thread.
 	 */
-	if (qp->nthr < nthr_min ||	/* Not enough threads yet */
+	if (qp->nthr < params->wthread_min ||	/* Not enough threads yet */
 	    (qp->nqueue > params->wthread_add_threshold && /* more needed */
 	    qp->nqueue > qp->lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
@@ -541,10 +536,9 @@ wrk_herder_thread(void *priv)
 			/*
 			 * Make sure all pools have their minimum complement
 			 */
-			for (w = 0 ; w < nwq; w++) {
-				if (wq[w]->nthr < nthr_min)
+			for (w = 0 ; w < nwq; w++)
+				while (wq[w]->nthr < params->wthread_min)
 					wrk_breed_flock(wq[w]);
-			}
 			/*
 			 * We cannot avoid getting a mutex, so we have a
 			 * bogo mutex just for POSIX_STUPIDITY
