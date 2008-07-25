@@ -51,6 +51,9 @@
 #include "vcl.h"
 #include "cache.h"
 
+
+void *vrt_magic_string_end = &vrt_magic_string_end;
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -136,7 +139,9 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		if (b + 1 < e) 
 			*b++ = ' ';
 	}
-	while (p != NULL) {
+	while (p != vrt_magic_string_end) {
+		if (p == NULL)
+			p = "(null)";
 		x = strlen(p);
 		if (b + x < e)
 			memcpy(b, p, x);
@@ -640,6 +645,38 @@ VRT_panic(struct sess *sp, const char *str, ...)
 	b = vrt_assemble_string(sp->http, "PANIC: ", str, ap);
 	va_end(ap);
 	lbv_assert("VCL", "", 0, b, 0, 2);
+}
+
+/*--------------------------------------------------------------------*/
+
+/*lint -e{818} sp could be const */
+void
+VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
+{
+	va_list ap;
+	const char *p;
+	struct vsb *vsb;
+
+	(void)flags;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(sp->obj);
+	AN(vsb);
+
+	vsb_cat(vsb, str);
+	va_start(ap, str);
+	p = va_arg(ap, const char *);
+	while (p != vrt_magic_string_end) {
+		if (p == NULL)
+			p = "(null)";
+		vsb_cat(vsb, p);
+		p = va_arg(ap, const char *);
+	}
+	va_end(ap);
+	SMS_Finish(sp->obj);
+	http_Unset(sp->obj->http, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
+	    "Content-Length: %d", sp->obj->len);
 }
 
 /*--------------------------------------------------------------------*/

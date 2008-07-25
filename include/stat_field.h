@@ -105,6 +105,12 @@ MAC_STAT(sma_nbytes,		uint64_t, 'i', "SMA outstanding bytes")
 MAC_STAT(sma_balloc,		uint64_t, 'i', "SMA bytes allocated")
 MAC_STAT(sma_bfree,		uint64_t, 'i', "SMA bytes free")
 
+MAC_STAT(sms_nreq,		uint64_t, 'a', "SMS allocator requests")
+MAC_STAT(sms_nobj,		uint64_t, 'i', "SMS outstanding allocations")
+MAC_STAT(sms_nbytes,		uint64_t, 'i', "SMS outstanding bytes")
+MAC_STAT(sms_balloc,		uint64_t, 'i', "SMS bytes allocated")
+MAC_STAT(sms_bfree,		uint64_t, 'i', "SMS bytes free")
+
 MAC_STAT(backend_req,		uint64_t, 'a', "Backend requests made")
 
 MAC_STAT(n_vcl,			uint64_t, 'a', "N vcl total")

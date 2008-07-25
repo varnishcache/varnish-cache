@@ -461,6 +461,7 @@ void Fetch_Init(void);
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
+void HSH_Freestore(struct object *o);
 int HSH_Compare(const struct sess *sp, const struct objhead *o);
 void HSH_Copy(const struct sess *sp, const struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
@@ -611,6 +612,10 @@ unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
 int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
+
+/* storage_synth.c */
+struct vsb *SMS_Makesynth(struct object *obj);
+void SMS_Finish(struct object *obj);
 
 #define MTX			pthread_mutex_t
 #define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
