@@ -274,9 +274,8 @@ static void
 tweak_thread_pool_min(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
-	(void)par;
 	tweak_generic_uint(cli, &master.wthread_min, arg,
-	    0, master.wthread_max);
+	    par->umin, master.wthread_max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -500,15 +499,15 @@ static const struct parspec parspec[] = {
 		"in the way of getting work done.\n",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"500", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL, 1, 0,
-		"The minimum number of threads in all worker pools combined.\n"
+	{ "thread_pool_min", tweak_thread_pool_min, NULL, 2, 0,
+		"The minimum number of threads in each worker pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
 		"situations where threads have expired.\n"
 		"\n"
-		"Minimum is 1 thread.",
+		"Minimum is 2 threads.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"1", "threads" },
+		"5", "threads" },
 	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 1, 0,
 		"Thread idle threshold.\n"
 		"\n"
