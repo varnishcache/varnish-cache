@@ -222,7 +222,7 @@ varnish_launch(struct varnish *v)
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	vtc_log(v->vl, 3, "opening CLI connection");
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 30; i++) {
 		(void)usleep(200000);
 		v->cli_fd = VSS_open(v->telnet);
 		if (v->cli_fd >= 0)
