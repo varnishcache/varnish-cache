@@ -57,6 +57,7 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
+	cache_backend.h \
 	cache_acceptor.h \
 	common.h \
 	hash_slinger.h \
