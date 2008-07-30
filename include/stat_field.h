@@ -116,3 +116,8 @@ MAC_STAT(backend_req,		uint64_t, 'a', "Backend requests made")
 MAC_STAT(n_vcl,			uint64_t, 'a', "N vcl total")
 MAC_STAT(n_vcl_avail,		uint64_t, 'a', "N vcl available")
 MAC_STAT(n_vcl_discard,		uint64_t, 'a', "N vcl discarded")
+
+MAC_STAT(n_purge,		uint64_t, 'i', "N total active purges")
+MAC_STAT(n_purge_add,		uint64_t, 'a', "N new purges added")
+MAC_STAT(n_purge_retire,	uint64_t, 'a', "N old purges deleted")
+MAC_STAT(n_purge_test,		uint64_t, 'a', "N purge record tests")

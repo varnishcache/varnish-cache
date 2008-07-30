@@ -95,7 +95,10 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 	LOCK(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
+	VSL_stats->n_purge++;
+	VSL_stats->n_purge_add++;
 	UNLOCK(&ban_mtx);
+
 	return (0);
 }
 
@@ -126,10 +129,13 @@ BAN_DestroyObj(struct object *o)
 
 	/* Check if we can purge the last ban entry */
 	b = VTAILQ_LAST(&ban_head, banhead);
-	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) 
+	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
+		VSL_stats->n_purge--;
+		VSL_stats->n_purge_retire++;
 		VTAILQ_REMOVE(&ban_head, b, list);
-	else
+	} else {
 		b = NULL;
+	}
 	UNLOCK(&ban_mtx);
 	if (b != NULL) {
 		free(b->ban);
@@ -144,6 +150,7 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 {
 	struct ban *b;
 	struct ban * volatile b0;
+	unsigned tests;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
@@ -158,7 +165,9 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	 * a refcount on a ban somewhere in the list and we do not
 	 * inspect the list past that ban.
 	 */
+	tests = 0;
 	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
+		tests++;
 		if (!regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0))
 			break;
 	}
@@ -167,6 +176,7 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	o->ban->refcount--;
 	if (b == o->ban)	/* not banned */
 		b0->refcount++;
+	VSL_stats->n_purge_test++;
 	UNLOCK(&ban_mtx);
 
 	if (b == o->ban) {	/* not banned */
