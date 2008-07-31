@@ -142,7 +142,7 @@ static const char *default_vcl =
     "        pass;\n"
     "    }\n"
     "	 set obj.prefetch =  -30s;"
-    "    insert;\n"
+    "    deliver;\n"
     "}\n"
     "sub vcl_deliver {\n"
     "    deliver;\n"

@@ -225,11 +225,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_RET_PIPE  (1 << 3)\n");
 	vsb_cat(sb, "#define VCL_RET_PASS  (1 << 4)\n");
 	vsb_cat(sb, "#define VCL_RET_FETCH  (1 << 5)\n");
-	vsb_cat(sb, "#define VCL_RET_INSERT  (1 << 6)\n");
-	vsb_cat(sb, "#define VCL_RET_DELIVER  (1 << 7)\n");
-	vsb_cat(sb, "#define VCL_RET_DISCARD  (1 << 8)\n");
-	vsb_cat(sb, "#define VCL_RET_KEEP  (1 << 9)\n");
-	vsb_cat(sb, "#define VCL_RET_RESTART  (1 << 10)\n");
+	vsb_cat(sb, "#define VCL_RET_DELIVER  (1 << 6)\n");
+	vsb_cat(sb, "#define VCL_RET_DISCARD  (1 << 7)\n");
+	vsb_cat(sb, "#define VCL_RET_KEEP  (1 << 8)\n");
+	vsb_cat(sb, "#define VCL_RET_RESTART  (1 << 9)\n");
 	vsb_cat(sb, "/*\n");
 	vsb_cat(sb, " * $Id$\n");
 	vsb_cat(sb, " *\n");
@@ -487,8 +486,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_status(const struct sess *, int);\n");
 	vsb_cat(sb, "const char * VRT_r_obj_response(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_response(const struct sess *, const char *, ...);\n");
-	vsb_cat(sb, "unsigned VRT_r_obj_valid(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_valid(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "unsigned VRT_r_obj_cacheable(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_cacheable(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(const struct sess *);\n");

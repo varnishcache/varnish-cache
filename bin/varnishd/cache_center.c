@@ -53,6 +53,7 @@ DOT	shape=hexagon
 DOT	label="Request received"
 DOT ]
 DOT ERROR [shape=plaintext]
+DOT RESTART [shape=plaintext]
 DOT acceptor -> start [style=bold,color=green,weight=4]
  */
 
@@ -122,12 +123,14 @@ DOT		label="vcl_deliver()|resp."
 DOT	]
 DOT	deliver2 [
 DOT		shape=ellipse
-DOT		label="Send hdr + object"
+DOT		label="Send resp + body"
 DOT	]
 DOT	deliver -> vcl_deliver [style=bold,color=green,weight=4]
 DOT	vcl_deliver -> deliver2 [style=bold,color=green,weight=4,label=deliver]
 DOT     vcl_deliver -> errdeliver [label="error"]
 DOT     errdeliver [label="ERROR",shape=plaintext]
+DOT     vcl_deliver -> rstdeliver [label="restart",color=purple]
+DOT     rstdeliver [label="RESTART",shape=plaintext]
 DOT }
 DOT deliver2 -> DONE [style=bold,color=green,weight=4]
  *
@@ -289,13 +292,13 @@ cnt_done(struct sess *sp)
  * Emit an error
  *
 DOT subgraph xcluster_error {
-DOT	error [
-DOT		shape=ellipse
-DOT		label="Issue HTTP error"
+DOT	vcl_error [
+DOT		shape=record
+DOT		label="vcl_error()|resp."
 DOT	]
-DOT	ERROR -> error
+DOT	ERROR -> vcl_error
+DOT	vcl_error-> deliver [label=deliver]
 DOT }
-DOT error -> DONE
  */
 
 static int
@@ -359,11 +362,14 @@ DOT	fetch_pass [
 DOT		shape=ellipse
 DOT		label="obj.pass=true"
 DOT	]
-DOT	vcl_fetch -> fetch_pass [label="pass"]
+DOT	vcl_fetch -> fetch_pass [label="pass",style=bold,color=red]
 DOT }
-DOT fetch_pass -> deliver
-DOT vcl_fetch -> deliver [label="insert",style=bold,color=blue,weight=2]
+DOT fetch_pass -> deliver [style=bold,color=red]
+DOT vcl_fetch -> deliver [label="deliver",style=bold,color=blue,weight=2]
 DOT vcl_fetch -> recv [label="restart"]
+DOT vcl_fetch -> rstfetch [label="restart",color=purple]
+DOT rstfetch [label="RESTART",shape=plaintext]
+DOT fetch -> errfetch 
 DOT vcl_fetch -> errfetch [label="error"]
 DOT errfetch [label="ERROR",shape=plaintext]
  */
@@ -422,7 +428,7 @@ VSL(SLT_Debug, sp->fd, "Fetch = %d", i);
 	case VCL_RET_PASS:
 		sp->obj->pass = 1;
 		break;
-	case VCL_RET_INSERT:
+	case VCL_RET_DELIVER:
 		break;
 	default:
 		INCOMPL();
@@ -499,7 +505,9 @@ DOT	]
 DOT }
 DOT hit -> err_hit [label="error"]
 DOT err_hit [label="ERROR",shape=plaintext]
-DOT hit -> pass [label=pass]
+DOT hit -> rst_hit [label="restart",color=purple]
+DOT rst_hit [label="RESTART",shape=plaintext]
+DOT hit -> pass [label=pass,style=bold,color=red]
 DOT hit -> deliver [label="deliver",style=bold,color=green,weight=4]
  */
 
@@ -564,7 +572,7 @@ DOT	hash -> lookup [label="hash",style=bold,color=green,weight=4]
 DOT	lookup -> lookup2 [label="yes",style=bold,color=green,weight=4]
 DOT }
 DOT lookup2 -> hit [label="no", style=bold,color=green,weight=4]
-DOT lookup2 -> pass [label="yes"]
+DOT lookup2 -> pass [label="yes",style=bold,color=red]
 DOT lookup -> miss [label="no",style=bold,color=blue,weight=2]
  */
 
@@ -658,10 +666,12 @@ DOT		label="vcl_miss()|req.\nbereq."
 DOT	]
 DOT	miss -> vcl_miss [style=bold,color=blue,weight=2]
 DOT }
+DOT vcl_miss -> rst_miss [label="restart",color=purple]
+DOT rst_miss [label="RESTART",shape=plaintext]
 DOT vcl_miss -> err_miss [label="error"]
 DOT err_miss [label="ERROR",shape=plaintext]
 DOT vcl_miss -> fetch [label="fetch",style=bold,color=blue,weight=2]
-DOT vcl_miss -> pass [label="pass"]
+DOT vcl_miss -> pass [label="pass",style=bold,color=red]
 DOT
  */
 
@@ -725,11 +735,13 @@ DOT	pass_do [
 DOT		shape=ellipse
 DOT		label="create anon object\n"
 DOT	]
-DOT	pass -> pass2
-DOT	pass2 -> vcl_pass
-DOT	vcl_pass -> pass_do [label="pass"]
+DOT	pass -> pass2 [style=bold, color=red]
+DOT	pass2 -> vcl_pass [style=bold, color=red]
+DOT	vcl_pass -> pass_do [label="pass"] [style=bold, color=red]
 DOT }
-DOT pass_do -> fetch
+DOT pass_do -> fetch [style=bold, color=red]
+DOT vcl_pass -> rst_pass [label="restart",color=purple]
+DOT rst_pass [label="RESTART",shape=plaintext]
 DOT vcl_pass -> err_pass [label="error"]
 DOT err_pass [label="ERROR",shape=plaintext]
  */
@@ -776,10 +788,10 @@ DOT	pipe_do [
 DOT		shape=ellipse
 DOT		label="send bereq.\npipe until close"
 DOT	]
-DOT	vcl_pipe -> pipe_do [label="pipe"]
-DOT	pipe -> vcl_pipe
+DOT	vcl_pipe -> pipe_do [label="pipe",style=bold,color=orange]
+DOT	pipe -> vcl_pipe [style=bold,color=orange]
 DOT }
-DOT pipe_do -> DONE
+DOT pipe_do -> DONE [style=bold,color=orange]
 DOT vcl_pipe -> err_pipe [label="error"]
 DOT err_pipe [label="ERROR",shape=plaintext]
  */
@@ -816,8 +828,9 @@ DOT		shape=record
 DOT		label="vcl_recv()|req."
 DOT	]
 DOT }
-DOT recv -> pipe [label="pipe"]
-DOT recv -> pass2 [label="pass"]
+DOT RESTART -> recv
+DOT recv -> pipe [label="pipe",style=bold,color=orange]
+DOT recv -> pass2 [label="pass",style=bold,color=red]
 DOT recv -> err_recv [label="error"]
 DOT err_recv [label="ERROR",shape=plaintext]
 DOT recv -> hash [label="lookup",style=bold,color=green,weight=4]
