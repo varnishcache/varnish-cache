@@ -572,9 +572,6 @@ void WSL_Flush(struct worker *w, int overflow);
 void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 
-/* cache_synthetic.c */
-void SYN_ErrorPage(struct sess *sp, int status, const char *reason);
-
 /* cache_vary.c */
 void VRY_Create(const struct sess *sp);
 int VRY_Match(const struct sess *sp, const unsigned char *vary);
