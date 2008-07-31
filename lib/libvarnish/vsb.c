@@ -40,7 +40,6 @@
 
 #include "libvarnish.h"
 #include "vsb.h"
-#include "miniobj.h"
 
 #define	KASSERT(e, m)		assert(e)
 #define	SBMALLOC(size)		malloc(size)
