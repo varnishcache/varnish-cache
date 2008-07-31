@@ -78,6 +78,10 @@ client_thread(void *priv)
 	vtc_log(vl, 2, "Started");
 	vtc_log(vl, 3, "Connect to %s", c->connect);
 	fd = VSS_open(c->connect);
+	if (fd < 0) {
+		sleep(1);
+		fd = VSS_open(c->connect);
+	}
 	assert(fd >= 0);
 	vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
 	http_process(vl, c->spec, fd, 1);
