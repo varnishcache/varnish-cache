@@ -53,7 +53,7 @@ struct vcls {
 	VTAILQ_ENTRY(vcls)	list;
 	char			*name;
 	void			*dlh;
-	struct VCL_conf		*conf;
+	struct VCL_conf		conf[1];
 };
 
 /*
@@ -131,6 +131,7 @@ static int
 VCL_Load(const char *fn, const char *name, struct cli *cli)
 {
 	struct vcls *vcl;
+	struct VCL_conf const *cnf;
 
 	ASSERT_CLI();
 	vcl = vcl_find(name);
@@ -149,13 +150,14 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
-	vcl->conf = dlsym(vcl->dlh, "VCL_conf");
-	if (vcl->conf == NULL) {
-		cli_out(cli, "No VCL_conf symbol\n");
+	cnf = dlsym(vcl->dlh, "VCL_conf");
+	if (cnf == NULL) {
+		cli_out(cli, "Internal error: No VCL_conf symbol\n");
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
 	}
+	memcpy(vcl->conf, cnf, sizeof *cnf);
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
 		cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
@@ -163,7 +165,6 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
-	vcl->conf->priv = vcl;
 	REPLACE(vcl->name, name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	LOCK(&vcl_mtx);

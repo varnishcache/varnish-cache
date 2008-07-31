@@ -262,8 +262,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "	unsigned	nhashcount;\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "        void            *priv;\n");
-	vsb_cat(sb, "\n");
 	vsb_cat(sb, "        vcl_init_f      *init_func;\n");
 	vsb_cat(sb, "        vcl_fini_f      *fini_func;\n");
 	vsb_cat(sb, "\n");
