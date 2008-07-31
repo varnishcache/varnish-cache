@@ -66,7 +66,7 @@ SMS_Init(void)
 	AZ(pthread_mutex_init(&sms_mtx, NULL));
 }
 
-struct stevedore sms_stevedore = {
+static struct stevedore sms_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"synth",
 	.free	=	sms_free,
