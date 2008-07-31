@@ -150,11 +150,6 @@ set spobj {
 	"const struct sess *"
     }
 
-    { obj.valid
-	RW BOOL
-	{                         hit fetch         discard timeout error}
-	"const struct sess *"
-    }
     { obj.cacheable
 	RW BOOL
 	{                         hit fetch         discard timeout error}

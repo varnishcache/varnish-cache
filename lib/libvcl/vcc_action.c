@@ -280,9 +280,28 @@ parse_set(struct tokenlist *tl)
 		}
 		Fb(tl, 0, "vrt_magic_string_end);\n");
 		break;
+	case BOOL:
+		if (tl->t->tok != '=') {
+			illegal_assignment(tl, "boolean");
+			return;
+		}
+		vcc_NextToken(tl);
+		ExpectErr(tl, ID);
+		if (vcc_IdIs(tl->t, "true")) {
+			Fb(tl, 0, " 1);\n", vp->lname);
+		} else if (vcc_IdIs(tl->t, "false")) {
+			Fb(tl, 0, " 0);\n", vp->lname);
+		} else {
+			vsb_printf(tl->sb,
+			    "Expected true or false\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_NextToken(tl);
+		break;
 	default:
 		vsb_printf(tl->sb,
-		    "Assignments not possible for '%s'\n", vp->name);
+		    "Assignments not possible for type of '%s'\n", vp->name);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}

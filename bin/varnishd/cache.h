@@ -258,7 +258,6 @@ struct object {
 
 	unsigned		response;
 
-	unsigned		valid;
 	unsigned		cacheable;
 
 	unsigned		busy;

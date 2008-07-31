@@ -162,11 +162,6 @@ cnt_deliver(struct sess *sp)
 	switch (sp->handling) {
 	case VCL_RET_DELIVER:
 		break;
-	case VCL_RET_ERROR:
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
-		sp->step = STP_ERROR;
-		return (0);
 	default:
 		INCOMPL();
 	}
@@ -316,6 +311,8 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		sp->obj = sp->wrk->nobj;
+		sp->obj->xid = sp->xid;
+		sp->obj->entered = sp->t_req;
 		sp->wrk->nobj = NULL;
 	} else {
 		/* XXX: Null the headers ? */
@@ -384,14 +381,21 @@ cnt_fetch(struct sess *sp)
 	i = Fetch(sp);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 
-	if (!i)
-		RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
-	else {
-		http_PutStatus(sp->wrk, sp->fd, sp->obj->http, 503);
-		http_PutProtocol(sp->wrk, sp->fd, sp->obj->http, "HTTP/1.1");
-		http_PutResponse(sp->wrk, sp->fd, sp->obj->http,
-		    "Backend error");
+	if (i) {
+VSL(SLT_Debug, sp->fd, "Fetch = %d", i);
+		sp->err_code = 503;
+		sp->step = STP_ERROR;
+		VBE_free_bereq(sp->bereq);
+		sp->bereq = NULL;
+		sp->obj->ttl = 0;
+		sp->obj->cacheable = 0;
+		HSH_Unbusy(sp);
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		return (0);
 	}
+
+	RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
 
 	sp->err_code = http_GetStatus(sp->obj->http);
 	VCL_fetch_method(sp);
