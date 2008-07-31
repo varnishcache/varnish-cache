@@ -159,6 +159,14 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 	return (ttd);
 }
 
+/*
+ * We could move this policy to vcl_fetch{} now but I have decided to leave
+ * it here for the POLA principle.  It is not credible to think that a
+ * majority of our uses will change the cacheability decision, so moving
+ * it to VCL would just make the average and median vcl_fetch{} implementation
+ * harder for people to write.  Instead the minority who want to override
+ * the RFC2616 mandated behaviour, can do so in their vcl_fetch{}
+ */
 int
 RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 {
