@@ -176,7 +176,8 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	o->ban->refcount--;
 	if (b == o->ban)	/* not banned */
 		b0->refcount++;
-	VSL_stats->n_purge_test++;
+	VSL_stats->n_purge_obj_test++;
+	VSL_stats->n_purge_re_test += tests;
 	UNLOCK(&ban_mtx);
 
 	if (b == o->ban) {	/* not banned */
