@@ -1,0 +1,30 @@
+# $Id: c00016.vtc 3012 2008-07-24 12:22:35Z des $
+
+test "Test vcl purging"
+
+server s1 {
+	rxreq
+	txresp -body "foo"
+
+	rxreq
+	txresp -body "foo"
+} -start
+
+varnish v1 -vcl+backend { 
+
+	sub vcl_fetch {
+		purge_url("^/$");
+	}
+
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.X-Varnish == "1001"
+
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == "1002"
+
+} -start
