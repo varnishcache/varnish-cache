@@ -680,6 +680,7 @@ smf_trim(const struct storage *s, size_t size)
 
 /*--------------------------------------------------------------------*/
 
+/*lint -e{818} not const-able */
 static void
 smf_free(struct storage *s)
 {

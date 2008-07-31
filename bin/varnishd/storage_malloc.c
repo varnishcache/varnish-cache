@@ -85,6 +85,7 @@ sma_alloc(struct stevedore *st, size_t size)
 	return (&sma->s);
 }
 
+/*lint -e{818} not const-able */
 static void
 sma_free(struct storage *s)
 {
