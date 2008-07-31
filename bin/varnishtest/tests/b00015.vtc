@@ -2,19 +2,82 @@
 
 test "Check synthetic error page caching"
 
-server s1 {
-	rxreq
-	txresp -status 503 -msg "Server Error"
-} -start
 
-varnish v1 -vcl+backend { } -start
+# First test that an internally generated error is not cached
+
+varnish v1 -vcl { 
+	backend foo {
+		.host = "127.0.0.2";
+	}
+} -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	# Disable this for now to not upset automatic scripts
-	#txreq -url "/"
-	#rxresp
-	#expect resp.status == 503
+	expect resp.http.X-varnish == "1001"
+} -run
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+	expect resp.http.X-varnish == "1002"
+} -run
+
+# Then check that an cacheable error from the backend is 
+
+server s1 {
+	rxreq
+	txresp -status 302
+} -start
+
+varnish v1 -vcl+backend { }
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 302
+	expect resp.http.X-varnish == "1003"
+} -run
+
+server s1 -wait
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 302
+	expect resp.http.X-varnish == "1004 1003"
+} -run
+
+# Then check that a non-cacheable error from the backend can be
+
+server s1 {
+	rxreq
+	txresp -status 502
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (obj.status == 502) {
+			set obj.cacheable = true;
+			set obj.ttl = 10m;
+		}
+	}
+ }
+
+client c1 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 502
+	expect resp.http.X-varnish == "1005"
+} -run
+
+server s1 -wait
+
+client c1 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 502
+	expect resp.http.X-varnish == "1006 1005"
 } -run

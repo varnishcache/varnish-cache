@@ -151,13 +151,6 @@ struct var vcc_vars[] = {
 	    "HDR_OBJ",
 	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
 	},
-	{ "obj.valid", BOOL, 9,
-	    "VRT_r_obj_valid(sp)",
-	    "VRT_l_obj_valid(sp, ",
-	    V_RW,
-	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
-	},
 	{ "obj.cacheable", BOOL, 13,
 	    "VRT_r_obj_cacheable(sp)",
 	    "VRT_l_obj_cacheable(sp, ",

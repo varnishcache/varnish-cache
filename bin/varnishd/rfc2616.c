@@ -178,12 +178,10 @@ RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 	case 410: /* Gone */
 	case 404: /* Not Found */
 		sp->obj->cacheable = 1;
-		sp->obj->valid = 1;
 		body = 1;
 		break;
 	default:
 		sp->obj->cacheable = 0;
-		sp->obj->valid = 1; 	/* XXX ? */
 		body = 0;
 		break;
 	}

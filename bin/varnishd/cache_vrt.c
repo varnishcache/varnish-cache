@@ -413,7 +413,6 @@ VRT_r_obj_##onm(const struct sess *sp)					\
 	return (sp->obj->field);					\
 }
 
-VOBJ(unsigned, valid, valid)
 VOBJ(unsigned, cacheable, cacheable)
 
 /*--------------------------------------------------------------------*/
