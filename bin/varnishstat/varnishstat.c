@@ -211,6 +211,13 @@ do_once(struct varnish_stats *VSL_stats, const char* fields)
 	gettimeofday(&tv, NULL);
 	up = tv.tv_sec - VSL_stats->start_time;
 
+	do {
+	  if (fields != NULL && ! show_field("uptime", fields ))
+	    break;
+	  printf("%-16s %12ju %12s %s\n", "uptime",
+		 tv.tv_sec - VSL_stats->start_time, ".  ", "Child uptime");
+	} while (0);
+
 #define MAC_STAT(n, t, f, d) \
 	do { \
 		if (fields != NULL && ! show_field( #n, fields )) break; \
@@ -246,6 +253,8 @@ list_fields(void)
 	fprintf(stderr, "Available fields to use with the varnishstat -f option:\n");
 	fprintf(stderr, "Field name           Description\n");
 	fprintf(stderr, "----------           -----------\n");
+	fprintf(stderr, "uptime               Child uptime\n");
+
 #define MAC_STAT(n, t, f, d) \
 	do { \
 		fprintf(stderr, "%-20s %s\n", #n, d);\
@@ -259,6 +268,7 @@ valid_fields(const char* fields)
 {
 	int i, valid_field, field_length;
 	const char *all_fields[] = {
+	  "uptime",
 #define MAC_STAT(n, t, f, d) \
 	#n,
 #include "stat_field.h"
