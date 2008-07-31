@@ -99,6 +99,7 @@ parse_error(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars);
+		ERRCHK(tl);
 		if (vp->fmt == INT) {
 			Fb(tl, 1, "VRT_error(sp, %s", vp->rname);
 			vcc_NextToken(tl);
