@@ -194,7 +194,7 @@ pan_wrk(const struct worker *wrk)
 static void
 pan_sess(const struct sess *sp)
 {
-	const char *stp;
+	const char *stp, *hand;
 
 	vsb_printf(vsp, "sp = %p {\n", sp);
 	vsb_printf(vsp,
@@ -210,10 +210,24 @@ pan_sess(const struct sess *sp)
 /*lint -restore */
 		default: stp = NULL;
 	}
+	switch (sp->handling) {
+/*lint -save -e525 */
+#define VCL_RET_MAC(l, u, b, v) case VCL_RET_##u: hand = #u; break;
+#define VCL_RET_MAC_E(l, u, b, v) case VCL_RET_##u: hand = #u; break;
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+#undef VCL_RET_MAC_E
+/*lint -restore */
+		default: stp = NULL;
+	}
 	if (stp != NULL)
 		vsb_printf(vsp, "  step = %s,\n", stp);
 	else
 		vsb_printf(vsp, "  step = 0x%x,\n", sp->step);
+	if (stp != NULL)
+		vsb_printf(vsp, "  handling = %s,\n", hand);
+	else
+		vsb_printf(vsp, "  handling = 0x%x,\n", sp->handling);
 	if (sp->err_code)
 		vsb_printf(vsp,
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
@@ -247,6 +261,10 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	const struct sess *sp;
 
 	switch(xxx) {
+	case 3:
+		vsb_printf(vsp,
+		    "Wrong turn:\n%s\n", cond);
+		break;
 	case 2:
 		vsb_printf(vsp,
 		    "Panic from VCL:\n%s\n", cond);

@@ -98,3 +98,7 @@ do { 									\
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
 #define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
 #define diagnostic(foo)	assert(foo)
+#define WRONG(expl) 							\
+do {									\
+	lbv_assert(__func__, __FILE__, __LINE__, expl, errno, 3);	\
+} while (0)
