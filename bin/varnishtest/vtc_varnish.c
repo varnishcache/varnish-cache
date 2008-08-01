@@ -301,7 +301,7 @@ varnish_wait(struct varnish *v)
  */
 
 static void
-varnish_cli(struct varnish *v, const char *cli)
+varnish_cli(struct varnish *v, const char *cli, unsigned exp)
 {
 	enum cli_status_e u;
 
@@ -309,6 +309,8 @@ varnish_cli(struct varnish *v, const char *cli)
 		varnish_launch(v);
 	u = varnish_ask_cli(v, cli, NULL);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
+	if (exp != 0 && exp != u)
+		vtc_log(v->vl, 0, "FAIL CLI response %u expected %u", u, exp);
 }
 
 /**********************************************************************
@@ -470,23 +472,40 @@ cmd_varnish(CMD_ARGS)
 
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-telnet")) {
+			AN(av[1]);
 			v->telnet = av[1];
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-accept")) {
+			AN(av[1]);
 			v->accept = av[1];
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-arg")) {
+			AN(av[1]);
 			v->args = av[1];
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-cli")) {
-			varnish_cli(v, av[1]);
+			AN(av[1]);
+			varnish_cli(v, av[1], 0);
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-cliok")) {
+			AN(av[1]);
+			varnish_cli(v, av[1], CLIS_OK);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-clierr")) {
+			AN(av[1]);
+			AN(av[2]);
+			varnish_cli(v, av[2], atoi(av[1]));
+			av += 2;
 			continue;
 		}
 		if (!strcmp(*av, "-launch")) {
@@ -498,16 +517,19 @@ cmd_varnish(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-vcl+backend")) {
+			AN(av[1]);
 			varnish_vclbackend(v, av[1]);
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-badvcl")) {
+			AN(av[1]);
 			varnish_vcl(v, av[1], CLIS_PARAM);
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-vcl")) {
+			AN(av[1]);
 			varnish_vcl(v, av[1], CLIS_OK);
 			av++;
 			continue;
