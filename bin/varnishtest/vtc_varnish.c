@@ -268,11 +268,19 @@ varnish_start(struct varnish *v)
 static void
 varnish_stop(struct varnish *v)
 {
+	char *r;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
+	while (1) {
+		(void)varnish_ask_cli(v, "status", &r);
+		if (!strcmp(r, "Child in state stopped"))
+			break;
+		free(r);
+		sleep (1);
+	}
 }
 
 /**********************************************************************
