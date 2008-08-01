@@ -2,8 +2,6 @@
 
 test "Check pipelining"
 
-varnish v1 -arg "-h simple_list -b 127.0.0.1:9080" -start
-
 server s1 {
 	rxreq 
 	expect req.url == "/foo"
@@ -11,9 +9,9 @@ server s1 {
 	rxreq 
 	expect req.url == "/bar"
 	txresp -body "foobar"
-}
+} -start 
 
-server s1 -start 
+varnish v1 -vcl+backend {} -start
 
 client c1 {
 	send "GET /foo HTTP/1.1\n\nGET /bar HTTP/1.1\n\nGET /bar HTTP/1.1\n\n"
@@ -29,6 +27,6 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.content-length == 6
 	expect resp.http.x-varnish == "1003 1002"
-}
+} -run
 
-client c1 -run
+varnish v1 -expect sess_pipeline == 2

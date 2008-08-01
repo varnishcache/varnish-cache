@@ -2,8 +2,6 @@
 
 test "Check chunked encoding from backend works"
 
-varnish v1 -arg "-s malloc -b 127.0.0.1:9080" -start
-
 server s1 {
 	rxreq 
 	expect req.url == "/bar"
@@ -21,9 +19,9 @@ server s1 {
 	send "00000004\r\n1234\r\n"
 	chunked "1234"
 	chunked ""
-}
+} -start
 
-server s1 -start 
+varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq -url "/bar"
@@ -34,6 +32,4 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.content-length == "8"
-}
-
-client c1 -run
+} -run

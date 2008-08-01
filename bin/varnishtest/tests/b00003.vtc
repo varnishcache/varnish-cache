@@ -4,28 +4,32 @@ test "Check that a cache fetch + hit transaction works"
 
 server s1 {
 	rxreq 
-	txresp \
-		-hdr "Connection: close" \
-		-body "012345\n"
-}
+	txresp -hdr "Connection: close" -body "012345\n"
+} -start
 
 varnish v1 -vcl+backend { } -start 
-
-server s1 -start 
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1001"
-}
+} -run
 
 client c2 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1002 1001"
-}
+} -run
 
-client c1 -run
-client c2 -run
+# Give varnish a chance to update stats
+delay .1
+
+varnish v1 -expect client_conn == 2
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect client_req == 2
+varnish v1 -expect s_sess == 2
+varnish v1 -expect s_req == 2
+varnish v1 -expect s_fetch == 1
