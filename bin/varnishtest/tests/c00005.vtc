@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test simple ACL (May fail on Linux)"
+test "Test simple ACL"
 
 server s1 {
 	rxreq
@@ -27,9 +27,7 @@ client c1 {
 	txreq -url "foo"
 	rxresp
 	expect resp.status == 200
-}
-
-client c1 -run
+} -run
 
 varnish v1 -vcl+backend {
 	acl acl1 {

@@ -112,7 +112,7 @@ client_new(char *name)
 		exit (1);
 	}
 
-	c->connect = ":9081";
+	c->connect = "127.0.0.1:9081";
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
 }
