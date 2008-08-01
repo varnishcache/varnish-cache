@@ -8,6 +8,15 @@ server s1 {
 
 varnish v1 -vcl+backend { } 
 
+varnish v1 -start
+varnish v1 -stop
+
+varnish v1 -start
+varnish v1 -stop
+
+varnish v1 -start
+varnish v1 -stop
+
 varnish v1 -cliok start
 varnish v1 -clierr 300 start
 varnish v1 -clierr 300 start
@@ -15,14 +24,5 @@ varnish v1 -clierr 300 start
 varnish v1 -cliok stop
 varnish v1 -clierr 300 stop
 varnish v1 -clierr 300 stop
-
-varnish v1 -cliok start
-varnish v1 -cliok stop
-
-varnish v1 -cliok start
-varnish v1 -cliok stop
-
-varnish v1 -cliok start
-varnish v1 -cliok stop
 
 varnish v1 -wait
