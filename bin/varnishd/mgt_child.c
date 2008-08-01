@@ -226,7 +226,7 @@ close_sockets(void)
 /*--------------------------------------------------------------------*/
 
 static void
-start_child(void)
+start_child(struct cli *cli)
 {
 	pid_t pid;
 	unsigned u;
@@ -238,10 +238,15 @@ start_child(void)
 		return;
 
 	if (open_sockets() != 0) {
+		child_state = CH_STOPPED;
+		if (cli != NULL) {
+			cli_result(cli, CLIS_CANT);
+			cli_out(cli, "Could not open sockets");
+			return;
+		}
 		REPORT0(LOG_ERR,
 		    "Child start failed: could not open sockets");
-		child_state = CH_STOPPED;
-		return;	/* XXX ?? */
+		return;
 	}
 
 	child_state = CH_STARTING;
@@ -451,7 +456,7 @@ mgt_sigchld(const struct vev *e, int what)
 	REPORT0(LOG_DEBUG, "Child cleanup complete");
 
 	if (child_state == CH_DIED && params->auto_restart)
-		start_child();
+		start_child(NULL);
 	else if (child_state == CH_DIED) {
 		child_state = CH_STOPPED;
 	} else if (child_state == CH_STOPPING)
@@ -531,9 +536,11 @@ mgt_run(int dflag, const char *T_arg)
 
 	if (!dflag && !mgt_has_vcl()) 
 		REPORT0(LOG_ERR, "No VCL loaded yet");
-	else if (!dflag)
-		start_child();
-	else
+	else if (!dflag) {
+		start_child(NULL);
+		if (child_state == CH_STOPPED)
+			exit(2);
+	} else
 		fprintf(stderr,
 		    "Debugging mode, enter \"start\" to start child\n");
 
@@ -556,9 +563,9 @@ mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 	if (priv != NULL && child_state == CH_RUNNING)
 		mgt_stop_child();
 	else if (priv == NULL && child_state == CH_STOPPED) {
-		if (mgt_has_vcl())
-			start_child();
-		else {
+		if (mgt_has_vcl()) {
+			start_child(cli);
+		} else {
 			cli_result(cli, CLIS_CANT);
 			cli_out(cli, "No VCL available");
 		}
