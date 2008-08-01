@@ -762,6 +762,7 @@ cnt_pass(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	}
+	sp->wrk->acct.pass++;
 	HSH_Prealloc(sp);
 	sp->obj = sp->wrk->nobj;
 	sp->wrk->nobj = NULL;
