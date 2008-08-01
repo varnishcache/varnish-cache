@@ -26,7 +26,7 @@ client c1 {
 	txreq -url "/foo"
 	# Don't expect answer, the server crashed.
 	sema r1 sync 2
-	delay 1.5
+	delay 2.5
 } -run
 
 server s1 {
