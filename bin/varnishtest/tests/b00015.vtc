@@ -2,7 +2,6 @@
 
 test "Check synthetic error page caching"
 
-
 # First test that an internally generated error is not cached
 
 varnish v1 -vcl { 
@@ -41,8 +40,6 @@ client c1 {
 	expect resp.http.X-varnish == "1003"
 } -run
 
-server s1 -wait
-
 client c1 {
 	txreq -url "/"
 	rxresp
@@ -64,7 +61,7 @@ varnish v1 -vcl+backend {
 			set obj.ttl = 10m;
 		}
 	}
- }
+}
 
 client c1 {
 	txreq -url "/2"
@@ -72,8 +69,6 @@ client c1 {
 	expect resp.status == 502
 	expect resp.http.X-varnish == "1005"
 } -run
-
-server s1 -wait
 
 client c1 {
 	txreq -url "/2"

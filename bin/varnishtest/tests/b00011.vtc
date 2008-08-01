@@ -2,23 +2,19 @@
 
 test "Check HTTP/1.0 EOF transmission"
 
-varnish v1 -arg "-h simple_list -b 127.0.0.1:9080" -start
-
 server s1 {
 	rxreq 
 	txresp -hdr "Connection: close" 
 	send "Body line 1\n"
 	send "Body line 2\n"
 	send "Body line 3\n"
-}
+} -start
 
-server s1 -start 
+varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.content-length == 36
-}
-
-client c1 -run
+} -run

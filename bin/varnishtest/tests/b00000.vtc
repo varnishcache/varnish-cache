@@ -2,23 +2,29 @@
 #
 # $Id$
 
-varnish v1 -arg "-b 127.0.0.1:9080" -start
+test "Does anything get through at all ?"
 
 server s1 {
 	rxreq 
-	txresp -hdr "Connection: close" -body "012345\n"
-}
+	txresp -body "012345\n"
+} -start
 
-server s1 -start 
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -expect n_object == 0
+varnish v1 -expect client_conn == 0
+varnish v1 -expect client_req == 0
+varnish v1 -expect cache_miss == 0
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-}
+} -run
 
-client c1 -run
-
-server s1 -wait
-
-varnish v1 -stop
+varnish v1 -expect n_object == 1
+varnish v1 -expect client_conn == 1
+varnish v1 -expect client_req == 1
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect s_sess == 1
+varnish v1 -expect s_req == 1

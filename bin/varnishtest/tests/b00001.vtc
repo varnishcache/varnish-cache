@@ -4,10 +4,8 @@ test "Check that a pipe transaction works"
 
 server s1 -repeat 1 {
 	rxreq 
-	txresp \
-		-hdr "Connection: close" \
-		-body "012345\n"
-}
+	txresp -body "012345\n"
+} -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
@@ -15,12 +13,18 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-server s1 -start 
-
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-}
+} -run
 
-client c1 -run
+# Give varnish a chance to update stats
+delay .1
+
+varnish v1 -expect n_object == 0
+varnish v1 -expect client_conn == 1
+varnish v1 -expect client_req == 1
+varnish v1 -expect s_sess == 1
+varnish v1 -expect s_req == 1
+varnish v1 -expect s_pipe == 1

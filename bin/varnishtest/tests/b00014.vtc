@@ -3,7 +3,7 @@
 test "Check -f command line arg"
 
 shell "echo 'backend foo { .host = \"127.0.0.1\"; .port = \"9080\"; }' > /tmp/_b00014.vcl" 
-varnish v1 -arg "-h simple_list -f /tmp/_b00014.vcl" -start
+varnish v1 -arg "-f /tmp/_b00014.vcl" -start
 
 server s1 {
 	rxreq 
@@ -19,7 +19,7 @@ client c1 {
 	rxresp
 } -run
 
-varnish v1 -cli "vcl.load foo /tmp/_b00014.vcl" -cli "vcl.use foo"
+varnish v1 -cliok "vcl.load foo /tmp/_b00014.vcl" -cliok "vcl.use foo"
 
 client c1 {
 	txreq -url /bar
