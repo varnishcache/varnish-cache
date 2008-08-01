@@ -487,7 +487,7 @@ cnt_first(struct sess *sp)
 		sp->step = STP_DONE;
 		break;
 	default:
-		INCOMPL();
+		WRONG("Illegal return from HTC_Rx");
 	}
 	return (0);
 }
@@ -884,7 +884,8 @@ cnt_recv(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	default:
-		INCOMPL();
+		WRONG("Illegal action in vcl_recv{}");
+		return (0);
 	}
 }
 
@@ -1008,7 +1009,8 @@ CNT_Session(struct sess *sp)
 		        break;
 #include "steps.h"
 #undef STEP
-		default:	INCOMPL();
+		default:
+			WRONG("State engine misfire");
 		}
 		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
