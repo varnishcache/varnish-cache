@@ -165,8 +165,11 @@ cnt_deliver(struct sess *sp)
 	switch (sp->handling) {
 	case VCL_RET_DELIVER:
 		break;
-	default:
+	case VCL_RET_RESTART:
 		INCOMPL();
+		break;
+	default:
+		WRONG("Illegal action in vcl_deliver{}");
 	}
 
 	sp->director = NULL;
@@ -337,6 +340,7 @@ cnt_error(struct sess *sp)
 		http_PutResponse(w, sp->fd, h,
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
+	assert(sp->handling == VCL_RET_DELIVER);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
 	sp->step = STP_DELIVER;
@@ -410,20 +414,15 @@ VSL(SLT_Debug, sp->fd, "Fetch = %d", i);
 	sp->bereq = NULL;
 
 	switch (sp->handling) {
-	case VCL_RET_ERROR:
 	case VCL_RET_RESTART:
 		sp->obj->ttl = 0;
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
 		sp->obj = NULL;
-		if (sp->handling == VCL_RET_ERROR)
-			sp->step = STP_ERROR;
-		else {
-			sp->director = NULL;
-			sp->restarts++;
-			sp->step = STP_RECV;
-		}
+		sp->director = NULL;
+		sp->restarts++;
+		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
 		sp->obj->pass = 1;
@@ -431,7 +430,7 @@ VSL(SLT_Debug, sp->fd, "Fetch = %d", i);
 	case VCL_RET_DELIVER:
 		break;
 	default:
-		INCOMPL();
+		WRONG("Illegal action in vcl_fetch{}");
 	}
 
 	sp->obj->cacheable = 1;
@@ -534,17 +533,20 @@ cnt_hit(struct sess *sp)
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 
-	if (sp->handling == VCL_RET_PASS) {
+	switch(sp->handling) {
+	case VCL_RET_PASS:
 		sp->step = STP_PASS;
 		return (0);
-	}
-
-	if (sp->handling == VCL_RET_ERROR) {
+	case VCL_RET_ERROR:
 		sp->step = STP_ERROR;
 		return (0);
+	case VCL_RET_RESTART:
+		INCOMPL();
+		return (0);
+	default:
+		WRONG("Illegal action in vcl_hit{}");
+		return (0);
 	}
-
-	INCOMPL();
 }
 
 
@@ -603,7 +605,7 @@ cnt_lookup(struct sess *sp)
 		sp->hashptr = (void*)p;
 
 		VCL_hash_method(sp);
-		/* XXX check error */
+		assert(sp->handling == VCL_RET_HASH);
 	}
 
 	o = HSH_Lookup(sp);
@@ -686,7 +688,8 @@ cnt_miss(struct sess *sp)
 	VBE_SelectBackend(sp);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
-	if (sp->handling == VCL_RET_ERROR) {
+	switch(sp->handling) {
+	case VCL_RET_ERROR:
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
@@ -695,8 +698,7 @@ cnt_miss(struct sess *sp)
 		sp->bereq = NULL;
 		sp->step = STP_ERROR;
 		return (0);
-	}
-	if (sp->handling == VCL_RET_PASS) {
+	case VCL_RET_PASS:
 		sp->obj->cacheable = 0;
 		HSH_Unbusy(sp);
 		HSH_Deref(sp->obj);
@@ -705,12 +707,16 @@ cnt_miss(struct sess *sp)
 		VBE_free_bereq(sp->bereq);
 		sp->bereq = NULL;
 		return (0);
-	}
-	if (sp->handling == VCL_RET_FETCH) {
+	case VCL_RET_FETCH:
 		sp->step = STP_FETCH;
 		return (0);
+	case VCL_RET_RESTART:
+		INCOMPL();
+		return (0);
+	default:
+		WRONG("Illegal action in vcl_miss{}");
+		return (0);
 	}
-	INCOMPL();
 }
 
 
@@ -762,6 +768,7 @@ cnt_pass(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	}
+	assert(sp->handling == VCL_RET_PASS);
 	sp->wrk->acct.pass++;
 	HSH_Prealloc(sp);
 	sp->obj = sp->wrk->nobj;
@@ -812,6 +819,7 @@ cnt_pipe(struct sess *sp)
 
 	if (sp->handling == VCL_RET_ERROR)
 		INCOMPL();
+	assert(sp->handling == VCL_RET_PIPE);
 
 	PipeSession(sp);
 	sp->step = STP_DONE;
