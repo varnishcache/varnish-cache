@@ -2,25 +2,21 @@
 #
 # $Id$
 
-test "Check that multiple thread pools all get started"
-
-varnish v1 -arg "-b 127.0.0.1:9080 -p thread_pools=9" -start
+test "Check that all thread pools all get started and get minimum threads"
 
 server s1 {
 	rxreq 
 	txresp -hdr "Connection: close" -body "012345\n"
-}
+} -start
 
-server s1 -start 
+varnish v1 -arg "-p thread_pool_min=2 -p thread_pools=4" -vcl+backend {} -start
+
+delay 1
+varnish v1 -expect n_wrk_create == 8
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-}
+} -run
 
-client c1 -run
-
-server s1 -wait
-
-varnish v1 -stop

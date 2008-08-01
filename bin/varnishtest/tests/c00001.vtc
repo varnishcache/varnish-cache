@@ -8,7 +8,7 @@ server s1 {
 		-hdr "Foobar: _barf_" \
 		-hdr "Connection: close" \
 		-body "012345\n"
-}
+} -start
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
@@ -26,8 +26,6 @@ varnish v1 -vcl+backend {
 	}
 } -start 
 
-server s1 -start 
-
 client c1 {
 	txreq -url "/"
 	rxresp
@@ -41,6 +39,4 @@ client c1 {
 	expect resp.http.snafu5 == "_barffra\p_"
 	# NB: have to escape the \\ in the next line
 	expect resp.http.snafu6 == "_f&rap\\_"
-}
-
-client c1 -run
+} -run

@@ -148,8 +148,8 @@ varnish_new(char *name)
 	}
 
 	v->args = "";
-	v->telnet = ":9001";
-	v->accept = ":9081";
+	v->telnet = "127.0.0.1:9001";
+	v->accept = "127.0.0.1:9081";
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 	return (v);
@@ -191,7 +191,7 @@ varnish_launch(struct varnish *v)
 	vsb = vsb_newauto();
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
-	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->name);
+	vsb_printf(vsb, " ./varnishd -d -d -n /tmp/__%s", v->name);
 	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
 	vsb_printf(vsb, " %s", v->args);
 	vsb_finish(vsb);
@@ -235,8 +235,12 @@ varnish_launch(struct varnish *v)
 	}
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
-	v->stats = VSL_OpenStats(v->name);
-
+	vsb = vsb_newauto();
+	vsb_printf(vsb, "/tmp/__%s", v->name);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	v->stats = VSL_OpenStats(vsb_data(vsb));
+	vsb_delete(vsb);
 }
 
 /**********************************************************************
