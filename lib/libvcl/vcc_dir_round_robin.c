@@ -54,6 +54,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 	struct token *t_field, *t_be;
 	int nbh, nelem;
 	struct fld_spec *fs;
+	const char *first;
 
 	fs = vcc_FldSpec(tl, "!backend", NULL);
 
@@ -62,6 +63,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 	    PF(t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
+		first = "";
 		t_be = tl->t;
 		vcc_ResetFldSpec(fs);
 		nbh = -1;
@@ -76,11 +78,12 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 			if (vcc_IdIs(t_field, "backend")) {
 				vcc_ParseBackendHost(tl, &nbh,
 				    t_dir, t_policy, nelem);
-				Fc(tl, 0, " .host = &bh_%d,", nbh);
+				Fc(tl, 0, "%s .host = &bh_%d", first, nbh);
 				ERRCHK(tl);
 			} else {
 				ErrInternal(tl);
 			}
+			first = ", ";
 		}
 		vcc_FieldsOk(tl, fs);
 		if (tl->err) {

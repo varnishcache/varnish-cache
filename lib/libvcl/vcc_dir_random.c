@@ -56,6 +56,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 	int nbh, nelem;
 	struct fld_spec *fs;
 	unsigned u;
+	const char *first;
 
 	fs = vcc_FldSpec(tl, "!backend", "!weight", NULL);
 
@@ -64,6 +65,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 	    PF(t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
+		first = "";
 		t_be = tl->t;
 		vcc_ResetFldSpec(fs);
 		nbh = -1;
@@ -78,7 +80,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 			if (vcc_IdIs(t_field, "backend")) {
 				vcc_ParseBackendHost(tl, &nbh,
 				    t_dir, t_policy, nelem);
-				Fc(tl, 0, " .host = &bh_%d,", nbh);
+				Fc(tl, 0, "%s .host = &bh_%d", first, nbh);
 				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {
 				ExpectErr(tl, CNUM);
@@ -92,13 +94,14 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 					vcc_ErrWhere(tl, tl->t);
 					return;
 				}
-				Fc(tl, 0, " .weight = %u", u);
+				Fc(tl, 0, "%s .weight = %u", first, u);
 				vcc_NextToken(tl);
 				ExpectErr(tl, ';');
 				vcc_NextToken(tl);
 			} else {
 				ErrInternal(tl);
 			}
+			first = ", ";
 		}
 		vcc_FieldsOk(tl, fs);
 		if (tl->err) {
