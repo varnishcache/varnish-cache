@@ -60,6 +60,7 @@ noinst_HEADERS = \
 	cache_backend.h \
 	cache_acceptor.h \
 	common.h \
+	default_vcl.h \
 	hash_slinger.h \
 	heritage.h \
 	mgt.h \
@@ -77,3 +78,13 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
+
+#
+# Turn the default.vcl file into a C-string we can include in the program.
+#
+default_vcl.h:	default.vcl Makefile
+	sed -e 's/"/\\"/g' -e 's/$$/\\n"/' -e 's/^/	"/' default.vcl > $@
+
+# Explicitly record dependency
+mgt_vcc.${OBJEXT}:	default_vcl.h
+
