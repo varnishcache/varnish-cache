@@ -86,5 +86,5 @@ default_vcl.h:	default.vcl Makefile
 	sed -e 's/"/\\"/g' -e 's/$$/\\n"/' -e 's/^/	"/' default.vcl > $@
 
 # Explicitly record dependency
-mgt_vcc.${OBJEXT}:	default_vcl.h
+mgt_vcc.c:	default_vcl.h
 
