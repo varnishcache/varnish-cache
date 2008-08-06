@@ -79,11 +79,14 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvcl/libvcl.la \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
 
+EXTRA_DIST = default.vcl
+DISTCLEANFILES = default_vcl.h
+
 #
 # Turn the default.vcl file into a C-string we can include in the program.
 #
 default_vcl.h:	default.vcl Makefile
-	sed -e 's/"/\\"/g' -e 's/$$/\\n"/' -e 's/^/	"/' default.vcl > $@
+	sed -e 's/"/\\"/g' -e 's/$$/\\n"/' -e 's/^/	"/' $(srcdir)/default.vcl > $@
 
 # Explicitly record dependency
 mgt_vcc.c:	default_vcl.h
