@@ -212,10 +212,11 @@ do_once(struct varnish_stats *VSL_stats, const char* fields)
 	up = tv.tv_sec - VSL_stats->start_time;
 
 	do {
-	  if (fields != NULL && ! show_field("uptime", fields ))
-	    break;
-	  printf("%-16s %12ju %12s %s\n", "uptime",
-		 tv.tv_sec - VSL_stats->start_time, ".  ", "Child uptime");
+		if (fields != NULL && ! show_field("uptime", fields ))
+			break;
+		printf("%-16s %12ju %12s %s\n", "uptime",
+		    (uintmax_t)(tv.tv_sec - VSL_stats->start_time),
+		    ".  ", "Child uptime");
 	} while (0);
 
 #define MAC_STAT(n, t, f, d) \
