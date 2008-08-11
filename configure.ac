@@ -101,6 +101,7 @@ AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
 AC_CHECK_FUNCS([getdtablesize])
 AC_CHECK_FUNCS([abort2])
+AC_CHECK_FUNCS([timegm])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"

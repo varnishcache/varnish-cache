@@ -429,7 +429,13 @@ main(int argc, char * const *argv)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
-	AZ(setenv("TZ", "GMT", 1));
+	/*
+	 * Run in UTC timezone, on the off-chance that this operating
+	 * system does not have a timegm() function, and translates
+	 * timestamps on the local timescale.
+	 * See lib/libvarnish/time.c
+	 */
+	AZ(setenv("TZ", "UTC", 1));
 	tzset();
 
 	memset(cli, 0, sizeof cli);
