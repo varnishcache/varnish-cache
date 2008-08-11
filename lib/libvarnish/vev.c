@@ -476,7 +476,7 @@ vev_schedule_one(struct vev_base *evb)
 		return (vev_sched_signal(evb));
 	assert(evb->lpfd < evb->npfd);
 	i = poll(evb->pfd, evb->lpfd, tmo);
-	if(i == -1 && errno == EINTR)
+	if (i == -1 && errno == EINTR)
 		return (vev_sched_signal(evb));
 	if (i == 0) {
 		assert(e != NULL);

@@ -377,7 +377,7 @@ VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int a)
 		b = sp->backend;
 	}
 	AN(b->method);
-	if(b->method->updatehealth != NULL)
+	if (b->method->updatehealth != NULL)
 		b->method->updatehealth(sp, vc, a);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 #endif
