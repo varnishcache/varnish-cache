@@ -705,13 +705,7 @@ static const struct parspec parspec[] = {
 		"the string will be replaced with the source file name, "
 		"and %o will be replaced with the output file name.",
 		MUST_RELOAD,
-#ifdef __APPLE__
-		"exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
-#elif defined(__SOLARIS__)
-		"exec cc -shared -fpic -c %o %s"
-#else /* default: GCC on Linux & FreeBSD */
-		"exec cc -fpic -shared -Wl,-x -o %o %s"
-#endif
+		VCC_CC
 		, NULL },
 	{ "max_restarts", tweak_uint, &master.max_restarts, 0, UINT_MAX,
 		"Upper limit on how many times a request can restart."
