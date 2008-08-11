@@ -32,7 +32,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <err.h>
 #include <pthread.h>
 #include <stdarg.h>
 
