@@ -39,6 +39,11 @@
 
 #include <libvarnish.h>
 
+const char err_miss_num[] = "Missing number";
+const char err_invalid_num[] = "Invalid number";
+const char err_abs_req[] = "Absolute number required";
+const char err_invalid_suff[] = "Invalid suffix";
+
 const char *
 str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
@@ -46,11 +51,11 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	char *end;
 
 	if (p == NULL || *p == '\0')
-		return ("missing number");
+		return (err_miss_num);
 
 	fval = strtod(p, &end);
 	if (end == p || !isfinite(fval))
-		return ("Invalid number");
+		return (err_invalid_num);
 
 	if (*end == '\0') {
 		*r = (uintmax_t)fval;
@@ -59,7 +64,7 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 
 	if (end[0] == '%' && end[1] == '\0') {
 		if (rel == 0)
-			return ("Absolute number required");
+			return (err_abs_req);
 		fval *= rel / 100.0;
 	} else {
 		/* accept a space before the multiplier */
@@ -91,15 +96,16 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 			fval *= (uintmax_t)1 << 60;
 			++end;
 			break;
-		case 'b': case 'B':
-			++end;
-			break;
 		default:
 			break;
 		}
 
+		/* [bB] is a generic suffix of no effect */
+		if (end[0] == 'b' || end[0] == 'B')
+			end++;
+
 		if (end[0] != '\0')
-			return ("Invalid suffix");
+			return (err_invalid_suff);
 	}
 
 	*r = (uintmax_t)round(fval);
@@ -107,8 +113,9 @@ str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 }
 
 #ifdef NUM_C_TEST
+/* Compile with: "cc -o foo -DNUM_C_TEST -I../.. -I../../include num.c -lm" */
 #include <assert.h>
-#include <err.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -116,6 +123,7 @@ struct test_case {
 	const char *str;
 	uintmax_t rel;
 	uintmax_t val;
+	const char *err;
 } test_cases[] = {
 	{ "1",			(uintmax_t)0,		(uintmax_t)1 },
 	{ "1B",			(uintmax_t)0,		(uintmax_t)1<<0 },
@@ -150,6 +158,13 @@ struct test_case {
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
 	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
+
+	/* Check the error checks */
+	{ "",			0,			0,				err_miss_num },
+	{ "m",			0,			0,				err_invalid_num },
+	{ "4%",			0,			0,				err_abs_req },
+	{ "3*",			0,			0,				err_invalid_suff },
+
 	/* TODO: add more */
 
 	{ 0, 0, 0 },
@@ -161,13 +176,18 @@ main(int argc, char *argv[])
 	struct test_case *tc;
 	uintmax_t val;
 	int ec;
+	const char *e;
 
 	(void)argc;
 	for (ec = 0, tc = test_cases; tc->str; ++tc) {
-		str2bytes(tc->str, &val, tc->rel);
-		if (val != tc->val) {
-			printf("%s: str2bytes(\"%s\", %ju) %ju != %ju\n",
-			    *argv, tc->str, tc->rel, val, tc->val);
+		e = str2bytes(tc->str, &val, tc->rel);
+		if (e != tc->err) {
+			printf("%s: str2bytes(\"%s\", %ju) (%s) != (%s)\n",
+			    *argv, tc->str, tc->rel, tc->err, e);
+			++ec;
+		} else if (e == NULL && val != tc->val) {
+			printf("%s: str2bytes(\"%s\", %ju) %ju != %ju (%s)\n",
+			    *argv, tc->str, tc->rel, val, tc->val, e);
 			++ec;
 		}
 	}
