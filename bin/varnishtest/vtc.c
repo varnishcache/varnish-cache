@@ -344,7 +344,7 @@ main(int argc, char * const *argv)
 	argc -= optind;
 	argv += optind;
 
-	if(argc == 0) 
+	if (argc == 0)
 		usage();
 
 	init_sema();
