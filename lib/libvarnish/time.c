@@ -54,6 +54,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
 #include "libvarnish.h"
 
 double

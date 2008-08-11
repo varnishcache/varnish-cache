@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "config.h"
 #include "libvarnish.h"
 #include "vss.h"
 

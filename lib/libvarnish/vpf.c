@@ -41,6 +41,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
 #ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
 #endif

@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 
+#include "config.h"
 #include "libvarnish.h"
 
 void

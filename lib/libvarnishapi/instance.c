@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "varnishapi.h"
 
 int

@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include "config.h"
 #include "vcc_compile.h"
 
 struct var vcc_vars[] = {

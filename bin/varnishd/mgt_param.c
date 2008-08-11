@@ -43,6 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "cli_common.h"

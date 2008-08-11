@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 
+#include "config.h"
 #include "vsb.h"
 
 #include "vcc_priv.h"

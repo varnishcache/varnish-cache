@@ -46,6 +46,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "config.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "shmlog.h"

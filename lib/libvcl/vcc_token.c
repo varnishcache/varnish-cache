@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "vqueue.h"
 
 #include "vsb.h"
