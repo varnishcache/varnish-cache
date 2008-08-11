@@ -305,6 +305,23 @@ AC_ARG_ENABLE(werror,
 	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
 	CFLAGS="${CFLAGS} -Werror")
 
+# Command line for compiling VCL code.  I wish there were a simple way
+# to figure this out dynamically without introducing a run-time
+# dependency on libtool.
+case $host in
+*-*-solaris*)
+	VCC_CC="cc -Kpic ${CFLAGS} -G -o %o %s"
+	;;
+*-*-darwin*)
+	VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+	;;
+*)
+	VCC_CC="exec cc -fpic -shared -Wl,-x -o %o %s"
+	;;
+esac
+
+AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile
