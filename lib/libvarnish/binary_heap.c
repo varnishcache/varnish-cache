@@ -194,7 +194,7 @@ binheap_root(const struct binheap *bh)
 
 	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
-	if(bh->next == ROOT_IDX)
+	if (bh->next == ROOT_IDX)
 		return (NULL);
 	return (bh->array[ROOT_IDX]);
 }

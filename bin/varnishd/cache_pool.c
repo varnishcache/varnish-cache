@@ -352,7 +352,7 @@ WRK_QueueSession(struct sess *sp)
 	 */
 	sp->t_end = TIM_real();
 	vca_close_session(sp, "dropped");
-	if(sp->vcl != NULL) {
+	if (sp->vcl != NULL) {
 		/*
 		 * A session parked on a busy object can come here
 		 * after it wakes up.  Loose the VCL reference.
