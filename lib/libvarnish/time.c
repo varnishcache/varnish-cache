@@ -112,18 +112,70 @@ static const char *fmts[] = {
 time_t
 TIM_parse(const char *p)
 {
+	time_t t;
 	struct tm tm;
 	const char **r;
 
 	for (r = fmts; *r != NULL; r++) {
 		memset(&tm, 0, sizeof tm);
-		if (strptime(p, *r, &tm) != NULL)
-			return (mktime(&tm));
+		if (strptime(p, *r, &tm) != NULL) {
+			/*
+			 * Make sure this is initialized on the off-chance
+			 * that some raving loonie would apply DST to UTC.
+			 */
+			tm.tm_isdst = -1;
+#if defined(HAVE_TIMEGM)
+			t = timegm(&tm);
+#else
+			/*
+			 * Ahh, another POSIX_STUPIDITY, how unexpected.
+			 * Instead of, as would have been logical, to have
+			 * tm_timezone element, mktime() is standardized as
+			 * always working in localtime.  This brilliant idea
+			 * came from the same people who said "leap-seconds ?
+			 * Naah, screw it!".
+			 *
+			 * On broken systems without a working timegm(),
+			 * it is the responsibility of the calling program
+			 * to set the timezone to UTC.  We check that.
+			 */
+			t = mktime(&tm);
+			assert(!strcmp(tzname[0], "UTC"));
+#endif
+			return (t);
+		}
 	}
 	return (0);
 }
 
 #ifdef TEST_DRIVER
+
+#include <stdlib.h>
+
+/*
+ * Compile with:
+ *  cc -o foo -DTEST_DRIVER -I../.. -I../../include time.c assert.c
+ * Test with:
+ *  env TZ=UTC ./foo
+ *  env TZ=CET ./foo
+ */
+
+static void
+tst(const char *s, time_t good)
+{
+	time_t t;
+	char buf[BUFSIZ];
+
+	t = TIM_parse(s);
+	TIM_format(t, buf);
+	printf("%-30s -> %12jd -> %s\n", s, (intmax_t)t, buf);
+	if (t != good) {
+		printf("Parse error! Got: %jd should have %jd diff %jd\n",
+		    (intmax_t)t, (intmax_t)good, (intmax_t)(t - good));
+		exit (2);
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -136,9 +188,9 @@ main(int argc, char **argv)
 	printf("scan = %d <%s>\n", TIM_parse(buf), buf);
 
 	/* Examples from RFC2616 section 3.3.1 */
-	printf("scan = %d\n", TIM_parse("Sun, 06 Nov 1994 08:49:37 GMT"));
-	printf("scan = %d\n", TIM_parse("Sunday, 06-Nov-94 08:49:37 GMT"));
-	printf("scan = %d\n", TIM_parse("Sun Nov  6 08:49:37 1994"));
+	tst("Sun, 06 Nov 1994 08:49:37 GMT", 784111777);
+	tst("Sunday, 06-Nov-94 08:49:37 GMT", 784111777);
+	tst("Sun Nov  6 08:49:37 1994", 784111777);
 
 	return (0);
 }
