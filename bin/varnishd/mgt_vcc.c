@@ -141,7 +141,8 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	char cmdline[1024];
 	struct vsb cmdsb;
 	char sf[] = "./vcl.########.c";
-	char *of;
+	char of[sizeof sf + 1];
+	char *retval;
 	int p[2], sfd, srclen, status;
 	pid_t pid;
 	void *dlh;
@@ -167,10 +168,11 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	AZ(close(sfd));
 
 	/* Name the output shared library by overwriting the final 'c' */
-	of = strdup(sf);
-	XXXAN(of);
-	assert(of[sizeof sf - 2] == 'c');
-	of[sizeof sf - 2] = 'o';
+	memcpy(of, sf, sizeof sf);
+	assert(sf[sizeof sf - 2] == 'c');
+	of[sizeof sf - 2] = 's';
+	of[sizeof sf - 1] = 'o';
+	of[sizeof sf] = '\0';
 	AN(vsb_new(&cmdsb, cmdline, sizeof cmdline, 0));
 	mgt_make_cc_cmd(&cmdsb, sf, of);
 	vsb_finish(&cmdsb);
@@ -181,7 +183,6 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		vsb_printf(sb, "%s(): pipe() failed: %s",
 		    __func__, strerror(errno));
 		(void)unlink(sf);
-		free(of);
 		return (NULL);
 	}
 	assert(p[0] > STDERR_FILENO);
@@ -192,7 +193,6 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		AZ(close(p[0]));
 		AZ(close(p[1]));
 		(void)unlink(sf);
-		free(of);
 		return (NULL);
 	}
 	if (pid == 0) {
@@ -217,7 +217,6 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		vsb_printf(sb, "%s(): waitpid() failed: %s",
 		    __func__, strerror(errno));
 		(void)unlink(of);
-		free(of);
 		return (NULL);
 	}
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
@@ -229,7 +228,6 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		if (WCOREDUMP(status))
 			vsb_printf(sb, ", core dumped");
 		(void)unlink(of);
-		free(of);
 		return (NULL);
 	}
 
@@ -239,7 +237,6 @@ mgt_run_cc(const char *source, struct vsb *sb)
 		    "%s(): failed to load compiled VCL program:\n  %s",
 		    __func__, dlerror());
 		(void)unlink(of);
-		free(of);
 		return (NULL);
 	}
 
@@ -249,7 +246,9 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	 */
 
 	AZ(dlclose(dlh));
-	return (of);
+	retval = strdup(of);
+	XXXAN(retval);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
