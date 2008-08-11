@@ -32,7 +32,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <err.h>
 
 #include "libvarnish.h"
 #include "vsb.h"
@@ -57,13 +56,17 @@ read_file(const char *fn)
 	int fd;
 
 	fd = open(fn, O_RDONLY);
-	if (fd < 0)
-		err(1, "Cannot open %s", fn);
+	if (fd < 0) {
+		fprintf(stderr, "Cannot open %s: %s", fn, strerror(errno));
+		exit (1);
+	}
 	buf = malloc(sz);
 	assert(buf != NULL);
 	s = read(fd, buf, sz - 1);
-	if (s <= 0) 
-		err(1, "Cannot read %s", fn);
+	if (s <= 0) {
+		fprintf(stderr, "Cannot read %s: %s", fn, strerror(errno));
+		exit (1);
+	}
 	AZ(close (fd));
 	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
 	buf[s] = '\0';
@@ -175,7 +178,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 			for (tn = 0; token_s[tn] != NULL; tn++)
 				fprintf(stderr, "%s ", token_s[tn]);
 			fprintf(stderr, "\n");
-			errx(1, "Unknown command: \"%s\"", token_s[0]);
+			fprintf(stderr, "Unknown command: \"%s\"", token_s[0]);
+			exit (1);
 		}
 	
 		assert(cp->cmd != NULL);
