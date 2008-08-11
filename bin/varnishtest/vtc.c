@@ -301,6 +301,17 @@ exec_file(const char *fn)
 }
 
 /**********************************************************************
+ * Print usage
+ */
+
+static void
+usage(void)
+{
+	fprintf(stderr, "usage: varnishtest [-qv] file ...\n");
+	exit(1);
+}
+
+/**********************************************************************
  * Main 
  */
 
@@ -322,13 +333,16 @@ main(int argc, char * const *argv)
 		case 'v':
 			vtc_verbosity++;
 			break;
-		case '?':
 		default:
-			errx(1, "Usage");
+			usage();
 		}
 	}
 	argc -= optind;
 	argv += optind;
+
+	if(argc == 0) 
+		usage();
+
 	init_sema();
 	for (ch = 0; ch < argc; ch++)
 		exec_file(argv[ch]);

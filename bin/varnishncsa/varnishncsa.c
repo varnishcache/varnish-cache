@@ -503,7 +503,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishncsa %s [-aDV] [-n varnish_name] [-P file] [-w file]\n", VSL_ARGS);
+	fprintf(stderr, "usage: varnishncsa %s [-aDV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
