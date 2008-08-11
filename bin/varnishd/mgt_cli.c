@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "config.h"
 #ifndef HAVE_VASPRINTF
 #include "compat/vasprintf.h"
 #endif

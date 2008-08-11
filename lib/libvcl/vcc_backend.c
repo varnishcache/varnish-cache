@@ -60,6 +60,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "config.h"
 #include "vsb.h"
 
 #include "vcc_priv.h"

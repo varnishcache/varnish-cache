@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include "config.h"
 #include "varnishapi.h"
 
 static const char *b64 =

@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "config.h"
 #ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
 #endif

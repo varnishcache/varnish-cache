@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "cache.h"
 #include "cache_backend.h"
 #include "vcl.h"
