@@ -261,7 +261,6 @@ vcc_FldSpec(struct tokenlist *tl, const char *first, ...)
 	return (r);
 }
 
-
 void
 vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 {
@@ -318,6 +317,8 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
 static void
 vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did, struct token *t_field)
 {
+	/* .url and .request are mutually exclusive */
+
 	if (*t_did != NULL) {
 		vsb_printf(tl->sb,
 		    "Probe request redefinition at:\n");
