@@ -112,6 +112,7 @@ child_main(void)
 	SES_Init();
 
 	VBE_Init();
+	VBP_Init();
 	VSL_Init();
 	WRK_Init();
 
