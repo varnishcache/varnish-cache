@@ -242,7 +242,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 	LOCK(&bp->mtx);
 	bp->refcount++;
-	UNLOCK(&sp->backend->mtx);
+	UNLOCK(&bp->mtx);
 
 	s = -1;
 	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
@@ -257,7 +257,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len);
 
 	if (s < 0) {
-		LOCK(&sp->backend->mtx);
+		LOCK(&bp->mtx);
 		bp->refcount--;		/* Only keep ref on success */
 		UNLOCK(&bp->mtx);
 	}
@@ -317,16 +317,13 @@ void
 VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
 {
 	struct backend *b;
-	int i;
 
 	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
 	b = vc->backend;
 	assert(vc->fd >= 0);
 	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
-	i = close(vc->fd);
-	assert(i == 0 || errno == ECONNRESET || errno == ENOTCONN);
-	vc->fd = -1;
+	TCP_close(&vc->fd);
 	VBE_DropRef(vc->backend);
 	vc->backend = NULL;
 	VBE_ReleaseConn(vc);

@@ -54,6 +54,7 @@ void TCP_blocking(int sock);
 void TCP_nonblocking(int sock);
 #ifdef SOL_SOCKET
 int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec);
+void TCP_close(int *s);
 #endif
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))

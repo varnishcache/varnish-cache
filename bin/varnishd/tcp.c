@@ -192,3 +192,17 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 	TCP_blocking(s);
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * When closing a TCP connection, a couple of errno's are legit, we
+ * can't be held responsible for the other end wanting to talk to us.
+ */
+
+void
+TCP_close(int *s)
+{
+	assert (close(*s) == 0 ||
+	    errno == ECONNRESET ||
+	    errno == ENOTCONN);
+	*s = -1;
+}
