@@ -809,6 +809,7 @@ ESI_Deliver(struct sess *sp)
 		http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
 		if (eb->host.b != NULL)  {
 			http_Unset(sp->http, H_Host);
+			http_Unset(sp->http, H_If_Modified_Since);
 			http_SetHeader(sp->wrk, sp->fd, sp->http, eb->host.b);
 		}
 		sp->step = STP_RECV;
