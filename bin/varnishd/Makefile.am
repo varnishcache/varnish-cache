@@ -58,6 +58,7 @@ noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
 	cache_backend.h \
+	cache_backend_poll.h \
 	cache_acceptor.h \
 	common.h \
 	default_vcl.h \
