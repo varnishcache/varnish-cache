@@ -2,7 +2,7 @@
 
 EXTRA_DIST = zope-plone.vcl
 
-dist_data_DATA = default.vcl
+dist_varnishconf_DATA = default.vcl
 
 default.vcl:	$(top_srcdir)/bin/varnishd/default.vcl
 	@echo -e "This is a basic VCL configuration file for varnish.  See the vcl(7)\n\
