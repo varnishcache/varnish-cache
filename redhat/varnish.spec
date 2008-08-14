@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: pre_svn20080307%{?dist}
+Release: pre_svn20080814%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -10,7 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtoolto generate a suitable
 # configure script. Release tarballs would not need this
 #BuildRequires: automake autoconf libtool
-BuildRequires: ncurses-devel libxslt
+BuildRequires: ncurses-devel libxslt groff
 Requires: kernel >= 2.6.0 varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires(pre): shadow-utils
@@ -56,7 +56,7 @@ Varnish is a high-performance HTTP accelerator
 # ./autogen.sh
 
 mkdir examples
-cp etc/default.vcl etc/zope-plone.vcl examples
+cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 %build
 
@@ -172,6 +172,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Thu Aug 14 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-pre_svn20080814
+- default.vcl has moved
+- Added groff to build requirements
+
 * Sat Dec 29 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.2-5
 - Added missing configuration examples
 - Corrected the license to "BSD"
