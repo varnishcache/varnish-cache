@@ -29,7 +29,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.content-length == 6
 	expect resp.http.x-varnish == "1001"
-} -start
+} -run
 
 varnish v1 -cli "vcl.use vcl2"
 
@@ -39,7 +39,7 @@ client c2 {
 	expect resp.status == 200
 	expect resp.http.content-length == 7
 	expect resp.http.x-varnish == "1002"
-} -start
+} -run
 
 varnish v1 -cli "vcl.use vcl1"
 
@@ -49,7 +49,7 @@ client c3 {
 	expect resp.status == 200
 	expect resp.http.content-length == 6
 	expect resp.http.x-varnish == "1003 1001"
-} -start
+} -run
 
 varnish v1 -cli "vcl.show vcl2"
 varnish v1 -cli "vcl.discard vcl2"

@@ -62,7 +62,7 @@ varnish v1 -expect n_vcl_discard == 1
 client c1 {
 	txreq -url /foo
 	rxresp
-} -start
+} -run
 
 # The workthread should have released its VCL reference now
 # but we need to tickle the CLI to notice
