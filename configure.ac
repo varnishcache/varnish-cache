@@ -262,6 +262,9 @@ fi
 VARNISH_STATE_DIR='${localstatedir}/varnish'
 AC_SUBST(VARNISH_STATE_DIR)
 
+# Default configuration directory.
+varnishconfdir='${sysconfdir}/varnish'
+AC_SUBST(varnishconfdir)
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
