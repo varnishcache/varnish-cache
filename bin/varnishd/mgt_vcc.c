@@ -143,7 +143,7 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	char sf[] = "./vcl.########.c";
 	char of[sizeof sf + 1];
 	char *retval;
-	int p[2], sfd, srclen, status;
+	int rv, p[2], sfd, srclen, status;
 	pid_t pid;
 	void *dlh;
 	struct vlu *vlu;
@@ -213,12 +213,15 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	AZ(close(p[0]));
 	VLU_Destroy(vlu);
 	(void)unlink(sf);
-	if (waitpid(pid, &status, 0) < 0) {
-		vsb_printf(sb, "%s(): waitpid() failed: %s",
-		    __func__, strerror(errno));
-		(void)unlink(of);
-		return (NULL);
-	}
+	do {
+		rv = waitpid(pid, &status, 0);
+		if (rv < 0 && errno != EINTR) {
+			vsb_printf(sb, "%s(): waitpid() failed: %s",
+			    __func__, strerror(errno));
+			(void)unlink(of);
+			return (NULL);
+		}
+	} while (rv < 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 		vsb_printf(sb, "%s(): Compiler failed", __func__);
 		if (WIFEXITED(status))
