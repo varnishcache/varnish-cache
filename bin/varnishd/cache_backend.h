@@ -95,7 +95,7 @@ struct backend {
 	VTAILQ_HEAD(, vbe_conn)	connlist;
 
 	struct vbp_target	*probe;
-	int			health;
+	unsigned		healthy;
 };
 
 /* cache_backend.c */
