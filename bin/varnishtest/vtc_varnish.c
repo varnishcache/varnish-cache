@@ -416,29 +416,36 @@ varnish_expect(struct varnish *v, char * const *av) {
 	uint64_t	val, ref;
 	int good;
 	char *p;
+	int i;
+
+	good = 0;
+
+	for (i = 0; i < 10; i++, usleep(100000)) {
 
 #define MAC_STAT(n, t, f, d) 					\
-	if (!strcmp(av[0], #n)) {				\
-		val = v->stats->n;				\
-	} else 
+		if (!strcmp(av[0], #n)) {			\
+			val = v->stats->n;			\
+		} else
 #include "stat_field.h"
 #undef MAC_STAT
 		{
-		vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
-	}
+			vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
+		}
 
-	ref = strtoumax(av[2], &p, 0);
-	if (ref == UINTMAX_MAX || *p) 
-		vtc_log(v->vl, 0, "Syntax error in number (%s)", av[2]);
-	good = 0;
-	if      (!strcmp(av[1], "==")) { if (val == ref) good = 1; }
-	else if (!strcmp(av[1], "!=")) { if (val != ref) good = 1; }
-	else if (!strcmp(av[1], ">"))  { if (val > ref)  good = 1; }
-	else if (!strcmp(av[1], "<"))  { if (val < ref)  good = 1; }
-	else if (!strcmp(av[1], ">=")) { if (val >= ref) good = 1; }
-	else if (!strcmp(av[1], "<=")) { if (val <= ref) good = 1; }
-	else {
-		vtc_log(v->vl, 0, "comparison %s unknown", av[1]);
+		ref = strtoumax(av[2], &p, 0);
+		if (ref == UINTMAX_MAX || *p)
+			vtc_log(v->vl, 0, "Syntax error in number (%s)", av[2]);
+		if      (!strcmp(av[1], "==")) { if (val == ref) good = 1; }
+		else if (!strcmp(av[1], "!=")) { if (val != ref) good = 1; }
+		else if (!strcmp(av[1], ">"))  { if (val > ref)  good = 1; }
+		else if (!strcmp(av[1], "<"))  { if (val < ref)  good = 1; }
+		else if (!strcmp(av[1], ">=")) { if (val >= ref) good = 1; }
+		else if (!strcmp(av[1], "<=")) { if (val <= ref) good = 1; }
+		else {
+			vtc_log(v->vl, 0, "comparison %s unknown", av[1]);
+		}
+		if (good)
+			break;
 	}
 	if (good)
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
