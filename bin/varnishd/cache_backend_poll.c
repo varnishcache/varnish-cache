@@ -62,6 +62,8 @@ struct vbp_target {
 	struct vrt_backend_probe 	probe;
 	int				stop;
 	int				req_len;
+
+	unsigned			good;
 	
 	/* Collected statistics */
 #define BITMAP(n, c, t, b)	uint64_t	n;
@@ -203,6 +205,8 @@ vbp_poke(struct vbp_target *vt)
 	TCP_close(&s);
 	t_now = TIM_real();
 	vt->good_recv |= 1;
+	/* XXX: Check reponse status */
+	vt->happy |= 1;
 	return (1);
 }
 
@@ -214,18 +218,29 @@ static void *
 vbp_wrk_poll_backend(void *priv)
 {
 	struct vbp_target *vt;
+	unsigned i, j;
+	uint64_t u;
+	const char *logmsg;
+	char bits[10];
 
 	THR_SetName("backend poll");
 
 	CAST_OBJ_NOTNULL(vt, priv, VBP_TARGET_MAGIC);
 
-	/* Establish defaults (XXX: Should they go in VCC instead ?) */
+	/*
+	 * Establish defaults
+	 * XXX: we could make these defaults parameters
+	 */
 	if (vt->probe.request == NULL)
 		vt->probe.request = default_request;
 	if (vt->probe.timeout == 0.0)
 		vt->probe.timeout = 2.0;
 	if (vt->probe.interval == 0.0)
 		vt->probe.timeout = 5.0;
+	if (vt->probe.window == 0)
+		vt->probe.window = 8;
+	if (vt->probe.threshold == 0)
+		vt->probe.threshold = 3;
 
 	printf("Probe(\"%s\", %g, %g)\n",
 	    vt->probe.request,
@@ -240,6 +255,38 @@ vbp_wrk_poll_backend(void *priv)
 #include "cache_backend_poll.h"
 #undef BITMAP
 		vbp_poke(vt);
+
+		i = 0;
+#define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
+#include "cache_backend_poll.h"
+#undef BITMAP
+		bits[i] = '\0';
+
+		u = vt->happy;
+		for (i = j = 0; i < vt->probe.window; i++) {
+			if (u & 1)
+				j++;
+			u >>= 1;
+		}
+		vt->good = j;
+
+		if (vt->good >= vt->probe.threshold) {
+			if (vt->backend->healthy)
+				logmsg = "Still healthy";
+			else
+				logmsg = "Back healthy";
+			vt->backend->healthy = 1;
+		} else {
+			if (vt->backend->healthy)
+				logmsg = "Went sick";
+			else
+				logmsg = "Still sick";
+			vt->backend->healthy = 0;
+		}
+		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u",
+		    vt->backend->vcl_name, logmsg, bits,
+		    vt->good, vt->probe.threshold, vt->probe.window);
+			
 		if (!vt->stop)
 			dsleep(vt->probe.interval);
 	}
@@ -251,14 +298,14 @@ vbp_wrk_poll_backend(void *priv)
  */
 
 static void
-vbp_bitmap(struct cli *cli, const char *s, uint64_t map, const char *lbl)
+vbp_bitmap(struct cli *cli, char c, uint64_t map, const char *lbl)
 {
 	int i;
 	uint64_t u = (1ULL << 63);
 
 	for (i = 0; i < 64; i++) {
 		if (map & u)
-			cli_out(cli, s);
+			cli_out(cli, "%c", c);
 		else
 			cli_out(cli, "-");
 		map <<= 1;
@@ -272,11 +319,17 @@ static void
 vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 {
 
-	cli_out(cli, "Health stats for backend %s\n",
-	    vt->backend->vcl_name);
+	cli_out(cli, "Backend %s is %s\n",
+	    vt->backend->vcl_name,
+	    vt->backend->healthy ? "Healthy" : "Sick");
+	cli_out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
+	    vt->good, vt->probe.threshold, vt->probe.window);
 	cli_out(cli, 
-	    "Oldest ______________________"
-	    "____________________________ Newest\n");
+	    "Oldest                       "
+	    "                             Newest\n");
+	cli_out(cli, 
+	    "============================="
+	    "===================================\n");
 
 #define BITMAP(n, c, t, b)					\
 		if ((vt->n != 0) || (b)) 				\
