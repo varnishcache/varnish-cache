@@ -54,15 +54,12 @@
 #include "vrt.h"
 #include "cache_backend.h"
 
-static MTX	vbp_mtx;
-
 struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
 	struct backend			*backend;
 	struct vrt_backend_probe 	probe;
-	struct workreq			wrq;
 	int				stop;
 	int				req_len;
 	
@@ -72,6 +69,7 @@ struct vbp_target {
 #undef BITMAP
 
 	VTAILQ_ENTRY(vbp_target)	list;
+	pthread_t			thread;
 };
 
 static VTAILQ_HEAD(, vbp_target)	vbp_list =
@@ -85,7 +83,7 @@ static char default_request[] =
 static void
 dsleep(double t)
 {
-	if (t > 10.0)
+	if (t > 100.0)
 		(void)sleep((int)round(t));
 	else
 		(void)usleep((int)round(t * 1e6));
@@ -212,19 +210,14 @@ vbp_poke(struct vbp_target *vt)
  * One thread per backend to be poked.
  */
 
-static void
-vbp_wrk_poll_backend(struct worker *w, void *priv)
+static void *
+vbp_wrk_poll_backend(void *priv)
 {
 	struct vbp_target *vt;
 
-	(void)w;
 	THR_SetName("backend poll");
 
 	CAST_OBJ_NOTNULL(vt, priv, VBP_TARGET_MAGIC);
-
-	LOCK(&vbp_mtx);
-	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
-	UNLOCK(&vbp_mtx);
 
 	/* Establish defaults (XXX: Should they go in VCC instead ?) */
 	if (vt->probe.request == NULL)
@@ -247,14 +240,10 @@ vbp_wrk_poll_backend(struct worker *w, void *priv)
 #include "cache_backend_poll.h"
 #undef BITMAP
 		vbp_poke(vt);
-		dsleep(vt->probe.interval);
+		if (!vt->stop)
+			dsleep(vt->probe.interval);
 	}
-	LOCK(&vbp_mtx);
-	VTAILQ_REMOVE(&vbp_list, vt, list);
-	UNLOCK(&vbp_mtx);
-	vt->backend->probe = NULL;
-	FREE_OBJ(vt);
-	THR_SetName("cache-worker");
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -280,7 +269,7 @@ vbp_bitmap(struct cli *cli, const char *s, uint64_t map, const char *lbl)
 /*lint -e{506} constant value boolean */
 /*lint -e{774} constant value boolean */
 static void
-vbp_health_one(struct cli *cli, struct vbp_target *vt)
+vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 {
 
 	cli_out(cli, "Health stats for backend %s\n",
@@ -301,6 +290,7 @@ vbp_health(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vbp_target *vt;
 
+	ASSERT_CLI();
 	(void)av;
 	(void)priv;
 
@@ -336,21 +326,32 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 	vt->probe = *p;
 	b->probe = vt;
 
-	vt->wrq.func = vbp_wrk_poll_backend;
-	vt->wrq.priv = vt;
-	if (WRK_Queue(&vt->wrq) == 0)
-		return;
-	assert(0 == __LINE__);
-	b->probe = NULL;
-	FREE_OBJ(vt);
+	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
+
+	AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
 }
 
 void
 VBP_Stop(struct backend *b)
 {
+	struct vbp_target *vt;
+	void *ret;
+
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+	ASSERT_CLI();
 	if (b->probe == NULL)
 		return;
-	b->probe->stop = 1;
+	CHECK_OBJ_NOTNULL(b->probe, VBP_TARGET_MAGIC);
+	vt = b->probe;
+
+	vt->stop = 1;
+	AZ(pthread_cancel(vt->thread));
+	AZ(pthread_join(vt->thread, &ret));
+
+	VTAILQ_REMOVE(&vbp_list, vt, list);
+	b->probe = NULL;
+	FREE_OBJ(vt);
 }
 
 /*--------------------------------------------------------------------
@@ -360,8 +361,6 @@ VBP_Stop(struct backend *b)
 void
 VBP_Init(void)
 {
-
-	MTX_INIT(&vbp_mtx);
 
 	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }
