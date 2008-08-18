@@ -1,11 +1,12 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: pre_svn20080814%{?dist}
+Release: 0.2.tp2
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
+#Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
+Source0: http://varnish.projects.linpro.no/static/varnish-%{version}-tp2.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtoolto generate a suitable
 # configure script. Release tarballs would not need this
@@ -49,7 +50,7 @@ Development files for %{name}-libs
 Varnish is a high-performance HTTP accelerator
 
 %prep
-%setup -q
+%setup -n varnish-%{version}-tp2
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
@@ -172,6 +173,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Aug 18 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.2.tp2
+- Changed source, version and release to match 2.0-tp2
+
 * Thu Aug 14 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-pre_svn20080814
 - default.vcl has moved
 - Added groff to build requirements
