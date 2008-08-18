@@ -331,6 +331,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	char		*request;\n");
 	vsb_cat(sb, "	double		timeout;\n");
 	vsb_cat(sb, "	double		interval;\n");
+	vsb_cat(sb, "	unsigned	window;\n");
+	vsb_cat(sb, "	unsigned	threshold;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/*\n");
