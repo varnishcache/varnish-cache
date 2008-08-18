@@ -336,18 +336,23 @@ vcc_ParseProbe(struct tokenlist *tl)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
-	struct token *t_did = NULL;
+	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
+	unsigned window, threshold;
 
 	fs = vcc_FldSpec(tl,
 	    "?url",
 	    "?request",
 	    "?timeout",
 	    "?interval",
+	    "?window",
+	    "?threshold",
 	    NULL);
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
 
+	window = 8;
+	threshold = 3;
 	Fb(tl, 0, "\t.probe = {\n");
 	while (tl->t->tok != '}') {
 
@@ -388,6 +393,16 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
+		} else if (vcc_IdIs(t_field, "window")) {
+			t_window = tl->t;
+			window = vcc_UintVal(tl);
+			vcc_NextToken(tl);
+			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "threshold")) {
+			t_threshold = tl->t;
+			threshold = vcc_UintVal(tl);
+			vcc_NextToken(tl);
+			ERRCHK(tl);
 		} else {
 			vcc_ErrToken(tl, t_field);
 			vcc_ErrWhere(tl, t_field);
@@ -398,6 +413,33 @@ vcc_ParseProbe(struct tokenlist *tl)
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
 	}
+
+	if (t_threshold == NULL && t_window != NULL) {
+		vsb_printf(tl->sb, "Must specify .threshold with .window\n");
+		vcc_ErrWhere(tl, t_window);
+		return;
+	} else if (t_threshold != NULL && t_window == NULL) {
+		if (threshold > 64) {
+			vsb_printf(tl->sb, "Threshold must be 64 or less.\n");
+			vcc_ErrWhere(tl, t_threshold);
+			return;
+		}
+		window = threshold + 1;
+	} else if (window > 64) {
+		AN(t_window);
+		vsb_printf(tl->sb, "Window must be 64 or less.\n");
+		vcc_ErrWhere(tl, t_window);
+		return;
+	}
+	if (threshold > window ) {
+		vsb_printf(tl->sb,
+		    "Threshold can not be greater than window.\n");
+		vcc_ErrWhere(tl, t_threshold);
+		AN(t_window);
+		vcc_ErrWhere(tl, t_window);
+	}
+	Fb(tl, 0, "\t\t.window = %u,\n", window);
+	Fb(tl, 0, "\t\t.threshold = %u\n", threshold);
 	Fb(tl, 0, "\t},\n");
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);

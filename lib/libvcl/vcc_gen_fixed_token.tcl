@@ -214,6 +214,7 @@ warns $foh
 puts $fo "#include \"config.h\""
 puts $fo "#include <stdio.h>"
 puts $fo "#include <ctype.h>"
+puts $fo "#include \"config.h\""
 puts $fo "#include \"vcc_priv.h\""
 puts $fo "#include \"vsb.h\""
 

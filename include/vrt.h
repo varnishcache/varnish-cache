@@ -51,6 +51,8 @@ struct vrt_backend_probe {
 	char		*request;
 	double		timeout;
 	double		interval;
+	unsigned	window;
+	unsigned	threshold;
 };
 
 /*
