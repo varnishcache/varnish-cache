@@ -54,6 +54,9 @@
 #include "vrt.h"
 #include "cache_backend.h"
 
+/* Default averaging rate, we want something pretty responsive */
+#define AVG_RATE			4
+
 struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
@@ -70,6 +73,10 @@ struct vbp_target {
 #define BITMAP(n, c, t, b)	uint64_t	n;
 #include "cache_backend_poll.h"
 #undef BITMAP
+
+	double				last;
+	double				avg;
+	double				rate;
 
 	VTAILQ_ENTRY(vbp_target)	list;
 	pthread_t			thread;
@@ -205,6 +212,7 @@ vbp_poke(struct vbp_target *vt)
 
 	TCP_close(&s);
 	t_now = TIM_real();
+	vt->last = t_now - t_start;
 	vt->good_recv |= 1;
 	/* XXX: Check reponse status */
 	vt->happy |= 1;
@@ -255,7 +263,15 @@ vbp_wrk_poll_backend(void *priv)
 #define BITMAP(n, c, t, b)	vt->n <<= 1;
 #include "cache_backend_poll.h"
 #undef BITMAP
+		vt->last = 0;
 		vbp_poke(vt);
+
+		/* Calculate exponential average */
+		if (vt->happy & 1) {
+			if (vt->rate < AVG_RATE)
+				vt->rate += 1.0;
+			vt->avg += (vt->last - vt->avg) / vt->rate;
+		}
 
 		i = 0;
 #define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
@@ -284,9 +300,10 @@ vbp_wrk_poll_backend(void *priv)
 				logmsg = "Still sick";
 			vt->backend->healthy = 0;
 		}
-		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u",
+		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f",
 		    vt->backend->vcl_name, logmsg, bits,
-		    vt->good, vt->probe.threshold, vt->probe.window);
+		    vt->good, vt->probe.threshold, vt->probe.window,
+		    vt->last, vt->avg);
 			
 		if (!vt->stop)
 			dsleep(vt->probe.interval);
@@ -325,6 +342,7 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 	    vt->backend->healthy ? "Healthy" : "Sick");
 	cli_out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->probe.threshold, vt->probe.window);
+	cli_out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
 	cli_out(cli, 
 	    "Oldest                       "
 	    "                             Newest\n");
