@@ -434,6 +434,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 		if (threshold > window ) {
 			vsb_printf(tl->sb,
 			    "Threshold can not be greater than window.\n");
+			AN(t_threshold);
 			vcc_ErrWhere(tl, t_threshold);
 			AN(t_window);
 			vcc_ErrWhere(tl, t_window);
