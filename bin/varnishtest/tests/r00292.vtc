@@ -1,0 +1,39 @@
+# $Id$
+#
+# This test checks that the ->hdf flag which tracks Connection: header
+# deletes tracks the headers properly.
+
+test "Header deletion test"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.hdr1 == "req.http.hdr1"
+	expect req.http.hdr2 == "2"
+	expect req.http.hdr3 == "req.http.hdr3"
+	expect req.http.hdr4 == "4"
+	expect req.http.hdr5 == "req.http.hdr5"
+	expect req.http.hdr6 == "6"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -vcl+backend { 
+
+	sub vcl_recv {
+		remove req.http.hdr1;
+		remove req.http.hdr5;
+	}
+} -start
+
+client c1 {
+	txreq  -url "/foo" \
+		-hdr "Connection: hdr3" \
+		-hdr "hdr1: 1" \
+		-hdr "hdr2: 2" \
+		-hdr "hdr3: 3" \
+		-hdr "hdr4: 4" \
+		-hdr "hdr5: 5" \
+		-hdr "hdr6: 6"
+	rxresp
+} -run
+
