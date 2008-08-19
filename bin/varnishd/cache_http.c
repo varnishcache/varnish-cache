@@ -604,6 +604,7 @@ http_copyheader(struct worker *w, int fd, struct http *to, const struct http *fm
 	Tcheck(fm->hd[n]);
 	if (to->nhd < HTTP_HDR_MAX) {
 		to->hd[to->nhd] = fm->hd[n];
+		to->hdf[to->nhd] = 0;
 		to->nhd++;
 	} else  {
 		VSL_stats->losthdr++;
@@ -736,10 +737,12 @@ http_PutField(struct worker *w, int fd, struct http *to, int field, const char *
 		WSL(w, SLT_LostHeader, fd, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
+		to->hdf[field] = 0;
 	} else {
 		memcpy(p, string, l + 1);
 		to->hd[field].b = p;
 		to->hd[field].e = p + l;
+		to->hdf[field] = 0;
 	}
 }
 
@@ -786,6 +789,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ..
 	} else {
 		to->hd[to->nhd].b = to->ws->f;
 		to->hd[to->nhd].e = to->ws->f + n;
+		to->hdf[to->nhd] = 0;
 		WS_Release(to->ws, n + 1);
 		to->nhd++;
 	}
@@ -800,8 +804,10 @@ http_Unset(struct http *hp, const char *hdr)
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (http_IsHdr(&hp->hd[u], hdr)) 
 			continue;
-		if (v != u)
+		if (v != u) {
 			memcpy(&hp->hd[v], &hp->hd[u], sizeof hp->hd[v]);
+			memcpy(&hp->hdf[v], &hp->hdf[u], sizeof hp->hdf[v]);
+		}
 		v++;
 	}
 	hp->nhd = v;
