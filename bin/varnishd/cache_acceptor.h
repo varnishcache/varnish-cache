@@ -48,8 +48,10 @@ extern struct acceptor acceptor_epoll;
 extern struct acceptor acceptor_kqueue;
 #endif
 
-#if defined(HAVE_POLL)
 extern struct acceptor acceptor_poll;
+
+#if defined(HAVE_PORT_CREATE)
+extern struct acceptor acceptor_ports;
 #endif
 
 /* vca_acceptor.c */

@@ -113,10 +113,16 @@ arg_ul(const char *p)
 /*--------------------------------------------------------------------*/
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
+#ifdef HAVE_LIBUMEM
+extern struct stevedore smu_stevedore;
+#endif
 
 static struct choice stv_choice[] = {
 	{ "file",	&smf_stevedore },
 	{ "malloc",	&sma_stevedore },
+#ifdef HAVE_LIBUMEM
+	{ "umem",	&smu_stevedore },
+#endif
 	{ NULL,		NULL }
 };
 
@@ -214,6 +220,9 @@ usage(void)
 	fprintf(stderr, FMT,
 	    "-s kind[,storageoptions]", "Backend storage specification");
 	fprintf(stderr, FMT, "", "  -s malloc");
+#ifdef HAVE_LIBUMEM
+	fprintf(stderr, FMT, "", "  -s umem");
+#endif
 	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");

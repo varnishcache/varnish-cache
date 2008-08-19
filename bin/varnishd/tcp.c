@@ -38,6 +38,9 @@
 
 #include <errno.h>
 #include <sys/ioctl.h>
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
 #include <netdb.h>
 #include <poll.h>
 #include <stdio.h>

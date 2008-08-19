@@ -52,6 +52,8 @@
 #include <sys/socket.h>
 #elif defined(__linux__)
 #include <sys/sendfile.h>
+#elif defined(__sun)
+#include <sys/sendfile.h>
 #else
 #error Unknown sendfile() implementation
 #endif
@@ -191,6 +193,37 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 		    sendfile(*w->wfd, fd, &off, len) != len)
 			w->werr++;
 	} while (0);
+#elif defined(__sun)
+#ifdef HAVE_SENDFILEV
+	do {
+		sendfilevec_t svvec[HTTP_HDR_MAX * 2 + 1];
+		size_t xferred = 0, expected = 0;
+		int i;
+		for (i = 0; i < w->niov; i++) {
+			svvec[i].sfv_fd = SFV_FD_SELF;
+			svvec[i].sfv_flag = 0;
+			svvec[i].sfv_off = (off_t) w->iov[i].iov_base;
+			svvec[i].sfv_len = w->iov[i].iov_len;
+			expected += svvec[i].sfv_len;
+		}
+		svvec[i].sfv_fd = fd;
+		svvec[i].sfv_flag = 0;
+		svvec[i].sfv_off = off;
+		svvec[i].sfv_len = len;
+		expected += svvec[i].sfv_len;
+		if (sendfilev(*w->wfd, svvec, i, &xferred) == -1 ||
+		    xferred != expected)
+			w->werr++;
+		w->liov = 0;
+		w->niov = 0;
+	} while (0);
+#else
+	do {
+		if (WRK_Flush(w) == 0 &&
+		    sendfile(*w->wfd, fd, &off, len) != len)
+			w->werr++;
+	} while (0);
+#endif
 #else
 #error Unknown sendfile() implementation
 #endif

@@ -129,6 +129,20 @@ case $host in
 	   AC_DEFINE([SENDFILE_WORKS], [1], [Define if SENDFILE works])
 	fi
  	;;
+*-*-solaris*)
+	AC_CHECK_HEADERS([sys/filio.h])
+	AC_CHECK_LIB(sendfile, sendfile)
+	AC_CHECK_LIB(umem, malloc)
+	AC_CHECK_HEADERS([umem.h])
+
+	if test "$ac_cv_lib_sendfile_sendfile" = yes; then
+		save_LIBS="${LIBS}"
+		LIBS="${NET_LIBS}"
+		AC_CHECK_FUNCS([sendfile])
+		AC_CHECK_FUNCS([sendfilev])
+		LIBS="${save_LIBS}"
+	fi
+	;;
 *)
 	AC_MSG_WARN([won't look for sendfile() on $host])
 	;;
@@ -191,23 +205,17 @@ else
 	ac_cv_func_epoll_ctl=no
 fi
 
-# --enable-poll
-AC_ARG_ENABLE(poll,
-    AS_HELP_STRING([--enable-poll],
-	[use poll if available (default is YES)]),
+# --enable-ports
+AC_ARG_ENABLE(ports,
+    AS_HELP_STRING([--enable-ports],
+	[use ports if available (default is YES)]),
     ,
-    [enable_poll=yes])
+    [enable_ports=yes])
 
-if test "$enable_poll" = yes; then
-	AC_CHECK_FUNCS([poll])
+if test "$enable_ports" = yes; then
+	AC_CHECK_FUNCS([port_create])
 else
-	ac_cv_func_poll=no
-fi
-
-if test "$ac_cv_func_kqueue" != yes &&
-   test "$ac_cv_func_epoll_ctl" != yes &&
-   test "$ac_cv_func_poll" != yes; then
-	AC_MSG_ERROR([no usable acceptor mechanism])
+	ac_cv_func_port_create=no
 fi
 
 # Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
