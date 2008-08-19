@@ -221,6 +221,9 @@ vbp_poke(struct vbp_target *vt)
 		return;
 	}
 
+	if (rlen == 0)
+		return;
+
 	/* So we have a good receive ... */
 	t_now = TIM_real();
 	vt->last = t_now - t_start;
