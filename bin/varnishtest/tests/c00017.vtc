@@ -1,0 +1,63 @@
+# $Id: c00016.vtc 3012 2008-07-24 12:22:35Z des $
+
+test "Test Backend Polling"
+
+varnish v1 -vcl { 
+
+	backend foo {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.probe = {
+			.timeout = 1 s;
+			.interval = 0.5 s;
+		}
+	}
+	
+} -start
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Bar: foo" -body "foobar" 
+} 
+
+# Handle  probes
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+server s1 -start -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -status 404 -hdr "Bar: foo" -body "foobar" 
+} -start -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -status 200 -hdr "Bar: foo" -body "foobar" 
+} -start -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -proto "FROBOZ" -status 200 -hdr "Bar: foo" -body "foobar" 
+} -start -wait
+
+server s1 {
+} -start -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	delay 2
+} -start -wait
+
+delay 2
+
+varnish v1 -cli "debug.health"
