@@ -342,14 +342,11 @@ Fetch(struct sess *sp)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
 	if (i > 0) {
-		if (i > 1)
-			VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
 		return (__LINE__);
 	}
 
 	if (WRK_Flush(w)) {
-		VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
@@ -364,14 +361,12 @@ Fetch(struct sess *sp)
 	while (i == 0);
 
 	if (i < 0) {
-		VBE_UpdateHealth(sp, vc, -1);
 		VBE_ClosedFd(sp->wrk, vc);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
 
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
-		VBE_UpdateHealth(sp, vc, -2);
 		VBE_ClosedFd(sp->wrk, vc);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
@@ -404,7 +399,6 @@ Fetch(struct sess *sp)
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
-		VBE_UpdateHealth(sp, vc, -3);
 		VBE_ClosedFd(sp->wrk, vc);
 		return (__LINE__);
 	} else {
@@ -425,7 +419,6 @@ Fetch(struct sess *sp)
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		VBE_UpdateHealth(sp, vc, -4);
 		VBE_ClosedFd(sp->wrk, vc);
 		sp->obj->len = 0;
 		return (__LINE__);
@@ -447,8 +440,6 @@ Fetch(struct sess *sp)
 
 	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
 		cls = 1;
-
-	VBE_UpdateHealth(sp, vc, http_GetStatus(sp->bereq->http));
 
 	if (cls)
 		VBE_ClosedFd(sp->wrk, vc);
