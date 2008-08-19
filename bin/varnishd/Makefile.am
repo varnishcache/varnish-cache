@@ -9,8 +9,9 @@ dist_man_MANS = varnishd.1
 varnishd_SOURCES = \
 	cache_acceptor.c \
 	cache_acceptor_epoll.c \
-	cache_acceptor_poll.c \
 	cache_acceptor_kqueue.c \
+	cache_acceptor_poll.c \
+	cache_acceptor_ports.c \
 	cache_backend.c \
 	cache_backend_cfg.c \
 	cache_backend_poll.c \
@@ -27,19 +28,19 @@ varnishd_SOURCES = \
 	cache_httpconn.c \
 	cache_main.c \
 	cache_panic.c \
-	cache_pool.c \
 	cache_pipe.c \
+	cache_pool.c \
 	cache_response.c \
 	cache_session.c \
 	cache_vary.c \
 	cache_vcl.c \
 	cache_vrt.c \
 	cache_vrt_acl.c \
-	cache_vrt_re.c \
 	cache_vrt_esi.c \
+	cache_vrt_re.c \
 	cache_ws.c \
-	hash_simple_list.c \
 	hash_classic.c \
+	hash_simple_list.c \
 	instance.c \
 	mgt_child.c \
 	mgt_cli.c \
@@ -51,15 +52,16 @@ varnishd_SOURCES = \
 	storage_file.c \
 	storage_malloc.c \
 	storage_synth.c \
+	storage_umem.c \
 	tcp.c \
 	varnishd.c
 
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
+	cache_acceptor.h \
 	cache_backend.h \
 	cache_backend_poll.h \
-	cache_acceptor.h \
 	common.h \
 	default_vcl.h \
 	hash_slinger.h \

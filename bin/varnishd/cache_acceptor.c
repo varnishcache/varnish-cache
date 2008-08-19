@@ -46,7 +46,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "config.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "shmlog.h"
@@ -60,9 +59,10 @@ static struct acceptor *vca_acceptors[] = {
 #if defined(HAVE_EPOLL_CTL)
 	&acceptor_epoll,
 #endif
-#if defined(HAVE_POLL)
-	&acceptor_poll,
+#if defined(HAVE_PORT_CREATE)
+	&acceptor_ports,
 #endif
+	&acceptor_poll,
 	NULL,
 };
 

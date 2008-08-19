@@ -32,8 +32,6 @@
 
 #include "config.h"
 
-#if defined(HAVE_POLL)
-
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -167,5 +165,3 @@ struct acceptor acceptor_poll = {
 	.name =		"poll",
 	.init =		vca_poll_init,
 };
-
-#endif /* defined(HAVE_POLL) */
