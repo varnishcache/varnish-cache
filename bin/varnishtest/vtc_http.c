@@ -167,6 +167,15 @@ cmd_http_expect(CMD_ARGS)
 			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
 			    av[0], lhs, av[1], av[2], rhs);
 		}
+	} else if (!strcmp(cmp, "!=")) {
+		if (!strcmp(lhs, rhs)) {
+			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
+			    av[0], lhs, av[1], av[2], rhs);
+			exit (1);
+		} else {
+			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
+			    av[0], lhs, av[1], av[2], rhs);
+		}
 	} else {
 		vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) not implemented",
 		    av[0], lhs, av[1], av[2], rhs);
