@@ -317,7 +317,7 @@ int
 main(int argc, char **argv)
 {
 	int c;
-	int a_flag = 0, D_flag = 0, o_flag = 0;
+	int a_flag = 0, D_flag = 0, o_flag = 0, u_flag = 0;
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
@@ -326,7 +326,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDon:P:Vw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDon:P:uVw:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -350,6 +350,9 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			P_arg = optarg;
+			break;
+		case 'u':
+			u_flag = 1;
 			break;
 		case 'V':
 			varnish_version("varnishlog");
@@ -390,6 +393,9 @@ main(int argc, char **argv)
 
 	if (o_flag)
 		do_order(vd, argc - optind, argv + optind);
+
+	if (u_flag)
+		setbuf(stdout, NULL);
 
 	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
 		if (fflush(stdout) != 0) {
