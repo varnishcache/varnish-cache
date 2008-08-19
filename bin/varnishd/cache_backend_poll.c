@@ -67,6 +67,7 @@ struct vbp_target {
 	char				*req;
 	int				req_len;
 
+	char				resp_buf[128];
 	unsigned			good;
 	
 	/* Collected statistics */
@@ -122,13 +123,14 @@ vbp_connect(int pf, const struct sockaddr *sa, socklen_t salen, int tmo)
 	return (-1);
 }
 
-static int
+static void
 vbp_poke(struct vbp_target *vt)
 {
 	int s, tmo, i;
-	double t_start, t_now, t_end, rlen;
+	double t_start, t_now, t_end;
+	unsigned rlen, resp;
 	struct backend *bp;
-	char buf[8192];
+	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
 
 	bp = vt->backend;
@@ -162,30 +164,34 @@ vbp_poke(struct vbp_target *vt)
 	}
 	if (s < 0) {
 		/* Got no connection: failed */
-		return (0);
+		return;
 	}
 
+	/* Send the request */
 	i = write(s, vt->req, vt->req_len);
 	if (i != vt->req_len) {
 		if (i < 0)
 			vt->err_xmit |= 1;
 		TCP_close(&s);
-		return (0);
+		return;
 	}
 	vt->good_xmit |= 1;
+
+	/* And do a shutdown(WR) so we know that the backend got it */
 	i = shutdown(s, SHUT_WR);
 	if (i != 0) {
 		vt->err_shut |= 1;
 		TCP_close(&s);
-		return (0);
+		return;
 	}
 	vt->good_shut |= 1;
 
+	/* Check if that took too long time */
 	t_now = TIM_real();
 	tmo = (int)round((t_end - t_now) * 1e3);
 	if (tmo < 0) {
 		TCP_close(&s);
-		return (0);
+		return;
 	}
 
 	pfd->fd = s;
@@ -198,25 +204,41 @@ vbp_poke(struct vbp_target *vt)
 			i = poll(pfd, 1, tmo);
 		if (i == 0 || tmo <= 0) {
 			TCP_close(&s);
-			return (0);
+			return;
 		}
-		i = read(s, buf, sizeof buf);
+		if (rlen < sizeof vt->resp_buf)
+			i = read(s, vt->resp_buf + rlen,
+			    sizeof vt->resp_buf - rlen);
+		else
+			i = read(s, buf, sizeof buf);
 		rlen += i;
 	} while (i > 0);
 
+	TCP_close(&s);
+
 	if (i < 0) {
 		vt->err_recv |= 1;
-		TCP_close(&s);
-		return (0);
+		return;
 	}
 
-	TCP_close(&s);
+	/* So we have a good receive ... */
 	t_now = TIM_real();
 	vt->last = t_now - t_start;
 	vt->good_recv |= 1;
-	/* XXX: Check reponse status */
-	vt->happy |= 1;
-	return (1);
+
+	/* Now find out if we like the response */
+	vt->resp_buf[sizeof vt->resp_buf - 1] = '\0';
+	p = strchr(vt->resp_buf, '\r');
+	if (p != NULL)
+		*p = '\0';
+	p = strchr(vt->resp_buf, '\n');
+	if (p != NULL)
+		*p = '\0';
+
+	i = sscanf(vt->resp_buf, "HTTP/%*f %u %s", &resp, buf);
+
+	if (i == 2 && resp == 200)
+		vt->happy |= 1;
 }
 
 /*--------------------------------------------------------------------
@@ -256,14 +278,13 @@ vbp_wrk_poll_backend(void *priv)
 	    vt->probe.timeout,
 	    vt->probe.interval);
 
-	vt->req_len = strlen(vt->probe.request);
-
 	/*lint -e{525} indent */
 	while (!vt->stop) {
 #define BITMAP(n, c, t, b)	vt->n <<= 1;
 #include "cache_backend_poll.h"
 #undef BITMAP
 		vt->last = 0;
+		vt->resp_buf[0] = '\0';
 		vbp_poke(vt);
 
 		/* Calculate exponential average */
@@ -300,10 +321,10 @@ vbp_wrk_poll_backend(void *priv)
 				logmsg = "Still sick";
 			vt->backend->healthy = 0;
 		}
-		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f",
+		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
 		    vt->backend->vcl_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
-		    vt->last, vt->avg);
+		    vt->last, vt->avg, vt->resp_buf);
 			
 		if (!vt->stop)
 			dsleep(vt->probe.interval);
@@ -406,10 +427,10 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 		XXXAN(vsb);
 		vsb_printf(vsb, "GET %s HTTP/1.1\r\n",
 		    p->url != NULL ? p->url : "/");
-		vsb_printf(vsb, "Connection: close\r\n");
 		if (b->hosthdr != NULL)
 			vsb_printf(vsb, "Host: %s\r\n", b->hosthdr);
-		vsb_printf(vsb, "\r\n", b->hosthdr);
+		vsb_printf(vsb, "Connection: close\r\n");
+		vsb_printf(vsb, "\r\n");
 		vsb_finish(vsb);
 		AZ(vsb_overflowed(vsb));
 		vt->req = strdup(vsb_data(vsb));
