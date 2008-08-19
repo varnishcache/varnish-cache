@@ -417,7 +417,6 @@ void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
 void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
-void VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *, int);
 void VBE_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 

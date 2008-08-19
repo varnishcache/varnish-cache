@@ -348,34 +348,3 @@ VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
 	VBE_DropRefLocked(vc->backend);
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 }
-
-/* Update health ----------------------------------------------------*/
-/* See cache_backend_random.c and/or cache_backend_round_robin.c for
- * details and comments about this function. 
- */
-void
-VBE_UpdateHealth(const struct sess *sp, const struct vbe_conn *vc, int a)
-{
-	(void)sp;
-	(void)vc;
-	(void)a;
-#if 0
-	INCOMPL();
-	struct backend *b;
-
-	if (vc != NULL) {
-		CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
-		CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-		b = vc->backend;
-	}
-	else {
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-		b = sp->backend;
-	}
-	AN(b->method);
-	if (b->method->updatehealth != NULL)
-		b->method->updatehealth(sp, vc, a);
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-#endif
-}
