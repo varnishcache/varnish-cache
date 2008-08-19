@@ -61,6 +61,7 @@ struct vbp_target {
 	struct backend			*backend;
 	struct vrt_backend_probe 	probe;
 	int				stop;
+	char				*req;
 	int				req_len;
 
 	unsigned			good;
@@ -157,7 +158,7 @@ vbp_poke(struct vbp_target *vt)
 		return (0);
 	}
 
-	i = write(s, vt->probe.request, vt->req_len);
+	i = write(s, vt->req, vt->req_len);
 	if (i != vt->req_len) {
 		if (i < 0)
 			vt->err_xmit |= 1;
@@ -243,7 +244,7 @@ vbp_wrk_poll_backend(void *priv)
 		vt->probe.threshold = 3;
 
 	printf("Probe(\"%s\", %g, %g)\n",
-	    vt->probe.request,
+	    vt->req,
 	    vt->probe.timeout,
 	    vt->probe.interval);
 
@@ -366,6 +367,7 @@ void
 VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 {
 	struct vbp_target *vt;
+	struct vsb *vsb;
 
 	ASSERT_CLI();
 
@@ -377,6 +379,27 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 	}
 	vt->backend = b;
 	vt->probe = *p;
+
+	if(p->request != NULL) {
+		vt->req = strdup(p->request);
+		XXXAN(vt->req);
+	} else {
+		vsb = vsb_newauto();
+		XXXAN(vsb);
+		vsb_printf(vsb, "GET %s HTTP/1.1\r\n",
+		    p->url != NULL ? p->url : "/");
+		vsb_printf(vsb, "Connection: close\r\n");
+		if (b->hosthdr != NULL)
+			vsb_printf(vsb, "Host: %s\r\n", b->hosthdr);
+		vsb_printf(vsb, "\r\n", b->hosthdr);
+		vsb_finish(vsb);
+		AZ(vsb_overflowed(vsb));
+		vt->req = strdup(vsb_data(vsb));
+		XXXAN(vt->req);
+		vsb_delete(vsb);
+	}
+	vt->req_len = strlen(vt->req);
+
 	b->probe = vt;
 
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);

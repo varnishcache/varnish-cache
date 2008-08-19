@@ -48,6 +48,7 @@ struct sockaddr;
 extern void *vrt_magic_string_end;
 
 struct vrt_backend_probe {
+	char		*url;
 	char		*request;
 	double		timeout;
 	double		interval;
