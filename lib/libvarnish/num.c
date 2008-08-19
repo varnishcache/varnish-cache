@@ -39,10 +39,10 @@
 
 #include <libvarnish.h>
 
-const char err_miss_num[] = "Missing number";
-const char err_invalid_num[] = "Invalid number";
-const char err_abs_req[] = "Absolute number required";
-const char err_invalid_suff[] = "Invalid suffix";
+static const char err_miss_num[] = "Missing number";
+static const char err_invalid_num[] = "Invalid number";
+static const char err_abs_req[] = "Absolute number required";
+static const char err_invalid_suff[] = "Invalid suffix";
 
 const char *
 str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
