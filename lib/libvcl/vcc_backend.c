@@ -364,12 +364,9 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
-			Fb(tl, 0, "\t\t.request =\n");
-			Fb(tl, 0, "\t\t\t\"GET \" ");
+			Fb(tl, 0, "\t\t.url = ");
 			EncToken(tl->fb, tl->t);
-			Fb(tl, 0, " \" /HTTP/1.1\\r\\n\"\n");
-			Fb(tl, 0, "\t\t\t\"Connection: close\\r\\n\"\n");
-			Fb(tl, 0, "\t\t\t\"\\r\\n\",\n");
+			Fb(tl, 0, ",\n");
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "request")) {
 			vcc_ProbeRedef(tl, &t_did, t_field);
@@ -703,7 +700,7 @@ static const struct dirlist {
 	const char	*name;
 	parsedirector_f	*func;
 } dirlist[] = {
-	{ "random", 	vcc_ParseRandomDirector },
+	{ "random", 		vcc_ParseRandomDirector },
 	{ "round-robin", 	vcc_ParseRoundRobinDirector },
 	{ NULL,		NULL }
 };
