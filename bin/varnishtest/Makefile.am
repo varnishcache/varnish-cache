@@ -1,5 +1,8 @@
 # $Id$
 
+TESTS_ENVIRONMENT = ./varnishtest
+TESTS = $(srcdir)/tests/*.vtc
+
 INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS =	varnishtest
