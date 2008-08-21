@@ -69,13 +69,15 @@
  */
 
 struct vbp_target;
+struct vbe_conn;
 struct vrt_backend_probe;
 
-/* -------------------------------------------------------------------
+/*--------------------------------------------------------------------
  * A director is a piece of code which selects one of possibly multiple
  * backends to use.
  */
 
+typedef struct vbe_conn *vdi_getfd_f(struct sess *sp);
 typedef struct backend *vdi_choose_f(struct sess *sp);
 typedef void vdi_fini_f(struct director *d);
 
@@ -84,11 +86,15 @@ struct director {
 #define DIRECTOR_MAGIC		0x3336351d
 	const char		*name;
 	vdi_choose_f		*choose;
+	vdi_getfd_f		*getfd;
 	vdi_fini_f		*fini;
 	void			*priv;
 };
 
-/* Backend indstance */
+/*--------------------------------------------------------------------
+ * An instance of a backend from a VCL program.
+ */
+
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
@@ -117,6 +123,7 @@ struct backend {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbe_conn *vc);
+struct vbe_conn *VBE_GetVbe(const struct sess *sp);
 
 /* cache_backend_cfg.c */
 extern MTX VBE_mtx;
