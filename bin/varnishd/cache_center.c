@@ -388,12 +388,11 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->bereq);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	AN(sp->director);
 	i = Fetch(sp);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	AN(sp->director);
 
 	if (i) {
-VSL(SLT_Debug, sp->fd, "Fetch = %d", i);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		VBE_free_bereq(sp->bereq);
@@ -854,7 +853,7 @@ cnt_recv(struct sess *sp)
 	/* By default we use the first backend */
 	AZ(sp->director);
 	sp->director = sp->vcl->director[0];
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	AN(sp->director);
 
 	VCL_recv_method(sp);
 
@@ -996,7 +995,6 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-		CHECK_OBJ_ORNULL(sp->director, DIRECTOR_MAGIC);
 
 		switch (sp->step) {
 #define STEP(l,u) \
