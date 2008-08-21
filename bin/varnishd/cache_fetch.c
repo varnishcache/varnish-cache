@@ -335,6 +335,15 @@ Fetch(struct sess *sp)
 	vc = VBE_GetFd(sp);
 	if (vc == NULL)
 		return (__LINE__);
+
+	/*
+	 * Now that we know our backend, we can set a default Host:
+	 * header if one is necessary.
+	 * XXX: This possibly ought to go into the default VCL
+	 */
+	if (!http_GetHdr(hp, H_Host, &b)) 
+		VBE_AddHostHeader(sp);
+
 	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRK_Reset(w, &vc->fd);
 	http_Write(w, hp, 0);	/* XXX: stats ? */

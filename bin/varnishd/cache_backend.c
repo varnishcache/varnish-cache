@@ -267,13 +267,16 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 /*--------------------------------------------------------------------*/
 
 struct vbe_conn *
-VBE_GetFd(const struct sess *sp)
+VBE_GetFd(struct sess *sp)
 {
 	struct backend *bp;
 	struct vbe_conn *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	VBE_SelectBackend(sp);
 	bp = sp->backend;
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
 	/* first look for vbe_conn's we can recycle */
 	while (1) {

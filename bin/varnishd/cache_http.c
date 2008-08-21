@@ -642,7 +642,6 @@ http_FilterHeader(struct sess *sp, unsigned how)
 {
 	struct bereq *bereq;
 	struct http *hp;
-	char *b;
 
         bereq = VBE_new_bereq();
         AN(bereq);
@@ -656,10 +655,6 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	    "X-Forwarded-For: %s", sp->addr);
 
 	sp->bereq = bereq;
-
-	/* XXX: This possibly ought to go into the default VCL */
-	if (!http_GetHdr(hp, H_Host, &b)) 
-		VBE_AddHostHeader(sp);
 }
 
 /*--------------------------------------------------------------------
