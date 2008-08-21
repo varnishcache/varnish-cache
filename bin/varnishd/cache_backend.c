@@ -264,17 +264,37 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 	return (s);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Get a connection to whatever backend the director think this session
+ * should contact.
+ */
 
 struct vbe_conn *
 VBE_GetFd(struct sess *sp)
 {
-	struct backend *bp;
-	struct vbe_conn *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	VBE_SelectBackend(sp);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+
+	if (sp->director->getfd != NULL)
+		return (sp->director->getfd(sp));
+
+	sp->backend = sp->director->choose(sp);
+	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	return (VBE_GetVbe(sp));
+}
+
+/*--------------------------------------------------------------------
+ * Get a connection to a particular backend.
+ */
+
+struct vbe_conn *
+VBE_GetVbe(const struct sess *sp)
+{
+	struct backend *bp;
+	struct vbe_conn *vc;
+
 	bp = sp->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 

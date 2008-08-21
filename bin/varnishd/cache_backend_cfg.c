@@ -56,19 +56,6 @@ MTX VBE_mtx;
  */
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 
-/*--------------------------------------------------------------------*/
-
-void
-VBE_SelectBackend(struct sess *sp)
-{
-	struct backend *bp;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	bp = sp->director->choose(sp);
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	sp->backend = bp;
-}
 
 /*--------------------------------------------------------------------
  */
