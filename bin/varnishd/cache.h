@@ -76,6 +76,7 @@ enum {
 struct cli;
 struct vsb;
 struct sess;
+struct director;
 struct object;
 struct objhead;
 struct objexp;
@@ -372,22 +373,6 @@ struct sess {
 	const char		**hashptr;
 };
 
-/* -------------------------------------------------------------------
- * A director is a piece of code which selects one of possibly multiple
- * backends to use.
- */
-
-typedef struct backend *vdi_choose_f(struct sess *sp);
-typedef void vdi_fini_f(struct director *d);
-
-struct director {
-	unsigned		magic;
-#define DIRECTOR_MAGIC		0x3336351d
-	const char		*name;
-	vdi_choose_f		*choose;
-	vdi_fini_f		*fini;
-	void			*priv;
-};
 
 /* -------------------------------------------------------------------*/
 
