@@ -76,13 +76,14 @@ VBE_SelectBackend(struct sess *sp)
 static void
 VBE_Nuke(struct backend *b)
 {
+
+	ASSERT_CLI();
 	VTAILQ_REMOVE(&backends, b, list);
 	free(b->ident);
 	free(b->hosthdr);
 	free(b->ipv4);
 	free(b->ipv6);
-	b->magic = 0;
-	free(b);
+	FREE_OBJ(b);
 	VSL_stats->n_backend--;
 }
 
