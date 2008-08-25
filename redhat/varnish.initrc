@@ -1,92 +1,143 @@
 #! /bin/sh
 #
-# varnish	Control the varnish HTTP accelerator
+# varnish Control the varnish HTTP accelerator
 #
 # chkconfig: - 90 10
-# description: HTTP accelerator
+# description: Varnish is a high-perfomance HTTP accelerator
 # processname: varnishd
-# config: /etc/varnish/vcl.conf
+# config: /etc/sysconfig/varnish
 # pidfile: /var/run/varnish/varnishd.pid
+
+### BEGIN INIT INFO
+# Provides: varnish
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Should-Start: $syslog
+# Short-Description: start and stop varnishd
+# Description: Varnish is a high-perfomance HTTP accelerator
+### END INIT INFO
 
 # Source function library.
 . /etc/init.d/functions
 
-RETVAL=0
-PROCNAME=varnishd
-PIDFILE=/var/run/varnish.pid
-LOCKFILE=/var/lock/subsys/varnish
+retval=0
+pidfile=/var/run/varnish.pid
+lockfile=/var/lock/subsys/varnish
+
+exec="/usr/sbin/varnishd"
+prog="varnishd"
+config="/etc/sysconfig/varnish"
 
 # Include varnish defaults
-. /etc/sysconfig/varnish
+[ -e /etc/sysconfig/varnish ] && . /etc/sysconfig/varnish
 
-DAEMON="/usr/sbin/varnishd"
+lockfile=/var/lock/subsys/$prog
 
-mkdir -p /var/run/varnish 2>/dev/null
+start() {
 
-# Open files (usually 1024, which is way too small for varnish)
-ulimit -n ${NFILES:-131072}
+	if [ ! -x $exec ]
+	then
+		echo $exec not found
+		exit 5
+	fi
 
-# Varnish wants to lock shared memory log in memory. 
-ulimit -l ${MEMLOCK:-82000}
-
-# See how we were called.
-case "$1" in
-  start)
+	if [ ! -f $config ]
+	then
+		echo $config not found
+		exit 6
+	fi
 	echo -n "Starting varnish HTTP accelerator: "
+
+	# Open files (usually 1024, which is way too small for varnish)
+	ulimit -n ${NFILES:-131072}
+
+	# Varnish wants to lock shared memory log in memory. 
+	ulimit -l ${MEMLOCK:-82000}
 
         # $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
         # has to set up a backend, or /tmp will be used, which is a bad idea.
 	if [ "$DAEMON_OPTS" = "" ]; then
-	    echo "\$DAEMON_OPTS empty."
-	    echo -n "Please put configuration options in /etc/sysconfig/varnish"
-	    echo_failure
+		echo "\$DAEMON_OPTS empty."
+		echo -n "Please put configuration options in $config"
+		return 6
 	else
-	    daemon ${DAEMON} "$DAEMON_OPTS" -P ${PIDFILE} > /dev/null 2>&1
-	    sleep 1
-	    pkill -0 $PROCNAME
-	    RETVAL=$?
-	    if [ $RETVAL -eq 0 ]
+		# Varnish always gives output on STDOUT
+		daemon $exec "$DAEMON_OPTS" -P $pidfile > /dev/null 2>&1
+		retval=$?
+		if [ $retval -eq 0 ]
 		then
-		echo_success
-		touch $LOCKFILE
-	    else
-		echo_failure
-	    fi	
+			touch $lockfile
+			echo_success
+			echo
+		else
+			echo_failure
+		fi
+		return $retval
 	fi
+}
+
+stop() {
+	echo -n "Stopping $prog: "
+	killproc $prog
+	retval=$?
 	echo
-	;;
-  stop)
-	echo -n "Stopping varnish HTTP accelerator: "
-	killproc $DAEMON
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]
-	then
-		echo_success
-		rm -f $LOCKFILE $PIDFILE
-	else
-		echo_failure
-	fi
-	echo
-	;;
-  status)
-	status $PROCNAME
-	RETVAL=$?
-	;;
-  restart|reload)
-  	$0 stop
-	$0 start
-	RETVAL=$?
-	;;
-  condrestart)
-        if [ -f $PIDFILE ]; then
-            $0 stop
-            $0 start
-            RETVAL=$?
-        fi
-	;;
-  *)
-	echo "Usage: $0 {start|stop|status|restart|condrestart}"
-	exit 1
+	[ $retval -eq 0 ] && rm -f $lockfile
+	return $retval
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	restart
+}
+
+force_reload() {
+	restart
+}
+
+rh_status() {
+	status $prog
+}
+
+rh_status_q() {
+	rh_status >/dev/null 2>&1
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		rh_status_q && exit 0
+		$1
+		;;
+	stop)
+		rh_status_q || exit 0
+		$1
+		;;
+	restart)
+		$1
+		;;
+	reload)
+		rh_status_q || exit 7
+		$1
+		;;
+	force-reload)
+		force_reload
+		;;
+	status)
+		rh_status
+		;;
+	condrestart|try-restart)
+		rh_status_q || exit 0
+		restart
+		;;
+	*)
+	echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+
+	exit 2
 esac
 
-exit $RETVAL
+exit $?
+
