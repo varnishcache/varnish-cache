@@ -23,7 +23,7 @@ To gain actual value from varnish, you may want to move the listening
 port to port 80, and your webserver to 8080 or similar.
 
 
-Builing a RPM package from SVN
+Building a RPM package from SVN
 ==============================
 You may build the package from a svn checkout. Follow the instructions
 at http://varnish.projects.linpro.no/wiki/Repository to get the
@@ -50,3 +50,4 @@ This builds a source rpm. Then you can, for example on a RHEL4 system,
 do something like this:
 
 rpmbuild --define "dist el4" --rebuild /path/to/varnish-1.1.2.src.rpm
+
