@@ -62,7 +62,7 @@ start() {
 		return 6
 	else
 		# Varnish always gives output on STDOUT
-		daemon $exec "$DAEMON_OPTS" -P $pidfile > /dev/null 2>&1
+		daemon $exec "$DAEMON_OPTS" --pidfile $pidfile > /dev/null 2>&1
 		retval=$?
 		if [ $retval -eq 0 ]
 		then
@@ -99,7 +99,7 @@ force_reload() {
 }
 
 rh_status() {
-	status $prog
+	status -p $pidfile $prog
 }
 
 rh_status_q() {
