@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.3.20080826svn3124%{?dist}
+Release: 0.3.20080826svn3125%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -197,7 +197,7 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Mon Aug 25 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.3.20080825svn3120
+* Mon Aug 25 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.3.20080825svn3125
 - Fixing up init script according to newer Fedora standards
 - The build now runs the test suite after compiling
 - Requires initscripts
@@ -206,9 +206,12 @@ fi
 * Mon Aug 18 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.2.tp2
 - Changed source, version and release to match 2.0-tp2
 
-* Thu Aug 14 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-pre_svn20080814
+* Thu Aug 14 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.1.20080814svn
 - default.vcl has moved
 - Added groff to build requirements
+
+* Tue Feb 19 2008 Fedora Release Engineering <rel-eng@fedoraproject.org> - 1.1.2-6
+- Autorebuild for GCC 4.3
 
 * Sat Dec 29 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.2-5
 - Added missing configuration examples
