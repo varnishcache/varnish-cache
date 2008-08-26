@@ -62,7 +62,7 @@ start() {
 		return 6
 	else
 		# Varnish always gives output on STDOUT
-		daemon $exec "$DAEMON_OPTS" --pidfile $pidfile > /dev/null 2>&1
+		daemon --pidfile $pidfile  $exec "$DAEMON_OPTS" > /dev/null 2>&1
 		retval=$?
 		if [ $retval -eq 0 ]
 		then
@@ -77,7 +77,7 @@ start() {
 }
 
 stop() {
-	echo -n "Stopping $prog: "
+	echo -n "Stopping varnish HTTP accelerator: "
 	killproc $prog
 	retval=$?
 	echo
