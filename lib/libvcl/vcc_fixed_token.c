@@ -349,6 +349,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "	const unsigned char		*ipv6_sockaddr;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "	double				connect_timeout;\n");
+	vsb_cat(sb, "	unsigned			max_connections;\n");
 	vsb_cat(sb, "	struct vrt_backend_probe 	probe;\n");
 	vsb_cat(sb, "};\n");
 	vsb_cat(sb, "\n");

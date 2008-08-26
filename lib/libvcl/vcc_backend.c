@@ -476,13 +476,16 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 	const char *ep;
 	struct fld_spec *fs;
 	struct vsb *vsb;
+	unsigned u;
 
 	fs = vcc_FldSpec(tl,
 	    "!host",
 	    "?port",
 	    "?host_header",
 	    "?connect_timeout",
-	    "?probe", NULL);
+	    "?probe",
+	    "?max_connections",
+	    NULL);
 	t_first = tl->t;
 
 	ExpectErr(tl, '{');
@@ -546,6 +549,13 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 			Fb(tl, 0, ",\n");
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "max_connections")) {
+			u = vcc_UintVal(tl);
+			vcc_NextToken(tl);
+			ERRCHK(tl);
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
+			Fb(tl, 0, "\t.max_connections = %u,\n", u);
 		} else if (vcc_IdIs(t_field, "probe")) {
 			vcc_ParseProbe(tl);
 			ERRCHK(tl);
