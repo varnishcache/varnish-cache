@@ -53,7 +53,6 @@ varnishd_SOURCES = \
 	storage_malloc.c \
 	storage_synth.c \
 	storage_umem.c \
-	tcp.c \
 	varnishd.c
 
 noinst_HEADERS = \

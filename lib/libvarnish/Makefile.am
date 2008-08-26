@@ -14,6 +14,7 @@ libvarnish_la_SOURCES = \
 	flopen.c \
 	num.c \
 	time.c \
+	tcp.c \
 	vct.c \
 	version.c \
 	vev.c \

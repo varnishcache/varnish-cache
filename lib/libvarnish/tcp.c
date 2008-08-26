@@ -53,7 +53,7 @@
 #include "compat/strlcpy.h"
 #endif
 
-#include "mgt.h"
+#include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/
 
