@@ -50,6 +50,21 @@ uint32_t crc32_l(const void *p1, unsigned l);
 /* from libvarnish/num.c */
 const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
 
+/* from libvarnish/tcp.c */
+/* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
+#define TCP_ADDRBUFSIZE		64
+#define TCP_PORTBUFSIZE		16
+
+void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+int TCP_filter_http(int sock);
+void TCP_blocking(int sock);
+void TCP_nonblocking(int sock);
+#ifdef SOL_SOCKET
+void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec);
+void TCP_close(int *s);
+#endif
+
 /* from libvarnish/time.c */
 void TIM_format(double t, char *p);
 time_t TIM_parse(const char *p);
