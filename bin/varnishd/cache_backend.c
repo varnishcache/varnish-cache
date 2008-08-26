@@ -240,6 +240,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 	LOCK(&bp->mtx);
 	bp->refcount++;
+	bp->n_conn++;		/* It mostly works */
 	UNLOCK(&bp->mtx);
 
 	s = -1;
@@ -256,6 +257,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 	if (s < 0) {
 		LOCK(&bp->mtx);
+		bp->n_conn--;		
 		bp->refcount--;		/* Only keep ref on success */
 		UNLOCK(&bp->mtx);
 	}
@@ -318,6 +320,11 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		return (NULL);
 	}
 
+	if (bp->max_conn > 0 && bp->n_conn >= bp->max_conn) {
+		VSL_stats->backend_busy++;
+		return (NULL);
+	}
+
 	vc = VBE_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
@@ -347,7 +354,7 @@ VBE_ClosedFd(struct sess *sp)
 
 	WSL(sp->wrk, SLT_BackendClose, sp->vbe->fd, "%s", bp->vcl_name);
 	TCP_close(&sp->vbe->fd);
-	VBE_DropRef(bp);
+	VBE_DropRefConn(bp);
 	sp->vbe->backend = NULL;
 	VBE_ReleaseConn(sp->vbe);
 	sp->vbe = NULL;

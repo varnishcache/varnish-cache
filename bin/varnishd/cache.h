@@ -407,7 +407,6 @@ void VBE_Poll(void);
 
 /* cache_backend_cfg.c */
 void VBE_Init(void);
-void VBE_DropRef(struct backend *);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 
 /* cache_backend_poll.c */

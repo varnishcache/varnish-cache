@@ -132,6 +132,18 @@ VBE_DropRef(struct backend *b)
 	VBE_DropRefLocked(b);
 }
 
+void
+VBE_DropRefConn(struct backend *b)
+{
+
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+	LOCK(&b->mtx);
+	assert(b->n_conn > 0);
+	b->n_conn--;
+	VBE_DropRefLocked(b);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -210,6 +222,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	REPLACE(b->hosthdr, vb->hosthdr);
 
 	b->connect_timeout = vb->connect_timeout;
+	b->max_conn = vb->max_connections;
 
 	/*
 	 * Copy over the sockaddrs
@@ -252,10 +265,9 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s %d\n",
-		    b,
-		    b->vcl_name,
-		    b->refcount);
+		cli_out(cli, "%p %s %d %d/%d\n",
+		    b, b->vcl_name, b->refcount,
+		    b->n_conn, b->max_conn);
 	}
 }
 

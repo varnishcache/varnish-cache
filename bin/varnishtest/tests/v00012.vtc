@@ -1,0 +1,43 @@
+# $Id$
+
+test "Check backend connection limit"
+
+server s1 {
+	rxreq
+	sema r1 sync 2
+	sema r2 sync 2
+	txresp
+} -start
+
+varnish v1 -vcl {
+
+	backend default {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.max_connections = 1;
+	}
+	sub vcl_recv {
+		pass;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+
+client c2 {
+	sema r1 sync 2
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -cli "debug.backend"
+
+sema r2 sync 2
+client c1 -wait
+
+varnish v1 -expect backend_busy == 1

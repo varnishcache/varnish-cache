@@ -113,6 +113,8 @@ struct backend {
 	struct sockaddr		*ipv6;
 	socklen_t		ipv6len;
 
+	unsigned		max_conn;
+	unsigned		n_conn;
 	VTAILQ_HEAD(, vbe_conn)	connlist;
 
 	struct vbp_target	*probe;
@@ -125,6 +127,8 @@ struct vbe_conn *VBE_GetVbe(struct sess *sp, struct backend *bp);
 
 /* cache_backend_cfg.c */
 extern MTX VBE_mtx;
+void VBE_DropRefConn(struct backend *);
+void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
 
 /* cache_backend_poll.c */
