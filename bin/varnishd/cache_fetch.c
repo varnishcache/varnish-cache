@@ -332,9 +332,10 @@ Fetch(struct sess *sp)
 
 	/* Set up obj's workspace */
 	WS_Assert(sp->obj->ws_o);
-	vc = VBE_GetFd(sp);
-	if (vc == NULL)
+	VBE_GetFd(sp);
+	if (sp->vbe == NULL)
 		return (__LINE__);
+	vc = sp->vbe;
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
@@ -351,12 +352,12 @@ Fetch(struct sess *sp)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
 	if (i > 0) {
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		return (__LINE__);
 	}
 
 	if (WRK_Flush(w)) {
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
@@ -370,13 +371,13 @@ Fetch(struct sess *sp)
 	while (i == 0);
 
 	if (i < 0) {
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
 
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
@@ -408,7 +409,7 @@ Fetch(struct sess *sp)
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		return (__LINE__);
 	} else {
 		switch (http_GetStatus(hp)) {
@@ -428,7 +429,7 @@ Fetch(struct sess *sp)
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		sp->obj->len = 0;
 		return (__LINE__);
 	}
@@ -451,9 +452,9 @@ Fetch(struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 	else
-		VBE_RecycleFd(sp->wrk, vc);
+		VBE_RecycleFd(sp);
 
 	return (0);
 }

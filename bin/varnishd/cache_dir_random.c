@@ -62,15 +62,15 @@ struct vdi_random {
 };
 
 
-/*lint -e{818} not const-able */
-static struct backend *
-vdi_random_choose(struct sess *sp)
+static struct vbe_conn *
+vdi_random_getfd(struct sess *sp)
 {
 	int i;
 	struct vdi_random *vs;
 	uint32_t r;
 	struct vdi_random_host *vh;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
 	r = random();
@@ -78,7 +78,7 @@ vdi_random_choose(struct sess *sp)
 
 	for (i = 0, vh = vs->hosts; i < vs->nhosts; vh++) 
 		if (r < vh->weight)
-			return (vh->backend);
+			return (VBE_GetVbe(sp, vh->backend));
 	assert(0 == __LINE__);
 	return (NULL);
 }
@@ -122,7 +122,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "random";
-	vs->dir.choose = vdi_random_choose;
+	vs->dir.getfd = vdi_random_getfd;
 	vs->dir.fini = vdi_random_fini;
 
 	s = 0;

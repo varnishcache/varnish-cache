@@ -78,14 +78,12 @@ struct vrt_backend_probe;
  */
 
 typedef struct vbe_conn *vdi_getfd_f(struct sess *sp);
-typedef struct backend *vdi_choose_f(struct sess *sp);
 typedef void vdi_fini_f(struct director *d);
 
 struct director {
 	unsigned		magic;
 #define DIRECTOR_MAGIC		0x3336351d
 	const char		*name;
-	vdi_choose_f		*choose;
 	vdi_getfd_f		*getfd;
 	vdi_fini_f		*fini;
 	void			*priv;
@@ -123,7 +121,7 @@ struct backend {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbe_conn *vc);
-struct vbe_conn *VBE_GetVbe(const struct sess *sp);
+struct vbe_conn *VBE_GetVbe(struct sess *sp, struct backend *bp);
 
 /* cache_backend_cfg.c */
 extern MTX VBE_mtx;

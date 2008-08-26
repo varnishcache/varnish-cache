@@ -175,10 +175,6 @@ cnt_deliver(struct sess *sp)
 
 	sp->director = NULL;
 	sp->restarts = 0;
-	sp->backend = NULL;		/*
-					 * XXX: we may want to leave this
-					 * behind to hint directors ?
-					 */
 					
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
@@ -209,13 +205,10 @@ cnt_done(struct sess *sp)
 	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
+	AZ(sp->vbe);
 	AZ(sp->bereq);
 	sp->director = NULL;
 	sp->restarts = 0;
-	sp->backend = NULL;		/*
-					 * XXX: we may want to leave this
-					 * behind to hint directors ?
-					 */
 					
 	if (sp->vcl != NULL && sp->esis == 0) {
 		if (sp->wrk->vcl != NULL)
@@ -389,7 +382,9 @@ cnt_fetch(struct sess *sp)
 
 	AN(sp->bereq);
 	AN(sp->director);
+	AZ(sp->vbe);
 	i = Fetch(sp);
+	AZ(sp->vbe);
 	AN(sp->director);
 
 	if (i) {

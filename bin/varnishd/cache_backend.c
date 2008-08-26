@@ -66,9 +66,10 @@ VBE_AddHostHeader(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq->http, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->bereq->http,
-	    "Host: %s", sp->backend->hosthdr);
+	    "Host: %s", sp->vbe->backend->hosthdr);
 }
 
 /*--------------------------------------------------------------------
@@ -81,24 +82,21 @@ VBE_AddHostHeader(const struct sess *sp)
  */
 
 static int
-VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen_t salen)
+VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen_t salen, const struct backend *bp)
 {
 	int s, i, tmo;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
 
 	s = socket(pf, SOCK_STREAM, 0);
-	if (s < 0) {
-		LOCK(&sp->backend->mtx);
+	if (s < 0) 
 		return (s);
-	}
 
 	tmo = params->connect_timeout;
-	if (sp->backend->connect_timeout > 10e-3)
-		tmo = (int)(sp->backend->connect_timeout * 1000);
+	if (bp->connect_timeout > 10e-3)
+		tmo = (int)(bp->connect_timeout * 1000);
 
 	if (tmo > 0)
 		i = TCP_connect(s, sa, salen, tmo);
@@ -113,7 +111,7 @@ VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    sp->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
 	return (s);
 }
@@ -250,11 +248,11 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 	/* release lock during stuff that can take a long time */
 
 	if (params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len);
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
 	if (s == -1 && bp->ipv4 != NULL)
-		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len);
+		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
 	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len);
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
 
 	if (s < 0) {
 		LOCK(&bp->mtx);
@@ -269,20 +267,15 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
  * should contact.
  */
 
-struct vbe_conn *
+void
 VBE_GetFd(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 
-	if (sp->director->getfd != NULL)
-		return (sp->director->getfd(sp));
-
-	sp->backend = sp->director->choose(sp);
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	return (VBE_GetVbe(sp));
+	AN (sp->director->getfd);
+	sp->vbe = sp->director->getfd(sp);
 }
 
 /*--------------------------------------------------------------------
@@ -290,12 +283,11 @@ VBE_GetFd(struct sess *sp)
  */
 
 struct vbe_conn *
-VBE_GetVbe(const struct sess *sp)
+VBE_GetVbe(struct sess *sp, struct backend *bp)
 {
-	struct backend *bp;
 	struct vbe_conn *vc;
 
-	bp = sp->backend;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
 	/* first look for vbe_conn's we can recycle */
@@ -317,7 +309,8 @@ VBE_GetVbe(const struct sess *sp)
 			VSL_stats->backend_conn++;
 			return (vc);
 		}
-		VBE_ClosedFd(sp->wrk, vc);
+		sp->vbe = vc;
+		VBE_ClosedFd(sp);
 	}
 
 	vc = VBE_NewConn();
@@ -337,37 +330,41 @@ VBE_GetVbe(const struct sess *sp)
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(struct worker *w, struct vbe_conn *vc)
+VBE_ClosedFd(struct sess *sp)
 {
-	struct backend *b;
+	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	b = vc->backend;
-	assert(vc->fd >= 0);
-	WSL(w, SLT_BackendClose, vc->fd, "%s", vc->backend->vcl_name);
-	TCP_close(&vc->fd);
-	VBE_DropRef(vc->backend);
-	vc->backend = NULL;
-	VBE_ReleaseConn(vc);
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
+	assert(sp->vbe->fd >= 0);
+
+	bp = sp->vbe->backend;
+
+	WSL(sp->wrk, SLT_BackendClose, sp->vbe->fd, "%s", bp->vcl_name);
+	TCP_close(&sp->vbe->fd);
+	VBE_DropRef(bp);
+	sp->vbe->backend = NULL;
+	VBE_ReleaseConn(sp->vbe);
+	sp->vbe = NULL;
 }
 
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VBE_RecycleFd(struct worker *w, struct vbe_conn *vc)
+VBE_RecycleFd(struct sess *sp)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	assert(vc->fd >= 0);
-	bp = vc->backend;
-	WSL(w, SLT_BackendReuse, vc->fd, "%s", vc->backend->vcl_name);
-	LOCK(&vc->backend->mtx);
+	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
+	assert(sp->vbe->fd >= 0);
+
+	bp = sp->vbe->backend;
+
+	WSL(sp->wrk, SLT_BackendReuse, sp->vbe->fd, "%s", bp->vcl_name);
+	LOCK(&bp->mtx);
 	VSL_stats->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
-	VBE_DropRefLocked(vc->backend);
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
+	sp->vbe = NULL;
+	VBE_DropRefLocked(bp);
 }
