@@ -354,7 +354,7 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct backend		*backend;
+	struct vbe_conn		*vbe;
 	struct bereq		*bereq;
 	struct object		*obj;
 	struct objhead		*objhead;
@@ -397,9 +397,9 @@ extern int vca_pipes[2];
 
 /* cache_backend.c */
 
-struct vbe_conn *VBE_GetFd(struct sess *sp);
-void VBE_ClosedFd(struct worker *w, struct vbe_conn *vc);
-void VBE_RecycleFd(struct worker *w, struct vbe_conn *vc);
+void VBE_GetFd(struct sess *sp);
+void VBE_ClosedFd(struct sess *sp);
+void VBE_RecycleFd(struct sess *sp);
 struct bereq * VBE_new_bereq(void);
 void VBE_free_bereq(struct bereq *bereq);
 void VBE_AddHostHeader(const struct sess *sp);

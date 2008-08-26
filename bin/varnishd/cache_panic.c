@@ -83,10 +83,14 @@ pan_ws(const struct ws *ws, int indent)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_backend(const struct backend *be)
+pan_vbe(const struct vbe_conn *vbe)
 {
 
-	vsb_printf(vsp, "  backend = %p {\n", be);
+	struct backend *be;
+
+	be = vbe->backend;
+
+	vsb_printf(vsp, "  backend = %p fd = %d {\n", be, vbe->fd);
 	vsb_printf(vsp, "    vcl_name = \"%s\",\n", be->vcl_name);
 	vsb_printf(vsp, "  },\n");
 }
@@ -242,8 +246,8 @@ pan_sess(const struct sess *sp)
 	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
 		pan_vcl(sp->vcl);
 
-	if (VALID_OBJ(sp->backend, BACKEND_MAGIC))
-		pan_backend(sp->backend);
+	if (VALID_OBJ(sp->vbe, BACKEND_MAGIC))
+		pan_vbe(sp->vbe);
 
 	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
 		pan_object(sp->obj);

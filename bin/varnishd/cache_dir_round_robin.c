@@ -59,21 +59,20 @@ struct vdi_round_robin {
 	unsigned		next_host;
 };
 
-
-/*lint -e{818} not const-able */
-static struct backend *
-vdi_round_robin_choose(struct sess *sp)
+static struct vbe_conn *
+vdi_round_robin_getfd(struct sess *sp)
 {
 	struct vdi_round_robin *vs;
 	struct backend *backend;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	backend = vs->hosts[ vs->next_host ].backend;
 	vs->next_host = (vs->next_host + 1) % vs->nhosts;
 
-	return (backend);
+	return (VBE_GetVbe(sp, backend));
 }
 
 /*lint -e{818} not const-able */
@@ -114,7 +113,7 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp, const struct vrt
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "round_robin";
-	vs->dir.choose = vdi_round_robin_choose;
+	vs->dir.getfd = vdi_round_robin_getfd;
 	vs->dir.fini = vdi_round_robin_fini;
 
 	vh = vs->hosts;

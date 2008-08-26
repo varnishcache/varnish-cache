@@ -77,9 +77,10 @@ PipeSession(struct sess *sp)
 	bereq = sp->bereq;
 	sp->bereq = NULL;
 
-	vc = VBE_GetFd(sp);
-	if (vc == NULL)
+	VBE_GetFd(sp);
+	if (sp->vbe == NULL)
 		return;
+	vc = sp->vbe;
 	TCP_blocking(vc->fd);
 
 	WRK_Reset(w, &vc->fd);
@@ -91,7 +92,7 @@ PipeSession(struct sess *sp)
 
 	if (WRK_Flush(w)) {
 		vca_close_session(sp, "pipe");
-		VBE_ClosedFd(sp->wrk, vc);
+		VBE_ClosedFd(sp);
 		return;
 	}
 
@@ -134,5 +135,5 @@ PipeSession(struct sess *sp)
 		(void)shutdown(vc->fd, SHUT_WR);
 	}
 	vca_close_session(sp, "pipe");
-	VBE_ClosedFd(sp->wrk, vc);
+	VBE_ClosedFd(sp);
 }

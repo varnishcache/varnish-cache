@@ -55,15 +55,15 @@ struct vdi_simple {
 	struct backend		*backend;
 };
 
-/*lint -e{818} not const-able */
-static struct backend *
-vdi_simple_choose(struct sess *sp)
+static struct vbe_conn *
+vdi_simple_getfd(struct sess *sp)
 {
 	struct vdi_simple *vs;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
-	return (vs->backend);
+	return (VBE_GetVbe(sp, vs->backend));
 }
 
 /*lint -e{818} not const-able */
@@ -92,7 +92,7 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
-	vs->dir.choose = vdi_simple_choose;
+	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.fini = vdi_simple_fini;
 
 	vs->backend = VBE_AddBackend(cli, t->host);
