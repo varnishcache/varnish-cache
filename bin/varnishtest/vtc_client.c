@@ -87,7 +87,7 @@ client_thread(void *priv)
 	vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
 	http_process(vl, c->spec, fd, 1);
 	vtc_log(vl, 3, "Closing fd %d", fd);
-	AZ(close(fd));
+	TCP_close(&fd);
 	vtc_log(vl, 2, "Ending");
 
 	return (NULL);
