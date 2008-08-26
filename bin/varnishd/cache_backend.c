@@ -313,6 +313,11 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		VBE_ClosedFd(sp);
 	}
 
+	if (!bp->healthy) {
+		VSL_stats->backend_unhealthy++;
+		return (NULL);
+	}
+
 	vc = VBE_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
