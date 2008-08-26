@@ -12,8 +12,8 @@ Default backend definition.  Set this to point to your content\n\
 server.\n\
 \n\
 backend default {\n\
-	.host = "127.0.0.1";\n\
-	.port = "8080";\n\
+	.host = \"127.0.0.1\";\n\
+	.port = \"8080\";\n\
 }\n\
 \n\
 Below is a commented-out copy of the default VCL logic.  If you\n\
