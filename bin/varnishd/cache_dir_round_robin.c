@@ -47,32 +47,41 @@
 /*--------------------------------------------------------------------*/
 
 struct vdi_round_robin_host {
-	struct backend		*backend;
+	struct backend			*backend;
 };
 
 struct vdi_round_robin {
-	unsigned		magic;
-#define VDI_ROUND_ROBIN_MAGIC	0x2114a178
-	struct director		dir;
+	unsigned			magic;
+#define VDI_ROUND_ROBIN_MAGIC		0x2114a178
+	struct director			dir;
 	struct vdi_round_robin_host	*hosts;
-	unsigned		nhosts;
-	unsigned		next_host;
+	unsigned			nhosts;
+	unsigned			next_host;
 };
 
 static struct vbe_conn *
 vdi_round_robin_getfd(struct sess *sp)
 {
+	int i;
 	struct vdi_round_robin *vs;
 	struct backend *backend;
+	struct vbe_conn *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
 
-	backend = vs->hosts[ vs->next_host ].backend;
-	vs->next_host = (vs->next_host + 1) % vs->nhosts;
+	for (i = 0; i < vs->nhosts; i++) {
+		backend = vs->hosts[vs->next_host].backend;
+		vs->next_host = (vs->next_host + 1) % vs->nhosts;
+		if (!backend->healthy)
+			continue;
+		vbe = VBE_GetVbe(sp, backend);
+		if (vbe != NULL)
+			return (vbe);
+	}
 
-	return (VBE_GetVbe(sp, backend));
+	return (NULL);
 }
 
 /*lint -e{818} not const-able */
