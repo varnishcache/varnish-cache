@@ -50,7 +50,7 @@
 
 struct vdi_random_host {
 	struct backend		*backend;
-	unsigned		weight;
+	double			weight;
 };
 
 struct vdi_random {
@@ -61,25 +61,60 @@ struct vdi_random {
 	unsigned		nhosts;
 };
 
-
 static struct vbe_conn *
 vdi_random_getfd(struct sess *sp)
 {
-	int i;
+	int i, j, k;
 	struct vdi_random *vs;
-	uint32_t r;
-	struct vdi_random_host *vh;
+	double r, s1, s2;
+	struct vbe_conn *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
-	r = random();
-	r &= 0x7fffffff;
 
-	for (i = 0, vh = vs->hosts; i < vs->nhosts; vh++) 
-		if (r < vh->weight)
-			return (VBE_GetVbe(sp, vh->backend));
-	assert(0 == __LINE__);
+	k = 0;
+	for (k = 0; k < 4; ) {	/* XXX: 4 is arbitrary */
+
+		r = random() / 2147483648.0;	/* 2^31 */
+		assert(r >= 0.0 && r < 1.0);
+
+		s1 = 0.0;
+		j = 0;
+		for (i = 0; i < vs->nhosts; i++) {
+			if (!vs->hosts[i].backend->healthy)
+				continue;
+			s1 += vs->hosts[i].weight;
+			j++;
+		}	
+
+		if (j == 0)		/* No healthy hosts */
+			return (NULL);
+
+		r *= s1;
+
+		s2 = 0;
+		j = 0;
+		for (i = 0; i < vs->nhosts; i++)  {
+			if (!vs->hosts[i].backend->healthy)
+				continue;
+			s2 += vs->hosts[i].weight;
+			if (r > s2)
+				j = i + 1;
+		}
+		if (s2 != s1) {
+			/*
+			 * Health bit changed in an unusable way while we
+			 * worked the problem.  Usable changes are any that
+			 * result in the same sum we prepared for.
+			 */
+			continue;
+		}
+		vbe = VBE_GetVbe(sp, vs->hosts[j].backend);
+		if (vbe != NULL)
+			return (vbe);
+		k++;
+	} 
 	return (NULL);
 }
 
@@ -108,8 +143,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	struct vdi_random *vs;
 	const struct vrt_dir_random_entry *te;
 	struct vdi_random_host *vh;
-	double s, a, b;
-	unsigned v;
+	double s;
 	int i;
 	
 	(void)cli;
@@ -130,24 +164,9 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	te = t->members;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
 		assert(te->weight > 0.0);
-		s += te->weight;
+		vh->weight = te->weight;
 		vh->backend = VBE_AddBackend(cli, te->host);
 	}
 	vs->nhosts = t->nmember;
-
-	/* Normalize weights */
-	i = 0;
-	a = 0.0;
-	assert(s > 0.0);
-	for (te = t->members; i < t->nmember; te++, i++) {
-		/* First normalize the specified weight in FP */
-		b = te->weight / s;	/*lint !e795 not zero division */
-		/* Then accumulate to eliminate rounding errors */
-		a += b;
-		/* Convert to unsigned in random() range */
-		v = (unsigned)((1U<<31) * a);
-		vs->hosts[i].weight = v;
-	}
-	assert(vs->hosts[t->nmember - 1].weight > 0x7fffffff);
 	*bp = &vs->dir;
 }
