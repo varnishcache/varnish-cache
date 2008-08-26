@@ -417,6 +417,8 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 	AN(vt);
 	if (!memcmp(&vt->probe, p, sizeof *p)) {
 		FREE_OBJ(vt);
+		/* No probe defined for this backend, set it healthy */
+		b->healthy = 1;
 		return;
 	}
 	vt->backend = b;
