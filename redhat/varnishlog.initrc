@@ -1,77 +1,116 @@
 #! /bin/sh
 #
-# varnishlog	Control the varnish HTTP accelerator logging daemon
+# varnishlog Control the varnish logging daemon
 #
 # chkconfig: - 90 10
-# description: HTTP accelerator logging daemon
+# description: Varnish logging daemon
 # processname: varnishlog
 # config: 
 # pidfile: /var/run/varnish/varnishlog.pid
 
+### BEGIN INIT INFO
+# Provides: varnishlog
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Short-Description: start and stop varnishlog
+# Description: Varnish HTTP accelerator logging daemon
+### END INIT INFO
+
 # Source function library.
 . /etc/init.d/functions
 
-RETVAL=0
-PROCNAME=varnishlog
+retval=0
+pidfile="/var/run/varnishlog.pid"
+lockfile="/var/lock/subsys/varnishlog"
+logfile="/var/log/varnish/varnish.log"
 
-DAEMON="/usr/bin/varnishlog"
-PIDFILE="/var/run/varnish/varnishlog.pid"
-LOCKFILE="/var/lock/subsys/varnishlog"
-LOGFILE="/var/log/varnish/varnish.log"
+exec="/usr/bin/varnishlog"
+prog="varnishlog"
 
-DAEMON_OPTS="-a -w ${LOGFILE} -D -P $PIDFILE"
+DAEMON_OPTS="-a -w $logfile -D -P $pidfile"
 
-mkdir -p /var/run/varnish 2>/dev/null
+# Include varnish defaults
+[ -e /etc/sysconfig/varnishlog ] && . /etc/sysconfig/varnishlog
+
+lockfile=/var/lock/subsys/$prog
+
+start() {
+
+	if [ ! -x $exec ]
+	then
+		echo $exec not found
+		exit 5
+	fi
+
+	echo -n "Starting varnish logging daemon: "
+
+	daemon --pidfile $pidfile $exec "$DAEMON_OPTS" 
+	echo
+	return $retval
+}
+
+stop() {
+	echo -n "Stopping varnish daemon: "
+	killproc $prog
+	retval=$?
+	echo
+	[ $retval -eq 0 ] && rm -f $lockfile
+	return $retval
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	restart
+}
+
+force_reload() {
+	restart
+}
+
+rh_status() {
+	status -p $pidfile $prog
+}
+
+rh_status_q() {
+	rh_status >/dev/null 2>&1
+}
 
 # See how we were called.
 case "$1" in
-  start)
-	echo -n "Starting varnish logging daeon: "
-	daemon --pidfile $PIDFILE $DAEMON "$DAEMON_OPTS"
-	sleep 1
-	pkill -0 $PROCNAME
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]
-	then
-		echo_success
-		touch $LOCKFILE
-	else
-		echo_failure
-	fi
-	echo
-	;;
-  stop)
-	echo -n "Stopping varnish logging daemon: "
-	killproc -p $PIDFILE $DAEMON
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]
-	then
-		echo_success
-		rm -f $LOCKFILE $PIDFILE
-	else
-		echo_failure
-	fi
-	echo
-	;;
-  status)
-	status -p $PIDFILE $PROCNAME
-	RETVAL=$?
-	;;
-  restart|reload)
-  	$0 stop
-	$0 start
-	RETVAL=$?
-	;;
-  condrestart)
-        if [ -f $PIDFILE ]; then
-            $0 stop
-            $0 start
-            RETVAL=$?
-        fi
-	;;
-  *)
-	echo "Usage: $0 {start|stop|status|restart|condrestart}"
-	exit 1
+	start)
+		rh_status_q && exit 0
+		$1
+		;;
+	stop)
+		rh_status_q || exit 0
+		$1
+		;;
+	restart)
+		$1
+		;;
+	reload)
+		rh_status_q || exit 7
+		$1
+		;;
+	force-reload)
+		force_reload
+		;;
+	status)
+		rh_status
+		;;
+	condrestart|try-restart)
+		rh_status_q || exit 0
+		restart
+		;;
+	*)
+	echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+
+	exit 2
 esac
 
-exit $RETVAL
+exit $?
+
