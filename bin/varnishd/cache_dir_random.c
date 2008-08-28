@@ -57,6 +57,8 @@ struct vdi_random {
 	unsigned		magic;
 #define VDI_RANDOM_MAGIC	0x3771ae23
 	struct director		dir;
+
+	unsigned		retries;
 	struct vdi_random_host	*hosts;
 	unsigned		nhosts;
 };
@@ -74,7 +76,7 @@ vdi_random_getfd(struct sess *sp)
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
 
 	k = 0;
-	for (k = 0; k < 4; ) {	/* XXX: 4 is arbitrary */
+	for (k = 0; k < vs->retries; ) {
 
 		r = random() / 2147483648.0;	/* 2^31 */
 		assert(r >= 0.0 && r < 1.0);
@@ -143,7 +145,6 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	struct vdi_random *vs;
 	const struct vrt_dir_random_entry *te;
 	struct vdi_random_host *vh;
-	double s;
 	int i;
 	
 	(void)cli;
@@ -159,7 +160,9 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.getfd = vdi_random_getfd;
 	vs->dir.fini = vdi_random_fini;
 
-	s = 0;
+	vs->retries = t->retries;
+	if (vs->retries == 0)
+		vs->retries = t->nmember;
 	vh = vs->hosts;
 	te = t->members;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
