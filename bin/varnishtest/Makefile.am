@@ -3,6 +3,8 @@
 TESTS_ENVIRONMENT = ./varnishtest
 TESTS = $(srcdir)/tests/*.vtc
 
+DISTCLEANFILES = _.ok
+
 INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS =	varnishtest
