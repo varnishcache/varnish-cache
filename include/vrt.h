@@ -93,6 +93,7 @@ struct vrt_dir_random_entry {
 
 struct vrt_dir_random {
 	const char 				*name;
+	unsigned				retries;
 	unsigned 				nmember;
 	const struct vrt_dir_random_entry	*members;
 };
