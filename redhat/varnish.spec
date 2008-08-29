@@ -154,6 +154,7 @@ rm -rf %{buildroot}
 %{_libdir}/libvarnishapi.so
 %{_libdir}/libvarnishcompat.so
 %{_libdir}/libvcl.so
+%dir %{_includedir}/varnish
 %{_includedir}/varnish/shmlog.h
 %{_includedir}/varnish/shmlog_tags.h
 %{_includedir}/varnish/stat_field.h
@@ -200,6 +201,7 @@ fi
 %changelog
 * Fri Aug 29 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.5.beta1
 - Bumped version numbers and source url for first beta release \o/
+- Added a missing directory to the libs-devel package (Michael Schwendt)
 
 * Wed Aug 27 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.4.20080827svn3136
 - Fixed up init script for varnishlog too
