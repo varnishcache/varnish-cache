@@ -63,7 +63,7 @@ Varnish is a high-performance HTTP accelerator
 
 %prep
 #%setup -q
-%setup -n varnish-2.0-beta1
+%setup -q -n varnish-2.0-beta1
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
