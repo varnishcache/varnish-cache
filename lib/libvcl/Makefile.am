@@ -4,6 +4,8 @@ INCLUDES = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libvcl.la
 
+libvcl_la_LDFLAGS = -version-info 1:0:0
+
 libvcl_la_SOURCES = \
 	vcc_priv.h \
 	vcc_compile.h \
