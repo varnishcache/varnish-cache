@@ -26,11 +26,11 @@ pidfile=/var/run/varnish.pid
 exec="/usr/sbin/varnishd"
 prog="varnishd"
 config="/etc/sysconfig/varnish"
+lockfile="/var/lock/subsys/varnish"
 
 # Include varnish defaults
 [ -e /etc/sysconfig/varnish ] && . /etc/sysconfig/varnish
 
-lockfile=/var/lock/subsys/$prog
 
 start() {
 
