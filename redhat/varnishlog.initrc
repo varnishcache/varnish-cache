@@ -32,8 +32,6 @@ DAEMON_OPTS="-a -w $logfile -D -P $pidfile"
 # Include varnish defaults
 [ -e /etc/sysconfig/varnishlog ] && . /etc/sysconfig/varnishlog
 
-lockfile=/var/lock/subsys/$prog
-
 start() {
 
 	if [ ! -x $exec ]
