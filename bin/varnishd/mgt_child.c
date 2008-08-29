@@ -50,6 +50,10 @@
 #include "compat/setproctitle.h"
 #endif
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 #include "heritage.h"
 #include "mgt.h"
 #include "cli.h"
@@ -282,6 +286,15 @@ start_child(struct cli *cli)
 			XXXAZ(setgid(params->gid));
 			XXXAZ(setuid(params->uid));
 		}
+
+		/* On Linux >= 2.4, you need to set the dumpable flag
+		   to get core dumps after you have done a setuid. */
+#ifdef __linux__
+		if (prctl(PR_SET_DUMPABLE, 1) != 0) {
+		  printf("Could not set dumpable bit.  Core dumps turned "
+			 "off\n");
+		}
+#endif
 
 		/* Redirect stdin/out/err */
 		AZ(close(STDIN_FILENO));
