@@ -83,7 +83,6 @@ sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
         s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 %{__make} %{?_smp_mflags}
-%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
 head -6 etc/default.vcl > redhat/default.vcl
 
@@ -103,6 +102,9 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
             s,killproc -p \$pidfile,killproc,g' \
     redhat/varnish.initrc redhat/varnishlog.initrc
 %endif
+
+%check
+%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
 %install
 rm -rf %{buildroot}
@@ -161,6 +163,7 @@ rm -rf %{buildroot}
 %{_includedir}/varnish/stats.h
 %{_includedir}/varnish/varnishapi.h
 %{_libdir}/pkgconfig/varnishapi.pc
+%doc LICENSE
 
 #%files libs-static
 #%{_libdir}/libvarnish.a
@@ -202,6 +205,8 @@ fi
 * Fri Aug 29 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.5.beta1
 - Bumped version numbers and source url for first beta release \o/
 - Added a missing directory to the libs-devel package (Michael Schwendt)
+- Added the LICENSE file to the libs-devel package
+- Moved make check to its proper place
 
 * Wed Aug 27 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.4.20080827svn3136
 - Fixed up init script for varnishlog too
