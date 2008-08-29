@@ -22,7 +22,6 @@
 
 retval=0
 pidfile=/var/run/varnish.pid
-lockfile=/var/lock/subsys/varnish
 
 exec="/usr/sbin/varnishd"
 prog="varnishd"
