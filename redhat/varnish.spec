@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.5.beta1%{?dist}
+Release: 0.6.beta1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -202,6 +202,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.6.beta1
+- Added a commented option for max coresize in the sysconfig script
+
 * Fri Aug 29 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.5.beta1
 - Bumped version numbers and source url for first beta release \o/
 - Added a missing directory to the libs-devel package (Michael Schwendt)
