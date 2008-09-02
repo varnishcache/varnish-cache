@@ -204,6 +204,7 @@ fi
 %changelog
 * Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.6.beta1
 - Added a commented option for max coresize in the sysconfig script
+- Added a comment in README.redhat about upgrading from 1.x to 2.0
 
 * Fri Aug 29 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.5.beta1
 - Bumped version numbers and source url for first beta release \o/
