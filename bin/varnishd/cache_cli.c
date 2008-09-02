@@ -153,6 +153,8 @@ CLI_Run(void)
 		pfd[0].fd = heritage.cli_in;
 		pfd[0].events = POLLIN;
 		i = poll(pfd, 1, -1);
+		if (i == -1 && errno == EINTR)
+			continue;
 		assert(i == 1);
 		if (pfd[0].revents & POLLHUP) {
 			fprintf(stderr,
