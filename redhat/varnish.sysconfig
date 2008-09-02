@@ -11,6 +11,9 @@ NFILES=131072
 # Default log size is 82MB + header
 MEMLOCK=82000
 
+# Maximum size of corefile (for ulimit -c). Default in Fedora is 0
+# DAEMON_COREFILE_LIMIT="unlimited"
+
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
