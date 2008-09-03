@@ -32,6 +32,8 @@ client c1 {
 varnish v1 -vcl+backend {
 	acl acl1 {
 		! "localhost";
+		"0.0.0.0" / 0;
+		"::" / 0;
 	}
 
 	sub vcl_recv {
