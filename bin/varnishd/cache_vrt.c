@@ -603,7 +603,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 		addr = &((const struct sockaddr_in *)sa)->sin_addr;
 		break;
 	case AF_INET6:
-		len = INET_ADDRSTRLEN;
+		len = INET6_ADDRSTRLEN;
 		addr = &((const struct sockaddr_in6 *)sa)->sin6_addr;
 		break;
 	default:
