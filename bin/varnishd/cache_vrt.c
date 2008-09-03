@@ -594,17 +594,21 @@ char *
 VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 {
 	char *p;
+	const struct sockaddr_in *si4;
+	const struct sockaddr_in6 *si6;
 	const void *addr;
 	int len;
 
 	switch (sa->sa_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
-		addr = &((const struct sockaddr_in *)sa)->sin_addr;
+		si4 = (const void *)sa;
+		addr = &(si4->sin_addr);
 		break;
 	case AF_INET6:
 		len = INET6_ADDRSTRLEN;
-		addr = &((const struct sockaddr_in6 *)sa)->sin6_addr;
+		si6 = (const void *)sa;
+		addr = &(si6->sin6_addr);
 		break;
 	default:
 		INCOMPL();
