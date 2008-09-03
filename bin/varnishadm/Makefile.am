@@ -12,4 +12,4 @@ varnishadm_SOURCES = \
 varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
-	${NET_LIBS}
+	${PTHREAD_LIBS} ${NET_LIBS}
