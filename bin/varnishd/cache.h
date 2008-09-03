@@ -40,6 +40,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "vqueue.h"
 
