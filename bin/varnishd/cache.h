@@ -285,6 +285,8 @@ struct object {
 	/* Prefetch */
 	struct object		*parent;
 	struct object		*child;
+
+	int			hits;
 };
 
 struct objhead {
