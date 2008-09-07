@@ -336,22 +336,26 @@ parse_unset(struct tokenlist *tl)
 static void
 parse_purge_url(struct tokenlist *tl)
 {
+	struct var *vp;
 
 	vcc_NextToken(tl);
-	
-	Fb(tl, 1, "VRT_purge(");
 	
 	Expect(tl, '(');
 	vcc_NextToken(tl);
 	
-	if (!vcc_StringVal(tl)) {
+	vp = vcc_FindVar(tl, tl->t, vcc_vars);
+	ERRCHK(tl);
+	assert(vp != NULL);
+	if (vp->fmt != STRING) {
 		vcc_ExpectedStringval(tl);
 		return;
 	}
 	
+	Fb(tl, 1, "if (%s) VRT_purge(%s, 0);\n", vp->rname, vp->rname);
+	vcc_NextToken(tl);
+
 	Expect(tl, ')');
 	vcc_NextToken(tl);
-	Fb(tl, 0, ", 0);\n");
 }
 
 
