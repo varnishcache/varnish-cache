@@ -84,7 +84,7 @@ vdi_round_robin_getfd(struct sess *sp)
 	return (NULL);
 }
 
-static unsigned *
+static unsigned
 vdi_round_robin_healthy(const struct sess *sp)
 {
 	struct vdi_round_robin *vs;
