@@ -509,5 +509,5 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char * VRT_r_resp_response(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_response(const struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "double VRT_r_now(const struct sess *);\n");
-	vsb_cat(sb, "int VRT_r_backend_health(const struct sess *);\n");
+	vsb_cat(sb, "unsigned VRT_r_backend_healthy(const struct sess *);\n");
 }

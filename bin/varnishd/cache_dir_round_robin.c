@@ -84,6 +84,23 @@ vdi_round_robin_getfd(struct sess *sp)
 	return (NULL);
 }
 
+static unsigned *
+vdi_round_robin_healthy(const struct sess *sp)
+{
+	struct vdi_round_robin *vs;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
+
+	for (i = 0; i < vs->nhosts; i++) {
+		if (vs->hosts[i].backend->healthy)
+			return 1;
+	}
+	return 0;
+}
+
 /*lint -e{818} not const-able */
 static void
 vdi_round_robin_fini(struct director *d)
@@ -124,6 +141,7 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp, const struct vrt
 	vs->dir.name = "round_robin";
 	vs->dir.getfd = vdi_round_robin_getfd;
 	vs->dir.fini = vdi_round_robin_fini;
+	vs->dir.healthy = vdi_round_robin_healthy;
 
 	vh = vs->hosts;
 	te = t->members;

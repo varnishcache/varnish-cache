@@ -120,6 +120,23 @@ vdi_random_getfd(struct sess *sp)
 	return (NULL);
 }
 
+static unsigned *
+vdi_random_healthy(const struct sess *sp)
+{
+	struct vdi_random *vs;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
+
+	for (i = 0; i < vs->nhosts; i++) {
+		if (vs->hosts[i].backend->healthy)
+			return 1;
+	}
+	return 0;
+}
+
 /*lint -e{818} not const-able */
 static void
 vdi_random_fini(struct director *d)
@@ -159,6 +176,7 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.name = "random";
 	vs->dir.getfd = vdi_random_getfd;
 	vs->dir.fini = vdi_random_fini;
+	vs->dir.healthy = vdi_random_healthy;
 
 	vs->retries = t->retries;
 	if (vs->retries == 0)
