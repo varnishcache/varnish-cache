@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include <stdio.h>
-#include "config.h"
 #include "vcc_compile.h"
 
 struct var vcc_vars[] = {
@@ -229,8 +228,8 @@ struct var vcc_vars[] = {
 	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
 	},
-	{ "backend.health", INT, 14,
-	    "VRT_r_backend_health(sp)",
+	{ "backend.healthy", BOOL, 15,
+	    "VRT_r_backend_healthy(sp)",
 	    NULL,
 	    V_RO,
 	    0,

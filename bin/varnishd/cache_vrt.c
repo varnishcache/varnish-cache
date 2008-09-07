@@ -50,7 +50,7 @@
 #include "vrt_obj.h"
 #include "vcl.h"
 #include "cache.h"
-
+#include "cache_backend.h"
 
 void *vrt_magic_string_end = &vrt_magic_string_end;
 
@@ -575,17 +575,12 @@ VRT_r_obj_hash(const struct sess *sp)
 	return (sp->obj->objhead->hash);
 }
 
-int
-VRT_r_backend_health(const struct sess *sp)
+unsigned
+VRT_r_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-#if 0	
-	CHECK_OBJ_NOTNULL(sp->backend, BACKEND_MAGIC);
-	return (sp->backend->health);
-#else
-	INCOMPL();
-	return (0);
-#endif
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	return (sp->director->healthy(sp));
 }
 
 /*--------------------------------------------------------------------*/

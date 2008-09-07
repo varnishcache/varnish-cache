@@ -66,6 +66,17 @@ vdi_simple_getfd(struct sess *sp)
 	return (VBE_GetVbe(sp, vs->backend));
 }
 
+static unsigned *
+vdi_simple_healthy(const struct sess *sp)
+{
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
+	return vs->backend->healthy;
+}
+
 /*lint -e{818} not const-able */
 static void
 vdi_simple_fini(struct director *d)
@@ -94,6 +105,7 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.name = "simple";
 	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.fini = vdi_simple_fini;
+	vs->dir.healthy = vdi_simple_healthy;
 
 	vs->backend = VBE_AddBackend(cli, t->host);
 
