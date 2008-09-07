@@ -58,6 +58,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <fcntl.h>
 
@@ -253,6 +254,8 @@ HSH_Lookup(struct sess *sp)
 	if (o != NULL) {
 		/* We found an object we like */
 		o->refcnt++;
+		if (o->hits < INT_MAX)
+			o->hits++;
 		UNLOCK(&oh->mtx);
 		if (params->log_hash)
 			WSP(sp, SLT_Hash, "%s", oh->hash);

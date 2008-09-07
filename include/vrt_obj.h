@@ -34,6 +34,7 @@ int VRT_r_obj_status(const struct sess *);
 void VRT_l_obj_status(const struct sess *, int);
 const char * VRT_r_obj_response(const struct sess *);
 void VRT_l_obj_response(const struct sess *, const char *, ...);
+int VRT_r_obj_hits(const struct sess *);
 unsigned VRT_r_obj_cacheable(const struct sess *);
 void VRT_l_obj_cacheable(const struct sess *, unsigned);
 double VRT_r_obj_ttl(const struct sess *);

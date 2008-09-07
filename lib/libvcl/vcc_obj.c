@@ -144,6 +144,13 @@ struct var vcc_vars[] = {
 	    0,
 	    VCL_MET_FETCH | VCL_MET_ERROR
 	},
+	{ "obj.hits", INT, 8,
+	    "VRT_r_obj_hits(sp)",
+	    NULL,
+	    V_RO,
+	    0,
+	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	},
 	{ "obj.http.", HEADER, 9,
 	    "VRT_r_obj_http_(sp)",
 	    "VRT_l_obj_http_(sp, ",

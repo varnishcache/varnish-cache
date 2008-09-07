@@ -144,6 +144,11 @@ set spobj {
 	{                             fetch                         error}
 	"const struct sess *"
     }
+    { obj.hits
+	RO INT
+	{			  hit fetch deliver                      }
+	"const struct sess *"
+    }
     { obj.http.
 	RW HDR_OBJ
 	{                         hit fetch 			    error}

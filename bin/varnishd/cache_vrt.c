@@ -552,6 +552,15 @@ VRT_r_now(const struct sess *sp)
 	return (TIM_real());
 }
 
+int
+VRT_r_obj_hits(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->obj->hits);
+}
+
 double
 VRT_r_obj_lastuse(const struct sess *sp)
 {
