@@ -66,7 +66,7 @@ vdi_simple_getfd(struct sess *sp)
 	return (VBE_GetVbe(sp, vs->backend));
 }
 
-static unsigned *
+static unsigned
 vdi_simple_healthy(const struct sess *sp)
 {
 	struct vdi_simple *vs;

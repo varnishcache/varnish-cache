@@ -120,7 +120,7 @@ vdi_random_getfd(struct sess *sp)
 	return (NULL);
 }
 
-static unsigned *
+static unsigned
 vdi_random_healthy(const struct sess *sp)
 {
 	struct vdi_random *vs;
