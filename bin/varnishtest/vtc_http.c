@@ -66,6 +66,41 @@ struct http {
 static const char *nl = "\r\n";
 
 /**********************************************************************
+ * Generate a synthetic body
+ */
+
+static const char *
+synth_body(const char *len)
+{
+	int i, j, k, l;
+	char *b;
+	
+	
+	AN(len);
+	i = strtoul(len, NULL, 0);
+	assert(i > 0);
+	b = malloc(i + 1);
+	AN(b);
+	l = k = '!';
+	for (j = 0; j < i; j++) {
+		if ((j % 64) == 63) {
+			b[j] = '\n';
+			k++;
+			if (k == '~')
+				k = '!';
+			l = k;
+		} else {
+			b[j] = l++;
+			if (l == '~')
+				l = '!';
+		}
+	}
+	b[i - 1] = '\n';
+	b[i] = '\0';
+	return (b);
+}
+
+/**********************************************************************
  * Finish and write the vsb to the fd
  */
 
@@ -441,6 +476,10 @@ cmd_http_txresp(CMD_ARGS)
 			AZ(body);
 			body = av[1];
 			av++;
+		} else if (!strcmp(*av, "-bodylen")) {
+			AZ(body);
+			body = synth_body(av[1]);
+			av++;
 		} else
 			break;
 	}
@@ -529,6 +568,10 @@ cmd_http_txreq(CMD_ARGS)
 		if (!strcmp(*av, "-body")) {
 			AZ(body);
 			body = av[1];
+			av++;
+		} else if (!strcmp(*av, "-bodylen")) {
+			AZ(body);
+			body = synth_body(av[1]);
 			av++;
 		} else
 			break;
