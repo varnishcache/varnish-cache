@@ -1,0 +1,53 @@
+# $Id: v00007.vtc 3060 2008-08-01 12:44:53Z phk $
+
+test "Regression test for ticket #306, random director ignoring good backend"
+
+server s1 {
+
+	rxreq
+	expect req.url == /foo
+	txresp -body "foo1"
+
+	rxreq
+	expect req.url == /bar
+	txresp -body "bar1"
+
+} -start
+
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	txresp -status 404
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "127.0.0.1"; .port = "9080";
+	}
+	backend s2 {
+		.host = "127.0.0.1"; .port = "9180";
+		.probe = {
+			.url = "/";
+		}
+	}
+	director foo random {
+		{ .backend = s2; .weight = 1; }
+		{ .backend = s1; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = foo;
+	}
+} -start
+
+client c1 {
+	timeout 10
+
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+
+} -run
