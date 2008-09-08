@@ -96,14 +96,14 @@ vdi_random_getfd(struct sess *sp)
 		r *= s1;
 
 		s2 = 0;
-		j = 0;
 		for (i = 0; i < vs->nhosts; i++)  {
 			if (!vs->hosts[i].backend->healthy)
 				continue;
 			s2 += vs->hosts[i].weight;
-			if (r > s2)
-				j = i + 1;
+			if (r < s2)
+				break;
 		}
+
 		if (s2 != s1) {
 			/*
 			 * Health bit changed in an unusable way while we
@@ -112,7 +112,7 @@ vdi_random_getfd(struct sess *sp)
 			 */
 			continue;
 		}
-		vbe = VBE_GetVbe(sp, vs->hosts[j].backend);
+		vbe = VBE_GetVbe(sp, vs->hosts[i].backend);
 		if (vbe != NULL)
 			return (vbe);
 		k++;
