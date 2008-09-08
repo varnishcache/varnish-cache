@@ -585,7 +585,7 @@ VRT_r_obj_hash(const struct sess *sp)
 }
 
 unsigned
-VRT_r_backend_healthy(const struct sess *sp)
+VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);

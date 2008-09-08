@@ -1,0 +1,48 @@
+# $Id$
+
+test "Check req.backend.healthy"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start -repeat 4
+
+varnish v1 -vcl {
+
+	backend default {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.max_connections = 1;
+		.probe = {
+			.url = "/";
+			.timeout = 100 ms;
+			.interval = 1s;
+			.window = 3;
+			.threshold = 2;
+		}
+	}
+
+	sub vcl_recv {
+		if (req.backend.healthy) {
+			error 200 "Backend healthy";
+		} else {
+			error 500 "Backend sick";
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+} -run
+
+shell "sleep 1"
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
