@@ -434,6 +434,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "/* Simple stuff */\n");
 	vsb_cat(sb, "int VRT_strcmp(const char *s1, const char *s2);\n");
+	vsb_cat(sb, "void VRT_memmove(void *dst, const void *src, unsigned len);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "void VRT_ESI(struct sess *sp);\n");
 	vsb_cat(sb, "void VRT_Rollback(struct sess *sp);\n");

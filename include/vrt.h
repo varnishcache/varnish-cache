@@ -154,6 +154,7 @@ void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
+void VRT_memmove(void *dst, const void *src, unsigned len);
 
 void VRT_ESI(struct sess *sp);
 void VRT_Rollback(struct sess *sp);
