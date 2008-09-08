@@ -726,3 +726,10 @@ VRT_strcmp(const char *s1, const char *s2)
 	return (strcmp(s1, s2));
 }
 
+void
+VRT_memmove(void *dst, const void *src, unsigned len)
+{
+
+	(void)memmove(dst, src, len);
+}
+
