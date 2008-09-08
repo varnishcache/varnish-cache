@@ -710,7 +710,8 @@ void
 VRT_purge(const char *regexp, int hash)
 {
 	
-	(void)BAN_Add(NULL, regexp, hash);
+	if (regexp != NULL)
+		(void)BAN_Add(NULL, regexp, hash);
 }
 
 /*--------------------------------------------------------------------
