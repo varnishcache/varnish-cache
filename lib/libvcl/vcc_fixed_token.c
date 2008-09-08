@@ -492,6 +492,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_status(const struct sess *, int);\n");
 	vsb_cat(sb, "const char * VRT_r_obj_response(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_response(const struct sess *, const char *, ...);\n");
+	vsb_cat(sb, "int VRT_r_obj_hits(const struct sess *);\n");
 	vsb_cat(sb, "unsigned VRT_r_obj_cacheable(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_cacheable(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "double VRT_r_obj_ttl(const struct sess *);\n");
