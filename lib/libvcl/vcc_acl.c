@@ -328,23 +328,37 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char
 	int depth, l, m, i;
 	unsigned at[VRT_ACL_MAXADDR + 1];
 	const char *oc;
+	struct sockaddr sa;
 
 	Fh(tl, 0, "\nstatic int\n");
 	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
 	    pfx, acln);
 	Fh(tl, 0, "{\n");
-	Fh(tl, 0, "\tunsigned fam;\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
+	assert(sizeof (unsigned char) == 1);
+	assert(sizeof (unsigned short) == 2);
+	assert(sizeof (unsigned int) == 4);
+	if (sizeof sa.sa_family == 1)
+		Fh(tl, 0, "\tunsigned char fam;\n");
+	else if (sizeof sa.sa_family == 2)
+		Fh(tl, 0, "\tunsigned short fam;\n");
+	else if (sizeof sa.sa_family == 4)
+		Fh(tl, 0, "\tunsigned int fam;\n");
+	else
+		assert(0 == __LINE__);
+		
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\ta = p;\n");
-	Fh(tl, 0, "\tfam = a[%d];\n", offsetof(struct sockaddr, sa_family));
+	Fh(tl, 0, "\tVRT_memmove(&fam, a + %d, sizeof fam);\n",
+	    offsetof(struct sockaddr, sa_family));
 	Fh(tl, 0, "\tif (fam == %d)\n", PF_INET);
 	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in, sin_addr));
 	Fh(tl, 0, "\telse if (fam == %d)\n", PF_INET6);
 	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in6, sin6_addr));
-	Fh(tl, 0, "\telse\n");
+	Fh(tl, 0, "\telse {\n");
+	Fh(tl, 0, "\t\tVRT_acl_log(sp, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
-	Fh(tl, 0, "\n");
+	Fh(tl, 0, "\t}\n\n");
 	depth = -1;
 	oc = 0;
 	at[0] = 256;
