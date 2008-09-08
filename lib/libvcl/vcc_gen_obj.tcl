@@ -216,7 +216,7 @@ set spobj {
 	    {recv pipe pass hash miss hit fetch deliver discard timeout}
 	    "const struct sess *"
     }
-    { backend.healthy	RO BOOL
+    { req.backend.healthy	RO BOOL
 	    {recv pipe pass hash miss hit fetch deliver discard timeout}
 	    "const struct sess *"
     }
