@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.6.beta1%{?dist}
+Release: 0.7.20080908svn3173%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -69,6 +69,21 @@ Varnish is a high-performance HTTP accelerator
 # Release tarballs would not need this
 #./autogen.sh
 
+# Hack to get 32- and 64-bits tests run concurrently on the same build machine
+case `uname -m` in
+	ppc64 | s390x | x86_64 | sparc64 )
+		sed -i ' 
+			s,9001,9011,g;
+			s,9080,9090,g; 
+			s,9081,9091,g; 
+			s,9082,9092,g; 
+			s,9180,9190,g;
+		' bin/varnishtest/*.c bin/varnishtest/tests/*vtc
+		;;
+	*)
+		;;
+esac
+
 mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
@@ -95,7 +110,6 @@ EOF
 
 tail -n +11 etc/default.vcl >> redhat/default.vcl
 
-# This part probably broken now
 %if "%dist" == "el4"
     sed -i 's,--pidfile \$pidfile,,g;
             s,status -p \$pidfile,status,g;
@@ -202,6 +216,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.7.beta1
+- Added a hack that changes the ports for 64bits builds, so they can run
+  in parallell with 32bits build on same build host.
+
 * Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.6.beta1
 - Added a commented option for max coresize in the sysconfig script
 - Added a comment in README.redhat about upgrading from 1.x to 2.0
@@ -211,6 +229,7 @@ fi
 - Added a missing directory to the libs-devel package (Michael Schwendt)
 - Added the LICENSE file to the libs-devel package
 - Moved make check to its proper place
+- Removed superfluous definition of lockfile in initscripts
 
 * Wed Aug 27 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.4.20080827svn3136
 - Fixed up init script for varnishlog too
