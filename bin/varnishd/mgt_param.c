@@ -595,6 +595,15 @@ static const struct parspec parspec[] = {
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
+	{ "shm_workspace", tweak_uint, &master.shm_workspace, 4096, UINT_MAX,
+		"Bytes of shmlog workspace allocated for worker threads. "
+		"If too big, it wastes some ram, if too small it causes "
+		"needless flushes of the SHM workspace.\n"
+		"These flushes show up in stats as "
+		"\"SHM flushes due to overflow\".\n"
+		"Minimum is 4096 bytes.",
+		DELAYED_EFFECT,
+		"8192", "bytes" },
 	{ "default_grace", tweak_uint, &master.default_grace, 0, UINT_MAX,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "
