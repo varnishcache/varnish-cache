@@ -219,6 +219,7 @@ cnt_done(struct sess *sp)
 
 	sp->t_end = TIM_real();
 	sp->wrk->used = sp->t_end;
+	assert(!isnan(sp->wrk->used));
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
@@ -235,8 +236,10 @@ cnt_done(struct sess *sp)
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0)
+	if (sp->esis > 0) {
+		assert(!isnan(sp->wrk->used));
 		return (1);
+	}
 
 	sp->t_req = NAN;
 
@@ -431,6 +434,7 @@ cnt_fetch(struct sess *sp)
 	sp->obj->cacheable = 1;
 	if (sp->obj->objhead != NULL) {
 		VRY_Create(sp);
+		assert(!isnan(sp->wrk->used));
 		EXP_Insert(sp->obj, sp->wrk->used);
 		HSH_Unbusy(sp);
 	}
@@ -463,6 +467,7 @@ cnt_first(struct sess *sp)
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->used = sp->t_open;
+	assert(!isnan(sp->wrk->used));
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
@@ -620,6 +625,7 @@ cnt_lookup(struct sess *sp)
 		 */
 		if (isnan(sp->wrk->used))
 			sp->wrk->used = TIM_real();
+		assert(!isnan(sp->wrk->used));
 		SES_Charge(sp);
 		return (1);
 	}
@@ -864,6 +870,7 @@ cnt_recv(struct sess *sp)
 			/* XXX: VSL something */
 			INCOMPL();
 			sp->step = STP_DONE;
+			assert(!isnan(sp->wrk->used));
 			return (1);
 		}
 		sp->step = STP_PIPE;
@@ -903,6 +910,7 @@ cnt_start(struct sess *sp)
 	VSL_stats->client_req++;			/* XXX not locked */
 	sp->t_req = TIM_real();
 	sp->wrk->used = sp->t_req;
+	assert(!isnan(sp->wrk->used));
 	sp->wrk->acct.req++;
 
 	/* Assign XID and log */
