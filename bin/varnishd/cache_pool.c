@@ -237,7 +237,7 @@ wrk_thread(void *priv)
 {
 	struct worker *w, ww;
 	struct wq *qp;
-	unsigned char wlog[8192]; 	/* XXX: size */
+	unsigned char wlog[params->shm_workspace];
 	struct workreq *wrq;
 
 	THR_SetName("cache-worker");
