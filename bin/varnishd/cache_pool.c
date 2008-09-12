@@ -245,7 +245,7 @@ wrk_thread(void *priv)
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
-	w->used = TIM_real();
+	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
 	AZ(pthread_cond_init(&w->cond, NULL));
@@ -256,7 +256,6 @@ wrk_thread(void *priv)
 	qp->nthr++;
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-		assert(!isnan(w->used));
 
 		/* Process overflow requests, if any */
 		w->wrq = VTAILQ_FIRST(&qp->overflow);
@@ -264,6 +263,8 @@ wrk_thread(void *priv)
 			VTAILQ_REMOVE(&qp->overflow, w->wrq, list);
 			qp->nqueue--;
 		} else {
+			if (isnan(w->lastused))
+				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
 			AZ(pthread_cond_wait(&w->cond, &qp->mtx));
 		}
@@ -273,6 +274,7 @@ wrk_thread(void *priv)
 		AN(w->wrq);
 		wrq = w->wrq;
 		AN(wrq->func);
+		w->lastused = NAN;
 		wrq->func(w, wrq->priv);
 		w->wrq = NULL;
 		LOCK(&qp->mtx);
@@ -359,9 +361,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 	sess->wrk = w;
 	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-	w->used = NAN;
 	CNT_Session(sess);
-	assert(!isnan(w->used));
 	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	THR_SetSession(NULL);
@@ -438,7 +438,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 
 	LOCK(&qp->mtx);
 	w = VTAILQ_LAST(&qp->idle, workerhead);
-	if (w != NULL && (w->used < t_idle || qp->nthr > nthr_max))
+	if (w != NULL && (w->lastused < t_idle || qp->nthr > nthr_max))
 		VTAILQ_REMOVE(&qp->idle, w, list);
 	else
 		w = NULL;
