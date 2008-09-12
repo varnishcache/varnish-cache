@@ -7,4 +7,5 @@ EXTRA_DIST =			\
 	varnish.logrotate	\
 	varnish.spec		\
 	varnish.sysconfig	\
-	varnishlog.initrc
+	varnishlog.initrc	\
+	varnishncsa.initrc

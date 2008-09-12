@@ -1,8 +1,9 @@
-/var/log/varnish/varnish.log {
+/var/log/varnish/*.log {
     missingok
     notifempty
     sharedscripts
     postrotate
         /bin/kill -HUP `cat /var/run/varnish/varnishlog.pid 2>/dev/null` 2> /dev/null || true
+	/bin/kill -HUP `cat /var/run/varnish/varnishncsa.pid 2>/dev/null` 2> /dev/null || true
     endscript
 }
