@@ -115,6 +115,7 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj->busy = 1;
 		w->nobj->refcnt = 1;
 		w->nobj->grace = NAN;
+		w->nobj->entered = NAN;
 		VTAILQ_INIT(&w->nobj->store);
 		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
