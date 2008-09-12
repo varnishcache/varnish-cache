@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.7.20080908svn3173%{?dist}
+Release: 0.9.20080912svn3184%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -110,11 +110,12 @@ EOF
 
 tail -n +11 etc/default.vcl >> redhat/default.vcl
 
-%if "%dist" == "el4"
+%if 0%{?fedora}%{?rhel} == 0 || 0%{?rhel} <= 4 && 0%{?fedora} <= 8
+    # Old style daemon function
     sed -i 's,--pidfile \$pidfile,,g;
             s,status -p \$pidfile,status,g;
             s,killproc -p \$pidfile,killproc,g' \
-    redhat/varnish.initrc redhat/varnishlog.initrc
+    redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
 %check
@@ -138,6 +139,7 @@ mkdir -p %{buildroot}/var/run/varnish
 %{__install} -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
 %{__install} -D -m 0755 redhat/varnish.initrc %{buildroot}%{_initrddir}/varnish
 %{__install} -D -m 0755 redhat/varnishlog.initrc %{buildroot}%{_initrddir}/varnishlog
+%{__install} -D -m 0755 redhat/varnishncsa.initrc %{buildroot}%{_initrddir}/varnishncsa
 
 %clean
 rm -rf %{buildroot}
@@ -158,6 +160,7 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
 %{_initrddir}/varnish
 %{_initrddir}/varnishlog
+%{_initrddir}/varnishncsa
 
 %files libs
 %defattr(-,root,root,-)
@@ -196,19 +199,23 @@ exit 0
 %post
 /sbin/chkconfig --add varnish
 /sbin/chkconfig --add varnishlog
+/sbin/chkconfig --add varnishncsa 
 
 %preun
 if [ $1 -lt 1 ]; then
   /sbin/service varnish stop > /dev/null 2>&1
   /sbin/service varnishlog stop > /dev/null 2>&1
+  /sbin/service varnishncsa stop > /dev/null 2>%1
   /sbin/chkconfig --del varnish
   /sbin/chkconfig --del varnishlog
+  /sbin/chkconfig --del varnishncsa 
 fi
 
 %postun
 if [ $1 -ge 1 ]; then
   /sbin/service varnish condrestart > /dev/null 2>&1
   /sbin/service varnishlog condrestart > /dev/null 2>&1
+  /sbin/service varnishncsa condrestart > /dev/null 2>&1
 fi
 
 %post libs -p /sbin/ldconfig
@@ -216,6 +223,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.20080912svn3184
+- Added varnisnsca init script (Colin Hill)
+- Corrected varnishlog init script (Colin Hill)
+
 * Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.7.beta1
 - Added a hack that changes the ports for 64bits builds, so they can run
   in parallell with 32bits build on same build host.
