@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
 #include "shmlog.h"
 #include "cache.h"
@@ -75,6 +76,7 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 	double h_date, h_expires, ttd;
 	char *p;
 
+	assert(obj->entered != 0.0 && !isnan(sp->obj->entered));
 	/* If all else fails, cache using default ttl */
 	ttl = params->default_ttl;
 
