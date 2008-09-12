@@ -434,8 +434,7 @@ cnt_fetch(struct sess *sp)
 	sp->obj->cacheable = 1;
 	if (sp->obj->objhead != NULL) {
 		VRY_Create(sp);
-		assert(!isnan(sp->wrk->used));
-		EXP_Insert(sp->obj, sp->wrk->used);
+		EXP_Insert(sp->obj);
 		HSH_Unbusy(sp);
 	}
 	sp->wrk->acct.fetch++;
