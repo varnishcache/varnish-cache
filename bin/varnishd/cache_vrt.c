@@ -480,7 +480,7 @@ VRT_r_req_xid(struct sess *sp)
 
 	size = snprintf(NULL, 0, "%u", sp->xid) + 1;
 	AN(p = WS_Alloc(sp->http->ws, size));
-	assert(snprintf(p, size, "%d", sp->xid) < size);
+	assert(snprintf(p, size, "%u", sp->xid) < size);
 	return (p);
 }
 
