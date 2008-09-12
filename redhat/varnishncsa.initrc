@@ -22,7 +22,7 @@
 retval=0
 pidfile="/var/run/varnishncsa.pid"
 lockfile="/var/lock/subsys/varnishncsa"
-logfile="/var/log/varnish/varnish.log"
+logfile="/var/log/varnish/varnishncsa.log"
 
 exec="/usr/bin/varnishncsa"
 prog="varnishncsa"
