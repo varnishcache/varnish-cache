@@ -218,8 +218,7 @@ cnt_done(struct sess *sp)
 	}
 
 	sp->t_end = TIM_real();
-	sp->wrk->used = sp->t_end;
-	assert(!isnan(sp->wrk->used));
+	sp->wrk->lastused = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
@@ -236,10 +235,8 @@ cnt_done(struct sess *sp)
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0) {
-		assert(!isnan(sp->wrk->used));
+	if (sp->esis > 0)
 		return (1);
-	}
 
 	sp->t_req = NAN;
 
@@ -248,7 +245,6 @@ cnt_done(struct sess *sp)
 	if (sp->fd < 0) {
 		SES_Charge(sp);
 		VSL_stats->sess_closed++;
-		assert(!isnan(sp->wrk->used));
 		sp->wrk = NULL;
 		SES_Delete(sp);
 		return (1);
@@ -281,7 +277,6 @@ cnt_done(struct sess *sp)
 	}
 	VSL_stats->sess_herd++;
 	SES_Charge(sp);
-	assert(!isnan(sp->wrk->used));
 	sp->wrk = NULL;
 	vca_return_session(sp);
 	return (1);
@@ -465,8 +460,7 @@ cnt_first(struct sess *sp)
 
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd);
-	sp->wrk->used = sp->t_open;
-	assert(!isnan(sp->wrk->used));
+	sp->wrk->lastused = sp->t_open;
 	sp->wrk->acct.sess++;
 	SES_RefSrcAddr(sp);
 	do
@@ -618,13 +612,6 @@ cnt_lookup(struct sess *sp)
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 			    "on waiting list <%s>", sp->objhead->hash);
-		/*
-		 * There is a non-zero risk that we come here more than once
-		 * before we get through, in that case cnt_recv must be set
-		 */
-		if (isnan(sp->wrk->used))
-			sp->wrk->used = TIM_real();
-		assert(!isnan(sp->wrk->used));
 		SES_Charge(sp);
 		return (1);
 	}
@@ -869,7 +856,6 @@ cnt_recv(struct sess *sp)
 			/* XXX: VSL something */
 			INCOMPL();
 			sp->step = STP_DONE;
-			assert(!isnan(sp->wrk->used));
 			return (1);
 		}
 		sp->step = STP_PIPE;
@@ -908,8 +894,7 @@ cnt_start(struct sess *sp)
 	/* Update stats of various sorts */
 	VSL_stats->client_req++;			/* XXX not locked */
 	sp->t_req = TIM_real();
-	sp->wrk->used = sp->t_req;
-	assert(!isnan(sp->wrk->used));
+	sp->wrk->lastused = sp->t_req;
 	sp->wrk->acct.req++;
 
 	/* Assign XID and log */
@@ -977,6 +962,15 @@ CNT_Session(struct sess *sp)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 	/*
+	 * Possible entrance states
+	 */
+	assert(
+	    sp->step == STP_FIRST ||
+	    sp->step == STP_START ||
+	    sp->step == STP_LOOKUP ||
+	    sp->step == STP_RECV);
+	  
+	/*
 	 * Whenever we come in from the acceptor we need to set blocking
 	 * mode, but there is no point in setting it when we come from
 	 * ESI or when a parked sessions returns.
@@ -1013,7 +1007,6 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
-	assert(!isnan(w->used));
 	WSL_Flush(w, 0);
 }
 

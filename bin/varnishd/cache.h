@@ -175,7 +175,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 
-	double			used;
+	double			lastused;
 
 	pthread_cond_t		cond;
 
