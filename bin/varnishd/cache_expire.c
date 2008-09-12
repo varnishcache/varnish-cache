@@ -162,7 +162,7 @@ update_object_when(const struct object *o)
  */
 
 void
-EXP_Insert(struct object *o, double now)
+EXP_Insert(struct object *o)
 {
 	struct objexp *oe;
 
@@ -173,7 +173,8 @@ EXP_Insert(struct object *o, double now)
 	add_objexp(o);
 	oe = o->objexp;
 
-	oe->lru_stamp = now;
+	assert(o->entered != 0 && !isnan(o->entered));
+	oe->lru_stamp = o->entered;
 	update_object_when(o);
 	LOCK(&exp_mtx);
 	binheap_insert(exp_heap, oe);
