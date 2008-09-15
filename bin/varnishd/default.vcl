@@ -109,14 +109,17 @@ sub vcl_deliver {
 }
 
 sub vcl_discard {
+    /* XXX: Do not redefine vcl_discard{}, it is not yet supported */
     discard;
 }
 
 sub vcl_prefetch {
+    /* XXX: Do not redefine vcl_prefetch{}, it is not yet supported */
     fetch;
 }
 
 sub vcl_timeout {
+    /* XXX: Do not redefine vcl_timeout{}, it is not yet supported */
     discard;
 }
 
