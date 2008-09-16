@@ -498,7 +498,7 @@ VRT_r_server_ip(struct sess *sp)
 {
 
 	if (sp->mysockaddr->sa_family == AF_UNSPEC)
-		assert(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen)
+		assert(!getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen)
 		    || errno == ECONNRESET);
 
 	return (sp->mysockaddr);
