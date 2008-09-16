@@ -49,7 +49,7 @@ start() {
 
 stop() {
 	echo -n "Stopping varnish logging daemon: "
-	killproc $prog
+	killproc -p $pidfile $prog
 	retval=$?
 	echo
 	[ $retval -eq 0 ] && rm -f $lockfile
