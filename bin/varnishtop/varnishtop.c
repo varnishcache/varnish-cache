@@ -72,6 +72,8 @@ static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int f_flag = 0;
 
+static unsigned maxfieldlen = 0;
+
 static void
 accumulate(const unsigned char *p)
 {
@@ -153,8 +155,9 @@ update(void)
 			len = SHMLOG_LEN(tp->rec);
 			if (len > COLS - 20)
 				len = COLS - 20;
-			mvprintw(l, 0, "%9.2f %-9.9s %*.*s\n",
-			    tp->count, VSL_tags[tp->rec[SHMLOG_TAG]],
+			mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
+			    tp->count, maxfieldlen, maxfieldlen,
+			    VSL_tags[tp->rec[SHMLOG_TAG]],
 			    len, len, tp->rec + SHMLOG_DATA);
 			t = tp->count;
 		}
@@ -197,6 +200,14 @@ do_curses(struct VSL_data *vd)
 {
 	pthread_t thr;
 	int ch;
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (maxfieldlen < strlen(VSL_tags[i]))
+			maxfieldlen = strlen(VSL_tags[i]);
+	}
 
 	if (pthread_create(&thr, NULL, accumulate_thread, vd) != 0) {
 		fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
