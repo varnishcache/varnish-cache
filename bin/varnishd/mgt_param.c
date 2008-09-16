@@ -728,14 +728,12 @@ static const struct parspec parspec[] = {
 		"  0x00000001 - Don't check if it looks like XML\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
-		"0", "restarts" },
+		"0", "bitmap" },
 	{ "max_esi_includes",
 		tweak_uint, &master.max_esi_includes, 0, UINT_MAX,
 		"Maximum depth of esi:include processing."
-		"\nBe aware that restarts are likely to cause a hit against "
-		"the backend, so don't increase thoughtlessly.\n",
 		0,
-		"5", "restarts" },
+		"5", "includes" },
 	{ "cache_vbe_conns", tweak_bool,  &master.cache_vbe_conns, 0, 0,
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
