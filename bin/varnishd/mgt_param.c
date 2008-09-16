@@ -731,7 +731,7 @@ static const struct parspec parspec[] = {
 		"0", "bitmap" },
 	{ "max_esi_includes",
 		tweak_uint, &master.max_esi_includes, 0, UINT_MAX,
-		"Maximum depth of esi:include processing."
+		"Maximum depth of esi:include processing.\n",
 		0,
 		"5", "includes" },
 	{ "cache_vbe_conns", tweak_bool,  &master.cache_vbe_conns, 0, 0,
