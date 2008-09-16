@@ -431,21 +431,19 @@ wrk_addpools(const unsigned pools)
 static void
 wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 {
-	struct worker *w;
-
-	if (qp->nthr <= params->wthread_min)
-		return;
+	struct worker *w = NULL;
 
 	LOCK(&qp->mtx);
-	w = VTAILQ_LAST(&qp->idle, workerhead);
-	if (w != NULL && (w->lastused < t_idle || qp->nthr > nthr_max))
-		VTAILQ_REMOVE(&qp->idle, w, list);
-	else
-		w = NULL;
 	vs->n_wrk += qp->nthr;
 	vs->n_wrk_queue += qp->nqueue;
 	vs->n_wrk_drop += qp->ndrop;
 	vs->n_wrk_overflow += qp->noverflow;
+
+	if (qp->nthr > params->wthread_min) {
+		w = VTAILQ_LAST(&qp->idle, workerhead);
+		if (w != NULL && (w->lastused < t_idle || qp->nthr > nthr_max))
+			VTAILQ_REMOVE(&qp->idle, w, list);
+	}
 	UNLOCK(&qp->mtx);
 
 	/* And give it a kiss on the cheek... */
