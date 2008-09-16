@@ -635,6 +635,9 @@ VRT_ESI(struct sess *sp)
 		return;
 	}
 
+	if (VTAILQ_EMPTY(&sp->obj->store))
+		return;
+
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	if (!(params->esi_syntax & 0x00000001)) {
