@@ -150,6 +150,9 @@ vcc_StringVal(struct tokenlist *tl)
 		case FLOAT:
 			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
 			break;
+		case BACKEND:
+			Fb(tl, 0, "VRT_backend_string(sp)");
+			break;
 		default:
 			vsb_printf(tl->sb,
 			    "String representation of '%s' not implemented yet.\n",

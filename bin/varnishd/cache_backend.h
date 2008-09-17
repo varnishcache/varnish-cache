@@ -85,6 +85,7 @@ struct director {
 	unsigned		magic;
 #define DIRECTOR_MAGIC		0x3336351d
 	const char		*name;
+	char			*vcl_name;
 	vdi_getfd_f		*getfd;
 	vdi_fini_f		*fini;
 	vdi_healthy		*healthy;

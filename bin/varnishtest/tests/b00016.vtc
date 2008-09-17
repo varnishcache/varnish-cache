@@ -1,0 +1,73 @@
+# $Id$
+
+test "Check naming of backends"
+
+varnish v1 -vcl { 
+	backend foo {
+		.host = "127.0.0.2";
+		.port = "9080";
+	}
+
+	sub vcl_recv {
+	    error 200 "ok";
+	}
+
+	sub vcl_error {
+	    set obj.http.X-Backend-Name = req.backend;
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-Backend-Name == "foo"
+} -run
+
+varnish v1 -vcl { 
+	director bar random {
+		{
+		.backend = {
+		 	.host = "127.0.0.2";
+			.port = "9080";
+		}
+		.weight = 1;
+		}
+	}
+
+	sub vcl_recv {
+	    error 200 "ok";
+	}
+
+	sub vcl_error {
+	    set obj.http.X-Backend-Name = req.backend;
+	}
+}
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-Backend-Name == "bar"
+} -run
+
+varnish v1 -vcl { 
+	director baz round-robin {
+		 { .backend = {
+		 	.host = "127.0.0.2";
+			.port = "9080";
+		} }
+	}
+
+	sub vcl_recv {
+	    error 200 "ok";
+	}
+
+	sub vcl_error {
+	    set obj.http.X-Backend-Name = req.backend;
+	}
+}
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-Backend-Name == "baz"
+} -run
