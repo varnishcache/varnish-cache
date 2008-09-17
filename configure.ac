@@ -218,6 +218,12 @@ else
 	ac_cv_func_port_create=no
 fi
 
+AM_MISSING_HAS_RUN
+AC_CHECK_PROGS(TCLSH, [tclsh tclsh8.4 tclsh8.5], false)
+if test "$TCLSH" = :; then
+  TCLSH=${am_missing_run}tclsh
+fi
+
 # Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
 # Varnish will build and run without these, but connections will not
 # time out, which may leave Varnish vulnerable to denail-of-service

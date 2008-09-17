@@ -24,3 +24,15 @@ libvcl_la_SOURCES = \
 	vcc_token.c \
 	vcc_var.c \
 	vcc_xref.c
+
+EXTRA_DIST = vcc_gen_obj.tcl \
+	vcc_gen_fixed_token.tcl
+
+vcc_obj.c: $(srcdir)/vcc_gen_obj.tcl
+	cd $(srcdir) && @TCLSH@ vcc_gen_obj.tcl
+
+vcc_fixed_token.c: $(srcdir)/vcc_gen_fixed_token.tcl
+	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl
+
+vcc_token_defs.h: $(srcdir)/vcc_gen_fixed_token.tcl
+	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl
