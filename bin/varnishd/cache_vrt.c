@@ -648,6 +648,14 @@ VRT_double_string(const struct sess *sp, double num)
 	return (p);
 }
 
+const char *
+VRT_backend_string(struct sess *sp)
+{
+       CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+       CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+       return (sp->director->vcl_name);
+}
+
 /*--------------------------------------------------------------------*/
 
 void

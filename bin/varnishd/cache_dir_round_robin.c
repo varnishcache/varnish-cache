@@ -116,6 +116,7 @@ vdi_round_robin_fini(struct director *d)
 	for (i = 0; i < vs->nhosts; i++, vh++)
 		VBE_DropRef(vh->backend);
 	free(vs->hosts);
+	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	vs->next_host = 0;
 	FREE_OBJ(vs);
@@ -139,6 +140,7 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp, const struct vrt
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "round_robin";
+	REPLACE(vs->dir.vcl_name, t->name);
 	vs->dir.getfd = vdi_round_robin_getfd;
 	vs->dir.fini = vdi_round_robin_fini;
 	vs->dir.healthy = vdi_round_robin_healthy;

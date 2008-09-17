@@ -87,6 +87,7 @@ vdi_simple_fini(struct director *d)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 	
 	VBE_DropRef(vs->backend);
+	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	FREE_OBJ(vs);
 }
@@ -103,6 +104,7 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, const struct vrt_dir_
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
+	REPLACE(vs->dir.vcl_name, t->host->vcl_name);
 	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.fini = vdi_simple_fini;
 	vs->dir.healthy = vdi_simple_healthy;

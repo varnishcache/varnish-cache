@@ -171,6 +171,7 @@ void VRT_fini_dir(struct cli *, struct director *);
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
 char *VRT_int_string(const struct sess *sp, int);
 char *VRT_double_string(const struct sess *sp, double);
+const char *VRT_backend_string(struct sess *sp);
 
 #define VRT_done(sp, hand)			\
 	do {					\
