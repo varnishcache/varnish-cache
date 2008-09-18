@@ -125,7 +125,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 		vcc_FieldsOk(tl, mfs);
 		if (tl->err) {
 			vsb_printf(tl->sb,
-			    "\nIn member host specfication starting at:\n");
+			    "\nIn member host specification starting at:\n");
 			vcc_ErrWhere(tl, t_be);
 			return;
 		}

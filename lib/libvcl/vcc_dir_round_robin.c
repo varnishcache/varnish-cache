@@ -88,7 +88,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 		vcc_FieldsOk(tl, fs);
 		if (tl->err) {
 			vsb_printf(tl->sb,
-			    "\nIn member host specfication starting at:\n");
+			    "\nIn member host specification starting at:\n");
 			vcc_ErrWhere(tl, t_be);
 			return;
 		}
