@@ -658,7 +658,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, c
 		vcc_ParseHostDef(tl, nbh, name, qual, serial);
 		if (tl->err) {
 			vsb_printf(tl->sb,
-			    "\nIn backend host specfication starting at:\n");
+			    "\nIn backend host specification starting at:\n");
 			vcc_ErrWhere(tl, t);
 		}
 		return;
@@ -762,7 +762,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 	}
 	if (tl->err) {
 		vsb_printf(tl->sb,
-		    "\nIn %.*s specfication starting at:\n", PF(t_first));
+		    "\nIn %.*s specification starting at:\n", PF(t_first));
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
