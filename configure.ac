@@ -219,7 +219,7 @@ else
 fi
 
 AM_MISSING_HAS_RUN
-AC_CHECK_PROGS(TCLSH, [tclsh tclsh8.4 tclsh8.5], false)
+AC_CHECK_PROGS(TCLSH, [tclsh tclsh8.4 tclsh8.5], :)
 if test "$TCLSH" = :; then
   TCLSH=${am_missing_run}tclsh
 fi
