@@ -49,10 +49,6 @@ sub vcl_recv {
         /* Non-RFC2616 or CONNECT which is weird. */
         pipe;
     }
-    if (req.http.Expect) {
-        /* Expect is just too hard at present. */
-        pipe;
-    }
     if (req.request != "GET" && req.request != "HEAD") {
         /* We only deal with GET and HEAD by default */
         pass;
