@@ -1,0 +1,37 @@
+# $Id$
+
+test "Check lack of response-string"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 \r\n"
+	send "Connection: close\r\n"
+	send "\r\n"
+	send "\r\n"
+	send "FOO\r\n"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == OK
+} -run
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200\r\n"
+	send "Connection: close\r\n"
+	send "\r\n"
+	send "\r\n"
+	send "FOO\r\n"
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == OK
+} -run
