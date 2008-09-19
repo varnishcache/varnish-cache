@@ -889,6 +889,8 @@ static int
 cnt_start(struct sess *sp)
 {
 	int done;
+	char *p;
+	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->restarts);
@@ -928,6 +930,21 @@ cnt_start(struct sess *sp)
 	sp->doclose = http_DoConnection(sp->http);
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
+
+	/*
+	 * Handle Expect headers
+	 */
+	if (http_GetHdr(sp->http, H_Expect, &p)) {
+		if (strcmp(p, "100-continue")) {
+			sp->err_code = 417;
+			sp->step = STP_ERROR;
+			return (0);
+		}
+
+		/* XXX: Don't bother with write failures for now */
+		(void)write(sp->fd, r, strlen(r));
+		http_Unset(sp->http, H_Expect);
+	}
 
 	sp->step = STP_RECV;
 	return (0);

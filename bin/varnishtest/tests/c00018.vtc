@@ -1,0 +1,21 @@
+# $Id$
+
+test "Check Expect headers"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
+	rxresp
+	expect resp.status == 100
+	rxresp
+	expect resp.status == 200
+	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
+	rxresp
+	expect resp.status == 417
+} -run
