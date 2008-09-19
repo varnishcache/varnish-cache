@@ -221,7 +221,7 @@ fi
 AM_MISSING_HAS_RUN
 AC_CHECK_PROGS(TCLSH, [tclsh tclsh8.4 tclsh8.5], :)
 if test "$TCLSH" = :; then
-  TCLSH=${am_missing_run}tclsh
+  TCLSH="${am_missing_run}tclsh || true"
 fi
 
 # Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
