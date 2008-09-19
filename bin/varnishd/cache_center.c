@@ -305,6 +305,10 @@ cnt_error(struct sess *sp)
 	char date[40];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	/* We always close when we take this path */
+	sp->doclose = "error";
+
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
