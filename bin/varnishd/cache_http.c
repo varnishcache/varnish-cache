@@ -379,7 +379,6 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 		r = q + 1;
 		if (q > p && q[-1] == '\r')
 			q--;
-		*q = '\0';
 		if (p == q)
 			break;
 
@@ -387,6 +386,10 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 		    (p[1] == 'f' || p[1] == 'F') &&
 		    p[2] == '-')
 			hp->conds = 1;
+
+		while (q > p && vct_issp(q[-1]))
+			q--;
+		*q = '\0';
 
 		if (hp->nhd < HTTP_HDR_MAX) {
 			hp->hdf[hp->nhd] = 0;
