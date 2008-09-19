@@ -432,12 +432,14 @@ http_splitline(struct worker *w, int fd, struct http *hp, const struct http_conn
 	for (; vct_issp(*p); p++)
 		;
 
-	/* Second field cannot contain SP, CRLF or CTL */
+	/* Second field cannot contain LWS */
 	hp->hd[h2].b = p;
-	for (; !vct_issp(*p); p++)
-		if (vct_isctl(*p))
-			return (400);
+	for (; !vct_islws(*p); p++)
+		;
 	hp->hd[h2].e = p;
+
+	if (!Tlen(hp->hd[h2]))
+		return (400);
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++)
@@ -520,7 +522,8 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http 
 		hp->status = 
 		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
 	}
-	if (!Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
+	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
+	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
 		/* Backend didn't send a response string, use the standard */
 		hp->hd[HTTP_HDR_RESPONSE].b = 
 		    TRUST_ME(http_StatusMessage(hp->status));
