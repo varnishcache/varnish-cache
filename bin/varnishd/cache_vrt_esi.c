@@ -790,9 +790,11 @@ ESI_Deliver(struct sess *sp)
 	struct object *obj;
 
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
-		WRK_Write(sp->wrk, eb->chunk_length, -1);
-		WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
-		WRK_Write(sp->wrk, "\r\n", -1);
+		if (Tlen(eb->verbatim)) {
+			WRK_Write(sp->wrk, eb->chunk_length, -1);
+			WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
+			WRK_Write(sp->wrk, "\r\n", -1);
+		}
 		if (eb->include.b == NULL ||
 		    sp->esis >= params->max_esi_includes)
 			continue;
