@@ -726,6 +726,7 @@ static const struct parspec parspec[] = {
 		tweak_uint, &master.esi_syntax, 0, UINT_MAX,
 		"Bitmap controlling ESI parsing code:\n"
 		"  0x00000001 - Don't check if it looks like XML\n"
+		"  0x00000002 - Ignore non-esi elements\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },

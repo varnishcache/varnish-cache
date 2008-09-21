@@ -466,6 +466,17 @@ esi_parse2(struct esi_work *ew)
 			continue;
 		} 
 
+		/* Ignore non esi elements, if so instructed */
+		if ((params->esi_syntax & 0x02)) {
+			if (memcmp(p, "<esi:", i > 5 ? 5 : i) &&
+			    memcmp(p, "</esi:", i > 6 ? 6 : i)) {
+				p += 1;
+				continue;
+			}
+			if (i < 6)
+				return (p);
+		}
+
 		/* Find end of this element */
 		for (q = p + 1; q < t.e && *q != '>'; q++)
 			continue;
