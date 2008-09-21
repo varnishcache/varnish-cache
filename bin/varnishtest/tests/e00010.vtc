@@ -1,0 +1,27 @@
+# $Id: e00008.vtc 3012 2008-07-24 12:22:35Z des $
+
+test "Ignoring non esi elements"
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<f<esi?
+		<esi:remove>
+			bar
+		</esi:remove>
+		foo
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start -cli "param.set esi_syntax 2"
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 21
+} -run
