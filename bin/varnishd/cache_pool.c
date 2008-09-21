@@ -238,7 +238,6 @@ wrk_thread(void *priv)
 	struct worker *w, ww;
 	struct wq *qp;
 	unsigned char wlog[params->shm_workspace];
-	struct workreq *wrq;
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -272,10 +271,9 @@ wrk_thread(void *priv)
 			break;
 		UNLOCK(&qp->mtx);
 		AN(w->wrq);
-		wrq = w->wrq;
-		AN(wrq->func);
+		AN(w->wrq->func);
 		w->lastused = NAN;
-		wrq->func(w, wrq->priv);
+		w->wrq->func(w, w->wrq->priv);
 		w->wrq = NULL;
 		LOCK(&qp->mtx);
 	}
