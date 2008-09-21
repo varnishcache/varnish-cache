@@ -57,6 +57,7 @@ struct http {
 	char			*rxbuf;
 	int			prxbuf;
 	char			*body;
+	char			bodylen[20];
 
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
@@ -159,6 +160,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->resp[1]);
 	if (!strcmp(spec, "resp.msg"))
 		return(hp->resp[2]);
+	if (!strcmp(spec, "resp.bodylen"))
+		return(hp->bodylen);
 	if (!memcmp(spec, "req.http.", 9)) {
 		hh = hp->req;
 		hdr = spec + 9;
@@ -330,15 +333,17 @@ static void
 http_swallow_body(struct http *hp, char * const *hh)
 {
 	char *p, *q;
-	int i, l;
+	int i, l, ll;
 	
 
+	ll = 0;
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
 		l = strtoul(p, NULL, 0);
 		hp->body = q = hp->rxbuf + hp->prxbuf;
 		http_rxchar(hp, l);
 		vtc_dump(hp->vl, 4, "body", hp->body);
+		ll = l;
 	}
 	p = http_find_header(hh, "transfer-encoding");
 	if (p != NULL && !strcmp(p, "chunked")) {
@@ -354,6 +359,7 @@ http_swallow_body(struct http *hp, char * const *hh)
 			assert(*q == '\0' || vct_islws(*q));
 			hp->prxbuf = l;
 			if (i > 0) {
+				ll += i;
 				http_rxchar(hp, i);
 				vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l);
 			}
@@ -362,11 +368,13 @@ http_swallow_body(struct http *hp, char * const *hh)
 			assert(vct_iscrlf(hp->rxbuf[l]));
 			assert(vct_iscrlf(hp->rxbuf[l + 1]));
 			hp->prxbuf = l;
+			hp->rxbuf[l] = '\0';
 			if (i == 0)
 				break;
 		}
 		vtc_dump(hp->vl, 4, "body", hp->body);
 	}
+	sprintf(hp->bodylen, "%d", ll);
 }
 
 /**********************************************************************
