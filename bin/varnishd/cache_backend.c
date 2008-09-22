@@ -309,6 +309,8 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 			/* XXX locking of stats */
 			VSL_stats->backend_reuse += 1;
 			VSL_stats->backend_conn++;
+			WSP(sp, SLT_Backend, "%d %s %s",
+			    vc->fd, sp->director->vcl_name, bp->vcl_name);
 			return (vc);
 		}
 		sp->vbe = vc;
@@ -336,6 +338,8 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 	}
 	vc->backend = bp;
 	VSL_stats->backend_conn++;
+	WSP(sp, SLT_Backend, "%d %s %s",
+	    vc->fd, sp->director->vcl_name, bp->vcl_name);
 	return (vc);
 }
 
