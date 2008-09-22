@@ -580,7 +580,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 
 	/* Check that the portname makes sense */
 	if (t_port != NULL) {
-		ep = CheckHostPort("localhost", t_port->dec);
+		ep = CheckHostPort("127.0.0.1", t_port->dec);
 		if (ep != NULL) {
 			vsb_printf(tl->sb,
 			    "Backend port '%.*s': %s\n", PF(t_port), ep);
