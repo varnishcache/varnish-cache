@@ -441,6 +441,8 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 		w = VTAILQ_LAST(&qp->idle, workerhead);
 		if (w != NULL && (w->lastused < t_idle || qp->nthr > nthr_max))
 			VTAILQ_REMOVE(&qp->idle, w, list);
+		else
+			w = NULL;
 	}
 	UNLOCK(&qp->mtx);
 
