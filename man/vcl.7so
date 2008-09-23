@@ -92,6 +92,78 @@ if (req.http.host ~ "^(www\.)?example.com$") {
     set req.backend = www;
 }
 .Ed
+.Ss Directors
+Directors choose from different backends based on health status and a
+per-director algorithm.
+There currently exists a round-robin and a random director.  
+
+Directors are defined using:
+.Bd -literal -offset 4n
+director b2 random {
+    .retries = 5;
+    {
+        /* We can refer to named backends */
+        .backend        = b1;
+        .weight         = 7;
+    }
+    {
+        /* Or define them inline */
+        .backend        = {
+            .host = "fs2";
+        }
+        .weight         = 3;
+    }
+}
+.Ed
+.Ss The random director
+The random director takes one per-director option
+.Fa .retries .
+This specifies how many tries it will use to find a working backend.
+The default is the same as the number of backends defined for the
+director.
+
+There is also a per-backend option: weight which defines the portion
+of traffic to send to the particular backend.
+.Ed
+.Ss The round-robin director
+The round-robin does not take any options.
+.Ed
+.Ss Backend probes
+Backends can be probed to see whether they should be considered
+healthy or not.  The return status can also be checked by using 
+.Fa req.backend.healthy
+.
+.Fa .window
+is how many of the latest polls we examine, while
+.Fa .threshold
+is how many of those must have succeeded for us to consider the
+backend healthy.
+.Bd -literal -offset 4n
+backend www {
+    .host = "www.example.com";
+    .port = "http";
+    .probe = {
+        .url = "/test.jpg";
+        .timeout = 0.3 s;
+	.window = 8;
+	.threshold = 3;
+    }
+}
+.Ed
+It is also possible to specify the raw HTTP request.
+.Bd -literal -offset 4n
+backend www {
+    .host = "www.example.com";
+    .port = "http";
+    .probe = {
+        # NB: \\r\\n automatically inserted after each string!
+        .request =
+            "GET / HTTP/1.1"
+            "Host: www.foo.bar"
+            "Connection: close";
+    }
+}
+.Ed
 .Ss ACLs
 An ACL declaration creates and initializes a named access control list
 which can later be used to match client addresses:
@@ -245,7 +317,9 @@ Proceed with pass mode.
 .El
 .\" vcl_hash
 .It Cm vcl_hash
-Currently not used.
+Use
+.Cm req.hash += req.http.Set-Cookie
+or similar to include the Set-Cookie HTTP header in the hash string.
 The
 .Cm vcl_hash
 subroutine may terminate with one of the following keywords:
@@ -313,10 +387,12 @@ request.
 Switch to pass mode.
 Control will eventually pass to
 .Cm vcl_pass .
-.It Cm insert
-Insert the object into the cache, then deliver it to the client.
+.It Cm deliver
+Possibly insert the object into the cache, then deliver it to the client.
 Control will eventually pass to
 .Cm vcl_deliver .
+.It Cm esi
+ESI-process the document which has just been fetched.
 .El
 .\" vcl_deliver
 .It Cm vcl_deliver
@@ -381,9 +457,9 @@ The current time, in seconds since the epoch.
 .Pp
 The following variables are available in backend declarations:
 .Bl -tag -width 4n
-.It Va backend.host
+.It Va .host
 Host name or IP address of a backend.
-.It Va backend.port
+.It Va .port
 Service name or port number of a backend.
 .El
 .Pp
@@ -405,6 +481,8 @@ The requested URL.
 The HTTP protocol version used by the client.
 .It Va req.backend
 The backend to use to service the request.
+.It Va req.backend.healthy
+Whether the backend is healthy or not.
 .It Va req.http. Ns Ar header
 The corresponding HTTP
 .Ar header .
@@ -502,8 +580,8 @@ specified.
 .\" Keep this in synch with bin/varnishd/mgt_vcc.c and etc/default.vcl
 .Bd -literal -offset 4n
 backend default {
-    set backend.host = "backend.example.com";
-    set backend.port = "http";
+    .host = "backend.example.com";
+    .port = "http";
 }
 
 .so default.vcl
@@ -514,13 +592,13 @@ separate backends in the same Varnish instance, by selecting backends
 based on the request URL.
 .Bd -literal -offset 4n
 backend www {
-    set backend.host = "www.example.com";
-    set backend.port = "80";
+    .host = "www.example.com";
+    .port = "80";
 }
 
 backend images {
-    set backend.host = "images.example.com";
-    set backend.port = "80";
+    .host = "images.example.com";
+    .port = "80";
 }
 
 sub vcl_recv {
