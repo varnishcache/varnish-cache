@@ -7,7 +7,7 @@ AM_CPPFLAGS := -DMALLOC_PRODUCTION
 noinst_LTLIBRARIES = libjemalloc_mt.la
 
 libjemalloc_mt_la_LIBADD = ${PTHREAD_LIBS}
-libjemalloc_mt_la_LDFLAGS = -version-info 0:0:0 -static
+libjemalloc_mt_la_LDFLAGS = -static
 libjemalloc_mt_la_CFLAGS = -D__isthreaded=true
 
 libjemalloc_mt_la_SOURCES = jemalloc_linux.c \
