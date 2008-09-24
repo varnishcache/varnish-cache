@@ -1,0 +1,55 @@
+This is a minimal-effort stand-alone jemalloc distribution for Linux.  The main
+rough spots are:
+
+* __isthreaded must be hard-coded, since the pthreads library really needs to
+  be involved in order to toggle it at run time.  Therefore, this distribution
+  builds two separate libraries:
+
+  + libjemalloc_mt.so.0 : Use for multi-threaded applications.
+  + libjemalloc.so.0 : Use for single-threaded applications.
+
+  Both libraries link against libpthread, though with a bit more code hacking,
+  this dependency could be removed for the single-threaded version.
+
+* MALLOC_MAG (thread-specific caching, using magazines) is disabled, because
+  special effort is required to avoid memory leaks when it is enabled.  To make
+  cleanup automatic, we would need help from the pthreads library.  If you
+  enable MALLOC_MAG, be sure to call _malloc_thread_cleanup() in each thread
+  just before it exits.
+
+* The code that determines the number of CPUs is sketchy.  The trouble is that
+  we must avoid any memory allocation during early initialization.
+
+In order to build:
+
+    make
+
+This generates two shared libraries, which you can either link against, or
+pre-load.
+
+Linking and running, where /path/to is the path to libjemalloc (-lpthread
+required even for libjemalloc.so):
+
+    gcc app.o -o app -L/path/to -ljemalloc_mt -lpthread
+    LD_LIBRARY_PATH=/path/to app
+
+Pre-loading:
+
+    LD_PRELOAD=/path/to/libjemalloc_mt.so.0 app
+
+jemalloc has a lot of run-time tuning options.  See the man page for details:
+
+    nroff -man malloc.3 | less
+
+In particular, take a look at the B, F, and N options.  If you enable
+MALLOC_MAG, look at the G and R options.
+
+If your application is crashing, or performance seems to be lacking, enable
+assertions and statistics gathering by removing MALLOC_PRODUCTION from CPPFLAGS
+in the Makefile.  In order to print a statistics summary at program exit, run
+your application like:
+
+    LD_PRELOAD=/path/to/libjemalloc_mt.so.0 MALLOC_OPTIONS=P app
+
+Please contact Jason Evans <jasone@canonware.com> with questions, comments, bug
+reports, etc.
