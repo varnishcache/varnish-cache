@@ -7,5 +7,9 @@ SUBDIRS = \
 	libvcl \
 	@JEMALLOC_SUBDIR@
 
-DIST_SUBDIRS = 	$(SUBDIRS) \
+DIST_SUBDIRS = 	\
+	libvarnish \
+	libvarnishapi \
+	libvarnishcompat \
+	libvcl \
 	libjemalloc
