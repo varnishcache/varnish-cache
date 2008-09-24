@@ -79,6 +79,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
+	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
 
 EXTRA_DIST = default.vcl

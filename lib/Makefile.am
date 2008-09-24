@@ -4,4 +4,5 @@ SUBDIRS = \
 	libvarnish \
 	libvarnishapi \
 	libvarnishcompat \
-	libvcl
+	libvcl \
+	@JEMALLOC_SUBDIR@

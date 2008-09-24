@@ -340,6 +340,28 @@ esac
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
+# Use jemalloc on Linux
+JEMALLOC_SUBDIR=
+JEMALLOC_LDADD=
+AC_ARG_ENABLE(jemalloc,
+AS_HELP_STRING([--disable-jemalloc],[do not use jemalloc (default is yes on Linux, no everywhere else)]),
+[if "x$enableval" = "xyes"; then
+	JEMALLOC_SUBDIR=libjemalloc
+	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
+fi],
+[case $host in #(
+*-*-linux*)
+	JEMALLOC_SUBDIR=libjemalloc
+	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
+	;; #(
+*)
+	true
+	;;
+esac])
+
+AC_SUBST(JEMALLOC_SUBDIR)
+AC_SUBST(JEMALLOC_LDADD)
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile
@@ -361,6 +383,7 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
+    lib/libjemalloc/Makefile
     man/Makefile
     redhat/Makefile
     varnishapi.pc
