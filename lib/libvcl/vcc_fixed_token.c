@@ -451,6 +451,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);\n");
 	vsb_cat(sb, "char *VRT_int_string(const struct sess *sp, int);\n");
 	vsb_cat(sb, "char *VRT_double_string(const struct sess *sp, double);\n");
+	vsb_cat(sb, "const char *VRT_backend_string(struct sess *sp);\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "#define VRT_done(sp, hand)			\\\n");
 	vsb_cat(sb, "	do {					\\\n");
