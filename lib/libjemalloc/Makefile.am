@@ -10,18 +10,9 @@ libjemalloc_mt_la_LIBADD = ${PTHREAD_LIBS}
 libjemalloc_mt_la_LDFLAGS = -version-info 0:0:0 -static
 libjemalloc_mt_la_CFLAGS = -D__isthreaded=true
 
-libjemalloc_mt_la_SOURCES = jemalloc_linux.c
+libjemalloc_mt_la_SOURCES = jemalloc_linux.c \
+	rb.h
 
-#jemalloc_linux.o: jemalloc_linux.c
-#	gcc $(CFLAGS) -c -DPIC -fPIC $(CPPFLAGS) -D__isthreaded=false -o $@ $+
-
-#libjemalloc_mt.so.0: jemalloc_linux_mt.o
-#	gcc -shared -lpthread -o $@ $+
-#	ln -sf $@ libjemalloc_mt.so
-
-#libjemalloc.so.0: jemalloc_linux.o
-#	gcc -shared -lpthread -o $@ $+
-#	ln -sf $@ libjemalloc.so
-
-#clean:
-#	rm -f *.o *.so.0 *.so
+EXTRA_DIST = malloc.3 \
+	malloc.c \
+	README
