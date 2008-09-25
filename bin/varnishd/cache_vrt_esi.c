@@ -829,6 +829,7 @@ ESI_Deliver(struct sess *sp)
 			http_SetHeader(sp->wrk, sp->fd, sp->http, eb->host.b);
 		}
 		sp->step = STP_RECV;
+		http_ForceGet(sp->http);
 		CNT_Session(sp);
 		sp->esis--;
 		sp->obj = obj;
