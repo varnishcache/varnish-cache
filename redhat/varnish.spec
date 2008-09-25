@@ -1,13 +1,13 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.9.20080916svn3192%{?dist}
+Release: 0.10.beta2%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://varnish.projects.linpro.no/static/varnish-cache.tar.gz
 #Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-Source0: http://downloads.sourceforge.net/varnish/varnish-2.0-beta1.tar.gz
+Source0: http://downloads.sourceforge.net/varnish/varnish-2.0-beta2.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -63,7 +63,7 @@ Varnish is a high-performance HTTP accelerator
 
 %prep
 #%setup -q
-%setup -q -n varnish-2.0-beta1
+%setup -q -n varnish-2.0-beta2
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
