@@ -473,6 +473,7 @@ void http_PutResponse(struct worker *w, int fd, struct http *to, const char *res
 void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 void http_SetH(struct http *to, unsigned n, const char *fm);
+void http_ForceGet(struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr);

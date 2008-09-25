@@ -577,6 +577,13 @@ http_copyreq(struct http *to, const struct http *fm, int how)
 }
 
 void
+http_ForceGet(struct http *to)
+{
+	if (strcmp(http_GetReq(to), "GET"))
+		http_SetH(to, HTTP_HDR_REQ, "GET");
+}
+
+void
 http_CopyResp(struct http *to, const struct http *fm)
 {
 
