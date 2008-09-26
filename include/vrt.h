@@ -60,10 +60,10 @@ struct vrt_backend_probe {
  * A backend is a host+port somewhere on the network
  */
 struct vrt_backend {
-	char				*vcl_name;
-	char				*ident;
+	const char			*vcl_name;
+	const char			*ident;
 
-	char				*hosthdr;
+	const char			*hosthdr;
 
 	const unsigned char		*ipv4_sockaddr;
 	const unsigned char		*ipv6_sockaddr;
