@@ -223,13 +223,13 @@ pan_sess(const struct sess *sp)
 #undef VCL_RET_MAC
 #undef VCL_RET_MAC_E
 /*lint -restore */
-		default: stp = NULL;
+		default: hand = NULL;
 	}
 	if (stp != NULL)
 		vsb_printf(vsp, "  step = %s,\n", stp);
 	else
 		vsb_printf(vsp, "  step = 0x%x,\n", sp->step);
-	if (stp != NULL)
+	if (hand != NULL)
 		vsb_printf(vsp, "  handling = %s,\n", hand);
 	else
 		vsb_printf(vsp, "  handling = 0x%x,\n", sp->handling);
@@ -320,7 +320,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	}
 #endif
 	if (params->diag_bitmap & 0x1000)
-		(void)exit(4);
+		exit(4);
 	else
 		abort();
 }

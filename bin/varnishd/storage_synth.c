@@ -89,8 +89,6 @@ SMS_Makesynth(struct object *obj)
 
 	sto = calloc(sizeof *sto, 1);
 	XXXAN(sto);
-	if (sto == NULL)
-		return (NULL);
 	vsb = vsb_newauto();
 	XXXAN(vsb);
 	sto->priv = vsb;
