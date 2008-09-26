@@ -331,10 +331,10 @@ case $host in
 	VCC_CC="cc -Kpic ${CFLAGS} -G -o %o %s"
 	;;
 *-*-darwin*)
-	VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+	VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup ${CFLAGS} -o %o %s"
 	;;
 *)
-	VCC_CC="exec cc -fpic -shared -Wl,-x -o %o %s"
+	VCC_CC="exec cc -fpic -shared -Wl,-x ${CFLAGS} -o %o %s"
 	;;
 esac
 
