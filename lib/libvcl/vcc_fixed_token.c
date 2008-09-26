@@ -340,10 +340,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * A backend is a host+port somewhere on the network\n");
 	vsb_cat(sb, " */\n");
 	vsb_cat(sb, "struct vrt_backend {\n");
-	vsb_cat(sb, "	char				*vcl_name;\n");
-	vsb_cat(sb, "	char				*ident;\n");
+	vsb_cat(sb, "	const char			*vcl_name;\n");
+	vsb_cat(sb, "	const char			*ident;\n");
 	vsb_cat(sb, "\n");
-	vsb_cat(sb, "	char				*hosthdr;\n");
+	vsb_cat(sb, "	const char			*hosthdr;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "	const unsigned char		*ipv4_sockaddr;\n");
 	vsb_cat(sb, "	const unsigned char		*ipv6_sockaddr;\n");
