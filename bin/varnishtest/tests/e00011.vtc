@@ -8,11 +8,11 @@ server s1 {
 	expect req.url == /foobar
 	txresp -body {<HTML>
 		FOO
-		<esi:include src="/bar">
+		<esi:include src="/bar"/>
 	}
 	rxreq
 	expect req.request == GET
-	txresp -body {
+	txresp -hdr "Set-Cookie: Foo=bar" -body {<HTML>
 		BAR
 	}
 } -start
@@ -20,12 +20,17 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		esi;
+		pass;
 	}
 } -start 
 
 client c1 {
-	txreq -req POST -url /foobar
+	txreq -req POST -url /foobar -body {
+		A debugged program is one for which you have
+		not yet found the conditions that make it fail.
+			-- Jerry Ogdin
+	}
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 25
+	expect resp.bodylen == 31
 } -run
