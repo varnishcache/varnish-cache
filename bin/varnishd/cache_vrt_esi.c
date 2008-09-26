@@ -830,6 +830,7 @@ ESI_Deliver(struct sess *sp)
 		}
 		sp->step = STP_RECV;
 		http_ForceGet(sp->http);
+		http_Unset(sp->http, H_Content_Length);
 		CNT_Session(sp);
 		sp->esis--;
 		sp->obj = obj;
