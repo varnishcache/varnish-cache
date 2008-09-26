@@ -95,7 +95,7 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
-        s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 %{__make} %{?_smp_mflags}
 
@@ -111,11 +111,11 @@ EOF
 tail -n +11 etc/default.vcl >> redhat/default.vcl
 
 %if 0%{?fedora}%{?rhel} == 0 || 0%{?rhel} <= 4 && 0%{?fedora} <= 8
-    # Old style daemon function
-    sed -i 's,--pidfile \$pidfile,,g;
-            s,status -p \$pidfile,status,g;
-            s,killproc -p \$pidfile,killproc,g' \
-    redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
+	# Old style daemon function
+	sed -i 's,--pidfile \$pidfile,,g;
+		s,status -p \$pidfile,status,g;
+		s,killproc -p \$pidfile,killproc,g' \
+	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
 %check
@@ -192,8 +192,8 @@ rm -rf %{buildroot}
 %pre
 getent group varnish >/dev/null || groupadd -r varnish
 getent passwd varnish >/dev/null || \
-    useradd -r -g varnish -d /var/lib/varnish -s /sbin/nologin \
-        -c "Varnish http accelerator user" varnish
+	useradd -r -g varnish -d /var/lib/varnish -s /sbin/nologin \
+		-c "Varnish http accelerator user" varnish
 exit 0
 
 %post
@@ -223,6 +223,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri Sep 26 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.10.beta2
+- 2.0-beta2 released. New upstream sources
+- Whitespace changes to make rpmlint more happy
+
 * Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.20080912svn3184
 - Added varnisnsca init script (Colin Hill)
 - Corrected varnishlog init script (Colin Hill)
