@@ -1,0 +1,5 @@
+# $Id$
+
+test "See that the VCL compiler works"
+
+shell "cd ../varnishd && ./varnishd -b 127.0.0.1:80 -C"
