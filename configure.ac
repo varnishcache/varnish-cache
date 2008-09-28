@@ -179,7 +179,7 @@ AC_ARG_ENABLE(kqueue,
 
 if test "$enable_kqueue" = yes; then
 	case $host in
-	*-*-freebsd*)
+	*-*-freebsd* | *-*-darwin9* )
 		AC_CHECK_FUNCS([kqueue])
 		;;
 	*-*-bsd*)
