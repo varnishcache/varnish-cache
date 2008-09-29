@@ -328,8 +328,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "extern void *vrt_magic_string_end;\n");
 	vsb_cat(sb, "\n");
 	vsb_cat(sb, "struct vrt_backend_probe {\n");
-	vsb_cat(sb, "	char		*url;\n");
-	vsb_cat(sb, "	char		*request;\n");
+	vsb_cat(sb, "	const char	*url;\n");
+	vsb_cat(sb, "	const char	*request;\n");
 	vsb_cat(sb, "	double		timeout;\n");
 	vsb_cat(sb, "	double		interval;\n");
 	vsb_cat(sb, "	unsigned	window;\n");
