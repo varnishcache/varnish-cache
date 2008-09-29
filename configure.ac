@@ -326,18 +326,22 @@ AC_ARG_ENABLE(werror,
 # Command line for compiling VCL code.  I wish there were a simple way
 # to figure this out dynamically without introducing a run-time
 # dependency on libtool.
-case $host in
-*-*-solaris*)
-	VCC_CC="cc -Kpic ${CFLAGS} -G -o %o %s"
-	;;
-*-*-darwin*)
-	VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup ${CFLAGS} -o %o %s"
-	;;
-*)
-	VCC_CC="exec cc -fpic -shared -Wl,-x ${CFLAGS} -o %o %s"
-	;;
-esac
-
+AC_ARG_VAR([VCC_CC], [C compiler command line for VCL code])
+if test "$ac_cv_env_VCC_CC_set" = "set"; then
+	VCC_CC="$ac_cv_env_VCC_CC_value"
+else
+	case $host in
+	*-*-solaris*)
+		VCC_CC="cc -Kpic -G -o %o %s"
+		;;
+	*-*-darwin*)
+		VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		;;
+	*)
+		VCC_CC="exec cc -fpic -shared -Wl,-x -o %o %s"
+		;;
+	esac
+fi
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
 # Use jemalloc on Linux
