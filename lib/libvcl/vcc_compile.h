@@ -203,6 +203,7 @@ int vcc_StringVal(struct tokenlist *tl);
 void vcc_ExpectedStringval(struct tokenlist *tl);
 
 /* vcc_token.c */
+void vcc_Coord(const struct tokenlist *tl, struct vsb *vsb, const struct token *t);
 void vcc_ErrToken(const struct tokenlist *tl, const struct token *t);
 void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);

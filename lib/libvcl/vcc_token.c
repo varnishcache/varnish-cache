@@ -68,32 +68,52 @@ vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line)
 	tl->err = 1;
 }
 
-void
-vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
+static void
+vcc_icoord(struct vsb *vsb, const struct token *t, const char **ll)
 {
-	unsigned lin, pos, x, y;
-	const char *p, *l, *f, *b, *e;
+	unsigned lin, pos;
+	const char *p, *b;
 	struct source *sp;
 
 	lin = 1;
 	pos = 0;
 	sp = t->src;
-	f = sp->name;
 	b = sp->b;
-	e = sp->e;
-	for (l = p = b; p < t->b; p++) {
+	for (p = b; p < t->b; p++) {
 		if (*p == '\n') {
 			lin++;
 			pos = 0;
-			l = p + 1;
+			if (ll != NULL)
+				*ll = p + 1;
 		} else if (*p == '\t') {
 			pos &= ~7;
 			pos += 8;
 		} else
 			pos++;
 	}
-	vsb_printf(tl->sb, "(%s Line %d Pos %d)\n", f, lin, pos + 1);
+	vsb_printf(vsb, "(%s Line %d Pos %d)", sp->name, lin, pos + 1);
+}
+
+void
+vcc_Coord(const struct tokenlist *tl, struct vsb *vsb, const struct token *t)
+{
+
+	if (t == NULL)
+		t = tl->t;
+	vcc_icoord(vsb, t, NULL);
+}
+
+void
+vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
+{
+	unsigned x, y;
+	const char *p, *l, *e;
+
+	vcc_icoord(tl->sb, t, &l);
+	vsb_printf(tl->sb, "\n");
+	
 	x = y = 0;
+	e = t->src->e;
 	for (p = l; p < e && *p != '\n'; p++) {
 		if (*p == '\t') {
 			y &= ~7;
