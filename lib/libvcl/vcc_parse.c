@@ -526,22 +526,31 @@ Function(struct tokenlist *tl)
 			vcc_AddRef(tl, tl->t, R_FUNC);
 		}
 		tl->curproc = tl->mprocs[m];
+		Fb(tl, 1, "  /* ... from ");
+		vcc_Coord(tl, tl->fb, NULL);
+		Fb(tl, 0, " */\n");
 	} else {
 		tl->fb = tl->fc;
 		tl->curproc = vcc_AddProc(tl, tl->t);
 		vcc_AddDef(tl, tl->t, R_FUNC);
 		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
 		    PF(tl->t));
-		Fc(tl, 1, "static int\n");
+		Fc(tl, 1, "\nstatic int\n");
 		Fc(tl, 1, "VGC_function_%.*s (struct sess *sp)\n", PF(tl->t));
 	}
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
 	Fb(tl, 1, "{\n");
 	L(tl, Compound(tl));
+	if (m == -1) {
+		/*
+		 * non-method subroutines must have an explicit non-action
+		 * return in case they just fall through the bottom.
+		 */
+		Fb(tl, 1, "  return(0);\n");
+	}
 	Fb(tl, 1, "}\n");
 	tl->indent -= INDENT;
-	Fb(tl, 0, "\n");
 	tl->fb = NULL;
 	tl->curproc = NULL;
 }
