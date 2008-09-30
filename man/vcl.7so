@@ -511,8 +511,6 @@ The HTTP protocol version used when the object was retrieved.
 The HTTP status code returned by the server.
 .It Va obj.response
 The HTTP status message returned by the server.
-.It Va obj.valid
-True if the request resulted in a valid HTTP response.
 .It Va obj.cacheable
 True if the request resulted in a cacheable response.
 .\" see cache_center.c and rfc2616.c for details
