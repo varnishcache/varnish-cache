@@ -38,7 +38,7 @@ client c1 {
 	expect resp.status == 500
 } -run
 
-shell "sleep 1"
+delay 1
 
 client c2 {
 	txreq
