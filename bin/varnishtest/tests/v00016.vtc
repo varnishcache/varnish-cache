@@ -1,0 +1,39 @@
+# $Id$
+
+test "Various VCL compiler coverage tests"
+
+varnish v1 -vcl {
+
+	backend b { .host = "127.0.0.1"; }
+
+	/* Test string regexp matching and "else if" */
+	sub vcl_recv {
+		if ((req.url ~ "foobar")) {
+			pass;
+		} else if (req.url ~ "snafu") {
+			pipe;
+		} else {
+			pass;
+		}
+	}
+}
+
+
+varnish v1 -vcl {
+
+	backend b { .host = "127.0.0.1"; }
+
+	/* test time and backend comparison */
+	sub vcl_fetch {
+		if (obj.ttl > 1d) {
+			set obj.ttl = 1d;
+		}
+		if (req.backend == b) {
+			set obj.ttl = 1d;
+		} else if (req.backend != b) {
+			set obj.ttl = 1h;
+		}
+	}
+	
+}
+
