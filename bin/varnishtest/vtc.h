@@ -44,7 +44,6 @@ cmd_f cmd_dump;
 cmd_f cmd_delay;
 cmd_f cmd_server;
 cmd_f cmd_client;
-cmd_f cmd_stats;
 cmd_f cmd_varnish;
 cmd_f cmd_sema;
 
