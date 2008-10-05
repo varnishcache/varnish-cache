@@ -17,8 +17,8 @@ varnish v1 -badvcl {
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a {
-		"1.2.3.4";
-		"1.2.3.4";
+		"1.2.3.4"/31;
+		"1.2.3.4"/31;
 	}
 	sub vcl_recv { if (client.ip ~ a) { pass; } }
 }
@@ -59,8 +59,32 @@ varnish v1 -badvcl {
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a {
-		"10.1.3"; 
+		! "10.1.3"; 
 		("en.lille.nisse.rejste"); 
+	}
+	sub vcl_recv { if (client.ip ~ a) { pass; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { if (client.ip == "127.0.0.1") { pass; } }
+	sub vcl_miss { if (client.ip != "127.0.0.1") { pass; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { if (client.ip > "127.0.0.1") { pass; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	acl a {
+		"10.1.1"/25; 
+		"10.1.3"/26; 
+		"10.1.3"/25; 
+		"10.1.2"/25; 
+		"10.1.2"/26; 
+		"10.1.4"/25; 
 	}
 	sub vcl_recv { if (client.ip ~ a) { pass; } }
 }
