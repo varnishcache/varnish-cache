@@ -60,7 +60,7 @@ varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a {
 		! "10.1.3"; 
-		("en.lille.nisse.rejste"); 
+		("en.lille.nisse.rejste" / 22); 
 		(!"en.lille.nisse.rejste"); 
 	}
 	sub vcl_recv { if (client.ip ~ a) { pass; } }
@@ -88,6 +88,7 @@ varnish v1 -vcl {
 		"10.1.4"/25; 
 		"10.2.66"/23;
 		! "10.2.64"/23;
+		"10.2.68"/23;
 	}
 	sub vcl_recv { if (client.ip ~ a) { pass; } }
 }
