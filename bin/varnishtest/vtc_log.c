@@ -80,6 +80,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	assert(lvl < NLEAD);
 	if (lvl > vtc_verbosity)
 		return;
+	vsb_clear(vl->vsb);
 	vsb_printf(vl->vsb, "%s %-4s ", lead[lvl], vl->id);
 	va_list ap;
 	va_start(ap, fmt);
@@ -107,6 +108,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	assert(lvl < NLEAD);
 	if (lvl > vtc_verbosity)
 		return;
+	vsb_clear(vl->vsb);
 	if (pfx == NULL)
 		pfx = "";
 	if (str == NULL) 
