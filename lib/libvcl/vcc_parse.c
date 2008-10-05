@@ -322,10 +322,29 @@ Cond_Bool(const struct var *vp, const struct tokenlist *tl)
 }
 
 static void
-Cond_Backend(const struct var *vp, const struct tokenlist *tl)
+Cond_Backend(const struct var *vp, struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
+	if (tl->t->tok == T_EQ) {
+		Fb(tl, 1, "  ==\n");
+	} else if (tl->t->tok == T_NEQ) {
+		Fb(tl, 1, "  !=\n");
+	} else {
+		vsb_printf(tl->sb, "Invalid condition ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " on backend variable\n");
+		vsb_printf(tl->sb,
+		    "  only '==' and '!=' are legal\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_NextToken(tl);
+	vcc_ExpectCid(tl);
+	ERRCHK(tl);
+	vcc_AddRef(tl, tl->t, R_BACKEND);
+	Fb(tl, 1, "VGC_backend_%.*s\n", PF(tl->t));
+	vcc_NextToken(tl);
 }
 
 static void
