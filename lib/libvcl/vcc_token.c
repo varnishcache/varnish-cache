@@ -79,6 +79,8 @@ vcc_icoord(struct vsb *vsb, const struct token *t, const char **ll)
 	pos = 0;
 	sp = t->src;
 	b = sp->b;
+	if (ll != NULL)
+		*ll = b;
 	for (p = b; p < t->b; p++) {
 		if (*p == '\n') {
 			lin++;
@@ -379,12 +381,13 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '}' && q[1] == 'C') {
 					vcc_AddToken(tl, CSRC, p, q + 2);
-					p = q + 2;
 					break;
 				}
 			}
-			if (q < sp->e)
+			if (q < sp->e) {
+				p = q + 2;
 				continue;
+			}
 			vcc_AddToken(tl, EOI, p, p + 2);
 			vsb_printf(tl->sb,
 			    "Unterminated inline C source, starting at\n");
