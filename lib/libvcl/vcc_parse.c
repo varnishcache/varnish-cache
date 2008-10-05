@@ -306,7 +306,7 @@ Cond_Int(const struct var *vp, struct tokenlist *tl)
 	default:
 		vsb_printf(tl->sb, "Invalid condition ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " on integer variable\n");
+		vsb_printf(tl->sb, " on numeric variable\n");
 		vsb_printf(tl->sb,
 		    "  only '==', '!=', '<', '>', '<=' and '>=' are legal\n");
 		vcc_ErrWhere(tl, tl->t);
