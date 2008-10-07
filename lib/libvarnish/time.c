@@ -53,6 +53,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+#include <math.h>
 
 #include "config.h"
 #include "libvarnish.h"
@@ -147,6 +149,16 @@ TIM_parse(const char *p)
 	}
 	return (0);
 }
+
+void
+TIM_sleep(double t)
+{
+	if (t > 100.0)
+		(void)sleep((int)round(t));
+	else
+		(void)usleep((int)round(t * 1e6));
+}
+
 
 #ifdef TEST_DRIVER
 

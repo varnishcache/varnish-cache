@@ -70,6 +70,7 @@ void TIM_format(double t, char *p);
 time_t TIM_parse(const char *p);
 double TIM_mono(void);
 double TIM_real(void);
+void TIM_sleep(double t);
 
 /* from libvarnish/version.c */
 void varnish_version(const char *);
