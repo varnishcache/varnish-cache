@@ -747,6 +747,12 @@ static const struct parspec parspec[] = {
 		"VCL can override this default value for each backend.",
 		0,
 		"400", "ms" },
+	{ "accept_fd_holdoff", tweak_timeout,
+		&master.accept_fd_holdoff, 0,  3600*1000,
+		"If we run out of file descriptors, the accept thread will "
+		"sleep.  This parameter control for how long it will sleep.",
+		EXPERIMENTAL,
+		"50", "ms" },
 	{ "clock_skew", tweak_uint, &master.clock_skew, 0, UINT_MAX,
 		"How much clockskew we are willing to accept between the "
 		"backend and our own clock.",
