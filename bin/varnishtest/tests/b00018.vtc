@@ -19,3 +19,5 @@ client c1 {
 	rxresp
 	expect resp.status == 523
 } -run
+
+varnish v1 -expect n_object == 0
