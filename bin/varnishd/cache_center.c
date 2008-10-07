@@ -855,6 +855,12 @@ cnt_recv(struct sess *sp)
 	AN(sp->director);
 
 	VCL_recv_method(sp);
+	if (sp->restarts >= params->max_restarts) {
+		if (sp->err_code == 0)
+			sp->err_code = 503;
+		sp->step = STP_ERROR;
+		return (0);
+	}
 
 	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
 	sp->sendbody = 0;

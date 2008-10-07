@@ -1,0 +1,48 @@
+# $Id$
+
+test "Check that max_restarts works and that we don't fall over"
+
+server s1 -repeat 6 {
+	rxreq
+	txresp -body "012345\n"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+	       restart;
+	}
+
+	sub vcl_error {
+		if (req.restarts == 2) {
+			set obj.status = 200;
+		} elsif (req.restarts > 2) {
+			set obj.status = 501;
+		} elsif (req.restarts < 2) {
+			set obj.status = 500;
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set max_restarts 2"
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "param.set max_restarts 3"
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 501
+} -run
+
+varnish v1 -cliok "param.set max_restarts 1"
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 500
+} -run
