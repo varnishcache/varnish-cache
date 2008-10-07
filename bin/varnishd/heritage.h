@@ -179,6 +179,10 @@ struct params {
 
 	/* Acceptable clockskew with backends */
 	unsigned		clock_skew;
+
+	/* Amount of time to sleep when running out of file
+	   descriptors.  In msecs */
+	unsigned		accept_fd_holdoff;
 };
 
 extern volatile struct params *params;
