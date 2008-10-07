@@ -1,0 +1,21 @@
+# $Id$
+
+test "Check that error in vcl_fetch works"
+
+server s1 {
+	rxreq 
+	txresp -body "012345\n"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_fetch {
+	    set obj.http.Foo = "bar";
+	    error 523 "not ok";
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 523
+} -run

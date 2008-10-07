@@ -426,6 +426,14 @@ cnt_fetch(struct sess *sp)
 		break;
 	case VCL_RET_DELIVER:
 		break;
+	case VCL_RET_ERROR:
+		sp->step = STP_ERROR;
+		sp->obj->ttl = 0;
+		sp->obj->cacheable = 0;
+		HSH_Unbusy(sp);
+		HSH_Deref(sp->obj);
+		sp->obj = NULL;
+		return (0);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
 	}
