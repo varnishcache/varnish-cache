@@ -828,6 +828,12 @@ ESI_Deliver(struct sess *sp)
 			http_Unset(sp->http, H_If_Modified_Since);
 			http_SetHeader(sp->wrk, sp->fd, sp->http, eb->host.b);
 		}
+		/*
+		 * XXX: We should decide if we should cache the director
+		 * XXX: or not (for session/backend coupling).  Until then
+		 * XXX: make sure we don't trip up the check in vcl_recv.
+		 */
+		sp->director = NULL;
 		sp->step = STP_RECV;
 		http_ForceGet(sp->http);
 		http_Unset(sp->http, H_Content_Length);
