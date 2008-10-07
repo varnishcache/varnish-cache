@@ -91,15 +91,6 @@ static char default_request[] =
     "Connection: close\r\n"
     "\r\n";
 
-static void
-dsleep(double t)
-{
-	if (t > 100.0)
-		(void)sleep((int)round(t));
-	else
-		(void)usleep((int)round(t * 1e6));
-}
-
 /*--------------------------------------------------------------------
  * Poke one backend, once, but possibly at both IPv4 and IPv6 addresses.
  *
@@ -330,7 +321,7 @@ vbp_wrk_poll_backend(void *priv)
 		    vt->last, vt->avg, vt->resp_buf);
 			
 		if (!vt->stop)
-			dsleep(vt->probe.interval);
+			TIM_sleep(vt->probe.interval);
 	}
 	return (NULL);
 }
