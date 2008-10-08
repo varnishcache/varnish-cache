@@ -27,25 +27,25 @@ client c1 -connect 127.0.0.1:9080 {
 	delay .2
 	txreq
 	rxresp
-	sema r1 sync 4
+	sema r2 sync 4
 } -start
 
 client c2 -connect 127.0.0.1:9081 {
 	delay .6
 	txreq
 	rxresp
-	sema r1 sync 4
+	sema r2 sync 4
 } -start
 
 client c3 -connect 127.0.0.1:9082 {
 	delay .9
 	txreq
 	rxresp
-	sema r1 sync 4
+	sema r2 sync 4
 } -start
 
 # Wait for all servers to have received requests
 sema r1 sync 4
 
 # Wait for all clients to have received responses
-sema r1 sync 4
+sema r2 sync 4
