@@ -62,6 +62,15 @@ vtc_logopen(const char *id)
 	return (vl);
 }
 
+void
+vtc_logclose(struct vtclog *vl)
+{
+
+	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
+	vsb_delete(vl->vsb);
+	FREE_OBJ(vl);
+}
+
 static const char *lead[] = {
 	"----",
 	"#   ",
@@ -77,6 +86,7 @@ void
 vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 {
 
+	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	assert(lvl < NLEAD);
 	if (lvl > vtc_verbosity)
 		return;
@@ -91,8 +101,11 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	AZ(vsb_overflowed(vl->vsb));
 	(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
-	if (lvl == 0)
+	if (lvl == 0) {
+		printf("---- TEST FILE: %s\n", vtc_file);
+		printf("---- TEST DESCRIPTION: %s\n", vtc_desc);
 		exit (1);
+	}
 }
 
 /**********************************************************************
@@ -105,6 +118,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 {
 	int nl = 1;
 
+	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	assert(lvl < NLEAD);
 	if (lvl > vtc_verbosity)
 		return;

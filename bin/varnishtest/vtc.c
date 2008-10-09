@@ -41,7 +41,8 @@
 #define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		100
 
-static struct vtclog	*vl;
+const char	*vtc_file;
+char		*vtc_desc;
 
 /**********************************************************************
  * Read a file into memory
@@ -80,7 +81,7 @@ read_file(const char *fn)
  */
 
 void
-parse_string(char *buf, const struct cmds *cmd, void *priv)
+parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	char *p, *q;
@@ -183,7 +184,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv)
 		}
 	
 		assert(cp->cmd != NULL);
-		cp->cmd(token_s, priv, cmd);
+		cp->cmd(token_s, priv, cmd, vl);
 	}
 }
 
@@ -196,7 +197,7 @@ reset_cmds(const struct cmds *cmd)
 {
 
 	for (; cmd->name != NULL; cmd++)
-		cmd->cmd(NULL, NULL, NULL);
+		cmd->cmd(NULL, NULL, NULL, NULL);
 }
 
 /**********************************************************************
@@ -209,6 +210,7 @@ cmd_test(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
+	(void)vl;
 
 	if (av == NULL)
 		return;
@@ -216,6 +218,7 @@ cmd_test(CMD_ARGS)
 
 	printf("#    TEST %s\n", av[1]);
 	AZ(av[2]);
+	vtc_desc = strdup(av[1]);
 }
 
 /**********************************************************************
@@ -270,6 +273,7 @@ cmd_dump(CMD_ARGS)
 {
 
 	(void)cmd;
+	(void)vl;
 	if (av == NULL)
 		return;
 	printf("cmd_dump(%p)\n", priv);
@@ -293,16 +297,20 @@ static struct cmds cmds[] = {
 };
 
 static void
-exec_file(const char *fn)
+exec_file(const char *fn, struct vtclog *vl)
 {
 	char *buf;
 
-	printf("#    TEST %s starting\n", fn);
+	vtc_file = fn;
+	vtc_desc = NULL;
+	vtc_log(vl, 1, "TEST %s starting", fn);
 	buf = read_file(fn);
-	parse_string(buf, cmds, NULL);
-	printf("#    RESETTING after %s\n", fn);
+	parse_string(buf, cmds, NULL, vl);
+	vtc_log(vl, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
-	printf("#    TEST %s completed\n", fn);
+	vtc_log(vl, 1, "TEST %s completed", fn);
+	vtc_file = NULL;
+	free(vtc_desc);
 }
 
 /**********************************************************************
@@ -325,10 +333,11 @@ main(int argc, char * const *argv)
 {
 	int ch;
 	FILE *fok;
+	static struct vtclog	*vl;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	vl = vtc_logopen("");
+	vl = vtc_logopen("top");
 	AN(vl);
 	while ((ch = getopt(argc, argv, "qv")) != -1) {
 		switch (ch) {
@@ -350,7 +359,7 @@ main(int argc, char * const *argv)
 
 	init_sema();
 	for (ch = 0; ch < argc; ch++)
-		exec_file(argv[ch]);
+		exec_file(argv[ch], vl);
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)
 		fclose(fok);

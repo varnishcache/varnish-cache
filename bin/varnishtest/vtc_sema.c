@@ -42,7 +42,6 @@ struct sema {
 	unsigned		magic;
 #define SEMA_MAGIC		0x29b64317
 	char			*name;
-	struct vtclog		*vl;
 	VTAILQ_ENTRY(sema)	list;
 	pthread_mutex_t		mtx;
 	pthread_cond_t		cond;
@@ -59,17 +58,15 @@ static VTAILQ_HEAD(, sema)	semas = VTAILQ_HEAD_INITIALIZER(semas);
  */
 
 static struct sema *
-sema_new(char *name)
+sema_new(char *name, struct vtclog *vl)
 {
 	struct sema *r;
 
 	ALLOC_OBJ(r, SEMA_MAGIC);
 	AN(r);
-	r->vl = vtc_logopen(name);
-	AN(r->vl);
 	r->name = name;
 	if (*name != 'r')
-		vtc_log(r->vl, 0, "Sema name must start with 'r'");
+		vtc_log(vl, 0, "Sema name must start with 'r' (%s)", *name);
 
 	AZ(pthread_mutex_init(&r->mtx, NULL));
 	AZ(pthread_cond_init(&r->cond, NULL));
@@ -84,24 +81,31 @@ sema_new(char *name)
  */
 
 static void
-sema_sync(struct sema *r, const char *av)
+sema_sync(struct sema *r, const char *av, struct vtclog *vl)
 {
 	unsigned u;
 
+	CHECK_OBJ_NOTNULL(r, SEMA_MAGIC);
 	u = strtoul(av, NULL, 0);
 
 	AZ(pthread_mutex_lock(&r->mtx));
 	if (r->expected == 0)
 		r->expected = u;
-	assert(r->expected == u);
+	if (r->expected != u)
+		vtc_log(vl, 0,
+		    "Sema(%s) use error: different expectations (%u vs %u)",
+		    r->name, r->expected, u);
 
 	if (++r->waiters == r->expected) {
-		vtc_log(r->vl, 4, "Wake %u", r->expected);
+		vtc_log(vl, 4, "Sema(%s) wake %u", r->name, r->expected);
 		AZ(pthread_cond_broadcast(&r->cond));
 		r->waiters = 0;
 		r->expected = 0;
-	} else 
+	} else {
+		vtc_log(vl, 4, "Sema(%s) wait %u of %u",
+		    r->name, r->waiters, r->expected);
 		AZ(pthread_cond_wait(&r->cond, &r->mtx));
+	}
 	AZ(pthread_mutex_unlock(&r->mtx));
 }
 
@@ -121,9 +125,10 @@ cmd_sema(CMD_ARGS)
 		AZ(pthread_mutex_lock(&sema_mtx));
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(r, &semas, list, r2) {
-			VTAILQ_REMOVE(&semas, r, list);
-			FREE_OBJ(r);
-			/* XXX: MEMLEAK */
+			AZ(pthread_mutex_lock(&r->mtx));
+			AZ(r->waiters);
+			AZ(r->expected);
+			AZ(pthread_mutex_unlock(&r->mtx));
 		}
 		AZ(pthread_mutex_unlock(&sema_mtx));
 		return;
@@ -137,7 +142,7 @@ cmd_sema(CMD_ARGS)
 		if (!strcmp(r->name, av[0]))
 			break;
 	if (r == NULL) 
-		r = sema_new(av[0]);
+		r = sema_new(av[0], vl);
 	AZ(pthread_mutex_unlock(&sema_mtx));
 	av++;
 
@@ -145,10 +150,10 @@ cmd_sema(CMD_ARGS)
 		if (!strcmp(*av, "sync")) {
 			av++;
 			AN(*av);
-			sema_sync(r, *av);
+			sema_sync(r, *av, vl);
 			continue;
 		}
-		vtc_log(r->vl, 0, "Unknown sema argument: %s", *av);
+		vtc_log(vl, 0, "Unknown sema argument: %s", *av);
 	}
 }
 

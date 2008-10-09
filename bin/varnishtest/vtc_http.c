@@ -70,7 +70,7 @@ static const char *nl = "\r\n";
  * Generate a synthetic body
  */
 
-static const char *
+static char *
 synth_body(const char *len)
 {
 	int i, j, k, l;
@@ -185,6 +185,7 @@ cmd_http_expect(CMD_ARGS)
 	char *rhs;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	assert(!strcmp(av[0], "expect"));
 	av++;
@@ -419,6 +420,7 @@ cmd_http_rxresp(CMD_ARGS)
 	struct http *hp;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(hp->client);
 	assert(!strcmp(av[0], "rxresp"));
@@ -445,9 +447,10 @@ cmd_http_txresp(CMD_ARGS)
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
 	const char *msg = "Ok";
-	const char *body = NULL;
+	char *body = NULL;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(hp->client);
 	assert(!strcmp(av[0], "txresp"));
@@ -482,7 +485,7 @@ cmd_http_txresp(CMD_ARGS)
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-body")) {
 			AZ(body);
-			body = av[1];
+			REPLACE(body, av[1]);
 			av++;
 		} else if (!strcmp(*av, "-bodylen")) {
 			AZ(body);
@@ -515,6 +518,7 @@ cmd_http_rxreq(CMD_ARGS)
 	struct http *hp;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(hp->client);
 	assert(!strcmp(av[0], "rxreq"));
@@ -544,6 +548,7 @@ cmd_http_txreq(CMD_ARGS)
 	const char *body = NULL;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(hp->client);
 	assert(!strcmp(av[0], "txreq"));
@@ -609,6 +614,7 @@ cmd_http_send(CMD_ARGS)
 	int i;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
@@ -628,6 +634,7 @@ cmd_http_chunked(CMD_ARGS)
 	struct http *hp;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
@@ -646,6 +653,7 @@ cmd_http_timeout(CMD_ARGS)
 	struct http *hp;
 
 	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
@@ -692,7 +700,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	q = strchr(s, '\0');
 	assert(q > s);
 	AN(s);
-	parse_string(s, http_cmds, hp);
+	parse_string(s, http_cmds, hp, vl);
 	vsb_delete(hp->vsb);
 	free(hp->rxbuf);
 	free(hp);
