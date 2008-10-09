@@ -119,6 +119,7 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 %endif
 
 %check
+LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
 %{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
 %install
@@ -218,6 +219,7 @@ fi
 %changelog
 * Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
 - 2.0-rc1 released. New upstream sources
+- Added a patch for pagesize to match redhat's rhel5 ppc64 koji build boxes
 - Added a patch for test a00008, from r3269
 - Removed condrestart in postscript at upgrade. We don't want that.
 
@@ -225,13 +227,17 @@ fi
 - 2.0-beta2 released. New upstream sources
 - Whitespace changes to make rpmlint more happy
 
-* Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.20080912svn3184
+* Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.9.20080912svn3184
 - Added varnisnsca init script (Colin Hill)
 - Corrected varnishlog init script (Colin Hill)
 
+* Tue Sep 09 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.beta1
+- Added a patch from r3171 that fixes an endian bug on ppc and ppc64
+- Added a hack that changes the varnishtest ports for 64bits builds,
+  so they can run in parallell with 32bits build on same build host
+
 * Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.7.beta1
-- Added a hack that changes the ports for 64bits builds, so they can run
-  in parallell with 32bits build on same build host.
+- Added a patch from r3156 and r3157, hiding a legit errno in make check
 
 * Tue Sep 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.6.beta1
 - Added a commented option for max coresize in the sysconfig script
