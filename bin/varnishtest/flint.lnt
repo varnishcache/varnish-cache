@@ -36,6 +36,9 @@
 // -emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
 // -emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(779, REPLACE)		// string constant !=
+-emacro(774, REPLACE)		// if(bool) always true
+-emacro(506, REPLACE)		// const bool
 // 
 -esym(534, sprintf)	// Ignoring return value of function
 // -esym(534, asprintf)	// Ignoring return value of function

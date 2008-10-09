@@ -131,21 +131,20 @@ varnish_cli_encode(struct vsb *vsb, const char *str)
  */
 
 static struct varnish *
-varnish_new(char *name)
+varnish_new(const char *name)
 {
 	struct varnish *v;
 
+	AN(name);
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
-	v->name = name;
+	REPLACE(v->name, name);
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
 	v->vl1 = vtc_logopen(name);
 	AN(v->vl1);
-	if (*name != 'v') {
+	if (*v->name != 'v')
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
-		exit (1);
-	}
 
 	v->args = "";
 	v->telnet = "127.0.0.1:9001";
@@ -153,6 +152,21 @@ varnish_new(char *name)
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 	return (v);
+}
+
+/**********************************************************************
+ * Delete a varnish instance
+ */
+
+static void
+varnish_delete(struct varnish *v)
+{
+
+	CHECK_OBJ_NOTNULL(v, VARNISH_MAGIC);
+	vtc_logclose(v->vl);
+	free(v->name);
+	/* XXX: MEMLEAK */
+	FREE_OBJ(v);
 }
 
 /**********************************************************************
@@ -418,8 +432,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
  */
 
 static void
-varnish_expect(struct varnish *v, char * const *av) {
-	uint64_t	val, ref;
+varnish_expect(const struct varnish *v, char * const *av) {
+	uint64_t val, ref;
 	int good;
 	char *p;
 	int i;
@@ -428,6 +442,7 @@ varnish_expect(struct varnish *v, char * const *av) {
 
 	for (i = 0; i < 10; i++, usleep(100000)) {
 
+
 #define MAC_STAT(n, t, f, d) 					\
 		if (!strcmp(av[0], #n)) {			\
 			val = v->stats->n;			\
@@ -435,6 +450,7 @@ varnish_expect(struct varnish *v, char * const *av) {
 #include "stat_field.h"
 #undef MAC_STAT
 		{
+			val = 0;
 			vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
 		}
 
@@ -472,6 +488,7 @@ cmd_varnish(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
+	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -479,8 +496,7 @@ cmd_varnish(CMD_ARGS)
 			if (v->cli_fd >= 0)
 				varnish_wait(v);
 			VTAILQ_REMOVE(&varnishes, v, list);
-			FREE_OBJ(v);
-			/* XXX: MEMLEAK */
+			varnish_delete(v);
 		}
 		return;
 	}

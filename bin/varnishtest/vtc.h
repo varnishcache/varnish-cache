@@ -30,7 +30,7 @@ struct vsb;
 struct vtclog;
 struct cmds;
 
-#define CMD_ARGS char * const *av, void *priv, const struct cmds *cmd
+#define CMD_ARGS char * const *av, void *priv, const struct cmds *cmd, struct vtclog *vl
 typedef void cmd_f(CMD_ARGS);
 
 struct cmds {
@@ -38,7 +38,7 @@ struct cmds {
 	cmd_f		*cmd;
 };
 
-void parse_string(char *buf, const struct cmds *cmd, void *priv);
+void parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl);
 
 cmd_f cmd_dump;
 cmd_f cmd_delay;
@@ -47,13 +47,17 @@ cmd_f cmd_client;
 cmd_f cmd_varnish;
 cmd_f cmd_sema;
 
+extern const char *vtc_file;
+extern char *vtc_desc;
+extern int vtc_verbosity;
+
 void init_sema(void);
 
 void http_process(struct vtclog *vl, const char *spec, int sock, int client);
 
 void cmd_server_genvcl(struct vsb *vsb);
 
-extern int vtc_verbosity;
 struct vtclog *vtc_logopen(const char *id);
+void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
 void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str);

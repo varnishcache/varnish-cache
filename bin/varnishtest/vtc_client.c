@@ -51,7 +51,7 @@ struct client {
 
 	char			*spec;
 	
-	const char		*connect;
+	char			*connect;
 
 	pthread_t		tp;
 };
@@ -98,23 +98,39 @@ client_thread(void *priv)
  */
 
 static struct client *
-client_new(char *name)
+client_new(const char *name)
 {
 	struct client *c;
 
+	AN(name);
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
-	c->name = name;
+	REPLACE(c->name, name);
 	c->vl = vtc_logopen(name);
 	AN(c->vl);
-	if (*name != 'c') {
+	if (*c->name != 'c')
 		vtc_log(c->vl, 0, "Client name must start with 'c'");
-		exit (1);
-	}
 
-	c->connect = "127.0.0.1:9081";
+	REPLACE(c->connect, "127.0.0.1:9081");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
+}
+
+/**********************************************************************
+ * Clean up client
+ */
+
+static void
+client_delete(struct client *c)
+{
+
+	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
+	vtc_logclose(c->vl);
+	free(c->spec);
+	free(c->name);
+	free(c->connect);
+	/* XXX: MEMLEAK (?)*/
+	FREE_OBJ(c);
 }
 
 /**********************************************************************
@@ -173,6 +189,7 @@ cmd_client(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
+	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -180,8 +197,7 @@ cmd_client(CMD_ARGS)
 			VTAILQ_REMOVE(&clients, c, list);
 			if (c->tp != 0)
 				client_wait(c);
-			FREE_OBJ(c);
-			/* XXX: MEMLEAK */
+			client_delete(c);
 		}
 		return;
 	}
@@ -198,7 +214,7 @@ cmd_client(CMD_ARGS)
 
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-connect")) {
-			c->connect = av[1];
+			REPLACE(c->connect, av[1]);
 			av++;
 			continue;
 		}
@@ -218,6 +234,6 @@ cmd_client(CMD_ARGS)
 			vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
 			exit (1);
 		}
-		c->spec = *av;
+		REPLACE(c->spec, *av);
 	}
 }
