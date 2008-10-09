@@ -1,13 +1,13 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.10.beta2%{?dist}
+Release: 0.11.rc1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://varnish.projects.linpro.no/static/varnish-cache.tar.gz
 #Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-Source0: http://downloads.sourceforge.net/varnish/varnish-2.0-beta2.tar.gz
+Source0: http://downloads.sourceforge.net/varnish/varnish-2.0-rc1.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -63,7 +63,7 @@ Varnish is a high-performance HTTP accelerator
 
 %prep
 #%setup -q
-%setup -q -n varnish-2.0-beta2
+%setup -q -n varnish-2.0-rc1
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
@@ -211,18 +211,16 @@ if [ $1 -lt 1 ]; then
   /sbin/chkconfig --del varnishncsa 
 fi
 
-%postun
-if [ $1 -ge 1 ]; then
-  /sbin/service varnish condrestart > /dev/null 2>&1
-  /sbin/service varnishlog condrestart > /dev/null 2>&1
-  /sbin/service varnishncsa condrestart > /dev/null 2>&1
-fi
-
 %post libs -p /sbin/ldconfig
 
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
+- 2.0-rc1 released. New upstream sources
+- Added a patch for test a00008, from r3269
+- Removed condrestart in postscript at upgrade. We don't want that.
+
 * Fri Sep 26 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.10.beta2
 - 2.0-beta2 released. New upstream sources
 - Whitespace changes to make rpmlint more happy
