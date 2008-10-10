@@ -331,7 +331,7 @@ usage(void)
 int
 main(int argc, char * const *argv)
 {
-	int ch, i, ntest;
+	int ch, i, ntest = 1;
 	FILE *fok;
 	static struct vtclog	*vl;
 
