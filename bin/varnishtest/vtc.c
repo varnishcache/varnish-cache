@@ -320,7 +320,7 @@ exec_file(const char *fn, struct vtclog *vl)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtest [-qv] file ...\n");
+	fprintf(stderr, "usage: varnishtest [-n iter] [-qv] file ...\n");
 	exit(1);
 }
 
@@ -331,7 +331,7 @@ usage(void)
 int
 main(int argc, char * const *argv)
 {
-	int ch;
+	int ch, i, ntest;
 	FILE *fok;
 	static struct vtclog	*vl;
 
@@ -339,8 +339,11 @@ main(int argc, char * const *argv)
 	setbuf(stderr, NULL);
 	vl = vtc_logopen("top");
 	AN(vl);
-	while ((ch = getopt(argc, argv, "qv")) != -1) {
+	while ((ch = getopt(argc, argv, "n:qv")) != -1) {
 		switch (ch) {
+		case 'n':
+			ntest = strtoul(optarg, NULL, 0);
+			break;
 		case 'q':
 			vtc_verbosity--;
 			break;
@@ -358,8 +361,10 @@ main(int argc, char * const *argv)
 		usage();
 
 	init_sema();
-	for (ch = 0; ch < argc; ch++)
-		exec_file(argv[ch], vl);
+	for (i = 0; i < ntest; i++) {
+		for (ch = 0; ch < argc; ch++)
+			exec_file(argv[ch], vl);
+	}
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)
 		fclose(fok);
