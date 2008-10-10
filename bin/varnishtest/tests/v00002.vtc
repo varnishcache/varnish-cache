@@ -9,7 +9,7 @@ varnish v1 -badvcl {
 # Reference to non-existent backend
 varnish v1 -badvcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 	}
 	sub vcl_recv {
 		set req.backend = b2;
@@ -52,7 +52,7 @@ varnish v1 -badvcl {
 # unknown field
 varnish v1 -badvcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 		.foobar = 123;
 	}
 }
@@ -89,7 +89,7 @@ varnish v1 -badvcl {
 # Old backend syntax
 varnish v1 -badvcl {
 	backend b1 {
-		set host = "localhost";
+		set host = "127.0.0.1";
 	}
 }
 

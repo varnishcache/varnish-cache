@@ -5,7 +5,7 @@ test "VCL: test backend probe syntax"
 # Check url definition
 varnish v1 -vcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 		.probe = {
 			.url = "/";
 		}
@@ -15,7 +15,7 @@ varnish v1 -vcl {
 # Check request definition
 varnish v1 -vcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 		.probe = {
 			.request = 
 			    "GET / HTTP/1.1"
@@ -27,7 +27,7 @@ varnish v1 -vcl {
 # Check redefinition
 varnish v1 -badvcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 		.probe = {
 			.url = "/";
 			.request = 
@@ -40,7 +40,7 @@ varnish v1 -badvcl {
 # Check redefinition the other way
 varnish v1 -badvcl {
 	backend b1 {
-		.host = "localhost";
+		.host = "127.0.0.1";
 		.probe = {
 			.request = 
 			    "GET / HTTP/1.1"
