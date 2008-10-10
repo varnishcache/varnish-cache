@@ -79,6 +79,8 @@ TimeUnit(struct tokenlist *tl)
 		sc = 60.0 * 60.0;
 	else if (vcc_IdIs(tl->t, "d"))
 		sc = 60.0 * 60.0 * 24.0;
+	else if (vcc_IdIs(tl->t, "w"))
+		sc = 60.0 * 60.0 * 24.0 * 7.0;
 	else {
 		vsb_printf(tl->sb, "Unknown time unit ");
 		vcc_ErrToken(tl, tl->t);
