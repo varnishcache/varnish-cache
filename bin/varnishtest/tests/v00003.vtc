@@ -29,3 +29,33 @@ varnish v1 -badvcl {
 		{ .backend = {.host = "127.0.0.1";}  .weight = k; }
 	}
 }
+
+# invalid weight
+varnish v1 -badvcl {
+	director r1 random {
+		{ .backend = {.host = "127.0.0.1";}  .weight = 0; }
+	}
+}
+
+# retries spec
+varnish v1 -vcl {
+	director r1 random {
+		.retries = 3;
+		{ .backend = {.host = "127.0.0.1";}  .weight = 1; }
+	}
+}
+	
+varnish v1 -badvcl {
+	director r1 random {
+		.foobar = 3;
+		{ .backend = {.host = "127.0.0.1";}  .weight = 1; }
+	}
+}
+	
+varnish v1 -badvcl {
+	director r1 random {
+		.retries = x;
+		{ .backend = {.host = "127.0.0.1";}  .weight = 1; }
+	}
+}
+	
