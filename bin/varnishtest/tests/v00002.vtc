@@ -117,7 +117,7 @@ varnish v1 -badvcl {
 	backend b1 { .host = "cnn.com"; }
 }
 
-varnish v1 -vcl {
+varnish v1 -badvcl {
 	backend b1 { .host = "////"; }
 }
 
