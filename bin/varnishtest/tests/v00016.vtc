@@ -33,6 +33,7 @@ varnish v1 -badvcl {
         include 
         if else elseif elsif
 	++ -- && || <= == != >= >> << += -= *= /=
+	{ } ( ) * + - / % > < = ; ! & . | ~ ,
 }
 
 varnish v1 -vcl {
