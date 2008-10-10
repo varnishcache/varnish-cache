@@ -358,8 +358,6 @@ vcc_ParseProbe(struct tokenlist *tl)
 
 		vcc_IsField(tl, &t_field, fs);
 		ERRCHK(tl);
-		if (tl->err)
-			break;
 		if (vcc_IdIs(t_field, "url")) {
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
@@ -519,8 +517,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
 
 		vcc_IsField(tl, &t_field, fs);
 		ERRCHK(tl);
-		if (tl->err)
-			break;
 		if (vcc_IdIs(t_field, "host")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
