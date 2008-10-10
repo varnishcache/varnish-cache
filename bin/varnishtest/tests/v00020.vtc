@@ -3,12 +3,20 @@
 test "VCL compiler coverage test: vcc_parse.c"
 
 varnish v1 -vcl {
-backend b { .host = "127.0.0.1"; }
-C{
-#include <stdio.h>
-}C
+	backend b { .host = "127.0.0.1"; }
+	C{
+	#include <stdio.h>
+	}C
 }
 
 varnish v1 -badvcl { 0; }
 
 varnish v1 -badvcl " sub vcl_recv { { } { "
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch {
+		set obj.ttl = 1w;
+	}
+}
+
