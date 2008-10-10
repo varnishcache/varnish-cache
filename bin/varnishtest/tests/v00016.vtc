@@ -3,6 +3,39 @@
 test "Various VCL compiler coverage tests"
 
 varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "/dev/null" ;
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	include "/dev/null" |
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	include <<
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if (req.url == "foo") {
+		} elsif (req.url == "bar") {
+		} elseif (req.url == "baz") {
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	/* token test */
+        error lookup hash pipe pass fetch deliver discard keep restart
+        include 
+        if else elseif elsif
+	++ -- && || <= == != >= >> << += -= *= /=
+}
+
+varnish v1 -vcl {
 
 	backend b { .host = "127.0.0.1"; }
 
