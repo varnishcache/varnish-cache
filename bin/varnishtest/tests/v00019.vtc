@@ -54,4 +54,3 @@ varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	?
 }
-
