@@ -305,8 +305,8 @@ http_splitheader(struct http *hp, int req)
  * Receive another character
  */
 
-static void
-http_rxchar(struct http *hp, int n)
+static int
+http_rxchar_eof(struct http *hp, int n)
 {
 	int i;
 	struct pollfd pfd[1];
@@ -319,11 +319,23 @@ http_rxchar(struct http *hp, int n)
 		assert(i > 0);
 		assert(hp->prxbuf < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
+		if (i == 0)
+			return (i);
 		assert(i > 0);
 		hp->prxbuf += i;
 		hp->rxbuf[hp->prxbuf] = '\0';
 		n -= i;
 	}
+	return (1);
+}
+
+static void
+http_rxchar(struct http *hp, int n)
+{
+	int i;
+
+	i = http_rxchar_eof(hp, n);
+	assert(i > 0);
 }
 
 /**********************************************************************
@@ -331,7 +343,7 @@ http_rxchar(struct http *hp, int n)
  */
 
 static void
-http_swallow_body(struct http *hp, char * const *hh)
+http_swallow_body(struct http *hp, char * const *hh, int body)
 {
 	char *p, *q;
 	int i, l, ll;
@@ -344,7 +356,8 @@ http_swallow_body(struct http *hp, char * const *hh)
 		hp->body = q = hp->rxbuf + hp->prxbuf;
 		http_rxchar(hp, l);
 		vtc_dump(hp->vl, 4, "body", hp->body);
-		ll = l;
+		sprintf(hp->bodylen, "%d", l);
+		return;
 	}
 	p = http_find_header(hh, "transfer-encoding");
 	if (p != NULL && !strcmp(p, "chunked")) {
@@ -374,7 +387,17 @@ http_swallow_body(struct http *hp, char * const *hh)
 				break;
 		}
 		vtc_dump(hp->vl, 4, "body", hp->body);
+		sprintf(hp->bodylen, "%d", ll);
+		return;
 	}
+	if (body) {
+		hp->body = q = hp->rxbuf + hp->prxbuf;
+		do  {
+			i = http_rxchar_eof(hp, 1);
+			ll += i;
+		} while (i > 0);
+		vtc_dump(hp->vl, 4, "rxeof", hp->body);
+	} 
 	sprintf(hp->bodylen, "%d", ll);
 }
 
@@ -433,7 +456,11 @@ cmd_http_rxresp(CMD_ARGS)
 	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
-	http_swallow_body(hp, hp->resp);
+	if (!strcmp(hp->resp[1], "200")) 
+		http_swallow_body(hp, hp->resp, 1);
+	else
+		http_swallow_body(hp, hp->resp, 0);
+	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
 /**********************************************************************
@@ -531,7 +558,8 @@ cmd_http_rxreq(CMD_ARGS)
 	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
-	http_swallow_body(hp, hp->req);
+	http_swallow_body(hp, hp->req, 0);
+	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
 /**********************************************************************
