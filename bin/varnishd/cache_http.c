@@ -496,6 +496,13 @@ http_DissectRequest(struct sess *sp)
 
 	i = http_splitline(sp->wrk, sp->fd, hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
+	hp->protover = 0.9;
+	if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
+		hp->protover = 1.0;
+	else if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+		hp->protover = 1.1;
+	else
+		hp->protover = 0.9;
 
 	if (i != 0)
 		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
