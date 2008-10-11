@@ -105,6 +105,10 @@ RES_BuildHttp(struct sess *sp)
 	http_FilterFields(sp->wrk, sp->fd, sp->http, sp->obj->http,
 	    HTTPH_A_DELIVER);
 
+	/* Only HTTP 1.1 can do Chunked encoding */
+	if (sp->http->protover < 1.1 && !VTAILQ_EMPTY(&sp->obj->esibits))
+		http_Unset(sp->http, H_Transfer_Encoding);
+
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
 
@@ -140,7 +144,7 @@ RES_WriteObj(struct sess *sp)
 	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
 		ESI_Deliver(sp);
 	} else if (sp->wantbody) {
-		if (sp->esis > 0) {
+		if (sp->esis > 0 && sp->http->protover >= 1.1) {
 			sprintf(lenbuf, "%x\r\n", sp->obj->len);
 			sp->wrk->acct.hdrbytes +=
 			    WRK_Write(sp->wrk, lenbuf, -1);
@@ -170,7 +174,7 @@ RES_WriteObj(struct sess *sp)
 			WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
-		if (sp->esis > 0)
+		if (sp->esis > 0 && sp->http->protover >= 1.1)
 			WRK_Write(sp->wrk, "\r\n", -1);
 	}
 	if (WRK_Flush(sp->wrk))
