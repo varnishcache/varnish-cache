@@ -1,0 +1,46 @@
+# $Id$
+
+test "ESI includes for pre HTTP/1.1 cannot used chunked encoding"
+
+server s1 {
+        rxreq 
+        expect req.url == "/foo/bar"
+        txresp -body {
+                <html>
+                Before include
+                <!--esi <esi:include src="body"/> -->
+                After include
+        }
+        rxreq 
+        expect req.url == "/foo/body"
+        txresp -body {
+                Included file
+        }
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+                esi;
+        }
+} -start
+
+client c1 {
+        txreq -url /foo/bar -proto HTTP/1.1
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 151
+} -run
+
+client c1 {
+        txreq -url /foo/bar -proto HTTP/1.0
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 151
+} -run
+
+client c1 {
+        txreq -url /foo/bar -proto ""
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 151
+} -run

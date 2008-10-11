@@ -802,9 +802,11 @@ ESI_Deliver(struct sess *sp)
 
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
 		if (Tlen(eb->verbatim)) {
-			WRK_Write(sp->wrk, eb->chunk_length, -1);
+			if (sp->http->protover >= 1.1)
+				WRK_Write(sp->wrk, eb->chunk_length, -1);
 			WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
-			WRK_Write(sp->wrk, "\r\n", -1);
+			if (sp->http->protover >= 1.1)
+				WRK_Write(sp->wrk, "\r\n", -1);
 		}
 		if (eb->include.b == NULL ||
 		    sp->esis >= params->max_esi_includes)
@@ -842,7 +844,7 @@ ESI_Deliver(struct sess *sp)
 		sp->obj = obj;
 
 	}
-	if (sp->esis == 0)
+	if (sp->esis == 0 && sp->http->protover >= 1.1)
 		WRK_Write(sp->wrk, "0\r\n\r\n", -1);
 }
 
