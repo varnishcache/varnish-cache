@@ -122,7 +122,7 @@ varnish v1 -badvcl {
 }
 
 varnish v1 -badvcl {
-	backend b1 { .host = "127.0.0.1"; .port = "70000"; }
+	backend b1 { .host = "127.0.0.1"; .port = "////"; }
 }
 
 varnish v1 -badvcl {
