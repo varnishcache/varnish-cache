@@ -362,6 +362,9 @@ Fetch(struct sess *sp)
 		return (__LINE__);
 	}
 
+	/* Checkpoint the shmlog here */
+	WSL_Flush(w, 0);
+
 	/* XXX is this the right place? */
 	VSL_stats->backend_req++;
 
