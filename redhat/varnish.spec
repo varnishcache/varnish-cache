@@ -1,13 +1,12 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.11.rc1%{?dist}
+Release: 0.12.20081014svn3295%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-#Source0: http://varnish.projects.linpro.no/static/varnish-cache.tar.gz
+Source0: http://varnish.projects.linpro.no/static/varnish-cache.tar.gz
 #Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-Source0: http://downloads.sourceforge.net/varnish/varnish-2.0-rc1.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -63,7 +62,7 @@ Varnish is a high-performance HTTP accelerator
 
 %prep
 #%setup -q
-%setup -q -n varnish-2.0-rc1
+%setup -q -n varnish-cache
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
@@ -90,7 +89,12 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 %build
 
 # Remove "--disable static" if you want to build static libraries 
+# jemalloc is not compatible with Red Hat's ppc64 RHEL5 kernel koji server :-(
+%ifarch ppc64 ppc
+%configure --disable-static --localstatedir=/var/lib --disable-jemalloc
+%else
 %configure --disable-static --localstatedir=/var/lib
+%endif
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
@@ -217,6 +221,10 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.12.20081014svn3295
+- Disabled jemalloc on ppc and ppc64. Added a note in README.redhat.
+- Synced to upstream again. No more patches needed.
+
 * Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
 - 2.0-rc1 released. New upstream sources
 - Added a patch for pagesize to match redhat's rhel5 ppc64 koji build boxes
