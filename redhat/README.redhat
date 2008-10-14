@@ -40,9 +40,24 @@ read the vcl(7) man page for more information on the vcl language.
 To gain actual value from varnish, you may want to move the listening
 port to port 80, and your webserver to 8080 or similar.
 
+Running with jemalloc on ppc or ppc64 on fedora: Edit and recompile
+===================================================================
+To get a package through to Fedora, it has to build in Red Hat's Koji
+build environment. Their ppc and ppc64 builders run mock on a RHEL
+ppc64 kernel. Our use of jemalloc does not work on this kernel, and
+the build stays unsuccessful. As ppc64 is not the primary target of
+varnish development, it may take some time to get this bug fixed. 
+To get the package through to Fedora, jemalloc is disabled in the ppc
+and ppc64 builds. 
+
+Now, varnish with jemalloc enabled is known to work at least on the
+ppc (32bit) kernel in Fedora 9. If you run on ppc, and have a workload
+that suits jemalloc better, you might want to change the specfile and
+recompile.  We would very much like feedback from anyone running
+varnish on Fedora's own ppc64 kernel.
 
 Building a RPM package from SVN
-==============================
+===============================
 You may build the package from a svn checkout. Follow the instructions
 at http://varnish.projects.linpro.no/wiki/Repository to get the
 source. Then enter the trunk directory and edit
