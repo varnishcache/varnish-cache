@@ -2,7 +2,17 @@
 
 test "Check that max_restarts works and that we don't fall over"
 
-server s1 -repeat 6 {
+server s1 {
+	rxreq
+	txresp -body "012345\n"
+	rxreq
+	txresp -body "012345\n"
+	rxreq
+	txresp -body "012345\n"
+	rxreq
+	txresp -body "012345\n"
+	rxreq
+	txresp -body "012345\n"
 	rxreq
 	txresp -body "012345\n"
 } -start
@@ -15,10 +25,13 @@ varnish v1 -vcl+backend {
 	sub vcl_error {
 		if (req.restarts == 2) {
 			set obj.status = 200;
+			set obj.response = "restart=2"; 
 		} elsif (req.restarts > 2) {
 			set obj.status = 501;
+			set obj.response = "restart>2"; 
 		} elsif (req.restarts < 2) {
 			set obj.status = 500;
+			set obj.response = "restart<2"; 
 		}
 	}
 } -start
