@@ -465,6 +465,7 @@ cnt_first(struct sess *sp)
 	 */
 
 	assert(sp->xid == 0);
+	assert(sp->restarts == 0);
 	VCA_Prep(sp);
 
 	/* Record the session watermark */
@@ -1059,7 +1060,7 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
         (void)priv;
 	if (av[2] != NULL) 
 		xids = strtoul(av[2], NULL, 0);
-	cli_out(cli, "XID is %u\n", xids);
+	cli_out(cli, "XID is %u", xids);
 }
 
 static struct cli_proto debug_cmds[] = {

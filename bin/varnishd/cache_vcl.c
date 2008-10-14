@@ -171,7 +171,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	if (vcl_active == NULL)
 		vcl_active = vcl;
 	UNLOCK(&vcl_mtx);
-	cli_out(cli, "Loaded \"%s\" as \"%s\"\n", fn , name);
+	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	vcl->conf->init_func(cli);
 	VSL_stats->n_vcl++;
 	VSL_stats->n_vcl_avail++;
