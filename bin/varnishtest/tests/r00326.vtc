@@ -1,4 +1,4 @@
-# $Id: e00008.vtc 3012 2008-07-24 12:22:35Z des $
+# $Id$
 
 test "No zerolength verbatim before <esi:include...>"
 
