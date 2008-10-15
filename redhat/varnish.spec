@@ -1,12 +1,11 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 0.12.20081014svn3295%{?dist}
+Release: 1{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-Source0: http://varnish.projects.linpro.no/static/varnish-cache.tar.gz
-#Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
+Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -61,8 +60,8 @@ Varnish is a high-performance HTTP accelerator
 #Varnish is a high-performance HTTP accelerator
 
 %prep
-#%setup -q
-%setup -q -n varnish-cache
+%setup -q
+#%setup -q -n varnish-cache
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
@@ -221,7 +220,8 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.12.20081014svn3295
+* Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-1
+- 2.0 released. New upstream sources
 - Disabled jemalloc on ppc and ppc64. Added a note in README.redhat.
 - Synced to upstream again. No more patches needed.
 
