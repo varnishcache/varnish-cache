@@ -18,7 +18,8 @@ XML = \
 all: ${CHANGELOGS}
 
 EXTRA_DIST = ${CHANGELOGS} ${XML} \
-	changes.css changes-html.xsl
+	changes.css changes-html.xsl \
+	getting-started.html
 
 CLEANFILES = ${CHANGELOGS}
 
