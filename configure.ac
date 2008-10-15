@@ -3,7 +3,7 @@
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006-2008 Linpro AS / Verdens Gang AS])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [trunk], [varnish-dev@projects.linpro.no])
+AC_INIT([Varnish], [2.0], [varnish-dev@projects.linpro.no])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
