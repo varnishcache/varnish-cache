@@ -397,7 +397,7 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char
 			Fh(tl, 0, "\t%*s%sif ((a[%d] & 0x%x) == %d) {\n",
 			    -i, "",
 			    oc,
-			    i, (0xff00 >> m) & 0xff,
+			    i - 1, (0xff00 >> m) & 0xff,
 			    ae->data[i] & ((0xff00 >> m) & 0xff));
 			at[i] = 256;
 			depth = i;
