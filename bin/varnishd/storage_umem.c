@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: storage_umem.c 3036 2008-07-31 09:24:25Z phk $
+ * $Id$
  *
  * Storage method based on umem_alloc(3MALLOC)
  */

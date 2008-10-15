@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: storage_malloc.c 2955 2008-07-19 09:24:07Z phk $
+ * $Id$
  *
  * Storage method for synthetic content, based on vsb.
  */

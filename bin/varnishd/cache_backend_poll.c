@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: cache_backend_cfg.c 2905 2008-07-08 10:09:03Z phk $
+ * $Id$
  *
  * Poll backends for collection of health statistics
  *
