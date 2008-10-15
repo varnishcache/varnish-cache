@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="1.1.2" to="2.0">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug">
+      <para>Only look for sendfile on platforms where we know how to
+      use it, which is FreeBSD for now.</para>
+    </change>
+
+    <change type="bug">
+      <para>Make it possible to adjust the shared memory log size and
+      bump the size from 8MB to 80MB.</para>
+    </change>
+
+    <change type="enh">
+      <para>Fix up the handling of request bodies to better match
+      what RFC2616 mandates.  This makes PUT, DELETE, OPTIONS and
+      TRACE work in addition to POST. </para>
+    </change>
+
+    <change type="enh">
+      <para>Change how backends are defined, to a constant structural
+      defintion style.  See
+      http://varnish.projects.linpro.no/wiki/VclSyntaxChanges for the
+      details.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add directors, which wrap backends.  Currently, there's a
+	random director and a round-robin director.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add "grace", which is for how long and object will be
+	served, even after it has expired.  To use this, both the
+	object's and the request's <code>grace</code> parameter need
+	to be set.</para>
+    </change>
+
+    <change type="enh">
+      <para>Manual pages have been updated for new VCL syntax and
+      varnishd options.</para>
+    </change>
+
+    <change type="enh">
+      <para>Man pages and other docs have been updated.</para>
+    </change>
+
+    <change type="enh">
+      <para>The shared memory log file is now locked in memory, so it
+      should not be paged out to disk.</para>
+    </change>
+
+    <change type="enh">
+      <para>We now handle Vary correctly, as well as Expect.</para>
+    </change>
+
+    <change type="enh">
+      <para>ESI include support is implemented.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make it possible to limit how much memory the malloc uses.</para>
+    </change>
+
+    <change type="enh">
+      <para>Solaris is now supported.</para>
+    </change>
+
+    <change type="enh">
+      <para>There is now a <code>regsuball</code> function, which
+      works like <code>regsub</code> except it replaces all
+      occurences of the regex, not just the first.</para>
+    </change>
+
+    <change type="enh">
+      <para>Backend and director declarations can have
+      a <code>.connect_timeout</code> parameter, which tells us how
+      long to wait for a successful connection.</para>
+    </change>
+
+    <change type="enh">
+      <para>It is now possible to select the acceptor to use by
+      changing the <code>acceptor</code> parameter.</para>
+    </change>
+
+    <change type="enh">
+      <para>Backends can have probes associated with them, which can
+      be checked with <code>req.backend.health</code> in VCL as well as
+      being handled by directors which do load-balancing.</para>
+    </change>
+
+    <change type="enh">
+      <para>Support larger-than-2GB files also on 32 bit hosts.
+      Please note that this does not mean we can support caches
+      bigger than 2GB, it just means logfiles and similar can be
+      bigger.</para>
+    </change>
+
+    <change type="bug">
+      <para>In some cases, we would remove the wrong header when we
+      were stripping Content-Transfer-Encoding headers from a
+      request.  This has been fixed.</para>
+    </change>
+
+    <change type="enh">
+      <para>Backends can have a <code>.max_connections</code>
+      associated with them.</para>
+    </change>
+
+    <change type="bug">
+      <para>On Linux, we need to set the dumpable bit on the child if
+      we want core dumps.  Make sure it's set.</para>
+    </change>
+
+    <change type="bug">
+      <para>Doing <code>purge.hash()</code> with an empty string
+      would cause us to dump core.  Fixed so we don't do that any
+      more.</para>
+    </change>
+
+    <change type="bug">
+      <para>We ran into a problem with glibc's malloc on Linux where
+      it seemed like it failed to ever give memory back to the OS,
+      causing the system to swap.  We have now switched to jemalloc
+      which appears not to have this problem.</para>
+    </change>
+
+    <change type="bug">
+      <para><code>max_restarts</code> was never checked, so we always
+      ended up running out of workspace.  Now, <code>vcl_error</code>
+      is called when we reach <code>max_restarts</code>.</para>
+    </change>
+  </subsystem>
+  <subsystem>
+    <name>varnishtest</name>
+
+    <change type="enh">
+      <para><code>varnishtest</code> is a tool to do correctness tests
+      of varnishd.  The test suite is run by using <code>make
+      check</code>.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishtop</name>
+
+    <change type="enh">
+      <para>We now set the field widths dynamically based on the size
+      of the terminal and the name of the longest field.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishstat</name>
+
+    <change type="enh">
+      <para><code>varnishstat -1</code> now displays the uptime too.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishncsa</name>
+
+    <change type="bug">
+      <para><code>varnishncsa</code> now does fflush after each
+      write.  This makes <code>tail -f</code> work correctly, as well
+      as avoiding broken lines in the log file.</para>
+    </change>
+
+    <change type="enh">
+      <para>It is possible to get <code>varnishncsa</code> to output
+      the <code>X-Forwarded-For</code> instead of the client IP by
+      passing <code>-f</code> to it.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Build system</name>
+
+    <change type="bug">
+      <para>Various sanity checks have been added
+      to <code>configure</code>, it now complains about no ncurses or
+      if SO_RCVTIMEO or SO_SNDTIMEO are non-functional.  It also
+      aborts if there's no working acceptor mechanism </para>
+    </change>
+
+    <change type="enh">
+      <para>The C compiler invocation is decided by the configure
+      script and can now be overridden by passing <code>VCC_CC</code>
+      when running configure.</para>
+    </change>
+  </subsystem>
+</group>
