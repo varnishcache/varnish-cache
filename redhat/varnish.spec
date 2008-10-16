@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
 Version: 2.0
-Release: 1{?dist}
+Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
