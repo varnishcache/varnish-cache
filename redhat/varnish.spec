@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
-Version: 2.0
-Release: 2%{?dist}
+Version: 2.0.1
+Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -230,20 +230,24 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 17 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.1-1
+- 2.0.1 released, a bugfix release. New upstream sources
+- Package now also available in EPEL
+
 * Thu Oct 16 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-2
 - Readded the debugflag patch. It's so practical
 - Added a strange workaround for make check on ppc64
 
 * Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-1
 - 2.0 released. New upstream sources
-- Disabled jemalloc on ppc and ppc64. Added a note in README.redhat.
-- Synced to upstream again. No more patches needed.
+- Disabled jemalloc on ppc and ppc64. Added a note in README.redhat
+- Synced to upstream again. No more patches needed
 
 * Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
 - 2.0-rc1 released. New upstream sources
 - Added a patch for pagesize to match redhat's rhel5 ppc64 koji build boxes
 - Added a patch for test a00008, from r3269
-- Removed condrestart in postscript at upgrade. We don't want that.
+- Removed condrestart in postscript at upgrade. We don't want that
 
 * Fri Sep 26 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.10.beta2
 - 2.0-beta2 released. New upstream sources
