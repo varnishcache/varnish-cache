@@ -1,0 +1,40 @@
+# $Id$
+
+test "#345, ESI waitinglist trouble"
+
+server s1 {
+	rxreq 
+	txresp -body {<esi:include src="someurl">}
+	rxreq 
+	sema r1 sync 2
+	delay 1
+	txresp -body {DATA}
+} -start
+
+varnish v1 -arg "-p diag_bitmap=0x20" -vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/") {
+			esi;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 4
+} -start
+
+client c2 {
+	txreq
+	sema r1 sync 2
+	rxresp
+	expect resp.bodylen == 4
+} -run
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 4
+} -run
+
