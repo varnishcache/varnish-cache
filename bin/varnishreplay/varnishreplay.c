@@ -743,7 +743,8 @@ main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 	pthread_attr_init(&thread_attr);
-	pthread_attr_setstacksize(&thread_attr, 16384);
+	/* XXX: seting the stack size manually reduces the memory usasage and increases speed */
+	pthread_attr_setstacksize(&thread_attr, 32768);
 
 	while (VSL_Dispatch(vd, gen_traffic, NULL) == 0)
 		/* nothing */ ;
