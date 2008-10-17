@@ -17,6 +17,7 @@
       <para>There was an off-by-one error in the ACL compilation.
       Now fixed.</para>
     </change>
+  </subsystem>
 
   <subsystem>
     <name>Red Hat spec file</name>
