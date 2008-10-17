@@ -308,6 +308,7 @@ cnt_error(struct sess *sp)
 
 	/* We always close when we take this path */
 	sp->doclose = "error";
+	sp->wantbody = 1;
 
 	w = sp->wrk;
 	if (sp->obj == NULL) {
