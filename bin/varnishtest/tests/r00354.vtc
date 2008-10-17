@@ -1,0 +1,16 @@
+# $Id$
+
+test "#354 Segfault in strcmp in http_DissectRequest()"
+
+server s1 {
+	rxreq
+	txresp
+}
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	send "FOO\r\n\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
