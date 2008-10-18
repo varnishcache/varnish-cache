@@ -95,7 +95,7 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 	char buf[256], *q;
 	txt t;
 
-	if (i == 0) 
+	if (i == 0)
 		i = p - ew->t.b;
 	if (i > 20) {
 		i = 20;
@@ -234,7 +234,7 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 
 	/* Value, if any ? */
 	*val = *in;
-	if (in->b >= in->e) 
+	if (in->b >= in->e)
 		return (1);
 
 	if (*in->b == '"') {
@@ -287,7 +287,7 @@ esi_addinclude(struct esi_work *ew, txt t)
 		    tag.e - tag.b, tag.b,
 		    val.e - val.b, val.b);
 		if (Tlen(tag) != 3 || memcmp(tag.b, "src", 3))
-			continue; 
+			continue;
 		if (Tlen(val) == 0) {
 			esi_error(ew, tag.b, Tlen(tag),
 			    "ESI esi:include src attribute withou value");
@@ -351,7 +351,7 @@ esi_addinclude(struct esi_work *ew, txt t)
 
 /*--------------------------------------------------------------------
  * Zoom over a piece of object and dike out all releveant esi: pieces.
- * The entire txt may not be processed because an interesting part 
+ * The entire txt may not be processed because an interesting part
  * could possibly span into the next chunk of storage.
  * Return value: number of bytes processed.
  */
@@ -385,7 +385,7 @@ esi_parse2(struct esi_work *ew)
 				if (!memcmp(p, "]]>", 3)) {
 					ew->incdata = 0;
 					p += 3;
-				} else 
+				} else
 					p++;
 			}
 			continue;
@@ -464,7 +464,7 @@ esi_parse2(struct esi_work *ew)
 			ew->incdata = 1;
 			p += 9;
 			continue;
-		} 
+		}
 
 		/* Ignore non esi elements, if so instructed */
 		if ((params->esi_syntax & 0x02)) {
@@ -510,7 +510,7 @@ esi_parse2(struct esi_work *ew)
 				esi_error(ew, p, 1 + q - p, ew->remflg ?
 				    "ESI 1.0 forbids nested esi:remove"
 				    : "ESI 1.0 esi:remove not opened");
-					
+
 				if (!ew->remflg) {
 					ew->o.e = p;
 					esi_addverbatim(ew);
@@ -561,7 +561,7 @@ esi_parse2(struct esi_work *ew)
 			continue;
 		}
 		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
-			
+
 			ew->o.e = p;
 			esi_addverbatim(ew);
 
@@ -723,7 +723,7 @@ VRT_ESI(struct sess *sp)
 			p = NULL;
 			continue;
 		}
-		assert(t.e > t.b + u); 	/* XXX incredibly long element ? */
+		assert(t.e > t.b + u);	/* XXX incredibly long element ? */
 		memcpy(t.b, p, u);
 
 		/* Peel start off next chunk, until and including '<' */
@@ -755,7 +755,7 @@ VRT_ESI(struct sess *sp)
 		ew->t = t;
 		q = esi_parse(ew);
 		assert(q == ew->t.e);	/* XXX */
-	
+
 		/* 'p' is cached starting point for next storage part */
 	}
 

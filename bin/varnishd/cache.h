@@ -135,11 +135,11 @@ struct http {
 	struct ws		*ws;
 
 	unsigned char		conds;		/* If-* headers present */
-	enum httpwhence 	logtag;
+	enum httpwhence		logtag;
 	int			status;
 	double			protover;
 
-	txt 			hd[HTTP_HDR_MAX];
+	txt			hd[HTTP_HDR_MAX];
 	unsigned char		hdf[HTTP_HDR_MAX];
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 	unsigned		nhd;
@@ -246,7 +246,7 @@ struct storage {
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
-	unsigned 		refcnt;
+	unsigned		refcnt;
 	unsigned		xid;
 	struct objhead		*objhead;
 	struct storage		*objstore;
@@ -349,7 +349,7 @@ struct sess {
 
 	enum step		step;
 	unsigned		cur_method;
-	unsigned 		handling;
+	unsigned		handling;
 	unsigned char		sendbody;
 	unsigned char		wantbody;
 	int			err_code;
@@ -465,25 +465,32 @@ void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);
 void http_CopyResp(struct http *to, const struct http *fm);
-void http_SetResp(struct http *to, const char *proto, const char *status, const char *response);
-void http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned how);
+void http_SetResp(struct http *to, const char *proto, const char *status,
+    const char *response);
+void http_FilterFields(struct worker *w, int fd, struct http *to,
+    const struct http *fm, unsigned how);
 void http_FilterHeader(struct sess *sp, unsigned how);
-void http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol);
+void http_PutProtocol(struct worker *w, int fd, struct http *to,
+    const char *protocol);
 void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
-void http_PutResponse(struct worker *w, int fd, struct http *to, const char *response);
-void http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...);
+void http_PutResponse(struct worker *w, int fd, struct http *to,
+    const char *response);
+void http_PrintfHeader(struct worker *w, int fd, struct http *to,
+    const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
 void http_SetH(struct http *to, unsigned n, const char *fm);
 void http_ForceGet(struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
-int http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr);
+int http_GetHdrField(const struct http *hp, const char *hdr,
+    const char *field, char **ptr);
 int http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 const char *http_GetProto(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_DissectRequest(struct sess *sp);
-int http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http *sp);
+int http_DissectResponse(struct worker *w, const struct http_conn *htc,
+    struct http *sp);
 const char *http_DoConnection(struct http *hp);
 void http_CopyHome(struct worker *w, int fd, struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
@@ -538,21 +545,23 @@ void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
 void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
 
-#define DSL(flag, tag, id, ...) 				\
+#define DSL(flag, tag, id, ...)					\
 	do {							\
 		if (params->diag_bitmap & (flag))		\
 			VSL((tag), (id), __VA_ARGS__);		\
 	} while (0)
 
-#define WSP(sess, tag, ...) 					\
+#define WSP(sess, tag, ...)					\
 	WSL((sess)->wrk, tag, (sess)->fd, __VA_ARGS__)
 
-#define WSPR(sess, tag, txt) 					\
+#define WSPR(sess, tag, txt)					\
 	WSLR((sess)->wrk, tag, (sess)->fd, txt)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
-	fprintf(stderr,"INCOMPLETE AT: %s(%d)\n", (const char *)__func__, __LINE__);	\
+	fprintf(stderr,							\
+	    "INCOMPLETE AT: %s(%d)\n",					\
+	    (const char *)__func__, __LINE__);				\
 	abort();							\
 	} while (0)
 #endif
@@ -616,10 +625,10 @@ do {								\
 		    __func__, __FILE__, __LINE__, (r));		\
 	}							\
 } while (0)
-#define LOCK(foo) 						\
-do { 								\
+#define LOCK(foo)						\
+do {								\
 	if (!(params->diag_bitmap & 0x18)) {			\
-		AZ(pthread_mutex_lock(foo)); 			\
+		AZ(pthread_mutex_lock(foo));			\
 	} else {						\
 		int ixjd = pthread_mutex_trylock(foo);		\
 		assert(ixjd == 0 || ixjd == EBUSY);		\
@@ -627,11 +636,11 @@ do { 								\
 			VSL(SLT_Debug, 0,			\
 			    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
 			    __func__, __FILE__, __LINE__);	\
-			AZ(pthread_mutex_lock(foo)); 		\
+			AZ(pthread_mutex_lock(foo));		\
 		} else if (params->diag_bitmap & 0x8) {		\
 			VSL(SLT_Debug, 0,			\
 			    "MTX_LOCK(%s,%s,%d," #foo ")",	\
-			    __func__, __FILE__, __LINE__); 	\
+			    __func__, __FILE__, __LINE__);	\
 		}						\
 	}							\
 } while (0)

@@ -41,11 +41,13 @@ void base64_init(void);
 int base64_decode(char *d, unsigned dlen, const char *s);
 
 /* shmlog.c */
-typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr);
+typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd,
+    unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
 #define VSL_ARGS	"bCcdI:i:k:r:s:X:x:"
-#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep] [-r file] [-s skip] [-X regexp] [-x tag]"
+#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep]" \
+			" [-r file] [-s skip] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;
 struct VSL_data;
 struct VSL_data *VSL_New(void);
@@ -60,6 +62,6 @@ const char *VSL_Name(void);
 extern const char *VSL_tags[256];
 
 /* instance.c */
-int		 varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir, size_t dirlen);
-
+int varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir,
+    size_t dirlen);
 #endif

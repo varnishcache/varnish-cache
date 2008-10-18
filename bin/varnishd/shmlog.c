@@ -86,7 +86,7 @@ vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 	p[__SHMLOG_ID_HIGH] = (id >> 8) & 0xff;
 	p[__SHMLOG_ID_LOW] = id & 0xff;
 	p[SHMLOG_DATA + len] = '\0';
-	p[SHMLOG_NEXTTAG + len] = SLT_ENDMARKER;	
+	p[SHMLOG_NEXTTAG + len] = SLT_ENDMARKER;
 	/* XXX: Write barrier here */
 	p[SHMLOG_TAG] = tag;
 }
@@ -159,7 +159,7 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 		p = logstart + loghead->ptr;
 		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
 		if (n > 255)
-			n = 255; 	/* we truncate long fields */
+			n = 255;	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
 		loghead->ptr += SHMLOG_NEXTTAG + n;
 		assert(loghead->ptr < loghead->size);
@@ -254,7 +254,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		p = w->wlp;
 		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
 		if (n > 255)
-			n = 255; 	/* we truncate long fields */
+			n = 255;	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
 		w->wlp += SHMLOG_NEXTTAG + n;
 		assert(w->wlp < w->wle);

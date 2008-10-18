@@ -185,7 +185,7 @@ smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
 	i = 0;
 	while(1) {
 		o = l;
-		if (o == l && o > 0) 
+		if (o == l && o > 0)
 			break;
 		l >>= 1;
 		i++;
@@ -303,7 +303,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 
 	if (S_ISREG(st.st_mode)) {
 		sc->fd = open(fn, O_RDWR);
-		if (sc->fd < 0) 
+		if (sc->fd < 0)
 			ARGV_ERR("(-sfile) \"%s\" could not open (%s)\n",
 			    fn, strerror(errno));
 		AZ(fstat(sc->fd, &st));

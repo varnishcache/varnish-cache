@@ -362,7 +362,8 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+    unsigned spec, const char *ptr)
 {
 	FILE *fo = priv;
 	int type;

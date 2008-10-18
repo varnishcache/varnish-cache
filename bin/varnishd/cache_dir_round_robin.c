@@ -111,7 +111,7 @@ vdi_round_robin_fini(struct director *d)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
-	
+
 	vh = vs->hosts;
 	for (i = 0; i < vs->nhosts; i++, vh++)
 		VBE_DropRef(vh->backend);
@@ -123,13 +123,14 @@ vdi_round_robin_fini(struct director *d)
 }
 
 void
-VRT_init_dir_round_robin(struct cli *cli, struct director **bp, const struct vrt_dir_round_robin *t)
+VRT_init_dir_round_robin(struct cli *cli, struct director **bp,
+    const struct vrt_dir_round_robin *t)
 {
 	struct vdi_round_robin *vs;
 	const struct vrt_dir_round_robin_entry *te;
 	struct vdi_round_robin_host *vh;
 	int i;
-	
+
 	(void)cli;
 
 	ALLOC_OBJ(vs, VDI_ROUND_ROBIN_MAGIC);

@@ -208,8 +208,8 @@ VCL_Poll(void)
 	struct vcls *vcl, *vcl2;
 
 	ASSERT_CLI();
-	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) 
-		if (vcl->conf->discard && vcl->conf->busy == 0) 
+	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2)
+		if (vcl->conf->discard && vcl->conf->busy == 0)
 			VCL_Nuke(vcl);
 }
 
@@ -323,7 +323,7 @@ VCL_##func##_method(struct sess *sp)					\
 									\
 	sp->handling = 0;						\
 	sp->cur_method = VCL_MET_ ## upper;				\
-	WSP(sp, SLT_VCL_call, "%s", #func); 				\
+	WSP(sp, SLT_VCL_call, "%s", #func);				\
 	sp->vcl->func##_func(sp);					\
 	WSP(sp, SLT_VCL_return, "%s", vcl_handlingname(sp->handling));	\
 	sp->cur_method = 0;						\
@@ -342,7 +342,7 @@ static struct cli_proto vcl_cmds[] = {
 	{ CLI_VCL_LIST,         ccf_config_list },
 	{ CLI_VCL_DISCARD,      ccf_config_discard },
 	{ CLI_VCL_USE,          ccf_config_use },
-	{ NULL }        
+	{ NULL }
 };
 
 void

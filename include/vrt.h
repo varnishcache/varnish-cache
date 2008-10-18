@@ -70,7 +70,7 @@ struct vrt_backend {
 
 	double				connect_timeout;
 	unsigned			max_connections;
-	struct vrt_backend_probe 	probe;
+	struct vrt_backend_probe	probe;
 };
 
 /*
@@ -92,9 +92,9 @@ struct vrt_dir_random_entry {
 };
 
 struct vrt_dir_random {
-	const char 				*name;
+	const char				*name;
 	unsigned				retries;
-	unsigned 				nmember;
+	unsigned				nmember;
 	const struct vrt_dir_random_entry	*members;
 };
 
@@ -108,7 +108,7 @@ struct vrt_dir_round_robin_entry {
 
 struct vrt_dir_round_robin {
 	const char				*name;
-	unsigned 				nmember;
+	unsigned				nmember;
 	const struct vrt_dir_round_robin_entry	*members;
 };
 
@@ -137,7 +137,8 @@ void VRT_re_init(void **, const char *, int sub);
 void VRT_re_fini(void *);
 int VRT_re_match(const char *, void *re);
 int VRT_re_test(struct vsb *, const char *, int sub);
-const char *VRT_regsub(const struct sess *sp, int all, const char *, void *, const char *);
+const char *VRT_regsub(const struct sess *sp, int all, const char *,
+    void *, const char *);
 
 void VRT_panic(struct sess *sp,  const char *, ...);
 void VRT_purge(const char *, int hash);
@@ -149,7 +150,8 @@ int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ };
 char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
-void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *, const char *, ...);
+void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
+    const char *, ...);
 void VRT_handling(struct sess *sp, unsigned hand);
 
 /* Simple stuff */
@@ -163,9 +165,12 @@ void VRT_Rollback(struct sess *sp);
 void VRT_synth_page(struct sess *sp, unsigned flags, const char *, ...);
 
 /* Backend related */
-void VRT_init_dir_simple(struct cli *, struct director **, const struct vrt_dir_simple *);
-void VRT_init_dir_random(struct cli *, struct director **, const struct vrt_dir_random *);
-void VRT_init_dir_round_robin(struct cli *, struct director **, const struct vrt_dir_round_robin *);
+void VRT_init_dir_simple(struct cli *, struct director **,
+    const struct vrt_dir_simple *);
+void VRT_init_dir_random(struct cli *, struct director **,
+    const struct vrt_dir_random *);
+void VRT_init_dir_round_robin(struct cli *, struct director **,
+    const struct vrt_dir_round_robin *);
 void VRT_fini_dir(struct cli *, struct director *);
 
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);

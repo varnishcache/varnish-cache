@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * $Id$
  */
 
@@ -30,7 +30,9 @@ struct vsb;
 struct vtclog;
 struct cmds;
 
-#define CMD_ARGS char * const *av, void *priv, const struct cmds *cmd, struct vtclog *vl
+#define CMD_ARGS \
+    char * const *av, void *priv, const struct cmds *cmd, struct vtclog *vl
+
 typedef void cmd_f(CMD_ARGS);
 
 struct cmds {
@@ -38,7 +40,8 @@ struct cmds {
 	cmd_f		*cmd;
 };
 
-void parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl);
+void parse_string(char *buf, const struct cmds *cmd, void *priv,
+    struct vtclog *vl);
 
 cmd_f cmd_dump;
 cmd_f cmd_delay;
@@ -60,4 +63,5 @@ void cmd_server_genvcl(struct vsb *vsb);
 struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
-void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str);
+void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
+    const char *str);

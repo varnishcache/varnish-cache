@@ -227,9 +227,9 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	/*
 	 * Copy over the sockaddrs
 	 */
-	if (vb->ipv4_sockaddr != NULL) 
+	if (vb->ipv4_sockaddr != NULL)
 		copy_sockaddr(&b->ipv4, &b->ipv4len, vb->ipv4_sockaddr);
-	if (vb->ipv6_sockaddr != NULL) 
+	if (vb->ipv6_sockaddr != NULL)
 		copy_sockaddr(&b->ipv6, &b->ipv6len, vb->ipv6_sockaddr);
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);

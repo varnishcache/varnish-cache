@@ -700,6 +700,4 @@ VCC_InitCompile(const char *default_vcl)
 	vcc_default_vcl_b = default_vcl;
 	vcc_default_vcl_e = strchr(default_vcl, '\0');
 	assert(vcc_default_vcl_e != NULL);
-
-	vcl_init_tnames();
 }

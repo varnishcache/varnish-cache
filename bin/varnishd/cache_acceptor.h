@@ -35,7 +35,7 @@ typedef void acceptor_init_f(void);
 typedef void acceptor_pass_f(struct sess *);
 
 struct acceptor {
-	const char 		*name;
+	const char		*name;
 	acceptor_init_f		*init;
 	acceptor_pass_f		*pass;
 };

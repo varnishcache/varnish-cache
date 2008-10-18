@@ -50,7 +50,8 @@
  */
 
 void
-vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, const struct token *t_dir)
+vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
+    const struct token *t_dir)
 {
 	struct token *t_field, *t_be;
 	int nbh, nelem;
@@ -91,7 +92,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy, cons
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
 		Fc(tl, 0, "\t{");
-	
+
 		while (tl->t->tok != '}') {	/* Member fields */
 			vcc_IsField(tl, &t_field, mfs);
 			ERRCHK(tl);

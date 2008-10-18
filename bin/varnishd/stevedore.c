@@ -105,7 +105,7 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
-	else if (ac != 0) 
+	else if (ac != 0)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
 	VTAILQ_INSERT_TAIL(&stevedores, stv, list);

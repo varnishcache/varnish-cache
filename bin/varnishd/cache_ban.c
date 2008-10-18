@@ -217,10 +217,10 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	/*
- 	 * XXX: Strictly speaking, this loop traversal is not lock-safe
+	 * XXX: Strictly speaking, this loop traversal is not lock-safe
 	 * XXX: because we might inspect the last ban while it gets
 	 * XXX: destroyed.  To properly fix this, we would need to either
- 	 * XXX: hold the lock over the entire loop, or grab refcounts
+	 * XXX: hold the lock over the entire loop, or grab refcounts
 	 * XXX: under lock for each element of the list.
 	 * XXX: We do neither, and hope for the best.
 	 */

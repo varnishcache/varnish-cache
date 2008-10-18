@@ -283,7 +283,7 @@ VSS_open(const char *str)
 		if (retval >= 0)
 			break;
 	}
-	for (n = 0; n < nvaddr; n++) 
+	for (n = 0; n < nvaddr; n++)
 		free(vaddr[n]);
 	free(vaddr);
 	free(addr);

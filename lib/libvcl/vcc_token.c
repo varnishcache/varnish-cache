@@ -113,7 +113,7 @@ vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
 
 	vcc_icoord(tl->sb, t, &l);
 	vsb_printf(tl->sb, "\n");
-	
+
 	x = y = 0;
 	e = t->src->e;
 	for (p = l; p < e && *p != '\n'; p++) {
@@ -221,7 +221,7 @@ vcc_isCid(const struct token *t)
 
 	assert(t->tok == ID);
 	for (q = t->b; q < t->e; q++) {
-		if (!isalnum(*q) && *q != '_') 
+		if (!isalnum(*q) && *q != '_')
 			return (0);
 	}
 	return (1);
@@ -394,7 +394,7 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-	
+
 		/* Recognize long-strings */
 		if (*p == '{' && p[1] == '"') {
 			for (q = p + 2; q < sp->e; q++) {
@@ -406,7 +406,7 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 			if (q < sp->e) {
 				p = q + 2;
 				u = tl->t->e - tl->t->b;
-				u -= 4; 	/* {" ... "} */
+				u -= 4;		/* {" ... "} */
 				tl->t->dec = TlAlloc(tl, u + 1 );
 				AN(tl->t->dec);
 				memcpy(tl->t->dec, tl->t->b + 2, u);

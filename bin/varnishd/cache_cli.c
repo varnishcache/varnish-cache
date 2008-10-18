@@ -90,7 +90,7 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 }
 
 /*--------------------------------------------------------------------
- * Called when we have a full line, look through all three command 
+ * Called when we have a full line, look through all three command
  * lists to find it.
  */
 
@@ -182,19 +182,19 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 
 #define SZOF(foo)       cli_out(cli, \
     "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
-        SZOF(struct ws);
-        SZOF(struct http);
-        SZOF(struct http_conn);
-        SZOF(struct acct);
-        SZOF(struct worker);
-        SZOF(struct workreq);
-        SZOF(struct bereq);
-        SZOF(struct storage);
-        SZOF(struct object);
-        SZOF(struct objhead);
-        SZOF(struct sess);
-        SZOF(struct vbe_conn);
-        SZOF(struct varnish_stats);
+	SZOF(struct ws);
+	SZOF(struct http);
+	SZOF(struct http_conn);
+	SZOF(struct acct);
+	SZOF(struct worker);
+	SZOF(struct workreq);
+	SZOF(struct bereq);
+	SZOF(struct storage);
+	SZOF(struct object);
+	SZOF(struct objhead);
+	SZOF(struct sess);
+	SZOF(struct vbe_conn);
+	SZOF(struct varnish_stats);
 }
 
 /*--------------------------------------------------------------------*/

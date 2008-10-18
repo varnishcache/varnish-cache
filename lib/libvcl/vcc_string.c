@@ -88,7 +88,7 @@ vcc_regsub(struct tokenlist *tl, int all)
 
 	Expect(tl, ',');
 	vcc_NextToken(tl);
-	
+
 	Expect(tl, CSTR);
 	p = vcc_regexp(tl, 1);
 	vcc_NextToken(tl);
@@ -96,7 +96,7 @@ vcc_regsub(struct tokenlist *tl, int all)
 
 	Expect(tl, ',');
 	vcc_NextToken(tl);
-	
+
 	if (!vcc_StringVal(tl)) {
 		vcc_ExpectedStringval(tl);
 		return (0);
@@ -119,7 +119,7 @@ vcc_regsub(struct tokenlist *tl, int all)
  */
 
 int
-vcc_StringVal(struct tokenlist *tl) 
+vcc_StringVal(struct tokenlist *tl)
 {
 	struct var *vp;
 
@@ -154,9 +154,8 @@ vcc_StringVal(struct tokenlist *tl)
 			Fb(tl, 0, "VRT_backend_string(sp)");
 			break;
 		default:
-			vsb_printf(tl->sb,
-			    "String representation of '%s' not implemented yet.\n",
-				vp->name);
+			vsb_printf(tl->sb, "String representation of '%s'"
+			    " not implemented yet.\n", vp->name);
 			vcc_ErrWhere(tl, tl->t);
 			return (0);
 		}

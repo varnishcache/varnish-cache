@@ -251,7 +251,8 @@ thread_get(int fd, void *(*thread_main)(void *))
 
 		while (fd >= newnthreads)
 			newnthreads += newnthreads + 1;
-		newthreads = realloc(newthreads, newnthreads * sizeof *newthreads);
+		newthreads = realloc(newthreads,
+		    newnthreads * sizeof *newthreads);
 		XXXAN(newthreads != NULL);
 		memset(newthreads + nthreads, 0,
 		    (newnthreads - nthreads) * sizeof *newthreads);
@@ -557,12 +558,15 @@ replay_thread(void *arg)
 
 		if (!thr->method || !thr->url || !thr->proto) {
 			thr->bogus = 1;
-		} else if (strcmp(thr->method, "GET") != 0 && strcmp(thr->method, "HEAD") != 0) {
+		} else if (strcmp(thr->method, "GET") != 0 &&
+		    strcmp(thr->method, "HEAD") != 0) {
 			thr->bogus = 1;
 		} else if (strcmp(thr->proto, "HTTP/1.0") == 0) {
-			reopen = !(thr->conn && strcasecmp(thr->conn, "keep-alive") == 0);
+			reopen = !(thr->conn &&
+			    strcasecmp(thr->conn, "keep-alive") == 0);
 		} else if (strcmp(thr->proto, "HTTP/1.1") == 0) {
-			reopen = (thr->conn && strcasecmp(thr->conn, "close") == 0);
+			reopen = (thr->conn &&
+			    strcasecmp(thr->conn, "close") == 0);
 		} else {
 			thr->bogus = 1;
 		}
@@ -701,7 +705,8 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishreplay [-D] -a address:port -r logfile\n");
+	fprintf(stderr,
+	    "usage: varnishreplay [-D] -a address:port -r logfile\n");
 	exit(1);
 }
 
@@ -743,7 +748,11 @@ main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 	pthread_attr_init(&thread_attr);
-	/* XXX: seting the stack size manually reduces the memory usasage and increases speed */
+
+	/*
+	 * XXX: seting the stack size manually reduces the memory usage
+	 * XXX: (allowing more threads) and increases speed (?)
+	 */
 	pthread_attr_setstacksize(&thread_attr, 32768);
 
 	while (VSL_Dispatch(vd, gen_traffic, NULL) == 0)

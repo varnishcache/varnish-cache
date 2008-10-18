@@ -133,7 +133,7 @@ HTC_Complete(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	i = htc_header_complete(&htc->rxbuf);
-	if (i < 0) 
+	if (i < 0)
 		htc->rxbuf.e = htc->rxbuf.b;
 	if (i <= 0)
 		return (0);
@@ -195,7 +195,7 @@ HTC_Read(struct http_conn *htc, void *d, unsigned len)
 		p += l;
 		len -= l;
 		htc->pipeline.b += l;
-		if (htc->pipeline.b == htc->pipeline.e) 
+		if (htc->pipeline.b == htc->pipeline.e)
 			htc->pipeline.b = htc->pipeline.e = NULL;
 	}
 	if (len == 0)

@@ -28,9 +28,6 @@
  *
  * $Id$
  *
- * XXX: We need to pass sessions back into the event engine when they are
- * reused.  Not sure what the most efficient way is for that.  For now
- * write the session pointer to a pipe which the event engine monitors.
  */
 
 #include "config.h"
@@ -68,7 +65,7 @@ static struct acceptor *vca_acceptors[] = {
 
 static struct acceptor *vca_act;
 
-static pthread_t 	vca_thread_acct;
+static pthread_t	vca_thread_acct;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
 static struct linger	linger;
@@ -227,12 +224,15 @@ vca_acct(void *arg)
 					break;
 				case EMFILE:
 					VSL(SLT_Debug, ls->sock,
-					    "Too many open files when accept(2)ing. Sleeping.");
-					TIM_sleep(params->accept_fd_holdoff * 1000.0);
+					    "Too many open files "
+					    "when accept(2)ing. Sleeping.");
+					TIM_sleep(
+					    params->accept_fd_holdoff * 1000.0);
 					break;
 				default:
 					VSL(SLT_Debug, ls->sock,
-					    "Accept failed: %s", strerror(errno));
+					    "Accept failed: %s",
+					    strerror(errno));
 					/* XXX: stats ? */
 					break;
 				}
@@ -320,7 +320,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
-	
+
 	if (vca_act == NULL)
 		vca_act = vca_acceptors[0];
 
@@ -356,7 +356,7 @@ VCA_tweak_acceptor(struct cli *cli, const char *arg)
 			cli_out(cli, "default");
 		else
 			cli_out(cli, "%s", vca_act->name);
-		
+
 		cli_out(cli, " (");
 		for (i = 0; vca_acceptors[i] != NULL; i++)
 			cli_out(cli, "%s%s", i == 0 ? "" : ", ",

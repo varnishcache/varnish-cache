@@ -132,7 +132,8 @@ cli_param(struct cli *cli)
 {
 
 	cli_result(cli, CLIS_PARAM);
-	cli_out(cli, "Parameter error, use \"help [command]\" for more info.\n");
+	cli_out(cli,
+	    "Parameter error, use \"help [command]\" for more info.\n");
 }
 
 int

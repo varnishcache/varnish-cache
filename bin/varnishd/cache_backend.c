@@ -82,7 +82,8 @@ VBE_AddHostHeader(const struct sess *sp)
  */
 
 static int
-VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen_t salen, const struct backend *bp)
+VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
+    socklen_t salen, const struct backend *bp)
 {
 	int s, i, tmo;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
@@ -91,7 +92,7 @@ VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa, socklen
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	s = socket(pf, SOCK_STREAM, 0);
-	if (s < 0) 
+	if (s < 0)
 		return (s);
 
 	tmo = params->connect_timeout;
@@ -257,7 +258,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 
 	if (s < 0) {
 		LOCK(&bp->mtx);
-		bp->n_conn--;		
+		bp->n_conn--;
 		bp->refcount--;		/* Only keep ref on success */
 		UNLOCK(&bp->mtx);
 	}

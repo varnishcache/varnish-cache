@@ -90,14 +90,16 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 		exit(1);
 	}
 	if (!(p = strchr(buf, ' '))) {
-		fprintf(stderr, "An error occured in parsing of status code.\n");
+		fprintf(stderr,
+		    "An error occured in parsing of status code.\n");
 		exit(1);
 	}
 	*p = '\0';
 	status = strtol(buf, &p, 10);
 	pp = p+1;
 	if (!(p = strchr(pp, '\n'))) {
-		fprintf(stderr, "An error occured in parsing of number of bytes returned.\n");
+		fprintf(stderr, "An error occured "
+		    "in parsing of number of bytes returned.\n");
 		exit(1);
 	}
 	*p = '\0';

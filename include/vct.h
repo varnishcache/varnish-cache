@@ -31,10 +31,10 @@
 
 /* from libvarnish/vct.c */
 
-#define VCT_SP    	(1<<0)
-#define VCT_CRLF  	(1<<1)
-#define VCT_LWS   	(VCT_CRLF | VCT_SP)
-#define VCT_CTL   	(1<<2)
+#define VCT_SP		(1<<0)
+#define VCT_CRLF	(1<<1)
+#define VCT_LWS		(VCT_CRLF | VCT_SP)
+#define VCT_CTL		(1<<2)
 #define VCT_ALPHA	(1<<3)
 #define VCT_SEPARATOR	(1<<4)
 #define VCT_DIGIT	(1<<5)
@@ -45,8 +45,8 @@ extern unsigned char vct_typtab[256];
 static inline int
 vct_is(unsigned char x, unsigned char y)
 {
- 
-        return (vct_typtab[x] & (y));
+
+	return (vct_typtab[x] & (y));
 }
 
 #define vct_issp(x) vct_is(x, VCT_SP)
