@@ -33,7 +33,8 @@ struct sess;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
-typedef struct objhead *hash_lookup_f(const struct sess *sp, struct objhead *nobj);
+typedef struct objhead *
+    hash_lookup_f(const struct sess *sp, struct objhead *nobj);
 typedef int hash_deref_f(const struct objhead *obj);
 
 struct hash_slinger {

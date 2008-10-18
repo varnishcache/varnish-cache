@@ -225,11 +225,9 @@ binheap_delete(struct binheap *bh, unsigned idx)
 
 #ifdef TEST_DRIVER
 /* Test driver -------------------------------------------------------*/
-
 #include <stdio.h>
 
 #if 0
-
 static int
 cmp(void *priv, void *a, void *b)
 {
@@ -295,11 +293,9 @@ main(int argc, char **argv)
 			dump(bh, "Delete", u);
 	}
 	printf("Deletes done\n");
-
 	return (0);
 }
 #else
-
 struct foo {
 	unsigned	idx;
 	unsigned	key;
@@ -309,7 +305,6 @@ struct foo {
 #define N 131
 
 struct foo ff[N];
-
 
 static int
 cmp(void *priv, void *a, void *b)
@@ -359,12 +354,12 @@ main(int argc, char **argv)
 	struct binheap *bh;
 	unsigned u, v;
 
-#if 0
-	srandomdev();
-	u = random();
-	printf("Seed %u\n", u);
-	srandom(u);
-#endif
+	if (0) {
+		srandomdev();
+		u = random();
+		printf("Seed %u\n", u);
+		srandom(u);
+	}
 	bh = binheap_new(NULL, cmp, update);
 	for (u = 0; u < M; u++) {
 		v = random() % N;

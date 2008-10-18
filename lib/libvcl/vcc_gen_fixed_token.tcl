@@ -30,7 +30,7 @@
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
 
-# These are the metods which can be called in the VCL program. 
+# These are the metods which can be called in the VCL program.
 # Second element is list of valid return actions.
 #
 set methods {
@@ -66,7 +66,7 @@ set returns {
 # Language keywords
 #
 set keywords {
-	include 
+	include
 
 	if else elseif elsif
 }
@@ -104,7 +104,8 @@ set extras {ID VAR CNUM CSTR EOI CSRC}
 proc warns {fd} {
 
 	puts $fd "/*"
-	puts $fd { * $Id$}
+	puts $fd \
+	    { * $Id$}
 	puts $fd " *"
 	puts $fd " * NB:  This file is machine generated, DO NOT EDIT!"
 	puts $fd " *"
@@ -135,7 +136,7 @@ puts $fo {	unsigned        magic;
         unsigned        nref;
         unsigned        busy;
         unsigned        discard;
-        
+
 	unsigned	nsrc;
 	const char	**srcname;
 	const char	**srcbody;
@@ -160,12 +161,13 @@ warns $for
 puts $for "#ifdef VCL_RET_MAC"
 set i 0
 foreach k $returns {
+	set u [string toupper $k]
 	if {$k == "error"} {
 		puts $for "#ifdef VCL_RET_MAC_E"
-		puts $for "VCL_RET_MAC_E($k, [string toupper $k], (1 << $i), $i)"
+		puts $for "VCL_RET_MAC_E($k, $u, (1 << $i), $i)"
 		puts $for "#endif"
 	} else {
-		puts $for "VCL_RET_MAC($k, [string toupper $k], (1 << $i), $i)"
+		puts $for "VCL_RET_MAC($k, $u, (1 << $i), $i)"
 	}
 	incr i
 }
@@ -184,7 +186,7 @@ foreach m $methods {
 	puts -nonewline $for "VCL_MET_MAC([lindex $m 0]"
 	puts -nonewline $for ",[string toupper [lindex $m 0]]"
 	set l [lindex $m 1]
-	puts -nonewline $for ",(VCL_RET_[string toupper [lindex $l 0]]"
+	puts -nonewline $for ",(\n    VCL_RET_[string toupper [lindex $l 0]]"
 	foreach r [lrange $l 1 end] {
 		puts -nonewline $for "|VCL_RET_[string toupper $r]"
 	}
@@ -260,6 +262,9 @@ foreach t $fixed {
 set seq [lsort [array names xx]]
 
 puts $fo {
+#define M1()     do {*q = p + 1; return (p[0]); } while (0)
+#define M2(c, t) do {if (p[1] == (c)) { *q = p + 2; return (t); }} while (0)
+
 unsigned
 vcl_fixed_token(const char *p, const char **q)}
 puts $fo "{"
@@ -279,25 +284,33 @@ foreach ch "$seq" {
 	scan "$ch" "%c" cx
 	puts $fo "	case '$ch':"
 	set retval "0"
+	set m1 0
 	foreach tt $l {
 		set k [lindex $tt 0]
 		if {[string length $k] == 1} {
-			puts $fo "\t\t*q = p + 1;"
-			set retval {p[0]}
+			puts $fo "\t\tM1();"
+			set m1 1
 			continue;
 		}
+		if {[string length $k] == 2} {
+			puts -nonewline $fo "		M2("
+			puts -nonewline $fo "'[string index $k 1]'"
+			puts            $fo ", [lindex $tt 1]);"
+			continue;
+		} 
 		puts -nonewline $fo "		if ("
 		for {set i 1} {$i < [string length $k]} {incr i} {
 			if {$i > 1} {
-				puts -nonewline $fo " && "
-				if {![expr $i % 3]} {
-					puts -nonewline $fo "\n\t\t    "
+				puts -nonewline $fo " &&"
+				if {[expr $i % 3] == 1} {
+					puts -nonewline $fo "\n\t\t   "
 				}
+				puts -nonewline $fo " "
 			}
 			puts -nonewline $fo "p\[$i\] == '[string index $k $i]'"
 		}
 		if {[lindex $tt 2]} {
-			if {![expr $i % 3]} {
+			if {[expr $i % 3] == 1} {
 				puts -nonewline $fo "\n\t\t    "
 			}
 			puts -nonewline $fo " && !isvar(p\[$i\])"
@@ -307,8 +320,10 @@ foreach ch "$seq" {
 		puts $fo "\t\t\treturn ([lindex $tt 1]);"
 		puts $fo "\t\t}"
 	}
-	puts $fo "\t\treturn ($retval);"
-} 
+	if {$m1 == 0} {
+		puts $fo "\t\treturn ($retval);"
+	}
+}
 
 puts $fo "	default:"
 puts $fo "		return (0);"
@@ -316,17 +331,14 @@ puts $fo "	}"
 puts $fo "}"
 
 puts $fo ""
-puts $fo "const char *vcl_tnames\[256\];\n"
-puts $fo "void"
-puts $fo "vcl_init_tnames(void)"
-puts $fo "{"
+puts $fo "const char *vcl_tnames\[256\] = {"
 foreach i $token2 {
-	puts $fo "\tvcl_tnames\[[lindex $i 0]\] = \"[lindex $i 0]\";"
+	puts $fo "\t\[[lindex $i 0]\] = \"[lindex $i 0]\","
 }
 foreach i $tokens {
-	puts $fo "\tvcl_tnames\[[lindex $i 0]\] = \"[lindex $i 1]\";"
+	puts $fo "\t\[[lindex $i 0]\] = \"[lindex $i 1]\","
 }
-puts $fo "}"
+puts $fo "};"
 
 #----------------------------------------------------------------------
 # Create the C-code which emits the boilerplate definitions for the
@@ -335,10 +347,42 @@ puts $fo "}"
 proc copy_include {n} {
 	global fo
 
+	puts $fo "\n\t/* $n */\n"
 	set fi [open $n]
+	set n 0
 	while {[gets $fi a] >= 0} {
-		regsub -all {\\} $a {\\\\} a
-		puts $fo "\tvsb_cat(sb, \"$a\\n\");"
+		for {set b 0} {$b < [string length $a]} {incr b} {
+			if {$n == 0} {
+				puts -nonewline $fo "\tvsb_cat(sb, \""
+			}
+			set c [string index $a $b]
+			if {"$c" == "\\"} {
+				puts -nonewline $fo "\\\\"
+				incr n
+			} elseif {"$c" == "\t"} {
+				puts -nonewline $fo "\\t"
+				incr n
+			} else {
+				puts -nonewline $fo "$c"
+			}
+			incr n
+			if {$n > 53} {
+				puts $fo "\");"
+				set n 0
+			}
+		}
+		if {$n == 0} {
+			puts -nonewline $fo "\tvsb_cat(sb, \""
+		}
+		puts -nonewline $fo "\\n"
+		incr n 2
+		if {$n > 53} {
+			puts $fo "\");"
+			set n 0
+		}
+	}
+	if {$n > 0} {
+		puts $fo "\");"
 	}
 	close $fi
 }
@@ -349,7 +393,8 @@ puts $fo "vcl_output_lang_h(struct vsb *sb)"
 puts $fo "{"
 set i 0
 foreach k $returns {
-	puts $fo "\tvsb_cat(sb, \"#define VCL_RET_[string toupper $k]  (1 << $i)\\n\");"
+	set u [string toupper $k]
+	puts $fo "\tvsb_cat(sb, \"#define VCL_RET_$u  (1 << $i)\\n\");"
 	incr i
 }
 

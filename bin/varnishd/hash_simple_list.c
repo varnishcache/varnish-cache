@@ -90,25 +90,23 @@ hsl_lookup(const struct sess *sp, struct objhead *nobj)
 		UNLOCK(&hsl_mutex);
 		return (nobj);
 	}
-	if (nobj == NULL) {
-		UNLOCK(&hsl_mutex);
-		return (NULL);
+	if (nobj != NULL) {
+		he2 = calloc(sizeof *he2, 1);
+		XXXAN(he2);
+		he2->obj = nobj;
+		he2->refcnt = 1;
+
+		nobj->hashpriv = he2;
+		nobj->hash = malloc(sp->lhashptr);
+		XXXAN(nobj->hash);
+		nobj->hashlen = sp->lhashptr;
+		HSH_Copy(sp, nobj);
+
+		if (he != NULL)
+			VTAILQ_INSERT_BEFORE(he, he2, list);
+		else
+			VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	}
-	he2 = calloc(sizeof *he2, 1);
-	XXXAN(he2);
-	he2->obj = nobj;
-	he2->refcnt = 1;
-
-	nobj->hashpriv = he2;
-	nobj->hash = malloc(sp->lhashptr);
-	XXXAN(nobj->hash);
-	nobj->hashlen = sp->lhashptr;
-	HSH_Copy(sp, nobj);
-
-	if (he != NULL)
-		VTAILQ_INSERT_BEFORE(he, he2, list);
-	else
-		VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	UNLOCK(&hsl_mutex);
 	return (nobj);
 }
@@ -143,5 +141,5 @@ struct hash_slinger hsl_slinger = {
 	.name	=	"simple",
 	.start	=	hsl_start,
 	.lookup =	hsl_lookup,
-	.deref 	=	hsl_deref,
+	.deref	=	hsl_deref,
 };

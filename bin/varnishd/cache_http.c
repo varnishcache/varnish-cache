@@ -55,9 +55,9 @@
 #undef HTTPH
 
 /*lint -save -e773 not () */
-#define LOGMTX2(ax, bx, cx) 	[bx] = SLT_##ax##cx
+#define LOGMTX2(ax, bx, cx)	[bx] = SLT_##ax##cx
 
-#define LOGMTX1(ax) { 		\
+#define LOGMTX1(ax) {					\
 	LOGMTX2(ax, HTTP_HDR_REQ,	Request),	\
 	LOGMTX2(ax, HTTP_HDR_RESPONSE,	Response),	\
 	LOGMTX2(ax, HTTP_HDR_STATUS,	Status),	\
@@ -229,12 +229,13 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 }
 
 /*--------------------------------------------------------------------
- * Find a given headerfield, and if present and wanted, the beginning 
+ * Find a given headerfield, and if present and wanted, the beginning
  * of its value.
  */
 
 int
-http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char **ptr)
+http_GetHdrField(const struct http *hp, const char *hdr,
+    const char *field, char **ptr)
 {
 	char *h, *e;
 	unsigned fl;
@@ -271,7 +272,7 @@ http_GetHdrField(const struct http *hp, const char *hdr, const char *field, char
 			return (1);
 		}
 		/* Skip token */
-		while (*h && !vct_issepctl(*h)) 
+		while (*h && !vct_issepctl(*h))
 			h++;
 	}
 	return (0);
@@ -410,7 +411,8 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
  */
 
 static int
-http_splitline(struct worker *w, int fd, struct http *hp, const struct http_conn *htc, int h1, int h2, int h3)
+http_splitline(struct worker *w, int fd, struct http *hp,
+    const struct http_conn *htc, int h1, int h2, int h3)
 {
 	char *p;
 
@@ -513,7 +515,8 @@ http_DissectRequest(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http *hp)
+http_DissectResponse(struct worker *w, const struct http_conn *htc,
+    struct http *hp)
 {
 	int i;
 
@@ -530,13 +533,13 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc, struct http 
 		if (hp->status == 0)
 			hp->status = i;
 	} else {
-		hp->status = 
+		hp->status =
 		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
 	}
 	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
 	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
 		/* Backend didn't send a response string, use the standard */
-		hp->hd[HTTP_HDR_RESPONSE].b = 
+		hp->hd[HTTP_HDR_RESPONSE].b =
 		    TRUST_ME(http_StatusMessage(hp->status));
 		hp->hd[HTTP_HDR_RESPONSE].e =
 		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
@@ -606,7 +609,8 @@ http_CopyResp(struct http *to, const struct http *fm)
 }
 
 void
-http_SetResp(struct http *to, const char *proto, const char *status, const char *response)
+http_SetResp(struct http *to, const char *proto, const char *status,
+    const char *response)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
@@ -616,7 +620,8 @@ http_SetResp(struct http *to, const char *proto, const char *status, const char 
 }
 
 static void
-http_copyheader(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned n)
+http_copyheader(struct worker *w, int fd, struct http *to,
+    const struct http *fm, unsigned n)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -636,7 +641,8 @@ http_copyheader(struct worker *w, int fd, struct http *to, const struct http *fm
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterFields(struct worker *w, int fd, struct http *to, const struct http *fm, unsigned how)
+http_FilterFields(struct worker *w, int fd, struct http *to,
+    const struct http *fm, unsigned how)
 {
 	unsigned u;
 
@@ -664,10 +670,10 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	struct bereq *bereq;
 	struct http *hp;
 
-        bereq = VBE_new_bereq();
-        AN(bereq);
-        hp = bereq->http;
-        hp->logtag = HTTP_Tx;
+	bereq = VBE_new_bereq();
+	AN(bereq);
+	hp = bereq->http;
+	hp->logtag = HTTP_Tx;
 
 	http_copyreq(hp, sp->http, how);
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
@@ -741,7 +747,8 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct worker *w, int fd, struct http *to, int field, const char *string)
+http_PutField(struct worker *w, int fd, struct http *to, int field,
+    const char *string)
 {
 	char *p;
 	unsigned l;
@@ -763,7 +770,8 @@ http_PutField(struct worker *w, int fd, struct http *to, int field, const char *
 }
 
 void
-http_PutProtocol(struct worker *w, int fd, struct http *to, const char *protocol)
+http_PutProtocol(struct worker *w, int fd, struct http *to,
+    const char *protocol)
 {
 
 	http_PutField(w, fd, to, HTTP_HDR_PROTO, protocol);
@@ -781,14 +789,16 @@ http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 }
 
 void
-http_PutResponse(struct worker *w, int fd, struct http *to, const char *response)
+http_PutResponse(struct worker *w, int fd, struct http *to,
+    const char *response)
 {
 
 	http_PutField(w, fd, to, HTTP_HDR_RESPONSE, response);
 }
 
 void
-http_PrintfHeader(struct worker *w, int fd, struct http *to, const char *fmt, ...)
+http_PrintfHeader(struct worker *w, int fd, struct http *to,
+    const char *fmt, ...)
 {
 	va_list ap;
 	unsigned l, n;
@@ -818,7 +828,7 @@ http_Unset(struct http *hp, const char *hdr)
 	unsigned u, v;
 
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (http_IsHdr(&hp->hd[u], hdr)) 
+		if (http_IsHdr(&hp->hd[u], hdr))
 			continue;
 		if (v != u) {
 			memcpy(&hp->hd[v], &hp->hd[u], sizeof hp->hd[v]);

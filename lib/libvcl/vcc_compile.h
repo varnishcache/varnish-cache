@@ -158,10 +158,12 @@ void vcc_ParseAction(struct tokenlist *tl);
 
 /* vcc_backend.c */
 struct fld_spec;
-typedef void parsedirector_f(struct tokenlist *tl, const struct token *t_policy, const struct token *t_dir);
+typedef void parsedirector_f(struct tokenlist *tl,
+    const struct token *t_policy, const struct token *t_dir);
 
 void vcc_ParseDirector(struct tokenlist *tl);
-void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr, const struct token *name, const struct token *qual, int serial);
+void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr,
+    const struct token *name, const struct token *qual, int serial);
 struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
 void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
@@ -203,7 +205,8 @@ int vcc_StringVal(struct tokenlist *tl);
 void vcc_ExpectedStringval(struct tokenlist *tl);
 
 /* vcc_token.c */
-void vcc_Coord(const struct tokenlist *tl, struct vsb *vsb, const struct token *t);
+void vcc_Coord(const struct tokenlist *tl, struct vsb *vsb,
+    const struct token *t);
 void vcc_ErrToken(const struct tokenlist *tl, const struct token *t);
 void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
 void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
@@ -212,11 +215,14 @@ int vcc_IdIs(const struct token *t, const char *p);
 void vcc_ExpectCid(struct tokenlist *tl);
 void vcc_Lexer(struct tokenlist *tl, struct source *sp);
 void vcc_NextToken(struct tokenlist *tl);
-void vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line);
-void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e);
+void vcc__ErrInternal(struct tokenlist *tl, const char *func,
+    unsigned line);
+void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b,
+    const char *e);
 
 /* vcc_var.c */
-struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl);
+struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t,
+    struct var *vl);
 
 /* vcc_xref.c */
 void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);

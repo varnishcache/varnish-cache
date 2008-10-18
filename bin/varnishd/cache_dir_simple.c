@@ -85,7 +85,7 @@ vdi_simple_fini(struct director *d)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	
+
 	VBE_DropRef(vs->backend);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
@@ -93,10 +93,11 @@ vdi_simple_fini(struct director *d)
 }
 
 void
-VRT_init_dir_simple(struct cli *cli, struct director **bp, const struct vrt_dir_simple *t)
+VRT_init_dir_simple(struct cli *cli, struct director **bp,
+    const struct vrt_dir_simple *t)
 {
 	struct vdi_simple *vs;
-	
+
 	(void)cli;
 
 	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);

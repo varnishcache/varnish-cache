@@ -57,7 +57,7 @@
 	"url.query",							\
 	"url.query <url>",						\
 	"\tQuery the cache status of a specific URL.\n"			\
-	    "\tReturns the TTL, size and checksum of the object.", 	\
+	    "\tReturns the TTL, size and checksum of the object.",	\
 	1, 1
 
 #define CLI_PURGE_URL							\

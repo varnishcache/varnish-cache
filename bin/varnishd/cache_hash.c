@@ -119,7 +119,7 @@ HSH_Prealloc(struct sess *sp)
 		VTAILQ_INIT(&w->nobj->store);
 		VTAILQ_INIT(&w->nobj->esibits);
 		VSL_stats->n_object++;
-		
+
 	} else
 		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
@@ -223,7 +223,7 @@ HSH_Lookup(struct sess *sp)
 		}
 		if (!o->cacheable)
 			continue;
-		if (o->ttl == 0) 
+		if (o->ttl == 0)
 			continue;
 		if (BAN_CheckObject(o, h->hd[HTTP_HDR_URL].b, oh->hash)) {
 			o->ttl = 0;
@@ -327,9 +327,9 @@ HSH_Unbusy(const struct sess *sp)
 	if (o->ws_o->overflow)
 		VSL_stats->n_objoverflow++;
 	if (params->diag_bitmap & 0x40)
-		WSP(sp, SLT_Debug, 
+		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
-	
+
 	oh = o->objhead;
 	if (oh != NULL) {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);

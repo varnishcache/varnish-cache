@@ -37,7 +37,7 @@
  * A VCL backend therefore has an implicit director of type "simple" created
  * by the compiler, but not visible in VCL.
  *
- * A VCL backend is a "named host", these can be referenced by name form
+ * A VCL backend is a "named host", these can be referenced by name from
  * VCL directors, but not from VCL backends.
  *
  * The reason for this quasimadness is that we want to collect statistics
@@ -90,13 +90,14 @@ CheckHostPort(const char *host, const char *port)
 }
 
 /*--------------------------------------------------------------------
- * Struct sockaddr is not really designed to be a compile time 
+ * Struct sockaddr is not really designed to be a compile time
  * initialized data structure, so we encode it as a byte-string
  * and put it in an official sockaddr when we load the VCL.
  */
 
 static void
-Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port)
+Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
+    const char *port)
 {
 	struct addrinfo *res, *res0, hint;
 	int n4, n6, len, error, retval;
@@ -118,7 +119,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port
 		if (res->ai_family == PF_INET) {
 			if (n4++ == 0)
 				emit = "ipv4_sockaddr";
-			else 
+			else
 				multiple = "IPv4";
 		} else if (res->ai_family == PF_INET6) {
 			if (n6++ == 0)
@@ -155,12 +156,12 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port
 		Fh(tl, 0, "    %3u, /* Length */\n",  res->ai_addrlen);
 		u = (void*)res->ai_addr;
 		for (len = 0; len < res->ai_addrlen; len++) {
-			if ((len % 8) == 0) 
+			if ((len % 8) == 0)
 				Fh(tl, 0, "   ");
 			Fh(tl, 0, " %3u", u[len]);
 			if (len + 1 < res->ai_addrlen)
 				Fh(tl, 0, ",");
-			if ((len % 8) == 7) 
+			if ((len % 8) == 7)
 				Fh(tl, 0, "\n");
 		}
 		Fh(tl, 0, "\n};\n");
@@ -188,7 +189,9 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port
  */
 
 static void
-vcc_EmitBeIdent(struct vsb *v, const struct token *name, const struct token *qual, int serial, const struct token *first, const struct token *last)
+vcc_EmitBeIdent(struct vsb *v, const struct token *name,
+    const struct token *qual, int serial, const struct token *first,
+    const struct token *last)
 {
 
 	AN(name);
@@ -276,7 +279,7 @@ vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 	vcc_NextToken(tl);
 
 	for (; fs->name != NULL; fs++) {
-		if (!vcc_IdIs(t_field, fs->name + 1)) 
+		if (!vcc_IdIs(t_field, fs->name + 1))
 			continue;
 		if (fs->found == NULL) {
 			fs->found = t_field;
@@ -315,7 +318,8 @@ vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
  */
 
 static void
-vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did, struct token *t_field)
+vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did,
+    struct token *t_field)
 {
 	/* .url and .request are mutually exclusive */
 
@@ -446,25 +450,14 @@ vcc_ParseProbe(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------
- * Parse and emit a backend host definition 
- *
- * The syntax is the following:
- *
- * backend_host_def:
- *	'{' be_elements '}'
- *
- * be_elements:
- *	be_element
- *	be_element be_elements
- *
- * be_element:
- *	'.' name '=' value ';'
+ * Parse and emit a backend host definition
  *
  * The struct vrt_backend is emitted to Fh().
  */
 
 static void
-vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const struct token *qual, int serial)
+vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
+    const struct token *qual, int serial)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -627,7 +620,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name, const
  */
 
 void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, const struct token *qual, int serial)
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name,
+    const struct token *qual, int serial)
 {
 	struct host *h;
 	struct token *t;
@@ -674,7 +668,8 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name, c
  */
 
 static void
-vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first, struct token *t_dir)
+vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first,
+    struct token *t_dir)
 {
 	struct host *h;
 
@@ -707,8 +702,8 @@ static const struct dirlist {
 	const char	*name;
 	parsedirector_f	*func;
 } dirlist[] = {
-	{ "random", 		vcc_ParseRandomDirector },
-	{ "round-robin", 	vcc_ParseRoundRobinDirector },
+	{ "random",		vcc_ParseRandomDirector },
+	{ "round-robin",	vcc_ParseRoundRobinDirector },
 	{ NULL,		NULL }
 };
 
@@ -738,7 +733,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 		t_policy = tl->t;
 		vcc_NextToken(tl);
 
-		for (dl = dirlist; dl->name != NULL; dl++) 
+		for (dl = dirlist; dl->name != NULL; dl++)
 			if (vcc_IdIs(t_policy, dl->name))
 				break;
 		if (dl->name == NULL) {

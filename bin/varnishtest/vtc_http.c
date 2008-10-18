@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -75,8 +75,8 @@ synth_body(const char *len)
 {
 	int i, j, k, l;
 	char *b;
-	
-	
+
+
 	AN(len);
 	i = strtoul(len, NULL, 0);
 	assert(i > 0);
@@ -347,7 +347,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 {
 	char *p, *q;
 	int i, l, ll;
-	
+
 
 	ll = 0;
 	p = http_find_header(hh, "content-length");
@@ -397,7 +397,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			ll += i;
 		} while (i > 0);
 		vtc_dump(hp->vl, 4, "rxeof", hp->body);
-	} 
+	}
 	sprintf(hp->bodylen, "%d", ll);
 }
 
@@ -419,7 +419,7 @@ http_rxhdr(struct http *hp)
 		p = hp->rxbuf + hp->prxbuf - 1;
 		i = 0;
 		for (i = 0; p > hp->rxbuf; p--) {
-			if (*p != '\n') 
+			if (*p != '\n')
 				break;
 			if (p - 1 > hp->rxbuf && p[-1] == '\r')
 				p--;
@@ -456,7 +456,7 @@ cmd_http_rxresp(CMD_ARGS)
 	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
-	if (!strcmp(hp->resp[1], "200")) 
+	if (!strcmp(hp->resp[1], "200"))
 		http_swallow_body(hp, hp->resp, 1);
 	else
 		http_swallow_body(hp, hp->resp, 0);
@@ -506,7 +506,7 @@ cmd_http_txresp(CMD_ARGS)
 		if (!strcmp(*av, "-hdr")) {
 			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
-		} else 
+		} else
 			break;
 	}
 	for(; *av != NULL; av++) {
@@ -525,7 +525,7 @@ cmd_http_txresp(CMD_ARGS)
 		fprintf(stderr, "Unknown http txresp spec: %s\n", *av);
 		exit (1);
 	}
-	if (body != NULL) 
+	if (body != NULL)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
@@ -621,7 +621,7 @@ cmd_http_txreq(CMD_ARGS)
 		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
 		exit (1);
 	}
-	if (body != NULL) 
+	if (body != NULL)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {

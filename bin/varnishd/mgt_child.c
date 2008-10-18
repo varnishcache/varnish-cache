@@ -194,7 +194,7 @@ open_sockets(void)
 			continue;
 		}
 		ls->sock = VSS_bind(ls->addr);
-		if (ls->sock < 0) 
+		if (ls->sock < 0)
 			continue;
 
 		mgt_child_inherit(ls->sock, "sock");
@@ -269,7 +269,7 @@ start_child(struct cli *cli)
 	child_cli_in = cp[0];
 
 	/*
-	 * Open pipe for child stdout/err 
+	 * Open pipe for child stdout/err
 	 * NB: not inherited, because we dup2() it to stdout/stderr in child
 	 */
 	AZ(pipe(cp));
@@ -548,7 +548,7 @@ mgt_run(int dflag, const char *T_arg)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	if (!dflag && !mgt_has_vcl()) 
+	if (!dflag && !mgt_has_vcl())
 		REPORT0(LOG_ERR, "No VCL loaded yet");
 	else if (!dflag) {
 		start_child(NULL);

@@ -60,8 +60,10 @@ int TCP_filter_http(int sock);
 void TCP_blocking(int sock);
 void TCP_nonblocking(int sock);
 #ifdef SOL_SOCKET
-void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec);
+void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
+    unsigned alen, char *pbuf, unsigned plen);
+int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen,
+    int msec);
 void TCP_close(int *s);
 #endif
 
@@ -88,7 +90,8 @@ int vtmpfile(char *);
  *	handle gracefully, such as malloc failure.
  */
 
-typedef void lbv_assert_f(const char *, const char *, int, const char *, int, int);
+typedef void lbv_assert_f(const char *, const char *, int, const char *,
+    int, int);
 
 extern lbv_assert_f *lbv_assert;
 
@@ -96,14 +99,14 @@ extern lbv_assert_f *lbv_assert;
 #define assert(e)	((void)(e))
 #else /* WITH_ASSERTS */
 #define assert(e)							\
-do { 									\
+do {									\
 	if (!(e))							\
 		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 0);	\
 } while (0)
 #endif
 
 #define xxxassert(e)							\
-do { 									\
+do {									\
 	if (!(e))							\
 		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 1); \
 } while (0)
@@ -114,7 +117,7 @@ do { 									\
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
 #define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
 #define diagnostic(foo)	assert(foo)
-#define WRONG(expl) 							\
+#define WRONG(expl)							\
 do {									\
 	lbv_assert(__func__, __FILE__, __LINE__, expl, errno, 3);	\
 } while (0)

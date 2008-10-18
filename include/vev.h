@@ -40,7 +40,7 @@ typedef int vev_cb_f(const struct vev *, int what);
 
 struct vev {
 	unsigned		magic;
-#define VEV_MAGIC		0x46bbd419 
+#define VEV_MAGIC		0x46bbd419
 
 	/* pub */
 	const char		*name;

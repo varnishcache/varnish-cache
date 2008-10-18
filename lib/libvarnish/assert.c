@@ -41,7 +41,8 @@
 #include "libvarnish.h"
 
 static void
-lbv_assert_default(const char *func, const char *file, int line, const char *cond, int err, int xxx)
+lbv_assert_default(const char *func, const char *file, int line,
+    const char *cond, int err, int xxx)
 {
 
 	if (xxx) {

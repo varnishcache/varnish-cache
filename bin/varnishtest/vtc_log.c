@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -56,7 +56,7 @@ vtc_logopen(const char *id)
 	struct vtclog *vl;
 
 	ALLOC_OBJ(vl, VTCLOG_MAGIC);
-	AN(vl);	
+	AN(vl);
 	vl->id = id;
 	vl->vsb = vsb_newauto();
 	return (vl);
@@ -125,7 +125,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	vsb_clear(vl->vsb);
 	if (pfx == NULL)
 		pfx = "";
-	if (str == NULL) 
+	if (str == NULL)
 		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
 		    lead[lvl], vl->id, pfx);
 	else

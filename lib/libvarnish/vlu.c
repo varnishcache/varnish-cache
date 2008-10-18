@@ -63,7 +63,7 @@ VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
 			l = NULL;
-		} 
+		}
 	}
 	return (l);
 }

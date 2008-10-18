@@ -52,7 +52,7 @@
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
 	unsigned char		data[VRT_ACL_MAXADDR + 1];
-	unsigned 		mask;
+	unsigned		mask;
 	unsigned		not;
 	unsigned		para;
 	struct token		*t_addr;
@@ -74,9 +74,9 @@ vcl_acl_cmp(struct tokenlist *tl, struct acl_e *ae1, struct acl_e *ae2)
 	if (ae2->mask < m)
 		m = ae2->mask;
 	for (; m >= 8; m -= 8) {
-		if (*p1 < *p2)	
+		if (*p1 < *p2)
 			return (-1);
-		if (*p1 > *p2)	
+		if (*p1 > *p2)
 			return (1);
 		p1++;
 		p2++;
@@ -135,7 +135,8 @@ vcl_acl_add_entry(struct tokenlist *tl, struct acl_e *ae)
 }
 
 static void
-vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l, const unsigned char *u, int fam)
+vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
+    const unsigned char *u, int fam)
 {
 	struct acl_e *ae2;
 
@@ -186,7 +187,7 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 			Fh(tl, 1, "/* Ignored ACL entry: %s%s",
 			    ae->para ? "\"(\" " : "", ae->not ? "\"!\" " : "");
 			EncToken(tl->fh, ae->t_addr);
-			if (ae->t_mask) 
+			if (ae->t_mask)
 				Fh(tl, 0, "/%u", ae->mask);
 			Fh(tl, 0, "%s\n", ae->para ? " \")\"" : "");
 			Fh(tl, 1, " * getaddrinfo:  %s */\n",
@@ -322,7 +323,8 @@ vcc_acl_entry(struct tokenlist *tl)
 }
 
 static void
-vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char *pfx)
+vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
+    const char *pfx)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -346,7 +348,7 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char
 		Fh(tl, 0, "\tunsigned int fam;\n");
 	else
 		assert(0 == __LINE__);
-		
+
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\ta = p;\n");
 	Fh(tl, 0, "\tVRT_memmove(&fam, a + %d, sizeof fam);\n",
@@ -421,7 +423,7 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent, const char
 		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
 	}
 
-	for (; 0 <= depth; depth--) 
+	for (; 0 <= depth; depth--)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
 	if (!silent)
 		Fh(tl, 0, "\tVRT_acl_log(sp, \"NO_MATCH %s\");\n", acln);
@@ -439,7 +441,8 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
-		Fb(tl, 1, "match_acl_named_%.*s(sp, %s)\n", PF(tl->t), vp->rname);
+		Fb(tl, 1, "match_acl_named_%.*s(sp, %s)\n",
+		    PF(tl->t), vp->rname);
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:

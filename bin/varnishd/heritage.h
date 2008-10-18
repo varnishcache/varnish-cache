@@ -77,7 +77,7 @@ struct params {
 
 	/* TTL used for lack of anything better */
 	unsigned		default_ttl;
-	
+
 	/* TTL used for synthesized error pages */
 	unsigned		err_ttl;
 
@@ -190,4 +190,5 @@ extern struct heritage heritage;
 
 void child_main(void);
 
-int varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir, size_t dirlen);
+int varnish_instance(const char *n_arg, char *name, size_t namelen,
+    char *dir, size_t dirlen);

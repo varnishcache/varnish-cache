@@ -220,7 +220,8 @@ struct {								\
 } while (0)
 
 #define	VSTAILQ_INSERT_AFTER(head, tqelm, elm, field) do {		\
-	if ((VSTAILQ_NEXT((elm), field) = VSTAILQ_NEXT((tqelm), field)) == NULL)\
+	if ((VSTAILQ_NEXT((elm), field) =				\
+	    VSTAILQ_NEXT((tqelm), field)) == NULL)			\
 		(head)->vstqh_last = &VSTAILQ_NEXT((elm), field);	\
 	VSTAILQ_NEXT((tqelm), field) = (elm);				\
 } while (0)
@@ -241,7 +242,8 @@ struct {								\
 	(VSTAILQ_EMPTY((head)) ?					\
 		NULL :							\
 	        ((struct type *)(void *)				\
-		((char *)((head)->vstqh_last) - __offsetof(struct type, field))))
+		((char *)((head)->vstqh_last) - 			\
+		     __offsetof(struct type, field))))
 
 #define	VSTAILQ_NEXT(elm, field)	((elm)->field.vstqe_next)
 
@@ -320,7 +322,8 @@ struct {								\
 
 #define	VLIST_INSERT_HEAD(head, elm, field) do {			\
 	if ((VLIST_NEXT((elm), field) = VLIST_FIRST((head))) != NULL)	\
-		VLIST_FIRST((head))->field.vle_prev = &VLIST_NEXT((elm), field);\
+		VLIST_FIRST((head))->field.vle_prev =			\
+		    &VLIST_NEXT((elm), field);				\
 	VLIST_FIRST((head)) = (elm);					\
 	(elm)->field.vle_prev = &VLIST_FIRST((head));			\
 } while (0)
@@ -329,7 +332,7 @@ struct {								\
 
 #define	VLIST_REMOVE(elm, field) do {					\
 	if (VLIST_NEXT((elm), field) != NULL)				\
-		VLIST_NEXT((elm), field)->field.vle_prev = 		\
+		VLIST_NEXT((elm), field)->field.vle_prev =		\
 		    (elm)->field.vle_prev;				\
 	*(elm)->field.vle_prev = VLIST_NEXT((elm), field);		\
 } while (0)
@@ -394,8 +397,9 @@ struct {								\
 } while (0)
 
 #define	VTAILQ_INSERT_AFTER(head, listelm, elm, field) do {		\
-	if ((VTAILQ_NEXT((elm), field) = VTAILQ_NEXT((listelm), field)) != NULL)\
-		VTAILQ_NEXT((elm), field)->field.vtqe_prev = 		\
+	if ((VTAILQ_NEXT((elm), field) =				\
+	    VTAILQ_NEXT((listelm), field)) != NULL)			\
+		VTAILQ_NEXT((elm), field)->field.vtqe_prev =		\
 		    &VTAILQ_NEXT((elm), field);				\
 	else {								\
 		(head)->vtqh_last = &VTAILQ_NEXT((elm), field);		\
@@ -438,7 +442,7 @@ struct {								\
 
 #define	VTAILQ_REMOVE(head, elm, field) do {				\
 	if ((VTAILQ_NEXT((elm), field)) != NULL)			\
-		VTAILQ_NEXT((elm), field)->field.vtqe_prev = 		\
+		VTAILQ_NEXT((elm), field)->field.vtqe_prev =		\
 		    (elm)->field.vtqe_prev;				\
 	else {								\
 		(head)->vtqh_last = (elm)->field.vtqe_prev;		\

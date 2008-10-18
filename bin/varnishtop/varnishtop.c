@@ -286,7 +286,8 @@ do_once(struct VSL_data *vd)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtop %s [-1fV] [-n varnish_name]\n", VSL_USAGE);
+	fprintf(stderr,
+	    "usage: varnishtop %s [-1fV] [-n varnish_name]\n", VSL_USAGE);
 	exit(1);
 }
 

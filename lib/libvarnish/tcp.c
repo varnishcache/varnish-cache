@@ -58,7 +58,8 @@
 /*--------------------------------------------------------------------*/
 
 void
-TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen, char *pbuf, unsigned plen)
+TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen,
+    char *pbuf, unsigned plen)
 {
 	int i;
 
@@ -119,7 +120,7 @@ TCP_filter_http(int sock)
 
 /*--------------------------------------------------------------------
  * Functions for controlling NONBLOCK mode.
- * 
+ *
  * We use FIONBIO because it is cheaper than fcntl(2), which requires
  * us to do two syscalls, one to get and one to set, the latter of
  * which mucks about a bit before it ends up calling ioctl(FIONBIO),
