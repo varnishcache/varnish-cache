@@ -441,7 +441,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 		if (lp->df_Host) {
 			if (strncmp(lp->df_Host, "http://", 7) != 0)
 				fprintf(fo, "http://");
-			fprintf(fo, lp->df_Host);
+			fprintf(fo, "%s", lp->df_Host);
 		}
 		fprintf(fo, "%s ", lp->df_Uq);
 		fprintf(fo, "%s\" ", lp->df_H);
