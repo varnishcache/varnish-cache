@@ -46,7 +46,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "vsb.h"
 
 #include "libvarnish.h"

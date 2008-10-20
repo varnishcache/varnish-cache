@@ -71,7 +71,6 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include "config.h"
 #ifndef HAVE_DAEMON
 #include "compat/daemon.h"
 #endif
