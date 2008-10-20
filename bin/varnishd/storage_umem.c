@@ -33,7 +33,7 @@
 
 #include "config.h"
 
-#ifdef HAVE_UMEM_H
+#ifdef HAVE_LIBUMEM
 
 #include <sys/types.h>
 
