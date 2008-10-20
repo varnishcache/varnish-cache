@@ -1,0 +1,83 @@
+# $Id$
+
+test "Check purge counters and duplicate purge elimination"
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: 1" -body "foo1"
+	rxreq
+	txresp -hdr "foo: 2" -body "foo2"
+	rxreq
+	txresp -hdr "foo: 3" -body "foo3"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "purge.url FOO"
+
+# There is one "magic" purge from boot
+varnish v1 -expect n_purge_add == 2
+varnish v1 -cliok "purge.list"
+
+# Our fetch is not affected by the purge
+# as the FOO-purge was preexisting
+client c1 {
+	txreq -url /FOO
+	rxresp
+	expect resp.http.foo == 1
+} -run
+
+varnish v1 -cliok "purge.list"
+varnish v1 -expect n_purge_obj_test == 0
+varnish v1 -expect n_purge_re_test == 0
+
+# Add another purge
+varnish v1 -cliok "purge.url FOO"
+varnish v1 -expect n_purge_add == 3
+varnish v1 -cliok "purge.list"
+
+# The cached object will be purged, and a new
+# fetched from the backend
+client c1 {
+	txreq -url /FOO
+	rxresp
+	expect resp.http.foo == 2
+} -run
+
+varnish v1 -expect n_purge_obj_test == 1
+varnish v1 -expect n_purge_re_test == 1
+varnish v1 -cliok "purge.list"
+
+# Fetch the cached copy, just for grins
+client c1 {
+	txreq -url /FOO
+	rxresp
+	expect resp.http.foo == 2
+} -run
+
+
+# Now add another purge
+varnish v1 -cliok "purge.url FOO"
+varnish v1 -expect n_purge_add == 4
+
+# Enable dup removal of purges
+varnish v1 -cliok "param.set purge_dups on"
+
+# This should incapacitate the to previous FOO purges.
+varnish v1 -cliok "purge.url FOO"
+varnish v1 -expect n_purge_add == 5
+varnish v1 -expect n_purge_dups == 3
+varnish v1 -cliok "purge.list"
+
+# And we should get a fresh object from backend
+client c1 {
+	txreq -url /FOO
+	rxresp
+	expect resp.http.foo == 3
+} -run
+
+# With only two objects having ever been compared
+varnish v1 -expect n_purge_obj_test == 2
+varnish v1 -expect n_purge_re_test == 2
+varnish v1 -cliok "purge.list"
+
