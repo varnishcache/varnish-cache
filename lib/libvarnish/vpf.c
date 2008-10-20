@@ -25,7 +25,7 @@
  *
  * $Id$
  * Derived from:
- * $FreeBSD: src/lib/libutil/pidfile.c,v 1.5 2007/05/11 11:10:05 des Exp $
+ * $FreeBSD: head/lib/libutil/pidfile.c 184091 2008-10-20 17:41:08Z des $
  */
 
 #include "config.h"
@@ -230,13 +230,7 @@ vpf_close(struct pidfh *pfh)
 static int
 _vpf_remove(struct pidfh *pfh, int freeit)
 {
-	struct flock lock;
 	int error;
-
-	lock.l_type = F_UNLCK;
-	lock.l_start = 0;
-	lock.l_whence = SEEK_SET;
-	lock.l_len = 0;
 
 	error = vpf_verify(pfh);
 	if (error != 0) {
@@ -246,10 +240,6 @@ _vpf_remove(struct pidfh *pfh, int freeit)
 
 	if (unlink(pfh->pf_path) == -1)
 		error = errno;
-	if (fcntl(pfh->pf_fd, F_SETLK, &lock) == -1) {
-		if (error == 0)
-			error = errno;
-	}
 	if (close(pfh->pf_fd) == -1) {
 		if (error == 0)
 			error = errno;
