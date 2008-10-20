@@ -2029,6 +2029,7 @@ chunk_alloc(size_t size, bool zero)
 {
 	void *ret;
 
+	(void)zero; /* XXX */
 	assert(size != 0);
 	assert((size & chunksize_mask) == 0);
 
@@ -3045,6 +3046,7 @@ arena_bin_malloc_easy(arena_t *arena, arena_bin_t *bin, arena_run_t *run)
 {
 	void *ret;
 
+	(void)arena; /* XXX */
 	assert(run->magic == ARENA_RUN_MAGIC);
 	assert(run->nfree > 0);
 
