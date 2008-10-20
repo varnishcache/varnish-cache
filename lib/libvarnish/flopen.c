@@ -26,17 +26,17 @@
  *
  * $Id$
  * Derived from:
- * $FreeBSD: src/lib/libutil/flopen.c,v 1.7 2007/05/23 12:09:33 des Exp $
+ * $FreeBSD: head/lib/libutil/flopen.c 184094 2008-10-20 18:11:30Z des $
  */
 
 #include "config.h"
 
-#include <sys/file.h>
 #include <sys/stat.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -46,8 +46,8 @@ int
 flopen(const char *path, int flags, ...)
 {
 	int fd, operation, serrno, trunc;
-	struct stat sb, fsb;
 	struct flock lock;
+	struct stat sb, fsb;
 	mode_t mode;
 
 #ifdef O_EXLOCK
@@ -63,10 +63,9 @@ flopen(const char *path, int flags, ...)
 		va_end(ap);
 	}
 
+	memset(&lock, 0, sizeof lock);
 	lock.l_type = ((flags & O_ACCMODE) == O_RDONLY) ? F_RDLCK : F_WRLCK;
-	lock.l_start = 0;
 	lock.l_whence = SEEK_SET;
-	lock.l_len = 0;
 	operation = (flags & O_NONBLOCK) ? F_SETLK : F_SETLKW;
 
 	trunc = (flags & O_TRUNC);
