@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "binary_heap.h"
 #include "libvarnish.h"
 

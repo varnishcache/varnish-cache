@@ -38,7 +38,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "config.h"
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif

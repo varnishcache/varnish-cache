@@ -26,7 +26,10 @@
  * $Id$
  */
 
+#include "config.h"
 
+#include <poll.h>
+#include <stdio.h>
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>

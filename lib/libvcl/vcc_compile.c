@@ -73,7 +73,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "vqueue.h"
 
 #include "vsb.h"
