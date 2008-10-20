@@ -193,8 +193,7 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 		    sendfile(*w->wfd, fd, &off, len) != len)
 			w->werr++;
 	} while (0);
-#elif defined(__sun)
-#ifdef HAVE_SENDFILEV
+#elif defined(__sun) && defined(HAVE_SENDFILEV)
 	do {
 		sendfilevec_t svvec[HTTP_HDR_MAX * 2 + 1];
 		size_t xferred = 0, expected = 0;
@@ -217,13 +216,12 @@ WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 		w->liov = 0;
 		w->niov = 0;
 	} while (0);
-#else
+#elif defined(__sun) && defined(HAVE_SENDFILE)
 	do {
 		if (WRK_Flush(w) == 0 &&
 		    sendfile(*w->wfd, fd, &off, len) != len)
 			w->werr++;
 	} while (0);
-#endif
 #else
 #error Unknown sendfile() implementation
 #endif
