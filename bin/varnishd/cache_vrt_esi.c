@@ -796,7 +796,6 @@ VRT_ESI(struct sess *sp)
 void
 ESI_Deliver(struct sess *sp)
 {
-
 	struct esi_bit *eb;
 	struct object *obj;
 
@@ -839,7 +838,16 @@ ESI_Deliver(struct sess *sp)
 		sp->step = STP_RECV;
 		http_ForceGet(sp->http);
 		http_Unset(sp->http, H_Content_Length);
-		CNT_Session(sp);
+		while (1) {
+			CNT_Session(sp);
+			if (sp->step == STP_DONE)
+				break;
+			AN(sp->wrk);
+			WSL_Flush(sp->wrk, 0);
+			DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
+			usleep(10000);
+		}
+		assert(sp->step == STP_DONE);
 		sp->esis--;
 		sp->obj = obj;
 

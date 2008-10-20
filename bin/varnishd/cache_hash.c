@@ -266,7 +266,8 @@ HSH_Lookup(struct sess *sp)
 
 	if (busy_o != NULL) {
 		/* There are one or more busy objects, wait for them */
-		VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
+		if (sp->esis == 0)
+			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
 		sp->objhead = oh;
 		UNLOCK(&oh->mtx);
 		return (NULL);
