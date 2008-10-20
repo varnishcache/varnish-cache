@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0" to="2.0.1">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="354">
+      <para>When receiving a garbled HTTP
+      request, <code>varnishd</code> would sometimes crash.  This has
+      been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para>There was an off-by-one error in the ACL compilation.
+      Now fixed.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>Red Hat spec file</name>
+
+    <change type="bug">
+      <para>A typo in the spec file made the .rpm file names wrong.</para>
+    </change>
+  </subsystem>
+</group>
