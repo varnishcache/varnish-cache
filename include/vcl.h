@@ -14,15 +14,15 @@ typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 
 struct VCL_conf {
-	unsigned        magic;
-#define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */
+	unsigned	magic;
+#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 
-        struct director  **director;
-        unsigned        ndirector;
-        struct vrt_ref  *ref;
-        unsigned        nref;
-        unsigned        busy;
-        unsigned        discard;
+	struct director	**director;
+	unsigned	ndirector;
+	struct vrt_ref	*ref;
+	unsigned	nref;
+	unsigned	busy;
+	unsigned	discard;
 
 	unsigned	nsrc;
 	const char	**srcname;
@@ -30,8 +30,8 @@ struct VCL_conf {
 
 	unsigned	nhashcount;
 
-        vcl_init_f      *init_func;
-        vcl_fini_f      *fini_func;
+	vcl_init_f	*init_func;
+	vcl_fini_f	*fini_func;
 
 	vcl_func_f	*recv_func;
 	vcl_func_f	*pipe_func;
