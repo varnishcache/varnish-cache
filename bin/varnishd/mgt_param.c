@@ -690,7 +690,7 @@ static const struct parspec parspec[] = {
 		"By default we copy the protocol version from the "
 		"incoming client request.",
 		EXPERIMENTAL,
-		"off", "bool" },
+		"on", "bool" },
 	{ "client_http11", tweak_bool, &master.client_http11, 0, 0,
 		"Force all client responses to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
