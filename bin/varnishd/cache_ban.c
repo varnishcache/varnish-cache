@@ -49,6 +49,8 @@ struct ban {
 #define BAN_MAGIC		0x700b08ea
 	VTAILQ_ENTRY(ban)	list;
 	unsigned		refcount;
+	int			flags;
+#define BAN_F_GONE		(1 << 0)
 	regex_t			regexp;
 	char			*ban;
 	int			hash;
@@ -68,8 +70,9 @@ static struct ban * volatile ban_start;
 int
 BAN_Add(struct cli *cli, const char *regexp, int hash)
 {
-	struct ban *b;
+	struct ban *b, *bi, *be;
 	char buf[512];
+	unsigned pcount;
 	int i;
 
 	ALLOC_OBJ(b, BAN_MAGIC);
@@ -97,6 +100,35 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 	ban_start = b;
 	VSL_stats->n_purge++;
 	VSL_stats->n_purge_add++;
+
+	if (params->purge_dups) {
+		be = VTAILQ_LAST(&ban_head, banhead);
+		be->refcount++;
+	} else
+		be = NULL;
+	UNLOCK(&ban_mtx);
+
+	if (be == NULL)
+		return (0);
+
+	/* Hunt down duplicates, and mark them as gone */
+	bi = b;
+	pcount = 0;
+	while(bi != be) {
+		bi = VTAILQ_NEXT(bi, list);
+		if (bi->flags & BAN_F_GONE)
+			continue;
+		if (b->hash != bi->hash)
+			continue;
+		if (strcmp(b->ban, bi->ban))
+			continue;
+		bi->flags |= BAN_F_GONE;
+		pcount++;
+	}
+	LOCK(&ban_mtx);
+	be->refcount--;
+	/* XXX: We should check if the tail can be removed */
+	VSL_stats->n_purge_dups += pcount;
 	UNLOCK(&ban_mtx);
 
 	return (0);
@@ -168,7 +200,8 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	tests = 0;
 	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
 		tests++;
-		if (!regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0))
+		if (!(b->flags & BAN_F_GONE) &&
+		    !regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0))
 			break;
 	}
 
@@ -227,8 +260,8 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	for (b0 = ban_start; b0 != NULL; b0 = VTAILQ_NEXT(b0, list)) {
 		if (b0->refcount == 0 && VTAILQ_NEXT(b0, list) == NULL)
 			break;
-		cli_out(cli, "%5u %s \"%s\"\n",
-		    b0->refcount,
+		cli_out(cli, "%5u %d %s \"%s\"\n",
+		    b0->refcount, b0->flags,
 		    b0->hash ? "hash" : "url ",
 		    b0->ban);
 	}
