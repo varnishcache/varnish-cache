@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "libvarnish.h"
 #include "vsb.h"
@@ -137,7 +136,7 @@ vsb_extend(struct vsb *s, int addlen)
 	newbuf = (char *)SBMALLOC(newsize);
 	if (newbuf == NULL)
 		return (-1);
-	bcopy(s->s_buf, newbuf, s->s_size);
+	memcpy(newbuf, s->s_buf, s->s_size);
 	if (VSB_ISDYNAMIC(s))
 		SBFREE(s->s_buf);
 	else
@@ -165,12 +164,12 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 		s = (struct vsb *)SBMALLOC(sizeof *s);
 		if (s == NULL)
 			return (NULL);
-		bzero(s, sizeof *s);
+		memset(s, 0, sizeof *s);
 		s->s_flags = flags;
 		s->s_magic = VSB_MAGIC;
 		VSB_SETFLAG(s, VSB_DYNSTRUCT);
 	} else {
-		bzero(s, sizeof *s);
+		memset(s, 0, sizeof *s);
 		s->s_flags = flags;
 		s->s_magic = VSB_MAGIC;
 	}
@@ -466,7 +465,7 @@ vsb_delete(struct vsb *s)
 	if (VSB_ISDYNAMIC(s))
 		SBFREE(s->s_buf);
 	isdyn = VSB_ISDYNSTRUCT(s);
-	bzero(s, sizeof *s);
+	memset(s, 0, sizeof *s);
 	if (isdyn)
 		SBFREE(s);
 }

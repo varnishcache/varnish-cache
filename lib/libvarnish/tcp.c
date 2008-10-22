@@ -102,7 +102,7 @@ TCP_filter_http(int sock)
 	struct accept_filter_arg afa;
 	int i;
 
-	bzero(&afa, sizeof(afa));
+	memset(&afa, 0, sizeof(afa));
 	strcpy(afa.af_name, "httpready");
 	errno = 0;
 	i = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER,
