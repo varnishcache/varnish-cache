@@ -198,11 +198,11 @@ replaced with
 .Fa sub .
 Within
 .Fa sub ,
-.Va $0
+.Va \\0
 (which can also be spelled
 .Va & )
 is replaced with the entire matched string, and
-.Va $n
+.Va \\n
 is replaced with the contents of subgroup
 .Ar n
 in the matched string.
