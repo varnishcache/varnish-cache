@@ -69,8 +69,8 @@
  * housekeeping fields parts of an object.
  */
 
-static const char *tmr_prefetch	= "prefetch";
-static const char *tmr_ttl	= "ttl";
+static const char * const tmr_prefetch	= "prefetch";
+static const char * const tmr_ttl	= "ttl";
 
 struct objexp {
 	unsigned		magic;
