@@ -40,7 +40,7 @@
 static VTAILQ_HEAD(, stevedore)	stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
 
-static struct stevedore * volatile stv_next;
+static const struct stevedore * volatile stv_next;
 
 struct storage *
 STV_alloc(struct sess *sp, size_t size)

@@ -248,7 +248,7 @@ vcc_ExpectCid(struct tokenlist *tl)
 static int8_t
 vcc_xdig(const char c)
 {
-	static const char *xdigit =
+	static const char * const xdigit =
 	    "0123456789abcdef"
 	    "0123456789ABCDEF";
 	const char *p;

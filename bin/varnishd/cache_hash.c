@@ -66,7 +66,7 @@
 #include "cache.h"
 #include "stevedore.h"
 
-static struct hash_slinger      *hash;
+static const struct hash_slinger *hash;
 
 double
 HSH_Grace(double g)
