@@ -55,7 +55,7 @@ static void
 vca_pollspace(unsigned fd)
 {
 	struct pollfd *newpollfd = pollfd;
-	unsigned newnpoll = npoll;
+	unsigned newnpoll;
 
 	if (fd < npoll)
 		return;
