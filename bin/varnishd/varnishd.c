@@ -117,7 +117,7 @@ extern struct stevedore smf_stevedore;
 extern struct stevedore smu_stevedore;
 #endif
 
-static struct choice stv_choice[] = {
+static const struct choice stv_choice[] = {
 	{ "file",	&smf_stevedore },
 	{ "malloc",	&sma_stevedore },
 #ifdef HAVE_LIBUMEM
@@ -158,7 +158,7 @@ setup_storage(const char *spec)
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
 
-static struct choice hsh_choice[] = {
+static const struct choice hsh_choice[] = {
 	{ "classic",		&hcl_slinger },
 	{ "simple",		&hsl_slinger },
 	{ "simple_list",	&hsl_slinger },	/* backwards compat */
