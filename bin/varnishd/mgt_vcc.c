@@ -78,7 +78,7 @@ char *mgt_cc_cmd;
 /*
  * Keep this in synch with man/vcl.7 and etc/default.vcl!
  */
-static const char *default_vcl =
+static const char * const default_vcl =
 #include "default_vcl.h"
     ""	;
 

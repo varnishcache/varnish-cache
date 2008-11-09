@@ -49,7 +49,7 @@
 #include "cache.h"
 #include "cache_acceptor.h"
 
-static struct acceptor *vca_acceptors[] = {
+static struct acceptor * const vca_acceptors[] = {
 #if defined(HAVE_KQUEUE)
 	&acceptor_kqueue,
 #endif
@@ -63,7 +63,7 @@ static struct acceptor *vca_acceptors[] = {
 	NULL,
 };
 
-static struct acceptor *vca_act;
+static struct acceptor const *vca_act;
 
 static pthread_t	vca_thread_acct;
 static struct timeval	tv_sndtimeo;
