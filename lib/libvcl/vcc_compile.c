@@ -415,6 +415,11 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 		}
 	}
 	assert(0 == fstat(fd, &st));
+	if (! S_ISREG(st.st_mode)) {
+		vsb_printf(sb, "File '%s' is not a regular file\n", fn);
+		AZ(close(fd));
+		return (NULL);
+	}
 	f = malloc(st.st_size + 1);
 	assert(f != NULL);
 	i = read(fd, f, st.st_size);
