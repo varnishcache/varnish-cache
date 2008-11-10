@@ -109,7 +109,7 @@ struct backend {
 
 	VTAILQ_ENTRY(backend)	list;
 	int			refcount;
-	pthread_mutex_t		mtx;
+	struct lock		mtx;
 
 	struct sockaddr		*ipv4;
 	socklen_t		ipv4len;
@@ -129,7 +129,7 @@ void VBE_ReleaseConn(struct vbe_conn *vc);
 struct vbe_conn *VBE_GetVbe(struct sess *sp, struct backend *bp);
 
 /* cache_backend_cfg.c */
-extern MTX VBE_mtx;
+extern struct lock VBE_mtx;
 void VBE_DropRefConn(struct backend *);
 void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *b);

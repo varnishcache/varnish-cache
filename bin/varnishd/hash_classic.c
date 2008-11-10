@@ -58,7 +58,7 @@ struct hcl_hd {
 	unsigned		magic;
 #define HCL_HEAD_MAGIC		0x0f327016
 	VTAILQ_HEAD(, hcl_entry)	head;
-	MTX			mtx;
+	struct lock		mtx;
 };
 
 static unsigned			hcl_nhash = 16383;
@@ -110,7 +110,7 @@ hcl_start(void)
 
 	for (u = 0; u < hcl_nhash; u++) {
 		VTAILQ_INIT(&hcl_head[u].head);
-		MTX_INIT(&hcl_head[u].mtx);
+		Lck_New(&hcl_head[u].mtx);
 		hcl_head[u].magic = HCL_HEAD_MAGIC;
 	}
 }
@@ -151,7 +151,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 	he2 = NULL;
 
 	for (r = 0; r < 2; r++ ) {
-		LOCK(&hp->mtx);
+		Lck_Lock(&hp->mtx);
 		VTAILQ_FOREACH(he, &hp->head, list) {
 			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
 			if (sp->lhashptr < he->oh->hashlen)
@@ -169,7 +169,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 				break;
 			he->refcnt++;
 			roh = he->oh;
-			UNLOCK(&hp->mtx);
+			Lck_Unlock(&hp->mtx);
 			/*
 			 * If we loose the race, we need to clean up
 			 * the work we did for our second attempt.
@@ -183,7 +183,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 			return (roh);
 		}
 		if (noh == NULL) {
-			UNLOCK(&hp->mtx);
+			Lck_Unlock(&hp->mtx);
 			return (NULL);
 		}
 		if (he2 != NULL) {
@@ -193,10 +193,10 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 				VTAILQ_INSERT_TAIL(&hp->head, he2, list);
 			he2->refcnt++;
 			noh = he2->oh;
-			UNLOCK(&hp->mtx);
+			Lck_Unlock(&hp->mtx);
 			return (noh);
 		}
-		UNLOCK(&hp->mtx);
+		Lck_Unlock(&hp->mtx);
 
 		he2 = calloc(sizeof *he2, 1);
 		XXXAN(he2);
@@ -234,12 +234,12 @@ hcl_deref(const struct objhead *oh)
 	assert(he->refcnt > 0);
 	assert(he->hash < hcl_nhash);
 	assert(hp == &hcl_head[he->hash]);
-	LOCK(&hp->mtx);
+	Lck_Lock(&hp->mtx);
 	if (--he->refcnt == 0)
 		VTAILQ_REMOVE(&hp->head, he, list);
 	else
 		he = NULL;
-	UNLOCK(&hp->mtx);
+	Lck_Unlock(&hp->mtx);
 	if (he == NULL)
 		return (1);
 	free(he);

@@ -79,7 +79,7 @@ VTAILQ_HEAD(workerhead, worker);
 struct wq {
 	unsigned		magic;
 #define WQ_MAGIC		0x606658fa
-	MTX			mtx;
+	struct lock		mtx;
 	struct workerhead	idle;
 	VTAILQ_HEAD(, workreq)	overflow;
 	unsigned		nthr;
@@ -95,7 +95,7 @@ static unsigned			ovfl_max;
 static unsigned			nthr_max;
 
 static pthread_cond_t		herder_cond;
-static MTX			herder_mtx;
+static struct lock		herder_mtx;
 
 /*--------------------------------------------------------------------
  * Write data to fd
@@ -249,7 +249,7 @@ wrk_thread(void *priv)
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
-	LOCK(&qp->mtx);
+	Lck_Lock(&qp->mtx);
 	qp->nthr++;
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
@@ -263,20 +263,20 @@ wrk_thread(void *priv)
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
-			AZ(pthread_cond_wait(&w->cond, &qp->mtx));
+			Lck_CondWait(&w->cond, &qp->mtx);
 		}
 		if (w->wrq == NULL)
 			break;
-		UNLOCK(&qp->mtx);
+		Lck_Unlock(&qp->mtx);
 		AN(w->wrq);
 		AN(w->wrq->func);
 		w->lastused = NAN;
 		w->wrq->func(w, w->wrq->priv);
 		w->wrq = NULL;
-		LOCK(&qp->mtx);
+		Lck_Lock(&qp->mtx);
 	}
 	qp->nthr--;
-	UNLOCK(&qp->mtx);
+	Lck_Unlock(&qp->mtx);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
@@ -285,7 +285,7 @@ wrk_thread(void *priv)
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
 	if (w->nobjhead != NULL) {
-		MTX_DESTROY(&w->nobjhead->mtx);
+		Lck_Delete(&w->nobjhead->mtx);
 		FREE_OBJ(w->nobjhead);
 	}
 	if (w->nobj!= NULL)
@@ -318,13 +318,13 @@ WRK_Queue(struct workreq *wrq)
 	qp = wq[onq];
 	nq = onq;
 
-	LOCK(&qp->mtx);
+	Lck_Lock(&qp->mtx);
 
 	/* If there are idle threads, we tickle the first one into action */
 	w = VTAILQ_FIRST(&qp->idle);
 	if (w != NULL) {
 		VTAILQ_REMOVE(&qp->idle, w, list);
-		UNLOCK(&qp->mtx);
+		Lck_Unlock(&qp->mtx);
 		w->wrq = wrq;
 		AZ(pthread_cond_signal(&w->cond));
 		return (0);
@@ -333,14 +333,14 @@ WRK_Queue(struct workreq *wrq)
 	/* If we have too much in the overflow already, refuse. */
 	if (qp->nqueue > ovfl_max) {
 		qp->ndrop++;
-		UNLOCK(&qp->mtx);
+		Lck_Unlock(&qp->mtx);
 		return (-1);
 	}
 
 	VTAILQ_INSERT_TAIL(&qp->overflow, wrq, list);
 	qp->noverflow++;
 	qp->nqueue++;
-	UNLOCK(&qp->mtx);
+	Lck_Unlock(&qp->mtx);
 	AZ(pthread_cond_signal(&herder_cond));
 	return (0);
 }
@@ -412,7 +412,7 @@ wrk_addpools(const unsigned pools)
 		wq[u] = calloc(sizeof *wq[u], 1);
 		XXXAN(wq[u]);
 		wq[u]->magic = WQ_MAGIC;
-		MTX_INIT(&wq[u]->mtx);
+		Lck_New(&wq[u]->mtx);
 		VTAILQ_INIT(&wq[u]->overflow);
 		VTAILQ_INIT(&wq[u]->idle);
 	}
@@ -429,7 +429,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 {
 	struct worker *w = NULL;
 
-	LOCK(&qp->mtx);
+	Lck_Lock(&qp->mtx);
 	vs->n_wrk += qp->nthr;
 	vs->n_wrk_queue += qp->nqueue;
 	vs->n_wrk_drop += qp->ndrop;
@@ -442,7 +442,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 		else
 			w = NULL;
 	}
-	UNLOCK(&qp->mtx);
+	Lck_Unlock(&qp->mtx);
 
 	/* And give it a kiss on the cheek... */
 	if (w != NULL) {
@@ -572,9 +572,9 @@ wrk_herder_thread(void *priv)
 			 * We cannot avoid getting a mutex, so we have a
 			 * bogo mutex just for POSIX_STUPIDITY
 			 */
-			AZ(pthread_mutex_lock(&herder_mtx));
-			AZ(pthread_cond_wait(&herder_cond, &herder_mtx));
-			AZ(pthread_mutex_unlock(&herder_mtx));
+			Lck_Lock(&herder_mtx);
+			Lck_CondWait(&herder_cond, &herder_mtx);
+			Lck_Unlock(&herder_mtx);
 			wrk_breed_flock(wq[u]);
 		}
 	}
@@ -588,7 +588,7 @@ WRK_Init(void)
 	pthread_t tp;
 
 	AZ(pthread_cond_init(&herder_cond, NULL));
-	AZ(pthread_mutex_init(&herder_mtx, NULL));
+	Lck_New(&herder_mtx);
 
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));

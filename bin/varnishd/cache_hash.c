@@ -93,7 +93,7 @@ HSH_Prealloc(struct sess *sp)
 		w->nobjhead->magic = OBJHEAD_MAGIC;
 		VTAILQ_INIT(&w->nobjhead->objects);
 		VTAILQ_INIT(&w->nobjhead->waitinglist);
-		MTX_INIT(&w->nobjhead->mtx);
+		Lck_New(&w->nobjhead->mtx);
 		VSL_stats->n_objecthead++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
@@ -205,13 +205,13 @@ HSH_Lookup(struct sess *sp)
 		oh = sp->objhead;
 		sp->objhead = NULL;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		LOCK(&oh->mtx);
+		Lck_Lock(&oh->mtx);
 	} else {
 		oh = hash->lookup(sp, w->nobjhead);
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		if (oh == w->nobjhead)
 			w->nobjhead = NULL;
-		LOCK(&oh->mtx);
+		Lck_Lock(&oh->mtx);
 	}
 
 	busy_o = NULL;
@@ -257,7 +257,7 @@ HSH_Lookup(struct sess *sp)
 		o->refcnt++;
 		if (o->hits < INT_MAX)
 			o->hits++;
-		UNLOCK(&oh->mtx);
+		Lck_Unlock(&oh->mtx);
 		if (params->log_hash)
 			WSP(sp, SLT_Hash, "%s", oh->hash);
 		(void)hash->deref(oh);
@@ -269,7 +269,7 @@ HSH_Lookup(struct sess *sp)
 		if (sp->esis == 0)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
 		sp->objhead = oh;
-		UNLOCK(&oh->mtx);
+		Lck_Unlock(&oh->mtx);
 		return (NULL);
 	}
 
@@ -285,7 +285,7 @@ HSH_Lookup(struct sess *sp)
 		o->parent = grace_o;
 		grace_o->refcnt++;
 	}
-	UNLOCK(&oh->mtx);
+	Lck_Unlock(&oh->mtx);
 	if (params->log_hash)
 		WSP(sp, SLT_Hash, "%s", oh->hash);
 	/*
@@ -333,7 +333,7 @@ HSH_Unbusy(const struct sess *sp)
 	oh = o->objhead;
 	if (oh != NULL) {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
-		LOCK(&oh->mtx);
+		Lck_Lock(&oh->mtx);
 	}
 	o->busy = 0;
 	if (oh != NULL)
@@ -343,7 +343,7 @@ HSH_Unbusy(const struct sess *sp)
 	if (parent != NULL)
 		parent->child = NULL;
 	if (oh != NULL)
-		UNLOCK(&oh->mtx);
+		Lck_Unlock(&oh->mtx);
 	if (parent != NULL)
 		HSH_Deref(parent);
 }
@@ -357,12 +357,12 @@ HSH_Ref(struct object *o)
 	oh = o->objhead;
 	if (oh != NULL) {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
-		LOCK(&oh->mtx);
+		Lck_Lock(&oh->mtx);
 	}
 	assert(o->refcnt > 0);
 	o->refcnt++;
 	if (oh != NULL)
-		UNLOCK(&oh->mtx);
+		Lck_Unlock(&oh->mtx);
 }
 
 void
@@ -377,7 +377,7 @@ HSH_Deref(struct object *o)
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 		/* drop ref on object */
-		LOCK(&oh->mtx);
+		Lck_Lock(&oh->mtx);
 	}
 	assert(o->refcnt > 0);
 	r = --o->refcnt;
@@ -386,7 +386,7 @@ HSH_Deref(struct object *o)
 	if (oh != NULL) {
 		if (!r)
 			VTAILQ_REMOVE(&oh->objects, o, list);
-		UNLOCK(&oh->mtx);
+		Lck_Unlock(&oh->mtx);
 	}
 
 	/* If still referenced, done */
@@ -411,7 +411,7 @@ HSH_Deref(struct object *o)
 	if (hash->deref(oh))
 		return;
 	assert(VTAILQ_EMPTY(&oh->objects));
-	MTX_DESTROY(&oh->mtx);
+	Lck_Delete(&oh->mtx);
 	VSL_stats->n_objecthead--;
 	free(oh->hash);
 	FREE_OBJ(oh);

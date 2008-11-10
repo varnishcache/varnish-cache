@@ -101,6 +101,10 @@ child_main(void)
 
 	THR_SetName("cache-main");
 
+	VSL_Init();	/* First, LCK needs it. */
+
+	LCK_Init();	/* Locking, must be first */
+
 	PAN_Init();
 	CLI_Init();
 	Fetch_Init();
@@ -113,7 +117,6 @@ child_main(void)
 
 	VBE_Init();
 	VBP_Init();
-	VSL_Init();
 	WRK_Init();
 
 	EXP_Init();

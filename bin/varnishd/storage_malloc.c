@@ -44,7 +44,7 @@
 #include "stevedore.h"
 
 static size_t			sma_max = SIZE_MAX;
-static MTX			sma_mtx;
+static struct lock		sma_mtx;
 
 struct sma {
 	struct storage		s;
@@ -56,7 +56,7 @@ sma_alloc(struct stevedore *st, size_t size)
 {
 	struct sma *sma;
 
-	LOCK(&sma_mtx);
+	Lck_Lock(&sma_mtx);
 	VSL_stats->sma_nreq++;
 	if (VSL_stats->sma_nbytes + size > sma_max)
 		size = 0;
@@ -65,7 +65,7 @@ sma_alloc(struct stevedore *st, size_t size)
 		VSL_stats->sma_nbytes += size;
 		VSL_stats->sma_balloc += size;
 	}
-	UNLOCK(&sma_mtx);
+	Lck_Unlock(&sma_mtx);
 
 	if (size == 0)
 		return (NULL);
@@ -94,11 +94,11 @@ sma_free(struct storage *s)
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	sma = s->priv;
 	assert(sma->sz == sma->s.space);
-	LOCK(&sma_mtx);
+	Lck_Lock(&sma_mtx);
 	VSL_stats->sma_nobj--;
 	VSL_stats->sma_nbytes -= sma->sz;
 	VSL_stats->sma_bfree += sma->sz;
-	UNLOCK(&sma_mtx);
+	Lck_Unlock(&sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
 }
@@ -113,11 +113,11 @@ sma_trim(const struct storage *s, size_t size)
 	sma = s->priv;
 	assert(sma->sz == sma->s.space);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
-		LOCK(&sma_mtx);
+		Lck_Lock(&sma_mtx);
 		VSL_stats->sma_nbytes -= (sma->sz - size);
 		VSL_stats->sma_bfree += sma->sz - size;
 		sma->sz = size;
-		UNLOCK(&sma_mtx);
+		Lck_Unlock(&sma_mtx);
 		sma->s.ptr = p;
 		sma->s.space = size;
 	}
@@ -150,7 +150,7 @@ static void
 sma_open(const struct stevedore *st)
 {
 	(void)st;
-	AZ(pthread_mutex_init(&sma_mtx, NULL));
+	Lck_New(&sma_mtx);
 }
 
 struct stevedore sma_stevedore = {

@@ -48,7 +48,7 @@
 #include "cache_backend.h"
 #include "cli_priv.h"
 
-MTX VBE_mtx;
+struct lock VBE_mtx;
 
 /*
  * The list of backends is not locked, it is only ever accessed from
@@ -105,7 +105,7 @@ VBE_DropRefLocked(struct backend *b)
 	assert(b->refcount > 0);
 
 	i = --b->refcount;
-	UNLOCK(&b->mtx);
+	Lck_Unlock(&b->mtx);
 	if (i > 0)
 		return;
 
@@ -128,7 +128,7 @@ VBE_DropRef(struct backend *b)
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	LOCK(&b->mtx);
+	Lck_Lock(&b->mtx);
 	VBE_DropRefLocked(b);
 }
 
@@ -138,7 +138,7 @@ VBE_DropRefConn(struct backend *b)
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	LOCK(&b->mtx);
+	Lck_Lock(&b->mtx);
 	assert(b->n_conn > 0);
 	b->n_conn--;
 	VBE_DropRefLocked(b);
@@ -207,7 +207,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
-	MTX_INIT(&b->mtx);
+	Lck_New(&b->mtx);
 	b->refcount = 1;
 
 	VTAILQ_INIT(&b->connlist);
@@ -283,6 +283,6 @@ void
 VBE_Init(void)
 {
 
-	MTX_INIT(&VBE_mtx);
+	Lck_New(&VBE_mtx);
 	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }
