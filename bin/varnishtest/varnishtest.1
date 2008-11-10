@@ -55,7 +55,7 @@ clients, and a varnishd process.
 The following options are available:
 .Bl -tag -width Fl
 .It Fl n Ar iter
-Run 
+Run
 .Ar iter
 number of iterations.
 .It Fl q
@@ -74,13 +74,13 @@ varnish v1 -arg "-b localhost:9080" -start
 # Create a server thread called "s1"
 server s1 {
     # Receive a request
-    rxreq 
+    rxreq
     # Send a standard response
     txresp -hdr "Connection: close" -body "012345\\n"
 }
 
 # Start the server thread
-server s1 -start 
+server s1 -start
 
 # Create a client thread called "c1"
 client c1 {
@@ -101,7 +101,6 @@ server s1 -wait
 # (Forcefully) Stop the varnish instance.
 varnish v1 -stop
 .Ed
-
 .Ss Example script output
 The output, running this script looks as follows.
 .Pp
