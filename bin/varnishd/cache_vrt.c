@@ -284,8 +284,8 @@ int
 VRT_r_resp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
+	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	return (atoi(sp->http->hd[HTTP_HDR_STATUS].b));
 }
 
 /*--------------------------------------------------------------------*/
