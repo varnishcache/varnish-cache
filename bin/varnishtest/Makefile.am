@@ -9,6 +9,8 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS =	varnishtest
 
+dist_man_MANS = varnishtest.1
+
 varnishtest_SOURCES = \
 		vtc.c \
 		vtc.h \
