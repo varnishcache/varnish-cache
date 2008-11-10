@@ -57,7 +57,7 @@ struct ban {
 };
 
 static VTAILQ_HEAD(banhead,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
-static MTX ban_mtx;
+static struct lock ban_mtx;
 
 /*
  * We maintain ban_start as a pointer to the first element of the list
@@ -95,7 +95,7 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 	b->hash = hash;
 	b->ban = strdup(regexp);
 	AN(b->ban);
-	LOCK(&ban_mtx);
+	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
 	VSL_stats->n_purge++;
@@ -106,7 +106,7 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 		be->refcount++;
 	} else
 		be = NULL;
-	UNLOCK(&ban_mtx);
+	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
 		return (0);
@@ -125,11 +125,11 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 		bi->flags |= BAN_F_GONE;
 		pcount++;
 	}
-	LOCK(&ban_mtx);
+	Lck_Lock(&ban_mtx);
 	be->refcount--;
 	/* XXX: We should check if the tail can be removed */
 	VSL_stats->n_purge_dups += pcount;
-	UNLOCK(&ban_mtx);
+	Lck_Unlock(&ban_mtx);
 
 	return (0);
 }
@@ -140,10 +140,10 @@ BAN_NewObj(struct object *o)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AZ(o->ban);
-	LOCK(&ban_mtx);
+	Lck_Lock(&ban_mtx);
 	o->ban = ban_start;
 	ban_start->refcount++;
-	UNLOCK(&ban_mtx);
+	Lck_Unlock(&ban_mtx);
 }
 
 void
@@ -155,7 +155,7 @@ BAN_DestroyObj(struct object *o)
 	if (o->ban == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
-	LOCK(&ban_mtx);
+	Lck_Lock(&ban_mtx);
 	o->ban->refcount--;
 	o->ban = NULL;
 
@@ -168,7 +168,7 @@ BAN_DestroyObj(struct object *o)
 	} else {
 		b = NULL;
 	}
-	UNLOCK(&ban_mtx);
+	Lck_Unlock(&ban_mtx);
 	if (b != NULL) {
 		free(b->ban);
 		regfree(&b->regexp);
@@ -205,13 +205,13 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 			break;
 	}
 
-	LOCK(&ban_mtx);
+	Lck_Lock(&ban_mtx);
 	o->ban->refcount--;
 	if (b == o->ban)	/* not banned */
 		b0->refcount++;
 	VSL_stats->n_purge_obj_test++;
 	VSL_stats->n_purge_re_test += tests;
-	UNLOCK(&ban_mtx);
+	Lck_Unlock(&ban_mtx);
 
 	if (b == o->ban) {	/* not banned */
 		o->ban = b0;
@@ -285,7 +285,7 @@ void
 BAN_Init(void)
 {
 
-	MTX_INIT(&ban_mtx);
+	Lck_New(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 	/* Add an initial ban, since the list can never be empty */
 	(void)BAN_Add(NULL, ".", 0);

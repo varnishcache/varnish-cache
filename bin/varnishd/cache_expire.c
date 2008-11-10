@@ -86,7 +86,7 @@ struct objexp {
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
-static MTX exp_mtx;
+static struct lock exp_mtx;
 static VTAILQ_HEAD(,objexp) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
 /*
@@ -176,12 +176,12 @@ EXP_Insert(struct object *o)
 	assert(o->entered != 0 && !isnan(o->entered));
 	oe->lru_stamp = o->entered;
 	update_object_when(o);
-	LOCK(&exp_mtx);
+	Lck_Lock(&exp_mtx);
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru, oe, list);
 	oe->on_lru = 1;
-	UNLOCK(&exp_mtx);
+	Lck_Unlock(&exp_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -196,7 +196,6 @@ EXP_Insert(struct object *o)
 void
 EXP_Touch(const struct object *o, double now)
 {
-	int i;
 	struct objexp *oe;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -206,8 +205,7 @@ EXP_Touch(const struct object *o, double now)
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 	if (oe->lru_stamp + params->lru_timeout > now)
 		return;
-	TRYLOCK(&exp_mtx, i);
-	if (i)
+	if (Lck_Trylock(&exp_mtx))
 		return;
 	if (oe->on_lru) {
 		VTAILQ_REMOVE(&lru, oe, list);
@@ -215,7 +213,7 @@ EXP_Touch(const struct object *o, double now)
 		oe->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
 	}
-	UNLOCK(&exp_mtx);
+	Lck_Unlock(&exp_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -238,13 +236,13 @@ EXP_Rearm(const struct object *o)
 		return;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 	update_object_when(o);
-	LOCK(&exp_mtx);
+	Lck_Lock(&exp_mtx);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
 	binheap_delete(exp_heap, oe->timer_idx); /* XXX: binheap_shuffle() ? */
 	assert(oe->timer_idx == BINHEAP_NOIDX);
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
-	UNLOCK(&exp_mtx);
+	Lck_Unlock(&exp_mtx);
 }
 
 
@@ -278,11 +276,11 @@ exp_timer(void *arg)
 	VCL_Get(&sp->vcl);
 	t = TIM_real();
 	while (1) {
-		LOCK(&exp_mtx);
+		Lck_Lock(&exp_mtx);
 		oe = binheap_root(exp_heap);
 		CHECK_OBJ_ORNULL(oe, OBJEXP_MAGIC);
 		if (oe == NULL || oe->timer_when > t) { /* XXX: > or >= ? */
-			UNLOCK(&exp_mtx);
+			Lck_Unlock(&exp_mtx);
 			WSL_Flush(&ww, 0);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
@@ -305,7 +303,7 @@ exp_timer(void *arg)
 		}
 
 		assert(oe->on_lru);
-		UNLOCK(&exp_mtx);
+		Lck_Unlock(&exp_mtx);
 
 		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid, oe->timer_what);
 
@@ -319,10 +317,10 @@ exp_timer(void *arg)
 				    o->xid);
 			}
 			update_object_when(o);
-			LOCK(&exp_mtx);
+			Lck_Lock(&exp_mtx);
 			binheap_insert(exp_heap, oe);
 			assert(oe->timer_idx != BINHEAP_NOIDX);
-			UNLOCK(&exp_mtx);
+			Lck_Unlock(&exp_mtx);
 		} else {
 			assert(oe->timer_what == tmr_ttl);
 			sp->obj = o;
@@ -332,11 +330,11 @@ exp_timer(void *arg)
 			assert(sp->handling == VCL_RET_DISCARD);
 			WSL(&ww, SLT_ExpKill, 0,
 			    "%u %d", o->xid, (int)(o->ttl - t));
-			LOCK(&exp_mtx);
+			Lck_Lock(&exp_mtx);
 			VTAILQ_REMOVE(&lru, o->objexp, list);
 			oe->on_lru = 0;
 			VSL_stats->n_expired++;
-			UNLOCK(&exp_mtx);
+			Lck_Unlock(&exp_mtx);
 			del_objexp(o);
 			HSH_Deref(o);
 		}
@@ -367,7 +365,7 @@ EXP_NukeOne(struct sess *sp)
 	 * NB: Checking refcount here is no guarantee that it does not gain
 	 * another ref while we ponder its destiny without the lock held.
 	 */
-	LOCK(&exp_mtx);
+	Lck_Lock(&exp_mtx);
 	VTAILQ_FOREACH(oe, &lru, list) {
 		CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 		if (oe->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
@@ -388,7 +386,7 @@ EXP_NukeOne(struct sess *sp)
 		assert(oe->timer_idx == BINHEAP_NOIDX);
 		VSL_stats->n_lru_nuked++;
 	}
-	UNLOCK(&exp_mtx);
+	Lck_Unlock(&exp_mtx);
 
 	if (oe == NULL)
 		return (-1);
@@ -414,14 +412,14 @@ EXP_NukeOne(struct sess *sp)
 	assert(sp->handling == VCL_RET_KEEP);
 
 	/* Insert in binheap and lru again */
-	LOCK(&exp_mtx);
+	Lck_Lock(&exp_mtx);
 	VSL_stats->n_lru_nuked--;		/* It was premature */
 	VSL_stats->n_lru_saved++;
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru, oe, list);
 	oe->on_lru = 1;
-	UNLOCK(&exp_mtx);
+	Lck_Unlock(&exp_mtx);
 	return (0);
 }
 
@@ -456,7 +454,7 @@ void
 EXP_Init(void)
 {
 
-	MTX_INIT(&exp_mtx);
+	Lck_New(&exp_mtx);
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	XXXAN(exp_heap);
 	AZ(pthread_create(&exp_thread, NULL, exp_timer, NULL));

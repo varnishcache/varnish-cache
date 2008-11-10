@@ -53,8 +53,8 @@
 #include "vlu.h"
 #include "vsb.h"
 
-pthread_t	cli_thread;
-static MTX	cli_mtx;
+pthread_t		cli_thread;
+static struct lock	cli_mtx;
 
 /*
  * The CLI commandlist is split in three:
@@ -81,12 +81,12 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 	case DEBUG_CLI:	 cp = &ccf_debug_cli;  break;
 	default: INCOMPL();
 	}
-	LOCK(&cli_mtx);
+	Lck_Lock(&cli_mtx);
 	c = cli_concat(*cp, p);
 	AN(c);
 	free(*cp);
 	*cp = c;
-	UNLOCK(&cli_mtx);
+	Lck_Unlock(&cli_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -105,7 +105,7 @@ cli_vlu(void *priv, const char *p)
 	VCL_Poll();
 	VBE_Poll();
 	vsb_clear(cli->sb);
-	LOCK(&cli_mtx);
+	Lck_Lock(&cli_mtx);
 	cli_dispatch(cli, ccf_master_cli, p);
 	if (cli->result == CLIS_UNKNOWN) {
 		vsb_clear(cli->sb);
@@ -117,7 +117,7 @@ cli_vlu(void *priv, const char *p)
 		cli->result = CLIS_OK;
 		cli_dispatch(cli, ccf_debug_cli, p);
 	}
-	UNLOCK(&cli_mtx);
+	Lck_Unlock(&cli_mtx);
 	vsb_finish(cli->sb);
 	AZ(vsb_overflowed(cli->sb));
 	i = cli_writeres(heritage.cli_out, cli);
@@ -242,7 +242,7 @@ void
 CLI_Init(void)
 {
 
-	MTX_INIT(&cli_mtx);
+	Lck_New(&cli_mtx);
 	cli_thread = pthread_self();
 
 	CLI_AddFuncs(MASTER_CLI, master_cmds);

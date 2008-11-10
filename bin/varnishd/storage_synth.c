@@ -43,18 +43,18 @@
 #include "vsb.h"
 #include "stevedore.h"
 
-static MTX			sms_mtx;
+static struct lock		sms_mtx;
 
 static void
 sms_free(struct storage *sto)
 {
 
 	CHECK_OBJ_NOTNULL(sto, STORAGE_MAGIC);
-	LOCK(&sms_mtx);
+	Lck_Lock(&sms_mtx);
 	VSL_stats->sms_nobj--;
 	VSL_stats->sms_nbytes -= sto->len;
 	VSL_stats->sms_bfree += sto->len;
-	UNLOCK(&sms_mtx);
+	Lck_Unlock(&sms_mtx);
 	vsb_delete(sto->priv);
 	free(sto);
 }
@@ -63,7 +63,7 @@ void
 SMS_Init(void)
 {
 
-	AZ(pthread_mutex_init(&sms_mtx, NULL));
+	Lck_New(&sms_mtx);
 }
 
 static struct stevedore sms_stevedore = {
@@ -82,10 +82,10 @@ SMS_Makesynth(struct object *obj)
 	HSH_Freestore(obj);
 	obj->len = 0;
 
-	LOCK(&sms_mtx);
+	Lck_Lock(&sms_mtx);
 	VSL_stats->sms_nreq++;
 	VSL_stats->sms_nobj++;
-	UNLOCK(&sms_mtx);
+	Lck_Unlock(&sms_mtx);
 
 	sto = calloc(sizeof *sto, 1);
 	XXXAN(sto);

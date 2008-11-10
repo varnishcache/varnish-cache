@@ -78,7 +78,7 @@ static VTAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
 };
 
 static unsigned ses_qp;
-static MTX			ses_mem_mtx;
+static struct lock		ses_mem_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -103,11 +103,11 @@ static struct srcaddrhead {
 	unsigned		magic;
 #define SRCADDRHEAD_MAGIC	0x38231a8b
 	VTAILQ_HEAD(,srcaddr)	head;
-	MTX			mtx;
+	struct lock		mtx;
 } *srchash;
 
 static unsigned			nsrchash;
-static MTX			stat_mtx;
+static struct lock 		stat_mtx;
 
 /*--------------------------------------------------------------------
  * Assign a srcaddr to this session.
@@ -140,7 +140,7 @@ SES_RefSrcAddr(struct sess *sp)
 		XXXAN(sp->wrk->srcaddr);
 	}
 
-	LOCK(&ch->mtx);
+	Lck_Lock(&ch->mtx);
 	c3 = NULL;
 	VTAILQ_FOREACH_SAFE(c, &ch->head, list, c2) {
 		if (c->hash == u && !strcmp(c->addr, sp->addr)) {
@@ -155,7 +155,7 @@ SES_RefSrcAddr(struct sess *sp)
 				VTAILQ_REMOVE(&ch->head, c3, list);
 				VSL_stats->n_srcaddr--;
 			}
-			UNLOCK(&ch->mtx);
+			Lck_Unlock(&ch->mtx);
 			if (c3 != NULL)
 				free(c3);
 			return;
@@ -183,7 +183,7 @@ SES_RefSrcAddr(struct sess *sp)
 	VSL_stats->n_srcaddr_act++;
 	VTAILQ_INSERT_TAIL(&ch->head, c3, list);
 	sp->srcaddr = c3;
-	UNLOCK(&ch->mtx);
+	Lck_Unlock(&ch->mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -198,13 +198,13 @@ ses_relsrcaddr(struct sess *sp)
 	CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
 	ch = sp->srcaddr->sah;
 	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
-	LOCK(&ch->mtx);
+	Lck_Lock(&ch->mtx);
 	assert(sp->srcaddr->nref > 0);
 	sp->srcaddr->nref--;
 	if (sp->srcaddr->nref == 0)
 		VSL_stats->n_srcaddr_act--;
 	sp->srcaddr = NULL;
-	UNLOCK(&ch->mtx);
+	Lck_Unlock(&ch->mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -228,21 +228,21 @@ SES_Charge(struct sess *sp)
 	if (sp->srcaddr != NULL) {
 		/* XXX: only report once per second ? */
 		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
-		LOCK(&sp->srcaddr->sah->mtx);
+		Lck_Lock(&sp->srcaddr->sah->mtx);
 		ses_sum_acct(&sp->srcaddr->acct, a);
 		b = sp->srcaddr->acct;
-		UNLOCK(&sp->srcaddr->sah->mtx);
+		Lck_Unlock(&sp->srcaddr->sah->mtx);
 		WSL(sp->wrk, SLT_StatAddr, 0,
 		    "%s 0 %.0f %ju %ju %ju %ju %ju %ju %ju",
 		    sp->srcaddr->addr, sp->t_end - b.first,
 		    b.sess, b.req, b.pipe, b.pass,
 		    b.fetch, b.hdrbytes, b.bodybytes);
 	}
-	LOCK(&stat_mtx);
+	Lck_Lock(&stat_mtx);
 #define ACCT(foo)	VSL_stats->s_##foo += a->foo;
 #include "acct_fields.h"
 #undef ACCT
-	UNLOCK(&stat_mtx);
+	Lck_Unlock(&stat_mtx);
 	memset(a, 0, sizeof *a);
 }
 
@@ -266,9 +266,9 @@ SES_New(const struct sockaddr *addr, unsigned len)
 		 * If that queue is empty, flip queues holding the lock
 		 * and try the new unlocked queue.
 		 */
-		LOCK(&ses_mem_mtx);
+		Lck_Lock(&ses_mem_mtx);
 		ses_qp = 1 - ses_qp;
-		UNLOCK(&ses_mem_mtx);
+		Lck_Unlock(&ses_mem_mtx);
 		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
 	}
 	if (sm != NULL) {
@@ -343,9 +343,9 @@ SES_Delete(struct sess *sp)
 		VSL_stats->n_sess_mem--;
 		free(sm);
 	} else {
-		LOCK(&ses_mem_mtx);
+		Lck_Lock(&ses_mem_mtx);
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
-		UNLOCK(&ses_mem_mtx);
+		Lck_Unlock(&ses_mem_mtx);
 	}
 }
 
@@ -362,8 +362,8 @@ SES_Init()
 	for (i = 0; i < nsrchash; i++) {
 		srchash[i].magic = SRCADDRHEAD_MAGIC;
 		VTAILQ_INIT(&srchash[i].head);
-		MTX_INIT(&srchash[i].mtx);
+		Lck_New(&srchash[i].mtx);
 	}
-	MTX_INIT(&stat_mtx);
-	MTX_INIT(&ses_mem_mtx);
+	Lck_New(&stat_mtx);
+	Lck_New(&ses_mem_mtx);
 }
