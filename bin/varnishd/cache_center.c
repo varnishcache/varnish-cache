@@ -1055,9 +1055,23 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 	cli_out(cli, "XID is %u", xids);
 }
 
+static void
+cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	unsigned long seed;
+
+	if (av[2] != NULL)
+		seed = strtoul(av[2], NULL, 0);
+	srandom(seed);
+	cli_out(cli, "Random(3) seeded with %lu", seed);
+}
+
 static struct cli_proto debug_cmds[] = {
 	{ "debug.xid", "debug.xid",
 		"\tExamine or set XID\n", 0, 1, cli_debug_xid },
+	{ "debug.srandom", "debug.srandom",
+		"\tSeed the random(3) function\n", 0, 1, cli_debug_srandom },
 	{ NULL }
 };
 
