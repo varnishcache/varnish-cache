@@ -286,8 +286,12 @@ LocTable(const struct tokenlist *tl)
 				pos++;
 
 		}
-		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, \"%.*s\" },\n",
-		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1, PF(t));
+		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, ",
+		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
+		if (t->tok == CSRC)
+			Fc(tl, 0, " \"C{\"},\n");
+		else
+			Fc(tl, 0, " \"%.*s\" },\n", PF(t));
 	}
 	Fc(tl, 0, "};\n");
 }
