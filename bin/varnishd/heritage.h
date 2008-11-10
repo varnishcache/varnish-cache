@@ -183,6 +183,9 @@ struct params {
 	/* Amount of time to sleep when running out of file
 	   descriptors.  In msecs */
 	unsigned		accept_fd_holdoff;
+
+	/* Get rid of duplicate purges */
+	unsigned		purge_dups;
 };
 
 extern volatile struct params *params;

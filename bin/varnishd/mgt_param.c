@@ -817,6 +817,10 @@ static const struct parspec parspec[] = {
 		"The TTL assigned to the synthesized error pages\n",
 		0,
 		"0", "seconds" },
+	{ "purge_dups", tweak_bool, &master.purge_dups, 0, 0,
+		"Detect and eliminate duplicate purges.\n",
+		0,
+		"off", "bool" },
 	{ NULL, NULL, NULL }
 };
 
