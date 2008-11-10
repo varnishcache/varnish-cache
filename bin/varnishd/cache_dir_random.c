@@ -66,9 +66,9 @@ struct vdi_random {
 static struct vbe_conn *
 vdi_random_getfd(struct sess *sp)
 {
-	int i, j, k;
+	int i, k;
 	struct vdi_random *vs;
-	double r, s1, s2;
+	double r, s1;
 	struct vbe_conn *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -78,45 +78,34 @@ vdi_random_getfd(struct sess *sp)
 	k = 0;
 	for (k = 0; k < vs->retries; ) {
 
-		r = random() / 2147483648.0;	/* 2^31 */
-		assert(r >= 0.0 && r < 1.0);
-
+		/* Sum up the weights of healty backends */
 		s1 = 0.0;
-		j = 0;
-		for (i = 0; i < vs->nhosts; i++) {
-			if (!vs->hosts[i].backend->healthy)
-				continue;
-			s1 += vs->hosts[i].weight;
-			j++;
-		}	
+		for (i = 0; i < vs->nhosts; i++)
+			if (vs->hosts[i].backend->healthy)
+				s1 += vs->hosts[i].weight;
 
-		if (j == 0)		/* No healthy hosts */
+		if (s1 == 0.0)
 			return (NULL);
 
+		/* Pick a random threshold in that interval */
+		r = random() / 2147483648.0;	/* 2^31 */
+		assert(r >= 0.0 && r < 1.0);
 		r *= s1;
 
-		s2 = 0;
+		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
 			if (!vs->hosts[i].backend->healthy)
 				continue;
-			s2 += vs->hosts[i].weight;
-			if (r < s2)
-				break;
+			s1 += vs->hosts[i].weight;
+			if (r >= s1)
+				continue;
+			vbe = VBE_GetVbe(sp, vs->hosts[i].backend);
+			if (vbe != NULL)
+				return (vbe);
+			break;
 		}
-
-		if (s2 != s1) {
-			/*
-			 * Health bit changed in an unusable way while we
-			 * worked the problem.  Usable changes are any that
-			 * result in the same sum we prepared for.
-			 */
-			continue;
-		}
-		vbe = VBE_GetVbe(sp, vs->hosts[i].backend);
-		if (vbe != NULL)
-			return (vbe);
 		k++;
-	} 
+	}
 	return (NULL);
 }
 
