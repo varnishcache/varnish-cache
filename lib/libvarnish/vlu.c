@@ -87,8 +87,11 @@ LineUpProcess(struct vlu *l)
 
 	l->buf[l->bufp] = '\0';
 	for (p = l->buf; *p != '\0'; p = q) {
-		q = strchr(p, '\n');
-		if (q == NULL)
+		/* Find first CR or NL */
+		for (q = p; *q != '\0'; q++)
+			if (*q == '\n' || *q == '\r')
+				break;
+		if (*q == '\0')
 			break;
 		*q++ = '\0';
 		i = l->func(l->priv, p);
