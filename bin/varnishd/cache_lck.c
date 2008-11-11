@@ -149,6 +149,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
 	ilck->held = 0;
 	AZ(pthread_cond_wait(cond, &ilck->mtx));
 	AZ(ilck->held);
+	ilck->held = 1;
 	ilck->owner = pthread_self();
 }
 
