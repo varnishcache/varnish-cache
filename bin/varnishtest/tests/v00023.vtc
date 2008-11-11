@@ -1,0 +1,31 @@
+# $Id$
+
+test "Test that obj.ttl = 0s prevents subsequent hits"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -body "1"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -body "22"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_hit {
+		set obj.ttl = 0s;
+		restart;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+} -run
