@@ -1,7 +1,7 @@
 Summary: Varnish is a high-performance HTTP accelerator
 Name: varnish
-Version: 2.0
-Release: 2%{?dist}
+Version: 2.0.2
+Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -220,6 +220,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Nov 10 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-1
+  New upstream release 2.0.2. A bugfix release
+
 * Sun Nov 02 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.1-2
 - Removed the requirement for kernel => 2.6.0. All supported
   platforms meets this, and it generates strange errors in EPEL
