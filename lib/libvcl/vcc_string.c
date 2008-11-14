@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <regex.h>
 
 #include "vsb.h"
 
@@ -47,13 +48,22 @@
 char *
 vcc_regexp(struct tokenlist *tl, int sub)
 {
-	char buf[32], *p;
+	char buf[BUFSIZ], *p;
+	regex_t	t;
+	int i;
 
 	Expect(tl, CSTR);
-	if (VRT_re_test(tl->sb, tl->t->dec, sub)) {
+	memset(&t, 0, sizeof t);
+	i = regcomp(&t, tl->t->dec, REG_EXTENDED | (sub ? 0 : REG_NOSUB));
+	if (i != 0) {
+		(void)regerror(i, &t, buf, sizeof buf);
+		vsb_printf(tl->sb,
+		    "Regexp compilation error:\n\n%s\n\n", buf);
 		vcc_ErrWhere(tl, tl->t);
+		regfree(&t);
 		return (NULL);
 	}
+	regfree(&t);
 	sprintf(buf, "VGC_re_%u", tl->recnt++);
 	p = TlAlloc(tl, strlen(buf) + 1);
 	strcpy(p, buf);
