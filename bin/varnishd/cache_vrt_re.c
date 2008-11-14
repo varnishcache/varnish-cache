@@ -84,25 +84,6 @@ VRT_re_match(const char *s, void *re)
 	return (0);
 }
 
-int
-VRT_re_test(struct vsb *sb, const char *re, int sub)
-{
-	int i;
-	regex_t	t;
-	char buf[BUFSIZ];
-
-	memset(&t, 0, sizeof t);
-	i = regcomp(&t, re, REG_EXTENDED | (sub ? 0 : REG_NOSUB));
-	if (i == 0) {
-		regfree(&t);
-		return (0);
-	}
-	(void)regerror(i, &t, buf, sizeof buf);
-	vsb_printf(sb, "Regexp compilation error:\n\n%s\n\n", buf);
-	regfree(&t);
-	return (1);
-}
-
 const char *
 VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
     const char *sub)
