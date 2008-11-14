@@ -167,10 +167,10 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3339 2008-10-20 20");
-	vsb_cat(sb, ":05:25Z phk $\n *\n * NB:  This file is machine genera");
-	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit vcc_gen_fixed_token.tcl");
-	vsb_cat(sb, " instead\n */\n\nstruct sess;\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3377 2008-11-10 11");
+	vsb_cat(sb, ":55:15Z tfheen $\n *\n * NB:  This file is machine gen");
+	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit vcc_gen_fixed_token.");
+	vsb_cat(sb, "tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
 	vsb_cat(sb, "typedef void vcl_fini_f(struct cli *);\n");
 	vsb_cat(sb, "typedef int vcl_func_f(struct sess *sp);\n");
@@ -223,8 +223,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3324 2008-10-18 20:");
-	vsb_cat(sb, "50:10Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3393 2008-11-14 09:");
+	vsb_cat(sb, "49:28Z phk $\n *\n * Runtime support for compiled VCL ");
 	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
 	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
@@ -271,7 +271,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "g);\n\n/* Regexp related */\nvoid VRT_re_init(void **,");
 	vsb_cat(sb, " const char *, int sub);\nvoid VRT_re_fini(void *);\n");
 	vsb_cat(sb, "int VRT_re_match(const char *, void *re);\n");
-	vsb_cat(sb, "int VRT_re_test(struct vsb *, const char *, int sub);\n");
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all,");
 	vsb_cat(sb, " const char *,\n    void *, const char *);\n");
 	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp,  const char *, ...);");
