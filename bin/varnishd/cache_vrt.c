@@ -80,6 +80,14 @@ VRT_count(const struct sess *sp, unsigned u)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_acl_log(const struct sess *sp, const char *msg)
+{
+	WSL(sp->wrk, SLT_VCL_acl, sp->fd, msg);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct http *
 vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 {
