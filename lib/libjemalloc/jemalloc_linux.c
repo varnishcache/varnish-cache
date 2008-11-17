@@ -197,6 +197,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <ansidecl.h>
 
 #include "rb.h"
 
@@ -1113,7 +1114,6 @@ static bool	base_pages_alloc_dss(size_t minsize);
 static bool	base_pages_alloc_mmap(size_t minsize);
 static bool	base_pages_alloc(size_t minsize);
 static void	*base_alloc(size_t size);
-static void	*base_calloc(size_t number, size_t size);
 static extent_node_t *base_node_alloc(void);
 static void	base_node_dealloc(extent_node_t *node);
 #ifdef MALLOC_STATS
@@ -1199,6 +1199,14 @@ void		_malloc_postfork(void);
  * End function prototypes.
  */
 /******************************************************************************/
+
+/*
+ * Functions missing prototypes which caused -Werror to fail. 
+ * Not sure if it has any side effects.
+ * */
+size_t malloc_usable_size(const void *ptr);
+void _malloc_thread_cleanup(void);
+
 
 static void
 wrtmessage(const char *p1, const char *p2, const char *p3, const char *p4)
@@ -1625,17 +1633,6 @@ base_alloc(size_t size)
 	return (ret);
 }
 
-static void *
-base_calloc(size_t number, size_t size)
-{
-	void *ret;
-
-	ret = base_alloc(number * size);
-	memset(ret, 0, number * size);
-
-	return (ret);
-}
-
 static extent_node_t *
 base_node_alloc(void)
 {
@@ -1779,7 +1776,7 @@ extent_szad_comp(extent_node_t *a, extent_node_t *b)
 }
 
 /* Wrap red-black tree macros in functions. */
-rb_wrap(static, extent_tree_szad_, extent_tree_t, extent_node_t,
+rb_wrap(static ATTRIBUTE_UNUSED, extent_tree_szad_, extent_tree_t, extent_node_t,
     link_szad, extent_szad_comp)
 #endif
 
@@ -1793,7 +1790,7 @@ extent_ad_comp(extent_node_t *a, extent_node_t *b)
 }
 
 /* Wrap red-black tree macros in functions. */
-rb_wrap(static, extent_tree_ad_, extent_tree_t, extent_node_t, link_ad,
+rb_wrap(static ATTRIBUTE_UNUSED, extent_tree_ad_, extent_tree_t, extent_node_t, link_ad,
     extent_ad_comp)
 
 /*
@@ -2347,7 +2344,7 @@ arena_chunk_comp(arena_chunk_t *a, arena_chunk_t *b)
 }
 
 /* Wrap red-black tree macros in functions. */
-rb_wrap(static, arena_chunk_tree_dirty_, arena_chunk_tree_t,
+rb_wrap(static ATTRIBUTE_UNUSED, arena_chunk_tree_dirty_, arena_chunk_tree_t,
     arena_chunk_t, link_dirty, arena_chunk_comp)
 
 static inline int
@@ -2363,7 +2360,7 @@ arena_run_comp(arena_chunk_map_t *a, arena_chunk_map_t *b)
 }
 
 /* Wrap red-black tree macros in functions. */
-rb_wrap(static, arena_run_tree_, arena_run_tree_t, arena_chunk_map_t,
+rb_wrap(static ATTRIBUTE_UNUSED, arena_run_tree_, arena_run_tree_t, arena_chunk_map_t,
     link, arena_run_comp)
 
 static inline int
@@ -2395,7 +2392,7 @@ arena_avail_comp(arena_chunk_map_t *a, arena_chunk_map_t *b)
 }
 
 /* Wrap red-black tree macros in functions. */
-rb_wrap(static, arena_avail_tree_, arena_avail_tree_t,
+rb_wrap(static ATTRIBUTE_UNUSED, arena_avail_tree_, arena_avail_tree_t,
     arena_chunk_map_t, link, arena_avail_comp)
 
 static inline void *
