@@ -137,7 +137,7 @@ HSH_Freestore(struct object *o)
 }
 
 int
-HSH_Compare(const struct sess *sp, const struct objhead *obj)
+HSH_Compare(const struct sess *sp, const struct objhead *oh)
 {
 	int i;
 	unsigned u, v;
@@ -145,11 +145,11 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(obj, OBJHEAD_MAGIC);
-	i = sp->lhashptr - obj->hashlen;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	i = sp->lhashptr - oh->hashlen;
 	if (i)
 		return (i);
-	b = obj->hash;
+	b = oh->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
 		i = memcmp(sp->hashptr[u], b, v);
@@ -162,18 +162,21 @@ HSH_Compare(const struct sess *sp, const struct objhead *obj)
 	}
 	assert(*b == '\0');
 	b++;
-	assert(b == obj->hash + obj->hashlen);
+	assert(b == oh->hash + oh->hashlen);
 	return (0);
 }
 
 void
-HSH_Copy(const struct sess *sp, const struct objhead *obj)
+HSH_Copy(const struct sess *sp, const struct objhead *oh)
 {
 	unsigned u, v;
 	char *b;
 
-	assert(obj->hashlen >= sp->lhashptr);
-	b = obj->hash;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	assert(oh->hashlen >= sp->lhashptr);
+	b = oh->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
 		memcpy(b, sp->hashptr[u], v);
@@ -181,7 +184,7 @@ HSH_Copy(const struct sess *sp, const struct objhead *obj)
 		*b++ = '#';
 	}
 	*b++ = '\0';
-	assert(b <= obj->hash + obj->hashlen);
+	assert(b <= oh->hash + oh->hashlen);
 }
 
 struct object *

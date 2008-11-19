@@ -116,13 +116,13 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
  */
 
 static int
-hsl_deref(const struct objhead *obj)
+hsl_deref(const struct objhead *oh)
 {
 	struct hsl_entry *he;
 	int ret;
 
-	AN(obj->hashpriv);
-	he = obj->hashpriv;
+	AN(oh->hashpriv);
+	he = oh->hashpriv;
 	Lck_Lock(&hsl_mtx);
 	if (--he->refcnt == 0) {
 		VTAILQ_REMOVE(&hsl_head, he, list);
