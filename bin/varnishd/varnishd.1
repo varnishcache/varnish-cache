@@ -520,7 +520,7 @@ Higher values may allow
 .Nm
 to respond faster to a sudden increase in traffic.
 .Pp
-The default is 1.
+The default is 5.
 .It Va thread_pools
 The number of worker thread pools.
 Higher values reduce lock contention but increase pressure on the
@@ -528,7 +528,7 @@ scheduler.
 Note that a decrease of this parameter will only take effect after a
 restart.
 .Pp
-The default is 1.
+The default is 2.
 .It Va thread_pool_timeout
 The amount of time a worker thread can be idle before it is killed,
 when the number of worker threads exceeds
