@@ -47,7 +47,6 @@
 struct hsl_entry {
 	VTAILQ_ENTRY(hsl_entry)	list;
 	struct objhead		*oh;
-	unsigned		refcnt;
 };
 
 static VTAILQ_HEAD(, hsl_entry)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
@@ -85,7 +84,7 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
 			continue;
 		if (i > 0)
 			break;
-		he->refcnt++;
+		he->oh->refcnt++;
 		noh = he->oh;
 		Lck_Unlock(&hsl_mtx);
 		return (noh);
@@ -94,7 +93,7 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
 		he2 = calloc(sizeof *he2, 1);
 		XXXAN(he2);
 		he2->oh = noh;
-		he2->refcnt = 1;
+		he2->oh->refcnt = 1;
 
 		noh->hashpriv = he2;
 		noh->hash = malloc(sp->lhashptr);
@@ -124,7 +123,7 @@ hsl_deref(const struct objhead *oh)
 	AN(oh->hashpriv);
 	he = oh->hashpriv;
 	Lck_Lock(&hsl_mtx);
-	if (--he->refcnt == 0) {
+	if (--he->oh->refcnt == 0) {
 		VTAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
 		ret = 0;

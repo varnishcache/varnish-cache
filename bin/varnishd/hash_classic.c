@@ -49,7 +49,6 @@ struct hcl_entry {
 	VTAILQ_ENTRY(hcl_entry)	list;
 	struct hcl_hd		*head;
 	struct objhead		*oh;
-	unsigned		refcnt;
 	unsigned		digest;
 	unsigned		hash;
 };
@@ -167,7 +166,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 				continue;
 			if (i > 0)
 				break;
-			he->refcnt++;
+			he->oh->refcnt++;
 			roh = he->oh;
 			Lck_Unlock(&hp->mtx);
 			/*
@@ -191,7 +190,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 				VTAILQ_INSERT_BEFORE(he, he2, list);
 			else
 				VTAILQ_INSERT_TAIL(&hp->head, he2, list);
-			he2->refcnt++;
+			he2->oh->refcnt++;
 			noh = he2->oh;
 			Lck_Unlock(&hp->mtx);
 			return (noh);
@@ -231,11 +230,11 @@ hcl_deref(const struct objhead *oh)
 	CAST_OBJ_NOTNULL(he, oh->hashpriv, HCL_ENTRY_MAGIC);
 	hp = he->head;
 	CHECK_OBJ_NOTNULL(hp, HCL_HEAD_MAGIC);
-	assert(he->refcnt > 0);
+	assert(he->oh->refcnt > 0);
 	assert(he->hash < hcl_nhash);
 	assert(hp == &hcl_head[he->hash]);
 	Lck_Lock(&hp->mtx);
-	if (--he->refcnt == 0)
+	if (--he->oh->refcnt == 0)
 		VTAILQ_REMOVE(&hp->head, he, list);
 	else
 		he = NULL;
