@@ -71,6 +71,7 @@
 #include "cli_priv.h"
 #include "cache.h"
 #include "stevedore.h"
+#include "hash_slinger.h"
 
 VTAILQ_HEAD(workerhead, worker);
 

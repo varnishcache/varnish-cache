@@ -75,6 +75,7 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"
+#include "hash_slinger.h"
 
 static unsigned xids;
 

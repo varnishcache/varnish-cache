@@ -29,6 +29,12 @@
  * $Id$
  */
 
+/*
+ * This macro can be used in .h files to isolate bits that the manager
+ * should not (need to) see, such as pthread mutexes etc.
+ */
+#define VARNISH_CACHE_CHILD	1
+
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
@@ -213,8 +219,6 @@ struct workreq {
 	void			*priv;
 };
 
-#include "hash_slinger.h"
-
 /* Backend Request ---------------------------------------------------*/
 
 struct bereq {
@@ -289,19 +293,6 @@ struct object {
 	struct object		*child;
 
 	int			hits;
-};
-
-struct objhead {
-	unsigned		magic;
-#define OBJHEAD_MAGIC		0x1b96615d
-	void			*hashpriv;
-
-	struct lock		mtx;
-	unsigned		refcnt;
-	VTAILQ_HEAD(,object)	objects;
-	char			*hash;
-	unsigned		hashlen;
-	VTAILQ_HEAD(, sess)	waitinglist;
 };
 
 /* -------------------------------------------------------------------*/
@@ -448,18 +439,6 @@ int EXP_NukeOne(struct sess *sp);
 int Fetch(struct sess *sp);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
-
-/* cache_hash.c */
-void HSH_Prealloc(struct sess *sp);
-void HSH_Freestore(struct object *o);
-int HSH_Compare(const struct sess *sp, const struct objhead *o);
-void HSH_Copy(const struct sess *sp, const struct objhead *o);
-struct object *HSH_Lookup(struct sess *sp);
-void HSH_Unbusy(const struct sess *sp);
-void HSH_Ref(struct object *o);
-void HSH_Deref(struct object *o);
-double HSH_Grace(double g);
-void HSH_Init(void);
 
 /* cache_http.c */
 const char *http_StatusMessage(unsigned);

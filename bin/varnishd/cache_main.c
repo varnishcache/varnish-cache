@@ -39,6 +39,7 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
+#include "hash_slinger.h"
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by

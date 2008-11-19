@@ -30,12 +30,13 @@
  */
 
 struct sess;
+struct object;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
 typedef struct objhead *
     hash_lookup_f(const struct sess *sp, struct objhead *nobj);
-typedef int hash_deref_f(const struct objhead *obj);
+typedef int hash_deref_f(struct objhead *obj);
 
 struct hash_slinger {
 	unsigned		magic;
@@ -46,3 +47,38 @@ struct hash_slinger {
 	hash_lookup_f		*lookup;
 	hash_deref_f		*deref;
 };
+
+/* cache_hash.c */
+void HSH_Prealloc(struct sess *sp);
+void HSH_Freestore(struct object *o);
+int HSH_Compare(const struct sess *sp, const struct objhead *o);
+void HSH_Copy(const struct sess *sp, struct objhead *o);
+struct object *HSH_Lookup(struct sess *sp);
+void HSH_Unbusy(const struct sess *sp);
+void HSH_Ref(struct object *o);
+void HSH_Deref(struct object *o);
+double HSH_Grace(double g);
+void HSH_Init(void);
+
+
+#ifdef VARNISH_CACHE_CHILD
+struct objhead {
+	unsigned		magic;
+#define OBJHEAD_MAGIC		0x1b96615d
+
+	struct lock		mtx;
+	unsigned		refcnt;
+	VTAILQ_HEAD(,object)	objects;
+	char			*hash;
+	unsigned		hashlen;
+	VTAILQ_HEAD(, sess)	waitinglist;
+
+	/*------------------------------------------------------------
+	 * The fields below are for the sole private use of the hash 
+	 * implementation.
+	 */
+	VTAILQ_ENTRY(objhead)	hoh_list;
+	void			*hoh_head;
+	unsigned		hoh_digest;
+};
+#endif /* VARNISH_CACHE_CHILD */

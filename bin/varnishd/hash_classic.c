@@ -40,23 +40,14 @@
 
 #include "shmlog.h"
 #include "cache.h"
+#include "hash_slinger.h"
 
 /*--------------------------------------------------------------------*/
-
-struct hcl_entry {
-	unsigned		magic;
-#define HCL_ENTRY_MAGIC		0x0ba707bf
-	VTAILQ_ENTRY(hcl_entry)	list;
-	struct hcl_hd		*head;
-	struct objhead		*oh;
-	unsigned		digest;
-	unsigned		hash;
-};
 
 struct hcl_hd {
 	unsigned		magic;
 #define HCL_HEAD_MAGIC		0x0f327016
-	VTAILQ_HEAD(, hcl_entry)	head;
+	VTAILQ_HEAD(, objhead)	head;
 	struct lock		mtx;
 };
 
@@ -126,16 +117,13 @@ hcl_start(void)
 static struct objhead *
 hcl_lookup(const struct sess *sp, struct objhead *noh)
 {
-	struct objhead *roh;
-	struct hcl_entry *he, *he2;
+	struct objhead *oh;
 	struct hcl_hd *hp;
-	unsigned u1, digest, r;
+	unsigned u1, digest;
 	unsigned u, v;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	CHECK_OBJ_ORNULL(noh, OBJHEAD_MAGIC);
 
 	digest = ~0U;
@@ -147,73 +135,39 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 
 	u1 = digest % hcl_nhash;
 	hp = &hcl_head[u1];
-	he2 = NULL;
 
-	for (r = 0; r < 2; r++ ) {
-		Lck_Lock(&hp->mtx);
-		VTAILQ_FOREACH(he, &hp->head, list) {
-			CHECK_OBJ_NOTNULL(he, HCL_ENTRY_MAGIC);
-			if (sp->lhashptr < he->oh->hashlen)
-				continue;
-			if (sp->lhashptr > he->oh->hashlen)
-				break;
-			if (he->digest < digest)
-				continue;
-			if (he->digest > digest)
-				break;
-			i = HSH_Compare(sp, he->oh);
-			if (i < 0)
-				continue;
-			if (i > 0)
-				break;
-			he->oh->refcnt++;
-			roh = he->oh;
-			Lck_Unlock(&hp->mtx);
-			/*
-			 * If we loose the race, we need to clean up
-			 * the work we did for our second attempt.
-			 */
-			if (he2 != NULL)
-				free(he2);
-			if (noh != NULL && noh->hash != NULL) {
-				free(noh->hash);
-				noh->hash = NULL;
-			}
-			return (roh);
-		}
-		if (noh == NULL) {
-			Lck_Unlock(&hp->mtx);
-			return (NULL);
-		}
-		if (he2 != NULL) {
-			if (he != NULL)
-				VTAILQ_INSERT_BEFORE(he, he2, list);
-			else
-				VTAILQ_INSERT_TAIL(&hp->head, he2, list);
-			he2->oh->refcnt++;
-			noh = he2->oh;
-			Lck_Unlock(&hp->mtx);
-			return (noh);
-		}
+	Lck_Lock(&hp->mtx);
+	VTAILQ_FOREACH(oh, &hp->head, hoh_list) {
+		if (sp->lhashptr < oh->hashlen)
+			continue;
+		if (sp->lhashptr > oh->hashlen)
+			break;
+		if (oh->hoh_digest < digest)
+			continue;
+		if (oh->hoh_digest > digest)
+			break;
+		i = HSH_Compare(sp, oh);
+		if (i < 0)
+			continue;
+		if (i > 0)
+			break;
+		oh->refcnt++;
 		Lck_Unlock(&hp->mtx);
-
-		he2 = calloc(sizeof *he2, 1);
-		XXXAN(he2);
-		he2->magic = HCL_ENTRY_MAGIC;
-		he2->oh = noh;
-		he2->digest = digest;
-		he2->hash = u1;
-		he2->head = hp;
-
-		noh->hashpriv = he2;
-		AZ(noh->hash);
-		noh->hash = malloc(sp->lhashptr);
-		XXXAN(noh->hash);
-		noh->hashlen = sp->lhashptr;
-		HSH_Copy(sp, noh);
+		return (oh);
 	}
-	assert(he2 == NULL);		/* FlexeLint */
-	INCOMPL();
+
+	if (oh != NULL)
+		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
+	else
+		VTAILQ_INSERT_TAIL(&hp->head, noh, hoh_list);
+
+	noh->hoh_digest = digest;
+	noh->hoh_head = hp;
+
+	HSH_Copy(sp, noh);
+
+	Lck_Unlock(&hp->mtx);
+	return (noh);
 }
 
 /*--------------------------------------------------------------------
@@ -221,28 +175,22 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
  */
 
 static int
-hcl_deref(const struct objhead *oh)
+hcl_deref(struct objhead *oh)
 {
-	struct hcl_entry *he;
 	struct hcl_hd *hp;
+	int ret;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	CAST_OBJ_NOTNULL(he, oh->hashpriv, HCL_ENTRY_MAGIC);
-	hp = he->head;
-	CHECK_OBJ_NOTNULL(hp, HCL_HEAD_MAGIC);
-	assert(he->oh->refcnt > 0);
-	assert(he->hash < hcl_nhash);
-	assert(hp == &hcl_head[he->hash]);
+	CAST_OBJ_NOTNULL(hp, oh->hoh_head, HCL_HEAD_MAGIC);
+	assert(oh->refcnt > 0);
 	Lck_Lock(&hp->mtx);
-	if (--he->oh->refcnt == 0)
-		VTAILQ_REMOVE(&hp->head, he, list);
-	else
-		he = NULL;
+	if (--oh->refcnt == 0) {
+		VTAILQ_REMOVE(&hp->head, oh, hoh_list);
+		ret = 0;
+	} else 
+		ret = 1;
 	Lck_Unlock(&hp->mtx);
-	if (he == NULL)
-		return (1);
-	free(he);
-	return (0);
+	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

@@ -33,23 +33,17 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "shmlog.h"
 #include "cache.h"
+#include "hash_slinger.h"
 
 /*--------------------------------------------------------------------*/
 
-struct hsl_entry {
-	VTAILQ_ENTRY(hsl_entry)	list;
-	struct objhead		*oh;
-};
-
-static VTAILQ_HEAD(, hsl_entry)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
+static VTAILQ_HEAD(, objhead)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
 static struct lock hsl_mtx;
 
 /*--------------------------------------------------------------------
@@ -74,38 +68,28 @@ hsl_start(void)
 static struct objhead *
 hsl_lookup(const struct sess *sp, struct objhead *noh)
 {
-	struct hsl_entry *he, *he2;
+	struct objhead *oh;
 	int i;
 
 	Lck_Lock(&hsl_mtx);
-	VTAILQ_FOREACH(he, &hsl_head, list) {
-		i = HSH_Compare(sp, he->oh);
+	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
+		i = HSH_Compare(sp, oh);
 		if (i < 0)
 			continue;
 		if (i > 0)
 			break;
-		he->oh->refcnt++;
-		noh = he->oh;
+		oh->refcnt++;
 		Lck_Unlock(&hsl_mtx);
-		return (noh);
+		return (oh);
 	}
-	if (noh != NULL) {
-		he2 = calloc(sizeof *he2, 1);
-		XXXAN(he2);
-		he2->oh = noh;
-		he2->oh->refcnt = 1;
 
-		noh->hashpriv = he2;
-		noh->hash = malloc(sp->lhashptr);
-		XXXAN(noh->hash);
-		noh->hashlen = sp->lhashptr;
-		HSH_Copy(sp, noh);
+	if (oh != NULL)
+		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
+	else
+		VTAILQ_INSERT_TAIL(&hsl_head, noh, hoh_list);
 
-		if (he != NULL)
-			VTAILQ_INSERT_BEFORE(he, he2, list);
-		else
-			VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
-	}
+	HSH_Copy(sp, noh);
+
 	Lck_Unlock(&hsl_mtx);
 	return (noh);
 }
@@ -115,17 +99,13 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
  */
 
 static int
-hsl_deref(const struct objhead *oh)
+hsl_deref(struct objhead *oh)
 {
-	struct hsl_entry *he;
 	int ret;
 
-	AN(oh->hashpriv);
-	he = oh->hashpriv;
 	Lck_Lock(&hsl_mtx);
-	if (--he->oh->refcnt == 0) {
-		VTAILQ_REMOVE(&hsl_head, he, list);
-		free(he);
+	if (--oh->refcnt == 0) {
+		VTAILQ_REMOVE(&hsl_head, oh, hoh_list);
 		ret = 0;
 	} else
 		ret = 1;
