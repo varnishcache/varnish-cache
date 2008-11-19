@@ -69,6 +69,8 @@ struct vrt_backend {
 	const unsigned char		*ipv6_sockaddr;
 
 	double				connect_timeout;
+	double				first_byte_timeout;
+	double				between_bytes_timeout;
 	unsigned			max_connections;
 	struct vrt_backend_probe	probe;
 };

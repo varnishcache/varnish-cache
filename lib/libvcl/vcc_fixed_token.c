@@ -243,6 +243,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv4_sockaddr;\n");
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv6_sockaddr;\n");
 	vsb_cat(sb, "\n\tdouble\t\t\t\tconnect_timeout;\n");
+	vsb_cat(sb, "\tdouble\t\t\t\tfirst_byte_timeout;\n");
+	vsb_cat(sb, "\tdouble\t\t\t\tbetween_bytes_timeout;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tmax_connections;\n");
 	vsb_cat(sb, "\tstruct vrt_backend_probe\tprobe;\n");
 	vsb_cat(sb, "};\n\n/*\n * A director with a predictable reply\n");
@@ -335,9 +337,16 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " const char *, ...);\nconst char * VRT_r_bereq_proto(c");
 	vsb_cat(sb, "onst struct sess *);\nvoid VRT_l_bereq_proto(const str");
 	vsb_cat(sb, "uct sess *, const char *, ...);\n");
-	vsb_cat(sb, "const char * VRT_r_obj_proto(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_proto(const struct sess *, const char *");
-	vsb_cat(sb, ", ...);\nint VRT_r_obj_status(const struct sess *);\n");
+	vsb_cat(sb, "double VRT_r_bereq_connect_timeout(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_bereq_connect_timeout(struct sess *, double");
+	vsb_cat(sb, ");\ndouble VRT_r_bereq_first_byte_timeout(struct sess ");
+	vsb_cat(sb, "*);\nvoid VRT_l_bereq_first_byte_timeout(struct sess *");
+	vsb_cat(sb, ", double);\ndouble VRT_r_bereq_between_bytes_timeout(s");
+	vsb_cat(sb, "truct sess *);\nvoid VRT_l_bereq_between_bytes_timeout");
+	vsb_cat(sb, "(struct sess *, double);\nconst char * VRT_r_obj_proto");
+	vsb_cat(sb, "(const struct sess *);\nvoid VRT_l_obj_proto(const str");
+	vsb_cat(sb, "uct sess *, const char *, ...);\n");
+	vsb_cat(sb, "int VRT_r_obj_status(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_status(const struct sess *, int);\n");
 	vsb_cat(sb, "const char * VRT_r_obj_response(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_response(const struct sess *, const cha");

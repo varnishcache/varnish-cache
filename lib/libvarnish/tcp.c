@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "config.h"
 #ifndef HAVE_STRLCPY
@@ -209,4 +210,15 @@ TCP_close(int *s)
 	    errno == ECONNRESET ||
 	    errno == ENOTCONN);
 	*s = -1;
+}
+
+void
+TCP_set_read_timeout(int s, double seconds)
+{
+	struct timeval timeout;
+	timeout.tv_sec = floor(seconds);
+	timeout.tv_usec = 1e6 * (seconds - timeout.tv_sec);
+#ifdef SO_RCVTIMEO_WORKS
+	AZ(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
+#endif
 }

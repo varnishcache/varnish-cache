@@ -95,7 +95,7 @@ VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 	if (s < 0)
 		return (s);
 
-	tmo = params->connect_timeout;
+	tmo = (int)(sp->connect_timeout * 1000);
 	if (bp->connect_timeout > 10e-3)
 		tmo = (int)(bp->connect_timeout * 1000);
 
