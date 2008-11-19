@@ -52,6 +52,7 @@
 #include "cache.h"
 #include "vlu.h"
 #include "vsb.h"
+#include "hash_slinger.h"
 
 pthread_t		cli_thread;
 static struct lock	cli_mtx;

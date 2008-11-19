@@ -65,6 +65,7 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
+#include "hash_slinger.h"
 
 static const struct hash_slinger *hash;
 
@@ -91,12 +92,23 @@ HSH_Prealloc(struct sess *sp)
 		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
 		XXXAN(w->nobjhead);
 		w->nobjhead->magic = OBJHEAD_MAGIC;
+		w->nobjhead->refcnt = 1;
 		VTAILQ_INIT(&w->nobjhead->objects);
 		VTAILQ_INIT(&w->nobjhead->waitinglist);
 		Lck_New(&w->nobjhead->mtx);
 		VSL_stats->n_objecthead++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
+
+#if 0
+	/* Make sure there is space enough for the hash-string */
+	if (w->nobjhead->hashlen < sp->lhashptr) {
+		w->objhead->hash = realloc(w->objhead->hash, sp->lhashptr);
+		w->objhead->hashlen = sp->lhashptr;
+		AN(w->objhead->hash);
+	}
+#endif
+
 	if (w->nobj == NULL) {
 		st = STV_alloc(sp, params->obj_workspace);
 		XXXAN(st);
@@ -167,7 +179,7 @@ HSH_Compare(const struct sess *sp, const struct objhead *oh)
 }
 
 void
-HSH_Copy(const struct sess *sp, const struct objhead *oh)
+HSH_Copy(const struct sess *sp, struct objhead *oh)
 {
 	unsigned u, v;
 	char *b;
@@ -175,7 +187,9 @@ HSH_Copy(const struct sess *sp, const struct objhead *oh)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	assert(oh->hashlen >= sp->lhashptr);
+	oh->hash = malloc(sp->lhashptr);
+	XXXAN(oh->hash);
+	oh->hashlen = sp->lhashptr;
 	b = oh->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
@@ -210,6 +224,7 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		Lck_Lock(&oh->mtx);
 	} else {
+		AN(w->nobjhead);
 		oh = hash->lookup(sp, w->nobjhead);
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		if (oh == w->nobjhead)

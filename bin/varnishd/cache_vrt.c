@@ -50,6 +50,7 @@
 #include "vrt_obj.h"
 #include "vcl.h"
 #include "cache.h"
+#include "hash_slinger.h"
 #include "cache_backend.h"
 
 void *vrt_magic_string_end = &vrt_magic_string_end;

@@ -60,6 +60,7 @@
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
+#include "hash_slinger.h"
 
 /*
  * Objects have sideways references in the binary heap and the LRU list
