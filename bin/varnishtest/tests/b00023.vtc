@@ -1,0 +1,31 @@
+# $Id: b00019.vtc 3300 2008-10-15 09:52:15Z tfheen $
+
+test "Check that the first_byte_timeout works from parameters"
+
+server s1 {
+	rxreq
+	delay 1.5
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok "param.set first_byte_timeout 1"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+
+server s1 {
+	rxreq
+	delay 0.5
+	txresp
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

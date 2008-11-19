@@ -154,7 +154,11 @@ struct params {
 	unsigned		cache_vbe_conns;
 
 	/* Default connection_timeout */
-	unsigned		connect_timeout;
+	double			connect_timeout;
+
+	/* Read timeouts for backend */
+	double			first_byte_timeout;
+	double	 		between_bytes_timeout;
 
 	/* How long to linger on sessions */
 	unsigned		session_linger;

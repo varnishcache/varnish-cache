@@ -222,6 +222,8 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	REPLACE(b->hosthdr, vb->hosthdr);
 
 	b->connect_timeout = vb->connect_timeout;
+	b->first_byte_timeout = vb->first_byte_timeout;
+	b->between_bytes_timeout = vb->between_bytes_timeout;
 	b->max_conn = vb->max_connections;
 
 	/*

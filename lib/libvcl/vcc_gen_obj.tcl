@@ -127,6 +127,21 @@ set spobj {
 	{     pipe pass      miss     fetch                        }
 	"const struct sess *"
     }
+    { bereq.connect_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
+    { bereq.first_byte_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
+    { bereq.between_bytes_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
 
     # The (possibly) cached object
     { obj.proto

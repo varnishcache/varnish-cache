@@ -336,6 +336,8 @@ Fetch(struct sess *sp)
 	if (sp->vbe == NULL)
 		return (__LINE__);
 	vc = sp->vbe;
+	/* Inherit the backend timeouts from the selected backend */
+	SES_InheritBackendTimeouts(sp);
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
@@ -369,8 +371,11 @@ Fetch(struct sess *sp)
 	VSL_stats->backend_req++;
 
 	HTC_Init(htc, bereq->ws, vc->fd);
-	do
+	TCP_set_read_timeout(vc->fd, sp->first_byte_timeout);
+	do {
 		i = HTC_Rx(htc);
+		TCP_set_read_timeout(vc->fd, sp->between_bytes_timeout);
+	}
 	while (i == 0);
 
 	if (i < 0) {

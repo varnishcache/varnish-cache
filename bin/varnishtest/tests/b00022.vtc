@@ -1,0 +1,39 @@
+# $Id: b00019.vtc 3300 2008-10-15 09:52:15Z tfheen $
+
+test "Check the between_bytes_timeout behaves from backend definition"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
+	delay 1.5
+	send "Baba\n"
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.between_bytes_timeout = 1s;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
+	delay 0.5
+	send "Baba\n"
+	delay 0.5
+	send "Baba\n"
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

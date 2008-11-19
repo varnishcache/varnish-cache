@@ -108,6 +108,21 @@ struct var vcc_vars[] = {
 	    V_RW,	    "HDR_BEREQ",
 	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
+	{ "bereq.connect_timeout", TIME, 21,
+	    "VRT_r_bereq_connect_timeout(sp)",	    "VRT_l_bereq_connect_timeout(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_PASS | VCL_MET_MISS
+	},
+	{ "bereq.first_byte_timeout", TIME, 24,
+	    "VRT_r_bereq_first_byte_timeout(sp)",	    "VRT_l_bereq_first_byte_timeout(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_PASS | VCL_MET_MISS
+	},
+	{ "bereq.between_bytes_timeout", TIME, 27,
+	    "VRT_r_bereq_between_bytes_timeout(sp)",	    "VRT_l_bereq_between_bytes_timeout(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_PASS | VCL_MET_MISS
+	},
 	{ "obj.proto", STRING, 9,
 	    "VRT_r_obj_proto(sp)",	    "VRT_l_obj_proto(sp, ",
 	    V_RW,	    0,

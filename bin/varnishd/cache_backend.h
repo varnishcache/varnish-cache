@@ -104,6 +104,8 @@ struct backend {
 	char			*ident;
 	char			*vcl_name;
 	double			connect_timeout;
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
 
 	uint32_t		hash;
 

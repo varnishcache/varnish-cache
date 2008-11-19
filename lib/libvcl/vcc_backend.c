@@ -473,6 +473,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	    "?port",
 	    "?host_header",
 	    "?connect_timeout",
+	    "?first_byte_timeout",
+	    "?between_bytes_timeout",
 	    "?probe",
 	    "?max_connections",
 	    NULL);
@@ -532,6 +534,20 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fb(tl, 0, "\t.connect_timeout = ");
+			vcc_TimeVal(tl);
+			ERRCHK(tl);
+			Fb(tl, 0, ",\n");
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
+			Fb(tl, 0, "\t.first_byte_timeout = ");
+			vcc_TimeVal(tl);
+			ERRCHK(tl);
+			Fb(tl, 0, ",\n");
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(t_field, "between_bytes_timeout")) {
+			Fb(tl, 0, "\t.between_bytes_timeout = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");

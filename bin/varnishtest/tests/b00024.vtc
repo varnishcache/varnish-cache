@@ -1,0 +1,34 @@
+# $Id: b00019.vtc 3300 2008-10-15 09:52:15Z tfheen $
+
+test "Check that the first_byte_timeout works from vcl"
+
+server s1 {
+	rxreq
+	delay 1.5
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_miss {
+		set bereq.first_byte_timeout = 1s;	
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+
+server s1 {
+	rxreq
+	delay 0.5
+	txresp
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

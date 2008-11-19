@@ -97,6 +97,24 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 		cli_out(cli, "%u", *dst);
 }
 
+static void
+tweak_generic_timeout_double(struct cli *cli, volatile double *dst, const char *arg)
+{
+	double u;
+
+	if (arg != NULL) {
+		u = strtod(arg, NULL);
+		if (u < 0) {
+			cli_out(cli, "Timeout must be greater or equal to zero\n");
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		*dst = u;
+	} else
+		cli_out(cli, "%f", *dst);
+}
+
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -108,7 +126,14 @@ tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 	tweak_generic_timeout(cli, dest, arg);
 }
 
+static void
+tweak_timeout_double(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile double *dest;
 
+	dest = par->priv;
+	tweak_generic_timeout_double(cli, dest, arg);
+}
 /*--------------------------------------------------------------------*/
 
 static void
@@ -746,14 +771,31 @@ static const struct parspec parspec[] = {
 		"Cache vbe_conn's or rely on malloc, that's the question.",
 		EXPERIMENTAL,
 		"off", "bool" },
-	{ "connect_timeout", tweak_uint,
+	{ "connect_timeout", tweak_timeout_double,
 		&master.connect_timeout,0, UINT_MAX,
 		"Default connection timeout for backend connections.  "
 		"We only try to connect to the backend for this many "
-		"milliseconds before giving up.  "
-		"VCL can override this default value for each backend.",
+		"seconds before giving up. "
+		"VCL can override this default value for each backend. "
+		"This does not apply to pipe. ",
 		0,
-		"400", "ms" },
+		"0.4", "s" },
+	{ "first_byte_timeout", tweak_timeout_double,
+		&master.first_byte_timeout,0, UINT_MAX,
+		"Default timeout for receiving first byte from backend. "
+		"We only wait for this many seconds for the first "
+		"byte before giving up. A value of 0 means it will never time out. "
+		"VCL can override this default value for each backend request.",
+		0,
+		"60", "s" },
+	{ "between_bytes_timeout", tweak_timeout_double,
+		&master.between_bytes_timeout,0, UINT_MAX,
+		"Default timeout between bytes when receiving data from backend. "
+		"We only wait for this many seconds between bytes "
+		"before giving up. A value of 0 means it will never time out. "
+		"VCL can override this default value for each backend request.",
+		0,
+		"60", "s" },
 	{ "accept_fd_holdoff", tweak_timeout,
 		&master.accept_fd_holdoff, 0,  3600*1000,
 		"If we run out of file descriptors, the accept thread will "

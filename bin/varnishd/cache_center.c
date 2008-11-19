@@ -845,6 +845,8 @@ cnt_recv(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
+	SES_ResetBackendTimeouts(sp);
+
 	/* By default we use the first backend */
 	AZ(sp->director);
 	sp->director = sp->vcl->director[0];
