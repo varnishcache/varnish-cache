@@ -28,7 +28,7 @@
  *
  * $Id$
  *
- * This fine contains code for two cross-reference or consistency checks.
+ * This file contains code for two cross-reference or consistency checks.
  *
  * The first check is simply that all functions, acls and backends are
  * both defined and referenced.  Complaints about referenced but undefined
@@ -90,7 +90,7 @@ vcc_typename(struct tokenlist *tl, const struct ref *r)
 		vcc_ErrToken(tl, r->name);
 		vsb_printf(tl->sb, " has unknown type %d\n",
 		    r->type);
-		return "???";
+		return "?";
 	}
 }
 
