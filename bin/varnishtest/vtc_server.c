@@ -98,7 +98,8 @@ server_thread(void *priv)
 		vtc_log(vl, 3, "Accepted socket fd is %d", fd);
 		http_process(vl, s->spec, fd, 0);
 		vtc_log(vl, 3, "shutting fd %d", fd);
-		assert((shutdown(fd, SHUT_WR) == 0) || errno == ENOTCONN);
+		assert((shutdown(fd, SHUT_WR) == 0)
+		    || errno == ENOTCONN || errno == ECONNRESET);
 		TCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
