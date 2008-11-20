@@ -60,84 +60,48 @@ struct acl_e {
 
 /* Compare two acl rules for ordering */
 
+#define CMP(a, b)							\
+	do {								\
+		if ((a) < (b))						\
+			return (-1);					\
+		else if ((b) < (a))					\
+			return (1);					\
+	} while (0)
+		
 static int
-vcl_acl_cmp(struct tokenlist *tl, struct acl_e *ae1, struct acl_e *ae2)
+vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 {
 	unsigned char *p1, *p2;
 	unsigned m;
 
-	(void)tl;
 	p1 = ae1->data;
 	p2 = ae2->data;
 	m = ae1->mask;
 	if (ae2->mask < m)
 		m = ae2->mask;
 	for (; m >= 8; m -= 8) {
-		if (*p1 < *p2)
-			return (-1);
-		if (*p1 > *p2)
-			return (1);
+		CMP(*p1, *p2);
 		p1++;
 		p2++;
 	}
 	if (m) {
 		m = 0xff00 >> m;
 		m &= 0xff;
-		if ((*p1 & m) < (*p2 & m))
-			return (-1);
-		if ((*p1 & m) > (*p2 & m))
-			return (1);
+		CMP(*p1 & m, *p2 & m);
 	}
-	if (ae1->mask > ae2->mask)
-		return (-1);
-	if (ae1->mask < ae2->mask)
-		return (1);
+	/* Long mask is less than short mask */
+	CMP(ae2->mask, ae1->mask);
 
 	return (0);
 }
 
 
 static void
-vcl_acl_add_entry(struct tokenlist *tl, struct acl_e *ae)
-{
-	struct acl_e *ae2;
-	int i;
-
-	VTAILQ_FOREACH(ae2, &tl->acl, list) {
-		i = vcl_acl_cmp(tl, ae, ae2);
-		if (i == 0) {
-			/* If the two rules agree, silently ignore it */
-			if (ae->not == ae2->not)
-				return;
-			vsb_printf(tl->sb, "Conflicting ACL entries:\n");
-			vcc_ErrWhere(tl, ae2->t_addr);
-			vsb_printf(tl->sb, "vs:\n");
-			vcc_ErrWhere(tl, ae->t_addr);
-			return;
-		}
-		/*
-		 * We could eliminate pointless rules here, for instance in:
-		 *	"10.1.0.1";
-		 *	"10.1";
-		 * The first rule is clearly pointless, as the second one
-		 * covers it.
-		 *
-		 * We do not do this however, because the shmlog may
-		 * be used to gather statistics.
-		 */
-		if (i < 0) {
-			VTAILQ_INSERT_BEFORE(ae2, ae, list);
-			return;
-		}
-	}
-	VTAILQ_INSERT_TAIL(&tl->acl, ae, list);
-}
-
-static void
-vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
+vcc_acl_add_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
     const unsigned char *u, int fam)
 {
-	struct acl_e *ae2;
+	struct acl_e *ae2, *aen;
+	int i;
 
 	if (fam == PF_INET && ae->mask > 32) {
 		vsb_printf(tl->sb,
@@ -152,17 +116,49 @@ vcc_acl_emit_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
 		return;
 	}
 
-	ae2 = TlAlloc(tl, sizeof *ae2);
-	AN(ae2);
-	*ae2 = *ae;
+	/* Make a copy from the template */
+	aen = TlAlloc(tl, sizeof *ae2);
+	AN(aen);
+	*aen = *ae;
 
-	ae2->data[0] = fam & 0xff;
-	ae2->mask += 8;	/* family matching */
+	/* We treat family as part of address, it saves code */
+	assert(fam <= 0xff);
+	aen->data[0] = fam & 0xff;
+	aen->mask += 8;
 
-	memcpy(ae2->data + 1, u, l);
+	memcpy(aen->data + 1, u, l);
 
-	vcl_acl_add_entry(tl, ae2);
-
+	VTAILQ_FOREACH(ae2, &tl->acl, list) {
+		i = vcl_acl_cmp(aen, ae2);
+		if (i == 0) {
+			/*
+			 * If the two rules agree, silently ignore it
+			 * XXX: is that counter intuitive ?
+			 */
+			if (aen->not == ae2->not)
+				return;
+			vsb_printf(tl->sb, "Conflicting ACL entries:\n");
+			vcc_ErrWhere(tl, ae2->t_addr);
+			vsb_printf(tl->sb, "vs:\n");
+			vcc_ErrWhere(tl, aen->t_addr);
+			return;
+		}
+		/*
+		 * We could eliminate pointless rules here, for instance in:
+		 *	"10.1.0.1";
+		 *	"10.1";
+		 * The first rule is clearly pointless, as the second one
+		 * covers it.
+		 *
+		 * We do not do this however, because the shmlog may
+		 * be used to gather statistics.
+		 */
+		if (i < 0) {
+			VTAILQ_INSERT_BEFORE(ae2, aen, list);
+			return;
+		}
+	}
+	VTAILQ_INSERT_TAIL(&tl->acl, aen, list);
 }
 
 static void
@@ -211,7 +207,7 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 			if (ae->t_mask == NULL)
 				ae->mask = 32;
 			i4++;
-			vcc_acl_emit_entry(tl, ae, 4, u, res->ai_family);
+			vcc_acl_add_entry(tl, ae, 4, u, res->ai_family);
 			break;
 		case PF_INET6:
 			assert(PF_INET6 < 256);
@@ -221,7 +217,7 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
 			if (ae->t_mask == NULL)
 				ae->mask = 128;
 			i6++;
-			vcc_acl_emit_entry(tl, ae, 16, u, res->ai_family);
+			vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
 			vsb_printf(tl->sb,
@@ -270,7 +266,7 @@ vcc_acl_try_netnotation(struct tokenlist *tl, struct acl_e *ae)
 	}
 	if (ae->t_mask == NULL)
 		ae->mask = 8 + 8 * i;
-	vcc_acl_emit_entry(tl, ae, 4, b, AF_INET);
+	vcc_acl_add_entry(tl, ae, 4, b, AF_INET);
 	return (1);
 }
 
@@ -321,9 +317,12 @@ vcc_acl_entry(struct tokenlist *tl)
 	ERRCHK(tl);
 }
 
+/*********************************************************************
+ * Emit a function to match the ACL we have collected
+ */
+
 static void
-vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
-    const char *pfx)
+vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -333,7 +332,7 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
 
 	Fh(tl, 0, "\nstatic int\n");
 	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
-	    pfx, acln);
+	    anon ? "anon" : "named", acln);
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
 	assert(sizeof (unsigned char) == 1);
@@ -375,30 +374,31 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
 		/* Back down, if necessary */
 		oc = "";
 		while (l <= depth) {
-			Fh(tl, 0, "\t%*s}\n",
-			    -depth, "");
+			Fh(tl, 0, "\t%*s}\n", -depth, "");
 			depth--;
 			oc = "else ";
 		}
+
 		m = ae->mask;
 		m -= l * 8;
+
+		/* Do whole byte compares */
 		for (i = l; m >= 8; m -= 8, i++) {
-			if (i == 0) {
+			if (i == 0)
 				Fh(tl, 0, "\t%*s%sif (fam == %d) {\n",
 				    -i, "", oc, ae->data[i]);
-			} else {
+			else
 				Fh(tl, 0, "\t%*s%sif (a[%d] == %d) {\n",
 				    -i, "", oc, i - 1, ae->data[i]);
-			}
 			at[i] = ae->data[i];
 			depth = i;
 			oc = "";
 		}
+
 		if (m > 0) {
+			/* Do fractional byte compares */
 			Fh(tl, 0, "\t%*s%sif ((a[%d] & 0x%x) == %d) {\n",
-			    -i, "",
-			    oc,
-			    i - 1, (0xff00 >> m) & 0xff,
+			    -i, "", oc, i - 1, (0xff00 >> m) & 0xff,
 			    ae->data[i] & ((0xff00 >> m) & 0xff));
 			at[i] = 256;
 			depth = i;
@@ -407,11 +407,9 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
 
 		i = (ae->mask + 7) / 8;
 
-		if (!silent) {
+		if (!anon) {
 			Fh(tl, 0, "\t%*sVRT_acl_log(sp, \"%sMATCH %s \" ",
-			    -i, "",
-			    ae->not ? "NEG_" : "",
-			    acln,
+			    -i, "", ae->not ? "NEG_" : "", acln,
 			    PF(ae->t_addr));
 			EncToken(tl->fh, ae->t_addr);
 			if (ae->t_mask != NULL)
@@ -422,9 +420,12 @@ vcc_acl_bot(const struct tokenlist *tl, const char *acln, int silent,
 		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
 	}
 
+	/* Unwind */
 	for (; 0 <= depth; depth--)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
-	if (!silent)
+
+	/* Deny by default */
+	if (!anon)
 		Fh(tl, 0, "\tVRT_acl_log(sp, \"NO_MATCH %s\");\n", acln);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 }
@@ -453,7 +454,7 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		asprintf(&acln, "%u", tl->cnt);
 		assert(acln != NULL);
 		vcc_acl_entry(tl);
-		vcc_acl_bot(tl, acln, 1, "anon");
+		vcc_acl_emit(tl, acln, 1);
 		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
 		    (tcond == T_NEQ ? "!" : ""), acln, vp->rname);
 		free(acln);
@@ -497,7 +498,7 @@ vcc_Acl(struct tokenlist *tl)
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
 
-	vcc_acl_bot(tl, acln, 0, "named");
+	vcc_acl_emit(tl, acln, 0);
 
 	free(acln);
 }
