@@ -773,11 +773,11 @@ static const struct parspec parspec[] = {
 		"off", "bool" },
 	{ "connect_timeout", tweak_timeout_double,
 		&master.connect_timeout,0, UINT_MAX,
-		"Default connection timeout for backend connections.  "
+		"Default connection timeout for backend connections. "
 		"We only try to connect to the backend for this many "
 		"seconds before giving up. "
-		"VCL can override this default value for each backend. "
-		"This does not apply to pipe. ",
+		"VCL can override this default value for each backend and "
+		"backend request."
 		0,
 		"0.4", "s" },
 	{ "first_byte_timeout", tweak_timeout_double,
@@ -785,7 +785,8 @@ static const struct parspec parspec[] = {
 		"Default timeout for receiving first byte from backend. "
 		"We only wait for this many seconds for the first "
 		"byte before giving up. A value of 0 means it will never time out. "
-		"VCL can override this default value for each backend request.",
+		"VCL can override this default value for each backend and "
+		"backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
 	{ "between_bytes_timeout", tweak_timeout_double,
@@ -793,7 +794,8 @@ static const struct parspec parspec[] = {
 		"Default timeout between bytes when receiving data from backend. "
 		"We only wait for this many seconds between bytes "
 		"before giving up. A value of 0 means it will never time out. "
-		"VCL can override this default value for each backend request.",
+		"VCL can override this default value for each backend request and "
+		"backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
 	{ "accept_fd_holdoff", tweak_timeout,

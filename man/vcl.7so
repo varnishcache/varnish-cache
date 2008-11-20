@@ -92,6 +92,26 @@ if (req.http.host ~ "^(www\.)?example.com$") {
     set req.backend = www;
 }
 .Ed
+.Pp
+The timeout parameters can be overridden in the backend declaration.
+The timeout parameters are
+.Fa .connect_timeout
+for the time to wait for a backend connection,
+.Fa .first_byte_timeout
+for the time to wait for the first byte from the backend and
+.Fa .between_bytes_timeout
+for time to wait between each received byte.
+.Pp
+These can be set in the declaration like this:
+.Bd -literal -offset 4n
+backend www {
+    .host = "www.example.com";
+    .port = "http";
+    .connect_timeout = 1s;
+    .first_byte_timeout = 5s;
+    .between_bytes_timeout = 2s;
+}
+.Ed
 .Ss Directors
 Directors choose from different backends based on health status and a
 per-director algorithm.
@@ -516,6 +536,14 @@ The HTTP protocol version used to talk to the server.
 .It Va bereq.http. Ns Ar header
 The corresponding HTTP
 .Ar header .
+.It Va bereq.connect_timeout
+The time in seconds to wait for a backend connection.
+.It Va bereq.first_byte_timeout
+The time in seconds to wait for the first byte from the backend.
+Not available in pipe mode.
+.It Va bereq.between_bytes_timeout
+The time in seconds to wait between each received byte from the backend.
+Not available in pipe mode.
 .El
 .Pp
 The following variables are available after the requested object has

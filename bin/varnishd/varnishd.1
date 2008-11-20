@@ -405,6 +405,15 @@ triggered the retrieval.
 .Pp
 The default is
 .Dv off .
+.It Va between_bytes_timeout
+Default timeout between bytes when receiving data from backend.
+We only wait for this many seconds between bytes before giving up.
+A value of 0 means it will never time out.
+VCL can override this default value for each backend and backend request.
+This parameter does not apply to pipe.
+.Pp
+The default is
+.Dv 60 seconds
 .It Va client_http11
 Whether to force the use of HTTP/1.1 when responding to client
 requests, or just use the same protocol version as that used by the
@@ -412,6 +421,13 @@ backend server which delivered the requested document.
 .Pp
 The default is
 .Dv off .
+.It Va connect_timeout
+Default connection timeout for backend connections.
+We only try to connect to the backend for this many seconds before giving up.
+VCL can override this default value for each backend and backend request.
+.Pp
+The default is
+.Dv 0.4 seconds
 .It Va default_ttl
 The default time-to-live assigned to objects if neither the backend
 nor the configuration assign one.
@@ -427,6 +443,15 @@ The default chunk size used when retrieving documents for which the
 backend server does not specify a content length.
 .Pp
 The default is 128 kilobytes.
+.It Va first_byte_timeout
+Default timeout for receiving first byte from backend.
+We only wait for this many seconds for the first byte before giving up.
+A value of 0 means it will never time out.
+VCL can override this default value for each backend and backend request.
+This parameter does not apply to pipe.
+.Pp
+The default is
+.Dv 60 seconds
 .It Va group
 The name of an unprivileged group to which the child process should
 switch before it starts accepting connections.
