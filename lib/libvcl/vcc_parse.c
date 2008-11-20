@@ -127,7 +127,7 @@ SizeUnit(struct tokenlist *tl)
 static double
 RateUnit(struct tokenlist *tl)
 {
-	double sc = 1.0;
+	double sc;
 
 	assert(tl->t->tok == ID);
 	sc = SizeUnit(tl);
