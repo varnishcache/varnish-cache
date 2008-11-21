@@ -37,6 +37,8 @@
 #define NULL ((void*)0)
 #endif
 
+struct vsb;
+
 /* from libvarnish/argv.c */
 void FreeArgv(char **argv);
 char **ParseArgv(const char *s, int flag);
@@ -49,6 +51,10 @@ uint32_t crc32_l(const void *p1, unsigned l);
 
 /* from libvarnish/num.c */
 const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
+
+/* from libvarnish/subproc.c */
+typedef void sub_func_f(void*);
+int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name, int maxlines);
 
 /* from libvarnish/tcp.c */
 /* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */

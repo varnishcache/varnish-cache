@@ -47,7 +47,6 @@
 #include "compat/asprintf.h"
 #endif
 #include "vsb.h"
-#include "vlu.h"
 
 #include "vqueue.h"
 
@@ -124,15 +123,12 @@ mgt_make_cc_cmd(struct vsb *sb, const char *sf, const char *of)
  * Errors goes in sb;
  */
 
-static int
-mgt_cc_vlu(void *priv, const char *str)
+static void
+run_cc(void *priv)
 {
-	struct vsb *vsb;
-
-	vsb = priv;
-	vsb_printf(vsb, "C-compiler said: %s\n", str);
-	return (0);
+	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
 }
+
 
 static char *
 mgt_run_cc(const char *source, struct vsb *sb)
@@ -142,10 +138,8 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	char sf[] = "./vcl.########.c";
 	char of[sizeof sf + 1];
 	char *retval;
-	int rv, p[2], sfd, srclen, status;
-	pid_t pid;
+	int sfd, srclen;
 	void *dlh;
-	struct vlu *vlu;
 
 	/* Create temporary C source file */
 	sfd = vtmpfile(sf);
@@ -178,57 +172,8 @@ mgt_run_cc(const char *source, struct vsb *sb)
 	AZ(vsb_overflowed(&cmdsb));
 	/* XXX check vsb state */
 
-	if (pipe(p) < 0) {
-		vsb_printf(sb, "%s(): pipe() failed: %s",
-		    __func__, strerror(errno));
+	if (SUB_run(sb, run_cc, cmdline, "C-compiler", 10)) {
 		(void)unlink(sf);
-		return (NULL);
-	}
-	assert(p[0] > STDERR_FILENO);
-	assert(p[1] > STDERR_FILENO);
-	if ((pid = fork()) < 0) {
-		vsb_printf(sb, "%s(): fork() failed: %s",
-		    __func__, strerror(errno));
-		AZ(close(p[0]));
-		AZ(close(p[1]));
-		(void)unlink(sf);
-		return (NULL);
-	}
-	if (pid == 0) {
-		AZ(close(STDIN_FILENO));
-		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
-		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
-		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
-		/* Close all other fds */
-		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
-			(void)close(sfd);
-		(void)execl("/bin/sh", "/bin/sh", "-c", cmdline, NULL);
-		_exit(1);
-	}
-	AZ(close(p[1]));
-	vlu = VLU_New(sb, mgt_cc_vlu, 0);
-	while (!VLU_Fd(p[0], vlu))
-		continue;
-	AZ(close(p[0]));
-	VLU_Destroy(vlu);
-	(void)unlink(sf);
-	do {
-		rv = waitpid(pid, &status, 0);
-		if (rv < 0 && errno != EINTR) {
-			vsb_printf(sb, "%s(): waitpid() failed: %s",
-			    __func__, strerror(errno));
-			(void)unlink(of);
-			return (NULL);
-		}
-	} while (rv < 0);
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-		vsb_printf(sb, "%s(): Compiler failed", __func__);
-		if (WIFEXITED(status))
-			vsb_printf(sb, ", exit %d", WEXITSTATUS(status));
-		if (WIFSIGNALED(status))
-			vsb_printf(sb, ", signal %d", WTERMSIG(status));
-		if (WCOREDUMP(status))
-			vsb_printf(sb, ", core dumped");
 		(void)unlink(of);
 		return (NULL);
 	}
