@@ -78,8 +78,8 @@ vtmpfile(char *template)
 	/* not reached */
 }
 
-char *
-vreadfile(int fd)
+static char *
+vreadfd(int fd)
 {
 	struct stat st;
 	char *f;
@@ -94,4 +94,20 @@ vreadfile(int fd)
 	assert(i == st.st_size);
 	f[i] = '\0';
 	return (f);
+}
+
+char *
+vreadfile(const char *fn)
+{
+	int fd, err;
+	char *r;
+
+	fd = open(fn, O_RDONLY);
+	if (fd < 0)
+		return (NULL);
+	r = vreadfd(fd);
+	err = errno;
+	AZ(close(fd));
+	errno = err;
+	return (r);
 }

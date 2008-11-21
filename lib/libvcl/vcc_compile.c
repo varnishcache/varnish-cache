@@ -399,22 +399,17 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(struct vsb *sb, const char *fn, int fd)
+vcc_file_source(struct vsb *sb, const char *fn)
 {
 	char *f;
 	struct source *sp;
 
-	if (fd < 0) {
-		fd = open(fn, O_RDONLY);
-		if (fd < 0) {
-			vsb_printf(sb, "Cannot open file '%s': %s\n",
-			    fn, strerror(errno));
-			return (NULL);
-		}
+	f = vreadfile(fn);
+	if (f == NULL) {
+		vsb_printf(sb, "Cannot read file '%s': %s\n",
+		    fn, strerror(errno));
+		return (NULL);
 	}
-	f = vreadfile(fd);
-	AN(f);
-	AZ(close(fd));
 	sp = vcc_new_source(f, NULL, fn);
 	sp->freeit = f;
 	return (sp);
@@ -450,7 +445,7 @@ vcc_resolve_includes(struct tokenlist *tl)
 		}
 		assert(t2 != NULL);
 
-		sp = vcc_file_source(tl->sb, t1->dec, -1);
+		sp = vcc_file_source(tl->sb, t1->dec);
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -661,24 +656,6 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	char *r;
 
 	sp = vcc_new_source(b, e, "input");
-	if (sp == NULL)
-		return (NULL);
-	r = vcc_CompileSource(sb, sp);
-	return (r);
-}
-
-/*--------------------------------------------------------------------
- * Compile the VCL code from the file named.  Error messages, if any
- * are formatted into the vsb.
- */
-
-char *
-VCC_CompileFile(struct vsb *sb, const char *fn, int fd)
-{
-	struct source *sp;
-	char *r;
-
-	sp = vcc_file_source(sb, fn, fd);
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(sb, sp);
