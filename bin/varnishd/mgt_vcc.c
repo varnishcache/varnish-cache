@@ -201,39 +201,26 @@ mgt_run_cc(const char *source, struct vsb *sb)
 /*--------------------------------------------------------------------*/
 
 static char *
-mgt_VccCompile(struct vsb *sb, const char *b, const char *e, int C_flag)
+mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 {
 	char *csrc, *vf = NULL;
 
-	csrc = VCC_Compile(sb, b, e);
+	*sb = vsb_newauto();
+	XXXAN(*sb);
+	csrc = VCC_Compile(*sb, b, NULL);
+
 	if (csrc != NULL) {
 		if (C_flag)
 			(void)fputs(csrc, stdout);
-		vf = mgt_run_cc(csrc, sb);
+		vf = mgt_run_cc(csrc, *sb);
 		if (C_flag && vf != NULL)
 			AZ(unlink(vf));
 		free(csrc);
 	}
+	vsb_finish(*sb);
+	AZ(vsb_overflowed(*sb));
 	return (vf);
 }
-
-static char *
-mgt_VccCompileFile(struct vsb *sb, const char *fn, int C_flag, int fd)
-{
-	char *csrc, *vf = NULL;
-
-	csrc = VCC_CompileFile(sb, fn, fd);
-	if (csrc != NULL) {
-		if (C_flag)
-			(void)fputs(csrc, stdout);
-		vf = mgt_run_cc(csrc, sb);
-		if (C_flag && vf != NULL)
-			AZ(unlink(vf));
-		free(csrc);
-	}
-	return (vf);
-}
-
 
 /*--------------------------------------------------------------------*/
 
@@ -290,16 +277,15 @@ mgt_vcc_delbyname(const char *name)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
+mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 {
 	char *addr, *port;
-	char *buf, *vf;
+	char *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
 
-	sb = vsb_newauto();
-	XXXAN(sb);
 	if (b_arg != NULL) {
+		AZ(vcl);
 		/*
 		 * XXX: should do a "HEAD /" on the -b argument to see that
 		 * XXX: it even works.  On the other hand, we should do that
@@ -318,26 +304,21 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, int f_fd, int C_flag)
 			 */
 			free(port);
 			fprintf(stderr, "invalid backend address\n");
-			vsb_delete(sb);
 			return (1);
 		}
 
-		buf = NULL;
-		asprintf(&buf,
+		asprintf(&vcl,
 		    "backend default {\n"
 		    "    .host = \"%s\";\n"
 		    "    .port = \"%s\";\n"
 		    "}\n", addr, port ? port : "http");
 		free(addr);
 		free(port);
-		AN(buf);
-		vf = mgt_VccCompile(sb, buf, NULL, C_flag);
-		free(buf);
-	} else {
-		vf = mgt_VccCompileFile(sb, f_arg, C_flag, f_fd);
+		AN(vcl);
 	}
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+
+	vf = mgt_VccCompile(&sb, vcl, C_flag);
+	free(vcl);
 	if (vsb_len(sb) > 0)
 		fprintf(stderr, "%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -432,11 +413,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	sb = vsb_newauto();
-	XXXAN(sb);
-	vf = mgt_VccCompile(sb, av[3], NULL, 0);
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+	vf = mgt_VccCompile(&sb, av[3], 0);
 	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -459,7 +436,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 void
 mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 {
-	char *vf;
+	char *vf, *vcl;
 	struct vsb *sb;
 	unsigned status;
 	char *p = NULL;
@@ -473,11 +450,16 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	sb = vsb_newauto();
-	XXXAN(sb);
-	vf = mgt_VccCompileFile(sb, av[3], 0, -1);
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+	vcl = vreadfile(av[3]);
+	if (vcl == NULL) {
+		cli_out(cli, "Cannot open '%s'", av[3]);
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+
+	vf = mgt_VccCompile(&sb, vcl, 0);
+	free(vcl);
+
 	if (vsb_len(sb) > 0)
 		cli_out(cli, "%s", vsb_data(sb));
 	vsb_delete(sb);

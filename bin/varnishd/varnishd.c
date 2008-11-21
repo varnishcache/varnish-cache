@@ -424,14 +424,13 @@ main(int argc, char * const *argv)
 	const char *l_arg = "80m";
 	uintmax_t l_size;
 	const char *q;
-	int f_fd = -1;
 	const char *h_arg = "classic";
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *s_arg = "file";
 	int s_arg_given = 0;
 	const char *T_arg = NULL;
-	char *p;
+	char *p, *vcl = NULL;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
 	char dirname[1024];
@@ -567,9 +566,9 @@ main(int argc, char * const *argv)
 	}
 
 	if (f_arg != NULL) {
-		f_fd = open(f_arg, O_RDONLY);
-		if (f_fd < 0) {
-			fprintf(stderr, "Cannot open '%s': %s\n",
+		vcl = vreadfile(f_arg);
+		if (vcl == NULL) {
+			fprintf(stderr, "Cannot read '%s': %s\n",
 			    f_arg, strerror(errno));
 			exit(1);
 		}
@@ -606,7 +605,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (b_arg != NULL || f_arg != NULL)
-		if (mgt_vcc_default(b_arg, f_arg, f_fd, C_flag))
+		if (mgt_vcc_default(b_arg, vcl, C_flag))
 			exit (2);
 
 	if (C_flag)

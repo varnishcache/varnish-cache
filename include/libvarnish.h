@@ -86,7 +86,7 @@ void varnish_version(const char *);
 
 /* from libvarnish/vtmpfile.c */
 int vtmpfile(char *);
-char *vreadfile(int fd);
+char *vreadfile(const char *fn);
 
 /*
  * assert(), AN() and AZ() are static checks that should not happen.
