@@ -35,6 +35,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#include <sys/stat.h>
 
 #include "libvarnish.h"
 
@@ -73,4 +76,22 @@ vtmpfile(char *template)
 			return (-1);
 	}
 	/* not reached */
+}
+
+char *
+vreadfile(int fd)
+{
+	struct stat st;
+	char *f;
+	int i;
+
+	assert(0 == fstat(fd, &st));
+	if (!S_ISREG(st.st_mode))
+		return (NULL);
+	f = malloc(st.st_size + 1);
+	assert(f != NULL);
+	i = read(fd, f, st.st_size);
+	assert(i == st.st_size);
+	f[i] = '\0';
+	return (f);
 }
