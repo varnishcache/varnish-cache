@@ -777,7 +777,7 @@ static const struct parspec parspec[] = {
 		"We only try to connect to the backend for this many "
 		"seconds before giving up. "
 		"VCL can override this default value for each backend and "
-		"backend request."
+		"backend request.",
 		0,
 		"0.4", "s" },
 	{ "first_byte_timeout", tweak_timeout_double,
