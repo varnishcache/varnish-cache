@@ -59,7 +59,7 @@ sub_vlu(void *priv, const char *str)
 	sp = priv;
 	if (!sp->lines++)
 		vsb_printf(sp->sb, "Message from %s:\n", sp->name);
-	if (sp->maxlines > 0 && sp->lines <= sp->maxlines)
+	if (sp->maxlines < 0 || sp->lines <= sp->maxlines)
 		vsb_printf(sp->sb, "%s\n", str);
 	return (0);
 }
@@ -108,7 +108,7 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name, int maxl
 		continue;
 	AZ(close(p[0]));
 	VLU_Destroy(vlu);
-	if (sp.lines > sp.maxlines)
+	if (sp.maxlines >= 0 && sp.lines > sp.maxlines)
 		vsb_printf(sb, "[%d lines truncated]\n",
 		    sp.lines - sp.maxlines);
 	do {
