@@ -84,12 +84,15 @@ static const char * const default_vcl =
 /*
  * Prepare the compiler command line
  */
-static void
-mgt_make_cc_cmd(struct vsb *sb, const char *sf, const char *of)
+static struct vsb *
+mgt_make_cc_cmd(const char *sf, const char *of)
 {
+	struct vsb *sb;
 	int pct;
 	char *p;
 
+	sb = vsb_newauto();
+	XXXAN(sb);
 	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
@@ -116,11 +119,13 @@ mgt_make_cc_cmd(struct vsb *sb, const char *sf, const char *of)
 	}
 	if (pct)
 		vsb_putc(sb, '%');
+	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
+	return (sb);
 }
 
 /*--------------------------------------------------------------------
- * Invoke system C compiler on source and return resulting dlfile.
- * Errors goes in sb;
+ * Invoke system C compiler in a sub-process
  */
 
 static void
@@ -129,60 +134,114 @@ run_cc(void *priv)
 	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
 }
 
+/*--------------------------------------------------------------------
+ * Invoke system VCC compiler in a sub-process
+ */
+
+struct vcc_priv {
+	char		*sf;
+	const char	*vcl;
+};
+
+static void
+run_vcc(void *priv)
+{
+	char *csrc;
+	struct vsb *sb;
+	struct vcc_priv *vp;
+	int fd, i, l;
+
+	vp = priv;
+	sb = vsb_newauto();
+	XXXAN(sb);
+	csrc = VCC_Compile(sb, vp->vcl, NULL);
+	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
+	if (vsb_len(sb))
+		printf("%s", vsb_data(sb));
+	vsb_delete(sb);
+	if (csrc == NULL)
+		exit (1);
+
+	fd = open(vp->sf, O_WRONLY);
+	if (fd < 0) {
+		fprintf(stderr, "Cannot open %s", vp->sf);
+		exit (1);
+	}
+	l = strlen(csrc);
+	i = write(fd, csrc, l);
+	if (i != l) {
+		fprintf(stderr, "Cannot write %s", vp->sf);
+		exit (1);
+	}
+	close(fd);
+	free(csrc);
+	exit (0);
+}
+
+/*--------------------------------------------------------------------
+ * Compile a VCL program, return shared object, errors in sb.
+ */
 
 static char *
-mgt_run_cc(const char *source, struct vsb *sb)
+mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 {
-	char cmdline[1024];
-	struct vsb cmdsb;
+	char *csrc;
+	struct vsb *cmdsb;
 	char sf[] = "./vcl.########.c";
 	char of[sizeof sf + 1];
 	char *retval;
-	int sfd, srclen;
+	int sfd, i;
 	void *dlh;
+	struct vcc_priv vp;
 
 	/* Create temporary C source file */
 	sfd = vtmpfile(sf);
 	if (sfd < 0) {
-		vsb_printf(sb,
-		    "%s(): failed to create %s: %s",
-		    __func__, sf, strerror(errno));
-		return (NULL);
-	}
-	srclen = strlen(source);
-	if (write(sfd, source, srclen) != srclen) {
-		vsb_printf(sb,
-		    "Failed to write C source to file: %s",
-		    strerror(errno));
-		AZ(unlink(sf));
-		AZ(close(sfd));
+		vsb_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
 	}
 	AZ(close(sfd));
 
-	/* Name the output shared library by overwriting the final 'c' */
+	/* Run the VCC compiler in a sub-process */
+	vp.sf = sf;
+	vp.vcl = vcl;
+	if (SUB_run(sb, run_vcc, &vp, "VCC-compiler", -1)) {
+		(void)unlink(sf);
+		return (NULL);
+	}
+
+	if (C_flag) {
+		csrc = vreadfile(sf);
+		(void)fputs(csrc, stdout);
+		free(csrc);
+	}
+
+	/* Name the output shared library by "s/[.]c$/[.]so/" */
 	memcpy(of, sf, sizeof sf);
 	assert(sf[sizeof sf - 2] == 'c');
 	of[sizeof sf - 2] = 's';
 	of[sizeof sf - 1] = 'o';
 	of[sizeof sf] = '\0';
-	AN(vsb_new(&cmdsb, cmdline, sizeof cmdline, 0));
-	mgt_make_cc_cmd(&cmdsb, sf, of);
-	vsb_finish(&cmdsb);
-	AZ(vsb_overflowed(&cmdsb));
-	/* XXX check vsb state */
 
-	if (SUB_run(sb, run_cc, cmdline, "C-compiler", 10)) {
-		(void)unlink(sf);
+	/* Build the C-compiler command line */
+	cmdsb = mgt_make_cc_cmd(sf, of);
+
+	/* Run the C-compiler in a sub-shell */
+	i = SUB_run(sb, run_cc, vsb_data(cmdsb), "C-compiler", 10);
+
+	(void)unlink(sf);
+	vsb_delete(cmdsb);
+
+	if (i) {
 		(void)unlink(of);
 		return (NULL);
 	}
 
-	/* Next, try to load the object into the management process */
+	/* Try to load the object into the management process */
 	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
 		vsb_printf(sb,
-		    "%s(): failed to load compiled VCL program:\n  %s",
-		    __func__, dlerror());
+		    "Compiled VCL program failed to load:\n  %s", dlerror());
 		(void)unlink(of);
 		return (NULL);
 	}
@@ -203,20 +262,11 @@ mgt_run_cc(const char *source, struct vsb *sb)
 static char *
 mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 {
-	char *csrc, *vf = NULL;
+	char *vf = NULL;
 
 	*sb = vsb_newauto();
 	XXXAN(*sb);
-	csrc = VCC_Compile(*sb, b, NULL);
-
-	if (csrc != NULL) {
-		if (C_flag)
-			(void)fputs(csrc, stdout);
-		vf = mgt_run_cc(csrc, *sb);
-		if (C_flag && vf != NULL)
-			AZ(unlink(vf));
-		free(csrc);
-	}
+	vf = mgt_run_cc(b, *sb, C_flag);
 	vsb_finish(*sb);
 	AZ(vsb_overflowed(*sb));
 	return (vf);
@@ -322,8 +372,11 @@ mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 	if (vsb_len(sb) > 0)
 		fprintf(stderr, "%s", vsb_data(sb));
 	vsb_delete(sb);
-	if (C_flag)
+	if (C_flag) {
+		if (vf != NULL) 
+			AZ(unlink(vf));
 		return (0);
+	}
 	if (vf == NULL) {
 		fprintf(stderr, "\nVCL compilation failed\n");
 		return (1);
