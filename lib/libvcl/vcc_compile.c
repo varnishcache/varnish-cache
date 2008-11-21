@@ -402,8 +402,6 @@ static struct source *
 vcc_file_source(struct vsb *sb, const char *fn, int fd)
 {
 	char *f;
-	int i;
-	struct stat st;
 	struct source *sp;
 
 	if (fd < 0) {
@@ -414,19 +412,10 @@ vcc_file_source(struct vsb *sb, const char *fn, int fd)
 			return (NULL);
 		}
 	}
-	assert(0 == fstat(fd, &st));
-	if (! S_ISREG(st.st_mode)) {
-		vsb_printf(sb, "File '%s' is not a regular file\n", fn);
-		AZ(close(fd));
-		return (NULL);
-	}
-	f = malloc(st.st_size + 1);
-	assert(f != NULL);
-	i = read(fd, f, st.st_size);
-	assert(i == st.st_size);
+	f = vreadfile(fd);
+	AN(f);
 	AZ(close(fd));
-	f[i] = '\0';
-	sp = vcc_new_source(f, f + i, fn);
+	sp = vcc_new_source(f, NULL, fn);
 	sp->freeit = f;
 	return (sp);
 }
