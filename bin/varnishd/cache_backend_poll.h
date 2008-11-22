@@ -30,7 +30,7 @@
  */
 
 BITMAP(good_ipv4, '4', "Good IPv4", 0)
-BITMAP(good_ipv6, '6', "Good IPv4", 0)
+BITMAP(good_ipv6, '6', "Good IPv6", 0)
 BITMAP( err_xmit, 'x', "Error Xmit", 0)
 BITMAP(good_xmit, 'X', "Good Xmit", 0)
 BITMAP( err_shut, 's', "Error Shut", 0)
