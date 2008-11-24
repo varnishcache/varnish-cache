@@ -80,7 +80,6 @@ AC_CHECK_HEADERS([pthread_np.h])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])
-AC_CHECK_HEADERS([vis.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -166,7 +165,6 @@ AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
-AC_CHECK_FUNCS([vis strvis strvisx])
 AC_CHECK_FUNCS([daemon])
 AC_SYS_LARGEFILE
 

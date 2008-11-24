@@ -20,7 +20,6 @@ nobase_noinst_HEADERS = \
 	compat/strlcpy.h \
 	compat/strndup.h \
 	compat/vasprintf.h \
-	compat/vis.h \
 	flopen.h \
 	http_headers.h \
 	libvarnish.h \
