@@ -800,7 +800,7 @@ ESI_Deliver(struct sess *sp)
 	struct object *obj;
 
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
-		assert(sp->wrk->wfd = &sp->fd);
+		assert(sp->wrk->wfd == &sp->fd);
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
 				(void)WRK_Write(sp->wrk, eb->chunk_length, -1);
@@ -855,7 +855,7 @@ ESI_Deliver(struct sess *sp)
 		sp->obj = obj;
 
 	}
-	assert(sp->wrk->wfd = &sp->fd);
+	assert(sp->wrk->wfd == &sp->fd);
 	if (sp->esis == 0 && sp->http->protover >= 1.1)
 		(void)WRK_Write(sp->wrk, "0\r\n\r\n", -1);
 }
