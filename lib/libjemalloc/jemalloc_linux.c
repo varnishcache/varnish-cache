@@ -197,9 +197,19 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <ansidecl.h>
 
 #include "rb.h"
+
+/* Prevent -Werror to complain about unused parameters when compiling
+   with non-ancient GCC.  Added directly here instead of grabbed from
+   ansidecl.h to save a build dependency on binutils-dev */
+#if __GNUC__ >= 3
+#ifndef ATTRIBUTE_UNUSED
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#endif /* ATTRIBUTE_UNUSED */
+#else
+#define ATTRIBUTE_UNUSED
+#endif
 
 #ifdef MALLOC_DEBUG
    /* Disable inlining to make debugging easier. */
