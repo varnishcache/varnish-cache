@@ -529,12 +529,15 @@ void PipeSession(struct sess *sp);
 void WRK_Init(void);
 int WRK_Queue(struct workreq *wrq);
 void WRK_QueueSession(struct sess *sp);
-void WRK_Reset(struct worker *w, int *fd);
-unsigned WRK_Flush(struct worker *w);
-unsigned WRK_Write(struct worker *w, const void *ptr, int len);
-unsigned WRK_WriteH(struct worker *w, const txt *hh, const char *suf);
+
+void WRW_Reserve(struct worker *w, int *fd);
+void WRW_Release(struct worker *w);
+unsigned WRW_Flush(struct worker *w);
+unsigned WRW_FlushRelease(struct worker *w);
+unsigned WRW_Write(struct worker *w, const void *ptr, int len);
+unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 #ifdef SENDFILE_WORKS
-void WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
+void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */

@@ -799,27 +799,24 @@ ESI_Deliver(struct sess *sp)
 	struct esi_bit *eb;
 	struct object *obj;
 
+	WRW_Reserve(sp->wrk, &sp->fd);
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
-		assert(sp->wrk->wfd == &sp->fd);
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
-				(void)WRK_Write(sp->wrk, eb->chunk_length, -1);
-			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk,
+				(void)WRW_Write(sp->wrk, eb->chunk_length, -1);
+			sp->wrk->acct.bodybytes += WRW_Write(sp->wrk,
 			    eb->verbatim.b, Tlen(eb->verbatim));
 			if (sp->http->protover >= 1.1)
-				(void)WRK_Write(sp->wrk, "\r\n", -1);
+				(void)WRW_Write(sp->wrk, "\r\n", -1);
 		}
 		if (eb->include.b == NULL ||
 		    sp->esis >= params->max_esi_includes)
 			continue;
 
-		/*
-		 * We flush here, because the next transaction is
-		 * quite likely to take some time, so we should get
-		 * as many bits to the client as we can already.
-		 */
-		if (WRK_Flush(sp->wrk))
-			break;
+		if (WRW_FlushRelease(sp->wrk)) {
+			vca_close_session(sp, "remote closed");
+			return;
+		}
 
 		sp->esis++;
 		obj = sp->obj;
@@ -853,11 +850,12 @@ ESI_Deliver(struct sess *sp)
 		assert(sp->step == STP_DONE);
 		sp->esis--;
 		sp->obj = obj;
-
+		WRW_Reserve(sp->wrk, &sp->fd);
 	}
-	assert(sp->wrk->wfd == &sp->fd);
 	if (sp->esis == 0 && sp->http->protover >= 1.1)
-		(void)WRK_Write(sp->wrk, "0\r\n\r\n", -1);
+		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
+	if (WRW_FlushRelease(sp->wrk))
+		vca_close_session(sp, "remote closed");
 }
 
 /*--------------------------------------------------------------------*/
