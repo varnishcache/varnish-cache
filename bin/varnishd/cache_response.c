@@ -146,8 +146,7 @@ RES_WriteObj(struct sess *sp)
 	} else if (sp->wantbody) {
 		if (sp->esis > 0 && sp->http->protover >= 1.1) {
 			sprintf(lenbuf, "%x\r\n", sp->obj->len);
-			sp->wrk->acct.hdrbytes +=
-			    WRK_Write(sp->wrk, lenbuf, -1);
+			(void)WRK_Write(sp->wrk, lenbuf, -1);
 		}
 
 		VTAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -171,11 +170,11 @@ RES_WriteObj(struct sess *sp)
 			}
 #endif /* SENDFILE_WORKS */
 			VSL_stats->n_objwrite++;
-			WRK_Write(sp->wrk, st->ptr, st->len);
+			(void)WRK_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
 		if (sp->esis > 0 && sp->http->protover >= 1.1)
-			WRK_Write(sp->wrk, "\r\n", -1);
+			(void)WRK_Write(sp->wrk, "\r\n", -1);
 	}
 	if (WRK_Flush(sp->wrk))
 		vca_close_session(sp, "remote closed");
