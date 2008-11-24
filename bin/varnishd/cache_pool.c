@@ -124,11 +124,12 @@ WRK_Flush(struct worker *w)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	if (*w->wfd >= 0 && w->niov > 0 && w->werr == 0) {
 		i = writev(*w->wfd, w->iov, w->niov);
-		if (i != w->liov)
+		if (i != w->liov) {
 			w->werr++;
-		WSL(w, SLT_Debug, *w->wfd,
-		    "Write error, len = %d/%d, errno = %s",
-		    i, w->liov, strerror(errno));
+			WSL(w, SLT_Debug, *w->wfd,
+			    "Write error, len = %d/%d, errno = %s",
+			    i, w->liov, strerror(errno));
+		}
 	}
 	w->liov = 0;
 	w->niov = 0;
