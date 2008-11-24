@@ -261,7 +261,7 @@ vbp_wrk_poll_backend(void *priv)
 	if (vt->probe.timeout == 0.0)
 		vt->probe.timeout = 2.0;
 	if (vt->probe.interval == 0.0)
-		vt->probe.timeout = 5.0;
+		vt->probe.interval = 5.0;
 	if (vt->probe.window == 0)
 		vt->probe.window = 8;
 	if (vt->probe.threshold == 0)
