@@ -98,6 +98,8 @@ struct params {
 	unsigned		obj_workspace;
 	unsigned		shm_workspace;
 
+	unsigned		shm_reclen;
+
 	/* Acceptor hints */
 	unsigned		sess_timeout;
 	unsigned		pipe_timeout;
