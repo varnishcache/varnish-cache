@@ -800,12 +800,14 @@ ESI_Deliver(struct sess *sp)
 	struct object *obj;
 
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
+		assert(sp->wrk->wfd = &sp->fd);
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
-				WRK_Write(sp->wrk, eb->chunk_length, -1);
-			WRK_Write(sp->wrk, eb->verbatim.b, Tlen(eb->verbatim));
+				(void)WRK_Write(sp->wrk, eb->chunk_length, -1);
+			sp->wrk->acct.bodybytes += WRK_Write(sp->wrk,
+			    eb->verbatim.b, Tlen(eb->verbatim));
 			if (sp->http->protover >= 1.1)
-				WRK_Write(sp->wrk, "\r\n", -1);
+				(void)WRK_Write(sp->wrk, "\r\n", -1);
 		}
 		if (eb->include.b == NULL ||
 		    sp->esis >= params->max_esi_includes)
@@ -814,9 +816,10 @@ ESI_Deliver(struct sess *sp)
 		/*
 		 * We flush here, because the next transaction is
 		 * quite likely to take some time, so we should get
-		 * as many bits to the client as we can already
+		 * as many bits to the client as we can already.
 		 */
-		WRK_Flush(sp->wrk);
+		if (WRK_Flush(sp->wrk))
+			break;
 
 		sp->esis++;
 		obj = sp->obj;
@@ -852,8 +855,9 @@ ESI_Deliver(struct sess *sp)
 		sp->obj = obj;
 
 	}
+	assert(sp->wrk->wfd = &sp->fd);
 	if (sp->esis == 0 && sp->http->protover >= 1.1)
-		WRK_Write(sp->wrk, "0\r\n\r\n", -1);
+		(void)WRK_Write(sp->wrk, "0\r\n\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
