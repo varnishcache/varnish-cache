@@ -764,6 +764,7 @@ static const struct parspec parspec[] = {
 		"Bitmap controlling ESI parsing code:\n"
 		"  0x00000001 - Don't check if it looks like XML\n"
 		"  0x00000002 - Ignore non-esi elements\n"
+		"  0x00000004 - Emit parsing debug records\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
