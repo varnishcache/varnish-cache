@@ -636,6 +636,11 @@ static const struct parspec parspec[] = {
 		"Minimum is 4096 bytes.",
 		DELAYED_EFFECT,
 		"8192", "bytes" },
+	{ "shm_reclen", tweak_uint, &master.shm_reclen, 16, 65535,
+		"Maximum number of bytes in SHM log record.\n"
+		"Maximum is 65535 bytes.",
+		0,
+		"255", "bytes" },
 	{ "default_grace", tweak_uint, &master.default_grace, 0, UINT_MAX,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "

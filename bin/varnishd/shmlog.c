@@ -81,6 +81,8 @@ static void
 vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 {
 
+	assert(len < 0x10000);
+	assert(id < 0x10000);
 	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
 	p[__SHMLOG_LEN_LOW] = len & 0xff;
 	p[__SHMLOG_ID_HIGH] = (id >> 8) & 0xff;
@@ -100,14 +102,15 @@ static void
 VSLR(enum shmlogtag tag, int id, txt t)
 {
 	unsigned char *p;
-	unsigned l;
+	unsigned l, mlen;
 
 	Tcheck(t);
+	mlen = params->shm_reclen;
 
 	/* Truncate */
 	l = Tlen(t);
-	if (l > 255) {
-		l = 255;
+	if (l > mlen) {
+		l = mlen;
 		t.e = t.b + l;
 	}
 
@@ -136,11 +139,12 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned char *p;
-	unsigned n;
+	unsigned n, mlen;
 	txt t;
 
 	AN(fmt);
 	va_start(ap, fmt);
+	mlen = params->shm_reclen;
 
 	if (strchr(fmt, '%') == NULL) {
 		t.b = TRUST_ME(fmt);
@@ -153,13 +157,14 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(loghead->ptr < loghead->size);
 
 		/* Wrap if we cannot fit a full size record */
-		if (loghead->ptr + SHMLOG_NEXTTAG + 255 + 1 >= loghead->size)
+		if (loghead->ptr + SHMLOG_NEXTTAG + mlen + 1 >= loghead->size)
 			vsl_wrap();
 
 		p = logstart + loghead->ptr;
-		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
-		if (n > 255)
-			n = 255;	/* we truncate long fields */
+		/* +1 for the NUL */
+		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1, fmt, ap);
+		if (n > mlen)
+			n = mlen;		/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
 		loghead->ptr += SHMLOG_NEXTTAG + n;
 		assert(loghead->ptr < loghead->size);
@@ -203,14 +208,15 @@ void
 WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 {
 	unsigned char *p;
-	unsigned l;
+	unsigned l, mlen;
 
 	Tcheck(t);
+	mlen = params->shm_reclen;
 
 	/* Truncate */
 	l = Tlen(t);
-	if (l > 255) {
-		l = 255;
+	if (l > mlen) {
+		l = mlen;
 		t.e = t.b + l;
 	}
 
@@ -234,11 +240,12 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned char *p;
-	unsigned n;
+	unsigned n, mlen;
 	txt t;
 
 	AN(fmt);
 	va_start(ap, fmt);
+	mlen = params->shm_reclen;
 
 	if (strchr(fmt, '%') == NULL) {
 		t.b = TRUST_ME(fmt);
@@ -248,13 +255,14 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(w->wlp < w->wle);
 
 		/* Wrap if we cannot fit a full size record */
-		if (w->wlp + SHMLOG_NEXTTAG + 255 + 1 >= w->wle)
+		if (w->wlp + SHMLOG_NEXTTAG + mlen + 1 >= w->wle)
 			WSL_Flush(w, 1);
 
 		p = w->wlp;
-		n = vsnprintf((char *)(p + SHMLOG_DATA), 256, fmt, ap);
-		if (n > 255)
-			n = 255;	/* we truncate long fields */
+		/* +1 for the NUL */
+		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1, fmt, ap);
+		if (n > mlen)
+			n = mlen;	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
 		w->wlp += SHMLOG_NEXTTAG + n;
 		assert(w->wlp < w->wle);
