@@ -282,11 +282,11 @@ esi_addinclude(struct esi_work *ew, txt t)
 	unsigned u, v;
 	struct ws *ws;
 
-	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
+	VSL(SLT_Debug, ew->sp->fd, "Incl \"%.*s\"", t.e - t.b, t.b);
 	eb = esi_addbit(ew);
 	while (esi_attrib(ew, &t, &tag, &val) == 1) {
 		if (params->esi_syntax & 0x4)
-			VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
+			VSL(SLT_Debug, ew->sp->fd, "<%.*s> -> <%.*s>",
 			    tag.e - tag.b, tag.b, val.e - val.b, val.b);
 		if (Tlen(tag) != 3 || memcmp(tag.b, "src", 3))
 			continue;
