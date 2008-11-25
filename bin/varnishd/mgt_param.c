@@ -50,35 +50,15 @@
 #include "mgt_cli.h"
 
 #include "heritage.h"
+#include "param.h"
 
 #include "vss.h"
 
 #define MAGIC_INIT_STRING	"\001"
-
-struct parspec;
-static int margin;
-
-typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
-
-struct parspec {
-	const char	*name;
-	tweak_t		*func;
-	volatile void	*priv;
-	unsigned	umin;
-	unsigned	umax;
-	const char	*descr;
-	int		 flags;
-#define DELAYED_EFFECT 1
-#define EXPERIMENTAL   2
-#define MUST_RESTART   4
-#define MUST_RELOAD    8
-	const char	*def;
-	const char	*units;
-};
-
 static struct params master;
 static int nparspec;
 static struct parspec const ** parspec;
+static int margin;
 
 /*--------------------------------------------------------------------*/
 
