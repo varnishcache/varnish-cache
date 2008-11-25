@@ -629,3 +629,5 @@ WRK_Init(void)
 	AZ(pthread_create(&tp, NULL, wrk_herder_thread, NULL));
 	AZ(pthread_detach(tp));
 }
+
+/*--------------------------------------------------------------------*/

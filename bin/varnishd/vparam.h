@@ -48,3 +48,14 @@ struct parspec {
 	const char	*def;
 	const char	*units;
 };
+
+void tweak_generic_uint(struct cli *cli,
+    volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
+void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
+void tweak_timeout(struct cli *cli,
+    const struct parspec *par, const char *arg);
+
+extern struct params master;
+
+/* mgt_pool.c */
+extern const struct parspec WRK_parspec[];
