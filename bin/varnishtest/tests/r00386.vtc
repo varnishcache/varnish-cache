@@ -1,0 +1,29 @@
+# $Id$
+
+test "#386, failure to insert include"
+
+server s1 {
+	rxreq
+	expect req.url == "/body"
+	txresp -hdr "Last-Modified: Tue, 25 Nov 2008 00:00:00 GMT" -body "BODY"
+	rxreq 
+	expect req.url == "/"
+	txresp -body {<X><esi:include src="/body"/></X>}
+} -start
+
+varnish v1 -arg "-p diag_bitmap=0x20" -vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/") {
+			esi;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /body
+	rxresp
+	expect resp.bodylen == 4
+	txreq -url / -hdr "If-Modified-Since:  Tue, 25 Nov 2008 00:00:00 GMT"
+	rxresp
+	expect resp.bodylen == 11
+} -start
