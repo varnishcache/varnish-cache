@@ -586,28 +586,12 @@ static int
 cnt_lookup(struct sess *sp)
 {
 	struct object *o;
-	char *p;
-	uintptr_t u;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	if (sp->obj == NULL) {
-
-		/* Allocate the pointers we need, align properly. */
-		sp->lhashptr = 1;	/* space for NUL */
-		sp->ihashptr = 0;
-		sp->nhashptr = sp->vcl->nhashcount * 2;
-		p = WS_Alloc(sp->http->ws,
-		    sizeof(const char *) * (sp->nhashptr + 1));
-		XXXAN(p);
-		/* Align pointer properly (?) */
-		u = (uintptr_t)p;
-		u &= sizeof(const char *) - 1;
-		if (u)
-			p += sizeof(const char *) - u;
-		sp->hashptr = (void*)p;
-
+		HSH_Prepare(sp, sp->vcl->nhashcount);
 		VCL_hash_method(sp);
 		assert(sp->handling == VCL_RET_HASH);
 	}

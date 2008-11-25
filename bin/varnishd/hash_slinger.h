@@ -59,6 +59,8 @@ void HSH_Ref(struct object *o);
 void HSH_Deref(struct object *o);
 double HSH_Grace(double g);
 void HSH_Init(void);
+void HSH_AddString(struct sess *sp, const char *str);
+void HSH_Prepare(struct sess *sp, unsigned hashcount);
 
 
 #ifdef VARNISH_CACHE_CHILD

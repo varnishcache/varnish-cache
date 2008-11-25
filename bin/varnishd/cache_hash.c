@@ -201,6 +201,48 @@ HSH_Copy(const struct sess *sp, struct objhead *oh)
 	assert(b <= oh->hash + oh->hashlen);
 }
 
+void
+HSH_Prepare(struct sess *sp, unsigned nhashcount)
+{
+	char *p;
+	unsigned u;
+
+	/* Allocate the pointers we need, align properly. */
+	sp->lhashptr = 1;       /* space for NUL */
+	sp->ihashptr = 0;
+	sp->nhashptr = nhashcount * 2;
+	p = WS_Alloc(sp->http->ws, sizeof(const char *) * (sp->nhashptr + 1));
+	XXXAN(p);
+	/* Align pointer properly (?) */
+	u = (uintptr_t)p;
+	u &= sizeof(const char *) - 1;
+	if (u)
+		p += sizeof(const char *) - u;
+	sp->hashptr = (void*)p;
+}
+
+void
+HSH_AddString(struct sess *sp, const char *str)
+{
+	int l;
+
+	if (str == NULL)
+		str = "";
+	l = strlen(str);
+
+	/*
+	* XXX: handle this by bouncing sp->vcl->nhashcount when it fails
+	* XXX: and dispose of this request either by reallocating the
+	* XXX: hashptr (if possible) or restarting/error the request
+	*/
+	xxxassert(sp->ihashptr < sp->nhashptr);
+
+	sp->hashptr[sp->ihashptr] = str;
+	sp->hashptr[sp->ihashptr + 1] = str + l;
+	sp->ihashptr += 2;
+	sp->lhashptr += l + 1;
+}
+
 struct object *
 HSH_Lookup(struct sess *sp)
 {
