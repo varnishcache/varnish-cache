@@ -26,9 +26,21 @@
  * From: $FreeBSD: head/lib/libmd/sha256c.c 154479 2006-01-17 15:35:57Z phk $
  */
 
-#include <stdint.h>
+#include "config.h"
 
+#include <stdint.h>
 #include <string.h>
+
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#define BYTE_ORDER	__BYTE_ORDER
+#define BIG_ENDIAN	__BIG_ENDIAN
+#endif
+#ifdef HAVE_SYS_ENDIAN_H
+#include <sys/endian.h>
+#define BYTE_ORDER	_BYTE_ORDER
+#define BIG_ENDIAN	_BIG_ENDIAN
+#endif
 
 #include "vsha256.h"
 
