@@ -22,19 +22,17 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * From: $FreeBSD: head/lib/libmd/sha256c.c 154479 2006-01-17 15:35:57Z phk $
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/lib/libmd/sha256c.c 154479 2006-01-17 15:35:57Z phk $");
-
-#include <sys/endian.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #include <string.h>
 
 #include "vsha256.h"
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
 
 /* Copy a vector of big-endian uint32_t into a vector of bytes */
 #define be32enc_vect(dst, src, len)	\
@@ -44,7 +42,26 @@ __FBSDID("$FreeBSD: head/lib/libmd/sha256c.c 154479 2006-01-17 15:35:57Z phk $")
 #define be32dec_vect(dst, src, len)	\
 	memcpy((void *)dst, (const void *)src, (size_t)len)
 
-#else /* BYTE_ORDER != BIG_ENDIAN */
+#else /* BYTE_ORDER != BIG_ENDIAN or in doubt... */
+
+static __inline uint32_t
+mybe32dec(const void *pp)
+{
+        unsigned char const *p = (unsigned char const *)pp;
+
+        return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
+}
+
+static __inline void
+mybe32enc(void *pp, uint32_t u)
+{
+        unsigned char *p = (unsigned char *)pp;
+
+        p[0] = (u >> 24) & 0xff;
+        p[1] = (u >> 16) & 0xff;
+        p[2] = (u >> 8) & 0xff;
+        p[3] = u & 0xff;
+}
 
 /*
  * Encode a length len/4 vector of (uint32_t) into a length len vector of
@@ -56,7 +73,7 @@ be32enc_vect(unsigned char *dst, const uint32_t *src, size_t len)
 	size_t i;
 
 	for (i = 0; i < len / 4; i++)
-		be32enc(dst + i * 4, src[i]);
+		mybe32enc(dst + i * 4, src[i]);
 }
 
 /*
@@ -69,10 +86,10 @@ be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
 	size_t i;
 
 	for (i = 0; i < len / 4; i++)
-		dst[i] = be32dec(src + i * 4);
+		dst[i] = mybe32dec(src + i * 4);
 }
 
-#endif /* BYTE_ORDER != BIG_ENDIAN */
+#endif 
 
 /* Elementary functions used by SHA256 */
 #define Ch(x, y, z)	((x & (y ^ z)) ^ z)
