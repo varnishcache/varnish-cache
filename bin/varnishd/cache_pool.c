@@ -308,6 +308,8 @@ wrk_thread(void *priv)
 		AN(w->wrq->func);
 		w->lastused = NAN;
 		w->wrq->func(w, w->wrq->priv);
+		AZ(w->wfd);
+		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
 		Lck_Lock(&qp->mtx);
 	}
