@@ -83,6 +83,8 @@ void
 HSH_Prealloc(struct sess *sp)
 {
 	struct worker *w;
+	struct objhead *oh;
+	struct object *o;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -90,47 +92,39 @@ HSH_Prealloc(struct sess *sp)
 	w = sp->wrk;
 
 	if (w->nobjhead == NULL) {
-		w->nobjhead = calloc(sizeof *w->nobjhead, 1);
-		XXXAN(w->nobjhead);
-		w->nobjhead->magic = OBJHEAD_MAGIC;
-		w->nobjhead->refcnt = 1;
-		VTAILQ_INIT(&w->nobjhead->objects);
-		VTAILQ_INIT(&w->nobjhead->waitinglist);
-		Lck_New(&w->nobjhead->mtx);
+		ALLOC_OBJ(oh, OBJHEAD_MAGIC);
+		XXXAN(oh);
+		oh->refcnt = 1;
+		VTAILQ_INIT(&oh->objects);
+		VTAILQ_INIT(&oh->waitinglist);
+		Lck_New(&oh->mtx);
+		w->nobjhead = oh;
 		VSL_stats->n_objecthead++;
 	} else
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
-
-#if 0
-	/* Make sure there is space enough for the hash-string */
-	if (w->nobjhead->hashlen < sp->lhashptr) {
-		w->objhead->hash = realloc(w->objhead->hash, sp->lhashptr);
-		w->objhead->hashlen = sp->lhashptr;
-		AN(w->objhead->hash);
-	}
-#endif
 
 	if (w->nobj == NULL) {
 		st = STV_alloc(sp, params->obj_workspace);
 		XXXAN(st);
 		assert(st->space > sizeof *w->nobj);
-		w->nobj = (void *)st->ptr; /* XXX: align ? */
-		st->len = sizeof *w->nobj;
-		memset(w->nobj, 0, sizeof *w->nobj);
-		w->nobj->objstore = st;
-		WS_Init(w->nobj->ws_o, "obj",
+		o = (void *)st->ptr; /* XXX: align ? */
+		st->len = sizeof *o;
+		memset(o, 0, sizeof *o);
+		o->objstore = st;
+		WS_Init(o->ws_o, "obj",
 		    st->ptr + st->len, st->space - st->len);
 		st->len = st->space;
-		WS_Assert(w->nobj->ws_o);
-		http_Setup(w->nobj->http, w->nobj->ws_o);
-		w->nobj->magic = OBJECT_MAGIC;
-		w->nobj->http->magic = HTTP_MAGIC;
-		w->nobj->busy = 1;
-		w->nobj->refcnt = 1;
-		w->nobj->grace = NAN;
-		w->nobj->entered = NAN;
-		VTAILQ_INIT(&w->nobj->store);
-		VTAILQ_INIT(&w->nobj->esibits);
+		WS_Assert(o->ws_o);
+		http_Setup(o->http, o->ws_o);
+		o->magic = OBJECT_MAGIC;
+		o->http->magic = HTTP_MAGIC;
+		o->busy = 1;
+		o->refcnt = 1;
+		o->grace = NAN;
+		o->entered = NAN;
+		VTAILQ_INIT(&o->store);
+		VTAILQ_INIT(&o->esibits);
+		w->nobj = o;
 		VSL_stats->n_object++;
 
 	} else

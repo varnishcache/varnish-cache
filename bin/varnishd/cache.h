@@ -509,7 +509,7 @@ void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
 int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__New(struct lock *lck, const char *w);
-void Lck__Assert(struct lock *lck, int held);
+void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
 void LCK_Init(void);

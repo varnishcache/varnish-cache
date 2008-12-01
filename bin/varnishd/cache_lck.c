@@ -125,7 +125,7 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 }
 
 void
-Lck__Assert(struct lock *lck, int held)
+Lck__Assert(const struct lock *lck, int held)
 {
 	struct ilck *ilck;
 
