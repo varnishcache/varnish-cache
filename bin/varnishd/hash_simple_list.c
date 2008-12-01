@@ -71,6 +71,8 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
 	struct objhead *oh;
 	int i;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
 		i = HSH_Compare(sp, oh);
