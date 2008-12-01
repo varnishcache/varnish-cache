@@ -33,18 +33,19 @@
 
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
-#define BYTE_ORDER	__BYTE_ORDER
-#define BIG_ENDIAN	__BIG_ENDIAN
+#define VBYTE_ORDER	__BYTE_ORDER
+#define VBIG_ENDIAN	__BIG_ENDIAN
 #endif
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
-#define BYTE_ORDER	_BYTE_ORDER
-#define BIG_ENDIAN	_BIG_ENDIAN
+#define VBYTE_ORDER	_BYTE_ORDER
+#define VBIG_ENDIAN	_BIG_ENDIAN
 #endif
 
+#include "libvarnish.h"
 #include "vsha256.h"
 
-#if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
+#if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
 
 /* Copy a vector of big-endian uint32_t into a vector of bytes */
 #define be32enc_vect(dst, src, len)	\
@@ -61,7 +62,7 @@ mybe32dec(const void *pp)
 {
         unsigned char const *p = (unsigned char const *)pp;
 
-        return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
+        return (((unsigned)p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
 }
 
 static __inline void
@@ -73,6 +74,15 @@ mybe32enc(void *pp, uint32_t u)
         p[1] = (u >> 16) & 0xff;
         p[2] = (u >> 8) & 0xff;
         p[3] = u & 0xff;
+}
+
+static __inline void
+mybe64enc(void *pp, uint64_t u)
+{
+	unsigned char *p = (unsigned char *)pp;
+
+	be32enc(p, u >> 32);
+	be32enc(p + 4, u & 0xffffffff);
 }
 
 /*
@@ -126,7 +136,7 @@ be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
 	    S[(66 - i) % 8], S[(67 - i) % 8],	\
 	    S[(68 - i) % 8], S[(69 - i) % 8],	\
 	    S[(70 - i) % 8], S[(71 - i) % 8],	\
-	    W[i] + k)
+	    (W[i] + k))
 
 /*
  * SHA256 block compression function.  The 256-bit state is transformed via
@@ -219,7 +229,7 @@ SHA256_Transform(uint32_t * state, const unsigned char block[64])
 		state[i] += S[i];
 }
 
-static unsigned char PAD[64] = {
+static const unsigned char PAD[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -234,14 +244,20 @@ SHA256_Pad(SHA256_CTX * ctx)
 	uint32_t r, plen;
 
 	/*
+	 * Rescale from bytes to bits
+	 */
+	ctx->count <<= 3;
+
+	/*
 	 * Convert length to a vector of bytes -- we do this now rather
 	 * than later because the length will change after we pad.
 	 */
-	be32enc_vect(len, ctx->count, 8);
+	mybe64enc(len, ctx->count);
 
 	/* Add 1--64 bytes so that the resulting length is 56 mod 64 */
-	r = (ctx->count[1] >> 3) & 0x3f;
+	r = ctx->count & 0x3f;
 	plen = (r < 56) ? (56 - r) : (120 - r);
+	assert(plen <= sizeof PAD);
 	SHA256_Update(ctx, PAD, (size_t)plen);
 
 	/* Add the terminating bit-count */
@@ -254,7 +270,7 @@ SHA256_Init(SHA256_CTX * ctx)
 {
 
 	/* Zero bits processed so far */
-	ctx->count[0] = ctx->count[1] = 0;
+	ctx->count = 0;
 
 	/* Magic initialization constants */
 	ctx->state[0] = 0x6A09E667;
@@ -271,43 +287,23 @@ SHA256_Init(SHA256_CTX * ctx)
 void
 SHA256_Update(SHA256_CTX * ctx, const void *in, size_t len)
 {
-	uint32_t bitlen[2];
-	uint32_t r;
+	uint32_t r, l;
 	const unsigned char *src = in;
 
 	/* Number of bytes left in the buffer from previous updates */
-	r = (ctx->count[1] >> 3) & 0x3f;
-
-	/* Convert the length into a number of bits */
-	bitlen[1] = ((uint32_t)len) << 3;
-	bitlen[0] = (uint32_t)(len >> 29);
-
-	/* Update number of bits */
-	if ((ctx->count[1] += bitlen[1]) < bitlen[1])
-		ctx->count[0]++;
-	ctx->count[0] += bitlen[0];
-
-	/* Handle the case where we don't need to perform any transforms */
-	if (len < 64 - r) {
-		memcpy(&ctx->buf[r], src, len);
-		return;
+	r = ctx->count & 0x3f;
+	while (len > 0) {
+		l = 64 - r;
+		if (l > len)
+			l = len;
+		memcpy(&ctx->buf[r], src, l);
+		len -= l;
+		src += l;
+		ctx->count += l;
+		r = ctx->count & 0x3f;
+		if (r == 0)
+			SHA256_Transform(ctx->state, ctx->buf);
 	}
-
-	/* Finish the current block */
-	memcpy(&ctx->buf[r], src, 64 - r);
-	SHA256_Transform(ctx->state, ctx->buf);
-	src += 64 - r;
-	len -= 64 - r;
-
-	/* Perform complete blocks */
-	while (len >= 64) {
-		SHA256_Transform(ctx->state, src);
-		src += 64;
-		len -= 64;
-	}
-
-	/* Copy left over data into buffer */
-	memcpy(ctx->buf, src, len);
 }
 
 /*
