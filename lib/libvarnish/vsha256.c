@@ -81,8 +81,8 @@ mybe64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
-	be32enc(p, u >> 32);
-	be32enc(p + 4, u & 0xffffffff);
+	mybe32enc(p, u >> 32);
+	mybe32enc(p + 4, u & 0xffffffff);
 }
 
 /*
