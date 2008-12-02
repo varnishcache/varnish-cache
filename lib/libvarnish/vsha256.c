@@ -244,20 +244,15 @@ SHA256_Pad(SHA256_CTX * ctx)
 	uint32_t r, plen;
 
 	/*
-	 * Rescale from bytes to bits
+	 * Convert length to bits and encode as a vector of bytes
+	 * -- we do this now rather than later because the length
+	 * will change after we pad.
 	 */
-	ctx->count <<= 3;
-
-	/*
-	 * Convert length to a vector of bytes -- we do this now rather
-	 * than later because the length will change after we pad.
-	 */
-	mybe64enc(len, ctx->count);
+	mybe64enc(len, ctx->count << 3);
 
 	/* Add 1--64 bytes so that the resulting length is 56 mod 64 */
 	r = ctx->count & 0x3f;
 	plen = (r < 56) ? (56 - r) : (120 - r);
-	assert(plen <= sizeof PAD);
 	SHA256_Update(ctx, PAD, (size_t)plen);
 
 	/* Add the terminating bit-count */
@@ -323,3 +318,43 @@ SHA256_Final(unsigned char digest[32], SHA256_CTX * ctx)
 	/* Clear the context state */
 	memset((void *)ctx, 0, sizeof(*ctx));
 }
+
+/*
+ * A few test-vectors, just in case
+ */
+
+static const struct sha256test {
+	const char              *input;
+	const unsigned char     output[32];
+} sha256test[] = {
+    { "",
+	{0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4,
+	 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b,
+	 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55} },
+    { "message digest",
+	{0xf7, 0x84, 0x6f, 0x55, 0xcf, 0x23, 0xe1, 0x4e, 0xeb, 0xea, 0xb5,
+	 0xb4, 0xe1, 0x55, 0x0c, 0xad, 0x5b, 0x50, 0x9e, 0x33, 0x48, 0xfb,
+	 0xc4, 0xef, 0xa3, 0xa1, 0x41, 0x3d, 0x39, 0x3c, 0xb6, 0x50} },
+    { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+	{0xdb, 0x4b, 0xfc, 0xbd, 0x4d, 0xa0, 0xcd, 0x85, 0xa6, 0x0c, 0x3c,
+	 0x37, 0xd3, 0xfb, 0xd8, 0x80, 0x5c, 0x77, 0xf1, 0x5f, 0xc6, 0xb1,
+	 0xfd, 0xfe, 0x61, 0x4e, 0xe0, 0xa7, 0xc8, 0xfd, 0xb4, 0xc0} },
+    { NULL }
+};
+
+
+void
+SHA256_Test(void)
+{
+	struct SHA256Context c;
+	const struct sha256test *p;
+	unsigned char o[32];
+
+	for (p = sha256test; p->input != NULL; p++) {
+		SHA256_Init(&c);
+		SHA256_Update(&c, p->input, strlen(p->input));
+		SHA256_Final(o, &c);
+		assert(!memcmp(o, p->output, 32));
+	}
+}
+

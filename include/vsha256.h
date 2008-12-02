@@ -41,6 +41,7 @@ __BEGIN_DECLS
 void	SHA256_Init(SHA256_CTX *);
 void	SHA256_Update(SHA256_CTX *, const void *, size_t);
 void	SHA256_Final(unsigned char [32], SHA256_CTX *);
+void	SHA256_Test(void);
 __END_DECLS
 
 #endif /* !_SHA256_H_ */
