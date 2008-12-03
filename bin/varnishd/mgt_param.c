@@ -713,7 +713,7 @@ static const struct parspec input_parspec[] = {
 	{ "hash_sha256", tweak_bool, &master.hash_sha256, 0, 0,
 		"Use SHA256 compression of hash-strings",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ "log_hashstring", tweak_bool, &master.log_hash, 0, 0,
 		"Log the hash string to shared memory log.\n",
 		0,
