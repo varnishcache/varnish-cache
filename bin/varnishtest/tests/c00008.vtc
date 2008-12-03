@@ -5,7 +5,8 @@ test "Test If-Modified-Since"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" -body "11111\n"
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -body "11111\n"
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -16,15 +17,18 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.content-length == 6
 
-	txreq -url "/foo" -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT"
+	txreq -url "/foo" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT"
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/foo" -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	txreq -url "/foo" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
 	rxresp
 	expect resp.status == 304
 
-	txreq -url "/foo" -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:02 GMT"
+	txreq -url "/foo" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:02 GMT"
 	rxresp
 	expect resp.status == 304
 } 
