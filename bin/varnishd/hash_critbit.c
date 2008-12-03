@@ -364,6 +364,7 @@ static struct objhead *
 hcb_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *oh;
+	unsigned u;
 	
 	assert(params->hash_sha256);
 	oh =  hcb_insert(&hcb_root, noh, 0);
@@ -371,14 +372,14 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		/* Assert that we didn't muck with the tree without lock */
 		assert(oh != noh);
 		Lck_Lock(&oh->mtx);
-		oh->refcnt++;
+		u = oh->refcnt;
+		if (u)
+			oh->refcnt++;
 		Lck_Unlock(&oh->mtx);
-		VSL_stats->hcb_nolock++;
-		if (0) {
-			fprintf(stderr, "%s %d\n", __func__, __LINE__);
-			dump(&hcb_root, stderr);
+		if (u) {
+			VSL_stats->hcb_nolock++;
+			return (oh);
 		}
-		return (oh);
 	}
 
 	/*
