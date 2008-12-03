@@ -59,6 +59,7 @@
 
 #include "vsb.h"
 #include "vpf.h"
+#include "vsha256.h"
 
 #include "cli.h"
 #include "cli_priv.h"
@@ -157,11 +158,13 @@ setup_storage(const char *spec)
 
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
+extern struct hash_slinger hcb_slinger;
 
 static const struct choice hsh_choice[] = {
 	{ "classic",		&hcl_slinger },
 	{ "simple",		&hsl_slinger },
 	{ "simple_list",	&hsl_slinger },	/* backwards compat */
+	{ "critbit",		&hcb_slinger },
 	{ NULL,			NULL }
 };
 
@@ -449,6 +452,11 @@ main(int argc, char * const *argv)
 	assert(TIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
 	assert(TIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
 	assert(TIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
+
+	/*
+	 * Check that our SHA256 works
+	 */
+	SHA256_Test();
 
 	memset(cli, 0, sizeof cli);
 	cli[0].sb = vsb_newauto();

@@ -126,3 +126,7 @@ MAC_STAT(n_purge_retire,	uint64_t, 'a', "N old purges deleted")
 MAC_STAT(n_purge_obj_test,	uint64_t, 'a', "N objects tested")
 MAC_STAT(n_purge_re_test,	uint64_t, 'a', "N regexps tested against")
 MAC_STAT(n_purge_dups,		uint64_t, 'a', "N duplicate purges removed")
+
+MAC_STAT(hcb_nolock,		uint64_t, 'a', "HCB Lookups without lock")
+MAC_STAT(hcb_lock,		uint64_t, 'a', "HCB Lookups with lock")
+MAC_STAT(hcb_insert,		uint64_t, 'a', "HCB Inserts")

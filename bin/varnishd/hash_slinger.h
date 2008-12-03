@@ -73,14 +73,24 @@ struct objhead {
 	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
+	unsigned char		digest[32];
+	unsigned char		digest_len;
 	VTAILQ_HEAD(, sess)	waitinglist;
 
-	/*------------------------------------------------------------
-	 * The fields below are for the sole private use of the hash 
-	 * implementation.
+	/*----------------------------------------------------
+	 * The fields below are for the sole private use of
+	 * the hash implementation(s).
 	 */
-	VTAILQ_ENTRY(objhead)	hoh_list;
-	void			*hoh_head;
-	unsigned		hoh_digest;
+	union {
+		void		*filler[3];
+		struct {
+			VTAILQ_ENTRY(objhead)	u_n_hoh_list;
+			void			*u_n_hoh_head;
+			unsigned		u_n_hoh_digest;
+		} n;
+	} u;
+#define hoh_list u.n.u_n_hoh_list
+#define hoh_head u.n.u_n_hoh_head
+#define hoh_digest u.n.u_n_hoh_digest
 };
 #endif /* VARNISH_CACHE_CHILD */
