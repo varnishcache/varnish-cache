@@ -262,7 +262,6 @@ HSH_Lookup(struct sess *sp)
 	HSH_Prealloc(sp);
 	if (params->hash_sha256) {
 		SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
-		sp->wrk->nobjhead->digest_len = 32;
 		/* WSP(sp, SLT_Debug, "SHA256: <%.32s>", sha256); */
 	}
 	
