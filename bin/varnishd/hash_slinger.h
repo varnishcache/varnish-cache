@@ -64,6 +64,9 @@ void HSH_Prepare(struct sess *sp, unsigned hashcount);
 
 
 #ifdef VARNISH_CACHE_CHILD
+
+#define DIGEST_LEN		32
+
 struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
@@ -73,9 +76,13 @@ struct objhead {
 	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
-	unsigned char		digest[32];
-	unsigned char		digest_len;
-	VTAILQ_HEAD(, sess)	waitinglist;
+	unsigned char		digest[DIGEST_LEN];
+	union {
+		VTAILQ_HEAD(, sess)	__u_waitinglist;
+		VTAILQ_ENTRY(objhead)	__u_coollist;
+	} __u;
+#define waitinglist __u.__u_waitinglist
+#define coollist __u.__u_coollist
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of
