@@ -30,7 +30,7 @@
  * A Crit Bit tree based hash
  */
 
-#define PHK	1
+#define PHK	0
 
 #include "config.h"
 
