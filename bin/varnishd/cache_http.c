@@ -251,7 +251,7 @@ http_DoConnection(struct http *hp)
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
-		if (strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+		if (hp->protover < 1.1)
 			return ("not HTTP/1.1");
 		return (NULL);
 	}
@@ -442,6 +442,21 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 
 /*--------------------------------------------------------------------*/
 
+static void
+http_ProtoVer(struct http *hp)
+{
+
+	if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
+		hp->protover = 1.0;
+	else if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+		hp->protover = 1.1;
+	else
+		hp->protover = 0.9;
+}
+
+
+/*--------------------------------------------------------------------*/
+
 int
 http_DissectRequest(struct sess *sp)
 {
@@ -463,13 +478,7 @@ http_DissectRequest(struct sess *sp)
 		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
 		return (i);
 	}
-
-	if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		hp->protover = 1.0;
-	else if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		hp->protover = 1.1;
-	else
-		hp->protover = 0.9;
+	http_ProtoVer(hp);
 	return (i);
 }
 
@@ -497,6 +506,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 		hp->status =
 		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
 	}
+	http_ProtoVer(hp);
 	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
 	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
 		/* Backend didn't send a response string, use the standard */
