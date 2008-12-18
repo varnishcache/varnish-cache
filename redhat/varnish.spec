@@ -1,4 +1,4 @@
-Summary: Varnish is a high-performance HTTP accelerator
+Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 2.0.2
 Release: 1%{?dist}
