@@ -5,7 +5,7 @@ test "Check that the first_byte_timeout works from parameters"
 server s1 {
 	rxreq
 	delay 1.5
-	txresp
+	txresp -body "foo"
 } -start
 
 varnish v1 -vcl+backend {} -start
@@ -21,7 +21,7 @@ client c1 {
 server s1 {
 	rxreq
 	delay 0.5
-	txresp
+	txresp -body "foo"
 } -start
 
 client c1 {
