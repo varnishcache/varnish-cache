@@ -1,0 +1,36 @@
+# $Id$
+
+test "Regression test for ticket 412"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -status 303 -hdr "Location: /foo" 
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "12345"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (obj.status == 303) {
+			set obj.cacheable = true;
+			set obj.ttl = 60 s;
+			set obj.http.X-Magic-Redirect = "1";
+			set req.url = obj.http.Location;
+			restart;
+		}
+	}
+	sub vcl_hit {
+		if (obj.http.X-Magic-Redirect == "1") {
+			set req.url = obj.http.Location;
+			restart;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
