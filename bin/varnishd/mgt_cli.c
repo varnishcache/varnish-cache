@@ -459,22 +459,23 @@ mgt_cli_telnet(int dflag, const char *T_arg)
 {
 	struct vss_addr **ta;
 	char *addr, *port;
-	int i, n, sock;
+	int i, n, sock, good;
 	struct telnet *tn;
 
 	dflag_copy = dflag;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
 	n = VSS_resolve(addr, port, &ta);
-	free(addr);
-	free(port);
 	if (n == 0) {
 		fprintf(stderr, "Could not open management port\n");
 		exit(2);
 	}
+	good = 0;
 	for (i = 0; i < n; ++i) {
 		sock = VSS_listen(ta[i], 10);
-		assert(sock >= 0);
+		if (sock < 0)
+			continue;
+		good++;
 		tn = telnet_new(sock);
 		tn->ev = vev_new();
 		XXXAN(tn->ev);
@@ -486,5 +487,12 @@ mgt_cli_telnet(int dflag, const char *T_arg)
 		ta[i] = NULL;
 	}
 	free(ta);
+	if (good == 0) {
+		REPORT(LOG_ERR, "-T %s:%s could not be listened on.",
+		    addr, port);
+		exit(2);
+	}
+	free(addr);
+	free(port);
 	return (0);
 }
