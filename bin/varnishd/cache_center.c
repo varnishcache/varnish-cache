@@ -177,8 +177,7 @@ cnt_deliver(struct sess *sp)
 
 	RES_WriteObj(sp);
 	AZ(sp->wrk->wfd);
-	HSH_Deref(sp->obj);
-	sp->obj = NULL;
+	HSH_Deref(&sp->obj);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -391,13 +390,9 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VBE_free_bereq(sp->bereq);
-		sp->bereq = NULL;
-		sp->obj->ttl = 0;
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
+		VBE_free_bereq(&sp->bereq);
+		HSH_Drop(sp);
+		AZ(sp->obj);
 		return (0);
 	}
 
@@ -406,16 +401,11 @@ cnt_fetch(struct sess *sp)
 	sp->err_code = http_GetStatus(sp->obj->http);
 	VCL_fetch_method(sp);
 
-	VBE_free_bereq(sp->bereq);
-	sp->bereq = NULL;
+	VBE_free_bereq(&sp->bereq);
 
 	switch (sp->handling) {
 	case VCL_RET_RESTART:
-		sp->obj->ttl = 0;
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
+		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
 		sp->step = STP_RECV;
@@ -427,11 +417,7 @@ cnt_fetch(struct sess *sp)
 		break;
 	case VCL_RET_ERROR:
 		sp->step = STP_ERROR;
-		sp->obj->ttl = 0;
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
+		HSH_Drop(sp);
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
@@ -535,8 +521,7 @@ cnt_hit(struct sess *sp)
 	}
 
 	/* Drop our object, we won't need it */
-	HSH_Deref(sp->obj);
-	sp->obj = NULL;
+	HSH_Deref(&sp->obj);
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
@@ -625,8 +610,7 @@ cnt_lookup(struct sess *sp)
 	if (sp->obj->pass) {
 		VSL_stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
+		HSH_Deref(&sp->obj);
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -670,24 +654,17 @@ cnt_miss(struct sess *sp)
 
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
+	AZ(sp->obj->cacheable);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
-		VBE_free_bereq(sp->bereq);
-		sp->bereq = NULL;
+		HSH_Drop(sp);
+		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		sp->obj->cacheable = 0;
-		HSH_Unbusy(sp);
-		HSH_Deref(sp->obj);
-		sp->obj = NULL;
+		HSH_Drop(sp);
+		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_PASS;
-		VBE_free_bereq(sp->bereq);
-		sp->bereq = NULL;
 		return (0);
 	case VCL_RET_FETCH:
 		sp->step = STP_FETCH;

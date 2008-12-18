@@ -337,7 +337,7 @@ exp_timer(void *arg)
 			VSL_stats->n_expired++;
 			Lck_Unlock(&exp_mtx);
 			del_objexp(o);
-			HSH_Deref(o);
+			HSH_Deref(&o);
 		}
 	}
 }
@@ -406,7 +406,7 @@ EXP_NukeOne(struct sess *sp)
 	if (sp->handling == VCL_RET_DISCARD) {
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
 		del_objexp(o);
-		HSH_Deref(o);
+		HSH_Deref(&o);
 		return (1);
 	}
 

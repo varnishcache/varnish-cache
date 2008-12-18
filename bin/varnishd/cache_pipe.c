@@ -96,8 +96,7 @@ PipeSession(struct sess *sp)
 		return;
 	}
 
-	VBE_free_bereq(bereq);
-	bereq = NULL;
+	VBE_free_bereq(&bereq);
 
 	sp->t_resp = TIM_real();
 

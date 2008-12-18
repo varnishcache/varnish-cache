@@ -322,7 +322,7 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	AN(sp->director);
-	assert(sp->obj->busy != 0);
+	AN(sp->obj->busy);
 	w = sp->wrk;
 	bereq = sp->bereq;
 	hp = bereq->http;

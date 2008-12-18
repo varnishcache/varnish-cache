@@ -172,8 +172,13 @@ VBE_new_bereq(void)
  */
 
 void
-VBE_free_bereq(struct bereq *bereq)
+VBE_free_bereq(struct bereq **bereqp)
 {
+	struct bereq *bereq;
+
+	AN(bereqp);
+	bereq = *bereqp;
+	*bereqp = NULL;
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
 	WS_Reset(bereq->ws, NULL);
