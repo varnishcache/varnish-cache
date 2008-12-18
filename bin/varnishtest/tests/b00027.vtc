@@ -1,0 +1,28 @@
+# $Id$
+
+test "test backend transmission corner cases"
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp -proto HTTP/1.0 -hdr "Connection: keep-alive"
+	rxreq
+	txresp -hdr "Transfer-encoding: foobar"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 0
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 0
+	txreq -url /barf
+	rxresp
+	expect resp.status == 503
+} -run
