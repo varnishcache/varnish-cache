@@ -85,7 +85,8 @@ parse_restart(struct tokenlist *tl)
 		ERRCHK(tl);
 	}
 	Fb(tl, 1, "VRT_done(sp, VCL_RET_RESTART);\n");
-	vcc_ProcAction(tl->curproc, VCL_RET_RESTART, tl->t);
+	assert(VCL_RET_RESTART == (1 << 9));	/* XXX: BANDAID FIXME! */
+	vcc_ProcAction(tl->curproc, 9, tl->t);
 	vcc_NextToken(tl);
 }
 
