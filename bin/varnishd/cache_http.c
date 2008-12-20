@@ -303,14 +303,6 @@ http_GetStatus(const struct http *hp)
 }
 
 const char *
-http_GetProto(const struct http *hp)
-{
-
-	Tcheck(hp->hd[HTTP_HDR_PROTO]);
-	return (hp->hd[HTTP_HDR_PROTO].b);
-}
-
-const char *
 http_GetReq(const struct http *hp)
 {
 
