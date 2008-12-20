@@ -476,7 +476,6 @@ int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 int http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
-const char *http_GetProto(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_DissectRequest(struct sess *sp);
 int http_DissectResponse(struct worker *w, const struct http_conn *htc,
