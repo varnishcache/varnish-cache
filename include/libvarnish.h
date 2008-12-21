@@ -128,4 +128,5 @@ do {									\
 #define WRONG(expl)							\
 do {									\
 	lbv_assert(__func__, __FILE__, __LINE__, expl, errno, 3);	\
+	abort();							\
 } while (0)
