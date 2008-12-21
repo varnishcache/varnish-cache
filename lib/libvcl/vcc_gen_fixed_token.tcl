@@ -109,7 +109,7 @@ proc warns {fd} {
 	puts $fd " *"
 	puts $fd " * NB:  This file is machine generated, DO NOT EDIT!"
 	puts $fd " *"
-	puts $fd " * Edit vcc_gen_fixed_token.tcl instead"
+	puts $fd " * Edit and run vcc_gen_fixed_token.tcl instead"
 	puts $fd " */"
 	puts $fd ""
 }
@@ -126,6 +126,29 @@ typedef void vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 }
+
+puts $fo "/* VCL Methods */"
+set u 0
+foreach m $methods {
+	if {[string length [lindex $m 0]] < 8} {
+		set sp "\t"
+	} else {
+		set sp ""
+	}
+	puts $fo "#define VCL_MET_[string toupper [lindex $m 0]]\t${sp}(1 << $u)"
+	incr u
+}
+
+puts $fo "\n#define VCL_MET_MAX\t\t$u\n"
+
+puts $fo "/* VCL Returns */"
+set i 0
+foreach k $returns {
+	puts $fo "#define VCL_RET_[string toupper $k]\t\t(1 << $i)"
+	incr i
+}
+puts $fo "\n#define VCL_RET_MAX\t\t$i\n"
+
 puts $fo "struct VCL_conf {"
 puts $fo {	unsigned	magic;
 #define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
@@ -171,13 +194,6 @@ foreach k $returns {
 	}
 	incr i
 }
-puts $for "#else"
-set i 0
-foreach k $returns {
-	puts $for "#define VCL_RET_[string toupper $k]  (1 << $i)"
-	incr i
-}
-puts $for "#define VCL_RET_MAX $i"
 puts $for "#endif"
 puts $for ""
 puts $for "#ifdef VCL_MET_MAC"
@@ -186,7 +202,7 @@ foreach m $methods {
 	puts -nonewline $for "VCL_MET_MAC([lindex $m 0]"
 	puts -nonewline $for ",[string toupper [lindex $m 0]]"
 	set l [lindex $m 1]
-	puts -nonewline $for ",(\n    VCL_RET_[string toupper [lindex $l 0]]"
+	puts -nonewline $for ",\n    (VCL_RET_[string toupper [lindex $l 0]]"
 	foreach r [lrange $l 1 end] {
 		puts -nonewline $for "|VCL_RET_[string toupper $r]"
 	}
@@ -194,14 +210,7 @@ foreach m $methods {
 	puts $for ")"
 	incr u
 }
-puts $for "#else"
-set u 0
-foreach m $methods {
-	puts $for "#define VCL_MET_[string toupper [lindex $m 0]]\t(1 << $u)"
-	incr u
-}
 puts $for "#endif"
-puts $for "#define N_METHODS $u"
 close $for
 
 #----------------------------------------------------------------------
