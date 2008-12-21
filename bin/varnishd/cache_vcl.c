@@ -46,6 +46,7 @@
 #include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"
+#include "libvcl.h"
 
 struct vcls {
 	unsigned		magic;
@@ -299,21 +300,6 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static const char *
-vcl_handlingname(unsigned u)
-{
-
-	switch (u) {
-#define VCL_RET_MAC(a, b, c,d)	case VCL_RET_##b: return(#a);
-#define VCL_RET_MAC_E(a, b, c,d)	case VCL_RET_##b: return(#a);
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
-	default:
-		return (NULL);
-	}
-}
-
 #define VCL_RET_MAC(l,u,b,n)
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
@@ -325,7 +311,7 @@ VCL_##func##_method(struct sess *sp)					\
 	sp->cur_method = VCL_MET_ ## upper;				\
 	WSP(sp, SLT_VCL_call, "%s", #func);				\
 	sp->vcl->func##_func(sp);					\
-	WSP(sp, SLT_VCL_return, "%s", vcl_handlingname(sp->handling));	\
+	WSP(sp, SLT_VCL_return, "%s", VCC_Return_Name(sp->handling));	\
 	sp->cur_method = 0;						\
 	assert(sp->handling & bitmap);					\
 	assert(!(sp->handling & ~bitmap));				\
