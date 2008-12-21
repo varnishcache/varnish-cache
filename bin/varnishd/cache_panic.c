@@ -40,6 +40,7 @@
 #include "cache.h"
 #include "cache_backend.h"
 #include "vcl.h"
+#include "libvcl.h"
 
 /*
  * The panic string is constructed in memory, then copied to the
@@ -214,16 +215,7 @@ pan_sess(const struct sess *sp)
 /*lint -restore */
 		default: stp = NULL;
 	}
-	switch (sp->handling) {
-/*lint -save -e525 */
-#define VCL_RET_MAC(l, u, b, v) case VCL_RET_##u: hand = #u; break;
-#define VCL_RET_MAC_E(l, u, b, v) case VCL_RET_##u: hand = #u; break;
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
-/*lint -restore */
-		default: hand = NULL;
-	}
+	hand = VCC_Return_Name(sp->handling);
 	if (stp != NULL)
 		vsb_printf(vsp, "  step = %s,\n", stp);
 	else
