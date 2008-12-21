@@ -298,7 +298,6 @@ cnt_error(struct sess *sp)
 {
 	struct worker *w;
 	struct http *h;
-	time_t now;
 	char date[40];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -322,8 +321,7 @@ cnt_error(struct sess *sp)
 
 	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
 	http_PutStatus(w, sp->fd, h, sp->err_code);
-	now = TIM_real();
-	TIM_format(now, date);
+	TIM_format(TIM_real(), date);
 	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
 	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
 	http_PrintfHeader(w, sp->fd, h, "Retry-After: %d", params->err_ttl);
@@ -537,7 +535,6 @@ cnt_hit(struct sess *sp)
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
-		return (0);
 	}
 }
 
@@ -671,10 +668,8 @@ cnt_miss(struct sess *sp)
 		return (0);
 	case VCL_RET_RESTART:
 		INCOMPL();
-		return (0);
 	default:
 		WRONG("Illegal action in vcl_miss{}");
-		return (0);
 	}
 }
 
@@ -849,7 +844,6 @@ cnt_recv(struct sess *sp)
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_recv{}");
-		return (0);
 	}
 }
 
@@ -1025,11 +1019,15 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 	cli_out(cli, "XID is %u", xids);
 }
 
+/*
+ * Default to seed=1, this is the only seed value POSIXl guarantees will
+ * result in a reproducible random number sequence.
+ */
 static void
 cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
-	unsigned long seed;
+	unsigned seed = 1;
 
 	if (av[2] != NULL)
 		seed = strtoul(av[2], NULL, 0);
