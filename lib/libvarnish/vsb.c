@@ -162,15 +162,17 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 		s = (struct vsb *)SBMALLOC(sizeof *s);
 		if (s == NULL)
 			return (NULL);
-		memset(s, 0, sizeof *s);
-		s->s_flags = flags;
-		s->s_magic = VSB_MAGIC;
+		if (vsb_new(s, buf, length, flags) == NULL) {
+			free(s);
+			return (NULL);
+		}
 		VSB_SETFLAG(s, VSB_DYNSTRUCT);
-	} else {
-		memset(s, 0, sizeof *s);
-		s->s_flags = flags;
-		s->s_magic = VSB_MAGIC;
+		return (s);
 	}
+
+	memset(s, 0, sizeof *s);
+	s->s_flags = flags;
+	s->s_magic = VSB_MAGIC;
 	s->s_size = length;
 	if (buf) {
 		s->s_buf = buf;
@@ -179,11 +181,8 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 	if (flags & VSB_AUTOEXTEND)
 		s->s_size = vsb_extendsize(s->s_size);
 	s->s_buf = (char *)SBMALLOC(s->s_size);
-	if (s->s_buf == NULL) {
-		if (VSB_ISDYNSTRUCT(s))
-			SBFREE(s);
+	if (s->s_buf == NULL)
 		return (NULL);
-	}
 	VSB_SETFLAG(s, VSB_DYNAMIC);
 	return (s);
 }
