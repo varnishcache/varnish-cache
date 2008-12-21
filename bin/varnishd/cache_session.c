@@ -382,7 +382,7 @@ SES_ResetBackendTimeouts(struct sess *sp)
 void
 SES_InheritBackendTimeouts(struct sess *sp)
 {
-	struct backend *be = NULL;
+	struct backend *be;
 
 	AN(sp);
 	AN(sp->vbe);
@@ -395,13 +395,12 @@ SES_InheritBackendTimeouts(struct sess *sp)
 	 * is parameter < backend definition < VCL.
 	 */
 	if (be->connect_timeout > 1e-3 && 
-			sp->connect_timeout == params->connect_timeout)
+	    sp->connect_timeout == params->connect_timeout)
 		sp->connect_timeout = be->connect_timeout;
 	if (be->first_byte_timeout > 1e-3 && 
-			sp->first_byte_timeout == params->first_byte_timeout)
+	    sp->first_byte_timeout == params->first_byte_timeout)
 		sp->first_byte_timeout = be->first_byte_timeout;
-	if (be->between_bytes_timeout > 1e-3 
-			&& sp->between_bytes_timeout == params->between_bytes_timeout)
+	if (be->between_bytes_timeout > 1e-3 &&
+	    sp->between_bytes_timeout == params->between_bytes_timeout)
 		sp->between_bytes_timeout = be->between_bytes_timeout;
 }
-
