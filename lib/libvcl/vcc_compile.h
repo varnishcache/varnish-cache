@@ -142,7 +142,7 @@ struct var {
 
 struct method {
 	const char		*name;
-	unsigned		returns;
+	unsigned		ret_bitmap;
 	unsigned		bitval;
 };
 

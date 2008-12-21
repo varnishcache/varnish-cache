@@ -154,21 +154,11 @@ const char * const vcl_tnames[256] = {
 void
 vcl_output_lang_h(struct vsb *sb)
 {
-	vsb_cat(sb, "#define VCL_RET_ERROR  (1 << 0)\n");
-	vsb_cat(sb, "#define VCL_RET_LOOKUP  (1 << 1)\n");
-	vsb_cat(sb, "#define VCL_RET_HASH  (1 << 2)\n");
-	vsb_cat(sb, "#define VCL_RET_PIPE  (1 << 3)\n");
-	vsb_cat(sb, "#define VCL_RET_PASS  (1 << 4)\n");
-	vsb_cat(sb, "#define VCL_RET_FETCH  (1 << 5)\n");
-	vsb_cat(sb, "#define VCL_RET_DELIVER  (1 << 6)\n");
-	vsb_cat(sb, "#define VCL_RET_DISCARD  (1 << 7)\n");
-	vsb_cat(sb, "#define VCL_RET_KEEP  (1 << 8)\n");
-	vsb_cat(sb, "#define VCL_RET_RESTART  (1 << 9)\n");
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3482 2008-12-21 16");
-	vsb_cat(sb, ":18:39Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3484 2008-12-21 17");
+	vsb_cat(sb, ":01:58Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -187,18 +177,14 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_MET_DISCARD\t\t(1 << 10)\n");
 	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 11)\n");
 	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t12\n\n");
-	vsb_cat(sb, "/* VCL Returns */\n#define VCL_RET_ERROR\t\t(1 << 0)\n");
-	vsb_cat(sb, "#define VCL_RET_LOOKUP\t\t(1 << 1)\n");
-	vsb_cat(sb, "#define VCL_RET_HASH\t\t(1 << 2)\n");
-	vsb_cat(sb, "#define VCL_RET_PIPE\t\t(1 << 3)\n");
-	vsb_cat(sb, "#define VCL_RET_PASS\t\t(1 << 4)\n");
-	vsb_cat(sb, "#define VCL_RET_FETCH\t\t(1 << 5)\n");
-	vsb_cat(sb, "#define VCL_RET_DELIVER\t\t(1 << 6)\n");
-	vsb_cat(sb, "#define VCL_RET_DISCARD\t\t(1 << 7)\n");
-	vsb_cat(sb, "#define VCL_RET_KEEP\t\t(1 << 8)\n");
-	vsb_cat(sb, "#define VCL_RET_RESTART\t\t(1 << 9)\n");
-	vsb_cat(sb, "\n#define VCL_RET_MAX\t\t10\n\n");
-	vsb_cat(sb, "struct VCL_conf {\n\tunsigned\tmagic;\n");
+	vsb_cat(sb, "/* VCL Returns */\n#define VCL_RET_ERROR\t\t0\n");
+	vsb_cat(sb, "#define VCL_RET_LOOKUP\t\t1\n#define VCL_RET_HASH\t\t2");
+	vsb_cat(sb, "\n#define VCL_RET_PIPE\t\t3\n#define VCL_RET_PASS\t\t4");
+	vsb_cat(sb, "\n#define VCL_RET_FETCH\t\t5\n#define VCL_RET_DELIVER\t");
+	vsb_cat(sb, "\t6\n#define VCL_RET_DISCARD\t\t7\n");
+	vsb_cat(sb, "#define VCL_RET_KEEP\t\t8\n#define VCL_RET_RESTART\t\t");
+	vsb_cat(sb, "9\n\n#define VCL_RET_MAX\t\t10\n");
+	vsb_cat(sb, "\nstruct VCL_conf {\n\tunsigned\tmagic;\n");
 	vsb_cat(sb, "#define VCL_CONF_MAGIC\t0x7406c509\t/* from /dev/rando");
 	vsb_cat(sb, "m */\n\n\tstruct director\t**director;\n");
 	vsb_cat(sb, "\tunsigned\tndirector;\n\tstruct vrt_ref\t*ref;\n");

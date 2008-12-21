@@ -48,18 +48,16 @@ parse_action(struct tokenlist *tl)
 
 	Expect(tl, ID);
 
-#define VCL_RET_MAC(l, u, b, i)						\
+#define VCL_RET_MAC(l, U)						\
 	do {								\
 		if (vcc_IdIs(tl->t, #l)) {				\
-			Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #u);	\
-			vcc_ProcAction(tl->curproc, i, tl->t);		\
+			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
+			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
 			retval = 1;					\
 		}							\
 	} while (0);
-#define VCL_RET_MAC_E(l, u, b, i) VCL_RET_MAC(l, u, b, i)
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
 	if (!retval) {
 		vsb_printf(tl->sb, "Expected action name.\n");
 		vcc_ErrWhere(tl, tl->t);
@@ -85,8 +83,7 @@ parse_restart(struct tokenlist *tl)
 		ERRCHK(tl);
 	}
 	Fb(tl, 1, "VRT_done(sp, VCL_RET_RESTART);\n");
-	assert(VCL_RET_RESTART == (1 << 9));	/* XXX: BANDAID FIXME! */
-	vcc_ProcAction(tl->curproc, 9, tl->t);
+	vcc_ProcAction(tl->curproc, VCL_RET_RESTART, tl->t);
 	vcc_NextToken(tl);
 }
 
@@ -465,7 +462,7 @@ static struct action_table {
 } action_table[] = {
 	{ "restart",		parse_restart },
 	{ "error",		parse_error },
-#define VCL_RET_MAC(l, u, b, i) { #l, parse_action },
+#define VCL_RET_MAC(l, U) { #l, parse_action },
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 

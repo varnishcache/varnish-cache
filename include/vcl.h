@@ -30,16 +30,16 @@ typedef int vcl_func_f(struct sess *sp);
 #define VCL_MET_MAX		12
 
 /* VCL Returns */
-#define VCL_RET_ERROR		(1 << 0)
-#define VCL_RET_LOOKUP		(1 << 1)
-#define VCL_RET_HASH		(1 << 2)
-#define VCL_RET_PIPE		(1 << 3)
-#define VCL_RET_PASS		(1 << 4)
-#define VCL_RET_FETCH		(1 << 5)
-#define VCL_RET_DELIVER		(1 << 6)
-#define VCL_RET_DISCARD		(1 << 7)
-#define VCL_RET_KEEP		(1 << 8)
-#define VCL_RET_RESTART		(1 << 9)
+#define VCL_RET_ERROR		0
+#define VCL_RET_LOOKUP		1
+#define VCL_RET_HASH		2
+#define VCL_RET_PIPE		3
+#define VCL_RET_PASS		4
+#define VCL_RET_FETCH		5
+#define VCL_RET_DELIVER		6
+#define VCL_RET_DISCARD		7
+#define VCL_RET_KEEP		8
+#define VCL_RET_RESTART		9
 
 #define VCL_RET_MAX		10
 
