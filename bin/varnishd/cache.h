@@ -595,11 +595,9 @@ void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Get(struct VCL_conf **vcc);
 void VCL_Poll(void);
 
-#define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
-#undef VCL_RET_MAC
 
 /* cache_vrt_esi.c */
 

@@ -348,7 +348,7 @@ VRT_handling(struct sess *sp, unsigned hand)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(!(hand & (hand -1)));	/* must be power of two */
+	assert(hand < VCL_RET_MAX);
 	sp->handling = hand;
 }
 

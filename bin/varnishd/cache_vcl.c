@@ -300,8 +300,6 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-#define VCL_RET_MAC(l,u,b,n)
-
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
 VCL_##func##_method(struct sess *sp)					\
@@ -313,13 +311,12 @@ VCL_##func##_method(struct sess *sp)					\
 	sp->vcl->func##_func(sp);					\
 	WSP(sp, SLT_VCL_return, "%s", VCC_Return_Name(sp->handling));	\
 	sp->cur_method = 0;						\
-	assert(sp->handling & bitmap);					\
-	assert(!(sp->handling & ~bitmap));				\
+	assert((1 << sp->handling) & bitmap);				\
+	assert(!((1 << sp->handling) & ~bitmap));			\
 }
 
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
-#undef VCL_RET_MAC
 
 /*--------------------------------------------------------------------*/
 
