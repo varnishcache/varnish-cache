@@ -30,7 +30,7 @@
  * A Crit Bit tree based hash
  */
 
-#define PHK	0
+#undef PHK
 
 #include "config.h"
 
@@ -66,7 +66,8 @@ hcb_bits(unsigned char x, unsigned char y)
 static void
 hcb_build_bittbl(void)
 {
-	unsigned x, y;
+	unsigned char x;
+	unsigned y;
 
 	y = 0;
 	for (x = 0; x < 8; x++)
@@ -162,10 +163,11 @@ hcb_l_y(uintptr_t u)
 static unsigned
 hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2, struct hcb_y *y)
 {
-	unsigned u, r;
+	unsigned char u, r;
 
 	for (u = 0; u < DIGEST_LEN && oh1->digest[u] == oh2->digest[u]; u++)
 		;
+	assert(u < DIGEST_LEN);
 	r = hcb_bits(oh1->digest[u], oh2->digest[u]);
 	y->ptr = u;
 	y->bitmask = 0x80 >> r;
@@ -260,7 +262,8 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	assert(hcb_is_y(*p));
 	
 	y = NULL;
-	while(hcb_is_y(*p)) {
+	while(1) {
+		assert(hcb_is_y(*p));
 		y = hcb_l_y(*p);
 		if (y->ptr > DIGEST_LEN)
 			s = 0;
@@ -276,12 +279,10 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 		r->cmps++;
 		p = &y->leaf[s];
 	}
-abort();
-	*p = y->leaf[1 - s];
 }
 
 /**********************************************************************/
-
+#ifdef PHK
 static void
 dumptree(uintptr_t p, int indent, FILE *fd)
 {
@@ -293,9 +294,8 @@ dumptree(uintptr_t p, int indent, FILE *fd)
 		return;
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
-		fprintf(fd, "%*.*sN %u %u r%d <%02x%02x%02x...> <%s>\n",
-		    indent, indent, "", DIGEST_LEN, indent / 2,
-		    oh->refcnt,
+		fprintf(fd, "%*.*sN %d r%u <%02x%02x%02x...> <%s>\n",
+		    indent, indent, "", indent / 2, oh->refcnt,
 		    oh->digest[0], oh->digest[1], oh->digest[2],
 		    oh->hash);
 		return;
@@ -316,8 +316,9 @@ dump(const struct hcb_root *root, FILE *fd)
 	fprintf(fd, "-------------\n");
 	dumptree(root->origo, 0, fd);
 	fprintf(fd, "-------------\n");
-	fflush(fd);
+	(void)fflush(fd);
 }
+#endif
 
 
 /**********************************************************************/
@@ -333,7 +334,7 @@ hcb_cleaner(void *priv)
 	THR_SetName("hcb_cleaner");
 	(void)priv;
 	while (1) {
-		sleep(1);
+		(void)sleep(1);
 		Lck_Lock(&hcb_mtx);
 		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
 			if (oh->hash != NULL) {
@@ -345,8 +346,9 @@ hcb_cleaner(void *priv)
 				continue;
 			if (++oh->refcnt > COOL_DURATION) {
 				VTAILQ_REMOVE(&laylow, oh, coollist);
-				if (PHK)
-					fprintf(stderr, "OH %p is cold enough\n", oh);
+#ifdef PHK
+				fprintf(stderr, "OH %p is cold enough\n", oh);
+#endif
 				free(oh);
 				VSL_stats->n_objecthead--;
 			}
@@ -387,10 +389,10 @@ hcb_deref(struct objhead *oh)
 		Lck_Unlock(&hcb_mtx);
 	}
 	Lck_Unlock(&oh->mtx);
-	if (PHK) {
-		fprintf(stderr, "%s %d %d <%s>\n", __func__, __LINE__, r, oh->hash);
-		dump(&hcb_root, stderr);
-	}
+#ifdef PHK
+	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
+	dump(&hcb_root, stderr);
+#endif
 	return (r);
 }
 
@@ -425,19 +427,19 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	oh =  hcb_insert(&hcb_root, noh, 1);
 	if (oh == noh) {
 		VSL_stats->hcb_insert++;
-		if (PHK) {
-			fprintf(stderr, "%s %d\n", __func__, __LINE__);
-			dump(&hcb_root, stderr);
-		}
+#ifdef PHK
+		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
+		dump(&hcb_root, stderr);
+#endif
 	} else {
 		free(noh->hash);
 		noh->hash = NULL;
 		noh->hashlen = 0;
 		VSL_stats->hcb_lock++;
-		if (PHK) {
-			fprintf(stderr, "%s %d\n", __func__, __LINE__);
-			dump(&hcb_root, stderr);
-		}
+#ifdef PHK
+		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
+		dump(&hcb_root, stderr);
+#endif
 	}
 	Lck_Unlock(&hcb_mtx);
 	return (oh);
