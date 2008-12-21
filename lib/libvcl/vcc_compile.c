@@ -500,7 +500,7 @@ vcc_NewTokenList(void)
 	assert(tl->ff != NULL);
 
 	/* body code of methods */
-	for (i = 0; i < N_METHODS; i++) {
+	for (i = 0; i < VCL_MET_MAX; i++) {
 		tl->fm[i] = vsb_newauto();
 		assert(tl->fm[i] != NULL);
 	}
@@ -532,7 +532,7 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 	vsb_delete(tl->fc);
 	vsb_delete(tl->fi);
 	vsb_delete(tl->ff);
-	for (i = 0; i < N_METHODS; i++)
+	for (i = 0; i < VCL_MET_MAX; i++)
 		vsb_delete(tl->fm[i]);
 
 	free(tl);
@@ -611,7 +611,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Emit method functions */
-	for (i = 0; i < N_METHODS; i++) {
+	for (i = 0; i < VCL_MET_MAX; i++) {
 		Fc(tl, 1, "\nstatic int\n");
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);

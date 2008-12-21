@@ -31,7 +31,7 @@
 
 #include "vqueue.h"
 
-#include "vcl_returns.h"
+#include "vcl.h"
 
 #define INDENT		2
 
@@ -77,7 +77,7 @@ struct tokenlist {
 	int			findent;
 	unsigned		cnt;
 	struct vsb		*fc, *fh, *fi, *ff, *fb;
-	struct vsb		*fm[N_METHODS];
+	struct vsb		*fm[VCL_MET_MAX];
 	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
@@ -85,7 +85,7 @@ struct tokenlist {
 	int			ndirector;
 	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
-	struct proc		*mprocs[N_METHODS];
+	struct proc		*mprocs[VCL_MET_MAX];
 
 	VTAILQ_HEAD(, acl_e)	acl;
 

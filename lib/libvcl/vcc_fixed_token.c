@@ -3,7 +3,7 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcc_gen_fixed_token.tcl instead
+ * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
 #include "config.h"
@@ -167,14 +167,38 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3377 2008-11-10 11");
-	vsb_cat(sb, ":55:15Z tfheen $\n *\n * NB:  This file is machine gen");
-	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit vcc_gen_fixed_token.");
-	vsb_cat(sb, "tcl instead\n */\n\nstruct sess;\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3482 2008-12-21 16");
+	vsb_cat(sb, ":18:39Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
+	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
 	vsb_cat(sb, "typedef void vcl_fini_f(struct cli *);\n");
 	vsb_cat(sb, "typedef int vcl_func_f(struct sess *sp);\n");
-	vsb_cat(sb, "\nstruct VCL_conf {\n\tunsigned\tmagic;\n");
+	vsb_cat(sb, "\n/* VCL Methods */\n#define VCL_MET_RECV\t\t(1 << 0)\n");
+	vsb_cat(sb, "#define VCL_MET_PIPE\t\t(1 << 1)\n");
+	vsb_cat(sb, "#define VCL_MET_PASS\t\t(1 << 2)\n");
+	vsb_cat(sb, "#define VCL_MET_HASH\t\t(1 << 3)\n");
+	vsb_cat(sb, "#define VCL_MET_MISS\t\t(1 << 4)\n");
+	vsb_cat(sb, "#define VCL_MET_HIT\t\t(1 << 5)\n");
+	vsb_cat(sb, "#define VCL_MET_FETCH\t\t(1 << 6)\n");
+	vsb_cat(sb, "#define VCL_MET_DELIVER\t\t(1 << 7)\n");
+	vsb_cat(sb, "#define VCL_MET_PREFETCH\t(1 << 8)\n");
+	vsb_cat(sb, "#define VCL_MET_TIMEOUT\t\t(1 << 9)\n");
+	vsb_cat(sb, "#define VCL_MET_DISCARD\t\t(1 << 10)\n");
+	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 11)\n");
+	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t12\n\n");
+	vsb_cat(sb, "/* VCL Returns */\n#define VCL_RET_ERROR\t\t(1 << 0)\n");
+	vsb_cat(sb, "#define VCL_RET_LOOKUP\t\t(1 << 1)\n");
+	vsb_cat(sb, "#define VCL_RET_HASH\t\t(1 << 2)\n");
+	vsb_cat(sb, "#define VCL_RET_PIPE\t\t(1 << 3)\n");
+	vsb_cat(sb, "#define VCL_RET_PASS\t\t(1 << 4)\n");
+	vsb_cat(sb, "#define VCL_RET_FETCH\t\t(1 << 5)\n");
+	vsb_cat(sb, "#define VCL_RET_DELIVER\t\t(1 << 6)\n");
+	vsb_cat(sb, "#define VCL_RET_DISCARD\t\t(1 << 7)\n");
+	vsb_cat(sb, "#define VCL_RET_KEEP\t\t(1 << 8)\n");
+	vsb_cat(sb, "#define VCL_RET_RESTART\t\t(1 << 9)\n");
+	vsb_cat(sb, "\n#define VCL_RET_MAX\t\t10\n\n");
+	vsb_cat(sb, "struct VCL_conf {\n\tunsigned\tmagic;\n");
 	vsb_cat(sb, "#define VCL_CONF_MAGIC\t0x7406c509\t/* from /dev/rando");
 	vsb_cat(sb, "m */\n\n\tstruct director\t**director;\n");
 	vsb_cat(sb, "\tunsigned\tndirector;\n\tstruct vrt_ref\t*ref;\n");
@@ -223,10 +247,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3393 2008-11-14 09:");
-	vsb_cat(sb, "49:28Z phk $\n *\n * Runtime support for compiled VCL ");
-	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
-	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3406 2008-11-19 14:");
+	vsb_cat(sb, "13:57Z petter $\n *\n * Runtime support for compiled V");
+	vsb_cat(sb, "CL programs.\n *\n * XXX: When this file is changed, l");
+	vsb_cat(sb, "ib/libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
 	vsb_cat(sb, "\nstruct sess;\nstruct vsb;\nstruct cli;\n");
 	vsb_cat(sb, "struct director;\nstruct VCL_conf;\n");
@@ -311,9 +335,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3324 2008-10-18 20:50:10Z ");
-	vsb_cat(sb, "phk $\n *\n * NB:  This file is machine generated, DO ");
-	vsb_cat(sb, "NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3406 2008-11-19 14:13:57Z petter");
+	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
+	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
