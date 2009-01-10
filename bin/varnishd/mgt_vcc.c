@@ -437,6 +437,7 @@ mgt_vcc_atexit(void)
 		if (vp == NULL)
 			break;
 		(void)unlink(vp->fname);
+		VTAILQ_REMOVE(&vclhead, vp, list);
 	}
 }
 
