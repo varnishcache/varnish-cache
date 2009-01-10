@@ -110,7 +110,8 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 
 		/* If we didn't succeed, add to buffer, try again */
 		if (q == NULL || q == buf || *q != '\n') {
-			xxxassert(be > bp);
+			if (bp >= be)
+				return (-1);
 			/*
 			 * The semantics we need here is "read until you have
 			 * received at least one character, but feel free to

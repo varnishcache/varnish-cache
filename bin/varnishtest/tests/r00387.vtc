@@ -1,0 +1,22 @@
+# $Id$
+
+test "Regression test for #387: too long chunk header"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 Ok\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send "004\r\n1234\r\n"
+	send "000000000000000000001\r\n@\r\n"
+	send "00000000\r\n"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
