@@ -436,7 +436,7 @@ mgt_vcc_atexit(void)
 		vp = VTAILQ_FIRST(&vclhead);
 		if (vp == NULL)
 			break;
-		mgt_vcc_del(vp);
+		(void)unlink(vp->fname);
 	}
 }
 
