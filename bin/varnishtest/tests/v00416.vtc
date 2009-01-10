@@ -1,0 +1,102 @@
+# $Id$
+
+test "Regression test for #416: a surplus of HTTP headers"
+
+server s1 {
+	rxreq
+	txresp \
+		-hdr hdr00=00 \
+		-hdr hdr01=01 \
+		-hdr hdr02=02 \
+		-hdr hdr03=03 \
+		-hdr hdr04=04 \
+		-hdr hdr05=05 \
+		-hdr hdr06=06 \
+		-hdr hdr07=07 \
+		-hdr hdr08=08 \
+		-hdr hdr09=09 \
+		-hdr hdr10=10 \
+		-hdr hdr11=11 \
+		-hdr hdr12=12 \
+		-hdr hdr13=13 \
+		-hdr hdr14=14 \
+		-hdr hdr15=15 \
+		-hdr hdr16=16 \
+		-hdr hdr17=17 \
+		-hdr hdr18=18 \
+		-hdr hdr19=19 \
+		-hdr hdr20=20 \
+		-hdr hdr21=21 \
+		-hdr hdr22=22 \
+		-hdr hdr23=23 \
+		-hdr hdr24=24 \
+		-hdr hdr25=25 \
+		-hdr hdr26=26 \
+		-hdr hdr27=27 \
+		-hdr hdr28=28 \
+		-hdr hdr29=29 \
+		-hdr hdr30=30 \
+		-hdr hdr31=31 \
+		-hdr hdr32=32 \
+		-hdr hdr33=33 \
+		-hdr hdr34=34 \
+		-hdr hdr35=35 \
+		-hdr hdr36=36 \
+		-hdr hdr37=37 \
+		-hdr hdr38=38 \
+		-hdr hdr39=39 \
+		-body "foo"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq \
+		-hdr hdr00=00 \
+		-hdr hdr01=01 \
+		-hdr hdr02=02 \
+		-hdr hdr03=03 \
+		-hdr hdr04=04 \
+		-hdr hdr05=05 \
+		-hdr hdr06=06 \
+		-hdr hdr07=07 \
+		-hdr hdr08=08 \
+		-hdr hdr09=09 \
+		-hdr hdr10=10 \
+		-hdr hdr11=11 \
+		-hdr hdr12=12 \
+		-hdr hdr13=13 \
+		-hdr hdr14=14 \
+		-hdr hdr15=15 \
+		-hdr hdr16=16 \
+		-hdr hdr17=17 \
+		-hdr hdr18=18 \
+		-hdr hdr19=19 \
+		-hdr hdr20=20 \
+		-hdr hdr21=21 \
+		-hdr hdr22=22 \
+		-hdr hdr23=23 \
+		-hdr hdr24=24 \
+		-hdr hdr25=25 \
+		-hdr hdr26=26 \
+		-hdr hdr27=27 \
+		-hdr hdr28=28 \
+		-hdr hdr29=29 \
+		-hdr hdr30=30 \
+		-hdr hdr31=31 \
+		-hdr hdr32=32 \
+		-hdr hdr33=33 \
+		-hdr hdr34=34 \
+		-hdr hdr35=35 \
+		-hdr hdr36=36 \
+		-hdr hdr37=37 \
+		-hdr hdr38=38 \
+		-hdr hdr39=39
+	rxresp
+} -run
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
