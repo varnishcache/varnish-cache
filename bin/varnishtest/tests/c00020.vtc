@@ -1,0 +1,32 @@
+# $Id$
+
+test "Test -h critbit a bit"
+
+server s1 {
+        rxreq 
+        txresp -hdr "Connection: close" -body "012345\n"
+} -start
+
+varnish v1 -arg "-hcritbit" -vcl+backend { } -start 
+
+client c1 {
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1001"
+} -run
+
+client c2 {
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1002 1001"
+} -run
+
+varnish v1 -expect client_conn == 2
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect client_req == 2
+varnish v1 -expect s_sess == 2
+varnish v1 -expect s_req == 2
+varnish v1 -expect s_fetch == 1
