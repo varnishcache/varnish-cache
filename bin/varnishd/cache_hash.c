@@ -143,36 +143,6 @@ HSH_Freestore(struct object *o)
 	}
 }
 
-int
-HSH_Compare(const struct sess *sp, const struct objhead *oh)
-{
-	int i;
-	unsigned u, v;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	i = sp->lhashptr - oh->hashlen;
-	if (i)
-		return (i);
-	b = oh->hash;
-	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
-		i = memcmp(sp->hashptr[u], b, v);
-		if (i)
-			return (i);
-		b += v;
-		i = '#' - *b++;
-		if (i)
-			return (i);
-	}
-	assert(*b == '\0');
-	b++;
-	assert(b == oh->hash + oh->hashlen);
-	return (0);
-}
-
 void
 HSH_Copy(const struct sess *sp, struct objhead *oh)
 {
