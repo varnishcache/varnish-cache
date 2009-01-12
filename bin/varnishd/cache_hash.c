@@ -214,8 +214,7 @@ HSH_Prepare(struct sess *sp, unsigned nhashcount)
 	if (u)
 		p += sizeof(const char *) - u;
 	sp->hashptr = (void*)p;
-	if (params->hash_sha256)
-		SHA256_Init(sp->wrk->sha256ctx);
+	SHA256_Init(sp->wrk->sha256ctx);
 }
 
 void
@@ -238,10 +237,8 @@ HSH_AddString(struct sess *sp, const char *str)
 	sp->hashptr[sp->ihashptr + 1] = str + l;
 	sp->ihashptr += 2;
 	sp->lhashptr += l + 1;
-	if (params->hash_sha256) {
-		SHA256_Update(sp->wrk->sha256ctx, str, l);
-		SHA256_Update(sp->wrk->sha256ctx, "#", 1);
-	}
+	SHA256_Update(sp->wrk->sha256ctx, str, l);
+	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
 }
 
 struct object *
@@ -260,10 +257,7 @@ HSH_Lookup(struct sess *sp)
 	h = sp->http;
 
 	HSH_Prealloc(sp);
-	if (params->hash_sha256) {
-		SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
-		/* WSP(sp, SLT_Debug, "SHA256: <%.32s>", sha256); */
-	}
+	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
 	
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);

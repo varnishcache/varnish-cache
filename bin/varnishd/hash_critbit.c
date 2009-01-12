@@ -367,7 +367,6 @@ hcb_start(void)
 
 	(void)oh;
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
-	assert(params->hash_sha256);
 	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();
@@ -402,7 +401,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	struct objhead *oh;
 	unsigned u;
 	
-	assert(params->hash_sha256);
 	oh =  hcb_insert(&hcb_root, noh, 0);
 	if (oh != NULL) {
 		/* Assert that we didn't muck with the tree without lock */
