@@ -29,6 +29,17 @@
  * $Id$
  *
  * Ban ("purge") processing
+ *
+ * A ban consists of a number of conditions (or tests), all of which must be
+ * satisfied.  Here are some potential bans we could support:
+ *
+ *	req.url == "/foo"
+ *	req.url ~ ".iso" && obj.size > 10MB
+ *	req.http.host ~ "web1.com" && obj.set-cookie ~ "USER=29293"
+ *
+ * We make the "&&" mandatory from the start, leaving the syntax space 
+ * for latter handling of "||" as well.
+ *
  */
 
 #include "config.h"
@@ -43,6 +54,22 @@
 #include "cli.h"
 #include "cli_priv.h"
 #include "cache.h"
+#include "hash_slinger.h"
+
+struct ban_test;
+
+/* A ban-testing function */
+typedef int ban_cond_f(const struct ban_test *bt, const struct object *o, const struct sess *sp);
+
+/* Each individual test to be performed on a ban */
+struct ban_test {
+	unsigned		magic;
+#define BAN_TEST_MAGIC		0x54feec67
+	VTAILQ_ENTRY(ban_test)	list;
+	int			cost;
+	ban_cond_f		*func;
+	regex_t			re;
+};
 
 struct ban {
 	unsigned		magic;
@@ -51,13 +78,103 @@ struct ban {
 	unsigned		refcount;
 	int			flags;
 #define BAN_F_GONE		(1 << 0)
-	regex_t			regexp;
 	char			*ban;
 	int			hash;
+	VTAILQ_HEAD(,ban_test)	tests;
 };
 
 static VTAILQ_HEAD(banhead,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
+
+/*--------------------------------------------------------------------
+ * Manipulation of bans
+ */
+
+static struct ban *
+ban_new_ban(void)
+{
+	struct ban *b;
+	ALLOC_OBJ(b, BAN_MAGIC);
+	if (b == NULL)
+		return (b);
+	VTAILQ_INIT(&b->tests);
+	return (b);
+}
+
+static struct ban_test *
+ban_add_test(struct ban *b)
+{
+	struct ban_test *bt;
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	ALLOC_OBJ(bt, BAN_TEST_MAGIC);
+	if (bt == NULL)
+		return (bt);
+	VTAILQ_INSERT_TAIL(&b->tests, bt, list);
+	return (bt);
+}
+
+static void
+ban_sort_by_cost(struct ban *b)
+{
+	struct ban_test *bt, *btn;
+	int i;
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+
+	do {
+		i = 0;
+		VTAILQ_FOREACH(bt, &b->tests, list) {
+			btn = VTAILQ_NEXT(bt, list);
+			if (btn != NULL && btn->cost < bt->cost) {
+				VTAILQ_REMOVE(&b->tests, bt, list);
+				VTAILQ_INSERT_AFTER(&b->tests, btn, bt, list);
+				i++;
+			}
+		}
+	} while (i);
+}
+
+static void
+ban_free_ban(struct ban *b)
+{
+	struct ban_test *bt;
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	while (!VTAILQ_EMPTY(&b->tests)) {
+		bt = VTAILQ_FIRST(&b->tests);
+		VTAILQ_REMOVE(&b->tests, bt, list);
+		FREE_OBJ(bt);
+	}
+	FREE_OBJ(b);
+}
+
+/*--------------------------------------------------------------------
+ * Test functions -- return 0 if the test does not match
+ */
+
+static int
+ban_cond_url_regexp(const struct ban_test *bt, const struct object *o,
+   const struct sess *sp)
+{
+	(void)o;
+	return (!regexec(&bt->re, sp->http->hd[HTTP_HDR_URL].b, 0, NULL, 0));
+}
+
+static int
+ban_cond_hash_regexp(const struct ban_test *bt, const struct object *o,
+   const struct sess *sp)
+{
+	(void)sp;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
+	AN(o->objhead->hash);
+	return (!regexec(&bt->re, o->objhead->hash, 0, NULL, 0));
+}
+
+/*--------------------------------------------------------------------
+ */
+
 
 /*
  * We maintain ban_start as a pointer to the first element of the list
@@ -71,25 +188,41 @@ int
 BAN_Add(struct cli *cli, const char *regexp, int hash)
 {
 	struct ban *b, *bi, *be;
+	struct ban_test *bt;
 	char buf[512];
 	unsigned pcount;
 	int i;
 
-	ALLOC_OBJ(b, BAN_MAGIC);
+	b = ban_new_ban();
 	if (b == NULL) {
 		cli_out(cli, "Out of Memory");
 		cli_result(cli, CLIS_CANT);
 		return (-1);
 	}
 
-	i = regcomp(&b->regexp, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+	bt = ban_add_test(b);
+	if (bt == NULL) {
+		cli_out(cli, "Out of Memory");
+		cli_result(cli, CLIS_CANT);
+		ban_free_ban(b);
+		return (-1);
+	}
+
+	ban_sort_by_cost(b);
+
+	if (hash)
+		bt->func = ban_cond_hash_regexp;
+	else
+		bt->func = ban_cond_url_regexp;
+		
+	i = regcomp(&bt->re, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
 	if (i) {
-		(void)regerror(i, &b->regexp, buf, sizeof buf);
-		regfree(&b->regexp);
+		(void)regerror(i, &bt->re, buf, sizeof buf);
+		regfree(&bt->re);
 		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
 		cli_out(cli, "%s", buf);
 		cli_result(cli, CLIS_PARAM);
-		FREE_OBJ(b);
+		ban_free_ban(b);
 		return (-1);
 	}
 	b->hash = hash;
@@ -169,21 +302,20 @@ BAN_DestroyObj(struct object *o)
 		b = NULL;
 	}
 	Lck_Unlock(&ban_mtx);
-	if (b != NULL) {
-		free(b->ban);
-		regfree(&b->regexp);
-		FREE_OBJ(b);
-	}
+	if (b != NULL)
+		ban_free_ban(b);
 
 }
 
 int
-BAN_CheckObject(struct object *o, const char *url, const char *hash)
+BAN_CheckObject(struct object *o, const struct sess *sp)
 {
 	struct ban *b;
+	struct ban_test *bt;
 	struct ban * volatile b0;
 	unsigned tests;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
 
@@ -199,9 +331,14 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 	 */
 	tests = 0;
 	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
-		tests++;
-		if (!(b->flags & BAN_F_GONE) &&
-		    !regexec(&b->regexp, b->hash ? hash : url, 0, NULL, 0))
+		if (b->flags & BAN_F_GONE)
+			continue;
+		VTAILQ_FOREACH(bt, &b->tests, list) {
+			tests++;
+			if (bt->func(bt, o, sp))
+				break;
+		}
+		if (bt != NULL)
 			break;
 	}
 
@@ -225,6 +362,17 @@ BAN_CheckObject(struct object *o, const char *url, const char *hash)
 /*--------------------------------------------------------------------
  * CLI functions to add bans
  */
+
+#if 0
+static void
+ccf_purge(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	(void)av;
+	(void)cli;
+}
+#endif
 
 static void
 ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
@@ -277,6 +425,9 @@ static struct cli_proto ban_cmds[] = {
 
 	{ CLI_PURGE_URL,			ccf_purge_url },
 	{ CLI_PURGE_HASH,			ccf_purge_hash },
+#if 0
+	{ CLI_PURGE,				ccf_purge },
+#endif
 	{ CLI_PURGE_LIST,			ccf_purge_list },
 	{ NULL }
 };

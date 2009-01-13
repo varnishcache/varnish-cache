@@ -422,7 +422,7 @@ int BAN_Add(struct cli *cli, const char *regexp, int hash);
 void BAN_Init(void);
 void BAN_NewObj(struct object *o);
 void BAN_DestroyObj(struct object *o);
-int BAN_CheckObject(struct object *o, const char *url, const char *hash);
+int BAN_CheckObject(struct object *o, const struct sess *sp);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
