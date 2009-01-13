@@ -46,6 +46,7 @@
 
 #include <sys/types.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
@@ -67,6 +68,7 @@ struct ban_test {
 #define BAN_TEST_MAGIC		0x54feec67
 	VTAILQ_ENTRY(ban_test)	list;
 	int			cost;
+	char			*test;
 	ban_cond_f		*func;
 	regex_t			re;
 };
@@ -78,8 +80,6 @@ struct ban {
 	unsigned		refcount;
 	int			flags;
 #define BAN_F_GONE		(1 << 0)
-	char			*ban;
-	int			hash;
 	VTAILQ_HEAD(,ban_test)	tests;
 };
 
@@ -144,9 +144,43 @@ ban_free_ban(struct ban *b)
 	while (!VTAILQ_EMPTY(&b->tests)) {
 		bt = VTAILQ_FIRST(&b->tests);
 		VTAILQ_REMOVE(&b->tests, bt, list);
+		free(bt->test);
+		regfree(&bt->re);
 		FREE_OBJ(bt);
 	}
 	FREE_OBJ(b);
+}
+
+/*
+ * Return zero of the two bans have the same components
+ *
+ * XXX: Looks too expensive for my taste.
+ */
+
+static int
+ban_compare(const struct ban *b1, const struct ban *b2)
+{
+	struct ban_test *bt1, *bt2;
+	int n, m;
+
+	CHECK_OBJ_NOTNULL(b1, BAN_MAGIC);
+	CHECK_OBJ_NOTNULL(b2, BAN_MAGIC);
+
+	n = 0;
+	VTAILQ_FOREACH(bt1, &b1->tests, list) {
+		n++;
+		VTAILQ_FOREACH(bt2, &b2->tests, list)
+			if (!strcmp(bt1->test, bt2->test))
+				break;
+		if (bt2 == NULL)
+			return (1);
+	}
+	m = 0;
+	VTAILQ_FOREACH(bt2, &b2->tests, list)
+		m++;
+	if (m != n)
+		return (1);
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -173,6 +207,58 @@ ban_cond_hash_regexp(const struct ban_test *bt, const struct object *o,
 }
 
 /*--------------------------------------------------------------------
+ * Parse and add a ban test specification
+ */
+
+static int
+ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
+{
+	struct ban_test *bt;
+	char buf[512];
+	int i;
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	bt = ban_add_test(b);
+	if (bt == NULL) {
+		cli_out(cli, "Out of Memory");
+		cli_result(cli, CLIS_CANT);
+		return (-1);
+	}
+
+	if (strcmp(a2, "~")) {
+		/* XXX: Add more conditionals */
+		cli_out(cli, "expected \"~\" got \"%s\"", a2);
+		cli_result(cli, CLIS_PARAM);
+		return (-1);
+	}
+
+	i = regcomp(&bt->re, a3, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+	if (i) {
+		(void)regerror(i, &bt->re, buf, sizeof buf);
+		regfree(&bt->re);
+		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
+		cli_out(cli, "%s", buf);
+		cli_result(cli, CLIS_PARAM);
+		return (-1);
+	}
+
+	if (!strcmp(a1, "req.url"))
+		bt->func = ban_cond_url_regexp;
+	else if (!strcmp(a1, "obj.hash"))
+		bt->func = ban_cond_hash_regexp;
+	else {
+		cli_out(cli, "unknown or unsupported field \"%s\"", a1);
+		cli_result(cli, CLIS_PARAM);
+		return (-1);
+	}
+
+	 /* XXX: proper quoting */
+	asprintf(&bt->test, "%s %s \"%s\"", a1, a2, a3);
+
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  */
 
 
@@ -184,50 +270,15 @@ ban_cond_hash_regexp(const struct ban_test *bt, const struct object *o,
  */
 static struct ban * volatile ban_start;
 
-int
-BAN_Add(struct cli *cli, const char *regexp, int hash)
+static void
+BAN_Insert(struct ban *b)
 {
-	struct ban *b, *bi, *be;
-	struct ban_test *bt;
-	char buf[512];
+	struct ban  *bi, *be;
 	unsigned pcount;
-	int i;
 
-	b = ban_new_ban();
-	if (b == NULL) {
-		cli_out(cli, "Out of Memory");
-		cli_result(cli, CLIS_CANT);
-		return (-1);
-	}
-
-	bt = ban_add_test(b);
-	if (bt == NULL) {
-		cli_out(cli, "Out of Memory");
-		cli_result(cli, CLIS_CANT);
-		ban_free_ban(b);
-		return (-1);
-	}
-
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	ban_sort_by_cost(b);
 
-	if (hash)
-		bt->func = ban_cond_hash_regexp;
-	else
-		bt->func = ban_cond_url_regexp;
-		
-	i = regcomp(&bt->re, regexp, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-	if (i) {
-		(void)regerror(i, &bt->re, buf, sizeof buf);
-		regfree(&bt->re);
-		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
-		cli_out(cli, "%s", buf);
-		cli_result(cli, CLIS_PARAM);
-		ban_free_ban(b);
-		return (-1);
-	}
-	b->hash = hash;
-	b->ban = strdup(regexp);
-	AN(b->ban);
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
@@ -242,7 +293,7 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
-		return (0);
+		return;
 
 	/* Hunt down duplicates, and mark them as gone */
 	bi = b;
@@ -251,9 +302,7 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 		bi = VTAILQ_NEXT(bi, list);
 		if (bi->flags & BAN_F_GONE)
 			continue;
-		if (b->hash != bi->hash)
-			continue;
-		if (strcmp(b->ban, bi->ban))
+		if (ban_compare(b, bi))
 			continue;
 		bi->flags |= BAN_F_GONE;
 		pcount++;
@@ -263,8 +312,6 @@ BAN_Add(struct cli *cli, const char *regexp, int hash)
 	/* XXX: We should check if the tail can be removed */
 	VSL_stats->n_purge_dups += pcount;
 	Lck_Unlock(&ban_mtx);
-
-	return (0);
 }
 
 void
@@ -363,37 +410,97 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
  * CLI functions to add bans
  */
 
-#if 0
 static void
 ccf_purge(struct cli *cli, const char * const *av, void *priv)
 {
+	int narg, i;
+	struct ban *b;
 
 	(void)priv;
-	(void)av;
-	(void)cli;
+
+	/* First do some cheap checks on the arguments */
+	for (narg = 0; av[narg + 2] != NULL; narg++)
+		continue;
+	if ((narg % 4) != 3) {
+		cli_out(cli, "Wrong number of arguments");
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+	for (i = 3; i < narg; i += 4) {
+		if (strcmp(av[i + 2], "&&")) {
+			cli_out(cli, "Found \"%s\" expected &&", av[i + 2]);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+	}
+
+	b = ban_new_ban();
+	if (b == NULL) {
+		cli_out(cli, "Out of Memory");
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+	for (i = 0; i < narg; i += 4)
+		if (ban_parse_test(cli, b, av[i + 2], av[i + 3], av[i + 4])) {
+			ban_free_ban(b);
+			return;
+		}
+	BAN_Insert(b);
 }
-#endif
+
+int
+BAN_Add(struct cli *cli, const char *regexp, int hash)
+{
+	const char *aav[6];
+
+	aav[0] = NULL;
+	aav[1] = "purge";
+	if (hash)
+		aav[2] = "obj.hash";
+	else
+		aav[2] = "req.url";
+	aav[3] = "~";
+	aav[4] = regexp;
+	aav[5] = NULL;
+	ccf_purge(cli, aav, NULL);
+	return (0);
+}
 
 static void
 ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
 {
+	const char *aav[6];
 
 	(void)priv;
-	(void)BAN_Add(cli, av[2], 0);
+	aav[0] = NULL;
+	aav[1] = "purge";
+	aav[2] = "req.url";
+	aav[3] = "~";
+	aav[4] = av[2];
+	aav[5] = NULL;
+	ccf_purge(cli, aav, priv);
 }
 
 static void
 ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 {
+	const char *aav[6];
 
 	(void)priv;
-	(void)BAN_Add(cli, av[2], 1);
+	aav[0] = NULL;
+	aav[1] = "purge";
+	aav[2] = "obj.hash";
+	aav[3] = "~";
+	aav[4] = av[2];
+	aav[5] = NULL;
+	ccf_purge(cli, aav, priv);
 }
 
 static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b0;
+	struct ban_test *bt;
 
 	(void)av;
 	(void)priv;
@@ -408,10 +515,10 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	for (b0 = ban_start; b0 != NULL; b0 = VTAILQ_NEXT(b0, list)) {
 		if (b0->refcount == 0 && VTAILQ_NEXT(b0, list) == NULL)
 			break;
-		cli_out(cli, "%5u %d %s \"%s\"\n",
-		    b0->refcount, b0->flags,
-		    b0->hash ? "hash" : "url ",
-		    b0->ban);
+		VTAILQ_FOREACH(bt, &b0->tests, list)
+			cli_out(cli, "%5u %d \"%s\"\n",
+			    b0->refcount, b0->flags,
+			    bt->test);
 	}
 }
 
@@ -425,9 +532,7 @@ static struct cli_proto ban_cmds[] = {
 
 	{ CLI_PURGE_URL,			ccf_purge_url },
 	{ CLI_PURGE_HASH,			ccf_purge_hash },
-#if 0
 	{ CLI_PURGE,				ccf_purge },
-#endif
 	{ CLI_PURGE_LIST,			ccf_purge_list },
 	{ NULL }
 };
