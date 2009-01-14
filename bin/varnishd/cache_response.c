@@ -140,7 +140,7 @@ RES_WriteObj(struct sess *sp)
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	if (sp->esis == 0)
-		sp->wrk->acct.hdrbytes += http_Write(sp->wrk, sp->http, 1);
+		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
 	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
 		if (WRW_FlushRelease(sp->wrk)) {
@@ -161,7 +161,7 @@ RES_WriteObj(struct sess *sp)
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 			u += st->len;
-			sp->wrk->acct.bodybytes += st->len;
+			sp->acct_req.bodybytes += st->len;
 #ifdef SENDFILE_WORKS
 			/*
 			 * XXX: the overhead of setting up sendfile is not

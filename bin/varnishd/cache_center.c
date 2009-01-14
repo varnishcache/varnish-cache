@@ -427,7 +427,7 @@ cnt_fetch(struct sess *sp)
 		EXP_Insert(sp->obj);
 		HSH_Unbusy(sp);
 	}
-	sp->wrk->acct.fetch++;
+	sp->acct_req.fetch++;
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -457,7 +457,7 @@ cnt_first(struct sess *sp)
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->lastused = sp->t_open;
-	sp->wrk->acct.sess++;
+	sp->acct_req.sess++;
 	SES_RefSrcAddr(sp);
 	do
 		i = HTC_Rx(sp->htc);
@@ -591,7 +591,6 @@ cnt_lookup(struct sess *sp)
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 			    "on waiting list <%s>", sp->objhead->hash);
-		SES_Charge(sp);
 		return (1);
 	}
 
@@ -721,7 +720,7 @@ cnt_pass(struct sess *sp)
 		return (0);
 	}
 	assert(sp->handling == VCL_RET_PASS);
-	sp->wrk->acct.pass++;
+	sp->acct_req.pass++;
 	HSH_Prealloc(sp);
 	sp->obj = sp->wrk->nobj;
 	sp->wrk->nobj = NULL;
@@ -763,7 +762,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	sp->wrk->acct.pipe++;
+	sp->acct_req.pipe++;
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);
@@ -871,7 +870,7 @@ cnt_start(struct sess *sp)
 	VSL_stats->client_req++;			/* XXX not locked */
 	sp->t_req = TIM_real();
 	sp->wrk->lastused = sp->t_req;
-	sp->wrk->acct.req++;
+	sp->acct_req.req++;
 
 	/* Assign XID and log */
 	sp->xid = ++xids;				/* XXX not locked */
