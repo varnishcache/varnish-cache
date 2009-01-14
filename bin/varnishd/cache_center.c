@@ -584,13 +584,10 @@ cnt_lookup(struct sess *sp)
 
 	if (o == NULL) {
 		/*
-		 * We hit a busy object, disembark worker thread and expect
-		 * hash code to restart us, still in STP_LOOKUP, later.
+		 * We lost the session to a busy object, disembark the
+		 * worker thread.   The hash code to restart the session,
+		 * still in STP_LOOKUP, later when the busy object isn't.
 		 */
-		assert(sp->objhead != NULL);
-		if (params->diag_bitmap & 0x20)
-			WSP(sp, SLT_Debug,
-			    "on waiting list <%s>", sp->objhead->hash);
 		return (1);
 	}
 
