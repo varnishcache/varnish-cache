@@ -77,6 +77,7 @@ char		*vsb_data(struct vsb *);
 int		 vsb_len(struct vsb *);
 int		 vsb_done(const struct vsb *);
 void		 vsb_delete(struct vsb *);
+void		 vsb_quote(struct vsb *s, const char *p, int how);
 #ifdef __cplusplus
 };
 #endif
