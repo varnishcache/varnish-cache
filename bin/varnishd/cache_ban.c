@@ -154,6 +154,8 @@ ban_free_ban(struct ban *b)
 			regfree(&bt->re);
 		if (bt->dst != NULL)
 			free(bt->dst);
+		if (bt->src != NULL)
+			free(bt->src);
 		FREE_OBJ(bt);
 	}
 	FREE_OBJ(b);
@@ -276,6 +278,7 @@ ban_parse_regexp(struct cli *cli, struct ban_test *bt, const char *a3)
 		return (-1);
 	}
 	bt->flags |= BAN_T_REGEXP;
+	bt->cost = 10;
 	return (0);
 }
 
@@ -429,6 +432,23 @@ BAN_NewObj(struct object *o)
 	Lck_Unlock(&ban_mtx);
 }
 
+static struct ban *
+BAN_CheckLast(void)
+{
+	struct ban *b;
+
+	Lck_AssertHeld(&ban_mtx);
+	b = VTAILQ_LAST(&ban_head, banhead);
+	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
+		VSL_stats->n_purge--;
+		VSL_stats->n_purge_retire++;
+		VTAILQ_REMOVE(&ban_head, b, list);
+	} else {
+		b = NULL;
+	}
+	return (b);
+}
+
 void
 BAN_DestroyObj(struct object *o)
 {
@@ -442,20 +462,14 @@ BAN_DestroyObj(struct object *o)
 	o->ban->refcount--;
 	o->ban = NULL;
 
-	/* Check if we can purge the last ban entry */
-	b = VTAILQ_LAST(&ban_head, banhead);
-	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSL_stats->n_purge--;
-		VSL_stats->n_purge_retire++;
-		VTAILQ_REMOVE(&ban_head, b, list);
-	} else {
-		b = NULL;
-	}
+	/* Attempt to purge last ban entry */
+	b = BAN_CheckLast();
 	Lck_Unlock(&ban_mtx);
 	if (b != NULL)
 		ban_free_ban(b);
 
 }
+
 
 int
 BAN_CheckObject(struct object *o, const struct sess *sp)
@@ -608,9 +622,16 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	Lck_Lock(&ban_mtx);
-	VTAILQ_LAST(&ban_head, banhead)->refcount++;
-	Lck_Unlock(&ban_mtx);
+	do {
+		/* Attempt to purge last ban entry */
+		Lck_Lock(&ban_mtx);
+		b = BAN_CheckLast();
+		if (b == NULL)
+			VTAILQ_LAST(&ban_head, banhead)->refcount++;
+		Lck_Unlock(&ban_mtx);
+		if (b != NULL)
+			ban_free_ban(b);
+	} while (b != NULL);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (b->flags & BAN_F_GONE)

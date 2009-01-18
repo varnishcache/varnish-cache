@@ -112,7 +112,7 @@ client c1 {
 } -run
 
 # header check, no header
-varnish v1 -cliok "purge obj.http.bar == barcheck"
+varnish v1 -cliok "purge req.url ~ foo && obj.http.bar == barcheck"
 varnish v1 -cliok "purge.list"
 
 client c1 {
