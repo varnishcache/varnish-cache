@@ -4,6 +4,8 @@ test "Check purge counters and duplicate purge elimination"
 
 server s1 {
 	rxreq
+	txresp -hdr "foo: 0" -body "foo0"
+	rxreq
 	txresp -hdr "foo: 1" -body "foo1"
 	rxreq
 	txresp -hdr "foo: 2" -body "foo2"
@@ -22,6 +24,9 @@ varnish v1 -cliok "purge.list"
 # Our fetch is not affected by the purge
 # as the FOO-purge was preexisting
 client c1 {
+	txreq -url /BAR
+	rxresp
+	expect resp.http.foo == 0
 	txreq -url /FOO
 	rxresp
 	expect resp.http.foo == 1
@@ -64,7 +69,7 @@ varnish v1 -expect n_purge_add == 5
 # Enable dup removal of purges
 varnish v1 -cliok "param.set purge_dups on"
 
-# This should incapacitate the to previous FOO purges.
+# This should incapacitate the two previous FOO purges.
 varnish v1 -cliok "purge.url FOO"
 varnish v1 -expect n_purge_add == 6
 varnish v1 -expect n_purge_dups == 3
