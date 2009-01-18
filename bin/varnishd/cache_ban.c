@@ -499,27 +499,30 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
-	struct ban *b0;
+	struct ban *b;
 	struct ban_test *bt;
 
 	(void)av;
 	(void)priv;
-	/*
-	 * XXX: Strictly speaking, this loop traversal is not lock-safe
-	 * XXX: because we might inspect the last ban while it gets
-	 * XXX: destroyed.  To properly fix this, we would need to either
-	 * XXX: hold the lock over the entire loop, or grab refcounts
-	 * XXX: under lock for each element of the list.
-	 * XXX: We do neither, and hope for the best.
-	 */
-	for (b0 = ban_start; b0 != NULL; b0 = VTAILQ_NEXT(b0, list)) {
-		if (b0->refcount == 0 && VTAILQ_NEXT(b0, list) == NULL)
-			break;
-		VTAILQ_FOREACH(bt, &b0->tests, list)
-			cli_out(cli, "%5u %d \"%s\"\n",
-			    b0->refcount, b0->flags,
-			    bt->test);
+
+	Lck_Lock(&ban_mtx);
+	VTAILQ_LAST(&ban_head, banhead)->refcount++;
+	Lck_Unlock(&ban_mtx);
+
+	VTAILQ_FOREACH(b, &ban_head, list) {
+		bt = VTAILQ_FIRST(&b->tests);
+		cli_out(cli, "%5u %4s\t%s\n",
+		    b->refcount, b->flags ? "Gone" : "", bt->test);
+		do {
+			bt = VTAILQ_NEXT(bt, list);
+			if (bt != NULL)
+				cli_out(cli, "\t\t%s\n", bt->test);
+		} while (bt != NULL);
 	}
+
+	Lck_Lock(&ban_mtx);
+	VTAILQ_LAST(&ban_head, banhead)->refcount--;
+	Lck_Unlock(&ban_mtx);
 }
 
 static struct cli_proto ban_cmds[] = {
