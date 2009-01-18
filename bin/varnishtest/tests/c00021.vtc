@@ -5,10 +5,19 @@ test "Test banning a url with cli:purge"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	txresp -body "1111\n"
+	txresp -hdr "foo: bar5" -body "1111\n"
+
 	rxreq
 	expect req.url == "/foo"
-	txresp -body "11111\n"
+	txresp -hdr "foo: bar6" -body "11111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar7" -body "111111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar8" -body "1111111\n"
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -17,33 +26,101 @@ client c1 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 5
-} 
+	expect resp.http.foo == bar5
+	expect resp.bodylen == 5
+} -run
 
-client c1 -run
-
+# syntax checks
 varnish v1 -clierr 104 "purge"
 varnish v1 -clierr 104 "purge foo"
 varnish v1 -clierr 104 "purge foo bar"
 varnish v1 -clierr 106 "purge a b c && a"
 varnish v1 -clierr 106 "purge a b c && a b"
 varnish v1 -clierr 106 "purge a b c || a b c"
-varnish v1 -cliok "purge req.url == foo"
-client c1 {
-	txreq -url "/foo"
-	rxresp
-	expect resp.status == 200
-	expect resp.http.content-length == 5
-}
+varnish v1 -cliok "purge.list"
 
-varnish v1 -cliok "purge req.url ~ foo && req.url ~ \"[ o]\""
+# exact match, not matching
+varnish v1 -cliok "purge req.url == foo"
 varnish v1 -cliok "purge.list"
 
 client c1 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
-}
+	expect resp.http.foo == bar5
+	expect resp.bodylen == 5
+} -run
 
-client c1 -run
+# exact match, matching
+varnish v1 -cliok "purge req.url == /foo"
+varnish v1 -cliok "purge.list"
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar6
+	expect resp.bodylen == 6
+} -run
+
+# regexp nonmatch
+varnish v1 -cliok "purge req.url ~ bar"
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar6
+	expect resp.bodylen == 6
+} -run
+
+
+# regexp match
+varnish v1 -cliok "purge req.url ~ foo"
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar7
+	expect resp.bodylen == 7
+} -run
+
+# header check, nonmatch
+varnish v1 -cliok "purge obj.http.foo != bar7"
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar7
+	expect resp.bodylen == 7
+} -run
+
+# header check, match
+varnish v1 -cliok "purge req.http.foo == barcheck"
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo" -hdr "foo: barcheck" 
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar8
+	expect resp.bodylen == 8
+} -run
+
+# header check, no header
+varnish v1 -cliok "purge obj.http.bar == barcheck"
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar8
+	expect resp.bodylen == 8
+} -run
+
+
