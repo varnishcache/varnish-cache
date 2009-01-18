@@ -215,6 +215,7 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
 {
 	struct ban_test *bt;
 	char buf[512];
+	struct vsb *sb;
 	int i;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
@@ -253,8 +254,15 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
 	}
 
 	 /* XXX: proper quoting */
-	asprintf(&bt->test, "%s %s \"%s\"", a1, a2, a3);
-
+	sb = vsb_newauto();
+	XXXAN(sb);
+	vsb_printf(sb, "%s %s ", a1, a2);
+	vsb_quote(sb, a3, 0);
+	vsb_finish(sb);
+	AZ(vsb_overflowed(sb));
+	bt->test = strdup(vsb_data(sb));
+	XXXAN(bt->test);
+	vsb_delete(sb);
 	return (0);
 }
 
