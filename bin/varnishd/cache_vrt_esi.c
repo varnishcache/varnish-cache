@@ -837,7 +837,14 @@ ESI_Deliver(struct sess *sp)
 		sp->director = NULL;
 		sp->step = STP_RECV;
 		http_ForceGet(sp->http);
+
+		/* Don't do conditionals */
+		sp->http->conds = 0;
+		http_Unset(sp->http, H_If_Modified_Since);
+
+		/* Client content already taken care of */
 		http_Unset(sp->http, H_Content_Length);
+
 		while (1) {
 			CNT_Session(sp);
 			if (sp->step == STP_DONE)
