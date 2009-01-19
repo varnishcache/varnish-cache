@@ -255,12 +255,8 @@ HSH_Lookup(struct sess *sp)
 			continue;
 		if (o->ttl == 0)
 			continue;
-		if (BAN_CheckObject(o, sp)) {
-			o->ttl = 0;
-			WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
-			EXP_Rearm(o);
+		if (BAN_CheckObject(o, sp)) 
 			continue;
-		}
 		if (o->vary != NULL && !VRY_Match(sp, o->vary))
 			continue;
 
