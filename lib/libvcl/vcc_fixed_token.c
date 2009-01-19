@@ -22,6 +22,7 @@ vcl_fixed_token(const char *p, const char **q)
 
 	switch (p[0]) {
 	case '!':
+		M2('~', T_NOMATCH);
 		M2('=', T_NEQ);
 		M1();
 	case '%':
@@ -146,6 +147,7 @@ const char * const vcl_tnames[256] = {
 	[T_LEQ] = "<=",
 	[T_MUL] = "*=",
 	[T_NEQ] = "!=",
+	[T_NOMATCH] = "!~",
 	[T_SHL] = "<<",
 	[T_SHR] = ">>",
 	[VAR] = "VAR",
