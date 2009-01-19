@@ -88,6 +88,7 @@ set magic {
 	{"-="	DECR}
 	{"*="	MUL}
 	{"/="	DIV}
+	{"!~"	NOMATCH}
 }
 
 # Single char tokens

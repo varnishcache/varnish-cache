@@ -26,9 +26,10 @@
 #define T_DECR 144
 #define T_MUL 145
 #define T_DIV 146
-#define ID 147
-#define VAR 148
-#define CNUM 149
-#define CSTR 150
-#define EOI 151
-#define CSRC 152
+#define T_NOMATCH 147
+#define ID 148
+#define VAR 149
+#define CNUM 150
+#define CSTR 151
+#define EOI 152
+#define CSRC 153
