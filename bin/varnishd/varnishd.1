@@ -236,9 +236,27 @@ The default is 16383.
 .Ss Storage Types
 The following storage types are available:
 .Bl -tag -width 4n
-.It Cm malloc
+.It Cm malloc Ns Op Ns , Ns Ar size Ns
 Storage for each object is allocated with
 .Xr malloc 3 .
+.Pp
+The
+.Ar size
+parameter specifies the maximum amount of memory varnishd will allocate.
+The size is assumed to be in bytes, unless followed by one of the
+following suffixes:
+.Bl -tag -width indent
+.It K, k
+The size is expressed in kibibytes.
+.It M, m
+The size is expressed in mebibytes.
+.It G, g
+The size is expressed in gibibytes.
+.It T, t
+The size is expressed in tebibytes.
+.El
+.Pp
+The default size is unlimited.
 .It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size Ns Op Ns , Ns Ar granularity
 Storage for each object is allocated from an arena backed by a file.
 This is the default.
