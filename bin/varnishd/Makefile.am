@@ -70,7 +70,8 @@ noinst_HEADERS = \
 	mgt.h \
 	mgt_cli.h \
 	steps.h \
-	stevedore.h
+	stevedore.h \
+	vparam.h
 
 varnishd_CFLAGS = \
         -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
