@@ -155,6 +155,8 @@ cnt_deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	AZ(sp->bereq);
+
 	sp->t_resp = TIM_real();
 	if (sp->obj->objhead != NULL) {
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
@@ -301,6 +303,7 @@ cnt_error(struct sess *sp)
 	char date[40];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AZ(sp->bereq);
 
 	/* We always close when we take this path */
 	sp->doclose = "error";
@@ -663,6 +666,7 @@ cnt_miss(struct sess *sp)
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
+		VBE_free_bereq(&sp->bereq);
 		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -713,6 +717,7 @@ cnt_pass(struct sess *sp)
 
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
+		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -769,6 +774,7 @@ cnt_pipe(struct sess *sp)
 	assert(sp->handling == VCL_RET_PIPE);
 
 	PipeSession(sp);
+	AZ(sp->bereq);
 	AZ(sp->wrk->wfd);
 	sp->step = STP_DONE;
 	return (0);
