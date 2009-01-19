@@ -1,0 +1,86 @@
+# $Id$
+
+test "Deeper test of random director"
+
+random
+
+server s1 {
+	rxreq
+	txresp -body "1"
+} -start
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	txresp -body "22"
+	rxreq
+	txresp -body "22"
+	rxreq
+	txresp -body "22"
+} -start
+server s3 -listen 127.0.0.1:9181 {
+	rxreq
+	txresp -body "333"
+} -start
+server s4 -listen 127.0.0.1:9182 {
+	rxreq
+	txresp -body "4444"
+	rxreq
+	txresp -body "4444"
+	rxreq
+	txresp -body "4444"
+	rxreq
+	txresp -body "4444"
+	rxreq
+	txresp -body "4444"
+} -start
+
+varnish v1 -vcl+backend {
+	director foo random {
+		{ .backend = s1; .weight = 1; }
+		{ .backend = s2; .weight = 1; }
+		{ .backend = s3; .weight = 1; }
+		{ .backend = s4; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = foo;
+		pass;
+	}
+} -start
+
+# NB: Do not change the number 1
+# NB: Only srandom(1) is standardized as deterministic.
+
+varnish v1 -cliok "debug.srandom 1"
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.bodylen == 4
+	txreq 
+	rxresp
+	expect resp.bodylen == 2
+	txreq 
+	rxresp
+	expect resp.bodylen == 4
+	txreq 
+	rxresp
+	expect resp.bodylen == 4
+	txreq 
+	rxresp
+	expect resp.bodylen == 4
+	txreq 
+	rxresp
+	expect resp.bodylen == 1
+	txreq 
+	rxresp
+	expect resp.bodylen == 2
+	txreq 
+	rxresp
+	expect resp.bodylen == 4
+	txreq 
+	rxresp
+	expect resp.bodylen == 2
+	txreq 
+	rxresp
+	expect resp.bodylen == 3
+} -run
