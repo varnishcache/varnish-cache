@@ -44,6 +44,8 @@
 const char	*vtc_file;
 char		*vtc_desc;
 
+static int	stop;
+
 /**********************************************************************
  * Read a file into memory
  */
@@ -185,6 +187,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 	
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
+		if (stop)
+			break;
 	}
 }
 
@@ -282,6 +286,52 @@ cmd_dump(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Check random generator
+ */
+
+#define NRNDEXPECT	12
+static const unsigned long random_expect[NRNDEXPECT] = {
+	1804289383,	846930886,	1681692777,	1714636915,
+	1957747793,	424238335,	719885386,	1649760492,
+	 596516649,	1189641421,	1025202362,	1350490027
+};
+
+#define RND_NEXT_1K	0x3bdcbe30
+
+static void
+cmd_random(CMD_ARGS)
+{
+	unsigned long l;
+	int i;
+
+	(void)cmd;
+	(void)priv;
+	if (av == NULL)
+		return;
+	srandom(1);
+	for (i = 0; i < NRNDEXPECT; i++) {
+		l = random();
+		if (l == random_expect[i])
+			continue;
+		vtc_log(vl, 4, "random[%d] = 0x%x (expect 0x%x)",
+		    i, l, random_expect[i]);
+		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
+		stop = 1;
+		break;
+	}
+	l = 0;
+	for (i = 0; i < 1000; i++) 
+		l += random();
+	if (l != RND_NEXT_1K) {
+		vtc_log(vl, 4, "sum(random[%d...%d]) = 0x%x (expect 0x%x)",
+		    NRNDEXPECT, NRNDEXPECT + 1000,
+		    l, RND_NEXT_1K);
+		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
+		stop = 1;
+	}
+}
+
+/**********************************************************************
  * Execute a file
  */
 
@@ -293,6 +343,7 @@ static struct cmds cmds[] = {
 	{ "test", 	cmd_test },
 	{ "shell", 	cmd_shell },
 	{ "sema", 	cmd_sema },
+	{ "random",	cmd_random },
 	{ NULL, 	NULL }
 };
 
@@ -301,6 +352,7 @@ exec_file(const char *fn, struct vtclog *vl)
 {
 	char *buf;
 
+	stop = 0;
 	vtc_file = fn;
 	vtc_desc = NULL;
 	vtc_log(vl, 1, "TEST %s starting", fn);
