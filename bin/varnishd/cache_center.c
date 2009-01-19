@@ -548,7 +548,9 @@ cnt_hit(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_RESTART:
-		INCOMPL();
+		sp->director = NULL;
+		sp->restarts++;
+		sp->step = STP_RECV;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
