@@ -69,6 +69,7 @@
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
+unsigned	save_hash;
 
 double
 HSH_Grace(double g)
@@ -151,6 +152,8 @@ HSH_Copy(const struct sess *sp, struct objhead *oh)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (!save_hash)
+		return;
 
 	oh->hash = malloc(sp->lhashptr);
 	XXXAN(oh->hash);
@@ -172,6 +175,10 @@ HSH_Prepare(struct sess *sp, unsigned nhashcount)
 	char *p;
 	unsigned u;
 
+	SHA256_Init(sp->wrk->sha256ctx);
+	if (!save_hash)
+		return;
+
 	/* Allocate the pointers we need, align properly. */
 	sp->lhashptr = 1;       /* space for NUL */
 	sp->ihashptr = 0;
@@ -184,7 +191,6 @@ HSH_Prepare(struct sess *sp, unsigned nhashcount)
 	if (u)
 		p += sizeof(const char *) - u;
 	sp->hashptr = (void*)p;
-	SHA256_Init(sp->wrk->sha256ctx);
 }
 
 void
@@ -195,6 +201,15 @@ HSH_AddString(struct sess *sp, const char *str)
 	if (str == NULL)
 		str = "";
 	l = strlen(str);
+
+	SHA256_Update(sp->wrk->sha256ctx, str, l);
+	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
+
+	if (params->log_hash)
+		WSP(sp, SLT_Hash, "%s", str);
+
+	if (!save_hash)
+		return;
 
 	/*
 	* XXX: handle this by bouncing sp->vcl->nhashcount when it fails
@@ -207,8 +222,6 @@ HSH_AddString(struct sess *sp, const char *str)
 	sp->hashptr[sp->ihashptr + 1] = str + l;
 	sp->ihashptr += 2;
 	sp->lhashptr += l + 1;
-	SHA256_Update(sp->wrk->sha256ctx, str, l);
-	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
 }
 
 struct object *
@@ -284,8 +297,6 @@ HSH_Lookup(struct sess *sp)
 		if (o->hits < INT_MAX)
 			o->hits++;
 		Lck_Unlock(&oh->mtx);
-		if (params->log_hash)
-			WSP(sp, SLT_Hash, "%s", oh->hash);
 		(void)hash->deref(oh);
 		return (o);
 	}
@@ -315,8 +326,6 @@ HSH_Lookup(struct sess *sp)
 		grace_o->refcnt++;
 	}
 	Lck_Unlock(&oh->mtx);
-	if (params->log_hash)
-		WSP(sp, SLT_Hash, "%s", oh->hash);
 	/*
 	 * XXX: This may be too early, relative to pass objects.
 	 * XXX: possibly move to when we commit to have it in the cache.
@@ -467,6 +476,7 @@ void
 HSH_Init(void)
 {
 
+	save_hash = params->save_hash;
 	hash = heritage.hash;
 	if (hash->start != NULL)
 		hash->start();
