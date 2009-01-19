@@ -242,7 +242,7 @@ ban_cond_req_http(const struct ban_test *bt, const struct object *o,
 
 	(void)o;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	http_GetHdr(sp->http, bt->src, &s);
+	(void)http_GetHdr(sp->http, bt->src, &s);
 	return (ban_cond_str(bt, s));
 }
 
@@ -254,7 +254,7 @@ ban_cond_obj_http(const struct ban_test *bt, const struct object *o,
 
 	(void)sp;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	http_GetHdr(o->http, bt->src, &s);
+	(void)http_GetHdr(o->http, bt->src, &s);
 	return (ban_cond_str(bt, s));
 }
 
@@ -288,9 +288,10 @@ ban_parse_http(struct ban_test *bt, const char *a1)
 	int l;
 
 	l = strlen(a1);
+	assert(l < 127);
 	bt->src = malloc(l + 3);
 	XXXAN(bt->src);
-	bt->src[0] = l + 1;
+	bt->src[0] = (char)l + 1;
 	memcpy(bt->src + 1, a1, l);
 	bt->src[l + 1] = ':';
 	bt->src[l + 2] = '\0';
