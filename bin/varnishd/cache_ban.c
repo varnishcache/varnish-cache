@@ -607,6 +607,14 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 	const char *aav[6];
 
 	(void)priv;
+	if (!save_hash) {
+		cli_out(cli,
+		    "purge.hash not possible.\n"
+		    "Set the \"purge_hash\" parameter to on\n"
+		    "and restart the varnish worker process to enable.\n");
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
 	aav[0] = NULL;
 	aav[1] = "purge";
 	aav[2] = "obj.hash";

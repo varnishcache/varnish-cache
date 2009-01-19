@@ -100,7 +100,8 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dst, const char *
 	if (arg != NULL) {
 		u = strtod(arg, NULL);
 		if (u < 0) {
-			cli_out(cli, "Timeout must be greater or equal to zero\n");
+			cli_out(cli,
+			    "Timeout must be greater or equal to zero\n");
 			cli_result(cli, CLIS_PARAM);
 			return;
 		}
@@ -713,6 +714,12 @@ static const struct parspec input_parspec[] = {
 	{ "log_hashstring", tweak_bool, &master.log_hash, 0, 0,
 		"Log the hash string to shared memory log.\n",
 		0,
+		"off", "bool" },
+	{ "purge_hash", tweak_bool, &master.save_hash, 0, 0,
+		"Enable purge.hash command.\n"
+		"NB: this increases storage requirement per object "
+		"by the length of the hash string.\n",
+		MUST_RESTART,
 		"off", "bool" },
 	{ "log_local_address", tweak_bool, &master.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "

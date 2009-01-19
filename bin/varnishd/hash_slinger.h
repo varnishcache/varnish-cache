@@ -105,4 +105,6 @@ struct objhead {
 #define hoh_head u.n.u_n_hoh_head
 #define hoh_digest u.n.u_n_hoh_digest
 };
+
+extern unsigned	save_hash;
 #endif /* VARNISH_CACHE_CHILD */
