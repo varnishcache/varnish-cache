@@ -1,0 +1,34 @@
+# $Id$
+
+test "check late pass stalling"
+
+server s1 {
+	rxreq
+	txresp \
+	    -hdr "Set-Cookie: foo=bar" \
+	    -hdr "Expires: Thu, 19 Nov 1981 08:52:00 GMT" \
+	    -body "1111\n"
+	rxreq
+	txresp \
+	    -hdr "Set-Cookie: foo=bar" \
+	    -hdr "Expires: Thu, 19 Nov 1981 08:52:00 GMT" \
+	    -body "22222n"
+	rxreq
+	txresp \
+	    -hdr "Set-Cookie: foo=bar" \
+	    -hdr "Expires: Thu, 19 Nov 1981 08:52:00 GMT" \
+	    -body "33333n"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+	txreq
+	rxresp
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect cache_hitpass == 2
