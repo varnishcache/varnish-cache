@@ -413,6 +413,8 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	case VCL_RET_PASS:
 		sp->obj->pass = 1;
+		if (sp->obj->ttl - sp->t_req < params->default_ttl)
+			sp->obj->ttl = sp->t_req + params->default_ttl;
 		break;
 	case VCL_RET_DELIVER:
 		break;
