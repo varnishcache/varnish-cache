@@ -6,7 +6,7 @@ License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-Patch0: varnish.varnishtest_debugflag.patch
+#Patch0: varnish.varnishtest_debugflag.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -64,7 +64,7 @@ Varnish is a high-performance HTTP accelerator
 %setup -q
 #%setup -q -n varnish-cache
 
-%patch0 -p0
+#%patch0 -p0
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
