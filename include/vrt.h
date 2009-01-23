@@ -141,8 +141,8 @@ int VRT_re_match(const char *, void *re);
 const char *VRT_regsub(const struct sess *sp, int all, const char *,
     void *, const char *);
 
-void VRT_panic(struct sess *sp,  const char *, ...);
-void VRT_purge(const char *, int hash);
+void VRT_panic(struct sess *sp, const char *, ...);
+void VRT_purge(struct sess *sp, char *, ...);
 
 void VRT_count(const struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);

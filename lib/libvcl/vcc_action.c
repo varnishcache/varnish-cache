@@ -348,26 +348,85 @@ parse_unset(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge_url(struct tokenlist *tl)
+parse_purge(struct tokenlist *tl)
 {
 
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_purge(");
 
 	Expect(tl, '(');
 	vcc_NextToken(tl);
 
-	if (!vcc_StringVal(tl)) {
-		vcc_ExpectedStringval(tl);
-		return;
+	if (tl->t->tok == VAR) {
+		Fb(tl, 1, "VRT_purge(sp,\n");
+		tl->indent += INDENT;
+		while (1) {
+			ExpectErr(tl, VAR);
+			Fb(tl, 1, "  \"%.*s\",\n", PF(tl->t));
+			vcc_NextToken(tl);
+			switch(tl->t->tok) {
+			case '~':
+			case T_NOMATCH:
+			case T_EQ:
+			case T_NEQ:
+				Fb(tl, 1, "  \"%.*s\",\n", PF(tl->t));
+				break;
+			default:
+				vsb_printf(tl->sb,
+				    "Expected ~, !~, == or !=.\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			vcc_NextToken(tl);
+			Fb(tl, 1, "  ");
+			if (!vcc_StringVal(tl)) {
+				vcc_ExpectedStringval(tl);
+				return;
+			}
+			Fb(tl, 0, ",\n");
+			if (tl->t->tok == ')')
+				break;
+			ExpectErr(tl, T_CAND);
+			Fb(tl, 1, "\"%.*s\",\n", PF(tl->t));
+			vcc_NextToken(tl);
+		}
+		Fb(tl, 1, "0);\n");
+		tl->indent -= INDENT;
+	} else {
+		Fb(tl, 1, "VRT_purge_string(sp, ");
+		if (!vcc_StringVal(tl)) {
+			vcc_ExpectedStringval(tl);
+			return;
+		}
+		do
+			Fb(tl, 0, ", ");
+		while (vcc_StringVal(tl));
+		Fb(tl, 0, ", 0);\n");
 	}
 
 	Expect(tl, ')');
 	vcc_NextToken(tl);
-	Fb(tl, 0, ", 0);\n");
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+parse_purge_url(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+
+	Fb(tl, 1, "VRT_purge(sp, \"req.url\", \"~\", ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 0, ", 0);\n");
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -376,21 +435,20 @@ parse_purge_hash(struct tokenlist *tl)
 {
 
 	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_purge(");
-
 	Expect(tl, '(');
 	vcc_NextToken(tl);
 
+	Fb(tl, 1, "VRT_purge(sp, \"obj.hash\", \"~\", ");
 	if (!vcc_StringVal(tl)) {
 		vcc_ExpectedStringval(tl);
 		return;
 	}
-
 	Expect(tl, ')');
 	vcc_NextToken(tl);
-	Fb(tl, 0, ", 1);\n");
+	Fb(tl, 0, ", 0);\n");
 }
+
+/*--------------------------------------------------------------------*/
 
 static void
 parse_esi(struct tokenlist *tl)
@@ -470,6 +528,7 @@ static struct action_table {
 	{ "call",		parse_call },
 	{ "esi",		parse_esi },
 	{ "panic",		parse_panic },
+	{ "purge",		parse_purge },
 	{ "purge_hash",		parse_purge_hash },
 	{ "purge_url",		parse_purge_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
