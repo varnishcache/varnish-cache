@@ -531,10 +531,8 @@ cmd_http_txresp(CMD_ARGS)
 	if (body != NULL)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
-	if (body != NULL) {
+	if (body != NULL)
 		vsb_cat(hp->vsb, body);
-		vsb_cat(hp->vsb, nl);
-	}
 	http_write(hp, 4, "txresp");
 }
 
@@ -561,6 +559,48 @@ cmd_http_rxreq(CMD_ARGS)
 	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
+	http_swallow_body(hp, hp->req, 0);
+	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
+}
+
+static void
+cmd_http_rxhdrs(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(hp->client);
+	assert(!strcmp(av[0], "rxhdrs"));
+	av++;
+
+	for(; *av != NULL; av++) {
+		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
+		exit (1);
+	}
+	vtc_log(hp->vl, 3, "rxhdrs");
+	http_rxhdr(hp);
+	http_splitheader(hp, 1);
+}
+
+static void
+cmd_http_rxbody(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(hp->client);
+	assert(!strcmp(av[0], "rxbody"));
+	av++;
+
+	for(; *av != NULL; av++) {
+		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
+		exit (1);
+	}
+	vtc_log(hp->vl, 3, "rxbody");
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -698,7 +738,11 @@ cmd_http_timeout(CMD_ARGS)
 static struct cmds http_cmds[] = {
 	{ "timeout",	cmd_http_timeout },
 	{ "txreq",	cmd_http_txreq },
+
 	{ "rxreq",	cmd_http_rxreq },
+	{ "rxhdrs",	cmd_http_rxhdrs },
+	{ "rxbody",	cmd_http_rxbody },
+
 	{ "txresp",	cmd_http_txresp },
 	{ "rxresp",	cmd_http_rxresp },
 	{ "expect",	cmd_http_expect },
