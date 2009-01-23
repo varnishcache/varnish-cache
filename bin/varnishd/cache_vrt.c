@@ -762,11 +762,35 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_purge(const char *regexp, int hash)
+VRT_purge(struct sess *sp, char *cmds, ...)
 {
+	char *a1, *a2, *a3;
+	va_list ap;
+	struct ban *b;
+	int good;
 
-	if (regexp != NULL)
-		(void)BAN_Add(NULL, regexp, hash);
+	(void)sp;
+	b = BAN_New();
+	va_start(ap, cmds);
+	a1 = cmds;
+	good = 0;
+	while (a1 != NULL) {
+		good = 0;
+		a2 = va_arg(ap, char *);
+		if (a2 == NULL)
+			break;
+		a3 = va_arg(ap, char *);
+		if (a3 == NULL)
+			break;
+		if (BAN_AddTest(NULL, b, a1, a2, a3))
+			break;
+		a1 = va_arg(ap, char *);
+		good = 1;
+	}
+	if (!good) 
+		BAN_Free(b);
+	else
+		BAN_Insert(b);
 }
 
 /*--------------------------------------------------------------------

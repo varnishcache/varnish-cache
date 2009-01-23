@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3484 2008-12-21 17");
-	vsb_cat(sb, ":01:58Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3534 2009-01-19 13");
+	vsb_cat(sb, ":46:31Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -287,8 +287,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "int VRT_re_match(const char *, void *re);\n");
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all,");
 	vsb_cat(sb, " const char *,\n    void *, const char *);\n");
-	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp,  const char *, ...);");
-	vsb_cat(sb, "\nvoid VRT_purge(const char *, int hash);\n");
+	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp, const char *, ...);\n");
+	vsb_cat(sb, "void VRT_purge(struct sess *sp, char *, ...);\n");
 	vsb_cat(sb, "\nvoid VRT_count(const struct sess *, unsigned);\n");
 	vsb_cat(sb, "int VRT_rewrite(const char *, const char *);\n");
 	vsb_cat(sb, "void VRT_error(struct sess *, unsigned, const char *);");

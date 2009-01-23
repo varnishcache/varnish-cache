@@ -95,8 +95,8 @@ static struct lock ban_mtx;
  * Manipulation of bans
  */
 
-static struct ban *
-ban_new_ban(void)
+struct ban *
+BAN_New(void)
 {
 	struct ban *b;
 	ALLOC_OBJ(b, BAN_MAGIC);
@@ -140,8 +140,8 @@ ban_sort_by_cost(struct ban *b)
 	} while (i);
 }
 
-static void
-ban_free_ban(struct ban *b)
+void
+BAN_Free(struct ban *b)
 {
 	struct ban_test *bt;
 
@@ -308,8 +308,8 @@ static const struct pvar {
 	{ 0, 0, 0}
 };
 
-static int
-ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
+int
+BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
 {
 	struct ban_test *bt;
 	struct vsb *sb;
@@ -387,7 +387,7 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
  */
 static struct ban * volatile ban_start;
 
-static void
+void
 BAN_Insert(struct ban *b)
 {
 	struct ban  *bi, *be;
@@ -476,7 +476,7 @@ BAN_DestroyObj(struct object *o)
 	b = BAN_CheckLast();
 	Lck_Unlock(&ban_mtx);
 	if (b != NULL)
-		ban_free_ban(b);
+		BAN_Free(b);
 
 }
 
@@ -564,36 +564,18 @@ ccf_purge(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 
-	b = ban_new_ban();
+	b = BAN_New();
 	if (b == NULL) {
 		cli_out(cli, "Out of Memory");
 		cli_result(cli, CLIS_CANT);
 		return;
 	}
 	for (i = 0; i < narg; i += 4)
-		if (ban_parse_test(cli, b, av[i + 2], av[i + 3], av[i + 4])) {
-			ban_free_ban(b);
+		if (BAN_AddTest(cli, b, av[i + 2], av[i + 3], av[i + 4])) {
+			BAN_Free(b);
 			return;
 		}
 	BAN_Insert(b);
-}
-
-int
-BAN_Add(struct cli *cli, const char *regexp, int hash)
-{
-	const char *aav[6];
-
-	aav[0] = NULL;
-	aav[1] = "purge";
-	if (hash)
-		aav[2] = "obj.hash";
-	else
-		aav[2] = "req.url";
-	aav[3] = "~";
-	aav[4] = regexp;
-	aav[5] = NULL;
-	ccf_purge(cli, aav, NULL);
-	return (0);
 }
 
 static void
@@ -651,7 +633,7 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 			VTAILQ_LAST(&ban_head, banhead)->refcount++;
 		Lck_Unlock(&ban_mtx);
 		if (b != NULL)
-			ban_free_ban(b);
+			BAN_Free(b);
 	} while (b != NULL);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
@@ -692,9 +674,17 @@ static struct cli_proto ban_cmds[] = {
 void
 BAN_Init(void)
 {
+	const char *aav[6];
 
 	Lck_New(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
+
 	/* Add an initial ban, since the list can never be empty */
-	(void)BAN_Add(NULL, ".", 0);
+	aav[0] = NULL;
+	aav[1] = "purge";
+	aav[2] = "req.url";
+	aav[3] = "~";
+	aav[4] = ".";
+	aav[5] = NULL;
+	ccf_purge(NULL, aav, NULL);
 }
