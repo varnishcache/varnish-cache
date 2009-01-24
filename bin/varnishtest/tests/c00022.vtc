@@ -1,0 +1,162 @@
+# $Id$
+
+test "Test banning a url with VCL purge"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar5" -body "1111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar6" -body "11111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar7" -body "111111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar8" -body "1111111\n"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_recv {
+		if (req.request == "PURGE") {
+			purge (req.url == req.url);
+			error 410;
+		}
+		if (req.request == "PURGESTR") {
+			purge ("" req.http.purge);
+			error 410;
+		}
+	}
+} -start
+
+# Fetch into cache
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar5
+	expect resp.bodylen == 5
+} -run
+
+# Purge something else
+client c1 {
+	txreq -req PURGE -url /foox
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+# Still in cache
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar5
+	expect resp.bodylen == 5
+} -run
+
+# Purge it
+client c1 {
+	txreq -req PURGE -url /foo
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+# New obj 
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar6
+	expect resp.bodylen == 6
+} -run
+
+# Purge everything else
+client c1 {
+	txreq -req PURGESTR -hdr "purge=req.url != /foo"
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+# still there
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar6
+	expect resp.bodylen == 6
+} -run
+
+# Purge it
+client c1 {
+	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"bar6\""
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+# New one
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar7
+	expect resp.bodylen == 7
+} -run
+
+# Purge something else
+client c1 {
+	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"bar6\""
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+# Still there
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar7
+	expect resp.bodylen == 7
+} -run
+
+# Header match
+client c1 {
+	txreq -req PURGESTR -hdr "Purge: req.http.foo == \"barcheck\""
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo" -hdr "foo: barcheck" 
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar8
+	expect resp.bodylen == 8
+} -run
+
+# Header match
+client c1 {
+	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"barcheck\""
+	rxresp
+	expect resp.status == 410
+} -run
+varnish v1 -cliok "purge.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar8
+	expect resp.bodylen == 8
+} -run
+
+

@@ -788,9 +788,59 @@ VRT_purge(struct sess *sp, char *cmds, ...)
 		good = 1;
 	}
 	if (!good) 
+		/* XXX: report error how ? */
 		BAN_Free(b);
 	else
 		BAN_Insert(b);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_purge_string(struct sess *sp, char *str, ...)
+{
+	char *p, *a1, *a2, *a3;
+	char **av;
+	va_list ap;
+	struct ban *b;
+	int good;
+	int i;
+
+	va_start(ap, str);
+	p = vrt_assemble_string(sp->http, NULL, str, ap);
+	if (p == NULL)
+		/* XXX: report error how ? */
+		return;
+
+	av = ParseArgv(p, 0);
+	if (av[0] != NULL) {
+		/* XXX: report error how ? */
+		FreeArgv(av);
+		return;
+	}
+	b = BAN_New();
+	good = 0;
+	for (i = 1; ; i += 3) {
+		a1 = av[i];
+		if (a1 == NULL)
+			break;
+		good = 0;
+		a2 = av[i + 1];
+		if (a2 == NULL)
+			break;
+		a3 = av[i + 2];
+		if (a3 == NULL)
+			break;
+		if (BAN_AddTest(NULL, b, a1, a2, a3))
+			break;
+		good = 1;
+	}
+	if (!good) 
+		/* XXX: report error how ? */
+		BAN_Free(b);
+	else
+		BAN_Insert(b);
+	FreeArgv(av);
 }
 
 /*--------------------------------------------------------------------

@@ -401,7 +401,7 @@ parse_purge(struct tokenlist *tl)
 		do
 			Fb(tl, 0, ", ");
 		while (vcc_StringVal(tl));
-		Fb(tl, 0, ", 0);\n");
+		Fb(tl, 0, "vrt_magic_string_end);\n");
 	}
 
 	Expect(tl, ')');
