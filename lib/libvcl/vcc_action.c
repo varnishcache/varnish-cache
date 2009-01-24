@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "vsb.h"
 
@@ -347,12 +348,22 @@ parse_unset(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static const struct purge_var {
+	const char	*name;
+	unsigned	flag;
+} purge_var[] = {
+#define PVAR(a, b, c)   { a, b },
+#include "purge_vars.h"
+#undef PVAR     
+        { 0, 0 }
+};
+
 static void
 parse_purge(struct tokenlist *tl)
 {
+	const struct purge_var *pv;
 
 	vcc_NextToken(tl);
-
 
 	Expect(tl, '(');
 	vcc_NextToken(tl);
@@ -362,6 +373,25 @@ parse_purge(struct tokenlist *tl)
 		tl->indent += INDENT;
 		while (1) {
 			ExpectErr(tl, VAR);
+
+			/* Check valididity of purge variable */
+			for (pv = purge_var; pv->name != NULL; pv++) {
+				if (!strncmp(pv->name, tl->t->b,
+				    strlen(pv->name)))
+					break;
+			}
+			if (pv->name == NULL) {
+				vsb_printf(tl->sb, "Unknown purge variable.");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			if (pv->flag &&
+			    tl->t->b + strlen(pv->name) >= tl->t->e) {
+				vsb_printf(tl->sb, "Missing header name.");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+
 			Fb(tl, 1, "  \"%.*s\",\n", PF(tl->t));
 			vcc_NextToken(tl);
 			switch(tl->t->tok) {
