@@ -53,6 +53,8 @@ vcc_regexp(struct tokenlist *tl, int sub)
 	int i;
 
 	Expect(tl, CSTR);
+	if (tl->err)
+		return (NULL);
 	memset(&t, 0, sizeof t);
 	i = regcomp(&t, tl->t->dec, REG_EXTENDED | (sub ? 0 : REG_NOSUB));
 	if (i != 0) {
@@ -88,6 +90,8 @@ vcc_regsub(struct tokenlist *tl, int all)
 	Fb(tl, 0, "VRT_regsub(sp, %d, ", all);
 
 	Expect(tl, '(');
+	if (tl->err)
+		return (0);
 	vcc_NextToken(tl);
 
 	if (!vcc_StringVal(tl)) {
@@ -96,14 +100,20 @@ vcc_regsub(struct tokenlist *tl, int all)
 	}
 
 	Expect(tl, ',');
+	if (tl->err)
+		return (0);
 	vcc_NextToken(tl);
 
 	Expect(tl, CSTR);
+	if (tl->err)
+		return (0);
 	p = vcc_regexp(tl, 1);
 	vcc_NextToken(tl);
 	Fb(tl, 0, ", %s, ", p);
 
 	Expect(tl, ',');
+	if (tl->err)
+		return (0);
 	vcc_NextToken(tl);
 
 	if (!vcc_StringVal(tl)) {
@@ -112,6 +122,8 @@ vcc_regsub(struct tokenlist *tl, int all)
 	}
 
 	Expect(tl, ')');
+	if (tl->err)
+		return (0);
 	vcc_NextToken(tl);
 	Fb(tl, 0, ")");
 
