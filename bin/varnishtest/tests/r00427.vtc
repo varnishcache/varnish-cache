@@ -1,0 +1,43 @@
+# $Id$
+
+test "client close in ESI delivery"
+
+server s1 {
+	rxreq
+	txresp -body {
+		<esi:include src="/foo">
+		<esi:include src="/bar">
+		<esi:include src="/barf">
+	} 
+
+	rxreq
+	expect req.url == "/foo"
+	sema r1 sync 2
+	sema r1 sync 2
+	txresp -body "[foo]"
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "[bar]"
+
+	rxreq
+	expect req.url == "/barf"
+	txresp -body "[barf]"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq
+	sema r1 sync 2
+} -run
+
+client c1 {
+	sema r1 sync 2
+	txreq
+	rxresp
+} -run
