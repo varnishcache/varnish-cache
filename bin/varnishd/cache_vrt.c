@@ -697,9 +697,10 @@ VRT_double_string(const struct sess *sp, double num)
 const char *
 VRT_backend_string(struct sess *sp)
 {
-       CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-       CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-       return (sp->director->vcl_name);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->director == NULL)
+		return (NULL);
+	return (sp->director->vcl_name);
 }
 
 /*--------------------------------------------------------------------*/
