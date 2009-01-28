@@ -318,9 +318,16 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
 	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f",
 	    sp->obj->xid, a, sp->t_req);
-	if (a < 0)
-		a = 0;
-	sp->obj->ttl = sp->t_req + a;
+	/*
+	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
+	 * any longer, but it will still be for up to 1s - epsilon because
+	 * of the rounding to seconds.
+	 * We special case and make sure that rounding does not surprise.
+	 */
+	if (a <= 0)
+		sp->obj->ttl = sp->t_req - 1;
+	else
+		sp->obj->ttl = sp->t_req + a;
 	EXP_Rearm(sp->obj);
 }
 
