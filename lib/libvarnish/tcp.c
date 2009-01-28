@@ -216,8 +216,8 @@ void
 TCP_set_read_timeout(int s, double seconds)
 {
 	struct timeval timeout;
-	timeout.tv_sec = floor(seconds);
-	timeout.tv_usec = 1e6 * (seconds - timeout.tv_sec);
+	timeout.tv_sec = (int)floor(seconds);
+	timeout.tv_usec = (int)(1e6 * (seconds - timeout.tv_sec));
 #ifdef SO_RCVTIMEO_WORKS
 	AZ(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
 #endif

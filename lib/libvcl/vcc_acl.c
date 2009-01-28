@@ -321,20 +321,20 @@ vcc_acl_entry(struct tokenlist *tl)
  * Emit a function to match the ACL we have collected
  */
 
+/*
+ * XXX: this is semi-silly.  We try really hard to not depend in the
+ * XXX: systems include files while compiling VCL, but we need to know
+ * XXX: the size of the sa_familiy member.
+ * XXX: FlexeLint complains about these antics, so isolate it in a
+ * XXX: separate function.
+ */
+
+/*lint -save -e506 -e774 -e550 */
 static void
-vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
+c_is_a_silly_language(const struct tokenlist *tl)
 {
-	struct acl_e *ae;
-	int depth, l, m, i;
-	unsigned at[VRT_ACL_MAXADDR + 1];
-	const char *oc;
 	struct sockaddr sa;
 
-	Fh(tl, 0, "\nstatic int\n");
-	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
-	    anon ? "anon" : "named", acln);
-	Fh(tl, 0, "{\n");
-	Fh(tl, 0, "\tconst unsigned char *a;\n");
 	assert(sizeof (unsigned char) == 1);
 	assert(sizeof (unsigned short) == 2);
 	assert(sizeof (unsigned int) == 4);
@@ -346,6 +346,23 @@ vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
 		Fh(tl, 0, "\tunsigned int fam;\n");
 	else
 		assert(0 == __LINE__);
+}
+/*lint -restore */
+
+static void
+vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
+{
+	struct acl_e *ae;
+	int depth, l, m, i;
+	unsigned at[VRT_ACL_MAXADDR + 1];
+	const char *oc;
+
+	Fh(tl, 0, "\nstatic int\n");
+	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
+	    anon ? "anon" : "named", acln);
+	Fh(tl, 0, "{\n");
+	Fh(tl, 0, "\tconst unsigned char *a;\n");
+	c_is_a_silly_language(tl);
 
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\ta = p;\n");
