@@ -209,8 +209,10 @@ vca_kqueue_init(void)
 	int i;
 
 	i = fcntl(vca_pipes[0], F_GETFL);
+	assert(i != -1);
 	i |= O_NONBLOCK;
 	i = fcntl(vca_pipes[0], F_SETFL, i);
+	assert(i != -1);
 
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
 }
