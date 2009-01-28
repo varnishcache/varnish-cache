@@ -228,7 +228,6 @@ struct object *
 HSH_Lookup(struct sess *sp)
 {
 	struct worker *w;
-	struct http *h;
 	struct objhead *oh;
 	struct object *o, *busy_o, *grace_o;
 
@@ -237,7 +236,6 @@ HSH_Lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	AN(hash);
 	w = sp->wrk;
-	h = sp->http;
 
 	HSH_Prealloc(sp);
 	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
