@@ -143,6 +143,9 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-smalloc) size \"%s\": %s\n", av[0], e);
 	if ((u != (uintmax_t)(size_t)u)) 
 		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
+
+	printf("storage_malloc: max size %ju MB.\n",
+	    u / (1024 * 1024));
 	sma_max = u;
 }
 
