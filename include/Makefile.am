@@ -26,6 +26,7 @@ nobase_noinst_HEADERS = \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
+	purge_vars.h \
 	vsha256.h \
 	vqueue.h \
 	vpf.h \
