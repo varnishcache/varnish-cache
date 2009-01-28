@@ -251,6 +251,7 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 	case '~':
 		vcc_NextToken(tl);
 		p = vcc_regexp(tl, 0);
+		ERRCHK(tl);
 		vcc_NextToken(tl);
 		Fb(tl, 1, "VRT_re_match(%s, %s)\n", vp->rname, p);
 		break;
