@@ -157,6 +157,11 @@ vbp_poke(struct vbp_target *vt)
 		/* Got no connection: failed */
 		return;
 	}
+	if (tmo <= 0) {
+		/* Spent too long time getting it */
+		TCP_close(&s);
+		return;
+	}
 
 	/* Send the request */
 	i = write(s, vt->req, vt->req_len);
