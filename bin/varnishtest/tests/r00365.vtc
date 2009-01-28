@@ -1,0 +1,31 @@
+# $Id$
+
+test "Test restarts in vcl_hit"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -body "1"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -body "22"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_hit {
+		set obj.cacheable = false;
+		restart;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+} -run
