@@ -351,7 +351,7 @@ Fetch(struct sess *sp)
 
 	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(w, &vc->fd);
-	http_Write(w, hp, 0);	/* XXX: stats ? */
+	(void)http_Write(w, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);

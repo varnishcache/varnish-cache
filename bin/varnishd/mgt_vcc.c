@@ -263,7 +263,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 static char *
 mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 {
-	char *vf = NULL;
+	char *vf;
 
 	*sb = vsb_newauto();
 	XXXAN(*sb);

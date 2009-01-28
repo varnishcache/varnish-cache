@@ -454,7 +454,7 @@ telnet_accept(const struct vev *ev, int what)
 	return (0);
 }
 
-int
+void
 mgt_cli_telnet(int dflag, const char *T_arg)
 {
 	struct vss_addr **ta;
@@ -494,5 +494,4 @@ mgt_cli_telnet(int dflag, const char *T_arg)
 	}
 	free(addr);
 	free(port);
-	return (0);
 }
