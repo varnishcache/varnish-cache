@@ -143,6 +143,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oe = o->objexp;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	Lck_AssertHeld(&exp_mtx);
 
 	if (o->prefetch < 0.0) {
 		when = o->ttl + o->prefetch;
@@ -184,8 +185,9 @@ EXP_Insert(struct object *o)
 
 	assert(o->entered != 0 && !isnan(o->entered));
 	oe->lru_stamp = o->entered;
-	(void)update_object_when(o);
 	Lck_Lock(&exp_mtx);
+	assert(oe->timer_idx == BINHEAP_NOIDX);
+	(void)update_object_when(o);
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru, oe, list);
@@ -245,7 +247,11 @@ EXP_Rearm(const struct object *o)
 		return;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 	Lck_Lock(&exp_mtx);
-	if (update_object_when(o)) {
+	/*
+	 * The hang-man might have this object of the binheap while
+	 * tending to a timer.  If so, we do not muck with it here.
+	 */
+	if (oe->timer_idx != BINHEAP_NOIDX && update_object_when(o)) {
 		/*
 		 * XXX: this could possibly be optimized by shuffling
 		 * XXX: up or down, but that leaves some very nasty
@@ -332,8 +338,9 @@ exp_timer(void *arg)
 				WSL(&ww, SLT_Debug, 0, "Attempt Prefetch %u",
 				    o->xid);
 			}
-			(void)update_object_when(o);
 			Lck_Lock(&exp_mtx);
+			assert(oe->timer_idx == BINHEAP_NOIDX);
+			(void)update_object_when(o);
 			binheap_insert(exp_heap, oe);
 			assert(oe->timer_idx != BINHEAP_NOIDX);
 			Lck_Unlock(&exp_mtx);
@@ -347,6 +354,7 @@ exp_timer(void *arg)
 			WSL(&ww, SLT_ExpKill, 0,
 			    "%u %d", o->xid, (int)(o->ttl - t));
 			Lck_Lock(&exp_mtx);
+			assert(oe->timer_idx == BINHEAP_NOIDX);
 			VTAILQ_REMOVE(&lru, o->objexp, list);
 			oe->on_lru = 0;
 			VSL_stats->n_expired++;
