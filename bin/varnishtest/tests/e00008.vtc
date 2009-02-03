@@ -5,41 +5,41 @@ test "ESI parsing errors"
 server s1 {
 	rxreq 
 	txresp -body {
-		<html>
-		Before include
-		<!--esi <esi:include src="/body"/> -->
-		After include
-		<!-- normal comment -->
-		<esi:bogosity/>
-		<esi:comment>	
-		 foo
-		 </esi:comment>
-		<esi:comment bar />
-
-		<esi:remove>
-			<esi:comment foo/>
-		</esi:remove>
-
-		<esi:remove>
-			<esi:remove>
-			bar
-			</esi:remove>
-		</esi:remove>
-		</>
-		<esi:remove/>
-
-		<esi:include
+		<html>					1
+		Before include				2
+		<!--esi <esi:include src="/body"/> -->	3
+		After include				4
+		<!-- normal comment -->			5
+		<esi:bogosity/>				6
+		<esi:comment>				7
+		 foo					8
+		 </esi:comment>				9
+		<esi:comment bar />			10
+							11
+		<esi:remove>				12
+			<esi:comment foo/>		13
+		</esi:remove>				14
+							15
+		<esi:remove>				16
+			<esi:remove>			17
+			bar				18
+			</esi:remove>			19
+		</esi:remove>				20
+		</>					21
+		<esi:remove/>				22
+							23
+		<esi:include				24
 	
-                                                             >
-
-		<esi:include  aaa />
-		<esi:include  k.=./>
-		<esi:include  src/>
-		<esi:include  src=/>
-		<esi:include  src= />
-		</esi:include>
-		<esi:include  src="foofof />
-		<esi:include  foo=bar src=/body2 />
+                                                             >	25
+							26
+		<esi:include  aaa />			27
+		<esi:include  k.=./>			28
+		<esi:include  src/>			29
+		<esi:include  src=/>			30
+		<esi:include  src= />			31
+		</esi:include>				32
+		<esi:include  src="foofof />		33
+		<esi:include  foo=bar src=/body2 />	34
 	}
 	rxreq 
 	expect req.url == "/body"
@@ -61,14 +61,18 @@ varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		esi;
 	}
-} -start
+} -start 
+
+varnish v1 -cliok "param.set esi_syntax 6" 
+
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
 
 client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 231
+	expect resp.bodylen == 385
 }
 
 client c1 -run
-varnish v1 -expect esi_errors == 15
+varnish v1 -expect esi_errors == 14
