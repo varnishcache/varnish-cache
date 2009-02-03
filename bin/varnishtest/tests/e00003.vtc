@@ -27,6 +27,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq 
 	rxresp
+	expect resp.bodylen == 65
 	expect resp.status == 200
 }
 

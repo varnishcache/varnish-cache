@@ -31,6 +31,7 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 72
 	expect resp.http.content-length == 72
 } -run
 
@@ -40,5 +41,6 @@ client c1 {
 	txreq -url bar
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 37
 	expect resp.http.transfer-encoding == "chunked"
 } -run
