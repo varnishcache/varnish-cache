@@ -615,8 +615,6 @@ esi_parse(struct esi_work *ew)
 {
 	char *p;
 
-printf("{%.*s}\n", Tlen(ew->t), ew->t.b);
-usleep(100000);
 	if (params->esi_syntax & 0x4)
 		VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
 		    Tlen(ew->t), Tlen(ew->t), ew->t.b);
