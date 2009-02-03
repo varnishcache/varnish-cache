@@ -221,6 +221,9 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	struct storage *st;
 	unsigned v;
 
+	if (fetchfrag > 0)
+		WSL(sp->wrk, SLT_Debug, sp->fd,
+		    "Fetch %d byte segments:", fetchfrag);
 	p = NULL;
 	v = 0;
 	st = NULL;
