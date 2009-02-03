@@ -130,3 +130,5 @@ MAC_STAT(n_purge_dups,		uint64_t, 'a', "N duplicate purges removed")
 MAC_STAT(hcb_nolock,		uint64_t, 'a', "HCB Lookups without lock")
 MAC_STAT(hcb_lock,		uint64_t, 'a', "HCB Lookups with lock")
 MAC_STAT(hcb_insert,		uint64_t, 'a', "HCB Inserts")
+
+MAC_STAT(esi_parse,		uint64_t, 'a', "Objects ESI parsed (unlock)")
