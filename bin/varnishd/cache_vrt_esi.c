@@ -615,6 +615,8 @@ esi_parse(struct esi_work *ew)
 {
 	char *p;
 
+printf("{%.*s}\n", Tlen(ew->t), ew->t.b);
+usleep(100000);
 	if (params->esi_syntax & 0x4)
 		VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
 		    Tlen(ew->t), Tlen(ew->t), ew->t.b);
@@ -662,21 +664,25 @@ static int
 contain_esi(struct object *obj) {
 	struct storage *st;
 	unsigned u;
-	const char *r;
+	const char *r, *r2;
 	static const char *wanted = "<esi:";
+	static const char *wanted2 = "<!--esi";
 
 	/*
 	 * Do a fast check to see if there is any '<esi:' sequences at all
 	 */
 	r = wanted;
+	r2 = wanted2;
 	VTAILQ_FOREACH(st, &obj->store, list) {
 		AN(st);
 		for (u = 0; u < st->len; u++) {
 			if (st->ptr[u] != *r) {
 				r = wanted;
-				continue;
-			}
-			if (*++r == '\0')
+			} else if (*++r == '\0')
+				return (1);
+			if (st->ptr[u] != *r2) {
+				r2 = wanted2;
+			} else if (*++r2 == '\0')
 				return (1);
 		}
 	}
