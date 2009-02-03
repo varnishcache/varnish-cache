@@ -231,6 +231,8 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 	memcpy(p + SHMLOG_DATA, t.b, l);
 	vsl_hdr(tag, p, l, id);
 	w->wlr++;
+	if (params->diag_bitmap & 0x10000)
+		WSL_Flush(w, 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -269,6 +271,8 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		w->wlr++;
 	}
 	va_end(ap);
+	if (params->diag_bitmap & 0x10000)
+		WSL_Flush(w, 0);
 }
 
 /*--------------------------------------------------------------------*/
