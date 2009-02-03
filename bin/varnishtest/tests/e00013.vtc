@@ -1,0 +1,25 @@
+# $Id$
+
+test "All white-space object, in multiple storage segments"
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -hdr "Connection: close"
+        send {                                         }
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+                esi;
+        }
+} -start
+
+varnish v1 -cliok "debug.fragfetch 4"
+
+client c1 {
+        txreq -url /foo
+        rxresp
+} -run
+
+varnish v1 -expect esi_parse == 0

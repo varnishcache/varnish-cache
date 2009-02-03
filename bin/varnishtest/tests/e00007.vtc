@@ -22,7 +22,9 @@ varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		esi;
 	}
-} -start -cli "debug.fragfetch 32"
+} -start
+
+varnish v1 -cliok "debug.fragfetch 32"
 
 client c1 {
 	txreq -url /foo/bar -hdr "Host: froboz"
