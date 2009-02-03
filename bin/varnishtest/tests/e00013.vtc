@@ -23,3 +23,4 @@ client c1 {
 } -run
 
 varnish v1 -expect esi_parse == 0
+varnish v1 -expect esi_errors == 0

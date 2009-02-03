@@ -44,3 +44,4 @@ client c1 {
 	expect resp.bodylen == 37
 	expect resp.http.transfer-encoding == "chunked"
 } -run
+varnish v1 -expect esi_errors == 1

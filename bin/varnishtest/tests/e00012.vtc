@@ -44,3 +44,4 @@ client c1 {
         expect resp.status == 200
         expect resp.bodylen == 151
 } -run
+varnish v1 -expect esi_errors == 0
