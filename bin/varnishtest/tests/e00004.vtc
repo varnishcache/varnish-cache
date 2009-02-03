@@ -28,6 +28,7 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 67
 }
 
 client c1 -run
