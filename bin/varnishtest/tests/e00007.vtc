@@ -2,17 +2,30 @@
 
 test "ESI spanning storage bits"
 
+# NB!  The layout of the body in the response is very carefully
+# NB!  tuned to give the desired code coverage.
+# NB!  It should look like this in the varnishlog:
+# NB!    7 Debug        c "Fetch 32 byte segments:"
+# NB!    7 Debug        c "%0a%09%09<html>filler%0a%09%09This is before"
+# NB!    7 Debug        c " the test%0a%09%09<![CDATA[foooooooooo"
+# NB!    7 Debug        c "ooooooooobar]]>%0a%09%09filler<esi:rem"
+# NB!    7 Debug        c "ove>%0a%09%09This is a test: Unseen Un"
+# NB!    7 Debug        c "iversity%0a%09%09Department of cruel a"
+# NB!    7 Debug        c "nd unjust geography%0a%09%09</esi:remo"
+# NB!    7 Debug        c "ve>%0a%09%09This is a test: Hello worl"
+# NB!    7 Debug        c "d%0a%09"
 
 server s1 {
 	rxreq 
 	expect req.url == "/foo/bar"
 	txresp -hdr "Connection: close"
 	send {
-		<html>
+		<html>filler
 		This is before the test
-		<![CDATA[fooooooobar]]>
-		<esi:remove>
+		<![CDATA[fooooooooooooooooooobar]]>
+		filler<esi:remove>
 		This is a test: Unseen University
+		Department of cruel and unjust geography
 		</esi:remove>
 		This is a test: Hello world
 	}
@@ -30,6 +43,7 @@ client c1 {
 	txreq -url /foo/bar -hdr "Host: froboz"
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 120
 }
 
 client c1 -run
