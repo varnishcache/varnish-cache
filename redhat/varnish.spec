@@ -122,6 +122,13 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 %endif
 
 %check
+# rhel5 on ppc64 is just too strange
+%ifarch ppc64
+	%if 0%{?rhel} > 4
+		cp bin/varnishd/.libs/varnishd bin/varnishd/lt-varnishd
+	%endif
+%endif
+
 LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
 %{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
