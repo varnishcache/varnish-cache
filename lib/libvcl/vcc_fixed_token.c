@@ -271,7 +271,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "g);\n\n/* Regexp related */\nvoid VRT_re_init(void **,");
 	vsb_cat(sb, " const char *, int sub);\nvoid VRT_re_fini(void *);\n");
 	vsb_cat(sb, "int VRT_re_match(const char *, void *re);\n");
-	vsb_cat(sb, "int VRT_re_test(struct vsb *, const char *, int sub);\n");
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all,");
 	vsb_cat(sb, " const char *,\n    void *, const char *);\n");
 	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp,  const char *, ...);");

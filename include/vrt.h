@@ -136,7 +136,6 @@ void VRT_acl_log(const struct sess *, const char *msg);
 void VRT_re_init(void **, const char *, int sub);
 void VRT_re_fini(void *);
 int VRT_re_match(const char *, void *re);
-int VRT_re_test(struct vsb *, const char *, int sub);
 const char *VRT_regsub(const struct sess *sp, int all, const char *,
     void *, const char *);
 
