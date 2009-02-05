@@ -167,8 +167,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3588 2009-02-05 09");
-	vsb_cat(sb, ":34:34Z tfheen $\n *\n * NB:  This file is machine gen");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3601 2009-02-05 10");
+	vsb_cat(sb, ":21:48Z tfheen $\n *\n * NB:  This file is machine gen");
 	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit vcc_gen_fixed_token.");
 	vsb_cat(sb, "tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");

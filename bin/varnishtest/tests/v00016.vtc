@@ -2,15 +2,19 @@
 
 test "Various VCL compiler coverage tests"
 
+shell "true > /tmp/_varnishtest_empty_file"
+
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	include "/dev/null" ;
+	include "/tmp/_varnishtest_empty_file" ;
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	include "/dev/null" |
+	include "/tmp/_varnishtest_empty_file" |
 }
+
+shell "rm -f /tmp/_varnishtest_empty_file"
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
