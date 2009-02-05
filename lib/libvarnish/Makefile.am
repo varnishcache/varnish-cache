@@ -10,6 +10,7 @@ libvarnish_la_SOURCES = \
 	argv.c \
 	assert.c \
 	binary_heap.c \
+	subproc.c \
 	cli.c \
 	cli_common.c \
 	crc32.c \
