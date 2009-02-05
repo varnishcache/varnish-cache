@@ -1,0 +1,50 @@
+# $Id: b00019.vtc 3300 2008-10-15 09:52:15Z tfheen $
+
+test "Check the precedence for timeouts"
+
+server s1 -listen 127.0.0.1:9080 {
+	rxreq
+	expect req.url == "from_backend"
+	delay 1; 
+	txresp
+} -start
+server s2 -listen 127.0.0.1:9180 {
+	rxreq
+	expect req.url == "from_vcl"
+	delay 1.5;
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.first_byte_timeout = 2s;
+	}
+	backend b2 {
+		.host = "127.0.0.1";
+		.port = "9180";
+		.first_byte_timeout = 1s;
+	}
+
+	sub vcl_recv {
+		if (req.url  == "from_backend") {
+			set req.backend = b1;
+			pass;
+		}
+		set req.backend = b2;
+	}
+	sub vcl_miss {
+		set bereq.first_byte_timeout = 2s;
+	}
+} -start
+varnish v1 -cliok "param.set first_byte_timeout 0.5"
+
+client c1 {
+	txreq -url "from_backend"
+	rxresp
+	expect resp.status == 200
+	txreq -url "from_vcl"
+	rxresp
+	expect resp.status == 200
+} -run

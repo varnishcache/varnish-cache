@@ -243,6 +243,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv4_sockaddr;\n");
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv6_sockaddr;\n");
 	vsb_cat(sb, "\n\tdouble\t\t\t\tconnect_timeout;\n");
+	vsb_cat(sb, "\tdouble\t\t\t\tfirst_byte_timeout;\n");
+	vsb_cat(sb, "\tdouble\t\t\t\tbetween_bytes_timeout;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tmax_connections;\n");
 	vsb_cat(sb, "\tstruct vrt_backend_probe\tprobe;\n");
 	vsb_cat(sb, "};\n\n/*\n * A director with a predictable reply\n");
@@ -309,9 +311,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3580 2009-02-05 08:45:25Z ");
-	vsb_cat(sb, "tfheen $\n *\n * NB:  This file is machine generated, ");
-	vsb_cat(sb, "DO NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3169 2008-09-08 09:49:01Z tfheen");
+	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
+	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
@@ -335,9 +337,16 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " const char *, ...);\nconst char * VRT_r_bereq_proto(c");
 	vsb_cat(sb, "onst struct sess *);\nvoid VRT_l_bereq_proto(const str");
 	vsb_cat(sb, "uct sess *, const char *, ...);\n");
-	vsb_cat(sb, "const char * VRT_r_obj_proto(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_proto(const struct sess *, const char *");
-	vsb_cat(sb, ", ...);\nint VRT_r_obj_status(const struct sess *);\n");
+	vsb_cat(sb, "double VRT_r_bereq_connect_timeout(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_bereq_connect_timeout(struct sess *, double");
+	vsb_cat(sb, ");\ndouble VRT_r_bereq_first_byte_timeout(struct sess ");
+	vsb_cat(sb, "*);\nvoid VRT_l_bereq_first_byte_timeout(struct sess *");
+	vsb_cat(sb, ", double);\ndouble VRT_r_bereq_between_bytes_timeout(s");
+	vsb_cat(sb, "truct sess *);\nvoid VRT_l_bereq_between_bytes_timeout");
+	vsb_cat(sb, "(struct sess *, double);\nconst char * VRT_r_obj_proto");
+	vsb_cat(sb, "(const struct sess *);\nvoid VRT_l_obj_proto(const str");
+	vsb_cat(sb, "uct sess *, const char *, ...);\n");
+	vsb_cat(sb, "int VRT_r_obj_status(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_status(const struct sess *, int);\n");
 	vsb_cat(sb, "const char * VRT_r_obj_response(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_response(const struct sess *, const cha");

@@ -337,6 +337,11 @@ struct sess {
 	double			t_resp;
 	double			t_end;
 
+	/* Timeouts */
+	double connect_timeout;
+	double first_byte_timeout;
+	double between_bytes_timeout;
+
 	/* Acceptable grace period */
 	double			grace;
 
@@ -538,6 +543,8 @@ struct sess *SES_New(const struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
 void SES_RefSrcAddr(struct sess *sp);
 void SES_Charge(struct sess *sp);
+void SES_ResetBackendTimeouts(struct sess *sp);
+void SES_InheritBackendTimeouts(struct sess *sp);
 
 /* cache_shmlog.c */
 void VSL_Init(void);
