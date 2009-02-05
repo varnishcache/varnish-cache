@@ -46,7 +46,7 @@
 
 struct hsl_entry {
 	VTAILQ_ENTRY(hsl_entry)	list;
-	struct objhead		*obj;
+	struct objhead		*oh;
 	unsigned		refcnt;
 };
 
@@ -73,34 +73,34 @@ hsl_start(void)
  */
 
 static struct objhead *
-hsl_lookup(const struct sess *sp, struct objhead *nobj)
+hsl_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct hsl_entry *he, *he2;
 	int i;
 
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(he, &hsl_head, list) {
-		i = HSH_Compare(sp, he->obj);
+		i = HSH_Compare(sp, he->oh);
 		if (i < 0)
 			continue;
 		if (i > 0)
 			break;
 		he->refcnt++;
-		nobj = he->obj;
+		noh = he->oh;
 		Lck_Unlock(&hsl_mtx);
-		return (nobj);
+		return (noh);
 	}
-	if (nobj != NULL) {
+	if (noh != NULL) {
 		he2 = calloc(sizeof *he2, 1);
 		XXXAN(he2);
-		he2->obj = nobj;
+		he2->oh = noh;
 		he2->refcnt = 1;
 
-		nobj->hashpriv = he2;
-		nobj->hash = malloc(sp->lhashptr);
-		XXXAN(nobj->hash);
-		nobj->hashlen = sp->lhashptr;
-		HSH_Copy(sp, nobj);
+		noh->hashpriv = he2;
+		noh->hash = malloc(sp->lhashptr);
+		XXXAN(noh->hash);
+		noh->hashlen = sp->lhashptr;
+		HSH_Copy(sp, noh);
 
 		if (he != NULL)
 			VTAILQ_INSERT_BEFORE(he, he2, list);
@@ -108,7 +108,7 @@ hsl_lookup(const struct sess *sp, struct objhead *nobj)
 			VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	}
 	Lck_Unlock(&hsl_mtx);
-	return (nobj);
+	return (noh);
 }
 
 /*--------------------------------------------------------------------
