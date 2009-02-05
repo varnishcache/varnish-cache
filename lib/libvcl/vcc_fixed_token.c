@@ -310,9 +310,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3169 2008-09-08 09:49:01Z tfheen");
-	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
-	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3580 2009-02-05 08:45:25Z ");
+	vsb_cat(sb, "tfheen $\n *\n * NB:  This file is machine generated, ");
+	vsb_cat(sb, "DO NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
