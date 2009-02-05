@@ -70,8 +70,9 @@ AC_SUBST(LIBM)
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
-AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS([sys/filio.h])
 AC_CHECK_HEADERS([sys/mount.h])
+AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/statvfs.h])
 AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([netinet/in.h])
@@ -109,7 +110,8 @@ AC_CHECK_FUNCS([pthread_set_name_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 LIBS="${save_LIBS}"
 
-## This one is tricky, there are multiple versions
+# sendfile is tricky: there are multiple versions, and most of them
+# don't work.
 case $target in
 *-*-freebsd*)
 	AC_CACHE_CHECK([whether sendfile works],
@@ -125,28 +127,37 @@ case $target in
 	    [ac_cv_so_sendfile_works=yes],
 	    [ac_cv_so_sendfile_works=no])
 	  ])
-	if test "$ac_cv_so_sendfile_works" = yes; then
-	   AC_DEFINE([SENDFILE_WORKS], [1], [Define if SENDFILE works])
-	fi
- 	;;
-*-*-solaris*)
-	AC_CHECK_HEADERS([sys/filio.h])
-	AC_CHECK_LIB(sendfile, sendfile)
-	AC_CHECK_LIB(umem, malloc)
-	AC_CHECK_HEADERS([umem.h])
-
-	if test "$ac_cv_lib_sendfile_sendfile" = yes; then
-		save_LIBS="${LIBS}"
-		LIBS="${NET_LIBS}"
-		AC_CHECK_FUNCS([sendfile])
-		AC_CHECK_FUNCS([sendfilev])
-		LIBS="${save_LIBS}"
-	fi
 	;;
+#*-*-solaris*)
+#	save_LIBS="${LIBS}"
+#	LIBS="${NET_LIBS}"
+#	AC_CHECK_LIB(sendfile, sendfile)
+#	AC_CHECK_FUNCS([sendfile])
+#	AC_CHECK_FUNCS([sendfilev])
+#	NET_LIBS="${LIBS}"
+#	LIBS="${save_LIBS}"
 *)
 	AC_MSG_WARN([won't look for sendfile() on $target])
 	;;
 esac
+if test "$ac_cv_so_sendfile_works" = yes; then
+	AC_DEFINE([SENDFILE_WORKS], [1], [Define if SENDFILE works])
+fi
+
+# Userland slab allocator, available only on Solaris
+case $target in
+*-*-solaris*)
+	AC_CHECK_HEADERS([umem.h])
+	if test "$ac_cv_have_umem_h" = yes; then
+		save_LIBS="${LIBS}"
+		LIBS=""
+		AC_CHECK_LIB(umem, umem_alloc)
+		LIBUMEM="${LIBS}"
+		LIBS="${save_LIBS}"
+	fi
+	;;
+esac
+AC_SUBST(LIBUMEM)
 
 # These functions are provided by libcompat on platforms where they
 # are not available

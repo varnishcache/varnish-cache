@@ -80,7 +80,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
 	@JEMALLOC_LDADD@ \
-	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
+	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM} ${LIBUMEM}
 
 EXTRA_DIST = default.vcl
 DISTCLEANFILES = default_vcl.h
@@ -93,4 +93,3 @@ default_vcl.h:	default.vcl Makefile
 
 # Explicitly record dependency
 mgt_vcc.c:	default_vcl.h
-
