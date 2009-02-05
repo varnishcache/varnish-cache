@@ -81,7 +81,7 @@ static enum {
 	CH_DIED = 4
 }			child_state = CH_STOPPED;
 
-static const char *ch_state[] = {
+static const char * const ch_state[] = {
 	[CH_STOPPED] =	"stopped",
 	[CH_STARTING] =	"starting",
 	[CH_RUNNING] =	"running",

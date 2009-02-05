@@ -104,7 +104,7 @@ vcl_fixed_token(const char *p, const char **q)
 	}
 }
 
-const char *vcl_tnames[256] = {
+const char * const vcl_tnames[256] = {
 	['!'] = "'!'",
 	['%'] = "'%'",
 	['&'] = "'&'",
