@@ -56,16 +56,17 @@ client c1 {
 } -run
 
 
-# Now add another purge
+# Now add another two purge, the hash should not be hit.
+varnish v1 -cliok "purge.hash FOO"
 varnish v1 -cliok "purge.url FOO"
-varnish v1 -expect n_purge_add == 4
+varnish v1 -expect n_purge_add == 5
 
 # Enable dup removal of purges
 varnish v1 -cliok "param.set purge_dups on"
 
 # This should incapacitate the to previous FOO purges.
 varnish v1 -cliok "purge.url FOO"
-varnish v1 -expect n_purge_add == 5
+varnish v1 -expect n_purge_add == 6
 varnish v1 -expect n_purge_dups == 3
 varnish v1 -cliok "purge.list"
 
@@ -81,3 +82,6 @@ varnish v1 -expect n_purge_obj_test == 2
 varnish v1 -expect n_purge_re_test == 2
 varnish v1 -cliok "purge.list"
 
+# Test a bogus regexp
+
+varnish v1 -clierr 106 "purge.url [[["
