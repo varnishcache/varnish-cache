@@ -127,15 +127,15 @@ typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 }
 puts $fo "struct VCL_conf {"
-puts $fo {	unsigned        magic;
-#define VCL_CONF_MAGIC  0x7406c509      /* from /dev/random */
+puts $fo {	unsigned	magic;
+#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 
-        struct director  **director;
-        unsigned        ndirector;
-        struct vrt_ref  *ref;
-        unsigned        nref;
-        unsigned        busy;
-        unsigned        discard;
+	struct director	**director;
+	unsigned	ndirector;
+	struct vrt_ref	*ref;
+	unsigned	nref;
+	unsigned	busy;
+	unsigned	discard;
 
 	unsigned	nsrc;
 	const char	**srcname;
@@ -143,8 +143,8 @@ puts $fo {	unsigned        magic;
 
 	unsigned	nhashcount;
 
-        vcl_init_f      *init_func;
-        vcl_fini_f      *fini_func;
+	vcl_init_f	*init_func;
+	vcl_fini_f	*fini_func;
 }
 foreach m $methods {
 	puts $fo "\tvcl_func_f\t*[lindex $m 0]_func;"
@@ -376,7 +376,7 @@ proc copy_include {n} {
 		}
 		puts -nonewline $fo "\\n"
 		incr n 2
-		if {$n > 53} {
+		if {$n > 30} {
 			puts $fo "\");"
 			set n 0
 		}
