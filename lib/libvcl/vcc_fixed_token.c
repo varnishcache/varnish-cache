@@ -223,8 +223,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3609 2009-02-05 11:");
-	vsb_cat(sb, "14:28Z tfheen $\n *\n * Runtime support for compiled V");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3616 2009-02-05 11:");
+	vsb_cat(sb, "43:20Z tfheen $\n *\n * Runtime support for compiled V");
 	vsb_cat(sb, "CL programs.\n *\n * XXX: When this file is changed, l");
 	vsb_cat(sb, "ib/libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
@@ -311,7 +311,7 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3169 2008-09-08 09:49:01Z tfheen");
+	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3616 2009-02-05 11:43:20Z tfheen");
 	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
 	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
