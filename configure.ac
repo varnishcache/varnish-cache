@@ -110,7 +110,7 @@ AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 LIBS="${save_LIBS}"
 
 ## This one is tricky, there are multiple versions
-case $host in
+case $target in
 *-*-freebsd*)
 	AC_CACHE_CHECK([whether sendfile works],
 	  [ac_cv_so_sendfile_works],
@@ -144,7 +144,7 @@ case $host in
 	fi
 	;;
 *)
-	AC_MSG_WARN([won't look for sendfile() on $host])
+	AC_MSG_WARN([won't look for sendfile() on $target])
 	;;
 esac
 
@@ -178,13 +178,13 @@ AC_ARG_ENABLE(kqueue,
     [enable_kqueue=yes])
 
 if test "$enable_kqueue" = yes; then
-	case $host in
+	case $target in
 	*-*-freebsd* | *-*-darwin9* )
 		AC_CHECK_FUNCS([kqueue])
 		;;
 	*-*-bsd*)
 		# No other BSD has a sufficiently recent implementation
-		AC_MSG_WARN([won't look for kqueue() on $host])
+		AC_MSG_WARN([won't look for kqueue() on $target])
 		ac_cv_func_kqueue=no
 		;;
 	esac
@@ -330,7 +330,7 @@ AC_ARG_VAR([VCC_CC], [C compiler command line for VCL code])
 if test "$ac_cv_env_VCC_CC_set" = "set"; then
 	VCC_CC="$ac_cv_env_VCC_CC_value"
 else
-	case $host in
+	case $target in
 	*-*-solaris*)
 		VCC_CC="cc -Kpic -G -o %o %s"
 		;;
@@ -353,7 +353,7 @@ AS_HELP_STRING([--disable-jemalloc],[do not use jemalloc (default is yes on Linu
 	JEMALLOC_SUBDIR=libjemalloc
 	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
 fi],
-[case $host in #(
+[case $target in #(
 *-*-linux*)
 	JEMALLOC_SUBDIR=libjemalloc
 	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
