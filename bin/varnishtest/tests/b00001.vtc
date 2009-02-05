@@ -19,9 +19,6 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-# Give varnish a chance to update stats
-delay .1
-
 varnish v1 -expect n_object == 0
 varnish v1 -expect client_conn == 1
 varnish v1 -expect client_req == 1
