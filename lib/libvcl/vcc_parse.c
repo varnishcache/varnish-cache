@@ -250,6 +250,7 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 	switch (tl->t->tok) {
 	case '~':
 		vcc_NextToken(tl);
+		ExpectErr(tl, CSTR);
 		p = vcc_regexp(tl, 0);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
