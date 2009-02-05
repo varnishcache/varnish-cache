@@ -126,6 +126,9 @@ WRK_Flush(struct worker *w)
 		i = writev(*w->wfd, w->iov, w->niov);
 		if (i != w->liov)
 			w->werr++;
+		WSL(w, SLT_Debug, *w->wfd,
+		    "Write error, len = %d/%d, errno = %s",
+		    i, w->liov, strerror(errno));
 	}
 	w->liov = 0;
 	w->niov = 0;
