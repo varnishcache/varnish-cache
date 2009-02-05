@@ -14,5 +14,4 @@ libvarnishcompat_la_SOURCES = \
 	srandomdev.c \
 	strlcat.c \
 	strlcpy.c \
-	strndup.c \
-	vis.c
+	strndup.c

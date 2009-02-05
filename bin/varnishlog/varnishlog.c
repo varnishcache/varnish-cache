@@ -47,12 +47,6 @@
 #include "compat/daemon.h"
 #endif
 
-#ifdef HAVE_VIS_H
-#include <vis.h>
-#else
-#include "compat/vis.h"
-#endif
-
 #include "vsb.h"
 #include "vpf.h"
 
