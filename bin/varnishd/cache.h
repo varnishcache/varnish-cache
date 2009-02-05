@@ -615,6 +615,22 @@ void SMS_Finish(struct object *obj);
 #define MTX			pthread_mutex_t
 #define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
 #define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
+
+#ifdef __flexelint_v9__
+#define TRYLOCK(foo, r)						\
+do {								\
+	(r) = pthread_mutex_trylock(foo);			\
+} while (0)
+#define LOCK(foo)						\
+do {								\
+	AZ(pthread_mutex_lock(foo));				\
+} while (0)
+#define UNLOCK(foo)						\
+do {								\
+	AZ(pthread_mutex_unlock(foo));				\
+} while (0)
+
+#else
 #define TRYLOCK(foo, r)						\
 do {								\
 	(r) = pthread_mutex_trylock(foo);			\
@@ -652,6 +668,7 @@ do {								\
 		    "MTX_UNLOCK(%s,%s,%d," #foo ")",		\
 		    __func__, __FILE__, __LINE__);		\
 } while (0)
+#endif
 
 #if defined(HAVE_PTHREAD_MUTEX_ISOWNED_NP)
 #define ALOCKED(mutex)		AN(pthread_mutex_isowned_np((mutex)))
@@ -693,8 +710,7 @@ Tlen(const txt t)
 {
 
 	Tcheck(t);
-	return
-	    ((unsigned)(t.e - t.b));
+	return ((unsigned)(t.e - t.b));
 }
 
 static inline void

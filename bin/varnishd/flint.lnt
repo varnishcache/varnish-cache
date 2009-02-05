@@ -1,4 +1,46 @@
--passes=3
+
+-d__flexelint_v9__=1
+
+//-sem (pthread_mutex_lock, thread_lock)
+-sem (pthread_mutex_trylock, thread_lock)
+-sem (VBE_DropRefLocked, thread_unlock)
+-e459	// unlocked access from func-ptr
+-e454	// mutex not released (...ReleaseLocked)
+-e457	// unprotected access
+
+-esym(458, lbv_assert)	// unlocked access
+-esym(458, params)	// unlocked access
+
+-emacro(835, HTTPH)	// Info 835: A zero has been given as left argument to operator '&'
+-emacro(845, HTTPH)	// Info 845: The left argument to operator '&&' is certain to be 0
+//////////////
+-efunc(1791, pdiff)	// return last on line
+//////////////
+-efile(451, "sys/*.h")	// No include guard
+-efile(451, "machine/*.h")	// No include guard
+-efile(451, "vcl_returns.h")	// No include guard
+-efile(451, "cache_backend_poll.h")	// No include guard
+-efile(451, "steps.h")	// No include guard
+-efile(451, "http_headers.h")	// No include guard
+-efile(451, "stat_field.h")	// No include guard
+-efile(451, "acct_fields.h")	// No include guard
+-efile(451, "config.h")	// No include guard
+//////////////
+// -e458			// unprotected access
+// -e456			// merged locking paths
+-sem(vca_thread_acct, thread_mono)
+-sem(vca_epoll_thread, thread_mono)
+-sem(vca_kqueue_thread, thread_mono)
+-sem(vca_poll_thread, thread_mono)
+-sem(vca_ports_thread, thread_mono)
+-sem(exp_timer, thread_mono)
+-sem(wrk_herdtimer_thread, thread_mono)
+-sem(wrk_herder_thread, thread_mono)
+-esym(458, VSL_stats)
+-esym(458, heritage)
+-esym(458, name_key)
+//////////////
+-passes=1
 
 +libh mgt_event.h
 +libh ../../config.h
