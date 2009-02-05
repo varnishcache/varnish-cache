@@ -297,6 +297,7 @@ struct objhead {
 	void			*hashpriv;
 
 	struct lock		mtx;
+	unsigned		refcnt;
 	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
