@@ -9,7 +9,6 @@
 #include "config.h"
 #include <stdio.h>
 #include <ctype.h>
-#include "config.h"
 #include "vcc_priv.h"
 #include "vsb.h"
 

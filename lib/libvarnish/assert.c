@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "libvarnish.h"
 
 static void

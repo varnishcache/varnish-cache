@@ -41,7 +41,6 @@
 #include <string.h>
 #include <strings.h>
 
-#include "config.h"
 #include "shmlog.h"
 #include "vct.h"
 #include "cache.h"

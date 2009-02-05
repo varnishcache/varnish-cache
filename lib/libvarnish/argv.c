@@ -45,7 +45,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "config.h"
 #include "libvarnish.h"
 
 static int

@@ -67,7 +67,6 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 #include <string.h>
 #include <unistd.h>
 
-#include "config.h"
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif

@@ -43,7 +43,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "config.h"
 #ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
 #endif

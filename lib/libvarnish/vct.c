@@ -30,6 +30,8 @@
  * ctype(3) like functions, according to RFC2616
  */
 
+#include "config.h"
+
 #include <vct.h>
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */

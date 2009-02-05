@@ -56,7 +56,6 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "config.h"
 #include "libvarnish.h"
 
 double

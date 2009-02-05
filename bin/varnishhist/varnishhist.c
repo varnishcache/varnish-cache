@@ -46,7 +46,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "libvarnish.h"
 #include "shmlog.h"
 #include "varnishapi.h"
