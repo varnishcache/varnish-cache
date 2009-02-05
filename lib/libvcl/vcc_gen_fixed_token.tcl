@@ -331,7 +331,7 @@ puts $fo "	}"
 puts $fo "}"
 
 puts $fo ""
-puts $fo "const char *vcl_tnames\[256\] = {"
+puts $fo "const char * const vcl_tnames\[256\] = {"
 foreach i $token2 {
 	puts $fo "\t\[[lindex $i 0]\] = \"[lindex $i 0]\","
 }
