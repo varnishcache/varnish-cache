@@ -122,11 +122,15 @@ tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 			*dest = 0;
 		else if (!strcasecmp(arg, "no"))
 			*dest = 0;
+		else if (!strcasecmp(arg, "false"))
+			*dest = 0;
 		else if (!strcasecmp(arg, "on"))
 			*dest = 1;
 		else if (!strcasecmp(arg, "enable"))
 			*dest = 1;
 		else if (!strcasecmp(arg, "yes"))
+			*dest = 1;
+		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
 			cli_out(cli, "use \"on\" or \"off\"\n");
