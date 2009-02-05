@@ -52,6 +52,7 @@ struct ilck {
 	unsigned		magic;
 #define ILCK_MAGIC		0x7b86c8a5
 	pthread_mutex_t		mtx;
+	int			held;
 	pthread_t		owner;
 	VTAILQ_ENTRY(ilck)	list;
 	const char		*w;
@@ -71,8 +72,9 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (!(params->diag_bitmap & 0x18)) {
 		AZ(pthread_mutex_lock(&ilck->mtx));
-		AZ(ilck->owner);
+		AZ(ilck->held);
 		ilck->owner = pthread_self();
+		ilck->held = 1;
 		return;
 	}
 	r = pthread_mutex_trylock(&ilck->mtx);
@@ -83,8 +85,9 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	} else if (params->diag_bitmap & 0x8) {
 		VSL(SLT_Debug, 0, "MTX_LOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 	}
-	AZ(ilck->owner);
+	AZ(ilck->held);
 	ilck->owner = pthread_self();
+	ilck->held = 1;
 }
 
 void
@@ -93,8 +96,9 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	struct ilck *ilck;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	assert(ilck->owner == pthread_self());
-	ilck->owner = NULL;
+	assert(pthread_equal(ilck->owner, pthread_self()));
+	AN(ilck->held);
+	ilck->held = 0;
 	AZ(pthread_mutex_unlock(&ilck->mtx));
 	if (params->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
@@ -113,7 +117,8 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 		VSL(SLT_Debug, 0,
 		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w);
 	if (r == 0) {
-		AZ(ilck->owner);
+		AZ(ilck->held);
+		ilck->held = 1;
 		ilck->owner = pthread_self();
 	}
 	return (r);
@@ -126,9 +131,11 @@ Lck__Assert(struct lock *lck, int held)
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (held)
-		assert(ilck->owner == pthread_self());
+		assert(ilck->held &&
+		    pthread_equal(ilck->owner, pthread_self()));
 	else
-		assert(ilck->owner != pthread_self());
+		assert(!ilck->held ||
+		    !pthread_equal(ilck->owner, pthread_self()));
 }
 
 void
@@ -137,10 +144,12 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
 	struct ilck *ilck;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	assert(ilck->owner == pthread_self());
-	ilck->owner = NULL;
+	AN(ilck->held);
+	assert(pthread_equal(ilck->owner, pthread_self()));
+	ilck->held = 0;
 	AZ(pthread_cond_wait(cond, &ilck->mtx));
-	AZ(ilck->owner);
+	AZ(ilck->held);
+	ilck->held = 1;
 	ilck->owner = pthread_self();
 }
 
