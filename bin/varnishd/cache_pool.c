@@ -106,22 +106,35 @@ static struct lock		herder_mtx;
  */
 
 void
-WRK_Reset(struct worker *w, int *fd)
+WRW_Reserve(struct worker *w, int *fd)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AZ(w->wfd);
 	w->werr = 0;
 	w->liov = 0;
 	w->niov = 0;
 	w->wfd = fd;
 }
 
+void
+WRW_Release(struct worker *w)
+{
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	w->werr = 0;
+	w->liov = 0;
+	w->niov = 0;
+	w->wfd = NULL;
+}
+
 unsigned
-WRK_Flush(struct worker *w)
+WRW_Flush(struct worker *w)
 {
 	ssize_t i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->wfd);
 	if (*w->wfd >= 0 && w->niov > 0 && w->werr == 0) {
 		i = writev(*w->wfd, w->iov, w->niov);
 		if (i != w->liov) {
@@ -137,32 +150,46 @@ WRK_Flush(struct worker *w)
 }
 
 unsigned
-WRK_WriteH(struct worker *w, const txt *hh, const char *suf)
+WRW_FlushRelease(struct worker *w)
 {
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w);
-	AN(hh);
-	AN(hh->b);
-	AN(hh->e);
-	u = WRK_Write(w, hh->b, hh->e - hh->b);
-	if (suf != NULL)
-		u += WRK_Write(w, suf, -1);
+	AN(w->wfd);
+	u = WRW_Flush(w);
+	WRW_Release(w);
 	return (u);
 }
 
 unsigned
-WRK_Write(struct worker *w, const void *ptr, int len)
+WRW_WriteH(struct worker *w, const txt *hh, const char *suf)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->wfd);
+	AN(w);
+	AN(hh);
+	AN(hh->b);
+	AN(hh->e);
+	u = WRW_Write(w, hh->b, hh->e - hh->b);
+	if (suf != NULL)
+		u += WRW_Write(w, suf, -1);
+	return (u);
+}
+
+unsigned
+WRW_Write(struct worker *w, const void *ptr, int len)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->wfd);
 	if (len == 0 || *w->wfd < 0)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
 	if (w->niov == MAX_IOVS)
-		(void)WRK_Flush(w);
+		(void)WRW_Flush(w);
 	w->iov[w->niov].iov_base = TRUST_ME(ptr);
 	w->iov[w->niov].iov_len = len;
 	w->liov += len;
@@ -172,10 +199,11 @@ WRK_Write(struct worker *w, const void *ptr, int len)
 
 #ifdef SENDFILE_WORKS
 void
-WRK_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
+WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->wfd);
 	assert(fd >= 0);
 	assert(len > 0);
 

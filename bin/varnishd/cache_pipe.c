@@ -83,14 +83,14 @@ PipeSession(struct sess *sp)
 	vc = sp->vbe;
 	TCP_blocking(vc->fd);
 
-	WRK_Reset(w, &vc->fd);
+	WRW_Reserve(w, &vc->fd);
 	w->acct.hdrbytes += http_Write(w, bereq->http, 0);
 
 	if (sp->htc->pipeline.b != NULL)
 		w->acct.bodybytes +=
-		    WRK_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
+		    WRW_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
-	if (WRK_Flush(w)) {
+	if (WRW_FlushRelease(w)) {
 		vca_close_session(sp, "pipe");
 		VBE_ClosedFd(sp);
 		return;
