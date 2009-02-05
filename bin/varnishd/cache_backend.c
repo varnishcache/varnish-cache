@@ -147,11 +147,11 @@ VBE_new_bereq(void)
 	struct bereq *bereq;
 	volatile unsigned len;
 
-	LOCK(&VBE_mtx);
+	Lck_Lock(&VBE_mtx);
 	bereq = VTAILQ_FIRST(&bereq_head);
 	if (bereq != NULL)
 		VTAILQ_REMOVE(&bereq_head, bereq, list);
-	UNLOCK(&VBE_mtx);
+	Lck_Unlock(&VBE_mtx);
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
 	} else {
@@ -177,9 +177,9 @@ VBE_free_bereq(struct bereq *bereq)
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
 	WS_Reset(bereq->ws, NULL);
-	LOCK(&VBE_mtx);
+	Lck_Lock(&VBE_mtx);
 	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
-	UNLOCK(&VBE_mtx);
+	Lck_Unlock(&VBE_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -195,13 +195,13 @@ VBE_NewConn(void)
 
 	vc = VTAILQ_FIRST(&vbe_conns);
 	if (vc != NULL) {
-		LOCK(&VBE_mtx);
+		Lck_Lock(&VBE_mtx);
 		vc = VTAILQ_FIRST(&vbe_conns);
 		if (vc != NULL) {
 			VSL_stats->backend_unused--;
 			VTAILQ_REMOVE(&vbe_conns, vc, list);
 		}
-		UNLOCK(&VBE_mtx);
+		Lck_Unlock(&VBE_mtx);
 	}
 	if (vc != NULL)
 		return (vc);
@@ -222,10 +222,10 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	assert(vc->fd < 0);
 
 	if (params->cache_vbe_conns) {
-		LOCK(&VBE_mtx);
+		Lck_Lock(&VBE_mtx);
 		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
 		VSL_stats->backend_unused++;
-		UNLOCK(&VBE_mtx);
+		Lck_Unlock(&VBE_mtx);
 	} else {
 		VSL_stats->n_vbe_conn--;
 		free(vc);
@@ -239,10 +239,10 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 {
 	int s;
 
-	LOCK(&bp->mtx);
+	Lck_Lock(&bp->mtx);
 	bp->refcount++;
 	bp->n_conn++;		/* It mostly works */
-	UNLOCK(&bp->mtx);
+	Lck_Unlock(&bp->mtx);
 
 	s = -1;
 	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
@@ -257,10 +257,10 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
 
 	if (s < 0) {
-		LOCK(&bp->mtx);
+		Lck_Lock(&bp->mtx);
 		bp->n_conn--;
 		bp->refcount--;		/* Only keep ref on success */
-		UNLOCK(&bp->mtx);
+		Lck_Unlock(&bp->mtx);
 	}
 	return (s);
 }
@@ -295,7 +295,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 
 	/* first look for vbe_conn's we can recycle */
 	while (1) {
-		LOCK(&bp->mtx);
+		Lck_Lock(&bp->mtx);
 		vc = VTAILQ_FIRST(&bp->connlist);
 		if (vc != NULL) {
 			bp->refcount++;
@@ -303,7 +303,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 			assert(vc->fd >= 0);
 			VTAILQ_REMOVE(&bp->connlist, vc, list);
 		}
-		UNLOCK(&bp->mtx);
+		Lck_Unlock(&bp->mtx);
 		if (vc == NULL)
 			break;
 		if (VBE_CheckFd(vc->fd)) {
@@ -379,7 +379,7 @@ VBE_RecycleFd(struct sess *sp)
 	bp = sp->vbe->backend;
 
 	WSL(sp->wrk, SLT_BackendReuse, sp->vbe->fd, "%s", bp->vcl_name);
-	LOCK(&bp->mtx);
+	Lck_Lock(&bp->mtx);
 	VSL_stats->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
 	sp->vbe = NULL;

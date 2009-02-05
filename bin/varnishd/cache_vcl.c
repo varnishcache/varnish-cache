@@ -64,7 +64,7 @@ static VTAILQ_HEAD(, vcls)	vcl_head =
     VTAILQ_HEAD_INITIALIZER(vcl_head);
 
 
-static MTX			vcl_mtx;
+static struct lock		vcl_mtx;
 static struct vcls		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
@@ -83,13 +83,13 @@ void
 VCL_Get(struct VCL_conf **vcc)
 {
 
-	LOCK(&vcl_mtx);
+	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
 	*vcc = vcl_active->conf;
 	AN(*vcc);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
-	UNLOCK(&vcl_mtx);
+	Lck_Unlock(&vcl_mtx);
 }
 
 void
@@ -100,14 +100,14 @@ VCL_Rel(struct VCL_conf **vcc)
 	vc = *vcc;
 	*vcc = NULL;
 
-	LOCK(&vcl_mtx);
+	Lck_Lock(&vcl_mtx);
 	assert(vc->busy > 0);
 	vc->busy--;
 	/*
 	 * We do not garbage collect discarded VCL's here, that happens
 	 * in VCL_Poll() which is called from the CLI thread.
 	 */
-	UNLOCK(&vcl_mtx);
+	Lck_Unlock(&vcl_mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -167,10 +167,10 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 	REPLACE(vcl->name, name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	LOCK(&vcl_mtx);
+	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
-	UNLOCK(&vcl_mtx);
+	Lck_Unlock(&vcl_mtx);
 	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	vcl->conf->init_func(cli);
 	VSL_stats->n_vcl++;
@@ -264,9 +264,9 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		cli_out(cli, "VCL '%s' unknown", av[2]);
 		return;
 	}
-	LOCK(&vcl_mtx);
+	Lck_Lock(&vcl_mtx);
 	if (vcl == vcl_active) {
-		UNLOCK(&vcl_mtx);
+		Lck_Unlock(&vcl_mtx);
 		cli_result(cli, CLIS_PARAM);
 		cli_out(cli, "VCL %s is the active VCL", av[2]);
 		return;
@@ -274,7 +274,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	VSL_stats->n_vcl_discard++;
 	VSL_stats->n_vcl_avail--;
 	vcl->conf->discard = 1;
-	UNLOCK(&vcl_mtx);
+	Lck_Unlock(&vcl_mtx);
 	if (vcl->conf->busy == 0)
 		VCL_Nuke(vcl);
 }
@@ -292,9 +292,9 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	LOCK(&vcl_mtx);
+	Lck_Lock(&vcl_mtx);
 	vcl_active = vcl;
-	UNLOCK(&vcl_mtx);
+	Lck_Unlock(&vcl_mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -350,5 +350,5 @@ VCL_Init()
 {
 
 	CLI_AddFuncs(MASTER_CLI, vcl_cmds);
-	MTX_INIT(&vcl_mtx);
+	Lck_New(&vcl_mtx);
 }

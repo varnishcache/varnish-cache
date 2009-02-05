@@ -51,7 +51,7 @@ struct hsl_entry {
 };
 
 static VTAILQ_HEAD(, hsl_entry)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
-static MTX hsl_mutex;
+static struct lock hsl_mtx;
 
 /*--------------------------------------------------------------------
  * The ->init method is called during process start and allows
@@ -62,7 +62,7 @@ static void
 hsl_start(void)
 {
 
-	MTX_INIT(&hsl_mutex);
+	Lck_New(&hsl_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -78,7 +78,7 @@ hsl_lookup(const struct sess *sp, struct objhead *nobj)
 	struct hsl_entry *he, *he2;
 	int i;
 
-	LOCK(&hsl_mutex);
+	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(he, &hsl_head, list) {
 		i = HSH_Compare(sp, he->obj);
 		if (i < 0)
@@ -87,7 +87,7 @@ hsl_lookup(const struct sess *sp, struct objhead *nobj)
 			break;
 		he->refcnt++;
 		nobj = he->obj;
-		UNLOCK(&hsl_mutex);
+		Lck_Unlock(&hsl_mtx);
 		return (nobj);
 	}
 	if (nobj != NULL) {
@@ -107,7 +107,7 @@ hsl_lookup(const struct sess *sp, struct objhead *nobj)
 		else
 			VTAILQ_INSERT_TAIL(&hsl_head, he2, list);
 	}
-	UNLOCK(&hsl_mutex);
+	Lck_Unlock(&hsl_mtx);
 	return (nobj);
 }
 
@@ -123,14 +123,14 @@ hsl_deref(const struct objhead *obj)
 
 	AN(obj->hashpriv);
 	he = obj->hashpriv;
-	LOCK(&hsl_mutex);
+	Lck_Lock(&hsl_mtx);
 	if (--he->refcnt == 0) {
 		VTAILQ_REMOVE(&hsl_head, he, list);
 		free(he);
 		ret = 0;
 	} else
 		ret = 1;
-	UNLOCK(&hsl_mutex);
+	Lck_Unlock(&hsl_mtx);
 	return (ret);
 }
 

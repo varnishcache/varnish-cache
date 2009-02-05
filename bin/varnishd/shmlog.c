@@ -64,7 +64,7 @@
 struct varnish_stats *VSL_stats;
 static struct shmloghead *loghead;
 static unsigned char *logstart;
-static MTX vsl_mtx;
+static pthread_mutex_t vsl_mtx;
 
 
 static void
@@ -287,7 +287,7 @@ VSL_Init(void)
 	assert(loghead->hdrsize == sizeof *loghead);
 	/* XXX more check sanity of loghead  ? */
 	logstart = (unsigned char *)loghead + loghead->start;
-	MTX_INIT(&vsl_mtx);
+	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	loghead->starttime = TIM_real();
 	loghead->panicstr[0] = '\0';
 	memset(VSL_stats, 0, sizeof *VSL_stats);

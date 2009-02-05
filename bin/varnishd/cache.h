@@ -87,6 +87,7 @@ struct esi_bit;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
+struct lock { void *priv; };		// Opaque
 
 /*--------------------------------------------------------------------*/
 
@@ -295,7 +296,7 @@ struct objhead {
 #define OBJHEAD_MAGIC		0x1b96615d
 	void			*hashpriv;
 
-	pthread_mutex_t		mtx;
+	struct lock		mtx;
 	VTAILQ_HEAD(,object)	objects;
 	char			*hash;
 	unsigned		hashlen;
@@ -512,6 +513,27 @@ const char* THR_GetName(void);
 void THR_SetSession(const struct sess *sp);
 const struct sess * THR_GetSession(void);
 
+/* cache_lck.c */
+
+/* Internal functions, call only through macros below */
+void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
+void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
+int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
+void Lck__New(struct lock *lck, const char *w);
+void Lck__Assert(struct lock *lck, int held);
+
+/* public interface: */
+void LCK_Init(void);
+void Lck_Delete(struct lock *lck);
+void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
+
+#define Lck_New(a) Lck__New(a, #a);
+#define Lck_Lock(a) Lck__Lock(a, __func__, __FILE__, __LINE__)
+#define Lck_Unlock(a) Lck__Unlock(a, __func__, __FILE__, __LINE__)
+#define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
+#define Lck_AssertHeld(a) Lck__Assert(a, 1)
+#define Lck_AssertNotHeld(a) Lck__Assert(a, 0)
+
 /* cache_panic.c */
 void PAN_Init(void);
 
@@ -611,72 +633,6 @@ int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
-
-#define MTX			pthread_mutex_t
-#define MTX_INIT(foo)		AZ(pthread_mutex_init(foo, NULL))
-#define MTX_DESTROY(foo)	AZ(pthread_mutex_destroy(foo))
-
-#ifdef __flexelint_v9__
-#define TRYLOCK(foo, r)						\
-do {								\
-	(r) = pthread_mutex_trylock(foo);			\
-} while (0)
-#define LOCK(foo)						\
-do {								\
-	AZ(pthread_mutex_lock(foo));				\
-} while (0)
-#define UNLOCK(foo)						\
-do {								\
-	AZ(pthread_mutex_unlock(foo));				\
-} while (0)
-
-#else
-#define TRYLOCK(foo, r)						\
-do {								\
-	(r) = pthread_mutex_trylock(foo);			\
-	assert(r == 0 || r == EBUSY);				\
-	if (params->diag_bitmap & 0x8) {			\
-		VSL(SLT_Debug, 0,				\
-		    "MTX_TRYLOCK(%s,%s,%d," #foo ") = %d",	\
-		    __func__, __FILE__, __LINE__, (r));		\
-	}							\
-} while (0)
-#define LOCK(foo)						\
-do {								\
-	if (!(params->diag_bitmap & 0x18)) {			\
-		AZ(pthread_mutex_lock(foo));			\
-	} else {						\
-		int ixjd = pthread_mutex_trylock(foo);		\
-		assert(ixjd == 0 || ixjd == EBUSY);		\
-		if (ixjd) {					\
-			VSL(SLT_Debug, 0,			\
-			    "MTX_CONTEST(%s,%s,%d," #foo ")",	\
-			    __func__, __FILE__, __LINE__);	\
-			AZ(pthread_mutex_lock(foo));		\
-		} else if (params->diag_bitmap & 0x8) {		\
-			VSL(SLT_Debug, 0,			\
-			    "MTX_LOCK(%s,%s,%d," #foo ")",	\
-			    __func__, __FILE__, __LINE__);	\
-		}						\
-	}							\
-} while (0)
-#define UNLOCK(foo)						\
-do {								\
-	AZ(pthread_mutex_unlock(foo));				\
-	if (params->diag_bitmap & 0x8)				\
-		VSL(SLT_Debug, 0,				\
-		    "MTX_UNLOCK(%s,%s,%d," #foo ")",		\
-		    __func__, __FILE__, __LINE__);		\
-} while (0)
-#endif
-
-#if defined(HAVE_PTHREAD_MUTEX_ISOWNED_NP)
-#define ALOCKED(mutex)		AN(pthread_mutex_isowned_np((mutex)))
-#elif defined(DIAGNOSTICS)
-#define ALOCKED(mutex)		AN(pthread_mutex_trylock((mutex)))
-#else
-#define ALOCKED(mutex)		(void)(mutex)
-#endif
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
