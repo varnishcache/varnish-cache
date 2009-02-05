@@ -109,7 +109,6 @@ cnt_again(struct sess *sp)
 	return (0);
 }
 
-
 /*--------------------------------------------------------------------
  * We have a refcounted object on the session, now deliver it.
  *
@@ -175,14 +174,13 @@ cnt_deliver(struct sess *sp)
 
 	sp->director = NULL;
 	sp->restarts = 0;
-					
+
 	RES_WriteObj(sp);
 	HSH_Deref(sp->obj);
 	sp->obj = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------
  * This is the final state, figure out if we should close or recycle
@@ -209,7 +207,7 @@ cnt_done(struct sess *sp)
 	AZ(sp->bereq);
 	sp->director = NULL;
 	sp->restarts = 0;
-					
+
 	if (sp->vcl != NULL && sp->esis == 0) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
@@ -282,7 +280,6 @@ cnt_done(struct sess *sp)
 	return (1);
 }
 
-
 /*--------------------------------------------------------------------
  * Emit an error
  *
@@ -327,9 +324,9 @@ cnt_error(struct sess *sp)
 	http_PutStatus(w, sp->fd, h, sp->err_code);
 	now = TIM_real();
 	TIM_format(now, date);
-        http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
-        http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
-        http_PrintfHeader(w, sp->fd, h, "Retry-After: %d", params->err_ttl);
+	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
+	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
+	http_PrintfHeader(w, sp->fd, h, "Retry-After: %d", params->err_ttl);
 
 	if (sp->err_reason != NULL)
 		http_PutResponse(w, sp->fd, h, sp->err_reason);
@@ -343,7 +340,6 @@ cnt_error(struct sess *sp)
 	sp->step = STP_DELIVER;
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------
  * We have fetched the headers from the backend, ask the VCL code what
@@ -370,7 +366,7 @@ DOT vcl_fetch -> deliver [label="deliver",style=bold,color=blue,weight=2]
 DOT vcl_fetch -> recv [label="restart"]
 DOT vcl_fetch -> rstfetch [label="restart",color=purple]
 DOT rstfetch [label="RESTART",shape=plaintext]
-DOT fetch -> errfetch 
+DOT fetch -> errfetch
 DOT vcl_fetch -> errfetch [label="error"]
 DOT errfetch [label="ERROR",shape=plaintext]
  */
@@ -558,7 +554,6 @@ cnt_hit(struct sess *sp)
 	}
 }
 
-
 /*--------------------------------------------------------------------
  * LOOKUP
  * Hash things together and look object up in hash-table.
@@ -656,7 +651,6 @@ cnt_lookup(struct sess *sp)
 	return (0);
 }
 
-
 /*--------------------------------------------------------------------
  * We had a miss, ask VCL, proceed as instructed
  *
@@ -720,7 +714,6 @@ cnt_miss(struct sess *sp)
 		return (0);
 	}
 }
-
 
 /*--------------------------------------------------------------------
  * Start pass processing by getting headers from backend, then
@@ -825,7 +818,6 @@ cnt_pipe(struct sess *sp)
 	sp->step = STP_DONE;
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------
  * RECV
@@ -1008,14 +1000,14 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_START ||
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
-	  
+
 	/*
 	 * Whenever we come in from the acceptor we need to set blocking
 	 * mode, but there is no point in setting it when we come from
 	 * ESI or when a parked sessions returns.
 	 * It would be simpler to do this in the acceptor, but we'd rather
 	 * do the syscall in the worker thread.
- 	 */
+	 */
 	if (sp->step == STP_FIRST || sp->step == STP_START)
 		TCP_blocking(sp->fd);
 
@@ -1060,8 +1052,8 @@ DOT }
 static void
 cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 {
-        (void)priv;
-	if (av[2] != NULL) 
+	(void)priv;
+	if (av[2] != NULL)
 		xids = strtoul(av[2], NULL, 0);
 	cli_out(cli, "XID is %u", xids);
 }

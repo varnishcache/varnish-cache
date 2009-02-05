@@ -56,7 +56,7 @@ static void Cond_0(struct tokenlist *tl);
 
 #define C(tl, sep)	do {					\
 	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
-	tl->t->cnt = tl->cnt; 					\
+	tl->t->cnt = tl->cnt;					\
 } while (0)
 
 /*--------------------------------------------------------------------
@@ -615,7 +615,7 @@ vcc_Parse(struct tokenlist *tl)
 			break;
 		case ID:
 			for (tp = toplev; tp->name != NULL; tp++) {
-				if (!vcc_IdIs(tl->t, tp->name)) 
+				if (!vcc_IdIs(tl->t, tp->name))
 					continue;
 				tp->func(tl);
 				break;

@@ -63,9 +63,11 @@ int		 vsb_bcat(struct vsb *, const void *, size_t);
 int		 vsb_bcpy(struct vsb *, const void *, size_t);
 int		 vsb_cat(struct vsb *, const char *);
 int		 vsb_cpy(struct vsb *, const char *);
-int		 vsb_printf(struct vsb *, const char *, ...) /* __printflike(2, 3) */;
+int		 vsb_printf(struct vsb *, const char *, ...)
+    /* __printflike(2, 3) */;
 #ifdef va_start
-int		 vsb_vprintf(struct vsb *, const char *, va_list) /* __printflike(2, 0) */;
+int		 vsb_vprintf(struct vsb *, const char *, va_list)
+    /* __printflike(2, 0) */;
 #endif
 int		 vsb_putc(struct vsb *, int);
 int		 vsb_trim(struct vsb *);

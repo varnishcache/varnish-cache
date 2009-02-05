@@ -64,15 +64,15 @@ pan_ws(const struct ws *ws, int indent)
 	    ws, ws->overflow ? "overflow" : "");
 	vsb_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
 	vsb_printf(vsp, "%*s{s,f,r,e} = {%p,", indent + 2, "", ws->s);
-	if (ws->f > ws->s) 
+	if (ws->f > ws->s)
 		vsb_printf(vsp, ",+%d", ws->f - ws->s);
 	else
 		vsb_printf(vsp, ",%p", ws->f);
-	if (ws->r > ws->s) 
+	if (ws->r > ws->s)
 		vsb_printf(vsp, ",+%d", ws->r - ws->s);
 	else
 		vsb_printf(vsp, ",%p", ws->r);
-	if (ws->e > ws->s) 
+	if (ws->e > ws->s)
 		vsb_printf(vsp, ",+%d", ws->e - ws->s);
 	else
 		vsb_printf(vsp, ",%p", ws->e);
@@ -258,7 +258,8 @@ pan_sess(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_ic(const char *func, const char *file, int line, const char *cond, int err, int xxx)
+pan_ic(const char *func, const char *file, int line, const char *cond,
+    int err, int xxx)
 {
 	int l;
 	char *p;
@@ -296,7 +297,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 		vsb_printf(vsp, "  thread = (%s)", q);
 	if (!(params->diag_bitmap & 0x2000)) {
 		sp = THR_GetSession();
-		if (sp != NULL) 
+		if (sp != NULL)
 			pan_sess(sp);
 	}
 	vsb_printf(vsp, "\n");
@@ -307,7 +308,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond, int err, 
 	memcpy(p, panicstr, l);
 	if (params->diag_bitmap & 0x4000)
 		(void)fputs(panicstr, stderr);
-		
+
 #ifdef HAVE_ABORT2
 	if (params->diag_bitmap & 0x8000) {
 		void *arg[1];

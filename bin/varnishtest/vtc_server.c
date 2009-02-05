@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -54,7 +54,7 @@ struct server {
 
 	unsigned		repeat;
 	char			*spec;
-	
+
 	int			depth;
 	int			sock;
 	char			*listen;
@@ -234,7 +234,7 @@ cmd_server(CMD_ARGS)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
 			VTAILQ_REMOVE(&servers, s, list);
-			if (s->sock >= 0) 
+			if (s->sock >= 0)
 				server_wait(s);
 			server_delete(s);
 		}
@@ -247,7 +247,7 @@ cmd_server(CMD_ARGS)
 	VTAILQ_FOREACH(s, &servers, list)
 		if (!strcmp(s->name, av[0]))
 			break;
-	if (s == NULL) 
+	if (s == NULL)
 		s = server_new(av[0]);
 	av++;
 

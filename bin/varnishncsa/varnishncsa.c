@@ -105,7 +105,8 @@ static size_t nll;
 static int prefer_x_forwarded_for = 0;
 
 static int
-isprefix(const char *str, const char *prefix, const char *end, const char **next)
+isprefix(const char *str, const char *prefix, const char *end,
+    const char **next)
 {
 
 	while (str < end && *str && *prefix &&
@@ -511,7 +512,9 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: varnishncsa %s [-aDV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	fprintf(stderr,
+	    "usage: varnishncsa %s [-aDV] [-n varnish_name] "
+	    "[-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 

@@ -49,7 +49,8 @@
  */
 
 void
-vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, const struct token *t_dir)
+vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy,
+    const struct token *t_dir)
 {
 	struct token *t_field, *t_be;
 	int nbh, nelem;
@@ -58,9 +59,8 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 
 	fs = vcc_FldSpec(tl, "!backend", NULL);
 
-	Fc(tl, 0,
-	    "\nstatic const struct vrt_dir_round_robin_entry vdrre_%.*s[] = {\n",
-	    PF(t_dir));
+	Fc(tl, 0, "\nstatic const struct vrt_dir_round_robin_entry "
+	    "vdrre_%.*s[] = {\n", PF(t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
 		first = "";
@@ -71,7 +71,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
 		Fc(tl, 0, "\t{");
-	
+
 		while (tl->t->tok != '}') {	/* Member fields */
 			vcc_IsField(tl, &t_field, fs);
 			ERRCHK(tl);
@@ -103,8 +103,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy, 
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdrre_%.*s,\n", PF(t_dir));
 	Fc(tl, 0, "};\n");
-	Fi(tl, 0,
-	    "\tVRT_init_dir_round_robin(cli, &VGC_backend_%.*s , &vdrr_%.*s);\n",
-	    PF(t_dir), PF(t_dir));
+	Fi(tl, 0, "\tVRT_init_dir_round_robin("
+	    "cli, &VGC_backend_%.*s , &vdrr_%.*s);\n", PF(t_dir), PF(t_dir));
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(t_dir));
 }

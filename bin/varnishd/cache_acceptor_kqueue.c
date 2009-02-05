@@ -85,7 +85,7 @@ vca_kq_sess(struct sess *sp, short arm)
 	assert(sp->fd >= 0);
 	DSL(0x04, SLT_Debug, sp->fd, "KQ: EV_SET sp %p arm %x", sp, arm);
 	EV_SET(&ki[nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
-	if (++nki == NKEV) 
+	if (++nki == NKEV)
 		vca_kq_flush();
 }
 

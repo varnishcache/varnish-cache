@@ -132,7 +132,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	(void)parent;
 
 	AZ(av[ac]);
-	if (ac > 1) 
+	if (ac > 1)
 		ARGV_ERR("(-smalloc) too many arguments\n");
 
 	if (ac == 0 || *av[0] == '\0')
@@ -141,7 +141,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	e = str2bytes(av[0], &u, 0);
 	if (e != NULL)
 		ARGV_ERR("(-smalloc) size \"%s\": %s\n", av[0], e);
-	if ((u != (uintmax_t)(size_t)u)) 
+	if ((u != (uintmax_t)(size_t)u))
 		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
 
 	printf("storage_malloc: max size %ju MB.\n",

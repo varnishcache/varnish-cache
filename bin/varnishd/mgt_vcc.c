@@ -65,7 +65,7 @@
 
 struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;
-	char 			*name;
+	char			*name;
 	char			*fname;
 	int			active;
 };
@@ -487,7 +487,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 		cli_result(cli, CLIS_PARAM);
 		return;
 	}
-	
+
 	sb = vsb_newauto();
 	XXXAN(sb);
 	vf = mgt_VccCompile(sb, av[3], NULL, 0);
@@ -577,7 +577,7 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp == NULL)
 		return;
-	if (vp->active != 0) 
+	if (vp->active != 0)
 		return;
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {

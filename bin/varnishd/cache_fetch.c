@@ -342,7 +342,7 @@ Fetch(struct sess *sp)
 	 * header if one is necessary.
 	 * XXX: This possibly ought to go into the default VCL
 	 */
-	if (!http_GetHdr(hp, H_Host, &b)) 
+	if (!http_GetHdr(hp, H_Host, &b))
 		VBE_AddHostHeader(sp);
 
 	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
@@ -469,8 +469,8 @@ Fetch(struct sess *sp)
 static void
 debug_fragfetch(struct cli *cli, const char * const *av, void *priv)
 {
-        (void)priv;
-        (void)cli;
+	(void)priv;
+	(void)cli;
 	fetchfrag = strtoul(av[2], NULL, 0);
 }
 

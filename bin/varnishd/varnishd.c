@@ -136,7 +136,7 @@ setup_storage(const char *spec)
 	av = ParseArgv(spec, ARGV_COMMA);
 	AN(av);
 
-	if (av[0] != NULL) 
+	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
 
 	if (av[1] == NULL)
@@ -175,7 +175,7 @@ setup_hash(const char *h_arg)
 	av = ParseArgv(h_arg, ARGV_COMMA);
 	AN(av);
 
-	if (av[0] != NULL) 
+	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
 
 	if (av[1] == NULL)
@@ -226,7 +226,8 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
-	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>,<granularity>");
+	fprintf(stderr, FMT, "",
+	    "  -s file,<dir_or_file>,<size>,<granularity>");
 	fprintf(stderr, FMT, "-t", "Default TTL");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
@@ -252,10 +253,10 @@ tackle_warg(const char *argv)
 	av = ParseArgv(argv, ARGV_COMMA);
 	AN(av);
 
-	if (av[0] != NULL) 
+	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
 
-	if (av[1] == NULL) 
+	if (av[1] == NULL)
 		usage();
 
 	u = arg_ul(av[1]);
@@ -462,7 +463,8 @@ main(int argc, char * const *argv)
 	MCF_ParamInit(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv, "a:b:Cdf:Fg:h:l:n:P:p:s:T:t:u:Vw:")) != -1)
+	while ((o = getopt(argc, argv,
+	    "a:b:Cdf:Fg:h:l:n:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -580,7 +582,7 @@ main(int argc, char * const *argv)
 		exit(1);
 	}
 
-	if (n_arg != NULL) 
+	if (n_arg != NULL)
 		openlog(n_arg, LOG_PID, LOG_LOCAL0);
 	else
 		openlog("varnishd", LOG_PID, LOG_LOCAL0);
@@ -624,7 +626,7 @@ main(int argc, char * const *argv)
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
-	if (pfh != NULL && vpf_write(pfh)) 
+	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
 	mgt_run(d_flag, T_arg);

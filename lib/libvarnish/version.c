@@ -43,5 +43,6 @@ varnish_version(const char *progname)
 {
 	fprintf(stderr, "%s (%s-%s)\n", progname,
 	    PACKAGE_TARNAME, PACKAGE_VERSION);
-	fprintf(stderr, "Copyright (c) 2006-2008 Linpro AS / Verdens Gang AS\n");
+	fprintf(stderr,
+	    "Copyright (c) 2006-2008 Linpro AS / Verdens Gang AS\n");
 }

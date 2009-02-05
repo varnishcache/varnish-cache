@@ -155,7 +155,8 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg, unsigned min, unsigned max)
+tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
+    unsigned min, unsigned max)
 {
 	unsigned u;
 
@@ -215,7 +216,7 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 				master.uid = getuid();
 				return;
 			}
-		} else 
+		} else
 			pw = getpwnam(arg);
 		if (pw == NULL) {
 			cli_out(cli, "Unknown user");
@@ -229,7 +230,7 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 		/* set group to user's primary group */
 		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
 		    (gr = getgrnam(gr->gr_name)) != NULL &&
-		    gr->gr_gid == pw->pw_gid) 
+		    gr->gr_gid == pw->pw_gid)
 			REPLACE(master.group, gr->gr_name);
 	} else if (master.user) {
 		cli_out(cli, "%s (%d)", master.user, (int)master.uid);
@@ -276,7 +277,8 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pool_min(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
+    const char *arg)
 {
 
 	tweak_generic_uint(cli, &master.wthread_min, arg,
@@ -286,7 +288,8 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par, const char *ar
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_thread_pool_max(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
+    const char *arg)
 {
 
 	(void)par;
@@ -310,7 +313,8 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 }
 
 static void
-tweak_listen_address(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_listen_address(struct cli *cli, const struct parspec *par,
+    const char *arg)
 {
 	char **av;
 	int i;

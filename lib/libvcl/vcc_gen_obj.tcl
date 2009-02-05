@@ -261,15 +261,31 @@ warns $fp
 
 proc method_map {m} {
 
-	set l ""
+	set l1 ""
+	set l2 ""
 	foreach i $m {
-		append l " | "
-		append l VCL_MET_[string toupper $i]
+		if {[string length $l2] > 55} {
+			if {$l1 != ""} {
+				append l1 "\n\t    "
+			}
+			append l1 "$l2"
+			set l2 ""
+		}
+		if {$l2 != "" || $l1 != ""} {
+			append l2 " | "
+		}
+		append l2 VCL_MET_[string toupper $i]
 	}
-	if {$l == ""} {
+	if {$l2 != ""} {
+		if {$l1 != ""} {
+			append l1 "\n\t    "
+		}
+		append l1 "$l2"
+	}
+	if {$l1 == ""} {
 		return "0"
 	}
-	return [string range $l 3 end]
+	return $l1
 }
 
 proc vars {v pa} {
@@ -289,12 +305,12 @@ proc vars {v pa} {
 			puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		}
 		if {$a == "RO" || $a == "RW"} {
-			puts $fo  "\t    \"VRT_r_${m}($pa)\","
+			puts -nonewline $fo  "\t    \"VRT_r_${m}($pa)\","
 			if {![regexp HDR_ $t]} {
 				puts $fp  "$tt($t) VRT_r_${m}($ty);"
 			}
 		} else {
-			puts $fo  "\t    NULL,"
+			puts -nonewline $fo  "\t    NULL,"
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
@@ -307,7 +323,7 @@ proc vars {v pa} {
 		} else {
 			puts $fo  "\t    NULL,"
 		}
-		puts $fo  "\t    V_$a,"
+		puts -nonewline $fo  "\t    V_$a,"
 		if {![regexp HDR_ $t]} {
 			puts $fo  "\t    0,"
 		} else {

@@ -81,9 +81,10 @@ show_field(const char* field, const char *fields)
 
 		while (field_start != NULL) {
 			field_end = field_start + field_length;
-			if ((field_start == fields || *(field_start - 1) == ',') &&
-				(*field_end == ',' || *field_end == '\0'))
-					return (match_value);
+			if ((field_start == fields ||
+			    *(field_start - 1) == ',') &&
+			    (*field_end == ',' || *field_end == '\0'))
+				return (match_value);
 			field_start = strstr( field_end, field );
 		}
 	}
@@ -237,14 +238,20 @@ static void
 usage(void)
 {
 #define FMT "    %-28s # %s\n"
-	fprintf(stderr, "usage: varnishstat [-1lV] [-f field_list] [-n varnish_name] [-w delay]\n");
+	fprintf(stderr, "usage: varnishstat "
+	    "[-1lV] [-f field_list] [-n varnish_name] [-w delay]\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics once and exit");
-	fprintf(stderr, FMT, "-f field_list", "Comma separated list of fields to display. ");
-	fprintf(stderr, FMT, "", "If it starts with '^' it is used as an exclusion list");
-	fprintf(stderr, FMT, "-l", "Lists the available fields to use with the -f option");
-	fprintf(stderr, FMT, "-n varnish_name", "The varnishd instance to get logs from");
+	fprintf(stderr, FMT, "-f field_list",
+	    "Comma separated list of fields to display. ");
+	fprintf(stderr, FMT, "",
+	    "If it starts with '^' it is used as an exclusion list");
+	fprintf(stderr, FMT, "-l",
+	    "Lists the available fields to use with the -f option");
+	fprintf(stderr, FMT, "-n varnish_name",
+	    "The varnishd instance to get logs from");
 	fprintf(stderr, FMT, "-V", "Display the version number and exit");
-	fprintf(stderr, FMT, "-w delay", "Wait delay seconds between updates.  The default is 1.");
+	fprintf(stderr, FMT, "-w delay",
+	    "Wait delay seconds between updates.  The default is 1.");
 #undef FMT
 	exit(1);
 }
@@ -252,7 +259,7 @@ usage(void)
 static void
 list_fields(void)
 {
-	fprintf(stderr, "Available fields to use with the varnishstat -f option:\n");
+	fprintf(stderr, "Varnishstat -f option fields:\n");
 	fprintf(stderr, "Field name           Description\n");
 	fprintf(stderr, "----------           -----------\n");
 	fprintf(stderr, "uptime               Child uptime\n");
@@ -290,7 +297,8 @@ valid_fields(const char* fields)
 
 		valid_field = 0;
 		for (i = 0; all_fields[i] != NULL; i++) {
-			if (strncmp(field_start, all_fields[i], field_length) == 0 && field_length == strlen( all_fields[i] )) {
+			if (strncmp(field_start, all_fields[i], field_length)
+			     == 0 && field_length == strlen( all_fields[i])) {
 				valid_field = 1;
 				break;
 			}
@@ -346,7 +354,7 @@ main(int argc, char **argv)
 
 	if ((VSL_stats = VSL_OpenStats(n_arg)) == NULL)
 		exit(1);
-	
+
 	if (fields != NULL && !valid_fields(fields)) {
 		usage();
 		exit(1);

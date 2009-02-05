@@ -66,8 +66,8 @@
 static int		cli_i = -1, cli_o = -1;
 
 struct telnet {
-	int 			fd;
-	struct vev 		*ev;
+	int			fd;
+	struct vev		*ev;
 	VTAILQ_ENTRY(telnet)	list;
 };
 
@@ -108,7 +108,7 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 		    "help %s\n", av[2] != NULL ? av[2] : "")) {
 			cli_out(cli, "%s", p);
 			cli_result(cli, u);
-		} 
+		}
 		free(p);
 	}
 }
@@ -144,7 +144,7 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_PARAM_SHOW,	mcf_param_show, NULL },
 	{ CLI_PARAM_SET,	mcf_param_set, NULL },
 
-	{ CLI_QUIT, 		mcf_close, NULL},
+	{ CLI_QUIT,		mcf_close, NULL},
 #if 0
 	{ CLI_SERVER_RESTART },
 	{ CLI_ZERO },

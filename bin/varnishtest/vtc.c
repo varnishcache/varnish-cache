@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -140,7 +140,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 						p++;
 					} else {
 						if (*p == '\n')
-							fprintf(stderr, "Unterminated quoted string in line:\n%s", p);
+							fprintf(stderr,
+				"Unterminated quoted string in line:\n%s", p);
 						assert(*p != '\n');
 						*q++ = *p;
 					}
@@ -184,7 +185,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			fprintf(stderr, "Unknown command: \"%s\"", token_s[0]);
 			exit (1);
 		}
-	
+
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
 		if (stop)
@@ -377,7 +378,7 @@ usage(void)
 }
 
 /**********************************************************************
- * Main 
+ * Main
  */
 
 int

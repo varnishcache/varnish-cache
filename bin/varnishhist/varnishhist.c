@@ -147,7 +147,8 @@ update(void)
 }
 
 static int
-h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+    unsigned spec, const char *ptr)
 {
 	double b;
 	int i, j;
@@ -308,8 +309,8 @@ do_curses(struct VSL_data *vd)
 static void
 usage(void)
 {
-	fprintf(stderr,
-	    "usage: varnishhist %s [-n varnish_name] [-V] [-w delay]\n", VSL_USAGE);
+	fprintf(stderr, "usage: varnishhist "
+	    "%s [-n varnish_name] [-V] [-w delay]\n", VSL_USAGE);
 	exit(1);
 }
 

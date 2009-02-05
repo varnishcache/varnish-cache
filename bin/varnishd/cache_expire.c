@@ -65,7 +65,7 @@
  * Objects have sideways references in the binary heap and the LRU list
  * and we want to avoid paging in a lot of objects just to move them up
  * or down the binheap or to move a unrelated object on the LRU list.
- * To avoid this we use a proxy object, objexp, to hold the relevant 
+ * To avoid this we use a proxy object, objexp, to hold the relevant
  * housekeeping fields parts of an object.
  */
 
@@ -219,7 +219,7 @@ EXP_Touch(const struct object *o, double now)
 }
 
 /*--------------------------------------------------------------------
- * We have changed one or more of the object timers, shuffle it 
+ * We have changed one or more of the object timers, shuffle it
  * accordingly in the binheap
  *
  * The VCL code can send us here on a non-cached object, just return.
@@ -289,7 +289,7 @@ exp_timer(void *arg)
 			t = TIM_real();
 			continue;
 		}
-	
+
 		o = oe->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oe->timer_idx != BINHEAP_NOIDX);
@@ -364,7 +364,7 @@ EXP_NukeOne(struct sess *sp)
 	 * with active references, likely means that it is already in core. An
 	 * object with no active references will be prodded further anyway.
 	 *
-	 * NB: Checking refcount here is no guarantee that it does not gain 
+	 * NB: Checking refcount here is no guarantee that it does not gain
 	 * another ref while we ponder its destiny without the lock held.
 	 */
 	LOCK(&exp_mtx);
@@ -415,7 +415,7 @@ EXP_NukeOne(struct sess *sp)
 
 	/* Insert in binheap and lru again */
 	LOCK(&exp_mtx);
-	VSL_stats->n_lru_nuked--; 		/* It was premature */
+	VSL_stats->n_lru_nuked--;		/* It was premature */
 	VSL_stats->n_lru_saved++;
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);

@@ -62,14 +62,14 @@ struct vbp_target {
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
 	struct backend			*backend;
-	struct vrt_backend_probe 	probe;
+	struct vrt_backend_probe	probe;
 	int				stop;
 	char				*req;
 	int				req_len;
 
 	char				resp_buf[128];
 	unsigned			good;
-	
+
 	/* Collected statistics */
 #define BITMAP(n, c, t, b)	uint64_t	n;
 #include "cache_backend_poll.h"
@@ -86,7 +86,7 @@ struct vbp_target {
 static VTAILQ_HEAD(, vbp_target)	vbp_list =
     VTAILQ_HEAD_INITIALIZER(vbp_list);
 
-static char default_request[] = 
+static char default_request[] =
     "GET / HTTP/1.1\r\n"
     "Connection: close\r\n"
     "\r\n";
@@ -324,7 +324,7 @@ vbp_wrk_poll_backend(void *priv)
 		    vt->backend->vcl_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
 		    vt->last, vt->avg, vt->resp_buf);
-			
+
 		if (!vt->stop)
 			TIM_sleep(vt->probe.interval);
 	}
@@ -363,15 +363,15 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 	cli_out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->probe.threshold, vt->probe.window);
 	cli_out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
-	cli_out(cli, 
+	cli_out(cli,
 	    "Oldest                       "
 	    "                             Newest\n");
-	cli_out(cli, 
+	cli_out(cli,
 	    "============================="
 	    "===================================\n");
 
 #define BITMAP(n, c, t, b)					\
-		if ((vt->n != 0) || (b)) 				\
+		if ((vt->n != 0) || (b))			\
 			vbp_bitmap(cli, (c), vt->n, (t));
 #include "cache_backend_poll.h"
 #undef BITMAP
@@ -391,10 +391,10 @@ vbp_health(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto debug_cmds[] = {
-        { "debug.health", "debug.health",
-                "\tDump backend health stuff\n",
-                0, 0, vbp_health },
-        { NULL }
+	{ "debug.health", "debug.health",
+		"\tDump backend health stuff\n",
+		0, 0, vbp_health },
+	{ NULL }
 };
 
 /*--------------------------------------------------------------------

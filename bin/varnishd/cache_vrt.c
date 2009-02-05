@@ -136,7 +136,7 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		if (b + x < e)
 			memcpy(b, h, x);
 		b += x;
-		if (b + 1 < e) 
+		if (b + 1 < e)
 			*b++ = ' ';
 	}
 	while (p != vrt_magic_string_end) {
@@ -148,7 +148,7 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		b += x;
 		p = va_arg(ap, const char *);
 	}
-	if (b + 1 < e) 
+	if (b + 1 < e)
 		*b++ = '\0';
 	if (b > e) {
 		WS_Release(hp->ws, 0);
@@ -164,7 +164,8 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr, const char *p, ...)
+VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
+    const char *p, ...)
 {
 	struct http *hp;
 	va_list ap;
@@ -190,7 +191,8 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr, const c
 /*--------------------------------------------------------------------*/
 
 static void
-vrt_do_string(struct worker *w, int fd, struct http *hp, int fld, const char *err, const char *p, va_list ap)
+vrt_do_string(struct worker *w, int fd, struct http *hp, int fld,
+    const char *err, const char *p, va_list ap)
 {
 	char *b;
 
@@ -519,7 +521,8 @@ VRT_r_server_port(struct sess *sp)
 
 	if (sp->mysockaddr->sa_family == AF_UNSPEC)
 		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
-	TCP_name(sp->mysockaddr, sp->mysockaddrlen, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	TCP_name(sp->mysockaddr, sp->mysockaddrlen,
+	    abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	return (atoi(pbuf));
 }
@@ -672,7 +675,7 @@ VRT_Rollback(struct sess *sp)
 	*sp->http = *sp->http0;
 	WS_Reset(sp->ws, sp->ws_req);
 }
-	
+
 /*--------------------------------------------------------------------*/
 
 /*lint -e{818} sp could be const */
@@ -725,7 +728,7 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 void
 VRT_purge(const char *regexp, int hash)
 {
-	
+
 	if (regexp != NULL)
 		(void)BAN_Add(NULL, regexp, hash);
 }

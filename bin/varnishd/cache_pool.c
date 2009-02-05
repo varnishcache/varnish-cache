@@ -79,7 +79,7 @@ VTAILQ_HEAD(workerhead, worker);
 struct wq {
 	unsigned		magic;
 #define WQ_MAGIC		0x606658fa
-	MTX 			mtx;
+	MTX			mtx;
 	struct workerhead	idle;
 	VTAILQ_HEAD(, workreq)	overflow;
 	unsigned		nthr;
@@ -456,7 +456,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 
 /*--------------------------------------------------------------------
  * Periodic pool herding thread
- * 
+ *
  * Do things which we can do at our leisure:
  *  Add pools
  *  Scale constants

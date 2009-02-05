@@ -120,7 +120,8 @@ clean_order(void)
 }
 
 static int
-h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len, unsigned spec, const char *ptr)
+h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+    unsigned spec, const char *ptr)
 {
 	char type;
 
@@ -261,7 +262,7 @@ open_log(const char *w_arg, int a_flag)
 
 	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
 #ifdef O_LARGEFILE
-        flags |= O_LARGEFILE;
+	flags |= O_LARGEFILE;
 #endif
 	if (!strcmp(w_arg, "-"))
 		fd = STDOUT_FILENO;
@@ -308,8 +309,8 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 static void
 usage(void)
 {
-	fprintf(stderr,
-	    "usage: varnishlog %s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	fprintf(stderr, "usage: varnishlog "
+	    "%s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 

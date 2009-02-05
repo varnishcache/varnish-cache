@@ -61,7 +61,8 @@ static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 static void
 vca_add(int fd, void *data)
 {
-	AZ(port_associate(solaris_dport, PORT_SOURCE_FD, fd, POLLIN | POLLERR | POLLPRI, data));
+	AZ(port_associate(solaris_dport, PORT_SOURCE_FD, fd,
+	    POLLIN | POLLERR | POLLPRI, data));
 }
 
 static void
@@ -120,7 +121,8 @@ vca_main(void *arg)
 		ts.tv_sec = 0L;
 		ts.tv_nsec = 50L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/;
 		nevents = 1;
-		if (port_getn(solaris_dport, ev, MAX_EVENTS, &nevents, &ts) == 0) {
+		if (port_getn(solaris_dport, ev, MAX_EVENTS, &nevents, &ts)
+		     == 0) {
 			for (ei=0; ei<nevents; ei++) {
 				vca_port_ev(ev + ei);
 			}

@@ -136,7 +136,7 @@ vdi_random_fini(struct director *d)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
-	
+
 	vh = vs->hosts;
 	for (i = 0; i < vs->nhosts; i++, vh++)
 		VBE_DropRef(vh->backend);
@@ -147,13 +147,14 @@ vdi_random_fini(struct director *d)
 }
 
 void
-VRT_init_dir_random(struct cli *cli, struct director **bp, const struct vrt_dir_random *t)
+VRT_init_dir_random(struct cli *cli, struct director **bp,
+    const struct vrt_dir_random *t)
 {
 	struct vdi_random *vs;
 	const struct vrt_dir_random_entry *te;
 	struct vdi_random_host *vh;
 	int i;
-	
+
 	(void)cli;
 
 	ALLOC_OBJ(vs, VDI_RANDOM_MAGIC);

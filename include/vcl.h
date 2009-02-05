@@ -23,7 +23,7 @@ struct VCL_conf {
         unsigned        nref;
         unsigned        busy;
         unsigned        discard;
-        
+
 	unsigned	nsrc;
 	const char	**srcname;
 	const char	**srcbody;

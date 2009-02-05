@@ -37,7 +37,8 @@ MAC_STAT(cache_hitpass,		uint64_t, 'a', "Cache hits for pass")
 MAC_STAT(cache_miss,		uint64_t, 'a', "Cache misses")
 
 MAC_STAT(backend_conn,		uint64_t, 'a', "Backend connections success")
-MAC_STAT(backend_unhealthy,	uint64_t, 'a', "Backend connections not attempted")
+MAC_STAT(backend_unhealthy,	uint64_t, 'a',
+    "Backend connections not attempted")
 MAC_STAT(backend_busy,		uint64_t, 'a', "Backend connections too many")
 MAC_STAT(backend_fail,		uint64_t, 'a', "Backend connections failures")
 MAC_STAT(backend_reuse,		uint64_t, 'a', "Backend connections reuses")

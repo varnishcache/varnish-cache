@@ -39,8 +39,7 @@
 
 int
 varnish_instance(const char *n_arg,
-    char *name, size_t namelen,
-    char *dir, size_t dirlen)
+    char *name, size_t namelen, char *dir, size_t dirlen)
 {
 	size_t len;
 

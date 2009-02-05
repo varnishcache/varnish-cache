@@ -340,13 +340,14 @@ vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 	struct procuse *pu;
 
 	VTAILQ_FOREACH(pu, &p->uses, list)
-		if (!(pu->v->methods & m->bitval)) 
+		if (!(pu->v->methods & m->bitval))
 			return (pu);
 	return (NULL);
 }
 
 static int
-vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p, struct method *m)
+vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p,
+    struct method *m)
 {
 	struct proccall *pc;
 	struct procuse *pu;
@@ -356,7 +357,7 @@ vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p, struct method *m
 		vsb_printf(tl->sb,
 		    "Variable \"%.*s\" is not available in %s\n",
 		    PF(pu->t), m->name);
-		vcc_ErrWhere(tl, pu->t); 
+		vcc_ErrWhere(tl, pu->t);
 		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);

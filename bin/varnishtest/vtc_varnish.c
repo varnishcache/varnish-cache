@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006-2008 Linpro AS
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -446,7 +446,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	for (i = 0; i < 10; i++, usleep(100000)) {
 
 
-#define MAC_STAT(n, t, f, d) 					\
+#define MAC_STAT(n, t, f, d)					\
 		if (!strcmp(av[0], #n)) {			\
 			val = v->stats->n;			\
 		} else
@@ -510,7 +510,7 @@ cmd_varnish(CMD_ARGS)
 	VTAILQ_FOREACH(v, &varnishes, list)
 		if (!strcmp(v->name, av[0]))
 			break;
-	if (v == NULL) 
+	if (v == NULL)
 		v = varnish_new(av[0]);
 	av++;
 
