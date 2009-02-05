@@ -65,7 +65,7 @@
 	LOGMTX2(ax, HTTP_HDR_FIRST,	Header),	\
 	}
 
-static enum shmlogtag logmtx[][HTTP_HDR_FIRST + 1] = {
+static const enum shmlogtag logmtx[][HTTP_HDR_FIRST + 1] = {
 	[HTTP_Rx] = LOGMTX1(Rx),
 	[HTTP_Tx] = LOGMTX1(Tx),
 	[HTTP_Obj] = LOGMTX1(Obj)

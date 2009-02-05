@@ -86,7 +86,7 @@ struct vbp_target {
 static VTAILQ_HEAD(, vbp_target)	vbp_list =
     VTAILQ_HEAD_INITIALIZER(vbp_list);
 
-static char default_request[] =
+static const char default_request[] =
     "GET / HTTP/1.1\r\n"
     "Connection: close\r\n"
     "\r\n";

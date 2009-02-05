@@ -233,8 +233,8 @@ smf_initfile(struct smf_sc *sc, const char *size, int newfile)
 	/* XXX: force block allocation here or in open ? */
 }
 
-static char default_size[] = "50%";
-static char default_filename[] = ".";
+static const char default_size[] = "50%";
+static const char default_filename[] = ".";
 
 static void
 smf_init(struct stevedore *parent, int ac, char * const *av)
