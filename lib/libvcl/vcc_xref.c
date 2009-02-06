@@ -68,7 +68,7 @@ struct proc {
 	VTAILQ_HEAD(,proccall)	calls;
 	VTAILQ_HEAD(,procuse)	uses;
 	struct token		*name;
-	unsigned		returns;
+	unsigned		ret_bitmap;
 	unsigned		exists;
 	unsigned		called;
 	unsigned		active;
@@ -242,14 +242,15 @@ void
 vcc_ProcAction(struct proc *p, unsigned returns, struct token *t)
 {
 
-	p->returns |= (1U << returns);
+	assert(returns < VCL_RET_MAX);
+	p->ret_bitmap |= (1U << returns);
 	/* Record the first instance of this return */
 	if (p->return_tok[returns] == NULL)
 		p->return_tok[returns] = t;
 }
 
 static int
-vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
+vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned bitmap)
 {
 	unsigned u;
 	struct proccall *pc;
@@ -264,13 +265,13 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
-	u = p->returns & ~returns;
+	u = p->ret_bitmap & ~bitmap;
 	if (u) {
 /*lint -save -e525 -e539 */
-#define VCL_RET_MAC(a, b, c, d) \
-		if (u & VCL_RET_##b) { \
-			vsb_printf(tl->sb, "Invalid return \"%s\"\n", #a); \
-			vcc_ErrWhere(tl, p->return_tok[d]); \
+#define VCL_RET_MAC(l, U) 						\
+		if (u & (1 << (VCL_RET_##U))) {				\
+			vsb_printf(tl->sb, "Invalid return \"" #l "\"\n");\
+			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
 		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
@@ -281,7 +282,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned returns)
 	}
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
-		if (vcc_CheckActionRecurse(tl, pc->p, returns)) {
+		if (vcc_CheckActionRecurse(tl, pc->p, bitmap)) {
 			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
@@ -305,19 +306,17 @@ vcc_CheckAction(struct tokenlist *tl)
 		if (i < 0)
 			continue;
 		m = method_tab + i;
-		if (vcc_CheckActionRecurse(tl, p, m->returns)) {
+		if (vcc_CheckActionRecurse(tl, p, m->ret_bitmap)) {
 			vsb_printf(tl->sb,
 			    "\n...which is the \"%s\" method\n", m->name);
 			vsb_printf(tl->sb, "Legal returns are:");
-#define VCL_RET_MAC(a, b, c, d) \
-			if (m->returns & c) \
-				vsb_printf(tl->sb, " \"%s\"", #a);
-#define VCL_RET_MAC_E(a, b, c, d) VCL_RET_MAC(a, b, c, d)
+#define VCL_RET_MAC(l, U)						\
+			if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
+				vsb_printf(tl->sb, " \"%s\"", #l);
 /*lint -save -e525 -e539 */
 #include "vcl_returns.h"
 /*lint +e525 */
 #undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
 /*lint -restore */
 			vsb_printf(tl->sb, "\n");
 			return (1);

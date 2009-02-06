@@ -144,7 +144,7 @@ puts $fo "\n#define VCL_MET_MAX\t\t$u\n"
 puts $fo "/* VCL Returns */"
 set i 0
 foreach k $returns {
-	puts $fo "#define VCL_RET_[string toupper $k]\t\t(1 << $i)"
+	puts $fo "#define VCL_RET_[string toupper $k]\t\t$i"
 	incr i
 }
 puts $fo "\n#define VCL_RET_MAX\t\t$i\n"
@@ -186,11 +186,9 @@ set i 0
 foreach k $returns {
 	set u [string toupper $k]
 	if {$k == "error"} {
-		puts $for "#ifdef VCL_RET_MAC_E"
-		puts $for "VCL_RET_MAC_E($k, $u, (1 << $i), $i)"
-		puts $for "#endif"
+		puts $for "VCL_RET_MAC($k, $u)"
 	} else {
-		puts $for "VCL_RET_MAC($k, $u, (1 << $i), $i)"
+		puts $for "VCL_RET_MAC($k, $u)"
 	}
 	incr i
 }
@@ -202,12 +200,12 @@ foreach m $methods {
 	puts -nonewline $for "VCL_MET_MAC([lindex $m 0]"
 	puts -nonewline $for ",[string toupper [lindex $m 0]]"
 	set l [lindex $m 1]
-	puts -nonewline $for ",\n    (VCL_RET_[string toupper [lindex $l 0]]"
+	puts $for ","
+	puts $for "     ((1 << VCL_RET_[string toupper [lindex $l 0]])"
 	foreach r [lrange $l 1 end] {
-		puts -nonewline $for "|VCL_RET_[string toupper $r]"
+		puts $for "    | (1 << VCL_RET_[string toupper $r])"
 	}
-	puts -nonewline $for ")"
-	puts $for ")"
+	puts $for "))"
 	incr u
 }
 puts $for "#endif"
@@ -400,12 +398,6 @@ puts $fo ""
 puts $fo "void"
 puts $fo "vcl_output_lang_h(struct vsb *sb)"
 puts $fo "{"
-set i 0
-foreach k $returns {
-	set u [string toupper $k]
-	puts $fo "\tvsb_cat(sb, \"#define VCL_RET_$u  (1 << $i)\\n\");"
-	incr i
-}
 
 copy_include ../../include/vcl.h
 copy_include ../../include/vrt.h

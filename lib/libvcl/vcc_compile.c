@@ -84,11 +84,9 @@
 #include "libvarnish.h"
 
 struct method method_tab[] = {
-#define VCL_RET_MAC(l,U,b,n)
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
-#undef VCL_RET_MAC
 	{ NULL, 0U, 0}
 };
 
@@ -360,12 +358,10 @@ EmitStruct(const struct tokenlist *tl)
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 	Fc(tl, 0, "\t.nhashcount = %u,\n", tl->nhashcount);
-#define VCL_RET_MAC(l,u,b,n)
 #define VCL_MET_MAC(l,u,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
-#undef VCL_RET_MAC
 	Fc(tl, 0, "};\n");
 }
 
@@ -669,11 +665,8 @@ VCC_Return_Name(unsigned method)
 {
 
 	switch (method) {
-	case 0:	return ("<none>");
-#define VCL_RET_MAC(l, u, b, i) case b: return(#l);
-#define VCL_RET_MAC_E(l, u, b, i) case b: return(#l);
+#define VCL_RET_MAC(l, U) case VCL_RET_##U: return(#l);
 #include "vcl_returns.h"
-#undef VCL_RET_MAC_E
 #undef VCL_RET_MAC
 	}
 	return (NULL);
