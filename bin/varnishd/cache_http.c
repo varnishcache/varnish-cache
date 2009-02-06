@@ -354,6 +354,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 		} else {
 			VSL_stats->losthdr++;
 			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
+			return (400);
 		}
 	}
 	return (0);
