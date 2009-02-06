@@ -77,6 +77,8 @@ struct parspec {
 };
 
 static struct params master;
+static int nparspec;
+static struct parspec const ** parspec;
 
 /*--------------------------------------------------------------------*/
 
@@ -402,7 +404,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		free(ta);
 	}
 	FreeArgv(av);
-	if (cli->result != CLIS_OK) {
+	if (cli != NULL && cli->result != CLIS_OK) {
 		clean_listen_sock_head(&lsh);
 		return;
 	}
@@ -492,7 +494,7 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
  * change its default value.
  * XXX: we should generate the relevant section of varnishd.1 from here.
  */
-static const struct parspec parspec[] = {
+static const struct parspec input_parspec[] = {
 	{ "user", tweak_user, NULL, 0, 0,
 		"The unprivileged user to run as.  Setting this will "
 		"also set \"group\" to the specified user's primary group.",
@@ -915,6 +917,7 @@ mcf_wrap(struct cli *cli, const char *text)
 void
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
+	int i;
 	const struct parspec *pp;
 	int lfmt;
 
@@ -923,7 +926,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		lfmt = 0;
 	else
 		lfmt = 1;
-	for (pp = parspec; pp->name != NULL; pp++) {
+	for (i = 0; i < nparspec; i++) {
+		pp = parspec[i];
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
 		cli_out(cli, "%-*s ", margin, pp->name);
@@ -977,9 +981,11 @@ MCF_ParamSync(void)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
+	int i;
 	const struct parspec *pp;
 
-	for (pp = parspec; pp->name != NULL; pp++) {
+	for (i = 0; i < nparspec; i++) {
+		pp = parspec[i];
 		if (!strcmp(pp->name, param)) {
 			pp->func(cli, pp, val);
 			if (cli->result != CLIS_OK) {
@@ -1009,20 +1015,69 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 	MCF_ParamSet(cli, av[2], av[3]);
 }
 
+/*--------------------------------------------------------------------
+ * Add a group of parameters to the global set and sort by name.
+ */
+
+static int
+parspec_cmp(const void *a, const void *b)
+{
+	struct parspec * const * pa = a;
+	struct parspec * const * pb = b;
+	return (strcmp((*pa)->name, (*pb)->name));
+}
+
+static void
+MCF_AddParams(const struct parspec *ps)
+{
+	const struct parspec *pp;
+	int n;
+
+	n = 0;
+	for (pp = ps; pp->name != NULL; pp++) {
+		if (strlen(pp->name) + 1 > margin)
+			margin = strlen(pp->name) + 1;
+		n++;
+	}
+	parspec = realloc(parspec, (nparspec + n + 1) * sizeof *parspec);
+	for (pp = ps; pp->name != NULL; pp++)
+		parspec[nparspec++] = pp;
+	parspec[nparspec] = NULL;
+	qsort (parspec, nparspec, sizeof parspec[0], parspec_cmp);
+}
+
+/*--------------------------------------------------------------------
+ * Set defaults for all parameters
+ */
+
+static void
+MCF_SetDefaults(struct cli *cli)
+{
+	const struct parspec *pp;
+	int i;
+
+	for (i = 0; i < nparspec; i++) {
+		pp = parspec[i];
+		if (cli != NULL)
+			cli_out(cli,
+			    "Set Default for %s = %s\n", pp->name, pp->def);
+		pp->func(cli, pp, pp->def);
+		if (cli != NULL && cli->result != CLIS_OK)
+			return;
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 void
 MCF_ParamInit(struct cli *cli)
 {
-	const struct parspec *pp;
 
-	for (pp = parspec; pp->name != NULL; pp++) {
-		cli_out(cli, "Set Default for %s = %s\n", pp->name, pp->def);
-		if (strlen(pp->name) + 1 > margin)
-			margin = strlen(pp->name) + 1;
-		pp->func(cli, pp, pp->def);
-		if (cli->result != CLIS_OK)
-			return;
-	}
+	MCF_AddParams(input_parspec);
+
+	/* XXX: We do this twice, to get past any interdependencies */
+	MCF_SetDefaults(NULL);
+	MCF_SetDefaults(cli);
+
 	params = &master;
 }
