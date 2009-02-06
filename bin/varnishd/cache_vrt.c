@@ -585,23 +585,8 @@ VRT_r_server_port(struct sess *sp)
 void
 VRT_l_req_hash(struct sess *sp, const char *str)
 {
-	int l;
 
-	if (str == NULL)
-		str = "";
-	l = strlen(str);
-
-	/*
-	 * XXX: handle this by bouncing sp->vcl->nhashcount when it fails
-	 * XXX: and dispose of this request either by reallocating the
-	 * XXX: hashptr (if possible) or restarting/error the request
-	 */
-	xxxassert(sp->ihashptr < sp->nhashptr);
-
-	sp->hashptr[sp->ihashptr] = str;
-	sp->hashptr[sp->ihashptr + 1] = str + l;
-	sp->ihashptr += 2;
-	sp->lhashptr += l + 1;
+	HSH_AddString(sp, str);
 }
 
 /*--------------------------------------------------------------------*/
