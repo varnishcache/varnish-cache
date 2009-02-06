@@ -174,6 +174,9 @@ struct params {
 	/* Default grace period */
 	unsigned		default_grace;
 
+	/* Use sha256 hasing */
+	unsigned		hash_sha256;
+
 	/* Log hash string to shm */
 	unsigned		log_hash;
 
