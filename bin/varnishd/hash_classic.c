@@ -124,7 +124,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_ORNULL(noh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 
 	digest = ~0U;
 	for (u = 0; u < sp->ihashptr; u += 2) {

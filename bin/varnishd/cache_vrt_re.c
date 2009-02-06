@@ -43,7 +43,6 @@
 
 #include "shmlog.h"
 #include "vrt.h"
-#include "vsb.h"
 #include "vcl.h"
 #include "cache.h"
 
