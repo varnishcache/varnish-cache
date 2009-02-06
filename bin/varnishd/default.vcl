@@ -48,25 +48,25 @@ sub vcl_recv {
       req.request != "OPTIONS" &&
       req.request != "DELETE") {
         /* Non-RFC2616 or CONNECT which is weird. */
-        pipe;
+        return (pipe);
     }
     if (req.request != "GET" && req.request != "HEAD") {
         /* We only deal with GET and HEAD by default */
-        pass;
+        return (pass);
     }
     if (req.http.Authorization || req.http.Cookie) {
         /* Not cacheable by default */
-        pass;
+        return (pass);
     }
-    lookup;
+    return (lookup);
 }
 
 sub vcl_pipe {
-    pipe;
+    return (pipe);
 }
 
 sub vcl_pass {
-    pass;
+    return (pass);
 }
 
 sub vcl_hash {
@@ -76,48 +76,48 @@ sub vcl_hash {
     } else {
         set req.hash += server.ip;
     }
-    hash;
+    return (hash);
 }
 
 sub vcl_hit {
     if (!obj.cacheable) {
-        pass;
+        return (pass);
     }
-    deliver;
+    return (deliver);
 }
 
 sub vcl_miss {
-    fetch;
+    return (fetch);
 }
 
 sub vcl_fetch {
     if (!obj.cacheable) {
-        pass;
+        return (pass);
     }
     if (obj.http.Set-Cookie) {
-        pass;
+        return (pass);
     }
     set obj.prefetch =  -30s;
-    deliver;
+    return (deliver);
 }
 
 sub vcl_deliver {
-    deliver;
+    return (deliver);
 }
 
 sub vcl_discard {
     /* XXX: Do not redefine vcl_discard{}, it is not yet supported */
-    discard;
+    return (discard);
 }
 
 sub vcl_prefetch {
     /* XXX: Do not redefine vcl_prefetch{}, it is not yet supported */
-    fetch;
+    return (fetch);
 }
 
 sub vcl_timeout {
     /* XXX: Do not redefine vcl_timeout{}, it is not yet supported */
-    discard;
+    return (discard);
 }
 
 sub vcl_error {
@@ -141,5 +141,5 @@ sub vcl_error {
   </body>
 </html>
 "};
-    deliver;
+    return (deliver);
 }

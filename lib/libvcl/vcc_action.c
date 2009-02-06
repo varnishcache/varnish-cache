@@ -41,23 +41,37 @@
 
 /*--------------------------------------------------------------------*/
 
-#define VCL_RET_MAC(l,u,b,i)				\
-static void						\
-parse_##l(struct tokenlist *tl)				\
-{							\
-							\
-	Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #u);	\
-	vcc_ProcAction(tl->curproc, i, tl->t);		\
-	vcc_NextToken(tl);				\
-}
+static void
+parse_action(struct tokenlist *tl)
+{
+	int retval = 0;
 
+	Expect(tl, ID);
+
+#define VCL_RET_MAC(l, u, b, i)						\
+	do {								\
+		if (vcc_IdIs(tl->t, #l)) {				\
+			Fb(tl, 1, "VRT_done(sp, VCL_RET_%s);\n", #u);	\
+			vcc_ProcAction(tl->curproc, i, tl->t);		\
+			retval = 1;					\
+		}							\
+	} while (0);
+#define VCL_RET_MAC_E(l, u, b, i) VCL_RET_MAC(l, u, b, i)
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
+#undef VCL_RET_MAC_E
+	if (!retval) {
+		vsb_printf(tl->sb, "Expected action name.\n");
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
+	vcc_NextToken(tl);
+}
 
 /*--------------------------------------------------------------------*/
 
 static void
-parse_restart_real(struct tokenlist *tl)
+parse_restart(struct tokenlist *tl)
 {
 	struct token *t1;
 
@@ -70,7 +84,9 @@ parse_restart_real(struct tokenlist *tl)
 		vcc_ErrWhere(tl, t1);
 		ERRCHK(tl);
 	}
-	parse_restart(tl);
+	Fb(tl, 1, "VRT_done(sp, VCL_RET_RESTART);\n");
+	vcc_ProcAction(tl->curproc, VCL_RET_RESTART, tl->t);
+	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------*/
@@ -407,6 +423,22 @@ parse_panic(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_return(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+	Expect(tl, '(');
+	vcc_NextToken(tl);
+	Expect(tl, ID);
+
+	parse_action(tl);
+	ERRCHK(tl);
+	Expect(tl, ')');
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_synthetic(struct tokenlist *tl)
 {
 	vcc_NextToken(tl);
@@ -430,12 +462,11 @@ static struct action_table {
 	const char		*name;
 	action_f		*func;
 } action_table[] = {
-	{ "restart",	parse_restart_real },
-#define VCL_RET_MAC(l, u, b, i) { #l, parse_##l },
-#define VCL_RET_MAC_E(l, u, b, i) VCL_RET_MAC(l, u, b, i)
+	{ "restart",		parse_restart },
+	{ "error",		parse_error },
+#define VCL_RET_MAC(l, u, b, i) { #l, parse_action },
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-#undef VCL_RET_MAC_E
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
@@ -447,6 +478,7 @@ static struct action_table {
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic },
 	{ "unset",		parse_unset },
+	{ "return",		parse_return },
 	{ NULL,			NULL }
 };
 
