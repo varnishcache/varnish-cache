@@ -115,7 +115,7 @@ backend www {
 .Ss Directors
 Directors choose from different backends based on health status and a
 per-director algorithm.
-There currently exists a round-robin and a random director.  
+There currently exists a round-robin and a random director.
 .Pp
 Directors are defined using:
 .Bd -literal -offset 4n
@@ -148,7 +148,7 @@ of traffic to send to the particular backend.
 The round-robin does not take any options.
 .Ss Backend probes
 Backends can be probed to see whether they should be considered
-healthy or not.  The return status can also be checked by using 
+healthy or not.  The return status can also be checked by using
 .Fa req.backend.healthy
 .
 .Fa .window
@@ -206,7 +206,7 @@ if (client.ip ~ local) {
     pipe;
 }
 .Ed
-.Ss Grace 
+.Ss Grace
 If the backend takes a long time to generate an object there is a risk
 of a thread pile up.
 In order to prevent this you can enable grace.
