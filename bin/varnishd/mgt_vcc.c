@@ -468,7 +468,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 
 	vf = mgt_VccCompile(&sb, av[3], 0);
 	if (vsb_len(sb) > 0)
-		cli_out(cli, "%s", vsb_data(sb));
+		cli_out(cli, "%s\n", vsb_data(sb));
 	vsb_delete(sb);
 	if (vf == NULL) {
 		cli_out(cli, "VCL compilation failed");
