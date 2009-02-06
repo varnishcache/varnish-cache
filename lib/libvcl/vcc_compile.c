@@ -670,8 +670,8 @@ VCC_Return_Name(unsigned method)
 
 	switch (method) {
 	case 0:	return ("<none>");
-#define VCL_RET_MAC(l, u, b, i) case b: return(#u);
-#define VCL_RET_MAC_E(l, u, b, i) case b: return(#u);
+#define VCL_RET_MAC(l, u, b, i) case b: return(#l);
+#define VCL_RET_MAC_E(l, u, b, i) case b: return(#l);
 #include "vcl_returns.h"
 #undef VCL_RET_MAC_E
 #undef VCL_RET_MAC
