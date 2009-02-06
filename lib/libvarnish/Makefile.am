@@ -24,6 +24,7 @@ libvarnish_la_SOURCES = \
 	vlu.c \
 	vpf.c \
 	vsb.c \
+	vsha256.c \
 	vss.c \
 	vtmpfile.c
 
