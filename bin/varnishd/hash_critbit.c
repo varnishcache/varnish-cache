@@ -30,6 +30,8 @@
  * A Crit Bit tree based hash
  */
 
+#define PHK	1
+
 #include "config.h"
 
 #include <pthread.h>
@@ -41,6 +43,8 @@
 #include "hash_slinger.h"
 
 static struct lock hcb_mtx;
+
+static VTAILQ_HEAD(,objhead)	laylow = VTAILQ_HEAD_INITIALIZER(laylow);
 
 /**********************************************************************
  * Table for finding out how many bits two bytes have in common,
@@ -160,7 +164,7 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2, struct hcb_y 
 {
 	unsigned u, r;
 
-	for (u = 0; u < oh1->digest_len && oh1->digest[u] == oh2->digest[u]; u++)
+	for (u = 0; u < DIGEST_LEN && oh1->digest[u] == oh2->digest[u]; u++)
 		;
 	r = hcb_bits(oh1->digest[u], oh2->digest[u]);
 	y->ptr = u;
@@ -190,7 +194,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
-		if (y->ptr > oh->digest_len)
+		if (y->ptr > DIGEST_LEN)
 			s = 0;
 		else
 			s = (oh->digest[y->ptr] & y->bitmask) != 0;
@@ -203,8 +207,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	/* We found a node, does it match ? */
 	oh2 = hcb_l_node(*p);
-	if (oh2->digest_len == oh->digest_len &&
-	    !memcmp(oh2->digest, oh->digest, oh->digest_len))
+	if (!memcmp(oh2->digest, oh->digest, DIGEST_LEN))
 		return (oh2);
 
 	if (!has_lock)
@@ -227,7 +230,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 		y = hcb_l_y(*p);
 		if (y->critbit > y2->critbit)
 			break;
-		if (y->ptr > oh->digest_len)
+		if (y->ptr > DIGEST_LEN)
 			s = 0;
 		else
 			s = (oh->digest[y->ptr] & y->bitmask) != 0;
@@ -259,7 +262,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	y = NULL;
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
-		if (y->ptr > oh->digest_len)
+		if (y->ptr > DIGEST_LEN)
 			s = 0;
 		else
 			s = (oh->digest[y->ptr] & y->bitmask) != 0;
@@ -291,7 +294,7 @@ dumptree(uintptr_t p, int indent, FILE *fd)
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
 		fprintf(fd, "%*.*sN %u %u r%d <%02x%02x%02x...> <%s>\n",
-		    indent, indent, "", oh->digest_len, indent / 2,
+		    indent, indent, "", DIGEST_LEN, indent / 2,
 		    oh->refcnt,
 		    oh->digest[0], oh->digest[1], oh->digest[2],
 		    oh->hash);
@@ -319,12 +322,49 @@ dump(const struct hcb_root *root, FILE *fd)
 
 /**********************************************************************/
 
+#define COOL_DURATION	15		/* seconds */
+
+static void *
+hcb_cleaner(void *priv)
+{
+	struct objhead *oh, *oh2;
+	struct hcb_y *y;
+
+	THR_SetName("hcb_cleaner");
+	(void)priv;
+	while (1) {
+		sleep(1);
+		Lck_Lock(&hcb_mtx);
+		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
+			if (oh->hash != NULL) {
+				free(oh->hash);
+				oh->hash = NULL;
+			}
+			y = (void *)&oh->u;
+			if (y->leaf[0] || y->leaf[1])
+				continue;
+			if (++oh->refcnt > COOL_DURATION) {
+				VTAILQ_REMOVE(&laylow, oh, coollist);
+				if (PHK)
+					fprintf(stderr, "OH %p is cold enough\n", oh);
+				free(oh);
+				VSL_stats->n_objecthead--;
+			}
+		}
+		Lck_Unlock(&hcb_mtx);
+	}
+}
+
+/**********************************************************************/
+
 static void
 hcb_start(void)
 {
 	struct objhead *oh = NULL;
+	pthread_t tp;
 
 	(void)oh;
+	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	assert(params->hash_sha256);
 	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);
@@ -336,7 +376,6 @@ static int
 hcb_deref(struct objhead *oh)
 {
 	int r;
-	struct hcb_y *y;
 
 	r = 1;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -344,16 +383,11 @@ hcb_deref(struct objhead *oh)
 	if (--oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
-		y = (void*)&oh->u;
-		if (y->leaf[0] == 0 && y->leaf[1] == 0)
-			r = 0;
-		else {
-			/* XXX: on waiting list */
-		}
+		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
 		Lck_Unlock(&hcb_mtx);
 	}
 	Lck_Unlock(&oh->mtx);
-	if (0) {
+	if (PHK) {
 		fprintf(stderr, "%s %d %d <%s>\n", __func__, __LINE__, r, oh->hash);
 		dump(&hcb_root, stderr);
 	}
@@ -391,7 +425,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	oh =  hcb_insert(&hcb_root, noh, 1);
 	if (oh == noh) {
 		VSL_stats->hcb_insert++;
-		if (0) {
+		if (PHK) {
 			fprintf(stderr, "%s %d\n", __func__, __LINE__);
 			dump(&hcb_root, stderr);
 		}
@@ -400,7 +434,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		noh->hash = NULL;
 		noh->hashlen = 0;
 		VSL_stats->hcb_lock++;
-		if (0) {
+		if (PHK) {
 			fprintf(stderr, "%s %d\n", __func__, __LINE__);
 			dump(&hcb_root, stderr);
 		}
