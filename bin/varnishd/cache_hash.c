@@ -251,7 +251,6 @@ HSH_Lookup(struct sess *sp)
 	struct http *h;
 	struct objhead *oh;
 	struct object *o, *busy_o, *grace_o;
-	unsigned char sha256[32];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -259,12 +258,14 @@ HSH_Lookup(struct sess *sp)
 	AN(hash);
 	w = sp->wrk;
 	h = sp->http;
-	if (params->hash_sha256) {
-		SHA256_Final(sha256, sp->wrk->sha256ctx);
-		/* WSP(sp, SLT_Debug, "SHA256: <%.32s>", sha256); */
-	}
 
 	HSH_Prealloc(sp);
+	if (params->hash_sha256) {
+		SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
+		sp->wrk->nobjhead->digest_len = 32;
+		/* WSP(sp, SLT_Debug, "SHA256: <%.32s>", sha256); */
+	}
+	
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		oh = sp->objhead;

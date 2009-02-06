@@ -40,6 +40,7 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_ws.c \
 	hash_classic.c \
+	hash_critbit.c \
 	hash_simple_list.c \
 	instance.c \
 	mgt_child.c \
