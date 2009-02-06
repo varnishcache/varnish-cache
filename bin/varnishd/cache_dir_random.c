@@ -75,7 +75,6 @@ vdi_random_getfd(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
 
-	k = 0;
 	for (k = 0; k < vs->retries; ) {
 
 		/* Sum up the weights of healty backends */
