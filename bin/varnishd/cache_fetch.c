@@ -353,12 +353,7 @@ Fetch(struct sess *sp)
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
-	if (i > 0) {
-		VBE_ClosedFd(sp);
-		return (__LINE__);
-	}
-
-	if (WRW_FlushRelease(w)) {
+	if (WRW_FlushRelease(w) || i > 0) {
 		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
