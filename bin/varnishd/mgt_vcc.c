@@ -174,7 +174,7 @@ run_vcc(void *priv)
 		fprintf(stderr, "Cannot write %s", vp->sf);
 		exit (1);
 	}
-	close(fd);
+	AZ(close(fd));
 	free(csrc);
 	exit (0);
 }
@@ -213,6 +213,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 
 	if (C_flag) {
 		csrc = vreadfile(sf);
+		XXXAN(csrc);
 		(void)fputs(csrc, stdout);
 		free(csrc);
 	}
