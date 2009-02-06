@@ -55,10 +55,23 @@
 #include "vss.h"
 
 #define MAGIC_INIT_STRING	"\001"
-static struct params master;
+struct params master;
 static int nparspec;
 static struct parspec const ** parspec;
 static int margin;
+
+/*--------------------------------------------------------------------*/
+
+static const struct parspec *
+mcf_findpar(const char *name)
+{
+	int i;
+
+	for (i = 0; i < nparspec; i++)
+		if (!strcmp(parspec[i]->name, name)) 
+			return (parspec[i]);
+	return (NULL);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -99,7 +112,7 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dst, const char *
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -160,7 +173,7 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
     unsigned min, unsigned max)
 {
@@ -191,7 +204,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -278,29 +291,6 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 	} else {
 		cli_out(cli, "%d", (int)master.gid);
 	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
-    const char *arg)
-{
-
-	tweak_generic_uint(cli, &master.wthread_min, arg,
-	    par->umin, master.wthread_max);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
-    const char *arg)
-{
-
-	(void)par;
-	tweak_generic_uint(cli, &master.wthread_max, arg,
-	    master.wthread_min, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
@@ -493,107 +483,6 @@ static const struct parspec input_parspec[] = {
 		"flush of the cache use \"url.purge .\"",
 		0,
 		"120", "seconds" },
-	{ "thread_pools", tweak_uint, &master.wthread_pools, 1, UINT_MAX,
-		"Number of worker thread pools.\n"
-		"\n"
-		"Increasing number of worker pools decreases lock "
-		"contention.\n"
-		"\n"
-		"Too many pools waste CPU and RAM resources, and more than "
-		"one pool for each CPU is probably detrimal to performance.\n"
-		"\n"
-		"Can be increased on the fly, but decreases require a "
-		"restart to take effect.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"2", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
-		"The maximum number of worker threads in all pools combined.\n"
-		"\n"
-		"Do not set this higher than you have to, since excess "
-		"worker threads soak up RAM and CPU and generally just get "
-		"in the way of getting work done.\n",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"500", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL, 2, 0,
-		"The minimum number of threads in each worker pool.\n"
-		"\n"
-		"Increasing this may help ramp up faster from low load "
-		"situations where threads have expired.\n"
-		"\n"
-		"Minimum is 2 threads.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"5", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 1, 0,
-		"Thread idle threshold.\n"
-		"\n"
-		"Threads in excess of thread_pool_min, which have been idle "
-		"for at least this long are candidates for purging.\n"
-		"\n"
-		"Minimum is 1 second.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"300", "seconds" },
-	{ "thread_pool_purge_delay",
-		tweak_timeout, &master.wthread_purge_delay, 100, 0,
-		"Wait this long between purging threads.\n"
-		"\n"
-		"This controls the decay of thread pools when idle(-ish).\n"
-		"\n"
-		"Minimum is 100 milliseconds.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"1000", "milliseconds" },
-	{ "thread_pool_add_threshold",
-		tweak_uint, &master.wthread_add_threshold, 0, UINT_MAX,
-		"Overflow threshold for worker thread creation.\n"
-		"\n"
-		"Setting this too low, will result in excess worker threads, "
-		"which is generally a bad idea.\n"
-		"\n"
-		"Setting it too high results in insuffient worker threads.\n",
-		EXPERIMENTAL,
-		"2", "requests" },
-	{ "thread_pool_add_delay",
-		tweak_timeout, &master.wthread_add_delay, 0, UINT_MAX,
-		"Wait at least this long between creating threads.\n"
-		"\n"
-		"Setting this too long results in insuffient worker threads.\n"
-		"\n"
-		"Setting this too short increases the risk of worker "
-		"thread pile-up.\n",
-		EXPERIMENTAL,
-		"20", "milliseconds" },
-	{ "thread_pool_fail_delay",
-		tweak_timeout, &master.wthread_fail_delay, 100, UINT_MAX,
-		"Wait at least this long after a failed thread creation "
-		"before trying to create another thread.\n"
-		"\n"
-		"Failure to create a worker thread is often a sign that "
-		" the end is near, because the process is running out of "
-		"RAM resources for thread stacks.\n"
-		"This delay tries to not rush it on needlessly.\n"
-		"\n"
-		"If thread creation failures are a problem, check that "
-		"thread_pool_max is not too high.\n"
-		"\n"
-		"It may also help to increase thread_pool_timeout and "
-		"thread_pool_min, to reduce the rate at which treads are "
-		"destroyed and later recreated.\n",
-		EXPERIMENTAL,
-		"200", "milliseconds" },
-	{ "overflow_max", tweak_uint, &master.overflow_max, 0, UINT_MAX,
-		"Percentage permitted overflow queue length.\n"
-		"\n"
-		"This sets the ratio of queued requests to worker threads, "
-		"above which sessions will be dropped instead of queued.\n",
-		EXPERIMENTAL,
-		"100", "%" },
-	{ "rush_exponent", tweak_uint, &master.rush_exponent, 2, UINT_MAX,
-		"How many parked request we start for each completed "
-		"request on the object.\n"
-		"NB: Even with the implict delay of delivery, "
-		"this parameter controls an exponential increase in "
-		"number of worker threads.  ",
-		EXPERIMENTAL,
-		"3", "requests per request" },
 	{ "sess_workspace", tweak_uint, &master.sess_workspace, 1024, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for sessions. "
 		"This space must be big enough for the entire HTTP protocol "
@@ -961,24 +850,21 @@ MCF_ParamSync(void)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
-	int i;
 	const struct parspec *pp;
 
-	for (i = 0; i < nparspec; i++) {
-		pp = parspec[i];
-		if (!strcmp(pp->name, param)) {
-			pp->func(cli, pp, val);
-			if (cli->result != CLIS_OK) {
-			} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
-				cli_out(cli, "Change will take effect"
-				    " when child is restarted");
-			} else if (pp->flags & MUST_RELOAD) {
-				cli_out(cli, "Change will take effect"
-				    " when VCL script is reloaded");
-			}
-			MCF_ParamSync();
-			return;
+	pp = mcf_findpar(param);
+	if (pp != NULL) {
+		pp->func(cli, pp, val);
+		if (cli->result != CLIS_OK) {
+		} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
+			cli_out(cli, "Change will take effect"
+			    " when child is restarted");
+		} else if (pp->flags & MUST_RELOAD) {
+			cli_out(cli, "Change will take effect"
+			    " when VCL script is reloaded");
 		}
+		MCF_ParamSync();
+		return;
 	}
 	cli_result(cli, CLIS_PARAM);
 	cli_out(cli, "Unknown parameter \"%s\".", param);
@@ -1015,6 +901,8 @@ MCF_AddParams(const struct parspec *ps)
 
 	n = 0;
 	for (pp = ps; pp->name != NULL; pp++) {
+		if (mcf_findpar(pp->name) != NULL)
+			fprintf(stderr, "Duplicate param: %s\n", pp->name);
 		if (strlen(pp->name) + 1 > margin)
 			margin = strlen(pp->name) + 1;
 		n++;
@@ -1054,6 +942,7 @@ MCF_ParamInit(struct cli *cli)
 {
 
 	MCF_AddParams(input_parspec);
+	MCF_AddParams(WRK_parspec);
 
 	/* XXX: We do this twice, to get past any interdependencies */
 	MCF_SetDefaults(NULL);
