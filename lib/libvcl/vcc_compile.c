@@ -662,6 +662,23 @@ VCC_Compile(struct vsb *sb, const char *b, const char *e)
 	return (r);
 }
 
+/*--------------------------------------------------------------------*/
+
+const char *
+VCC_Return_Name(unsigned method)
+{
+
+	switch (method) {
+	case 0:	return ("<none>");
+#define VCL_RET_MAC(l, u, b, i) case b: return(#u);
+#define VCL_RET_MAC_E(l, u, b, i) case b: return(#u);
+#include "vcl_returns.h"
+#undef VCL_RET_MAC_E
+#undef VCL_RET_MAC
+	}
+	return (NULL);
+}
+
 /*--------------------------------------------------------------------
  * Initialize the compiler and register the default VCL code for later
  * compilation runs.
