@@ -158,8 +158,9 @@ esi_addbit(struct esi_work *ew)
 	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
 	ew->eb->verbatim = ew->dst;
 	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
-	VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
-	    Tlen(ew->dst), Tlen(ew->dst), ew->dst.b);
+	if (params->esi_syntax & 0x4)
+		VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
+		    Tlen(ew->dst), Tlen(ew->dst), ew->dst.b);
 	return(ew->eb);
 }
 
@@ -172,8 +173,9 @@ static void
 esi_addverbatim(struct esi_work *ew)
 {
 
-	VSL(SLT_Debug, ew->sp->fd, "AddVer: %d <%.*s>",
-	    Tlen(ew->o), Tlen(ew->o), ew->o.b);
+	if (params->esi_syntax & 0x4)
+		VSL(SLT_Debug, ew->sp->fd, "AddVer: %d <%.*s>",
+		    Tlen(ew->o), Tlen(ew->o), ew->o.b);
 	if (ew->o.b != ew->dst.e)
 		memmove(ew->dst.e, ew->o.b, Tlen(ew->o));
 	ew->dst.e += Tlen(ew->o);
@@ -283,9 +285,9 @@ esi_addinclude(struct esi_work *ew, txt t)
 	VSL(SLT_Debug, 0, "Incl \"%.*s\"", t.e - t.b, t.b);
 	eb = esi_addbit(ew);
 	while (esi_attrib(ew, &t, &tag, &val) == 1) {
-		VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
-		    tag.e - tag.b, tag.b,
-		    val.e - val.b, val.b);
+		if (params->esi_syntax & 0x4)
+			VSL(SLT_Debug, 0, "<%.*s> -> <%.*s>",
+			    tag.e - tag.b, tag.b, val.e - val.b, val.b);
 		if (Tlen(tag) != 3 || memcmp(tag.b, "src", 3))
 			continue;
 		if (Tlen(val) == 0) {
@@ -496,8 +498,9 @@ esi_parse2(struct esi_work *ew)
 			r = p + 1;
 		}
 
-		VSL(SLT_Debug, ew->sp->fd, "Element: clos=%d [%.*s]",
-		    celem, q - r, r);
+		if (params->esi_syntax & 0x4)
+			VSL(SLT_Debug, ew->sp->fd, "Element: clos=%d [%.*s]",
+			    celem, q - r, r);
 
 		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
 
@@ -612,8 +615,9 @@ esi_parse(struct esi_work *ew)
 {
 	char *p;
 
-	VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
-	    Tlen(ew->t), Tlen(ew->t), ew->t.b);
+	if (params->esi_syntax & 0x4)
+		VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
+		    Tlen(ew->t), Tlen(ew->t), ew->t.b);
 	p = esi_parse2(ew);
 	assert(ew->o.b >= ew->t.b);
 	assert(ew->o.e <= ew->t.e);
