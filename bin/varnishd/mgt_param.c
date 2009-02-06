@@ -908,6 +908,7 @@ MCF_AddParams(const struct parspec *ps)
 		n++;
 	}
 	parspec = realloc(parspec, (nparspec + n + 1) * sizeof *parspec);
+	XXXAN(parspec);
 	for (pp = ps; pp->name != NULL; pp++)
 		parspec[nparspec++] = pp;
 	parspec[nparspec] = NULL;
