@@ -3,7 +3,7 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcc_gen_fixed_token.tcl instead
+ * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
 #define LOW_TOKEN 128

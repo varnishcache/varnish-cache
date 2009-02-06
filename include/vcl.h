@@ -3,7 +3,7 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcc_gen_fixed_token.tcl instead
+ * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
 struct sess;
@@ -12,6 +12,36 @@ struct cli;
 typedef void vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
+
+/* VCL Methods */
+#define VCL_MET_RECV		(1 << 0)
+#define VCL_MET_PIPE		(1 << 1)
+#define VCL_MET_PASS		(1 << 2)
+#define VCL_MET_HASH		(1 << 3)
+#define VCL_MET_MISS		(1 << 4)
+#define VCL_MET_HIT		(1 << 5)
+#define VCL_MET_FETCH		(1 << 6)
+#define VCL_MET_DELIVER		(1 << 7)
+#define VCL_MET_PREFETCH	(1 << 8)
+#define VCL_MET_TIMEOUT		(1 << 9)
+#define VCL_MET_DISCARD		(1 << 10)
+#define VCL_MET_ERROR		(1 << 11)
+
+#define VCL_MET_MAX		12
+
+/* VCL Returns */
+#define VCL_RET_ERROR		(1 << 0)
+#define VCL_RET_LOOKUP		(1 << 1)
+#define VCL_RET_HASH		(1 << 2)
+#define VCL_RET_PIPE		(1 << 3)
+#define VCL_RET_PASS		(1 << 4)
+#define VCL_RET_FETCH		(1 << 5)
+#define VCL_RET_DELIVER		(1 << 6)
+#define VCL_RET_DISCARD		(1 << 7)
+#define VCL_RET_KEEP		(1 << 8)
+#define VCL_RET_RESTART		(1 << 9)
+
+#define VCL_RET_MAX		10
 
 struct VCL_conf {
 	unsigned	magic;

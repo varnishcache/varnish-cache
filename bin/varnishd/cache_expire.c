@@ -60,6 +60,7 @@
 #include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
+#include "vcl.h"
 #include "hash_slinger.h"
 
 /*

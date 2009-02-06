@@ -540,7 +540,7 @@ Function(struct tokenlist *tl)
 
 	m = IsMethod(tl->t);
 	if (m != -1) {
-		assert(m < N_METHODS);
+		assert(m < VCL_MET_MAX);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
 			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
