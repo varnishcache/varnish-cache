@@ -427,14 +427,11 @@ HSH_Ref(struct object *o)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
-	if (oh != NULL) {
-		CHECK_OBJ(oh, OBJHEAD_MAGIC);
-		Lck_Lock(&oh->mtx);
-	}
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_Lock(&oh->mtx);
 	assert(o->refcnt > 0);
 	o->refcnt++;
-	if (oh != NULL)
-		Lck_Unlock(&oh->mtx);
+	Lck_Unlock(&oh->mtx);
 }
 
 void
