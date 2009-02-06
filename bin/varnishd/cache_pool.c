@@ -72,6 +72,7 @@
 #include "cache.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
+#include "vsha256.h"
 
 VTAILQ_HEAD(workerhead, worker);
 
@@ -269,6 +270,7 @@ wrk_thread(void *priv)
 	struct worker *w, ww;
 	struct wq *qp;
 	unsigned char wlog[params->shm_workspace];
+	struct SHA256Context sha256;
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -278,6 +280,7 @@ wrk_thread(void *priv)
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
+	w->sha256ctx = &sha256;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	VSL(SLT_WorkThread, 0, "%p start", w);

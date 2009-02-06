@@ -93,6 +93,8 @@ struct esi_bit;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
+struct SHA256Context;
+
 struct lock { void *priv; };		// Opaque
 
 /*--------------------------------------------------------------------*/
@@ -202,6 +204,8 @@ struct worker {
 
 	unsigned char		*wlb, *wlp, *wle;
 	unsigned		wlr;
+
+	struct SHA256Context	*sha256ctx;
 };
 
 /* Work Request for worker thread ------------------------------------*/
