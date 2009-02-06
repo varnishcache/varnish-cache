@@ -40,7 +40,7 @@
 -esym(458, heritage)
 -esym(458, name_key)
 //////////////
--passes=1
+-passes=3
 
 +libh mgt_event.h
 +libh ../../config.h
@@ -54,6 +54,7 @@
 -emacro(527, WRONG)	// unreachable code
 
 -emacro(702, WEXITSTATUS)	// signed shift right 
+-efunc(525, VCC_Return_Name)	// Negative indent
 
 
 // -header(../../config.h)

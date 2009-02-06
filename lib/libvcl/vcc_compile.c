@@ -668,8 +668,9 @@ VCC_Return_Name(unsigned method)
 #define VCL_RET_MAC(l, U) case VCL_RET_##U: return(#l);
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
+	default:
+		return (NULL);
 	}
-	return (NULL);
 }
 
 /*--------------------------------------------------------------------
