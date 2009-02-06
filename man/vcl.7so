@@ -56,7 +56,7 @@ In addition to the C-like assignment (=), comparison (==) and boolean
 (!, && and ||) operators, VCL supports regular expression and ACL
 matching using the ~ operator.
 .Pp
-Unlike C and Perl, the backslash (\\) character has no special meaning
+Unlike C and Perl, the backslash (\e) character has no special meaning
 in strings in VCL, which use the (%xx) escape mechanism just like URLs,
 so it can be freely used in regular expressions without doubling.
 .Pp
@@ -174,7 +174,7 @@ backend www {
     .host = "www.example.com";
     .port = "http";
     .probe = {
-        # NB: \\r\\n automatically inserted after each string!
+        # NB: \er\en automatically inserted after each string!
         .request =
             "GET / HTTP/1.1"
             "Host: www.foo.bar"
@@ -236,11 +236,11 @@ replaced with
 .Fa sub .
 Within
 .Fa sub ,
-.Va \\0
+.Va \e0
 (which can also be spelled
 .Va & )
 is replaced with the entire matched string, and
-.Va \\n
+.Va \en
 is replaced with the contents of subgroup
 .Ar n
 in the matched string.
