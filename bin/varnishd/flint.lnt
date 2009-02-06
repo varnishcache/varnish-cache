@@ -51,6 +51,7 @@
 -emacro(736, isnan)  // isnanf
 -efile(766, ../../config.h)
 -emacro(413, offsetof)	// likely null pointer
+-emacro(527, WRONG)	// unreachable code
 
 -emacro(702, WEXITSTATUS)	// signed shift right 
 
