@@ -50,7 +50,7 @@
 #include "mgt_cli.h"
 
 #include "heritage.h"
-#include "param.h"
+#include "vparam.h"
 
 #include "vss.h"
 
