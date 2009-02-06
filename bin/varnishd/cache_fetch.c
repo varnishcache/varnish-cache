@@ -414,15 +414,31 @@ Fetch(struct sess *sp)
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_ClosedFd(sp);
 		return (__LINE__);
+	} else if (http_HdrIs(hp, H_Connection, "keep-alive")) {
+		/*
+		 * If we have Connection: keep-alive, it cannot possibly be
+		 * EOF encoded, and since it is neither length nor chunked
+		 * it must be zero length.
+		 */
+		mklen = 1;
+	} else if (http_HdrIs(hp, H_Connection, "close")) {
+		/*
+		 * If we have connection closed, it is safe to read what
+		 * comes in any case.
+		 */
+		cls = fetch_eof(sp, htc);
+		mklen = 1;
+	} else if (hp->protover < 1.1) {
+		/*
+		 * With no Connection header, assume EOF
+		 */
+		cls = fetch_eof(sp, htc);
+		mklen = 1;
 	} else {
-		switch (http_GetStatus(hp)) {
-			case 200:
-				cls = fetch_eof(sp, htc);
-				mklen = 1;
-				break;
-			default:
-				break;
-		}
+		/*
+		 * Assume zero length
+		 */
+		mklen = 1;
 	}
 
 	if (cls < 0) {
@@ -451,7 +467,7 @@ Fetch(struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->fd, hp2,
 		    "Content-Length: %u", sp->obj->len);
 
-	if (http_GetHdr(hp, H_Connection, &b) && !strcasecmp(b, "close"))
+	if (http_HdrIs(hp, H_Connection, "close")) 
 		cls = 1;
 
 	if (cls)
