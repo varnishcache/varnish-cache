@@ -1,0 +1,21 @@
+# $Id$
+
+test "Regression test for ticket 409"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	send "HTTP/1.0 400 Not funny\r\n"
+	send "\r\n"
+	send "12345\r\n"
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 400
+	expect resp.bodylen == 7
+} -run
