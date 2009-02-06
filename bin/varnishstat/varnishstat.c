@@ -52,6 +52,7 @@
 
 #define FIELD_EXCLUSION_CHARACTER '^'
 
+
 static void
 myexp(double *acc, double val, unsigned *n, unsigned nmax)
 {
@@ -95,6 +96,7 @@ static void
 do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 {
 	struct varnish_stats copy;
+	struct varnish_stats seen;
 	intmax_t ju;
 	struct timeval tv;
 	double tt, lt, hit, miss, ratio, up;
@@ -104,6 +106,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 	int ch, line;
 
 	memset(&copy, 0, sizeof copy);
+	memset(&seen, 0, sizeof seen);
 
 	a1 = a2 = a3 = 0.0;
 	n1 = n2 = n3 = 0;
@@ -144,13 +147,18 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 
 		line = 3;
 #define MAC_STAT(n, t, f, d) \
-	if ((fields == NULL || show_field( #n, fields )) && ++line < LINES) { \
+	if ((fields == NULL || show_field( #n, fields )) && line < LINES) { \
 		ju = VSL_stats->n; \
-		if (f == 'a') { \
+		if (ju == 0 && !seen.n) { \
+		} else if (f == 'a') { \
+			seen.n = 1; \
+			line++; \
 			mvprintw(line, 0, "%12ju %12.2f %12.2f %s\n", \
 			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d); \
 			copy.n = ju; \
 		} else { \
+			seen.n = 1; \
+			line++; \
 			mvprintw(line, 0, "%12ju %12s %12s %s\n", \
 			    ju, ".  ", ".  ", d); \
 		} \
