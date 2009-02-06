@@ -69,6 +69,8 @@
 
 -ffc	// No automatic custody
 
+-e455	// thread lock
+-e458	// unprotected read
 -e763	// Redundant declaration for symbol '...' previously declared
 -e726	// Extraneous comma ignored
 -e728	// Symbol ... not explicitly initialized
