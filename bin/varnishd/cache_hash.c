@@ -379,6 +379,22 @@ hsh_rush(struct objhead *oh)
 }
 
 void
+HSH_Drop(struct sess *sp)
+{
+	struct object *o;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	o = sp->obj;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	assert(o->busy);
+	assert(o->refcnt > 0);
+	o->ttl = 0;
+	o->cacheable = 0;
+	HSH_Unbusy(sp);
+	HSH_Deref(&sp->obj);
+}
+
+void
 HSH_Unbusy(const struct sess *sp)
 {
 	struct object *o;
@@ -411,7 +427,7 @@ HSH_Unbusy(const struct sess *sp)
 	if (oh != NULL)
 		Lck_Unlock(&oh->mtx);
 	if (parent != NULL)
-		HSH_Deref(parent);
+		HSH_Deref(&parent);
 }
 
 void
@@ -429,11 +445,15 @@ HSH_Ref(struct object *o)
 }
 
 void
-HSH_Deref(struct object *o)
+HSH_Deref(struct object **oo)
 {
+	struct object *o;
 	struct objhead *oh;
 	unsigned r;
 
+	AN(oo);
+	o = *oo;
+	*oo = NULL;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
 	if (oh != NULL) {
