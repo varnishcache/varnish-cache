@@ -189,7 +189,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 		return (CLIS_COMMS);
 	}
 
-	i = cli_readres(cli_i, &u, resp, params->cli_timeout);
+	(void)cli_readres(cli_i, &u, resp, params->cli_timeout);
 	if (status != NULL)
 		*status = u;
 	return (u == CLIS_OK ? 0 : u);
@@ -270,7 +270,7 @@ mgt_cli_vlu(void *priv, const char *p)
 			xxxassert(i == strlen(p));
 			i = write(cli_o, "\n", 1);
 			xxxassert(i == 1);
-			i = cli_readres(cli_i, &u, &q, params->cli_timeout);
+			(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
 			cli_result(cp->cli, u);
 			cli_out(cp->cli, "%s", q);
 			free(q);
