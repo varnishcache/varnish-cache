@@ -1,0 +1,11 @@
+# $Id$
+
+test "Regression test for ticket 409"
+
+varnish v1  -badvcl {
+	sub vcl_recv {
+		if ( req.url ~ ! "\.(png|jpg|gif|js|css)$" ) {
+			return (pass);
+		}
+	}
+}
