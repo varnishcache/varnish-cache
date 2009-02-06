@@ -123,7 +123,7 @@ cli_result(struct cli *cli, unsigned res)
 	if (cli != NULL)
 		cli->result = res;	/*lint !e64 type mismatch */
 	else
-		printf("CLI result = %d\n", res);
+		printf("CLI result = %u\n", res);
 }
 
 void
@@ -192,15 +192,16 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 {
 	char res[CLI_LINE0_LEN];	/* For NUL */
 	int i, j;
-	unsigned u, v;
+	unsigned u, v, s;
 	char *p;
 
+	if (status == NULL)
+		status = &s;
 	if (ptr != NULL)
 		*ptr = NULL;
 	i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
 	if (i != CLI_LINE0_LEN) {
-		if (status != NULL)
-			*status = CLIS_COMMS;
+		*status = CLIS_COMMS;
 		if (ptr != NULL)
 			*ptr = strdup("CLI communication error");
 		return (1);
@@ -211,12 +212,12 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	res[CLI_LINE0_LEN - 1] = '\0';
 	j = sscanf(res, "%u %u\n", &u, &v);
 	assert(j == 2);
-	if (status != NULL)
-		*status = u;
+	*status = u;
 	p = malloc(v + 1);
 	assert(p != NULL);
 	i = read_tmo(fd, p, v + 1, tmo);
 	if (i < 0) {
+		*status = CLIS_COMMS;
 		free(p);
 		return (i);
 	}
