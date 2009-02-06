@@ -343,6 +343,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 
 	assert(sp->alloc == 0);
 	assert(sp->flist == NULL);
+	Lck_AssertHeld(&sc->mtx);
 	b = sp->size / sc->pagesize;
 	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
@@ -372,6 +373,7 @@ remfree(const struct smf_sc *sc, struct smf *sp)
 
 	assert(sp->alloc == 0);
 	assert(sp->flist != NULL);
+	Lck_AssertHeld(&sc->mtx);
 	b = sp->size / sc->pagesize;
 	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
@@ -602,14 +604,16 @@ smf_open(const struct stevedore *st)
 
 	sc = st->priv;
 
+	Lck_New(&sc->mtx);
+	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);
+	Lck_Unlock(&sc->mtx);
 	printf("managed to mmap %ju bytes of %ju\n",
 	    (uintmax_t)sum, sc->filesize);
 
 	/* XXX */
 	if (sum < MINPAGES * (off_t)getpagesize())
 		exit (2);
-	Lck_New(&sc->mtx);
 
 	VSL_stats->sm_bfree += sc->filesize;
 }
