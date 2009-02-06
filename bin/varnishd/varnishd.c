@@ -543,7 +543,7 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	if (argc != 0) {
-		fprintf(stderr, "Too many arguments\n");
+		fprintf(stderr, "Too many arguments (%s...)\n", argv[0]);
 		usage();
 	}
 
