@@ -70,7 +70,11 @@ struct ban_test {
 	int			cost;
 	char			*test;
 	ban_cond_f		*func;
+	int			flags;
+#define BAN_T_REGEXP		(1 << 0)
+#define BAN_T_NOT		(1 << 1)
 	regex_t			re;
+	char			*dst;
 };
 
 struct ban {
@@ -145,7 +149,10 @@ ban_free_ban(struct ban *b)
 		bt = VTAILQ_FIRST(&b->tests);
 		VTAILQ_REMOVE(&b->tests, bt, list);
 		free(bt->test);
-		regfree(&bt->re);
+		if (bt->flags & BAN_T_REGEXP)
+			regfree(&bt->re);
+		if (bt->dst != NULL)
+			free(bt->dst);
 		FREE_OBJ(bt);
 	}
 	FREE_OBJ(b);
@@ -188,22 +195,38 @@ ban_compare(const struct ban *b1, const struct ban *b2)
  */
 
 static int
-ban_cond_url_regexp(const struct ban_test *bt, const struct object *o,
-   const struct sess *sp)
+ban_cond_str(const struct ban_test *bt, const char *p)
 {
-	(void)o;
-	return (!regexec(&bt->re, sp->http->hd[HTTP_HDR_URL].b, 0, NULL, 0));
+	int i;
+
+	if (bt->flags & BAN_T_REGEXP)
+		i = regexec(&bt->re, p, 0, NULL, 0);
+	else
+		i = strcmp(bt->dst, p);
+	if (bt->flags & BAN_T_NOT)
+		return (i);
+	return (!i);
 }
 
 static int
-ban_cond_hash_regexp(const struct ban_test *bt, const struct object *o,
+ban_cond_url(const struct ban_test *bt, const struct object *o,
+   const struct sess *sp)
+{
+	(void)o;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return(ban_cond_str(bt, sp->http->hd[HTTP_HDR_URL].b));
+}
+
+static int
+ban_cond_hash(const struct ban_test *bt, const struct object *o,
    const struct sess *sp)
 {
 	(void)sp;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
 	AN(o->objhead->hash);
-	return (!regexec(&bt->re, o->objhead->hash, 0, NULL, 0));
+	return(ban_cond_str(bt, o->objhead->hash));
 }
 
 /*--------------------------------------------------------------------
@@ -211,10 +234,28 @@ ban_cond_hash_regexp(const struct ban_test *bt, const struct object *o,
  */
 
 static int
+ban_parse_regexp(struct cli *cli, struct ban_test *bt, const char *a3)
+{
+	int i;
+	char buf[512];
+
+	i = regcomp(&bt->re, a3, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+	if (i) {
+		(void)regerror(i, &bt->re, buf, sizeof buf);
+		regfree(&bt->re);
+		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
+		cli_out(cli, "%s", buf);
+		cli_result(cli, CLIS_PARAM);
+		return (-1);
+	}
+	bt->flags |= BAN_T_REGEXP;
+	return (0);
+}
+
+static int
 ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
 {
 	struct ban_test *bt;
-	char buf[512];
 	struct vsb *sb;
 	int i;
 
@@ -226,27 +267,32 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
 		return (-1);
 	}
 
-	if (strcmp(a2, "~")) {
-		/* XXX: Add more conditionals */
-		cli_out(cli, "expected \"~\" got \"%s\"", a2);
+	if (!strcmp(a2, "~")) {
+		i = ban_parse_regexp(cli, bt, a3);
+		if (i)
+			return (i);
+	} else if (!strcmp(a2, "!~")) {
+		bt->flags |= BAN_T_NOT;
+		i = ban_parse_regexp(cli, bt, a3);
+		if (i)
+			return (i);
+	} else if (!strcmp(a2, "==")) {
+		bt->dst = strdup(a3);
+		XXXAN(bt->dst);
+	} else if (!strcmp(a2, "!=")) {
+		bt->flags |= BAN_T_NOT;
+		bt->dst = strdup(a3);
+		XXXAN(bt->dst);
+	} else {
+		cli_out(cli,
+		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
 		cli_result(cli, CLIS_PARAM);
 		return (-1);
 	}
-
-	i = regcomp(&bt->re, a3, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-	if (i) {
-		(void)regerror(i, &bt->re, buf, sizeof buf);
-		regfree(&bt->re);
-		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
-		cli_out(cli, "%s", buf);
-		cli_result(cli, CLIS_PARAM);
-		return (-1);
-	}
-
 	if (!strcmp(a1, "req.url"))
-		bt->func = ban_cond_url_regexp;
+		bt->func = ban_cond_url;
 	else if (!strcmp(a1, "obj.hash"))
-		bt->func = ban_cond_hash_regexp;
+		bt->func = ban_cond_hash;
 	else {
 		cli_out(cli, "unknown or unsupported field \"%s\"", a1);
 		cli_result(cli, CLIS_PARAM);
