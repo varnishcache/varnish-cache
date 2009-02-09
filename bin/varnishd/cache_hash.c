@@ -298,6 +298,9 @@ HSH_Lookup(struct sess *sp)
 		/* There are one or more busy objects, wait for them */
 		if (sp->esis == 0)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
+		if (params->diag_bitmap & 0x20)
+			WSP(sp, SLT_Debug,
+				"on waiting list <%s>", oh->hash);
 		sp->objhead = oh;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
