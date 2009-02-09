@@ -28,8 +28,8 @@ varnish v1 -clierr 104 "purge foo bar"
 varnish v1 -clierr 106 "purge a b c && a"
 varnish v1 -clierr 106 "purge a b c && a b"
 varnish v1 -clierr 106 "purge a b c || a b c"
-varnish v1 -cli "purge req.url ~ foo"
-# varnish v1 -cli "purge req.url ~ foo && req.url ~ bar"
+varnish v1 -cliok "purge req.url ~ foo && req.url ~ \"[ o]\""
+varnish v1 -cliok "purge.list"
 
 client c1 {
 	txreq -url "/foo"
