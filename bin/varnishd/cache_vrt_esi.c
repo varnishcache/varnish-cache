@@ -808,7 +808,7 @@ ESI_Deliver(struct sess *sp)
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
 				(void)WRW_Write(sp->wrk, eb->chunk_length, -1);
-			sp->wrk->acct.bodybytes += WRW_Write(sp->wrk,
+			sp->acct_req.bodybytes += WRW_Write(sp->wrk,
 			    eb->verbatim.b, Tlen(eb->verbatim));
 			if (sp->http->protover >= 1.1)
 				(void)WRW_Write(sp->wrk, "\r\n", -1);

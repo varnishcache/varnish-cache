@@ -199,7 +199,6 @@ struct worker {
 
 	struct VCL_conf		*vcl;
 	struct srcaddr		*srcaddr;
-	struct acct		acct;
 
 	unsigned char		*wlb, *wlp, *wle;
 	unsigned		wlr;
@@ -370,6 +369,7 @@ struct sess {
 
 	struct workreq		workreq;
 	struct acct		acct;
+	struct acct		acct_req;
 
 	/* pointers to hash string components */
 	unsigned		nhashptr;
