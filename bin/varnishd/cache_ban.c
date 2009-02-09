@@ -415,7 +415,6 @@ BAN_Insert(struct ban *b)
 	}
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
-	/* XXX: We should check if the tail can be removed */
 	VSL_stats->n_purge_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
@@ -634,10 +633,12 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	} while (b != NULL);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b->flags & BAN_F_GONE)
+		if (b->refcount == 0 && (b->flags & BAN_F_GONE))
 			continue;
 		bt = VTAILQ_FIRST(&b->tests);
-		cli_out(cli, "%5u\t%s", b->refcount, bt->test);
+		cli_out(cli, "%5u%s\t%s", b->refcount,
+		    b->flags & BAN_F_GONE ? "G" : " ",
+		    bt->test);
 		do {
 			bt = VTAILQ_NEXT(bt, list);
 			if (bt != NULL)
