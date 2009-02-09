@@ -518,14 +518,16 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	Lck_Unlock(&ban_mtx);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
+		if (b->flags & BAN_F_GONE)
+			continue;
 		bt = VTAILQ_FIRST(&b->tests);
-		cli_out(cli, "%5u %4s\t%s\n",
-		    b->refcount, b->flags ? "Gone" : "", bt->test);
+		cli_out(cli, "%5u\t%s", b->refcount, bt->test);
 		do {
 			bt = VTAILQ_NEXT(bt, list);
 			if (bt != NULL)
-				cli_out(cli, "\t\t%s\n", bt->test);
+				cli_out(cli, " && \\\n\t%s", bt->test);
 		} while (bt != NULL);
+		cli_out(cli, "\n");
 	}
 
 	Lck_Lock(&ban_mtx);
