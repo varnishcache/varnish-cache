@@ -4,6 +4,7 @@ test "Test -h critbit a bit"
 
 server s1 {
         rxreq 
+	expect req.url == "/"
         txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
@@ -23,10 +24,38 @@ client c2 {
         expect resp.http.X-Varnish == "1002 1001"
 } -run
 
-varnish v1 -expect client_conn == 2
-varnish v1 -expect cache_hit == 1
-varnish v1 -expect cache_miss == 1
-varnish v1 -expect client_req == 2
-varnish v1 -expect s_sess == 2
-varnish v1 -expect s_req == 2
-varnish v1 -expect s_fetch == 1
+server s1 {
+        rxreq 
+	expect req.url == "/foo"
+        txresp -body "012345\n"
+        rxreq 
+	expect req.url == "/bar"
+        txresp -body "012345\n"
+} -start
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1003"
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1004 1001"
+        txreq -url "/bar"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1005"
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Varnish == "1006 1003"
+} -run
+
+varnish v1 -expect client_conn == 3
+varnish v1 -expect cache_hit == 3
+varnish v1 -expect cache_miss == 3
+varnish v1 -expect client_req == 6
+varnish v1 -expect s_sess == 3
+varnish v1 -expect s_req == 6
+varnish v1 -expect s_fetch == 3
