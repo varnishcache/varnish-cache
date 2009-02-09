@@ -75,7 +75,7 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
-		i = HSH_Compare(sp, oh);
+		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)

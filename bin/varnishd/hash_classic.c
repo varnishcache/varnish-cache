@@ -132,15 +132,7 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 
 	Lck_Lock(&hp->mtx);
 	VTAILQ_FOREACH(oh, &hp->head, hoh_list) {
-		if (sp->lhashptr < oh->hashlen)
-			continue;
-		if (sp->lhashptr > oh->hashlen)
-			break;
-		if (oh->hoh_digest < digest)
-			continue;
-		if (oh->hoh_digest > digest)
-			break;
-		i = HSH_Compare(sp, oh);
+		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)
