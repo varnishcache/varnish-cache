@@ -476,3 +476,55 @@ vsb_done(const struct vsb *s)
 
 	return(VSB_ISFINISHED(s));
 }
+
+/*
+ * Quote a string
+ */
+void
+vsb_quote(struct vsb *s, const char *p, int how)
+{
+	const char *q;
+	int quote = 0;
+
+	(void)how;	/* For future enhancements */
+
+	for (q = p; *q != '\0'; q++) {
+		if (!isgraph(*q) || *q == '"') {
+			quote++;
+			break;
+		}
+	}
+	if (!quote) {
+		(void)vsb_cat(s, p);
+		return;
+	}
+	(void)vsb_putc(s, '"');
+	for (q = p; *q != '\0'; q++) {
+		switch (*q) {
+		case ' ':
+			(void)vsb_putc(s, *q);
+			break;
+		case '\\':
+		case '"':
+			(void)vsb_putc(s, '\\');
+			(void)vsb_putc(s, *q);
+			break;
+		case '\n':
+			(void)vsb_cat(s, "\\n");
+			break;
+		case '\r':
+			(void)vsb_cat(s, "\\r");
+			break;
+		case '\t':
+			(void)vsb_cat(s, "\\t");
+			break;
+		default:
+			if (isgraph(*q))
+				(void)vsb_putc(s, *q);
+			else
+				(void)vsb_printf(s, "\\%o", *q);
+			break;
+		}
+	}
+	(void)vsb_putc(s, '"');
+}
