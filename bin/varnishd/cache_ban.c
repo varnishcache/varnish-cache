@@ -75,6 +75,7 @@ struct ban_test {
 #define BAN_T_NOT		(1 << 1)
 	regex_t			re;
 	char			*dst;
+	char			*src;
 };
 
 struct ban {
@@ -191,7 +192,7 @@ ban_compare(const struct ban *b1, const struct ban *b2)
 }
 
 /*--------------------------------------------------------------------
- * Test functions -- return 0 if the test does not match
+ * Test functions -- return 0 if the test matches
  */
 
 static int
@@ -199,13 +200,15 @@ ban_cond_str(const struct ban_test *bt, const char *p)
 {
 	int i;
 
+	if (p == NULL)
+		return(!(bt->flags & BAN_T_NOT));
 	if (bt->flags & BAN_T_REGEXP)
 		i = regexec(&bt->re, p, 0, NULL, 0);
 	else
 		i = strcmp(bt->dst, p);
 	if (bt->flags & BAN_T_NOT)
-		return (i);
-	return (!i);
+		return (!i);
+	return (i);
 }
 
 static int
@@ -229,6 +232,30 @@ ban_cond_hash(const struct ban_test *bt, const struct object *o,
 	return(ban_cond_str(bt, o->objhead->hash));
 }
 
+static int
+ban_cond_req_http(const struct ban_test *bt, const struct object *o,
+   const struct sess *sp)
+{
+	char *s;
+
+	(void)o;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	http_GetHdr(sp->http, bt->src, &s);
+	return (ban_cond_str(bt, s));
+}
+
+static int
+ban_cond_obj_http(const struct ban_test *bt, const struct object *o,
+   const struct sess *sp)
+{
+	char *s;
+
+	(void)sp;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	http_GetHdr(o->http, bt->src, &s);
+	return (ban_cond_str(bt, s));
+}
+
 /*--------------------------------------------------------------------
  * Parse and add a ban test specification
  */
@@ -250,6 +277,20 @@ ban_parse_regexp(struct cli *cli, struct ban_test *bt, const char *a3)
 	}
 	bt->flags |= BAN_T_REGEXP;
 	return (0);
+}
+
+static void
+ban_parse_http(struct ban_test *bt, const char *a1)
+{
+	int l;
+
+	l = strlen(a1);
+	bt->src = malloc(l + 3);
+	XXXAN(bt->src);
+	bt->src[0] = l + 1;
+	memcpy(bt->src + 1, a1, l);
+	bt->src[l + 1] = ':';
+	bt->src[l + 2] = '\0';
 }
 
 static int
@@ -289,11 +330,19 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
 		cli_result(cli, CLIS_PARAM);
 		return (-1);
 	}
+
+
 	if (!strcmp(a1, "req.url"))
 		bt->func = ban_cond_url;
 	else if (!strcmp(a1, "obj.hash"))
 		bt->func = ban_cond_hash;
-	else {
+	else if (!strncmp(a1, "req.http.", 9)) {
+		bt->func = ban_cond_req_http;
+		ban_parse_http(bt, a1 + 9);
+	} else if (!strncmp(a1, "obj.http.", 9)) {
+		bt->func = ban_cond_obj_http;
+		ban_parse_http(bt, a1 + 9);
+	} else {
 		cli_out(cli, "unknown or unsupported field \"%s\"", a1);
 		cli_result(cli, CLIS_PARAM);
 		return (-1);
@@ -439,7 +488,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 			if (bt->func(bt, o, sp))
 				break;
 		}
-		if (bt != NULL)
+		if (bt == NULL)
 			break;
 	}
 
