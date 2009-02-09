@@ -120,19 +120,13 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 	struct objhead *oh;
 	struct hcl_hd *hp;
 	unsigned u1, digest;
-	unsigned u, v;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 
-	digest = ~0U;
-	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
-		digest = crc32(digest, sp->hashptr[u], v);
-	}
-	digest ^= ~0U;
-
+	assert(sizeof noh->digest > sizeof digest);
+	memcpy(&digest, noh->digest, sizeof digest);
 	u1 = digest % hcl_nhash;
 	hp = &hcl_head[u1];
 
