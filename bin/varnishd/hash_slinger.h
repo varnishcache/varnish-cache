@@ -78,12 +78,17 @@ struct objhead {
 	char			*hash;
 	unsigned		hashlen;
 	unsigned char		digest[DIGEST_LEN];
+#ifdef NOT_YET
 	union {
 		VTAILQ_HEAD(, sess)	__u_waitinglist;
 		VTAILQ_ENTRY(objhead)	__u_coollist;
 	} __u;
 #define waitinglist __u.__u_waitinglist
 #define coollist __u.__u_coollist
+#else
+	VTAILQ_HEAD(, sess)	waitinglist;
+	VTAILQ_ENTRY(objhead)	coollist;
+#endif
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of
