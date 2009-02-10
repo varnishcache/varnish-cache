@@ -90,13 +90,14 @@ PipeSession(struct sess *sp)
 		sp->acct_req.bodybytes +=
 		    WRW_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
-	if (WRW_FlushRelease(w)) {
+	i = WRW_FlushRelease(w);
+	VBE_free_bereq(&bereq);
+
+	if (i) {
 		vca_close_session(sp, "pipe");
 		VBE_ClosedFd(sp);
 		return;
 	}
-
-	VBE_free_bereq(&bereq);
 
 	sp->t_resp = TIM_real();
 
