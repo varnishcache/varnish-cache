@@ -297,11 +297,23 @@ ban_parse_http(struct ban_test *bt, const char *a1)
 	bt->src[l + 2] = '\0';
 }
 
+static const struct pvar {
+	const char		*name;
+	unsigned		flag;
+	ban_cond_f		*func;
+} pvars[] = {
+#define PVAR(a, b, c)	{ a, b, c },
+#include "purge_vars.h"
+#undef PVAR
+	{ 0, 0, 0}
+};
+
 static int
 ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
 {
 	struct ban_test *bt;
 	struct vsb *sb;
+	const struct pvar *pv;
 	int i;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
@@ -336,17 +348,15 @@ ban_parse_test(struct cli *cli, struct ban *b, const char *a1, const char *a2, c
 	}
 
 
-	if (!strcmp(a1, "req.url"))
-		bt->func = ban_cond_url;
-	else if (!strcmp(a1, "obj.hash"))
-		bt->func = ban_cond_hash;
-	else if (!strncmp(a1, "req.http.", 9)) {
-		bt->func = ban_cond_req_http;
-		ban_parse_http(bt, a1 + 9);
-	} else if (!strncmp(a1, "obj.http.", 9)) {
-		bt->func = ban_cond_obj_http;
-		ban_parse_http(bt, a1 + 9);
-	} else {
+	for (pv = pvars; pv->name != NULL; pv++) {
+		if (strncmp(a1, pv->name, strlen(pv->name)))
+			continue;
+		bt->func = pv->func;
+		if (pv->flag & 1) 
+			ban_parse_http(bt, a1 + strlen(pv->name));
+		break;
+	}
+	if (pv->name == NULL) {
 		cli_out(cli, "unknown or unsupported field \"%s\"", a1);
 		cli_result(cli, CLIS_PARAM);
 		return (-1);
