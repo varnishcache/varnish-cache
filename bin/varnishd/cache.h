@@ -417,7 +417,10 @@ struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 void VBP_Init(void);
 
 /* cache_ban.c */
-int BAN_Add(struct cli *cli, const char *regexp, int hash);
+struct ban *BAN_New(void);
+int BAN_AddTest(struct cli *, struct ban *, const char *, const char *, const char *);
+void BAN_Free(struct ban *b);
+void BAN_Insert(struct ban *b);
 void BAN_Init(void);
 void BAN_NewObj(struct object *o);
 void BAN_DestroyObj(struct object *o);
