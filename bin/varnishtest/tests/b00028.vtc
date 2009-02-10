@@ -1,0 +1,28 @@
+# $Id$
+
+test "regexp match and no-match"
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: bar" -hdr "Bar: foo" -body "1111\n"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_fetch {
+		if (obj.http.foo ~ "bar") {
+			set obj.http.foo1 = "1";
+		}
+		if (obj.http.bar !~ "bar") {
+			set obj.http.bar1 = "1";
+		}
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo1 == "1"
+	expect resp.http.bar1 == "1"
+} -run
