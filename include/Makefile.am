@@ -22,9 +22,11 @@ nobase_noinst_HEADERS = \
 	compat/vasprintf.h \
 	flopen.h \
 	http_headers.h \
+	http_response.h \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
+	vsha256.h \
 	vqueue.h \
 	vpf.h \
 	vsb.h \
