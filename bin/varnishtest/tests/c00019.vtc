@@ -13,7 +13,7 @@ server s1 {
 	txresp -hdr "foo: 3" -body "foo3"
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -arg "-p purge_hash=on" -vcl+backend {} -start
 
 varnish v1 -cliok "purge.url FOO"
 

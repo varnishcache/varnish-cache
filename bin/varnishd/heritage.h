@@ -177,6 +177,9 @@ struct params {
 	/* Log hash string to shm */
 	unsigned		log_hash;
 
+	/* Log hash string to shm */
+	unsigned		save_hash;
+
 	/* Log local socket address to shm */
 	unsigned		log_local_addr;
 

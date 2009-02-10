@@ -11,7 +11,11 @@ server s1 {
 	txresp -body "11111\n"
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -arg "-ppurge_hash=off" -vcl+backend { } -start
+varnish v1 -clierr 300 "purge.hash foo"
+varnish v1 -stop
+varnish v1 -cliok "param.set purge_hash on"
+varnish v1 -start
 
 client c1 {
 	txreq -url "/foo"
@@ -22,7 +26,7 @@ client c1 {
 
 client c1 -run
 
-varnish v1 -cli "purge.hash foo"
+varnish v1 -cliok "purge.hash foo"
 
 client c1 {
 	txreq -url "/foo"
