@@ -33,6 +33,26 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+# Trigger syntax check 
+varnish v1 -badvcl {
+	backend foo {
+		.host = "127.0.0.1";
+	}
+	sub vcl_recv {
+		purge (req.foo == req.url);
+	}
+}
+
+# Trigger syntax check 
+varnish v1 -badvcl {
+	backend foo {
+		.host = "127.0.0.1";
+	}
+	sub vcl_recv {
+		purge (req.http. == req.url);
+	}
+}
+
 # Fetch into cache
 client c1 {
 	txreq -url "/foo"
