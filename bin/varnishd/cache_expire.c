@@ -133,27 +133,34 @@ del_objexp(struct object *o)
  * When & why does the timer fire for this object ?
  */
 
-static void
+static int
 update_object_when(const struct object *o)
 {
 	struct objexp *oe;
+	double when;
+	const char *what;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oe = o->objexp;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
 
 	if (o->prefetch < 0.0) {
-		oe->timer_when = o->ttl + o->prefetch;
-		oe->timer_what = tmr_prefetch;
+		when = o->ttl + o->prefetch;
+		what = tmr_prefetch;
 	} else if (o->prefetch > 0.0) {
 		assert(o->prefetch <= o->ttl);
-		oe->timer_when = o->prefetch;
-		oe->timer_what = tmr_prefetch;
+		when = o->prefetch;
+		what = tmr_prefetch;
 	} else {
-		oe->timer_when = o->ttl + HSH_Grace(o->grace);
-		oe->timer_what = tmr_ttl;
+		when = o->ttl + HSH_Grace(o->grace);
+		what = tmr_ttl;
 	}
-	assert(!isnan(oe->timer_when));
+	assert(!isnan(when));
+	oe->timer_what = what;
+	if (when == oe->timer_when)
+		return (0);
+	oe->timer_when = when;
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -237,13 +244,20 @@ EXP_Rearm(const struct object *o)
 	if (oe == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
-	update_object_when(o);
 	Lck_Lock(&exp_mtx);
-	assert(oe->timer_idx != BINHEAP_NOIDX);
-	binheap_delete(exp_heap, oe->timer_idx); /* XXX: binheap_shuffle() ? */
-	assert(oe->timer_idx == BINHEAP_NOIDX);
-	binheap_insert(exp_heap, oe);
-	assert(oe->timer_idx != BINHEAP_NOIDX);
+	if (update_object_when(o)) {
+		/*
+		 * XXX: this could possibly be optimized by shuffling
+		 * XXX: up or down, but that leaves some very nasty
+		 * XXX: corner cases, such as shuffling all the way
+		 * XXX: down the left half, then back up the right half.
+		 */
+		assert(oe->timer_idx != BINHEAP_NOIDX);
+		binheap_delete(exp_heap, oe->timer_idx);
+		assert(oe->timer_idx == BINHEAP_NOIDX);
+		binheap_insert(exp_heap, oe);
+		assert(oe->timer_idx != BINHEAP_NOIDX);
+	}
 	Lck_Unlock(&exp_mtx);
 }
 
