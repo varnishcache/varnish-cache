@@ -862,6 +862,8 @@ ESI_Deliver(struct sess *sp)
 		sp->esis--;
 		sp->obj = obj;
 		WRW_Reserve(sp->wrk, &sp->fd);
+		if (sp->fd < 0)
+			break;
 	}
 	if (sp->esis == 0 && sp->http->protover >= 1.1)
 		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
