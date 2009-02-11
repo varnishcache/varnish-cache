@@ -132,3 +132,4 @@ MAC_STAT(hcb_lock,		uint64_t, 'a', "HCB Lookups with lock")
 MAC_STAT(hcb_insert,		uint64_t, 'a', "HCB Inserts")
 
 MAC_STAT(esi_parse,		uint64_t, 'a', "Objects ESI parsed (unlock)")
+MAC_STAT(esi_errors,		uint64_t, 'a', "ESI parse errors (unlock)")

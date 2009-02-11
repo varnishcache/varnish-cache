@@ -95,6 +95,7 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 	char buf[256], *q;
 	txt t;
 
+	VSL_stats->esi_errors++;
 	if (i == 0)
 		i = p - ew->t.b;
 	if (i > 20) {
