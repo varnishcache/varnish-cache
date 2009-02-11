@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0.2" to="2.0.3">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="386">
+      <para>Handle If-Modified-Since and ESI sub-objects better,
+      fixing a problem where we sometimes neglected to insert
+      included objects.</para>
+    </change>
+
+    <change type="enh" ref="365">
+      <para><code>restart</code> in <code>vcl_hit</code> is now supported.</para>
+    </change>
+
+    <change type="bug">
+      <para>Setting the TTL of an object to 0 seconds would sometimes
+      cause it to be delivered for up to one second - epsilon.  This
+      has been corrected and we should now never deliver those
+      objects to other clients.</para>
+    </change>
+
+    <change type="enh">
+      <para>The malloc storage backend now prints the maximum storage
+      size, just like the file backend.</para>
+    </change>
+
+    <change type="bug" ref="362">
+      <para>Various small documentation bugs have been fixed.</para>
+    </change>
+
+    <change type="bug" >
+      <para>Varnish did not set a default interval for backend
+      probes, causing it to poll the backend continuously.  This has
+      been corrected.</para>
+    </change>
+
+    <change type="enh">
+      <para>Allow "true" and "false" when setting boolean parameters,
+      in addition to on/off, enable/disable and yes/no.</para>
+    </change>
+
+    <change type="enh">
+      <para>Default to always talking HTTP 1.1 with the backend.</para>
+    </change>
+
+    <change type="bug" ref="368">
+      <para>Varnish did not make sure the file it was loading was a
+      regular file.   This could cause Varnish to crash if it was
+      asked to load a directory or other non-regular file.  We now
+      check that the file is a regular file before loading it.</para>
+    </change>
+
+    <change type="enh" ref="210">
+      <para>The binary heap used for expiry processing had
+      scalability problems.  Work around this by using stripes of a
+      fixed size, which should make this scale better, particularly
+      when starting up and having lots of objects.</para>
+    </change>
+
+    <change type="bug">
+      <para>When we imported the <code>jemalloc</code> library into
+      the Varnish tree, it did not compile without warnings.  This
+      has now been fixed.</para>
+    </change>
+
+    <change type="bug" ref="278">
+      <para>Varnish took a very long time to detect that the backend
+      did not respond.  To remedy this, we now have read timeouts in
+      addition to the connect timeout.  Both
+      the <code>first_byte_timeout</code> and
+      the <code>between_bytes_timeout</code> defaults to 60 seconds.
+      The connect timeout is no longer in milliseconds, but rather in
+      seconds.</para>
+    </change>
+
+    <change type="enh">
+      <para>Previously, the VCL to C conversion as well as the
+      invocation of the C compiler was done in the management
+      process.  This is now done in a separate sub-process.  This
+      prevents any bugs in the VCL compiler from affecting the
+      management process.</para>
+    </change>
+
+    <change type="bug">
+      <para>Chunked encoding headers were counted in the statistics
+      for header bytes.  They no longer are.</para>
+    </change>
+
+    <change type="bug">
+      <para>ESI processed objects were not counted in the statistics
+      for body bytes.  They now are.</para>
+    </change>
+
+    <change type="enh">
+      <para>It is now possible to adjust the maximum record length of
+      log entries in the shmlog by tuning the <code>shm_reclen</code>
+      parameter.</para>
+    </change>
+
+    <change type="enh">
+      <para>The management parameters listed in the CLI were not
+      sorted, which made it hard to find the parameter you were
+      looking for.  They are now sorted, which should make this
+      easier.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add a new hashing type, "critbit", which uses a lock-less
+      tree based lookup algorithm.  This is experimental and should
+      not be enabled in production environments without proper
+      testing.</para>
+    </change>
+
+    <change type="enh">
+      <para>The session workspace had a default size of 8k.  It is
+      now 16k, which should make VCLs where many headers are
+      processed less prone to panics.</para>
+    </change>
+
+    <change type="enh">
+      <para>We have seen that people seem to be confused as to which
+      actions in the different VCL functions return and which ones
+      don't.  Add a new syntax <code>return(action)</code> to make
+      this more explicit.  The old syntax is still supported.</para>
+    </change>
+
+    <change type="bug" ref="97">
+      <para>Varnish would return an error if any of the management
+      IPs listed in the <code>-T</code> parameter could not be
+      listened to.  We now only return an error if none of them can
+      be listened to.</para>
+    </change>
+
+    <change type="bug" ref="416">
+      <para>In the case of the backend or client giving us too many
+      parameters, we used to just ignore the overflowing headers.
+      This is problematic if you end up ignoreing Content-Length,
+      Transfer-Encoding and similar headers.  We now give out a 400
+      error to the client if it sends us too many and 503 if we get
+      too many from the backend.</para>
+    </change>
+
+    <change type="bug" ref="387">
+      <para>We used panic if we got a too large chunked header.
+      This behaviour has been changed into just failing the
+      transaction.</para>
+    </change>
+
+    <change type="enh">
+      <para>Varnish now supports an extended purge method where it is
+      possible to do <code>purge req.http.host ~ "web1.com" && req.url ~ "\.png"
+      </code> and similar.  See the documentation for details.</para>
+    </change>
+
+    <change type="bug" ref="418">
+      <para>Under heavy load, Varnish would sometimes crash when
+      trying to update the per-request statistics.  This has now been
+      fixed.</para>
+    </change>
+
+    <change type="enh">
+      <para>It is now possible to not save the hash string in the
+      session and object workspace.  This will save a lot of memory
+      on sites with many small objects.  Disabling
+      the <code>purge_hash</code> parameter also disables
+      the <code>purge.hash</code> facility.</para>
+    </change>
+
+    <change type="enh">
+      <para>Varnish now supports <code>!~</code> as a "no match"
+      regular expression matcher.</para>
+    </change>
+
+    <change type="bug" ref="425">
+      <para>In some cases, you could get serialised access to "pass"
+      objects.  We now make it default to the default_ttl value; this
+      can be overridden in vcl_fetch.</para>
+    </change>
+
+    <change type="bug" ref="417">
+      <para>Varnish did not check the syntax of <code>regsub</code>
+      calls properly.  More checking has been added.</para>
+    </change>
+
+    <change type="bug" ref="427">
+      <para>If the client closed the connection while Varnish was
+      processing ESI elements, Varnish would crash while trying to
+      write the object to the client.  We now check if the client has
+      closed the connection.</para>
+    </change>
+
+    <change type="bug" ref="433">
+      <para>The ESI parser had a bug where it would crash if an XML
+      comment would span storage segments.  This has been
+      fixed.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>VCL Manual page</name>
+
+    <change type="bug">
+      <para>The documentation on how capturing parentheses work was
+      wrong.  This has been corrected.</para>
+    </change>
+
+    <change type="enh">
+      <para>Grace has now been documented.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishreplay</name>
+
+    <change type="bug">
+      <para><code>varnishreplay</code> did not work correctly on
+      Linux, due to a too small stack.  This has now been fixed.</para>
+    </change>
+  </subsystem>
+</group>
