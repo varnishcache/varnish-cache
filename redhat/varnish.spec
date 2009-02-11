@@ -135,6 +135,10 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
 %{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
+# Remove uneccessary doc src files
+mkdir doc.src
+mv doc/*.xml doc/*.xsl doc/Makefile* doc.src
+
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
@@ -168,6 +172,7 @@ rm -rf %{buildroot}
 %{_mandir}/man7/*.7*
 %doc INSTALL LICENSE README redhat/README.redhat ChangeLog 
 %doc examples
+%doc doc
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/sysconfig/varnish
@@ -230,6 +235,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed Feb 11 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.3-1
+  New upstream release 2.0.3. A bugfix and feature enhancement release
+
 * Mon Nov 10 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-1
   New upstream release 2.0.2. A bugfix release
 
