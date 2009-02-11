@@ -745,6 +745,7 @@ static const struct parspec input_parspec[] = {
 #ifdef HAVE_ABORT2
 		"  0x00008000 - panic to abort2().\n"
 #endif
+		"  0x00010000 - synchronize shmlog.\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
