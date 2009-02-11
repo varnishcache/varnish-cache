@@ -1,0 +1,48 @@
+# $Id$
+
+test "noidx"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Connection: close"
+	send {
+<H>
+FOO{
+<esi:include src="/bar"/>
+}FOO
+<!-- blablablabablablablablablablablablabla >
+blablablablab -->
+The end.
+}
+
+} -start
+
+server s2 -listen 127.0.0.1:9082 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "bar"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/foo") {
+			set req.backend = s1;
+		} else {
+			set req.backend = s2;
+		}
+	}
+
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+varnish v1 -cliok "param.set esi_syntax 4"
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
+varnish v1 -cliok "debug.fragfetch 32"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
