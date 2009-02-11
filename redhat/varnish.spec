@@ -135,6 +135,10 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
 %{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
+# Remove uneccessary doc src files
+mkdir doc.src
+mv doc/*.xml doc/*.xsl doc/Makefile* doc.src
+
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
@@ -168,6 +172,7 @@ rm -rf %{buildroot}
 %{_mandir}/man7/*.7*
 %doc INSTALL LICENSE README redhat/README.redhat ChangeLog 
 %doc examples
+%doc doc
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/sysconfig/varnish
@@ -230,6 +235,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed Feb 11 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.3-1
+  New upstream release 2.0.3. A bugfix and feature enhancement release
+
 * Mon Nov 10 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-1
   New upstream release 2.0.2. A bugfix release
 
@@ -247,14 +255,14 @@ fi
 
 * Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-1
 - 2.0 released. New upstream sources
-- Disabled jemalloc on ppc and ppc64. Added a note in README.redhat.
+- Disabled jemalloc on ppc and ppc64. Added a note in README.redhat
 - Synced to upstream again. No more patches needed.
 
 * Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
 - 2.0-rc1 released. New upstream sources
 - Added a patch for pagesize to match redhat's rhel5 ppc64 koji build boxes
 - Added a patch for test a00008, from r3269
-- Removed condrestart in postscript at upgrade. We don't want that.
+- Removed condrestart in postscript at upgrade. We don't want that
 
 * Fri Sep 26 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.10.beta2
 - 2.0-beta2 released. New upstream sources
