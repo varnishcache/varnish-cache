@@ -630,6 +630,59 @@ esi_parse(struct esi_work *ew)
 	return (p);
 }
 
+/*--------------------------------------------------------------------
+ * See if this looks like XML: first non-white char must be '<'
+ */
+
+static int
+looks_like_xml(struct object *obj) {
+	struct storage *st;
+	unsigned u;
+
+	VTAILQ_FOREACH(st, &obj->store, list) {
+		AN(st);
+		for (u = 0; u < st->len; u++) {
+			if (isspace(st->ptr[u]))
+				continue;
+			if (st->ptr[u] == '<')
+				return (1);
+			else
+				return (0);
+		}
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * A quick stroll through the object, to find out if it contains any
+ * esi sequences at all.
+ */
+
+static int
+contain_esi(struct object *obj) {
+	struct storage *st;
+	unsigned u;
+	const char *r;
+	static const char *wanted = "<esi:";
+
+	/*
+	 * Do a fast check to see if there is any '<esi:' sequences at all
+	 */
+	r = wanted;
+	VTAILQ_FOREACH(st, &obj->store, list) {
+		AN(st);
+		for (u = 0; u < st->len; u++) {
+			if (st->ptr[u] != *r) {
+				r = wanted;
+				continue;
+			}
+			if (*++r == '\0')
+				return (1);
+		}
+	}
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -642,6 +695,8 @@ VRT_ESI(struct sess *sp)
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+
 	assert(sp->obj->busy);
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
@@ -653,28 +708,25 @@ VRT_ESI(struct sess *sp)
 	if (VTAILQ_EMPTY(&sp->obj->store))
 		return;
 
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-
 	if (!(params->esi_syntax & 0x00000001)) {
 		/*
 		 * By default, we will not ESI process an object where
 		 *  the first non-space character is different from '<'
 		 */
-		st = VTAILQ_FIRST(&sp->obj->store);
-		AN(st);
-		for (u = 0; u < st->len; u++) {
-			if (isspace(st->ptr[u]))
-				continue;
-			if (st->ptr[u] == '<')
-				break;
+		if (!looks_like_xml(sp->obj)) {
 			WSP(sp, SLT_ESI_xmlerror,
-			    "No ESI processing, "
-			    "binary object: 0x%02x at pos %u.",
-			    st->ptr[u], u);
+			    "No ESI processing, first char not '<'");
 			return;
 		}
 	}
 
+	/*
+	 * Do a fast check to see if there is any '<esi:' sequences at all
+	 */
+	if (!contain_esi(sp->obj))
+		return;
+
+	VSL_stats->esi_parse++;
 	/* XXX: only if GET ? */
 	ew = eww;
 	memset(eww, 0, sizeof eww);
