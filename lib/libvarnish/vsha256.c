@@ -45,26 +45,6 @@
 #include "libvarnish.h"
 #include "vsha256.h"
 
-#if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
-
-/* Copy a vector of big-endian uint32_t into a vector of bytes */
-#define be32enc_vect(dst, src, len)	\
-	memcpy((void *)dst, (const void *)src, (size_t)len)
-
-/* Copy a vector of bytes into a vector of big-endian uint32_t */
-#define be32dec_vect(dst, src, len)	\
-	memcpy((void *)dst, (const void *)src, (size_t)len)
-
-#else /* BYTE_ORDER != BIG_ENDIAN or in doubt... */
-
-static __inline uint32_t
-mybe32dec(const void *pp)
-{
-        unsigned char const *p = (unsigned char const *)pp;
-
-        return (((unsigned)p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
-}
-
 static __inline void
 mybe32enc(void *pp, uint32_t u)
 {
@@ -83,6 +63,26 @@ mybe64enc(void *pp, uint64_t u)
 
 	mybe32enc(p, u >> 32);
 	mybe32enc(p + 4, u & 0xffffffff);
+}
+
+#if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
+
+/* Copy a vector of big-endian uint32_t into a vector of bytes */
+#define be32enc_vect(dst, src, len)	\
+	memcpy((void *)dst, (const void *)src, (size_t)len)
+
+/* Copy a vector of bytes into a vector of big-endian uint32_t */
+#define be32dec_vect(dst, src, len)	\
+	memcpy((void *)dst, (const void *)src, (size_t)len)
+
+#else /* BYTE_ORDER != BIG_ENDIAN or in doubt... */
+
+static __inline uint32_t
+mybe32dec(const void *pp)
+{
+        unsigned char const *p = (unsigned char const *)pp;
+
+        return (((unsigned)p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
 }
 
 /*
