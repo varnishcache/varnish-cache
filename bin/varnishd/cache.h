@@ -85,7 +85,7 @@ struct sess;
 struct director;
 struct object;
 struct objhead;
-struct objexp;
+struct objcore;
 struct workreq;
 struct addrinfo;
 struct esi_bit;
@@ -248,6 +248,26 @@ struct storage {
 	off_t			where;
 };
 
+/* Object core structure ---------------------------------------------
+ * Objects have sideways references in the binary heap and the LRU list
+ * and we want to avoid paging in a lot of objects just to move them up
+ * or down the binheap or to move a unrelated object on the LRU list.
+ * To avoid this we use a proxy object, objcore, to hold the relevant
+ * housekeeping fields parts of an object.
+ */
+
+struct objcore {
+	unsigned		magic;
+#define OBJCORE_MAGIC		0x4d301302
+	struct object		*obj;
+	double			timer_when;
+	const char		*timer_what;
+	unsigned		timer_idx;
+	VTAILQ_ENTRY(objcore)	list;
+	int			on_lru;
+	double			lru_stamp;
+};
+
 /* Object structure --------------------------------------------------*/
 
 struct object {
@@ -257,7 +277,7 @@ struct object {
 	unsigned		xid;
 	struct objhead		*objhead;
 	struct storage		*objstore;
-	struct objexp		*objexp;
+	struct objcore		*objcore;
 
 	struct ws		ws_o[1];
 	unsigned char		*vary;

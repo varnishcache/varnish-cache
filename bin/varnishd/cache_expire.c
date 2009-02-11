@@ -63,33 +63,13 @@
 #include "vcl.h"
 #include "hash_slinger.h"
 
-/*
- * Objects have sideways references in the binary heap and the LRU list
- * and we want to avoid paging in a lot of objects just to move them up
- * or down the binheap or to move a unrelated object on the LRU list.
- * To avoid this we use a proxy object, objexp, to hold the relevant
- * housekeeping fields parts of an object.
- */
-
 static const char * const tmr_prefetch	= "prefetch";
 static const char * const tmr_ttl	= "ttl";
-
-struct objexp {
-	unsigned		magic;
-#define OBJEXP_MAGIC		0x4d301302
-	struct object		*obj;
-	double			timer_when;
-	const char		*timer_what;
-	unsigned		timer_idx;
-	VTAILQ_ENTRY(objexp)	list;
-	int			on_lru;
-	double			lru_stamp;
-};
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
-static VTAILQ_HEAD(,objexp) lru = VTAILQ_HEAD_INITIALIZER(lru);
+static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
@@ -99,34 +79,34 @@ static VTAILQ_HEAD(,objexp) lru = VTAILQ_HEAD_INITIALIZER(lru);
 #define BINHEAP_NOIDX 0
 
 /*--------------------------------------------------------------------
- * Add and Remove objexp's from objects.
+ * Add and Remove objcore's from objects.
  */
 
 static void
-add_objexp(struct object *o)
+add_objcore(struct object *o)
 {
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	AZ(o->objexp);
+	AZ(o->objcore);
 	assert(o->busy);
 	assert(o->cacheable);
-	o->objexp = calloc(sizeof *o->objexp, 1);
-	AN(o->objexp);
-	o->objexp->magic = OBJEXP_MAGIC;
-	o->objexp->obj = o;
+	o->objcore = calloc(sizeof *o->objcore, 1);
+	AN(o->objcore);
+	o->objcore->magic = OBJCORE_MAGIC;
+	o->objcore->obj = o;
 }
 
 static void
-del_objexp(struct object *o)
+del_objcore(struct object *o)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oe = o->objexp;
-	o->objexp = NULL;
-	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
-	assert(oe->timer_idx == BINHEAP_NOIDX);
-	free(oe);
+	oc = o->objcore;
+	o->objcore = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->timer_idx == BINHEAP_NOIDX);
+	free(oc);
 }
 
 /*--------------------------------------------------------------------
@@ -136,13 +116,13 @@ del_objexp(struct object *o)
 static int
 update_object_when(const struct object *o)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 	double when;
 	const char *what;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oe = o->objexp;
-	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
 	if (o->prefetch < 0.0) {
@@ -157,10 +137,10 @@ update_object_when(const struct object *o)
 		what = tmr_ttl;
 	}
 	assert(!isnan(when));
-	oe->timer_what = what;
-	if (when == oe->timer_when)
+	oc->timer_what = what;
+	if (when == oc->timer_when)
 		return (0);
-	oe->timer_when = when;
+	oc->timer_when = when;
 	return (1);
 }
 
@@ -174,24 +154,24 @@ update_object_when(const struct object *o)
 void
 EXP_Insert(struct object *o)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
 	assert(o->cacheable);
 	HSH_Ref(o);
-	add_objexp(o);
-	oe = o->objexp;
+	add_objcore(o);
+	oc = o->objcore;
 
 	assert(o->entered != 0 && !isnan(o->entered));
-	oe->lru_stamp = o->entered;
+	oc->lru_stamp = o->entered;
 	Lck_Lock(&exp_mtx);
-	assert(oe->timer_idx == BINHEAP_NOIDX);
+	assert(oc->timer_idx == BINHEAP_NOIDX);
 	(void)update_object_when(o);
-	binheap_insert(exp_heap, oe);
-	assert(oe->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oe, list);
-	oe->on_lru = 1;
+	binheap_insert(exp_heap, oc);
+	assert(oc->timer_idx != BINHEAP_NOIDX);
+	VTAILQ_INSERT_TAIL(&lru, oc, list);
+	oc->on_lru = 1;
 	Lck_Unlock(&exp_mtx);
 }
 
@@ -207,21 +187,21 @@ EXP_Insert(struct object *o)
 void
 EXP_Touch(const struct object *o, double now)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oe = o->objexp;
-	if (oe == NULL)
+	oc = o->objcore;
+	if (oc == NULL)
 		return;
-	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
-	if (oe->lru_stamp + params->lru_timeout > now)
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	if (oc->lru_stamp + params->lru_timeout > now)
 		return;
 	if (Lck_Trylock(&exp_mtx))
 		return;
-	if (oe->on_lru) {
-		VTAILQ_REMOVE(&lru, oe, list);
-		VTAILQ_INSERT_TAIL(&lru, oe, list);
-		oe->lru_stamp = now;
+	if (oc->on_lru) {
+		VTAILQ_REMOVE(&lru, oc, list);
+		VTAILQ_INSERT_TAIL(&lru, oc, list);
+		oc->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
 	}
 	Lck_Unlock(&exp_mtx);
@@ -239,30 +219,30 @@ EXP_Touch(const struct object *o, double now)
 void
 EXP_Rearm(const struct object *o)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oe = o->objexp;
-	if (oe == NULL)
+	oc = o->objcore;
+	if (oc == NULL)
 		return;
-	CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_Lock(&exp_mtx);
 	/*
 	 * The hang-man might have this object of the binheap while
 	 * tending to a timer.  If so, we do not muck with it here.
 	 */
-	if (oe->timer_idx != BINHEAP_NOIDX && update_object_when(o)) {
+	if (oc->timer_idx != BINHEAP_NOIDX && update_object_when(o)) {
 		/*
 		 * XXX: this could possibly be optimized by shuffling
 		 * XXX: up or down, but that leaves some very nasty
 		 * XXX: corner cases, such as shuffling all the way
 		 * XXX: down the left half, then back up the right half.
 		 */
-		assert(oe->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(exp_heap, oe->timer_idx);
-		assert(oe->timer_idx == BINHEAP_NOIDX);
-		binheap_insert(exp_heap, oe);
-		assert(oe->timer_idx != BINHEAP_NOIDX);
+		assert(oc->timer_idx != BINHEAP_NOIDX);
+		binheap_delete(exp_heap, oc->timer_idx);
+		assert(oc->timer_idx == BINHEAP_NOIDX);
+		binheap_insert(exp_heap, oc);
+		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
 }
@@ -278,7 +258,7 @@ static void *
 exp_timer(void *arg)
 {
 	struct worker ww;
-	struct objexp *oe;
+	struct objcore *oc;
 	struct object *o;
 	double t;
 	struct sess *sp;
@@ -299,9 +279,9 @@ exp_timer(void *arg)
 	t = TIM_real();
 	while (1) {
 		Lck_Lock(&exp_mtx);
-		oe = binheap_root(exp_heap);
-		CHECK_OBJ_ORNULL(oe, OBJEXP_MAGIC);
-		if (oe == NULL || oe->timer_when > t) { /* XXX: > or >= ? */
+		oc = binheap_root(exp_heap);
+		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+		if (oc == NULL || oc->timer_when > t) { /* XXX: > or >= ? */
 			Lck_Unlock(&exp_mtx);
 			WSL_Flush(&ww, 0);
 			AZ(sleep(1));
@@ -310,26 +290,26 @@ exp_timer(void *arg)
 			continue;
 		}
 
-		o = oe->obj;
+		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		assert(oe->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(exp_heap, oe->timer_idx);
-		assert(oe->timer_idx == BINHEAP_NOIDX);
+		assert(oc->timer_idx != BINHEAP_NOIDX);
+		binheap_delete(exp_heap, oc->timer_idx);
+		assert(oc->timer_idx == BINHEAP_NOIDX);
 
 		{	/* Sanity checking */
-			struct objexp *oe2 = binheap_root(exp_heap);
-			if (oe2 != NULL) {
-				assert(oe2->timer_idx != BINHEAP_NOIDX);
-				assert(oe2->timer_when >= oe->timer_when);
+			struct objcore *oc2 = binheap_root(exp_heap);
+			if (oc2 != NULL) {
+				assert(oc2->timer_idx != BINHEAP_NOIDX);
+				assert(oc2->timer_when >= oc->timer_when);
 			}
 		}
 
-		assert(oe->on_lru);
+		assert(oc->on_lru);
 		Lck_Unlock(&exp_mtx);
 
-		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid, oe->timer_what);
+		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid, oc->timer_what);
 
-		if (oe->timer_what == tmr_prefetch) {
+		if (oc->timer_what == tmr_prefetch) {
 			o->prefetch = 0.0;
 			sp->obj = o;
 			VCL_prefetch_method(sp);
@@ -339,13 +319,13 @@ exp_timer(void *arg)
 				    o->xid);
 			}
 			Lck_Lock(&exp_mtx);
-			assert(oe->timer_idx == BINHEAP_NOIDX);
+			assert(oc->timer_idx == BINHEAP_NOIDX);
 			(void)update_object_when(o);
-			binheap_insert(exp_heap, oe);
-			assert(oe->timer_idx != BINHEAP_NOIDX);
+			binheap_insert(exp_heap, oc);
+			assert(oc->timer_idx != BINHEAP_NOIDX);
 			Lck_Unlock(&exp_mtx);
 		} else {
-			assert(oe->timer_what == tmr_ttl);
+			assert(oc->timer_what == tmr_ttl);
 			sp->obj = o;
 			VCL_timeout_method(sp);
 			sp->obj = NULL;
@@ -354,12 +334,12 @@ exp_timer(void *arg)
 			WSL(&ww, SLT_ExpKill, 0,
 			    "%u %d", o->xid, (int)(o->ttl - t));
 			Lck_Lock(&exp_mtx);
-			assert(oe->timer_idx == BINHEAP_NOIDX);
-			VTAILQ_REMOVE(&lru, o->objexp, list);
-			oe->on_lru = 0;
+			assert(oc->timer_idx == BINHEAP_NOIDX);
+			VTAILQ_REMOVE(&lru, o->objcore, list);
+			oc->on_lru = 0;
 			VSL_stats->n_expired++;
 			Lck_Unlock(&exp_mtx);
-			del_objexp(o);
+			del_objcore(o);
 			HSH_Deref(&o);
 		}
 	}
@@ -374,13 +354,13 @@ exp_timer(void *arg)
 int
 EXP_NukeOne(struct sess *sp)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 	struct object *o;
 
 	/*
 	 * Find the first currently unused object on the LRU.
 	 *
-	 * Ideally we would have the refcnt in the objexp so we the object does
+	 * Ideally we would have the refcnt in the objcore so we the object does
 	 * not need to get paged in for this check, but it does not pay off
 	 * the complexity:  The chances of an object being in front of the LRU,
 	 * with active references, likely means that it is already in core. An
@@ -390,29 +370,29 @@ EXP_NukeOne(struct sess *sp)
 	 * another ref while we ponder its destiny without the lock held.
 	 */
 	Lck_Lock(&exp_mtx);
-	VTAILQ_FOREACH(oe, &lru, list) {
-		CHECK_OBJ_NOTNULL(oe, OBJEXP_MAGIC);
-		if (oe->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
+	VTAILQ_FOREACH(oc, &lru, list) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;
-		if (oe->obj->refcnt == 1)
+		if (oc->obj->refcnt == 1)
 			break;
 	}
-	if (oe != NULL) {
+	if (oc != NULL) {
 		/*
 		 * We hazzard the guess that the object is more likely to
 		 * be tossed than kept, and forge ahead on the work to save
 		 * a lock cycle.  If the object is kept, we reverse these
 		 * actions below.
 		 */
-		VTAILQ_REMOVE(&lru, oe, list);
-		oe->on_lru = 0;
-		binheap_delete(exp_heap, oe->timer_idx);
-		assert(oe->timer_idx == BINHEAP_NOIDX);
+		VTAILQ_REMOVE(&lru, oc, list);
+		oc->on_lru = 0;
+		binheap_delete(exp_heap, oc->timer_idx);
+		assert(oc->timer_idx == BINHEAP_NOIDX);
 		VSL_stats->n_lru_nuked++;
 	}
 	Lck_Unlock(&exp_mtx);
 
-	if (oe == NULL)
+	if (oc == NULL)
 		return (-1);
 
 	/*
@@ -421,14 +401,14 @@ EXP_NukeOne(struct sess *sp)
 	 * substitute the object we want to nuke for the sessions own object.
 	 */
 	o = sp->obj;
-	sp->obj = oe->obj;
+	sp->obj = oc->obj;
 	VCL_discard_method(sp);
 	sp->obj = o;
-	o = oe->obj;
+	o = oc->obj;
 
 	if (sp->handling == VCL_RET_DISCARD) {
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
-		del_objexp(o);
+		del_objcore(o);
 		HSH_Deref(&o);
 		return (1);
 	}
@@ -439,37 +419,37 @@ EXP_NukeOne(struct sess *sp)
 	Lck_Lock(&exp_mtx);
 	VSL_stats->n_lru_nuked--;		/* It was premature */
 	VSL_stats->n_lru_saved++;
-	binheap_insert(exp_heap, oe);
-	assert(oe->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oe, list);
-	oe->on_lru = 1;
+	binheap_insert(exp_heap, oc);
+	assert(oc->timer_idx != BINHEAP_NOIDX);
+	VTAILQ_INSERT_TAIL(&lru, oc, list);
+	oc->on_lru = 1;
 	Lck_Unlock(&exp_mtx);
 	return (0);
 }
 
 /*--------------------------------------------------------------------
- * BinHeap helper functions for objexp.
+ * BinHeap helper functions for objcore.
  */
 
 static int
 object_cmp(void *priv, void *a, void *b)
 {
-	struct objexp *aa, *bb;
+	struct objcore *aa, *bb;
 
 	(void)priv;
-	CAST_OBJ_NOTNULL(aa, a, OBJEXP_MAGIC);
-	CAST_OBJ_NOTNULL(bb, b, OBJEXP_MAGIC);
+	CAST_OBJ_NOTNULL(aa, a, OBJCORE_MAGIC);
+	CAST_OBJ_NOTNULL(bb, b, OBJCORE_MAGIC);
 	return (aa->timer_when < bb->timer_when);
 }
 
 static void
 object_update(void *priv, void *p, unsigned u)
 {
-	struct objexp *oe;
+	struct objcore *oc;
 
 	(void)priv;
-	CAST_OBJ_NOTNULL(oe, p, OBJEXP_MAGIC);
-	oe->timer_idx = u;
+	CAST_OBJ_NOTNULL(oc, p, OBJCORE_MAGIC);
+	oc->timer_idx = u;
 }
 
 /*--------------------------------------------------------------------*/

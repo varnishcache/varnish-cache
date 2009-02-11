@@ -192,6 +192,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct bereq);
 	SZOF(struct storage);
 	SZOF(struct object);
+	SZOF(struct objcore);
 	SZOF(struct objhead);
 	SZOF(struct sess);
 	SZOF(struct vbe_conn);
