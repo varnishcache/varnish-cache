@@ -155,7 +155,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	XXXAN(va);
 	*vap = va;
 	for (res = res0, i = 0; res != NULL; res = res->ai_next, ++i) {
-		va[i] = calloc(1, sizeof(*va[i]));
+		va[i] = calloc(1, sizeof(**va));
 		XXXAN(va[i]);
 		va[i]->va_family = res->ai_family;
 		va[i]->va_socktype = res->ai_socktype;
