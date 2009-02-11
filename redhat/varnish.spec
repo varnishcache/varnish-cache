@@ -238,6 +238,9 @@ fi
 * Wed Feb 11 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.3-1
   New upstream release 2.0.3. A bugfix and feature enhancement release
 
+* Fri Dec 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-2
+  Added a fix for a timeout bug, backported from trunk
+
 * Mon Nov 10 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-1
   New upstream release 2.0.2. A bugfix release
 
@@ -256,7 +259,7 @@ fi
 * Wed Oct 15 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-1
 - 2.0 released. New upstream sources
 - Disabled jemalloc on ppc and ppc64. Added a note in README.redhat
-- Synced to upstream again. No more patches needed.
+- Synced to upstream again. No more patches needed
 
 * Wed Oct 08 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.11.rc1
 - 2.0-rc1 released. New upstream sources
