@@ -49,7 +49,7 @@ void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
-int mgt_cli_telnet(int dflag, const char *T_arg);
+void mgt_cli_telnet(int dflag, const char *T_arg);
 
 /* mgt_param.c */
 void MCF_ParamSync(void);

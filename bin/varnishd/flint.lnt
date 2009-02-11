@@ -7,6 +7,7 @@
 -e459	// unlocked access from func-ptr
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
+-e777	// float equality comparison
 
 -esym(458, lbv_assert)	// unlocked access
 -esym(458, params)	// unlocked access
@@ -55,6 +56,8 @@
 
 -emacro(702, WEXITSTATUS)	// signed shift right 
 -efunc(525, VCC_Return_Name)	// Negative indent
+
+
 
 // -header(../../config.h)
 

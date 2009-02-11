@@ -184,7 +184,7 @@ EXP_Insert(struct object *o)
 
 	assert(o->entered != 0 && !isnan(o->entered));
 	oe->lru_stamp = o->entered;
-	update_object_when(o);
+	(void)update_object_when(o);
 	Lck_Lock(&exp_mtx);
 	binheap_insert(exp_heap, oe);
 	assert(oe->timer_idx != BINHEAP_NOIDX);
@@ -332,7 +332,7 @@ exp_timer(void *arg)
 				WSL(&ww, SLT_Debug, 0, "Attempt Prefetch %u",
 				    o->xid);
 			}
-			update_object_when(o);
+			(void)update_object_when(o);
 			Lck_Lock(&exp_mtx);
 			binheap_insert(exp_heap, oe);
 			assert(oe->timer_idx != BINHEAP_NOIDX);

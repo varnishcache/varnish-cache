@@ -145,7 +145,7 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 		 * derive a relative time from the two headers.
 		 * (the negative ttl case is caught above)
 		 */
-		ttl = (h_expires - h_date);
+		ttl = (int)(h_expires - h_date);
 
 	} while (0);
 
