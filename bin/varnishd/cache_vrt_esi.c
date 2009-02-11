@@ -69,23 +69,83 @@ struct esi_bit {
 
 VTAILQ_HEAD(esibithead, esi_bit);
 
+struct esi_ptr {
+	const char		*p;
+	struct storage		*st;
+};
+
 struct esi_work {
 	struct sess		*sp;
 	size_t			off;
+
+	struct esi_ptr		s;
+	struct esi_ptr		p;
+
+	txt			tag;
+
 	txt			t;
-	txt			o;
-	txt			dst;
 	struct esi_bit		*eb;
 	struct esi_bit		*ebl;	/* list of */
 	int			neb;
-	int			is_esi;
 	int			remflg;	/* inside <esi:remove> </esi:remove> */
 	int			incmt;	/* inside <!--esi ... --> comment */
-	int			incdata; /* inside <![CCDATA[ ... ]]> */
 };
 
 /*--------------------------------------------------------------------
+ * Move the parse-pointer forward.
+ */
+
+static void
+Nep(struct esi_ptr *ep)
+{
+	static const char * const finis = "";
+
+	if (ep->p == finis)
+		return;
+	ep->p++;
+	if (ep->p < (char*)ep->st->ptr + ep->st->len) 
+		return;
+	ep->st = VTAILQ_NEXT(ep->st, list);
+	if (ep->st != NULL) {
+		ep->p = (char *)ep->st->ptr;
+		return;
+	}
+	ep->p = finis;
+	return;
+}
+
+static void
+N(struct esi_work *ew)
+{
+
+	if (*ew->p.p != '\0')
+		ew->off++;
+	Nep(&ew->p);
+}
+
+/*--------------------------------------------------------------------
+ * Strcmp for objects pointers
+ */
+
+static int
+CMP(const struct esi_ptr *ep, const char *str)
+{
+	struct esi_ptr p2;
+
+	for (p2 = *ep; *str == *p2.p; str++)
+		Nep(&p2);
+	return (*str);
+}
+
+
+/*--------------------------------------------------------------------
  * Report a parsing error
+ *
+ * XXX: The "at xxx" count is usually the tail of the sequence.  Since we
+ * XXX: wander over the storage in an oderly manner now, we could keep
+ * XXX: track of line+pos and record the beginning of the stuff that
+ * XXX: offends os in the central dispatch loop.
+ * XXX: This is left a an excercise for the reader.
  */
 
 static void
@@ -103,7 +163,7 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 		ellipsis = 1;
 	}
 	q = buf;
-	q += sprintf(buf, "at %zd: %s \"", ew->off + (p - ew->t.b), err);
+	q += sprintf(buf, "at %zu: %s \"", ew->off, err);
 	while (i > 0) {
 		if (*p >= ' ' && *p <= '~') {
 			*q++ = *p;
@@ -141,8 +201,8 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
  * Add ESI bit to object
  */
 
-static struct esi_bit *
-esi_addbit(struct esi_work *ew)
+static void
+esi_addbit(struct esi_work *ew, const char *verbatim, unsigned len)
 {
 
 	if (ew->neb == 0) {
@@ -157,29 +217,41 @@ esi_addbit(struct esi_work *ew)
 
 
 	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
-	ew->eb->verbatim = ew->dst;
-	sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->dst));
-	if (params->esi_syntax & 0x4)
-		VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
-		    Tlen(ew->dst), Tlen(ew->dst), ew->dst.b);
-	return(ew->eb);
+	if (verbatim != NULL) {
+		ew->eb->verbatim.b = TRUST_ME(verbatim);
+		if (len > 0)
+			ew->eb->verbatim.e = TRUST_ME(verbatim + len);
+		sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->eb->verbatim));
+		if (params->esi_syntax & 0x4)
+			VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
+			    Tlen(ew->eb->verbatim),
+			    Tlen(ew->eb->verbatim),
+			    ew->eb->verbatim.b);
+	} else
+		ew->eb->verbatim.b = ew->eb->verbatim.e = (void*)ew->eb;
 }
 
-
-/*--------------------------------------------------------------------
- * Add verbatim piece to output
- */
+/*--------------------------------------------------------------------*/
 
 static void
-esi_addverbatim(struct esi_work *ew)
+esi_addpfx(struct esi_work *ew)
 {
+	const char *ep;
 
-	if (params->esi_syntax & 0x4)
-		VSL(SLT_Debug, ew->sp->fd, "AddVer: %d <%.*s>",
-		    Tlen(ew->o), Tlen(ew->o), ew->o.b);
-	if (ew->o.b != ew->dst.e)
-		memmove(ew->dst.e, ew->o.b, Tlen(ew->o));
-	ew->dst.e += Tlen(ew->o);
+	if (ew->remflg) {
+		/* In <esi:remove...> don't add anything */
+		ew->s = ew->p;
+		return;
+	}
+	while (ew->s.st != ew->p.st) {
+		ep = (const char *)(ew->s.st->ptr + ew->s.st->len);
+		esi_addbit(ew, ew->s.p, ep - ew->s.p);
+		ew->s.p = ep;
+		Nep(&ew->s);
+	}
+	if (ew->s.st != NULL && ew->p.p != ew->s.p)
+		esi_addbit(ew, ew->s.p, ew->p.p - ew->s.p);
+	ew->s.p = ew->p.p;
 }
 
 /*--------------------------------------------------------------------
@@ -274,17 +346,20 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
  */
 
 static void
-esi_addinclude(struct esi_work *ew, txt t)
+esi_handle_include(struct esi_work *ew)
 {
 	struct esi_bit *eb;
 	char *p, *q;
+	txt t = ew->tag;
 	txt tag;
 	txt val;
 	unsigned u, v;
 	struct ws *ws;
 
+	if (ew->eb == NULL || ew->eb->include.b != NULL)
+		esi_addbit(ew, NULL, 0);
+	eb = ew->eb;
 	VSL(SLT_Debug, ew->sp->fd, "Incl \"%.*s\"", t.e - t.b, t.b);
-	eb = esi_addbit(ew);
 	while (esi_attrib(ew, &t, &tag, &val) == 1) {
 		if (params->esi_syntax & 0x4)
 			VSL(SLT_Debug, ew->sp->fd, "<%.*s> -> <%.*s>",
@@ -353,290 +428,11 @@ esi_addinclude(struct esi_work *ew, txt t)
 }
 
 /*--------------------------------------------------------------------
- * Zoom over a piece of object and dike out all releveant esi: pieces.
- * The entire txt may not be processed because an interesting part
- * could possibly span into the next chunk of storage.
- * Return value: number of bytes processed.
- */
-
-static char *
-esi_parse2(struct esi_work *ew)
-{
-	char *p, *q, *r;
-	txt t;
-	int celem;		/* closing element */
-	int i;
-
-	t = ew->t;
-	ew->dst.b = t.b;
-	ew->dst.e = t.b;
-	ew->o.b = t.b;
-	ew->o.e = t.b;
-	for (p = t.b; p < t.e; ) {
-		assert(p >= t.b);
-		assert(p < t.e);
-		if (ew->incdata) {
-			/*
-			 * We are inside an <![CDATA[ constuct and mus skip
-			 * to the end marker ]]>.
-			 */
-			if (*p != ']') {
-				p++;
-			} else {
-				if (p + 2 >= t.e)
-					return (p);
-				if (!memcmp(p, "]]>", 3)) {
-					ew->incdata = 0;
-					p += 3;
-				} else
-					p++;
-			}
-			continue;
-		}
-		if (ew->incmt && *p == '-') {
-			/*
-			 * We are inside an <!--esi comment and need to zap
-			 * the end comment marker --> when we see it.
-			 */
-			if (p + 2 >= t.e)
-				return (p);
-			if (!memcmp(p, "-->", 3)) {
-				ew->incmt = 0;
-				ew->o.e = p;
-				esi_addverbatim(ew);
-				p += 3;
-				ew->o.b = p;
-			} else
-				p++;
-			continue;
-		}
-
-		if (*p != '<') {
-			/* nothing happens until next element or comment */
-			p++;
-			continue;
-		}
-
-		i = t.e - p;
-
-		if (i < 2)
-			return (p);
-
-		if (ew->remflg == 0 && !memcmp(p, "<!--esi", i > 7 ? 7 : i)) {
-			/*
-			 * ESI comment. <!--esi...-->
-			 * at least 10 char, but we only test on the
-			 * first seven because the tail is handled
-			 * by the ew->incmt flag.
-			 */
-			ew->is_esi++;
-			if (i < 7)
-				return (p);
-
-			ew->o.e = p;
-			esi_addverbatim(ew);
-
-			p += 7;
-			ew->o.b = p;
-			ew->incmt = 1;
-			continue;
-		}
-
-		if (!memcmp(p, "<!--", i > 4 ? 4 : i)) {
-			/*
-			 * plain comment <!--...--> at least 7 char
-			 */
-			if (i < 7)
-				return (p);
-			for (q = p + 4; ; q++) {
-				if (q + 2 >= t.e)
-					return (p);
-				if (!memcmp(q, "-->", 3))
-					break;
-			}
-			p = q + 3;
-			continue;
-		}
-
-		if (!memcmp(p, "<![CDATA[", i > 9 ? 9 : i)) {
-			/*
-			 * cdata <![CDATA[ at least 9 char
-			 */
-			if (i < 9)
-				return (p);
-			ew->incdata = 1;
-			p += 9;
-			continue;
-		}
-
-		/* Ignore non esi elements, if so instructed */
-		if ((params->esi_syntax & 0x02)) {
-			if (memcmp(p, "<esi:", i > 5 ? 5 : i) &&
-			    memcmp(p, "</esi:", i > 6 ? 6 : i)) {
-				p += 1;
-				continue;
-			}
-			if (i < 6)
-				return (p);
-		}
-
-		/* Find end of this element */
-		for (q = p + 1; q < t.e && *q != '>'; q++)
-			continue;
-		if (q >= t.e || *q != '>')
-			return (p);
-
-		/* Opening/empty or closing element ? */
-		if (p[1] == '/') {
-			celem = 1;
-			r = p + 2;
-			if (q[-1] == '/') {
-				esi_error(ew, p, 1 + q - p,
-				    "XML 1.0 empty and closing element");
-			}
-		} else {
-			celem = 0;
-			r = p + 1;
-		}
-
-		if (params->esi_syntax & 0x4)
-			VSL(SLT_Debug, ew->sp->fd, "Element: clos=%d [%.*s]",
-			    celem, q - r, r);
-
-		if (r + 9 < q && !memcmp(r, "esi:remove", 10)) {
-
-			ew->is_esi++;
-
-			if (celem != ew->remflg) {
-				/*
-				 * ESI 1.0 violation, ignore element
-				 */
-				esi_error(ew, p, 1 + q - p, ew->remflg ?
-				    "ESI 1.0 forbids nested esi:remove"
-				    : "ESI 1.0 esi:remove not opened");
-
-				if (!ew->remflg) {
-					ew->o.e = p;
-					esi_addverbatim(ew);
-				}
-			} else if (!celem && q[-1] == '/') {
-				/* empty element */
-				ew->o.e = p;
-				esi_addverbatim(ew);
-			} else if (!celem) {
-				/* open element */
-				ew->o.e = p;
-				esi_addverbatim(ew);
-				ew->remflg = !celem;
-			} else {
-				/* close element */
-				ew->remflg = !celem;
-			}
-			p = q + 1;
-			ew->o.b = p;
-			continue;
-		}
-
-		if (ew->remflg && r + 3 < q && !memcmp(r, "esi:", 4)) {
-			/*
-			 * ESI 1.0 violation, no esi: elements in esi:remove
-			 */
-			esi_error(ew, p, 1 + q - p,
-			    "ESI 1.0 forbids esi: elements inside esi:remove");
-			p = q + 1;
-			continue;
-		}
-		ew->is_esi++;
-
-		if (r + 10 < q && !memcmp(r, "esi:comment", 11)) {
-
-			ew->o.e = p;
-			esi_addverbatim(ew);
-
-			if (celem == 1) {
-				esi_error(ew, p, 1 + q - p,
-				    "ESI 1.0 closing esi:comment illegal");
-			} else if (q[-1] != '/') {
-				esi_error(ew, p, 1 + q - p,
-				    "ESI 1.0 wants empty esi:comment");
-			}
-			p = q + 1;
-			ew->o.b = p;
-			continue;
-		}
-		if (r + 10 < q && !memcmp(r, "esi:include", 11)) {
-
-			ew->o.e = p;
-			esi_addverbatim(ew);
-
-			if (celem == 0) {
-				ew->o.b = r + 11;
-				if (q[-1] != '/') {
-					esi_error(ew, p, 1 + q - p,
-					    "ESI 1.0 wants empty esi:include");
-					ew->o.e = q;
-				} else {
-					ew->o.e = q - 1;
-				}
-				esi_addinclude(ew, ew->o);
-				ew->dst.b = q + 1;
-				ew->dst.e = q + 1;
-			} else {
-				esi_error(ew, p, 1 + q - p,
-				    "ESI 1.0 closing esi:include illegal");
-			}
-			p = q + 1;
-			ew->o.b = p;
-			continue;
-		}
-
-		if (r + 3 < q && !memcmp(r, "esi:", 4)) {
-			/*
-			 * Unimplemented ESI element, ignore
-			 */
-			esi_error(ew, p, 1 + q - p,
-			    "ESI 1.0 unimplemented element");
-			ew->o.e = p;
-			esi_addverbatim(ew);
-			p = q + 1;
-			ew->o.b = p;
-			continue;
-		}
-
-		/* Not an element we care about */
-		assert(q < t.e);
-		p = q + 1;
-	}
-	assert(p == t.e);
-	return (p);
-}
-
-static char *
-esi_parse(struct esi_work *ew)
-{
-	char *p;
-
-	if (params->esi_syntax & 0x4)
-		VSL(SLT_Debug, ew->sp->fd, "Parse: %d <%.*s>",
-		    Tlen(ew->t), Tlen(ew->t), ew->t.b);
-	p = esi_parse2(ew);
-	assert(ew->o.b >= ew->t.b);
-	assert(ew->o.e <= ew->t.e);
-	ew->o.e = p;
-	if (Tlen(ew->o) && !ew->remflg)
-		esi_addverbatim(ew);
-	if (Tlen(ew->dst))
-		esi_addbit(ew);
-	ew->off += (p - ew->t.b);
-	return (p);
-}
-
-/*--------------------------------------------------------------------
  * See if this looks like XML: first non-white char must be '<'
  */
 
 static int
-looks_like_xml(struct object *obj) {
+looks_like_xml(const struct object *obj) {
 	struct storage *st;
 	unsigned u;
 
@@ -660,12 +456,12 @@ looks_like_xml(struct object *obj) {
  */
 
 static int
-contain_esi(struct object *obj) {
+contain_esi(const struct object *obj) {
 	struct storage *st;
 	unsigned u;
 	const char *r, *r2;
-	static const char *wanted = "<esi:";
-	static const char *wanted2 = "<!--esi";
+	static const char * const wanted = "<esi:";
+	static const char * const wanted2 = "<!--esi";
 
 	/*
 	 * Do a fast check to see if there is any '<esi:' sequences at all
@@ -690,14 +486,160 @@ contain_esi(struct object *obj) {
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_esi_comment(struct esi_work *ew)
+{
+
+	esi_addpfx(ew);
+
+	N(ew); N(ew); N(ew); N(ew); N(ew); N(ew); N(ew);
+	assert(!ew->incmt);
+	ew->incmt = 1;
+	ew->s.p = ew->p.p;
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_comment(struct esi_work *ew)
+{
+
+	do {
+		N(ew);
+		if (*ew->p.p == '-' && !CMP(&ew->p, "-->")) {
+			N(ew);
+			N(ew);
+			N(ew);
+			break;
+		}
+	} while (*ew->p.p != '\0');
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_cdata(struct esi_work *ew)
+{
+
+	esi_addpfx(ew);
+
+	do {
+		N(ew);
+		if (*ew->p.p == ']' && !CMP(&ew->p, "]]>")) {
+			N(ew);
+			N(ew);
+			N(ew);
+			break;
+		}
+	} while (*ew->p.p != '\0');
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_esi_tag(struct esi_work *ew, int closing)
+{
+	int l, ll, empty;
+	struct esi_ptr px;
+	char *q;
+
+	esi_addpfx(ew);
+
+	do
+		N(ew);
+	while (*ew->p.p != '>' && *ew->p.p != '\0');
+	if (*ew->p.p == '\0') {
+		esi_addpfx(ew);
+		esi_error(ew, ew->s.p, 0,
+		    "XML 1.0 incomplete language element");
+		return;
+	}
+	N(ew);
+
+	if (ew->p.st == ew->s.st) {
+		ew->tag.b = TRUST_ME(ew->s.p);
+		ew->tag.e = TRUST_ME(ew->p.p);
+	} else {
+		/*
+		 * The element is spread over more than one storage
+		 * segment, pull it together in the object workspace
+		 * XXX: Ideally, we should only pull together the bits
+		 * XXX: we need, like the filename.
+		 */
+		ew->tag.b = ew->sp->obj->ws_o->f;
+		ew->tag.e = ew->tag.b + WS_Reserve(ew->sp->obj->ws_o, 0);
+		px = ew->s;
+		q = ew->tag.b;
+		while (px.p != ew->p.p) {
+			xxxassert(q < ew->tag.e);
+			*q++ = *px.p;
+			Nep(&px);
+		}
+		ew->tag.e = q;
+		WS_Release(ew->sp->obj->ws_o, Tlen(ew->tag));
+	}
+	ll = Tlen(ew->tag);
+	ew->tag.b++;
+	ew->tag.e--;
+	empty = (ew->tag.e[-1] == '/') ? 1 : 0; 
+	if (empty)
+		ew->tag.e--;
+
+	if (empty && closing)
+		esi_error(ew, ew->s.p, ll,
+		    "XML 1.0 empty and closing element");
+
+	ew->tag.b += 4 + (closing ? 1 : 0);
+	l = Tlen(ew->tag);
+	VSL(SLT_Debug, ew->sp->fd,
+	    "tag {%.*s} %d %d %d", l, ew->tag.b, ew->remflg, empty, closing);
+	if (l >= 6 && !memcmp(ew->tag.b, "remove", 6)) {
+		if (empty) {
+			/* XXX ?? */
+		} else if (closing) {
+			if (!ew->remflg)
+				esi_error(ew, ew->s.p, ll,
+				    "ESI 1.0 esi:remove not opened");
+			ew->remflg = 0;
+		} else {
+			if (ew->remflg)
+				esi_error(ew, ew->s.p, ll,
+				    "ESI 1.0 forbids nested esi:remove");
+			ew->remflg = 1;
+		}
+	} else if (ew->remflg) {
+		esi_error(ew, ew->s.p, ll,
+		    "ESI 1.0 forbids esi: elements inside esi:remove");
+	} else if (l >= 7 && !memcmp(ew->tag.b, "comment", 7)) {
+		if (closing)
+			esi_error(ew, ew->s.p, ll,
+			    "ESI 1.0 closing esi:comment illegal");
+		else if (!empty)
+			esi_error(ew, ew->s.p, ll,
+			    "ESI 1.0 wants empty esi:comment");
+	} else if (l >= 7 && !memcmp(ew->tag.b, "include", 7)) {
+		if (closing) {
+			esi_error(ew, ew->s.p, ll,
+			    "ESI 1.0 closing esi:include illegal");
+		} else if (!empty) {
+			esi_error(ew, ew->s.p, ll,
+			    "ESI 1.0 wants empty esi:include");
+		} 
+		ew->tag.b += 7;
+		esi_handle_include(ew);
+	} else {
+		esi_error(ew, ew->s.p, ll,
+		    "ESI 1.0 unimplemented element");
+	}
+	ew->s = ew->p;
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VRT_ESI(struct sess *sp)
 {
-	struct storage *st, *st2;
 	struct esi_work *ew, eww[1];
-	txt t;
-	unsigned u;
-	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -738,87 +680,55 @@ VRT_ESI(struct sess *sp)
 	ew->sp = sp;
 	ew->off = 1;
 
-	p = NULL;
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		if (p != NULL) {
-			assert ((void*)p > (void *)st->ptr);
-			assert ((void*)p <= (void *)(st->ptr + st->len));
-			if (p == (void*)(st->ptr + st->len))
-				break;
-			ew->t.b = p;
-			p = NULL;
-		} else
-			ew->t.b = (void *)st->ptr;
-		ew->t.e = (void *)(st->ptr + st->len);
-		p = esi_parse(ew);
-		if (p == ew->t.e) {
-			p = NULL;
+	ew->p.st = VTAILQ_FIRST(&sp->obj->store);
+	AN(ew->p.st);
+	ew->p.p = (char *)ew->p.st->ptr;
+
+	/* ->s points to the first un-dealt-with byte */
+	ew->s = ew->p;
+
+	while (*ew->p.p != '\0') {
+
+		if (ew->incmt && *ew->p.p == '-' && !CMP(&ew->p, "-->")) {
+			/* End of ESI comment */
+			esi_addpfx(ew);
+			N(ew);
+			N(ew);
+			N(ew);
+			ew->s = ew->p;
+			ew->incmt = 0;
+			continue;
+		}
+		/* Skip forward to the first '<' */
+		if (*ew->p.p != '<') {
+			N(ew);
 			continue;
 		}
 
-		if (VTAILQ_NEXT(st, list) == NULL) {
+		if (!CMP(&ew->p, "<!--esi")) {
+			parse_esi_comment(ew);
+		} else if (!CMP(&ew->p, "<!--")) {
+			parse_comment(ew);
+		} else if (!CMP(&ew->p, "</esi")) {
+			parse_esi_tag(ew, 1);
+		} else if (!CMP(&ew->p, "<esi:")) {
+			parse_esi_tag(ew, 0);
+		} else if (!CMP(&ew->p, "<![CDATA[")) {
+			parse_cdata(ew);
+		} else {
 			/*
-			 * XXX: illegal XML input, but did we handle
-			 * XXX: all of it, or do we leave the final
-			 * XXX: element dangling ?
+			 * Something we don't care about, just skip it.
 			 */
-			esi_error(ew, p, ew->t.e -p,
-			    "XML 1.0 incomplete language element");
-			ew->dst.b = p;
-			ew->dst.e = ew->t.e;
-			esi_addbit(ew);
-			break;
-		}
-
-		/* Move remainder to workspace */
-		u = ew->t.e - p;
-		t.b = sp->obj->ws_o->f;
-		t.e = t.b + WS_Reserve(sp->obj->ws_o, 0);
-		if (t.b + u >= t.e) {
-			esi_error(ew, p, ew->t.e - p,
-			    "XML 1.0 unreasonably long element");
-			WS_Release(sp->obj->ws_o, 0);
-			ew->dst.b = p;
-			ew->dst.e = ew->t.e;
-			esi_addbit(ew);
-			p = NULL;
-			continue;
-		}
-		assert(t.e > t.b + u);	/* XXX incredibly long element ? */
-		memcpy(t.b, p, u);
-
-		/* Peel start off next chunk, until and including '<' */
-		st2 = VTAILQ_NEXT(st, list);
-		AN(st2);
-		q = t.b + u;
-		p = (void*)st2->ptr;
-		while (1) {
-			if (p >= (char *)st2->ptr + st2->len || q >= t.e) {
-				esi_error(ew, t.b, q - t.b,
-				    "XML 1.0 unreasonably long element");
-				WS_Release(sp->obj->ws_o, 0);
-				ew->dst.b = t.b;
-				ew->dst.e = q;
-				esi_addbit(ew);
-				p = NULL;
-				break;
+			N(ew);
+			if (!(params->esi_syntax & 0x2)) {
+				/* XXX: drop this ? */
+				do {
+					N(ew);
+				} while (*ew->p.p != '>' && *ew->p.p != '\0');
 			}
-			*q = *p++;
-			if (*q++ == '>')
-				break;
 		}
-		if (p == NULL)
-			continue;
-		WS_ReleaseP(sp->obj->ws_o, q);
-		t.e = q;
-
-		/* Parse this bit */
-		ew->t = t;
-		q = esi_parse(ew);
-		assert(q == ew->t.e);	/* XXX */
-
-		/* 'p' is cached starting point for next storage part */
 	}
+	esi_addpfx(ew);
 
 	/*
 	 * XXX: we could record the starting point of these elements
@@ -827,9 +737,6 @@ VRT_ESI(struct sess *sp)
 	 * XXX: it like this for now, pending more thought about the
 	 * XXX: proper way to report these errors.
 	 */
-	if (ew->incdata)
-		esi_error(ew, ew->t.e, -1,
-		    "ESI 1.0 unterminated <![CDATA[ element");
 	if (ew->remflg)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <esi:remove> element");
@@ -837,19 +744,12 @@ VRT_ESI(struct sess *sp)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <!--esi comment");
 
-	if (!ew->is_esi) {
-		ESI_Destroy(sp->obj);
-		return;
-	}
-
 	/*
 	 * Our ESI implementation needs chunked encoding
-	 * XXX: We should only do this if we find any ESI directives
 	 */
 	http_Unset(sp->obj->http, H_Content_Length);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 	    "Transfer-Encoding: chunked");
-
 }
 
 /*--------------------------------------------------------------------*/
@@ -913,7 +813,7 @@ ESI_Deliver(struct sess *sp)
 			AN(sp->wrk);
 			WSL_Flush(sp->wrk, 0);
 			DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
-			usleep(10000);
+			(void)usleep(10000);
 		}
 		assert(sp->step == STP_DONE);
 		sp->esis--;
