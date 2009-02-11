@@ -238,6 +238,9 @@ fi
 * Wed Feb 11 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.3-1
   New upstream release 2.0.3. A bugfix and feature enhancement release
 
+* Fri Dec 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-2
+  Added a fix for a timeout bug, backported from trunk
+
 * Mon Nov 10 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0.2-1
   New upstream release 2.0.2. A bugfix release
 
