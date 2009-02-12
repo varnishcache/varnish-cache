@@ -133,7 +133,7 @@ EXP_Insert(struct object *o)
 	oc = o->objcore;
 
 	assert(o->entered != 0 && !isnan(o->entered));
-	oc->lru_stamp = o->entered;
+	o->last_lru = o->entered;
 	Lck_Lock(&exp_mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 	(void)update_object_when(o);
@@ -153,27 +153,27 @@ EXP_Insert(struct object *o)
  * that can be worked around by examining obj.last_use in vcl_discard{}
  */
 
-void
-EXP_Touch(const struct object *o, double now)
+int
+EXP_Touch(const struct object *o)
 {
 	struct objcore *oc;
+	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	if (oc == NULL)
-		return;
+		return (retval);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (oc->lru_stamp + params->lru_timeout > now)
-		return;
 	if (Lck_Trylock(&exp_mtx))
-		return;
+		return (retval);
 	if (oc->on_lru) {
 		VTAILQ_REMOVE(&lru, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
-		oc->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
+		retval = 1;
 	}
 	Lck_Unlock(&exp_mtx);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
