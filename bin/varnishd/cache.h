@@ -183,6 +183,7 @@ struct worker {
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
 	struct object		*nobj;
+	struct objcore		*nobjcore;
 
 	double			lastused;
 
@@ -264,6 +265,7 @@ struct objcore {
 	const char		*timer_what;
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
+	VTAILQ_ENTRY(objcore)	lru_list;
 	int			on_lru;
 	double			lru_stamp;
 };
@@ -302,7 +304,6 @@ struct object {
 	double			last_modified;
 
 	struct http		http[1];
-	VTAILQ_ENTRY(object)	list;
 
 	VTAILQ_HEAD(, storage)	store;
 

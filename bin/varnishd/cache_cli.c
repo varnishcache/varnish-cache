@@ -197,6 +197,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct sess);
 	SZOF(struct vbe_conn);
 	SZOF(struct varnish_stats);
+	SZOF(struct lock);
 }
 
 /*--------------------------------------------------------------------*/
