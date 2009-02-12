@@ -432,7 +432,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	} else {
 		free(noh->hash);
 		noh->hash = NULL;
-		noh->hashlen = 0;
 		VSL_stats->hcb_lock++;
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);

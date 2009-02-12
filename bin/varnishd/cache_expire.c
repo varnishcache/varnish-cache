@@ -79,37 +79,6 @@ static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
 #define BINHEAP_NOIDX 0
 
 /*--------------------------------------------------------------------
- * Add and Remove objcore's from objects.
- */
-
-static void
-add_objcore(struct object *o)
-{
-
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	AZ(o->objcore);
-	assert(o->busy);
-	assert(o->cacheable);
-	o->objcore = calloc(sizeof *o->objcore, 1);
-	AN(o->objcore);
-	o->objcore->magic = OBJCORE_MAGIC;
-	o->objcore->obj = o;
-}
-
-static void
-del_objcore(struct object *o)
-{
-	struct objcore *oc;
-
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
-	o->objcore = NULL;
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	assert(oc->timer_idx == BINHEAP_NOIDX);
-	free(oc);
-}
-
-/*--------------------------------------------------------------------
  * When & why does the timer fire for this object ?
  */
 
@@ -160,7 +129,7 @@ EXP_Insert(struct object *o)
 	assert(o->busy);
 	assert(o->cacheable);
 	HSH_Ref(o);
-	add_objcore(o);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	oc = o->objcore;
 
 	assert(o->entered != 0 && !isnan(o->entered));
@@ -170,7 +139,7 @@ EXP_Insert(struct object *o)
 	(void)update_object_when(o);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oc, list);
+	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
 	oc->on_lru = 1;
 	Lck_Unlock(&exp_mtx);
 }
@@ -199,8 +168,8 @@ EXP_Touch(const struct object *o, double now)
 	if (Lck_Trylock(&exp_mtx))
 		return;
 	if (oc->on_lru) {
-		VTAILQ_REMOVE(&lru, oc, list);
-		VTAILQ_INSERT_TAIL(&lru, oc, list);
+		VTAILQ_REMOVE(&lru, oc, lru_list);
+		VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
 		oc->lru_stamp = now;
 		VSL_stats->n_lru_moved++;
 	}
@@ -335,11 +304,10 @@ exp_timer(void *arg)
 			    "%u %d", o->xid, (int)(o->ttl - t));
 			Lck_Lock(&exp_mtx);
 			assert(oc->timer_idx == BINHEAP_NOIDX);
-			VTAILQ_REMOVE(&lru, o->objcore, list);
+			VTAILQ_REMOVE(&lru, o->objcore, lru_list);
 			oc->on_lru = 0;
 			VSL_stats->n_expired++;
 			Lck_Unlock(&exp_mtx);
-			del_objcore(o);
 			HSH_Deref(&o);
 		}
 	}
@@ -370,7 +338,7 @@ EXP_NukeOne(struct sess *sp)
 	 * another ref while we ponder its destiny without the lock held.
 	 */
 	Lck_Lock(&exp_mtx);
-	VTAILQ_FOREACH(oc, &lru, list) {
+	VTAILQ_FOREACH(oc, &lru, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;
@@ -384,7 +352,7 @@ EXP_NukeOne(struct sess *sp)
 		 * a lock cycle.  If the object is kept, we reverse these
 		 * actions below.
 		 */
-		VTAILQ_REMOVE(&lru, oc, list);
+		VTAILQ_REMOVE(&lru, oc, lru_list);
 		oc->on_lru = 0;
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
@@ -408,7 +376,6 @@ EXP_NukeOne(struct sess *sp)
 
 	if (sp->handling == VCL_RET_DISCARD) {
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
-		del_objcore(o);
 		HSH_Deref(&o);
 		return (1);
 	}
@@ -421,7 +388,7 @@ EXP_NukeOne(struct sess *sp)
 	VSL_stats->n_lru_saved++;
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oc, list);
+	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
 	oc->on_lru = 1;
 	Lck_Unlock(&exp_mtx);
 	return (0);

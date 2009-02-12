@@ -73,11 +73,10 @@ struct objhead {
 
 	struct lock		mtx;
 	unsigned		refcnt;
-	VTAILQ_HEAD(,object)	objects;
+	VTAILQ_HEAD(,objcore)	objcs;
 	char			*hash;
-	unsigned		hashlen;
 	unsigned char		digest[DIGEST_LEN];
-#ifdef NOT_YET
+#ifndef NOT_YET
 	union {
 		VTAILQ_HEAD(, sess)	__u_waitinglist;
 		VTAILQ_ENTRY(objhead)	__u_coollist;

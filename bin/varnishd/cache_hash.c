@@ -85,6 +85,7 @@ HSH_Prealloc(struct sess *sp)
 {
 	struct worker *w;
 	struct objhead *oh;
+	struct objcore *oc;
 	struct object *o;
 	struct storage *st;
 
@@ -92,17 +93,23 @@ HSH_Prealloc(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
+	if (w->nobjcore == NULL) {
+		ALLOC_OBJ(oc, OBJCORE_MAGIC);
+		w->nobjcore = oc;
+	}
+	CHECK_OBJ_NOTNULL(w->nobjcore, OBJCORE_MAGIC);
+
 	if (w->nobjhead == NULL) {
 		ALLOC_OBJ(oh, OBJHEAD_MAGIC);
 		XXXAN(oh);
 		oh->refcnt = 1;
-		VTAILQ_INIT(&oh->objects);
+		VTAILQ_INIT(&oh->objcs);
 		VTAILQ_INIT(&oh->waitinglist);
 		Lck_New(&oh->mtx);
 		w->nobjhead = oh;
 		VSL_stats->n_objecthead++;
-	} else
-		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
+	}
+	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 
 	if (w->nobj == NULL) {
 		st = STV_alloc(sp, params->obj_workspace);
@@ -128,8 +135,8 @@ HSH_Prealloc(struct sess *sp)
 		w->nobj = o;
 		VSL_stats->n_object++;
 
-	} else
-		CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
+	}
+	CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
 
 void
@@ -157,7 +164,6 @@ HSH_Copy(const struct sess *sp, struct objhead *oh)
 
 	oh->hash = malloc(sp->lhashptr);
 	XXXAN(oh->hash);
-	oh->hashlen = sp->lhashptr;
 	b = oh->hash;
 	for (u = 0; u < sp->ihashptr; u += 2) {
 		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
@@ -166,7 +172,7 @@ HSH_Copy(const struct sess *sp, struct objhead *oh)
 		*b++ = '#';
 	}
 	*b++ = '\0';
-	assert(b <= oh->hash + oh->hashlen);
+	assert(b <= oh->hash + sp->lhashptr);
 }
 
 void
@@ -229,6 +235,7 @@ HSH_Lookup(struct sess *sp)
 {
 	struct worker *w;
 	struct objhead *oh;
+	struct objcore *oc;
 	struct object *o, *busy_o, *grace_o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -257,7 +264,11 @@ HSH_Lookup(struct sess *sp)
 
 	busy_o = NULL;
 	grace_o = NULL;
-	VTAILQ_FOREACH(o, &oh->objects, list) {
+	o = NULL;
+	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		o = oc->obj;
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		
 		if (o->busy) {
 			busy_o = o;
 			continue;
@@ -279,6 +290,10 @@ HSH_Lookup(struct sess *sp)
 		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req)
 			grace_o = o;
 	}
+	if (oc == NULL)
+		o = NULL;
+	else
+		AN(o);
 
 	/*
 	 * If we have a object in grace and being fetched,
@@ -314,9 +329,15 @@ HSH_Lookup(struct sess *sp)
 	/* Insert (precreated) object in objecthead */
 	o = w->nobj;
 	w->nobj = NULL;
+
+	oc = w->nobjcore;
+	w->nobjcore = NULL;
+
 	o->objhead = oh;
+	o->objcore = oc;
+	oc->obj = o;
 	/* XXX: Should this not be ..._HEAD now ? */
-	VTAILQ_INSERT_TAIL(&oh->objects, o, list);
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	if (grace_o != NULL) {
 		grace_o->child = o;
@@ -419,6 +440,7 @@ HSH_Deref(struct object **oo)
 {
 	struct object *o;
 	struct objhead *oh;
+	struct objcore *oc;
 	unsigned r;
 
 	AN(oo);
@@ -426,19 +448,22 @@ HSH_Deref(struct object **oo)
 	*oo = NULL;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oh = o->objhead;
-	if (oh != NULL) {
+	if (oh == NULL) {
+		oc = NULL;
+		assert(o->refcnt > 0);
+		r = --o->refcnt;
+	} else {
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-		/* drop ref on object */
+		oc = o->objcore;
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		
 		Lck_Lock(&oh->mtx);
-	}
-	assert(o->refcnt > 0);
-	r = --o->refcnt;
-	if (oh != NULL)
-		hsh_rush(oh);
-	if (oh != NULL) {
+		assert(o->refcnt > 0);
+		r = --o->refcnt;
 		if (!r)
-			VTAILQ_REMOVE(&oh->objects, o, list);
+			VTAILQ_REMOVE(&oh->objcs, oc, list);
+		hsh_rush(oh);
 		Lck_Unlock(&oh->mtx);
 	}
 
@@ -458,12 +483,16 @@ HSH_Deref(struct object **oo)
 	STV_free(o->objstore);
 	VSL_stats->n_object--;
 
-	if (oh == NULL)
+	if (oh == NULL) {
+		AZ(oc);
 		return;
+	}
+	AN(oc);
+	FREE_OBJ(oc);
 	/* Drop our ref on the objhead */
 	if (hash->deref(oh))
 		return;
-	assert(VTAILQ_EMPTY(&oh->objects));
+	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
 	VSL_stats->n_objecthead--;
 	free(oh->hash);
