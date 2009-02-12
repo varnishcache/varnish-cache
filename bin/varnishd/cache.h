@@ -267,7 +267,6 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
 	int			on_lru;
-	double			lru_stamp;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -302,6 +301,7 @@ struct object {
 	double			prefetch;
 
 	double			last_modified;
+	double			last_lru;
 
 	struct http		http[1];
 
@@ -463,7 +463,7 @@ extern pthread_t cli_thread;
 void EXP_Insert(struct object *o);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
-void EXP_Touch(const struct object *o, double now);
+int EXP_Touch(const struct object *o);
 int EXP_NukeOne(struct sess *sp);
 
 /* cache_fetch.c */
