@@ -7,7 +7,7 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p acceptor=poll" -vcl+backend {} -start
+varnish v1 -arg "-p waiter=poll" -vcl+backend {} -start
 
 client c1 {
 	txreq -url "/"
