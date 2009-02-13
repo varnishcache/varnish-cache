@@ -134,3 +134,28 @@ VLU_File(FILE *f, struct vlu *l)
 	l->bufp = strlen(l->buf);
 	return (LineUpProcess(l));
 }
+
+int
+VLU_Data(const void *ptr, int len, struct vlu *l)
+{
+	const char *p;
+	int i;
+
+	p = ptr;
+	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
+	if (len < 0)
+		len = strlen(p);
+	while (len > 0) {
+		i = len;
+		if (i > l->bufl - l->bufp)
+			i = l->bufl - l->bufp;
+		memcpy(l->buf + l->bufp, p, i);
+		l->bufp += i;
+		p += i;
+		len -= i;
+		i = LineUpProcess(l);
+		if (i)
+			break;
+	}
+	return (i);
+}
