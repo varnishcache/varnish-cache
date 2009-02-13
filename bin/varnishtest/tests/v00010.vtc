@@ -17,7 +17,12 @@ varnish v1 -vcl+backend {
 			panic "Had Panic header: " obj.http.panic;
 		}
 	}
-} -start -cli "param.set diag_bitmap 0x00001000"
+} -start
+
+varnish v1 -cliok "param.set diag_bitmap 0x00001000" 
+
+# varnishtest defaults to auto_restart off, to avoid masking bugs.
+varnish v1 -cliok "param.set auto_restart on" 
 
 
 client c1 {
