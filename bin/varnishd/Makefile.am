@@ -8,10 +8,10 @@ dist_man_MANS = varnishd.1
 
 varnishd_SOURCES = \
 	cache_acceptor.c \
-	cache_acceptor_epoll.c \
-	cache_acceptor_kqueue.c \
-	cache_acceptor_poll.c \
-	cache_acceptor_ports.c \
+	cache_waiter_epoll.c \
+	cache_waiter_kqueue.c \
+	cache_waiter_poll.c \
+	cache_waiter_ports.c \
 	cache_backend.c \
 	cache_backend_cfg.c \
 	cache_backend_poll.c \
@@ -60,7 +60,7 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
-	cache_acceptor.h \
+	cache_waiter.h \
 	cache_backend.h \
 	cache_backend_poll.h \
 	common.h \

@@ -413,12 +413,12 @@ tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_acceptor(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	VCA_tweak_acceptor(cli, arg);
+	VCA_tweak_waiter(cli, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -701,7 +701,7 @@ static const struct parspec input_parspec[] = {
 		"completing.\n"
 		"Setting this too high results in worker threads not doing "
 		"anything for their keep, setting it too low just means that "
-		"more sessions take a detour around the acceptor.",
+		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0", "ms" },
 	{ "cli_buffer", tweak_uint, &master.cli_buffer, 4096, UINT_MAX,
@@ -726,8 +726,8 @@ static const struct parspec input_parspec[] = {
 		"SessionOpen shared memory record.\n",
 		0,
 		"off", "bool" },
-	{ "acceptor", tweak_acceptor, NULL, 0, 0,
-		"Select the acceptor kernel interface.\n",
+	{ "waiter", tweak_waiter, NULL, 0, 0,
+		"Select the waiter kernel interface.\n",
 		EXPERIMENTAL | MUST_RESTART,
 		"default", NULL },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,

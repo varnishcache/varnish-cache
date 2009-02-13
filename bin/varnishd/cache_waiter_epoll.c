@@ -45,7 +45,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "cache_acceptor.h"
+#include "cache_waiter.h"
 
 static pthread_t vca_epoll_thread;
 static int epfd = -1;
@@ -133,7 +133,7 @@ vca_epoll_init(void)
 	AZ(pthread_create(&vca_epoll_thread, NULL, vca_main, NULL));
 }
 
-struct acceptor acceptor_epoll = {
+struct waiter waiter_epoll = {
 	.name =		"epoll",
 	.init =		vca_epoll_init,
 };
