@@ -112,8 +112,11 @@ VBE_DropRefLocked(struct backend *b)
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vbe, &b->connlist, list, vbe2) {
 		VTAILQ_REMOVE(&b->connlist, vbe, list);
-		if (vbe->fd >= 0)
+		if (vbe->fd >= 0) {
 			AZ(close(vbe->fd));
+			vbe->fd = -1;
+		}
+		vbe->backend = NULL;
 		VBE_ReleaseConn(vbe);
 	}
 	if (b->probe != NULL)
