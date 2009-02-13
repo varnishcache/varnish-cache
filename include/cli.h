@@ -225,6 +225,12 @@
 	"\tCheck status of Varnish cache process.",			\
 	0, 0
 
+#define CLI_BANNER	 						\
+	"banner",							\
+	"banner",							\
+	"\tPrint welcome banner.",					\
+	0, 0
+
 #define CLI_HIDDEN(foo, min_arg, max_arg)				\
 	foo, NULL, NULL, min_arg, max_arg,
 

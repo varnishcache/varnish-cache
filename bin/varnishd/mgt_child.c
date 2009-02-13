@@ -553,9 +553,7 @@ mgt_run(int dflag, const char *T_arg)
 		start_child(NULL);
 		if (child_state == CH_STOPPED)
 			exit(2);
-	} else
-		fprintf(stderr,
-		    "Debugging mode, enter \"start\" to start child\n");
+	} 
 
 	i = vev_schedule(mgt_evb);
 	if (i != 0)
