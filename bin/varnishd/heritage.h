@@ -195,6 +195,9 @@ struct params {
 
 	/* Get rid of duplicate purges */
 	unsigned		purge_dups;
+
+	/* CLI banner */
+	unsigned		cli_banner;
 };
 
 extern volatile struct params *params;

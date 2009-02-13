@@ -126,9 +126,28 @@ mcf_close(struct cli *cli, const char *const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mcf_banner(struct cli *cli, const char *const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	cli_out(cli, "-----------------------------\n");
+	cli_out(cli, "Varnish HTTP accelerator CLI.\n");
+	cli_out(cli, "-----------------------------\n");
+	cli_out(cli, "Type 'help' for command list.\n");
+	cli_out(cli, "Type 'quit' to close CLI session.\n");
+	if (child_pid < 0)
+		cli_out(cli, "Type 'start' to launch worker process.\n");
+	cli_result(cli, CLIS_OK);
+}
+
+/*--------------------------------------------------------------------*/
+
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
 	{ CLI_HELP,		mcf_help, cli_proto },
+	{ CLI_BANNER,		mcf_banner, NULL },
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
 	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
@@ -250,8 +269,6 @@ mgt_cli_vlu(void *priv, const char *p)
 		return (0);
 
 	cli_dispatch(cp->cli, cli_proto, p);
-	vsb_finish(cp->cli->sb);
-	AZ(vsb_overflowed(cp->cli->sb));
 	if (cp->cli->result == CLIS_UNKNOWN) {
 		/*
 		 * Command not recognized in master, try cacher if it is
@@ -275,9 +292,9 @@ mgt_cli_vlu(void *priv, const char *p)
 			cli_out(cp->cli, "%s", q);
 			free(q);
 		}
-		vsb_finish(cp->cli->sb);
-		AZ(vsb_overflowed(cp->cli->sb));
 	}
+	vsb_finish(cp->cli->sb);
+	AZ(vsb_overflowed(cp->cli->sb));
 
 	/* send the result back */
 	syslog(LOG_INFO, "CLI %d result %d \"%s\"",
@@ -371,6 +388,9 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 
 	cp->cli->sb = vsb_newauto();
 	XXXAN(cp->cli->sb);
+
+	if (params->cli_banner)
+		(void)VLU_Data("banner\n", -1, cp->vlu);
 
 	cp->ev = calloc(sizeof *cp->ev, 1);
 	cp->ev->name = cp->name;
