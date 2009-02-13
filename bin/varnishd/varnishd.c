@@ -78,6 +78,7 @@
 
 struct heritage heritage;
 volatile struct params *params;
+unsigned d_flag = 0;
 
 /*--------------------------------------------------------------------*/
 
@@ -420,7 +421,6 @@ main(int argc, char * const *argv)
 {
 	int o;
 	unsigned C_flag = 0;
-	unsigned d_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
@@ -636,7 +636,7 @@ main(int argc, char * const *argv)
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
-	mgt_run(d_flag, T_arg);
+	mgt_run(T_arg);
 
 	if (pfh != NULL)
 		(void)vpf_remove(pfh);

@@ -37,9 +37,10 @@
 struct cli;
 
 extern struct vev_base	*mgt_evb;
+extern unsigned d_flag;
 
 /* mgt_child.c */
-void mgt_run(int dflag, const char *T_arg);
+void mgt_run(const char *T_arg);
 extern pid_t mgt_pid, child_pid;
 void mgt_stop_child(void);
 
@@ -49,7 +50,7 @@ void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
-void mgt_cli_telnet(int dflag, const char *T_arg);
+void mgt_cli_telnet(const char *T_arg);
 
 /* mgt_param.c */
 void MCF_ParamSync(void);
