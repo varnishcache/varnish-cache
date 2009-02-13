@@ -5,10 +5,9 @@ test "Test parking second request on backend delay, then pass"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
+	sema r1 sync 2
 	send "HTTP/1.1 200 Ok\r\nContent-Length: 12\r\n\r\n"
-	delay .5
 	send "line1\n"
-	delay .5
 	send "line2\n"
 
 	rxreq
@@ -29,11 +28,15 @@ client c1 {
 	expect resp.http.content-length == 12
 	expect resp.http.x-varnish == "1001"
 } -start
-delay .2
+sema r1 sync 2
 client c2 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.content-length == 6
 	expect resp.http.x-varnish == "1002"
-} -start
+} -run
+
+client c1 -wait
+
+varnish v1 -expect cache_hitpass == 1
