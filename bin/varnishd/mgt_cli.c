@@ -161,11 +161,26 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_PARAM_SET,	mcf_param_set, NULL },
 
 	{ CLI_QUIT,		mcf_close, NULL},
-#if 0
-	{ CLI_SERVER_RESTART },
-	{ CLI_ZERO },
-	{ CLI_VERBOSE,		m_cli_func_verbose, NULL },
-#endif
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------*/
+
+
+static void
+mcf_panic(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)cli;
+	(void)av;
+	(void)priv;
+	assert(!strcmp("", "You asked for it"));
+}
+
+static struct cli_proto cli_debug[] = {
+	{ "debug.panic.master", "debug.panic.master",
+		"\tPanic the master process.\n",
+		0, 0, mcf_panic, NULL},
 	{ NULL }
 };
 
@@ -267,6 +282,8 @@ mgt_cli_vlu(void *priv, const char *p)
 		return (0);
 
 	cli_dispatch(cp->cli, cli_proto, p);
+	if (cp->cli->result == CLIS_UNKNOWN) 
+		cli_dispatch(cp->cli, cli_debug, p);
 	if (cp->cli->result == CLIS_UNKNOWN) {
 		/*
 		 * Command not recognized in master, try cacher if it is

@@ -223,6 +223,18 @@ ccf_help(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+ccf_panic(struct cli *cli, const char * const *av, void *priv)
+{ 
+
+	(void)cli;
+	(void)av;
+	(void)priv;
+	assert(!strcmp("", "You asked for it"));
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct cli_proto master_cmds[] = {
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_HELP,             ccf_help, NULL },
@@ -233,6 +245,9 @@ static struct cli_proto debug_cmds[] = {
 	{ "debug.sizeof", "debug.sizeof",
 		"\tDump sizeof various data structures\n",
 		0, 0, cli_debug_sizeof },
+	{ "debug.panic.worker", "debug.panic.worker",
+		"\tPanic the worker process.\n",
+		0, 0, ccf_panic },
 	{ NULL }
 };
 
