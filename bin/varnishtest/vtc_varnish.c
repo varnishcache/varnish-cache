@@ -207,7 +207,7 @@ varnish_launch(struct varnish *v)
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n /tmp/__%s", v->name);
-	vsb_printf(vsb, " -p cli_banner=off);
+	vsb_printf(vsb, " -p cli_banner=off");
 	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
 	vsb_printf(vsb, " -P /tmp/__%s/varnishd.pid", v->name);
 	vsb_printf(vsb, " %s", v->args);
