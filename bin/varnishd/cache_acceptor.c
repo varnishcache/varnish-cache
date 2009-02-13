@@ -47,23 +47,23 @@
 #include "cli_priv.h"
 #include "shmlog.h"
 #include "cache.h"
-#include "cache_acceptor.h"
+#include "cache_waiter.h"
 
-static struct acceptor * const vca_acceptors[] = {
+static struct waiter * const vca_waiters[] = {
 #if defined(HAVE_KQUEUE)
-	&acceptor_kqueue,
+	&waiter_kqueue,
 #endif
 #if defined(HAVE_EPOLL_CTL)
-	&acceptor_epoll,
+	&waiter_epoll,
 #endif
 #if defined(HAVE_PORT_CREATE)
-	&acceptor_ports,
+	&waiter_ports,
 #endif
-	&acceptor_poll,
+	&waiter_poll,
 	NULL,
 };
 
-static struct acceptor const *vca_act;
+static struct waiter const *vca_act;
 
 static pthread_t	vca_thread_acct;
 static struct timeval	tv_sndtimeo;
@@ -322,7 +322,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (vca_act == NULL)
-		vca_act = vca_acceptors[0];
+		vca_act = vca_waiters[0];
 
 	AN(vca_act);
 	AN(vca_act->name);
@@ -347,7 +347,7 @@ VCA_Init(void)
 }
 
 void
-VCA_tweak_acceptor(struct cli *cli, const char *arg)
+VCA_tweak_waiter(struct cli *cli, const char *arg)
 {
 	int i;
 
@@ -358,9 +358,9 @@ VCA_tweak_acceptor(struct cli *cli, const char *arg)
 			cli_out(cli, "%s", vca_act->name);
 
 		cli_out(cli, " (");
-		for (i = 0; vca_acceptors[i] != NULL; i++)
+		for (i = 0; vca_waiters[i] != NULL; i++)
 			cli_out(cli, "%s%s", i == 0 ? "" : ", ",
-			    vca_acceptors[i]->name);
+			    vca_waiters[i]->name);
 		cli_out(cli, ")");
 		return;
 	}
@@ -368,12 +368,12 @@ VCA_tweak_acceptor(struct cli *cli, const char *arg)
 		vca_act = NULL;
 		return;
 	}
-	for (i = 0; vca_acceptors[i]->name; i++) {
-		if (!strcmp(arg, vca_acceptors[i]->name)) {
-			vca_act = vca_acceptors[i];
+	for (i = 0; vca_waiters[i]->name; i++) {
+		if (!strcmp(arg, vca_waiters[i]->name)) {
+			vca_act = vca_waiters[i];
 			return;
 		}
 	}
-	cli_out(cli, "Unknown acceptor");
+	cli_out(cli, "Unknown waiter");
 	cli_result(cli, CLIS_PARAM);
 }

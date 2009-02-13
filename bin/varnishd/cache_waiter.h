@@ -31,29 +31,29 @@
 
 struct sess;
 
-typedef void acceptor_init_f(void);
-typedef void acceptor_pass_f(struct sess *);
+typedef void waiter_init_f(void);
+typedef void waiter_pass_f(struct sess *);
 
 extern int vca_pipes[2];
 
-struct acceptor {
+struct waiter {
 	const char		*name;
-	acceptor_init_f		*init;
-	acceptor_pass_f		*pass;
+	waiter_init_f		*init;
+	waiter_pass_f		*pass;
 };
 
 #if defined(HAVE_EPOLL_CTL)
-extern struct acceptor acceptor_epoll;
+extern struct waiter waiter_epoll;
 #endif
 
 #if defined(HAVE_KQUEUE)
-extern struct acceptor acceptor_kqueue;
+extern struct waiter waiter_kqueue;
 #endif
 
-extern struct acceptor acceptor_poll;
+extern struct waiter waiter_poll;
 
 #if defined(HAVE_PORT_CREATE)
-extern struct acceptor acceptor_ports;
+extern struct waiter waiter_ports;
 #endif
 
 /* vca_acceptor.c */

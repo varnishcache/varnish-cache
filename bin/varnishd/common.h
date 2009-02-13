@@ -33,7 +33,7 @@ struct cli;
 struct sockaddr;
 
 /* cache_acceptor.c */
-void VCA_tweak_acceptor(struct cli *cli, const char *arg);
+void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* shmlog.c */
 void VSL_Panic(int *len, char **ptr);

@@ -48,7 +48,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "cache_acceptor.h"
+#include "cache_waiter.h"
 
 
 /**********************************************************************/
@@ -217,7 +217,7 @@ vca_kqueue_init(void)
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
 }
 
-struct acceptor acceptor_kqueue = {
+struct waiter waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vca_kqueue_init,
 };

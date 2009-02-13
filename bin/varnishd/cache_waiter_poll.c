@@ -41,7 +41,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "cache_acceptor.h"
+#include "cache_waiter.h"
 
 static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
@@ -161,7 +161,7 @@ vca_poll_init(void)
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 
-struct acceptor acceptor_poll = {
+struct waiter waiter_poll = {
 	.name =		"poll",
 	.init =		vca_poll_init,
 };

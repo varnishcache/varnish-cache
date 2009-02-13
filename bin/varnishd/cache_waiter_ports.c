@@ -50,7 +50,7 @@
 
 #include "shmlog.h"
 #include "cache.h"
-#include "cache_acceptor.h"
+#include "cache_waiter.h"
 
 #define MAX_EVENTS 256
 static pthread_t vca_ports_thread;
@@ -162,7 +162,7 @@ vca_ports_init(void)
 	AZ(pthread_create(&vca_ports_thread, NULL, vca_main, NULL));
 }
 
-struct acceptor acceptor_ports = {
+struct waiter waiter_ports = {
 	.name =		"ports",
 	.init =		vca_ports_init,
 	.pass =		vca_ports_pass
