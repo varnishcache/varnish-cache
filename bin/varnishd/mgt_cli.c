@@ -74,8 +74,6 @@ static VTAILQ_HEAD(,telnet)	telnets = VTAILQ_HEAD_INITIALIZER(telnets);
 static void telnet_close_all(void);
 static void telnet_close_one(int fd);
 
-static int			dflag_copy;
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -335,7 +333,7 @@ mgt_cli_close(struct cli_port *cp)
 		(void)close(2);
 		assert(open("/dev/null", O_WRONLY) == 2);
 
-		if (dflag_copy == 2) {
+		if (d_flag == 2) {
 			mgt_stop_child();
 			telnet_close_all();
 		}
@@ -475,14 +473,12 @@ telnet_accept(const struct vev *ev, int what)
 }
 
 void
-mgt_cli_telnet(int dflag, const char *T_arg)
+mgt_cli_telnet(const char *T_arg)
 {
 	struct vss_addr **ta;
 	char *addr, *port;
 	int i, n, sock, good;
 	struct telnet *tn;
-
-	dflag_copy = dflag;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
 	n = VSS_resolve(addr, port, &ta);

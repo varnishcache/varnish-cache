@@ -499,7 +499,7 @@ mgt_sigint(const struct vev *e, int what)
  */
 
 void
-mgt_run(int dflag, const char *T_arg)
+mgt_run(const char *T_arg)
 {
 	struct sigaction sac;
 	struct vev *e;
@@ -510,11 +510,11 @@ mgt_run(int dflag, const char *T_arg)
 	mgt_evb = vev_new_base();
 	XXXAN(mgt_evb);
 
-	if (dflag)
+	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug");
 
 	if (T_arg)
-		mgt_cli_telnet(dflag, T_arg);
+		mgt_cli_telnet(T_arg);
 
 	e = vev_new();
 	XXXAN(e);
@@ -547,9 +547,9 @@ mgt_run(int dflag, const char *T_arg)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	if (!dflag && !mgt_has_vcl())
+	if (!d_flag && !mgt_has_vcl())
 		REPORT0(LOG_ERR, "No VCL loaded yet");
-	else if (!dflag) {
+	else if (!d_flag) {
 		start_child(NULL);
 		if (child_state == CH_STOPPED)
 			exit(2);
