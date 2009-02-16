@@ -643,7 +643,8 @@ VRT_ESI(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	AN(ObjIsBusy(sp->obj));
+	if (sp->obj->objcore != NULL)	/* Pass has no objcore */
+		AN(ObjIsBusy(sp->obj));
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
 		WSP(sp, SLT_VCL_error,
