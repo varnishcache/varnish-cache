@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -63,13 +63,15 @@
 #include "vcl.h"
 #include "hash_slinger.h"
 
-static const char * const tmr_prefetch	= "prefetch";
-static const char * const tmr_ttl	= "ttl";
-
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
 static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
+
+static const char *timer_what[] = {
+	[OC_T_TTL]	=	"TTL",
+	[OC_T_PREFETCH]	=	"Prefetch",
+};
 
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
@@ -87,7 +89,7 @@ update_object_when(const struct object *o)
 {
 	struct objcore *oc;
 	double when;
-	const char *what;
+	unsigned char what;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
@@ -96,14 +98,14 @@ update_object_when(const struct object *o)
 
 	if (o->prefetch < 0.0) {
 		when = o->ttl + o->prefetch;
-		what = tmr_prefetch;
+		what = OC_T_PREFETCH;
 	} else if (o->prefetch > 0.0) {
 		assert(o->prefetch <= o->ttl);
 		when = o->prefetch;
-		what = tmr_prefetch;
+		what = OC_T_PREFETCH;
 	} else {
 		when = o->ttl + HSH_Grace(o->grace);
-		what = tmr_ttl;
+		what = OC_T_TTL;
 	}
 	assert(!isnan(when));
 	oc->timer_what = what;
@@ -140,7 +142,7 @@ EXP_Insert(struct object *o)
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
-	oc->on_lru = 1;
+	oc->flags |= OC_F_ONLRU;
 	Lck_Unlock(&exp_mtx);
 }
 
@@ -166,7 +168,7 @@ EXP_Touch(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
-	if (oc->on_lru) {
+	if (oc->flags & OC_F_ONLRU) {
 		VTAILQ_REMOVE(&lru, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
 		VSL_stats->n_lru_moved++;
@@ -273,12 +275,13 @@ exp_timer(void *arg)
 			}
 		}
 
-		assert(oc->on_lru);
+		assert(oc->flags & OC_F_ONLRU);
 		Lck_Unlock(&exp_mtx);
 
-		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid, oc->timer_what);
+		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid,
+		    timer_what[oc->timer_what]);
 
-		if (oc->timer_what == tmr_prefetch) {
+		if (oc->timer_what == OC_T_PREFETCH) {
 			o->prefetch = 0.0;
 			sp->obj = o;
 			VCL_prefetch_method(sp);
@@ -294,7 +297,7 @@ exp_timer(void *arg)
 			assert(oc->timer_idx != BINHEAP_NOIDX);
 			Lck_Unlock(&exp_mtx);
 		} else {
-			assert(oc->timer_what == tmr_ttl);
+			assert(oc->timer_what == OC_T_TTL);
 			sp->obj = o;
 			VCL_timeout_method(sp);
 			sp->obj = NULL;
@@ -305,7 +308,7 @@ exp_timer(void *arg)
 			Lck_Lock(&exp_mtx);
 			assert(oc->timer_idx == BINHEAP_NOIDX);
 			VTAILQ_REMOVE(&lru, o->objcore, lru_list);
-			oc->on_lru = 0;
+			oc->flags &= ~OC_F_ONLRU;
 			VSL_stats->n_expired++;
 			Lck_Unlock(&exp_mtx);
 			HSH_Deref(&o);
@@ -353,7 +356,7 @@ EXP_NukeOne(struct sess *sp)
 		 * actions below.
 		 */
 		VTAILQ_REMOVE(&lru, oc, lru_list);
-		oc->on_lru = 0;
+		oc->flags &= ~OC_F_ONLRU;
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 		VSL_stats->n_lru_nuked++;
@@ -389,7 +392,7 @@ EXP_NukeOne(struct sess *sp)
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
-	oc->on_lru = 1;
+	oc->flags |= OC_F_ONLRU;
 	Lck_Unlock(&exp_mtx);
 	return (0);
 }
