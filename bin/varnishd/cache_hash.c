@@ -96,6 +96,7 @@ HSH_Prealloc(struct sess *sp)
 	if (w->nobjcore == NULL) {
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		w->nobjcore = oc;
+		oc->flags |= OC_F_BUSY;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjcore, OBJCORE_MAGIC);
 
@@ -126,7 +127,6 @@ HSH_Prealloc(struct sess *sp)
 		http_Setup(o->http, o->ws_o);
 		o->magic = OBJECT_MAGIC;
 		o->http->magic = HTTP_MAGIC;
-		o->busy = 1;
 		o->refcnt = 1;
 		o->grace = NAN;
 		o->entered = NAN;
@@ -269,7 +269,7 @@ HSH_Lookup(struct sess *sp)
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		
-		if (o->busy) {
+		if (ObjIsBusy(o)) {
 			busy_o = o;
 			continue;
 		}
@@ -377,7 +377,7 @@ HSH_Drop(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	assert(o->busy);
+	AN(ObjIsBusy(o));
 	assert(o->refcnt > 0);
 	o->ttl = 0;
 	o->cacheable = 0;
@@ -395,7 +395,7 @@ HSH_Unbusy(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	assert(o->busy);
+	AN(ObjIsBusy(o));
 	assert(o->refcnt > 0);
 	if (o->ws_o->overflow)
 		VSL_stats->n_objoverflow++;
@@ -408,7 +408,7 @@ HSH_Unbusy(const struct sess *sp)
 		CHECK_OBJ(oh, OBJHEAD_MAGIC);
 		Lck_Lock(&oh->mtx);
 	}
-	o->busy = 0;
+	o->objcore->flags &= ~OC_F_BUSY;
 	if (oh != NULL)
 		hsh_rush(oh);
 	parent = o->parent;

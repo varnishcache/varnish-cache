@@ -326,7 +326,8 @@ Fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	AN(sp->director);
-	AN(sp->obj->busy);
+	if (sp->obj->objcore != NULL)		/* pass has no objcore */
+		AN(ObjIsBusy(sp->obj));
 	AN(sp->bereq);
 	w = sp->wrk;
 	bereq = sp->bereq;

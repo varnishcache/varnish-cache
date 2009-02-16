@@ -601,7 +601,7 @@ cnt_lookup(struct sess *sp)
 	sp->obj = o;
 
 	/* If we inserted a new object it's a miss */
-	if (sp->obj->busy) {
+	if (ObjIsBusy(sp->obj)) {
 		VSL_stats->cache_miss++;
 		sp->step = STP_MISS;
 		return (0);
@@ -730,7 +730,6 @@ cnt_pass(struct sess *sp)
 	HSH_Prealloc(sp);
 	sp->obj = sp->wrk->nobj;
 	sp->wrk->nobj = NULL;
-	sp->obj->busy = 1;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);

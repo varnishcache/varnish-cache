@@ -267,6 +267,7 @@ struct objcore {
 #define OC_T_PREFETCH		2
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
+#define OC_F_BUSY		(1<<1)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
@@ -294,7 +295,6 @@ struct object {
 
 	unsigned		cacheable;
 
-	unsigned		busy;
 	unsigned		len;
 
 	double			age;
@@ -415,7 +415,6 @@ struct vbe_conn {
 };
 
 /* Prototypes etc ----------------------------------------------------*/
-
 
 /* cache_acceptor.c */
 void vca_return_session(struct sess *sp);
@@ -697,4 +696,12 @@ Tadd(txt *t, const char *p, int l)
 	} else {
 		t->b = t->e;
 	}
+}
+
+static inline unsigned
+ObjIsBusy(const struct object *o)
+{
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	return (o->objcore->flags & OC_F_BUSY);
 }
