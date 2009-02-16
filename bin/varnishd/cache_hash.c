@@ -377,11 +377,13 @@ HSH_Drop(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	AN(ObjIsBusy(o));
+	if (o->objcore != NULL)		/* Pass has no objcore */
+		AN(ObjIsBusy(o));
 	assert(o->refcnt > 0);
 	o->ttl = 0;
 	o->cacheable = 0;
-	HSH_Unbusy(sp);
+	if (o->objcore != NULL)		/* Pass has no objcore */
+		HSH_Unbusy(sp);
 	HSH_Deref(&sp->obj);
 }
 
