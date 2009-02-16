@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -262,11 +262,14 @@ struct objcore {
 #define OBJCORE_MAGIC		0x4d301302
 	struct object		*obj;
 	double			timer_when;
-	const char		*timer_what;
+	unsigned char		timer_what;
+#define OC_T_TTL		1
+#define OC_T_PREFETCH		2
+	unsigned char		flags;
+#define OC_F_ONLRU		(1<<0)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
-	int			on_lru;
 };
 
 /* Object structure --------------------------------------------------*/
