@@ -128,7 +128,7 @@ EXP_Insert(struct object *o)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	assert(o->busy);
+	AN(ObjIsBusy(o));
 	assert(o->cacheable);
 	HSH_Ref(o);
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
