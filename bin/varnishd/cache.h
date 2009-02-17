@@ -262,7 +262,6 @@ struct objcore {
 #define OBJCORE_MAGIC		0x4d301302
 	struct object		*obj;
 	double			timer_when;
-	double			ttl;
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
@@ -294,6 +293,7 @@ struct object {
 
 	unsigned		len;
 
+	double			ttl;
 	double			age;
 	double			entered;
 	double			grace;

@@ -90,7 +90,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = oc->ttl + HSH_Grace(o->grace);
+	when = o->ttl + HSH_Grace(o->grace);
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);
@@ -269,7 +269,7 @@ exp_timer(void *arg)
 
 		assert(sp->handling == VCL_RET_DISCARD);
 		WSL(&ww, SLT_ExpKill, 0,
-		    "%u %d", o->xid, (int)(o->objcore->ttl - t));
+		    "%u %d", o->xid, (int)(o->ttl - t));
 		Lck_Lock(&exp_mtx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
