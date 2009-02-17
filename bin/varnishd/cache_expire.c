@@ -68,10 +68,6 @@ static struct binheap *exp_heap;
 static struct lock exp_mtx;
 static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
-static const char *timer_what[] = {
-	[OC_T_TTL]	=	"TTL",
-};
-
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
  * so that other users of the object will not stumble trying to change the
@@ -88,7 +84,6 @@ update_object_when(const struct object *o)
 {
 	struct objcore *oc;
 	double when;
-	unsigned char what;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
@@ -96,9 +91,7 @@ update_object_when(const struct object *o)
 	Lck_AssertHeld(&exp_mtx);
 
 	when = oc->ttl + HSH_Grace(o->grace);
-	what = OC_T_TTL;
 	assert(!isnan(when));
-	oc->timer_what = what;
 	if (when == oc->timer_when)
 		return (0);
 	oc->timer_when = when;
@@ -268,10 +261,8 @@ exp_timer(void *arg)
 		assert(oc->flags & OC_F_ONLRU);
 		Lck_Unlock(&exp_mtx);
 
-		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid,
-		    timer_what[oc->timer_what]);
+		WSL(&ww, SLT_ExpPick, 0, "%u TTL", o->xid);
 
-		assert(oc->timer_what == OC_T_TTL);
 		sp->obj = o;
 		VCL_timeout_method(sp);
 		sp->obj = NULL;
