@@ -95,6 +95,7 @@ HSH_Prealloc(struct sess *sp)
 
 	if (w->nobjcore == NULL) {
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
+		XXXAN(oc);
 		w->nobjcore = oc;
 		oc->flags |= OC_F_BUSY;
 	}
