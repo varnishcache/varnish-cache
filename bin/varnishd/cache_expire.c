@@ -97,14 +97,14 @@ update_object_when(const struct object *o)
 	Lck_AssertHeld(&exp_mtx);
 
 	if (o->prefetch < 0.0) {
-		when = o->ttl + o->prefetch;
+		when = oc->ttl + o->prefetch;
 		what = OC_T_PREFETCH;
 	} else if (o->prefetch > 0.0) {
-		assert(o->prefetch <= o->ttl);
+		assert(o->prefetch <= oc->ttl);
 		when = o->prefetch;
 		what = OC_T_PREFETCH;
 	} else {
-		when = o->ttl + HSH_Grace(o->grace);
+		when = oc->ttl + HSH_Grace(o->grace);
 		what = OC_T_TTL;
 	}
 	assert(!isnan(when));
@@ -304,7 +304,7 @@ exp_timer(void *arg)
 
 			assert(sp->handling == VCL_RET_DISCARD);
 			WSL(&ww, SLT_ExpKill, 0,
-			    "%u %d", o->xid, (int)(o->ttl - t));
+			    "%u %d", o->xid, (int)(o->objcore->ttl - t));
 			Lck_Lock(&exp_mtx);
 			assert(oc->timer_idx == BINHEAP_NOIDX);
 			VTAILQ_REMOVE(&lru, o->objcore, lru_list);

@@ -378,6 +378,7 @@ static int
 cnt_fetch(struct sess *sp)
 {
 	int i;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -414,10 +415,12 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
-		if (sp->obj->objcore != NULL)
-			sp->obj->objcore->flags |= OC_F_PASS;
-		if (sp->obj->ttl - sp->t_req < params->default_ttl)
-			sp->obj->ttl = sp->t_req + params->default_ttl;
+		if (sp->obj->objcore != NULL) {
+			oc = sp->obj->objcore;
+			oc->flags |= OC_F_PASS;
+			if (oc->ttl - sp->t_req < params->default_ttl)
+				oc->ttl = sp->t_req + params->default_ttl;
+		}
 		break;
 	case VCL_RET_DELIVER:
 		break;

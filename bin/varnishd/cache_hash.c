@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -275,7 +275,7 @@ HSH_Lookup(struct sess *sp)
 		}
 		if (!o->cacheable)
 			continue;
-		if (o->ttl == 0)
+		if (oc->ttl == 0)
 			continue;
 		if (BAN_CheckObject(o, sp)) 
 			continue;
@@ -283,11 +283,11 @@ HSH_Lookup(struct sess *sp)
 			continue;
 
 		/* If still valid, use it */
-		if (o->ttl >= sp->t_req)
+		if (oc->ttl >= sp->t_req)
 			break;
 
 		/* Remember any matching objects inside their grace period */
-		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req)
+		if (oc->ttl + HSH_Grace(o->grace) >= sp->t_req)
 			grace_o = o;
 	}
 	if (oc == NULL)
@@ -301,7 +301,7 @@ HSH_Lookup(struct sess *sp)
 	 */
 	if (o == NULL && grace_o != NULL &&
 	    grace_o->child != NULL &&
-	    grace_o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
+	    grace_o->objcore->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 		o = grace_o;
 
 	if (o != NULL) {
@@ -377,10 +377,11 @@ HSH_Drop(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	if (o->objcore != NULL)		/* Pass has no objcore */
-		AN(ObjIsBusy(o));
 	assert(o->refcnt > 0);
-	o->ttl = 0;
+	if (o->objcore != NULL) {	/* Pass has no objcore */
+		AN(ObjIsBusy(o));
+		o->objcore->ttl = 0;
+	}
 	o->cacheable = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
