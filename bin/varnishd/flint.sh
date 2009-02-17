@@ -10,4 +10,11 @@ flexelint \
 	flint.lnt \
 	*.c \
 	../../lib/libvarnish/*.c \
-	../../lib/libvcl/*.c 
+	../../lib/libvcl/*.c \
+	> $T
+if [ -f _flint.old ] ; then
+	diff -u _flint.old $T
+	mv $T _flint.old
+fi
+cat $T
+rm $T
