@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -97,7 +97,6 @@ sub vcl_fetch {
     if (obj.http.Set-Cookie) {
         return (pass);
     }
-    set obj.prefetch =  -30s;
     return (deliver);
 }
 
@@ -108,11 +107,6 @@ sub vcl_deliver {
 sub vcl_discard {
     /* XXX: Do not redefine vcl_discard{}, it is not yet supported */
     return (discard);
-}
-
-sub vcl_prefetch {
-    /* XXX: Do not redefine vcl_prefetch{}, it is not yet supported */
-    return (fetch);
 }
 
 sub vcl_timeout {

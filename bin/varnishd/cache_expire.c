@@ -70,7 +70,6 @@ static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
 static const char *timer_what[] = {
 	[OC_T_TTL]	=	"TTL",
-	[OC_T_PREFETCH]	=	"Prefetch",
 };
 
 /*
@@ -96,17 +95,8 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	if (o->prefetch < 0.0) {
-		when = oc->ttl + o->prefetch;
-		what = OC_T_PREFETCH;
-	} else if (o->prefetch > 0.0) {
-		assert(o->prefetch <= oc->ttl);
-		when = o->prefetch;
-		what = OC_T_PREFETCH;
-	} else {
-		when = oc->ttl + HSH_Grace(o->grace);
-		what = OC_T_TTL;
-	}
+	when = oc->ttl + HSH_Grace(o->grace);
+	what = OC_T_TTL;
 	assert(!isnan(when));
 	oc->timer_what = what;
 	if (when == oc->timer_when)
@@ -222,7 +212,7 @@ EXP_Rearm(const struct object *o)
 /*--------------------------------------------------------------------
  * This thread monitors the root of the binary heap and whenever an
  * object gets close enough, VCL is asked to decide if it should be
- * discarded or prefetched.
+ * discarded.
  */
 
 static void *
@@ -281,38 +271,21 @@ exp_timer(void *arg)
 		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid,
 		    timer_what[oc->timer_what]);
 
-		if (oc->timer_what == OC_T_PREFETCH) {
-			o->prefetch = 0.0;
-			sp->obj = o;
-			VCL_prefetch_method(sp);
-			sp->obj = NULL;
-			if (sp->handling == VCL_RET_FETCH) {
-				WSL(&ww, SLT_Debug, 0, "Attempt Prefetch %u",
-				    o->xid);
-			}
-			Lck_Lock(&exp_mtx);
-			assert(oc->timer_idx == BINHEAP_NOIDX);
-			(void)update_object_when(o);
-			binheap_insert(exp_heap, oc);
-			assert(oc->timer_idx != BINHEAP_NOIDX);
-			Lck_Unlock(&exp_mtx);
-		} else {
-			assert(oc->timer_what == OC_T_TTL);
-			sp->obj = o;
-			VCL_timeout_method(sp);
-			sp->obj = NULL;
+		assert(oc->timer_what == OC_T_TTL);
+		sp->obj = o;
+		VCL_timeout_method(sp);
+		sp->obj = NULL;
 
-			assert(sp->handling == VCL_RET_DISCARD);
-			WSL(&ww, SLT_ExpKill, 0,
-			    "%u %d", o->xid, (int)(o->objcore->ttl - t));
-			Lck_Lock(&exp_mtx);
-			assert(oc->timer_idx == BINHEAP_NOIDX);
-			VTAILQ_REMOVE(&lru, o->objcore, lru_list);
-			oc->flags &= ~OC_F_ONLRU;
-			VSL_stats->n_expired++;
-			Lck_Unlock(&exp_mtx);
-			HSH_Deref(&o);
-		}
+		assert(sp->handling == VCL_RET_DISCARD);
+		WSL(&ww, SLT_ExpKill, 0,
+		    "%u %d", o->xid, (int)(o->objcore->ttl - t));
+		Lck_Lock(&exp_mtx);
+		assert(oc->timer_idx == BINHEAP_NOIDX);
+		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
+		oc->flags &= ~OC_F_ONLRU;
+		VSL_stats->n_expired++;
+		Lck_Unlock(&exp_mtx);
+		HSH_Deref(&o);
 	}
 }
 
