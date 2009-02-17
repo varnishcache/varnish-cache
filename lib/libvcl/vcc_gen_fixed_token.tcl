@@ -1,7 +1,7 @@
 #!/usr/local/bin/tclsh8.4
 #-
 # Copyright (c) 2006 Verdens Gang AS
-# Copyright (c) 2006-2008 Linpro AS
+# Copyright (c) 2006-2009 Linpro AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -42,7 +42,6 @@ set methods {
 	{hit		{error restart pass deliver}}
 	{fetch		{error restart pass deliver}}
 	{deliver	{restart deliver}}
-	{prefetch	{fetch pass}}
 	{timeout	{fetch discard}}
 	{discard	{discard keep}}
 	{error		{deliver}}

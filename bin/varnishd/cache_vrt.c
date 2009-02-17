@@ -424,44 +424,6 @@ VRT_r_obj_grace(const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-/* XXX: the VCL_info messages has unexpected fractions on the ttl */
-
-void
-VRT_l_obj_prefetch(const struct sess *sp, double a)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	if (sp->obj->objcore == NULL)
-		return;
-	sp->obj->prefetch = 0.0;
-	if (a == 0.0)
-		sp->obj->prefetch = a;
-	else if (a > 0.0 && a + sp->t_req <= sp->obj->objcore->ttl)
-		sp->obj->prefetch = a + sp->t_req;
-	else if (a < 0.0 && a + sp->obj->objcore->ttl > sp->t_req)
-		sp->obj->prefetch = a;
-	else if (a > 0.0)
-		WSL(sp->wrk, SLT_VCL_info, sp->id,
-		    "XID %u: obj.prefetch (%g) after TTL (%g), ignored.",
-		    sp->obj->xid, a, sp->obj->objcore->ttl - sp->t_req);
-	else /* if (a < 0.0) */
-		WSL(sp->wrk, SLT_VCL_info, sp->id,
-		    "XID %u: obj.prefetch (%g) less than ttl (%g), ignored.",
-		    sp->obj->xid, a, sp->obj->objcore->ttl - sp->t_req);
-	EXP_Rearm(sp->obj);
-}
-
-double
-VRT_r_obj_prefetch(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->prefetch - sp->t_req);
-}
-
-/*--------------------------------------------------------------------*/
-
 #define VOBJ(type,onm,field)						\
 void									\
 VRT_l_obj_##onm(const struct sess *sp, type a)				\

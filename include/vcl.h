@@ -22,12 +22,11 @@ typedef int vcl_func_f(struct sess *sp);
 #define VCL_MET_HIT		(1 << 5)
 #define VCL_MET_FETCH		(1 << 6)
 #define VCL_MET_DELIVER		(1 << 7)
-#define VCL_MET_PREFETCH	(1 << 8)
-#define VCL_MET_TIMEOUT		(1 << 9)
-#define VCL_MET_DISCARD		(1 << 10)
-#define VCL_MET_ERROR		(1 << 11)
+#define VCL_MET_TIMEOUT		(1 << 8)
+#define VCL_MET_DISCARD		(1 << 9)
+#define VCL_MET_ERROR		(1 << 10)
 
-#define VCL_MET_MAX		12
+#define VCL_MET_MAX		11
 
 /* VCL Returns */
 #define VCL_RET_ERROR		0
@@ -71,7 +70,6 @@ struct VCL_conf {
 	vcl_func_f	*hit_func;
 	vcl_func_f	*fetch_func;
 	vcl_func_f	*deliver_func;
-	vcl_func_f	*prefetch_func;
 	vcl_func_f	*timeout_func;
 	vcl_func_f	*discard_func;
 	vcl_func_f	*error_func;

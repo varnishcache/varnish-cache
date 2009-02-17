@@ -174,11 +174,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_MET_HIT\t\t(1 << 5)\n");
 	vsb_cat(sb, "#define VCL_MET_FETCH\t\t(1 << 6)\n");
 	vsb_cat(sb, "#define VCL_MET_DELIVER\t\t(1 << 7)\n");
-	vsb_cat(sb, "#define VCL_MET_PREFETCH\t(1 << 8)\n");
-	vsb_cat(sb, "#define VCL_MET_TIMEOUT\t\t(1 << 9)\n");
-	vsb_cat(sb, "#define VCL_MET_DISCARD\t\t(1 << 10)\n");
-	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 11)\n");
-	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t12\n\n");
+	vsb_cat(sb, "#define VCL_MET_TIMEOUT\t\t(1 << 8)\n");
+	vsb_cat(sb, "#define VCL_MET_DISCARD\t\t(1 << 9)\n");
+	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 10)\n");
+	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t11\n\n");
 	vsb_cat(sb, "/* VCL Returns */\n#define VCL_RET_ERROR\t\t0\n");
 	vsb_cat(sb, "#define VCL_RET_LOOKUP\t\t1\n#define VCL_RET_HASH\t\t2");
 	vsb_cat(sb, "\n#define VCL_RET_PIPE\t\t3\n#define VCL_RET_PASS\t\t4");
@@ -199,10 +198,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tvcl_func_f\t*pass_func;\n\tvcl_func_f\t*hash_func;\n");
 	vsb_cat(sb, "\tvcl_func_f\t*miss_func;\n\tvcl_func_f\t*hit_func;\n");
 	vsb_cat(sb, "\tvcl_func_f\t*fetch_func;\n\tvcl_func_f\t*deliver_fun");
-	vsb_cat(sb, "c;\n\tvcl_func_f\t*prefetch_func;\n");
-	vsb_cat(sb, "\tvcl_func_f\t*timeout_func;\n\tvcl_func_f\t*discard_f");
-	vsb_cat(sb, "unc;\n\tvcl_func_f\t*error_func;\n");
-	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "c;\n\tvcl_func_f\t*timeout_func;\n");
+	vsb_cat(sb, "\tvcl_func_f\t*discard_func;\n\tvcl_func_f\t*error_fun");
+	vsb_cat(sb, "c;\n};\n");
 
 	/* ../../include/vrt.h */
 
@@ -235,8 +233,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3541 2009-01-23 21:");
-	vsb_cat(sb, "17:02Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3542 2009-01-24 10:");
+	vsb_cat(sb, "36:46Z phk $\n *\n * Runtime support for compiled VCL ");
 	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
 	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
@@ -324,9 +322,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3406 2008-11-19 14:13:57Z petter");
-	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
-	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3406 2008-11-19 14:13:57Z ");
+	vsb_cat(sb, "petter $\n *\n * NB:  This file is machine generated, ");
+	vsb_cat(sb, "DO NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
@@ -370,8 +368,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "void VRT_l_obj_ttl(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_grace(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_grace(const struct sess *, double);\n");
-	vsb_cat(sb, "double VRT_r_obj_prefetch(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_obj_prefetch(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_lastuse(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_obj_hash(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_proto(const struct sess *);\n");

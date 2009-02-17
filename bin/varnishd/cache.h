@@ -265,7 +265,6 @@ struct objcore {
 	double			ttl;
 	unsigned char		timer_what;
 #define OC_T_TTL		1
-#define OC_T_PREFETCH		2
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
@@ -300,7 +299,6 @@ struct object {
 	double			age;
 	double			entered;
 	double			grace;
-	double			prefetch;
 
 	double			last_modified;
 	double			last_lru;

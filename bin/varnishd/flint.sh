@@ -14,7 +14,7 @@ flexelint \
 	> $T
 if [ -f _flint.old ] ; then
 	diff -u _flint.old $T
-	mv $T _flint.old
 fi
 cat $T
+cp $T _flint.old
 rm $T
