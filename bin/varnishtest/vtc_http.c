@@ -340,6 +340,11 @@ http_rxchar(struct http *hp, int n)
 	int i;
 
 	i = http_rxchar_eof(hp, n);
+	if (i <= 0) {
+		vtc_log(hp->vl, 0, "HTTP rx failed (%s)",
+		    strerror(errno));
+		exit (1);
+	}
 	assert(i > 0);
 }
 
