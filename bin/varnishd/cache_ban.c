@@ -528,7 +528,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 		o->ban = b0;
 		return (0);
 	} else {
-		o->objcore->ttl = 0;
+		o->ttl = 0;
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
 		o->ban = NULL;

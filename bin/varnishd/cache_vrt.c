@@ -380,9 +380,9 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	 * We special case and make sure that rounding does not surprise.
 	 */
 	if (a <= 0)
-		sp->obj->objcore->ttl = sp->t_req - 1;
+		sp->obj->ttl = sp->t_req - 1;
 	else
-		sp->obj->objcore->ttl = sp->t_req + a;
+		sp->obj->ttl = sp->t_req + a;
 	EXP_Rearm(sp->obj);
 }
 
@@ -393,7 +393,7 @@ VRT_r_obj_ttl(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
 	if (sp->obj->objcore == NULL)
 		return (0.0);
-	return (sp->obj->objcore->ttl - sp->t_req);
+	return (sp->obj->ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------
