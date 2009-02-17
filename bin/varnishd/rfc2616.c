@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -173,6 +173,7 @@ int
 RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 {
 	int body = 0;
+	double ttl;
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
@@ -196,8 +197,10 @@ RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 		break;
 	}
 
-	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->obj);
-	if (sp->obj->ttl == 0)
+	ttl = RFC2616_Ttl(sp, hp, sp->obj);
+	if (sp->obj->objcore != NULL)
+		sp->obj->objcore->ttl = ttl;
+	if (ttl == 0)
 		sp->obj->cacheable = 0;
 
 	return (body);

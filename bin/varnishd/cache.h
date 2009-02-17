@@ -262,6 +262,7 @@ struct objcore {
 #define OBJCORE_MAGIC		0x4d301302
 	struct object		*obj;
 	double			timer_when;
+	double			ttl;
 	unsigned char		timer_what;
 #define OC_T_TTL		1
 #define OC_T_PREFETCH		2
@@ -298,7 +299,6 @@ struct object {
 
 	double			age;
 	double			entered;
-	double			ttl;
 	double			grace;
 	double			prefetch;
 

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -369,6 +369,8 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (sp->obj->objcore == NULL)
+		return;
 	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f",
 	    sp->obj->xid, a, sp->t_req);
 	/*
@@ -378,9 +380,9 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	 * We special case and make sure that rounding does not surprise.
 	 */
 	if (a <= 0)
-		sp->obj->ttl = sp->t_req - 1;
+		sp->obj->objcore->ttl = sp->t_req - 1;
 	else
-		sp->obj->ttl = sp->t_req + a;
+		sp->obj->objcore->ttl = sp->t_req + a;
 	EXP_Rearm(sp->obj);
 }
 
@@ -389,7 +391,9 @@ VRT_r_obj_ttl(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->ttl - sp->t_req);
+	if (sp->obj->objcore == NULL)
+		return (0.0);
+	return (sp->obj->objcore->ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------
@@ -428,21 +432,23 @@ VRT_l_obj_prefetch(const struct sess *sp, double a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (sp->obj->objcore == NULL)
+		return;
 	sp->obj->prefetch = 0.0;
 	if (a == 0.0)
 		sp->obj->prefetch = a;
-	else if (a > 0.0 && a + sp->t_req <= sp->obj->ttl)
+	else if (a > 0.0 && a + sp->t_req <= sp->obj->objcore->ttl)
 		sp->obj->prefetch = a + sp->t_req;
-	else if (a < 0.0 && a + sp->obj->ttl > sp->t_req)
+	else if (a < 0.0 && a + sp->obj->objcore->ttl > sp->t_req)
 		sp->obj->prefetch = a;
 	else if (a > 0.0)
 		WSL(sp->wrk, SLT_VCL_info, sp->id,
 		    "XID %u: obj.prefetch (%g) after TTL (%g), ignored.",
-		    sp->obj->xid, a, sp->obj->ttl - sp->t_req);
+		    sp->obj->xid, a, sp->obj->objcore->ttl - sp->t_req);
 	else /* if (a < 0.0) */
 		WSL(sp->wrk, SLT_VCL_info, sp->id,
 		    "XID %u: obj.prefetch (%g) less than ttl (%g), ignored.",
-		    sp->obj->xid, a, sp->obj->ttl - sp->t_req);
+		    sp->obj->xid, a, sp->obj->objcore->ttl - sp->t_req);
 	EXP_Rearm(sp->obj);
 }
 
