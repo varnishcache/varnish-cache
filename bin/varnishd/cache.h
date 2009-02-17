@@ -268,6 +268,7 @@ struct objcore {
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
+#define OC_F_PASS		(1<<2)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
@@ -288,8 +289,6 @@ struct object {
 	unsigned char		*vary;
 
 	struct ban		*ban;
-
-	unsigned		pass;
 
 	unsigned		response;
 

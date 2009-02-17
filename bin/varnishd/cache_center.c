@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -414,7 +414,8 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
-		sp->obj->pass = 1;
+		if (sp->obj->objcore != NULL)
+			sp->obj->objcore->flags |= OC_F_PASS;
 		if (sp->obj->ttl - sp->t_req < params->default_ttl)
 			sp->obj->ttl = sp->t_req + params->default_ttl;
 		break;
@@ -514,7 +515,7 @@ cnt_hit(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	assert(!sp->obj->pass);
+	assert(!(sp->obj->objcore->flags & OC_F_PASS));
 
 	VCL_hit_method(sp);
 
@@ -607,7 +608,7 @@ cnt_lookup(struct sess *sp)
 		return (0);
 	}
 
-	if (sp->obj->pass) {
+	if (sp->obj->objcore->flags & OC_F_PASS) {
 		VSL_stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(&sp->obj);
