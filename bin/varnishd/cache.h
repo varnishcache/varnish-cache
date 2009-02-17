@@ -263,8 +263,6 @@ struct objcore {
 	struct object		*obj;
 	double			timer_when;
 	double			ttl;
-	unsigned char		timer_what;
-#define OC_T_TTL		1
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
