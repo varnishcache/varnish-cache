@@ -15,6 +15,10 @@ AM_INIT_AUTOMAKE([foreign])
 # Checks for programs.
 AC_GNU_SOURCE
 AC_PROG_CC
+AC_PROG_CC_STDC
+if test "x$ac_cv_prog_cc_c99" = xno; then
+  AC_MSG_ERROR([Could not find a C99 compatible compiler])
+fi
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
