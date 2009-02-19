@@ -63,5 +63,8 @@ void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
 void STV_open(void);
 
+int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
+uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx);
+
 /* Synthetic Storage */
 void SMS_Init(void);
