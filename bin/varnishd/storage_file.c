@@ -38,18 +38,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif
-
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
-
-#ifdef HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -120,113 +108,13 @@ struct smf_sc {
 
 /*--------------------------------------------------------------------*/
 
-static uintmax_t
-smf_fsspace(int fd, unsigned *bs)
-{
-#if defined(HAVE_SYS_STATVFS_H)
-	struct statvfs fsst;
-
-	AZ(fstatvfs(fd, &fsst));
-#elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
-	struct statfs fsst;
-
-	AZ(fstatfs(sc->fd, &fsst));
-#else
-#error no struct statfs / struct statvfs
-#endif
-
-	/* We use units of the larger of filesystem blocksize and pagesize */
-	if (*bs < fsst.f_bsize)
-		*bs = fsst.f_bsize;
-	xxxassert(*bs % fsst.f_bsize == 0);
-	return (fsst.f_bsize * fsst.f_bavail);
-}
-
-
-/*--------------------------------------------------------------------*/
-
 static void
-smf_calcsize(struct smf_sc *sc, const char *size, int newfile)
+smf_initfile(struct smf_sc *sc, const char *size)
 {
-	uintmax_t l, fssize;
-	unsigned bs;
-	const char *q;
-	int i;
-	off_t o;
-	struct stat st;
-
-	AN(sc);
-	AZ(fstat(sc->fd, &st));
-	xxxassert(S_ISREG(st.st_mode));
-
-	bs = sc->pagesize;
-	fssize = smf_fsspace(sc->fd, &bs);
-	xxxassert(bs % sc->pagesize == 0);
-
-	if ((size == NULL || *size == '\0') && !newfile) {
-		/*
-		 * We have no size specification, but an existing file,
-		 * use it's existing size.
-		 */
-		l = st.st_size;
-	} else {
-		AN(size);
-		q = str2bytes(size, &l, fssize);
-
-		if (q != NULL)
-			ARGV_ERR("(-sfile) size \"%s\": %s\n", size, q);
-	}
-
-	/*
-	 * This trickery wouldn't be necessary if X/Open would
-	 * just add OFF_MAX to <limits.h>...
-	 */
-	i = 0;
-	while(1) {
-		o = l;
-		if (o == l && o > 0)
-			break;
-		l >>= 1;
-		i++;
-	}
-	if (i)
-		fprintf(stderr, "WARNING: storage file size reduced"
-		    " to %ju due to system limitations\n", l);
-
-	if (l < st.st_size) {
-		AZ(ftruncate(sc->fd, (off_t)l));
-	} else if (l - st.st_size > fssize) {
-		l = fssize * 80 / 100;
-		fprintf(stderr, "WARNING: storage file size reduced"
-		    " to %ju (80%% of available disk space)\n", l);
-	}
-
-	/* round down to multiple of filesystem blocksize or pagesize */
-	l -= (l % bs);
-
-	if (l < MINPAGES * (uintmax_t)sc->pagesize)
-		ARGV_ERR("size too small, at least %ju needed\n",
-		    (uintmax_t)MINPAGES * sc->pagesize);
-
-	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 */
-		fprintf(stderr,
-		    "NB: Storage size limited to 2GB on 32 bit architecture,\n"
-		    "NB: otherwise we could run out of address space.\n"
-		);
-		l = INT32_MAX;
-		l -= (l % bs);
-	}
+	sc->filesize = STV_FileSize(sc->fd, size, &sc->pagesize, "-sfile");
 
 	printf("storage_file: filename: %s size %ju MB.\n",
-	    sc->filename, l / (1024 * 1024));
-
-	sc->filesize = l;
-}
-
-static void
-smf_initfile(struct smf_sc *sc, const char *size, int newfile)
-{
-	smf_calcsize(sc, size, newfile);
+	      sc->filename, sc->filesize / (1024 * 1024));
 
 	AZ(ftruncate(sc->fd, (off_t)sc->filesize));
 
@@ -240,8 +128,6 @@ static void
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *size, *fn, *r;
-	char *q, *p;
-	struct stat st;
 	struct smf_sc *sc;
 	unsigned u;
 	uintmax_t page_size;
@@ -278,56 +164,10 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 
 	parent->priv = sc;
 
-	/* try to create a new file of this name */
-#ifdef O_LARGEFILE
-	sc->fd = open(fn, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0600);
-#else
-	sc->fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0600);
-#endif
-	if (sc->fd >= 0) {
-		sc->filename = fn;
-		mgt_child_inherit(sc->fd, "storage_file");
-		smf_initfile(sc, size, 1);
-		return;
-	}
+	(void)STV_GetFile(fn, &sc->fd, &sc->filename, "-sfile");
 
-	/* it must exist then */
-	if (stat(fn, &st))
-		ARGV_ERR("(-sfile) \"%s\" "
-		    "does not exist and could not be created\n", fn);
-
-	/* and it should be a file or directory */
-	if (!(S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)))
-		ARGV_ERR("(-sfile) \"%s\" is neither file nor directory\n", fn);
-
-	if (S_ISREG(st.st_mode)) {
-		sc->fd = open(fn, O_RDWR);
-		if (sc->fd < 0)
-			ARGV_ERR("(-sfile) \"%s\" could not open (%s)\n",
-			    fn, strerror(errno));
-		AZ(fstat(sc->fd, &st));
-		if (!S_ISREG(st.st_mode))
-			ARGV_ERR("(-sfile) \"%s\" "
-			    "was not a file after opening\n", fn);
-		sc->filename = fn;
-		mgt_child_inherit(sc->fd, "storage_file");
-		smf_initfile(sc, size, 0);
-		return;
-	}
-
-	asprintf(&q, "%s/varnish.XXXXXX", fn);
-	XXXAN(q);
-	sc->fd = mkstemp(q);
-	if (sc->fd < 0)
-		ARGV_ERR("(-sfile) \"%s\" "
-		    "mkstemp(%s) failed (%s)\n", fn, q, strerror(errno));
-	AZ(unlink(q));
-	asprintf(&p, "%s (unlinked)", q);
-	XXXAN(p);
-	sc->filename = p;
-	free(q);
-	smf_initfile(sc, size, 1);
 	mgt_child_inherit(sc->fd, "storage_file");
+	smf_initfile(sc, size);
 }
 
 /*--------------------------------------------------------------------
