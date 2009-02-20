@@ -451,7 +451,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	for (i = 0; i < 10; i++, usleep(100000)) {
 
 
-#define MAC_STAT(n, t, f, d)					\
+#define MAC_STAT(n, t, l, f, d)					\
 		if (!strcmp(av[0], #n)) {			\
 			val = v->stats->n;			\
 		} else
