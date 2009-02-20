@@ -92,12 +92,10 @@ struct objhead {
 		struct {
 			VTAILQ_ENTRY(objhead)	u_n_hoh_list;
 			void			*u_n_hoh_head;
-			unsigned		u_n_hoh_digest;
 		} n;
 	} u;
 #define hoh_list u.n.u_n_hoh_list
 #define hoh_head u.n.u_n_hoh_head
-#define hoh_digest u.n.u_n_hoh_digest
 };
 
 extern unsigned	save_hash;

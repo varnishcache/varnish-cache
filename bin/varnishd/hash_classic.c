@@ -147,7 +147,6 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 	else
 		VTAILQ_INSERT_TAIL(&hp->head, noh, hoh_list);
 
-	noh->hoh_digest = digest;
 	noh->hoh_head = hp;
 
 	HSH_Copy(sp, noh);
