@@ -251,6 +251,7 @@ exp_timer(void *arg)
 
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);

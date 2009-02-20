@@ -356,6 +356,7 @@ HSH_Lookup(struct sess *sp)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%s>", oh->hash);
 		sp->objhead = oh;
+		sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
 	}
@@ -393,10 +394,14 @@ hsh_rush(struct objhead *oh)
 	unsigned u;
 	struct sess *sp;
 
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
 	for (u = 0; u < params->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&oh->waitinglist);
 		if (sp == NULL)
 			return;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		AZ(sp->wrk);
 		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
 		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
 		WRK_QueueSession(sp);

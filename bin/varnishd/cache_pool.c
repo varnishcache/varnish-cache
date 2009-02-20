@@ -330,10 +330,8 @@ wrk_thread(void *priv)
 				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
 			if (!stats_clean) {
-				Lck_Lock(&wstat_mtx);
-				wrk_sumstat(w);
+				WRK_SumStat(w);
 				stats_clean = 1;
-				Lck_Unlock(&wstat_mtx);
 			}
 			Lck_CondWait(&w->cond, &qp->mtx);
 		}
@@ -348,6 +346,7 @@ wrk_thread(void *priv)
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
+		HSH_Cleanup(w);
 		if (!Lck_Trylock(&wstat_mtx)) {
 			wrk_sumstat(w);
 			stats_clean = 1;
@@ -430,6 +429,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 	struct sess *sess;
 
 	CAST_OBJ_NOTNULL(sess, priv, SESS_MAGIC);
+	AZ(sess->wrk);
 	THR_SetSession(sess);
 	sess->wrk = w;
 	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
@@ -445,6 +445,8 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 void
 WRK_QueueSession(struct sess *sp)
 {
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AZ(sp->wrk);
 	sp->workreq.func = wrk_do_cnt_sess;
 	sp->workreq.priv = sp;
 	if (WRK_Queue(&sp->workreq) == 0)
