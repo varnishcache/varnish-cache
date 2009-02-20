@@ -505,7 +505,8 @@ HSH_Deref(struct worker *w, struct object **oo)
 		r = --o->refcnt;
 		if (!r)
 			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		hsh_rush(oh);
+		else
+			hsh_rush(oh);
 		Lck_Unlock(&oh->mtx);
 	}
 
