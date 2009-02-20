@@ -41,6 +41,7 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "hash_slinger.h"
+#include "cli_priv.h"
 
 static struct lock hcb_mtx;
 
@@ -282,9 +283,9 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 }
 
 /**********************************************************************/
-#ifdef PHK
+
 static void
-dumptree(uintptr_t p, int indent, FILE *fd)
+dumptree(struct cli *cli, uintptr_t p, int indent)
 {
 	int i;
 	const struct objhead *oh;
@@ -294,7 +295,7 @@ dumptree(uintptr_t p, int indent, FILE *fd)
 		return;
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
-		fprintf(fd, "%*.*sN %d r%u <%02x%02x%02x...> <%s>\n",
+		cli_out(cli, "%*.*sN %d r%u <%02x%02x%02x...> <%s>\n",
 		    indent, indent, "", indent / 2, oh->refcnt,
 		    oh->digest[0], oh->digest[1], oh->digest[2],
 		    oh->hash);
@@ -302,24 +303,38 @@ dumptree(uintptr_t p, int indent, FILE *fd)
 	}
 	assert(hcb_is_y(p));
 	y = hcb_l_y(p);
-	fprintf(fd, "%*.*sY c %u p %u b %02x i %d\n",
+	cli_out(cli, "%*.*sY c %u p %u b %02x i %d\n",
 	    indent, indent, "",
 	    y->critbit, y->ptr, y->bitmask, indent / 2);
 	indent += 2;
 	for (i = 0; i < 2; i++)
-		dumptree(y->leaf[i], indent, fd);
+		dumptree(cli, y->leaf[i], indent);
 }
 
 static void
-dump(const struct hcb_root *root, FILE *fd)
+hcb_dump(struct cli *cli, const char * const *av, void *priv)
 {
-	fprintf(fd, "-------------\n");
-	dumptree(root->origo, 0, fd);
-	fprintf(fd, "-------------\n");
-	(void)fflush(fd);
-}
-#endif
+	struct objhead *oh, *oh2;
+	struct hcb_y *y;
 
+	(void)priv;
+	(void)av;
+	cli_out(cli, "HCB dump:\n");
+	dumptree(cli, hcb_root.origo, 0);
+	cli_out(cli, "Coollist:\n");
+	Lck_Lock(&hcb_mtx);
+	VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
+		y = (void *)&oh->u;
+		cli_out(cli, "%p ref %d, y{%u, %u}\n", oh,
+			oh->refcnt, y->leaf[0], y->leaf[1]);
+	}
+	Lck_Unlock(&hcb_mtx);
+}
+
+static struct cli_proto hcb_cmds[] = {
+	{ "hcb.dump", "hcb.dump", "dump HCB tree\n", 0, 0, hcb_dump },
+	{ NULL }
+};
 
 /**********************************************************************/
 
@@ -362,6 +377,7 @@ hcb_start(void)
 	pthread_t tp;
 
 	(void)oh;
+	CLI_AddFuncs(DEBUG_CLI, hcb_cmds);
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);
@@ -387,7 +403,6 @@ hcb_deref(struct objhead *oh)
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
 	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
-	dump(&hcb_root, stderr);
 #endif
 	return (r);
 }
@@ -424,7 +439,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		VSL_stats->hcb_insert++;
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
-		dump(&hcb_root, stderr);
 #endif
 	} else {
 		free(noh->hash);
@@ -432,7 +446,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		VSL_stats->hcb_lock++;
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
-		dump(&hcb_root, stderr);
 #endif
 	}
 	Lck_Unlock(&hcb_mtx);
