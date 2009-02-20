@@ -266,12 +266,12 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 /*--------------------------------------------------------------------*/
 
 static void
-wrk_sumstat(struct worker *w)
+wrk_sumstat(const struct worker *w)
 {
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) VSL_stats->n += w->stats->n 
+#define L1(n) (VSL_stats->n += w->stats->n)
 #define MAC_STAT(n, t, l, f, d) L##l(n);
 #include "stat_field.h"
 #undef MAC_STAT
@@ -281,7 +281,7 @@ wrk_sumstat(struct worker *w)
 }
 
 void
-WRK_SumStat(struct worker *w)
+WRK_SumStat(const struct worker *w)
 {
 	Lck_Lock(&wstat_mtx);
 	wrk_sumstat(w);

@@ -162,7 +162,7 @@ HSH_Cleanup(struct worker *w)
 }
 
 void
-HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
+HSH_DeleteObjHead(const struct worker *w, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
@@ -478,7 +478,7 @@ HSH_Ref(struct object *o)
 }
 
 void
-HSH_Deref(struct worker *w, struct object **oo)
+HSH_Deref(const struct worker *w, struct object **oo)
 {
 	struct object *o;
 	struct objhead *oh;
