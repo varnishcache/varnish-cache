@@ -346,7 +346,6 @@ wrk_thread(void *priv)
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
-		HSH_Cleanup(w);
 		if (!Lck_Trylock(&wstat_mtx)) {
 			wrk_sumstat(w);
 			stats_clean = 1;
