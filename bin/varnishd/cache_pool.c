@@ -365,12 +365,8 @@ wrk_thread(void *priv)
 	AZ(pthread_cond_destroy(&w->cond));
 	if (w->srcaddr != NULL)
 		free(w->srcaddr);
-	if (w->nobjhead != NULL) {
-		Lck_Delete(&w->nobjhead->mtx);
-		FREE_OBJ(w->nobjhead);
-	}
-	if (w->nobj!= NULL)
-		STV_free(w->nobj->objstore);
+	HSH_Cleanup(w);
+	WRK_SumStat(w);
 	return (NULL);
 }
 

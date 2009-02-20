@@ -30,6 +30,7 @@
  */
 
 struct sess;
+struct worker;
 struct object;
 
 typedef void hash_init_f(int ac, char * const *av);
@@ -50,6 +51,7 @@ struct hash_slinger {
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
+void HSH_Cleanup(struct worker *w);
 void HSH_Freestore(struct object *o);
 void HSH_Copy(const struct sess *sp, struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);

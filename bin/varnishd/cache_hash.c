@@ -141,6 +141,27 @@ HSH_Prealloc(struct sess *sp)
 }
 
 void
+HSH_Cleanup(struct worker *w)
+{
+
+	if (w->nobjcore != NULL) {
+		FREE_OBJ(w->nobjcore);
+		w->nobjcore = NULL;
+	}
+	if (w->nobjhead != NULL) {
+		Lck_Delete(&w->nobjhead->mtx);
+		FREE_OBJ(w->nobjhead);
+		w->nobjhead = NULL;
+		w->stats->n_objecthead--;
+	}
+	if (w->nobj != NULL) {
+		STV_free(w->nobj->objstore);
+		w->nobj = NULL;
+		w->stats->n_object--;
+	}
+}
+
+void
 HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 {
 
