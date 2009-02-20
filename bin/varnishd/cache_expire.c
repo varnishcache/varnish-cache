@@ -272,6 +272,7 @@ exp_timer(void *arg)
 		    "%u %d", o->xid, (int)(o->ttl - t));
 		Lck_Lock(&exp_mtx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
+		assert(oc->flags & OC_F_ONLRU);
 		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
 		oc->flags &= ~OC_F_ONLRU;
 		VSL_stats->n_expired++;

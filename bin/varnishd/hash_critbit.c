@@ -323,7 +323,7 @@ dump(const struct hcb_root *root, FILE *fd)
 
 /**********************************************************************/
 
-#define COOL_DURATION	15		/* seconds */
+#define COOL_DURATION	60		/* seconds */
 
 static void *
 hcb_cleaner(void *priv)
@@ -337,10 +337,6 @@ hcb_cleaner(void *priv)
 		(void)sleep(1);
 		Lck_Lock(&hcb_mtx);
 		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
-			if (oh->hash != NULL) {
-				free(oh->hash);
-				oh->hash = NULL;
-			}
 			y = (void *)&oh->u;
 			if (y->leaf[0] || y->leaf[1])
 				continue;
@@ -349,8 +345,8 @@ hcb_cleaner(void *priv)
 #ifdef PHK
 				fprintf(stderr, "OH %p is cold enough\n", oh);
 #endif
-				free(oh);
-				VSL_stats->n_objecthead--;
+				oh->refcnt = 0;
+				HSH_DeleteObjHead(oh);
 			}
 		}
 		Lck_Unlock(&hcb_mtx);
@@ -381,6 +377,7 @@ hcb_deref(struct objhead *oh)
 	r = 1;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
 	if (--oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);

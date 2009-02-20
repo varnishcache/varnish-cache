@@ -469,6 +469,7 @@ BAN_DestroyObj(struct object *o)
 		return;
 	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
 	Lck_Lock(&ban_mtx);
+	assert(o->ban->refcount > 0);
 	o->ban->refcount--;
 	o->ban = NULL;
 
@@ -477,7 +478,6 @@ BAN_DestroyObj(struct object *o)
 	Lck_Unlock(&ban_mtx);
 	if (b != NULL)
 		BAN_Free(b);
-
 }
 
 
