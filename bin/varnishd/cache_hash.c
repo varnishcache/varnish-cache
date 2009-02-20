@@ -109,7 +109,7 @@ HSH_Prealloc(struct sess *sp)
 		VTAILQ_INIT(&oh->waitinglist);
 		Lck_New(&oh->mtx);
 		w->nobjhead = oh;
-		VSL_stats->n_objecthead++;
+		w->stats->n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 
@@ -134,20 +134,20 @@ HSH_Prealloc(struct sess *sp)
 		VTAILQ_INIT(&o->store);
 		VTAILQ_INIT(&o->esibits);
 		w->nobj = o;
-		VSL_stats->n_object++;
+		w->stats->n_object++;
 
 	}
 	CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
 
 void
-HSH_DeleteObjHead(struct objhead *oh)
+HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	VSL_stats->n_objecthead--;
+	w->stats->n_objecthead--;
 	free(oh->hash);
 	FREE_OBJ(oh);
 }
@@ -398,7 +398,7 @@ HSH_Drop(struct sess *sp)
 	o->cacheable = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
-	HSH_Deref(&sp->obj);
+	HSH_Deref(sp->wrk, &sp->obj);
 }
 
 void
@@ -434,7 +434,7 @@ HSH_Unbusy(const struct sess *sp)
 	if (oh != NULL)
 		Lck_Unlock(&oh->mtx);
 	if (parent != NULL)
-		HSH_Deref(&parent);
+		HSH_Deref(sp->wrk, &parent);
 }
 
 void
@@ -452,7 +452,7 @@ HSH_Ref(struct object *o)
 }
 
 void
-HSH_Deref(struct object **oo)
+HSH_Deref(struct worker *w, struct object **oo)
 {
 	struct object *o;
 	struct objhead *oh;
@@ -498,7 +498,7 @@ HSH_Deref(struct object **oo)
 	ESI_Destroy(o);
 	HSH_Freestore(o);
 	STV_free(o->objstore);
-	VSL_stats->n_object--;
+	w->stats->n_object--;
 
 	if (oh == NULL) {
 		AZ(oc);
@@ -510,7 +510,7 @@ HSH_Deref(struct object **oo)
 	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
 		return;
-	HSH_DeleteObjHead(oh);
+	HSH_DeleteObjHead(w, oh);
 }
 
 void

@@ -98,6 +98,7 @@ static unsigned			nthr_max;
 
 static pthread_cond_t		herder_cond;
 static struct lock		herder_mtx;
+static struct lock		wstat_mtx;
 
 /*--------------------------------------------------------------------
  * Write data to fd
@@ -264,6 +265,31 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 
 /*--------------------------------------------------------------------*/
 
+static void
+wrk_sumstat(struct worker *w)
+{
+
+	Lck_AssertHeld(&wstat_mtx);
+#define L0(n)
+#define L1(n) VSL_stats->n += w->stats->n 
+#define MAC_STAT(n, t, l, f, d) L##l(n);
+#include "stat_field.h"
+#undef MAC_STAT
+#undef L0
+#undef L1
+	memset(w->stats, 0, sizeof *w->stats);
+}
+
+void
+WRK_SumStat(struct worker *w)
+{
+	Lck_Lock(&wstat_mtx);
+	wrk_sumstat(w);
+	Lck_Unlock(&wstat_mtx);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void *
 wrk_thread(void *priv)
 {
@@ -271,12 +297,16 @@ wrk_thread(void *priv)
 	struct wq *qp;
 	unsigned char wlog[params->shm_workspace];
 	struct SHA256Context sha256;
+	struct dstat stats;
+	unsigned stats_clean = 0;
 
 	THR_SetName("cache-worker");
 	w = &ww;
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	memset(w, 0, sizeof *w);
+	memset(&stats, 0, sizeof stats);
 	w->magic = WORKER_MAGIC;
+	w->stats = &stats;
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
@@ -299,6 +329,12 @@ wrk_thread(void *priv)
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
+			if (!stats_clean) {
+				Lck_Lock(&wstat_mtx);
+				wrk_sumstat(w);
+				stats_clean = 1;
+				Lck_Unlock(&wstat_mtx);
+			}
 			Lck_CondWait(&w->cond, &qp->mtx);
 		}
 		if (w->wrq == NULL)
@@ -307,14 +343,21 @@ wrk_thread(void *priv)
 		AN(w->wrq);
 		AN(w->wrq->func);
 		w->lastused = NAN;
+		stats_clean = 0;
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
+		if (!Lck_Trylock(&wstat_mtx)) {
+			wrk_sumstat(w);
+			stats_clean = 1;
+			Lck_Unlock(&wstat_mtx);
+		}
 		Lck_Lock(&qp->mtx);
 	}
 	qp->nthr--;
 	Lck_Unlock(&qp->mtx);
+	AN(stats_clean);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
@@ -627,6 +670,7 @@ WRK_Init(void)
 
 	AZ(pthread_cond_init(&herder_cond, NULL));
 	Lck_New(&herder_mtx);
+	Lck_New(&wstat_mtx);
 
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));

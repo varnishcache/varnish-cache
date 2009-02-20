@@ -217,16 +217,20 @@ exp_timer(void *arg)
 	double t;
 	struct sess *sp;
 	unsigned char logbuf[1024];		/* XXX size ? */
+	struct dstat stats;
 
 	THR_SetName("cache-timeout");
 	(void)arg;
 
 	sp = SES_New(NULL, 0);
 	XXXAN(sp);
+	memset(&ww, 0, sizeof ww);
+	memset(&stats, 0, sizeof stats);
 	sp->wrk = &ww;
 	ww.magic = WORKER_MAGIC;
 	ww.wlp = ww.wlb = logbuf;
 	ww.wle = logbuf + sizeof logbuf;
+	ww.stats = &stats;
 
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
@@ -238,6 +242,7 @@ exp_timer(void *arg)
 		if (oc == NULL || oc->timer_when > t) { /* XXX: > or >= ? */
 			Lck_Unlock(&exp_mtx);
 			WSL_Flush(&ww, 0);
+			WRK_SumStat(&ww);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
 			t = TIM_real();
@@ -277,7 +282,7 @@ exp_timer(void *arg)
 		oc->flags &= ~OC_F_ONLRU;
 		VSL_stats->n_expired++;
 		Lck_Unlock(&exp_mtx);
-		HSH_Deref(&o);
+		HSH_Deref(&ww, &o);
 	}
 }
 
@@ -344,7 +349,7 @@ EXP_NukeOne(struct sess *sp)
 
 	if (sp->handling == VCL_RET_DISCARD) {
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
-		HSH_Deref(&o);
+		HSH_Deref(sp->wrk, &o);
 		return (1);
 	}
 
