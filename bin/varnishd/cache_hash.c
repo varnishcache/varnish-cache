@@ -141,6 +141,18 @@ HSH_Prealloc(struct sess *sp)
 }
 
 void
+HSH_DeleteObjHead(struct objhead *oh)
+{
+
+	AZ(oh->refcnt);
+	assert(VTAILQ_EMPTY(&oh->objcs));
+	Lck_Delete(&oh->mtx);
+	VSL_stats->n_objecthead--;
+	free(oh->hash);
+	FREE_OBJ(oh);
+}
+
+void
 HSH_Freestore(struct object *o)
 {
 	struct storage *st, *stn;
@@ -311,7 +323,7 @@ HSH_Lookup(struct sess *sp)
 		if (o->hits < INT_MAX)
 			o->hits++;
 		Lck_Unlock(&oh->mtx);
-		(void)hash->deref(oh);
+		assert(hash->deref(oh));
 		return (o);
 	}
 
@@ -476,6 +488,7 @@ HSH_Deref(struct object **oo)
 		return;
 
 	BAN_DestroyObj(o);
+	AZ(o->ban);
 	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 	    o->xid, WS_Free(o->ws_o));
 
@@ -494,13 +507,10 @@ HSH_Deref(struct object **oo)
 	AN(oc);
 	FREE_OBJ(oc);
 	/* Drop our ref on the objhead */
+	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
 		return;
-	assert(VTAILQ_EMPTY(&oh->objcs));
-	Lck_Delete(&oh->mtx);
-	VSL_stats->n_objecthead--;
-	free(oh->hash);
-	FREE_OBJ(oh);
+	HSH_DeleteObjHead(oh);
 }
 
 void
