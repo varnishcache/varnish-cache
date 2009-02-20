@@ -146,7 +146,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 		mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3);
 
 		line = 3;
-#define MAC_STAT(n, t, f, d) \
+#define MAC_STAT(n, t, l, f, d) \
 	if ((fields == NULL || show_field( #n, fields )) && line < LINES) { \
 		ju = VSL_stats->n; \
 		if (ju == 0 && !seen.n) { \
@@ -228,7 +228,7 @@ do_once(struct varnish_stats *VSL_stats, const char* fields)
 		    ".  ", "Child uptime");
 	} while (0);
 
-#define MAC_STAT(n, t, f, d) \
+#define MAC_STAT(n, t, l, f, d) \
 	do { \
 		if (fields != NULL && ! show_field( #n, fields )) break; \
 		intmax_t ju = VSL_stats->n; \
@@ -271,7 +271,7 @@ list_fields(void)
 	fprintf(stderr, "----------           -----------\n");
 	fprintf(stderr, "uptime               Child uptime\n");
 
-#define MAC_STAT(n, t, f, d) \
+#define MAC_STAT(n, t, l, f, d) \
 	do { \
 		fprintf(stderr, "%-20s %s\n", #n, d);\
 	} while (0);
@@ -285,7 +285,7 @@ valid_fields(const char* fields)
 	int i, valid_field, field_length;
 	const char *all_fields[] = {
 	  "uptime",
-#define MAC_STAT(n, t, f, d) \
+#define MAC_STAT(n, t, l, f, d) \
 	#n,
 #include "stat_field.h"
 #undef MAC_STAT
