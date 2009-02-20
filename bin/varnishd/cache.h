@@ -178,12 +178,25 @@ struct acct {
 
 /*--------------------------------------------------------------------*/
 
+#define L0(n)
+#define L1(n)			int n;
+#define MAC_STAT(n, t, l, f, e)	L##l(n)
+struct dstat {
+#include "stat_field.h"
+};
+#undef MAC_STAT
+#undef L0
+#undef L1
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
 	struct object		*nobj;
 	struct objcore		*nobjcore;
+	struct dstat		*stats;
 
 	double			lastused;
 
@@ -551,6 +564,7 @@ void PipeSession(struct sess *sp);
 void WRK_Init(void);
 int WRK_Queue(struct workreq *wrq);
 void WRK_QueueSession(struct sess *sp);
+void WRK_SumStat(struct worker *w);
 
 void WRW_Reserve(struct worker *w, int *fd);
 void WRW_Release(struct worker *w);

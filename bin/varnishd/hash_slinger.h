@@ -50,13 +50,11 @@ struct hash_slinger {
 
 /* cache_hash.c */
 void HSH_Prealloc(struct sess *sp);
-void HSH_DeleteObjHead(struct objhead *oh);
 void HSH_Freestore(struct object *o);
 void HSH_Copy(const struct sess *sp, struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
 void HSH_Unbusy(const struct sess *sp);
 void HSH_Ref(struct object *o);
-void HSH_Deref(struct object **o);
 void HSH_Drop(struct sess *sp);
 double HSH_Grace(double g);
 void HSH_Init(void);
@@ -100,4 +98,6 @@ struct objhead {
 };
 
 extern unsigned	save_hash;
+void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
+void HSH_Deref(struct worker *w, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */

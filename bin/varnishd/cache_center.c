@@ -181,7 +181,7 @@ cnt_deliver(struct sess *sp)
 
 	RES_WriteObj(sp);
 	AZ(sp->wrk->wfd);
-	HSH_Deref(&sp->obj);
+	HSH_Deref(sp->wrk, &sp->obj);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -527,7 +527,7 @@ cnt_hit(struct sess *sp)
 	}
 
 	/* Drop our object, we won't need it */
-	HSH_Deref(&sp->obj);
+	HSH_Deref(sp->wrk, &sp->obj);
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
@@ -611,7 +611,7 @@ cnt_lookup(struct sess *sp)
 	if (sp->obj->objcore->flags & OC_F_PASS) {
 		VSL_stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
-		HSH_Deref(&sp->obj);
+		HSH_Deref(sp->wrk, &sp->obj);
 		sp->step = STP_PASS;
 		return (0);
 	}

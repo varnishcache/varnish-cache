@@ -345,6 +345,13 @@ hcb_cleaner(void *priv)
 {
 	struct objhead *oh, *oh2;
 	struct hcb_y *y;
+	struct worker ww;
+	struct dstat stats;
+
+	memset(&ww, 0, sizeof ww);
+	memset(&stats, 0, sizeof stats);
+	ww.magic = WORKER_MAGIC;
+	ww.stats = &stats;
 
 	THR_SetName("hcb_cleaner");
 	(void)priv;
@@ -361,10 +368,11 @@ hcb_cleaner(void *priv)
 				fprintf(stderr, "OH %p is cold enough\n", oh);
 #endif
 				oh->refcnt = 0;
-				HSH_DeleteObjHead(oh);
+				HSH_DeleteObjHead(&ww, oh);
 			}
 		}
 		Lck_Unlock(&hcb_mtx);
+		WRK_SumStat(&ww);
 	}
 }
 
