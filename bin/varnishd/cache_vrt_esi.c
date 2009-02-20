@@ -759,22 +759,24 @@ ESI_Deliver(struct sess *sp)
 {
 	struct esi_bit *eb;
 	struct object *obj;
+	struct worker *w;
 
-	WRW_Reserve(sp->wrk, &sp->fd);
+	w = sp->wrk;
+	WRW_Reserve(w, &sp->fd);
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
-				(void)WRW_Write(sp->wrk, eb->chunk_length, -1);
-			sp->acct_req.bodybytes += WRW_Write(sp->wrk,
+				(void)WRW_Write(w, eb->chunk_length, -1);
+			sp->acct_req.bodybytes += WRW_Write(w,
 			    eb->verbatim.b, Tlen(eb->verbatim));
 			if (sp->http->protover >= 1.1)
-				(void)WRW_Write(sp->wrk, "\r\n", -1);
+				(void)WRW_Write(w, "\r\n", -1);
 		}
 		if (eb->include.b == NULL ||
 		    sp->esis >= params->max_esi_includes)
 			continue;
 
-		if (WRW_FlushRelease(sp->wrk)) {
+		if (WRW_FlushRelease(w)) {
 			vca_close_session(sp, "remote closed");
 			return;
 		}
@@ -788,7 +790,7 @@ ESI_Deliver(struct sess *sp)
 		if (eb->host.b != NULL)  {
 			http_Unset(sp->http, H_Host);
 			http_Unset(sp->http, H_If_Modified_Since);
-			http_SetHeader(sp->wrk, sp->fd, sp->http, eb->host.b);
+			http_SetHeader(w, sp->fd, sp->http, eb->host.b);
 		}
 		/*
 		 * XXX: We should decide if we should cache the director
@@ -807,14 +809,16 @@ ESI_Deliver(struct sess *sp)
 		http_Unset(sp->http, H_Content_Length);
 
 		while (1) {
+			sp->wrk = w;
 			CNT_Session(sp);
 			if (sp->step == STP_DONE)
 				break;
-			AN(sp->wrk);
-			WSL_Flush(sp->wrk, 0);
+			AZ(sp->wrk);
+			WSL_Flush(w, 0);
 			DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
 			(void)usleep(10000);
 		}
+		AN(sp->wrk);
 		assert(sp->step == STP_DONE);
 		sp->esis--;
 		sp->obj = obj;
