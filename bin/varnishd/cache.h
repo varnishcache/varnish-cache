@@ -564,7 +564,7 @@ void PipeSession(struct sess *sp);
 void WRK_Init(void);
 int WRK_Queue(struct workreq *wrq);
 void WRK_QueueSession(struct sess *sp);
-void WRK_SumStat(struct worker *w);
+void WRK_SumStat(const struct worker *w);
 
 void WRW_Reserve(struct worker *w, int *fd);
 void WRW_Release(struct worker *w);
