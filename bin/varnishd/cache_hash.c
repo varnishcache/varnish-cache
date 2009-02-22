@@ -549,3 +549,11 @@ HSH_Init(void)
 	if (hash->start != NULL)
 		hash->start();
 }
+
+const struct choice hsh_choice[] = {
+	{ "classic",		&hcl_slinger },
+	{ "simple",		&hsl_slinger },
+	{ "simple_list",	&hsl_slinger },	/* backwards compat */
+	{ "critbit",		&hcb_slinger },
+	{ NULL,			NULL }
+};

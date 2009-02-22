@@ -103,3 +103,8 @@ extern unsigned	save_hash;
 void HSH_DeleteObjHead(const struct worker *w, struct objhead *oh);
 void HSH_Deref(const struct worker *w, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
+
+extern struct hash_slinger hsl_slinger;
+extern struct hash_slinger hcl_slinger;
+extern struct hash_slinger hcb_slinger;
+extern const struct choice hsh_choice[];

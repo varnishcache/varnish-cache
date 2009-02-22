@@ -68,3 +68,11 @@ uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const ch
 
 /* Synthetic Storage */
 void SMS_Init(void);
+
+extern struct stevedore sma_stevedore;
+extern struct stevedore smf_stevedore;
+#ifdef HAVE_LIBUMEM
+extern struct stevedore smu_stevedore;
+#endif
+
+extern const struct choice STV_choice[];

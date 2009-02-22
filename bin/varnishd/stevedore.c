@@ -124,3 +124,12 @@ STV_open(void)
 			stv->open(stv);
 	}
 }
+
+const struct choice STV_choice[] = {
+	{ "file",	&smf_stevedore },
+	{ "malloc",	&sma_stevedore },
+#ifdef HAVE_LIBUMEM
+	{ "umem",	&smu_stevedore },
+#endif
+	{ NULL,		NULL }
+};
