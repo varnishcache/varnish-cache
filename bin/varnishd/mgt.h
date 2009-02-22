@@ -76,4 +76,3 @@ extern char *mgt_cc_cmd;
 		fprintf(stderr, fmt "\n", __VA_ARGS__);	\
 		syslog(pri, fmt, __VA_ARGS__);		\
 	} while (0)
-

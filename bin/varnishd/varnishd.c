@@ -82,11 +82,6 @@ unsigned d_flag = 0;
 
 /*--------------------------------------------------------------------*/
 
-struct choice {
-	const char	*name;
-	void		*ptr;
-};
-
 static void *
 pick(const struct choice *cp, const char *which, const char *kind)
 {
@@ -113,20 +108,6 @@ arg_ul(const char *p)
 }
 
 /*--------------------------------------------------------------------*/
-extern struct stevedore sma_stevedore;
-extern struct stevedore smf_stevedore;
-#ifdef HAVE_LIBUMEM
-extern struct stevedore smu_stevedore;
-#endif
-
-static const struct choice stv_choice[] = {
-	{ "file",	&smf_stevedore },
-	{ "malloc",	&sma_stevedore },
-#ifdef HAVE_LIBUMEM
-	{ "umem",	&smu_stevedore },
-#endif
-	{ NULL,		NULL }
-};
 
 static void
 setup_storage(const char *spec)
@@ -147,7 +128,7 @@ setup_storage(const char *spec)
 	for (ac = 0; av[ac + 2] != NULL; ac++)
 		continue;
 
-	priv = pick(stv_choice, av[1], "storage");
+	priv = pick(STV_choice, av[1], "storage");
 	AN(priv);
 
 	STV_add(priv, ac, av + 2);
@@ -156,18 +137,6 @@ setup_storage(const char *spec)
 }
 
 /*--------------------------------------------------------------------*/
-
-extern struct hash_slinger hsl_slinger;
-extern struct hash_slinger hcl_slinger;
-extern struct hash_slinger hcb_slinger;
-
-static const struct choice hsh_choice[] = {
-	{ "classic",		&hcl_slinger },
-	{ "simple",		&hsl_slinger },
-	{ "simple_list",	&hsl_slinger },	/* backwards compat */
-	{ "critbit",		&hcb_slinger },
-	{ NULL,			NULL }
-};
 
 static void
 setup_hash(const char *h_arg)

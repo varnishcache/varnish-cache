@@ -52,3 +52,9 @@ void mgt_child_inherit(int fd, const char *what);
 		fprintf(stderr, "Error: " __VA_ARGS__);		\
 		exit(2);					\
 	} while (0);
+
+/* A tiny helper for choosing hash/storage modules */
+struct choice {
+	const char      *name;
+	void            *ptr;
+};
