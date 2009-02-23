@@ -49,6 +49,13 @@
 
 #include "persistent.h"
 
+/* XXX: name confusion with on-media version ? */
+struct smp_seg {
+	VTAILQ_ENTRY(smp_seg)	list;
+	
+	struct smp_segment	*seg_desc;
+};
+
 struct smp_sc {
 	unsigned		magic;
 #define SMP_SC_MAGIC		0x7b73af0a 
@@ -60,6 +67,10 @@ struct smp_sc {
 	uint32_t		unique;
 
 	uint8_t			*ptr;
+
+	struct smp_ident	*ident;
+
+	VTAILQ_HEAD(, smp_seg)	segments;
 };
 
 /*--------------------------------------------------------------------*/
@@ -128,7 +139,29 @@ smp_check_sign(const struct smp_sc *sc, uint64_t adr, const char *id)
 		return (1);
 	if (ss->unique != sc->unique)
 		return (2);
+	if (ss->mapped != (uintptr_t)ss)
+		return (3);
 	return (smp_check_hash(ss, sizeof *ss + ss->length));
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+smp_open_sign(const struct smp_sc *sc, uint64_t adr, void **ptr, uint64_t *len, const char *id)
+{
+	struct smp_sign *ss;
+	int i;
+	
+	AZ(adr & 0x7);			/* Enforce alignment */
+	AN(ptr);
+	AN(len);
+	i = smp_check_sign(sc, adr, id);
+	if (i)
+		return (i);
+	ss = (void*)(sc->ptr + adr);
+	*ptr = (void*)(sc->ptr + adr + sizeof *ss);
+	*len = ss->length;
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -156,11 +189,14 @@ smp_newsilo(struct smp_sc *sc)
 	/* XXX: intelligent sizing of things */
 	si->stuff[SMP_BAN1_STUFF] = sc->granularity;
 	si->stuff[SMP_BAN2_STUFF] = si->stuff[SMP_BAN1_STUFF] + 1024*1024;
-	si->stuff[SMP_SEGS_STUFF] = si->stuff[SMP_BAN2_STUFF] + 1024*1024;
+	si->stuff[SMP_SEG1_STUFF] = si->stuff[SMP_BAN2_STUFF] + 1024*1024;
+	si->stuff[SMP_SEG2_STUFF] = si->stuff[SMP_SEG1_STUFF] + 1024*1024;
+	si->stuff[SMP_SPC_STUFF] = si->stuff[SMP_SEG2_STUFF] + 1024*1024;
 	si->stuff[SMP_END_STUFF] = si->mediasize;
 	smp_create_sign(sc, si->stuff[SMP_BAN1_STUFF], 0, "BAN 1");
 	smp_create_sign(sc, si->stuff[SMP_BAN2_STUFF], 0, "BAN 2");
-	smp_create_sign(sc, si->stuff[SMP_SEGS_STUFF], 0, "SEGMENT");
+	smp_create_sign(sc, si->stuff[SMP_SEG1_STUFF], 0, "SEG 1");
+	smp_create_sign(sc, si->stuff[SMP_SEG2_STUFF], 0, "SEG 2");
 
 	smp_make_hash(si, sizeof *si);
 }
@@ -171,7 +207,7 @@ static int
 smp_valid_silo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
-	int i;
+	int i, j;
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 	si = (void*)sc->ptr;
@@ -195,21 +231,24 @@ smp_valid_silo(struct smp_sc *sc)
 
 	/* XXX: Sanity check stuff[4] */
 
-	assert(si->stuff[0] > sizeof *si + SHA256_LEN);
-	assert(si->stuff[1] > si->stuff[0]);
-	assert(si->stuff[2] > si->stuff[1]);
-	assert(si->stuff[3] > si->stuff[2]);
-	assert(si->stuff[3] == sc->mediasize);
+	assert(si->stuff[SMP_BAN1_STUFF] > sizeof *si + SHA256_LEN);
+	assert(si->stuff[SMP_BAN2_STUFF] > si->stuff[0]);
+	assert(si->stuff[SMP_SEG1_STUFF] > si->stuff[1]);
+	assert(si->stuff[SMP_SEG2_STUFF] > si->stuff[2]);
+	assert(si->stuff[SMP_SPC_STUFF] > si->stuff[3]);
+	assert(si->stuff[SMP_END_STUFF] == sc->mediasize);
 
+	/* We must have one valid BAN table */
 	i = smp_check_sign(sc, si->stuff[SMP_BAN1_STUFF], "BAN 1");
-	if (i)
-		return (i + 10);
-	i = smp_check_sign(sc, si->stuff[SMP_BAN2_STUFF], "BAN 2");
-	if (i)
-		return (i + 20);
-	i = smp_check_sign(sc, si->stuff[SMP_SEGS_STUFF], "SEGMENT");
-	if (i)
-		return (i + 30);
+	j = smp_check_sign(sc, si->stuff[SMP_BAN2_STUFF], "BAN 2");
+	if (i && j)
+		return (100 + i * 10 + j);
+
+	/* We must have one valid SEG table */
+	i = smp_check_sign(sc, si->stuff[SMP_SEG1_STUFF], "SEG 1");
+	j = smp_check_sign(sc, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+	if (i && j)
+		return (200 + i * 10 + j);
 	return (0);
 }
 
@@ -240,6 +279,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	ALLOC_OBJ(sc, SMP_SC_MAGIC);
 	XXXAN(sc);
 	sc->fd = -1;
+	VTAILQ_INIT(&sc->segments);
 
 	/* Argument processing */
 	if (ac != 2)
@@ -278,11 +318,53 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 
 /*--------------------------------------------------------------------*/
 
+static int
+smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
+{
+	void *ptr;
+	uint64_t length;
+	struct smp_segment *ss;
+
+	if (smp_open_sign(sc, sc->ident->stuff[stuff], &ptr, &length, id))
+		return (1);
+
+	ss = ptr;
+	for(; length > 0; length -= sizeof *ss, ss ++) {
+fprintf(stderr, "SEG %ju %ju\n", ss->offset, ss->length);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+smp_open(const struct stevedore *st)
+{
+	struct smp_sc	*sc;
+
+	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+
+	/* We trust the parent to give us a valid silo, for good measure: */
+	AZ(smp_valid_silo(sc));
+
+	sc->ident = (void*)sc->ptr;
+
+	/* XXX: read in bans */
+
+	/*
+	 * We attempt seg2 first, and if that fails, take seg1
+	 */
+	if (smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"))
+		AZ(smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"));
+}
+
+/*--------------------------------------------------------------------*/
+
 struct stevedore smp_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"persistent",
 	.init	=	smp_init,
-	// .open	=	smf_open,
+	.open	=	smp_open,
 	// .alloc	=	smf_alloc,
 	// .trim	=	smf_trim,
 	// .free	=	smf_free,
