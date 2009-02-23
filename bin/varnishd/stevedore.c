@@ -128,6 +128,7 @@ STV_open(void)
 const struct choice STV_choice[] = {
 	{ "file",	&smf_stevedore },
 	{ "malloc",	&sma_stevedore },
+	{ "persistent",	&smp_stevedore },
 #ifdef HAVE_LIBUMEM
 	{ "umem",	&smu_stevedore },
 #endif
