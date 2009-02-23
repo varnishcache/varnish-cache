@@ -83,7 +83,9 @@ struct smp_sc {
 	VTAILQ_HEAD(, smp_seg)	segments;
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Write a sha256hash after a sequence of bytes.
+ */
 
 static void
 smp_make_hash(void *ptr, off_t len)
@@ -98,7 +100,9 @@ smp_make_hash(void *ptr, off_t len)
 	SHA256_Final(dest, &c);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Check that a sequence of bytes matches the SHA256 stored behind it.
+ */
 
 static int
 smp_check_hash(void *ptr, off_t len)
@@ -115,7 +119,9 @@ smp_check_hash(void *ptr, off_t len)
 	return(memcmp(sign, dest, sizeof sign));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Create or write a signature block covering a sequence of bytes.
+ */
 
 static void
 smp_create_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
@@ -136,7 +142,9 @@ fprintf(stderr, "CreateSign(%jx, %jx, %s)\n",
     adr, len, id);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Force a write of a signature block to the backing store.
+ */
 
 static void
 smp_sync_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len)
@@ -149,7 +157,9 @@ smp_sync_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len)
 fprintf(stderr, "SyncSign(%jx, %jx)\n", adr, len);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Check a signature block and return zero if OK.
+ */
 
 static int
 smp_check_sign(const struct smp_sc *sc, uint64_t adr, const char *id)
@@ -169,7 +179,9 @@ smp_check_sign(const struct smp_sc *sc, uint64_t adr, const char *id)
 	return (smp_check_hash(ss, sizeof *ss + ss->length));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Open a signature block, and return zero if it is valid.
+ */
 
 static int
 smp_open_sign(const struct smp_sc *sc, uint64_t adr, void **ptr, uint64_t *len, const char *id)
@@ -189,7 +201,11 @@ fprintf(stderr, "OpenSign(%jx, %s) -> {%p, %jx, %d}\n",
 	return (i);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Initialize a Silo with a valid but empty structure.
+ *
+ * XXX: more intelligent sizing of things.
+ */
 
 static void
 smp_newsilo(struct smp_sc *sc)
@@ -211,7 +227,6 @@ smp_newsilo(struct smp_sc *sc)
 	si->mediasize = sc->mediasize;
 	si->granularity = sc->granularity;
 
-	/* XXX: intelligent sizing of things */
 	si->stuff[SMP_BAN1_STUFF] = sc->granularity;
 	si->stuff[SMP_BAN2_STUFF] = si->stuff[SMP_BAN1_STUFF] + 1024*1024;
 	si->stuff[SMP_SEG1_STUFF] = si->stuff[SMP_BAN2_STUFF] + 1024*1024;
@@ -226,7 +241,9 @@ smp_newsilo(struct smp_sc *sc)
 	smp_make_hash(si, sizeof *si);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Check if a silo is valid.
+ */
 
 static int
 smp_valid_silo(struct smp_sc *sc)
@@ -277,7 +294,9 @@ smp_valid_silo(struct smp_sc *sc)
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Set up persistent storage silo in the master process.
+ */
 
 static void
 smp_init(struct stevedore *parent, int ac, char * const *av)
@@ -383,7 +402,9 @@ smp_save_segs(struct smp_sc *sc)
 	smp_save_seg(sc, sc->ident->stuff[SMP_SEG2_STUFF], "SEG 2");
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Attempt to open and read in a segment list
+ */
 
 static int
 smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
@@ -413,10 +434,15 @@ fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 	}
+
+	/* XXX: sanity check pointer+length for validity and non-overlap */
+
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Open a silo in the worker process
+ */
 
 static void
 smp_open(const struct stevedore *st)
@@ -433,7 +459,7 @@ smp_open(const struct stevedore *st)
 	/* XXX: read in bans */
 
 	/*
-	 * We attempt seg1 first, and if that fails, take seg2
+	 * We attempt seg1 first, and if that fails, try seg2
 	 */
 	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
 		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
