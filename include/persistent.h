@@ -99,7 +99,7 @@ struct smp_sign {
 	uint64_t		length;
 };
 
-#define SMP_SIGN_SIZE		(8 + 4 + 8 + 8 + 32)
+#define SMP_SIGN_SIZE		(8 + 4 + 8 + 8)
 
 /*
  * A segment descriptor.
