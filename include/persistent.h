@@ -81,6 +81,8 @@ struct smp_ident {
 
 #define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 8 + 4 )
 
+#define SMP_IDENT_STRING	"Varnish Persistent Storage Silo"
+
 /*
  * A segment descriptor.
  */

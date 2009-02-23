@@ -71,6 +71,7 @@ void SMS_Init(void);
 
 extern struct stevedore sma_stevedore;
 extern struct stevedore smf_stevedore;
+extern struct stevedore smp_stevedore;
 #ifdef HAVE_LIBUMEM
 extern struct stevedore smu_stevedore;
 #endif
