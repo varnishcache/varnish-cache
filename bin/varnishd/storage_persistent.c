@@ -94,7 +94,7 @@ smp_check_hash(void *ptr, off_t len)
 /*--------------------------------------------------------------------*/
 
 static void
-smp_create_sign(struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
+smp_create_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
 {
 	struct smp_sign *ss;
 
@@ -113,7 +113,7 @@ smp_create_sign(struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
 /*--------------------------------------------------------------------*/
 
 static int
-smp_check_sign(struct smp_sc *sc, uint64_t adr, const char *id)
+smp_check_sign(const struct smp_sc *sc, uint64_t adr, const char *id)
 {
 	struct smp_sign *ss;
 
@@ -221,13 +221,13 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	(void)parent;
 
 	AZ(av[ac]);
-#define SZOF(foo)       fprintf(stderr, \
-    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
-	SZOF(struct smp_ident);
-	SZOF(struct smp_sign);
-	SZOF(struct smp_segment);
-	SZOF(struct smp_object);
-#undef SZOF
+#define SIZOF(foo)       fprintf(stderr, \
+    "sizeof(%s) = %zu = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+	SIZOF(struct smp_ident);
+	SIZOF(struct smp_sign);
+	SIZOF(struct smp_segment);
+	SIZOF(struct smp_object);
+#undef SIZOF
 
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
 	assert(sizeof(struct smp_sign) == SMP_SIGN_SIZE);
