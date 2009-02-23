@@ -28,6 +28,9 @@
  * $Id$
  *
  * Persistent storage method
+ *
+ * XXX: Before we start the client or maybe after it stops, we should give the
+ * XXX: stevedores a chance to examine their storage for consistency.
  */
 
 #include "config.h"
@@ -266,7 +269,11 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	smp_newsilo(sc);
 	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
 	AZ(smp_valid_silo(sc));
-	exit (2);
+
+	parent->priv = sc;
+
+	/* XXX: only for sendfile I guess... */
+	mgt_child_inherit(sc->fd, "storage_persistent");
 }
 
 /*--------------------------------------------------------------------*/

@@ -60,6 +60,7 @@ STV_alloc(struct sess *sp, size_t size)
 		stv_next = stv;
 
 		/* try to allocate from it */
+		AN(stv->alloc);
 		st = stv->alloc(stv, size);
 		if (st != NULL)
 			break;
