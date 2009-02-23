@@ -54,6 +54,7 @@ struct smp_sc {
 	const char		*filename;
 	off_t			mediasize;
 	unsigned		granularity;
+	uint32_t		unique;
 
 	uint8_t			*ptr;
 };
@@ -61,10 +62,13 @@ struct smp_sc {
 /*--------------------------------------------------------------------*/
 
 static void
-smp_make_sign(const void *ptr, off_t len, uint8_t *dest)
+smp_make_hash(void *ptr, off_t len)
 {
 	struct SHA256Context c;
+	unsigned char *dest;
 
+	dest = ptr;
+	dest += len;
 	SHA256_Init(&c);
 	SHA256_Update(&c, ptr, len);
 	SHA256_Final(dest, &c);
@@ -73,15 +77,55 @@ smp_make_sign(const void *ptr, off_t len, uint8_t *dest)
 /*--------------------------------------------------------------------*/
 
 static int
-smp_check_sign(const void *ptr, off_t len, const void *sign)
+smp_check_hash(void *ptr, off_t len)
 {
 	struct SHA256Context c;
-	unsigned char nsign[32];
+	unsigned char sign[SHA256_LEN];
+	unsigned char *dest;
 
+	dest = ptr;
+	dest += len;
 	SHA256_Init(&c);
 	SHA256_Update(&c, ptr, len);
-	SHA256_Final(nsign, &c);
-	return(memcmp(sign, nsign, sizeof nsign));
+	SHA256_Final(sign, &c);
+	return(memcmp(sign, dest, sizeof sign));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+smp_create_sign(struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
+{
+	struct smp_sign *ss;
+
+	AZ(adr & 0x7);			/* Enforce alignment */
+
+	ss = (void*)(sc->ptr + adr);
+	memset(ss, 0, sizeof *ss);
+	assert(strlen(id) < sizeof ss->ident);
+	strcpy(ss->ident, id);
+	ss->unique = sc->unique;
+	ss->mapped = (uintptr_t)(sc->ptr + adr);
+	ss->length = len;
+	smp_make_hash(ss, sizeof *ss + len);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+smp_check_sign(struct smp_sc *sc, uint64_t adr, const char *id)
+{
+	struct smp_sign *ss;
+
+	AZ(adr & 0x7);			/* Enforce alignment */
+
+	ss = (void*)(sc->ptr + adr);
+	assert(strlen(id) < sizeof ss->ident);
+	if (strcmp(id, ss->ident))
+		return (1);
+	if (ss->unique != sc->unique)
+		return (2);
+	return (smp_check_hash(ss, sizeof *ss + ss->length));
 }
 
 /*--------------------------------------------------------------------*/
@@ -92,6 +136,9 @@ smp_newsilo(struct smp_sc *sc)
 	struct smp_ident	*si;
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
+
+	sc->unique = random();
+
 	si = (void*)sc->ptr;
 	memset(si, 0, sizeof *si);
 	strcpy(si->ident, SMP_IDENT_STRING);
@@ -99,18 +146,29 @@ smp_newsilo(struct smp_sc *sc)
 	si->size = sizeof *si;
 	si->major_version = 1;
 	si->minor_version = 1;
+	si->unique = sc->unique;
 	si->mediasize = sc->mediasize;
 	si->granularity = sc->granularity;
 
-	smp_make_sign(si, sizeof *si, sc->ptr + sizeof *si);
+	/* XXX: intelligent sizing of things */
+	si->stuff[SMP_BAN1_STUFF] = sc->granularity;
+	si->stuff[SMP_BAN2_STUFF] = si->stuff[SMP_BAN1_STUFF] + 1024*1024;
+	si->stuff[SMP_SEGS_STUFF] = si->stuff[SMP_BAN2_STUFF] + 1024*1024;
+	si->stuff[SMP_END_STUFF] = si->mediasize;
+	smp_create_sign(sc, si->stuff[SMP_BAN1_STUFF], 0, "BAN 1");
+	smp_create_sign(sc, si->stuff[SMP_BAN2_STUFF], 0, "BAN 2");
+	smp_create_sign(sc, si->stuff[SMP_SEGS_STUFF], 0, "SEGMENT");
+
+	smp_make_hash(si, sizeof *si);
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-smp_valid_ident(struct smp_sc *sc)
+smp_valid_silo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
+	int i;
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 	si = (void*)sc->ptr;
@@ -120,7 +178,7 @@ smp_valid_ident(struct smp_sc *sc)
 		return (2);
 	if (si->size != sizeof *si)
 		return (3);
-	if (smp_check_sign(si, sizeof *si, sc->ptr + sizeof *si))
+	if (smp_check_hash(si, sizeof *si))
 		return (4);
 	if (si->major_version != 1)
 		return (5);
@@ -130,6 +188,25 @@ smp_valid_ident(struct smp_sc *sc)
 		return (7);
 	if (si->granularity != sc->granularity)
 		return (8);
+	sc->unique = si->unique;
+
+	/* XXX: Sanity check stuff[4] */
+
+	assert(si->stuff[0] > sizeof *si + SHA256_LEN);
+	assert(si->stuff[1] > si->stuff[0]);
+	assert(si->stuff[2] > si->stuff[1]);
+	assert(si->stuff[3] > si->stuff[2]);
+	assert(si->stuff[3] == sc->mediasize);
+
+	i = smp_check_sign(sc, si->stuff[SMP_BAN1_STUFF], "BAN 1");
+	if (i)
+		return (i + 10);
+	i = smp_check_sign(sc, si->stuff[SMP_BAN2_STUFF], "BAN 2");
+	if (i)
+		return (i + 20);
+	i = smp_check_sign(sc, si->stuff[SMP_SEGS_STUFF], "SEGMENT");
+	if (i)
+		return (i + 30);
 	return (0);
 }
 
@@ -144,7 +221,16 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	(void)parent;
 
 	AZ(av[ac]);
+#define SZOF(foo)       fprintf(stderr, \
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+	SZOF(struct smp_ident);
+	SZOF(struct smp_sign);
+	SZOF(struct smp_segment);
+	SZOF(struct smp_object);
+#undef SZOF
+
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
+	assert(sizeof(struct smp_sign) == SMP_SIGN_SIZE);
 	assert(sizeof(struct smp_object) == SMP_OBJECT_SIZE);
 
 	/* Allocate softc */
@@ -176,9 +262,10 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	fprintf(stderr, "i = %d ms = %jd g = %u\n",
 	    i, (intmax_t)sc->mediasize, sc->granularity);
 
-	fprintf(stderr, "Silo: %d\n", smp_valid_ident(sc));
+	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
 	smp_newsilo(sc);
-	fprintf(stderr, "Silo: %d\n", smp_valid_ident(sc));
+	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
+	AZ(smp_valid_silo(sc));
 	exit (2);
 }
 

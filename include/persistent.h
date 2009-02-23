@@ -71,17 +71,35 @@ struct smp_ident {
 
 	uint32_t		minor_version;
 
+	uint32_t		unique;
+
 	uint64_t		mediasize;	/* ... in bytes */
 
 	uint32_t		granularity;	/* smallest ... in bytes */
 
-	/* XXX: ptr to bans table */
-	/* XXX: ptr to segment table */
+	uint64_t		stuff[4];	/* pointers to stuff */
+#define	SMP_BAN1_STUFF		0
+#define	SMP_BAN2_STUFF		1
+#define	SMP_SEGS_STUFF		2
+#define	SMP_END_STUFF		3
 };
 
-#define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 8 + 4 )
+#define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 4 * 8)
 
 #define SMP_IDENT_STRING	"Varnish Persistent Storage Silo"
+
+/*
+ * This is used to sign various bits on the disk.
+ */
+
+struct smp_sign {
+	char			ident[8];
+	uint32_t		unique;
+	uint64_t		mapped;
+	uint64_t		length;
+};
+
+#define SMP_SIGN_SIZE		(8 + 4 + 8 + 8 + 32)
 
 /*
  * A segment descriptor.
