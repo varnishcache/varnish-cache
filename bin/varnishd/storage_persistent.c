@@ -49,6 +49,14 @@
 
 #include "persistent.h"
 
+#ifndef MAP_NOCORE
+#define MAP_NOCORE 0 /* XXX Linux */
+#endif
+
+#ifndef MAP_NOSYNC
+#define MAP_NOSYNC 0 /* XXX Linux */
+#endif
+
 /* XXX: name confusion with on-media version ? */
 struct smp_seg {
 	VTAILQ_ENTRY(smp_seg)	list;
