@@ -31,6 +31,8 @@
 
 #include <stdint.h>
 
+#define SHA256_LEN		32
+
 typedef struct SHA256Context {
 	uint32_t state[8];
 	uint64_t count;
@@ -39,7 +41,7 @@ typedef struct SHA256Context {
 
 void	SHA256_Init(SHA256_CTX *);
 void	SHA256_Update(SHA256_CTX *, const void *, size_t);
-void	SHA256_Final(unsigned char [32], SHA256_CTX *);
+void	SHA256_Final(unsigned char [SHA256_LEN], SHA256_CTX *);
 void	SHA256_Test(void);
 
 #endif /* !_SHA256_H_ */
