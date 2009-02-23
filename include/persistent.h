@@ -29,25 +29,35 @@
  */
 
 /*
+ *
  * Overall layout:
  *
  *	struct smp_ident;		Identification and geometry 
  *	sha256[...]			checksum of same
  *
- *	struct smp_segment[N];		Segment table
- *	sha256[...]			checksum of same
- *
+ *	struct smp_sign;
  *	banspace_1;			First ban-space
  *	sha256[...]			checksum of same
  *
+ *	struct smp_sign;
  *	banspace_2;			Second ban-space
  *	sha256[...]			checksum of same
  *
+ *	struct smp_sign;
+ *	struct smp_segment_1[N];	Segment table
+ *	sha256[...]			checksum of same
+ *
+ *	struct smp_sign;
+ *	struct smp_segment_2[N];	Segment table
+ *	sha256[...]			checksum of same
+ *
  *	N segments {
+ *		struct smp_sign;
  *		struct smp_object[M]	Objects in segment
  *		sha256[...]		checksum of same
  *		objspace
  *	}
+ *
  */
 
 /*
@@ -77,14 +87,16 @@ struct smp_ident {
 
 	uint32_t		granularity;	/* smallest ... in bytes */
 
-	uint64_t		stuff[4];	/* pointers to stuff */
+	uint64_t		stuff[6];	/* pointers to stuff */
 #define	SMP_BAN1_STUFF		0
 #define	SMP_BAN2_STUFF		1
-#define	SMP_SEGS_STUFF		2
-#define	SMP_END_STUFF		3
+#define	SMP_SEG1_STUFF		2
+#define	SMP_SEG2_STUFF		3
+#define	SMP_SPC_STUFF		4
+#define	SMP_END_STUFF		5
 };
 
-#define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 4 * 8)
+#define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 6 * 8)
 
 #define SMP_IDENT_STRING	"Varnish Persistent Storage Silo"
 
@@ -100,6 +112,7 @@ struct smp_sign {
 };
 
 #define SMP_SIGN_SIZE		(8 + 4 + 8 + 8)
+#define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + SHA256_LEN)
 
 /*
  * A segment descriptor.
