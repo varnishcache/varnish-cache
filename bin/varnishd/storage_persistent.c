@@ -59,9 +59,11 @@
 
 /* XXX: name confusion with on-media version ? */
 struct smp_seg {
+	unsigned		magic;
+#define SMP_SEG_MAGIC		0x45c61895
 	VTAILQ_ENTRY(smp_seg)	list;
-	
-	struct smp_segment	*seg_desc;
+	uint64_t		offset;
+	uint64_t		length;
 };
 
 struct smp_sc {
@@ -130,6 +132,21 @@ smp_create_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len, const char 
 	ss->mapped = (uintptr_t)(sc->ptr + adr);
 	ss->length = len;
 	smp_make_hash(ss, sizeof *ss + len);
+fprintf(stderr, "CreateSign(%jx, %jx, %s)\n",
+    adr, len, id);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+smp_sync_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len)
+{
+
+	AZ(adr & 0x7);			/* Enforce alignment */
+
+	AZ(msync(sc->ptr + adr,
+	    sizeof(struct smp_sign) + len + SHA256_LEN, MS_SYNC));
+fprintf(stderr, "SyncSign(%jx, %jx)\n", adr, len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -163,13 +180,13 @@ smp_open_sign(const struct smp_sc *sc, uint64_t adr, void **ptr, uint64_t *len, 
 	AZ(adr & 0x7);			/* Enforce alignment */
 	AN(ptr);
 	AN(len);
-	i = smp_check_sign(sc, adr, id);
-	if (i)
-		return (i);
 	ss = (void*)(sc->ptr + adr);
 	*ptr = (void*)(sc->ptr + adr + sizeof *ss);
 	*len = ss->length;
-	return (0);
+	i = smp_check_sign(sc, adr, id);
+fprintf(stderr, "OpenSign(%jx, %s) -> {%p, %jx, %d}\n",
+    adr, id, *ptr, *len, i);
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
@@ -313,8 +330,10 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	fprintf(stderr, "i = %d ms = %jd g = %u\n",
 	    i, (intmax_t)sc->mediasize, sc->granularity);
 
-	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
-	smp_newsilo(sc);
+	i = smp_valid_silo(sc);
+	fprintf(stderr, "Silo: %d\n", i);
+	if (i)
+		smp_newsilo(sc);
 	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
 	AZ(smp_valid_silo(sc));
 
@@ -322,6 +341,46 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 
 	/* XXX: only for sendfile I guess... */
 	mgt_child_inherit(sc->fd, "storage_persistent");
+}
+
+/*--------------------------------------------------------------------
+ * Write the segmentlist back to the silo.
+ *
+ * We write the first copy, sync it synchronously, then write the
+ * second copy and sync it synchronously.
+ *
+ * Provided the kernel doesn't lie, that means we will always have
+ * at least one valid copy on in the silo.
+ */
+
+static void
+smp_save_seg(struct smp_sc *sc, uint64_t adr, const char *id)
+{
+	struct smp_segment *ss;
+	struct smp_seg *sg;
+	void *ptr;
+	uint64_t length;
+
+	(void)smp_open_sign(sc, adr, &ptr, &length, id);
+	ss = ptr;
+	length = 0;
+	VTAILQ_FOREACH(sg, &sc->segments, list) {
+		ss->offset = sg->offset;
+		ss->length = sg->length;
+		ss++;
+		length += sizeof *ss;
+fprintf(stderr, "WR SEG %jx %jx\n", sg->offset, sg->length);
+	}
+	smp_create_sign(sc, adr, length, id);
+	smp_sync_sign(sc, adr, length);
+}
+
+static void
+smp_save_segs(struct smp_sc *sc)
+{
+
+	smp_save_seg(sc, sc->ident->stuff[SMP_SEG1_STUFF], "SEG 1");
+	smp_save_seg(sc, sc->ident->stuff[SMP_SEG2_STUFF], "SEG 2");
 }
 
 /*--------------------------------------------------------------------*/
@@ -332,13 +391,27 @@ smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
 	void *ptr;
 	uint64_t length;
 	struct smp_segment *ss;
+	struct smp_seg *sg;
 
 	if (smp_open_sign(sc, sc->ident->stuff[stuff], &ptr, &length, id))
 		return (1);
 
 	ss = ptr;
 	for(; length > 0; length -= sizeof *ss, ss ++) {
-fprintf(stderr, "SEG %ju %ju\n", ss->offset, ss->length);
+		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
+		AN(sg);
+		sg->offset = ss->offset;
+		sg->length = ss->length;
+		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
+fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
+	}
+	if (VTAILQ_EMPTY(&sc->segments)) {
+		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
+		AN(sg);
+		sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
+		sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
+		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
+fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 	}
 	return (0);
 }
@@ -360,10 +433,11 @@ smp_open(const struct stevedore *st)
 	/* XXX: read in bans */
 
 	/*
-	 * We attempt seg2 first, and if that fails, take seg1
+	 * We attempt seg1 first, and if that fails, take seg2
 	 */
-	if (smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"))
-		AZ(smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"));
+	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
+		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
+	smp_save_segs(sc);
 }
 
 /*--------------------------------------------------------------------*/
