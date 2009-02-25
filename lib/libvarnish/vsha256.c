@@ -45,7 +45,7 @@
 #include "libvarnish.h"
 #include "vsha256.h"
 
-static __inline void
+static inline void
 mybe32enc(void *pp, uint32_t u)
 {
         unsigned char *p = (unsigned char *)pp;
@@ -56,7 +56,7 @@ mybe32enc(void *pp, uint32_t u)
         p[3] = u & 0xff;
 }
 
-static __inline void
+static inline void
 mybe64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
@@ -77,7 +77,7 @@ mybe64enc(void *pp, uint64_t u)
 
 #else /* BYTE_ORDER != BIG_ENDIAN or in doubt... */
 
-static __inline uint32_t
+static inline uint32_t
 mybe32dec(const void *pp)
 {
         unsigned char const *p = (unsigned char const *)pp;
