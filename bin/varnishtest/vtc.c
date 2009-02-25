@@ -246,7 +246,7 @@ cmd_shell(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1]);
-	(void)system(av[1]);	/* XXX: assert ? */
+	assert(WEXITSTATUS(system(av[1])) == 0);
 }
 
 /**********************************************************************
