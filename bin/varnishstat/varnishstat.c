@@ -212,6 +212,31 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 }
 
 static void
+do_xml(struct varnish_stats *VSL_stats, const char* fields)
+{
+	char time_stamp[20];
+	time_t now;
+
+	printf("<?xml version=\"1.0\"?>\n");
+	now = time(NULL);
+	strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
+	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
+#define MAC_STAT(n, t, l, f, d) \
+	do { \
+		if (fields != NULL && ! show_field( #n, fields )) break; \
+		intmax_t ju = VSL_stats->n; \
+		printf("\t<stat>\n"); \
+		printf("\t\t<name>%s</name>\n", #n); \
+		printf("\t\t<value>%ju</value>\n", ju); \
+		printf("\t\t<description>%s</description>\n", d); \
+		printf("\t</stat>\n"); \
+	} while (0);
+#include "stat_field.h"
+#undef MAC_STAT
+	printf("</varnishstat>\n");
+}
+
+static void
 do_once(struct varnish_stats *VSL_stats, const char* fields)
 {
 	struct timeval tv;
@@ -259,6 +284,8 @@ usage(void)
 	fprintf(stderr, FMT, "-V", "Display the version number and exit");
 	fprintf(stderr, FMT, "-w delay",
 	    "Wait delay seconds between updates.  The default is 1.");
+	fprintf(stderr, FMT, "-x",
+	    "Print statistics once as XML and exit.");
 #undef FMT
 	exit(1);
 }
@@ -330,11 +357,11 @@ main(int argc, char **argv)
 {
 	int c;
 	struct varnish_stats *VSL_stats;
-	int delay = 1, once = 0;
+	int delay = 1, once = 0, xml = 0;
 	const char *n_arg = NULL;
 	const char *fields = NULL;
 
-	while ((c = getopt(argc, argv, "1f:ln:Vw:")) != -1) {
+	while ((c = getopt(argc, argv, "1f:ln:Vw:x")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -354,6 +381,9 @@ main(int argc, char **argv)
 		case 'w':
 			delay = atoi(optarg);
 			break;
+		case 'x':
+			xml = 1;
+			break;
 		default:
 			usage();
 		}
@@ -366,8 +396,10 @@ main(int argc, char **argv)
 		usage();
 		exit(1);
 	}
-
-	if (once)
+	
+	if (xml) 
+		do_xml(VSL_stats, fields);
+	else if (once)
 		do_once(VSL_stats, fields);
 	else
 		do_curses(VSL_stats, delay, fields);
