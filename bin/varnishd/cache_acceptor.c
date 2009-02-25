@@ -368,7 +368,7 @@ VCA_tweak_waiter(struct cli *cli, const char *arg)
 		vca_act = NULL;
 		return;
 	}
-	for (i = 0; vca_waiters[i]->name; i++) {
+	for (i = 0; vca_waiters[i]; i++) {
 		if (!strcmp(arg, vca_waiters[i]->name)) {
 			vca_act = vca_waiters[i];
 			return;
