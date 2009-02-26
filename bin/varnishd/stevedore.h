@@ -34,12 +34,15 @@
 struct stevedore;
 struct sess;
 struct iovec;
+struct object;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(const struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
+typedef void storage_object_f(struct object *);
+typedef void storage_close_f(const struct stevedore *);
 
 struct stevedore {
 	unsigned		magic;
@@ -50,6 +53,8 @@ struct stevedore {
 	storage_alloc_f		*alloc;
 	storage_trim_f		*trim;
 	storage_free_f		*free;
+	storage_object_f	*object;
+	storage_close_f		*close;
 
 	/* private fields */
 	void			*priv;
