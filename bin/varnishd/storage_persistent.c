@@ -64,6 +64,7 @@ struct smp_seg {
 	VTAILQ_ENTRY(smp_seg)	list;
 	uint64_t		offset;
 	uint64_t		length;
+	struct smp_segment	segment;
 };
 
 struct smp_sc {
@@ -81,6 +82,8 @@ struct smp_sc {
 	struct smp_ident	*ident;
 
 	VTAILQ_HEAD(, smp_seg)	segments;
+	struct smp_seg		*cur_seg;
+	uint64_t		next_addr;
 };
 
 /*--------------------------------------------------------------------
@@ -311,7 +314,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
     "sizeof(%s) = %zu = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
 	SIZOF(struct smp_ident);
 	SIZOF(struct smp_sign);
-	SIZOF(struct smp_segment);
+	SIZOF(struct smp_segptr);
 	SIZOF(struct smp_object);
 #undef SIZOF
 
@@ -375,7 +378,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 static void
 smp_save_seg(struct smp_sc *sc, uint64_t adr, const char *id)
 {
-	struct smp_segment *ss;
+	struct smp_segptr *ss;
 	struct smp_seg *sg;
 	void *ptr;
 	uint64_t length;
@@ -411,7 +414,7 @@ smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
 {
 	void *ptr;
 	uint64_t length;
-	struct smp_segment *ss;
+	struct smp_segptr *ss;
 	struct smp_seg *sg;
 
 	if (smp_open_sign(sc, sc->ident->stuff[stuff], &ptr, &length, id))
@@ -426,18 +429,44 @@ smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
 	}
-	if (VTAILQ_EMPTY(&sc->segments)) {
-		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
-		AN(sg);
-		sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
-		sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
-		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
-fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
-	}
-
-	/* XXX: sanity check pointer+length for validity and non-overlap */
-
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Create a new segment
+ */
+
+static void
+smp_new_seg(struct smp_sc *sc)
+{
+	struct smp_seg *sg;
+	void *ptr;
+	uint64_t length;
+
+	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
+	AN(sg);
+	/* XXX: find where */
+	sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
+	sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
+	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
+fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
+
+	/* Neuter the new segment in case there is an old one there */
+	(void)smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT");
+	memcpy(ptr, &sg->segment, sizeof sg->segment);
+	smp_create_sign(sc, sg->offset, sizeof sg->segment, "SEGMENT");
+	smp_sync_sign(sc, sg->offset, sizeof sg->segment);
+
+	/* Then add it to the segment list. */
+	smp_save_segs(sc);
+
+	/* Set up our allocation point */
+	sc->cur_seg = sg;
+	sc->next_addr = sg->offset +
+	    sizeof (struct smp_sign) +
+	    sizeof (struct smp_segment) +
+	    SHA256_LEN;
+	memcpy(sc->ptr + sc->next_addr, "HERE", 4);
 }
 
 /*--------------------------------------------------------------------
@@ -463,8 +492,48 @@ smp_open(const struct stevedore *st)
 	 */
 	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
 		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
-	smp_save_segs(sc);
+
+	smp_new_seg(sc);
 }
+
+/*--------------------------------------------------------------------
+ * Allocate a bite
+ */
+
+static struct storage *
+smp_alloc(struct stevedore *st, size_t size)
+{
+	struct smp_sc *sc;
+	struct storage *ss;
+
+	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+
+	/* XXX: size fit check */
+	AN(sc->next_addr);
+
+	/* Grab and fill a storage structure */
+	ss = (void *)(sc->ptr + sc->next_addr);
+	memset(ss, 0, sizeof *ss);
+	ss->magic = STORAGE_MAGIC;
+	ss->space = size;
+	ss->ptr = (void *)(ss + 1);
+	ss->priv = sc->cur_seg;			/* XXX ? */
+	ss->stevedore = st;
+	ss->fd = sc->fd;
+	ss->where = sc->next_addr + sizeof *ss;
+
+	sc->next_addr += size + sizeof *ss;
+	return (ss);
+}
+
+static void
+smp_free(struct storage *st)
+{
+
+	/* XXX */
+	(void)st;
+}
+
 
 /*--------------------------------------------------------------------*/
 
@@ -473,7 +542,6 @@ struct stevedore smp_stevedore = {
 	.name	=	"persistent",
 	.init	=	smp_init,
 	.open	=	smp_open,
-	// .alloc	=	smf_alloc,
-	// .trim	=	smf_trim,
-	// .free	=	smf_free,
+	.alloc	=	smp_alloc,
+	.free	=	smp_free,
 };

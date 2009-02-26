@@ -55,6 +55,7 @@ STV_alloc(struct sess *sp, size_t size)
 		if (stv == NULL)
 			stv = VTAILQ_FIRST(&stevedores);
 		AN(stv);
+		AN(stv->name);
 
 		 /* XXX: only safe as long as pointer writes are atomic */
 		stv_next = stv;
@@ -103,6 +104,8 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 	AN(stv);
 
 	*stv = *stv2;
+	AN(stv->name);
+	AN(stv->alloc);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
