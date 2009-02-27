@@ -385,7 +385,11 @@ cnt_fetch(struct sess *sp)
 	AN(sp->bereq);
 	AN(sp->director);
 	AZ(sp->vbe);
+
+	sp->obj->xid = sp->xid;
+	WS_Assert(sp->obj->ws_o);
 	i = FetchHdr(sp);
+	
 	if (i == 0)
 		i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
