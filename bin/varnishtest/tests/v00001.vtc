@@ -29,11 +29,11 @@ varnish v1 -vcl+backend {
 		set bereq.request = "GET";
 	}
 	sub vcl_fetch {
-		set obj.http.foobar =
-		    obj.proto obj.response obj.status;
-		set obj.proto = "HTTP/1.2";
-		set obj.response = "For circular files";
-		set obj.status = 903;
+		set beresp.http.foobar =
+		    beresp.proto beresp.response beresp.status;
+		set beresp.proto = "HTTP/1.2";
+		set beresp.response = "For circular files";
+		set beresp.status = 903;
 	}
 	sub vcl_deliver {
 		set resp.proto = "HTTP/1.2";

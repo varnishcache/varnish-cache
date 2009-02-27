@@ -123,80 +123,91 @@ struct var vcc_vars[] = {
 	    V_RW,	    0,
 	    VCL_MET_PASS | VCL_MET_MISS
 	},
-	{ "beresp.request", STRING, 14,
-	    "VRT_r_beresp_request(sp)",	    "VRT_l_beresp_request(sp, ",
-	    V_RW,	    0,
-	    VCL_MET_FETCH
-	},
-	{ "beresp.url", STRING, 10,
-	    "VRT_r_beresp_url(sp)",	    "VRT_l_beresp_url(sp, ",
-	    V_RW,	    0,
-	    VCL_MET_FETCH
-	},
 	{ "beresp.proto", STRING, 12,
 	    "VRT_r_beresp_proto(sp)",	    "VRT_l_beresp_proto(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_FETCH
 	},
+	{ "beresp.status", INT, 13,
+	    "VRT_r_beresp_status(sp)",	    "VRT_l_beresp_status(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.response", STRING, 15,
+	    "VRT_r_beresp_response(sp)",	    "VRT_l_beresp_response(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
 	{ "beresp.http.", HEADER, 12,
 	    "VRT_r_beresp_http_(sp)",	    "VRT_l_beresp_http_(sp, ",
-	    V_RW,	    "HDR_BEREQ",
+	    V_RW,	    "HDR_BERESP",
+	    VCL_MET_FETCH
+	},
+	{ "beresp.cacheable", BOOL, 16,
+	    "VRT_r_beresp_cacheable(sp)",	    "VRT_l_beresp_cacheable(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.ttl", TIME, 10,
+	    "VRT_r_beresp_ttl(sp)",	    "VRT_l_beresp_ttl(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.grace", TIME, 12,
+	    "VRT_r_beresp_grace(sp)",	    "VRT_l_beresp_grace(sp, ",
+	    V_RW,	    0,
 	    VCL_MET_FETCH
 	},
 	{ "obj.proto", STRING, 9,
 	    "VRT_r_obj_proto(sp)",	    "VRT_l_obj_proto(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	    VCL_MET_HIT | VCL_MET_ERROR
 	},
 	{ "obj.status", INT, 10,
 	    "VRT_r_obj_status(sp)",	    "VRT_l_obj_status(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_FETCH | VCL_MET_ERROR
+	    VCL_MET_ERROR
 	},
 	{ "obj.response", STRING, 12,
 	    "VRT_r_obj_response(sp)",	    "VRT_l_obj_response(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_FETCH | VCL_MET_ERROR
+	    VCL_MET_ERROR
 	},
 	{ "obj.hits", INT, 8,
 	    "VRT_r_obj_hits(sp)",	    NULL,
 	    V_RO,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	    VCL_MET_HIT | VCL_MET_DELIVER
 	},
 	{ "obj.http.", HEADER, 9,
 	    "VRT_r_obj_http_(sp)",	    "VRT_l_obj_http_(sp, ",
 	    V_RW,	    "HDR_OBJ",
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	    VCL_MET_HIT | VCL_MET_ERROR
 	},
 	{ "obj.cacheable", BOOL, 13,
 	    "VRT_r_obj_cacheable(sp)",	    "VRT_l_obj_cacheable(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
-	     | VCL_MET_ERROR
+	    VCL_MET_HIT
 	},
 	{ "obj.ttl", TIME, 7,
 	    "VRT_r_obj_ttl(sp)",	    "VRT_l_obj_ttl(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
-	     | VCL_MET_ERROR
+	    VCL_MET_HIT | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.grace", TIME, 9,
 	    "VRT_r_obj_grace(sp)",	    "VRT_l_obj_grace(sp, ",
 	    V_RW,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DISCARD | VCL_MET_TIMEOUT
-	     | VCL_MET_ERROR
+	    VCL_MET_HIT | VCL_MET_DISCARD | VCL_MET_TIMEOUT | VCL_MET_ERROR
 	},
 	{ "obj.lastuse", TIME, 11,
 	    "VRT_r_obj_lastuse(sp)",	    NULL,
 	    V_RO,	    0,
-	    VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_DISCARD
-	     | VCL_MET_TIMEOUT | VCL_MET_ERROR
+	    VCL_MET_HIT | VCL_MET_DELIVER | VCL_MET_DISCARD | VCL_MET_TIMEOUT
+	     | VCL_MET_ERROR
 	},
 	{ "obj.hash", STRING, 8,
 	    "VRT_r_obj_hash(sp)",	    NULL,
 	    V_RO,	    0,
-	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
-	     | VCL_MET_ERROR
+	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "resp.proto", STRING, 10,
 	    "VRT_r_resp_proto(sp)",	    "VRT_l_resp_proto(sp, ",

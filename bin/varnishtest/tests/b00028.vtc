@@ -10,11 +10,15 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_fetch {
-		if (obj.http.foo ~ "bar") {
-			set obj.http.foo1 = "1";
+		if (beresp.http.foo ~ "bar") {
+			set beresp.http.foo1 = "1";
+		} else {
+			error 999;
 		}
-		if (obj.http.bar !~ "bar") {
-			set obj.http.bar1 = "1";
+		if (beresp.http.bar !~ "bar") {
+			set beresp.http.bar1 = "2";
+		} else {
+			error 999;
 		}
 	}
 
@@ -24,5 +28,5 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.foo1 == "1"
-	expect resp.http.bar1 == "1"
+	expect resp.http.bar1 == "2"
 } -run

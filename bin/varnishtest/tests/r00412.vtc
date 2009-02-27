@@ -13,11 +13,11 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
-		if (obj.status == 303) {
-			set obj.cacheable = true;
-			set obj.ttl = 60 s;
-			set obj.http.X-Magic-Redirect = "1";
-			set req.url = obj.http.Location;
+		if (beresp.status == 303) {
+			set beresp.cacheable = true;
+			set beresp.ttl = 60 s;
+			set beresp.http.X-Magic-Redirect = "1";
+			set req.url = beresp.http.Location;
 			restart;
 		}
 	}

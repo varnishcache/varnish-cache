@@ -13,8 +13,8 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_fetch {
-		if (obj.http.panic) {
-			panic "Had Panic header: " obj.http.panic;
+		if (beresp.http.panic) {
+			panic "Had Panic header: " beresp.http.panic;
 		}
 	}
 } -start

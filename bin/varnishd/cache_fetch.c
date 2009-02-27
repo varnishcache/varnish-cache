@@ -330,7 +330,7 @@ FetchHdr(struct sess *sp)
 
 	w = sp->wrk;
 	bereq = sp->bereq;
-	hp = &bereq->http[0];
+	hp = bereq->bereq;
 
 	VBE_GetFd(sp);
 	if (sp->vbe == NULL)
@@ -381,7 +381,7 @@ FetchHdr(struct sess *sp)
 		return (__LINE__);
 	}
 
-	hp = &bereq->http[1];
+	hp = bereq->beresp;
 
 	if (http_DissectResponse(sp->wrk, bereq->htc, hp)) {
 		VBE_ClosedFd(sp);
@@ -399,15 +399,18 @@ FetchBody(struct sess *sp)
 	struct vbe_conn *vc;
 	char *b;
 	int cls;
-	struct http *hp, *hp2;
+	struct http *hp;
 	struct storage *st;
 	int mklen, is_head;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
-	hp = &sp->bereq->http[1];
+
+	/* We use the unmodified headers */
+	hp = &sp->bereq->beresp[1];
 	AN(sp->director);
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
@@ -415,19 +418,7 @@ FetchBody(struct sess *sp)
 
 	vc = sp->vbe;
 
-	sp->obj->entered = TIM_real();
-	is_head = (strcasecmp(http_GetReq(&sp->bereq->http[0]), "head") == 0);
-
-	if (http_GetHdr(hp, H_Last_Modified, &b))
-		sp->obj->last_modified = TIM_parse(b);
-
-	/* Filter into object */
-	hp2 = sp->obj->http;
-
-	hp2->logtag = HTTP_Obj;
-	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
-	http_CopyHome(sp->wrk, sp->fd, hp2);
+	is_head = (strcasecmp(http_GetReq(sp->bereq->bereq), "head") == 0);
 
 	/* Determine if we have a body or not */
 	cls = 0;
@@ -495,7 +486,7 @@ FetchBody(struct sess *sp)
 	}
 
 	if (mklen > 0)
-		http_PrintfHeader(sp->wrk, sp->fd, hp2,
+		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 		    "Content-Length: %u", sp->obj->len);
 
 	if (http_HdrIs(hp, H_Connection, "close")) 

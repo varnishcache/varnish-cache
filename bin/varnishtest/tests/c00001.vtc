@@ -12,17 +12,17 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
-		set obj.http.Snafu1 = regsub(obj.http.Foobar, "ar", "\0\0");
-		set obj.http.Snafu2 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\3\2p");
-		set obj.http.Snafu3 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\\\3\2p");
-		set obj.http.Snafu4 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p");
-		set obj.http.Snafu5 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\0\4\3\2\\p");
-		set obj.http.Snafu6 =
-		    regsub(obj.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p\");
+		set beresp.http.Snafu1 = regsub(beresp.http.Foobar, "ar", "\0\0");
+		set beresp.http.Snafu2 =
+		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\3\2p");
+		set beresp.http.Snafu3 =
+		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\\\3\2p");
+		set beresp.http.Snafu4 =
+		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p");
+		set beresp.http.Snafu5 =
+		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\0\4\3\2\\p");
+		set beresp.http.Snafu6 =
+		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p\");
 	}
 } -start 
 

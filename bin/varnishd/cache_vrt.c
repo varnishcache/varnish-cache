@@ -100,10 +100,10 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->http;
 		break;
 	case HDR_BEREQ:
-		hp = &sp->bereq->http[0];
+		hp = sp->bereq->bereq;
 		break;
 	case HDR_BERESP:
-		hp = &sp->bereq->http[1];
+		hp = sp->bereq->beresp;
 		break;
 	case HDR_RESP:
 		hp = sp->http;
@@ -243,13 +243,15 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
 VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
 VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	sp->bereq->http,	HTTP_HDR_REQ)
-VRT_DO_HDR(bereq, url,		sp->bereq->http,	HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	sp->bereq->http,	HTTP_HDR_PROTO)
+VRT_DO_HDR(bereq, request,	sp->bereq->bereq,	HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, url,		sp->bereq->bereq,	HTTP_HDR_URL)
+VRT_DO_HDR(bereq, proto,	sp->bereq->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp,  proto,	sp->bereq->beresp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp,  response,	sp->bereq->beresp,	HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 
@@ -277,6 +279,7 @@ VRT_r_obj_status(const struct sess *sp)
 	/* XXX: use http_GetStatus() */
 	if (sp->obj->http->status)
 		return (sp->obj->http->status);
+	AN(sp->obj->http->hd[HTTP_HDR_STATUS].b);
 	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
 }
 
@@ -301,6 +304,93 @@ VRT_r_resp_status(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	return (atoi(sp->http->hd[HTTP_HDR_STATUS].b));
 }
+
+/*--------------------------------------------------------------------*/
+
+#define VBEREQ(dir, type,onm,field)					\
+void									\
+VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
+{									\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */	\
+	sp->bereq->field = a;						\
+}									\
+									\
+type									\
+VRT_r_##dir##_##onm(const struct sess *sp)				\
+{									\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */	\
+	return (sp->bereq->field);					\
+}
+
+VBEREQ(beresp, unsigned, cacheable, cacheable)
+VBEREQ(beresp, double, grace, grace)
+
+/*--------------------------------------------------------------------
+ * XXX: Working relative to t_req is maybe not the right thing, we could
+ * XXX: have spent a long time talking to the backend since then.
+ * XXX: It might make sense to cache a timestamp as "current time"
+ * XXX: before vcl_recv (== t_req) and vcl_fetch.
+ * XXX: On the other hand, that might lead to inconsistent behaviour
+ * XXX: where an object expires while we are running VCL code, and
+ * XXX: and that may not be a good idea either.
+ * XXX: See also related t_req use in cache_hash.c
+ */
+
+void
+VRT_l_beresp_ttl(const struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req);
+	/*
+	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
+	 * any longer, but it will still be for up to 1s - epsilon because
+	 * of the rounding to seconds.
+	 * We special case and make sure that rounding does not surprise.
+	 */
+	if (a <= 0)
+		sp->bereq->ttl = sp->t_req - 1;
+	else
+		sp->bereq->ttl = sp->t_req + a;
+}
+
+double
+VRT_r_beresp_ttl(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */
+	return (sp->bereq->ttl - sp->t_req);
+}
+
+void
+VRT_l_beresp_status(const struct sess *sp, int num)
+{
+	char *p;
+
+	assert(num >= 100 && num <= 999);
+	p = WS_Alloc(sp->obj->http->ws, 4);
+	if (p == NULL)
+		WSP(sp, SLT_LostHeader, "%s", "obj.status");
+	else
+		sprintf(p, "%d", num);
+	http_SetH(sp->bereq->beresp, HTTP_HDR_STATUS, p);
+}
+
+int
+VRT_r_beresp_status(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+	/* XXX: use http_GetStatus() */
+	if (sp->bereq->beresp->status)
+		return (sp->bereq->beresp->status);
+	AN(sp->bereq->beresp->hd[HTTP_HDR_STATUS].b);
+	return (atoi(sp->bereq->beresp->hd[HTTP_HDR_STATUS].b));
+}
+
 
 void
 VRT_l_bereq_connect_timeout(struct sess *sp, double num)

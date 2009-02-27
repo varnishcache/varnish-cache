@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_fetch {
-		if (obj.status != 200) {
+		if (beresp.status != 200) {
 			restart;
 		}
 	}

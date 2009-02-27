@@ -637,7 +637,7 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	AZ(sp->bereq);
 	bereq = VBE_new_bereq();
 	AN(bereq);
-	hp = bereq->http;
+	hp = bereq->bereq;
 	hp->logtag = HTTP_Tx;
 
 	http_copyreq(hp, sp->http, how);

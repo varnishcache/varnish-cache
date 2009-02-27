@@ -146,24 +146,39 @@ set spobj {
 
     #######################################################################
     # Response from the backend
-    { beresp.request
-	RW STRING
-	{                             fetch                        }
-	"const struct sess *"
-    }
-    { beresp.url
-	RW STRING
-	{                             fetch                        }
-	"const struct sess *"
-    }
     { beresp.proto
 	RW STRING
 	{                             fetch                        }
 	"const struct sess *"
     }
-    { beresp.http.
-	RW HDR_BEREQ
+    { beresp.status
+	RW INT
 	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.response
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.http.
+	RW HDR_BERESP
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.cacheable
+	RW BOOL
+	{                             fetch                              }
+	"const struct sess *"
+    }
+    { beresp.ttl
+	RW TIME
+	{                             fetch				 }
+	"const struct sess *"
+    }
+    { beresp.grace
+	RW TIME
+	{                             fetch				 }
 	"const struct sess *"
     }
 
@@ -171,56 +186,57 @@ set spobj {
     # The (possibly) cached object
     { obj.proto
 	RW STRING
-	{                         hit fetch                         error}
+	{                         hit                               error}
 	"const struct sess *"
     }
     { obj.status
 	RW INT
-	{                             fetch                         error}
+	{                                                           error}
 	"const struct sess *"
     }
     { obj.response
 	RW STRING
-	{                             fetch                         error}
+	{                                                           error}
 	"const struct sess *"
     }
     { obj.hits
 	RO INT
-	{			  hit fetch deliver                      }
+	{			  hit       deliver                      }
 	"const struct sess *"
     }
     { obj.http.
 	RW HDR_OBJ
-	{                         hit fetch 			    error}
+	{                         hit       			    error}
 	"const struct sess *"
     }
 
     { obj.cacheable
 	RW BOOL
-	{                         hit fetch         discard timeout error}
+	{                         hit                                    }
 	"const struct sess *"
     }
     { obj.ttl
 	RW TIME
-	{                         hit fetch         discard timeout error}
+	{                         hit               discard timeout error}
 	"const struct sess *"
     }
     { obj.grace
 	RW TIME
-	{                         hit fetch         discard timeout error}
+	{                         hit               discard timeout error}
 	"const struct sess *"
     }
     { obj.lastuse
 	RO TIME
-	{                         hit fetch deliver discard timeout error}
+	{                         hit       deliver discard timeout error}
 	"const struct sess *"
     }
     { obj.hash
 	RO STRING
-	{                    miss hit fetch deliver                 error}
+	{                    miss hit       deliver                 error}
 	"const struct sess *"
     }
 
+    #######################################################################
     # The response we send back
     { resp.proto
 	RW STRING

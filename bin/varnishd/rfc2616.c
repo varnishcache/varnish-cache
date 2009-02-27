@@ -68,15 +68,19 @@
  *
  */
 
-static double
-RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
+double
+RFC2616_Ttl(const struct sess *sp)
 {
 	int ttl;
 	unsigned max_age, age;
 	double h_date, h_expires, ttd;
 	char *p;
+	const struct http *hp;
 
-	assert(obj->entered != 0.0 && !isnan(sp->obj->entered));
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+	hp = sp->bereq->beresp;
+
+	assert(sp->bereq->entered != 0.0 && !isnan(sp->bereq->entered));
 	/* If all else fails, cache using default ttl */
 	ttl = params->default_ttl;
 
@@ -99,7 +103,7 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 			max_age = strtoul(p, NULL, 0);
 			if (http_GetHdr(hp, H_Age, &p)) {
 				age = strtoul(p, NULL, 0);
-				obj->age = age;
+				sp->bereq->age = age;
 			}
 
 			if (age > max_age)
@@ -126,14 +130,14 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 		}
 
 		if (h_date == 0 ||
-		    (h_date < obj->entered + params->clock_skew &&
-		    h_date + params->clock_skew > obj->entered)) {
+		    (h_date < sp->bereq->entered + params->clock_skew &&
+		    h_date + params->clock_skew > sp->bereq->entered)) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < obj->entered)
+			if (h_expires < sp->bereq->entered)
 				ttl = 0;
 			else
 				ttd = h_expires;
@@ -150,58 +154,13 @@ RFC2616_Ttl(const struct sess *sp, const struct http *hp, struct object *obj)
 	} while (0);
 
 	if (ttl > 0 && ttd == 0)
-		ttd = obj->entered + ttl;
+		ttd = sp->bereq->entered + ttl;
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %u %u", sp->xid,
-	    ttd ? (int)(ttd - obj->entered) : 0,
-	    (int)obj->entered, (int)h_date,
+	    ttd ? (int)(ttd - sp->bereq->entered) : 0,
+	    (int)sp->bereq->entered, (int)h_date,
 	    (int)h_expires, max_age, age);
 
 	return (ttd);
 }
-
-/*
- * We could move this policy to vcl_fetch{} now but I have decided to leave
- * it here for the POLA principle.  It is not credible to think that a
- * majority of our uses will change the cacheability decision, so moving
- * it to VCL would just make the average and median vcl_fetch{} implementation
- * harder for people to write.  Instead the minority who want to override
- * the RFC2616 mandated behaviour, can do so in their vcl_fetch{}
- */
-int
-RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
-{
-	int body = 0;
-	double ttl;
-
-	/*
-	 * Initial cacheability determination per [RFC2616, 13.4]
-	 * We do not support ranges yet, so 206 is out.
-	 */
-	sp->obj->response = http_GetStatus(hp);
-	switch (sp->obj->response) {
-	case 200: /* OK */
-	case 203: /* Non-Authoritative Information */
-	case 300: /* Multiple Choices */
-	case 301: /* Moved Permanently */
-	case 302: /* Moved Temporarily */
-	case 410: /* Gone */
-	case 404: /* Not Found */
-		sp->obj->cacheable = 1;
-		body = 1;
-		break;
-	default:
-		sp->obj->cacheable = 0;
-		body = 0;
-		break;
-	}
-
-	ttl = RFC2616_Ttl(sp, hp, sp->obj);
-	sp->obj->ttl = ttl;
-	if (ttl == 0)
-		sp->obj->cacheable = 0;
-
-	return (body);
-}
-
