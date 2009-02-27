@@ -315,7 +315,6 @@ FetchHdr(struct sess *sp)
 	char *b;
 	struct http *hp;
 	struct bereq *bereq;
-	struct http_conn htc[1];
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -368,10 +367,10 @@ FetchHdr(struct sess *sp)
 
 	/* Receive response */
 
-	HTC_Init(htc, bereq->ws, vc->fd);
+	HTC_Init(bereq->htc, bereq->ws, vc->fd);
 	TCP_set_read_timeout(vc->fd, sp->first_byte_timeout);
 	do {
-		i = HTC_Rx(htc);
+		i = HTC_Rx(bereq->htc);
 		TCP_set_read_timeout(vc->fd, sp->between_bytes_timeout);
 	}
 	while (i == 0);
@@ -384,7 +383,7 @@ FetchHdr(struct sess *sp)
 
 	hp = &bereq->http[1];
 
-	if (http_DissectResponse(sp->wrk, htc, hp)) {
+	if (http_DissectResponse(sp->wrk, bereq->htc, hp)) {
 		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
@@ -403,7 +402,6 @@ FetchBody(struct sess *sp)
 	struct http *hp, *hp2;
 	struct storage *st;
 	int mklen, is_head;
-	struct http_conn htc[1];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -437,10 +435,10 @@ FetchBody(struct sess *sp)
 	if (is_head) {
 		/* nothing */
 	} else if (http_GetHdr(hp, H_Content_Length, &b)) {
-		cls = fetch_straight(sp, htc, b);
+		cls = fetch_straight(sp, sp->bereq->htc, b);
 		mklen = 1;
 	} else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		cls = fetch_chunked(sp, htc);
+		cls = fetch_chunked(sp, sp->bereq->htc);
 		mklen = 1;
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		/* XXX: AUGH! */
@@ -459,13 +457,13 @@ FetchBody(struct sess *sp)
 		 * If we have connection closed, it is safe to read what
 		 * comes in any case.
 		 */
-		cls = fetch_eof(sp, htc);
+		cls = fetch_eof(sp, sp->bereq->htc);
 		mklen = 1;
 	} else if (hp->protover < 1.1) {
 		/*
 		 * With no Connection header, assume EOF
 		 */
-		cls = fetch_eof(sp, htc);
+		cls = fetch_eof(sp, sp->bereq->htc);
 		mklen = 1;
 	} else {
 		/*

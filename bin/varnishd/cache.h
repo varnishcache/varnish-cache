@@ -243,6 +243,7 @@ struct bereq {
 	VTAILQ_ENTRY(bereq)	list;
 	struct ws		ws[1];
 	struct http		http[2];
+	struct http_conn	htc[1];
 };
 
 /* Storage -----------------------------------------------------------*/
