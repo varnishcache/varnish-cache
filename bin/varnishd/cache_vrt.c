@@ -776,6 +776,23 @@ VRT_Rollback(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_ESI(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+
+	if (sp->cur_method != VCL_MET_FETCH) {
+		/* XXX: we should catch this at compile time */
+		WSP(sp, SLT_VCL_error,
+		    "esi can only be called from vcl_fetch");
+		return;
+	}
+
+	sp->bereq->do_esi = 1;
+}
+
+/*--------------------------------------------------------------------*/
+
 /*lint -e{818} sp could be const */
 void
 VRT_panic(struct sess *sp, const char *str, ...)
