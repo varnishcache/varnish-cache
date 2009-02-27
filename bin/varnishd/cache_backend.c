@@ -163,7 +163,8 @@ VBE_new_bereq(void)
 		WS_Init(bereq->ws, "bereq", bereq + 1, len);
 		VSL_stats->n_bereq++;
 	}
-	http_Setup(bereq->http, bereq->ws);
+	http_Setup(&bereq->http[0], bereq->ws);
+	http_Setup(&bereq->http[1], bereq->ws);
 	return (bereq);
 }
 
