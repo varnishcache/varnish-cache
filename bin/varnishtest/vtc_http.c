@@ -321,6 +321,11 @@ http_rxchar_eof(struct http *hp, int n)
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
+		if (i <= 0) {
+			vtc_log(hp->vl, 0, "HTTP rx failed (%s)",
+			    strerror(errno));
+			exit (1);
+		}
 		assert(i > 0);
 		assert(hp->prxbuf < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
@@ -341,8 +346,7 @@ http_rxchar(struct http *hp, int n)
 
 	i = http_rxchar_eof(hp, n);
 	if (i <= 0) {
-		vtc_log(hp->vl, 0, "HTTP rx failed (%s)",
-		    strerror(errno));
+		vtc_log(hp->vl, 0, "HTTP rx failed (%s)", strerror(errno));
 		exit (1);
 	}
 	assert(i > 0);
