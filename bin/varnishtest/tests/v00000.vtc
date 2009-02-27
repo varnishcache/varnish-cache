@@ -15,8 +15,8 @@ varnish v1 -vcl+backend {
 		set req.grace += 1 s;
 	}
 	sub vcl_fetch {
-		set obj.ttl += 1 m;
-		set obj.grace += 1 h;
+		set beresp.ttl += 1 m;
+		set beresp.grace += 1 h;
 	}
 } -start
 

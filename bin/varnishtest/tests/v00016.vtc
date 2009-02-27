@@ -63,13 +63,13 @@ varnish v1 -vcl {
 
 	/* test time and backend comparison */
 	sub vcl_fetch {
-		if (obj.ttl > 1d) {
-			set obj.ttl = 1d;
+		if (beresp.ttl > 1d) {
+			set beresp.ttl = 1d;
 		}
 		if (req.backend == b) {
-			set obj.ttl = 1d;
+			set beresp.ttl = 1d;
 		} else if (req.backend != b) {
-			set obj.ttl = 1h;
+			set beresp.ttl = 1h;
 		}
 	}
 	

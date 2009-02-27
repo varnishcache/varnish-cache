@@ -242,8 +242,15 @@ struct bereq {
 #define BEREQ_MAGIC		0x3b6d250c
 	VTAILQ_ENTRY(bereq)	list;
 	struct ws		ws[1];
-	struct http		http[2];
+	struct http		bereq[1];
+	struct http		beresp[2];
 	struct http_conn	htc[1];
+	unsigned		cacheable;
+	double			age;
+	double			entered;
+	double			ttl;
+	double			grace;
+	unsigned		do_esi;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -639,6 +646,7 @@ void VCL_Poll(void);
 
 void ESI_Deliver(struct sess *);
 void ESI_Destroy(struct object *);
+void ESI_Parse(struct sess *);
 
 /* cache_ws.c */
 
@@ -654,7 +662,7 @@ char *WS_Snapshot(struct ws *ws);
 unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
-int RFC2616_cache_policy(const struct sess *sp, const struct http *hp);
+double RFC2616_Ttl(const struct sess *sp);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);

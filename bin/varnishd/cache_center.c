@@ -378,6 +378,8 @@ static int
 cnt_fetch(struct sess *sp)
 {
 	int i;
+	struct http *hp, *hp2;
+	char *b;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -388,10 +390,79 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	WS_Assert(sp->obj->ws_o);
+
 	i = FetchHdr(sp);
+
+	/*
+	 * Save a copy before it might get mangled in VCL.  When it comes to
+	 * dealing with the body, we want to see the unadultered headers.
+	 */
+	sp->bereq->beresp[1] = sp->bereq->beresp[0];
+
+	if (i) {
+		sp->err_code = 503;
+		sp->step = STP_ERROR;
+		VBE_free_bereq(&sp->bereq);
+		HSH_Drop(sp);
+		AZ(sp->obj);
+		return (0);
+	}
+
+	sp->err_code = http_GetStatus(sp->bereq->beresp);
+
+	/*
+	 * Initial cacheability determination per [RFC2616, 13.4]
+	 * We do not support ranges yet, so 206 is out.
+	 */
+	switch (sp->err_code) {
+	case 200: /* OK */
+	case 203: /* Non-Authoritative Information */
+	case 300: /* Multiple Choices */
+	case 301: /* Moved Permanently */
+	case 302: /* Moved Temporarily */
+	case 410: /* Gone */
+	case 404: /* Not Found */
+		sp->bereq->cacheable = 1;
+		break;
+	default:
+		sp->bereq->cacheable = 0;
+		break;
+	}
+
+	sp->bereq->entered = TIM_real();
+	sp->bereq->age = 0;
+	sp->bereq->ttl = RFC2616_Ttl(sp);
+
+	if (sp->bereq->ttl == 0.)
+		sp->bereq->cacheable = 0;
+
+	sp->bereq->do_esi = 0;
+	sp->bereq->grace = NAN;
+
+	VCL_fetch_method(sp);
+
+	sp->obj->response = sp->err_code;
+	sp->obj->cacheable = sp->bereq->cacheable;
+	sp->obj->ttl = sp->bereq->ttl;
+	sp->obj->grace = sp->bereq->grace;
+	if (sp->obj->ttl == 0.)
+		sp->obj->cacheable = 0;
+	sp->obj->age = sp->bereq->age;
+	sp->obj->entered = sp->bereq->entered;
+
+	/* Filter into object */
+	hp = sp->bereq->beresp;
+	hp2 = sp->obj->http;
+
+	hp2->logtag = HTTP_Obj;
+	http_CopyResp(hp2, hp);
+	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
+	http_CopyHome(sp->wrk, sp->fd, hp2);
+
+	if (http_GetHdr(hp, H_Last_Modified, &b))
+		sp->obj->last_modified = TIM_parse(b);
 	
-	if (i == 0)
-		i = FetchBody(sp);
+	i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbe);
 	AN(sp->director);
@@ -405,10 +476,8 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 
-	RFC2616_cache_policy(sp, sp->obj->http);	/* XXX -> VCL */
-
-	sp->err_code = http_GetStatus(sp->obj->http);
-	VCL_fetch_method(sp);
+	if (sp->bereq->do_esi)
+		ESI_Parse(sp);
 
 	VBE_free_bereq(&sp->bereq);
 

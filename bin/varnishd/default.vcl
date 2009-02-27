@@ -91,10 +91,10 @@ sub vcl_miss {
 }
 
 sub vcl_fetch {
-    if (!obj.cacheable) {
+    if (!beresp.cacheable) {
         return (pass);
     }
-    if (obj.http.Set-Cookie) {
+    if (beresp.http.Set-Cookie) {
         return (pass);
     }
     return (deliver);

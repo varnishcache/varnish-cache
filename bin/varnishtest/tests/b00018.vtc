@@ -9,7 +9,7 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
-	    set obj.http.Foo = "bar";
+	    set beresp.http.Foo = "bar";
 	    error 523 "not ok";
 	}
 } -start

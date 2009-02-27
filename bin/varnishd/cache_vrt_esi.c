@@ -398,8 +398,8 @@ esi_handle_include(struct esi_work *ew)
 			 */
 			CHECK_OBJ_NOTNULL(ew->sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(ew->sp->bereq, BEREQ_MAGIC);
-			CHECK_OBJ_NOTNULL(ew->sp->bereq->http, HTTP_MAGIC);
-			tag = ew->sp->bereq->http->hd[HTTP_HDR_URL];
+			CHECK_OBJ_NOTNULL(ew->sp->bereq->bereq, HTTP_MAGIC);
+			tag = ew->sp->bereq->bereq->hd[HTTP_HDR_URL];
 
 			/* Use the objects WS to store the result */
 			CHECK_OBJ_NOTNULL(ew->sp->obj, OBJECT_MAGIC);
@@ -639,12 +639,8 @@ parse_esi_tag(struct esi_work *ew, int closing)
 void
 VRT_ESI(struct sess *sp)
 {
-	struct esi_work *ew, eww[1];
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	if (sp->obj->objcore != NULL)	/* Pass has no objcore */
-		AN(ObjIsBusy(sp->obj));
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
 		WSP(sp, SLT_VCL_error,
@@ -652,6 +648,19 @@ VRT_ESI(struct sess *sp)
 		return;
 	}
 
+	sp->bereq->do_esi = 1;
+}
+
+
+void
+ESI_Parse(struct sess *sp)
+{
+	struct esi_work *ew, eww[1];
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	if (sp->obj->objcore != NULL)	/* Pass has no objcore */
+		AN(ObjIsBusy(sp->obj));
 	if (VTAILQ_EMPTY(&sp->obj->store))
 		return;
 

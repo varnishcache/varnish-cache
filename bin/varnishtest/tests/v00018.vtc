@@ -15,14 +15,14 @@ varnish v1 -badvcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { error obj.status ; }
+	sub vcl_fetch { error beresp.status ; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { error req.url ; }
 	sub vcl_pass { error "the butter please" ; }
-	sub vcl_fetch { error obj.status req.url; }
+	sub vcl_fetch { error beresp.status req.url; }
 }
 
 varnish v1 -badvcl {
@@ -37,12 +37,12 @@ varnish v1 -badvcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.ttl /= 2; }
+	sub vcl_fetch { set beresp.ttl /= 2; }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.ttl >>= 2; }
+	sub vcl_fetch { set beresp.ttl >>= 2; }
 }
 
 varnish v1 -badvcl {
@@ -78,22 +78,22 @@ varnish v1 -badvcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.cacheable = true; }
+	sub vcl_fetch { set beresp.cacheable = true; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.cacheable = false; }
+	sub vcl_fetch { set beresp.cacheable = false; }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.cacheable = mu; }
+	sub vcl_fetch { set beresp.cacheable = mu; }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { unset obj.cacheable; }
+	sub vcl_fetch { unset beresp.cacheable; }
 }
 
 varnish v1 -badvcl {
