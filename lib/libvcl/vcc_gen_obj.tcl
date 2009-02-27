@@ -106,6 +106,7 @@ set spobj {
 	"struct sess *"
     }
 
+    #######################################################################
     # Request sent to backend
     { bereq.request
 	RW STRING
@@ -143,6 +144,30 @@ set spobj {
 	"struct sess *"
     }
 
+    #######################################################################
+    # Response from the backend
+    { beresp.request
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.url
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.proto
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.http.
+	RW HDR_BEREQ
+	{                             fetch                        }
+	"const struct sess *"
+    }
+
+    #######################################################################
     # The (possibly) cached object
     { obj.proto
 	RW STRING

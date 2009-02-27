@@ -102,6 +102,9 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 	case HDR_BEREQ:
 		hp = &sp->bereq->http[0];
 		break;
+	case HDR_BERESP:
+		hp = &sp->bereq->http[1];
+		break;
 	case HDR_RESP:
 		hp = sp->http;
 		break;

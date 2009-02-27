@@ -308,16 +308,13 @@ FetchReqBody(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-Fetch(struct sess *sp)
+FetchHdr(struct sess *sp)
 {
 	struct vbe_conn *vc;
 	struct worker *w;
 	char *b;
-	int cls;
-	struct http *hp, *hp2;
-	struct storage *st;
+	struct http *hp;
 	struct bereq *bereq;
-	int mklen, is_head;
 	struct http_conn htc[1];
 	int i;
 
@@ -335,7 +332,6 @@ Fetch(struct sess *sp)
 	w = sp->wrk;
 	bereq = sp->bereq;
 	hp = &bereq->http[0];
-	is_head = (strcasecmp(http_GetReq(hp), "head") == 0);
 
 	sp->obj->xid = sp->xid;
 
@@ -398,7 +394,37 @@ Fetch(struct sess *sp)
 		return (__LINE__);
 	}
 
+	return (0);
+
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+FetchBody(struct sess *sp)
+{
+	struct vbe_conn *vc;
+	char *b;
+	int cls;
+	struct http *hp, *hp2;
+	struct storage *st;
+	int mklen, is_head;
+	struct http_conn htc[1];
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
+	hp = &sp->bereq->http[1];
+	AN(sp->director);
+	if (sp->obj->objcore != NULL)		/* pass has no objcore */
+		AN(ObjIsBusy(sp->obj));
+	AN(sp->bereq);
+
+	vc = sp->vbe;
+
 	sp->obj->entered = TIM_real();
+	is_head = (strcasecmp(http_GetReq(&sp->bereq->http[0]), "head") == 0);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);

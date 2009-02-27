@@ -123,6 +123,26 @@ struct var vcc_vars[] = {
 	    V_RW,	    0,
 	    VCL_MET_PASS | VCL_MET_MISS
 	},
+	{ "beresp.request", STRING, 14,
+	    "VRT_r_beresp_request(sp)",	    "VRT_l_beresp_request(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.url", STRING, 10,
+	    "VRT_r_beresp_url(sp)",	    "VRT_l_beresp_url(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.proto", STRING, 12,
+	    "VRT_r_beresp_proto(sp)",	    "VRT_l_beresp_proto(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.http.", HEADER, 12,
+	    "VRT_r_beresp_http_(sp)",	    "VRT_l_beresp_http_(sp, ",
+	    V_RW,	    "HDR_BEREQ",
+	    VCL_MET_FETCH
+	},
 	{ "obj.proto", STRING, 9,
 	    "VRT_r_obj_proto(sp)",	    "VRT_l_obj_proto(sp, ",
 	    V_RW,	    0,

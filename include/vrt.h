@@ -150,7 +150,7 @@ int VRT_rewrite(const char *, const char *);
 void VRT_error(struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ };
+enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
 char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
 void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
     const char *, ...);

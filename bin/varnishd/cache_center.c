@@ -355,7 +355,7 @@ DOT		label="fetch from backend\n(find obj.ttl)"
 DOT	]
 DOT	vcl_fetch [
 DOT		shape=record
-DOT		label="vcl_fetch()|req.\nobj.\nbereq."
+DOT		label="vcl_fetch()|req.\nobj.\nbereq.\nberesp."
 DOT	]
 DOT	fetch -> vcl_fetch [style=bold,color=blue,weight=2]
 DOT	fetch_pass [
@@ -385,7 +385,9 @@ cnt_fetch(struct sess *sp)
 	AN(sp->bereq);
 	AN(sp->director);
 	AZ(sp->vbe);
-	i = Fetch(sp);
+	i = FetchHdr(sp);
+	if (i == 0)
+		i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbe);
 	AN(sp->director);
