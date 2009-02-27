@@ -115,10 +115,10 @@ struct smp_sign {
 #define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + SHA256_LEN)
 
 /*
- * A segment descriptor.
+ * A segment pointer.
  */
 
-struct smp_segment {
+struct smp_segptr {
 	uint64_t		offset;
 	uint64_t		length;
 };
@@ -148,3 +148,12 @@ struct smp_object {
 };
 
 #define SMP_OBJECT_SIZE		(32 + 8 + 8 + 8 + 8)
+
+/*
+ * Segment
+ */
+
+struct smp_segment {
+	uint64_t		objlist;
+	unsigned		nalloc;
+};
