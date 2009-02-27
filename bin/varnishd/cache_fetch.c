@@ -333,10 +333,6 @@ FetchHdr(struct sess *sp)
 	bereq = sp->bereq;
 	hp = &bereq->http[0];
 
-	sp->obj->xid = sp->xid;
-
-	/* Set up obj's workspace */
-	WS_Assert(sp->obj->ws_o);
 	VBE_GetFd(sp);
 	if (sp->vbe == NULL)
 		return (__LINE__);
@@ -393,9 +389,7 @@ FetchHdr(struct sess *sp)
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
-
 	return (0);
-
 }
 
 /*--------------------------------------------------------------------*/
