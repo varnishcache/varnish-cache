@@ -329,9 +329,12 @@ Fetch(struct sess *sp)
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
 	AN(sp->bereq);
+
+	/* Transmit request */
+
 	w = sp->wrk;
 	bereq = sp->bereq;
-	hp = bereq->http;
+	hp = &bereq->http[0];
 	is_head = (strcasecmp(http_GetReq(hp), "head") == 0);
 
 	sp->obj->xid = sp->xid;
@@ -371,6 +374,8 @@ Fetch(struct sess *sp)
 	/* XXX is this the right place? */
 	VSL_stats->backend_req++;
 
+	/* Receive response */
+
 	HTC_Init(htc, bereq->ws, vc->fd);
 	TCP_set_read_timeout(vc->fd, sp->first_byte_timeout);
 	do {
@@ -384,6 +389,8 @@ Fetch(struct sess *sp)
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
+
+	hp = &bereq->http[1];
 
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
 		VBE_ClosedFd(sp);

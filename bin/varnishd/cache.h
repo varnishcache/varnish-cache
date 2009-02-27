@@ -242,7 +242,7 @@ struct bereq {
 #define BEREQ_MAGIC		0x3b6d250c
 	VTAILQ_ENTRY(bereq)	list;
 	struct ws		ws[1];
-	struct http		http[1];
+	struct http		http[2];
 };
 
 /* Storage -----------------------------------------------------------*/
