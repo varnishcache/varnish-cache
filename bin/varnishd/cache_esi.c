@@ -637,22 +637,6 @@ parse_esi_tag(struct esi_work *ew, int closing)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ESI(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
-
-	if (sp->cur_method != VCL_MET_FETCH) {
-		/* XXX: we should catch this at compile time */
-		WSP(sp, SLT_VCL_error,
-		    "esi can only be called from vcl_fetch");
-		return;
-	}
-
-	sp->bereq->do_esi = 1;
-}
-
-
-void
 ESI_Parse(struct sess *sp)
 {
 	struct esi_work *ew, eww[1];

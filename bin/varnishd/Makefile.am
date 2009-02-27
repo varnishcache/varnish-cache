@@ -21,6 +21,7 @@ varnishd_SOURCES = \
 	cache_dir_random.c \
 	cache_dir_round_robin.c \
 	cache_dir_simple.c \
+	cache_esi.c \
 	cache_expire.c \
 	cache_fetch.c \
 	cache_hash.c \
@@ -36,7 +37,6 @@ varnishd_SOURCES = \
 	cache_vary.c \
 	cache_vcl.c \
 	cache_vrt.c \
-	cache_vrt_esi.c \
 	cache_vrt_re.c \
 	cache_ws.c \
 	hash_classic.c \
