@@ -396,6 +396,7 @@ struct sess {
 	struct vbe_conn		*vbe;
 	struct bereq		*bereq;
 	struct object		*obj;
+	struct objcore		*objcore;
 	struct objhead		*objhead;
 	struct VCL_conf		*vcl;
 

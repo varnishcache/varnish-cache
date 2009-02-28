@@ -319,11 +319,14 @@ FetchHdr(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	AN(sp->director);
-	if (sp->obj->objcore != NULL)		/* pass has no objcore */
-		AN(ObjIsBusy(sp->obj));
+	AZ(sp->obj);
+	if (sp->objcore != NULL) {		/* pass has no objcore */
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		AN(sp->objhead);		/* details in hash_slinger.h */
+		AN(sp->objcore->flags & OC_F_BUSY);
+	}
 	AN(sp->bereq);
 
 	/* Transmit request */

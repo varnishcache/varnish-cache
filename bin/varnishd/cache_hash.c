@@ -308,6 +308,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	busy_oc = NULL;
 	grace_oc = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		/* Must be at least our own ref + the objcore we examine */
+		assert(oh->refcnt > 1);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 		if (oc->flags & OC_F_BUSY) {
@@ -359,6 +361,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o->refcnt++;
 		if (o->hits < INT_MAX)
 			o->hits++;
+		assert(oh->refcnt > 1);
 		Lck_Unlock(&oh->mtx);
 		assert(hash->deref(oh));
 		*poh = oh;
@@ -454,10 +457,10 @@ HSH_Unbusy(const struct sess *sp)
 		Lck_Lock(&oh->mtx);
 	}
 	o->objcore->flags &= ~OC_F_BUSY;
-	if (oh != NULL)
+	if (oh != NULL) {
 		hsh_rush(oh);
-	if (oh != NULL)
 		Lck_Unlock(&oh->mtx);
+	}
 }
 
 void
@@ -472,6 +475,29 @@ HSH_Ref(struct object *o)
 	assert(o->refcnt > 0);
 	o->refcnt++;
 	Lck_Unlock(&oh->mtx);
+}
+
+void
+HSH_DerefObjCore(struct sess *sp)
+{
+	struct objhead *oh;
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+
+	oh = sp->objhead;
+	sp->objhead = NULL;
+	oc = sp->objcore;
+	sp->objcore = NULL;
+
+	Lck_Lock(&oh->mtx);
+	VTAILQ_REMOVE(&oh->objcs, oc, list);
+	Lck_Unlock(&oh->mtx);
+	assert(oh->refcnt > 0);
+	if (hash->deref(oh))
+		return;
+	HSH_DeleteObjHead(sp->wrk, oh);
 }
 
 void
@@ -492,7 +518,7 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		assert(o->refcnt > 0);
 		r = --o->refcnt;
 	} else {
-		CHECK_OBJ(oh, OBJHEAD_MAGIC);
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 		oc = o->objcore;
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -525,6 +551,7 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		STV_free(o->objstore);
 	else
 		FREE_OBJ(o);
+	o = NULL;
 	w->stats->n_object--;
 
 	if (oh == NULL) {
@@ -539,6 +566,7 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		return;
 	HSH_DeleteObjHead(w, oh);
 }
+
 
 void
 HSH_Init(void)

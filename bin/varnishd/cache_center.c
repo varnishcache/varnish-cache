@@ -378,6 +378,7 @@ cnt_fetch(struct sess *sp)
 {
 	int i;
 	struct http *hp, *hp2;
+	struct object *o;
 	char *b;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -386,9 +387,6 @@ cnt_fetch(struct sess *sp)
 	AN(sp->bereq);
 	AN(sp->director);
 	AZ(sp->vbe);
-
-	sp->obj->xid = sp->xid;
-	WS_Assert(sp->obj->ws_o);
 
 	i = FetchHdr(sp);
 
@@ -402,7 +400,11 @@ cnt_fetch(struct sess *sp)
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		VBE_free_bereq(&sp->bereq);
-		HSH_Drop(sp);
+		if (sp->objhead) {
+			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+			HSH_DerefObjCore(sp);
+		}
 		AZ(sp->obj);
 		return (0);
 	}
@@ -440,6 +442,21 @@ cnt_fetch(struct sess *sp)
 
 	VCL_fetch_method(sp);
 
+	o = HSH_NewObject(sp, sp->handling != VCL_RET_DELIVER);
+
+	if (sp->objhead != NULL) {
+		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		sp->objcore->obj = o;
+		o->objcore = sp->objcore;
+		o->objhead = sp->objhead;
+		sp->objhead = NULL;	/* refcnt follows pointer. */
+	}
+	sp->obj = o;
+
+	BAN_NewObj(sp->obj);
+
+	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
 	sp->obj->cacheable = sp->bereq->cacheable;
 	sp->obj->ttl = sp->bereq->ttl;
@@ -448,6 +465,7 @@ cnt_fetch(struct sess *sp)
 		sp->obj->cacheable = 0;
 	sp->obj->age = sp->bereq->age;
 	sp->obj->entered = sp->bereq->entered;
+	WS_Assert(sp->obj->ws_o);
 
 	/* Filter into object */
 	hp = sp->bereq->beresp;
@@ -602,6 +620,9 @@ cnt_hit(struct sess *sp)
 
 	/* Drop our object, we won't need it */
 	HSH_Deref(sp->wrk, &sp->obj);
+	sp->objcore = NULL;
+	AZ(sp->objhead);
+	sp->objhead = NULL;
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
@@ -675,6 +696,7 @@ cnt_lookup(struct sess *sp)
 		return (1);
 	}
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* If we inserted a new object it's a miss */
@@ -682,14 +704,8 @@ cnt_lookup(struct sess *sp)
 		VSL_stats->cache_miss++;
 
 		AZ(oc->obj);
-		o = HSH_NewObject(sp, 0);
-
-		o->objhead = oh;
-		o->objcore = oc;
-		oc->obj = o;
-		sp->obj = o;
-
-		BAN_NewObj(o);
+		sp->objhead = oh;
+		sp->objcore = oc;
 		sp->step = STP_MISS;
 		return (0);
 	}
@@ -702,6 +718,8 @@ cnt_lookup(struct sess *sp)
 		VSL_stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(sp->wrk, &sp->obj);
+		sp->objcore = NULL;
+		sp->objhead = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -740,27 +758,29 @@ cnt_miss(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	AZ(sp->obj);
+	AN(sp->objcore);
+	AN(sp->objhead);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
-	AZ(sp->obj->cacheable);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
-		HSH_Drop(sp);
+		HSH_DerefObjCore(sp);
 		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		HSH_Drop(sp);
 		VBE_free_bereq(&sp->bereq);
+		HSH_DerefObjCore(sp);
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_FETCH:
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
+		HSH_DerefObjCore(sp);
 		VBE_free_bereq(&sp->bereq);
 		INCOMPL();
 	default:
@@ -818,8 +838,6 @@ cnt_pass(struct sess *sp)
 	}
 	assert(sp->handling == VCL_RET_PASS);
 	sp->acct_req.pass++;
-	HSH_Prealloc(sp);
-	sp->obj = HSH_NewObject(sp, 1);
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
