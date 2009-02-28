@@ -54,7 +54,7 @@ void HSH_Prealloc(struct sess *sp);
 void HSH_Cleanup(struct worker *w);
 void HSH_Freestore(struct object *o);
 void HSH_Copy(const struct sess *sp, struct objhead *o);
-struct object *HSH_Lookup(struct sess *sp);
+struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(const struct sess *sp);
 void HSH_Ref(struct object *o);
 void HSH_Drop(struct sess *sp);

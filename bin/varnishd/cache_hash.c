@@ -264,13 +264,14 @@ HSH_AddString(struct sess *sp, const char *str)
 	sp->lhashptr += l + 1;
 }
 
-struct object *
-HSH_Lookup(struct sess *sp)
+struct objcore *
+HSH_Lookup(struct sess *sp, struct objhead **poh)
 {
 	struct worker *w;
 	struct objhead *oh;
 	struct objcore *oc;
-	struct object *o, *busy_o, *grace_o;
+	struct objcore *busy_oc, *grace_oc;
+	struct object *o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -296,17 +297,19 @@ HSH_Lookup(struct sess *sp)
 		Lck_Lock(&oh->mtx);
 	}
 
-	busy_o = NULL;
-	grace_o = NULL;
-	o = NULL;
+	busy_oc = NULL;
+	grace_oc = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+		if (oc->flags & OC_F_BUSY) {
+			busy_oc = oc;
+			continue;
+		}
+
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		
-		if (ObjIsBusy(o)) {
-			busy_o = o;
-			continue;
-		}
 		if (!o->cacheable)
 			continue;
 		if (o->ttl == 0)
@@ -322,33 +325,39 @@ HSH_Lookup(struct sess *sp)
 
 		/* Remember any matching objects inside their grace period */
 		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req)
-			grace_o = o;
+			grace_oc = oc;
 	}
-	if (oc == NULL)
-		o = NULL;
-	else
-		AN(o);
 
 	/*
 	 * If we have seen a busy object, and have an object in grace,
 	 * use it, if req.grace is also satisified.
+	 * XXX: Interesting footnote:  The busy object might be for a
+	 * XXX: different "Vary:" than we sought.  We have no way of knowing
+	 * XXX: this until the object is unbusy'ed, so in practice we
+	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
-	if (o == NULL && grace_o != NULL &&
-	    busy_o != NULL &&
-	    grace_o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
-		o = grace_o;
+	if (oc == NULL && grace_oc != NULL && busy_oc != NULL) {
+		o = grace_oc->obj;
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
+			oc = grace_oc;
+	}
 
-	if (o != NULL) {
+	if (oc != NULL) {
+		o = oc->obj;
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
 		/* We found an object we like */
 		o->refcnt++;
 		if (o->hits < INT_MAX)
 			o->hits++;
 		Lck_Unlock(&oh->mtx);
 		assert(hash->deref(oh));
-		return (o);
+		*poh = oh;
+		return (oc);
 	}
 
-	if (busy_o != NULL) {
+	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
 		if (sp->esis == 0)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
@@ -361,26 +370,17 @@ HSH_Lookup(struct sess *sp)
 		return (NULL);
 	}
 
-	/* Insert (precreated) object in objecthead */
-	o = w->nobj;
-	w->nobj = NULL;
-
+	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
+	AN(oc->flags & OC_F_BUSY);
 
-	o->objhead = oh;
-	o->objcore = oc;
-	oc->obj = o;
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
-	/*
-	 * XXX: This may be too early, relative to pass objects.
-	 * XXX: possibly move to when we commit to have it in the cache.
-	 */
-	BAN_NewObj(o);
-	return (o);
+	*poh = oh;
+	return (oc);
 }
 
 static void
@@ -432,6 +432,7 @@ HSH_Unbusy(const struct sess *sp)
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AN(ObjIsBusy(o));
+	assert(o->objcore->obj == o);
 	assert(o->refcnt > 0);
 	if (o->ws_o->overflow)
 		VSL_stats->n_objoverflow++;
