@@ -330,11 +330,11 @@ HSH_Lookup(struct sess *sp)
 		AN(o);
 
 	/*
-	 * If we have a object in grace and being fetched,
+	 * If we have seen a busy object, and have an object in grace,
 	 * use it, if req.grace is also satisified.
 	 */
 	if (o == NULL && grace_o != NULL &&
-	    grace_o->child != NULL &&
+	    busy_o != NULL &&
 	    grace_o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 		o = grace_o;
 
@@ -374,11 +374,6 @@ HSH_Lookup(struct sess *sp)
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
-	if (grace_o != NULL) {
-		grace_o->child = o;
-		o->parent = grace_o;
-		grace_o->refcnt++;
-	}
 	Lck_Unlock(&oh->mtx);
 	/*
 	 * XXX: This may be too early, relative to pass objects.
@@ -432,7 +427,6 @@ HSH_Unbusy(const struct sess *sp)
 {
 	struct object *o;
 	struct objhead *oh;
-	struct object *parent;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
@@ -453,14 +447,8 @@ HSH_Unbusy(const struct sess *sp)
 	o->objcore->flags &= ~OC_F_BUSY;
 	if (oh != NULL)
 		hsh_rush(oh);
-	parent = o->parent;
-	o->parent = NULL;
-	if (parent != NULL)
-		parent->child = NULL;
 	if (oh != NULL)
 		Lck_Unlock(&oh->mtx);
-	if (parent != NULL)
-		HSH_Deref(sp->wrk, &parent);
 }
 
 void

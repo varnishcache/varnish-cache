@@ -330,10 +330,6 @@ struct object {
 
 	double			last_use;
 
-	/* Prefetch */
-	struct object		*parent;
-	struct object		*child;
-
 	int			hits;
 };
 
