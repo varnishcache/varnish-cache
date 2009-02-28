@@ -371,7 +371,7 @@ VRT_l_beresp_status(const struct sess *sp, int num)
 	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->obj->http->ws, 4);
+	p = WS_Alloc(sp->bereq->beresp->ws, 4);
 	if (p == NULL)
 		WSP(sp, SLT_LostHeader, "%s", "obj.status");
 	else
