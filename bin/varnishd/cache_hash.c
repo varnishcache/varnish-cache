@@ -80,24 +80,35 @@ HSH_Grace(double g)
 }
 
 struct object *
-HSH_NewObject(struct sess *sp)
+HSH_NewObject(struct sess *sp, int transient)
 {
 	struct object *o;
 	struct storage *st;
+	void *p;
 
-	st = STV_alloc(sp, params->obj_workspace);
-	XXXAN(st);
-	assert(st->space > sizeof *o);
-	o = (void *)st->ptr; /* XXX: align ? */
-	st->len = sizeof *o;
-	memset(o, 0, sizeof *o);
-	o->objstore = st;
-	WS_Init(o->ws_o, "obj",
-	    st->ptr + st->len, st->space - st->len);
-	st->len = st->space;
+	if (transient) {
+		p = malloc(sizeof *o + params->obj_workspace);
+		XXXAN(p);
+		o = p;
+		p = o + 1;
+		memset(o, 0, sizeof *o);
+		o->magic = OBJECT_MAGIC;
+		WS_Init(o->ws_o, "obj", p, params->obj_workspace);
+	} else {
+		st = STV_alloc(sp, params->obj_workspace);
+		XXXAN(st);
+		assert(st->space > sizeof *o);
+		o = (void *)st->ptr; /* XXX: align ? */
+		st->len = sizeof *o;
+		memset(o, 0, sizeof *o);
+		o->magic = OBJECT_MAGIC;
+		o->objstore = st;
+		WS_Init(o->ws_o, "obj",
+		    st->ptr + st->len, st->space - st->len);
+		st->len = st->space;
+	}
 	WS_Assert(o->ws_o);
 	http_Setup(o->http, o->ws_o);
-	o->magic = OBJECT_MAGIC;
 	o->http->magic = HTTP_MAGIC;
 	o->refcnt = 1;
 	o->grace = NAN;
@@ -510,7 +521,10 @@ HSH_Deref(const struct worker *w, struct object **oo)
 
 	ESI_Destroy(o);
 	HSH_Freestore(o);
-	STV_free(o->objstore);
+	if (o->objstore != NULL)
+		STV_free(o->objstore);
+	else
+		FREE_OBJ(o);
 	w->stats->n_object--;
 
 	if (oh == NULL) {

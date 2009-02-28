@@ -314,7 +314,7 @@ cnt_error(struct sess *sp)
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
-		sp->obj = HSH_NewObject(sp);
+		sp->obj = HSH_NewObject(sp, 1);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -682,7 +682,7 @@ cnt_lookup(struct sess *sp)
 		VSL_stats->cache_miss++;
 
 		AZ(oc->obj);
-		o = HSH_NewObject(sp);
+		o = HSH_NewObject(sp, 0);
 
 		o->objhead = oh;
 		o->objcore = oc;
@@ -819,7 +819,7 @@ cnt_pass(struct sess *sp)
 	assert(sp->handling == VCL_RET_PASS);
 	sp->acct_req.pass++;
 	HSH_Prealloc(sp);
-	sp->obj = HSH_NewObject(sp);
+	sp->obj = HSH_NewObject(sp, 1);
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
