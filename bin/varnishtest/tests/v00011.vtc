@@ -11,9 +11,11 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-
-	sub vcl_fetch {
-		purge_url("^/$");
+	sub vcl_recv {
+		if (req.request == "PURGE") {
+			purge_url("^/$");
+			error 209 "foo";
+		}
 	}
 
 } -start
@@ -22,9 +24,18 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.http.X-Varnish == "1001"
+} -run
 
-	txreq
+client c1 {
+	txreq -req "PURGE"
 	rxresp
 	expect resp.http.X-Varnish == "1002"
+	expect resp.status == 209
+} -run
 
-} -start
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == "1003"
+
+} -run
