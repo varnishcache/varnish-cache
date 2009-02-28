@@ -652,7 +652,9 @@ DOT lookup -> miss [label="no",style=bold,color=blue,weight=2]
 static int
 cnt_lookup(struct sess *sp)
 {
+	struct objcore *oc;
 	struct object *o;
+	struct objhead *oh;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -663,9 +665,9 @@ cnt_lookup(struct sess *sp)
 		assert(sp->handling == VCL_RET_HASH);
 	}
 
-	o = HSH_Lookup(sp);
+	oc = HSH_Lookup(sp, &oh);
 
-	if (o == NULL) {
+	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
 		 * worker thread.   The hash code to restart the session,
@@ -674,16 +676,31 @@ cnt_lookup(struct sess *sp)
 		return (1);
 	}
 
-	sp->obj = o;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* If we inserted a new object it's a miss */
-	if (ObjIsBusy(sp->obj)) {
+	if (oc->flags & OC_F_BUSY) {
 		VSL_stats->cache_miss++;
+
+		AZ(oc->obj);
+		o = sp->wrk->nobj;
+		sp->wrk->nobj = NULL;
+
+		o->objhead = oh;
+		o->objcore = oc;
+		oc->obj = o;
+		sp->obj = o;
+
+		BAN_NewObj(o);
 		sp->step = STP_MISS;
 		return (0);
 	}
 
-	if (sp->obj->objcore->flags & OC_F_PASS) {
+	o = oc->obj;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	sp->obj = o;
+
+	if (oc->flags & OC_F_PASS) {
 		VSL_stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(sp->wrk, &sp->obj);
