@@ -314,10 +314,9 @@ cnt_error(struct sess *sp)
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
-		sp->obj = sp->wrk->nobj;
+		sp->obj = HSH_NewObject(sp);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
-		sp->wrk->nobj = NULL;
 	} else {
 		/* XXX: Null the headers ? */
 	}
@@ -683,8 +682,7 @@ cnt_lookup(struct sess *sp)
 		VSL_stats->cache_miss++;
 
 		AZ(oc->obj);
-		o = sp->wrk->nobj;
-		sp->wrk->nobj = NULL;
+		o = HSH_NewObject(sp);
 
 		o->objhead = oh;
 		o->objcore = oc;
@@ -821,8 +819,7 @@ cnt_pass(struct sess *sp)
 	assert(sp->handling == VCL_RET_PASS);
 	sp->acct_req.pass++;
 	HSH_Prealloc(sp);
-	sp->obj = sp->wrk->nobj;
-	sp->wrk->nobj = NULL;
+	sp->obj = HSH_NewObject(sp);
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
@@ -1078,7 +1075,6 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_ORNULL(sp->obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 
 		switch (sp->step) {
@@ -1093,7 +1089,6 @@ CNT_Session(struct sess *sp)
 		default:
 			WRONG("State engine misfire");
 		}
-		CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	WSL_Flush(w, 0);

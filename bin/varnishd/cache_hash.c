@@ -79,15 +79,42 @@ HSH_Grace(double g)
 	return (g);
 }
 
+struct object *
+HSH_NewObject(struct sess *sp)
+{
+	struct object *o;
+	struct storage *st;
+
+	st = STV_alloc(sp, params->obj_workspace);
+	XXXAN(st);
+	assert(st->space > sizeof *o);
+	o = (void *)st->ptr; /* XXX: align ? */
+	st->len = sizeof *o;
+	memset(o, 0, sizeof *o);
+	o->objstore = st;
+	WS_Init(o->ws_o, "obj",
+	    st->ptr + st->len, st->space - st->len);
+	st->len = st->space;
+	WS_Assert(o->ws_o);
+	http_Setup(o->http, o->ws_o);
+	o->magic = OBJECT_MAGIC;
+	o->http->magic = HTTP_MAGIC;
+	o->refcnt = 1;
+	o->grace = NAN;
+	o->entered = NAN;
+	VTAILQ_INIT(&o->store);
+	VTAILQ_INIT(&o->esibits);
+	sp->wrk->stats->n_object++;
+	return (o);
+}
+
 /* Precreate an objhead and object for later use */
 void
-HSH_Prealloc(struct sess *sp)
+HSH_Prealloc(const struct sess *sp)
 {
 	struct worker *w;
 	struct objhead *oh;
 	struct objcore *oc;
-	struct object *o;
-	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -113,31 +140,6 @@ HSH_Prealloc(struct sess *sp)
 	}
 	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 
-	if (w->nobj == NULL) {
-		st = STV_alloc(sp, params->obj_workspace);
-		XXXAN(st);
-		assert(st->space > sizeof *w->nobj);
-		o = (void *)st->ptr; /* XXX: align ? */
-		st->len = sizeof *o;
-		memset(o, 0, sizeof *o);
-		o->objstore = st;
-		WS_Init(o->ws_o, "obj",
-		    st->ptr + st->len, st->space - st->len);
-		st->len = st->space;
-		WS_Assert(o->ws_o);
-		http_Setup(o->http, o->ws_o);
-		o->magic = OBJECT_MAGIC;
-		o->http->magic = HTTP_MAGIC;
-		o->refcnt = 1;
-		o->grace = NAN;
-		o->entered = NAN;
-		VTAILQ_INIT(&o->store);
-		VTAILQ_INIT(&o->esibits);
-		w->nobj = o;
-		w->stats->n_object++;
-
-	}
-	CHECK_OBJ_NOTNULL(w->nobj, OBJECT_MAGIC);
 }
 
 void
@@ -153,11 +155,6 @@ HSH_Cleanup(struct worker *w)
 		FREE_OBJ(w->nobjhead);
 		w->nobjhead = NULL;
 		w->stats->n_objecthead--;
-	}
-	if (w->nobj != NULL) {
-		STV_free(w->nobj->objstore);
-		w->nobj = NULL;
-		w->stats->n_object--;
 	}
 }
 
