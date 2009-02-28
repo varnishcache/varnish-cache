@@ -194,7 +194,6 @@ struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
-	struct object		*nobj;
 	struct objcore		*nobjcore;
 	struct dstat		*stats;
 

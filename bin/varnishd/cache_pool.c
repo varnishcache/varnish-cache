@@ -431,10 +431,8 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 	AZ(sess->wrk);
 	THR_SetSession(sess);
 	sess->wrk = w;
-	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	CNT_Session(sess);
-	CHECK_OBJ_ORNULL(w->nobj, OBJECT_MAGIC);
 	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	THR_SetSession(NULL);
 }
