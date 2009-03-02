@@ -41,6 +41,43 @@
 
 #define STATUS_OK	200
 
+static void
+parse_reply(int sock, long *status, long *answerlen, char **answer)
+{
+	int n;
+	char buf[13];
+	char *p, *pp;
+
+	n = read(sock, buf, 13);
+	if (n != 13) {
+		fprintf(stderr, "An error occured in receiving status.\n");
+		exit(1);
+	}
+	if (!(p = strchr(buf, ' '))) {
+		fprintf(stderr,
+			"An error occured in parsing of status code.\n");
+		exit(1);
+	}
+	*p = '\0';
+	*status = strtol(buf, &p, 10);
+	pp = p+1;
+	if (!(p = strchr(pp, '\n'))) {
+		fprintf(stderr, "An error occured "
+			"in parsing of number of bytes returned.\n");
+		exit(1);
+	}
+	*p = '\0';
+	*answerlen = strtol(pp, &p, 10);
+
+	*answer = malloc(*answerlen+1);
+	n = read(sock, *answer, *answerlen);
+	read(sock, buf, 1); /* Read the trailing \n */
+	if (n != *answerlen) {
+		fprintf(stderr, "An error occured in receiving answer.\n");
+		exit(1);
+	}
+}
+
 /*
  * This function establishes a connection to the specified ip and port and
  * sends a command to varnishd. If varnishd returns an OK status, the result
@@ -76,6 +113,25 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	}
 	free(ta);
 
+	write(sock, "ping\n", 5);
+	parse_reply(sock, &status, &bytes, &answer);
+	if (status != 200) {
+			fprintf(stderr, "No pong received from server\n", status);
+			exit(1);
+	}
+
+	if (strstr(answer, "PONG") == NULL) {
+		/* The first one was probably just the banner,
+		   see if there are more replies.*/
+		free(answer);
+		parse_reply(sock, &status, &answerlen, &answer);
+		if (status != 200 || strstr(answer, "PONG") == NULL) {
+			fprintf(stderr, "No pong received from server\n", status);
+			exit(1);
+		}
+	}
+	free(answer);
+
 	for (i=0; i<argc; i++) {
 		if (i > 0)
 			write(sock, " ", 1);
@@ -83,33 +139,8 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	}
 	write(sock, "\n", 1);
 
-	n = read(sock, buf, 13);
-	if (n != 13) {
-		fprintf(stderr, "An error occured in receiving status.\n");
-		exit(1);
-	}
-	if (!(p = strchr(buf, ' '))) {
-		fprintf(stderr,
-		    "An error occured in parsing of status code.\n");
-		exit(1);
-	}
-	*p = '\0';
-	status = strtol(buf, &p, 10);
-	pp = p+1;
-	if (!(p = strchr(pp, '\n'))) {
-		fprintf(stderr, "An error occured "
-		    "in parsing of number of bytes returned.\n");
-		exit(1);
-	}
-	*p = '\0';
-	bytes = strtol(pp, &p, 10);
+	parse_reply(sock, &status, &bytes, &answer);
 
-	answer = malloc(bytes+1);
-	n = read(sock, answer, bytes);
-	if (n != bytes) {
-		fprintf(stderr, "An error occured in receiving answer.\n");
-		exit(1);
-	}
 	answer[bytes] = '\0';
 	close(sock);
 
