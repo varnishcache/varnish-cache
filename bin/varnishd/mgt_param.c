@@ -746,6 +746,7 @@ static const struct parspec input_parspec[] = {
 		"  0x00008000 - panic to abort2().\n"
 #endif
 		"  0x00010000 - synchronize shmlog.\n"
+		"  0x80000000 - do edge-detection on digest.\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
