@@ -124,7 +124,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 		/* The first one was probably just the banner,
 		   see if there are more replies.*/
 		free(answer);
-		parse_reply(sock, &status, &answerlen, &answer);
+		parse_reply(sock, &status, &bytes, &answer);
 		if (status != 200 || strstr(answer, "PONG") == NULL) {
 			fprintf(stderr, "No pong received from server\n", status);
 			exit(1);
