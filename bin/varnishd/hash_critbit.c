@@ -443,12 +443,14 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
 #endif
 	} else {
+		CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 		free(noh->hash);
 		noh->hash = NULL;
 		VSL_stats->hcb_lock++;
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
 #endif
+		oh->refcnt++;
 	}
 	Lck_Unlock(&hcb_mtx);
 	return (oh);
