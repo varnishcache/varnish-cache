@@ -197,10 +197,8 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
-		if (y->ptr > DIGEST_LEN)
-			s = 0;
-		else
-			s = (oh->digest[y->ptr] & y->bitmask) != 0;
+		assert(y->ptr < DIGEST_LEN);
+		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		root->cmps++;
 		p = &y->leaf[s];
@@ -233,10 +231,8 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 		y = hcb_l_y(*p);
 		if (y->critbit > y2->critbit)
 			break;
-		if (y->ptr > DIGEST_LEN)
-			s = 0;
-		else
-			s = (oh->digest[y->ptr] & y->bitmask) != 0;
+		assert(y->ptr < DIGEST_LEN);
+		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		root->cmps++;
 		p = &y->leaf[s];
@@ -266,10 +262,8 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	while(1) {
 		assert(hcb_is_y(*p));
 		y = hcb_l_y(*p);
-		if (y->ptr > DIGEST_LEN)
-			s = 0;
-		else
-			s = (oh->digest[y->ptr] & y->bitmask) != 0;
+		assert(y->ptr < DIGEST_LEN);
+		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		if (y->leaf[s] == hcb_r_node(oh)) {
 			*p = y->leaf[1 - s];
