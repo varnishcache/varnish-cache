@@ -176,38 +176,44 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2, struct hcb_y 
 	return (y->critbit);
 }
 
-/**********************************************************************/
+/*********************************************************************
+ * Unless we have the lock, we need to be very careful about pointer
+ * references into the tree, we cannot trust things to be the same
+ * in two consequtive memory accesses.
+ */
 
 static struct objhead *
 hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 {
-	uintptr_t *p;
+	volatile uintptr_t *p;
+	uintptr_t pp;
 	struct hcb_y *y, *y2;
 	struct objhead *oh2;
 	unsigned s, s2;
 
-
 	p = &root->origo;
-	if (*p == 0) {
+	pp = *p;
+	if (pp == 0) {
 		if (!has_lock)
 			return (NULL);
 		*p = hcb_r_node(oh);
 		return (oh);
 	}
 
-	while(hcb_is_y(*p)) {
-		y = hcb_l_y(*p);
+	while(hcb_is_y(pp)) {
+		y = hcb_l_y(pp);
 		assert(y->ptr < DIGEST_LEN);
 		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		root->cmps++;
 		p = &y->leaf[s];
+		pp = *p;
 	}
 
-	assert(hcb_is_node(*p));
+	assert(hcb_is_node(pp));
 
 	/* We found a node, does it match ? */
-	oh2 = hcb_l_node(*p);
+	oh2 = hcb_l_node(pp);
 	if (!memcmp(oh2->digest, oh->digest, DIGEST_LEN))
 		return (oh2);
 
@@ -356,12 +362,12 @@ hcb_cleaner(void *priv)
 			y = (void *)&oh->u;
 			if (y->leaf[0] || y->leaf[1])
 				continue;
-			if (++oh->refcnt > COOL_DURATION) {
+			if (++oh->digest[0] > COOL_DURATION) {
 				VTAILQ_REMOVE(&laylow, oh, coollist);
 #ifdef PHK
 				fprintf(stderr, "OH %p is cold enough\n", oh);
 #endif
-				oh->refcnt = 0;
+				AZ(oh->refcnt);
 				HSH_DeleteObjHead(&ww, oh);
 			}
 		}
@@ -399,6 +405,9 @@ hcb_deref(struct objhead *oh)
 	if (--oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
+		assert(VTAILQ_EMPTY(&oh->objcs));
+		assert(VTAILQ_EMPTY(&oh->waitinglist));
+		oh->digest[0] = 0;
 		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
 		Lck_Unlock(&hcb_mtx);
 	}
@@ -420,6 +429,10 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		/* Assert that we didn't muck with the tree without lock */
 		assert(oh != noh);
 		Lck_Lock(&oh->mtx);
+		/*
+		 * A refcount of zero indicates that the tree changed
+		 * under us, so fall through and try with the lock held.
+		 */
 		u = oh->refcnt;
 		if (u)
 			oh->refcnt++;
@@ -436,6 +449,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	 */
 	HSH_Copy(sp, noh);
 	Lck_Lock(&hcb_mtx);
+	assert(noh->refcnt == 1);
 	oh =  hcb_insert(&hcb_root, noh, 1);
 	if (oh == noh) {
 		VSL_stats->hcb_insert++;
@@ -450,7 +464,9 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
 #endif
+		Lck_Lock(&oh->mtx);
 		oh->refcnt++;
+		Lck_Unlock(&oh->mtx);
 	}
 	Lck_Unlock(&hcb_mtx);
 	return (oh);
