@@ -572,6 +572,7 @@ void
 HSH_Init(void)
 {
 
+	assert(DIGEST_LEN == SHA256_LEN);	/* avoid #include pollution */
 	save_hash = params->save_hash;
 	hash = heritage.hash;
 	if (hash->start != NULL)
