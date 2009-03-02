@@ -62,7 +62,8 @@ VRT_error(struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason);
+	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ? 
+	    reason : "(null)");
 	sp->err_code = code ? code : 503;
 	sp->err_reason = reason ? reason : http_StatusMessage(sp->err_code);
 }
