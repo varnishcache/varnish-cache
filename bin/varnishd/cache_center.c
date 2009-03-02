@@ -380,6 +380,7 @@ cnt_fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	struct object *o;
 	char *b;
+	unsigned handling;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -442,7 +443,14 @@ cnt_fetch(struct sess *sp)
 
 	VCL_fetch_method(sp);
 
-	o = HSH_NewObject(sp, sp->handling != VCL_RET_DELIVER);
+	/*
+	 * When we fetch the body, we may hit the LRU cleanup and that
+	 * will overwrite sp->handling, so we have to save our plans
+	 * here.
+	 */
+	handling = sp->handling;
+
+	o = HSH_NewObject(sp, handling != VCL_RET_DELIVER);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
@@ -498,7 +506,7 @@ cnt_fetch(struct sess *sp)
 
 	VBE_free_bereq(&sp->bereq);
 
-	switch (sp->handling) {
+	switch (handling) {
 	case VCL_RET_RESTART:
 		HSH_Drop(sp);
 		sp->director = NULL;
