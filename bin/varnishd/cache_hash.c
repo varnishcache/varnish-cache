@@ -521,25 +521,23 @@ HSH_Unbusy(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	oh = o->objhead;
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
 	AN(ObjIsBusy(o));
 	assert(o->objcore->obj == o);
 	assert(o->refcnt > 0);
+	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
 		VSL_stats->n_objoverflow++;
 	if (params->diag_bitmap & 0x40)
 		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
-	oh = o->objhead;
-	if (oh != NULL) {
-		CHECK_OBJ(oh, OBJHEAD_MAGIC);
-		Lck_Lock(&oh->mtx);
-	}
+	Lck_Lock(&oh->mtx);
 	o->objcore->flags &= ~OC_F_BUSY;
-	if (oh != NULL) {
-		hsh_rush(oh);
-		Lck_Unlock(&oh->mtx);
-	}
+	hsh_rush(oh);
+	Lck_Unlock(&oh->mtx);
 }
 
 void
@@ -605,9 +603,10 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		Lck_Lock(&oh->mtx);
 		assert(o->refcnt > 0);
 		r = --o->refcnt;
-		if (!r)
+		if (!r) {
+			assert(VTAILQ_EMPTY(&oh->waitinglist));
 			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		else
+		} else
 			hsh_rush(oh);
 		Lck_Unlock(&oh->mtx);
 	}
