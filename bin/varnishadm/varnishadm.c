@@ -93,8 +93,6 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	int sock;
 	long status, bytes;
 	char *answer = NULL;
-	char buf[13];
-	char *p, *pp;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
 	XXXAN(n = VSS_resolve(addr, port, &ta));
@@ -116,7 +114,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	write(sock, "ping\n", 5);
 	parse_reply(sock, &status, &bytes, &answer);
 	if (status != 200) {
-			fprintf(stderr, "No pong received from server\n", status);
+			fprintf(stderr, "No pong received from server\n");
 			exit(1);
 	}
 
@@ -126,7 +124,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 		free(answer);
 		parse_reply(sock, &status, &bytes, &answer);
 		if (status != 200 || strstr(answer, "PONG") == NULL) {
-			fprintf(stderr, "No pong received from server\n", status);
+			fprintf(stderr, "No pong received from server\n");
 			exit(1);
 		}
 	}
