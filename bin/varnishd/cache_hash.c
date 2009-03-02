@@ -601,13 +601,12 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		
 		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 0);
 		assert(o->refcnt > 0);
 		r = --o->refcnt;
-		if (!r) {
-			assert(VTAILQ_EMPTY(&oh->waitinglist));
+		if (!r) 
 			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		} else
-			hsh_rush(oh);
+		hsh_rush(oh);
 		Lck_Unlock(&oh->mtx);
 	}
 
