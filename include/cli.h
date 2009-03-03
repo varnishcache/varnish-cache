@@ -231,6 +231,12 @@
 	"\tPrint welcome banner.",					\
 	0, 0
 
+#define CLI_AUTH	 						\
+	"auth",								\
+	"auth response",						\
+	"\tAuthenticate.",						\
+	1, 1
+
 #define CLI_HIDDEN(foo, min_arg, max_arg)				\
 	foo, NULL, NULL, min_arg, max_arg,
 
@@ -245,6 +251,7 @@ enum cli_status_e {
 	CLIS_TOOFEW	= 104,
 	CLIS_TOOMANY	= 105,
 	CLIS_PARAM	= 106,
+	CLIS_AUTH	= 107,
 	CLIS_OK		= 200,
 	CLIS_CANT	= 300,
 	CLIS_COMMS	= 400,

@@ -33,6 +33,7 @@ struct cli {
 	/* XXX: should be MINI_OBJ */
 	struct vsb		*sb;
 	enum cli_status_e	result;
+	void			*priv;
 };
 
 int cli_writeres(int fd, const struct cli *cli);
