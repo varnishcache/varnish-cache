@@ -64,7 +64,6 @@
 #include "vss.h"
 #include "vbm.h"
 
-pid_t		mgt_pid;
 pid_t		child_pid = -1;
 
 static struct vbitmap	*fd_map;
@@ -89,7 +88,6 @@ static const char * const ch_state[] = {
 	[CH_DIED] =	"died, (restarting)",
 };
 
-struct vev_base		*mgt_evb;
 static struct vev	*ev_poker;
 static struct vev	*ev_listen;
 static struct vlu	*vlu;
@@ -499,22 +497,11 @@ mgt_sigint(const struct vev *e, int what)
  */
 
 void
-mgt_run(const char *T_arg)
+MGT_Run(void)
 {
 	struct sigaction sac;
 	struct vev *e;
 	int i;
-
-	mgt_pid = getpid();
-
-	mgt_evb = vev_new_base();
-	XXXAN(mgt_evb);
-
-	if (d_flag)
-		mgt_cli_setup(0, 1, 1, "debug");
-
-	if (T_arg)
-		mgt_cli_telnet(T_arg);
 
 	e = vev_new();
 	XXXAN(e);

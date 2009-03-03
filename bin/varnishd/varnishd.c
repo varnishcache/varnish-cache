@@ -58,6 +58,7 @@
 #endif
 
 #include "vsb.h"
+#include "vev.h"
 #include "vpf.h"
 #include "vsha256.h"
 
@@ -76,9 +77,13 @@
 #define INFTIM -1
 #endif
 
-struct heritage heritage;
-volatile struct params *params;
-unsigned d_flag = 0;
+struct heritage		heritage;
+volatile struct params	*params;
+unsigned		d_flag = 0;
+pid_t			mgt_pid;
+struct vev_base		*mgt_evb;
+
+
 
 /*--------------------------------------------------------------------*/
 
@@ -605,7 +610,17 @@ main(int argc, char * const *argv)
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
-	mgt_run(T_arg);
+	mgt_pid = getpid();
+
+	mgt_evb = vev_new_base();
+	XXXAN(mgt_evb);
+
+	if (d_flag)
+		mgt_cli_setup(0, 1, 1, "debug");
+	if (T_arg)
+		mgt_cli_telnet(T_arg);
+
+	MGT_Run();
 
 	if (pfh != NULL)
 		(void)vpf_remove(pfh);
