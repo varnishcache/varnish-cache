@@ -57,17 +57,32 @@
 #include "mgt.h"
 #include "mgt_cli.h"
 #include "vev.h"
+#include "vsha256.h"
 #include "shmlog.h"
 
 #include "vlu.h"
 #include "vss.h"
 
 static int		cli_i = -1, cli_o = -1;
+static const char	*secret_file;
 
 struct telnet {
 	int			fd;
 	struct vev		*ev;
 	VTAILQ_ENTRY(telnet)	list;
+};
+
+struct cli_port {
+	unsigned		magic;
+#define CLI_PORT_MAGIC		0x5791079f
+	struct vev		*ev;
+	int			fdi;
+	int			fdo;
+	int			verbose;
+	struct vlu		*vlu;
+	struct cli		cli[1];
+	char			*name;
+	char			challenge[34];
 };
 
 static VTAILQ_HEAD(,telnet)	telnets = VTAILQ_HEAD_INITIALIZER(telnets);
@@ -166,7 +181,6 @@ static struct cli_proto cli_proto[] = {
 
 /*--------------------------------------------------------------------*/
 
-
 static void
 mcf_panic(struct cli *cli, const char * const *av, void *priv)
 {
@@ -248,19 +262,93 @@ mgt_cli_stop_child(void)
 	/* XXX: kick any users */
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Validate the authentication
+ */
 
-struct cli_port {
-	unsigned		magic;
-#define CLI_PORT_MAGIC		0x5791079f
-	struct vev		*ev;
-	int			fdi;
-	int			fdo;
-	int			verbose;
-	struct vlu		*vlu;
-	struct cli		cli[1];
-	char			*name;
+static void
+mcf_auth(struct cli *cli, const char *const *av, void *priv)
+{
+	char buf[1025];
+	int i, fd;
+	struct SHA256Context sha256ctx;
+	unsigned char digest[SHA256_LEN];
+	struct cli_port *cp;
+
+	AN(av[2]);
+	CAST_OBJ_NOTNULL(cp, cli->priv, CLI_PORT_MAGIC);
+	(void)priv;
+	AN(secret_file);
+	fd = open(secret_file, O_RDONLY);
+	if (fd < 0) {
+		cli_out(cli, "Cannot open secret file (%s)\n",
+		    strerror(errno));
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+	i = read(fd, buf, sizeof buf);
+	if (i == 0) {
+		cli_out(cli, "Empty secret file");
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+	if (i < 0) {
+		cli_out(cli, "Read error on secret file (%s)\n",
+		    strerror(errno));
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+	if (i == sizeof buf) {
+		cli_out(cli, "Secret file too long (> %d)\n",
+		    sizeof buf - 1);
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
+	buf[i] = '\0';
+	AZ(close(fd));
+	SHA256_Init(&sha256ctx);
+	SHA256_Update(&sha256ctx, cp->challenge, strlen(cp->challenge));
+	SHA256_Update(&sha256ctx, buf, i);
+	SHA256_Update(&sha256ctx, cp->challenge, strlen(cp->challenge));
+	SHA256_Final(digest, &sha256ctx);
+	for (i = 0; i < SHA256_LEN; i++)
+		sprintf(buf + i + i, "%02x", digest[i]);
+	if (strcasecmp(buf, av[2])) {
+		cli_result(cli, CLIS_UNKNOWN);
+		return;
+	}
+	cp->challenge[0] = '\0';
+	cli_result(cli, CLIS_OK);
+	if (params->cli_banner) 
+		mcf_banner(cli, av, priv);
+}
+
+static struct cli_proto cli_auth[] = {
+	{ CLI_HELP,		mcf_help, cli_auth },
+	{ CLI_AUTH,		mcf_auth, NULL },
+	{ CLI_QUIT,		mcf_close, NULL},
+	{ NULL }
 };
+
+/*--------------------------------------------------------------------
+ * Generate a random challenge
+ */
+
+static void
+mgt_cli_challenge(struct cli_port *cp)
+{
+	int i;
+
+	for (i = 0; i + 2 < sizeof cp->challenge; i++)
+		cp->challenge[i] = (random() % 26) + 'a';
+	cp->challenge[i++] = '\n';
+	cp->challenge[i] = '\0';
+	cli_out(cp->cli, "%s", cp->challenge);
+	cli_out(cp->cli, "\nAuthentication required.\n");
+	cli_result(cp->cli, CLIS_AUTH);
+}
+
+/*--------------------------------------------------------------------*/
 
 static int
 mgt_cli_vlu(void *priv, const char *p)
@@ -281,31 +369,39 @@ mgt_cli_vlu(void *priv, const char *p)
 	if (*p == '\0')
 		return (0);
 
-	cli_dispatch(cp->cli, cli_proto, p);
-	if (cp->cli->result == CLIS_UNKNOWN) 
-		cli_dispatch(cp->cli, cli_debug, p);
-	if (cp->cli->result == CLIS_UNKNOWN) {
-		/*
-		 * Command not recognized in master, try cacher if it is
-		 * running.
-		 */
-		vsb_clear(cp->cli->sb);
-		cp->cli->result = CLIS_OK;
-		if (cli_o <= 0) {
-			cli_result(cp->cli, CLIS_UNKNOWN);
-			cli_out(cp->cli,
-			    "Unknown request in manager process "
-			    "(child not running).\n"
-			    "Type 'help' for more info.");
-		} else {
-			i = write(cli_o, p, strlen(p));
-			xxxassert(i == strlen(p));
-			i = write(cli_o, "\n", 1);
-			xxxassert(i == 1);
-			(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
-			cli_result(cp->cli, u);
-			cli_out(cp->cli, "%s", q);
-			free(q);
+	if (secret_file != NULL && cp->challenge[0] != '\0') {
+		/* Authentication not yet passed */
+		cli_dispatch(cp->cli, cli_auth, p);
+		if (cp->cli->result == CLIS_UNKNOWN) 
+			mgt_cli_challenge(cp);
+	} else {
+		cli_dispatch(cp->cli, cli_proto, p);
+		if (cp->cli->result == CLIS_UNKNOWN) 
+			cli_dispatch(cp->cli, cli_debug, p);
+		if (cp->cli->result == CLIS_UNKNOWN) {
+			/*
+			 * Command not recognized in master, try cacher if it is
+			 * running.
+			 */
+			vsb_clear(cp->cli->sb);
+			cp->cli->result = CLIS_OK;
+			if (cli_o <= 0) {
+				cli_result(cp->cli, CLIS_UNKNOWN);
+				cli_out(cp->cli,
+				    "Unknown request in manager process "
+				    "(child not running).\n"
+				    "Type 'help' for more info.");
+			} else {
+				i = write(cli_o, p, strlen(p));
+				xxxassert(i == strlen(p));
+				i = write(cli_o, "\n", 1);
+				xxxassert(i == 1);
+				(void)cli_readres(cli_i,
+				    &u, &q, params->cli_timeout);
+				cli_result(cp->cli, u);
+				cli_out(cp->cli, "%s", q);
+				free(q);
+			}
 		}
 	}
 	vsb_finish(cp->cli->sb);
@@ -403,8 +499,16 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 
 	cp->cli->sb = vsb_newauto();
 	XXXAN(cp->cli->sb);
+	cp->cli->priv = cp;
 
-	if (params->cli_banner)
+	/*
+	 * If we have a secret file authenticate all CLI connections
+	 * except the stdin/stdout debug port.
+	 */
+	if (cp->fdi != 0 && secret_file != NULL) {
+		mgt_cli_challenge(cp);
+		(void)VLU_Data("auth -\n", -1, cp->vlu);
+	} else if (params->cli_banner)
 		(void)VLU_Data("banner\n", -1, cp->vlu);
 
 	cp->ev = calloc(sizeof *cp->ev, 1);
@@ -432,7 +536,6 @@ telnet_close_one(int fd)
 		break;
 	}
 }
-
 
 static void
 telnet_close_all()
@@ -487,6 +590,31 @@ telnet_accept(const struct vev *ev, int what)
 	mgt_cli_setup(i, i, 0, p);
 	free(p);
 	return (0);
+}
+
+void
+mgt_cli_secret(const char *S_arg)
+{
+	int i, fd;
+	char buf[BUFSIZ];
+
+
+	srandomdev();
+	fd = open(S_arg, O_RDONLY);
+	if (fd < 0) {
+		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
+		exit (2);
+	}
+	i = read(fd, buf, sizeof buf);
+	if (i == 0) {
+		fprintf(stderr, "Empty secret-file \"%s\"\n", S_arg);
+		exit (2);
+	}
+	if (i < 0) {
+		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
+		exit (2);
+	}
+	secret_file = S_arg;
 }
 
 void

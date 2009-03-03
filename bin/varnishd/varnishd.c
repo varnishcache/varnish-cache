@@ -207,6 +207,8 @@ usage(void)
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
 	fprintf(stderr, FMT, "-t", "Default TTL");
+	fprintf(stderr, FMT, "-S secret-file",
+	    "Secret file for CLI authentication");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
 	fprintf(stderr, FMT, "-V", "version");
@@ -404,6 +406,7 @@ main(int argc, char * const *argv)
 	const char *h_arg = "classic";
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
+	const char *S_arg = NULL;
 	const char *s_arg = "file";
 	int s_arg_given = 0;
 	const char *T_arg = NULL;
@@ -445,7 +448,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:l:n:P:p:s:T:t:u:Vw:")) != -1)
+	    "a:b:Cdf:Fg:h:l:n:P:p:S:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -496,6 +499,9 @@ main(int argc, char * const *argv)
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
+			break;
+		case 'S':
+			S_arg = optarg;
 			break;
 		case 'T':
 			T_arg = optarg;
@@ -617,7 +623,9 @@ main(int argc, char * const *argv)
 
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug");
-	if (T_arg)
+	if (S_arg != NULL)
+		mgt_cli_secret(S_arg);
+	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
 
 	MGT_Run();
