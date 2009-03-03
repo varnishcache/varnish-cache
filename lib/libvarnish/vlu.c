@@ -62,12 +62,12 @@ VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 		l->func = func;
 		l->priv = priv;
 		l->bufl = bufsize - 1;
+		l->telnet = -1;
 		l->buf = malloc(l->bufl + 1);
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
 			l = NULL;
 		}
-		l->telnet = -1;
 	}
 	return (l);
 }
@@ -119,7 +119,7 @@ vlu_dotelnet(struct vlu *l, char *p)
 		/* Return WONT for these */
 		memcpy(tno, p, 3);
 		tno[1] = (char)252;
-		write(l->telnet, tno, 3);
+		(void)write(l->telnet, tno, 3);
 		i = 3;
 		break;
 	default:
@@ -198,7 +198,7 @@ int
 VLU_Data(const void *ptr, int len, struct vlu *l)
 {
 	const char *p;
-	int i;
+	int i = 0;
 
 	p = ptr;
 	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
