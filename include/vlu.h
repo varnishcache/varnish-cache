@@ -38,5 +38,6 @@ int VLU_Fd(int fd, struct vlu *l);
 int VLU_File(FILE *f, struct vlu *l);
 int VLU_Data(const void *ptr, int len, struct vlu *l);
 void VLU_Destroy(struct vlu *l);
+void VLU_SetTelnet(struct vlu *l, int fd);
 
 #endif

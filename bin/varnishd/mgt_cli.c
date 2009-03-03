@@ -501,6 +501,10 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	XXXAN(cp->cli->sb);
 	cp->cli->priv = cp;
 
+	/* Deal with TELNET options */
+	if (cp->fdi != 0)
+		VLU_SetTelnet(cp->vlu, cp->fdo);
+
 	/*
 	 * If we have a secret file authenticate all CLI connections
 	 * except the stdin/stdout debug port.
