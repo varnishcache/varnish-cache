@@ -37,11 +37,12 @@
 struct cli;
 
 extern struct vev_base	*mgt_evb;
-extern unsigned d_flag;
+extern unsigned		d_flag;
+extern pid_t		mgt_pid;
 
 /* mgt_child.c */
-void mgt_run(const char *T_arg);
-extern pid_t mgt_pid, child_pid;
+extern pid_t child_pid;
+void MGT_Run(void);
 void mgt_stop_child(void);
 
 /* mgt_cli.c */
