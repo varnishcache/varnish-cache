@@ -313,16 +313,14 @@ void									\
 VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */	\
-	sp->bereq->field = a;						\
+	sp->wrk->field = a;						\
 }									\
 									\
 type									\
 VRT_r_##dir##_##onm(const struct sess *sp)				\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */	\
-	return (sp->bereq->field);					\
+	return (sp->wrk->field);					\
 }
 
 VBEREQ(beresp, unsigned, cacheable, cacheable)
@@ -344,7 +342,6 @@ VRT_l_beresp_ttl(const struct sess *sp, double a)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */
 	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req);
 	/*
 	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
@@ -353,17 +350,16 @@ VRT_l_beresp_ttl(const struct sess *sp, double a)
 	 * We special case and make sure that rounding does not surprise.
 	 */
 	if (a <= 0)
-		sp->bereq->ttl = sp->t_req - 1;
+		sp->wrk->ttl = sp->t_req - 1;
 	else
-		sp->bereq->ttl = sp->t_req + a;
+		sp->wrk->ttl = sp->t_req + a;
 }
 
 double
 VRT_r_beresp_ttl(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);	/* XXX */
-	return (sp->bereq->ttl - sp->t_req);
+	return (sp->wrk->ttl - sp->t_req);
 }
 
 void
@@ -384,7 +380,6 @@ int
 VRT_r_beresp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	/* XXX: use http_GetStatus() */
 	if (sp->wrk->beresp->status)
 		return (sp->wrk->beresp->status);
@@ -780,7 +775,6 @@ VRT_Rollback(struct sess *sp)
 void
 VRT_ESI(struct sess *sp)
 {
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 
 	if (sp->cur_method != VCL_MET_FETCH) {
 		/* XXX: we should catch this at compile time */
@@ -789,7 +783,7 @@ VRT_ESI(struct sess *sp)
 		return;
 	}
 
-	sp->bereq->do_esi = 1;
+	sp->wrk->do_esi = 1;
 }
 
 /*--------------------------------------------------------------------*/

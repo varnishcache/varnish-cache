@@ -77,10 +77,9 @@ RFC2616_Ttl(const struct sess *sp)
 	char *p;
 	const struct http *hp;
 
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	hp = sp->wrk->beresp;
 
-	assert(sp->bereq->entered != 0.0 && !isnan(sp->bereq->entered));
+	assert(sp->wrk->entered != 0.0 && !isnan(sp->wrk->entered));
 	/* If all else fails, cache using default ttl */
 	ttl = params->default_ttl;
 
@@ -103,7 +102,7 @@ RFC2616_Ttl(const struct sess *sp)
 			max_age = strtoul(p, NULL, 0);
 			if (http_GetHdr(hp, H_Age, &p)) {
 				age = strtoul(p, NULL, 0);
-				sp->bereq->age = age;
+				sp->wrk->age = age;
 			}
 
 			if (age > max_age)
@@ -130,14 +129,14 @@ RFC2616_Ttl(const struct sess *sp)
 		}
 
 		if (h_date == 0 ||
-		    (h_date < sp->bereq->entered + params->clock_skew &&
-		    h_date + params->clock_skew > sp->bereq->entered)) {
+		    (h_date < sp->wrk->entered + params->clock_skew &&
+		    h_date + params->clock_skew > sp->wrk->entered)) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < sp->bereq->entered)
+			if (h_expires < sp->wrk->entered)
 				ttl = 0;
 			else
 				ttd = h_expires;
@@ -154,12 +153,12 @@ RFC2616_Ttl(const struct sess *sp)
 	} while (0);
 
 	if (ttl > 0 && ttd == 0)
-		ttd = sp->bereq->entered + ttl;
+		ttd = sp->wrk->entered + ttl;
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %u %u", sp->xid,
-	    ttd ? (int)(ttd - sp->bereq->entered) : 0,
-	    (int)sp->bereq->entered, (int)h_date,
+	    ttd ? (int)(ttd - sp->wrk->entered) : 0,
+	    (int)sp->wrk->entered, (int)h_date,
 	    (int)h_expires, max_age, age);
 
 	return (ttd);

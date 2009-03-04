@@ -314,12 +314,10 @@ FetchHdr(struct sess *sp)
 	struct worker *w;
 	char *b;
 	struct http *hp;
-	struct bereq *bereq;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	AN(sp->director);
 	AZ(sp->obj);
 	if (sp->objcore != NULL) {		/* pass has no objcore */
@@ -327,12 +325,10 @@ FetchHdr(struct sess *sp)
 		AN(sp->objhead);		/* details in hash_slinger.h */
 		AN(sp->objcore->flags & OC_F_BUSY);
 	}
-	AN(sp->bereq);
 
 	/* Transmit request */
 
 	w = sp->wrk;
-	bereq = sp->bereq;
 	hp = sp->wrk->bereq;
 
 	VBE_GetFd(sp);
@@ -410,14 +406,12 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 
 	/* We use the unmodified headers */
 	hp = sp->wrk->beresp1;
 	AN(sp->director);
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
-	AN(sp->bereq);
 
 	vc = sp->vbe;
 

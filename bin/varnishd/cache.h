@@ -225,6 +225,13 @@ struct worker {
 	struct http		*beresp1;
 	struct http		*beresp;
 	struct http		*resp;
+
+	unsigned		cacheable;
+	double			age;
+	double			entered;
+	double			ttl;
+	double			grace;
+	unsigned		do_esi;
 };
 
 /* Work Request for worker thread ------------------------------------*/
@@ -240,20 +247,6 @@ struct workreq {
 	VTAILQ_ENTRY(workreq)	list;
 	workfunc		*func;
 	void			*priv;
-};
-
-/* Backend Request ---------------------------------------------------*/
-
-struct bereq {
-	unsigned		magic;
-#define BEREQ_MAGIC		0x3b6d250c
-	VTAILQ_ENTRY(bereq)	list;
-	unsigned		cacheable;
-	double			age;
-	double			entered;
-	double			ttl;
-	double			grace;
-	unsigned		do_esi;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -398,7 +391,6 @@ struct sess {
 
 	struct director		*director;
 	struct vbe_conn		*vbe;
-	struct bereq		*bereq;
 	struct object		*obj;
 	struct objcore		*objcore;
 	struct objhead		*objhead;
@@ -443,8 +435,6 @@ void VCA_Init(void);
 void VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct sess *sp);
 void VBE_RecycleFd(struct sess *sp);
-struct bereq * VBE_new_bereq(struct sess *sp);
-void VBE_free_bereq(struct bereq **bereq);
 void VBE_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 

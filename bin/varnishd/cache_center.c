@@ -155,8 +155,6 @@ cnt_deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	AZ(sp->bereq);
-
 	sp->t_resp = TIM_real();
 	if (sp->obj->objhead != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
@@ -208,7 +206,6 @@ cnt_done(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->vbe);
-	AZ(sp->bereq);
 	sp->director = NULL;
 	sp->restarts = 0;
 
@@ -305,7 +302,6 @@ cnt_error(struct sess *sp)
 	char date[40];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->bereq);
 
 	/* We always close when we take this path */
 	sp->doclose = "error";
@@ -386,7 +382,6 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	AN(sp->bereq);
 	AN(sp->director);
 	AZ(sp->vbe);
 
@@ -404,7 +399,6 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VBE_free_bereq(&sp->bereq);
 		if (sp->objhead) {
 			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -428,22 +422,22 @@ cnt_fetch(struct sess *sp)
 	case 302: /* Moved Temporarily */
 	case 410: /* Gone */
 	case 404: /* Not Found */
-		sp->bereq->cacheable = 1;
+		sp->wrk->cacheable = 1;
 		break;
 	default:
-		sp->bereq->cacheable = 0;
+		sp->wrk->cacheable = 0;
 		break;
 	}
 
-	sp->bereq->entered = TIM_real();
-	sp->bereq->age = 0;
-	sp->bereq->ttl = RFC2616_Ttl(sp);
+	sp->wrk->entered = TIM_real();
+	sp->wrk->age = 0;
+	sp->wrk->ttl = RFC2616_Ttl(sp);
 
-	if (sp->bereq->ttl == 0.)
-		sp->bereq->cacheable = 0;
+	if (sp->wrk->ttl == 0.)
+		sp->wrk->cacheable = 0;
 
-	sp->bereq->do_esi = 0;
-	sp->bereq->grace = NAN;
+	sp->wrk->do_esi = 0;
+	sp->wrk->grace = NAN;
 
 	VCL_fetch_method(sp);
 
@@ -470,13 +464,13 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->cacheable = sp->bereq->cacheable;
-	sp->obj->ttl = sp->bereq->ttl;
-	sp->obj->grace = sp->bereq->grace;
+	sp->obj->cacheable = sp->wrk->cacheable;
+	sp->obj->ttl = sp->wrk->ttl;
+	sp->obj->grace = sp->wrk->grace;
 	if (sp->obj->ttl == 0.)
 		sp->obj->cacheable = 0;
-	sp->obj->age = sp->bereq->age;
-	sp->obj->entered = sp->bereq->entered;
+	sp->obj->age = sp->wrk->age;
+	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
 
 	/* Filter into object */
@@ -499,16 +493,13 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VBE_free_bereq(&sp->bereq);
 		HSH_Drop(sp);
 		AZ(sp->obj);
 		return (0);
 	}
 
-	if (sp->bereq->do_esi)
+	if (sp->wrk->do_esi)
 		ESI_Parse(sp);
-
-	VBE_free_bereq(&sp->bereq);
 
 	switch (handling) {
 	case VCL_RET_RESTART:
@@ -783,11 +774,9 @@ cnt_miss(struct sess *sp)
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
 		HSH_DerefObjCore(sp);
-		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		VBE_free_bereq(&sp->bereq);
 		HSH_DerefObjCore(sp);
 		sp->step = STP_PASS;
 		return (0);
@@ -796,7 +785,6 @@ cnt_miss(struct sess *sp)
 		return (0);
 	case VCL_RET_RESTART:
 		HSH_DerefObjCore(sp);
-		VBE_free_bereq(&sp->bereq);
 		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -848,7 +836,6 @@ cnt_pass(struct sess *sp)
 
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
-		VBE_free_bereq(&sp->bereq);
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -902,7 +889,6 @@ cnt_pipe(struct sess *sp)
 	assert(sp->handling == VCL_RET_PIPE);
 
 	PipeSession(sp);
-	AZ(sp->bereq);
 	AZ(sp->wrk->wfd);
 	sp->step = STP_DONE;
 	return (0);

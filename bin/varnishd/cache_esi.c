@@ -397,7 +397,6 @@ esi_handle_include(struct esi_work *ew)
 			 * different and have been rewritten underway.
 			 */
 			CHECK_OBJ_NOTNULL(ew->sp, SESS_MAGIC);
-			CHECK_OBJ_NOTNULL(ew->sp->bereq, BEREQ_MAGIC);
 			CHECK_OBJ_NOTNULL(ew->sp->wrk->bereq, HTTP_MAGIC);
 			tag = ew->sp->wrk->bereq->hd[HTTP_HDR_URL];
 
