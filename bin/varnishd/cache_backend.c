@@ -145,7 +145,6 @@ struct bereq *
 VBE_new_bereq(struct sess *sp)
 {
 	struct bereq *bereq;
-	volatile unsigned len;
 
 	Lck_Lock(&VBE_mtx);
 	bereq = VTAILQ_FIRST(&bereq_head);
@@ -155,12 +154,10 @@ VBE_new_bereq(struct sess *sp)
 	if (bereq != NULL) {
 		CHECK_OBJ(bereq, BEREQ_MAGIC);
 	} else {
-		len =  params->sess_workspace;
-		bereq = calloc(sizeof *bereq + len, 1);
+		bereq = calloc(sizeof *bereq, 1);
 		if (bereq == NULL)
 			return (NULL);
 		bereq->magic = BEREQ_MAGIC;
-		WS_Init(bereq->ws, "bereq", bereq + 1, len);
 		sp->wrk->stats->n_bereq++;
 	}
 	return (bereq);
@@ -180,7 +177,6 @@ VBE_free_bereq(struct bereq **bereqp)
 	*bereqp = NULL;
 
 	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
-	WS_Reset(bereq->ws, NULL);
 	Lck_Lock(&VBE_mtx);
 	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
 	Lck_Unlock(&VBE_mtx);
