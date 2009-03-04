@@ -385,8 +385,9 @@ cnt_fetch(struct sess *sp)
 	AN(sp->director);
 	AZ(sp->vbe);
 
+	/* sp->wrk->http[0] is (still) bereq */
 	sp->wrk->beresp = &sp->wrk->http[1];
-	sp->wrk->beresp1 = &sp->wrk->http[2];
+	http_Setup(sp->wrk->beresp, sp->wrk->ws);
 
 	i = FetchHdr(sp);
 
@@ -394,17 +395,21 @@ cnt_fetch(struct sess *sp)
 	 * Save a copy before it might get mangled in VCL.  When it comes to
 	 * dealing with the body, we want to see the unadultered headers.
 	 */
+	sp->wrk->beresp1 = &sp->wrk->http[2];
 	*sp->wrk->beresp1 = *sp->wrk->beresp;
 
 	if (i) {
-		sp->err_code = 503;
-		sp->step = STP_ERROR;
 		if (sp->objhead) {
 			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 			HSH_DerefObjCore(sp);
 		}
 		AZ(sp->obj);
+		sp->wrk->bereq = NULL;
+		sp->wrk->beresp = NULL;
+		sp->wrk->beresp1 = NULL;
+		sp->err_code = 503;
+		sp->step = STP_ERROR;
 		return (0);
 	}
 
@@ -491,10 +496,13 @@ cnt_fetch(struct sess *sp)
 	AN(sp->director);
 
 	if (i) {
-		sp->err_code = 503;
-		sp->step = STP_ERROR;
 		HSH_Drop(sp);
 		AZ(sp->obj);
+		sp->wrk->bereq = NULL;
+		sp->wrk->beresp = NULL;
+		sp->wrk->beresp1 = NULL;
+		sp->err_code = 503;
+		sp->step = STP_ERROR;
 		return (0);
 	}
 
@@ -506,6 +514,9 @@ cnt_fetch(struct sess *sp)
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
+		sp->wrk->bereq = NULL;
+		sp->wrk->beresp = NULL;
+		sp->wrk->beresp1 = NULL;
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
@@ -517,8 +528,11 @@ cnt_fetch(struct sess *sp)
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_ERROR:
-		sp->step = STP_ERROR;
 		HSH_Drop(sp);
+		sp->wrk->bereq = NULL;
+		sp->wrk->beresp = NULL;
+		sp->wrk->beresp1 = NULL;
+		sp->step = STP_ERROR;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
@@ -532,6 +546,8 @@ cnt_fetch(struct sess *sp)
 	}
 	sp->acct_req.fetch++;
 	sp->wrk->bereq = NULL;
+	sp->wrk->beresp = NULL;
+	sp->wrk->beresp1 = NULL;
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -769,6 +785,7 @@ cnt_miss(struct sess *sp)
 	AN(sp->objcore);
 	AN(sp->objhead);
 	sp->wrk->bereq = &sp->wrk->http[0];
+	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
 	switch(sp->handling) {
@@ -832,6 +849,7 @@ cnt_pass(struct sess *sp)
 	AZ(sp->obj);
 
 	sp->wrk->bereq = &sp->wrk->http[0];
+	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -880,6 +898,7 @@ cnt_pipe(struct sess *sp)
 
 	sp->acct_req.pipe++;
 	sp->wrk->bereq = &sp->wrk->http[0];
+	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);
