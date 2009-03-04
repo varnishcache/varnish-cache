@@ -439,7 +439,7 @@ void VCA_Init(void);
 void VBE_GetFd(struct sess *sp);
 void VBE_ClosedFd(struct sess *sp);
 void VBE_RecycleFd(struct sess *sp);
-struct bereq * VBE_new_bereq(void);
+struct bereq * VBE_new_bereq(struct sess *sp);
 void VBE_free_bereq(struct bereq **bereq);
 void VBE_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
