@@ -49,6 +49,10 @@
 #include "compat/vasprintf.h"
 #endif
 
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
+
 #include "cli_priv.h"
 #include "cli.h"
 #include "vsb.h"
