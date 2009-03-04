@@ -162,6 +162,8 @@ cnt_deliver(struct sess *sp)
 			sp->obj->last_lru = sp->t_resp;	/* XXX: locking ? */
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
 	}
+	sp->wrk->resp = &sp->wrk->http[2];
+	http_Setup(sp->wrk->resp, sp->wrk->ws);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (sp->handling) {
@@ -180,6 +182,7 @@ cnt_deliver(struct sess *sp)
 	RES_WriteObj(sp);
 	AZ(sp->wrk->wfd);
 	HSH_Deref(sp->wrk, &sp->obj);
+	sp->wrk->resp = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -1116,6 +1119,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(sp->obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+		WS_Assert(w->ws);
 
 		switch (sp->step) {
 #define STEP(l,u) \
@@ -1129,6 +1133,7 @@ CNT_Session(struct sess *sp)
 		default:
 			WRONG("State engine misfire");
 		}
+		WS_Assert(w->ws);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	WSL_Flush(w, 0);

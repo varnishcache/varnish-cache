@@ -59,22 +59,22 @@ set spobj {
     # Request paramters
     { req.request
 	RW STRING
-	{recv pipe pass hash miss hit fetch                        error }
+	{recv pipe pass hash miss hit fetch deliver                error }
 	"const struct sess *"
     }
     { req.url
 	RW STRING
-	{recv pipe pass hash miss hit fetch                        error }
+	{recv pipe pass hash miss hit fetch deliver                error }
 	"const struct sess *"
     }
     { req.proto
 	RW STRING
-	{recv pipe pass hash miss hit fetch                        error }
+	{recv pipe pass hash miss hit fetch deliver                error }
 	"const struct sess *"
     }
     { req.http.
 	RW HDR_REQ
-	{recv pipe pass hash miss hit fetch                        error }
+	{recv pipe pass hash miss hit fetch deliver                error }
 	"const struct sess *"
     }
 
@@ -86,7 +86,7 @@ set spobj {
     }
     { req.backend
 	RW BACKEND
-	{recv pipe pass hash miss hit fetch                        error }
+	{recv pipe pass hash miss hit fetch deliver                error }
 	"struct sess *"
     }
     { req.restarts
