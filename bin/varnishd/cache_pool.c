@@ -349,6 +349,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 		w->beresp = NULL;
 		w->resp = NULL;
 		w->wrq->func(w, w->wrq->priv);
+		AZ(w->bereq);
+		AZ(w->beresp1);
+		AZ(w->beresp);
+		AZ(w->resp);
+		WS_Assert(w->ws);
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;

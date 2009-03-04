@@ -36,25 +36,29 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_request(sp)",	    "VRT_l_req_request(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "req.url", STRING, 7,
 	    "VRT_r_req_url(sp)",	    "VRT_l_req_url(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "req.proto", STRING, 9,
 	    "VRT_r_req_proto(sp)",	    "VRT_l_req_proto(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "req.http.", HEADER, 9,
 	    "VRT_r_req_http_(sp)",	    "VRT_l_req_http_(sp, ",
 	    V_RW,	    "HDR_REQ",
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "req.hash", HASH, 8,
 	    NULL,	    "VRT_l_req_hash(sp, ",
@@ -65,7 +69,8 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_backend(sp)",	    "VRT_l_req_backend(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_ERROR
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "req.restarts", INT, 12,
 	    "VRT_r_req_restarts(sp)",	    NULL,

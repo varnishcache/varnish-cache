@@ -49,16 +49,16 @@ res_do_304(struct sess *sp)
 
 	WSP(sp, SLT_Length, "%u", 0);
 
-	http_ClrHeader(sp->http);
-	sp->http->logtag = HTTP_Tx;
-	http_SetResp(sp->http, "HTTP/1.1", "304", "Not Modified");
+	http_ClrHeader(sp->wrk->resp);
+	sp->wrk->resp->logtag = HTTP_Tx;
+	http_SetResp(sp->wrk->resp, "HTTP/1.1", "304", "Not Modified");
 	TIM_format(sp->t_req, lm);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
-	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", lm);
+	http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp, "Via: 1.1 varnish");
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "X-Varnish: %u", sp->xid);
 	TIM_format(sp->obj->last_modified, lm);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Connection: %s",
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Last-Modified: %s", lm);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
 	sp->wantbody = 0;
 }
@@ -99,29 +99,29 @@ RES_BuildHttp(struct sess *sp)
 
 	WSP(sp, SLT_Length, "%u", sp->obj->len);
 
-	http_ClrHeader(sp->http);
-	sp->http->logtag = HTTP_Tx;
-	http_CopyResp(sp->http, sp->obj->http);
-	http_FilterFields(sp->wrk, sp->fd, sp->http, sp->obj->http,
+	http_ClrHeader(sp->wrk->resp);
+	sp->wrk->resp->logtag = HTTP_Tx;
+	http_CopyResp(sp->wrk->resp, sp->obj->http);
+	http_FilterFields(sp->wrk, sp->fd, sp->wrk->resp, sp->obj->http,
 	    HTTPH_A_DELIVER);
 
 	/* Only HTTP 1.1 can do Chunked encoding */
 	if (sp->http->protover < 1.1 && !VTAILQ_EMPTY(&sp->obj->esibits))
-		http_Unset(sp->http, H_Transfer_Encoding);
+		http_Unset(sp->wrk->resp, H_Transfer_Encoding);
 
 	TIM_format(TIM_real(), time_str);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);
 
 	if (sp->xid != sp->obj->xid)
-		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
 	else
-		http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Age: %.0f",
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Age: %.0f",
 	    sp->obj->age + sp->t_resp - sp->obj->entered);
-	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Connection: %s",
+	http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp, "Via: 1.1 varnish");
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
 }
 
@@ -140,7 +140,7 @@ RES_WriteObj(struct sess *sp)
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	if (sp->esis == 0)
-		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->http, 1);
+		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
 
 	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
 		if (WRW_FlushRelease(sp->wrk)) {
