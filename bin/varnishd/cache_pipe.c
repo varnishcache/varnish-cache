@@ -67,15 +67,12 @@ PipeSession(struct sess *sp)
 {
 	struct vbe_conn *vc;
 	struct worker *w;
-	struct bereq *bereq;
 	struct pollfd fds[2];
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
-	bereq = sp->bereq;
-	sp->bereq = NULL;
 
 	VBE_GetFd(sp);
 	if (sp->vbe == NULL)
@@ -91,7 +88,6 @@ PipeSession(struct sess *sp)
 		    WRW_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
 	i = WRW_FlushRelease(w);
-	VBE_free_bereq(&bereq);
 
 	if (i) {
 		vca_close_session(sp, "pipe");

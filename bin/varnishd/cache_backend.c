@@ -51,11 +51,6 @@
  */
 static VTAILQ_HEAD(,vbe_conn) vbe_conns = VTAILQ_HEAD_INITIALIZER(vbe_conns);
 
-/*
- * List of cached bereq's
- */
-static VTAILQ_HEAD(,bereq) bereq_head = VTAILQ_HEAD_INITIALIZER(bereq_head);
-
 /*--------------------------------------------------------------------
  * Create default Host: header for backend request
  */
@@ -64,7 +59,6 @@ VBE_AddHostHeader(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
@@ -132,54 +126,6 @@ VBE_CheckFd(int fd)
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	return(poll(&pfd, 1, 0) == 0);
-}
-
-/*--------------------------------------------------------------------
- * Get a bereq structure for talking HTTP with the backend.
- * First attempt to pick one from our stash, else make a new.
- *
- * Can fail with NULL.
- */
-
-struct bereq *
-VBE_new_bereq(struct sess *sp)
-{
-	struct bereq *bereq;
-
-	Lck_Lock(&VBE_mtx);
-	bereq = VTAILQ_FIRST(&bereq_head);
-	if (bereq != NULL)
-		VTAILQ_REMOVE(&bereq_head, bereq, list);
-	Lck_Unlock(&VBE_mtx);
-	if (bereq != NULL) {
-		CHECK_OBJ(bereq, BEREQ_MAGIC);
-	} else {
-		bereq = calloc(sizeof *bereq, 1);
-		if (bereq == NULL)
-			return (NULL);
-		bereq->magic = BEREQ_MAGIC;
-		sp->wrk->stats->n_bereq++;
-	}
-	return (bereq);
-}
-
-/*--------------------------------------------------------------------
- * Return a bereq to the stash.
- */
-
-void
-VBE_free_bereq(struct bereq **bereqp)
-{
-	struct bereq *bereq;
-
-	AN(bereqp);
-	bereq = *bereqp;
-	*bereqp = NULL;
-
-	CHECK_OBJ_NOTNULL(bereq, BEREQ_MAGIC);
-	Lck_Lock(&VBE_mtx);
-	VTAILQ_INSERT_HEAD(&bereq_head, bereq, list);
-	Lck_Unlock(&VBE_mtx);
 }
 
 /*--------------------------------------------------------------------

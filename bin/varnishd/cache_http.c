@@ -631,13 +631,10 @@ http_FilterFields(struct worker *w, int fd, struct http *to,
 void
 http_FilterHeader(struct sess *sp, unsigned how)
 {
-	struct bereq *bereq;
 	struct http *hp;
 
-	AZ(sp->bereq);
-	bereq = VBE_new_bereq(sp);
-	AN(bereq);
 	hp = sp->wrk->bereq;
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
 	http_copyreq(hp, sp->http, how);
@@ -645,8 +642,6 @@ http_FilterHeader(struct sess *sp, unsigned how)
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
 	    "X-Forwarded-For: %s", sp->addr);
-
-	sp->bereq = bereq;
 }
 
 /*--------------------------------------------------------------------
