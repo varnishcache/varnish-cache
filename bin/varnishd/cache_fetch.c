@@ -333,7 +333,7 @@ FetchHdr(struct sess *sp)
 
 	w = sp->wrk;
 	bereq = sp->bereq;
-	hp = bereq->bereq;
+	hp = sp->wrk->bereq;
 
 	VBE_GetFd(sp);
 	if (sp->vbe == NULL)
@@ -421,7 +421,7 @@ FetchBody(struct sess *sp)
 
 	vc = sp->vbe;
 
-	is_head = (strcasecmp(http_GetReq(sp->bereq->bereq), "head") == 0);
+	is_head = (strcasecmp(http_GetReq(sp->wrk->bereq), "head") == 0);
 
 	/* Determine if we have a body or not */
 	cls = 0;

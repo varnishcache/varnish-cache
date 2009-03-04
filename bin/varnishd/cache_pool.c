@@ -347,6 +347,10 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 		http_Setup(&w->http[0], w->ws);
 		http_Setup(&w->http[1], w->ws);
 		http_Setup(&w->http[2], w->ws);
+		w->bereq = NULL;
+		w->beresp1 = NULL;
+		w->beresp = NULL;
+		w->resp = NULL;
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);

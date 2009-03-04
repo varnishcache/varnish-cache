@@ -65,10 +65,10 @@ VBE_AddHostHeader(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->bereq->bereq, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->bereq->bereq,
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
 	    "Host: %s", sp->vbe->backend->hosthdr);
 }
 
@@ -163,7 +163,6 @@ VBE_new_bereq(struct sess *sp)
 		WS_Init(bereq->ws, "bereq", bereq + 1, len);
 		sp->wrk->stats->n_bereq++;
 	}
-	http_Setup(bereq->bereq, bereq->ws);
 	http_Setup(bereq->beresp, bereq->ws);
 	return (bereq);
 }
