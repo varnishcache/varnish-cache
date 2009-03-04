@@ -101,7 +101,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->http;
 		break;
 	case HDR_BEREQ:
-		hp = sp->bereq->bereq;
+		hp = sp->wrk->bereq;
 		break;
 	case HDR_BERESP:
 		hp = sp->bereq->beresp;
@@ -244,9 +244,9 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
 VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
 VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	sp->bereq->bereq,	HTTP_HDR_REQ)
-VRT_DO_HDR(bereq, url,		sp->bereq->bereq,	HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	sp->bereq->bereq,	HTTP_HDR_PROTO)
+VRT_DO_HDR(bereq, request,	sp->wrk->bereq,		HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, url,		sp->wrk->bereq,		HTTP_HDR_URL)
+VRT_DO_HDR(bereq, proto,	sp->wrk->bereq,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)

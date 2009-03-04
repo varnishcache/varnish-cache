@@ -84,7 +84,7 @@ PipeSession(struct sess *sp)
 	TCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
-	sp->acct_req.hdrbytes += http_Write(w, bereq->bereq, 0);
+	sp->acct_req.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
 
 	if (sp->htc->pipeline.b != NULL)
 		sp->acct_req.bodybytes +=

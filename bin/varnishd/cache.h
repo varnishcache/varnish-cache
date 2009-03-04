@@ -220,6 +220,10 @@ struct worker {
 
 	struct ws		ws[1];
 	struct http		http[3];
+	struct http		*bereq;
+	struct http		*beresp1;
+	struct http		*beresp;
+	struct http		*resp;
 };
 
 /* Work Request for worker thread ------------------------------------*/
@@ -244,7 +248,6 @@ struct bereq {
 #define BEREQ_MAGIC		0x3b6d250c
 	VTAILQ_ENTRY(bereq)	list;
 	struct ws		ws[1];
-	struct http		bereq[1];
 	struct http		beresp[2];
 	struct http_conn	htc[1];
 	unsigned		cacheable;

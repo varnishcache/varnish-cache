@@ -339,6 +339,7 @@ cnt_error(struct sess *sp)
 	assert(sp->handling == VCL_RET_DELIVER);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
+	sp->wrk->bereq = NULL;
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -536,6 +537,7 @@ cnt_fetch(struct sess *sp)
 		HSH_Unbusy(sp);
 	}
 	sp->acct_req.fetch++;
+	sp->wrk->bereq = NULL;
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -622,6 +624,7 @@ cnt_hit(struct sess *sp)
 	if (sp->handling == VCL_RET_DELIVER) {
 		/* Dispose of any body part of the request */
 		FetchReqBody(sp);
+		sp->wrk->bereq = NULL;
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -771,6 +774,7 @@ cnt_miss(struct sess *sp)
 	AZ(sp->obj);
 	AN(sp->objcore);
 	AN(sp->objhead);
+	sp->wrk->bereq = &sp->wrk->http[0];
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
 	switch(sp->handling) {
@@ -836,6 +840,7 @@ cnt_pass(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
+	sp->wrk->bereq = &sp->wrk->http[0];
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -884,6 +889,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	sp->acct_req.pipe++;
+	sp->wrk->bereq = &sp->wrk->http[0];
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);

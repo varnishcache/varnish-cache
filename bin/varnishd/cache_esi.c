@@ -398,8 +398,8 @@ esi_handle_include(struct esi_work *ew)
 			 */
 			CHECK_OBJ_NOTNULL(ew->sp, SESS_MAGIC);
 			CHECK_OBJ_NOTNULL(ew->sp->bereq, BEREQ_MAGIC);
-			CHECK_OBJ_NOTNULL(ew->sp->bereq->bereq, HTTP_MAGIC);
-			tag = ew->sp->bereq->bereq->hd[HTTP_HDR_URL];
+			CHECK_OBJ_NOTNULL(ew->sp->wrk->bereq, HTTP_MAGIC);
+			tag = ew->sp->wrk->bereq->hd[HTTP_HDR_URL];
 
 			/* Use the objects WS to store the result */
 			CHECK_OBJ_NOTNULL(ew->sp->obj, OBJECT_MAGIC);
