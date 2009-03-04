@@ -344,9 +344,6 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 		w->lastused = NAN;
 		stats_clean = 0;
 		WS_Reset(w->ws, NULL);
-		http_Setup(&w->http[0], w->ws);
-		http_Setup(&w->http[1], w->ws);
-		http_Setup(&w->http[2], w->ws);
 		w->bereq = NULL;
 		w->beresp1 = NULL;
 		w->beresp = NULL;
