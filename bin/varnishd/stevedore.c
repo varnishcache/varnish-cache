@@ -46,19 +46,32 @@ struct storage *
 STV_alloc(struct sess *sp, size_t size)
 {
 	struct storage *st;
-	struct stevedore *stv;
+	struct stevedore *stv = NULL;
+	unsigned fail = 0;
+
+	/*
+	 * Always try the stevedore which allocated the object in order to
+	 * not needlessly split an object across multiple stevedores.
+	 */
+	if (sp->obj != NULL) {
+		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+		if (sp->obj->objstore != NULL) {
+			stv = sp->obj->objstore->stevedore;
+			CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+		}
+	}
 
 	for (;;) {
-
-		/* pick a stevedore and bump the head along */
-		stv = VTAILQ_NEXT(stv_next, list);
-		if (stv == NULL)
-			stv = VTAILQ_FIRST(&stevedores);
-		AN(stv);
-		AN(stv->name);
-
-		 /* XXX: only safe as long as pointer writes are atomic */
-		stv_next = stv;
+		if (stv == NULL) {
+			/* pick a stevedore and bump the head along */
+			stv = VTAILQ_NEXT(stv_next, list);
+			if (stv == NULL)
+				stv = VTAILQ_FIRST(&stevedores);
+			AN(stv);
+			AN(stv->name);
+			stv_next = stv;
+			fail = 0;
+		}
 
 		/* try to allocate from it */
 		AN(stv->alloc);
@@ -69,6 +82,10 @@ STV_alloc(struct sess *sp, size_t size)
 		/* no luck; try to free some space and keep trying */
 		if (EXP_NukeOne(sp) == -1)
 			break;
+
+		/* Enough is enough: try another if we have one */
+		if (++fail == 50)
+			stv = NULL;
 	}
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	return (st);
