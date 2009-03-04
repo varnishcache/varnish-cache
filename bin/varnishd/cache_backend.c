@@ -163,7 +163,6 @@ VBE_new_bereq(struct sess *sp)
 		WS_Init(bereq->ws, "bereq", bereq + 1, len);
 		sp->wrk->stats->n_bereq++;
 	}
-	http_Setup(bereq->beresp, bereq->ws);
 	return (bereq);
 }
 

@@ -390,13 +390,16 @@ cnt_fetch(struct sess *sp)
 	AN(sp->director);
 	AZ(sp->vbe);
 
+	sp->wrk->beresp = &sp->wrk->http[1];
+	sp->wrk->beresp1 = &sp->wrk->http[2];
+
 	i = FetchHdr(sp);
 
 	/*
 	 * Save a copy before it might get mangled in VCL.  When it comes to
 	 * dealing with the body, we want to see the unadultered headers.
 	 */
-	sp->bereq->beresp[1] = sp->bereq->beresp[0];
+	*sp->wrk->beresp1 = *sp->wrk->beresp;
 
 	if (i) {
 		sp->err_code = 503;
@@ -411,7 +414,7 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 
-	sp->err_code = http_GetStatus(sp->bereq->beresp);
+	sp->err_code = http_GetStatus(sp->wrk->beresp);
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
@@ -477,7 +480,7 @@ cnt_fetch(struct sess *sp)
 	WS_Assert(sp->obj->ws_o);
 
 	/* Filter into object */
-	hp = sp->bereq->beresp;
+	hp = sp->wrk->beresp;
 	hp2 = sp->obj->http;
 
 	hp2->logtag = HTTP_Obj;

@@ -104,7 +104,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->wrk->bereq;
 		break;
 	case HDR_BERESP:
-		hp = sp->bereq->beresp;
+		hp = sp->wrk->beresp;
 		break;
 	case HDR_RESP:
 		hp = sp->http;
@@ -251,8 +251,8 @@ VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->http,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(beresp,  proto,	sp->bereq->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	sp->bereq->beresp,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp,  proto,	sp->wrk->beresp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp,  response,	sp->wrk->beresp,	HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 
@@ -372,12 +372,12 @@ VRT_l_beresp_status(const struct sess *sp, int num)
 	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->bereq->beresp->ws, 4);
+	p = WS_Alloc(sp->wrk->beresp->ws, 4);
 	if (p == NULL)
 		WSP(sp, SLT_LostHeader, "%s", "obj.status");
 	else
 		sprintf(p, "%d", num);
-	http_SetH(sp->bereq->beresp, HTTP_HDR_STATUS, p);
+	http_SetH(sp->wrk->beresp, HTTP_HDR_STATUS, p);
 }
 
 int
@@ -386,10 +386,10 @@ VRT_r_beresp_status(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 	/* XXX: use http_GetStatus() */
-	if (sp->bereq->beresp->status)
-		return (sp->bereq->beresp->status);
-	AN(sp->bereq->beresp->hd[HTTP_HDR_STATUS].b);
-	return (atoi(sp->bereq->beresp->hd[HTTP_HDR_STATUS].b));
+	if (sp->wrk->beresp->status)
+		return (sp->wrk->beresp->status);
+	AN(sp->wrk->beresp->hd[HTTP_HDR_STATUS].b);
+	return (atoi(sp->wrk->beresp->hd[HTTP_HDR_STATUS].b));
 }
 
 

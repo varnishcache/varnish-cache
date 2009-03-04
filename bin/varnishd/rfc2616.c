@@ -78,7 +78,7 @@ RFC2616_Ttl(const struct sess *sp)
 	const struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
-	hp = sp->bereq->beresp;
+	hp = sp->wrk->beresp;
 
 	assert(sp->bereq->entered != 0.0 && !isnan(sp->bereq->entered));
 	/* If all else fails, cache using default ttl */
