@@ -291,18 +291,17 @@ WRK_SumStat(const struct worker *w)
 /*--------------------------------------------------------------------*/
 
 static void *
-wrk_thread(void *priv)
+wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 {
 	struct worker *w, ww;
-	struct wq *qp;
-	unsigned char wlog[params->shm_workspace];
+	unsigned char wlog[shm_workspace];
+	unsigned char ws[sess_workspace];
 	struct SHA256Context sha256;
 	struct dstat stats;
 	unsigned stats_clean = 0;
 
 	THR_SetName("cache-worker");
 	w = &ww;
-	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	memset(w, 0, sizeof *w);
 	memset(&stats, 0, sizeof stats);
 	w->magic = WORKER_MAGIC;
@@ -312,6 +311,8 @@ wrk_thread(void *priv)
 	w->wle = wlog + sizeof wlog;
 	w->sha256ctx = &sha256;
 	AZ(pthread_cond_init(&w->cond, NULL));
+
+	WS_Init(w->ws, "wrk", ws, sess_workspace);
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
@@ -342,6 +343,10 @@ wrk_thread(void *priv)
 		AN(w->wrq->func);
 		w->lastused = NAN;
 		stats_clean = 0;
+		WS_Reset(w->ws, NULL);
+		http_Setup(&w->http[0], w->ws);
+		http_Setup(&w->http[1], w->ws);
+		http_Setup(&w->http[2], w->ws);
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
@@ -366,6 +371,18 @@ wrk_thread(void *priv)
 	HSH_Cleanup(w);
 	WRK_SumStat(w);
 	return (NULL);
+}
+
+static void *
+wrk_thread(void *priv)
+{
+	struct wq *qp;
+
+	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
+	/* We need to snapshot these two for consistency */
+	return (wrk_thread_real(qp,
+	    params->shm_workspace,
+	    params->sess_workspace));
 }
 
 /*--------------------------------------------------------------------

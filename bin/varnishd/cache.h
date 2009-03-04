@@ -217,6 +217,9 @@ struct worker {
 	unsigned		wlr;
 
 	struct SHA256Context	*sha256ctx;
+
+	struct ws		ws[1];
+	struct http		http[3];
 };
 
 /* Work Request for worker thread ------------------------------------*/
