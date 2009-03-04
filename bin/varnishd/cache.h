@@ -218,6 +218,7 @@ struct worker {
 
 	struct SHA256Context	*sha256ctx;
 
+	struct http_conn	htc[1];
 	struct ws		ws[1];
 	struct http		http[3];
 	struct http		*bereq;
@@ -247,8 +248,6 @@ struct bereq {
 	unsigned		magic;
 #define BEREQ_MAGIC		0x3b6d250c
 	VTAILQ_ENTRY(bereq)	list;
-	struct ws		ws[1];
-	struct http_conn	htc[1];
 	unsigned		cacheable;
 	double			age;
 	double			entered;
