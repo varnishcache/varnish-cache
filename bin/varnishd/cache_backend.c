@@ -142,7 +142,7 @@ VBE_CheckFd(int fd)
  */
 
 struct bereq *
-VBE_new_bereq(void)
+VBE_new_bereq(struct sess *sp)
 {
 	struct bereq *bereq;
 	volatile unsigned len;
@@ -161,7 +161,7 @@ VBE_new_bereq(void)
 			return (NULL);
 		bereq->magic = BEREQ_MAGIC;
 		WS_Init(bereq->ws, "bereq", bereq + 1, len);
-		VSL_stats->n_bereq++;
+		sp->wrk->stats->n_bereq++;
 	}
 	http_Setup(bereq->bereq, bereq->ws);
 	http_Setup(bereq->beresp, bereq->ws);
