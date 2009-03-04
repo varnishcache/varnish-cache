@@ -384,7 +384,7 @@ FetchHdr(struct sess *sp)
 		return (__LINE__);
 	}
 
-	hp = bereq->beresp;
+	hp = sp->wrk->beresp;
 
 	if (http_DissectResponse(sp->wrk, bereq->htc, hp)) {
 		VBE_ClosedFd(sp);
@@ -413,7 +413,7 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->bereq, BEREQ_MAGIC);
 
 	/* We use the unmodified headers */
-	hp = &sp->bereq->beresp[1];
+	hp = sp->wrk->beresp1;
 	AN(sp->director);
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
