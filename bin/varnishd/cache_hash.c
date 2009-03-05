@@ -336,6 +336,7 @@ hsh_testmagic(void *result)
 		memcpy(hsh_magiclist[nused++].was, result, SHA256_LEN);
 	if (i == nused)
 		return;
+	assert(i < HSH_NMAGIC);
 	fprintf(stderr, "HASHMAGIC: <");
 	for (j = 0; j < SHA256_LEN; j++)
 		fprintf(stderr, "%02x", ((unsigned char*)result)[j]);
