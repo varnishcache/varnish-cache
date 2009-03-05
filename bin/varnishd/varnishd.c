@@ -82,8 +82,7 @@ volatile struct params	*params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
-
-
+int			exit_status;
 
 /*--------------------------------------------------------------------*/
 
@@ -632,5 +631,5 @@ main(int argc, char * const *argv)
 
 	if (pfh != NULL)
 		(void)vpf_remove(pfh);
-	exit(0);
+	exit(exit_status);
 }

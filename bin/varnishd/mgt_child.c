@@ -431,13 +431,19 @@ mgt_sigchld(const struct vev *e, int what)
 	vsb = vsb_newauto();
 	XXXAN(vsb);
 	vsb_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
-	if (!WIFEXITED(status) && WEXITSTATUS(status))
+	if (!WIFEXITED(status) && WEXITSTATUS(status)) {
 		vsb_printf(vsb, " status=%d", WEXITSTATUS(status));
-	if (WIFSIGNALED(status))
+		exit_status |= 0x20;
+	}
+	if (WIFSIGNALED(status)) {
 		vsb_printf(vsb, " signal=%d", WTERMSIG(status));
+		exit_status |= 0x40;
+	}
 #ifdef WCOREDUMP
-	if (WCOREDUMP(status))
+	if (WCOREDUMP(status)) {
 		vsb_printf(vsb, " (core dumped)");
+		exit_status |= 0x80;
+	}
 #endif
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
@@ -547,7 +553,6 @@ MGT_Run(void)
 		REPORT(LOG_ERR, "vev_schedule() = %d", i);
 
 	REPORT0(LOG_ERR, "manager dies");
-	exit(2);
 }
 
 /*--------------------------------------------------------------------*/
