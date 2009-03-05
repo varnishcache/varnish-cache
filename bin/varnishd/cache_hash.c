@@ -67,6 +67,7 @@
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "vsha256.h"
+#include "cache_backend.h"
 
 static const struct hash_slinger *hash;
 unsigned	save_hash;
@@ -362,6 +363,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	AN(hash);
 	w = sp->wrk;
 
@@ -419,14 +421,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	}
 
 	/*
-	 * If we have seen a busy object, and have an object in grace,
-	 * use it, if req.grace is also satisified.
+	 * If we have seen a busy object or the backend is unhealthy, and
+	 * have an object in grace, use it, if req.grace is also
+	 * satisified.
 	 * XXX: Interesting footnote:  The busy object might be for a
 	 * XXX: different "Vary:" than we sought.  We have no way of knowing
 	 * XXX: this until the object is unbusy'ed, so in practice we
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
-	if (oc == NULL && grace_oc != NULL && busy_oc != NULL) {
+	if (oc == NULL && grace_oc != NULL && 
+	    (busy_oc != NULL || !sp->director->healthy(sp))) {
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
