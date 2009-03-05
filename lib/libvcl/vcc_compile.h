@@ -100,7 +100,6 @@ enum var_type {
 	INT,
 	FLOAT,
 	SIZE,
-	RATE,
 	TIME,
 	RTIME,
 	STRING,

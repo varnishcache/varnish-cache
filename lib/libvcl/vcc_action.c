@@ -185,7 +185,6 @@ parse_set(struct tokenlist *tl)
 	switch (vp->fmt) {
 	case INT:
 	case SIZE:
-	case RATE:
 	case TIME:
 	case RTIME:
 	case FLOAT:
@@ -207,8 +206,6 @@ parse_set(struct tokenlist *tl)
 				vcc_RTimeVal(tl);
 			else if (vp->fmt == SIZE)
 				vcc_SizeVal(tl);
-			else if (vp->fmt == RATE)
-				vcc_RateVal(tl);
 			else if (vp->fmt == FLOAT)
 				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
 			else if (vp->fmt == INT) {
