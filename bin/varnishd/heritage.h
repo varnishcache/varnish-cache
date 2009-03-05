@@ -125,10 +125,6 @@ struct params {
 	/* Listen depth */
 	unsigned		listen_depth;
 
-	/* Srcaddr hash */
-	unsigned		srcaddr_hash;
-	unsigned		srcaddr_ttl;
-
 	/* HTTP proto behaviour */
 	unsigned		backend_http11;
 	unsigned		client_http11;

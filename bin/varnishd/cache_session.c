@@ -30,14 +30,6 @@
  *
  * Session and Client management.
  *
- * The srcaddr structures are kept around only as a convenience feature to
- * make it possible to track down offenders and misconfigured caches.
- * As such it is pure overhead and we do not want to spend too much time
- * on maintaining it.
- *
- * We identify srcaddrs instead of full addr+port because the desired level
- * of granularity is "whois is abuse@ or tech-c@ in the RIPE database.
- *
  * XXX: The two-list session management is actually not a good idea
  * XXX: come to think of it, because we want the sessions reused in
  * XXX: Most Recently Used order.
@@ -83,130 +75,7 @@ static struct lock		ses_mem_mtx;
 
 /*--------------------------------------------------------------------*/
 
-struct srcaddr {
-	unsigned		magic;
-#define SRCADDR_MAGIC		0x375111db
-
-	unsigned		hash;
-	VTAILQ_ENTRY(srcaddr)	list;
-	struct srcaddrhead	*sah;
-
-	char			addr[TCP_ADDRBUFSIZE];
-	unsigned		nref;
-
-	/* How long to keep entry around.  Inherits timescale from t_open */
-	double			ttl;
-
-	struct acct		acct;
-};
-
-static struct srcaddrhead {
-	unsigned		magic;
-#define SRCADDRHEAD_MAGIC	0x38231a8b
-	VTAILQ_HEAD(,srcaddr)	head;
-	struct lock		mtx;
-} *srchash;
-
-static unsigned			nsrchash;
 static struct lock 		stat_mtx;
-
-/*--------------------------------------------------------------------
- * Assign a srcaddr to this session.
- *
- * Each hash bucket is sorted in least recently used order and if we
- * need to make a new entry we recycle the first expired entry we find.
- * If we find more expired entries during our search, we delete them.
- */
-
-void
-SES_RefSrcAddr(struct sess *sp)
-{
-	unsigned u, v;
-	struct srcaddr *c, *c2, *c3;
-	struct srcaddrhead *ch;
-	double now;
-
-	if (params->srcaddr_ttl == 0) {
-		sp->srcaddr = NULL;
-		return;
-	}
-	AZ(sp->srcaddr);
-	u = crc32_l(sp->addr, strlen(sp->addr));
-	v = u % nsrchash;
-	ch = &srchash[v];
-	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
-	now = sp->t_open;
-	if (sp->wrk->srcaddr == NULL) {
-		sp->wrk->srcaddr = calloc(sizeof *sp->wrk->srcaddr, 1);
-		XXXAN(sp->wrk->srcaddr);
-	}
-
-	Lck_Lock(&ch->mtx);
-	c3 = NULL;
-	VTAILQ_FOREACH_SAFE(c, &ch->head, list, c2) {
-		if (c->hash == u && !strcmp(c->addr, sp->addr)) {
-			if (c->nref == 0)
-				VSL_stats->n_srcaddr_act++;
-			c->nref++;
-			c->ttl = now + params->srcaddr_ttl;
-			sp->srcaddr = c;
-			VTAILQ_REMOVE(&ch->head, c, list);
-			VTAILQ_INSERT_TAIL(&ch->head, c, list);
-			if (c3 != NULL) {
-				VTAILQ_REMOVE(&ch->head, c3, list);
-				VSL_stats->n_srcaddr--;
-			}
-			Lck_Unlock(&ch->mtx);
-			if (c3 != NULL)
-				free(c3);
-			return;
-		}
-		if (c->nref > 0 || c->ttl > now)
-			continue;
-		if (c3 == NULL)
-			c3 = c;
-	}
-	if (c3 == NULL) {
-		c3 = sp->wrk->srcaddr;
-		sp->wrk->srcaddr = NULL;
-		VSL_stats->n_srcaddr++;
-	} else
-		VTAILQ_REMOVE(&ch->head, c3, list);
-	AN(c3);
-	memset(c3, 0, sizeof *c3);
-	c3->magic = SRCADDR_MAGIC;
-	strcpy(c3->addr, sp->addr);
-	c3->hash = u;
-	c3->acct.first = now;
-	c3->ttl = now + params->srcaddr_ttl;
-	c3->nref = 1;
-	c3->sah = ch;
-	VSL_stats->n_srcaddr_act++;
-	VTAILQ_INSERT_TAIL(&ch->head, c3, list);
-	sp->srcaddr = c3;
-	Lck_Unlock(&ch->mtx);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-ses_relsrcaddr(struct sess *sp)
-{
-	struct srcaddrhead *ch;
-
-	if (sp->srcaddr == NULL)
-		return;
-	CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
-	ch = sp->srcaddr->sah;
-	CHECK_OBJ(ch, SRCADDRHEAD_MAGIC);
-	Lck_Lock(&ch->mtx);
-	assert(sp->srcaddr->nref > 0);
-	sp->srcaddr->nref--;
-	if (sp->srcaddr->nref == 0)
-		VSL_stats->n_srcaddr_act--;
-	sp->srcaddr = NULL;
-	Lck_Unlock(&ch->mtx);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -223,22 +92,8 @@ void
 SES_Charge(struct sess *sp)
 {
 	struct acct *a = &sp->acct_req;
-	struct acct b;
 
 	ses_sum_acct(&sp->acct, a);
-	if (sp->srcaddr != NULL) {
-		/* XXX: only report once per second ? */
-		CHECK_OBJ(sp->srcaddr, SRCADDR_MAGIC);
-		Lck_Lock(&sp->srcaddr->sah->mtx);
-		ses_sum_acct(&sp->srcaddr->acct, a);
-		b = sp->srcaddr->acct;
-		Lck_Unlock(&sp->srcaddr->sah->mtx);
-		WSL(sp->wrk, SLT_StatAddr, 0,
-		    "%s 0 %.0f %ju %ju %ju %ju %ju %ju %ju",
-		    sp->srcaddr->addr, sp->t_end - b.first,
-		    b.sess, b.req, b.pipe, b.pass,
-		    b.fetch, b.hdrbytes, b.bodybytes);
-	}
 	Lck_Lock(&stat_mtx);
 #define ACCT(foo)	VSL_stats->s_##foo += a->foo;
 #include "acct_fields.h"
@@ -335,7 +190,6 @@ SES_Delete(struct sess *sp)
 	AZ(sp->obj);
 	AZ(sp->vcl);
 	VSL_stats->n_sess--;
-	ses_relsrcaddr(sp);
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
@@ -357,16 +211,7 @@ SES_Delete(struct sess *sp)
 void
 SES_Init()
 {
-	int i;
 
-	nsrchash = params->srcaddr_hash;
-	srchash = calloc(sizeof *srchash, nsrchash);
-	XXXAN(srchash);
-	for (i = 0; i < nsrchash; i++) {
-		srchash[i].magic = SRCADDRHEAD_MAGIC;
-		VTAILQ_INIT(&srchash[i].head);
-		Lck_New(&srchash[i].mtx);
-	}
 	Lck_New(&stat_mtx);
 	Lck_New(&ses_mem_mtx);
 }

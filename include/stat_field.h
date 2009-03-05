@@ -45,8 +45,6 @@ MAC_STAT(backend_reuse,		uint64_t, 0, 'a', "Backend connections reuses")
 MAC_STAT(backend_recycle,	uint64_t, 0, 'a', "Backend connections recycles")
 MAC_STAT(backend_unused,	uint64_t, 0, 'a', "Backend connections unused")
 
-MAC_STAT(n_srcaddr,		uint64_t, 0, 'i', "N struct srcaddr")
-MAC_STAT(n_srcaddr_act,		uint64_t, 0, 'i', "N active struct srcaddr")
 MAC_STAT(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
 MAC_STAT(n_sess,		uint64_t, 0, 'i', "N struct sess")
 MAC_STAT(n_object,		uint64_t, 1, 'i', "N struct object")

@@ -372,8 +372,6 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
-	if (w->srcaddr != NULL)
-		free(w->srcaddr);
 	HSH_Cleanup(w);
 	WRK_SumStat(w);
 	return (NULL);

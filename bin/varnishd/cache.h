@@ -211,7 +211,6 @@ struct worker {
 	ssize_t			liov;
 
 	struct VCL_conf		*vcl;
-	struct srcaddr		*srcaddr;
 
 	unsigned char		*wlb, *wlp, *wle;
 	unsigned		wlr;
@@ -352,7 +351,6 @@ struct sess {
 	/* formatted ascii client address */
 	char			*addr;
 	char			*port;
-	struct srcaddr		*srcaddr;
 
 	/* HTTP request */
 	const char		*doclose;
@@ -579,7 +577,6 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 void SES_Init(void);
 struct sess *SES_New(const struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
-void SES_RefSrcAddr(struct sess *sp);
 void SES_Charge(struct sess *sp);
 void SES_ResetBackendTimeouts(struct sess *sp);
 void SES_InheritBackendTimeouts(struct sess *sp);

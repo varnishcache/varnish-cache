@@ -41,7 +41,6 @@
 SLTM(Debug)
 SLTM(Error)
 SLTM(CLI)
-SLTM(StatAddr)
 SLTM(StatSess)
 SLTM(ReqEnd)
 SLTM(SessionOpen)
