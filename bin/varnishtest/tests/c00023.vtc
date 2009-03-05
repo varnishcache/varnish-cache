@@ -33,7 +33,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-hcritbit" -vcl+backend { } -start 
-varnish v1 -cliok "param.set diag_bitmap 0x8000000"
+varnish v1 -cliok "param.set diag_bitmap 0x80000000"
 
 client c1 {
         txreq -url "/1"
