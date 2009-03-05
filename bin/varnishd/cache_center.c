@@ -911,6 +911,7 @@ cnt_pipe(struct sess *sp)
 
 	PipeSession(sp);
 	AZ(sp->wrk->wfd);
+	sp->wrk->bereq = NULL;
 	sp->step = STP_DONE;
 	return (0);
 }
