@@ -121,23 +121,6 @@ SizeUnit(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------
- * Recognize and convert units of rate as { space '/' time }
- */
-
-static double
-RateUnit(struct tokenlist *tl)
-{
-	double sc;
-
-	assert(tl->t->tok == ID);
-	sc = SizeUnit(tl);
-	Expect(tl, '/');
-	vcc_NextToken(tl);
-	sc /= TimeUnit(tl);
-	return (sc);
-}
-
-/*--------------------------------------------------------------------
  * Recognize and convert { CNUM } to unsigned value
  */
 
@@ -224,18 +207,6 @@ vcc_SizeVal(struct tokenlist *tl)
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = SizeUnit(tl);
-	Fb(tl, 0, "(%g * %g)", v, sc);
-}
-
-void
-vcc_RateVal(struct tokenlist *tl)
-{
-	double v, sc;
-
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = RateUnit(tl);
 	Fb(tl, 0, "(%g * %g)", v, sc);
 }
 
