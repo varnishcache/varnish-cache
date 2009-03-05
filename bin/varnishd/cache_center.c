@@ -581,7 +581,6 @@ cnt_first(struct sess *sp)
 	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->lastused = sp->t_open;
 	sp->acct_req.sess++;
-	SES_RefSrcAddr(sp);
 	do
 		i = HTC_Rx(sp->htc);
 	while (i == 0);

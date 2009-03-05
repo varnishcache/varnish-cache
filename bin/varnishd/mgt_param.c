@@ -576,16 +576,6 @@ static const struct parspec input_parspec[] = {
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "srcaddr_hash", tweak_uint, &master.srcaddr_hash, 63, UINT_MAX,
-		"Number of source address hash buckets.\n"
-		"Powers of two are bad, prime numbers are good.",
-		EXPERIMENTAL | MUST_RESTART,
-		"1049", "buckets" },
-	{ "srcaddr_ttl", tweak_uint, &master.srcaddr_ttl, 0, UINT_MAX,
-		"Lifetime of srcaddr entries.\n"
-		"Zero will disable srcaddr accounting entirely.",
-		EXPERIMENTAL,
-		"30", "seconds" },
 	{ "backend_http11", tweak_bool, &master.backend_http11, 0, 0,
 		"Force all backend requests to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
