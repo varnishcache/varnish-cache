@@ -65,6 +65,8 @@ struct smp_seg {
 	uint64_t		offset;
 	uint64_t		length;
 	struct smp_segment	segment;
+	uint32_t		nalloc;
+	uint64_t		next_addr;
 };
 
 struct smp_sc {
@@ -83,7 +85,6 @@ struct smp_sc {
 
 	VTAILQ_HEAD(, smp_seg)	segments;
 	struct smp_seg		*cur_seg;
-	uint64_t		next_addr;
 };
 
 /*--------------------------------------------------------------------
@@ -462,11 +463,30 @@ fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 
 	/* Set up our allocation point */
 	sc->cur_seg = sg;
-	sc->next_addr = sg->offset +
+	sg->next_addr = sg->offset +
 	    sizeof (struct smp_sign) +
 	    sizeof (struct smp_segment) +
 	    SHA256_LEN;
-	memcpy(sc->ptr + sc->next_addr, "HERE", 4);
+	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+}
+
+/*--------------------------------------------------------------------
+ * Close a segment
+ */
+
+static void
+smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
+{
+	void *ptr;
+	uint64_t length;
+
+	(void)sc;
+	sg->segment.objlist = sg->next_addr;
+	sg->segment.nalloc = sg->nalloc;
+	(void)smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT");
+	memcpy(ptr, &sg->segment, sizeof sg->segment);
+	smp_create_sign(sc, sg->offset, sizeof sg->segment, "SEGMENT");
+	smp_sync_sign(sc, sg->offset, sizeof sg->segment);
 }
 
 /*--------------------------------------------------------------------
@@ -504,7 +524,11 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 static void
 smp_close(const struct stevedore *st)
 {
+	struct smp_sc	*sc;
+
+	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 fprintf(stderr, "Close Silo(%p)\n", st);
+	smp_close_seg(sc, sc->cur_seg);
 }
 
 /*--------------------------------------------------------------------
@@ -514,6 +538,14 @@ fprintf(stderr, "Close Silo(%p)\n", st);
 static void
 smp_object(const struct sess *sp)
 {
+	struct smp_sc	*sc;
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
+
+	sc->cur_seg->nalloc++;
+
 fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }
 
@@ -526,14 +558,16 @@ smp_alloc(struct stevedore *st, size_t size)
 {
 	struct smp_sc *sc;
 	struct storage *ss;
+	struct smp_seg *sg;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+	sg = sc->cur_seg;
 
 	/* XXX: size fit check */
-	AN(sc->next_addr);
+	AN(sg->next_addr);
 
 	/* Grab and fill a storage structure */
-	ss = (void *)(sc->ptr + sc->next_addr);
+	ss = (void *)(sc->ptr + sg->next_addr);
 	memset(ss, 0, sizeof *ss);
 	ss->magic = STORAGE_MAGIC;
 	ss->space = size;
@@ -541,10 +575,10 @@ smp_alloc(struct stevedore *st, size_t size)
 	ss->priv = sc;
 	ss->stevedore = st;
 	ss->fd = sc->fd;
-	ss->where = sc->next_addr + sizeof *ss;
+	ss->where = sg->next_addr + sizeof *ss;
 
-	sc->next_addr += size + sizeof *ss;
-	memcpy(sc->ptr + sc->next_addr, "HERE", 4);
+	sg->next_addr += size + sizeof *ss;
+	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	return (ss);
 }
 
@@ -552,18 +586,21 @@ static void
 smp_trim(struct storage *ss, size_t size)
 {
 	struct smp_sc *sc;
+	struct smp_seg *sg;
 
 fprintf(stderr, "Trim(%p %u)\n", ss, size);
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
+	sg = sc->cur_seg;
 
 	/* We want 16 bytes alignment */
 	size |= 0xf;
 	size += 1;
 
-	if (ss->ptr + ss->space == sc->next_addr + sc->ptr) {
-		sc->next_addr -= ss->space - size;
+	if (ss->ptr + ss->space == sg->next_addr + sc->ptr) {
+		memcpy(sc->ptr + sg->next_addr, "\0\0\0\0", 4);
+		sg->next_addr -= ss->space - size;
 		ss->space = size;
-		memcpy(sc->ptr + sc->next_addr, "HERE", 4);
+		memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	}
 }
 
