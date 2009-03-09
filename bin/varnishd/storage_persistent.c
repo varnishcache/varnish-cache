@@ -72,6 +72,8 @@ struct smp_seg {
 	uint64_t		next_addr;
 };
 
+VTAILQ_HEAD(smp_seghead, smp_seg);
+
 struct smp_sc {
 	unsigned		magic;
 #define SMP_SC_MAGIC		0x7b73af0a 
@@ -86,7 +88,7 @@ struct smp_sc {
 
 	struct smp_ident	*ident;
 
-	VTAILQ_HEAD(, smp_seg)	segments;
+	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
 };
 
@@ -410,6 +412,35 @@ smp_save_segs(struct smp_sc *sc)
 }
 
 /*--------------------------------------------------------------------
+ * Load segments
+ */
+
+static void
+smp_load_seg(struct smp_sc *sc, struct smp_seg *sg)
+{
+	void *ptr;
+	uint64_t length;
+	struct smp_segment *sp;
+	struct smp_object *so;
+	uint32_t no;
+	double t_now = TIM_real();
+
+	if (smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT"))
+		return;
+	fprintf(stderr, "Load Seg %p %jx\n", ptr, length);
+	sp = ptr;
+	fprintf(stderr, "Objlist %jx Nalloc %u\n", sp->objlist, sp->nalloc);
+	so = (void*)(sc->ptr + sp->objlist);
+	no = sp->nalloc;
+	for (;no > 0; so++,no--) {
+		if (so->ttl < t_now)
+			continue;
+		fprintf(stderr, "OBJ %p dTTL: %g PTR %jx\n",
+		    so, so->ttl - t_now, so->offset);
+	}
+}
+
+/*--------------------------------------------------------------------
  * Attempt to open and read in a segment list
  */
 
@@ -443,7 +474,7 @@ fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
 static void
 smp_new_seg(struct smp_sc *sc)
 {
-	struct smp_seg *sg;
+	struct smp_seg *sg, *sg2;
 	void *ptr;
 	uint64_t length;
 
@@ -455,7 +486,12 @@ smp_new_seg(struct smp_sc *sc)
 	AN(sg->objs);
 
 	/* XXX: find where it goes in silo */
-	sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
+
+	sg2 = VTAILQ_LAST(&sc->segments, smp_seghead);
+	if (sg2 == NULL)
+		sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
+	else
+		sg->offset = sg2->offset + sg2->length;
 	sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
 
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
@@ -490,6 +526,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	uint64_t length;
 
 	(void)sc;
+	/* XXX: if segment is empty, delete instead */
 fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
 	/* Copy the objects into the segment */
 	memcpy(sc->ptr + sg->next_addr,
@@ -506,6 +543,8 @@ fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
 
 	sg->next_addr += sizeof *sg->objs * sg->nalloc;
 	sg->length = sg->next_addr - sg->offset;
+	sg->length |= 7;
+	sg->length++;
 
 	/* Save segment list */
 	smp_save_segs(sc);
@@ -520,6 +559,7 @@ static void
 smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
+	struct smp_seg *sg;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 fprintf(stderr, "Open Silo(%p)\n", st);
@@ -536,6 +576,9 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 	 */
 	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
 		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
+
+	VTAILQ_FOREACH(sg, &sc->segments, list) 
+		smp_load_seg(sc, sg);
 
 	smp_new_seg(sc);
 }
