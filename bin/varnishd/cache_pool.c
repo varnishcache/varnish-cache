@@ -687,6 +687,7 @@ struct bgthread {
 #define BGTHREAD_MAGIC	0x23b5152b
 	const char	*name;
 	bgthread_t	*func;
+	void		*priv;
 };
 
 static void *
@@ -710,7 +711,7 @@ wrk_bgthread(void *arg)
 	ww.wle = logbuf + sizeof logbuf;
 	ww.stats = &stats;
 
-	(void)bt->func(sp);
+	(void)bt->func(sp, bt->priv);
 
 	WRONG("BgThread terminated");
 
@@ -718,7 +719,7 @@ wrk_bgthread(void *arg)
 }
 
 void
-WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func)
+WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 {
 	struct bgthread *bt;
 
@@ -727,6 +728,7 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func)
 
 	bt->name = name;
 	bt->func = func;
+	bt->priv = priv;
 	AZ(pthread_create(thr, NULL, wrk_bgthread, bt));
 }
 

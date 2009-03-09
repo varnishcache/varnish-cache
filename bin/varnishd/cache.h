@@ -573,8 +573,8 @@ unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
-typedef void *bgthread_t(struct sess *);
-void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func);
+typedef void *bgthread_t(struct sess *, void *priv);
+void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv);
 
 /* cache_session.c [SES] */
 void SES_Init(void);
