@@ -282,6 +282,7 @@ struct objcore {
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
+#define OC_F_PERSISTENT		(1<<3)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;

@@ -90,6 +90,7 @@ struct smp_sc {
 
 	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
+	pthread_t		thread;
 };
 
 /*--------------------------------------------------------------------
@@ -327,6 +328,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
 	assert(sizeof(struct smp_sign) == SMP_SIGN_SIZE);
 	assert(sizeof(struct smp_object) == SMP_OBJECT_SIZE);
+	/* XXX: assert(sizeof smp_object.hash == DIGEST_LEN); */
 
 	/* Allocate softc */
 	ALLOC_OBJ(sc, SMP_SC_MAGIC);
@@ -416,27 +418,32 @@ smp_save_segs(struct smp_sc *sc)
  */
 
 static void
-smp_load_seg(struct smp_sc *sc, struct smp_seg *sg)
+smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 {
 	void *ptr;
 	uint64_t length;
-	struct smp_segment *sp;
+	struct smp_segment *ss;
 	struct smp_object *so;
 	uint32_t no;
 	double t_now = TIM_real();
 
+	(void)sp;
 	if (smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT"))
 		return;
 	fprintf(stderr, "Load Seg %p %jx\n", ptr, length);
-	sp = ptr;
-	fprintf(stderr, "Objlist %jx Nalloc %u\n", sp->objlist, sp->nalloc);
-	so = (void*)(sc->ptr + sp->objlist);
-	no = sp->nalloc;
+	ss = ptr;
+	fprintf(stderr, "Objlist %jx Nalloc %u\n", ss->objlist, ss->nalloc);
+	so = (void*)(sc->ptr + ss->objlist);
+	no = ss->nalloc;
 	for (;no > 0; so++,no--) {
 		if (so->ttl < t_now)
 			continue;
 		fprintf(stderr, "OBJ %p dTTL: %g PTR %jx\n",
 		    so, so->ttl - t_now, so->offset);
+		HSH_Prealloc(sp);
+		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
+		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
+		(void)HSH_Insert(sp);
 	}
 }
 
@@ -552,6 +559,27 @@ fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
 }
 
 /*--------------------------------------------------------------------
+ * Silo worker thread
+ */
+
+static void *
+smp_thread(struct sess *sp, void *priv)
+{
+	struct smp_sc	*sc;
+	struct smp_seg *sg;
+
+	(void)sp;
+	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
+
+	VTAILQ_FOREACH(sg, &sc->segments, list)
+		smp_load_seg(sp, sc, sg);
+
+	while (1)	
+		sleep (1);
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------
  * Open a silo in the worker process
  */
 
@@ -559,7 +587,6 @@ static void
 smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
-	struct smp_seg *sg;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 fprintf(stderr, "Open Silo(%p)\n", st);
@@ -577,10 +604,10 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
 		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
 
-	VTAILQ_FOREACH(sg, &sc->segments, list) 
-		smp_load_seg(sc, sg);
-
+	/* Open a new segment, so we are ready to write */
 	smp_new_seg(sc);
+
+	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
 }
 
 /*--------------------------------------------------------------------
