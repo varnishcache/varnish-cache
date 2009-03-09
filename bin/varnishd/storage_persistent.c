@@ -45,6 +45,7 @@
 
 #include "cache.h"
 #include "stevedore.h"
+#include "hash_slinger.h"
 #include "vsha256.h"
 
 #include "persistent.h"
@@ -66,6 +67,8 @@ struct smp_seg {
 	uint64_t		length;
 	struct smp_segment	segment;
 	uint32_t		nalloc;
+	uint32_t		maxobj;
+	struct smp_object	*objs;
 	uint64_t		next_addr;
 };
 
@@ -446,9 +449,15 @@ smp_new_seg(struct smp_sc *sc)
 
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
-	/* XXX: find where */
+
+	sg->maxobj = 16;		/* XXX: param ? */
+	sg->objs = malloc(sizeof *sg->objs * sg->maxobj);
+	AN(sg->objs);
+
+	/* XXX: find where it goes in silo */
 	sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
 	sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
+
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 
@@ -481,12 +490,26 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	uint64_t length;
 
 	(void)sc;
+fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
+	/* Copy the objects into the segment */
+	memcpy(sc->ptr + sg->next_addr,
+	    sg->objs, sizeof *sg->objs * sg->nalloc);
+
+	/* Update the segment header */
 	sg->segment.objlist = sg->next_addr;
 	sg->segment.nalloc = sg->nalloc;
+
+	/* Write it to silo */
 	(void)smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT");
 	memcpy(ptr, &sg->segment, sizeof sg->segment);
 	smp_create_sign(sc, sg->offset, sizeof sg->segment, "SEGMENT");
-	smp_sync_sign(sc, sg->offset, sizeof sg->segment);
+
+	sg->next_addr += sizeof *sg->objs * sg->nalloc;
+	sg->length = sg->next_addr - sg->offset;
+
+	/* Save segment list */
+	smp_save_segs(sc);
+
 }
 
 /*--------------------------------------------------------------------
@@ -539,12 +562,19 @@ static void
 smp_object(const struct sess *sp)
 {
 	struct smp_sc	*sc;
+	struct smp_seg *sg;
+	struct smp_object *so;
+
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
 
-	sc->cur_seg->nalloc++;
+	sg = sc->cur_seg;
+	so = &sg->objs[sg->nalloc++];
+	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
+	so->ttl = sp->obj->ttl;
+	so->offset = (uint8_t*)sp->obj - sc->ptr;
 
 fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }
