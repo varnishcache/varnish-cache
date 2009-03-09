@@ -238,16 +238,17 @@ cmd_test(CMD_ARGS)
 static void
 cmd_shell(CMD_ARGS)
 {
-
 	(void)priv;
 	(void)cmd;
+	int r;
 
 	if (av == NULL)
 		return;
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1]);
-	assert(WEXITSTATUS(system(av[1])) == 0);
+	r = system(av[1]);
+	assert(WEXITSTATUS(r) == 0);
 }
 
 /**********************************************************************
