@@ -1,0 +1,33 @@
+# $Id$
+
+test "Test Basic persistence"
+
+server s1 {
+	rxreq 
+	txresp 
+} -start
+
+shell "rm -f /tmp/__v1/_.per"
+
+varnish v1 \
+	-arg "-spersistent,/tmp/__v1/_.per,10m" -vcl+backend { } -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+} -run
+
+varnish v1 -cliok stop
+
+server s1 stop
+
+varnish v1 -cliok start
+
+#client c1 {
+#	txreq -url "/"
+#	rxresp
+#	expect resp.status == 200
+#	expect resp.http.X-Varnish == "1001"
+#} -run
