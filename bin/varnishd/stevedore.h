@@ -39,9 +39,9 @@ struct object;
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
-typedef void storage_trim_f(const struct storage *, size_t size);
+typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
-typedef void storage_object_f(struct object *);
+typedef void storage_object_f(const struct sess *sp);
 typedef void storage_close_f(const struct stevedore *);
 
 struct stevedore {
@@ -63,10 +63,11 @@ struct stevedore {
 };
 
 struct storage *STV_alloc(struct sess *sp, size_t size);
-void STV_trim(const struct storage *st, size_t size);
+void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
 void STV_open(void);
+void STV_close(void);
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx);

@@ -82,7 +82,7 @@ volatile struct params	*params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
-int			exit_status;
+int			exit_status = 0;
 
 /*--------------------------------------------------------------------*/
 

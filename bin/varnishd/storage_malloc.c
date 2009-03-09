@@ -104,7 +104,7 @@ sma_free(struct storage *s)
 }
 
 static void
-sma_trim(const struct storage *s, size_t size)
+sma_trim(struct storage *s, size_t size)
 {
 	struct sma *sma;
 	void *p;
@@ -119,7 +119,7 @@ sma_trim(const struct storage *s, size_t size)
 		sma->sz = size;
 		Lck_Unlock(&sma_mtx);
 		sma->s.ptr = p;
-		sma->s.space = size;
+		s->space = size;
 	}
 }
 

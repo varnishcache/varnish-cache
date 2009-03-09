@@ -376,9 +376,8 @@ DOT errfetch [label="ERROR",shape=plaintext]
 static int
 cnt_fetch(struct sess *sp)
 {
-	int i;
+	int i, transient;
 	struct http *hp, *hp2;
-	struct object *o;
 	char *b;
 	unsigned handling;
 
@@ -456,17 +455,27 @@ cnt_fetch(struct sess *sp)
 	 */
 	handling = sp->handling;
 
-	o = HSH_NewObject(sp, handling != VCL_RET_DELIVER);
+	if (sp->objhead == NULL)
+		transient = 1;
+	else if (sp->handling == VCL_RET_DELIVER)
+		transient = 0;
+	else
+		transient = 1;
+
+	/*
+	 * XXX: If we have a Length: header, we should allocate the body
+	 * XXX: also.
+ 	 */
+	sp->obj = HSH_NewObject(sp, transient);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		sp->objcore->obj = o;
-		o->objcore = sp->objcore;
-		o->objhead = sp->objhead;
+		sp->objcore->obj = sp->obj;
+		sp->obj->objcore = sp->objcore;
+		sp->obj->objhead = sp->objhead;
 		sp->objhead = NULL;	/* refcnt follows pointer. */
 	}
-	sp->obj = o;
 
 	BAN_NewObj(sp->obj);
 
@@ -508,6 +517,9 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	}
+
+	if (!transient)
+		HSH_Object(sp);
 
 	if (sp->wrk->do_esi)
 		ESI_Parse(sp);

@@ -160,7 +160,7 @@ CLI_Run(void)
 		if (pfd[0].revents & POLLHUP) {
 			fprintf(stderr,
 			    "EOF on CLI connection, exiting\n");
-			exit(0);
+			break;
 		}
 		i = VLU_Fd(heritage.cli_in, vlu);
 		if (i) {

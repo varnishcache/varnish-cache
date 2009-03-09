@@ -92,7 +92,7 @@ STV_alloc(struct sess *sp, size_t size)
 }
 
 void
-STV_trim(const struct storage *st, size_t size)
+STV_trim(struct storage *st, size_t size)
 {
 
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -143,6 +143,17 @@ STV_open(void)
 	VTAILQ_FOREACH(stv, &stevedores, list) {
 		if (stv->open != NULL)
 			stv->open(stv);
+	}
+}
+
+void
+STV_close(void)
+{
+	struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stevedores, list) {
+		if (stv->close != NULL)
+			stv->close(stv);
 	}
 }
 

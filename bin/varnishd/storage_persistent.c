@@ -479,6 +479,7 @@ smp_open(const struct stevedore *st)
 	struct smp_sc	*sc;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+fprintf(stderr, "Open Silo(%p)\n", st);
 
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
@@ -494,6 +495,26 @@ smp_open(const struct stevedore *st)
 		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
 
 	smp_new_seg(sc);
+}
+
+/*--------------------------------------------------------------------
+ * Close a silo
+ */
+
+static void
+smp_close(const struct stevedore *st)
+{
+fprintf(stderr, "Close Silo(%p)\n", st);
+}
+
+/*--------------------------------------------------------------------
+ * Designate object
+ */
+
+static void
+smp_object(const struct sess *sp)
+{
+fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }
 
 /*--------------------------------------------------------------------
@@ -517,13 +538,33 @@ smp_alloc(struct stevedore *st, size_t size)
 	ss->magic = STORAGE_MAGIC;
 	ss->space = size;
 	ss->ptr = (void *)(ss + 1);
-	ss->priv = sc->cur_seg;			/* XXX ? */
+	ss->priv = sc;
 	ss->stevedore = st;
 	ss->fd = sc->fd;
 	ss->where = sc->next_addr + sizeof *ss;
 
 	sc->next_addr += size + sizeof *ss;
+	memcpy(sc->ptr + sc->next_addr, "HERE", 4);
 	return (ss);
+}
+
+static void
+smp_trim(struct storage *ss, size_t size)
+{
+	struct smp_sc *sc;
+
+fprintf(stderr, "Trim(%p %u)\n", ss, size);
+	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
+
+	/* We want 16 bytes alignment */
+	size |= 0xf;
+	size += 1;
+
+	if (ss->ptr + ss->space == sc->next_addr + sc->ptr) {
+		sc->next_addr -= ss->space - size;
+		ss->space = size;
+		memcpy(sc->ptr + sc->next_addr, "HERE", 4);
+	}
 }
 
 static void
@@ -542,6 +583,9 @@ struct stevedore smp_stevedore = {
 	.name	=	"persistent",
 	.init	=	smp_init,
 	.open	=	smp_open,
+	.close	=	smp_close,
 	.alloc	=	smp_alloc,
+	.object	=	smp_object,
 	.free	=	smp_free,
+	.trim	=	smp_trim,
 };
