@@ -144,7 +144,7 @@ struct smp_object {
 	double  		ttl;
 	double  		ban;
 	uint64_t		offset;
-	uint64_t		len;
+	uint64_t		len;	/* XXX: madvise */
 };
 
 #define SMP_OBJECT_SIZE		(32 + 8 + 8 + 8 + 8)
@@ -155,5 +155,5 @@ struct smp_object {
 
 struct smp_segment {
 	uint64_t		objlist;
-	unsigned		nalloc;
+	uint32_t		nalloc;
 };
