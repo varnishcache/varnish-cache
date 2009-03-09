@@ -133,5 +133,7 @@ child_main(void)
 
 	CLI_Run();
 
+	STV_close();
+
 	printf("Child dies\n");
 }

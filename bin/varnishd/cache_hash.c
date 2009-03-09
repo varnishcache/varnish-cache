@@ -120,6 +120,21 @@ HSH_NewObject(struct sess *sp, int transient)
 	return (o);
 }
 
+/*
+ * XXX: this should vector through stevedore.c instead of calling the
+ * XXX: member function directly.
+ */
+
+void
+HSH_Object(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	if (sp->obj->objstore->stevedore->object != NULL)
+		sp->obj->objstore->stevedore->object(sp);
+}
+
 /* Precreate an objhead and object for later use */
 void
 HSH_Prealloc(const struct sess *sp)
@@ -648,7 +663,6 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		return;
 	HSH_DeleteObjHead(w, oh);
 }
-
 
 void
 HSH_Init(void)

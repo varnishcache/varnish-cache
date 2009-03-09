@@ -497,7 +497,7 @@ smf_alloc(struct stevedore *st, size_t size)
 /*--------------------------------------------------------------------*/
 
 static void
-smf_trim(const struct storage *s, size_t size)
+smf_trim(struct storage *s, size_t size)
 {
 	struct smf *smf;
 	struct smf_sc *sc;
@@ -518,7 +518,7 @@ smf_trim(const struct storage *s, size_t size)
 		trim_smf(smf, size);
 		assert(smf->size == size);
 		Lck_Unlock(&sc->mtx);
-		smf->s.space = size;
+		s->space = size;
 	}
 }
 
