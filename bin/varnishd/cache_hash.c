@@ -234,7 +234,7 @@ HSH_Copy(const struct sess *sp, struct objhead *oh)
 }
 
 void
-HSH_Prepare(struct sess *sp, unsigned nhashcount)
+HSH_BeforeVclHash(struct sess *sp, unsigned nhashcount)
 {
 	char *p;
 	unsigned u;
@@ -255,6 +255,14 @@ HSH_Prepare(struct sess *sp, unsigned nhashcount)
 	if (u)
 		p += sizeof(const char *) - u;
 	sp->hashptr = (void*)p;
+}
+
+void
+HSH_AfterVclHash(struct sess *sp)
+{
+
+	HSH_Prealloc(sp);
+	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
 }
 
 void
@@ -365,6 +373,42 @@ hsh_testmagic(void *result)
 
 /**********************************************************************/
 
+struct objcore *
+HSH_Insert(struct sess *sp)
+{
+	struct worker *w;
+	struct objhead *oh;
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	AN(hash);
+	w = sp->wrk;
+
+	HSH_Prealloc(sp);
+	if (params->diag_bitmap & 0x80000000)
+		hsh_testmagic(sp->wrk->nobjhead->digest);
+	
+	AZ(sp->objhead);
+	AN(w->nobjhead);
+	oh = hash->lookup(sp, w->nobjhead);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (oh == w->nobjhead)
+		w->nobjhead = NULL;
+	Lck_Lock(&oh->mtx);
+
+	/* Insert (precreated) objcore in objecthead */
+	oc = w->nobjcore;
+	w->nobjcore = NULL;
+	AN(oc->flags & OC_F_BUSY);
+
+	/* XXX: Should this not be ..._HEAD now ? */
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	/* NB: do not deref objhead the new object inherits our reference */
+	Lck_Unlock(&oh->mtx);
+	return (oc);
+}
+
 
 struct objcore *
 HSH_Lookup(struct sess *sp, struct objhead **poh)
@@ -383,7 +427,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	w = sp->wrk;
 
 	HSH_Prealloc(sp);
-	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 	
@@ -408,6 +451,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+		XXXAZ(oc->flags & OC_F_PERSISTENT);
 
 		if (oc->flags & OC_F_BUSY) {
 			busy_oc = oc;
