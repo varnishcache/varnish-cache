@@ -659,6 +659,9 @@ double RFC2616_Ttl(const struct sess *sp);
 struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
 
+/* storage_persistent.c */
+void SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc);
+
 /*
  * A normal pointer difference is signed, but we never want a negative value
  * so this little tool will make sure we don't get that.
