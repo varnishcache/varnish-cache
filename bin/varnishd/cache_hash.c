@@ -400,7 +400,8 @@ HSH_Insert(struct sess *sp)
 	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
-	AN(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_BUSY);
+	CHECK_OBJ_NOTNULL(oc->obj, OBJECT_MAGIC);
 
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
@@ -452,7 +453,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		assert(oh->refcnt > 1);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-		XXXAZ(oc->flags & OC_F_PERSISTENT);
+		if (oc->flags & OC_F_PERSISTENT)
+			SMP_Fixup(sp, oh, oc);
 
 		if (oc->flags & OC_F_BUSY) {
 			busy_oc = oc;

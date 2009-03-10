@@ -414,6 +414,26 @@ smp_save_segs(struct smp_sc *sc)
 }
 
 /*--------------------------------------------------------------------
+ * Fixup an object
+ */
+
+void
+SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
+{
+fprintf(stderr, "Fixup %p %p\n", sp, oc);
+
+	oc->flags &= ~OC_F_PERSISTENT;
+
+	oc->obj->refcnt = 0;
+	oc->obj->objcore = oc;
+	oc->obj->objhead = oh;
+
+	/* XXX: Placeholder for persistent bans */
+	oc->obj->ban = NULL;
+	BAN_NewObj(oc->obj);
+}
+
+/*--------------------------------------------------------------------
  * Load segments
  */
 
@@ -442,6 +462,8 @@ smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 		    so, so->ttl - t_now, so->offset);
 		HSH_Prealloc(sp);
 		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
+		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
+		sp->wrk->nobjcore->obj = (void*)(so->offset + sc->ptr);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 	}

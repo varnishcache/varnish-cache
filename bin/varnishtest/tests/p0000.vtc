@@ -23,11 +23,11 @@ varnish v1 -stop
 
 varnish v1 -start
 
-#client c1 {
-#	txreq -url "/"
-#	rxresp
-#	expect resp.status == 200
-#	expect resp.http.X-Varnish == "1001"
-#} -run
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+} -run
 
-shell "rm -f /tmp/__v1/_.per"
+# shell "rm -f /tmp/__v1/_.per"
