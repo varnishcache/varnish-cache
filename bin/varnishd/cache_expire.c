@@ -201,7 +201,8 @@ EXP_Rearm(const struct object *o)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
-	SMP_TTLchanged(o);
+	if (o->smp != NULL)
+		SMP_TTLchanged(o);
 }
 
 
