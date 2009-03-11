@@ -528,12 +528,16 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 
 	if (b == o->ban) {	/* not banned */
 		o->ban = b0;
+		if (o->smp != NULL)
+			SMP_BANchanged(o);
 		return (0);
 	} else {
 		o->ttl = 0;
+		o->ban = NULL;
+		SMP_TTLchanged(o);
+		/* BAN also changed, but that is not important any more */
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
-		o->ban = NULL;
 		return (1);
 	}
 }

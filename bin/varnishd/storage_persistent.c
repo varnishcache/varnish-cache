@@ -420,7 +420,17 @@ smp_save_segs(struct smp_sc *sc)
 void
 SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 {
+	struct smp_object *so;
+
 fprintf(stderr, "Fixup %p %p\n", sp, oc);
+
+	so = (void*)oc->obj;
+	oc->obj = so->ptr;
+
+	/* XXX: This should fail gracefully */
+	CHECK_OBJ_NOTNULL(oc->obj, OBJECT_MAGIC);
+
+	oc->obj->smp = so;
 
 	oc->flags &= ~OC_F_PERSISTENT;
 
@@ -434,7 +444,34 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
 }
 
 /*--------------------------------------------------------------------
+ * Update objects
+ */
+
+void
+SMP_BANchanged(const struct object *o)
+{
+	assert(o->smp != NULL);
+}
+
+void
+SMP_TTLchanged(const struct object *o)
+{
+
+	assert(o->smp != NULL);
+}
+
+/*--------------------------------------------------------------------
  * Load segments
+ *
+ * The overall objective is to register the existence of an object, based
+ * only on the minimally sized struct smp_object, without causing the
+ * main object to be faulted in.
+ *
+ * XXX: We can test this by mprotecting the main body of the segment
+ * XXX: until the first fixup happens, or even just over this loop,
+ * XXX: However: the requires that the smp_objects starter further
+ * XXX: into the segment than a page so that they do not get hit
+ * XXX: by the protection.
  */
 
 static void
@@ -458,12 +495,12 @@ smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 	for (;no > 0; so++,no--) {
 		if (so->ttl < t_now)
 			continue;
-		fprintf(stderr, "OBJ %p dTTL: %g PTR %jx\n",
-		    so, so->ttl - t_now, so->offset);
+		fprintf(stderr, "OBJ %p dTTL: %g PTR %p\n",
+		    so, so->ttl - t_now, so->ptr);
 		HSH_Prealloc(sp);
 		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
 		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
-		sp->wrk->nobjcore->obj = (void*)(so->offset + sc->ptr);
+		sp->wrk->nobjcore->obj = (void*)so;
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 	}
@@ -666,7 +703,7 @@ smp_object(const struct sess *sp)
 	so = &sg->objs[sg->nalloc++];
 	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
-	so->offset = (uint8_t*)sp->obj - sc->ptr;
+	so->ptr = sp->obj;
 
 fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }

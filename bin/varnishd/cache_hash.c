@@ -401,7 +401,6 @@ HSH_Insert(struct sess *sp)
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
 	AZ(oc->flags & OC_F_BUSY);
-	CHECK_OBJ_NOTNULL(oc->obj, OBJECT_MAGIC);
 
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
