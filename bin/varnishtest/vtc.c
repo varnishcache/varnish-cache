@@ -48,8 +48,8 @@
 
 const char	*vtc_file;
 char		*vtc_desc;
-
-static int	stop;
+int		vtc_error;		/* Error encountered */
+int		vtc_stop;		/* Stops current test without error */
 
 /**********************************************************************
  * Read a file into memory
@@ -64,17 +64,13 @@ read_file(const char *fn)
 	int fd;
 
 	fd = open(fn, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr, "Cannot open %s: %s", fn, strerror(errno));
-		exit (1);
-	}
+	if (fd < 0)
+		return (NULL);
 	buf = malloc(sz);
 	assert(buf != NULL);
 	s = read(fd, buf, sz - 1);
-	if (s <= 0) {
-		fprintf(stderr, "Cannot read %s: %s", fn, strerror(errno));
-		exit (1);
-	}
+	if (s <= 0)
+		return (NULL);
 	AZ(close (fd));
 	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
 	buf[s] = '\0';
@@ -98,6 +94,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 
 	assert(buf != NULL);
 	for (p = buf; *p != '\0'; p++) {
+		if (vtc_error || vtc_stop)
+			break;
 		/* Start of line */
 		if (isspace(*p))
 			continue;
@@ -183,18 +181,11 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 		for (cp = cmd; cp->name != NULL; cp++)
 			if (!strcmp(token_s[0], cp->name))
 				break;
-		if (cp->name == NULL) {
-			for (tn = 0; token_s[tn] != NULL; tn++)
-				fprintf(stderr, "%s ", token_s[tn]);
-			fprintf(stderr, "\n");
-			fprintf(stderr, "Unknown command: \"%s\"", token_s[0]);
-			exit (1);
-		}
+		if (cp->name == NULL)
+			vtc_log(vl, 0, "Unknown command: \"%s\"", token_s[0]);
 
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
-		if (stop)
-			break;
 	}
 }
 
@@ -323,7 +314,7 @@ cmd_random(CMD_ARGS)
 		vtc_log(vl, 4, "random[%d] = 0x%x (expect 0x%x)",
 		    i, l, random_expect[i]);
 		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
-		stop = 1;
+		vtc_stop = 1;
 		break;
 	}
 	l = 0;
@@ -334,7 +325,7 @@ cmd_random(CMD_ARGS)
 		    NRNDEXPECT, NRNDEXPECT + 1000,
 		    l, RND_NEXT_1K);
 		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
-		stop = 1;
+		vtc_stop = 1;
 	}
 }
 
@@ -359,15 +350,21 @@ exec_file(const char *fn, struct vtclog *vl)
 {
 	char *buf;
 
-	stop = 0;
+	vtc_stop = 0;
 	vtc_file = fn;
 	vtc_desc = NULL;
 	vtc_log(vl, 1, "TEST %s starting", fn);
 	buf = read_file(fn);
+	if (buf == NULL)
+		vtc_log(vl, 0, "Cannot read file '%s': %s",
+		    fn, strerror(errno));
 	parse_string(buf, cmds, NULL, vl);
 	vtc_log(vl, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
-	vtc_log(vl, 1, "TEST %s completed", fn);
+	if (vtc_error)
+		vtc_log(vl, 1, "TEST %s FAILED", fn);
+	else
+		vtc_log(vl, 1, "TEST %s completed", fn);
 	vtc_file = NULL;
 	free(vtc_desc);
 }
@@ -421,9 +418,18 @@ main(int argc, char * const *argv)
 
 	init_sema();
 	for (i = 0; i < ntest; i++) {
-		for (ch = 0; ch < argc; ch++)
+		for (ch = 0; ch < argc; ch++) {
 			exec_file(argv[ch], vl);
+			if (vtc_error)
+				break;
+		}
+		if (vtc_error)
+			break;
 	}
+
+	if (vtc_error)
+		return (2);
+
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)
 		fclose(fok);

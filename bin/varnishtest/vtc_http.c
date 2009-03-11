@@ -203,27 +203,22 @@ cmd_http_expect(CMD_ARGS)
 	cmp = av[1];
 	rhs = cmd_var_resolve(hp, av[2]);
 	if (!strcmp(cmp, "==")) {
-		if (strcmp(lhs, rhs)) {
+		if (strcmp(lhs, rhs))
 			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
 			    av[0], lhs, av[1], av[2], rhs);
-			exit (1);
-		} else {
+		else
 			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
 			    av[0], lhs, av[1], av[2], rhs);
-		}
 	} else if (!strcmp(cmp, "!=")) {
-		if (!strcmp(lhs, rhs)) {
+		if (!strcmp(lhs, rhs))
 			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
 			    av[0], lhs, av[1], av[2], rhs);
-			exit (1);
-		} else {
+		else
 			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
 			    av[0], lhs, av[1], av[2], rhs);
-		}
 	} else {
 		vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) not implemented",
 		    av[0], lhs, av[1], av[2], rhs);
-		exit (1);
 	}
 }
 
@@ -321,11 +316,9 @@ http_rxchar_eof(struct http *hp, int n)
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
-		if (i <= 0) {
+		if (i <= 0)
 			vtc_log(hp->vl, 0, "HTTP rx failed (%s)",
 			    strerror(errno));
-			exit (1);
-		}
 		assert(i > 0);
 		assert(hp->prxbuf < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
@@ -345,10 +338,8 @@ http_rxchar(struct http *hp, int n)
 	int i;
 
 	i = http_rxchar_eof(hp, n);
-	if (i <= 0) {
+	if (i <= 0)
 		vtc_log(hp->vl, 0, "HTTP rx failed (%s)", strerror(errno));
-		exit (1);
-	}
 	assert(i > 0);
 }
 
@@ -463,10 +454,8 @@ cmd_http_rxresp(CMD_ARGS)
 	assert(!strcmp(av[0], "rxresp"));
 	av++;
 
-	for(; *av != NULL; av++) {
-		fprintf(stderr, "Unknown http rxresp spec: %s\n", *av);
-		exit (1);
-	}
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxresp spec: %s\n", *av);
 	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
@@ -535,10 +524,8 @@ cmd_http_txresp(CMD_ARGS)
 		} else
 			break;
 	}
-	if (*av != NULL) {
-		fprintf(stderr, "Unknown http txresp spec: %s\n", *av);
-		exit (1);
-	}
+	if (*av != NULL)
+		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 	if (body != NULL)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
@@ -563,10 +550,8 @@ cmd_http_rxreq(CMD_ARGS)
 	assert(!strcmp(av[0], "rxreq"));
 	av++;
 
-	for(; *av != NULL; av++) {
-		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
-		exit (1);
-	}
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
@@ -586,10 +571,8 @@ cmd_http_rxhdrs(CMD_ARGS)
 	assert(!strcmp(av[0], "rxhdrs"));
 	av++;
 
-	for(; *av != NULL; av++) {
-		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
-		exit (1);
-	}
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	vtc_log(hp->vl, 3, "rxhdrs");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
@@ -607,10 +590,8 @@ cmd_http_rxbody(CMD_ARGS)
 	assert(!strcmp(av[0], "rxbody"));
 	av++;
 
-	for(; *av != NULL; av++) {
-		fprintf(stderr, "Unknown http rxreq spec: %s\n", *av);
-		exit (1);
-	}
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	vtc_log(hp->vl, 3, "rxbody");
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
@@ -671,10 +652,8 @@ cmd_http_txreq(CMD_ARGS)
 		} else
 			break;
 	}
-	if (*av != NULL) {
-		fprintf(stderr, "Unknown http txreq spec: %s\n", *av);
-		exit (1);
-	}
+	if (*av != NULL)
+		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	if (body != NULL)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
