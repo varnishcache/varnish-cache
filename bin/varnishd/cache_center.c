@@ -475,6 +475,7 @@ cnt_fetch(struct sess *sp)
 		sp->obj->objcore = sp->objcore;
 		sp->obj->objhead = sp->objhead;
 		sp->objhead = NULL;	/* refcnt follows pointer. */
+		sp->objcore = NULL;	/* refcnt follows pointer. */
 	}
 
 	BAN_NewObj(sp->obj);
@@ -657,7 +658,6 @@ cnt_hit(struct sess *sp)
 	HSH_Deref(sp->wrk, &sp->obj);
 	sp->objcore = NULL;
 	AZ(sp->objhead);
-	sp->objhead = NULL;
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
