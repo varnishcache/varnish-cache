@@ -249,9 +249,8 @@ varnish_launch(struct varnish *v)
 			break;
 	}
 	if (v->cli_fd < 0) {
-		vtc_log(v->vl, 0, "FAIL no CLI connection");
 		(void)kill(v->pid, SIGKILL);
-		exit (1);
+		vtc_log(v->vl, 0, "FAIL no CLI connection");
 	}
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
@@ -522,6 +521,8 @@ cmd_varnish(CMD_ARGS)
 	av++;
 
 	for (; *av != NULL; av++) {
+		if (vtc_error)
+			break;
 		if (!strcmp(*av, "-telnet")) {
 			AN(av[1]);
 			v->telnet = av[1];
@@ -600,6 +601,5 @@ cmd_varnish(CMD_ARGS)
 			continue;
 		}
 		vtc_log(v->vl, 0, "Unknown varnish argument: %s", *av);
-		exit (1);
 	}
 }

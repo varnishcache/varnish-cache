@@ -108,7 +108,8 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	if (lvl == 0) {
 		printf("---- TEST FILE: %s\n", vtc_file);
 		printf("---- TEST DESCRIPTION: %s\n", vtc_desc);
-		exit (1);
+		vtc_error = 1;
+		pthread_exit(NULL);
 	}
 }
 
@@ -157,6 +158,8 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	AZ(vsb_overflowed(vl->vsb));
 	(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
-	if (lvl == 0)
-		exit (1);
+	if (lvl == 0) {
+		vtc_error = 1;
+		pthread_exit(NULL);
+	}
 }

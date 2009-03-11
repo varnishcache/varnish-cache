@@ -164,13 +164,11 @@ server_start(struct server *s)
 	vtc_log(s->vl, 2, "Starting server");
 	if (s->sock < 0) {
 		naddr = VSS_resolve(s->addr, s->port, &s->vss_addr);
-		if (naddr != 1) {
+		if (naddr != 1)
 			vtc_log(s->vl, 0,
 			    "Server s listen address not unique"
 			    " \"%s\" resolves to (%d) sockets",
 			    s->listen, naddr);
-			exit (1);
-		}
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
 	}
@@ -191,11 +189,9 @@ server_wait(struct server *s)
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	vtc_log(s->vl, 2, "Waiting for server");
 	AZ(pthread_join(s->tp, &res));
-	if (res != NULL) {
+	if (res != NULL)
 		vtc_log(s->vl, 0, "Server returned \"%p\"",
 		    (char *)res);
-		exit (1);
-	}
 	s->tp = 0;
 	TCP_close(&s->sock);
 	s->sock = -1;
@@ -255,6 +251,8 @@ cmd_server(CMD_ARGS)
 	av++;
 
 	for (; *av != NULL; av++) {
+		if (vtc_error)
+			break;
 		if (!strcmp(*av, "-repeat")) {
 			s->repeat = atoi(av[1]);
 			av++;
@@ -274,10 +272,8 @@ cmd_server(CMD_ARGS)
 			server_wait(s);
 			continue;
 		}
-		if (**av == '-') {
+		if (**av == '-')
 			vtc_log(s->vl, 0, "Unknown server argument: %s", *av);
-			exit (1);
-		}
 		s->spec = *av;
 	}
 }

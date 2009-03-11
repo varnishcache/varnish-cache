@@ -162,10 +162,8 @@ client_wait(struct client *c)
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
 	vtc_log(c->vl, 2, "Waiting for client");
 	AZ(pthread_join(c->tp, &res));
-	if (res != NULL) {
+	if (res != NULL)
 		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
-		exit (1);
-	}
 	c->tp = 0;
 }
 
@@ -217,6 +215,8 @@ cmd_client(CMD_ARGS)
 	av++;
 
 	for (; *av != NULL; av++) {
+		if (vtc_error)
+			break;
 		if (!strcmp(*av, "-connect")) {
 			REPLACE(c->connect, av[1]);
 			av++;
@@ -234,10 +234,8 @@ cmd_client(CMD_ARGS)
 			client_run(c);
 			continue;
 		}
-		if (**av == '-') {
+		if (**av == '-')
 			vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
-			exit (1);
-		}
 		REPLACE(c->spec, *av);
 	}
 }
