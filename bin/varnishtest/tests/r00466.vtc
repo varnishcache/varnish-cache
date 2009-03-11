@@ -1,0 +1,40 @@
+# $Id$
+
+test "Check Range forwarding to backend"
+
+server s1 {
+	rxreq 
+	expect req.url == "/foo"
+	expect req.http.range == "req.http.range"
+	txresp \
+		-hdr "Foobar: _barf_" \
+		-body "012345\n"
+
+	rxreq 
+	expect req.url == "/bar"
+	expect req.http.range == "200-300"
+	txresp \
+		-status 206 \
+		-hdr "Foobar: _barf_" \
+		-body "012345\n"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_recv {
+		if (req.url ~ "bar") {
+			pass;
+		}
+	}
+} -start -cliok "param.set diag_bitmap 0x10000"
+
+client c1 {
+	txreq -url "/foo" -hdr "Range: 100-200"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+
+	txreq -url "/bar" -hdr "Range: 200-300"
+	rxresp
+	expect resp.status == 206
+	expect resp.http.X-Varnish == "1002"
+} -run
