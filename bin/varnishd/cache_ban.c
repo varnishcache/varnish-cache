@@ -86,6 +86,7 @@ struct ban {
 	int			flags;
 #define BAN_F_GONE		(1 << 0)
 	VTAILQ_HEAD(,ban_test)	tests;
+	double			t0;
 };
 
 static VTAILQ_HEAD(banhead,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
@@ -394,6 +395,7 @@ BAN_Insert(struct ban *b)
 	unsigned pcount;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	b->t0 = TIM_real();
 	ban_sort_by_cost(b);
 
 	Lck_Lock(&ban_mtx);
