@@ -534,7 +534,8 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 	} else {
 		o->ttl = 0;
 		o->ban = NULL;
-		SMP_TTLchanged(o);
+		if (o->smp != NULL)
+			SMP_TTLchanged(o);
 		/* BAN also changed, but that is not important any more */
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
