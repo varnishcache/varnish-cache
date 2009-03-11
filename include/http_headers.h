@@ -86,7 +86,7 @@ HTTPH("Max-Forwards",		H_Max_Forwards,		1, 0, 0,										0, 0)	/* RFC2616 14.31
 HTTPH("Pragma",			H_Pragma,		1, 0, 0,										0, 0)	/* RFC2616 14.32 */
 HTTPH("Proxy-Authenticate",	H_Proxy_Authenticate,	2, 3, 				    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.33 */
 HTTPH("Proxy-Authorization",	H_Proxy_Authorization,	1, 3, 				    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.34 */
-HTTPH("Range",			H_Range,		1, 0, 0,										0, 0)	/* RFC2616 14.35 */
+HTTPH("Range",			H_Range,		1, 0,                  		    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.35 */
 HTTPH("Referer",		H_Referer,		1, 0, 0,										0, 0)	/* RFC2616 14.36 */
 HTTPH("Retry-After",		H_Retry_After,		2, 0, 0,										0, 0)	/* RFC2616 14.37 */
 HTTPH("Server",			H_Server,		2, 0, 0,										0, 0)	/* RFC2616 14.38 */
