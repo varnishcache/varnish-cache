@@ -639,6 +639,7 @@ HSH_DerefObjCore(struct sess *sp)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	Lck_Unlock(&oh->mtx);
 	assert(oh->refcnt > 0);
+	FREE_OBJ(oc);
 	if (hash->deref(oh))
 		return;
 	HSH_DeleteObjHead(sp->wrk, oh);
