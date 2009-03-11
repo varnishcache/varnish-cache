@@ -143,11 +143,11 @@ struct smp_object {
 	unsigned char		hash[32];
 	double  		ttl;
 	double  		ban;
-	uint64_t		offset;
+	struct object		*ptr;
 	uint64_t		len;	/* XXX: madvise */
 };
 
-#define SMP_OBJECT_SIZE		(32 + 8 + 8 + 8 + 8)
+#define SMP_OBJECT_SIZE		(32 + 8 + 8 + sizeof(void *) + 8)
 
 /*
  * Segment
