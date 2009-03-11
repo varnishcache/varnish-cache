@@ -127,6 +127,8 @@ EXP_Insert(struct object *o)
 	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
 	oc->flags |= OC_F_ONLRU;
 	Lck_Unlock(&exp_mtx);
+	if (o->smp != NULL)
+		SMP_TTLchanged(o);
 }
 
 /*--------------------------------------------------------------------
@@ -199,6 +201,7 @@ EXP_Rearm(const struct object *o)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
+	SMP_TTLchanged(o);
 }
 
 

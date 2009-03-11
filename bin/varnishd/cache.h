@@ -93,6 +93,7 @@ struct vrt_backend;
 struct cli_proto;
 struct ban;
 struct SHA256Context;
+struct smp_object;
 
 struct lock { void *priv; };		// Opaque
 
@@ -298,6 +299,8 @@ struct object {
 	struct objhead		*objhead;
 	struct storage		*objstore;
 	struct objcore		*objcore;
+
+	struct smp_object	*smp;
 
 	struct ws		ws_o[1];
 	unsigned char		*vary;
@@ -661,6 +664,8 @@ void SMS_Finish(struct object *obj);
 
 /* storage_persistent.c */
 void SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc);
+void SMP_BANchanged(const struct object *o);
+void SMP_TTLchanged(const struct object *o);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
