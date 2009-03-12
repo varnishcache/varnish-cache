@@ -34,6 +34,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -50,6 +51,7 @@ const char	*vtc_file;
 char		*vtc_desc;
 int		vtc_error;		/* Error encountered */
 int		vtc_stop;		/* Stops current test without error */
+pthread_t	vtc_thread;;
 
 /**********************************************************************
  * Read a file into memory
@@ -417,6 +419,8 @@ main(int argc, char * const *argv)
 		usage();
 
 	init_sema();
+
+	vtc_thread = pthread_self();
 	for (i = 0; i < ntest; i++) {
 		for (ch = 0; ch < argc; ch++) {
 			exec_file(argv[ch], vl);
