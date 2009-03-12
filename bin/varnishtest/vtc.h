@@ -57,6 +57,7 @@ extern char *vtc_desc;
 extern int vtc_verbosity;
 extern int vtc_error;		/* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
+extern pthread_t	vtc_thread;;
 
 void init_sema(void);
 

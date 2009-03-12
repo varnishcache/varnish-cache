@@ -10,6 +10,7 @@ server s1 {
 shell "rm -f /tmp/__v1/_.per"
 
 varnish v1 \
+	-arg "-pdiag_bitmap=0x20000" \
 	-arg "-spersistent,/tmp/__v1/_.per,10m" -vcl+backend { } -start 
 
 client c1 {

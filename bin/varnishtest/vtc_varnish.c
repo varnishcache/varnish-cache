@@ -37,6 +37,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <poll.h>
 #include <pthread.h>
 #include <inttypes.h>
 
@@ -181,10 +182,20 @@ varnish_thread(void *priv)
 {
 	struct varnish *v;
 	char buf[BUFSIZ];
+	struct pollfd fds[1];
 	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
+	TCP_nonblocking(v->fds[0]);
 	while (1) {
+		memset(fds, 0, sizeof fds);
+		fds->fd = v->fds[0];
+		fds->events = POLLIN;
+		i = poll(fds, 1, 1000);
+		if (i == 0)
+			continue;
+		if (fds->revents & (POLLERR|POLLHUP))
+			break;
 		i = read(v->fds[0], buf, sizeof buf - 1);
 		if (i <= 0)
 			break;
@@ -249,8 +260,10 @@ varnish_launch(struct varnish *v)
 			break;
 	}
 	if (v->cli_fd < 0) {
+		AZ(close(v->fds[1]));
 		(void)kill(v->pid, SIGKILL);
 		vtc_log(v->vl, 0, "FAIL no CLI connection");
+		return;
 	}
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
@@ -273,6 +286,8 @@ varnish_start(struct varnish *v)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
+	if (vtc_error)
+		return;
 	vtc_log(v->vl, 2, "Start");
 	u = varnish_ask_cli(v, "start", NULL);
 	assert(u == CLIS_OK);
@@ -291,6 +306,8 @@ varnish_stop(struct varnish *v)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
+	if (vtc_error)
+		return;
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	while (1) {
@@ -343,6 +360,8 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
+	if (vtc_error)
+		return;
 	u = varnish_ask_cli(v, cli, NULL);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (exp != 0 && exp != u)
@@ -361,6 +380,8 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
+	if (vtc_error)
+		return;
 	vsb = vsb_newauto();
 	AN(vsb);
 
@@ -401,6 +422,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
+	if (vtc_error)
+		return;
 	vsb = vsb_newauto();
 	AN(vsb);
 

@@ -233,8 +233,10 @@ cmd_server(CMD_ARGS)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
 			VTAILQ_REMOVE(&servers, s, list);
-			if (s->sock >= 0)
+			if (s->sock >= 0) {
+				pthread_cancel(s->tp);
 				server_wait(s);
+			}
 			server_delete(s);
 		}
 		return;

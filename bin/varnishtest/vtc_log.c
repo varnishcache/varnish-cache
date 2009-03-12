@@ -109,7 +109,8 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 		printf("---- TEST FILE: %s\n", vtc_file);
 		printf("---- TEST DESCRIPTION: %s\n", vtc_desc);
 		vtc_error = 1;
-		pthread_exit(NULL);
+		if (pthread_self() != vtc_thread)
+			pthread_exit(NULL);
 	}
 }
 
@@ -160,6 +161,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	vsb_clear(vl->vsb);
 	if (lvl == 0) {
 		vtc_error = 1;
-		pthread_exit(NULL);
+		if (pthread_self() != vtc_thread)
+			pthread_exit(NULL);
 	}
 }
