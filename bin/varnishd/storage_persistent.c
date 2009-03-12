@@ -58,18 +58,29 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
+struct smp_sc;
+
 /* XXX: name confusion with on-media version ? */
 struct smp_seg {
 	unsigned		magic;
 #define SMP_SEG_MAGIC		0x45c61895
-	VTAILQ_ENTRY(smp_seg)	list;
-	uint64_t		offset;
+
+	struct smp_sc		*sc;
+
+	VTAILQ_ENTRY(smp_seg)	list;		/* on smp_sc.smp_segments */
+
+	uint64_t		offset;		/* coordinates in silo */
 	uint64_t		length;
-	struct smp_segment	segment;
-	uint32_t		nalloc;
-	uint32_t		maxobj;
-	struct smp_object	*objs;
-	uint64_t		next_addr;
+
+	struct smp_segment	segment;	/* Copy of on-disk desc. */
+
+	uint32_t		nalloc;		/* How many live objects */
+	uint32_t		nfixed;		/* How many fixed objects */
+
+	/* Only for open segment */
+	uint32_t		maxobj;		/* Max number of objects */
+	struct smp_object	*objs;		/* objdesc copy */
+	uint64_t		next_addr;	/* next write address */
 };
 
 VTAILQ_HEAD(smp_seghead, smp_seg);
@@ -420,18 +431,23 @@ smp_save_segs(struct smp_sc *sc)
 void
 SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 {
+	struct smp_seg *sg;
 	struct smp_object *so;
+
+	sg = oc->smp_seg;
+	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 
 fprintf(stderr, "Fixup %p %p\n", sp, oc);
 
 	so = (void*)oc->obj;
 	oc->obj = so->ptr;
 
-	/* XXX: This should fail gracefully */
+	/* XXX: This check should fail gracefully */
 	CHECK_OBJ_NOTNULL(oc->obj, OBJECT_MAGIC);
 
-	oc->obj->smp = so;
+	oc->obj->smp_object = so;
 
+	AN(oc->flags & OC_F_PERSISTENT);
 	oc->flags &= ~OC_F_PERSISTENT;
 
 	oc->obj->refcnt = 0;
@@ -441,6 +457,8 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
 	/* XXX: Placeholder for persistent bans */
 	oc->obj->ban = NULL;
 	BAN_NewObj(oc->obj);
+
+	sg->nfixed++;
 }
 
 /*--------------------------------------------------------------------
@@ -448,16 +466,50 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
  */
 
 void
-SMP_BANchanged(const struct object *o)
+SMP_FreeObj(struct object *o)
 {
-	assert(o->smp != NULL);
+	struct smp_seg *sg;
+
+	AN(o->smp_object);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	AZ(o->objcore->flags & OC_F_PERSISTENT);
+	sg = o->objcore->smp_seg;
+	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+
+	o->smp_object->ttl = 0;
+	assert(sg->nalloc > 0);
+	sg->nalloc--;
+	sg->nfixed--;
+
+	/* XXX: check if seg is empty, or leave to thread ? */
+}
+
+void
+SMP_BANchanged(const struct object *o, double t)
+{
+	struct smp_seg *sg;
+
+	AN(o->smp_object);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	sg = o->objcore->smp_seg;
+	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
+
+	o->smp_object->ban = t;
 }
 
 void
 SMP_TTLchanged(const struct object *o)
 {
+	struct smp_seg *sg;
 
-	assert(o->smp != NULL);
+	AN(o->smp_object);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	sg = o->objcore->smp_seg;
+	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
+
+	o->smp_object->ttl = o->ttl;
 }
 
 /*--------------------------------------------------------------------
@@ -493,6 +545,7 @@ smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 	so = (void*)(sc->ptr + ss->objlist);
 	no = ss->nalloc;
 	for (;no > 0; so++,no--) {
+fprintf(stderr, "TTL: %g %g (%g)\n", so->ttl, t_now, so->ttl - t_now);
 		if (so->ttl < t_now)
 			continue;
 		fprintf(stderr, "OBJ %p dTTL: %g PTR %p\n",
@@ -501,9 +554,12 @@ smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
 		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
 		sp->wrk->nobjcore->obj = (void*)so;
+		sp->wrk->nobjcore->smp_seg = sg;
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
+		sg->nalloc++;
 	}
+fprintf(stderr, "Got %u objects in seg %p\n", sg->nalloc, sg);
 }
 
 /*--------------------------------------------------------------------
@@ -527,6 +583,7 @@ smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
 		AN(sg);
 		sg->offset = ss->offset;
 		sg->length = ss->length;
+		sg->sc = sc;
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
 	}
