@@ -89,6 +89,9 @@ struct smp_sc {
 	unsigned		magic;
 #define SMP_SC_MAGIC		0x7b73af0a 
 
+	unsigned		flags;
+#define SMP_F_LOADED		(1 << 0)
+
 	int			fd;
 	const char		*filename;
 	off_t			mediasize;
@@ -102,7 +105,11 @@ struct smp_sc {
 	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
 	pthread_t		thread;
+
+	VTAILQ_ENTRY(smp_sc)	list;
 };
+
+static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 
 /*--------------------------------------------------------------------
  * Write a sha256hash after a sequence of bytes.
@@ -690,6 +697,7 @@ smp_thread(struct sess *sp, void *priv)
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		smp_load_seg(sp, sc, sg);
 
+	sc->flags |= SMP_F_LOADED;
 	while (1)	
 		sleep (1);
 	return (NULL);
@@ -724,6 +732,8 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 	smp_new_seg(sc);
 
 	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
+
+	VTAILQ_INSERT_TAIL(&silos, sc, list);
 }
 
 /*--------------------------------------------------------------------
@@ -828,6 +838,25 @@ smp_free(struct storage *st)
 	(void)st;
 }
 
+
+/*--------------------------------------------------------------------*/
+
+void
+SMP_Ready(void)
+{
+	struct smp_sc *sc;
+
+	while (1) {
+		VTAILQ_FOREACH(sc, &silos, list) {
+			if (!(sc->flags & SMP_F_LOADED)) {
+				sleep(1);
+				break;
+			}
+		}
+		if (sc == NULL)
+			break;
+	}
+}
 
 /*--------------------------------------------------------------------*/
 

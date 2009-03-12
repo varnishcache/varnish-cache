@@ -129,6 +129,10 @@ child_main(void)
 	SMS_Init();
 	STV_open();
 
+	/* Wait for persistent storage to load if asked to */
+	if (params->diag_bitmap & 0x00020000)
+		SMP_Ready();
+
 	VSL_stats->start_time = (time_t)TIM_real();
 
 	CLI_Run();
