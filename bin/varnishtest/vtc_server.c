@@ -189,7 +189,7 @@ server_wait(struct server *s)
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	vtc_log(s->vl, 2, "Waiting for server");
 	AZ(pthread_join(s->tp, &res));
-	if (res != NULL)
+	if (res != NULL && !vtc_stop)
 		vtc_log(s->vl, 0, "Server returned \"%p\"",
 		    (char *)res);
 	s->tp = 0;

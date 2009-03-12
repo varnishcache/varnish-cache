@@ -351,6 +351,7 @@ static void
 exec_file(const char *fn, struct vtclog *vl)
 {
 	char *buf;
+	unsigned old_err;
 
 	vtc_stop = 0;
 	vtc_file = fn;
@@ -361,8 +362,11 @@ exec_file(const char *fn, struct vtclog *vl)
 		vtc_log(vl, 0, "Cannot read file '%s': %s",
 		    fn, strerror(errno));
 	parse_string(buf, cmds, NULL, vl);
+	old_err = vtc_error;
+	vtc_stop = 1;
 	vtc_log(vl, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
+	vtc_error = old_err;
 	if (vtc_error)
 		vtc_log(vl, 1, "TEST %s FAILED", fn);
 	else
