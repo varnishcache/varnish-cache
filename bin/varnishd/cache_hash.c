@@ -406,6 +406,8 @@ HSH_Insert(const struct sess *sp)
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
+
+	/* XXX: Insert in EXP */
 	return (oc);
 }
 
@@ -690,11 +692,15 @@ HSH_Deref(const struct worker *w, struct object **oo)
 		free(o->vary);
 
 	ESI_Destroy(o);
-	HSH_Freestore(o);
-	if (o->objstore != NULL)
-		STV_free(o->objstore);
-	else
-		FREE_OBJ(o);
+	if (o->smp_object != NULL) {
+		SMP_FreeObj(o);
+	} else {
+		HSH_Freestore(o);
+		if (o->objstore != NULL)
+			STV_free(o->objstore);
+		else
+			FREE_OBJ(o);
+	}
 	o = NULL;
 	w->stats->n_object--;
 

@@ -1,0 +1,63 @@
+# $Id$
+
+test "Change TTL on persistent object"
+
+shell "rm -f /tmp/__v1/_.per"
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: foo"
+} -start
+
+varnish v1 \
+	-arg "-spersistent,/tmp/__v1/_.per,10m" -vcl+backend { } -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo"
+} -run
+
+varnish v1 -stop
+server s1 -wait
+
+varnish v1 -vcl+backend {
+	sub vcl_hit {
+		set obj.ttl = 1 s;
+	}
+}
+
+varnish v1 -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo"
+} -run
+
+varnish v1 -stop
+
+varnish v1 -vcl+backend { }
+
+delay 2
+
+varnish v1 -start
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: bar"
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "bar"
+} -run
+
+# shell "rm -f /tmp/__v1/_.per"
