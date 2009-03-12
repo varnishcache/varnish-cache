@@ -28,4 +28,6 @@ client c2 {
 	expect resp.status == 200
 	expect resp.http.content-length == 12
 	expect resp.http.x-varnish == "1002 1001"
-} -start
+} -run
+
+client c1 -wait
