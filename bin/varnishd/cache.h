@@ -492,7 +492,7 @@ void http_SetResp(struct http *to, const char *proto, const char *status,
     const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to,
     const struct http *fm, unsigned how);
-void http_FilterHeader(struct sess *sp, unsigned how);
+void http_FilterHeader(const struct sess *sp, unsigned how);
 void http_PutProtocol(struct worker *w, int fd, struct http *to,
     const char *protocol);
 void http_PutStatus(struct worker *w, int fd, struct http *to, int status);

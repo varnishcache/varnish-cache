@@ -66,6 +66,7 @@
 
 -sem(vsb_new, @p == (1p ? 1p : malloc(1)))
 -sem(vsb_delete, custodial(1))
+-sem(pthread_create, custodial(4))
 -sem(lbv_assert, r_no)
 -sem(lbv_xxxassert, r_no)
 -sem(WS_Init, custodial(2))

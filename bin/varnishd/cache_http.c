@@ -629,7 +629,7 @@ http_FilterFields(struct worker *w, int fd, struct http *to,
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterHeader(struct sess *sp, unsigned how)
+http_FilterHeader(const struct sess *sp, unsigned how)
 {
 	struct http *hp;
 
