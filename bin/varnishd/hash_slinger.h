@@ -64,9 +64,9 @@ double HSH_Grace(double g);
 void HSH_Init(void);
 void HSH_AddString(struct sess *sp, const char *str);
 void HSH_BeforeVclHash(struct sess *sp, unsigned hashcount);
-void HSH_AfterVclHash(struct sess *sp);
+void HSH_AfterVclHash(const struct sess *sp);
 void HSH_DerefObjCore(struct sess *sp);
-struct objcore *HSH_Insert(struct sess *sp);
+struct objcore *HSH_Insert(const struct sess *sp);
 
 #ifdef VARNISH_CACHE_CHILD
 

@@ -258,7 +258,7 @@ HSH_BeforeVclHash(struct sess *sp, unsigned nhashcount)
 }
 
 void
-HSH_AfterVclHash(struct sess *sp)
+HSH_AfterVclHash(const struct sess *sp)
 {
 
 	HSH_Prealloc(sp);
@@ -351,7 +351,7 @@ static void
 hsh_testmagic(void *result)
 {
 	int i, j;
-	static int nused;
+	static int nused = 0;
 
 	for (i = 0; i < nused; i++)
 		if (!memcmp(hsh_magiclist[i].was, result, SHA256_LEN))
@@ -374,7 +374,7 @@ hsh_testmagic(void *result)
 /**********************************************************************/
 
 struct objcore *
-HSH_Insert(struct sess *sp)
+HSH_Insert(const struct sess *sp)
 {
 	struct worker *w;
 	struct objhead *oh;
