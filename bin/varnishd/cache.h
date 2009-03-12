@@ -670,6 +670,7 @@ void SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc);
 void SMP_BANchanged(const struct object *o, double t);
 void SMP_TTLchanged(const struct object *o);
 void SMP_FreeObj(struct object *o);
+void SMP_Ready(void);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
