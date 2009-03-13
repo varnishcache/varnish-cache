@@ -814,7 +814,7 @@ smp_trim(struct storage *ss, size_t size)
 	struct smp_sc *sc;
 	struct smp_seg *sg;
 
-fprintf(stderr, "Trim(%p %u)\n", ss, size);
+fprintf(stderr, "Trim(%p %zu)\n", ss, size);
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
 	sg = sc->cur_seg;
 
