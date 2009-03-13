@@ -469,6 +469,17 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
 }
 
 /*--------------------------------------------------------------------
+ * Add a new ban to all silos
+ */
+
+void
+SMP_NewBan(double t0, const char *ban)
+{
+	(void)t0;
+	(void)ban;
+}
+
+/*--------------------------------------------------------------------
  * Update objects
  */
 
