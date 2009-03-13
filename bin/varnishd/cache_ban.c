@@ -67,8 +67,6 @@ struct ban_test {
 	unsigned		magic;
 #define BAN_TEST_MAGIC		0x54feec67
 	VTAILQ_ENTRY(ban_test)	list;
-	int			cost;
-	char			*test;
 	ban_cond_f		*func;
 	int			flags;
 #define BAN_T_REGEXP		(1 << 0)
@@ -87,6 +85,8 @@ struct ban {
 #define BAN_F_GONE		(1 << 0)
 	VTAILQ_HEAD(,ban_test)	tests;
 	double			t0;
+	struct vsb		*vsb;
+	char			*test;
 };
 
 static VTAILQ_HEAD(banhead,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
@@ -103,6 +103,11 @@ BAN_New(void)
 	ALLOC_OBJ(b, BAN_MAGIC);
 	if (b == NULL)
 		return (b);
+	b->vsb = vsb_newauto();
+	if (b->vsb == NULL) {
+		FREE_OBJ(b);
+		return (NULL);
+	}
 	VTAILQ_INIT(&b->tests);
 	return (b);
 }
@@ -120,37 +125,19 @@ ban_add_test(struct ban *b)
 	return (bt);
 }
 
-static void
-ban_sort_by_cost(struct ban *b)
-{
-	struct ban_test *bt, *btn;
-	int i;
-
-	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-
-	do {
-		i = 0;
-		VTAILQ_FOREACH(bt, &b->tests, list) {
-			btn = VTAILQ_NEXT(bt, list);
-			if (btn != NULL && btn->cost < bt->cost) {
-				VTAILQ_REMOVE(&b->tests, bt, list);
-				VTAILQ_INSERT_AFTER(&b->tests, btn, bt, list);
-				i++;
-			}
-		}
-	} while (i);
-}
-
 void
 BAN_Free(struct ban *b)
 {
 	struct ban_test *bt;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	if (b->vsb != NULL)
+		vsb_delete(b->vsb);
+	if (b->test != NULL)
+		free(b->test);
 	while (!VTAILQ_EMPTY(&b->tests)) {
 		bt = VTAILQ_FIRST(&b->tests);
 		VTAILQ_REMOVE(&b->tests, bt, list);
-		free(bt->test);
 		if (bt->flags & BAN_T_REGEXP)
 			regfree(&bt->re);
 		if (bt->dst != NULL)
@@ -160,38 +147,6 @@ BAN_Free(struct ban *b)
 		FREE_OBJ(bt);
 	}
 	FREE_OBJ(b);
-}
-
-/*
- * Return zero of the two bans have the same components
- *
- * XXX: Looks too expensive for my taste.
- */
-
-static int
-ban_compare(const struct ban *b1, const struct ban *b2)
-{
-	struct ban_test *bt1, *bt2;
-	int n, m;
-
-	CHECK_OBJ_NOTNULL(b1, BAN_MAGIC);
-	CHECK_OBJ_NOTNULL(b2, BAN_MAGIC);
-
-	n = 0;
-	VTAILQ_FOREACH(bt1, &b1->tests, list) {
-		n++;
-		VTAILQ_FOREACH(bt2, &b2->tests, list)
-			if (!strcmp(bt1->test, bt2->test))
-				break;
-		if (bt2 == NULL)
-			return (1);
-	}
-	m = 0;
-	VTAILQ_FOREACH(bt2, &b2->tests, list)
-		m++;
-	if (m != n)
-		return (1);
-	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -279,7 +234,6 @@ ban_parse_regexp(struct cli *cli, struct ban_test *bt, const char *a3)
 		return (-1);
 	}
 	bt->flags |= BAN_T_REGEXP;
-	bt->cost = 10;
 	return (0);
 }
 
@@ -313,11 +267,12 @@ int
 BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
 {
 	struct ban_test *bt;
-	struct vsb *sb;
 	const struct pvar *pv;
 	int i;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	if (!VTAILQ_EMPTY(&b->tests))
+		vsb_cat(b->vsb, " && ");
 	bt = ban_add_test(b);
 	if (bt == NULL) {
 		cli_out(cli, "Out of Memory");
@@ -363,16 +318,8 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 		return (-1);
 	}
 
-	 /* XXX: proper quoting */
-	sb = vsb_newauto();
-	XXXAN(sb);
-	vsb_printf(sb, "%s %s ", a1, a2);
-	vsb_quote(sb, a3, 0);
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
-	bt->test = strdup(vsb_data(sb));
-	XXXAN(bt->test);
-	vsb_delete(sb);
+	vsb_printf(b->vsb, "%s %s ", a1, a2);
+	vsb_quote(b->vsb, a3, 0);
 	return (0);
 }
 
@@ -396,7 +343,13 @@ BAN_Insert(struct ban *b)
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	b->t0 = TIM_real();
-	ban_sort_by_cost(b);
+
+	vsb_finish(b->vsb);
+	AZ(vsb_overflowed(b->vsb));
+	b->test = strdup(vsb_data(b->vsb));
+	AN(b->test);
+	vsb_delete(b->vsb);
+	b->vsb = NULL;
 
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
@@ -421,7 +374,7 @@ BAN_Insert(struct ban *b)
 		bi = VTAILQ_NEXT(bi, list);
 		if (bi->flags & BAN_F_GONE)
 			continue;
-		if (ban_compare(b, bi))
+		if (strcmp(b->test, bi->test))
 			continue;
 		bi->flags |= BAN_F_GONE;
 		pcount++;
@@ -627,7 +580,6 @@ static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b;
-	struct ban_test *bt;
 
 	(void)av;
 	(void)priv;
@@ -646,16 +598,8 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (b->refcount == 0 && (b->flags & BAN_F_GONE))
 			continue;
-		bt = VTAILQ_FIRST(&b->tests);
-		cli_out(cli, "%5u%s\t%s", b->refcount,
-		    b->flags & BAN_F_GONE ? "G" : " ",
-		    bt->test);
-		do {
-			bt = VTAILQ_NEXT(bt, list);
-			if (bt != NULL)
-				cli_out(cli, " && \\\n\t%s", bt->test);
-		} while (bt != NULL);
-		cli_out(cli, "\n");
+		cli_out(cli, "%5u%s\t%s\n", b->refcount,
+		    b->flags & BAN_F_GONE ? "G" : " ", b->test);
 	}
 
 	Lck_Lock(&ban_mtx);
