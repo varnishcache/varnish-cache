@@ -83,9 +83,9 @@ struct smp_ident {
 
 	uint32_t		unique;
 
-	uint64_t		mediasize;	/* ... in bytes */
-
 	uint32_t		granularity;	/* smallest ... in bytes */
+
+	uint64_t		mediasize;	/* ... in bytes */
 
 	uint64_t		stuff[6];	/* pointers to stuff */
 #define	SMP_BAN1_STUFF		0
