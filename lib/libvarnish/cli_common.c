@@ -163,7 +163,7 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	if (i != CLI_LINE0_LEN) {
 		*status = CLIS_COMMS;
 		if (ptr != NULL)
-			*ptr = strdup("CLI communication error");
+			*ptr = strdup("CLI communication error (hdr)");
 		return (1);
 	}
 	assert(i == CLI_LINE0_LEN);
@@ -179,6 +179,8 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	if (i < 0) {
 		*status = CLIS_COMMS;
 		free(p);
+		if (ptr != NULL)
+			*ptr = strdup("CLI communication error (body)");
 		return (i);
 	}
 	assert(i == v + 1);
