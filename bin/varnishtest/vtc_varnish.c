@@ -66,7 +66,7 @@ struct varnish {
 
 	struct varnish_stats	*stats;
 
-	const char		*args;
+	struct vsb 		*args;
 	int			fds[4];
 	pid_t			pid;
 	const char		*telnet;
@@ -155,7 +155,7 @@ varnish_new(const char *name)
 	if (*v->name != 'v')
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 
-	v->args = "";
+	v->args = vsb_newauto();
 	v->telnet = "127.0.0.1:9001";
 	v->accept = "127.0.0.1:9081";
 	v->cli_fd = -1;
@@ -220,6 +220,8 @@ varnish_launch(struct varnish *v)
 	struct vsb *vsb;
 	int i;
 
+	vsb_finish(v->args);
+	AZ(vsb_overflowed(v->args));
 	vtc_log(v->vl, 2, "Launch");
 	vsb = vsb_newauto();
 	AN(vsb);
@@ -229,7 +231,7 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " -p auto_restart=off");
 	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
 	vsb_printf(vsb, " -P /tmp/__%s/varnishd.pid", v->name);
-	vsb_printf(vsb, " %s", v->args);
+	vsb_printf(vsb, " %s", vsb_data(v->args));
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
@@ -340,6 +342,8 @@ varnish_wait(struct varnish *v)
 
 	if (v->cli_fd < 0)
 		return;
+	if (vtc_error)
+		sleep(1);	/* give panic messages a chance */
 	varnish_stop(v);
 	vtc_log(v->vl, 2, "Wait");
 	AZ(close(v->cli_fd));
@@ -569,7 +573,8 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
-			v->args = av[1];
+			vsb_cat(v->args, " ");
+			vsb_cat(v->args, av[1]);
 			av++;
 			continue;
 		}
