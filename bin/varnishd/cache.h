@@ -459,6 +459,9 @@ void BAN_Init(void);
 void BAN_NewObj(struct object *o);
 void BAN_DestroyObj(struct object *o);
 int BAN_CheckObject(struct object *o, const struct sess *sp);
+void BAN_Reload(double t0, unsigned flags, const char *ban);
+struct ban *BAN_TailRef(void);
+void BAN_Compile(void);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
