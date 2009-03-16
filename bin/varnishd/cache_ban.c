@@ -513,11 +513,16 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 	b2->test = strdup(ban);
 	AN(b2->test);
 	b2->t0 = t0;
+	b2->flags |= BAN_F_PENDING;
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
 }
+
+/*--------------------------------------------------------------------
+ * All silos have read their bans now compile them.
+ */
 
 void
 BAN_Compile(void)
@@ -529,10 +534,9 @@ BAN_Compile(void)
 	ASSERT_CLI();
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (!VTAILQ_EMPTY(&b->tests))
+		if (!(b->flags & BAN_F_PENDING))
 			continue;
-		if (b->test == NULL || *b->test == '\0')
-			continue;
+		b->flags &= ~BAN_F_PENDING;
 		av = ParseArgv(b->test, 0);
 		XXXAN(av);
 		XXXAZ(av[0]);

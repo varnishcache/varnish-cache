@@ -56,6 +56,7 @@ struct ban {
 	unsigned		refcount;
 	int			flags;
 #define BAN_F_GONE		(1 << 0)
+#define BAN_F_PENDING		(1 << 1)
 	VTAILQ_HEAD(,ban_test)	tests;
 	double			t0;
 	struct vsb		*vsb;
