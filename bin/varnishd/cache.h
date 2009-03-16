@@ -290,6 +290,7 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
 	struct smp_seg		*smp_seg;
+	struct ban		*ban;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -308,8 +309,8 @@ struct object {
 	struct ws		ws_o[1];
 	unsigned char		*vary;
 
-	struct ban		*ban;
-
+	double			ban_t;
+	struct ban		*ban;	/* XXX --> objcore */
 	unsigned		response;
 
 	unsigned		cacheable;
@@ -462,6 +463,8 @@ int BAN_CheckObject(struct object *o, const struct sess *sp);
 void BAN_Reload(double t0, unsigned flags, const char *ban);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
+struct ban *BAN_RefBan(double t0, struct ban *tail);
+void BAN_Deref(struct ban **ban);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
