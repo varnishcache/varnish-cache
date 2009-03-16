@@ -469,6 +469,85 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
+ * Bans read in from persistent storage on startup
+ */
+
+struct ban *
+BAN_TailRef(void)
+{
+	struct ban *b;
+
+	ASSERT_CLI();
+	b = VTAILQ_LAST(&ban_head, banhead);
+	AN(b);
+	b->refcount++;
+	return (b);
+}
+
+/*--------------------------------------------------------------------
+ * Put a skeleton ban in the list, unless there is an indentical one
+ * already.
+ */
+
+void
+BAN_Reload(double t0, unsigned flags, const char *ban)
+{
+	struct ban *b, *b2;
+
+	ASSERT_CLI();
+
+	(void)flags;		/* for future use */
+	VTAILQ_FOREACH(b, &ban_head, list) {
+		if (b->t0 > t0)
+			continue;
+		if (b->t0 == t0 && !strcmp(b->test, ban))
+			return;
+		if (b->t0 < t0)
+			break;
+	}
+
+	VSL_stats->n_purge++;
+	VSL_stats->n_purge_add++;
+
+	b2 = BAN_New();
+	b2->test = strdup(ban);
+	AN(b2->test);
+	b2->t0 = t0;
+	if (b == NULL)
+		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
+	else
+		VTAILQ_INSERT_BEFORE(b, b2, list);
+}
+
+void
+BAN_Compile(void)
+{
+	struct ban *b;
+	char **av;
+	int i;
+
+	ASSERT_CLI();
+
+	VTAILQ_FOREACH(b, &ban_head, list) {
+		if (!VTAILQ_EMPTY(&b->tests))
+			continue;
+		if (b->test == NULL || *b->test == '\0')
+			continue;
+		av = ParseArgv(b->test, 0);
+		XXXAN(av);
+		XXXAZ(av[0]);
+		for (i = 1; av[i] != NULL; i += 3) {
+			if (i != 1) {
+				AZ(strcmp(av[i], "&&"));
+				i++;
+			}
+			AZ(BAN_AddTest(NULL, b, av[i], av[i + 1], av[i + 2]));
+		}
+	}
+	ban_start = VTAILQ_FIRST(&ban_head);
+}
+
+/*--------------------------------------------------------------------
  * CLI functions to add bans
  */
 
@@ -552,6 +631,7 @@ static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b;
+	char t[64];
 
 	(void)av;
 	(void)priv;
@@ -570,7 +650,8 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (b->refcount == 0 && (b->flags & BAN_F_GONE))
 			continue;
-		cli_out(cli, "%5u%s\t%s\n", b->refcount,
+		TIM_format(b->t0, t);
+		cli_out(cli, "%s %10.6f %5u%s\t%s\n", t, b->t0, b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ", b->test);
 	}
 
@@ -597,17 +678,12 @@ static struct cli_proto ban_cmds[] = {
 void
 BAN_Init(void)
 {
-	const char *aav[6];
+	struct ban *b;
 
 	Lck_New(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 
-	/* Add an initial ban, since the list can never be empty */
-	aav[0] = NULL;
-	aav[1] = "purge";
-	aav[2] = "req.url";
-	aav[3] = "~";
-	aav[4] = ".";
-	aav[5] = NULL;
-	ccf_purge(NULL, aav, NULL);
+	b = BAN_New();
+	b->flags |= BAN_F_GONE;
+	BAN_Insert(b);
 }

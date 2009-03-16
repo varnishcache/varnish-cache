@@ -123,6 +123,8 @@ struct smp_sc {
 	struct smp_signctx	ban2;
 	struct smp_signctx	seg1;
 	struct smp_signctx	seg2;
+
+	struct ban		*tailban;
 };
 
 /*
@@ -622,6 +624,7 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 		}
 
 fprintf(stderr, "BAN {%g %u %u \"%s\"}\n", t0, flags, length, ptr);
+		BAN_Reload(t0, flags, (const char *)ptr);
 
 		ptr += length;
 	}
@@ -905,6 +908,9 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 	/* We attempt seg1 first, and if that fails, try seg2 */
 	if (smp_open_segs(sc, &sc->seg1))
 		AZ(smp_open_segs(sc, &sc->seg2));
+
+	sc->tailban = BAN_TailRef();
+	AN(sc->tailban);
 
 	/* XXX: save segments to ensure consistency between seg1 & seg2 ? */
 

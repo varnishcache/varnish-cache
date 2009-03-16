@@ -129,6 +129,8 @@ child_main(void)
 	SMS_Init();
 	STV_open();
 
+	BAN_Compile();
+
 	/* Wait for persistent storage to load if asked to */
 	if (params->diag_bitmap & 0x00020000)
 		SMP_Ready();
