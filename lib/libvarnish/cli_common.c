@@ -164,7 +164,9 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 		*status = CLIS_COMMS;
 		if (ptr != NULL)
 			*ptr = strdup("CLI communication error (hdr)");
-		return (1);
+		if (i != 0)
+			return (i);
+		return (400);
 	}
 	assert(i == CLI_LINE0_LEN);
 	assert(res[3] == ' ');

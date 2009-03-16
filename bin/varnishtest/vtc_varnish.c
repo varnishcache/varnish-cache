@@ -97,7 +97,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	assert(i == strlen(cmd));
 	i = write(v->cli_fd, "\n", 1);
 	assert(i == 1);
-	i = cli_readres(v->cli_fd, &retval, &r, 10.0);
+	i = cli_readres(v->cli_fd, &retval, &r, 20.0);
 	if (i != 0) {
 		vtc_log(v->vl, 0, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
@@ -295,8 +295,12 @@ varnish_start(struct varnish *v)
 		return;
 	vtc_log(v->vl, 2, "Start");
 	u = varnish_ask_cli(v, "start", NULL);
+	if (vtc_error)
+		return;
 	assert(u == CLIS_OK);
 	u = varnish_ask_cli(v, "debug.xid 1000", NULL);
+	if (vtc_error)
+		return;
 	assert(u == CLIS_OK);
 }
 
