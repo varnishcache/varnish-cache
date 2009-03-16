@@ -177,12 +177,13 @@ fprintf(stderr, "CreateSign(%jx, %jx, %s)\n",
 static void
 smp_sync_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len)
 {
+	int i;
 
 	AZ(adr & 0x7);			/* Enforce alignment */
 
-	AZ(msync(sc->ptr + adr,
-	    sizeof(struct smp_sign) + len + SHA256_LEN, MS_SYNC));
-fprintf(stderr, "SyncSign(%jx, %jx)\n", adr, len);
+	i = msync(sc->ptr + adr,
+	    sizeof(struct smp_sign) + len + SHA256_LEN, MS_SYNC);
+fprintf(stderr, "SyncSign(%jx, %jx) = %d %s\n", adr, len, i, strerror(errno));
 }
 
 /*--------------------------------------------------------------------
