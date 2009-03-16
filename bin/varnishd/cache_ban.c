@@ -332,6 +332,8 @@ BAN_Insert(struct ban *b)
 		be->refcount++;
 	} else
 		be = NULL;
+
+	SMP_NewBan(b->t0, b->test);
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
@@ -349,7 +351,6 @@ BAN_Insert(struct ban *b)
 		bi->flags |= BAN_F_GONE;
 		pcount++;
 	}
-	SMP_NewBan(b->t0, b->test);
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
 	VSL_stats->n_purge_dups += pcount;

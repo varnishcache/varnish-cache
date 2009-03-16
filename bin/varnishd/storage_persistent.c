@@ -37,6 +37,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,6 +58,13 @@
 #ifndef MAP_NOSYNC
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
+
+struct smp_signctx {
+	struct smp_sign		*ss;
+	struct SHA256Context	ctx;
+	uint32_t		unique;
+	const char		*id;
+};
 
 struct smp_sc;
 
@@ -81,6 +89,8 @@ struct smp_seg {
 	uint32_t		maxobj;		/* Max number of objects */
 	struct smp_object	*objs;		/* objdesc copy */
 	uint64_t		next_addr;	/* next write address */
+
+	struct smp_signctx	ctx[1];
 };
 
 VTAILQ_HEAD(smp_seghead, smp_seg);
@@ -107,67 +117,127 @@ struct smp_sc {
 	pthread_t		thread;
 
 	VTAILQ_ENTRY(smp_sc)	list;
+
+	struct smp_signctx	idn;
+	struct smp_signctx	ban1;
+	struct smp_signctx	ban2;
+	struct smp_signctx	seg1;
+	struct smp_signctx	seg2;
 };
 
+/*
+ * silos is unlocked, it only changes during startup when we are 
+ * single-threaded
+ */
 static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 
+/*********************************************************************
+ * SIGNATURE functions
+ */
+
+#define SIGN_DATA(ctx)	((void *)((ctx)->ss + 1))
+#define SIGN_END(ctx)	((void *)((int8_t *)SIGN_DATA(ctx) + (ctx)->ss->length))
+
 /*--------------------------------------------------------------------
- * Write a sha256hash after a sequence of bytes.
+ * debug
  */
 
 static void
-smp_make_hash(void *ptr, off_t len)
+smp_dump_sign(struct smp_signctx *ctx)
 {
-	struct SHA256Context c;
-	unsigned char *dest;
+	fprintf(stderr, "%p {%s %x %p %ju}\n", ctx, ctx->id, ctx->unique, ctx->ss, ctx->ss->length);
+}
 
-	dest = ptr;
-	dest += len;
-	SHA256_Init(&c);
-	SHA256_Update(&c, ptr, len);
-	SHA256_Final(dest, &c);
+
+/*--------------------------------------------------------------------
+ * Define a signature by location and identifier.
+ */
+
+static void
+smp_def_sign(struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
+{
+
+	AZ(off & 7);			/* Alignment */
+	assert(strlen(id) < sizeof ctx->ss->ident);
+
+	memset(ctx, 0, sizeof ctx);
+	ctx->ss = (void*)(sc->ptr + off);
+	ctx->unique = sc->unique;
+	ctx->id = id;
+fprintf(stderr, "DEF(%p %p %s)\n", ctx, ctx->ss, id);
 }
 
 /*--------------------------------------------------------------------
- * Check that a sequence of bytes matches the SHA256 stored behind it.
+ * Check that a signature is good, leave state ready for append
  */
-
 static int
-smp_check_hash(void *ptr, off_t len)
+smp_chk_sign(struct smp_signctx *ctx)
 {
-	struct SHA256Context c;
+	struct SHA256Context cx;
 	unsigned char sign[SHA256_LEN];
-	unsigned char *dest;
+	int r = 0;
 
-	dest = ptr;
-	dest += len;
-	SHA256_Init(&c);
-	SHA256_Update(&c, ptr, len);
-	SHA256_Final(sign, &c);
-	return(memcmp(sign, dest, sizeof sign));
+	if (strcmp(ctx->id, ctx->ss->ident))
+		r = 1;
+	else if (ctx->unique != ctx->ss->unique)
+		r = 2;
+	else if ((uintptr_t)ctx->ss != ctx->ss->mapped)
+		r = 3;
+	else {
+		SHA256_Init(&ctx->ctx);
+		SHA256_Update(&ctx->ctx, ctx->ss,
+		    offsetof(struct smp_sign, length));
+		SHA256_Update(&ctx->ctx, SIGN_DATA(ctx), ctx->ss->length);
+		cx = ctx->ctx;
+		SHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
+		SHA256_Final(sign, &cx);
+		if (memcmp(sign, SIGN_END(ctx), sizeof sign))
+			r = 4;
+	} 
+if (r) {
+	fprintf(stderr, "CHK(%p %p %s) = %d\n",
+	    ctx, ctx->ss, ctx->ss->ident, r);
+	smp_dump_sign(ctx);
+}
+	return (r);
 }
 
 /*--------------------------------------------------------------------
- * Create or write a signature block covering a sequence of bytes.
+ * Append data to a signature
+ */
+static void
+smp_append_sign(struct smp_signctx *ctx, void *ptr, uint32_t len)
+{
+	struct SHA256Context cx;
+	unsigned char sign[SHA256_LEN];
+
+	if (len != 0) {
+		SHA256_Update(&ctx->ctx, ptr, len);
+		ctx->ss->length += len;
+	}
+	cx = ctx->ctx;
+	SHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
+	SHA256_Final(sign, &cx);
+	memcpy(SIGN_END(ctx), sign, sizeof sign);
+XXXAZ(smp_chk_sign(ctx));
+}
+
+/*--------------------------------------------------------------------
+ * Reset a signature to empty, prepare for appending.
  */
 
 static void
-smp_create_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len, const char *id)
+smp_reset_sign(struct smp_signctx *ctx)
 {
-	struct smp_sign *ss;
 
-	AZ(adr & 0x7);			/* Enforce alignment */
-
-	ss = (void*)(sc->ptr + adr);
-	memset(ss, 0, sizeof *ss);
-	assert(strlen(id) < sizeof ss->ident);
-	strcpy(ss->ident, id);
-	ss->unique = sc->unique;
-	ss->mapped = (uintptr_t)(sc->ptr + adr);
-	ss->length = len;
-	smp_make_hash(ss, sizeof *ss + len);
-fprintf(stderr, "CreateSign(%jx, %jx, %s)\n",
-    adr, len, id);
+	memset(ctx->ss, 0, sizeof *ctx->ss);
+	strcpy(ctx->ss->ident, ctx->id);
+	ctx->ss->unique = ctx->unique;
+	ctx->ss->mapped = (uintptr_t)ctx->ss;
+	SHA256_Init(&ctx->ctx);
+	SHA256_Update(&ctx->ctx, ctx->ss,
+	    offsetof(struct smp_sign, length));
+	smp_append_sign(ctx, NULL, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -175,59 +245,28 @@ fprintf(stderr, "CreateSign(%jx, %jx, %s)\n",
  */
 
 static void
-smp_sync_sign(const struct smp_sc *sc, uint64_t adr, uint64_t len)
+smp_sync_sign(const struct smp_signctx *ctx)
 {
-	int i;
 
-	AZ(adr & 0x7);			/* Enforce alignment */
+	(void)ctx;
 
+#if 0
 	i = msync(sc->ptr + adr,
 	    sizeof(struct smp_sign) + len + SHA256_LEN, MS_SYNC);
 fprintf(stderr, "SyncSign(%jx, %jx) = %d %s\n", adr, len, i, strerror(errno));
+#endif
 }
 
 /*--------------------------------------------------------------------
- * Check a signature block and return zero if OK.
+ * Create and force a new signature to backing store
  */
 
-static int
-smp_check_sign(const struct smp_sc *sc, uint64_t adr, const char *id)
+static void
+smp_new_sign(struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
 {
-	struct smp_sign *ss;
-
-	AZ(adr & 0x7);			/* Enforce alignment */
-
-	ss = (void*)(sc->ptr + adr);
-	assert(strlen(id) < sizeof ss->ident);
-	if (strcmp(id, ss->ident))
-		return (1);
-	if (ss->unique != sc->unique)
-		return (2);
-	if (ss->mapped != (uintptr_t)ss)
-		return (3);
-	return (smp_check_hash(ss, sizeof *ss + ss->length));
-}
-
-/*--------------------------------------------------------------------
- * Open a signature block, and return zero if it is valid.
- */
-
-static int
-smp_open_sign(const struct smp_sc *sc, uint64_t adr, void **ptr, uint64_t *len, const char *id)
-{
-	struct smp_sign *ss;
-	int i;
-	
-	AZ(adr & 0x7);			/* Enforce alignment */
-	AN(ptr);
-	AN(len);
-	ss = (void*)(sc->ptr + adr);
-	*ptr = (void*)(sc->ptr + adr + sizeof *ss);
-	*len = ss->length;
-	i = smp_check_sign(sc, adr, id);
-fprintf(stderr, "OpenSign(%jx, %s) -> {%p, %jx, %d}\n",
-    adr, id, *ptr, *len, i);
-	return (i);
+	smp_def_sign(sc, ctx, off, id);
+	smp_reset_sign(ctx);
+	smp_sync_sign(ctx);
 }
 
 /*--------------------------------------------------------------------
@@ -243,9 +282,13 @@ smp_newsilo(struct smp_sc *sc)
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 
+	/* Choose a new random number */
 	sc->unique = random();
 
-	si = (void*)sc->ptr;
+	smp_reset_sign(&sc->idn);
+	si = sc->ident;
+printf("NEW: %p\n", si);
+
 	memset(si, 0, sizeof *si);
 	strcpy(si->ident, SMP_IDENT_STRING);
 	si->byte_order = 0x12345678;
@@ -262,12 +305,15 @@ smp_newsilo(struct smp_sc *sc)
 	si->stuff[SMP_SEG2_STUFF] = si->stuff[SMP_SEG1_STUFF] + 1024*1024;
 	si->stuff[SMP_SPC_STUFF] = si->stuff[SMP_SEG2_STUFF] + 1024*1024;
 	si->stuff[SMP_END_STUFF] = si->mediasize;
-	smp_create_sign(sc, si->stuff[SMP_BAN1_STUFF], 0, "BAN 1");
-	smp_create_sign(sc, si->stuff[SMP_BAN2_STUFF], 0, "BAN 2");
-	smp_create_sign(sc, si->stuff[SMP_SEG1_STUFF], 0, "SEG 1");
-	smp_create_sign(sc, si->stuff[SMP_SEG2_STUFF], 0, "SEG 2");
+	assert(si->stuff[SMP_SPC_STUFF] < si->stuff[SMP_END_STUFF]);
 
-	smp_make_hash(si, sizeof *si);
+	smp_new_sign(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF], "BAN 1");
+	smp_new_sign(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF], "BAN 2");
+	smp_new_sign(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF], "SEG 1");
+	smp_new_sign(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+
+	smp_append_sign(&sc->idn, si, sizeof *si);
+	smp_sync_sign(&sc->idn);
 }
 
 /*--------------------------------------------------------------------
@@ -281,14 +327,17 @@ smp_valid_silo(struct smp_sc *sc)
 	int i, j;
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
-	si = (void*)sc->ptr;
-	if (strcmp(si->ident, SMP_IDENT_STRING))
+
+	if (smp_chk_sign(&sc->idn))
 		return (1);
-	if (si->byte_order != 0x12345678)
+
+	si = sc->ident;
+printf("VALID: %p\n", si);
+	if (strcmp(si->ident, SMP_IDENT_STRING))
 		return (2);
-	if (si->size != sizeof *si)
+	if (si->byte_order != 0x12345678)
 		return (3);
-	if (smp_check_hash(si, sizeof *si))
+	if (si->size != sizeof *si)
 		return (4);
 	if (si->major_version != 1)
 		return (5);
@@ -309,15 +358,20 @@ smp_valid_silo(struct smp_sc *sc)
 	assert(si->stuff[SMP_SPC_STUFF] > si->stuff[3]);
 	assert(si->stuff[SMP_END_STUFF] == sc->mediasize);
 
+	smp_def_sign(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF], "BAN 1");
+	smp_def_sign(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF], "BAN 2");
+	smp_def_sign(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF], "SEG 1");
+	smp_def_sign(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+
 	/* We must have one valid BAN table */
-	i = smp_check_sign(sc, si->stuff[SMP_BAN1_STUFF], "BAN 1");
-	j = smp_check_sign(sc, si->stuff[SMP_BAN2_STUFF], "BAN 2");
+	i = smp_chk_sign(&sc->ban1);
+	j = smp_chk_sign(&sc->ban2);
 	if (i && j)
 		return (100 + i * 10 + j);
 
 	/* We must have one valid SEG table */
-	i = smp_check_sign(sc, si->stuff[SMP_SEG1_STUFF], "SEG 1");
-	j = smp_check_sign(sc, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+	i = smp_chk_sign(&sc->seg1);
+	j = smp_chk_sign(&sc->seg2);
 	if (i && j)
 		return (200 + i * 10 + j);
 	return (0);
@@ -379,6 +433,9 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	fprintf(stderr, "i = %d ms = %jd g = %u\n",
 	    i, (intmax_t)sc->mediasize, sc->granularity);
 
+	smp_def_sign(sc, &sc->idn, 0, "SILO");
+	sc->ident = SIGN_DATA(&sc->idn);
+
 	i = smp_valid_silo(sc);
 	fprintf(stderr, "Silo: %d\n", i);
 	if (i)
@@ -403,33 +460,33 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
  */
 
 static void
-smp_save_seg(struct smp_sc *sc, uint64_t adr, const char *id)
+smp_save_seg(struct smp_sc *sc, struct smp_signctx *ctx)
 {
 	struct smp_segptr *ss;
 	struct smp_seg *sg;
-	void *ptr;
 	uint64_t length;
 
-	(void)smp_open_sign(sc, adr, &ptr, &length, id);
-	ss = ptr;
-	length = 0;
+	smp_reset_sign(ctx);
+	ss = SIGN_DATA(ctx);
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
+		assert(sg->offset < sc->mediasize);
+		assert(sg->offset + sg->length <= sc->mediasize);
 		ss->offset = sg->offset;
 		ss->length = sg->length;
 		ss++;
 		length += sizeof *ss;
 fprintf(stderr, "WR SEG %jx %jx\n", sg->offset, sg->length);
 	}
-	smp_create_sign(sc, adr, length, id);
-	smp_sync_sign(sc, adr, length);
+	smp_append_sign(ctx, SIGN_DATA(ctx), length);
+	smp_sync_sign(ctx);
 }
 
 static void
 smp_save_segs(struct smp_sc *sc)
 {
 
-	smp_save_seg(sc, sc->ident->stuff[SMP_SEG1_STUFF], "SEG 1");
-	smp_save_seg(sc, sc->ident->stuff[SMP_SEG2_STUFF], "SEG 2");
+	smp_save_seg(sc, &sc->seg1);
+	smp_save_seg(sc, &sc->seg2);
 }
 
 /*--------------------------------------------------------------------
@@ -473,11 +530,19 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
  * Add a new ban to all silos
  */
 
+static void
+smp_appendban(struct smp_sc *sc, double t0, const char *ban)
+{
+fprintf(stderr, "silo %p BAN %g %s\n", sc, t0, ban);
+}
+
 void
 SMP_NewBan(double t0, const char *ban)
 {
-	(void)t0;
-	(void)ban;
+	struct smp_sc *sc;
+
+	VTAILQ_FOREACH(sc, &silos, list)
+		smp_appendban(sc, t0, ban);
 }
 
 /*--------------------------------------------------------------------
@@ -554,10 +619,15 @@ smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
 	struct smp_object *so;
 	uint32_t no;
 	double t_now = TIM_real();
+	struct smp_signctx ctx[1];
 
 	(void)sp;
-	if (smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT"))
+	AN(sg->offset);
+	smp_def_sign(sc, ctx, sg->offset, "SEGMENT");
+	if (smp_chk_sign(ctx))
 		return;
+	ptr = SIGN_DATA(ctx);
+	length = ctx->ss->length;
 	fprintf(stderr, "Load Seg %p %jx\n", ptr, length);
 	ss = ptr;
 	fprintf(stderr, "Objlist %jx Nalloc %u\n", ss->objlist, ss->nalloc);
@@ -586,22 +656,27 @@ fprintf(stderr, "Got %u objects in seg %p\n", sg->nalloc, sg);
  */
 
 static int
-smp_open_segs(struct smp_sc *sc, int stuff, const char *id)
+smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 {
-	void *ptr;
 	uint64_t length;
 	struct smp_segptr *ss;
 	struct smp_seg *sg;
+	int i;
 
-	if (smp_open_sign(sc, sc->ident->stuff[stuff], &ptr, &length, id))
-		return (1);
+	i = smp_chk_sign(ctx);	
+	if (i)
+		return (i);
+	ss = SIGN_DATA(ctx);
+	length = ctx->ss->length;
 
-	ss = ptr;
 	for(; length > 0; length -= sizeof *ss, ss ++) {
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		sg->offset = ss->offset;
 		sg->length = ss->length;
+		/* XXX: check that they are inside silo */
+		/* XXX: check that they don't overlap */
+		/* XXX: check that they are serial */
 		sg->sc = sc;
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
@@ -617,8 +692,6 @@ static void
 smp_new_seg(struct smp_sc *sc)
 {
 	struct smp_seg *sg, *sg2;
-	void *ptr;
-	uint64_t length;
 
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
@@ -630,22 +703,30 @@ smp_new_seg(struct smp_sc *sc)
 	/* XXX: find where it goes in silo */
 
 	sg2 = VTAILQ_LAST(&sc->segments, smp_seghead);
-	if (sg2 == NULL)
+	if (sg2 == NULL) {
 		sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
-	else
+		assert(sc->ident->stuff[SMP_SPC_STUFF] < sc->mediasize);
+	} else {
 		sg->offset = sg2->offset + sg2->length;
+		assert(sg->offset < sc->mediasize);
+	}
 	sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
+
+	assert(sg->offset + sg->length <= sc->mediasize);
 
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 
 	/* Neuter the new segment in case there is an old one there */
-	(void)smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT");
-	memcpy(ptr, &sg->segment, sizeof sg->segment);
-	smp_create_sign(sc, sg->offset, sizeof sg->segment, "SEGMENT");
-	smp_sync_sign(sc, sg->offset, sizeof sg->segment);
+	AN(sg->offset);
+	smp_def_sign(sc, sg->ctx, sg->offset, "SEGMENT");
+	smp_reset_sign(sg->ctx);
+	memcpy(SIGN_DATA(sg->ctx), &sg->segment, sizeof sg->segment);
+	smp_append_sign(sg->ctx, &sg->segment, sizeof sg->segment);
+	smp_sync_sign(sg->ctx);
 
 	/* Then add it to the segment list. */
+	/* XXX: could be done cheaper with append ? */
 	smp_save_segs(sc);
 
 	/* Set up our allocation point */
@@ -664,8 +745,6 @@ fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 static void
 smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 {
-	void *ptr;
-	uint64_t length;
 
 	(void)sc;
 	/* XXX: if segment is empty, delete instead */
@@ -679,9 +758,10 @@ fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
 	sg->segment.nalloc = sg->nalloc;
 
 	/* Write it to silo */
-	(void)smp_open_sign(sc, sg->offset, &ptr, &length, "SEGMENT");
-	memcpy(ptr, &sg->segment, sizeof sg->segment);
-	smp_create_sign(sc, sg->offset, sizeof sg->segment, "SEGMENT");
+	smp_reset_sign(sg->ctx);
+	memcpy(SIGN_DATA(sg->ctx), &sg->segment, sizeof sg->segment);
+	smp_append_sign(sg->ctx, &sg->segment, sizeof sg->segment);
+	smp_sync_sign(sg->ctx);
 
 	sg->next_addr += sizeof *sg->objs * sg->nalloc;
 	sg->length = sg->next_addr - sg->offset;
@@ -730,15 +810,15 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
 
-	sc->ident = (void*)sc->ptr;
+	sc->ident = SIGN_DATA(&sc->idn);
 
 	/* XXX: read in bans */
 
 	/*
 	 * We attempt seg1 first, and if that fails, try seg2
 	 */
-	if (smp_open_segs(sc, SMP_SEG1_STUFF, "SEG 1"))
-		AZ(smp_open_segs(sc, SMP_SEG2_STUFF, "SEG 2"));
+	if (smp_open_segs(sc, &sc->seg1))
+		AZ(smp_open_segs(sc, &sc->seg2));
 
 	/* Open a new segment, so we are ready to write */
 	smp_new_seg(sc);
