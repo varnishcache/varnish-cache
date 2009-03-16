@@ -62,9 +62,10 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
-	cache_waiter.h \
+	cache_ban.h \
 	cache_backend.h \
 	cache_backend_poll.h \
+	cache_waiter.h \
 	common.h \
 	default_vcl.h \
 	hash_slinger.h \
