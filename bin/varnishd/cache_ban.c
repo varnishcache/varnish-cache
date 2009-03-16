@@ -523,7 +523,7 @@ fprintf(stderr, "REF...: %g %g %g (%s)\n", b->t0, t0, b->t0 - t0, b->test);
 	}
 	AN(b);
 fprintf(stderr, "REF: %p %g %g %g\n", b, b->t0, t0, b->t0 - t0);
-	assert(b->t0 >= t0);
+	assert(b->t0 == t0);
 	Lck_Lock(&ban_mtx);
 	b->refcount++;
 	Lck_Unlock(&ban_mtx);
@@ -564,6 +564,8 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
+
+	/* XXX: Hunt duplicates down */
 }
 
 /*--------------------------------------------------------------------
