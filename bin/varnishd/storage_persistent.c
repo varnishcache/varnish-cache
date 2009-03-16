@@ -525,10 +525,8 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
 	oc->obj->refcnt = 0;
 	oc->obj->objcore = oc;
 	oc->obj->objhead = oh;
-
-	/* XXX: Placeholder for persistent bans */
-	oc->obj->ban = NULL;
-	BAN_NewObj(oc->obj);
+	oc->obj->ban = oc->ban;
+fprintf(stderr, "OBJ FIX: %p ban %p\n", oc->obj, oc->obj->ban);
 
 	sg->nfixed++;
 }
@@ -542,7 +540,7 @@ smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0, uint32_t fl
 {
 	uint8_t *ptr, *ptr2;
 	
-fprintf(stderr, "silo %p BAN %g %s\n", sc, t0, ban);
+	(void)sc;
 	ptr = ptr2 = SIGN_END(ctx);
 
 	memcpy(ptr, "BAN", 4);
@@ -668,6 +666,7 @@ SMP_BANchanged(const struct object *o, double t)
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 
+fprintf(stderr, "OBJ CHG %p ban %10.9f\n", o, t);
 	o->smp_object->ban = t;
 }
 
@@ -733,6 +732,8 @@ fprintf(stderr, "TTL: %g %g (%g)\n", so->ttl, t_now, so->ttl - t_now);
 		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
 		sp->wrk->nobjcore->obj = (void*)so;
 		sp->wrk->nobjcore->smp_seg = sg;
+		sp->wrk->nobjcore->ban = BAN_RefBan(so->ban, sc->tailban);
+fprintf(stderr, "OBJ LOAD: %p ban %10.9f %p\n", so->ptr, so->ban, sp->wrk->nobjcore->ban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		sg->nalloc++;
@@ -879,6 +880,7 @@ smp_thread(struct sess *sp, void *priv)
 		smp_load_seg(sp, sc, sg);
 
 	sc->flags |= SMP_F_LOADED;
+	BAN_Deref(&sc->tailban);
 	while (1)	
 		sleep (1);
 	return (NULL);
@@ -957,6 +959,7 @@ smp_object(const struct sess *sp)
 	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
 	so->ptr = sp->obj;
+	so->ban = sp->obj->ban_t;
 
 fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }

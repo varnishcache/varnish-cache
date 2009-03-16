@@ -61,6 +61,7 @@
 
 struct banhead ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 struct lock ban_mtx;
+static struct ban *ban_magic;
 
 /*--------------------------------------------------------------------
  * Manipulation of bans
@@ -327,10 +328,10 @@ BAN_Insert(struct ban *b)
 	VSL_stats->n_purge++;
 	VSL_stats->n_purge_add++;
 
-	if (params->purge_dups) {
-		be = VTAILQ_LAST(&ban_head, banhead);
+	be = VTAILQ_LAST(&ban_head, banhead);
+	if (params->purge_dups && be != b)
 		be->refcount++;
-	} else
+	else
 		be = NULL;
 
 	SMP_NewBan(b->t0, b->test);
@@ -367,6 +368,7 @@ BAN_NewObj(struct object *o)
 	o->ban = ban_start;
 	ban_start->refcount++;
 	Lck_Unlock(&ban_mtx);
+	o->ban_t = o->ban->t0;
 }
 
 static struct ban *
@@ -453,6 +455,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 
 	if (b == o->ban) {	/* not banned */
 		o->ban = b0;
+		o->ban_t = o->ban->t0;
 		if (o->smp_object != NULL)
 			SMP_BANchanged(o, b0->t0);
 		return (0);
@@ -469,7 +472,24 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * Bans read in from persistent storage on startup
+ * Release a reference
+ */
+
+void
+BAN_Deref(struct ban **bb)
+{
+	struct ban *b;
+
+	b = *bb;
+	*bb = NULL;
+	Lck_Lock(&ban_mtx);
+	b->refcount--;
+fprintf(stderr, "DEREF %p %u\n", b, b->refcount);
+	Lck_Unlock(&ban_mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Get a reference to the oldest ban in the list
  */
 
 struct ban *
@@ -481,6 +501,32 @@ BAN_TailRef(void)
 	b = VTAILQ_LAST(&ban_head, banhead);
 	AN(b);
 	b->refcount++;
+fprintf(stderr, "TAILREF %p %u\n", b, b->refcount);
+	return (b);
+}
+
+/*--------------------------------------------------------------------
+ * Find and/or Grab a reference to an objects ban based on timestamp
+ */
+
+struct ban *
+BAN_RefBan(double t0, struct ban *tail)
+{
+	struct ban *b;
+
+	VTAILQ_FOREACH(b, &ban_head, list) {
+fprintf(stderr, "REF...: %g %g %g (%s)\n", b->t0, t0, b->t0 - t0, b->test);
+		if (b == tail)
+			break;
+		if (b->t0 <= t0)
+			break;
+	}
+	AN(b);
+fprintf(stderr, "REF: %p %g %g %g\n", b, b->t0, t0, b->t0 - t0);
+	assert(b->t0 >= t0);
+	Lck_Lock(&ban_mtx);
+	b->refcount++;
+	Lck_Unlock(&ban_mtx);
 	return (b);
 }
 
@@ -533,6 +579,9 @@ BAN_Compile(void)
 
 	ASSERT_CLI();
 
+	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
+	SMP_NewBan(ban_magic->t0, ban_magic->test);
+	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (!(b->flags & BAN_F_PENDING))
 			continue;
@@ -634,8 +683,7 @@ ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 static void
 ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 {
-	struct ban *b;
-	char t[64];
+	struct ban *b, *bl = NULL;
 
 	(void)av;
 	(void)priv;
@@ -644,23 +692,25 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 		/* Attempt to purge last ban entry */
 		Lck_Lock(&ban_mtx);
 		b = BAN_CheckLast();
+		bl = VTAILQ_LAST(&ban_head, banhead);
 		if (b == NULL)
-			VTAILQ_LAST(&ban_head, banhead)->refcount++;
+			bl->refcount++;
 		Lck_Unlock(&ban_mtx);
 		if (b != NULL)
 			BAN_Free(b);
 	} while (b != NULL);
+	AN(bl);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b->refcount == 0 && (b->flags & BAN_F_GONE))
-			continue;
-		TIM_format(b->t0, t);
-		cli_out(cli, "%s %10.6f %5u%s\t%s\n", t, b->t0, b->refcount,
+		// if (b->refcount == 0 && (b->flags & BAN_F_GONE))
+		//	continue;
+		cli_out(cli, "%p %10.6f %5u%s\t%s\n", b, b->t0,
+		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ", b->test);
 	}
 
 	Lck_Lock(&ban_mtx);
-	VTAILQ_LAST(&ban_head, banhead)->refcount--;
+	bl->refcount--;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -682,12 +732,12 @@ static struct cli_proto ban_cmds[] = {
 void
 BAN_Init(void)
 {
-	struct ban *b;
 
 	Lck_New(&ban_mtx);
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 
-	b = BAN_New();
-	b->flags |= BAN_F_GONE;
-	BAN_Insert(b);
+	ban_magic = BAN_New();
+	ban_magic->flags |= BAN_F_GONE;
+	BAN_Insert(ban_magic);
+	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
 }

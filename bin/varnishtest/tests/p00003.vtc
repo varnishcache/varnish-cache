@@ -1,0 +1,57 @@
+# $Id$
+
+test "Ban a persistent object"
+
+shell "rm -f /tmp/__v1/_.per"
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: foo"
+} -start
+
+varnish v1 \
+	-arg "-pdiag_bitmap=0x20000" \
+	-arg "-spersistent,/tmp/__v1/_.per,10m" \
+	-vcl+backend { } -start 
+
+varnish v1 -cliok purge.list
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo"
+} -run
+
+varnish v1 -cliok "purge req.url == /"
+varnish v1 -cliok purge.list
+varnish v1 -stop
+server s1 -wait
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: bar"
+} -start
+
+varnish v1 -start
+
+varnish v1 -cliok purge.list
+
+# Count of 2 here, because the "magic" ban is also there"
+# varnish v1 -expect n_purge == 2
+
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "bar"
+} -run
+
+
+varnish v1 -cliok purge.list
+
+varnish v1 -stop
+

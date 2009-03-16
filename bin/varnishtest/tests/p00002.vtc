@@ -36,15 +36,5 @@ varnish v1 -start
 
 varnish v1 -cliok purge.list
 
-varnish v1 -expect n_purge == 1
-
-# client c1 {
-#	txreq -url "/"
-#	rxresp
-#	expect resp.status == 200
-#	expect resp.http.X-Varnish == "1001"
-#	expect resp.http.foo == "bar"
-#} -run
-#
-#varnish v1 -stop
-
+# Count of 3 here, because two "magic" bans are also there"
+varnish v1 -expect n_purge == 3
