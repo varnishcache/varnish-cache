@@ -536,18 +536,99 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
  */
 
 static void
-smp_appendban(struct smp_sc *sc, double t0, const char *ban)
+smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0, uint32_t flags, uint32_t len, const char *ban)
 {
+	uint8_t *ptr, *ptr2;
+	
 fprintf(stderr, "silo %p BAN %g %s\n", sc, t0, ban);
+	ptr = ptr2 = SIGN_END(ctx);
+
+	memcpy(ptr, "BAN", 4);
+	ptr += 4;
+
+	memcpy(ptr, &t0, sizeof t0);
+	ptr += sizeof t0;
+
+	memcpy(ptr, &flags, sizeof flags);
+	ptr += sizeof flags;
+
+	memcpy(ptr, &len, sizeof len);
+	ptr += sizeof len;
+
+	memcpy(ptr, ban, len);
+	ptr += len;
+
+	smp_append_sign(ctx, ptr2, ptr - ptr2);
 }
 
 void
 SMP_NewBan(double t0, const char *ban)
 {
 	struct smp_sc *sc;
+	uint32_t l = strlen(ban) + 1;
 
-	VTAILQ_FOREACH(sc, &silos, list)
-		smp_appendban(sc, t0, ban);
+	VTAILQ_FOREACH(sc, &silos, list) {
+		smp_appendban(sc, &sc->ban1, t0, 0, l, ban);
+		smp_appendban(sc, &sc->ban2, t0, 0, l, ban);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Attempt to open and read in a ban list
+ */
+
+static int
+smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
+{
+	uint8_t *ptr, *pe;
+	double t0;
+	uint32_t flags, length;
+	int i, retval = 0;
+
+	(void)sc;
+	i = smp_chk_sign(ctx);	
+	if (i)
+		return (i);
+	ptr = SIGN_DATA(ctx);
+	pe = ptr + ctx->ss->length;
+
+	while (ptr < pe) {
+		if (memcmp(ptr, "BAN", 4)) {
+			retval = 1001;
+			break;
+		}
+		ptr += 4;
+
+		memcpy(&t0, ptr, sizeof t0);
+		ptr += sizeof t0;
+
+		memcpy(&flags, ptr, sizeof flags);
+		ptr += sizeof flags;
+		if (flags != 0) {
+			retval = 1002;
+			break;
+		}
+
+		memcpy(&length, ptr, sizeof length);
+		ptr += sizeof length;
+		if (ptr + length > pe) {
+			retval = 1003;
+			break;
+		}
+
+		if (ptr[length - 1] != '\0') {
+			retval = 1004;
+			break;
+		}
+
+fprintf(stderr, "BAN {%g %u %u \"%s\"}\n", t0, flags, length, ptr);
+
+		ptr += length;
+	}
+	assert(ptr <= pe);
+	if (retval)
+fprintf(stderr, "BAN read failed: %d\n", retval);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -817,13 +898,15 @@ fprintf(stderr, "Open Silo(%p)\n", st);
 
 	sc->ident = SIGN_DATA(&sc->idn);
 
-	/* XXX: read in bans */
+	/* We attempt ban1 first, and if that fails, try ban2 */
+	if (smp_open_bans(sc, &sc->ban1))
+		AZ(smp_open_bans(sc, &sc->ban2));
 
-	/*
-	 * We attempt seg1 first, and if that fails, try seg2
-	 */
+	/* We attempt seg1 first, and if that fails, try seg2 */
 	if (smp_open_segs(sc, &sc->seg1))
 		AZ(smp_open_segs(sc, &sc->seg2));
+
+	/* XXX: save segments to ensure consistency between seg1 & seg2 ? */
 
 	/* Open a new segment, so we are ready to write */
 	smp_new_seg(sc);
