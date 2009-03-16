@@ -133,6 +133,11 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 
 /*********************************************************************
  * SIGNATURE functions
+ * The signature is SHA256 over:
+ *    1. The smp_sign struct up to but not including the length field.
+ *    2. smp_sign->length bytes, starting after the smp_sign structure
+ *    3. The smp-sign->length field.
+ * The signature is stored after the byte-range from step 2.
  */
 
 #define SIGN_DATA(ctx)	((void *)((ctx)->ss + 1))
