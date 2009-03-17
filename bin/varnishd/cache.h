@@ -463,7 +463,7 @@ int BAN_CheckObject(struct object *o, const struct sess *sp);
 void BAN_Reload(double t0, unsigned flags, const char *ban);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
-struct ban *BAN_RefBan(double t0, struct ban *tail);
+struct ban *BAN_RefBan(double t0, const struct ban *tail);
 void BAN_Deref(struct ban **ban);
 
 /* cache_center.c [CNT] */
