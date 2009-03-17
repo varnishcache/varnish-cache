@@ -161,7 +161,7 @@ smp_dump_sign(struct smp_signctx *ctx)
  */
 
 static void
-smp_def_sign(struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
+smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
 {
 
 	AZ(off & 7);			/* Alignment */
@@ -201,11 +201,11 @@ smp_chk_sign(struct smp_signctx *ctx)
 		if (memcmp(sign, SIGN_END(ctx), sizeof sign))
 			r = 4;
 	} 
-if (r) {
-	fprintf(stderr, "CHK(%p %p %s) = %d\n",
-	    ctx, ctx->ss, ctx->ss->ident, r);
-	smp_dump_sign(ctx);
-}
+	if (r) {
+		fprintf(stderr, "CHK(%p %p %s) = %d\n",
+		    ctx, ctx->ss, ctx->ss->ident, r);
+		smp_dump_sign(ctx);
+	}
 	return (r);
 }
 
@@ -213,7 +213,7 @@ if (r) {
  * Append data to a signature
  */
 static void
-smp_append_sign(struct smp_signctx *ctx, void *ptr, uint32_t len)
+smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len)
 {
 	struct SHA256Context cx;
 	unsigned char sign[SHA256_LEN];
@@ -254,13 +254,13 @@ smp_reset_sign(struct smp_signctx *ctx)
 static void
 smp_sync_sign(const struct smp_signctx *ctx)
 {
+	int i;
 
-	(void)ctx;
-
-#if 0
-	i = msync(sc->ptr + adr,
-	    sizeof(struct smp_sign) + len + SHA256_LEN, MS_SYNC);
-fprintf(stderr, "SyncSign(%jx, %jx) = %d %s\n", adr, len, i, strerror(errno));
+#if 1
+	i = msync(ctx->ss, ctx->ss->length + SHA256_LEN, MS_SYNC);
+	if (i)
+fprintf(stderr, "SyncSign(%p %s) = %d %s\n",
+    ctx->ss, ctx->id, i, strerror(errno));
 #endif
 }
 
@@ -269,7 +269,7 @@ fprintf(stderr, "SyncSign(%jx, %jx) = %d %s\n", adr, len, i, strerror(errno));
  */
 
 static void
-smp_new_sign(struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
+smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
 {
 	smp_def_sign(sc, ctx, off, id);
 	smp_reset_sign(ctx);
@@ -467,7 +467,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
  */
 
 static void
-smp_save_seg(struct smp_sc *sc, struct smp_signctx *ctx)
+smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 {
 	struct smp_segptr *ss;
 	struct smp_seg *sg;
@@ -475,6 +475,7 @@ smp_save_seg(struct smp_sc *sc, struct smp_signctx *ctx)
 
 	smp_reset_sign(ctx);
 	ss = SIGN_DATA(ctx);
+	length = 0;
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
 		assert(sg->offset < sc->mediasize);
 		assert(sg->offset + sg->length <= sc->mediasize);
@@ -699,7 +700,7 @@ SMP_TTLchanged(const struct object *o)
  */
 
 static void
-smp_load_seg(struct sess *sp, struct smp_sc *sc, struct smp_seg *sg)
+smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 {
 	void *ptr;
 	uint64_t length;
@@ -1002,6 +1003,7 @@ smp_trim(struct storage *ss, size_t size)
 {
 	struct smp_sc *sc;
 	struct smp_seg *sg;
+	const char z[4] = { 0, 0, 0, 0};
 
 fprintf(stderr, "Trim(%p %zu)\n", ss, size);
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
@@ -1012,7 +1014,7 @@ fprintf(stderr, "Trim(%p %zu)\n", ss, size);
 	size += 1;
 
 	if (ss->ptr + ss->space == sg->next_addr + sc->ptr) {
-		memcpy(sc->ptr + sg->next_addr, "\0\0\0\0", 4);
+		memcpy(sc->ptr + sg->next_addr, z, 4);
 		sg->next_addr -= ss->space - size;
 		ss->space = size;
 		memcpy(sc->ptr + sg->next_addr, "HERE", 4);

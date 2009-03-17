@@ -510,7 +510,7 @@ fprintf(stderr, "TAILREF %p %u\n", b, b->refcount);
  */
 
 struct ban *
-BAN_RefBan(double t0, struct ban *tail)
+BAN_RefBan(double t0, const struct ban *tail)
 {
 	struct ban *b;
 
@@ -556,6 +556,7 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 	VSL_stats->n_purge_add++;
 
 	b2 = BAN_New();
+	AN(b2);
 	b2->test = strdup(ban);
 	AN(b2->test);
 	b2->t0 = t0;
@@ -739,6 +740,7 @@ BAN_Init(void)
 	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
 
 	ban_magic = BAN_New();
+	AN(ban_magic);
 	ban_magic->flags |= BAN_F_GONE;
 	BAN_Insert(ban_magic);
 	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
