@@ -38,7 +38,6 @@ struct cli;
 
 extern struct vev_base	*mgt_evb;
 extern unsigned		d_flag;
-extern pid_t		mgt_pid;
 extern int		exit_status;
 
 /* mgt_child.c */

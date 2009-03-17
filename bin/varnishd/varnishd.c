@@ -417,6 +417,9 @@ main(int argc, char * const *argv)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	/* for ASSERT_MGT() */
+	mgt_pid = getpid();
+
 	/*
 	 * Run in UTC timezone, on the off-chance that this operating
 	 * system does not have a timegm() function, and translates
@@ -615,6 +618,7 @@ main(int argc, char * const *argv)
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
+	/* Do this again after debugstunt and daemon has run */
 	mgt_pid = getpid();
 
 	mgt_evb = vev_new_base();

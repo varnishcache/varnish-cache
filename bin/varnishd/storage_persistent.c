@@ -59,6 +59,19 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
+#define ASSERT_SILO_THREAD(sc) \
+    do {assert(pthread_self() == (sc)->thread);} while (0)
+
+/*
+ * Context for a signature.
+ *
+ * A signature is a sequence of bytes in the silo, signed by a SHA256 hash
+ * which follows the bytes.
+ *
+ * The context structure allows us to append to a signature without
+ * recalculating the entire SHA256 hash.
+ */
+
 struct smp_signctx {
 	struct smp_sign		*ss;
 	struct SHA256Context	ctx;
@@ -125,6 +138,8 @@ struct smp_sc {
 	struct smp_signctx	seg2;
 
 	struct ban		*tailban;
+
+	struct lock		mtx;
 };
 
 /*
@@ -287,6 +302,7 @@ smp_newsilo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
 
+	ASSERT_MGT();
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 
 	/* Choose a new random number */
@@ -394,7 +410,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	struct smp_sc		*sc;
 	int i;
 	
-	(void)parent;
+	ASSERT_MGT();
 
 	AZ(av[ac]);
 #define SIZOF(foo)       fprintf(stderr, \
@@ -586,6 +602,7 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 	uint32_t flags, length;
 	int i, retval = 0;
 
+	ASSERT_CLI();
 	(void)sc;
 	i = smp_chk_sign(ctx);	
 	if (i)
@@ -710,6 +727,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	double t_now = TIM_real();
 	struct smp_signctx ctx[1];
 
+	ASSERT_SILO_THREAD(sc);
 	(void)sp;
 	AN(sg->offset);
 	smp_def_sign(sc, ctx, sg->offset, "SEGMENT");
@@ -754,6 +772,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	struct smp_seg *sg;
 	int i;
 
+	ASSERT_CLI();
 	i = smp_chk_sign(ctx);	
 	if (i)
 		return (i);
@@ -896,8 +915,12 @@ smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
 
+	ASSERT_CLI();
+
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 fprintf(stderr, "Open Silo(%p)\n", st);
+
+	Lck_New(&sc->mtx);
 
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
@@ -934,9 +957,13 @@ smp_close(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
 
+	ASSERT_CLI();
+
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 fprintf(stderr, "Close Silo(%p)\n", st);
 	smp_close_seg(sc, sc->cur_seg);
+
+	/* XXX: reap thread */
 }
 
 /*--------------------------------------------------------------------
@@ -955,12 +982,14 @@ smp_object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
 
+	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
 	so = &sg->objs[sg->nalloc++];
 	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
 	so->ptr = sp->obj;
 	so->ban = sp->obj->ban_t;
+	Lck_Unlock(&sc->mtx);
 
 fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }
@@ -977,13 +1006,17 @@ smp_alloc(struct stevedore *st, size_t size)
 	struct smp_seg *sg;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+
+	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
 
 	/* XXX: size fit check */
 	AN(sg->next_addr);
+	ss = (void *)(sc->ptr + sg->next_addr);
+	sg->next_addr += size + sizeof *ss;
+	Lck_Unlock(&sc->mtx);
 
 	/* Grab and fill a storage structure */
-	ss = (void *)(sc->ptr + sg->next_addr);
 	memset(ss, 0, sizeof *ss);
 	ss->magic = STORAGE_MAGIC;
 	ss->space = size;
@@ -992,8 +1025,6 @@ smp_alloc(struct stevedore *st, size_t size)
 	ss->stevedore = st;
 	ss->fd = sc->fd;
 	ss->where = sg->next_addr + sizeof *ss;
-
-	sg->next_addr += size + sizeof *ss;
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	return (ss);
 }
@@ -1007,19 +1038,31 @@ smp_trim(struct storage *ss, size_t size)
 
 fprintf(stderr, "Trim(%p %zu)\n", ss, size);
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
-	sg = sc->cur_seg;
 
 	/* We want 16 bytes alignment */
 	size |= 0xf;
 	size += 1;
 
+	sg = sc->cur_seg;
+	if (ss->ptr + ss->space != sg->next_addr + sc->ptr) 
+		return;
+
+	Lck_Lock(&sc->mtx);
+	sg = sc->cur_seg;
 	if (ss->ptr + ss->space == sg->next_addr + sc->ptr) {
 		memcpy(sc->ptr + sg->next_addr, z, 4);
 		sg->next_addr -= ss->space - size;
 		ss->space = size;
 		memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	}
+	Lck_Unlock(&sc->mtx);
 }
+
+/*--------------------------------------------------------------------
+ * We don't track frees of storage, we track the objects which own them
+ * instead, when there are no more objects in in the first segment, it
+ * can be reclaimed.
+ */
 
 static void
 smp_free(struct storage *st)
@@ -1029,20 +1072,22 @@ smp_free(struct storage *st)
 	(void)st;
 }
 
-
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Pause until all silos have loaded.
+ */
 
 void
 SMP_Ready(void)
 {
 	struct smp_sc *sc;
 
+	ASSERT_CLI();
 	while (1) {
 		VTAILQ_FOREACH(sc, &silos, list) {
-			if (!(sc->flags & SMP_F_LOADED)) {
-				sleep(1);
-				break;
-			}
+			if (sc->flags & SMP_F_LOADED)
+				continue;
+			(void)sleep(1);
+			break;
 		}
 		if (sc == NULL)
 			break;
