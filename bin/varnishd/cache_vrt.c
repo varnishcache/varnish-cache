@@ -625,6 +625,8 @@ VRT_r_server_ip(struct sess *sp)
 const char*
 VRT_r_server_identity(struct sess *sp)
 {
+	(void)sp;
+
 	if (heritage.identity[0] != '\0')
 		return heritage.identity;
 	else 
@@ -635,6 +637,8 @@ VRT_r_server_identity(struct sess *sp)
 const char*
 VRT_r_server_hostname(struct sess *sp)
 {
+	(void)sp;
+
 	if (vrt_hostname[0] == '\0')
 		gethostname(vrt_hostname, 255);
 	
