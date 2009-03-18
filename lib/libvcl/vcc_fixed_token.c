@@ -322,12 +322,13 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3838 2009-02-27 15:20:57Z ");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3880 2009-03-04 13:00:18Z ");
 	vsb_cat(sb, "phk $\n *\n * NB:  This file is machine generated, DO ");
 	vsb_cat(sb, "NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
-	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
+	vsb_cat(sb, "s *);\nconst char * VRT_r_server_hostname(struct sess ");
+	vsb_cat(sb, "*);\nint VRT_r_server_port(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_request(const struct sess *, const char");
 	vsb_cat(sb, " *, ...);\nconst char * VRT_r_req_url(const struct ses");
