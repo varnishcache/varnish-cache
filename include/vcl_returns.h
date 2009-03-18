@@ -69,6 +69,7 @@ VCL_MET_MAC(discard,DISCARD,
     | (1 << VCL_RET_KEEP)
 ))
 VCL_MET_MAC(error,ERROR,
-     ((1 << VCL_RET_DELIVER)
+     ((1 << VCL_RET_RESTART)
+    | (1 << VCL_RET_DELIVER)
 ))
 #endif

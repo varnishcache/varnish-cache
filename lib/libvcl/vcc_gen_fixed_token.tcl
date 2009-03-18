@@ -44,7 +44,7 @@ set methods {
 	{deliver	{restart deliver}}
 	{timeout	{fetch discard}}
 	{discard	{discard keep}}
-	{error		{deliver}}
+	{error		{restart deliver}}
 }
 
 # These are the return actions
