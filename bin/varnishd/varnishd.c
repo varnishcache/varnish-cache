@@ -578,8 +578,8 @@ main(int argc, char * const *argv)
 
 
 	if (i_arg != NULL) {
-		size_t len;
-		if (snprintf(heritage.identity, sizeof heritage.identity, "%s", i_arg) > sizeof heritage.identity) {
+		if (snprintf(heritage.identity, sizeof heritage.identity,
+		    "%s", i_arg) > sizeof heritage.identity) {
 			fprintf(stderr, "Invalid identity name: %s\n",
 			    strerror(ENAMETOOLONG));
 			exit(1);
