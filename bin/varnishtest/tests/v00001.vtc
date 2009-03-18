@@ -39,6 +39,9 @@ varnish v1 -vcl+backend {
 		set resp.proto = "HTTP/1.2";
 		set resp.response = "Naah, lets fail it";
 		set resp.status = 904;
+		# XXX should be moved to it's own test
+		set resp.http.x-served-by-hostname = server.hostname;
+		set resp.http.x-served-by-identity = server.identity;
 		set resp.http.foobar =
 		    resp.proto
 		    resp.status;
