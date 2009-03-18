@@ -161,17 +161,6 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 #define SIGN_END(ctx)	((void *)((int8_t *)SIGN_DATA(ctx) + (ctx)->ss->length))
 
 /*--------------------------------------------------------------------
- * debug
- */
-
-static void
-smp_dump_sign(struct smp_signctx *ctx)
-{
-	fprintf(stderr, "%p {%s %x %p %ju}\n", ctx, ctx->id, ctx->unique, ctx->ss, ctx->ss->length);
-}
-
-
-/*--------------------------------------------------------------------
  * Define a signature by location and identifier.
  */
 
@@ -186,7 +175,6 @@ smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, con
 	ctx->ss = (void*)(sc->ptr + off);
 	ctx->unique = sc->unique;
 	ctx->id = id;
-fprintf(stderr, "DEF(%p %p %s)\n", ctx, ctx->ss, id);
 }
 
 /*--------------------------------------------------------------------
@@ -219,7 +207,8 @@ smp_chk_sign(struct smp_signctx *ctx)
 	if (r) {
 		fprintf(stderr, "CHK(%p %p %s) = %d\n",
 		    ctx, ctx->ss, ctx->ss->ident, r);
-		smp_dump_sign(ctx);
+		fprintf(stderr, "%p {%s %x %p %ju}\n",
+		    ctx, ctx->id, ctx->unique, ctx->ss, ctx->ss->length);
 	}
 	return (r);
 }
@@ -453,17 +442,12 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
 		    strerror(errno));
 
-	fprintf(stderr, "i = %d ms = %jd g = %u\n",
-	    i, (intmax_t)sc->mediasize, sc->granularity);
-
 	smp_def_sign(sc, &sc->idn, 0, "SILO");
 	sc->ident = SIGN_DATA(&sc->idn);
 
 	i = smp_valid_silo(sc);
-	fprintf(stderr, "Silo: %d\n", i);
 	if (i)
 		smp_newsilo(sc);
-	fprintf(stderr, "Silo: %d\n", smp_valid_silo(sc));
 	AZ(smp_valid_silo(sc));
 
 	parent->priv = sc;
@@ -499,7 +483,6 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 		ss->length = sg->length;
 		ss++;
 		length += sizeof *ss;
-fprintf(stderr, "WR SEG %jx %jx\n", sg->offset, sg->length);
 	}
 	smp_append_sign(ctx, SIGN_DATA(ctx), length);
 	smp_sync_sign(ctx);
@@ -523,10 +506,9 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	struct smp_seg *sg;
 	struct smp_object *so;
 
+	(void)sp;
 	sg = oc->smp_seg;
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
-
-fprintf(stderr, "Fixup %p %p\n", sp, oc);
 
 	so = (void*)oc->obj;
 	oc->obj = so->ptr;
@@ -543,7 +525,6 @@ fprintf(stderr, "Fixup %p %p\n", sp, oc);
 	oc->obj->objcore = oc;
 	oc->obj->objhead = oh;
 	oc->obj->ban = oc->ban;
-fprintf(stderr, "OBJ FIX: %p ban %p\n", oc->obj, oc->obj->ban);
 
 	sg->nfixed++;
 }
@@ -639,14 +620,11 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 			break;
 		}
 
-fprintf(stderr, "BAN {%g %u %u \"%s\"}\n", t0, flags, length, ptr);
 		BAN_Reload(t0, flags, (const char *)ptr);
 
 		ptr += length;
 	}
 	assert(ptr <= pe);
-	if (retval)
-fprintf(stderr, "BAN read failed: %d\n", retval);
 	return (retval);
 }
 
@@ -684,7 +662,6 @@ SMP_BANchanged(const struct object *o, double t)
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 
-fprintf(stderr, "OBJ CHG %p ban %10.9f\n", o, t);
 	o->smp_object->ban = t;
 }
 
@@ -735,29 +712,22 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		return;
 	ptr = SIGN_DATA(ctx);
 	length = ctx->ss->length;
-	fprintf(stderr, "Load Seg %p %jx\n", ptr, length);
 	ss = ptr;
-	fprintf(stderr, "Objlist %jx Nalloc %u\n", ss->objlist, ss->nalloc);
 	so = (void*)(sc->ptr + ss->objlist);
 	no = ss->nalloc;
 	for (;no > 0; so++,no--) {
-fprintf(stderr, "TTL: %g %g (%g)\n", so->ttl, t_now, so->ttl - t_now);
 		if (so->ttl < t_now)
 			continue;
-		fprintf(stderr, "OBJ %p dTTL: %g PTR %p\n",
-		    so, so->ttl - t_now, so->ptr);
 		HSH_Prealloc(sp);
 		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
 		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
 		sp->wrk->nobjcore->obj = (void*)so;
 		sp->wrk->nobjcore->smp_seg = sg;
 		sp->wrk->nobjcore->ban = BAN_RefBan(so->ban, sc->tailban);
-fprintf(stderr, "OBJ LOAD: %p ban %10.9f %p\n", so->ptr, so->ban, sp->wrk->nobjcore->ban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		sg->nalloc++;
 	}
-fprintf(stderr, "Got %u objects in seg %p\n", sg->nalloc, sg);
 }
 
 /*--------------------------------------------------------------------
@@ -789,7 +759,6 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		/* XXX: check that they are serial */
 		sg->sc = sc;
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
-fprintf(stderr, "RD SEG %jx %jx\n", sg->offset, sg->length);
 	}
 	return (0);
 }
@@ -825,7 +794,6 @@ smp_new_seg(struct smp_sc *sc)
 	assert(sg->offset + sg->length <= sc->mediasize);
 
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
-fprintf(stderr, "MK SEG %jx %jx\n", sg->offset, sg->length);
 
 	/* Neuter the new segment in case there is an old one there */
 	AN(sg->offset);
@@ -858,7 +826,6 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	(void)sc;
 	/* XXX: if segment is empty, delete instead */
-fprintf(stderr, "Close seg %p na = %jx\n", sg, sg->next_addr);
 	/* Copy the objects into the segment */
 	memcpy(sc->ptr + sg->next_addr,
 	    sg->objs, sizeof *sg->objs * sg->nalloc);
@@ -918,7 +885,6 @@ smp_open(const struct stevedore *st)
 	ASSERT_CLI();
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
-fprintf(stderr, "Open Silo(%p)\n", st);
 
 	Lck_New(&sc->mtx);
 
@@ -960,7 +926,6 @@ smp_close(const struct stevedore *st)
 	ASSERT_CLI();
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
-fprintf(stderr, "Close Silo(%p)\n", st);
 	smp_close_seg(sc, sc->cur_seg);
 
 	/* XXX: reap thread */
@@ -991,7 +956,6 @@ smp_object(const struct sess *sp)
 	so->ban = sp->obj->ban_t;
 	Lck_Unlock(&sc->mtx);
 
-fprintf(stderr, "Object(%p %p)\n", sp, sp->obj);
 }
 
 /*--------------------------------------------------------------------
@@ -1036,7 +1000,6 @@ smp_trim(struct storage *ss, size_t size)
 	struct smp_seg *sg;
 	const char z[4] = { 0, 0, 0, 0};
 
-fprintf(stderr, "Trim(%p %zu)\n", ss, size);
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
 
 	/* We want 16 bytes alignment */
