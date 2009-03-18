@@ -623,6 +623,16 @@ VRT_r_server_ip(struct sess *sp)
 }
 
 const char*
+VRT_r_server_identity(struct sess *sp)
+{
+	if (heritage.identity[0] != '\0')
+		return heritage.identity;
+	else 
+		return heritage.name;
+}
+
+
+const char*
 VRT_r_server_hostname(struct sess *sp)
 {
 	if (vrt_hostname[0] == '\0')
