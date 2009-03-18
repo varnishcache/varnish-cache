@@ -484,7 +484,6 @@ BAN_Deref(struct ban **bb)
 	*bb = NULL;
 	Lck_Lock(&ban_mtx);
 	b->refcount--;
-fprintf(stderr, "DEREF %p %u\n", b, b->refcount);
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -501,7 +500,6 @@ BAN_TailRef(void)
 	b = VTAILQ_LAST(&ban_head, banhead);
 	AN(b);
 	b->refcount++;
-fprintf(stderr, "TAILREF %p %u\n", b, b->refcount);
 	return (b);
 }
 
@@ -515,14 +513,12 @@ BAN_RefBan(double t0, const struct ban *tail)
 	struct ban *b;
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
-fprintf(stderr, "REF...: %g %g %g (%s)\n", b->t0, t0, b->t0 - t0, b->test);
 		if (b == tail)
 			break;
 		if (b->t0 <= t0)
 			break;
 	}
 	AN(b);
-fprintf(stderr, "REF: %p %g %g %g\n", b, b->t0, t0, b->t0 - t0);
 	assert(b->t0 == t0);
 	Lck_Lock(&ban_mtx);
 	b->refcount++;
@@ -582,9 +578,7 @@ BAN_Compile(void)
 
 	ASSERT_CLI();
 
-	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
 	SMP_NewBan(ban_magic->t0, ban_magic->test);
-	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (!(b->flags & BAN_F_PENDING))
 			continue;
@@ -743,5 +737,4 @@ BAN_Init(void)
 	AN(ban_magic);
 	ban_magic->flags |= BAN_F_GONE;
 	BAN_Insert(ban_magic);
-	fprintf(stderr, "BAN_MAGIC %u\n", ban_magic->refcount);
 }
