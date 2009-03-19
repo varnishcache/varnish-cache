@@ -13,7 +13,6 @@ libvarnish_la_SOURCES = \
 	subproc.c \
 	cli.c \
 	cli_common.c \
-	crc32.c \
 	flopen.c \
 	num.c \
 	time.c \
