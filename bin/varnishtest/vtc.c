@@ -1,6 +1,8 @@
 /*
- * Copyright (c) 2006-2008 Linpro AS
+ * Copyright (c) 2008-2009 Linpro AS
  * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
