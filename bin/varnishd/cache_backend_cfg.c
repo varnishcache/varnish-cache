@@ -45,6 +45,7 @@
 #include "shmlog.h"
 #include "cache.h"
 #include "vrt.h"
+#include "vsha256.h"
 #include "cache_backend.h"
 #include "cli_priv.h"
 
@@ -171,6 +172,8 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 {
 	struct backend *b;
 	uint32_t u;
+	struct SHA256Context ctx;
+	uint8_t hash[SHA256_LEN];
 
 	AN(vb->ident);
 	assert(vb->ipv4_sockaddr != NULL || vb->ipv6_sockaddr != NULL);
@@ -178,11 +181,17 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	ASSERT_CLI();
 
 	/* calculate a hash of (ident + ipv4_sockaddr + ipv6_sockaddr) */
-	u = crc32(~0U, vb->ident, strlen(vb->ident));
+	SHA256_Init(&ctx);
+	SHA256_Update(&ctx, vb->ident, strlen(vb->ident));
 	if (vb->ipv4_sockaddr != NULL)
-		u = crc32(u, vb->ipv4_sockaddr + 1, vb->ipv4_sockaddr[0]);
+		SHA256_Update(&ctx,
+		    vb->ipv4_sockaddr + 1, vb->ipv4_sockaddr[0]);
 	if (vb->ipv6_sockaddr != NULL)
-		u = crc32(u, vb->ipv6_sockaddr + 1, vb->ipv6_sockaddr[0]);
+		SHA256_Update(&ctx,
+		    vb->ipv6_sockaddr + 1, vb->ipv6_sockaddr[0]);
+
+	SHA256_Final(hash, &ctx);
+	memcpy(&u, hash, sizeof u);
 
 	/* Run through the list and see if we already have this backend */
 	VTAILQ_FOREACH(b, &backends, list) {
