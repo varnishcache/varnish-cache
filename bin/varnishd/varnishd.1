@@ -1,6 +1,6 @@
 .\"-
 .\" Copyright (c) 2006 Verdens Gang AS
-.\" Copyright (c) 2006-2008 Linpro AS
+.\" Copyright (c) 2006-2009 Linpro AS
 .\" All rights reserved.
 .\"
 .\" Author: Dag-Erling Smørgrav <des@des.no>
@@ -28,7 +28,7 @@
 .\"
 .\" $Id$
 .\"
-.Dd March 8, 2008
+.Dd February 17, 2008
 .Dt VARNISHD 1
 .Os
 .Sh NAME
@@ -62,7 +62,11 @@ requests for the same document.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
-.It Fl a Ar address Ns Op : Ns Ar port
+.It Xo
+.Fl a Ar address Ns Op : Ns Ar port Ns
+.Op , Ns Ar address Ns Op : Ns Ar port Ns
+.Op ...
+.Xc
 Listen for client requests on the specified
 .Ar address
 and
@@ -84,11 +88,9 @@ If
 .Ar port
 is not specified, the default HTTP port as listed in
 .Pa /etc/services
-is used.  To listen on multiple hosts or ports, the argument to 
-.Fl a
-can be a (quoted) whitespace separated list of
-.Ar address Ns Op : Ns Ar port
-tokens.
+is used.
+Multiple listening addresses and ports can be specified as a
+whitespace- or comma-separated list.
 .It Fl b Ar host Ns Op : Ns Ar port
 Use the specified
 .Ar host
