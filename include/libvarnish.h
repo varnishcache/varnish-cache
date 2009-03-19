@@ -45,10 +45,6 @@ char **ParseArgv(const char *s, int flag);
 #define ARGV_COMMENT	(1 << 0)
 #define ARGV_COMMA	(1 << 1)
 
-/* from libvarnish/crc32.c */
-uint32_t crc32(uint32_t crc, const void *p1, unsigned l);
-uint32_t crc32_l(const void *p1, unsigned l);
-
 /* from libvarnish/num.c */
 const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
 
