@@ -1,0 +1,24 @@
+# $Id$
+
+test "zero length ESI include segmens with chunked encoding"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {<foo><esi:include src="/bar"><bar>}
+	rxreq
+	expect req.url == "/bar"
+	txresp 
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 10
+} -run
