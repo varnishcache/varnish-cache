@@ -19,3 +19,7 @@ varnish v1 -start
 varnish v1 -cliok "help"
 
 varnish v1 -cliok "stats"
+
+varnish v1 -cliok "param.set acceptor default"
+
+varnish v1 -clierr 106 "param.set acceptor HASH(0x8839c4c)"

@@ -368,7 +368,7 @@ VCA_tweak_acceptor(struct cli *cli, const char *arg)
 		vca_act = NULL;
 		return;
 	}
-	for (i = 0; vca_acceptors[i]->name; i++) {
+	for (i = 0; vca_acceptors[i]; i++) {
 		if (!strcmp(arg, vca_acceptors[i]->name)) {
 			vca_act = vca_acceptors[i];
 			return;
