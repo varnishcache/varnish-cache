@@ -227,7 +227,7 @@ vca_acct(void *arg)
 					    "Too many open files "
 					    "when accept(2)ing. Sleeping.");
 					TIM_sleep(
-					    params->accept_fd_holdoff * 1000.0);
+					    params->accept_fd_holdoff * 0.001);
 					break;
 				default:
 					VSL(SLT_Debug, ls->sock,
