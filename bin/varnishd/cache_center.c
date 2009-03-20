@@ -494,7 +494,7 @@ cnt_fetch(struct sess *sp)
 	sp->obj->cacheable = sp->wrk->cacheable;
 	sp->obj->ttl = sp->wrk->ttl;
 	sp->obj->grace = sp->wrk->grace;
-	if (sp->obj->ttl == 0.)
+	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)		
 		sp->obj->cacheable = 0;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
