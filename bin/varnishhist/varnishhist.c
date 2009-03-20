@@ -34,6 +34,7 @@
 
 #include "config.h"
 
+#include <sys/types.h>
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>

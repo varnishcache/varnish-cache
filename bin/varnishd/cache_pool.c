@@ -48,7 +48,7 @@
 #include <sys/uio.h>
 
 #ifdef SENDFILE_WORKS
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 #include <sys/socket.h>
 #elif defined(__linux__)
 #include <sys/sendfile.h>
@@ -209,7 +209,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	assert(fd >= 0);
 	assert(len > 0);
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 	do {
 		struct sf_hdtr sfh;
 		memset(&sfh, 0, sizeof sfh);
