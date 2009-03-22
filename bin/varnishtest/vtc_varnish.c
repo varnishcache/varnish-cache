@@ -76,6 +76,7 @@ struct varnish {
 
 	int			cli_fd;
 	int			vcl_nbr;
+	char			*workdir;
 };
 
 static VTAILQ_HEAD(, varnish)	varnishes =
@@ -143,15 +144,28 @@ static struct varnish *
 varnish_new(const char *name)
 {
 	struct varnish *v;
+	char *c;
 
 	AN(name);
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
 	REPLACE(v->name, name);
+
+	if (getuid() == 0)
+		asprintf(&v->workdir, "/tmp/__%s", name);
+	else
+		asprintf(&v->workdir, "/tmp/__%s.%d", name, getuid());
+	AN(v->workdir);
+
+	asprintf(&c, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
+	AZ(system(c));
+
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
+
 	v->vl1 = vtc_logopen(name);
 	AN(v->vl1);
+
 	if (*v->name != 'v')
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 
@@ -160,6 +174,7 @@ varnish_new(const char *name)
 	v->accept = "127.0.0.1:9081";
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
+
 	return (v);
 }
 
@@ -174,7 +189,17 @@ varnish_delete(struct varnish *v)
 	CHECK_OBJ_NOTNULL(v, VARNISH_MAGIC);
 	vtc_logclose(v->vl);
 	free(v->name);
-	/* XXX: MEMLEAK */
+	free(v->workdir);
+	VSL_Close();
+
+	/*
+	 * We do not delete the workdir, it may contain stuff people
+	 * want (coredumps, shmlog/stats etc), and trying to divine
+	 * "may want" is just too much trouble.  Leave it around and
+	 * nuke it at the start of the next test-run.
+	 */
+
+	/* XXX: MEMLEAK (?) */
 	FREE_OBJ(v);
 }
 
@@ -226,11 +251,11 @@ varnish_launch(struct varnish *v)
 	vsb = vsb_newauto();
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
-	vsb_printf(vsb, " ./varnishd -d -d -n /tmp/__%s", v->name);
+	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
 	vsb_printf(vsb, " -p cli_banner=off");
 	vsb_printf(vsb, " -p auto_restart=off");
 	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
-	vsb_printf(vsb, " -P /tmp/__%s/varnishd.pid", v->name);
+	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	vsb_printf(vsb, " %s", vsb_data(v->args));
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
@@ -274,12 +299,9 @@ varnish_launch(struct varnish *v)
 	}
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
-	vsb = vsb_newauto();
-	vsb_printf(vsb, "/tmp/__%s", v->name);
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
-	v->stats = VSL_OpenStats(vsb_data(vsb));
-	vsb_delete(vsb);
+	if (v->stats != NULL)
+		VSL_Close();
+	v->stats = VSL_OpenStats(v->workdir);
 }
 
 /**********************************************************************
@@ -514,12 +536,13 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		if (good)
 			break;
 	}
-	if (good)
+	if (good) {
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
 		    av[0], val, av[1], av[2]);
-	else
-		vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
-		    av[0], val, av[1], av[2], ref);
+		return;
+	}
+	vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
+	    av[0], val, av[1], av[2], ref);
 }
 
 /**********************************************************************
