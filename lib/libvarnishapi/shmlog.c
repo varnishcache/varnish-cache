@@ -560,6 +560,18 @@ VSL_OpenStats(const char *varnish_name)
 	return (&vsl_lh->stats);
 }
 
+void
+VSL_Close(void)
+{
+	if (vsl_lh == NULL)
+		return;
+	assert(0 == munmap(vsl_lh, vsl_lh->size + sizeof *vsl_lh));
+	vsl_lh = NULL;
+	assert(vsl_fd >= 0);
+	assert(0 == close(vsl_fd));
+	vsl_fd = -1;
+}
+
 const char *
 VSL_Name(void)
 {
