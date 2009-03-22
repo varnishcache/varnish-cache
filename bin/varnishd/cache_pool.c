@@ -545,7 +545,7 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
 	if (w != NULL) {
 		AZ(w->wrq);
 		AZ(pthread_cond_signal(&w->cond));
-		(void)usleep(params->wthread_purge_delay * 1000);
+		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
 }
 
@@ -601,7 +601,7 @@ wrk_herdtimer_thread(void *priv)
 		VSL_stats->n_wrk_drop = vs->n_wrk_drop;
 		VSL_stats->n_wrk_overflow = vs->n_wrk_overflow;
 
-		(void)usleep(params->wthread_purge_delay * 1000);
+		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
 }
 
@@ -627,11 +627,11 @@ wrk_breed_flock(struct wq *qp)
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
 			VSL_stats->n_wrk_failed++;
-			(void)usleep(params->wthread_fail_delay * 1000);
+			TIM_sleep(params->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
 			VSL_stats->n_wrk_create++;
-			(void)usleep(params->wthread_add_delay * 1000);
+			TIM_sleep(params->wthread_add_delay * 1e-3);
 		}
 	}
 	qp->lqueue = qp->nqueue;
