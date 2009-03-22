@@ -263,11 +263,7 @@ cmd_delay(CMD_ARGS)
 	AZ(av[2]);
 	f = strtod(av[1], NULL);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
-	if (f > 100.) {
-		(void)sleep((int)f);
-	} else {
-		(void)usleep((int)(f * 1e6));
-	}
+	TIM_sleep(f);
 }
 
 /**********************************************************************
