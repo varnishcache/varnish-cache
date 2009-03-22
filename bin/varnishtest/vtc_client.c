@@ -72,7 +72,7 @@ client_thread(void *priv)
 {
 	struct client *c;
 	struct vtclog *vl;
-	int fd = -1;
+	int fd;
 	int i;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
@@ -84,7 +84,7 @@ client_thread(void *priv)
 	vtc_log(vl, 3, "Connect to %s", c->connect);
 	fd = VSS_open(c->connect);
 	for (i = 0; fd < 0 && i < 3; i++) {
-		sleep(1);
+		(void)sleep(1);
 		fd = VSS_open(c->connect);
 	}
 	assert(fd >= 0);

@@ -70,7 +70,7 @@ struct http {
 };
 
 /* XXX: we may want to vary this */
-static const char *nl = "\r\n";
+static const char * const nl = "\r\n";
 
 /**********************************************************************
  * Generate a synthetic body
@@ -359,7 +359,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
 		l = strtoul(p, NULL, 0);
-		hp->body = q = hp->rxbuf + hp->prxbuf;
+		hp->body = hp->rxbuf + hp->prxbuf;
 		http_rxchar(hp, l);
 		vtc_dump(hp->vl, 4, "body", hp->body);
 		sprintf(hp->bodylen, "%d", l);
@@ -397,7 +397,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		return;
 	}
 	if (body) {
-		hp->body = q = hp->rxbuf + hp->prxbuf;
+		hp->body = hp->rxbuf + hp->prxbuf;
 		do  {
 			i = http_rxchar_eof(hp, 1);
 			ll += i;
@@ -423,7 +423,6 @@ http_rxhdr(struct http *hp)
 	while (1) {
 		http_rxchar(hp, 1);
 		p = hp->rxbuf + hp->prxbuf - 1;
-		i = 0;
 		for (i = 0; p > hp->rxbuf; p--) {
 			if (*p != '\n')
 				break;
@@ -719,14 +718,14 @@ cmd_http_timeout(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	hp->timeout = strtod(av[1], NULL) * 1000.0;
+	hp->timeout = (int)(strtod(av[1], NULL) * 1000.0);
 }
 
 /**********************************************************************
  * Execute HTTP specifications
  */
 
-static struct cmds http_cmds[] = {
+static const struct cmds http_cmds[] = {
 	{ "timeout",	cmd_http_timeout },
 	{ "txreq",	cmd_http_txreq },
 

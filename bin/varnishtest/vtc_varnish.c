@@ -152,12 +152,12 @@ varnish_new(const char *name)
 	REPLACE(v->name, name);
 
 	if (getuid() == 0)
-		asprintf(&v->workdir, "/tmp/__%s", name);
+		(void)asprintf(&v->workdir, "/tmp/__%s", name);
 	else
-		asprintf(&v->workdir, "/tmp/__%s.%d", name, getuid());
+		(void)asprintf(&v->workdir, "/tmp/__%s.%d", name, getuid());
 	AN(v->workdir);
 
-	asprintf(&c, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
+	(void)asprintf(&c, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
 	AZ(system(c));
 
 	v->vl = vtc_logopen(name);
@@ -273,7 +273,7 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[2]));
 		AZ(close(v->fds[3]));
 		for (i = 3; i <getdtablesize(); i++)
-			close(i);
+			(void)close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
 		exit(1);
 	}
@@ -348,7 +348,8 @@ varnish_stop(struct varnish *v)
 		if (!strcmp(r, "Child in state stopped"))
 			break;
 		free(r);
-		sleep (1);
+		(void)sleep (1);
+		/* XXX: should fail eventually */
 	}
 }
 
@@ -365,7 +366,7 @@ varnish_wait(struct varnish *v)
 	if (v->cli_fd < 0)
 		return;
 	if (vtc_error)
-		sleep(1);	/* give panic messages a chance */
+		(void)sleep(1);	/* give panic messages a chance */
 	varnish_stop(v);
 	vtc_log(v->vl, 2, "Wait");
 	AZ(close(v->cli_fd));
@@ -507,7 +508,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 
 	good = 0;
 
-	for (i = 0; i < 10; i++, usleep(100000)) {
+	for (i = 0; i < 10; i++, (void)usleep(100000)) {
 
 
 #define MAC_STAT(n, t, l, f, d)					\

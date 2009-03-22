@@ -9,6 +9,8 @@
 -emacro(736, isnan)  // isnanf
 -efile(766, ../../config.h)
 
+-esym(850, av)
+
 
 // -header(../../config.h)
 
@@ -77,6 +79,10 @@
 // -e641	// Converting enum 'cli_status_e' to int
 // 
 // // Review all below this line ///////////////////////////////////////////////
+
+-e457 // unprotected write access 
+-e459 // unprotected access 
+-e458 // unprotected access 
 // 
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
 -e737	// [45]  Loss of sign in promotion from int to unsigned
