@@ -57,6 +57,7 @@ void VSL_NonBlocking(struct VSL_data *vd, int nb);
 int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
+void VSL_Close(void);
 struct varnish_stats *VSL_OpenStats(const char *varnish_name);
 const char *VSL_Name(void);
 extern const char *VSL_tags[256];
