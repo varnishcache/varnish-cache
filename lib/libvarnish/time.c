@@ -152,10 +152,20 @@ TIM_parse(const char *p)
 void
 TIM_sleep(double t)
 {
-	if (t > 100.0)
-		(void)sleep((int)round(t));
-	else
-		(void)usleep((int)round(t * 1e6));
+	struct timespec ts;
+
+	ts.tv_sec = floor(t);
+	ts.tv_nsec = floor((t - ts.tv_sec) * 1e9);
+
+#ifdef HAVE_NANOSLEEP
+	(void)nanosleep(&ts, NULL);
+#else
+	if (ts.tv_sec > 0)
+		(void)sleep(ts.tv_sec);
+	ts.tv_nsec /= 1000;
+	if (ts.tv_nsec > 0)
+		(void)usleep(ts.tv_nsec);
+#endif
 }
 
 
