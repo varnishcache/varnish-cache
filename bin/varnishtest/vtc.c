@@ -71,8 +71,10 @@ read_file(const char *fn)
 	buf = malloc(sz);
 	assert(buf != NULL);
 	s = read(fd, buf, sz - 1);
-	if (s <= 0)
+	if (s <= 0) {
+		free(buf);
 		return (NULL);
+	}
 	AZ(close (fd));
 	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
 	buf[s] = '\0';
@@ -335,7 +337,7 @@ cmd_random(CMD_ARGS)
  * Execute a file
  */
 
-static struct cmds cmds[] = {
+static const struct cmds cmds[] = {
 	{ "server",	cmd_server },
 	{ "client",	cmd_client },
 	{ "varnish",	cmd_varnish },
@@ -440,6 +442,6 @@ main(int argc, char * const *argv)
 
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)
-		fclose(fok);
+		AZ(fclose(fok));
 	return (0);
 }

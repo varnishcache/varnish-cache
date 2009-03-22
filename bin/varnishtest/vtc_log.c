@@ -75,7 +75,7 @@ vtc_logclose(struct vtclog *vl)
 	FREE_OBJ(vl);
 }
 
-static const char *lead[] = {
+static const char * const lead[] = {
 	"----",
 	"#   ",
 	"##  ",
