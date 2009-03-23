@@ -260,7 +260,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	switch(xxx) {
 	case 3:
 		vsb_printf(vsp,
-		    "Wrong turn:\n%s\n", cond);
+		    "Wrong turn at %s:%d:\n%s\n", file, line, cond);
 		break;
 	case 2:
 		vsb_printf(vsp,
