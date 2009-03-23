@@ -372,6 +372,10 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	cp->cli->sb = vsb_newauto();
 	XXXAN(cp->cli->sb);
 
+	/* Deal with TELNET options */
+	if (cp->fdi != 0)
+		VLU_SetTelnet(cp->vlu, cp->fdo);
+
 	cp->ev = calloc(sizeof *cp->ev, 1);
 	cp->ev->name = cp->name;
 	cp->ev->fd = fdi;
