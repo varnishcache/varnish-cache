@@ -54,6 +54,7 @@
 #include "cache_backend.h"
 
 void *vrt_magic_string_end = &vrt_magic_string_end;
+char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------*/
 
@@ -563,6 +564,15 @@ VRT_r_server_ip(struct sess *sp)
 		    || errno == ECONNRESET);
 
 	return (sp->mysockaddr);
+}
+
+const char*
+VRT_r_server_hostname(struct sess *sp)
+{
+	if (vrt_hostname[0] == '\0')
+		gethostname(vrt_hostname, 255);
+	
+	return (const char*) &vrt_hostname;
 }
 
 int

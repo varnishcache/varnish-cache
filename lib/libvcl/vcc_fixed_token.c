@@ -329,7 +329,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "DO NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
-	vsb_cat(sb, "s *);\nint VRT_r_server_port(struct sess *);\n");
+	vsb_cat(sb, "s *);\nconst char * VRT_r_server_hostname(struct sess ");
+	vsb_cat(sb, "*);\nint VRT_r_server_port(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_request(const struct sess *, const char");
 	vsb_cat(sb, " *, ...);\nconst char * VRT_r_req_url(const struct ses");

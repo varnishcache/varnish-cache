@@ -25,6 +25,13 @@ struct var vcc_vars[] = {
 	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	     | VCL_MET_ERROR
 	},
+	{ "server.hostname", STRING, 15,
+	    "VRT_r_server_hostname(sp)",	    NULL,
+	    V_RO,	    0,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
+	},
 	{ "server.port", INT, 11,
 	    "VRT_r_server_port(sp)",	    NULL,
 	    V_RO,	    0,
