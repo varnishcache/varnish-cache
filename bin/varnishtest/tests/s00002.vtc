@@ -1,0 +1,44 @@
+# $Id$
+
+test "Check grace with sick backends"
+
+server s1 -listen 127.0.0.1:9080 -repeat 4 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "hi"
+} -start
+
+varnish v1 -vcl {
+	backend b { 
+		.host = "127.0.0.1"; 
+		.port = "9080"; 
+		.probe = { 
+			.url = "/"; 
+			.timeout = 30ms; 
+			.interval = 1s; 
+			.window = 2; 
+			.threshold = 1; 
+			} 
+		}
+	sub vcl_fetch { 
+		set obj.ttl = 1s; 
+		set obj.grace = 1m; 
+		set obj.cacheable = true; 
+	}
+} -start
+
+delay 2
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+
+delay 3
+
+client c2 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run

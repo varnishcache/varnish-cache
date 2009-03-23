@@ -67,6 +67,7 @@
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "vsha256.h"
+#include "cache_backend.h"
 
 static const struct hash_slinger *hash;
 unsigned	save_hash;
@@ -234,6 +235,7 @@ HSH_Lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	AN(hash);
 	w = sp->wrk;
 
@@ -281,11 +283,12 @@ HSH_Lookup(struct sess *sp)
 	}
 
 	/*
-	 * If we have a object in grace and being fetched,
-	 * use it, if req.grace is also satisified.
+	 * If we have seen a busy object or the backend is unhealthy, and
+	 * have an object in grace, use it, if req.grace is also
+	 * satisified.
 	 */
 	if (o == NULL && grace_o != NULL &&
-	    grace_o->child != NULL &&
+	    (grace_o->child != NULL || !sp->director->healthy(sp)) &&
 	    grace_o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 		o = grace_o;
 
