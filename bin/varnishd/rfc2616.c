@@ -197,7 +197,7 @@ RFC2616_cache_policy(const struct sess *sp, const struct http *hp)
 	}
 
 	sp->obj->ttl = RFC2616_Ttl(sp, hp, sp->obj);
-	if (sp->obj->ttl == 0)
+	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)
 		sp->obj->cacheable = 0;
 
 	return (body);
