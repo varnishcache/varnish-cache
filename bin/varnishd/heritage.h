@@ -65,6 +65,7 @@ struct heritage {
 	struct hash_slinger		*hash;
 
 	char				name[1024];
+	char                            identity[1024];
 };
 
 struct params {

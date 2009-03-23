@@ -56,6 +56,11 @@ set spobj {
 	{recv pipe pass hash miss hit fetch deliver                error }
 	"struct sess *"
     }
+    { server.identity
+	RO STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
     { server.port
 	RO INT
 	{recv pipe pass hash miss hit fetch deliver                error }

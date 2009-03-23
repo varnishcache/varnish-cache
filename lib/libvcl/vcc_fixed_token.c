@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3718 2009-02-10 14");
-	vsb_cat(sb, ":25:49Z tfheen $\n *\n * NB:  This file is machine gen");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 3991 2009-03-23 12");
+	vsb_cat(sb, ":42:15Z tfheen $\n *\n * NB:  This file is machine gen");
 	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixe");
 	vsb_cat(sb, "d_token.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -330,7 +330,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nconst char * VRT_r_server_hostname(struct sess ");
-	vsb_cat(sb, "*);\nint VRT_r_server_port(struct sess *);\n");
+	vsb_cat(sb, "*);\nconst char * VRT_r_server_identity(struct sess *)");
+	vsb_cat(sb, ";\nint VRT_r_server_port(struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_request(const struct sess *, const char");
 	vsb_cat(sb, " *, ...);\nconst char * VRT_r_req_url(const struct ses");

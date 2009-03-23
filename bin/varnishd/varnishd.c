@@ -216,6 +216,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h simple_list");
 	fprintf(stderr, FMT, "", "  -h classic  [default]");
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
+	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
 	fprintf(stderr, FMT, "-l bytesize", "Size of shared memory log");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
@@ -424,6 +425,7 @@ main(int argc, char * const *argv)
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
+	const char *i_arg = NULL;
 	const char *l_arg = "80m";
 	uintmax_t l_size;
 	const char *q;
@@ -471,7 +473,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:l:n:P:p:s:T:t:u:Vw:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:n:P:p:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -497,6 +499,9 @@ main(int argc, char * const *argv)
 			break;
 		case 'h':
 			h_arg = optarg;
+			break;
+		case 'i':
+			i_arg = optarg;
 			break;
 		case 'l':
 			l_arg = optarg;
@@ -588,6 +593,17 @@ main(int argc, char * const *argv)
 		    strerror(errno));
 		exit(1);
 	}
+
+
+	if (i_arg != NULL) {
+		size_t len;
+		if (snprintf(heritage.identity, sizeof heritage.identity, "%s", i_arg) > sizeof heritage.identity) {
+			fprintf(stderr, "Invalid identity name: %s\n",
+			    strerror(ENAMETOOLONG));
+			exit(1);
+		}
+	}
+	
 
 	if (n_arg != NULL)
 		openlog(n_arg, LOG_PID, LOG_LOCAL0);
