@@ -152,7 +152,9 @@ RES_WriteObj(struct sess *sp)
 	}
 
 	if (sp->wantbody) {
-		if (sp->esis > 0 && sp->http->protover >= 1.1) {
+		if (sp->esis > 0 &&
+		    sp->http->protover >= 1.1 &&
+		    sp->obj->len > 0) {
 			sprintf(lenbuf, "%x\r\n", sp->obj->len);
 			(void)WRW_Write(sp->wrk, lenbuf, -1);
 		}
@@ -181,7 +183,9 @@ RES_WriteObj(struct sess *sp)
 			(void)WRW_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
-		if (sp->esis > 0 && sp->http->protover >= 1.1)
+		if (sp->esis > 0 &&
+		    sp->http->protover >= 1.1 &&
+		    sp->obj->len > 0)
 			(void)WRW_Write(sp->wrk, "\r\n", -1);
 	}
 	if (WRW_FlushRelease(sp->wrk))
