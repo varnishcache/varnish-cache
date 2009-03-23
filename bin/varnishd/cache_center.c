@@ -305,10 +305,6 @@ cnt_error(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->bereq);
 
-	/* We always close when we take this path */
-	sp->doclose = "error";
-	sp->wantbody = 1;
-
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
@@ -335,6 +331,19 @@ cnt_error(struct sess *sp)
 		http_PutResponse(w, sp->fd, h,
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
+
+	if (sp->handling == VCL_RET_RESTART) {
+		HSH_Drop(sp);
+		sp->director = NULL;
+		sp->restarts++;
+		sp->step = STP_RECV;
+		return (0);
+	}
+
+	/* We always close when we take this path */
+	sp->doclose = "error";
+	sp->wantbody = 1;
+
 	assert(sp->handling == VCL_RET_DELIVER);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
