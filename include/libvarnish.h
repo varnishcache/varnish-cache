@@ -71,7 +71,7 @@ void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
 int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen,
     int msec);
 void TCP_close(int *s);
-void TCP_set_read_timeout(int socket, double seconds);
+void TCP_set_read_timeout(int s, double seconds);
 #endif
 
 /* from libvarnish/time.c */
