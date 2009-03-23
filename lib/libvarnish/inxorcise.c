@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: $
+ * $Id$
  *
  * This file only exists because Apple has decided to break a
  * function that has an age old tradition and force the user
@@ -40,17 +40,16 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "libvarnish.h"
 
-#ifdef __APPLE__ && __MAC_OS_X_VERSION_10_5
+#if __APPLE__ && __MAC_OS_X_VERSION_10_5
 int inxorcise(int nochdir __attribute__((unused)), int noclose __attribute__((unused))) {
 	fprintf(stderr, "Apple does not want programs to use daemon(3) and suggests using launchd(1).  We don't agree, but their dad is bigger than our dad.\n");
 	exit(1);
 }
 #else
 int inxorcise(int nochdir, int noclose) {
-	return (daemon(nochdir, noclose));
+	return daemon(nochdir, noclose);
 }
 #endif
-
-
