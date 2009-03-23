@@ -159,8 +159,10 @@ vca_kqueue_main(void *arg)
 	assert(kq >= 0);
 
 	j = 0;
-	EV_SET(&ke[j++], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
-	EV_SET(&ke[j++], vca_pipes[0], EVFILT_READ, EV_ADD, 0, 0, vca_pipes);
+	EV_SET(&ke[j], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
+	j++;
+	EV_SET(&ke[j], vca_pipes[0], EVFILT_READ, EV_ADD, 0, 0, vca_pipes);
+	j++;
 	AZ(kevent(kq, ke, j, NULL, 0, NULL));
 
 	nki = 0;
