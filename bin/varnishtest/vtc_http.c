@@ -477,6 +477,8 @@ cmd_http_txresp(CMD_ARGS)
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
 	const char *msg = "Ok";
+	int bodylen;
+	char *b, *c;
 	char *body = NULL;
 
 	(void)cmd;
@@ -517,9 +519,21 @@ cmd_http_txresp(CMD_ARGS)
 			AZ(body);
 			REPLACE(body, av[1]);
 			av++;
+			bodylen = strlen(body);
+			for (b = body; *b != '\0'; b++) {
+				if(*b == '\\' && b[1] == '0') {
+					*b = '\0';
+					for(c = b+1; *c != '\0'; c++) {
+						*c = c[1];
+					}
+					b++;
+					bodylen--;
+				}
+			}
 		} else if (!strcmp(*av, "-bodylen")) {
 			AZ(body);
 			body = synth_body(av[1]);
+			bodylen = strlen(body);
 			av++;
 		} else
 			break;
@@ -527,10 +541,10 @@ cmd_http_txresp(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 	if (body != NULL)
-		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
+		vsb_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL)
-		vsb_cat(hp->vsb, body);
+		vsb_bcat(hp->vsb, body, bodylen);
 	http_write(hp, 4, "txresp");
 }
 
