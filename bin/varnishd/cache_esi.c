@@ -71,6 +71,7 @@ VTAILQ_HEAD(esibithead, esi_bit);
 
 struct esi_ptr {
 	const char		*p;
+	const char              *e;
 	struct storage		*st;
 };
 
@@ -108,9 +109,11 @@ Nep(struct esi_ptr *ep)
 	ep->st = VTAILQ_NEXT(ep->st, list);
 	if (ep->st != NULL) {
 		ep->p = (char *)ep->st->ptr;
+		ep->e = ep->p + ep->st->len;
 		return;
 	}
 	ep->p = finis;
+	ep->e = finis;
 	return;
 }
 
@@ -118,7 +121,7 @@ static void
 N(struct esi_work *ew)
 {
 
-	if (*ew->p.p != '\0')
+	if (ew->p.p < ew->p.e)
 		ew->off++;
 	Nep(&ew->p);
 }
@@ -511,7 +514,7 @@ parse_comment(struct esi_work *ew)
 			N(ew);
 			break;
 		}
-	} while (*ew->p.p != '\0');
+	} while (ew->p.p < ew->p.e);
 }
 
 /*--------------------------------------------------------------------*/
@@ -530,7 +533,7 @@ parse_cdata(struct esi_work *ew)
 			N(ew);
 			break;
 		}
-	} while (*ew->p.p != '\0');
+	} while (ew->p.p < ew->p.e);
 }
 
 /*--------------------------------------------------------------------*/
@@ -546,8 +549,8 @@ parse_esi_tag(struct esi_work *ew, int closing)
 
 	do
 		N(ew);
-	while (*ew->p.p != '>' && *ew->p.p != '\0');
-	if (*ew->p.p == '\0') {
+	while (*ew->p.p != '>' && ew->p.p < ew->p.e);
+	if (ew->p.p == ew->p.e) {
 		esi_addpfx(ew);
 		esi_error(ew, ew->s.p, 0,
 		    "XML 1.0 incomplete language element");
@@ -675,11 +678,12 @@ ESI_Parse(struct sess *sp)
 	ew->p.st = VTAILQ_FIRST(&sp->obj->store);
 	AN(ew->p.st);
 	ew->p.p = (char *)ew->p.st->ptr;
-
+	ew->p.e = ew->p.p + ew->p.st->len;
+	
 	/* ->s points to the first un-dealt-with byte */
 	ew->s = ew->p;
 
-	while (*ew->p.p != '\0') {
+	while (ew->p.p < ew->p.e) {
 
 		if (ew->incmt && *ew->p.p == '-' && !CMP(&ew->p, "-->")) {
 			/* End of ESI comment */
@@ -716,7 +720,7 @@ ESI_Parse(struct sess *sp)
 				/* XXX: drop this ? */
 				do {
 					N(ew);
-				} while (*ew->p.p != '>' && *ew->p.p != '\0');
+				} while (*ew->p.p != '>' && ew->p.p < ew->p.e);
 			}
 		}
 	}

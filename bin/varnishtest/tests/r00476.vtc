@@ -1,0 +1,36 @@
+# $Id: r00445.vtc 3987 2009-03-23 11:54:19Z sky $
+
+test "zero length ESI include segmens with chunked encoding"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {<a><esi:include src="/bar"><b>\0c}
+	rxreq
+	expect req.url == "/bar"
+	txresp 
+	rxreq
+	expect req.url == "/comment"
+	txresp -body {<a><!--esi foo --><b>\0c}
+	rxreq
+	expect req.url == "/nullbefore"
+	txresp -body {<a>\0<esi:include src="/bar"><b>c}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.bodylen == 8
+	txreq -url /comment
+	rxresp
+	expect resp.bodylen == 13
+	txreq -url /nullbefore
+	rxresp
+	expect resp.bodylen == 8
+} -run
