@@ -1,6 +1,6 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.0.3
+Version: 2.0.4
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
@@ -64,11 +64,12 @@ Varnish is a high-performance HTTP accelerator
 %setup -q
 #%setup -q -n varnish-cache
 
-#%patch0 -p0
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
 #./autogen.sh
+
+#%patch0 -p0
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
@@ -235,6 +236,12 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri Mar 27 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.4-1
+  New upstream release 2.0.4 
+
+* Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.0.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
 * Wed Feb 11 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.3-1
   New upstream release 2.0.3. A bugfix and feature enhancement release
 
