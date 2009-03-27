@@ -569,7 +569,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (D_flag && daemon(0, 0) == -1) {
+	if (D_flag && inxorcise(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
 			vpf_remove(pfh);

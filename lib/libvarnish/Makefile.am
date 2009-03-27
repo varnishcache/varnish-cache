@@ -15,6 +15,7 @@ libvarnish_la_SOURCES = \
 	cli_common.c \
 	crc32.c \
 	flopen.c \
+	inxorcise.c \
 	num.c \
 	time.c \
 	tcp.c \
