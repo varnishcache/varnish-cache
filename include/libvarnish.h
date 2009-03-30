@@ -128,3 +128,4 @@ do {									\
 } while (0)
 
 int inxorcise(int nochdir, int noclose);
+const char* svn_version(void);
