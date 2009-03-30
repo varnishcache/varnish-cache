@@ -16,6 +16,7 @@ libvarnish_la_SOURCES = \
 	flopen.c \
 	inxorcise.c \
 	num.c \
+	svn_version.c \
 	time.c \
 	tcp.c \
 	vct.c \
@@ -30,6 +31,13 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
+svn_version.c: FORCE
+	echo '#include <libvarnish.h>' > svn_version.c
+	echo 'const char* svn_version(void)' >> svn_version.c
+	echo -n '{ const char* SVN_Version = "' >> svn_version.c
+	svnversion -n $(top_srcdir)          >> svn_version.c
+	echo '"; return SVN_Version; }'      >> svn_version.c
+FORCE:
 
 if ENABLE_TESTS
 TESTS = num_c_test
