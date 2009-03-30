@@ -31,6 +31,7 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
+DISTCLEANFILES = svn_version.c
 svn_version.c: FORCE
 	echo '#include <libvarnish.h>' > svn_version.c
 	echo 'const char* svn_version(void)' >> svn_version.c
