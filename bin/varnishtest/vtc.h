@@ -28,6 +28,8 @@
  * $Id$
  */
 
+#include <pthread.h>
+
 struct vsb;
 struct vtclog;
 struct cmds;
