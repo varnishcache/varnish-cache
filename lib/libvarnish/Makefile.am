@@ -33,11 +33,19 @@ libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
 DISTCLEANFILES = svn_version.c
 svn_version.c: FORCE
-	echo '#include <libvarnish.h>' > svn_version.c
-	echo 'const char* svn_version(void)' >> svn_version.c
-	echo -n '{ const char* SVN_Version = "' >> svn_version.c
-	svnversion -n $(top_srcdir)          >> svn_version.c
-	echo '"; return SVN_Version; }'      >> svn_version.c
+	V="$(shell svnversion -n $(top_srcdir))" \
+	H="$(shell head -n 1 svn_version.c || true)"; \
+	if [ "/* $$V */" != "$$H" ]; then \
+		( \
+		  echo "/* $$V */" ;\
+		  echo "#include <libvarnish.h>" ;\
+		  echo "const char* svn_version(void)" ;\
+		  echo "{" ;\
+		  echo "	const char* SVN_Version = \"$$V\";" ;\
+		  echo "	return SVN_Version;" ;\
+		  echo "}" ;\
+		) > svn_version.c ; \
+	fi
 FORCE:
 
 if ENABLE_TESTS
