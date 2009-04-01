@@ -45,7 +45,7 @@
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-                
+
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
@@ -85,7 +85,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 	char *q;
 	int retval = 1;
 
-	AN(fn);	
+	AN(fn);
 	AN(fnp);
 	AN(fdp);
 	*fnp = NULL;
