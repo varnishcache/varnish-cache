@@ -81,6 +81,7 @@
       full length, but stopped at the first NULL byte.  We no longer
       do that, enabling ESI processing of binary data.</para>
     </change>
+  </subsystem>
 
   <subsystem>
     <name>varnishtest</name>
