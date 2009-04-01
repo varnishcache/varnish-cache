@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0.3" to="2.0.4">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="enh">
+      <para>Make Varnish more portable by pulling in fixes for
+      Solaris and NetBSD.</para>
+    </change>
+
+    <change type="bug">
+      <para>Correct description of -a in the manual page.</para>
+    </change>
+
+    <change type="bug">
+      <para>Ensure we are compiling in C99 mode.</para>
+    </change>
+
+    <change type="bug" ref="458">
+      <para>If error was called with a null reason, we would crash on
+      Solaris.  Make sure this no longer happens.</para>
+    </change>
+
+    <change type="bug" ref="428">
+      <para>Varnish used to crash if you asked it to use a
+      non-existent waiter.  This has now been fixed.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add documentation to the default VCL explaining that
+      using <code>Connection: close</code> in <code>vcl_close</code>
+      is generally a good idea.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add minimal facility for dealing with TELNET option
+	negotiation by returning WONT to DO and DONT requests.</para>
+    </change>
+
+    <change type="enh">
+      <para>If the backend is unhealthy, use a graced object if one is
+      available.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make <code>server.hostname</code>
+      and <code>server.identity</code> available to VCL.  The latter
+      can be set with the <code>-i</code> parameter
+      to <code>varnishd</code>.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make <code>restart</code> available
+      from <code>vcl_error</code>.</para>
+    </change>
+
+    <change type="enh">
+      <para>Previously, only the TTL of an object was considered in
+      whether it would be marked as cacheable.  This has been changed
+      to take the grace into consideration as well.</para>
+    </change>
+
+    <change type="bug" ref="445">
+      <para>Previously, if an included ESI fragment had a zero size,
+      we would send out a zero-sized chunk which signifies
+      end-of-transmission.  We now ignore zero-sized chunks.</para>
+    </change>
+
+    <change type="bug">
+      <para>We accidentially slept for far too long when we reached
+      the maximum number of open file descriptors.  This has been
+      corrected and <code>accept_fd_holdoff</code> now works
+      correctly.</para>
+    </change>
+    <change type="bug" ref="476">
+      <para>Previously, when ESI processing, we did not look at the
+      full length, but stopped at the first NULL byte.  We no longer
+      do that, enabling ESI processing of binary data.</para>
+    </change>
+
+  <subsystem>
+    <name>varnishtest</name>
+    <change type="bug">
+      <para>Make sure system "..." returns successfully to ensure
+      test failures do not go unnoticed.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make it possible to send NULL bytes through the testing
+      framework.</para>
+    </change>
+  </subsystem>
+</group>
