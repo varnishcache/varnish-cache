@@ -140,23 +140,28 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 static uintmax_t
 stv_fsspace(int fd, unsigned *bs)
 {
+	uintmax_t bsize, bavail;
 #if defined(HAVE_SYS_STATVFS_H)
 	struct statvfs fsst;
 
 	AZ(fstatvfs(fd, &fsst));
+	bsize = fsst.f_frsize;
+	bavail = fsst.f_bavail;
 #elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
 	struct statfs fsst;
 
 	AZ(fstatfs(sc->fd, &fsst));
+	bsize = fsst.f_bsize;
+	bavail = fsst.f_bavail;
 #else
 #error no struct statfs / struct statvfs
 #endif
 
 	/* We use units of the larger of filesystem blocksize and pagesize */
-	if (*bs < fsst.f_bsize)
-		*bs = fsst.f_bsize;
-	xxxassert(*bs % fsst.f_bsize == 0);
-	return (fsst.f_bsize * fsst.f_bavail);
+	if (*bs < bsize)
+		*bs = bsize;
+	xxxassert(*bs % bsize == 0);
+	return (bsize * bavail);
 }
 
 
