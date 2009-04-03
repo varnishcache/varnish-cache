@@ -199,9 +199,11 @@
 
 #include "rb.h"
 
-/* Prevent -Werror to complain about unused parameters when compiling
-   with non-ancient GCC.  Added directly here instead of grabbed from
-   ansidecl.h to save a build dependency on binutils-dev */
+/*
+ * Prevent gcc from complaining about unused parameters.  Added directly
+ * here instead of including ansidecl.h to save a build dependency on
+ * binutils-dev.
+ */
 #if __GNUC__ >= 3
 #ifndef ATTRIBUTE_UNUSED
 #define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
