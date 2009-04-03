@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2008 Linpro AS
+ * Copyright (c) 2007-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
