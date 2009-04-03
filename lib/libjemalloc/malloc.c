@@ -186,7 +186,6 @@ __FBSDID("$FreeBSD: head/lib/libc/stdlib/malloc.c 182225 2008-08-27 02:00:53Z ja
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 
 #include "un-namespace.h"
