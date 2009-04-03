@@ -205,7 +205,7 @@ vcl_output_lang_h(struct vsb *sb)
 	/* ../../include/vrt.h */
 
 	vsb_cat(sb, "/*-\n * Copyright (c) 2006 Verdens Gang AS\n");
-	vsb_cat(sb, " * Copyright (c) 2006-2008 Linpro AS\n");
+	vsb_cat(sb, " * Copyright (c) 2006-2009 Linpro AS\n");
 	vsb_cat(sb, " * All rights reserved.\n *\n * Author: Poul-Henning K");
 	vsb_cat(sb, "amp <phk@phk.freebsd.dk>\n *\n * Redistribution and us");
 	vsb_cat(sb, "e in source and binary forms, with or without\n");

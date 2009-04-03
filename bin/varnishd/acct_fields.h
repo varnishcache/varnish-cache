@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2008 Verdens Gang AS
- * Copyright (c) 2008 Linpro AS
+ * Copyright (c) 2008-2009 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
