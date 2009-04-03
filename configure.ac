@@ -75,9 +75,11 @@ AC_SUBST(LIBM)
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
+AC_CHECK_HEADERS([sys/param.h])
+AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([sys/endian.h])
 AC_CHECK_HEADERS([sys/filio.h])
-AC_CHECK_HEADERS([sys/mount.h])
+AC_CHECK_HEADERS([sys/mount.h], [], [], [#include <sys/param.h>])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/statvfs.h])
 AC_CHECK_HEADERS([sys/vfs.h])
