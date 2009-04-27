@@ -1,0 +1,27 @@
+# $Id$
+
+test "HTTP continuation lines"
+
+#NB: careful about spaces and tabs in this test.
+
+server s1 {
+	rxreq
+	txresp -hdr {Foo: bar,
+	barf: fail} -body "xxx"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.http.bar = beresp.http.foo;
+		remove beresp.http.foo;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.bar == "bar,  barf: fail"
+	expect resp.http.barf == resp.http.barf
+	expect resp.http.foo == resp.http.foo
+} -run
+
