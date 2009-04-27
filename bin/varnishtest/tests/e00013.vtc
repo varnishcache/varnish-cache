@@ -6,7 +6,7 @@ server s1 {
         rxreq
         expect req.url == "/foo"
         txresp -hdr "Connection: close"
-        send {                                         }
+        send {<x>                                      }
 } -start
 
 varnish v1 -vcl+backend {
