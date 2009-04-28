@@ -152,6 +152,11 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 	unsigned u;
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		/* XXX We have to check for empty header entries
+		   because a header could have been lost in 
+		   http_copyHome */
+		if (hp->hd[u].b == NULL)
+			continue;
 		Tcheck(hp->hd[u]);
 		if (hp->hd[u].e < hp->hd[u].b + l + 1)
 			continue;
@@ -615,6 +620,8 @@ http_FilterFields(struct worker *w, int fd, struct http *to,
 	to->nhd = HTTP_HDR_FIRST;
 	to->status = fm->status;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
+		if (fm->hd[u].b == NULL)
+			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
 #define HTTPH(a, b, c, d, e, f, g) \
@@ -675,6 +682,8 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
+			/* XXX This leaves a slot empty */
+			VSL_stats->losthdr++;
 			WSLR(w, SLT_LostHeader, fd, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
@@ -793,6 +802,8 @@ http_Unset(struct http *hp, const char *hdr)
 	unsigned u, v;
 
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		if (hp->hd[u].b == NULL)
+			continue;
 		if (http_IsHdr(&hp->hd[u], hdr))
 			continue;
 		if (v != u) {
@@ -829,6 +840,8 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 		WSLH(w, *w->wfd, hp, HTTP_HDR_PROTO);
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		if (hp->hd[u].b == NULL)
+			continue;
 		AN(hp->hd[u].b);
 		AN(hp->hd[u].e);
 		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
