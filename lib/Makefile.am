@@ -1,15 +1,15 @@
 # $Id$
 
 SUBDIRS = \
+	libvarnishcompat \
 	libvarnish \
 	libvarnishapi \
-	libvarnishcompat \
 	libvcl \
 	@JEMALLOC_SUBDIR@
 
 DIST_SUBDIRS = 	\
+	libvarnishcompat \
 	libvarnish \
 	libvarnishapi \
-	libvarnishcompat \
 	libvcl \
 	libjemalloc
