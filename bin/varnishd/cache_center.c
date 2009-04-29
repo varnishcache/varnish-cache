@@ -979,7 +979,12 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	sp->wantbody = (strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD") != 0);
+	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) {
+		sp->wantbody = 0;
+		http_ForceGet(sp->http);
+	} else
+		sp->wantbody = 1;
+
 	sp->sendbody = 0;
 	switch(sp->handling) {
 	case VCL_RET_LOOKUP:
