@@ -576,12 +576,6 @@ static const struct parspec input_parspec[] = {
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "backend_http11", tweak_bool, &master.backend_http11, 0, 0,
-		"Force all backend requests to be HTTP/1.1.\n"
-		"By default we copy the protocol version from the "
-		"incoming client request.",
-		EXPERIMENTAL,
-		"on", "bool" },
 	{ "client_http11", tweak_bool, &master.client_http11, 0, 0,
 		"Force all client responses to be HTTP/1.1.\n"
 		"By default we copy the protocol version from the "
