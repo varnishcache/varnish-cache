@@ -555,23 +555,6 @@ http_copyh(struct http *to, const struct http *fm, unsigned n)
 	to->hdf[n] = fm->hdf[n];
 }
 
-static void
-http_copyreq(struct http *to, const struct http *fm, int how)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-
-	if ((how == HTTPH_R_PIPE) || (how == HTTPH_R_PASS)) {
-		http_copyh(to, fm, HTTP_HDR_REQ);
-		http_copyh(to, fm, HTTP_HDR_PROTO);
-	} else {
-		http_SetH(to, HTTP_HDR_REQ, "GET");
-		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	}
-	http_copyh(to, fm, HTTP_HDR_URL);
-}
-
 void
 http_ForceGet(struct http *to)
 {
@@ -660,7 +643,12 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
-	http_copyreq(hp, sp->http, how);
+	http_copyh(hp, sp->http, HTTP_HDR_REQ);
+	http_copyh(hp, sp->http, HTTP_HDR_URL);
+	if (how == HTTPH_R_FETCH)
+		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
+	else
+		http_copyh(hp, sp->http, HTTP_HDR_PROTO);
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->fd, hp,
