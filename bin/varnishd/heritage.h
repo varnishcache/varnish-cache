@@ -127,7 +127,6 @@ struct params {
 	unsigned		listen_depth;
 
 	/* HTTP proto behaviour */
-	unsigned		backend_http11;
 	unsigned		client_http11;
 
 	/* CLI related */
