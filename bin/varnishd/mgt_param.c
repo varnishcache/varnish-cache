@@ -586,7 +586,7 @@ static const struct parspec input_parspec[] = {
 		"Timeout for the childs replies to CLI requests from "
 		"the master.",
 		0,
-		"5", "seconds" },
+		"10", "seconds" },
 	{ "ping_interval", tweak_uint, &master.ping_interval, 0, UINT_MAX,
 		"Interval between pings from parent to child.\n"
 		"Zero will disable pinging entirely, which makes "
