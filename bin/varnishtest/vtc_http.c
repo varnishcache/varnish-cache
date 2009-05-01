@@ -321,7 +321,7 @@ http_rxchar_eof(struct http *hp, int n)
 			vtc_log(hp->vl, 0, "HTTP rx failed (%s)",
 			    strerror(errno));
 		assert(i > 0);
-		assert(hp->prxbuf < hp->nrxbuf);
+		assert(hp->prxbuf + n < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
 		if (i == 0)
 			return (i);
