@@ -242,8 +242,15 @@ cnt_done(struct sess *sp)
 
 	sp->t_req = NAN;
 
-	if (sp->fd >= 0 && sp->doclose != NULL)
+	if (sp->fd >= 0 && sp->doclose != NULL) {
+		/*
+		 * This is an orderly close of the connection; ditch linger 
+		 * before we close, to get queued data transmitted.
+		 */
+		struct linger lin = { 0, 0 };
+		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &lin, sizeof lin));
 		vca_close_session(sp, sp->doclose);
+	}
 	if (sp->fd < 0) {
 		SES_Charge(sp);
 		VSL_stats->sess_closed++;

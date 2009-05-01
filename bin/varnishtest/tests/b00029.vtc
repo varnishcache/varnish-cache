@@ -1,0 +1,18 @@
+# $Id$
+
+test "Test orderly connection closure"
+
+
+server s1 {
+	rxreq
+	txresp -bodylen 130000
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -hdr "Connection: close"
+	delay 3
+	rxresp
+	expect resp.bodylen == 130000
+} -run
