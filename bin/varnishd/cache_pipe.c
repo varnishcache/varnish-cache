@@ -98,8 +98,12 @@ PipeSession(struct sess *sp)
 	sp->t_resp = TIM_real();
 
 	memset(fds, 0, sizeof fds);
+
+	TCP_linger(vc->fd, 0);
 	fds[0].fd = vc->fd;
 	fds[0].events = POLLIN | POLLERR;
+
+	TCP_linger(sp->fd, 0);
 	fds[1].fd = sp->fd;
 	fds[1].events = POLLIN | POLLERR;
 

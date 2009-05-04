@@ -247,8 +247,7 @@ cnt_done(struct sess *sp)
 		 * This is an orderly close of the connection; ditch linger 
 		 * before we close, to get queued data transmitted.
 		 */
-		struct linger lin = { 0, 0 };
-		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER, &lin, sizeof lin));
+		TCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
 	if (sp->fd < 0) {
