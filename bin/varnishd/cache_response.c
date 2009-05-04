@@ -106,8 +106,11 @@ RES_BuildHttp(struct sess *sp)
 	    HTTPH_A_DELIVER);
 
 	/* Only HTTP 1.1 can do Chunked encoding */
-	if (sp->http->protover < 1.1 && !VTAILQ_EMPTY(&sp->obj->esibits))
-		http_Unset(sp->wrk->resp, H_Transfer_Encoding);
+	if (!VTAILQ_EMPTY(&sp->obj->esibits)) {
+		http_Unset(sp->wrk->resp, H_Content_Length);
+		if(sp->http->protover >= 1.1)
+			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Transfer-Encoding: chunked");
+	}
 
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);

@@ -739,13 +739,6 @@ ESI_Parse(struct sess *sp)
 	if (ew->incmt)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <!--esi comment");
-
-	/*
-	 * Our ESI implementation needs chunked encoding
-	 */
-	http_Unset(sp->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
-	    "Transfer-Encoding: chunked");
 }
 
 /*--------------------------------------------------------------------*/
