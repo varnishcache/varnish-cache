@@ -410,13 +410,15 @@ struct symbols {
 static VTAILQ_HEAD(,symbols) symbols = VTAILQ_HEAD_INITIALIZER(symbols);
 
 int
-Symbol_Lookup(struct vsb *vsb, uintptr_t ptr)
+Symbol_Lookup(struct vsb *vsb, void *ptr)
 {
 	struct symbols *s, *s0;
+	uintptr_t pp;
 
+	pp = (uintptr_t)ptr;
 	s0 = NULL;
 	VTAILQ_FOREACH(s, &symbols, list) {
-		if (s->a > ptr)
+		if (s->a > pp)
 			continue;
 		if (s0 != NULL && s->a < s0->a)
 			continue;
@@ -424,9 +426,9 @@ Symbol_Lookup(struct vsb *vsb, uintptr_t ptr)
 	}
 	if (s0 == NULL)
 		return (-1);
-	vsb_printf(vsb, "%p", (void *)ptr);
+	vsb_printf(vsb, "%p", ptr);
 	if (s0 != NULL)
-		vsb_printf(vsb, ": %s+%jx", s0->n, (uintmax_t)ptr - s0->a);
+		vsb_printf(vsb, ": %s+%jx", s0->n, (uintmax_t)pp - s0->a);
 	return (0);
 }
 
