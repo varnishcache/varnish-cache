@@ -14,6 +14,7 @@ nobase_noinst_HEADERS = \
 	cli_priv.h \
 	compat/asprintf.h \
 	compat/daemon.h \
+	compat/execinfo.h \
 	compat/setproctitle.h \
 	compat/srandomdev.h \
 	compat/strlcat.h \
