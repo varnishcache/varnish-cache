@@ -26,6 +26,8 @@
  * $Id: execinfo.c,v 1.3 2004/07/19 05:21:09 sobomax Exp $
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <dlfcn.h>
@@ -72,15 +74,20 @@ char **
 backtrace_symbols(void *const *buffer, int size)
 {
     size_t clen, alen;
-    int i, offset;
+    int i;
     char **rval;
-    Dl_info info;
 
     clen = size * sizeof(char *);
     rval = malloc(clen);
     if (rval == NULL)
         return NULL;
     for (i = 0; i < size; i++) {
+
+#ifdef HAVE_DLADDR
+    {
+        Dl_info info;
+	int offset;
+
         if (dladdr(buffer[i], &info) != 0) {
             if (info.dli_sname == NULL)
                 info.dli_sname = "???";
@@ -102,15 +109,19 @@ backtrace_symbols(void *const *buffer, int size)
                 return NULL;
             snprintf((char *) rval + clen, alen, "%p <%s+%d> at %s",
               buffer[i], info.dli_sname, offset, info.dli_fname);
-        } else {
-            alen = 2 +                      /* "0x" */
-                   (sizeof(void *) * 2) +   /* "01234567" */
-                   1;                       /* "\0" */
-            rval = realloc_safe(rval, clen + alen);
-            if (rval == NULL)
-                return NULL;
-            snprintf((char *) rval + clen, alen, "%p", buffer[i]);
-        }
+            rval[i] = (char *) clen;
+            clen += alen;
+	    continue;
+        } 
+    }
+#endif
+	alen = 2 +                      /* "0x" */
+	       (sizeof(void *) * 2) +   /* "01234567" */
+	       1;                       /* "\0" */
+	rval = realloc_safe(rval, clen + alen);
+	if (rval == NULL)
+	    return NULL;
+	snprintf((char *) rval + clen, alen, "%p", buffer[i]);
         rval[i] = (char *) clen;
         clen += alen;
     }
