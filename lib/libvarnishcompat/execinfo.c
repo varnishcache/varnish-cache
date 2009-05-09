@@ -36,7 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "execinfo.h"
+#include "compat/execinfo.h"
 
 void *getreturnaddr(int);
 void *getframeaddr(int);
