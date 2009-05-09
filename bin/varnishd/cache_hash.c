@@ -593,6 +593,7 @@ HSH_Unbusy(const struct sess *sp)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	AN(ObjIsBusy(o));
+	AN(o->ban);
 	assert(o->objcore->obj == o);
 	assert(o->refcnt > 0);
 	assert(oh->refcnt > 0);
