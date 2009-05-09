@@ -37,6 +37,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifndef HAVE_EXECINFO_H
+#include "compat/execinfo.h"
+#else
+#include <execinfo.h>
+#endif
 #include "cache.h"
 #include "cache_backend.h"
 #include "vcl.h"
@@ -249,6 +254,28 @@ pan_sess(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
+pan_backtrace(void)
+{
+	void *array[10];
+	size_t size;
+	size_t i;
+
+	size = backtrace (array, 10);
+	vsb_printf(vsp, "Backtrace:\n");
+	for (i = 0; i < size; i++) {
+		vsb_printf (vsp, "  ");
+		if (Symbol_Lookup(vsp, (uintptr_t)array[i]) < 0) {
+			char **strings;
+			strings = backtrace_symbols(&array[i], 1);
+			vsb_printf(vsp, "%p: %s", array[i], strings[0]);
+		}
+		vsb_printf (vsp, "\n");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 pan_ic(const char *func, const char *file, int line, const char *cond,
     int err, int xxx)
 {
@@ -264,7 +291,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		break;
 	case 2:
 		vsb_printf(vsp,
-		    "Panic from VCL:\n%s\n", cond);
+		    "Panic from VCL:\n  %s\n", cond);
 		break;
 	case 1:
 		vsb_printf(vsp,
@@ -276,16 +303,19 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	case 0:
 		vsb_printf(vsp,
 		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.",
+		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 		break;
 	}
 	if (err)
-		vsb_printf(vsp, "  errno = %d (%s)", err, strerror(err));
+		vsb_printf(vsp, "errno = %d (%s)\n", err, strerror(err));
 
 	q = THR_GetName();
 	if (q != NULL)
-		vsb_printf(vsp, "  thread = (%s)", q);
+		vsb_printf(vsp, "thread = (%s)\n", q);
+
+	pan_backtrace();
+
 	if (!(params->diag_bitmap & 0x2000)) {
 		sp = THR_GetSession();
 		if (sp != NULL)
