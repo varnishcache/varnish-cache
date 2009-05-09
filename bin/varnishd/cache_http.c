@@ -502,25 +502,35 @@ int
 http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *hp)
 {
-	int i;
+	int i = 0;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Rx;
 
-	i = http_splitline(w, htc->fd, hp, htc,
-	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE);
+	if (http_splitline(w, htc->fd, hp, htc,
+	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
+		i = 503;
 
-	if (i != 0 || memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
-		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
-	if (i != 0) {
-		if (hp->status == 0)
-			hp->status = i;
-	} else {
-		hp->status =
-		    strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL /* XXX */, 10);
+	if (i == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
+		i = 503;
+
+	if (i == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
+		i = 503;
+
+	if (i == 0) {
+		hp->status = strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL, 10);
+		if (hp->status < 100 || hp->status > 999)
+			i = 503;
 	}
-	http_ProtoVer(hp);
+
+	if (i != 0) {
+		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
+		hp->status = i;
+	} else {
+		http_ProtoVer(hp);
+	}
+
 	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
 	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
 		/* Backend didn't send a response string, use the standard */
