@@ -29,7 +29,6 @@
 #ifndef COMPAT_EXECINFO_H_INCLUDED
 #define COMPAT_EXECINFO_H_INCLUDED
 
-#ifndef HAVE_EXECINFO_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +39,6 @@ void    backtrace_symbols_fd(void *const *, int, int);
 
 #ifdef __cplusplus
 }
-#endif
 #endif
 
 #endif /* COMPAT_EXECINFO_H_INCLUDED */
