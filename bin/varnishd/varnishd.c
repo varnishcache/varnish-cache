@@ -390,6 +390,90 @@ cli_check(const struct cli *cli)
 	exit (2);
 }
 
+/*--------------------------------------------------------------------
+ * All praise POSIX!  Thanks to our glorious standards there are no
+ * standard way to get a back-trace of the stack, and even if we hack
+ * that together from spit and pieces of string, there is no way no
+ * standard way to translate a pointer to a symbol, which returns anything
+ * usable.  (See for instance FreeBSD PR-134391).
+ *
+ * Attempt to run nm(1) on our binary during startup, hoping it will
+ * give us a usable list of symbols.
+ */
+
+struct symbols {
+	uintptr_t		a;
+	char			*n;
+	VTAILQ_ENTRY(symbols)	list;
+};
+
+static VTAILQ_HEAD(,symbols) symbols = VTAILQ_HEAD_INITIALIZER(symbols);
+
+int
+Symbol_Lookup(struct vsb *vsb, uintptr_t ptr)
+{
+	struct symbols *s, *s0;
+
+	s0 = NULL;
+	VTAILQ_FOREACH(s, &symbols, list) {
+		if (s->a > ptr)
+			continue;
+		if (s0 != NULL && s->a < s0->a)
+			continue;
+		s0 = s;
+	}
+	if (s0 == NULL)
+		return (-1);
+	vsb_printf(vsb, "%p", (void *)ptr);
+	if (s0 != NULL)
+		vsb_printf(vsb, ": %s+%jx", s0->n, (uintmax_t)ptr - s0->a);
+	return (0);
+}
+
+static void
+Symbol_hack(const char *a0)
+{
+	char buf[BUFSIZ], *p, *e;
+	FILE *fi;
+	uintptr_t a;
+	struct symbols *s;
+
+	strcpy(buf, "nm -an ");
+	strcat(buf, a0);
+	fi = popen(buf, "r");
+	if (fi != NULL) {
+		while (fgets(buf, sizeof buf, fi)) {
+			if (buf[0] == ' ')
+				continue;
+			p = NULL;
+			a = strtoul(buf, &p, 16);
+			if (p == NULL)
+				continue;
+			if (a == 0)
+				continue;
+			if (*p++ != ' ')
+				continue;
+			p++;
+			if (*p++ != ' ')
+				continue;
+			if (*p <= ' ')
+				continue;
+			e = strchr(p, '\0');
+			AN(e);
+			while (e > p && isspace(e[-1]))
+				e--;
+			*e = '\0';
+			s = malloc(sizeof *s + strlen(p) + 1);
+			AN(s);
+			s->a = a;
+			s->n = (void*)(s + 1);
+			strcpy(s->n, p);
+			VTAILQ_INSERT_TAIL(&symbols, s, list);
+		}
+		pclose(fi);
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -418,6 +502,8 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+
+	Symbol_hack(argv[0]);
 
 	/* for ASSERT_MGT() */
 	mgt_pid = getpid();

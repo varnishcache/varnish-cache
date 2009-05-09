@@ -44,6 +44,10 @@ void VSL_Panic(int *len, char **ptr);
 void VSL_MgtInit(const char *fn, unsigned size);
 extern struct varnish_stats *VSL_stats;
 
+/* varnishd.c */
+struct vsb;
+int Symbol_Lookup(struct vsb *vsb, uintptr_t ptr);
+
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
