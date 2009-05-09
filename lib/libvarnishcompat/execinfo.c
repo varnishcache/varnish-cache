@@ -132,6 +132,7 @@ backtrace_symbols(void *const *buffer, int size)
     return rval;
 }
 
+#if 0
 void
 backtrace_symbols_fd(void *const *buffer, int size, int fd)
 {
@@ -173,6 +174,7 @@ backtrace_symbols_fd(void *const *buffer, int size, int fd)
         write(fd, buf, len - 1);
     }
 }
+#endif
 
 void *
 getreturnaddr(int level)
