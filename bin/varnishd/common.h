@@ -46,7 +46,7 @@ extern struct varnish_stats *VSL_stats;
 
 /* varnishd.c */
 struct vsb;
-int Symbol_Lookup(struct vsb *vsb, uintptr_t ptr);
+int Symbol_Lookup(struct vsb *vsb, void *ptr);
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
 

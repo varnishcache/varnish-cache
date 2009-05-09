@@ -273,7 +273,7 @@ pan_backtrace(void)
 	vsb_printf(vsp, "Backtrace:\n");
 	for (i = 0; i < size; i++) {
 		vsb_printf (vsp, "  ");
-		if (Symbol_Lookup(vsp, (uintptr_t)array[i]) < 0) {
+		if (Symbol_Lookup(vsp, array[i]) < 0) {
 			char **strings;
 			strings = backtrace_symbols(&array[i], 1);
 			vsb_printf(vsp, "%p: %s", array[i], strings[0]);
