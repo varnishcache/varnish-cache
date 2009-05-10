@@ -1,0 +1,49 @@
+# $Id: e00003.vtc 3573 2009-02-03 18:44:21Z phk $
+
+test "ESI requests turned off"
+
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/body"/>
+		After include
+	}
+	rxreq 
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/body"/>
+		After include
+	}
+	rxreq 
+	expect req.url == "/body"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+	    	if(req.url == "/") {
+ 	    	   set req.esi = false;
+		}
+		esi;
+	}
+} -start
+
+client c1 {
+        txreq
+	rxresp
+	expect resp.bodylen == 73
+	expect resp.status == 200
+	txreq -url "/esi"
+	rxresp
+	expect resp.bodylen == 65
+	expect resp.status == 200
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0

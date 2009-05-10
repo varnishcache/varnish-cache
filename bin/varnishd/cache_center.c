@@ -978,6 +978,8 @@ cnt_recv(struct sess *sp)
 	sp->director = sp->vcl->director[0];
 	AN(sp->director);
 
+      	sp->disable_esi = 0;
+	
 	VCL_recv_method(sp);
 	if (sp->restarts >= params->max_restarts) {
 		if (sp->err_code == 0)
