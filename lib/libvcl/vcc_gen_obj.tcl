@@ -116,6 +116,12 @@ set spobj {
 	"struct sess *"
     }
 
+    { req.esi
+	RW BOOL
+	{recv fetch deliver					   error}
+	"struct sess *"
+    }
+
     #######################################################################
     # Request sent to backend
     { bereq.request

@@ -233,8 +233,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 3834 2009-02-27 12:");
-	vsb_cat(sb, "02:50Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4025 2009-04-03 21:");
+	vsb_cat(sb, "52:44Z des $\n *\n * Runtime support for compiled VCL ");
 	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
 	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
@@ -343,6 +343,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "uct sess *);\ndouble VRT_r_req_grace(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_grace(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_req_xid(struct sess *);\n");
+	vsb_cat(sb, "unsigned VRT_r_req_esi(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_esi(struct sess *, unsigned);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);");
 	vsb_cat(sb, "\nvoid VRT_l_bereq_request(const struct sess *, const ");
 	vsb_cat(sb, "char *, ...);\nconst char * VRT_r_bereq_url(const stru");

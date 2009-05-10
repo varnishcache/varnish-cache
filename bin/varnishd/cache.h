@@ -345,6 +345,7 @@ struct sess {
 
 	int			restarts;
 	int			esis;
+	int			disable_esi;
 
 	struct worker		*wrk;
 

@@ -304,8 +304,7 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 	in->b++;
 
 	if (isspace(*in->b)) {
-		val->e = val->b = in->b;;
-		*val->e = '\0';
+		val->e = val->b = in->b;
 		in->b++;
 		return (1);
 	}
@@ -340,7 +339,6 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 		val->e = in->b;
 		in->b++;
 	}
-	*val->e = '\0';
 	return (1);
 }
 
@@ -352,11 +350,11 @@ static void
 esi_handle_include(struct esi_work *ew)
 {
 	struct esi_bit *eb;
-	char *p, *q;
+	char *p, *q, *c;
 	txt t = ew->tag;
 	txt tag;
 	txt val;
-	unsigned u, v;
+	unsigned u, v, s;
 	struct ws *ws;
 
 	if (ew->eb == NULL || ew->eb->include.b != NULL)
@@ -373,6 +371,20 @@ esi_handle_include(struct esi_work *ew)
 			esi_error(ew, tag.b, Tlen(tag),
 			    "ESI esi:include src attribute withou value");
 			continue;
+		}
+
+		/* Wee are saving the original string */
+		ws = ew->sp->obj->ws_o;
+		WS_Assert(ws);
+		s = 0;
+
+		if ( val.b != val.e ) {
+			s = Tlen(val) + 1;
+			c = WS_Alloc(ws, s);
+			memcpy(c, val.b, Tlen(val));
+			val.b = c;
+			val.e = val.b + s;
+			*val.e = '\0';
 		}
 
 		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
@@ -405,8 +417,6 @@ esi_handle_include(struct esi_work *ew)
 
 			/* Use the objects WS to store the result */
 			CHECK_OBJ_NOTNULL(ew->sp->obj, OBJECT_MAGIC);
-			ws = ew->sp->obj->ws_o;
-			WS_Assert(ws);
 
 			/* Look for the last '/' before a '?' */
 			q = NULL;
