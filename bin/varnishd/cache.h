@@ -434,6 +434,7 @@ void vca_return_session(struct sess *sp);
 void vca_close_session(struct sess *sp, const char *why);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
+extern pthread_t VCA_thread;
 
 /* cache_backend.c */
 
@@ -591,6 +592,7 @@ void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv
 /* cache_session.c [SES] */
 void SES_Init(void);
 struct sess *SES_New(const struct sockaddr *addr, unsigned len);
+struct sess *SES_Alloc(const struct sockaddr *addr, unsigned len);
 void SES_Delete(struct sess *sp);
 void SES_Charge(struct sess *sp);
 void SES_ResetBackendTimeouts(struct sess *sp);
