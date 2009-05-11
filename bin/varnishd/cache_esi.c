@@ -381,6 +381,7 @@ esi_handle_include(struct esi_work *ew)
 		if ( val.b != val.e ) {
 			s = Tlen(val) + 1;
 			c = WS_Alloc(ws, s);
+			XXXAN(c);
 			memcpy(c, val.b, Tlen(val));
 			val.b = c;
 			val.e = val.b + s;

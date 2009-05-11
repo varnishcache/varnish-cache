@@ -142,7 +142,7 @@ RES_WriteObj(struct sess *sp)
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (!sp->disable_esi == 0 || sp->esis == 0)
+	if (sp->disable_esi || !sp->esis)
 		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
 
 	if (!sp->disable_esi && sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {

@@ -53,8 +53,11 @@
 #include "hash_slinger.h"
 #include "cache_backend.h"
 
+/*XXX: sort of a hack, improve the Tcl code in the compiler to avoid */
+/*lint -save -esym(818,sp) */
+
 void *vrt_magic_string_end = &vrt_magic_string_end;
-char vrt_hostname[255] = "";
+static char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------*/
 
@@ -658,9 +661,9 @@ VRT_r_server_hostname(struct sess *sp)
 	(void)sp;
 
 	if (vrt_hostname[0] == '\0')
-		gethostname(vrt_hostname, 255);
+		AZ(gethostname(vrt_hostname, 255));
 	
-	return (const char*) &vrt_hostname;
+	return (vrt_hostname);
 }
 
 int
@@ -983,3 +986,4 @@ VRT_memmove(void *dst, const void *src, unsigned len)
 	(void)memmove(dst, src, len);
 }
 
+/*lint -restore */
