@@ -701,7 +701,7 @@ wrk_bgthread(void *arg)
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
-	sp = SES_New(NULL, 0);
+	sp = SES_Alloc(NULL, 0);
 	XXXAN(sp);
 	memset(&ww, 0, sizeof ww);
 	memset(&stats, 0, sizeof stats);
