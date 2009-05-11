@@ -111,6 +111,8 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 	volatile unsigned u;
 
 	if (sm == NULL) {
+		if (VSL_stats->n_sess_mem >= params->max_sess)
+			return (NULL);
 		/*
 		 * It is not necessary to lock mem_workspace, but we
 		 * need to cache it locally, to make sure we get a

@@ -676,6 +676,15 @@ static const struct parspec input_parspec[] = {
 		"have both IPv4 and IPv6 addresses.",
 		0,
 		"off", "bool" },
+	{ "session_max", tweak_uint,
+		&master.max_sess, 1000, UINT_MAX,
+		"Maximum number of sessions we will allocate "
+		"before just dropping connections.\n"
+		"This is mostly an anti-DoS measure, and setting it plenty "
+		"high should not hurt, as long as you have the memory for "
+		"it.\n",
+		0,
+		"100000", "sessions" },
 	{ "session_linger", tweak_uint,
 		&master.session_linger,0, UINT_MAX,
 		"How long time the workerthread lingers on the session "
