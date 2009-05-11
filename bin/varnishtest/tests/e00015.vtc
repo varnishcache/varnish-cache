@@ -1,7 +1,9 @@
-# $Id: e00003.vtc 3573 2009-02-03 18:44:21Z phk $
+# $Id$
 
 test "ESI requests turned off"
 
+# There is probably a bug if an ESI subrequest turns ESI delivery back on 
+# XXX reminder so I don't forget it
 
 server s1 {
 	rxreq 
