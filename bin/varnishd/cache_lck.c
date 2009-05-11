@@ -48,6 +48,9 @@
 #include "shmlog.h"
 #include "cache.h"
 
+/*The constability of lck depends on platform pthreads implementation */
+/*lint -save -esym(818,lck) */
+
 struct ilck {
 	unsigned		magic;
 #define ILCK_MAGIC		0x7b86c8a5
@@ -190,3 +193,5 @@ LCK_Init(void)
 
 	AZ(pthread_mutex_init(&lck_mtx, NULL));
 }
+
+/*lint -restore */

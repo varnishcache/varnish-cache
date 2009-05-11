@@ -664,7 +664,7 @@ cnt_hit(struct sess *sp)
 
 	if (sp->handling == VCL_RET_DELIVER) {
 		/* Dispose of any body part of the request */
-		FetchReqBody(sp);
+		(void)FetchReqBody(sp);
 		sp->wrk->bereq = NULL;
 		sp->step = STP_DELIVER;
 		return (0);
@@ -1004,7 +1004,7 @@ cnt_recv(struct sess *sp)
 		if (sp->esis > 0) {
 			/* XXX: VSL something */
 			INCOMPL();
-			sp->step = STP_DONE;
+			/* sp->step = STP_DONE; */
 			return (1);
 		}
 		sp->step = STP_PIPE;

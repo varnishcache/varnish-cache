@@ -472,7 +472,7 @@ Symbol_hack(const char *a0)
 			strcpy(s->n, p);
 			VTAILQ_INSERT_TAIL(&symbols, s, list);
 		}
-		pclose(fi);
+		(void)pclose(fi);
 	}
 }
 
