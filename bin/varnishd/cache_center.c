@@ -97,6 +97,7 @@ cnt_again(struct sess *sp)
 	AZ(sp->obj);
 	assert(sp->xid == 0);
 
+	WS_Reset(sp->wrk->ws, NULL);
 	i = HTC_Complete(sp->htc);
 	while (i == 0)
 		i = HTC_Rx(sp->htc);
