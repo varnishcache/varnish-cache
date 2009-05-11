@@ -108,12 +108,16 @@ sock_test(int fd)
 	need_test = 0;
 }
 
+/*--------------------------------------------------------------------
+ * Called once the workerthread gets hold of the session, to do setup
+ * setup overhead, we don't want to bother the acceptor thread with.
+ */
+
 void
 VCA_Prep(struct sess *sp)
 {
 	char addr[TCP_ADDRBUFSIZE];
 	char port[TCP_PORTBUFSIZE];
-
 
 	TCP_name(sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);

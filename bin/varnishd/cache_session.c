@@ -122,6 +122,8 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 		sm = malloc(sizeof *sm + u);
 		if (sm == NULL)
 			return (NULL);
+		/* Don't waste time zeroing the workspace */
+		memset(sm, 0, sizeof *sm);
 		sm->magic = SESSMEM_MAGIC;
 		sm->workspace = u;
 		VSL_stats->n_sess_mem++;
@@ -129,7 +131,6 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	VSL_stats->n_sess++;
 	sp = &sm->sess;
-	memset(sp, 0, sizeof *sp);
 	sp->magic = SESS_MAGIC;
 	sp->mem = sm;
 	sp->sockaddr = (void*)(&sm->sockaddr[0]);
@@ -201,6 +202,7 @@ SES_Delete(struct sess *sp)
 {
 	struct acct *b = &sp->acct;
 	struct sessmem *sm;
+	unsigned workspace;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
@@ -219,6 +221,12 @@ SES_Delete(struct sess *sp)
 		VSL_stats->n_sess_mem--;
 		free(sm);
 	} else {
+		/* Clean and prepare for reuse */
+		workspace = sm->workspace;
+		memset(sm, 0, sizeof *sm);
+		sm->magic = SESSMEM_MAGIC;
+		sm->workspace = workspace;
+
 		Lck_Lock(&ses_mem_mtx);
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
 		Lck_Unlock(&ses_mem_mtx);
