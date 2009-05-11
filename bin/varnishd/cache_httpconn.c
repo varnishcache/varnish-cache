@@ -89,6 +89,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd)
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->fd = fd;
+	/* XXX: ->s or ->f ? or param ? */
 	(void)WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
 	htc->rxbuf.b = ws->f;
 	htc->rxbuf.e = ws->f;
@@ -133,9 +134,8 @@ HTC_Complete(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	i = htc_header_complete(&htc->rxbuf);
-	if (i < 0)
-		htc->rxbuf.e = htc->rxbuf.b;
-	if (i <= 0)
+	assert(i >= 0);
+	if (i == 0)
 		return (0);
 	WS_ReleaseP(htc->ws, htc->rxbuf.e);
 	if (htc->rxbuf.b + i < htc->rxbuf.e) {
