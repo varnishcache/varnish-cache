@@ -1087,6 +1087,10 @@ cnt_start(struct sess *sp)
 
 		/* XXX: Don't bother with write failures for now */
 		(void)write(sp->fd, r, strlen(r));
+		/* XXX: When we do ESI includes, this is not removed
+		 * XXX: because we use http0 as our basis.  Believed
+		 * XXX: safe, but potentially confusing.
+		 */
 		http_Unset(sp->http, H_Expect);
 	}
 

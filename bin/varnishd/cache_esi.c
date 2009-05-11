@@ -760,9 +760,12 @@ ESI_Deliver(struct sess *sp)
 	struct esi_bit *eb;
 	struct object *obj;
 	struct worker *w;
+	char *ws_wm;
+	struct http http_save;
 
 	w = sp->wrk;
 	WRW_Reserve(w, &sp->fd);
+	http_save.magic = 0;
 	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
@@ -784,8 +787,17 @@ ESI_Deliver(struct sess *sp)
 		sp->esis++;
 		obj = sp->obj;
 		sp->obj = NULL;
+
+		/* Save the master objects HTTP state, we may need it later */
+		if (http_save.magic == 0)
+			http_save = *sp->http;
+
+		/* Reset request to status before we started messing with it */
 		*sp->http = *sp->http0;
-		/* XXX: reset sp->ws */
+
+		/* Take a workspace snapshot */
+		ws_wm = WS_Snapshot(sp->ws);
+
 		http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
 		if (eb->host.b != NULL)  {
 			http_Unset(sp->http, H_Host);
@@ -822,10 +834,17 @@ ESI_Deliver(struct sess *sp)
 		assert(sp->step == STP_DONE);
 		sp->esis--;
 		sp->obj = obj;
+
+		/* Reset the workspace */
+		WS_Reset(sp->ws, ws_wm);
+
 		WRW_Reserve(sp->wrk, &sp->fd);
 		if (sp->fd < 0)
 			break;
 	}
+	/* Restore master objects HTTP state */
+	if (http_save.magic)
+		*sp->http = http_save;
 	if (sp->esis == 0 && sp->http->protover >= 1.1)
 		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
 	if (WRW_FlushRelease(sp->wrk))
