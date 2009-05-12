@@ -97,7 +97,6 @@ cnt_again(struct sess *sp)
 	AZ(sp->obj);
 	assert(sp->xid == 0);
 
-	WS_Reset(sp->wrk->ws, NULL);
 	i = HTC_Complete(sp->htc);
 	while (i == 0)
 		i = HTC_Rx(sp->htc);
@@ -816,6 +815,7 @@ cnt_miss(struct sess *sp)
 	AZ(sp->obj);
 	AN(sp->objcore);
 	AN(sp->objhead);
+	WS_Reset(sp->wrk->ws, NULL);
 	sp->wrk->bereq = &sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
@@ -880,6 +880,7 @@ cnt_pass(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
 
+	WS_Reset(sp->wrk->ws, NULL);
 	sp->wrk->bereq = &sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
@@ -929,6 +930,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	sp->acct_req.pipe++;
+	WS_Reset(sp->wrk->ws, NULL);
 	sp->wrk->bereq = &sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
