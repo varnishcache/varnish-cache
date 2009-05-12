@@ -760,7 +760,7 @@ ESI_Deliver(struct sess *sp)
 	struct esi_bit *eb;
 	struct object *obj;
 	struct worker *w;
-	char *ws_wm, *wws_wm;
+	char *ws_wm;
 	struct http http_save;
 
 	w = sp->wrk;
@@ -797,7 +797,6 @@ ESI_Deliver(struct sess *sp)
 
 		/* Take a workspace snapshot */
 		ws_wm = WS_Snapshot(sp->ws);
-		wws_wm = WS_Snapshot(sp->wrk->ws);
 
 		http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
 		if (eb->host.b != NULL)  {
@@ -838,7 +837,6 @@ ESI_Deliver(struct sess *sp)
 
 		/* Reset the workspace */
 		WS_Reset(sp->ws, ws_wm);
-		WS_Reset(sp->wrk->ws, wws_wm);
 
 		WRW_Reserve(sp->wrk, &sp->fd);
 		if (sp->fd < 0)
