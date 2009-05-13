@@ -1,0 +1,49 @@
+# $Id: e00015.vtc 4068 2009-05-11 08:50:45Z sky $
+
+test "ESI request can't be turned off midstream"
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/body"/>
+		<esi:include src="/body3"/>
+		After include
+	}
+	rxreq 
+	expect req.url == "/body"
+	txresp -body {
+	       <esi:include src="/body2">
+	}
+	rxreq
+	expect req.url == "/body2"
+	txresp -body {
+	       included
+	}
+	rxreq
+	expect req.url == "/body3"
+	txresp -body {
+	       included body3
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+ 	    	set req.esi = true;	
+	    	if(req.url == "/body") {
+		   set req.esi = false;
+		} 
+		esi;
+	}
+} -start
+
+client c1 {
+        txreq
+	rxresp
+	expect resp.bodylen == 105
+	expect resp.status == 200
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0
