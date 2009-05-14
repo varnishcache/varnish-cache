@@ -118,7 +118,7 @@ cnt_wait(struct sess *sp)
 		if (i == -2)
 			vca_close_session(sp, "overflow");
 		else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
-		    (errno == 0 || errno == ECONNRESET)
+		    (errno == 0 || errno == ECONNRESET))
 			vca_close_session(sp, "EOF");
 		else 
 			vca_close_session(sp, "error");
