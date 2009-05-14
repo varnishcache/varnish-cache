@@ -14,7 +14,7 @@ server s1 {
 	rxreq 
 	expect req.url == "/body"
 	txresp -body {
-	       <esi:include src="/body2">
+	       <esi:include src="/body2"/>
 	}
 	rxreq
 	expect req.url == "/body2"
