@@ -80,17 +80,15 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
 static unsigned xids;
 
 /*--------------------------------------------------------------------
- * AGAIN
- * We come here when we just completed a request and already have
- * received (part of) the next one.  Instead taking the detour
- * around the acceptor and then back to a worker, just stay in this
- * worker and do what it takes.
+ * WAIT
+ * Wait until we have a full request in our htc.
  */
 
 static int
-cnt_again(struct sess *sp)
+cnt_wait(struct sess *sp)
 {
 	int i;
+	struct pollfd pfd[1];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->vcl);
@@ -98,12 +96,32 @@ cnt_again(struct sess *sp)
 	assert(sp->xid == 0);
 
 	i = HTC_Complete(sp->htc);
-	while (i == 0)
+	while (i == 0) {
+		if (params->session_linger > 0) {
+			pfd[0].fd = sp->fd;
+			pfd[0].events = POLLIN;
+			pfd[0].revents = 0;
+			i = poll(pfd, 1, params->session_linger);
+			if (i == 0) {
+				WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
+				VSL_stats->sess_herd++;
+				sp->wrk = NULL;
+				vca_return_session(sp);
+				return (1);
+			}
+		}
 		i = HTC_Rx(sp->htc);
+	}
 	if (i == 1) {
 		sp->step = STP_START;
 	} else {
-		vca_close_session(sp, "overflow");
+		if (i == -2)
+			vca_close_session(sp, "overflow");
+		else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
+		    (errno == 0 || errno == ECONNRESET)
+			vca_close_session(sp, "EOF");
+		else 
+			vca_close_session(sp, "error");
 		sp->step = STP_DONE;
 	}
 	return (0);
@@ -201,7 +219,6 @@ static int
 cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
-	struct pollfd pfd[1];
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -269,19 +286,13 @@ cnt_done(struct sess *sp)
 	}
 	if (Tlen(sp->htc->rxbuf)) {
 		VSL_stats->sess_readahead++;
-		sp->step = STP_AGAIN;
+		sp->step = STP_WAIT;
 		return (0);
 	}
 	if (params->session_linger > 0) {
-		pfd[0].fd = sp->fd;
-		pfd[0].events = POLLIN;
-		pfd[0].revents = 0;
-		i = poll(pfd, 1, params->session_linger);
-		if (i > 0) {
-			VSL_stats->sess_linger++;
-			sp->step = STP_AGAIN;
-			return (0);
-		}
+		VSL_stats->sess_linger++;
+		sp->step = STP_WAIT;
+		return (0);
 	}
 	VSL_stats->sess_herd++;
 	SES_Charge(sp);
@@ -590,7 +601,6 @@ cnt_fetch(struct sess *sp)
 static int
 cnt_first(struct sess *sp)
 {
-	int i;
 
 	/*
 	 * XXX: If we don't have acceptfilters we are somewhat subject
@@ -610,25 +620,8 @@ cnt_first(struct sess *sp)
 	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->lastused = sp->t_open;
 	sp->acct_req.sess++;
-	do
-		i = HTC_Rx(sp->htc);
-	while (i == 0);
 
-	switch (i) {
-	case 1:
-		sp->step = STP_START;
-		break;
-	case -1:
-		vca_close_session(sp, "error");
-		sp->step = STP_DONE;
-		break;
-	case -2:
-		vca_close_session(sp, "blast");
-		sp->step = STP_DONE;
-		break;
-	default:
-		WRONG("Illegal return from HTC_Rx");
-	}
+	sp->step = STP_WAIT;
 	return (0);
 }
 
