@@ -104,7 +104,8 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 
 	AN(VSL_stats);
 #define MAC_STAT(n, t, l, f, d) \
-    cli_out(cli, "%12ju  %s\n", (VSL_stats->n), d);
+	if (VSL_stats->n != 0) \
+	    cli_out(cli, "%12ju  %s\n", (VSL_stats->n), d);
 #include "stat_field.h"
 #undef MAC_STAT
 }
