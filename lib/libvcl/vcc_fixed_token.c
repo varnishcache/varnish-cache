@@ -324,9 +324,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vrt_obj.h 3990 2009-03-23 12:37:42Z tfheen");
-	vsb_cat(sb, " $\n *\n * NB:  This file is machine generated, DO NOT");
-	vsb_cat(sb, " EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3992 2009-03-23 12:50:04Z ");
+	vsb_cat(sb, "tfheen $\n *\n * NB:  This file is machine generated, ");
+	vsb_cat(sb, "DO NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nconst char * VRT_r_server_hostname(struct sess ");
@@ -345,6 +345,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "uct sess *);\ndouble VRT_r_req_grace(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_grace(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_req_xid(struct sess *);\n");
+	vsb_cat(sb, "unsigned VRT_r_req_esi(struct sess *);\n");
+	vsb_cat(sb, "void VRT_l_req_esi(struct sess *, unsigned);\n");
 	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);");
 	vsb_cat(sb, "\nvoid VRT_l_bereq_request(const struct sess *, const ");
 	vsb_cat(sb, "char *, ...);\nconst char * VRT_r_bereq_url(const stru");

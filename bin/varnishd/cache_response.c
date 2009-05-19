@@ -106,9 +106,12 @@ RES_BuildHttp(struct sess *sp)
 	    HTTPH_A_DELIVER);
 
 	/* Only HTTP 1.1 can do Chunked encoding */
-	if (sp->http->protover < 1.1 && !VTAILQ_EMPTY(&sp->obj->esibits))
-		http_Unset(sp->http, H_Transfer_Encoding);
-
+ 	if (!sp->disable_esi && !VTAILQ_EMPTY(&sp->obj->esibits)) {
+ 		http_Unset(sp->http, H_Content_Length);
+ 		if(sp->http->protover >= 1.1)
+ 			http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Transfer-Encoding: chunked");
+ 	}
+ 
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", time_str);
 
@@ -139,10 +142,10 @@ RES_WriteObj(struct sess *sp)
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (sp->esis == 0)
+	if (sp->disable_esi || sp->esis == 0)
 		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->http, 1);
 
-	if (sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
+	if (!sp->disable_esi && sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
 		if (WRW_FlushRelease(sp->wrk)) {
 			vca_close_session(sp, "remote closed");
 			return;
@@ -152,7 +155,8 @@ RES_WriteObj(struct sess *sp)
 	}
 
 	if (sp->wantbody) {
-		if (sp->esis > 0 &&
+		if (!sp->disable_esi &&
+		    sp->esis > 0 &&
 		    sp->http->protover >= 1.1 &&
 		    sp->obj->len > 0) {
 			sprintf(lenbuf, "%x\r\n", sp->obj->len);
@@ -183,7 +187,8 @@ RES_WriteObj(struct sess *sp)
 			(void)WRW_Write(sp->wrk, st->ptr, st->len);
 		}
 		assert(u == sp->obj->len);
-		if (sp->esis > 0 &&
+		if (!sp->disable_esi &&
+		    sp->esis > 0 &&
 		    sp->http->protover >= 1.1 &&
 		    sp->obj->len > 0)
 			(void)WRW_Write(sp->wrk, "\r\n", -1);

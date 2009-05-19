@@ -496,6 +496,22 @@ VRT_r_req_backend(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_l_req_esi(struct sess *sp, unsigned process_esi)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->disable_esi = !process_esi;
+}
+
+unsigned
+VRT_r_req_esi(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (!sp->disable_esi);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 VRT_r_req_restarts(const struct sess *sp)
 {
