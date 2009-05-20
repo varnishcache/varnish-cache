@@ -48,6 +48,10 @@
 #include <limits.h>
 #include <unistd.h>
 
+#if defined(HAVE_EPOLL_CTL)
+#include <sys/epoll.h>
+#endif
+
 #include "vqueue.h"
 
 #include "vsb.h"
@@ -413,6 +417,10 @@ struct sess {
 	unsigned		ihashptr;
 	unsigned		lhashptr;
 	const char		**hashptr;
+
+#if defined(HAVE_EPOLL_CTL)
+	struct epoll_event ev;
+#endif
 };
 
 

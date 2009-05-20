@@ -3,6 +3,8 @@
  * Copyright (c) 2006-2009 Linpro AS
  * All rights reserved.
  *
+ * Author: Rogerio Carvalho Schneider <stockrt@gmail.com>
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -35,9 +37,14 @@
 
 #if defined(HAVE_EPOLL_CTL)
 
+#ifndef EPOLLRDHUP
+#  define EPOLLRDHUP 0
+#endif
+
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -47,77 +54,141 @@
 #include "cache.h"
 #include "cache_waiter.h"
 
+#define NEEV	100
+
 static pthread_t vca_epoll_thread;
+static pthread_t vca_epoll_timeout_thread;;
 static int epfd = -1;
 
 static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
+int dotimer_pipe[2];
 
 static void
-vca_add(int fd, void *data)
+vca_modadd(int fd, void *data, short arm)
 {
-	struct epoll_event ev = { EPOLLIN | EPOLLPRI, { data } };
-	AZ(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev));
+
+	assert(fd >= 0);
+	if (data == vca_pipes || data == dotimer_pipe) {
+		struct epoll_event ev = {
+		    EPOLLIN | EPOLLPRI | EPOLLET, { data }
+		};
+		AZ(epoll_ctl(epfd, arm, fd, &ev));
+	} else {
+		struct sess *sp = (struct sess *)data;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		sp->ev.data.ptr = data;
+		sp->ev.events = EPOLLIN | EPOLLPRI | EPOLLONESHOT | EPOLLRDHUP;
+		AZ(epoll_ctl(epfd, arm, fd, &sp->ev));
+	}
 }
 
 static void
-vca_del(int fd)
+vca_cond_modadd(int fd, void *data)
 {
-	struct epoll_event ev = { 0, { 0 } };
-	AZ(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev));
+	struct sess *sp = (struct sess *)data;
+
+	assert(fd >= 0);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->ev.data.ptr)
+		AZ(epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &sp->ev));
+	else {
+		sp->ev.data.ptr = data;
+		sp->ev.events = EPOLLIN | EPOLLPRI | EPOLLONESHOT | EPOLLRDHUP;
+		AZ(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &sp->ev));
+	}
 }
+
+static void
+vca_eev(const struct epoll_event *ep)
+{
+	struct sess *ss[NEEV], *sp;
+	int i, j;
+
+	AN(ep->data.ptr);
+	if (ep->data.ptr == vca_pipes) {
+		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
+			j = 0;
+			i = read(vca_pipes[0], ss, sizeof ss);
+			if (i == -1 && errno == EAGAIN)
+				return;
+			while (i >= sizeof ss[0]) {
+				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+				assert(ss[j]->fd >= 0);
+				AZ(ss[j]->obj);
+				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
+				vca_cond_modadd(ss[j]->fd, ss[j]);
+				j++;
+				i -= sizeof ss[0];
+			}
+			assert(i == 0);
+		}
+	} else {
+		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
+		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
+			i = HTC_Rx(sp->htc);
+			if (i == 0) {
+				vca_modadd(sp->fd, sp, EPOLL_CTL_MOD);
+				return;	/* more needed */
+			}
+			VTAILQ_REMOVE(&sesshead, sp, list);
+			vca_handover(sp, i);
+		} else if (ep->events & EPOLLERR) {
+			VTAILQ_REMOVE(&sesshead, sp, list);
+			vca_close_session(sp, "ERR");
+			SES_Delete(sp);
+		} else if (ep->events & EPOLLHUP) {
+			VTAILQ_REMOVE(&sesshead, sp, list);
+			vca_close_session(sp, "HUP");
+			SES_Delete(sp);
+		} else if (ep->events & EPOLLRDHUP) {
+			VTAILQ_REMOVE(&sesshead, sp, list);
+			vca_close_session(sp, "RHUP");
+			SES_Delete(sp);
+		}
+	}
+}
+
+/*--------------------------------------------------------------------*/
 
 static void *
 vca_main(void *arg)
 {
-	struct epoll_event ev;
+	struct epoll_event ev[NEEV], *ep;
+	struct sess *sp;
 	double deadline;
-	int dotimer = 0;
-	double last_timeout = 0, tmp_timeout;
-	struct sess *sp, *sp2;
-	int i;
+	int dotimer, i, n;
 
 	THR_SetName("cache-epoll");
 	(void)arg;
 
-	epfd = epoll_create(16);
+	epfd = epoll_create(1);
 	assert(epfd >= 0);
 
-	vca_add(vca_pipes[0], vca_pipes);
+	vca_modadd(vca_pipes[0], vca_pipes, EPOLL_CTL_ADD);
+	vca_modadd(dotimer_pipe[0], dotimer_pipe, EPOLL_CTL_ADD);
 
 	while (1) {
-		if ((dotimer = epoll_wait(epfd, &ev, 1, 100)) > 0) {
-			if (ev.data.ptr == vca_pipes) {
-				i = read(vca_pipes[0], &sp, sizeof sp);
-				assert(i == sizeof sp);
-				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-				VTAILQ_INSERT_TAIL(&sesshead, sp, list);
-				vca_add(sp->fd, sp);
-			} else {
-				CAST_OBJ_NOTNULL(sp, ev.data.ptr, SESS_MAGIC);
-				i = HTC_Rx(sp->htc);
-				if (i != 0) {
-					VTAILQ_REMOVE(&sesshead, sp, list);
-					vca_del(sp->fd);
-					vca_handover(sp, i);
-				}
-			}
+		dotimer = 0;
+		n = epoll_wait(epfd, ev, NEEV, -1);
+		for (ep = ev, i = 0; i < n; i++, ep++) {
+			if (ep->data.ptr == dotimer_pipe &&
+			    (ep->events == EPOLLIN || ep->events == EPOLLPRI))
+				dotimer = 1;
+			else
+				vca_eev(ep);
 		}
-		tmp_timeout = TIM_mono();
-		if ((tmp_timeout - last_timeout) > 60) {
-			last_timeout = tmp_timeout;
-		} else {
-			if (dotimer > 0)
-				continue;
-		}
+		if (!dotimer)
+			continue;
 
 		/* check for timeouts */
 		deadline = TIM_real() - params->sess_timeout;
-		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
-			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		for (;;) {
+			sp = VTAILQ_FIRST(&sesshead);
+			if (sp == NULL)
+				break;
 			if (sp->t_open > deadline)
-				continue;
+				break;
 			VTAILQ_REMOVE(&sesshead, sp, list);
-			vca_del(sp->fd);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
 		}
@@ -126,10 +197,45 @@ vca_main(void *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void *
+vca_sess_timeout_ticker(void *arg)
+{
+	char ticker = 'R';
+	char junk;
+
+	THR_SetName("cache-epoll-sess_timeout_ticker");
+	(void)arg;
+
+	while (1) {
+		/* ticking */
+		assert(write(dotimer_pipe[1], &ticker, 1));
+		TIM_sleep(100 * 1e-3);
+		assert(read(dotimer_pipe[0], &junk, 1));
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 vca_epoll_init(void)
 {
+	int i;
 
+	i = fcntl(vca_pipes[0], F_GETFL);
+	assert(i != -1);
+	i |= O_NONBLOCK;
+	i = fcntl(vca_pipes[0], F_SETFL, i);
+	assert(i != -1);
+
+	AZ(pipe(dotimer_pipe));
+	i = fcntl(dotimer_pipe[0], F_GETFL);
+	assert(i != -1);
+	i |= O_NONBLOCK;
+	i = fcntl(dotimer_pipe[0], F_SETFL, i);
+	assert(i != -1);
+
+	AZ(pthread_create(&vca_epoll_timeout_thread,
+	    NULL, vca_sess_timeout_ticker, NULL));
 	AZ(pthread_create(&vca_epoll_thread, NULL, vca_main, NULL));
 }
 
