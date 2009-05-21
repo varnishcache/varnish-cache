@@ -37,10 +37,6 @@
 
 #if defined(HAVE_EPOLL_CTL)
 
-#ifndef EPOLLRDHUP
-#  define EPOLLRDHUP 0
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -49,6 +45,10 @@
 #include <unistd.h>
 
 #include <sys/epoll.h>
+
+#ifndef EPOLLRDHUP
+#  define EPOLLRDHUP 0
+#endif
 
 #include "shmlog.h"
 #include "cache.h"
