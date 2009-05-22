@@ -461,6 +461,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 		return (0);
 	} else {
 		o->ttl = 0;
+		o->cacheable = 0;
 		o->ban = NULL;
 		if (o->smp_object != NULL)
 			SMP_TTLchanged(o);
