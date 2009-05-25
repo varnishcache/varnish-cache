@@ -89,7 +89,6 @@ struct object;
 struct objhead;
 struct objcore;
 struct workreq;
-struct addrinfo;
 struct esi_bit;
 struct vrt_backend;
 struct cli_proto;
@@ -585,7 +584,6 @@ void WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(const struct worker *w);
 
 void WRW_Reserve(struct worker *w, int *fd);
-void WRW_Release(struct worker *w);
 unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
 unsigned WRW_Write(struct worker *w, const void *ptr, int len);

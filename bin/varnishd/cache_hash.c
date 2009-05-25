@@ -606,6 +606,7 @@ HSH_Unbusy(const struct sess *sp)
 	Lck_Lock(&oh->mtx);
 	o->objcore->flags &= ~OC_F_BUSY;
 	hsh_rush(oh);
+	AN(o->ban);
 	Lck_Unlock(&oh->mtx);
 }
 

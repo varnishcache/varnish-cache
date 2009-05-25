@@ -81,7 +81,7 @@ WRW_Reserve(struct worker *w, int *fd)
 	w->wfd = fd;
 }
 
-void
+static void
 WRW_Release(struct worker *w)
 {
 
