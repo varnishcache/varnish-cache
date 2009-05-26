@@ -33,8 +33,8 @@ libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
 
 DISTCLEANFILES = svn_version.c
 svn_version.c: FORCE
-	V="$$(git log -n 1 --pretty=format:%h || svnversion -n $(top_srcdir))" \
-	H="$$(head -n 1 svn_version.c || true)"; \
+	V="$$(git log -n 1 --pretty=format:%h 2>/dev/null || svnversion -n $(top_srcdir))" \
+	H="$$(head -n 1 svn_version.c 2>/dev/null || true)"; \
 	if [ "/* $$V */" != "$$H" ]; then \
 		( \
 		  echo "/* $$V */" ;\
