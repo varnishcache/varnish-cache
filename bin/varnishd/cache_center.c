@@ -261,7 +261,7 @@ cnt_done(struct sess *sp)
 
 	if (sp->fd >= 0 && sp->doclose != NULL) {
 		/*
-		 * This is an orderly close of the connection; ditch linger 
+		 * This is an orderly close of the connection; ditch nolinger 
 		 * before we close, to get queued data transmitted.
 		 */
 		TCP_linger(sp->fd, 0);
