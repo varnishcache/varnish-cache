@@ -135,8 +135,9 @@ sub vcl_error {
     <p>"} obj.response {"</p>
     <h3>Guru Meditation:</h3>
     <p>XID: "} req.xid {"</p>
+    <hr>
     <address>
-       <a href="http://www.varnish-cache.org/">Varnish</a>
+       <a href="http://www.varnish-cache.org/">Varnish cache server</a>
     </address>
   </body>
 </html>
