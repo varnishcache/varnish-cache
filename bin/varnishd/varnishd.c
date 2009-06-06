@@ -716,7 +716,7 @@ main(int argc, char * const *argv)
 	if (d_flag == 1)
 		DebugStunt();
 	if (d_flag < 2 && !F_flag)
-		AZ(inxorcise(1, d_flag));
+		AZ(daemon(1, d_flag));
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 
