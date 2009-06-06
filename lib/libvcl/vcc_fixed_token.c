@@ -7,9 +7,6 @@
  */
 
 #include "config.h"
-
-#include "svnid.h"
-SVNID("$Id$")
 #include <stdio.h>
 #include <ctype.h>
 #include "config.h"
@@ -325,7 +322,7 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 3949 2009-03-18 12:10:46Z ");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 4066 2009-05-10 21:21:36Z ");
 	vsb_cat(sb, "sky $\n *\n * NB:  This file is machine generated, DO ");
 	vsb_cat(sb, "NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
