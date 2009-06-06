@@ -178,6 +178,19 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([daemon])
+# white lie - we don't actually test it
+AC_MSG_CHECKING([whether daemon() works])
+case $target in
+*-*-darwin*)
+	# present but not functional
+	AC_MSG_RESULT([no])
+	ac_cv_func_daemon=no
+	;;
+*)
+	AC_MSG_RESULT([yes])
+	;;
+esac
+
 AC_SYS_LARGEFILE
 
 save_LIBS="${LIBS}"
