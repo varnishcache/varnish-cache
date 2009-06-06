@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * This file contains code for two cross-reference or consistency checks.
  *
  * The first check is simply that all functions, acls and backends are
@@ -40,6 +38,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdio.h>
 

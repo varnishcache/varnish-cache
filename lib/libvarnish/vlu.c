@@ -23,13 +23,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Functions for assembling a bytestream into text-lines and calling
  * a function on each.
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdio.h>
 #include <string.h>

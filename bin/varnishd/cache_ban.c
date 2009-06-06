@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Ban ("purge") processing
  *
  * A ban consists of a number of conditions (or tests), all of which must be
@@ -43,6 +41,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <sys/types.h>
 

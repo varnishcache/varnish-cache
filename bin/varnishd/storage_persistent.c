@@ -25,8 +25,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Persistent storage method
  *
  * XXX: Before we start the client or maybe after it stops, we should give the
@@ -34,6 +32,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <errno.h>
 #include <stdio.h>

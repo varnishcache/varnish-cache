@@ -25,8 +25,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * The geniuses who came up with pthreads did not think operations like
  * pthread_assert_mutex_held() were important enough to include them in
  * the API.
@@ -36,6 +34,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdio.h>
 

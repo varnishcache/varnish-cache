@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * This file contains the central state machine for pushing requests.
  *
  * We cannot just use direct calls because it is possible to kick a
@@ -58,6 +56,9 @@ DOT acceptor -> start [style=bold,color=green,weight=4]
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdio.h>
 #include <errno.h>

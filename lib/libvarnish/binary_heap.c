@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Implementation of a binary heap API
  *
  * We use a malloc(3)/realloc(3) array to store the pointers using the
@@ -35,6 +33,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <unistd.h>
 #include <stdlib.h>

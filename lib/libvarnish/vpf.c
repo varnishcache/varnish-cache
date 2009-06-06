@@ -22,13 +22,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id$
  * Derived from:
  * $FreeBSD: head/lib/libutil/pidfile.c 184091 2008-10-20 17:41:08Z des $
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <sys/param.h>
 #include <sys/file.h>

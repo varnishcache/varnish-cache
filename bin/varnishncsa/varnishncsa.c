@@ -27,8 +27,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Obtain log data from the shared memory log, order it by session ID, and
  * display it in Apache / NCSA combined log format:
  *
@@ -60,6 +58,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <ctype.h>
 #include <errno.h>

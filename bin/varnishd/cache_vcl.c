@@ -26,14 +26,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Interface *to* compiled VCL code:  Loading, unloading, calling into etc.
  *
  * The interface *from* the compiled VCL code is in cache_vrt.c.
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdio.h>
 #include <unistd.h>
