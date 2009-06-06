@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: vcc_gen_obj.tcl 4066 2009-05-10 21:21:36Z sky $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
