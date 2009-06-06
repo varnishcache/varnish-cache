@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * A necessary explanation of a convoluted policy:
  *
  * In VCL we have backends and directors.
@@ -51,6 +49,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <sys/types.h>
 #include <sys/socket.h>

@@ -26,14 +26,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * XXX: We need to pass sessions back into the event engine when they are
  * reused.  Not sure what the most efficient way is for that.  For now
  * write the session pointer to a pipe which the event engine monitors.
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #if defined(HAVE_EPOLL_CTL)
 

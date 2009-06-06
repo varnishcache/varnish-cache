@@ -28,6 +28,9 @@
 
 #include "config.h"
 
+#include "svnid.h"
+SVNID("$Id$")
+
 #include <stdint.h>
 #include <string.h>
 

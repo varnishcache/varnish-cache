@@ -19,6 +19,9 @@
 
 #include "config.h"
 
+#include "svnid.h"
+SVNID("$Id$")
+
 #ifndef HAVE_STRLCPY
 
 #include <sys/types.h>

@@ -7,6 +7,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 #include <stdio.h>
 #include "vcc_compile.h"
 

@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * LRU and object timer handling.
  *
  * We have two data structures, a LRU-list and a binary heap for the timers
@@ -50,6 +48,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <unistd.h>
 #include <stdio.h>

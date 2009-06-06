@@ -2,11 +2,12 @@
  * Written by Poul-Henning Kamp <phk@phk.freebsd.dk>
  *
  * This file is in the public domain.
- *
- * $Id$
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <sys/types.h>
 #include <stdint.h>

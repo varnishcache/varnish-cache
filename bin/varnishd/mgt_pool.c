@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: cache_pool.c 3429 2008-11-24 17:47:21Z phk $
- *
  * We maintain a number of worker thread pools, to spread lock contention.
  *
  * Pools can be added on the fly, as a means to mitigate lock contention,
@@ -43,6 +41,9 @@
  */
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id: cache_pool.c 3429 2008-11-24 17:47:21Z phk $")
 #include <limits.h>
 #include <sys/types.h>
 

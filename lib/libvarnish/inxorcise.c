@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * This file only exists because Apple has decided to break a
  * function that has an age old tradition and force the user
  * to use launchd instead.
@@ -37,6 +35,9 @@
  
 
 #include "config.h"
+
+#include "svnid.h"
+SVNID("$Id$")
 
 #include <stdlib.h>
 #include <stdio.h>
