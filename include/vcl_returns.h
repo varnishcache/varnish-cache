@@ -64,10 +64,6 @@ VCL_MET_MAC(timeout,TIMEOUT,
      ((1 << VCL_RET_FETCH)
     | (1 << VCL_RET_DISCARD)
 ))
-VCL_MET_MAC(discard,DISCARD,
-     ((1 << VCL_RET_DISCARD)
-    | (1 << VCL_RET_KEEP)
-))
 VCL_MET_MAC(error,ERROR,
      ((1 << VCL_RET_RESTART)
     | (1 << VCL_RET_DELIVER)

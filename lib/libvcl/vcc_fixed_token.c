@@ -175,9 +175,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VCL_MET_FETCH\t\t(1 << 6)\n");
 	vsb_cat(sb, "#define VCL_MET_DELIVER\t\t(1 << 7)\n");
 	vsb_cat(sb, "#define VCL_MET_TIMEOUT\t\t(1 << 8)\n");
-	vsb_cat(sb, "#define VCL_MET_DISCARD\t\t(1 << 9)\n");
-	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 10)\n");
-	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t11\n\n");
+	vsb_cat(sb, "#define VCL_MET_ERROR\t\t(1 << 9)\n");
+	vsb_cat(sb, "\n#define VCL_MET_MAX\t\t10\n\n");
 	vsb_cat(sb, "/* VCL Returns */\n#define VCL_RET_ERROR\t\t0\n");
 	vsb_cat(sb, "#define VCL_RET_LOOKUP\t\t1\n#define VCL_RET_HASH\t\t2");
 	vsb_cat(sb, "\n#define VCL_RET_PIPE\t\t3\n#define VCL_RET_PASS\t\t4");
@@ -199,8 +198,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tvcl_func_f\t*miss_func;\n\tvcl_func_f\t*hit_func;\n");
 	vsb_cat(sb, "\tvcl_func_f\t*fetch_func;\n\tvcl_func_f\t*deliver_fun");
 	vsb_cat(sb, "c;\n\tvcl_func_f\t*timeout_func;\n");
-	vsb_cat(sb, "\tvcl_func_f\t*discard_func;\n\tvcl_func_f\t*error_fun");
-	vsb_cat(sb, "c;\n};\n");
+	vsb_cat(sb, "\tvcl_func_f\t*error_func;\n};\n");
 
 	/* ../../include/vrt.h */
 

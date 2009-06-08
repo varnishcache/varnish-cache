@@ -309,12 +309,6 @@ EXP_NukeOne(struct sess *sp)
 			break;
 	}
 	if (oc != NULL) {
-		/*
-		 * We hazzard the guess that the object is more likely to
-		 * be tossed than kept, and forge ahead on the work to save
-		 * a lock cycle.  If the object is kept, we reverse these
-		 * actions below.
-		 */
 		VTAILQ_REMOVE(&lru, oc, lru_list);
 		oc->flags &= ~OC_F_ONLRU;
 		binheap_delete(exp_heap, oc->timer_idx);
@@ -326,35 +320,9 @@ EXP_NukeOne(struct sess *sp)
 	if (oc == NULL)
 		return (-1);
 
-	/*
-	 * Ask VCL in the context of the clients session, in order to allow
-	 * client QoS considerations to inform the decision. Temporarily
-	 * substitute the object we want to nuke for the sessions own object.
-	 */
-	o = sp->obj;
-	sp->obj = oc->obj;
-	VCL_discard_method(sp);
-	sp->obj = o;
-	o = oc->obj;
-
-	if (sp->handling == VCL_RET_DISCARD) {
-		WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
-		HSH_Deref(sp->wrk, &o);
-		return (1);
-	}
-
-	assert(sp->handling == VCL_RET_KEEP);
-
-	/* Insert in binheap and lru again */
-	Lck_Lock(&exp_mtx);
-	VSL_stats->n_lru_nuked--;		/* It was premature */
-	VSL_stats->n_lru_saved++;
-	binheap_insert(exp_heap, oc);
-	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
-	oc->flags |= OC_F_ONLRU;
-	Lck_Unlock(&exp_mtx);
-	return (0);
+	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
+	HSH_Deref(sp->wrk, &o);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
