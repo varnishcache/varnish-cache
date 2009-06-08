@@ -43,7 +43,6 @@ set methods {
 	{fetch		{error restart pass deliver}}
 	{deliver	{restart deliver}}
 	{timeout	{fetch discard}}
-	{discard	{discard keep}}
 	{error		{restart deliver}}
 }
 
