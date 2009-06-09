@@ -444,35 +444,6 @@ request.
 .It Cm deliver
 Deliver the object to the client.
 .El
-.\" vcl_timeout
-.It Cm vcl_timeout
-Called by the reaper thread shortly before a cached document reaches
-its expiry time.
-.Pp
-The
-.Cm vcl_timeout
-subroutine may terminate with one of the following keywords:
-.Bl -tag -width indent
-.It Cm fetch
-Request a fresh copy of the object from the backend.
-.It Cm discard
-Discard the object.
-.El
-.\" vcl_discard
-.It Cm vcl_discard
-Called by the reaper thread when a cached document is about to be
-discarded, either because it has expired or because space is running
-low.
-.Pp
-The
-.Cm vcl_discard
-subroutine may terminate with one of the following keywords:
-.Bl -tag -width indent
-.It Cm discard
-Discard the object.
-.It Cm keep
-Keep the object in cache.
-.El
 .El
 .Pp
 If one of these subroutines is left undefined or terminates without

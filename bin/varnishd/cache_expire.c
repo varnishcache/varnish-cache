@@ -31,20 +31,10 @@
  * We have two data structures, a LRU-list and a binary heap for the timers
  * and two ways to kill objects: TTL-timeouts and LRU cleanups.
  *
- * To avoid holding the mutex while we ponder the fate of objects, we
- * have the following prototol:
+ * Any object on the LRU is also on the binheap and vice versa.
  *
- * Any object on the LRU is also on the binheap (normal case)
+ * We hold one object reference for both data structures.
  *
- * An object is taken off only the binheap but left on the LRU during timer
- * processing because we have no easy way to put it back the right place
- * in the LRU list.
- *
- * An object is taken off both LRU and binheap for LRU processing, (which
- * implies that it must be on both, from where it follows that the timer
- * is not chewing on it) because we expect the majority of objects to be
- * discarded by LRU and save a lock cycle that way, and because we can
- * properly replace it's position in the binheap.
  */
 
 #include "config.h"
@@ -112,6 +102,7 @@ EXP_Insert(struct object *o)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	AN(o->objhead);
 	AN(ObjIsBusy(o));
 	assert(o->cacheable);
 	HSH_Ref(o);
@@ -151,6 +142,7 @@ EXP_Touch(const struct object *o)
 	oc = o->objcore;
 	if (oc == NULL)
 		return (retval);
+	AN(o->objhead);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
@@ -241,9 +233,12 @@ exp_timer(struct sess *sp, void *priv)
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
+		assert(oc->flags & OC_F_ONLRU);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
+		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
+		oc->flags &= ~OC_F_ONLRU;
 
 		{	/* Sanity checking */
 			struct objcore *oc2 = binheap_root(exp_heap);
@@ -253,32 +248,17 @@ exp_timer(struct sess *sp, void *priv)
 			}
 		}
 
-		assert(oc->flags & OC_F_ONLRU);
-		Lck_Unlock(&exp_mtx);
-
-		WSL(sp->wrk, SLT_ExpPick, 0, "%u TTL", o->xid);
-
-		sp->obj = o;
-		VCL_timeout_method(sp);
-		sp->obj = NULL;
-
-		assert(sp->handling == VCL_RET_DISCARD);
-		WSL(sp->wrk, SLT_ExpKill, 0,
-		    "%u %d", o->xid, (int)(o->ttl - t));
-		Lck_Lock(&exp_mtx);
-		assert(oc->timer_idx == BINHEAP_NOIDX);
-		assert(oc->flags & OC_F_ONLRU);
-		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
-		oc->flags &= ~OC_F_ONLRU;
 		VSL_stats->n_expired++;
 		Lck_Unlock(&exp_mtx);
+		WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
+		    o->xid, (int)(o->ttl - t));
 		HSH_Deref(sp->wrk, &o);
 	}
 }
 
 /*--------------------------------------------------------------------
- * Attempt to make space by nuking, with VCLs permission, the oldest
- * object on the LRU list which isn't in use.
+ * Attempt to make space by nuking, the oldest object on the LRU list
+ * which isn't in use.
  * Returns: 1: did, 0: didn't, -1: can't
  */
 
@@ -291,14 +271,12 @@ EXP_NukeOne(struct sess *sp)
 	/*
 	 * Find the first currently unused object on the LRU.
 	 *
-	 * Ideally we would have the refcnt in the objcore so we the object does
+	 * Ideally we would have the refcnt in the objcore so we object does
 	 * not need to get paged in for this check, but it does not pay off
 	 * the complexity:  The chances of an object being in front of the LRU,
 	 * with active references, likely means that it is already in core. An
 	 * object with no active references will be prodded further anyway.
 	 *
-	 * NB: Checking refcount here is no guarantee that it does not gain
-	 * another ref while we ponder its destiny without the lock held.
 	 */
 	Lck_Lock(&exp_mtx);
 	VTAILQ_FOREACH(oc, &lru, lru_list) {

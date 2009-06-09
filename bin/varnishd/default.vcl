@@ -110,11 +110,6 @@ sub vcl_deliver {
     return (deliver);
 }
 
-sub vcl_timeout {
-    /* XXX: Do not redefine vcl_timeout{}, it is not yet supported */
-    return (discard);
-}
-
 sub vcl_error {
     set obj.http.Content-Type = "text/html; charset=utf-8";
     synthetic {"

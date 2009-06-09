@@ -233,17 +233,17 @@ set spobj {
     }
     { obj.ttl
 	RW TIME
-	{                         hit               timeout error}
+	{                         hit               error}
 	"const struct sess *"
     }
     { obj.grace
 	RW TIME
-	{                         hit               timeout error}
+	{                         hit               error}
 	"const struct sess *"
     }
     { obj.lastuse
 	RO TIME
-	{                         hit       deliver timeout error}
+	{                         hit       deliver error}
 	"const struct sess *"
     }
     { obj.hash
@@ -280,11 +280,11 @@ set spobj {
     # XXX: or delta times in VCL programs, so this shouldn't be needed /phk
     { now
 	    RO TIME
-	    {recv pipe pass hash miss hit fetch deliver timeout}
+	    {recv pipe pass hash miss hit fetch deliver }
 	    "const struct sess *"
     }
     { req.backend.healthy	RO BOOL
-	    {recv pipe pass hash miss hit fetch deliver timeout}
+	    {recv pipe pass hash miss hit fetch deliver }
 	    "const struct sess *"
     }
 
