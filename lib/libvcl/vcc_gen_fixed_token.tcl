@@ -42,7 +42,6 @@ set methods {
 	{hit		{error restart pass deliver}}
 	{fetch		{error restart pass deliver}}
 	{deliver	{restart deliver}}
-	{timeout	{fetch discard}}
 	{error		{restart deliver}}
 }
 
