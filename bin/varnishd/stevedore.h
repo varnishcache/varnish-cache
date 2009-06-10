@@ -29,8 +29,6 @@
  * $Id$
  */
 
-#include "vqueue.h"
-
 struct stevedore;
 struct sess;
 struct iovec;
@@ -56,6 +54,8 @@ struct stevedore {
 	storage_object_f	*object;
 	storage_close_f		*close;
 
+	struct objcore_head	lru;
+
 	/* private fields */
 	void			*priv;
 
@@ -68,6 +68,7 @@ void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
 void STV_open(void);
 void STV_close(void);
+struct objcore_head *STV_lru(struct storage *st);
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx);

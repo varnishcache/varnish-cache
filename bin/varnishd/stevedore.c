@@ -81,7 +81,7 @@ STV_alloc(struct sess *sp, size_t size)
 			break;
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(sp) == -1)
+		if (EXP_NukeOne(sp, &stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -124,6 +124,7 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 	*stv = *stv2;
 	AN(stv->name);
 	AN(stv->alloc);
+	VTAILQ_INIT(&stv->lru);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
@@ -156,6 +157,16 @@ STV_close(void)
 		if (stv->close != NULL)
 			stv->close(stv);
 	}
+}
+
+struct objcore_head *
+STV_lru(struct storage *st)
+{
+	if (st == NULL)
+		return (NULL);
+	CHECK_OBJ(st, STORAGE_MAGIC);
+
+	return (&st->stevedore->lru);
 }
 
 const struct choice STV_choice[] = {
