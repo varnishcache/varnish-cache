@@ -58,15 +58,16 @@ SVNID("$Id$")
 #include "cli.h"
 #include "vsb.h"
 #include "cli_common.h"
-#include "heritage.h"
-#include "mgt.h"
-#include "mgt_cli.h"
 #include "vev.h"
 #include "vsha256.h"
 #include "shmlog.h"
-
 #include "vlu.h"
 #include "vss.h"
+
+
+#include "mgt.h"
+#include "heritage.h"
+#include "mgt_cli.h"
 
 static int		cli_i = -1, cli_o = -1;
 static const char	*secret_file;

@@ -49,8 +49,6 @@ SVNID("$Id$")
 #endif
 #include "vsb.h"
 
-#include "vqueue.h"
-
 #include "libvcl.h"
 #include "cli.h"
 #include "cli_priv.h"

@@ -33,8 +33,6 @@
 
 #include <pthread.h>
 
-#include "vqueue.h"
-
 struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	list;
 	int				sock;

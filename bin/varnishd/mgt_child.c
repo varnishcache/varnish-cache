@@ -54,8 +54,8 @@ SVNID("$Id$")
 #include <sys/prctl.h>
 #endif
 
-#include "heritage.h"
 #include "mgt.h"
+#include "heritage.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
