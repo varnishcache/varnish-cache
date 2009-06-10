@@ -490,7 +490,7 @@ void EXP_Insert(struct object *o);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(const struct object *o);
-int EXP_NukeOne(struct sess *sp);
+int EXP_NukeOne(struct sess *sp, struct objcore_head *lru);
 
 /* cache_fetch.c */
 int FetchHdr(struct sess *sp);

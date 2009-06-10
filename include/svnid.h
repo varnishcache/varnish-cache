@@ -31,6 +31,6 @@
 #define SVNID_H_INCLUDED
 
 #define SVNID(id) \
-	static const char *svnid __attribute__((__unused__)) = id;
+	static const char * const svnid __attribute__((__unused__)) = id;
 
 #endif

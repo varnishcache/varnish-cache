@@ -40,6 +40,7 @@
 -esym(458, VSL_stats)
 -esym(458, heritage)
 -esym(458, name_key)
+-esym(528, svnid)
 //////////////
 -passes=3
 

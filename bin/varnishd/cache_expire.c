@@ -53,11 +53,11 @@ SVNID("$Id$")
 #include "cache.h"
 #include "vcl.h"
 #include "hash_slinger.h"
+#include "stevedore.h"
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
-static VTAILQ_HEAD(,objcore) lru = VTAILQ_HEAD_INITIALIZER(lru);
 
 /*
  * This is a magic marker for the objects currently on the SIOP [look it up]
@@ -100,6 +100,7 @@ void
 EXP_Insert(struct object *o)
 {
 	struct objcore *oc;
+	struct objcore_head *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AN(o->objhead);
@@ -116,8 +117,11 @@ EXP_Insert(struct object *o)
 	(void)update_object_when(o);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
-	oc->flags |= OC_F_ONLRU;
+	lru = STV_lru(o->objstore);
+	if (lru != NULL) {
+		VTAILQ_INSERT_TAIL(lru, oc, lru_list);
+		oc->flags |= OC_F_ONLRU;
+	}
 	Lck_Unlock(&exp_mtx);
 	if (o->smp_object != NULL)
 		SMP_TTLchanged(o);
@@ -137,18 +141,22 @@ EXP_Touch(const struct object *o)
 {
 	struct objcore *oc;
 	int retval = 0;
+	struct objcore_head *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	if (oc == NULL)
+		return (retval);
+	lru = STV_lru(o->objstore);
+	if (lru == NULL)
 		return (retval);
 	AN(o->objhead);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
 	if (oc->flags & OC_F_ONLRU) {
-		VTAILQ_REMOVE(&lru, oc, lru_list);
-		VTAILQ_INSERT_TAIL(&lru, oc, lru_list);
+		VTAILQ_REMOVE(lru, oc, lru_list);
+		VTAILQ_INSERT_TAIL(lru, oc, lru_list);
 		VSL_stats->n_lru_moved++;
 		retval = 1;
 	}
@@ -211,6 +219,7 @@ exp_timer(struct sess *sp, void *priv)
 	struct objcore *oc;
 	struct object *o;
 	double t;
+	struct objcore_head *lru;
 
 	(void)priv;
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
@@ -237,7 +246,9 @@ exp_timer(struct sess *sp, void *priv)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		VTAILQ_REMOVE(&lru, o->objcore, lru_list);
+		lru = STV_lru(o->objstore);
+		AN(lru);
+		VTAILQ_REMOVE(lru, o->objcore, lru_list);
 		oc->flags &= ~OC_F_ONLRU;
 
 		{	/* Sanity checking */
@@ -263,7 +274,7 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct sess *sp)
+EXP_NukeOne(struct sess *sp, struct objcore_head *lru)
 {
 	struct objcore *oc;
 	struct object *o;
@@ -279,7 +290,7 @@ EXP_NukeOne(struct sess *sp)
 	 *
 	 */
 	Lck_Lock(&exp_mtx);
-	VTAILQ_FOREACH(oc, &lru, lru_list) {
+	VTAILQ_FOREACH(oc, lru, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;
@@ -287,7 +298,7 @@ EXP_NukeOne(struct sess *sp)
 			break;
 	}
 	if (oc != NULL) {
-		VTAILQ_REMOVE(&lru, oc, lru_list);
+		VTAILQ_REMOVE(lru, oc, lru_list);
 		oc->flags &= ~OC_F_ONLRU;
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
