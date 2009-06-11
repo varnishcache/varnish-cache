@@ -2,7 +2,7 @@
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2009-2009 Linpro AS])
+Copyright (c) 2006-2009 Linpro AS])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@projects.linpro.no])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
