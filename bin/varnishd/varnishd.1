@@ -350,6 +350,38 @@ option is specified, the list includes a brief explanation of each
 parameter.
 .It Cm ping Op Ns Ar timestamp
 Ping the child process.
+.It Cm purge Ar field Ar operator Ar argument Op && Ar field Ar operator Ar argument Op ...
+Immediately invalidate all documents matching the purge expression.
+See
+.Va Purge expressions
+for more documentation and examples.
+.It Cm purge.hash Ar regex
+Immediately invalidate all documents where
+.Va obj.hash
+matches the
+.Va regex .
+The default object hash contains the values from
+.Va req.url
+and either
+.Va req.http.host
+or
+.Va server.ip
+depending on the presence of a Host: header in the request sent by the
+client.  The object hash may be modified further by
+.Va VCL.
+.It Cm purge.list
+Display the purge list.
+.Pp
+All requests for objects from the cache are matched against items on
+the purge list.  If an object in the cache is older than a matching
+purge list item, it is considered "purged", and will be fetched from
+the backend instead.
+.Pp
+When a purge expression is older than all the objects in the cache, it
+is removed from the list.
+.It Cm purge.url Ar regexp
+Immediately invalidate all documents whose URL matches the specified
+regular expression.
 .It Cm start
 Start the child process if it is not already running.
 .It Cm stats
@@ -363,8 +395,7 @@ Check the status of the child process.
 .It Cm stop
 Stop the child process.
 .It Cm url.purge Ar regexp
-Immediately invalidate all documents whos URL matches the specified
-regular expression.
+Deprecated, see purge.url instead
 .It Cm vcl.discard Ar configname
 Discard the configuration specified by
 .Ar configname .
@@ -588,6 +619,46 @@ Note that this will generate large amounts of log data.
 The default is
 .Dv off .
 .El
+.Ss Purge expressions
+A purge expression consists of one or more conditions.  A condition
+consists of a field, a operator, and an argument. Conditions can be
+ANDed together with "&&".
+.Pp
+A field can be any of the variables from VCL, for instance
+.Va req.url ,
+.Va req.http.host
+or
+.Va obj.set-cookie .
+.Pp
+Operators are "==" for direct comparision, "~" for a regular
+expression match, and ">" or "<" for size comparisons.  Prepending an
+operator with "!" negates the expression.
+.Pp
+The argument could be a quoted string, a regexp, or an integer.
+Integers can have "KB", "MB", "GB" or "TB" appended for size related
+fields.
+.Pp
+Simple example: All requests where
+.Va req.url
+exactly matches the string
+.Va /news
+are purged from the cache.
+.Bd -literal -offset 4n
+req.url == "/news"
+.Ed
+.Pp
+Example: Purge all documents where the name does not end with ".ogg",
+and where the size of the object is greater than 10 megabytes.
+.Bd -literal -offset 4n
+req.url !~ "\.ogg" && obj.size > 10MB
+.Ed
+.Pp
+Example: Purge all documents where the serving host is "example.com"
+or "www.example.com", and where the Set-Cookie header received from
+the backend contains "USERID=1663".
+.Bd -literal -offset 4n
+req.http.host ~ "^(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
+.Ed
 .Sh SEE ALSO
 .Xr varnishlog 1 ,
 .Xr varnishhist 1 ,
@@ -614,4 +685,6 @@ daemon was developed by
 .An Poul-Henning Kamp Aq phk@phk.freebsd.dk
 in cooperation with Verdens Gang AS and Linpro AS.
 This manual page was written by
-.An Dag-Erling Sm\(/orgrav Aq des@des.no .
+.An Dag-Erling Sm\(/orgrav Aq des@des.no
+with updates by
+.An Stig Sandbeck Mathisen Aq ssm@debian.org
