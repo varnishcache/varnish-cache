@@ -663,14 +663,14 @@ req.url == "/news"
 Example: Purge all documents where the name does not end with ".ogg",
 and where the size of the object is greater than 10 megabytes.
 .Bd -literal -offset 4n
-req.url !~ "\.ogg" && obj.size > 10MB
+req.url !~ "\\.ogg$" && obj.size > 10MB
 .Ed
 .Pp
 Example: Purge all documents where the serving host is "example.com"
 or "www.example.com", and where the Set-Cookie header received from
 the backend contains "USERID=1663".
 .Bd -literal -offset 4n
-req.http.host ~ "^(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
+req.http.host ~ "^(www\\.)example.com$" && obj.set-cookie ~ "USERID=1663"
 .Ed
 .Sh SEE ALSO
 .Xr varnishlog 1 ,
