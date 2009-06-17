@@ -45,7 +45,7 @@ SVNID("$Id$")
 #include "compat/daemon.h"
 
 int
-daemon(int nochdir, int noclose)
+varnish_daemon(int nochdir, int noclose)
 {
 	struct sigaction osa, sa;
 	int fd;
