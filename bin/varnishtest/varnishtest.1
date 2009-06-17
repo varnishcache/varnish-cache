@@ -69,23 +69,23 @@ File to use as a script
 .Ss Example script
 .Bd -literal -offset 4n
 # Start a varnish instance called "v1"
-varnish v1 -arg "-b localhost:9080" -start
+varnish v1 \-arg "\-b localhost:9080" \-start
 
 # Create a server thread called "s1"
 server s1 {
     # Receive a request
     rxreq
     # Send a standard response
-    txresp -hdr "Connection: close" -body "012345\\n"
+    txresp \-hdr "Connection: close" \-body "012345\\n"
 }
 
 # Start the server thread
-server s1 -start
+server s1 \-start
 
 # Create a client thread called "c1"
 client c1 {
    # Send a request
-   txreq -url "/"
+   txreq \-url "/"
    # Wait for a response
    rxresp
    # Insist that it be a success
@@ -93,13 +93,13 @@ client c1 {
 }
 
 # Run the client
-client c1 -run
+client c1 \-run
 
 # Wait for the server to die
-server s1 -wait
+server s1 \-wait
 
 # (Forcefully) Stop the varnish instance.
-varnish v1 -stop
+varnish v1 \-stop
 .Ed
 .Ss Example script output
 The output, running this script looks as follows.
@@ -112,7 +112,7 @@ The second field where the message comes from
 The rest of the line is anyones guess :-)
 .Bd -literal -offset 4n
 #    TEST tests/b00000.vtc starting
-###  v1   CMD: cd ../varnishd && ./varnishd -d -d -n v1 -a :9081 -T :9001 -b localhost:9080
+###  v1   CMD: cd ../varnishd && ./varnishd \-d \-d \-n v1 \-a :9081 \-T :9001 \-b localhost:9080
 ###  v1   opening CLI connection
 #### v1   debug| NB: Storage size limited to 2GB on 32 bit architecture,\\n
 #### v1   debug| NB: otherwise we could run out of address space.\\n
