@@ -141,13 +141,13 @@ Exclude log entries with the specified tag.
 The following example displays a continuously updated list of the most
 frequently requested URLs:
 .Bd -literal
-varnishtop -i RxURL
+varnishtop \-i RxURL
 .Ed
 .Pp
 The following example displays a continuously updated list of the most
 commonly used user agents:
 .Bd -literal
-varnishtop -i RxHeader -C -I \\^User-Agent
+varnishtop \-i RxHeader \-C \-I \\^User-Agent
 .Ed
 .Sh SEE ALSO
 .Xr varnishd 1 ,

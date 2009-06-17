@@ -232,13 +232,13 @@ The following log entry tags are currently defined:
 The following command line simply copies all log entries to a log
 file:
 .Bd -literal -offset 4n
-$ varnishlog -w /var/log/varnish.log
+$ varnishlog \-w /var/log/varnish.log
 .Ed
 .Pp
 The following command line reads that same log file and displays
 requests for the front page:
 .Bd -literal -offset 4n
-$ varnishlog -r /var/log/varnish.log -c -o RxURL '^/$'
+$ varnishlog \-r /var/log/varnish.log \-c \-o RxURL '^/$'
 .Ed
 .Sh SEE ALSO
 .Xr varnishd 1 ,
