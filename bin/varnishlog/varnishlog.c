@@ -44,9 +44,7 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <limits.h>
 
-#ifndef HAVE_DAEMON
 #include "compat/daemon.h"
-#endif
 
 #include "vsb.h"
 #include "vpf.h"
@@ -373,7 +371,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (D_flag && daemon(0, 0) == -1) {
+	if (D_flag && varnish_daemon(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
 			vpf_remove(pfh);

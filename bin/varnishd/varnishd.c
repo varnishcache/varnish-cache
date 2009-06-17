@@ -50,9 +50,7 @@ SVNID("$Id$")
 #include <time.h>
 #include <unistd.h>
 
-#ifndef HAVE_DAEMON
 #include "compat/daemon.h"
-#endif
 
 #ifndef HAVE_STRLCPY
 #include "compat/strlcpy.h"
@@ -716,7 +714,7 @@ main(int argc, char * const *argv)
 	if (d_flag == 1)
 		DebugStunt();
 	if (d_flag < 2 && !F_flag)
-		AZ(daemon(1, d_flag));
+		AZ(varnish_daemon(1, d_flag));
 	if (d_flag == 1)
 		printf("%d\n", getpid());
 

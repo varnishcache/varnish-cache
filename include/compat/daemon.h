@@ -33,7 +33,9 @@
 #define COMPAT_DAEMON_H_INCLUDED
 
 #ifndef HAVE_DAEMON
-int daemon(int nochdir, int noclose);
+int varnish_daemon(int nochdir, int noclose);
+#else 
+#define varnish_daemon(a,b)  daemon(a,b)
 #endif
 
 #endif
