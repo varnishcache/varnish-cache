@@ -62,8 +62,3 @@ struct ban {
 	struct vsb		*vsb;
 	char			*test;
 };
-
-VTAILQ_HEAD(banhead,ban);
-
-extern struct banhead ban_head;
-extern struct lock ban_mtx;

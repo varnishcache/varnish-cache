@@ -60,8 +60,8 @@ SVNID("$Id$")
 
 #include "cache_ban.h"
 
-struct banhead ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
-struct lock ban_mtx;
+static VTAILQ_HEAD(banhead,ban)	ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
+static struct lock ban_mtx;
 static struct ban *ban_magic;
 
 /*--------------------------------------------------------------------
@@ -529,23 +529,31 @@ BAN_RefBan(double t0, const struct ban *tail)
 }
 
 /*--------------------------------------------------------------------
- * Put a skeleton ban in the list, unless there is an indentical one
- * already.
+ * Put a skeleton ban in the list, unless there is an identical,
+ * time & condition, ban already in place.
+ *
+ * If a newer ban has same condition, mark the new ban GONE, and
+ * mark any older bans, with the same condition, GONE as well.
  */
 
 void
 BAN_Reload(double t0, unsigned flags, const char *ban)
 {
 	struct ban *b, *b2;
+	int gone = 0;
 
 	ASSERT_CLI();
 
 	(void)flags;		/* for future use */
+
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b->t0 > t0)
+		if (!strcmp(b->test, ban)) {
+			if (b->t0 > t0)
+				gone |= BAN_F_GONE;
+			else if (b->t0 == t0)
+				return;
+		} else if (b->t0 > t0)
 			continue;
-		if (b->t0 == t0 && !strcmp(b->test, ban))
-			return;
 		if (b->t0 < t0)
 			break;
 	}
@@ -558,17 +566,23 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 	b2->test = strdup(ban);
 	AN(b2->test);
 	b2->t0 = t0;
-	b2->flags |= BAN_F_PENDING;
+	b2->flags |= BAN_F_PENDING | gone;
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
 
-	/* XXX: Hunt duplicates down */
+	/* Hunt down older duplicates */
+	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
+		if (b->flags & BAN_F_GONE)
+			continue;
+		if (!strcmp(b->test, b2->test))
+			b->flags |= BAN_F_GONE;
+	}
 }
 
 /*--------------------------------------------------------------------
- * All silos have read their bans now compile them.
+ * All silos have read their bans, now compile them.
  */
 
 void
@@ -585,6 +599,8 @@ BAN_Compile(void)
 		if (!(b->flags & BAN_F_PENDING))
 			continue;
 		b->flags &= ~BAN_F_PENDING;
+		if (b->flags & BAN_F_GONE)
+			continue;
 		av = ParseArgv(b->test, 0);
 		XXXAN(av);
 		XXXAZ(av[0]);
