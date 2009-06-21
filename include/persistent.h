@@ -96,7 +96,11 @@ struct smp_ident {
 #define	SMP_END_STUFF		5
 };
 
-#define SMP_IDENT_SIZE		(32 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 6 * 8)
+/*
+ * The size of smp_ident should be fixed and constant across all platforms.
+ * We enforce that with the following #define and an assert in smp_init()
+ */
+#define SMP_IDENT_SIZE		112
 
 #define SMP_IDENT_STRING	"Varnish Persistent Storage Silo"
 
@@ -111,7 +115,6 @@ struct smp_sign {
 	uint64_t		length;		/* NB: Must be last */
 };
 
-#define SMP_SIGN_SIZE		(8 + 4 + 8 + 8)
 #define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + SHA256_LEN)
 
 /*
@@ -122,8 +125,6 @@ struct smp_segptr {
 	uint64_t		offset;
 	uint64_t		length;
 };
-
-#define SMP_SEGMENT_SIZE	(8+8)
 
 /*
  * Ban description
@@ -146,8 +147,6 @@ struct smp_object {
 	struct object		*ptr;
 	uint64_t		len;	/* XXX: madvise */
 };
-
-#define SMP_OBJECT_SIZE		(32 + 8 + 8 + sizeof(void *) + 8)
 
 /*
  * Segment

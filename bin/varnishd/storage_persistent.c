@@ -411,9 +411,6 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 #undef SIZOF
 
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
-	/* XXX: assert(sizeof(struct smp_sign) == SMP_SIGN_SIZE); */
-	/* XXX: assert(sizeof(struct smp_object) == SMP_OBJECT_SIZE); */
-	/* XXX: assert(sizeof smp_object.hash == DIGEST_LEN); */
 
 	/* Allocate softc */
 	ALLOC_OBJ(sc, SMP_SC_MAGIC);
