@@ -345,7 +345,6 @@ smp_valid_silo(struct smp_sc *sc)
 		return (1);
 
 	si = sc->ident;
-printf("VALID: %p\n", si);
 	if (strcmp(si->ident, SMP_IDENT_STRING))
 		return (2);
 	if (si->byte_order != 0x12345678)
@@ -864,11 +863,13 @@ smp_thread(struct sess *sp, void *priv)
 	(void)sp;
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
 
+	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		smp_load_seg(sp, sc, sg);
 
 	sc->flags |= SMP_F_LOADED;
 	BAN_Deref(&sc->tailban);
+	sc->tailban = NULL;
 	while (1)	
 		sleep (1);
 	return (NULL);
@@ -907,9 +908,12 @@ smp_open(const struct stevedore *st)
 
 	/* XXX: save segments to ensure consistency between seg1 & seg2 ? */
 
+	/* XXX: abandon early segments to make sure we have free space ? */
+
 	/* Open a new segment, so we are ready to write */
 	smp_new_seg(sc);
 
+	/* Start the worker silo worker thread, it will load the objects */
 	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
 
 	VTAILQ_INSERT_TAIL(&silos, sc, list);
@@ -950,6 +954,7 @@ smp_object(const struct sess *sp)
 
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
+	assert(sg->nalloc < sg->maxobj);
 	so = &sg->objs[sg->nalloc++];
 	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
