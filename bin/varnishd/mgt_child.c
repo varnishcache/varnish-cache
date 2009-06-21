@@ -344,7 +344,6 @@ start_child(struct cli *cli)
 	e->callback = child_listener;
 	AZ(vev_add(mgt_evb, e));
 	ev_listen = e;
-
 	AZ(ev_poker);
 	if (params->ping_interval > 0) {
 		e = vev_new();
@@ -361,11 +360,10 @@ start_child(struct cli *cli)
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		REPORT(LOG_ERR, "Pushing vcls failed: %s", p);
 		free(p);
-		/* Pick up any stuff lingering on stdout/stderr */
-		(void)child_listener(NULL, EV_RD);
-		exit(2);
-	}
-	child_state = CH_RUNNING;
+		child_state = CH_RUNNING;
+		mgt_stop_child();
+	} else
+		child_state = CH_RUNNING;
 }
 
 /*--------------------------------------------------------------------*/
