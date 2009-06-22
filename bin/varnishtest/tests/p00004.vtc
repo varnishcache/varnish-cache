@@ -36,8 +36,9 @@ client c1 {
 
 varnish v1 -expect n_object == 2
 
-varnish v1 -cliok stop
-varnish v1 -cliok start -cliok "debug.xid 2000"
+varnish v1 -stop
+varnish v1 -start 
+varnish v1 -cliok "debug.xid 2000"
 
 varnish v1 -expect n_object == 2
 
