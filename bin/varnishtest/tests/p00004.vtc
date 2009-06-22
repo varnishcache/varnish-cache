@@ -1,0 +1,62 @@
+# $Id$
+
+test "Check object references"
+
+shell "rm -f /tmp/__v1/_.per"
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: foo"
+	rxreq 
+	txresp -hdr "Bar: bar"
+} -start
+
+varnish v1 \
+	-arg "-pdiag_bitmap=0x20000" \
+	-arg "-spersistent,/tmp/__v1/_.per,10m" \
+	-vcl+backend { } -start 
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo"
+} -run
+
+varnish v1 -expect n_object == 1
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1002"
+	expect resp.http.bar == "bar"
+} -run
+
+varnish v1 -expect n_object == 2
+
+varnish v1 -cliok stop
+varnish v1 -cliok start -cliok "debug.xid 2000"
+
+varnish v1 -expect n_object == 2
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "2001 1001"
+	expect resp.http.foo == "foo"
+} -run
+
+varnish v1 -expect n_object == 2
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "2002 1002"
+	expect resp.http.bar == "bar"
+} -run
+
+varnish v1 -expect n_object == 2
