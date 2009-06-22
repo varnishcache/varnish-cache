@@ -37,6 +37,7 @@
 SVNID("$Id$")
 
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -141,6 +142,18 @@ struct smp_sc {
 	struct ban		*tailban;
 
 	struct lock		mtx;
+
+	/* Cleaner metrics */
+
+	unsigned		min_nseg;
+	unsigned		aim_nseg;
+	unsigned		max_nseg;
+
+	unsigned		aim_nobj;
+
+	uint64_t		min_segl;
+	uint64_t		aim_segl;
+	uint64_t		max_segl;
 };
 
 /*
@@ -282,6 +295,21 @@ smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, con
 }
 
 /*--------------------------------------------------------------------
+ * Caculate payload of some stuff
+ */
+
+static uint64_t
+smp_stuff_len(const struct smp_sc *sc, unsigned stuff)
+{
+	uint64_t l;
+
+	assert(stuff < SMP_END_STUFF);
+	l = sc->ident->stuff[stuff + 1] - sc->ident->stuff[stuff];
+	l -= SMP_SIGN_SPACE;
+	return (l);
+}
+
+/*--------------------------------------------------------------------
  * Initialize a Silo with a valid but empty structure.
  *
  * XXX: more intelligent sizing of things.
@@ -361,14 +389,22 @@ smp_valid_silo(struct smp_sc *sc)
 		return (8);
 	sc->unique = si->unique;
 
-	/* XXX: Sanity check stuff[4] */
+	/* XXX: Sanity check stuff[6] */
 
 	assert(si->stuff[SMP_BAN1_STUFF] > sizeof *si + SHA256_LEN);
-	assert(si->stuff[SMP_BAN2_STUFF] > si->stuff[0]);
-	assert(si->stuff[SMP_SEG1_STUFF] > si->stuff[1]);
-	assert(si->stuff[SMP_SEG2_STUFF] > si->stuff[2]);
-	assert(si->stuff[SMP_SPC_STUFF] > si->stuff[3]);
+	assert(si->stuff[SMP_BAN2_STUFF] > si->stuff[SMP_BAN1_STUFF]);
+	assert(si->stuff[SMP_SEG1_STUFF] > si->stuff[SMP_BAN2_STUFF]);
+	assert(si->stuff[SMP_SEG2_STUFF] > si->stuff[SMP_SEG1_STUFF]);
+	assert(si->stuff[SMP_SPC_STUFF] > si->stuff[SMP_SEG2_STUFF]);
 	assert(si->stuff[SMP_END_STUFF] == sc->mediasize);
+
+	assert(smp_stuff_len(sc, SMP_SEG1_STUFF) > 65536);
+	assert(smp_stuff_len(sc, SMP_SEG1_STUFF) ==
+	  smp_stuff_len(sc, SMP_SEG2_STUFF));
+
+	assert(smp_stuff_len(sc, SMP_BAN1_STUFF) > 65536);
+	assert(smp_stuff_len(sc, SMP_BAN1_STUFF) ==
+	  smp_stuff_len(sc, SMP_BAN2_STUFF));
 
 	smp_def_sign(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF], "BAN 1");
 	smp_def_sign(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF], "BAN 2");
@@ -387,6 +423,69 @@ smp_valid_silo(struct smp_sc *sc)
 	if (i && j)
 		return (200 + i * 10 + j);
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Calculate cleaner metrics from silo dimensions
+ */
+
+static void
+smp_metrics(struct smp_sc *sc)
+{
+
+	/*
+	 * We do not want to loose too big chunks of the silos
+	 * content when we are forced to clean a segment.
+	 *
+	 * For now insist that a segment covers no more than 1% of the silo.
+	 *
+	 * XXX: This should possibly depend on the size of the silo so
+	 * XXX: trivially small silos do not run into trouble along
+	 * XXX: the lines of "one object per silo".
+	 */
+
+	sc->min_nseg = 100;
+	sc->max_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->min_nseg;
+
+	fprintf(stderr, "min_nseg = %u, max_segl = %ju\n",
+	    sc->min_nseg, (uintmax_t)sc->max_segl);
+
+	/*
+	 * The number of segments are limited by the size of the segment
+	 * table(s) and from that follows the minimum size of a segmement.
+	 */
+
+	sc->max_nseg = smp_stuff_len(sc, SMP_SEG1_STUFF) / sc->min_nseg;
+	sc->min_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->max_nseg;
+
+	fprintf(stderr, "max_nseg = %u, min_segl = %ju\n",
+	    sc->max_nseg, (uintmax_t)sc->min_segl);
+
+	/*
+	 * Set our initial aim point at the exponential average of the
+	 * two extremes.
+	 *
+	 * XXX: This is a pretty arbitrary choice, but having no idea
+	 * XXX: object count, size distribution or ttl pattern at this
+	 * XXX: point, we have to do something.
+	 */
+
+	sc->aim_nseg =
+	   (unsigned) exp((log(sc->min_nseg) + log(sc->max_nseg))*.5);
+	sc->aim_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->aim_nseg;
+
+	fprintf(stderr, "aim_nseg = %u, aim_segl = %ju\n",
+	    sc->aim_nseg, (uintmax_t)sc->aim_segl);
+
+	/*
+	 * Objects per segment
+	 *
+	 * XXX: calculate size of minimum object (workspace, http etc)
+	 */
+
+	sc->aim_nobj = sc->max_segl / 4000;
+
+	fprintf(stderr, "aim_nobj = %u\n", sc->aim_nobj);
 }
 
 /*--------------------------------------------------------------------
@@ -447,11 +546,14 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 		smp_newsilo(sc);
 	AZ(smp_valid_silo(sc));
 
+	smp_metrics(sc);
+
 	parent->priv = sc;
 
 	/* XXX: only for sendfile I guess... */
 	mgt_child_inherit(sc->fd, "storage_persistent");
 }
+
 
 /*--------------------------------------------------------------------
  * Write the segmentlist back to the silo.
@@ -725,6 +827,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		(void)HSH_Insert(sp);
 		sg->nalloc++;
 	}
+	WRK_SumStat(sp->wrk);
 }
 
 /*--------------------------------------------------------------------
@@ -772,7 +875,7 @@ smp_new_seg(struct smp_sc *sc)
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
 
-	sg->maxobj = 16;		/* XXX: param ? */
+	sg->maxobj = sc->aim_nobj;
 	sg->objs = malloc(sizeof *sg->objs * sg->maxobj);
 	AN(sg->objs);
 
@@ -786,7 +889,8 @@ smp_new_seg(struct smp_sc *sc)
 		sg->offset = sg2->offset + sg2->length;
 		assert(sg->offset < sc->mediasize);
 	}
-	sg->length = sc->ident->stuff[SMP_END_STUFF] - sg->offset;
+	sg->length = sc->aim_segl;
+	sg->length &= ~7;
 
 	assert(sg->offset + sg->length <= sc->mediasize);
 
@@ -951,6 +1055,12 @@ smp_object(const struct sess *sp)
 
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
+	if (sg->nalloc >= sg->maxobj) {
+		smp_close_seg(sc, sc->cur_seg);
+		smp_new_seg(sc);
+		fprintf(stderr, "New Segment\n");
+		sg = sc->cur_seg;
+	}
 	assert(sg->nalloc < sg->maxobj);
 	so = &sg->objs[sg->nalloc++];
 	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);

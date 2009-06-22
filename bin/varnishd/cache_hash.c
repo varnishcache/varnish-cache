@@ -407,6 +407,7 @@ HSH_Insert(const struct sess *sp)
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
+	sp->wrk->stats->n_object++;
 
 	/* XXX: Insert in EXP */
 	return (oc);
