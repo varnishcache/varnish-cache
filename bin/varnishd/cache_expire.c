@@ -97,6 +97,31 @@ update_object_when(const struct object *o)
  */
 
 void
+EXP_Inject(struct objcore *oc, struct objcore_head *lru, double ttl)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	Lck_Lock(&exp_mtx);
+	assert(oc->timer_idx == BINHEAP_NOIDX);
+	oc->timer_when = ttl;
+	binheap_insert(exp_heap, oc);
+	assert(oc->timer_idx != BINHEAP_NOIDX);
+	if (lru != NULL) {
+		VTAILQ_INSERT_TAIL(lru, oc, lru_list);
+		oc->flags |= OC_F_ONLRU;
+	}
+	Lck_Unlock(&exp_mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Object has been added to cache, record in lru & binheap.
+ *
+ * We grab a reference to the object, which will keep it around until
+ * we decide its time to let it go.
+ */
+
+void
 EXP_Insert(struct object *o)
 {
 	struct objcore *oc;
