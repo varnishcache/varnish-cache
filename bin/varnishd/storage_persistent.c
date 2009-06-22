@@ -800,6 +800,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	uint64_t length;
 	struct smp_segment *ss;
 	struct smp_object *so;
+	struct objcore *oc;
 	uint32_t no;
 	double t_now = TIM_real();
 	struct smp_signctx ctx[1];
@@ -819,13 +820,15 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		if (so->ttl < t_now)
 			continue;
 		HSH_Prealloc(sp);
-		sp->wrk->nobjcore->flags |= OC_F_PERSISTENT;
-		sp->wrk->nobjcore->flags &= ~OC_F_BUSY;
-		sp->wrk->nobjcore->obj = (void*)so;
-		sp->wrk->nobjcore->smp_seg = sg;
-		sp->wrk->nobjcore->ban = BAN_RefBan(so->ban, sc->tailban);
+		oc = sp->wrk->nobjcore;
+		oc->flags |= OC_F_PERSISTENT;
+		oc->flags &= ~OC_F_BUSY;
+		oc->obj = (void*)so;
+		oc->smp_seg = sg;
+		oc->ban = BAN_RefBan(so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
+		EXP_Inject(oc, NULL, so->ttl);
 		sg->nalloc++;
 	}
 	WRK_SumStat(sp->wrk);

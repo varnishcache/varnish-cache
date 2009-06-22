@@ -408,8 +408,6 @@ HSH_Insert(const struct sess *sp)
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
 	sp->wrk->stats->n_object++;
-
-	/* XXX: Insert in EXP */
 	return (oc);
 }
 
