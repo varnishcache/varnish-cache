@@ -268,8 +268,8 @@ dump(void)
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (tp->count <= 1.0)
 			break;
-		len = tp->rec[1];
-		printf("%9.2f %*.*s\n", tp->count, len, len, tp->rec + 4);
+		len = SHMLOG_LEN(tp->rec);
+		printf("%9.2f %*.*s\n", tp->count, len, len, tp->rec + SHMLOG_DATA);
 	}
 }
 
