@@ -334,6 +334,11 @@ EXP_NukeOne(struct sess *sp, struct objcore_head *lru)
 	if (oc == NULL)
 		return (-1);
 
+	/* o is never allocated so this shouldn't work
+	 * making a comment so I don't forget
+	 * why does no test case capture this?
+	 * could be my swine flu riddled mind playing games? / Artur
+	 */
 	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
 	HSH_Deref(sp->wrk, &o);
 	return (1);
