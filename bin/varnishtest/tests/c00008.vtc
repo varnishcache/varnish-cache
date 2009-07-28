@@ -6,6 +6,7 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -hdr "ETag: foo" \
 	    -body "11111\n"
 } -start
 
@@ -15,22 +16,26 @@ client c1 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.etag == "foo"
 	expect resp.http.content-length == 6
 
 	txreq -url "/foo" \
 	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.etag == "foo"
 
 	txreq -url "/foo" \
 	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
 	rxresp
 	expect resp.status == 304
+	expect resp.http.etag == "foo"
 
 	txreq -url "/foo" \
 	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:02 GMT"
 	rxresp
 	expect resp.status == 304
+	expect resp.http.etag == "foo"
 } 
 
 client c1 -run
