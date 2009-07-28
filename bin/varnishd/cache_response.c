@@ -47,6 +47,7 @@ static void
 res_do_304(struct sess *sp)
 {
 	char lm[64];
+	char *p;
 
 	WSP(sp, SLT_Length, "%u", 0);
 
@@ -61,6 +62,19 @@ res_do_304(struct sess *sp)
 		TIM_format(sp->obj->last_modified, lm);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Last-Modified: %s", lm);
 	}
+
+	/* http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5 */
+	if (http_GetHdr(sp->obj->http, H_Cache_Control, &p))
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Cache-Control: %s", p);
+	if (http_GetHdr(sp->obj->http, H_Content_Location, &p))
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Content-Location: %s", p);
+	if (http_GetHdr(sp->obj->http, H_ETag, &p))
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "ETag: %s", p);
+	if (http_GetHdr(sp->obj->http, H_Expires, &p))
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Expires: %s", p);
+	if (http_GetHdr(sp->obj->http, H_Vary, &p))
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Vary: %s", p);
+
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
 	sp->wantbody = 0;
