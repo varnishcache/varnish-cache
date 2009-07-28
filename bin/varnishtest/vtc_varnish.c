@@ -381,9 +381,14 @@ varnish_wait(struct varnish *v)
 	vtc_log(v->vl, 2, "R %d Status: %04x", r, status);
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return;
+#ifdef WCOREDUMP
 	vtc_log(v->vl, 0, "Bad exit code: %04x sig %x exit %x core %x",
 	    status, WTERMSIG(status), WEXITSTATUS(status),
 	    WCOREDUMP(status));
+#else
+	vtc_log(v->vl, 0, "Bad exit code: %04x sig %x exit %x",
+	    status, WTERMSIG(status), WEXITSTATUS(status));
+#endif
 }
 
 /**********************************************************************
