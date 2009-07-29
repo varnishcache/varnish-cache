@@ -129,6 +129,13 @@ TCP_filter_http(int sock)
  * at least on FreeBSD.
  */
 
+/* 
+ * XXXXX -- Artur after debugging with victory
+ * This needs to rewrotten to use fcntl on solaris
+ * since the ioctl breaks connects.
+ * How to know we are on solaris?
+*/
+
 void
 TCP_blocking(int sock)
 {
