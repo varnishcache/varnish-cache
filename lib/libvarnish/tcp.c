@@ -57,11 +57,6 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 
-/* Solaris can't use the ioctl" */
-#ifdef __sun
-#include <fcntl.h>
-#endif
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -132,9 +127,6 @@ TCP_filter_http(int sock)
  * us to do two syscalls, one to get and one to set, the latter of
  * which mucks about a bit before it ends up calling ioctl(FIONBIO),
  * at least on FreeBSD.
- *
- * On some platforms we need to use fcntl because the ioctl is unreliable
- * The one that we know this is the case for is solaris.
  */
 
 void
@@ -142,13 +134,8 @@ TCP_blocking(int sock)
 {
 	int i;
 
-#ifdef __sun
-	i = fcntl (sock, F_GETFL,0);
-	fcntl(sock, F_SETFL, i & ~O_NONBLOCK);
-#else
 	i = 0;
 	AZ(ioctl(sock, FIONBIO, &i));
-#endif
 }
 
 void
@@ -156,13 +143,8 @@ TCP_nonblocking(int sock)
 {
 	int i;
 
-#ifdef __sun
-	i = fcntl (sock, F_GETFL,0);
-	fcntl(sock, F_SETFL, i | O_NONBLOCK);
-#else
 	i = 1;
 	AZ(ioctl(sock, FIONBIO, &i));
-#endif
 }
 
 /*--------------------------------------------------------------------
