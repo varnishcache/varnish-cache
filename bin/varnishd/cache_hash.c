@@ -82,13 +82,14 @@ HSH_Grace(double g)
 
 /* Precreate an objhead and object for later use */
 void
-HSH_Prealloc(struct sess *sp)
+HSH_Prealloc(struct sess *sp, int transient)
 {
 	struct worker *w;
 	struct objhead *oh;
 	struct object *o;
 	struct storage *st;
-
+	void *p;
+	
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
@@ -106,16 +107,26 @@ HSH_Prealloc(struct sess *sp)
 		CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 
 	if (w->nobj == NULL) {
-		st = STV_alloc(sp, params->obj_workspace);
-		XXXAN(st);
-		assert(st->space > sizeof *w->nobj);
-		o = (void *)st->ptr; /* XXX: align ? */
-		st->len = sizeof *o;
-		memset(o, 0, sizeof *o);
-		o->objstore = st;
-		WS_Init(o->ws_o, "obj",
-		    st->ptr + st->len, st->space - st->len);
-		st->len = st->space;
+		if (transient) {
+			p = malloc(sizeof *o + params->obj_workspace);
+			XXXAN(p);
+			o = p;
+			p = o + 1;
+			memset(o, 0, sizeof *o);
+			o->magic = OBJECT_MAGIC;
+			WS_Init(o->ws_o, "obj", p, params->obj_workspace);
+		} else {
+			st = STV_alloc(sp, params->obj_workspace);
+			XXXAN(st);
+			assert(st->space > sizeof *w->nobj);
+			o = (void *)st->ptr; /* XXX: align ? */
+			st->len = sizeof *o;
+			memset(o, 0, sizeof *o);
+			o->objstore = st;
+			WS_Init(o->ws_o, "obj",
+			    st->ptr + st->len, st->space - st->len);
+			st->len = st->space;
+		}
 		WS_Assert(o->ws_o);
 		http_Setup(o->http, o->ws_o);
 		o->magic = OBJECT_MAGIC;
@@ -239,7 +250,7 @@ HSH_Lookup(struct sess *sp)
 	AN(hash);
 	w = sp->wrk;
 
-	HSH_Prealloc(sp);
+	HSH_Prealloc(sp, 0);
 	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
 	
 	if (sp->objhead != NULL) {
@@ -458,7 +469,11 @@ HSH_Deref(struct object **oo)
 
 	ESI_Destroy(o);
 	HSH_Freestore(o);
-	STV_free(o->objstore);
+	if (o->objstore != NULL)
+		STV_free(o->objstore);
+	else
+		FREE_OBJ(o);
+		
 	VSL_stats->n_object--;
 
 	if (oh == NULL)

@@ -307,7 +307,7 @@ cnt_error(struct sess *sp)
 
 	w = sp->wrk;
 	if (sp->obj == NULL) {
-		HSH_Prealloc(sp);
+		HSH_Prealloc(sp, 1);
 		sp->obj = sp->wrk->nobj;
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
@@ -734,7 +734,7 @@ cnt_pass(struct sess *sp)
 	}
 	assert(sp->handling == VCL_RET_PASS);
 	sp->acct_req.pass++;
-	HSH_Prealloc(sp);
+	HSH_Prealloc(sp, 0);
 	sp->obj = sp->wrk->nobj;
 	sp->wrk->nobj = NULL;
 	sp->obj->busy = 1;

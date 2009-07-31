@@ -49,7 +49,7 @@ struct hash_slinger {
 };
 
 /* cache_hash.c */
-void HSH_Prealloc(struct sess *sp);
+void HSH_Prealloc(struct sess *sp, int transient);
 void HSH_Freestore(struct object *o);
 void HSH_Copy(const struct sess *sp, struct objhead *o);
 struct object *HSH_Lookup(struct sess *sp);
