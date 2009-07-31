@@ -78,7 +78,7 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 		return;
 	}
 	r = pthread_mutex_trylock(&ilck->mtx);
-	assert(r == 0 || errno == EBUSY);
+	assert(r == 0 || r == EBUSY);
 	if (r) {
 		VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)", p, f, l, ilck->w);
 		AZ(pthread_mutex_lock(&ilck->mtx));
