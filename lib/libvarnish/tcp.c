@@ -37,6 +37,10 @@ SVNID("$Id$")
 
 #include <netinet/in.h>
 
+#ifdef __linux
+#include <netinet/tcp.h>
+#endif
+
 #include <errno.h>
 #include <sys/ioctl.h>
 #ifdef HAVE_SYS_FILIO_H
@@ -114,6 +118,10 @@ TCP_filter_http(int sock)
 		printf("Acceptfilter(%d, httpready): %d %s\n",
 		    sock, i, strerror(errno));
 	return (i);
+#elif defined(__linux)
+	int defer = 1;
+	setsockopt(sock, SOL_TCP,TCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
+	return (0);
 #else
 	(void)sock;
 	return (0);
