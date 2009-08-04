@@ -55,7 +55,8 @@ SVNID("$Id$")
 #include "varnishapi.h"
 
 struct top {
-	unsigned char		rec[4 + 255];
+	unsigned char		rec[4];
+	unsigned char		*rec_data;
 	unsigned		clen;
 	unsigned		hash;
 	VTAILQ_ENTRY(top)	list;
@@ -100,7 +101,7 @@ accumulate(const unsigned char *p)
 			continue;
 		if (tp->clen != q - p)
 			continue;
-		if (memcmp(p + SHMLOG_DATA, tp->rec + SHMLOG_DATA,
+		if (memcmp(p + SHMLOG_DATA, tp->rec_data,
 		    q - (p + SHMLOG_DATA)))
 			continue;
 		tp->count += 1.0;
@@ -110,12 +111,15 @@ accumulate(const unsigned char *p)
 		ntop++;
 		tp = calloc(sizeof *tp, 1);
 		assert(tp != NULL);
+		tp->rec_data = calloc(l, 1);
+		assert(tp->rec_data != NULL);
 		tp->hash = u;
 		tp->count = 1.0;
 		tp->clen = q - p;
 		VTAILQ_INSERT_TAIL(&top_head, tp, list);
 	}
-	memcpy(tp->rec, p, SHMLOG_DATA + l);
+	memcpy(tp->rec, p, SHMLOG_DATA - 1);
+	memcpy(tp->rec_data, p + SHMLOG_DATA, l);
 	while (1) {
 		tp2 = VTAILQ_PREV(tp, tophead, list);
 		if (tp2 == NULL || tp2->count >= tp->count)
@@ -158,12 +162,13 @@ update(void)
 			mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
 			    tp->count, maxfieldlen, maxfieldlen,
 			    VSL_tags[tp->rec[SHMLOG_TAG]],
-			    len, len, tp->rec + SHMLOG_DATA);
+			    len, len, tp->rec_data);
 			t = tp->count;
 		}
 		tp->count *= .999;
 		if (tp->count * 10 < t || l > LINES * 10) {
 			VTAILQ_REMOVE(&top_head, tp, list);
+			free(tp->rec_data);
 			free(tp);
 			ntop--;
 		}
