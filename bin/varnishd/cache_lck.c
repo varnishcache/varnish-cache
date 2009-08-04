@@ -115,8 +115,8 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	int r;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	r = pthread_mutex_lock(&ilck->mtx);
-	assert(r == 0 || errno == EBUSY);
+	r = pthread_mutex_trylock(&ilck->mtx);
+	assert(r == 0 || r == EBUSY);
 	if (params->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0,
 		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w);
