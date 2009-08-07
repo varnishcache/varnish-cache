@@ -291,7 +291,7 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 	}
 
 	vsb_printf(b->vsb, "%s %s ", a1, a2);
-	vsb_quote(b->vsb, a3, 0);
+	vsb_quote(b->vsb, a3, -1, 0);
 	return (0);
 }
 
