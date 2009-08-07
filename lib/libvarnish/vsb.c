@@ -482,25 +482,27 @@ vsb_done(const struct vsb *s)
  * Quote a string
  */
 void
-vsb_quote(struct vsb *s, const char *p, int how)
+vsb_quote(struct vsb *s, const char *p, int len, int how)
 {
 	const char *q;
 	int quote = 0;
 
 	(void)how;	/* For future enhancements */
+	if (len == -1)
+		len = strlen(p);
 
-	for (q = p; *q != '\0'; q++) {
+	for (q = p; q < p + len; q++) {
 		if (!isgraph(*q) || *q == '"') {
 			quote++;
 			break;
 		}
 	}
 	if (!quote) {
-		(void)vsb_cat(s, p);
+		(void)vsb_bcat(s, p, len);
 		return;
 	}
 	(void)vsb_putc(s, '"');
-	for (q = p; *q != '\0'; q++) {
+	for (q = p; q < p + len; q++) {
 		switch (*q) {
 		case ' ':
 			(void)vsb_putc(s, *q);
@@ -523,9 +525,66 @@ vsb_quote(struct vsb *s, const char *p, int how)
 			if (isgraph(*q))
 				(void)vsb_putc(s, *q);
 			else
-				(void)vsb_printf(s, "\\%o", *q);
+				(void)vsb_printf(s, "\\%o", *q & 0xff);
 			break;
 		}
 	}
 	(void)vsb_putc(s, '"');
+}
+
+/*
+ * Unquote a string
+ */
+const char *
+vsb_unquote(struct vsb *s, const char *p, int len, int how)
+{
+	const char *q;
+	char *r;
+	unsigned long u;
+	char c;
+
+	(void)how;	/* For future enhancements */
+
+	if (len == -1)
+		len = strlen(p);
+
+	for (q = p; q < p + len; q++) {
+		if (*q != '\\') {
+			(void)vsb_bcat(s, q, 1);
+			continue;
+		}
+		if (++q >= p + len)
+			return ("Incomplete '\\'-sequence at end of string");
+
+		switch(*q) {
+		case 'n':
+			(void)vsb_bcat(s, "\n", 1);
+			continue;
+		case 'r':
+			(void)vsb_bcat(s, "\r", 1);
+			continue;
+		case 't':
+			(void)vsb_bcat(s, "\t", 1);
+			continue;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+			errno = 0;
+			u = strtoul(q, &r, 8);
+			if (errno != 0 || (u & ~0xff))
+				return ("\\ooo sequence out of range");
+			c = (char)u;
+			(void)vsb_bcat(s, &c, 1);
+			q = r - 1;
+			continue;
+		default:
+			(void)vsb_bcat(s, q, 1);
+		}
+	}
+	return (NULL);
 }

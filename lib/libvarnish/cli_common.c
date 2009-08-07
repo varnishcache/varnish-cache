@@ -74,7 +74,7 @@ void
 cli_quote(struct cli *cli, const char *s)
 {
 
-	vsb_quote(cli->sb, s, 0);
+	vsb_quote(cli->sb, s, -1, 0);
 }
 
 void
