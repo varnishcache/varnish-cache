@@ -483,8 +483,13 @@ cnt_fetch(struct sess *sp)
 	handling = sp->handling;
 
 	if (sp->objhead == NULL)
+		/* This is a pass from vcl_recv */
 		transient = 1;
+	else if (sp->handling == VCL_RET_PASS)
+		/* A pass from vcl_fetch is not transient */
+		transient = 0;
 	else if (sp->handling == VCL_RET_DELIVER)
+		/* Regular object */
 		transient = 0;
 	else
 		transient = 1;
@@ -582,7 +587,7 @@ cnt_fetch(struct sess *sp)
 	}
 
 	sp->obj->cacheable = 1;
-	if (sp->obj->objhead != NULL) {
+	if (!transient) {
 		VRY_Create(sp);
 		EXP_Insert(sp->obj);
 		AN(sp->obj->ban);
