@@ -8,6 +8,7 @@
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
 -e777	// float equality comparison
+-e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
 -esym(458, lbv_assert)	// unlocked access
 -esym(458, params)	// unlocked access
@@ -144,6 +145,7 @@
 -e574	// Signed-unsigned mix with relational
 -e712	// Loss of precision (assignment) (long long to
 -e747	// Significant prototype coercion (arg. no. 2) long
+-e776	// Possible truncation of addition
 
 /*
 
