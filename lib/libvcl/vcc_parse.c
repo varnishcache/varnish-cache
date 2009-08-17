@@ -235,10 +235,11 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 		Fb(tl, 1, "%sVRT_strcmp(%s, ",
 		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
 		vcc_NextToken(tl);
-		ExpectErr(tl, CSTR);
-		EncToken(tl->fb, tl->t);
+		if (!vcc_StringVal(tl)) {
+			vcc_ExpectedStringval(tl);
+			break;
+		}
 		Fb(tl, 0, ")\n");
-		vcc_NextToken(tl);
 		break;
 	default:
 		Fb(tl, 1, "%s != (void*)0\n", vp->rname);
