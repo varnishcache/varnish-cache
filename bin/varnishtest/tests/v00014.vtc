@@ -20,6 +20,7 @@ varnish v1 -vcl {
 			.interval = 1s;
 			.window = 3;
 			.threshold = 2;
+			.initial = 0;
 		}
 	}
 
