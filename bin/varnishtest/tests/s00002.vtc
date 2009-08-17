@@ -18,6 +18,7 @@ varnish v1 -vcl {
 			.interval = 1s; 
 			.window = 2; 
 			.threshold = 1; 
+			.initial = 0;
 			} 
 		}
 	sub vcl_fetch { 

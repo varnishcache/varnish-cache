@@ -54,6 +54,7 @@ struct vrt_backend_probe {
 	double		interval;
 	unsigned	window;
 	unsigned	threshold;
+	unsigned	initial;
 };
 
 /*

@@ -306,9 +306,6 @@ vbp_has_poked(struct vbp_target *vt)
 	    vt->backend->vcl_name, logmsg, bits,
 	    vt->good, vt->probe.threshold, vt->probe.window,
 	    vt->last, vt->avg, vt->resp_buf);
-
-	if (!vt->stop)
-		TIM_sleep(vt->probe.interval);
 }
 
 /*--------------------------------------------------------------------
@@ -340,24 +337,20 @@ vbp_wrk_poll_backend(void *priv)
 	if (vt->probe.threshold == 0)
 		vt->probe.threshold = 3;
 
-	if (vt->probe.threshold == ~0)
+	if (vt->probe.threshold == ~0U)
 		vt->probe.initial = vt->probe.threshold - 1;
 
 	if (vt->probe.initial > vt->probe.threshold)
 		vt->probe.initial = vt->probe.threshold;
 
-printf("Initial %u\n", vt->probe.initial);
-
 	printf("Probe(\"%s\", %g, %g)\n",
 	    vt->req, vt->probe.timeout, vt->probe.interval);
 
-if (0) {
 	for (u = 0; u < vt->probe.initial; u++) {
 		vbp_start_poke(vt);
 		vt->happy |= 1;
 		vbp_has_poked(vt);
 	}
-}
 
 	while (!vt->stop) {
 		vbp_start_poke(vt);
