@@ -242,6 +242,76 @@ vbp_poke(struct vbp_target *vt)
 }
 
 /*--------------------------------------------------------------------
+ * Record pokings...
+ */
+
+static void
+vbp_start_poke(struct vbp_target *vt)
+{
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+#define BITMAP(n, c, t, b)	vt->n <<= 1;
+#include "cache_backend_poll.h"
+#undef BITMAP
+
+	vt->last = 0;
+	vt->resp_buf[0] = '\0';
+}
+
+static void
+vbp_has_poked(struct vbp_target *vt)
+{
+	unsigned i, j;
+	uint64_t u;
+	const char *logmsg;
+	char bits[10];
+
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+	/* Calculate exponential average */
+	if (vt->happy & 1) {
+		if (vt->rate < AVG_RATE)
+			vt->rate += 1.0;
+		vt->avg += (vt->last - vt->avg) / vt->rate;
+	}
+
+	i = 0;
+#define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
+#include "cache_backend_poll.h"
+#undef BITMAP
+	bits[i] = '\0';
+
+	u = vt->happy;
+	for (i = j = 0; i < vt->probe.window; i++) {
+		if (u & 1)
+			j++;
+		u >>= 1;
+	}
+	vt->good = j;
+
+	if (vt->good >= vt->probe.threshold) {
+		if (vt->backend->healthy)
+			logmsg = "Still healthy";
+		else
+			logmsg = "Back healthy";
+		vt->backend->healthy = 1;
+	} else {
+		if (vt->backend->healthy)
+			logmsg = "Went sick";
+		else
+			logmsg = "Still sick";
+		vt->backend->healthy = 0;
+	}
+	VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
+	    vt->backend->vcl_name, logmsg, bits,
+	    vt->good, vt->probe.threshold, vt->probe.window,
+	    vt->last, vt->avg, vt->resp_buf);
+
+	if (!vt->stop)
+		TIM_sleep(vt->probe.interval);
+}
+
+/*--------------------------------------------------------------------
  * One thread per backend to be poked.
  */
 
@@ -249,10 +319,7 @@ static void *
 vbp_wrk_poll_backend(void *priv)
 {
 	struct vbp_target *vt;
-	unsigned i, j;
-	uint64_t u;
-	const char *logmsg;
-	char bits[10];
+	unsigned u;
 
 	THR_SetName("backend poll");
 
@@ -273,59 +340,29 @@ vbp_wrk_poll_backend(void *priv)
 	if (vt->probe.threshold == 0)
 		vt->probe.threshold = 3;
 
+	if (vt->probe.threshold == ~0)
+		vt->probe.initial = vt->probe.threshold - 1;
+
+	if (vt->probe.initial > vt->probe.threshold)
+		vt->probe.initial = vt->probe.threshold;
+
+printf("Initial %u\n", vt->probe.initial);
+
 	printf("Probe(\"%s\", %g, %g)\n",
-	    vt->req,
-	    vt->probe.timeout,
-	    vt->probe.interval);
+	    vt->req, vt->probe.timeout, vt->probe.interval);
 
-	/*lint -e{525} indent */
+if (0) {
+	for (u = 0; u < vt->probe.initial; u++) {
+		vbp_start_poke(vt);
+		vt->happy |= 1;
+		vbp_has_poked(vt);
+	}
+}
+
 	while (!vt->stop) {
-#define BITMAP(n, c, t, b)	vt->n <<= 1;
-#include "cache_backend_poll.h"
-#undef BITMAP
-		vt->last = 0;
-		vt->resp_buf[0] = '\0';
+		vbp_start_poke(vt);
 		vbp_poke(vt);
-
-		/* Calculate exponential average */
-		if (vt->happy & 1) {
-			if (vt->rate < AVG_RATE)
-				vt->rate += 1.0;
-			vt->avg += (vt->last - vt->avg) / vt->rate;
-		}
-
-		i = 0;
-#define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
-#include "cache_backend_poll.h"
-#undef BITMAP
-		bits[i] = '\0';
-
-		u = vt->happy;
-		for (i = j = 0; i < vt->probe.window; i++) {
-			if (u & 1)
-				j++;
-			u >>= 1;
-		}
-		vt->good = j;
-
-		if (vt->good >= vt->probe.threshold) {
-			if (vt->backend->healthy)
-				logmsg = "Still healthy";
-			else
-				logmsg = "Back healthy";
-			vt->backend->healthy = 1;
-		} else {
-			if (vt->backend->healthy)
-				logmsg = "Went sick";
-			else
-				logmsg = "Still sick";
-			vt->backend->healthy = 0;
-		}
-		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->vcl_name, logmsg, bits,
-		    vt->good, vt->probe.threshold, vt->probe.window,
-		    vt->last, vt->avg, vt->resp_buf);
-
+		vbp_has_poked(vt);
 		if (!vt->stop)
 			TIM_sleep(vt->probe.interval);
 	}
