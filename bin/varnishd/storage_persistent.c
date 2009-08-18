@@ -129,6 +129,7 @@ struct smp_sc {
 
 	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
+	uint64_t		objreserv;
 	pthread_t		thread;
 
 	VTAILQ_ENTRY(smp_sc)	list;
@@ -328,7 +329,6 @@ smp_newsilo(struct smp_sc *sc)
 
 	smp_reset_sign(&sc->idn);
 	si = sc->ident;
-printf("NEW: %p\n", si);
 
 	memset(si, 0, sizeof *si);
 	strcpy(si->ident, SMP_IDENT_STRING);
@@ -444,7 +444,7 @@ smp_metrics(struct smp_sc *sc)
 	 * XXX: the lines of "one object per silo".
 	 */
 
-	sc->min_nseg = 100;
+	sc->min_nseg = 40;
 	sc->max_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->min_nseg;
 
 	fprintf(stderr, "min_nseg = %u, max_segl = %ju\n",
@@ -537,6 +537,20 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	if (sc->ptr == MAP_FAILED)
 		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
 		    strerror(errno));
+
+	if (1) {
+		/*
+		 * XXX: This (magically ?) prevents a memory corruption
+		 * XXX: which I have not been able to find any rhyme and
+		 * XXX: reason in.
+		 */
+		void *foo;
+
+
+		foo = mmap(sc->ptr + sc->mediasize, sc->granularity,
+		    PROT_NONE, MAP_ANON, -1, 0);
+		assert(foo == sc->ptr + sc->mediasize);
+	}
 
 	smp_def_sign(sc, &sc->idn, 0, "SILO");
 	sc->ident = SIGN_DATA(&sc->idn);
@@ -919,6 +933,7 @@ smp_new_seg(struct smp_sc *sc)
 	    sizeof (struct smp_segment) +
 	    SHA256_LEN;
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+	sc->objreserv = sizeof *sg->objs + SHA256_LEN;
 }
 
 /*--------------------------------------------------------------------
@@ -928,12 +943,18 @@ smp_new_seg(struct smp_sc *sc)
 static void
 smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 {
+	size_t sz;
 
 	(void)sc;
+
 	/* XXX: if segment is empty, delete instead */
+
+
 	/* Copy the objects into the segment */
-	memcpy(sc->ptr + sg->next_addr,
-	    sg->objs, sizeof *sg->objs * sg->nalloc);
+	sz = sizeof *sg->objs * sg->nalloc;
+	assert(sg->next_addr + sz <= sg->offset + sg->length);
+
+	memcpy(sc->ptr + sg->next_addr, sg->objs, sz);
 
 	/* Update the segment header */
 	sg->segment.objlist = sg->next_addr;
@@ -1059,6 +1080,7 @@ smp_object(const struct sess *sp)
 
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
+	sc->objreserv += sizeof *so;
 	if (sg->nalloc >= sg->maxobj) {
 		smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
@@ -1085,20 +1107,47 @@ smp_alloc(struct stevedore *st, size_t size)
 	struct smp_sc *sc;
 	struct storage *ss;
 	struct smp_seg *sg;
+	size_t sz2;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
 
-	/* XXX: size fit check */
-	if (sg->next_addr + sizeof *ss + size > sg->length) {
-		Lck_Unlock(&sc->mtx);
-		return (NULL);
-	}
 	AN(sg->next_addr);
+
+	/*
+	 * XXX: We do not have a mechanism for deciding which allocations
+	 * XXX: have mandatory size and which can be chopped into smaller
+	 * XXX: allocations.
+	 * XXX: The primary unchoppable allocation is from HSH_NewObject()
+	 * XXX: which needs an object + workspace.
+	 */
+	sz2 = sizeof (struct object) + 1024;
+	if (size < sz2)
+		sz2 = size;
+
+	/* If the segment is full, get a new one right away */
+	if (sg->next_addr + sizeof *ss + sz2 + sc->objreserv >
+	     sg->offset + sg->length) {
+		smp_close_seg(sc, sc->cur_seg);
+		smp_new_seg(sc);
+		sg = sc->cur_seg;
+	}
+
+	assert (sg->next_addr + sizeof *ss + sz2 + sc->objreserv <=
+	    sg->offset + sg->length);
+
+	if (sg->next_addr + sizeof *ss + size + sc->objreserv >
+	    sg->offset + sg->length)
+		size = (sg->offset + sg->length) -
+			(sg->next_addr + sizeof *ss + sc->objreserv);
+
 	ss = (void *)(sc->ptr + sg->next_addr);
+
 	sg->next_addr += size + sizeof *ss;
+	assert(sg->next_addr <= sg->offset + sg->length);
+	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	Lck_Unlock(&sc->mtx);
 
 	/* Grab and fill a storage structure */
@@ -1110,7 +1159,6 @@ smp_alloc(struct stevedore *st, size_t size)
 	ss->stevedore = st;
 	ss->fd = sc->fd;
 	ss->where = sg->next_addr + sizeof *ss;
-	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	return (ss);
 }
 
@@ -1120,6 +1168,8 @@ smp_trim(struct storage *ss, size_t size)
 	struct smp_sc *sc;
 	struct smp_seg *sg;
 	const char z[4] = { 0, 0, 0, 0};
+
+	return;
 
 	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
 
