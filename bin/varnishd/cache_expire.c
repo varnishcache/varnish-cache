@@ -264,31 +264,36 @@ exp_timer(struct sess *sp, void *priv)
 			continue;
 		}
 
-		o = oc->obj;
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
-		assert(oc->flags & OC_F_ONLRU);
+		/* It's time... */
+
+		/* Remove from binheap */
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		lru = STV_lru(o->objstore);
-		AN(lru);
-		VTAILQ_REMOVE(lru, o->objcore, lru_list);
-		oc->flags &= ~OC_F_ONLRU;
 
-		{	/* Sanity checking */
-			struct objcore *oc2 = binheap_root(exp_heap);
-			if (oc2 != NULL) {
-				assert(oc2->timer_idx != BINHEAP_NOIDX);
-				assert(oc2->timer_when >= oc->timer_when);
-			}
+		/* And from LRU */
+		if (oc->flags & OC_F_ONLRU) {
+			assert(!(oc->flags & OC_F_PERSISTENT));
+			lru = STV_lru(o->objstore);
+			AN(lru);
+			VTAILQ_REMOVE(lru, o->objcore, lru_list);
+			oc->flags &= ~OC_F_ONLRU;
+		} else {
+			assert(oc->flags & OC_F_PERSISTENT);
 		}
 
 		VSL_stats->n_expired++;
+
 		Lck_Unlock(&exp_mtx);
+
+		if (!(oc->flags & OC_F_PERSISTENT)) {
+			o = oc->obj;
+			CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+			HSH_Deref(sp->wrk, &o);
+			CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
+		}
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
 		    o->xid, (int)(o->ttl - t));
-		HSH_Deref(sp->wrk, &o);
 	}
 }
 
