@@ -92,11 +92,6 @@ set spobj {
 	{recv pipe pass hash miss hit fetch deliver                error }
 	"const struct sess *"
     }
-    { client.bandwidth				 # Not implemented yet
-	NO
-	{ }
-	"const struct sess *"
-    }
     { server.ip
 	RO IP
 	{recv pipe pass hash miss hit fetch deliver                error }
