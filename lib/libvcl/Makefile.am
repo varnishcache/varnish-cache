@@ -25,11 +25,11 @@ libvcl_la_SOURCES = \
 	vcc_var.c \
 	vcc_xref.c
 
-EXTRA_DIST = vcc_gen_obj.tcl \
+EXTRA_DIST = \
 	vcc_gen_fixed_token.tcl
 
-$(srcdir)/vcc_obj.c: $(srcdir)/vcc_gen_obj.tcl
-	cd $(srcdir) && @TCLSH@ vcc_gen_obj.tcl || true
+$(srcdir)/vcc_obj.c: $(srcdir)/vcc_gen_fixed_token.tcl
+	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl || true
 
 $(srcdir)/vcc_fixed_token.c: $(srcdir)/vcc_gen_fixed_token.tcl $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
 	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl || true

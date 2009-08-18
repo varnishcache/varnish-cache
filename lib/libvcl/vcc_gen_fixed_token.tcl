@@ -45,21 +45,6 @@ set methods {
 	{error		{restart deliver}}
 }
 
-# These are the return actions
-#
-set returns {
-	error
-	lookup
-	hash
-	pipe
-	pass
-	fetch
-	deliver
-	discard
-	keep
-	restart
-}
-
 # Language keywords
 #
 set keywords {
@@ -97,6 +82,292 @@ set char {{}()*+-/%><=;!&.|~,}
 set extras {ID VAR CNUM CSTR EOI CSRC}
 
 #----------------------------------------------------------------------
+# Variables available in sessions
+# Comments are stripped from #...\n
+set spobj {
+
+    # Connection related parameters
+    { client.ip
+	RO IP
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { client.bandwidth				 # Not implemented yet
+	NO
+	{ }
+	"const struct sess *"
+    }
+    { server.ip
+	RO IP
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    { server.hostname
+	RO STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    { server.identity
+	RO STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    { server.port
+	RO INT
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    # Request paramters
+    { req.request
+	RW STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { req.url
+	RW STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { req.proto
+	RW STRING
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { req.http.
+	RW HDR_REQ
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+
+    # Possibly misnamed, not really part of the request
+    { req.hash
+	WO HASH
+	{               hash                                       error }
+	"struct sess *"
+    }
+    { req.backend
+	RW BACKEND
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"struct sess *"
+    }
+    { req.restarts
+	RO INT
+	{recv pipe pass hash miss hit fetch deliver                error }
+	"const struct sess *"
+    }
+    { req.grace
+	RW TIME
+	{recv pipe pass hash miss hit fetch deliver		   error }
+	"struct sess *"
+    }
+
+    { req.xid
+	RO STRING
+	{recv pipe pass hash miss hit fetch deliver		   error}
+	"struct sess *"
+    }
+
+    { req.esi
+	RW BOOL
+	{recv fetch deliver					   error}
+	"struct sess *"
+    }
+
+    #######################################################################
+    # Request sent to backend
+    { bereq.request
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.url
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.proto
+	RW STRING
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.http.
+	RW HDR_BEREQ
+	{     pipe pass      miss     fetch                        }
+	"const struct sess *"
+    }
+    { bereq.connect_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
+    { bereq.first_byte_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
+    { bereq.between_bytes_timeout
+	RW TIME
+	{     pass      miss     }
+	"struct sess *"
+    }
+
+    #######################################################################
+    # Response from the backend
+    { beresp.proto
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.status
+	RW INT
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.response
+	RW STRING
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.http.
+	RW HDR_BERESP
+	{                             fetch                        }
+	"const struct sess *"
+    }
+    { beresp.cacheable
+	RW BOOL
+	{                             fetch                              }
+	"const struct sess *"
+    }
+    { beresp.ttl
+	RW TIME
+	{                             fetch				 }
+	"const struct sess *"
+    }
+    { beresp.grace
+	RW TIME
+	{                             fetch				 }
+	"const struct sess *"
+    }
+
+    #######################################################################
+    # The (possibly) cached object
+    { obj.proto
+	RW STRING
+	{                         hit                               error}
+	"const struct sess *"
+    }
+    { obj.status
+	RW INT
+	{                                                           error}
+	"const struct sess *"
+    }
+    { obj.response
+	RW STRING
+	{                                                           error}
+	"const struct sess *"
+    }
+    { obj.hits
+	RO INT
+	{			  hit       deliver                      }
+	"const struct sess *"
+    }
+    { obj.http.
+	RW HDR_OBJ
+	{                         hit       			    error}
+	"const struct sess *"
+    }
+
+    { obj.cacheable
+	RW BOOL
+	{                         hit                                    }
+	"const struct sess *"
+    }
+    { obj.ttl
+	RW TIME
+	{                         hit               error}
+	"const struct sess *"
+    }
+    { obj.grace
+	RW TIME
+	{                         hit               error}
+	"const struct sess *"
+    }
+    { obj.lastuse
+	RO TIME
+	{                         hit       deliver error}
+	"const struct sess *"
+    }
+    { obj.hash
+	RO STRING
+	{                    miss hit       deliver                 error}
+	"const struct sess *"
+    }
+
+    #######################################################################
+    # The response we send back
+    { resp.proto
+	RW STRING
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.status
+	RW INT
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.response
+	RW STRING
+	{                                   deliver                }
+	"const struct sess *"
+    }
+    { resp.http.
+	RW HDR_RESP
+	{                                   deliver                }
+	"const struct sess *"
+    }
+
+    # Miscellaneous
+    # XXX: I'm not happy about this one.  All times should be relative
+    # XXX: or delta times in VCL programs, so this shouldn't be needed /phk
+    { now
+	    RO TIME
+	    {recv pipe pass hash miss hit fetch deliver }
+	    "const struct sess *"
+    }
+    { req.backend.healthy	RO BOOL
+	    {recv pipe pass hash miss hit fetch deliver }
+	    "const struct sess *"
+    }
+
+}
+
+set tt(IP)		"struct sockaddr *"
+set tt(STRING)		"const char *"
+set tt(BOOL)		"unsigned"
+set tt(BACKEND)		"struct director *"
+set tt(TIME)		"double"
+set tt(RTIME)		"double"
+set tt(INT)		"int"
+set tt(HDR_RESP)	"const char *"
+set tt(HDR_OBJ)		"const char *"
+set tt(HDR_REQ)		"const char *"
+set tt(HDR_BEREQ)	"const char *"
+set tt(HOSTNAME) 	"const char *"
+set tt(PORTNAME) 	"const char *"
+set tt(HASH) 		"const char *"
+set tt(SET) 		"struct vrt_backend_entry *"
+
+#----------------------------------------------------------------------
+# Figure out the union list of return actions
+foreach i $methods {
+	foreach j [lindex $i 1] {
+		set tmp($j) 1
+	}
+}
+set returns [lsort [array names tmp]]
+unset tmp
+
+#----------------------------------------------------------------------
 # Boilerplate warning for all generated files.
 
 proc warns {fd} {
@@ -111,6 +382,148 @@ proc warns {fd} {
 	puts $fd " */"
 	puts $fd ""
 }
+
+#----------------------------------------------------------------------
+# Include a .h file as a string.
+
+proc copy_include {n} {
+	global fo
+
+	puts $fo "\n\t/* $n */\n"
+	set fi [open $n]
+	set n 0
+	while {[gets $fi a] >= 0} {
+		for {set b 0} {$b < [string length $a]} {incr b} {
+			if {$n == 0} {
+				puts -nonewline $fo "\tvsb_cat(sb, \""
+			}
+			set c [string index $a $b]
+			if {"$c" == "\\"} {
+				puts -nonewline $fo "\\\\"
+				incr n
+			} elseif {"$c" == "\t"} {
+				puts -nonewline $fo "\\t"
+				incr n
+			} else {
+				puts -nonewline $fo "$c"
+			}
+			incr n
+			if {$n > 53} {
+				puts $fo "\");"
+				set n 0
+			}
+		}
+		if {$n == 0} {
+			puts -nonewline $fo "\tvsb_cat(sb, \""
+		}
+		puts -nonewline $fo "\\n"
+		incr n 2
+		if {$n > 30} {
+			puts $fo "\");"
+			set n 0
+		}
+	}
+	if {$n > 0} {
+		puts $fo "\");"
+	}
+	close $fi
+}
+
+#----------------------------------------------------------------------
+# Build the variable related .c and .h files
+
+set fo [open vcc_obj.c w]
+warns $fo
+set fp [open ../../include/vrt_obj.h w]
+warns $fp
+
+proc method_map {m} {
+
+	set l1 ""
+	set l2 ""
+	foreach i $m {
+		if {[string length $l2] > 55} {
+			if {$l1 != ""} {
+				append l1 "\n\t    "
+			}
+			append l1 "$l2"
+			set l2 ""
+		}
+		if {$l2 != "" || $l1 != ""} {
+			append l2 " | "
+		}
+		append l2 VCL_MET_[string toupper $i]
+	}
+	if {$l2 != ""} {
+		if {$l1 != ""} {
+			append l1 "\n\t    "
+		}
+		append l1 "$l2"
+	}
+	if {$l1 == ""} {
+		return "0"
+	}
+	return $l1
+}
+
+proc vars {v pa} {
+	global tt fo fp
+
+	regsub -all "#\[^\n\]*\n" $v "" v
+	foreach v $v {
+		set n [lindex $v 0]
+		regsub -all {[.]} $n "_" m
+		set a [lindex $v 1]
+		if {$a == "NO"} continue
+		set t [lindex $v 2]
+		set ty [lindex $v 4]
+		if {[regexp HDR_ $t]} {
+			puts $fo  "\t\{ \"$n\", HEADER, [string length $n],"
+		} else {
+			puts $fo  "\t\{ \"$n\", $t, [string length $n],"
+		}
+		if {$a == "RO" || $a == "RW"} {
+			puts -nonewline $fo  "\t    \"VRT_r_${m}($pa)\","
+			if {![regexp HDR_ $t]} {
+				puts $fp  "$tt($t) VRT_r_${m}($ty);"
+			}
+		} else {
+			puts -nonewline $fo  "\t    NULL,"
+		}
+		if {$a == "WO" || $a == "RW"} {
+			puts $fo  "\t    \"VRT_l_${m}($pa, \","
+			if {[regexp HDR_ $t]} {
+			} elseif {$t == "STRING"} {
+				puts $fp  "void VRT_l_${m}($ty, $tt($t), ...);"
+			} else {
+				puts $fp  "void VRT_l_${m}($ty, $tt($t));"
+			}
+		} else {
+			puts $fo  "\t    NULL,"
+		}
+		puts -nonewline $fo  "\t    V_$a,"
+		if {![regexp HDR_ $t]} {
+			puts $fo  "\t    0,"
+		} else {
+			puts $fo  "\t    \"$t\","
+		}
+		puts $fo  "\t    [method_map [lindex $v 3]]"
+		puts $fo "\t\},"
+
+	}
+	puts $fo "\t{ NULL }"
+}
+
+puts $fo "#include \"config.h\""
+puts $fo "#include <stdio.h>"
+puts $fo "#include \"vcc_compile.h\""
+puts $fo ""
+
+puts $fo "struct var vcc_vars\[\] = {"
+vars $spobj "sp"
+puts $fo "};"
+close $fp
+
 
 #----------------------------------------------------------------------
 # Build the vcl.h #include file
@@ -290,8 +703,8 @@ foreach ch "$seq" {
 	puts $fo "	case '$ch':"
 	set retval "0"
 	set m1 0
-	foreach tt $l {
-		set k [lindex $tt 0]
+	foreach ty $l {
+		set k [lindex $ty 0]
 		if {[string length $k] == 1} {
 			puts $fo "\t\tM1();"
 			set m1 1
@@ -300,7 +713,7 @@ foreach ch "$seq" {
 		if {[string length $k] == 2} {
 			puts -nonewline $fo "		M2("
 			puts -nonewline $fo "'[string index $k 1]'"
-			puts            $fo ", [lindex $tt 1]);"
+			puts            $fo ", [lindex $ty 1]);"
 			continue;
 		} 
 		puts -nonewline $fo "		if ("
@@ -314,7 +727,7 @@ foreach ch "$seq" {
 			}
 			puts -nonewline $fo "p\[$i\] == '[string index $k $i]'"
 		}
-		if {[lindex $tt 2]} {
+		if {[lindex $ty 2]} {
 			if {[expr $i % 3] == 1} {
 				puts -nonewline $fo "\n\t\t    "
 			}
@@ -322,7 +735,7 @@ foreach ch "$seq" {
 		}
 		puts $fo ") {"
 		puts $fo "\t\t\t*q = p + [string length $k];"
-		puts $fo "\t\t\treturn ([lindex $tt 1]);"
+		puts $fo "\t\t\treturn ([lindex $ty 1]);"
 		puts $fo "\t\t}"
 	}
 	if {$m1 == 0} {
@@ -345,53 +758,6 @@ foreach i $tokens {
 }
 puts $fo "};"
 
-#----------------------------------------------------------------------
-# Create the C-code which emits the boilerplate definitions for the
-# generated C code output
-
-proc copy_include {n} {
-	global fo
-
-	puts $fo "\n\t/* $n */\n"
-	set fi [open $n]
-	set n 0
-	while {[gets $fi a] >= 0} {
-		for {set b 0} {$b < [string length $a]} {incr b} {
-			if {$n == 0} {
-				puts -nonewline $fo "\tvsb_cat(sb, \""
-			}
-			set c [string index $a $b]
-			if {"$c" == "\\"} {
-				puts -nonewline $fo "\\\\"
-				incr n
-			} elseif {"$c" == "\t"} {
-				puts -nonewline $fo "\\t"
-				incr n
-			} else {
-				puts -nonewline $fo "$c"
-			}
-			incr n
-			if {$n > 53} {
-				puts $fo "\");"
-				set n 0
-			}
-		}
-		if {$n == 0} {
-			puts -nonewline $fo "\tvsb_cat(sb, \""
-		}
-		puts -nonewline $fo "\\n"
-		incr n 2
-		if {$n > 30} {
-			puts $fo "\");"
-			set n 0
-		}
-	}
-	if {$n > 0} {
-		puts $fo "\");"
-	}
-	close $fi
-}
-
 puts $fo ""
 puts $fo "void"
 puts $fo "vcl_output_lang_h(struct vsb *sb)"
@@ -405,3 +771,4 @@ puts $fo "}"
 
 close $foh
 close $fo
+

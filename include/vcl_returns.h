@@ -7,15 +7,13 @@
  */
 
 #ifdef VCL_RET_MAC
-VCL_RET_MAC(error, ERROR)
-VCL_RET_MAC(lookup, LOOKUP)
-VCL_RET_MAC(hash, HASH)
-VCL_RET_MAC(pipe, PIPE)
-VCL_RET_MAC(pass, PASS)
-VCL_RET_MAC(fetch, FETCH)
 VCL_RET_MAC(deliver, DELIVER)
-VCL_RET_MAC(discard, DISCARD)
-VCL_RET_MAC(keep, KEEP)
+VCL_RET_MAC(error, ERROR)
+VCL_RET_MAC(fetch, FETCH)
+VCL_RET_MAC(hash, HASH)
+VCL_RET_MAC(lookup, LOOKUP)
+VCL_RET_MAC(pass, PASS)
+VCL_RET_MAC(pipe, PIPE)
 VCL_RET_MAC(restart, RESTART)
 #endif
 

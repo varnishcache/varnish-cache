@@ -1,9 +1,9 @@
 /*
- * $Id: vcc_gen_obj.tcl 4099 2009-06-08 21:40:48Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4100 2009-06-09 10:41:38Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcc_gen_obj.tcl instead
+ * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
 #include "config.h"
