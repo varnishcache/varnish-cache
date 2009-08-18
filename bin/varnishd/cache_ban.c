@@ -157,9 +157,10 @@ ban_cond_hash(const struct ban_test *bt, const struct object *o,
 {
 	(void)sp;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
-	AN(o->objhead->hash);
-	return(ban_cond_str(bt, o->objhead->hash));
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objcore->objhead, OBJHEAD_MAGIC);
+	AN(o->objcore->objhead->hash);
+	return(ban_cond_str(bt, o->objcore->objhead->hash));
 }
 
 static int

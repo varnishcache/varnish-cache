@@ -281,6 +281,7 @@ struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
 	struct object		*obj;
+	struct objhead		*objhead;
 	double			timer_when;
 	unsigned char		flags;
 #define OC_F_ONLRU		(1<<0)
@@ -301,7 +302,6 @@ struct object {
 #define OBJECT_MAGIC		0x32851d42
 	unsigned		refcnt;
 	unsigned		xid;
-	struct objhead		*objhead;
 	struct storage		*objstore;
 	struct objcore		*objcore;
 

@@ -623,7 +623,7 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	/* refcnt is one because the object is in the hash */
 	oc->obj->refcnt = 1;
 	oc->obj->objcore = oc;
-	oc->obj->objhead = oh;
+	oc->objhead = oh;
 	oc->obj->ban = oc->ban;
 
 	sg->nfixed++;
@@ -1067,7 +1067,7 @@ smp_object(const struct sess *sp)
 	}
 	assert(sg->nalloc < sg->maxobj);
 	so = &sg->objs[sg->nalloc++];
-	memcpy(so->hash, sp->obj->objhead->digest, DIGEST_LEN);
+	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
 	so->ptr = sp->obj;
 	so->ban = sp->obj->ban_t;

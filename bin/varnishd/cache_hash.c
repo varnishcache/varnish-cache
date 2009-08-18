@@ -589,7 +589,8 @@ HSH_Unbusy(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oh = o->objhead;
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	oh = o->objcore->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	AN(ObjIsBusy(o));
@@ -616,7 +617,8 @@ HSH_Ref(struct object *o)
 	struct objhead *oh;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oh = o->objhead;
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	oh = o->objcore->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(o->refcnt > 0);
@@ -660,16 +662,15 @@ HSH_Deref(const struct worker *w, struct object **oo)
 	o = *oo;
 	*oo = NULL;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oh = o->objhead;
-	if (oh == NULL) {
-		oc = NULL;
+	oc = o->objcore;
+	if (oc == NULL) {
 		assert(o->refcnt > 0);
 		r = --o->refcnt;
+		oh = NULL;
 	} else {
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-
-		oc = o->objcore;
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		oh = oc->objhead;
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
@@ -706,11 +707,11 @@ HSH_Deref(const struct worker *w, struct object **oo)
 	o = NULL;
 	w->stats->n_object--;
 
-	if (oh == NULL) {
-		AZ(oc);
+	if (oc == NULL) {
+		AZ(oh);
 		return;
 	}
-	AN(oc);
+	AN(oh);
 	FREE_OBJ(oc);
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);

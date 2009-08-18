@@ -175,7 +175,7 @@ cnt_deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	sp->t_resp = TIM_real();
-	if (sp->obj->objhead != NULL) {
+	if (sp->obj->objcore != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
 		    EXP_Touch(sp->obj))
 			sp->obj->last_lru = sp->t_resp;	/* XXX: locking ? */
@@ -505,7 +505,7 @@ cnt_fetch(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		sp->objcore->obj = sp->obj;
 		sp->obj->objcore = sp->objcore;
-		sp->obj->objhead = sp->objhead;
+		sp->objcore->objhead = sp->objhead;
 		sp->objhead = NULL;	/* refcnt follows pointer. */
 		sp->objcore = NULL;	/* refcnt follows pointer. */
 	}
