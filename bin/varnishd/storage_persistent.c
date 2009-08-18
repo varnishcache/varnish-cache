@@ -892,6 +892,7 @@ smp_new_seg(struct smp_sc *sc)
 	} else {
 		sg->offset = sg2->offset + sg2->length;
 		assert(sg->offset < sc->mediasize);
+		assert(sg->offset + sg2->length < sc->mediasize);
 	}
 	sg->length = sc->aim_segl;
 	sg->length &= ~7;
