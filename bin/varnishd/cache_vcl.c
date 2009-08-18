@@ -84,10 +84,10 @@ VCL_Refresh(struct VCL_conf **vcc)
 void
 VCL_Get(struct VCL_conf **vcc)
 {
-	static int once;
+	static int once = 0;
 
 	while (!once && vcl_active == NULL) {
-		sleep(1);
+		(void)sleep(1);
 	}
 	once = 1;
 
