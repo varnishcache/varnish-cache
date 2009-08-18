@@ -128,11 +128,10 @@ EXP_Insert(struct object *o)
 	struct objcore_head *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	AN(o->objhead);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	AN(ObjIsBusy(o));
 	assert(o->cacheable);
 	HSH_Ref(o);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	oc = o->objcore;
 
 	assert(o->entered != 0 && !isnan(o->entered));
@@ -175,8 +174,8 @@ EXP_Touch(const struct object *o)
 	lru = STV_lru(o->objstore);
 	if (lru == NULL)
 		return (retval);
-	AN(o->objhead);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
 	if (oc->flags & OC_F_ONLRU) {
@@ -274,11 +273,13 @@ exp_timer(struct sess *sp, void *priv)
 		/* And from LRU */
 		if (oc->flags & OC_F_ONLRU) {
 			assert(!(oc->flags & OC_F_PERSISTENT));
+			o = oc->obj;
 			lru = STV_lru(o->objstore);
 			AN(lru);
 			VTAILQ_REMOVE(lru, o->objcore, lru_list);
 			oc->flags &= ~OC_F_ONLRU;
 		} else {
+			o = NULL;
 			assert(oc->flags & OC_F_PERSISTENT);
 		}
 
@@ -289,11 +290,14 @@ exp_timer(struct sess *sp, void *priv)
 		if (!(oc->flags & OC_F_PERSISTENT)) {
 			o = oc->obj;
 			CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+			CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
+			    o->xid, (int)(o->ttl - t));
 			HSH_Deref(sp->wrk, &o);
-			CHECK_OBJ_NOTNULL(o->objhead, OBJHEAD_MAGIC);
+		} else {
+			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
+			    o, (int)(oc->timer_when - t));
 		}
-		WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
-		    o->xid, (int)(o->ttl - t));
 	}
 }
 

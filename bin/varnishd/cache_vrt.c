@@ -731,10 +731,11 @@ VRT_r_obj_hash(const struct sess *sp)
 	if (sp->obj == NULL)
 		return (NULL);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	if (sp->obj->objhead == NULL)
+	if (sp->obj->objcore == NULL)
 		return (NULL);
-	CHECK_OBJ_NOTNULL(sp->obj->objhead, OBJHEAD_MAGIC);
-	return (sp->obj->objhead->hash);
+	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objcore->objhead, OBJHEAD_MAGIC);
+	return (sp->obj->objcore->objhead->hash);
 }
 
 unsigned
