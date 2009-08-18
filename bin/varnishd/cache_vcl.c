@@ -84,6 +84,12 @@ VCL_Refresh(struct VCL_conf **vcc)
 void
 VCL_Get(struct VCL_conf **vcc)
 {
+	static int once;
+
+	while (!once && vcl_active == NULL) {
+		sleep(1);
+	}
+	once = 1;
 
 	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
