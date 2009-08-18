@@ -53,7 +53,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	int i;
 	unsigned char *p;
 	uintmax_t cll;
-	unsigned cl;
+	unsigned cl, sl;
 	struct storage *st;
 
 	cll = strtoumax(b, NULL, 0);
@@ -63,18 +63,24 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	cl = (unsigned)cll;
 	assert((uintmax_t)cl == cll); /* Protect against bogusly large values */
 
-	st = STV_alloc(sp, cl);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-	st->len = cl;
-	sp->obj->len = cl;
-	p = st->ptr;
-
 	while (cl > 0) {
-		i = HTC_Read(htc, p, cl);
-		if (i <= 0)
-			return (-1);
-		p += i;
-		cl -= i;
+		st = STV_alloc(sp, cl);
+		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+		sl = st->space;
+		if (sl > cl)
+			sl = cl;
+		p = st->ptr;
+
+		while (sl > 0) {
+			i = HTC_Read(htc, p, sl);
+			if (i <= 0)
+				return (-1);
+			p += i;
+			st->len += i;
+			sp->obj->len += i;
+			sl -= i;
+			cl -= i;
+		}
 	}
 	return (0);
 }
