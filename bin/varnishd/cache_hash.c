@@ -406,6 +406,7 @@ HSH_Insert(const struct sess *sp)
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
+	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
 	sp->wrk->stats->n_object++;
 	return (oc);
@@ -642,6 +643,7 @@ HSH_DerefObjCore(struct sess *sp)
 
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
+	sp->wrk->stats->n_object--;
 	Lck_Unlock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);

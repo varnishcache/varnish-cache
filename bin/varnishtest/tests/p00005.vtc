@@ -1,0 +1,50 @@
+# $Id$
+
+test "Check expiry of non-instantiated object"
+
+shell "rm -f /tmp/__v1/_.per"
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: foo1"
+} -start
+
+varnish v1 \
+	-arg "-pdiag_bitmap=0x30000" \
+	-arg "-spersistent,/tmp/__v1/_.per,10m" \
+	-vcl+backend { 
+		sub vcl_fetch {
+			set beresp.ttl = 3s;
+		}
+	} -start 
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo1"
+} -run
+
+varnish v1 -expect n_object == 1
+
+varnish v1 -stop
+
+server s1 -wait {
+	rxreq 
+	txresp -hdr "Foo: foo2"
+} -start
+
+varnish v1 -start
+
+delay 5
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo2"
+} -run
+
+varnish v1 -expect n_object == 1
