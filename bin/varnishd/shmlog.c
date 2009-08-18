@@ -72,16 +72,19 @@ static void
 vsl_wrap(void)
 {
 
+	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 	*logstart = SLT_ENDMARKER;
 	logstart[loghead->ptr] = SLT_WRAPMARKER;
 	loghead->ptr = 0;
 	VSL_stats->shm_cycles++;
+	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 }
 
 static void
 vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 {
 
+	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 	assert(len < 0x10000);
 	assert(id < 0x10000);
 	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
@@ -281,13 +284,18 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 void
 VSL_Panic(int *len, char **ptr)
 {
+	static char a[1] = { '\0' }; 
 
 	AN(len);
 	AN(ptr);
-	assert(loghead->magic == SHMLOGHEAD_MAGIC);
-	assert(loghead->hdrsize == sizeof *loghead);
-	*len = sizeof(loghead->panicstr);
-	*ptr = loghead->panicstr;
+	if (loghead->magic == SHMLOGHEAD_MAGIC) {
+		assert(loghead->hdrsize == sizeof *loghead);
+		*len = sizeof(loghead->panicstr);
+		*ptr = loghead->panicstr;
+	} else {
+		*len = 0;
+		*ptr = a;
+	}
 }
 
 /*--------------------------------------------------------------------*/
