@@ -892,7 +892,6 @@ smp_new_seg(struct smp_sc *sc)
 	} else {
 		sg->offset = sg2->offset + sg2->length;
 		assert(sg->offset < sc->mediasize);
-		assert(sg->offset + sg2->length < sc->mediasize);
 	}
 	sg->length = sc->aim_segl;
 	sg->length &= ~7;
@@ -1093,6 +1092,10 @@ smp_alloc(struct stevedore *st, size_t size)
 	sg = sc->cur_seg;
 
 	/* XXX: size fit check */
+	if (sg->next_addr + sizeof *ss + size > sg->length) {
+		Lck_Unlock(&sc->mtx);
+		return (NULL);
+	}
 	AN(sg->next_addr);
 	ss = (void *)(sc->ptr + sg->next_addr);
 	sg->next_addr += size + sizeof *ss;
