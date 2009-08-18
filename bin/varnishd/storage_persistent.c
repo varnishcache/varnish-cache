@@ -444,7 +444,7 @@ smp_metrics(struct smp_sc *sc)
 	 * XXX: the lines of "one object per silo".
 	 */
 
-	sc->min_nseg = 40;
+	sc->min_nseg = 10;
 	sc->max_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->min_nseg;
 
 	fprintf(stderr, "min_nseg = %u, max_segl = %ju\n",
@@ -457,6 +457,11 @@ smp_metrics(struct smp_sc *sc)
 
 	sc->max_nseg = smp_stuff_len(sc, SMP_SEG1_STUFF) / sc->min_nseg;
 	sc->min_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->max_nseg;
+
+	while (sc->min_segl < sizeof(struct object)) {
+		sc->max_nseg /= 2;
+		sc->min_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->max_nseg;
+	}
 
 	fprintf(stderr, "max_nseg = %u, min_segl = %ju\n",
 	    sc->max_nseg, (uintmax_t)sc->min_segl);
@@ -537,20 +542,6 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	if (sc->ptr == MAP_FAILED)
 		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
 		    strerror(errno));
-
-	if (1) {
-		/*
-		 * XXX: This (magically ?) prevents a memory corruption
-		 * XXX: which I have not been able to find any rhyme and
-		 * XXX: reason in.
-		 */
-		void *foo;
-
-
-		foo = mmap(sc->ptr + sc->mediasize, sc->granularity,
-		    PROT_NONE, MAP_ANON, -1, 0);
-		assert(foo == sc->ptr + sc->mediasize);
-	}
 
 	smp_def_sign(sc, &sc->idn, 0, "SILO");
 	sc->ident = SIGN_DATA(&sc->idn);
@@ -890,6 +881,7 @@ smp_new_seg(struct smp_sc *sc)
 {
 	struct smp_seg *sg, *sg2;
 
+	Lck_AssertHeld(&sc->mtx);
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
 
@@ -947,6 +939,8 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	(void)sc;
 
+	Lck_AssertHeld(&sc->mtx);
+
 	/* XXX: if segment is empty, delete instead */
 
 
@@ -968,7 +962,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	sg->next_addr += sizeof *sg->objs * sg->nalloc;
 	sg->length = sg->next_addr - sg->offset;
-	sg->length |= 7;
+	sg->length |= 15;
 	sg->length++;
 
 	/* Save segment list */
@@ -1015,6 +1009,7 @@ smp_open(const struct stevedore *st)
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
 	Lck_New(&sc->mtx);
+	Lck_Lock(&sc->mtx);
 
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
@@ -1043,6 +1038,7 @@ smp_open(const struct stevedore *st)
 	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
 
 	VTAILQ_INSERT_TAIL(&silos, sc, list);
+	Lck_Unlock(&sc->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -1057,7 +1053,9 @@ smp_close(const struct stevedore *st)
 	ASSERT_CLI();
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+	Lck_Lock(&sc->mtx);
 	smp_close_seg(sc, sc->cur_seg);
+	Lck_Unlock(&sc->mtx);
 
 	/* XXX: reap thread */
 }
@@ -1159,6 +1157,9 @@ smp_alloc(struct stevedore *st, size_t size)
 	ss->stevedore = st;
 	ss->fd = sc->fd;
 	ss->where = sg->next_addr + sizeof *ss;
+	assert((uintmax_t)ss->space == (uintmax_t)size);
+	assert((char*)ss->ptr > (char*)ss);
+	assert((char*)ss->ptr + ss->space <= (char*)sc->ptr + sc->mediasize);
 	return (ss);
 }
 
