@@ -87,253 +87,254 @@ set extras {ID VAR CNUM CSTR EOI CSRC}
 set spobj {
 
     # Connection related parameters
-    { client.ip
-	RO IP
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { client.ip				IP
+	RO
+	all
 	"const struct sess *"
     }
-    { server.ip
-	RO IP
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { server.ip				IP
+	RO
+	all
 	"struct sess *"
     }
-    { server.hostname
-	RO STRING
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { server.hostname			STRING
+	RO
+	all
 	"struct sess *"
     }
-    { server.identity
-	RO STRING
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { server.identity			STRING
+	RO
+	all
 	"struct sess *"
     }
-    { server.port
-	RO INT
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { server.port			INT
+	RO
+	all
 	"struct sess *"
     }
     # Request paramters
-    { req.request
-	RW STRING
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.request			STRING
+	RW
+	all
 	"const struct sess *"
     }
-    { req.url
-	RW STRING
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.url				STRING
+	RW
+	all
 	"const struct sess *"
     }
-    { req.proto
-	RW STRING
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.proto				STRING
+	RW
+	all
 	"const struct sess *"
     }
-    { req.http.
-	RW HDR_REQ
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.http.				HDR_REQ
+	RW
+	all
 	"const struct sess *"
     }
 
     # Possibly misnamed, not really part of the request
-    { req.hash
-	WO HASH
-	{               hash                                       error }
+    { req.hash				HASH
+	WO
+	{ hash error }
 	"struct sess *"
     }
-    { req.backend
-	RW BACKEND
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.backend			BACKEND
+	RW
+	all
 	"struct sess *"
     }
-    { req.restarts
-	RO INT
-	{recv pipe pass hash miss hit fetch deliver                error }
+    { req.restarts			INT
+	RO
+	all
 	"const struct sess *"
     }
-    { req.grace
-	RW TIME
-	{recv pipe pass hash miss hit fetch deliver		   error }
+    { req.grace				TIME
+	RW
+	all
 	"struct sess *"
     }
 
-    { req.xid
-	RO STRING
-	{recv pipe pass hash miss hit fetch deliver		   error}
+    { req.xid				STRING
+	RO
+	all
 	"struct sess *"
     }
 
-    { req.esi
-	RW BOOL
-	{recv fetch deliver					   error}
+    { req.esi				BOOL
+	RW
+	{recv fetch deliver error }
 	"struct sess *"
+    }
+
+    { req.backend.healthy		BOOL
+	RO
+	all
+	"const struct sess *"
     }
 
     #######################################################################
     # Request sent to backend
-    { bereq.request
-	RW STRING
-	{     pipe pass      miss     fetch                        }
+    { bereq.request			STRING
+	RW
+	{ pipe pass miss fetch }
 	"const struct sess *"
     }
-    { bereq.url
-	RW STRING
-	{     pipe pass      miss     fetch                        }
+    { bereq.url				STRING
+	RW
+	{ pipe pass miss fetch }
 	"const struct sess *"
     }
-    { bereq.proto
-	RW STRING
-	{     pipe pass      miss     fetch                        }
+    { bereq.proto			STRING
+	RW
+	{ pipe pass miss fetch }
 	"const struct sess *"
     }
-    { bereq.http.
-	RW HDR_BEREQ
-	{     pipe pass      miss     fetch                        }
+    { bereq.http.			HDR_BEREQ
+	RW
+	{ pipe pass miss fetch }
 	"const struct sess *"
     }
-    { bereq.connect_timeout
-	RW TIME
-	{     pass      miss     }
+    { bereq.connect_timeout		TIME
+	RW
+	{ pass miss }
 	"struct sess *"
     }
-    { bereq.first_byte_timeout
-	RW TIME
-	{     pass      miss     }
+    { bereq.first_byte_timeout		TIME
+	RW
+	{ pass miss }
 	"struct sess *"
     }
-    { bereq.between_bytes_timeout
-	RW TIME
-	{     pass      miss     }
+    { bereq.between_bytes_timeout	TIME
+	RW
+	{ pass miss }
 	"struct sess *"
     }
 
     #######################################################################
     # Response from the backend
-    { beresp.proto
-	RW STRING
-	{                             fetch                        }
+    { beresp.proto			STRING
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.status
-	RW INT
-	{                             fetch                        }
+    { beresp.status			INT
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.response
-	RW STRING
-	{                             fetch                        }
+    { beresp.response			STRING
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.http.
-	RW HDR_BERESP
-	{                             fetch                        }
+    { beresp.http.			HDR_BERESP
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.cacheable
-	RW BOOL
-	{                             fetch                              }
+    { beresp.cacheable			BOOL
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.ttl
-	RW TIME
-	{                             fetch				 }
+    { beresp.ttl			TIME
+	RW
+	{ fetch }
 	"const struct sess *"
     }
-    { beresp.grace
-	RW TIME
-	{                             fetch				 }
+    { beresp.grace			TIME
+	RW
+	{ fetch }
 	"const struct sess *"
     }
 
     #######################################################################
     # The (possibly) cached object
-    { obj.proto
-	RW STRING
-	{                         hit                               error}
+    { obj.proto				STRING
+	RW 
+	{ hit error }
 	"const struct sess *"
     }
-    { obj.status
-	RW INT
-	{                                                           error}
+    { obj.status			INT
+	RW 
+	{ error }
 	"const struct sess *"
     }
-    { obj.response
-	RW STRING
-	{                                                           error}
+    { obj.response			STRING
+	RW
+	{ error }
 	"const struct sess *"
     }
-    { obj.hits
-	RO INT
-	{			  hit       deliver                      }
+    { obj.hits				INT
+	RO
+	{ hit deliver }
 	"const struct sess *"
     }
-    { obj.http.
-	RW HDR_OBJ
-	{                         hit       			    error}
+    { obj.http.				HDR_OBJ
+	RW
+	{ hit error }
 	"const struct sess *"
     }
 
-    { obj.cacheable
-	RW BOOL
-	{                         hit                                    }
+    { obj.cacheable			BOOL
+	RW
+	{ hit }
 	"const struct sess *"
     }
-    { obj.ttl
-	RW TIME
-	{                         hit               error}
+    { obj.ttl				TIME
+	RW
+	{ hit error }
 	"const struct sess *"
     }
-    { obj.grace
-	RW TIME
-	{                         hit               error}
+    { obj.grace				TIME
+	RW
+	{ hit error }
 	"const struct sess *"
     }
-    { obj.lastuse
-	RO TIME
-	{                         hit       deliver error}
+    { obj.lastuse			TIME
+	RO
+	{ hit deliver error }
 	"const struct sess *"
     }
-    { obj.hash
-	RO STRING
-	{                    miss hit       deliver                 error}
+    { obj.hash				STRING
+	RO
+	{ miss hit deliver error }
 	"const struct sess *"
     }
 
     #######################################################################
     # The response we send back
-    { resp.proto
-	RW STRING
-	{                                   deliver                }
+    { resp.proto			STRING
+	RW
+	{ deliver }
 	"const struct sess *"
     }
-    { resp.status
-	RW INT
-	{                                   deliver                }
+    { resp.status			INT
+	RW
+	{ deliver }
 	"const struct sess *"
     }
-    { resp.response
-	RW STRING
-	{                                   deliver                }
+    { resp.response			STRING
+	RW
+	{ deliver }
 	"const struct sess *"
     }
-    { resp.http.
-	RW HDR_RESP
-	{                                   deliver                }
+    { resp.http.			HDR_RESP
+	RW
+	{ deliver }
 	"const struct sess *"
     }
 
     # Miscellaneous
     # XXX: I'm not happy about this one.  All times should be relative
     # XXX: or delta times in VCL programs, so this shouldn't be needed /phk
-    { now
-	    RO TIME
-	    {recv pipe pass hash miss hit fetch deliver }
-	    "const struct sess *"
+    { now				TIME
+	RO
+	all
+	"const struct sess *"
     }
-    { req.backend.healthy	RO BOOL
-	    {recv pipe pass hash miss hit fetch deliver }
-	    "const struct sess *"
-    }
-
 }
 
 set tt(IP)		"struct sockaddr *"
@@ -433,7 +434,14 @@ set fp [open ../../include/vrt_obj.h w]
 warns $fp
 
 proc method_map {m} {
+	global methods
 
+	if {$m == "all"} {
+		set m ""
+		foreach i $methods {
+			lappend m [lindex $i 0]
+		}
+	}
 	set l1 ""
 	set l2 ""
 	foreach i $m {
@@ -468,9 +476,9 @@ proc vars {v pa} {
 	foreach v $v {
 		set n [lindex $v 0]
 		regsub -all {[.]} $n "_" m
-		set a [lindex $v 1]
+		set t [lindex $v 1]
+		set a [lindex $v 2]
 		if {$a == "NO"} continue
-		set t [lindex $v 2]
 		set ty [lindex $v 4]
 		if {[regexp HDR_ $t]} {
 			puts $fo  "\t\{ \"$n\", HEADER, [string length $n],"

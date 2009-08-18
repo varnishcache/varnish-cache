@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4100 2009-06-09 10:41:38Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4188 2009-08-18 08:29:27Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -111,6 +111,13 @@ struct var vcc_vars[] = {
 	    "VRT_r_req_esi(sp)",	    "VRT_l_req_esi(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_FETCH | VCL_MET_DELIVER | VCL_MET_ERROR
+	},
+	{ "req.backend.healthy", BOOL, 19,
+	    "VRT_r_req_backend_healthy(sp)",	    NULL,
+	    V_RO,	    0,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ "bereq.request", STRING, 13,
 	    "VRT_r_bereq_request(sp)",	    "VRT_l_bereq_request(sp, ",
@@ -257,12 +264,7 @@ struct var vcc_vars[] = {
 	    V_RO,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
 	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
-	},
-	{ "req.backend.healthy", BOOL, 19,
-	    "VRT_r_req_backend_healthy(sp)",	    NULL,
-	    V_RO,	    0,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
-	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
 	},
 	{ NULL }
 };
