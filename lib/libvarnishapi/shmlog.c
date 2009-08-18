@@ -540,7 +540,10 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	switch (arg) {
 	case 'b': vd->b_opt = !vd->b_opt; return (1);
 	case 'c': vd->c_opt = !vd->c_opt; return (1);
-	case 'd': vd->d_opt = !vd->d_opt; return (1);
+	case 'd':
+		vd->d_opt = !vd->d_opt;
+		vd->flags |= F_NON_BLOCKING;
+		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
