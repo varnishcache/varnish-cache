@@ -3,7 +3,7 @@
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vcc_gen_obj.tcl instead
+ * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
 struct sockaddr * VRT_r_client_ip(const struct sess *);
