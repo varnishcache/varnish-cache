@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4100 2009-06-09 10:41:38Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4188 2009-08-18 08:29:27Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4100 2009-06-09 10");
-	vsb_cat(sb, ":41:38Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4188 2009-08-18 08");
+	vsb_cat(sb, ":29:27Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -317,8 +317,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4100 2009-06-09 10");
-	vsb_cat(sb, ":41:38Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4188 2009-08-18 08");
+	vsb_cat(sb, ":29:27Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sockaddr * VRT_r_clien");
 	vsb_cat(sb, "t_ip(const struct sess *);\nstruct sockaddr * VRT_r_se");
@@ -340,13 +340,14 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char * VRT_r_req_xid(struct sess *);\n");
 	vsb_cat(sb, "unsigned VRT_r_req_esi(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_esi(struct sess *, unsigned);\n");
-	vsb_cat(sb, "const char * VRT_r_bereq_request(const struct sess *);");
-	vsb_cat(sb, "\nvoid VRT_l_bereq_request(const struct sess *, const ");
-	vsb_cat(sb, "char *, ...);\nconst char * VRT_r_bereq_url(const stru");
-	vsb_cat(sb, "ct sess *);\nvoid VRT_l_bereq_url(const struct sess *,");
-	vsb_cat(sb, " const char *, ...);\nconst char * VRT_r_bereq_proto(c");
-	vsb_cat(sb, "onst struct sess *);\nvoid VRT_l_bereq_proto(const str");
-	vsb_cat(sb, "uct sess *, const char *, ...);\n");
+	vsb_cat(sb, "unsigned VRT_r_req_backend_healthy(const struct sess *");
+	vsb_cat(sb, ");\nconst char * VRT_r_bereq_request(const struct sess");
+	vsb_cat(sb, " *);\nvoid VRT_l_bereq_request(const struct sess *, co");
+	vsb_cat(sb, "nst char *, ...);\nconst char * VRT_r_bereq_url(const ");
+	vsb_cat(sb, "struct sess *);\nvoid VRT_l_bereq_url(const struct ses");
+	vsb_cat(sb, "s *, const char *, ...);\nconst char * VRT_r_bereq_pro");
+	vsb_cat(sb, "to(const struct sess *);\nvoid VRT_l_bereq_proto(const");
+	vsb_cat(sb, " struct sess *, const char *, ...);\n");
 	vsb_cat(sb, "double VRT_r_bereq_connect_timeout(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_bereq_connect_timeout(struct sess *, double");
 	vsb_cat(sb, ");\ndouble VRT_r_bereq_first_byte_timeout(struct sess ");
@@ -388,6 +389,4 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char * VRT_r_resp_response(const struct sess *);");
 	vsb_cat(sb, "\nvoid VRT_l_resp_response(const struct sess *, const ");
 	vsb_cat(sb, "char *, ...);\ndouble VRT_r_now(const struct sess *);\n");
-	vsb_cat(sb, "unsigned VRT_r_req_backend_healthy(const struct sess *");
-	vsb_cat(sb, ");\n");
 }
