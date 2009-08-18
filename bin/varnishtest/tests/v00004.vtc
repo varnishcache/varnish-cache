@@ -29,6 +29,8 @@ varnish v1 -vcl {
 }
 
 varnish v1 -expect n_backend == 2
+# give the expiry thread a chance to let go of its VCL
+delay 2
 varnish v1 -expect n_vcl == 3
 
 

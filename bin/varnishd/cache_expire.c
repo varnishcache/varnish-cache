@@ -262,7 +262,9 @@ exp_timer(struct sess *sp, void *priv)
 			continue;
 		}
 
+
 		/* It's time... */
+		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 
 		/* Remove from binheap */
 		assert(oc->timer_idx != BINHEAP_NOIDX);
@@ -286,16 +288,19 @@ exp_timer(struct sess *sp, void *priv)
 
 		Lck_Unlock(&exp_mtx);
 
+		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		if (!(oc->flags & OC_F_PERSISTENT)) {
 			o = oc->obj;
 			CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-			CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
 			    o->xid, (int)(o->ttl - t));
 			HSH_Deref(sp->wrk, &o);
 		} else {
-			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
+			WSL(sp->wrk, SLT_ExpKill, 1, "%u %d",
 			    o, (int)(oc->timer_when - t));
+			sp->objhead = oc->objhead;
+			sp->objcore = oc;
+			HSH_DerefObjCore(sp);
 		}
 	}
 }
