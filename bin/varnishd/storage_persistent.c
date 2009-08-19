@@ -830,7 +830,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		oc->flags &= ~OC_F_BUSY;
 		oc->obj = (void*)so;
 		oc->smp_seg = sg;
-		oc->ban = BAN_RefBan(so->ban, sc->tailban);
+		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		EXP_Inject(oc, NULL, so->ttl);
