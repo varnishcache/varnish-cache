@@ -1,0 +1,24 @@
+# $Id$
+
+test "Test that we can't recurse restarts forever"
+
+varnish v1 -vcl { 
+	backend bad { 
+		.host = "127.0.0.1";
+		.port = "9090";
+	}
+
+	sub vcl_recv {
+	    set req.backend = bad;
+	}
+	sub vcl_error { 
+	    restart; 
+	}
+ } -start 
+
+client c1 {
+        txreq -url "/"
+        rxresp
+        expect resp.status == 503
+} -run
+
