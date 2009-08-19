@@ -195,6 +195,9 @@ struct params {
 
 	/* CLI banner */
 	unsigned		cli_banner;
+
+	/* How long time does the ban lurker sleep */
+	double			ban_lurker_sleep;
 };
 
 extern volatile struct params *params;

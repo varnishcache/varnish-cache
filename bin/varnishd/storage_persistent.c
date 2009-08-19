@@ -610,6 +610,7 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	struct smp_seg *sg;
 	struct smp_object *so;
 
+	Lck_AssertHeld(&oh->mtx);
 	(void)sp;
 	sg = oc->smp_seg;
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);

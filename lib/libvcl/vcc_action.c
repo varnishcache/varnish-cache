@@ -383,7 +383,7 @@ parse_purge(struct tokenlist *tl)
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			if (pv->flag &&
+			if ((pv->flag & 1) &&
 			    tl->t->b + strlen(pv->name) >= tl->t->e) {
 				vsb_printf(tl->sb, "Missing header name.");
 				vcc_ErrWhere(tl, tl->t);
