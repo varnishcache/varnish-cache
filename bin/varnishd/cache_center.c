@@ -350,13 +350,15 @@ cnt_error(struct sess *sp)
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
 
-	if (sp->handling == VCL_RET_RESTART) {
+	if (sp->handling == VCL_RET_RESTART && sp->restarts <  params->max_restarts) {
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
 		sp->step = STP_RECV;
 		return (0);
-	}
+	} else if (sp->handling == VCL_RET_RESTART)
+		sp->handling = VCL_RET_DELIVER;
+		  
 
 	/* We always close when we take this path */
 	sp->doclose = "error";
