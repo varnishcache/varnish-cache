@@ -58,6 +58,7 @@ struct ban {
 #define BAN_F_GONE		(1 << 0)
 #define BAN_F_PENDING		(1 << 1)
 	VTAILQ_HEAD(,ban_test)	tests;
+	VTAILQ_HEAD(,objcore)	objcore;
 	double			t0;
 	struct vsb		*vsb;
 	char			*test;

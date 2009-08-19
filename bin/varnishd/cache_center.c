@@ -510,9 +510,8 @@ cnt_fetch(struct sess *sp)
 		sp->objcore->objhead = sp->objhead;
 		sp->objhead = NULL;	/* refcnt follows pointer. */
 		sp->objcore = NULL;	/* refcnt follows pointer. */
+		BAN_NewObj(sp->obj);
 	}
-
-	BAN_NewObj(sp->obj);
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
