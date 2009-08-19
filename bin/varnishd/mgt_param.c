@@ -758,6 +758,14 @@ static const struct parspec input_parspec[] = {
 		"Set to off for compatibility with pre 2.1 versions.\n",
 		0,
 		"on", "bool" },
+	{ "ban_lurker_sleep", tweak_timeout_double,
+		&master.ban_lurker_sleep, 0.0, UINT_MAX,
+		"How long time does the ban lurker thread sleeps between "
+		"successfull attempts to push the last item up the purge "
+		" list.  It always sleeps a second when nothing can be done.\n"
+		"A value of zero disables the ban lurker.",
+		0,
+		"0.0", "s" },
 	{ NULL, NULL, NULL }
 };
 

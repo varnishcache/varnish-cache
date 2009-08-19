@@ -57,6 +57,7 @@ struct ban {
 	int			flags;
 #define BAN_F_GONE		(1 << 0)
 #define BAN_F_PENDING		(1 << 1)
+#define BAN_F_REQ		(1 << 2)
 	VTAILQ_HEAD(,ban_test)	tests;
 	VTAILQ_HEAD(,objcore)	objcore;
 	double			t0;

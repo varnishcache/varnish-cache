@@ -66,6 +66,7 @@ void HSH_AddString(struct sess *sp, const char *str);
 void HSH_BeforeVclHash(struct sess *sp, unsigned hashcount);
 void HSH_AfterVclHash(const struct sess *sp);
 void HSH_DerefObjCore(struct sess *sp);
+void HSH_FindBan(struct sess *sp, struct objcore **oc);
 struct objcore *HSH_Insert(const struct sess *sp);
 
 #ifdef VARNISH_CACHE_CHILD

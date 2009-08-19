@@ -53,6 +53,9 @@ varnish v1 -cli "debug.backend" -cli "vcl.list"
 
 varnish v1 -cli "vcl.discard vcl1"
 
+# Give expiry thread a chance to let go
+delay 2
+
 # It won't go away as long as the workthread holds a VCL reference
 varnish v1 -expect n_backend == 2
 varnish v1 -expect n_vcl_avail == 1

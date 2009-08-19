@@ -63,6 +63,7 @@ SVNID("$Id$")
 static VTAILQ_HEAD(banhead,ban)	ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
+static pthread_t ban_thread;
 
 /*--------------------------------------------------------------------
  * Manipulation of bans
@@ -285,6 +286,8 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 		if (strncmp(a1, pv->name, strlen(pv->name)))
 			continue;
 		bt->func = pv->func;
+		if (pv->flag & 2)
+			b->flags |= BAN_F_REQ;
 		if (pv->flag & 1) 
 			ban_parse_http(bt, a1 + strlen(pv->name));
 		break;
@@ -419,8 +422,8 @@ BAN_DestroyObj(struct object *o)
 }
 
 
-int
-BAN_CheckObject(struct object *o, const struct sess *sp)
+static int
+ban_check_object(struct object *o, const struct sess *sp, int has_req)
 {
 	struct ban *b;
 	struct ban_test *bt;
@@ -445,6 +448,8 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
 		if (b->flags & BAN_F_GONE)
 			continue;
+		if (!has_req && (b->flags & BAN_F_REQ))
+			return (0);
 		VTAILQ_FOREACH(bt, &b->tests, list) {
 			tests++;
 			if (bt->func(bt, o, sp))
@@ -483,6 +488,68 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 		return (1);
 	}
 }
+
+int
+BAN_CheckObject(struct object *o, const struct sess *sp)
+{
+
+	return ban_check_object(o, sp, 1);
+}
+
+/*--------------------------------------------------------------------
+ * Ban tail lurker thread
+ */
+
+static void *
+ban_lurker(struct sess *sp, void *priv)
+{
+	struct ban *b, *bf;
+	struct objcore *oc;
+	struct object *o;
+
+	(void)priv;
+	while (1) {
+		WSL_Flush(sp->wrk, 0);
+		WRK_SumStat(sp->wrk);
+		if (params->ban_lurker_sleep == 0.0) {
+			AZ(sleep(1));
+			continue;
+		}
+		Lck_Lock(&ban_mtx);
+
+		/* First try to route the last ban */
+		bf = BAN_CheckLast();
+		if (bf != NULL) {
+			Lck_Unlock(&ban_mtx);
+			BAN_Free(bf);
+			TIM_sleep(params->ban_lurker_sleep);
+			continue;
+		}
+		/* Then try to poke the first object on the last ban */
+		oc = NULL;
+		while (1) {
+			b = VTAILQ_LAST(&ban_head, banhead);
+			if (b == ban_start) 
+				break;
+			oc = VTAILQ_FIRST(&b->objcore);
+			if (oc == NULL)
+				break;
+			HSH_FindBan(sp, &oc);
+			break;
+		}
+		Lck_Unlock(&ban_mtx);
+		if (oc == NULL) {
+			TIM_sleep(1.0);
+			continue;
+		}
+		o = oc->obj;
+		(void)ban_check_object(o, sp, 0);
+		WSP(sp, SLT_Debug, "lurker: %p %g", oc, o->ttl);
+		HSH_Deref(sp->wrk, &o);
+		TIM_sleep(params->ban_lurker_sleep);
+	}
+}
+
 
 /*--------------------------------------------------------------------
  * Release a reference
@@ -767,4 +834,5 @@ BAN_Init(void)
 	AN(ban_magic);
 	ban_magic->flags |= BAN_F_GONE;
 	BAN_Insert(ban_magic);
+	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
 }
