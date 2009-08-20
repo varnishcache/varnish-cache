@@ -541,6 +541,9 @@ The object's remaining time to live, in seconds.
 .It Va obj.lastuse
 The approximate time elapsed since the object was last requests, in
 seconds.
+.It Va obj.hits
+The approximate number of times the object has been delivered. A value of 0
+indicates a cache miss.
 .El
 .Pp
 The following variables are available while determining the hash key
