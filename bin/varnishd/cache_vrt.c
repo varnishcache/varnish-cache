@@ -279,6 +279,59 @@ VRT_l_obj_status(const struct sess *sp, int num)
 	http_SetH(sp->obj->http, HTTP_HDR_STATUS, p);
 }
 
+/* Add an objecthead to the saintmode list for the (hopefully) relevant
+ * backend. Some double-up asserting here to avoid assert-errors when there
+ * is no object. 
+ */
+void
+VRT_l_beresp_saintmode(const struct sess *sp, double a)
+{
+	struct trouble *new;
+	struct trouble *tr;
+	struct trouble *tr2;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (!sp->vbe)
+		return;
+	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
+	if (!sp->vbe->backend)
+		return;
+	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
+	if (!sp->objhead)
+		return;
+	CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+
+	/* Setting a negative holdoff period is a mistake. Detecting this
+	 * when compiling the VCL would be better.
+	 */
+	assert(a > 0);
+	
+	ALLOC_OBJ(new, TROUBLE_MAGIC);
+	new->objhead = sp->objhead;
+	new->timeout = sp->t_req + a;
+
+	/* Insert the new item on the list before the first item with a
+	 * timeout at a later date (ie: sort by which entry will time out
+	 * from the list
+	 */	
+	Lck_Lock(&sp->vbe->backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &sp->vbe->backend->troublelist, list, tr2) {
+		if (tr->timeout < new->timeout) {
+			VTAILQ_INSERT_BEFORE(tr, new, list);
+			new = NULL;
+			break;
+		}
+	}
+
+	/* Insert the item at the end if the list is empty or all other
+	 * items have a longer timeout.
+	 */
+	if (new)
+		VTAILQ_INSERT_TAIL(&sp->vbe->backend->troublelist, new, list);
+	
+	Lck_Unlock(&sp->vbe->backend->mtx);
+}
+
 int
 VRT_r_obj_status(const struct sess *sp)
 {

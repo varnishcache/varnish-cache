@@ -219,6 +219,11 @@ set spobj {
 	{ fetch }
 	"const struct sess *"
     }
+    { beresp.saintmode			TIME
+    	WO
+	{ fetch }
+	"const struct sess *"
+    }
     { beresp.status			INT
 	RW
 	{ fetch }

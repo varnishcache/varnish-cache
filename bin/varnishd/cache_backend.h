@@ -93,6 +93,18 @@ struct director {
 };
 
 /*--------------------------------------------------------------------
+ * List of objectheads that have recently been rejected by VCL.
+ */
+
+struct trouble {
+	unsigned		magic;
+#define TROUBLE_MAGIC		0x4211ab21
+	void			*objhead; /* NB: only comparison */
+	double			timeout;
+	VTAILQ_ENTRY(trouble)	list;
+};
+
+/*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
  */
 
@@ -124,11 +136,13 @@ struct backend {
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
+	VTAILQ_HEAD(, trouble)	troublelist;
 };
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbe_conn *vc);
 struct vbe_conn *VBE_GetVbe(struct sess *sp, struct backend *bp);
+unsigned int backend_is_healthy(const struct sess *sp, struct backend *backend);
 
 /* cache_backend_cfg.c */
 extern struct lock VBE_mtx;

@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4188 2009-08-18 08:29:27Z phk $
+ * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -157,6 +157,11 @@ struct var vcc_vars[] = {
 	{ "beresp.proto", STRING, 12,
 	    "VRT_r_beresp_proto(sp)",	    "VRT_l_beresp_proto(sp, ",
 	    V_RW,	    0,
+	    VCL_MET_FETCH
+	},
+	{ "beresp.saintmode", TIME, 16,
+	    NULL,	    "VRT_l_beresp_saintmode(sp, ",
+	    V_WO,	    0,
 	    VCL_MET_FETCH
 	},
 	{ "beresp.status", INT, 13,
