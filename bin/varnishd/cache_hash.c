@@ -493,6 +493,11 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * XXX: this until the object is unbusy'ed, so in practice we
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
+	/* Grace-stuff: sp->objhead is evaluated in healthy() for 'saint
+	 * mode'. Is this entirely wrong, or just ugly? Why isn't objhead
+	 * set here? FIXME:Grace.
+	 */
+	sp->objhead = oh;
 	if (oc == NULL && grace_oc != NULL && 
 	    (busy_oc != NULL || !sp->director->healthy(sp))) {
 		o = grace_oc->obj;
@@ -500,6 +505,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 			oc = grace_oc;
 	}
+	sp->objhead = NULL;
 
 	if (oc != NULL) {
 		o = oc->obj;

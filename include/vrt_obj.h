@@ -41,6 +41,7 @@ double VRT_r_bereq_between_bytes_timeout(struct sess *);
 void VRT_l_bereq_between_bytes_timeout(struct sess *, double);
 const char * VRT_r_beresp_proto(const struct sess *);
 void VRT_l_beresp_proto(const struct sess *, const char *, ...);
+void VRT_l_beresp_saintmode(const struct sess *, double);
 int VRT_r_beresp_status(const struct sess *);
 void VRT_l_beresp_status(const struct sess *, int);
 const char * VRT_r_beresp_response(const struct sess *);

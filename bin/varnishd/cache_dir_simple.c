@@ -75,7 +75,7 @@ vdi_simple_healthy(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
-	return vs->backend->healthy;
+	return (backend_is_healthy(sp, vs->backend));
 }
 
 /*lint -e{818} not const-able */

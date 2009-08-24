@@ -228,6 +228,52 @@ VBE_GetFd(struct sess *sp)
 	sp->vbe = sp->director->getfd(sp);
 }
 
+/*
+ * It evaluates if a backend is healthy _for_a_specific_object_.
+ * That means that it relies on sp->objhead. This is mainly for saint-mode,
+ * but also takes backend->healthy into account.
+ */
+unsigned int
+backend_is_healthy(const struct sess *sp, struct backend *backend)
+{
+	struct trouble *tr;
+	struct trouble *tr2;
+	struct trouble *old = NULL;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
+
+	if (!backend->healthy)
+		return 0;
+
+	/* No need to test if we don't have an object head to test against.
+	 * FIXME: Should check the magic too, but probably not assert?
+	 */
+	if (!sp->objhead)
+		return 1;
+
+	Lck_Lock(&backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &backend->troublelist, list, tr2) {
+		CHECK_OBJ_NOTNULL(tr, TROUBLE_MAGIC);
+		if (tr->timeout < sp->t_req) {
+			VTAILQ_REMOVE(&backend->troublelist, tr, list);
+			old = tr;
+			break;
+		}
+
+		if (tr->objhead == sp->objhead) {
+			Lck_Unlock(&backend->mtx);
+			return 0;
+		}
+	}
+	Lck_Unlock(&backend->mtx);
+
+	if (old)
+		FREE_OBJ(old);
+
+	return 1;
+}
+
 /*--------------------------------------------------------------------
  * Get a connection to a particular backend.
  */
@@ -265,7 +311,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		VBE_ClosedFd(sp);
 	}
 
-	if (!bp->healthy) {
+	if (!backend_is_healthy(sp, bp)) {
 		VSL_stats->backend_unhealthy++;
 		return (NULL);
 	}

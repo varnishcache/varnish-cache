@@ -226,6 +226,8 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	VTAILQ_INIT(&b->connlist);
 	b->hash = u;
 
+	VTAILQ_INIT(&b->troublelist);
+
 	/*
 	 * This backend may live longer than the VCL that instantiated it
 	 * so we cannot simply reference the VCL's copy of things.
