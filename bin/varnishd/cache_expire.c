@@ -101,6 +101,7 @@ EXP_Inject(struct objcore *oc, struct objcore *lrut, double ttl)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(lrut, OBJCORE_MAGIC);
 
 	Lck_Lock(&exp_mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
@@ -259,7 +260,6 @@ exp_timer(struct sess *sp, void *priv)
 			t = TIM_real();
 			continue;
 		}
-
 
 		/* It's time... */
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);

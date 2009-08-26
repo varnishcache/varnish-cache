@@ -836,6 +836,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
+		AZ(sp->wrk->nobjcore);
 		EXP_Inject(oc, sc->parent->lru_tail, so->ttl);
 		sg->nalloc++;
 	}
@@ -993,6 +994,7 @@ smp_thread(struct sess *sp, void *priv)
 	sc->flags |= SMP_F_LOADED;
 	BAN_Deref(&sc->tailban);
 	sc->tailban = NULL;
+	printf("Silo completely loaded\n");
 	while (1)	
 		sleep (1);
 	return (NULL);
