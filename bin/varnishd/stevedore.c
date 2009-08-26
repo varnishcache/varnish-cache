@@ -124,7 +124,9 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 	*stv = *stv2;
 	AN(stv->name);
 	AN(stv->alloc);
-	VTAILQ_INIT(&stv->lru);
+	ALLOC_OBJ(stv->lru_tail, OBJCORE_MAGIC);
+	VLIST_INIT(&stv->lru);
+	VLIST_INSERT_HEAD(&stv->lru, stv->lru_tail, lru_list);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
@@ -159,14 +161,12 @@ STV_close(void)
 	}
 }
 
-struct objcore_head *
+struct objcore *
 STV_lru(struct storage *st)
 {
-	if (st == NULL)
-		return (NULL);
-	CHECK_OBJ(st, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 
-	return (&st->stevedore->lru);
+	return (st->stevedore->lru_tail);
 }
 
 const struct choice STV_choice[] = {

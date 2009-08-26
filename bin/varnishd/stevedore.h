@@ -55,6 +55,7 @@ struct stevedore {
 	storage_close_f		*close;
 
 	struct objcore_head	lru;
+	struct objcore		*lru_tail;
 
 	/* private fields */
 	void			*priv;
@@ -68,7 +69,8 @@ void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
 void STV_open(void);
 void STV_close(void);
-struct objcore_head *STV_lru(struct storage *st);
+struct objcore *STV_lru(struct storage *st);
+
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx);

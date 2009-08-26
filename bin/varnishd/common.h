@@ -67,5 +67,5 @@ struct choice {
 
 /* Sort of hack-ish... */
 struct objcore;
-VTAILQ_HEAD(objcore_head, objcore);
+VLIST_HEAD(objcore_head, objcore);
 
