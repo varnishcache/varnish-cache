@@ -314,7 +314,8 @@ DebugStunt(void)
 	pipes[1][1] = 1;
 
 	/* close the rest */
-	for (i = 5; i < getdtablesize(); i++)
+	j = getdtablesize();
+	for (i = 5; i < j; i++)
 		(void)close(i);
 
 	pfd[0].fd = pipes[0][0];
