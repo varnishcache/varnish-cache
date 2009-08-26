@@ -29,12 +29,12 @@
  *
  * Define which variables we can purge on, and which function does it.
  *
- * Middle field is a bitmap:
- *   1 = HTTP header search
- *   2 = Needs a client supplied request for test evaluation
  */
 
-PVAR("req.url",		2|0, ban_cond_url)
-PVAR("obj.hash", 	0|0, ban_cond_hash)
-PVAR("req.http.",	2|1, ban_cond_req_http)
-PVAR("obj.http.",	0|1, ban_cond_obj_http)
+#define PVAR_HTTP	1
+#define PVAR_REQ	2
+
+PVAR("req.url",		PVAR_REQ,		ban_cond_url)
+PVAR("obj.hash", 	0,			ban_cond_hash)
+PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	ban_cond_req_http)
+PVAR("obj.http.",	PVAR_HTTP,		ban_cond_obj_http)

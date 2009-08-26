@@ -235,7 +235,7 @@ static const struct pvar {
 	unsigned		flag;
 	ban_cond_f		*func;
 } pvars[] = {
-#define PVAR(a, b, c)	{ a, b, c },
+#define PVAR(a, b, c)	{ (a), (b), (c) },
 #include "purge_vars.h"
 #undef PVAR
 	{ 0, 0, 0}
@@ -286,9 +286,9 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 		if (strncmp(a1, pv->name, strlen(pv->name)))
 			continue;
 		bt->func = pv->func;
-		if (pv->flag & 2)
+		if (pv->flag & PVAR_REQ)
 			b->flags |= BAN_F_REQ;
-		if (pv->flag & 1) 
+		if (pv->flag & PVAR_HTTP) 
 			ban_parse_http(bt, a1 + strlen(pv->name));
 		break;
 	}

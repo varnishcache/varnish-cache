@@ -350,7 +350,7 @@ static const struct purge_var {
 	const char	*name;
 	unsigned	flag;
 } purge_var[] = {
-#define PVAR(a, b, c)   { a, b },
+#define PVAR(a, b, c)   { (a), (b) },
 #include "purge_vars.h"
 #undef PVAR     
         { 0, 0 }
@@ -383,7 +383,7 @@ parse_purge(struct tokenlist *tl)
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			if ((pv->flag & 1) &&
+			if ((pv->flag & PVAR_HTTP) &&
 			    tl->t->b + strlen(pv->name) >= tl->t->e) {
 				vsb_printf(tl->sb, "Missing header name.");
 				vcc_ErrWhere(tl, tl->t);

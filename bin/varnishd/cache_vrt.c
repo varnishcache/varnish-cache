@@ -307,6 +307,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	assert(a > 0);
 	
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
+	AN(new);
 	new->objhead = sp->objhead;
 	new->timeout = sp->t_req + a;
 
