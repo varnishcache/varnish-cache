@@ -290,7 +290,7 @@ struct objcore {
 #define OC_F_PERSISTENT		(1<<3)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
-	VTAILQ_ENTRY(objcore)	lru_list;
+	VLIST_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct smp_seg		*smp_seg;
 	struct ban		*ban;
@@ -488,11 +488,11 @@ extern pthread_t cli_thread;
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
-void EXP_Inject(struct objcore *oc, struct objcore_head *lru, double ttl);
+void EXP_Inject(struct objcore *oc, struct objcore *lrut, double ttl);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(const struct object *o);
-int EXP_NukeOne(struct sess *sp, struct objcore_head *lru);
+int EXP_NukeOne(struct sess *sp, const struct objcore_head *lru);
 
 /* cache_fetch.c */
 int FetchHdr(struct sess *sp);

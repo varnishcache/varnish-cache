@@ -113,6 +113,7 @@ VTAILQ_HEAD(smp_seghead, smp_seg);
 struct smp_sc {
 	unsigned		magic;
 #define SMP_SC_MAGIC		0x7b73af0a 
+	struct stevedore	*parent;
 
 	unsigned		flags;
 #define SMP_F_LOADED		(1 << 0)
@@ -519,6 +520,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	/* Allocate softc */
 	ALLOC_OBJ(sc, SMP_SC_MAGIC);
 	XXXAN(sc);
+	sc->parent = parent;
 	sc->fd = -1;
 	VTAILQ_INIT(&sc->segments);
 
@@ -834,7 +836,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
-		EXP_Inject(oc, NULL, so->ttl);
+		EXP_Inject(oc, sc->parent->lru_tail, so->ttl);
 		sg->nalloc++;
 	}
 	WRK_SumStat(sp->wrk);
