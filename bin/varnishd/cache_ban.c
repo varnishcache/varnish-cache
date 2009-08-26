@@ -506,6 +506,7 @@ ban_lurker(struct sess *sp, void *priv)
 	struct ban *b, *bf;
 	struct objcore *oc;
 	struct object *o;
+	int i;
 
 	(void)priv;
 	while (1) {
@@ -542,9 +543,10 @@ ban_lurker(struct sess *sp, void *priv)
 			TIM_sleep(1.0);
 			continue;
 		}
+		AZ(oc->flags & OC_F_PERSISTENT);
 		o = oc->obj;
-		(void)ban_check_object(o, sp, 0);
-		WSP(sp, SLT_Debug, "lurker: %p %g", oc, o->ttl);
+		i = ban_check_object(o, sp, 0);
+		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->ttl, i);
 		HSH_Deref(sp->wrk, &o);
 		TIM_sleep(params->ban_lurker_sleep);
 	}

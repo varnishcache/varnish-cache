@@ -401,6 +401,7 @@ HSH_Insert(const struct sess *sp)
 	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 
 	/* XXX: Should this not be ..._HEAD now ? */
@@ -681,13 +682,13 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	VTAILQ_FOREACH(oc2, &oh->objcs, list)
-		if (oc1 == oc2) {
-			oc1->obj->refcnt++;
+		if (oc1 == oc2)
 			break;
-		}
 	if (oc2 != NULL && oc2->flags & OC_F_PERSISTENT)
 		SMP_Fixup(sp, oh, oc2);
-	Lck_Unlock(&oc1->objhead->mtx);
+	if (oc2 != NULL)
+		oc2->obj->refcnt++;
+	Lck_Unlock(&oh->mtx);
 	*oc = oc2;
 }
 
