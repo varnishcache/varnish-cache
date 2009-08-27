@@ -42,6 +42,7 @@ typedef void storage_free_f(struct storage *);
 typedef void storage_object_f(const struct sess *sp);
 typedef void storage_close_f(const struct stevedore *);
 
+
 struct stevedore {
 	unsigned		magic;
 #define STEVEDORE_MAGIC		0x4baf43db
@@ -54,8 +55,7 @@ struct stevedore {
 	storage_object_f	*object;
 	storage_close_f		*close;
 
-	struct objcore_head	lru;
-	struct objcore		*lru_tail;
+	struct lru		*lru;
 
 	/* private fields */
 	void			*priv;
@@ -69,7 +69,7 @@ void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
 void STV_open(void);
 void STV_close(void);
-struct objcore *STV_lru(struct storage *st);
+struct lru *STV_lru(const struct storage *st);
 
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);

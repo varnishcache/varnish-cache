@@ -64,8 +64,3 @@ struct choice {
 	const char      *name;
 	void            *ptr;
 };
-
-/* Sort of hack-ish... */
-struct objcore;
-VLIST_HEAD(objcore_head, objcore);
-

@@ -837,7 +837,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		AZ(sp->wrk->nobjcore);
-		EXP_Inject(oc, sc->parent->lru_tail, so->ttl);
+		EXP_Inject(oc, sc->parent->lru, so->ttl);
 		sg->nalloc++;
 	}
 	WRK_SumStat(sp->wrk);

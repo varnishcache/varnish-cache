@@ -97,18 +97,18 @@ update_object_when(const struct object *o)
  */
 
 void
-EXP_Inject(struct objcore *oc, struct objcore *lrut, double ttl)
+EXP_Inject(struct objcore *oc, struct lru *lru, double ttl)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(lrut, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&exp_mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 	oc->timer_when = ttl;
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VLIST_INSERT_BEFORE(lrut, oc, lru_list);
+	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
 	oc->flags |= OC_F_ONLRU;
 	Lck_Unlock(&exp_mtx);
 }
@@ -123,7 +123,8 @@ EXP_Inject(struct objcore *oc, struct objcore *lrut, double ttl)
 void
 EXP_Insert(struct object *o)
 {
-	struct objcore *oc, *lrut;
+	struct objcore *oc;
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
@@ -134,15 +135,15 @@ EXP_Insert(struct object *o)
 
 	assert(o->entered != 0 && !isnan(o->entered));
 	o->last_lru = o->entered;
-	lrut = STV_lru(o->objstore);
 	Lck_Lock(&exp_mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 	(void)update_object_when(o);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
 	if (o->objstore != NULL) {
-		CHECK_OBJ_NOTNULL(lrut, OBJCORE_MAGIC);
-		VLIST_INSERT_BEFORE(lrut, oc, lru_list);
+		lru = STV_lru(o->objstore);
+		CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
 		oc->flags |= OC_F_ONLRU;
 	}
 	Lck_Unlock(&exp_mtx);
@@ -163,7 +164,8 @@ int
 EXP_Touch(const struct object *o)
 {
 	int retval = 0;
-	struct objcore *oc, *lrut;
+	struct objcore *oc;
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
@@ -174,13 +176,13 @@ EXP_Touch(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	if (o->objstore == NULL)	/* XXX ?? */
 		return (retval);
-	lrut = STV_lru(o->objstore);
-	CHECK_OBJ_NOTNULL(lrut, OBJCORE_MAGIC);
+	lru = STV_lru(o->objstore);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
 	if (oc->flags & OC_F_ONLRU) {	/* XXX ?? */
 		VLIST_REMOVE(oc, lru_list);
-		VLIST_INSERT_BEFORE(lrut, oc, lru_list);
+		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
 		VSL_stats->n_lru_moved++;
 		retval = 1;
 	}
@@ -303,7 +305,7 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct sess *sp, const struct objcore_head *lru)
+EXP_NukeOne(struct sess *sp, const struct lru *lru)
 {
 	struct objcore *oc;
 
@@ -318,7 +320,12 @@ EXP_NukeOne(struct sess *sp, const struct objcore_head *lru)
 	 *
 	 */
 	Lck_Lock(&exp_mtx);
-	VLIST_FOREACH(oc, lru, lru_list) {
+	VLIST_FOREACH(oc, &lru->lru_head, lru_list) {
+		if (oc == &lru->senteniel) {
+			AZ(VLIST_NEXT(oc, lru_list));
+			oc = NULL;
+			break;
+		}
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;

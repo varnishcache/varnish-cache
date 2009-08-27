@@ -296,6 +296,15 @@ struct objcore {
 	struct ban		*ban;
 };
 
+/*--------------------------------------------------------------------*/
+
+struct lru {
+	unsigned		magic;
+#define LRU_MAGIC		0x3fec7bb0
+	VLIST_HEAD(,objcore)	lru_head;
+	struct objcore		senteniel;
+};
+
 /* Object structure --------------------------------------------------*/
 
 struct object {
@@ -488,11 +497,11 @@ extern pthread_t cli_thread;
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
-void EXP_Inject(struct objcore *oc, struct objcore *lrut, double ttl);
+void EXP_Inject(struct objcore *oc, struct lru *lru, double ttl);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(const struct object *o);
-int EXP_NukeOne(struct sess *sp, const struct objcore_head *lru);
+int EXP_NukeOne(struct sess *sp, const struct lru *lru);
 
 /* cache_fetch.c */
 int FetchHdr(struct sess *sp);
