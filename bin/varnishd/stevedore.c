@@ -43,6 +43,18 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 
 static const struct stevedore * volatile stv_next;
 
+static struct lru *
+LRU_Alloc(void)
+{
+	struct lru *l;
+
+	ALLOC_OBJ(l, LRU_MAGIC);
+	AN(l);
+	VLIST_INIT(&l->lru_head);
+	VLIST_INSERT_HEAD(&l->lru_head, &l->senteniel, lru_list);
+	return (l);
+}
+
 struct storage *
 STV_alloc(struct sess *sp, size_t size)
 {
@@ -81,7 +93,7 @@ STV_alloc(struct sess *sp, size_t size)
 			break;
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(sp, &stv->lru) == -1)
+		if (EXP_NukeOne(sp, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -124,9 +136,7 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 	*stv = *stv2;
 	AN(stv->name);
 	AN(stv->alloc);
-	ALLOC_OBJ(stv->lru_tail, OBJCORE_MAGIC);
-	VLIST_INIT(&stv->lru);
-	VLIST_INSERT_HEAD(&stv->lru, stv->lru_tail, lru_list);
+	stv->lru = LRU_Alloc();
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
@@ -161,12 +171,12 @@ STV_close(void)
 	}
 }
 
-struct objcore *
-STV_lru(struct storage *st)
+struct lru *
+STV_lru(const struct storage *st)
 {
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 
-	return (st->stevedore->lru_tail);
+	return (st->stevedore->lru);
 }
 
 const struct choice STV_choice[] = {
