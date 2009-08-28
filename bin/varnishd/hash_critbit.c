@@ -375,6 +375,7 @@ hcb_cleaner(void *priv)
 		Lck_Unlock(&hcb_mtx);
 		WRK_SumStat(&ww);
 	}
+	return NULL;
 }
 
 /**********************************************************************/

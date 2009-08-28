@@ -195,6 +195,7 @@ vca_main(void *arg)
 			SES_Delete(sp);
 		}
 	}
+	return NULL;
 }
 
 /*--------------------------------------------------------------------*/
@@ -214,6 +215,7 @@ vca_sess_timeout_ticker(void *arg)
 		TIM_sleep(100 * 1e-3);
 		assert(read(dotimer_pipe[0], &junk, 1));
 	}
+	return NULL;
 }
 
 /*--------------------------------------------------------------------*/
