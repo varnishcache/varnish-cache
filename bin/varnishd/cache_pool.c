@@ -428,6 +428,7 @@ wrk_herdtimer_thread(void *priv)
 
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
+	return NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -500,6 +501,7 @@ wrk_herder_thread(void *priv)
 			wrk_breed_flock(wq[u]);
 		}
 	}
+	return NULL;
 }
 
 /*--------------------------------------------------------------------
