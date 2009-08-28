@@ -105,7 +105,8 @@ cnt_wait(struct sess *sp)
 			i = poll(pfd, 1, params->session_linger);
 			if (i == 0) {
 				WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
-				VSL_stats->sess_herd++;
+				sp->wrk->stats->sess_herd++;
+				SES_Charge(sp);
 				sp->wrk = NULL;
 				vca_return_session(sp);
 				return (1);
@@ -254,9 +255,11 @@ cnt_done(struct sess *sp)
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
-	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0)
+	/* If we did an ESI include, don't mess up our state */ 
+	if (sp->esis > 0) {
+		SES_Charge(sp);
 		return (1);
+	}
 
 	sp->t_req = NAN;
 
@@ -269,8 +272,8 @@ cnt_done(struct sess *sp)
 		vca_close_session(sp, sp->doclose);
 	}
 	if (sp->fd < 0) {
+		sp->wrk->stats->sess_closed++;
 		SES_Charge(sp);
-		VSL_stats->sess_closed++;
 		sp->wrk = NULL;
 		SES_Delete(sp);
 		return (1);
@@ -281,21 +284,21 @@ cnt_done(struct sess *sp)
 
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
-		VSL_stats->sess_pipeline++;
+		sp->wrk->stats->sess_pipeline++;
 		sp->step = STP_START;
 		return (0);
 	}
 	if (Tlen(sp->htc->rxbuf)) {
-		VSL_stats->sess_readahead++;
+		sp->wrk->stats->sess_readahead++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
 	if (params->session_linger > 0) {
-		VSL_stats->sess_linger++;
+		sp->wrk->stats->sess_linger++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
-	VSL_stats->sess_herd++;
+	sp->wrk->stats->sess_herd++;
 	SES_Charge(sp);
 	sp->wrk = NULL;
 	vca_return_session(sp);
@@ -745,6 +748,7 @@ cnt_lookup(struct sess *sp)
 		 * worker thread.   The hash code to restart the session,
 		 * still in STP_LOOKUP, later when the busy object isn't.
 		 */
+		AZ(sp->wrk);
 		return (1);
 	}
 
@@ -753,7 +757,7 @@ cnt_lookup(struct sess *sp)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
-		VSL_stats->cache_miss++;
+		sp->wrk->stats->cache_miss++;
 
 		AZ(oc->obj);
 		sp->objhead = oh;
@@ -767,7 +771,7 @@ cnt_lookup(struct sess *sp)
 	sp->obj = o;
 
 	if (oc->flags & OC_F_PASS) {
-		VSL_stats->cache_hitpass++;
+		sp->wrk->stats->cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(sp->wrk, &sp->obj);
 		sp->objcore = NULL;
@@ -776,7 +780,7 @@ cnt_lookup(struct sess *sp)
 		return (0);
 	}
 
-	VSL_stats->cache_hit++;
+	sp->wrk->stats->cache_hit++;
 	WSP(sp, SLT_Hit, "%u", sp->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
@@ -1045,7 +1049,7 @@ cnt_start(struct sess *sp)
 	AZ(sp->vcl);
 
 	/* Update stats of various sorts */
-	VSL_stats->client_req++;			/* XXX not locked */
+	sp->wrk->stats->client_req++;
 	sp->t_req = TIM_real();
 	sp->wrk->lastused = sp->t_req;
 	sp->acct_req.req++;

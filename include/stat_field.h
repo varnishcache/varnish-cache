@@ -27,15 +27,18 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * 3rd argument marks fields for inclusion in the per worker-thread
+ * stats structure.
  */
 
 MAC_STAT(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
 MAC_STAT(client_drop,		uint64_t, 0, 'a', "Connection dropped, no sess")
-MAC_STAT(client_req,		uint64_t, 0, 'a', "Client requests received")
+MAC_STAT(client_req,		uint64_t, 1, 'a', "Client requests received")
 
-MAC_STAT(cache_hit,		uint64_t, 0, 'a', "Cache hits")
-MAC_STAT(cache_hitpass,		uint64_t, 0, 'a', "Cache hits for pass")
-MAC_STAT(cache_miss,		uint64_t, 0, 'a', "Cache misses")
+MAC_STAT(cache_hit,		uint64_t, 1, 'a', "Cache hits")
+MAC_STAT(cache_hitpass,		uint64_t, 1, 'a', "Cache hits for pass")
+MAC_STAT(cache_miss,		uint64_t, 1, 'a', "Cache misses")
 
 MAC_STAT(backend_conn,		uint64_t, 0, 'a', "Backend conn. success")
 MAC_STAT(backend_unhealthy,	uint64_t, 0, 'a', "Backend conn. not attempted")
@@ -75,19 +78,19 @@ MAC_STAT(n_objsendfile,		uint64_t, 0, 'a', "Objects sent with sendfile")
 MAC_STAT(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write")
 MAC_STAT(n_objoverflow,		uint64_t, 0, 'a', "Objects overflowing workspace")
 
-MAC_STAT(s_sess,		uint64_t, 0, 'a', "Total Sessions")
-MAC_STAT(s_req,			uint64_t, 0, 'a', "Total Requests")
-MAC_STAT(s_pipe,		uint64_t, 0, 'a', "Total pipe")
-MAC_STAT(s_pass,		uint64_t, 0, 'a', "Total pass")
-MAC_STAT(s_fetch,		uint64_t, 0, 'a', "Total fetch")
-MAC_STAT(s_hdrbytes,		uint64_t, 0, 'a', "Total header bytes")
-MAC_STAT(s_bodybytes,		uint64_t, 0, 'a', "Total body bytes")
+MAC_STAT(s_sess,		uint64_t, 1, 'a', "Total Sessions")
+MAC_STAT(s_req,			uint64_t, 1, 'a', "Total Requests")
+MAC_STAT(s_pipe,		uint64_t, 1, 'a', "Total pipe")
+MAC_STAT(s_pass,		uint64_t, 1, 'a', "Total pass")
+MAC_STAT(s_fetch,		uint64_t, 1, 'a', "Total fetch")
+MAC_STAT(s_hdrbytes,		uint64_t, 1, 'a', "Total header bytes")
+MAC_STAT(s_bodybytes,		uint64_t, 1, 'a', "Total body bytes")
 
-MAC_STAT(sess_closed,		uint64_t, 0, 'a', "Session Closed")
-MAC_STAT(sess_pipeline,		uint64_t, 0, 'a', "Session Pipeline")
-MAC_STAT(sess_readahead,	uint64_t, 0, 'a', "Session Read Ahead")
-MAC_STAT(sess_linger,		uint64_t, 0, 'a', "Session Linger")
-MAC_STAT(sess_herd,		uint64_t, 0, 'a', "Session herd")
+MAC_STAT(sess_closed,		uint64_t, 1, 'a', "Session Closed")
+MAC_STAT(sess_pipeline,		uint64_t, 1, 'a', "Session Pipeline")
+MAC_STAT(sess_readahead,	uint64_t, 1, 'a', "Session Read Ahead")
+MAC_STAT(sess_linger,		uint64_t, 1, 'a', "Session Linger")
+MAC_STAT(sess_herd,		uint64_t, 1, 'a', "Session herd")
 
 MAC_STAT(shm_records,		uint64_t, 0, 'a', "SHM records")
 MAC_STAT(shm_writes,		uint64_t, 0, 'a', "SHM writes")

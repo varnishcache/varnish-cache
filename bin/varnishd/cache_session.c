@@ -80,27 +80,17 @@ static struct lock 		stat_mtx;
 
 /*--------------------------------------------------------------------*/
 
-static void
-ses_sum_acct(struct acct *sum, const struct acct *inc)
-{
-
-#define ACCT(foo)	sum->foo += inc->foo;
-#include "acct_fields.h"
-#undef ACCT
-}
-
 void
 SES_Charge(struct sess *sp)
 {
 	struct acct *a = &sp->acct_req;
 
-	ses_sum_acct(&sp->acct, a);
-	Lck_Lock(&stat_mtx);
-#define ACCT(foo)	VSL_stats->s_##foo += a->foo;
+#define ACCT(foo)	\
+	sp->wrk->stats->s_##foo += a->foo; 	\
+	sp->acct.foo += a->foo;		\
+	a->foo = 0;
 #include "acct_fields.h"
 #undef ACCT
-	Lck_Unlock(&stat_mtx);
-	memset(a, 0, sizeof *a);
 }
 
 /*--------------------------------------------------------------------*/
