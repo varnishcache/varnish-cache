@@ -105,7 +105,7 @@ cnt_wait(struct sess *sp)
 			i = poll(pfd, 1, params->session_linger);
 			if (i == 0) {
 				WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
-				sp->wrk->stats->sess_herd++;
+				sp->wrk->stats.sess_herd++;
 				SES_Charge(sp);
 				sp->wrk = NULL;
 				vca_return_session(sp);
@@ -271,35 +271,38 @@ cnt_done(struct sess *sp)
 		TCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
+
+	SES_Charge(sp);
+
 	if (sp->fd < 0) {
-		sp->wrk->stats->sess_closed++;
-		SES_Charge(sp);
+		sp->wrk->stats.sess_closed++;
 		sp->wrk = NULL;
 		SES_Delete(sp);
 		return (1);
 	}
 
+	if (sp->wrk->stats.client_req >= params->wthread_stats_rate) 
+		WRK_SumStat(sp->wrk);
 	/* Reset the workspace to the session-watermark */
 	WS_Reset(sp->ws, sp->ws_ses);
 
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
-		sp->wrk->stats->sess_pipeline++;
+		sp->wrk->stats.sess_pipeline++;
 		sp->step = STP_START;
 		return (0);
 	}
 	if (Tlen(sp->htc->rxbuf)) {
-		sp->wrk->stats->sess_readahead++;
+		sp->wrk->stats.sess_readahead++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
 	if (params->session_linger > 0) {
-		sp->wrk->stats->sess_linger++;
+		sp->wrk->stats.sess_linger++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
-	sp->wrk->stats->sess_herd++;
-	SES_Charge(sp);
+	sp->wrk->stats.sess_herd++;
 	sp->wrk = NULL;
 	vca_return_session(sp);
 	return (1);
@@ -757,7 +760,7 @@ cnt_lookup(struct sess *sp)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
-		sp->wrk->stats->cache_miss++;
+		sp->wrk->stats.cache_miss++;
 
 		AZ(oc->obj);
 		sp->objhead = oh;
@@ -771,7 +774,7 @@ cnt_lookup(struct sess *sp)
 	sp->obj = o;
 
 	if (oc->flags & OC_F_PASS) {
-		sp->wrk->stats->cache_hitpass++;
+		sp->wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		HSH_Deref(sp->wrk, &sp->obj);
 		sp->objcore = NULL;
@@ -780,7 +783,7 @@ cnt_lookup(struct sess *sp)
 		return (0);
 	}
 
-	sp->wrk->stats->cache_hit++;
+	sp->wrk->stats.cache_hit++;
 	WSP(sp, SLT_Hit, "%u", sp->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
@@ -1049,7 +1052,7 @@ cnt_start(struct sess *sp)
 	AZ(sp->vcl);
 
 	/* Update stats of various sorts */
-	sp->wrk->stats->client_req++;
+	sp->wrk->stats.client_req++;
 	sp->t_req = TIM_real();
 	sp->wrk->lastused = sp->t_req;
 	sp->acct_req.req++;
