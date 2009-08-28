@@ -530,6 +530,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%s>", oh->hash);
+		SES_Charge(sp);
 		sp->objhead = oh;
 		sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);

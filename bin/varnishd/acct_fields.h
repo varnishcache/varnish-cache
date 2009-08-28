@@ -27,6 +27,10 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * These are the stats we keep track of per session.  They will be summed,
+ * via the sp->wrk->stats into the s_<name> fields in the SHM file.
+ * NB: Remember to mark those in stat_field.h to be included in struct dstat.
  */
 
 ACCT(sess)
