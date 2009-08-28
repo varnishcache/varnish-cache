@@ -199,7 +199,7 @@ struct worker {
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
-	struct dstat		*stats;
+	struct dstat		stats;
 
 	double			lastused;
 
@@ -592,7 +592,7 @@ void PipeSession(struct sess *sp);
 void WRK_Init(void);
 int WRK_Queue(struct workreq *wrq);
 void WRK_QueueSession(struct sess *sp);
-void WRK_SumStat(const struct worker *w);
+void WRK_SumStat(struct worker *w);
 
 void WRW_Reserve(struct worker *w, int *fd);
 unsigned WRW_Flush(struct worker *w);

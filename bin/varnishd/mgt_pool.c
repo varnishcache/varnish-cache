@@ -165,6 +165,16 @@ const struct parspec WRK_parspec[] = {
 		"destroyed and later recreated.\n",
 		EXPERIMENTAL,
 		"200", "milliseconds" },
+	{ "thread_stats_rate",
+		tweak_uint, &master.wthread_stats_rate, 0, UINT_MAX,
+		"Worker threads accumulate statistics, and dump these into "
+		"the global stats counters if the lock is free when they "
+		"finish a request.\n"
+		"This parameters defines the maximum number of requests "
+		"a worker thread may handle, before it is forced to dump "
+		"its accumulated stats into the global counters.\n",
+		EXPERIMENTAL,
+		"10", "requests" },
 	{ "overflow_max", tweak_uint, &master.overflow_max, 0, UINT_MAX,
 		"Percentage permitted overflow queue length.\n"
 		"\n"

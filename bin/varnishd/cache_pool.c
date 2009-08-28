@@ -91,23 +91,24 @@ static struct lock		wstat_mtx;
 /*--------------------------------------------------------------------*/
 
 static void
-wrk_sumstat(const struct worker *w)
+wrk_sumstat(struct worker *w)
 {
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) (VSL_stats->n += w->stats->n)
+#define L1(n) (VSL_stats->n += w->stats.n)
 #define MAC_STAT(n, t, l, f, d) L##l(n);
 #include "stat_field.h"
 #undef MAC_STAT
 #undef L0
 #undef L1
-	memset(w->stats, 0, sizeof *w->stats);
+	memset(&w->stats, 0, sizeof w->stats);
 }
 
 void
-WRK_SumStat(const struct worker *w)
+WRK_SumStat(struct worker *w)
 {
+
 	Lck_Lock(&wstat_mtx);
 	wrk_sumstat(w);
 	Lck_Unlock(&wstat_mtx);
@@ -122,15 +123,12 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 	unsigned char wlog[shm_workspace];
 	unsigned char ws[sess_workspace];
 	struct SHA256Context sha256;
-	struct dstat stats;
-	unsigned stats_clean = 0;
+	int stats_clean;
 
 	THR_SetName("cache-worker");
 	w = &ww;
 	memset(w, 0, sizeof *w);
-	memset(&stats, 0, sizeof stats);
 	w->magic = WORKER_MAGIC;
-	w->stats = &stats;
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
@@ -143,6 +141,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 
 	Lck_Lock(&qp->mtx);
 	qp->nthr++;
+	stats_clean = 1;
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
@@ -155,19 +154,17 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
-			if (!stats_clean) {
+			if (!stats_clean)
 				WRK_SumStat(w);
-				stats_clean = 1;
-			}
 			Lck_CondWait(&w->cond, &qp->mtx);
 		}
 		if (w->wrq == NULL)
 			break;
 		Lck_Unlock(&qp->mtx);
+		stats_clean = 0;
 		AN(w->wrq);
 		AN(w->wrq->func);
 		w->lastused = NAN;
-		stats_clean = 0;
 		WS_Reset(w->ws, NULL);
 		w->bereq = NULL;
 		w->beresp1 = NULL;
@@ -184,14 +181,13 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 		w->wrq = NULL;
 		if (!Lck_Trylock(&wstat_mtx)) {
 			wrk_sumstat(w);
-			stats_clean = 1;
 			Lck_Unlock(&wstat_mtx);
+			stats_clean = 1;
 		}
 		Lck_Lock(&qp->mtx);
 	}
 	qp->nthr--;
 	Lck_Unlock(&qp->mtx);
-	AN(stats_clean);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
@@ -524,19 +520,16 @@ wrk_bgthread(void *arg)
 	struct worker ww;
 	struct sess *sp;
 	unsigned char logbuf[1024];	/* XXX:  size ? */
-	struct dstat stats;
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
 	sp = SES_Alloc(NULL, 0);
 	XXXAN(sp);
 	memset(&ww, 0, sizeof ww);
-	memset(&stats, 0, sizeof stats);
 	sp->wrk = &ww;
 	ww.magic = WORKER_MAGIC;
 	ww.wlp = ww.wlb = logbuf;
 	ww.wle = logbuf + sizeof logbuf;
-	ww.stats = &stats;
 
 	(void)bt->func(sp, bt->priv);
 

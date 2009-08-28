@@ -76,7 +76,7 @@ MAC_STAT(losthdr,		uint64_t, 0, 'a', "HTTP header overflows")
 
 MAC_STAT(n_objsendfile,		uint64_t, 0, 'a', "Objects sent with sendfile")
 MAC_STAT(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write")
-MAC_STAT(n_objoverflow,		uint64_t, 0, 'a', "Objects overflowing workspace")
+MAC_STAT(n_objoverflow,		uint64_t, 1, 'a', "Objects overflowing workspace")
 
 MAC_STAT(s_sess,		uint64_t, 1, 'a', "Total Sessions")
 MAC_STAT(s_req,			uint64_t, 1, 'a', "Total Requests")

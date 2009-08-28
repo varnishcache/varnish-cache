@@ -347,12 +347,9 @@ hcb_cleaner(void *priv)
 	struct objhead *oh, *oh2;
 	struct hcb_y *y;
 	struct worker ww;
-	struct dstat stats;
 
 	memset(&ww, 0, sizeof ww);
-	memset(&stats, 0, sizeof stats);
 	ww.magic = WORKER_MAGIC;
-	ww.stats = &stats;
 
 	THR_SetName("hcb_cleaner");
 	(void)priv;

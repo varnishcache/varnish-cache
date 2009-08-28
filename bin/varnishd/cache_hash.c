@@ -117,7 +117,7 @@ HSH_NewObject(struct sess *sp, int transient)
 	o->entered = NAN;
 	VTAILQ_INIT(&o->store);
 	VTAILQ_INIT(&o->esibits);
-	sp->wrk->stats->n_object++;
+	sp->wrk->stats.n_object++;
 	return (o);
 }
 
@@ -164,7 +164,7 @@ HSH_Prealloc(const struct sess *sp)
 		VTAILQ_INIT(&oh->waitinglist);
 		Lck_New(&oh->mtx);
 		w->nobjhead = oh;
-		w->stats->n_objecthead++;
+		w->stats.n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
 
@@ -182,18 +182,18 @@ HSH_Cleanup(struct worker *w)
 		Lck_Delete(&w->nobjhead->mtx);
 		FREE_OBJ(w->nobjhead);
 		w->nobjhead = NULL;
-		w->stats->n_objecthead--;
+		w->stats.n_objecthead--;
 	}
 }
 
 void
-HSH_DeleteObjHead(const struct worker *w, struct objhead *oh)
+HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	w->stats->n_objecthead--;
+	w->stats.n_objecthead--;
 	free(oh->hash);
 	FREE_OBJ(oh);
 }
@@ -409,7 +409,7 @@ HSH_Insert(const struct sess *sp)
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	sp->wrk->stats->n_object++;
+	sp->wrk->stats.n_object++;
 	return (oc);
 }
 
@@ -608,7 +608,7 @@ HSH_Unbusy(const struct sess *sp)
 	assert(o->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
-		VSL_stats->n_objoverflow++;
+		sp->wrk->stats.n_objoverflow++;
 	if (params->diag_bitmap & 0x40)
 		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
@@ -651,7 +651,7 @@ HSH_DerefObjCore(struct sess *sp)
 
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
-	sp->wrk->stats->n_object--;
+	sp->wrk->stats.n_object--;
 	Lck_Unlock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);
@@ -694,7 +694,7 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 }
 
 void
-HSH_Deref(const struct worker *w, struct object **oo)
+HSH_Deref(struct worker *w, struct object **oo)
 {
 	struct object *o;
 	struct objhead *oh;
@@ -749,7 +749,7 @@ HSH_Deref(const struct worker *w, struct object **oo)
 			FREE_OBJ(o);
 	}
 	o = NULL;
-	w->stats->n_object--;
+	w->stats.n_object--;
 
 	if (oc == NULL) {
 		AZ(oh);
