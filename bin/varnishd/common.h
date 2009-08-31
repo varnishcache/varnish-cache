@@ -64,3 +64,5 @@ struct choice {
 	const char      *name;
 	void            *ptr;
 };
+
+#define NEEDLESS_RETURN(foo) 	return (foo)

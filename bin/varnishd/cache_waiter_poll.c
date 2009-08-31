@@ -152,7 +152,7 @@ vca_main(void *arg)
 			SES_Delete(sp);
 		}
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------*/

@@ -296,7 +296,7 @@ exp_timer(struct sess *sp, void *priv)
 			HSH_DerefObjCore(sp);
 		}
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------

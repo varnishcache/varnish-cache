@@ -997,7 +997,7 @@ smp_thread(struct sess *sp, void *priv)
 	printf("Silo completely loaded\n");
 	while (1)	
 		sleep (1);
-	return (NULL);
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------
