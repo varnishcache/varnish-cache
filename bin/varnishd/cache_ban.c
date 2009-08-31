@@ -550,7 +550,7 @@ ban_lurker(struct sess *sp, void *priv)
 		HSH_Deref(sp->wrk, &o);
 		TIM_sleep(params->ban_lurker_sleep);
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 

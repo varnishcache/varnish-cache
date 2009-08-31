@@ -268,7 +268,7 @@ vca_acct(void *arg)
 			WRK_QueueSession(sp);
 		}
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------*/

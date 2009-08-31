@@ -753,3 +753,4 @@ ObjIsBusy(const struct object *o)
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	return (o->objcore->flags & OC_F_BUSY);
 }
+

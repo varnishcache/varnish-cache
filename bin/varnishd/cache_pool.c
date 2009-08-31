@@ -424,7 +424,7 @@ wrk_herdtimer_thread(void *priv)
 
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -497,7 +497,7 @@ wrk_herder_thread(void *priv)
 			wrk_breed_flock(wq[u]);
 		}
 	}
-	return NULL;
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -535,7 +535,7 @@ wrk_bgthread(void *arg)
 
 	WRONG("BgThread terminated");
 
-	return (NULL);
+	NEEDLESS_RETURN(NULL);
 }
 
 void
