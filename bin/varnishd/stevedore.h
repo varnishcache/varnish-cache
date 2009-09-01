@@ -71,6 +71,7 @@ void STV_open(void);
 void STV_close(void);
 struct lru *STV_lru(const struct storage *st);
 
+struct lru *LRU_Alloc(void);
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx);

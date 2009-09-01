@@ -89,6 +89,7 @@ struct smp_seg {
 #define SMP_SEG_MAGIC		0x45c61895
 
 	struct smp_sc		*sc;
+	struct lru		*lru;
 
 	VTAILQ_ENTRY(smp_seg)	list;		/* on smp_sc.smp_segments */
 
@@ -276,12 +277,11 @@ smp_sync_sign(const struct smp_signctx *ctx)
 {
 	int i;
 
-#if 1
+	/* XXX: round to pages */
 	i = msync(ctx->ss, ctx->ss->length + SHA256_LEN, MS_SYNC);
-	if (i)
-fprintf(stderr, "SyncSign(%p %s) = %d %s\n",
-    ctx->ss, ctx->id, i, strerror(errno));
-#endif
+	if (i && 0)
+		fprintf(stderr, "SyncSign(%p %s) = %d %s\n",
+		    ctx->ss, ctx->id, i, strerror(errno));
 }
 
 /*--------------------------------------------------------------------
@@ -805,7 +805,6 @@ static void
 smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 {
 	void *ptr;
-	uint64_t length;
 	struct smp_segment *ss;
 	struct smp_object *so;
 	struct objcore *oc;
@@ -820,7 +819,6 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	if (smp_chk_sign(ctx))
 		return;
 	ptr = SIGN_DATA(ctx);
-	length = ctx->ss->length;
 	ss = ptr;
 	so = (void*)(sc->ptr + ss->objlist);
 	no = ss->nalloc;
@@ -829,7 +827,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 			continue;
 		HSH_Prealloc(sp);
 		oc = sp->wrk->nobjcore;
-		oc->flags |= OC_F_PERSISTENT;
+		oc->flags |= OC_F_PERSISTENT | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
 		oc->obj = (void*)so;
 		oc->smp_seg = sg;
@@ -837,7 +835,7 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		AZ(sp->wrk->nobjcore);
-		EXP_Inject(oc, sc->parent->lru, so->ttl);
+		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nalloc++;
 	}
 	WRK_SumStat(sp->wrk);
@@ -865,6 +863,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	for(; length > 0; length -= sizeof *ss, ss ++) {
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
+		sg->lru = LRU_Alloc();
 		sg->offset = ss->offset;
 		sg->length = ss->length;
 		/* XXX: check that they are inside silo */
@@ -1081,6 +1080,7 @@ smp_object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
 
+	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
 	sc->objreserv += sizeof *so;

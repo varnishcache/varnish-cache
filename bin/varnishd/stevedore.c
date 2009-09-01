@@ -43,7 +43,16 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 
 static const struct stevedore * volatile stv_next;
 
-static struct lru *
+/*********************************************************************
+ * NB! Dirty trick alert:
+ *
+ * We use a captive objcore as tail senteniel for LRU lists, but to
+ * make sure it does not get into play by accident, we do _not_ 
+ * initialize its magic with OBJCORE_MAGIC.
+ *
+ */
+
+struct lru *
 LRU_Alloc(void)
 {
 	struct lru *l;
@@ -54,6 +63,8 @@ LRU_Alloc(void)
 	VLIST_INSERT_HEAD(&l->lru_head, &l->senteniel, lru_list);
 	return (l);
 }
+
+/*********************************************************************/
 
 struct storage *
 STV_alloc(struct sess *sp, size_t size)

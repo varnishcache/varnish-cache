@@ -283,11 +283,12 @@ struct objcore {
 	struct object		*obj;
 	struct objhead		*objhead;
 	double			timer_when;
-	unsigned char		flags;
+	unsigned 		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
 #define OC_F_PERSISTENT		(1<<3)
+#define OC_F_LRUDONTMOVE	(1<<4)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VLIST_ENTRY(objcore)	lru_list;

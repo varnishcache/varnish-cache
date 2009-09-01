@@ -163,21 +163,33 @@ EXP_Insert(struct object *o)
 int
 EXP_Touch(const struct object *o)
 {
-	int retval = 0;
+	int retval;
 	struct objcore *oc;
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	if (oc == NULL)
-		return (retval);
+		return (0);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	/* We must have an objhead, otherwise we have no business on a LRU */
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+
+	/*
+	 * For -spersistent we don't move objects on the lru list.  Each
+	 * segment has its own LRU list, and the order on it is not material
+	 * for anything.  The code below would move the objects to the
+	 * LRU list of the currently open segment, which would prevent
+	 * the cleaner from doing its job.
+	 */
+	if (oc->flags & OC_F_LRUDONTMOVE)
+		return (0);
+
 	if (o->objstore == NULL)	/* XXX ?? */
-		return (retval);
+		return (0);
 	lru = STV_lru(o->objstore);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	retval = 0;
 	if (Lck_Trylock(&exp_mtx))
 		return (retval);
 	if (oc->flags & OC_F_ONLRU) {	/* XXX ?? */

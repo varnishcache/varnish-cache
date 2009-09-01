@@ -132,6 +132,7 @@ HSH_Object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	AN(ObjIsBusy(sp->obj));
 	if (sp->obj->objstore->stevedore->object != NULL)
 		sp->obj->objstore->stevedore->object(sp);
 }
@@ -372,7 +373,10 @@ hsh_testmagic(void *result)
 	fprintf(stderr, ">\n");
 }
 
-/**********************************************************************/
+/**********************************************************************
+ * Insert an object which magically appears out of nowhere or, more likely,
+ * comes off some persistent storage device.
+ */
 
 struct objcore *
 HSH_Insert(const struct sess *sp)
