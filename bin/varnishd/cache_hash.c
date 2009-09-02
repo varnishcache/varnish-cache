@@ -158,6 +158,7 @@ HSH_Prealloc(const struct sess *sp)
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		XXXAN(oc);
 		w->nobjcore = oc;
+		w->stats.n_objectcore++;
 		oc->flags |= OC_F_BUSY;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjcore, OBJCORE_MAGIC);
@@ -664,6 +665,7 @@ HSH_DerefObjCore(struct sess *sp)
 	Lck_Unlock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);
+	sp->wrk->stats.n_objectcore--;
 	if (hash->deref(oh))
 		return;
 	HSH_DeleteObjHead(sp->wrk, oh);
@@ -766,6 +768,7 @@ HSH_Deref(struct worker *w, struct object **oo)
 	}
 	AN(oh);
 	FREE_OBJ(oc);
+	w->stats.n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
