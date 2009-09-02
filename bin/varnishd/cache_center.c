@@ -333,7 +333,8 @@ cnt_error(struct sess *sp)
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
-		sp->obj = HSH_NewObject(sp, 1);
+		sp->wrk->cacheable = 0;
+		sp->obj = HSH_NewObject(sp);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -411,7 +412,7 @@ DOT errfetch [label="ERROR",shape=plaintext]
 static int
 cnt_fetch(struct sess *sp)
 {
-	int i, transient;
+	int i;
 	struct http *hp, *hp2;
 	char *b;
 	unsigned handling;
@@ -436,10 +437,12 @@ cnt_fetch(struct sess *sp)
 	*sp->wrk->beresp1 = *sp->wrk->beresp;
 
 	if (i) {
-		if (sp->objhead) {
+		if (sp->objcore != NULL) {
 			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 			HSH_DerefObjCore(sp);
+			AZ(sp->objhead);
+			AZ(sp->objcore);
 		}
 		AZ(sp->obj);
 		sp->wrk->bereq = NULL;
@@ -475,7 +478,7 @@ cnt_fetch(struct sess *sp)
 	sp->wrk->age = 0;
 	sp->wrk->ttl = RFC2616_Ttl(sp);
 
-	if (sp->wrk->ttl == 0.)
+	if (sp->objcore == NULL)
 		sp->wrk->cacheable = 0;
 
 	sp->wrk->do_esi = 0;
@@ -490,23 +493,28 @@ cnt_fetch(struct sess *sp)
 	 */
 	handling = sp->handling;
 
-	if (sp->objhead == NULL)
+	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
-		transient = 1;
-	else if (sp->handling == VCL_RET_PASS)
-		/* A pass from vcl_fetch is not transient */
-		transient = 0;
-	else if (sp->handling == VCL_RET_DELIVER)
-		/* Regular object */
-		transient = 0;
-	else
-		transient = 1;
+		AZ(sp->objhead);
+		sp->wrk->cacheable = 0;
+	} else if (!sp->wrk->cacheable) {
+		if (sp->objhead != NULL)
+			HSH_DerefObjCore(sp);
+	}
+
+	if (sp->wrk->cacheable) {
+		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+	} else {
+		AZ(sp->objhead);
+		AZ(sp->objcore);
+	}
 
 	/*
 	 * XXX: If we have a Length: header, we should allocate the body
 	 * XXX: also.
  	 */
-	sp->obj = HSH_NewObject(sp, transient);
+	sp->obj = HSH_NewObject(sp);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
@@ -558,7 +566,7 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 
-	if (!transient)
+	if (sp->wrk->cacheable)
 		HSH_Object(sp);
 
 	if (sp->wrk->do_esi)
@@ -594,7 +602,7 @@ cnt_fetch(struct sess *sp)
 	}
 
 	sp->obj->cacheable = 1;
-	if (!transient) {
+	if (sp->wrk->cacheable) {
 		VRY_Create(sp);
 		EXP_Insert(sp->obj);
 		AN(sp->obj->ban);

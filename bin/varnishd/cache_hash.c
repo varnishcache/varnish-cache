@@ -82,13 +82,13 @@ HSH_Grace(double g)
 }
 
 struct object *
-HSH_NewObject(struct sess *sp, int transient)
+HSH_NewObject(struct sess *sp)
 {
 	struct object *o;
 	struct storage *st;
 	void *p;
 
-	if (transient) {
+	if (!sp->wrk->cacheable) {
 		p = malloc(sizeof *o + params->obj_workspace);
 		XXXAN(p);
 		o = p;

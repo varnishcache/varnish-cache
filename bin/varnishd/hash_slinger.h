@@ -50,7 +50,7 @@ struct hash_slinger {
 };
 
 /* cache_hash.c */
-struct object *HSH_NewObject(struct sess *sp, int transient);
+struct object *HSH_NewObject(struct sess *sp);
 void HSH_Object(const struct sess *sp);
 void HSH_Prealloc(const struct sess *sp);
 void HSH_Cleanup(struct worker *w);
