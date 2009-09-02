@@ -154,6 +154,7 @@ struct http {
 	txt			hd[HTTP_HDR_MAX];
 	unsigned char		hdf[HTTP_HDR_MAX];
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
+#define HDF_COPY		(1 << 1)	/* Copy this field */
 	unsigned		nhd;
 };
 
@@ -512,6 +513,7 @@ void Fetch_Init(void);
 
 /* cache_http.c */
 const char *http_StatusMessage(unsigned);
+unsigned http_EstimateWS(struct http *fm, unsigned how);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);

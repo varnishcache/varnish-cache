@@ -334,7 +334,7 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		sp->wrk->cacheable = 0;
-		sp->obj = HSH_NewObject(sp);
+		sp->obj = HSH_NewObject(sp, 0);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -415,7 +415,7 @@ cnt_fetch(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned handling;
+	unsigned handling, l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -516,11 +516,16 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objcore);
 	}
 
+	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS);
+
+	/* Space for producing a Content-Length: header */
+	l += 30;
+
 	/*
 	 * XXX: If we have a Length: header, we should allocate the body
 	 * XXX: also.
  	 */
-	sp->obj = HSH_NewObject(sp);
+	sp->obj = HSH_NewObject(sp, l);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);

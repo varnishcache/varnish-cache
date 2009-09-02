@@ -492,14 +492,14 @@ static const struct parspec input_parspec[] = {
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"16384", "bytes" },
-	{ "obj_workspace", tweak_uint, &master.obj_workspace, 1024, UINT_MAX,
+	{ "obj_workspace", tweak_uint, &master.obj_workspace, 0, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for objects. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code while it "
 		"is cached.\n"
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
-		"8192", "bytes" },
+		"0", "bytes" },
 	{ "shm_workspace", tweak_uint, &master.shm_workspace, 4096, UINT_MAX,
 		"Bytes of shmlog workspace allocated for worker threads. "
 		"If too big, it wastes some ram, if too small it causes "
