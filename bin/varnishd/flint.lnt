@@ -131,7 +131,9 @@
 // cache_center.c
 -efunc(525, CNT_Session)	// Negative indentation from line
 -efunc(525, http_FilterFields)	// Negative indentation from line
+-efunc(525, http_EstimateWS)	// Negative indentation from line
 -efunc(539, http_FilterFields)	// Positive indentation from line
+-efunc(539, http_EstimateWS)	// Positive indentation from line
 
 // cache_vcl.c
 -efunc(525, vcl_handlingname)	// Negative indentation from line

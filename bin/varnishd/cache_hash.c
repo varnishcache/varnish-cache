@@ -82,22 +82,27 @@ HSH_Grace(double g)
 }
 
 struct object *
-HSH_NewObject(struct sess *sp)
+HSH_NewObject(struct sess *sp, unsigned l)
 {
 	struct object *o;
 	struct storage *st;
 	void *p;
 
+	if (l == 0)
+		l = 1024;
+	if (params->obj_workspace > 0 && params->obj_workspace > l)
+		l =  params->obj_workspace;
+
 	if (!sp->wrk->cacheable) {
-		p = malloc(sizeof *o + params->obj_workspace);
+		p = malloc(sizeof *o + l);
 		XXXAN(p);
 		o = p;
 		p = o + 1;
 		memset(o, 0, sizeof *o);
 		o->magic = OBJECT_MAGIC;
-		WS_Init(o->ws_o, "obj", p, params->obj_workspace);
+		WS_Init(o->ws_o, "obj", p, l);
 	} else {
-		st = STV_alloc(sp, params->obj_workspace);
+		st = STV_alloc(sp, sizeof *o + l);
 		XXXAN(st);
 		assert(st->space > sizeof *o);
 		o = (void *)st->ptr; /* XXX: align ? */
