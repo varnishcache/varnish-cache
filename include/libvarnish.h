@@ -42,6 +42,8 @@ struct vsb;
 /* from libvarnish/argv.c */
 void FreeArgv(char **argv);
 char **ParseArgv(const char *s, int flag);
+char *BackSlashDecode(const char *s, const char *e);
+int BackSlash(const char *s, char *res);
 #define ARGV_COMMENT	(1 << 0)
 #define ARGV_COMMA	(1 << 1)
 
