@@ -502,6 +502,12 @@ cnt_fetch(struct sess *sp)
 			HSH_DerefObjCore(sp);
 	}
 
+	/*
+	 * At this point we are either committed to flesh out the busy
+	 * object we have in the hash or we have let go of it if we ever
+	 * had one.
+	 */
+
 	if (sp->wrk->cacheable) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
