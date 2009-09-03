@@ -183,6 +183,7 @@ HSH_Cleanup(struct worker *w)
 
 	if (w->nobjcore != NULL) {
 		FREE_OBJ(w->nobjcore);
+		w->stats.n_objectcore--;
 		w->nobjcore = NULL;
 	}
 	if (w->nobjhead != NULL) {
@@ -419,7 +420,7 @@ HSH_Insert(const struct sess *sp)
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	sp->wrk->stats.n_object++;
+	sp->wrk->stats.n_vampireobject++;
 	return (oc);
 }
 
@@ -661,7 +662,6 @@ HSH_DerefObjCore(struct sess *sp)
 
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
-	sp->wrk->stats.n_object--;
 	Lck_Unlock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);

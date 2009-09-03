@@ -40,7 +40,8 @@ varnish v1 -stop
 varnish v1 -start 
 varnish v1 -cliok "debug.xid 2000"
 
-varnish v1 -expect n_object == 2
+varnish v1 -expect n_vampireobject == 2
+varnish v1 -expect n_object == 0
 
 client c1 {
 	txreq -url "/foo"
@@ -50,7 +51,8 @@ client c1 {
 	expect resp.http.foo == "foo"
 } -run
 
-varnish v1 -expect n_object == 2
+varnish v1 -expect n_vampireobject == 1
+varnish v1 -expect n_object == 1
 
 client c1 {
 	txreq -url "/bar"
@@ -61,3 +63,4 @@ client c1 {
 } -run
 
 varnish v1 -expect n_object == 2
+varnish v1 -expect n_vampireobject == 0

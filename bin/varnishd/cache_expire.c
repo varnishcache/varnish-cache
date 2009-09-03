@@ -306,6 +306,7 @@ exp_timer(struct sess *sp, void *priv)
 			sp->objhead = oc->objhead;
 			sp->objcore = oc;
 			HSH_DerefObjCore(sp);
+			sp->wrk->stats.n_vampireobject--;
 		}
 	}
 	NEEDLESS_RETURN(NULL);
