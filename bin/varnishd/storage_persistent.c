@@ -635,6 +635,8 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	oc->obj->ban = oc->ban;
 
 	sg->nfixed++;
+	sp->wrk->stats.n_object++;
+	sp->wrk->stats.n_vampireobject--;
 }
 
 /*--------------------------------------------------------------------

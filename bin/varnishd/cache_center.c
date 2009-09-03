@@ -504,7 +504,7 @@ cnt_fetch(struct sess *sp)
 
 	/*
 	 * At this point we are either committed to flesh out the busy
-	 * object we have in the hash or we have let go of it if we ever
+	 * object we have in the hash or we have let go of it, if we ever
 	 * had one.
 	 */
 
