@@ -87,6 +87,28 @@ stv_pick_stevedore(void)
 
 /*********************************************************************/
 
+static void
+STV_InitObj(struct sess *sp, struct object *o, unsigned wsl)
+{
+
+	memset(o, 0, sizeof *o);
+	o->magic = OBJECT_MAGIC;
+
+	WS_Init(o->ws_o, "obj", (o + 1), wsl);
+	WS_Assert(o->ws_o);
+
+	http_Setup(o->http, o->ws_o);
+	o->http->magic = HTTP_MAGIC;
+	o->refcnt = 1;
+	o->grace = NAN;
+	o->entered = NAN;
+	VTAILQ_INIT(&o->store);
+	VTAILQ_INIT(&o->esibits);
+	sp->wrk->stats.n_object++;
+}
+
+/*********************************************************************/
+
 struct object *
 STV_NewObject(struct sess *sp, unsigned l, double ttl)
 {
@@ -102,31 +124,19 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl)
 	if (!sp->wrk->cacheable) {
 		o = malloc(sizeof *o + l);
 		XXXAN(o);
-	} else {
-		st = STV_alloc(sp, sizeof *o + l);
-		XXXAN(st);
-		xxxassert(st->space >= (sizeof *o + l));
+		STV_InitObj(sp, o, l);
+		return (o);
+	} 
+	st = STV_alloc(sp, sizeof *o + l);
+	XXXAN(st);
+	xxxassert(st->space >= (sizeof *o + l));
 
-		st->len = st->space;
-		l = st->space - sizeof *o;
+	st->len = st->space;
 
-		o = (void *)st->ptr; /* XXX: align ? */
-	}
-	memset(o, 0, sizeof *o);
+	o = (void *)st->ptr; /* XXX: align ? */
+
+	STV_InitObj(sp, o, st->space - sizeof *o);
 	o->objstore = st;
-	o->magic = OBJECT_MAGIC;
-
-	WS_Init(o->ws_o, "obj", (o + 1), l);
-	WS_Assert(o->ws_o);
-
-	http_Setup(o->http, o->ws_o);
-	o->http->magic = HTTP_MAGIC;
-	o->refcnt = 1;
-	o->grace = NAN;
-	o->entered = NAN;
-	VTAILQ_INIT(&o->store);
-	VTAILQ_INIT(&o->esibits);
-	sp->wrk->stats.n_object++;
 	return (o);
 }
 
