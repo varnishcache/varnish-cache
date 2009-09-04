@@ -34,6 +34,7 @@ SVNID("$Id$")
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "cache.h"
 #include "stevedore.h"
@@ -62,6 +63,53 @@ LRU_Alloc(void)
 	VLIST_INIT(&l->lru_head);
 	VLIST_INSERT_HEAD(&l->lru_head, &l->senteniel, lru_list);
 	return (l);
+}
+
+/*********************************************************************/
+
+struct object *
+STV_NewObject(struct sess *sp, unsigned l)
+{
+	struct object *o;
+	struct storage *st;
+	void *p;
+
+	if (l == 0)
+		l = 1024;
+	if (params->obj_workspace > 0 && params->obj_workspace > l)
+		l =  params->obj_workspace;
+
+	if (!sp->wrk->cacheable) {
+		p = malloc(sizeof *o + l);
+		XXXAN(p);
+		o = p;
+		p = o + 1;
+		memset(o, 0, sizeof *o);
+		o->magic = OBJECT_MAGIC;
+		WS_Init(o->ws_o, "obj", p, l);
+	} else {
+		st = STV_alloc(sp, sizeof *o + l);
+		XXXAN(st);
+		assert(st->space > sizeof *o);
+		o = (void *)st->ptr; /* XXX: align ? */
+		st->len = sizeof *o;
+		memset(o, 0, sizeof *o);
+		o->magic = OBJECT_MAGIC;
+		o->objstore = st;
+		WS_Init(o->ws_o, "obj",
+		    st->ptr + st->len, st->space - st->len);
+		st->len = st->space;
+	}
+	WS_Assert(o->ws_o);
+	http_Setup(o->http, o->ws_o);
+	o->http->magic = HTTP_MAGIC;
+	o->refcnt = 1;
+	o->grace = NAN;
+	o->entered = NAN;
+	VTAILQ_INIT(&o->store);
+	VTAILQ_INIT(&o->esibits);
+	sp->wrk->stats.n_object++;
+	return (o);
 }
 
 /*********************************************************************/

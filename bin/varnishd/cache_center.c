@@ -77,6 +77,7 @@ SVNID("$Id$")
 #include "cli_priv.h"
 #include "cache.h"
 #include "hash_slinger.h"
+#include "stevedore.h"
 
 static unsigned xids;
 
@@ -334,7 +335,7 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		sp->wrk->cacheable = 0;
-		sp->obj = HSH_NewObject(sp, 0);
+		sp->obj = STV_NewObject(sp, 0);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -525,7 +526,7 @@ cnt_fetch(struct sess *sp)
 	 * XXX: If we have a Length: header, we should allocate the body
 	 * XXX: also.
  	 */
-	sp->obj = HSH_NewObject(sp, l);
+	sp->obj = STV_NewObject(sp, l);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
