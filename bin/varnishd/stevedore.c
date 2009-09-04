@@ -65,42 +65,60 @@ LRU_Alloc(void)
 	return (l);
 }
 
+/*********************************************************************
+ * XXX: trust pointer writes to be atomic
+ */
+
+static struct stevedore *
+stv_pick_stevedore(void)
+{
+	struct stevedore *stv;
+
+	/* pick a stevedore and bump the head along */
+	stv = VTAILQ_NEXT(stv_next, list);
+	if (stv == NULL)
+		stv = VTAILQ_FIRST(&stevedores);
+	AN(stv);
+	AN(stv->name);
+	stv_next = stv;
+	return (stv);
+}
+
+
 /*********************************************************************/
 
 struct object *
-STV_NewObject(struct sess *sp, unsigned l)
+STV_NewObject(struct sess *sp, unsigned l, double ttl)
 {
 	struct object *o;
-	struct storage *st;
-	void *p;
+	struct storage *st = NULL;
 
+	(void)ttl;
 	if (l == 0)
 		l = 1024;
 	if (params->obj_workspace > 0 && params->obj_workspace > l)
 		l =  params->obj_workspace;
 
 	if (!sp->wrk->cacheable) {
-		p = malloc(sizeof *o + l);
-		XXXAN(p);
-		o = p;
-		p = o + 1;
-		memset(o, 0, sizeof *o);
-		o->magic = OBJECT_MAGIC;
-		WS_Init(o->ws_o, "obj", p, l);
+		o = malloc(sizeof *o + l);
+		XXXAN(o);
 	} else {
 		st = STV_alloc(sp, sizeof *o + l);
 		XXXAN(st);
-		assert(st->space > sizeof *o);
-		o = (void *)st->ptr; /* XXX: align ? */
-		st->len = sizeof *o;
-		memset(o, 0, sizeof *o);
-		o->magic = OBJECT_MAGIC;
-		o->objstore = st;
-		WS_Init(o->ws_o, "obj",
-		    st->ptr + st->len, st->space - st->len);
+		xxxassert(st->space >= (sizeof *o + l));
+
 		st->len = st->space;
+		l = st->space - sizeof *o;
+
+		o = (void *)st->ptr; /* XXX: align ? */
 	}
+	memset(o, 0, sizeof *o);
+	o->objstore = st;
+	o->magic = OBJECT_MAGIC;
+
+	WS_Init(o->ws_o, "obj", (o + 1), l);
 	WS_Assert(o->ws_o);
+
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
 	o->refcnt = 1;
@@ -135,13 +153,7 @@ STV_alloc(struct sess *sp, size_t size)
 
 	for (;;) {
 		if (stv == NULL) {
-			/* pick a stevedore and bump the head along */
-			stv = VTAILQ_NEXT(stv_next, list);
-			if (stv == NULL)
-				stv = VTAILQ_FIRST(&stevedores);
-			AN(stv);
-			AN(stv->name);
-			stv_next = stv;
+			stv = stv_pick_stevedore();
 			fail = 0;
 		}
 

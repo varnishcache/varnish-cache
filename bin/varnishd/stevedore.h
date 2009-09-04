@@ -37,6 +37,7 @@ struct object;
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
+typedef struct object *storage_alloc_obj_f(struct stevedore *, size_t size, double ttl);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
 typedef void storage_object_f(const struct sess *sp);
@@ -50,6 +51,7 @@ struct stevedore {
 	storage_init_f		*init;	/* called by mgt process */
 	storage_open_f		*open;	/* called by cache process */
 	storage_alloc_f		*alloc;
+	storage_alloc_obj_f	*allocobj;
 	storage_trim_f		*trim;
 	storage_free_f		*free;
 	storage_object_f	*object;
@@ -63,7 +65,7 @@ struct stevedore {
 	VTAILQ_ENTRY(stevedore)	list;
 };
 
-struct object *STV_NewObject(struct sess *sp, unsigned len);
+struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl);
 struct storage *STV_alloc(struct sess *sp, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
