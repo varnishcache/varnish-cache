@@ -38,7 +38,6 @@ SVNID("$Id$")
 #include <grp.h>
 #include <limits.h>
 #include <pwd.h>
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
