@@ -1,6 +1,5 @@
 #!/bin/sh
 
-T=/tmp/_$$
 flexelint \
 	-I/usr/include \
 	-I. \
@@ -10,11 +9,4 @@ flexelint \
 	flint.lnt \
 	*.c \
 	../../lib/libvarnish/*.c \
-	../../lib/libvcl/*.c \
-	> $T
-if [ -f _flint.old ] ; then
-	diff -u _flint.old $T
-fi
-cat $T
-cp $T _flint.old
-rm $T
+	../../lib/libvcl/*.c
