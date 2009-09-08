@@ -49,6 +49,17 @@ MAC_STAT(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed")
 MAC_STAT(backend_recycle,	uint64_t, 0, 'a', "Backend conn. recycles")
 MAC_STAT(backend_unused,	uint64_t, 0, 'a', "Backend conn. unused")
 
+MAC_STAT(fetch_head,		uint64_t, 1, 'a', "Fetch head")
+MAC_STAT(fetch_length,		uint64_t, 1, 'a', "Fetch with Length")
+MAC_STAT(fetch_chunked,		uint64_t, 1, 'a', "Fetch chunked")
+MAC_STAT(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF")
+MAC_STAT(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers")
+MAC_STAT(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close")
+MAC_STAT(fetch_oldhttp,		uint64_t, 1, 'a', "Fetch pre HTTP/1.1 closed")
+MAC_STAT(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len")
+MAC_STAT(fetch_failed,		uint64_t, 1, 'a', "Fetch failed")
+
+
 MAC_STAT(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
 MAC_STAT(n_sess,		uint64_t, 0, 'i', "N struct sess")
 MAC_STAT(n_object,		uint64_t, 1, 'i', "N struct object")
