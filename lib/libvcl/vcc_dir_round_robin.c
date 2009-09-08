@@ -34,7 +34,6 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

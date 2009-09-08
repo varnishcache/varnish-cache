@@ -36,11 +36,9 @@ SVNID("$Id$")
 
 #include <sys/param.h>
 #include <sys/mman.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
