@@ -997,7 +997,7 @@ smp_thread(struct sess *sp, void *priv)
 	sc->tailban = NULL;
 	printf("Silo completely loaded\n");
 	while (1)	
-		sleep (1);
+		(void)sleep (1);
 	NEEDLESS_RETURN(NULL);
 }
 

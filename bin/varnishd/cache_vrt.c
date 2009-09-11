@@ -975,7 +975,7 @@ VRT_purge(struct sess *sp, char *cmds, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_purge_string(struct sess *sp, char *str, ...)
+VRT_purge_string(struct sess *sp, const char *str, ...)
 {
 	char *p, *a1, *a2, *a3;
 	char **av;

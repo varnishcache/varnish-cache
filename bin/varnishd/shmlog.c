@@ -166,7 +166,7 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 
 		p = logstart + loghead->ptr;
 		/* +1 for the NUL */
-		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1, fmt, ap);
+		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1L, fmt, ap);
 		if (n > mlen)
 			n = mlen;		/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);
@@ -266,7 +266,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 
 		p = w->wlp;
 		/* +1 for the NUL */
-		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1, fmt, ap);
+		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1L, fmt, ap);
 		if (n > mlen)
 			n = mlen;	/* we truncate long fields */
 		vsl_hdr(tag, p, n, id);

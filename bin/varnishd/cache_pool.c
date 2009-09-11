@@ -327,7 +327,7 @@ wrk_addpools(const unsigned pools)
 	owq = wq;
 	wq = pwq;
 	for (u = nwq; u < pools; u++) {
-		wq[u] = calloc(sizeof *wq[u], 1);
+		wq[u] = calloc(sizeof *wq[0], 1);
 		XXXAN(wq[u]);
 		wq[u]->magic = WQ_MAGIC;
 		Lck_New(&wq[u]->mtx);

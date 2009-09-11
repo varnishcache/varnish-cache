@@ -222,7 +222,7 @@ ban_parse_http(struct ban_test *bt, const char *a1)
 
 	l = strlen(a1);
 	assert(l < 127);
-	bt->src = malloc(l + 3);
+	bt->src = malloc(l + 3L);
 	XXXAN(bt->src);
 	bt->src[0] = (char)l + 1;
 	memcpy(bt->src + 1, a1, l);

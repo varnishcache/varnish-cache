@@ -758,7 +758,7 @@ static const struct parspec input_parspec[] = {
 		0,
 		"on", "bool" },
 	{ "ban_lurker_sleep", tweak_timeout_double,
-		&master.ban_lurker_sleep, 0.0, UINT_MAX,
+		&master.ban_lurker_sleep, 0, UINT_MAX,
 		"How long time does the ban lurker thread sleeps between "
 		"successfull attempts to push the last item up the purge "
 		" list.  It always sleeps a second when nothing can be done.\n"
@@ -919,7 +919,7 @@ MCF_AddParams(const struct parspec *ps)
 			margin = strlen(pp->name) + 1;
 		n++;
 	}
-	parspec = realloc(parspec, (nparspec + n + 1) * sizeof *parspec);
+	parspec = realloc(parspec, (1L + nparspec + n) * sizeof *parspec);
 	XXXAN(parspec);
 	for (pp = ps; pp->name != NULL; pp++)
 		parspec[nparspec++] = pp;

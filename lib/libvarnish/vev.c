@@ -151,7 +151,7 @@ vev_get_sig(int sig)
 	if (sig < vev_nsig)
 		return (0);
 
-	os = calloc(sizeof *os, (sig + 1));
+	os = calloc(sizeof *os, (sig + 1L));
 	if (os == NULL)
 		return (ENOMEM);
 

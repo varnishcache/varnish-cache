@@ -174,7 +174,7 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 	j = sscanf(res, "%u %u\n", &u, &v);
 	assert(j == 2);
 	*status = u;
-	p = malloc(v + 1);
+	p = malloc(v + 1L);
 	assert(p != NULL);
 	i = read_tmo(fd, p, v + 1, tmo);
 	if (i < 0) {

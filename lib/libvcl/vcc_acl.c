@@ -40,7 +40,6 @@ SVNID("$Id$")
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "vsb.h"
 #include "vrt.h"

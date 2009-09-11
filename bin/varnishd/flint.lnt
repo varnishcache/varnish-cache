@@ -1,6 +1,13 @@
 
 -d__flexelint_v9__=1
 
+// FLINT Bug20090910_838
+-efunc(838, VRT_purge)
+-efunc(838, VRT_purge_string)
+
+// FLINT Bug Bug20090908_766
+-efile(766, cache_vcl.c)
+
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
 -sem (VBE_DropRefLocked, thread_unlock)
@@ -42,6 +49,7 @@
 -esym(458, heritage)
 -esym(458, name_key)
 -esym(528, svnid)
+
 //////////////
 -passes=3
 
@@ -142,22 +150,9 @@
 
 // Review all below this line ///////////////////////////////////////////////
 
--e732   // Loss of sign (arg. no. 2) (int to unsigned
--e737	// [45]  Loss of sign in promotion from int to unsigned
--e713	// Loss of precision (assignment) (unsigned long long to long long)
--e574	// Signed-unsigned mix with relational
--e712	// Loss of precision (assignment) (long long to
--e747	// Significant prototype coercion (arg. no. 2) long
--e776	// Possible truncation of addition
-
-/*
-
--e767	// Macro redef (system queue.h vs ours )
-
--e506	// Constant value boolean
--e818	// Pointer parameter '...' could be declared as pointing to const
--e774	// Boolean within 'if' always evaluates to False
--e534	// Ignoring return value of function
--e557	// unrecog format
-
-*/
+-e732   // 183 Loss of sign (___) (___ to ___)
+-e737	// 143 Loss of sign in promotion from ___ to ___
+-e713	// 42 Loss of precision (___) (___ to ___)
+-e574	// 48 Signed-unsigned mix with relational
+-e712	// 96 Loss of precision (___) (___ to ___)
+-e747	// 297 Significant prototype coercion (___) ___ to ___

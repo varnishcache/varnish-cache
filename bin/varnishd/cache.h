@@ -503,7 +503,7 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double ttl);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(const struct object *o);
-int EXP_NukeOne(struct sess *sp, const struct lru *lru);
+int EXP_NukeOne(const struct sess *sp, const struct lru *lru);
 
 /* cache_fetch.c */
 int FetchHdr(struct sess *sp);
@@ -513,7 +513,7 @@ void Fetch_Init(void);
 
 /* cache_http.c */
 const char *http_StatusMessage(unsigned);
-unsigned http_EstimateWS(struct http *fm, unsigned how);
+unsigned http_EstimateWS(const struct http *fm, unsigned how);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);

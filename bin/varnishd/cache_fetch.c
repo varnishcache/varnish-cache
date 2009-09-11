@@ -247,7 +247,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		if (v == 0) {
 			if (st != NULL && fetchfrag > 0)
 				dump_st(sp, st);
-			st = STV_alloc(sp, params->fetch_chunksize * 1024);
+			st = STV_alloc(sp, params->fetch_chunksize * 1024LL);
 			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
