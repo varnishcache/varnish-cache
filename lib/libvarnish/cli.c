@@ -150,7 +150,7 @@ cli_concat(struct cli_proto *c1, struct cli_proto *c2)
 	for(c = c2; c != NULL && c->request != NULL; c++)
 		i2++;
 
-	c = malloc(sizeof(*c) * (i1 + i2 + 1));
+	c = malloc(sizeof(*c) * (1L + i1 + i2));
 	if (c == NULL)
 		return (c);
 	if (c1 != NULL)

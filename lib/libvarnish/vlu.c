@@ -64,7 +64,7 @@ VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 		l->priv = priv;
 		l->bufl = bufsize - 1;
 		l->telnet = -1;
-		l->buf = malloc(l->bufl + 1);
+		l->buf = malloc(l->bufl + 1L);
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
 			l = NULL;

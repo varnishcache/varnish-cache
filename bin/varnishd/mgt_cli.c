@@ -346,7 +346,7 @@ mgt_cli_challenge(struct cli_port *cp)
 {
 	int i;
 
-	for (i = 0; i + 2 < sizeof cp->challenge; i++)
+	for (i = 0; i + 2L < sizeof cp->challenge; i++)
 		cp->challenge[i] = (random() % 26) + 'a';
 	cp->challenge[i++] = '\n';
 	cp->challenge[i] = '\0';

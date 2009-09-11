@@ -211,7 +211,7 @@ HSH_BeforeVclHash(struct sess *sp, unsigned nhashcount)
 	sp->lhashptr = 1;       /* space for NUL */
 	sp->ihashptr = 0;
 	sp->nhashptr = nhashcount * 2;
-	p = WS_Alloc(sp->http->ws, sizeof(const char *) * (sp->nhashptr + 1));
+	p = WS_Alloc(sp->http->ws, sizeof(const char *) * (sp->nhashptr + 1L));
 	XXXAN(p);
 	/* Align pointer properly (?) */
 	u = (uintptr_t)p;

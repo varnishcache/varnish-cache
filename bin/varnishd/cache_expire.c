@@ -319,7 +319,7 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct sess *sp, const struct lru *lru)
+EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 {
 	struct objcore *oc;
 

@@ -630,7 +630,7 @@ http_copyheader(struct worker *w, int fd, struct http *to,
  */
 
 unsigned 
-http_EstimateWS(struct http *fm, unsigned how)
+http_EstimateWS(const struct http *fm, unsigned how)
 {
 	unsigned u, l;
 
@@ -723,7 +723,7 @@ http_CopyHome(struct worker *w, int fd, struct http *hp)
 		p = WS_Alloc(hp->ws, l + 1);
 		if (p != NULL) {
 			WSLH(w, fd, hp, u);
-			memcpy(p, hp->hd[u].b, l + 1);
+			memcpy(p, hp->hd[u].b, l + 1L);
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
@@ -781,7 +781,7 @@ http_PutField(struct worker *w, int fd, struct http *to, int field,
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
 	} else {
-		memcpy(p, string, l + 1);
+		memcpy(p, string, l + 1L);
 		to->hd[field].b = p;
 		to->hd[field].e = p + l;
 		to->hdf[field] = 0;

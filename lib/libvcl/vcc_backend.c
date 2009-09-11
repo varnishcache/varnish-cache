@@ -137,7 +137,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
 			    "Please specify which exact address "
 			    "you want to use, we found these:\n",
 			    PF(t_host), multiple);
-			for (res = res0; res; res = res->ai_next) {
+			for (res = res0; res != NULL; res = res->ai_next) {
 				error = getnameinfo(res->ai_addr,
 				    res->ai_addrlen, hbuf, sizeof hbuf,
 				    NULL, 0, NI_NUMERICHOST);

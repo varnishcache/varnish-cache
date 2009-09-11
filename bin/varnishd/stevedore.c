@@ -113,7 +113,7 @@ struct object *
 STV_NewObject(struct sess *sp, unsigned l, double ttl)
 {
 	struct object *o;
-	struct storage *st = NULL;
+	struct storage *st;
 
 	(void)ttl;
 	if (l == 0)
