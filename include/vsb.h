@@ -36,7 +36,6 @@
 struct vsb {
 	unsigned	s_magic;
 	char		*s_buf;		/* storage buffer */
-	void		*s_unused;	/* binary compatibility. */
 	size_t		 s_size;	/* size of storage buffer */
 	size_t		 s_len;		/* current length of string */
 #define	VSB_FIXEDLEN	0x00000000	/* fixed length buffer (default) */

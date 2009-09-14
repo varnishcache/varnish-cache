@@ -40,7 +40,7 @@ SVNID("$Id$")
 #define VCT_UPALPHA	VCT_ALPHA
 #define VCT_LOALPHA	VCT_ALPHA
 
-unsigned char vct_typtab[256] = {
+unsigned const char vct_typtab[256] = {
 	[0x00]	=	VCT_CTL,
 	[0x01]	=	VCT_CTL,
 	[0x02]	=	VCT_CTL,

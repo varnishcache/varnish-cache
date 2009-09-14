@@ -85,15 +85,6 @@ cli_result(struct cli *cli, unsigned res)
 		printf("CLI result = %u\n", res);
 }
 
-void
-cli_param(struct cli *cli)
-{
-
-	cli_result(cli, CLIS_PARAM);
-	cli_out(cli,
-	    "Parameter error, use \"help [command]\" for more info.\n");
-}
-
 int
 cli_writeres(int fd, const struct cli *cli)
 {

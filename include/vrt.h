@@ -45,7 +45,7 @@ struct sockaddr;
  * A backend probe specification
  */
 
-extern void *vrt_magic_string_end;
+extern const void * const vrt_magic_string_end;
 
 struct vrt_backend_probe {
 	const char	*url;

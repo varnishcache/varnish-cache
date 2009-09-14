@@ -315,11 +315,11 @@ VCL_##func##_method(struct sess *sp)					\
 	sp->handling = 0;						\
 	sp->cur_method = VCL_MET_ ## upper;				\
 	WSP(sp, SLT_VCL_call, "%s", #func);				\
-	sp->vcl->func##_func(sp);					\
+	(void)sp->vcl->func##_func(sp);					\
 	WSP(sp, SLT_VCL_return, "%s", VCC_Return_Name(sp->handling));	\
 	sp->cur_method = 0;						\
-	assert((1 << sp->handling) & bitmap);				\
-	assert(!((1 << sp->handling) & ~bitmap));			\
+	assert((1U << sp->handling) & bitmap);				\
+	assert(!((1U << sp->handling) & ~bitmap));			\
 }
 
 #include "vcl_returns.h"

@@ -40,7 +40,7 @@
 #define VCT_DIGIT	(1<<5)
 #define VCT_HEX		(1<<6)
 
-extern unsigned char vct_typtab[256];
+extern const unsigned char vct_typtab[256];
 
 static inline int
 vct_is(unsigned char x, unsigned char y)
