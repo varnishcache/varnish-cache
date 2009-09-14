@@ -34,8 +34,6 @@
 
 #include "shmlog.h"
 
-#define V_DEAD __attribute__ ((noreturn))
-
 /* base64.c */
 void base64_init(void);
 int base64_decode(char *d, unsigned dlen, const char *s);

@@ -14,15 +14,15 @@ typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 
 /* VCL Methods */
-#define VCL_MET_RECV		(1 << 0)
-#define VCL_MET_PIPE		(1 << 1)
-#define VCL_MET_PASS		(1 << 2)
-#define VCL_MET_HASH		(1 << 3)
-#define VCL_MET_MISS		(1 << 4)
-#define VCL_MET_HIT		(1 << 5)
-#define VCL_MET_FETCH		(1 << 6)
-#define VCL_MET_DELIVER		(1 << 7)
-#define VCL_MET_ERROR		(1 << 8)
+#define VCL_MET_RECV		(1U << 0)
+#define VCL_MET_PIPE		(1U << 1)
+#define VCL_MET_PASS		(1U << 2)
+#define VCL_MET_HASH		(1U << 3)
+#define VCL_MET_MISS		(1U << 4)
+#define VCL_MET_HIT		(1U << 5)
+#define VCL_MET_FETCH		(1U << 6)
+#define VCL_MET_DELIVER		(1U << 7)
+#define VCL_MET_ERROR		(1U << 8)
 
 #define VCL_MET_MAX		9
 

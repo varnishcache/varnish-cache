@@ -6,7 +6,6 @@
  * Edit and run vcc_gen_fixed_token.tcl instead
  */
 
-#define LOW_TOKEN 128
 #define T_INCLUDE 128
 #define T_IF 129
 #define T_ELSE 130

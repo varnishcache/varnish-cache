@@ -1,12 +1,67 @@
 
 -d__flexelint_v9__=1
 
+-libdir(../../include)
+-libdir(../../lib/)
+
+// -efile(765, ../../lib/)
+// -efile(765, ../../include/)
+// -efile(759, ../../lib/)
+// -efile(759, ../../include/)
+
+-esym(755, vct_*)
+-esym(759, vev_*)
+-esym(765, vev_*)
+-esym(714, vev_*)
+-esym(759, vsb_*)
+-esym(765, vsb_*)
+-esym(714, vsb_*)
+-esym(759, vpf_*)
+-esym(765, vpf_*)
+-esym(714, vpf_*)
+-esym(759, H_*)
+-esym(765, H_*)
+-esym(757, VSL_*)
+-esym(765, VLU_*)
+-esym(759, VLU_*)
+-esym(714, VLU_*)
+-esym(765, VSS_*)
+-esym(759, VSS_*)
+-esym(755, VSL_*)
+-esym(765, VSL_*)
+-esym(759, VSL_*)
+-esym(765, CLI_*)
+-esym(759, CLI_*)
+-esym(755, CLI_*)
+
+-esym(755, VLIST_*)
+-esym(755, VSLIST_*)
+-esym(755, VSTAILQ_*)
+-esym(755, VTAILQ_*)
+
+// Stuff used outside varnishd
+-esym(759, BackSlash)
+-esym(765, BackSlash)
+-esym(759, BackSlashDecode)
+-esym(765, BackSlashDecode)
+-esym(714, VSS_open)
+-esym(757, base64*)
+
+
+// Stuff used by compiled VCL
+-esym(757, VRT_*)
+-esym(759, VRT_*)
+-esym(765, VRT_*)
+-esym(714, VRT_*)
+-esym(755, VRT_*)
+-esym(765, vrt_magic_string_end)
+-esym(759, vrt_magic_string_end)
+-esym(768, vrt_ref::*)
+-esym(768, VCL_conf::*)
+
 // FLINT Bug20090910_838
 -efunc(838, VRT_purge)
 -efunc(838, VRT_purge_string)
-
-// FLINT Bug Bug20090908_766
--efile(766, cache_vcl.c)
 
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
@@ -25,8 +80,8 @@
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////
--efile(451, "sys/*.h")	// No include guard
--efile(451, "machine/*.h")	// No include guard
+-efile(451, "sys/\*.h")	// No include guard
+-efile(451, "machine/\*.h")	// No include guard
 -efile(451, "vcl_returns.h")	// No include guard
 -efile(451, "cache_backend_poll.h")	// No include guard
 -efile(451, "steps.h")	// No include guard

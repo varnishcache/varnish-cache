@@ -554,7 +554,7 @@ foreach m $methods {
 	} else {
 		set sp ""
 	}
-	puts $fo "#define VCL_MET_[string toupper [lindex $m 0]]\t${sp}(1 << $u)"
+	puts $fo "#define VCL_MET_[string toupper [lindex $m 0]]\t${sp}(1U << $u)"
 	incr u
 }
 
@@ -620,9 +620,9 @@ foreach m $methods {
 	puts -nonewline $for ",[string toupper [lindex $m 0]]"
 	set l [lindex $m 1]
 	puts $for ","
-	puts $for "     ((1 << VCL_RET_[string toupper [lindex $l 0]])"
+	puts $for "     ((1U << VCL_RET_[string toupper [lindex $l 0]])"
 	foreach r [lrange $l 1 end] {
-		puts $for "    | (1 << VCL_RET_[string toupper $r])"
+		puts $for "    | (1U << VCL_RET_[string toupper $r])"
 	}
 	puts $for "))"
 	incr u
@@ -647,8 +647,6 @@ puts $fo "#include \"vcc_priv.h\""
 puts $fo "#include \"vsb.h\""
 
 set tn 128
-puts $foh "#define LOW_TOKEN $tn"
-
 
 proc add_token {tok str alpha} {
 	global tokens tn fixed foh

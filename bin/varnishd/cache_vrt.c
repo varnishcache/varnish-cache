@@ -57,7 +57,7 @@ SVNID("$Id$")
 /*XXX: sort of a hack, improve the Tcl code in the compiler to avoid */
 /*lint -save -esym(818,sp) */
 
-void *vrt_magic_string_end = &vrt_magic_string_end;
+const void * const vrt_magic_string_end = &vrt_magic_string_end;
 static char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------*/
