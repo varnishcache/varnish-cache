@@ -1,0 +1,19 @@
+# $Id$
+
+test "error from vcl_recv{} has no numeric code"
+
+
+server s1 {
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (error);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 501
+} -run
