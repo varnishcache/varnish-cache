@@ -344,6 +344,9 @@ cnt_error(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	h = sp->obj->http;
 
+	if (sp->err_code < 100 || sp->err_code > 999)
+		sp->err_code = 501;
+
 	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
 	http_PutStatus(w, sp->fd, h, sp->err_code);
 	TIM_format(TIM_real(), date);
