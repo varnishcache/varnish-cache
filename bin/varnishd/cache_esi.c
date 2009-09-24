@@ -370,7 +370,7 @@ esi_handle_include(struct esi_work *ew)
 			continue;
 		if (Tlen(val) == 0) {
 			esi_error(ew, tag.b, Tlen(tag),
-			    "ESI esi:include src attribute withou value");
+			    "ESI esi:include src attribute without value");
 			continue;
 		}
 
