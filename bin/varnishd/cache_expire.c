@@ -275,12 +275,13 @@ EXP_Rearm(const struct object *o)
  */
 
 static void *
-exp_timer(struct sess *sp)
+exp_timer(struct sess *sp, void *priv)
 {
 	struct objexp *oe;
 	struct object *o;
 	double t;
 
+	(void)priv;
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
 	t = TIM_real();
@@ -468,5 +469,5 @@ EXP_Init(void)
 	Lck_New(&exp_mtx);
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	XXXAN(exp_heap);
-	WRK_BgThread(&exp_thread, "cache-timeout", exp_timer);
+	WRK_BgThread(&exp_thread, "cache-timeout", exp_timer, NULL);
 }
