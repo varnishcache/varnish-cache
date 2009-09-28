@@ -618,6 +618,56 @@ wrk_herder_thread(void *priv)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * Create and starte a back-ground thread which as its own worker and
+ * session data structures;
+ */
+
+struct bgthread {
+	unsigned	magic;
+#define BGTHREAD_MAGIC	0x23b5152b
+	const char	*name;
+	bgthread_t	*func;
+};
+
+static void *
+wrk_bgthread(void *arg)
+{
+	struct bgthread *bt;
+	struct worker ww;
+	struct sess *sp;
+	unsigned char logbuf[1024];	/* XXX:  size ? */
+
+	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
+	THR_SetName(bt->name);
+	sp = SES_New(NULL, 0);
+	XXXAN(sp);
+	memset(&ww, 0, sizeof ww);
+	sp->wrk = &ww;
+	ww.magic = WORKER_MAGIC;
+	ww.wlp = ww.wlb = logbuf;
+	ww.wle = logbuf + sizeof logbuf;
+
+	(void)bt->func(sp);
+
+	WRONG("BgThread terminated");
+
+	return (NULL);
+}
+
+void
+WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func)
+{
+	struct bgthread *bt;
+
+	ALLOC_OBJ(bt, BGTHREAD_MAGIC);
+	AN(bt);
+
+	bt->name = name;
+	bt->func = func;
+	AZ(pthread_create(thr, NULL, wrk_bgthread, bt));
+}
+
 /*--------------------------------------------------------------------*/
 
 void

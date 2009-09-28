@@ -275,24 +275,11 @@ EXP_Rearm(const struct object *o)
  */
 
 static void *
-exp_timer(void *arg)
+exp_timer(struct sess *sp)
 {
-	struct worker ww;
 	struct objexp *oe;
 	struct object *o;
 	double t;
-	struct sess *sp;
-	unsigned char logbuf[1024];		/* XXX size ? */
-
-	THR_SetName("cache-timeout");
-	(void)arg;
-
-	sp = SES_New(NULL, 0);
-	XXXAN(sp);
-	sp->wrk = &ww;
-	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlb = logbuf;
-	ww.wle = logbuf + sizeof logbuf;
 
 	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
@@ -303,7 +290,7 @@ exp_timer(void *arg)
 		CHECK_OBJ_ORNULL(oe, OBJEXP_MAGIC);
 		if (oe == NULL || oe->timer_when > t) { /* XXX: > or >= ? */
 			Lck_Unlock(&exp_mtx);
-			WSL_Flush(&ww, 0);
+			WSL_Flush(sp->wrk, 0);
 			AZ(sleep(1));
 			VCL_Refresh(&sp->vcl);
 			t = TIM_real();
@@ -327,7 +314,7 @@ exp_timer(void *arg)
 		assert(oe->on_lru);
 		Lck_Unlock(&exp_mtx);
 
-		WSL(&ww, SLT_ExpPick, 0, "%u %s", o->xid, oe->timer_what);
+		WSL(sp->wrk, SLT_ExpPick, 0, "%u %s", o->xid, oe->timer_what);
 
 		if (oe->timer_what == tmr_prefetch) {
 			o->prefetch = 0.0;
@@ -335,7 +322,7 @@ exp_timer(void *arg)
 			VCL_prefetch_method(sp);
 			sp->obj = NULL;
 			if (sp->handling == VCL_RET_FETCH) {
-				WSL(&ww, SLT_Debug, 0, "Attempt Prefetch %u",
+				WSL(sp->wrk, SLT_Debug, 0, "Attempt Prefetch %u",
 				    o->xid);
 			}
 			Lck_Lock(&exp_mtx);
@@ -351,7 +338,7 @@ exp_timer(void *arg)
 			sp->obj = NULL;
 
 			assert(sp->handling == VCL_RET_DISCARD);
-			WSL(&ww, SLT_ExpKill, 0,
+			WSL(sp->wrk, SLT_ExpKill, 0,
 			    "%u %d", o->xid, (int)(o->ttl - t));
 			Lck_Lock(&exp_mtx);
 			assert(oe->timer_idx == BINHEAP_NOIDX);
@@ -481,5 +468,5 @@ EXP_Init(void)
 	Lck_New(&exp_mtx);
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	XXXAN(exp_heap);
-	AZ(pthread_create(&exp_thread, NULL, exp_timer, NULL));
+	WRK_BgThread(&exp_thread, "cache-timeout", exp_timer);
 }
