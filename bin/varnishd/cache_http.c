@@ -332,12 +332,29 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
 	for (; p < t.e; p = r) {
-		/* XXX: handle continuation lines */
-		q = strchr(p, '\n');
-		assert(q != NULL);
-		r = q + 1;
-		if (q > p && q[-1] == '\r')
-			q--;
+
+		/* Find end of next header */
+		q = r = p;
+		while (r < t.e) {
+			if (!vct_iscrlf(*r)) {
+				r++;
+				continue;
+			}
+			q = r;
+			assert(r < t.e);
+			r += vct_skipcrlf(r);
+			if (r >= t.e)
+				break;
+			/* If line does not continue: got it. */
+			if (!vct_issp(*r))
+				break;
+
+			/* Clear line continuation LWS to spaces */
+			while (vct_islws(*q))
+				*q++ = ' ';
+		}
+
+		/* Empty header = end of headers */
 		if (p == q)
 			break;
 
