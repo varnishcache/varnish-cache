@@ -781,7 +781,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int client)
 	hp->vl = vl;
 	hp->client = client;
 	hp->timeout = 3000;
-	hp->nrxbuf = 8192;
+	hp->nrxbuf = 64*1024;
 	hp->vsb = vsb_newauto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	AN(hp->rxbuf);
