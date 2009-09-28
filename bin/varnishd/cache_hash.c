@@ -389,7 +389,6 @@ HSH_Unbusy(const struct sess *sp)
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	assert(o->busy);
-	AN(o->ban);
 	assert(o->refcnt > 0);
 	if (o->ws_o->overflow)
 		VSL_stats->n_objoverflow++;
