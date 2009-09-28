@@ -249,35 +249,14 @@ SES_Charge(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-struct sess *
-SES_New(const struct sockaddr *addr, unsigned len)
+static struct sess *
+ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 {
-	struct sessmem *sm;
 	struct sess *sp;
 	volatile unsigned u;
 
-	/*
-	 * One of the two queues is unlocked because only one
-	 * thread ever gets here to empty it.
-	 */
-	assert(ses_qp <= 1);
-	sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
 	if (sm == NULL) {
 		/*
-		 * If that queue is empty, flip queues holding the lock
-		 * and try the new unlocked queue.
-		 */
-		Lck_Lock(&ses_mem_mtx);
-		ses_qp = 1 - ses_qp;
-		Lck_Unlock(&ses_mem_mtx);
-		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
-	}
-	if (sm != NULL) {
-		VTAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
-	} else {
-		/*
-		 * If that fails, alloc new one.
-		 *
 		 * It is not necessary to lock mem_workspace, but we
 		 * need to cache it locally, to make sure we get a
 		 * consistent view of it.
@@ -322,6 +301,43 @@ SES_New(const struct sockaddr *addr, unsigned len)
 
 	return (sp);
 }
+
+/*--------------------------------------------------------------------
+ * Try to recycle an existing session.
+ */
+
+struct sess *
+SES_New(const struct sockaddr *addr, unsigned len)
+{
+	struct sessmem *sm;
+
+	assert(pthread_self() == VCA_thread);
+	assert(ses_qp <= 1);
+	sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
+	if (sm == NULL) {
+		/*
+		 * If that queue is empty, flip queues holding the lock
+		 * and try the new unlocked queue.
+		 */
+		Lck_Lock(&ses_mem_mtx);
+		ses_qp = 1 - ses_qp;
+		Lck_Unlock(&ses_mem_mtx);
+		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
+	}
+	if (sm != NULL)
+		VTAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
+	return (ses_setup(sm, addr, len));
+}
+
+/*--------------------------------------------------------------------*/
+
+struct sess *
+SES_Alloc(const struct sockaddr *addr, unsigned len)
+{
+	return (ses_setup(NULL, addr, len));
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 SES_Delete(struct sess *sp)

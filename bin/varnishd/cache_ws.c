@@ -82,6 +82,10 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	WS_Assert(ws);
 }
 
+/*
+ * Reset a WS to start or a given pointer, likely from WS_Snapshot
+ */
+
 void
 WS_Reset(struct ws *ws, char *p)
 {

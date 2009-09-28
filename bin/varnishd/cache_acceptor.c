@@ -65,7 +65,7 @@ static struct acceptor * const vca_acceptors[] = {
 
 static struct acceptor const *vca_act;
 
-static pthread_t	vca_thread_acct;
+pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
 static const struct linger linger = {
@@ -332,7 +332,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	if (vca_act->pass == NULL)
 		AZ(pipe(vca_pipes));
 	vca_act->init();
-	AZ(pthread_create(&vca_thread_acct, NULL, vca_acct, NULL));
+	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
 }
 
