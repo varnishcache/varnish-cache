@@ -37,6 +37,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifndef HAVE_EXECINFO_H
+#include "compat/execinfo.h"
+#else
+#include <execinfo.h>
+#endif
 #include "cache.h"
 #include "cache_backend.h"
 #include "vcl.h"
@@ -131,21 +136,21 @@ pan_storage(const struct storage *st)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_http(const struct http *h)
+pan_http(const char *id, const struct http *h, int indent)
 {
 	int i;
 
-	vsb_printf(vsp, "    http = {\n");
-	pan_ws(h->ws, 6);
-	if (h->nhd > HTTP_HDR_FIRST) {
-		vsb_printf(vsp, "      hd = {\n");
-		for (i = HTTP_HDR_FIRST; i < h->nhd; ++i)
-			vsb_printf(vsp, "        \"%.*s\",\n",
-			    (int)(h->hd[i].e - h->hd[i].b),
-			    h->hd[i].b);
-		vsb_printf(vsp, "      },\n");
+	vsb_printf(vsp, "%*shttp[%s] = {\n", indent, "", id);
+	vsb_printf(vsp, "%*sws = %p[%s]\n", indent + 2, "",
+	    h->ws, h->ws ? h->ws->id : "");
+	for (i = 0; i < h->nhd; ++i) {
+		if (h->hd[i].b == NULL && h->hd[i].e == NULL)
+			continue;
+		vsb_printf(vsp, "%*s\"%.*s\",\n", indent + 4, "",
+		    (int)(h->hd[i].e - h->hd[i].b),
+		    h->hd[i].b);
 	}
-	vsb_printf(vsp, "    },\n");
+	vsb_printf(vsp, "%*s},\n", indent, "");
 }
 
 
@@ -159,7 +164,7 @@ pan_object(const struct object *o)
 	vsb_printf(vsp, "  obj = %p {\n", o);
 	vsb_printf(vsp, "    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
 	pan_ws(o->ws_o, 4);
-	pan_http(o->http);
+	pan_http("obj", o->http, 4);
 	vsb_printf(vsp, "    len = %u,\n", o->len);
 	vsb_printf(vsp, "    store = {\n");
 	VTAILQ_FOREACH(st, &o->store, list)
@@ -190,8 +195,7 @@ static void
 pan_wrk(const struct worker *wrk)
 {
 
-	vsb_printf(vsp, "    worker = %p {\n", wrk);
-	vsb_printf(vsp, "    },\n");
+	vsb_printf(vsp, "  worker = %p\n", wrk);
 }
 
 /*--------------------------------------------------------------------*/
@@ -229,7 +233,11 @@ pan_sess(const struct sess *sp)
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
 
+	vsb_printf(vsp, "  restarts = %d, esis = %d\n",
+	    sp->restarts, sp->esis);
+
 	pan_ws(sp->ws, 2);
+	pan_http("req", sp->http, 2);
 
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);
@@ -244,6 +252,28 @@ pan_sess(const struct sess *sp)
 		pan_object(sp->obj);
 
 	vsb_printf(vsp, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+pan_backtrace(void)
+{
+	void *array[10];
+	size_t size;
+	size_t i;
+
+	size = backtrace (array, 10);
+	vsb_printf(vsp, "Backtrace:\n");
+	for (i = 0; i < size; i++) {
+		vsb_printf (vsp, "  ");
+		if (Symbol_Lookup(vsp, array[i]) < 0) {
+			char **strings;
+			strings = backtrace_symbols(&array[i], 1);
+			vsb_printf(vsp, "%p: %s", array[i], strings[0]);
+		}
+		vsb_printf (vsp, "\n");
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -264,7 +294,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		break;
 	case 2:
 		vsb_printf(vsp,
-		    "Panic from VCL:\n%s\n", cond);
+		    "Panic from VCL:\n  %s\n", cond);
 		break;
 	case 1:
 		vsb_printf(vsp,
@@ -276,16 +306,19 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	case 0:
 		vsb_printf(vsp,
 		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.",
+		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 		break;
 	}
 	if (err)
-		vsb_printf(vsp, "  errno = %d (%s)", err, strerror(err));
+		vsb_printf(vsp, "errno = %d (%s)\n", err, strerror(err));
 
 	q = THR_GetName();
 	if (q != NULL)
-		vsb_printf(vsp, "  thread = (%s)", q);
+		vsb_printf(vsp, "thread = (%s)\n", q);
+
+	pan_backtrace();
+
 	if (!(params->diag_bitmap & 0x2000)) {
 		sp = THR_GetSession();
 		if (sp != NULL)

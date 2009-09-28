@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2008 Linpro AS
+/*
+ * Copyright (c) 2003 Maxim Sobolev <sobomax@FreeBSD.org>
  * All rights reserved.
- *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -17,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -26,33 +23,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
+ * $Id: execinfo.h,v 1.2 2004/07/19 05:20:29 sobomax Exp $
  */
 
-struct cli;
-struct sockaddr;
+#ifndef COMPAT_EXECINFO_H_INCLUDED
+#define COMPAT_EXECINFO_H_INCLUDED
 
-/* cache_acceptor.c */
-void VCA_tweak_acceptor(struct cli *cli, const char *arg);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* shmlog.c */
-void VSL_Panic(int *len, char **ptr);
+int     backtrace(void **, int);
+char ** backtrace_symbols(void *const *, int);
+void    backtrace_symbols_fd(void *const *, int, int);
 
-/* shmlog.c */
-void VSL_MgtInit(const char *fn, unsigned size);
-extern struct varnish_stats *VSL_stats;
+#ifdef __cplusplus
+}
+#endif
 
-/* varnishd.c */
-struct vsb;
-int Symbol_Lookup(struct vsb *vsb, void *ptr);
-
-#define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
-
-/* Really belongs in mgt.h, but storage_file chokes on both */
-void mgt_child_inherit(int fd, const char *what);
-
-#define ARGV_ERR(...)						\
-	do {							\
-		fprintf(stderr, "Error: " __VA_ARGS__);		\
-		exit(2);					\
-	} while (0);
+#endif /* COMPAT_EXECINFO_H_INCLUDED */
