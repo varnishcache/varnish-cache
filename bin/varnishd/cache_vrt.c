@@ -130,7 +130,9 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 	return (p);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: Optimize the single element case ?
+ */
 
 /*lint -e{818} ap,hp could be const */
 static char *
@@ -862,20 +864,25 @@ VRT_purge_string(struct sess *sp, char *str, ...)
 	}
 	b = BAN_New();
 	good = 0;
-	for (i = 1; ; i += 3) {
-		a1 = av[i];
+	for (i = 1; ;) {
+		a1 = av[i++];
 		if (a1 == NULL)
 			break;
 		good = 0;
-		a2 = av[i + 1];
+		a2 = av[i++];
 		if (a2 == NULL)
 			break;
-		a3 = av[i + 2];
+		a3 = av[i++];
 		if (a3 == NULL)
 			break;
 		if (BAN_AddTest(NULL, b, a1, a2, a3))
 			break;
 		good = 1;
+		if (av[i] == NULL)
+			break;
+		good = 0;
+		if (strcmp(av[i++], "&&"))
+			break;
 	}
 	if (!good) 
 		/* XXX: report error how ? */
