@@ -63,7 +63,7 @@ pan_ws(const struct ws *ws, int indent)
 	vsb_printf(vsp, "%*sws = %p { %s\n", indent, "",
 	    ws, ws->overflow ? "overflow" : "");
 	vsb_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
-	vsb_printf(vsp, "%*s{s,f,r,e} = {%p,", indent + 2, "", ws->s);
+	vsb_printf(vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 	if (ws->f > ws->s)
 		vsb_printf(vsp, ",+%d", ws->f - ws->s);
 	else
