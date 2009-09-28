@@ -65,6 +65,7 @@ void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
 void TCP_blocking(int sock);
 void TCP_nonblocking(int sock);
+void TCP_linger(int sock, int linger);
 #ifdef SOL_SOCKET
 void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);

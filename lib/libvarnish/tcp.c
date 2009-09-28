@@ -222,3 +222,17 @@ TCP_set_read_timeout(int s, double seconds)
 	AZ(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
 #endif
 }
+
+/*--------------------------------------------------------------------
+ * Set or reset SO_LINGER flag
+ */
+ 
+void
+TCP_linger(int sock, int linger)
+{
+	struct linger lin;
+
+	memset(&lin, 0, sizeof lin);
+	lin.l_onoff = linger;
+	AZ(setsockopt(sock, SOL_SOCKET, SO_LINGER, &lin, sizeof lin));
+}

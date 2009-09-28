@@ -68,7 +68,9 @@ static struct acceptor const *vca_act;
 static pthread_t	vca_thread_acct;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
-static struct linger	linger;
+static const struct linger linger = {
+	.l_onoff	=	1,
+};
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
 
