@@ -241,8 +241,11 @@ vca_acct(void *arg)
 				continue;
 			}
 			sp = SES_New(addr, l);
-			XXXAN(sp);
-
+			if (sp == NULL) {
+				AZ(close(i));
+				VSL_stats->client_drop++;
+				continue;
+			}
 			sp->fd = i;
 			sp->id = i;
 			sp->t_open = now;

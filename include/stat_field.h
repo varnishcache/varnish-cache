@@ -30,6 +30,7 @@
  */
 
 MAC_STAT(client_conn,		uint64_t, 'a', "Client connections accepted")
+MAC_STAT(client_drop,		uint64_t, 'a', "Connection dropped, no sess")
 MAC_STAT(client_req,		uint64_t, 'a', "Client requests received")
 
 MAC_STAT(cache_hit,		uint64_t, 'a', "Cache hits")

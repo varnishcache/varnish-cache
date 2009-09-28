@@ -82,6 +82,9 @@ struct params {
 	/* TTL used for synthesized error pages */
 	unsigned		err_ttl;
 
+	/* Maximum concurrent sessions */
+	unsigned		max_sess;
+
 	/* Worker threads and pool */
 	unsigned		wthread_min;
 	unsigned		wthread_max;
