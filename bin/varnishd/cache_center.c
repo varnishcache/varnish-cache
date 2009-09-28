@@ -445,6 +445,7 @@ cnt_fetch(struct sess *sp)
 	if (sp->obj->objhead != NULL) {
 		VRY_Create(sp);
 		EXP_Insert(sp->obj);
+		AN(sp->obj->ban);
 		HSH_Unbusy(sp);
 	}
 	sp->acct_req.fetch++;
