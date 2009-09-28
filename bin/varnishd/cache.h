@@ -58,8 +58,6 @@
 #include "heritage.h"
 #include "miniobj.h"
 
-#define HTTP_HDR_MAX_VAL 32
-
 enum {
 	/* Fields from the first line of HTTP proto */
 	HTTP_HDR_REQ,
