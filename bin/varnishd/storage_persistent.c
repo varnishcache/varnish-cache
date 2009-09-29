@@ -131,6 +131,8 @@ struct smp_sc {
 
 	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
+	uint64_t		free_offset;
+
 	uint64_t		objreserv;
 	pthread_t		thread;
 
@@ -157,6 +159,8 @@ struct smp_sc {
 	uint64_t		min_segl;
 	uint64_t		aim_segl;
 	uint64_t		max_segl;
+
+	uint64_t		free_reserve;
 };
 
 /*
@@ -492,6 +496,13 @@ smp_metrics(struct smp_sc *sc)
 	sc->aim_nobj = sc->max_segl / 4000;
 
 	fprintf(stderr, "aim_nobj = %u\n", sc->aim_nobj);
+
+	/*
+	 * How much space in the free reserve pool ?
+	 */
+	sc->free_reserve = sc->aim_segl * 10;
+
+	fprintf(stderr, "free_reserve = %ju\n", sc->free_reserve);
 }
 
 /*--------------------------------------------------------------------
@@ -587,6 +598,7 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 		assert(sg->offset + sg->length <= sc->mediasize);
 		ss->offset = sg->offset;
 		ss->length = sg->length;
+// printf("SAVE_SEG %jx...%jx\n", ss->offset, ss->offset + ss->length);
 		ss++;
 		length += sizeof *ss;
 	}
@@ -850,30 +862,115 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 static int
 smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 {
-	uint64_t length;
-	struct smp_segptr *ss;
-	struct smp_seg *sg;
-	int i;
+	uint64_t length, l;
+	struct smp_segptr *ss, *se;
+	struct smp_seg *sg, *sg1, *sg2;
+	int i, n = 0;
 
 	ASSERT_CLI();
 	i = smp_chk_sign(ctx);	
 	if (i)
 		return (i);
+
 	ss = SIGN_DATA(ctx);
 	length = ctx->ss->length;
 
-	for(; length > 0; length -= sizeof *ss, ss ++) {
+	if (length == 0) {
+		/* No segments */
+		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
+		return (0);
+	}
+	se = ss + length / sizeof *ss;
+	se--;
+	assert(ss <= se);
+
+	/*
+	 * Locate the free reserve, there are only two basic cases,
+	 * but once we start dropping segments, things gets more complicated.
+	 */
+
+	sc->free_offset = se->offset + se->length;
+	l = sc->mediasize - sc->free_offset;
+	if (se->offset > ss->offset && l >= sc->free_reserve) {
+		/*
+		 * [__xxxxyyyyzzzz___] 
+		 * Plenty of space at tail, do nothing.
+		 */
+//printf("TRS: %jx @ %jx\n", l, sc->free_offset);
+	} else if (ss->offset > se->offset) {
+		/*
+		 * [zzzz____xxxxyyyy_]
+		 * (make) space between ends
+		 * We might nuke the entire tail end without getting
+		 * enough space, in which case we fall through to the
+		 * last check.
+		 */
+		while (ss < se && ss->offset > se->offset) {
+//printf("TEST_SEG1 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+			l = ss->offset - (se->offset + se->length);
+			if (l > sc->free_reserve)
+				break;
+//printf("DROP_SEG1 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+			ss++;
+			n++;
+		}
+	}
+
+	if (l < sc->free_reserve) {
+		/*
+		 * [__xxxxyyyyzzzz___] 
+		 * (make) space at front
+		 */
+		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
+		while (ss < se) {
+//printf("TEST_SEG2 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+			l = ss->offset - sc->free_offset;
+			if (l > sc->free_reserve)
+				break;
+//printf("DROP_SEG2 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+			ss++;
+			n++;
+		}
+	}
+
+	assert (l >= sc->free_reserve);
+
+//printf("FRS: %jx @ %jx\n", l, sc->free_offset);
+
+	sg1 = NULL;
+	sg2 = NULL;
+	for(; ss <= se; ss++) {
+// printf("LOAD_SEG %jx...%jx\n", ss->offset, ss->offset + ss->length);
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		sg->lru = LRU_Alloc();
 		sg->offset = ss->offset;
 		sg->length = ss->length;
+		if (sg1 != NULL) {
+			assert(sg1->offset != sg->offset);
+			if (sg1->offset < sg->offset)
+				assert(sg1->offset + sg1->length <= sg->offset);
+			else
+				assert(sg->offset + sg->length <= sg1->offset);
+		}
+		if (sg2 != NULL) {
+			assert(sg2->offset != sg->offset);
+			if (sg2->offset < sg->offset)
+				assert(sg2->offset + sg2->length <= sg->offset);
+			else
+				assert(sg->offset + sg->length <= sg2->offset);
+		}
+
 		/* XXX: check that they are inside silo */
 		/* XXX: check that they don't overlap */
 		/* XXX: check that they are serial */
 		sg->sc = sc;
 		VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
+		sg2 = sg;
+		if (sg1 == NULL)
+			sg1 = sg;
 	}
+	printf("Dropped %d segments to make free_reserve\n", n);
 	return (0);
 }
 
@@ -896,18 +993,34 @@ smp_new_seg(struct smp_sc *sc)
 
 	/* XXX: find where it goes in silo */
 
-	sg2 = VTAILQ_LAST(&sc->segments, smp_seghead);
-	if (sg2 == NULL) {
-		sg->offset = sc->ident->stuff[SMP_SPC_STUFF];
-		assert(sc->ident->stuff[SMP_SPC_STUFF] < sc->mediasize);
-	} else {
-		sg->offset = sg2->offset + sg2->length;
-		assert(sg->offset < sc->mediasize);
-	}
+	sg->offset = sc->free_offset;
+	assert(sg->offset >= sc->ident->stuff[SMP_SPC_STUFF]);
+	assert(sg->offset < sc->mediasize);
+
 	sg->length = sc->aim_segl;
 	sg->length &= ~7;
 
+
 	assert(sg->offset + sg->length <= sc->mediasize);
+
+	sg2 = VTAILQ_FIRST(&sc->segments);
+	if (sg2 != NULL && sg2->offset > sc->free_offset) {
+//printf("SG %jx...%jx\n", sg->offset, sg->offset + sg->length);
+//printf("SG2 %jx...%jx\n", sg2->offset, sg2->offset + sg2->length);
+
+//printf("spc %jx %jx\n", sg2->offset + sg2->length - sg->offset, sc->free_reserve);
+
+		if (sg->offset + sg->length > sg2->offset) {
+			printf("Out of space in persistent silo\n");
+			printf("Committing suicide, restart will make space\n");
+			exit (0);
+		}
+		assert(sg->offset + sg->length <= sg2->offset);
+	}
+
+	sc->free_offset += sg->length;
+
+//printf("NEW_SEG %jx...%jx\n", sg->offset, sg->offset + sg->length);
 
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 
@@ -972,7 +1085,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	/* Save segment list */
 	smp_save_segs(sc);
-
+	sc->free_offset = sg->offset + sg->length;
 }
 
 /*--------------------------------------------------------------------
