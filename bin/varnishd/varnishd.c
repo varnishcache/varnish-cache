@@ -418,7 +418,7 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	VTAILQ_FOREACH(s, &symbols, list) {
 		if (s->a > pp)
 			continue;
-		if (s0 == NULL || s->a < s0->a)
+		if (s0 == NULL || s->a > s0->a)
 			s0 = s;
 	}
 	if (s0 == NULL)
@@ -439,7 +439,7 @@ Symbol_hack(const char *a0)
 	asprintf(&p, "nm -an %s", a0);
 	if (p == NULL)
 		return;
-	fi = popen(buf, "r");
+	fi = popen(p, "r");
 	free(p);
 	if (fi == NULL) 
 		return;
