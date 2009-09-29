@@ -1093,6 +1093,13 @@ cnt_start(struct sess *sp)
 	http_Setup(sp->http, sp->ws);
 	done = http_DissectRequest(sp);
 
+	/* If we could not even parse the request, just close */
+	if (done < 0) {
+		sp->step = STP_DONE;
+		vca_close_session(sp, "junk");
+		return (0);
+	}
+
 	/* Catch request snapshot */
 	sp->ws_req = WS_Snapshot(sp->ws);
 

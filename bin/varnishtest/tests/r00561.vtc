@@ -1,0 +1,25 @@
+# $Id$
+
+test "Junk request should not go to vcl_error"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_error {
+		return (restart);
+	}
+} -start
+
+client c1 {
+	send "sljdslf\r\n\r\n"
+	delay .1
+} -run
+
+client c1 {
+	txreq 
+	rxresp
+} -run
+

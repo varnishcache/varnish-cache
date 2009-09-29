@@ -406,7 +406,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	q = p;
 	for (; !vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (400);
+			return (-1);
 	}
 	hp->hd[h1].b = q;
 	hp->hd[h1].e = p;
@@ -414,14 +414,14 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (400);
+			return (-1);
 	}
 
 	/* Second field cannot contain LWS or CTL */
 	q = p;
 	for (; !vct_islws(*p); p++) {
 		if (vct_isctl(*p))
-			return (400);
+			return (-1);
 	}
 	hp->hd[h2].b = q;
 	hp->hd[h2].e = p;
@@ -432,7 +432,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (400);
+			return (-1);
 	}
 
 	/* Third field is optional and cannot contain CTL */
@@ -440,7 +440,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	if (!vct_iscrlf(*p)) {
 		for (; !vct_iscrlf(*p); p++)
 			if (vct_isctl(*p))
-				return (400);
+				return (-1);
 	}
 	hp->hd[h3].b = q;
 	hp->hd[h3].e = p;
