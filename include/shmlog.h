@@ -43,7 +43,7 @@
 #include "stats.h"
 
 struct shmloghead {
-#define SHMLOGHEAD_MAGIC	4185512498U	/* From /dev/random */
+#define SHMLOGHEAD_MAGIC	4185512499U	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
