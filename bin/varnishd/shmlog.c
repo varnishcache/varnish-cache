@@ -86,10 +86,11 @@ vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 
 	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 	assert(len < 0x10000);
-	assert(id < 0x10000);
 	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
 	p[__SHMLOG_LEN_LOW] = len & 0xff;
-	p[__SHMLOG_ID_HIGH] = (id >> 8) & 0xff;
+	p[__SHMLOG_ID_HIGH] = (id >> 24) & 0xff;
+	p[__SHMLOG_ID_MEDHIGH] = (id >> 16) & 0xff;
+	p[__SHMLOG_ID_MEDLOW] = (id >> 8) & 0xff;
 	p[__SHMLOG_ID_LOW] = id & 0xff;
 	p[SHMLOG_DATA + len] = '\0';
 	p[SHMLOG_NEXTTAG + len] = SLT_ENDMARKER;

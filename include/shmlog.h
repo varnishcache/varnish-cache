@@ -73,7 +73,7 @@ struct shmloghead {
  *
  *	1 byte		field type (enum shmlogtag)
  *	2 bytes		length of contents
- *	2 bytes		record identifier
+ *	4 bytes		record identifier
  *	n bytes		field contents (isgraph(c) || isspace(c)) allowed.
  */
 
@@ -81,12 +81,18 @@ struct shmloghead {
 #define __SHMLOG_LEN_HIGH	1
 #define __SHMLOG_LEN_LOW	2
 #define __SHMLOG_ID_HIGH	3
-#define __SHMLOG_ID_LOW	4
-#define SHMLOG_DATA	5
-#define SHMLOG_NEXTTAG	6	/* ... + len */
+#define __SHMLOG_ID_MEDHIGH	4
+#define __SHMLOG_ID_MEDLOW	5
+#define __SHMLOG_ID_LOW		6
+#define SHMLOG_DATA		7
+#define SHMLOG_NEXTTAG		8	/* ... + len */
 
 #define SHMLOG_LEN(p)	(((p)[__SHMLOG_LEN_HIGH] << 8) | (p)[__SHMLOG_LEN_LOW])
-#define SHMLOG_ID(p)	(((p)[__SHMLOG_ID_HIGH] << 8) | (p)[__SHMLOG_ID_LOW])
+#define SHMLOG_ID(p)	( \
+	((p)[__SHMLOG_ID_HIGH] << 24) | \
+	((p)[__SHMLOG_ID_MEDHIGH] << 16) | \
+	((p)[__SHMLOG_ID_MEDLOW] << 8) | \
+	 (p)[__SHMLOG_ID_LOW])
 
 /*
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
