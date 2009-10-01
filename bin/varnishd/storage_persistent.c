@@ -98,7 +98,8 @@ struct smp_seg {
 
 	struct smp_segment	segment;	/* Copy of on-disk desc. */
 
-	uint32_t		nalloc;		/* How many live objects */
+	uint32_t		nalloc;		/* How many alloc objects */
+	uint32_t		nfilled;	/* How many live objects */
 	uint32_t		nfixed;		/* How many fixed objects */
 
 	/* Only for open segment */
@@ -590,6 +591,7 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 	struct smp_seg *sg;
 	uint64_t length;
 
+	Lck_AssertHeld(&sc->mtx);
 	smp_reset_sign(ctx);
 	ss = SIGN_DATA(ctx);
 	length = 0;
@@ -598,7 +600,6 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 		assert(sg->offset + sg->length <= sc->mediasize);
 		ss->offset = sg->offset;
 		ss->length = sg->length;
-// printf("SAVE_SEG %jx...%jx\n", ss->offset, ss->offset + ss->length);
 		ss++;
 		length += sizeof *ss;
 	}
@@ -609,6 +610,19 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 static void
 smp_save_segs(struct smp_sc *sc)
 {
+	struct smp_seg *sg, *sg2;
+
+	Lck_AssertHeld(&sc->mtx);
+
+	/* Elide any empty segments from the list before we write it */
+	VTAILQ_FOREACH_SAFE(sg, &sc->segments, list, sg2) {
+		if (sg->nalloc > 0)
+			continue;
+		if (sg == sc->cur_seg)
+			continue;
+		VTAILQ_REMOVE(&sc->segments, sg, list);
+		// XXX: free segment
+	}
 
 	smp_save_seg(sc, &sc->seg1);
 	smp_save_seg(sc, &sc->seg2);
@@ -765,10 +779,16 @@ SMP_FreeObj(struct object *o)
 	sg = o->objcore->smp_seg;
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 
+	Lck_Lock(&sg->sc->mtx);
 	o->smp_object->ttl = 0;
 	assert(sg->nalloc > 0);
+	assert(sg->nfixed > 0);
+
 	sg->nalloc--;
+	o->smp_object = NULL;
+
 	sg->nfixed--;
+	Lck_Unlock(&sg->sc->mtx);
 
 	/* XXX: check if seg is empty, or leave to thread ? */
 }
@@ -836,6 +856,8 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	ss = ptr;
 	so = (void*)(sc->ptr + ss->objlist);
 	no = ss->nalloc;
+	/* Clear the bogus "hold" count */
+	sg->nalloc = 0;
 	for (;no > 0; so++,no--) {
 		if (so->ttl < t_now)
 			continue;
@@ -946,6 +968,11 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		sg->lru = LRU_Alloc();
 		sg->offset = ss->offset;
 		sg->length = ss->length;
+		/*
+		 * HACK: prevent save_segs from nuking segment until we have
+		 * HACK: loaded it.
+		 */
+		sg->nalloc = 1;
 		if (sg1 != NULL) {
 			assert(sg1->offset != sg->offset);
 			if (sg1->offset < sg->offset)
@@ -986,6 +1013,7 @@ smp_new_seg(struct smp_sc *sc)
 	Lck_AssertHeld(&sc->mtx);
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
+	sg->sc = sc;
 
 	sg->maxobj = sc->aim_nobj;
 	sg->objs = malloc(sizeof *sg->objs * sg->maxobj);
@@ -1032,9 +1060,6 @@ smp_new_seg(struct smp_sc *sc)
 	smp_append_sign(sg->ctx, &sg->segment, sizeof sg->segment);
 	smp_sync_sign(sg->ctx);
 
-	/* Then add it to the segment list. */
-	/* XXX: could be done cheaper with append ? */
-	smp_save_segs(sc);
 
 	/* Set up our allocation point */
 	sc->cur_seg = sg;
@@ -1044,6 +1069,10 @@ smp_new_seg(struct smp_sc *sc)
 	    SHA256_LEN;
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	sc->objreserv = sizeof *sg->objs + SHA256_LEN;
+
+	/* Then add it to the segment list. */
+	/* XXX: could be done cheaper with append ? */
+	smp_save_segs(sc);
 }
 
 /*--------------------------------------------------------------------
@@ -1060,6 +1089,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	Lck_AssertHeld(&sc->mtx);
 
 	/* XXX: if segment is empty, delete instead */
+
 
 
 	/* Copy the objects into the segment */
@@ -1109,7 +1139,7 @@ smp_thread(struct sess *sp, void *priv)
 	BAN_Deref(&sc->tailban);
 	sc->tailban = NULL;
 	printf("Silo completely loaded\n");
-	while (1)	
+	while (1)	 
 		(void)sleep (1);
 	NEEDLESS_RETURN(NULL);
 }
@@ -1193,24 +1223,22 @@ smp_object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objcore->smp_seg, SMP_SEG_MAGIC);
 	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
 
 	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
 	Lck_Lock(&sc->mtx);
-	sg = sc->cur_seg;
+	sg = sp->obj->objcore->smp_seg;
 	sc->objreserv += sizeof *so;
-	if (sg->nalloc >= sg->maxobj) {
-		smp_close_seg(sc, sc->cur_seg);
-		smp_new_seg(sc);
-		fprintf(stderr, "New Segment\n");
-		sg = sc->cur_seg;
-	}
-	assert(sg->nalloc < sg->maxobj);
+	assert(sg->nalloc < sg->nfilled);
 	so = &sg->objs[sg->nalloc++];
+	sg->nfixed++;
 	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
 	so->ptr = sp->obj;
 	so->ban = sp->obj->ban_t;
+	/* XXX: if segment is already closed, write sg->objs */
+	sp->obj->smp_object = so;
 	Lck_Unlock(&sc->mtx);
 
 }
@@ -1229,7 +1257,6 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 
 	(void)oc;
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
-
 	Lck_Lock(&sc->mtx);
 	sg = sc->cur_seg;
 
@@ -1267,6 +1294,16 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	sg->next_addr += size + sizeof *ss;
 	assert(sg->next_addr <= sg->offset + sg->length);
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+	if (oc != NULL) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		if (++sg->nfilled >= sg->maxobj) {
+			smp_close_seg(sc, sc->cur_seg);
+			smp_new_seg(sc);
+			fprintf(stderr, "New Segment\n");
+			sg = sc->cur_seg;
+		}
+		oc->smp_seg = sg;
+	}
 	Lck_Unlock(&sc->mtx);
 
 	/* Grab and fill a storage structure */
