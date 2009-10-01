@@ -169,7 +169,7 @@ STV_alloc(struct sess *sp, size_t size)
 
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = stv->alloc(stv, size);
+		st = stv->alloc(stv, size, 0);
 		if (st != NULL)
 			break;
 
