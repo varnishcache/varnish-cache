@@ -33,10 +33,11 @@ struct stevedore;
 struct sess;
 struct iovec;
 struct object;
+struct objcore;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
-typedef struct storage *storage_alloc_f(struct stevedore *, size_t size, int isobj);
+typedef struct storage *storage_alloc_f(struct stevedore *, size_t size, struct objcore *);
 typedef struct object *storage_alloc_obj_f(struct stevedore *, size_t size, double ttl);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
@@ -66,7 +67,7 @@ struct stevedore {
 };
 
 struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl);
-struct storage *STV_alloc(struct sess *sp, size_t size);
+struct storage *STV_alloc(struct sess *sp, size_t size, struct objcore *oc);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);

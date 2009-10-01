@@ -64,7 +64,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	assert((uintmax_t)cl == cll); /* Protect against bogusly large values */
 
 	while (cl > 0) {
-		st = STV_alloc(sp, cl);
+		st = STV_alloc(sp, cl, NULL);
 		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 		sl = st->space;
 		if (sl > cl)
@@ -164,7 +164,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 				v = u;
 				if (u < params->fetch_chunksize * 1024)
 					v = params->fetch_chunksize * 1024;
-				st = STV_alloc(sp, v);
+				st = STV_alloc(sp, v, NULL);
 				VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			}
 			v = st->space - st->len;
@@ -247,7 +247,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		if (v == 0) {
 			if (st != NULL && fetchfrag > 0)
 				dump_st(sp, st);
-			st = STV_alloc(sp, params->fetch_chunksize * 1024LL);
+			st = STV_alloc(sp, params->fetch_chunksize * 1024LL, NULL);
 			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;

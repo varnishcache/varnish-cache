@@ -53,11 +53,11 @@ struct sma {
 };
 
 static struct storage *
-sma_alloc(struct stevedore *st, size_t size, int isobj)
+sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 {
 	struct sma *sma;
 
-	(void)isobj;
+	(void)oc;
 	Lck_Lock(&sma_mtx);
 	VSL_stats->sma_nreq++;
 	if (VSL_stats->sma_nbytes + size > sma_max)

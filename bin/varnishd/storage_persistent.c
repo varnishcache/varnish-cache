@@ -1220,14 +1220,14 @@ smp_object(const struct sess *sp)
  */
 
 static struct storage *
-smp_alloc(struct stevedore *st, size_t size, int isobj)
+smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 {
 	struct smp_sc *sc;
 	struct storage *ss;
 	struct smp_seg *sg;
 	size_t sz2;
 
-	(void)isobj;
+	(void)oc;
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
 	Lck_Lock(&sc->mtx);
