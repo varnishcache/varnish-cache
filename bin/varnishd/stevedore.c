@@ -127,7 +127,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl)
 		STV_InitObj(sp, o, l);
 		return (o);
 	} 
-	st = STV_alloc(sp, sizeof *o + l);
+	st = STV_alloc(sp, sizeof *o + l, sp->objcore);
 	XXXAN(st);
 	xxxassert(st->space >= (sizeof *o + l));
 
@@ -143,7 +143,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl)
 /*********************************************************************/
 
 struct storage *
-STV_alloc(struct sess *sp, size_t size)
+STV_alloc(struct sess *sp, size_t size, struct objcore *oc)
 {
 	struct storage *st;
 	struct stevedore *stv = NULL;
@@ -169,7 +169,7 @@ STV_alloc(struct sess *sp, size_t size)
 
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = stv->alloc(stv, size, 0);
+		st = stv->alloc(stv, size, oc);
 		if (st != NULL)
 			break;
 
