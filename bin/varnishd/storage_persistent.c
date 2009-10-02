@@ -1253,7 +1253,6 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	struct smp_sc *sc;
 	struct storage *ss;
 	struct smp_seg *sg;
-	size_t sz2;
 
 	(void)oc;
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
@@ -1262,37 +1261,21 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 
 	AN(sg->next_addr);
 
-	/*
-	 * XXX: We do not have a mechanism for deciding which allocations
-	 * XXX: have mandatory size and which can be chopped into smaller
-	 * XXX: allocations.
-	 * XXX: The primary unchoppable allocation is from HSH_NewObject()
-	 * XXX: which needs an object + workspace.
-	 */
-	sz2 = sizeof (struct object) + 1024;
-	if (size < sz2)
-		sz2 = size;
-
 	/* If the segment is full, get a new one right away */
-	if (sg->next_addr + sizeof *ss + sz2 + sc->objreserv >
+	if (sg->next_addr + sizeof *ss + size + sc->objreserv >
 	     sg->offset + sg->length) {
 		smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
 		sg = sc->cur_seg;
 	}
 
-	assert (sg->next_addr + sizeof *ss + sz2 + sc->objreserv <=
+	assert (sg->next_addr + sizeof *ss + size + sc->objreserv <=
 	    sg->offset + sg->length);
-
-	if (sg->next_addr + sizeof *ss + size + sc->objreserv >
-	    sg->offset + sg->length)
-		size = (sg->offset + sg->length) -
-			(sg->next_addr + sizeof *ss + sc->objreserv);
 
 	ss = (void *)(sc->ptr + sg->next_addr);
 
 	sg->next_addr += size + sizeof *ss;
-	assert(sg->next_addr <= sg->offset + sg->length);
+	assert(sg->next_addr + sc->objreserv <= sg->offset + sg->length);
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	if (oc != NULL) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
