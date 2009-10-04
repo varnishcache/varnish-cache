@@ -705,7 +705,7 @@ HSH_Deref(struct worker *w, struct object **oo)
 		free(o->vary);
 
 	ESI_Destroy(o);
-	if (o->smp_object != NULL) {
+	if (o->objcore != NULL && o->objcore->smp_seg != NULL) {
 		SMP_FreeObj(o);
 	} else {
 		HSH_Freestore(o);

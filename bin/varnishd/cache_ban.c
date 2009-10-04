@@ -473,14 +473,14 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	if (b == o->ban) {	/* not banned */
 		o->ban = b0;
 		o->ban_t = o->ban->t0;
-		if (o->smp_object != NULL)
+		if (o->objcore->smp_seg != NULL)
 			SMP_BANchanged(o, b0->t0);
 		return (0);
 	} else {
 		o->ttl = 0;
 		o->cacheable = 0;
 		o->ban = NULL;
-		if (o->smp_object != NULL)
+		if (o->objcore->smp_seg != NULL)
 			SMP_TTLchanged(o);
 		/* BAN also changed, but that is not important any more */
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
