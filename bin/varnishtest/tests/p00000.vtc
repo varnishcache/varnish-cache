@@ -13,6 +13,10 @@ varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
 	-arg "-spersistent,/tmp/__v1/_.per,10m" -vcl+backend { } -start 
 
+varnish v1 -stop
+
+varnish v1 -start
+
 client c1 {
 	txreq -url "/"
 	rxresp
