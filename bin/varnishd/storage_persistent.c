@@ -1330,8 +1330,10 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		smp_new_seg(sc);
 	}
 
-	if (needed > smp_spaceleft(sg))
+	if (needed > smp_spaceleft(sg)) {
+		Lck_Unlock(&sc->mtx);
 		return (NULL);
+	}
 
 	assert(needed <= smp_spaceleft(sg));
 
