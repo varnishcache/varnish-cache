@@ -1273,6 +1273,7 @@ smp_object(const struct sess *sp)
 	sp->obj->smp_index = sg->nalloc2++;
 	so = &sg->objs[sp->obj->smp_index];
 	sg->nfixed++;
+	sg->nobj++;
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
 	so->ttl = sp->obj->ttl;
@@ -1323,7 +1324,8 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		}
 
 		/* If there is space, fine */
-		if (needed < left && (oc == NULL || sg->nalloc1 < sc->aim_nobj))
+		if (needed <= left &&
+		    (oc == NULL || sg->nalloc1 < sc->aim_nobj))
 			break;
 
 		smp_close_seg(sc, sc->cur_seg);
