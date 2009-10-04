@@ -317,7 +317,7 @@ struct object {
 	struct storage		*objstore;
 	struct objcore		*objcore;
 
-	struct smp_object	*smp_object;
+	unsigned		smp_index;
 
 	struct ws		ws_o[1];
 	unsigned char		*vary;

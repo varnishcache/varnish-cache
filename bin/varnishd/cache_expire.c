@@ -147,7 +147,7 @@ EXP_Insert(struct object *o)
 		oc->flags |= OC_F_ONLRU;
 	}
 	Lck_Unlock(&exp_mtx);
-	if (o->smp_object != NULL)
+	if (o->objcore->smp_seg != NULL)
 		SMP_TTLchanged(o);
 }
 
@@ -240,7 +240,7 @@ EXP_Rearm(const struct object *o)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
-	if (o->smp_object != NULL)
+	if (o->objcore->smp_seg != NULL)
 		SMP_TTLchanged(o);
 }
 
