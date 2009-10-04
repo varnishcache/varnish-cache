@@ -1068,7 +1068,7 @@ smp_new_seg(struct smp_sc *sc)
 	    sizeof (struct smp_segment) +
 	    SHA256_LEN;
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
-	sc->objreserv = sizeof *sg->objs + SHA256_LEN;
+	sc->objreserv = 0;
 
 	/* Then add it to the segment list. */
 	/* XXX: could be done cheaper with append ? */
@@ -1090,11 +1090,10 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	/* XXX: if segment is empty, delete instead */
 
-
-
 	/* Copy the objects into the segment */
 	sz = sizeof *sg->objs * sg->nalloc;
-	assert(sg->next_addr + sz <= sg->offset + sg->length);
+	/* XXX: Seen by sky 2009-10-02: */
+	assert(sg->next_addr + sz <= sg->offset + sg->length); 
 
 	memcpy(sc->ptr + sg->next_addr, sg->objs, sz);
 
@@ -1229,7 +1228,6 @@ smp_object(const struct sess *sp)
 	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
 	Lck_Lock(&sc->mtx);
 	sg = sp->obj->objcore->smp_seg;
-	sc->objreserv += sizeof *so;
 	assert(sg->nalloc < sg->nfilled);
 	so = &sg->objs[sg->nalloc++];
 	sg->nfixed++;
@@ -1238,7 +1236,10 @@ smp_object(const struct sess *sp)
 	so->ptr = sp->obj;
 	so->ban = sp->obj->ban_t;
 	/* XXX: if segment is already closed, write sg->objs */
+
+	/* XXX: Uhm, this should not be the temp version, should it ? */
 	sp->obj->smp_object = so;
+
 	Lck_Unlock(&sc->mtx);
 
 }
@@ -1247,53 +1248,90 @@ smp_object(const struct sess *sp)
  * Allocate a bite
  */
 
+static uint64_t
+smp_spaceleft(const struct smp_seg *sg)
+{
+
+	assert(sg->next_addr <= (sg->offset + sg->length));
+	return ((sg->offset + sg->length) - sg->next_addr);
+}
+
 static struct storage *
 smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 {
 	struct smp_sc *sc;
 	struct storage *ss;
 	struct smp_seg *sg;
+	uint64_t needed, left, overhead;
+	void *allocation;
+	unsigned tries;
 
-	(void)oc;
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 	Lck_Lock(&sc->mtx);
-	sg = sc->cur_seg;
 
-	AN(sg->next_addr);
+	for (tries = 0; tries < 3; tries++) {
+		sg = sc->cur_seg;
+		CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 
-	/* If the segment is full, get a new one right away */
-	if (sg->next_addr + sizeof *ss + size + sc->objreserv >
-	     sg->offset + sg->length) {
+		overhead = sizeof *ss + sc->objreserv;
+		needed = overhead + size;
+		left = smp_spaceleft(sg);
+
+		if (oc != NULL) {
+			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+			/* Objects also need an entry in the index */
+			needed += sizeof (struct smp_object);
+		} else if (needed > left && (overhead + 4096) < left) {
+			/*
+			 * Non-objects can be trimmed down to fit what we
+			 * have to offer (think: DVD image), but we do not
+			 * want to trim down to trivial sizes.
+			 */
+			size = left - overhead;
+			needed = overhead + size;
+			assert(needed <= left);
+		}
+
+		/* If there is space, fine */
+		if (needed < left && (oc == NULL || sg->nfilled < sg->maxobj))
+			break;
+
 		smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
-		sg = sc->cur_seg;
 	}
 
-	assert (sg->next_addr + sizeof *ss + size + sc->objreserv <=
-	    sg->offset + sg->length);
+	if (needed > smp_spaceleft(sg))
+		return (NULL);
 
+	assert(needed <= smp_spaceleft(sg));
+
+	/* Grab for storage struct */
 	ss = (void *)(sc->ptr + sg->next_addr);
+	sg->next_addr +=sizeof *ss;
 
-	sg->next_addr += size + sizeof *ss;
-	assert(sg->next_addr + sc->objreserv <= sg->offset + sg->length);
+	/* Grab for allocated space */
+	allocation = sc->ptr + sg->next_addr;
+	sg->next_addr += size;
+
+	/* Paint our marker */
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+
 	if (oc != NULL) {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		if (++sg->nfilled >= sg->maxobj) {
-			smp_close_seg(sc, sc->cur_seg);
-			smp_new_seg(sc);
-			fprintf(stderr, "New Segment\n");
-			sg = sc->cur_seg;
-		}
+		/* Make reservation in the index */
+		assert(sg->nfilled < sg->maxobj);
+		sg->nfilled++;
+		sc->objreserv += sizeof (struct smp_object);
+		assert(sc->objreserv <= smp_spaceleft(sg));
 		oc->smp_seg = sg;
 	}
+
 	Lck_Unlock(&sc->mtx);
 
-	/* Grab and fill a storage structure */
+	/* Fill the storage structure */
 	memset(ss, 0, sizeof *ss);
 	ss->magic = STORAGE_MAGIC;
+	ss->ptr = allocation;
 	ss->space = size;
-	ss->ptr = (void *)(ss + 1);
 	ss->priv = sc;
 	ss->stevedore = st;
 	ss->fd = sc->fd;
