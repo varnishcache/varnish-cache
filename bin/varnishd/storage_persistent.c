@@ -46,6 +46,7 @@ SVNID("$Id$")
 #include <sys/param.h>
 #include <sys/mman.h>
 
+#include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
@@ -1062,6 +1063,17 @@ smp_new_seg(struct smp_sc *sc)
 
 	sg->length = sc->aim_segl;
 	sg->length &= ~7;
+
+	if (sg->offset + sg->length > sc->mediasize) {
+		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
+		sg->offset = sc->free_offset;
+		sg2 = VTAILQ_FIRST(&sc->segments);
+		if (sg->offset + sg->length > sg2->offset) {
+			printf("Out of space in persistent silo\n");
+			printf("Committing suicide, restart will make space\n");
+			exit (0);
+		}
+	}
 
 
 	assert(sg->offset + sg->length <= sc->mediasize);
