@@ -1312,6 +1312,12 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 	Lck_Lock(&sc->mtx);
 
+	/* Alignment */
+	if (size & 0xf) {
+		size |= 0xf;
+		size += 1;
+	}
+
 	for (tries = 0; tries < 3; tries++) {
 		sg = sc->cur_seg;
 		CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
@@ -1333,6 +1339,7 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 			size = left - overhead;
 			needed = overhead + size;
 			assert(needed <= left);
+			size &= ~15;
 		}
 
 		/* If there is space, fine */
