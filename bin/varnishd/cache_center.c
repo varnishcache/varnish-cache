@@ -420,6 +420,7 @@ cnt_fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	char *b;
 	unsigned handling, l;
+	struct vsb *vary;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -515,12 +516,17 @@ cnt_fetch(struct sess *sp)
 	if (sp->wrk->cacheable) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		vary = VRY_Create(sp, sp->wrk->beresp);
 	} else {
 		AZ(sp->objhead);
 		AZ(sp->objcore);
+		vary = NULL;
 	}
 
 	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS);
+
+	if (vary != NULL)
+		l += vsb_len(vary);
 
 	/* Space for producing a Content-Length: header */
 	l += 30;
@@ -541,6 +547,15 @@ cnt_fetch(struct sess *sp)
 		sp->objhead = NULL;	/* refcnt follows pointer. */
 		sp->objcore = NULL;	/* refcnt follows pointer. */
 		BAN_NewObj(sp->obj);
+	}
+
+	if (vary != NULL) {
+		sp->obj->vary =
+		    (void *)WS_Alloc(sp->obj->http->ws, vsb_len(vary));
+		AN(sp->obj->vary);
+		memcpy(sp->obj->vary, vsb_data(vary), vsb_len(vary));
+		vsb_delete(vary);
+		vary = NULL;
 	}
 
 	sp->obj->xid = sp->xid;
@@ -619,7 +634,6 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->cacheable = 1;
 	if (sp->wrk->cacheable) {
-		VRY_Create(sp);
 		EXP_Insert(sp->obj);
 		AN(sp->obj->ban);
 		HSH_Unbusy(sp);
