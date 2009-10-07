@@ -124,16 +124,8 @@ struct smp_sign {
 struct smp_segptr {
 	uint64_t		offset;
 	uint64_t		length;
-};
-
-/*
- * Ban description
- */
-
-struct smp_ban {
-	double			ttl;
-	uint16_t		length;
-	uint8_t			valid;
+	uint64_t		objlist;
+	uint32_t		nalloc;
 };
 
 /*
@@ -146,13 +138,4 @@ struct smp_object {
 	double  		ban;
 	struct object		*ptr;
 	uint64_t		len;	/* XXX: madvise */
-};
-
-/*
- * Segment
- */
-
-struct smp_segment {
-	uint64_t		objlist;
-	uint32_t		nalloc;
 };

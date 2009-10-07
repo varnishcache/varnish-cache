@@ -65,6 +65,9 @@ SVNID("$Id$")
 #define ASSERT_SILO_THREAD(sc) \
     do {assert(pthread_self() == (sc)->thread);} while (0)
 
+#define RDN2(x, y)  ((x)&(~((y)-1))) 		/* if y is powers of two */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
+
 /*
  * Context for a signature.
  *
@@ -94,12 +97,10 @@ struct smp_seg {
 
 	VTAILQ_ENTRY(smp_seg)	list;		/* on smp_sc.smp_segments */
 
-	uint64_t		offset;		/* coordinates in silo */
-	uint64_t		length;
-
-	struct smp_segment	segment;	/* Copy of on-disk desc. */
+	struct smp_segptr	p;
 
 	uint32_t		nobj;		/* Number of objects */
+	uint32_t		nalloc;		/* Allocations */
 	uint32_t		nalloc1;	/* Allocated objects */
 	uint32_t		nalloc2;	/* Registered objects */
 	uint32_t		nfixed;		/* How many fixed objects */
@@ -166,6 +167,12 @@ struct smp_sc {
 
 	uint64_t		free_reserve;
 };
+
+#define CACHE_LINE_ALIGN	16
+
+#define C_ALIGN(x)	RUP2(x, CACHE_LINE_ALIGN)
+
+#define SEG_SPACE RUP2(SMP_SIGN_SPACE, CACHE_LINE_ALIGN)
 
 /*
  * silos is unlocked, it only changes during startup when we are 
@@ -343,7 +350,7 @@ smp_newsilo(struct smp_sc *sc)
 	si->byte_order = 0x12345678;
 	si->size = sizeof *si;
 	si->major_version = 1;
-	si->minor_version = 1;
+	si->minor_version = 2;
 	si->unique = sc->unique;
 	si->mediasize = sc->mediasize;
 	si->granularity = sc->granularity;
@@ -389,7 +396,7 @@ smp_valid_silo(struct smp_sc *sc)
 		return (4);
 	if (si->major_version != 1)
 		return (5);
-	if (si->minor_version != 1)
+	if (si->minor_version != 2)
 		return (6);
 	if (si->mediasize != sc->mediasize)
 		return (7);
@@ -529,6 +536,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	SIZOF(struct smp_object);
 #undef SIZOF
 
+	/* See comments in persistent.h */
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
 
 	/* Allocate softc */
@@ -598,10 +606,9 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 	ss = SIGN_DATA(ctx);
 	length = 0;
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
-		assert(sg->offset < sc->mediasize);
-		assert(sg->offset + sg->length <= sc->mediasize);
-		ss->offset = sg->offset;
-		ss->length = sg->length;
+		assert(sg->p.offset < sc->mediasize);
+		assert(sg->p.offset + sg->p.length <= sc->mediasize);
+		*ss = sg->p;
 		ss++;
 		length += sizeof *ss;
 	}
@@ -839,11 +846,18 @@ SMP_TTLchanged(const struct object *o)
 /*--------------------------------------------------------------------*/
 
 static uint64_t
+smp_segend(const struct smp_seg *sg)
+{
+
+	return (sg->p.offset + sg->p.length);
+}
+
+static uint64_t
 smp_spaceleft(const struct smp_seg *sg)
 {
 
-	assert(sg->next_addr <= (sg->offset + sg->length));
-	return ((sg->offset + sg->length) - sg->next_addr);
+	assert(sg->next_addr <= smp_segend(sg));
+	return (smp_segend(sg) - sg->next_addr);
 }
 
 /*--------------------------------------------------------------------
@@ -863,8 +877,6 @@ smp_spaceleft(const struct smp_seg *sg)
 static void
 smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 {
-	void *ptr;
-	struct smp_segment *ss;
 	struct smp_object *so;
 	struct objcore *oc;
 	uint32_t no;
@@ -873,18 +885,16 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 
 	ASSERT_SILO_THREAD(sc);
 	(void)sp;
-	AN(sg->offset);
-	smp_def_sign(sc, ctx, sg->offset, "SEGMENT");
+	AN(sg->p.offset);
+	if (sg->p.objlist == 0)
+		return;
+	smp_def_sign(sc, ctx, sg->p.offset, "SEGHEAD");
 	if (smp_chk_sign(ctx))
 		return;
-	ptr = SIGN_DATA(ctx);
-	ss = ptr;
-	if (ss->objlist == 0)
-		return;
-	so = (void*)(sc->ptr + ss->objlist);
+	so = (void*)(sc->ptr + sg->p.objlist);
 	sg->objs = so;
-	sg->nalloc2 = ss->nalloc;
-	no = ss->nalloc;
+	sg->nalloc2 = sg->p.nalloc;
+	no = sg->p.nalloc;
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
 	for (;no > 0; so++,no--) {
@@ -974,11 +984,11 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		 */
 		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
 		while (ss < se) {
-//printf("TEST_SEG2 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+//printf("TEST_SEG2 %jx...%jx\n", ss->p.offset, ss->p.offset + ss->length);
 			l = ss->offset - sc->free_offset;
 			if (l > sc->free_reserve)
 				break;
-//printf("DROP_SEG2 %jx...%jx\n", ss->offset, ss->offset + ss->length);
+//printf("DROP_SEG2 %jx...%jx\n", ss->p.offset, ss->p.offset + ss->length);
 			ss++;
 			n++;
 		}
@@ -991,30 +1001,29 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	sg1 = NULL;
 	sg2 = NULL;
 	for(; ss <= se; ss++) {
-// printf("LOAD_SEG %jx...%jx\n", ss->offset, ss->offset + ss->length);
+// printf("LOAD_SEG %jx...%jx\n", ss->p.offset, ss->p.offset + ss->length);
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		sg->lru = LRU_Alloc();
-		sg->offset = ss->offset;
-		sg->length = ss->length;
+		sg->p = *ss;
 		/*
 		 * HACK: prevent save_segs from nuking segment until we have
 		 * HACK: loaded it.
 		 */
 		sg->nobj = 1;
 		if (sg1 != NULL) {
-			assert(sg1->offset != sg->offset);
-			if (sg1->offset < sg->offset)
-				assert(sg1->offset + sg1->length <= sg->offset);
+			assert(sg1->p.offset != sg->p.offset);
+			if (sg1->p.offset < sg->p.offset)
+				assert(smp_segend(sg1) <= sg->p.offset);
 			else
-				assert(sg->offset + sg->length <= sg1->offset);
+				assert(smp_segend(sg) <= sg1->p.offset);
 		}
 		if (sg2 != NULL) {
-			assert(sg2->offset != sg->offset);
-			if (sg2->offset < sg->offset)
-				assert(sg2->offset + sg2->length <= sg->offset);
+			assert(sg2->p.offset != sg->p.offset);
+			if (sg2->p.offset < sg->p.offset)
+				assert(smp_segend(sg2) <= sg->p.offset);
 			else
-				assert(sg->offset + sg->length <= sg2->offset);
+				assert(smp_segend(sg) <= sg2->p.offset);
 		}
 
 		/* XXX: check that they are inside silo */
@@ -1054,19 +1063,19 @@ smp_new_seg(struct smp_sc *sc)
 
 	/* XXX: find where it goes in silo */
 
-	sg->offset = sc->free_offset;
+	sg->p.offset = sc->free_offset;
 	// XXX: align */
-	assert(sg->offset >= sc->ident->stuff[SMP_SPC_STUFF]);
-	assert(sg->offset < sc->mediasize);
+	assert(sg->p.offset >= sc->ident->stuff[SMP_SPC_STUFF]);
+	assert(sg->p.offset < sc->mediasize);
 
-	sg->length = sc->aim_segl;
-	sg->length &= ~7;
+	sg->p.length = sc->aim_segl;
+	sg->p.length &= ~7;
 
-	if (sg->offset + sg->length > sc->mediasize) {
+	if (smp_segend(sg) > sc->mediasize) {
 		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
-		sg->offset = sc->free_offset;
+		sg->p.offset = sc->free_offset;
 		sg2 = VTAILQ_FIRST(&sc->segments);
-		if (sg->offset + sg->length > sg2->offset) {
+		if (smp_segend(sg) > sg2->p.offset) {
 			printf("Out of space in persistent silo\n");
 			printf("Committing suicide, restart will make space\n");
 			exit (0);
@@ -1074,50 +1083,36 @@ smp_new_seg(struct smp_sc *sc)
 	}
 
 
-	assert(sg->offset + sg->length <= sc->mediasize);
+	assert(smp_segend(sg) <= sc->mediasize);
 
 	sg2 = VTAILQ_FIRST(&sc->segments);
-	if (sg2 != NULL && sg2->offset > sc->free_offset) {
-//printf("SG %jx...%jx\n", sg->offset, sg->offset + sg->length);
-//printf("SG2 %jx...%jx\n", sg2->offset, sg2->offset + sg2->length);
-
-//printf("spc %jx %jx\n", sg2->offset + sg2->length - sg->offset, sc->free_reserve);
-
-		if (sg->offset + sg->length > sg2->offset) {
+	if (sg2 != NULL && sg2->p.offset > sc->free_offset) {
+		if (smp_segend(sg) > sg2->p.offset) {
 			printf("Out of space in persistent silo\n");
 			printf("Committing suicide, restart will make space\n");
 			exit (0);
 		}
-		assert(sg->offset + sg->length <= sg2->offset);
+		assert(smp_segend(sg) <= sg2->p.offset);
 	}
 
-	sc->free_offset += sg->length;
+	sc->free_offset += sg->p.length;
 
-//printf("NEW_SEG %jx...%jx\n", sg->offset, sg->offset + sg->length);
 
 	VTAILQ_INSERT_TAIL(&sc->segments, sg, list);
 
 	/* Neuter the new segment in case there is an old one there */
-	AN(sg->offset);
-	smp_def_sign(sc, sg->ctx, sg->offset, "SEGMENT");
+	AN(sg->p.offset);
+	smp_def_sign(sc, sg->ctx, sg->p.offset, "SEGHEAD");
 	smp_reset_sign(sg->ctx);
-	memcpy(SIGN_DATA(sg->ctx), &sg->segment, sizeof sg->segment);
-	smp_append_sign(sg->ctx, &sg->segment, sizeof sg->segment);
 	smp_sync_sign(sg->ctx);
-
 
 	/* Set up our allocation point */
 	sc->cur_seg = sg;
-	sg->next_addr = sg->offset +
-	    sizeof (struct smp_sign) +
-	    sizeof (struct smp_segment) +
+	sg->next_addr = sg->p.offset +
+	    sizeof (struct smp_sign) +		// XXX use macro
 	    SHA256_LEN;
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 	sc->objreserv = 0;
-
-	/* Then add it to the segment list. */
-	/* XXX: could be done cheaper with append ? */
-	smp_save_segs(sc);
 }
 
 /*--------------------------------------------------------------------
@@ -1127,40 +1122,56 @@ smp_new_seg(struct smp_sc *sc)
 static void
 smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 {
-
-	/* XXX: if segment is empty, delete instead */
-	assert(sg = sc->cur_seg);
+	void *p;
 
 	Lck_AssertHeld(&sc->mtx);
 
+	/* XXX: if segment is empty, delete instead */
+	assert(sg == sc->cur_seg);
+	AN(sg->p.offset);
+
+	sc->cur_seg = NULL;
+
+	if (sg->nalloc == 0) {
+		sc->objbuf = sg->objs;
+		AN(sc->objbuf);
+		VTAILQ_REMOVE(&sc->segments, sg, list);
+		free(sg);
+		return;
+	}
+
 	assert(sg->nalloc1 * sizeof(struct smp_object) == sc->objreserv);
-	assert(sc->objreserv <= smp_spaceleft(sg));
+	assert(C_ALIGN(sc->objreserv) + 2 * SEG_SPACE <= smp_spaceleft(sg));
+
+	/* Write the OBJIDX */
+	smp_def_sign(sc, sg->ctx, sg->next_addr, "OBJIDX");
+	smp_reset_sign(sg->ctx);
+	smp_sync_sign(sg->ctx);
+	sg->next_addr += SEG_SPACE;
 
 	/* Update the segment header */
-	sg->segment.objlist = sg->next_addr;
-	sg->segment.nalloc = sg->nalloc1;
+	sg->p.objlist = sg->next_addr;
+	sg->p.nalloc = sg->nalloc1;
 
+	p = (void*)(sc->ptr + sg->next_addr);
+	sg->next_addr += C_ALIGN(sc->objreserv);
+
+	memcpy(p, sg->objs, sc->objreserv);
 	sc->objbuf = sg->objs;
+	/* XXX: membarrier */
+	sg->objs = p;
 
-	sg->objs = (void*)(sc->ptr + sg->next_addr);
-	sg->next_addr += sc->objreserv;
-
-	memcpy(sg->objs, sc->objbuf, sc->objreserv);
-
-	/* Write segment header to silo */
+	/* Write the SEGTAIL */
+	smp_def_sign(sc, sg->ctx, sg->next_addr, "SEGTAIL");
 	smp_reset_sign(sg->ctx);
-	memcpy(SIGN_DATA(sg->ctx), &sg->segment, sizeof sg->segment);
-	smp_append_sign(sg->ctx, &sg->segment, sizeof sg->segment);
 	smp_sync_sign(sg->ctx);
+	sg->next_addr += SEG_SPACE;
 
-	sg->length = sg->next_addr - sg->offset;
-
-	sg->length |= 15;
-	sg->length++;
+	sg->p.length = sg->next_addr - sg->p.offset;
 
 	/* Save segment list */
 	smp_save_segs(sc);
-	sc->free_offset = sg->offset + sg->length;
+	sc->free_offset = smp_segend(sg);
 }
 
 /*--------------------------------------------------------------------
@@ -1313,25 +1324,26 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 	Lck_Lock(&sc->mtx);
 
-	/* Alignment */
-	if (size & 0xf) {
-		size |= 0xf;
-		size += 1;
-	}
+	size = C_ALIGN(size);
 
 	for (tries = 0; tries < 3; tries++) {
 		sg = sc->cur_seg;
 		CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 
-		overhead = sizeof *ss + sc->objreserv;
+		overhead = C_ALIGN(sizeof *ss);
+		overhead += SEG_SPACE * 2;
+		if (oc == NULL) {
+			overhead += C_ALIGN(sc->objreserv);
+		} else {
+			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+			overhead +=
+			    C_ALIGN(sizeof(struct smp_object) + sc->objreserv);
+		}
 		needed = overhead + size;
 		left = smp_spaceleft(sg);
 
-		if (oc != NULL) {
-			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-			/* Objects also need an entry in the index */
-			needed += sizeof (struct smp_object);
-		} else if (needed > left && (overhead + 4096) < left) {
+		if (oc == NULL && needed > left && (overhead + 4096) < left) {
+			/* XXX: Also check the bit we cut off isn't silly short */
 			/*
 			 * Non-objects can be trimmed down to fit what we
 			 * have to offer (think: DVD image), but we do not
@@ -1340,7 +1352,7 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 			size = left - overhead;
 			needed = overhead + size;
 			assert(needed <= left);
-			size &= ~15;
+			size &= ~15;		/* XXX */
 		}
 
 		/* If there is space, fine */
@@ -1352,6 +1364,8 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		smp_new_seg(sc);
 	}
 
+	assert(size == C_ALIGN(size));
+
 	if (needed > smp_spaceleft(sg)) {
 		Lck_Unlock(&sc->mtx);
 		return (NULL);
@@ -1361,7 +1375,7 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 
 	/* Grab for storage struct */
 	ss = (void *)(sc->ptr + sg->next_addr);
-	sg->next_addr +=sizeof *ss;
+	sg->next_addr += C_ALIGN(sizeof *ss);
 
 	/* Grab for allocated space */
 	allocation = sc->ptr + sg->next_addr;
@@ -1379,6 +1393,7 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		oc->smp_seg = sg;
 	}
 
+	sg->nalloc++;
 	Lck_Unlock(&sc->mtx);
 
 	/* Fill the storage structure */
