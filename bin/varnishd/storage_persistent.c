@@ -616,16 +616,18 @@ smp_save_segs(struct smp_sc *sc)
 
 	Lck_AssertHeld(&sc->mtx);
 
-	/* Elide any empty segments from the list before we write it */
+	/*
+	 * Remove empty segments from the front of the list
+	 * before we write the segments to disk.
+	 */
 	VTAILQ_FOREACH_SAFE(sg, &sc->segments, list, sg2) {
 		if (sg->nobj > 0)
-			continue;
+			break;
 		if (sg == sc->cur_seg)
 			continue;
 		VTAILQ_REMOVE(&sc->segments, sg, list);
-		// XXX: free segment
+		free(sg);
 	}
-
 	smp_save_seg(sc, &sc->seg1);
 	smp_save_seg(sc, &sc->seg2);
 }
@@ -1042,13 +1044,9 @@ smp_new_seg(struct smp_sc *sc)
 	AN(sg);
 	sg->sc = sc;
 
-	if (sc->objbuf == NULL) {
-		sg->objs = malloc(sizeof *sg->objs * sc->aim_nobj);
-	} else {
-		sg->objs = sc->objbuf;
-		sc->objbuf = NULL;
-	}
-	
+	AN(sc->objbuf);
+	sg->objs = sc->objbuf;
+	sc->objbuf = NULL;
 	AN(sg->objs);
 
 	/* XXX: debugging */
@@ -1206,6 +1204,9 @@ smp_open(const struct stevedore *st)
 
 	Lck_New(&sc->mtx);
 	Lck_Lock(&sc->mtx);
+
+	sc->objbuf = malloc(sizeof *sc->objbuf * sc->aim_nobj);
+	AN(sc->objbuf);
 
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
