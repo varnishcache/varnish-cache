@@ -236,7 +236,7 @@ start_child(struct cli *cli)
 	unsigned u;
 	char *p;
 	struct vev *e;
-	int i, cp[2];
+	int i, j, cp[2];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -304,7 +304,8 @@ start_child(struct cli *cli)
 		/* Close anything we shouldn't know about */
 		closelog();
 		printf("Closed fds:");
-		for (i = STDERR_FILENO + 1; i < getdtablesize(); i++) {
+		j = getdtablesize();
+		for (i = STDERR_FILENO + 1; i < j; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
 			if (close(i) == 0)
