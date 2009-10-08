@@ -502,7 +502,10 @@ void
 VRT_l_req_esi(struct sess *sp, unsigned process_esi)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->disable_esi = !process_esi;
+	/* only allow you to turn of esi in the main request
+	   else everything gets confused */
+	if(sp->esis == 0)
+	   sp->disable_esi = !process_esi;
 }
 
 unsigned
