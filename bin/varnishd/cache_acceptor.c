@@ -68,6 +68,13 @@ static struct acceptor const *vca_act;
 pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
+
+/*
+ * We want to get out of any kind of touble-hit TCP connections as fast
+ * as absolutely possible, so we set them LINGER enabled with zero timeout,
+ * so that even if there are outstanding write data on the socket, a close(2)
+ * will return immediately.
+ */
 static const struct linger linger = {
 	.l_onoff	=	1,
 };

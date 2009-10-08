@@ -340,7 +340,8 @@ vcc_ParseProbe(struct tokenlist *tl)
 	struct fld_spec *fs;
 	struct token *t_field;
 	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
-	unsigned window, threshold;
+	struct token *t_initial = NULL;
+	unsigned window, threshold, initial;
 
 	fs = vcc_FldSpec(tl,
 	    "?url",
@@ -349,6 +350,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	    "?interval",
 	    "?window",
 	    "?threshold",
+	    "?initial",
 	    NULL);
 
 	ExpectErr(tl, '{');
@@ -356,6 +358,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 
 	window = 0;
 	threshold = 0;
+	initial = 0;
 	Fb(tl, 0, "\t.probe = {\n");
 	while (tl->t->tok != '}') {
 
@@ -394,6 +397,11 @@ vcc_ParseProbe(struct tokenlist *tl)
 		} else if (vcc_IdIs(t_field, "window")) {
 			t_window = tl->t;
 			window = vcc_UintVal(tl);
+			vcc_NextToken(tl);
+			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "initial")) {
+			t_initial = tl->t;
+			initial = vcc_UintVal(tl);
 			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "threshold")) {
@@ -441,8 +449,12 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_ErrWhere(tl, t_window);
 		}
 		Fb(tl, 0, "\t\t.window = %u,\n", window);
-		Fb(tl, 0, "\t\t.threshold = %u\n", threshold);
+		Fb(tl, 0, "\t\t.threshold = %u,\n", threshold);
 	}
+	if (t_initial != NULL) 
+		Fb(tl, 0, "\t\t.initial = %u,\n", initial);
+	else
+		Fb(tl, 0, "\t\t.initial = ~0U,\n", initial);
 	Fb(tl, 0, "\t},\n");
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);

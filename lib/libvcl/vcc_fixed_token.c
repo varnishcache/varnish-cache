@@ -247,12 +247,12 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\nstruct vrt_backend_probe {\n\tconst char\t*url;\n");
 	vsb_cat(sb, "\tconst char\t*request;\n\tdouble\t\ttimeout;\n");
 	vsb_cat(sb, "\tdouble\t\tinterval;\n\tunsigned\twindow;\n");
-	vsb_cat(sb, "\tunsigned\tthreshold;\n};\n\n/*\n");
-	vsb_cat(sb, " * A backend is a host+port somewhere on the network\n");
-	vsb_cat(sb, " */\nstruct vrt_backend {\n\tconst char\t\t\t*vcl_name");
-	vsb_cat(sb, ";\n\tconst char\t\t\t*ident;\n\n");
-	vsb_cat(sb, "\tconst char\t\t\t*hosthdr;\n\n");
-	vsb_cat(sb, "\tconst unsigned char\t\t*ipv4_sockaddr;\n");
+	vsb_cat(sb, "\tunsigned\tthreshold;\n\tunsigned\tinitial;\n");
+	vsb_cat(sb, "};\n\n/*\n * A backend is a host+port somewhere on the");
+	vsb_cat(sb, " network\n */\nstruct vrt_backend {\n");
+	vsb_cat(sb, "\tconst char\t\t\t*vcl_name;\n\tconst char\t\t\t*ident");
+	vsb_cat(sb, ";\n\n\tconst char\t\t\t*hosthdr;\n");
+	vsb_cat(sb, "\n\tconst unsigned char\t\t*ipv4_sockaddr;\n");
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv6_sockaddr;\n");
 	vsb_cat(sb, "\n\tdouble\t\t\t\tconnect_timeout;\n");
 	vsb_cat(sb, "\tdouble\t\t\t\tfirst_byte_timeout;\n");
@@ -324,9 +324,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id$\n");
-	vsb_cat(sb, " *\n * NB:  This file is machine generated, DO NOT EDI");
-	vsb_cat(sb, "T!\n *\n * Edit vcc_gen_obj.tcl instead\n");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_obj.tcl 4082 2009-05-19 07:14:00Z ");
+	vsb_cat(sb, "sky $\n *\n * NB:  This file is machine generated, DO ");
+	vsb_cat(sb, "NOT EDIT!\n *\n * Edit vcc_gen_obj.tcl instead\n");
 	vsb_cat(sb, " */\n\nstruct sockaddr * VRT_r_client_ip(const struct ");
 	vsb_cat(sb, "sess *);\nstruct sockaddr * VRT_r_server_ip(struct ses");
 	vsb_cat(sb, "s *);\nconst char * VRT_r_server_hostname(struct sess ");
