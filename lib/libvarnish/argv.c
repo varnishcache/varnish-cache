@@ -43,11 +43,12 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 
 #include "libvarnish.h"
 
-static int
+int
 BackSlash(const char *s, char *res)
 {
 	int r;
@@ -103,13 +104,16 @@ BackSlash(const char *s, char *res)
 	return (r);
 }
 
-static char *
+char *
 BackSlashDecode(const char *s, const char *e)
 {
 	const char *q;
 	char *p, *r;
 	int i;
 
+	if (e == NULL)
+		e = strchr(s, '\0');
+	assert(e != NULL);
 	p = calloc((e - s) + 1, 1);
 	if (p == NULL)
 		return (p);

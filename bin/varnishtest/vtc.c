@@ -130,19 +130,9 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 				for (; *p != '\0'; p++) {
 					if (*p == '"')
 						break;
-
-					if (*p == '\\' && p[1] == 'n') {
-						*q++ = '\n';
-						p++;
-					} else if (*p == '\\' && p[1] == 'r') {
-						*q++ = '\r';
-						p++;
-					} else if (*p == '\\' && p[1] == '\\') {
-						*q++ = '\\';
-						p++;
-					} else if (*p == '\\' && p[1] == '"') {
-						*q++ = '"';
-						p++;
+					if (*p == '\\') {
+						p += BackSlash(p, q) - 1;
+						q++;
 					} else {
 						if (*p == '\n')
 							fprintf(stderr,
