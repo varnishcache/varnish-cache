@@ -765,7 +765,7 @@ static const struct parspec input_parspec[] = {
 	{ "purge_dups", tweak_bool, &master.purge_dups, 0, 0,
 		"Detect and eliminate duplicate purges.\n",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ NULL, NULL, NULL }
 };
 
