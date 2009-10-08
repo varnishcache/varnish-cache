@@ -712,7 +712,7 @@ static const struct parspec input_parspec[] = {
 		"anything for their keep, setting it too low just means that "
 		"more sessions take a detour around the acceptor.",
 		EXPERIMENTAL,
-		"0", "ms" },
+		"50", "ms" },
 	{ "cli_buffer", tweak_uint, &master.cli_buffer, 4096, UINT_MAX,
 		"Size of buffer for CLI input."
 		"\nYou may need to increase this if you have big VCL files "

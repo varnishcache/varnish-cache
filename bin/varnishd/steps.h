@@ -29,7 +29,7 @@
  * $Id$
  */
 
-STEP(again,	AGAIN)
+STEP(wait,	WAIT)
 STEP(first,	FIRST)
 STEP(recv,	RECV)
 STEP(start,	START)

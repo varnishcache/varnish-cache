@@ -92,6 +92,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd)
 	(void)WS_Reserve(htc->ws, (htc->ws->e - htc->ws->s) / 2);
 	htc->rxbuf.b = ws->f;
 	htc->rxbuf.e = ws->f;
+	*htc->rxbuf.e = '\0';
 	htc->pipeline.b = NULL;
 	htc->pipeline.e = NULL;
 }

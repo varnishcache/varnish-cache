@@ -253,6 +253,7 @@ vca_acct(void *arg)
 			sp->fd = i;
 			sp->id = i;
 			sp->t_open = now;
+			sp->t_end = now;
 			sp->mylsock = ls;
 
 			sp->step = STP_FIRST;
