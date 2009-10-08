@@ -158,8 +158,7 @@ CLI_Run(void)
 			continue;
 		assert(i == 1);
 		if (pfd[0].revents & POLLHUP) {
-			fprintf(stderr,
-			    "EOF on CLI connection, exiting\n");
+			VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 			exit(0);
 		}
 		i = VLU_Fd(heritage.cli_in, vlu);
