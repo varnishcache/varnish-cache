@@ -1,0 +1,15 @@
+# $Id$
+
+# Regression test for bad backend reply with ctrl char.
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 OK\013\r\n\r\nTest"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
