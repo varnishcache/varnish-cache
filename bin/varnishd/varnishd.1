@@ -326,8 +326,12 @@ will offer a command-line management interface on the specified
 address and port.
 The following commands are available:
 .Bl -tag -width 4n
-.It Cm help
+.It Cm help Op Ar command
 Display a list of available commands.
+.Pp
+If the
+.Ar command
+is specified, display help for this command.
 .It Cm param.set Ar param Ar value
 Set the parameter specified by
 .Ar param
@@ -336,20 +340,24 @@ to the specified
 See
 .Sx Run-Time Parameters
 for a list of parameters.
-.It Cm param.show Ar param
-Display the value of the parameter specified by
-.Ar param .
-See
-.Sx Run-Time Parameters
-for a list of parameters.
-.It Cm param.show Op Fl l
-Display a list of run-time parameters and their values.
+.It Xo
+.Cm param.show
+.Op Fl l
+.Op Ar param
+.Xc
+Display a list if run-time parameters and their values. 
+.Pp
 If the
 .Fl l
 option is specified, the list includes a brief explanation of each
 parameter.
+.Pp
+If a
+.Ar param
+is specified, display only the value and explanation for this
+parameter.
 .It Cm ping Op Ns Ar timestamp
-Ping the child process.
+Ping the Varnish cache process, keeping the connection alive.
 .It Cm purge Ar field Ar operator Ar argument Op && Ar field Ar operator Ar argument Op ...
 Immediately invalidate all documents matching the purge expression.
 See
@@ -382,20 +390,25 @@ is removed from the list.
 .It Cm purge.url Ar regexp
 Immediately invalidate all documents whose URL matches the specified
 regular expression.
+.It Cm quit
+Close the connection to the varnish admin port.
 .It Cm start
-Start the child process if it is not already running.
+Start the Varnish cache process if it is not already running.
 .It Cm stats
-Display server statistics.
+Show summary statistics.
+.Pp
 All the numbers presented are totals since server startup; for a
 better idea of the current situation, use the
 .Xr varnishstat 1
 utility.
 .It Cm status
-Check the status of the child process.
+Check the status of the Varnish cache process.
 .It Cm stop
-Stop the child process.
+Stop the Varnish cache process.
 .It Cm url.purge Ar regexp
-Deprecated, see purge.url instead
+Deprecated, see
+.Cm purge.url
+instead.
 .It Cm vcl.discard Ar configname
 Discard the configuration specified by
 .Ar configname .
