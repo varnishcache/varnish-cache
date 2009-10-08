@@ -56,8 +56,10 @@ res_do_304(struct sess *sp)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->http, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "X-Varnish: %u", sp->xid);
-	TIM_format(sp->obj->last_modified, lm);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
+	if (sp->obj->last_modified) {
+		TIM_format(sp->obj->last_modified, lm);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Last-Modified: %s", lm);
+	}
 	http_PrintfHeader(sp->wrk, sp->fd, sp->http, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
 	sp->wantbody = 0;
@@ -68,17 +70,33 @@ res_do_304(struct sess *sp)
 static int
 res_do_conds(struct sess *sp)
 {
-	char *p;
+	char *p, *e;
 	double ims;
+	int do_cond = 0;
 
-	if (sp->obj->last_modified > 0 &&
-	    http_GetHdr(sp->http, H_If_Modified_Since, &p)) {
+	/* RFC 2616 13.3.4 states we need to match both ETag
+	   and If-Modified-Since if present*/
+
+	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
+		if (!sp->obj->last_modified)
+			return (0);
 		ims = TIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
 		if (sp->obj->last_modified > ims) {
 			return (0);
 		}
+		do_cond = 1;
+	}
+
+	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
+	    http_GetHdr(sp->obj->http, H_ETag, &e)) {
+		if (strcmp(p,e) != 0)
+			return (0);
+		do_cond = 1;
+	}
+
+	if (do_cond == 1) { 
 		res_do_304(sp);
 		return (1);
 	}
