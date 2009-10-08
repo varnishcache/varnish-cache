@@ -366,7 +366,7 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 	sb = vsb_newauto();
 	XXXAN(sb);
 	vsb_printf(sb, "%s %s ", a1, a2);
-	vsb_quote(sb, a3, 0);
+	vsb_quote(sb, a3, -1, 0);
 	vsb_finish(sb);
 	AZ(vsb_overflowed(sb));
 	bt->test = strdup(vsb_data(sb));
