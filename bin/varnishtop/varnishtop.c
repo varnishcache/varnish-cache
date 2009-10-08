@@ -268,7 +268,7 @@ dump(void)
 		if (tp->count <= 1.0)
 			break;
 		len = SHMLOG_LEN(tp->rec);
-		printf("%9.2f %*.*s\n", tp->count, len, len, tp->rec + SHMLOG_DATA);
+		printf("%9.2f %s %*.*s\n", tp->count, VSL_tags[tp->rec[SHMLOG_TAG]], len, len, tp->rec + SHMLOG_DATA);
 	}
 }
 
