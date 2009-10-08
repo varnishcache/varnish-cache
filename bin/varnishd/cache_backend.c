@@ -314,11 +314,11 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		if (VBE_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSL_stats->backend_reuse += 1;
-			VSL_stats->backend_conn++;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
 			return (vc);
 		}
+		VSL_stats->backend_toolate++;
 		sp->vbe = vc;
 		VBE_ClosedFd(sp);
 	}
