@@ -407,14 +407,17 @@ Fetch(struct sess *sp)
 	cls = 0;
 	mklen = 0;
 	if (is_head) {
-		/* nothing */
+		VSL_stats->fetch_head++;
 	} else if (http_GetHdr(hp, H_Content_Length, &b)) {
+		VSL_stats->fetch_length++;
 		cls = fetch_straight(sp, htc, b);
 		mklen = 1;
 	} else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
+		VSL_stats->fetch_chunked++;
 		cls = fetch_chunked(sp, htc);
 		mklen = 1;
 	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		VSL_stats->fetch_bad++;
 		/* XXX: AUGH! */
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
 		VBE_ClosedFd(sp);
@@ -427,6 +430,7 @@ Fetch(struct sess *sp)
 		 */
 		mklen = 1;
 	} else if (http_HdrIs(hp, H_Connection, "close")) {
+		VSL_stats->fetch_close++;
 		/*
 		 * If we have connection closed, it is safe to read what
 		 * comes in any case.
@@ -434,19 +438,23 @@ Fetch(struct sess *sp)
 		cls = fetch_eof(sp, htc);
 		mklen = 1;
 	} else if (hp->protover < 1.1) {
+		VSL_stats->fetch_oldhttp++;
 		/*
 		 * With no Connection header, assume EOF
 		 */
 		cls = fetch_eof(sp, htc);
 		mklen = 1;
 	} else {
+		VSL_stats->fetch_zero++;
 		/*
 		 * Assume zero length
+		 * XXX:  ??? 
 		 */
 		mklen = 1;
 	}
 
 	if (cls < 0) {
+		VSL_stats->fetch_failed++;
 		/* XXX: Wouldn't this store automatically be released ? */
 		while (!VTAILQ_EMPTY(&sp->obj->store)) {
 			st = VTAILQ_FIRST(&sp->obj->store);
