@@ -282,7 +282,6 @@ exp_timer(struct sess *sp, void *priv)
 	double t;
 
 	(void)priv;
-	AZ(sleep(10));		/* XXX: Takes time for VCL to arrive */
 	VCL_Get(&sp->vcl);
 	t = TIM_real();
 	while (1) {
