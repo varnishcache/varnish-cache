@@ -190,7 +190,7 @@ thread_log(int lvl, int errcode, const char *fmt, ...)
 	pthread_mutex_unlock(&log_mutex);
 }
 
-struct thread {
+struct replay_thread {
 	pthread_t thread_id;
 	struct mailbox mbox;
 
@@ -212,14 +212,14 @@ struct thread {
 	char temp[2048];
 };
 
-static struct thread **threads;
+static struct replay_thread **threads;
 static size_t nthreads;
 
 /*
  * Clear thread state
  */
 static void
-thread_clear(struct thread *thr)
+thread_clear(struct replay_thread *thr)
 {
 
 	thr->method = thr->proto = thr->url = NULL;
@@ -236,17 +236,17 @@ thread_clear(struct thread *thr)
 	thr->sock = -1;
 }
 
-#define THREAD_FAIL ((struct thread *)-1)
+#define THREAD_FAIL ((struct replay_thread *)-1)
 
 static pthread_attr_t thread_attr;
 
-static struct thread *
+static struct replay_thread *
 thread_get(int fd, void *(*thread_main)(void *))
 {
 
 	assert(fd != 0);
 	if (fd >= nthreads) {
-		struct thread **newthreads = threads;
+		struct replay_thread **newthreads = threads;
 		size_t newnthreads = nthreads;
 
 		while (fd >= newnthreads)
@@ -309,7 +309,7 @@ thread_close(int fd)
  * Allocate from thread arena
  */
 static void *
-thread_alloc(struct thread *thr, size_t len)
+thread_alloc(struct replay_thread *thr, size_t len)
 {
 	void *ptr;
 
@@ -325,7 +325,7 @@ thread_alloc(struct thread *thr, size_t len)
  * trimmed.
  */
 static char *
-trimline(struct thread *thr, const char *str)
+trimline(struct replay_thread *thr, const char *str)
 {
 	size_t len;
 	char *p;
@@ -355,7 +355,7 @@ trimline(struct thread *thr, const char *str)
  * A line is terminated by \r\n
  */
 static int
-read_line(struct thread *thr)
+read_line(struct replay_thread *thr)
 {
 	int i, len;
 
@@ -389,7 +389,7 @@ read_line(struct thread *thr)
  * the number of bytes read.
  */
 static int
-read_block(struct thread *thr, int len)
+read_block(struct replay_thread *thr, int len)
 {
 	int n, r, tot;
 
@@ -412,7 +412,7 @@ read_block(struct thread *thr, int len)
 /* Receive the response after sending a request.
  */
 static int
-receive_response(struct thread *thr)
+receive_response(struct replay_thread *thr)
 {
 	const char *next;
 	int line_len;
@@ -496,7 +496,7 @@ replay_thread(void *arg)
 {
 	struct iovec iov[6];
 	char space[1] = " ", crlf[2] = "\r\n";
-	struct thread *thr = arg;
+	struct replay_thread *thr = arg;
 	struct message *msg;
 	enum shmlogtag tag;
 	size_t len;
@@ -642,7 +642,7 @@ static int
 gen_traffic(void *priv, enum shmlogtag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr)
 {
-	struct thread *thr;
+	struct replay_thread *thr;
 	const char *end;
 	struct message *msg;
 
