@@ -350,8 +350,10 @@ Fetch(struct sess *sp)
 	/* Set up obj's workspace */
 	WS_Assert(sp->obj->ws_o);
 	VBE_GetFd(sp);
-	if (sp->vbe == NULL)
+	if (sp->vbe == NULL) {
+		WSP(sp, SLT_FetchError, "no backend connection");
 		return (__LINE__);
+	}
 	vc = sp->vbe;
 	/* Inherit the backend timeouts from the selected backend */
 	SES_InheritBackendTimeouts(sp);
@@ -371,6 +373,7 @@ Fetch(struct sess *sp)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
 	if (WRW_FlushRelease(w) || i > 0) {
+		WSP(sp, SLT_FetchError, "backend write error: %d", errno);
 		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
@@ -386,17 +389,19 @@ Fetch(struct sess *sp)
 	TCP_set_read_timeout(vc->fd, sp->first_byte_timeout);
 	do {
 		i = HTC_Rx(htc);
+		if (i < 0) {
+			WSP(sp, SLT_FetchError,
+			    "http read error: %d", errno);
+			VBE_ClosedFd(sp);
+			/* XXX: other cleanup ? */
+			return (__LINE__);
+		}
 		TCP_set_read_timeout(vc->fd, sp->between_bytes_timeout);
 	}
 	while (i == 0);
 
-	if (i < 0) {
-		VBE_ClosedFd(sp);
-		/* XXX: other cleanup ? */
-		return (__LINE__);
-	}
-
 	if (http_DissectResponse(sp->wrk, htc, hp)) {
+		WSP(sp, SLT_FetchError, "http format error");
 		VBE_ClosedFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
@@ -531,5 +536,3 @@ Fetch_Init(void)
 
 	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
 }
-
-
