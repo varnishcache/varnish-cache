@@ -24,7 +24,11 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
-AC_CHECK_PROGS(XSLTPROC, [xsltproc])
+AC_CHECK_PROGS(XSLTPROC, [xsltproc], "no")
+if test "x$XSLTPROC" = "xno"; then
+   AC_MSG_WARN([xsltproc not found – not building documentation])
+fi
+AM_CONDITIONAL(HAVE_XSLTPROC,[test "x$XSLTPROC" != "xno"])
 
 # Checks for libraries.
 save_LIBS="${LIBS}"
