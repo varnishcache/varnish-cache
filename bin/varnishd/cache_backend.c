@@ -231,7 +231,12 @@ VBE_GetFd(struct sess *sp)
 /*
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on sp->objhead. This is mainly for saint-mode,
- * but also takes backend->healthy into account.
+ * but also takes backend->healthy into account. If
+ * params->saintmode_threshold is 0, this is basically just a test of
+ * backend->healthy.
+ *
+ * The threshold has to be evaluated _after_ the timeout check, otherwise
+ * items would never time out once the threshold is reached.
  */
 unsigned int
 backend_is_healthy(const struct sess *sp, struct backend *backend)
@@ -239,12 +244,17 @@ backend_is_healthy(const struct sess *sp, struct backend *backend)
 	struct trouble *tr;
 	struct trouble *tr2;
 	struct trouble *old = NULL;
+	unsigned i = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
 	if (!backend->healthy)
 		return 0;
+
+	/* Saintmode is disabled */
+	if (params->saintmode_threshold == 0)
+		return 1;
 
 	/* No need to test if we don't have an object head to test against.
 	 * FIXME: Should check the magic too, but probably not assert?
@@ -262,6 +272,15 @@ backend_is_healthy(const struct sess *sp, struct backend *backend)
 		}
 
 		if (tr->objhead == sp->objhead) {
+			Lck_Unlock(&backend->mtx);
+			return 0;
+		}
+
+		/* If the threshold is at 1, a single entry on the list
+		 * will disable the backend. Since 0 is disable, ++i
+		 * instead of i++ to allow this behavior.
+		 */
+		if (++i >= params->saintmode_threshold) {
 			Lck_Unlock(&backend->mtx);
 			return 0;
 		}

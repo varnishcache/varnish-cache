@@ -765,6 +765,12 @@ static const struct parspec input_parspec[] = {
 		"A value of zero disables the ban lurker.",
 		0,
 		"0.0", "s" },
+	{ "saintmode_threshold", tweak_uint, &master.saintmode_threshold, 0, UINT_MAX,
+		"The maximum number of objects held off by saint mode before no further "
+		"will be made to the backend until one times out. A value of 0 disables "
+		"saintmode.",
+		EXPERIMENTAL,
+		"10", "objects" }, 
 	{ NULL, NULL, NULL }
 };
 
