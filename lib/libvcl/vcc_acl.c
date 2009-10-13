@@ -250,14 +250,18 @@ vcc_acl_try_netnotation(struct tokenlist *tl, struct acl_e *ae)
 {
 	unsigned char b[4];
 	int i, j, k;
+	unsigned u;
 	const char *p;
 
 	memset(b, 0, sizeof b);
 	p = ae->t_addr->dec;
 	for (i = 0; i < 4; i++) {
-		j = sscanf(p, "%hhu%n", &b[i], &k);
+		j = sscanf(p, "%u%n", &u, &k);
 		if (j != 1)
 			return (0);
+		if (u & ~0xff)
+			return (0);
+		b[i] = (unsigned char)u;
 		if (p[k] == '\0')
 			break;
 		if (p[k] != '.')

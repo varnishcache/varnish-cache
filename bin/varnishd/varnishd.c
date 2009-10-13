@@ -445,15 +445,12 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	VTAILQ_FOREACH(s, &symbols, list) {
 		if (s->a > pp)
 			continue;
-		if (s0 != NULL && s->a < s0->a)
-			continue;
-		s0 = s;
+		if (s0 == NULL || s->a < s0->a)
+			s0 = s;
 	}
 	if (s0 == NULL)
 		return (-1);
-	vsb_printf(vsb, "%p", ptr);
-	if (s0 != NULL)
-		vsb_printf(vsb, ": %s+%jx", s0->n, (uintmax_t)pp - s0->a);
+	vsb_printf(vsb, "%p: %s+%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
 	return (0);
 }
 
@@ -465,40 +462,43 @@ Symbol_hack(const char *a0)
 	uintptr_t a;
 	struct symbols *s;
 
-	strcpy(buf, "nm -an ");
-	strcat(buf, a0);
+	p = NULL;
+	asprintf(&p, "nm -an %s", a0);
+	if (p == NULL)
+		return;
 	fi = popen(buf, "r");
-	if (fi != NULL) {
-		while (fgets(buf, sizeof buf, fi)) {
-			if (buf[0] == ' ')
-				continue;
-			p = NULL;
-			a = strtoul(buf, &p, 16);
-			if (p == NULL)
-				continue;
-			if (a == 0)
-				continue;
-			if (*p++ != ' ')
-				continue;
-			p++;
-			if (*p++ != ' ')
-				continue;
-			if (*p <= ' ')
-				continue;
-			e = strchr(p, '\0');
-			AN(e);
-			while (e > p && isspace(e[-1]))
-				e--;
-			*e = '\0';
-			s = malloc(sizeof *s + strlen(p) + 1);
-			AN(s);
-			s->a = a;
-			s->n = (void*)(s + 1);
-			strcpy(s->n, p);
-			VTAILQ_INSERT_TAIL(&symbols, s, list);
-		}
-		pclose(fi);
+	free(p);
+	if (fi == NULL) 
+		return;
+	while (fgets(buf, sizeof buf, fi)) {
+		if (buf[0] == ' ')
+			continue;
+		p = NULL;
+		a = strtoul(buf, &p, 16);
+		if (p == NULL)
+			continue;
+		if (a == 0)
+			continue;
+		if (*p++ != ' ')
+			continue;
+		p++;
+		if (*p++ != ' ')
+			continue;
+		if (*p <= ' ')
+			continue;
+		e = strchr(p, '\0');
+		AN(e);
+		while (e > p && isspace(e[-1]))
+			e--;
+		*e = '\0';
+		s = malloc(sizeof *s + strlen(p) + 1);
+		AN(s);
+		s->a = a;
+		s->n = (void*)(s + 1);
+		strcpy(s->n, p);
+		VTAILQ_INSERT_TAIL(&symbols, s, list);
 	}
+	(void)pclose(fi);
 }
 
 /*--------------------------------------------------------------------*/
