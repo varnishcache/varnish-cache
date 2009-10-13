@@ -70,8 +70,11 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 
 	while (cl > 0) {
 		i = HTC_Read(htc, p, cl);
-		if (i <= 0)
+		if (i <= 0) {
+			WSP(sp, SLT_FetchError,
+			    "straight read_error: %d", errno);
 			return (-1);
+		}
 		p += i;
 		cl -= i;
 	}
@@ -110,8 +113,11 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 
 		/* If we didn't succeed, add to buffer, try again */
 		if (q == NULL || q == buf || *q != '\n') {
-			if (bp >= be)
+			if (bp >= be) {
+				WSP(sp, SLT_FetchError,
+				    "chunked hex-line too long");
 				return (-1);
+			}
 			/*
 			 * The semantics we need here is "read until you have
 			 * received at least one character, but feel free to
@@ -128,8 +134,11 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 			 * at a time.
 			 */
 			i = HTC_Read(htc, bp, 1);
-			if (i <= 0)
+			if (i <= 0) {
+				WSP(sp, SLT_FetchError,
+				    "chunked read_error: %d", errno);
 				return (-1);
+			}
 			bp += i;
 			continue;
 		}
@@ -241,8 +250,11 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		AN(p);
 		AN(st);
 		i = HTC_Read(htc, p, v);
-		if (i < 0)
+		if (i < 0) {
+			WSP(sp, SLT_FetchError,
+			    "eof read_error: %d", errno);
 			return (-1);
+		}
 		if (i == 0)
 			break;
 		p += i;

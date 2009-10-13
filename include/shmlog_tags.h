@@ -56,8 +56,6 @@ SLTM(ClientAddr)
 SLTM(Backend)
 SLTM(Length)
 
-SLTM(FetchError)
-
 SLTM(RxRequest)
 SLTM(RxResponse)
 SLTM(RxStatus)
@@ -103,3 +101,5 @@ SLTM(ESI_xmlerror)
 SLTM(Hash)
 
 SLTM(Backend_health)
+
+SLTM(FetchError)
