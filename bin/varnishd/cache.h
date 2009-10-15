@@ -285,6 +285,7 @@ struct object {
 
 	struct http		http[1];
 	VTAILQ_ENTRY(object)	list;
+	VTAILQ_ENTRY(object)	ban_list;
 
 	VTAILQ_HEAD(, storage)	store;
 

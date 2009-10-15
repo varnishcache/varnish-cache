@@ -460,7 +460,8 @@ HSH_Deref(struct object **oo)
 	if (r != 0)
 		return;
 
-	BAN_DestroyObj(o);
+	if (oh != NULL)
+		BAN_DestroyObj(o);
 	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 	    o->xid, WS_Free(o->ws_o));
 
