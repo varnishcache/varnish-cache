@@ -50,13 +50,13 @@ SVNID("$Id$")
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <regex.h>
 
 #include "shmlog.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "cache.h"
 #include "hash_slinger.h"
+#include "vre.h"
 
 #include "cache_ban.h"
 
@@ -116,7 +116,7 @@ BAN_Free(struct ban *b)
 		bt = VTAILQ_FIRST(&b->tests);
 		VTAILQ_REMOVE(&b->tests, bt, list);
 		if (bt->flags & BAN_T_REGEXP)
-			regfree(&bt->re);
+			VRE_free(&bt->re);
 		if (bt->dst != NULL)
 			free(bt->dst);
 		if (bt->src != NULL)
@@ -137,10 +137,13 @@ ban_cond_str(const struct ban_test *bt, const char *p)
 
 	if (p == NULL)
 		return(!(bt->flags & BAN_T_NOT));
-	if (bt->flags & BAN_T_REGEXP)
-		i = regexec(&bt->re, p, 0, NULL, 0);
-	else
+	if (bt->flags & BAN_T_REGEXP) {
+		i = VRE_exec(bt->re, p, strlen(p), 0, 0, NULL, 0);
+		if (i >= 0)
+			i = 0;
+	} else {
 		i = strcmp(bt->dst, p);
+	}
 	if (bt->flags & BAN_T_NOT)
 		return (!i);
 	return (i);
@@ -199,15 +202,13 @@ ban_cond_obj_http(const struct ban_test *bt, const struct object *o,
 static int
 ban_parse_regexp(struct cli *cli, struct ban_test *bt, const char *a3)
 {
-	int i;
-	char buf[512];
+	const char *error;
+	int erroroffset;
 
-	i = regcomp(&bt->re, a3, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-	if (i) {
-		(void)regerror(i, &bt->re, buf, sizeof buf);
-		regfree(&bt->re);
-		VSL(SLT_Debug, 0, "REGEX: <%s>", buf);
-		cli_out(cli, "%s", buf);
+	bt->re = VRE_compile(a3, 0, &error, &erroroffset);
+	if (bt->re == NULL) {
+		VSL(SLT_Debug, 0, "REGEX: <%s>", error);
+		cli_out(cli, "%s", error);
 		cli_result(cli, CLIS_PARAM);
 		return (-1);
 	}

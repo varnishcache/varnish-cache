@@ -225,7 +225,7 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 		     tl->t->tok == '~' ? "" : "!");
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
-		p = vcc_regexp(tl, 0);
+		p = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
 		Fb(tl, 1, "%s, %s)\n", vp->rname, p);

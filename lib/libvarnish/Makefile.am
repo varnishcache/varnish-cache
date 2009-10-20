@@ -1,6 +1,6 @@
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 lib_LTLIBRARIES = libvarnish.la
 
@@ -23,12 +23,13 @@ libvarnish_la_SOURCES = \
 	vev.c \
 	vlu.c \
 	vpf.c \
+	vre.c \
 	vsb.c \
 	vsha256.c \
 	vss.c \
 	vtmpfile.c
 
-libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM}
+libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
 
 DISTCLEANFILES = svn_version.c
 svn_version.c: FORCE

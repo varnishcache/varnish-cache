@@ -198,7 +198,7 @@ unsigned vcc_UintVal(struct tokenlist *tl);
 double vcc_DoubleVal(struct tokenlist *tl);
 
 /* vcc_string.c */
-char *vcc_regexp(struct tokenlist *tl, int sub);
+char *vcc_regexp(struct tokenlist *tl);
 int vcc_StringVal(struct tokenlist *tl);
 void vcc_ExpectedStringval(struct tokenlist *tl);
 

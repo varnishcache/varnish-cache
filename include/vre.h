@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2009 Redpill Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Tollef Fog Heen <tfheen@redpill-linpro.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,39 +27,19 @@
  *
  * $Id$
  *
+ * Regular expression support
+ *
  */
 
-struct ban_test;
+struct vre;
+typedef struct vre vre_t;
 
-/* A ban-testing function */
-typedef int ban_cond_f(const struct ban_test *bt, const struct object *o, const struct sess *sp);
+/* This maps to PCRE error codes */
+#define VRE_ERROR_NOMATCH         (-1)
 
-/* Each individual test to be performed on a ban */
-struct ban_test {
-	unsigned		magic;
-#define BAN_TEST_MAGIC		0x54feec67
-	VTAILQ_ENTRY(ban_test)	list;
-	ban_cond_f		*func;
-	int			flags;
-#define BAN_T_REGEXP		(1 << 0)
-#define BAN_T_NOT		(1 << 1)
-	vre_t			*re;
-	char			*dst;
-	char			*src;
-};
+/* And those to PCRE options */
+#define VRE_CASELESS           0x00000001
 
-struct ban {
-	unsigned		magic;
-#define BAN_MAGIC		0x700b08ea
-	VTAILQ_ENTRY(ban)	list;
-	unsigned		refcount;
-	int			flags;
-#define BAN_F_GONE		(1 << 0)
-#define BAN_F_PENDING		(1 << 1)
-#define BAN_F_REQ		(1 << 2)
-	VTAILQ_HEAD(,ban_test)	tests;
-	VTAILQ_HEAD(,objcore)	objcore;
-	double			t0;
-	struct vsb		*vsb;
-	char			*test;
-};
+vre_t *VRE_compile(const char *, int, const char **, int *);
+int VRE_exec(const vre_t *, const char *, int, int, int, int *, int);
+void VRE_free(vre_t **);
