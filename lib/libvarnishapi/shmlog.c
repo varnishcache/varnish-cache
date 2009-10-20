@@ -40,13 +40,13 @@ SVNID("$Id$")
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "shmlog.h"
+#include "vre.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
@@ -84,8 +84,8 @@ struct VSL_data {
 #define M_SELECT		(1 << 3)
 
 	int			regflags;
-	regex_t			*regincl;
-	regex_t			*regexcl;
+	vre_t			*regincl;
+	vre_t			*regexcl;
 
 	unsigned long		skip;
 	unsigned long		keep;
@@ -170,7 +170,7 @@ VSL_New(void)
 	assert(VSL_S_BACKEND == M_BACKEND);
 	vd = calloc(sizeof *vd, 1);
 	assert(vd != NULL);
-	vd->regflags = REG_EXTENDED | REG_NOSUB;
+	vd->regflags = 0;
 	vd->magic = VSL_MAGIC;
 	vd->fd = -1;
 	return (vd);
@@ -272,7 +272,6 @@ int
 VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 {
 	unsigned char *p;
-	regmatch_t rm;
 	unsigned u, l;
 	int i;
 
@@ -315,19 +314,19 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->c_opt && !(vd->map[u] & M_CLIENT))
 			continue;
 		if (vd->regincl != NULL) {
-			rm.rm_so = 0;
-			rm.rm_eo = l;
-			i = regexec(vd->regincl,
-			    (char *)p + SHMLOG_DATA, 1, &rm, 0);
-			if (i == REG_NOMATCH)
+			i = VRE_exec(vd->regincl,
+				     (char *)p + SHMLOG_DATA,
+				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     0, 0, NULL, 0);
+			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
-			rm.rm_so = 0;
-			rm.rm_eo = l;
-			i = regexec(vd->regexcl,
-			    (char *)p + SHMLOG_DATA, 1, &rm, 0);
-			if (i != REG_NOMATCH)
+			i = VRE_exec(vd->regincl,
+				     (char *)p + SHMLOG_DATA,
+				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     0, 0, NULL, 0);
+			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
 		*pp = p;
@@ -412,9 +411,9 @@ vsl_r_arg(struct VSL_data *vd, const char *opt)
 static int
 vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
 {
-	int i;
-	regex_t **rp;
-	char buf[BUFSIZ];
+	vre_t **rp;
+	const char *error;
+	int erroroffset;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (arg == 'I')
@@ -425,15 +424,9 @@ vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
 		fprintf(stderr, "Option %c can only be given once", arg);
 		return (-1);
 	}
-	*rp = calloc(sizeof(regex_t), 1);
+	*rp = VRE_compile(opt, vd->regflags, &error, &erroroffset);
 	if (*rp == NULL) {
-		perror("malloc");
-		return (-1);
-	}
-	i = regcomp(*rp, opt, vd->regflags);
-	if (i) {
-		regerror(i, *rp, buf, sizeof buf);
-		fprintf(stderr, "%s", buf);
+		fprintf(stderr, "Illegal regex: %s\n", error);
 		return (-1);
 	}
 	return (1);
@@ -547,7 +540,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
-	case 'C': vd->regflags = REG_ICASE; return (1);
+	case 'C': vd->regflags = VRE_CASELESS; return (1);
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'k': return (vsl_k_arg(vd, opt));
 	default:

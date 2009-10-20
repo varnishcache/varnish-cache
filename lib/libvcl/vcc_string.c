@@ -34,7 +34,6 @@ SVNID("$Id$")
 
 #include <stdio.h>
 #include <string.h>
-#include <regex.h>
 
 #include "vsb.h"
 
@@ -43,30 +42,30 @@ SVNID("$Id$")
 #include "libvarnish.h"
 
 #include "vrt.h"
+#include "vre.h"
 
 /*--------------------------------------------------------------------*/
 
 char *
-vcc_regexp(struct tokenlist *tl, int sub)
+vcc_regexp(struct tokenlist *tl)
 {
 	char buf[BUFSIZ], *p;
-	regex_t	t;
-	int i;
+	vre_t *t;
+	const char *error;
+	int erroroffset;
 
 	Expect(tl, CSTR);
 	if (tl->err)
 		return (NULL);
 	memset(&t, 0, sizeof t);
-	i = regcomp(&t, tl->t->dec, REG_EXTENDED | (sub ? 0 : REG_NOSUB));
-	if (i != 0) {
-		(void)regerror(i, &t, buf, sizeof buf);
+	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
+	if (t == NULL) {
 		vsb_printf(tl->sb,
-		    "Regexp compilation error:\n\n%s\n\n", buf);
+		    "Regexp compilation error:\n\n%s\n\n", error);
 		vcc_ErrWhere(tl, tl->t);
-		regfree(&t);
 		return (NULL);
 	}
-	regfree(&t);
+	VRE_free(&t);
 	sprintf(buf, "VGC_re_%u", tl->recnt++);
 	p = TlAlloc(tl, strlen(buf) + 1);
 	strcpy(p, buf);
@@ -74,7 +73,7 @@ vcc_regexp(struct tokenlist *tl, int sub)
 	Fh(tl, 0, "static void *%s;\n", buf);
 	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
 	EncToken(tl->fi, tl->t);
-	Fi(tl, 0, ", %d);\n", sub);
+	Fi(tl, 0, ");\n");
 	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
 	return (p);
 }
@@ -108,7 +107,7 @@ vcc_regsub(struct tokenlist *tl, int all)
 	Expect(tl, CSTR);
 	if (tl->err)
 		return (0);
-	p = vcc_regexp(tl, 1);
+	p = vcc_regexp(tl);
 	vcc_NextToken(tl);
 	Fb(tl, 0, ", %s, ", p);
 

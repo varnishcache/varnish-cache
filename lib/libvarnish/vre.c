@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2009 Redpill Linpro AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Tollef Fog Heen <tfheen@redpill-linpro.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,42 +24,55 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id$
- *
  */
 
-struct ban_test;
+#include <pcre.h>
 
-/* A ban-testing function */
-typedef int ban_cond_f(const struct ban_test *bt, const struct object *o, const struct sess *sp);
+#include "libvarnish.h"
+#include "miniobj.h"
+#include "vre.h"
 
-/* Each individual test to be performed on a ban */
-struct ban_test {
+struct vre {
 	unsigned		magic;
-#define BAN_TEST_MAGIC		0x54feec67
-	VTAILQ_ENTRY(ban_test)	list;
-	ban_cond_f		*func;
-	int			flags;
-#define BAN_T_REGEXP		(1 << 0)
-#define BAN_T_NOT		(1 << 1)
-	vre_t			*re;
-	char			*dst;
-	char			*src;
+#define VRE_MAGIC		0xe83097dc
+	pcre *re;
 };
 
-struct ban {
-	unsigned		magic;
-#define BAN_MAGIC		0x700b08ea
-	VTAILQ_ENTRY(ban)	list;
-	unsigned		refcount;
-	int			flags;
-#define BAN_F_GONE		(1 << 0)
-#define BAN_F_PENDING		(1 << 1)
-#define BAN_F_REQ		(1 << 2)
-	VTAILQ_HEAD(,ban_test)	tests;
-	VTAILQ_HEAD(,objcore)	objcore;
-	double			t0;
-	struct vsb		*vsb;
-	char			*test;
-};
+vre_t *VRE_compile(const char *pattern, int options,
+		    const char **errptr, int *erroffset) {
+	vre_t *v;
+	*errptr = NULL; *erroffset = 0;
+
+	ALLOC_OBJ(v, VRE_MAGIC);
+	AN(v);
+	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
+	if (v->re == NULL) {
+		VRE_free(&v);
+		return NULL;
+	}
+	return v;
+}
+
+int VRE_exec(const vre_t *code, const char *subject, int length,
+	     int startoffset, int options, int *ovector, int ovecsize) {
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	int ov[30];
+	if (ovector == NULL) {
+		ovector = ov;
+		ovecsize = sizeof(ov)/sizeof(ov[0]);
+	}
+
+	return pcre_exec(code->re, NULL, subject, length,
+			 startoffset, options, ovector, ovecsize);
+}
+
+void VRE_free(vre_t **vv) {
+
+	vre_t *v = *vv;
+
+	*vv = NULL;
+	CHECK_OBJ(v, VRE_MAGIC);
+	pcre_free(v->re);
+	v->magic = 0;
+	FREE_OBJ(v);
+}

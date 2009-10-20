@@ -36,7 +36,6 @@ SVNID("$Id$")
 
 #include <errno.h>
 #include <fcntl.h>
-#include <regex.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +50,7 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "vre.h"
 #include "varnishapi.h"
 
 static int	b_flag, c_flag;
@@ -80,7 +80,7 @@ static enum shmlogtag   last[65536];
 #define F_MATCH		(1 << 1)
 
 static int		match_tag = -1;
-static regex_t		match_re;
+static vre_t		*match_re;
 
 static void
 h_order_finish(int fd)
@@ -132,7 +132,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 		assert(ob[fd] != NULL);
 	}
 	if (tag == match_tag &&
-	    !regexec(&match_re, ptr, 0, NULL, 0))
+	    VRE_exec(match_re, ptr, len, 0, 0, NULL, 0) > 0)
 		flg[fd] |= F_MATCH;
 
 	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
@@ -198,6 +198,8 @@ static void
 do_order(struct VSL_data *vd, int argc, char **argv)
 {
 	int i;
+	const char *error;
+	int erroroffset;
 
 	if (argc == 2) {
 		match_tag = name2tag(argv[0]);
@@ -205,11 +207,9 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
 			exit(2);
 		}
-		i = regcomp(&match_re, argv[1], REG_EXTENDED | REG_NOSUB);
-		if (i) {
-			char buf[BUFSIZ];
-			regerror(i, &match_re, buf, sizeof buf);
-			fprintf(stderr, "%s\n", buf);
+		match_re = VRE_compile(argv[1], 0, &error, &erroroffset);
+		if (match_re == NULL) {
+			fprintf(stderr, "Invalid regex: %s\n", error);
 			exit(2);
 		}
 	}

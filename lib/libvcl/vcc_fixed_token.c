@@ -276,7 +276,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "#define VRT_ACL_MAXADDR\t\t16\t/* max(IPv4, IPv6) */\n");
 	vsb_cat(sb, "\nvoid VRT_acl_log(const struct sess *, const char *ms");
 	vsb_cat(sb, "g);\n\n/* Regexp related */\nvoid VRT_re_init(void **,");
-	vsb_cat(sb, " const char *, int sub);\nvoid VRT_re_fini(void *);\n");
+	vsb_cat(sb, " const char *);\nvoid VRT_re_fini(void *);\n");
 	vsb_cat(sb, "int VRT_re_match(const char *, void *re);\n");
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all,");
 	vsb_cat(sb, " const char *,\n    void *, const char *);\n");

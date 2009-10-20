@@ -40,47 +40,47 @@ SVNID("$Id$")
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <regex.h>
 
 #include "shmlog.h"
 #include "vrt.h"
+#include "vre.h"
 #include "vcl.h"
 #include "cache.h"
 
 void
-VRT_re_init(void **rep, const char *re, int sub)
+VRT_re_init(void **rep, const char *re)
 {
-	regex_t	*t;
+	vre_t *t;
+	const char *error;
+	int erroroffset;
 
-	t = calloc(sizeof *t, 1);
-	XXXAN(t);
 	/* This was already check-compiled by the VCL compiler */
-	AZ(regcomp(t, re, REG_EXTENDED | REG_ICASE | (sub ? 0 : REG_NOSUB)));
+	t = VRE_compile(re, 0, &error, &erroroffset);
+	AN(t);
 	*rep = t;
 }
 
 void
 VRT_re_fini(void *rep)
 {
-
 	if (rep != NULL)
-		regfree(rep);
+		VRE_free((vre_t**)&rep);
 }
 
 int
 VRT_re_match(const char *s, void *re)
 {
-	regex_t	*t;
+	vre_t *t;
 	int i;
 
 	if (s == NULL)
 		return (0);
 	AN(re);
 	t = re;
-	i = regexec(t, s, 0, NULL, 0);
-	if (i == 0)
+	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0);
+	if (i >= 0)
 		return (1);
-	assert(i == REG_NOMATCH);
+	assert(i == VRE_ERROR_NOMATCH);
 	return (0);
 }
 
@@ -88,8 +88,8 @@ const char *
 VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
     const char *sub)
 {
-	regmatch_t pm[10];
-	regex_t *t;
+	int ovector[30];
+	vre_t *t;
 	int i, l;
 	txt res;
 	char *b0;
@@ -100,10 +100,11 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	if (str == NULL)
 		return ("");
 	t = re;
-	i = regexec(t, str, 10, pm, 0);
+	memset(&ovector, 0, sizeof(ovector));
+	i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);
 
 	/* If it didn't match, we can return the original string */
-	if (i == REG_NOMATCH)
+	if (i == VRE_ERROR_NOMATCH)
 		return(str);
 
 	u = WS_Reserve(sp->http->ws, 0);
@@ -112,8 +113,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 
 	do {
 		/* Copy prefix to match */
-		Tadd(&res, str, pm[0].rm_so);
-
+		Tadd(&res, str, ovector[0]);
 		for (s = sub ; *s != '\0'; s++ ) {
 			if (*s != '\\' || s[1] == '\0') {
 				if (res.b < res.e)
@@ -123,19 +123,20 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 			s++;
 			if (isdigit(*s)) {
 				x = *s - '0';
-				l = pm[x].rm_eo - pm[x].rm_so;
-				Tadd(&res, str + pm[x].rm_so, l);
+				l = ovector[2*x+1] - ovector[2*x];
+				Tadd(&res, str + ovector[2*x], l);
 				continue;
 			} else {
 				if (res.b < res.e)
 					*res.b++ = *s;
 			}
 		}
-		str += pm[0].rm_eo;
+		str += ovector[1];
 		if (!all)
 			break;
-		i = regexec(t, str, 10, pm, 0);
-	} while (i != REG_NOMATCH);
+		memset(&ovector, 0, sizeof(ovector));
+		i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);
+	} while (i != VRE_ERROR_NOMATCH);
 
 	/* Copy suffix to match */
 	l = strlen(str) + 1;

@@ -75,6 +75,37 @@ AC_SUBST(NET_LIBS)
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
 
+PKG_PROG_PKG_CONFIG
+if test -n $PKG_CONFIG; then
+   PKG_CHECK_MODULES([PCRE], [libpcre])
+else
+   AC_CHECK_PROG(PCRE_CONFIG, pcre-config, pcre-config)
+   AC_ARG_WITH(pcre-config,
+               AS_HELP_STRING([--with-pcre-config=PATH],
+                              [Location of PCRE pcre-config (auto)]),
+               [pcre_config="$withval"],
+               [pcre_config=""])
+
+  if test "x$pcre_config" != "x" ; then
+    AC_MSG_CHECKING(for $pcre_config)
+
+    if test -f $pcre_config ; then
+      PCRE_CONFIG=$pcre_config
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no - searching PATH)
+    fi
+  fi
+  if test "x$PCRE_CONFIG" = "x"; then
+    AC_CHECK_PROGS(PCRE_CONFIG, pcre-config)
+  fi
+  PCRE_CFLAGS=`$PCRE_CONFIG --cflags`
+  PCRE_LIBS=`$PCRE_CONFIG --libs`
+fi
+AC_SUBST(PCRE_CFLAGS)
+AC_SUBST(PCRE_LIBS)
+
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
