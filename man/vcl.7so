@@ -120,6 +120,14 @@ backend www {
     .between_bytes_timeout = 2s;
 }
 .Ed
+.Pp
+To stop using a backend after number of items have been added to it's
+saintmode list 
+.Fa .saintmode_threshold
+can be set to the maximum list size. Setting a value of 0 disables
+saintmode checking entirely for that backend. The value in the backend
+declaration overrides the parameter.
+
 .Ss Directors
 Directors choose from different backends based on health status and a
 per-director algorithm.

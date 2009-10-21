@@ -251,6 +251,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tdouble\t\t\t\tfirst_byte_timeout;\n");
 	vsb_cat(sb, "\tdouble\t\t\t\tbetween_bytes_timeout;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tmax_connections;\n");
+	vsb_cat(sb, "\tunsigned\t\t\tsaintmode_threshold;\n");
 	vsb_cat(sb, "\tstruct vrt_backend_probe\tprobe;\n");
 	vsb_cat(sb, "};\n\n/*\n * A director with a predictable reply\n");
 	vsb_cat(sb, " */\n\nstruct vrt_dir_simple {\n");

@@ -137,6 +137,7 @@ struct backend {
 	struct vbp_target	*probe;
 	unsigned		healthy;
 	VTAILQ_HEAD(, trouble)	troublelist;
+	unsigned		saintmode_threshold;
 };
 
 /* cache_backend.c */
