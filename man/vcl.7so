@@ -121,8 +121,8 @@ backend www {
 }
 .Ed
 .Pp
-To stop using a backend after number of items have been added to it's
-saintmode list 
+To mark a backend as unhealthy after number of items have been added to
+it's saintmode list 
 .Fa .saintmode_threshold
 can be set to the maximum list size. Setting a value of 0 disables
 saintmode checking entirely for that backend. The value in the backend
