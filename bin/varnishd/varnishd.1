@@ -555,6 +555,12 @@ The default is 3 seconds.
 The time to wait before dropping an idle pipe mode connection.
 .Pp
 The default is 60 seconds.
+.It Va saintmode_threshold
+The number of items allowed on the saintmode list for a backend before it
+is considered sick. A value of 0 disables saintmode and any associated
+overhead.
+.Pp
+The default is 10 objects
 .It Va sendfile_threshold
 The size threshold beyond which documents are sent to the client using
 .Xr sendfile 2
