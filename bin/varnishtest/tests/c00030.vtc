@@ -1,0 +1,108 @@
+# $Id$
+
+test "Test that saintmode_threshold in VCL"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+
+	rxreq
+	txresp -hdr "X-Saint: yes"
+
+	rxreq
+	txresp -hdr "X-Saint: yes"
+
+	rxreq
+	txresp -hdr "X-Saint: yes"
+
+	rxreq
+	txresp -hdr "X-Saint: yes"
+} -start
+
+varnish v1 -arg "-p saintmode_threshold=10" -vcl {
+	backend foo {
+		.host = "127.0.0.1";
+		.port = "9080";
+		.saintmode_threshold = 2;
+	}
+
+	sub vcl_recv {
+		set req.backend = foo;
+		set req.grace = 1h;
+	}
+
+	sub vcl_fetch {
+		if (beresp.http.X-Saint == "yes") {
+			set beresp.saintmode = 20s;
+			restart;
+		}
+		set beresp.grace = 1h;
+		set beresp.ttl = 1s;
+	}
+	sub vcl_deliver {
+		set resp.http.X-Restarts = req.restarts;
+	}
+ } -start
+
+client c1 {
+        txreq -url "/one"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+        txreq -url "/two"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+        txreq -url "/three"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+        txreq -url "/four"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+	delay 2
+
+        txreq -url "/one"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "1"
+
+        txreq -url "/two"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "1"
+
+        txreq -url "/three"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+        txreq -url "/four"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.X-Saint != "yes"
+	expect resp.http.X-Restarts == "0"
+
+} -run
+

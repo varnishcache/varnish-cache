@@ -56,6 +56,7 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <limits.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -476,6 +477,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
+	unsigned saint = UINT_MAX;
 	const char *ep;
 	struct fld_spec *fs;
 	struct vsb *vsb;
@@ -490,6 +492,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	    "?between_bytes_timeout",
 	    "?probe",
 	    "?max_connections",
+	    "?saintmode_threshold",
 	    NULL);
 	t_first = tl->t;
 
@@ -573,6 +576,22 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 			ExpectErr(tl, ';');
 			vcc_NextToken(tl);
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
+		} else if (vcc_IdIs(t_field, "saintmode_threshold")) {
+			u = vcc_UintVal(tl);
+			/* UINT_MAX == magic number to mark as unset, so
+			 * not allowed here.
+			 */
+			if (u == UINT_MAX) {
+				vsb_printf(tl->sb, "Value outside allowed range: ");
+				vcc_ErrToken(tl, tl->t);
+				vsb_printf(tl->sb, " at\n");
+				vcc_ErrWhere(tl, tl->t);
+			}
+			vcc_NextToken(tl);
+			ERRCHK(tl);
+			saint = u;
+			ExpectErr(tl, ';');
+			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "probe")) {
 			vcc_ParseProbe(tl);
 			ERRCHK(tl);
@@ -622,6 +641,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	else
 		EncToken(tl->fb, t_host);
 	Fb(tl, 0, ",\n");
+
+	Fb(tl, 0, "\t.saintmode_threshold = %d,\n",saint);
 
 	/* Close the struct */
 	Fb(tl, 0, "};\n");

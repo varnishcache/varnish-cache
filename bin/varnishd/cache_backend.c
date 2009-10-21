@@ -35,6 +35,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -245,15 +246,23 @@ backend_is_healthy(const struct sess *sp, struct backend *backend)
 	struct trouble *tr2;
 	struct trouble *old = NULL;
 	unsigned i = 0;
-
+	unsigned int threshold;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
 	if (!backend->healthy)
 		return 0;
 
+	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
+	 * specified by VCL (thus use param).
+	 */
+	if (backend->saintmode_threshold == UINT_MAX)
+		threshold = params->saintmode_threshold;
+	else
+		threshold = backend->saintmode_threshold;
+
 	/* Saintmode is disabled */
-	if (params->saintmode_threshold == 0)
+	if (threshold == 0)
 		return 1;
 
 	/* No need to test if we don't have an object head to test against.
@@ -280,7 +289,7 @@ backend_is_healthy(const struct sess *sp, struct backend *backend)
 		 * will disable the backend. Since 0 is disable, ++i
 		 * instead of i++ to allow this behavior.
 		 */
-		if (++i >= params->saintmode_threshold) {
+		if (++i >=threshold) {
 			Lck_Unlock(&backend->mtx);
 			return 0;
 		}

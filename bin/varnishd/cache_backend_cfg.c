@@ -240,6 +240,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->first_byte_timeout = vb->first_byte_timeout;
 	b->between_bytes_timeout = vb->between_bytes_timeout;
 	b->max_conn = vb->max_connections;
+	b->saintmode_threshold = vb->saintmode_threshold;
 
 	/*
 	 * Copy over the sockaddrs
