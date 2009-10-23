@@ -75,6 +75,7 @@ AC_SUBST(NET_LIBS)
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
 
+m4_pattern_forbid([^_?PKG_[A-Z_]+$],[pkg.m4 missing, please install pkg-config])
 PKG_PROG_PKG_CONFIG
 if test -n $PKG_CONFIG; then
    PKG_CHECK_MODULES([PCRE], [libpcre])
