@@ -192,6 +192,7 @@ vca_main(void *arg)
 			if (sp->t_open > deadline)
 				break;
 			VTAILQ_REMOVE(&sesshead, sp, list);
+			TCP_linger(sp->fd, 0);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
 		}
