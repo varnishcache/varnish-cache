@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0.4" to="2.0.5">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="498">
+      <para>Handle object workspace overruns better.</para>
+    </change>
+
+    <change type="enh">
+      <para>Allow turning off ESI processing per request by using
+      <code>set req.esi = off</code>.</para>
+    </change>
+
+    <change type="enh">
+      <para>Tell the kernel that we expect to use the mmap-ed file in
+      a random fashion.  On Linux, this turns off/down readahead and
+      increases performance.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make it possible to change the maximum number of HTTP
+      headers we allow by
+      passing <code>--with-max-header-fields=NUM</code> rather than
+      changing the code.</para>
+    </change>
+
+    <change type="enh" ref="428">
+      <para>Implement support for HTTP continuation lines.</para>
+    </change>
+
+    <change type="enh">
+      <para>Change how connections are closed and only use SO_LINGER
+      for orderly connection closure.  This should hopefully make
+      worker threads less prone to hangups on network problems.</para>
+    </change>
+
+    <change type="bug" ref="502">
+      <para>Handle multi-element purges correctly.  Previously we
+      ended up with parse errors when this was done from VCL.</para>
+    </change>
+
+    <change type="bug" ref="506, 549">
+      <para>Handle illegal responses from the backend better by
+      serving a 503 page rather than panic-ing.</para>
+    </change>
+
+    <change type="enh">
+      <para>When we run into an assertion that is not true, Varnish
+      would previously dump a little bit of information about itself.
+      Extend that information with a backtrace.  Note that this relies
+      on the varnish binary being unstripped.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add a session_max parameter that limits the maximum
+      number of sessions we keep open before we start dropping new
+      connections summarily.</para>
+    </change>
+
+    <change type="bug">
+      <para>Try to consume less memory when doing ESI processing by
+      properly rolling back used workspace after processing an
+      object.  This should make it possible to
+      turn <code>sess_workspace</code> quite a bit for users with
+      ESI-heavy pages.</para>
+    </change>
+
+    <change type="enh">
+      <para>Turn on <code>session_linger</code> by default.  Tests
+      have shown that <code>session_linger</code> helps a fair bit
+      with performance.</para>
+    </change>
+
+    <change type="enh">
+      <para>Rewrite the epoll acceptor for better performance.  This
+      should lead to both higher processing rates and maximum number
+      of connections on Linux.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add If-None-Match support, this gives significant
+      bandwidth savings for users with compliant browsers.</para>
+    </change>
+
+    <change type="bug" ref="529">
+      <para>RFC2616 specifies
+      that <code>ETag</code>, <code>Content-Location</code>, <code>Expires</code>, <code>Cache-Control</code>
+      and <code>Vary</code> should be emitted when delivering a
+      response with the 304 response code.</para>
+    </change>
+
+    <change type="bug" ref="531">
+      <para>Various fixes which makes Varnish compile and work on AIX.</para>
+    </change>
+
+    <change type="enh">
+      <para>Turn on TCP_DEFER_ACCEPT on Linux.  This should make us
+      less suspecible to denial of service attacks as well as give us
+      slightly better performance.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add an <code>.initial</code> property to the backend
+      probe specification.  This is the number of good probes we
+      pretend to have seen.  The default is one less than .threshold,
+      which means the first probe will decide if we consider the
+      backend healthy.</para>
+    </change>
+
+    <change type="enh">
+      <para>Make it possible to compare strings against other
+      string-like objects, not just plain strings.  This allows you to
+      compare two headers, for instance.</para>
+    </change>
+
+    <change type="bug">
+      <para>When support for <code>restart</code>
+      in <code>vcl_error</code> was added, there was no check to
+      prevent infinte recursion.  This has now been fixed.
+     </para>
+    </change>
+
+    <change type="enh">
+      <para>Turn on purge_dups by default.  This should make us
+      consume less memory when there are many bans for the same
+      pattern added.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add a new log tag called <code>FetchError</code> which
+      tries to explain why we could not fetch an object from the
+      backend.</para>
+    </change>
+
+    <change type="enh">
+      <para>Change the default <code>srcaddr_ttl</code> to 0.  It is
+      not used by anything and has been removed in the development
+      version.  This will increase performance somewhat.</para>
+    </change>
+
+  </subsystem>
+
+  <subsystem>
+    <name>varnishtop</name>
+    <change type="bug" ref="514">
+      <para>varnishtop did not handle variable-length log fields
+      correctly. This is now fixed.</para>
+    </change>
+
+    <change type="enh">
+      <para>varnishtop previously did not print the name of the tag,
+      which made it very hard to understand.  We now print out the
+      tag name.</para>
+    </change>
+  </subsystem>
+</group>
