@@ -463,7 +463,7 @@ Symbol_hack(const char *a0)
 	struct symbols *s;
 
 	p = NULL;
-	asprintf(&p, "nm -an %s", a0);
+	asprintf(&p, "nm -an %s 2>/dev/null", a0);
 	if (p == NULL)
 		return;
 	fi = popen(p, "r");
