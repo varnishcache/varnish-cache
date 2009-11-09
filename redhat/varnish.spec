@@ -1,12 +1,14 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.0.4
+Version: 2.0.5
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 #Patch0: varnish.varnishtest_debugflag.patch
+#Patch1: varnish.s390x_pagesize.patch
+#Patch2: varnish.sparc_pagesize.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -64,12 +66,13 @@ Varnish is a high-performance HTTP accelerator
 %setup -q
 #%setup -q -n varnish-cache
 
-
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
 #./autogen.sh
 
 #%patch0 -p0
+#%patch1 -p0
+#%patch2 -p0
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
@@ -92,7 +95,7 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 %build
 
 # Remove "--disable static" if you want to build static libraries 
-# jemalloc is not compatible with Red Hat's ppc64 RHEL5 kernel koji server :-(
+# jemalloc is not compatible with Red Hat's ppc* RHEL5 kernel koji server :-(
 %ifarch ppc64 ppc
 %configure --disable-static --localstatedir=/var/lib --disable-jemalloc
 %else
@@ -236,6 +239,18 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Nov 09 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.5-1
+- New upstream release
+
+* Thu Aug 13 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.4-4
+- Added a sparc specific patch to libjemalloc.
+
+* Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.0.4-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
+* Thu May 04 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.4-2
+- Added a s390 specific patch to libjemalloc.
+
 * Fri Mar 27 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.4-1
   New upstream release 2.0.4 
 
