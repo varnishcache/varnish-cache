@@ -58,6 +58,8 @@ struct client {
 
 	char			*connect;
 
+	unsigned		repeat;
+
 	pthread_t		tp;
 };
 
@@ -75,26 +77,30 @@ client_thread(void *priv)
 	struct vtclog *vl;
 	int fd;
 	int i;
+	unsigned u;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(c->connect);
 
 	vl = vtc_logopen(c->name);
 
-	vtc_log(vl, 2, "Started");
-	vtc_log(vl, 3, "Connect to %s", c->connect);
-	fd = VSS_open(c->connect);
-	for (i = 0; fd < 0 && i < 3; i++) {
-		(void)sleep(1);
+	if (c->repeat == 0)
+		c->repeat = 1;
+	vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
+	for (u = 0; u < c->repeat; u++) {
+		vtc_log(vl, 3, "Connect to %s", c->connect);
 		fd = VSS_open(c->connect);
+		for (i = 0; fd < 0 && i < 3; i++) {
+			(void)sleep(1);
+			fd = VSS_open(c->connect);
+		}
+		assert(fd >= 0);
+		vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
+		http_process(vl, c->spec, fd, 1);
+		vtc_log(vl, 3, "Closing fd %d", fd);
+		TCP_close(&fd);
 	}
-	assert(fd >= 0);
-	vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
-	http_process(vl, c->spec, fd, 1);
-	vtc_log(vl, 3, "Closing fd %d", fd);
-	TCP_close(&fd);
 	vtc_log(vl, 2, "Ending");
-
 	return (NULL);
 }
 
@@ -220,6 +226,11 @@ cmd_client(CMD_ARGS)
 			break;
 		if (!strcmp(*av, "-connect")) {
 			REPLACE(c->connect, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-repeat")) {
+			c->repeat = atoi(av[1]);
 			av++;
 			continue;
 		}
