@@ -271,6 +271,8 @@ pan_backtrace(void)
 	size_t i;
 
 	size = backtrace (array, 10);
+	if (size == 0)
+		return;
 	vsb_printf(vsp, "Backtrace:\n");
 	for (i = 0; i < size; i++) {
 		vsb_printf (vsp, "  ");

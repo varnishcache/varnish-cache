@@ -39,7 +39,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <ctype.h>
 
 #include "libvarnish.h"
 #include "vct.h"
@@ -521,6 +520,7 @@ cmd_http_txresp(CMD_ARGS)
 		if (!strcmp(*av, "-body")) {
 			AZ(body);
 			REPLACE(body, av[1]);
+			AN(body);
 			av++;
 			bodylen = strlen(body);
 			for (b = body; *b != '\0'; b++) {

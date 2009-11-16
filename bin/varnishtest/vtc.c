@@ -52,7 +52,7 @@ const char	*vtc_file;
 char		*vtc_desc;
 int		vtc_error;		/* Error encountered */
 int		vtc_stop;		/* Stops current test without error */
-pthread_t	vtc_thread;;
+pthread_t	vtc_thread;
 
 /**********************************************************************
  * Read a file into memory

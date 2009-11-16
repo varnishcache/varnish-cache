@@ -11,6 +11,17 @@
 
 -esym(850, av)
 
+-esym(528, svnid)
+
+-ffc	// No automatic custody
+
+-e712	// 14      Info    712     Loss of precision (___) (___ to ___)
+-e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
+
+
+
+
+
 
 // -header(../../config.h)
 

@@ -103,7 +103,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	if (i != 0) {
 		vtc_log(v->vl, 0, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
-		return (retval);
+		return ((enum cli_status_e)retval);
 	}
 	assert(i == 0);
 	vtc_dump(v->vl, 4, "CLI RX", r);
@@ -213,12 +213,13 @@ varnish_thread(void *priv)
 {
 	struct varnish *v;
 	char buf[BUFSIZ];
-	struct pollfd fds[1];
+	struct pollfd *fds, fd;
 	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
 	TCP_nonblocking(v->fds[0]);
 	while (1) {
+		fds = &fd;
 		memset(fds, 0, sizeof fds);
 		fds->fd = v->fds[0];
 		fds->events = POLLIN;
@@ -406,7 +407,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
 		return;
 	u = varnish_ask_cli(v, cli, NULL);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
-	if (exp != 0 && exp != u)
+	if (exp != 0 && exp != (unsigned)u)
 		vtc_log(v->vl, 0, "FAIL CLI response %u expected %u", u, exp);
 }
 
@@ -616,7 +617,7 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-cliok")) {
 			AN(av[1]);
-			varnish_cli(v, av[1], CLIS_OK);
+			varnish_cli(v, av[1], (unsigned)CLIS_OK);
 			av++;
 			continue;
 		}
