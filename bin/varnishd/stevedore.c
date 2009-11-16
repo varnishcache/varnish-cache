@@ -103,7 +103,6 @@ STV_InitObj(struct sess *sp, struct object *o, unsigned wsl)
 	o->grace = NAN;
 	o->entered = NAN;
 	VTAILQ_INIT(&o->store);
-	VTAILQ_INIT(&o->esibits);
 	sp->wrk->stats.n_object++;
 }
 

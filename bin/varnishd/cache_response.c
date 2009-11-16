@@ -139,7 +139,7 @@ RES_BuildHttp(struct sess *sp)
 	    HTTPH_A_DELIVER);
 
 	/* Only HTTP 1.1 can do Chunked encoding */
-	if (!sp->disable_esi && !VTAILQ_EMPTY(&sp->obj->esibits)) {
+	if (!sp->disable_esi && sp->obj->esidata != NULL) {
 		http_Unset(sp->wrk->resp, H_Content_Length);
 		if(sp->http->protover >= 1.1)
 			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Transfer-Encoding: chunked");
@@ -178,7 +178,7 @@ RES_WriteObj(struct sess *sp)
 	if (sp->disable_esi || !sp->esis)
 		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
 
-	if (!sp->disable_esi && sp->wantbody && !VTAILQ_EMPTY(&sp->obj->esibits)) {
+	if (!sp->disable_esi && sp->wantbody && sp->obj->esidata != NULL) {
 		if (WRW_FlushRelease(sp->wrk)) {
 			vca_close_session(sp, "remote closed");
 			return;
