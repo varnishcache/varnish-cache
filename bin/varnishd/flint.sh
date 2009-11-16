@@ -5,6 +5,7 @@ flexelint \
 	-I. \
 	-I../../include \
 	-I../.. \
+	-I/usr/local/include \
 	-DVARNISH_STATE_DIR=\"foo\" \
 	*.c \
 	../../lib/libvarnish/*.c \
