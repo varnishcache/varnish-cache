@@ -54,8 +54,7 @@ SVNID("$Id$")
 #include "vrt.h"
 #include "vcl.h"
 #include "cache.h"
-
-#define NDEFELEM		10
+#include "stevedore.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -65,10 +64,7 @@ struct esi_bit {
 	txt			verbatim;
 	txt			host;
 	txt			include;
-	int			free_this;
 };
-
-VTAILQ_HEAD(esibithead, esi_bit);
 
 struct esi_ptr {
 	const char		*p;
@@ -87,14 +83,24 @@ struct esi_work {
 
 	txt			t;
 	struct esi_bit		*eb;
-	struct esi_bit		*ebl;	/* list of */
-	int			neb;
 	int			remflg;	/* inside <esi:remove> </esi:remove> */
 	int			incmt;	/* inside <!--esi ... --> comment */
+
+	unsigned		space;	/* ... needed */
+
+	VTAILQ_HEAD(, esi_bit)	esibits;
+
+};
+
+struct esidata	{
+	unsigned		magic;
+#define ESIDATA_MAGIC		0x7255277f
+	VTAILQ_HEAD(, esi_bit)	esibits;
+	struct storage		*storage;
 };
 
 /*--------------------------------------------------------------------
- * Move the parse-pointer forward.
+ * Move an esi_ptr one char forward
  */
 
 static void
@@ -117,6 +123,10 @@ Nep(struct esi_ptr *ep)
 	ep->e = finis;
 	return;
 }
+
+/*--------------------------------------------------------------------
+ * Consume one input character.
+ */
 
 static void
 N(struct esi_work *ew)
@@ -209,18 +219,12 @@ static void
 esi_addbit(struct esi_work *ew, const char *verbatim, unsigned len)
 {
 
-	if (ew->neb == 0) {
-		ew->ebl = calloc(NDEFELEM, sizeof(struct esi_bit));
-		XXXAN(ew->ebl);
-		ew->neb = NDEFELEM;
-		ew->ebl->free_this = 1;
-	}
-	ew->eb = ew->ebl;
-	ew->ebl++;
-	ew->neb--;
+	ew->space += sizeof(*ew->eb);
+	ew->eb = (void*)WS_Alloc(ew->sp->wrk->ws, sizeof *ew->eb);
+	AN(ew->eb);
+	memset(ew->eb, 0, sizeof *ew->eb);
 
-
-	VTAILQ_INSERT_TAIL(&ew->sp->obj->esibits, ew->eb, list);
+	VTAILQ_INSERT_TAIL(&ew->esibits, ew->eb, list);
 	if (verbatim != NULL) {
 		ew->eb->verbatim.b = TRUST_ME(verbatim);
 		if (len > 0)
@@ -231,8 +235,10 @@ esi_addbit(struct esi_work *ew, const char *verbatim, unsigned len)
 			    Tlen(ew->eb->verbatim),
 			    Tlen(ew->eb->verbatim),
 			    ew->eb->verbatim.b);
-	} else
-		ew->eb->verbatim.b = ew->eb->verbatim.e = (void*)ew->eb;
+	} else {
+		AN(ew->s.p);
+		ew->eb->verbatim.b = ew->eb->verbatim.e = TRUST_ME(ew->s.p);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -381,12 +387,12 @@ esi_handle_include(struct esi_work *ew)
 
 		if ( val.b != val.e ) {
 			s = Tlen(val) + 1;
-			c = WS_Alloc(ws, s);
+			c = WS_Alloc(ew->sp->wrk->ws, s);
 			XXXAN(c);
 			memcpy(c, val.b, Tlen(val));
 			val.b = c;
 			val.e = val.b + s;
-			*val.e = '\0';
+			val.e[-1] = '\0';
 		}
 
 		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
@@ -428,7 +434,7 @@ esi_handle_include(struct esi_work *ew)
 			if (q != NULL)
 				tag.e = q + 1;
 
-			u = WS_Reserve(ws, 0);
+			u = WS_Reserve(ew->sp->wrk->ws, 0);
 			v = snprintf(ws->f, u - 1, "%.*s%.*s",
 			    pdiff(tag.b, tag.e), tag.b,
 			    pdiff(val.b, val.e), val.b);
@@ -436,8 +442,12 @@ esi_handle_include(struct esi_work *ew)
 			xxxassert(v < u);
 			eb->include.b = ws->f;
 			eb->include.e = ws->f + v;
-			WS_Release(ws, v);
+			WS_Release(ew->sp->wrk->ws, v);
 		}
+		if (eb->include.b != NULL)
+			ew->space += Tlen(eb->include);
+		if (eb->host.b != NULL)
+			ew->space += Tlen(eb->host);
 	}
 }
 
@@ -654,6 +664,11 @@ void
 ESI_Parse(struct sess *sp)
 {
 	struct esi_work *ew, eww[1];
+	struct esi_bit *eb;
+	struct esidata *ed;
+	struct storage *st;
+	unsigned u;
+	char *hack;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -680,12 +695,18 @@ ESI_Parse(struct sess *sp)
 	if (!contain_esi(sp->obj))
 		return;
 
+	/* XXX: debugging hack */
+	hack = sp->wrk->ws->f;
+
 	VSL_stats->esi_parse++;
 	/* XXX: only if GET ? */
 	ew = eww;
 	memset(eww, 0, sizeof eww);
+	VTAILQ_INIT(&ew->esibits);
 	ew->sp = sp;
 	ew->off = 1;
+
+	ew->space += sizeof(struct esidata);
 
 	ew->p.st = VTAILQ_FIRST(&sp->obj->store);
 	AN(ew->p.st);
@@ -751,6 +772,48 @@ ESI_Parse(struct sess *sp)
 	if (ew->incmt)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <!--esi comment");
+
+	st = STV_alloc(sp, ew->space, sp->obj->objcore);
+	AN(st);
+	assert(st->space >= ew->space);
+
+	ed = (void*)st->ptr;
+	st->len += sizeof(*ed);
+	memset(ed, 0, sizeof *ed);
+	ed->magic = ESIDATA_MAGIC;
+	ed->storage = st;
+	VTAILQ_INIT(&ed->esibits);
+
+	while (!VTAILQ_EMPTY(&ew->esibits)) {
+		eb = VTAILQ_FIRST(&ew->esibits);
+		VTAILQ_REMOVE(&ew->esibits, eb, list);
+		memcpy(st->ptr + st->len, eb, sizeof *eb);
+		eb = (void*)(st->ptr + st->len);
+		st->len += sizeof(*eb);
+
+		if (eb->include.b != NULL) {
+			u = Tlen(eb->include);
+			memcpy(st->ptr + st->len, eb->include.b, u);
+			eb->include.b = (void*)(st->ptr + st->len);
+			eb->include.e = eb->include.b + u;
+			st->len += u;
+		}
+		if (eb->host.b != NULL) {
+			u = Tlen(eb->host);
+			memcpy(st->ptr + st->len, eb->host.b, u);
+			eb->host.b = (void*)(st->ptr + st->len);
+			eb->host.e = eb->host.b + u;
+			st->len += u;
+		}
+
+		VTAILQ_INSERT_TAIL(&ed->esibits, eb, list);
+	}
+
+	assert(st->len < st->space);
+	assert(st->len == ew->space);
+	sp->obj->esidata = ed;
+
+	memset(hack, 0xaa, sp->wrk->ws->f - hack);
 }
 
 /*--------------------------------------------------------------------*/
@@ -763,11 +826,14 @@ ESI_Deliver(struct sess *sp)
 	struct worker *w;
 	char *ws_wm;
 	struct http http_save;
+	struct esidata *ed;
 
 	w = sp->wrk;
 	WRW_Reserve(w, &sp->fd);
 	http_save.magic = 0;
-	VTAILQ_FOREACH(eb, &sp->obj->esibits, list) {
+	ed = sp->obj->esidata;
+	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
+	VTAILQ_FOREACH(eb, &ed->esibits, list) {
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
 				(void)WRW_Write(w, eb->chunk_length, -1);
@@ -857,16 +923,10 @@ ESI_Deliver(struct sess *sp)
 void
 ESI_Destroy(struct object *o)
 {
-	struct esi_bit *eb;
+	struct esidata *ed;
 
-	/*
-	 * Delete esi_bits from behind and free(3) the ones that want to be.
-	 */
-	while (!VTAILQ_EMPTY(&o->esibits)) {
-		eb = VTAILQ_LAST(&o->esibits, esibithead);
-		VTAILQ_REMOVE(&o->esibits, eb, list);
-		if (eb->free_this)
-			free(eb);
-	}
+	ed = o->esidata;
+	o->esidata = NULL;
+	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
+	STV_free(ed->storage);
 }
-

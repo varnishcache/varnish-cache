@@ -701,7 +701,8 @@ HSH_Deref(struct worker *w, struct object **oo)
 	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 	    o->xid, WS_Free(o->ws_o));
 
-	ESI_Destroy(o);
+	if (o->esidata != NULL)
+		ESI_Destroy(o);
 	if (o->objcore != NULL && o->objcore->smp_seg != NULL) {
 		SMP_FreeObj(o);
 	} else {

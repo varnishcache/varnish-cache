@@ -89,7 +89,7 @@ struct object;
 struct objhead;
 struct objcore;
 struct workreq;
-struct esi_bit;
+struct esidata;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
@@ -342,7 +342,7 @@ struct object {
 
 	VTAILQ_HEAD(, storage)	store;
 
-	VTAILQ_HEAD(, esi_bit)	esibits;
+	struct esidata		*esidata;
 
 	double			last_use;
 
