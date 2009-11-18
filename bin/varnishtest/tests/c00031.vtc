@@ -1,0 +1,19 @@
+# Test that we get anything through at all
+#
+# $Id: c00002.vtc 3053 2008-08-01 09:22:21Z phk $
+
+test "Worker thread stack size setting"
+
+server s1 {
+	rxreq 
+	txresp
+} -start
+
+varnish v1 -arg "-p thread_pool_stack=131072" -vcl+backend {} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+
