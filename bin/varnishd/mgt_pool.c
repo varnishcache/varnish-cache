@@ -190,6 +190,13 @@ const struct parspec WRK_parspec[] = {
 		"number of worker threads.  ",
 		EXPERIMENTAL,
 		"3", "requests per request" },
+	{ "thread_pool_stack",
+		tweak_uint, &master.wthread_stacksize, 64*1024, UINT_MAX,
+		"Worker thread stack size.  In particular on 32bit systems "
+		"you may need to tweak this down to fit many threads into "
+		"the limited address space.\n",
+		EXPERIMENTAL,
+		"-1", "bytes" },
 	{ NULL, NULL, NULL }
 };
 
