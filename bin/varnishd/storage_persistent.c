@@ -99,6 +99,8 @@ struct smp_seg {
 
 	struct smp_segptr	p;
 
+	unsigned		must_load;
+
 	uint32_t		nobj;		/* Number of objects */
 	uint32_t		nalloc;		/* Allocations */
 	uint32_t		nalloc1;	/* Allocated objects */
@@ -884,7 +886,11 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	struct smp_signctx ctx[1];
 
 	ASSERT_SILO_THREAD(sc);
-	(void)sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
+	assert(sg->must_load == 1);
+	sg->must_load = 0;
 	AN(sg->p.offset);
 	if (sg->p.objlist == 0)
 		return;
@@ -1005,7 +1011,11 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		sg->lru = LRU_Alloc();
+		CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 		sg->p = *ss;
+
+		sg->must_load = 1;
+
 		/*
 		 * HACK: prevent save_segs from nuking segment until we have
 		 * HACK: loaded it.
@@ -1052,6 +1062,8 @@ smp_new_seg(struct smp_sc *sc)
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	AN(sg);
 	sg->sc = sc;
+	sg->lru = LRU_Alloc();
+	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 
 	AN(sc->objbuf);
 	sg->objs = sc->objbuf;
@@ -1189,7 +1201,8 @@ smp_thread(struct sess *sp, void *priv)
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
-		smp_load_seg(sp, sc, sg);
+		if (sg->must_load)
+			smp_load_seg(sp, sc, sg);
 
 	sc->flags |= SMP_F_LOADED;
 	BAN_Deref(&sc->tailban);
