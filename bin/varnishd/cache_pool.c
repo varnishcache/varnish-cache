@@ -432,7 +432,7 @@ wrk_herdtimer_thread(void *priv)
  */
 
 static void
-wrk_breed_flock(struct wq *qp)
+wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 {
 	pthread_t tp;
 
@@ -445,7 +445,7 @@ wrk_breed_flock(struct wq *qp)
 	    qp->nqueue > qp->lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
 			VSL_stats->n_wrk_max++;
-		} else if (pthread_create(&tp, NULL, wrk_thread, qp)) {
+		} else if (pthread_create(&tp, tp_attr, wrk_thread, qp)) {
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
 			VSL_stats->n_wrk_failed++;
@@ -476,17 +476,27 @@ static void *
 wrk_herder_thread(void *priv)
 {
 	unsigned u, w;
+	pthread_attr_t tp_attr; 
+
+	/* Set the stacksize for worker threads */ 
+	AZ(pthread_attr_init(&tp_attr));
 
 	THR_SetName("wrk_herder");
 	(void)priv;
 	while (1) {
 		for (u = 0 ; u < nwq; u++) {
+			if (params->wthread_stacksize != UINT_MAX)
+				AZ(pthread_attr_setstacksize(&tp_attr,
+				    params->wthread_stacksize)); 
+
+			wrk_breed_flock(wq[u], &tp_attr);
+
 			/*
 			 * Make sure all pools have their minimum complement
 			 */
 			for (w = 0 ; w < nwq; w++)
 				while (wq[w]->nthr < params->wthread_min)
-					wrk_breed_flock(wq[w]);
+					wrk_breed_flock(wq[w], &tp_attr);
 			/*
 			 * We cannot avoid getting a mutex, so we have a
 			 * bogo mutex just for POSIX_STUPIDITY
@@ -494,7 +504,6 @@ wrk_herder_thread(void *priv)
 			Lck_Lock(&herder_mtx);
 			Lck_CondWait(&herder_cond, &herder_mtx);
 			Lck_Unlock(&herder_mtx);
-			wrk_breed_flock(wq[u]);
 		}
 	}
 	NEEDLESS_RETURN(NULL);

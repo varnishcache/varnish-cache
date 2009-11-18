@@ -93,6 +93,7 @@ struct params {
 	unsigned		wthread_fail_delay;
 	unsigned		wthread_purge_delay;
 	unsigned		wthread_stats_rate;
+	unsigned		wthread_stacksize;
 
 	unsigned		overflow_max;
 
