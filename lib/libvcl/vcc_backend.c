@@ -348,7 +348,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	fs = vcc_FldSpec(tl,
 	    "?url",
 	    "?request",
-	    "?status",
+	    "?expected_response",
 	    "?timeout",
 	    "?interval",
 	    "?window",
@@ -408,7 +408,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 			initial = vcc_UintVal(tl);
 			vcc_NextToken(tl);
 			ERRCHK(tl);
-		} else if (vcc_IdIs(t_field, "status")) {
+		} else if (vcc_IdIs(t_field, "expected_response")) {
 			status = vcc_UintVal(tl);
 			if (status < 100 || status > 999) {
 				vsb_printf(tl->sb,
