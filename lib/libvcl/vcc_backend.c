@@ -343,11 +343,12 @@ vcc_ParseProbe(struct tokenlist *tl)
 	struct token *t_field;
 	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
-	unsigned window, threshold, initial;
+	unsigned window, threshold, initial, status;
 
 	fs = vcc_FldSpec(tl,
 	    "?url",
 	    "?request",
+	    "?status",
 	    "?timeout",
 	    "?interval",
 	    "?window",
@@ -361,6 +362,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	window = 0;
 	threshold = 0;
 	initial = 0;
+	status = 0;
 	Fb(tl, 0, "\t.probe = {\n");
 	while (tl->t->tok != '}') {
 
@@ -404,6 +406,17 @@ vcc_ParseProbe(struct tokenlist *tl)
 		} else if (vcc_IdIs(t_field, "initial")) {
 			t_initial = tl->t;
 			initial = vcc_UintVal(tl);
+			vcc_NextToken(tl);
+			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "status")) {
+			status = vcc_UintVal(tl);
+			if (status < 100 || status > 999) {
+				vsb_printf(tl->sb,
+				    "Must specify .status with exactly three "
+				    " digits (100 <= x <= 999)\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
 			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "threshold")) {
@@ -457,6 +470,8 @@ vcc_ParseProbe(struct tokenlist *tl)
 		Fb(tl, 0, "\t\t.initial = %u,\n", initial);
 	else
 		Fb(tl, 0, "\t\t.initial = ~0U,\n", initial);
+	if (status > 0)
+		Fb(tl, 0, "\t\t.exp_status = %u,\n", status);
 	Fb(tl, 0, "\t},\n");
 	ExpectErr(tl, '}');
 	vcc_NextToken(tl);
