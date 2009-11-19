@@ -228,10 +228,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4336 2009-10-21 11:");
-	vsb_cat(sb, "36:28Z kristian $\n *\n * Runtime support for compiled");
-	vsb_cat(sb, " VCL programs.\n *\n * XXX: When this file is changed,");
-	vsb_cat(sb, " lib/libvcl/vcc_gen_fixed_token.tcl\n");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4356 2009-11-19 11:");
+	vsb_cat(sb, "40:23Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
+	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
 	vsb_cat(sb, "\nstruct sess;\nstruct vsb;\nstruct cli;\n");
 	vsb_cat(sb, "struct director;\nstruct VCL_conf;\n");

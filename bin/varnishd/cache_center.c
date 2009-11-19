@@ -123,7 +123,7 @@ cnt_wait(struct sess *sp)
 		else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
 		    (errno == 0 || errno == ECONNRESET))
 			vca_close_session(sp, "EOF");
-		else 
+		else
 			vca_close_session(sp, "error");
 		sp->step = STP_DONE;
 	}
@@ -256,7 +256,7 @@ cnt_done(struct sess *sp)
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
-	/* If we did an ESI include, don't mess up our state */ 
+	/* If we did an ESI include, don't mess up our state */
 	if (sp->esis > 0) {
 		SES_Charge(sp);
 		return (1);
@@ -266,7 +266,7 @@ cnt_done(struct sess *sp)
 
 	if (sp->fd >= 0 && sp->doclose != NULL) {
 		/*
-		 * This is an orderly close of the connection; ditch nolinger 
+		 * This is an orderly close of the connection; ditch nolinger
 		 * before we close, to get queued data transmitted.
 		 */
 		TCP_linger(sp->fd, 0);
@@ -282,7 +282,7 @@ cnt_done(struct sess *sp)
 		return (1);
 	}
 
-	if (sp->wrk->stats.client_req >= params->wthread_stats_rate) 
+	if (sp->wrk->stats.client_req >= params->wthread_stats_rate)
 		WRK_SumStat(sp->wrk);
 	/* Reset the workspace to the session-watermark */
 	WS_Reset(sp->ws, sp->ws_ses);
@@ -361,7 +361,8 @@ cnt_error(struct sess *sp)
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
 
-	if (sp->handling == VCL_RET_RESTART && sp->restarts <  params->max_restarts) {
+	if (sp->handling == VCL_RET_RESTART &&
+	    sp->restarts <  params->max_restarts) {
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
@@ -369,7 +370,7 @@ cnt_error(struct sess *sp)
 		return (0);
 	} else if (sp->handling == VCL_RET_RESTART)
 		sp->handling = VCL_RET_DELIVER;
-		  
+
 
 	/* We always close when we take this path */
 	sp->doclose = "error";
@@ -534,7 +535,7 @@ cnt_fetch(struct sess *sp)
 	/*
 	 * XXX: If we have a Length: header, we should allocate the body
 	 * XXX: also.
- 	 */
+	 */
 
 	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl);
 
@@ -563,7 +564,7 @@ cnt_fetch(struct sess *sp)
 	sp->obj->cacheable = sp->wrk->cacheable;
 	sp->obj->ttl = sp->wrk->ttl;
 	sp->obj->grace = sp->wrk->grace;
-	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)		
+	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)
 		sp->obj->cacheable = 0;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
@@ -580,7 +581,7 @@ cnt_fetch(struct sess *sp)
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
-	
+
 	i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbe);
@@ -614,7 +615,7 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
-		if (sp->obj->objcore != NULL) 
+		if (sp->obj->objcore != NULL)
 			sp->obj->objcore->flags |= OC_F_PASS;
 		if (sp->obj->ttl - sp->t_req < params->default_ttl)
 			sp->obj->ttl = sp->t_req + params->default_ttl;
@@ -1026,8 +1027,8 @@ cnt_recv(struct sess *sp)
 	sp->director = sp->vcl->director[0];
 	AN(sp->director);
 
-      	sp->disable_esi = 0;
-	
+	sp->disable_esi = 0;
+
 	VCL_recv_method(sp);
 	if (sp->restarts >= params->max_restarts) {
 		if (sp->err_code == 0)

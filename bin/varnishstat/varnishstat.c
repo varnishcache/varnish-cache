@@ -397,8 +397,8 @@ main(int argc, char **argv)
 		usage();
 		exit(1);
 	}
-	
-	if (xml) 
+
+	if (xml)
 		do_xml(VSL_stats, fields);
 	else if (once)
 		do_once(VSL_stats, fields);

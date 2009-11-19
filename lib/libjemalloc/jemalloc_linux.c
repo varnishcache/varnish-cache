@@ -1212,7 +1212,7 @@ void		_malloc_postfork(void);
 /******************************************************************************/
 
 /*
- * Functions missing prototypes which caused -Werror to fail. 
+ * Functions missing prototypes which caused -Werror to fail.
  * Not sure if it has any side effects.
  * */
 size_t malloc_usable_size(const void *ptr);

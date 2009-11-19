@@ -65,4 +65,4 @@ struct choice {
 	void            *ptr;
 };
 
-#define NEEDLESS_RETURN(foo) 	return (foo)
+#define NEEDLESS_RETURN(foo)	return (foo)

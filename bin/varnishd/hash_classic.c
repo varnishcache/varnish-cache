@@ -173,7 +173,7 @@ hcl_deref(struct objhead *oh)
 	if (--oh->refcnt == 0) {
 		VTAILQ_REMOVE(&hp->head, oh, hoh_list);
 		ret = 0;
-	} else 
+	} else
 		ret = 1;
 	Lck_Unlock(&hp->mtx);
 	return (ret);

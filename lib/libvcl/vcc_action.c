@@ -352,7 +352,7 @@ static const struct purge_var {
 } purge_var[] = {
 #define PVAR(a, b, c)   { (a), (b) },
 #include "purge_vars.h"
-#undef PVAR     
+#undef PVAR
         { 0, 0 }
 };
 

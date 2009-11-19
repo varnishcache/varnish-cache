@@ -186,7 +186,7 @@ binheap_trickledown(const struct binheap *bh, unsigned u)
 		v2 = CHILD(u, 1);
 		if (v2 < bh->next && bh->cmp(bh->priv, A(bh, v2), A(bh, v1)))
 			v1 = v2;
-		if (bh->cmp(bh->priv, A(bh, u), A(bh, v1))) 
+		if (bh->cmp(bh->priv, A(bh, u), A(bh, v1)))
 			return;
 		binhead_swap(bh, u, v1);
 		u = v1;
@@ -426,7 +426,7 @@ main(int argc, char **argv)
 			binheap_delete(bh, ff[v].idx);
 		} else {
 			ff[v].key = random();
-			if (0) 
+			if (0)
 				printf("Insert [%u] %'u\n", v, ff[v].key);
 			else
 				printf("+%u", v);

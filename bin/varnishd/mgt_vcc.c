@@ -373,7 +373,7 @@ mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 		fprintf(stderr, "%s", vsb_data(sb));
 	vsb_delete(sb);
 	if (C_flag) {
-		if (vf != NULL) 
+		if (vf != NULL)
 			AZ(unlink(vf));
 		return (0);
 	}

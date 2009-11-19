@@ -111,7 +111,7 @@ Nep(struct esi_ptr *ep)
 	if (ep->p == finis)
 		return;
 	ep->p++;
-	if (ep->p < (char*)ep->st->ptr + ep->st->len) 
+	if (ep->p < (char*)ep->st->ptr + ep->st->len)
 		return;
 	ep->st = VTAILQ_NEXT(ep->st, list);
 	if (ep->st != NULL) {
@@ -605,7 +605,7 @@ parse_esi_tag(struct esi_work *ew, int closing)
 	ll = Tlen(ew->tag);
 	ew->tag.b++;
 	ew->tag.e--;
-	empty = (ew->tag.e[-1] == '/') ? 1 : 0; 
+	empty = (ew->tag.e[-1] == '/') ? 1 : 0;
 	if (empty)
 		ew->tag.e--;
 
@@ -648,7 +648,7 @@ parse_esi_tag(struct esi_work *ew, int closing)
 		} else if (!empty) {
 			esi_error(ew, ew->s.p, ll,
 			    "ESI 1.0 wants empty esi:include");
-		} 
+		}
 		ew->tag.b += 7;
 		esi_handle_include(ew);
 	} else {
@@ -712,7 +712,7 @@ ESI_Parse(struct sess *sp)
 	AN(ew->p.st);
 	ew->p.p = (char *)ew->p.st->ptr;
 	ew->p.e = ew->p.p + ew->p.st->len;
-	
+
 	/* ->s points to the first un-dealt-with byte */
 	ew->s = ew->p;
 

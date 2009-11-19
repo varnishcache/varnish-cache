@@ -35,6 +35,6 @@
 #define PVAR_REQ	2
 
 PVAR("req.url",		PVAR_REQ,		ban_cond_url)
-PVAR("obj.hash", 	0,			ban_cond_hash)
+PVAR("obj.hash",	0,			ban_cond_hash)
 PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	ban_cond_req_http)
 PVAR("obj.http.",	PVAR_HTTP,		ban_cond_obj_http)

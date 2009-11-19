@@ -68,7 +68,7 @@ mcf_findpar(const char *name)
 	int i;
 
 	for (i = 0; i < nparspec; i++)
-		if (!strcmp(parspec[i]->name, name)) 
+		if (!strcmp(parspec[i]->name, name))
 			return (parspec[i]);
 	return (NULL);
 }
@@ -93,7 +93,8 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 }
 
 static void
-tweak_generic_timeout_double(struct cli *cli, volatile double *dst, const char *arg)
+tweak_generic_timeout_double(struct cli *cli, volatile double *dst,
+    const char *arg)
 {
 	double u;
 
@@ -123,7 +124,8 @@ tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 }
 
 static void
-tweak_timeout_double(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_timeout_double(struct cli *cli, const struct parspec *par,
+    const char *arg)
 {
 	volatile double *dest;
 
@@ -646,18 +648,20 @@ static const struct parspec input_parspec[] = {
 		&master.first_byte_timeout,0, UINT_MAX,
 		"Default timeout for receiving first byte from backend. "
 		"We only wait for this many seconds for the first "
-		"byte before giving up. A value of 0 means it will never time out. "
+		"byte before giving up. A value of 0 means it will never time "
+		"out. "
 		"VCL can override this default value for each backend and "
 		"backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
 	{ "between_bytes_timeout", tweak_timeout_double,
 		&master.between_bytes_timeout,0, UINT_MAX,
-		"Default timeout between bytes when receiving data from backend. "
+		"Default timeout between bytes when receiving data from "
+		"backend. "
 		"We only wait for this many seconds between bytes "
 		"before giving up. A value of 0 means it will never time out. "
-		"VCL can override this default value for each backend request and "
-		"backend request. This parameter does not apply to pipe.",
+		"VCL can override this default value for each backend request "
+		"and backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
 	{ "accept_fd_holdoff", tweak_timeout,
@@ -765,12 +769,13 @@ static const struct parspec input_parspec[] = {
 		"A value of zero disables the ban lurker.",
 		0,
 		"0.0", "s" },
-	{ "saintmode_threshold", tweak_uint, &master.saintmode_threshold, 0, UINT_MAX,
-		"The maximum number of objects held off by saint mode before no further "
-		"will be made to the backend until one times out. A value of 0 disables "
-		"saintmode.",
+	{ "saintmode_threshold", tweak_uint,
+		&master.saintmode_threshold, 0, UINT_MAX,
+		"The maximum number of objects held off by saint mode before "
+		"no further will be made to the backend until one times out.  "
+		"A value of 0 disables saintmode.",
 		EXPERIMENTAL,
-		"10", "objects" }, 
+		"10", "objects" },
 	{ NULL, NULL, NULL }
 };
 

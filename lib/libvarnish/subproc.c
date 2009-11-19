@@ -66,7 +66,8 @@ sub_vlu(void *priv, const char *str)
 }
 
 int
-SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name, int maxlines)
+SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
+    int maxlines)
 {
 	int rv, p[2], sfd, status;
 	pid_t pid;

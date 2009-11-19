@@ -284,7 +284,7 @@ struct objcore {
 	struct object		*obj;
 	struct objhead		*objhead;
 	double			timer_when;
-	unsigned 		flags;
+	unsigned		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
@@ -472,7 +472,8 @@ void VBP_Init(void);
 
 /* cache_ban.c */
 struct ban *BAN_New(void);
-int BAN_AddTest(struct cli *, struct ban *, const char *, const char *, const char *);
+int BAN_AddTest(struct cli *, struct ban *, const char *, const char *,
+    const char *);
 void BAN_Free(struct ban *b);
 void BAN_Insert(struct ban *b);
 void BAN_Init(void);
@@ -607,7 +608,8 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 typedef void *bgthread_t(struct sess *, void *priv);
-void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv);
+void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
+    void *priv);
 
 /* cache_session.c [SES] */
 void SES_Init(void);

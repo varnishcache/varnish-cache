@@ -153,7 +153,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		/* XXX We have to check for empty header entries
-		   because a header could have been lost in 
+		   because a header could have been lost in
 		   http_copyHome */
 		if (hp->hd[u].b == NULL)
 			continue;
@@ -629,7 +629,7 @@ http_copyheader(struct worker *w, int fd, struct http *to,
  * to 'how'.
  */
 
-unsigned 
+unsigned
 http_EstimateWS(const struct http *fm, unsigned how)
 {
 	unsigned u, l;

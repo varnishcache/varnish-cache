@@ -242,7 +242,7 @@ struct {								\
 	(VSTAILQ_EMPTY((head)) ?					\
 		NULL :							\
 	        ((struct type *)(void *)				\
-		((char *)((head)->vstqh_last) - 			\
+		((char *)((head)->vstqh_last) -				\
 		     __offsetof(struct type, field))))
 
 #define	VSTAILQ_NEXT(elm, field)	((elm)->field.vstqe_next)

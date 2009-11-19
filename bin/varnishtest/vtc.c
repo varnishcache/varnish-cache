@@ -309,7 +309,7 @@ cmd_random(CMD_ARGS)
 		break;
 	}
 	l = 0;
-	for (i = 0; i < 1000; i++) 
+	for (i = 0; i < 1000; i++)
 		l += random();
 	if (l != RND_NEXT_1K) {
 		vtc_log(vl, 4, "sum(random[%d...%d]) = 0x%x (expect 0x%x)",
