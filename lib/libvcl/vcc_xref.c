@@ -269,7 +269,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned bitmap)
 	u = p->ret_bitmap & ~bitmap;
 	if (u) {
 /*lint -save -e525 -e539 */
-#define VCL_RET_MAC(l, U) 						\
+#define VCL_RET_MAC(l, U)						\
 		if (u & (1 << (VCL_RET_##U))) {				\
 			vsb_printf(tl->sb, "Invalid return \"" #l "\"\n");\
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\

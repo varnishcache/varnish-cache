@@ -116,7 +116,7 @@ backtrace_symbols(void *const *buffer, int size)
             rval[i] = (char *) clen;
             clen += alen;
 	    continue;
-        } 
+        }
     }
 #endif
 	alen = 2 +                      /* "0x" */

@@ -47,7 +47,7 @@ struct vlu {
 	unsigned	bufl;
 	unsigned	bufp;
 	void		*priv;
-	int 		telnet;
+	int		telnet;
 	vlu_f	*func;
 };
 
@@ -145,7 +145,7 @@ LineUpProcess(struct vlu *l)
 	for (p = l->buf; *p != '\0'; p = q) {
 		/* Find first CR or NL */
 		for (q = p; *q != '\0'; q++) {
-			while (l->telnet >= 0 && *q == (char)255) 
+			while (l->telnet >= 0 && *q == (char)255)
 				if (vlu_dotelnet(l, q))
 					return (0);
 			if (*q == '\n' || *q == '\r')

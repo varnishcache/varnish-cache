@@ -79,7 +79,7 @@
 	"purge <field> <operator> <arg> [&& <field> <oper> <arg>]...",	\
 	"\tAll objects where the all the conditions match will be "	\
 	    "marked obsolete.",						\
-	3, UINT_MAX 
+	3, UINT_MAX
 
 #define CLI_PURGE_LIST							\
 	"purge.list",							\
@@ -225,13 +225,13 @@
 	"\tCheck status of Varnish cache process.",			\
 	0, 0
 
-#define CLI_BANNER	 						\
+#define CLI_BANNER							\
 	"banner",							\
 	"banner",							\
 	"\tPrint welcome banner.",					\
 	0, 0
 
-#define CLI_AUTH	 						\
+#define CLI_AUTH							\
 	"auth",								\
 	"auth response",						\
 	"\tAuthenticate.",						\

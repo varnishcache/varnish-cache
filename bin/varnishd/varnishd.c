@@ -442,7 +442,7 @@ Symbol_hack(const char *a0)
 		return;
 	fi = popen(p, "r");
 	free(p);
-	if (fi == NULL) 
+	if (fi == NULL)
 		return;
 	while (fgets(buf, sizeof buf, fi)) {
 		if (buf[0] == ' ')
@@ -663,7 +663,6 @@ main(int argc, char * const *argv)
 		exit(1);
 	}
 
-
 	if (i_arg != NULL) {
 		if (snprintf(heritage.identity, sizeof heritage.identity,
 		    "%s", i_arg) > sizeof heritage.identity) {
@@ -672,7 +671,6 @@ main(int argc, char * const *argv)
 			exit(1);
 		}
 	}
-	
 
 	if (n_arg != NULL)
 		openlog(n_arg, LOG_PID, LOG_LOCAL0);

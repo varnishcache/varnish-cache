@@ -285,7 +285,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 void
 VSL_Panic(int *len, char **ptr)
 {
-	static char a[1] = { '\0' }; 
+	static char a[1] = { '\0' };
 
 	AN(len);
 	AN(ptr);

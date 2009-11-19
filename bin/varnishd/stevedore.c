@@ -48,7 +48,7 @@ static const struct stevedore * volatile stv_next;
  * NB! Dirty trick alert:
  *
  * We use a captive objcore as tail senteniel for LRU lists, but to
- * make sure it does not get into play by accident, we do _not_ 
+ * make sure it does not get into play by accident, we do _not_
  * initialize its magic with OBJCORE_MAGIC.
  *
  */
@@ -125,7 +125,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl)
 		XXXAN(o);
 		STV_InitObj(sp, o, l);
 		return (o);
-	} 
+	}
 	st = STV_alloc(sp, sizeof *o + l, sp->objcore);
 	XXXAN(st);
 	xxxassert(st->space >= (sizeof *o + l));

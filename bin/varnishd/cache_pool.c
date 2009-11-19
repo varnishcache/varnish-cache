@@ -476,9 +476,9 @@ static void *
 wrk_herder_thread(void *priv)
 {
 	unsigned u, w;
-	pthread_attr_t tp_attr; 
+	pthread_attr_t tp_attr;
 
-	/* Set the stacksize for worker threads */ 
+	/* Set the stacksize for worker threads */
 	AZ(pthread_attr_init(&tp_attr));
 
 	THR_SetName("wrk_herder");
@@ -487,7 +487,7 @@ wrk_herder_thread(void *priv)
 		for (u = 0 ; u < nwq; u++) {
 			if (params->wthread_stacksize != UINT_MAX)
 				AZ(pthread_attr_setstacksize(&tp_attr,
-				    params->wthread_stacksize)); 
+				    params->wthread_stacksize));
 
 			wrk_breed_flock(wq[u], &tp_attr);
 

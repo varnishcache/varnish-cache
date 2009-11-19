@@ -320,7 +320,7 @@ hsh_testmagic(void *result)
 	for (i = 0; i < nused; i++)
 		if (!memcmp(hsh_magiclist[i].was, result, SHA256_LEN))
 			break;
-	if (i == nused && i < HSH_NMAGIC) 
+	if (i == nused && i < HSH_NMAGIC)
 		memcpy(hsh_magiclist[nused++].was, result, SHA256_LEN);
 	if (i == nused)
 		return;
@@ -355,7 +355,7 @@ HSH_Insert(const struct sess *sp)
 	HSH_Prealloc(sp);
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
-	
+
 	AZ(sp->objhead);
 	AN(w->nobjhead);
 	oh = hash->lookup(sp, w->nobjhead);
@@ -399,7 +399,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	HSH_Prealloc(sp);
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
-	
+
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		oh = sp->objhead;
@@ -432,12 +432,12 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		
+
 		if (!o->cacheable)
 			continue;
 		if (o->ttl == 0)
 			continue;
-		if (BAN_CheckObject(o, sp)) 
+		if (BAN_CheckObject(o, sp))
 			continue;
 		if (o->vary != NULL && !VRY_Match(sp, o->vary))
 			continue;
@@ -465,7 +465,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * set here? FIXME:Grace.
 	 */
 	sp->objhead = oh;
-	if (oc == NULL && grace_oc != NULL && 
+	if (oc == NULL && grace_oc != NULL &&
 	    (busy_oc != NULL || !sp->director->healthy(sp))) {
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -629,7 +629,7 @@ HSH_DerefObjCore(struct sess *sp)
 /*******************************************************************
  * This one is slightly tricky.  This is called from the BAN module
  * to try to wash the object which holds the oldest ban.
- * We compete against HSH_Deref() which comes in the opposite 
+ * We compete against HSH_Deref() which comes in the opposite
  * locking order, we need to hold the BAN mutex, to stop the
  * BAN_DestroyObj() call in HSH_Deref(), so that the objhead
  * will not be removed under us.
@@ -680,12 +680,12 @@ HSH_Deref(struct worker *w, struct object **oo)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		oh = oc->objhead;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		
+
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
 		assert(o->refcnt > 0);
 		r = --o->refcnt;
-		if (!r) 
+		if (!r)
 			VTAILQ_REMOVE(&oh->objcs, oc, list);
 		hsh_rush(oh);
 		Lck_Unlock(&oh->mtx);

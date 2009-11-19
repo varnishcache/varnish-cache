@@ -34,7 +34,7 @@
 
 #ifndef HAVE_DAEMON
 int varnish_daemon(int nochdir, int noclose);
-#else 
+#else
 #define varnish_daemon(a,b)  daemon(a,b)
 #endif
 

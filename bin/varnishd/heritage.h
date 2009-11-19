@@ -159,7 +159,7 @@ struct params {
 
 	/* Read timeouts for backend */
 	double			first_byte_timeout;
-	double	 		between_bytes_timeout;
+	double			between_bytes_timeout;
 
 	/* How long to linger on sessions */
 	unsigned		session_linger;

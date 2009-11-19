@@ -67,7 +67,7 @@ struct acl_e {
 		else if ((b) < (a))					\
 			return (1);					\
 	} while (0)
-		
+
 static int
 vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 {

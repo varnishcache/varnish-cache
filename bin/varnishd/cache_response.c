@@ -57,23 +57,30 @@ res_do_304(struct sess *sp)
 	TIM_format(sp->t_req, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "X-Varnish: %u", sp->xid);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+	    "X-Varnish: %u", sp->xid);
 	if (sp->obj->last_modified) {
 		TIM_format(sp->obj->last_modified, lm);
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Last-Modified: %s", lm);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Last-Modified: %s", lm);
 	}
 
 	/* http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5 */
 	if (http_GetHdr(sp->obj->http, H_Cache_Control, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Cache-Control: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Cache-Control: %s", p);
 	if (http_GetHdr(sp->obj->http, H_Content_Location, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Content-Location: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Content-Location: %s", p);
 	if (http_GetHdr(sp->obj->http, H_ETag, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "ETag: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "ETag: %s", p);
 	if (http_GetHdr(sp->obj->http, H_Expires, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Expires: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Expires: %s", p);
 	if (http_GetHdr(sp->obj->http, H_Vary, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Vary: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Vary: %s", p);
 
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
@@ -111,7 +118,7 @@ res_do_conds(struct sess *sp)
 		do_cond = 1;
 	}
 
-	if (do_cond == 1) { 
+	if (do_cond == 1) {
 		res_do_304(sp);
 		return (1);
 	}
@@ -142,7 +149,8 @@ RES_BuildHttp(struct sess *sp)
 	if (!sp->disable_esi && sp->obj->esidata != NULL) {
 		http_Unset(sp->wrk->resp, H_Content_Length);
 		if(sp->http->protover >= 1.1)
-			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Transfer-Encoding: chunked");
+			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+			    "Transfer-Encoding: chunked");
 	}
 
 	TIM_format(TIM_real(), time_str);

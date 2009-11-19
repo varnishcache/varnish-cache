@@ -287,7 +287,7 @@ exp_timer(struct sess *sp, void *priv)
 		if (oc->flags & OC_F_ONLRU) {
 			VLIST_REMOVE(oc, lru_list);
 			oc->flags &= ~OC_F_ONLRU;
-		} 
+		}
 
 		VSL_stats->n_expired++;
 

@@ -76,7 +76,7 @@ static struct lock		ses_mem_mtx;
 
 /*--------------------------------------------------------------------*/
 
-static struct lock 		stat_mtx;
+static struct lock		stat_mtx;
 
 /*--------------------------------------------------------------------*/
 
@@ -86,7 +86,7 @@ SES_Charge(struct sess *sp)
 	struct acct *a = &sp->acct_req;
 
 #define ACCT(foo)	\
-	sp->wrk->stats.s_##foo += a->foo; 	\
+	sp->wrk->stats.s_##foo += a->foo;	\
 	sp->acct.foo += a->foo;		\
 	a->foo = 0;
 #include "acct_fields.h"
@@ -135,7 +135,7 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 	sp->t_end = NAN;
 	sp->grace = NAN;
 	sp->disable_esi = 0;
-	
+
 	assert(len <= sp->sockaddrlen);
 	if (addr != NULL) {
 		memcpy(sp->sockaddr, addr, len);
@@ -252,15 +252,15 @@ SES_InheritBackendTimeouts(struct sess *sp)
 	AN(sp->vbe->backend);
 
 	be = sp->vbe->backend;
-	/* 
+	/*
 	 * We only inherit the backend's timeout if the session timeout
 	 * has not already been set in the VCL, as the order of precedence
 	 * is parameter < backend definition < VCL.
 	 */
-	if (be->connect_timeout > 1e-3 && 
+	if (be->connect_timeout > 1e-3 &&
 	    sp->connect_timeout == params->connect_timeout)
 		sp->connect_timeout = be->connect_timeout;
-	if (be->first_byte_timeout > 1e-3 && 
+	if (be->first_byte_timeout > 1e-3 &&
 	    sp->first_byte_timeout == params->first_byte_timeout)
 		sp->first_byte_timeout = be->first_byte_timeout;
 	if (be->between_bytes_timeout > 1e-3 &&

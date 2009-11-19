@@ -65,7 +65,7 @@ SVNID("$Id$")
 #define ASSERT_SILO_THREAD(sc) \
     do {assert(pthread_self() == (sc)->thread);} while (0)
 
-#define RDN2(x, y)  ((x)&(~((y)-1))) 		/* if y is powers of two */
+#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
 #define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
 
 /*
@@ -118,7 +118,7 @@ VTAILQ_HEAD(smp_seghead, smp_seg);
 
 struct smp_sc {
 	unsigned		magic;
-#define SMP_SC_MAGIC		0x7b73af0a 
+#define SMP_SC_MAGIC		0x7b73af0a
 	struct stevedore	*parent;
 
 	unsigned		flags;
@@ -177,7 +177,7 @@ struct smp_sc {
 #define SEG_SPACE RUP2(SMP_SIGN_SPACE, CACHE_LINE_ALIGN)
 
 /*
- * silos is unlocked, it only changes during startup when we are 
+ * silos is unlocked, it only changes during startup when we are
  * single-threaded
  */
 static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
@@ -199,7 +199,8 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  */
 
 static void
-smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
+smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
+    uint64_t off, const char *id)
 {
 
 	AZ(off & 7);			/* Alignment */
@@ -237,7 +238,7 @@ smp_chk_sign(struct smp_signctx *ctx)
 		SHA256_Final(sign, &cx);
 		if (memcmp(sign, SIGN_END(ctx), sizeof sign))
 			r = 4;
-	} 
+	}
 	if (r) {
 		fprintf(stderr, "CHK(%p %s %p %s) = %d\n",
 		    ctx, ctx->id, ctx->ss,
@@ -305,7 +306,8 @@ smp_sync_sign(const struct smp_signctx *ctx)
  */
 
 static void
-smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx, uint64_t off, const char *id)
+smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
+    uint64_t off, const char *id)
 {
 	smp_def_sign(sc, ctx, off, id);
 	smp_reset_sign(ctx);
@@ -526,7 +528,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 {
 	struct smp_sc		*sc;
 	int i;
-	
+
 	ASSERT_MGT();
 
 	AZ(av[ac]);
@@ -685,10 +687,11 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
  */
 
 static void
-smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0, uint32_t flags, uint32_t len, const char *ban)
+smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0,
+    uint32_t flags, uint32_t len, const char *ban)
 {
 	uint8_t *ptr, *ptr2;
-	
+
 	(void)sc;
 	ptr = ptr2 = SIGN_END(ctx);
 
@@ -736,7 +739,7 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 
 	ASSERT_CLI();
 	(void)sc;
-	i = smp_chk_sign(ctx);	
+	i = smp_chk_sign(ctx);
 	if (i)
 		return (i);
 	ptr = SIGN_DATA(ctx);
@@ -935,7 +938,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	int i, n = 0;
 
 	ASSERT_CLI();
-	i = smp_chk_sign(ctx);	
+	i = smp_chk_sign(ctx);
 	if (i)
 		return (i);
 
@@ -960,7 +963,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	l = sc->mediasize - sc->free_offset;
 	if (se->offset > ss->offset && l >= sc->free_reserve) {
 		/*
-		 * [__xxxxyyyyzzzz___] 
+		 * [__xxxxyyyyzzzz___]
 		 * Plenty of space at tail, do nothing.
 		 */
 //printf("TRS: %jx @ %jx\n", l, sc->free_offset);
@@ -985,7 +988,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 
 	if (l < sc->free_reserve) {
 		/*
-		 * [__xxxxyyyyzzzz___] 
+		 * [__xxxxyyyyzzzz___]
 		 * (make) space at front
 		 */
 		sc->free_offset = sc->ident->stuff[SMP_SPC_STUFF];
@@ -1208,7 +1211,7 @@ smp_thread(struct sess *sp, void *priv)
 	BAN_Deref(&sc->tailban);
 	sc->tailban = NULL;
 	printf("Silo completely loaded\n");
-	while (1)	 
+	while (1)
 		(void)sleep (1);
 	NEEDLESS_RETURN(NULL);
 }
@@ -1356,7 +1359,9 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		left = smp_spaceleft(sg);
 
 		if (oc == NULL && needed > left && (overhead + 4096) < left) {
-			/* XXX: Also check the bit we cut off isn't silly short */
+			/* XXX: Also check the bit we cut off isn't silly
+			 * short
+			 */
 			/*
 			 * Non-objects can be trimmed down to fit what we
 			 * have to offer (think: DVD image), but we do not
@@ -1440,7 +1445,7 @@ smp_trim(struct storage *ss, size_t size)
 	size += 1;
 
 	sg = sc->cur_seg;
-	if (ss->ptr + ss->space != sg->next_addr + sc->ptr) 
+	if (ss->ptr + ss->space != sg->next_addr + sc->ptr)
 		return;
 
 	Lck_Lock(&sc->mtx);

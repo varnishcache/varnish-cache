@@ -35,7 +35,7 @@
  *	req.url ~ ".iso" && obj.size > 10MB
  *	req.http.host ~ "web1.com" && obj.set-cookie ~ "USER=29293"
  *
- * We make the "&&" mandatory from the start, leaving the syntax space 
+ * We make the "&&" mandatory from the start, leaving the syntax space
  * for latter handling of "||" as well.
  *
  */
@@ -243,7 +243,8 @@ static const struct pvar {
 };
 
 int
-BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, const char *a3)
+BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
+    const char *a3)
 {
 	struct ban_test *bt;
 	const struct pvar *pv;
@@ -289,7 +290,7 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2, cons
 		bt->func = pv->func;
 		if (pv->flag & PVAR_REQ)
 			b->flags |= BAN_F_REQ;
-		if (pv->flag & PVAR_HTTP) 
+		if (pv->flag & PVAR_HTTP)
 			ban_parse_http(bt, a1 + strlen(pv->name));
 		break;
 	}
@@ -531,7 +532,7 @@ ban_lurker(struct sess *sp, void *priv)
 		oc = NULL;
 		while (1) {
 			b = VTAILQ_LAST(&ban_head, banhead);
-			if (b == ban_start) 
+			if (b == ban_start)
 				break;
 			oc = VTAILQ_FIRST(&b->objcore);
 			if (oc == NULL)

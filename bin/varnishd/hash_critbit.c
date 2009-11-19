@@ -51,10 +51,10 @@ static VTAILQ_HEAD(,objhead)	laylow = VTAILQ_HEAD_INITIALIZER(laylow);
 /**********************************************************************
  * Table for finding out how many bits two bytes have in common,
  * counting from the MSB towards the LSB.
- * ie: 
+ * ie:
  *	hcb_bittbl[0x01 ^ 0x22] == 2
  *	hcb_bittbl[0x10 ^ 0x0b] == 3
- * 
+ *
  */
 
 static unsigned char hcb_bittbl[256];
@@ -163,7 +163,8 @@ hcb_l_y(uintptr_t u)
 /**********************************************************************/
 
 static unsigned
-hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2, struct hcb_y *y)
+hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
+    struct hcb_y *y)
 {
 	unsigned char u, r;
 
@@ -264,7 +265,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	}
 	p = &r->origo;
 	assert(hcb_is_y(*p));
-	
+
 	y = NULL;
 	while(1) {
 		assert(hcb_is_y(*p));
@@ -422,7 +423,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *oh;
 	unsigned u;
-	
+
 	oh =  hcb_insert(&hcb_root, noh, 0);
 	if (oh != NULL) {
 		/* Assert that we didn't muck with the tree without lock */

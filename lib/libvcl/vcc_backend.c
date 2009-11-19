@@ -466,7 +466,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 		Fb(tl, 0, "\t\t.window = %u,\n", window);
 		Fb(tl, 0, "\t\t.threshold = %u,\n", threshold);
 	}
-	if (t_initial != NULL) 
+	if (t_initial != NULL)
 		Fb(tl, 0, "\t\t.initial = %u,\n", initial);
 	else
 		Fb(tl, 0, "\t\t.initial = ~0U,\n", initial);
@@ -597,7 +597,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 			 * not allowed here.
 			 */
 			if (u == UINT_MAX) {
-				vsb_printf(tl->sb, "Value outside allowed range: ");
+				vsb_printf(tl->sb,
+				    "Value outside allowed range: ");
 				vcc_ErrToken(tl, tl->t);
 				vsb_printf(tl->sb, " at\n");
 				vcc_ErrWhere(tl, tl->t);

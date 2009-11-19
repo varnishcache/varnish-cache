@@ -224,7 +224,7 @@ ccf_help(struct cli *cli, const char * const *av, void *priv)
 
 static void
 ccf_panic(struct cli *cli, const char * const *av, void *priv)
-{ 
+{
 
 	(void)cli;
 	(void)av;

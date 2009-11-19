@@ -72,7 +72,8 @@ MAC_STAT(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
 MAC_STAT(n_vbe_conn,		uint64_t, 0, 'i', "N struct vbe_conn")
 MAC_STAT(n_wrk,			uint64_t, 0, 'i', "N worker threads")
 MAC_STAT(n_wrk_create,		uint64_t, 0, 'a', "N worker threads created")
-MAC_STAT(n_wrk_failed,		uint64_t, 0, 'a', "N worker threads not created")
+MAC_STAT(n_wrk_failed,		uint64_t, 0, 'a',
+					"N worker threads not created")
 MAC_STAT(n_wrk_max,		uint64_t, 0, 'a', "N worker threads limited")
 MAC_STAT(n_wrk_queue,		uint64_t, 0, 'a', "N queued work requests")
 MAC_STAT(n_wrk_overflow,	uint64_t, 0, 'a', "N overflowed work requests")
@@ -89,7 +90,8 @@ MAC_STAT(losthdr,		uint64_t, 0, 'a', "HTTP header overflows")
 
 MAC_STAT(n_objsendfile,		uint64_t, 0, 'a', "Objects sent with sendfile")
 MAC_STAT(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write")
-MAC_STAT(n_objoverflow,		uint64_t, 1, 'a', "Objects overflowing workspace")
+MAC_STAT(n_objoverflow,		uint64_t, 1, 'a',
+					"Objects overflowing workspace")
 
 MAC_STAT(s_sess,		uint64_t, 1, 'a', "Total Sessions")
 MAC_STAT(s_req,			uint64_t, 1, 'a', "Total Requests")

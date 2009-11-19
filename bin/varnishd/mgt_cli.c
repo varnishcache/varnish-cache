@@ -326,7 +326,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	}
 	cp->challenge[0] = '\0';
 	cli_result(cli, CLIS_OK);
-	if (params->cli_banner) 
+	if (params->cli_banner)
 		mcf_banner(cli, av, priv);
 }
 
@@ -379,11 +379,11 @@ mgt_cli_vlu(void *priv, const char *p)
 	if (secret_file != NULL && cp->challenge[0] != '\0') {
 		/* Authentication not yet passed */
 		cli_dispatch(cp->cli, cli_auth, p);
-		if (cp->cli->result == CLIS_UNKNOWN) 
+		if (cp->cli->result == CLIS_UNKNOWN)
 			mgt_cli_challenge(cp);
 	} else {
 		cli_dispatch(cp->cli, cli_proto, p);
-		if (cp->cli->result == CLIS_UNKNOWN) 
+		if (cp->cli->result == CLIS_UNKNOWN)
 			cli_dispatch(cp->cli, cli_debug, p);
 		if (cp->cli->result == CLIS_UNKNOWN) {
 			/*

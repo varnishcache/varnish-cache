@@ -67,7 +67,7 @@ VRT_error(struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ? 
+	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ?
 	    reason : "(null)");
 	sp->err_code = code ? code : 503;
 	sp->err_reason = reason ? reason : http_StatusMessage(sp->err_code);
@@ -281,7 +281,7 @@ VRT_l_obj_status(const struct sess *sp, int num)
 
 /* Add an objecthead to the saintmode list for the (hopefully) relevant
  * backend. Some double-up asserting here to avoid assert-errors when there
- * is no object. 
+ * is no object.
  */
 void
 VRT_l_beresp_saintmode(const struct sess *sp, double a)
@@ -305,7 +305,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * when compiling the VCL would be better.
 	 */
 	assert(a > 0);
-	
+
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
 	new->objhead = sp->objhead;
@@ -314,7 +314,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	/* Insert the new item on the list before the first item with a
 	 * timeout at a later date (ie: sort by which entry will time out
 	 * from the list
-	 */	
+	 */
 	Lck_Lock(&sp->vbe->backend->mtx);
 	VTAILQ_FOREACH_SAFE(tr, &sp->vbe->backend->troublelist, list, tr2) {
 		if (tr->timeout < new->timeout) {
@@ -329,7 +329,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 */
 	if (new)
 		VTAILQ_INSERT_TAIL(&sp->vbe->backend->troublelist, new, list);
-	
+
 	Lck_Unlock(&sp->vbe->backend->mtx);
 }
 
@@ -708,7 +708,7 @@ VRT_r_server_identity(struct sess *sp)
 
 	if (heritage.identity[0] != '\0')
 		return heritage.identity;
-	else 
+	else
 		return heritage.name;
 }
 
@@ -720,7 +720,7 @@ VRT_r_server_hostname(struct sess *sp)
 
 	if (vrt_hostname[0] == '\0')
 		AZ(gethostname(vrt_hostname, 255));
-	
+
 	return (vrt_hostname);
 }
 
@@ -965,7 +965,7 @@ VRT_purge(struct sess *sp, char *cmds, ...)
 		a1 = va_arg(ap, char *);
 		good = 1;
 	}
-	if (!good) 
+	if (!good)
 		/* XXX: report error how ? */
 		BAN_Free(b);
 	else
@@ -1018,7 +1018,7 @@ VRT_purge_string(struct sess *sp, const char *str, ...)
 		if (strcmp(av[i++], "&&"))
 			break;
 	}
-	if (!good) 
+	if (!good)
 		/* XXX: report error how ? */
 		BAN_Free(b);
 	else

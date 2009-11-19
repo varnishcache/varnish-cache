@@ -67,7 +67,7 @@ struct varnish {
 
 	struct varnish_stats	*stats;
 
-	struct vsb 		*args;
+	struct vsb		*args;
 	int			fds[4];
 	pid_t			pid;
 	const char		*telnet;

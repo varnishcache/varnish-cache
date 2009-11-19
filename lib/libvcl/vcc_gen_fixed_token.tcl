@@ -258,12 +258,12 @@ set spobj {
     #######################################################################
     # The (possibly) cached object
     { obj.proto				STRING
-	RW 
+	RW
 	{ hit error }
 	"const struct sess *"
     }
     { obj.status			INT
-	RW 
+	RW
 	{ error }
 	"const struct sess *"
     }
@@ -491,12 +491,12 @@ proc vars {v pa} {
 			puts $fo  "\t\{ \"$n\", $t, [string length $n],"
 		}
 		if {$a == "RO" || $a == "RW"} {
-			puts -nonewline $fo  "\t    \"VRT_r_${m}($pa)\","
+			puts $fo  "\t    \"VRT_r_${m}($pa)\","
 			if {![regexp HDR_ $t]} {
 				puts $fp  "$tt($t) VRT_r_${m}($ty);"
 			}
 		} else {
-			puts -nonewline $fo  "\t    NULL,"
+			puts $fo  "\t    NULL,"
 		}
 		if {$a == "WO" || $a == "RW"} {
 			puts $fo  "\t    \"VRT_l_${m}($pa, \","
@@ -554,7 +554,8 @@ foreach m $methods {
 	} else {
 		set sp ""
 	}
-	puts $fo "#define VCL_MET_[string toupper [lindex $m 0]]\t${sp}(1U << $u)"
+	puts -nonewline $fo "#define VCL_MET_[string toupper [lindex $m 0]]\t"
+	puts $fo "${sp}(1U << $u)"
 	incr u
 }
 
@@ -721,7 +722,7 @@ foreach ch "$seq" {
 			puts -nonewline $fo "'[string index $k 1]'"
 			puts            $fo ", [lindex $ty 1]);"
 			continue;
-		} 
+		}
 		puts -nonewline $fo "		if ("
 		for {set i 1} {$i < [string length $k]} {incr i} {
 			if {$i > 1} {

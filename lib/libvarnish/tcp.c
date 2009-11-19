@@ -235,7 +235,7 @@ TCP_set_read_timeout(int s, double seconds)
 /*--------------------------------------------------------------------
  * Set or reset SO_LINGER flag
  */
- 
+
 void
 TCP_linger(int sock, int linger)
 {

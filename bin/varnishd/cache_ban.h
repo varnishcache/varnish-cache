@@ -33,7 +33,8 @@
 struct ban_test;
 
 /* A ban-testing function */
-typedef int ban_cond_f(const struct ban_test *bt, const struct object *o, const struct sess *sp);
+typedef int ban_cond_f(const struct ban_test *bt, const struct object *o,
+    const struct sess *sp);
 
 /* Each individual test to be performed on a ban */
 struct ban_test {

@@ -114,7 +114,7 @@ be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
 		dst[i] = mybe32dec(src + i * 4);
 }
 
-#endif 
+#endif
 
 /* Elementary functions used by SHA256 */
 #define Ch(x, y, z)	((x & (y ^ z)) ^ z)

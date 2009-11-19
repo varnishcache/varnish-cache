@@ -247,7 +247,8 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 		if (v == 0) {
 			if (st != NULL && fetchfrag > 0)
 				dump_st(sp, st);
-			st = STV_alloc(sp, params->fetch_chunksize * 1024LL, NULL);
+			st = STV_alloc(sp, params->fetch_chunksize * 1024LL,
+			    NULL);
 			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 			p = st->ptr + st->len;
 			v = st->space - st->len;
@@ -486,7 +487,7 @@ FetchBody(struct sess *sp)
 		sp->wrk->stats.fetch_zero++;
 		/*
 		 * Assume zero length
-		 * XXX:  ??? 
+		 * XXX:  ???
 		 */
 		mklen = 1;
 	}
@@ -518,7 +519,7 @@ FetchBody(struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 		    "Content-Length: %u", sp->obj->len);
 
-	if (http_HdrIs(hp, H_Connection, "close")) 
+	if (http_HdrIs(hp, H_Connection, "close"))
 		cls = 1;
 
 	if (cls)

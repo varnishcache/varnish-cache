@@ -32,7 +32,7 @@
  *
  * Overall layout:
  *
- *	struct smp_ident;		Identification and geometry 
+ *	struct smp_ident;		Identification and geometry
  *	sha256[...]			checksum of same
  *
  *	struct smp_sign;
@@ -134,8 +134,8 @@ struct smp_segptr {
 
 struct smp_object {
 	unsigned char		hash[32];
-	double  		ttl;
-	double  		ban;
+	double			ttl;
+	double			ban;
 	struct object		*ptr;
 	uint64_t		len;	/* XXX: madvise */
 };

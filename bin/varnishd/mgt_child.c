@@ -546,7 +546,7 @@ MGT_Run(void)
 		start_child(NULL);
 		if (child_state == CH_STOPPED)
 			exit(2);
-	} 
+	}
 
 	i = vev_schedule(mgt_evb);
 	if (i != 0)
