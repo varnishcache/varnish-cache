@@ -7,7 +7,7 @@ varnish v1 -vcl {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {
-			.status = 204;
+			.expected_response = 204;
 		}
 	}
 }
