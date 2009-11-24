@@ -35,7 +35,11 @@ server s1 -wait {
 	txresp -hdr "Foo: foo2"
 } -start
 
-varnish v1 -start
+varnish v1 -vcl+backend {
+		sub vcl_fetch {
+			set beresp.ttl = 3s;
+		}
+	} -start
 
 delay 5
 

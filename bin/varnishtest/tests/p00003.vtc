@@ -34,7 +34,7 @@ server s1 {
 	txresp -hdr "Foo: bar"
 } -start
 
-varnish v1 -start
+varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok purge.list
 

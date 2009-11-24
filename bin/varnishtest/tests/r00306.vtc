@@ -2,7 +2,7 @@
 
 test "Regression test for ticket #306, random director ignoring good backend"
 
-server s1 {
+server s1 -listen 127.0.0.1:9080 {
 
 	rxreq
 	expect req.url == /foo

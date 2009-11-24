@@ -2,7 +2,7 @@
 
 test "bidirectional message bodies"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	expect req.request == PUT
 	expect req.proto == HTTP/1.0
@@ -13,7 +13,7 @@ server s1 -listen 127.0.0.1:9080 {
 
 server s1 -start 
 
-client c1 -connect 127.0.0.1:9080 {
+client c1 -connect $s1_sock {
 	txreq -req PUT -proto HTTP/1.0 -url /foo \
 		-body "123456789\n"
 	rxresp

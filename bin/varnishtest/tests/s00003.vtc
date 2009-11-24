@@ -2,7 +2,7 @@
 
 test "Check saint mode with sick pages"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	timeout 10
 
 	rxreq
@@ -16,8 +16,7 @@ server s1 -listen 127.0.0.1:9080 {
 	txresp -status 200 -hdr "foo: 3"
 } -start
 
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; .port = "9080"; }
+varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		set beresp.ttl = 1s;
 		set beresp.grace = 10m;

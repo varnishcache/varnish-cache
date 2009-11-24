@@ -2,8 +2,6 @@
 
 test "Test Vary functionality"
 
-varnish v1 -arg "-b 127.0.0.1:9080" -start
-
 server s1 {
 	rxreq
 	expect req.http.foobar == "1"
@@ -17,6 +15,8 @@ server s1 {
 	rxreq
 	txresp -hdr "Vary: Foobar" -hdr "Snafu: 4" -body "4444\n"
 } -start
+
+varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq -hdr "Foobar: 1"
