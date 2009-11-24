@@ -136,6 +136,38 @@ macro_get(const char *name)
 	return (retval);
 }
 
+static struct vsb *
+macro_expand(char *name)
+{
+	struct vsb *vsb;
+	char *p, *q;
+
+	vsb = vsb_newauto();
+	AN(vsb);
+	while (*name != '\0') {
+		p = strstr(name, "${");
+		if (p == NULL) {
+			vsb_cat(vsb, name);
+			break;
+		}
+		vsb_bcat(vsb, name, p - name);
+		q = strchr(p, '}');
+		if (q == NULL) {
+			vsb_cat(vsb, name);
+			break;
+		}
+		assert(p[0] == '$');
+		assert(p[1] == '{');
+		assert(q[0] == '}');
+		p += 2;
+		*q = '\0';
+		vsb_cat(vsb, macro_get(p));
+		name = q + 1;
+	}
+	vsb_finish(vsb);
+	return (vsb);
+}
+
 /**********************************************************************
  * Read a file into memory
  */
@@ -174,6 +206,7 @@ void
 parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
+	struct vsb *token_exp[MAX_TOKENS];
 	char *p, *q;
 	int nest_brace;
 	int tn;
@@ -251,16 +284,14 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 		assert(tn < MAX_TOKENS);
 		token_s[tn] = NULL;
 		for (tn = 0; token_s[tn] != NULL; tn++) {
+			token_exp[tn] = NULL;
 			AN(token_e[tn]);	/*lint !e771 */
 			*token_e[tn] = '\0';	/*lint !e771 */
-			if (token_s[tn][0] == '$') {
-				q = macro_get(token_s[tn] + 1);
-				if (q == NULL)
-					vtc_log(vl, 0,
-					    "Unknown macro: \"%s\"", token_s[tn]);
-				token_s[tn] = q;
-				token_e[tn] = strchr(token_s[tn], '\0');
-			}
+			if (NULL == strstr(token_s[tn], "${"))
+				continue;
+			token_exp[tn] = macro_expand(token_s[tn]);
+			token_s[tn] = vsb_data(token_exp[tn]);
+			token_e[tn] = strchr(token_s[tn], '\0');
 		}
 
 		for (cp = cmd; cp->name != NULL; cp++)
