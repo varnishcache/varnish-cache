@@ -72,3 +72,6 @@ void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
 void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
     const char *str);
+
+void macro_def(struct vtclog *vl, const char *instance, const char *name, const char *fmt, ...);
+
