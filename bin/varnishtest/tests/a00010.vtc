@@ -2,7 +2,7 @@
 
 test "simply test that the framework support \0"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
         rxreq
 	expect req.url == "/"
 	txresp -body {a\0bc}
@@ -10,7 +10,7 @@ server s1 -listen 127.0.0.1:9080 {
 
 server s1 -start 
 
-client c1 -connect 127.0.0.1:9080 {
+client c1 -connect $s1_sock {
 
 	txreq
 	rxresp

@@ -2,7 +2,7 @@
 
 test "TCP reuse"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	expect req.url == "/1"
 	txresp -body "123456789\n"
@@ -13,7 +13,7 @@ server s1 -listen 127.0.0.1:9080 {
 
 server s1 -start 
 
-client c1 -connect 127.0.0.1:9080 {
+client c1 -connect $s1_sock {
 	txreq -url "/1" -req "POST" -body "abcdefghi\n"
 	rxresp
 	txreq -url "/2" -req "POST" -body "ihgfedcba\n"

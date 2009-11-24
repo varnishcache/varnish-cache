@@ -4,17 +4,13 @@ test "VCL: Test backend retirement"
 
 # First do one request to get a work-thread that holds a VCL reference
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	txresp
 } -start
 
 # Only one pool, to avoid getting more than one work thread
-varnish v1 -arg "-p thread_pools=1 -w1,1,300" -vcl {
-	backend b1 {
-		.host = "127.0.0.1";
-		.port = "9080";
-	}
+varnish v1 -arg "-p thread_pools=1 -w1,1,300" -vcl+backend {
 } -start
 
 client c1 {

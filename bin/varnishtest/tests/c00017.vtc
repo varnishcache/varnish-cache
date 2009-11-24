@@ -2,6 +2,12 @@
 
 test "Test Backend Polling"
 
+server s1 -listen 127.0.0.1:9080 {
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Bar: foo" -body "foobar" 
+} -start
+
 varnish v1 -vcl { 
 
 	backend foo {
@@ -15,11 +21,6 @@ varnish v1 -vcl {
 	
 } -start
 
-server s1 {
-	rxreq
-	expect req.url == "/"
-	txresp -hdr "Bar: foo" -body "foobar" 
-} 
 
 # Handle  probes
 server s1 -start -wait

@@ -2,7 +2,7 @@
 
 test "Test restart in vcl_error"
 
-server s1 {
+server s1 -listen 127.0.0.1:9080 {
         rxreq 
         txresp 
 } -start

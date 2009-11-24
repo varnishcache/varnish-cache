@@ -2,7 +2,7 @@
 
 test "Check backend connection limit"
 
-server s1 {
+server s1 -listen 127.0.0.1:9080 {
 	rxreq
 	sema r1 sync 2
 	sema r2 sync 2

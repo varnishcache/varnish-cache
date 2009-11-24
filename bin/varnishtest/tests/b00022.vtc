@@ -2,7 +2,7 @@
 
 test "Check the between_bytes_timeout behaves from backend definition"
 
-server s1 {
+server s1 -listen 127.0.0.1:9080 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
 	delay 1.5

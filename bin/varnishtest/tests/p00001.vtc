@@ -22,13 +22,14 @@ client c1 {
 } -run
 
 varnish v1 -stop
-server s1 -wait
 
 varnish v1 -vcl+backend {
 	sub vcl_hit {
 		set obj.ttl = 1 s;
 	}
 }
+
+server s1 -wait
 
 varnish v1 -start
 
@@ -42,16 +43,16 @@ client c1 {
 
 varnish v1 -stop
 
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: bar"
+} -start
+
 varnish v1 -vcl+backend { }
 
 delay 2
 
 varnish v1 -start
-
-server s1 {
-	rxreq 
-	txresp -hdr "Foo: bar"
-} -start
 
 client c1 {
 	txreq -url "/"
