@@ -36,12 +36,15 @@ SVNID("$Id$")
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
 #include "libvarnish.h"
 #include "vsb.h"
+#include "vqueue.h"
+#include "miniobj.h"
 
 #include "vtc.h"
 
@@ -53,6 +56,85 @@ char		*vtc_desc;
 int		vtc_error;		/* Error encountered */
 int		vtc_stop;		/* Stops current test without error */
 pthread_t	vtc_thread;
+
+/**********************************************************************
+ * Macro facility
+ */
+
+struct macro {
+	VTAILQ_ENTRY(macro)	list;
+	char			*name;
+	char			*val;
+};
+
+static VTAILQ_HEAD(,macro) macro_list = VTAILQ_HEAD_INITIALIZER(macro_list);
+
+static pthread_mutex_t		macro_mtx;
+
+static void
+init_macro(void)
+{
+	AZ(pthread_mutex_init(&macro_mtx, NULL));
+}
+
+void
+macro_def(struct vtclog *vl, const char *instance, const char *name,
+    const char *fmt, ...)
+{
+	char buf[256];
+	struct macro *m;
+	va_list ap;
+
+	if (instance != NULL) {
+		assert (snprintf(buf, sizeof buf, "%s_%s", instance, name)
+		    < sizeof buf);
+		name = buf;
+	}
+
+	AZ(pthread_mutex_lock(&macro_mtx));
+	VTAILQ_FOREACH(m, &macro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	if (m == NULL && fmt != NULL) {
+		m = calloc(sizeof *m, 1);
+		AN(m);
+		REPLACE(m->name, name);
+		VTAILQ_INSERT_TAIL(&macro_list, m, list);
+	}
+	if (fmt != NULL) {
+		AN(m);
+		va_start(ap, fmt);
+		free(m->val);
+		m->val = NULL;
+		(void)vasprintf(&m->val, fmt, ap);
+		va_end(ap);
+		AN(m->val);
+		vtc_log(vl, 2, "macro def %s=%s", m->name, m->val);
+	} else if (m != NULL) {
+		vtc_log(vl, 2, "macro undef %s", m->name);
+		VTAILQ_REMOVE(&macro_list, m, list);
+		free(m->name);
+		free(m->val);
+		free(m);
+	}
+	AZ(pthread_mutex_unlock(&macro_mtx));
+}
+
+static char *
+macro_get(const char *name)
+{
+	struct macro *m;
+
+	char *retval = NULL;
+	AZ(pthread_mutex_lock(&macro_mtx));
+	VTAILQ_FOREACH(m, &macro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	if (m != NULL)
+		retval = strdup(m->val);
+	AZ(pthread_mutex_unlock(&macro_mtx));
+	return (retval);
+}
 
 /**********************************************************************
  * Read a file into memory
@@ -171,6 +253,14 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 		for (tn = 0; token_s[tn] != NULL; tn++) {
 			AN(token_e[tn]);	/*lint !e771 */
 			*token_e[tn] = '\0';	/*lint !e771 */
+			if (token_s[tn][0] == '$') {
+				q = macro_get(token_s[tn] + 1);
+				if (q == NULL)
+					vtc_log(vl, 0,
+					    "Unknown macro: \"%s\"", token_s[tn]);
+				token_s[tn] = q;
+				token_e[tn] = strchr(token_s[tn], '\0');
+			}
 		}
 
 		for (cp = cmd; cp->name != NULL; cp++)
@@ -411,6 +501,7 @@ main(int argc, char * const *argv)
 	if (argc == 0)
 		usage();
 
+	init_macro();
 	init_sema();
 
 	vtc_thread = pthread_self();
