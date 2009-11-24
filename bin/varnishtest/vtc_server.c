@@ -65,6 +65,8 @@ struct server {
 	struct vss_addr		**vss_addr;
 	char			*addr;
 	char			*port;
+	char			aaddr[32];
+	char			aport[32];
 
 	pthread_t		tp;
 };
@@ -91,7 +93,7 @@ server_thread(void *priv)
 
 	vl = vtc_logopen(s->name);
 
-	vtc_log(vl, 2, "Started on %s", s->listen);
+	vtc_log(vl, 2, "Started on %s:%s", s->aaddr, s->aport);
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
 			vtc_log(vl, 3, "Iteration %d", i);
@@ -105,6 +107,9 @@ server_thread(void *priv)
 		    || errno == ENOTCONN || errno == ECONNRESET);
 		TCP_close(&fd);
 	}
+	macro_def(s->vl, s->name, "addr", NULL);
+	macro_def(s->vl, s->name, "port", NULL);
+	macro_def(s->vl, s->name, "sock", NULL);
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
 }
@@ -172,9 +177,13 @@ server_start(struct server *s)
 			    s->listen, naddr);
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
+		TCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
+		    s->aport, sizeof s->aport);
+		macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
+		macro_def(s->vl, s->name, "port", "%s", s->aport);
+		macro_def(s->vl, s->name, "sock", "%s:%s", s->aaddr, s->aport);
 	}
-	vtc_log(s->vl, 3, "listen on %s (fd %d)",
-	    s->listen, s->sock);
+	vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
 
@@ -210,9 +219,7 @@ cmd_server_genvcl(struct vsb *vsb)
 	VTAILQ_FOREACH(s, &servers, list) {
 		vsb_printf(vsb,
 		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
-		    s->name,
-		    s->addr == NULL ? "127.0.0.1" : s->addr,
-		    s->port);
+		    s->name, s->aaddr, s->aport);
 	}
 }
 
