@@ -7,11 +7,9 @@ server s1 {
 	txresp \
 		-hdr "Connection: close" \
 		-body "012345\n"
-}
+} -start
 
 varnish v1 -arg "-p session_linger=20" -vcl+backend { } -start 
-
-server s1 -start 
 
 client c1 {
 	send "GET / HTTP/1.1\r\n\r\n\r\n"

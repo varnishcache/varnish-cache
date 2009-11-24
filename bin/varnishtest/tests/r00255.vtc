@@ -10,11 +10,9 @@ server s1 {
 	    -hdr "Last-Modified: Sun, 27 Nov 2005 05:41:47 GMT" \
 	    -hdr "Cache-Control: max-age =0" \
 	    -body "012345\n"
-}
+} -start
 
 varnish v1 -vcl+backend { sub vcl_recv {set req.backend = s1;} } -start 
-
-server s1 -start 
 
 client c1 {
 	txreq -url "/"

@@ -7,7 +7,7 @@ server s1 {
 	txresp \
 		-hdr "Connection: close" \
 		-body "012345\n"
-}
+} -start
 
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
@@ -16,8 +16,6 @@ varnish v1 -vcl+backend {
 		}
 	}
 } -start 
-
-server s1 -start 
 
 client c1 {
 	txreq -req POST -url "/" \

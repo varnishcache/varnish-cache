@@ -8,7 +8,7 @@ server s1 {
 		-hdr "Foobar: _barf_" \
 		-hdr "Connection: close" \
 		-body "012345\n"
-}
+} -start
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
@@ -18,8 +18,6 @@ varnish v1 -vcl+backend {
 		    "box";
 	}
 } -start 
-
-server s1 -start 
 
 client c1 {
 	txreq -url "/"
