@@ -8,7 +8,7 @@ server s1 {
 	rxreq
 	txresp -body "1"
 } -start
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	txresp -body "22"
 	rxreq
@@ -16,11 +16,11 @@ server s2 -listen 127.0.0.1:9180 {
 	rxreq
 	txresp -body "22"
 } -start
-server s3 -listen 127.0.0.1:9181 {
+server s3 {
 	rxreq
 	txresp -body "333"
 } -start
-server s4 -listen 127.0.0.1:9182 {
+server s4 {
 	rxreq
 	txresp -body "4444"
 	rxreq

@@ -18,7 +18,7 @@ The end.
 
 } -start
 
-server s2 -listen 127.0.0.1:9082 {
+server s2 {
 	rxreq
 	expect req.url == "/bar"
 	txresp -body "bar"

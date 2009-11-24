@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	expect req.url == "/body"
 	txresp -body {

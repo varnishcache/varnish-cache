@@ -2,42 +2,42 @@
 
 test "Sema operations"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	sema r1 sync 4
 	delay .9
 	txresp
 } -start
 
-server s2 -listen 127.0.0.1:9081 {
+server s2 {
 	rxreq
 	sema r1 sync 4
 	delay .6
 	txresp
 } -start
 
-server s3 -listen 127.0.0.1:9082 {
+server s3 {
 	rxreq
 	sema r1 sync 4
 	delay .2
 	txresp
 } -start
 
-client c1 -connect 127.0.0.1:9080 {
+client c1 -connect $s1_sock {
 	delay .2
 	txreq
 	rxresp
 	sema r1 sync 4
 } -start
 
-client c2 -connect 127.0.0.1:9081 {
+client c2 -connect $s2_sock {
 	delay .6
 	txreq
 	rxresp
 	sema r1 sync 4
 } -start
 
-client c3 -connect 127.0.0.1:9082 {
+client c3 -connect $s3_sock {
 	delay .9
 	txreq
 	rxresp

@@ -2,23 +2,23 @@
 
 test "Test round robin director"
 
-server s1 -listen 127.0.0.1:2000 {
+server s1 {
 	rxreq
 	txresp -body "1"
 } -start
 
-server s2 -listen 127.0.0.1:3000 {
+server s2 {
 	rxreq
 	txresp -body "22"
 } -start
 
 
-server s3 -listen 127.0.0.1:4000 {
+server s3 {
 	rxreq
 	txresp -body "333"
 } -start
 
-server s4 -listen 127.0.0.1:5000 {
+server s4 {
 	rxreq
 	txresp -body "4444"
 } -start
