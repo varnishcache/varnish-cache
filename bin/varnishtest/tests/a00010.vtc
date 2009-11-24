@@ -10,7 +10,7 @@ server s1 {
 
 server s1 -start 
 
-client c1 -connect $s1_sock {
+client c1 -connect ${s1_sock} {
 
 	txreq
 	rxresp

@@ -21,7 +21,7 @@ server s2 {
 server s1 -start 
 server s2 -start 
 
-client c1 -connect $s1_sock {
+client c1 -connect ${s1_sock} {
 	txreq -req PUT -proto HTTP/1.0 -url /foo
 	rxresp
 	expect resp.proto == HTTP/1.2
@@ -29,7 +29,7 @@ client c1 -connect $s1_sock {
 	expect resp.msg == Foo
 }
 
-client c2 -connect $s2_sock {
+client c2 -connect ${s2_sock} {
 	txreq 
 	rxresp
 	expect resp.proto == HTTP/1.1
