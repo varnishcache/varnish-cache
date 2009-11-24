@@ -2,19 +2,22 @@
 
 test "Test restart in vcl_error"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
         rxreq 
         txresp 
 } -start
 
+server s2 {
+} -start
+
 varnish v1 -vcl { 
 	backend bad { 
-		.host = "127.0.0.1";
-		.port = "9099";
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
 	}
 	backend good { 
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 	}
 	sub vcl_recv {
 		if (req.restarts > 0) {

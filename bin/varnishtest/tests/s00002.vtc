@@ -2,7 +2,7 @@
 
 test "Check grace with sick backends"
 
-server s1 -listen 127.0.0.1:9080 -repeat 4 {
+server s1 -repeat 4 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "hi"
@@ -10,8 +10,8 @@ server s1 -listen 127.0.0.1:9080 -repeat 4 {
 
 varnish v1 -vcl {
 	backend b { 
-		.host = "127.0.0.1"; 
-		.port = "9080"; 
+		.host = "${s1_addr}"; 
+		.port = "${s1_port}"; 
 		.probe = { 
 			.url = "/"; 
 			.timeout = 30ms; 

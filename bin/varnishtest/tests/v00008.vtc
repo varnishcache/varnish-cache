@@ -23,7 +23,7 @@ client c1 {
 	rxresp
 } -run
 
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	expect req.url == "/barf"
 	expect req.http.host == "FOObar"
@@ -32,8 +32,8 @@ server s2 -listen 127.0.0.1:9180 {
 
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
-		.port = "9180";
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
 		.host_header = "FOObar";
 	}
 } 

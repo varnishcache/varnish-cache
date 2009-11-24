@@ -2,7 +2,7 @@
 
 test "Check that the first_byte_timeout works from backend definition"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	delay 1.5
 	txresp
@@ -10,8 +10,8 @@ server s1 -listen 127.0.0.1:9080 {
 
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.first_byte_timeout = 1s;
 	}
 } -start

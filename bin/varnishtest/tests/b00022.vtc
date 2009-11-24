@@ -2,7 +2,7 @@
 
 test "Check the between_bytes_timeout behaves from backend definition"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
 	delay 1.5
@@ -11,8 +11,8 @@ server s1 -listen 127.0.0.1:9080 {
 
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.between_bytes_timeout = 1s;
 	}
 } -start
