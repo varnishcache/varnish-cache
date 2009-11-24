@@ -2,7 +2,7 @@
 
 test "Regression test for ticket #306, random director ignoring good backend"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 
 	rxreq
 	expect req.url == /foo
@@ -14,17 +14,17 @@ server s1 -listen 127.0.0.1:9080 {
 
 } -start
 
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	txresp -status 404
 } -start
 
 varnish v1 -vcl {
 	backend s1 {
-		.host = "127.0.0.1"; .port = "9080";
+		.host = "${s1_addr}"; .port = "${s1_port}";
 	}
 	backend s2 {
-		.host = "127.0.0.1"; .port = "9180";
+		.host = "${s2_addr}"; .port = "${s2_port}";
 		.probe = {
 			.url = "/";
 			.initial = 0;

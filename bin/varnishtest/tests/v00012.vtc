@@ -2,7 +2,7 @@
 
 test "Check backend connection limit"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	sema r1 sync 2
 	sema r2 sync 2
@@ -12,8 +12,8 @@ server s1 -listen 127.0.0.1:9080 {
 varnish v1 -vcl {
 
 	backend default {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.max_connections = 1;
 	}
 	sub vcl_recv {

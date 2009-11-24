@@ -11,8 +11,8 @@ server s1 {
 varnish v1 -vcl {
 
 	backend default {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.max_connections = 1;
 		.probe = {
 			.url = "/";

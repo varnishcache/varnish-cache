@@ -2,13 +2,13 @@
 
 test "Check the precedence for timeouts"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	expect req.url == "from_backend"
 	delay 1; 
 	txresp
 } -start
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	expect req.url == "from_vcl"
 	delay 1.5;
@@ -17,13 +17,13 @@ server s2 -listen 127.0.0.1:9180 {
 
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.first_byte_timeout = 2s;
 	}
 	backend b2 {
-		.host = "127.0.0.1";
-		.port = "9180";
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
 		.first_byte_timeout = 1s;
 	}
 

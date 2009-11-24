@@ -2,7 +2,7 @@
 
 test "Test that saintmode_threshold in VCL"
 
-server s1 -listen 127.0.0.1:9080 {
+server s1 {
 	rxreq
 	txresp
 
@@ -30,8 +30,8 @@ server s1 -listen 127.0.0.1:9080 {
 
 varnish v1 -arg "-p saintmode_threshold=10" -vcl {
 	backend foo {
-		.host = "127.0.0.1";
-		.port = "9080";
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
 		.saintmode_threshold = 2;
 	}
 

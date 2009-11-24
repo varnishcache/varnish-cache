@@ -27,15 +27,15 @@ varnish v1 -expect n_vcl_discard == 0
 
 # Set up a new VCL and backend
 
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	txresp
 } -start
 
 varnish v1 -vcl {
 	backend b2 {
-		.host = "127.0.0.1";
-		.port = "9180";
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
 	}
 }
 
