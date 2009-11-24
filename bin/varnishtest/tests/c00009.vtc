@@ -8,7 +8,7 @@ server s1 {
 	txresp -status 404 
 } -start
 
-server s2 -listen 127.0.0.1:9180 {
+server s2 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -body "foobar"

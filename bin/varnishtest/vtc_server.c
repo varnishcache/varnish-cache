@@ -132,7 +132,7 @@ server_new(const char *name)
 	if (*s->name != 's')
 		vtc_log(s->vl, 0, "Server name must start with 's'");
 
-	REPLACE(s->listen, "127.0.0.1:9080");
+	REPLACE(s->listen, "127.0.0.1:0");
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
 	s->depth = 1;
