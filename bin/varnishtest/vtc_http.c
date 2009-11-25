@@ -40,6 +40,9 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include "libvarnish.h"
 #include "vct.h"
 #include "miniobj.h"
@@ -53,7 +56,7 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x2f02169c
 	int			fd;
-	int			client;
+	int			sfd;
 	int			timeout;
 	struct vtclog		*vl;
 
@@ -68,6 +71,21 @@ struct http {
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
 };
+
+#define ONLY_CLIENT(hp, av)						\
+	do {								\
+		if (hp->sfd >= 0)					\
+			vtc_log(hp->vl, 0,				\
+			    "\"%s\" only possible in client", av[0]);	\
+	} while (0)
+
+#define ONLY_SERVER(hp, av)						\
+	do {								\
+		if (hp->sfd < 0)					\
+			vtc_log(hp->vl, 0,				\
+			    "\"%s\" only possible in server", av[0]);	\
+	} while (0)
+			    
 
 /* XXX: we may want to vary this */
 static const char * const nl = "\r\n";
@@ -452,7 +470,7 @@ cmd_http_rxresp(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AN(hp->client);
+	ONLY_CLIENT(hp, av);
 	assert(!strcmp(av[0], "rxresp"));
 	av++;
 
@@ -486,7 +504,7 @@ cmd_http_txresp(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AZ(hp->client);
+	ONLY_SERVER(hp, av);
 	assert(!strcmp(av[0], "txresp"));
 	av++;
 
@@ -563,7 +581,7 @@ cmd_http_rxreq(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AZ(hp->client);
+	ONLY_SERVER(hp, av);
 	assert(!strcmp(av[0], "rxreq"));
 	av++;
 
@@ -584,7 +602,7 @@ cmd_http_rxhdrs(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AZ(hp->client);
+	ONLY_SERVER(hp, av);
 	assert(!strcmp(av[0], "rxhdrs"));
 	av++;
 
@@ -603,7 +621,7 @@ cmd_http_rxbody(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AZ(hp->client);
+	ONLY_SERVER(hp, av);
 	assert(!strcmp(av[0], "rxbody"));
 	av++;
 
@@ -630,7 +648,7 @@ cmd_http_txreq(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AN(hp->client);
+	ONLY_CLIENT(hp, av);
 	assert(!strcmp(av[0], "txreq"));
 	av++;
 
@@ -739,6 +757,48 @@ cmd_http_timeout(CMD_ARGS)
 }
 
 /**********************************************************************
+ * close and accept a new connection
+ */
+
+static void
+cmd_http_accept(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(av[1]);
+	assert(hp->sfd >= 0);
+	TCP_close(&hp->fd);
+	hp->fd = accept(hp->sfd, NULL, NULL);
+}
+
+/**********************************************************************
+ * loop operator
+ */
+
+static void
+cmd_http_loop(CMD_ARGS)
+{
+	struct http *hp;
+	unsigned n, m;
+	char *s;
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AN(av[2]);
+	AZ(av[3]);
+	n = strtod(av[1], NULL);
+	for (m = 1 ; m <= n; m++) {
+		vtc_log(vl, 4, "Loop #%u", m);
+		s = strdup(av[2]);
+		AN(s);
+		parse_string(s, cmd, hp, vl);
+	}
+}
+
+/**********************************************************************
  * Execute HTTP specifications
  */
 
@@ -757,24 +817,27 @@ static const struct cmds http_cmds[] = {
 	{ "chunked",	cmd_http_chunked },
 	{ "delay",	cmd_delay },
 	{ "sema",	cmd_sema },
+	{ "accept",	cmd_http_accept },
+	{ "loop",	cmd_http_loop },
 	{ NULL,		NULL }
 };
 
 void
-http_process(struct vtclog *vl, const char *spec, int sock, int client)
+http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 {
 	struct http *hp;
 	char *s, *q;
 
+	(void)sfd;
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
-	hp->vl = vl;
-	hp->client = client;
 	hp->timeout = 3000;
 	hp->nrxbuf = 640*1024;
 	hp->vsb = vsb_newauto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
+	hp->sfd = sfd;
+	hp->vl = vl;
 	AN(hp->rxbuf);
 	AN(hp->vsb);
 

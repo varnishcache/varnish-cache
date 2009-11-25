@@ -63,7 +63,7 @@ extern pthread_t	vtc_thread;
 
 void init_sema(void);
 
-void http_process(struct vtclog *vl, const char *spec, int sock, int client);
+void http_process(struct vtclog *vl, const char *spec, int sock, int sfd);
 
 void cmd_server_genvcl(struct vsb *vsb);
 

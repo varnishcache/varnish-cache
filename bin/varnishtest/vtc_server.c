@@ -101,7 +101,7 @@ server_thread(void *priv)
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
 		vtc_log(vl, 3, "Accepted socket fd is %d", fd);
-		http_process(vl, s->spec, fd, 0);
+		http_process(vl, s->spec, fd, s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		assert((shutdown(fd, SHUT_WR) == 0)
 		    || errno == ENOTCONN || errno == ECONNRESET);

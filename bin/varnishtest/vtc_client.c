@@ -96,7 +96,7 @@ client_thread(void *priv)
 		}
 		assert(fd >= 0);
 		vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
-		http_process(vl, c->spec, fd, 1);
+		http_process(vl, c->spec, fd, -1);
 		vtc_log(vl, 3, "Closing fd %d", fd);
 		TCP_close(&fd);
 	}
