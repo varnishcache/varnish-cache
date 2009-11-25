@@ -314,6 +314,7 @@ static void
 varnish_start(struct varnish *v)
 {
 	enum cli_status_e u;
+	char *resp, *h, *p, *q;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -328,6 +329,21 @@ varnish_start(struct varnish *v)
 	if (vtc_error)
 		return;
 	assert(u == CLIS_OK);
+	u = varnish_ask_cli(v, "debug.listen_address", &resp);
+	if (vtc_error)
+		return;
+	assert(u == CLIS_OK);
+	h = resp;
+	p = strchr(h, ' ');
+	AN(p);
+	*p++ = '\0';
+	q = strchr(p, '\n');
+	AN(q);
+	*q = '\0';
+	vtc_log(v->vl, 2, "Listen on %s %s", h, p);
+	macro_def(v->vl, v->name, "addr", "%s", h);
+	macro_def(v->vl, v->name, "port", "%s", p);
+	macro_def(v->vl, v->name, "sock", "%s:%s", h, p);
 }
 
 /**********************************************************************
@@ -343,6 +359,9 @@ varnish_stop(struct varnish *v)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
+	macro_def(v->vl, v->name, "addr", NULL);
+	macro_def(v->vl, v->name, "port", NULL);
+	macro_def(v->vl, v->name, "sock", NULL);
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	while (1) {
