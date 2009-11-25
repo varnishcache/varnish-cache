@@ -172,7 +172,7 @@ varnish_new(const char *name)
 
 	v->args = vsb_newauto();
 	v->telnet = "127.0.0.1:9001";
-	v->accept = "127.0.0.1:9081";
+	v->accept = "127.0.0.1:0";
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 

@@ -42,6 +42,7 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
+#include "vsb.h"
 #include "vqueue.h"
 #include "miniobj.h"
 #include "vss.h"
@@ -78,9 +79,15 @@ client_thread(void *priv)
 	int fd;
 	int i;
 	unsigned u;
+	struct vsb *vsb;
+	char *p;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(c->connect);
+
+	p = strdup(c->connect);
+	vsb = macro_expand(p);
+	AN(vsb);
 
 	vl = vtc_logopen(c->name);
 
@@ -88,19 +95,23 @@ client_thread(void *priv)
 		c->repeat = 1;
 	vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
 	for (u = 0; u < c->repeat; u++) {
-		vtc_log(vl, 3, "Connect to %s", c->connect);
-		fd = VSS_open(c->connect);
+		vtc_log(vl, 3, "Connect to %s", vsb_data(vsb));
+		fd = VSS_open(vsb_data(vsb));
 		for (i = 0; fd < 0 && i < 3; i++) {
 			(void)sleep(1);
-			fd = VSS_open(c->connect);
+			fd = VSS_open(vsb_data(vsb));
 		}
+		if (fd < 0)
+			vtc_log(c->vl, 0, "Failed to open %s", vsb_data(vsb));
 		assert(fd >= 0);
-		vtc_log(vl, 3, "Connected to %s fd is %d", c->connect, fd);
+		vtc_log(vl, 3, "Connected to %s fd is %d", vsb_data(vsb), fd);
 		http_process(vl, c->spec, fd, -1);
 		vtc_log(vl, 3, "Closing fd %d", fd);
 		TCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
+	vsb_delete(vsb);
+	free(p);
 	return (NULL);
 }
 
@@ -122,7 +133,7 @@ client_new(const char *name)
 	if (*c->name != 'c')
 		vtc_log(c->vl, 0, "Client name must start with 'c'");
 
-	REPLACE(c->connect, "127.0.0.1:9081");
+	REPLACE(c->connect, "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
 }

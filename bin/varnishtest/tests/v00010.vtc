@@ -8,6 +8,9 @@ server s1 {
 	rxreq
 	txresp -hdr "Panic: please" -body "012345\n"
 	sema r1 sync 2
+	accept
+	rxreq
+	txresp -hdr "Foo: foo" -body "abcdef\n"
 } -start
 
 varnish v1 -vcl+backend {
@@ -19,7 +22,12 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-varnish v1 -cliok "param.set diag_bitmap 0x00001000" 
+varnish v1 -cliok "param.set diag_bitmap 0x00001000"
+
+# We have to force a known listen address otherwise the client cannot find
+# the varnish after the restart.
+
+varnish v1 -cliok "param.set listen_address 127.0.0.1:9080" -stop -start
 
 # varnishtest defaults to auto_restart off, to avoid masking bugs.
 varnish v1 -cliok "param.set auto_restart on" 
@@ -31,13 +39,9 @@ client c1 {
 	txreq -url "/foo"
 	# Don't expect answer, the server crashed.
 	sema r1 sync 2
-	delay 2.5
 } -run
 
-server s1 {
-	rxreq
-	txresp -hdr "Foo: foo" -body "abcdef\n"
-} -start
+delay 2.5
 
 client c1 {
 	txreq -url "/"
