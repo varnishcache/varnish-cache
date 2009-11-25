@@ -13,7 +13,7 @@ server s1 {
 # Benchmark Testing
 varnish v1 -cliok "param.set listen_address 198.18.1.1:9082"
 varnish v1 -vcl+backend {} -clierr 300 start
-varnish v1 -cliok "param.set listen_address :9081,127.0.0.2:9082"
+varnish v1 -cliok "param.set listen_address 127.0.0.1:9081,127.0.0.2:9082"
 varnish v1 -start
 
 client c1 {

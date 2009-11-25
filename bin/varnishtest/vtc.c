@@ -136,7 +136,7 @@ macro_get(const char *name)
 	return (retval);
 }
 
-static struct vsb *
+struct vsb *
 macro_expand(char *name)
 {
 	struct vsb *vsb;
