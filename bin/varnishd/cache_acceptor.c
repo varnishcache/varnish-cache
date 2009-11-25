@@ -353,8 +353,37 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
+{
+	struct listen_sock *ls;
+	char h[32], p[32];
+
+	(void)cli;
+	(void)av;
+	(void)priv;
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock < 0)
+			continue;
+		TCP_myname(ls->sock, h, sizeof h, p, sizeof p);
+		cli_out(cli, "%s %s\n", h, p);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct cli_proto vca_cmds[] = {
 	{ CLI_SERVER_START,	ccf_start },
+	{ NULL }
+};
+
+static struct cli_proto vca_debug_cmds[] = {
+	{ "debug.listen_address",
+	    "debug.listen_address",
+	    "Report the actual listen address\n", 0, 0,
+	    ccf_listen_address, NULL },
 	{ NULL }
 };
 
@@ -363,6 +392,7 @@ VCA_Init(void)
 {
 
 	CLI_AddFuncs(MASTER_CLI, vca_cmds);
+	CLI_AddFuncs(DEBUG_CLI, vca_debug_cmds);
 }
 
 void
