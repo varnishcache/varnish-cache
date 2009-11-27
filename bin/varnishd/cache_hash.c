@@ -71,7 +71,6 @@ SVNID("$Id$")
 #include "cache_backend.h"
 
 static const struct hash_slinger *hash;
-unsigned	save_hash;
 
 double
 HSH_Grace(double g)
@@ -157,7 +156,6 @@ HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
 	w->stats.n_objecthead--;
-	free(oh->hash);
 	FREE_OBJ(oh);
 }
 
@@ -174,51 +172,10 @@ HSH_Freestore(struct object *o)
 }
 
 void
-HSH_Copy(const struct sess *sp, struct objhead *oh)
+HSH_BeforeVclHash(const struct sess *sp)
 {
-	unsigned u, v;
-	char *b;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	if (!save_hash)
-		return;
-
-	oh->hash = malloc(sp->lhashptr);
-	XXXAN(oh->hash);
-	b = oh->hash;
-	for (u = 0; u < sp->ihashptr; u += 2) {
-		v = pdiff(sp->hashptr[u], sp->hashptr[u + 1]);
-		memcpy(b, sp->hashptr[u], v);
-		b += v;
-		*b++ = '#';
-	}
-	*b++ = '\0';
-	assert(b <= oh->hash + sp->lhashptr);
-}
-
-void
-HSH_BeforeVclHash(struct sess *sp, unsigned nhashcount)
-{
-	char *p;
-	unsigned u;
 
 	SHA256_Init(sp->wrk->sha256ctx);
-	if (!save_hash)
-		return;
-
-	/* Allocate the pointers we need, align properly. */
-	sp->lhashptr = 1;       /* space for NUL */
-	sp->ihashptr = 0;
-	sp->nhashptr = nhashcount * 2;
-	p = WS_Alloc(sp->http->ws, sizeof(const char *) * (sp->nhashptr + 1L));
-	XXXAN(p);
-	/* Align pointer properly (?) */
-	u = (uintptr_t)p;
-	u &= sizeof(const char *) - 1;
-	if (u)
-		p += sizeof(const char *) - u;
-	sp->hashptr = (void*)p;
 }
 
 void
@@ -230,7 +187,7 @@ HSH_AfterVclHash(const struct sess *sp)
 }
 
 void
-HSH_AddString(struct sess *sp, const char *str)
+HSH_AddString(const struct sess *sp, const char *str)
 {
 	int l;
 
@@ -243,21 +200,6 @@ HSH_AddString(struct sess *sp, const char *str)
 
 	if (params->log_hash)
 		WSP(sp, SLT_Hash, "%s", str);
-
-	if (!save_hash)
-		return;
-
-	/*
-	* XXX: handle this by bouncing sp->vcl->nhashcount when it fails
-	* XXX: and dispose of this request either by reallocating the
-	* XXX: hashptr (if possible) or restarting/error the request
-	*/
-	xxxassert(sp->ihashptr < sp->nhashptr);
-
-	sp->hashptr[sp->ihashptr] = str;
-	sp->hashptr[sp->ihashptr + 1] = str + l;
-	sp->ihashptr += 2;
-	sp->lhashptr += l + 1;
 }
 
 /**********************************************************************
@@ -495,7 +437,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
-				"on waiting list <%s>", oh->hash);
+				"on waiting list <%p>", oh);
 		SES_Charge(sp);
 		sp->objhead = oh;
 		sp->wrk = NULL;
@@ -734,7 +676,6 @@ HSH_Init(void)
 {
 
 	assert(DIGEST_LEN == SHA256_LEN);	/* avoid #include pollution */
-	save_hash = params->save_hash;
 	hash = heritage.hash;
 	if (hash->start != NULL)
 		hash->start();

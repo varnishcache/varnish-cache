@@ -303,11 +303,6 @@ set spobj {
 	{ hit deliver error }
 	"const struct sess *"
     }
-    { obj.hash				STRING
-	RO
-	{ miss hit deliver error }
-	"const struct sess *"
-    }
 
     #######################################################################
     # The response we send back
@@ -583,8 +578,6 @@ puts $fo {	unsigned	magic;
 	unsigned	nsrc;
 	const char	**srcname;
 	const char	**srcbody;
-
-	unsigned	nhashcount;
 
 	vcl_init_f	*init_func;
 	vcl_fini_f	*fini_func;

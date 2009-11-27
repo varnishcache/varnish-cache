@@ -2,37 +2,4 @@
 
 test "Test banning a hash"
 
-server s1 {
-	rxreq
-	expect req.url == "/foo"
-	txresp -body "1111\n"
-	rxreq
-	expect req.url == "/foo"
-	txresp -body "11111\n"
-} -start
-
-varnish v1 -arg "-ppurge_hash=off" -vcl+backend { } -start
-varnish v1 -clierr 300 "purge.hash foo"
-varnish v1 -stop
-varnish v1 -cliok "param.set purge_hash on"
-varnish v1 -start
-
-client c1 {
-	txreq -url "/foo"
-	rxresp
-	expect resp.status == 200
-	expect resp.http.content-length == 5
-} 
-
-client c1 -run
-
-varnish v1 -cliok "purge.hash foo"
-
-client c1 {
-	txreq -url "/foo"
-	rxresp
-	expect resp.status == 200
-	expect resp.http.content-length == 6
-}
-
-client c1 -run
+varnish v1 -arg "-b 127.0.0.1:80 -a 127.0.0.1:0" -start -clierr 300 "purge.hash foo"

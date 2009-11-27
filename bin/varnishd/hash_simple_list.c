@@ -91,8 +91,6 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
 	else
 		VTAILQ_INSERT_TAIL(&hsl_head, noh, hoh_list);
 
-	HSH_Copy(sp, noh);
-
 	Lck_Unlock(&hsl_mtx);
 	return (noh);
 }

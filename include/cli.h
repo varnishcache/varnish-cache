@@ -67,13 +67,6 @@
 	    "marked obsolete.",						\
 	1, 1
 
-#define CLI_PURGE_HASH							\
-	"purge.hash",							\
-	"purge.hash <regexp>",						\
-	"\tAll objects where the hash string matches regexp will be "	\
-	    "marked obsolete.",						\
-	1, 1
-
 #define CLI_PURGE							\
 	"purge",							\
 	"purge <field> <operator> <arg> [&& <field> <oper> <arg>]...",	\

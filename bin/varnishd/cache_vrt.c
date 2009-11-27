@@ -777,21 +777,6 @@ VRT_r_obj_lastuse(const struct sess *sp)
 	return (TIM_real() - sp->obj->last_use);
 }
 
-const char *
-VRT_r_obj_hash(const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->obj == NULL)
-		return (NULL);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	if (sp->obj->objcore == NULL)
-		return (NULL);
-	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objcore->objhead, OBJHEAD_MAGIC);
-	return (sp->obj->objcore->objhead->hash);
-}
-
 unsigned
 VRT_r_req_backend_healthy(const struct sess *sp)
 {

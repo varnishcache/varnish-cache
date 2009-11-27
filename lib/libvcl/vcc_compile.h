@@ -90,7 +90,6 @@ struct tokenlist {
 	VTAILQ_HEAD(, acl_e)	acl;
 
 	unsigned		recnt;
-	unsigned		nhashcount;
 	unsigned		nsockaddr;
 };
 

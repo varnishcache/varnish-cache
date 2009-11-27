@@ -13,7 +13,7 @@ server s1 {
 	txresp -hdr "foo: 3" -body "foo3"
 } -start
 
-varnish v1 -arg "-p purge_hash=on" -vcl+backend {} -start
+varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok "purge.url FOO"
 
@@ -61,8 +61,8 @@ client c1 {
 } -run
 
 
-# Now add another two purge, the hash should not be hit.
-varnish v1 -cliok "purge.hash FOO"
+# Now add another two purges, Kilroy should not be hit
+varnish v1 -cliok "purge.url KILROY"
 varnish v1 -cliok "purge.url FOO"
 varnish v1 -expect n_purge_add == 5
 
