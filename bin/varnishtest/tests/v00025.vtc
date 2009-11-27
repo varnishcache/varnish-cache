@@ -1,0 +1,63 @@
+# $Id$
+
+test "More VCL coverage"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+sub vcl_deliver {
+	if (obj.lastuse > 3 s) {
+		set resp.http.lastuse = "then";
+	} else {
+		set resp.http.lastuse = "now";
+	}
+	set resp.http.server_port = server.port;
+}
+
+sub vcl_fetch {
+	if (req.esi) {
+		set beresp.http.esi = "yes";
+	}
+	set beresp.http.backend = req.backend;
+	if (beresp.ttl > 3 s) {
+		set beresp.http.ttl = "long";
+	} else {
+		set beresp.http.ttl = "short";
+	}
+}
+
+sub vcl_hit {
+	if (obj.grace < 3m) {
+		set obj.grace = 1m;
+	} else {
+		set obj.grace = 2m;
+	}
+	if (obj.ttl < 3m) {
+		set obj.ttl = 2m;
+	} else {
+		set obj.ttl = 3m;
+	}
+}
+
+sub vcl_miss {
+	if (bereq.between_bytes_timeout < 10s) {
+		set bereq.http.quick = "please";
+	}
+	if (bereq.connect_timeout < 10s) {
+		set bereq.http.hello = "please";
+	}
+	set bereq.connect_timeout = 10s;
+}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	txreq
+	rxresp
+} -run
