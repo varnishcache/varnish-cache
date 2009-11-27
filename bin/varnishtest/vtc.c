@@ -109,9 +109,9 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		(void)vasprintf(&m->val, fmt, ap);
 		va_end(ap);
 		AN(m->val);
-		vtc_log(vl, 2, "macro def %s=%s", m->name, m->val);
+		vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	} else if (m != NULL) {
-		vtc_log(vl, 2, "macro undef %s", m->name);
+		vtc_log(vl, 4, "macro undef %s", name);
 		VTAILQ_REMOVE(&macro_list, m, list);
 		free(m->name);
 		free(m->val);
@@ -506,6 +506,8 @@ main(int argc, char * const *argv)
 	int ch, i, ntest = 1;
 	FILE *fok;
 	static struct vtclog	*vl;
+	double tmax, t0, t00;
+	const char *nmax;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -536,9 +538,18 @@ main(int argc, char * const *argv)
 	init_sema();
 
 	vtc_thread = pthread_self();
+	tmax = 0;
+	nmax = NULL;
+	t00 = TIM_mono();
 	for (i = 0; i < ntest; i++) {
 		for (ch = 0; ch < argc; ch++) {
+			t0 = TIM_mono();
 			exec_file(argv[ch], vl);
+			t0 = TIM_mono() - t0;
+			if (t0 > tmax) {
+				tmax = t0;
+				nmax = argv[ch];
+			}
 			if (vtc_error)
 				break;
 		}
@@ -548,6 +559,11 @@ main(int argc, char * const *argv)
 
 	if (vtc_error)
 		return (2);
+
+	t00 = TIM_mono() - t00;
+	if (tmax > 0 && nmax != NULL)
+		vtc_log(vl, 1, "Slowest test: %s %.3fs", nmax, tmax);
+	vtc_log(vl, 1, "Total duration: %.3fs", t00);
 
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)
