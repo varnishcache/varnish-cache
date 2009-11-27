@@ -712,12 +712,6 @@ static const struct parspec input_parspec[] = {
 		"Log the hash string to shared memory log.\n",
 		0,
 		"off", "bool" },
-	{ "purge_hash", tweak_bool, &master.save_hash, 0, 0,
-		"Enable purge.hash command.\n"
-		"NB: this increases storage requirement per object "
-		"by the length of the hash string.\n",
-		MUST_RESTART,
-		"off", "bool" },
 	{ "log_local_address", tweak_bool, &master.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
 		"SessionOpen shared memory record.\n",

@@ -297,10 +297,9 @@ dumptree(struct cli *cli, uintptr_t p, int indent)
 		return;
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
-		cli_out(cli, "%*.*sN %d r%u <%02x%02x%02x...> <%s>\n",
+		cli_out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
 		    indent, indent, "", indent / 2, oh->refcnt,
-		    oh->digest[0], oh->digest[1], oh->digest[2],
-		    oh->hash);
+		    oh->digest[0], oh->digest[1], oh->digest[2]);
 		return;
 	}
 	assert(hcb_is_y(p));
@@ -424,6 +423,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	struct objhead *oh;
 	unsigned u;
 
+	(void)sp;
 	oh =  hcb_insert(&hcb_root, noh, 0);
 	if (oh != NULL) {
 		/* Assert that we didn't muck with the tree without lock */
@@ -447,7 +447,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	 * Try again, holding lock and fully ready objhead, so that if
 	 * somebody else beats us back, they do not get surprised.
 	 */
-	HSH_Copy(sp, noh);
 	Lck_Lock(&hcb_mtx);
 	assert(noh->refcnt == 1);
 	oh =  hcb_insert(&hcb_root, noh, 1);
@@ -458,8 +457,6 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 #endif
 	} else {
 		CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
-		free(noh->hash);
-		noh->hash = NULL;
 		VSL_stats->hcb_lock++;
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);

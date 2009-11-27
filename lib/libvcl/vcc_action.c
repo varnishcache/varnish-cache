@@ -269,7 +269,6 @@ parse_set(struct tokenlist *tl)
 		 * variable, so that varnishd can preallocate the worst case
 		 * number of slots for composing the hash string.
 		 */
-		tl->nhashcount++;
 		break;
 	case STRING:
 		if (tl->t->tok != '=') {

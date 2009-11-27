@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4236 2009-09-14 08:47:03Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19:03:25Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -278,12 +278,6 @@ struct var vcc_vars[] = {
 	    NULL,
 	    V_RO,	    0,
 	    VCL_MET_HIT | VCL_MET_DELIVER | VCL_MET_ERROR
-	},
-	{ "obj.hash", STRING, 8,
-	    "VRT_r_obj_hash(sp)",
-	    NULL,
-	    V_RO,	    0,
-	    VCL_MET_MISS | VCL_MET_HIT | VCL_MET_DELIVER | VCL_MET_ERROR
 	},
 	{ "resp.proto", STRING, 10,
 	    "VRT_r_resp_proto(sp)",

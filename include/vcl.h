@@ -53,8 +53,6 @@ struct VCL_conf {
 	const char	**srcname;
 	const char	**srcbody;
 
-	unsigned	nhashcount;
-
 	vcl_init_f	*init_func;
 	vcl_fini_f	*fini_func;
 

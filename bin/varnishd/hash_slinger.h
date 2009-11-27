@@ -54,15 +54,14 @@ void HSH_Object(const struct sess *sp);
 void HSH_Prealloc(const struct sess *sp);
 void HSH_Cleanup(struct worker *w);
 void HSH_Freestore(struct object *o);
-void HSH_Copy(const struct sess *sp, struct objhead *o);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(const struct sess *sp);
 void HSH_Ref(struct object *o);
 void HSH_Drop(struct sess *sp);
 double HSH_Grace(double g);
 void HSH_Init(void);
-void HSH_AddString(struct sess *sp, const char *str);
-void HSH_BeforeVclHash(struct sess *sp, unsigned hashcount);
+void HSH_AddString(const struct sess *sp, const char *str);
+void HSH_BeforeVclHash(const struct sess *sp);
 void HSH_AfterVclHash(const struct sess *sp);
 void HSH_DerefObjCore(struct sess *sp);
 void HSH_FindBan(struct sess *sp, struct objcore **oc);
@@ -79,7 +78,6 @@ struct objhead {
 	struct lock		mtx;
 	unsigned		refcnt;
 	VTAILQ_HEAD(,objcore)	objcs;
-	char			*hash;
 	unsigned char		digest[DIGEST_LEN];
 	union {
 		VTAILQ_HEAD(, sess)	__u_waitinglist;
@@ -103,7 +101,6 @@ struct objhead {
 #define hoh_head u.n.u_n_hoh_head
 };
 
-extern unsigned	save_hash;
 void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
 void HSH_Deref(struct worker *w, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */

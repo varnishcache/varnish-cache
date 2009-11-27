@@ -160,18 +160,6 @@ ban_cond_url(const struct ban_test *bt, const struct object *o,
 }
 
 static int
-ban_cond_hash(const struct ban_test *bt, const struct object *o,
-   const struct sess *sp)
-{
-	(void)sp;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore->objhead, OBJHEAD_MAGIC);
-	AN(o->objcore->objhead->hash);
-	return(ban_cond_str(bt, o->objcore->objhead->hash));
-}
-
-static int
 ban_cond_req_http(const struct ban_test *bt, const struct object *o,
    const struct sess *sp)
 {
@@ -759,24 +747,12 @@ ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
 static void
 ccf_purge_hash(struct cli *cli, const char * const *av, void *priv)
 {
-	const char *aav[6];
 
+	(void)av;
 	(void)priv;
-	if (!save_hash) {
-		cli_out(cli,
-		    "purge.hash not possible.\n"
-		    "Set the \"purge_hash\" parameter to on\n"
-		    "and restart the varnish worker process to enable.\n");
-		cli_result(cli, CLIS_CANT);
-		return;
-	}
-	aav[0] = NULL;
-	aav[1] = "purge";
-	aav[2] = "obj.hash";
-	aav[3] = "~";
-	aav[4] = av[2];
-	aav[5] = NULL;
-	ccf_purge(cli, aav, priv);
+	cli_out(cli, "purge.hash is no longer supported.\n");
+	cli_result(cli, CLIS_CANT);
+	return;
 }
 
 static void
@@ -819,10 +795,10 @@ static struct cli_proto ban_cmds[] = {
 	 * XXX: COMPAT: to stay compatible with 1.x series syntax.
 	 */
 	{ CLI_HIDDEN("url.purge", 1, 1)		ccf_purge_url },
-	{ CLI_HIDDEN("hash.purge", 1, 1)	ccf_purge_hash },
+	{ CLI_HIDDEN("hash.purge", 0, 1)	ccf_purge_hash },
+	{ CLI_HIDDEN("purge.hash", 0, 1)	ccf_purge_hash },
 
 	{ CLI_PURGE_URL,			ccf_purge_url },
-	{ CLI_PURGE_HASH,			ccf_purge_hash },
 	{ CLI_PURGE,				ccf_purge },
 	{ CLI_PURGE_LIST,			ccf_purge_list },
 	{ NULL }

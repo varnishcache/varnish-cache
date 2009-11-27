@@ -150,8 +150,6 @@ hcl_lookup(const struct sess *sp, struct objhead *noh)
 
 	noh->hoh_head = hp;
 
-	HSH_Copy(sp, noh);
-
 	Lck_Unlock(&hp->mtx);
 	return (noh);
 }

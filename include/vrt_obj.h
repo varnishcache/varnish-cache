@@ -66,7 +66,6 @@ void VRT_l_obj_ttl(const struct sess *, double);
 double VRT_r_obj_grace(const struct sess *);
 void VRT_l_obj_grace(const struct sess *, double);
 double VRT_r_obj_lastuse(const struct sess *);
-const char * VRT_r_obj_hash(const struct sess *);
 const char * VRT_r_resp_proto(const struct sess *);
 void VRT_l_resp_proto(const struct sess *, const char *, ...);
 int VRT_r_resp_status(const struct sess *);

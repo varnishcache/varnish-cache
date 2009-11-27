@@ -423,12 +423,6 @@ struct sess {
 	struct acct		acct;
 	struct acct		acct_req;
 
-	/* pointers to hash string components */
-	unsigned		nhashptr;
-	unsigned		ihashptr;
-	unsigned		lhashptr;
-	const char		**hashptr;
-
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
 #endif

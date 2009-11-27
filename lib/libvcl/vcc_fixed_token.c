@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4236 2009-09-14 08:47:03Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19:03:25Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4236 2009-09-14 08");
-	vsb_cat(sb, ":47:03Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19");
+	vsb_cat(sb, ":03:25Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -188,14 +188,13 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tunsigned\tnref;\n\tunsigned\tbusy;\n");
 	vsb_cat(sb, "\tunsigned\tdiscard;\n\n\tunsigned\tnsrc;\n");
 	vsb_cat(sb, "\tconst char\t**srcname;\n\tconst char\t**srcbody;\n");
-	vsb_cat(sb, "\n\tunsigned\tnhashcount;\n\n\tvcl_init_f\t*init_func;");
-	vsb_cat(sb, "\n\tvcl_fini_f\t*fini_func;\n\n");
-	vsb_cat(sb, "\tvcl_func_f\t*recv_func;\n\tvcl_func_f\t*pipe_func;\n");
-	vsb_cat(sb, "\tvcl_func_f\t*pass_func;\n\tvcl_func_f\t*hash_func;\n");
-	vsb_cat(sb, "\tvcl_func_f\t*miss_func;\n\tvcl_func_f\t*hit_func;\n");
-	vsb_cat(sb, "\tvcl_func_f\t*fetch_func;\n\tvcl_func_f\t*deliver_fun");
-	vsb_cat(sb, "c;\n\tvcl_func_f\t*error_func;\n");
-	vsb_cat(sb, "};\n");
+	vsb_cat(sb, "\n\tvcl_init_f\t*init_func;\n\tvcl_fini_f\t*fini_func;");
+	vsb_cat(sb, "\n\n\tvcl_func_f\t*recv_func;\n");
+	vsb_cat(sb, "\tvcl_func_f\t*pipe_func;\n\tvcl_func_f\t*pass_func;\n");
+	vsb_cat(sb, "\tvcl_func_f\t*hash_func;\n\tvcl_func_f\t*miss_func;\n");
+	vsb_cat(sb, "\tvcl_func_f\t*hit_func;\n\tvcl_func_f\t*fetch_func;\n");
+	vsb_cat(sb, "\tvcl_func_f\t*deliver_func;\n\tvcl_func_f\t*error_fun");
+	vsb_cat(sb, "c;\n};\n");
 
 	/* ../../include/vrt.h */
 
@@ -319,8 +318,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4236 2009-09-14 08");
-	vsb_cat(sb, ":47:03Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19");
+	vsb_cat(sb, ":03:25Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sockaddr * VRT_r_clien");
 	vsb_cat(sb, "t_ip(const struct sess *);\nstruct sockaddr * VRT_r_se");
@@ -384,7 +383,6 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "double VRT_r_obj_grace(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_obj_grace(const struct sess *, double);\n");
 	vsb_cat(sb, "double VRT_r_obj_lastuse(const struct sess *);\n");
-	vsb_cat(sb, "const char * VRT_r_obj_hash(const struct sess *);\n");
 	vsb_cat(sb, "const char * VRT_r_resp_proto(const struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_resp_proto(const struct sess *, const char ");
 	vsb_cat(sb, "*, ...);\nint VRT_r_resp_status(const struct sess *);\n");
