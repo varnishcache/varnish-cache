@@ -85,7 +85,7 @@ struct http {
 			vtc_log(hp->vl, 0,				\
 			    "\"%s\" only possible in server", av[0]);	\
 	} while (0)
-			    
+
 
 /* XXX: we may want to vary this */
 static const char * const nl = "\r\n";
@@ -138,7 +138,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 	AZ(vsb_overflowed(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
-	if (l != vsb_len(hp->vsb)) 
+	if (l != vsb_len(hp->vsb))
 		vtc_log(hp->vl, 0, "Write failed: %s", strerror(errno));
 }
 
