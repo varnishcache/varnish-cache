@@ -213,6 +213,7 @@ AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
+AC_CHECK_FUNCS([backtrace])
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
 case $target in
