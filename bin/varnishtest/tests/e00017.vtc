@@ -1,0 +1,88 @@
+# $Id: e00003.vtc 3742 2009-02-11 07:53:47Z tfheen $
+
+test "Aggressive use of ESI include"
+
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/00"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/01"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/02"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/03"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/04"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/05"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/06"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/07"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/08"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/09"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/10"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/11"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/12"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/13"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/14"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/15"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/16"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/17"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/18"/>
+		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/19"/>
+		After include
+	}
+	rxreq 
+	txresp -body { Included file 00 }
+	rxreq 
+	txresp -body { Included file 01 }
+	rxreq 
+	txresp -body { Included file 02 }
+	rxreq 
+	txresp -body { Included file 03 }
+	rxreq 
+	txresp -body { Included file 04 }
+	rxreq 
+	txresp -body { Included file 05 }
+	rxreq 
+	txresp -body { Included file 06 }
+	rxreq
+	txresp -body { Included file 07 }
+	rxreq 
+	txresp -body { Included file 08 }
+	rxreq 
+	txresp -body { Included file 09 }
+	rxreq 
+	txresp -body { Included file 10 }
+	rxreq 
+	txresp -body { Included file 11 }
+	rxreq 
+	txresp -body { Included file 12 }
+	rxreq 
+	txresp -body { Included file 13 }
+	rxreq 
+	txresp -body { Included file 14 }
+	rxreq 
+	txresp -body { Included file 15 }
+	rxreq 
+	txresp -body { Included file 16 }
+	rxreq
+	txresp -body { Included file 17 }
+	rxreq 
+	txresp -body { Included file 18 }
+	rxreq 
+	txresp -body { Included file 19 }
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 200
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0

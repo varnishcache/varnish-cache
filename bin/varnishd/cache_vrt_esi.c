@@ -384,7 +384,7 @@ esi_handle_include(struct esi_work *ew)
 			memcpy(c, val.b, Tlen(val));
 			val.b = c;
 			val.e = val.b + s;
-			*val.e = '\0';
+			val.e[-1] = '\0';
 		}
 
 		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
