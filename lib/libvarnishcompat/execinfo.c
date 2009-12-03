@@ -29,6 +29,8 @@
 #include "svnid.h"
 SVNID("$Id: execinfo.c,v 1.3 2004/07/19 05:21:09 sobomax Exp $")
 
+#ifndef HAVE_BACKTRACE
+
 #include "compat/execinfo.h"
 
 #if defined (__GNUC__) && __GNUC__ >= 4	/* XXX Correct version to check for ? */
@@ -428,4 +430,5 @@ backtrace_symbols(void *const *buffer, int size)
 	return (0);
 }
 
-#endif
+#endif /*  (__GNUC__) && __GNUC__ >= 4 */
+#endif /* HAVE_BACKTRACE */
