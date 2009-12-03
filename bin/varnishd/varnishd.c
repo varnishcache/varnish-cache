@@ -209,6 +209,7 @@ usage(void)
 	fprintf(stderr, FMT, "-b address:port", "backend address and port");
 	fprintf(stderr, FMT, "", "   -b <hostname_or_IP>");
 	fprintf(stderr, FMT, "", "   -b '<hostname_or_IP>:<port_or_service>'");
+	fprintf(stderr, FMT, "-C", "print VCL code compiled to C language");
 	fprintf(stderr, FMT, "-d", "debug");
 	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
