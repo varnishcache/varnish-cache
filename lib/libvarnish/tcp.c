@@ -240,8 +240,10 @@ void
 TCP_linger(int sock, int linger)
 {
 	struct linger lin;
+	int i;
 
 	memset(&lin, 0, sizeof lin);
 	lin.l_onoff = linger;
-	AZ(setsockopt(sock, SOL_SOCKET, SO_LINGER, &lin, sizeof lin));
+	i = setsockopt(sock, SOL_SOCKET, SO_LINGER, &lin, sizeof lin);
+	assert(i == 0 || errno == EBADF);
 }
