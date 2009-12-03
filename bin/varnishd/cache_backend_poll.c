@@ -173,23 +173,6 @@ vbp_poke(struct vbp_target *vt)
 	}
 	vt->good_xmit |= 1;
 
-	/* And do a shutdown(WR) so we know that the backend got it */
-	i = shutdown(s, SHUT_WR);
-	if (i != 0) {
-		vt->err_shut |= 1;
-		TCP_close(&s);
-		return;
-	}
-	vt->good_shut |= 1;
-
-	/* Check if that took too long time */
-	t_now = TIM_real();
-	tmo = (int)round((t_end - t_now) * 1e3);
-	if (tmo < 0) {
-		TCP_close(&s);
-		return;
-	}
-
 	pfd->fd = s;
 	rlen = 0;
 	do {
@@ -236,7 +219,7 @@ vbp_poke(struct vbp_target *vt)
 
 	i = sscanf(vt->resp_buf, "HTTP/%*f %u %s", &resp, buf);
 
-	if (i == 2 && resp == 200)
+	if (i == 2 && resp == vt->probe.exp_status)
 		vt->happy |= 1;
 }
 
@@ -335,6 +318,8 @@ vbp_wrk_poll_backend(void *priv)
 		vt->probe.window = 8;
 	if (vt->probe.threshold == 0)
 		vt->probe.threshold = 3;
+	if (vt->probe.exp_status == 0)
+		vt->probe.exp_status = 200;
 
 	if (vt->probe.threshold == ~0U)
 		vt->probe.initial = vt->probe.threshold - 1;

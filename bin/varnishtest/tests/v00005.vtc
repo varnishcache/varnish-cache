@@ -2,6 +2,16 @@
 
 test "VCL: test backend probe syntax"
 
+# Check status definition
+varnish v1 -vcl {
+	backend b1 {
+		.host = "127.0.0.1";
+		.probe = {
+			.expected_response = 204;
+		}
+	}
+}
+
 # Check url definition
 varnish v1 -vcl {
 	backend b1 {
