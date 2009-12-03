@@ -99,7 +99,6 @@ if (req.http.host ~ "^(www\.)?example.com$") {
 To avoid overloading backend servers,
 .Fa .max_connections
 can be set to limit the maximum number of concurrent backend connections.
-.Ed
 .Pp
 The timeout parameters can be overridden in the backend declaration.
 The timeout parameters are
