@@ -79,15 +79,6 @@ struct vrt_backend {
 };
 
 /*
- * A director with a predictable reply
- */
-
-struct vrt_dir_simple {
-	const char				*name;
-	const struct vrt_backend		*host;
-};
-
-/*
  * A director with an unpredictable reply
  */
 
@@ -171,7 +162,7 @@ void VRT_synth_page(struct sess *sp, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir_simple(struct cli *, struct director **,
-    const struct vrt_dir_simple *);
+    const struct vrt_backend *);
 void VRT_init_dir_random(struct cli *, struct director **,
     const struct vrt_dir_random *);
 void VRT_init_dir_round_robin(struct cli *, struct director **,

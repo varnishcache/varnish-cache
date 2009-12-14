@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19:03:25Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4376 2009-11-27 11:06:32Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *

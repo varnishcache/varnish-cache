@@ -747,15 +747,9 @@ vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first,
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
 
 	Fi(tl, 0,
-	    "\tVRT_init_dir_simple(cli, &VGC_backend_%.*s , &sbe_%.*s);\n",
-	    PF(h->name), PF(h->name));
+	    "\tVRT_init_dir_simple(cli, &VGC_backend_%.*s , &bh_%d);\n",
+	    PF(h->name), h->hnum);
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(h->name));
-
-	Fh(tl, 0, "\nstatic const struct vrt_dir_simple sbe_%.*s = {\n",
-	    PF(h->name));
-	Fh(tl, 0, "\t.name = \"%.*s\",\n", PF(h->name));
-	Fh(tl, 0, "\t.host = &bh_%d,\n", h->hnum);
-	Fh(tl, 0, "};\n");
 
 }
 
