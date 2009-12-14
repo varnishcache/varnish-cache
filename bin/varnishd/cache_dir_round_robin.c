@@ -75,7 +75,7 @@ vdi_round_robin_getfd(struct sess *sp)
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[vs->next_host].backend;
 		vs->next_host = (vs->next_host + 1) % vs->nhosts;
-		if (!backend_is_healthy(sp, backend))
+		if (!VBE_Healthy(sp, backend))
 			continue;
 		vbe = VBE_GetVbe(sp, backend);
 		if (vbe != NULL)
@@ -96,7 +96,7 @@ vdi_round_robin_healthy(const struct sess *sp)
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (backend_is_healthy(sp, vs->hosts[i].backend))
+		if (VBE_Healthy(sp, vs->hosts[i].backend))
 			return 1;
 	}
 	return 0;

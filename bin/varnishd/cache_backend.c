@@ -229,7 +229,7 @@ VBE_GetFd(struct sess *sp)
 	sp->vbe = sp->director->getfd(sp);
 }
 
-/*
+/*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on sp->objhead. This is mainly for saint-mode,
  * but also takes backend->healthy into account. If
@@ -239,8 +239,9 @@ VBE_GetFd(struct sess *sp)
  * The threshold has to be evaluated _after_ the timeout check, otherwise
  * items would never time out once the threshold is reached.
  */
+
 unsigned int
-backend_is_healthy(const struct sess *sp, struct backend *backend)
+VBE_Healthy(const struct sess *sp, struct backend *backend)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -339,7 +340,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		VBE_ClosedFd(sp);
 	}
 
-	if (!backend_is_healthy(sp, bp)) {
+	if (!VBE_Healthy(sp, bp)) {
 		VSL_stats->backend_unhealthy++;
 		return (NULL);
 	}

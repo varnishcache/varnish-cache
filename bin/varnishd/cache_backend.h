@@ -143,7 +143,7 @@ struct backend {
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbe_conn *vc);
 struct vbe_conn *VBE_GetVbe(struct sess *sp, struct backend *bp);
-unsigned int backend_is_healthy(const struct sess *sp, struct backend *backend);
+unsigned int VBE_Healthy(const struct sess *sp, struct backend *backend);
 
 /* cache_backend_cfg.c */
 extern struct lock VBE_mtx;
