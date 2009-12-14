@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19:03:25Z phk $
+ * $Id: vcc_gen_fixed_token.tcl 4376 2009-11-27 11:06:32Z phk $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19");
-	vsb_cat(sb, ":03:25Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4376 2009-11-27 11");
+	vsb_cat(sb, ":06:32Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -253,11 +253,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tunsigned\t\t\tmax_connections;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tsaintmode_threshold;\n");
 	vsb_cat(sb, "\tstruct vrt_backend_probe\tprobe;\n");
-	vsb_cat(sb, "};\n\n/*\n * A director with a predictable reply\n");
-	vsb_cat(sb, " */\n\nstruct vrt_dir_simple {\n");
-	vsb_cat(sb, "\tconst char\t\t\t\t*name;\n\tconst struct vrt_backend");
-	vsb_cat(sb, "\t\t*host;\n};\n\n/*\n * A director with an unpredicta");
-	vsb_cat(sb, "ble reply\n */\n\nstruct vrt_dir_random_entry {\n");
+	vsb_cat(sb, "};\n\n/*\n * A director with an unpredictable reply\n");
+	vsb_cat(sb, " */\n\nstruct vrt_dir_random_entry {\n");
 	vsb_cat(sb, "\tconst struct vrt_backend\t\t*host;\n");
 	vsb_cat(sb, "\tdouble\t\t\t\t\tweight;\n};\n");
 	vsb_cat(sb, "\nstruct vrt_dir_random {\n\tconst char\t\t\t\t*name;\n");
@@ -302,7 +299,7 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "ss *sp, unsigned flags, const char *, ...);\n");
 	vsb_cat(sb, "\n/* Backend related */\nvoid VRT_init_dir_simple(stru");
 	vsb_cat(sb, "ct cli *, struct director **,\n");
-	vsb_cat(sb, "    const struct vrt_dir_simple *);\n");
+	vsb_cat(sb, "    const struct vrt_backend *);\n");
 	vsb_cat(sb, "void VRT_init_dir_random(struct cli *, struct director");
 	vsb_cat(sb, " **,\n    const struct vrt_dir_random *);\n");
 	vsb_cat(sb, "void VRT_init_dir_round_robin(struct cli *, struct dir");
@@ -318,8 +315,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4358 2009-11-19 19");
-	vsb_cat(sb, ":03:25Z phk $\n *\n * NB:  This file is machine genera");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4376 2009-11-27 11");
+	vsb_cat(sb, ":06:32Z phk $\n *\n * NB:  This file is machine genera");
 	vsb_cat(sb, "ted, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_t");
 	vsb_cat(sb, "oken.tcl instead\n */\n\nstruct sockaddr * VRT_r_clien");
 	vsb_cat(sb, "t_ip(const struct sess *);\nstruct sockaddr * VRT_r_se");

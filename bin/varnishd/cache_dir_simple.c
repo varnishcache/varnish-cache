@@ -95,7 +95,7 @@ vdi_simple_fini(struct director *d)
 
 void
 VRT_init_dir_simple(struct cli *cli, struct director **bp,
-    const struct vrt_dir_simple *t)
+    const struct vrt_backend *t)
 {
 	struct vdi_simple *vs;
 
@@ -106,12 +106,12 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp,
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
-	REPLACE(vs->dir.vcl_name, t->host->vcl_name);
+	REPLACE(vs->dir.vcl_name, t->vcl_name);
 	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.fini = vdi_simple_fini;
 	vs->dir.healthy = vdi_simple_healthy;
 
-	vs->backend = VBE_AddBackend(cli, t->host);
+	vs->backend = VBE_AddBackend(cli, t);
 
 	*bp = &vs->dir;
 }
