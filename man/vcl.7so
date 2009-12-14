@@ -369,8 +369,8 @@ Proceed with pass mode.
 .\" vcl_hash
 .It Cm vcl_hash
 Use
-.Cm req.hash += req.http.Set-Cookie
-or similar to include the Set-Cookie HTTP header in the hash string.
+.Cm req.hash += req.http.Cookie
+or similar to include the Cookie HTTP header in the hash string.
 The
 .Cm vcl_hash
 subroutine may terminate with one of the following keywords:
@@ -669,7 +669,7 @@ sub vcl_recv {
 
 sub vcl_fetch {
     if (obj.http.Set-Cookie) {
-        insert;
+        deliver;
     }
 }
 .Ed
