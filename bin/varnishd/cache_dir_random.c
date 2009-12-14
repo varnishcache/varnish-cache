@@ -81,7 +81,7 @@ vdi_random_getfd(struct sess *sp)
 		/* Sum up the weights of healty backends */
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)
-			if (backend_is_healthy(sp,vs->hosts[i].backend))
+			if (VBE_Healthy(sp,vs->hosts[i].backend))
 				s1 += vs->hosts[i].weight;
 
 		if (s1 == 0.0)
@@ -94,7 +94,7 @@ vdi_random_getfd(struct sess *sp)
 
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
-			if (!backend_is_healthy(sp, vs->hosts[i].backend))
+			if (!VBE_Healthy(sp, vs->hosts[i].backend))
 				continue;
 			s1 += vs->hosts[i].weight;
 			if (r >= s1)
@@ -120,7 +120,7 @@ vdi_random_healthy(const struct sess *sp)
 	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (backend_is_healthy(sp,vs->hosts[i].backend))
+		if (VBE_Healthy(sp,vs->hosts[i].backend))
 			return 1;
 	}
 	return 0;
