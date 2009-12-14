@@ -1,14 +1,12 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.0.5
+Version: 2.0.6
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 #Patch0: varnish.varnishtest_debugflag.patch
-#Patch1: varnish.s390x_pagesize.patch
-#Patch2: varnish.sparc_pagesize.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -71,8 +69,6 @@ Varnish is a high-performance HTTP accelerator
 #./autogen.sh
 
 #%patch0 -p0
-#%patch1 -p0
-#%patch2 -p0
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
@@ -239,6 +235,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Dec 14 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.6-1
+- New upstream release
+
 * Mon Nov 09 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.5-1
 - New upstream release
 
