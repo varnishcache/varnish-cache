@@ -244,7 +244,7 @@
 #  define SIZEOF_PTR_2POW	3
 #  define NO_TLS
 #endif
-#ifdef __sparc64__
+#ifdef __sparc__
 #  define PAGESIZE_2POW		13
 #  define QUANTUM_2POW		4
 #  define SIZEOF_PTR_2POW	3
@@ -272,6 +272,11 @@
 #  define PAGESIZE_2POW		12
 #  define QUANTUM_2POW		4
 #  define SIZEOF_PTR_2POW	2
+#endif
+#ifdef __s390x__
+#  define PAGESIZE_2POW		12
+#  define QUANTUM_2POW		4
+#  define SIZEOF_PTR_2POW	3
 #endif
 
 #define	QUANTUM			((size_t)(1U << QUANTUM_2POW))
