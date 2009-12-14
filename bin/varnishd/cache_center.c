@@ -775,12 +775,6 @@ cnt_lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	if (sp->obj == NULL) {
-		HSH_BeforeVclHash(sp);
-		VCL_hash_method(sp);
-		assert(sp->handling == VCL_RET_HASH);
-		HSH_AfterVclHash(sp);
-	}
 
 	oc = HSH_Lookup(sp, &oh);
 
@@ -1015,6 +1009,7 @@ DOT recv -> hash [label="lookup",style=bold,color=green,weight=4]
 static int
 cnt_recv(struct sess *sp)
 {
+	unsigned recv_handling;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -1030,12 +1025,19 @@ cnt_recv(struct sess *sp)
 	sp->disable_esi = 0;
 
 	VCL_recv_method(sp);
+	recv_handling = sp->handling;
+
 	if (sp->restarts >= params->max_restarts) {
 		if (sp->err_code == 0)
 			sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
 	}
+
+	HSH_BeforeVclHash(sp);
+	VCL_hash_method(sp);
+	assert(sp->handling == VCL_RET_HASH);
+	HSH_AfterVclHash(sp);
 
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) {
 		sp->wantbody = 0;
@@ -1044,7 +1046,7 @@ cnt_recv(struct sess *sp)
 		sp->wantbody = 1;
 
 	sp->sendbody = 0;
-	switch(sp->handling) {
+	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
 		/* XXX: discard req body, if any */
 		sp->step = STP_LOOKUP;
