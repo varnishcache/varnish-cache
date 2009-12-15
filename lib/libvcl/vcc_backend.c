@@ -72,6 +72,7 @@ struct host {
 	VTAILQ_ENTRY(host)      list;
 	int	                hnum;
 	struct token            *name;
+	char			*vgcname;
 };
 
 static const char *
@@ -760,6 +761,8 @@ vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first,
 	h->name = t_dir;
 	vcc_AddDef(tl, t_dir, R_BACKEND);
 	sprintf(vgcname, "VGC_backend__%.*s", PF(h->name));
+	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
+	strcpy(h->vgcname, vgcname);
 
 	vcc_ParseHostDef(tl, &h->hnum, h->name, t_first, -1, vgcname);
 	ERRCHK(tl);
