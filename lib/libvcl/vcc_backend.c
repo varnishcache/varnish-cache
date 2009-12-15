@@ -199,8 +199,13 @@ vcc_EmitBeIdent(struct vsb *v, const struct token *name,
 	AN(qual);
 	assert(first != last);
 	vsb_printf(v, "\t.ident =");
-	vsb_printf(v, "\n\t    \"%.*s %.*s [%d] \"",
-	    PF(qual), PF(name), serial);
+	if (serial >= 0) {
+		vsb_printf(v, "\n\t    \"%.*s %.*s [%d] \"",
+		    PF(qual), PF(name), serial);
+	} else {
+		vsb_printf(v, "\n\t    \"%.*s %.*s \"",
+		    PF(qual), PF(name));
+	}
 	while (1) {
 		if (first->dec != NULL)
 			vsb_printf(v, "\n\t    \"\\\"\" %.*s \"\\\" \"",
@@ -522,7 +527,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	Fb(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
 
 	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
-	if (serial)
+	if (serial >= 0)
 		Fb(tl, 0, "[%d]", serial);
 	Fb(tl, 0, "\",\n");
 
@@ -741,15 +746,15 @@ vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first,
 	h = TlAlloc(tl, sizeof *h);
 	h->name = t_dir;
 
-	vcc_ParseHostDef(tl, &h->hnum, h->name, t_first, 0);
+	vcc_ParseHostDef(tl, &h->hnum, h->name, t_first, -1);
 	ERRCHK(tl);
 
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
 
 	Fi(tl, 0,
-	    "\tVRT_init_dir_simple(cli, &VGC_backend_%.*s , &bh_%d);\n",
+	    "\tVRT_init_dir_simple(cli, &VGC_backend__%.*s , &bh_%d);\n",
 	    PF(h->name), h->hnum);
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(h->name));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(h->name));
 
 }
 
@@ -780,7 +785,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 	t_dir = tl->t;
 	vcc_NextToken(tl);
 
-	Fh(tl, 1, "\n#define VGC_backend_%.*s (VCL_conf.director[%d])\n",
+	Fh(tl, 1, "\n#define VGC_backend__%.*s (VCL_conf.director[%d])\n",
 	    PF(t_dir), tl->ndirector);
 	vcc_AddDef(tl, t_dir, R_BACKEND);
 	tl->ndirector++;

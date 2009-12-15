@@ -104,6 +104,6 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl, const struct token *t_policy,
 	Fc(tl, 0, "\t.members = vdrre_%.*s,\n", PF(t_dir));
 	Fc(tl, 0, "};\n");
 	Fi(tl, 0, "\tVRT_init_dir_round_robin("
-	    "cli, &VGC_backend_%.*s , &vdrr_%.*s);\n", PF(t_dir), PF(t_dir));
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend_%.*s);\n", PF(t_dir));
+	    "cli, &VGC_backend__%.*s , &vdrr_%.*s);\n", PF(t_dir), PF(t_dir));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(t_dir));
 }
