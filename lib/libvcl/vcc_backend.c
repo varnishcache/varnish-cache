@@ -191,21 +191,18 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
  */
 
 static void
-vcc_EmitBeIdent(struct vsb *v, const struct token *name,
-    const struct token *qual, int serial, const struct token *first,
-    const struct token *last)
+vcc_EmitBeIdent(struct tokenlist *tl, struct vsb *v, 
+    int serial, const struct token *first, const struct token *last)
 {
 
-	AN(name);
-	AN(qual);
 	assert(first != last);
 	vsb_printf(v, "\t.ident =");
 	if (serial >= 0) {
 		vsb_printf(v, "\n\t    \"%.*s %.*s [%d] \"",
-		    PF(qual), PF(name), serial);
+		    PF(tl->t_policy), PF(tl->t_dir), serial);
 	} else {
 		vsb_printf(v, "\n\t    \"%.*s %.*s \"",
-		    PF(qual), PF(name));
+		    PF(tl->t_policy), PF(tl->t_dir));
 	}
 	while (1) {
 		if (first->dec != NULL)
@@ -490,8 +487,8 @@ vcc_ParseProbe(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
-    const struct token *qual, int serial, const char *vgcname)
+vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
+    const char *vgcname)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -530,7 +527,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	*nbh = tl->nbackend_host++;
 	Fb(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
 
-	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(name));
+	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(tl->t_dir));
 	if (serial >= 0)
 		Fb(tl, 0, "[%d]", serial);
 	Fb(tl, 0, "\",\n");
@@ -657,7 +654,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
 	ExpectErr(tl, '}');
 
 	/* We have parsed it all, emit the ident string */
-	vcc_EmitBeIdent(tl->fb, name, qual, serial, t_first, tl->t);
+	vcc_EmitBeIdent(tl, tl->fb, serial, t_first, tl->t);
 
 	/* Emit the hosthdr field, fall back to .host if not specified */
 	Fb(tl, 0, "\t.hosthdr = ");
@@ -699,8 +696,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, const struct token *name,
  */
 
 void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name,
-    const struct token *qual, int serial)
+vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, int serial)
 {
 	struct host *h;
 	struct token *t;
@@ -726,9 +722,9 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name,
 	} else if (tl->t->tok == '{') {
 		t = tl->t;
 
-		sprintf(vgcname, "VGC_backend_%.*s_%d", PF(name), serial);
+		sprintf(vgcname, "VGC_backend_%.*s_%d", PF(tl->t_dir), serial);
 
-		vcc_ParseHostDef(tl, nbh, name, qual, serial, vgcname);
+		vcc_ParseHostDef(tl, nbh, serial, vgcname);
 		if (tl->err) {
 			vsb_printf(tl->sb,
 			    "\nIn backend host specification starting at:\n");
@@ -751,20 +747,19 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, const struct token *name,
  */
 
 static void
-vcc_ParseSimpleDirector(struct tokenlist *tl, const struct token *t_first,
-    struct token *t_dir)
+vcc_ParseSimpleDirector(struct tokenlist *tl)
 {
 	struct host *h;
 	char vgcname[BUFSIZ];
 
 	h = TlAlloc(tl, sizeof *h);
-	h->name = t_dir;
-	vcc_AddDef(tl, t_dir, R_BACKEND);
+	h->name = tl->t_dir;
+	vcc_AddDef(tl, tl->t_dir, R_BACKEND);
 	sprintf(vgcname, "VGC_backend__%.*s", PF(h->name));
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
 
-	vcc_ParseHostDef(tl, &h->hnum, h->name, t_first, -1, vgcname);
+	vcc_ParseHostDef(tl, &h->hnum, -1, vgcname);
 	ERRCHK(tl);
 
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
@@ -786,7 +781,7 @@ static const struct dirlist {
 void
 vcc_ParseDirector(struct tokenlist *tl)
 {
-	struct token *t_dir, *t_first, *t_policy;
+	struct token *t_first;
 	struct dirlist const *dl;
 
 	t_first = tl->t;
@@ -794,35 +789,36 @@ vcc_ParseDirector(struct tokenlist *tl)
 
 	vcc_ExpectCid(tl);		/* ID: name */
 	ERRCHK(tl);
-	t_dir = tl->t;
+	tl->t_dir = tl->t;
 	vcc_NextToken(tl);
 
 
 	if (vcc_IdIs(t_first, "backend")) {
-		vcc_ParseSimpleDirector(tl, t_first, t_dir);
+		tl->t_policy = t_first;
+		vcc_ParseSimpleDirector(tl);
 	} else {
 		Fh(tl, 1,
 		    "\n#define VGC_backend__%.*s (VCL_conf.director[%d])\n",
-		    PF(t_dir), tl->ndirector);
-		vcc_AddDef(tl, t_dir, R_BACKEND);
+		    PF(tl->t_dir), tl->ndirector);
+		vcc_AddDef(tl, tl->t_dir, R_BACKEND);
 		tl->ndirector++;
 		ExpectErr(tl, ID);		/* ID: policy */
-		t_policy = tl->t;
+		tl->t_policy = tl->t;
 		vcc_NextToken(tl);
 
 		for (dl = dirlist; dl->name != NULL; dl++)
-			if (vcc_IdIs(t_policy, dl->name))
+			if (vcc_IdIs(tl->t_policy, dl->name))
 				break;
 		if (dl->name == NULL) {
 			vsb_printf(tl->sb, "Unknown director policy: ");
-			vcc_ErrToken(tl, t_policy);
+			vcc_ErrToken(tl, tl->t_policy);
 			vsb_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, t_policy);
+			vcc_ErrWhere(tl, tl->t_policy);
 			return;
 		}
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
-		dl->func(tl, t_policy, t_dir);
+		dl->func(tl);
 		if (!tl->err) {
 			ExpectErr(tl, '}');
 			vcc_NextToken(tl);
@@ -834,4 +830,6 @@ vcc_ParseDirector(struct tokenlist *tl)
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
+	tl->t_policy = NULL;
+	tl->t_dir = NULL;
 }
