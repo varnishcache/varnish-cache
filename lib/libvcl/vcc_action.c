@@ -251,7 +251,7 @@ parse_set(struct tokenlist *tl)
 		vcc_ExpectCid(tl);
 		ERRCHK(tl);
 		vcc_AddRef(tl, tl->t, R_BACKEND);
-		Fb(tl, 0, "VGC_backend_%.*s", PF(tl->t));
+		Fb(tl, 0, "VGC_backend__%.*s", PF(tl->t));
 		vcc_NextToken(tl);
 		Fb(tl, 0, ");\n");
 		break;

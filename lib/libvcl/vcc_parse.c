@@ -322,7 +322,7 @@ Cond_Backend(const struct var *vp, struct tokenlist *tl)
 	vcc_ExpectCid(tl);
 	ERRCHK(tl);
 	vcc_AddRef(tl, tl->t, R_BACKEND);
-	Fb(tl, 1, "VGC_backend_%.*s\n", PF(tl->t));
+	Fb(tl, 1, "VGC_backend__%.*s\n", PF(tl->t));
 	vcc_NextToken(tl);
 }
 
