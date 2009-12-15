@@ -50,8 +50,7 @@ SVNID("$Id$")
  */
 
 void
-vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
-    const struct token *t_dir)
+vcc_ParseRandomDirector(struct tokenlist *tl)
 {
 	struct token *t_field, *t_be;
 	int nbh, nelem;
@@ -59,7 +58,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
 	unsigned u, retries;
 	const char *first;
 
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(t_dir));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(tl->t_dir));
 
 	fs = vcc_FldSpec(tl, "?retries", NULL);
 
@@ -83,7 +82,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
 
 	Fc(tl, 0,
 	    "\nstatic const struct vrt_dir_random_entry vdre_%.*s[] = {\n",
-	    PF(t_dir));
+	    PF(tl->t_dir));
 
 	for (nelem = 0; tl->t->tok != '}'; nelem++) {	/* List of members */
 		first = "";
@@ -99,8 +98,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
 			vcc_IsField(tl, &t_field, mfs);
 			ERRCHK(tl);
 			if (vcc_IdIs(t_field, "backend")) {
-				vcc_ParseBackendHost(tl, &nbh,
-				    t_dir, t_policy, nelem);
+				vcc_ParseBackendHost(tl, &nbh, nelem);
 				Fc(tl, 0, "%s .host = &bh_%d", first, nbh);
 				ERRCHK(tl);
 			} else if (vcc_IdIs(t_field, "weight")) {
@@ -138,13 +136,13 @@ vcc_ParseRandomDirector(struct tokenlist *tl, const struct token *t_policy,
 	Fc(tl, 0, "};\n");
 	Fc(tl, 0,
 	    "\nstatic const struct vrt_dir_random vdr_%.*s = {\n",
-	    PF(t_dir));
-	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(t_dir));
+	    PF(tl->t_dir));
+	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(tl->t_dir));
 	Fc(tl, 0, "\t.retries = %u,\n", retries);
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
-	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(t_dir));
+	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(tl->t_dir));
 	Fc(tl, 0, "};\n");
 	Fi(tl, 0,
 	    "\tVRT_init_dir_random(cli, &VGC_backend__%.*s , &vdr_%.*s);\n",
-	    PF(t_dir), PF(t_dir));
+	    PF(tl->t_dir), PF(tl->t_dir));
 }

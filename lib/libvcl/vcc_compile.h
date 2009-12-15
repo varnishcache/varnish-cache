@@ -89,6 +89,9 @@ struct tokenlist {
 
 	VTAILQ_HEAD(, acl_e)	acl;
 
+	struct token		*t_dir;
+	struct token		*t_policy;
+
 	unsigned		recnt;
 	unsigned		nsockaddr;
 };
@@ -156,12 +159,10 @@ void vcc_ParseAction(struct tokenlist *tl);
 
 /* vcc_backend.c */
 struct fld_spec;
-typedef void parsedirector_f(struct tokenlist *tl,
-    const struct token *t_policy, const struct token *t_dir);
+typedef void parsedirector_f(struct tokenlist *tl);
 
 void vcc_ParseDirector(struct tokenlist *tl);
-void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr,
-    const struct token *name, const struct token *qual, int serial);
+void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr, int serial);
 struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
 void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
