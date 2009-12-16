@@ -78,6 +78,7 @@ SVNID("$Id$")
 #include "cache.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
+#include "vsha256.h"
 
 static unsigned xids;
 
@@ -1034,10 +1035,10 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	HSH_BeforeVclHash(sp);
+	SHA256_Init(sp->wrk->sha256ctx);
 	VCL_hash_method(sp);
 	assert(sp->handling == VCL_RET_HASH);
-	HSH_AfterVclHash(sp);
+	SHA256_Final(sp->digest, sp->wrk->sha256ctx);
 
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) {
 		sp->wantbody = 0;
