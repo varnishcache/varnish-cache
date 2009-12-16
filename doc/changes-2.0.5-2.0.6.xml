@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0.5" to="2.0.6">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="585">
+      <para>2.0.5 had an off-by-one error in the ESI handling causing
+      includes to fail a large part of the time. This has now been
+      fixed.</para>
+    </change>
+
+    <change type="bug" ref="584">
+      <para>Try harder to not confuse backends when sending them
+      backend probes.  We half-closed the connection, something some
+      backends thought meant we had dropped the connection.  Stop
+      doing so, and add the capability for specifying the expected
+      response code.</para>
+    </change>
+
+    <change type="bug">
+      <para>In 2.0.5, session lingering was turned on.  This caused
+      statistics to not be counted often enough in some cases.  This
+      has now been fixed.</para>
+    </change>
+
+    <change type="bug" ref="547">
+      <para>Avoid triggering an assert if the other end closes the
+      connection while we are lingering and waiting for another
+      request from them.</para>
+    </change>
+
+    <change type="bug" ref="577">
+      <para>When generating backtraces, prefer the built-in backtrace
+      function if such exists.  This fixes a problem compiling 2.0.5
+      on Solaris.</para>
+    </change>
+
+    <change type="enh" ref="572">
+      <para>Make it possible to specify the per-thread stack size.
+      This might be useful on 32 bit systems with their limited
+      address space.</para>
+    </change>
+
+    <change type="bug" ref="559">
+      <para>Document the <code>-C</code> option
+      to <code>varnishd</code>.</para>
+    </change>
+  <subsystem>
+</group>
