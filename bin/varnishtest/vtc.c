@@ -294,7 +294,7 @@ static const unsigned long random_expect[NRNDEXPECT] = {
 static void
 cmd_random(CMD_ARGS)
 {
-	unsigned long l;
+	uint32_t l;
 	int i;
 
 	(void)cmd;
