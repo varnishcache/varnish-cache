@@ -92,24 +92,6 @@ struct director {
 	void			*priv;
 };
 
-static inline struct vbe_conn *
-dir_getfd(struct director *d, struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->getfd(d, sp));
-}
-
-static inline int
-dir_healthy(struct director *d, const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, sp));
-}
-
 /*--------------------------------------------------------------------
  * List of objectheads that have recently been rejected by VCL.
  */

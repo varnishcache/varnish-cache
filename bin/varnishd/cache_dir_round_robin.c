@@ -75,9 +75,9 @@ vdi_round_robin_getfd(struct director *d, struct sess *sp)
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[vs->next_host].backend;
 		vs->next_host = (vs->next_host + 1) % vs->nhosts;
-		if (!backend->healthy(backend, sp))
+		if (!VBE_Healthy(backend, sp))
 			continue;
-		vbe = backend->getfd(backend, sp);
+		vbe = VBE_GetFd(backend, sp);
 		if (vbe != NULL)
 			return (vbe);
 	}
@@ -98,7 +98,7 @@ vdi_round_robin_healthy(struct director *d, const struct sess *sp)
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[i].backend;
-		if (backend->healthy(backend, sp))
+		if (VBE_Healthy(backend, sp))
 			return 1;
 	}
 	return 0;
@@ -108,18 +108,11 @@ vdi_round_robin_healthy(struct director *d, const struct sess *sp)
 static void
 vdi_round_robin_fini(struct director *d)
 {
-	// int i;
 	struct vdi_round_robin *vs;
-	struct vdi_round_robin_host *vh;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
-	vh = vs->hosts;
-#if 0 /* XXX */
-	for (i = 0; i < vs->nhosts; i++, vh++)
-		VBE_DropRef(vh->backend);
-#endif
 	free(vs->hosts);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;

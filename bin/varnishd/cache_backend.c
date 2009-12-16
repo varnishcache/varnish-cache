@@ -353,21 +353,6 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 	return (vc);
 }
 
-/*--------------------------------------------------------------------
- * Get a connection to whatever backend the director think this session
- * should contact.
- */
-
-void
-VBE_GetFd(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-
-	AN (sp->director->getfd);
-	sp->vbe = sp->director->getfd(sp->director, sp);
-}
 /* Close a connection ------------------------------------------------*/
 
 void
@@ -410,6 +395,31 @@ VBE_RecycleFd(struct sess *sp)
 	VBE_DropRefLocked(bp);
 }
 
+/* Get a connection --------------------------------------------------*/
+
+struct vbe_conn *
+VBE_GetFd(struct director *d, struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (d == NULL)
+		d = sp->director;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	return (d->getfd(d, sp));
+}
+
+/* Cheack health -----------------------------------------------------*/
+
+int
+VBE_Healthy(struct director *d, const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (d == NULL)
+		d = sp->director;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	return (d->healthy(d, sp));
+}
 
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
