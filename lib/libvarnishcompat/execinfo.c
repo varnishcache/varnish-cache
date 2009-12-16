@@ -28,6 +28,10 @@
 
 #include "config.h"
 
+#include "compat/execinfo.h"
+
+#if defined (__GNUC__) && __GNUC__ >= 4	/* XXX Correct version to check for ? */
+
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <dlfcn.h>
@@ -38,10 +42,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/execinfo.h"
 
-void *getreturnaddr(int);
-void *getframeaddr(int);
+static void *getreturnaddr(int);
+static void *getframeaddr(int);
 
 #define D10(x) ceil(log10(((x) == 0) ? 2 : ((x) + 1)))
 
@@ -132,51 +135,7 @@ backtrace_symbols(void *const *buffer, int size)
     return rval;
 }
 
-#if 0
-void
-backtrace_symbols_fd(void *const *buffer, int size, int fd)
-{
-    int i, len, offset;
-    char *buf;
-    Dl_info info;
-
-    for (i = 0; i < size; i++) {
-        if (dladdr(buffer[i], &info) != 0) {
-            if (info.dli_sname == NULL)
-                info.dli_sname = "???";
-            if (info.dli_saddr == NULL)
-                info.dli_saddr = buffer[i];
-            offset = (const char *)buffer[i] - (const char *)info.dli_saddr;
-            /* "0x01234567 <function+offset> at filename" */
-            len = 2 +                      /* "0x" */
-                  (sizeof(void *) * 2) +   /* "01234567" */
-                  2 +                      /* " <" */
-                  strlen(info.dli_sname) + /* "function" */
-                  1 +                      /* "+" */
-                  D10(offset) +            /* "offset */
-                  5 +                      /* "> at " */
-                  strlen(info.dli_fname) + /* "filename" */
-                  2;                       /* "\n\0" */
-            buf = alloca(len);
-            if (buf == NULL)
-                return;
-            snprintf(buf, len, "%p <%s+%d> at %s\n",
-              buffer[i], info.dli_sname, offset, info.dli_fname);
-        } else {
-            len = 2 +                      /* "0x" */
-                  (sizeof(void *) * 2) +   /* "01234567" */
-                  2;                       /* "\n\0" */
-            buf = alloca(len);
-            if (buf == NULL)
-                return;
-            snprintf(buf, len, "%p\n", buffer[i]);
-        }
-        write(fd, buf, len - 1);
-    }
-}
-#endif
-
-void *
+static void *
 getreturnaddr(int level)
 {
 
@@ -313,7 +272,7 @@ getreturnaddr(int level)
     }
 }
 
-void *
+static void *
 getframeaddr(int level)
 {
 
@@ -449,3 +408,23 @@ getframeaddr(int level)
     default: return NULL;
     }
 }
+
+#else
+
+int
+backtrace(void **buffer, int size)
+{
+	(void)buffer;
+	(void)size;
+	return (0);
+}
+
+char **
+backtrace_symbols(void *const *buffer, int size)
+{
+	(void)buffer;
+	(void)size;
+	return (0);
+}
+
+#endif
