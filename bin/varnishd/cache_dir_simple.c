@@ -41,6 +41,7 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include "shmlog.h"
 #include "cache.h"
@@ -57,24 +58,24 @@ struct vdi_simple {
 };
 
 static struct vbe_conn *
-vdi_simple_getfd(struct sess *sp)
+vdi_simple_getfd(struct director *d, struct sess *sp)
 {
 	struct vdi_simple *vs;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 	return (VBE_GetVbe(sp, vs->backend));
 }
 
 static unsigned
-vdi_simple_healthy(const struct sess *sp)
+vdi_simple_healthy(struct director *d, const struct sess *sp)
 {
 	struct vdi_simple *vs;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_SIMPLE_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 	return (VBE_Healthy(sp, vs->backend));
 }
 
@@ -94,12 +95,15 @@ vdi_simple_fini(struct director *d)
 }
 
 void
-VRT_init_dir_simple(struct cli *cli, struct director **bp,
-    const struct vrt_backend *t)
+VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
 {
+	const struct vrt_backend *t;
 	struct vdi_simple *vs;
 
+	ASSERT_CLI();
 	(void)cli;
+	t = priv;
 
 	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);
 	XXXAN(vs);
@@ -113,5 +117,5 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp,
 
 	vs->backend = VBE_AddBackend(cli, t);
 
-	*bp = &vs->dir;
+	bp[idx] = &vs->dir;
 }

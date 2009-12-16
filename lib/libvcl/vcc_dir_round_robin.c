@@ -78,7 +78,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl)
 				vcc_ParseBackendHost(tl, nelem, &p);
 				ERRCHK(tl);
 				AN(p);
-				Fc(tl, 0, "%s .host = &vgc_dir_priv_%s",
+				Fc(tl, 0, "%s .host = VGC_backend_%s",
 				    first, p);
 			} else {
 				ErrInternal(tl);

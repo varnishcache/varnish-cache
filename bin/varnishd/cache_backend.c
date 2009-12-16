@@ -68,6 +68,25 @@ VBE_AddHostHeader(const struct sess *sp)
 	    "Host: %s", sp->vbe->backend->hosthdr);
 }
 
+void
+VBE_ReleaseConn(struct vbe_conn *vc)
+{
+
+	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	assert(vc->backend == NULL);
+	assert(vc->fd < 0);
+
+	if (params->cache_vbe_conns) {
+		Lck_Lock(&VBE_mtx);
+		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
+		VSL_stats->backend_unused++;
+		Lck_Unlock(&VBE_mtx);
+	} else {
+		VSL_stats->n_vbe_conn--;
+		free(vc);
+	}
+}
+
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
  *
@@ -110,6 +129,39 @@ VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
 	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
+	return (s);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+bes_conn_try(const struct sess *sp, struct backend *bp)
+{
+	int s;
+
+	Lck_Lock(&bp->mtx);
+	bp->refcount++;
+	bp->n_conn++;		/* It mostly works */
+	Lck_Unlock(&bp->mtx);
+
+	s = -1;
+	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
+
+	/* release lock during stuff that can take a long time */
+
+	if (params->prefer_ipv6 && bp->ipv6 != NULL)
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+	if (s == -1 && bp->ipv4 != NULL)
+		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
+	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
+		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+
+	if (s < 0) {
+		Lck_Lock(&bp->mtx);
+		bp->n_conn--;
+		bp->refcount--;		/* Only keep ref on success */
+		Lck_Unlock(&bp->mtx);
+	}
 	return (s);
 }
 
@@ -161,73 +213,6 @@ VBE_NewConn(void)
 	return (vc);
 }
 
-void
-VBE_ReleaseConn(struct vbe_conn *vc)
-{
-
-	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
-	assert(vc->backend == NULL);
-	assert(vc->fd < 0);
-
-	if (params->cache_vbe_conns) {
-		Lck_Lock(&VBE_mtx);
-		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
-		VSL_stats->backend_unused++;
-		Lck_Unlock(&VBE_mtx);
-	} else {
-		VSL_stats->n_vbe_conn--;
-		free(vc);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-bes_conn_try(const struct sess *sp, struct backend *bp)
-{
-	int s;
-
-	Lck_Lock(&bp->mtx);
-	bp->refcount++;
-	bp->n_conn++;		/* It mostly works */
-	Lck_Unlock(&bp->mtx);
-
-	s = -1;
-	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
-
-	/* release lock during stuff that can take a long time */
-
-	if (params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
-	if (s == -1 && bp->ipv4 != NULL)
-		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
-	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
-
-	if (s < 0) {
-		Lck_Lock(&bp->mtx);
-		bp->n_conn--;
-		bp->refcount--;		/* Only keep ref on success */
-		Lck_Unlock(&bp->mtx);
-	}
-	return (s);
-}
-
-/*--------------------------------------------------------------------
- * Get a connection to whatever backend the director think this session
- * should contact.
- */
-
-void
-VBE_GetFd(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-
-	AN (sp->director->getfd);
-	sp->vbe = sp->director->getfd(sp);
-}
 
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
@@ -366,6 +351,21 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 	return (vc);
 }
 
+/*--------------------------------------------------------------------
+ * Get a connection to whatever backend the director think this session
+ * should contact.
+ */
+
+void
+VBE_GetFd(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+
+	AN (sp->director->getfd);
+	sp->vbe = sp->director->getfd(sp->director, sp);
+}
 /* Close a connection ------------------------------------------------*/
 
 void

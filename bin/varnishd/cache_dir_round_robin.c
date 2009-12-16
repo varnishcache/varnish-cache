@@ -48,7 +48,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 struct vdi_round_robin_host {
-	struct backend			*backend;
+	struct director			*backend;
 };
 
 struct vdi_round_robin {
@@ -61,23 +61,23 @@ struct vdi_round_robin {
 };
 
 static struct vbe_conn *
-vdi_round_robin_getfd(struct sess *sp)
+vdi_round_robin_getfd(struct director *d, struct sess *sp)
 {
 	int i;
 	struct vdi_round_robin *vs;
-	struct backend *backend;
+	struct director *backend;
 	struct vbe_conn *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[vs->next_host].backend;
 		vs->next_host = (vs->next_host + 1) % vs->nhosts;
-		if (!VBE_Healthy(sp, backend))
+		if (!backend->healthy(backend, sp))
 			continue;
-		vbe = VBE_GetVbe(sp, backend);
+		vbe = backend->getfd(backend, sp);
 		if (vbe != NULL)
 			return (vbe);
 	}
@@ -86,17 +86,19 @@ vdi_round_robin_getfd(struct sess *sp)
 }
 
 static unsigned
-vdi_round_robin_healthy(const struct sess *sp)
+vdi_round_robin_healthy(struct director *d, const struct sess *sp)
 {
 	struct vdi_round_robin *vs;
+	struct director *backend;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_ROUND_ROBIN_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VBE_Healthy(sp, vs->hosts[i].backend))
+		backend = vs->hosts[i].backend;
+		if (backend->healthy(backend, sp))
 			return 1;
 	}
 	return 0;
@@ -106,7 +108,7 @@ vdi_round_robin_healthy(const struct sess *sp)
 static void
 vdi_round_robin_fini(struct director *d)
 {
-	int i;
+	// int i;
 	struct vdi_round_robin *vs;
 	struct vdi_round_robin_host *vh;
 
@@ -114,8 +116,10 @@ vdi_round_robin_fini(struct director *d)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	vh = vs->hosts;
+#if 0 /* XXX */
 	for (i = 0; i < vs->nhosts; i++, vh++)
 		VBE_DropRef(vh->backend);
+#endif
 	free(vs->hosts);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
@@ -124,15 +128,18 @@ vdi_round_robin_fini(struct director *d)
 }
 
 void
-VRT_init_dir_round_robin(struct cli *cli, struct director **bp,
-    const struct vrt_dir_round_robin *t)
+VRT_init_dir_round_robin(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
 {
+	const struct vrt_dir_round_robin *t;
 	struct vdi_round_robin *vs;
 	const struct vrt_dir_round_robin_entry *te;
 	struct vdi_round_robin_host *vh;
 	int i;
 
+	ASSERT_CLI();
 	(void)cli;
+	t = priv;
 
 	ALLOC_OBJ(vs, VDI_ROUND_ROBIN_MAGIC);
 	XXXAN(vs);
@@ -149,10 +156,12 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp,
 
 	vh = vs->hosts;
 	te = t->members;
-	for (i = 0; i < t->nmember; i++, vh++, te++)
-		vh->backend = VBE_AddBackend(cli, te->host);
+	for (i = 0; i < t->nmember; i++, vh++, te++) {
+		vh->backend = bp[te->host];
+		AN (vh->backend);
+	}
 	vs->nhosts = t->nmember;
 	vs->next_host = 0;
 
-	*bp = &vs->dir;
+	bp[idx] = &vs->dir;
 }
