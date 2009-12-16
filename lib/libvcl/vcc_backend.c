@@ -70,7 +70,6 @@ SVNID("$Id$")
 
 struct host {
 	VTAILQ_ENTRY(host)      list;
-	int	                hnum;
 	struct token            *name;
 	char			*vgcname;
 };
@@ -487,8 +486,7 @@ vcc_ParseProbe(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
-    const char *vgcname)
+vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -523,8 +521,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
 	AN(vsb);
 	tl->fb = vsb;
 
-	*nbh = tl->nbackend_host++;
-	Fb(tl, 0, "\nstatic const struct vrt_backend bh_%d = {\n", *nbh);
+	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
+	    vgcname);
 
 	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(tl->t_dir));
 	if (serial >= 0)
@@ -676,8 +674,8 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
 	Fh(tl, 0, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 
-	Fi(tl, 0, "\tVRT_init_dir_simple(cli, &VGCDIR(%s), &bh_%d);\n",
-	    vgcname, *nbh);
+	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director, \"simple\",\n"
+	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);\n", vgcname, vgcname);
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
 	tl->ndirector++;
 }
@@ -695,12 +693,14 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
  */
 
 void
-vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, int serial)
+vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm)
 {
 	struct host *h;
 	struct token *t;
 	char vgcname[BUFSIZ];
 
+	AN(nm);
+	*nm = NULL;
 	if (tl->t->tok == ID) {
 		VTAILQ_FOREACH(h, &tl->hosts, list) {
 			if (vcc_Teq(h->name, tl->t))
@@ -717,18 +717,22 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, int serial)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ';');
 		vcc_NextToken(tl);
-		*nbh = h->hnum;
+		*nm = h->vgcname;
 	} else if (tl->t->tok == '{') {
 		t = tl->t;
 
 		sprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
 
-		vcc_ParseHostDef(tl, nbh, serial, vgcname);
+		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
+		    PF(tl->t_dir));
+		vcc_ParseHostDef(tl, serial, vgcname);
 		if (tl->err) {
 			vsb_printf(tl->sb,
 			    "\nIn backend host specification starting at:\n");
 			vcc_ErrWhere(tl, t);
 		}
+		*nm = strdup(vgcname);	 /* XXX */
+
 		return;
 	} else {
 		vsb_printf(tl->sb,
@@ -758,7 +762,7 @@ vcc_ParseSimpleDirector(struct tokenlist *tl)
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
 
-	vcc_ParseHostDef(tl, &h->hnum, -1, vgcname);
+	vcc_ParseHostDef(tl, -1, vgcname);
 	ERRCHK(tl);
 
 	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
@@ -821,6 +825,13 @@ vcc_ParseDirector(struct tokenlist *tl)
 			ExpectErr(tl, '}');
 			vcc_NextToken(tl);
 		}
+		Fi(tl, 0,
+		    "\tVRT_init_dir(cli, VCL_conf.director, \"%.*s\",\n",
+		    PF(tl->t_policy));
+		Fi(tl, 0, "\t    VGC_backend__%.*s, &vgc_dir_priv_%.*s);\n",
+		    PF(tl->t_dir), PF(tl->t_dir));
+
+		
 	}
 	if (tl->err) {
 		vsb_printf(tl->sb,

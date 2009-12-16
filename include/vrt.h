@@ -161,12 +161,8 @@ void VRT_Rollback(struct sess *sp);
 void VRT_synth_page(struct sess *sp, unsigned flags, const char *, ...);
 
 /* Backend related */
-void VRT_init_dir_simple(struct cli *, struct director **,
-    const struct vrt_backend *);
-void VRT_init_dir_random(struct cli *, struct director **,
-    const struct vrt_dir_random *);
-void VRT_init_dir_round_robin(struct cli *, struct director **,
-    const struct vrt_dir_round_robin *);
+void VRT_init_dir(struct cli *, struct director **, const char *name,
+    int idx, const void *priv);
 void VRT_fini_dir(struct cli *, struct director *);
 
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
