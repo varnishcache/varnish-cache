@@ -1,0 +1,52 @@
+# $Id$
+
+test "Hash director"
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: 1" -body "1"
+	rxreq
+	txresp -hdr "Foo: 3" -body "3"
+} -start
+
+server s2 {
+	rxreq
+	txresp -hdr "Foo: 2" -body "2"
+	rxreq
+	txresp -hdr "Foo: 4" -body "4"
+} -start
+
+
+varnish v1 -vcl+backend {
+	director h1 hash {
+		{ .backend = s1; .weight = 1; }
+		{ .backend = s2; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = h1;
+		pass;
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url /12
+	rxresp
+	expect resp.http.foo == "1"
+
+	txreq -url /1
+	rxresp
+	expect resp.http.foo == "2"
+
+	txreq -url /13
+	rxresp
+	expect resp.http.foo == "3"
+
+	txreq -url /15
+	rxresp
+	expect resp.http.foo == "4"
+
+
+} -run

@@ -776,6 +776,7 @@ static const struct dirlist {
 	const char	*name;
 	parsedirector_f	*func;
 } dirlist[] = {
+	{ "hash",		vcc_ParseRandomDirector },
 	{ "random",		vcc_ParseRandomDirector },
 	{ "round-robin",	vcc_ParseRoundRobinDirector },
 	{ NULL,		NULL }

@@ -155,6 +155,8 @@ void VBP_Stop(struct backend *b);
 
 
 /* Init functions for directors */
-void VRT_init_dir_simple(struct cli *, struct director **, int , const void*);
-void VRT_init_dir_random(struct cli *, struct director **, int , const void*);
-void VRT_init_dir_round_robin(struct cli *, struct director **, int , const void*);
+typedef void dir_init_f(struct cli *, struct director **, int , const void*);
+dir_init_f VRT_init_dir_simple;
+dir_init_f VRT_init_dir_hash;
+dir_init_f VRT_init_dir_random;
+dir_init_f VRT_init_dir_round_robin;

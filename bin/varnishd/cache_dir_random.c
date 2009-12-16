@@ -26,6 +26,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This code is shared between the random and hash directors, because they
+ * share the same properties and most of the same selection logic.
+ *
+ * The random director picks a backend on random, according to weight,
+ * from the healty subset of backends.
+ *
+ * The hash director first tries to locate the "canonical" backend from
+ * the full set, according to weight, and if it is healthy selects it.
+ * If the canonical backend is not healthy, we pick a backend according
+ * to weight from the healthy subset. That way only traffic to unhealthy
+ * backends gets redistributed.
  */
 
 #include "config.h"
@@ -59,7 +70,9 @@ struct vdi_random {
 #define VDI_RANDOM_MAGIC	0x3771ae23
 	struct director		dir;
 
+	unsigned		use_hash;
 	unsigned		retries;
+	double			tot_weight;
 	struct vdi_random_host	*hosts;
 	unsigned		nhosts;
 };
@@ -70,12 +83,37 @@ vdi_random_getfd(struct director *d, struct sess *sp)
 	int i, k;
 	struct vdi_random *vs;
 	double r, s1;
+	unsigned u;
 	struct vbe_conn *vbe;
 	struct director *d2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
+
+	/*
+	 * If we are hashing, first try to hit our "canonical backend" 
+	 * If that fails, we fall through, and select a weighted backend
+	 * amongst the good set.
+	 */
+	if (vs->use_hash) {
+		memcpy(&u, sp->digest, sizeof u);
+		r = u / 4294967296.0;
+		r *= vs->tot_weight;
+		s1 = 0.0;
+		for (i = 0; i < vs->nhosts; i++)  {
+			s1 += vs->hosts[i].weight;
+			if (r >= s1)
+				continue;
+			d2 = vs->hosts[i].backend;
+			if (!VBE_Healthy(d2, sp))
+				break;
+			vbe = VBE_GetFd(d2, sp);
+			if (vbe != NULL)
+				return (vbe);
+			break;
+		}
+	}
 
 	for (k = 0; k < vs->retries; ) {
 
@@ -91,8 +129,13 @@ vdi_random_getfd(struct director *d, struct sess *sp)
 		if (s1 == 0.0)
 			return (NULL);
 
-		/* Pick a random threshold in that interval */
-		r = random() / 2147483648.0;	/* 2^31 */
+		if (vs->use_hash) {
+			memcpy(&u, sp->digest, sizeof u);
+			r = u / 4294967296.0;
+		} else {
+			/* Pick a random threshold in that interval */
+			r = random() / 2147483648.0;	/* 2^31 */
+		}
 		assert(r >= 0.0 && r < 1.0);
 		r *= s1;
 
@@ -119,15 +162,13 @@ vdi_random_healthy(struct director *d, const struct sess *sp)
 {
 	struct vdi_random *vs;
 	int i;
-	struct director *d2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		d2 = vs->hosts[i].backend;
-		if (VBE_Healthy(d2, sp))
+		if (VBE_Healthy(vs->hosts[i].backend, sp))
 			return 1;
 	}
 	return 0;
@@ -148,9 +189,9 @@ vdi_random_fini(struct director *d)
 	FREE_OBJ(vs);
 }
 
-void
-VRT_init_dir_random(struct cli *cli, struct director **bp, int idx,
-    const void *priv)
+static void
+vrt_init(struct cli *cli, struct director **bp, int idx,
+    const void *priv, int use_hash)
 {
 	const struct vrt_dir_random *t;
 	struct vdi_random *vs;
@@ -175,17 +216,34 @@ VRT_init_dir_random(struct cli *cli, struct director **bp, int idx,
 	vs->dir.fini = vdi_random_fini;
 	vs->dir.healthy = vdi_random_healthy;
 
+	vs->use_hash = use_hash;
 	vs->retries = t->retries;
 	if (vs->retries == 0)
 		vs->retries = t->nmember;
 	vh = vs->hosts;
 	te = t->members;
+	vs->tot_weight = 0.;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
 		assert(te->weight > 0.0);
 		vh->weight = te->weight;
+		vs->tot_weight += vh->weight;
 		vh->backend = bp[te->host];
 		AN(vh->backend);
 	}
 	vs->nhosts = t->nmember;
 	bp[idx] = &vs->dir;
+}
+
+void
+VRT_init_dir_random(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	vrt_init(cli, bp, idx, priv, 0);
+}
+
+void
+VRT_init_dir_hash(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	vrt_init(cli, bp, idx, priv, 1);
 }
