@@ -20,7 +20,6 @@ varnishd_SOURCES = \
 	cache_cli.c \
 	cache_dir_random.c \
 	cache_dir_round_robin.c \
-	cache_dir_simple.c \
 	cache_esi.c \
 	cache_expire.c \
 	cache_fetch.c \
