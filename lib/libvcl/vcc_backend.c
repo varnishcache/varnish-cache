@@ -501,8 +501,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
 	struct vsb *vsb;
 	unsigned u;
 
-	Fh(tl, 1, "\n#define %s (VCL_conf.director[%d])\n",
-	    vgcname, tl->ndirector);
+	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, tl->ndirector);
 
 	fs = vcc_FldSpec(tl,
 	    "!host",
@@ -677,9 +676,9 @@ vcc_ParseHostDef(struct tokenlist *tl, int *nbh, int serial,
 	Fh(tl, 0, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 
-	Fi(tl, 0, "\tVRT_init_dir_simple(cli, &%s, &bh_%d);\n",
+	Fi(tl, 0, "\tVRT_init_dir_simple(cli, &VGCDIR(%s), &bh_%d);\n",
 	    vgcname, *nbh);
-	Ff(tl, 0, "\tVRT_fini_dir(cli, %s);\n", vgcname);
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
 	tl->ndirector++;
 }
 
@@ -722,7 +721,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int *nbh, int serial)
 	} else if (tl->t->tok == '{') {
 		t = tl->t;
 
-		sprintf(vgcname, "VGC_backend_%.*s_%d", PF(tl->t_dir), serial);
+		sprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
 
 		vcc_ParseHostDef(tl, nbh, serial, vgcname);
 		if (tl->err) {
@@ -755,7 +754,7 @@ vcc_ParseSimpleDirector(struct tokenlist *tl)
 	h = TlAlloc(tl, sizeof *h);
 	h->name = tl->t_dir;
 	vcc_AddDef(tl, tl->t_dir, R_BACKEND);
-	sprintf(vgcname, "VGC_backend__%.*s", PF(h->name));
+	sprintf(vgcname, "_%.*s", PF(h->name));
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
 
@@ -797,8 +796,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
-		Fh(tl, 1,
-		    "\n#define VGC_backend__%.*s (VCL_conf.director[%d])\n",
+		Fh(tl, 1, "\n#define VGC_backend__%.*s %d\n",
 		    PF(tl->t_dir), tl->ndirector);
 		vcc_AddDef(tl, tl->t_dir, R_BACKEND);
 		tl->ndirector++;

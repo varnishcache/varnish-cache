@@ -552,6 +552,9 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 	Fh(tl, 0, "\n/* ---===### VCC generated below here ###===---*/\n");
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
+	/* Macro for accessing directors */
+	Fh(tl, 0, "#define VGCDIR(n) VCL_conf.director[VGC_backend_##n]\n");
+
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;

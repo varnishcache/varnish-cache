@@ -58,7 +58,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 	unsigned u, retries;
 	const char *first;
 
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(tl->t_dir));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n", PF(tl->t_dir));
 
 	fs = vcc_FldSpec(tl, "?retries", NULL);
 
@@ -142,7 +142,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(tl->t_dir));
 	Fc(tl, 0, "};\n");
-	Fi(tl, 0,
-	    "\tVRT_init_dir_random(cli, &VGC_backend__%.*s , &vdr_%.*s);\n",
+	Fi(tl, 0, "\tVRT_init_dir_random(cli, &VGCDIR(_%.*s) , &vdr_%.*s);\n",
 	    PF(tl->t_dir), PF(tl->t_dir));
 }
