@@ -47,6 +47,7 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "cache.h"
 #include "cache_backend.h"
+#include "vrt.h"
 
 /*
  * List of cached vbe_conns, used if enabled in params/heritage
@@ -68,6 +69,7 @@ VBE_AddHostHeader(const struct sess *sp)
 	    "Host: %s", sp->vbe->backend->hosthdr);
 }
 
+/* Private interface from backend_cfg.c */
 void
 VBE_ReleaseConn(struct vbe_conn *vc)
 {
@@ -97,7 +99,7 @@ VBE_ReleaseConn(struct vbe_conn *vc)
  */
 
 static int
-VBE_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
+vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
     socklen_t salen, const struct backend *bp)
 {
 	int s, i, tmo;
@@ -150,11 +152,11 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 	/* release lock during stuff that can take a long time */
 
 	if (params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
 	if (s == -1 && bp->ipv4 != NULL)
-		s = VBE_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
+		s = vbe_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
 	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = VBE_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
 
 	if (s < 0) {
 		Lck_Lock(&bp->mtx);
@@ -172,7 +174,7 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
  */
 
 static int
-VBE_CheckFd(int fd)
+vbe_CheckFd(int fd)
 {
 	struct pollfd pfd;
 
@@ -189,7 +191,7 @@ VBE_CheckFd(int fd)
  */
 
 static struct vbe_conn *
-VBE_NewConn(void)
+vbe_NewConn(void)
 {
 	struct vbe_conn *vc;
 
@@ -225,8 +227,8 @@ VBE_NewConn(void)
  * items would never time out once the threshold is reached.
  */
 
-unsigned int
-VBE_Healthy(const struct sess *sp, struct backend *backend)
+static unsigned int
+vbe_Healthy(const struct sess *sp, struct backend *backend)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -292,8 +294,8 @@ VBE_Healthy(const struct sess *sp, struct backend *backend)
  * Get a connection to a particular backend.
  */
 
-struct vbe_conn *
-VBE_GetVbe(struct sess *sp, struct backend *bp)
+static struct vbe_conn *
+vbe_GetVbe(struct sess *sp, struct backend *bp)
 {
 	struct vbe_conn *vc;
 
@@ -313,7 +315,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		Lck_Unlock(&bp->mtx);
 		if (vc == NULL)
 			break;
-		if (VBE_CheckFd(vc->fd)) {
+		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSL_stats->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
@@ -325,7 +327,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		VBE_ClosedFd(sp);
 	}
 
-	if (!VBE_Healthy(sp, bp)) {
+	if (!vbe_Healthy(sp, bp)) {
 		VSL_stats->backend_unhealthy++;
 		return (NULL);
 	}
@@ -335,7 +337,7 @@ VBE_GetVbe(struct sess *sp, struct backend *bp)
 		return (NULL);
 	}
 
-	vc = VBE_NewConn();
+	vc = vbe_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
 	vc->fd = bes_conn_try(sp, bp);
@@ -406,4 +408,81 @@ VBE_RecycleFd(struct sess *sp)
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
 	sp->vbe = NULL;
 	VBE_DropRefLocked(bp);
+}
+
+
+/*--------------------------------------------------------------------
+ * The "simple" director really isn't, since thats where all the actual
+ * connections happen.  Nontheless, pretend it is simple by sequestering
+ * the directoricity of it under this line.
+ */
+
+struct vdi_simple {
+	unsigned		magic;
+#define VDI_SIMPLE_MAGIC	0x476d25b7
+	struct director		dir;
+	struct backend		*backend;
+};
+
+static struct vbe_conn *
+vdi_simple_getfd(struct director *d, struct sess *sp)
+{
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+	return (vbe_GetVbe(sp, vs->backend));
+}
+
+static unsigned
+vdi_simple_healthy(struct director *d, const struct sess *sp)
+{
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+	return (vbe_Healthy(sp, vs->backend));
+}
+
+/*lint -e{818} not const-able */
+static void
+vdi_simple_fini(struct director *d)
+{
+	struct vdi_simple *vs;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+
+	VBE_DropRef(vs->backend);
+	free(vs->dir.vcl_name);
+	vs->dir.magic = 0;
+	FREE_OBJ(vs);
+}
+
+void
+VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	const struct vrt_backend *t;
+	struct vdi_simple *vs;
+
+	ASSERT_CLI();
+	(void)cli;
+	t = priv;
+
+	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);
+	XXXAN(vs);
+	vs->dir.magic = DIRECTOR_MAGIC;
+	vs->dir.priv = vs;
+	vs->dir.name = "simple";
+	REPLACE(vs->dir.vcl_name, t->vcl_name);
+	vs->dir.getfd = vdi_simple_getfd;
+	vs->dir.fini = vdi_simple_fini;
+	vs->dir.healthy = vdi_simple_healthy;
+
+	vs->backend = VBE_AddBackend(cli, t);
+
+	bp[idx] = &vs->dir;
 }
