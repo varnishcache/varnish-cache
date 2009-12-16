@@ -49,5 +49,5 @@
       <para>Document the <code>-C</code> option
       to <code>varnishd</code>.</para>
     </change>
-  <subsystem>
+  </subsystem>
 </group>
