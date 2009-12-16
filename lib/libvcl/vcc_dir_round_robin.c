@@ -56,7 +56,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl)
 	struct fld_spec *fs;
 	const char *first;
 
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGC_backend__%.*s);\n", PF(tl->t_dir));
+	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n", PF(tl->t_dir));
 
 	fs = vcc_FldSpec(tl, "!backend", NULL);
 
@@ -104,6 +104,6 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl)
 	Fc(tl, 0, "\t.members = vdrre_%.*s,\n", PF(tl->t_dir));
 	Fc(tl, 0, "};\n");
 	Fi(tl, 0, "\tVRT_init_dir_round_robin("
-	    "cli, &VGC_backend__%.*s , &vdrr_%.*s);\n",
+	    "cli, &VGCDIR(_%.*s), &vdrr_%.*s);\n",
 	    PF(tl->t_dir), PF(tl->t_dir));
 }
