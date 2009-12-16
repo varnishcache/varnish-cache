@@ -172,21 +172,6 @@ HSH_Freestore(struct object *o)
 }
 
 void
-HSH_BeforeVclHash(const struct sess *sp)
-{
-
-	SHA256_Init(sp->wrk->sha256ctx);
-}
-
-void
-HSH_AfterVclHash(const struct sess *sp)
-{
-
-	HSH_Prealloc(sp);
-	SHA256_Final(sp->wrk->nobjhead->digest, sp->wrk->sha256ctx);
-}
-
-void
 HSH_AddString(const struct sess *sp, const char *str)
 {
 	int l;
@@ -339,6 +324,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	w = sp->wrk;
 
 	HSH_Prealloc(sp);
+	memcpy(sp->wrk->nobjhead->digest, sp->digest, sizeof sp->digest);
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 

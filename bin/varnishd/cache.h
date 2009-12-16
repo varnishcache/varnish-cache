@@ -100,6 +100,9 @@ struct smp_seg;
 
 struct lock { void *priv; };		// Opaque
 
+#define DIGEST_LEN		32
+
+
 /*--------------------------------------------------------------------*/
 
 typedef struct {
@@ -382,6 +385,8 @@ struct sess {
 	struct ws		ws[1];
 	char			*ws_ses;	/* WS above session data */
 	char			*ws_req;	/* WS above request data */
+
+	unsigned char		digest[DIGEST_LEN];
 
 	struct http_conn	htc[1];
 

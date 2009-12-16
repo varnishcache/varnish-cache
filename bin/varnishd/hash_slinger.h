@@ -61,15 +61,11 @@ void HSH_Drop(struct sess *sp);
 double HSH_Grace(double g);
 void HSH_Init(void);
 void HSH_AddString(const struct sess *sp, const char *str);
-void HSH_BeforeVclHash(const struct sess *sp);
-void HSH_AfterVclHash(const struct sess *sp);
 void HSH_DerefObjCore(struct sess *sp);
 void HSH_FindBan(struct sess *sp, struct objcore **oc);
 struct objcore *HSH_Insert(const struct sess *sp);
 
 #ifdef VARNISH_CACHE_CHILD
-
-#define DIGEST_LEN		32
 
 struct objhead {
 	unsigned		magic;
