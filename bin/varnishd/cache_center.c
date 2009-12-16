@@ -105,6 +105,7 @@ cnt_wait(struct sess *sp)
 			if (i == 0) {
 				WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
 				VSL_stats->sess_herd++;
+				SES_Charge(sp);
 				sp->wrk = NULL;
 				vca_return_session(sp);
 				return (1);
