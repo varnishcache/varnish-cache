@@ -83,7 +83,7 @@ struct vrt_backend {
  */
 
 struct vrt_dir_random_entry {
-	const struct vrt_backend		*host;
+	int					host;
 	double					weight;
 };
 
@@ -99,7 +99,7 @@ struct vrt_dir_random {
  */
 
 struct vrt_dir_round_robin_entry {
-	const struct vrt_backend		*host;
+	int					host;
 };
 
 struct vrt_dir_round_robin {

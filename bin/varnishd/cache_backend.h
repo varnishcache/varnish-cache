@@ -77,9 +77,9 @@ struct vrt_backend_probe;
  * backends to use.
  */
 
-typedef struct vbe_conn *vdi_getfd_f(struct sess *sp);
-typedef void vdi_fini_f(struct director *d);
-typedef unsigned vdi_healthy(const struct sess *sp);
+typedef struct vbe_conn *vdi_getfd_f(struct director *, struct sess *sp);
+typedef void vdi_fini_f(struct director *);
+typedef unsigned vdi_healthy(struct director *, const struct sess *sp);
 
 struct director {
 	unsigned		magic;
@@ -91,6 +91,24 @@ struct director {
 	vdi_healthy		*healthy;
 	void			*priv;
 };
+
+static inline struct vbe_conn *
+dir_getfd(struct director *d, struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	return (d->getfd(d, sp));
+}
+
+static inline int
+dir_healthy(struct director *d, const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	return (d->healthy(d, sp));
+}
 
 /*--------------------------------------------------------------------
  * List of objectheads that have recently been rejected by VCL.
@@ -157,12 +175,6 @@ void VBP_Stop(struct backend *b);
 
 
 /* Init functions for directors */
-struct vrt_backend;
-void VRT_init_dir_simple(struct cli *, struct director **,
-    const struct vrt_backend *);
-struct vrt_dir_random;
-void VRT_init_dir_random(struct cli *, struct director **,
-    const struct vrt_dir_random *);
-struct vrt_dir_round_robin;
-void VRT_init_dir_round_robin(struct cli *, struct director **,
-    const struct vrt_dir_round_robin *);
+void VRT_init_dir_simple(struct cli *, struct director **, int , const void*);
+void VRT_init_dir_random(struct cli *, struct director **, int , const void*);
+void VRT_init_dir_round_robin(struct cli *, struct director **, int , const void*);

@@ -50,7 +50,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 struct vdi_random_host {
-	struct backend		*backend;
+	struct director		*backend;
 	double			weight;
 };
 
@@ -65,24 +65,27 @@ struct vdi_random {
 };
 
 static struct vbe_conn *
-vdi_random_getfd(struct sess *sp)
+vdi_random_getfd(struct director *d, struct sess *sp)
 {
 	int i, k;
 	struct vdi_random *vs;
 	double r, s1;
 	struct vbe_conn *vbe;
+	struct director *d2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (k = 0; k < vs->retries; ) {
 
 		/* Sum up the weights of healty backends */
 		s1 = 0.0;
-		for (i = 0; i < vs->nhosts; i++)
-			if (VBE_Healthy(sp,vs->hosts[i].backend))
+		for (i = 0; i < vs->nhosts; i++) {
+			d2 = vs->hosts[i].backend;
+			if (d2->healthy(d2, sp))
 				s1 += vs->hosts[i].weight;
+		}
 
 		if (s1 == 0.0)
 			return (NULL);
@@ -94,12 +97,13 @@ vdi_random_getfd(struct sess *sp)
 
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
-			if (!VBE_Healthy(sp, vs->hosts[i].backend))
+			d2 = vs->hosts[i].backend;
+			if (!d2->healthy(d2, sp))
 				continue;
 			s1 += vs->hosts[i].weight;
 			if (r >= s1)
 				continue;
-			vbe = VBE_GetVbe(sp, vs->hosts[i].backend);
+			vbe = d2->getfd(d2, sp);
 			if (vbe != NULL)
 				return (vbe);
 			break;
@@ -110,17 +114,19 @@ vdi_random_getfd(struct sess *sp)
 }
 
 static unsigned
-vdi_random_healthy(const struct sess *sp)
+vdi_random_healthy(struct director *d, const struct sess *sp)
 {
 	struct vdi_random *vs;
 	int i;
+	struct director *d2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_RANDOM_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VBE_Healthy(sp,vs->hosts[i].backend))
+		d2 = vs->hosts[i].backend;
+		if (d2->healthy(d2, sp))
 			return 1;
 	}
 	return 0;
@@ -130,7 +136,7 @@ vdi_random_healthy(const struct sess *sp)
 static void
 vdi_random_fini(struct director *d)
 {
-	int i;
+	// int i;
 	struct vdi_random *vs;
 	struct vdi_random_host *vh;
 
@@ -138,8 +144,10 @@ vdi_random_fini(struct director *d)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	vh = vs->hosts;
+#if 0 /* XXX */
 	for (i = 0; i < vs->nhosts; i++, vh++)
 		VBE_DropRef(vh->backend);
+#endif
 	free(vs->hosts);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
@@ -147,15 +155,18 @@ vdi_random_fini(struct director *d)
 }
 
 void
-VRT_init_dir_random(struct cli *cli, struct director **bp,
-    const struct vrt_dir_random *t)
+VRT_init_dir_random(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
 {
+	const struct vrt_dir_random *t;
 	struct vdi_random *vs;
 	const struct vrt_dir_random_entry *te;
 	struct vdi_random_host *vh;
 	int i;
 
+	ASSERT_CLI();
 	(void)cli;
+	t = priv;
 
 	ALLOC_OBJ(vs, VDI_RANDOM_MAGIC);
 	XXXAN(vs);
@@ -178,8 +189,9 @@ VRT_init_dir_random(struct cli *cli, struct director **bp,
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
 		assert(te->weight > 0.0);
 		vh->weight = te->weight;
-		vh->backend = VBE_AddBackend(cli, te->host);
+		vh->backend = bp[te->host];
+		AN(vh->backend);
 	}
 	vs->nhosts = t->nmember;
-	*bp = &vs->dir;
+	bp[idx] = &vs->dir;
 }
