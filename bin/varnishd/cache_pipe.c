@@ -75,7 +75,7 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	VBE_GetFd(sp);
+	sp->vbe = VBE_GetFd(NULL, sp);
 	if (sp->vbe == NULL)
 		return;
 	vc = sp->vbe;

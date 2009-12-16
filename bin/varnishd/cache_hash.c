@@ -408,7 +408,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 */
 	sp->objhead = oh;
 	if (oc == NULL && grace_oc != NULL &&
-	    (busy_oc != NULL || !sp->director->healthy(sp->director, sp))) {
+	    (busy_oc != NULL || !VBE_Healthy(NULL, sp))) {
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)

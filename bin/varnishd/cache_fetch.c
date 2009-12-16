@@ -351,7 +351,7 @@ FetchHdr(struct sess *sp)
 	w = sp->wrk;
 	hp = sp->wrk->bereq;
 
-	VBE_GetFd(sp);
+	sp->vbe = VBE_GetFd(NULL, sp);
 	if (sp->vbe == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
 		return (__LINE__);
