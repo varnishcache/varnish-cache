@@ -175,6 +175,7 @@ AC_CHECK_FUNCS([srandomdev])
 AC_CHECK_FUNCS([strlcat strlcpy])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([daemon])
+AC_CHECK_FUNCS([backtrace])
 AC_SYS_LARGEFILE
 
 save_LIBS="${LIBS}"
