@@ -850,6 +850,23 @@ VRT_backend_string(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------*/
+void
+VRT_init_dir(struct cli *cli, struct director **dir, const char *name,
+    int idx, const void *priv)
+{
+
+	if (!strcmp(name, "simple"))
+		VRT_init_dir_simple(cli, dir + idx, priv);
+	else if (!strcmp(name, "random"))
+		VRT_init_dir_random(cli, dir + idx, priv);
+	else if (!strcmp(name, "round-robin"))
+		VRT_init_dir_round_robin(cli, dir + idx, priv);
+	else
+		INCOMPL();
+}
+
+
+/*--------------------------------------------------------------------*/
 
 void
 VRT_Rollback(struct sess *sp)

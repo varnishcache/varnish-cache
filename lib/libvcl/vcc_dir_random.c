@@ -53,12 +53,11 @@ void
 vcc_ParseRandomDirector(struct tokenlist *tl)
 {
 	struct token *t_field, *t_be;
-	int nbh, nelem;
+	int nelem;
 	struct fld_spec *fs, *mfs;
 	unsigned u, retries;
 	const char *first;
-
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n", PF(tl->t_dir));
+	char *p;
 
 	fs = vcc_FldSpec(tl, "?retries", NULL);
 
@@ -88,7 +87,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 		first = "";
 		t_be = tl->t;
 		vcc_ResetFldSpec(mfs);
-		nbh = -1;
 
 		ExpectErr(tl, '{');
 		vcc_NextToken(tl);
@@ -98,9 +96,11 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 			vcc_IsField(tl, &t_field, mfs);
 			ERRCHK(tl);
 			if (vcc_IdIs(t_field, "backend")) {
-				vcc_ParseBackendHost(tl, &nbh, nelem);
-				Fc(tl, 0, "%s .host = &bh_%d", first, nbh);
+				vcc_ParseBackendHost(tl, nelem, &p);
 				ERRCHK(tl);
+				AN(p);
+				Fc(tl, 0, "%s .host = &vgc_dir_priv_%s",
+				    first, p);
 			} else if (vcc_IdIs(t_field, "weight")) {
 				ExpectErr(tl, CNUM);
 				u = vcc_UintVal(tl);
@@ -135,13 +135,11 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 	}
 	Fc(tl, 0, "};\n");
 	Fc(tl, 0,
-	    "\nstatic const struct vrt_dir_random vdr_%.*s = {\n",
+	    "\nstatic const struct vrt_dir_random vgc_dir_priv_%.*s = {\n",
 	    PF(tl->t_dir));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(tl->t_dir));
 	Fc(tl, 0, "\t.retries = %u,\n", retries);
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
 	Fc(tl, 0, "\t.members = vdre_%.*s,\n", PF(tl->t_dir));
 	Fc(tl, 0, "};\n");
-	Fi(tl, 0, "\tVRT_init_dir_random(cli, &VGCDIR(_%.*s) , &vdr_%.*s);\n",
-	    PF(tl->t_dir), PF(tl->t_dir));
 }

@@ -154,3 +154,15 @@ void VBE_DropRefLocked(struct backend *b);
 /* cache_backend_poll.c */
 void VBP_Start(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Stop(struct backend *b);
+
+
+/* Init functions for directors */
+struct vrt_backend;
+void VRT_init_dir_simple(struct cli *, struct director **,
+    const struct vrt_backend *);
+struct vrt_dir_random;
+void VRT_init_dir_random(struct cli *, struct director **,
+    const struct vrt_dir_random *);
+struct vrt_dir_round_robin;
+void VRT_init_dir_round_robin(struct cli *, struct director **,
+    const struct vrt_dir_round_robin *);

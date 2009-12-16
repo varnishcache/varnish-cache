@@ -227,8 +227,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4356 2009-11-19 11:");
-	vsb_cat(sb, "40:23Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4391 2009-12-14 12:");
+	vsb_cat(sb, "10:15Z phk $\n *\n * Runtime support for compiled VCL ");
 	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
 	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
@@ -297,13 +297,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, ");\nvoid VRT_Rollback(struct sess *sp);\n");
 	vsb_cat(sb, "\n/* Synthetic pages */\nvoid VRT_synth_page(struct se");
 	vsb_cat(sb, "ss *sp, unsigned flags, const char *, ...);\n");
-	vsb_cat(sb, "\n/* Backend related */\nvoid VRT_init_dir_simple(stru");
-	vsb_cat(sb, "ct cli *, struct director **,\n");
-	vsb_cat(sb, "    const struct vrt_backend *);\n");
-	vsb_cat(sb, "void VRT_init_dir_random(struct cli *, struct director");
-	vsb_cat(sb, " **,\n    const struct vrt_dir_random *);\n");
-	vsb_cat(sb, "void VRT_init_dir_round_robin(struct cli *, struct dir");
-	vsb_cat(sb, "ector **,\n    const struct vrt_dir_round_robin *);\n");
+	vsb_cat(sb, "\n/* Backend related */\nvoid VRT_init_dir(struct cli ");
+	vsb_cat(sb, "*, struct director **, const char *name,\n");
+	vsb_cat(sb, "    int idx, const void *priv);\n");
 	vsb_cat(sb, "void VRT_fini_dir(struct cli *, struct director *);\n");
 	vsb_cat(sb, "\nchar *VRT_IP_string(const struct sess *sp, const str");
 	vsb_cat(sb, "uct sockaddr *sa);\nchar *VRT_int_string(const struct ");

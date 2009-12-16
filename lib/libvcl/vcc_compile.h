@@ -81,7 +81,6 @@ struct tokenlist {
 	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
-	int			nbackend_host;
 	int			ndirector;
 	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
@@ -162,7 +161,7 @@ struct fld_spec;
 typedef void parsedirector_f(struct tokenlist *tl);
 
 void vcc_ParseDirector(struct tokenlist *tl);
-void vcc_ParseBackendHost(struct tokenlist *tl, int *nbr, int serial);
+void vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm);
 struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
 void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
