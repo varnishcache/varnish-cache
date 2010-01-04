@@ -2,7 +2,8 @@
 
 Varnish uses the GNU autotools.  To build and install Varnish, simply
 run the 'configure' script in the top-level directory, then run 'make'
-and 'make install'.
+and 'make install'.  On Linux, you need to run 'ldconfig' as root
+afterwards in order to update the shared library cache.
 
 If you obtained the sources directly from the Subversion repository,
 you will need to run autogen.sh first to create the configure script.
