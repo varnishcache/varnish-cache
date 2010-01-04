@@ -489,6 +489,20 @@ The following variables are available while processing a request:
 .Bl -tag -width 4n
 .It Va client.ip
 The client's IP address.
+.It Va server.hostname
+The host name of the server.
+.It Va server.identity
+The identity of the server, as set by the
+.Fl i
+parameter.
+If the
+.Fl i
+parameter is not passed to 
+.Nm varnishd ,
+.Va server.identity
+will be set to the name of the instance, as specified by the
+.Fl n
+parameter.
 .It Va server.ip
 The IP address of the socket on which the client connection was
 received.

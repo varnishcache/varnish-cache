@@ -43,6 +43,7 @@
 .Op Fl f Ar config
 .Op Fl g Ar group
 .Op Fl h Ar type Ns Op , Ns Ar options
+.Op Fl i Ar identity
 .Op Fl l Ar shmlogsize
 .Op Fl n Ar name
 .Op Fl P Ar file
@@ -138,6 +139,11 @@ Specifies the hash algorithm.
 See
 .Sx Hash Algorithms
 for a list of supported algorithms.
+.It Fl i Ar identity
+Specify the identity of the varnish server.  This can be accessed
+using
+.Va server.identity
+from VCL
 .It Fl l Ar shmlogsize
 Specify size of shmlog file.
 Scaling suffixes like 'k', 'm' can be used up to (e)tabytes.
