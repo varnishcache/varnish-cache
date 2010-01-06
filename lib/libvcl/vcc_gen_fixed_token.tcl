@@ -150,7 +150,7 @@ set spobj {
 	all
 	"const struct sess *"
     }
-    { req.grace				TIME
+    { req.grace				RTIME
 	RW
 	all
 	"struct sess *"
@@ -196,17 +196,17 @@ set spobj {
 	{ pipe pass miss fetch }
 	"const struct sess *"
     }
-    { bereq.connect_timeout		TIME
+    { bereq.connect_timeout		RTIME
 	RW
 	{ pass miss }
 	"struct sess *"
     }
-    { bereq.first_byte_timeout		TIME
+    { bereq.first_byte_timeout		RTIME
 	RW
 	{ pass miss }
 	"struct sess *"
     }
-    { bereq.between_bytes_timeout	TIME
+    { bereq.between_bytes_timeout	RTIME
 	RW
 	{ pass miss }
 	"struct sess *"
@@ -219,7 +219,7 @@ set spobj {
 	{ fetch }
 	"const struct sess *"
     }
-    { beresp.saintmode			TIME
+    { beresp.saintmode			RTIME
     	WO
 	{ fetch }
 	"const struct sess *"
@@ -244,12 +244,12 @@ set spobj {
 	{ fetch }
 	"const struct sess *"
     }
-    { beresp.ttl			TIME
+    { beresp.ttl			RTIME
 	RW
 	{ fetch }
 	"const struct sess *"
     }
-    { beresp.grace			TIME
+    { beresp.grace			RTIME
 	RW
 	{ fetch }
 	"const struct sess *"
@@ -288,17 +288,17 @@ set spobj {
 	{ hit }
 	"const struct sess *"
     }
-    { obj.ttl				TIME
+    { obj.ttl				RTIME
 	RW
 	{ hit error }
 	"const struct sess *"
     }
-    { obj.grace				TIME
+    { obj.grace				RTIME
 	RW
 	{ hit error }
 	"const struct sess *"
     }
-    { obj.lastuse			TIME
+    { obj.lastuse			RTIME
 	RO
 	{ hit deliver error }
 	"const struct sess *"

@@ -840,6 +840,16 @@ VRT_double_string(const struct sess *sp, double num)
 	return (p);
 }
 
+char *
+VRT_time_string(const struct sess *sp, double t)
+{
+	char *p;
+
+	AN(p = WS_Alloc(sp->http->ws, TIM_FORMAT_SIZE));
+	TIM_format(t, p);
+	return p;
+}
+
 const char *
 VRT_backend_string(struct sess *sp)
 {

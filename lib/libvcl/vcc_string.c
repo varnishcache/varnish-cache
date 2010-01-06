@@ -171,6 +171,12 @@ vcc_StringVal(struct tokenlist *tl)
 		case FLOAT:
 			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
 			break;
+		case TIME:
+			Fb(tl, 0, "VRT_time_string(sp, %s)", vp->rname);
+			break;
+		case RTIME:
+			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
+			break;
 		case BACKEND:
 			Fb(tl, 0, "VRT_backend_string(sp)");
 			break;

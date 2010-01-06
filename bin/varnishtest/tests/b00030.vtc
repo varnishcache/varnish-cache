@@ -1,0 +1,20 @@
+# $Id$
+
+test "Test formatting of timestamps"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		error 200 req.grace;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.msg == "10.000"
+} -run

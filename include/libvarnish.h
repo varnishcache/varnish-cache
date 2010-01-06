@@ -75,6 +75,7 @@ void TCP_set_read_timeout(int s, double seconds);
 #endif
 
 /* from libvarnish/time.c */
+#define TIM_FORMAT_SIZE 30
 void TIM_format(double t, char *p);
 time_t TIM_parse(const char *p);
 double TIM_mono(void);

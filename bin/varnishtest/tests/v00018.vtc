@@ -27,11 +27,6 @@ varnish v1 -vcl {
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { error 404 req.grace; }
-}
-
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { set server.port = 1000; }
 }
 

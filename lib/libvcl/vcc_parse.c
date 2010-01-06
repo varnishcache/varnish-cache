@@ -265,6 +265,9 @@ Cond_Int(const struct var *vp, struct tokenlist *tl)
 		case TIME:
 			vcc_TimeVal(tl);
 			break;
+		case RTIME:
+			vcc_RTimeVal(tl);
+			break;
 		case INT:
 			ExpectErr(tl, CNUM);
 			Fb(tl, 0, "%.*s ", PF(tl->t));
@@ -355,6 +358,7 @@ Cond_2(struct tokenlist *tl)
 		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
 		case STRING:	L(tl, Cond_String(vp, tl)); break;
 		case TIME:	L(tl, Cond_Int(vp, tl)); break;
+		case RTIME:	L(tl, Cond_Int(vp, tl)); break;
 		case BACKEND:	L(tl, Cond_Backend(vp, tl)); break;
 		default:
 			vsb_printf(tl->sb,

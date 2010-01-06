@@ -107,7 +107,7 @@ TIM_format(double t, char *p)
 
 	tt = (time_t) t;
 	(void)gmtime_r(&tt, &tm);
-	AN(strftime(p, 30, "%a, %d %b %Y %T GMT", &tm));
+	AN(strftime(p, TIM_FORMAT_SIZE, "%a, %d %b %Y %T GMT", &tm));
 }
 
 /* XXX: add statistics ? */
