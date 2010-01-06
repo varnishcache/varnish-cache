@@ -45,6 +45,36 @@ server s1 {
 		-hdr hdr37=37 \
 		-hdr hdr38=38 \
 		-hdr hdr39=39 \
+		-hdr hdr40=40 \
+		-hdr hdr41=41 \
+		-hdr hdr42=42 \
+		-hdr hdr43=43 \
+		-hdr hdr44=44 \
+		-hdr hdr45=45 \
+		-hdr hdr46=46 \
+		-hdr hdr47=47 \
+		-hdr hdr48=48 \
+		-hdr hdr49=49 \
+		-hdr hdr50=50 \
+		-hdr hdr51=51 \
+		-hdr hdr52=52 \
+		-hdr hdr53=53 \
+		-hdr hdr54=54 \
+		-hdr hdr55=55 \
+		-hdr hdr56=56 \
+		-hdr hdr57=57 \
+		-hdr hdr58=58 \
+		-hdr hdr59=59 \
+		-hdr hdr60=60 \
+		-hdr hdr61=61 \
+		-hdr hdr62=62 \
+		-hdr hdr63=63 \
+		-hdr hdr64=64 \
+		-hdr hdr65=65 \
+		-hdr hdr66=66 \
+		-hdr hdr67=67 \
+		-hdr hdr68=68 \
+		-hdr hdr69=69 \
 		-body "foo"
 } -start
 
@@ -91,7 +121,37 @@ client c1 {
 		-hdr hdr36=36 \
 		-hdr hdr37=37 \
 		-hdr hdr38=38 \
-		-hdr hdr39=39
+		-hdr hdr39=39 \
+		-hdr hdr40=40 \
+		-hdr hdr41=41 \
+		-hdr hdr42=42 \
+		-hdr hdr43=43 \
+		-hdr hdr44=44 \
+		-hdr hdr45=45 \
+		-hdr hdr46=46 \
+		-hdr hdr47=47 \
+		-hdr hdr48=48 \
+		-hdr hdr49=49 \
+		-hdr hdr50=50 \
+		-hdr hdr51=51 \
+		-hdr hdr52=52 \
+		-hdr hdr53=53 \
+		-hdr hdr54=54 \
+		-hdr hdr55=55 \
+		-hdr hdr56=56 \
+		-hdr hdr57=57 \
+		-hdr hdr58=58 \
+		-hdr hdr59=59 \
+		-hdr hdr60=60 \
+		-hdr hdr61=61 \
+		-hdr hdr62=62 \
+		-hdr hdr63=63 \
+		-hdr hdr64=64 \
+		-hdr hdr65=65 \
+		-hdr hdr66=66 \
+		-hdr hdr67=67 \
+		-hdr hdr68=68 \
+		-hdr hdr69=69
 	rxresp
 } -run
 
