@@ -153,6 +153,37 @@ CMP(const struct esi_ptr *ep, const char *str)
 
 
 /*--------------------------------------------------------------------
+ * Replace the mandatory XML 1.0 entity references, in place.
+ */
+
+static void
+XMLentity(txt *t)
+{
+	char *s, *d;
+
+	for (s = d = t->b; s < t->e; ) {
+		if (*s == '&') {
+#define R(l,f,r)							\
+			if (s + l <= t->e && !memcmp(s, f, l)) {	\
+				*d++ = r;				\
+				s += l;					\
+				continue;				\
+			}
+			R(6, "&apos;", '\'');
+			R(6, "&quot;", '"');
+			R(4, "&lt;", '<');
+			R(4, "&gt;", '>');
+			R(5, "&amp;", '&');
+		}
+#undef R
+		*d++ = *s++;
+	}
+	t->e = d;
+	t->e[0] = '\0';
+}
+
+
+/*--------------------------------------------------------------------
  * Report a parsing error
  *
  * XXX: The "at xxx" count is usually the tail of the sequence.  Since we
@@ -385,7 +416,7 @@ esi_handle_include(struct esi_work *ew)
 		WS_Assert(ws);
 		s = 0;
 
-		if ( val.b != val.e ) {
+		if (val.b != val.e) {
 			s = Tlen(val) + 1;
 			c = WS_Alloc(ew->sp->wrk->ws, s);
 			XXXAN(c);
@@ -394,6 +425,9 @@ esi_handle_include(struct esi_work *ew)
 			val.e = val.b + s;
 			val.e[-1] = '\0';
 		}
+
+		if (strchr(val.b, '&'))
+			XMLentity(&val);
 
 		if (Tlen(val) > 7 && !memcmp(val.b, "http://", 7)) {
 			/*  Rewrite to Host: header inplace */
