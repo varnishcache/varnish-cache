@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4376 2009-11-27 11:06:32Z phk $
+ * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -105,7 +105,7 @@ struct var vcc_vars[] = {
 	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	     | VCL_MET_ERROR
 	},
-	{ "req.grace", TIME, 9,
+	{ "req.grace", RTIME, 9,
 	    "VRT_r_req_grace(sp)",
 	    "VRT_l_req_grace(sp, ",
 	    V_RW,	    0,
@@ -159,19 +159,19 @@ struct var vcc_vars[] = {
 	    V_RW,	    "HDR_BEREQ",
 	    VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_MISS | VCL_MET_FETCH
 	},
-	{ "bereq.connect_timeout", TIME, 21,
+	{ "bereq.connect_timeout", RTIME, 21,
 	    "VRT_r_bereq_connect_timeout(sp)",
 	    "VRT_l_bereq_connect_timeout(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_PASS | VCL_MET_MISS
 	},
-	{ "bereq.first_byte_timeout", TIME, 24,
+	{ "bereq.first_byte_timeout", RTIME, 24,
 	    "VRT_r_bereq_first_byte_timeout(sp)",
 	    "VRT_l_bereq_first_byte_timeout(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_PASS | VCL_MET_MISS
 	},
-	{ "bereq.between_bytes_timeout", TIME, 27,
+	{ "bereq.between_bytes_timeout", RTIME, 27,
 	    "VRT_r_bereq_between_bytes_timeout(sp)",
 	    "VRT_l_bereq_between_bytes_timeout(sp, ",
 	    V_RW,	    0,
@@ -183,7 +183,7 @@ struct var vcc_vars[] = {
 	    V_RW,	    0,
 	    VCL_MET_FETCH
 	},
-	{ "beresp.saintmode", TIME, 16,
+	{ "beresp.saintmode", RTIME, 16,
 	    NULL,
 	    "VRT_l_beresp_saintmode(sp, ",
 	    V_WO,	    0,
@@ -213,13 +213,13 @@ struct var vcc_vars[] = {
 	    V_RW,	    0,
 	    VCL_MET_FETCH
 	},
-	{ "beresp.ttl", TIME, 10,
+	{ "beresp.ttl", RTIME, 10,
 	    "VRT_r_beresp_ttl(sp)",
 	    "VRT_l_beresp_ttl(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_FETCH
 	},
-	{ "beresp.grace", TIME, 12,
+	{ "beresp.grace", RTIME, 12,
 	    "VRT_r_beresp_grace(sp)",
 	    "VRT_l_beresp_grace(sp, ",
 	    V_RW,	    0,
@@ -261,19 +261,19 @@ struct var vcc_vars[] = {
 	    V_RW,	    0,
 	    VCL_MET_HIT
 	},
-	{ "obj.ttl", TIME, 7,
+	{ "obj.ttl", RTIME, 7,
 	    "VRT_r_obj_ttl(sp)",
 	    "VRT_l_obj_ttl(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_HIT | VCL_MET_ERROR
 	},
-	{ "obj.grace", TIME, 9,
+	{ "obj.grace", RTIME, 9,
 	    "VRT_r_obj_grace(sp)",
 	    "VRT_l_obj_grace(sp, ",
 	    V_RW,	    0,
 	    VCL_MET_HIT | VCL_MET_ERROR
 	},
-	{ "obj.lastuse", TIME, 11,
+	{ "obj.lastuse", RTIME, 11,
 	    "VRT_r_obj_lastuse(sp)",
 	    NULL,
 	    V_RO,	    0,
