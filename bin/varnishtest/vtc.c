@@ -49,7 +49,7 @@ SVNID("$Id$")
 #include "vtc.h"
 
 #define		MAX_FILESIZE		(1024 * 1024)
-#define		MAX_TOKENS		100
+#define		MAX_TOKENS		200
 
 const char	*vtc_file;
 char		*vtc_desc;
