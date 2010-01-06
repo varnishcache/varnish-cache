@@ -435,13 +435,13 @@ esi_handle_include(struct esi_work *ew)
 				tag.e = q + 1;
 
 			u = WS_Reserve(ew->sp->wrk->ws, 0);
-			v = snprintf(ws->f, u - 1, "%.*s%.*s",
+			v = snprintf(ew->sp->wrk->ws->f, u - 1, "%.*s%.*s",
 			    pdiff(tag.b, tag.e), tag.b,
 			    pdiff(val.b, val.e), val.b);
 			v++;
 			xxxassert(v < u);
-			eb->include.b = ws->f;
-			eb->include.e = ws->f + v;
+			eb->include.b = ew->sp->wrk->ws->f;
+			eb->include.e = ew->sp->wrk->ws->f + v;
 			WS_Release(ew->sp->wrk->ws, v);
 		}
 		if (eb->include.b != NULL)
