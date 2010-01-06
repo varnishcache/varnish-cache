@@ -1,0 +1,49 @@
+# $Id$
+
+test "Url workspace gets overwritten/reused"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {
+		<esi:include src="1"/>
+		<esi:include src="2"/>
+		<esi:include src="3"/>
+		<esi:include src="4"/>
+		<esi:include src="5"/>
+	}
+
+	rxreq
+	expect req.url == "/1"
+	txresp -body "11111"
+
+	rxreq
+	expect req.url == "/2"
+	txresp -body "22222"
+
+	rxreq
+	expect req.url == "/3"
+	txresp -body "33333"
+
+	rxreq
+	expect req.url == "/4"
+	txresp -body "44444"
+
+	rxreq
+	expect req.url == "/5"
+	txresp -body "55555"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
