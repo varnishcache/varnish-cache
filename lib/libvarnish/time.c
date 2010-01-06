@@ -59,10 +59,18 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 
+/*
+ * Note on Solaris: for some reason, clock_gettime(CLOCK_MONOTONIC, &ts) is not
+ * implemented in assembly, but falls into a syscall, while gethrtime() doesn't,
+ * so we save a syscall by using gethrtime() if it is defined.
+ */
+
 double
 TIM_mono(void)
 {
-#ifdef HAVE_CLOCK_GETTIME
+#ifdef HAVE_GETHRTIME
+	return (gethrtime() * 1e-9);
+#elif  HAVE_CLOCK_GETTIME
 	struct timespec ts;
 
 	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
@@ -177,6 +185,8 @@ TIM_sleep(double t)
 /*
  * Compile with:
  *  cc -o foo -DTEST_DRIVER -I../.. -I../../include time.c assert.c
+ * (Solaris)
+ *  cc -o foo -DTEST_DRIVER -I../.. -I../../include -lm time.c assert.c
  * Test with:
  *  env TZ=UTC ./foo
  *  env TZ=CET ./foo
@@ -198,6 +208,49 @@ tst(const char *s, time_t good)
 	}
 }
 
+static int
+tst_delta_check(const char *name, double begin, double end, double ref)
+{
+	const double tol_max = 1.1;
+	const double tol_min = 1;
+
+	printf("%s delta for %fs sleep: %f\n", name, ref, (end - begin));
+
+	if ((end - begin) > tol_max * ref) {
+		printf("%s delta above tolerance: ((%f - %f) = %f) > %f\n",
+		    name, end, begin, (end - begin), tol_max);
+		return (1);
+	} else if ((end - begin) < tol_min * ref) {
+		printf("%s delta below tolerance: ((%f - %f) = %f) < %f\n",
+		    name, end, begin, (end - begin), tol_min);
+		return (1);
+	}
+	return (0);
+}
+
+static void
+tst_delta()
+{
+	double m_begin, m_end;
+	double r_begin, r_end;
+	const double ref = 1;
+	int err = 0;
+
+	r_begin = TIM_real();
+	m_begin = TIM_mono();
+	TIM_sleep(ref);
+	r_end = TIM_real();
+	m_end = TIM_mono();
+
+	err += tst_delta_check("TIM_mono", m_begin, m_end, ref);
+	err += tst_delta_check("TIM_real", r_begin, r_end, ref);
+
+	if (err) {
+		printf("%d time delta test errrors\n", err);
+		exit (2);
+	}
+}
+	
 int
 main(int argc, char **argv)
 {
@@ -213,6 +266,8 @@ main(int argc, char **argv)
 	tst("Sun, 06 Nov 1994 08:49:37 GMT", 784111777);
 	tst("Sunday, 06-Nov-94 08:49:37 GMT", 784111777);
 	tst("Sun Nov  6 08:49:37 1994", 784111777);
+
+	tst_delta();
 
 	return (0);
 }

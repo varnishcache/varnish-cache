@@ -232,6 +232,7 @@ AC_SYS_LARGEFILE
 save_LIBS="${LIBS}"
 LIBS="${LIBS} ${RT_LIBS}"
 AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_FUNCS([gethrtime]) 
 LIBS="${save_LIBS}"
 
 # Check which mechanism to use for the acceptor.  We look for kqueue
