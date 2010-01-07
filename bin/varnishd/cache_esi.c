@@ -53,6 +53,7 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "vrt.h"
 #include "vcl.h"
+#include "vct.h"
 #include "cache.h"
 #include "stevedore.h"
 
@@ -314,16 +315,17 @@ esi_attrib(const struct esi_work *ew, txt *in, txt *attrib, txt *val)
 	if (in->b >= in->e)
 		return (0);
 
-	if (!isalpha(*in->b)) {
+	if (!vct_isxmlnamestart(*in->b)) {
 		/* XXX error */
-		esi_error(ew, in->b, 1, "XML 1.0 Illegal attribute character");
+		esi_error(ew, in->b, 1,
+		    "XML 1.0 Illegal attribute start character");
 		return (-1);
 	}
 
 	/* Attribute name until '=' or space */
 	*attrib = *in;
 	while(in->b < in->e && *in->b != '=' && !isspace(*in->b)) {
-		if (!isalnum(*in->b)) {
+		if (!vct_isxmlname(*in->b)) {
 			esi_error(ew, attrib->b, 1 + (in->b - attrib->b),
 			    "XML 1.0 Illegal attribute character");
 			return (-1);
