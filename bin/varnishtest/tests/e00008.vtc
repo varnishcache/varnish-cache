@@ -33,7 +33,7 @@ server s1 {
                                                              >	25
 							26
 		<esi:include  aaa />			27
-		<esi:include  k.=./>			28
+		<esi:include  k?=./>			28
 		<esi:include  src/>			29
 		<esi:include  src=/>			30
 		<esi:include  src= />			31
