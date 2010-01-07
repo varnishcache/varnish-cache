@@ -45,7 +45,7 @@
 extern const uint16_t vct_typtab[256];
 
 static inline int
-vct_is(unsigned char x, unsigned char y)
+vct_is(unsigned char x, uint16_t y)
 {
 
 	return (vct_typtab[x] & (y));
@@ -58,8 +58,8 @@ vct_is(unsigned char x, unsigned char y)
 #define vct_isalpha(x) vct_is(x, VCT_ALPHA)
 #define vct_issep(x) vct_is(x, VCT_SEPARATOR)
 #define vct_issepctl(x) vct_is(x, VCT_SEPARATOR | VCT_CTL)
-#define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMES)
-#define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNM)
+#define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMESTART)
+#define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
 #define vct_skipcrlf(p) (p[0] == 0x0d && p[1] == 0x0a ? 2 : 1)
