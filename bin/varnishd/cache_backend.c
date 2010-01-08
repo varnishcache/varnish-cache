@@ -402,7 +402,7 @@ VBE_RecycleFd(struct sess *sp)
 /* Get a connection --------------------------------------------------*/
 
 struct vbe_conn *
-VBE_GetFd(struct director *d, struct sess *sp)
+VBE_GetFd(const struct director *d, struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -415,7 +415,7 @@ VBE_GetFd(struct director *d, struct sess *sp)
 /* Cheack health -----------------------------------------------------*/
 
 int
-VBE_Healthy(struct director *d, const struct sess *sp)
+VBE_Healthy(const struct director *d, const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -439,7 +439,7 @@ struct vdi_simple {
 };
 
 static struct vbe_conn *
-vdi_simple_getfd(struct director *d, struct sess *sp)
+vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
 	struct vdi_simple *vs;
 
@@ -450,7 +450,7 @@ vdi_simple_getfd(struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_simple_healthy(struct director *d, const struct sess *sp)
+vdi_simple_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_simple *vs;
 

@@ -61,7 +61,7 @@ struct vdi_round_robin {
 };
 
 static struct vbe_conn *
-vdi_round_robin_getfd(struct director *d, struct sess *sp)
+vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 {
 	int i;
 	struct vdi_round_robin *vs;
@@ -86,7 +86,7 @@ vdi_round_robin_getfd(struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_round_robin_healthy(struct director *d, const struct sess *sp)
+vdi_round_robin_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_round_robin *vs;
 	struct director *backend;
