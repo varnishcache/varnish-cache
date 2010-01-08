@@ -84,7 +84,9 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 		VSL_stats->backend_unused++;
 		Lck_Unlock(&VBE_mtx);
 	} else {
+		Lck_Lock(&VBE_mtx);
 		VSL_stats->n_vbe_conn--;
+		Lck_Unlock(&VBE_mtx);
 		free(vc);
 	}
 }
@@ -211,7 +213,9 @@ vbe_NewConn(void)
 	XXXAN(vc);
 	vc->magic = VBE_CONN_MAGIC;
 	vc->fd = -1;
+	Lck_Lock(&VBE_mtx);
 	VSL_stats->n_vbe_conn++;
+	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
 
