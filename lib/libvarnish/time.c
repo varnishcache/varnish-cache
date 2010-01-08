@@ -163,8 +163,8 @@ TIM_sleep(double t)
 {
 	struct timespec ts;
 
-	ts.tv_sec = floor(t);
-	ts.tv_nsec = floor((t - ts.tv_sec) * 1e9);
+	ts.tv_sec = (time_t)floor(t);
+	ts.tv_nsec = (long)floor((t - ts.tv_sec) * 1e9);
 
 #ifdef HAVE_NANOSLEEP
 	(void)nanosleep(&ts, NULL);

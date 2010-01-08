@@ -654,7 +654,7 @@ void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vary.c */
-struct vsb *VRY_Create(const struct sess *sp, struct http *hp);
+struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
 int VRY_Match(const struct sess *sp, const unsigned char *vary);
 
 /* cache_vcl.c */
