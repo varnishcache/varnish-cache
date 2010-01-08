@@ -422,7 +422,8 @@ cnt_fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	char *b;
 	unsigned handling, l;
-	struct vsb *vary;
+	int varyl = 0;
+	struct vsb *vary = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -519,16 +520,19 @@ cnt_fetch(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(sp, sp->wrk->beresp);
+		if (vary != NULL) {
+			varyl = vsb_len(vary);
+			assert(varyl > 0);
+		}
 	} else {
 		AZ(sp->objhead);
 		AZ(sp->objcore);
-		vary = NULL;
 	}
 
 	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS);
 
 	if (vary != NULL)
-		l += vsb_len(vary);
+		l += varyl;
 
 	/* Space for producing a Content-Length: header */
 	l += 30;
@@ -553,9 +557,9 @@ cnt_fetch(struct sess *sp)
 
 	if (vary != NULL) {
 		sp->obj->vary =
-		    (void *)WS_Alloc(sp->obj->http->ws, vsb_len(vary));
+		    (void *)WS_Alloc(sp->obj->http->ws, varyl);
 		AN(sp->obj->vary);
-		memcpy(sp->obj->vary, vsb_data(vary), vsb_len(vary));
+		memcpy(sp->obj->vary, vsb_data(vary), varyl);
 		vsb_delete(vary);
 		vary = NULL;
 	}

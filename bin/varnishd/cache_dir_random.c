@@ -78,7 +78,7 @@ struct vdi_random {
 };
 
 static struct vbe_conn *
-vdi_random_getfd(struct director *d, struct sess *sp)
+vdi_random_getfd(const struct director *d, struct sess *sp)
 {
 	int i, k;
 	struct vdi_random *vs;
@@ -158,7 +158,7 @@ vdi_random_getfd(struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_random_healthy(struct director *d, const struct sess *sp)
+vdi_random_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_random *vs;
 	int i;
