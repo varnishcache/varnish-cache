@@ -40,6 +40,7 @@ SVNID("$Id$")
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
+#include "compat/vasprintf.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -64,13 +65,13 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	v->fmt = STRING;
 	v->hdr = vh->hdr;
 	v->methods = vh->methods;
-	asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
+	assert(asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
+	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len) > 0);
 	AN(p);
 	TlFree(tl, p);
 	v->rname = p;
-	asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len);
+	assert(asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
+	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len) > 0);
 	AN(p);
 	TlFree(tl, p);
 	v->lname = p;

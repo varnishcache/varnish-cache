@@ -40,6 +40,7 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include "compat/asprintf.h"
 
 #include "libvarnish.h"
 #include "vsb.h"
@@ -106,7 +107,7 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		va_start(ap, fmt);
 		free(m->val);
 		m->val = NULL;
-		(void)vasprintf(&m->val, fmt, ap);
+		assert(vasprintf(&m->val, fmt, ap) >= 0);
 		va_end(ap);
 		AN(m->val);
 		vtc_log(vl, 4, "macro def %s=%s", name, m->val);

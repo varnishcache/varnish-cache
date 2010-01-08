@@ -47,6 +47,7 @@ SVNID("$Id$")
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
+#include "compat/vasprintf.h"
 
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
@@ -472,8 +473,8 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		VTAILQ_INIT(&tl->acl);
 		tcond = tl->t->tok;
 		vcc_NextToken(tl);
-		asprintf(&acln, "%u", tl->cnt);
-		assert(acln != NULL);
+		assert(asprintf(&acln, "%u", tl->cnt) > 0);
+		AN(acln);
 		vcc_acl_entry(tl);
 		vcc_acl_emit(tl, acln, 1);
 		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
@@ -504,8 +505,8 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	vcc_AddDef(tl, an, R_ACL);
-	asprintf(&acln, "%.*s", PF(an));
-	assert(acln != NULL);
+	assert(asprintf(&acln, "%.*s", PF(an)) > 0);
+	AN(acln);
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);

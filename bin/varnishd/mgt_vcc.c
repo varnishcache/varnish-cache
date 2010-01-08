@@ -44,9 +44,7 @@ SVNID("$Id$")
 #include <string.h>
 #include <unistd.h>
 
-#ifndef HAVE_ASPRINTF
 #include "compat/asprintf.h"
-#endif
 #include "vsb.h"
 
 #include "libvcl.h"

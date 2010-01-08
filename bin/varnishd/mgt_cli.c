@@ -46,9 +46,7 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <sys/socket.h>
 
-#ifndef HAVE_VASPRINTF
 #include "compat/vasprintf.h"
-#endif
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -593,7 +591,7 @@ telnet_accept(const struct vev *ev, int what)
 	TCP_myname(ev->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name((void*)&addr, addrlen, abuf2, sizeof abuf2,
 	    pbuf2, sizeof pbuf2);
-	asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1);
+	assert(asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1) > 0);
 	XXXAN(p);
 
 	(void)telnet_new(i);
