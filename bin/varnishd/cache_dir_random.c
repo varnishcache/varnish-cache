@@ -97,7 +97,10 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	 * amongst the good set.
 	 */
 	if (vs->use_hash) {
-		memcpy(&u, sp->digest, sizeof u);
+		u = sp->digest[3] << 24;
+		u |= sp->digest[2] << 16;
+		u |= sp->digest[1] << 8;
+		u |= sp->digest[0] << 0;
 		r = u / 4294967296.0;
 		r *= vs->tot_weight;
 		s1 = 0.0;
@@ -130,7 +133,10 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 			return (NULL);
 
 		if (vs->use_hash) {
-			memcpy(&u, sp->digest, sizeof u);
+			u = sp->digest[3] << 24;
+			u |= sp->digest[2] << 16;
+			u |= sp->digest[1] << 8;
+			u |= sp->digest[0] << 0;
 			r = u / 4294967296.0;
 		} else {
 			/* Pick a random threshold in that interval */
