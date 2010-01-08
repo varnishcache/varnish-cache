@@ -282,9 +282,6 @@ sub pipe_if_local {
 .Pp
 Subroutines in VCL do not take arguments, nor do they return values.
 .Pp
-If multiple subroutines with the same name are defined, they are
-concatenated in the order in which the appear in the source.
-.Pp
 To call a subroutine, use the
 .Cm call
 keyword followed by the subroutine's name:
@@ -467,6 +464,36 @@ builtin default.
 See the
 .Sx EXAMPLES
 section for a listing of the default code.
+.Ss Multiple subroutines
+If multiple subroutines with the same name are defined, they are
+concatenated in the order in which the appear in the source.
+.Pp
+Example:
+.Bd -literal -offset 4n
+# in file "main.vcl"
+include "backends.vcl";
+include "purge.vcl";
+
+# in file "backends.vcl"
+sub vcl_recv {
+  if (req.http.host ~ "example.com") {
+    set req.backend = foo;
+  } elsif (req.http.host ~ "example.org") {
+    set req.backend = bar;
+  }
+}
+
+# in file "purge.vcl"
+sub vcl_recv {
+  if (client.ip ~ admin_network) {
+    if (req.http.Cache-Control ~ "no-cache") {
+      purge_url(req.url);
+    }
+  }
+}
+.Ed
+.Pp
+The builtin default subroutines are implicitly appended in this way.
 .Ss Variables
 Although subroutines take no arguments, the necessary information is
 made available to the handler subroutines through global variables.
