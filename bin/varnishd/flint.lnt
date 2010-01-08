@@ -203,6 +203,8 @@
 -esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
+-e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
+
 // Review all below this line ///////////////////////////////////////////////
 
 -e732   // 183 Loss of sign (___) (___ to ___)

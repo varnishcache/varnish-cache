@@ -64,7 +64,7 @@ SVNID("$Id$")
 #include "cache.h"
 
 struct vsb *
-VRY_Create(const struct sess *sp, struct http *hp)
+VRY_Create(const struct sess *sp, const struct http *hp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;

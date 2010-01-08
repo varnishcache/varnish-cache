@@ -100,7 +100,7 @@ static void
 Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
     const char *port)
 {
-	struct addrinfo *res, *res0, hint;
+	struct addrinfo *res, *res0, *res1, hint;
 	int n4, n6, len, error, retval;
 	const char *emit, *multiple;
 	unsigned char *u;
@@ -138,9 +138,9 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
 			    "Please specify which exact address "
 			    "you want to use, we found these:\n",
 			    PF(t_host), multiple);
-			for (res = res0; res != NULL; res = res->ai_next) {
-				error = getnameinfo(res->ai_addr,
-				    res->ai_addrlen, hbuf, sizeof hbuf,
+			for (res1 = res0; res1 != NULL; res1 = res1->ai_next) {
+				error = getnameinfo(res1->ai_addr,
+				    res1->ai_addrlen, hbuf, sizeof hbuf,
 				    NULL, 0, NI_NUMERICHOST);
 				AZ(error);
 				vsb_printf(tl->sb, "\t%s\n", hbuf);
@@ -190,7 +190,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
  */
 
 static void
-vcc_EmitBeIdent(struct tokenlist *tl, struct vsb *v, 
+vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v, 
     int serial, const struct token *first, const struct token *last)
 {
 
