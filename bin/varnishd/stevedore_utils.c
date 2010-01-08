@@ -55,6 +55,7 @@ SVNID("$Id$")
 #include <sys/vfs.h>
 #endif
 
+#include "compat/asprintf.h"
 #include "mgt.h"
 #include "stevedore.h"
 
@@ -106,7 +107,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		    ctx, fn);
 
 	if (S_ISDIR(st.st_mode)) {
-		asprintf(&q, "%s/varnish.XXXXXX", fn);
+		xxxassert(asprintf(&q, "%s/varnish.XXXXXX", fn) > 0);
 		XXXAN(q);
 		fd = mkstemp(q);
 		if (fd < 0)

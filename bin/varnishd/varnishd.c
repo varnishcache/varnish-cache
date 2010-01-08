@@ -48,6 +48,7 @@ SVNID("$Id$")
 #include <time.h>
 #include <unistd.h>
 
+#include "compat/asprintf.h"
 #include "compat/daemon.h"
 
 #ifndef HAVE_STRLCPY
@@ -435,10 +436,11 @@ Symbol_hack(const char *a0)
 	FILE *fi;
 	uintptr_t a;
 	struct symbols *s;
+	int i;
 
 	p = NULL;
-	asprintf(&p, "nm -an %s 2>/dev/null", a0);
-	if (p == NULL)
+	i = asprintf(&p, "nm -an %s 2>/dev/null", a0);
+	if (i < 0 || p == NULL)
 		return;
 	fi = popen(p, "r");
 	free(p);
