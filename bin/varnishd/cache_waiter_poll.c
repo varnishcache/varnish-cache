@@ -44,6 +44,8 @@ SVNID("$Id$")
 #include "cache.h"
 #include "cache_waiter.h"
 
+#define NEEV	128
+
 static pthread_t vca_poll_thread;
 static struct pollfd *pollfd;
 static unsigned npoll, hpoll;
@@ -106,9 +108,9 @@ static void *
 vca_main(void *arg)
 {
 	unsigned v;
-	struct sess *sp, *sp2;
+	struct sess *ss[NEEV], *sp, *sp2;
 	double deadline;
-	int i, fd;
+	int i, j, fd;
 
 	THR_SetName("cache-poll");
 	(void)arg;
@@ -119,11 +121,14 @@ vca_main(void *arg)
 		v = poll(pollfd, hpoll + 1, 100);
 		if (v && pollfd[vca_pipes[0]].revents) {
 			v--;
-			i = read(vca_pipes[0], &sp, sizeof sp);
-			assert(i == sizeof sp);
-			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			VTAILQ_INSERT_TAIL(&sesshead, sp, list);
-			vca_poll(sp->fd);
+			i = read(vca_pipes[0], ss, sizeof ss);
+			assert(i >= 0);
+			assert((i % sizeof ss[0]) == 0);
+			for (j = 0; j * sizeof ss[0] < i; j += sizeof ss[0]) {
+				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
+				vca_poll(ss[j]->fd);
+			}
 		}
 		deadline = TIM_real() - params->sess_timeout;
 		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
