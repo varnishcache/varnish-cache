@@ -446,7 +446,14 @@ Existing requests will continue using whichever configuration was in
 use when they arrived.
 .El
 .Ss Run-Time Parameters
-.\" Keep in synch with parspec[] in mgt_param.c
+.\" Keep in synch with parspec[] in mgt_param.c and WRK_parspec[] in
+ \" mgt_pool.c
+.Pp
+Note that if an run-time parameter is marked
+.Bq experimental ,
+we do not know yet if it is a good idea to change this parameter, or
+if the default value is even sensible.  Caution is advised, and
+feedback is most welcome.
 .Bl -tag -width 4n
 .It Va auto_restart
 Whether to automatically restart the child process if it dies.
@@ -561,6 +568,15 @@ The default is 3 seconds.
 The time to wait before dropping an idle pipe mode connection.
 .Pp
 The default is 60 seconds.
+.It Va rush_exponent
+.Bq experimental
+.Pp
+How many parked request we start for each completed request on the object.
+.Pp
+NB: Even with the implict delay of delivery, this parameter controls
+an exponential increase in number of worker threads.
+.Pp
+The default is 3 requests per request.
 .It Va saintmode_threshold
 The number of items allowed on the saintmode list for a backend before it
 is considered sick. A value of 0 disables saintmode and any associated
@@ -596,7 +612,51 @@ The default is 1049.
 .It Va srcaddr_ttl
 The length of time to keep per-client accounting records.
 Setting this to 0 will disable per-client accounting.
+.It Va thread_pool_add_delay
+.Bq experimental
+.Pp
+Wait at least many miliseconds between creating threads.
+.Pp
+Setting this too long results in insuffient worker threads.
+.Pp
+Settings this too high increase the risk for worker thread pile-up.
+.Pp
+The default is 20 miliseconds.
+.It Va thread_pool_add_threshold
+.Bq experimental
+.Pp
+Overflow threshold in number of requests for worker thread creation.
+.Pp
+Setting this too low, will result in excess worker threads, which is
+generally a bad idea.
+.Pp
+Setting it too high results in insuffient worker threads.
+.Pp
+The default is 2 requests
+.It Va thread_pool_fail_delay
+.Bq experimental
+.Pp
+Wait at least this many miliseconds after a failed thread creation
+before trying to create another thread.
+.Pp
+Failure to create a worker thread is often a sign that the end is
+near, because the process is running out of RAM resources for thread
+stacks.  This delay tries to not rush it on needlessly.
+.Pp
+If thread creation failures are a problem, check that
+.Va thread_pool_max
+is not too high.
+.Pp
+It may also help to increase
+.Va thread_pool_timeout
+and
+.Va thread_pool_min ,
+to reduce the rate at which treads are destroyed and later recreated.
+.Pp
+The default is 200 miliseconds
 .It Va thread_pool_max
+.Bq experimental
+.Pp
 The maximum total number of worker threads.
 If the number of concurrent requests rises beyond this number,
 requests will start queueing up waiting for a worker thread to pick
@@ -606,12 +666,38 @@ the scheduler.
 .Pp
 The default is 1000.
 .It Va thread_pool_min
+.Bq experimental
+.Pp
 The minimum total number of worker threads.
 Higher values may allow
 .Nm
 to respond faster to a sudden increase in traffic.
 .Pp
 The default is 5.
+.It Va thread_pool_purge_delay
+.Bq experimental
+.Pp
+Wait this many miliseconds between purging threads.
+.Pp
+This controls the decay of thread pool when idle(-ish).
+.Pp
+The minimum is 100 miliseconds, the default is 1000 miliseconds.
+.It Va thread_pool_stack
+.Bq experimental
+.Pp
+Worker thread stack size.  The number used is the amount of bytes used
+as thread stack size.
+.Pp
+On 32bit systems in particular you may need to tweak this down to fit
+many threads into the limited address space.
+.It Va thread_pool_timeout
+.Bq experimental
+.Pp
+The amount of time a worker thread can be idle before it is killed,
+when the number of worker threads exceeds
+.Va thread_pool_min .
+.Pp
+The default is 120 seconds.
 .It Va thread_pools
 The number of worker thread pools.
 Higher values reduce lock contention but increase pressure on the
@@ -620,12 +706,15 @@ Note that a decrease of this parameter will only take effect after a
 restart.
 .Pp
 The default is 2.
-.It Va thread_pool_timeout
-The amount of time a worker thread can be idle before it is killed,
-when the number of worker threads exceeds
-.Va thread_pool_min .
+.It Va thread_stats_rate
+.Bq experimental
 .Pp
-The default is 120 seconds.
+Worker threads accumulate statistics, and dump these into the global
+stats counters if the lock is free when they finish a request.
+.Pp
+This parameters defines the maximum number of requests a worker thread
+may handle, before it is forced to dump its accumulated stats into the
+global counters.
 .It Va user
 The name of an unprivileged user to which the child process should
 switch before it starts accepting connections.
