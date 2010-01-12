@@ -47,14 +47,13 @@ SVNID("$Id$")
 
 #include "shmlog.h"
 #include "vre.h"
+#include "vbm.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
 /* Parameters */
 #define			SLEEP_USEC	(50*1000)
 #define			TIMEOUT_USEC	(5*1000*1000)
-
-#define NFD		(256 * 256)
 
 struct VSL_data {
 	unsigned		magic;
@@ -67,7 +66,8 @@ struct VSL_data {
 
 	/* for -r option */
 	int			fd;
-	unsigned char		rbuf[SHMLOG_NEXTTAG + 255 + 1];
+	unsigned		rbuflen;
+	unsigned char		*rbuf;
 
 	int			b_opt;
 	int			c_opt;
@@ -77,11 +77,22 @@ struct VSL_data {
 #define F_SEEN_IX		(1 << 0)
 #define F_NON_BLOCKING		(1 << 1)
 
-	unsigned char		map[NFD];
-#define M_CLIENT		(1 << 0)
-#define M_BACKEND		(1 << 1)
-#define M_SUPPRESS		(1 << 2)
-#define M_SELECT		(1 << 3)
+	/*
+	 * These two bitmaps mark fd's as belonging to client or backend
+	 * transactions respectively.
+	 */
+	struct vbitmap		*vbm_client;	
+	struct vbitmap		*vbm_backend;	
+
+	/*
+	 * Bit map of programatically selected tags, that cannot be suppressed.
+	 * This way programs can make sure they will see certain tags, even
+	 * if the user tries to supress them with -x/-X
+	 */
+	struct vbitmap		*vbm_select;	/* index: tag */
+
+	/* Bit map of tags selected/supressed with -[iIxX] options */
+	struct vbitmap		*vbm_supress;	/* index: tag */
 
 	int			regflags;
 	vre_t			*regincl;
@@ -166,13 +177,18 @@ VSL_New(void)
 {
 	struct VSL_data *vd;
 
-	assert(VSL_S_CLIENT == M_CLIENT);
-	assert(VSL_S_BACKEND == M_BACKEND);
 	vd = calloc(sizeof *vd, 1);
 	assert(vd != NULL);
 	vd->regflags = 0;
 	vd->magic = VSL_MAGIC;
 	vd->fd = -1;
+	vd->vbm_client = vbit_init(4096);
+	vd->vbm_backend = vbit_init(4096);
+	vd->vbm_supress = vbit_init(256);
+	vd->vbm_select = vbit_init(256);
+	vd->rbuflen = SHMLOG_NEXTTAG + 256;
+	vd->rbuf = malloc(vd->rbuflen);
+	assert(vd->rbuf != NULL);
 	return (vd);
 }
 
@@ -183,7 +199,7 @@ VSL_Select(struct VSL_data *vd, unsigned tag)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	vd->map[tag] |= M_SELECT;
+	vbit_set(vd->vbm_select, tag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -235,12 +251,20 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->fd != -1) {
+		assert(vd->rbuflen >= SHMLOG_DATA);
 		i = read(vd->fd, vd->rbuf, SHMLOG_DATA);
 		if (i != SHMLOG_DATA)
 			return (-1);
-		i = read(vd->fd, vd->rbuf + SHMLOG_DATA,
-		    SHMLOG_LEN(vd->rbuf) + 1);
-		if (i != SHMLOG_LEN(vd->rbuf) + 1)
+		l = SHMLOG_LEN(vd->rbuf) + SHMLOG_NEXTTAG;
+		if (vd->rbuflen < l) {
+			l += 200;
+			vd->rbuf = realloc(vd->rbuf, l);
+			assert(vd->rbuf != NULL);
+			vd->rbuflen = l;
+		}
+		l = SHMLOG_LEN(vd->rbuf) + 1;
+		i = read(vd->fd, vd->rbuf + SHMLOG_DATA, l);
+		if (i != l)
 			return (-1);
 		*pp = vd->rbuf;
 		return (1);
@@ -271,7 +295,7 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 int
 VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 {
-	unsigned char *p;
+	unsigned char *p, t;
 	unsigned u, l;
 	int i;
 
@@ -285,13 +309,13 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		switch(p[SHMLOG_TAG]) {
 		case SLT_SessionOpen:
 		case SLT_ReqStart:
-			vd->map[u] |= M_CLIENT;
-			vd->map[u] &= ~M_BACKEND;
+			vbit_set(vd->vbm_client, u);
+			vbit_clr(vd->vbm_backend, u);
 			break;
 		case SLT_BackendOpen:
 		case SLT_BackendXID:
-			vd->map[u] |= M_BACKEND;
-			vd->map[u] &= ~M_CLIENT;
+			vbit_clr(vd->vbm_client, u);
+			vbit_set(vd->vbm_backend, u);
 			break;
 		default:
 			break;
@@ -303,15 +327,16 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			if (--vd->keep == 0)
 				return (-1);
 		}
-		if (vd->map[p[SHMLOG_TAG]] & M_SELECT) {
+		t = p[SHMLOG_TAG];
+		if (vbit_test(vd->vbm_select, t)) {
 			*pp = p;
 			return (1);
 		}
-		if (vd->map[p[SHMLOG_TAG]] & M_SUPPRESS)
+		if (vbit_test(vd->vbm_supress, t))
 			continue;
-		if (vd->b_opt && !(vd->map[u] & M_BACKEND))
+		if (vd->b_opt && !vbit_test(vd->vbm_backend, u))
 			continue;
-		if (vd->c_opt && !(vd->map[u] & M_CLIENT))
+		if (vd->c_opt && !vbit_test(vd->vbm_client, u))
 			continue;
 		if (vd->regincl != NULL) {
 			i = VRE_exec(vd->regincl,
@@ -340,7 +365,7 @@ int
 VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 {
 	int i;
-	unsigned u, l;
+	unsigned u, l, s;
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -350,10 +375,13 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 			return (i);
 		u = SHMLOG_ID(p);
 		l = SHMLOG_LEN(p);
+		s = 0;
+		if (vbit_test(vd->vbm_backend, u))
+			s |= VSL_S_BACKEND;
+		if (vbit_test(vd->vbm_client, u))
+			s |= VSL_S_CLIENT;
 		if (func(priv,
-		    p[SHMLOG_TAG], u, l,
-		    vd->map[u] & (VSL_S_CLIENT|VSL_S_BACKEND),
-		    (char *)p + SHMLOG_DATA))
+		    p[SHMLOG_TAG], u, l, s, (char *)p + SHMLOG_DATA))
 			return (1);
 	}
 }
@@ -444,7 +472,7 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 	/* If first option is 'i', set all bits for supression */
 	if (arg == 'i' && !(vd->flags & F_SEEN_IX))
 		for (i = 0; i < 256; i++)
-			vd->map[i] |= M_SUPPRESS;
+			vbit_set(vd->vbm_supress, i);
 	vd->flags |= F_SEEN_IX;
 
 	for (b = opt; *b; b = e) {
@@ -470,9 +498,9 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 				continue;
 
 			if (arg == 'x')
-				vd->map[i] |= M_SUPPRESS;
+				vbit_set(vd->vbm_supress, i);
 			else
-				vd->map[i] &= ~M_SUPPRESS;
+				vbit_clr(vd->vbm_supress, i);
 			break;
 		}
 		if (i == 256) {
