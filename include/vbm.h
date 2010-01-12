@@ -56,7 +56,7 @@ vbit_expand(struct vbitmap *vb, unsigned bit)
 	bit += VBITMAP_LUMP - 1;
 	bit -= (bit % VBITMAP_LUMP);
 	p = realloc(vb->bits, bit / 8);
-	AN(p);
+	assert(p != NULL);
 	memset(p + vb->nbits / 8, 0, (bit - vb->nbits) / 8);
 	vb->bits = (void*)p;
 	vb->nbits = bit;
@@ -68,7 +68,7 @@ vbit_init(unsigned initial)
 	struct vbitmap *vb;
 
 	vb = calloc(sizeof *vb, 1);
-	AN(vb);
+	assert(vb != NULL);
 	if (initial == 0)
 		initial = VBITMAP_LUMP;
 	vbit_expand(vb, initial);
