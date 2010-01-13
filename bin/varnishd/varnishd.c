@@ -192,6 +192,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
 	fprintf(stderr, FMT, "-l bytesize", "Size of shared memory log");
+	fprintf(stderr, FMT, "-M address:port", "CLI-master to connect to.");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
 	fprintf(stderr, FMT, "-p param=value", "set parameter");
@@ -516,6 +517,7 @@ main(int argc, char * const *argv)
 	uintmax_t l_size;
 	const char *q;
 	const char *h_arg = "classic";
+	const char *M_arg = NULL;
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
@@ -565,7 +567,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:n:P:p:S:s:T:t:u:Vw:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:S:s:T:t:u:Vw:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -597,6 +599,9 @@ main(int argc, char * const *argv)
 			break;
 		case 'l':
 			l_arg = optarg;
+			break;
+		case 'M':
+			M_arg = optarg;
 			break;
 		case 'n':
 			n_arg = optarg;
@@ -755,6 +760,8 @@ main(int argc, char * const *argv)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
 	if (S_arg != NULL)
 		mgt_cli_secret(S_arg);
+	if (M_arg != NULL)
+		mgt_cli_master(M_arg);
 	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
 
