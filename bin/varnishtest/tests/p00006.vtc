@@ -2,7 +2,7 @@
 
 test "Check that Vary headers are stored"
 
-shell "rm -f /tmp/__v1/_.per"
+shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
 	rxreq 
@@ -13,7 +13,7 @@ server s1 {
 
 
 varnish v1 \
-	-arg "-spersistent,/tmp/__v1/_.per,10m" \
+	-arg "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start 
 
 client c1 {

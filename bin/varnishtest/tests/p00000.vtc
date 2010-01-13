@@ -7,11 +7,11 @@ server s1 {
 	txresp 
 } -start
 
-shell "rm -f /tmp/__v1/_.per"
+shell "rm -f ${tmpdir}/_.per"
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
-	-arg "-spersistent,/tmp/__v1/_.per,10m" -vcl+backend { } -start 
+	-arg "-spersistent,${tmpdir}/_.per,10m" -vcl+backend { } -start 
 
 varnish v1 -stop
 

@@ -40,6 +40,8 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "compat/asprintf.h"
 
 #include "libvarnish.h"
@@ -509,6 +511,7 @@ main(int argc, char * const *argv)
 	static struct vtclog	*vl;
 	double tmax, t0, t00;
 	const char *nmax;
+	char *tmpdir, *cmd;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -538,6 +541,10 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
+	tmpdir = tempnam(NULL, "vtc");
+	AN(tmpdir);
+	mkdir(tmpdir, 0700);
+	macro_def(vl, NULL, "tmpdir", tmpdir);
 	vtc_thread = pthread_self();
 	tmax = 0;
 	nmax = NULL;
@@ -557,6 +564,13 @@ main(int argc, char * const *argv)
 		if (vtc_error)
 			break;
 	}
+
+	/* XXX this will always remove the tmpdir even on failures.
+	 * Maybe we should keep it in that case? */
+	assert(asprintf(&cmd, "rm -rf %s", tmpdir) > 0);
+	AZ(system(cmd));
+	free(tmpdir);
+	free(cmd);
 
 	if (vtc_error)
 		return (2);
