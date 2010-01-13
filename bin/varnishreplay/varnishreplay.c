@@ -581,7 +581,8 @@ replay_thread(void *arg)
 			for (;;) {
 				thread_log(1, 0, "sleeping before connect...");
 				usleep(1000 * (thr->fd % 3001));
-				if ((thr->sock = VSS_connect(addr_info)) >= 0)
+				thr->sock = VSS_connect(addr_info, 0);
+				if (thr->sock >= 0)
 					break;
 				thread_log(0, errno, "connect failed");
 			}

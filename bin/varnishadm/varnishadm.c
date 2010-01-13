@@ -104,7 +104,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 		exit(2);
 	}
 
-	sock = VSS_connect(ta[0]);
+	sock = VSS_connect(ta[0], 0);
 
 	for (i = 0; i < n; ++i) {
 		free(ta[i]);
