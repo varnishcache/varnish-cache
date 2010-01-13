@@ -71,14 +71,16 @@ static int		cli_i = -1, cli_o = -1;
 static const char	*secret_file;
 
 struct telnet {
+	unsigned		magic;
+#define TELNET_MAGIC		0x53ec3ac0
 	int			fd;
 	struct vev		*ev;
-	VTAILQ_ENTRY(telnet)	list;
 };
 
 struct cli_port {
 	unsigned		magic;
 #define CLI_PORT_MAGIC		0x5791079f
+	VTAILQ_ENTRY(cli_port)	list;
 	struct vev		*ev;
 	int			fdi;
 	int			fdo;
@@ -87,11 +89,11 @@ struct cli_port {
 	struct cli		cli[1];
 	char			*name;
 	char			challenge[34];
+	mgt_cli_close_f		*closefunc;
+	void			*priv;
 };
 
-static VTAILQ_HEAD(,telnet)	telnets = VTAILQ_HEAD_INITIALIZER(telnets);
-static void telnet_close_all(void);
-static void telnet_close_one(int fd);
+static VTAILQ_HEAD(,cli_port)	clilist = VTAILQ_HEAD_INITIALIZER(clilist);
 
 /*--------------------------------------------------------------------*/
 
@@ -436,31 +438,35 @@ mgt_cli_close(struct cli_port *cp)
 
 	CHECK_OBJ_NOTNULL(cp, CLI_PORT_MAGIC);
 	syslog(LOG_NOTICE, "CLI %d closed", cp->fdi);
+	/*
+	 * Remove from list, so that if closefunc calls mgt_cli_close_all
+	 * it will not try to remove this one too.
+	 */
+	VTAILQ_REMOVE(&clilist, cp, list);
+
 	free(cp->name);
 	vsb_delete(cp->cli->sb);
 	VLU_Destroy(cp->vlu);
 
-	(void)close(cp->fdi);
-	if (cp->fdo != cp->fdi)
-		(void)close(cp->fdo);
-
-	/* Special case for stdin/out/err */
-	if (cp->fdi == 0) {
-		assert(open("/dev/null", O_RDONLY) == 0);
-		assert(open("/dev/null", O_WRONLY) == 1);
-		(void)close(2);
-		assert(open("/dev/null", O_WRONLY) == 2);
-
-		if (d_flag == 2) {
-			mgt_stop_child();
-			telnet_close_all();
-		}
-	} else {
-		telnet_close_one(cp->fdi);
-	}
-
-	free(cp);
+	cp->closefunc(cp->priv);
+	FREE_OBJ(cp);
 	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Get rid of all CLI sessions
+ */
+
+void
+mgt_cli_close_all(void)
+{
+	struct cli_port *cp;
+
+	while (!VTAILQ_EMPTY(&clilist)) {
+		cp = VTAILQ_FIRST(&clilist);
+		vev_del(mgt_evb, cp->ev);
+		(void)mgt_cli_close(cp);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -485,7 +491,7 @@ mgt_cli_callback(const struct vev *e, int what)
 /*--------------------------------------------------------------------*/
 
 void
-mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
+mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f *closefunc, void *priv)
 {
 	struct cli_port *cp;
 
@@ -501,6 +507,9 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	cp->fdi = fdi;
 	cp->fdo = fdo;
 	cp->verbose = verbose;
+
+	cp->closefunc = closefunc;
+	cp->priv = priv;
 
 	cp->cli->sb = vsb_newauto();
 	XXXAN(cp->cli->sb);
@@ -520,42 +529,26 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident)
 	} else if (params->cli_banner)
 		(void)VLU_Data("banner\n", -1, cp->vlu);
 
-	cp->ev = calloc(sizeof *cp->ev, 1);
+	cp->ev = vev_new();
 	cp->ev->name = cp->name;
 	cp->ev->fd = fdi;
 	cp->ev->fd_flags = EV_RD;
 	cp->ev->callback = mgt_cli_callback;
 	cp->ev->priv = cp;
+	VTAILQ_INSERT_TAIL(&clilist, cp, list);
 	AZ(vev_add(mgt_evb, cp->ev));
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-telnet_close_one(int fd)
+telnet_close(void *priv)
 {
-	struct telnet *tn, *tn2;
+	struct telnet *tn;
 
-	VTAILQ_FOREACH_SAFE(tn, &telnets, list, tn2) {
-		if (tn->fd != fd)
-			continue;
-		VTAILQ_REMOVE(&telnets, tn, list);
-		(void)close(tn->fd);
-		free(tn);
-		break;
-	}
-}
-
-static void
-telnet_close_all()
-{
-	struct telnet *tn, *tn2;
-
-	VTAILQ_FOREACH_SAFE(tn, &telnets, list, tn2) {
-		VTAILQ_REMOVE(&telnets, tn, list);
-		AZ(close(tn->fd));
-		free(tn);
-	}
+	CAST_OBJ_NOTNULL(tn, priv, TELNET_MAGIC);
+	(void)close(tn->fd);
+	FREE_OBJ(tn);
 }
 
 static struct telnet *
@@ -563,10 +556,9 @@ telnet_new(int fd)
 {
 	struct telnet *tn;
 
-	tn = calloc(sizeof *tn, 1);
+	ALLOC_OBJ(tn, TELNET_MAGIC);
 	AN(tn);
 	tn->fd = fd;
-	VTAILQ_INSERT_TAIL(&telnets, tn, list);
 	return (tn);
 }
 
@@ -575,6 +567,7 @@ telnet_accept(const struct vev *ev, int what)
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
+	struct telnet *tn;
 	int i;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
@@ -594,9 +587,9 @@ telnet_accept(const struct vev *ev, int what)
 	assert(asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1) > 0);
 	XXXAN(p);
 
-	(void)telnet_new(i);
+	tn = telnet_new(i);
 
-	mgt_cli_setup(i, i, 0, p);
+	mgt_cli_setup(i, i, 0, p, telnet_close, tn);
 	free(p);
 	return (0);
 }

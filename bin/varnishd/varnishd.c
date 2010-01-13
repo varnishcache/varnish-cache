@@ -38,6 +38,7 @@ SVNID("$Id$")
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -477,6 +478,29 @@ Symbol_hack(const char *a0)
 	(void)pclose(fi);
 }
 
+/*--------------------------------------------------------------------
+ * This function is called when the CLI on stdin is closed.
+ */
+
+static void
+cli_stdin_close(void *priv)
+{
+
+	(void)priv;
+	(void)close(0);
+	(void)close(1);
+	(void)close(2);
+	assert(open("/dev/null", O_RDONLY) == 0);
+	assert(open("/dev/null", O_WRONLY) == 1);
+	assert(open("/dev/null", O_WRONLY) == 2);
+
+	if (d_flag == 2) {
+		mgt_stop_child();
+		mgt_cli_close_all();
+		exit(0);
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -728,7 +752,7 @@ main(int argc, char * const *argv)
 	XXXAN(mgt_evb);
 
 	if (d_flag)
-		mgt_cli_setup(0, 1, 1, "debug");
+		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
 	if (S_arg != NULL)
 		mgt_cli_secret(S_arg);
 	if (T_arg != NULL)
