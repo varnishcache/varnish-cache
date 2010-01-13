@@ -98,6 +98,23 @@ TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 	AZ(getsockname(sock, addr, &l));
 	TCP_name(addr, l, abuf, alen, pbuf, plen);
 }
+/*--------------------------------------------------------------------*/
+
+void
+TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
+{
+	struct sockaddr_storage addr_s;
+	struct sockaddr	*addr = (void*)&addr_s;
+	socklen_t l;
+
+	l = sizeof addr_s;
+	if (!getpeername(sock, addr, &l))
+		TCP_name(addr, l, abuf, alen, pbuf, plen);
+	else {
+		strlcpy(abuf, "<none>", alen);
+		strlcpy(pbuf, "<none>", plen);
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
