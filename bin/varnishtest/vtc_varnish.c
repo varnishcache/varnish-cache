@@ -71,8 +71,6 @@ struct varnish {
 	struct vsb		*args;
 	int			fds[4];
 	pid_t			pid;
-	const char		*telnet;
-	const char		*accept;
 
 	pthread_t		tp;
 
@@ -173,8 +171,6 @@ varnish_new(const char *name)
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 
 	v->args = vsb_newauto();
-	v->telnet = "127.0.0.1:9001";
-	v->accept = "127.0.0.1:0";
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 
@@ -247,7 +243,16 @@ static void
 varnish_launch(struct varnish *v)
 {
 	struct vsb *vsb;
-	int i;
+	int i, nfd, nap;
+	struct vss_addr **ap;
+	char abuf[128],pbuf[128];
+	struct pollfd fd;
+
+	/* Create listener socket */
+	nap = VSS_resolve("127.0.0.1", "0", &ap);
+	AN(nap);
+	v->cli_fd = VSS_listen(ap[0], 1);
+	TCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	vsb_finish(v->args);
 	AZ(vsb_overflowed(v->args));
@@ -258,7 +263,8 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
 	vsb_printf(vsb, " -p cli_banner=off");
 	vsb_printf(vsb, " -p auto_restart=off");
-	vsb_printf(vsb, " -a '%s' -T %s", v->accept, v->telnet);
+	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");
+	vsb_printf(vsb, " -M %s:%s", abuf, pbuf);
 	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	vsb_printf(vsb, " %s", vsb_data(v->args));
 	vsb_finish(vsb);
@@ -288,19 +294,27 @@ varnish_launch(struct varnish *v)
 	vsb_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
-	vtc_log(v->vl, 3, "opening CLI connection");
-	for (i = 0; i < 30; i++) {
-		(void)usleep(200000);
-		v->cli_fd = VSS_open(v->telnet);
-		if (v->cli_fd >= 0)
-			break;
-	}
-	if (v->cli_fd < 0) {
+	/* Wait for the varnish to call home */
+	fd.fd = v->cli_fd;
+	fd.events = POLLIN;
+	i = poll(&fd, 1, 6000);
+	if (i != 1) {
 		AZ(close(v->fds[1]));
 		(void)kill(v->pid, SIGKILL);
-		vtc_log(v->vl, 0, "FAIL no CLI connection");
+		vtc_log(v->vl, 0, "FAIL timeout waiting for CLI connection");
 		return;
 	}
+	nfd = accept(v->cli_fd, NULL, NULL);
+	if (nfd < 0) {
+		AZ(close(v->fds[1]));
+		(void)kill(v->pid, SIGKILL);
+		vtc_log(v->vl, 0, "FAIL no CLI connection accepted");
+		return;
+	}
+	
+	AZ(close(v->cli_fd));
+	v->cli_fd = nfd;
+	
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
 	if (v->stats != NULL)
@@ -611,18 +625,6 @@ cmd_varnish(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
-		if (!strcmp(*av, "-telnet")) {
-			AN(av[1]);
-			v->telnet = av[1];
-			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-accept")) {
-			AN(av[1]);
-			v->accept = av[1];
-			av++;
-			continue;
-		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			vsb_cat(v->args, " ");
@@ -647,10 +649,6 @@ cmd_varnish(CMD_ARGS)
 			AN(av[2]);
 			varnish_cli(v, av[2], atoi(av[1]));
 			av += 2;
-			continue;
-		}
-		if (!strcmp(*av, "-launch")) {
-			varnish_launch(v);
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {
