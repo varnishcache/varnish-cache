@@ -101,6 +101,7 @@ struct params {
 	unsigned		sess_workspace;
 	unsigned		obj_workspace;
 	unsigned		shm_workspace;
+	unsigned		http_headers;
 
 	unsigned		shm_reclen;
 

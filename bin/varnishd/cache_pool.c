@@ -117,11 +117,16 @@ WRK_SumStat(struct worker *w)
 /*--------------------------------------------------------------------*/
 
 static void *
-wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
+wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
+    unsigned nhttp, unsigned http_space, unsigned siov)
 {
 	struct worker *w, ww;
 	unsigned char wlog[shm_workspace];
 	unsigned char ws[sess_workspace];
+	unsigned char http0[http_space];
+	unsigned char http1[http_space];
+	unsigned char http2[http_space];
+	struct iovec iov[siov];
 	struct SHA256Context sha256;
 	int stats_clean;
 
@@ -133,6 +138,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace)
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + sizeof wlog;
 	w->sha256ctx = &sha256;
+	w->http[0] = HTTP_create(http0, nhttp);
+	w->http[1] = HTTP_create(http1, nhttp);
+	w->http[2] = HTTP_create(http2, nhttp);
+	w->iov = iov;
+	w->siov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->ws, "wrk", ws, sess_workspace);
@@ -202,12 +212,19 @@ static void *
 wrk_thread(void *priv)
 {
 	struct wq *qp;
+	volatile unsigned nhttp;
+	unsigned siov;
 
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	/* We need to snapshot these two for consistency */
+	nhttp = params->http_headers;
+	siov = nhttp * 2;		/* XXX param ? */
+	if (siov > IOV_MAX)
+		siov = IOV_MAX;
 	return (wrk_thread_real(qp,
 	    params->shm_workspace,
-	    params->sess_workspace));
+	    params->sess_workspace,
+	    nhttp, HTTP_estimate(nhttp), siov));
 }
 
 /*--------------------------------------------------------------------

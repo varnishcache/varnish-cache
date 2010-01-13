@@ -184,7 +184,7 @@ cnt_deliver(struct sess *sp)
 			sp->obj->last_lru = sp->t_resp;	/* XXX: locking ? */
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
 	}
-	sp->wrk->resp = &sp->wrk->http[2];
+	sp->wrk->resp = sp->wrk->http[2];
 	http_Setup(sp->wrk->resp, sp->wrk->ws);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
@@ -336,7 +336,7 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		sp->wrk->cacheable = 0;
-		sp->obj = STV_NewObject(sp, 0, 0);
+		sp->obj = STV_NewObject(sp, 0, 0, params->http_headers);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -421,7 +421,7 @@ cnt_fetch(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned handling, l;
+	unsigned handling, l, nhttp;
 	int varyl = 0;
 	struct vsb *vary = NULL;
 
@@ -432,7 +432,7 @@ cnt_fetch(struct sess *sp)
 	AZ(sp->vbe);
 
 	/* sp->wrk->http[0] is (still) bereq */
-	sp->wrk->beresp = &sp->wrk->http[1];
+	sp->wrk->beresp = sp->wrk->http[1];
 	http_Setup(sp->wrk->beresp, sp->wrk->ws);
 
 	i = FetchHdr(sp);
@@ -441,7 +441,7 @@ cnt_fetch(struct sess *sp)
 	 * Save a copy before it might get mangled in VCL.  When it comes to
 	 * dealing with the body, we want to see the unadultered headers.
 	 */
-	sp->wrk->beresp1 = &sp->wrk->http[2];
+	sp->wrk->beresp1 = sp->wrk->http[2];
 	*sp->wrk->beresp1 = *sp->wrk->beresp;
 
 	if (i) {
@@ -529,7 +529,7 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objcore);
 	}
 
-	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS);
+	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS, &nhttp);
 
 	if (vary != NULL)
 		l += varyl;
@@ -542,7 +542,7 @@ cnt_fetch(struct sess *sp)
 	 * XXX: also.
 	 */
 
-	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl);
+	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl, nhttp);
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
@@ -861,7 +861,7 @@ cnt_miss(struct sess *sp)
 	AN(sp->objcore);
 	AN(sp->objhead);
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = &sp->wrk->http[0];
+	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	VCL_miss_method(sp);
@@ -926,7 +926,7 @@ cnt_pass(struct sess *sp)
 	AZ(sp->obj);
 
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = &sp->wrk->http[0];
+	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
@@ -976,7 +976,7 @@ cnt_pipe(struct sess *sp)
 
 	sp->acct_req.pipe++;
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = &sp->wrk->http[0];
+	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 

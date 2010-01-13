@@ -117,14 +117,49 @@ http_StatusMessage(unsigned status)
 
 /*--------------------------------------------------------------------*/
 
+unsigned
+HTTP_estimate(unsigned nhttp)
+{
+
+	/* XXX: We trust the structs to size-aligned as necessary */
+	return (sizeof (struct http) + (sizeof (txt) + 1) * nhttp);
+}
+
+struct http *
+HTTP_create(void *p, unsigned nhttp)
+{
+	struct http *hp;
+
+	hp = p;
+	hp->magic = HTTP_MAGIC;
+	hp->hd = (void*)(hp + 1);
+	hp->shd = nhttp;
+	hp->hdf = (void*)(hp->hd + nhttp);
+	return (hp);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 http_Setup(struct http *hp, struct ws *ws)
 {
+	unsigned shd;
+	txt *hd;
+	unsigned char *hdf;
 
+	/* XXX: This is not elegant, is it efficient ? */
+	shd = hp->shd;
+	hd = hp->hd;
+	hdf = hp->hdf;
 	memset(hp, 0, sizeof *hp);
+	memset(hd, 0, sizeof *hd * shd);
+	memset(hdf, 0, sizeof *hdf * shd);
 	hp->magic = HTTP_MAGIC;
 	hp->ws = ws;
 	hp->nhd = HTTP_HDR_FIRST;
+	hp->shd = shd;
+	hp->hd = hd;
+	hp->hdf = hdf;
 }
 
 /*--------------------------------------------------------------------*/
@@ -367,7 +402,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 			q--;
 		*q = '\0';
 
-		if (hp->nhd < HTTP_HDR_MAX) {
+		if (hp->nhd < hp->shd) {
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
 			hp->hd[hp->nhd].e = q;
@@ -556,7 +591,7 @@ void
 http_SetH(struct http *to, unsigned n, const char *fm)
 {
 
-	assert(n < HTTP_HDR_MAX);
+	assert(n < to->shd);
 	AN(fm);
 	to->hd[n].b = TRUST_ME(fm);
 	to->hd[n].e = strchr(to->hd[n].b, '\0');
@@ -567,7 +602,7 @@ static void
 http_copyh(struct http *to, const struct http *fm, unsigned n)
 {
 
-	assert(n < HTTP_HDR_MAX);
+	assert(n < to->shd);
 	Tcheck(fm->hd[n]);
 	to->hd[n] = fm->hd[n];
 	to->hdf[n] = fm->hdf[n];
@@ -612,9 +647,9 @@ http_copyheader(struct worker *w, int fd, struct http *to,
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	assert(n < HTTP_HDR_MAX);
+	assert(n < to->shd);
 	Tcheck(fm->hd[n]);
-	if (to->nhd < HTTP_HDR_MAX) {
+	if (to->nhd < to->shd) {
 		to->hd[to->nhd] = fm->hd[n];
 		to->hdf[to->nhd] = 0;
 		to->nhd++;
@@ -630,11 +665,12 @@ http_copyheader(struct worker *w, int fd, struct http *to,
  */
 
 unsigned
-http_EstimateWS(const struct http *fm, unsigned how)
+http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd)
 {
 	unsigned u, l;
 
 	l = 0;
+	*nhd = HTTP_HDR_FIRST;
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	for (u = 0; u < fm->nhd; u++) {
 		if (fm->hd[u].b == NULL)
@@ -647,6 +683,7 @@ http_EstimateWS(const struct http *fm, unsigned how)
 #include "http_headers.h"
 #undef HTTPH
 		l += Tlen(fm->hd[u]) + 1;
+		(*nhd)++;
 		// fm->hdf[u] |= HDF_COPY;
 	}
 	return (l);
@@ -755,7 +792,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	if (to->nhd >= HTTP_HDR_MAX) {
+	if (to->nhd >= to->shd) {
 		VSL_stats->losthdr++;
 		WSL(w, SLT_LostHeader, fd, "%s", hdr);
 		return;
@@ -827,7 +864,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to,
 	va_start(ap, fmt);
 	n = vsnprintf(to->ws->f, l, fmt, ap);
 	va_end(ap);
-	if (n + 1 >= l || to->nhd >= HTTP_HDR_MAX) {
+	if (n + 1 >= l || to->nhd >= to->shd) {
 		VSL_stats->losthdr++;
 		WSL(w, SLT_LostHeader, fd, "%s", to->ws->f);
 		WS_Release(to->ws, 0);

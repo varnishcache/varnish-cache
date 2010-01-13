@@ -60,8 +60,9 @@ struct sessmem {
 #define SESSMEM_MAGIC		0x555859c5
 
 	struct sess		sess;
-	struct http		http[2];
 	unsigned		workspace;
+	void			*wsp;
+	struct http		*http[2];
 	VTAILQ_ENTRY(sessmem)	list;
 	struct sockaddr_storage	sockaddr[2];
 };
@@ -99,25 +100,40 @@ static struct sess *
 ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 {
 	struct sess *sp;
-	volatile unsigned u;
+	unsigned char *p;
+	volatile unsigned nws;
+	volatile unsigned nhttp;
+	unsigned l, hl;
 
 	if (sm == NULL) {
 		if (VSL_stats->n_sess_mem >= params->max_sess)
 			return (NULL);
 		/*
-		 * It is not necessary to lock mem_workspace, but we
-		 * need to cache it locally, to make sure we get a
-		 * consistent view of it.
+		 * It is not necessary to lock these, but we need to
+		 * cache them locally, to make sure we get a consistent
+		 * view of the value.
 		 */
-		u = params->sess_workspace;
-		sm = malloc(sizeof *sm + u);
-		if (sm == NULL)
+		nws = params->sess_workspace;
+		nhttp = params->http_headers;
+		hl = HTTP_estimate(nhttp);
+		l = sizeof *sm + nws + 2 * hl;
+		p = malloc(l);
+		if (p == NULL)
 			return (NULL);
+
 		/* Don't waste time zeroing the workspace */
-		memset(sm, 0, sizeof *sm);
+		memset(p, 0, l - nws);
+
+		sm = (void*)p;
+		p += sizeof *sm;
 		sm->magic = SESSMEM_MAGIC;
-		sm->workspace = u;
+		sm->workspace = nws;
 		VSL_stats->n_sess_mem++;
+		sm->http[0] = HTTP_create(p, nhttp);
+		p += hl;
+		sm->http[1] = HTTP_create(p, nhttp);
+		p += hl;
+		sm->wsp = p;
 	}
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	VSL_stats->n_sess++;
@@ -142,9 +158,9 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 		sp->sockaddrlen = len;
 	}
 
-	WS_Init(sp->ws, "sess", (void *)(sm + 1), sm->workspace);
-	sp->http = &sm->http[0];
-	sp->http0 = &sm->http[1];
+	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
+	sp->http = sm->http[0];
+	sp->http0 = sm->http[1];
 
 	SES_ResetBackendTimeouts(sp);
 
@@ -193,7 +209,7 @@ SES_Delete(struct sess *sp)
 {
 	struct acct *b = &sp->acct;
 	struct sessmem *sm;
-	unsigned workspace;
+	// unsigned workspace;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
@@ -213,10 +229,10 @@ SES_Delete(struct sess *sp)
 		free(sm);
 	} else {
 		/* Clean and prepare for reuse */
-		workspace = sm->workspace;
-		memset(sm, 0, sizeof *sm);
-		sm->magic = SESSMEM_MAGIC;
-		sm->workspace = workspace;
+		// workspace = sm->workspace;
+		// memset(sm, 0, sizeof *sm);
+		// sm->magic = SESSMEM_MAGIC;
+		// sm->workspace = workspace;
 
 		Lck_Lock(&ses_mem_mtx);
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);

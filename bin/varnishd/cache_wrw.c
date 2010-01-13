@@ -153,7 +153,7 @@ WRW_Write(struct worker *w, const void *ptr, int len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (w->niov == MAX_IOVS)
+	if (w->niov == w->siov)
 		(void)WRW_Flush(w);
 	w->iov[w->niov].iov_base = TRUST_ME(ptr);
 	w->iov[w->niov].iov_len = len;
@@ -193,7 +193,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILEV)
 	do {
-		sendfilevec_t svvec[HTTP_HDR_MAX * 2 + 1];
+		sendfilevec_t svvec[params->http_headers * 2 + 1];
 		size_t xferred = 0, expected = 0;
 		int i;
 		for (i = 0; i < w->niov; i++) {

@@ -71,15 +71,7 @@ enum {
 	HTTP_HDR_RESPONSE,
 	/* HTTP header lines */
 	HTTP_HDR_FIRST,
-	HTTP_HDR_MAX = HTTP_HDR_MAX_VAL
 };
-
-/* Note: intentionally not IOV_MAX unless it has to be */
-#if (IOV_MAX < (HTTP_HDR_MAX_VAL * 2))
-#  define MAX_IOVS	IOV_MAX
-#else
-#  define MAX_IOVS	(HTTP_HDR_MAX_VAL * 2)
-#endif
 
 struct cli;
 struct vsb;
@@ -154,11 +146,12 @@ struct http {
 	int			status;
 	double			protover;
 
-	txt			hd[HTTP_HDR_MAX];
-	unsigned char		hdf[HTTP_HDR_MAX];
+	unsigned		shd;		/* Size of hd space */
+	txt			*hd;
+	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 #define HDF_COPY		(1 << 1)	/* Copy this field */
-	unsigned		nhd;
+	unsigned		nhd;		/* Next free hd */
 };
 
 /*--------------------------------------------------------------------
@@ -214,8 +207,9 @@ struct worker {
 
 	int			*wfd;
 	unsigned		werr;	/* valid after WRK_Flush() */
-	struct iovec		iov[MAX_IOVS];
-	int			niov;
+	struct iovec		*iov;
+	unsigned		siov;
+	unsigned		niov;
 	ssize_t			liov;
 
 	struct VCL_conf		*vcl;
@@ -227,7 +221,7 @@ struct worker {
 
 	struct http_conn	htc[1];
 	struct ws		ws[1];
-	struct http		http[3];
+	struct http		*http[3];
 	struct http		*bereq;
 	struct http		*beresp1;
 	struct http		*beresp;
@@ -341,7 +335,7 @@ struct object {
 	double			last_modified;
 	double			last_lru;
 
-	struct http		http[1];
+	struct http		*http;
 
 	VTAILQ_HEAD(, storage)	store;
 
@@ -513,8 +507,10 @@ int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 
 /* cache_http.c */
+unsigned HTTP_estimate(unsigned nhttp);
+struct http *HTTP_create(void *p, unsigned nhttp);
 const char *http_StatusMessage(unsigned);
-unsigned http_EstimateWS(const struct http *fm, unsigned how);
+unsigned http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);
