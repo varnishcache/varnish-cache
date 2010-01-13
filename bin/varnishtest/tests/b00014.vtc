@@ -12,19 +12,17 @@ server s1 {
 	txresp -body "bar"
 } -start
 
-shell "echo 'backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > /tmp/_b00014.vcl" 
-varnish v1 -arg "-f /tmp/_b00014.vcl" -start
+shell "echo 'backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl" 
+varnish v1 -arg "-f ${tmpdir}/_b00014.vcl" -start
 
 client c1 {
 	txreq -url /foo
 	rxresp
 } -run
 
-varnish v1 -cliok "vcl.load foo /tmp/_b00014.vcl" -cliok "vcl.use foo"
+varnish v1 -cliok "vcl.load foo ${tmpdir}/_b00014.vcl" -cliok "vcl.use foo"
 
 client c1 {
 	txreq -url /bar
 	rxresp
 } -run
-
-shell "rm -f /tmp/_b00014.vcl" 

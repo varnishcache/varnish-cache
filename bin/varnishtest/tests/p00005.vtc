@@ -2,7 +2,7 @@
 
 test "Check expiry of non-instantiated object"
 
-shell "rm -f /tmp/__v1/_.per"
+shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
 	rxreq 
@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x30000" \
-	-arg "-spersistent,/tmp/__v1/_.per,10m" \
+	-arg "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { 
 		sub vcl_fetch {
 			set beresp.ttl = 3s;

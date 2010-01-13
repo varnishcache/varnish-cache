@@ -2,7 +2,7 @@
 
 test "Ban a persistent object"
 
-shell "rm -f /tmp/__v1/_.per[12]"
+shell "rm -f ${tmpdir}/_.per[12]"
 
 server s1 {
 	rxreq 
@@ -11,8 +11,8 @@ server s1 {
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
-	-arg "-spersistent,/tmp/__v1/_.per1,10m" \
-	-arg "-spersistent,/tmp/__v1/_.per2,10m" \
+	-arg "-spersistent,${tmpdir}/_.per1,10m" \
+	-arg "-spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { } -start 
 
 client c1 {
