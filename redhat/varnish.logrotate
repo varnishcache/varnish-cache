@@ -2,6 +2,7 @@
     missingok
     notifempty
     sharedscripts
+    delaycompress
     postrotate
         /bin/kill -HUP `cat /var/run/varnishlog.pid 2>/dev/null` 2> /dev/null || true
 	/bin/kill -HUP `cat /var/run/varnishncsa.pid 2>/dev/null` 2> /dev/null || true
