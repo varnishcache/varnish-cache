@@ -46,8 +46,6 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <sys/socket.h>
 
-#include "compat/vasprintf.h"
-
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
@@ -501,7 +499,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 
 	cp->name = strdup(ident);
 	XXXAN(cp->name);
-	syslog(LOG_NOTICE, "CLI %d open from %s", fdi, cp->name);
+	syslog(LOG_NOTICE, "CLI %d open %s", fdi, cp->name);
 	cp->magic = CLI_PORT_MAGIC;
 
 	cp->fdi = fdi;
@@ -541,6 +539,26 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 
 /*--------------------------------------------------------------------*/
 
+static struct vsb *
+sock_id(const char *pfx, int fd)
+{
+	struct vsb *vsb;
+
+	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
+	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+
+	vsb = vsb_newauto();
+	AN(vsb);
+	TCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	TCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	vsb_printf(vsb, "%s %s:%s %s:%s", pfx, abuf2, pbuf2, abuf1, pbuf1);
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	return (vsb);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 telnet_close(void *priv)
 {
@@ -565,13 +583,11 @@ telnet_new(int fd)
 static int
 telnet_accept(const struct vev *ev, int what)
 {
+	struct vsb *vsb;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
 	struct telnet *tn;
 	int i;
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
-	char *p;
 
 	(void)what;
 	addrlen = sizeof addr;
@@ -581,16 +597,10 @@ telnet_accept(const struct vev *ev, int what)
 	if (i < 0)
 		return (0);
 
-	TCP_myname(ev->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name((void*)&addr, addrlen, abuf2, sizeof abuf2,
-	    pbuf2, sizeof pbuf2);
-	assert(asprintf(&p, "telnet %s:%s %s:%s", abuf2, pbuf2, abuf1, pbuf1) > 0);
-	XXXAN(p);
-
 	tn = telnet_new(i);
-
-	mgt_cli_setup(i, i, 0, p, telnet_close, tn);
-	free(p);
+	vsb = sock_id("telnet", ev->fd);
+	mgt_cli_setup(i, i, 0, vsb_data(vsb), telnet_close, tn);
+	vsb_delete(vsb);
 	return (0);
 }
 
@@ -657,4 +667,101 @@ mgt_cli_telnet(const char *T_arg)
 	}
 	free(addr);
 	free(port);
+}
+
+/* Reverse CLI ("Master") connections --------------------------------*/
+
+static int M_fd = -1;
+static struct vev *M_poker, *M_conn;
+static char *M_addr, *M_port;
+static struct vss_addr **M_ta;
+static int M_nta, M_nxt;
+static double M_poll = 0.1;
+
+static void
+Marg_closer(void *priv)
+{
+
+	(void)priv;
+	(void)close(M_fd);
+	M_fd = -1;
+}
+
+static int
+Marg_poker(const struct vev *e, int what)
+{
+	struct vsb *vsb;
+	int s, k;
+	socklen_t l;
+
+	(void)what;	/* XXX: ??? */
+
+	if (e == M_conn) {
+		/* Our connect(2) returned, check result */
+		l = sizeof k;
+		AZ(getsockopt(M_fd, SOL_SOCKET, SO_ERROR, &k, &l));
+		if (k) {
+			errno = k;
+			syslog(LOG_INFO, "Could not connect to CLI-master: %m");
+			(void)close(M_fd);
+			M_fd = -1;
+			/* Try next address */
+			if (++M_nxt >= M_nta) {
+				M_nxt = 0;
+				if (M_poll < 10)
+					M_poll *= 2;
+			}
+			return (1);
+		}
+		vsb = sock_id("master", M_fd);
+		mgt_cli_setup(M_fd, M_fd, 0, vsb_data(vsb), Marg_closer, NULL);
+		vsb_delete(vsb);
+		M_poll = 1;
+		return (1);
+	}
+
+	assert(e == M_poker);
+
+	M_poker->timeout = M_poll;	/* XXX nasty ? */
+	if (M_fd >= 0)
+		return (0);
+
+	/* Try to connect asynchronously */
+	s = VSS_connect(M_ta[M_nxt], 1);
+	if (s < 0)
+		return (0);
+
+	M_conn = vev_new();
+	AN(M_conn);
+	M_conn->callback = Marg_poker;
+	M_conn->name = "-M connector";	
+	M_conn->fd_flags = EV_WR;
+	M_conn->fd = s;
+	M_fd = s;
+	AZ(vev_add(mgt_evb, M_conn));
+	return (0);
+}
+
+void
+mgt_cli_master(const char *M_arg)
+{
+	(void)M_arg;
+
+	if (VSS_parse(M_arg, &M_addr, &M_port) || M_port == NULL) {
+		fprintf(stderr, "Could not parse -M argument\n");
+		exit (1);
+	}
+	M_nta = VSS_resolve(M_addr, M_port, &M_ta);
+	if (M_nta <= 0) {
+		fprintf(stderr, "Could resolve -M argument to address\n");
+		exit (1);
+	}
+	M_nxt = 0;
+	AZ(M_poker);
+	M_poker = vev_new();
+	AN(M_poker);
+	M_poker->timeout = M_poll;
+	M_poker->callback = Marg_poker;
+	M_poker->name = "-M poker";	
+	AZ(vev_add(mgt_evb, M_poker));
 }
