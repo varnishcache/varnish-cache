@@ -493,6 +493,12 @@ static const struct parspec input_parspec[] = {
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
 		"16384", "bytes" },
+	{ "http_headers", tweak_uint, &master.http_headers, 32, UINT_MAX,
+		"Maximum number of HTTP headers we will deal with.\n"
+		"This space is preallocated in sessions and workthreads only "
+		"objects allocate only space for the headers they store.\n",
+		0,
+		"64", "header lines" },
 	{ "obj_workspace", tweak_uint, &master.obj_workspace, 0, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for objects. "
 		"This space must be big enough for the entire HTTP protocol "

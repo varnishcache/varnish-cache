@@ -88,13 +88,15 @@ stv_pick_stevedore(void)
 /*********************************************************************/
 
 static void
-STV_InitObj(struct sess *sp, struct object *o, unsigned wsl)
+STV_InitObj(struct sess *sp, struct object *o, unsigned wsl, unsigned lhttp,
+    unsigned nhttp)
 {
 
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 
-	WS_Init(o->ws_o, "obj", (o + 1), wsl);
+	o->http = HTTP_create(o + 1, nhttp);
+	WS_Init(o->ws_o, "obj", (char *)(o + 1) + lhttp, wsl);
 	WS_Assert(o->ws_o);
 
 	http_Setup(o->http, o->ws_o);
@@ -109,10 +111,11 @@ STV_InitObj(struct sess *sp, struct object *o, unsigned wsl)
 /*********************************************************************/
 
 struct object *
-STV_NewObject(struct sess *sp, unsigned l, double ttl)
+STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 {
 	struct object *o;
 	struct storage *st;
+	unsigned lh;
 
 	(void)ttl;
 	if (l == 0)
@@ -120,21 +123,23 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl)
 	if (params->obj_workspace > 0 && params->obj_workspace > l)
 		l =  params->obj_workspace;
 
+	lh = HTTP_estimate(nhttp);
+
 	if (!sp->wrk->cacheable) {
-		o = malloc(sizeof *o + l);
+		o = malloc(sizeof *o + l + lh);
 		XXXAN(o);
-		STV_InitObj(sp, o, l);
+		STV_InitObj(sp, o, l, lh, nhttp);
 		return (o);
 	}
-	st = STV_alloc(sp, sizeof *o + l, sp->objcore);
+	st = STV_alloc(sp, sizeof *o + l + lh, sp->objcore);
 	XXXAN(st);
-	xxxassert(st->space >= (sizeof *o + l));
+	xxxassert(st->space >= (sizeof *o + l + lh));
 
 	st->len = st->space;
 
 	o = (void *)st->ptr; /* XXX: align ? */
 
-	STV_InitObj(sp, o, st->space - sizeof *o);
+	STV_InitObj(sp, o, st->space - (sizeof *o + lh), lh, nhttp);
 	o->objstore = st;
 	return (o);
 }
