@@ -34,5 +34,5 @@ int VSS_parse(const char *str, char **addr, char **port);
 int VSS_resolve(const char *addr, const char *port, struct vss_addr ***ta);
 int VSS_bind(const struct vss_addr *addr);
 int VSS_listen(const struct vss_addr *addr, int depth);
-int VSS_connect(const struct vss_addr *addr);
+int VSS_connect(const struct vss_addr *addr, int nonblock);
 int VSS_open(const char *str);

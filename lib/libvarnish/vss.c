@@ -239,9 +239,9 @@ VSS_listen(const struct vss_addr *va, int depth)
  * Return the socket.
  */
 int
-VSS_connect(const struct vss_addr *va)
+VSS_connect(const struct vss_addr *va, int nonblock)
 {
-	int sd;
+	int sd, i;
 
 	sd = socket(va->va_family, va->va_socktype, va->va_protocol);
 	if (sd < 0) {
@@ -249,12 +249,14 @@ VSS_connect(const struct vss_addr *va)
 			perror("socket()");
 		return (-1);
 	}
-	if (connect(sd, &va->va_addr.sa, va->va_addrlen) != 0) {
-		perror("connect()");
-		(void)close(sd);
-		return (-1);
-	}
-	return (sd);
+	if (nonblock) 
+		TCP_nonblocking(sd);
+	i = connect(sd, &va->va_addr.sa, va->va_addrlen);
+	if (i == 0 || (nonblock && errno == EINPROGRESS))
+		return (sd);
+	perror("connect()");
+	(void)close(sd);
+	return (-1);
 }
 
 /*
@@ -279,7 +281,7 @@ VSS_open(const char *str)
 		return (-1);
 	}
 	for (n = 0; n < nvaddr; n++) {
-		retval = VSS_connect(vaddr[n]);
+		retval = VSS_connect(vaddr[n], 0);
 		if (retval >= 0)
 			break;
 	}
