@@ -3,7 +3,7 @@
     notifempty
     sharedscripts
     postrotate
-        /bin/kill -HUP `cat /var/run/varnish/varnishlog.pid 2>/dev/null` 2> /dev/null || true
-	/bin/kill -HUP `cat /var/run/varnish/varnishncsa.pid 2>/dev/null` 2> /dev/null || true
+        /bin/kill -HUP `cat /var/run/varnishlog.pid 2>/dev/null` 2> /dev/null || true
+	/bin/kill -HUP `cat /var/run/varnishncsa.pid 2>/dev/null` 2> /dev/null || true
     endscript
 }
