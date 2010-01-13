@@ -49,12 +49,14 @@ void mgt_stop_child(void);
 
 /* mgt_cli.c */
 
-void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident);
+typedef void mgt_cli_close_f(void *priv);
+void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f *close_func, void *priv);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
 void mgt_cli_telnet(const char *T_arg);
 void mgt_cli_secret(const char *S_arg);
+void mgt_cli_close_all(void);
 
 /* mgt_param.c */
 void MCF_ParamSync(void);
