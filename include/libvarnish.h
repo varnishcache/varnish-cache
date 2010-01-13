@@ -61,6 +61,7 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 #define TCP_PORTBUFSIZE		16
 
 void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+void TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
 void TCP_blocking(int sock);
 void TCP_nonblocking(int sock);
