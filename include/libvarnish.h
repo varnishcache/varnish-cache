@@ -133,3 +133,17 @@ do {									\
 	abort();							\
 } while (0)
 const char* svn_version(void);
+
+/* Safe printf into a fixed-size buffer */
+#define bprintf(buf, fmt, ...)						\
+	do {								\
+		assert(snprintf(buf, sizeof buf, fmt, __VA_ARGS__)	\
+		    < sizeof buf);					\
+	} while (0)
+
+/* Safe printf into a fixed-size buffer */
+#define vbprintf(buf, fmt, ap)						\
+	do {								\
+		assert(vsnprintf(buf, sizeof buf, fmt, ap)		\
+		    < sizeof buf);					\
+	} while (0)
