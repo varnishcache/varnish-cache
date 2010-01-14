@@ -160,3 +160,4 @@ dir_init_f VRT_init_dir_simple;
 dir_init_f VRT_init_dir_hash;
 dir_init_f VRT_init_dir_random;
 dir_init_f VRT_init_dir_round_robin;
+dir_init_f VRT_init_dir_client;

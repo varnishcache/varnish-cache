@@ -57,6 +57,7 @@ SVNID("$Id$")
 #include "cache.h"
 #include "cache_backend.h"
 #include "vrt.h"
+#include "vsha256.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -65,12 +66,14 @@ struct vdi_random_host {
 	double			weight;
 };
 
+enum crit_e {c_random, c_hash, c_client};
+
 struct vdi_random {
 	unsigned		magic;
 #define VDI_RANDOM_MAGIC	0x3771ae23
 	struct director		dir;
 
-	unsigned		use_hash;
+	enum crit_e		criteria;
 	unsigned		retries;
 	double			tot_weight;
 	struct vdi_random_host	*hosts;
@@ -86,22 +89,47 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	unsigned u;
 	struct vbe_conn *vbe;
 	struct director *d2;
+	struct SHA256Context ctx;
+	unsigned char sign[SHA256_LEN], *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
+	if (vs->criteria == c_client) {
+		/*
+		 * Hash the client IP# ascii representation, rather than
+		 * rely on the raw IP# being a good hash distributor, since
+		 * experience shows this not to be the case.
+		 * We do not hash the port number, to make everybody behind
+		 * a given NAT gateway fetch from the same backend.
+		 */
+		SHA256_Init(&ctx);
+		AN(sp->addr);
+		SHA256_Update(&ctx, sp->addr, strlen(sp->addr));
+		SHA256_Final(sign, &ctx);
+		hp = sign;
+	}
+	if (vs->criteria == c_hash) {
+		/*
+		 * Reuse the hash-string, the objective here is to fetch the
+		 * same object on the same backend all the time
+		 */
+		hp = sp->digest;
+	}
+
 	/*
 	 * If we are hashing, first try to hit our "canonical backend" 
 	 * If that fails, we fall through, and select a weighted backend
-	 * amongst the good set.
+	 * amongst the healthy set.
 	 */
-	if (vs->use_hash) {
-		u = sp->digest[3] << 24;
-		u |= sp->digest[2] << 16;
-		u |= sp->digest[1] << 8;
-		u |= sp->digest[0] << 0;
+	if (vs->criteria != c_random) {
+		u = hp[3] << 24;
+		u |= hp[2] << 16;
+		u |= hp[1] << 8;
+		u |= hp[0] << 0;
 		r = u / 4294967296.0;
+		assert(r >= 0.0 && r < 1.0);
 		r *= vs->tot_weight;
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
@@ -119,7 +147,6 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	}
 
 	for (k = 0; k < vs->retries; ) {
-
 		/* Sum up the weights of healty backends */
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++) {
@@ -132,11 +159,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		if (s1 == 0.0)
 			return (NULL);
 
-		if (vs->use_hash) {
-			u = sp->digest[3] << 24;
-			u |= sp->digest[2] << 16;
-			u |= sp->digest[1] << 8;
-			u |= sp->digest[0] << 0;
+		if (vs->criteria != c_random) {
 			r = u / 4294967296.0;
 		} else {
 			/* Pick a random threshold in that interval */
@@ -197,7 +220,7 @@ vdi_random_fini(struct director *d)
 
 static void
 vrt_init(struct cli *cli, struct director **bp, int idx,
-    const void *priv, int use_hash)
+    const void *priv, enum crit_e criteria)
 {
 	const struct vrt_dir_random *t;
 	struct vdi_random *vs;
@@ -222,7 +245,7 @@ vrt_init(struct cli *cli, struct director **bp, int idx,
 	vs->dir.fini = vdi_random_fini;
 	vs->dir.healthy = vdi_random_healthy;
 
-	vs->use_hash = use_hash;
+	vs->criteria = criteria;
 	vs->retries = t->retries;
 	if (vs->retries == 0)
 		vs->retries = t->nmember;
@@ -244,12 +267,19 @@ void
 VRT_init_dir_random(struct cli *cli, struct director **bp, int idx,
     const void *priv)
 {
-	vrt_init(cli, bp, idx, priv, 0);
+	vrt_init(cli, bp, idx, priv, c_random);
 }
 
 void
 VRT_init_dir_hash(struct cli *cli, struct director **bp, int idx,
     const void *priv)
 {
-	vrt_init(cli, bp, idx, priv, 1);
+	vrt_init(cli, bp, idx, priv, c_hash);
+}
+
+void
+VRT_init_dir_client(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	vrt_init(cli, bp, idx, priv, c_client);
 }
