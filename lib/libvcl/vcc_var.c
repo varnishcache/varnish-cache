@@ -40,7 +40,6 @@ SVNID("$Id$")
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
-#include "compat/vasprintf.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -49,7 +48,8 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 {
 	char *p;
 	struct var *v;
-	int i;
+	int i, l;
+	char buf[258];
 
 	(void)tl;
 
@@ -65,16 +65,22 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	v->fmt = STRING;
 	v->hdr = vh->hdr;
 	v->methods = vh->methods;
-	assert(asprintf(&p, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len) > 0);
-	AN(p);
-	TlFree(tl, p);
+	l = strlen(v->name + vh->len) + 1;
+
+	bprintf(buf, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")",
+	    v->hdr, (unsigned)l, v->name + vh->len);
+	i = strlen(buf);
+	p = TlAlloc(tl, i + 1);
+	memcpy(p, buf, i + 1);
 	v->rname = p;
-	assert(asprintf(&p, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ", v->hdr,
-	    (unsigned)(strlen(v->name + vh->len) + 1), v->name + vh->len) > 0);
-	AN(p);
-	TlFree(tl, p);
+
+	bprintf(buf, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ",
+	    v->hdr, (unsigned)l, v->name + vh->len);
+	i = strlen(buf);
+	p =  TlAlloc(tl, i + 1);
+	memcpy(p, buf, i + 1);
 	v->lname = p;
+
 	return (v);
 }
 

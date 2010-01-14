@@ -89,8 +89,7 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 	va_list ap;
 
 	if (instance != NULL) {
-		assert (snprintf(buf, sizeof buf, "%s_%s", instance, name)
-		    < sizeof buf);
+		bprintf(buf, "%s_%s", instance, name);
 		name = buf;
 	}
 
@@ -109,8 +108,9 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		va_start(ap, fmt);
 		free(m->val);
 		m->val = NULL;
-		assert(vasprintf(&m->val, fmt, ap) >= 0);
+		vbprintf(buf, fmt, ap);
 		va_end(ap);
+		m->val = strdup(buf);
 		AN(m->val);
 		vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	} else if (m != NULL) {
