@@ -264,6 +264,12 @@ __FBSDID("$FreeBSD: head/lib/libc/stdlib/malloc.c 182225 2008-08-27 02:00:53Z ja
 #  define QUANTUM_2POW		4
 #  define SIZEOF_PTR_2POW	2
 #endif
+#ifdef __sh__
+#  define PAGESIZE_2POW		12
+#  define QUANTUM_2POW		3
+#  define SIZEOF_PTR_2POW	2
+#  define NO_TLS
+#endif
 
 #define	QUANTUM			((size_t)(1U << QUANTUM_2POW))
 #define	QUANTUM_MASK		(QUANTUM - 1)
