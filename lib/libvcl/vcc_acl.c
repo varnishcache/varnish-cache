@@ -47,7 +47,6 @@ SVNID("$Id$")
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
-#include "compat/vasprintf.h"
 
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
@@ -456,7 +455,7 @@ void
 vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 {
 	unsigned tcond;
-	char *acln;
+	char acln[32];
 
 	switch (tl->t->tok) {
 	case '~':
@@ -473,13 +472,11 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 		VTAILQ_INIT(&tl->acl);
 		tcond = tl->t->tok;
 		vcc_NextToken(tl);
-		assert(asprintf(&acln, "%u", tl->cnt) > 0);
-		AN(acln);
+		bprintf(acln, "%u", tl->cnt);
 		vcc_acl_entry(tl);
 		vcc_acl_emit(tl, acln, 1);
 		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
 		    (tcond == T_NEQ ? "!" : ""), acln, vp->rname);
-		free(acln);
 		break;
 	default:
 		vsb_printf(tl->sb, "Invalid condition ");
@@ -495,7 +492,7 @@ void
 vcc_Acl(struct tokenlist *tl)
 {
 	struct token *an;
-	char *acln;
+	char acln[1024];
 
 	vcc_NextToken(tl);
 	VTAILQ_INIT(&tl->acl);
@@ -505,8 +502,7 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	vcc_AddDef(tl, an, R_ACL);
-	assert(asprintf(&acln, "%.*s", PF(an)) > 0);
-	AN(acln);
+	bprintf(acln, "%.*s", PF(an));
 
 	ExpectErr(tl, '{');
 	vcc_NextToken(tl);
@@ -521,6 +517,4 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	vcc_acl_emit(tl, acln, 0);
-
-	free(acln);
 }
