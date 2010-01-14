@@ -778,6 +778,7 @@ static const struct dirlist {
 } dirlist[] = {
 	{ "hash",		vcc_ParseRandomDirector },
 	{ "random",		vcc_ParseRandomDirector },
+	{ "client",		vcc_ParseRandomDirector },
 	{ "round-robin",	vcc_ParseRoundRobinDirector },
 	{ NULL,		NULL }
 };
