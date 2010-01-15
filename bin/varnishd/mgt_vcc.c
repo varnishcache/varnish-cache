@@ -325,12 +325,13 @@ mgt_vcc_delbyname(const char *name)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
+mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 {
 	char *addr, *port;
 	char *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
+	char buf[BUFSIZ];
 
 	if (b_arg != NULL) {
 		AZ(vcl);
@@ -363,6 +364,9 @@ mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 		free(addr);
 		free(port);
 		AN(vcl);
+		bprintf(buf, "boot (-b %s)", b_arg);
+	} else {
+		brintf(buf, "boot (-f %s)", f_arg);
 	}
 
 	vf = mgt_VccCompile(&sb, vcl, C_flag);
@@ -379,7 +383,7 @@ mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 		fprintf(stderr, "\nVCL compilation failed\n");
 		return (1);
 	}
-	vp = mgt_vcc_add("boot", vf);
+	vp = mgt_vcc_add(buf, vf);
 	vp->active = 1;
 	return (0);
 }
