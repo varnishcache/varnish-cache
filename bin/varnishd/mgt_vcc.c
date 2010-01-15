@@ -406,13 +406,13 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p,
-		    "vcl.load %s %s\n", vp->name, vp->fname))
+		    "vcl.load \"%s\" %s\n", vp->name, vp->fname))
 			return (1);
 		free(*p);
 		if (!vp->active)
 			continue;
 		if (mgt_cli_askchild(status, p,
-		    "vcl.use %s\n", vp->name))
+		    "vcl.use \"%s\"\n", vp->name))
 			return (1);
 		free(*p);
 	}
