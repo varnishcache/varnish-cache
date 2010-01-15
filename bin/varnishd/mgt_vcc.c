@@ -366,7 +366,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 		AN(vcl);
 		bprintf(buf, "boot (-b %s)", b_arg);
 	} else {
-		brintf(buf, "boot (-f %s)", f_arg);
+		bprintf(buf, "boot (-f %s)", f_arg);
 	}
 
 	vf = mgt_VccCompile(&sb, vcl, C_flag);
