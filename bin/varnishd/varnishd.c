@@ -727,7 +727,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (b_arg != NULL || f_arg != NULL)
-		if (mgt_vcc_default(b_arg, vcl, C_flag))
+		if (mgt_vcc_default(b_arg, f_arg, vcl, C_flag))
 			exit (2);
 
 	if (C_flag)
