@@ -598,7 +598,7 @@ telnet_accept(const struct vev *ev, int what)
 		return (0);
 
 	tn = telnet_new(i);
-	vsb = sock_id("telnet", ev->fd);
+	vsb = sock_id("telnet", i);
 	mgt_cli_setup(i, i, 0, vsb_data(vsb), telnet_close, tn);
 	vsb_delete(vsb);
 	return (0);
