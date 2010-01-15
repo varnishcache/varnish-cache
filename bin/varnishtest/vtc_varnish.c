@@ -337,18 +337,25 @@ varnish_start(struct varnish *v)
 	if (vtc_error)
 		return;
 	vtc_log(v->vl, 2, "Start");
-	u = varnish_ask_cli(v, "start", NULL);
+	u = varnish_ask_cli(v, "start", &resp);
 	if (vtc_error)
 		return;
-	assert(u == CLIS_OK);
-	u = varnish_ask_cli(v, "debug.xid 1000", NULL);
+	if (u != CLIS_OK) 
+		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
+	free(resp);
+	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
 		return;
-	assert(u == CLIS_OK);
+	if (u != CLIS_OK) 
+		vtc_log(v->vl, 0, "CLI debug.xid command failed: %u %s",
+		    u, resp);
+	free(resp);
 	u = varnish_ask_cli(v, "debug.listen_address", &resp);
 	if (vtc_error)
 		return;
-	assert(u == CLIS_OK);
+	if (u != CLIS_OK) 
+		vtc_log(v->vl, 0,
+		    "CLI debug.listen_address command failed: %u %s", u, resp);
 	h = resp;
 	p = strchr(h, ' ');
 	AN(p);
