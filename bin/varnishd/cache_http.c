@@ -734,8 +734,6 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 		http_copyh(hp, sp->http, HTTP_HDR_PROTO);
 	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
 	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
-	http_PrintfHeader(sp->wrk, sp->fd, hp,
-	    "X-Forwarded-For: %s", sp->addr);
 }
 
 /*--------------------------------------------------------------------
