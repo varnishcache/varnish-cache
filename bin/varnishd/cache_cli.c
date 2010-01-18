@@ -50,13 +50,14 @@ SVNID("$Id$")
 #include "cli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
+#include "cli_serve.h"
 #include "cache.h"
-#include "vlu.h"
 #include "vsb.h"
 #include "hash_slinger.h"
 
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
+static int		add_check;
 
 /*
  * The CLI commandlist is split in three:
@@ -77,6 +78,7 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 {
 	struct cli_proto *c, **cp;
 
+	AZ(add_check);
 	switch (which) {
 	case MASTER_CLI: cp = &ccf_master_cli; break;
 	case PUBLIC_CLI: cp = &ccf_public_cli; break;
@@ -91,86 +93,44 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 	Lck_Unlock(&cli_mtx);
 }
 
-/*--------------------------------------------------------------------
- * Called when we have a full line, look through all three command
- * lists to find it.
- */
-
-static int
-cli_vlu(void *priv, const char *p)
+static void
+cli_cb_before(void *priv)
 {
-	struct cli *cli;
-	int i;
 
-	cli = priv;
-	VSL(SLT_CLI, 0, "Rd %s", p);
+	VSL(SLT_CLI, 0, "Rd %s", priv);
 	VCL_Poll();
 	VBE_Poll();
-	vsb_clear(cli->sb);
 	Lck_Lock(&cli_mtx);
-	cli_dispatch(cli, ccf_master_cli, p);
-	if (cli->result == CLIS_UNKNOWN) {
-		vsb_clear(cli->sb);
-		cli->result = CLIS_OK;
-		cli_dispatch(cli, ccf_public_cli, p);
-	}
-	if (cli->result == CLIS_UNKNOWN) {
-		vsb_clear(cli->sb);
-		cli->result = CLIS_OK;
-		cli_dispatch(cli, ccf_debug_cli, p);
-	}
-	Lck_Unlock(&cli_mtx);
-	vsb_finish(cli->sb);
-	AZ(vsb_overflowed(cli->sb));
-	i = cli_writeres(heritage.cli_out, cli);
-	if (i)
-		VSL(SLT_Error, 0, "CLI write failed (errno=%d)", errno);
-	else
-		VSL(SLT_CLI, 0, "Wr %d %d %s",
-		    i, cli->result, vsb_data(cli->sb));
-	return (0);
 }
 
-/*--------------------------------------------------------------------
- * Run CLI on cli pipes from manager
- */
+static void
+cli_cb_after(void *priv)
+{
+	struct cli *cli;
+
+	Lck_Unlock(&cli_mtx);
+	cli = priv;
+	VSL(SLT_CLI, 0, "Wr %03u %s", cli->result, vsb_data(cli->sb));
+}
 
 void
 CLI_Run(void)
 {
-	struct pollfd pfd[1];
-	struct cli *cli, clis;
-	struct vlu *vlu;
+	struct cls	*cls;
 	int i;
 
-	cli = &clis;
-	memset(cli, 0, sizeof *cli);
+	add_check = 1;
 
-	cli->sb = vsb_newauto();
-	XXXAN(cli->sb);
-	vlu = VLU_New(cli, cli_vlu, params->cli_buffer);
-	XXXAN(vlu);
-	printf("Ready\n");
-	while (1) {
-		pfd[0].fd = heritage.cli_in;
-		pfd[0].events = POLLIN;
-		i = poll(pfd, 1, -1);
-		if (i == -1 && errno == EINTR)
-			continue;
-		assert(i == 1);
-		if (pfd[0].revents & POLLHUP) {
-			VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
-			break;
-		}
-		i = VLU_Fd(heritage.cli_in, vlu);
-		if (i) {
-			fprintf(stderr,
-			    "Error on CLI connection, exiting "
-			    "(VLU_Fd %d ev: %x)\n",
-				i, pfd[0].revents);
-			break;
-		}
-	}
+	cls = CLS_New(cli_cb_before, cli_cb_after, NULL, params->cli_buffer);
+	AZ(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AZ(CLS_AddFunc(cls, ccf_master_cli));
+	AZ(CLS_AddFunc(cls, ccf_public_cli));
+	AZ(CLS_AddFunc(cls, ccf_debug_cli));
+
+	do {
+		i = CLS_Poll(cls, -1);
+	} while(i > 0);
+	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 }
 
 /*--------------------------------------------------------------------*/

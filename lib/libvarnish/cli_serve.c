@@ -78,6 +78,7 @@ struct cls {
 	VTAILQ_HEAD(,cls_func)		funcs;
 	cls_cb_f			*before, *after;
 	void				*priv;
+	unsigned			maxlen;
 };
 
 static int
@@ -92,7 +93,7 @@ cls_vlu(void *priv, const char *p)
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
 
 	if (cs->before != NULL)
-		cs->before(cs->priv);
+		cs->before(cs->priv != NULL ? cs->priv : (void*)(uintptr_t)p);
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
 		vsb_clear(cfd->cli->sb);
 		cfd->cli->result = CLIS_OK;
@@ -100,17 +101,17 @@ cls_vlu(void *priv, const char *p)
 		if (cfd->cli->result != CLIS_UNKNOWN) 
 			break;
 	}
-	if (cs->after != NULL)
-		cs->after(cs->priv);
 	vsb_finish(cfd->cli->sb);
 	AZ(vsb_overflowed(cfd->cli->sb));
+	if (cs->after != NULL)
+		cs->after(cs->priv != NULL ? cs->priv : cfd->cli);
 	if (cli_writeres(cfd->fdo, cfd->cli) || cfd->cli->result == CLIS_CLOSE)
 		return (1);
 	return (0);
 }
 
 struct cls *
-CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv)
+CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv, unsigned maxlen)
 {
 	struct cls *cs;
 
@@ -121,10 +122,10 @@ CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv)
 	cs->before = before;
 	cs->after = after;
 	cs->priv = priv;
+	cs->maxlen = maxlen;
 	return (cs);
 }
 
-/* XXX close call back */
 int
 CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
@@ -138,7 +139,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cls = cs;
 	cfd->fdi = fdi;
 	cfd->fdo = fdo;
-	cfd->vlu = VLU_New(cfd, cls_vlu, 65536);	/* XXX */
+	cfd->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
 	cfd->cli = &cfd->clis;
 	cfd->cli->sb = vsb_newauto();
 	cfd->closefunc = closefunc;
