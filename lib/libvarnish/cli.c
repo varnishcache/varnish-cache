@@ -97,9 +97,12 @@ cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line)
 			cli_result(cli, CLIS_UNKNOWN);
 			break;
 		}
-		for (cp = clp; cp->request != NULL; cp++)
+		for (cp = clp; cp->request != NULL; cp++) {
 			if (!strcmp(av[1], cp->request))
 				break;
+			if (!strcmp("*", cp->request))
+				break;
+		}
 		if (cp->request == NULL) {
 			cli_out(cli,
 			    "Unknown request.\nType 'help' for more info.\n");
