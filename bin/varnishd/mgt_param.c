@@ -756,9 +756,8 @@ static const struct parspec input_parspec[] = {
 		"Detect and eliminate duplicate purges.\n",
 		0,
 		"on", "bool" },
-	{ "cli_banner", tweak_bool, &master.cli_banner, 0, 0,
-		"Emit CLI banner on connect.\n"
-		"Set to off for compatibility with pre 2.1 versions.\n",
+	{ "syslog_cli_traffic", tweak_bool, &master.syslog_cli_traffic, 0, 0,
+		"Log all CLI traffic to syslog(LOG_INFO).\n",
 		0,
 		"on", "bool" },
 	{ "ban_lurker_sleep", tweak_timeout_double,

@@ -247,6 +247,8 @@ varnish_launch(struct varnish *v)
 	struct vss_addr **ap;
 	char abuf[128],pbuf[128];
 	struct pollfd fd;
+	unsigned retval;
+	char *r;
 
 	/* Create listener socket */
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
@@ -261,8 +263,8 @@ varnish_launch(struct varnish *v)
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
-	vsb_printf(vsb, " -p cli_banner=off");
 	vsb_printf(vsb, " -p auto_restart=off");
+	vsb_printf(vsb, " -p syslog_cli_traffic=off");
 	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");
 	vsb_printf(vsb, " -M %s:%s", abuf, pbuf);
 	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
@@ -317,6 +319,13 @@ varnish_launch(struct varnish *v)
 	
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
+
+	i = cli_readres(v->cli_fd, &retval, &r, 20.0);
+	if (i != 0 || retval != CLIS_OK)
+		vtc_log(v->vl, 0, "CLI banner fail", v->cli_fd);
+	vtc_log(v->vl, 4, "CLI banner %03u", retval);
+	free(r);
+
 	if (v->stats != NULL)
 		VSL_Close();
 	v->stats = VSL_OpenStats(v->workdir);

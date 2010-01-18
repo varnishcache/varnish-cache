@@ -94,11 +94,9 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 }
 
 static void
-cli_cb_before(void *priv)
+cli_cb_before(struct cli *cli)
 {
-	struct cli *cli;
 
-	cli = priv;
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
 	VCL_Poll();
 	VBE_Poll();
@@ -106,12 +104,9 @@ cli_cb_before(void *priv)
 }
 
 static void
-cli_cb_after(void *priv)
+cli_cb_after(struct cli *cli)
 {
-	struct cli *cli;
-
 	Lck_Unlock(&cli_mtx);
-	cli = priv;
 	VSL(SLT_CLI, 0, "Wr %03u %s", cli->result, vsb_data(cli->sb));
 }
 
@@ -123,11 +118,12 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	cls = CLS_New(cli_cb_before, cli_cb_after, NULL, params->cli_buffer);
-	AZ(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
-	AZ(CLS_AddFunc(cls, ccf_master_cli));
-	AZ(CLS_AddFunc(cls, ccf_public_cli));
-	AZ(CLS_AddFunc(cls, ccf_debug_cli));
+	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	AN(cls);
+	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AZ(CLS_AddFunc(cls, 0, ccf_master_cli));
+	AZ(CLS_AddFunc(cls, 0, ccf_public_cli));
+	AZ(CLS_AddFunc(cls, 0, ccf_debug_cli));
 
 	do {
 		i = CLS_Poll(cls, -1);
