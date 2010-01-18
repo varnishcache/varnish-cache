@@ -13,6 +13,7 @@ libvarnish_la_SOURCES = \
 	subproc.c \
 	cli.c \
 	cli_common.c \
+	cli_serve.c \
 	flopen.c \
 	num.c \
 	svn_version.c \
