@@ -203,6 +203,47 @@ static struct cli_proto cli_debug[] = {
 	{ NULL }
 };
 
+/*--------------------------------------------------------------------*/
+
+static void
+mcf_askchild(struct cli *cli, const char * const *av, void *priv)
+{
+	int i;
+	char *q;
+	unsigned u;
+
+	(void)av;
+	(void)priv;
+	/*
+	 * Command not recognized in master, try cacher if it is
+	 * running.
+	 */
+	if (cli_o <= 0) {
+		cli_result(cli, CLIS_UNKNOWN);
+		cli_out(cli,
+		    "Unknown request in manager process "
+		    "(child not running).\n"
+		    "Type 'help' for more info.");
+		return;
+	} 
+	AN(cli->cmd);
+	i = write(cli_o, cli->cmd, strlen(cli->cmd));
+	xxxassert(i == strlen(cli->cmd));
+	i = write(cli_o, "\n", 1);
+	xxxassert(i == 1);
+	(void)cli_readres(cli_i,
+	    &u, &q, params->cli_timeout);
+	cli_result(cli, u);
+	cli_out(cli, "%s", q);
+	free(q);
+}
+
+static struct cli_proto cli_askchild[] = {
+	{ "*", "<wild-card-entry>", "\t<fall through to cacher>\n",
+		0, 9999, mcf_askchild, NULL},
+	{ NULL }
+};
+
 /*--------------------------------------------------------------------
  * Ask the child something over CLI, return zero only if everything is
  * happy happy.
@@ -359,9 +400,6 @@ static int
 mgt_cli_vlu(void *priv, const char *p)
 {
 	struct cli_port *cp;
-	char *q;
-	unsigned u;
-	int i;
 
 	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
 	vsb_clear(cp->cli->sb);
@@ -374,6 +412,7 @@ mgt_cli_vlu(void *priv, const char *p)
 	if (*p == '\0')
 		return (0);
 
+	cp->cli->cmd = p;
 	if (secret_file != NULL && cp->challenge[0] != '\0') {
 		/* Authentication not yet passed */
 		cli_dispatch(cp->cli, cli_auth, p);
@@ -381,36 +420,19 @@ mgt_cli_vlu(void *priv, const char *p)
 			mgt_cli_challenge(cp);
 	} else {
 		cli_dispatch(cp->cli, cli_proto, p);
-		if (cp->cli->result == CLIS_UNKNOWN)
-			cli_dispatch(cp->cli, cli_debug, p);
 		if (cp->cli->result == CLIS_UNKNOWN) {
-			/*
-			 * Command not recognized in master, try cacher if it is
-			 * running.
-			 */
 			vsb_clear(cp->cli->sb);
-			cp->cli->result = CLIS_OK;
-			if (cli_o <= 0) {
-				cli_result(cp->cli, CLIS_UNKNOWN);
-				cli_out(cp->cli,
-				    "Unknown request in manager process "
-				    "(child not running).\n"
-				    "Type 'help' for more info.");
-			} else {
-				i = write(cli_o, p, strlen(p));
-				xxxassert(i == strlen(p));
-				i = write(cli_o, "\n", 1);
-				xxxassert(i == 1);
-				(void)cli_readres(cli_i,
-				    &u, &q, params->cli_timeout);
-				cli_result(cp->cli, u);
-				cli_out(cp->cli, "%s", q);
-				free(q);
-			}
+			cli_dispatch(cp->cli, cli_debug, p);
+		}
+		if (cp->cli->result == CLIS_UNKNOWN) {
+			vsb_clear(cp->cli->sb);
+			cli_dispatch(cp->cli, cli_askchild, p);
 		}
 	}
 	vsb_finish(cp->cli->sb);
 	AZ(vsb_overflowed(cp->cli->sb));
+
+	cp->cli->cmd = NULL;
 
 	/* send the result back */
 	syslog(LOG_INFO, "CLI %d result %d \"%s\"",
