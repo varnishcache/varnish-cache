@@ -1,0 +1,22 @@
+# $Id$
+
+test "Test X-Forward-For headers"
+
+server s1 {
+	rxreq
+	expect req.http.X-Forwarded-For == "127.0.0.1"
+	txresp
+	rxreq
+	expect req.http.X-Forwarded-For == "1.2.3.4, 127.0.0.1"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	txreq -url /2 -hdr "X-forwarded-for: 1.2.3.4"
+	rxresp
+} -run
