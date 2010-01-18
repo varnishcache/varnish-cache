@@ -34,6 +34,7 @@ struct cli {
 	struct vsb		*sb;
 	enum cli_status_e	result;
 	void			*priv;
+	const char		*cmd;
 };
 
 int cli_writeres(int fd, const struct cli *cli);

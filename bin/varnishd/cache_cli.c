@@ -96,8 +96,10 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 static void
 cli_cb_before(void *priv)
 {
+	struct cli *cli;
 
-	VSL(SLT_CLI, 0, "Rd %s", priv);
+	cli = priv;
+	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
 	VCL_Poll();
 	VBE_Poll();
 	Lck_Lock(&cli_mtx);

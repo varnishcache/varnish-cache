@@ -92,8 +92,9 @@ cls_vlu(void *priv, const char *p)
 	cs = cfd->cls;
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
 
+	cfd->cli->cmd = p;
 	if (cs->before != NULL)
-		cs->before(cs->priv != NULL ? cs->priv : (void*)(uintptr_t)p);
+		cs->before(cs->priv != NULL ? cs->priv : cfd->cli);
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
 		vsb_clear(cfd->cli->sb);
 		cfd->cli->result = CLIS_OK;
@@ -107,6 +108,7 @@ cls_vlu(void *priv, const char *p)
 		cs->after(cs->priv != NULL ? cs->priv : cfd->cli);
 	if (cli_writeres(cfd->fdo, cfd->cli) || cfd->cli->result == CLIS_CLOSE)
 		return (1);
+	cfd->cli->cmd = NULL;
 	return (0);
 }
 
