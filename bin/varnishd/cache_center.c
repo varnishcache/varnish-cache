@@ -594,7 +594,7 @@ cnt_lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	if (sp->obj == NULL) {
+	if (sp->objhead == NULL) {
 		HSH_Prepare(sp, sp->vcl->nhashcount);
 		VCL_hash_method(sp);
 		assert(sp->handling == VCL_RET_HASH);
