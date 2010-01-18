@@ -29,12 +29,17 @@
  * $Id$
  */
 
+struct vlu;
+
 struct cli {
 	/* XXX: should be MINI_OBJ */
 	struct vsb		*sb;
 	enum cli_status_e	result;
-	void			*priv;
 	const char		*cmd;
+	unsigned		auth;
+	char			challenge[34];
+	char			*ident;
+	struct vlu		*vlu;
 };
 
 int cli_writeres(int fd, const struct cli *cli);

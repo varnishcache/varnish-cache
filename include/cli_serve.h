@@ -31,8 +31,12 @@
 
 struct cls;
 typedef void cls_cb_f(void *priv);
-struct cls *CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv, unsigned maxlen);
-int CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
+typedef void cls_cbc_f(struct cli*);
+struct cls *CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen);
+struct cli *CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
-int CLS_AddFunc(struct cls *cs, struct cli_proto *clp);
+int CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp);
 int CLS_Poll(struct cls *cs, int timeout);
+int CLS_PollFd(struct cls *cs, int fd, int timeout);
+void CLS_Destroy(struct cls **);
+

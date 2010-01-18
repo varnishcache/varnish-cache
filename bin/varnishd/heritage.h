@@ -193,14 +193,13 @@ struct params {
 	/* Get rid of duplicate purges */
 	unsigned		purge_dups;
 
-	/* CLI banner */
-	unsigned		cli_banner;
-
 	/* How long time does the ban lurker sleep */
 	double			ban_lurker_sleep;
 
 	/* Max size of the saintmode list. 0 == no saint mode. */
 	unsigned		saintmode_threshold;
+
+	unsigned		syslog_cli_traffic;
 };
 
 extern volatile struct params *params;

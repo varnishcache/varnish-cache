@@ -38,7 +38,6 @@ SVNID("$Id$")
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -54,6 +53,7 @@ SVNID("$Id$")
 #include "cli.h"
 #include "vsb.h"
 #include "cli_common.h"
+#include "cli_serve.h"
 #include "vev.h"
 #include "vsha256.h"
 #include "shmlog.h"
@@ -66,32 +66,14 @@ SVNID("$Id$")
 #include "mgt_cli.h"
 
 static int		cli_i = -1, cli_o = -1;
+static struct cls	*cls;
 static const char	*secret_file;
 
-struct telnet {
-	unsigned		magic;
-#define TELNET_MAGIC		0x53ec3ac0
-	int			fd;
-	struct vev		*ev;
-};
+#define	MCF_NOAUTH	0
+#define MCF_AUTH	16
 
-struct cli_port {
-	unsigned		magic;
-#define CLI_PORT_MAGIC		0x5791079f
-	VTAILQ_ENTRY(cli_port)	list;
-	struct vev		*ev;
-	int			fdi;
-	int			fdo;
-	int			verbose;
-	struct vlu		*vlu;
-	struct cli		cli[1];
-	char			*name;
-	char			challenge[34];
-	mgt_cli_close_f		*closefunc;
-	void			*priv;
-};
+static void mcf_help(struct cli *cli, const char * const *av, void *priv);
 
-static VTAILQ_HEAD(,cli_port)	clilist = VTAILQ_HEAD_INITIALIZER(clilist);
 
 /*--------------------------------------------------------------------*/
 
@@ -110,25 +92,6 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 #undef MAC_STAT
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-mcf_help(struct cli *cli, const char * const *av, void *priv)
-{
-	unsigned u;
-	char *p;
-
-	cli_func_help(cli, av, priv);
-	if (cli_o >= 0 && (av[2] == NULL || *av[2] == '-')) {
-		p = NULL;
-		if (!mgt_cli_askchild(&u, &p,
-		    "help %s\n", av[2] != NULL ? av[2] : "")) {
-			cli_out(cli, "%s", p);
-			cli_result(cli, u);
-		}
-		free(p);
-	}
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -164,7 +127,6 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
-	{ CLI_HELP,		mcf_help, cli_proto },
 	{ CLI_BANNER,		mcf_banner, NULL },
 	{ CLI_PING,		cli_func_ping },
 	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
@@ -309,6 +271,24 @@ mgt_cli_stop_child(void)
 }
 
 /*--------------------------------------------------------------------
+ * Generate a random challenge
+ */
+
+static void
+mgt_cli_challenge(struct cli *cli)
+{
+	int i;
+
+	for (i = 0; i + 2L < sizeof cli->challenge; i++)
+		cli->challenge[i] = (random() % 26) + 'a';
+	cli->challenge[i++] = '\n';
+	cli->challenge[i] = '\0';
+	cli_out(cli, "%s", cli->challenge);
+	cli_out(cli, "\nAuthentication required.\n");
+	cli_result(cli, CLIS_AUTH);
+}
+
+/*--------------------------------------------------------------------
  * Validate the authentication
  */
 
@@ -319,10 +299,8 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	int i, fd;
 	struct SHA256Context sha256ctx;
 	unsigned char digest[SHA256_LEN];
-	struct cli_port *cp;
 
 	AN(av[2]);
-	CAST_OBJ_NOTNULL(cp, cli->priv, CLI_PORT_MAGIC);
 	(void)priv;
 	AN(secret_file);
 	fd = open(secret_file, O_RDONLY);
@@ -353,20 +331,20 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	buf[i] = '\0';
 	AZ(close(fd));
 	SHA256_Init(&sha256ctx);
-	SHA256_Update(&sha256ctx, cp->challenge, strlen(cp->challenge));
+	SHA256_Update(&sha256ctx, cli->challenge, strlen(cli->challenge));
 	SHA256_Update(&sha256ctx, buf, i);
-	SHA256_Update(&sha256ctx, cp->challenge, strlen(cp->challenge));
+	SHA256_Update(&sha256ctx, cli->challenge, strlen(cli->challenge));
 	SHA256_Final(digest, &sha256ctx);
 	for (i = 0; i < SHA256_LEN; i++)
 		sprintf(buf + i + i, "%02x", digest[i]);
 	if (strcasecmp(buf, av[2])) {
-		cli_result(cli, CLIS_UNKNOWN);
+		mgt_cli_challenge(cli);
 		return;
 	}
-	cp->challenge[0] = '\0';
+	cli->auth = MCF_AUTH;
+	memset(cli->challenge, 0, sizeof cli->challenge);
 	cli_result(cli, CLIS_OK);
-	if (params->cli_banner)
-		mcf_banner(cli, av, priv);
+	mcf_banner(cli, av, priv);
 }
 
 static struct cli_proto cli_auth[] = {
@@ -376,101 +354,61 @@ static struct cli_proto cli_auth[] = {
 	{ NULL }
 };
 
-/*--------------------------------------------------------------------
- * Generate a random challenge
- */
+/*--------------------------------------------------------------------*/
 
 static void
-mgt_cli_challenge(struct cli_port *cp)
+mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
-	int i;
+	unsigned u;
+	char *p;
 
-	for (i = 0; i + 2L < sizeof cp->challenge; i++)
-		cp->challenge[i] = (random() % 26) + 'a';
-	cp->challenge[i++] = '\n';
-	cp->challenge[i] = '\0';
-	cli_out(cp->cli, "%s", cp->challenge);
-	cli_out(cp->cli, "\nAuthentication required.\n");
-	cli_result(cp->cli, CLIS_AUTH);
+	(void)priv;
+	cli_func_help(cli, av, cli_auth);
+	if (cli->auth == MCF_NOAUTH)
+		return;
+	cli_func_help(cli, av, cli_proto);
+	if (cli_o >= 0 && (av[2] == NULL || *av[2] == '-')) {
+		p = NULL;
+		if (!mgt_cli_askchild(&u, &p,
+		    "help %s\n", av[2] != NULL ? av[2] : "")) {
+			cli_out(cli, "%s", p);
+			cli_result(cli, u);
+		}
+		free(p);
+	}
+}
+
+
+/*--------------------------------------------------------------------*/
+static void
+mgt_cli_cb_before(struct cli *cli)
+{
+
+	if (params->syslog_cli_traffic)
+		syslog(LOG_NOTICE, "CLI %s Rd %s", cli->ident, cli->cmd);
+}
+
+static void
+mgt_cli_cb_after(struct cli *cli)
+{
+
+	if (params->syslog_cli_traffic)
+		syslog(LOG_NOTICE, "CLI %s Wr %03u %s",
+		    cli->ident, cli->result, vsb_data(cli->sb));
 }
 
 /*--------------------------------------------------------------------*/
 
-static int
-mgt_cli_vlu(void *priv, const char *p)
-{
-	struct cli_port *cp;
-
-	CAST_OBJ_NOTNULL(cp, priv, CLI_PORT_MAGIC);
-	vsb_clear(cp->cli->sb);
-
-	/* Skip whitespace */
-	for (; isspace(*p); p++)
-		continue;
-
-	/* Ignore empty lines */
-	if (*p == '\0')
-		return (0);
-
-	cp->cli->cmd = p;
-	if (secret_file != NULL && cp->challenge[0] != '\0') {
-		/* Authentication not yet passed */
-		cli_dispatch(cp->cli, cli_auth, p);
-		if (cp->cli->result == CLIS_UNKNOWN)
-			mgt_cli_challenge(cp);
-	} else {
-		cli_dispatch(cp->cli, cli_proto, p);
-		if (cp->cli->result == CLIS_UNKNOWN) {
-			vsb_clear(cp->cli->sb);
-			cli_dispatch(cp->cli, cli_debug, p);
-		}
-		if (cp->cli->result == CLIS_UNKNOWN) {
-			vsb_clear(cp->cli->sb);
-			cli_dispatch(cp->cli, cli_askchild, p);
-		}
-	}
-	vsb_finish(cp->cli->sb);
-	AZ(vsb_overflowed(cp->cli->sb));
-
-	cp->cli->cmd = NULL;
-
-	/* send the result back */
-	syslog(LOG_INFO, "CLI %d result %d \"%s\"",
-	    cp->fdi, cp->cli->result, p);
-	if (cli_writeres(cp->fdo, cp->cli) || cp->cli->result == CLIS_CLOSE)
-		return (1);
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- * Get rid of a CLI session.
- *
- * Always and only called from mgt_cli_callback().
- *
- * We must get rid of everything but the event, which gets GC'ed by
- * ev_schdule_one() when mgt_cli_callback, through our return value
- * returns non-zero.
- */
-
-static int
-mgt_cli_close(struct cli_port *cp)
+static void
+mgt_cli_init_cls(void)
 {
 
-	CHECK_OBJ_NOTNULL(cp, CLI_PORT_MAGIC);
-	syslog(LOG_NOTICE, "CLI %d closed", cp->fdi);
-	/*
-	 * Remove from list, so that if closefunc calls mgt_cli_close_all
-	 * it will not try to remove this one too.
-	 */
-	VTAILQ_REMOVE(&clilist, cp, list);
-
-	free(cp->name);
-	vsb_delete(cp->cli->sb);
-	VLU_Destroy(cp->vlu);
-
-	cp->closefunc(cp->priv);
-	FREE_OBJ(cp);
-	return (1);
+	cls = CLS_New(mgt_cli_cb_before, mgt_cli_cb_after, params->cli_buffer);
+	AN(cls);
+	AZ(CLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
+	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_proto));
+	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_debug));
+	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_askchild));
 }
 
 /*--------------------------------------------------------------------
@@ -480,13 +418,8 @@ mgt_cli_close(struct cli_port *cp)
 void
 mgt_cli_close_all(void)
 {
-	struct cli_port *cp;
 
-	while (!VTAILQ_EMPTY(&clilist)) {
-		cp = VTAILQ_FIRST(&clilist);
-		vev_del(mgt_evb, cp->ev);
-		(void)mgt_cli_close(cp);
-	}
+	CLS_Destroy(&cls);
 }
 
 /*--------------------------------------------------------------------
@@ -494,18 +427,14 @@ mgt_cli_close_all(void)
  */
 
 static int
-mgt_cli_callback(const struct vev *e, int what)
+mgt_cli_callback2(const struct vev *e, int what)
 {
-	struct cli_port *cp;
+	int i;
 
-	CAST_OBJ_NOTNULL(cp, e->priv, CLI_PORT_MAGIC);
-
-	if (what & (EV_ERR | EV_HUP | EV_GONE))
-		return (mgt_cli_close(cp));
-
-	if (VLU_Fd(cp->fdi, cp->vlu))
-		return (mgt_cli_close(cp));
-	return (0);
+	(void)e;
+	(void)what;
+	i = CLS_PollFd(cls, e->fd, 0);
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
@@ -513,50 +442,41 @@ mgt_cli_callback(const struct vev *e, int what)
 void
 mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f *closefunc, void *priv)
 {
-	struct cli_port *cp;
+	struct cli *cli;
+	struct vev *ev;
 
-	cp = calloc(sizeof *cp, 1);
-	XXXAN(cp);
-	cp->vlu = VLU_New(cp, mgt_cli_vlu, params->cli_buffer);
+	(void)ident;
+	(void)verbose;
+	if (cls == NULL) 
+		mgt_cli_init_cls();
 
-	cp->name = strdup(ident);
-	XXXAN(cp->name);
-	syslog(LOG_NOTICE, "CLI %d open %s", fdi, cp->name);
-	cp->magic = CLI_PORT_MAGIC;
+	cli = CLS_AddFd(cls, fdi, fdo, closefunc, priv);
 
-	cp->fdi = fdi;
-	cp->fdo = fdo;
-	cp->verbose = verbose;
-
-	cp->closefunc = closefunc;
-	cp->priv = priv;
-
-	cp->cli->sb = vsb_newauto();
-	XXXAN(cp->cli->sb);
-	cp->cli->priv = cp;
+	cli->ident = strdup(ident);
 
 	/* Deal with TELNET options */
-	if (cp->fdi != 0)
-		VLU_SetTelnet(cp->vlu, cp->fdo);
+	if (fdi != 0)
+		VLU_SetTelnet(cli->vlu, fdo);
 
-	/*
-	 * If we have a secret file authenticate all CLI connections
-	 * except the stdin/stdout debug port.
-	 */
-	if (cp->fdi != 0 && secret_file != NULL) {
-		mgt_cli_challenge(cp);
-		(void)VLU_Data("auth -\n", -1, cp->vlu);
-	} else if (params->cli_banner)
-		(void)VLU_Data("banner\n", -1, cp->vlu);
+	if (fdi != 0 && secret_file != NULL) {
+		cli->auth = MCF_NOAUTH;
+		mgt_cli_challenge(cli);
+	} else {
+		cli->auth = MCF_AUTH;
+		mcf_banner(cli, NULL, NULL);
+	}
+	vsb_finish(cli->sb);
+	(void)cli_writeres(fdo, cli);
 
-	cp->ev = vev_new();
-	cp->ev->name = cp->name;
-	cp->ev->fd = fdi;
-	cp->ev->fd_flags = EV_RD;
-	cp->ev->callback = mgt_cli_callback;
-	cp->ev->priv = cp;
-	VTAILQ_INSERT_TAIL(&clilist, cp, list);
-	AZ(vev_add(mgt_evb, cp->ev));
+
+	ev = vev_new();
+	AN(ev);
+	ev->name = cli->ident;
+	ev->fd = fdi;
+	ev->fd_flags = EV_RD;
+	ev->callback = mgt_cli_callback2;
+	ev->priv = cli;
+	AZ(vev_add(mgt_evb, ev));
 }
 
 /*--------------------------------------------------------------------*/
@@ -580,6 +500,13 @@ sock_id(const char *pfx, int fd)
 }
 
 /*--------------------------------------------------------------------*/
+
+struct telnet {
+	unsigned		magic;
+#define TELNET_MAGIC		0x53ec3ac0
+	int			fd;
+	struct vev		*ev;
+};
 
 static void
 telnet_close(void *priv)

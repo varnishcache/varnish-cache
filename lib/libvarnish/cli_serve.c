@@ -55,6 +55,7 @@ struct cls_func {
 	unsigned			magic;
 #define CLS_FUNC_MAGIC			0x7d280c9b
 	VTAILQ_ENTRY(cls_func)		list;
+	unsigned			auth;
 	struct cli_proto		*clp;
 };
 
@@ -63,7 +64,6 @@ struct cls_fd {
 #define CLS_FD_MAGIC			0x010dbd1e
 	VTAILQ_ENTRY(cls_fd)		list;
 	int				fdi, fdo;
-	struct vlu			*vlu;
 	struct cls			*cls;
 	struct cli			*cli, clis;
 	cls_cb_f			*closefunc;
@@ -76,8 +76,7 @@ struct cls {
 	VTAILQ_HEAD(,cls_fd)		fds;
 	unsigned			nfd;
 	VTAILQ_HEAD(,cls_func)		funcs;
-	cls_cb_f			*before, *after;
-	void				*priv;
+	cls_cbc_f			*before, *after;
 	unsigned			maxlen;
 };
 
@@ -92,10 +91,22 @@ cls_vlu(void *priv, const char *p)
 	cs = cfd->cls;
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
 
+	/* Skip whitespace */
+	for (; isspace(*p); p++)
+		continue;
+
+	/* Ignore empty lines */
+	if (*p == '\0')
+		return (0);
+
 	cfd->cli->cmd = p;
 	if (cs->before != NULL)
-		cs->before(cs->priv != NULL ? cs->priv : cfd->cli);
+		cs->before(cfd->cli);
+	vsb_clear(cfd->cli->sb);
+	cfd->cli->result = CLIS_UNKNOWN; 
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+		if (cfn->auth > cfd->cli->auth)
+			continue;
 		vsb_clear(cfd->cli->sb);
 		cfd->cli->result = CLIS_OK;
 		cli_dispatch(cfd->cli, cfn->clp, p);
@@ -105,7 +116,7 @@ cls_vlu(void *priv, const char *p)
 	vsb_finish(cfd->cli->sb);
 	AZ(vsb_overflowed(cfd->cli->sb));
 	if (cs->after != NULL)
-		cs->after(cs->priv != NULL ? cs->priv : cfd->cli);
+		cs->after(cfd->cli);
 	if (cli_writeres(cfd->fdo, cfd->cli) || cfd->cli->result == CLIS_CLOSE)
 		return (1);
 	cfd->cli->cmd = NULL;
@@ -113,7 +124,7 @@ cls_vlu(void *priv, const char *p)
 }
 
 struct cls *
-CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv, unsigned maxlen)
+CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 {
 	struct cls *cs;
 
@@ -123,12 +134,11 @@ CLS_New(cls_cb_f *before, cls_cb_f *after, void *priv, unsigned maxlen)
 	VTAILQ_INIT(&cs->funcs);
 	cs->before = before;
 	cs->after = after;
-	cs->priv = priv;
 	cs->maxlen = maxlen;
 	return (cs);
 }
 
-int
+struct cli *
 CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
 	struct cls_fd *cfd;
@@ -141,15 +151,15 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cls = cs;
 	cfd->fdi = fdi;
 	cfd->fdo = fdo;
-	cfd->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
 	cfd->cli = &cfd->clis;
+	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
 	cfd->cli->sb = vsb_newauto();
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);
 	VTAILQ_INSERT_TAIL(&cs->fds, cfd, list);
 	cs->nfd++;
-	return (0);
+	return (cfd->cli);
 }
 
 static void
@@ -161,7 +171,7 @@ cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
-	VLU_Destroy(cfd->vlu);
+	VLU_Destroy(cfd->cli->vlu);
 	vsb_delete(cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
@@ -170,12 +180,14 @@ cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 	} else {
 		cfd->closefunc(cfd->priv);
 	}
+	if (cfd->cli->ident != NULL)
+		free(cfd->cli->ident);
 	FREE_OBJ(cfd);
 }
 
 
 int
-CLS_AddFunc(struct cls *cs, struct cli_proto *clp)
+CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp)
 {
 	struct cls_func *cfn;
 
@@ -183,8 +195,48 @@ CLS_AddFunc(struct cls *cs, struct cli_proto *clp)
 	ALLOC_OBJ(cfn, CLS_FUNC_MAGIC);
 	AN(cfn);
 	cfn->clp = clp;
+	cfn->auth = auth;
 	VTAILQ_INSERT_TAIL(&cs->funcs, cfn, list);
 	return (0);
+}
+
+int
+CLS_PollFd(struct cls *cs, int fd, int timeout)
+{
+	struct cls_fd *cfd;
+	struct pollfd pfd[1];
+	int i, j, k;
+
+	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	if (cs->nfd == 0) {
+		errno = 0;
+		return (-1);
+	}
+	assert(cs->nfd > 0);
+
+	i = 0;
+	VTAILQ_FOREACH(cfd, &cs->fds, list) {
+		if (cfd->fdi != fd)
+			continue;
+		pfd[i].fd = cfd->fdi;
+		pfd[i].events = POLLIN;
+		pfd[i].revents = 0;
+		i++;
+		break;
+	}
+	assert(i == 1);
+	CHECK_OBJ_NOTNULL(cfd, CLS_FD_MAGIC);
+
+	j = poll(pfd, 1, timeout);
+	if (j <= 0)
+		return (j);
+	if (pfd[0].revents & POLLHUP)
+		k = 1;
+	else
+		k = VLU_Fd(cfd->fdi, cfd->cli->vlu);
+	if (k)
+		cls_close_fd(cs, cfd);
+	return (k);
 }
 
 int
@@ -220,7 +272,7 @@ CLS_Poll(struct cls *cs, int timeout)
 			if (pfd[i].revents & POLLHUP)
 				k = 1;
 			else
-				k = VLU_Fd(cfd->fdi, cfd->vlu);
+				k = VLU_Fd(cfd->fdi, cfd->cli->vlu);
 			if (k)
 				cls_close_fd(cs, cfd);
 			i++;
@@ -229,3 +281,25 @@ CLS_Poll(struct cls *cs, int timeout)
 	}
 	return (j);
 }
+
+void
+CLS_Destroy(struct cls **csp)
+{
+	struct cls *cs;
+	struct cls_fd *cfd, *cfd2;
+	struct cls_func *cfn;
+
+	cs = *csp;
+	*csp = NULL;
+	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2) 
+		cls_close_fd(cs, cfd);
+
+	while (!VTAILQ_EMPTY(&cs->funcs)) {
+		cfn = VTAILQ_FIRST(&cs->funcs);
+		VTAILQ_REMOVE(&cs->funcs, cfn, list);
+		FREE_OBJ(cfn);
+	}
+	FREE_OBJ(cs);
+}
+
