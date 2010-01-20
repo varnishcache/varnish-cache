@@ -514,22 +514,22 @@ unsigned http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);
-void http_CopyResp(struct http *to, const struct http *fm);
-void http_SetResp(struct http *to, const char *proto, const char *status,
+void http_CopyResp(const struct http *to, const struct http *fm);
+void http_SetResp(const struct http *to, const char *proto, const char *status,
     const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
-void http_PutProtocol(struct worker *w, int fd, struct http *to,
+void http_PutProtocol(struct worker *w, int fd, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
-void http_PutResponse(struct worker *w, int fd, struct http *to,
+void http_PutResponse(struct worker *w, int fd, const struct http *to,
     const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to,
     const char *fmt, ...);
 void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
-void http_SetH(struct http *to, unsigned n, const char *fm);
-void http_ForceGet(struct http *to);
+void http_SetH(const struct http *to, unsigned n, const char *fm);
+void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr,
@@ -540,8 +540,8 @@ int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_DissectRequest(struct sess *sp);
 int http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
-const char *http_DoConnection(struct http *hp);
-void http_CopyHome(struct worker *w, int fd, struct http *hp);
+const char *http_DoConnection(const struct http *hp);
+void http_CopyHome(struct worker *w, int fd, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */

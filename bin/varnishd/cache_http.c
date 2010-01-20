@@ -284,7 +284,7 @@ http_GetHdrField(const struct http *hp, const char *hdr,
  */
 
 const char *
-http_DoConnection(struct http *hp)
+http_DoConnection(const struct http *hp)
 {
 	char *p, *q;
 	const char *ret;
@@ -588,7 +588,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 /*--------------------------------------------------------------------*/
 
 void
-http_SetH(struct http *to, unsigned n, const char *fm)
+http_SetH(const struct http *to, unsigned n, const char *fm)
 {
 
 	assert(n < to->shd);
@@ -599,7 +599,7 @@ http_SetH(struct http *to, unsigned n, const char *fm)
 }
 
 static void
-http_copyh(struct http *to, const struct http *fm, unsigned n)
+http_copyh(const struct http *to, const struct http *fm, unsigned n)
 {
 
 	assert(n < to->shd);
@@ -609,14 +609,14 @@ http_copyh(struct http *to, const struct http *fm, unsigned n)
 }
 
 void
-http_ForceGet(struct http *to)
+http_ForceGet(const struct http *to)
 {
 	if (strcmp(http_GetReq(to), "GET"))
 		http_SetH(to, HTTP_HDR_REQ, "GET");
 }
 
 void
-http_CopyResp(struct http *to, const struct http *fm)
+http_CopyResp(const struct http *to, const struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
@@ -630,7 +630,7 @@ http_CopyResp(struct http *to, const struct http *fm)
 }
 
 void
-http_SetResp(struct http *to, const char *proto, const char *status,
+http_SetResp(const struct http *to, const char *proto, const char *status,
     const char *response)
 {
 
@@ -742,7 +742,7 @@ http_FilterHeader(const struct sess *sp, unsigned how)
  */
 
 void
-http_CopyHome(struct worker *w, int fd, struct http *hp)
+http_CopyHome(struct worker *w, int fd, const struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -801,7 +801,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct worker *w, int fd, struct http *to, int field,
+http_PutField(struct worker *w, int fd, const struct http *to, int field,
     const char *string)
 {
 	char *p;
@@ -824,7 +824,7 @@ http_PutField(struct worker *w, int fd, struct http *to, int field,
 }
 
 void
-http_PutProtocol(struct worker *w, int fd, struct http *to,
+http_PutProtocol(struct worker *w, int fd, const struct http *to,
     const char *protocol)
 {
 
@@ -843,7 +843,7 @@ http_PutStatus(struct worker *w, int fd, struct http *to, int status)
 }
 
 void
-http_PutResponse(struct worker *w, int fd, struct http *to,
+http_PutResponse(struct worker *w, int fd, const struct http *to,
     const char *response)
 {
 

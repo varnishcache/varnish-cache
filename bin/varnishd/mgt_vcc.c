@@ -44,7 +44,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/asprintf.h"
 #include "vsb.h"
 
 #include "libvcl.h"
@@ -356,13 +355,14 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 			return (1);
 		}
 
-		asprintf(&vcl,
+		bprintf(buf,
 		    "backend default {\n"
 		    "    .host = \"%s\";\n"
 		    "    .port = \"%s\";\n"
 		    "}\n", addr, port ? port : "http");
 		free(addr);
 		free(port);
+		vcl = strdup(buf);
 		AN(vcl);
 		bprintf(buf, "boot (-b %s)", b_arg);
 	} else {
