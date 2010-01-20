@@ -80,46 +80,132 @@ struct cls {
 	unsigned			maxlen;
 };
 
+/*--------------------------------------------------------------------
+ * Look for a CLI command to execute
+ */
+
+static int
+cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
+    unsigned ac)
+{
+	struct cli_proto *cp;
+
+	AN(av);
+	for (cp = clp; cp->request != NULL; cp++) {
+		if (!strcmp(av[1], cp->request))
+			break;
+		if (!strcmp("*", cp->request))
+			break;
+	}
+	if (cp->request == NULL)
+		return (0);
+
+	if (cp->func == NULL) {
+		cli_out(cli, "Unimplemented\n");
+		cli_result(cli, CLIS_UNIMPL);
+		return(1);
+	}
+
+	if (ac - 1 < cp->minarg) {
+		cli_out(cli, "Too few parameters\n");
+		cli_result(cli, CLIS_TOOFEW);
+		return(1);
+	}
+
+	if (ac - 1> cp->maxarg) {
+		cli_out(cli, "Too many parameters\n");
+		cli_result(cli, CLIS_TOOMANY);
+		return(1);
+	}
+
+	cli->result = CLIS_OK;
+	vsb_clear(cli->sb);
+	cp->func(cli, (const char * const *)av, cp->priv);
+	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * We have collected a full cli line, parse it and execute, if possible.
+ */
+
 static int
 cls_vlu(void *priv, const char *p)
 {
 	struct cls_fd *cfd;
 	struct cls *cs;
 	struct cls_func *cfn;
+	struct cli *cli;
+	char * * av;
+	unsigned na;
 
 	CAST_OBJ_NOTNULL(cfd, priv, CLS_FD_MAGIC);
 	cs = cfd->cls;
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
 
-	/* Skip whitespace */
+	cli = cfd->cli;
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	AZ(cli->cmd);
+
+	/*
+	 * Lines with only whitespace are simply ignored, in order to not
+	 * complicate CLI-client side scripts and TELNET users
+	 */
 	for (; isspace(*p); p++)
 		continue;
-
-	/* Ignore empty lines */
 	if (*p == '\0')
 		return (0);
 
-	cfd->cli->cmd = p;
+	cli->cmd = p;
+
+	av = ParseArgv(p, 0);
+	AN(av);
+
+	cli->result = CLIS_UNKNOWN; 
+	vsb_clear(cli->sb);
+	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
+
 	if (cs->before != NULL)
-		cs->before(cfd->cli);
-	vsb_clear(cfd->cli->sb);
-	cfd->cli->result = CLIS_UNKNOWN; 
-	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
-		if (cfn->auth > cfd->cli->auth)
-			continue;
-		vsb_clear(cfd->cli->sb);
-		cfd->cli->result = CLIS_OK;
-		cli_dispatch(cfd->cli, cfn->clp, p);
-		if (cfd->cli->result != CLIS_UNKNOWN) 
+		cs->before(cli);
+
+	do {
+		if (av[0] != NULL) {
+			cli_out(cli, "Syntax Error: %s\n", av[0]);
+			cli_result(cli, CLIS_SYNTAX);
 			break;
-	}
-	vsb_finish(cfd->cli->sb);
-	AZ(vsb_overflowed(cfd->cli->sb));
+		}
+
+		if (isupper(av[1][0])) {
+			cli_out(cli, "all commands are in lower-case.\n");
+			cli_result(cli, CLIS_UNKNOWN);
+			break;
+		}
+
+		if (!islower(av[1][0]))
+			break;
+
+		for (na = 0; av[na + 1] != NULL; na++)
+			continue;
+
+		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+			if (cfn->auth > cli->auth)
+				continue;
+			if (cls_dispatch(cli, cfn->clp, av, na))
+				break;
+		}
+	} while (0);
+
+	vsb_finish(cli->sb);
+	AZ(vsb_overflowed(cli->sb));
+
 	if (cs->after != NULL)
-		cs->after(cfd->cli);
-	if (cli_writeres(cfd->fdo, cfd->cli) || cfd->cli->result == CLIS_CLOSE)
+		cs->after(cli);
+
+	cli->cmd = NULL;
+	FreeArgv(av);
+
+	if (cli_writeres(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
 		return (1);
-	cfd->cli->cmd = NULL;
+
 	return (0);
 }
 
@@ -152,6 +238,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdi = fdi;
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
+	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
 	cfd->cli->sb = vsb_newauto();
 	cfd->closefunc = closefunc;

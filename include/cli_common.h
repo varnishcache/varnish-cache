@@ -32,7 +32,8 @@
 struct vlu;
 
 struct cli {
-	/* XXX: should be MINI_OBJ */
+	unsigned		magic;
+#define CLI_MAGIC		0x4038d570
 	struct vsb		*sb;
 	enum cli_status_e	result;
 	const char		*cmd;

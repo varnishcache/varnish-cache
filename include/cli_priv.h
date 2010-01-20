@@ -58,7 +58,6 @@ void cli_quote(struct cli *cli, const char *str);
 void cli_result(struct cli *cli, unsigned r);
 
 /* From libvarnish/cli.c */
-void cli_dispatch(struct cli *cli, struct cli_proto *clp, const char *line);
 cli_func_t	cli_func_help;
 cli_func_t	cli_func_ping;
 struct cli_proto *cli_concat(struct cli_proto *, struct cli_proto *);

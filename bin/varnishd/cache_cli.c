@@ -94,7 +94,7 @@ CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
 }
 
 static void
-cli_cb_before(struct cli *cli)
+cli_cb_before(const struct cli *cli)
 {
 
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
@@ -104,7 +104,7 @@ cli_cb_before(struct cli *cli)
 }
 
 static void
-cli_cb_after(struct cli *cli)
+cli_cb_after(const struct cli *cli)
 {
 	Lck_Unlock(&cli_mtx);
 	VSL(SLT_CLI, 0, "Wr %03u %s", cli->result, vsb_data(cli->sb));
