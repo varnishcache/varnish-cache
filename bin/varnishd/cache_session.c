@@ -234,6 +234,15 @@ SES_Delete(struct sess *sp)
 		// sm->magic = SESSMEM_MAGIC;
 		// sm->workspace = workspace;
 
+		/* XXX: cache_waiter_epoll.c evaluates data.ptr. If it's
+		 * XXX: not nulled, things go wrong during load.
+		 * XXX: Should probably find a better method to deal with
+		 * XXX: this scenario...
+		 */
+#if defined(HAVE_EPOLL_CTL)
+		sm->sess.ev.data.ptr = NULL;
+#endif
+
 		Lck_Lock(&ses_mem_mtx);
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
 		Lck_Unlock(&ses_mem_mtx);
