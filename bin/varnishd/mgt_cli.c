@@ -381,7 +381,7 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 static void
-mgt_cli_cb_before(struct cli *cli)
+mgt_cli_cb_before(const struct cli *cli)
 {
 
 	if (params->syslog_cli_traffic)
@@ -389,7 +389,7 @@ mgt_cli_cb_before(struct cli *cli)
 }
 
 static void
-mgt_cli_cb_after(struct cli *cli)
+mgt_cli_cb_after(const struct cli *cli)
 {
 
 	if (params->syslog_cli_traffic)

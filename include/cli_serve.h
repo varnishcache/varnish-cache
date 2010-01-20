@@ -31,7 +31,7 @@
 
 struct cls;
 typedef void cls_cb_f(void *priv);
-typedef void cls_cbc_f(struct cli*);
+typedef void cls_cbc_f(const struct cli*);
 struct cls *CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen);
 struct cli *CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
