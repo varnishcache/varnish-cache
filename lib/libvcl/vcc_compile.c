@@ -96,8 +96,8 @@ static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
 /*--------------------------------------------------------------------*/
 
-void
-TlFree(struct tokenlist *tl, void *p)
+static void
+TlDoFree(struct tokenlist *tl, void *p)
 {
 	struct membit *mb;
 
@@ -115,7 +115,7 @@ TlAlloc(struct tokenlist *tl, unsigned len)
 
 	p = calloc(len, 1);
 	assert(p != NULL);
-	TlFree(tl, p);
+	TlDoFree(tl, p);
 	return (p);
 }
 

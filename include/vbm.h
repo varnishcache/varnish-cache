@@ -85,7 +85,7 @@ vbit_set(struct vbitmap *vb, unsigned bit)
 }
 
 static inline void
-vbit_clr(struct vbitmap *vb, unsigned bit)
+vbit_clr(const struct vbitmap *vb, unsigned bit)
 {
 
 	if (bit < vb->nbits)
@@ -93,7 +93,7 @@ vbit_clr(struct vbitmap *vb, unsigned bit)
 }
 
 static inline int
-vbit_test(struct vbitmap *vb, unsigned bit)
+vbit_test(const struct vbitmap *vb, unsigned bit)
 {
 
 	if (bit >= vb->nbits)

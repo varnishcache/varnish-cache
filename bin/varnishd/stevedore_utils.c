@@ -55,7 +55,6 @@ SVNID("$Id$")
 #include <sys/vfs.h>
 #endif
 
-#include "compat/asprintf.h"
 #include "mgt.h"
 #include "stevedore.h"
 
@@ -86,6 +85,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 	struct stat st;
 	char *q;
 	int retval = 1;
+	char buf[FILENAME_MAX];
 
 	AN(fn);
 	AN(fnp);
@@ -107,13 +107,13 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		    ctx, fn);
 
 	if (S_ISDIR(st.st_mode)) {
-		xxxassert(asprintf(&q, "%s/varnish.XXXXXX", fn) > 0);
-		XXXAN(q);
-		fd = mkstemp(q);
+		bprintf(buf, "%s/varnish.XXXXXX", fn);
+		fd = mkstemp(buf);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" mkstemp(%s) failed (%s)\n",
 			    ctx, fn, q, strerror(errno));
-		*fnp = q;
+		*fnp = strdup(buf);
+		AN(*fnp);
 		retval = 2;
 	} else if (S_ISREG(st.st_mode)) {
 		fd = open(fn, O_RDWR | O_LARGEFILE);

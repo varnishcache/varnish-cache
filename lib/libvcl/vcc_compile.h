@@ -176,7 +176,6 @@ void Fi(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Ff(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
-void TlFree(struct tokenlist *tl, void *p);
 void *TlAlloc(struct tokenlist *tl, unsigned len);
 
 /* vcc_dir_random.c */
