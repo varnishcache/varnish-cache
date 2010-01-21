@@ -58,6 +58,7 @@ SVNID("$Id$")
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
 static int		add_check;
+static struct cls	*cls;
 
 /*
  * The CLI commandlist is split in three:
@@ -67,29 +68,17 @@ static int		add_check;
  *  - Undocumented debug commands, show in undocumented "help -d"
  */
 
-static struct cli_proto *ccf_master_cli, *ccf_public_cli, *ccf_debug_cli;
-
 /*--------------------------------------------------------------------
  * Add CLI functions to the appropriate command set
  */
 
 void
-CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p)
+CLI_AddFuncs(struct cli_proto *p)
 {
-	struct cli_proto *c, **cp;
 
 	AZ(add_check);
-	switch (which) {
-	case MASTER_CLI: cp = &ccf_master_cli; break;
-	case PUBLIC_CLI: cp = &ccf_public_cli; break;
-	case DEBUG_CLI:	 cp = &ccf_debug_cli;  break;
-	default: INCOMPL();
-	}
 	Lck_Lock(&cli_mtx);
-	c = cli_concat(*cp, p);
-	AN(c);
-	free(*cp);
-	*cp = c;
+	AZ(CLS_AddFunc(cls, 0, p));
 	Lck_Unlock(&cli_mtx);
 }
 
@@ -113,17 +102,11 @@ cli_cb_after(const struct cli *cli)
 void
 CLI_Run(void)
 {
-	struct cls	*cls;
 	int i;
 
 	add_check = 1;
 
-	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
-	AN(cls);
 	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
-	AZ(CLS_AddFunc(cls, 0, ccf_master_cli));
-	AZ(CLS_AddFunc(cls, 0, ccf_public_cli));
-	AZ(CLS_AddFunc(cls, 0, ccf_debug_cli));
 
 	do {
 		i = CLS_Poll(cls, -1);
@@ -160,27 +143,6 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-ccf_help(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)priv;
-	cli_func_help(cli, av, ccf_public_cli);
-
-	if (av[2] != NULL && !strcmp(av[2], "-d")) {
-		/* Also list undocumented commands */
-		cli_out(cli, "\nDebugging commands:\n");
-		cli_func_help(cli, av, ccf_debug_cli);
-	} else if (cli->result == CLIS_UNKNOWN) {
-		/* Otherwise, try the undocumented list */
-		vsb_clear(cli->sb);
-		cli->result = CLIS_OK;
-		cli_func_help(cli, av, ccf_debug_cli);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 ccf_panic(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -193,18 +155,14 @@ ccf_panic(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto master_cmds[] = {
-	{ CLI_PING,		cli_func_ping },
-	{ CLI_HELP,             ccf_help, NULL },
-	{ NULL }
-};
-
-static struct cli_proto debug_cmds[] = {
+	{ CLI_PING,		"i", CLS_func_ping },
+	{ CLI_HELP,             "i", CLS_func_help },
 	{ "debug.sizeof", "debug.sizeof",
 		"\tDump sizeof various data structures\n",
-		0, 0, cli_debug_sizeof },
+		0, 0, "d", cli_debug_sizeof },
 	{ "debug.panic.worker", "debug.panic.worker",
 		"\tPanic the worker process.\n",
-		0, 0, ccf_panic },
+		0, 0, "d", ccf_panic },
 	{ NULL }
 };
 
@@ -220,7 +178,9 @@ CLI_Init(void)
 	Lck_New(&cli_mtx);
 	cli_thread = pthread_self();
 
-	CLI_AddFuncs(MASTER_CLI, master_cmds);
-	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	AN(cls);
+
+	CLI_AddFuncs(master_cmds);
 }
 

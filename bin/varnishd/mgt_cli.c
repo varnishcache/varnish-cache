@@ -72,9 +72,6 @@ static const char	*secret_file;
 #define	MCF_NOAUTH	0
 #define MCF_AUTH	16
 
-static void mcf_help(struct cli *cli, const char * const *av, void *priv);
-
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -90,19 +87,6 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 	    cli_out(cli, "%12ju  %s\n", (VSL_stats->n), d);
 #include "stat_field.h"
 #undef MAC_STAT
-}
-
-
-/*--------------------------------------------------------------------*/
-
-static void
-mcf_close(struct cli *cli, const char *const *av, void *priv)
-{
-
-	(void)av;
-	(void)priv;
-	cli_out(cli, "Closing CLI connection");
-	cli_result(cli, CLIS_CLOSE);
 }
 
 /*--------------------------------------------------------------------*/
@@ -127,22 +111,19 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
-	{ CLI_BANNER,		mcf_banner, NULL },
-	{ CLI_PING,		cli_func_ping },
-	{ CLI_SERVER_STATUS,	mcf_server_status, NULL },
-	{ CLI_SERVER_START,	mcf_server_startstop, NULL },
-	{ CLI_SERVER_STOP,	mcf_server_startstop, cli_proto },
-	{ CLI_STATS,		mcf_stats, NULL },
-	{ CLI_VCL_LOAD,		mcf_config_load, NULL },
-	{ CLI_VCL_INLINE,	mcf_config_inline, NULL },
-	{ CLI_VCL_USE,		mcf_config_use, NULL },
-	{ CLI_VCL_DISCARD,	mcf_config_discard, NULL },
-	{ CLI_VCL_LIST,		mcf_config_list, NULL },
-	{ CLI_VCL_SHOW,		mcf_config_show, NULL },
-	{ CLI_PARAM_SHOW,	mcf_param_show, NULL },
-	{ CLI_PARAM_SET,	mcf_param_set, NULL },
-
-	{ CLI_QUIT,		mcf_close, NULL},
+	{ CLI_BANNER,		"", mcf_banner, NULL },
+	{ CLI_SERVER_STATUS,	"", mcf_server_status, NULL },
+	{ CLI_SERVER_START,	"", mcf_server_startstop, NULL },
+	{ CLI_SERVER_STOP,	"", mcf_server_startstop, cli_proto },
+	{ CLI_STATS,		"", mcf_stats, NULL },
+	{ CLI_VCL_LOAD,		"", mcf_config_load, NULL },
+	{ CLI_VCL_INLINE,	"", mcf_config_inline, NULL },
+	{ CLI_VCL_USE,		"", mcf_config_use, NULL },
+	{ CLI_VCL_DISCARD,	"", mcf_config_discard, NULL },
+	{ CLI_VCL_LIST,		"", mcf_config_list, NULL },
+	{ CLI_VCL_SHOW,		"", mcf_config_show, NULL },
+	{ CLI_PARAM_SHOW,	"", mcf_param_show, NULL },
+	{ CLI_PARAM_SET,	"", mcf_param_set, NULL },
 	{ NULL }
 };
 
@@ -161,7 +142,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 static struct cli_proto cli_debug[] = {
 	{ "debug.panic.master", "debug.panic.master",
 		"\tPanic the master process.\n",
-		0, 0, mcf_panic, NULL},
+		0, 0, "d", mcf_panic, NULL},
 	{ NULL }
 };
 
@@ -181,6 +162,10 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	 * running.
 	 */
 	if (cli_o <= 0) {
+		if (!strcmp(av[1], "help")) {
+			cli_out(cli, "No help from child, (not running).\n");
+			return;
+		}
 		cli_result(cli, CLIS_UNKNOWN);
 		cli_out(cli,
 		    "Unknown request in manager process "
@@ -202,7 +187,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto cli_askchild[] = {
 	{ "*", "<wild-card-entry>", "\t<fall through to cacher>\n",
-		0, 9999, mcf_askchild, NULL},
+		0, 9999, "h*", mcf_askchild, NULL},
 	{ NULL }
 };
 
@@ -348,36 +333,12 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLI_HELP,		mcf_help, cli_auth },
-	{ CLI_AUTH,		mcf_auth, NULL },
-	{ CLI_QUIT,		mcf_close, NULL},
+	{ CLI_HELP,		"", CLS_func_help, NULL },
+	{ CLI_PING,		"", CLS_func_ping },
+	{ CLI_AUTH,		"", mcf_auth, NULL },
+	{ CLI_QUIT,		"", CLS_func_close, NULL},
 	{ NULL }
 };
-
-/*--------------------------------------------------------------------*/
-
-static void
-mcf_help(struct cli *cli, const char * const *av, void *priv)
-{
-	unsigned u;
-	char *p;
-
-	(void)priv;
-	cli_func_help(cli, av, cli_auth);
-	if (cli->auth == MCF_NOAUTH)
-		return;
-	cli_func_help(cli, av, cli_proto);
-	if (cli_o >= 0 && (av[2] == NULL || *av[2] == '-')) {
-		p = NULL;
-		if (!mgt_cli_askchild(&u, &p,
-		    "help %s\n", av[2] != NULL ? av[2] : "")) {
-			cli_out(cli, "%s", p);
-			cli_result(cli, u);
-		}
-		free(p);
-	}
-}
-
 
 /*--------------------------------------------------------------------*/
 static void

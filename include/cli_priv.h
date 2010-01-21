@@ -46,6 +46,7 @@ struct cli_proto {
 	const char		*help;
 	unsigned		minarg;
 	unsigned		maxarg;
+	char			flags[4];
 
 	/* Dispatch information */
 	cli_func_t		*func;
@@ -56,8 +57,3 @@ struct cli_proto {
 void cli_out(struct cli *cli, const char *fmt, ...);
 void cli_quote(struct cli *cli, const char *str);
 void cli_result(struct cli *cli, unsigned r);
-
-/* From libvarnish/cli.c */
-cli_func_t	cli_func_help;
-cli_func_t	cli_func_ping;
-struct cli_proto *cli_concat(struct cli_proto *, struct cli_proto *);

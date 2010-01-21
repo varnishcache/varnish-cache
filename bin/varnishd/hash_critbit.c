@@ -333,7 +333,7 @@ hcb_dump(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto hcb_cmds[] = {
-	{ "hcb.dump", "hcb.dump", "dump HCB tree\n", 0, 0, hcb_dump },
+	{ "hcb.dump", "hcb.dump", "dump HCB tree\n", 0, 0, "d", hcb_dump },
 	{ NULL }
 };
 
@@ -384,7 +384,7 @@ hcb_start(void)
 	pthread_t tp;
 
 	(void)oh;
-	CLI_AddFuncs(DEBUG_CLI, hcb_cmds);
+	CLI_AddFuncs(hcb_cmds);
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);

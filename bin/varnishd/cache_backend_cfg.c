@@ -311,7 +311,7 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
 	{ "debug.backend", "debug.backend",
-	    "\tExamine Backend internals\n", 0, 0, cli_debug_backend },
+	    "\tExamine Backend internals\n", 0, 0, "d", cli_debug_backend },
 	{ NULL }
 };
 
@@ -322,5 +322,5 @@ VBE_Init(void)
 {
 
 	Lck_New(&VBE_mtx);
-	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+	CLI_AddFuncs(debug_cmds);
 }

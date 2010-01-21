@@ -80,6 +80,107 @@ struct cls {
 	unsigned			maxlen;
 };
 
+/*--------------------------------------------------------------------*/
+ 
+void
+CLS_func_close(struct cli *cli, const char *const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	cli_out(cli, "Closing CLI connection");
+	cli_result(cli, CLIS_CLOSE);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+CLS_func_ping(struct cli *cli, const char * const *av, void *priv)
+{
+	time_t t;
+
+	(void)priv;
+	(void)av;
+	t = time(NULL);
+	cli_out(cli, "PONG %ld 1.0", t);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+CLS_func_help(struct cli *cli, const char * const *av, void *priv)
+{
+	struct cli_proto *cp;
+	struct cls_func *cfn;
+	unsigned all, debug, u, d, h, i, wc;
+	struct cls *cs;
+
+	(void)priv;
+	cs = cli->cls;
+	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+
+	if (av[2] == NULL) {
+		all = debug = 0;
+	} else if (!strcmp(av[2], "-a")) {
+		all = 1;
+		debug = 0;
+	} else if (!strcmp(av[2], "-d")) {
+		all = 0;
+		debug = 1;
+	} else {
+		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+			for (cp = cfn->clp; cp->request != NULL; cp++) {
+				if (!strcmp(cp->request, av[2])) {
+					cli_out(cli, "%s\n%s\n",
+					    cp->syntax, cp->help);
+					return;
+				}
+				for (u = 0; u < sizeof cp->flags; u++) {
+					if (cp->flags[u] == '*') {
+						cp->func(cli,av,priv);
+						return;
+					}
+				}
+			}
+		}
+		cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
+		cli_result(cli, CLIS_UNKNOWN);
+		return;
+	}
+	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+		for (cp = cfn->clp; cp->request != NULL; cp++) {
+			d = 0;
+			h = 0;
+			i = 0;
+			wc = 0;
+			for (u = 0; u < sizeof cp->flags; u++) {
+				if (cp->flags[u] == '\0')
+					continue;
+				if (cp->flags[u] == 'd')
+					d = 1;
+				if (cp->flags[u] == 'h')
+					h = 1;
+				if (cp->flags[u] == 'i')
+					i = 1;
+				if (cp->flags[u] == '*')
+					wc = 1;
+			}
+			if (i)
+				continue;
+			if (wc) {
+				cp->func(cli, av, priv);
+				continue;
+			}
+			if (debug != d)
+				continue;
+			if (h && !all)
+				continue;
+			if (cp->syntax != NULL)
+				cli_out(cli, "%s\n", cp->syntax);
+		}
+	}
+}
+
 /*--------------------------------------------------------------------
  * Look for a CLI command to execute
  */
@@ -156,6 +257,7 @@ cls_vlu(void *priv, const char *p)
 		return (0);
 
 	cli->cmd = p;
+	cli->cls = cs;
 
 	av = ParseArgv(p, 0);
 	AN(av);
@@ -201,6 +303,7 @@ cls_vlu(void *priv, const char *p)
 		cs->after(cli);
 
 	cli->cmd = NULL;
+	cli->cls = NULL;
 	FreeArgv(av);
 
 	if (cli_writeres(cfd->fdo, cli) || cli->result == CLIS_CLOSE)

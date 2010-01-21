@@ -375,15 +375,11 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vca_cmds[] = {
-	{ CLI_SERVER_START,	ccf_start },
-	{ NULL }
-};
-
-static struct cli_proto vca_debug_cmds[] = {
+	{ CLI_SERVER_START,	"i", ccf_start },
 	{ "debug.listen_address",
 	    "debug.listen_address",
 	    "Report the actual listen address\n", 0, 0,
-	    ccf_listen_address, NULL },
+	    "d", ccf_listen_address, NULL },
 	{ NULL }
 };
 
@@ -391,8 +387,7 @@ void
 VCA_Init(void)
 {
 
-	CLI_AddFuncs(MASTER_CLI, vca_cmds);
-	CLI_AddFuncs(DEBUG_CLI, vca_debug_cmds);
+	CLI_AddFuncs(vca_cmds);
 }
 
 void
