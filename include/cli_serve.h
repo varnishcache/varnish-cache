@@ -40,3 +40,8 @@ int CLS_Poll(struct cls *cs, int timeout);
 int CLS_PollFd(struct cls *cs, int fd, int timeout);
 void CLS_Destroy(struct cls **);
 
+/* From libvarnish/cli.c */
+cli_func_t	CLS_func_close;
+cli_func_t	CLS_func_help;
+cli_func_t	CLS_func_ping;
+

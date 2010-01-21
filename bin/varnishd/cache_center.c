@@ -1278,9 +1278,9 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
 	{ "debug.xid", "debug.xid",
-		"\tExamine or set XID\n", 0, 1, cli_debug_xid },
+		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
 	{ "debug.srandom", "debug.srandom",
-		"\tSeed the random(3) function\n", 0, 1, cli_debug_srandom },
+		"\tSeed the random(3) function\n", 0, 1, "d", cli_debug_srandom },
 	{ NULL }
 };
 
@@ -1294,7 +1294,7 @@ CNT_Init(void)
 
 	srandomdev();
 	xids = random();
-	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+	CLI_AddFuncs(debug_cmds);
 }
 
 

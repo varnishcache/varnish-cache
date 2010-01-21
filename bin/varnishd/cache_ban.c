@@ -794,13 +794,13 @@ static struct cli_proto ban_cmds[] = {
 	 * XXX: COMPAT: Retain these two entries for entire 2.x series
 	 * XXX: COMPAT: to stay compatible with 1.x series syntax.
 	 */
-	{ CLI_HIDDEN("url.purge", 1, 1)		ccf_purge_url },
-	{ CLI_HIDDEN("hash.purge", 0, 1)	ccf_purge_hash },
-	{ CLI_HIDDEN("purge.hash", 0, 1)	ccf_purge_hash },
+	{ CLI_HIDDEN("url.purge", 1, 1)		"h", ccf_purge_url },
+	{ CLI_HIDDEN("hash.purge", 0, 1)	"h", ccf_purge_hash },
+	{ CLI_HIDDEN("purge.hash", 0, 1)	"h", ccf_purge_hash },
 
-	{ CLI_PURGE_URL,			ccf_purge_url },
-	{ CLI_PURGE,				ccf_purge },
-	{ CLI_PURGE_LIST,			ccf_purge_list },
+	{ CLI_PURGE_URL,			"", ccf_purge_url },
+	{ CLI_PURGE,				"", ccf_purge },
+	{ CLI_PURGE_LIST,			"", ccf_purge_list },
 	{ NULL }
 };
 
@@ -809,7 +809,7 @@ BAN_Init(void)
 {
 
 	Lck_New(&ban_mtx);
-	CLI_AddFuncs(PUBLIC_CLI, ban_cmds);
+	CLI_AddFuncs(ban_cmds);
 
 	ban_magic = BAN_New();
 	AN(ban_magic);

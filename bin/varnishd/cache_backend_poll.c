@@ -409,7 +409,7 @@ vbp_health(struct cli *cli, const char * const *av, void *priv)
 static struct cli_proto debug_cmds[] = {
 	{ "debug.health", "debug.health",
 		"\tDump backend health stuff\n",
-		0, 0, vbp_health },
+		0, 0, "d", vbp_health },
 	{ NULL }
 };
 
@@ -494,5 +494,5 @@ void
 VBP_Init(void)
 {
 
-	CLI_AddFuncs(DEBUG_CLI, debug_cmds);
+	CLI_AddFuncs(debug_cmds);
 }

@@ -30,6 +30,7 @@
  */
 
 struct vlu;
+struct cls;
 
 struct cli {
 	unsigned		magic;
@@ -41,6 +42,7 @@ struct cli {
 	char			challenge[34];
 	char			*ident;
 	struct vlu		*vlu;
+	struct cls		*cls;
 };
 
 int cli_writeres(int fd, const struct cli *cli);

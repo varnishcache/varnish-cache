@@ -184,16 +184,3 @@ cli_readres(int fd, unsigned *status, char **ptr, double tmo)
 		*ptr = p;
 	return (0);
 }
-
-/*--------------------------------------------------------------------*/
-
-void
-cli_func_ping(struct cli *cli, const char * const *av, void *priv)
-{
-	time_t t;
-
-	(void)priv;
-	(void)av;
-	t = time(NULL);
-	cli_out(cli, "PONG %ld 1.0", t);
-}

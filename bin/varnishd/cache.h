@@ -487,8 +487,7 @@ void CNT_Init(void);
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
 void CLI_Run(void);
-enum cli_set_e {MASTER_CLI, PUBLIC_CLI, DEBUG_CLI};
-void CLI_AddFuncs(enum cli_set_e which, struct cli_proto *p);
+void CLI_AddFuncs(struct cli_proto *p);
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 

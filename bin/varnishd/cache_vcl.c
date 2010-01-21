@@ -328,10 +328,10 @@ VCL_##func##_method(struct sess *sp)					\
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vcl_cmds[] = {
-	{ CLI_VCL_LOAD,         ccf_config_load },
-	{ CLI_VCL_LIST,         ccf_config_list },
-	{ CLI_VCL_DISCARD,      ccf_config_discard },
-	{ CLI_VCL_USE,          ccf_config_use },
+	{ CLI_VCL_LOAD,         "i", ccf_config_load },
+	{ CLI_VCL_LIST,         "i", ccf_config_list },
+	{ CLI_VCL_DISCARD,      "i", ccf_config_discard },
+	{ CLI_VCL_USE,          "i", ccf_config_use },
 	{ NULL }
 };
 
@@ -339,6 +339,6 @@ void
 VCL_Init()
 {
 
-	CLI_AddFuncs(MASTER_CLI, vcl_cmds);
+	CLI_AddFuncs(vcl_cmds);
 	Lck_New(&vcl_mtx);
 }
