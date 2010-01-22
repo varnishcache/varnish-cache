@@ -124,7 +124,7 @@ vca_main(void *arg)
 			i = read(vca_pipes[0], ss, sizeof ss);
 			assert(i >= 0);
 			assert((i % sizeof ss[0]) == 0);
-			for (j = 0; j * sizeof ss[0] < i; j += sizeof ss[0]) {
+			for (j = 0; j * sizeof ss[0] < i; j++) {
 				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
 				vca_poll(ss[j]->fd);
