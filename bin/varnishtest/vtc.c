@@ -336,7 +336,7 @@ cmd_test(CMD_ARGS)
 		return;
 	assert(!strcmp(av[0], "test"));
 
-	printf("#    TEST %s\n", av[1]);
+	vtc_log(vl, 1, "TEST %s", av[1]);
 	AZ(av[2]);
 	vtc_desc = strdup(av[1]);
 }
@@ -460,12 +460,14 @@ static const struct cmds cmds[] = {
 	{ NULL,		NULL }
 };
 
-static void
+static double
 exec_file(const char *fn, struct vtclog *vl)
 {
 	char *buf;
+	double t0;
 	unsigned old_err;
 
+	t0 = TIM_mono();
 	vtc_stop = 0;
 	vtc_file = fn;
 	vtc_desc = NULL;
@@ -480,12 +482,24 @@ exec_file(const char *fn, struct vtclog *vl)
 	vtc_log(vl, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
 	vtc_error = old_err;
+
 	if (vtc_error)
 		vtc_log(vl, 1, "TEST %s FAILED", fn);
-	else
+	else {
 		vtc_log(vl, 1, "TEST %s completed", fn);
+		vtc_logreset();
+	}
+
+	t0 = TIM_mono() - t0;
+
+	if (vtc_error && vtc_verbosity == 0)
+		printf("%s", vtc_logfull());
+	else if (vtc_verbosity == 0)
+		printf("#    top  TEST %s passed (%.3fs)\n", fn, t0);
+
 	vtc_file = NULL;
 	free(vtc_desc);
+	return (t0);
 }
 
 /**********************************************************************
@@ -506,7 +520,7 @@ usage(void)
 int
 main(int argc, char * const *argv)
 {
-	int ch, i, ntest = 1;
+	int ch, i, ntest = 1, ncheck = 0;
 	FILE *fok;
 	static struct vtclog	*vl;
 	double tmax, t0, t00;
@@ -515,6 +529,7 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+	vtc_loginit();
 	vl = vtc_logopen("top");
 	AN(vl);
 	while ((ch = getopt(argc, argv, "n:qv")) != -1) {
@@ -551,9 +566,8 @@ main(int argc, char * const *argv)
 	t00 = TIM_mono();
 	for (i = 0; i < ntest; i++) {
 		for (ch = 0; ch < argc; ch++) {
-			t0 = TIM_mono();
-			exec_file(argv[ch], vl);
-			t0 = TIM_mono() - t0;
+			t0 = exec_file(argv[ch], vl);
+			ncheck++;
 			if (t0 > tmax) {
 				tmax = t0;
 				nmax = argv[ch];
@@ -576,9 +590,11 @@ main(int argc, char * const *argv)
 		return (2);
 
 	t00 = TIM_mono() - t00;
-	if (tmax > 0 && nmax != NULL)
-		vtc_log(vl, 1, "Slowest test: %s %.3fs", nmax, tmax);
-	vtc_log(vl, 1, "Total duration: %.3fs", t00);
+	if (ncheck > 1) {
+		printf("#    top  Slowest test: %s %.3fs\n", nmax, tmax);
+		printf("#    top  Total tests run:   %d\n", ncheck);
+		printf("#    top  Total duration: %.3fs\n", t00);
+	}
 
 	fok = fopen("_.ok", "w");
 	if (fok != NULL)

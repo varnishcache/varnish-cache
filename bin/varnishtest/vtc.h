@@ -67,6 +67,9 @@ void http_process(struct vtclog *vl, const char *spec, int sock, int sfd);
 
 void cmd_server_genvcl(struct vsb *vsb);
 
+void vtc_loginit(void);
+void vtc_logreset(void);
+const char *vtc_logfull(void);
 struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
