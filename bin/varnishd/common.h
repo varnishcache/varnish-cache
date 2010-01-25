@@ -31,6 +31,7 @@
 
 struct cli;
 struct sockaddr;
+
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
@@ -46,6 +47,7 @@ extern struct varnish_stats *VSL_stats;
 
 /* varnishd.c */
 struct vsb;
+extern struct vsb *vident;
 int Symbol_Lookup(struct vsb *vsb, void *ptr);
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))

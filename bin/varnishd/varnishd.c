@@ -49,6 +49,8 @@ SVNID("$Id$")
 #include <time.h>
 #include <unistd.h>
 
+#include <sys/utsname.h>
+
 #include "compat/daemon.h"
 
 #ifndef HAVE_STRLCPY
@@ -81,6 +83,21 @@ unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
+struct vsb		*vident;
+
+static void
+build_vident(void)
+{
+	struct utsname uts;
+
+	vident = vsb_newauto();
+	AN(vident);
+	if (!uname(&uts)) {
+		vsb_printf(vident, ",%s", uts.sysname);
+		vsb_printf(vident, ",%s", uts.release);
+		vsb_printf(vident, ",%s", uts.machine);
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -132,6 +149,7 @@ setup_storage(const char *spec)
 
 	priv = pick(STV_choice, av[1], "storage");
 	AN(priv);
+	vsb_printf(vident, ",-s%s", av[1]);
 
 	STV_add(priv, ac, av + 2);
 
@@ -161,6 +179,7 @@ setup_hash(const char *h_arg)
 
 	hp = pick(hsh_choice, av[1], "hash");
 	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
+	vsb_printf(vident, ",-h%s", av[1]);
 	heritage.hash = hp;
 	if (hp->init != NULL)
 		hp->init(ac, av + 2);
@@ -526,6 +545,8 @@ main(int argc, char * const *argv)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	build_vident();
+
 	Symbol_hack(argv[0]);
 
 	/* for ASSERT_MGT() */
@@ -734,6 +755,9 @@ main(int argc, char * const *argv)
 
 	VSL_MgtInit(SHMLOG_FILENAME, l_size);
 
+	vsb_finish(vident);
+	AZ(vsb_overflowed(vident));
+
 	if (d_flag == 1)
 		DebugStunt();
 	if (d_flag < 2 && !F_flag)
@@ -743,6 +767,9 @@ main(int argc, char * const *argv)
 
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
+
+	if (d_flag > 0)
+		fprintf(stderr, "Varnish on %s\n", vsb_data(vident) + 1);
 
 	/* Do this again after debugstunt and daemon has run */
 	mgt_pid = getpid();

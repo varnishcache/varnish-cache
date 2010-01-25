@@ -326,6 +326,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	if (q != NULL)
 		vsb_printf(vsp, "thread = (%s)\n", q);
 
+	vsb_printf(vsp, "ident = %s,%s\n",
+	    vsb_data(vident) + 1, VCA_waiter_name());
+
 	pan_backtrace();
 
 	if (!(params->diag_bitmap & 0x2000)) {

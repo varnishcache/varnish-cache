@@ -70,7 +70,22 @@ pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
 
-/*
+/*--------------------------------------------------------------------
+ * Report waiter name to panics
+ */
+
+const char *
+VCA_waiter_name(void)
+{
+
+	if (vca_act != NULL)
+		return (vca_act->name);
+	else
+		return ("no_waiter");
+}
+
+
+/*--------------------------------------------------------------------
  * We want to get out of any kind of touble-hit TCP connections as fast
  * as absolutely possible, so we set them LINGER enabled with zero timeout,
  * so that even if there are outstanding write data on the socket, a close(2)
@@ -394,6 +409,8 @@ void
 VCA_tweak_waiter(struct cli *cli, const char *arg)
 {
 	int i;
+
+	 ASSERT_MGT();
 
 	if (arg == NULL) {
 		if (vca_act == NULL)
