@@ -122,9 +122,17 @@ vca_main(void *arg)
 		assert(hpoll < npoll);
 		while (hpoll > 0 && pollfd[hpoll].fd == -1)
 			hpoll--;
+		assert(vca_pipes[0] <= hpoll);
+		assert(pollfd[vca_pipes[0]].fd = vca_pipes[0]);
+		assert(pollfd[vca_pipes[1]].fd = -1);
 		v = poll(pollfd, hpoll + 1, 100);
 		assert(v >= 0);
 		if (v && pollfd[vca_pipes[0]].revents) {
+			
+			if (pollfd[vca_pipes[0]].revents != POLLIN)
+				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
+				    pollfd[vca_pipes[0]].revents);
+			assert(pollfd[vca_pipes[0]].revents == POLLIN);
 			v--;
 			i = read(vca_pipes[0], ss, sizeof ss);
 			assert(i >= 0);

@@ -97,7 +97,7 @@ static const struct linger linger = {
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
 
-int vca_pipes[2];
+int vca_pipes[2] = { -1, -1 };
 
 static void
 sock_test(int fd)
@@ -343,7 +343,6 @@ vca_return_session(struct sess *sp)
 	else
 		vca_act->pass(sp);
 }
-
 
 /*--------------------------------------------------------------------*/
 
