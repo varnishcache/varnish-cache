@@ -553,12 +553,21 @@ main(int argc, char *argv[])
 		case 'w':
 			w_arg = optarg;
 			break;
+		case 'b':
+			fprintf(stderr, "-b is not valid for varnishncsa\n");
+			exit(1);
+			break;
+		case 'c':
+			/* XXX: Silently ignored: it's required anyway */
+			break;
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}
 	}
+
+	VSL_Arg(vd, 'c', optarg);
 
 	if (VSL_OpenLog(vd, n_arg))
 		exit(1);
