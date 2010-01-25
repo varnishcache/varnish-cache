@@ -63,15 +63,18 @@ vca_pollspace(unsigned fd)
 	if (fd < npoll)
 		return;
 	newnpoll = npoll;
+	if (newnpoll == 0)
+		newnpoll = 1;
 	while (fd >= newnpoll)
-		newnpoll = newnpoll * 2 + 1;
+		newnpoll = newnpoll * 2;
 	VSL(SLT_Debug, 0, "Acceptor poll space increased to %u", newnpoll);
 	newpollfd = realloc(newpollfd, newnpoll * sizeof *newpollfd);
-	XXXAN(newpollfd);	/* close offending fd */
+	XXXAN(newpollfd);
 	memset(newpollfd + npoll, 0, (newnpoll - npoll) * sizeof *newpollfd);
 	pollfd = newpollfd;
 	while (npoll < newnpoll)
 		pollfd[npoll++].fd = -1;
+	assert(fd < npoll);
 }
 
 /*--------------------------------------------------------------------*/
@@ -82,6 +85,7 @@ vca_poll(int fd)
 
 	assert(fd >= 0);
 	vca_pollspace((unsigned)fd);
+	assert(fd < npoll);
 	if (hpoll < fd)
 		hpoll = fd;
 	pollfd[fd].fd = fd;
@@ -92,14 +96,11 @@ static void
 vca_unpoll(int fd)
 {
 
+	assert(fd < npoll);
 	assert(fd >= 0);
 	vca_pollspace((unsigned)fd);
 	pollfd[fd].fd = -1;
 	pollfd[fd].events = 0;
-	if (hpoll == fd) {
-		while (pollfd[--hpoll].fd == -1)
-			continue;
-	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -107,7 +108,7 @@ vca_unpoll(int fd)
 static void *
 vca_main(void *arg)
 {
-	unsigned v;
+	int v;
 	struct sess *ss[NEEV], *sp, *sp2;
 	double deadline;
 	int i, j, fd;
@@ -118,14 +119,19 @@ vca_main(void *arg)
 	vca_poll(vca_pipes[0]);
 
 	while (1) {
+		assert(hpoll < npoll);
+		while (hpoll > 0 && pollfd[hpoll].fd == -1)
+			hpoll--;
 		v = poll(pollfd, hpoll + 1, 100);
+		assert(v >= 0);
 		if (v && pollfd[vca_pipes[0]].revents) {
 			v--;
 			i = read(vca_pipes[0], ss, sizeof ss);
 			assert(i >= 0);
-			assert((i % sizeof ss[0]) == 0);
+			assert(((unsigned)i % sizeof ss[0]) == 0);
 			for (j = 0; j * sizeof ss[0] < i; j++) {
 				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+				assert(ss[j]->fd >= 0);
 				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
 				vca_poll(ss[j]->fd);
 			}
@@ -136,25 +142,25 @@ vca_main(void *arg)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			fd = sp->fd;
+			assert(pollfd[fd].fd == fd);
 			if (pollfd[fd].revents) {
 				v--;
 				i = HTC_Rx(sp->htc);
 				VTAILQ_REMOVE(&sesshead, sp, list);
 				if (i == 0) {
+					/* Mov to front of list for speed */
 					VTAILQ_INSERT_HEAD(&sesshead, sp, list);
-					continue;
+				} else {
+					vca_unpoll(fd);
+					vca_handover(sp, i);
 				}
+			} else if (sp->t_open <= deadline) {
+				VTAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(fd);
-				vca_handover(sp, i);
-				continue;
+				TCP_linger(sp->fd, 0);
+				vca_close_session(sp, "timeout");
+				SES_Delete(sp);
 			}
-			if (sp->t_open > deadline)
-				continue;
-			VTAILQ_REMOVE(&sesshead, sp, list);
-			vca_unpoll(fd);
-			TCP_linger(sp->fd, 0);
-			vca_close_session(sp, "timeout");
-			SES_Delete(sp);
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -166,6 +172,7 @@ static void
 vca_poll_init(void)
 {
 
+	vca_pollspace(256);
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 
