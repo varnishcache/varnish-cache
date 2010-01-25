@@ -24,14 +24,11 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set diag_bitmap 0x00001000"
 
-# We have to force a known listen address otherwise the client cannot find
-# the varnish after the restart.
-
-varnish v1 -cliok "param.set listen_address 127.0.0.1:9080" -stop -start
+# Force the (random) port selected to be used again after restart.
+varnish v1 -cliok "param.set listen_address ${v1_sock}"
 
 # varnishtest defaults to auto_restart off, to avoid masking bugs.
 varnish v1 -cliok "param.set auto_restart on" 
-
 
 client c1 {
 	txreq -url "/"
