@@ -332,6 +332,8 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	struct vclprog *vp;
 	char buf[BUFSIZ];
 
+	/* XXX: annotate vcl with -b/-f arg so people know where it came from */
+	(void)f_arg;
 	if (b_arg != NULL) {
 		AZ(vcl);
 		/*
@@ -364,10 +366,8 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 		free(port);
 		vcl = strdup(buf);
 		AN(vcl);
-		bprintf(buf, "boot (-b %s)", b_arg);
-	} else {
-		bprintf(buf, "boot (-f %s)", f_arg);
 	}
+	strcpy(buf, "boot");
 
 	vf = mgt_VccCompile(&sb, vcl, C_flag);
 	free(vcl);
