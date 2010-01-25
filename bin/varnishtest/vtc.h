@@ -60,6 +60,7 @@ extern int vtc_verbosity;
 extern int vtc_error;		/* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
+extern char *vtc_tmpdir;
 
 void init_sema(void);
 
@@ -78,4 +79,4 @@ void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
 
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...);
-struct vsb *macro_expand(char *name);
+struct vsb *macro_expand(const char *name);
