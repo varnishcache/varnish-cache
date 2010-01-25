@@ -46,6 +46,10 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#ifdef HAVE_PRIV_H
+#include <priv.h>
+#endif
+
 #ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
 #endif
@@ -228,6 +232,36 @@ close_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
+/* Waive all privileges in the child, it does not need any */
+
+static inline void
+waive_privileges(void)
+{
+#ifdef HAVE_SETPPRIV
+	priv_set_t *empty;
+
+	if (!(empty = priv_allocset())) {
+		perror("priv_allocset_failed");
+		return;
+	}
+	priv_emptyset(empty);
+
+#define SETPPRIV(which, set)				       \
+	if (setppriv(PRIV_SET, which, set))		       \
+		perror("Waiving privileges failed on " #which)
+
+	SETPPRIV(PRIV_LIMIT, empty);
+	SETPPRIV(PRIV_INHERITABLE, empty);
+	SETPPRIV(PRIV_PERMITTED, empty); /* implies PRIV_EFFECTIVE */
+
+	priv_freeset(empty);
+#else
+	return;
+#endif
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 start_child(struct cli *cli)
 {
@@ -311,6 +345,8 @@ start_child(struct cli *cli)
 				printf(" %d", i);
 		}
 		printf("\n");
+
+		waive_privileges();
 
 		setproctitle("Varnish-Chld %s", heritage.name);
 

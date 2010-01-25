@@ -126,6 +126,7 @@ AC_CHECK_HEADERS([pthread_np.h])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])
+AC_CHECK_HEADERS([priv.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -150,6 +151,7 @@ AC_CHECK_FUNCS([getdtablesize])
 AC_CHECK_FUNCS([abort2])
 AC_CHECK_FUNCS([timegm])
 AC_CHECK_FUNCS([nanosleep])
+AC_CHECK_FUNCS([setppriv])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
