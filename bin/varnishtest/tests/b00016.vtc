@@ -4,8 +4,7 @@ test "Check naming of backends"
 
 varnish v1 -vcl { 
 	backend foo {
-		.host = "127.0.0.2";
-		.port = "9080";
+		.host = "127.0.0.2"; .port = "9080";
 	}
 
 	sub vcl_recv {
@@ -27,8 +26,7 @@ varnish v1 -vcl {
 	director bar random {
 		{
 		.backend = {
-		 	.host = "127.0.0.2";
-			.port = "9080";
+		 	.host = "127.0.0.2"; .port = "9080";
 		}
 		.weight = 1;
 		}
@@ -52,8 +50,7 @@ client c1 {
 varnish v1 -vcl { 
 	director baz round-robin {
 		 { .backend = {
-		 	.host = "127.0.0.2";
-			.port = "9080";
+		 	.host = "127.0.0.2"; .port = "9080";
 		} }
 	}
 
