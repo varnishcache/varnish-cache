@@ -45,14 +45,47 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
-int vtc_verbosity = 3;
+int vtc_verbosity = 0;
+
+static struct vsb	*vtclog_full;
+static pthread_mutex_t	vtclog_mtx;
 
 struct vtclog {
 	unsigned	magic;
 #define VTCLOG_MAGIC	0x82731202
 	const char	*id;
 	struct vsb	*vsb;
+	pthread_mutex_t	mtx;
 };
+
+/**********************************************************************/
+
+void
+vtc_loginit()
+{
+
+	vtclog_full = vsb_newauto();
+	AN(vtclog_full);
+	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
+}
+
+void
+vtc_logreset()
+{
+
+	vsb_clear(vtclog_full);
+}
+
+const char *
+vtc_logfull(void)
+{
+	vsb_finish(vtclog_full);
+	AZ(vsb_overflowed(vtclog_full));
+	return (vsb_data(vtclog_full));
+}
+
+/**********************************************************************/
+
 
 struct vtclog *
 vtc_logopen(const char *id)
@@ -63,6 +96,7 @@ vtc_logopen(const char *id)
 	AN(vl);
 	vl->id = id;
 	vl->vsb = vsb_newauto();
+	AZ(pthread_mutex_init(&vl->mtx, NULL));
 	return (vl);
 }
 
@@ -72,6 +106,7 @@ vtc_logclose(struct vtclog *vl)
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	vsb_delete(vl->vsb);
+	AZ(pthread_mutex_destroy(&vl->mtx));
 	FREE_OBJ(vl);
 }
 
@@ -91,9 +126,8 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 {
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
+	AZ(pthread_mutex_lock(&vl->mtx));
 	assert(lvl < NLEAD);
-	if (lvl > vtc_verbosity)
-		return;
 	vsb_clear(vl->vsb);
 	vsb_printf(vl->vsb, "%s %-4s ", lead[lvl], vl->id);
 	va_list ap;
@@ -103,11 +137,16 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	vsb_putc(vl->vsb, '\n');
 	vsb_finish(vl->vsb);
 	AZ(vsb_overflowed(vl->vsb));
-	(void)fputs(vsb_data(vl->vsb), stdout);
+
+	AZ(pthread_mutex_lock(&vtclog_mtx));
+	vsb_cat(vtclog_full, vsb_data(vl->vsb));
+	AZ(pthread_mutex_unlock(&vtclog_mtx));
+
+	if (lvl > 0 && lvl <= vtc_verbosity)
+		(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
+	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
-		printf("---- TEST FILE: %s\n", vtc_file);
-		printf("---- TEST DESCRIPTION: %s\n", vtc_desc);
 		vtc_error = 1;
 		if (pthread_self() != vtc_thread)
 			pthread_exit(NULL);
