@@ -547,14 +547,15 @@ HSH_DerefObjCore(struct sess *sp)
 	sp->objcore = NULL;
 
 	Lck_Lock(&oh->mtx);
+	assert(oc->objhead == oh);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	Lck_Unlock(&oh->mtx);
+	oc->objhead = NULL;
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);
 	sp->wrk->stats.n_objectcore--;
-	if (hash->deref(oh))
-		return;
-	HSH_DeleteObjHead(sp->wrk, oh);
+	if (!hash->deref(oh))
+		HSH_DeleteObjHead(sp->wrk, oh);
 }
 
 /*******************************************************************

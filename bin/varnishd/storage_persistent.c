@@ -674,7 +674,6 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	/* refcnt is one because the object is in the hash */
 	oc->obj->refcnt = 1;
 	oc->obj->objcore = oc;
-	oc->objhead = oh;
 	oc->obj->ban = oc->ban;
 
 	sg->nfixed++;
