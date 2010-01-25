@@ -13,4 +13,8 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
+	delay .1
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
 } -run
