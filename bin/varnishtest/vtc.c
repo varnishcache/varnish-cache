@@ -42,7 +42,6 @@ SVNID("$Id$")
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "compat/asprintf.h"
 
 #include "libvarnish.h"
 #include "vsb.h"
@@ -59,6 +58,7 @@ char		*vtc_desc;
 int		vtc_error;		/* Error encountered */
 int		vtc_stop;		/* Stops current test without error */
 pthread_t	vtc_thread;
+char		*vtc_tmpdir;
 
 /**********************************************************************
  * Macro facility
@@ -140,7 +140,7 @@ macro_get(const char *name)
 }
 
 struct vsb *
-macro_expand(char *name)
+macro_expand(const char *name)
 {
 	struct vsb *vsb;
 	char *p, *q;
@@ -525,7 +525,7 @@ main(int argc, char * const *argv)
 	static struct vtclog	*vl;
 	double tmax, t0, t00;
 	const char *nmax;
-	char *tmpdir, *cmd;
+	char cmd[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -556,10 +556,10 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
-	tmpdir = tempnam(NULL, "vtc");
-	AN(tmpdir);
-	mkdir(tmpdir, 0700);
-	macro_def(vl, NULL, "tmpdir", tmpdir);
+	vtc_tmpdir = tempnam(NULL, "vtc");
+	AN(vtc_tmpdir);
+	AZ(mkdir(vtc_tmpdir, 0700));
+	macro_def(vl, NULL, "tmpdir", vtc_tmpdir);
 	vtc_thread = pthread_self();
 	tmax = 0;
 	nmax = NULL;
@@ -579,12 +579,12 @@ main(int argc, char * const *argv)
 			break;
 	}
 
-	/* XXX this will always remove the tmpdir even on failures.
-	 * Maybe we should keep it in that case? */
-	assert(asprintf(&cmd, "rm -rf %s", tmpdir) > 0);
-	AZ(system(cmd));
-	free(tmpdir);
-	free(cmd);
+	/* Remove tmpdir on success or non-verbosity */
+	if (vtc_error == 0 || vtc_verbosity == 0) {
+		bprintf(cmd, "rm -rf %s", vtc_tmpdir);
+		AZ(system(cmd));
+		free(vtc_tmpdir);
+	}
 
 	if (vtc_error)
 		return (2);

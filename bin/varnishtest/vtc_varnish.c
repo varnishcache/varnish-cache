@@ -46,7 +46,6 @@ SVNID("$Id$")
 #include <sys/wait.h>
 #include <sys/socket.h>
 
-#include "compat/asprintf.h"
 #include "vqueue.h"
 #include "miniobj.h"
 #include "libvarnish.h"
@@ -144,22 +143,19 @@ static struct varnish *
 varnish_new(const char *name)
 {
 	struct varnish *v;
-	char *c;
+	char buf[1024];
 
 	AN(name);
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
 	REPLACE(v->name, name);
 
-	if (getuid() == 0)
-		assert(asprintf(&v->workdir, "/tmp/__%s", name) >= 0);
-	else
-		assert(asprintf(&v->workdir, "/tmp/__%s.%d", name, getuid()) >= 0);
+	bprintf(buf, "%s/%s", vtc_tmpdir, name);
+	v->workdir = strdup(buf);
 	AN(v->workdir);
 
-	assert(asprintf(&c, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir) >= 0);
-	AN(c);
-	AZ(system(c));
+	bprintf(buf, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
+	AZ(system(buf));
 
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
