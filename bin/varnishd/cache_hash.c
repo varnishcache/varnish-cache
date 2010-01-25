@@ -348,6 +348,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
+		assert(oc->objhead == oh);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 		if (oc->flags & OC_F_PERSISTENT)
@@ -405,6 +406,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (oc != NULL) {
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		assert(oc->objhead == oh);
 
 		/* We found an object we like */
 		o->refcnt++;
@@ -438,6 +440,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	oc->objhead = oh;
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
 	*poh = oh;
