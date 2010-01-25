@@ -88,6 +88,7 @@ vca_poll(int fd)
 	assert(fd < npoll);
 	if (hpoll < fd)
 		hpoll = fd;
+	assert(pollfd[fd].fd == -1);
 	pollfd[fd].fd = fd;
 	pollfd[fd].events = POLLIN;
 }
@@ -99,6 +100,7 @@ vca_unpoll(int fd)
 	assert(fd < npoll);
 	assert(fd >= 0);
 	vca_pollspace((unsigned)fd);
+	assert(pollfd[fd].fd == fd);
 	pollfd[fd].fd = -1;
 	pollfd[fd].events = 0;
 }
