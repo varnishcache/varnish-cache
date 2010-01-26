@@ -94,50 +94,75 @@ SES_Charge(struct sess *sp)
 #undef ACCT
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This function allocates a session + assorted peripheral data 
+ * structures in one single malloc operation.
+ */
 
-static struct sess *
-ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
+static struct sessmem *
+ses_sm_alloc(void)
 {
-	struct sess *sp;
-	unsigned char *p;
+	struct sessmem *sm;
+	unsigned char *p, *q;
 	volatile unsigned nws;
 	volatile unsigned nhttp;
 	unsigned l, hl;
 
-	if (sm == NULL) {
-		if (VSL_stats->n_sess_mem >= params->max_sess)
-			return (NULL);
-		/*
-		 * It is not necessary to lock these, but we need to
-		 * cache them locally, to make sure we get a consistent
-		 * view of the value.
-		 */
-		nws = params->sess_workspace;
-		nhttp = params->http_headers;
-		hl = HTTP_estimate(nhttp);
-		l = sizeof *sm + nws + 2 * hl;
-		p = malloc(l);
-		if (p == NULL)
-			return (NULL);
+	if (VSL_stats->n_sess_mem >= params->max_sess)
+		return (NULL);
+	/*
+	 * It is not necessary to lock these, but we need to
+	 * cache them locally, to make sure we get a consistent
+	 * view of the value.
+	 */
+	nws = params->sess_workspace;
+	nhttp = params->http_headers;
+	hl = HTTP_estimate(nhttp);
+	l = sizeof *sm + nws + 2 * hl;
+	p = malloc(l);
+	if (p == NULL)
+		return (NULL);
+	q = p + l;
 
-		/* Don't waste time zeroing the workspace */
-		memset(p, 0, l - nws);
+	Lck_Lock(&stat_mtx);
+	VSL_stats->n_sess_mem++;
+	Lck_Unlock(&stat_mtx);
 
-		sm = (void*)p;
-		p += sizeof *sm;
-		sm->magic = SESSMEM_MAGIC;
-		sm->workspace = nws;
-		VSL_stats->n_sess_mem++;
-		sm->http[0] = HTTP_create(p, nhttp);
-		p += hl;
-		sm->http[1] = HTTP_create(p, nhttp);
-		p += hl;
-		sm->wsp = p;
-	}
+	/* Don't waste time zeroing the workspace */
+	memset(p, 0, l - nws);
+
+	sm = (void*)p;
+	p += sizeof *sm;
+	sm->magic = SESSMEM_MAGIC;
+	sm->workspace = nws;
+	sm->http[0] = HTTP_create(p, nhttp);
+	p += hl;
+	sm->http[1] = HTTP_create(p, nhttp);
+	p += hl;
+	sm->wsp = p;
+	p += nws;
+	assert(p == q);
+
+	return (sm);
+}
+
+/*--------------------------------------------------------------------
+ * This prepares a session for use, based on its sessmem structure.
+ */
+
+static void
+ses_setup(struct sessmem *sm)
+{
+	struct sess *sp;
+
+
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
-	VSL_stats->n_sess++;
 	sp = &sm->sess;
+	memset(sp, 0, sizeof *sp);
+
+	/* We assume that the sess has been zeroed by the time we get here */
+	AZ(sp->magic);
+
 	sp->magic = SESS_MAGIC;
 	sp->mem = sm;
 	sp->sockaddr = (void*)(&sm->sockaddr[0]);
@@ -150,31 +175,23 @@ ses_setup(struct sessmem *sm, const struct sockaddr *addr, unsigned len)
 	sp->t_resp = NAN;
 	sp->t_end = NAN;
 	sp->grace = NAN;
-	sp->disable_esi = 0;
-
-	assert(len <= sp->sockaddrlen);
-	if (addr != NULL) {
-		memcpy(sp->sockaddr, addr, len);
-		sp->sockaddrlen = len;
-	}
 
 	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
 	sp->http = sm->http[0];
 	sp->http0 = sm->http[1];
 
 	SES_ResetBackendTimeouts(sp);
-
-	return (sp);
 }
 
 /*--------------------------------------------------------------------
- * Try to recycle an existing session.
+ * Get a new session, preferably by recycling an already ready one
  */
 
 struct sess *
-SES_New(const struct sockaddr *addr, unsigned len)
+SES_New(void)
 {
 	struct sessmem *sm;
+	struct sess *sp;
 
 	assert(pthread_self() == VCA_thread);
 	assert(ses_qp <= 1);
@@ -189,27 +206,52 @@ SES_New(const struct sockaddr *addr, unsigned len)
 		Lck_Unlock(&ses_mem_mtx);
 		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
 	}
-	if (sm != NULL)
+	if (sm != NULL) {
 		VTAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
-	return (ses_setup(sm, addr, len));
+		sp = &sm->sess;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	} else {
+		sm = ses_sm_alloc();
+		if (sm == NULL)
+			return (NULL);
+		ses_setup(sm);
+		sp = &sm->sess;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	}
+
+	VSL_stats->n_sess++;		/* XXX: locking  ? */
+
+	return (sp);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Allocate a session for use by background threads.
+ */
 
 struct sess *
-SES_Alloc(const struct sockaddr *addr, unsigned len)
+SES_Alloc(void)
 {
-	return (ses_setup(NULL, addr, len));
+	struct sess *sp;
+	struct sessmem *sm;
+
+	sm = ses_sm_alloc();
+	AN(sm);
+	ses_setup(sm);
+	sp = &sm->sess;
+	sp->sockaddrlen = 0;
+	return (sp);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Recycle a session.  If the workspace has changed, deleted it,
+ * otherwise wash it, and put it up for adoption.
+ */
 
 void
 SES_Delete(struct sess *sp)
 {
 	struct acct *b = &sp->acct;
 	struct sessmem *sm;
-	// unsigned workspace;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
@@ -217,7 +259,7 @@ SES_Delete(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	VSL_stats->n_sess--;
+	VSL_stats->n_sess--;			/* XXX: locking ? */
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
@@ -225,27 +267,27 @@ SES_Delete(struct sess *sp)
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->sess_workspace) {
+		Lck_Lock(&stat_mtx);
 		VSL_stats->n_sess_mem--;
+		Lck_Unlock(&stat_mtx);
 		free(sm);
 	} else {
 		/* Clean and prepare for reuse */
-		// workspace = sm->workspace;
-		// memset(sm, 0, sizeof *sm);
-		// sm->magic = SESSMEM_MAGIC;
-		// sm->workspace = workspace;
-
-		/* XXX: cache_waiter_epoll.c evaluates data.ptr. If it's
-		 * XXX: not nulled, things go wrong during load.
-		 * XXX: Should probably find a better method to deal with
-		 * XXX: this scenario...
-		 */
-#if defined(HAVE_EPOLL_CTL)
-		sm->sess.ev.data.ptr = NULL;
-#endif
-
+		ses_setup(sm);
 		Lck_Lock(&ses_mem_mtx);
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
 		Lck_Unlock(&ses_mem_mtx);
+	}
+
+	/* Try to precreate some ses-mem so the acceptor will not have to */
+	if (VSL_stats->n_sess_mem < VSL_stats->n_sess + 10) {
+		sm = ses_sm_alloc();
+		if (sm != NULL) {
+			ses_setup(sm);
+			Lck_Lock(&ses_mem_mtx);
+			VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
+			Lck_Unlock(&ses_mem_mtx);
+		}
 	}
 }
 
@@ -258,6 +300,8 @@ SES_Init()
 	Lck_New(&stat_mtx);
 	Lck_New(&ses_mem_mtx);
 }
+
+/* XXX: We should use NAN as default marker */
 
 void
 SES_ResetBackendTimeouts(struct sess *sp)

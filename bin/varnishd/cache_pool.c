@@ -549,7 +549,7 @@ wrk_bgthread(void *arg)
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
-	sp = SES_Alloc(NULL, 0);
+	sp = SES_Alloc();
 	XXXAN(sp);
 	memset(&ww, 0, sizeof ww);
 	sp->wrk = &ww;
