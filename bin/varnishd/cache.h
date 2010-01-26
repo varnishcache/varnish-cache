@@ -427,7 +427,6 @@ struct sess {
 #endif
 };
 
-
 /* -------------------------------------------------------------------*/
 
 /* Backend connection */
@@ -609,8 +608,8 @@ void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
 
 /* cache_session.c [SES] */
 void SES_Init(void);
-struct sess *SES_New(const struct sockaddr *addr, unsigned len);
-struct sess *SES_Alloc(const struct sockaddr *addr, unsigned len);
+struct sess *SES_New(void);
+struct sess *SES_Alloc(void);
 void SES_Delete(struct sess *sp);
 void SES_Charge(struct sess *sp);
 void SES_ResetBackendTimeouts(struct sess *sp);

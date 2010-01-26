@@ -267,7 +267,7 @@ vca_acct(void *arg)
 				}
 				continue;
 			}
-			sp = SES_New(addr, l);
+			sp = SES_New();
 			if (sp == NULL) {
 				AZ(close(i));
 				VSL_stats->client_drop++;
@@ -278,6 +278,9 @@ vca_acct(void *arg)
 			sp->t_open = now;
 			sp->t_end = now;
 			sp->mylsock = ls;
+			assert(l < sp->sockaddrlen);
+			memcpy(sp->sockaddr, addr, l);
+			sp->sockaddrlen = l;
 
 			sp->step = STP_FIRST;
 			WRK_QueueSession(sp);
