@@ -864,6 +864,9 @@ cnt_miss(struct sess *sp)
 	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
+	sp->wrk->connect_timeout = 0;
+	sp->wrk->first_byte_timeout = 0;
+	sp->wrk->between_bytes_timeout = 0;
 	VCL_miss_method(sp);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
@@ -930,6 +933,9 @@ cnt_pass(struct sess *sp)
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
+	sp->wrk->connect_timeout = 0;
+	sp->wrk->first_byte_timeout = 0;
+	sp->wrk->between_bytes_timeout = 0;
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
 		sp->step = STP_ERROR;
@@ -1019,8 +1025,6 @@ cnt_recv(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
-
-	SES_ResetBackendTimeouts(sp);
 
 	/* By default we use the first backend */
 	AZ(sp->director);

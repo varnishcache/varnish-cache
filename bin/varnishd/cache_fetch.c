@@ -335,6 +335,7 @@ FetchHdr(struct sess *sp)
 	char *b;
 	struct http *hp;
 	int i;
+	double tmo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -357,8 +358,6 @@ FetchHdr(struct sess *sp)
 		return (__LINE__);
 	}
 	vc = sp->vbe;
-	/* Inherit the backend timeouts from the selected backend */
-	SES_InheritBackendTimeouts(sp);
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
@@ -390,7 +389,10 @@ FetchHdr(struct sess *sp)
 	/* Receive response */
 
 	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd);
-	TCP_set_read_timeout(vc->fd, sp->first_byte_timeout);
+
+	TCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
+	tmo = vc->first_byte_timeout;
+
 	do {
 		i = HTC_Rx(sp->wrk->htc);
 		if (i < 0) {
@@ -400,9 +402,12 @@ FetchHdr(struct sess *sp)
 			/* XXX: other cleanup ? */
 			return (__LINE__);
 		}
-		TCP_set_read_timeout(vc->fd, sp->between_bytes_timeout);
-	}
-	while (i == 0);
+
+		if (vc->between_bytes_timeout != tmo) {
+			TCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
+			tmo = vc->between_bytes_timeout;
+		}
+	} while (i == 0);
 
 	hp = sp->wrk->beresp;
 

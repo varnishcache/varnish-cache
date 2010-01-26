@@ -233,6 +233,12 @@ struct worker {
 	double			ttl;
 	double			grace;
 	unsigned		do_esi;
+
+	/* Timeouts */
+	double			connect_timeout;
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
+
 };
 
 /* Work Request for worker thread ------------------------------------*/
@@ -390,11 +396,6 @@ struct sess {
 	double			t_resp;
 	double			t_end;
 
-	/* Timeouts */
-	double connect_timeout;
-	double first_byte_timeout;
-	double between_bytes_timeout;
-
 	/* Acceptable grace period */
 	double			grace;
 
@@ -436,6 +437,10 @@ struct vbe_conn {
 	VTAILQ_ENTRY(vbe_conn)	list;
 	struct backend		*backend;
 	int			fd;
+
+	/* Timeouts */
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
 };
 
 /* Prototypes etc ----------------------------------------------------*/
@@ -612,8 +617,6 @@ struct sess *SES_New(void);
 struct sess *SES_Alloc(void);
 void SES_Delete(struct sess *sp);
 void SES_Charge(struct sess *sp);
-void SES_ResetBackendTimeouts(struct sess *sp);
-void SES_InheritBackendTimeouts(struct sess *sp);
 
 /* cache_shmlog.c */
 void VSL_Init(void);
