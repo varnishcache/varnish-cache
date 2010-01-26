@@ -453,42 +453,42 @@ void
 VRT_l_bereq_connect_timeout(struct sess *sp, double num)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->connect_timeout = (num > 0 ? num : 0);
+	sp->wrk->connect_timeout = (num > 0 ? num : 0);
 }
 
 double
 VRT_r_bereq_connect_timeout(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return sp->connect_timeout;
+	return (sp->wrk->connect_timeout);
 }
 
 void
 VRT_l_bereq_first_byte_timeout(struct sess *sp, double num)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->first_byte_timeout = (num > 0 ? num : 0);
+	sp->wrk->first_byte_timeout = (num > 0 ? num : 0);
 }
 
 double
 VRT_r_bereq_first_byte_timeout(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return sp->first_byte_timeout;
+	return (sp->wrk->first_byte_timeout);
 }
 
 void
 VRT_l_bereq_between_bytes_timeout(struct sess *sp, double num)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->between_bytes_timeout = (num > 0 ? num : 0);
+	sp->wrk->between_bytes_timeout = (num > 0 ? num : 0);
 }
 
 double
 VRT_r_bereq_between_bytes_timeout(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return sp->between_bytes_timeout;
+	return (sp->wrk->between_bytes_timeout);
 }
 
 /*--------------------------------------------------------------------*/

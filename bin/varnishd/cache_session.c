@@ -179,8 +179,6 @@ ses_setup(struct sessmem *sm)
 	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
 	sp->http = sm->http[0];
 	sp->http0 = sm->http[1];
-
-	SES_ResetBackendTimeouts(sp);
 }
 
 /*--------------------------------------------------------------------
@@ -299,40 +297,4 @@ SES_Init()
 
 	Lck_New(&stat_mtx);
 	Lck_New(&ses_mem_mtx);
-}
-
-/* XXX: We should use NAN as default marker */
-
-void
-SES_ResetBackendTimeouts(struct sess *sp)
-{
-	sp->connect_timeout = params->connect_timeout;
-	sp->first_byte_timeout = params->first_byte_timeout;
-	sp->between_bytes_timeout = params->between_bytes_timeout;
-}
-
-void
-SES_InheritBackendTimeouts(struct sess *sp)
-{
-	struct backend *be;
-
-	AN(sp);
-	AN(sp->vbe);
-	AN(sp->vbe->backend);
-
-	be = sp->vbe->backend;
-	/*
-	 * We only inherit the backend's timeout if the session timeout
-	 * has not already been set in the VCL, as the order of precedence
-	 * is parameter < backend definition < VCL.
-	 */
-	if (be->connect_timeout > 1e-3 &&
-	    sp->connect_timeout == params->connect_timeout)
-		sp->connect_timeout = be->connect_timeout;
-	if (be->first_byte_timeout > 1e-3 &&
-	    sp->first_byte_timeout == params->first_byte_timeout)
-		sp->first_byte_timeout = be->first_byte_timeout;
-	if (be->between_bytes_timeout > 1e-3 &&
-	    sp->between_bytes_timeout == params->between_bytes_timeout)
-		sp->between_bytes_timeout = be->between_bytes_timeout;
 }

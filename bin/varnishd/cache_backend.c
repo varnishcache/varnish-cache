@@ -91,6 +91,17 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	}
 }
 
+#define FIND_TMO(tmx, dst, sp, be)		\
+	do {					\
+		dst = sp->wrk->tmx;		\
+		if (dst == 0.0)			\
+			dst = be->tmx;		\
+		if (dst == 0.0)			\
+			dst = params->tmx;	\
+		assert(dst > 0.0);		\
+	} while (0)
+		
+
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
  *
@@ -105,6 +116,7 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
     socklen_t salen, const struct backend *bp)
 {
 	int s, i, tmo;
+	double tmod;
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
@@ -114,9 +126,9 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 	if (s < 0)
 		return (s);
 
-	tmo = (int)(sp->connect_timeout * 1000);
-	if (bp->connect_timeout > 10e-3)
-		tmo = (int)(bp->connect_timeout * 1000);
+	FIND_TMO(connect_timeout, tmod, sp, bp);
+
+	tmo = (int)(tmod * 1000.0);
 
 	if (tmo > 0)
 		i = TCP_connect(s, sa, salen, tmo);
@@ -412,7 +424,7 @@ VBE_GetFd(const struct director *d, struct sess *sp)
 	return (d->getfd(d, sp));
 }
 
-/* Cheack health -----------------------------------------------------*/
+/* Check health ------------------------------------------------------*/
 
 int
 VBE_Healthy(const struct director *d, const struct sess *sp)
@@ -442,11 +454,19 @@ static struct vbe_conn *
 vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
 	struct vdi_simple *vs;
+	struct vbe_conn *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_GetVbe(sp, vs->backend));
+	vc = vbe_GetVbe(sp, vs->backend);
+	if (vc != NULL) {
+		FIND_TMO(first_byte_timeout,
+		    vc->first_byte_timeout, sp, vc->backend);
+		FIND_TMO(between_bytes_timeout,
+		    vc->between_bytes_timeout, sp, vc->backend);
+	}
+	return (vc);
 }
 
 static unsigned
