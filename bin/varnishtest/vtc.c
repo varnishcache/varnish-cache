@@ -561,6 +561,8 @@ main(int argc, char * const *argv)
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vl, NULL, "tmpdir", vtc_tmpdir);
 	vtc_thread = pthread_self();
+
+	macro_def(vl, NULL, "bad_ip", "255.255.255.254");
 	tmax = 0;
 	nmax = NULL;
 	t00 = TIM_mono();
