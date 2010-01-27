@@ -187,7 +187,7 @@ vca_acct(void *arg)
 	struct pollfd *pfd;
 	struct listen_sock *ls;
 	unsigned u;
-	double now;
+	double now, pace;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -207,6 +207,7 @@ vca_acct(void *arg)
 	}
 
 	need_test = 1;
+	pace = 0;
 	while (1) {
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
@@ -234,6 +235,13 @@ vca_acct(void *arg)
 			}
 		}
 #endif
+		/* Bound the pacing delay by parameter */
+		if (pace > params->acceptor_sleep_max)
+			pace = params->acceptor_sleep_max;
+		if (pace < params->acceptor_sleep_incr)
+			pace = 0.0;
+		if (pace > 0.0)
+			TIM_sleep(pace);
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
 		u = 0;
@@ -247,6 +255,7 @@ vca_acct(void *arg)
 			addr = (void*)&addr_s;
 			i = accept(ls->sock, addr, &l);
 			if (i < 0) {
+				VSL_stats->accept_fail++;
 				switch (errno) {
 				case EAGAIN:
 				case ECONNABORTED:
@@ -255,14 +264,13 @@ vca_acct(void *arg)
 					VSL(SLT_Debug, ls->sock,
 					    "Too many open files "
 					    "when accept(2)ing. Sleeping.");
-					TIM_sleep(
-					    params->accept_fd_holdoff * 0.001);
+					pace += params->acceptor_sleep_incr;
 					break;
 				default:
 					VSL(SLT_Debug, ls->sock,
 					    "Accept failed: %s",
 					    strerror(errno));
-					/* XXX: stats ? */
+					pace += params->acceptor_sleep_incr;
 					break;
 				}
 				continue;
@@ -271,6 +279,7 @@ vca_acct(void *arg)
 			if (sp == NULL) {
 				AZ(close(i));
 				VSL_stats->client_drop++;
+				pace += params->acceptor_sleep_incr;
 				continue;
 			}
 			sp->fd = i;
@@ -283,7 +292,12 @@ vca_acct(void *arg)
 			sp->sockaddrlen = l;
 
 			sp->step = STP_FIRST;
-			WRK_QueueSession(sp);
+			if (WRK_QueueSession(sp)) {
+				VSL_stats->client_drop++;
+				pace += params->acceptor_sleep_incr;
+			} else {
+				pace *= params->acceptor_sleep_decay;
+			}
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -306,7 +320,8 @@ vca_handover(struct sess *sp, int status)
 		break;
 	case 1:
 		sp->step = STP_START;
-		WRK_QueueSession(sp);
+		if (WRK_QueueSession(sp))
+			VSL_stats->client_drop_late++;
 		break;
 	default:
 		INCOMPL();

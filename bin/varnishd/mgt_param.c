@@ -132,7 +132,6 @@ tweak_timeout_double(struct cli *cli, const struct parspec *par,
 		cli_out(cli, "%.6f", *dest);
 }
 
-#if 0
 /*--------------------------------------------------------------------*/
 
 static void
@@ -163,7 +162,6 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 	} else
 		cli_out(cli, "%f", *dest);
 }
-#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -703,12 +701,30 @@ static const struct parspec input_parspec[] = {
 		"and backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
-	{ "accept_fd_holdoff", tweak_timeout,
-		&master.accept_fd_holdoff, 0,  3600*1000,
-		"If we run out of file descriptors, the accept thread will "
-		"sleep.  This parameter control for how long it will sleep.",
+	{ "acceptor_sleep_max", tweak_timeout_double,
+		&master.acceptor_sleep_max, 0,  10,
+		"If we run out of resources, such as file descriptors or "
+		"worker threads, the acceptor will sleep between accepts.\n"
+		"This parameter limits how long it can sleep between "
+		"attempts to accept new connections.",
 		EXPERIMENTAL,
-		"50", "ms" },
+		"0.050", "s" },
+	{ "acceptor_sleep_incr", tweak_timeout_double,
+		&master.acceptor_sleep_incr, 0,  1,
+		"If we run out of resources, such as file descriptors or "
+		"worker threads, the acceptor will sleep between accepts.\n"
+		"This parameter control how much longer we sleep, each time "
+		"we fail to accept a new connection.",
+		EXPERIMENTAL,
+		"0.001", "s" },
+	{ "acceptor_sleep_decay", tweak_generic_double,
+		&master.acceptor_sleep_decay, 0,  1,
+		"If we run out of resources, such as file descriptors or "
+		"worker threads, the acceptor will sleep between accepts.\n"
+		"This parameter (multiplicatively) reduce the sleep duration "
+		"for each succesfull accept. (ie: 0.9 = reduce by 10%)",
+		EXPERIMENTAL,
+		"0.900", "" },
 	{ "clock_skew", tweak_uint, &master.clock_skew, 0, UINT_MAX,
 		"How much clockskew we are willing to accept between the "
 		"backend and our own clock.",

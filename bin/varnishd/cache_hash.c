@@ -463,7 +463,14 @@ hsh_rush(struct objhead *oh)
 		AZ(sp->wrk);
 		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
 		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
-		WRK_QueueSession(sp);
+		if (WRK_QueueSession(sp)) {
+			/*
+			 * We could not schedule the session, leave the
+			 * rest on the busy list.
+			 */
+			VSL_stats->client_drop_late++;
+			break;
+		}
 	}
 }
 
