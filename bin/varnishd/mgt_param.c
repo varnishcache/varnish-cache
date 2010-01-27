@@ -92,26 +92,6 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 		cli_out(cli, "%u", *dst);
 }
 
-static void
-tweak_generic_timeout_double(struct cli *cli, volatile double *dst,
-    const char *arg)
-{
-	double u;
-
-	if (arg != NULL) {
-		u = strtod(arg, NULL);
-		if (u < 0) {
-			cli_out(cli,
-			    "Timeout must be greater or equal to zero\n");
-			cli_result(cli, CLIS_PARAM);
-			return;
-		}
-		*dst = u;
-	} else
-		cli_out(cli, "%f", *dst);
-}
-
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -128,10 +108,63 @@ tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
+	double u;
 
 	dest = par->priv;
-	tweak_generic_timeout_double(cli, dest, arg);
+	if (arg != NULL) {
+		u = strtod(arg, NULL);
+		if (u < par->min) {
+			cli_out(cli,
+			    "Timeout must be greater or equal to %.g\n",
+				 par->min);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		if (u > par->max) {
+			cli_out(cli,
+			    "Timeout must be less than or equal to %.g\n",
+				 par->max);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		*dest = u;
+	} else
+		cli_out(cli, "%.6f", *dest);
 }
+
+#if 0
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_generic_double(struct cli *cli, const struct parspec *par,
+    const char *arg)
+{
+	volatile double *dest;
+	double u;
+
+	dest = par->priv;
+	if (arg != NULL) {
+		u = strtod(arg, NULL);
+		if (u < par->min) {
+			cli_out(cli,
+			    "Must be greater or equal to %.g\n",
+				 par->min);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		if (u > par->max) {
+			cli_out(cli,
+			    "Must be less than or equal to %.g\n",
+				 par->max);
+			cli_result(cli, CLIS_PARAM);
+			return;
+		}
+		*dest = u;
+	} else
+		cli_out(cli, "%f", *dest);
+}
+#endif
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -213,7 +246,7 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	tweak_generic_uint(cli, dest, arg, par->umin, par->umax);
+	tweak_generic_uint(cli, dest, arg, (uint)par->min, (uint)par->max);
 }
 
 /*--------------------------------------------------------------------
@@ -551,7 +584,7 @@ static const struct parspec input_parspec[] = {
 		0,
 		"on", "bool" },
 	{ "fetch_chunksize",
-		tweak_uint, &master.fetch_chunksize, 4, UINT_MAX / 1024,
+		tweak_uint, &master.fetch_chunksize, 4, UINT_MAX / 1024.,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
 		"short TTLs.\n"

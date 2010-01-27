@@ -37,8 +37,8 @@ struct parspec {
 	const char	*name;
 	tweak_t		*func;
 	volatile void	*priv;
-	unsigned	umin;
-	unsigned	umax;
+	double		min;
+	double		max;
 	const char	*descr;
 	int		 flags;
 #define DELAYED_EFFECT 1
