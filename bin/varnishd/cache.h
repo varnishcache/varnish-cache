@@ -595,7 +595,7 @@ void PipeSession(struct sess *sp);
 /* cache_pool.c */
 void WRK_Init(void);
 int WRK_Queue(struct workreq *wrq);
-void WRK_QueueSession(struct sess *sp);
+int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
 void WRW_Reserve(struct worker *w, int *fd);
