@@ -33,7 +33,7 @@
  */
 
 MAC_STAT(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
-MAC_STAT(client_drop,		uint64_t, 0, 'a', "Connection dropped, no sess")
+MAC_STAT(client_drop,		uint64_t, 0, 'a', "Connection dropped, no sess/wrk")
 MAC_STAT(client_req,		uint64_t, 1, 'a', "Client requests received")
 
 MAC_STAT(cache_hit,		uint64_t, 1, 'a', "Cache hits")
@@ -149,3 +149,5 @@ MAC_STAT(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts")
 
 MAC_STAT(esi_parse,		uint64_t, 0, 'a', "Objects ESI parsed (unlock)")
 MAC_STAT(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
+MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
+MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
