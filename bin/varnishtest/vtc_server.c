@@ -55,6 +55,7 @@ struct server {
 	char			*name;
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(server)	list;
+	char			run;
 
 	unsigned		repeat;
 	char			*spec;
@@ -184,6 +185,7 @@ server_start(struct server *s)
 		macro_def(s->vl, s->name, "sock", "%s:%s", s->aaddr, s->aport);
 	}
 	vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
+	s->run = 1;
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
 
@@ -205,6 +207,7 @@ server_wait(struct server *s)
 	s->tp = 0;
 	TCP_close(&s->sock);
 	s->sock = -1;
+	s->run = 0;
 }
 
 /**********************************************************************
@@ -241,7 +244,7 @@ cmd_server(CMD_ARGS)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
 			VTAILQ_REMOVE(&servers, s, list);
-			if (s->sock >= 0) {
+			if (s->run) {
 				(void)pthread_cancel(s->tp);
 				server_wait(s);
 			}
