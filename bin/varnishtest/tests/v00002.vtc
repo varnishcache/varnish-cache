@@ -59,7 +59,7 @@ varnish v1 -badvcl {
 
 # Check backend reference by name
 varnish v1 -badvcl {
-	backend b1 { .host = "127.0.0.2"; }
+	backend b1 { .host = "${bad_ip}"; }
 	director r1 random {
 		{ .weight = 1; .backend = b1; }
 		{ .weight = 1; .backend = { .host = "127.0.0.3"; } }
@@ -69,18 +69,18 @@ varnish v1 -badvcl {
 
 # Check backend reference by name
 varnish v1 -badvcl {
-	backend b1 { .host = "127.0.0.2"; }
+	backend b1 { .host = "${bad_ip}"; }
 	backend b2 b1;
 }
 
 # Check backend reference by non-C-compat name
 varnish v1 -badvcl {
-	backend b-1 { .host = "127.0.0.2"; }
+	backend b-1 { .host = "${bad_ip}"; }
 }
 
 # Check backend reference by non-C-compat name
 varnish v1 -badvcl {
-	backend b1 { .host = "127.0.0.2"; }
+	backend b1 { .host = "${bad_ip}"; }
 	sub vcl_recv {
 		set req.backend = b-1;
 	}

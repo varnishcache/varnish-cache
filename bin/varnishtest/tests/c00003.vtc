@@ -9,11 +9,9 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-# 198.18.1.1 is IANA-reserved for Network Interconnect Device
-# Benchmark Testing
-varnish v1 -cliok "param.set listen_address 127.0.0.2:0"
+varnish v1 -cliok "param.set listen_address ${bad_ip}:0"
 varnish v1 -vcl+backend {} -clierr 300 start
-varnish v1 -cliok "param.set listen_address 127.0.0.1:0,127.0.0.2:9082"
+varnish v1 -cliok "param.set listen_address 127.0.0.1:0,${bad_ip}:9082"
 varnish v1 -start
 
 client c1 {

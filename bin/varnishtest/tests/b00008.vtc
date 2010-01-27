@@ -2,7 +2,7 @@
 
 test "Test CLI help and parameter functions"
 
-varnish v1 -arg "-b 127.0.0.2:9080" 
+varnish v1 -arg "-b ${bad_ip}:9080" 
 
 varnish v1 -cliok "help"
 

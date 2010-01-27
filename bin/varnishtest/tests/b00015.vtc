@@ -6,7 +6,7 @@ test "Check synthetic error page caching"
 
 varnish v1 -vcl { 
 	backend foo {
-		.host = "127.0.0.2"; .port = "9080";
+		.host = "${bad_ip}"; .port = "9080";
 	}
 } -start
 
