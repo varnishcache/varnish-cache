@@ -298,7 +298,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 WRK_QueueSession(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -306,7 +306,7 @@ WRK_QueueSession(struct sess *sp)
 	sp->workreq.func = wrk_do_cnt_sess;
 	sp->workreq.priv = sp;
 	if (WRK_Queue(&sp->workreq) == 0)
-		return;
+		return (0);
 
 	/*
 	 * Couldn't queue it -- kill it.
@@ -324,6 +324,7 @@ WRK_QueueSession(struct sess *sp)
 		VCL_Rel(&sp->vcl);
 	}
 	SES_Delete(sp);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
