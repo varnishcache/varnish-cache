@@ -61,7 +61,7 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
 {
 
 	tweak_generic_uint(cli, &master.wthread_min, arg,
-	    par->umin, master.wthread_max);
+	    (unsigned)par->min, master.wthread_max);
 }
 
 /*--------------------------------------------------------------------*/
