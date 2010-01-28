@@ -93,7 +93,6 @@ sema_sync(struct sema *r, const char *av, struct vtclog *vl)
 	CHECK_OBJ_NOTNULL(r, SEMA_MAGIC);
 	u = strtoul(av, NULL, 0);
 
-	AZ(pthread_mutex_lock(&r->mtx));
 	if (r->expected == 0)
 		r->expected = u;
 	if (r->expected != u)
@@ -111,7 +110,6 @@ sema_sync(struct sema *r, const char *av, struct vtclog *vl)
 		    r->name, r->waiters, r->expected);
 		AZ(pthread_cond_wait(&r->cond, &r->mtx));
 	}
-	AZ(pthread_mutex_unlock(&r->mtx));
 }
 
 /**********************************************************************
@@ -148,8 +146,9 @@ cmd_sema(CMD_ARGS)
 			break;
 	if (r == NULL)
 		r = sema_new(av[0], vl);
-	AZ(pthread_mutex_unlock(&sema_mtx));
 	av++;
+	AZ(pthread_mutex_lock(&r->mtx));
+	AZ(pthread_mutex_unlock(&sema_mtx));
 
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "sync")) {
@@ -160,6 +159,7 @@ cmd_sema(CMD_ARGS)
 		}
 		vtc_log(vl, 0, "Unknown sema argument: %s", *av);
 	}
+	AZ(pthread_mutex_unlock(&r->mtx));
 }
 
 void
