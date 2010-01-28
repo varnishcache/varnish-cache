@@ -24,4 +24,4 @@ client c1 {
 	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: foo, close"
 	rxresp
 	expect req.http.Bar == "req.http.Bar"
-} -start
+} -run
