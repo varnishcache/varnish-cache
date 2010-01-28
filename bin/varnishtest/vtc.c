@@ -53,12 +53,15 @@ SVNID("$Id$")
 #define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		200
 
-const char	*vtc_file;
-char		*vtc_desc;
-int		vtc_error;		/* Error encountered */
-int		vtc_stop;		/* Stops current test without error */
-pthread_t	vtc_thread;
-char		*vtc_tmpdir;
+const char		*vtc_file;
+char			*vtc_desc;
+int			vtc_error;	/* Error encountered */
+int			vtc_stop;	/* Stops current test without error */
+pthread_t		vtc_thread;
+char			*vtc_tmpdir;
+static struct vtclog	*vltop;
+static pthread_mutex_t	vtc_mtx;
+static pthread_cond_t	vtc_cond;
 
 /**********************************************************************
  * Macro facility
@@ -460,33 +463,67 @@ static const struct cmds cmds[] = {
 	{ NULL,		NULL }
 };
 
-static double
-exec_file(const char *fn, struct vtclog *vl)
+struct priv_exec {
+	const char	*fn;
+	char		*buf;
+};
+
+static void *
+exec_file_thread(void *priv)
 {
-	char *buf;
-	double t0;
 	unsigned old_err;
+	struct priv_exec *pe;
+
+	pe = priv;
+
+	parse_string(pe->buf, cmds, NULL, vltop);
+	old_err = vtc_error;
+	vtc_stop = 1;
+	vtc_log(vltop, 1, "RESETTING after %s", pe->fn);
+	reset_cmds(cmds);
+	vtc_error = old_err;
+	AZ(pthread_cond_signal(&vtc_cond));
+	return (NULL);
+}
+
+static double
+exec_file(const char *fn, unsigned dur)
+{
+	double t0;
+	struct priv_exec pe;
+	pthread_t pt;
+	struct timespec ts;
+	void *v;
+	int i;
 
 	t0 = TIM_mono();
 	vtc_stop = 0;
 	vtc_file = fn;
 	vtc_desc = NULL;
-	vtc_log(vl, 1, "TEST %s starting", fn);
-	buf = read_file(fn);
-	if (buf == NULL)
-		vtc_log(vl, 0, "Cannot read file '%s': %s",
+	vtc_log(vltop, 1, "TEST %s starting", fn);
+	pe.buf = read_file(fn);
+	if (pe.buf == NULL)
+		vtc_log(vltop, 0, "Cannot read file '%s': %s",
 		    fn, strerror(errno));
-	parse_string(buf, cmds, NULL, vl);
-	old_err = vtc_error;
-	vtc_stop = 1;
-	vtc_log(vl, 1, "RESETTING after %s", fn);
-	reset_cmds(cmds);
-	vtc_error = old_err;
+	pe.fn = fn;
+
+	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
+	AZ(pthread_mutex_lock(&vtc_mtx));
+	AZ(clock_gettime(CLOCK_REALTIME, &ts));
+	ts.tv_sec += dur;
+	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
+	AZ(pthread_mutex_unlock(&vtc_mtx));
+	if (i == ETIMEDOUT)  {
+		vtc_log(vltop, 1, "Test timed out");
+		vtc_error = 1;
+	} else {
+		AZ(pthread_join(pt, &v));
+	}
 
 	if (vtc_error)
-		vtc_log(vl, 1, "TEST %s FAILED", fn);
+		vtc_log(vltop, 1, "TEST %s FAILED", fn);
 	else {
-		vtc_log(vl, 1, "TEST %s completed", fn);
+		vtc_log(vltop, 1, "TEST %s completed", fn);
 		vtc_logreset();
 	}
 
@@ -517,28 +554,35 @@ usage(void)
  * Main
  */
 
+/**********************************************************************
+ * Main
+ */
+
 int
 main(int argc, char * const *argv)
 {
 	int ch, i, ntest = 1, ncheck = 0;
 	FILE *fok;
-	static struct vtclog	*vl;
 	double tmax, t0, t00;
+	unsigned dur = 30;
 	const char *nmax;
 	char cmd[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	vtc_loginit();
-	vl = vtc_logopen("top");
-	AN(vl);
-	while ((ch = getopt(argc, argv, "n:qv")) != -1) {
+	vltop = vtc_logopen("top");
+	AN(vltop);
+	while ((ch = getopt(argc, argv, "n:qt:v")) != -1) {
 		switch (ch) {
 		case 'n':
 			ntest = strtoul(optarg, NULL, 0);
 			break;
 		case 'q':
 			vtc_verbosity--;
+			break;
+		case 't':
+			dur = strtoul(optarg, NULL, 0);
 			break;
 		case 'v':
 			vtc_verbosity++;
@@ -559,16 +603,19 @@ main(int argc, char * const *argv)
 	vtc_tmpdir = tempnam(NULL, "vtc");
 	AN(vtc_tmpdir);
 	AZ(mkdir(vtc_tmpdir, 0700));
-	macro_def(vl, NULL, "tmpdir", vtc_tmpdir);
+	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
 	vtc_thread = pthread_self();
 
-	macro_def(vl, NULL, "bad_ip", "10.255.255.255");
+	AZ(pthread_mutex_init(&vtc_mtx, NULL));
+	AZ(pthread_cond_init(&vtc_cond, NULL));
+
+	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 	tmax = 0;
 	nmax = NULL;
 	t00 = TIM_mono();
 	for (i = 0; i < ntest; i++) {
 		for (ch = 0; ch < argc; ch++) {
-			t0 = exec_file(argv[ch], vl);
+			t0 = exec_file(argv[ch], dur);
 			ncheck++;
 			if (t0 > tmax) {
 				tmax = t0;
