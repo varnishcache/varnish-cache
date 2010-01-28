@@ -98,7 +98,6 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 			dst = be->tmx;		\
 		if (dst == 0.0)			\
 			dst = params->tmx;	\
-		assert(dst > 0.0);		\
 	} while (0)
 		
 
