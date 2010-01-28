@@ -6,7 +6,7 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
-} -start -repeat 4
+} -start
 
 varnish v1 -vcl {
 
@@ -16,7 +16,7 @@ varnish v1 -vcl {
 		.max_connections = 1;
 		.probe = {
 			.url = "/";
-			.timeout = 100 ms;
+			.timeout = 1s;
 			.interval = 1s;
 			.window = 3;
 			.threshold = 2;
@@ -39,11 +39,22 @@ client c1 {
 	expect resp.status == 500
 } -run
 
-delay 1
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foobar"
+} -start
 
 client c2 {
-	txreq
+	txreq -url "/foo"
 	rxresp
+	expect resp.bodylen == 6
 	expect resp.status == 200
 } -start
 
