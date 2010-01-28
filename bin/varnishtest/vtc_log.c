@@ -120,6 +120,17 @@ static const char * const lead[] = {
 
 #define NLEAD (sizeof(lead)/sizeof(lead[0]))
 
+static void
+vtc_log_emit(struct vtclog *vl, unsigned lvl)
+{
+	AZ(pthread_mutex_lock(&vtclog_mtx));
+	vsb_cat(vtclog_full, vsb_data(vl->vsb));
+	AZ(pthread_mutex_unlock(&vtclog_mtx));
+
+	if (lvl > 0 && lvl <= vtc_verbosity)
+		(void)fputs(vsb_data(vl->vsb), stdout);
+}
+
 //lint -e{818}
 void
 vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
@@ -138,12 +149,8 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	vsb_finish(vl->vsb);
 	AZ(vsb_overflowed(vl->vsb));
 
-	AZ(pthread_mutex_lock(&vtclog_mtx));
-	vsb_cat(vtclog_full, vsb_data(vl->vsb));
-	AZ(pthread_mutex_unlock(&vtclog_mtx));
+	vtc_log_emit(vl, lvl);
 
-	if (lvl > 0 && lvl <= vtc_verbosity)
-		(void)fputs(vsb_data(vl->vsb), stdout);
 	vsb_clear(vl->vsb);
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
@@ -165,8 +172,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	assert(lvl < NLEAD);
-	if (lvl > vtc_verbosity)
-		return;
+	AZ(pthread_mutex_lock(&vl->mtx));
 	vsb_clear(vl->vsb);
 	if (pfx == NULL)
 		pfx = "";
@@ -196,8 +202,11 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 		vsb_printf(vl->vsb, "\n");
 	vsb_finish(vl->vsb);
 	AZ(vsb_overflowed(vl->vsb));
-	(void)fputs(vsb_data(vl->vsb), stdout);
+
+	vtc_log_emit(vl, lvl);
+
 	vsb_clear(vl->vsb);
+	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
 		vtc_error = 1;
 		if (pthread_self() != vtc_thread)
