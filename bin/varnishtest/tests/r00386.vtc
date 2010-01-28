@@ -26,4 +26,4 @@ client c1 {
 	txreq -url / -hdr "If-Modified-Since:  Tue, 25 Nov 2008 00:00:00 GMT"
 	rxresp
 	expect resp.bodylen == 11
-} -start
+} -run
