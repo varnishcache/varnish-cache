@@ -93,7 +93,8 @@ client_thread(void *priv)
 
 	if (c->repeat == 0)
 		c->repeat = 1;
-	vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
+	if (c->repeat != 1)
+		vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
 	for (u = 0; u < c->repeat; u++) {
 		vtc_log(vl, 3, "Connect to %s", vsb_data(vsb));
 		fd = VSS_open(vsb_data(vsb));
