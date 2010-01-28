@@ -183,6 +183,9 @@ server_start(struct server *s)
 		macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
 		macro_def(s->vl, s->name, "port", "%s", s->aport);
 		macro_def(s->vl, s->name, "sock", "%s:%s", s->aaddr, s->aport);
+		/* Record the actual port, and reuse it on subsequent starts */
+		if (!strcmp(s->port, "0"))
+			REPLACE(s->port, s->aport);
 	}
 	vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
 	s->run = 1;
@@ -243,6 +246,7 @@ cmd_server(CMD_ARGS)
 	if (av == NULL) {
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(s, &servers, list, s2) {
+			CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 			VTAILQ_REMOVE(&servers, s, list);
 			if (s->run) {
 				(void)pthread_cancel(s->tp);
@@ -261,11 +265,26 @@ cmd_server(CMD_ARGS)
 			break;
 	if (s == NULL)
 		s = server_new(av[0]);
+	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	av++;
 
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
+		if (!strcmp(*av, "-wait")) {
+			if (!s->run)
+				vtc_log(s->vl, 0, "Server not -started");
+			server_wait(s);
+			continue;
+		}
+		/*
+		 * We do an implict -wait if people muck about with a 
+		 * running server.
+		 */
+		if (s->run) 
+			server_wait(s);
+
+		assert(s->run == 0);
 		if (!strcmp(*av, "-repeat")) {
 			s->repeat = atoi(av[1]);
 			av++;
@@ -279,10 +298,6 @@ cmd_server(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-start")) {
 			server_start(s);
-			continue;
-		}
-		if (!strcmp(*av, "-wait")) {
-			server_wait(s);
 			continue;
 		}
 		if (**av == '-')
