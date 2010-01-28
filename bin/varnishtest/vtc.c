@@ -482,7 +482,9 @@ exec_file_thread(void *priv)
 	vtc_log(vltop, 1, "RESETTING after %s", pe->fn);
 	reset_cmds(cmds);
 	vtc_error = old_err;
+	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_cond_signal(&vtc_cond));
+	AZ(pthread_mutex_unlock(&vtc_mtx));
 	return (NULL);
 }
 
@@ -507,12 +509,14 @@ exec_file(const char *fn, unsigned dur)
 		    fn, strerror(errno));
 	pe.fn = fn;
 
-	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
-	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(clock_gettime(CLOCK_REALTIME, &ts));
 	ts.tv_sec += dur;
+
+	AZ(pthread_mutex_lock(&vtc_mtx));
+	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
 	AZ(pthread_mutex_unlock(&vtc_mtx));
+
 	if (i == ETIMEDOUT)  {
 		vtc_log(vltop, 1, "Test timed out");
 		vtc_error = 1;
