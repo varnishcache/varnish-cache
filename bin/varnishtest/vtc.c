@@ -53,8 +53,8 @@ SVNID("$Id$")
 #define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		200
 
-const char		*vtc_file;
-char			*vtc_desc;
+static const char	*vtc_file;
+static char		*vtc_desc;
 int			vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
@@ -515,13 +515,18 @@ exec_file(const char *fn, unsigned dur)
 	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
-	AZ(pthread_mutex_unlock(&vtc_mtx));
 
 	if (i == ETIMEDOUT)  {
+		// AZ(pthread_cancel(pt));
+		// AZ(pthread_join(pt, &v));
 		vtc_log(vltop, 1, "Test timed out");
 		vtc_error = 1;
-	} else {
+	} else if (i == 0) {
+		AZ(pthread_mutex_unlock(&vtc_mtx));
 		AZ(pthread_join(pt, &v));
+	} else {
+		vtc_log(vltop, 1, "Weird return: %d %s", i, strerror(i));
+		vtc_error = 1;
 	}
 
 	if (vtc_error)
