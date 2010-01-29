@@ -516,16 +516,22 @@ exec_file(const char *fn, unsigned dur)
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
 
-	if (i == ETIMEDOUT)  {
-		// AZ(pthread_cancel(pt));
-		// AZ(pthread_join(pt, &v));
-		vtc_log(vltop, 1, "Test timed out");
-		vtc_error = 1;
-	} else if (i == 0) {
+	if (i == 0) {
 		AZ(pthread_mutex_unlock(&vtc_mtx));
 		AZ(pthread_join(pt, &v));
 	} else {
-		vtc_log(vltop, 1, "Weird return: %d %s", i, strerror(i));
+		if (i != ETIMEDOUT)
+			vtc_log(vltop, 1, "Weird condwait return: %d %s",
+			    i, strerror(i));
+		/*
+		 * We are all going to die anyway, so don't waste time
+		 * trying to clean things up, it seems to trigger a
+		 * problem in the tinderbox
+		 *   AZ(pthread_mutex_unlock(&vtc_mtx));
+		 *   AZ(pthread_cancel(pt));
+		 *   AZ(pthread_join(pt, &v));
+		 */
+		vtc_log(vltop, 1, "Test timed out");
 		vtc_error = 1;
 	}
 
