@@ -175,9 +175,19 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	} 
 	AN(cli->cmd);
 	i = write(cli_o, cli->cmd, strlen(cli->cmd));
-	xxxassert(i == strlen(cli->cmd));
+	if (i != strlen(cli->cmd)) {
+		cli_result(cli, CLIS_COMMS);
+		cli_out(cli, "CLI communication error");
+		return;
+	}
 	i = write(cli_o, "\n", 1);
-	xxxassert(i == 1);
+	if (i != 1) {
+		cli_result(cli, CLIS_COMMS);
+		cli_out(cli, "CLI communication error");
+		return;
+	}
+		
+	assert(i == 1 || errno == EPIPE);
 	(void)cli_readres(cli_i,
 	    &u, &q, params->cli_timeout);
 	cli_result(cli, u);
