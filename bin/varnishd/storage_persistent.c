@@ -672,7 +672,6 @@ SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
 	oc->flags &= ~OC_F_PERSISTENT;
 
 	/* refcnt is one because the object is in the hash */
-	oc->obj->refcnt = 1;
 	oc->obj->objcore = oc;
 	oc->obj->ban = oc->ban;
 

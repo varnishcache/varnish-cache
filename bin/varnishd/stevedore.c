@@ -101,7 +101,6 @@ STV_InitObj(struct sess *sp, struct object *o, unsigned wsl, unsigned lhttp,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->refcnt = 1;
 	o->grace = NAN;
 	o->entered = NAN;
 	VTAILQ_INIT(&o->store);

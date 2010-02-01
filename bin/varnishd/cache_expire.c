@@ -345,7 +345,7 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;
-		if (oc->obj->refcnt == 1)
+		if (oc->refcnt == 1)
 			break;
 	}
 	if (oc != NULL) {
