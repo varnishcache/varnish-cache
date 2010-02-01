@@ -330,6 +330,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	if (sp->objhead != NULL) {
+		/*
+		 * This sess came off the waiting list, and brings a
+		 * oh refcnt with it.
+		 */
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		oh = sp->objhead;
 		sp->objhead = NULL;
@@ -390,10 +394,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * XXX: this until the object is unbusy'ed, so in practice we
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
-	/* Grace-stuff: sp->objhead is evaluated in healthy() for 'saint
-	 * mode'. Is this entirely wrong, or just ugly? Why isn't objhead
-	 * set here? FIXME:Grace.
-	 */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
@@ -429,6 +429,11 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%p>", oh);
 		SES_Charge(sp);
+		/*
+		 * The objhead reference transfers to the sess, we get it
+		 * back when the sess comes off the waiting list and
+		 * calls us again
+		 */
 		sp->objhead = oh;
 		sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
