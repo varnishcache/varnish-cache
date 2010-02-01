@@ -294,6 +294,7 @@ HSH_Insert(const struct sess *sp)
 	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
+	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 
@@ -409,7 +410,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		assert(oc->objhead == oh);
 
 		/* We found an object we like */
-		o->refcnt++;
+		oc->refcnt++;
 		if (o->hits < INT_MAX)
 			o->hits++;
 		assert(oh->refcnt > 1);
@@ -437,6 +438,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	oc = w->nobjcore;
 	w->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
+	oc->refcnt = 1;
 
 	/* XXX: Should this not be ..._HEAD now ? */
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
@@ -474,6 +476,12 @@ hsh_rush(struct objhead *oh)
 	}
 }
 
+/**********************************************************************
+ * Kill a busy object we don't need anyway.
+ * There may be sessions on the waiting list, so we cannot just blow
+ * it out of the water.
+ */
+
 void
 HSH_Drop(struct sess *sp)
 {
@@ -482,8 +490,8 @@ HSH_Drop(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	assert(o->refcnt > 0);
 	if (o->objcore != NULL) {	/* Pass has no objcore */
+		assert(o->objcore->refcnt > 0);
 		AN(ObjIsBusy(o));
 		o->ttl = 0;
 	}
@@ -509,7 +517,7 @@ HSH_Unbusy(const struct sess *sp)
 	AN(ObjIsBusy(o));
 	AN(o->ban);
 	assert(o->objcore->obj == o);
-	assert(o->refcnt > 0);
+	assert(o->objcore->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
 		sp->wrk->stats.n_objoverflow++;
@@ -534,8 +542,8 @@ HSH_Ref(struct object *o)
 	oh = o->objcore->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
-	assert(o->refcnt > 0);
-	o->refcnt++;
+	assert(o->objcore->refcnt > 0);
+	o->objcore->refcnt++;
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -593,7 +601,7 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 	if (oc2 != NULL && oc2->flags & OC_F_PERSISTENT)
 		SMP_Fixup(sp, oh, oc2);
 	if (oc2 != NULL)
-		oc2->obj->refcnt++;
+		oc2->refcnt++;
 	Lck_Unlock(&oh->mtx);
 	*oc = oc2;
 }
@@ -612,8 +620,7 @@ HSH_Deref(struct worker *w, struct object **oo)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	if (oc == NULL) {
-		assert(o->refcnt > 0);
-		r = --o->refcnt;
+		r = 0;
 		oh = NULL;
 	} else {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -622,8 +629,8 @@ HSH_Deref(struct worker *w, struct object **oo)
 
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
-		assert(o->refcnt > 0);
-		r = --o->refcnt;
+		assert(oc->refcnt > 0);
+		r = --oc->refcnt;
 		if (!r)
 			VTAILQ_REMOVE(&oh->objcs, oc, list);
 		hsh_rush(oh);

@@ -284,6 +284,7 @@ struct storage {
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
+	unsigned		refcnt;
 	struct object		*obj;
 	struct objhead		*objhead;
 	double			timer_when;
@@ -315,7 +316,6 @@ struct lru {
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
-	unsigned		refcnt;
 	unsigned		xid;
 	struct storage		*objstore;
 	struct objcore		*objcore;

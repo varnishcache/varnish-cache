@@ -163,7 +163,7 @@ pan_object(const struct object *o)
 	const struct storage *st;
 
 	vsb_printf(vsp, "  obj = %p {\n", o);
-	vsb_printf(vsp, "    refcnt = %u, xid = %u,\n", o->refcnt, o->xid);
+	vsb_printf(vsp, "    xid = %u,\n", o->xid);
 	pan_ws(o->ws_o, 4);
 	pan_http("obj", o->http, 4);
 	vsb_printf(vsp, "    len = %u,\n", o->len);
