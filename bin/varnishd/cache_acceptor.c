@@ -187,7 +187,7 @@ vca_acct(void *arg)
 	struct pollfd *pfd;
 	struct listen_sock *ls;
 	unsigned u;
-	double now, pace;
+	double t0, now, pace;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -208,6 +208,7 @@ vca_acct(void *arg)
 
 	need_test = 1;
 	pace = 0;
+	t0 = TIM_real();
 	while (1) {
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != tv_sndtimeo.tv_sec) {
@@ -244,6 +245,7 @@ vca_acct(void *arg)
 			TIM_sleep(pace);
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
+		VSL_stats->uptime = (uint64_t)(now - t0);
 		u = 0;
 		VTAILQ_FOREACH(ls, &heritage.socks, list) {
 			if (ls->sock < 0)
