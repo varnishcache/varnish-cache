@@ -1,0 +1,75 @@
+# $Id$
+
+test "Regression test for 590"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove> 
+		<esi:include src="/fooooooooooooo"/>
+	}
+
+	rxreq
+	txresp -body "foo"
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_fetch {
+		esi;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 184
+} -run
