@@ -582,7 +582,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:S:s:T:t:u:Vw:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:S:s:T:t:u:Vx:w:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -652,6 +652,15 @@ main(int argc, char * const *argv)
 		case 'V':
 			varnish_version("varnishd");
 			exit(0);
+		case 'x':
+#ifdef DIAGNOSTICS
+			if (!strcmp(optarg, "dumpmdoc")) {
+				MCF_DumpMdoc();
+				exit (0);
+			}
+#endif /* DIAGNOSTICS */
+			usage();
+			break;
 		case 'w':
 			tackle_warg(optarg);
 			break;

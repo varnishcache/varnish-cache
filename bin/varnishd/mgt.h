@@ -63,6 +63,7 @@ void mgt_cli_close_all(void);
 void MCF_ParamSync(void);
 void MCF_ParamInit(struct cli *);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
+void MCF_DumpMdoc(void);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
