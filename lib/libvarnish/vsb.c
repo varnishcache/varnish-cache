@@ -1,5 +1,6 @@
 /*-
- * Copyright (c) 2000 Poul-Henning Kamp and Dag-Erling Smørgrav
+ * Copyright (c) 2000-2008 Poul-Henning Kamp
+ * Copyright (c) 2000-2008 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,17 +13,18 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * $FreeBSD: src/sys/kern/subr_sbuf.c,v 1.30 2005/12/23 11:49:53 phk Exp $
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+__FBSDID("$FreeBSD: head/sys/kern/subr_sbuf.c 181462 2008-08-09 10:26:21Z des $");
  */
 
 #include "config.h"
@@ -73,6 +75,7 @@ SVNID("$Id$")
 static void
 _vsb_assert_integrity(const char *fun, struct vsb *s)
 {
+
 	(void)fun;
 	(void)s;
 	KASSERT(s != NULL,
@@ -88,6 +91,7 @@ _vsb_assert_integrity(const char *fun, struct vsb *s)
 static void
 _vsb_assert_state(const char *fun, struct vsb *s, int state)
 {
+
 	(void)fun;
 	(void)s;
 	(void)state;
@@ -114,7 +118,6 @@ vsb_extendsize(int size)
 		else
 			newsize += VSB_MAXEXTENDINCR;
 	}
-
 	return (newsize);
 }
 
@@ -130,9 +133,8 @@ vsb_extend(struct vsb *s, int addlen)
 
 	if (!VSB_CANEXTEND(s))
 		return (-1);
-
 	newsize = vsb_extendsize(s->s_size + addlen);
-	newbuf = (char *)SBMALLOC(newsize);
+	newbuf = SBMALLOC(newsize);
 	if (newbuf == NULL)
 		return (-1);
 	memcpy(newbuf, s->s_buf, s->s_size);
@@ -153,6 +155,7 @@ vsb_extend(struct vsb *s, int addlen)
 struct vsb *
 vsb_new(struct vsb *s, char *buf, int length, int flags)
 {
+
 	KASSERT(length >= 0,
 	    ("attempt to create an vsb of negative length (%d)", length));
 	KASSERT((flags & ~VSB_USRFLAGMSK) == 0,
@@ -160,17 +163,11 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 
 	flags &= VSB_USRFLAGMSK;
 	if (s == NULL) {
-		s = (struct vsb *)SBMALLOC(sizeof *s);
+		s = SBMALLOC(sizeof(*s));
 		if (s == NULL)
 			return (NULL);
-		if (vsb_new(s, buf, length, flags) == NULL) {
-			free(s);
-			return (NULL);
-		}
-		VSB_SETFLAG(s, VSB_DYNSTRUCT);
-		return (s);
+		flags |= VSB_DYNSTRUCT;
 	}
-
 	memset(s, 0, sizeof *s);
 	s->s_flags = flags;
 	s->s_magic = VSB_MAGIC;
@@ -181,9 +178,12 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 	}
 	if (flags & VSB_AUTOEXTEND)
 		s->s_size = vsb_extendsize(s->s_size);
-	s->s_buf = (char *)SBMALLOC(s->s_size);
-	if (s->s_buf == NULL)
+	s->s_buf = SBMALLOC(s->s_size);
+	if (s->s_buf == NULL) {
+		if (VSB_ISDYNSTRUCT(s))
+			SBFREE(s);
 		return (NULL);
+	}
 	VSB_SETFLAG(s, VSB_DYNAMIC);
 	return (s);
 }
@@ -194,6 +194,7 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 void
 vsb_clear(struct vsb *s)
 {
+
 	vsb_assert_integrity(s);
 	/* don't care if it's finished or not */
 
@@ -209,6 +210,7 @@ vsb_clear(struct vsb *s)
 int
 vsb_setpos(struct vsb *s, int pos)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -236,7 +238,6 @@ vsb_bcat(struct vsb *s, const void *buf, size_t len)
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
-
 	for (; len; len--) {
 		if (!VSB_HASROOM(s) && vsb_extend(s, len) < 0)
 			break;
@@ -255,6 +256,7 @@ vsb_bcat(struct vsb *s, const void *buf, size_t len)
 int
 vsb_bcpy(struct vsb *s, const void *buf, size_t len)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -268,6 +270,7 @@ vsb_bcpy(struct vsb *s, const void *buf, size_t len)
 int
 vsb_cat(struct vsb *s, const char *str)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -292,6 +295,7 @@ vsb_cat(struct vsb *s, const char *str)
 int
 vsb_cpy(struct vsb *s, const char *str)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -367,18 +371,18 @@ vsb_printf(struct vsb *s, const char *fmt, ...)
 int
 vsb_putc(struct vsb *s, int c)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
-
 	if (!VSB_HASROOM(s) && vsb_extend(s, 1) < 0) {
 		VSB_SETFLAG(s, VSB_OVERFLOWED);
 		return (-1);
 	}
 	if (c != '\0')
-	    s->s_buf[s->s_len++] = (char)c;
+		s->s_buf[s->s_len++] = (char)c;
 	return (0);
 }
 
@@ -388,6 +392,7 @@ vsb_putc(struct vsb *s, int c)
 int
 vsb_trim(struct vsb *s)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -406,7 +411,8 @@ vsb_trim(struct vsb *s)
 int
 vsb_overflowed(const struct vsb *s)
 {
-    return VSB_HASOVERFLOWED(s);
+
+	return (VSB_HASOVERFLOWED(s));
 }
 
 /*
@@ -415,6 +421,7 @@ vsb_overflowed(const struct vsb *s)
 void
 vsb_finish(struct vsb *s)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, 0);
 
@@ -429,10 +436,11 @@ vsb_finish(struct vsb *s)
 char *
 vsb_data(struct vsb *s)
 {
+
 	vsb_assert_integrity(s);
 	vsb_assert_state(s, VSB_FINISHED);
 
-	return s->s_buf;
+	return (s->s_buf);
 }
 
 /*
@@ -441,12 +449,13 @@ vsb_data(struct vsb *s)
 int
 vsb_len(struct vsb *s)
 {
+
 	vsb_assert_integrity(s);
 	/* don't care if it's finished or not */
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
-	return s->s_len;
+	return (s->s_len);
 }
 
 /*
