@@ -36,24 +36,37 @@
 .Nd HTTP accelerator daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl a Ar address Ns Op : Ns Ar port
-.Op Fl b Ar host Ns Op : Ns Ar port
+.Oo Fl a Ar address Ns
+.Op : Ns Ar port
+.Oc
+.Oo Fl b Ar host Ns
+.Op : Ns Ar port
+.Oc
 .Op Fl d
 .Op Fl F
 .Op Fl f Ar config
 .Op Fl g Ar group
-.Op Fl h Ar type Ns Op , Ns Ar options
+.Oo Fl h Ar type Ns
+.Op , Ns Ar options
+.Oc
 .Op Fl i Ar identity
 .Op Fl l Ar shmlogsize
 .Op Fl n Ar name
 .Op Fl P Ar file
 .Op Fl p Ar param Ns = Ns Ar value
-.Op Fl s Ar type Ns Op , Ns Ar options
-.Op Fl T Ar address Ns Op : Ns Ar port
+.Oo Fl s Ar type Ns
+.Op , Ns Ar options
+.Oc
+.Oo Fl T Ar address Ns
+.Op : Ns Ar port
+.Oc
 .Op Fl t Ar ttl
 .Op Fl u Ar user
 .Op Fl V
-.Op Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
+.Oo Fl w Ar min Ns 
+.Oo , Ns Ar max Ns
+.Op , Ns Ar timeout
+.Oc Oc
 .Sh DESCRIPTION
 The
 .Nm
@@ -63,9 +76,11 @@ requests for the same document.
 .Pp
 The following options are available:
 .Bl -tag -width Fl
-.It Xo
-.Fl a Ar address Ns Op : Ns Ar port Ns
-.Op , Ns Ar address Ns Op : Ns Ar port Ns
+.It Fl a Ar address Ns Xo
+.Op : Ns Ar port Ns
+.Oo , Ns Ar address Ns
+.Op : Ns Ar port Ns
+.Oc
 .Op ...
 .Xc
 Listen for client requests on the specified
@@ -92,7 +107,9 @@ is not specified, the default HTTP port as listed in
 is used.
 Multiple listening addresses and ports can be specified as a
 whitespace- or comma-separated list.
-.It Fl b Ar host Ns Op : Ns Ar port
+.It Fl b Ar host Ns Xo
+.Op : Ns Ar port
+.Xc
 Use the specified
 .Ar host
 as backend server.
@@ -134,7 +151,9 @@ should switch before it starts accepting connections.
 This is a shortcut for specifying the
 .Va group
 run-time parameter.
-.It Fl h Ar type Ns Op , Ns Ar options
+.It Fl h Ar type Ns Xo
+.Op , Ns Ar options
+.Xc
 Specifies the hash algorithm.
 See
 .Sx Hash Algorithms
@@ -149,7 +168,7 @@ Specify size of shmlog file.
 Scaling suffixes like 'k', 'm' can be used up to (e)tabytes.
 Default is 80 Megabytes.
 Specifying less than 8 Megabytes is unwise.
-.It Fl n
+.It Fl n Ar name
 Specify a name for this instance.
 Amonst other things, this name is used to construct the name of the
 directory in which
@@ -169,14 +188,18 @@ to the specified
 See
 .Sx Run-Time Parameters
 for a list of parameters.
-.It Fl s Ar type Ns Op , Ns Ar options
+.It Fl s Ar type Ns Xo
+.Op , Ns Ar options
+.Xc
 Use the specified storage backend.
 See
 .Sx Storage Types
 for a list of supported storage types.
 This option can be used multiple times to specify multiple storage
 files.
-.It Fl T Ar address Ns Op : Ns Ar port
+.It Fl T Ar address Ns Xo
+.Op : Ns Ar port
+.Xc
 Offer a management interface on the specified
 .Ar address
 and
@@ -200,7 +223,11 @@ If specifying both a user and a group, the user should be specified
 first.
 .It Fl V
 Display the version number and exit.
-.It Fl w Ar min Ns Op , Ns Ar max Ns Op , Ns Ar timeout
+.It Fl w Ar min Ns Xo
+.Oo , Ns Ar max Ns
+.Op , Ns Ar timeout
+.Oc
+.Xc
 Start at least
 .Ar min
 but no more than
@@ -227,7 +254,9 @@ The following hash algorithms are available:
 .It Cm simple_list
 A simple doubly-linked list.
 Not recommended for production use.
-.It Cm classic Ns Op Ns , Ns Ar buckets
+.It Cm classic Ns Xo
+.Op Ns , Ns Ar buckets
+.Xc
 A standard hash table.
 This is the default.
 .Pp
@@ -244,7 +273,9 @@ The default is 16383.
 .Ss Storage Types
 The following storage types are available:
 .Bl -tag -width 4n
-.It Cm malloc Ns Op Ns , Ns Ar size Ns
+.It Cm malloc Ns Xo
+.Op Ns , Ns Ar size Ns
+.Xc
 Storage for each object is allocated with
 .Xr malloc 3 .
 .Pp
@@ -265,7 +296,12 @@ The size is expressed in tebibytes.
 .El
 .Pp
 The default size is unlimited.
-.It Cm file Ns Op Ns , Ns Ar path Ns Op Ns , Ns Ar size Ns Op Ns , Ns Ar granularity
+.It Cm file Ns Xo
+.Oo Ns , Ns Ar path Ns
+.Oo Ns , Ns Ar size Ns
+.Op Ns , Ns Ar granularity
+.Oc Oc
+.Xc
 Storage for each object is allocated from an arena backed by a file.
 This is the default.
 .Pp
@@ -364,7 +400,10 @@ is specified, display only the value and explanation for this
 parameter.
 .It Cm ping Op Ns Ar timestamp
 Ping the Varnish cache process, keeping the connection alive.
-.It Cm purge Ar field Ar operator Ar argument Op && Ar field Ar operator Ar argument Op ...
+.It Cm purge Ar field Ar operator Ar argument Xo
+.Oo && Ar field Ar operator Ar argument Oo ...
+.Oc Oc
+.Xc
 Immediately invalidate all documents matching the purge expression.
 See
 .Va Purge expressions
