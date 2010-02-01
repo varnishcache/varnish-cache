@@ -85,6 +85,9 @@ client c1 {
         expect resp.http.X-Saint != "yes"
 	expect resp.http.X-Restarts == "1"
 
+	# The saintmode_threshold should kick in now
+	# so expect no more restarts
+
         txreq -url "/three"
         rxresp
         expect resp.status == 200
