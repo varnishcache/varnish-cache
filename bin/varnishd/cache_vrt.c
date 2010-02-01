@@ -308,7 +308,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->objhead = sp->objhead;
+	new->target = (uintptr_t)sp->objhead;
 	new->timeout = sp->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
@@ -782,7 +782,7 @@ VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	return (VBE_Healthy(NULL, sp));
+	return (VBE_Healthy_sp(sp, sp->director));
 }
 
 /*--------------------------------------------------------------------*/

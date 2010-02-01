@@ -75,7 +75,7 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[vs->next_host].backend;
 		vs->next_host = (vs->next_host + 1) % vs->nhosts;
-		if (!VBE_Healthy(backend, sp))
+		if (!VBE_Healthy_sp(sp, backend))
 			continue;
 		vbe = VBE_GetFd(backend, sp);
 		if (vbe != NULL)
@@ -86,19 +86,18 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_round_robin_healthy(const struct director *d, const struct sess *sp)
+vdi_round_robin_healthy(double now, const struct director *d, uintptr_t target)
 {
 	struct vdi_round_robin *vs;
 	struct director *backend;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[i].backend;
-		if (VBE_Healthy(backend, sp))
+		if (VBE_Healthy(now, backend, target))
 			return 1;
 	}
 	return 0;

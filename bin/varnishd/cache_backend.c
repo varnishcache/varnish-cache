@@ -243,18 +243,18 @@ vbe_NewConn(void)
  */
 
 static unsigned int
-vbe_Healthy(const struct sess *sp, struct backend *backend)
+vbe_Healthy(double now, uintptr_t target, struct backend *backend)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
-	struct trouble *old = NULL;
-	unsigned i = 0;
+	struct trouble *old;
+	unsigned i = 0, retval;
 	unsigned int threshold;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
 	if (!backend->healthy)
-		return 0;
+		return (0);
 
 	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
 	 * specified by VCL (thus use param).
@@ -266,43 +266,47 @@ vbe_Healthy(const struct sess *sp, struct backend *backend)
 
 	/* Saintmode is disabled */
 	if (threshold == 0)
-		return 1;
+		return (1);
 
 	/* No need to test if we don't have an object head to test against.
 	 * FIXME: Should check the magic too, but probably not assert?
 	 */
-	if (!sp->objhead)
-		return 1;
+	if (target == 0)
+		return (1);
 
+	old = NULL;
+	retval = 1;
 	Lck_Lock(&backend->mtx);
 	VTAILQ_FOREACH_SAFE(tr, &backend->troublelist, list, tr2) {
 		CHECK_OBJ_NOTNULL(tr, TROUBLE_MAGIC);
-		if (tr->timeout < sp->t_req) {
+
+		if (tr->timeout < now) {
 			VTAILQ_REMOVE(&backend->troublelist, tr, list);
 			old = tr;
+			retval = 1;
 			break;
 		}
 
-		if (tr->objhead == sp->objhead) {
-			Lck_Unlock(&backend->mtx);
-			return 0;
+		if (tr->target == target) {
+			retval = 0;
+			break;
 		}
 
 		/* If the threshold is at 1, a single entry on the list
 		 * will disable the backend. Since 0 is disable, ++i
 		 * instead of i++ to allow this behavior.
 		 */
-		if (++i >=threshold) {
-			Lck_Unlock(&backend->mtx);
-			return 0;
+		if (++i >= threshold) {
+			retval = 0;
+			break;
 		}
 	}
 	Lck_Unlock(&backend->mtx);
 
-	if (old)
+	if (old != NULL)
 		FREE_OBJ(old);
 
-	return 1;
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -342,7 +346,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 		VBE_ClosedFd(sp);
 	}
 
-	if (!vbe_Healthy(sp, bp)) {
+	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {
 		VSL_stats->backend_unhealthy++;
 		return (NULL);
 	}
@@ -423,17 +427,28 @@ VBE_GetFd(const struct director *d, struct sess *sp)
 	return (d->getfd(d, sp));
 }
 
-/* Check health ------------------------------------------------------*/
+/* Check health ------------------------------------------------------
+ *
+ * The target is really an objhead pointer, but since it can not be
+ * dereferenced during health-checks, we pass it as uintptr_t, which
+ * hopefully will make people investigate, before mucking about with it.
+ */
 
 int
-VBE_Healthy(const struct director *d, const struct sess *sp)
+VBE_Healthy_sp(const struct sess *sp, const struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (d == NULL)
-		d = sp->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, sp));
+	return (d->healthy(sp->t_req, d, (uintptr_t)sp->objhead));
+}
+
+int
+VBE_Healthy(double now, const struct director *d, uintptr_t target)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	return (d->healthy(now, d, target));
 }
 
 /*--------------------------------------------------------------------
@@ -469,14 +484,13 @@ vdi_simple_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_simple_healthy(const struct director *d, const struct sess *sp)
+vdi_simple_healthy(double now, const struct director *d, uintptr_t target)
 {
 	struct vdi_simple *vs;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(sp, vs->backend));
+	return (vbe_Healthy(now, target, vs->backend));
 }
 
 /*lint -e{818} not const-able */
