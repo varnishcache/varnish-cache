@@ -425,6 +425,21 @@ VCA_Init(void)
 }
 
 void
+VCA_Shutdown(void)
+{
+	struct listen_sock *ls;
+	int i;
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock < 0)
+			continue;
+		i = ls->sock;
+		ls->sock = -1;
+		(void)close(i);
+	}
+}
+
+void
 VCA_tweak_waiter(struct cli *cli, const char *arg)
 {
 	int i;
