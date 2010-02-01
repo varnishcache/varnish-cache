@@ -137,7 +137,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 			if (r >= s1)
 				continue;
 			d2 = vs->hosts[i].backend;
-			if (!VBE_Healthy(d2, sp))
+			if (!VBE_Healthy_sp(sp, d2))
 				break;
 			vbe = VBE_GetFd(d2, sp);
 			if (vbe != NULL)
@@ -152,7 +152,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		for (i = 0; i < vs->nhosts; i++) {
 			d2 = vs->hosts[i].backend;
 			/* XXX: cache result of healty to avoid double work */
-			if (VBE_Healthy(d2, sp))
+			if (VBE_Healthy_sp(sp, d2))
 				s1 += vs->hosts[i].weight;
 		}
 
@@ -171,7 +171,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
 			d2 = vs->hosts[i].backend;
-			if (!VBE_Healthy(d2, sp))
+			if (!VBE_Healthy_sp(sp, d2))
 				continue;
 			s1 += vs->hosts[i].weight;
 			if (r >= s1)
@@ -187,17 +187,16 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_random_healthy(const struct director *d, const struct sess *sp)
+vdi_random_healthy(double now, const struct director *d, uintptr_t target)
 {
 	struct vdi_random *vs;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VBE_Healthy(vs->hosts[i].backend, sp))
+		if (VBE_Healthy(now, vs->hosts[i].backend, target))
 			return 1;
 	}
 	return 0;

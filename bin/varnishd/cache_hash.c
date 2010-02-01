@@ -187,7 +187,7 @@ HSH_AddString(const struct sess *sp, const char *str)
 		WSP(sp, SLT_Hash, "%s", str);
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * This is a debugging hack to enable testing of boundary conditions
  * in the hash algorithm.
  * We trap the first 9 different digests and translate them to different
@@ -394,15 +394,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * mode'. Is this entirely wrong, or just ugly? Why isn't objhead
 	 * set here? FIXME:Grace.
 	 */
-	sp->objhead = oh;
-	if (oc == NULL && grace_oc != NULL &&
-	    (busy_oc != NULL || !VBE_Healthy(NULL, sp))) {
+	if (oc == NULL			/* We found no live object */
+	    && grace_oc != NULL		/* There is a grace candidate */
+	    && (busy_oc != NULL		/* Somebody else is already busy */
+	    || !VBE_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
+					 /* Or it is impossible to fetch: */
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 			oc = grace_oc;
 	}
-	sp->objhead = NULL;
 
 	if (oc != NULL) {
 		o = oc->obj;

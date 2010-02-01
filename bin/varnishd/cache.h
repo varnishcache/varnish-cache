@@ -456,7 +456,8 @@ extern pthread_t VCA_thread;
 /* cache_backend.c */
 
 struct vbe_conn *VBE_GetFd(const struct director *, struct sess *sp);
-int VBE_Healthy(const struct director *, const struct sess *sp);
+int VBE_Healthy(double now, const struct director *, uintptr_t target);
+int VBE_Healthy_sp(const struct sess *sp, const struct director *);
 void VBE_ClosedFd(struct sess *sp);
 void VBE_RecycleFd(struct sess *sp);
 void VBE_AddHostHeader(const struct sess *sp);
