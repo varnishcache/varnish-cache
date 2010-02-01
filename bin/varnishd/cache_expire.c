@@ -324,6 +324,7 @@ int
 EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 {
 	struct objcore *oc;
+	struct object *o;
 
 	/*
 	 * Find the first currently unused object on the LRU.
@@ -361,7 +362,8 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 		return (-1);
 
 	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", oc->obj->xid);
-	HSH_Deref(sp->wrk, &(oc->obj));
+	o = oc->obj;
+	HSH_Deref(sp->wrk, &o);
 	return (1);
 }
 
