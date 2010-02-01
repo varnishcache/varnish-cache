@@ -1022,3 +1022,66 @@ MCF_ParamInit(struct cli *cli)
 
 	params = &master;
 }
+
+/*--------------------------------------------------------------------*/
+
+#ifdef DIAGNOSTICS
+
+void
+MCF_DumpMdoc(void)
+{
+	const struct parspec *pp;
+	const char *p, *q;
+	int i;
+
+	printf(".Bl -tag -width 4n\n");
+	for (i = 0; i < nparspec; i++) {
+		pp = parspec[i];
+		printf(".It Va %s\n", pp->name);
+		if (pp->units != NULL && *pp->units != '\0')
+			printf("Units:\n.Dv %s\n.br\n", pp->units);
+		printf("Default:\n.Dv %s\n.br\n", pp->def);
+		/*
+		 * XXX: we should mark the params with one/two flags
+		 * XXX: that say if ->min/->max are valid, so we
+		 * XXX: can emit those also in help texts.
+		 */
+		if (pp->flags) {
+			printf("Flags:\n.Dv \"");
+			q = "";
+			if (pp->flags & DELAYED_EFFECT) {
+				printf("%sdelayed", q);
+				q = ", ";
+			}
+			if (pp->flags & MUST_RESTART) {
+				printf("%smust_restart", q);
+				q = ", ";
+			}
+			if (pp->flags & MUST_RELOAD) {
+				printf("%smust_reload", q);
+				q = ", ";
+			}
+			if (pp->flags & EXPERIMENTAL) {
+				printf("%sexperimental", q);
+				q = ", ";
+			}
+			printf("\"\n.br\n");
+		}
+		printf(".Pp\n");
+		for (p = pp->descr; *p; p++) {
+			if (*p == '\n' && p[1] =='\0') 
+				break;
+			if (*p == '\n' && p[1] =='\n') {
+				printf("\n.Pp\n");
+				p++;
+			} else if (*p == '\n') {
+				printf("\n.br\n");
+			} else {
+				printf("%c", *p);
+			}
+		}
+		printf("\n.Pp\n");
+	}
+	printf(".El\n");
+}
+#endif /* DIAGNOSTICS */
