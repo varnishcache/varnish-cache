@@ -845,7 +845,7 @@ ESI_Parse(struct sess *sp)
 		VTAILQ_INSERT_TAIL(&ed->esibits, eb, list);
 	}
 
-	assert(st->len < st->space);
+	assert(st->len <= st->space);
 	assert(st->len == ew->space);
 	sp->obj->esidata = ed;
 
