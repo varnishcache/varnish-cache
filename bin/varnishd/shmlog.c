@@ -32,6 +32,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -313,6 +314,7 @@ VSL_Init(void)
 	loghead->starttime = TIM_real();
 	loghead->panicstr[0] = '\0';
 	memset(VSL_stats, 0, sizeof *VSL_stats);
+	loghead->child_pid = getpid();
 }
 
 /*--------------------------------------------------------------------*/
@@ -333,6 +335,25 @@ vsl_goodold(int fd)
 		return (0);
 	if (slh.start != sizeof slh + sizeof *params)
 		return (0);
+
+	if (!kill(slh.master_pid, 0)) {
+		fprintf(stderr,
+		    "SHMFILE owned by running varnishd master (pid=%jd)\n",
+		    (intmax_t)slh.master_pid);
+		fprintf(stderr,
+		    "(Use unique -n arguments if you want multiple "
+		    "instances.)\n");
+		exit(2);
+	}
+
+	if (slh.child_pid != 0 && !kill(slh.child_pid, 0)) {
+		fprintf(stderr,
+		    "SHMFILE used by orphan varnishd child process (pid=%jd)\n",
+		    (intmax_t)slh.child_pid);
+		fprintf(stderr, "(We assume that process is busy dying.)\n");
+		return (0);
+	}
+
 	/* XXX more checks */
 	heritage.vsl_size = slh.size + slh.start;
 	return (1);
@@ -345,7 +366,7 @@ vsl_buildnew(const char *fn, unsigned size)
 	int i;
 
 	(void)unlink(fn);
-	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT, 0644);
+	heritage.vsl_fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0644);
 	if (heritage.vsl_fd < 0) {
 		fprintf(stderr, "Could not open %s: %s\n",
 		    fn, strerror(errno));
@@ -384,6 +405,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    heritage.vsl_fd, 0);
+	loghead->master_pid = getpid();
 	xxxassert(loghead != MAP_FAILED);
 	(void)mlock(loghead, heritage.vsl_size);
 	VSL_stats = &loghead->stats;

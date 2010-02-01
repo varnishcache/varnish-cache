@@ -39,6 +39,7 @@
 #define SHMLOG_FILENAME		"_.vsl"
 
 #include <time.h>
+#include <sys/types.h>
 
 #include "stats.h"
 
@@ -49,6 +50,8 @@ struct shmloghead {
 	unsigned		hdrsize;
 
 	time_t			starttime;
+	pid_t			master_pid;
+	pid_t			child_pid;
 
 	/*
 	 * Byte offset into the file where the fifolog starts
