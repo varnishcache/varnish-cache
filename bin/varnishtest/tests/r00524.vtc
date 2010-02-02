@@ -1,0 +1,33 @@
+# $Id$
+
+test "Regression test for 524: HTTP/1.0 and ESI"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {
+		<esi:remove> </esi:remove> 
+		<esi:include src="/foo"/>
+		<esi:remove> </esi:remove> 
+	}
+
+	rxreq
+	txresp -body "<foo>"
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		// return (pass);
+	}
+	sub vcl_fetch {
+		esi;
+	}
+} -cliok "param.set sess_timeout 60" -start
+
+client c1 {
+	txreq -proto HTTP/1.0 -hdr "Connection: kEep-alive"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 18
+} -run
