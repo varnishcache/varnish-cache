@@ -276,7 +276,7 @@ dump(void)
 		len = SHMLOG_LEN(tp->rec);
 		printf("%9.2f %s %*.*s\n",
 		    tp->count, VSL_tags[tp->rec[SHMLOG_TAG]],
-		    len, len, tp->rec + SHMLOG_DATA);
+		    len, len, tp->rec_data);
 	}
 }
 
