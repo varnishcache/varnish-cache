@@ -35,6 +35,7 @@ SVNID("$Id$")
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -491,7 +492,7 @@ exec_file_thread(void *priv)
 static double
 exec_file(const char *fn, unsigned dur)
 {
-	double t0;
+	double t0, t;
 	struct priv_exec pe;
 	pthread_t pt;
 	struct timespec ts;
@@ -509,8 +510,9 @@ exec_file(const char *fn, unsigned dur)
 		    fn, strerror(errno));
 	pe.fn = fn;
 
-	AZ(clock_gettime(CLOCK_REALTIME, &ts));
-	ts.tv_sec += dur;
+	t = TIM_real() + dur;
+	ts.tv_sec = floor(t);
+	ts.tv_nsec = (t - ts.tv_sec) * 1e9;
 
 	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
