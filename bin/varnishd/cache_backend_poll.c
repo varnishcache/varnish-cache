@@ -436,9 +436,10 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 	vt->backend = b;
 	vt->probe = *p;
 
+	p = &vt->probe;
+
 	if(p->request != NULL) {
-		vt->req = strdup(p->request);
-		XXXAN(vt->req);
+		REPLACE(vt->req, p->request);
 	} else {
 		vsb = vsb_newauto();
 		XXXAN(vsb);
