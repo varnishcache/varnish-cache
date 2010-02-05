@@ -503,9 +503,9 @@ static void
 http_ProtoVer(struct http *hp)
 {
 
-	if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
+	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
 		hp->protover = 1.0;
-	else if (!strcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
 		hp->protover = 1.1;
 	else
 		hp->protover = 0.9;
@@ -621,10 +621,7 @@ http_CopyResp(const struct http *to, const struct http *fm)
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	if (params->client_http11)
-		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	else
-		http_copyh(to, fm, HTTP_HDR_PROTO);
+	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	http_copyh(to, fm, HTTP_HDR_STATUS);
 	http_copyh(to, fm, HTTP_HDR_RESPONSE);
 }
