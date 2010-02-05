@@ -615,12 +615,6 @@ static const struct parspec input_parspec[] = {
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "client_http11", tweak_bool, &master.client_http11, 0, 0,
-		"Force all client responses to be HTTP/1.1.\n"
-		"By default we copy the protocol version from the "
-		"backend response.",
-		EXPERIMENTAL,
-		"off", "bool" },
 	{ "cli_timeout", tweak_timeout, &master.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the master.",
