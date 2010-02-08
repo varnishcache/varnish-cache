@@ -529,7 +529,7 @@ main(int argc, char * const *argv)
 	const char *l_arg = "80m";
 	uintmax_t l_size;
 	const char *q;
-	const char *h_arg = "classic";
+	const char *h_arg = "critbit";
 	const char *M_arg = NULL;
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
