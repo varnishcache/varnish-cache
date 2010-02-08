@@ -83,7 +83,6 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 {
 	int fd;
 	struct stat st;
-	char *q;
 	int retval = 1;
 	char buf[FILENAME_MAX];
 
@@ -111,7 +110,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		fd = mkstemp(buf);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" mkstemp(%s) failed (%s)\n",
-			    ctx, fn, q, strerror(errno));
+			    ctx, fn, buf, strerror(errno));
 		*fnp = strdup(buf);
 		AN(*fnp);
 		retval = 2;
