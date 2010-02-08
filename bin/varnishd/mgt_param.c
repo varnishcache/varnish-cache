@@ -523,7 +523,12 @@ static const struct parspec input_parspec[] = {
 		"header and any edits done to it in the VCL code.\n"
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
-		"16384", "bytes" },
+#if SIZE_MAX <= UINT32_MAX
+		"16384",
+#else
+		"65536",
+#endif
+		"bytes" },
 	{ "http_headers", tweak_uint, &master.http_headers, 32, UINT_MAX,
 		"Maximum number of HTTP headers we will deal with.\n"
 		"This space is preallocated in sessions and workthreads only "
