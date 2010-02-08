@@ -117,10 +117,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 	unsigned lh;
 
 	(void)ttl;
-	if (l == 0)
-		l = 1024;
-	if (params->obj_workspace > 0 && params->obj_workspace > l)
-		l =  params->obj_workspace;
+	assert(l > 0);
 
 	lh = HTTP_estimate(nhttp);
 
