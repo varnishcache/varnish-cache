@@ -156,10 +156,11 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		if (b + x < e)
 			memcpy(b, h, x);
 		b += x;
-		if (b + 1 < e)
-			*b++ = ' ';
+		if (b < e)
+			*b = ' ';
+		b++;
 	}
-	while (p != vrt_magic_string_end) {
+	while (p != vrt_magic_string_end && b < e) {
 		if (p == NULL)
 			p = "(null)";
 		x = strlen(p);
@@ -168,8 +169,9 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		b += x;
 		p = va_arg(ap, const char *);
 	}
-	if (b + 1 < e)
-		*b++ = '\0';
+	if (b < e)
+		*b = '\0';
+	b++;
 	if (b > e) {
 		WS_Release(hp->ws, 0);
 		return (NULL);
