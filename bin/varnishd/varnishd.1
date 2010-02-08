@@ -895,21 +895,6 @@ Upper limit on how many times a request can restart.
 .br
 Be aware that restarts are likely to cause a hit against the backend, so don't increase thoughtlessly.
 .Pp
-.It Va obj_workspace
-Units:
-.Dv bytes
-.br
-Default:
-.Dv 0
-.br
-Flags:
-.Dv "delayed"
-.br
-.Pp
-Bytes of HTTP protocol workspace allocated for objects. This space must be big enough for the entire HTTP protocol header and any edits done to it in the VCL code while it is cached.
-.br
-Minimum is 1024 bytes.
-.Pp
 .It Va overflow_max
 Units:
 .Dv %

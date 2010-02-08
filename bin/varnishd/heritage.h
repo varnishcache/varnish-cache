@@ -99,7 +99,6 @@ struct params {
 
 	/* Memory allocation hints */
 	unsigned		sess_workspace;
-	unsigned		obj_workspace;
 	unsigned		shm_workspace;
 	unsigned		http_headers;
 
