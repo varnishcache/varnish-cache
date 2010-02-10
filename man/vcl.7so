@@ -171,6 +171,9 @@ is how many of the latest polls we examine, while
 .Fa .threshold
 is how many of those must have succeeded for us to consider the
 backend healthy.
+.Fa .initial
+is how many of the probes are considered good when Varnish starts -
+defaults to the same amount as the threshold.
 .Bd -literal -offset 4n
 backend www {
     .host = "www.example.com";
@@ -180,6 +183,7 @@ backend www {
         .timeout = 0.3 s;
 	.window = 8;
 	.threshold = 3;
+	.initial = 3;
     }
 }
 .Ed
