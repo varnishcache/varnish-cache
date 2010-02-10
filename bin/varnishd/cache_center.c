@@ -789,8 +789,8 @@ cnt_lookup(struct sess *sp)
 		 * We lost the session to a busy object, disembark the
 		 * worker thread.   The hash code to restart the session,
 		 * still in STP_LOOKUP, later when the busy object isn't.
+		 * NB:  Do not access sp any more !
 		 */
-		AZ(sp->wrk);
 		return (1);
 	}
 
@@ -1217,6 +1217,9 @@ CNT_Session(struct sess *sp)
 	if (sp->step == STP_FIRST || sp->step == STP_START)
 		TCP_blocking(sp->fd);
 
+	/*
+	 * NB: Once done is set, we can no longer touch sp! 
+	 */
 	for (done = 0; !done; ) {
 		assert(sp->wrk == w);
 		/*
