@@ -758,7 +758,48 @@ cmd_http_timeout(CMD_ARGS)
 }
 
 /**********************************************************************
- * close and accept a new connection
+ * expect other end to close (server only)
+ */
+
+static void
+cmd_http_expect_close(CMD_ARGS)
+{
+	struct http *hp;
+	struct pollfd fds[1];
+	char c;
+	int i;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(av[1]);
+	assert(hp->sfd >= 0);
+
+	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
+	while (1) {
+		fds[0].fd = hp->fd;
+		fds[0].events = POLLIN | POLLHUP | POLLERR;
+		fds[0].revents = 0;
+		i = poll(fds, 1, 1000);
+		if (i == 0)
+			vtc_log(vl, 0, "Expected close: timeout");
+		if (i != 1 || !(fds[0].revents & POLLIN))
+			vtc_log(vl, 0,
+			    "Expected close: poll = %d, revents = 0x%x",
+			    i, fds[0].revents);
+		i = read(hp->fd, &c, 1);
+		if (i == 0)
+			break;
+		if (i == 1 && vct_islws(c))
+			continue;
+		vtc_log(vl, 0,
+		    "Expecting close: read = %d, c = 0x%02x", i, c);
+	}
+	vtc_log(vl, 4, "fd=%d EOF, as expected", hp->fd);
+}
+
+/**********************************************************************
+ * close and accept a new connection  (server only)
  */
 
 static void
@@ -772,7 +813,9 @@ cmd_http_accept(CMD_ARGS)
 	AZ(av[1]);
 	assert(hp->sfd >= 0);
 	TCP_close(&hp->fd);
+	vtc_log(vl, 4, "Accepting");
 	hp->fd = accept(hp->sfd, NULL, NULL);
+	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
 }
 
 /**********************************************************************
@@ -804,23 +847,24 @@ cmd_http_loop(CMD_ARGS)
  */
 
 static const struct cmds http_cmds[] = {
-	{ "timeout",	cmd_http_timeout },
-	{ "txreq",	cmd_http_txreq },
+	{ "timeout",		cmd_http_timeout },
+	{ "txreq",		cmd_http_txreq },
 
-	{ "rxreq",	cmd_http_rxreq },
-	{ "rxhdrs",	cmd_http_rxhdrs },
-	{ "rxbody",	cmd_http_rxbody },
+	{ "rxreq",		cmd_http_rxreq },
+	{ "rxhdrs",		cmd_http_rxhdrs },
+	{ "rxbody",		cmd_http_rxbody },
 
-	{ "txresp",	cmd_http_txresp },
-	{ "rxresp",	cmd_http_rxresp },
-	{ "expect",	cmd_http_expect },
-	{ "send",	cmd_http_send },
-	{ "chunked",	cmd_http_chunked },
-	{ "delay",	cmd_delay },
-	{ "sema",	cmd_sema },
-	{ "accept",	cmd_http_accept },
-	{ "loop",	cmd_http_loop },
-	{ NULL,		NULL }
+	{ "txresp",		cmd_http_txresp },
+	{ "rxresp",		cmd_http_rxresp },
+	{ "expect",		cmd_http_expect },
+	{ "send",		cmd_http_send },
+	{ "chunked",		cmd_http_chunked },
+	{ "delay",		cmd_delay },
+	{ "sema",		cmd_sema },
+	{ "expect_close",	cmd_http_expect_close },
+	{ "accept",		cmd_http_accept },
+	{ "loop",		cmd_http_loop },
+	{ NULL,			NULL }
 };
 
 void
