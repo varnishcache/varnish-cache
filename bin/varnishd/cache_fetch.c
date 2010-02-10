@@ -497,6 +497,12 @@ FetchBody(struct sess *sp)
 		mklen = 1;
 	}
 
+	if (http_HdrIs(hp, H_Connection, "close"))
+		cls = 1;
+
+	if (hp->protover < 1.1 && !http_HdrIs(hp, H_Connection, "keep-alive"))
+		cls = 1;
+
 	if (cls < 0) {
 		sp->wrk->stats.fetch_failed++;
 		/* XXX: Wouldn't this store automatically be released ? */
