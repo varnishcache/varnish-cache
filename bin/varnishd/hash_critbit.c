@@ -216,6 +216,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	/* We found a node, does it match ? */
 	oh2 = hcb_l_node(pp);
+	CHECK_OBJ_NOTNULL(oh2, OBJHEAD_MAGIC);
 	if (!memcmp(oh2->digest, oh->digest, DIGEST_LEN))
 		return (oh2);
 
@@ -357,6 +358,8 @@ hcb_cleaner(void *priv)
 		(void)sleep(1);
 		Lck_Lock(&hcb_mtx);
 		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
+			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+			AZ(oh->refcnt);
 			y = (void *)&oh->u;
 			if (y->leaf[0] || y->leaf[1])
 				continue;
@@ -365,7 +368,6 @@ hcb_cleaner(void *priv)
 #ifdef PHK
 				fprintf(stderr, "OH %p is cold enough\n", oh);
 #endif
-				AZ(oh->refcnt);
 				HSH_DeleteObjHead(&ww, oh);
 			}
 		}
@@ -401,7 +403,8 @@ hcb_deref(struct objhead *oh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
-	if (--oh->refcnt == 0) {
+	if (oh->refcnt == 1) {
+		/* Remove from tree before decrementing refcnt to zero */
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
 		assert(VTAILQ_EMPTY(&oh->objcs));
@@ -410,6 +413,7 @@ hcb_deref(struct objhead *oh)
 		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
 		Lck_Unlock(&hcb_mtx);
 	}
+	oh->refcnt--;
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
 	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
@@ -452,6 +456,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	oh =  hcb_insert(&hcb_root, noh, 1);
 	if (oh == noh) {
 		VSL_stats->hcb_insert++;
+		assert(oh->refcnt > 0);
 #ifdef PHK
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
 #endif
@@ -462,6 +467,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
 #endif
 		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 0);
 		oh->refcnt++;
 		Lck_Unlock(&oh->mtx);
 	}
