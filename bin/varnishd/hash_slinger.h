@@ -72,7 +72,7 @@ struct objhead {
 #define OBJHEAD_MAGIC		0x1b96615d
 
 	struct lock		mtx;
-	unsigned		refcnt;
+	int			refcnt;
 	VTAILQ_HEAD(,objcore)	objcs;
 	unsigned char		digest[DIGEST_LEN];
 	union {

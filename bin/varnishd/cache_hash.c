@@ -290,6 +290,7 @@ HSH_Insert(const struct sess *sp)
 	if (oh == w->nobjhead)
 		w->nobjhead = NULL;
 	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
 
 	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;
@@ -337,17 +338,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		oh = sp->objhead;
 		sp->objhead = NULL;
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		Lck_Lock(&oh->mtx);
 	} else {
 		AN(w->nobjhead);
 		oh = hash->lookup(sp, w->nobjhead);
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		if (oh == w->nobjhead)
 			w->nobjhead = NULL;
-		Lck_Lock(&oh->mtx);
 	}
 
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
 	busy_oc = NULL;
 	grace_oc = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
@@ -532,6 +532,7 @@ HSH_Unbusy(const struct sess *sp)
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
 	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
 	o->objcore->flags &= ~OC_F_BUSY;
 	hsh_rush(oh);
 	AN(o->ban);
