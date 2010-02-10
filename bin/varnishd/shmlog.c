@@ -336,7 +336,7 @@ vsl_goodold(int fd)
 	if (slh.start != sizeof slh + sizeof *params)
 		return (0);
 
-	if (!kill(slh.master_pid, 0)) {
+	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
 		fprintf(stderr,
 		    "SHMFILE owned by running varnishd master (pid=%jd)\n",
 		    (intmax_t)slh.master_pid);
