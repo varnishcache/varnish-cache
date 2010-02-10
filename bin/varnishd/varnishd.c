@@ -579,6 +579,18 @@ main(int argc, char * const *argv)
 	mgt_vcc_init();
 
 	MCF_ParamInit(cli);
+
+	if (sizeof(void *) < 8) {
+		/*
+		 * Adjust default parameters for 32 bit systems to conserve
+		 * VM space.
+		 */
+		MCF_ParamSet(cli, "sess_workspace", "16384");
+		cli_check(cli);
+		MCF_ParamSet(cli, "thread_pool_stack", "65536");
+		cli_check(cli);
+	}
+
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
