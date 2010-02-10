@@ -127,7 +127,7 @@ vtc_log_emit(struct vtclog *vl, unsigned lvl)
 	vsb_cat(vtclog_full, vsb_data(vl->vsb));
 	AZ(pthread_mutex_unlock(&vtclog_mtx));
 
-	if (lvl > 0 && lvl <= vtc_verbosity)
+	if (lvl <= vtc_verbosity)
 		(void)fputs(vsb_data(vl->vsb), stdout);
 }
 
