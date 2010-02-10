@@ -1,0 +1,44 @@
+# $Id$
+
+test "HTTP 1.0 backend not getting reused"
+
+
+server s1 {
+	rxreq
+	txresp -proto HTTP/1.0 -status 201 -hdr "Connection: keep-alive" -body foo
+
+	rxreq
+	txresp -proto HTTP/1.0 -status 202 -hdr "Connection: close" -body foo
+
+	expect_close
+	accept
+
+	rxreq
+	txresp -proto HTTP/1.0 -status 203 -body foo
+
+	expect_close
+	accept
+
+	rxreq
+	txresp -proto HTTP/1.0 -status 204 -body bar
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return (pass); }
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 201
+	txreq 
+	rxresp
+	expect resp.status == 202
+	txreq 
+	rxresp
+	expect resp.status == 203
+	txreq 
+	rxresp
+	expect resp.status == 204
+} -run
