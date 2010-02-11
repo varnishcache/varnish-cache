@@ -68,10 +68,14 @@ static void
 vca_modadd(int fd, void *data, short arm)
 {
 
+	/* XXX: EPOLLET (edge triggered) can cause rather Bad Things to
+	 * XXX: happen: If NEEV+1 threads get stuck in write(), all threads
+	 * XXX: will hang. See #644.
+	 */
 	assert(fd >= 0);
 	if (data == vca_pipes || data == dotimer_pipe) {
 		struct epoll_event ev = {
-		    EPOLLIN | EPOLLPRI | EPOLLET, { data }
+		    EPOLLIN | EPOLLPRI , { data }
 		};
 		AZ(epoll_ctl(epfd, arm, fd, &ev));
 	} else {
