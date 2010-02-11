@@ -136,8 +136,6 @@ child_main(void)
 	if (params->diag_bitmap & 0x00020000)
 		SMP_Ready();
 
-	VSL_stats->start_time = (time_t)TIM_real();
-
 	CLI_Run();
 
 	STV_close();
