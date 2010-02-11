@@ -126,7 +126,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 		tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 		lt = tt - lt;
 
-		rt = tv.tv_sec - VSL_stats->start_time;
+		rt = VSL_stats->uptime;
 		up = rt;
 
 		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
@@ -244,15 +244,7 @@ do_once(struct varnish_stats *VSL_stats, const char* fields)
 	double up;
 
 	gettimeofday(&tv, NULL);
-	up = tv.tv_sec - VSL_stats->start_time;
-
-	do {
-		if (fields != NULL && ! show_field("uptime", fields ))
-			break;
-		printf("%-16s %12ju %12s %s\n", "uptime",
-		    (uintmax_t)(tv.tv_sec - VSL_stats->start_time),
-		    ".  ", "Child uptime");
-	} while (0);
+	up = VSL_stats->uptime;
 
 #define MAC_STAT(n, t, l, f, d) \
 	do { \
@@ -297,7 +289,6 @@ list_fields(void)
 	fprintf(stderr, "Varnishstat -f option fields:\n");
 	fprintf(stderr, "Field name           Description\n");
 	fprintf(stderr, "----------           -----------\n");
-	fprintf(stderr, "uptime               Child uptime\n");
 
 #define MAC_STAT(n, t, l, f, d) \
 	do { \
@@ -312,7 +303,6 @@ valid_fields(const char* fields)
 {
 	int i, valid_field, field_length;
 	const char *all_fields[] = {
-	  "uptime",
 #define MAC_STAT(n, t, l, f, d) \
 	#n,
 #include "stat_field.h"
