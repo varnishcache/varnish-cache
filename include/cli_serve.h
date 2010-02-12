@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Redpill Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
