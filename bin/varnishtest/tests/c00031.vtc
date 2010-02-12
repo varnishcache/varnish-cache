@@ -1,6 +1,6 @@
 # Test that we get anything through at all
 #
-# $Id: c00002.vtc 3053 2008-08-01 09:22:21Z phk $
+# $Id$
 
 test "Worker thread stack size setting"
 

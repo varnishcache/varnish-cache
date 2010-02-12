@@ -1,4 +1,4 @@
-# $Id: e00003.vtc 3742 2009-02-11 07:53:47Z tfheen $
+# $Id$
 
 test "Aggressive use of ESI include"
 

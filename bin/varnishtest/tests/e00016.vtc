@@ -1,4 +1,4 @@
-# $Id: e00015.vtc 4068 2009-05-11 08:50:45Z sky $
+# $Id$
 
 test "ESI request can't be turned off midstream"
 

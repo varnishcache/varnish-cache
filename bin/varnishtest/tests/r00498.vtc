@@ -1,4 +1,4 @@
-# $Id: r00445.vtc 3987 2009-03-23 11:54:19Z sky $
+# $Id$
 
 test "very very very long return header"
 
