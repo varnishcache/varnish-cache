@@ -1,4 +1,4 @@
-# $Id: b00019.vtc 3300 2008-10-15 09:52:15Z tfheen $
+# $Id$
 
 test "Check that the first_byte_timeout works from backend definition"
 

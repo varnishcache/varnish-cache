@@ -1,4 +1,4 @@
-# $Id: r00445.vtc 3987 2009-03-23 11:54:19Z sky $
+# $Id$
 
 test "zero length ESI include segmens with chunked encoding"
 
