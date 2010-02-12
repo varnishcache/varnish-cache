@@ -99,7 +99,7 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 		if (dst == 0.0)			\
 			dst = params->tmx;	\
 	} while (0)
-		
+
 
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.

@@ -309,10 +309,10 @@ varnish_launch(struct varnish *v)
 		vtc_log(v->vl, 0, "FAIL no CLI connection accepted");
 		return;
 	}
-	
+
 	AZ(close(v->cli_fd));
 	v->cli_fd = nfd;
-	
+
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
 
@@ -345,20 +345,20 @@ varnish_start(struct varnish *v)
 	u = varnish_ask_cli(v, "start", &resp);
 	if (vtc_error)
 		return;
-	if (u != CLIS_OK) 
+	if (u != CLIS_OK)
 		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
 	free(resp);
 	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
 		return;
-	if (u != CLIS_OK) 
+	if (u != CLIS_OK)
 		vtc_log(v->vl, 0, "CLI debug.xid command failed: %u %s",
 		    u, resp);
 	free(resp);
 	u = varnish_ask_cli(v, "debug.listen_address", &resp);
 	if (vtc_error)
 		return;
-	if (u != CLIS_OK) 
+	if (u != CLIS_OK)
 		vtc_log(v->vl, 0,
 		    "CLI debug.listen_address command failed: %u %s", u, resp);
 	h = resp;

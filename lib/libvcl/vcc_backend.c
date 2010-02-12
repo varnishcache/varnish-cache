@@ -190,7 +190,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
  */
 
 static void
-vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v, 
+vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v,
     int serial, const struct token *first, const struct token *last)
 {
 
@@ -833,7 +833,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 		Fi(tl, 0, "\t    VGC_backend__%.*s, &vgc_dir_priv_%.*s);\n",
 		    PF(tl->t_dir), PF(tl->t_dir));
 
-		
+
 	}
 	if (tl->err) {
 		vsb_printf(tl->sb,

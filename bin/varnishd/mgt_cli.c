@@ -172,7 +172,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "(child not running).\n"
 		    "Type 'help' for more info.");
 		return;
-	} 
+	}
 	AN(cli->cmd);
 	i = write(cli_o, cli->cmd, strlen(cli->cmd));
 	if (i != strlen(cli->cmd)) {
@@ -186,7 +186,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		cli_out(cli, "CLI communication error");
 		return;
 	}
-		
+
 	assert(i == 1 || errno == EPIPE);
 	(void)cli_readres(cli_i,
 	    &u, &q, params->cli_timeout);
@@ -418,7 +418,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 
 	(void)ident;
 	(void)verbose;
-	if (cls == NULL) 
+	if (cls == NULL)
 		mgt_cli_init_cls();
 
 	cli = CLS_AddFd(cls, fdi, fdo, closefunc, priv);
@@ -654,7 +654,7 @@ Marg_poker(const struct vev *e, int what)
 	M_conn = vev_new();
 	AN(M_conn);
 	M_conn->callback = Marg_poker;
-	M_conn->name = "-M connector";	
+	M_conn->name = "-M connector";
 	M_conn->fd_flags = EV_WR;
 	M_conn->fd = s;
 	M_fd = s;
@@ -682,6 +682,6 @@ mgt_cli_master(const char *M_arg)
 	AN(M_poker);
 	M_poker->timeout = M_poll;
 	M_poker->callback = Marg_poker;
-	M_poker->name = "-M poker";	
+	M_poker->name = "-M poker";
 	AZ(vev_add(mgt_evb, M_poker));
 }

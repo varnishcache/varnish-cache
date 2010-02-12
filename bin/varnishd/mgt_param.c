@@ -1056,7 +1056,7 @@ MCF_DumpMdoc(void)
 		}
 		printf(".Pp\n");
 		for (p = pp->descr; *p; p++) {
-			if (*p == '\n' && p[1] =='\0') 
+			if (*p == '\n' && p[1] =='\0')
 				break;
 			if (*p == '\n' && p[1] =='\n') {
 				printf("\n.Pp\n");

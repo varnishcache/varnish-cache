@@ -50,7 +50,7 @@ SVNID("$Id: cli.c 4235 2009-09-11 13:06:15Z phk $")
 #include <cli_serve.h>
 #include <libvarnish.h>
 #include <miniobj.h>
- 
+
 struct cls_func {
 	unsigned			magic;
 #define CLS_FUNC_MAGIC			0x7d280c9b
@@ -81,7 +81,7 @@ struct cls {
 };
 
 /*--------------------------------------------------------------------*/
- 
+
 void
 CLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
@@ -262,7 +262,7 @@ cls_vlu(void *priv, const char *p)
 	av = ParseArgv(p, 0);
 	AN(av);
 
-	cli->result = CLIS_UNKNOWN; 
+	cli->result = CLIS_UNKNOWN;
 	vsb_clear(cli->sb);
 	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
 
@@ -355,7 +355,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 static void
 cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 {
-	
+
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
 	CHECK_OBJ_NOTNULL(cfd, CLS_FD_MAGIC);
 
@@ -482,7 +482,7 @@ CLS_Destroy(struct cls **csp)
 	cs = *csp;
 	*csp = NULL;
 	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
-	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2) 
+	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
 		cls_close_fd(cs, cfd);
 
 	while (!VTAILQ_EMPTY(&cs->funcs)) {

@@ -119,7 +119,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	}
 
 	/*
-	 * If we are hashing, first try to hit our "canonical backend" 
+	 * If we are hashing, first try to hit our "canonical backend"
 	 * If that fails, we fall through, and select a weighted backend
 	 * amongst the healthy set.
 	 */

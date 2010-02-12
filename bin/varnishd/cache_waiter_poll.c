@@ -130,7 +130,7 @@ vca_main(void *arg)
 		v = poll(pollfd, hpoll + 1, 100);
 		assert(v >= 0);
 		if (v && pollfd[vca_pipes[0]].revents) {
-			
+
 			if (pollfd[vca_pipes[0]].revents != POLLIN)
 				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
 				    pollfd[vca_pipes[0]].revents);
