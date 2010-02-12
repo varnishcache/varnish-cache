@@ -250,7 +250,7 @@ tst_delta()
 		exit (2);
 	}
 }
-	
+
 int
 main(int argc, char **argv)
 {

@@ -151,7 +151,7 @@ RES_BuildHttp(struct sess *sp)
 		if(sp->http->protover >= 1.1)
 			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 			    "Transfer-Encoding: chunked");
-		else 
+		else
 			sp->doclose = "ESI EOF";
 	}
 

@@ -65,7 +65,7 @@ struct stevedore {
 	VTAILQ_ENTRY(stevedore)	list;
 };
 
-struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl, 
+struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl,
     unsigned nhttp);
 struct storage *STV_alloc(struct sess *sp, size_t size, struct objcore *oc);
 void STV_trim(struct storage *st, size_t size);

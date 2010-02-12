@@ -95,7 +95,7 @@ SES_Charge(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * This function allocates a session + assorted peripheral data 
+ * This function allocates a session + assorted peripheral data
  * structures in one single malloc operation.
  */
 

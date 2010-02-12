@@ -81,8 +81,8 @@ struct VSL_data {
 	 * These two bitmaps mark fd's as belonging to client or backend
 	 * transactions respectively.
 	 */
-	struct vbitmap		*vbm_client;	
-	struct vbitmap		*vbm_backend;	
+	struct vbitmap		*vbm_client;
+	struct vbitmap		*vbm_backend;
 
 	/*
 	 * Bit map of programatically selected tags, that cannot be suppressed.

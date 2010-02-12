@@ -1218,7 +1218,7 @@ CNT_Session(struct sess *sp)
 		TCP_blocking(sp->fd);
 
 	/*
-	 * NB: Once done is set, we can no longer touch sp! 
+	 * NB: Once done is set, we can no longer touch sp!
 	 */
 	for (done = 0; !done; ) {
 		assert(sp->wrk == w);

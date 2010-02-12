@@ -278,10 +278,10 @@ cmd_server(CMD_ARGS)
 			continue;
 		}
 		/*
-		 * We do an implict -wait if people muck about with a 
+		 * We do an implict -wait if people muck about with a
 		 * running server.
 		 */
-		if (s->run) 
+		if (s->run)
 			server_wait(s);
 
 		assert(s->run == 0);
