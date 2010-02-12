@@ -417,8 +417,6 @@ else
 fi
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
-AC_DEFINE_UNQUOTED(HTTP_HDR_MAX_VAL, $with_max_header_fields, [Define maximum number of header fields supported by varnish ])
-
 # Use jemalloc on Linux
 JEMALLOC_SUBDIR=
 JEMALLOC_LDADD=
