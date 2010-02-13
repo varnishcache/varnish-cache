@@ -156,6 +156,9 @@ vca_main(void *arg)
 			if (pollfd[fd].revents) {
 				v--;
 				i = HTC_Rx(sp->htc);
+				if (pollfd[fd].revents != POLLIN)
+					VSL(SLT_Debug, fd, "Poll: %x / %d",
+					    pollfd[fd].revents, i);
 				VTAILQ_REMOVE(&sesshead, sp, list);
 				if (i == 0) {
 					/* Mov to front of list for speed */
@@ -172,6 +175,7 @@ vca_main(void *arg)
 				SES_Delete(sp);
 			}
 		}
+		assert(v == 0);
 	}
 	NEEDLESS_RETURN(NULL);
 }
