@@ -86,9 +86,14 @@ vca_poll(int fd)
 	assert(fd >= 0);
 	vca_pollspace((unsigned)fd);
 	assert(fd < npoll);
+
 	if (hpoll < fd)
 		hpoll = fd;
+
 	assert(pollfd[fd].fd == -1);
+	assert(pollfd[fd].events == 0);
+	assert(pollfd[fd].revents == 0);
+
 	pollfd[fd].fd = fd;
 	pollfd[fd].events = POLLIN;
 }
@@ -97,10 +102,14 @@ static void
 vca_unpoll(int fd)
 {
 
-	assert(fd < npoll);
 	assert(fd >= 0);
+	assert(fd < npoll);
 	vca_pollspace((unsigned)fd);
+
 	assert(pollfd[fd].fd == fd);
+	assert(pollfd[fd].events == POLLIN);
+	assert(pollfd[fd].revents == 0);
+
 	pollfd[fd].fd = -1;
 	pollfd[fd].events = 0;
 }
@@ -125,33 +134,19 @@ vca_main(void *arg)
 		while (hpoll > 0 && pollfd[hpoll].fd == -1)
 			hpoll--;
 		assert(vca_pipes[0] <= hpoll);
-		assert(pollfd[vca_pipes[0]].fd = vca_pipes[0]);
-		assert(pollfd[vca_pipes[1]].fd = -1);
+		assert(pollfd[vca_pipes[0]].fd == vca_pipes[0]);
+		assert(pollfd[vca_pipes[1]].fd == -1);
 		v = poll(pollfd, hpoll + 1, 100);
 		assert(v >= 0);
-		if (v && pollfd[vca_pipes[0]].revents) {
-
-			if (pollfd[vca_pipes[0]].revents != POLLIN)
-				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
-				    pollfd[vca_pipes[0]].revents);
-			assert(pollfd[vca_pipes[0]].revents == POLLIN);
-			v--;
-			i = read(vca_pipes[0], ss, sizeof ss);
-			assert(i >= 0);
-			assert(((unsigned)i % sizeof ss[0]) == 0);
-			for (j = 0; j * sizeof ss[0] < i; j++) {
-				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
-				assert(ss[j]->fd >= 0);
-				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
-				vca_poll(ss[j]->fd);
-			}
-		}
 		deadline = TIM_real() - params->sess_timeout;
 		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			if (v == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			fd = sp->fd;
+			assert(fd >= 0);
+			assert(fd <= hpoll);
+			assert(fd < npoll);
 			assert(pollfd[fd].fd == fd);
 			if (pollfd[fd].revents) {
 				v--;
@@ -159,6 +154,7 @@ vca_main(void *arg)
 				if (pollfd[fd].revents != POLLIN)
 					VSL(SLT_Debug, fd, "Poll: %x / %d",
 					    pollfd[fd].revents, i);
+				pollfd[fd].revents = 0;
 				VTAILQ_REMOVE(&sesshead, sp, list);
 				if (i == 0) {
 					/* Mov to front of list for speed */
@@ -173,6 +169,24 @@ vca_main(void *arg)
 				TCP_linger(sp->fd, 0);
 				vca_close_session(sp, "timeout");
 				SES_Delete(sp);
+			}
+		}
+		if (v && pollfd[vca_pipes[0]].revents) {
+
+			if (pollfd[vca_pipes[0]].revents != POLLIN)
+				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
+				    pollfd[vca_pipes[0]].revents);
+			assert(pollfd[vca_pipes[0]].revents == POLLIN);
+			pollfd[vca_pipes[0]].revents = 0;
+			v--;
+			i = read(vca_pipes[0], ss, sizeof ss);
+			assert(i >= 0);
+			assert(((unsigned)i % sizeof ss[0]) == 0);
+			for (j = 0; j * sizeof ss[0] < i; j++) {
+				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+				assert(ss[j]->fd >= 0);
+				VTAILQ_INSERT_TAIL(&sesshead, ss[j], list);
+				vca_poll(ss[j]->fd);
 			}
 		}
 		assert(v == 0);
