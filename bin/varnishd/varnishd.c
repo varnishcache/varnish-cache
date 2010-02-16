@@ -350,7 +350,7 @@ DebugStunt(void)
 	buf[i] = '\0';
 	d_child = strtoul(buf, &p, 0);
 	xxxassert(p != NULL);
-	printf("New Pid %d\n", d_child);
+	printf("New Pid %ju\n", (uintmax_t)d_child);
 	xxxassert(d_child != 0);
 	i = strlen(p);
 	j = write(pipes[1][1], p, i);
@@ -784,7 +784,7 @@ main(int argc, char * const *argv)
 	if (d_flag < 2 && !F_flag)
 		AZ(varnish_daemon(1, d_flag));
 	if (d_flag == 1)
-		printf("%d\n", getpid());
+		printf("%ju\n", (uintmax_t)getpid());
 
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
