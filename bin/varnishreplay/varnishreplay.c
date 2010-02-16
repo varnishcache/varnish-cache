@@ -40,6 +40,7 @@ SVNID("$Id$")
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
