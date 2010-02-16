@@ -295,7 +295,7 @@ smp_sync_sign(const struct smp_signctx *ctx)
 	int i;
 
 	/* XXX: round to pages */
-	i = msync(ctx->ss, ctx->ss->length + SHA256_LEN, MS_SYNC);
+	i = msync((void*)ctx->ss, ctx->ss->length + SHA256_LEN, MS_SYNC);
 	if (i && 0)
 		fprintf(stderr, "SyncSign(%p %s) = %d %s\n",
 		    ctx->ss, ctx->id, i, strerror(errno));
