@@ -160,7 +160,7 @@ vsl_shmem_map(const char *varnish_name)
 		return (1);
 	}
 
-	vsl_lh = mmap(NULL, slh.size + sizeof slh,
+	vsl_lh = (void *)mmap(NULL, slh.size + sizeof slh,
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vsl_fd, 0);
 	if (vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
@@ -590,7 +590,7 @@ VSL_Close(void)
 {
 	if (vsl_lh == NULL)
 		return;
-	assert(0 == munmap(vsl_lh, vsl_lh->size + sizeof *vsl_lh));
+	assert(0 == munmap((void*)vsl_lh, vsl_lh->size + sizeof *vsl_lh));
 	vsl_lh = NULL;
 	assert(vsl_fd >= 0);
 	assert(0 == close(vsl_fd));

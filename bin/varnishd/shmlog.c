@@ -401,13 +401,13 @@ VSL_MgtInit(const char *fn, unsigned size)
 		vsl_buildnew(fn, size);
 	}
 
-	loghead = mmap(NULL, heritage.vsl_size,
+	loghead = (void *)mmap(NULL, heritage.vsl_size,
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    heritage.vsl_fd, 0);
 	loghead->master_pid = getpid();
 	xxxassert(loghead != MAP_FAILED);
-	(void)mlock(loghead, heritage.vsl_size);
+	(void)mlock((void*)loghead, heritage.vsl_size);
 	VSL_stats = &loghead->stats;
 	pp = (void *)(loghead + 1);
 	*pp = *params;
