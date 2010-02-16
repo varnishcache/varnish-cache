@@ -449,6 +449,31 @@ cmd_random(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Check features.
+ */
+
+static void
+cmd_feature(CMD_ARGS)
+{
+	int i;
+
+	(void)priv;
+	(void)cmd;
+	if (av == NULL)
+		return;
+
+	for (i = 1; av[i] != NULL; i++) {
+#ifdef SO_RCVTIMEO_WORKS
+		if (!strcmp(av[i], "SO_RCVTIMEO_WORKS"))
+			continue;
+#endif
+		vtc_log(vl, 1, "SKIPPING test, missing feature %s", av[i]);
+		vtc_stop = 1;
+		return;
+	}
+}
+
+/**********************************************************************
  * Execute a file
  */
 
@@ -461,6 +486,7 @@ static const struct cmds cmds[] = {
 	{ "shell",	cmd_shell },
 	{ "sema",	cmd_sema },
 	{ "random",	cmd_random },
+	{ "feature",	cmd_feature },
 	{ NULL,		NULL }
 };
 

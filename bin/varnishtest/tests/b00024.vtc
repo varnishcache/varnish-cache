@@ -2,6 +2,8 @@
 
 test "Check that the first_byte_timeout works from vcl"
 
+feature SO_RCVTIMEO_WORKS
+
 server s1 {
 	rxreq
 	delay 1.5
