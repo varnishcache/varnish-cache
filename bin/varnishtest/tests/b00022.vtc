@@ -2,6 +2,8 @@
 
 test "Check the between_bytes_timeout behaves from backend definition"
 
+feature SO_RCVTIMEO_WORKS
+
 server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
