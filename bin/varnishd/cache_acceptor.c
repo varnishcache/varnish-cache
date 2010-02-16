@@ -118,6 +118,10 @@ sock_test(int fd)
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_sndtimeo, l))
 		need_sndtimeo = 1;
+#else
+	(void)tv;
+	(void)tv_sndtimeo;
+	(void)need_sndtimeo;
 #endif
 
 #ifdef SO_RCVTIMEO_WORKS
@@ -126,6 +130,10 @@ sock_test(int fd)
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_rcvtimeo, l))
 		need_rcvtimeo = 1;
+#else
+	(void)tv;
+	(void)tv_rcvtimeo;
+	(void)need_rcvtimeo;
 #endif
 
 	need_test = 0;
