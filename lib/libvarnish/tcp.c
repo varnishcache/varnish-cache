@@ -61,45 +61,6 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 
-/*--------------------------------------------------------------------
- * Recognize errno's we see when the remote end closed the connection.
- *
- * This "magic" is mostly needed because solaris wrongly returns EBADF
- * when they should return ECONNRESET upon receiving a TCP-RST from the
- * far end.
- *
- * My theory is, that some genius decided that since the socket is now
- * officially useless, and since they already have found and locked
- * the socket/pcb, they might as well get rid off it right away.
- *
- * On next use from the program, EBADF happens to be the errno, but since
- * all programs just call strerror(), who cares ?
- *
- * Well, I do.  EBADF is the canonical "Programmer goofed" errno, and
- * it should not be issued for other reasons.
- *
- * An interesting question here, is if the kernel might conceiveably
- * reallocate the fd# before the application closes it, on the mistaken
- * belief that it is unused ?  That would be bad news...
- *
- */
-
-int
-TCP_Errno(void)
-{
-
-	switch (errno) {
-	case ECONNRESET:
-    	case ENOTCONN:
-#if defined (__SVR4) && defined (__sun)
-	case EBADF:
-#endif
-		return (1);
-	default:
-		return (0);
-	}
-}
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -271,8 +232,9 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 void
 TCP_close(int *s)
 {
-
-	assert (close(*s) == 0 || TCP_Errno());
+	assert (close(*s) == 0 ||
+	    errno == ECONNRESET ||
+	    errno == ENOTCONN);
 	*s = -1;
 }
 
