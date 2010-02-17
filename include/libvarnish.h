@@ -60,12 +60,16 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 #define TCP_ADDRBUFSIZE		64
 #define TCP_PORTBUFSIZE		16
 
+#define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN)
+
+#define TCP_Assert(a) assert(TCP_Check(a))
+
 void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 void TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
 int TCP_filter_http(int sock);
-void TCP_blocking(int sock);
-void TCP_nonblocking(int sock);
-void TCP_linger(int sock, int linger);
+int TCP_blocking(int sock);
+int TCP_nonblocking(int sock);
+int TCP_linger(int sock, int linger);
 #ifdef SOL_SOCKET
 void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);
