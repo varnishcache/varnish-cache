@@ -639,6 +639,7 @@ cmd_varnish(CMD_ARGS)
 			break;
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
+			AZ(v->pid);
 			vsb_cat(v->args, " ");
 			vsb_cat(v->args, av[1]);
 			av++;
