@@ -84,7 +84,7 @@ static unsigned xids;
 
 /*--------------------------------------------------------------------
  * WAIT
- * Wait until we have a full request in our htc.
+ * Wait (briefly) until we have a full request in our htc.
  */
 
 static int
@@ -99,35 +99,36 @@ cnt_wait(struct sess *sp)
 	assert(sp->xid == 0);
 
 	i = HTC_Complete(sp->htc);
-	while (i == 0) {
-		if (params->session_linger > 0) {
-			pfd[0].fd = sp->fd;
-			pfd[0].events = POLLIN;
-			pfd[0].revents = 0;
-			i = poll(pfd, 1, params->session_linger);
-			if (i == 0) {
-				WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
-				sp->wrk->stats.sess_herd++;
-				SES_Charge(sp);
-				sp->wrk = NULL;
-				vca_return_session(sp);
-				return (1);
-			}
-		}
-		i = HTC_Rx(sp->htc);
+	if (i == 0 && params->session_linger > 0) {
+		pfd[0].fd = sp->fd;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		i = poll(pfd, 1, params->session_linger);
+		if (i)
+			i = HTC_Rx(sp->htc);
+	}
+	if (i == 0) {
+		WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
+		sp->wrk->stats.sess_herd++;
+		SES_Charge(sp);
+		sp->wrk = NULL;
+		vca_return_session(sp);
+		return (1);
 	}
 	if (i == 1) {
 		sp->step = STP_START;
-	} else {
-		if (i == -2)
-			vca_close_session(sp, "overflow");
-		else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
-		    (errno == 0 || errno == ECONNRESET))
-			vca_close_session(sp, "EOF");
-		else
-			vca_close_session(sp, "error");
-		sp->step = STP_DONE;
+		return (0);
 	}
+	if (i == -2) {
+		vca_close_session(sp, "overflow");
+		return (0);
+	}
+	if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
+	    (errno == 0 || errno == ECONNRESET))
+		vca_close_session(sp, "EOF");
+	else
+		vca_close_session(sp, "error");
+	sp->step = STP_DONE;
 	return (0);
 }
 
