@@ -154,22 +154,26 @@ TCP_filter_http(int sock)
  * at least on FreeBSD.
  */
 
-void
+int
 TCP_blocking(int sock)
 {
-	int i;
+	int i, j;
 
 	i = 0;
-	AZ(ioctl(sock, FIONBIO, &i));
+	j = ioctl(sock, FIONBIO, &i);
+	TCP_Assert(j);
+	return (j);
 }
 
-void
+int
 TCP_nonblocking(int sock)
 {
-	int i;
+	int i, j;
 
 	i = 1;
-	AZ(ioctl(sock, FIONBIO, &i));
+	j = ioctl(sock, FIONBIO, &i);
+	TCP_Assert(j);
+	return (j);
 }
 
 /*--------------------------------------------------------------------
@@ -255,7 +259,7 @@ TCP_set_read_timeout(int s, double seconds)
  * Set or reset SO_LINGER flag
  */
 
-void
+int
 TCP_linger(int sock, int linger)
 {
 	struct linger lin;
@@ -264,5 +268,6 @@ TCP_linger(int sock, int linger)
 	memset(&lin, 0, sizeof lin);
 	lin.l_onoff = linger;
 	i = setsockopt(sock, SOL_SOCKET, SO_LINGER, &lin, sizeof lin);
-	assert(i == 0 || errno == EBADF);
+	TCP_Assert(i);
+	return (i);
 }

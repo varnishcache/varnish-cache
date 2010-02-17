@@ -105,16 +105,25 @@ sock_test(int fd)
 	struct linger lin;
 	struct timeval tv;
 	socklen_t l;
+	int i;
 
 	l = sizeof lin;
-	AZ(getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l));
+	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
+	if (i) {
+		TCP_Assert(i);
+		return;
+	}
 	assert(l == sizeof lin);
 	if (memcmp(&lin, &linger, l))
 		need_linger = 1;
 
 #ifdef SO_SNDTIMEO_WORKS
 	l = sizeof tv;
-	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l));
+	i = getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l);
+	if (i) {
+		TCP_Assert(i);
+		return;
+	}
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_sndtimeo, l))
 		need_sndtimeo = 1;
@@ -126,7 +135,11 @@ sock_test(int fd)
 
 #ifdef SO_RCVTIMEO_WORKS
 	l = sizeof tv;
-	AZ(getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l));
+	i = getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l);
+	if (i) {
+		TCP_Assert(i);
+		return;
+	}
 	assert(l == sizeof tv);
 	if (memcmp(&tv, &tv_rcvtimeo, l))
 		need_rcvtimeo = 1;
@@ -168,16 +181,16 @@ VCA_Prep(struct sess *sp)
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
-		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 #ifdef SO_SNDTIMEO_WORKS
 	if (need_sndtimeo)
-		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 		    &tv_sndtimeo, sizeof tv_sndtimeo));
 #endif
 #ifdef SO_RCVTIMEO_WORKS
 	if (need_rcvtimeo)
-		AZ(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
 }
@@ -365,8 +378,9 @@ vca_return_session(struct sess *sp)
 	 * Set nonblocking in the worker-thread, before passing to the
 	 * acceptor thread, to reduce syscall density of the latter.
 	 */
-	TCP_nonblocking(sp->fd);
-	if (vca_act->pass == NULL)
+	if (TCP_nonblocking(sp->fd))
+		vca_close_session(sp, "remote closed");
+	else if (vca_act->pass == NULL)
 		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 	else
 		vca_act->pass(sp);
