@@ -250,7 +250,7 @@ VSS_connect(const struct vss_addr *va, int nonblock)
 		return (-1);
 	}
 	if (nonblock)
-		TCP_nonblocking(sd);
+		(void)TCP_nonblocking(sd);
 	i = connect(sd, &va->va_addr.sa, va->va_addrlen);
 	if (i == 0 || (nonblock && errno == EINPROGRESS))
 		return (sd);

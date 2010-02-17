@@ -166,7 +166,7 @@ vca_main(void *arg)
 			} else if (sp->t_open <= deadline) {
 				VTAILQ_REMOVE(&sesshead, sp, list);
 				vca_unpoll(fd);
-				TCP_linger(sp->fd, 0);
+				(void)TCP_linger(sp->fd, 0);
 				vca_close_session(sp, "timeout");
 				SES_Delete(sp);
 			}
