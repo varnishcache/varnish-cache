@@ -643,6 +643,7 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
+	setenv("TMPDIR", "/tmp", 0);
 	vtc_tmpdir = tempnam(NULL, "vtc");
 	AN(vtc_tmpdir);
 	AZ(mkdir(vtc_tmpdir, 0700));
