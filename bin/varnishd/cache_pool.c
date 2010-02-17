@@ -417,7 +417,6 @@ wrk_herdtimer_thread(void *priv)
 	AN(unlink("/"));		/* This had better fail */
 	errno_is_multi_threaded = errno;
 	assert(errno_is_multi_threaded != 0);
-	assert(errno == EISDIR);
 
 	memset(&vsm, 0, sizeof vsm);
 	vs = &vsm;
