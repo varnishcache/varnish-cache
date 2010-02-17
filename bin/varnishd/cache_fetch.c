@@ -367,7 +367,7 @@ FetchHdr(struct sess *sp)
 	if (!http_GetHdr(hp, H_Host, &b))
 		VBE_AddHostHeader(sp);
 
-	TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
+	(void)TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(w, &vc->fd);
 	(void)http_Write(w, hp, 0);	/* XXX: stats ? */
 

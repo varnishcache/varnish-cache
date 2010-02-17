@@ -196,7 +196,7 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 	assert(s >= 0);
 
 	/* Set the socket non-blocking */
-	TCP_nonblocking(s);
+	(void)TCP_nonblocking(s);
 
 	/* Attempt the connect */
 	i = connect(s, name, namelen);
@@ -224,7 +224,7 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 	if (k)
 		return (-1);
 
-	TCP_blocking(s);
+	(void)TCP_blocking(s);
 	return (0);
 }
 

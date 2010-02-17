@@ -271,7 +271,7 @@ cnt_done(struct sess *sp)
 		 * This is an orderly close of the connection; ditch nolinger
 		 * before we close, to get queued data transmitted.
 		 */
-		TCP_linger(sp->fd, 0);
+		(void)TCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
 
@@ -1216,7 +1216,7 @@ CNT_Session(struct sess *sp)
 	 * do the syscall in the worker thread.
 	 */
 	if (sp->step == STP_FIRST || sp->step == STP_START)
-		TCP_blocking(sp->fd);
+		(void)TCP_blocking(sp->fd);
 
 	/*
 	 * NB: Once done is set, we can no longer touch sp!
