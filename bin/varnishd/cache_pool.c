@@ -404,8 +404,20 @@ wrk_herdtimer_thread(void *priv)
 	volatile unsigned u;
 	double t_idle;
 	struct varnish_stats vsm, *vs;
+	int errno_is_multi_threaded;
 
 	THR_SetName("wrk_herdtimer");
+
+	/*
+	 * This is one of the first threads created, test to see that
+	 * errno is really per thread.  If this fails, your C-compiler
+	 * needs some magic argument (-mt, -pthread, -pthreads etc etc).
+	 */
+	errno = 0;
+	AN(unlink("/"));		/* This had better fail */
+	errno_is_multi_threaded = errno;
+	assert(errno_is_multi_threaded != 0);
+	assert(errno == EISDIR);
 
 	memset(&vsm, 0, sizeof vsm);
 	vs = &vsm;
