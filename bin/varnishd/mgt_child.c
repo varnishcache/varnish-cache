@@ -136,7 +136,7 @@ child_line(void *priv, const char *p)
 {
 	(void)priv;
 
-	REPORT(LOG_NOTICE, "Child (%ju) said %s", (uintmax_t)child_pid, p);
+	REPORT(LOG_NOTICE, "Child (%jd) said %s", (intmax_t)child_pid, p);
 	return (0);
 }
 
@@ -173,8 +173,8 @@ child_poker(const struct vev *e, int what)
 	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
 		return (0);
 	REPORT(LOG_ERR,
-	    "Child (%ju) not responding to ping, killing it.",
-	    (uintmax_t)child_pid);
+	    "Child (%jd) not responding to ping, killing it.",
+	    (intmax_t)child_pid);
 	if (params->diag_bitmap & 0x1000)
 		(void)kill(child_pid, SIGKILL);
 	else
@@ -357,7 +357,7 @@ start_child(struct cli *cli)
 
 		exit(1);
 	}
-	REPORT(LOG_NOTICE, "child (%ju) Started", (uintmax_t)pid);
+	REPORT(LOG_NOTICE, "child (%jd) Started", (intmax_t)pid);
 
 	/* Close stuff the child got */
 	closex(&heritage.std_fd);
@@ -440,7 +440,7 @@ mgt_report_panic(pid_t r)
 	VSL_Panic(&l, &p);
 	if (*p == '\0')
 		return;
-	REPORT(LOG_ERR, "Child (%ju) Panic message: %s", (uintmax_t)r, p);
+	REPORT(LOG_ERR, "Child (%jd) Panic message: %s", (intmax_t)r, p);
 }
 
 /*--------------------------------------------------------------------*/
