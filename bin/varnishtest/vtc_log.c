@@ -123,6 +123,8 @@ static const char * const lead[] = {
 static void
 vtc_log_emit(struct vtclog *vl, unsigned lvl)
 {
+	if (vtc_stop && lvl == 0)
+		return;
 	AZ(pthread_mutex_lock(&vtclog_mtx));
 	vsb_cat(vtclog_full, vsb_data(vl->vsb));
 	AZ(pthread_mutex_unlock(&vtclog_mtx));
