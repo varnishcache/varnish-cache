@@ -1157,6 +1157,8 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	assert(C_ALIGN(sc->objreserv) + 2 * SEG_SPACE <= smp_spaceleft(sg));
 
 	/* Write the OBJIDX */
+	sg->next_addr |= 7;
+	sg->next_addr++;
 	smp_def_sign(sc, sg->ctx, sg->next_addr, "OBJIDX");
 	smp_reset_sign(sg->ctx);
 	smp_sync_sign(sg->ctx);
