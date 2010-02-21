@@ -208,10 +208,10 @@ static struct cli_proto cli_askchild[] = {
 
 int
 mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
-	char *p;
 	int i, j;
 	va_list ap;
 	unsigned u;
+	char buf[params->cli_buffer], *p;
 
 	if (resp != NULL)
 		*resp = NULL;
@@ -223,13 +223,12 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 		return (CLIS_CANT);
 	}
 	va_start(ap, fmt);
-	i = vasprintf(&p, fmt, ap);
+	vbprintf(buf, fmt, ap);
 	va_end(ap);
-	if (i < 0)
-		return (i);
-	assert(p[i - 1] == '\n');
-	j = write(cli_o, p, i);
-	free(p);
+	p = strchr(buf, '\0');
+	assert(p != NULL && p > buf && p[-1] == '\n');
+	i = p - buf;
+	j = write(cli_o, buf, i);
 	if (j != i) {
 		if (status != NULL)
 			*status = CLIS_COMMS;
