@@ -137,5 +137,4 @@ struct smp_object {
 	double			ttl;
 	double			ban;
 	struct object		*ptr;
-	uint64_t		len;	/* XXX: madvise */
 };

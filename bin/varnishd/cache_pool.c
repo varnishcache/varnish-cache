@@ -212,13 +212,13 @@ static void *
 wrk_thread(void *priv)
 {
 	struct wq *qp;
-	volatile unsigned nhttp;
+	unsigned nhttp;
 	unsigned siov;
 
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	/* We need to snapshot these two for consistency */
 	nhttp = params->http_headers;
-	siov = nhttp * 2;		/* XXX param ? */
+	siov = nhttp * 2;
 	if (siov > IOV_MAX)
 		siov = IOV_MAX;
 	return (wrk_thread_real(qp,

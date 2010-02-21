@@ -279,7 +279,10 @@ pan_backtrace(void)
 		if (Symbol_Lookup(vsp, array[i]) < 0) {
 			char **strings;
 			strings = backtrace_symbols(&array[i], 1);
-			vsb_printf(vsp, "%p: %s", array[i], strings[0]);
+			if (strings != NULL && strings[0] != NULL)
+				vsb_printf(vsp, "%p: %s", array[i], strings[0]);
+			else
+				vsb_printf(vsp, "%p: (?)", array[i]);
 		}
 		vsb_printf (vsp, "\n");
 	}
