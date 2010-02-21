@@ -695,10 +695,10 @@ struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
 
 /* storage_persistent.c */
-void SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc);
+void SMP_Fixup(struct sess *sp, const struct objhead *oh, struct objcore *oc);
 void SMP_BANchanged(const struct object *o, double t);
 void SMP_TTLchanged(const struct object *o);
-void SMP_FreeObj(struct object *o);
+void SMP_FreeObj(const struct object *o);
 void SMP_Ready(void);
 void SMP_NewBan(double t0, const char *ban);
 

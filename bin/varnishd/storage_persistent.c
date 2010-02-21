@@ -648,7 +648,7 @@ smp_save_segs(struct smp_sc *sc)
  */
 
 void
-SMP_Fixup(struct sess *sp, struct objhead *oh, struct objcore *oc)
+SMP_Fixup(struct sess *sp, const struct objhead *oh, struct objcore *oc)
 {
 	struct smp_seg *sg;
 	struct smp_object *so;
@@ -785,7 +785,7 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
  */
 
 void
-SMP_FreeObj(struct object *o)
+SMP_FreeObj(const struct object *o)
 {
 	struct smp_seg *sg;
 

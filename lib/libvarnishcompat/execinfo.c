@@ -45,97 +45,88 @@ SVNID("$Id: execinfo.c,v 1.3 2004/07/19 05:21:09 sobomax Exp $")
 #include <string.h>
 #include <unistd.h>
 
-
 static void *getreturnaddr(int);
 static void *getframeaddr(int);
-
-#define D10(x) ceil(log10(((x) == 0) ? 2 : ((x) + 1)))
-
-inline static void *
-realloc_safe(void *ptr, size_t size)
-{
-    void *nptr;
-
-    nptr = realloc(ptr, size);
-    if (nptr == NULL)
-        free(ptr);
-    return nptr;
-}
 
 int
 backtrace(void **buffer, int size)
 {
-    int i;
+	int i;
 
-    for (i = 1; getframeaddr(i + 1) != NULL && i != size + 1; i++) {
-        buffer[i - 1] = getreturnaddr(i);
-        if (buffer[i - 1] == NULL)
-            break;
-    }
-
-    return i - 1;
+	for (i = 1; getframeaddr(i + 1) != NULL && i != size + 1; i++) {
+		buffer[i - 1] = getreturnaddr(i);
+		if (buffer[i - 1] == NULL)
+			break;
+	}
+	return (i - 1);
 }
+
+/*
+ * XXX: This implementation should be changed to a much more conservative
+ * XXX: memory strategy:  Allocate 4k up front, realloc 4K more as needed.
+ */
 
 char **
 backtrace_symbols(void *const *buffer, int size)
 {
-    size_t clen, alen;
-    int i;
-    char **rval;
+	size_t clen, alen;
+	int i;
+	char **rval;
 
-    clen = size * sizeof(char *);
-    rval = malloc(clen);
-    if (rval == NULL)
-        return NULL;
-    for (i = 0; i < size; i++) {
+	clen = size * sizeof(char *);
+	rval = malloc(clen);
+	if (rval == NULL)
+		return (NULL);
+	for (i = 0; i < size; i++) {
 
 #ifdef HAVE_DLADDR
-    {
-        Dl_info info;
-	int offset;
+		{
+		Dl_info info;
+		int offset;
 
-        if (dladdr(buffer[i], &info) != 0) {
-            if (info.dli_sname == NULL)
-                info.dli_sname = "???";
-            if (info.dli_saddr == NULL)
-                info.dli_saddr = buffer[i];
-            offset = (const char*)buffer[i] - (const char*)info.dli_saddr;
-            /* "0x01234567 <function+offset> at filename" */
-            alen = 2 +                      /* "0x" */
-                   (sizeof(void *) * 2) +   /* "01234567" */
-                   2 +                      /* " <" */
-                   strlen(info.dli_sname) + /* "function" */
-                   1 +                      /* "+" */
-                   10 +                     /* "offset */
-                   5 +                      /* "> at " */
-                   strlen(info.dli_fname) + /* "filename" */
-                   1;                       /* "\0" */
-            rval = realloc_safe(rval, clen + alen);
-            if (rval == NULL)
-                return NULL;
-            snprintf((char *) rval + clen, alen, "%p <%s+%d> at %s",
-              buffer[i], info.dli_sname, offset, info.dli_fname);
-            rval[i] = (char *) clen;
-            clen += alen;
-	    continue;
-        }
-    }
+		if (dladdr(buffer[i], &info) != 0) {
+			if (info.dli_sname == NULL)
+				info.dli_sname = "?";
+			if (info.dli_saddr == NULL)
+				info.dli_saddr = buffer[i];
+			offset = (const char*)buffer[i] -
+			    (const char*)info.dli_saddr;
+			/* "0x01234567 <function+offset> at filename" */
+			alen = 2 +                      /* "0x" */
+			    (sizeof(void *) * 2) +   /* "01234567" */
+			    2 +                      /* " <" */
+			    strlen(info.dli_sname) + /* "function" */
+			    1 +                      /* "+" */
+			    10 +                     /* "offset */
+			    5 +                      /* "> at " */
+			    strlen(info.dli_fname) + /* "filename" */
+			    1;                       /* "\0" */
+			rval = realloc(rval, clen + alen);
+			if (rval == NULL)
+				return NULL;
+			(void)snprintf((char *) rval + clen, alen,
+			    "%p <%s+%d> at %s", buffer[i], info.dli_sname,
+			    offset, info.dli_fname);
+			rval[i] = (char *) clen;
+			clen += alen;
+			continue;
+		}
+		}
 #endif
-	alen = 2 +                      /* "0x" */
-	       (sizeof(void *) * 2) +   /* "01234567" */
-	       1;                       /* "\0" */
-	rval = realloc_safe(rval, clen + alen);
-	if (rval == NULL)
-	    return NULL;
-	snprintf((char *) rval + clen, alen, "%p", buffer[i]);
-        rval[i] = (char *) clen;
-        clen += alen;
-    }
+		alen = 2 +                      /* "0x" */
+		    (sizeof(void *) * 2) +   /* "01234567" */
+		    1;                       /* "\0" */
+		rval = realloc(rval, clen + alen);
+		if (rval == NULL)
+			return NULL;
+		(void)snprintf((char *) rval + clen, alen, "%p", buffer[i]);
+		rval[i] = (char *) clen;
+		clen += alen;
+	}
 
-    for (i = 0; i < size; i++)
-        rval[i] += (long) rval;
-
-    return rval;
+	for (i = 0; i < size; i++)
+		rval[i] += (long) rval;
+	return (rval);
 }
 
 static void *

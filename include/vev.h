@@ -50,7 +50,6 @@ struct vev {
 #define		EV_WR		POLLOUT
 #define		EV_ERR		POLLERR
 #define		EV_HUP		POLLHUP
-#define		EV_GONE		POLLNVAL
 #define		EV_SIG		-1
 	int			sig;
 	unsigned		sig_flags;

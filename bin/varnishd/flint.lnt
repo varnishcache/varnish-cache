@@ -201,6 +201,9 @@
 -efunc(539, http_FilterFields)	// Positive indentation from line
 -efunc(539, http_EstimateWS)	// Positive indentation from line
 
+-esym(525, __builtin_frame_address)	// Not defined
+-esym(525, __builtin_return_address)	// Not defined
+
 // cache_vcl.c
 -efunc(525, vcl_handlingname)	// Negative indentation from line
 -esym(528, vcl_handlingname)	// Not referenced

@@ -199,6 +199,10 @@ struct params {
 	unsigned		syslog_cli_traffic;
 };
 
+/*
+ * We declare this a volatile pointer, so that reads of parameters
+ * become atomic, leaving the CLI thread lattitude to change the values
+ */
 extern volatile struct params *params;
 extern struct heritage heritage;
 
