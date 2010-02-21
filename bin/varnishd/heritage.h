@@ -129,9 +129,6 @@ struct params {
 	/* Listen depth */
 	unsigned		listen_depth;
 
-	/* HTTP proto behaviour */
-	unsigned		client_http11;
-
 	/* CLI related */
 	unsigned		cli_timeout;
 	unsigned		ping_interval;

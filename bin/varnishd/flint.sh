@@ -9,4 +9,5 @@ flexelint \
 	-DVARNISH_STATE_DIR=\"foo\" \
 	*.c \
 	../../lib/libvarnish/*.c \
+	../../lib/libvarnishcompat/execinfo.c \
 	../../lib/libvcl/*.c
