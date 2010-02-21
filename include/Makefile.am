@@ -13,7 +13,6 @@ nobase_noinst_HEADERS = \
 	cli_common.h \
 	cli_priv.h \
 	cli_serve.h \
-	compat/asprintf.h \
 	compat/daemon.h \
 	compat/execinfo.h \
 	compat/setproctitle.h \
@@ -21,7 +20,6 @@ nobase_noinst_HEADERS = \
 	compat/strlcat.h \
 	compat/strlcpy.h \
 	compat/strndup.h \
-	compat/vasprintf.h \
 	flopen.h \
 	http_headers.h \
 	http_response.h \
