@@ -9,9 +9,10 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p thread_pool_min=2 -p thread_pools=4" -vcl+backend {} -start
+varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=2 -p thread_pools=4" 
 
-delay 1
+varnish v1 -vcl+backend {} -start
+
 varnish v1 -expect n_wrk_create == 8
 
 client c1 {
