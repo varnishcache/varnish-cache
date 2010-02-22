@@ -44,7 +44,10 @@
 
 #include "svnid.h"
 SVNID("$Id: cache_pool.c 3429 2008-11-24 17:47:21Z phk $")
+#include <stdio.h>
+#include <string.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/types.h>
 
 #include "cli_priv.h"
@@ -62,6 +65,33 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
 
 	tweak_generic_uint(cli, &master.wthread_min, arg,
 	    (unsigned)par->min, master.wthread_max);
+}
+
+/*--------------------------------------------------------------------
+ * This is utterly ridiculous:  POSIX does not guarantee that the 
+ * minimum thread stack size is a compile time constant.
+ * XXX: "32" is a magic marker for 32bit systems.
+ */
+
+static void
+tweak_stack_size(struct cli *cli, const struct parspec *par,
+    const char *arg)
+{
+	unsigned low, u;
+	char buf[12];
+
+	low = sysconf(_SC_THREAD_STACK_MIN);
+
+	if (arg != NULL && !strcmp(arg, "32")) {
+		u = 65536;
+		if (u < low)
+			u = low;
+		sprintf(buf, "%u", u);
+		arg = buf;
+	}
+
+	tweak_generic_uint(cli, &master.wthread_stacksize, arg,
+	    low, (uint)par->max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -191,8 +221,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"3", "requests per request" },
 	{ "thread_pool_stack",
-		tweak_uint, &master.wthread_stacksize,
-		PTHREAD_STACK_MIN, UINT_MAX,
+		tweak_stack_size, &master.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
 		"On 32bit systems you may need to tweak this down to fit "
 		"many threads into the limited address space.\n",
@@ -200,4 +229,3 @@ const struct parspec WRK_parspec[] = {
 		"-1", "bytes" },
 	{ NULL, NULL, NULL }
 };
-
