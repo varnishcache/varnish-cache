@@ -588,10 +588,7 @@ main(int argc, char * const *argv)
 		MCF_ParamSet(cli, "sess_workspace", "16384");
 		cli_check(cli);
 
-		/* Set the stacksize to min(PTHREAD_STACK_MIN, 64k) */
-		bprintf(dirname, "%d",
-		    PTHREAD_STACK_MIN > 65536 ? PTHREAD_STACK_MIN : 65536);
-		MCF_ParamSet(cli, "thread_pool_stack", dirname);
+		MCF_ParamSet(cli, "thread_pool_stack", "32");
 		cli_check(cli);
 	}
 
