@@ -6,6 +6,20 @@ varnish v1 -arg "-b ${bad_ip}:9080"
 
 varnish v1 -cliok "help"
 
+varnish v1 -cliok "help -a"
+
+varnish v1 -cliok "help -d"
+
+varnish v1 -cliok "help vcl.load"
+
+varnish v1 -cliok "help purge"
+
+varnish v1 -clierr 101 "FOO?"
+
+varnish v1 -clierr 100 "\x22"
+
+varnish v1 -clierr 105 "help  1 2 3"
+
 varnish v1 -cliok "param.show"
 
 varnish v1 -cliok "param.show diag_bitmap"
