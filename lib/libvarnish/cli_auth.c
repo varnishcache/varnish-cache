@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -25,27 +24,41 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id$
  */
 
-struct vlu;
-struct cls;
+#include "config.h"
 
-struct cli {
-	unsigned		magic;
-#define CLI_MAGIC		0x4038d570
-	struct vsb		*sb;
-	enum cli_status_e	result;
-	const char		*cmd;
-	unsigned		auth;
-	char			challenge[34];
-	char			*ident;
-	struct vlu		*vlu;
-	struct cls		*cls;
-};
+#include "svnid.h"
+SVNID("$Id$");
 
-int cli_writeres(int fd, const struct cli *cli);
-int cli_readres(int fd, unsigned *status, char **ptr, double tmo);
+#include <sys/types.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <string.h>
 
-void CLI_response(int S_fd, const char *challenge, char *reponse);
+#include "cli.h"
+#include "cli_common.h"
+#include "vsha256.h"
+
+void
+CLI_response(int S_fd, const char *challenge, char *response)
+{
+	SHA256_CTX ctx;
+	uint8_t buf[BUFSIZ];
+	int i;
+
+	SHA256_Init(&ctx);
+	SHA256_Update(&ctx, challenge, 32);
+	SHA256_Update(&ctx, "\n", 1);
+	do {
+		i = read(S_fd, buf, sizeof buf);
+		if (i > 0)
+			SHA256_Update(&ctx, buf, i);
+	} while (i > 0);
+	SHA256_Update(&ctx, challenge, 32);
+	SHA256_Update(&ctx, "\n", 1);
+	SHA256_Final(buf, &ctx);
+	for(i = 0; i < SHA256_LEN; i++)
+		sprintf(response + 2 * i, "%02x", buf[i]);
+}
