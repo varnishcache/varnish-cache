@@ -55,7 +55,6 @@ SVNID("$Id$")
 #include "cli_common.h"
 #include "cli_serve.h"
 #include "vev.h"
-#include "vsha256.h"
 #include "shmlog.h"
 #include "vlu.h"
 #include "vss.h"
@@ -289,10 +288,8 @@ mgt_cli_challenge(struct cli *cli)
 static void
 mcf_auth(struct cli *cli, const char *const *av, void *priv)
 {
-	char buf[1025];
-	int i, fd;
-	struct SHA256Context sha256ctx;
-	unsigned char digest[SHA256_LEN];
+	int fd;
+	char buf[CLI_AUTH_RESPONSE_LEN];
 
 	AN(av[2]);
 	(void)priv;
@@ -304,33 +301,8 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		cli_result(cli, CLIS_CANT);
 		return;
 	}
-	i = read(fd, buf, sizeof buf);
-	if (i == 0) {
-		cli_out(cli, "Empty secret file");
-		cli_result(cli, CLIS_CANT);
-		return;
-	}
-	if (i < 0) {
-		cli_out(cli, "Read error on secret file (%s)\n",
-		    strerror(errno));
-		cli_result(cli, CLIS_CANT);
-		return;
-	}
-	if (i == sizeof buf) {
-		cli_out(cli, "Secret file too long (> %d)\n",
-		    sizeof buf - 1);
-		cli_result(cli, CLIS_CANT);
-		return;
-	}
-	buf[i] = '\0';
+	CLI_response(fd, cli->challenge, buf);
 	AZ(close(fd));
-	SHA256_Init(&sha256ctx);
-	SHA256_Update(&sha256ctx, cli->challenge, strlen(cli->challenge));
-	SHA256_Update(&sha256ctx, buf, i);
-	SHA256_Update(&sha256ctx, cli->challenge, strlen(cli->challenge));
-	SHA256_Final(digest, &sha256ctx);
-	for (i = 0; i < SHA256_LEN; i++)
-		sprintf(buf + i + i, "%02x", digest[i]);
 	if (strcasecmp(buf, av[2])) {
 		mgt_cli_challenge(cli);
 		return;
