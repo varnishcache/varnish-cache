@@ -48,4 +48,7 @@ struct cli {
 int cli_writeres(int fd, const struct cli *cli);
 int cli_readres(int fd, unsigned *status, char **ptr, double tmo);
 
-void CLI_response(int S_fd, const char *challenge, char *reponse);
+#define CLI_AUTH_RESPONSE_LEN		65	/* 64 hex + NUL */
+
+void CLI_response(int S_fd, const char *challenge,
+    char reponse[CLI_AUTH_RESPONSE_LEN]);
