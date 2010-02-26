@@ -34,6 +34,7 @@ SVNID("$Id$")
 #include <stdio.h>
 
 #include <ctype.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -92,11 +93,13 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	unsigned retval;
 	char *r;
 
-	vtc_dump(v->vl, 4, "CLI TX", cmd);
-	i = write(v->cli_fd, cmd, strlen(cmd));
-	assert(i == strlen(cmd));
-	i = write(v->cli_fd, "\n", 1);
-	assert(i == 1);
+	if (cmd != NULL) {
+		vtc_dump(v->vl, 4, "CLI TX", cmd);
+		i = write(v->cli_fd, cmd, strlen(cmd));
+		assert(i == strlen(cmd));
+		i = write(v->cli_fd, "\n", 1);
+		assert(i == 1);
+	}
 	i = cli_readres(v->cli_fd, &retval, &r, 20.0);
 	if (i != 0) {
 		vtc_log(v->vl, 0, "CLI failed (%s) = %d %u %s",
@@ -104,8 +107,8 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 		return ((enum cli_status_e)retval);
 	}
 	assert(i == 0);
+	vtc_log(v->vl, 3, "CLI RX  %u", retval);
 	vtc_dump(v->vl, 4, "CLI RX", r);
-	vtc_log(v->vl, 3, "CLI STATUS (%s) %u", cmd, retval);
 	if (repl != NULL)
 		*repl = r;
 	else
@@ -154,7 +157,8 @@ varnish_new(const char *name)
 	v->workdir = strdup(buf);
 	AN(v->workdir);
 
-	bprintf(buf, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
+	bprintf(buf, "rm -rf %s ; mkdir -p %s ; echo ' %ld' > %s/_S",
+	    v->workdir, v->workdir, random(), v->workdir);
 	AZ(system(buf));
 
 	v->vl = vtc_logopen(name);
@@ -241,9 +245,9 @@ varnish_launch(struct varnish *v)
 	struct vsb *vsb;
 	int i, nfd, nap;
 	struct vss_addr **ap;
-	char abuf[128],pbuf[128];
+	char abuf[128], pbuf[128];
 	struct pollfd fd;
-	unsigned retval;
+	enum cli_status_e u;
 	char *r;
 
 	/* Create listener socket */
@@ -262,6 +266,7 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " -p auto_restart=off");
 	vsb_printf(vsb, " -p syslog_cli_traffic=off");
 	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");
+	vsb_printf(vsb, " -S %s/_S", v->workdir);
 	vsb_printf(vsb, " -M %s:%s", abuf, pbuf);
 	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	vsb_printf(vsb, " %s", vsb_data(v->args));
@@ -312,14 +317,35 @@ varnish_launch(struct varnish *v)
 
 	AZ(close(v->cli_fd));
 	v->cli_fd = nfd;
+	nfd = -1;
 
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
 
-	i = cli_readres(v->cli_fd, &retval, &r, 20.0);
-	if (i != 0 || retval != CLIS_OK)
-		vtc_log(v->vl, 0, "CLI banner fail", v->cli_fd);
-	vtc_log(v->vl, 4, "CLI banner %03u", retval);
+
+	/* Receive the banner or auth response */
+	u = varnish_ask_cli(v, NULL, &r);
+	if (vtc_error)
+		return;
+	if (u != CLIS_AUTH)
+		vtc_log(v->vl, 0, "CLI auth demand expected: %u %s", u, r);
+
+	bprintf(abuf, "%s/_S", v->workdir);
+	nfd = open(abuf, O_RDONLY);
+	assert(nfd >= 0);
+
+	assert(sizeof abuf >= CLI_AUTH_RESPONSE_LEN + 6);
+	strcpy(abuf, "auth ");
+	CLI_response(nfd, r, abuf + 5);
+	AZ(close(nfd));
+	free(r);
+	strcat(abuf, "\n");
+
+	u = varnish_ask_cli(v, abuf, &r);
+	if (vtc_error)
+		return;
+	if (u != CLIS_OK)
+		vtc_log(v->vl, 0, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
 	if (v->stats != NULL)
