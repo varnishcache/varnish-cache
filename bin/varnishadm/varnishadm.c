@@ -37,47 +37,10 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <string.h>
 
+#include "cli.h"
+#include "cli_common.h"
 #include "libvarnish.h"
 #include "vss.h"
-
-#define STATUS_OK	200
-
-static void
-parse_reply(int sock, long *status, long *answerlen, char **answer)
-{
-	int n;
-	char buf[13];
-	char *p, *pp;
-
-	n = read(sock, buf, 13);
-	if (n != 13) {
-		fprintf(stderr, "An error occured in receiving status.\n");
-		exit(1);
-	}
-	if (!(p = strchr(buf, ' '))) {
-		fprintf(stderr,
-			"An error occured in parsing of status code.\n");
-		exit(1);
-	}
-	*p = '\0';
-	*status = strtol(buf, &p, 10);
-	pp = p+1;
-	if (!(p = strchr(pp, '\n'))) {
-		fprintf(stderr, "An error occured "
-			"in parsing of number of bytes returned.\n");
-		exit(1);
-	}
-	*p = '\0';
-	*answerlen = strtol(pp, &p, 10);
-
-	*answer = malloc(*answerlen+1);
-	n = read(sock, *answer, *answerlen);
-	read(sock, buf, 1); /* Read the trailing \n */
-	if (n != *answerlen) {
-		fprintf(stderr, "An error occured in receiving answer.\n");
-		exit(1);
-	}
-}
 
 /*
  * This function establishes a connection to the specified ip and port and
@@ -92,7 +55,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	char *addr, *port;
 	int i, n;
 	int sock;
-	long status, bytes;
+	unsigned status;
 	char *answer = NULL;
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
@@ -112,22 +75,21 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	}
 	free(ta);
 
-	write(sock, "ping\n", 5);
-	parse_reply(sock, &status, &bytes, &answer);
-	if (status != 200) {
-			fprintf(stderr, "No pong received from server\n");
-			exit(1);
+	cli_readres(sock, &status, &answer, 2000);
+	if (status == CLIS_AUTH) {
+		fprintf(stderr, "Authentication required\n");
+		exit(1);
+	}
+	if (status != CLIS_OK) {
+		fprintf(stderr, "No pong received from server\n");
+		exit(1);
 	}
 
-	if (strstr(answer, "PONG") == NULL) {
-		/* The first one was probably just the banner,
-		   see if there are more replies.*/
-		free(answer);
-		parse_reply(sock, &status, &bytes, &answer);
-		if (status != 200 || strstr(answer, "PONG") == NULL) {
-			fprintf(stderr, "No pong received from server\n");
-			exit(1);
-		}
+	write(sock, "ping\n", 5);
+	cli_readres(sock, &status, &answer, 2000);
+	if (status != CLIS_OK || strstr(answer, "PONG") == NULL) {
+		fprintf(stderr, "No pong received from server\n");
+		exit(1);
 	}
 	free(answer);
 
@@ -138,16 +100,15 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	}
 	write(sock, "\n", 1);
 
-	parse_reply(sock, &status, &bytes, &answer);
+	cli_readres(sock, &status, &answer, 2000);
 
-	answer[bytes] = '\0';
 	close(sock);
 
-	if (status == STATUS_OK) {
+	if (status == CLIS_OK) {
 		printf("%s\n", answer);
 		exit(0);
 	}
-	fprintf(stderr, "Command failed with error code %ld\n", status);
+	fprintf(stderr, "Command failed with error code %u\n", status);
 	exit(1);
 
 }
