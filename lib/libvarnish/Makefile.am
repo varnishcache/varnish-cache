@@ -11,6 +11,7 @@ libvarnish_la_SOURCES = \
 	assert.c \
 	binary_heap.c \
 	subproc.c \
+	cli_auth.c \
 	cli_common.c \
 	cli_serve.c \
 	flopen.c \
