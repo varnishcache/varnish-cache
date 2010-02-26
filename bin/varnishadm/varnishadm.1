@@ -37,6 +37,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl t Ar timeout
+.Op Fl S Ar secret_file
 .Fl T Ar address Ns : Ns Ar port
 .Cm command
 .Op Ar ...
@@ -51,6 +52,8 @@ The following options are available:
 .Bl -tag -width Fl
 .It Fl t Ar timeout 
 Wait no longer than this many seconds for an operation to finish.
+.It Fl S Ar secret_file
+Specify the authentication secret file
 .It Fl T Ar address Ns : Ns Ar port
 Connect to the management interface at the specified address and port.
 .El

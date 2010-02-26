@@ -32,6 +32,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -51,12 +52,13 @@ static double timeout = 5;
  * returned
  */
 static void
-telnet_mgt(const char *T_arg, int argc, char *argv[])
+telnet_mgt(const char *T_arg, const char *S_arg, int argc, char *argv[])
 {
-	int i;
+	int i, fd;
 	int sock;
 	unsigned status;
 	char *answer = NULL;
+	char buf[CLI_AUTH_RESPONSE_LEN];
 
 	sock = VSS_open(T_arg, timeout);
 	if (sock < 0) {
@@ -66,11 +68,25 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 
 	cli_readres(sock, &status, &answer, timeout);
 	if (status == CLIS_AUTH) {
-		fprintf(stderr, "Authentication required\n");
-		exit(1);
+		if (S_arg == NULL) {
+			fprintf(stderr, "Authentication required\n");
+			exit(1);
+		}
+		fd = open(S_arg, O_RDONLY);
+		if (fd < 0) {
+			fprintf(stderr, "Cannot open \"%s\": %s\n",
+			    S_arg, strerror(errno));
+			exit (1);
+		}
+		CLI_response(fd, answer, buf);
+		AZ(close(fd));
+		write(sock, "auth ", 5);
+		write(sock, buf, strlen(buf));
+		write(sock, "\n", 1);
+		cli_readres(sock, &status, &answer, timeout);
 	}
 	if (status != CLIS_OK) {
-		fprintf(stderr, "No pong received from server\n");
+		fprintf(stderr, "Rejected %u\n%s\n", status, answer);
 		exit(1);
 	}
 
@@ -106,7 +122,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishadm [-t timeout] -T [address]:port command [...]\n");
+	    "usage: varnishadm [-t timeout] [-S secretfile] -T [address]:port command [...]\n");
 	exit(1);
 }
 
@@ -114,10 +130,14 @@ int
 main(int argc, char *argv[])
 {
 	const char *T_arg = NULL;
+	const char *S_arg = NULL;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "T:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "S:T:t:")) != -1) {
 		switch (opt) {
+		case 'S':
+			S_arg = optarg;
+			break;
 		case 'T':
 			T_arg = optarg;
 			break;
@@ -135,7 +155,7 @@ main(int argc, char *argv[])
 	if (T_arg == NULL || argc < 1)
 		usage();
 
-	telnet_mgt(T_arg, argc, argv);
+	telnet_mgt(T_arg, S_arg, argc, argv);
 
 	exit(0);
 }
