@@ -42,6 +42,8 @@ SVNID("$Id$")
 #include "libvarnish.h"
 #include "vss.h"
 
+static double timeout = 5;
+
 /*
  * This function establishes a connection to the specified ip and port and
  * sends a command to varnishd. If varnishd returns an OK status, the result
@@ -51,31 +53,18 @@ SVNID("$Id$")
 static void
 telnet_mgt(const char *T_arg, int argc, char *argv[])
 {
-	struct vss_addr **ta;
-	char *addr, *port;
-	int i, n;
+	int i;
 	int sock;
 	unsigned status;
 	char *answer = NULL;
 
-	XXXAZ(VSS_parse(T_arg, &addr, &port));
-	XXXAN(n = VSS_resolve(addr, port, &ta));
-	free(addr);
-	free(port);
-	if (n == 0) {
-		fprintf(stderr, "Could not resolve '%s'\n", T_arg);
-		exit(2);
+	sock = VSS_open(T_arg, timeout);
+	if (sock < 0) {
+		fprintf(stderr, "Connection failed\n");
+		exit(1);
 	}
 
-	sock = VSS_connect(ta[0], 0);
-
-	for (i = 0; i < n; ++i) {
-		free(ta[i]);
-		ta[i] = NULL;
-	}
-	free(ta);
-
-	cli_readres(sock, &status, &answer, 2000);
+	cli_readres(sock, &status, &answer, timeout);
 	if (status == CLIS_AUTH) {
 		fprintf(stderr, "Authentication required\n");
 		exit(1);
@@ -86,7 +75,7 @@ telnet_mgt(const char *T_arg, int argc, char *argv[])
 	}
 
 	write(sock, "ping\n", 5);
-	cli_readres(sock, &status, &answer, 2000);
+	cli_readres(sock, &status, &answer, timeout);
 	if (status != CLIS_OK || strstr(answer, "PONG") == NULL) {
 		fprintf(stderr, "No pong received from server\n");
 		exit(1);
@@ -117,7 +106,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishadm -T [address]:port command [...]\n");
+	    "usage: varnishadm [-t timeout] -T [address]:port command [...]\n");
 	exit(1);
 }
 
@@ -127,10 +116,13 @@ main(int argc, char *argv[])
 	const char *T_arg = NULL;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "T:")) != -1) {
+	while ((opt = getopt(argc, argv, "T:t:")) != -1) {
 		switch (opt) {
 		case 'T':
 			T_arg = optarg;
+			break;
+		case 't':
+			timeout = strtod(optarg, NULL);
 			break;
 		default:
 			usage();
