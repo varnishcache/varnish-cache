@@ -32,14 +32,12 @@
 SVNID("$Id$");
 
 #include <sys/types.h>
-#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <string.h>
 
 #include "cli.h"
 #include "cli_common.h"
+#include "libvarnish.h"
 #include "vsha256.h"
 
 
