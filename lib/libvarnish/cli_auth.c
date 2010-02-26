@@ -32,6 +32,7 @@
 SVNID("$Id$");
 
 #include <sys/types.h>
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -41,12 +42,16 @@ SVNID("$Id$");
 #include "cli_common.h"
 #include "vsha256.h"
 
+
 void
-CLI_response(int S_fd, const char *challenge, char *response)
+CLI_response(int S_fd, const char *challenge,
+    char response[CLI_AUTH_RESPONSE_LEN])
 {
 	SHA256_CTX ctx;
 	uint8_t buf[BUFSIZ];
 	int i;
+
+	assert(CLI_AUTH_RESPONSE_LEN == (SHA256_LEN * 2 + 1));
 
 	SHA256_Init(&ctx);
 	SHA256_Update(&ctx, challenge, 32);
