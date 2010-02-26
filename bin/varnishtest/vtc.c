@@ -88,13 +88,14 @@ void
 macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
 {
-	char buf[256];
+	char buf1[256];
+	char buf2[256];
 	struct macro *m;
 	va_list ap;
 
 	if (instance != NULL) {
-		bprintf(buf, "%s_%s", instance, name);
-		name = buf;
+		bprintf(buf1, "%s_%s", instance, name);
+		name = buf1;
 	}
 
 	AZ(pthread_mutex_lock(&macro_mtx));
@@ -112,9 +113,9 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		va_start(ap, fmt);
 		free(m->val);
 		m->val = NULL;
-		vbprintf(buf, fmt, ap);
+		vbprintf(buf2, fmt, ap);
 		va_end(ap);
-		m->val = strdup(buf);
+		m->val = strdup(buf2);
 		AN(m->val);
 		vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	} else if (m != NULL) {
