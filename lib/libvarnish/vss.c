@@ -40,6 +40,7 @@ SVNID("$Id$")
 
 #include <errno.h>
 #include <netdb.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -264,12 +265,13 @@ VSS_connect(const struct vss_addr *va, int nonblock)
  */
 
 int
-VSS_open(const char *str)
+VSS_open(const char *str, double tmo)
 {
 	int retval;
 	char *addr = NULL, *port = NULL;
-	int nvaddr, n;
+	int nvaddr, n, i;
 	struct vss_addr **vaddr;
+	struct pollfd pfd;
 
 	retval = VSS_parse(str, &addr, &port);
 	if (retval < 0)
@@ -281,7 +283,16 @@ VSS_open(const char *str)
 		return (-1);
 	}
 	for (n = 0; n < nvaddr; n++) {
-		retval = VSS_connect(vaddr[n], 0);
+		retval = VSS_connect(vaddr[n], tmo != 0.0);
+		if (retval >= 0 && tmo != 0.0) {
+			pfd.fd = retval;
+			pfd.events = POLLOUT;
+			i = poll(&pfd, 1, tmo * 1e3);
+			if (i == 0 || pfd.revents != POLLOUT) {
+				(void)close(retval);
+				retval = -1;
+			}
+		}
 		if (retval >= 0)
 			break;
 	}
