@@ -32,7 +32,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: cli.c 4235 2009-09-11 13:06:15Z phk $")
+SVNID("$Id$")
 
 #include <ctype.h>
 #include <poll.h>
