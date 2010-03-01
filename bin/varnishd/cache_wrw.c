@@ -43,7 +43,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: cache_pool.c 4069 2009-05-11 08:57:00Z phk $")
+SVNID("$Id$")
 
 #include <sys/types.h>
 #include <sys/uio.h>

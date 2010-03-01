@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: mgt_param.c 3440 2008-11-25 13:39:15Z phk $
+ * $Id$
  */
 
 struct parspec;
