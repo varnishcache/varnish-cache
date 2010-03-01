@@ -160,6 +160,7 @@ vca_main(void *arg)
 {
 	struct epoll_event ev[NEEV], *ep;
 	struct sess *sp;
+	char junk;
 	double deadline;
 	int dotimer, i, n;
 
@@ -178,8 +179,10 @@ vca_main(void *arg)
 		for (ep = ev, i = 0; i < n; i++, ep++) {
 			if (ep->data.ptr == dotimer_pipe &&
 			    (ep->events == EPOLLIN || ep->events == EPOLLPRI))
+			{
+				assert(read(dotimer_pipe[0], &junk, 1));
 				dotimer = 1;
-			else
+			} else
 				vca_eev(ep);
 		}
 		if (!dotimer)
@@ -208,7 +211,6 @@ static void *
 vca_sess_timeout_ticker(void *arg)
 {
 	char ticker = 'R';
-	char junk;
 
 	THR_SetName("cache-epoll-sess_timeout_ticker");
 	(void)arg;
@@ -217,7 +219,6 @@ vca_sess_timeout_ticker(void *arg)
 		/* ticking */
 		assert(write(dotimer_pipe[1], &ticker, 1));
 		TIM_sleep(100 * 1e-3);
-		assert(read(dotimer_pipe[0], &junk, 1));
 	}
 	return NULL;
 }

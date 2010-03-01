@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4428 2010-01-06 17:38:59Z tfheen $
+ * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -159,10 +159,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4428 2010-01-06 17");
-	vsb_cat(sb, ":38:59Z tfheen $\n *\n * NB:  This file is machine gen");
-	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixe");
-	vsb_cat(sb, "d_token.tcl instead\n */\n\nstruct sess;\n");
+	vsb_cat(sb, "/*\n * $Id$\n *\n * NB:  This file is machine generate");
+	vsb_cat(sb, "d, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_tok");
+	vsb_cat(sb, "en.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
 	vsb_cat(sb, "typedef void vcl_fini_f(struct cli *);\n");
 	vsb_cat(sb, "typedef int vcl_func_f(struct sess *sp);\n");
@@ -227,16 +226,16 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4428 2010-01-06 17:");
-	vsb_cat(sb, "38:59Z tfheen $\n *\n * Runtime support for compiled V");
-	vsb_cat(sb, "CL programs.\n *\n * XXX: When this file is changed, l");
-	vsb_cat(sb, "ib/libvcl/vcc_gen_fixed_token.tcl\n");
-	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
-	vsb_cat(sb, "\nstruct sess;\nstruct vsb;\nstruct cli;\n");
-	vsb_cat(sb, "struct director;\nstruct VCL_conf;\n");
-	vsb_cat(sb, "struct sockaddr;\n\n/*\n * A backend probe specificati");
-	vsb_cat(sb, "on\n */\n\nextern const void * const vrt_magic_string_");
-	vsb_cat(sb, "end;\n\nstruct vrt_backend_probe {\n");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id$\n *\n");
+	vsb_cat(sb, " * Runtime support for compiled VCL programs.\n");
+	vsb_cat(sb, " *\n * XXX: When this file is changed, lib/libvcl/vcc_");
+	vsb_cat(sb, "gen_fixed_token.tcl\n * XXX: *MUST* be rerun.\n");
+	vsb_cat(sb, " */\n\nstruct sess;\nstruct vsb;\n");
+	vsb_cat(sb, "struct cli;\nstruct director;\n");
+	vsb_cat(sb, "struct VCL_conf;\nstruct sockaddr;\n");
+	vsb_cat(sb, "\n/*\n * A backend probe specification\n");
+	vsb_cat(sb, " */\n\nextern const void * const vrt_magic_string_end;");
+	vsb_cat(sb, "\n\nstruct vrt_backend_probe {\n");
 	vsb_cat(sb, "\tconst char\t*url;\n\tconst char\t*request;\n");
 	vsb_cat(sb, "\tdouble\t\ttimeout;\n\tdouble\t\tinterval;\n");
 	vsb_cat(sb, "\tunsigned\texp_status;\n\tunsigned\twindow;\n");
@@ -312,27 +311,25 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4428 2010-01-06 17");
-	vsb_cat(sb, ":38:59Z tfheen $\n *\n * NB:  This file is machine gen");
-	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixe");
-	vsb_cat(sb, "d_token.tcl instead\n */\n\nstruct sockaddr * VRT_r_cl");
-	vsb_cat(sb, "ient_ip(const struct sess *);\n");
-	vsb_cat(sb, "struct sockaddr * VRT_r_server_ip(struct sess *);\n");
-	vsb_cat(sb, "const char * VRT_r_server_hostname(struct sess *);\n");
-	vsb_cat(sb, "const char * VRT_r_server_identity(struct sess *);\n");
-	vsb_cat(sb, "int VRT_r_server_port(struct sess *);\n");
-	vsb_cat(sb, "const char * VRT_r_req_request(const struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_req_request(const struct sess *, const char");
-	vsb_cat(sb, " *, ...);\nconst char * VRT_r_req_url(const struct ses");
-	vsb_cat(sb, "s *);\nvoid VRT_l_req_url(const struct sess *, const c");
-	vsb_cat(sb, "har *, ...);\nconst char * VRT_r_req_proto(const struc");
-	vsb_cat(sb, "t sess *);\nvoid VRT_l_req_proto(const struct sess *, ");
-	vsb_cat(sb, "const char *, ...);\nvoid VRT_l_req_hash(struct sess *");
-	vsb_cat(sb, ", const char *);\nstruct director * VRT_r_req_backend(");
-	vsb_cat(sb, "struct sess *);\nvoid VRT_l_req_backend(struct sess *,");
-	vsb_cat(sb, " struct director *);\nint VRT_r_req_restarts(const str");
-	vsb_cat(sb, "uct sess *);\ndouble VRT_r_req_grace(struct sess *);\n");
-	vsb_cat(sb, "void VRT_l_req_grace(struct sess *, double);\n");
+	vsb_cat(sb, "/*\n * $Id$\n *\n * NB:  This file is machine generate");
+	vsb_cat(sb, "d, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_tok");
+	vsb_cat(sb, "en.tcl instead\n */\n\nstruct sockaddr * VRT_r_client_");
+	vsb_cat(sb, "ip(const struct sess *);\nstruct sockaddr * VRT_r_serv");
+	vsb_cat(sb, "er_ip(struct sess *);\nconst char * VRT_r_server_hostn");
+	vsb_cat(sb, "ame(struct sess *);\nconst char * VRT_r_server_identit");
+	vsb_cat(sb, "y(struct sess *);\nint VRT_r_server_port(struct sess *");
+	vsb_cat(sb, ");\nconst char * VRT_r_req_request(const struct sess *");
+	vsb_cat(sb, ");\nvoid VRT_l_req_request(const struct sess *, const ");
+	vsb_cat(sb, "char *, ...);\nconst char * VRT_r_req_url(const struct");
+	vsb_cat(sb, " sess *);\nvoid VRT_l_req_url(const struct sess *, con");
+	vsb_cat(sb, "st char *, ...);\nconst char * VRT_r_req_proto(const s");
+	vsb_cat(sb, "truct sess *);\nvoid VRT_l_req_proto(const struct sess");
+	vsb_cat(sb, " *, const char *, ...);\nvoid VRT_l_req_hash(struct se");
+	vsb_cat(sb, "ss *, const char *);\nstruct director * VRT_r_req_back");
+	vsb_cat(sb, "end(struct sess *);\nvoid VRT_l_req_backend(struct ses");
+	vsb_cat(sb, "s *, struct director *);\nint VRT_r_req_restarts(const");
+	vsb_cat(sb, " struct sess *);\ndouble VRT_r_req_grace(struct sess *");
+	vsb_cat(sb, ");\nvoid VRT_l_req_grace(struct sess *, double);\n");
 	vsb_cat(sb, "const char * VRT_r_req_xid(struct sess *);\n");
 	vsb_cat(sb, "unsigned VRT_r_req_esi(struct sess *);\n");
 	vsb_cat(sb, "void VRT_l_req_esi(struct sess *, unsigned);\n");
