@@ -271,7 +271,7 @@ cnt_done(struct sess *sp)
 		 * This is an orderly close of the connection; ditch nolinger
 		 * before we close, to get queued data transmitted.
 		 */
-		(void)TCP_linger(sp->fd, 0);
+		// XXX: not yet (void)TCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
 

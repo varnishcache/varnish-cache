@@ -100,11 +100,11 @@ PipeSession(struct sess *sp)
 
 	memset(fds, 0, sizeof fds);
 
-	(void)TCP_linger(vc->fd, 0);
+	// XXX: not yet (void)TCP_linger(vc->fd, 0);
 	fds[0].fd = vc->fd;
 	fds[0].events = POLLIN | POLLERR;
 
-	(void)TCP_linger(sp->fd, 0);
+	// XXX: not yet (void)TCP_linger(sp->fd, 0);
 	fds[1].fd = sp->fd;
 	fds[1].events = POLLIN | POLLERR;
 
