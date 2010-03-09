@@ -92,7 +92,7 @@ VCA_waiter_name(void)
  * will return immediately.
  */
 static const struct linger linger = {
-	.l_onoff	=	1,
+	.l_onoff	=	0,
 };
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
