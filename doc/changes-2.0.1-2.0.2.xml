@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id$ -->
+<group from="2.0.1" to="2.0.2">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="345">
+      <para>In high-load situations, when using
+      ESI, <code>varnishd</code> would sometimes mishandle objects and
+      crash.  This has been worked around. </para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishreplay</name>
+
+    <change type="bug">
+      <para><code>varnishreplay</code> did not work correctly on
+      Linux, due to a too small stack.  This has now been fixed.</para>
+    </change>
+  </subsystem>
+</group>
