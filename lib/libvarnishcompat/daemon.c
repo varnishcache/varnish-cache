@@ -65,7 +65,11 @@ varnish_daemon(int nochdir, int noclose)
 	case 0:
 		break;
 	default:
-		exit(0);
+		/*
+		 * A fine point:  _exit(0), not exit(0), to avoid triggering
+		 * atexit(3) processing
+		 */
+		_exit(0);
 	}
 
 	newgrp = setsid();
