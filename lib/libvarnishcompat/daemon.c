@@ -67,7 +67,7 @@ varnish_daemon(int nochdir, int noclose)
 	default:
 		/*
 		 * A fine point:  _exit(0), not exit(0), to avoid triggering
-		 * atexit(3) processing
+		 * atexit(3) processing.
 		 */
 		_exit(0);
 	}
