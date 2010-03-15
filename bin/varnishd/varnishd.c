@@ -277,124 +277,6 @@ tackle_warg(const char *argv)
 	FreeArgv(av);
 }
 
-/*--------------------------------------------------------------------
- * When -d is specified we fork a third process which will relay
- * keystrokes between the terminal and the CLI.  This allows us to
- * detach from the process and have it daemonize properly (ie: it already
- * did that long time ago).
- * Doing the simple thing and calling daemon(3) when the user asks for
- * it does not work, daemon(3) forks and all the threads are lost.
- */
-
-static pid_t d_child;
-
-
-static void
-DebugSigPass(int sig)
-{
-
-	(void)kill(d_child, sig);
-}
-
-static void
-DebugStunt(void)
-{
-	int pipes[2][2];
-	struct pollfd pfd[2];
-	char buf[BUFSIZ];
-	int i, j, k;
-	char *p;
-
-	AZ(pipe(pipes[0]));
-	AZ(pipe(pipes[1]));
-	d_child = fork();
-	xxxassert(d_child >= 0);
-	if (!d_child) {
-		/* stdin from parent, std{out,err} to parent */
-		assert(dup2(pipes[0][0], 0) == 0);
-		assert(dup2(pipes[1][1], 1) == 1);
-		assert(dup2(pipes[1][1], 2) == 2);
-		AZ(close(pipes[0][0]));
-		AZ(close(pipes[0][1]));
-		AZ(close(pipes[1][0]));
-		AZ(close(pipes[1][1]));
-		return;
-	}
-
-	/* set up parent's end of pipe to child's stdin */
-	AZ(close(pipes[0][0]));
-	pipes[0][0] = 0;
-	assert(dup2(pipes[0][1], 3) == 3);
-	pipes[0][1] = 3;
-
-	/* set up parent's end of pipe from child's std{out,err} */
-	assert(dup2(pipes[1][0], 4) == 4);
-	pipes[1][0] = 4;
-	AZ(close(pipes[1][1]));
-	pipes[1][1] = 1;
-
-	/* close the rest */
-	j = getdtablesize();
-	for (i = 5; i < j; i++)
-		(void)close(i);
-
-	pfd[0].fd = pipes[0][0];
-	pfd[0].events = POLLIN;
-	pfd[1].fd = pipes[1][0];
-	pfd[1].events = POLLIN;
-
-	(void)signal(SIGPIPE, SIG_IGN);
-	(void)signal(SIGINT, DebugSigPass);
-	i = read(pipes[1][0], buf, sizeof buf - 1);
-	xxxassert(i >= 0);
-	buf[i] = '\0';
-	d_child = strtoul(buf, &p, 0);
-	xxxassert(p != NULL);
-	printf("New Pid %ju\n", (uintmax_t)d_child);
-	xxxassert(d_child != 0);
-	i = strlen(p);
-	j = write(pipes[1][1], p, i);
-	xxxassert(j == i);
-
-	while (1) {
-		if (pfd[0].fd == -1 && pfd[1].fd == -1)
-			break;
-		i = poll(pfd, 2, INFTIM);
-		for (k = 0; k < 2; k++) {
-			if (pfd[k].fd == -1)
-				continue;
-			if (pfd[k].revents == 0)
-				continue;
-			if (pfd[k].revents != POLLIN) {
-				printf("k %d rev %d\n", k, pfd[k].revents);
-				AZ(close(pipes[k][0]));
-				AZ(close(pipes[k][1]));
-				pfd[k].fd = -1;
-				if (k == 1)
-					exit (0);
-			}
-			j = read(pipes[k][0], buf, sizeof buf);
-			if (j == 0) {
-				printf("k %d eof\n", k);
-				AZ(close(pipes[k][0]));
-				AZ(close(pipes[k][1]));
-				pfd[k].fd = -1;
-			}
-			if (j > 0) {
-				i = write(pipes[k][1], buf, j);
-				if (i != j) {
-					printf("k %d write (%d %d)\n", k, i, j);
-					AZ(close(pipes[k][0]));
-					AZ(close(pipes[k][1]));
-					pfd[k].fd = -1;
-				}
-			}
-		}
-	}
-	exit (0);
-}
-
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -508,7 +390,7 @@ cli_stdin_close(void *priv)
 	assert(open("/dev/null", O_WRONLY) == 1);
 	assert(open("/dev/null", O_WRONLY) == 2);
 
-	if (d_flag == 2) {
+	if (d_flag) {
 		mgt_stop_child();
 		mgt_cli_close_all();
 		exit(0);
@@ -780,17 +662,13 @@ main(int argc, char * const *argv)
 	vsb_finish(vident);
 	AZ(vsb_overflowed(vident));
 
-	if (d_flag == 1)
-		DebugStunt();
-	if (d_flag < 2 && !F_flag)
-		AZ(varnish_daemon(1, d_flag));
-	if (d_flag == 1)
-		printf("%ju\n", (uintmax_t)getpid());
+	if (!d_flag && !F_flag)
+		AZ(varnish_daemon(1, 0));
 
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
-	if (d_flag > 0)
+	if (d_flag)
 		fprintf(stderr, "Varnish on %s\n", vsb_data(vident) + 1);
 
 	/* Do this again after debugstunt and daemon has run */

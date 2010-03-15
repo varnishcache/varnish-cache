@@ -117,26 +117,11 @@ If
 .Ar port
 is not specified, the default is 8080.
 .It Fl d
-Enables debugging mode.
-This causes
-.Nm
-to fork; the child process daemonizes and runs as usual, while the
-parent process remains attached to the console and will accept
-management commands from
-.Dv stdin .
-If the parent process receives
-.Dv EOF ,
-it will terminate, but the child process will continue to run.
-.Pp
-The child process will not start accepting client connections until
-the
-.Cm start
-command is given.
-.Pp
-If the
-.Fl d
-flag is specified twice, the child process will not daemonize, and
-terminating the parent process will also terminate the child.
+Enables debugging mode:
+The parent process runs in the foreground with a CLI connection on
+stdin/stdout, and the child process must
+be started explicitly with a CLI command.
+Terminating the parent process will also terminate the child.
 .It Fl F
 Run in the foreground.
 .It Fl f Ar config
