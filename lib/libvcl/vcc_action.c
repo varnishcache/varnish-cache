@@ -458,26 +458,6 @@ parse_purge_url(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge_hash(struct tokenlist *tl)
-{
-
-	vcc_NextToken(tl);
-	Expect(tl, '(');
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_purge(sp, \"obj.hash\", \"~\", ");
-	if (!vcc_StringVal(tl)) {
-		vcc_ExpectedStringval(tl);
-		return;
-	}
-	Expect(tl, ')');
-	vcc_NextToken(tl);
-	Fb(tl, 0, ", 0);\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_esi(struct tokenlist *tl)
 {
 
@@ -553,7 +533,6 @@ static struct action_table {
 	{ "esi",		parse_esi },
 	{ "panic",		parse_panic },
 	{ "purge",		parse_purge },
-	{ "purge_hash",		parse_purge_hash },
 	{ "purge_url",		parse_purge_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "set",		parse_set },
