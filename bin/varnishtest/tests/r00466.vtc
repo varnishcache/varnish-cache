@@ -22,7 +22,7 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
 		if (req.url ~ "bar") {
-			pass;
+			return(pass);
 		}
 	}
 } -start -cliok "param.set diag_bitmap 0x10000"

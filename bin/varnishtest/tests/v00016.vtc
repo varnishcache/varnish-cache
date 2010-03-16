@@ -47,11 +47,11 @@ varnish v1 -vcl {
 	/* Test string regexp matching and "else if" */
 	sub vcl_recv {
 		if ((req.url ~ "foobar")) {
-			pass;
+			return(pass);
 		} else if (req.url ~ "snafu") {
-			pipe;
+			return(pipe);
 		} else {
-			pass;
+			return(pass);
 		}
 	}
 }

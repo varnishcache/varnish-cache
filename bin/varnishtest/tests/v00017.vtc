@@ -5,13 +5,13 @@ test "VCL compiler coverage test: vcc_acl.c"
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2.3"/33; }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "1::2"/129; }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -vcl {
@@ -20,7 +20,7 @@ varnish v1 -vcl {
 		"1.2.3.4"/31;
 		"1.2.3.4"/31;
 	}
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
@@ -29,31 +29,31 @@ varnish v1 -badvcl {
 		"1.2.3.4";
 		!"1.2.3.4";
 	}
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "...com"; }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2."; }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { ( "10.1.2"; }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2" ); }
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -vcl {
@@ -63,18 +63,18 @@ varnish v1 -vcl {
 		("...com" / 22); 
 		(!"...com"); 
 	}
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { if (client.ip == "127.0.0.1") { pass; } }
-	sub vcl_miss { if (client.ip != "127.0.0.1") { pass; } }
+	sub vcl_recv { if (client.ip == "127.0.0.1") { return(pass); } }
+	sub vcl_miss { if (client.ip != "127.0.0.1") { return(pass); } }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { if (client.ip > "127.0.0.1") { pass; } }
+	sub vcl_recv { if (client.ip > "127.0.0.1") { return(pass); } }
 }
 
 varnish v1 -vcl {
@@ -90,6 +90,6 @@ varnish v1 -vcl {
 		! "10.2.64"/23;
 		"10.2.68"/23;
 	}
-	sub vcl_recv { if (client.ip ~ a) { pass; } }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
