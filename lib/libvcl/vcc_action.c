@@ -547,9 +547,6 @@ static struct action_table {
 } action_table[] = {
 	{ "restart",		parse_restart },
 	{ "error",		parse_error },
-#define VCL_RET_MAC(l, U) { #l, parse_action },
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
