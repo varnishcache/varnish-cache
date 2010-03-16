@@ -25,6 +25,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * This file parses the real action of the VCL code, the procedure
+ * statements which do the actual work.
  */
 
 #include "config.h"
@@ -40,33 +43,6 @@ SVNID("$Id$")
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
-
-/*--------------------------------------------------------------------*/
-
-static void
-parse_action(struct tokenlist *tl)
-{
-	int retval = 0;
-
-	Expect(tl, ID);
-
-#define VCL_RET_MAC(l, U)						\
-	do {								\
-		if (vcc_IdIs(tl->t, #l)) {				\
-			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
-			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
-			retval = 1;					\
-		}							\
-	} while (0);
-#include "vcl_returns.h"
-#undef VCL_RET_MAC
-	if (!retval) {
-		vsb_printf(tl->sb, "Expected action name.\n");
-		vcc_ErrWhere(tl, tl->t);
-		ERRCHK(tl);
-	}
-	vcc_NextToken(tl);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -488,13 +464,29 @@ parse_panic(struct tokenlist *tl)
 static void
 parse_return(struct tokenlist *tl)
 {
+	int retval = 0;
+
 	vcc_NextToken(tl);
 	Expect(tl, '(');
 	vcc_NextToken(tl);
 	Expect(tl, ID);
 
-	parse_action(tl);
-	ERRCHK(tl);
+#define VCL_RET_MAC(l, U)						\
+	do {								\
+		if (vcc_IdIs(tl->t, #l)) {				\
+			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
+			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
+			retval = 1;					\
+		}							\
+	} while (0);
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
+	if (!retval) {
+		vsb_printf(tl->sb, "Expected return action name.\n");
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
+	vcc_NextToken(tl);
 	Expect(tl, ')');
 	vcc_NextToken(tl);
 }
@@ -542,21 +534,19 @@ static struct action_table {
 	{ NULL,			NULL }
 };
 
-void
+int
 vcc_ParseAction(struct tokenlist *tl)
 {
 	struct token *at;
 	struct action_table *atp;
 
 	at = tl->t;
-	if (at->tok == ID) {
-		for(atp = action_table; atp->name != NULL; atp++) {
-			if (vcc_IdIs(at, atp->name)) {
-				atp->func(tl);
-				return;
-			}
+	assert (at->tok == ID);
+	for(atp = action_table; atp->name != NULL; atp++) {
+		if (vcc_IdIs(at, atp->name)) {
+			atp->func(tl);
+			return(1);
 		}
 	}
-	vsb_printf(tl->sb, "Expected action, 'if' or '}'\n");
-	vcc_ErrWhere(tl, at);
+	return (0);
 }

@@ -154,7 +154,7 @@ void vcc_Acl(struct tokenlist *tl);
 void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
 
 /* vcc_action.c */
-void vcc_ParseAction(struct tokenlist *tl);
+int vcc_ParseAction(struct tokenlist *tl);
 
 /* vcc_backend.c */
 struct fld_spec;
