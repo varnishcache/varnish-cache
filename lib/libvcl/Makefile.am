@@ -14,6 +14,7 @@ libvcl_la_SOURCES = \
 	vcc_acl.c \
 	vcc_action.c \
 	vcc_backend.c \
+	vcc_backend_util.c \
 	vcc_compile.c \
 	vcc_dir_random.c \
 	vcc_dir_round_robin.c \
