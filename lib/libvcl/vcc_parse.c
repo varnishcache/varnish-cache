@@ -467,6 +467,7 @@ IfStmt(struct tokenlist *tl)
 static void
 Compound(struct tokenlist *tl)
 {
+	int i;
 
 	ExpectErr(tl, '{');
 	Fb(tl, 1, "{\n");
@@ -498,12 +499,21 @@ Compound(struct tokenlist *tl)
 			    "End of input while in compound statement\n");
 			tl->err = 1;
 			return;
-		default:
-			vcc_ParseAction(tl);
+		case ID:
+			i = vcc_ParseAction(tl);
 			ERRCHK(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
-			break;
+			if (i) {
+				ExpectErr(tl, ';');
+				vcc_NextToken(tl);
+				break;
+			}
+			/* FALLTHROUGH */
+		default:
+			/* We deliberately do not mention inline C */
+			vsb_printf(tl->sb,
+			    "Expected an action, 'if', '{' or '}'\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
 		}
 	}
 }
@@ -559,8 +569,10 @@ Function(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------
  * Top level of parser, recognize:
+ * 	Inline C-code
+ *	ACL definitions
  *	Function definitions
- *	Backend definitions
+ *	Backend & Director definitions
  *	End of input
  */
 
@@ -603,6 +615,7 @@ vcc_Parse(struct tokenlist *tl)
 				break;
 			/* FALLTHROUGH */
 		default:
+			/* We deliberately do not mention inline-C */
 			vsb_printf(tl->sb, "Expected one of\n\t");
 			for (tp = toplev; tp->name != NULL; tp++) {
 				if (tp[1].name == NULL)
