@@ -169,6 +169,13 @@ void vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
+/*
+ * H -> Header, before the C code
+ * C -> C-code
+ * B -> Body of function, ends up in C once function is completed
+ * I -> Initializer function
+ * F -> Finish function
+ */
 void Fh(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fc(const struct tokenlist *tl, int indent, const char *fmt, ...);
 void Fb(const struct tokenlist *tl, int indent, const char *fmt, ...);
@@ -236,4 +243,3 @@ int vcc_CheckUses(struct tokenlist *tl);
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
 #define Expect(a, b) vcc__Expect(a, b, __LINE__)
 #define ExpectErr(a, b) do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
-
