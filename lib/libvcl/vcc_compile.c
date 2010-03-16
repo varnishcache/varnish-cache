@@ -29,9 +29,6 @@
 
 /*
  * XXX:
- *	generate interface structure
- *
- * XXX:
  *	Better error messages, throughout.
  *	>It also accured to me that we could link the errors to the error
  *	>documentation.
@@ -51,11 +48,6 @@
  *	>Read more about this type of error:
  *	>http://varnish/doc/error.html#Unknown%20variable
  *
- * XXX:
- *	Create proper tmp filenames for .h, .c and .o
- *
- * XXX:
- *	and all the rest...
  */
 
 #include "config.h"
@@ -134,7 +126,7 @@ IsMethod(const struct token *t)
 }
 
 /*--------------------------------------------------------------------
- * Printf output to the two vsbs, possibly indented
+ * Printf output to the vsbs, possibly indented
  */
 
 void
