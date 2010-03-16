@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.request == "POST") {
 			/* Lookup so we find any cached object */
-			lookup;
+			return (lookup);
 		}
 	}
 	sub vcl_hit {
@@ -32,13 +32,13 @@ varnish v1 -vcl+backend {
 			/* Get rid of this object */
 			set obj.cacheable = false;
 			set obj.ttl = 0s;
-			pass;
+			return (pass);
 		}
 	}
 	sub vcl_miss {
 		if (req.request == "POST") {
 			/* Make sure we don't cache the POST result */
-			pass;
+			return (pass);
 		}
 	}
 } -start

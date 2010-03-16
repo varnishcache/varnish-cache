@@ -13,7 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_miss {
-		pass;
+		return(pass);
 	}
 } -start
 

@@ -17,7 +17,7 @@ varnish v1 -vcl {
 		.max_connections = 1;
 	}
 	sub vcl_recv {
-		pass;
+		return(pass);
 	}
 } -start
 

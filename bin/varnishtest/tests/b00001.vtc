@@ -9,7 +9,7 @@ server s1 -repeat 1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		pipe;
+		return(pipe);
 	}
 } -start
 

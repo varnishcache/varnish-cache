@@ -32,7 +32,7 @@ varnish v1 -vcl {
 	sub vcl_recv {
 		if (req.url  == "from_backend") {
 			set req.backend = b1;
-			pass;
+			return(pass);
 		}
 		set req.backend = b2;
 	}
