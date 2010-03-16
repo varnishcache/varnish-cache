@@ -393,21 +393,6 @@ Immediately invalidate all documents matching the purge expression.
 See
 .Va Purge expressions
 for more documentation and examples.
-.It Cm purge.hash Ar regex
-Immediately invalidate all documents where
-.Va obj.hash
-matches the
-.Va regex .
-The default object hash contains the values from
-.Va req.url
-and either
-.Va req.http.host
-or
-.Va server.ip
-depending on the presence of a Host: header in the request sent by the
-client.
-The object hash may be modified further by
-.Va VCL.
 .It Cm purge.list
 Display the purge list.
 .Pp

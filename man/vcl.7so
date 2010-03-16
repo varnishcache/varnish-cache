@@ -267,9 +267,6 @@ in the matched string.
 As
 .Fn regsuball
 but this replaces all occurrences.
-.It Fn purge_hash "regex"
-Purge all objects in cache whose hash strings match
-.Fa regex .
 .It Fn purge_url "regex"
 Purge all objects in cache whose URLs match
 .Fa regex .

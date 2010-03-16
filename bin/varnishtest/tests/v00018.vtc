@@ -103,7 +103,7 @@ varnish v1 -badvcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { purge_hash ("foo"); }
+	sub vcl_recv { purge_url ("foo"); }
 }
 
 varnish v1 -badvcl {
