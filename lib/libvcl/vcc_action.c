@@ -511,6 +511,17 @@ parse_synthetic(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+parse_new_syntax(struct tokenlist *tl)
+{
+
+	vsb_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
+	    PF(tl->t), PF(tl->t));
+	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------*/
+
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
@@ -519,6 +530,11 @@ static struct action_table {
 } action_table[] = {
 	{ "restart",		parse_restart },
 	{ "error",		parse_error },
+
+#define VCL_RET_MAC(l, U)						\
+	{ #l,			parse_new_syntax },
+#include "vcl_returns.h"
+#undef VCL_RET_MAC
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
