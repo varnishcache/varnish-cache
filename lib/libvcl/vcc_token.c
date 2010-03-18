@@ -355,6 +355,15 @@ vcc_Lexer(struct tokenlist *tl, struct source *sp)
 		/* Skip C-style comments */
 		if (*p == '/' && p[1] == '*') {
 			for (q = p + 2; q < sp->e; q++) {
+				if (*q == '/' && q[1] == '*') {
+					vsb_printf(tl->sb,
+					    "/* ... */ comment contains /*\n");
+					vcc_AddToken(tl, EOI, p, p + 2);
+					vcc_ErrWhere(tl, tl->t);
+					vcc_AddToken(tl, EOI, q, q + 2);
+					vcc_ErrWhere(tl, tl->t);
+					return;
+				}
 				if (*q == '*' && q[1] == '/') {
 					p = q + 2;
 					break;
