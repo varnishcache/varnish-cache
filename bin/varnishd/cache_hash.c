@@ -154,6 +154,7 @@ HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
+	assert(VTAILQ_EMPTY(&oh->waitinglist));
 	Lck_Delete(&oh->mtx);
 	w->stats.n_objecthead--;
 	FREE_OBJ(oh);
@@ -571,6 +572,8 @@ HSH_DerefObjCore(struct sess *sp)
 	Lck_Lock(&oh->mtx);
 	assert(oc->objhead == oh);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
+	if (oc->flags & OC_F_BUSY)
+		hsh_rush(oh);
 	Lck_Unlock(&oh->mtx);
 	oc->objhead = NULL;
 	assert(oh->refcnt > 0);
