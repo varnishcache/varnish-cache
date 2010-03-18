@@ -1,0 +1,42 @@
+# $Id$
+
+test "things stuck on busy object"
+
+server s1 {
+	rxreq
+	sema r1 sync 2
+	delay 1
+	# There is a race in varnish between the first request releasing
+	# the backend connection, and the second request trying to get it
+	# which makes reuse of backend connection sometimes work and
+	# sometimes not.  Solve by never reusing the backend connection.
+	txresp -hdr "Connection: close" -bodylen 2
+	expect_close
+	accept
+	rxreq
+	txresp -bodylen 5
+} -start
+
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.cacheable = false;
+	}
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 2
+} -start
+
+client c2 {
+	sema r1 sync 2
+	txreq
+	rxresp
+	expect resp.bodylen == 5
+} -start
+
+client c1 -wait
+client c2 -wait
