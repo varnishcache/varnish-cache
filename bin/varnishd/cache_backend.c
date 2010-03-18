@@ -407,6 +407,11 @@ VBE_RecycleFd(struct sess *sp)
 	bp = sp->vbe->backend;
 
 	WSL(sp->wrk, SLT_BackendReuse, sp->vbe->fd, "%s", bp->vcl_name);
+	/*
+	 * Flush the shmlog, so that another session reusing this backend
+	 * will log chronologically later than our use of it.
+	 */
+	WSL_Flush(sp->wrk, 0);
 	Lck_Lock(&bp->mtx);
 	VSL_stats->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
