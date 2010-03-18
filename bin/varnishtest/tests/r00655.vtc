@@ -1,0 +1,11 @@
+# $Id$
+
+test "Test nested /*...*/ comments "
+
+
+varnish v1 -badvcl {
+
+	/* foo
+		/* bar
+	*/
+}
