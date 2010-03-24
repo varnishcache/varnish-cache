@@ -101,7 +101,8 @@ server_thread(void *priv)
 		addr = (void*)&addr_s;
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
-		vtc_log(vl, 3, "Accepted socket fd is %d", fd);
+		if (fd < 0)
+			vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 		http_process(vl, s->spec, fd, s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		assert((shutdown(fd, SHUT_WR) == 0)
