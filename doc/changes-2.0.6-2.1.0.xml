@@ -48,7 +48,7 @@
       <para>When closing connections, we experimented with sending RST
       to free up load balancers and free up threads more quickly.
       This caused some problems with NAT routers and so has been
-      reverted for now.
+      reverted for now.</para>
     </change>
 
     <change type="enh">
@@ -176,7 +176,7 @@
 
     <change type="enh">
       <para><code>purge.hash</code> is now deprecated and no longer
-      shown in help listings.</code>.</para>
+      shown in help listings.</para>
     </change>
 
     <change type="enh" ref="607">
@@ -298,11 +298,19 @@
       <para>Exit at the end of the file when started
 	with <code>-d</code>.</para>
     </change>
+  </subsystem>
 
+  <subsystem>
+    <name>varnishadm</name>
 
-varnishadm:
- - timeout support
- - secret support
- - handle cli banner
+    <change type="enh">
+      <para><code>varnishadm</code> can now have a timeout when trying
+      to connect to the running <code>varnishd</code>.</para>
+    </change>
 
+    <change type="enh">
+      <para><code>varnishadm</code> now knows how to respond to the
+      secret from a secured <code>varnishd</code></para>
+    </change>
+  </subsystem>
 </group>
