@@ -68,7 +68,7 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
 }
 
 /*--------------------------------------------------------------------
- * This is utterly ridiculous:  POSIX does not guarantee that the 
+ * This is utterly ridiculous:  POSIX does not guarantee that the
  * minimum thread stack size is a compile time constant.
  * XXX: "32" is a magic marker for 32bit systems.
  */
