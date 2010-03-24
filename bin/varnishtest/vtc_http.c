@@ -815,6 +815,8 @@ cmd_http_accept(CMD_ARGS)
 	TCP_close(&hp->fd);
 	vtc_log(vl, 4, "Accepting");
 	hp->fd = accept(hp->sfd, NULL, NULL);
+	if (hp->fd < 0)
+		vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
 }
 
