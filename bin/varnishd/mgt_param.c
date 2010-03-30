@@ -548,9 +548,11 @@ static const struct parspec input_parspec[] = {
 	{ "default_grace", tweak_uint, &master.default_grace, 0, UINT_MAX,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "
-		"is attempting to get a new copy.",
+		"is attempting to get a new copy.\n"
+		"Objects already cached will not be affected by changes "
+		"made until they are fetched from the backend again.\n",
 		DELAYED_EFFECT,
-		"10" "seconds" },
+		"10", "seconds" },
 	{ "sess_timeout", tweak_timeout, &master.sess_timeout, 0, 0,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
