@@ -43,7 +43,7 @@ SVNID("$Id$")
 #include "binary_heap.h"
 #include "libvarnish.h"
 
-/* Paramters ---------------------------------------------------------*/
+/* Parameters --------------------------------------------------------*/
 
 /*
  * The number of elements in a row has to be a compromise between
@@ -81,11 +81,77 @@ struct binheap {
 	unsigned		rows;
 	unsigned		length;
 	unsigned		next;
+	unsigned		page_size;
+	unsigned		page_mask;
+	unsigned		page_shift;
 };
 
-#define PARENT(u)	((u) / 2)
-/*lint -emacro(835, CHILD) 0 right of + */
-#define CHILD(u,n)	((u) * 2 + (n))
+#define VM_AWARE
+
+#ifdef VM_AWARE
+
+static  unsigned
+parent(const struct binheap *bh, unsigned u)
+{
+	unsigned po;
+	unsigned v;
+
+	po = u & bh->page_mask;
+
+	if (u < bh->page_size || po > 3) {
+		v = (u & ~bh->page_mask) | (po >> 1);
+	} else if (po < 2) {
+		v = (u - bh->page_size) >> bh->page_shift;
+		v += v & ~(bh->page_mask >> 1);
+		v |= bh->page_size / 2;
+	} else {
+		v = u - 2;
+	}
+	return (v);
+}
+
+static void
+child(const struct binheap *bh, unsigned u, unsigned *a, unsigned *b)
+{
+
+	if (u > bh->page_mask && (u & (bh->page_mask - 1)) == 0) {
+		/* First two elements are magical except on the first page */
+		*a = *b = u + 2;
+	} else if (u & (bh->page_size >> 1)) {
+		/* The bottom row is even more magical */
+		*a = (u & ~bh->page_mask) >> 1;
+		*a |= u & (bh->page_mask >> 1);
+		*a += 1;
+		*a <<= bh->page_shift;
+		*b = *a + 1;
+	} else {
+		/* The rest is as usual, only inside the page */
+		*a = u + (u & bh->page_mask);
+		*b += 1;
+	}
+}
+
+
+#else
+
+static unsigned
+parent(const struct binheap *bh, unsigned u)
+{
+
+	(void)bh;
+	return (u / 2);
+}
+
+static void
+child(const struct binheap *bh, unsigned u, unsigned *a, unsigned *b)
+{
+
+	(void)bh;
+	*a = u * 2;
+	*b = *a + 1;
+}
+
+#endif
 
 /* Implementation ----------------------------------------------------*/
 
@@ -114,11 +180,21 @@ struct binheap *
 binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 {
 	struct binheap *bh;
+	unsigned u;
 
 	bh = calloc(sizeof *bh, 1);
 	if (bh == NULL)
 		return (bh);
 	bh->priv = priv;
+
+	bh->page_size = (unsigned)getpagesize() / sizeof (void *);
+	bh->page_mask = bh->page_size - 1;
+	assert(!(bh->page_size & bh->page_mask));	/* power of two */
+	for (u = 1; (1U << u) != bh->page_size; u++)
+		;
+	bh->page_shift = u;
+	assert(bh->page_size <= (sizeof(**bh->array) * ROW_WIDTH));
+	
 	bh->cmp = cmp_f;
 	bh->update = update_f;
 	bh->next = ROOT_IDX;
@@ -164,7 +240,7 @@ binheap_trickleup(const struct binheap *bh, unsigned u)
 
 	assert(bh->magic == BINHEAP_MAGIC);
 	while (u > ROOT_IDX) {
-		v = PARENT(u);
+		v = parent(bh, u);
 		if (!bh->cmp(bh->priv, A(bh, u), A(bh, v)))
 			break;
 		binhead_swap(bh, u, v);
@@ -180,10 +256,9 @@ binheap_trickledown(const struct binheap *bh, unsigned u)
 
 	assert(bh->magic == BINHEAP_MAGIC);
 	while (1) {
-		v1 = CHILD(u, 0);
+		child(bh, u, &v1, &v2);
 		if (v1 >= bh->next)
 			return;
-		v2 = CHILD(u, 1);
 		if (v2 < bh->next && bh->cmp(bh->priv, A(bh, v2), A(bh, v1)))
 			v1 = v2;
 		if (bh->cmp(bh->priv, A(bh, u), A(bh, v1)))
@@ -280,84 +355,14 @@ binheap_delete(struct binheap *bh, unsigned idx)
 /* Test driver -------------------------------------------------------*/
 #include <stdio.h>
 
-#if 1
-
-#define N 23
-
-static int
-cmp(void *priv, void *a, void *b)
-{
-
-	return (*(unsigned *)a < *(unsigned *)b);
-}
-
-void
-update(void *priv, void *a, unsigned u)
-{
-	printf("%p is now %u\n", a, u);
-}
-
-static void
-dump(struct binheap *bh, const char *what, unsigned ptr)
-{
-	FILE *f;
-	unsigned u, *up;
-
-	printf("dump\n");
-	f = popen("dot -Tps >> /tmp/_.ps 2>/dev/null", "w");
-	assert(f != NULL);
-	fprintf(f, "digraph binheap {\n");
-	fprintf(f, "size=\"7,10\"\n");
-	fprintf(f, "ptr [label=\"%s\"]\n", what);
-	fprintf(f, "ptr -> node_%u\n", ptr);
-	for (u = 1; u < bh->next; u++) {
-		up = A(bh, u);
-		fprintf(f, "node_%u [label=\"%u\"];\n", u, *up);
-		if (u > 0)
-			fprintf(f, "node_%u -> node_%u\n", PARENT(u), u);
-	}
-	fprintf(f, "}\n");
-	pclose(f);
-}
-
-int
-main(int argc, char **argv)
-{
-	struct binheap *bh;
-	unsigned l[N], u, *up, lu;
-
-	system("echo %! > /tmp/_.ps");
-	bh = binheap_new(NULL, cmp, update);
-	for (u = 0; u < N; u++) {
-		l[u] = random() % 1000;
-		binheap_insert(bh, &l[u]);
-		if (1)
-			dump(bh, "Insert", 0);
-	}
-	printf("Inserts done\n");
-	lu = 0;
-	while(1) {
-		up = binheap_root(bh);
-		if (up == NULL)
-			break;
-		assert(*up >= lu);
-		lu = *up;
-		u = (random() % (bh->next - 1)) + 1;
-		binheap_delete(bh, u);
-		if (1)
-			dump(bh, "Delete", u);
-	}
-	printf("Deletes done\n");
-	return (0);
-}
-#else
 struct foo {
 	unsigned	idx;
 	unsigned	key;
 };
 
-#define M 1311191
-#define N 1311
+#define M 31011091	/* Number of operations */
+#define N 10313102		/* Number of items */
+#define R -1		/* Random modulus */
 
 struct foo ff[N];
 
@@ -383,31 +388,23 @@ update(void *priv, void *a, unsigned u)
 void
 chk(struct binheap *bh)
 {
-	unsigned u, v, nb = 0;
+	unsigned u, v;
 	struct foo *fa, *fb;
 
 	for (u = 2; u < bh->next; u++) {
-		v = PARENT(u);
+		v = parent(bh, u);
 		fa = A(bh, u);
 		fb = A(bh, v);
-		assert(fa->key > fb->key);
-		continue;
-		printf("[%2u/%2u] %10u > [%2u/%2u] %10u %s\n",
-		    u, fa - ff, fa->key,
-		    v, fb - ff, fb->key,
-		    fa->key > fb->key ? "OK" : "BAD");
-		if (fa->key <= fb->key)
-			nb++;
+		assert(fa->key >= fb->key);
 	}
-	if (nb)
-		exit(0);
 }
 
 int
 main(int argc, char **argv)
 {
 	struct binheap *bh;
-	unsigned u, v;
+	unsigned u, v, lr;
+	struct foo *fp;
 
 	if (0) {
 		srandomdev();
@@ -416,25 +413,59 @@ main(int argc, char **argv)
 		srandom(u);
 	}
 	bh = binheap_new(NULL, cmp, update);
+
+	/* First insert our N elements */
+	for (u = 0; u < N; u++) {
+		lr = random() % R;
+		ff[u].key = lr;
+		binheap_insert(bh, &ff[u]);
+
+		fp = binheap_root(bh);
+		assert(fp->idx == 1);
+		assert(fp->key <= lr);
+	}
+	fprintf(stderr, "%d inserts OK\n", N);
+	/* For M cycles, pick the root, insert new */
+	for (u = 0; u < M; u++) {
+		fp = binheap_root(bh);
+		assert(fp->idx == 1);
+
+		/* It cannot possibly be larger than the last value we added */
+		assert(fp->key <= lr);
+		binheap_delete(bh, fp->idx);
+
+		lr = random() % R;
+		fp->key = lr;
+		binheap_insert(bh, fp);
+	}
+	fprintf(stderr, "%d replacements OK\n", M);
+	/* The remove everything */
+	lr = 0;
+	for (u = 0; u < N; u++) {
+		fp = binheap_root(bh);
+		assert(fp->idx == 1);
+		assert(fp->key >= lr);
+		lr = fp->key;
+		binheap_delete(bh, fp->idx);
+	}
+	fprintf(stderr, "%d removes OK\n", N);
+
 	for (u = 0; u < M; u++) {
 		v = random() % N;
 		if (ff[v].idx > 0) {
-			if (0)
-				printf("Delete [%u] %'u\n", v, ff[v].key);
-			else
-				printf("-%u", v);
+			assert(ff[v].idx != 0);
 			binheap_delete(bh, ff[v].idx);
+			assert(ff[v].idx == 0);
 		} else {
-			ff[v].key = random();
-			if (0)
-				printf("Insert [%u] %'u\n", v, ff[v].key);
-			else
-				printf("+%u", v);
+			assert(ff[v].idx == 0);
+			ff[v].key = random() % R;
 			binheap_insert(bh, &ff[v]);
+			assert(ff[v].idx != 0);
 		}
-		chk(bh);
+		if (0)
+			chk(bh);
 	}
+	fprintf(stderr, "%d updates OK\n", M);
 	return (0);
 }
-#endif
 #endif
