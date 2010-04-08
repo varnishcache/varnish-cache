@@ -164,6 +164,7 @@ run_vcc(void *priv)
 		fprintf(stderr, "Cannot open %s", vp->sf);
 		exit (1);
 	}
+	mgt_got_fd(fd);
 	l = strlen(csrc);
 	i = write(fd, csrc, l);
 	if (i != l) {

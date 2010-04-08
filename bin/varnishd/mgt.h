@@ -46,6 +46,7 @@ extern int		exit_status;
 extern pid_t child_pid;
 void MGT_Run(void);
 void mgt_stop_child(void);
+void mgt_got_fd(int fd);
 
 /* mgt_cli.c */
 

@@ -424,6 +424,15 @@ main(int argc, char * const *argv)
 	struct pidfh *pfh = NULL;
 	char dirname[1024];
 
+	/*
+	 * Start out by closing all unwanted file descriptors we might
+	 * have inherited from sloppy process control daemons.
+	 */
+	for (o = getdtablesize(); o > STDERR_FILENO; o--)
+		(void)close(o);
+
+	mgt_got_fd(STDERR_FILENO);
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 

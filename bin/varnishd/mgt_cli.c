@@ -301,6 +301,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		cli_result(cli, CLIS_CANT);
 		return;
 	}
+	mgt_got_fd(fd);
 	CLI_response(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
@@ -488,6 +489,7 @@ telnet_accept(const struct vev *ev, int what)
 	if (i < 0)
 		return (0);
 
+	mgt_got_fd(i);
 	tn = telnet_new(i);
 	vsb = sock_id("telnet", i);
 	mgt_cli_setup(i, i, 0, vsb_data(vsb), telnet_close, tn);
@@ -508,6 +510,7 @@ mgt_cli_secret(const char *S_arg)
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
 		exit (2);
 	}
+	mgt_got_fd(fd);
 	i = read(fd, buf, sizeof buf);
 	if (i == 0) {
 		fprintf(stderr, "Empty secret-file \"%s\"\n", S_arg);
@@ -622,6 +625,8 @@ Marg_poker(const struct vev *e, int what)
 	s = VSS_connect(M_ta[M_nxt], 1);
 	if (s < 0)
 		return (0);
+
+	mgt_got_fd(s);
 
 	M_conn = vev_new();
 	AN(M_conn);
