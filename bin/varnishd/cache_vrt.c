@@ -867,7 +867,7 @@ void
 VRT_Rollback(struct sess *sp)
 {
 
-	*sp->http = *sp->http0;
+	HTTP_Copy(sp->http, sp->http0);
 	WS_Reset(sp->ws, sp->ws_req);
 }
 

@@ -135,6 +135,7 @@ enum httpwhence {
 	HTTP_Obj = 3
 };
 
+/* NB: remember to update http_Copy() if you add fields */
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
@@ -514,6 +515,7 @@ void Fetch_Init(void);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
+void HTTP_Copy(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, unsigned nhttp);
 const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd);
