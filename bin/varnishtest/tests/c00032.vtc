@@ -1,0 +1,36 @@
+# $Id$
+
+test "Test Rollback"
+
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.foobar == "harck-coff"
+	txresp -status 400
+	rxreq
+	expect req.url == "/bar"
+	expect req.http.foobar == "snark"
+	txresp -bodylen 5
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/foo") {
+			set req.http.foobar = "harck-coff";
+		}
+	}
+
+	sub vcl_fetch {
+		if (beresp.status == 400) {
+			rollback;
+			set req.url = "/bar";
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo" -hdr "foobar: snark"
+	rxresp
+} -run

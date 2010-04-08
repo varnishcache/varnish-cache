@@ -4,13 +4,8 @@ test "VCL compiler coverage test: vcc_action.c"
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_hit { restart ; }
-	sub vcl_miss { restart rollback; }
-}
-
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_hit { restart 2 ; }
+	sub vcl_hit { return (restart) ; }
+	sub vcl_miss { rollback; return (restart); }
 }
 
 varnish v1 -vcl {

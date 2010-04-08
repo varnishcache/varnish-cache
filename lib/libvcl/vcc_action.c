@@ -47,27 +47,6 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static void
-parse_restart(struct tokenlist *tl)
-{
-	struct token *t1;
-
-	t1 = VTAILQ_NEXT(tl->t, list);
-	if (t1->tok == ID && vcc_IdIs(t1, "rollback")) {
-		Fb(tl, 1, "VRT_Rollback(sp);\n");
-		vcc_NextToken(tl);
-	} else if (t1->tok != ';') {
-		vsb_printf(tl->sb, "Expected \"rollback\" or semicolon.\n");
-		vcc_ErrWhere(tl, t1);
-		ERRCHK(tl);
-	}
-	Fb(tl, 1, "VRT_done(sp, VCL_RET_RESTART);\n");
-	vcc_ProcAction(tl->curproc, VCL_RET_RESTART, tl->t);
-	vcc_NextToken(tl);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_call(struct tokenlist *tl)
 {
 
@@ -239,11 +218,6 @@ parse_set(struct tokenlist *tl)
 			return;
 		}
 		Fb(tl, 0, ");\n");
-		/*
-		 * We count the number of operations on the req.hash
-		 * variable, so that varnishd can preallocate the worst case
-		 * number of slots for composing the hash string.
-		 */
 		break;
 	case STRING:
 		if (tl->t->tok != '=') {
@@ -443,6 +417,17 @@ parse_esi(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_new_syntax(struct tokenlist *tl)
+{
+
+	vsb_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
+	    PF(tl->t), PF(tl->t));
+	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_panic(struct tokenlist *tl)
 {
 	vcc_NextToken(tl);
@@ -510,24 +495,12 @@ parse_synthetic(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_new_syntax(struct tokenlist *tl)
-{
-
-	vsb_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
-	    PF(tl->t), PF(tl->t));
-	vcc_ErrWhere(tl, tl->t);
-}
-
-/*--------------------------------------------------------------------*/
-
 typedef void action_f(struct tokenlist *tl);
 
 static struct action_table {
 	const char		*name;
 	action_f		*func;
 } action_table[] = {
-	{ "restart",		parse_restart },
 	{ "error",		parse_error },
 
 #define VCL_RET_MAC(l, U)						\
@@ -542,10 +515,11 @@ static struct action_table {
 	{ "purge",		parse_purge },
 	{ "purge_url",		parse_purge_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
+	{ "return",		parse_return },
+	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic },
 	{ "unset",		parse_unset },
-	{ "return",		parse_return },
 	{ NULL,			NULL }
 };
 
