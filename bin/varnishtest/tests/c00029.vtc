@@ -36,7 +36,7 @@ varnish v1 -arg "-p saintmode_threshold=2" -vcl+backend {
 	sub vcl_fetch {
 		if (beresp.http.X-Saint == "yes") {
 			set beresp.saintmode = 20s;
-			restart;
+			return(restart);
 		}
 		set beresp.grace = 1h;
 		set beresp.ttl = 1s;

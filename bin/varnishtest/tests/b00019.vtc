@@ -19,7 +19,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
-	       restart;
+	       return (restart);
 	}
 
 	sub vcl_error {

@@ -18,13 +18,13 @@ varnish v1 -vcl+backend {
 			set beresp.ttl = 60 s;
 			set beresp.http.X-Magic-Redirect = "1";
 			set req.url = beresp.http.Location;
-			restart;
+			return (restart);
 		}
 	}
 	sub vcl_hit {
 		if (obj.http.X-Magic-Redirect == "1") {
 			set req.url = obj.http.Location;
-			restart;
+			return (restart);
 		}
 	}
 } -start

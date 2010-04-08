@@ -26,7 +26,7 @@ varnish v1 -vcl {
 	}
 	sub vcl_error { 
 		if (req.restarts < 1) { 
-			restart; 
+			return (restart); 
 		} else { 
 			set obj.status = 201; 
 		}

@@ -11,7 +11,7 @@ varnish v1 -vcl {
 	    set req.backend = bad;
 	}
 	sub vcl_error { 
-	    restart; 
+	    return (restart);
 	}
  } -start 
 
