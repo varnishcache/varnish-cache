@@ -232,8 +232,7 @@ parse_set(struct tokenlist *tl)
 		Fb(tl, 0, ");\n");
 		break;
 	case HASH:
-		ExpectErr(tl, T_INCR);
-		vcc_NextToken(tl);
+		SkipToken(tl, T_INCR);
 		if (!vcc_StringVal(tl)) {
 			ERRCHK(tl);
 			vcc_ExpectedStringval(tl);

@@ -259,8 +259,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	    "?initial",
 	    NULL);
 
-	ExpectErr(tl, '{');
-	vcc_NextToken(tl);
+	SkipToken(tl, '{');
 
 	window = 0;
 	threshold = 0;
@@ -334,8 +333,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 			return;
 		}
 
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
+		SkipToken(tl, ';');
 	}
 
 	if (t_threshold != NULL || t_window != NULL) {
@@ -376,8 +374,7 @@ vcc_ParseProbe(struct tokenlist *tl)
 	if (status > 0)
 		Fb(tl, 0, "\t\t.exp_status = %u,\n", status);
 	Fb(tl, 0, "\t},\n");
-	ExpectErr(tl, '}');
-	vcc_NextToken(tl);
+	SkipToken(tl, '}');
 }
 
 /*--------------------------------------------------------------------
@@ -415,8 +412,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 	    NULL);
 	t_first = tl->t;
 
-	ExpectErr(tl, '{');
-	vcc_NextToken(tl);
+	SkipToken(tl, '{');
 
 	vsb = vsb_newauto();
 	AN(vsb);
@@ -451,49 +447,42 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			assert(tl->t->dec != NULL);
 			t_host = tl->t;
 			vcc_NextToken(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "port")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_port = tl->t;
 			vcc_NextToken(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "host_header")) {
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_hosthdr = tl->t;
 			vcc_NextToken(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fb(tl, 0, "\t.connect_timeout = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
 			Fb(tl, 0, "\t.first_byte_timeout = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "between_bytes_timeout")) {
 			Fb(tl, 0, "\t.between_bytes_timeout = ");
 			vcc_TimeVal(tl);
 			ERRCHK(tl);
 			Fb(tl, 0, ",\n");
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "max_connections")) {
 			u = vcc_UintVal(tl);
 			vcc_NextToken(tl);
 			ERRCHK(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
 		} else if (vcc_IdIs(t_field, "saintmode_threshold")) {
 			u = vcc_UintVal(tl);
@@ -510,8 +499,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			vcc_NextToken(tl);
 			ERRCHK(tl);
 			saint = u;
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
 			vcc_ParseProbe(tl);
 			ERRCHK(tl);
@@ -616,8 +604,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm)
 		}
 		vcc_AddRef(tl, h->name, R_BACKEND);
 		vcc_NextToken(tl);
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
+		SkipToken(tl, ';');
 		*nm = h->vgcname;
 	} else if (tl->t->tok == '{') {
 		t = tl->t;
@@ -721,13 +708,10 @@ vcc_ParseDirector(struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t_policy);
 			return;
 		}
-		ExpectErr(tl, '{');
-		vcc_NextToken(tl);
+		SkipToken(tl, '{');
 		dl->func(tl);
-		if (!tl->err) {
-			ExpectErr(tl, '}');
-			vcc_NextToken(tl);
-		}
+		if (!tl->err)
+			SkipToken(tl, '}');
 		Fi(tl, 0,
 		    "\tVRT_init_dir(cli, VCL_conf.director, \"%.*s\",\n",
 		    PF(tl->t_policy));

@@ -242,4 +242,7 @@ int vcc_CheckUses(struct tokenlist *tl);
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
 #define Expect(a, b) vcc__Expect(a, b, __LINE__)
-#define ExpectErr(a, b) do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
+#define ExpectErr(a, b) \
+    do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
+#define SkipToken(a, b) \
+    do { vcc__Expect(a, b, __LINE__); ERRCHK(a); vcc_NextToken(a); } while (0)

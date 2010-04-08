@@ -70,8 +70,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 			retries = vcc_UintVal(tl);
 			ERRCHK(tl);
 			vcc_NextToken(tl);
-			ExpectErr(tl, ';');
-			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else {
 			ErrInternal(tl);
 		}
@@ -88,8 +87,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 		t_be = tl->t;
 		vcc_ResetFldSpec(mfs);
 
-		ExpectErr(tl, '{');
-		vcc_NextToken(tl);
+		SkipToken(tl, '{');
 		Fc(tl, 0, "\t{");
 
 		while (tl->t->tok != '}') {	/* Member fields */
@@ -116,8 +114,7 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 				}
 				Fc(tl, 0, "%s .weight = %u", first, u);
 				vcc_NextToken(tl);
-				ExpectErr(tl, ';');
-				vcc_NextToken(tl);
+				SkipToken(tl, ';');
 			} else {
 				ErrInternal(tl);
 			}
