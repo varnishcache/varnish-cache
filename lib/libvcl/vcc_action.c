@@ -478,6 +478,16 @@ parse_return(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_rollback(struct tokenlist *tl)
+{
+
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_Rollback(sp);\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_synthetic(struct tokenlist *tl)
 {
 	vcc_NextToken(tl);
