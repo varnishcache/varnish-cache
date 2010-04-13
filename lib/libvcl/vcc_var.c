@@ -110,3 +110,35 @@ vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
 	return (NULL);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+vcc_VarVal(struct tokenlist *tl, const struct var *vp, const struct token *vt)
+{
+	double d;
+
+	if (vp->fmt == TIME) {
+		vcc_TimeVal(tl, &d);
+		ERRCHK(tl);
+		Fb(tl, 0, "%g", d);
+	} else if (vp->fmt == RTIME) {
+		vcc_RTimeVal(tl, &d);
+		ERRCHK(tl);
+		Fb(tl, 0, "%g", d);
+	} else if (vp->fmt == SIZE) {
+		vcc_SizeVal(tl, &d);
+		ERRCHK(tl);
+		Fb(tl, 0, "%g", d);
+	} else if (vp->fmt == FLOAT) {
+		Fb(tl, 0, "%g", vcc_DoubleVal(tl));
+	} else if (vp->fmt == INT) { 
+		Fb(tl, 0, "%u", vcc_UintVal(tl));
+		vcc_NextToken(tl);
+	} else {
+		AN(vt);
+		vsb_printf(tl->sb,
+		    "Variable has incompatible type.\n");
+		vcc_ErrWhere(tl, vt);
+		return;
+	}
+}

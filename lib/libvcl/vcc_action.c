@@ -156,23 +156,8 @@ parse_set(struct tokenlist *tl)
 		case T_INCR:
 		case T_DECR:
 		case '=':
-			if (vp->fmt == TIME)
-				vcc_TimeVal(tl);
-			else if (vp->fmt == RTIME)
-				vcc_RTimeVal(tl);
-			else if (vp->fmt == SIZE)
-				vcc_SizeVal(tl);
-			else if (vp->fmt == FLOAT)
-				Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-			else if (vp->fmt == INT) {
-				Fb(tl, 0, "%u", vcc_UintVal(tl));
-				vcc_NextToken(tl);
-			} else {
-				vsb_printf(tl->sb,
-				    "Cannot assign this variable type.\n");
-				vcc_ErrWhere(tl, vt);
-				return;
-			}
+			vcc_VarVal(tl, vp, vt);
+			ERRCHK(tl);
 			break;
 		default:
 			vsb_printf(tl->sb, "Invalid assignment operator.\n");
