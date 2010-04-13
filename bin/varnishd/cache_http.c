@@ -679,7 +679,7 @@ http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd)
 			continue;
 #include "http_headers.h"
 #undef HTTPH
-		l += Tlen(fm->hd[u]) + 1;
+		l += PRNDUP(Tlen(fm->hd[u]) + 1);
 		(*nhd)++;
 		// fm->hdf[u] |= HDF_COPY;
 	}
