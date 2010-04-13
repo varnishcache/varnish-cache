@@ -306,7 +306,6 @@ vcc_acl_entry(struct tokenlist *tl)
 		ae->t_mask = tl->t;
 		ExpectErr(tl, CNUM);
 		ae->mask = vcc_UintVal(tl);
-		vcc_NextToken(tl);
 	}
 
 	if (ae->para) 

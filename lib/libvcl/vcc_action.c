@@ -80,7 +80,6 @@ parse_error(struct tokenlist *tl)
 		}
 	} else if (tl->t->tok == CNUM) {
 		Fb(tl, 1, "VRT_error(sp, %u", vcc_UintVal(tl));
-		vcc_NextToken(tl);
 	} else
 		Fb(tl, 1, "VRT_error(sp, 0");
 	if (tl->t->tok == CSTR) {
