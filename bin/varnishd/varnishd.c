@@ -674,6 +674,8 @@ main(int argc, char * const *argv)
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
+	VSL_MgtPid();
+
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 

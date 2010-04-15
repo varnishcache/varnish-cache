@@ -413,3 +413,10 @@ VSL_MgtInit(const char *fn, unsigned size)
 	*pp = *params;
 	params = pp;
 }
+
+void
+VSL_MgtPid(void)
+{
+
+	loghead->master_pid = getpid();
+}
