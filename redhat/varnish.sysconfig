@@ -38,6 +38,7 @@ DAEMON_OPTS="-a :6081 \
              -T localhost:6082 \
              -f /etc/varnish/default.vcl \
              -u varnish -g varnish \
+             -S /etc/varnish/secret \
              -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
