@@ -866,6 +866,7 @@ cnt_miss(struct sess *sp)
 	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
+	http_ForceGet(sp->wrk->bereq);
 	sp->wrk->connect_timeout = 0;
 	sp->wrk->first_byte_timeout = 0;
 	sp->wrk->between_bytes_timeout = 0;
@@ -1050,10 +1051,9 @@ cnt_recv(struct sess *sp)
 	assert(sp->handling == VCL_RET_HASH);
 	SHA256_Final(sp->digest, sp->wrk->sha256ctx);
 
-	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) {
+	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) 
 		sp->wantbody = 0;
-		http_ForceGet(sp->http);
-	} else
+	else
 		sp->wantbody = 1;
 
 	sp->sendbody = 0;
