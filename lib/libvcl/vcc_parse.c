@@ -43,8 +43,8 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
-static void Compound(struct tokenlist *tl);
-static void Cond_0(struct tokenlist *tl);
+static void vcc_Compound(struct tokenlist *tl);
+static void vcc_Cond_0(struct tokenlist *tl);
 
 /*--------------------------------------------------------------------*/
 
@@ -64,7 +64,7 @@ static void Cond_0(struct tokenlist *tl);
  */
 
 static double
-TimeUnit(struct tokenlist *tl)
+vcc_TimeUnit(struct tokenlist *tl)
 {
 	double sc = 1.0;
 
@@ -97,7 +97,7 @@ TimeUnit(struct tokenlist *tl)
  */
 
 static double
-SizeUnit(struct tokenlist *tl)
+vcc_SizeUnit(struct tokenlist *tl)
 {
 	double sc = 1.0;
 
@@ -186,7 +186,7 @@ vcc_RTimeVal(struct tokenlist *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
-	sc = TimeUnit(tl);
+	sc = vcc_TimeUnit(tl);
 	*d = sign * v * sc;
 }
 
@@ -200,7 +200,7 @@ vcc_TimeVal(struct tokenlist *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
-	sc = TimeUnit(tl);
+	sc = vcc_TimeUnit(tl);
 	*d = v * sc;
 }
 
@@ -214,14 +214,14 @@ vcc_SizeVal(struct tokenlist *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
-	sc = SizeUnit(tl);
+	sc = vcc_SizeUnit(tl);
 	*d = v * sc;
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-Cond_String(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_String(const struct var *vp, struct tokenlist *tl)
 {
 	char *p;
 
@@ -255,7 +255,7 @@ Cond_String(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_Int(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_Int(const struct var *vp, struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s ", vp->rname);
@@ -284,14 +284,14 @@ Cond_Int(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_Bool(const struct var *vp, const struct tokenlist *tl)
+vcc_Cond_Bool(const struct var *vp, const struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
 }
 
 static void
-Cond_Backend(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_Backend(const struct var *vp, struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
@@ -317,7 +317,7 @@ Cond_Backend(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-Cond_2(struct tokenlist *tl)
+vcc_Cond_2(struct tokenlist *tl)
 {
 	struct var *vp;
 
@@ -330,7 +330,7 @@ Cond_2(struct tokenlist *tl)
 	}
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
-		Cond_0(tl);
+		vcc_Cond_0(tl);
 		SkipToken(tl, ')');
 	} else if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars);
@@ -338,14 +338,14 @@ Cond_2(struct tokenlist *tl)
 		assert(vp != NULL);
 		vcc_NextToken(tl);
 		switch (vp->fmt) {
-		case INT:	L(tl, Cond_Int(vp, tl)); break;
-		case SIZE:	L(tl, Cond_Int(vp, tl)); break;
-		case BOOL:	L(tl, Cond_Bool(vp, tl)); break;
+		case INT:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		case BOOL:	L(tl, vcc_Cond_Bool(vp, tl)); break;
 		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
-		case STRING:	L(tl, Cond_String(vp, tl)); break;
-		case TIME:	L(tl, Cond_Int(vp, tl)); break;
-		case RTIME:	L(tl, Cond_Int(vp, tl)); break;
-		case BACKEND:	L(tl, Cond_Backend(vp, tl)); break;
+		case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;
+		case TIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		case RTIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		case BACKEND:	L(tl, vcc_Cond_Backend(vp, tl)); break;
 		default:
 			vsb_printf(tl->sb,
 			    "Variable '%s'"
@@ -367,40 +367,40 @@ Cond_2(struct tokenlist *tl)
 }
 
 static void
-Cond_1(struct tokenlist *tl)
+vcc_Cond_1(struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "(\n");
-	L(tl, Cond_2(tl));
+	L(tl, vcc_Cond_2(tl));
 	while (tl->t->tok == T_CAND) {
 		vcc_NextToken(tl);
 		Fb(tl, 1, ") && (\n");
-		L(tl, Cond_2(tl));
+		L(tl, vcc_Cond_2(tl));
 	}
 	Fb(tl, 1, ")\n");
 }
 
 static void
-Cond_0(struct tokenlist *tl)
+vcc_Cond_0(struct tokenlist *tl)
 {
 
 	Fb(tl, 1, "(\n");
-	L(tl, Cond_1(tl));
+	L(tl, vcc_Cond_1(tl));
 	while (tl->t->tok == T_COR) {
 		vcc_NextToken(tl);
 		Fb(tl, 1, ") || (\n");
-		L(tl, Cond_1(tl));
+		L(tl, vcc_Cond_1(tl));
 	}
 	Fb(tl, 1, ")\n");
 }
 
 static void
-Conditional(struct tokenlist *tl)
+vcc_Conditional(struct tokenlist *tl)
 {
 
 	SkipToken(tl, '(');
 	Fb(tl, 1, "(\n");
-	L(tl, Cond_0(tl));
+	L(tl, vcc_Cond_0(tl));
 	ERRCHK(tl);
 	Fb(tl, 1, ")\n");
 	SkipToken(tl, ')');
@@ -409,14 +409,14 @@ Conditional(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-IfStmt(struct tokenlist *tl)
+vcc_IfStmt(struct tokenlist *tl)
 {
 
 	SkipToken(tl, T_IF);
 	Fb(tl, 1, "if \n");
-	L(tl, Conditional(tl));
+	L(tl, vcc_Conditional(tl));
 	ERRCHK(tl);
-	L(tl, Compound(tl));
+	L(tl, vcc_Compound(tl));
 	ERRCHK(tl);
 	while (1) {
 		switch (tl->t->tok) {
@@ -424,7 +424,7 @@ IfStmt(struct tokenlist *tl)
 			vcc_NextToken(tl);
 			if (tl->t->tok != T_IF) {
 				Fb(tl, 1, "else \n");
-				L(tl, Compound(tl));
+				L(tl, vcc_Compound(tl));
 				ERRCHK(tl);
 				return;
 			}
@@ -433,9 +433,9 @@ IfStmt(struct tokenlist *tl)
 		case T_ELSIF:
 			Fb(tl, 1, "else if \n");
 			vcc_NextToken(tl);
-			L(tl, Conditional(tl));
+			L(tl, vcc_Conditional(tl));
 			ERRCHK(tl);
-			L(tl, Compound(tl));
+			L(tl, vcc_Compound(tl));
 			ERRCHK(tl);
 			break;
 		default:
@@ -448,7 +448,7 @@ IfStmt(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-Compound(struct tokenlist *tl)
+vcc_Compound(struct tokenlist *tl)
 {
 	int i;
 
@@ -460,10 +460,10 @@ Compound(struct tokenlist *tl)
 		ERRCHK(tl);
 		switch (tl->t->tok) {
 		case '{':
-			Compound(tl);
+			vcc_Compound(tl);
 			break;
 		case T_IF:
-			IfStmt(tl);
+			vcc_IfStmt(tl);
 			break;
 		case '}':
 			vcc_NextToken(tl);
@@ -502,7 +502,7 @@ Compound(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-Function(struct tokenlist *tl)
+vcc_Function(struct tokenlist *tl)
 {
 	int m;
 
@@ -534,7 +534,7 @@ Function(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
 	Fb(tl, 1, "{\n");
-	L(tl, Compound(tl));
+	L(tl, vcc_Compound(tl));
 	if (m == -1) {
 		/*
 		 * non-method subroutines must have an explicit non-action
@@ -564,7 +564,7 @@ static struct toplev {
 	parse_f		*func;
 } toplev[] = {
 	{ "acl",		vcc_Acl },
-	{ "sub",		Function },
+	{ "sub",		vcc_Function },
 	{ "backend",		vcc_ParseDirector },
 	{ "director",		vcc_ParseDirector },
 	{ NULL, NULL }
