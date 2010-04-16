@@ -57,17 +57,17 @@ WS_Assert(const struct ws *ws)
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
 	assert(ws->s != NULL);
-	// assert(PAOK(ws->s));
+	assert(PAOK(ws->s));
 	assert(ws->e != NULL);
-	// assert(PAOK(ws->e));
+	assert(PAOK(ws->e));
 	assert(ws->s < ws->e);
 	assert(ws->f >= ws->s);
 	assert(ws->f <= ws->e);
-	// assert(PAOK(ws->f));
+	assert(PAOK(ws->f));
 	if (ws->r) {
 		assert(ws->r > ws->s);
 		assert(ws->r <= ws->e);
-		// assert(PAOK(ws->r));
+		assert(PAOK(ws->r));
 	}
 }
 
@@ -176,7 +176,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 		b2 = ws->e - ws->f;
 	else
 		b2 = bytes;
-	// b2 = PRNDND(b2);
+	b2 = PRNDDN(b2);
 	xxxassert(ws->f + b2 <= ws->e);
 	ws->r = ws->f + b2;
 	DSL(0x02, SLT_Debug, 0, "WS_Reserve(%p, %u/%u) = %u",
@@ -189,7 +189,7 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
-	// bytes = PRNDUP(bytes);
+	bytes = PRNDUP(bytes);
 	assert(bytes <= ws->e - ws->f);
 	DSL(0x02, SLT_Debug, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
@@ -207,8 +207,7 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 	assert(ws->r != NULL);
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);
-	// ws->f += PRNDUP(ptr - ws->f);
-	ws->f += (ptr - ws->f);
+	ws->f += PRNDUP(ptr - ws->f);
 	ws->r = NULL;
 	WS_Assert(ws);
 }
