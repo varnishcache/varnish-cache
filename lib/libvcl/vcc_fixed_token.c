@@ -227,10 +227,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4428 2010-01-06 17:");
-	vsb_cat(sb, "38:59Z tfheen $\n *\n * Runtime support for compiled V");
-	vsb_cat(sb, "CL programs.\n *\n * XXX: When this file is changed, l");
-	vsb_cat(sb, "ib/libvcl/vcc_gen_fixed_token.tcl\n");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 4667 2010-04-16 09:");
+	vsb_cat(sb, "58:02Z phk $\n *\n * Runtime support for compiled VCL ");
+	vsb_cat(sb, "programs.\n *\n * XXX: When this file is changed, lib/");
+	vsb_cat(sb, "libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");
 	vsb_cat(sb, "\nstruct sess;\nstruct vsb;\nstruct cli;\n");
 	vsb_cat(sb, "struct director;\nstruct VCL_conf;\n");
@@ -281,8 +281,9 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp, const char *, ...);\n");
 	vsb_cat(sb, "void VRT_ban(struct sess *sp, char *, ...);\n");
 	vsb_cat(sb, "void VRT_ban_string(struct sess *sp, const char *, ...");
-	vsb_cat(sb, ");\n\nvoid VRT_count(const struct sess *, unsigned);\n");
-	vsb_cat(sb, "int VRT_rewrite(const char *, const char *);\n");
+	vsb_cat(sb, ");\nvoid VRT_purge(struct sess *sp, double ttl, double");
+	vsb_cat(sb, " grace);\n\nvoid VRT_count(const struct sess *, unsign");
+	vsb_cat(sb, "ed);\nint VRT_rewrite(const char *, const char *);\n");
 	vsb_cat(sb, "void VRT_error(struct sess *, unsigned, const char *);");
 	vsb_cat(sb, "\nint VRT_switch_config(const char *);\n");
 	vsb_cat(sb, "\nenum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BERE");

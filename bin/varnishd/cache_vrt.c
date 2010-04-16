@@ -1024,6 +1024,19 @@ VRT_ban_string(struct sess *sp, const char *str, ...)
 }
 
 /*--------------------------------------------------------------------
+ * "real" purges
+ */
+
+void
+VRT_purge(struct sess *sp, double ttl, double grace)
+{
+	if (sp->cur_method == VCL_MET_HIT)
+		HSH_Purge(sp, sp->obj->objcore->objhead, ttl, grace);
+	else if (sp->cur_method == VCL_MET_MISS)
+		HSH_Purge(sp, sp->objcore->objhead, ttl, grace);
+}
+
+/*--------------------------------------------------------------------
  * Simple stuff
  */
 
