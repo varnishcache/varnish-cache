@@ -586,13 +586,8 @@ The HTTP status message returned by the server.
 .It Va obj.cacheable
 True if the request resulted in a cacheable response.
 .\" see cache_center.c and rfc2616.c for details
-A response is considered cacheable if it is valid (see above), the
-HTTP status code is 200, 203, 300, 301, 302, 404 or 410 and it has a
-non-zero time-to-live when
-.Cm Expires
-and
-.Cm Cache-Control
-headers are taken into account.
+A response is considered cacheable if it is valid (see above), and the
+HTTP status code is 200, 203, 300, 301, 302, 404 or 410.
 .It Va obj.ttl
 The object's remaining time to live, in seconds.
 .It Va obj.lastuse
