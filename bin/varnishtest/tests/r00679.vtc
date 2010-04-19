@@ -1,0 +1,16 @@
+# $Id$
+
+test "pass + HEAD"
+
+server s1 {
+	rxreq
+	expect req.request == "HEAD"
+	txresp 
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -req HEAD -hdr "Cookie: foo=bar"
+	rxresp -no_obj
+} -run
