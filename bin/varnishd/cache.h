@@ -95,6 +95,15 @@ struct lock { void *priv; };		// Opaque
 #define DIGEST_LEN		32
 
 
+/*--------------------------------------------------------------------
+ * Pointer aligment magic
+ */
+
+#define PALGN		(sizeof(void *) - 1)
+#define PAOK(p)		(((uintptr_t)(p) & PALGN) == 0)
+#define PRNDDN(p)	((uintptr_t)(p) & ~PALGN)
+#define PRNDUP(p)	(((uintptr_t)(p) + PALGN) & ~PALGN)
+
 /*--------------------------------------------------------------------*/
 
 typedef struct {
