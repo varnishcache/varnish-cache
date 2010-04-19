@@ -293,7 +293,11 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 
 	AN(av[2]);
 	(void)priv;
-	AN(secret_file);
+	if (secret_file == NULL) {
+		cli_out(cli, "Secret file not configured\n");
+		cli_result(cli, CLIS_CANT);
+		return;
+	}
 	fd = open(secret_file, O_RDONLY);
 	if (fd < 0) {
 		cli_out(cli, "Cannot open secret file (%s)\n",
