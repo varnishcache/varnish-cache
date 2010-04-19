@@ -123,6 +123,7 @@ SizeUnit(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------
  * Recognize and convert { CNUM } to unsigned value
+ * The tokenizer made sure we only get digits.
  */
 
 unsigned
@@ -141,6 +142,7 @@ vcc_UintVal(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------
  * Recognize and convert { CNUM [ '.' [ CNUM ] ] } to double value
+ * The tokenizer made sure we only get digits and a '.'
  */
 
 double
@@ -171,7 +173,7 @@ vcc_DoubleVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_RTimeVal(struct tokenlist *tl)
+vcc_RTimeVal(struct tokenlist *tl, double *d)
 {
 	double v, sc;
 	int sign = 1;
@@ -184,11 +186,13 @@ vcc_RTimeVal(struct tokenlist *tl)
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = TimeUnit(tl);
-	Fb(tl, 0, "(%d * %g * %g)", sign, v, sc);
+	*d = sign * v * sc;
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-vcc_TimeVal(struct tokenlist *tl)
+vcc_TimeVal(struct tokenlist *tl, double *d)
 {
 	double v, sc;
 
@@ -196,11 +200,13 @@ vcc_TimeVal(struct tokenlist *tl)
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = TimeUnit(tl);
-	Fb(tl, 0, "(%g * %g)", v, sc);
+	*d = v * sc;
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-vcc_SizeVal(struct tokenlist *tl)
+vcc_SizeVal(struct tokenlist *tl, double *d)
 {
 	double v, sc;
 
@@ -208,7 +214,7 @@ vcc_SizeVal(struct tokenlist *tl)
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
 	sc = SizeUnit(tl);
-	Fb(tl, 0, "(%g * %g)", v, sc);
+	*d = v * sc;
 }
 
 /*--------------------------------------------------------------------*/
@@ -261,28 +267,8 @@ Cond_Int(const struct var *vp, struct tokenlist *tl)
 	case '<':
 		Fb(tl, 0, "%.*s ", PF(tl->t));
 		vcc_NextToken(tl);
-		switch(vp->fmt) {
-		case TIME:
-			vcc_TimeVal(tl);
-			break;
-		case RTIME:
-			vcc_RTimeVal(tl);
-			break;
-		case INT:
-			ExpectErr(tl, CNUM);
-			Fb(tl, 0, "%.*s ", PF(tl->t));
-			vcc_NextToken(tl);
-			break;
-		case SIZE:
-			vcc_SizeVal(tl);
-			break;
-		default:
-			vsb_printf(tl->sb,
-			    "No conditions available for variable '%s'\n",
-			    vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
+		vcc_VarVal(tl, vp, NULL);
+		ERRCHK(tl);
 		Fb(tl, 0, "\n");
 		break;
 	default:

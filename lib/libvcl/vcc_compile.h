@@ -196,9 +196,9 @@ extern struct var vcc_vars[];
 
 /* vcc_parse.c */
 void vcc_Parse(struct tokenlist *tl);
-void vcc_RTimeVal(struct tokenlist *tl);
-void vcc_TimeVal(struct tokenlist *tl);
-void vcc_SizeVal(struct tokenlist *tl);
+void vcc_RTimeVal(struct tokenlist *tl, double *);
+void vcc_TimeVal(struct tokenlist *tl, double *);
+void vcc_SizeVal(struct tokenlist *tl, double *);
 unsigned vcc_UintVal(struct tokenlist *tl);
 double vcc_DoubleVal(struct tokenlist *tl);
 
@@ -226,6 +226,8 @@ void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b,
 /* vcc_var.c */
 struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t,
     struct var *vl);
+void vcc_VarVal(struct tokenlist *tl, const struct var *vp,
+    const struct token *vt);
 
 /* vcc_xref.c */
 void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
