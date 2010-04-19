@@ -450,6 +450,7 @@ AC_CONFIG_FILES([
     bin/varnishncsa/Makefile
     bin/varnishreplay/Makefile
     bin/varnishstat/Makefile
+    bin/varnishsizes/Makefile
     bin/varnishtest/Makefile
     bin/varnishtop/Makefile
     doc/Makefile
