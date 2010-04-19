@@ -896,7 +896,7 @@ ESI_Deliver(struct sess *sp)
 			http_save = *sp->http;
 
 		/* Reset request to status before we started messing with it */
-		*sp->http = *sp->http0;
+		HTTP_Copy(sp->http, sp->http0);
 
 		/* Take a workspace snapshot */
 		ws_wm = WS_Snapshot(sp->ws);

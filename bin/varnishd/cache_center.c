@@ -1132,7 +1132,7 @@ cnt_start(struct sess *sp)
 	sp->ws_req = WS_Snapshot(sp->ws);
 
 	/* Catch original request, before modification */
-	*sp->http0 = *sp->http;
+	HTTP_Copy(sp->http0, sp->http);
 
 	if (done != 0) {
 		sp->err_code = done;
