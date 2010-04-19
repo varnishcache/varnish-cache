@@ -169,7 +169,7 @@ pass(int sock)
 		assert(i > 0);
 		if (fds[0].revents & POLLIN) {
 			n = read(fds[0].fd, buf, sizeof buf);
-			if (n == 0) 
+			if (n == 0)
 				exit (0);
 			if (n < 0) {
 				perror("Read error reading CLI socket");
@@ -241,9 +241,9 @@ main(int argc, char * const *argv)
 	assert(T_arg != NULL);
 	sock = cli_sock(T_arg, S_arg);
 
-	if (argc > 0) 
+	if (argc > 0)
 		do_args(sock, argc, argv);
-	else 
+	else
 		pass(sock);
 
 	exit(0);

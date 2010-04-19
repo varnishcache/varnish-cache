@@ -569,7 +569,7 @@ Function(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------
  * Top level of parser, recognize:
- * 	Inline C-code
+ *	Inline C-code
  *	ACL definitions
  *	Function definitions
  *	Backend & Director definitions
