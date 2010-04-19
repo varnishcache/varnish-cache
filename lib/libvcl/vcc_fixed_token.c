@@ -279,10 +279,10 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "const char *VRT_regsub(const struct sess *sp, int all,");
 	vsb_cat(sb, " const char *,\n    void *, const char *);\n");
 	vsb_cat(sb, "\nvoid VRT_panic(struct sess *sp, const char *, ...);\n");
-	vsb_cat(sb, "void VRT_purge(struct sess *sp, char *, ...);\n");
-	vsb_cat(sb, "void VRT_purge_string(struct sess *sp, const char *, .");
-	vsb_cat(sb, "..);\n\nvoid VRT_count(const struct sess *, unsigned);");
-	vsb_cat(sb, "\nint VRT_rewrite(const char *, const char *);\n");
+	vsb_cat(sb, "void VRT_ban(struct sess *sp, char *, ...);\n");
+	vsb_cat(sb, "void VRT_ban_string(struct sess *sp, const char *, ...");
+	vsb_cat(sb, ");\n\nvoid VRT_count(const struct sess *, unsigned);\n");
+	vsb_cat(sb, "int VRT_rewrite(const char *, const char *);\n");
 	vsb_cat(sb, "void VRT_error(struct sess *, unsigned, const char *);");
 	vsb_cat(sb, "\nint VRT_switch_config(const char *);\n");
 	vsb_cat(sb, "\nenum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BERE");

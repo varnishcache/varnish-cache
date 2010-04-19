@@ -325,7 +325,7 @@ parse_purge(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 	if (tl->t->tok == VAR) {
-		Fb(tl, 1, "VRT_purge(sp,\n");
+		Fb(tl, 1, "VRT_ban(sp,\n");
 		tl->indent += INDENT;
 		while (1) {
 			ExpectErr(tl, VAR);
@@ -379,7 +379,7 @@ parse_purge(struct tokenlist *tl)
 		Fb(tl, 1, "0);\n");
 		tl->indent -= INDENT;
 	} else {
-		Fb(tl, 1, "VRT_purge_string(sp, ");
+		Fb(tl, 1, "VRT_ban_string(sp, ");
 		if (!vcc_StringVal(tl)) {
 			vcc_ExpectedStringval(tl);
 			return;
@@ -404,7 +404,7 @@ parse_purge_url(struct tokenlist *tl)
 	Expect(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_purge(sp, \"req.url\", \"~\", ");
+	Fb(tl, 1, "VRT_ban(sp, \"req.url\", \"~\", ");
 	if (!vcc_StringVal(tl)) {
 		vcc_ExpectedStringval(tl);
 		return;

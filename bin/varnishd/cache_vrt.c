@@ -937,7 +937,7 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_purge(struct sess *sp, char *cmds, ...)
+VRT_ban(struct sess *sp, char *cmds, ...)
 {
 	char *a1, *a2, *a3;
 	va_list ap;
@@ -972,7 +972,7 @@ VRT_purge(struct sess *sp, char *cmds, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_purge_string(struct sess *sp, const char *str, ...)
+VRT_ban_string(struct sess *sp, const char *str, ...)
 {
 	char *p, *a1, *a2, *a3;
 	char **av;
