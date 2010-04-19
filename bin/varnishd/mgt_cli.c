@@ -517,6 +517,7 @@ mgt_cli_secret(const char *S_arg)
 		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
 		exit (2);
 	}
+	AZ(close(fd));
 	secret_file = S_arg;
 }
 
