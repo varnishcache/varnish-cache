@@ -29,6 +29,11 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 65
 	expect resp.status == 200
+	# test that there is no difference on miss/hit
+	txreq 
+	rxresp
+	expect resp.bodylen == 65
+	expect resp.status == 200
 }
 
 client c1 -run
