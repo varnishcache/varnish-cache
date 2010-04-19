@@ -194,7 +194,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 		;
 	bh->page_shift = u;
 	assert(bh->page_size <= (sizeof(**bh->array) * ROW_WIDTH));
-	
+
 	bh->cmp = cmp_f;
 	bh->update = update_f;
 	bh->next = ROOT_IDX;

@@ -207,7 +207,7 @@ RES_BuildHttp(struct sess *sp)
 	} else if (params->http_range_support)
 		http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "Accept-Ranges: bytes");
-		
+
 
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);
@@ -248,7 +248,7 @@ RES_WriteObj(struct sess *sp)
 
 		if (sp->esis == 0)
 			/* no headers for interior ESI includes */
-			sp->acct_req.hdrbytes += 
+			sp->acct_req.hdrbytes +=
 			    http_Write(sp->wrk, sp->wrk->resp, 1);
 
 		if (WRW_FlushRelease(sp->wrk)) {
@@ -279,7 +279,7 @@ RES_WriteObj(struct sess *sp)
 	    sp->http->protover >= 1.1 &&
 	    sp->obj->len > 0) {
 		/*
-		 * Interior ESI includes (which are not themselves ESI 
+		 * Interior ESI includes (which are not themselves ESI
 		 * objects) use chunked encoding (here) or EOF (nothing)
 		 */
 		assert(sp->wantbody);
@@ -304,7 +304,7 @@ RES_WriteObj(struct sess *sp)
 		off = 0;
 		if (ptr + len <= low) {
 			/* This segment is too early */
-			ptr += len;	
+			ptr += len;
 			continue;
 		}
 		if (ptr < low) {

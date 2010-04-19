@@ -308,7 +308,7 @@ vcc_acl_entry(struct tokenlist *tl)
 		ae->mask = vcc_UintVal(tl);
 	}
 
-	if (ae->para) 
+	if (ae->para)
 		SkipToken(tl, ')');
 
 	if (!vcc_acl_try_netnotation(tl, ae)) {
