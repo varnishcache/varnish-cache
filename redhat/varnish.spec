@@ -1,22 +1,22 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.0.7
-Release: 0.1svn20100201r4527%{?dist}
+Version: 2.1.1
+Release: 0.svn20100415%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
-#Patch0: varnish.varnishtest_debugflag.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
-#BuildRequires: automake autoconf libtool
+BuildRequires: automake autoconf libtool
 BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
+Requires: pcre
 Requires(pre): shadow-utils
-Requires(post): /sbin/chkconfig
+Requires(post): /sbin/chkconfig, /usr/bin/mkpasswd
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 Requires(preun): initscripts
@@ -61,14 +61,12 @@ Varnish is a high-performance HTTP accelerator
 #Varnish is a high-performance HTTP accelerator
 
 %prep
-%setup -q
-#%setup -q -n varnish-cache
+#%setup -q
+%setup -q -n varnish-cache
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-#./autogen.sh
-
-#%patch0
+./autogen.sh
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
@@ -100,6 +98,11 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 %else
 	%configure --disable-static --localstatedir=/var/lib
 %endif
+
+# Have to regenerate the docs because of patched doc/changes-2.0.6-2.1.0.xml
+pushd doc/
+make clean
+popd
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
@@ -143,9 +146,6 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 		rm bin/varnishtest/tests/r00387.vtc
 	%endif
 %endif
-
-# p class checks are still unstable
-rm bin/varnishtest/tests/p*.vtc
 
 LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
 %{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
@@ -234,6 +234,7 @@ exit 0
 /sbin/chkconfig --add varnish
 /sbin/chkconfig --add varnishlog
 /sbin/chkconfig --add varnishncsa 
+test -f /etc/varnish/secret || (mkpasswd > /etc/varnish/secret && chmod 0600 /etc/varnish/secret)
 
 %preun
 if [ $1 -lt 1 ]; then
@@ -250,9 +251,18 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Mon Jan 25 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.0.7-0.1
-- changes-2.0.6.html works now, so remove fix
-- Added pcre-devel and pkgconfig to the build requirements
+* Wed Apr 14 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.1.0-2
+- Added a patch from svn that fixes changes-2.0.6-2.1.0.xml
+
+* Tue Apr 06 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.1.0-1
+- New upstream release; note: Configuration changes, see the README
+- Removed unneeded patches 
+- CVE-2009-2936: Added a patch from Debian that adds the -S option 
+  to the varnisdh(1) manpage and to the sysconfig defaults, thus
+  password-protecting the admin interface port (#579536,#579533)
+- Generates that password in the post script, requires mkpasswd
+- Added a patch from Robert Scheck for explicit linking to libm
+- Requires pcre
 
 * Wed Dec 23 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.6-2
 - Added a test that enables jemalloc on ppc if the kernel is
