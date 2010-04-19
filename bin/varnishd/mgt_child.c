@@ -71,6 +71,7 @@ SVNID("$Id$")
 
 pid_t		child_pid = -1;
 
+
 static struct vbitmap	*fd_map;
 
 static int		child_cli_in = -1;
@@ -96,6 +97,33 @@ static const char * const ch_state[] = {
 static struct vev	*ev_poker;
 static struct vev	*ev_listen;
 static struct vlu	*vlu;
+
+/*--------------------------------------------------------------------
+ * Track the highest file descriptor the parent knows is being used.
+ *
+ * This allows the child process to clean/close only a small fraction 
+ * of the possible file descriptors after exec(2).
+ *
+ * This is likely to a bit on the low side, as libc and other libraries
+ * has a tendency to cache file descriptors (syslog, resolver, etc.)
+ * so we add a margin of 100 fds.
+ */
+
+static int		mgt_max_fd;
+
+#define CLOSE_FD_UP_TO	(mgt_max_fd + 100)
+
+void
+mgt_got_fd(int fd)
+{
+	/*
+	 * Assert > 0, to catch bogus opens, we know where stdin goes
+	 * in the master process.
+	 */
+	assert(fd > 0);
+	if (fd > mgt_max_fd)
+		mgt_max_fd = fd;
+}
 
 /*--------------------------------------------------------------------
  * A handy little function
@@ -270,7 +298,7 @@ start_child(struct cli *cli)
 	unsigned u;
 	char *p;
 	struct vev *e;
-	int i, j, cp[2];
+	int i, cp[2];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -337,13 +365,10 @@ start_child(struct cli *cli)
 
 		/* Close anything we shouldn't know about */
 		closelog();
-		printf("Closed fds:");
-		j = getdtablesize();
-		for (i = STDERR_FILENO + 1; i < j; i++) {
+		for (i = STDERR_FILENO + 1; i < CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
-			if (close(i) == 0)
-				printf(" %d", i);
+			(void)(close(i) == 0);
 		}
 		printf("\n");
 
