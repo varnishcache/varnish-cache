@@ -95,6 +95,9 @@ STV_InitObj(struct sess *sp, struct object *o, unsigned wsl, unsigned lhttp,
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 
+	assert(PAOK(wsl));
+	assert(PAOK(lhttp));
+
 	o->http = HTTP_create(o + 1, nhttp);
 	WS_Init(o->ws_o, "obj", (char *)(o + 1) + lhttp, wsl);
 	WS_Assert(o->ws_o);
@@ -118,8 +121,10 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 
 	(void)ttl;
 	assert(l > 0);
+	l = PRNDUP(l);
 
 	lh = HTTP_estimate(nhttp);
+	lh = PRNDUP(lh);
 
 	if (!sp->wrk->cacheable) {
 		o = malloc(sizeof *o + l + lh);
@@ -135,7 +140,10 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 
 	o = (void *)st->ptr; /* XXX: align ? */
 
-	STV_InitObj(sp, o, st->space - (sizeof *o + lh), lh, nhttp);
+	l = PRNDDN(st->space - (sizeof *o + lh));
+	
+
+	STV_InitObj(sp, o, l, lh, nhttp);
 	o->objstore = st;
 	return (o);
 }
