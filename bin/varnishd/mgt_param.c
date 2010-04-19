@@ -813,6 +813,10 @@ static const struct parspec input_parspec[] = {
 		"A value of 0 disables saintmode.",
 		EXPERIMENTAL,
 		"10", "objects" },
+	{ "http_range_support", tweak_bool, &master.http_range_support, 0, 0,
+		"Enable support for HTTP Range headers.\n",
+		EXPERIMENTAL,
+		"off", "bool" },
 	{ NULL, NULL, NULL }
 };
 

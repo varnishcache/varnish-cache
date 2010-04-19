@@ -197,6 +197,8 @@ struct params {
 	unsigned		saintmode_threshold;
 
 	unsigned		syslog_cli_traffic;
+
+	unsigned		http_range_support;
 };
 
 /*
