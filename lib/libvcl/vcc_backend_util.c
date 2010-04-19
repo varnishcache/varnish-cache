@@ -98,14 +98,12 @@ vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 {
 	struct token *t_field;
 
-	ExpectErr(tl, '.');
-	vcc_NextToken(tl);
+	SkipToken(tl, '.');
 	ExpectErr(tl, ID);
 	t_field = tl->t;
 	*t = t_field;
 	vcc_NextToken(tl);
-	ExpectErr(tl, '=');
-	vcc_NextToken(tl);
+	SkipToken(tl, '=');
 
 	for (; fs->name != NULL; fs++) {
 		if (!vcc_IdIs(t_field, fs->name + 1))

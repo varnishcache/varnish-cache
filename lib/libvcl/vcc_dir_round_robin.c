@@ -67,8 +67,7 @@ vcc_ParseRoundRobinDirector(struct tokenlist *tl)
 		t_be = tl->t;
 		vcc_ResetFldSpec(fs);
 
-		ExpectErr(tl, '{');
-		vcc_NextToken(tl);
+		SkipToken(tl, '{');
 		Fc(tl, 0, "\t{");
 
 		while (tl->t->tok != '}') {	/* Member fields */

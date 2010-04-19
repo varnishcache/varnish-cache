@@ -344,8 +344,7 @@ Cond_2(struct tokenlist *tl)
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
 		Cond_0(tl);
-		ExpectErr(tl, ')');
-		vcc_NextToken(tl);
+		SkipToken(tl, ')');
 	} else if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars);
 		ERRCHK(tl);
@@ -412,14 +411,12 @@ static void
 Conditional(struct tokenlist *tl)
 {
 
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	Fb(tl, 1, "(\n");
 	L(tl, Cond_0(tl));
 	ERRCHK(tl);
 	Fb(tl, 1, ")\n");
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
 }
 
 /*--------------------------------------------------------------------*/
@@ -428,9 +425,8 @@ static void
 IfStmt(struct tokenlist *tl)
 {
 
-	ExpectErr(tl, T_IF);
+	SkipToken(tl, T_IF);
 	Fb(tl, 1, "if \n");
-	vcc_NextToken(tl);
 	L(tl, Conditional(tl));
 	ERRCHK(tl);
 	L(tl, Compound(tl));
@@ -469,11 +465,10 @@ Compound(struct tokenlist *tl)
 {
 	int i;
 
-	ExpectErr(tl, '{');
+	SkipToken(tl, '{');
 	Fb(tl, 1, "{\n");
 	tl->indent += INDENT;
 	C(tl, ";");
-	vcc_NextToken(tl);
 	while (1) {
 		ERRCHK(tl);
 		switch (tl->t->tok) {
@@ -503,8 +498,7 @@ Compound(struct tokenlist *tl)
 			i = vcc_ParseAction(tl);
 			ERRCHK(tl);
 			if (i) {
-				ExpectErr(tl, ';');
-				vcc_NextToken(tl);
+				SkipToken(tl, ';');
 				break;
 			}
 			/* FALLTHROUGH */

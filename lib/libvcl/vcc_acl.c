@@ -309,10 +309,8 @@ vcc_acl_entry(struct tokenlist *tl)
 		vcc_NextToken(tl);
 	}
 
-	if (ae->para) {
-		ExpectErr(tl, ')');
-		vcc_NextToken(tl);
-	}
+	if (ae->para) 
+		SkipToken(tl, ')');
 
 	if (!vcc_acl_try_netnotation(tl, ae)) {
 		ERRCHK(tl);
@@ -504,17 +502,14 @@ vcc_Acl(struct tokenlist *tl)
 	vcc_AddDef(tl, an, R_ACL);
 	bprintf(acln, "%.*s", PF(an));
 
-	ExpectErr(tl, '{');
-	vcc_NextToken(tl);
+	SkipToken(tl, '{');
 
 	while (tl->t->tok != '}') {
 		vcc_acl_entry(tl);
 		ERRCHK(tl);
-		ExpectErr(tl, ';');
-		vcc_NextToken(tl);
+		SkipToken(tl, ';');
 	}
-	ExpectErr(tl, '}');
-	vcc_NextToken(tl);
+	SkipToken(tl, '}');
 
 	vcc_acl_emit(tl, acln, 0);
 }
