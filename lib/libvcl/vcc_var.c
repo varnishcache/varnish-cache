@@ -133,7 +133,6 @@ vcc_VarVal(struct tokenlist *tl, const struct var *vp, const struct token *vt)
 		Fb(tl, 0, "%g", vcc_DoubleVal(tl));
 	} else if (vp->fmt == INT) { 
 		Fb(tl, 0, "%u", vcc_UintVal(tl));
-		vcc_NextToken(tl);
 	} else {
 		AN(vt);
 		vsb_printf(tl->sb,

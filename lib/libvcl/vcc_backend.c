@@ -304,12 +304,10 @@ vcc_ParseProbe(struct tokenlist *tl)
 		} else if (vcc_IdIs(t_field, "window")) {
 			t_window = tl->t;
 			window = vcc_UintVal(tl);
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "initial")) {
 			t_initial = tl->t;
 			initial = vcc_UintVal(tl);
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "expected_response")) {
 			status = vcc_UintVal(tl);
@@ -320,12 +318,10 @@ vcc_ParseProbe(struct tokenlist *tl)
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "threshold")) {
 			t_threshold = tl->t;
 			threshold = vcc_UintVal(tl);
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 		} else {
 			vcc_ErrToken(tl, t_field);
@@ -482,7 +478,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "max_connections")) {
 			u = vcc_UintVal(tl);
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 			SkipToken(tl, ';');
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
@@ -498,7 +493,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 				vsb_printf(tl->sb, " at\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
-			vcc_NextToken(tl);
 			ERRCHK(tl);
 			saint = u;
 			SkipToken(tl, ';');

@@ -69,7 +69,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 			ExpectErr(tl, CNUM);
 			retries = vcc_UintVal(tl);
 			ERRCHK(tl);
-			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else {
 			ErrInternal(tl);
@@ -113,7 +112,6 @@ vcc_ParseRandomDirector(struct tokenlist *tl)
 					return;
 				}
 				Fc(tl, 0, "%s .weight = %u", first, u);
-				vcc_NextToken(tl);
 				SkipToken(tl, ';');
 			} else {
 				ErrInternal(tl);
