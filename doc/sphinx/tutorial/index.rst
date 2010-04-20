@@ -1,3 +1,5 @@
+.. _Tutorial:
+
 %%%%%%%%%%%%%%%%
 Varnish Tutorial
 %%%%%%%%%%%%%%%%
