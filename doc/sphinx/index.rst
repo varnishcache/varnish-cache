@@ -103,5 +103,5 @@ from Tcl to Python in that case.
 Poul-Henning, 2010-04-11
 
 
-.. _Sphinx: http://http://sphinx.pocoo.org/
+.. _Sphinx: http://sphinx.pocoo.org/
 .. _reStructuredText: http://docutils.sourceforge.net/rst.html
