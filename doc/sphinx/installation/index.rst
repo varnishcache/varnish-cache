@@ -11,16 +11,17 @@ move traffic.
 
 	install.rst
 	help.rst
+	bugs.rst
 
 .. todo::
         [V] on this os, pull this package
         [V] .. that ..//..
         [V] to compile from source
-        how to get help
-        - mailing list
-        - IRC
-        - varnish-software.com
-        - other listed consultants
+        [V] how to get help
+        [V]- mailing list
+        [V] - IRC
+        [V] - varnish-software.com
+        [V] - other listed consultants
         reporting bugs
         - using varnishtest to reproduce
         - what data do we need
