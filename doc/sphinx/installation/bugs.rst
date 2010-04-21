@@ -12,7 +12,15 @@ not thread 438 either, lets look at 439 then..." routine really fast.
 So if you run into a bug, it is important that you spend a little bit
 of time collecting the right information, to help us fix the bug.
 
-Roughly we have three clases of bugs with Varnish.
+The most valuable information you can give us, is **always** how
+to trigger and reproduce the problem.  If you can tell us that, we
+rarely need anything else to solve it.  The caveat being, that we
+do not have a way to simulate high levels of real-life web-traffic,
+so telling us to "have 10.000 clients hit at once" does not really
+allow us to reproduce.
+
+Roughly we have three clases of bugs with Varnish, and the information
+we need to debug them depends on the kind of bug.
 
 Varnish crashes
 ===============
@@ -121,4 +129,19 @@ start from scratch.  If that does not work either, tell us, that
 means that we have wedged your kernel.
 
 
+Varnish does something wrong
+============================
+
+These are the easy bugs: usually all we need from you is the relevant
+transactions recorded with ``varnishlog`` and your explanation of
+what is wrong about what Varnish does.
+
+Be aware, that often Varnish does exactly what you asked it to, rather
+than what you intended it to do, so it sounds like a bug that would
+have tripped up everybody else, take a moment to read though your
+VCL and see if it really does what you think.
+
+You can also try setting the ``vcl_trace`` parameter, that will
+generate log records with like and char number for each statement
+executed in your VCL program.
 
