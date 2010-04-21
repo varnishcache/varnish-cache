@@ -3,7 +3,7 @@
 <!DOCTYPE changelog [
  <!ENTITY mdash "&#8212;">
 ]>
-<!-- $Id: changes-2.0.xml 4602 2010-03-01 11:30:43Z phk $ -->
+<!-- $Id$ -->
 <changelog xmlns:xi="http://www.w3.org/2001/XInclude">
   <package>Varnish</package>
   <version>2.1</version>
