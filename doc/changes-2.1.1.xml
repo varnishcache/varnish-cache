@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xml" href="changes-html.xsl"?>
+<!DOCTYPE changelog [
+ <!ENTITY mdash "&#8212;">
+]>
+<!-- $Id: changes-2.1.1.xml 4709 2010-04-21 10:40:27Z tfheen $ -->
+<changelog xmlns:xi="http://www.w3.org/2001/XInclude">
+  <package>Varnish</package>
+  <version>2.1</version>
+
+  <xi:include href="changes-2.1.0-2.1.1.xml"/>
+</changelog>
