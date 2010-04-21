@@ -1,0 +1,89 @@
+# $Id$
+
+test "real purges"
+
+server s1 {
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 1
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 2
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 3
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 4
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 5
+	rxreq
+	txresp -hdr "Vary: foo" -bodylen 6
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_recv {
+		if (req.request == "PURGE") {
+			return (lookup);
+		}
+	}
+
+	sub vcl_hit {
+		if (req.request == "PURGE") {
+			C{ VRT_purge(sp, 0, 0); }C
+			error 456 "got it";
+		}
+	}
+	sub vcl_miss {
+		if (req.request == "PURGE") {
+			C{ VRT_purge(sp, 0, 0); }C
+			error 456 "got it";
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: bar1"
+	rxresp
+	expect resp.bodylen == 1
+
+	txreq -hdr "foo: bar2"
+	rxresp
+	expect resp.bodylen == 2
+
+	txreq -hdr "foo: bar1"
+	rxresp
+	expect resp.bodylen == 1
+
+	txreq -hdr "foo: bar2"
+	rxresp
+	expect resp.bodylen == 2
+
+	txreq -req "PURGE" -hdr "foo: bar1"
+	rxresp
+	expect resp.status == 456
+} -run
+
+client c1 {
+	txreq -hdr "foo: bar1"
+	rxresp
+	expect resp.bodylen == 3
+
+	txreq -hdr "foo: bar2"
+	rxresp
+	expect resp.bodylen == 4
+
+	txreq -req "PURGE" -hdr "foo: bar3"
+	rxresp
+	expect resp.status == 456
+} -run
+
+client c1 {
+	txreq -hdr "foo: bar1"
+	rxresp
+	expect resp.bodylen == 5
+
+	txreq -hdr "foo: bar2"
+	rxresp
+	expect resp.bodylen == 6
+
+} -run
+
+

@@ -308,6 +308,8 @@ HSH_Insert(const struct sess *sp)
 	return (oc);
 }
 
+/**********************************************************************
+ */
 
 struct objcore *
 HSH_Lookup(struct sess *sp, struct objhead **poh)
@@ -353,8 +355,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
-		assert(oc->objhead == oh);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		assert(oc->objhead == oh);
 
 		if (oc->flags & OC_F_PERSISTENT)
 			SMP_Fixup(sp, oh, oc);
@@ -455,6 +457,9 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	return (oc);
 }
 
+/**********************************************************************
+ */
+
 static void
 hsh_rush(struct objhead *oh)
 {
@@ -481,6 +486,56 @@ hsh_rush(struct objhead *oh)
 		}
 	}
 }
+
+/**********************************************************************
+ * Purge an entire objhead
+ */
+
+void
+HSH_Purge(struct sess *sp, struct objhead *oh, double ttl, double grace)
+{
+	struct objcore *oc, **ocp;
+	unsigned spc, nobj, n;
+	struct object *o;
+
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	spc = WS_Reserve(sp->wrk->ws, 0);
+	ocp = (void*)sp->wrk->ws->f;
+	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
+	nobj = 0;
+	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		assert(oc->objhead == oh);
+
+		if (oc->flags & OC_F_PERSISTENT)
+			SMP_Fixup(sp, oh, oc);
+
+		xxxassert(spc >= sizeof *ocp);
+		oc->refcnt++;
+		spc -= sizeof *ocp;
+		ocp[nobj++] = oc;
+	}
+	Lck_Unlock(&oh->mtx);
+
+	if (ttl <= 0)
+		ttl = -1;
+	for (n = 0; n < nobj; n++) {
+		oc = ocp[n];
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		o = oc->obj;
+		if (o == NULL)
+			continue;
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		o->ttl = sp->t_req + ttl;
+		if (!isnan(grace))
+			o->grace = grace;
+		EXP_Rearm(o);
+		HSH_Deref(sp->wrk, &o);
+	}
+	WS_Release(sp->wrk->ws, 0);
+}
+
 
 /**********************************************************************
  * Kill a busy object we don't need anyway.
