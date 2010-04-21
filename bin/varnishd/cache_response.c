@@ -40,6 +40,7 @@ SVNID("$Id$")
 
 #include "shmlog.h"
 #include "cache.h"
+#include "vct.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -127,6 +128,56 @@ res_do_conds(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+static void
+res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
+{
+	unsigned low, high;
+
+	(void)sp;
+	if (strncmp(r, "bytes=", 6))
+		return;
+	r += 6;
+	printf("-----------------RANGE: <%s>\n", r);
+	low = 0;
+	high = 0;
+	if (!vct_isdigit(*r))
+		return;
+	while (vct_isdigit(*r)) {
+		low *= 10;
+		low += *r - '0';
+		r++;
+	}
+	if (*r != '-')
+		return;
+	r++;
+	if (!vct_isdigit(*r))
+		return;
+	while (vct_isdigit(*r)) {
+		high *= 10;
+		high += *r - '0';
+		r++;
+	}
+	if (*r != '\0')
+		return;
+	printf("-----------------RANGE: %u %u\n", low, high);
+	if (high >= sp->obj->len)
+		high = sp->obj->len - 1;
+	if (low == 0 && high >= sp->obj->len)
+		return;
+
+
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+	    "Content-Range: bytes %u-%u/%u", low, high, sp->obj->len);
+	http_Unset(sp->wrk->resp, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+	    "Content-Length: %u", 1 + high - low);
+	http_SetResp(sp->wrk->resp, "HTTP/1.1", "206", "Partial Content");
+	*plow = low;
+	*phigh = high;
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 RES_BuildHttp(struct sess *sp)
 {
@@ -153,7 +204,10 @@ RES_BuildHttp(struct sess *sp)
 			    "Transfer-Encoding: chunked");
 		else
 			sp->doclose = "ESI EOF";
-	}
+	} else if (params->http_range_support)
+		http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Accept-Ranges: bytes");
+		
 
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);
@@ -179,63 +233,119 @@ RES_WriteObj(struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	char lenbuf[20];
+	char *r;
+	unsigned low, high, ptr, off, len;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (sp->disable_esi || !sp->esis)
-		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
+	/*
+	 * ESI objects get special delivery
+	 */
+	if (!sp->disable_esi && sp->obj->esidata != NULL) {
 
-	if (!sp->disable_esi && sp->wantbody && sp->obj->esidata != NULL) {
+		if (sp->esis == 0)
+			/* no headers for interior ESI includes */
+			sp->acct_req.hdrbytes += 
+			    http_Write(sp->wrk, sp->wrk->resp, 1);
+
 		if (WRW_FlushRelease(sp->wrk)) {
 			vca_close_session(sp, "remote closed");
-			return;
-		}
-		ESI_Deliver(sp);
+		} else if (sp->wantbody)
+			ESI_Deliver(sp);
 		return;
 	}
 
-	if (sp->wantbody) {
-		if (!sp->disable_esi &&
-		    sp->esis > 0 &&
-		    sp->http->protover >= 1.1 &&
-		    sp->obj->len > 0) {
-			sprintf(lenbuf, "%x\r\n", sp->obj->len);
-			(void)WRW_Write(sp->wrk, lenbuf, -1);
-		}
+	/*
+	 * How much of the object we want to deliver
+	 */
+	low = 0;
+	high = sp->obj->len - 1;
 
-		VTAILQ_FOREACH(st, &sp->obj->store, list) {
-			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-			u += st->len;
-			sp->acct_req.bodybytes += st->len;
-#ifdef SENDFILE_WORKS
-			/*
-			 * XXX: the overhead of setting up sendfile is not
-			 * XXX: epsilon and maybe not even delta, so avoid
-			 * XXX: engaging sendfile for small objects.
-			 * XXX: Should use getpagesize() ?
-			 */
-			if (st->fd >= 0 &&
-			    st->len >= params->sendfile_threshold) {
-				VSL_stats->n_objsendfile++;
-				WRW_Sendfile(sp->wrk, st->fd,
-				    st->where, st->len);
-				continue;
-			}
-#endif /* SENDFILE_WORKS */
-			VSL_stats->n_objwrite++;
-			(void)WRW_Write(sp->wrk, st->ptr, st->len);
-		}
-		assert(u == sp->obj->len);
-		if (!sp->disable_esi &&
-		    sp->esis > 0 &&
-		    sp->http->protover >= 1.1 &&
-		    sp->obj->len > 0)
-			(void)WRW_Write(sp->wrk, "\r\n", -1);
+	if (sp->disable_esi || sp->esis == 0) {
+		/* For none ESI and non ESI-included objects, try Range */
+		if (params->http_range_support &&
+		    (sp->disable_esi || sp->esis == 0) &&
+		    sp->obj->response == 200 &&
+		    sp->wantbody &&
+		    http_GetHdr(sp->http, H_Range, &r))
+			res_dorange(sp, r, &low, &high);
+
+		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
+	} else if (!sp->disable_esi &&
+	    sp->esis > 0 &&
+	    sp->http->protover >= 1.1 &&
+	    sp->obj->len > 0) {
+		/*
+		 * Interior ESI includes (which are not themselves ESI 
+		 * objects) use chunked encoding (here) or EOF (nothing)
+		 */
+		assert(sp->wantbody);
+		sprintf(lenbuf, "%x\r\n", sp->obj->len);
+		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
+
+	if (!sp->wantbody) {
+		/* This was a HEAD request */
+		assert(sp->esis == 0);
+		if (WRW_FlushRelease(sp->wrk))
+			vca_close_session(sp, "remote closed");
+		return;
+	}
+
+	ptr = 0;
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		u += st->len;
+		len = st->len;
+		off = 0;
+		if (ptr + len <= low) {
+			/* This segment is too early */
+			ptr += len;	
+			continue;
+		}
+		if (ptr < low) {
+			/* Chop front of segment off */
+			off += (low - ptr);
+			len -= (low - ptr);
+			ptr += (low - ptr);
+		}
+		if (ptr + len > high)
+			/* Chop tail of segment off */
+			len = 1 + high - low;
+
+		ptr += len;
+
+		sp->acct_req.bodybytes += len;
+#ifdef SENDFILE_WORKS
+		/*
+		 * XXX: the overhead of setting up sendfile is not
+		 * XXX: epsilon and maybe not even delta, so avoid
+		 * XXX: engaging sendfile for small objects.
+		 * XXX: Should use getpagesize() ?
+		 */
+		if (st->fd >= 0 &&
+		    st->len >= params->sendfile_threshold) {
+			VSL_stats->n_objsendfile++;
+			WRW_Sendfile(sp->wrk, st->fd, st->where + off, len);
+			continue;
+		}
+#endif /* SENDFILE_WORKS */
+		VSL_stats->n_objwrite++;
+		(void)WRW_Write(sp->wrk, st->ptr + off, len);
+	}
+	assert(u == sp->obj->len);
+	if (!sp->disable_esi &&
+	    sp->esis > 0 &&
+	    sp->http->protover >= 1.1 &&
+	    sp->obj->len > 0) {
+		/* post-chunk new line */
+		(void)WRW_Write(sp->wrk, "\r\n", -1);
+	}
+
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }

@@ -1,0 +1,59 @@
+# $Id$
+
+test "Range headers"
+
+server s1 {
+	rxreq
+	txresp -bodylen 100
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -hdr "Range: bytes=0-9"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+} -run
+
+varnish v1 -cliok "param.set http_range_support on"
+
+
+client c1 {
+	txreq -hdr "Range: bytes =0-9"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes=0- 9"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes =-9"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes =0-a"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes=0-9"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 10
+
+	txreq -hdr "Range: bytes=10-19"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 10
+
+	txreq -hdr "Range: bytes=90-101"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 10
+} -run
+
