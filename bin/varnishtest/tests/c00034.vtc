@@ -51,9 +51,39 @@ client c1 {
 	expect resp.status == 206
 	expect resp.bodylen == 10
 
-	txreq -hdr "Range: bytes=90-101"
+	txreq -hdr "Range: bytes=90-"
 	rxresp
 	expect resp.status == 206
 	expect resp.bodylen == 10
+
+	txreq -hdr "Range: bytes=-9"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 10
+
+	txreq -hdr "Range: bytes=-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes=102-102"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes=99-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 1
+
+	txreq -hdr "Range: bytes=99-70"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+
+	txreq -hdr "Range: bytes=-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 100
 } -run
 

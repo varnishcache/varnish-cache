@@ -137,34 +137,42 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 	if (strncmp(r, "bytes=", 6))
 		return;
 	r += 6;
-	printf("-----------------RANGE: <%s>\n", r);
+
+	/* The low end of range */
 	low = 0;
-	high = 0;
-	if (!vct_isdigit(*r))
+	if (!vct_isdigit(*r) && *r != '-')
 		return;
 	while (vct_isdigit(*r)) {
 		low *= 10;
 		low += *r - '0';
 		r++;
 	}
+
+	if (low >= sp->obj->len)
+		return;
+
 	if (*r != '-')
 		return;
 	r++;
-	if (!vct_isdigit(*r))
-		return;
-	while (vct_isdigit(*r)) {
-		high *= 10;
-		high += *r - '0';
-		r++;
-	}
+
+	/* The high end of range */
+	if (vct_isdigit(*r)) {
+		high = 0;
+		while (vct_isdigit(*r)) {
+			high *= 10;
+			high += *r - '0';
+			r++;
+		}
+	} else
+		high = sp->obj->len - 1;
 	if (*r != '\0')
 		return;
-	printf("-----------------RANGE: %u %u\n", low, high);
-	if (high >= sp->obj->len)
-		high = sp->obj->len - 1;
-	if (low == 0 && high >= sp->obj->len)
-		return;
 
+	if (high >= sp->obj->len)
+		high = sp->obj->len;
+
+	if (low > high)
+		return;
 
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 	    "Content-Range: bytes %u-%u/%u", low, high, sp->obj->len);
@@ -172,6 +180,8 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 	    "Content-Length: %u", 1 + high - low);
 	http_SetResp(sp->wrk->resp, "HTTP/1.1", "206", "Partial Content");
+
+
 	*plow = low;
 	*phigh = high;
 }
