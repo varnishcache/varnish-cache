@@ -126,7 +126,6 @@ it's saintmode list
 can be set to the maximum list size. Setting a value of 0 disables
 saintmode checking entirely for that backend. The value in the backend
 declaration overrides the parameter.
-
 .Ss Directors
 Directors choose from different backends based on health status and a
 per-director algorithm.
