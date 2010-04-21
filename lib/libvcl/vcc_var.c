@@ -131,7 +131,7 @@ vcc_VarVal(struct tokenlist *tl, const struct var *vp, const struct token *vt)
 		Fb(tl, 0, "%g", d);
 	} else if (vp->fmt == FLOAT) {
 		Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-	} else if (vp->fmt == INT) { 
+	} else if (vp->fmt == INT) {
 		Fb(tl, 0, "%u", vcc_UintVal(tl));
 	} else {
 		AN(vt);

@@ -1051,7 +1051,7 @@ cnt_recv(struct sess *sp)
 	assert(sp->handling == VCL_RET_HASH);
 	SHA256_Final(sp->digest, sp->wrk->sha256ctx);
 
-	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD")) 
+	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD"))
 		sp->wantbody = 0;
 	else
 		sp->wantbody = 1;

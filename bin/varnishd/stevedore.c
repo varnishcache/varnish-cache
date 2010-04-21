@@ -141,7 +141,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 	o = (void *)st->ptr; /* XXX: align ? */
 
 	l = PRNDDN(st->space - (sizeof *o + lh));
-	
+
 
 	STV_InitObj(sp, o, l, lh, nhttp);
 	o->objstore = st;

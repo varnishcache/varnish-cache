@@ -101,7 +101,7 @@ static struct vlu	*vlu;
 /*--------------------------------------------------------------------
  * Track the highest file descriptor the parent knows is being used.
  *
- * This allows the child process to clean/close only a small fraction 
+ * This allows the child process to clean/close only a small fraction
  * of the possible file descriptors after exec(2).
  *
  * This is likely to a bit on the low side, as libc and other libraries
