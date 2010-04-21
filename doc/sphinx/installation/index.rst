@@ -10,6 +10,7 @@ move traffic.
 .. toctree::
 
 	install.rst
+	help.rst
 
 .. todo::
         [V] on this os, pull this package
