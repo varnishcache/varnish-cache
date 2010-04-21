@@ -1,7 +1,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 2.1.1
-Release: 0.svn20100415%{?dist}
+Release: 0.svn20100421%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -9,7 +9,7 @@ Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
-BuildRequires: automake autoconf libtool
+#BuildRequires: automake autoconf libtool
 BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
@@ -61,12 +61,12 @@ Varnish is a high-performance HTTP accelerator
 #Varnish is a high-performance HTTP accelerator
 
 %prep
-#%setup -q
-%setup -q -n varnish-cache
+%setup -q
+#%setup -q -n varnish-cache
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-./autogen.sh
+#./autogen.sh
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
