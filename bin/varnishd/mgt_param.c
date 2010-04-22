@@ -817,6 +817,13 @@ static const struct parspec input_parspec[] = {
 		"Enable support for HTTP Range headers.\n",
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "critbit_cooloff", tweak_timeout_double,
+		&master.critbit_cooloff, 60, UINT_MAX,
+		"How long time the critbit hasher keeps deleted objheads "
+		"on the cooloff list.\n"
+		"A value of zero disables the ban lurker.",
+		EXPERIMENTAL,
+		"180.0", "s" },
 	{ NULL, NULL, NULL }
 };
 

@@ -340,8 +340,6 @@ static struct cli_proto hcb_cmds[] = {
 
 /**********************************************************************/
 
-#define COOL_DURATION	60		/* seconds */
-
 static void *
 hcb_cleaner(void *priv)
 {
@@ -363,7 +361,7 @@ hcb_cleaner(void *priv)
 			y = (void *)&oh->u;
 			if (y->leaf[0] || y->leaf[1])
 				continue;
-			if (++oh->digest[0] > COOL_DURATION) {
+			if (++oh->digest[0] > params->critbit_cooloff) {
 				VTAILQ_REMOVE(&laylow, oh, coollist);
 #ifdef PHK
 				fprintf(stderr, "OH %p is cold enough\n", oh);
