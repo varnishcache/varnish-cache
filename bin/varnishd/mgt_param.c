@@ -818,7 +818,7 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"off", "bool" },
 	{ "critbit_cooloff", tweak_timeout_double,
-		&master.critbit_cooloff, 60, UINT_MAX,
+		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "
 		"on the cooloff list.\n"
 		"A value of zero disables the ban lurker.",
