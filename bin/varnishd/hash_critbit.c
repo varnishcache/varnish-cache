@@ -93,18 +93,17 @@ hcb_build_bittbl(void)
  */
 
 struct hcb_y {
-	unsigned short	critbit;
-	unsigned char	ptr;
-	unsigned char	bitmask;
-	uintptr_t	leaf[2];
+	unsigned short		critbit;
+	unsigned char		ptr;
+	unsigned char		bitmask;
+	volatile uintptr_t	leaf[2];
 };
 
 #define HCB_BIT_NODE		(1<<0)
 #define HCB_BIT_Y		(1<<1)
 
 struct hcb_root {
-	uintptr_t	origo;
-	unsigned	cmps;
+	volatile uintptr_t	origo;
 };
 
 static struct hcb_root	hcb_root;
@@ -209,7 +208,6 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 		assert(y->ptr < DIGEST_LEN);
 		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
-		root->cmps++;
 		p = &y->leaf[s];
 		pp = *p;
 	}
@@ -246,7 +244,6 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 		assert(y->ptr < DIGEST_LEN);
 		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
-		root->cmps++;
 		p = &y->leaf[s];
 	}
 	y2->leaf[s2] = *p;
@@ -260,7 +257,7 @@ static void
 hcb_delete(struct hcb_root *r, struct objhead *oh)
 {
 	struct hcb_y *y;
-	uintptr_t *p;
+	volatile uintptr_t *p;
 	unsigned s;
 
 	if (r->origo == hcb_r_node(oh)) {
@@ -283,7 +280,6 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 			y->leaf[1] = 0;
 			return;
 		}
-		r->cmps++;
 		p = &y->leaf[s];
 	}
 }
