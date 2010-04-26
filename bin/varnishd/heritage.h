@@ -199,6 +199,8 @@ struct params {
 	unsigned		syslog_cli_traffic;
 
 	unsigned		http_range_support;
+
+	double			critbit_cooloff;
 };
 
 /*
