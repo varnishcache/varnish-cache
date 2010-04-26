@@ -74,6 +74,12 @@
       header.  This has to be enabled using the parameter
       http_range_support.</para>
     </change>
+
+    <change type="bug" id="684">
+      <para>The <code>critbit</code> hasher could get into a deadlock
+      and had a race condition.  Both those have now been fixed.</para>
+    </change>
+
   </subsystem>
   <subsystem>
     <name>varnishsizes</name>
