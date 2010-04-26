@@ -212,6 +212,12 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 		pp = *p;
 	}
 
+	if (pp == 0) {
+		/* We raced hcb_delete and got a NULL pointer */
+		assert(!has_lock);
+		return (NULL);
+	}
+
 	assert(hcb_is_node(pp));
 
 	/* We found a node, does it match ? */
