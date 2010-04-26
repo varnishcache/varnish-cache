@@ -160,7 +160,9 @@ hcb_l_y(uintptr_t u)
 	return ((struct hcb_y *)(u & ~HCB_BIT_Y));
 }
 
-/**********************************************************************/
+/**********************************************************************
+ * Find the "critical" bit that separates these two digests
+ */
 
 static unsigned
 hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
@@ -238,6 +240,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
+		assert(y->critbit != y2->critbit);
 		if (y->critbit > y2->critbit)
 			break;
 		assert(y->ptr < DIGEST_LEN);
@@ -353,7 +356,6 @@ hcb_cleaner(void *priv)
 	THR_SetName("hcb_cleaner");
 	(void)priv;
 	while (1) {
-		(void)sleep(1);
 		Lck_Lock(&hcb_mtx);
 		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
 			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -363,14 +365,16 @@ hcb_cleaner(void *priv)
 				continue;
 			if (++oh->digest[0] > params->critbit_cooloff) {
 				VTAILQ_REMOVE(&laylow, oh, coollist);
-#ifdef PHK
-				fprintf(stderr, "OH %p is cold enough\n", oh);
-#endif
-				HSH_DeleteObjHead(&ww, oh);
+				break;
 			}
 		}
 		Lck_Unlock(&hcb_mtx);
-		WRK_SumStat(&ww);
+		if (oh == NULL) {
+			WRK_SumStat(&ww);
+			(void)sleep(1);
+		} else {
+			HSH_DeleteObjHead(&ww, oh);
+		}
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -385,11 +389,11 @@ hcb_start(void)
 
 	(void)oh;
 	CLI_AddFuncs(hcb_cmds);
+	Lck_New(&hcb_mtx);
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();
-	Lck_New(&hcb_mtx);
 }
 
 static int
@@ -401,8 +405,8 @@ hcb_deref(struct objhead *oh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
-	if (oh->refcnt == 1) {
-		/* Remove from tree before decrementing refcnt to zero */
+	oh->refcnt--;
+	if (oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
 		assert(VTAILQ_EMPTY(&oh->objcs));
@@ -411,7 +415,6 @@ hcb_deref(struct objhead *oh)
 		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
 		Lck_Unlock(&hcb_mtx);
 	}
-	oh->refcnt--;
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
 	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
@@ -423,54 +426,52 @@ static struct objhead *
 hcb_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *oh;
-	unsigned u;
+	volatile unsigned u;
+	unsigned with_lock;
 
 	(void)sp;
-	oh =  hcb_insert(&hcb_root, noh, 0);
-	if (oh != NULL) {
-		/* Assert that we didn't muck with the tree without lock */
-		assert(oh != noh);
+	
+	with_lock = 0;
+	while (1) {
+		if (with_lock) {
+			Lck_Lock(&hcb_mtx);
+			VSL_stats->hcb_lock++;
+			assert(noh->refcnt == 1);
+			oh =  hcb_insert(&hcb_root, noh, 1);
+			Lck_Unlock(&hcb_mtx);
+		} else {
+			VSL_stats->hcb_nolock++;
+			oh =  hcb_insert(&hcb_root, noh, 0);
+		}
+
+		if (oh != NULL && oh == noh) {
+			/* Assert that we only muck with the tree with a lock */
+			assert(with_lock);
+			VSL_stats->hcb_insert++;
+			assert(oh->refcnt > 0);
+			return (oh);
+		} 
+
+		if (oh == NULL) {
+			assert(!with_lock);
+			/* Try again, with lock */
+			with_lock = 1;
+			continue;
+		}
+
+		CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 		Lck_Lock(&oh->mtx);
 		/*
 		 * A refcount of zero indicates that the tree changed
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u)
+		if (u > 0)
 			oh->refcnt++;
 		Lck_Unlock(&oh->mtx);
-		if (u) {
-			VSL_stats->hcb_nolock++;
+		if (u > 0)
 			return (oh);
-		}
 	}
-
-	/*
-	 * Try again, holding lock and fully ready objhead, so that if
-	 * somebody else beats us back, they do not get surprised.
-	 */
-	Lck_Lock(&hcb_mtx);
-	assert(noh->refcnt == 1);
-	oh =  hcb_insert(&hcb_root, noh, 1);
-	if (oh == noh) {
-		VSL_stats->hcb_insert++;
-		assert(oh->refcnt > 0);
-#ifdef PHK
-		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
-#endif
-	} else {
-		CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
-		VSL_stats->hcb_lock++;
-#ifdef PHK
-		fprintf(stderr, "hcb_lookup %d\n", __LINE__);
-#endif
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		oh->refcnt++;
-		Lck_Unlock(&oh->mtx);
-	}
-	Lck_Unlock(&hcb_mtx);
-	return (oh);
 }
 
 
