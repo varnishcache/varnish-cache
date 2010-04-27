@@ -114,7 +114,7 @@ varnish v1 -badvcl {
 
 varnish v1 -badvcl {
 	/* too many IP numbers */
-	backend b1 { .host = "cnn.com"; }
+	backend b1 { .host = "v00002.freebsd.dk"; }
 }
 
 varnish v1 -badvcl {
