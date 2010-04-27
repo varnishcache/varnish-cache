@@ -27,13 +27,13 @@ libvcl_la_SOURCES = \
 	vcc_xref.c
 
 EXTRA_DIST = \
-	vcc_gen_fixed_token.tcl
+	generate.py
 
-$(srcdir)/vcc_obj.c: $(srcdir)/vcc_gen_fixed_token.tcl
-	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl || true
+$(srcdir)/vcc_obj.c: $(srcdir)/generate.py
+	cd $(srcdir) && @PYTHON3@ generate.py || true
 
-$(srcdir)/vcc_fixed_token.c: $(srcdir)/vcc_gen_fixed_token.tcl $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl || true
+$(srcdir)/vcc_fixed_token.c: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
+	cd $(srcdir) && @PYTHON3@ generate.py || true
 
-$(srcdir)/vcc_token_defs.h: $(srcdir)/vcc_gen_fixed_token.tcl $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @TCLSH@ vcc_gen_fixed_token.tcl || true
+$(srcdir)/vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
+	cd $(srcdir) && @PYTHON3@ generate.py || true
