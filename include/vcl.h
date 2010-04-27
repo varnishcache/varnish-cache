@@ -1,9 +1,10 @@
+
 /*
  * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit and run vcc_gen_fixed_token.tcl instead
+ * Edit and run generate.py instead
  */
 
 struct sess;

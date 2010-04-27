@@ -30,8 +30,7 @@
  *
  * Runtime support for compiled VCL programs.
  *
- * XXX: When this file is changed, lib/libvcl/vcc_gen_fixed_token.tcl
- * XXX: *MUST* be rerun.
+ * XXX: When this file is changed, lib/libvcl/generate.py *MUST* be rerun.
  */
 
 struct sess;
