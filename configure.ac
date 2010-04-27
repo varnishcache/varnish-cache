@@ -291,9 +291,9 @@ else
 fi
 
 AM_MISSING_HAS_RUN
-AC_CHECK_PROGS(PYTHON3, [python3 python3.1 python3.2], :)
-if test "$PYTHON3" = :; then
-  PYTHON3="${am_missing_run}python3"
+AC_CHECK_PROGS(PYTHON, [python python2 python2.5 python2.6 python3 python3.1 python3.2], :)
+if test "$PYTHON" = :; then
+  PYTHON="${am_missing_run}python"
 fi
 
 # Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.

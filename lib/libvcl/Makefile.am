@@ -30,10 +30,10 @@ EXTRA_DIST = \
 	generate.py
 
 $(srcdir)/vcc_obj.c: $(srcdir)/generate.py
-	cd $(srcdir) && @PYTHON3@ generate.py || true
+	cd $(srcdir) && @PYTHON@ generate.py || true
 
 $(srcdir)/vcc_fixed_token.c: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @PYTHON3@ generate.py || true
+	cd $(srcdir) && @PYTHON@ generate.py || true
 
 $(srcdir)/vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @PYTHON3@ generate.py || true
+	cd $(srcdir) && @PYTHON@ generate.py || true
