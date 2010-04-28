@@ -703,7 +703,6 @@ fo.close()
 #######################################################################
 
 def restrict(fo, spec):
-	print("RX: ", spec)
 	if len(spec) == 0:
 		fo.write("\t    0,\n")
 		return
@@ -737,7 +736,6 @@ struct var vcc_vars[] = {
 """)
 
 for i in sp_variables:
-	print(i)
 	typ = i[1]
 	if typ[:4] == "HDR_":
 		typ = "HEADER"
