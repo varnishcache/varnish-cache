@@ -61,7 +61,8 @@ struct proccall {
 struct procuse {
 	VTAILQ_ENTRY(procuse)	list;
 	struct token		*t;
-	struct var		*v;
+	unsigned		mask;
+	const char		*use;
 };
 
 struct proc {
@@ -212,16 +213,19 @@ vcc_AddProc(struct tokenlist *tl, struct token *t)
 }
 
 void
-vcc_AddUses(struct tokenlist *tl, struct var *v)
+vcc_AddUses(struct tokenlist *tl, const struct token *t, unsigned mask,
+    const char *use)
 {
 	struct procuse *pu;
 
+	(void)t;
 	if (tl->curproc == NULL)	/* backend */
 		return;
 	pu = TlAlloc(tl, sizeof *pu);
 	assert(pu != NULL);
-	pu->v = v;
 	pu->t = tl->t;
+	pu->mask = mask;
+	pu->use = use;
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 }
 
@@ -339,7 +343,7 @@ vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 	struct procuse *pu;
 
 	VTAILQ_FOREACH(pu, &p->uses, list)
-		if (!(pu->v->methods & m->bitval))
+		if (!(pu->mask & m->bitval))
 			return (pu);
 	return (NULL);
 }
@@ -389,8 +393,8 @@ vcc_CheckUses(struct tokenlist *tl)
 		pu = vcc_FindIllegalUse(p, m);
 		if (pu != NULL) {
 			vsb_printf(tl->sb,
-			    "Variable '%.*s' not accessible in method '%.*s'.",
-			    PF(pu->t), PF(p->name));
+			    "Variable '%.*s': %s not allowed in method '%.*s'.",
+			    PF(pu->t), pu->use, PF(p->name));
 			vsb_cat(tl->sb, "\nAt: ");
 			vcc_ErrWhere(tl, pu->t);
 			return (1);

@@ -154,7 +154,7 @@ vcc_StringVal(struct tokenlist *tl)
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "regsuball"))
 		return (vcc_regsub(tl, 1));
 	if (tl->t->tok == VAR) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars);
+		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		if (tl->err)
 			return (0);
 		assert(vp != NULL);

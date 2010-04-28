@@ -61,10 +61,10 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 	memcpy(p, t->b, i);
 	p[i] = '\0';
 	v->name = p;
-	v->access = V_RW;
+	v->r_methods = vh->r_methods;
+	v->l_methods = vh->l_methods;
 	v->fmt = STRING;
 	v->hdr = vh->hdr;
-	v->methods = vh->methods;
 	l = strlen(v->name + vh->len) + 1;
 
 	bprintf(buf, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")",
@@ -87,7 +87,8 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 /*--------------------------------------------------------------------*/
 
 struct var *
-vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
+vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl,
+    int wr_access, const char *use)
 {
 	struct var *v;
 
@@ -98,7 +99,25 @@ vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl)
 			continue;
 		if (memcmp(t->b, v->name, v->len))
 			continue;
-		vcc_AddUses(tl, v);
+		if (wr_access && v->l_methods == 0) {
+			vsb_printf(tl->sb, "Variable ");
+			vcc_ErrToken(tl, t);
+			vsb_printf(tl->sb, " is read only.");
+			vsb_cat(tl->sb, "\nAt: ");
+			vcc_ErrWhere(tl, t);
+			return (NULL);
+		} else if (wr_access) {
+			vcc_AddUses(tl, t, v->l_methods, use);
+		} else if (v->r_methods == 0) {
+			vsb_printf(tl->sb, "Variable ");
+			vcc_ErrToken(tl, t);
+			vsb_printf(tl->sb, " is write only.");
+			vsb_cat(tl->sb, "\nAt: ");
+			vcc_ErrWhere(tl, t);
+			return (NULL);
+		} else {
+			vcc_AddUses(tl, t, v->r_methods, use);
+		}
 		if (v->fmt != HEADER)
 			return (v);
 		return (HeaderVar(tl, t, v));

@@ -109,12 +109,6 @@ enum var_type {
 	HEADER
 };
 
-enum var_access {
-	V_RO,
-	V_RW,
-	V_WO
-};
-
 enum ref_type {
 	R_FUNC,
 	R_ACL,
@@ -134,10 +128,10 @@ struct var {
 	enum var_type		fmt;
 	unsigned		len;
 	const char		*rname;
+	unsigned		r_methods;
 	const char		*lname;
-	enum var_access		access;
+	unsigned		l_methods;
 	const char		*hdr;
-	unsigned		methods;
 };
 
 struct method {
@@ -225,7 +219,7 @@ void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b,
 
 /* vcc_var.c */
 struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t,
-    struct var *vl);
+    struct var *vl, int wr_access, const char *use);
 void vcc_VarVal(struct tokenlist *tl, const struct var *vp,
     const struct token *vt);
 
@@ -238,7 +232,8 @@ void vcc_AddCall(struct tokenlist *tl, struct token *t);
 struct proc *vcc_AddProc(struct tokenlist *tl, struct token *t);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct tokenlist *tl);
-void vcc_AddUses(struct tokenlist *tl, struct var *v);
+void vcc_AddUses(struct tokenlist *tl, const struct token *t, unsigned mask,
+    const char *use);
 int vcc_CheckUses(struct tokenlist *tl);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)

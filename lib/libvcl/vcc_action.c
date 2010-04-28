@@ -69,7 +69,7 @@ parse_error(struct tokenlist *tl)
 
 	vcc_NextToken(tl);
 	if (tl->t->tok == VAR) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars);
+		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		ERRCHK(tl);
 		assert(vp != NULL);
 		if (vp->fmt == INT) {
@@ -112,16 +112,6 @@ illegal_assignment(const struct tokenlist *tl, const char *type)
 }
 
 static void
-check_writebit(struct tokenlist *tl, const struct var *vp)
-{
-
-	if (vp->access == V_RW || vp->access == V_WO)
-		return;
-	vsb_printf(tl->sb, "Variable %.*s cannot be modified.\n", PF(tl->t));
-	vcc_ErrWhere(tl, tl->t);
-}
-
-static void
 parse_set(struct tokenlist *tl)
 {
 	struct var *vp;
@@ -130,11 +120,9 @@ parse_set(struct tokenlist *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, VAR);
 	vt = tl->t;
-	vp = vcc_FindVar(tl, tl->t, vcc_vars);
+	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "set");
 	ERRCHK(tl);
 	assert(vp != NULL);
-	check_writebit(tl, vp);
-	ERRCHK(tl);
 	Fb(tl, 1, "%s", vp->lname);
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
@@ -262,15 +250,15 @@ parse_unset(struct tokenlist *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, VAR);
-	vp = vcc_FindVar(tl, tl->t, vcc_vars);
+	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "unset");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	if (vp->fmt != STRING || vp->hdr == NULL) {
-		vsb_printf(tl->sb, "Only http header lines can be unset.\n");
+		vsb_printf(tl->sb,
+		    "Only http header variables can be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	check_writebit(tl, vp);
 	ERRCHK(tl);
 	Fb(tl, 1, "%s0);\n", vp->lname);
 	vcc_NextToken(tl);
