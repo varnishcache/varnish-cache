@@ -95,231 +95,277 @@ returns =(
 
 sp_variables = (
 	('client.ip',
-		'IP', 'RO',
+		'IP',
 		( 'all',),
+		( ),
 		'const struct sess *'
 	),
 	('server.ip',
-		'IP', 'RO',
+		'IP',
 		( 'all',),
+		( ),
 		'struct sess *'
 	),
 	('server.hostname',
-		'STRING', 'RO',
+		'STRING',
 		( 'all',),
+		( ),
 		'struct sess *'
 	),
 	('server.identity',
-		'STRING', 'RO',
+		'STRING',
 		( 'all',),
+		( ),
 		'struct sess *'
 	),
 	('server.port',
-		'INT', 'RO',
+		'INT',
 		( 'all',),
+		( ),
 		'struct sess *'
 	),
 	('req.request',
-		'STRING', 'RW',
+		'STRING',
+		( 'all',),
 		( 'all',),
 		'const struct sess *'
 	),
 	('req.url',
-		'STRING', 'RW',
+		'STRING',
+		( 'all',),
 		( 'all',),
 		'const struct sess *'
 	),
 	('req.proto',
-		'STRING', 'RW',
+		'STRING',
+		( 'all',),
 		( 'all',),
 		'const struct sess *'
 	),
 	('req.http.',
-		'HDR_REQ', 'RW',
+		'HDR_REQ',
+		( 'all',),
 		( 'all',),
 		'const struct sess *'
 	),
 	('req.hash',
-		'HASH', 'WO',
-		( 'hash', 'error',),
+		'HASH',
+		( ),
+		( 'hash', 'error',),	# XXX error ???
 		'struct sess *'
 	),
 	('req.backend',
-		'BACKEND', 'RW',
+		'BACKEND',
+		( 'all',),
 		( 'all',),
 		'struct sess *'
 	),
 	('req.restarts',
-		'INT', 'RO',
+		'INT',
 		( 'all',),
+		( ),
 		'const struct sess *'
 	),
 	('req.grace',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'all',),
 		( 'all',),
 		'struct sess *'
 	),
 	('req.xid',
-		'STRING', 'RO',
+		'STRING',
 		( 'all',),
+		( ),
 		'struct sess *'
 	),
 	('req.esi',
-		'BOOL', 'RW',
+		'BOOL',
+		( 'recv', 'fetch', 'deliver', 'error',),
 		( 'recv', 'fetch', 'deliver', 'error',),
 		'struct sess *'
 	),
 	('req.backend.healthy',
-		'BOOL', 'RO',
+		'BOOL',
 		( 'all',),
+		( ),
 		'const struct sess *'
 	),
 	('bereq.request',
-		'STRING', 'RW',
+		'STRING',
+		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		'const struct sess *'
 	),
 	('bereq.url',
-		'STRING', 'RW',
+		'STRING',
+		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		'const struct sess *'
 	),
 	('bereq.proto',
-		'STRING', 'RW',
+		'STRING',
+		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		'const struct sess *'
 	),
 	('bereq.http.',
-		'HDR_BEREQ', 'RW',
+		'HDR_BEREQ',
+		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		'const struct sess *'
 	),
 	('bereq.connect_timeout',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'pass', 'miss',),
 		( 'pass', 'miss',),
 		'struct sess *'
 	),
 	('bereq.first_byte_timeout',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'pass', 'miss',),
 		( 'pass', 'miss',),
 		'struct sess *'
 	),
 	('bereq.between_bytes_timeout',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'pass', 'miss',),
 		( 'pass', 'miss',),
 		'struct sess *'
 	),
 	('beresp.proto',
-		'STRING', 'RW',
+		'STRING',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.saintmode',
-		'RTIME', 'WO',
+		'RTIME',
+		( ),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.status',
-		'INT', 'RW',
+		'INT',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.response',
-		'STRING', 'RW',
+		'STRING',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.http.',
-		'HDR_BERESP', 'RW',
+		'HDR_BERESP',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.cacheable',
-		'BOOL', 'RW',
+		'BOOL',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.ttl',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.grace',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('obj.proto',
-		'STRING', 'RW',
+		'STRING',
+		( 'hit', 'error',),
 		( 'hit', 'error',),
 		'const struct sess *'
 	),
 	('obj.status',
-		'INT', 'RW',
+		'INT',
+		( 'error',),
 		( 'error',),
 		'const struct sess *'
 	),
 	('obj.response',
-		'STRING', 'RW',
+		'STRING',
+		( 'error',),
 		( 'error',),
 		'const struct sess *'
 	),
 	('obj.hits',
-		'INT', 'RO',
+		'INT',
 		( 'hit', 'deliver',),
+		( ),
 		'const struct sess *'
 	),
 	('obj.http.',
-		'HDR_OBJ', 'RW',
+		'HDR_OBJ',
 		( 'hit', 'error',),
+		( 'error',),		# XXX ?
 		'const struct sess *'
 	),
 	('obj.cacheable',
-		'BOOL', 'RW',
+		'BOOL',
+		( 'hit',),
 		( 'hit',),
 		'const struct sess *'
 	),
 	('obj.ttl',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'hit', 'error',),
 		( 'hit', 'error',),
 		'const struct sess *'
 	),
 	('obj.grace',
-		'RTIME', 'RW',
+		'RTIME',
+		( 'hit', 'error',),
 		( 'hit', 'error',),
 		'const struct sess *'
 	),
 	('obj.lastuse',
-		'RTIME', 'RO',
+		'RTIME',
 		( 'hit', 'deliver', 'error',),
+		( ),
 		'const struct sess *'
 	),
 	('resp.proto',
-		'STRING', 'RW',
+		'STRING',
+		( 'deliver',),
 		( 'deliver',),
 		'const struct sess *'
 	),
 	('resp.status',
-		'INT', 'RW',
+		'INT',
+		( 'deliver',),
 		( 'deliver',),
 		'const struct sess *'
 	),
 	('resp.response',
-		'STRING', 'RW',
+		'STRING',
+		( 'deliver',),
 		( 'deliver',),
 		'const struct sess *'
 	),
 	('resp.http.',
-		'HDR_RESP', 'RW',
+		'HDR_RESP',
+		( 'deliver',),
 		( 'deliver',),
 		'const struct sess *'
 	),
 	('now',
-		'TIME', 'RO',
+		'TIME',
 		( 'all',),
+		( ),
 		'const struct sess *'
 	),
 )
+
 #######################################################################
 # VCL to C type conversion
 
@@ -656,6 +702,29 @@ fo.close()
 
 #######################################################################
 
+def restrict(fo, spec):
+	print("RX: ", spec)
+	if len(spec) == 0:
+		fo.write("\t    0,\n")
+		return
+	if spec[0] == 'all':
+		spec = vcls
+	p = ""
+	n = 0
+	for j in spec:
+		if n == 4:
+			fo.write("\n")
+			n = 0
+		if n == 0:
+			fo.write("\t    ")
+		n += 1
+		fo.write(p + "VCL_MET_" + j.upper())
+		p = " | "
+		
+	fo.write(",\n")
+
+#######################################################################
+
 fo=open("vcc_obj.c", "w")
 file_header(fo)
 
@@ -668,40 +737,28 @@ struct var vcc_vars[] = {
 """)
 
 for i in sp_variables:
+	print(i)
 	typ = i[1]
 	if typ[:4] == "HDR_":
 		typ = "HEADER"
 	fo.write("\t{ \"%s\", %s, %d,\n" % (i[0], typ, len(i[0])))
-	if i[2] == "RO" or i[2] == "RW":
+
+	if len(i[2]) > 0:
 		fo.write('\t    "VRT_r_%s(sp)",\n' % i[0].replace(".", "_"))
 	else:
-		fo.write('\t    NULL,\n')
-	if i[2] == "WO" or i[2] == "RW":
+		fo.write('\t    NULL,\t/* No reads allowed */\n')
+	restrict(fo, i[2])
+
+	if len(i[3]) > 0:
 		fo.write('\t    "VRT_l_%s(sp, ",\n' % i[0].replace(".", "_"))
 	else:
-		fo.write('\t    NULL,\n')
-	fo.write('\t    V_%s,' % i[2])
+		fo.write('\t    NULL,\t/* No writes allowed */\n')
+	restrict(fo, i[3])
+
 	if typ == "HEADER":
 		fo.write('\t    "%s",\n' % i[1])
 	else:
 		fo.write('\t    0,\n')		# XXX: shoule be NULL
-	x = i[3]
-	if x[0] == 'all':
-		x = vcls
-	p = ""
-	n = 0
-	for j in x:
-		if n == 0:
-			fo.write("\t    ")
-		n += 1
-		fo.write(p + "VCL_MET_" + j.upper())
-		p = " | "
-		if n == 4:
-			fo.write("\n")
-			n = 0
-		
-	if n > 0:
-		fo.write("\n")
 	fo.write("\t},\n")
 
 fo.write("\t{ NULL }\n};\n")
