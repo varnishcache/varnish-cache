@@ -509,10 +509,12 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 	AZ(vsb_overflowed(vsb));
 
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
-	if (u != expect)
+	if (u != expect) {
 		vtc_log(v->vl, 0,
 		    "VCL compilation got %u expected %u",
 		    u, expect);
+		return;
+	}
 	if (u == CLIS_OK) {
 		vsb_clear(vsb);
 		vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
