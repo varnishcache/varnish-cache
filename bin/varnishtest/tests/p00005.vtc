@@ -12,6 +12,7 @@ server s1 {
 varnish v1 \
 	-arg "-pdiag_bitmap=0x30000" \
 	-arg "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-pban_lurker_sleep=0" \
 	-vcl+backend { 
 		sub vcl_fetch {
 			set beresp.ttl = 3s;
