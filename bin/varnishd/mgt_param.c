@@ -805,7 +805,7 @@ static const struct parspec input_parspec[] = {
 		" list.  It always sleeps a second when nothing can be done.\n"
 		"A value of zero disables the ban lurker.",
 		0,
-		"0.0", "s" },
+		"0.1", "s" },
 	{ "saintmode_threshold", tweak_uint,
 		&master.saintmode_threshold, 0, UINT_MAX,
 		"The maximum number of objects held off by saint mode before "

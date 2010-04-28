@@ -14,6 +14,7 @@ server s1 {
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
 	-arg "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-pban_lurker_sleep=0" \
 	-vcl+backend { } -start 
 
 client c1 {
