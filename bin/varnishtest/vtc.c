@@ -504,6 +504,7 @@ exec_file_thread(void *priv)
 
 	pe = priv;
 
+	vtc_thread = pthread_self();
 	parse_string(pe->buf, cmds, NULL, vltop);
 	old_err = vtc_error;
 	vtc_stop = 1;
@@ -544,6 +545,7 @@ exec_file(const char *fn, unsigned dur)
 	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
+	vtc_thread = NULL;
 
 	if (i == 0) {
 		AZ(pthread_mutex_unlock(&vtc_mtx));
@@ -649,7 +651,6 @@ main(int argc, char * const *argv)
 	AN(vtc_tmpdir);
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
-	vtc_thread = pthread_self();
 
 	AZ(pthread_mutex_init(&vtc_mtx, NULL));
 	AZ(pthread_cond_init(&vtc_cond, NULL));
