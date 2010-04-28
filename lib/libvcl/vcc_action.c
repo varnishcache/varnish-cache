@@ -482,6 +482,7 @@ typedef void action_f(struct tokenlist *tl);
 static struct action_table {
 	const char		*name;
 	action_f		*func;
+	unsigned		bitmask;
 } action_table[] = {
 	{ "error",		parse_error },
 
@@ -492,7 +493,7 @@ static struct action_table {
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
-	{ "esi",		parse_esi },
+	{ "esi",		parse_esi, VCL_MET_FETCH },
 	{ "panic",		parse_panic },
 	{ "purge",		parse_purge },
 	{ "purge_url",		parse_purge_url },
@@ -515,6 +516,8 @@ vcc_ParseAction(struct tokenlist *tl)
 	assert (at->tok == ID);
 	for(atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
+			if (atp->bitmask != 0)
+				vcc_AddUses(tl, at, atp->bitmask, "is");
 			atp->func(tl);
 			return(1);
 		}

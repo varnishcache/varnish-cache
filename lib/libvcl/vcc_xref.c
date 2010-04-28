@@ -358,8 +358,8 @@ vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p,
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
 		vsb_printf(tl->sb,
-		    "Variable \"%.*s\" is not available in %s\n",
-		    PF(pu->t), m->name);
+		    "'%.*s': %s not possible in method '%.*s'.\n",
+		    PF(pu->t), pu->use, PF(p->name));
 		vcc_ErrWhere(tl, pu->t);
 		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n",
 		    PF(p->name));
@@ -393,7 +393,7 @@ vcc_CheckUses(struct tokenlist *tl)
 		pu = vcc_FindIllegalUse(p, m);
 		if (pu != NULL) {
 			vsb_printf(tl->sb,
-			    "Variable '%.*s': %s not allowed in method '%.*s'.",
+			    "'%.*s': %s not possible in method '%.*s'.",
 			    PF(pu->t), pu->use, PF(p->name));
 			vsb_cat(tl->sb, "\nAt: ");
 			vcc_ErrWhere(tl, pu->t);
