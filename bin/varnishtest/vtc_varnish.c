@@ -33,6 +33,7 @@ SVNID("$Id$")
 
 #include <stdio.h>
 
+#include <limits.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -67,6 +68,8 @@ struct varnish {
 	VTAILQ_ENTRY(varnish)	list;
 
 	struct varnish_stats	*stats;
+
+	struct vsb		*storage;
 
 	struct vsb		*args;
 	int			fds[4];
@@ -171,8 +174,14 @@ varnish_new(const char *name)
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 
 	v->args = vsb_newauto();
+
+	v->storage = vsb_newauto();
+	vsb_printf(v->storage, "-sfile,%s,10M", v->workdir);
+	vsb_finish(v->storage);
+
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
+
 
 	return (v);
 }
@@ -269,6 +278,7 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " -S %s/_S", v->workdir);
 	vsb_printf(vsb, " -M %s:%s", abuf, pbuf);
 	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
+	vsb_printf(vsb, " %s", vsb_data(v->storage));
 	vsb_printf(vsb, " %s", vsb_data(v->args));
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
@@ -665,6 +675,13 @@ cmd_varnish(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
+		if (!strcmp(*av, "-storage")) {
+			vsb_clear(v->storage);
+			vsb_cat(v->storage, av[1]);
+			vsb_finish(v->storage);
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(v->pid);

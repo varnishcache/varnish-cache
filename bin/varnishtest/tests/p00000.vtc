@@ -11,7 +11,8 @@ shell "rm -f ${tmpdir}/_.per"
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
-	-arg "-spersistent,${tmpdir}/_.per,10m" -vcl+backend { } -start 
+	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-vcl+backend { } -start 
 
 varnish v1 -stop
 
