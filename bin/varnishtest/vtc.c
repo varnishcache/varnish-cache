@@ -612,6 +612,7 @@ main(int argc, char * const *argv)
 	double tmax, t0, t00;
 	unsigned dur = 30;
 	const char *nmax;
+	char tmpdir[BUFSIZ];
 	char cmd[BUFSIZ];
 
 	setbuf(stdout, NULL);
@@ -646,8 +647,8 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
-	setenv("TMPDIR", "/tmp", 0);
-	vtc_tmpdir = tempnam(NULL, "vtc");
+	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
+	vtc_tmpdir = tmpdir;
 	AN(vtc_tmpdir);
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
