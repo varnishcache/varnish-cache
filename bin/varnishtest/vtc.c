@@ -36,6 +36,7 @@ SVNID("$Id$")
 #include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
+#include <limits.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -54,12 +55,11 @@ SVNID("$Id$")
 #define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		200
 
-static const char	*vtc_file;
 static char		*vtc_desc;
 int			vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
-char			*vtc_tmpdir;
+char			vtc_tmpdir[PATH_MAX];
 static struct vtclog	*vltop;
 static pthread_mutex_t	vtc_mtx;
 static pthread_cond_t	vtc_cond;
@@ -529,7 +529,6 @@ exec_file(const char *fn, unsigned dur)
 
 	t0 = TIM_mono();
 	vtc_stop = 0;
-	vtc_file = fn;
 	vtc_desc = NULL;
 	vtc_log(vltop, 1, "TEST %s starting", fn);
 	pe.buf = read_file(fn);
@@ -539,18 +538,19 @@ exec_file(const char *fn, unsigned dur)
 	pe.fn = fn;
 
 	t = TIM_real() + dur;
-	ts.tv_sec = floor(t);
-	ts.tv_nsec = (t - ts.tv_sec) * 1e9;
+	ts.tv_sec = (long)floor(t);
+	ts.tv_nsec = (long)((t - ts.tv_sec) * 1e9);
 
 	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
-	vtc_thread = NULL;
+	memset(&vtc_thread, 0, sizeof vtc_thread);
 
 	if (i == 0) {
 		AZ(pthread_mutex_unlock(&vtc_mtx));
 		AZ(pthread_join(pt, &v));
 	} else {
+		AZ(pthread_mutex_unlock(&vtc_mtx));
 		if (i != ETIMEDOUT)
 			vtc_log(vltop, 1, "Weird condwait return: %d %s",
 			    i, strerror(i));
@@ -580,7 +580,6 @@ exec_file(const char *fn, unsigned dur)
 	else if (vtc_verbosity == 0)
 		printf("#    top  TEST %s passed (%.3fs)\n", fn, t0);
 
-	vtc_file = NULL;
 	free(vtc_desc);
 	return (t0);
 }
@@ -612,7 +611,6 @@ main(int argc, char * const *argv)
 	double tmax, t0, t00;
 	unsigned dur = 30;
 	const char *nmax;
-	char tmpdir[BUFSIZ];
 	char cmd[BUFSIZ];
 
 	setbuf(stdout, NULL);
@@ -647,9 +645,7 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
-	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
-	vtc_tmpdir = tmpdir;
-	AN(vtc_tmpdir);
+	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
 
@@ -679,7 +675,6 @@ main(int argc, char * const *argv)
 	if (vtc_error == 0 || vtc_verbosity == 0) {
 		bprintf(cmd, "rm -rf %s", vtc_tmpdir);
 		AZ(system(cmd));
-		free(vtc_tmpdir);
 	}
 
 	if (vtc_error)

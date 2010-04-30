@@ -31,6 +31,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include <limits.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
