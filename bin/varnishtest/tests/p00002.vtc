@@ -11,6 +11,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
+	-arg "-pban_lurker_sleep=0" \
 	-storage "-spersistent,${tmpdir}/_.per1,10m" \
 	-storage "-spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { } -start 
