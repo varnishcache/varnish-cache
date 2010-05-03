@@ -483,7 +483,6 @@ cmd_http_rxresp(CMD_ARGS)
 		else
 			vtc_log(hp->vl, 0,
 			    "Unknown http rxresp spec: %s\n", *av);
-	vtc_log(hp->vl, 3, "rxresp");
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
 	if (!has_obj)
@@ -596,7 +595,6 @@ cmd_http_rxreq(CMD_ARGS)
 
 	for(; *av != NULL; av++)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
-	vtc_log(hp->vl, 3, "rxreq");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	http_swallow_body(hp, hp->req, 0);
@@ -617,7 +615,6 @@ cmd_http_rxhdrs(CMD_ARGS)
 
 	for(; *av != NULL; av++)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
-	vtc_log(hp->vl, 3, "rxhdrs");
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 }
@@ -636,7 +633,6 @@ cmd_http_rxbody(CMD_ARGS)
 
 	for(; *av != NULL; av++)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
-	vtc_log(hp->vl, 3, "rxbody");
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -887,7 +883,10 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
-	hp->timeout = 3000;
+	if (vtc_learn)
+		hp->timeout = 120 * 1000;
+	else
+		hp->timeout = 3000;
 	hp->nrxbuf = 640*1024;
 	hp->vsb = vsb_newauto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */

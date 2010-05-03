@@ -54,6 +54,7 @@ cmd_f cmd_client;
 cmd_f cmd_varnish;
 cmd_f cmd_sema;
 
+extern int vtc_learn;		/* Non-zero in Learners mode */
 extern int vtc_verbosity;
 extern int vtc_error;		/* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */

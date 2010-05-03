@@ -58,7 +58,7 @@ struct client {
 
 	char			*spec;
 
-	char			*connect;
+	char			connect[256];
 
 	unsigned		repeat;
 
@@ -84,7 +84,7 @@ client_thread(void *priv)
 	char *p;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
-	AN(c->connect);
+	AN(*c->connect);
 
 	p = strdup(c->connect);
 	vsb = macro_expand(p);
@@ -106,9 +106,9 @@ client_thread(void *priv)
 		if (fd < 0)
 			vtc_log(c->vl, 0, "Failed to open %s", vsb_data(vsb));
 		assert(fd >= 0);
-		vtc_log(vl, 3, "Connected to %s fd is %d", vsb_data(vsb), fd);
+		vtc_log(vl, 3, "connected fd %d", fd);
 		http_process(vl, c->spec, fd, -1);
-		vtc_log(vl, 3, "Closing fd %d", fd);
+		vtc_log(vl, 3, "closing fd %d", fd);
 		TCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
@@ -135,7 +135,10 @@ client_new(const char *name)
 	if (*c->name != 'c')
 		vtc_log(c->vl, 0, "Client name must start with 'c'");
 
-	REPLACE(c->connect, "${v1_sock}");
+	if (vtc_learn)
+		bprintf(c->connect, "127.0.0.1:%d", vtc_learn);
+	else
+		bprintf(c->connect, "%s", "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
 }
@@ -152,7 +155,6 @@ client_delete(struct client *c)
 	vtc_logclose(c->vl);
 	free(c->spec);
 	free(c->name);
-	free(c->connect);
 	/* XXX: MEMLEAK (?)*/
 	FREE_OBJ(c);
 }
@@ -180,7 +182,8 @@ client_wait(struct client *c)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	vtc_log(c->vl, 2, "Waiting for client");
+	if (!vtc_learn)
+		vtc_log(c->vl, 2, "Waiting for client");
 	AZ(pthread_join(c->tp, &res));
 	if (res != NULL)
 		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
@@ -238,7 +241,11 @@ cmd_client(CMD_ARGS)
 		if (vtc_error)
 			break;
 		if (!strcmp(*av, "-connect")) {
-			REPLACE(c->connect, av[1]);
+			if (vtc_learn)
+				bprintf(c->connect, "127.0.0.1:%d",
+				    vtc_learn + atoi(av[1]));
+			else
+				bprintf(c->connect, "%s", av[1]);
 			av++;
 			continue;
 		}

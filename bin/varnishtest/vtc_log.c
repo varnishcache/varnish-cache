@@ -113,10 +113,10 @@ vtc_logclose(struct vtclog *vl)
 
 static const char * const lead[] = {
 	"----",
-	"#   ",
-	"##  ",
-	"### ",
-	"####"
+	"*   ",
+	"**  ",
+	"*** ",
+	"****"
 };
 
 #define NLEAD (sizeof(lead)/sizeof(lead[0]))
