@@ -1,0 +1,6 @@
+# $Id$
+
+client c1 -connect 12 {
+	txreq
+	rxresp
+} -run
