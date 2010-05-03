@@ -680,7 +680,8 @@ main(int argc, char * const *argv)
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
 	if (d_flag)
-		fprintf(stderr, "Varnish on %s\n", vsb_data(vident) + 1);
+		fprintf(stderr, "Platform: %s\n", vsb_data(vident) + 1);
+	syslog(LOG_NOTICE, "Platform: %s\n", vsb_data(vident) + 1);
 
 	/* Do this again after debugstunt and daemon has run */
 	mgt_pid = getpid();
