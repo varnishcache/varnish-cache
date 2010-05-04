@@ -744,6 +744,37 @@ cmd_http_chunked(CMD_ARGS)
 	http_write(hp, 4, "chunked");
 }
 
+static void
+cmd_http_chunkedlen(CMD_ARGS)
+{
+	unsigned len;
+	unsigned u, v;
+	char buf[16384];
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	vsb_clear(hp->vsb);
+
+	len = atoi(av[1]);
+
+	for (u = 0; u < sizeof buf; u++)
+		buf[u] = (u & 7) + '0';
+
+	for (u = 0; u < len; u += 16384) {
+		v = len - u;
+		if (v > sizeof buf)
+			v = sizeof buf;
+		vsb_printf(hp->vsb, "%x%s", v, nl);
+		vsb_printf(hp->vsb, "%*.*s%s", v, v, buf, nl);
+	}
+	vsb_printf(hp->vsb, "%x%s", 0, nl);
+	http_write(hp, 4, "chunked");
+}
+
 /**********************************************************************
  * set the timeout
  */
@@ -865,6 +896,7 @@ static const struct cmds http_cmds[] = {
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
 	{ "chunked",		cmd_http_chunked },
+	{ "chunkedlen",		cmd_http_chunkedlen },
 	{ "delay",		cmd_delay },
 	{ "sema",		cmd_sema },
 	{ "expect_close",	cmd_http_expect_close },
