@@ -325,7 +325,7 @@ RES_WriteObj(struct sess *sp)
 		}
 		if (ptr + len > high)
 			/* Chop tail of segment off */
-			len = 1 + high - low;
+			len = 1 + high - ptr;
 
 		ptr += len;
 
