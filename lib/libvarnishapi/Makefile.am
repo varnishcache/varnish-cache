@@ -7,8 +7,8 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = -version-info 1:0:0
 
 libvarnishapi_la_SOURCES = \
+	../libvarnish/vin.c \
 	base64.c \
-	instance.c \
 	shmlog.c
 
 libvarnishapi_la_CFLAGS = \

@@ -127,20 +127,16 @@ vsl_shmem_map(const char *varnish_name)
 {
 	int i;
 	struct shmloghead slh;
-	char dirname[PATH_MAX], logname[PATH_MAX];
+	char *logname;
 
 	if (vsl_lh != NULL)
 		return (0);
 
-	if (varnish_instance(varnish_name, vsl_name,
-	    sizeof vsl_name, dirname, sizeof dirname) != 0) {
+	if (vin_n_arg(varnish_name, NULL, NULL, &logname)) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		return (1);
 	}
-
-	/* XXX check overflow */
-	snprintf(logname, sizeof logname, "%s/%s", dirname, SHMLOG_FILENAME);
 
 	vsl_fd = open(logname, O_RDONLY);
 	if (vsl_fd < 0) {

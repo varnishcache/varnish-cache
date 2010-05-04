@@ -42,7 +42,6 @@ varnishd_SOURCES = \
 	hash_classic.c \
 	hash_critbit.c \
 	hash_simple_list.c \
-	instance.c \
 	mgt_child.c \
 	mgt_cli.c \
 	mgt_param.c \

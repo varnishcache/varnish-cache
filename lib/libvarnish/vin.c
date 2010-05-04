@@ -24,44 +24,79 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * XXX: NB: also used in libvarnishapi
  */
 
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id$")
+SVNID("$Id: instance.c 4093 2009-06-06 15:56:17Z des $")
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
-#include "varnishapi.h"
+#include "libvarnish.h"
+#include "shmlog.h"
 
 int
-varnish_instance(const char *n_arg,
-    char *name, size_t namelen, char *dir, size_t dirlen)
+vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)
 {
-	size_t len;
+	char nm[PATH_MAX];
+	char dn[PATH_MAX];
 
-	if (n_arg == NULL) {
-		if (gethostname(name, namelen) != 0)
+
+	/* First: determine the name */
+
+	if (n_arg == NULL || *n_arg == '\0') {
+		if (gethostname(nm, sizeof nm) != 0)
 			return (-1);
-	} else {
-		len = snprintf(name, namelen, "%s", n_arg);
-		if (len >= namelen) {
-			errno = ENAMETOOLONG;
-			return (-1);
-		}
-	}
-
-	if (*name == '/')
-		len = snprintf(dir, dirlen, "%s", name);
-	else
-		len = snprintf(dir, dirlen, "%s/%s", VARNISH_STATE_DIR, name);
-
-	if (len >= dirlen) {
+	} else if (strlen(n_arg) >= sizeof nm) {
+		/* preliminary length check to avoid overflowing nm */
 		errno = ENAMETOOLONG;
 		return (-1);
+	} else
+		bprintf(nm, "%s", n_arg);
+
+
+	/* Second: find the directory name */
+
+	if (*nm == '/')
+		strcpy(dn, nm);
+	else if (strlen(VARNISH_STATE_DIR) + 1 + strlen(nm) >= sizeof dn){
+		/* preliminary length check to avoid overflowing dm */
+		errno = ENAMETOOLONG;
+		return (-1);
+	} else {
+		bprintf(dn, "%s/%s", VARNISH_STATE_DIR, nm);
+	}
+
+	/* Definitive length check */
+	if (strlen(dn) + 1 + strlen(SHMLOG_FILENAME) >= sizeof dn) {
+		errno = ENAMETOOLONG;
+		return (-1);
+	}
+
+	strcat(dn, "/");
+
+	if (name != NULL) {
+		*name = strdup(nm);
+		if (*name == NULL)
+			return (-1);
+	}
+	if (dir != NULL) {
+		*dir = strdup(dn);
+		if (*dir == NULL)
+			return (-1);
+	}
+	if (vsl != NULL) {
+		bprintf(nm, "%s%s", dn, SHMLOG_FILENAME);
+		*vsl = strdup(nm);
+		if (*vsl == NULL)
+			return (-1);
 	}
 	return (0);
 }

@@ -60,7 +60,4 @@ struct varnish_stats *VSL_OpenStats(const char *varnish_name);
 const char *VSL_Name(void);
 extern const char *VSL_tags[256];
 
-/* instance.c */
-int varnish_instance(const char *n_arg, char *name, size_t namelen, char *dir,
-    size_t dirlen);
 #endif

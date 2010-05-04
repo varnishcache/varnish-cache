@@ -422,7 +422,7 @@ main(int argc, char * const *argv)
 	char *p, *vcl = NULL;
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
-	char dirname[1024];
+	char *dirname;
 
 	/*
 	 * Start out by closing all unwanted file descriptors we might
@@ -615,8 +615,7 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (varnish_instance(n_arg, heritage.name, sizeof heritage.name,
-	    dirname, sizeof dirname) != 0) {
+	if (vin_n_arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		exit(1);

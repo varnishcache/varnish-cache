@@ -109,4 +109,7 @@ enum shmlogtag {
 	SLT_WRAPMARKER = 255
 };
 
+/* This function lives in both libvarnish and libvarnishapi */
+int vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl);
+
 #endif
