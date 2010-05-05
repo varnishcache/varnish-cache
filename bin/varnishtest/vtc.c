@@ -178,7 +178,7 @@ macro_expand(struct vtclog *vl, const char *text)
 			vtc_log(vl, 0, "Macro ${%s} not found", p);
 			return (NULL);
 		}
-		vsb_printf(vsb, "{MACRO NOT FOUND: %s}", p);
+		vsb_printf(vsb, "%s", m);
 		text = q + 1;
 	}
 	vsb_finish(vsb);
