@@ -307,6 +307,8 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			if (NULL == strstr(token_s[tn], "${"))
 				continue;
 			token_exp[tn] = macro_expand(vl, token_s[tn]);
+			if (vtc_error)
+				return;
 			token_s[tn] = vsb_data(token_exp[tn]);
 			token_e[tn] = strchr(token_s[tn], '\0');
 		}
