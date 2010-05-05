@@ -574,9 +574,10 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	AZ(vsb_overflowed(vsb));
 
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
-	if (u != CLIS_OK)
+	if (u != CLIS_OK) {
 		vtc_log(v->vl, 0, "FAIL VCL does not compile");
-	assert(u == CLIS_OK);
+		return;
+	}
 	vsb_clear(vsb);
 	vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
 	vsb_finish(vsb);
