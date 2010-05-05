@@ -149,23 +149,23 @@ macro_get(const char *name)
 }
 
 struct vsb *
-macro_expand(const char *name)
+macro_expand(struct vtclog *vl, const char *text)
 {
 	struct vsb *vsb;
-	char *p, *q;
+	char *p, *q, *m;
 
 	vsb = vsb_newauto();
 	AN(vsb);
-	while (*name != '\0') {
-		p = strstr(name, "${");
+	while (*text != '\0') {
+		p = strstr(text, "${");
 		if (p == NULL) {
-			vsb_cat(vsb, name);
+			vsb_cat(vsb, text);
 			break;
 		}
-		vsb_bcat(vsb, name, p - name);
+		vsb_bcat(vsb, text, p - text);
 		q = strchr(p, '}');
 		if (q == NULL) {
-			vsb_cat(vsb, name);
+			vsb_cat(vsb, text);
 			break;
 		}
 		assert(p[0] == '$');
@@ -173,8 +173,13 @@ macro_expand(const char *name)
 		assert(q[0] == '}');
 		p += 2;
 		*q = '\0';
-		vsb_cat(vsb, macro_get(p));
-		name = q + 1;
+		m = macro_get(p);
+		if (m == NULL) {
+			vtc_log(vl, 0, "Macro ${%s} not found", p);
+			return (NULL);
+		}
+		vsb_printf(vsb, "{MACRO NOT FOUND: %s}", p);
+		text = q + 1;
 	}
 	vsb_finish(vsb);
 	return (vsb);
@@ -301,7 +306,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			*token_e[tn] = '\0';	/*lint !e771 */
 			if (NULL == strstr(token_s[tn], "${"))
 				continue;
-			token_exp[tn] = macro_expand(token_s[tn]);
+			token_exp[tn] = macro_expand(vl, token_s[tn]);
 			token_s[tn] = vsb_data(token_exp[tn]);
 			token_e[tn] = strchr(token_s[tn], '\0');
 		}

@@ -78,4 +78,4 @@ void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
 
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...);
-struct vsb *macro_expand(const char *name);
+struct vsb *macro_expand(struct vtclog *vl, const char *text);

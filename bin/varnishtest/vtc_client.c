@@ -86,11 +86,12 @@ client_thread(void *priv)
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(*c->connect);
 
-	p = strdup(c->connect);
-	vsb = macro_expand(p);
-	AN(vsb);
-
 	vl = vtc_logopen(c->name);
+
+	p = strdup(c->connect);
+	AN(p);
+	vsb = macro_expand(vl, p);
+	AN(vsb);
 
 	if (c->repeat == 0)
 		c->repeat = 1;
