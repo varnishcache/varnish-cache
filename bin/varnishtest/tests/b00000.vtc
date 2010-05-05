@@ -9,7 +9,7 @@ server s1 {
 	txresp -body "012345\n"
 } -start
 
-varnish v1 -arg "-smalloc,1m" -vcl+backend {} -start
+varnish v1 -storage "-smalloc,1m" -vcl+backend {} -start
 
 varnish v1 -cliok "param.set diag_bitmap 0x2"
 

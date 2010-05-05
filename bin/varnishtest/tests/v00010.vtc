@@ -13,7 +13,7 @@ server s1 {
 	txresp -hdr "Foo: foo" -body "abcdef\n"
 } -start
 
-varnish v1 -arg "-smalloc,1m" -vcl+backend {
+varnish v1 -storage "-smalloc,1m" -vcl+backend {
 
 	sub vcl_fetch {
 		if (beresp.http.panic) {

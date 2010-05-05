@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-pdiag_bitmap=0x20000" \
-	-arg "-spersistent,${tmpdir}/_.per,10m" \
+	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start 
 
 varnish v1 -cliok purge.list
