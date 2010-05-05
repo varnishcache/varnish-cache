@@ -115,6 +115,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->wrk->resp;
 		break;
 	case HDR_OBJ:
+		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 		hp = sp->obj->http;
 		break;
 	default:
