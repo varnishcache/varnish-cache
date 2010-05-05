@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id: changes-2.0.6-2.1.0.xml 4672 2010-04-19 10:26:23Z tfheen $ -->
+<group from="2.1.1" to="2.1.2">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug" ref="694">
+      <para>When adding <code>Range</code> support for 2.1.1, we
+      accidentially introduced a bug which would append garbage to
+      objects larger than the chunk size, by default 128k. Browsers
+      would do the right thing due to Content-Length, but some load
+      balancers would get very confused.</para>
+    </change>
+
+  </subsystem>
+</group>
