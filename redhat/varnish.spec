@@ -1,7 +1,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.1
-Release: 0.svn20100421%{?dist}
+Version: 2.1.2
+Release: 1
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -87,6 +87,12 @@ mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 %build
+
+# No pkgconfig/libpcre.pc in rhel4
+%if 0%{?rhel} == 4
+	export PCRE_CFLAGS=`pcre-config --cflags`
+	export PCRE_LIBS=`pcre-config --libs` 
+%endif
 
 # Remove "--disable static" if you want to build static libraries 
 # jemalloc is not compatible with Red Hat's ppc* RHEL5 kernel koji server :-(
@@ -251,6 +257,17 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Wed May 05 2010 Tollef Fog Heen <tfheen@varnish-software.com> - 2.1.2-1
+- New upstream release
+- Remove patches merged upstream
+
+* Tue Apr 27 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.1.1-1
+- New upstream release
+- Added a fix for missing pkgconfig/libpcre.pc on rhel4
+- Added a patch from trunk making the rpm buildable on lowspec
+  build hosts (like Red Hat's ppc build farm nodes)
+- Removed patches that are merged upstream
+
 * Wed Apr 14 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.1.0-2
 - Added a patch from svn that fixes changes-2.0.6-2.1.0.xml
 
