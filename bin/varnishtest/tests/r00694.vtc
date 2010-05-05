@@ -1,0 +1,24 @@
+# $Id$
+
+test "Wrong calculation of last storage segment length"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 Ok\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	# This is chunksize (128k) + 2 to force to chunks to be allocated
+	chunkedlen 131074
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		unset resp.http.content-length;
+	}
+} -start
+
+client c1 {
+	txreq -proto HTTP/1.0
+	rxresp
+	expect resp.bodylen == 131074
+} -run
