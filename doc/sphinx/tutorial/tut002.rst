@@ -1,0 +1,92 @@
+.. _TUT002:
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+TUT002: Caching an object with varnish
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Now it is time to loose your viginity and cache an object with ``varnishd``.
+
+In the first window, start this command::
+
+	varnishd -L20000 -t30
+
+You should see something like this::
+
+	storage_malloc: max size 1 MB.
+	Using old SHMFILE
+	Platform: FreeBSD,9.0-CURRENT,amd64,-smalloc,-hcritbit
+	200 193     
+	-----------------------------
+	Varnish HTTP accelerator CLI.
+	-----------------------------
+	Type 'help' for command list.
+	Type 'quit' to close CLI session.
+	Type 'start' to launch worker process.
+
+We will explain this stuff later, for now just type ``start`` and you should
+see something like::
+
+	child (88590) Started
+	200 0       
+
+	Child (88590) said 
+	Child (88590) said Child starts
+
+Next, start a backend in a different window::
+
+	varnishtest -L20000 S002.vtc
+
+And finally, send a request from a third window::
+
+	varnishtest -L20000 -vv C002.vtc
+
+You will notice that both the backend and client windows both do
+their thing, and exit back to the shell prompt.
+
+In the client window you will have a line like::
+
+	**** c1   http[ 6] | X-Varnish: 17443679
+
+This is Varnish telling you that it was involved.  (The exact number will
+be different for you, it is just a transaction-id.)
+
+Now, try running *only* the client command again::
+
+	varnishtest -L20000 -vv C002.vtc
+
+Tada!  You have just received a cache-hit from varnishd.
+
+This time the ``X-Varnish`` line will have two numbers::
+
+	**** c1   http[ 6] | X-Varnish: 17443680 17443679
+
+The first number is the XID for this request, the second one is the
+XID that brought this object into varnishd's cache, it matches the
+number you saw above.
+
+If you run the client again, you will see::
+
+	**** c1   http[ 6] | X-Varnish: 17443681 17443679
+
+You can keep running the client and you will get hits, but
+30 seconds after the object was put in the cache, ``varnishd``
+will expire it, and then you will get varnish "Guru meditation"
+message, because the backend does not respond::
+
+	**** c1   body|   <head>\n
+	**** c1   body|     <title>503 Service Unavailable</title>\n
+	**** c1   body|   </head>\n
+	**** c1   body|   <body>\n
+	**** c1   body|     <h1>Error 503 Service Unavailable</h1>\n
+	**** c1   body|     <p>Service Unavailable</p>\n
+	**** c1   body|     <h3>Guru Meditation:</h3>\n
+	**** c1   body|     <p>XID: 1685367940</p>\n
+	**** c1   body|     <hr>\n
+
+If you start the backend again:
+
+	varnishtest -L20000 S002.vtc
+
+Then you can fetch the object for another 30 seconds.
+
+

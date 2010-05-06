@@ -11,6 +11,7 @@ know and understand Varnish.
 
 	intro.rst
 	tut001.rst
+	tut002.rst
 
 .. todo::
         starting varnish with -d, seeing a transaction go through
