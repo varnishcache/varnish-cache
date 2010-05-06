@@ -599,8 +599,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	case 'L':
 		vd->L_opt = strtoul(opt, NULL, 0);
 		if (vd->L_opt < 1024 || vd->L_opt > 65000) {
-			fprintf(stderr,
-			    "Illegal -L option must be [1024...65000]\n");
+			fprintf(stderr, "%s\n", VIN_L_MSG);
 			exit (1);
 		}
 		free(vd->n_opt);

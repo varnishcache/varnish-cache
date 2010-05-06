@@ -50,6 +50,7 @@ extern struct varnish_stats *VSL_stats;
 struct vsb;
 extern struct vsb *vident;
 int Symbol_Lookup(struct vsb *vsb, void *ptr);
+extern unsigned L_arg;
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
 
