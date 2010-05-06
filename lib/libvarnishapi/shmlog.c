@@ -69,6 +69,7 @@ struct VSL_data {
 	unsigned		rbuflen;
 	unsigned char		*rbuf;
 
+	unsigned		L_opt;
 	char			*n_opt;
 	int			b_opt;
 	int			c_opt;
@@ -585,16 +586,27 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		vd->flags |= F_NON_BLOCKING;
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
+	case 'k': return (vsl_k_arg(vd, opt));
 	case 'n':
 		free(vd->n_opt);
 		vd->n_opt = strdup(opt);
 		assert(vd->n_opt != NULL);
 		return (1);
 	case 'r': return (vsl_r_arg(vd, opt));
+	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
 	case 'C': vd->regflags = VRE_CASELESS; return (1);
-	case 's': return (vsl_s_arg(vd, opt));
-	case 'k': return (vsl_k_arg(vd, opt));
+	case 'L':
+		vd->L_opt = strtoul(opt, NULL, 0);
+		if (vd->L_opt < 1024 || vd->L_opt > 65000) {
+			fprintf(stderr,
+			    "Illegal -L option must be [1024...65000]\n");
+			exit (1);
+		}
+		free(vd->n_opt);
+		vd->n_opt = vin_L_arg(vd->L_opt);
+		assert(vd->n_opt != NULL);
+		return (1);
 	default:
 		return (0);
 	}

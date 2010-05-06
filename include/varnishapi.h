@@ -43,8 +43,8 @@ typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-#define VSL_LOG_ARGS	"bCcdI:i:k:n:r:s:X:x:"
-#define VSL_STAT_ARGS	"n:"
+#define VSL_LOG_ARGS	"bCcdI:i:k:L:n:r:s:X:x:"
+#define VSL_STAT_ARGS	"L:n:"
 #define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep]" \
 			" [-r file] [-s skip] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;

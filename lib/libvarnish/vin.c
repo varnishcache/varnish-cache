@@ -100,3 +100,13 @@ vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)
 	}
 	return (0);
 }
+
+char *
+vin_L_arg(unsigned L_arg)
+{
+	char p[PATH_MAX];
+
+	assert(VIN_L_OK(L_arg));
+	bprintf(p, "/tmp/varnish_L_%u", L_arg);
+	return (strdup(p));
+}
