@@ -551,7 +551,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 
 	/* Check that the portname makes sense */
 	if (Learn_mode && t_port != NULL && t_port->tok == CNUM) {
-		assert(tL_port);
 		bprintf(tmpbuf, "%u", Learn_mode + 10 + tL_port);
 		Emit_Sockaddr(tl, t_host, tmpbuf);
 	} else if (t_port != NULL) {

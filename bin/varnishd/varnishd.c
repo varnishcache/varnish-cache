@@ -675,7 +675,7 @@ main(int argc, char * const *argv)
 		exit(1);
 	}
 
-	if (b_arg != NULL || f_arg != NULL)
+	if (b_arg != NULL || f_arg != NULL || L_arg > 0)
 		if (mgt_vcc_default(b_arg, f_arg, vcl, C_flag))
 			exit (2);
 
