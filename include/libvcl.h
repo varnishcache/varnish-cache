@@ -30,6 +30,6 @@
  */
 
 char *VCC_Compile(struct vsb *sb, const char *b, const char *e);
-void VCC_InitCompile(const char *default_vcl);
+void VCC_InitCompile(const char *default_vcl, unsigned L_arg);
 const char *VCC_Return_Name(unsigned action);
 

@@ -163,6 +163,7 @@ void vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
+extern unsigned Learn_mode;
 /*
  * H -> Header, before the C code
  * C -> C-code

@@ -469,8 +469,6 @@ main(int argc, char * const *argv)
 
 	VTAILQ_INIT(&heritage.socks);
 
-	mgt_vcc_init();
-
 	MCF_ParamInit(cli);
 
 	if (sizeof(void *) < 8) {
@@ -590,6 +588,8 @@ main(int argc, char * const *argv)
 
 	argc -= optind;
 	argv += optind;
+
+	mgt_vcc_init();
 
 	if (L_arg) {
 		/* Learner mode */

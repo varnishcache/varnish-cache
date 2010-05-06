@@ -447,7 +447,7 @@ void
 mgt_vcc_init(void)
 {
 
-	VCC_InitCompile(default_vcl);
+	VCC_InitCompile(default_vcl, L_arg);
 	AZ(atexit(mgt_vcc_atexit));
 }
 
