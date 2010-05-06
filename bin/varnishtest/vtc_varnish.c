@@ -80,6 +80,8 @@ struct varnish {
 	int			cli_fd;
 	int			vcl_nbr;
 	char			*workdir;
+
+	struct VSL_data 	*vd;
 };
 
 static VTAILQ_HEAD(, varnish)	varnishes =
@@ -198,7 +200,7 @@ varnish_delete(struct varnish *v)
 	vtc_logclose(v->vl);
 	free(v->name);
 	free(v->workdir);
-	VSL_Close();
+	VSL_Delete(v->vd);
 
 	/*
 	 * We do not delete the workdir, it may contain stuff people
@@ -258,6 +260,8 @@ varnish_launch(struct varnish *v)
 	struct pollfd fd;
 	enum cli_status_e u;
 	char *r;
+
+	v->vd = VSL_New();
 
 	/* Create listener socket */
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
@@ -359,8 +363,9 @@ varnish_launch(struct varnish *v)
 	free(r);
 
 	if (v->stats != NULL)
-		VSL_Close();
-	v->stats = VSL_OpenStats(v->workdir);
+		VSL_Close(v->vd);
+	VSL_Arg(v->vd, 'n', v->workdir);
+	v->stats = VSL_OpenStats(v->vd);
 }
 
 /**********************************************************************

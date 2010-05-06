@@ -94,7 +94,7 @@ show_field(const char* field, const char *fields)
 }
 
 static void
-do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
+do_curses(struct VSL_data *vd, struct varnish_stats *VSL_stats, int delay, const char *fields)
 {
 	struct varnish_stats copy;
 	struct varnish_stats seen;
@@ -129,7 +129,7 @@ do_curses(struct varnish_stats *VSL_stats, int delay, const char *fields)
 		rt = VSL_stats->uptime;
 		up = rt;
 
-		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
+		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
 		mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
 		    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60);
 
@@ -347,12 +347,14 @@ int
 main(int argc, char **argv)
 {
 	int c;
+	struct VSL_data *vd;
 	struct varnish_stats *VSL_stats;
 	int delay = 1, once = 0, xml = 0;
-	const char *n_arg = NULL;
 	const char *fields = NULL;
 
-	while ((c = getopt(argc, argv, "1f:ln:Vw:x")) != -1) {
+	vd = VSL_New();
+
+	while ((c = getopt(argc, argv, VSL_STAT_ARGS "1f:lVw:x")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -363,9 +365,6 @@ main(int argc, char **argv)
 		case 'l':
 			list_fields();
 			exit(0);
-		case 'n':
-			n_arg = optarg;
-			break;
 		case 'V':
 			varnish_version("varnishstat");
 			exit(0);
@@ -376,11 +375,13 @@ main(int argc, char **argv)
 			xml = 1;
 			break;
 		default:
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
 			usage();
 		}
 	}
 
-	if ((VSL_stats = VSL_OpenStats(n_arg)) == NULL)
+	if ((VSL_stats = VSL_OpenStats(vd)) == NULL)
 		exit(1);
 
 	if (fields != NULL && !valid_fields(fields)) {
@@ -393,7 +394,7 @@ main(int argc, char **argv)
 	else if (once)
 		do_once(VSL_stats, fields);
 	else
-		do_curses(VSL_stats, delay, fields);
+		do_curses(vd, VSL_stats, delay, fields);
 
 	exit(0);
 }

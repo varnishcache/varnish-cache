@@ -96,7 +96,7 @@ static int scales[] = {
 };
 
 static void
-update(void)
+update(struct VSL_data *vd)
 {
 	int w = COLS / HIST_RANGE;
 	int n = w * HIST_RANGE;
@@ -116,7 +116,7 @@ update(void)
 		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
-	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
+	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
 
 	/* count our flock */
 	for (i = 0; i < n; ++i)
@@ -258,7 +258,7 @@ do_curses(struct VSL_data *vd)
 	erase();
 	for (;;) {
 		pthread_mutex_lock(&mtx);
-		update();
+		update(vd);
 		pthread_mutex_unlock(&mtx);
 
 		timeout(delay * 1000);
@@ -324,7 +324,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 
-	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
+	while ((o = getopt(argc, argv, VSL_LOG_ARGS "Vw:")) != -1) {
 		switch (o) {
 		case 'V':
 			varnish_version("varnishsizes");

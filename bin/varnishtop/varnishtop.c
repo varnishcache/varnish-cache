@@ -137,7 +137,7 @@ accumulate(const unsigned char *p)
 }
 
 static void
-update(void)
+update(struct VSL_data *vd)
 {
 	struct top *tp, *tp2;
 	int l, len;
@@ -152,7 +152,7 @@ update(void)
 
 	erase();
 	l = 1;
-	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name());
+	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
 	mvprintw(0, 0, "list length %u", ntop);
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
@@ -228,7 +228,7 @@ do_curses(struct VSL_data *vd)
 	erase();
 	for (;;) {
 		pthread_mutex_lock(&mtx);
-		update();
+		update(vd);
 		pthread_mutex_unlock(&mtx);
 
 		timeout(1000);
@@ -306,7 +306,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 
-	while ((o = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
+	while ((o = getopt(argc, argv, VSL_LOG_ARGS "1fV")) != -1) {
 		switch (o) {
 		case '1':
 			VSL_Arg(vd, 'd', NULL);

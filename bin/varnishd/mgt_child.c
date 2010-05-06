@@ -540,6 +540,7 @@ mgt_sigchld(const struct vev *e, int what)
 		child_state = CH_STOPPED;
 	} else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
+
 	return (0);
 }
 
@@ -615,6 +616,9 @@ MGT_Run(void)
 		REPORT(LOG_ERR, "vev_schedule() = %d", i);
 
 	REPORT0(LOG_ERR, "manager dies");
+
+	/* XXX: quench compiler warning about unused func */
+	vbit_destroy(NULL);
 }
 
 /*--------------------------------------------------------------------*/

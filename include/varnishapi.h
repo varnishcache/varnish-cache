@@ -43,7 +43,8 @@ typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:"
+#define VSL_LOG_ARGS	"bCcdI:i:k:n:r:s:X:x:"
+#define VSL_STAT_ARGS	"n:"
 #define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep]" \
 			" [-r file] [-s skip] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;
@@ -55,9 +56,10 @@ void VSL_NonBlocking(struct VSL_data *vd, int nb);
 int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
-void VSL_Close(void);
-struct varnish_stats *VSL_OpenStats(const char *varnish_name);
-const char *VSL_Name(void);
+void VSL_Close(struct VSL_data *vd);
+void VSL_Delete(struct VSL_data *vd);
+struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
+const char *VSL_Name(struct VSL_data *vd);
 extern const char *VSL_tags[256];
 
 #endif

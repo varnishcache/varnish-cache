@@ -529,7 +529,7 @@ main(int argc, char *argv[])
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:f")) != -1) {
+	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDP:Vw:f")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;

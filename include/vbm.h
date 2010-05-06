@@ -75,6 +75,16 @@ vbit_init(unsigned initial)
 	return (vb);
 }
 
+static void
+vbit_destroy(struct vbitmap *vb)
+{
+
+	if (vb == NULL)
+		return;
+	free(vb->bits);
+	free(vb);
+}
+
 static inline void
 vbit_set(struct vbitmap *vb, unsigned bit)
 {

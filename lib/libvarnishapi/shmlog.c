@@ -65,7 +65,7 @@ struct VSL_data {
 	unsigned char		*ptr;
 
 	/* for -r option */
-	int			fd;
+	int			r_fd;
 	unsigned		rbuflen;
 	unsigned char		*rbuf;
 
@@ -101,15 +101,14 @@ struct VSL_data {
 
 	unsigned long		skip;
 	unsigned long		keep;
+
+	int			vsl_fd;
+	struct shmloghead 	*vsl_lh;
 };
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
 #endif
-
-static int vsl_fd;
-static struct shmloghead *vsl_lh;
-static char vsl_name[PATH_MAX];
 
 static int vsl_nextlog(struct VSL_data *vd, unsigned char **pp);
 
@@ -124,28 +123,28 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_shmem_map(const char *varnish_name)
+vsl_shmem_map(struct VSL_data *vd)
 {
 	int i;
 	struct shmloghead slh;
 	char *logname;
 
-	if (vsl_lh != NULL)
+	if (vd->vsl_lh != NULL)
 		return (0);
 
-	if (vin_n_arg(varnish_name, NULL, NULL, &logname)) {
+	if (vin_n_arg(vd->n_opt, NULL, NULL, &logname)) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		return (1);
 	}
 
-	vsl_fd = open(logname, O_RDONLY);
-	if (vsl_fd < 0) {
+	vd->vsl_fd = open(logname, O_RDONLY);
+	if (vd->vsl_fd < 0) {
 		fprintf(stderr, "Cannot open %s: %s\n",
 		    logname, strerror(errno));
 		return (1);
 	}
-	i = read(vsl_fd, &slh, sizeof slh);
+	i = read(vd->vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		fprintf(stderr, "Cannot read %s: %s\n",
 		    logname, strerror(errno));
@@ -157,9 +156,9 @@ vsl_shmem_map(const char *varnish_name)
 		return (1);
 	}
 
-	vsl_lh = (void *)mmap(NULL, slh.size + sizeof slh,
-	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vsl_fd, 0);
-	if (vsl_lh == MAP_FAILED) {
+	vd->vsl_lh = (void *)mmap(NULL, slh.size + sizeof slh,
+	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
+	if (vd->vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
 		    logname, strerror(errno));
 		return (1);
@@ -178,15 +177,38 @@ VSL_New(void)
 	assert(vd != NULL);
 	vd->regflags = 0;
 	vd->magic = VSL_MAGIC;
-	vd->fd = -1;
+	vd->vsl_fd = -1;
+
+
+	/* XXX: Allocate only if log access */
 	vd->vbm_client = vbit_init(4096);
 	vd->vbm_backend = vbit_init(4096);
 	vd->vbm_supress = vbit_init(256);
 	vd->vbm_select = vbit_init(256);
+
+	vd->r_fd = -1;
+	/* XXX: Allocate only if -r option given ? */
 	vd->rbuflen = SHMLOG_NEXTTAG + 256;
 	vd->rbuf = malloc(vd->rbuflen);
 	assert(vd->rbuf != NULL);
+
 	return (vd);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VSL_Delete(struct VSL_data *vd)
+{
+
+	VSL_Close(vd);
+	vbit_destroy(vd->vbm_client);
+	vbit_destroy(vd->vbm_backend);
+	vbit_destroy(vd->vbm_supress);
+	vbit_destroy(vd->vbm_select);
+	free(vd->n_opt);
+	free(vd->rbuf);
+	free(vd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -207,18 +229,18 @@ VSL_OpenLog(struct VSL_data *vd)
 	unsigned char *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->fd != -1)
+	if (vd->r_fd != -1)
 		return (0);
 
-	if (vsl_shmem_map(vd->n_opt))
+	if (vsl_shmem_map(vd))
 		return (-1);
 
-	vd->head = vsl_lh;
-	vd->logstart = (unsigned char *)vsl_lh + vsl_lh->start;
-	vd->logend = vd->logstart + vsl_lh->size;
+	vd->head = vd->vsl_lh;
+	vd->logstart = (unsigned char *)vd->vsl_lh + vd->vsl_lh->start;
+	vd->logend = vd->logstart + vd->vsl_lh->size;
 	vd->ptr = vd->logstart;
 
-	if (!vd->d_opt && vd->fd == -1) {
+	if (!vd->d_opt && vd->r_fd == -1) {
 		for (p = vd->ptr; *p != SLT_ENDMARKER; )
 			p += SHMLOG_LEN(p) + SHMLOG_NEXTTAG;
 		vd->ptr = p;
@@ -247,9 +269,9 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->fd != -1) {
+	if (vd->r_fd != -1) {
 		assert(vd->rbuflen >= SHMLOG_DATA);
-		i = read(vd->fd, vd->rbuf, SHMLOG_DATA);
+		i = read(vd->r_fd, vd->rbuf, SHMLOG_DATA);
 		if (i != SHMLOG_DATA)
 			return (-1);
 		l = SHMLOG_LEN(vd->rbuf) + SHMLOG_NEXTTAG;
@@ -260,7 +282,7 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 			vd->rbuflen = l;
 		}
 		l = SHMLOG_LEN(vd->rbuf) + 1;
-		i = read(vd->fd, vd->rbuf + SHMLOG_DATA, l);
+		i = read(vd->r_fd, vd->rbuf + SHMLOG_DATA, l);
 		if (i != l)
 			return (-1);
 		*pp = vd->rbuf;
@@ -421,10 +443,10 @@ vsl_r_arg(struct VSL_data *vd, const char *opt)
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (!strcmp(opt, "-"))
-		vd->fd = STDIN_FILENO;
+		vd->r_fd = STDIN_FILENO;
 	else
-		vd->fd = open(opt, O_RDONLY);
-	if (vd->fd < 0) {
+		vd->r_fd = open(opt, O_RDONLY);
+	if (vd->r_fd < 0) {
 		perror(opt);
 		return (-1);
 	}
@@ -579,29 +601,30 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 }
 
 struct varnish_stats *
-VSL_OpenStats(const char *varnish_name)
+VSL_OpenStats(struct VSL_data *vd)
 {
 
-	if (vsl_shmem_map(varnish_name))
+	if (vsl_shmem_map(vd))
 		return (NULL);
-	return (&vsl_lh->stats);
+	return (&vd->vsl_lh->stats);
 }
 
 void
-VSL_Close(void)
+VSL_Close(struct VSL_data *vd)
 {
-	if (vsl_lh == NULL)
+	if (vd->vsl_lh == NULL)
 		return;
-	assert(0 == munmap((void*)vsl_lh, vsl_lh->size + sizeof *vsl_lh));
-	vsl_lh = NULL;
-	assert(vsl_fd >= 0);
-	assert(0 == close(vsl_fd));
-	vsl_fd = -1;
+	assert(0 == munmap((void*)vd->vsl_lh,
+	    vd->vsl_lh->size + sizeof *vd->vsl_lh));
+	vd->vsl_lh = NULL;
+	assert(vd->vsl_fd >= 0);
+	assert(0 == close(vd->vsl_fd));
+	vd->vsl_fd = -1;
 }
 
 const char *
-VSL_Name(void)
+VSL_Name(struct VSL_data *vd)
 {
 
-	return (vsl_name);
+	return (vd->n_opt);
 }
