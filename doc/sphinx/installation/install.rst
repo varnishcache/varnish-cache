@@ -17,10 +17,27 @@ Installing Varnish on most relevant operating systems can usually
 be done with with the systems package manager, typical examples
 being:
 
-FreeBSD (from source)
-	``cd /usr/ports/varnish && make install clean``
-FreeBSD (binary package)
-	``pkg_add -r varnish``
+**FreeBSD**
+
+	FreeBSD (from source)
+		``cd /usr/ports/varnish && make install clean``
+	FreeBSD (binary package)
+		``pkg_add -r varnish``
+
+**CentOS/RedHat 5.4 - RPM files**
+
+	We try to keep the lastest version available as prebuildt RPMs (el4 & el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
+	Varnish is included in the `EPEL <http://fedoraproject.org/wiki/EPEL>`_ repository. **BUT** unfortunatly we had a syntax change in Varnish 2.0.6->2.1.X. This means that we can not update Varnish in `EPEL <http://fedoraproject.org/wiki/EPEL>`_ so the latest version there is Varnish 2.0.6. In the future (EPEL6) we should be available with Varnish 2.1.X or higher.
+
+**Debian/Ubuntu - DEB files**
+
+	Varnish is distributed to the *unstable* repository of Debian. You should be able to get a hold of the lastest version there.
+	
+	Ubuntu syncronize the *unstable* Debian repository. See `Ubuntu Packages <http://packages.ubuntu.com/>`_.
+
+**Other systems**
+
+	You are probably best of compiling your own code. See `Compiling Varnish from source`_.
 
 If that worked for you, you can skip the rest of this document
 for now, and and start reading the much more interesting :ref:`Tutorial`
