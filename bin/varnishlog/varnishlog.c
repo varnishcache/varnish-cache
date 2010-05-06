@@ -311,7 +311,6 @@ main(int argc, char **argv)
 {
 	int c;
 	int a_flag = 0, D_flag = 0, o_flag = 0, u_flag = 0;
-	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
@@ -319,7 +318,7 @@ main(int argc, char **argv)
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDon:P:uVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDoP:uVw:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -334,9 +333,6 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			D_flag = 1;
-			break;
-		case 'n':
-			n_arg = optarg;
 			break;
 		case 'o':
 			o_flag = 1;
@@ -363,7 +359,7 @@ main(int argc, char **argv)
 	if (o_flag && w_arg != NULL)
 		usage();
 
-	if (VSL_OpenLog(vd, n_arg))
+	if (VSL_OpenLog(vd))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

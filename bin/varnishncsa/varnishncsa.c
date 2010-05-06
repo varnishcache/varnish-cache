@@ -521,7 +521,6 @@ main(int argc, char *argv[])
 {
 	int c;
 	int a_flag = 0, D_flag = 0;
-	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
@@ -530,7 +529,7 @@ main(int argc, char *argv[])
 
 	vd = VSL_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDn:P:Vw:f")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:f")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -540,9 +539,6 @@ main(int argc, char *argv[])
 			break;
 		case 'D':
 			D_flag = 1;
-			break;
-		case 'n':
-			n_arg = optarg;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -569,7 +565,7 @@ main(int argc, char *argv[])
 
 	VSL_Arg(vd, 'c', optarg);
 
-	if (VSL_OpenLog(vd, n_arg))
+	if (VSL_OpenLog(vd))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

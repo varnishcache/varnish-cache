@@ -302,19 +302,15 @@ int
 main(int argc, char **argv)
 {
 	struct VSL_data *vd;
-	const char *n_arg = NULL;
 	int o, once = 0;
 
 	vd = VSL_New();
 
-	while ((o = getopt(argc, argv, VSL_ARGS "1fn:V")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
 		switch (o) {
 		case '1':
 			VSL_Arg(vd, 'd', NULL);
 			once = 1;
-			break;
-		case 'n':
-			n_arg = optarg;
 			break;
 		case 'f':
 			f_flag = 1;
@@ -329,7 +325,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_OpenLog(vd, n_arg))
+	if (VSL_OpenLog(vd))
 		exit (1);
 
 	if (once) {

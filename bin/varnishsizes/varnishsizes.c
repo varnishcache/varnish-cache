@@ -321,15 +321,11 @@ main(int argc, char **argv)
 {
 	int o;
 	struct VSL_data *vd;
-	const char *n_arg = NULL;
 
 	vd = VSL_New();
 
-	while ((o = getopt(argc, argv, VSL_ARGS "n:Vw:")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (o) {
-		case 'n':
-			n_arg = optarg;
-			break;
 		case 'V':
 			varnish_version("varnishsizes");
 			exit(0);
@@ -343,7 +339,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_OpenLog(vd, n_arg))
+	if (VSL_OpenLog(vd))
 		exit(1);
 
 	log_ten = log(10.0);

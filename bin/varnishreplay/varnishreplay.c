@@ -724,7 +724,7 @@ main(int argc, char *argv[])
 	debug = 0;
 
 	VSL_Arg(vd, 'c', NULL);
-	while ((c = getopt(argc, argv, "a:Dr:")) != -1) {
+	while ((c = getopt(argc, argv, "a:Dr:n:")) != -1) {
 		switch (c) {
 		case 'a':
 			address = optarg;
@@ -743,7 +743,7 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (VSL_OpenLog(vd, NULL))
+	if (VSL_OpenLog(vd))
 		exit(1);
 
 	addr_info = init_connection(address);

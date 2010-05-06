@@ -69,6 +69,7 @@ struct VSL_data {
 	unsigned		rbuflen;
 	unsigned char		*rbuf;
 
+	char			*n_opt;
 	int			b_opt;
 	int			c_opt;
 	int			d_opt;
@@ -201,7 +202,7 @@ VSL_Select(struct VSL_data *vd, unsigned tag)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
+VSL_OpenLog(struct VSL_data *vd)
 {
 	unsigned char *p;
 
@@ -209,7 +210,7 @@ VSL_OpenLog(struct VSL_data *vd, const char *varnish_name)
 	if (vd->fd != -1)
 		return (0);
 
-	if (vsl_shmem_map(varnish_name))
+	if (vsl_shmem_map(vd->n_opt))
 		return (-1);
 
 	vd->head = vsl_lh;
@@ -562,6 +563,11 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		vd->flags |= F_NON_BLOCKING;
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
+	case 'n':
+		free(vd->n_opt);
+		vd->n_opt = strdup(opt);
+		assert(vd->n_opt != NULL);
+		return (1);
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
 	case 'C': vd->regflags = VRE_CASELESS; return (1);
