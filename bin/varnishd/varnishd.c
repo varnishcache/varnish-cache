@@ -593,8 +593,10 @@ main(int argc, char * const *argv)
 
 	if (L_arg) {
 		/* Learner mode */
-		if (!s_arg_given)
+		if (!s_arg_given) {
 			setup_storage("malloc,1m");
+			s_arg_given = 1;
+		}
 	}
 
 	if (argc != 0) {
