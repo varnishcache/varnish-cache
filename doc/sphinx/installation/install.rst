@@ -1,3 +1,5 @@
+.. _install-doc:
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Installing Varnish on your computer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,6 +29,7 @@ being:
 **CentOS/RedHat 5.4 - RPM files**
 
 	We try to keep the lastest version available as prebuildt RPMs (el4 & el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
+
 	Varnish is included in the `EPEL <http://fedoraproject.org/wiki/EPEL>`_ repository. **BUT** unfortunatly we had a syntax change in Varnish 2.0.6->2.1.X. This means that we can not update Varnish in `EPEL <http://fedoraproject.org/wiki/EPEL>`_ so the latest version there is Varnish 2.0.6. In the future (EPEL6) we should be available with Varnish 2.1.X or higher.
 
 **Debian/Ubuntu - DEB files**

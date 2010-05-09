@@ -13,7 +13,7 @@ VCL is an acronym for Varnish Configuration Language.  In a VCL file, you config
 
 We are working on documenting VCL. The `WIKI <http://varnish-cache.org/wiki/VCLExamples>`_ contains some examples.
 
-Please also see "man 7 vcl".
+Please also see ``man 7 vcl``.
 
 
 **How do I load VCL file while Varnish is running?**
