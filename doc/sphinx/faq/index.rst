@@ -13,9 +13,8 @@ The most frequently asked questions about Varnish in different contexts.
 	http.rst
 	configuration.rst
 	logging.rst
-	old-faq.rst
 
 .. todo::
-        [V] - Split FAQ up in different sections
+        [V] - Now that the FAQ has been all reStructureized, we need to qualitycheck the content, update old info, and delete unrelevant info.
 
 
