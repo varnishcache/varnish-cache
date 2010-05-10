@@ -153,6 +153,11 @@ vcc_StringVal(struct tokenlist *tl)
 		return (vcc_regsub(tl, 0));
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "regsuball"))
 		return (vcc_regsub(tl, 1));
+	if (tl->t->tok == ID && vcc_IdIs(tl->t, "now")) {
+		Fb(tl, 0, "VRT_time_string(sp, VRT_r_now(sp))");
+		vcc_NextToken(tl);
+		return 1;
+	}
 	if (tl->t->tok == VAR) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		if (tl->err)
