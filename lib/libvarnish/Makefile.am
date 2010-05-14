@@ -36,7 +36,7 @@ libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
 
 DISTCLEANFILES = svn_version.c
 svn_version.c: FORCE
-	V="$$(git log -n 1 --pretty=format:%h 2>/dev/null || LANG=C svnversion -n $(top_srcdir))" \
+	V="$$(sh -c "git log -n 1 --pretty=format:%h" 2>/dev/null || LANG=C svnversion -n $(top_srcdir))" \
 	H="$$(head -n 1 svn_version.c 2>/dev/null || true)"; \
 	[ "$$V" = "exported" ] && [ -e svn_version.c ] && exit 0 ; \
 	if [ "/* $$V */" != "$$H" ]; then \
