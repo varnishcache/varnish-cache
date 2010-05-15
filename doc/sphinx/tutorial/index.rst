@@ -1,17 +1,21 @@
-.. _Tutorial:
+.. _tutorial-index:
 
 %%%%%%%%%%%%%%%%
 Varnish Tutorial
 %%%%%%%%%%%%%%%%
 
-Welcome to the Varnish Tutorial, we hope this will help you get to 
-know and understand Varnish.
-
 .. toctree::
 
 	intro.rst
-	tut001.rst
-	tut002.rst
+	backend_servers.rst
+        starting_varnish.rst
+	logging.rst
+        putting_varnish_on_port_80.rst
+	vcl.rst
+        statistics.rst
+        increasing_your_hitrate.rst
+	advanced_backend_servers.rst
+	troubleshooting.rst
 
 .. todo::
         starting varnish with -d, seeing a transaction go through
