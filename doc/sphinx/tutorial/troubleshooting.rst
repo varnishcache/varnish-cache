@@ -3,7 +3,7 @@ Troubleshooting Varnish
 
 
 When Varnish won't start
------------------------
+------------------------
 
 Sometimes Varnish wont start. There is a pletphora of reasons why
 Varnish wont start on your machine. We've seen everything from wrong

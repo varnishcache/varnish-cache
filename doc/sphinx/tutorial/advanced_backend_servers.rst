@@ -1,5 +1,5 @@
 Advanced Backend configuration
-----------------
+==============================
 
 At some point you might need Varnish to cache content from several
 servers. You might want Varnish to map all the URL into one single
@@ -10,30 +10,29 @@ site. Lets say our Java application should handle URL beginning with
 /java/.
 
 We manage to get the thing up and running on port 8000. Now, lets have
-a look a default.vcl.
+a look a default.vcl.::
 
-backend default {
-    .host = "127.0.0.1";
-    .port = "8080";
-}
+  backend default {
+      .host = "127.0.0.1";
+      .port = "8080";
+  }
 
-We add a new backend.
+We add a new backend.::
 
-backend java {
-    .host = "127.0.0.1";
-    .port = "8000";
-}
+  backend java {
+      .host = "127.0.0.1";
+      .port = "8000";
+  }
 
-Now we need tell where to send the difference URL. Lets look at vcl_recv:
+Now we need tell where to send the difference URL. Lets look at vcl_recv.::
 
-
-sub vcl_recv {
-    if (req.url ~ "^/java/") {
-        set req.backend = java;
-    } else {
-        set req.backend = default.
-    }
-}
+  sub vcl_recv {
+      if (req.url ~ "^/java/") {
+          set req.backend = java;
+      } else {
+          set req.backend = default.
+      }
+  }
 
 It's quite simple, really. Lets stop and think about this for a
 moment. As you can see you can define how you choose backends based on
@@ -41,8 +40,8 @@ really arbitrary data. You want to send mobile devices to a different
 backend? No problem. if (req.User-agent ~ /mobile/) .... should do the
 trick. 
 
-Directors 
-~~~~~~~~~~
+Directors
+---------
 
 You can also group several backend into a group of backends. These
 groups are called directors. This will give you increased performance
@@ -52,13 +51,12 @@ together in a director.::
 	 backend server1 {
 	     .host = "192.168.0.10";
 	 }
-::
 	 backend server2{
 	     .host = "192.168.0.10";
 	 }
 
-
 Now we create the director.::
+
        	director example_director round-robin {
         {
                 .backend = server1;
@@ -81,7 +79,7 @@ requests to the healthy server? Sure it can. This is where the Health
 Checks come into play.
 
 Health checks
-~~~~~~~~~~~~
+-------------
 
 Lets set up a director with two backends and health checks. First lets
 define the backends.::
@@ -96,8 +94,7 @@ define the backends.::
                 .threshold = 3;
 	   }
          }
-::
-	backend server2 {
+       backend server2 {
   	  .host = "server2.example.com";
   	  .probe = {
                 .url = "/";
@@ -131,7 +128,7 @@ XXX: Ref to reference guide.
 
 Now we define the director.::
 
-director example_director round-robin {
+  director example_director round-robin {
         {
                 .backend = server1;
         }
@@ -145,4 +142,3 @@ director example_director round-robin {
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
 unhealty.
-
