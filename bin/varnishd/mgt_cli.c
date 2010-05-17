@@ -506,7 +506,13 @@ mgt_cli_secret(const char *S_arg)
 {
 	int i, fd;
 	char buf[BUFSIZ];
+	char *p;
 
+	/* Save in shmem */
+	i = strlen(S_arg);
+	p = mgt_SHM_Alloc(i + 1, "Arg", "-S");
+	AN(p);
+	strcpy(p, S_arg);
 
 	srandomdev();
 	fd = open(S_arg, O_RDONLY);
@@ -535,8 +541,16 @@ mgt_cli_telnet(const char *T_arg)
 	char *addr, *port;
 	int i, n, sock, good;
 	struct telnet *tn;
+	char *p;
+
+	/* Save in shmem */
+	i = strlen(T_arg);
+	p = mgt_SHM_Alloc(i + 1, "Arg", "-T");
+	AN(p);
+	strcpy(p, T_arg);
 
 	XXXAZ(VSS_parse(T_arg, &addr, &port));
+
 	n = VSS_resolve(addr, port, &ta);
 	if (n == 0) {
 		fprintf(stderr, "Could not open management port\n");
