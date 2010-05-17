@@ -64,7 +64,7 @@ static int vsl_fd = -1;
 
 /*--------------------------------------------------------------------*/
 
-static void *
+void *
 mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 {
 	struct shmalloc *sha, *sha2;
@@ -221,8 +221,6 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	if (av[0] != NULL) 
 		ARGV_ERR("\t-l ...: %s", av[0]);
 
-	printf("<%s> <%s> <%s>\n", av[1], av[2], av[3]);
-
 	ap = av + 1;
 
 	/* Size of SHMLOG */
@@ -296,7 +294,8 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 
 	memset(&loghead->head, 0, sizeof loghead->head);
 	loghead->head.magic = SHMALLOC_MAGIC;
-	loghead->head.len = size - sizeof *loghead;
+	loghead->head.len =
+	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
 	bprintf(loghead->head.type, "%s", "Free");
 	MEMORY_BARRIER();
 
