@@ -44,6 +44,7 @@ SVNID("$Id$")
 #include "cli.h"
 #include "cli_common.h"
 #include "libvarnish.h"
+#include "varnishapi.h"
 #include "vss.h"
 
 static double timeout = 5;
@@ -214,10 +215,16 @@ main(int argc, char * const *argv)
 {
 	const char *T_arg = NULL;
 	const char *S_arg = NULL;
+	const char *n_arg = NULL;
+	struct VSL_data *vsd;
+	char *p;
 	int opt, sock;
 
-	while ((opt = getopt(argc, argv, "S:T:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "n:S:T:t:")) != -1) {
 		switch (opt) {
+		case 'n':
+			n_arg = optarg;
+			break;
 		case 'S':
 			S_arg = optarg;
 			break;
@@ -234,6 +241,25 @@ main(int argc, char * const *argv)
 
 	argc -= optind;
 	argv += optind;
+
+	if (n_arg != NULL) {
+		vsd = VSL_New();
+		assert(VSL_Arg(vsd, 'n', n_arg));
+		if (!VSL_Open(vsd)) {
+			if (T_arg == NULL) {
+				p = VSL_Find_Alloc(vsd, "Arg", "-T", NULL);
+				if (p != NULL) {
+					T_arg = strdup(p);
+				}
+			}
+			if (S_arg == NULL) {
+				p = VSL_Find_Alloc(vsd, "Arg", "-S", NULL);
+				if (p != NULL) {
+					S_arg = strdup(p);
+				}
+			}
+		}
+	}
 
 	if (T_arg == NULL)
 		usage();
