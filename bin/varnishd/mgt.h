@@ -68,6 +68,10 @@ void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_DumpMdoc(void);
 #endif
 
+/* mgt_shmem.c */
+void mgt_SHM_Init(const char *fn, const char *arg);
+void mgt_SHM_Pid(void);
+
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
 int mgt_vcc_default(const char *bflag, const char *f_arg, char *vcl, int Cflag);

@@ -42,8 +42,6 @@ void VCA_tweak_waiter(struct cli *cli, const char *arg);
 void VSL_Panic(int *len, char **ptr);
 
 /* mgt_shmem.c */
-void VSL_MgtInit(const char *fn, unsigned size);
-void VSL_MgtPid(void);
 extern struct varnish_stats *VSL_stats;
 extern struct shmloghead *loghead;
 extern unsigned char *logstart;

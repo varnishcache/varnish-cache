@@ -126,10 +126,23 @@ vsl_buildnew(const char *fn, unsigned size)
 }
 
 void
-VSL_MgtInit(const char *fn, unsigned size)
+mgt_SHM_Init(const char *fn, const char *l_arg)
 {
 	int i;
 	struct params *pp;
+	const char *arg_default = "80m";
+	const char *q;
+	uintmax_t size;
+
+	if (l_arg == NULL)
+		l_arg = arg_default;
+
+	q = str2bytes(l_arg, &size, 0);
+	if (q != NULL) {
+		fprintf(stderr,  "Parameter error:\n");
+		fprintf(stderr, "\t-l ...:  %s\n", q);
+		exit (1);
+	}
 
 	i = open(fn, O_RDWR, 0644);
 	if (i >= 0 && vsl_goodold(i)) {
@@ -155,7 +168,7 @@ VSL_MgtInit(const char *fn, unsigned size)
 }
 
 void
-VSL_MgtPid(void)
+mgt_SHM_Pid(void)
 {
 
 	loghead->master_pid = getpid();

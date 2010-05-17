@@ -409,9 +409,7 @@ main(int argc, char * const *argv)
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *i_arg = NULL;
-	const char *l_arg = "80m";
-	uintmax_t l_size;
-	const char *q;
+	const char *l_arg = NULL;	/* default in mgt_shmem.c */
 	const char *h_arg = "critbit";
 	const char *M_arg = NULL;
 	const char *n_arg = NULL;
@@ -604,13 +602,6 @@ main(int argc, char * const *argv)
 		usage();
 	}
 
-	q = str2bytes(l_arg, &l_size, 0);
-	if (q != NULL) {
-		fprintf(stderr, "Parameter error:\n");
-		fprintf(stderr, "\t-l ...:  %s\n", q);
-		exit (1);
-	}
-
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
@@ -689,7 +680,7 @@ main(int argc, char * const *argv)
 
 	setup_hash(h_arg);
 
-	VSL_MgtInit(SHMLOG_FILENAME, l_size);
+	mgt_SHM_Init(SHMLOG_FILENAME, l_arg);
 
 	vsb_finish(vident);
 	AZ(vsb_overflowed(vident));
@@ -697,7 +688,7 @@ main(int argc, char * const *argv)
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
-	VSL_MgtPid();
+	mgt_SHM_Pid();
 
 	if (pfh != NULL && vpf_write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
