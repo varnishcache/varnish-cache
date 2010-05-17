@@ -240,7 +240,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 
 	/* Fill or not ? */
 	if (*ap != NULL) {
-		if (*ap == '\0')
+		if (**ap == '\0')
 			fill = 1;
 		else if (!strcmp(*ap, "-"))
 			fill = 0;
@@ -253,15 +253,15 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 		fill = 1;
 	}
 
+	if (*ap != NULL) 
+		ARGV_ERR("\t-l ...:  Too many sub-args\n");
+
 	FreeArgv(av);
 
 	size = s1 + s2;
 	ps = getpagesize();
 	size += ps - 1;
 	size &= ~(ps - 1);
-
-	if (av[2] == NULL)
-		q = str2bytes(av[2], &size, 0);
 
 	i = open(fn, O_RDWR, 0644);
 	if (i >= 0 && vsl_goodold(i, size, s2)) {
