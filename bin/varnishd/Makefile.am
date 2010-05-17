@@ -33,6 +33,7 @@ varnishd_SOURCES = \
 	cache_pool.c \
 	cache_response.c \
 	cache_session.c \
+	cache_shmlog.c \
 	cache_vary.c \
 	cache_vcl.c \
 	cache_vrt.c \
@@ -46,9 +47,9 @@ varnishd_SOURCES = \
 	mgt_cli.c \
 	mgt_param.c \
 	mgt_pool.c \
+	mgt_shmem.c \
 	mgt_vcc.c \
 	rfc2616.c \
-	shmlog.c \
 	stevedore.c \
 	storage_file.c \
 	storage_malloc.c \
