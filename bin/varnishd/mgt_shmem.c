@@ -56,6 +56,9 @@ SVNID("$Id$")
 struct varnish_stats *VSL_stats;
 struct shmloghead *loghead;
 unsigned char *logstart;
+uint8_t			*vsl_log_start;
+uint8_t			*vsl_log_end;
+uint8_t			*vsl_log_nxt;
 
 static int vsl_fd = -1;
 
@@ -102,7 +105,7 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 		loghead->alloc_seq = seq++;
 		MEMORY_BARRIER();
 
-		return ((void*)(sha + 1));
+		return (SHA_PTR(sha));
 
 	}
 	return (NULL);
@@ -114,7 +117,7 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
  */
 
 static int
-vsl_goodold(int fd, unsigned size, unsigned s2)
+vsl_goodold(int fd, unsigned size)
 {
 	struct shmloghead slh;
 	int i;
@@ -153,7 +156,7 @@ vsl_goodold(int fd, unsigned size, unsigned s2)
 
 	/* Sanity checks */
 
-	if (slh.start != s2)
+	if (slh.shm_size != size)
 		return (0);
 
 	if (st.st_size != size)
@@ -163,7 +166,7 @@ vsl_goodold(int fd, unsigned size, unsigned s2)
 }
 
 static void
-vsl_buildnew(const char *fn, unsigned size, int fill, unsigned s2)
+vsl_buildnew(const char *fn, unsigned size, int fill)
 {
 	struct shmloghead slh;
 	int i;
@@ -181,9 +184,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill, unsigned s2)
 	memset(&slh, 0, sizeof slh);
 	slh.magic = SHMLOGHEAD_MAGIC;
 	slh.hdrsize = sizeof slh;
-	slh.size = size;
-	slh.ptr = 0;
-	slh.start = s2;
+	slh.shm_size = size;
 	i = write(vsl_fd, &slh, sizeof slh);
 	xxxassert(i == sizeof slh);
 
@@ -272,13 +273,13 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	size &= ~(ps - 1);
 
 	i = open(fn, O_RDWR, 0644);
-	if (i >= 0 && vsl_goodold(i, size, s2)) {
+	if (i >= 0 && vsl_goodold(i, size)) {
 		fprintf(stderr, "Using old SHMFILE\n");
 		vsl_fd = i;
 	} else {
 		fprintf(stderr, "Creating new SHMFILE\n");
 		(void)close(i);
-		vsl_buildnew(fn, size, fill, s2);
+		vsl_buildnew(fn, size, fill);
 	}
 
 	loghead = (void *)mmap(NULL, size,
@@ -295,17 +296,26 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 
 	memset(&loghead->head, 0, sizeof loghead->head);
 	loghead->head.magic = SHMALLOC_MAGIC;
-	loghead->head.len = s2 - sizeof *loghead;
+	loghead->head.len = size - sizeof *loghead;
 	bprintf(loghead->head.type, "%s", "Free");
 	MEMORY_BARRIER();
 
-	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_STAT_TYPE, "");
+	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_TYPE_STAT, "");
 	AN(VSL_stats);
 
 	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "");
 	AN(pp);
 	*pp = *params;
 	params = pp;
+
+	vsl_log_start = mgt_SHM_Alloc(s1, VSL_TYPE_LOG, "");
+	AN(vsl_log_start);
+	vsl_log_end = vsl_log_start + s1;
+	vsl_log_nxt = vsl_log_start + 1;
+	*vsl_log_nxt = SLT_ENDMARKER;
+	MEMORY_BARRIER();
+	*vsl_log_start = random();
+	MEMORY_BARRIER();
 
 	loghead->alloc_seq = random();
 	MEMORY_BARRIER();

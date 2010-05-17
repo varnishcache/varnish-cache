@@ -119,10 +119,10 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 		return (1);
 	}
 
-	p = vd->ptr;
+	p = vd->log_ptr;
 	for (w = 0; w < TIMEOUT_USEC;) {
 		if (*p == SLT_WRAPMARKER) {
-			p = vd->logstart;
+			p = vd->log_start + 1;
 			continue;
 		}
 		if (*p == SLT_ENDMARKER) {
@@ -133,11 +133,11 @@ vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
 			continue;
 		}
 		l = SHMLOG_LEN(p);
-		vd->ptr = p + l + SHMLOG_NEXTTAG;
+		vd->log_ptr = p + l + SHMLOG_NEXTTAG;
 		*pp = p;
 		return (1);
 	}
-	vd->ptr = p;
+	vd->log_ptr = p;
 	return (0);
 }
 

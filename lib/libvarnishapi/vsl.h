@@ -37,10 +37,13 @@ struct VSL_data {
 	unsigned		magic;
 #define VSL_MAGIC		0x6e3bd69b
 
-	struct shmloghead	*head;
-	unsigned char		*logstart;
-	unsigned char		*logend;
-	unsigned char		*ptr;
+
+	int			vsl_fd;
+	struct shmloghead 	*vsl_lh;
+
+	unsigned char		*log_start;
+	unsigned char		*log_end;
+	unsigned char		*log_ptr;
 
 	/* for -r option */
 	int			r_fd;
@@ -80,7 +83,4 @@ struct VSL_data {
 
 	unsigned long		skip;
 	unsigned long		keep;
-
-	int			vsl_fd;
-	struct shmloghead 	*vsl_lh;
 };

@@ -137,7 +137,7 @@ VSL_Open(struct VSL_data *vd)
 		return (1);
 	}
 
-	vd->vsl_lh = (void *)mmap(NULL, slh.size + sizeof slh,
+	vd->vsl_lh = (void *)mmap(NULL, slh.shm_size,
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
 	if (vd->vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
@@ -154,8 +154,7 @@ VSL_Close(struct VSL_data *vd)
 {
 	if (vd->vsl_lh == NULL)
 		return;
-	assert(0 == munmap((void*)vd->vsl_lh,
-	    vd->vsl_lh->size + sizeof *vd->vsl_lh));
+	assert(0 == munmap((void*)vd->vsl_lh, vd->vsl_lh->shm_size));
 	vd->vsl_lh = NULL;
 	assert(vd->vsl_fd >= 0);
 	assert(0 == close(vd->vsl_fd));
@@ -188,9 +187,10 @@ VSL_OpenStats(struct VSL_data *vd)
 {
 	struct shmalloc *sha;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (VSL_Open(vd))
 		return (NULL);
-	sha = vsl_find_alloc(vd, VSL_STAT_TYPE, "");
+	sha = vsl_find_alloc(vd, VSL_TYPE_STAT, "");
 	assert(sha != NULL);
 	return (SHA_PTR(sha));
 }
@@ -201,23 +201,22 @@ int
 VSL_OpenLog(struct VSL_data *vd)
 {
 	unsigned char *p;
+	struct shmalloc *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->r_fd != -1)
-		return (0);
-
 	if (VSL_Open(vd))
 		return (-1);
+	sha = vsl_find_alloc(vd, VSL_TYPE_LOG, "");
+	assert(sha != NULL);
 
-	vd->head = vd->vsl_lh;
-	vd->logstart = (unsigned char *)vd->vsl_lh + vd->vsl_lh->start;
-	vd->logend = vd->logstart + vd->vsl_lh->size;
-	vd->ptr = vd->logstart;
+	vd->log_start = SHA_PTR(sha);
+	vd->log_end = vd->log_start + sha->len - sizeof *sha;
+	vd->log_ptr = vd->log_start + 1;
 
 	if (!vd->d_opt && vd->r_fd == -1) {
-		for (p = vd->ptr; *p != SLT_ENDMARKER; )
+		for (p = vd->log_ptr; *p != SLT_ENDMARKER; )
 			p += SHMLOG_LEN(p) + SHMLOG_NEXTTAG;
-		vd->ptr = p;
+		vd->log_ptr = p;
 	}
 	return (0);
 }

@@ -89,6 +89,9 @@ static inline void
 vbit_set(struct vbitmap *vb, unsigned bit)
 {
 
+	if (0)	/* XXX: HACK: ref it, to silence compiler */
+		vbit_destroy(vb);
+
 	if (bit >= vb->nbits)
 		vbit_expand(vb, bit);
 	vb->bits[VBITMAP_IDX(bit)] |= VBITMAP_BIT(bit);

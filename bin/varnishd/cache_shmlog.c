@@ -55,19 +55,21 @@ static void
 vsl_wrap(void)
 {
 
-	assert(loghead->magic == SHMLOGHEAD_MAGIC);
-	*logstart = SLT_ENDMARKER;
-	logstart[loghead->ptr] = SLT_WRAPMARKER;
-	loghead->ptr = 0;
+	assert(vsl_log_nxt < vsl_log_end);
+	vsl_log_start[1] = SLT_ENDMARKER;
+	MEMORY_BARRIER();
+	*vsl_log_nxt = SLT_WRAPMARKER;
+	MEMORY_BARRIER();
+	vsl_log_start[0]++;
+	vsl_log_nxt = vsl_log_start + 1;
 	VSL_stats->shm_cycles++;
-	assert(loghead->magic == SHMLOGHEAD_MAGIC);
 }
 
 static void
 vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 {
 
-	assert(loghead->magic == SHMLOGHEAD_MAGIC);
+	assert(vsl_log_nxt + SHMLOG_NEXTTAG + len < vsl_log_end);
 	assert(len < 0x10000);
 	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
 	p[__SHMLOG_LEN_LOW] = len & 0xff;
@@ -76,9 +78,26 @@ vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
 	p[__SHMLOG_ID_MEDLOW] = (id >> 8) & 0xff;
 	p[__SHMLOG_ID_LOW] = id & 0xff;
 	p[SHMLOG_DATA + len] = '\0';
-	p[SHMLOG_NEXTTAG + len] = SLT_ENDMARKER;
-	/* XXX: Write barrier here */
+	MEMORY_BARRIER();
 	p[SHMLOG_TAG] = tag;
+}
+
+static uint8_t *
+vsl_get(unsigned len)
+{
+	uint8_t *p;
+
+	assert(vsl_log_nxt < vsl_log_end);
+
+	/* Wrap if necessary */
+	if (vsl_log_nxt + SHMLOG_NEXTTAG + len + 1 >= vsl_log_end) /* XXX: + 1 ?? */
+		vsl_wrap();
+	p = vsl_log_nxt;
+
+	vsl_log_nxt += SHMLOG_NEXTTAG + len;
+	assert(vsl_log_nxt < vsl_log_end);
+	*vsl_log_nxt = SLT_ENDMARKER;
+	return (p);
 }
 
 /*--------------------------------------------------------------------
@@ -106,14 +125,7 @@ VSLR(enum shmlogtag tag, int id, txt t)
 	LOCKSHM(&vsl_mtx);
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records++;
-	assert(loghead->ptr < loghead->size);
-
-	/* Wrap if necessary */
-	if (loghead->ptr + SHMLOG_NEXTTAG + l + 1 >= loghead->size)
-		vsl_wrap();
-	p = logstart + loghead->ptr;
-	loghead->ptr += SHMLOG_NEXTTAG + l;
-	assert(loghead->ptr < loghead->size);
+	p = vsl_get(l);
 	UNLOCKSHM(&vsl_mtx);
 
 	memcpy(p + SHMLOG_DATA, t.b, l);
@@ -142,21 +154,25 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 		LOCKSHM(&vsl_mtx);
 		VSL_stats->shm_writes++;
 		VSL_stats->shm_records++;
-		assert(loghead->ptr < loghead->size);
+		assert(vsl_log_nxt < vsl_log_end);
 
 		/* Wrap if we cannot fit a full size record */
-		if (loghead->ptr + SHMLOG_NEXTTAG + mlen + 1 >= loghead->size)
+		if (vsl_log_nxt + SHMLOG_NEXTTAG + mlen + 1 >= vsl_log_end)
 			vsl_wrap();
 
-		p = logstart + loghead->ptr;
+		p = vsl_log_nxt;
 		/* +1 for the NUL */
 		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1L, fmt, ap);
 		if (n > mlen)
 			n = mlen;		/* we truncate long fields */
-		vsl_hdr(tag, p, n, id);
-		loghead->ptr += SHMLOG_NEXTTAG + n;
-		assert(loghead->ptr < loghead->size);
+
+		vsl_log_nxt += SHMLOG_NEXTTAG + n;
+		assert(vsl_log_nxt < vsl_log_end);
+		*vsl_log_nxt = SLT_ENDMARKER;
+
 		UNLOCKSHM(&vsl_mtx);
+
+		vsl_hdr(tag, p, n, id);
 	}
 	va_end(ap);
 }
@@ -166,7 +182,7 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 void
 WSL_Flush(struct worker *w, int overflow)
 {
-	unsigned char *p;
+	uint8_t *p;
 	unsigned l;
 
 	l = pdiff(w->wlb, w->wlp);
@@ -176,15 +192,11 @@ WSL_Flush(struct worker *w, int overflow)
 	VSL_stats->shm_flushes += overflow;
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
-	if (loghead->ptr + l + 1 >= loghead->size)
-		vsl_wrap();
-	p = logstart + loghead->ptr;
-	p[l] = SLT_ENDMARKER;
-	loghead->ptr += l;
-	assert(loghead->ptr < loghead->size);
+	p = vsl_get(l);
 	UNLOCKSHM(&vsl_mtx);
+
 	memcpy(p + 1, w->wlb + 1, l - 1);
-	/* XXX: memory barrier here */
+	MEMORY_BARRIER();
 	p[0] = w->wlb[0];
 	w->wlp = w->wlb;
 	w->wlr = 0;
@@ -269,10 +281,6 @@ void
 VSL_Init(void)
 {
 
-	assert(loghead->magic == SHMLOGHEAD_MAGIC);
-	assert(loghead->hdrsize == sizeof *loghead);
-	/* XXX more check sanity of loghead  ? */
-	logstart = (unsigned char *)loghead + loghead->start;
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	loghead->starttime = TIM_real();
 	loghead->panicstr[0] = '\0';

@@ -68,17 +68,7 @@ struct shmloghead {
 	pid_t			master_pid;
 	pid_t			child_pid;
 
-	/*
-	 * Byte offset into the file where the fifolog starts
-	 * This allows the header to expand later.
-	 */
-	unsigned		start;
-
-	/* Length of the fifolog area in bytes */
-	unsigned		size;
-
-	/* Current write position relative to the beginning of start */
-	unsigned		ptr;
+	unsigned		shm_size;
 
 	/* Panic message buffer */
 	char			panicstr[64 * 1024];
@@ -87,6 +77,8 @@ struct shmloghead {
 	/* Must be last element */
 	struct shmalloc		head;
 };
+
+#define VSL_TYPE_LOG		"Log"
 
 /*
  * Record format is as follows:
