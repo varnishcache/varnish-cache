@@ -38,9 +38,6 @@ extern pid_t mgt_pid;
 /* cache_acceptor.c */
 void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
-/* shmlog.c */
-void VSL_Panic(int *len, char **ptr);
-
 /* mgt_shmem.c */
 extern struct varnish_stats *VSL_stats;
 extern struct shmloghead *loghead;

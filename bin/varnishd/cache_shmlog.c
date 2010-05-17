@@ -266,25 +266,6 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Panic(int *len, char **ptr)
-{
-	static char a[1] = { '\0' };
-
-	AN(len);
-	AN(ptr);
-	if (loghead->magic == SHMLOGHEAD_MAGIC) {
-		assert(loghead->hdrsize == sizeof *loghead);
-		*len = sizeof(loghead->panicstr);
-		*ptr = loghead->panicstr;
-	} else {
-		*len = 0;
-		*ptr = a;
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
 VSL_Init(void)
 {
 

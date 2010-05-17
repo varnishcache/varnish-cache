@@ -44,6 +44,7 @@ SVNID("$Id$")
 #include <execinfo.h>
 #endif
 #include "cache.h"
+#include "shmlog.h"
 #include "cache_backend.h"
 #include "vcl.h"
 #include "libvcl.h"
@@ -57,7 +58,6 @@ SVNID("$Id$")
  * (gdb) printf "%s", panicstr
  */
 
-char panicstr[65536];
 static struct vsb vsps, *vsp;
 
 /*--------------------------------------------------------------------*/
@@ -294,7 +294,6 @@ static void
 pan_ic(const char *func, const char *file, int line, const char *cond,
     int err, int xxx)
 {
-	int l;
 	char *p;
 	const char *q;
 	const struct sess *sp;
@@ -341,22 +340,19 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	}
 	vsb_printf(vsp, "\n");
 	vsb_bcat(vsp, "", 1);	/* NUL termination */
-	VSL_Panic(&l, &p);
-	if (l < sizeof(panicstr))
-		l = sizeof(panicstr);
-	memcpy(p, panicstr, l);
+
 	if (params->diag_bitmap & 0x4000)
-		(void)fputs(panicstr, stderr);
+		(void)fputs(loghead->panicstr, stderr);
 
 #ifdef HAVE_ABORT2
 	if (params->diag_bitmap & 0x8000) {
 		void *arg[1];
 
-		for (p = panicstr; *p; p++)
+		for (p = loghead->panicstr; *p; p++)
 			if (*p == '\n')
 				*p = ' ';
-		arg[0] = panicstr;
-		abort2(panicstr, 1, arg);
+		arg[0] = loghead->panicstr;
+		abort2(loghead->panicstr, 1, arg);
 	}
 #endif
 	if (params->diag_bitmap & 0x1000)
@@ -373,5 +369,6 @@ PAN_Init(void)
 
 	lbv_assert = pan_ic;
 	vsp = &vsps;
-	AN(vsb_new(vsp, panicstr, sizeof panicstr, VSB_FIXEDLEN));
+	AN(vsb_new(vsp, loghead->panicstr, sizeof loghead->panicstr,
+	    VSB_FIXEDLEN));
 }

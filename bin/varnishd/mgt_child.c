@@ -59,6 +59,7 @@ SVNID("$Id$")
 #endif
 
 #include "mgt.h"
+#include "shmlog.h"
 #include "heritage.h"
 #include "cli.h"
 #include "cli_priv.h"
@@ -459,13 +460,11 @@ mgt_stop_child(void)
 static void
 mgt_report_panic(pid_t r)
 {
-	int l;
-	char *p;
 
-	VSL_Panic(&l, &p);
-	if (*p == '\0')
+	if (loghead->panicstr[0] == '\0')
 		return;
-	REPORT(LOG_ERR, "Child (%jd) Panic message: %s", (intmax_t)r, p);
+	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
+	    (intmax_t)r, loghead->panicstr);
 }
 
 /*--------------------------------------------------------------------*/
