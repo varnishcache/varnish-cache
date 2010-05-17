@@ -77,7 +77,7 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
 
 		if (strcmp(sha->type, "Free")) {
-			sha = (void*)((uintptr_t)sha + sha->len);
+			sha = SHA_NEXT(sha);
 			continue;
 		}
 		assert(size <= sha->len);
@@ -288,7 +288,6 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	loghead->master_pid = getpid();
 	xxxassert(loghead != MAP_FAILED);
 	(void)mlock((void*)loghead, size);
-	VSL_stats = &loghead->stats;
 
 	/* Initialize pool */
 	loghead->alloc_seq = 0;
@@ -300,7 +299,11 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	bprintf(loghead->head.type, "%s", "Free");
 	MEMORY_BARRIER();
 
+	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_STAT_TYPE, "");
+	AN(VSL_stats);
+
 	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "");
+	AN(pp);
 	*pp = *params;
 	params = pp;
 

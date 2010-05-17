@@ -55,6 +55,9 @@ struct shmalloc {
 	char			ident[8];
 };
 
+#define SHA_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
+#define SHA_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
+
 struct shmloghead {
 #define SHMLOGHEAD_MAGIC	4185512500U	/* From /dev/random */
 	unsigned		magic;
@@ -76,8 +79,6 @@ struct shmloghead {
 
 	/* Current write position relative to the beginning of start */
 	unsigned		ptr;
-
-	struct varnish_stats	stats;
 
 	/* Panic message buffer */
 	char			panicstr[64 * 1024];

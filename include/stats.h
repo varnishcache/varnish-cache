@@ -31,6 +31,8 @@
 
 #include <stdint.h>
 
+#define VSL_STAT_TYPE		"Stats"
+
 struct varnish_stats {
 #define MAC_STAT(n, t, l, f, e)	t n;
 #include "stat_field.h"

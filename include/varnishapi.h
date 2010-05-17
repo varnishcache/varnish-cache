@@ -57,6 +57,7 @@ int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
 int VSL_Arg(struct VSL_data *vd, int arg, const char *opt);
 void VSL_Close(struct VSL_data *vd);
+int VSL_Open(struct VSL_data *vd);
 void VSL_Delete(struct VSL_data *vd);
 struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
 const char *VSL_Name(struct VSL_data *vd);

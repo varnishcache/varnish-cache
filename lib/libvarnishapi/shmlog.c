@@ -123,8 +123,8 @@ const char *VSL_tags[256] = {
 
 /*--------------------------------------------------------------------*/
 
-static int
-vsl_shmem_map(struct VSL_data *vd)
+int
+VSL_Open(struct VSL_data *vd)
 {
 	int i;
 	struct shmloghead slh;
@@ -180,7 +180,6 @@ VSL_New(void)
 	vd->magic = VSL_MAGIC;
 	vd->vsl_fd = -1;
 
-
 	/* XXX: Allocate only if log access */
 	vd->vbm_client = vbit_init(4096);
 	vd->vbm_backend = vbit_init(4096);
@@ -233,7 +232,7 @@ VSL_OpenLog(struct VSL_data *vd)
 	if (vd->r_fd != -1)
 		return (0);
 
-	if (vsl_shmem_map(vd))
+	if (VSL_Open(vd))
 		return (-1);
 
 	vd->head = vd->vsl_lh;
@@ -611,13 +610,36 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+static
+struct shmalloc *
+vsl_find_alloc(struct VSL_data *vd, const char *type, const char *ident)
+{
+	struct shmalloc *sha;
+
+	assert (vd->vsl_lh != NULL);
+	for(sha = &vd->vsl_lh->head; ; sha = SHA_NEXT(sha)) {
+		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+		if (strcmp(sha->type, type)) 
+			continue;
+		if (ident != NULL && strcmp(sha->ident, ident))
+			continue;
+		return (sha);
+	}
+	return (NULL);
+}
+
 struct varnish_stats *
 VSL_OpenStats(struct VSL_data *vd)
 {
+	struct shmalloc *sha;
 
-	if (vsl_shmem_map(vd))
+	if (VSL_Open(vd))
 		return (NULL);
-	return (&vd->vsl_lh->stats);
+	sha = vsl_find_alloc(vd, VSL_STAT_TYPE, "");
+	assert(sha != NULL);
+	return (SHA_PTR(sha));
 }
 
 void
