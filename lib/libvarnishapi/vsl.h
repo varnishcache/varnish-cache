@@ -40,6 +40,7 @@ struct VSL_data {
 
 	int			vsl_fd;
 	struct shmloghead 	*vsl_lh;
+	void			*vsl_end;
 
 	unsigned char		*log_start;
 	unsigned char		*log_end;

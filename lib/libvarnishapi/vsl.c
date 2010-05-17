@@ -144,6 +144,7 @@ VSL_Open(struct VSL_data *vd)
 		    logname, strerror(errno));
 		return (1);
 	}
+	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
 	return (0);
 }
 
@@ -169,7 +170,7 @@ vsl_find_alloc(struct VSL_data *vd, const char *type, const char *ident)
 	struct shmalloc *sha;
 
 	assert (vd->vsl_lh != NULL);
-	for(sha = &vd->vsl_lh->head; ; sha = SHA_NEXT(sha)) {
+	for(sha = &vd->vsl_lh->head; (void*)sha < vd->vsl_end; sha = SHA_NEXT(sha)) {
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
 		if (strcmp(sha->type, type)) 
 			continue;
@@ -178,6 +179,25 @@ vsl_find_alloc(struct VSL_data *vd, const char *type, const char *ident)
 		return (sha);
 	}
 	return (NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
+void *
+VSL_Find_Alloc(struct VSL_data *vd, const char *type, const char *ident,
+    unsigned *lenp)
+{
+	struct shmalloc *sha;
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (VSL_Open(vd))
+		return (NULL);
+	sha = vsl_find_alloc(vd, type, ident);
+	if (sha == NULL)
+		return (NULL);
+	if (lenp != NULL)
+		*lenp = sha->len - sizeof *sha;
+	return (SHA_PTR(sha));
 }
 
 /*--------------------------------------------------------------------*/
