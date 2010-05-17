@@ -43,8 +43,20 @@
 
 #include "stats.h"
 
+/*
+ * This structure describes each allocation from the shmlog
+ */
+
+struct shmalloc {
+#define SHMALLOC_MAGIC		0x43907b6e	/* From /dev/random */
+	unsigned		magic;
+	unsigned		len;
+	char			type[8];
+	char			ident[8];
+};
+
 struct shmloghead {
-#define SHMLOGHEAD_MAGIC	4185512499U	/* From /dev/random */
+#define SHMLOGHEAD_MAGIC	4185512500U	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
@@ -69,6 +81,10 @@ struct shmloghead {
 
 	/* Panic message buffer */
 	char			panicstr[64 * 1024];
+
+	unsigned		alloc_seq;
+	/* Must be last element */
+	struct shmalloc		head;
 };
 
 /*

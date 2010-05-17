@@ -39,6 +39,7 @@ SVNID("$Id$")
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "shmlog.h"
 #include "mgt.h"
@@ -57,15 +58,70 @@ struct shmloghead *loghead;
 unsigned char *logstart;
 
 static int vsl_fd = -1;
-static unsigned vsl_size;
+
+/*--------------------------------------------------------------------*/
+
+static void *
+mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
+{
+	struct shmalloc *sha, *sha2;
+	unsigned seq;
+
+	/* Round up to pointersize */
+	size += sizeof(sha) - 1;
+	size &= ~(sizeof(sha) - 1);
+
+	size += sizeof *sha;
+	sha = &loghead->head;
+	while (1) {
+		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+
+		if (strcmp(sha->type, "Free")) {
+			sha = (void*)((uintptr_t)sha + sha->len);
+			continue;
+		}
+		assert(size <= sha->len);
+
+		sha2 = (void*)((uintptr_t)sha + size);
+
+		seq = loghead->alloc_seq;
+		loghead->alloc_seq = 0;
+		MEMORY_BARRIER();
+
+		memset(sha2, 0, sizeof *sha2);
+		sha2->magic = SHMALLOC_MAGIC;
+		sha2->len = sha->len - size;
+		bprintf(sha2->type, "%s", "Free");
+		MEMORY_BARRIER();
+
+		sha->len = size;
+		bprintf(sha->type, "%s", type);
+		bprintf(sha->ident, "%s", ident);
+		MEMORY_BARRIER();
+
+		loghead->alloc_seq = seq++;
+		MEMORY_BARRIER();
+
+		return ((void*)(sha + 1));
+
+	}
+	return (NULL);
+}
 
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_goodold(int fd)
+vsl_goodold(int fd, unsigned size, unsigned s2)
 {
 	struct shmloghead slh;
 	int i;
+	struct stat st;
+
+	AZ(fstat(fd, &st));
+	if (!S_ISREG(st.st_mode))
+		ARGV_ERR("\t-l ...: Not a file\n");
+	if (st.st_size != size)
+		return (0);
 
 	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	i = read(fd, &slh, sizeof slh);
@@ -75,7 +131,7 @@ vsl_goodold(int fd)
 		return (0);
 	if (slh.hdrsize != sizeof slh)
 		return (0);
-	if (slh.start != sizeof slh + sizeof *params)
+	if (slh.start != s2)
 		return (0);
 
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
@@ -95,14 +151,11 @@ vsl_goodold(int fd)
 		fprintf(stderr, "(We assume that process is busy dying.)\n");
 		return (0);
 	}
-
-	/* XXX more checks */
-	vsl_size = slh.size + slh.start;
 	return (1);
 }
 
 static void
-vsl_buildnew(const char *fn, unsigned size, int fill)
+vsl_buildnew(const char *fn, unsigned size, int fill, unsigned s2)
 {
 	struct shmloghead slh;
 	int i;
@@ -122,10 +175,9 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	slh.hdrsize = sizeof slh;
 	slh.size = size;
 	slh.ptr = 0;
-	slh.start = sizeof slh + sizeof *params;
+	slh.start = s2;
 	i = write(vsl_fd, &slh, sizeof slh);
 	xxxassert(i == sizeof slh);
-	vsl_size = slh.start + size;
 
 	if (fill) {
 		memset(buf, 0, sizeof buf);
@@ -140,7 +192,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 		}
 	}
 
-	AZ(ftruncate(vsl_fd, (off_t)vsl_size));
+	AZ(ftruncate(vsl_fd, (off_t)size));
 }
 
 void
@@ -149,7 +201,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	int i, fill;
 	struct params *pp;
 	const char *q;
-	uintmax_t size, s1, s2;
+	uintmax_t size, s1, s2, ps;
 	char **av, **ap;
 
 	if (l_arg == NULL)
@@ -204,31 +256,48 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	FreeArgv(av);
 
 	size = s1 + s2;
+	ps = getpagesize();
+	size += ps - 1;
+	size &= ~(ps - 1);
 
 	if (av[2] == NULL)
 		q = str2bytes(av[2], &size, 0);
 
 	i = open(fn, O_RDWR, 0644);
-	if (i >= 0 && vsl_goodold(i)) {
+	if (i >= 0 && vsl_goodold(i, size, s2)) {
 		fprintf(stderr, "Using old SHMFILE\n");
 		vsl_fd = i;
 	} else {
 		fprintf(stderr, "Creating new SHMFILE\n");
 		(void)close(i);
-		vsl_buildnew(fn, size, fill);
+		vsl_buildnew(fn, size, fill, s2);
 	}
 
-	loghead = (void *)mmap(NULL, vsl_size,
+	loghead = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsl_fd, 0);
 	loghead->master_pid = getpid();
 	xxxassert(loghead != MAP_FAILED);
-	(void)mlock((void*)loghead, vsl_size);
+	(void)mlock((void*)loghead, size);
 	VSL_stats = &loghead->stats;
-	pp = (void *)(loghead + 1);
+
+	/* Initialize pool */
+	loghead->alloc_seq = 0;
+	MEMORY_BARRIER();
+
+	memset(&loghead->head, 0, sizeof loghead->head);
+	loghead->head.magic = SHMALLOC_MAGIC;
+	loghead->head.len = s2 - sizeof *loghead;
+	bprintf(loghead->head.type, "%s", "Free");
+	MEMORY_BARRIER();
+
+	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "");
 	*pp = *params;
 	params = pp;
+
+	loghead->alloc_seq = random();
+	MEMORY_BARRIER();
 }
 
 void
