@@ -276,6 +276,7 @@ varnish_launch(struct varnish *v)
 	AN(vsb);
 	vsb_printf(vsb, "cd ../varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
+	vsb_printf(vsb, " -l 10m,1m,-");
 	vsb_printf(vsb, " -p auto_restart=off");
 	vsb_printf(vsb, " -p syslog_cli_traffic=off");
 	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");

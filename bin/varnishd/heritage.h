@@ -55,10 +55,6 @@ struct heritage {
 	struct listen_sock_head		socks;
 	unsigned			nsocks;
 
-	/* Share memory log fd and size (incl header) */
-	int				vsl_fd;
-	unsigned			vsl_size;
-
 	/* Hash method */
 	struct hash_slinger		*hash;
 
