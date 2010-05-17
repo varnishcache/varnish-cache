@@ -70,3 +70,18 @@ struct choice {
 };
 
 #define NEEDLESS_RETURN(foo)	return (foo)
+
+/**********************************************************************
+ * Guess what:  There is no POSIX standard for memory barriers.
+ * XXX: Please try to find the minimal #ifdef to use here, rely on OS
+ * supplied facilities if at all possible, to avoid descending into the
+ * full cpu/compiler explosion.
+ */
+
+#ifdef __FreeBSD__
+#include <machine/atomic.h>
+#define MEMORY_BARRIER()       mb()
+#else
+#warn "MEMORY_BARRIER() is expensive"
+#define MEMORY_BARRIER()       close(-1)
+#endif
