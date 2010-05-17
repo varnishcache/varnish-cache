@@ -9,7 +9,9 @@ libvarnishapi_la_LDFLAGS = -version-info 1:0:0
 libvarnishapi_la_SOURCES = \
 	../libvarnish/vin.c \
 	base64.c \
-	shmlog.c
+	vsl.c \
+	vsl_arg.c \
+	vsl_log.c
 
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
