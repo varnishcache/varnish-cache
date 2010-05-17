@@ -108,7 +108,10 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 	return (NULL);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Try to reuse an existing shmem file, but try to not disturb another
+ * varnishd using the file.
+ */
 
 static int
 vsl_goodold(int fd, unsigned size, unsigned s2)
@@ -119,9 +122,7 @@ vsl_goodold(int fd, unsigned size, unsigned s2)
 
 	AZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode))
-		ARGV_ERR("\t-l ...: Not a file\n");
-	if (st.st_size != size)
-		return (0);
+		ARGV_ERR("\tshmlog: Not a file\n");
 
 	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	i = read(fd, &slh, sizeof slh);
@@ -130,8 +131,6 @@ vsl_goodold(int fd, unsigned size, unsigned s2)
 	if (slh.magic != SHMLOGHEAD_MAGIC)
 		return (0);
 	if (slh.hdrsize != sizeof slh)
-		return (0);
-	if (slh.start != s2)
 		return (0);
 
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
@@ -151,6 +150,15 @@ vsl_goodold(int fd, unsigned size, unsigned s2)
 		fprintf(stderr, "(We assume that process is busy dying.)\n");
 		return (0);
 	}
+
+	/* Sanity checks */
+
+	if (slh.start != s2)
+		return (0);
+
+	if (st.st_size != size)
+		return (0);
+
 	return (1);
 }
 
