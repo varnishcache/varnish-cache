@@ -210,7 +210,10 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h classic  [default]");
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
-	fprintf(stderr, FMT, "-l bytesize", "Size of shared memory log");
+	fprintf(stderr, FMT, "-l shl,free,fill", "Size of shared memory file");
+	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
+	fprintf(stderr, FMT, "", "  free: space for other allocations [1m]");
+	fprintf(stderr, FMT, "", "  fill: prefill new file [+]");
 	fprintf(stderr, FMT, "-M address:port", "CLI-master to connect to.");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
