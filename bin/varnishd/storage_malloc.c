@@ -38,47 +38,65 @@ SVNID("$Id$")
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 
-static size_t			sma_max = SIZE_MAX;
-static struct lock		sma_mtx;
+struct sma_sc {
+	unsigned		magic;
+#define SMA_SC_MAGIC		0x1ac8a345
+	struct lock		sma_mtx;
+	size_t			sma_max;
+};
 
 struct sma {
+	unsigned		magic;
+#define SMA_MAGIC		0x69ae9bb9
 	struct storage		s;
 	size_t			sz;
+	struct sma_sc		*sc;
 };
 
 static struct storage *
 sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 {
+	struct sma_sc *sma_sc;
 	struct sma *sma;
 
+	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	(void)oc;
-	Lck_Lock(&sma_mtx);
+	Lck_Lock(&sma_sc->sma_mtx);
 	VSL_stats->sma_nreq++;
-	if (VSL_stats->sma_nbytes + size > sma_max)
+	if (VSL_stats->sma_nbytes + size > sma_sc->sma_max)
 		size = 0;
 	else {
 		VSL_stats->sma_nobj++;
 		VSL_stats->sma_nbytes += size;
 		VSL_stats->sma_balloc += size;
 	}
-	Lck_Unlock(&sma_mtx);
+	Lck_Unlock(&sma_sc->sma_mtx);
 
 	if (size == 0)
 		return (NULL);
 
-	sma = calloc(sizeof *sma, 1);
+	/*
+	 * Do not collaps the sma allocation with sma->s.ptr: it is not
+	 * a good idea.  Not only would it make ->trim impossible,
+	 * performance-wise it would be a catastropy with chunksized
+	 * allocations growing another full page, just to accomodate the sma.
+	 */
+	ALLOC_OBJ(sma, SMA_MAGIC);
 	if (sma == NULL)
-		return (NULL);
+		return (NULL);		/* XXX: stats suffer */
+	sma->sc = sma_sc;
 	sma->sz = size;
 	sma->s.priv = sma;
 	sma->s.ptr = malloc(size);
-	XXXAN(sma->s.ptr);
+	if (sma->s.ptr == NULL) {
+		free(sma);
+		return (NULL);		/* XXX: stats suffer */
+	}
 	sma->s.len = 0;
 	sma->s.space = size;
 	sma->s.fd = -1;
@@ -91,16 +109,18 @@ sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 static void
 sma_free(struct storage *s)
 {
+	struct sma_sc *sma_sc;
 	struct sma *sma;
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	sma = s->priv;
+	CAST_OBJ_NOTNULL(sma, s->priv, SMA_MAGIC);
+	sma_sc = sma->sc;
 	assert(sma->sz == sma->s.space);
-	Lck_Lock(&sma_mtx);
+	Lck_Lock(&sma_sc->sma_mtx);
 	VSL_stats->sma_nobj--;
 	VSL_stats->sma_nbytes -= sma->sz;
 	VSL_stats->sma_bfree += sma->sz;
-	Lck_Unlock(&sma_mtx);
+	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
 }
@@ -108,18 +128,22 @@ sma_free(struct storage *s)
 static void
 sma_trim(struct storage *s, size_t size)
 {
+	struct sma_sc *sma_sc;
 	struct sma *sma;
 	void *p;
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	sma = s->priv;
+	CAST_OBJ_NOTNULL(sma, s->priv, SMA_MAGIC);
+	sma_sc = sma->sc;
+
 	assert(sma->sz == sma->s.space);
+	assert(size < sma->sz);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
-		Lck_Lock(&sma_mtx);
+		Lck_Lock(&sma_sc->sma_mtx);
 		VSL_stats->sma_nbytes -= (sma->sz - size);
 		VSL_stats->sma_bfree += sma->sz - size;
 		sma->sz = size;
-		Lck_Unlock(&sma_mtx);
+		Lck_Unlock(&sma_sc->sma_mtx);
 		sma->s.ptr = p;
 		s->space = size;
 	}
@@ -130,8 +154,12 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *e;
 	uintmax_t u;
+	struct sma_sc *sc;
 
-	(void)parent;
+	ALLOC_OBJ(sc, SMA_SC_MAGIC);
+	AN(sc);
+	sc->sma_max = SIZE_MAX;
+	parent->priv = sc;
 
 	AZ(av[ac]);
 	if (ac > 1)
@@ -148,14 +176,17 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 
 	printf("storage_malloc: max size %ju MB.\n",
 	    u / (1024 * 1024));
-	sma_max = u;
+	sc->sma_max = u;
+
 }
 
 static void
 sma_open(const struct stevedore *st)
 {
-	(void)st;
-	Lck_New(&sma_mtx);
+	struct sma_sc *sma_sc;
+
+	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
+	Lck_New(&sma_sc->sma_mtx);
 }
 
 struct stevedore sma_stevedore = {
