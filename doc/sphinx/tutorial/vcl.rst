@@ -1,7 +1,4 @@
 Varnish Configuration Language - VCL
-====================================
-
-How ordinary configuration files work
 -------------------------------------
 
 Varnish has a really neat configuration system. Most other systems use
@@ -26,9 +23,6 @@ lets point out a few weaknesses with this model.
 2) Which rules have precedence? Does the last rule to match stick? Or
    the first? Or does Squid try to combine all the matching rules. I
    actually don't know. 
-
-Enter VCL
----------
 
 Now enter Varnish. Varnish takes your configuration file and
 translates it to C code, then runs it through a compiler and loads

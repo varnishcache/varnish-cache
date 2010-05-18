@@ -1,5 +1,5 @@
 Advanced Backend configuration
-==============================
+------------------------------
 
 At some point you might need Varnish to cache content from several
 servers. You might want Varnish to map all the URL into one single
