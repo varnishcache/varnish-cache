@@ -239,6 +239,18 @@ STV_add(const struct stevedore *stv2, int ac, char * const *av)
 }
 
 void
+STV_ready(void)
+{
+	struct stevedore *stv;
+
+	ASSERT_MGT();
+	VTAILQ_FOREACH(stv, &stevedores, list) {
+		if (stv->ready != NULL)
+			stv->ready(stv);
+	}
+}
+
+void
 STV_open(void)
 {
 	struct stevedore *stv;

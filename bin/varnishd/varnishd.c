@@ -719,6 +719,8 @@ main(int argc, char * const *argv)
 		mgt_cli_telnet(tmpbuf);
 	}
 
+	STV_ready();	/* Complete initialization */
+
 	MGT_Run();
 
 	if (pfh != NULL)

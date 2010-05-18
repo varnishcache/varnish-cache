@@ -36,6 +36,7 @@ struct object;
 struct objcore;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
+typedef void storage_ready_f(struct stevedore *);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size,
     struct objcore *);
@@ -50,6 +51,7 @@ struct stevedore {
 #define STEVEDORE_MAGIC		0x4baf43db
 	const char		*name;
 	storage_init_f		*init;	/* called by mgt process */
+	storage_ready_f		*ready;	/* called by mgt process */
 	storage_open_f		*open;	/* called by cache process */
 	storage_alloc_f		*alloc;
 	storage_trim_f		*trim;
@@ -71,6 +73,7 @@ struct storage *STV_alloc(struct sess *sp, size_t size, struct objcore *oc);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_add(const struct stevedore *stv, int ac, char * const *av);
+void STV_ready(void);
 void STV_open(void);
 void STV_close(void);
 struct lru *STV_lru(const struct storage *st);
