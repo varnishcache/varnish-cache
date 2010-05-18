@@ -71,7 +71,6 @@ void MCF_DumpMdoc(void);
 /* mgt_shmem.c */
 void mgt_SHM_Init(const char *fn, const char *arg);
 void mgt_SHM_Pid(void);
-void *mgt_SHM_Alloc(unsigned size, const char *type, const char *ident);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
