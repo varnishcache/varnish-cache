@@ -70,6 +70,8 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 	struct shmalloc *sha, *sha2;
 	unsigned seq;
 
+	ASSERT_MGT();
+	AN(loghead);
 	/* Round up to pointersize */
 	size += sizeof(sha) - 1;
 	size &= ~(sizeof(sha) - 1);
