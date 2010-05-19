@@ -142,6 +142,10 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 	unsigned n, mlen;
 	txt t;
 
+	/*
+	 * XXX: consider formatting into a stack buffer then move into
+	 * XXX: shmlog with VSLR().
+	 */
 	AN(fmt);
 	va_start(ap, fmt);
 	mlen = params->shm_reclen;
