@@ -214,31 +214,6 @@ STV_free(struct storage *st)
 }
 
 void
-STV_add(const struct stevedore *stv2, int ac, char * const *av)
-{
-	struct stevedore *stv;
-
-	CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
-	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
-	AN(stv);
-
-	*stv = *stv2;
-	AN(stv->name);
-	AN(stv->alloc);
-	stv->lru = LRU_Alloc();
-
-	if (stv->init != NULL)
-		stv->init(stv, ac, av);
-	else if (ac != 0)
-		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
-
-	VTAILQ_INSERT_TAIL(&stevedores, stv, list);
-
-	if (!stv_next)
-		stv_next = VTAILQ_FIRST(&stevedores);
-}
-
-void
 STV_ready(void)
 {
 	struct stevedore *stv;
@@ -280,7 +255,7 @@ STV_lru(const struct storage *st)
 	return (st->stevedore->lru);
 }
 
-const struct choice STV_choice[] = {
+static const struct choice STV_choice[] = {
 	{ "file",	&smf_stevedore },
 	{ "malloc",	&sma_stevedore },
 	{ "persistent",	&smp_stevedore },
@@ -289,3 +264,51 @@ const struct choice STV_choice[] = {
 #endif
 	{ NULL,		NULL }
 };
+
+/*--------------------------------------------------------------------*/
+
+void
+STV_config(const char *spec)
+{
+	char **av;
+	struct stevedore *stv;
+	const struct stevedore *stv2;
+	int ac;
+
+	av = ParseArgv(spec, ARGV_COMMA);
+	AN(av);
+
+	if (av[0] != NULL)
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL)
+		ARGV_ERR("-s argument is empty\n");
+
+	for (ac = 0; av[ac + 2] != NULL; ac++)
+		continue;
+
+	stv2 = pick(STV_choice, av[1], "storage");
+	AN(stv2);
+	vsb_printf(vident, ",-s%s", av[1]);
+
+	av += 2;
+
+	CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
+	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
+	AN(stv);
+
+	*stv = *stv2;
+	AN(stv->name);
+	AN(stv->alloc);
+	stv->lru = LRU_Alloc();
+
+	if (stv->init != NULL)
+		stv->init(stv, ac, av);
+	else if (ac != 0)
+		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
+
+	VTAILQ_INSERT_TAIL(&stevedores, stv, list);
+
+	if (!stv_next)
+		stv_next = VTAILQ_FIRST(&stevedores);
+}

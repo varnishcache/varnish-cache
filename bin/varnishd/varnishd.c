@@ -102,7 +102,7 @@ build_vident(void)
 
 /*--------------------------------------------------------------------*/
 
-void *
+const void *
 pick(const struct choice *cp, const char *which, const char *kind)
 {
 
@@ -125,68 +125,6 @@ arg_ul(const char *p)
 	if (*q != '\0')
 		ARGV_ERR("Invalid number: \"%s\"\n", p);
 	return (ul);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-setup_storage(const char *spec)
-{
-	char **av;
-	void *priv;
-	int ac;
-
-	av = ParseArgv(spec, ARGV_COMMA);
-	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
-
-	if (av[1] == NULL)
-		ARGV_ERR("-s argument is empty\n");
-
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	priv = pick(STV_choice, av[1], "storage");
-	AN(priv);
-	vsb_printf(vident, ",-s%s", av[1]);
-
-	STV_add(priv, ac, av + 2);
-
-	/* We do not free av, to make life simpler for stevedores */
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-setup_hash(const char *h_arg)
-{
-	char **av;
-	int ac;
-	struct hash_slinger *hp;
-
-	av = ParseArgv(h_arg, ARGV_COMMA);
-	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
-
-	if (av[1] == NULL)
-		ARGV_ERR("-h argument is empty\n");
-
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	hp = pick(hsh_choice, av[1], "hash");
-	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	vsb_printf(vident, ",-h%s", av[1]);
-	heritage.hash = hp;
-	if (hp->init != NULL)
-		hp->init(ac, av + 2);
-	else if (ac > 0)
-		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
-		    hp->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -554,7 +492,7 @@ main(int argc, char * const *argv)
 			break;
 		case 's':
 			s_arg_given = 1;
-			setup_storage(optarg);
+			STV_config(optarg);
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
@@ -595,7 +533,7 @@ main(int argc, char * const *argv)
 	if (L_arg) {
 		/* Learner mode */
 		if (!s_arg_given) {
-			setup_storage("malloc,1m");
+			STV_config("malloc,1m");
 			s_arg_given = 1;
 		}
 	}
@@ -679,9 +617,9 @@ main(int argc, char * const *argv)
 		exit (0);
 
 	if (!s_arg_given)
-		setup_storage(s_arg);
+		STV_config(s_arg);
 
-	setup_hash(h_arg);
+	HSH_config(h_arg);
 
 	mgt_SHM_Init(SHMLOG_FILENAME, l_arg);
 

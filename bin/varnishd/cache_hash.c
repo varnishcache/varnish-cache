@@ -749,10 +749,43 @@ HSH_Init(void)
 		hash->start();
 }
 
-const struct choice hsh_choice[] = {
+static const struct choice hsh_choice[] = {
 	{ "classic",		&hcl_slinger },
 	{ "simple",		&hsl_slinger },
 	{ "simple_list",	&hsl_slinger },	/* backwards compat */
 	{ "critbit",		&hcb_slinger },
 	{ NULL,			NULL }
 };
+
+/*--------------------------------------------------------------------*/
+
+void
+HSH_config(const char *h_arg)
+{
+	char **av;
+	int ac;
+	const struct hash_slinger *hp;
+
+	av = ParseArgv(h_arg, ARGV_COMMA);
+	AN(av);
+
+	if (av[0] != NULL)
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL)
+		ARGV_ERR("-h argument is empty\n");
+
+	for (ac = 0; av[ac + 2] != NULL; ac++)
+		continue;
+
+	hp = pick(hsh_choice, av[1], "hash");
+	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
+	vsb_printf(vident, ",-h%s", av[1]);
+	heritage.hash = hp;
+	if (hp->init != NULL)
+		hp->init(ac, av + 2);
+	else if (ac > 0)
+		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
+		    hp->name);
+}
+

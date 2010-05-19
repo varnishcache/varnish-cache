@@ -65,6 +65,7 @@ void HSH_DerefObjCore(struct sess *sp);
 void HSH_FindBan(struct sess *sp, struct objcore **oc);
 struct objcore *HSH_Insert(const struct sess *sp);
 void HSH_Purge(struct sess *, struct objhead *, double ttl, double grace);
+void HSH_config(const char *h_arg);
 
 #ifdef VARNISH_CACHE_CHILD
 
@@ -105,4 +106,3 @@ void HSH_Deref(struct worker *w, struct object **o);
 extern struct hash_slinger hsl_slinger;
 extern struct hash_slinger hcl_slinger;
 extern struct hash_slinger hcb_slinger;
-extern const struct choice hsh_choice[];

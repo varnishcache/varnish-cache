@@ -56,7 +56,7 @@ struct heritage {
 	unsigned			nsocks;
 
 	/* Hash method */
-	struct hash_slinger		*hash;
+	const struct hash_slinger	*hash;
 
 	char				*name;
 	char                            identity[1024];

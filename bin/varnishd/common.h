@@ -66,9 +66,9 @@ void mgt_child_inherit(int fd, const char *what);
 /* A tiny helper for choosing hash/storage modules */
 struct choice {
 	const char      *name;
-	void            *ptr;		/* XXX: constify */
+	const void	*ptr;
 };
-void *pick(const struct choice *cp, const char *which, const char *kind);
+const void *pick(const struct choice *cp, const char *which, const char *kind);
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 
