@@ -144,8 +144,9 @@ usage(void)
 	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
 	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
+	fprintf(stderr, FMT, "", "  -h critbit [default]");
 	fprintf(stderr, FMT, "", "  -h simple_list");
-	fprintf(stderr, FMT, "", "  -h classic  [default]");
+	fprintf(stderr, FMT, "", "  -h classic");
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
 	fprintf(stderr, FMT, "-l shl,free,fill", "Size of shared memory file");
@@ -165,6 +166,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
+	fprintf(stderr, FMT, "", "  -s persist{experimenta}");
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
 	fprintf(stderr, FMT, "-t", "Default TTL");
