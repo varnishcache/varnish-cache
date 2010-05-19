@@ -102,7 +102,7 @@ build_vident(void)
 
 /*--------------------------------------------------------------------*/
 
-static void *
+void *
 pick(const struct choice *cp, const char *which, const char *kind)
 {
 
