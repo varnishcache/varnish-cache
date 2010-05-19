@@ -67,6 +67,9 @@ varnish v1 -expect n_backend == 2
 varnish v1 -expect n_vcl == 2
 
 varnish v1 -cli "vcl.discard vcl4"
+varnish v1 -cli "vcl.list"
+delay 1
+varnish v1 -cli "vcl.list"
 
 varnish v1 -expect n_backend == 1
 varnish v1 -expect n_vcl == 1
