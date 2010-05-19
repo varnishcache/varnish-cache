@@ -58,6 +58,7 @@ SVNID("$Id$")
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vsha256.h"
+#include "vend.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -90,7 +91,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	struct vbe_conn *vbe;
 	struct director *d2;
 	struct SHA256Context ctx;
-	unsigned char sign[SHA256_LEN], *hp;
+	uint8_t sign[SHA256_LEN], *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -124,10 +125,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 	 * amongst the healthy set.
 	 */
 	if (vs->criteria != c_random) {
-		u = hp[3] << 24;
-		u |= hp[2] << 16;
-		u |= hp[1] << 8;
-		u |= hp[0] << 0;
+		u = vle32dec(hp);
 		r = u / 4294967296.0;
 		assert(r >= 0.0 && r < 1.0);
 		r *= vs->tot_weight;
