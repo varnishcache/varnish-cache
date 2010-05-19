@@ -1,0 +1,83 @@
+# $Id$
+#
+
+test "check boundary condition on vrt_assemble_string()"
+
+server s1 {
+	rxreq
+	expect req.http.baz == "req.http.baz"
+	txresp -status 201
+
+	rxreq
+	expect req.http.baz == "req.http.baz"
+	txresp -status 202
+
+	rxreq
+	expect req.http.baz == "BAZ"
+	txresp -status 203
+
+} -start
+
+varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
+
+	sub vcl_recv {
+		set req.http.foo = 
+			req.http.bar
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" "0123456789abcdef"
+			"0123456789abcdef" 
+			"01234567";
+		set req.http.baz = "BAZ";
+		return (pass);
+	}
+	sub vcl_hash {
+		set req.hash += req.url;
+		return (hash);
+	}
+} -start
+
+client c1 {
+	# This should soak up all bytes but the last in the workspace
+	txreq -hdr "foo: x" -hdr "bar: A" 
+	rxresp
+	expect resp.status == 201
+
+	# This should soak up all bytes in the workspace
+	txreq -hdr "foo: x" -hdr "bar: AB" 
+	rxresp
+	expect resp.status == 202
+
+	# This overcommits the workspace, failing the "bar" set,
+	# Thus allowing the "baz" set to work.
+	txreq -hdr "foo: x" -hdr "bar: ABC" 
+	rxresp
+	expect resp.status == 203
+
+} -run

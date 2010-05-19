@@ -179,7 +179,7 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 	} else {
 		e = b;
 		b = hp->ws->f;
-		WS_Release(hp->ws, 1 + e - b);
+		WS_Release(hp->ws, e - b);
 		return (b);
 	}
 }
