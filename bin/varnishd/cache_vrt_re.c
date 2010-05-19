@@ -100,7 +100,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	if (str == NULL)
 		return ("");
 	t = re;
-	memset(&ovector, 0, sizeof(ovector));
+	memset(ovector, 0, sizeof(ovector));
 	i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);
 
 	/* If it didn't match, we can return the original string */
