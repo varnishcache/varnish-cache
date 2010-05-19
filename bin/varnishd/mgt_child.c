@@ -615,9 +615,6 @@ MGT_Run(void)
 		REPORT(LOG_ERR, "vev_schedule() = %d", i);
 
 	REPORT0(LOG_ERR, "manager dies");
-
-	/* XXX: quench compiler warning about unused func */
-	vbit_destroy(NULL);
 }
 
 /*--------------------------------------------------------------------*/
