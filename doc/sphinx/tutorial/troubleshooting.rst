@@ -41,10 +41,18 @@ instruct the master process to start the cache by issuing "start".::
 	 Could not open sockets
 
 And here we have our problem. Something else is bound to the HTTP port
-of Varnish. 
+of Varnish. If this doesn't help try strace or truss or come find us
+on IRC.
 
 
 Varnish is crashing
 ~~~~~~~~~~~~~~~~~~~
 
 When varnish goes bust.
+
+
+Varnish doesn't cache
+~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`_tutorial-increasing_your_hitrate:`.
+

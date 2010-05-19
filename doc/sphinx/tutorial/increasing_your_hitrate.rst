@@ -47,29 +47,32 @@ requests, which lack the Host header. So I add a Host header with the
 prints repsonse headers and -d discards the actual content. We dont
 really care about the content, only the headers.
 
-As you can see VG ads quite a bit of information in their headers. A
-lot of this information is added in their VCL.
+As you can see VG ads quite a bit of information in their
+headers. Some of the headers, like the X-Rick-Would-Never are specific
+to vg.no and their somewhat odd sense of humour. Others, like the
+X-VG-Webcache are for debugging purposes. 
 
 So, to check whether a site sets cookies for a specific URL just do
-``GET -Used http://example.com/ |grep Set-Cookie``
+``GET -Used http://example.com/ |grep ^Set-Cookie``
 
 Firefox plugins
 ~~~~~~~~~~~~~~~
 
 There are also a couple of great plugins for Firefox. Both *Live HTTP
 Headers* and *Firebug* can show you what headers are beeing sent and
-recieved.
+recieved. Try googling for them if you want to check them out. They
+are both recommended.
 
 
-HTTP Headers
-------------
+The role of HTTP Headers
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Varnish considers itself part of the actual webserver, since its under
 your control. The role of *surrogate origin cache* is not really well
 defined by the IETF so RFC 2616 doesn't always tell us what we should
-do
+do.
 
-Cache-control
+Cache-Control
 ~~~~~~~~~~~~~
 
 The Cache-Control instructs caches how to handle the content. Varnish
@@ -79,6 +82,21 @@ for an object.
 "Cache-Control: nocache" is ignored. See
 :ref:`tutorial-increasing_your_hitrate-pragma:` for an example on how
 to implement support.
+
+So make sure use issue a Cache-Control header with a max-age
+header. You can have a look at what Varnish Softwares drupal server
+issues:::
+
+  $ GET -Used http://www.varnish-software.com/|grep ^Cache-Control
+  Cache-Control: public, max-age=600
+
+Age
+~~~
+
+Varnish adds a Age header to indicate how long the object has been
+kept inside Varnish. You can grep out Age from varnishlog like this::
+
+  varnishlog -i TxHeader -I ^Age
 
 Cookies
 ~~~~~~~
@@ -105,10 +123,26 @@ Quite simple. If, however, you need to do something more complicated,
 like removing one out of several cookies, things get
 difficult. Unfornunatly Varnish doesn't have good tools for
 manipulating the Cookies. We have to use regular expressions to do the
-work. Let me show you an example where we remove everything the the cookies named COOKIE1 and COOKIE2  and you can marvel at it.::
+work.
+
+Let me show you what Varnish Software uses. We use some cookies for
+Google Analytics tracking and similar tools. The cookies are all set
+and used by Javascript. Varnish and Drupal doesn't need to see those
+cookies and since Varnish will cease caching of pages when the client
+sends cookies we will discard these unnecessary cookies in VCL.
+
+In the following VCL we discard all cookies that start with a underscore.::
+
+  // Remove has_js and Google Analytics __* cookies.
+  set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js)=[^;]*", "");
+  // Remove a ";" prefix, if present.
+  set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
+
+Let me show you an example where we remove everything the the cookies
+named COOKIE1 and COOKIE2 and you can marvel at it.::
 
   sub vcl_recv {
-  if (req.http.Cookie) {
+    if (req.http.Cookie) {
       set req.http.Cookie = ";" req.http.Cookie;
       set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
       set req.http.Cookie = regsuball(req.http.Cookie, ";(COOKIE1|COOKIE2)=", "; \1=");
@@ -127,7 +161,43 @@ Vary
 ~~~~
 
 The Vary header is sent by the web server to indicate what makes a
-HTTP object Vary.
+HTTP object Vary. This makes a lot of sense with headers like
+Accept-Encoding. When a server issues a "Vary: Accept-Encoding" it
+tells Varnish that its needs to cache a separate version for every
+different Accept-Encoding that is comming from the clients. So, if a
+clients only accepts gzip encoding Varnish wont't serve the version of
+the page encoded with the deflate encoding.
+
+The problem is that the Accept-Encoding field contains a lot of
+different encodings. If one browser sends::
+
+  Accept-Encodign: gzip,deflate
+
+And another one sends::
+
+  Accept-Encoding:: deflate, gzip
+
+Varnish will keep two variants of the page requested due to the
+different Accept-Encoding headers. Normalizing the accept-encoding
+header will sure that you have as few variants as possible. The
+following VCL code will normalize the Accept-Encoding headers.::
+
+    if (req.http.Accept-Encoding) {
+        if (req.url ~ "\.(jpg|png|gif|gz|tgz|bz2|tbz|mp3|ogg)$") {
+            # No point in compressing these
+            remove req.http.Accept-Encoding;
+        } elsif (req.http.Accept-Encoding ~ "gzip") {
+            set req.http.Accept-Encoding = "gzip";
+        } elsif (req.http.Accept-Encoding ~ "deflate") {
+            set req.http.Accept-Encoding = "deflate";
+        } else {
+            # unkown algorithm
+            remove req.http.Accept-Encoding;
+        }
+    }
+
+The code sets the Accept-Encoding header from the client to either
+gzip, deflate with a preference for gzip.
 
 .. _tutorial-increasing_your_hitrate-pragma:
 
@@ -148,12 +218,14 @@ Authentication
 ~~~~~~~~~~~~~~
 
 Normalizing your namespace
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 .. _tutorial-increasing_your_hitrate-purging:
 
 Purging
--------
+~~~~~~~
 
 
 HTTP Purges
