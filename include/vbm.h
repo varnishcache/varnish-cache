@@ -75,7 +75,7 @@ vbit_init(unsigned initial)
 	return (vb);
 }
 
-static void
+static inline void
 vbit_destroy(struct vbitmap *vb)
 {
 
@@ -88,9 +88,6 @@ vbit_destroy(struct vbitmap *vb)
 static inline void
 vbit_set(struct vbitmap *vb, unsigned bit)
 {
-
-	if (0)	/* XXX: HACK: ref it, to silence compiler */
-		vbit_destroy(vb);
 
 	if (bit >= vb->nbits)
 		vbit_expand(vb, bit);
