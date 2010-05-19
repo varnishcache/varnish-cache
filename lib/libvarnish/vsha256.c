@@ -47,26 +47,7 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 #include "vsha256.h"
-
-static inline void
-mybe32enc(void *pp, uint32_t u)
-{
-        unsigned char *p = (unsigned char *)pp;
-
-        p[0] = (u >> 24) & 0xff;
-        p[1] = (u >> 16) & 0xff;
-        p[2] = (u >> 8) & 0xff;
-        p[3] = u & 0xff;
-}
-
-static inline void
-mybe64enc(void *pp, uint64_t u)
-{
-	unsigned char *p = (unsigned char *)pp;
-
-	mybe32enc(p, u >> 32);
-	mybe32enc(p + 4, u & 0xffffffff);
-}
+#include "vend.h"
 
 #if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
 
@@ -80,14 +61,6 @@ mybe64enc(void *pp, uint64_t u)
 
 #else /* BYTE_ORDER != BIG_ENDIAN or in doubt... */
 
-static inline uint32_t
-mybe32dec(const void *pp)
-{
-        unsigned char const *p = (unsigned char const *)pp;
-
-        return (((unsigned)p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
-}
-
 /*
  * Encode a length len/4 vector of (uint32_t) into a length len vector of
  * (unsigned char) in big-endian form.  Assumes len is a multiple of 4.
@@ -98,7 +71,7 @@ be32enc_vect(unsigned char *dst, const uint32_t *src, size_t len)
 	size_t i;
 
 	for (i = 0; i < len / 4; i++)
-		mybe32enc(dst + i * 4, src[i]);
+		vbe32enc(dst + i * 4, src[i]);
 }
 
 /*
@@ -111,7 +84,7 @@ be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
 	size_t i;
 
 	for (i = 0; i < len / 4; i++)
-		dst[i] = mybe32dec(src + i * 4);
+		dst[i] = vbe32dec(src + i * 4);
 }
 
 #endif
@@ -251,7 +224,7 @@ SHA256_Pad(SHA256_CTX * ctx)
 	 * -- we do this now rather than later because the length
 	 * will change after we pad.
 	 */
-	mybe64enc(len, ctx->count << 3);
+	vbe64enc(len, ctx->count << 3);
 
 	/* Add 1--64 bytes so that the resulting length is 56 mod 64 */
 	r = ctx->count & 0x3f;
