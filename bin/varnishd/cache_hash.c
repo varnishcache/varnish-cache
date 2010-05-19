@@ -595,7 +595,7 @@ HSH_Unbusy(const struct sess *sp)
 }
 
 void
-HSH_Ref(struct object *o)
+HSH_Ref(const struct object *o)
 {
 	struct objhead *oh;
 
