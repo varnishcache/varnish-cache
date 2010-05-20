@@ -29,7 +29,9 @@
  * $Id$
  */
 
-#include <vqueue.h>
+#include <stdint.h>
+
+#include "vqueue.h"
 
 #include "common.h"
 #include "miniobj.h"
