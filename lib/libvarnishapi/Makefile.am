@@ -7,6 +7,8 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = -version-info 1:0:0
 
 libvarnishapi_la_SOURCES = \
+	vsl.h \
+	\
 	../libvarnish/vin.c \
 	base64.c \
 	vsl.c \
