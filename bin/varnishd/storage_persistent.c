@@ -1497,7 +1497,7 @@ SMP_Ready(void)
 
 /*--------------------------------------------------------------------*/
 
-struct stevedore smp_stevedore = {
+const struct stevedore smp_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"persistent",
 	.init	=	smp_init,

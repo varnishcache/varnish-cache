@@ -161,7 +161,7 @@ smu_open(const struct stevedore *st)
 	AZ(pthread_mutex_init(&smu_mtx, NULL));
 }
 
-struct stevedore smu_stevedore = {
+const struct stevedore smu_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"umem",
 	.init	=	smu_init,

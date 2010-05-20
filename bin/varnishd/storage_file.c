@@ -541,7 +541,7 @@ smf_free(struct storage *s)
 
 /*--------------------------------------------------------------------*/
 
-struct stevedore smf_stevedore = {
+const struct stevedore smf_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"file",
 	.init	=	smf_init,

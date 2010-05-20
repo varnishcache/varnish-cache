@@ -189,7 +189,7 @@ sma_open(const struct stevedore *st)
 	Lck_New(&sma_sc->sma_mtx);
 }
 
-struct stevedore sma_stevedore = {
+const struct stevedore sma_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"malloc",
 	.init	=	sma_init,
