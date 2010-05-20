@@ -83,6 +83,6 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 #include <machine/atomic.h>
 #define MEMORY_BARRIER()       mb()
 #else
-#warn "MEMORY_BARRIER() is expensive"
+#warning "MEMORY_BARRIER() is expensive"
 #define MEMORY_BARRIER()       close(-1)
 #endif
