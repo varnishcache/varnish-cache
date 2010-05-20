@@ -36,9 +36,11 @@ nobase_noinst_HEADERS = \
 	vcl.h \
 	vcl_returns.h \
 	vct.h \
+	vend.h \
 	vev.h \
 	vlu.h \
 	vbm.h \
+	vmb.h \
 	vre.h \
 	vrt.h \
 	vrt_obj.h \
