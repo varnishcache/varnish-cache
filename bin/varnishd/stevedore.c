@@ -38,6 +38,7 @@ SVNID("$Id$")
 
 #include "cache.h"
 #include "stevedore.h"
+#include "cli_priv.h"
 
 static VTAILQ_HEAD(, stevedore)	stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
@@ -271,11 +272,20 @@ void
 STV_config(const char *spec)
 {
 	char **av;
+	const char *p, *q;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
-	int ac;
+	int ac, l;
+	static unsigned seq = 0;
 
-	av = ParseArgv(spec, ARGV_COMMA);
+	p = strchr(spec, '=');
+	q = strchr(spec, ',');
+	if (p != NULL && (q == NULL || q > p)) {
+		av = ParseArgv(p + 1, ARGV_COMMA);
+	} else {
+		av = ParseArgv(spec, ARGV_COMMA);
+		p = NULL;
+	}
 	AN(av);
 
 	if (av[0] != NULL)
@@ -289,6 +299,8 @@ STV_config(const char *spec)
 
 	stv2 = pick(STV_choice, av[1], "storage");
 	AN(stv2);
+
+	/* Append to ident string */
 	vsb_printf(vident, ",-s%s", av[1]);
 
 	av += 2;
@@ -300,6 +312,16 @@ STV_config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 	AN(stv->alloc);
+
+	if (p == NULL)
+		bprintf(stv->ident, "storage_%u", seq++);
+	else {
+		l = p - spec;
+		if (l > sizeof stv->ident - 1)
+			l = sizeof stv->ident - 1;
+		bprintf(stv->ident, "%*.*s", l, l, spec);
+	}
+
 	stv->lru = LRU_Alloc();
 
 	if (stv->init != NULL)
@@ -312,3 +334,28 @@ STV_config(const char *spec)
 	if (!stv_next)
 		stv_next = VTAILQ_FIRST(&stevedores);
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+stv_cli_list(struct cli *cli, const char * const *av, void *priv)
+{
+	struct stevedore *stv;
+
+	ASSERT_MGT();
+	(void)av;
+	(void)priv;
+	cli_out(cli, "Storage devices:\n");
+	VTAILQ_FOREACH(stv, &stevedores, list) {
+		cli_out(cli, "\tstorage.%s.%s\n", stv->name, stv->ident);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+struct cli_proto cli_stv[] = {
+	{ "storage.list", "storage.list", "List storage devices\n",
+	    0, 0, "", stv_cli_list },
+	{ NULL}
+};
+

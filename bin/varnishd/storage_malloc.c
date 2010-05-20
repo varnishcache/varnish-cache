@@ -174,7 +174,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	if ((u != (uintmax_t)(size_t)u))
 		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
 
-	printf("storage_malloc: max size %ju MB.\n",
+	printf("storage.malloc.%s: max size %ju MB.\n", parent->ident,
 	    u / (1024 * 1024));
 	sc->sma_max = u;
 

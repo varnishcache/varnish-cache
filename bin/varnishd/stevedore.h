@@ -65,6 +65,7 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
+	char			ident[16];
 };
 
 struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl,

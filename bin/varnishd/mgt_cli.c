@@ -355,6 +355,7 @@ mgt_cli_init_cls(void)
 	AZ(CLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
 	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_proto));
 	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_debug));
+	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_stv));
 	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_askchild));
 }
 

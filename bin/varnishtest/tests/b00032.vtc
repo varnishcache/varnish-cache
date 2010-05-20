@@ -1,0 +1,5 @@
+# $Id$
+
+test "CLI coverage test"
+
+varnish v1 -cliok storage.list
