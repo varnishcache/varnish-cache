@@ -53,9 +53,8 @@ SVNID("$Id$")
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct varnish_stats *VSL_stats;
-struct shmloghead *loghead;
-unsigned char *logstart;
+struct varnish_stats	*VSL_stats;
+struct shmloghead	*loghead;
 uint8_t			*vsl_log_start;
 uint8_t			*vsl_log_end;
 uint8_t			*vsl_log_nxt;
