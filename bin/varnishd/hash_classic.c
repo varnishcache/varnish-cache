@@ -179,7 +179,7 @@ hcl_deref(struct objhead *oh)
 
 /*--------------------------------------------------------------------*/
 
-struct hash_slinger hcl_slinger = {
+const struct hash_slinger hcl_slinger = {
 	.magic	=	SLINGER_MAGIC,
 	.name	=	"classic",
 	.init	=	hcl_init,

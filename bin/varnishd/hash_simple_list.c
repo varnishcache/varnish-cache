@@ -116,7 +116,7 @@ hsl_deref(struct objhead *oh)
 
 /*--------------------------------------------------------------------*/
 
-struct hash_slinger hsl_slinger = {
+const struct hash_slinger hsl_slinger = {
 	.magic	=	SLINGER_MAGIC,
 	.name	=	"simple",
 	.start	=	hsl_start,

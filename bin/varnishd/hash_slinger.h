@@ -103,6 +103,6 @@ void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
 void HSH_Deref(struct worker *w, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
-extern struct hash_slinger hsl_slinger;
-extern struct hash_slinger hcl_slinger;
-extern struct hash_slinger hcb_slinger;
+extern const struct hash_slinger hsl_slinger;
+extern const struct hash_slinger hcl_slinger;
+extern const struct hash_slinger hcb_slinger;

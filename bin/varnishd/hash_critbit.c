@@ -477,7 +477,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 }
 
 
-struct hash_slinger hcb_slinger = {
+const struct hash_slinger hcb_slinger = {
 	.magic  =       SLINGER_MAGIC,
 	.name   =       "critbit",
 	.start  =       hcb_start,
