@@ -247,13 +247,13 @@ main(int argc, char * const *argv)
 		assert(VSL_Arg(vsd, 'n', n_arg));
 		if (!VSL_Open(vsd)) {
 			if (T_arg == NULL) {
-				p = VSL_Find_Alloc(vsd, "Arg", "-T", NULL);
+				p = VSL_Find_Alloc(vsd, "Arg", "-T", "", NULL);
 				if (p != NULL) {
 					T_arg = strdup(p);
 				}
 			}
 			if (S_arg == NULL) {
-				p = VSL_Find_Alloc(vsd, "Arg", "-S", NULL);
+				p = VSL_Find_Alloc(vsd, "Arg", "-S", "", NULL);
 				if (p != NULL) {
 					S_arg = strdup(p);
 				}

@@ -39,7 +39,7 @@ extern pid_t mgt_pid;
 void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* mgt_shmem.c */
-void *mgt_SHM_Alloc(unsigned size, const char *type, const char *ident);
+void *mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident);
 extern struct varnish_stats *VSL_stats;
 extern struct shmloghead *loghead;
 extern uint8_t			*vsl_log_start;

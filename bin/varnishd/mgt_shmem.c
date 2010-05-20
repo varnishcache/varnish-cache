@@ -64,7 +64,7 @@ static int vsl_fd = -1;
 /*--------------------------------------------------------------------*/
 
 void *
-mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
+mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 {
 	struct shmalloc *sha, *sha2;
 	unsigned seq;
@@ -99,6 +99,7 @@ mgt_SHM_Alloc(unsigned size, const char *type, const char *ident)
 		MEMORY_BARRIER();
 
 		sha->len = size;
+		bprintf(sha->class, "%s", class);
 		bprintf(sha->type, "%s", type);
 		bprintf(sha->ident, "%s", ident);
 		MEMORY_BARRIER();
@@ -300,15 +301,15 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	bprintf(loghead->head.type, "%s", "Free");
 	MEMORY_BARRIER();
 
-	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_TYPE_STAT, "");
+	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_CLASS_STAT, "", "");
 	AN(VSL_stats);
 
-	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "");
+	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "", "");
 	AN(pp);
 	*pp = *params;
 	params = pp;
 
-	vsl_log_start = mgt_SHM_Alloc(s1, VSL_TYPE_LOG, "");
+	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS_LOG, "", "");
 	AN(vsl_log_start);
 	vsl_log_end = vsl_log_start + s1;
 	vsl_log_nxt = vsl_log_start + 1;

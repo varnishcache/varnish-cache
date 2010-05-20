@@ -62,8 +62,7 @@ void VSL_Delete(struct VSL_data *vd);
 struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
 const char *VSL_Name(struct VSL_data *vd);
 extern const char *VSL_tags[256];
-void *VSL_Find_Alloc(struct VSL_data *vd, const char *type, const char *ident,
-    unsigned *lenp);
-
+void *VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type,
+    const char *ident, unsigned *lenp);
 
 #endif

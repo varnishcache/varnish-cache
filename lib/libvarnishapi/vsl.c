@@ -165,14 +165,16 @@ VSL_Close(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 static struct shmalloc *
-vsl_find_alloc(struct VSL_data *vd, const char *type, const char *ident)
+vsl_find_alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct shmalloc *sha;
 
 	assert (vd->vsl_lh != NULL);
 	for(sha = &vd->vsl_lh->head; (void*)sha < vd->vsl_end; sha = SHA_NEXT(sha)) {
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
-		if (strcmp(sha->type, type)) 
+		if (strcmp(sha->class, class)) 
+			continue;
+		if (type != NULL && strcmp(sha->type, type))
 			continue;
 		if (ident != NULL && strcmp(sha->ident, ident))
 			continue;
@@ -184,7 +186,7 @@ vsl_find_alloc(struct VSL_data *vd, const char *type, const char *ident)
 /*--------------------------------------------------------------------*/
 
 void *
-VSL_Find_Alloc(struct VSL_data *vd, const char *type, const char *ident,
+VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident,
     unsigned *lenp)
 {
 	struct shmalloc *sha;
@@ -192,7 +194,7 @@ VSL_Find_Alloc(struct VSL_data *vd, const char *type, const char *ident,
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (VSL_Open(vd))
 		return (NULL);
-	sha = vsl_find_alloc(vd, type, ident);
+	sha = vsl_find_alloc(vd, class, type, ident);
 	if (sha == NULL)
 		return (NULL);
 	if (lenp != NULL)
@@ -210,7 +212,7 @@ VSL_OpenStats(struct VSL_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (VSL_Open(vd))
 		return (NULL);
-	sha = vsl_find_alloc(vd, VSL_TYPE_STAT, "");
+	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
 	assert(sha != NULL);
 	return (SHA_PTR(sha));
 }
@@ -226,7 +228,7 @@ VSL_OpenLog(struct VSL_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (VSL_Open(vd))
 		return (-1);
-	sha = vsl_find_alloc(vd, VSL_TYPE_LOG, "");
+	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, "", "");
 	assert(sha != NULL);
 
 	vd->log_start = SHA_PTR(sha);

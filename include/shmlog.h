@@ -51,15 +51,16 @@ struct shmalloc {
 #define SHMALLOC_MAGIC		0x43907b6e	/* From /dev/random */
 	unsigned		magic;
 	unsigned		len;
+	char			class[8];
 	char			type[8];
-	char			ident[8];
+	char			ident[16];
 };
 
 #define SHA_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
 #define SHA_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
 
 struct shmloghead {
-#define SHMLOGHEAD_MAGIC	4185512500U	/* From /dev/random */
+#define SHMLOGHEAD_MAGIC	4185512501U	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
@@ -78,7 +79,8 @@ struct shmloghead {
 	struct shmalloc		head;
 };
 
-#define VSL_TYPE_LOG		"Log"
+#define VSL_CLASS_LOG		"Log"
+#define VSL_CLASS_STAT		"Stat"
 
 /*
  * Record format is as follows:
