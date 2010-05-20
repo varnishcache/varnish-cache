@@ -3,6 +3,8 @@
 
 test "check boundary condition on vrt_assemble_string()"
 
+feature 64bit
+
 server s1 {
 	rxreq
 	expect req.http.baz == "req.http.baz"

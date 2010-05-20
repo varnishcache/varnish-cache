@@ -482,6 +482,9 @@ cmd_feature(CMD_ARGS)
 		if (!strcmp(av[i], "SO_RCVTIMEO_WORKS"))
 			continue;
 #endif
+		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
+			continue;
+
 		vtc_log(vl, 1, "SKIPPING test, missing feature %s", av[i]);
 		vtc_stop = 1;
 		return;
