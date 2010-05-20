@@ -294,7 +294,6 @@ static void
 pan_ic(const char *func, const char *file, int line, const char *cond,
     int err, int xxx)
 {
-	char *p;
 	const char *q;
 	const struct sess *sp;
 
@@ -347,6 +346,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 #ifdef HAVE_ABORT2
 	if (params->diag_bitmap & 0x8000) {
 		void *arg[1];
+		char *p;
 
 		for (p = loghead->panicstr; *p; p++)
 			if (*p == '\n')
