@@ -39,7 +39,6 @@ SVNID("$Id$")
 
 #include <curses.h>
 #include <errno.h>
-#include <limits.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +51,8 @@ SVNID("$Id$")
 #include "varnishapi.h"
 
 #define FIELD_EXCLUSION_CHARACTER '^'
+
+#define AC(x) assert((x) != ERR)
 
 
 static void
@@ -66,8 +67,8 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 static int
 show_field(const char* field, const char *fields)
 {
-	char* field_start;
-	char* field_end;
+	const char* field_start;
+	const char* field_end;
 	int field_length;
 	int match_value = 1;
 
@@ -94,7 +95,7 @@ show_field(const char* field, const char *fields)
 }
 
 static void
-do_curses(struct VSL_data *vd, struct varnish_stats *VSL_stats, int delay, const char *fields)
+do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay, const char *fields)
 {
 	struct varnish_stats copy;
 	struct varnish_stats seen;
@@ -112,26 +113,26 @@ do_curses(struct VSL_data *vd, struct varnish_stats *VSL_stats, int delay, const
 	a1 = a2 = a3 = 0.0;
 	n1 = n2 = n3 = 0;
 
-	initscr();
-	raw();
-	noecho();
-	nonl();
-	intrflush(stdscr, FALSE);
-	curs_set(0);
-	erase();
+	(void)initscr();
+	AC(raw());
+	AC(noecho());
+	AC(nonl());
+	AC(intrflush(stdscr, FALSE));
+	AC(curs_set(0));
+	AC(erase());
 
 	lt = 0;
 	while (1) {
-		gettimeofday(&tv, NULL);
+		AZ(gettimeofday(&tv, NULL));
 		tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 		lt = tt - lt;
 
 		rt = VSL_stats->uptime;
 		up = rt;
 
-		mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
-		mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
-		    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60);
+		AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
+		AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
+		    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
 
 		hit = VSL_stats->cache_hit - copy.cache_hit;
 		miss = VSL_stats->cache_miss - copy.cache_miss;
@@ -143,55 +144,55 @@ do_curses(struct VSL_data *vd, struct varnish_stats *VSL_stats, int delay, const
 			myexp(&a2, ratio, &n2, 100);
 			myexp(&a3, ratio, &n3, 1000);
 		}
-		mvprintw(1, 0, "Hitrate ratio: %8u %8u %8u", n1, n2, n3);
-		mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3);
+		AC(mvprintw(1, 0, "Hitrate ratio: %8u %8u %8u", n1, n2, n3));
+		AC(mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3));
 
 		line = 3;
-#define MAC_STAT(n, t, l, f, d) \
+#define MAC_STAT(n, t, l, ff, d) \
 	if ((fields == NULL || show_field( #n, fields )) && line < LINES) { \
 		ju = VSL_stats->n; \
 		if (ju == 0 && !seen.n) { \
-		} else if (f == 'a') { \
+		} else if (ff == 'a') { \
 			seen.n = 1; \
 			line++; \
-			mvprintw(line, 0, "%12ju %12.2f %12.2f %s\n", \
-			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d); \
+			AC(mvprintw(line, 0, "%12ju %12.2f %12.2f %s\n", \
+			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d)); \
 			copy.n = ju; \
 		} else { \
 			seen.n = 1; \
 			line++; \
-			mvprintw(line, 0, "%12ju %12s %12s %s\n", \
-			    ju, ".  ", ".  ", d); \
+			AC(mvprintw(line, 0, "%12ju %12s %12s %s\n", \
+			    ju, ".  ", ".  ", d)); \
 		} \
 	}
 #include "stat_field.h"
 #undef MAC_STAT
 		lt = tt;
-		refresh();
+		AC(refresh());
 		timeout(delay * 1000);
 		switch ((ch = getch())) {
 		case ERR:
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:
-			erase();
+			AC(erase());
 			break;
 #endif
 		case '\014': /* Ctrl-L */
 		case '\024': /* Ctrl-T */
-			redrawwin(stdscr);
-			refresh();
+			AC(redrawwin(stdscr));
+			AC(refresh());
 			break;
 		case '\003': /* Ctrl-C */
-			raise(SIGINT);
+			AZ(raise(SIGINT));
 			break;
 		case '\032': /* Ctrl-Z */
-			raise(SIGTSTP);
+			AZ(raise(SIGTSTP));
 			break;
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
-			endwin();
+			AC(endwin());
 			exit(0);
 		case '0':
 		case '1':
@@ -203,24 +204,24 @@ do_curses(struct VSL_data *vd, struct varnish_stats *VSL_stats, int delay, const
 		case '7':
 		case '8':
 		case '9':
-			delay = 1 << (ch - '0');
+			delay = 1U << (ch - '0');
 			break;
 		default:
-			beep();
+			AC(beep());
 			break;
 		}
 	}
 }
 
 static void
-do_xml(struct varnish_stats *VSL_stats, const char* fields)
+do_xml(const struct varnish_stats *VSL_stats, const char* fields)
 {
 	char time_stamp[20];
 	time_t now;
 
 	printf("<?xml version=\"1.0\"?>\n");
 	now = time(NULL);
-	strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
+	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
 #define MAC_STAT(n, t, l, f, d) \
 	do { \
@@ -238,19 +239,19 @@ do_xml(struct varnish_stats *VSL_stats, const char* fields)
 }
 
 static void
-do_once(struct varnish_stats *VSL_stats, const char* fields)
+do_once(const struct varnish_stats *VSL_stats, const char* fields)
 {
 	struct timeval tv;
 	double up;
 
-	gettimeofday(&tv, NULL);
+	AZ(gettimeofday(&tv, NULL));
 	up = VSL_stats->uptime;
 
-#define MAC_STAT(n, t, l, f, d) \
+#define MAC_STAT(n, t, l, ff, d) \
 	do { \
 		if (fields != NULL && ! show_field( #n, fields )) break; \
 		intmax_t ju = VSL_stats->n; \
-		if (f == 'a') \
+		if (ff == 'a') \
 			printf("%-16s %12ju %12.2f %s\n", #n, ju, ju / up, d); \
 		else \
 			printf("%-16s %12ju %12s %s\n", #n, ju, ".  ", d); \
@@ -330,9 +331,9 @@ valid_fields(const char* fields)
 		}
 
 		if (!valid_field) {
-			fputs("The field '", stderr);
-			fwrite(field_start, 1, field_length, stderr);
-			fputs("' is not a valid field\n", stderr);
+			(void)fputs("The field '", stderr);
+			(void)fwrite(field_start, 1, field_length, stderr);
+			(void)fputs("' is not a valid field\n", stderr);
 			return (0);
 		}
 
@@ -344,7 +345,7 @@ valid_fields(const char* fields)
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char * const *argv)
 {
 	int c;
 	struct VSL_data *vd;
