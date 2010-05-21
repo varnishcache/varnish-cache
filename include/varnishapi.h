@@ -66,7 +66,7 @@ void *VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type,
     const char *ident, unsigned *lenp);
 
 struct shmalloc *vsl_iter0(struct VSL_data *vd);
-struct shmalloc *vsl_itern(struct VSL_data *vd, struct shmalloc **pp);
+void vsl_itern(struct VSL_data *vd, struct shmalloc **pp);
 
 #define VSL_FOREACH(var, vd) \
 	for((var) = vsl_iter0((vd)); (var) != NULL; vsl_itern((vd), &(var)))

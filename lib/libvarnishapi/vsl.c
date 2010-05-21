@@ -177,19 +177,22 @@ vsl_iter0(struct VSL_data *vd)
 	return (&vd->vsl_lh->head);
 }
 
-struct shmalloc *
+void
 vsl_itern(struct VSL_data *vd, struct shmalloc **pp)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
-		return(NULL);
+	if (vd->alloc_seq != vd->vsl_lh->alloc_seq) {
+		*pp = NULL;
+		return;
+	}
 	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
 	*pp = SHA_NEXT(*pp);
-	if ((void*)*pp >= vd->vsl_end)
-		return (NULL);
+	if ((void*)(*pp) >= vd->vsl_end) {
+		*pp = NULL;
+		return;
+	}
 	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
-	return (*pp);
 }
 
 /*--------------------------------------------------------------------*/
