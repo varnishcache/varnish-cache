@@ -673,6 +673,7 @@ main(int argc, char * const *argv)
 	init_macro();
 	init_sema();
 
+	srandomdev();
 	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
