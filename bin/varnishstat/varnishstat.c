@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2010 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -148,22 +148,24 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay,
 		AC(mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3));
 
 		line = 3;
-#define MAC_STAT(n, t, l, ff, d) \
+#define MAC_STAT(n, t, l, ff, d)					\
 	if ((fields == NULL || show_field( #n, fields )) && line < LINES) { \
-		ju = VSL_stats->n; \
-		if (ju == 0 && !seen.n) { \
-		} else if (ff == 'a') { \
-			seen.n = 1; \
-			line++; \
-			AC(mvprintw(line, 0, "%12ju %12.2f %12.2f %s\n", \
-			    ju, (ju - (intmax_t)copy.n)/lt, ju / up, d)); \
-			copy.n = ju; \
-		} else { \
-			seen.n = 1; \
-			line++; \
-			AC(mvprintw(line, 0, "%12ju %12s %12s %s\n", \
-			    ju, ".  ", ".  ", d)); \
-		} \
+		ju = VSL_stats->n;					\
+		if (ju == 0 && !seen.n) {				\
+		} else if (ff == 'a') {					\
+			seen.n = 1;					\
+			line++;						\
+			AC(mvprintw(line, 0,				\
+			    "%12ju %12.2f %12.2f %s\n",			\
+			    ju, (ju - (intmax_t)copy.n)/lt,		\
+			    ju / up, d));				\
+			copy.n = ju;					\
+		} else {						\
+			seen.n = 1;					\
+			line++;						\
+			AC(mvprintw(line, 0, "%12ju %12s %12s %s\n",	\
+			    ju, ".  ", ".  ", d));			\
+		}							\
 	}
 #include "stat_field.h"
 #undef MAC_STAT
@@ -223,15 +225,16 @@ do_xml(const struct varnish_stats *VSL_stats, const char* fields)
 	now = time(NULL);
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
-#define MAC_STAT(n, t, l, f, d) \
-	do { \
-		if (fields != NULL && ! show_field( #n, fields )) break; \
-		intmax_t ju = VSL_stats->n; \
-		printf("\t<stat>\n"); \
-		printf("\t\t<name>%s</name>\n", #n); \
-		printf("\t\t<value>%ju</value>\n", ju); \
-		printf("\t\t<description>%s</description>\n", d); \
-		printf("\t</stat>\n"); \
+#define MAC_STAT(n, t, l, f, d)						\
+	do {								\
+		if (fields != NULL && ! show_field( #n, fields ))	\
+			break;						\
+		intmax_t ju = VSL_stats->n;				\
+		printf("\t<stat>\n");					\
+		printf("\t\t<name>%s</name>\n", #n);			\
+		printf("\t\t<value>%ju</value>\n", ju);			\
+		printf("\t\t<description>%s</description>\n", d);	\
+		printf("\t</stat>\n");					\
 	} while (0);
 #include "stat_field.h"
 #undef MAC_STAT
@@ -247,14 +250,17 @@ do_once(const struct varnish_stats *VSL_stats, const char* fields)
 	AZ(gettimeofday(&tv, NULL));
 	up = VSL_stats->uptime;
 
-#define MAC_STAT(n, t, l, ff, d) \
-	do { \
-		if (fields != NULL && ! show_field( #n, fields )) break; \
-		intmax_t ju = VSL_stats->n; \
-		if (ff == 'a') \
-			printf("%-16s %12ju %12.2f %s\n", #n, ju, ju / up, d); \
-		else \
-			printf("%-16s %12ju %12s %s\n", #n, ju, ".  ", d); \
+#define MAC_STAT(n, t, l, ff, d)					\
+	do {								\
+		if (fields != NULL && ! show_field( #n, fields ))	\
+			break;						\
+		intmax_t ju = VSL_stats->n;				\
+		if (ff == 'a')						\
+			printf("%-16s %12ju %12.2f %s\n",		\
+			    #n, ju, ju / up, d);			\
+		else							\
+			printf("%-16s %12ju %12s %s\n",			\
+			    #n, ju, ".  ", d); \
 	} while (0);
 #include "stat_field.h"
 #undef MAC_STAT
@@ -291,9 +297,9 @@ list_fields(void)
 	fprintf(stderr, "Field name           Description\n");
 	fprintf(stderr, "----------           -----------\n");
 
-#define MAC_STAT(n, t, l, f, d) \
-	do { \
-		fprintf(stderr, "%-20s %s\n", #n, d);\
+#define MAC_STAT(n, t, l, f, d)						\
+	do {								\
+		fprintf(stderr, "%-20s %s\n", #n, d);			\
 	} while (0);
 #include "stat_field.h"
 #undef MAC_STAT
@@ -349,7 +355,7 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSL_data *vd;
-	struct varnish_stats *VSL_stats;
+	const struct varnish_stats *VSL_stats;
 	int delay = 1, once = 0, xml = 0;
 	const char *fields = NULL;
 
