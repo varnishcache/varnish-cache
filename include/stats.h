@@ -31,10 +31,18 @@
 
 #include <stdint.h>
 
-#define VSL_TYPE_STAT		"Stats"
+#define VSL_TYPE_STAT		""
 
 struct varnish_stats {
 #define MAC_STAT(n, t, l, f, e)	t n;
 #include "stat_field.h"
 #undef MAC_STAT
+};
+
+#define VSL_TYPE_STAT_SMA	"SMA"
+
+struct varnish_stats_sma {
+#define MAC_STAT_SMA(n, t, l, f, e)	t n;
+#include "stat_field.h"
+#undef MAC_STAT_SMA
 };

@@ -32,6 +32,12 @@
  * stats structure.
  */
 
+#ifndef MAC_STAT
+#define MAC_STAT(a, b, c, d, e)
+#define __MAC_STAT
+#endif
+
+
 MAC_STAT(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
 MAC_STAT(client_drop,		uint64_t, 0, 'a', "Connection dropped, no sess/wrk")
 MAC_STAT(client_req,		uint64_t, 1, 'a', "Client requests received")
@@ -118,12 +124,6 @@ MAC_STAT(sm_nobj,		uint64_t, 0, 'i', "outstanding allocations")
 MAC_STAT(sm_balloc,		uint64_t, 0, 'i', "bytes allocated")
 MAC_STAT(sm_bfree,		uint64_t, 0, 'i', "bytes free")
 
-MAC_STAT(sma_nreq,		uint64_t, 0, 'a', "SMA allocator requests")
-MAC_STAT(sma_nobj,		uint64_t, 0, 'i', "SMA outstanding allocations")
-MAC_STAT(sma_nbytes,		uint64_t, 0, 'i', "SMA outstanding bytes")
-MAC_STAT(sma_balloc,		uint64_t, 0, 'i', "SMA bytes allocated")
-MAC_STAT(sma_bfree,		uint64_t, 0, 'i', "SMA bytes free")
-
 MAC_STAT(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests")
 MAC_STAT(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations")
 MAC_STAT(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes")
@@ -152,3 +152,24 @@ MAC_STAT(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
 MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
+
+#ifdef __MAC_STAT
+#undef MAC_STAT
+#undef __MAC_STAT
+#endif
+
+#ifndef MAC_STAT_SMA
+#define MAC_STAT_SMA(a, b, c, d, e)
+#define __MAC_STAT_SMA
+#endif
+
+MAC_STAT_SMA(sma_nreq,		uint64_t, 0, 'a', "Allocator requests")
+MAC_STAT_SMA(sma_nobj,		uint64_t, 0, 'i', "Outstanding allocations")
+MAC_STAT_SMA(sma_nbytes,	uint64_t, 0, 'i', "Outstanding bytes")
+MAC_STAT_SMA(sma_balloc,	uint64_t, 0, 'i', "Bytes allocated")
+MAC_STAT_SMA(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
+
+#ifdef __MAC_STAT_SMA
+#undef MAC_STAT_SMA
+#undef __MAC_STAT_SMA
+#endif

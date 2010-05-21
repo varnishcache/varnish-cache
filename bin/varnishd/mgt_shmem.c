@@ -301,7 +301,8 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	bprintf(loghead->head.class, "%s", "Free");
 	MEMORY_BARRIER();
 
-	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_CLASS_STAT, "", "");
+	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
+	    VSL_CLASS_STAT, VSL_TYPE_STAT, "");
 	AN(VSL_stats);
 
 	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "", "");

@@ -110,7 +110,6 @@ main_stat(void *ptr, const char *fields)
 #undef MAC_STAT
 }
 
-#if 0
 static void
 sma_stat(struct shmalloc *sha, const char *fields)
 {
@@ -122,7 +121,6 @@ sma_stat(struct shmalloc *sha, const char *fields)
 #include "stat_field.h"
 #undef MAC_STAT_SMA
 }
-#endif
 
 static void
 prep_pts(struct VSL_data *vd, const char *fields)
@@ -133,12 +131,10 @@ prep_pts(struct VSL_data *vd, const char *fields)
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
 		if (strcmp(sha->class, VSL_CLASS_STAT))
 			continue;
-		if (!strcmp(sha->type, ""))
+		if (!strcmp(sha->type, VSL_TYPE_STAT))
 			main_stat(SHA_PTR(sha), fields);
-#if 0
 		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
 			sma_stat(sha, fields);
-#endif
 		else
 			fprintf(stderr, "Unknwon Statistics");
 	}

@@ -261,7 +261,7 @@ VSL_OpenLog(struct VSL_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (VSL_Open(vd))
 		return (-1);
-	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, "", "");
+	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, VSL_TYPE_STAT_SMA, "");
 	assert(sha != NULL);
 
 	vd->log_start = SHA_PTR(sha);

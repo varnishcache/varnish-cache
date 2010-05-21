@@ -48,6 +48,7 @@ struct sma_sc {
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
+	struct varnish_stats_sma *stats;
 };
 
 struct sma {
@@ -67,13 +68,13 @@ sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	(void)oc;
 	Lck_Lock(&sma_sc->sma_mtx);
-	VSL_stats->sma_nreq++;
-	if (VSL_stats->sma_nbytes + size > sma_sc->sma_max)
+	sma_sc->stats->sma_nreq++;
+	if (sma_sc->stats->sma_nbytes + size > sma_sc->sma_max)
 		size = 0;
 	else {
-		VSL_stats->sma_nobj++;
-		VSL_stats->sma_nbytes += size;
-		VSL_stats->sma_balloc += size;
+		sma_sc->stats->sma_nobj++;
+		sma_sc->stats->sma_nbytes += size;
+		sma_sc->stats->sma_balloc += size;
 	}
 	Lck_Unlock(&sma_sc->sma_mtx);
 
@@ -117,9 +118,9 @@ sma_free(struct storage *s)
 	sma_sc = sma->sc;
 	assert(sma->sz == sma->s.space);
 	Lck_Lock(&sma_sc->sma_mtx);
-	VSL_stats->sma_nobj--;
-	VSL_stats->sma_nbytes -= sma->sz;
-	VSL_stats->sma_bfree += sma->sz;
+	sma_sc->stats->sma_nobj--;
+	sma_sc->stats->sma_nbytes -= sma->sz;
+	sma_sc->stats->sma_bfree += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
@@ -140,8 +141,8 @@ sma_trim(struct storage *s, size_t size)
 	assert(size < sma->sz);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
 		Lck_Lock(&sma_sc->sma_mtx);
-		VSL_stats->sma_nbytes -= (sma->sz - size);
-		VSL_stats->sma_bfree += sma->sz - size;
+		sma_sc->stats->sma_nbytes -= (sma->sz - size);
+		sma_sc->stats->sma_bfree += sma->sz - size;
 		sma->sz = size;
 		Lck_Unlock(&sma_sc->sma_mtx);
 		sma->s.ptr = p;
@@ -156,6 +157,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	uintmax_t u;
 	struct sma_sc *sc;
 
+	ASSERT_MGT();
 	ALLOC_OBJ(sc, SMA_SC_MAGIC);
 	AN(sc);
 	sc->sma_max = SIZE_MAX;
@@ -181,6 +183,17 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 }
 
 static void
+sma_ready(struct stevedore *st)
+{
+	struct sma_sc *sma_sc;
+
+	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
+	sma_sc->stats = mgt_SHM_Alloc(sizeof *sma_sc->stats,
+	    VSL_CLASS_STAT, VSL_TYPE_STAT_SMA, st->ident);
+	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
+}
+
+static void
 sma_open(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
@@ -193,6 +206,7 @@ const struct stevedore sma_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"malloc",
 	.init	=	sma_init,
+	.ready	=	sma_ready,
 	.open	=	sma_open,
 	.alloc	=	sma_alloc,
 	.free	=	sma_free,
