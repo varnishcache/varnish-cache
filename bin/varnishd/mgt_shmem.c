@@ -80,7 +80,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 	while (1) {
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
 
-		if (strcmp(sha->type, "Free")) {
+		if (strcmp(sha->class, "Free")) {
 			sha = SHA_NEXT(sha);
 			continue;
 		}
@@ -95,7 +95,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 		memset(sha2, 0, sizeof *sha2);
 		sha2->magic = SHMALLOC_MAGIC;
 		sha2->len = sha->len - size;
-		bprintf(sha2->type, "%s", "Free");
+		bprintf(sha2->class, "%s", "Free");
 		MEMORY_BARRIER();
 
 		sha->len = size;
@@ -298,7 +298,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	loghead->head.magic = SHMALLOC_MAGIC;
 	loghead->head.len =
 	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
-	bprintf(loghead->head.type, "%s", "Free");
+	bprintf(loghead->head.class, "%s", "Free");
 	MEMORY_BARRIER();
 
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats, VSL_CLASS_STAT, "", "");
