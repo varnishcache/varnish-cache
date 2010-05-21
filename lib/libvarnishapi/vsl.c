@@ -145,6 +145,8 @@ VSL_Open(struct VSL_data *vd)
 		return (1);
 	}
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
+
+	vd->alloc_seq = slh.alloc_seq;
 	return (0);
 }
 
@@ -164,13 +166,41 @@ VSL_Close(struct VSL_data *vd)
 
 /*--------------------------------------------------------------------*/
 
+struct shmalloc *
+vsl_iter0(struct VSL_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
+		return(NULL);
+	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, SHMALLOC_MAGIC);
+	return (&vd->vsl_lh->head);
+}
+
+struct shmalloc *
+vsl_itern(struct VSL_data *vd, struct shmalloc **pp)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
+		return(NULL);
+	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
+	*pp = SHA_NEXT(*pp);
+	if ((void*)*pp >= vd->vsl_end)
+		return (NULL);
+	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
+	return (*pp);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct shmalloc *
 vsl_find_alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct shmalloc *sha;
 
 	assert (vd->vsl_lh != NULL);
-	for(sha = &vd->vsl_lh->head; (void*)sha < vd->vsl_end; sha = SHA_NEXT(sha)) {
+	VSL_FOREACH(sha, vd) {
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
 		if (strcmp(sha->class, class)) 
 			continue;
