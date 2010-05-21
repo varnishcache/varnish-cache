@@ -1,6 +1,11 @@
 Troubleshooting Varnish
 -----------------------
 
+Sometimes Varnish misbehaves. In order for you to understand whats
+going on there are a couple of places you can check. varnishlog,
+/var/log/syslog, /var/log/messages are all places where varnish might
+leave clues of whats going on.
+
 
 When Varnish won't start
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,6 +55,12 @@ Varnish is crashing
 
 When varnish goes bust.
 
+
+Varnish gives me Guru meditation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First find the relevant log entries in varnishlog. That will probably
+give you a clue.
 
 Varnish doesn't cache
 ~~~~~~~~~~~~~~~~~~~~~

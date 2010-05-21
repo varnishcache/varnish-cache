@@ -14,8 +14,8 @@ the web server. If you have Varnish the easiest might be to use
 varnishlog, but sometimes a separate tool makes sense. Here are the
 ones I use.
 
-lwp-request
-~~~~~~~~~~~
+Tool: lwp-request
+~~~~~~~~~~~~~~~~~
 
 lwp-request is part of The World-Wide Web library for Perl. It's
 couple of really basic programs that can execute a HTTP request and
@@ -57,8 +57,8 @@ So, to check whether a site sets cookies for a specific URL just do::
 
   GET -Used http://example.com/ |grep ^Set-Cookie
 
-Firefox plugins
-~~~~~~~~~~~~~~~
+Tool: Live HTTP Headers
+~~~~~~~~~~~~~~~~~~~~~~~
 
 There is also a plugin for Firefox. *Live HTTP Headers* can show you
 what headers are beeing sent and recieved. Live HTTP Headers can be
