@@ -48,10 +48,101 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 #include "shmlog.h"
+#include "vqueue.h"
 #include "varnishapi.h"
 #include "varnishstat.h"
+#include "miniobj.h"
 
 #define AC(x) assert((x) != ERR)
+
+struct pt {
+	VTAILQ_ENTRY(pt)	next;
+	const volatile uint64_t	*ptr;
+	uint64_t		ref;
+	char			type;
+	char			seen;
+	const char		*name;
+};
+
+static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
+
+static struct pt *
+add_pt(const uint64_t *ptr, int type, const char *c, const char *t, const char *i)
+{
+	struct pt *pt;
+	char buf[128];
+
+	pt = calloc(sizeof *pt, 1);
+	AN(pt);
+	VTAILQ_INSERT_TAIL(&pthead, pt, next);
+
+	pt->ptr = ptr;
+	pt->ref = *ptr;
+	pt->type = type;
+
+	*buf = '\0';
+	if (c != NULL) {
+		strcat(buf, c);
+		strcat(buf, ".");
+	}
+	if (t != NULL) {
+		strcat(buf, t);
+		strcat(buf, ".");
+	}
+	if (i != NULL) {
+		strcat(buf, i);
+		strcat(buf, ".");
+	}
+	pt->name = strdup(buf);
+	AN(pt->name);
+	return (pt);
+}
+
+static void
+main_stat(void *ptr, const char *fields)
+{
+	struct varnish_stats *st = ptr;
+
+#define MAC_STAT(nn, tt, ll, ff, dd)					\
+	if (fields == NULL || show_field( #nn, fields )) 		\
+		(void)add_pt(&st->nn, ff, NULL, NULL, dd);
+#include "stat_field.h"
+#undef MAC_STAT
+}
+
+#if 0
+static void
+sma_stat(struct shmalloc *sha, const char *fields)
+{
+	struct varnish_stats_sma *st = SHA_PTR(sha);
+
+#define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
+	if (fields == NULL || show_field( #nn, fields )) 		\
+		(void)add_pt(&st->nn, ff, "SMA", sha->ident, dd);
+#include "stat_field.h"
+#undef MAC_STAT_SMA
+}
+#endif
+
+static void
+prep_pts(struct VSL_data *vd, const char *fields)
+{
+	struct shmalloc *sha;
+
+	VSL_FOREACH(sha, vd) {
+		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+		if (strcmp(sha->class, VSL_CLASS_STAT))
+			continue;
+		if (!strcmp(sha->type, ""))
+			main_stat(SHA_PTR(sha), fields);
+#if 0
+		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
+			sma_stat(sha, fields);
+#endif
+		else
+			fprintf(stderr, "Unknwon Statistics");
+	}
+}
 
 static void
 myexp(double *acc, double val, unsigned *n, unsigned nmax)
@@ -66,7 +157,6 @@ void
 do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay, const char *fields)
 {
 	struct varnish_stats copy;
-	struct varnish_stats seen;
 	intmax_t ju;
 	struct timeval tv;
 	double tt, lt, hit, miss, ratio, up;
@@ -74,9 +164,10 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay,
 	unsigned n1, n2, n3;
 	time_t rt;
 	int ch, line;
+	struct pt *pt;
 
+	prep_pts(vd, fields);
 	memset(&copy, 0, sizeof copy);
-	memset(&seen, 0, sizeof seen);
 
 	a1 = a2 = a3 = 0.0;
 	n1 = n2 = n3 = 0;
@@ -116,27 +207,25 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay,
 		AC(mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3));
 
 		line = 3;
-#define MAC_STAT(n, t, l, ff, d)					\
-	if ((fields == NULL || show_field( #n, fields )) && line < LINES) { \
-		ju = VSL_stats->n;					\
-		if (ju == 0 && !seen.n) {				\
-		} else if (ff == 'a') {					\
-			seen.n = 1;					\
-			line++;						\
-			AC(mvprintw(line, 0,				\
-			    "%12ju %12.2f %12.2f %s\n",			\
-			    ju, (ju - (intmax_t)copy.n)/lt,		\
-			    ju / up, d));				\
-			copy.n = ju;					\
-		} else {						\
-			seen.n = 1;					\
-			line++;						\
-			AC(mvprintw(line, 0, "%12ju %12s %12s %s\n",	\
-			    ju, ".  ", ".  ", d));			\
-		}							\
-	}
-#include "stat_field.h"
-#undef MAC_STAT
+		VTAILQ_FOREACH(pt, &pthead, next) {
+			if (line >= LINES)
+				break;
+			ju = *pt->ptr;
+			if (ju == 0 && !pt->seen)
+				continue;
+			pt->seen = 1;
+			line++;
+			if (pt->type == 'a') {
+				AC(mvprintw(line, 0,
+				    "%12ju %12.2f %12.2f %s\n",
+				    ju, (ju - (intmax_t)pt->ref)/lt,
+				    ju / up, pt->name));		
+				pt->ref = ju;
+			} else {
+				AC(mvprintw(line, 0, "%12ju %12s %12s %s\n",
+				    ju, ".  ", ".  ", pt->name));
+			}
+		}
 		lt = tt;
 		AC(refresh());
 		timeout(delay * 1000);
