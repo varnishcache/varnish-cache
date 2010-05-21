@@ -25,9 +25,10 @@ vg.no was the first site to use Varnish and the people running Varnish
 there are quite clueful. So its interesting to look at their HTTP
 Headers. Lets send a GET requst for their home page.::
 
-  $ GET -H 'Host: vg.no' -Used http://vg.no/ 
-  GET http://www.vg.no/
-  User-Agent: Rickzilla 1.0
+  $ GET -H 'Host: www.vg.no' -Used http://vg.no/
+  GET http://vg.no/
+  Host: www.vg.no
+  User-Agent: lwp-request/5.834 libwww-perl/5.834
   
   200 OK
   Cache-Control: must-revalidate
@@ -59,10 +60,10 @@ So, to check whether a site sets cookies for a specific URL just do::
 Firefox plugins
 ~~~~~~~~~~~~~~~
 
-There are also a couple of great plugins for Firefox. Both *Live HTTP
-Headers* and *Firebug* can show you what headers are beeing sent and
-recieved. Try googling for them if you want to check them out. They
-are both recommended.
+There is also a plugin for Firefox. *Live HTTP Headers* can show you
+what headers are beeing sent and recieved. Live HTTP Headers can be
+found at https://addons.mozilla.org/en-US/firefox/addon/3829/ or by
+googling "Live HTTP Headers".
 
 
 The role of HTTP Headers
@@ -124,15 +125,19 @@ Quite simple. If, however, you need to do something more complicated,
 like removing one out of several cookies, things get
 difficult. Unfornunatly Varnish doesn't have good tools for
 manipulating the Cookies. We have to use regular expressions to do the
-work.
+work. If you are familiar with regular expressions you'll understand
+whats going on. If you don't I suggest you either pick up a book on
+the subject, read through the *pcrepattern* man page or read through
+one of many online guides.
 
 Let me show you what Varnish Software uses. We use some cookies for
 Google Analytics tracking and similar tools. The cookies are all set
 and used by Javascript. Varnish and Drupal doesn't need to see those
 cookies and since Varnish will cease caching of pages when the client
-sends cookies we will discard these unnecessary cookies in VCL.
+sends cookies we will discard these unnecessary cookies in VCL. 
 
-In the following VCL we discard all cookies that start with a underscore.::
+In the following VCL we discard all cookies that start with a
+underscore.::
 
   // Remove has_js and Google Analytics __* cookies.
   set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js)=[^;]*", "");

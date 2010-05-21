@@ -78,6 +78,8 @@ But what if one of your servers goes down? Can Varnish direct all the
 requests to the healthy server? Sure it can. This is where the Health
 Checks come into play.
 
+.. _tutorial-advanced_backend_servers-health:
+
 Health checks
 -------------
 
@@ -124,8 +126,6 @@ window
 threshold 
  How many of the .window last polls must be good for the backend to be declared healthy.
 
-XXX: Ref to reference guide.
-
 Now we define the director.::
 
   director example_director round-robin {
@@ -141,4 +141,6 @@ Now we define the director.::
 
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
-unhealty.
+unhealty. Varnish can also serve stale content if all the backends are
+down. See :ref:`tutorial-handling_misbehaving_servers` for more
+information on how to enable this.
