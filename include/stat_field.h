@@ -153,6 +153,8 @@ MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
 
+MAC_STAT(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
+
 #ifdef __MAC_STAT
 #undef MAC_STAT
 #undef __MAC_STAT

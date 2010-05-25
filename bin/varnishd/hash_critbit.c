@@ -367,6 +367,7 @@ hcb_cleaner(void *priv)
 				continue;
 			if (++oh->digest[0] > params->critbit_cooloff) {
 				VTAILQ_REMOVE(&laylow, oh, coollist);
+				VSL_stats->critbit_cooler--;
 				break;
 			}
 		}
@@ -415,6 +416,7 @@ hcb_deref(struct objhead *oh)
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
 		oh->digest[0] = 0;
 		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
+		VSL_stats->critbit_cooler++;
 		Lck_Unlock(&hcb_mtx);
 	}
 	Lck_Unlock(&oh->mtx);
@@ -428,7 +430,7 @@ static struct objhead *
 hcb_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *oh;
-	volatile unsigned u;
+	unsigned u;
 	unsigned with_lock;
 
 	(void)sp;
@@ -439,11 +441,11 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 			Lck_Lock(&hcb_mtx);
 			VSL_stats->hcb_lock++;
 			assert(noh->refcnt == 1);
-			oh =  hcb_insert(&hcb_root, noh, 1);
+			oh = hcb_insert(&hcb_root, noh, 1);
 			Lck_Unlock(&hcb_mtx);
 		} else {
 			VSL_stats->hcb_nolock++;
-			oh =  hcb_insert(&hcb_root, noh, 0);
+			oh = hcb_insert(&hcb_root, noh, 0);
 		}
 
 		if (oh != NULL && oh == noh) {
@@ -468,8 +470,12 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u > 0)
+		if (u > 0) {
 			oh->refcnt++;
+		} else {
+			assert(!with_lock);
+			with_lock = 1;
+		}
 		Lck_Unlock(&oh->mtx);
 		if (u > 0)
 			return (oh);
