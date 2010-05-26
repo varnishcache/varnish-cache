@@ -146,6 +146,10 @@ HSH_Cleanup(struct worker *w)
 		w->nobjhead = NULL;
 		w->stats.n_objecthead--;
 	}
+	if (w->nhashpriv != NULL) {
+		free(w->nhashpriv);
+		w->nhashpriv = NULL;
+	}
 }
 
 void

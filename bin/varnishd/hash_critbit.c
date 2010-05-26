@@ -46,8 +46,6 @@ SVNID("$Id$")
 
 static struct lock hcb_mtx;
 
-static VTAILQ_HEAD(,objhead)	laylow = VTAILQ_HEAD_INITIALIZER(laylow);
-
 /**********************************************************************
  * Table for finding out how many bits two bytes have in common,
  * counting from the MSB towards the LSB.
@@ -93,10 +91,13 @@ hcb_build_bittbl(void)
  */
 
 struct hcb_y {
+	unsigned		magic;
+#define HCB_Y_MAGIC		0x125c4bd2
 	unsigned short		critbit;
 	unsigned char		ptr;
 	unsigned char		bitmask;
 	volatile uintptr_t	leaf[2];
+	VSTAILQ_ENTRY(hcb_y)	list;
 };
 
 #define HCB_BIT_NODE		(1<<0)
@@ -107,6 +108,9 @@ struct hcb_root {
 };
 
 static struct hcb_root	hcb_root;
+
+static VSTAILQ_HEAD(, hcb_y)	cool = VSTAILQ_HEAD_INITIALIZER(cool);
+static VSTAILQ_HEAD(, hcb_y)	dead = VSTAILQ_HEAD_INITIALIZER(dead);
 
 /**********************************************************************
  * Pointer accessor functions
@@ -146,6 +150,7 @@ static uintptr_t
 hcb_r_y(struct hcb_y *y)
 {
 
+	CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 	assert(!((uintptr_t)y & (HCB_BIT_NODE|HCB_BIT_Y)));
 	return (HCB_BIT_Y | (uintptr_t)y);
 }
@@ -169,6 +174,7 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
 {
 	unsigned char u, r;
 
+	CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 	for (u = 0; u < DIGEST_LEN && oh1->digest[u] == oh2->digest[u]; u++)
 		;
 	assert(u < DIGEST_LEN);
@@ -186,7 +192,7 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
  */
 
 static struct objhead *
-hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
+hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int has_lock)
 {
 	volatile uintptr_t *p;
 	uintptr_t pp;
@@ -205,6 +211,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	while(hcb_is_y(pp)) {
 		y = hcb_l_y(pp);
+		CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 		assert(y->ptr < DIGEST_LEN);
 		s = (oh->digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
@@ -231,8 +238,8 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	/* Insert */
 
-	y2 = (void*)&oh->u;
-	memset(y2, 0, sizeof *y2);
+	CAST_OBJ_NOTNULL(y2, wrk->nhashpriv, HCB_Y_MAGIC);
+	wrk->nhashpriv = NULL;
 	(void)hcb_crit_bit(oh, hcb_l_node(*p), y2);
 	s2 = (oh->digest[y2->ptr] & y2->bitmask) != 0;
 	assert(s2 < 2);
@@ -244,6 +251,7 @@ hcb_insert(struct hcb_root *root, struct objhead *oh, int has_lock)
 
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
+		CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 		assert(y->critbit != y2->critbit);
 		if (y->critbit > y2->critbit)
 			break;
@@ -282,8 +290,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 		assert(s < 2);
 		if (y->leaf[s] == hcb_r_node(oh)) {
 			*p = y->leaf[1 - s];
-			y->leaf[0] = 0;
-			y->leaf[1] = 0;
+			VSTAILQ_INSERT_TAIL(&cool, y, list);
 			return;
 		}
 		p = &y->leaf[s];
@@ -321,21 +328,12 @@ dumptree(struct cli *cli, uintptr_t p, int indent)
 static void
 hcb_dump(struct cli *cli, const char * const *av, void *priv)
 {
-	struct objhead *oh, *oh2;
-	struct hcb_y *y;
 
 	(void)priv;
 	(void)av;
 	cli_out(cli, "HCB dump:\n");
 	dumptree(cli, hcb_root.origo, 0);
 	cli_out(cli, "Coollist:\n");
-	Lck_Lock(&hcb_mtx);
-	VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
-		y = (void *)&oh->u;
-		cli_out(cli, "%p ref %d, y{%u, %u}\n", oh,
-			oh->refcnt, y->leaf[0], y->leaf[1]);
-	}
-	Lck_Unlock(&hcb_mtx);
 }
 
 static struct cli_proto hcb_cmds[] = {
@@ -348,8 +346,7 @@ static struct cli_proto hcb_cmds[] = {
 static void *
 hcb_cleaner(void *priv)
 {
-	struct objhead *oh, *oh2;
-	struct hcb_y *y;
+	struct hcb_y *y, *y2;
 	struct worker ww;
 
 	memset(&ww, 0, sizeof ww);
@@ -358,26 +355,15 @@ hcb_cleaner(void *priv)
 	THR_SetName("hcb_cleaner");
 	(void)priv;
 	while (1) {
+		VSTAILQ_FOREACH_SAFE(y, &dead, list, y2) {
+			VSTAILQ_REMOVE_HEAD(&dead, list);
+			FREE_OBJ(y);
+		}
 		Lck_Lock(&hcb_mtx);
-		VTAILQ_FOREACH_SAFE(oh, &laylow, coollist, oh2) {
-			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-			AZ(oh->refcnt);
-			y = (void *)&oh->u;
-			if (y->leaf[0] || y->leaf[1])
-				continue;
-			if (++oh->digest[0] > params->critbit_cooloff) {
-				VTAILQ_REMOVE(&laylow, oh, coollist);
-				VSL_stats->critbit_cooler--;
-				break;
-			}
-		}
+		VSTAILQ_CONCAT(&dead, &cool);
 		Lck_Unlock(&hcb_mtx);
-		if (oh == NULL) {
-			WRK_SumStat(&ww);
-			(void)sleep(1);
-		} else {
-			HSH_DeleteObjHead(&ww, oh);
-		}
+		WRK_SumStat(&ww);
+		TIM_sleep(params->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -394,7 +380,6 @@ hcb_start(void)
 	CLI_AddFuncs(hcb_cmds);
 	Lck_New(&hcb_mtx);
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
-	assert(sizeof(struct hcb_y) <= sizeof(oh->u));
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();
 }
@@ -412,12 +397,10 @@ hcb_deref(struct objhead *oh)
 	if (oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
+		Lck_Unlock(&hcb_mtx);
 		assert(VTAILQ_EMPTY(&oh->objcs));
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
-		oh->digest[0] = 0;
-		VTAILQ_INSERT_TAIL(&laylow, oh, coollist);
-		VSL_stats->critbit_cooler++;
-		Lck_Unlock(&hcb_mtx);
+		r = 0;
 	}
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
@@ -430,6 +413,7 @@ static struct objhead *
 hcb_lookup(const struct sess *sp, struct objhead *noh)
 {
 	struct objhead *oh;
+	struct hcb_y *y;
 	unsigned u;
 	unsigned with_lock;
 
@@ -438,14 +422,19 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	with_lock = 0;
 	while (1) {
 		if (with_lock) {
+			if (sp->wrk->nhashpriv == NULL) {
+				ALLOC_OBJ(y, HCB_Y_MAGIC);
+				sp->wrk->nhashpriv = y;
+			}
+			AN(sp->wrk->nhashpriv);
 			Lck_Lock(&hcb_mtx);
 			VSL_stats->hcb_lock++;
 			assert(noh->refcnt == 1);
-			oh = hcb_insert(&hcb_root, noh, 1);
+			oh = hcb_insert(sp->wrk, &hcb_root, noh, 1);
 			Lck_Unlock(&hcb_mtx);
 		} else {
 			VSL_stats->hcb_nolock++;
-			oh = hcb_insert(&hcb_root, noh, 0);
+			oh = hcb_insert(sp->wrk, &hcb_root, noh, 0);
 		}
 
 		if (oh != NULL && oh == noh) {
