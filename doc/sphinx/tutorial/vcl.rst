@@ -1,45 +1,28 @@
 Varnish Configuration Language - VCL
 -------------------------------------
 
-Varnish has a really neat configuration system. Most other systems use
-configuration directives, where you basically turn on and off a bunch
-of switches. 
+Varnish has a great configuration system. Most other systems use
+configuration directives, where you basically turn on and off lots of
+switches. Varnish uses a domain specific language called Varnish
+Configuration Language, or VCL for short. Varnish translates this
+configuration into binary code which is then executed when requests
+arrive.
 
-A very common thing to do in Varnish is to override the cache headers
-from our backend. Lets see how this looks in Squid, which has a
-standard configuration.::
-
-	 refresh_pattern ^http://images.   3600   20%     7200
-	 refresh_pattern -i (/cgi-bin/|\?)    0    0%        0
-	 refresh_pattern -i (/\.jpg)       1800   10%     3600 override-expire 
-	 refresh_pattern .                    0   20%     4320
-
-If you are familiar with squid that probably made sense to you. But
-lets point out a few weaknesses with this model.
-
-1) It's not intuitive. You can guess what the options mean, and you
-   can (and should) document it in your configuration file.
-
-2) Which rules have precedence? Does the last rule to match stick? Or
-   the first? Or does Squid try to combine all the matching rules. I
-   actually don't know. 
-
-Now enter Varnish. Varnish takes your configuration file and
-translates it to C code, then runs it through a compiler and loads
-it. When requests come along varnish just executes the relevant
-subroutines of the configuration at the relevant times.
+The VCL files are divided into subroutines. The different subroutines
+are executed at different times. One is executed when we get the
+request, another when files are fetched from the backend server.
 
 Varnish will execute these subroutines of code at different stages of
-its work. Since its code it's execute line by line and precedence
+its work. Because it is code it is execute line by line precedence
 isn't a problem. At some point you call an action in this subroutine
-and then the execution of the subroutine stops. 
+and then the execution of the subroutine stops.
 
 If you don't call an action in your subroutine and it reaches the end
-Varnish will execute some built in code as well. We discuss this in
-XXX: Appendix A - the builtin VCL.
+Varnish will execute some built in VCL code. You will see this VCL
+code commented out in default.vcl.
 
 99% of all the changes you'll need to do will be done in two of these
-subroutines.
+subroutines. vcl_recv and vcl_fetch.
 
 vcl_recv
 ~~~~~~~~
