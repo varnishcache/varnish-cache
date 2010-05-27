@@ -109,8 +109,10 @@ struct hcb_root {
 
 static struct hcb_root	hcb_root;
 
-static VSTAILQ_HEAD(, hcb_y)	cool = VSTAILQ_HEAD_INITIALIZER(cool);
-static VSTAILQ_HEAD(, hcb_y)	dead = VSTAILQ_HEAD_INITIALIZER(dead);
+static VSTAILQ_HEAD(, hcb_y)	cool_y = VSTAILQ_HEAD_INITIALIZER(cool_y);
+static VSTAILQ_HEAD(, hcb_y)	dead_y = VSTAILQ_HEAD_INITIALIZER(dead_y);
+static VTAILQ_HEAD(, objhead)	cool_h = VTAILQ_HEAD_INITIALIZER(cool_h);
+static VTAILQ_HEAD(, objhead)	dead_h = VTAILQ_HEAD_INITIALIZER(dead_h);
 
 /**********************************************************************
  * Pointer accessor functions
@@ -290,7 +292,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 		assert(s < 2);
 		if (y->leaf[s] == hcb_r_node(oh)) {
 			*p = y->leaf[1 - s];
-			VSTAILQ_INSERT_TAIL(&cool, y, list);
+			VSTAILQ_INSERT_TAIL(&cool_y, y, list);
 			return;
 		}
 		p = &y->leaf[s];
@@ -348,6 +350,7 @@ hcb_cleaner(void *priv)
 {
 	struct hcb_y *y, *y2;
 	struct worker ww;
+	struct objhead *oh, *oh2;
 
 	memset(&ww, 0, sizeof ww);
 	ww.magic = WORKER_MAGIC;
@@ -355,12 +358,17 @@ hcb_cleaner(void *priv)
 	THR_SetName("hcb_cleaner");
 	(void)priv;
 	while (1) {
-		VSTAILQ_FOREACH_SAFE(y, &dead, list, y2) {
-			VSTAILQ_REMOVE_HEAD(&dead, list);
+		VSTAILQ_FOREACH_SAFE(y, &dead_y, list, y2) {
+			VSTAILQ_REMOVE_HEAD(&dead_y, list);
 			FREE_OBJ(y);
 		}
+		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
+			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
+			HSH_DeleteObjHead(&ww, oh);
+		}
 		Lck_Lock(&hcb_mtx);
-		VSTAILQ_CONCAT(&dead, &cool);
+		VSTAILQ_CONCAT(&dead_y, &cool_y);
+		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
 		WRK_SumStat(&ww);
 		TIM_sleep(params->critbit_cooloff);
@@ -397,10 +405,10 @@ hcb_deref(struct objhead *oh)
 	if (oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
+		VTAILQ_INSERT_TAIL(&cool_h, oh, hoh_list);
 		Lck_Unlock(&hcb_mtx);
 		assert(VTAILQ_EMPTY(&oh->objcs));
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
-		r = 0;
 	}
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
