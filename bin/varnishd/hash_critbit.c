@@ -43,6 +43,7 @@ SVNID("$Id$")
 #include "cache.h"
 #include "hash_slinger.h"
 #include "cli_priv.h"
+#include "vmb.h"
 
 static struct lock hcb_mtx;
 
@@ -242,7 +243,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int ha
 
 	CAST_OBJ_NOTNULL(y2, wrk->nhashpriv, HCB_Y_MAGIC);
 	wrk->nhashpriv = NULL;
-	(void)hcb_crit_bit(oh, hcb_l_node(*p), y2);
+	(void)hcb_crit_bit(oh, oh2, y2);
 	s2 = (oh->digest[y2->ptr] & y2->bitmask) != 0;
 	assert(s2 < 2);
 	y2->leaf[s2] = hcb_r_node(oh);
@@ -263,6 +264,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int ha
 		p = &y->leaf[s];
 	}
 	y2->leaf[s2] = *p;
+	VWMB();
 	*p = hcb_r_y(y2);
 	return(oh);
 }
