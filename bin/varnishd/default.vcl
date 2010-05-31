@@ -132,9 +132,7 @@ sub vcl_error {
     <h3>Guru Meditation:</h3>
     <p>XID: "} req.xid {"</p>
     <hr>
-    <address>
-       <a href="http://www.varnish-cache.org/">Varnish cache server</a>
-    </address>
+    <p>Varnish cache server</p>
   </body>
 </html>
 "};
