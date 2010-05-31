@@ -1,0 +1,22 @@
+# $Id$
+
+test "Range bug"
+
+server s1 {
+	rxreq
+	txresp -bodylen 100
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v1 -cliok "param.set http_range_support on"
+
+
+client c1 {
+	txreq -hdr "Range: bytes=50-200"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 50
+} -run
+

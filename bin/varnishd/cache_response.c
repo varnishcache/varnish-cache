@@ -169,7 +169,7 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 		return;
 
 	if (high >= sp->obj->len)
-		high = sp->obj->len;
+		high = sp->obj->len - 1;
 
 	if (low > high)
 		return;
