@@ -696,10 +696,12 @@ VRT_r_client_ip(const struct sess *sp)
 struct sockaddr *
 VRT_r_server_ip(struct sess *sp)
 {
+	int i;
 
-	if (sp->mysockaddr->sa_family == AF_UNSPEC)
-		assert(!getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen)
-		    || errno == ECONNRESET);
+	if (sp->mysockaddr->sa_family == AF_UNSPEC) {
+		i = getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen);
+		assert(TCP_Check(i));
+	}
 
 	return (sp->mysockaddr);
 }
