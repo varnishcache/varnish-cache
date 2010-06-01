@@ -44,6 +44,7 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "mgt.h"
 #include "heritage.h"
+#include "vmb.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
