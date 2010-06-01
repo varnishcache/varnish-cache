@@ -1,6 +1,6 @@
-===========
- varnishadm
-===========
+==========
+varnishadm
+==========
 
 ----------------------------------
 Control a running varnish instance
