@@ -167,6 +167,10 @@ vsl_goodold(int fd, unsigned size)
 	return (1);
 }
 
+/*--------------------------------------------------------------------
+ * Build a new shmlog file
+ */
+
 static void
 vsl_buildnew(const char *fn, unsigned size, int fill)
 {
@@ -178,7 +182,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	(void)unlink(fn);
 	vsl_fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0644);
 	if (vsl_fd < 0) {
-		fprintf(stderr, "Could not open %s: %s\n",
+		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));
 		exit (1);
 	}
@@ -291,15 +295,14 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	(void)mlock((void*)loghead, size);
 
 	/* Initialize pool */
-	loghead->alloc_seq = 0;
-	MEMORY_BARRIER();
+	loghead->alloc_seq = 0;			/* Zero means "inconsistent" */
+	VWMB();
 
 	memset(&loghead->head, 0, sizeof loghead->head);
 	loghead->head.magic = SHMALLOC_MAGIC;
 	loghead->head.len =
 	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
 	bprintf(loghead->head.class, "%s", "Free");
-	MEMORY_BARRIER();
 
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
 	    VSL_CLASS_STAT, VSL_TYPE_STAT, "");
@@ -315,12 +318,10 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	vsl_log_end = vsl_log_start + s1;
 	vsl_log_nxt = vsl_log_start + 1;
 	*vsl_log_nxt = SLT_ENDMARKER;
-	MEMORY_BARRIER();
 	*vsl_log_start = random();
-	MEMORY_BARRIER();
 
+	VWMB();
 	loghead->alloc_seq = random();
-	MEMORY_BARRIER();
 }
 
 void
