@@ -91,25 +91,25 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 
 		seq = loghead->alloc_seq;
 		loghead->alloc_seq = 0;
-		MEMORY_BARRIER();
+		VWMB();
 
 		memset(sha2, 0, sizeof *sha2);
 		sha2->magic = SHMALLOC_MAGIC;
 		sha2->len = sha->len - size;
 		bprintf(sha2->class, "%s", "Free");
-		MEMORY_BARRIER();
 
 		sha->len = size;
 		bprintf(sha->class, "%s", class);
 		bprintf(sha->type, "%s", type);
 		bprintf(sha->ident, "%s", ident);
-		MEMORY_BARRIER();
 
-		loghead->alloc_seq = seq++;
-		MEMORY_BARRIER();
+		VWMB();
+		if (seq != 0) 
+			do
+				loghead->alloc_seq = seq++;
+			while (loghead->alloc_seq == 0);
 
 		return (SHA_PTR(sha));
-
 	}
 	return (NULL);
 }
@@ -304,6 +304,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	loghead->head.len =
 	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
 	bprintf(loghead->head.class, "%s", "Free");
+	VWMB();
 
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
 	    VSL_CLASS_STAT, VSL_TYPE_STAT, "");
@@ -319,10 +320,16 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	vsl_log_end = vsl_log_start + s1;
 	vsl_log_nxt = vsl_log_start + 1;
 	*vsl_log_nxt = SLT_ENDMARKER;
-	*vsl_log_start = random();
-
 	VWMB();
-	loghead->alloc_seq = random();
+
+	do
+		*vsl_log_start = random();
+	while (*vsl_log_start == 0);
+
+	do
+		loghead->alloc_seq = random();
+	while (loghead->alloc_seq == 0);
+
 }
 
 void

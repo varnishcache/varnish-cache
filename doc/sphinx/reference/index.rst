@@ -1,6 +1,13 @@
-%%%%%%%%%%%%%%%%%%%%%
-The Varnish Reference
-%%%%%%%%%%%%%%%%%%%%%
+.. _reference-index:
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The Varnish Reference Manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+.. toctree::
+
+	varnishadm.rst
+	shmem.rst
 
 .. todo::
         The programs:
@@ -32,4 +39,6 @@ The Varnish Reference
         . - rollback
         Varnishtest
         . syntax etc.
+	Shared Memory
+	. internals
 
