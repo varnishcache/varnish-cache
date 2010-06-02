@@ -221,6 +221,17 @@ following VCL code will normalize the Accept-Encoding headers.::
 The code sets the Accept-Encoding header from the client to either
 gzip, deflate with a preference for gzip.
 
+Pitfall - Vary: User-Agent
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some applications or application servers send *Vary: User-Agent* along
+with their content. This instructs Varnish to cache a separate copy
+for every variation of User-Agent there is. There are plenty. Even a
+single patchlevel of the same browser will generate at least 10
+different User-Agent headers based just on what operating system they
+are running. So if you need to Vary based on User-Agent be sure to
+normalize the header or your hit rate will suffer badly.
+
 .. _tutorial-increasing_your_hitrate-pragma:
 
 Pragma
