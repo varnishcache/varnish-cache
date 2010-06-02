@@ -6,39 +6,45 @@ Varnish uses shared memory for logging and statistics, because it
 is faster and much more efficient.  But it is also tricky in ways
 a regular logfile is not.
 
-Collision Detection
--------------------
-
 When you open a file in "append" mode, the operating system guarantees
 that whatever you write will not overwrite existing data in the file.
 The neat result of this is that multiple procesess or threads writing
-to the same file does not even need to know about each other it all
+to the same file does not even need to know about each other, it all
 works just as you would expect.
 
-With shared memory you get no such seatbelts.
+With a shared memory log, we get no help from the kernel, the writers
+need to make sure they do not stomp on each other, and they need to
+make it possible and safe for the readers to access the data.
 
-When Varnishd starts, it could find an existing shared memory file,
-being used by another varnishd, either because somebody gave the wrong
-(or no) -n argument, or because the old varnishd was not dead when
-some kind of process-nanny restarted varnishd anew.
+The "CS101" way, is to introduce locks, and much time is spent examining
+the relative merits of the many kinds of locks available.
 
-If the shared memory file has a different version or layout it will
-be deleted and a new created.
+Inside the varnishd (worker) process, we use mutexes to guarantee
+consistency, both with respect to allocations, log entries and stats
+counters.
 
-If the process listed in the "master_pid" field is running,
-varnishd will abort startup, assuming you got a wrong -n argument.
+We do not want a varnishncsa trying to push data through a stalled
+ssh connection to stall the delivery of content, so readers like
+that are purely read-only, they do not get to affect the varnishd
+process and that means no locks for them.
 
-If the process listed in the "child_pid" field is (still?) running,
-or if the file as a size different from that specified in the -l 
-argument, it will be deleted and a new file created.
+Instead we use "stable storage" concepts, to make sure the view
+seen by the readers is consistent at all times.
 
-The upshot of this, is that programs subscribing to the shared memory
-file should periodically do a stat(2) on the name, and if the
-st_dev or st_inode fields changed, switch to the new shared memory file.
+As long as you only add stuff, that is trivial, but taking away
+stuff, such as when a backend is taken out of the configuration,
+we need to give the readers a chance to discover this, a "cooling
+off" period.
 
-Also, the master_pid field should be monitored, if it changes, the
-shared memory file should be "reopened" with respect to the linked
-list of allocations.
+When Varnishd starts, if it finds an existing shared memory file,
+and it can safely read the master_pid field, it will check if that
+process is running, and if so, fail with an error message, indicating
+that -n arguments collide.
+
+In all other cases, it will delete and create a new shmlog file,
+in order to provide running readers a cooling off period, where
+they can discover that there is a new shmlog file, by doing a
+stat(2) call and checking the st_dev & st_inode fields.
 
 Allocations
 -----------

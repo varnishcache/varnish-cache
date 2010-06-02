@@ -115,12 +115,12 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 }
 
 /*--------------------------------------------------------------------
- * Try to reuse an existing shmem file, but try to not disturb another
- * varnishd using the file.
+ * Check that we are not started with the same -n argument as an already
+ * running varnishd
  */
 
-static int
-vsl_goodold(int fd, unsigned size)
+static void
+vsl_n_check(int fd)
 {
 	struct shmloghead slh;
 	int i;
@@ -133,11 +133,11 @@ vsl_goodold(int fd, unsigned size)
 	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	i = read(fd, &slh, sizeof slh);
 	if (i != sizeof slh)
-		return (0);
+		return;
 	if (slh.magic != SHMLOGHEAD_MAGIC)
-		return (0);
+		return;
 	if (slh.hdrsize != sizeof slh)
-		return (0);
+		return;
 
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
 		fprintf(stderr,
@@ -148,24 +148,6 @@ vsl_goodold(int fd, unsigned size)
 		    "instances.)\n");
 		exit(2);
 	}
-
-	if (slh.child_pid != 0 && !kill(slh.child_pid, 0)) {
-		fprintf(stderr,
-		    "SHMFILE used by orphan varnishd child process (pid=%jd)\n",
-		    (intmax_t)slh.child_pid);
-		fprintf(stderr, "(We assume that process is busy dying.)\n");
-		return (0);
-	}
-
-	/* Sanity checks */
-
-	if (slh.shm_size != size)
-		return (0);
-
-	if (st.st_size != size)
-		return (0);
-
-	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -278,14 +260,13 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	size &= ~(ps - 1);
 
 	i = open(fn, O_RDWR, 0644);
-	if (i >= 0 && vsl_goodold(i, size)) {
-		fprintf(stderr, "Using old SHMFILE\n");
-		vsl_fd = i;
-	} else {
-		fprintf(stderr, "Creating new SHMFILE\n");
+	if (i >= 0) {
+		vsl_n_check(i);
 		(void)close(i);
-		vsl_buildnew(fn, size, fill);
-	}
+	} 
+	fprintf(stderr, "Creating new SHMFILE\n");
+	(void)close(i);
+	vsl_buildnew(fn, size, fill);
 
 	loghead = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
