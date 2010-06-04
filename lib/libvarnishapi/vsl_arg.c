@@ -212,6 +212,11 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		free(vd->n_opt);
 		vd->n_opt = strdup(opt);
 		assert(vd->n_opt != NULL);
+		if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->vsl)) {
+			fprintf(stderr, "Invalid instance name: %s\n",
+			    strerror(errno));
+			return (-1);
+		}
 		return (1);
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));

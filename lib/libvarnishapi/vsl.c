@@ -108,32 +108,25 @@ VSL_Open(struct VSL_data *vd)
 {
 	int i;
 	struct shmloghead slh;
-	char *logname;
 
 	if (vd->vsl_lh != NULL)
 		return (0);
 
-	if (vin_n_arg(vd->n_opt, NULL, NULL, &logname)) {
-		fprintf(stderr, "Invalid instance name: %s\n",
-		    strerror(errno));
-		return (1);
-	}
-
-	vd->vsl_fd = open(logname, O_RDONLY);
+	vd->vsl_fd = open(vd->vsl, O_RDONLY);
 	if (vd->vsl_fd < 0) {
 		fprintf(stderr, "Cannot open %s: %s\n",
-		    logname, strerror(errno));
+		    vd->vsl, strerror(errno));
 		return (1);
 	}
 	i = read(vd->vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		fprintf(stderr, "Cannot read %s: %s\n",
-		    logname, strerror(errno));
+		    vd->vsl, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
 		fprintf(stderr, "Wrong magic number in file %s\n",
-		    logname);
+		    vd->vsl);
 		return (1);
 	}
 
@@ -141,7 +134,7 @@ VSL_Open(struct VSL_data *vd)
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
 	if (vd->vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    logname, strerror(errno));
+		    vd->vsl, strerror(errno));
 		return (1);
 	}
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;

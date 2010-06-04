@@ -37,6 +37,7 @@ struct VSL_data {
 	unsigned		magic;
 #define VSL_MAGIC		0x6e3bd69b
 
+	char			*vsl;
 
 	int			vsl_fd;
 	struct shmloghead 	*vsl_lh;
