@@ -60,13 +60,13 @@ void VSL_Close(struct VSL_data *vd);
 int VSL_Open(struct VSL_data *vd);
 void VSL_Delete(struct VSL_data *vd);
 struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
-const char *VSL_Name(struct VSL_data *vd);
+const char *VSL_Name(const struct VSL_data *vd);
 extern const char *VSL_tags[256];
 void *VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type,
     const char *ident, unsigned *lenp);
 
-struct shmalloc *vsl_iter0(struct VSL_data *vd);
-void vsl_itern(struct VSL_data *vd, struct shmalloc **pp);
+struct shmalloc *vsl_iter0(const struct VSL_data *vd);
+void vsl_itern(const struct VSL_data *vd, struct shmalloc **pp);
 
 #define VSL_FOREACH(var, vd) \
 	for((var) = vsl_iter0((vd)); (var) != NULL; vsl_itern((vd), &(var)))

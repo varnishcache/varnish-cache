@@ -10,10 +10,9 @@
 SVNID("$Id$")
 
 #include <sys/types.h>
-#include <stdint.h>
 #include "varnishapi.h"
 
-static const char *b64 =
+static const char b64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static char i64[256];

@@ -34,12 +34,11 @@ SVNID("$Id$")
 
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,6 +97,7 @@ VSL_Delete(struct VSL_data *vd)
 	vbit_destroy(vd->vbm_select);
 	free(vd->n_opt);
 	free(vd->rbuf);
+	free(vd->fname);
 	free(vd);
 }
 
@@ -112,21 +112,28 @@ VSL_Open(struct VSL_data *vd)
 	if (vd->vsl_lh != NULL)
 		return (0);
 
-	vd->vsl_fd = open(vd->vsl, O_RDONLY);
+	vd->vsl_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsl_fd < 0) {
 		fprintf(stderr, "Cannot open %s: %s\n",
-		    vd->vsl, strerror(errno));
+		    vd->fname, strerror(errno));
 		return (1);
 	}
+
+	assert(fstat(vd->vsl_fd, &vd->fstat) == 0);
+	if (!S_ISREG(vd->fstat.st_mode)) {
+		fprintf(stderr, "%s is not a regular file\n", vd->fname);
+		return (1);
+	}
+
 	i = read(vd->vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		fprintf(stderr, "Cannot read %s: %s\n",
-		    vd->vsl, strerror(errno));
+		    vd->fname, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
 		fprintf(stderr, "Wrong magic number in file %s\n",
-		    vd->vsl);
+		    vd->fname);
 		return (1);
 	}
 
@@ -134,7 +141,7 @@ VSL_Open(struct VSL_data *vd)
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
 	if (vd->vsl_lh == MAP_FAILED) {
 		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    vd->vsl, strerror(errno));
+		    vd->fname, strerror(errno));
 		return (1);
 	}
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
@@ -160,7 +167,7 @@ VSL_Close(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 struct shmalloc *
-vsl_iter0(struct VSL_data *vd)
+vsl_iter0(const struct VSL_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -171,7 +178,7 @@ vsl_iter0(struct VSL_data *vd)
 }
 
 void
-vsl_itern(struct VSL_data *vd, struct shmalloc **pp)
+vsl_itern(const struct VSL_data *vd, struct shmalloc **pp)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -191,7 +198,7 @@ vsl_itern(struct VSL_data *vd, struct shmalloc **pp)
 /*--------------------------------------------------------------------*/
 
 static struct shmalloc *
-vsl_find_alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident)
+vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct shmalloc *sha;
 
@@ -272,7 +279,7 @@ VSL_OpenLog(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 const char *
-VSL_Name(struct VSL_data *vd)
+VSL_Name(const struct VSL_data *vd)
 {
 
 	return (vd->n_opt);

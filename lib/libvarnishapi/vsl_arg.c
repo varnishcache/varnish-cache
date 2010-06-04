@@ -33,13 +33,12 @@
 SVNID("$Id$")
 
 #include <sys/types.h>
-#include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -212,7 +211,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		free(vd->n_opt);
 		vd->n_opt = strdup(opt);
 		assert(vd->n_opt != NULL);
-		if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->vsl)) {
+		if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
 			fprintf(stderr, "Invalid instance name: %s\n",
 			    strerror(errno));
 			return (-1);
