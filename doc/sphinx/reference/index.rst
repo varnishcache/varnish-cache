@@ -5,14 +5,19 @@ The Varnish Reference Manual
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 .. toctree::
-	
-	varnishadm.rst
-	shmem.rst
+
 	vcl.rst
-	varnishstat.rst
-	varnishsizes.rst
-	varnishreplay.rst
+	varnishadm.rst
+	varnishd.rst
+	varnishhist.rst
 	varnishlog.rst
+	varnishncsa.rst
+	varnishreplay.rst
+	varnishsizes.rst
+	varnishstat.rst
+	varnishtest.rst
+	varnishtop.rst
+	shmem.rst
 
 .. todo::
         The programs:

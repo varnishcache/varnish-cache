@@ -1,8 +1,7 @@
 .. _install-doc:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Installing Varnish on your computer
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Installing Varnish
+==================
 
 With open source software, you can choose to install binary packages
 or compile stuff from source-code. To install a package or compile
@@ -11,8 +10,8 @@ method too choose read the whole document and choose the method you
 are most confortable with.
 
 
-Installing Varnish from packages
-================================
+Source or packages?
+~~~~~~~~~~~~~~~~~~~
 
 Installing Varnish on most relevant operating systems can usually 
 be done with with the systems package manager, typical examples
