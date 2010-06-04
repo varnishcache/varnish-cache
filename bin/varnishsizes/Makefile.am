@@ -9,7 +9,6 @@ dist_man_MANS = varnishsizes.1
 varnishsizes_SOURCES = varnishsizes.c
 
 varnishsizes_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lm \
