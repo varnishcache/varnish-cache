@@ -13,7 +13,6 @@ varnishstat_SOURCES = \
 	varnishstat_curses.c
 
 varnishstat_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	${CURSES_LIBS} ${RT_LIBS} ${PTHREAD_LIBS}
