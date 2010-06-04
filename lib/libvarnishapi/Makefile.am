@@ -1,6 +1,6 @@
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 lib_LTLIBRARIES = libvarnishapi.la
 
@@ -9,8 +9,11 @@ libvarnishapi_la_LDFLAGS = -version-info 1:0:0
 libvarnishapi_la_SOURCES = \
 	vsl.h \
 	\
-	../libvarnish/vin.c \
 	../libvarnish/assert.c \
+	../libvarnish/svn_version.c \
+	../libvarnish/version.c \
+	../libvarnish/vin.c \
+	../libvarnish/vre.c \
 	base64.c \
 	vsl.c \
 	vsl_arg.c \
@@ -18,3 +21,5 @@ libvarnishapi_la_SOURCES = \
 
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
+
+libvarnishapi_la_LIBADD = @PCRE_LIBS@
