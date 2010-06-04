@@ -29,6 +29,7 @@ nobase_noinst_HEADERS = \
 	persistent.h \
 	purge_vars.h \
 	svnid.h \
+	vas.h \
 	vsha256.h \
 	vqueue.h \
 	vpf.h \

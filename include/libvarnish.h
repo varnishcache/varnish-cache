@@ -33,6 +33,8 @@
 #include <time.h>
 #include <stdint.h>
 
+#include "vas.h"
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
@@ -103,48 +105,6 @@ void varnish_version(const char *);
 int vtmpfile(char *);
 char *vreadfile(const char *fn);
 
-/*
- * assert(), AN() and AZ() are static checks that should not happen.
- *	In general asserts should be cheap, such as checking return
- *	values and similar.
- * diagnostic() are asserts which are so expensive that we may want
- *	to compile them out for performance at a later date.
- * xxxassert(), XXXAN() and XXXAZ() marks conditions we ought to
- *	handle gracefully, such as malloc failure.
- */
-
-typedef void lbv_assert_f(const char *, const char *, int, const char *,
-    int, int);
-
-extern lbv_assert_f *lbv_assert;
-
-#ifdef WITHOUT_ASSERTS
-#define assert(e)	((void)(e))
-#else /* WITH_ASSERTS */
-#define assert(e)							\
-do {									\
-	if (!(e))							\
-		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 0);	\
-} while (0)
-#endif
-
-#define xxxassert(e)							\
-do {									\
-	if (!(e))							\
-		lbv_assert(__func__, __FILE__, __LINE__, #e, errno, 1); \
-} while (0)
-
-/* Assert zero return value */
-#define AZ(foo)	do { assert((foo) == 0); } while (0)
-#define AN(foo)	do { assert((foo) != 0); } while (0)
-#define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
-#define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
-#define diagnostic(foo)	assert(foo)
-#define WRONG(expl)							\
-do {									\
-	lbv_assert(__func__, __FILE__, __LINE__, expl, errno, 3);	\
-	abort();							\
-} while (0)
 const char* svn_version(void);
 
 /* Safe printf into a fixed-size buffer */

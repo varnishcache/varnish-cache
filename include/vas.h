@@ -26,40 +26,52 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This is the default backend function for libvarnish' assert facilities.
+ * $Id$
+ *
+ * assert(), AN() and AZ() are static checks that should not happen.
+ *	In general asserts should be cheap, such as checking return
+ *	values and similar.
+ * diagnostic() are asserts which are so expensive that we may want
+ *	to compile them out for performance at a later date.
+ * xxxassert(), XXXAN() and XXXAZ() marks conditions we ought to
+ *	handle gracefully, such as malloc failure.
  */
 
-#include "config.h"
+#ifndef VAS_H_INCLUDED
+#define VAS_H_INCLUDED
 
-#include "svnid.h"
-SVNID("$Id$")
+#include <errno.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+typedef void vas_f(const char *, const char *, int, const char *, int, int);
 
-#include "libvarnish.h"
+extern vas_f *vas_fail;
 
-static void
-vas_fail_default(const char *func, const char *file, int line,
-    const char *cond, int err, int xxx)
-{
+#ifdef WITHOUT_ASSERTS
+#define assert(e)	((void)(e))
+#else /* WITH_ASSERTS */
+#define assert(e)							\
+do {									\
+	if (!(e))							\
+		vas_fail(__func__, __FILE__, __LINE__, #e, errno, 0);	\
+} while (0)
+#endif
 
-	if (xxx) {
-		fprintf(stderr,
-		    "Missing errorhandling code in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.\n",
-		    func, file, line, cond);
-	} else {
-		fprintf(stderr,
-		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.\n",
-		    func, file, line, cond);
-	}
-	if (err)
-		fprintf(stderr,
-		    "  errno = %d (%s)\n", err, strerror(err));
-	abort();
-}
+#define xxxassert(e)							\
+do {									\
+	if (!(e))							\
+		vas_fail(__func__, __FILE__, __LINE__, #e, errno, 1);	\
+} while (0)
 
-vas_f *vas_fail = vas_fail_default;
+/* Assert zero return value */
+#define AZ(foo)		do { assert((foo) == 0); } while (0)
+#define AN(foo)		do { assert((foo) != 0); } while (0)
+#define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
+#define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
+#define diagnostic(foo)	assert(foo)
+#define WRONG(expl)							\
+do {									\
+	vas_fail(__func__, __FILE__, __LINE__, expl, errno, 3);		\
+	abort();							\
+} while (0)
+
+#endif

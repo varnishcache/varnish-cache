@@ -36,7 +36,6 @@ SVNID("$Id$")
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -44,6 +43,7 @@ SVNID("$Id$")
 #include <string.h>
 #include <unistd.h>
 
+#include "vas.h"
 #include "shmlog.h"
 #include "vre.h"
 #include "vbm.h"

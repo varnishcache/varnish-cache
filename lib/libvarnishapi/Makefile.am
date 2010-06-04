@@ -10,6 +10,7 @@ libvarnishapi_la_SOURCES = \
 	vsl.h \
 	\
 	../libvarnish/vin.c \
+	../libvarnish/assert.c \
 	base64.c \
 	vsl.c \
 	vsl_arg.c \

@@ -367,7 +367,7 @@ void
 PAN_Init(void)
 {
 
-	lbv_assert = pan_ic;
+	vas_fail = pan_ic;
 	vsp = &vsps;
 	AN(vsb_new(vsp, loghead->panicstr, sizeof loghead->panicstr,
 	    VSB_FIXEDLEN));
