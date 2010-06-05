@@ -1,0 +1,12 @@
+-passes=3
+
+///////////////////////////////////////////////////////////////////////
+// ../../config.h magic
+-header(../../config.h)
++libh ../../config.h
+-efile(451, ../../config.h)
+
+
+///////////////////////////////////////////////////////////////////////
+// assert() support, common to libvarnish and libvarnishapi
+-sem(vas_fail, r_no)

@@ -1,6 +1,7 @@
 #!/bin/sh
 
 flexelint \
+	../flint.lnt \
 	flint.lnt \
 	-I. \
 	-I../../include \

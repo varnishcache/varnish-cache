@@ -5,5 +5,6 @@ flexelint \
 	-I. \
 	-I../../include \
 	-I../.. \
+	../flint.lnt \
 	flint.lnt \
 	*.c 

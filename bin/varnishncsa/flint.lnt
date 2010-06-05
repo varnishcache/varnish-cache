@@ -1,6 +1,3 @@
--passes=3
-
--header(../../config.h)
 
 +d__attribute__()=
 

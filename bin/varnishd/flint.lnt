@@ -1,4 +1,3 @@
-
 -d__flexelint_v9__=1
 
 -libdir(../../include)
@@ -75,7 +74,6 @@
 -e777	// float equality comparison
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
--esym(458, lbv_assert)	// unlocked access
 -esym(458, params)	// unlocked access
 
 -emacro(835, HTTPH)	// Info 835: A zero has been given as left argument to operator '&'
@@ -109,10 +107,8 @@
 -esym(528, svnid)
 
 //////////////
--passes=3
 
 +libh mgt_event.h
-+libh ../../config.h
 
 -emacro((???),va_arg)   // the va_arg() macro can yield 415, 416, 661, 662
                         // 796 and 797 (out-of-bounds errors).
@@ -128,7 +124,6 @@
 
 
 
-// -header(../../config.h)
 
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
@@ -136,8 +131,6 @@
 -sem(vsb_new, @p == (1p ? 1p : malloc(1)))
 -sem(vsb_delete, custodial(1))
 -sem(pthread_create, custodial(4))
--sem(lbv_assert, r_no)
--sem(lbv_xxxassert, r_no)
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 

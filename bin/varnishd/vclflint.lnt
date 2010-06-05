@@ -1,8 +1,6 @@
 // Flexelint configuration file for VCL compiler output
 //
 
--passes=3
-
 -esym(763, sess)	// Redundant declaration for symbol 'sess'
 			// Harmless
 

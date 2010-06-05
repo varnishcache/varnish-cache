@@ -1,7 +1,5 @@
--passes=3
 
 +libh mgt_event.h
-+libh ../../config.h
 
 -emacro((???),va_arg)   // the va_arg() macro can yield 415, 416, 661, 662
                         // 796 and 797 (out-of-bounds errors).
@@ -19,11 +17,6 @@
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
 
-
-
-
-
-// -header(../../config.h)
 
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
