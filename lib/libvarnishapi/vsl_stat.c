@@ -34,6 +34,7 @@ SVNID("$Id$")
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #include "vas.h"
 #include "shmlog.h"
@@ -56,4 +57,63 @@ VSL_OpenStats(struct VSL_data *vd)
 	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
 	assert(sha != NULL);
 	return (SHA_PTR(sha));
+}
+
+/*--------------------------------------------------------------------
+ * -1 -> unknown stats encountered.
+ */
+
+static int
+iter_main(struct shmalloc *sha, vsl_stat_f *func, void *priv)
+{
+	struct varnish_stats *st = SHA_PTR(sha);
+	int i;
+
+#define MAC_STAT(nn, tt, ll, ff, dd)					\
+	i = func(priv, "", "",						\
+	    #nn, #tt, ff, dd, &st->nn);					\
+	if (i)								\
+		return(i);
+#include "stat_field.h"
+#undef MAC_STAT
+	return (0);
+}
+
+static int
+iter_sma(struct shmalloc *sha, vsl_stat_f *func, void *priv)
+{
+	struct varnish_stats_sma *st = SHA_PTR(sha);
+	int i;
+
+#define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
+	i = func(priv, VSL_TYPE_STAT_SMA, sha->ident,			\
+	    #nn, #tt, ff, dd, &st->nn);					\
+	if (i)								\
+		return(i);
+#include "stat_field.h"
+#undef MAC_STAT_SMA
+	return (0);
+}
+
+int
+VSL_IterStat(struct VSL_data *vd, vsl_stat_f *func, void *priv)
+{
+	struct shmalloc *sha;
+	int i;
+
+	i = 0;
+	VSL_FOREACH(sha, vd) {
+		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+		if (strcmp(sha->class, VSL_CLASS_STAT))
+			continue;
+		if (!strcmp(sha->type, VSL_TYPE_STAT))
+			i = iter_main(sha, func, priv);
+		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
+			i = iter_sma(sha, func, priv);
+		else
+			i = -1;
+		if (i != 0)
+			break;
+	}
+	return (i);
 }

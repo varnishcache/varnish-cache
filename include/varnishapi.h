@@ -71,4 +71,16 @@ void vsl_itern(const struct VSL_data *vd, struct shmalloc **pp);
 #define VSL_FOREACH(var, vd) \
 	for((var) = vsl_iter0((vd)); (var) != NULL; vsl_itern((vd), &(var)))
 
+typedef int vsl_stat_f(
+	void *priv,		/* private context			*/
+	const char *type,	/* stat struct type			*/
+	const char *ident,	/* stat struct ident			*/
+	const char *nm,		/* field name				*/
+	const char *fmt,	/* field format ("uint64_t")		*/
+	int flag,		/* 'a' = counter, 'i' = gauge		*/
+	const char *desc,	/* description				*/
+	volatile void *ptr);	/* field value				*/
+
+int VSL_IterStat(struct VSL_data *vd, vsl_stat_f *func, void *priv);
+
 #endif
