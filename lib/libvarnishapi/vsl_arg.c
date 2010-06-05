@@ -167,6 +167,7 @@ vsl_s_arg(struct VSL_data *vd, const char *opt)
 	}
 	return (1);
 }
+
 /*--------------------------------------------------------------------*/
 
 static int
@@ -187,15 +188,26 @@ vsl_k_arg(struct VSL_data *vd, const char *opt)
 	return (1);
 }
 
-/*--------------------------------------------------------------------
- * XXX: Should really be split into three:
- *   VSL_Arg() for generic args for all programs (-n)
- *   VSL_Log_Arg() for log readers.
- *   VSL_Stat_Arg() for stat reporters.
- */
+/*--------------------------------------------------------------------*/
+
+static int
+vsl_n_arg(struct VSL_data *vd, const char *opt)
+{
+
+	REPLACE(vd->n_opt, opt);
+	AN(vd->n_opt);
+	if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
+		fprintf(stderr, "Invalid instance name: %s\n",
+		    strerror(errno));
+		return (-1);
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
 
 int
-VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
+VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -208,16 +220,7 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'k': return (vsl_k_arg(vd, opt));
-	case 'n':
-		free(vd->n_opt);
-		vd->n_opt = strdup(opt);
-		assert(vd->n_opt != NULL);
-		if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
-			fprintf(stderr, "Invalid instance name: %s\n",
-			    strerror(errno));
-			return (-1);
-		}
-		return (1);
+	case 'n': return (vsl_n_arg(vd, opt));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
@@ -232,6 +235,20 @@ VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
 		vd->n_opt = vin_L_arg(vd->L_opt);
 		assert(vd->n_opt != NULL);
 		return (1);
+	default:
+		return (0);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	switch (arg) {
+	case 'n': return (vsl_n_arg(vd, opt));
 	default:
 		return (0);
 	}

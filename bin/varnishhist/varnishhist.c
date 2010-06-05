@@ -332,7 +332,7 @@ main(int argc, char **argv)
 			delay = atoi(optarg);
 			break;
 		default:
-			if (VSL_Arg(vd, o, optarg) > 0)
+			if (VSL_Log_Arg(vd, o, optarg) > 0)
 				break;
 			usage();
 		}

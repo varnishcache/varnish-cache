@@ -296,7 +296,7 @@ main(int argc, char * const *argv)
 			xml = 1;
 			break;
 		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
+			if (VSL_Stat_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}

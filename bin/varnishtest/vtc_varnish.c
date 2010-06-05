@@ -364,7 +364,7 @@ varnish_launch(struct varnish *v)
 
 	if (v->stats != NULL)
 		VSL_Close(v->vd);
-	(void)VSL_Arg(v->vd, 'n', v->workdir);
+	(void)VSL_Log_Arg(v->vd, 'n', v->workdir);
 	v->stats = VSL_OpenStats(v->vd);
 }
 

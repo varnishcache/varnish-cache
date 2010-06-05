@@ -557,13 +557,13 @@ main(int argc, char *argv[])
 			/* XXX: Silently ignored: it's required anyway */
 			break;
 		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
+			if (VSL_Log_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}
 	}
 
-	VSL_Arg(vd, 'c', optarg);
+	VSL_Log_Arg(vd, 'c', optarg);
 
 	if (VSL_OpenLog(vd))
 		exit(1);

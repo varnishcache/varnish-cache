@@ -325,11 +325,11 @@ main(int argc, char **argv)
 			break;
 		case 'b':
 			b_flag = 1;
-			VSL_Arg(vd, c, optarg);
+			VSL_Log_Arg(vd, c, optarg);
 			break;
 		case 'c':
 			c_flag = 1;
-			VSL_Arg(vd, c, optarg);
+			VSL_Log_Arg(vd, c, optarg);
 			break;
 		case 'D':
 			D_flag = 1;
@@ -350,7 +350,7 @@ main(int argc, char **argv)
 			w_arg = optarg;
 			break;
 		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
+			if (VSL_Log_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}
