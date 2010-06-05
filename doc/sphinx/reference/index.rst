@@ -51,4 +51,7 @@ The Varnish Reference Manual
         . syntax etc.
 	Shared Memory
 	. internals
+	. Log records
+	Libvarnishapi
+	. function descriptions
 
