@@ -187,7 +187,12 @@ vsl_k_arg(struct VSL_data *vd, const char *opt)
 	return (1);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * XXX: Should really be split into three:
+ *   VSL_Arg() for generic args for all programs (-n)
+ *   VSL_Log_Arg() for log readers.
+ *   VSL_Stat_Arg() for stat reporters.
+ */
 
 int
 VSL_Arg(struct VSL_data *vd, int arg, const char *opt)
