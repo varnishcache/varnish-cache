@@ -96,7 +96,7 @@ do_xml_cb(
 	const char *fmt,	/* field format ("uint64_t")		*/
 	int flag,		/* 'a' = counter, 'i' = gauge		*/
 	const char *desc,	/* description				*/
-	const volatile void *const ptr) 	/* field value			*/
+	const volatile void *const ptr) 	/* field value		*/
 {
 	uint64_t val;
 	struct xml_priv *xp;
@@ -154,7 +154,7 @@ do_once_cb(
 	const char *fmt,	/* field format ("uint64_t")		*/
 	int flag,		/* 'a' = counter, 'i' = gauge		*/
 	const char *desc,	/* description				*/
-	const volatile void * const ptr) 	/* field value			*/
+	const volatile void * const ptr) 	/* field value		*/
 {
 	struct once_priv *op;
 	uint64_t val;
