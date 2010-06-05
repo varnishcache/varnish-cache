@@ -121,7 +121,7 @@ do_xml_cb(
 }
 
 static void
-do_xml(struct VSL_data *vd, const char* fields)
+do_xml(const struct VSL_data *vd, const char* fields)
 {
 	char time_stamp[20];
 	time_t now;
@@ -182,7 +182,7 @@ do_once_cb(
 }
 
 static void
-do_once(struct VSL_data *vd, const struct varnish_stats *VSL_stats, const char* fields)
+do_once(const struct VSL_data *vd, const struct varnish_stats *VSL_stats, const char* fields)
 {
 	struct once_priv op;
 

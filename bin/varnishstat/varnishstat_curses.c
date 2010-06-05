@@ -51,7 +51,6 @@ SVNID("$Id$")
 #include "vqueue.h"
 #include "varnishapi.h"
 #include "varnishstat.h"
-#include "miniobj.h"
 
 #define AC(x) assert((x) != ERR)
 
@@ -59,85 +58,72 @@ struct pt {
 	VTAILQ_ENTRY(pt)	next;
 	const volatile uint64_t	*ptr;
 	uint64_t		ref;
-	char			type;
+	int			type;
 	char			seen;
 	const char		*name;
 };
 
 static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
 
-static struct pt *
-add_pt(const uint64_t *ptr, int type, const char *c, const char *t, const char *i)
+
+struct curses_priv {
+	const char *fields;
+};
+
+static int
+do_curses_cb(
+	void *priv,		/* private context			*/
+	const char *type,	/* stat struct type			*/
+	const char *ident,	/* stat struct ident			*/
+	const char *nm,		/* field name				*/
+	const char *fmt,	/* field format ("uint64_t")		*/
+	int flag,		/* 'a' = counter, 'i' = gauge		*/
+	const char *desc,	/* description				*/
+	const volatile void *const ptr) 	/* field value		*/
 {
+	struct curses_priv *cp;
 	struct pt *pt;
 	char buf[128];
+
+	cp = priv;
+	if (cp->fields != NULL && !show_field(nm, cp->fields))
+		return (0);
+	assert(!strcmp(fmt, "uint64_t"));
 
 	pt = calloc(sizeof *pt, 1);
 	AN(pt);
 	VTAILQ_INSERT_TAIL(&pthead, pt, next);
 
 	pt->ptr = ptr;
-	pt->ref = *ptr;
-	pt->type = type;
+	pt->ref = *pt->ptr;
+	pt->type = flag;
 
 	*buf = '\0';
-	if (c != NULL) {
-		strcat(buf, c);
+	if (strcmp(type, "")) {
+		strcat(buf, type);
 		strcat(buf, ".");
 	}
-	if (t != NULL) {
-		strcat(buf, t);
+	if (strcmp(ident, "")) {
+		strcat(buf, ident);
 		strcat(buf, ".");
 	}
-	if (i != NULL) {
-		strcat(buf, i);
-		strcat(buf, ".");
-	}
+	strcat(buf, nm);
+	strcat(buf, " - ");
+	strcat(buf, desc);
 	pt->name = strdup(buf);
 	AN(pt->name);
-	return (pt);
-}
-
-static void
-main_stat(void *ptr, const char *fields)
-{
-	struct varnish_stats *st = ptr;
-
-#define MAC_STAT(nn, tt, ll, ff, dd)					\
-	if (fields == NULL || show_field( #nn, fields )) 		\
-		(void)add_pt(&st->nn, ff, NULL, NULL, dd);
-#include "stat_field.h"
-#undef MAC_STAT
-}
-
-static void
-sma_stat(struct shmalloc *sha, const char *fields)
-{
-	struct varnish_stats_sma *st = SHA_PTR(sha);
-
-#define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
-	if (fields == NULL || show_field( #nn, fields )) 		\
-		(void)add_pt(&st->nn, ff, "SMA", sha->ident, dd);
-#include "stat_field.h"
-#undef MAC_STAT_SMA
+	return (0);
 }
 
 static void
 prep_pts(struct VSL_data *vd, const char *fields)
 {
-	struct shmalloc *sha;
+	struct curses_priv cp;
 
-	VSL_FOREACH(sha, vd) {
-		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
-		if (strcmp(sha->class, VSL_CLASS_STAT))
-			continue;
-		if (!strcmp(sha->type, VSL_TYPE_STAT))
-			main_stat(SHA_PTR(sha), fields);
-		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
-			sma_stat(sha, fields);
-		else
-			fprintf(stderr, "Unknwon Statistics");
-	}
+	cp.fields = fields;
+
+	(void)VSL_IterStat(vd, do_curses_cb, &cp);
+
 }
 
 static void
