@@ -183,7 +183,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 	if (str == NULL)
 		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
 		    lead[lvl], vl->id, pfx);
-	else
+	else {
 		l = 0;
 		for(; *str != '\0'; str++) {
 			if (++l > 512) {
@@ -207,6 +207,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 			else
 				vsb_printf(vl->vsb, "%c", *str);
 		}
+	}
 	if (!nl)
 		vsb_printf(vl->vsb, "\n");
 	vsb_finish(vl->vsb);
