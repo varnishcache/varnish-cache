@@ -33,11 +33,6 @@
 // -e785	// Too few initializers for aggregate 
 // -e786	// String concatenation within initializer
 // 
-// -emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
-// -emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
-// -emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
-// -emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
--emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
 -emacro(779, REPLACE)		// string constant !=
 -emacro(774, REPLACE)		// if(bool) always true
 -emacro(506, REPLACE)		// const bool

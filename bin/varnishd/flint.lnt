@@ -12,9 +12,6 @@
 -esym(759, vev_*)
 -esym(765, vev_*)
 -esym(714, vev_*)
--esym(759, vsb_*)
--esym(765, vsb_*)
--esym(714, vsb_*)
 -esym(759, vpf_*)
 -esym(765, vpf_*)
 -esym(714, vpf_*)
@@ -32,11 +29,6 @@
 -esym(765, CLI_*)
 -esym(759, CLI_*)
 -esym(755, CLI_*)
-
--esym(755, VLIST_*)
--esym(755, VSLIST_*)
--esym(755, VSTAILQ_*)
--esym(755, VTAILQ_*)
 
 // XXX: I think this is a flexelint bug:
 -esym(522, vbit_clr)
@@ -126,8 +118,6 @@
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
 
--sem(vsb_new, @p == (1p ? 1p : malloc(1)))
--sem(vsb_delete, custodial(1))
 -sem(pthread_create, custodial(4))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
@@ -140,13 +130,6 @@
 -e716	// while(1) ... 
 -e785	// Too few initializers for aggregate 
 -e786	// String concatenation within initializer
-
--emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
--emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
--emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
--emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
--emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
--emacro(506, VSTAILQ_FOREACH_SAFE) // constant value boolean
 
 -esym(765, vcc_ProcAction) // could be made static
 -esym(759, vcc_ProcAction) // could be moved to module

@@ -19,6 +19,43 @@
 -sem(vas_fail, r_no)
 
 ///////////////////////////////////////////////////////////////////////
+// <vqueue.h>
+
+-esym(755, VLIST_*)	// Global macro not ref.
+-esym(755, VSLIST_*)
+-esym(755, VSTAILQ_*)
+-esym(755, VTAILQ_*)
+
+-emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
+-emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
+-emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(506, VSTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
+-emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
+-esym(755, VTAILQ_*)
+
+///////////////////////////////////////////////////////////////////////
+// miniobj
+
+-emacro(755, CAST_OBJ)
+
+///////////////////////////////////////////////////////////////////////
+// VSB
+
+-esym(759, vsb_*)	// header decl could be moved
+-esym(765, vsb_*)	// exten could be made static
+-esym(714, vsb_*)	// symb not ref
+-sem(vsb_new, @p == (1p ? 1p : malloc(1)))
+-sem(vsb_delete, custodial(1))
+
+-esym(534, vsb_cat)	// Ignore retval
+-esym(534, vsb_bcat)
+-esym(534, vsb_putc)
+-esym(534, vsb_printf)
+-esym(534, vsb_vprintf)
+-esym(534, vsb_putc)
+
+///////////////////////////////////////////////////////////////////////
 // Ignore return values OK for these functions
 
 -esym(534, printf)
@@ -32,10 +69,3 @@
 -esym(534, strcat)
 -esym(534, strcpy)
 -esym(534, strlcpy)
-
--esym(534, vsb_cat)
--esym(534, vsb_bcat)
--esym(534, vsb_putc)
--esym(534, vsb_printf)
--esym(534, vsb_vprintf)
--esym(534, vsb_putc)

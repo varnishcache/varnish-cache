@@ -11,11 +11,6 @@
 -e785	// Too few initializers for aggregate 
 -e786	// String concatenation within initializer
 
--emacro(740, TAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
--emacro((826), TAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
-
-
-
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean
 
