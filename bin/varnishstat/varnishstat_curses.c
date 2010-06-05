@@ -71,45 +71,37 @@ struct curses_priv {
 };
 
 static int
-do_curses_cb(
-	void *priv,		/* private context			*/
-	const char *type,	/* stat struct type			*/
-	const char *ident,	/* stat struct ident			*/
-	const char *nm,		/* field name				*/
-	const char *fmt,	/* field format ("uint64_t")		*/
-	int flag,		/* 'a' = counter, 'i' = gauge		*/
-	const char *desc,	/* description				*/
-	const volatile void *const ptr) 	/* field value		*/
+do_curses_cb(void *priv, const struct vsl_statpt * const sp)
 {
 	struct curses_priv *cp;
 	struct pt *pt;
 	char buf[128];
 
 	cp = priv;
-	if (cp->fields != NULL && !show_field(nm, cp->fields))
+	if (cp->fields != NULL && !show_field(sp->nm, cp->fields))
 		return (0);
-	assert(!strcmp(fmt, "uint64_t"));
+	assert(!strcmp(sp->fmt, "uint64_t"));
 
 	pt = calloc(sizeof *pt, 1);
 	AN(pt);
 	VTAILQ_INSERT_TAIL(&pthead, pt, next);
 
-	pt->ptr = ptr;
+	pt->ptr = sp->ptr;
 	pt->ref = *pt->ptr;
-	pt->type = flag;
+	pt->type = sp->flag;
 
 	*buf = '\0';
-	if (strcmp(type, "")) {
-		strcat(buf, type);
+	if (strcmp(sp->type, "")) {
+		strcat(buf, sp->type);
 		strcat(buf, ".");
 	}
-	if (strcmp(ident, "")) {
-		strcat(buf, ident);
+	if (strcmp(sp->ident, "")) {
+		strcat(buf, sp->ident);
 		strcat(buf, ".");
 	}
-	strcat(buf, nm);
+	strcat(buf, sp->nm);
 	strcat(buf, " - ");
-	strcat(buf, desc);
+	strcat(buf, sp->desc);
 	pt->name = strdup(buf);
 	AN(pt->name);
 	return (0);

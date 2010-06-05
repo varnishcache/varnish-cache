@@ -67,11 +67,18 @@ static int
 iter_main(struct shmalloc *sha, vsl_stat_f *func, void *priv)
 {
 	struct varnish_stats *st = SHA_PTR(sha);
+	struct vsl_statpt sp;
 	int i;
 
+	sp.type = "";
+	sp.ident = "";
 #define MAC_STAT(nn, tt, ll, ff, dd)					\
-	i = func(priv, "", "",						\
-	    #nn, #tt, ff, dd, &st->nn);					\
+	sp.nm = #nn;							\
+	sp.fmt = #tt;							\
+	sp.flag = ff;							\
+	sp.desc = dd;							\
+	sp.ptr = &st->nn;						\
+	i = func(priv, &sp);						\
 	if (i)								\
 		return(i);
 #include "stat_field.h"
@@ -83,11 +90,18 @@ static int
 iter_sma(struct shmalloc *sha, vsl_stat_f *func, void *priv)
 {
 	struct varnish_stats_sma *st = SHA_PTR(sha);
+	struct vsl_statpt sp;
 	int i;
 
+	sp.type = VSL_TYPE_STAT_SMA;
+	sp.ident = sha->ident;
 #define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
-	i = func(priv, VSL_TYPE_STAT_SMA, sha->ident,			\
-	    #nn, #tt, ff, dd, &st->nn);					\
+	sp.nm = #nn;							\
+	sp.fmt = #tt;							\
+	sp.flag = ff;							\
+	sp.desc = dd;							\
+	sp.ptr = &st->nn;						\
+	i = func(priv, &sp);						\
 	if (i)								\
 		return(i);
 #include "stat_field.h"

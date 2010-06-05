@@ -88,34 +88,26 @@ struct xml_priv {
 };
 
 static int
-do_xml_cb(
-	void *priv,		/* private context			*/
-	const char *type,	/* stat struct type			*/
-	const char *ident,	/* stat struct ident			*/
-	const char *nm,		/* field name				*/
-	const char *fmt,	/* field format ("uint64_t")		*/
-	int flag,		/* 'a' = counter, 'i' = gauge		*/
-	const char *desc,	/* description				*/
-	const volatile void *const ptr) 	/* field value		*/
+do_xml_cb(void *priv, const struct vsl_statpt * const pt)
 {
 	uint64_t val;
 	struct xml_priv *xp;
 
 	xp = priv;
-	if (xp->fields != NULL && !show_field(nm, xp->fields))
+	if (xp->fields != NULL && !show_field(pt->nm, xp->fields))
 		return (0);
-	assert(!strcmp(fmt, "uint64_t"));
-	val = *(const volatile uint64_t*)ptr;
+	assert(!strcmp(pt->fmt, "uint64_t"));
+	val = *(const volatile uint64_t*)pt->ptr;
 
 	printf("\t<stat>\n");
-	if (strcmp(type, ""))
-		printf("\t\t<type>%s</type>\n", type);
-	if (strcmp(ident, ""))
-		printf("\t\t<ident>%s</ident>\n", ident);
-	printf("\t\t<name>%s</name>\n", nm);
+	if (strcmp(pt->type, ""))
+		printf("\t\t<type>%s</type>\n", pt->type);
+	if (strcmp(pt->ident, ""))
+		printf("\t\t<ident>%s</ident>\n", pt->ident);
+	printf("\t\t<name>%s</name>\n", pt->nm);
 	printf("\t\t<value>%ju</value>\n", val);
-	printf("\t\t<flag>%c</flag>\n", flag);
-	printf("\t\t<description>%s</description>\n", desc);
+	printf("\t\t<flag>%c</flag>\n", pt->flag);
+	printf("\t\t<description>%s</description>\n", pt->desc);
 	printf("\t</stat>\n");
 	return (0);
 }
@@ -146,38 +138,30 @@ struct once_priv {
 };
 
 static int
-do_once_cb(
-	void *priv,		/* private context			*/
-	const char *type,	/* stat struct type			*/
-	const char *ident,	/* stat struct ident			*/
-	const char *nm,		/* field name				*/
-	const char *fmt,	/* field format ("uint64_t")		*/
-	int flag,		/* 'a' = counter, 'i' = gauge		*/
-	const char *desc,	/* description				*/
-	const volatile void * const ptr) 	/* field value		*/
+do_once_cb(void *priv, const struct vsl_statpt * const pt)
 {
 	struct once_priv *op;
 	uint64_t val;
 	int i;
 
 	op = priv;
-	if (op->fields != NULL && !show_field(nm, op->fields))
+	if (op->fields != NULL && !show_field(pt->nm, op->fields))
 		return (0);
-	assert(!strcmp(fmt, "uint64_t"));
-	val = *(const volatile uint64_t*)ptr;
+	assert(!strcmp(pt->fmt, "uint64_t"));
+	val = *(const volatile uint64_t*)pt->ptr;
 	i = 0;
-	if (strcmp(type, "")) 
-		i += printf("%s.", type);
-	if (strcmp(ident, ""))
-		i += printf("%s.", ident);
-	i += printf("%s", nm);
+	if (strcmp(pt->type, "")) 
+		i += printf("%s.", pt->type);
+	if (strcmp(pt->ident, ""))
+		i += printf("%s.", pt->ident);
+	i += printf("%s", pt->nm);
 	if (i > op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (flag == 'a') 
-		printf("%12ju %12.2f %s\n", val, val / op->up, desc);
+	if (pt->flag == 'a') 
+		printf("%12ju %12.2f %s\n", val, val / op->up, pt->desc);
 	else
-		printf("%12ju %12s %s\n", val, ".  ", desc);
+		printf("%12ju %12s %s\n", val, ".  ", pt->desc);
 	return (0);
 }
 
