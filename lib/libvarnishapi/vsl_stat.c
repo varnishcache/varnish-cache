@@ -96,7 +96,7 @@ iter_sma(struct shmalloc *sha, vsl_stat_f *func, void *priv)
 }
 
 int
-VSL_IterStat(struct VSL_data *vd, vsl_stat_f *func, void *priv)
+VSL_IterStat(const struct VSL_data *vd, vsl_stat_f *func, void *priv)
 {
 	struct shmalloc *sha;
 	int i;

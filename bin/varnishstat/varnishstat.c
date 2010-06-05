@@ -81,56 +81,120 @@ show_field(const char* field, const char *fields)
 	return (!match_value);
 }
 
+/*--------------------------------------------------------------------*/
+
+struct xml_priv {
+	const char *fields;
+};
+
+static int
+do_xml_cb(
+	void *priv,		/* private context			*/
+	const char *type,	/* stat struct type			*/
+	const char *ident,	/* stat struct ident			*/
+	const char *nm,		/* field name				*/
+	const char *fmt,	/* field format ("uint64_t")		*/
+	int flag,		/* 'a' = counter, 'i' = gauge		*/
+	const char *desc,	/* description				*/
+	const volatile void *const ptr) 	/* field value			*/
+{
+	uint64_t val;
+	struct xml_priv *xp;
+
+	xp = priv;
+	if (xp->fields != NULL && !show_field(nm, xp->fields))
+		return (0);
+	assert(!strcmp(fmt, "uint64_t"));
+	val = *(const volatile uint64_t*)ptr;
+
+	printf("\t<stat>\n");
+	if (strcmp(type, ""))
+		printf("\t\t<type>%s</type>\n", type);
+	if (strcmp(ident, ""))
+		printf("\t\t<ident>%s</ident>\n", ident);
+	printf("\t\t<name>%s</name>\n", nm);
+	printf("\t\t<value>%ju</value>\n", val);
+	printf("\t\t<flag>%c</flag>\n", flag);
+	printf("\t\t<description>%s</description>\n", desc);
+	printf("\t</stat>\n");
+	return (0);
+}
+
 static void
-do_xml(const struct varnish_stats *VSL_stats, const char* fields)
+do_xml(struct VSL_data *vd, const char* fields)
 {
 	char time_stamp[20];
 	time_t now;
+	struct xml_priv xp;
+
+	xp.fields = fields;
 
 	printf("<?xml version=\"1.0\"?>\n");
 	now = time(NULL);
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
-#define MAC_STAT(n, t, l, f, d)						\
-	do {								\
-		if (fields != NULL && ! show_field( #n, fields ))	\
-			break;						\
-		intmax_t ju = VSL_stats->n;				\
-		printf("\t<stat>\n");					\
-		printf("\t\t<name>%s</name>\n", #n);			\
-		printf("\t\t<value>%ju</value>\n", ju);			\
-		printf("\t\t<description>%s</description>\n", d);	\
-		printf("\t</stat>\n");					\
-	} while (0);
-#include "stat_field.h"
-#undef MAC_STAT
+	(void)VSL_IterStat(vd, do_xml_cb, &xp);
 	printf("</varnishstat>\n");
 }
 
-static void
-do_once(const struct varnish_stats *VSL_stats, const char* fields)
+/*--------------------------------------------------------------------*/
+
+struct once_priv {
+	double	up;
+	const char *fields;
+	int pad;
+};
+
+static int
+do_once_cb(
+	void *priv,		/* private context			*/
+	const char *type,	/* stat struct type			*/
+	const char *ident,	/* stat struct ident			*/
+	const char *nm,		/* field name				*/
+	const char *fmt,	/* field format ("uint64_t")		*/
+	int flag,		/* 'a' = counter, 'i' = gauge		*/
+	const char *desc,	/* description				*/
+	const volatile void * const ptr) 	/* field value			*/
 {
-	struct timeval tv;
-	double up;
+	struct once_priv *op;
+	uint64_t val;
+	int i;
 
-	AZ(gettimeofday(&tv, NULL));
-	up = VSL_stats->uptime;
-
-#define MAC_STAT(n, t, l, ff, d)					\
-	do {								\
-		if (fields != NULL && ! show_field( #n, fields ))	\
-			break;						\
-		intmax_t ju = VSL_stats->n;				\
-		if (ff == 'a')						\
-			printf("%-16s %12ju %12.2f %s\n",		\
-			    #n, ju, ju / up, d);			\
-		else							\
-			printf("%-16s %12ju %12s %s\n",			\
-			    #n, ju, ".  ", d); \
-	} while (0);
-#include "stat_field.h"
-#undef MAC_STAT
+	op = priv;
+	if (op->fields != NULL && !show_field(nm, op->fields))
+		return (0);
+	assert(!strcmp(fmt, "uint64_t"));
+	val = *(const volatile uint64_t*)ptr;
+	i = 0;
+	if (strcmp(type, "")) 
+		i += printf("%s.", type);
+	if (strcmp(ident, ""))
+		i += printf("%s.", ident);
+	i += printf("%s", nm);
+	if (i > op->pad)
+		op->pad = i + 1;
+	printf("%*.*s", op->pad - i, op->pad - i, "");
+	if (flag == 'a') 
+		printf("%12ju %12.2f %s\n", val, val / op->up, desc);
+	else
+		printf("%12ju %12s %s\n", val, ".  ", desc);
+	return (0);
 }
+
+static void
+do_once(struct VSL_data *vd, const struct varnish_stats *VSL_stats, const char* fields)
+{
+	struct once_priv op;
+
+	memset(&op, 0, sizeof op);
+	op.up = VSL_stats->uptime;
+	op.fields = fields;
+	op.pad = 18;
+
+	(void)VSL_IterStat(vd, do_once_cb, &op);
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 usage(void)
@@ -266,9 +330,9 @@ main(int argc, char * const *argv)
 	}
 
 	if (xml)
-		do_xml(VSL_stats, fields);
+		do_xml(vd, fields);
 	else if (once)
-		do_once(VSL_stats, fields);
+		do_once(vd, VSL_stats, fields);
 	else
 		do_curses(vd, VSL_stats, delay, fields);
 

@@ -79,8 +79,8 @@ typedef int vsl_stat_f(
 	const char *fmt,	/* field format ("uint64_t")		*/
 	int flag,		/* 'a' = counter, 'i' = gauge		*/
 	const char *desc,	/* description				*/
-	volatile void *ptr);	/* field value				*/
+	const volatile void * const ptr);	/* field value		*/
 
-int VSL_IterStat(struct VSL_data *vd, vsl_stat_f *func, void *priv);
+int VSL_IterStat(const struct VSL_data *vd, vsl_stat_f *func, void *priv);
 
 #endif
