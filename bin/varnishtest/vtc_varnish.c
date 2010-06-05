@@ -526,6 +526,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
 	if (u != expect) {
+		vsb_delete(vsb);
 		vtc_log(v->vl, 0,
 		    "VCL compilation got %u expected %u",
 		    u, expect);
@@ -581,6 +582,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 
 	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
 	if (u != CLIS_OK) {
+		vsb_delete(vsb);
+		vsb_delete(vsb2);
 		vtc_log(v->vl, 0, "FAIL VCL does not compile");
 		return;
 	}

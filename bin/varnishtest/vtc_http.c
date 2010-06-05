@@ -870,7 +870,7 @@ cmd_http_loop(CMD_ARGS)
 	AN(av[1]);
 	AN(av[2]);
 	AZ(av[3]);
-	n = strtod(av[1], NULL);
+	n = strtoul(av[1], NULL, 0);
 	for (m = 1 ; m <= n; m++) {
 		vtc_log(vl, 4, "Loop #%u", m);
 		s = strdup(av[2]);

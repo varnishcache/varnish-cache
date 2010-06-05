@@ -12,6 +12,7 @@
 -esym(528, svnid)		// Sym not ref
 
 -efile(451, shmlog_tags.h)	// No include guard
+-efile(451, stat_field.h)	// No include guard
 
 ///////////////////////////////////////////////////////////////////////
 // assert() support, common to libvarnish and libvarnishapi

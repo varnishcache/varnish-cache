@@ -122,7 +122,7 @@ static const char * const lead[] = {
 #define NLEAD (sizeof(lead)/sizeof(lead[0]))
 
 static void
-vtc_log_emit(struct vtclog *vl, unsigned lvl)
+vtc_log_emit(const struct vtclog *vl, unsigned lvl)
 {
 	if (vtc_stop && lvl == 0)
 		return;
