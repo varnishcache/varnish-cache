@@ -116,8 +116,8 @@ synth_body(const char *len)
 				k = '!';
 			l = k;
 		} else {
-			b[j] = l++;
-			if (l == '~')
+			b[j] = (char)l;
+			if (++l == '~')
 				l = '!';
 		}
 	}
@@ -505,7 +505,7 @@ cmd_http_txresp(CMD_ARGS)
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
 	const char *msg = "Ok";
-	int bodylen;
+	int bodylen = 0;
 	char *b, *c;
 	char *body = NULL;
 

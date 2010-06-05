@@ -95,7 +95,6 @@
 
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
--emacro(702, WEXITSTATUS)	// signed shift right 
 -efunc(525, VCC_Return_Name)	// Negative indent
 
 -sem(WS_Init, custodial(2))

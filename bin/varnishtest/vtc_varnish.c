@@ -226,7 +226,7 @@ varnish_thread(void *priv)
 	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-	TCP_nonblocking(v->fds[0]);
+	(void)TCP_nonblocking(v->fds[0]);
 	while (1) {
 		fds = &fd;
 		memset(fds, 0, sizeof fds);
@@ -332,7 +332,6 @@ varnish_launch(struct varnish *v)
 
 	AZ(close(v->cli_fd));
 	v->cli_fd = nfd;
-	nfd = -1;
 
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
@@ -365,7 +364,7 @@ varnish_launch(struct varnish *v)
 
 	if (v->stats != NULL)
 		VSL_Close(v->vd);
-	VSL_Arg(v->vd, 'n', v->workdir);
+	(void)VSL_Arg(v->vd, 'n', v->workdir);
 	v->stats = VSL_OpenStats(v->vd);
 }
 
@@ -651,6 +650,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 
 	sp.target = av[0];
 	sp.val = 0;
+	ref = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
 
 		good = -1;

@@ -133,14 +133,16 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 }
 
 static char *
-macro_get(const char *name)
+macro_get(const char *b, const char *e)
 {
 	struct macro *m;
+	int l;
 
 	char *retval = NULL;
 	AZ(pthread_mutex_lock(&macro_mtx));
+	l = e - b;
 	VTAILQ_FOREACH(m, &macro_list, list)
-		if (!strcmp(name, m->name))
+		if (!memcmp(b, m->name, l) && m->name[l] == '\0')
 			break;
 	if (m != NULL)
 		retval = strdup(m->val);
@@ -152,7 +154,8 @@ struct vsb *
 macro_expand(struct vtclog *vl, const char *text)
 {
 	struct vsb *vsb;
-	char *p, *q, *m;
+	const char *p, *q;
+	char *m;
 
 	vsb = vsb_newauto();
 	AN(vsb);
@@ -172,8 +175,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		assert(p[1] == '{');
 		assert(q[0] == '}');
 		p += 2;
-		*q = '\0';
-		m = macro_get(p);
+		m = macro_get(p, q);
 		if (m == NULL) {
 			vsb_delete(vsb);
 			vtc_log(vl, 0, "Macro ${%s} not found", p);
@@ -399,23 +401,6 @@ cmd_delay(CMD_ARGS)
 	f = strtod(av[1], NULL);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
 	TIM_sleep(f);
-}
-
-/**********************************************************************
- * Dump command arguments
- */
-
-void
-cmd_dump(CMD_ARGS)
-{
-
-	(void)cmd;
-	(void)vl;
-	if (av == NULL)
-		return;
-	printf("cmd_dump(%p)\n", priv);
-	while (*av)
-		printf("\t<%s>\n", *av++);
 }
 
 /**********************************************************************

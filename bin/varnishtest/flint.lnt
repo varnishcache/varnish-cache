@@ -4,6 +4,12 @@
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
+-e445	// Reuse of for loop variable '___' at '___' could cause chaos
+-e850	// for loop index variable '___' whose type category is '___' is modified in body of the for loop that began at '___'
+-e443	// for clause irregularity: variable '___' initialized in 1st expression does not match '___' modified in 3rd
+
+
+-e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
 -e763	// Redundant declaration for symbol '...' previously declared
 -e716	// while(1) ... 
