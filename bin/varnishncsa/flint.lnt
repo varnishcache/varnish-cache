@@ -1,18 +1,12 @@
 
 +d__attribute__()=
 
-// Fix strchr() semtics, it can only return NULL if arg2 != 0
--sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
-
 -e763	// Redundant declaration for symbol '...' previously declared
 -e726	// Extraneous comma ignored
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ... 
 -e785	// Too few initializers for aggregate 
 -e786	// String concatenation within initializer
-
-// cache.h
--emacro(506, INCOMPL) // Constant value Boolean
 
 // cache_center.c
 -efunc(525, CNT_Session)	// Negative indentation from line

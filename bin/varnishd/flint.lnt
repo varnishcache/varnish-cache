@@ -1,13 +1,5 @@
 -d__flexelint_v9__=1
 
--libdir(../../include)
--libdir(../../lib/)
-
-// -efile(765, ../../lib/)
-// -efile(765, ../../include/)
-// -efile(759, ../../lib/)
-// -efile(759, ../../include/)
-
 -esym(755, vct_*)
 -esym(759, vev_*)
 -esym(765, vev_*)
@@ -96,29 +88,16 @@
 -esym(458, VSL_stats)
 -esym(458, heritage)
 -esym(458, name_key)
--esym(528, svnid)
 
 //////////////
 
 +libh mgt_event.h
 
--elib(123)  // size is both a variable and a macro with args
--emacro(736, isnan)  // isnanf
--efile(766, ../../config.h)
--emacro(413, offsetof)	// likely null pointer
--emacro(527, WRONG)	// unreachable code
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
 -emacro(702, WEXITSTATUS)	// signed shift right 
 -efunc(525, VCC_Return_Name)	// Negative indent
 
-
-
-
-// Fix strchr() semtics, it can only return NULL if arg2 != 0
--sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
-
--sem(pthread_create, custodial(4))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
@@ -140,9 +119,6 @@
 -emacro(506, isnan, isfinite)	// constant value boolean
 -emacro(736, isfinite)	// loss of precision
 -emacro(747, isnan)	// significant coersion
--emacro(506, assert)	// constant value boolean
--emacro(827, assert)	// loop not reachable
--emacro(774, assert)	// booelan always true
 -emacro(774, HTTPH)	// always false
 -emacro(527, ARGV_ERR)	// unreachable
 
