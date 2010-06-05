@@ -25,69 +25,35 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id$
  */
 
-/* Parameters */
-#define			SLEEP_USEC	(50*1000)
-#define			TIMEOUT_USEC	(5*1000*1000)
+#include "config.h"
 
-struct VSL_data {
-	unsigned		magic;
-#define VSL_MAGIC		0x6e3bd69b
+#include "svnid.h"
+SVNID("$Id$")
 
-	char			*fname;
-	struct stat		fstat;
+#include <sys/types.h>
+#include <sys/stat.h>
 
-	int			vsl_fd;
-	struct shmloghead 	*vsl_lh;
-	void			*vsl_end;
-	unsigned		alloc_seq;
+#include "vas.h"
+#include "shmlog.h"
+#include "vre.h"
+#include "miniobj.h"
+#include "varnishapi.h"
 
-	unsigned char		*log_start;
-	unsigned char		*log_end;
-	unsigned char		*log_ptr;
+#include "vsl.h"
 
-	/* for -r option */
-	int			r_fd;
-	unsigned		rbuflen;
-	unsigned char		*rbuf;
+/*--------------------------------------------------------------------*/
 
-	unsigned		L_opt;
-	char			*n_opt;
-	int			b_opt;
-	int			c_opt;
-	int			d_opt;
+struct varnish_stats *
+VSL_OpenStats(struct VSL_data *vd)
+{
+	struct shmalloc *sha;
 
-	unsigned		flags;
-#define F_SEEN_IX		(1 << 0)
-#define F_NON_BLOCKING		(1 << 1)
-
-	/*
-	 * These two bitmaps mark fd's as belonging to client or backend
-	 * transactions respectively.
-	 */
-	struct vbitmap		*vbm_client;
-	struct vbitmap		*vbm_backend;
-
-	/*
-	 * Bit map of programatically selected tags, that cannot be suppressed.
-	 * This way programs can make sure they will see certain tags, even
-	 * if the user tries to supress them with -x/-X
-	 */
-	struct vbitmap		*vbm_select;	/* index: tag */
-
-	/* Bit map of tags selected/supressed with -[iIxX] options */
-	struct vbitmap		*vbm_supress;	/* index: tag */
-
-	int			regflags;
-	vre_t			*regincl;
-	vre_t			*regexcl;
-
-	unsigned long		skip;
-	unsigned long		keep;
-};
-
-struct shmalloc *vsl_find_alloc(const struct VSL_data *vd, const char *class,
-    const char *type, const char *ident);
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (VSL_Open(vd))
+		return (NULL);
+	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
+	assert(sha != NULL);
+	return (SHA_PTR(sha));
+}

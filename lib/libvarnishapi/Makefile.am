@@ -17,7 +17,8 @@ libvarnishapi_la_SOURCES = \
 	base64.c \
 	vsl.c \
 	vsl_arg.c \
-	vsl_log.c
+	vsl_log.c \
+	vsl_stat.c
 
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'

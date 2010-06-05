@@ -197,7 +197,7 @@ vsl_itern(const struct VSL_data *vd, struct shmalloc **pp)
 
 /*--------------------------------------------------------------------*/
 
-static struct shmalloc *
+struct shmalloc *
 vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct shmalloc *sha;
@@ -232,21 +232,6 @@ VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const c
 		return (NULL);
 	if (lenp != NULL)
 		*lenp = sha->len - sizeof *sha;
-	return (SHA_PTR(sha));
-}
-
-/*--------------------------------------------------------------------*/
-
-struct varnish_stats *
-VSL_OpenStats(struct VSL_data *vd)
-{
-	struct shmalloc *sha;
-
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (VSL_Open(vd))
-		return (NULL);
-	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
-	assert(sha != NULL);
 	return (SHA_PTR(sha));
 }
 
