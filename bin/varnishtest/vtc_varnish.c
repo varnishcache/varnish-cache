@@ -601,51 +601,87 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
  * Check statistics
  */
 
+struct stat_priv {
+	const char *target;
+	uintmax_t val;
+};
+
+static int
+do_stat_cb(void *priv, const struct vsl_statpt * const pt)
+{
+	struct stat_priv *sp = priv;
+	const char *p = sp->target;
+	int i;
+
+	if (strcmp(pt->type, "")) {
+		i = strlen(pt->type);
+		if (memcmp(pt->type, p, i))
+			return (0);
+		p += i;
+		if (*p != '.')
+			return (0);
+		p++;
+	}
+	if (strcmp(pt->ident, "")) {
+		i = strlen(pt->ident);
+		if (memcmp(pt->ident, p, i))
+			return (0);
+		p += i;
+		if (*p != '.')
+			return (0);
+		p++;
+	}
+	if (strcmp(pt->nm, p))
+		return (0);
+
+	assert(!strcmp(pt->fmt, "uint64_t"));
+	sp->val = *(const volatile uint64_t*)pt->ptr;
+	return (1);
+}
+
 static void
 varnish_expect(const struct varnish *v, char * const *av) {
-	uint64_t val, ref;
+	uint64_t ref;
 	int good;
 	char *p;
 	int i;
+	struct stat_priv sp;
+	
+	good = -1;
 
-	good = 0;
-
+	sp.target = av[0];
+	sp.val = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
 
-
-#define MAC_STAT(n, t, l, f, d)					\
-		if (!strcmp(av[0], #n)) {			\
-			val = v->stats->n;			\
-		} else
-#include "stat_field.h"
-#undef MAC_STAT
-		{
-			val = 0;
-			vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
-		}
+		good = -1;
+		if (!VSL_IterStat(v->vd, do_stat_cb, &sp))
+			continue;
+		good = 0;
 
 		ref = strtoumax(av[2], &p, 0);
 		if (ref == UINTMAX_MAX || *p)
 			vtc_log(v->vl, 0, "Syntax error in number (%s)", av[2]);
-		if      (!strcmp(av[1], "==")) { if (val == ref) good = 1; }
-		else if (!strcmp(av[1], "!=")) { if (val != ref) good = 1; }
-		else if (!strcmp(av[1], ">"))  { if (val > ref)  good = 1; }
-		else if (!strcmp(av[1], "<"))  { if (val < ref)  good = 1; }
-		else if (!strcmp(av[1], ">=")) { if (val >= ref) good = 1; }
-		else if (!strcmp(av[1], "<=")) { if (val <= ref) good = 1; }
+		if      (!strcmp(av[1], "==")) { if (sp.val == ref) good = 1; }
+		else if (!strcmp(av[1], "!=")) { if (sp.val != ref) good = 1; }
+		else if (!strcmp(av[1], ">"))  { if (sp.val > ref)  good = 1; }
+		else if (!strcmp(av[1], "<"))  { if (sp.val < ref)  good = 1; }
+		else if (!strcmp(av[1], ">=")) { if (sp.val >= ref) good = 1; }
+		else if (!strcmp(av[1], "<=")) { if (sp.val <= ref) good = 1; }
 		else {
 			vtc_log(v->vl, 0, "comparison %s unknown", av[1]);
 		}
 		if (good)
 			break;
 	}
-	if (good) {
+	if (good == -1) {
+		vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
+	} else if (good) {
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
-		    av[0], val, av[1], av[2]);
-		return;
+		    av[0], sp.val, av[1], av[2]);
+	} else {
+		vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
+		    av[0], sp.val, av[1], av[2], ref);
 	}
-	vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
-	    av[0], val, av[1], av[2], ref);
 }
 
 /**********************************************************************
