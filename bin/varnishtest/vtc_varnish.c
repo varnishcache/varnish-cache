@@ -612,9 +612,9 @@ do_stat_cb(void *priv, const struct vsl_statpt * const pt)
 	const char *p = sp->target;
 	int i;
 
-	if (strcmp(pt->type, "")) {
-		i = strlen(pt->type);
-		if (memcmp(pt->type, p, i))
+	if (strcmp(pt->class, "")) {
+		i = strlen(pt->class);
+		if (memcmp(pt->class, p, i))
 			return (0);
 		p += i;
 		if (*p != '.')
@@ -630,7 +630,7 @@ do_stat_cb(void *priv, const struct vsl_statpt * const pt)
 			return (0);
 		p++;
 	}
-	if (strcmp(pt->nm, p))
+	if (strcmp(pt->name, p))
 		return (0);
 
 	assert(!strcmp(pt->fmt, "uint64_t"));

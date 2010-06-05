@@ -65,21 +65,13 @@ struct pt {
 
 static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
 
-
-struct curses_priv {
-	const char *fields;
-};
-
 static int
 do_curses_cb(void *priv, const struct vsl_statpt * const sp)
 {
-	struct curses_priv *cp;
 	struct pt *pt;
 	char buf[128];
 
-	cp = priv;
-	if (cp->fields != NULL && !show_field(sp->nm, cp->fields))
-		return (0);
+	(void)priv;
 	assert(!strcmp(sp->fmt, "uint64_t"));
 
 	pt = calloc(sizeof *pt, 1);
@@ -91,15 +83,15 @@ do_curses_cb(void *priv, const struct vsl_statpt * const sp)
 	pt->type = sp->flag;
 
 	*buf = '\0';
-	if (strcmp(sp->type, "")) {
-		strcat(buf, sp->type);
+	if (strcmp(sp->class, "")) {
+		strcat(buf, sp->class);
 		strcat(buf, ".");
 	}
 	if (strcmp(sp->ident, "")) {
 		strcat(buf, sp->ident);
 		strcat(buf, ".");
 	}
-	strcat(buf, sp->nm);
+	strcat(buf, sp->name);
 	strcat(buf, " - ");
 	strcat(buf, sp->desc);
 	pt->name = strdup(buf);
@@ -108,9 +100,8 @@ do_curses_cb(void *priv, const struct vsl_statpt * const sp)
 }
 
 static void
-prep_pts(const struct VSL_data *vd, const char *fields)
+prep_pts(const struct VSL_data *vd)
 {
-	struct curses_priv cp;
 	struct pt *pt, *pt2;
 
 	VTAILQ_FOREACH_SAFE(pt, &pthead, next, pt2) {
@@ -118,10 +109,8 @@ prep_pts(const struct VSL_data *vd, const char *fields)
 		free(pt->name);
 		free(pt);
 	}
-	cp.fields = fields;
 
-	(void)VSL_IterStat(vd, do_curses_cb, &cp);
-
+	(void)VSL_IterStat(vd, do_curses_cb, NULL);
 }
 
 static void
@@ -135,7 +124,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 
 void
 do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
-    int delay, const char *fields)
+    int delay)
 {
 	intmax_t ju;
 	struct timeval tv;
@@ -158,7 +147,7 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
 		/*
 		 * Initialization goes in outher loop
 		 */
-		prep_pts(vd, fields);
+		prep_pts(vd);
 		AC(erase());
 		AC(refresh());
 

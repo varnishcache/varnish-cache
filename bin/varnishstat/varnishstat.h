@@ -27,5 +27,4 @@
  *
  */
 
-int show_field(const char* field, const char *fields);
-void do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay, const char *fields);
+void do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay);

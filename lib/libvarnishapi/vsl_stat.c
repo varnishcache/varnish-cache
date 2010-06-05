@@ -39,6 +39,7 @@ SVNID("$Id$")
 #include "vas.h"
 #include "shmlog.h"
 #include "vre.h"
+#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
@@ -52,6 +53,7 @@ VSL_OpenStats(struct VSL_data *vd)
 	struct shmalloc *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+
 	if (VSL_Open(vd))
 		return (NULL);
 	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
@@ -63,22 +65,63 @@ VSL_OpenStats(struct VSL_data *vd)
  * -1 -> unknown stats encountered.
  */
 
+static inline int 
+iter_test(const char *s1, const char *s2, int wc)
+{
+
+	if (s1 == NULL)
+		return (0);
+	if (!wc)
+		return (strcmp(s1, s2));
+	for (; *s1 != '\0' && *s1 == *s2; s1++, s2++)
+		continue;
+	return (*s1 != '\0');
+}
+
 static int
-iter_main(struct shmalloc *sha, vsl_stat_f *func, void *priv)
+iter_call(const struct VSL_data *vd, vsl_stat_f *func, void *priv,
+    const struct vsl_statpt *const sp)
+{
+	struct vsl_sf *sf;
+	int good = vd->sf_init;
+
+	if (VTAILQ_EMPTY(&vd->sf_list))
+		return (func(priv, sp));
+
+	VTAILQ_FOREACH(sf, &vd->sf_list, next) {
+		if (iter_test(sf->class, sp->class, sf->flags & VSL_SF_CL_WC))
+			continue;
+		if (iter_test(sf->ident, sp->ident, sf->flags & VSL_SF_ID_WC))
+			continue;
+		if (iter_test(sf->name, sp->name, sf->flags & VSL_SF_NM_WC))
+			continue;
+		if (sf->flags & VSL_SF_EXCL)
+			good = 0;
+		else
+			good = 1;
+	}
+	if (!good)
+		return (0);
+	return (func(priv, sp));
+}
+
+static int
+iter_main(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
+    void *priv)
 {
 	struct varnish_stats *st = SHA_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
-	sp.type = "";
+	sp.class = "";
 	sp.ident = "";
 #define MAC_STAT(nn, tt, ll, ff, dd)					\
-	sp.nm = #nn;							\
+	sp.name = #nn;							\
 	sp.fmt = #tt;							\
 	sp.flag = ff;							\
 	sp.desc = dd;							\
 	sp.ptr = &st->nn;						\
-	i = func(priv, &sp);						\
+	i = iter_call(vd, func, priv, &sp);				\
 	if (i)								\
 		return(i);
 #include "stat_field.h"
@@ -87,21 +130,22 @@ iter_main(struct shmalloc *sha, vsl_stat_f *func, void *priv)
 }
 
 static int
-iter_sma(struct shmalloc *sha, vsl_stat_f *func, void *priv)
+iter_sma(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
+    void *priv)
 {
 	struct varnish_stats_sma *st = SHA_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
-	sp.type = VSL_TYPE_STAT_SMA;
+	sp.class = VSL_TYPE_STAT_SMA;
 	sp.ident = sha->ident;
 #define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
-	sp.nm = #nn;							\
+	sp.name = #nn;							\
 	sp.fmt = #tt;							\
 	sp.flag = ff;							\
 	sp.desc = dd;							\
 	sp.ptr = &st->nn;						\
-	i = func(priv, &sp);						\
+	i = iter_call(vd, func, priv, &sp);				\
 	if (i)								\
 		return(i);
 #include "stat_field.h"
@@ -121,9 +165,9 @@ VSL_IterStat(const struct VSL_data *vd, vsl_stat_f *func, void *priv)
 		if (strcmp(sha->class, VSL_CLASS_STAT))
 			continue;
 		if (!strcmp(sha->type, VSL_TYPE_STAT))
-			i = iter_main(sha, func, priv);
+			i = iter_main(vd, sha, func, priv);
 		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
-			i = iter_sma(sha, func, priv);
+			i = iter_sma(vd, sha, func, priv);
 		else
 			i = -1;
 		if (i != 0)

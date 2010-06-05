@@ -33,6 +33,20 @@
 #define			SLEEP_USEC	(50*1000)
 #define			TIMEOUT_USEC	(5*1000*1000)
 
+struct vsl_sf {
+	unsigned		magic;
+#define VSL_SF_MAGIC		0x558478dd
+	VTAILQ_ENTRY(vsl_sf)	next;
+	int			flags;
+#define VSL_SF_EXCL		(1 << 0)
+#define VSL_SF_CL_WC		(1 << 1)
+#define VSL_SF_ID_WC		(1 << 2)
+#define VSL_SF_NM_WC		(1 << 3)
+	char			*class;
+	char			*ident;
+	char			*name;
+};
+
 struct VSL_data {
 	unsigned		magic;
 #define VSL_MAGIC		0x6e3bd69b
@@ -44,6 +58,13 @@ struct VSL_data {
 	struct shmloghead 	*vsl_lh;
 	void			*vsl_end;
 	unsigned		alloc_seq;
+
+	/* Stuff relating the stats fields start here */
+
+	int			sf_init;
+	VTAILQ_HEAD(, vsl_sf)	sf_list;
+
+	/* Stuff relating the log records below here */
 
 	unsigned char		*log_start;
 	unsigned char		*log_end;

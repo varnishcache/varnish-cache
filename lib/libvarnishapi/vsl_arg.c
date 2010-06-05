@@ -44,9 +44,11 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "vas.h"
+#include "argv.h"
 #include "shmlog.h"
 #include "vre.h"
 #include "vbm.h"
+#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
@@ -242,12 +244,93 @@ VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 
 /*--------------------------------------------------------------------*/
 
+static int
+vsl_sf_arg(struct VSL_data *vd, const char *opt)
+{
+	struct vsl_sf *sf;
+	char **av, *q, *p;
+	int i;
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+
+	if (VTAILQ_EMPTY(&vd->sf_list)) {
+		if (*opt == '^')
+			vd->sf_init = 1;
+	}
+
+	av = ParseArgv(opt, ARGV_COMMA);
+	AN(av);
+	if (av[0] != NULL) {
+		fprintf(stderr, "Parse error: %s", av[0]);
+		exit (1);
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		ALLOC_OBJ(sf, VSL_SF_MAGIC);
+		AN(sf);
+		VTAILQ_INSERT_TAIL(&vd->sf_list, sf, next);
+
+		p = av[i];
+		if (*p == '^') {
+			sf->flags |= VSL_SF_EXCL;
+			p++;
+		}
+
+		q = strchr(p, '.');
+		if (q != NULL) {
+			*q++ = '\0';
+			if (*p != '\0')
+				REPLACE(sf->class, p);
+			p = q;
+			if (*p != '\0') {
+				q = strchr(p, '.');
+				if (q != NULL) {
+					*q++ = '\0';
+					if (*p != '\0')
+						REPLACE(sf->ident, p);
+					p = q;
+				}
+			}
+		}
+		if (*p != '\0') {
+			REPLACE(sf->name, p);
+		}
+
+		/* Check for wildcards */
+		if (sf->class != NULL) {
+			q = strchr(sf->class, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_CL_WC;
+			}
+		}
+		if (sf->ident != NULL) {
+			q = strchr(sf->ident, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_ID_WC;
+			}
+		}
+		if (sf->name != NULL) {
+			q = strchr(sf->name, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_NM_WC;
+			}
+		}
+	}
+	FreeArgv(av);
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	switch (arg) {
+	case 'f': return (vsl_sf_arg(vd, opt));
 	case 'n': return (vsl_n_arg(vd, opt));
 	default:
 		return (0);

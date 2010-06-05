@@ -44,6 +44,7 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "vre.h"
 #include "vbm.h"
+#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 

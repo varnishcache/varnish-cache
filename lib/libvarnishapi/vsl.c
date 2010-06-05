@@ -47,6 +47,7 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "vre.h"
 #include "vbm.h"
+#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
@@ -81,6 +82,8 @@ VSL_New(void)
 	vd->rbuf = malloc(vd->rbuflen);
 	assert(vd->rbuf != NULL);
 
+	VTAILQ_INIT(&vd->sf_list);
+
 	return (vd);
 }
 
@@ -89,6 +92,7 @@ VSL_New(void)
 void
 VSL_Delete(struct VSL_data *vd)
 {
+	struct vsl_sf *sf;
 
 	VSL_Close(vd);
 	vbit_destroy(vd->vbm_client);
@@ -98,6 +102,16 @@ VSL_Delete(struct VSL_data *vd)
 	free(vd->n_opt);
 	free(vd->rbuf);
 	free(vd->fname);
+
+	while(!VTAILQ_EMPTY(&vd->sf_list)) {
+		sf = VTAILQ_FIRST(&vd->sf_list);	
+		VTAILQ_REMOVE(&vd->sf_list, sf, next);
+		free(sf->class);
+		free(sf->ident);
+		free(sf->name);
+		free(sf);
+	}
+
 	free(vd);
 }
 
