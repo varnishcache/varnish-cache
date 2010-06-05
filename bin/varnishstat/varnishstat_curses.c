@@ -60,7 +60,7 @@ struct pt {
 	uint64_t		ref;
 	int			type;
 	char			seen;
-	const char		*name;
+	char			*name;
 };
 
 static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
@@ -116,10 +116,16 @@ do_curses_cb(
 }
 
 static void
-prep_pts(struct VSL_data *vd, const char *fields)
+prep_pts(const struct VSL_data *vd, const char *fields)
 {
 	struct curses_priv cp;
+	struct pt *pt, *pt2;
 
+	VTAILQ_FOREACH_SAFE(pt, &pthead, next, pt2) {
+		VTAILQ_REMOVE(&pthead, pt, next);
+		free(pt->name);
+		free(pt);
+	}
 	cp.fields = fields;
 
 	(void)VSL_IterStat(vd, do_curses_cb, &cp);
@@ -136,23 +142,18 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 void
-do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay, const char *fields)
+do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
+    int delay, const char *fields)
 {
-	struct varnish_stats copy;
 	intmax_t ju;
 	struct timeval tv;
-	double tt, lt, hit, miss, ratio, up;
+	double tt, lt, lhit, hit, lmiss, miss, hr, mr, ratio, up;
 	double a1, a2, a3;
 	unsigned n1, n2, n3;
 	time_t rt;
 	int ch, line;
 	struct pt *pt;
-
-	prep_pts(vd, fields);
-	memset(&copy, 0, sizeof copy);
-
-	a1 = a2 = a3 = 0.0;
-	n1 = n2 = n3 = 0;
+	double act, lact;
 
 	(void)initscr();
 	AC(raw());
@@ -160,96 +161,124 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats, int delay,
 	AC(nonl());
 	AC(intrflush(stdscr, FALSE));
 	AC(curs_set(0));
-	AC(erase());
 
-	lt = 0;
 	while (1) {
-		AZ(gettimeofday(&tv, NULL));
-		tt = tv.tv_usec * 1e-6 + tv.tv_sec;
-		lt = tt - lt;
-
-		rt = VSL_stats->uptime;
-		up = rt;
-
-		AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
-		AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
-		    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
-
-		hit = VSL_stats->cache_hit - copy.cache_hit;
-		miss = VSL_stats->cache_miss - copy.cache_miss;
-		hit /= lt;
-		miss /= lt;
-		if (hit + miss != 0) {
-			ratio = hit / (hit + miss);
-			myexp(&a1, ratio, &n1, 10);
-			myexp(&a2, ratio, &n2, 100);
-			myexp(&a3, ratio, &n3, 1000);
-		}
-		AC(mvprintw(1, 0, "Hitrate ratio: %8u %8u %8u", n1, n2, n3));
-		AC(mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f", a1, a2, a3));
-
-		line = 3;
-		VTAILQ_FOREACH(pt, &pthead, next) {
-			if (line >= LINES)
-				break;
-			ju = *pt->ptr;
-			if (ju == 0 && !pt->seen)
-				continue;
-			pt->seen = 1;
-			line++;
-			if (pt->type == 'a') {
-				AC(mvprintw(line, 0,
-				    "%12ju %12.2f %12.2f %s\n",
-				    ju, (ju - (intmax_t)pt->ref)/lt,
-				    ju / up, pt->name));		
-				pt->ref = ju;
-			} else {
-				AC(mvprintw(line, 0, "%12ju %12s %12s %s\n",
-				    ju, ".  ", ".  ", pt->name));
-			}
-		}
-		lt = tt;
+		/*
+		 * Initialization goes in outher loop
+		 */
+		prep_pts(vd, fields);
+		AC(erase());
 		AC(refresh());
-		timeout(delay * 1000);
-		switch ((ch = getch())) {
-		case ERR:
-			break;
-#ifdef KEY_RESIZE
-		case KEY_RESIZE:
-			AC(erase());
-			break;
-#endif
-		case '\014': /* Ctrl-L */
-		case '\024': /* Ctrl-T */
-			AC(redrawwin(stdscr));
+
+		a1 = a2 = a3 = 0.0;
+		n1 = n2 = n3 = 0;
+		lt = 0;
+		lhit = 0;
+		lmiss = 0;
+		lact = 0;
+
+		while (1) {
+			/*
+			 * Break to outher loop if we need to re-read file.
+			 * Only check if it looks like nothing is happening.
+			 */
+			act = VSL_stats->cache_hit + VSL_stats->cache_miss + 1;
+			if (act == lact && VSL_ReOpen(vd))
+				break;
+			lact = act;
+
+			AZ(gettimeofday(&tv, NULL));
+			tt = tv.tv_usec * 1e-6 + tv.tv_sec;
+			lt = tt - lt;
+
+			rt = VSL_stats->uptime;
+			up = rt;
+
+			AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
+			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
+			    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
+
+			hit = VSL_stats->cache_hit;
+			miss = VSL_stats->cache_miss;
+			hr = (hit - lhit) / lt;
+			mr = (miss - lmiss) / lt;
+			lhit = hit;
+			lmiss = miss;
+			if (hr + mr != 0) {
+				ratio = hr / (hr + mr);
+				myexp(&a1, ratio, &n1, 10);
+				myexp(&a2, ratio, &n2, 100);
+				myexp(&a3, ratio, &n3, 1000);
+			}
+			AC(mvprintw(1, 0, "Hitrate ratio: %8u %8u %8u",
+			    n1, n2, n3));
+			AC(mvprintw(2, 0, "Hitrate avg:   %8.4f %8.4f %8.4f",
+			    a1, a2, a3));
+
+			line = 3;
+			VTAILQ_FOREACH(pt, &pthead, next) {
+				if (line >= LINES)
+					break;
+				ju = *pt->ptr;
+				if (ju == 0 && !pt->seen)
+					continue;
+				pt->seen = 1;
+				line++;
+				if (pt->type == 'a') {
+					AC(mvprintw(line, 0,
+					    "%12ju %12.2f %12.2f %s\n",
+					    ju, (ju - (intmax_t)pt->ref)/lt,
+					    ju / up, pt->name));		
+					pt->ref = ju;
+				} else {
+					AC(mvprintw(line, 0,
+					    "%12ju %12s %12s %s\n",
+					    ju, ".  ", ".  ", pt->name));
+				}
+			}
+			lt = tt;
 			AC(refresh());
-			break;
-		case '\003': /* Ctrl-C */
-			AZ(raise(SIGINT));
-			break;
-		case '\032': /* Ctrl-Z */
-			AZ(raise(SIGTSTP));
-			break;
-		case '\021': /* Ctrl-Q */
-		case 'Q':
-		case 'q':
-			AC(endwin());
-			exit(0);
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			delay = 1U << (ch - '0');
-			break;
-		default:
-			AC(beep());
-			break;
+			timeout(delay * 1000);
+			switch ((ch = getch())) {
+			case ERR:
+				break;
+#ifdef KEY_RESIZE
+			case KEY_RESIZE:
+				AC(erase());
+				break;
+#endif
+			case '\014': /* Ctrl-L */
+			case '\024': /* Ctrl-T */
+				AC(redrawwin(stdscr));
+				AC(refresh());
+				break;
+			case '\003': /* Ctrl-C */
+				AZ(raise(SIGINT));
+				break;
+			case '\032': /* Ctrl-Z */
+				AZ(raise(SIGTSTP));
+				break;
+			case '\021': /* Ctrl-Q */
+			case 'Q':
+			case 'q':
+				AC(endwin());
+				exit(0);
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				delay = 1U << (ch - '0');
+				break;
+			default:
+				AC(beep());
+				break;
+			}
 		}
 	}
 }
