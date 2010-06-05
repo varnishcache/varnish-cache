@@ -1,12 +1,41 @@
 -passes=3
 
+-ffc			// No automatic custody
+
 ///////////////////////////////////////////////////////////////////////
 // ../../config.h magic
 -header(../../config.h)
 +libh ../../config.h
--efile(451, ../../config.h)
+-efile(451, ../../config.h)	// No include guard
 
+
+///////////////////////////////////////////////////////////////////////
+// varargs stuff
+
+-emacro((???), va_arg)	// 415, 416, 416, 661, 662, 796, 797 ...
 
 ///////////////////////////////////////////////////////////////////////
 // assert() support, common to libvarnish and libvarnishapi
 -sem(vas_fail, r_no)
+
+///////////////////////////////////////////////////////////////////////
+// Ignore return values OK for these functions
+
+-esym(534, printf)
+-esym(534, fprintf)
+-esym(534, sprintf)
+
+-esym(534, memset)
+-esym(534, memcpy)
+-esym(534, memmove)
+
+-esym(534, strcat)
+-esym(534, strcpy)
+-esym(534, strlcpy)
+
+-esym(534, vsb_cat)
+-esym(534, vsb_bcat)
+-esym(534, vsb_putc)
+-esym(534, vsb_printf)
+-esym(534, vsb_vprintf)
+-esym(534, vsb_putc)

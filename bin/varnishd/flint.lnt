@@ -110,8 +110,6 @@
 
 +libh mgt_event.h
 
--emacro((???),va_arg)   // the va_arg() macro can yield 415, 416, 661, 662
-                        // 796 and 797 (out-of-bounds errors).
 -elib(123)  // size is both a variable and a macro with args
 -emacro(736, isnan)  // isnanf
 -efile(766, ../../config.h)
@@ -134,8 +132,6 @@
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
--ffc	// No automatic custody
-
 -e455	// thread lock
 -e458	// unprotected read
 -e763	// Redundant declaration for symbol '...' previously declared
@@ -156,22 +152,6 @@
 -esym(759, vcc_ProcAction) // could be moved to module
 -esym(714, vcc_ProcAction) // not ref.
 
--esym(534, sprintf)	// Ignoring return value of function
--esym(534, asprintf)	// Ignoring return value of function
--esym(534, printf)	// Ignoring return value of function
--esym(534, fprintf)	// Ignoring return value of function
--esym(534, memset)	// Ignoring return value of function
--esym(534, memcpy)	// Ignoring return value of function
--esym(534, memmove)	// Ignoring return value of function
--esym(534, strcpy)	// Ignoring return value of function
--esym(534, vsb_printf)	// Ignoring return value of function
--esym(534, vsb_vprintf)	// Ignoring return value of function
--esym(534, vsb_cat)	// Ignoring return value of function
--esym(534, vsb_bcat)	// Ignoring return value of function
--esym(534, vsb_putc)	// Ignoring return value of function
--esym(534, strcat)	// Ignoring return value of function
--esym(534, strcpy)	// Ignoring return value of function
--esym(534, strlcpy)	// Ignoring return value of function
 -esym(765, panicstr)	// Could be static
 
 -emacro(506, isnan, isfinite)	// constant value boolean

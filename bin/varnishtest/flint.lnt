@@ -1,8 +1,6 @@
 
 +libh mgt_event.h
 
--emacro((???),va_arg)   // the va_arg() macro can yield 415, 416, 661, 662
-                        // 796 and 797 (out-of-bounds errors).
 -elib(123)  // size is both a variable and a macro with args
 -emacro(736, isnan)  // isnanf
 -efile(766, ../../config.h)
@@ -10,8 +8,6 @@
 -esym(850, av)
 
 -esym(528, svnid)
-
--ffc	// No automatic custody
 
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
@@ -45,22 +41,6 @@
 -emacro(779, REPLACE)		// string constant !=
 -emacro(774, REPLACE)		// if(bool) always true
 -emacro(506, REPLACE)		// const bool
-// 
--esym(534, sprintf)	// Ignoring return value of function
-// -esym(534, asprintf)	// Ignoring return value of function
--esym(534, printf)	// Ignoring return value of function
--esym(534, fprintf)	// Ignoring return value of function
--esym(534, memset)	// Ignoring return value of function
-// -esym(534, memcpy)	// Ignoring return value of function
-// -esym(534, memmove)	// Ignoring return value of function
-// -esym(534, strcpy)	// Ignoring return value of function
--esym(534, vsb_printf)	// Ignoring return value of function
--esym(534, vsb_cat)	// Ignoring return value of function
--esym(534, vsb_bcat)	// Ignoring return value of function
--esym(534, vsb_putc)	// Ignoring return value of function
--esym(534, strcat)	// Ignoring return value of function
--esym(534, strcpy)	// Ignoring return value of function
--esym(534, strlcpy)	// Ignoring return value of function
 // 
 // -emacro(506, isnan)	// constant value boolean
 // -emacro(747, isnan)	// significant coersion
