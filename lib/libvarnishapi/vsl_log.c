@@ -49,10 +49,6 @@ SVNID("$Id$")
 
 #include "vsl.h"
 
-#ifndef MAP_HASSEMAPHORE
-#define MAP_HASSEMAPHORE 0 /* XXX Linux */
-#endif
-
 static int vsl_nextlog(struct VSL_data *vd, unsigned char **pp);
 
 /*--------------------------------------------------------------------*/

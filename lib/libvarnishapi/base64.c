@@ -26,7 +26,7 @@ base64_init(void)
 	for (i = 0; i < 256; i++)
 		i64[i] = -1;
 	for (p = b64, i = 0; *p; p++, i++)
-		i64[(int)*p] = i;
+		i64[(int)*p] = (char)i;
 	i64['='] = 0;
 }
 
