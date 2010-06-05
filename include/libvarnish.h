@@ -41,13 +41,7 @@
 
 struct vsb;
 
-/* from libvarnish/argv.c */
-void FreeArgv(char **argv);
-char **ParseArgv(const char *s, int flag);
-char *BackSlashDecode(const char *s, const char *e);
-int BackSlash(const char *s, char *res);
-#define ARGV_COMMENT	(1 << 0)
-#define ARGV_COMMA	(1 << 1)
+#include "argv.h"
 
 /* from libvarnish/num.c */
 const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
