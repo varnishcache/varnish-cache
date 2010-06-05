@@ -103,8 +103,8 @@ VSL_Delete(struct VSL_data *vd)
 
 /*--------------------------------------------------------------------*/
 
-int
-VSL_Open(struct VSL_data *vd)
+static int
+vsl_open(struct VSL_data *vd, int rep)
 {
 	int i;
 	struct shmloghead slh;
@@ -114,40 +114,55 @@ VSL_Open(struct VSL_data *vd)
 
 	vd->vsl_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsl_fd < 0) {
-		fprintf(stderr, "Cannot open %s: %s\n",
-		    vd->fname, strerror(errno));
+		if (rep)
+			fprintf(stderr, "Cannot open %s: %s\n",
+			    vd->fname, strerror(errno));
 		return (1);
 	}
 
 	assert(fstat(vd->vsl_fd, &vd->fstat) == 0);
 	if (!S_ISREG(vd->fstat.st_mode)) {
-		fprintf(stderr, "%s is not a regular file\n", vd->fname);
+		if (rep)
+			fprintf(stderr, "%s is not a regular file\n",
+			    vd->fname);
 		return (1);
 	}
 
 	i = read(vd->vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
-		fprintf(stderr, "Cannot read %s: %s\n",
-		    vd->fname, strerror(errno));
+		if (rep)
+			fprintf(stderr, "Cannot read %s: %s\n",
+			    vd->fname, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
-		fprintf(stderr, "Wrong magic number in file %s\n",
-		    vd->fname);
+		if (rep)
+			fprintf(stderr, "Wrong magic number in file %s\n",
+			    vd->fname);
 		return (1);
 	}
 
 	vd->vsl_lh = (void *)mmap(NULL, slh.shm_size,
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
 	if (vd->vsl_lh == MAP_FAILED) {
-		fprintf(stderr, "Cannot mmap %s: %s\n",
-		    vd->fname, strerror(errno));
+		if (rep)
+			fprintf(stderr, "Cannot mmap %s: %s\n",
+			    vd->fname, strerror(errno));
 		return (1);
 	}
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
 
+	while(slh.alloc_seq == 0)
+		usleep(50000);
 	vd->alloc_seq = slh.alloc_seq;
 	return (0);
+}
+
+int
+VSL_Open(struct VSL_data *vd)
+{
+	
+	return (vsl_open(vd, 1));
 }
 
 /*--------------------------------------------------------------------*/
@@ -162,6 +177,33 @@ VSL_Close(struct VSL_data *vd)
 	assert(vd->vsl_fd >= 0);
 	assert(0 == close(vd->vsl_fd));
 	vd->vsl_fd = -1;
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSL_ReOpen(struct VSL_data *vd)
+{
+	struct stat st;
+	int i;
+
+	if (vd->vsl_lh == NULL)
+		return (-1);
+
+	if (stat(vd->fname, &st))
+		return (0);
+
+	if (st.st_dev == vd->fstat.st_dev && st.st_ino == vd->fstat.st_ino)
+		return (0);
+
+	VSL_Close(vd);
+	for (i = 0; i < 5; i++) {
+		if (!vsl_open(vd, 0))
+			return (1);
+	}
+	if (vsl_open(vd, 1))
+		return (-1);
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/

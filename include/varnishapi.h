@@ -65,6 +65,8 @@ extern const char *VSL_tags[256];
 void *VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type,
     const char *ident, unsigned *lenp);
 
+int VSL_ReOpen(struct VSL_data *vd);
+
 struct shmalloc *vsl_iter0(const struct VSL_data *vd);
 void vsl_itern(const struct VSL_data *vd, struct shmalloc **pp);
 
