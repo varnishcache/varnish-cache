@@ -54,10 +54,12 @@ SVNID("$Id$")
 #include "shmlog.h"
 #include "varnishapi.h"
 
+#define AC(x) assert((x) != ERR)
+
 struct top {
 	uint8_t			tag;
 	char			*rec_data;
-	unsigned		clen;
+	int			clen;
 	unsigned		hash;
 	VTAILQ_ENTRY(top)	list;
 	double			count;
@@ -76,7 +78,7 @@ static int f_flag = 0;
 static unsigned maxfieldlen = 0;
 
 static void
-accumulate(uint32_t *p)
+accumulate(uint32_t * const p)
 {
 	struct top *tp, *tp2;
 	const char *q;
@@ -141,12 +143,12 @@ accumulate(uint32_t *p)
 }
 
 static void
-update(struct VSL_data *vd)
+update(const struct VSL_data *vd)
 {
 	struct top *tp, *tp2;
 	int l, len;
 	double t = 0;
-	static time_t last;
+	static time_t last = 0;
 	time_t now;
 
 	now = time(NULL);
@@ -154,19 +156,19 @@ update(struct VSL_data *vd)
 		return;
 	last = now;
 
-	erase();
 	l = 1;
-	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
-	mvprintw(0, 0, "list length %u", ntop);
+	AC(erase());
+	AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
+	AC(mvprintw(0, 0, "list length %u", ntop));
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
 			len = tp->clen;
 			if (len > COLS - 20)
 				len = COLS - 20;
-			mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
+			AC(mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
 			    tp->count, maxfieldlen, maxfieldlen,
 			    VSL_tags[tp->tag],
-			    len, len, tp->rec_data);
+			    len, len, tp->rec_data));
 			t = tp->count;
 		}
 		tp->count *= .999;
@@ -177,7 +179,7 @@ update(struct VSL_data *vd)
 			ntop--;
 		}
 	}
-	refresh();
+	AC(refresh());
 }
 
 static void *
@@ -193,13 +195,13 @@ accumulate_thread(void *arg)
 		if (i < 0)
 			break;
 		if (i == 0) {
-			usleep(50000);
+			AZ(usleep(50000));
 			continue;
 		}
 
-		pthread_mutex_lock(&mtx);
+		AZ(pthread_mutex_lock(&mtx));
 		accumulate(p);
-		pthread_mutex_unlock(&mtx);
+		AZ(pthread_mutex_unlock(&mtx));
 	}
 	return (arg);
 }
@@ -208,7 +210,6 @@ static void
 do_curses(struct VSL_data *vd)
 {
 	pthread_t thr;
-	int ch;
 	int i;
 
 	for (i = 0; i < 256; i++) {
@@ -223,46 +224,46 @@ do_curses(struct VSL_data *vd)
 		exit(1);
 	}
 
-	initscr();
-	raw();
-	noecho();
-	nonl();
-	intrflush(stdscr, FALSE);
-	curs_set(0);
-	erase();
+	(void)initscr();
+	AC(raw());
+	AC(noecho());
+	AC(nonl());
+	AC(intrflush(stdscr, FALSE));
+	AC(curs_set(0));
+	AC(erase());
 	for (;;) {
-		pthread_mutex_lock(&mtx);
+		AZ(pthread_mutex_lock(&mtx));
 		update(vd);
-		pthread_mutex_unlock(&mtx);
+		AZ(pthread_mutex_unlock(&mtx));
 
 		timeout(1000);
-		switch ((ch = getch())) {
+		switch (getch()) {
 		case ERR:
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:
-			erase();
+			AC(erase());
 			break;
 #endif
 		case '\014': /* Ctrl-L */
 		case '\024': /* Ctrl-T */
-			redrawwin(stdscr);
-			refresh();
+			AC(redrawwin(stdscr));
+			AC(refresh());
 			break;
 		case '\003': /* Ctrl-C */
-			raise(SIGINT);
+			AZ(raise(SIGINT));
 			break;
 		case '\032': /* Ctrl-Z */
-			endwin();
-			raise(SIGTSTP);
+			AC(endwin());
+			AZ(raise(SIGTSTP));
 			break;
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
-			endwin();
+			AC(endwin());
 			return;
 		default:
-			beep();
+			AC(beep());
 			break;
 		}
 	}
@@ -311,7 +312,7 @@ main(int argc, char **argv)
 	while ((o = getopt(argc, argv, VSL_LOG_ARGS "1fV")) != -1) {
 		switch (o) {
 		case '1':
-			VSL_Log_Arg(vd, 'd', NULL);
+			AN(VSL_Log_Arg(vd, 'd', NULL));
 			once = 1;
 			break;
 		case 'f':

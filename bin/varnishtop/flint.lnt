@@ -1,0 +1,21 @@
+
+-e712	// 14      Info    712     Loss of precision (___) (___ to ___)
+-e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
+
+-e763	// Redundant declaration for symbol '...' previously declared
+-e716	// while(1) ... 
+
+-e457 // unprotected write access 
+-e459 // unprotected access 
+-e458 // unprotected access 
+
+-e732   // Loss of sign (arg. no. 2) (int to unsigned
+-e737	// [45]  Loss of sign in promotion from int to unsigned
+-e713	// Loss of precision (assignment) (unsigned long long to long long)
+-e574	// Signed-unsigned mix with relational
+
+///////////////////////////////////////////////////////////////////////
+// Varnishstat specific
+
+/// -e850 // for loop index variable '___' whose type category is '___' is modified in body of the for loop that began at '___'
+
