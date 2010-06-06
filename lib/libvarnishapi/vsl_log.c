@@ -90,6 +90,7 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 	unsigned w, l;
 	uint8_t t;
 	int i;
+	uint32_t seq;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->r_fd != -1) {
@@ -110,23 +111,28 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 		*pp = vd->rbuf;
 		return (1);
 	}
+	seq = vd->log_start[0];
 	for (w = 0; w < TIMEOUT_USEC;) {
 		t = VSL_TAG(vd->log_ptr);
-		if (t == SLT_WRAPMARKER) {
+
+		if (t != SLT_ENDMARKER) {
+			*pp = vd->log_ptr;
+			vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
+			return (1);
+		}
+
+		if (t == SLT_WRAPMARKER || vd->log_start[0] != seq) {
 			vd->log_ptr = vd->log_start + 1;
+			seq = vd->log_start[0];
 			continue;
 		}
-		if (t == SLT_ENDMARKER) {
-			/* XXX: check log_start[0] */
-			if (vd->flags & F_NON_BLOCKING)
-				return (-1);
-			w += SLEEP_USEC;
-			usleep(SLEEP_USEC);
-			continue;
-		}
-		*pp = vd->log_ptr;
-		vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
-		return (1);
+
+	
+		/* XXX: check log_start[0] */
+		if (vd->flags & F_NON_BLOCKING)
+			return (-1);
+		w += SLEEP_USEC;
+		usleep(SLEEP_USEC);
 	}
 	*pp = NULL;
 	return (0);

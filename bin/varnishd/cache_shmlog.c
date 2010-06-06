@@ -50,33 +50,6 @@ vsl_w0(uint32_t type, uint32_t length)
         return (((type & 0xff) << 24) | length);
 }
 
-#define LOCKSHM(foo)					\
-	do {						\
-		if (pthread_mutex_trylock(foo)) {	\
-			AZ(pthread_mutex_lock(foo));	\
-			VSL_stats->shm_cont++;		\
-		}					\
-	} while (0);
-
-#define UNLOCKSHM(foo)	AZ(pthread_mutex_unlock(foo))
-
-static void
-vsl_wrap(void)
-{
-
-	assert(vsl_log_nxt < vsl_log_end);
-	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
-
-	vsl_log_start[1] = vsl_w0(SLT_ENDMARKER, 0);
-	do
-		vsl_log_start[0]++;
-	while (vsl_log_start[0] == 0);
-	VWMB();
-	*vsl_log_nxt = vsl_w0(SLT_WRAPMARKER, 0);
-	vsl_log_nxt = vsl_log_start + 1;
-	VSL_stats->shm_cycles++;
-}
-
 /*--------------------------------------------------------------------*/
 
 static inline void
@@ -90,33 +63,55 @@ vsl_hdr(enum shmlogtag tag, uint32_t *p, unsigned len, unsigned id)
 	p[0] = vsl_w0(tag, len);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+vsl_wrap(void)
+{
+
+	vsl_log_start[1] = vsl_w0(SLT_ENDMARKER, 0);
+	do
+		vsl_log_start[0]++;
+	while (vsl_log_start[0] == 0);
+	VWMB();
+	*vsl_log_nxt = vsl_w0(SLT_WRAPMARKER, 0);
+	vsl_log_nxt = vsl_log_start + 1;
+	VSL_stats->shm_cycles++;
+}
+
 /*--------------------------------------------------------------------
  * Reserve bytes for a record, wrap if necessary
  */
 
 static uint32_t *
-vsl_get(unsigned len)
+vsl_get(unsigned len, unsigned records, unsigned flushes)
 {
 	uint32_t *p;
-	uint32_t u;
 
+	if (pthread_mutex_trylock(&vsl_mtx)) {
+		AZ(pthread_mutex_lock(&vsl_mtx));
+		VSL_stats->shm_cont++;
+	}
 	assert(vsl_log_nxt < vsl_log_end);
 	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
 
-	u = VSL_WORDS(len);
+	VSL_stats->shm_writes++;
+	VSL_stats->shm_flushes += flushes;
+	VSL_stats->shm_records += records;
 
 	/* Wrap if necessary */
-	if (VSL_NEXT(vsl_log_nxt, len) >= vsl_log_end) 
+	if (VSL_NEXT(vsl_log_nxt, len) >= vsl_log_end)
 		vsl_wrap();
 
 	p = vsl_log_nxt;
 	vsl_log_nxt = VSL_NEXT(vsl_log_nxt, len);
 
+	*vsl_log_nxt = vsl_w0(SLT_ENDMARKER, 0);
+
 	assert(vsl_log_nxt < vsl_log_end);
 	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+	AZ(pthread_mutex_unlock(&vsl_mtx));
 
-	*vsl_log_nxt = vsl_w0(SLT_ENDMARKER, 0);
-	printf("GET %p -> %p\n", p, vsl_log_nxt);
 	return (p);
 }
 
@@ -137,12 +132,7 @@ VSLR(enum shmlogtag tag, int id, const char *b, unsigned len)
 	if (len > mlen) 
 		len = mlen;
 
-	/* Only hold the lock while we find our space */
-	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_writes++;
-	VSL_stats->shm_records++;
-	p = vsl_get(len);
-	UNLOCKSHM(&vsl_mtx);
+	p = vsl_get(len, 1, 0);
 
 	memcpy(p + 2, b, len);
 	vsl_hdr(tag, p, len, id);
@@ -189,12 +179,7 @@ WSL_Flush(struct worker *w, int overflow)
 
 	assert(l >= 8);
 
-	LOCKSHM(&vsl_mtx);
-	VSL_stats->shm_flushes += overflow;
-	VSL_stats->shm_writes++;
-	VSL_stats->shm_records += w->wlr;
-	p = vsl_get(l - 8);
-	UNLOCKSHM(&vsl_mtx);
+	p = vsl_get(l - 8, w->wlr, overflow);
 
 	memcpy(p + 1, w->wlb + 1, l - 4);
 	VWMB();
@@ -281,7 +266,8 @@ VSL_Init(void)
 {
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
-	loghead->starttime = TIM_real();
+	vsl_wrap();
+	loghead->starttime = (intmax_t)TIM_real();
 	loghead->panicstr[0] = '\0';
 	memset(VSL_stats, 0, sizeof *VSL_stats);
 	loghead->child_pid = getpid();
