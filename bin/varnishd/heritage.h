@@ -203,7 +203,7 @@ struct params {
  * We declare this a volatile pointer, so that reads of parameters
  * become atomic, leaving the CLI thread lattitude to change the values
  */
-extern volatile struct params *params;
+extern volatile struct params * volatile params;
 extern struct heritage heritage;
 
 void child_main(void);

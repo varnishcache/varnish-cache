@@ -78,8 +78,8 @@ VSL_New(void)
 
 	vd->r_fd = -1;
 	/* XXX: Allocate only if -r option given ? */
-	vd->rbuflen = SHMLOG_NEXTTAG + 256;
-	vd->rbuf = malloc(vd->rbuflen);
+	vd->rbuflen = 256;	/* XXX ?? */
+	vd->rbuf = malloc(vd->rbuflen * 4);
 	assert(vd->rbuf != NULL);
 
 	VTAILQ_INIT(&vd->sf_list);
@@ -289,32 +289,6 @@ VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const c
 	if (lenp != NULL)
 		*lenp = sha->len - sizeof *sha;
 	return (SHA_PTR(sha));
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-VSL_OpenLog(struct VSL_data *vd)
-{
-	unsigned char *p;
-	struct shmalloc *sha;
-
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (VSL_Open(vd))
-		return (-1);
-	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, VSL_TYPE_STAT_SMA, "");
-	assert(sha != NULL);
-
-	vd->log_start = SHA_PTR(sha);
-	vd->log_end = vd->log_start + sha->len - sizeof *sha;
-	vd->log_ptr = vd->log_start + 1;
-
-	if (!vd->d_opt && vd->r_fd == -1) {
-		for (p = vd->log_ptr; *p != SLT_ENDMARKER; )
-			p += SHMLOG_LEN(p) + SHMLOG_NEXTTAG;
-		vd->log_ptr = p;
-	}
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/

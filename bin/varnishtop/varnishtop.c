@@ -55,8 +55,8 @@ SVNID("$Id$")
 #include "varnishapi.h"
 
 struct top {
-	unsigned char		rec[4];
-	unsigned char		*rec_data;
+	uint8_t			tag;
+	char			*rec_data;
 	unsigned		clen;
 	unsigned		hash;
 	VTAILQ_ENTRY(top)	list;
@@ -76,33 +76,36 @@ static int f_flag = 0;
 static unsigned maxfieldlen = 0;
 
 static void
-accumulate(const unsigned char *p)
+accumulate(uint32_t *p)
 {
 	struct top *tp, *tp2;
-	const unsigned char *q;
+	const char *q;
 	unsigned int u, l;
+	uint8_t t;
 	int i;
 
-	// fprintf(stderr, "%*.*s\n", p[1], p[1], p + 4);
+	// fprintf(stderr, "%p %08x %08x\n", p, p[0], p[1]);
 
 	u = 0;
-	q = p + SHMLOG_DATA;
-	l = SHMLOG_LEN(p);
+	q = VSL_DATA(p);
+	l = VSL_LEN(p);
+	t = VSL_TAG(p);
 	for (i = 0; i < l; i++, q++) {
-		if (f_flag && (*q == ':' || isspace(*q)))
+		if (f_flag && (*q == ':' || isspace(*q))) {
+			l = q - VSL_DATA(p);
 			break;
+		}
 		u += *q;
 	}
 
 	VTAILQ_FOREACH(tp, &top_head, list) {
 		if (tp->hash != u)
 			continue;
-		if (tp->rec[SHMLOG_TAG] != p[SHMLOG_TAG])
+		if (tp->tag != t)
 			continue;
-		if (tp->clen != q - p)
+		if (tp->clen != l)
 			continue;
-		if (memcmp(p + SHMLOG_DATA, tp->rec_data,
-		    q - (p + SHMLOG_DATA)))
+		if (memcmp(VSL_DATA(p), tp->rec_data, l))
 			continue;
 		tp->count += 1.0;
 		break;
@@ -111,15 +114,16 @@ accumulate(const unsigned char *p)
 		ntop++;
 		tp = calloc(sizeof *tp, 1);
 		assert(tp != NULL);
-		tp->rec_data = calloc(l, 1);
+		tp->rec_data = calloc(l + 1, 1);
 		assert(tp->rec_data != NULL);
 		tp->hash = u;
 		tp->count = 1.0;
-		tp->clen = q - p;
+		tp->clen = l;
+		tp->tag = t;
+		memcpy(tp->rec_data, VSL_DATA(p), l);
+		tp->rec_data[l] = '\0';
 		VTAILQ_INSERT_TAIL(&top_head, tp, list);
 	}
-	memcpy(tp->rec, p, SHMLOG_DATA - 1);
-	memcpy(tp->rec_data, p + SHMLOG_DATA, l);
 	while (1) {
 		tp2 = VTAILQ_PREV(tp, tophead, list);
 		if (tp2 == NULL || tp2->count >= tp->count)
@@ -156,12 +160,12 @@ update(struct VSL_data *vd)
 	mvprintw(0, 0, "list length %u", ntop);
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
-			len = SHMLOG_LEN(tp->rec);
+			len = tp->clen;
 			if (len > COLS - 20)
 				len = COLS - 20;
 			mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
 			    tp->count, maxfieldlen, maxfieldlen,
-			    VSL_tags[tp->rec[SHMLOG_TAG]],
+			    VSL_tags[tp->tag],
 			    len, len, tp->rec_data);
 			t = tp->count;
 		}
@@ -180,10 +184,10 @@ static void *
 accumulate_thread(void *arg)
 {
 	struct VSL_data *vd = arg;
+	uint32_t *p;
+	int i;
 
 	for (;;) {
-		unsigned char *p;
-		int i;
 
 		i = VSL_NextLog(vd, &p);
 		if (i < 0)
@@ -268,22 +272,20 @@ static void
 dump(void)
 {
 	struct top *tp, *tp2;
-	int len;
 
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (tp->count <= 1.0)
 			break;
-		len = SHMLOG_LEN(tp->rec);
 		printf("%9.2f %s %*.*s\n",
-		    tp->count, VSL_tags[tp->rec[SHMLOG_TAG]],
-		    len, len, tp->rec_data);
+		    tp->count, VSL_tags[tp->tag],
+		    tp->clen, tp->clen, tp->rec_data);
 	}
 }
 
 static void
 do_once(struct VSL_data *vd)
 {
-	unsigned char *p;
+	uint32_t *p;
 
 	while (VSL_NextLog(vd, &p) > 0)
 		accumulate(p);

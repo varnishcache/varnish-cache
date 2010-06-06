@@ -78,7 +78,7 @@ SVNID("$Id$")
 #endif
 
 struct heritage		heritage;
-volatile struct params	*params;
+volatile struct params	* volatile params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;

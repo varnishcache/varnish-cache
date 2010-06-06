@@ -56,9 +56,9 @@ SVNID("$Id$")
 
 struct varnish_stats	*VSL_stats;
 struct shmloghead	*loghead;
-uint8_t			*vsl_log_start;
-uint8_t			*vsl_log_end;
-uint8_t			*vsl_log_nxt;
+uint32_t		*vsl_log_start;
+uint32_t		*vsl_log_end;
+uint32_t		*vsl_log_nxt;
 
 static int vsl_fd = -1;
 
@@ -264,7 +264,6 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 		vsl_n_check(i);
 		(void)close(i);
 	} 
-	fprintf(stderr, "Creating new SHMFILE\n");
 	(void)close(i);
 	vsl_buildnew(fn, size, fill);
 
@@ -275,10 +274,6 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	loghead->master_pid = getpid();
 	xxxassert(loghead != MAP_FAILED);
 	(void)mlock((void*)loghead, size);
-
-	/* Initialize pool */
-	loghead->alloc_seq = 0;			/* Zero means "inconsistent" */
-	VWMB();
 
 	memset(&loghead->head, 0, sizeof loghead->head);
 	loghead->head.magic = SHMALLOC_MAGIC;
@@ -298,14 +293,15 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 
 	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS_LOG, "", "");
 	AN(vsl_log_start);
-	vsl_log_end = vsl_log_start + s1;
+	vsl_log_end = (void*)((uint8_t *)vsl_log_start + s1);
 	vsl_log_nxt = vsl_log_start + 1;
-	*vsl_log_nxt = SLT_ENDMARKER;
-	VWMB();
+	*vsl_log_nxt = (SLT_ENDMARKER << 24);
 
 	do
-		*vsl_log_start = random();
+		*vsl_log_start = random() & 0xffff;
 	while (*vsl_log_start == 0);
+
+	VWMB();
 
 	do
 		loghead->alloc_seq = random();

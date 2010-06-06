@@ -54,7 +54,7 @@ void VSL_Select(struct VSL_data *vd, unsigned tag);
 int VSL_OpenLog(struct VSL_data *vd);
 void VSL_NonBlocking(struct VSL_data *vd, int nb);
 int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
-int VSL_NextLog(struct VSL_data *lh, unsigned char **pp);
+int VSL_NextLog(struct VSL_data *lh, uint32_t **pp);
 int VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt);
 int VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt);
 void VSL_Close(struct VSL_data *vd);

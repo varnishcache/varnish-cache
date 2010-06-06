@@ -38,8 +38,17 @@ SVNID("$Id$")
 
 #include "shmlog.h"
 #include "cache.h"
+#include "vmb.h"
 
 static pthread_mutex_t vsl_mtx;
+
+static inline uint32_t
+vsl_w0(uint32_t type, uint32_t length)
+{
+
+	assert(length < 0x10000);
+        return (((type & 0xff) << 24) | length);
+}
 
 #define LOCKSHM(foo)					\
 	do {						\
@@ -56,47 +65,58 @@ vsl_wrap(void)
 {
 
 	assert(vsl_log_nxt < vsl_log_end);
-	vsl_log_start[1] = SLT_ENDMARKER;
-	MEMORY_BARRIER();
-	*vsl_log_nxt = SLT_WRAPMARKER;
-	MEMORY_BARRIER();
-	vsl_log_start[0]++;
+	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+
+	vsl_log_start[1] = vsl_w0(SLT_ENDMARKER, 0);
+	do
+		vsl_log_start[0]++;
+	while (vsl_log_start[0] == 0);
+	VWMB();
+	*vsl_log_nxt = vsl_w0(SLT_WRAPMARKER, 0);
 	vsl_log_nxt = vsl_log_start + 1;
 	VSL_stats->shm_cycles++;
 }
 
-static void
-vsl_hdr(enum shmlogtag tag, unsigned char *p, unsigned len, unsigned id)
+/*--------------------------------------------------------------------*/
+
+static inline void
+vsl_hdr(enum shmlogtag tag, uint32_t *p, unsigned len, unsigned id)
 {
 
-	assert(vsl_log_nxt + SHMLOG_NEXTTAG + len < vsl_log_end);
-	assert(len < 0x10000);
-	p[__SHMLOG_LEN_HIGH] = (len >> 8) & 0xff;
-	p[__SHMLOG_LEN_LOW] = len & 0xff;
-	p[__SHMLOG_ID_HIGH] = (id >> 24) & 0xff;
-	p[__SHMLOG_ID_MEDHIGH] = (id >> 16) & 0xff;
-	p[__SHMLOG_ID_MEDLOW] = (id >> 8) & 0xff;
-	p[__SHMLOG_ID_LOW] = id & 0xff;
-	p[SHMLOG_DATA + len] = '\0';
-	MEMORY_BARRIER();
-	p[SHMLOG_TAG] = tag;
+	assert(((uintptr_t)p & 0x3) == 0);
+
+	p[1] = id;
+	VMB();
+	p[0] = vsl_w0(tag, len);
 }
 
-static uint8_t *
+/*--------------------------------------------------------------------
+ * Reserve bytes for a record, wrap if necessary
+ */
+
+static uint32_t *
 vsl_get(unsigned len)
 {
-	uint8_t *p;
+	uint32_t *p;
+	uint32_t u;
 
 	assert(vsl_log_nxt < vsl_log_end);
+	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+
+	u = VSL_WORDS(len);
 
 	/* Wrap if necessary */
-	if (vsl_log_nxt + SHMLOG_NEXTTAG + len + 1 >= vsl_log_end) /* XXX: + 1 ?? */
+	if (VSL_NEXT(vsl_log_nxt, len) >= vsl_log_end) 
 		vsl_wrap();
-	p = vsl_log_nxt;
 
-	vsl_log_nxt += SHMLOG_NEXTTAG + len;
+	p = vsl_log_nxt;
+	vsl_log_nxt = VSL_NEXT(vsl_log_nxt, len);
+
 	assert(vsl_log_nxt < vsl_log_end);
-	*vsl_log_nxt = SLT_ENDMARKER;
+	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+
+	*vsl_log_nxt = vsl_w0(SLT_ENDMARKER, 0);
+	printf("GET %p -> %p\n", p, vsl_log_nxt);
 	return (p);
 }
 
@@ -106,30 +126,26 @@ vsl_get(unsigned len)
  */
 
 static void
-VSLR(enum shmlogtag tag, int id, txt t)
+VSLR(enum shmlogtag tag, int id, const char *b, unsigned len)
 {
-	unsigned char *p;
-	unsigned l, mlen;
+	uint32_t *p;
+	unsigned mlen;
 
-	Tcheck(t);
 	mlen = params->shm_reclen;
 
 	/* Truncate */
-	l = Tlen(t);
-	if (l > mlen) {
-		l = mlen;
-		t.e = t.b + l;
-	}
+	if (len > mlen) 
+		len = mlen;
 
 	/* Only hold the lock while we find our space */
 	LOCKSHM(&vsl_mtx);
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records++;
-	p = vsl_get(l);
+	p = vsl_get(len);
 	UNLOCKSHM(&vsl_mtx);
 
-	memcpy(p + SHMLOG_DATA, t.b, l);
-	vsl_hdr(tag, p, l, id);
+	memcpy(p + 2, b, len);
+	vsl_hdr(tag, p, len, id);
 }
 
 /*--------------------------------------------------------------------*/
@@ -138,9 +154,8 @@ void
 VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
-	unsigned char *p;
-	unsigned n, mlen;
-	txt t;
+	unsigned n, mlen = params->shm_reclen;
+	char buf[mlen];
 
 	/*
 	 * XXX: consider formatting into a stack buffer then move into
@@ -148,35 +163,14 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 	 */
 	AN(fmt);
 	va_start(ap, fmt);
-	mlen = params->shm_reclen;
 
 	if (strchr(fmt, '%') == NULL) {
-		t.b = TRUST_ME(fmt);
-		t.e = strchr(t.b, '\0');
-		VSLR(tag, id, t);
+		VSLR(tag, id, fmt, strlen(fmt));
 	} else {
-		LOCKSHM(&vsl_mtx);
-		VSL_stats->shm_writes++;
-		VSL_stats->shm_records++;
-		assert(vsl_log_nxt < vsl_log_end);
-
-		/* Wrap if we cannot fit a full size record */
-		if (vsl_log_nxt + SHMLOG_NEXTTAG + mlen + 1 >= vsl_log_end)
-			vsl_wrap();
-
-		p = vsl_log_nxt;
-		/* +1 for the NUL */
-		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1L, fmt, ap);
+		n = vsnprintf(buf, mlen, fmt, ap);
 		if (n > mlen)
-			n = mlen;		/* we truncate long fields */
-
-		vsl_log_nxt += SHMLOG_NEXTTAG + n;
-		assert(vsl_log_nxt < vsl_log_end);
-		*vsl_log_nxt = SLT_ENDMARKER;
-
-		UNLOCKSHM(&vsl_mtx);
-
-		vsl_hdr(tag, p, n, id);
+			n = mlen;
+		VSLR(tag, id, buf, n);
 	}
 	va_end(ap);
 }
@@ -186,21 +180,24 @@ VSL(enum shmlogtag tag, int id, const char *fmt, ...)
 void
 WSL_Flush(struct worker *w, int overflow)
 {
-	uint8_t *p;
+	uint32_t *p;
 	unsigned l;
 
 	l = pdiff(w->wlb, w->wlp);
 	if (l == 0)
 		return;
+
+	assert(l >= 8);
+
 	LOCKSHM(&vsl_mtx);
 	VSL_stats->shm_flushes += overflow;
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_records += w->wlr;
-	p = vsl_get(l);
+	p = vsl_get(l - 8);
 	UNLOCKSHM(&vsl_mtx);
 
-	memcpy(p + 1, w->wlb + 1, l - 1);
-	MEMORY_BARRIER();
+	memcpy(p + 1, w->wlb + 1, l - 4);
+	VWMB();
 	p[0] = w->wlb[0];
 	w->wlp = w->wlb;
 	w->wlr = 0;
@@ -211,7 +208,6 @@ WSL_Flush(struct worker *w, int overflow)
 void
 WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 {
-	unsigned char *p;
 	unsigned l, mlen;
 
 	Tcheck(t);
@@ -227,13 +223,13 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 	assert(w->wlp < w->wle);
 
 	/* Wrap if necessary */
-	if (w->wlp + SHMLOG_NEXTTAG + l + 1 >= w->wle)
+	if (VSL_NEXT(w->wlp, l) >= w->wle)
 		WSL_Flush(w, 1);
-	p = w->wlp;
-	w->wlp += SHMLOG_NEXTTAG + l;
+	assert (VSL_NEXT(w->wlp, l) < w->wle);
+	memcpy(VSL_DATA(w->wlp), t.b, l);
+	vsl_hdr(tag, w->wlp, l, id);
+	w->wlp = VSL_NEXT(w->wlp, l);
 	assert(w->wlp < w->wle);
-	memcpy(p + SHMLOG_DATA, t.b, l);
-	vsl_hdr(tag, p, l, id);
 	w->wlr++;
 	if (params->diag_bitmap & 0x10000)
 		WSL_Flush(w, 0);
@@ -245,7 +241,7 @@ void
 WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
-	unsigned char *p;
+	char *p;
 	unsigned n, mlen;
 	txt t;
 
@@ -261,16 +257,15 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(w->wlp < w->wle);
 
 		/* Wrap if we cannot fit a full size record */
-		if (w->wlp + SHMLOG_NEXTTAG + mlen + 1 >= w->wle)
+		if (VSL_NEXT(w->wlp, mlen) >= w->wle)
 			WSL_Flush(w, 1);
 
-		p = w->wlp;
-		/* +1 for the NUL */
-		n = vsnprintf((char *)(p + SHMLOG_DATA), mlen + 1L, fmt, ap);
+		p = VSL_DATA(w->wlp);
+		n = vsnprintf(p, mlen, fmt, ap);
 		if (n > mlen)
 			n = mlen;	/* we truncate long fields */
-		vsl_hdr(tag, p, n, id);
-		w->wlp += SHMLOG_NEXTTAG + n;
+		vsl_hdr(tag, w->wlp, n, id);
+		w->wlp = VSL_NEXT(w->wlp, n);
 		assert(w->wlp < w->wle);
 		w->wlr++;
 	}

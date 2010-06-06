@@ -121,7 +121,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
     unsigned nhttp, unsigned http_space, unsigned siov)
 {
 	struct worker *w, ww;
-	unsigned char wlog[shm_workspace];
+	uint32_t wlog[shm_workspace / 4];
 	unsigned char ws[sess_workspace];
 	unsigned char http0[http_space];
 	unsigned char http1[http_space];
@@ -136,7 +136,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	w->magic = WORKER_MAGIC;
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
-	w->wle = wlog + sizeof wlog;
+	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
 	w->http[0] = HTTP_create(http0, nhttp);
 	w->http[1] = HTTP_create(http1, nhttp);
@@ -557,7 +557,7 @@ wrk_bgthread(void *arg)
 	struct bgthread *bt;
 	struct worker ww;
 	struct sess *sp;
-	unsigned char logbuf[1024];	/* XXX:  size ? */
+	uint32_t logbuf[1024];	/* XXX:  size ? */
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
@@ -567,7 +567,7 @@ wrk_bgthread(void *arg)
 	sp->wrk = &ww;
 	ww.magic = WORKER_MAGIC;
 	ww.wlp = ww.wlb = logbuf;
-	ww.wle = logbuf + sizeof logbuf;
+	ww.wle = logbuf + (sizeof logbuf) / 4;
 
 	(void)bt->func(sp, bt->priv);
 

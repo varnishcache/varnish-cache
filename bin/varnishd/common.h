@@ -42,9 +42,9 @@ void VCA_tweak_waiter(struct cli *cli, const char *arg);
 void *mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident);
 extern struct varnish_stats *VSL_stats;
 extern struct shmloghead *loghead;
-extern uint8_t			*vsl_log_start;
-extern uint8_t			*vsl_log_end;
-extern uint8_t			*vsl_log_nxt;
+extern uint32_t			*vsl_log_start;
+extern uint32_t			*vsl_log_end;
+extern uint32_t			*vsl_log_nxt;
 
 /* varnishd.c */
 struct vsb;

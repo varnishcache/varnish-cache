@@ -50,7 +50,7 @@ SVNID("$Id$")
 
 #include "vsl.h"
 
-static int vsl_nextlog(struct VSL_data *vd, unsigned char **pp);
+static int vsl_nextlog(struct VSL_data *vd, uint32_t **pp);
 
 /*--------------------------------------------------------------------*/
 
@@ -85,59 +85,58 @@ VSL_NonBlocking(struct VSL_data *vd, int nb)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_nextlog(struct VSL_data *vd, unsigned char **pp)
+vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 {
-	unsigned char *p;
 	unsigned w, l;
+	uint8_t t;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->r_fd != -1) {
-		assert(vd->rbuflen >= SHMLOG_DATA);
-		i = read(vd->r_fd, vd->rbuf, SHMLOG_DATA);
-		if (i != SHMLOG_DATA)
+		assert(vd->rbuflen >= 8);
+		i = read(vd->r_fd, vd->rbuf, 8);
+		if (i != 8)
 			return (-1);
-		l = SHMLOG_LEN(vd->rbuf) + SHMLOG_NEXTTAG;
+		l = 2 + VSL_WORDS(VSL_LEN(vd->rbuf));
 		if (vd->rbuflen < l) {
-			l += 200;
-			vd->rbuf = realloc(vd->rbuf, l);
+			l += 256;
+			vd->rbuf = realloc(vd->rbuf, l * 4);
 			assert(vd->rbuf != NULL);
 			vd->rbuflen = l;
 		}
-		l = SHMLOG_LEN(vd->rbuf) + 1;
-		i = read(vd->r_fd, vd->rbuf + SHMLOG_DATA, l);
+		i = read(vd->r_fd, vd->rbuf + 2, l * 4 - 8);
 		if (i != l)
 			return (-1);
 		*pp = vd->rbuf;
 		return (1);
 	}
-
-	p = vd->log_ptr;
 	for (w = 0; w < TIMEOUT_USEC;) {
-		if (*p == SLT_WRAPMARKER) {
-			p = vd->log_start + 1;
+		t = VSL_TAG(vd->log_ptr);
+		if (t == SLT_WRAPMARKER) {
+			vd->log_ptr = vd->log_start + 1;
 			continue;
 		}
-		if (*p == SLT_ENDMARKER) {
+		if (t == SLT_ENDMARKER) {
+			/* XXX: check log_start[0] */
 			if (vd->flags & F_NON_BLOCKING)
 				return (-1);
 			w += SLEEP_USEC;
 			usleep(SLEEP_USEC);
 			continue;
 		}
-		l = SHMLOG_LEN(p);
-		vd->log_ptr = p + l + SHMLOG_NEXTTAG;
-		*pp = p;
+		*pp = vd->log_ptr;
+		vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
 		return (1);
 	}
-	vd->log_ptr = p;
+	*pp = NULL;
 	return (0);
 }
 
 int
-VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
+VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
 {
-	unsigned char *p, t;
+	uint32_t *p;
+	unsigned char t;
 	unsigned u, l;
 	int i;
 
@@ -146,9 +145,10 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		i = vsl_nextlog(vd, &p);
 		if (i != 1)
 			return (i);
-		u = SHMLOG_ID(p);
-		l = SHMLOG_LEN(p);
-		switch(p[SHMLOG_TAG]) {
+		u = VSL_ID(p);
+		l = VSL_LEN(p);
+		t = VSL_TAG(p);
+		switch(t) {
 		case SLT_SessionOpen:
 		case SLT_ReqStart:
 			vbit_set(vd->vbm_client, u);
@@ -169,7 +169,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			if (--vd->keep == 0)
 				return (-1);
 		}
-		t = p[SHMLOG_TAG];
+
 		if (vbit_test(vd->vbm_select, t)) {
 			*pp = p;
 			return (1);
@@ -182,16 +182,16 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 			continue;
 		if (vd->regincl != NULL) {
 			i = VRE_exec(vd->regincl,
-				     (char *)p + SHMLOG_DATA,
-				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     VSL_DATA(p),
+				     VSL_LEN(p), /* Length */
 				     0, 0, NULL, 0);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
 			i = VRE_exec(vd->regincl,
-				     (char *)p + SHMLOG_DATA,
-				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     VSL_DATA(p),
+				     VSL_LEN(p), /* Length */
 				     0, 0, NULL, 0);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
@@ -208,22 +208,21 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 {
 	int i;
 	unsigned u, l, s;
-	unsigned char *p;
+	uint32_t *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
-		if (i <= 0)
+		if (i != 1)
 			return (i);
-		u = SHMLOG_ID(p);
-		l = SHMLOG_LEN(p);
+		u = VSL_ID(p);
+		l = VSL_LEN(p);
 		s = 0;
 		if (vbit_test(vd->vbm_backend, u))
 			s |= VSL_S_BACKEND;
 		if (vbit_test(vd->vbm_client, u))
 			s |= VSL_S_CLIENT;
-		if (func(priv,
-		    p[SHMLOG_TAG], u, l, s, (char *)p + SHMLOG_DATA))
+		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p)))
 			return (1);
 	}
 }
@@ -257,3 +256,28 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 	fprintf(fo, "%5d %-12s %c %.*s\n", fd, VSL_tags[tag], type, len, ptr);
 	return (0);
 }
+
+/*--------------------------------------------------------------------*/
+
+int
+VSL_OpenLog(struct VSL_data *vd)
+{
+	struct shmalloc *sha;
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (VSL_Open(vd))
+		return (-1);
+	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, "", "");
+	assert(sha != NULL);
+
+	vd->log_start = SHA_PTR(sha);
+	vd->log_end = (void*)((char *)vd->log_start + sha->len - sizeof *sha);
+	vd->log_ptr = vd->log_start + 1;
+
+	if (!vd->d_opt && vd->r_fd == -1) {
+		while (VSL_TAG(vd->log_ptr) != SLT_ENDMARKER)
+			vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
+	}
+	return (0);
+}
+

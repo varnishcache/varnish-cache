@@ -271,7 +271,7 @@ static void
 do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i, l;
-	unsigned char *p;
+	uint32_t *p;
 
 	fd = open_log(w_arg, a_flag);
 	signal(SIGHUP, sighup);
@@ -280,8 +280,8 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 		if (i < 0)
 			break;
 		if (i > 0) {
-			l = SHMLOG_LEN(p);
-			i = write(fd, p, SHMLOG_NEXTTAG + l);
+			l = VSL_LEN(p);
+			i = write(fd, p, 8 + VSL_WORDS(l) * 4);
 			if (i < 0) {
 				perror(w_arg);
 				exit(1);

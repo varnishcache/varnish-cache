@@ -60,7 +60,7 @@ struct shmalloc {
 #define SHA_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
 
 struct shmloghead {
-#define SHMLOGHEAD_MAGIC	4185512501U	/* From /dev/random */
+#define SHMLOGHEAD_MAGIC	4185512502U	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
@@ -83,30 +83,25 @@ struct shmloghead {
 #define VSL_CLASS_STAT		"Stat"
 
 /*
- * Record format is as follows:
+ * Shared memory log format
  *
- *	1 byte		field type (enum shmlogtag)
- *	2 bytes		length of contents
- *	4 bytes		record identifier
- *	n bytes		field contents (isgraph(c) || isspace(c)) allowed.
+ * The log is structured as an array of 32bit unsigned integers.
+ *
+ * The first integer contains a non-zero serial number, which changes
+ * whenever writing the log starts from the front.
+ *
+ * Each logrecord consist of:
+ *	[n] 		= ((type & 0xff) << 24) | (length & 0xffff)
+ *	[n + 1] 	= identifier
+ *	[n + 2] ... [m]	= content
  */
 
-#define SHMLOG_TAG	0
-#define __SHMLOG_LEN_HIGH	1
-#define __SHMLOG_LEN_LOW	2
-#define __SHMLOG_ID_HIGH	3
-#define __SHMLOG_ID_MEDHIGH	4
-#define __SHMLOG_ID_MEDLOW	5
-#define __SHMLOG_ID_LOW		6
-#define SHMLOG_DATA		7
-#define SHMLOG_NEXTTAG		8	/* ... + len */
-
-#define SHMLOG_LEN(p)	(((p)[__SHMLOG_LEN_HIGH] << 8) | (p)[__SHMLOG_LEN_LOW])
-#define SHMLOG_ID(p)	( \
-	((p)[__SHMLOG_ID_HIGH] << 24) | \
-	((p)[__SHMLOG_ID_MEDHIGH] << 16) | \
-	((p)[__SHMLOG_ID_MEDLOW] << 8) | \
-	 (p)[__SHMLOG_ID_LOW])
+#define VSL_WORDS(len) (((len) + 3) / 4)
+#define VSL_NEXT(ptr, len) ((ptr) + 2 + VSL_WORDS(len))
+#define VSL_LEN(ptr) ((ptr)[0] & 0xffff)
+#define VSL_TAG(ptr) ((ptr)[0] >> 24)
+#define VSL_ID(ptr) ((ptr)[1])
+#define VSL_DATA(ptr) ((char*)((ptr)+2))
 
 /*
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
@@ -117,7 +112,7 @@ enum shmlogtag {
 #define SLTM(foo)	SLT_##foo,
 #include "shmlog_tags.h"
 #undef SLTM
-	SLT_WRAPMARKER = 255
+	SLT_WRAPMARKER = 255U
 };
 
 /* This function lives in both libvarnish and libvarnishapi */

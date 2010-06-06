@@ -225,7 +225,7 @@ struct worker {
 
 	struct VCL_conf		*vcl;
 
-	unsigned char		*wlb, *wlp, *wle;
+	uint32_t 		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
 	struct SHA256Context	*sha256ctx;

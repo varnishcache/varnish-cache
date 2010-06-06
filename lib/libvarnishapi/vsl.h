@@ -66,14 +66,14 @@ struct VSL_data {
 
 	/* Stuff relating the log records below here */
 
-	unsigned char		*log_start;
-	unsigned char		*log_end;
-	unsigned char		*log_ptr;
+	uint32_t		*log_start;
+	uint32_t		*log_end;
+	uint32_t		*log_ptr;
 
 	/* for -r option */
 	int			r_fd;
 	unsigned		rbuflen;
-	unsigned char		*rbuf;
+	uint32_t		*rbuf;
 
 	unsigned		L_opt;
 	char			*n_opt;
