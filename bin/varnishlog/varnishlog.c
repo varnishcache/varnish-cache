@@ -124,7 +124,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 
 	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
 		if (!b_flag && !c_flag)
-			VSL_H_Print(stdout, tag, fd, len, spec, ptr);
+			(void)VSL_H_Print(stdout, tag, fd, len, spec, ptr);
 		return (0);
 	}
 	if (ob[fd] == NULL) {
@@ -195,7 +195,7 @@ h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 }
 
 static void
-do_order(struct VSL_data *vd, int argc, char **argv)
+do_order(struct VSL_data *vd, int argc, char * const *argv)
 {
 	int i;
 	const char *error;
@@ -227,7 +227,7 @@ do_order(struct VSL_data *vd, int argc, char **argv)
 		i = VSL_Dispatch(vd, h_order, NULL);
 		if (i == 0) {
 			clean_order();
-			fflush(stdout);
+			AZ(fflush(stdout));
 		}
 		else if (i < 0)
 			break;
@@ -274,7 +274,8 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 	uint32_t *p;
 
 	fd = open_log(w_arg, a_flag);
-	signal(SIGHUP, sighup);
+	XXXAN(fd >= 0);
+	(void)signal(SIGHUP, sighup);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
 		if (i < 0)
@@ -288,8 +289,9 @@ do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
 			}
 		}
 		if (reopen) {
-			close(fd);
+			AZ(close(fd));
 			fd = open_log(w_arg, a_flag);
+			XXXAN(fd >= 0);
 			reopen = 0;
 		}
 	}
@@ -307,7 +309,7 @@ usage(void)
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char * const *argv)
 {
 	int c;
 	int a_flag = 0, D_flag = 0, o_flag = 0, u_flag = 0;
@@ -325,11 +327,11 @@ main(int argc, char **argv)
 			break;
 		case 'b':
 			b_flag = 1;
-			VSL_Log_Arg(vd, c, optarg);
+			AN(VSL_Log_Arg(vd, c, optarg));
 			break;
 		case 'c':
 			c_flag = 1;
-			VSL_Log_Arg(vd, c, optarg);
+			AN(VSL_Log_Arg(vd, c, optarg));
 			break;
 		case 'D':
 			D_flag = 1;

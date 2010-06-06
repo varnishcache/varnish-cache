@@ -20,6 +20,8 @@
 -emacro(506, assert)    // constant value boolean
 -emacro(827, assert)    // loop not reachable
 -emacro(774, assert)    // booelan always true
+-emacro(731, assert)    // booelan arg to eq/non-eq
+-emacro(731, xxxassert)	// arg to eq/non-eq
 -emacro(527, WRONG)     // unreachable code
 
 ///////////////////////////////////////////////////////////////////////
