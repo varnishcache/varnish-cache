@@ -337,7 +337,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	(void)f_arg;
 
 	if (L_arg && b_arg == NULL) {
-		bprintf(buf, 
+		bprintf(buf,
 		    "backend default {\n"
 		    "    .host = \"127.0.0.1\";\n"
 		    "    .port = %s;\n"

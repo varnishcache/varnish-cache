@@ -55,7 +55,7 @@ struct VSL_data {
 	struct stat		fstat;
 
 	int			vsl_fd;
-	struct shmloghead 	*vsl_lh;
+	struct shmloghead	*vsl_lh;
 	void			*vsl_end;
 	unsigned		alloc_seq;
 

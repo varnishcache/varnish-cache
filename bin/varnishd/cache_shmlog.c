@@ -129,7 +129,7 @@ VSLR(enum shmlogtag tag, int id, const char *b, unsigned len)
 	mlen = params->shm_reclen;
 
 	/* Truncate */
-	if (len > mlen) 
+	if (len > mlen)
 		len = mlen;
 
 	p = vsl_get(len, 1, 0);

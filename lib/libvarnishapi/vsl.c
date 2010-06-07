@@ -104,7 +104,7 @@ VSL_Delete(struct VSL_data *vd)
 	free(vd->fname);
 
 	while(!VTAILQ_EMPTY(&vd->sf_list)) {
-		sf = VTAILQ_FIRST(&vd->sf_list);	
+		sf = VTAILQ_FIRST(&vd->sf_list);
 		VTAILQ_REMOVE(&vd->sf_list, sf, next);
 		free(sf->class);
 		free(sf->ident);
@@ -175,7 +175,7 @@ vsl_open(struct VSL_data *vd, int rep)
 int
 VSL_Open(struct VSL_data *vd)
 {
-	
+
 	return (vsl_open(vd, 1));
 }
 
@@ -261,7 +261,7 @@ vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, c
 	assert (vd->vsl_lh != NULL);
 	VSL_FOREACH(sha, vd) {
 		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
-		if (strcmp(sha->class, class)) 
+		if (strcmp(sha->class, class))
 			continue;
 		if (type != NULL && strcmp(sha->type, type))
 			continue;

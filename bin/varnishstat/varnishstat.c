@@ -105,7 +105,7 @@ do_once_cb(void *priv, const struct vsl_statpt * const pt)
 	assert(!strcmp(pt->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	i = 0;
-	if (strcmp(pt->class, "")) 
+	if (strcmp(pt->class, ""))
 		i += printf("%s.", pt->class);
 	if (strcmp(pt->ident, ""))
 		i += printf("%s.", pt->ident);
@@ -113,7 +113,7 @@ do_once_cb(void *priv, const struct vsl_statpt * const pt)
 	if (i > op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->flag == 'a') 
+	if (pt->flag == 'a')
 		printf("%12ju %12.2f %s\n", val, val / op->up, pt->desc);
 	else
 		printf("%12ju %12s %s\n", val, ".  ", pt->desc);
@@ -141,7 +141,7 @@ do_list_cb(void *priv, const struct vsl_statpt * const pt)
 
 	(void)priv;
 	i = 0;
-	if (strcmp(pt->class, "")) 
+	if (strcmp(pt->class, ""))
 		i += fprintf(stderr, "%s.", pt->class);
 	if (strcmp(pt->ident, ""))
 		i += fprintf(stderr, "%s.", pt->ident);

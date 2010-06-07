@@ -381,10 +381,10 @@ vcltypes = {
 	'HDR_OBJ':	"const char *",
 	'HDR_REQ':	"const char *",
 	'HDR_BEREQ':	"const char *",
-	'HOSTNAME': 	"const char *",
-	'PORTNAME': 	"const char *",
-	'HASH': 	"const char *",
-	'SET': 		"struct vrt_backend_entry *",
+	'HOSTNAME':	"const char *",
+	'PORTNAME':	"const char *",
+	'HASH':		"const char *",
+	'SET':		"struct vrt_backend_entry *",
 }
 
 #######################################################################
@@ -443,9 +443,11 @@ vcl_fixed_token(const char *p, const char **q)
 				l = len(j)
 				while (k < l):
 					fo.write("p[%d] == '%s'" % (k, j[k]))
-					fo.write(" && ")
+					fo.write(" &&")
 					if (k % 3) == 0:
 						fo.write("\n\t\t    ")
+					else:
+						fo.write(" ")
 					k += 1
 				fo.write("!isvar(p[%d])) {\n" % l)
 				fo.write("\t\t\t*q = p + %d;\n" % l)

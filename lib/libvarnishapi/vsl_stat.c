@@ -65,7 +65,7 @@ VSL_OpenStats(struct VSL_data *vd)
  * -1 -> unknown stats encountered.
  */
 
-static inline int 
+static inline int
 iter_test(const char *s1, const char *s2, int wc)
 {
 

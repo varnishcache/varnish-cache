@@ -187,7 +187,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 		l = 0;
 		for(; *str != '\0'; str++) {
 			if (++l > 512) {
-				vsb_printf(vl->vsb, "..."); 
+				vsb_printf(vl->vsb, "...");
 				break;
 			}
 			if (nl) {

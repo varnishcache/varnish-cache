@@ -56,9 +56,9 @@ void vmb_pthread(void);
 
 #elif defined(__arm__)
 
-#define VMB()	
-#define VWMB()	
-#define VRMB()	
+#define VMB()
+#define VWMB()
+#define VRMB()
 
 #elif defined(__i386__) && defined(__GNUC__)
 

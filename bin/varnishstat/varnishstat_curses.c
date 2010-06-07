@@ -209,7 +209,7 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
 					AC(mvprintw(line, 0,
 					    "%12ju %12.2f %12.2f %s\n",
 					    ju, (ju - (intmax_t)pt->ref)/lt,
-					    ju / up, pt->name));		
+					    ju / up, pt->name));
 					pt->ref = ju;
 				} else {
 					AC(mvprintw(line, 0,

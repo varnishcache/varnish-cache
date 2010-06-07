@@ -68,25 +68,25 @@ vcl_fixed_token(const char *p, const char **q)
 		M2('>', T_SHR);
 		M1();
 	case 'e':
-		if (p[1] == 'l' && p[2] == 's' && p[3] == 'e' && 
+		if (p[1] == 'l' && p[2] == 's' && p[3] == 'e' &&
 		    p[4] == 'i' && p[5] == 'f' && !isvar(p[6])) {
 			*q = p + 6;
 			return (T_ELSEIF);
 		}
-		if (p[1] == 'l' && p[2] == 's' && p[3] == 'i' && 
+		if (p[1] == 'l' && p[2] == 's' && p[3] == 'i' &&
 		    p[4] == 'f' && !isvar(p[5])) {
 			*q = p + 5;
 			return (T_ELSIF);
 		}
-		if (p[1] == 'l' && p[2] == 's' && p[3] == 'e' && 
+		if (p[1] == 'l' && p[2] == 's' && p[3] == 'e' &&
 		    !isvar(p[4])) {
 			*q = p + 4;
 			return (T_ELSE);
 		}
 		return (0);
 	case 'i':
-		if (p[1] == 'n' && p[2] == 'c' && p[3] == 'l' && 
-		    p[4] == 'u' && p[5] == 'd' && p[6] == 'e' && 
+		if (p[1] == 'n' && p[2] == 'c' && p[3] == 'l' &&
+		    p[4] == 'u' && p[5] == 'd' && p[6] == 'e' &&
 		    !isvar(p[7])) {
 			*q = p + 7;
 			return (T_INCLUDE);

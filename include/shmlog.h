@@ -91,8 +91,8 @@ struct shmloghead {
  * whenever writing the log starts from the front.
  *
  * Each logrecord consist of:
- *	[n] 		= ((type & 0xff) << 24) | (length & 0xffff)
- *	[n + 1] 	= identifier
+ *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
+ *	[n + 1]		= identifier
  *	[n + 2] ... [m]	= content
  */
 

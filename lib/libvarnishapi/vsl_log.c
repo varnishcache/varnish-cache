@@ -127,7 +127,6 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 			continue;
 		}
 
-	
 		/* XXX: check log_start[0] */
 		if (vd->flags & F_NON_BLOCKING)
 			return (-1);

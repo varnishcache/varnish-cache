@@ -428,7 +428,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	unsigned with_lock;
 
 	(void)sp;
-	
+
 	with_lock = 0;
 	while (1) {
 		if (with_lock) {
@@ -453,7 +453,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 			VSL_stats->hcb_insert++;
 			assert(oh->refcnt > 0);
 			return (oh);
-		} 
+		}
 
 		if (oh == NULL) {
 			assert(!with_lock);

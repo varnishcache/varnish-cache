@@ -81,7 +81,7 @@ struct varnish {
 	int			vcl_nbr;
 	char			*workdir;
 
-	struct VSL_data 	*vd;
+	struct VSL_data		*vd;
 };
 
 static VTAILQ_HEAD(, varnish)	varnishes =
@@ -645,7 +645,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	char *p;
 	int i;
 	struct stat_priv sp;
-	
+
 	good = -1;
 
 	sp.target = av[0];

@@ -104,7 +104,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 		bprintf(sha->ident, "%s", ident);
 
 		VWMB();
-		if (seq != 0) 
+		if (seq != 0)
 			do
 				loghead->alloc_seq = seq++;
 			while (loghead->alloc_seq == 0);
@@ -207,7 +207,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 
 	av = ParseArgv(l_arg, ARGV_COMMA);
 	AN(av);
-	if (av[0] != NULL) 
+	if (av[0] != NULL)
 		ARGV_ERR("\t-l ...: %s", av[0]);
 
 	ap = av + 1;
@@ -249,7 +249,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 		fill = 1;
 	}
 
-	if (*ap != NULL) 
+	if (*ap != NULL)
 		ARGV_ERR("\t-l ...:  Too many sub-args\n");
 
 	FreeArgv(av);
@@ -263,7 +263,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	if (i >= 0) {
 		vsl_n_check(i);
 		(void)close(i);
-	} 
+	}
 	(void)close(i);
 	vsl_buildnew(fn, size, fill);
 
