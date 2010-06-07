@@ -31,7 +31,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: instance.c 4093 2009-06-06 15:56:17Z des $")
+SVNID("$Id$")
 
 #include <errno.h>
 #include <limits.h>
