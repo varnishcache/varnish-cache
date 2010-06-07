@@ -8,8 +8,8 @@ Varnish is a state of the art web accelerator. Its mission is to sit
 in front of a web server an cache the content. It makes your web site
 go fast.
 
-We suggest you start by reading the :ref:`_Installation`. Once you
-have Varnish up and running go through the :ref:`_tutorial-index`.
+We suggest you start by reading the :ref:`install-index`. Once you
+have Varnish up and running go through the :ref:`tutorial-index`.
 
 
 Contents:
