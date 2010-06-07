@@ -100,11 +100,11 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 	VSL_stats->shm_records += records;
 
 	/* Wrap if necessary */
-	if (VSL_NEXT(vsl_log_nxt, len) >= vsl_log_end)
+	if (VSL_END(vsl_log_nxt, len) >= vsl_log_end)
 		vsl_wrap();
 
 	p = vsl_log_nxt;
-	vsl_log_nxt = VSL_NEXT(vsl_log_nxt, len);
+	vsl_log_nxt = VSL_END(vsl_log_nxt, len);
 
 	*vsl_log_nxt = vsl_w0(SLT_ENDMARKER, 0);
 
@@ -208,12 +208,12 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 	assert(w->wlp < w->wle);
 
 	/* Wrap if necessary */
-	if (VSL_NEXT(w->wlp, l) >= w->wle)
+	if (VSL_END(w->wlp, l) >= w->wle)
 		WSL_Flush(w, 1);
-	assert (VSL_NEXT(w->wlp, l) < w->wle);
+	assert (VSL_END(w->wlp, l) < w->wle);
 	memcpy(VSL_DATA(w->wlp), t.b, l);
 	vsl_hdr(tag, w->wlp, l, id);
-	w->wlp = VSL_NEXT(w->wlp, l);
+	w->wlp = VSL_END(w->wlp, l);
 	assert(w->wlp < w->wle);
 	w->wlr++;
 	if (params->diag_bitmap & 0x10000)
@@ -242,7 +242,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		assert(w->wlp < w->wle);
 
 		/* Wrap if we cannot fit a full size record */
-		if (VSL_NEXT(w->wlp, mlen) >= w->wle)
+		if (VSL_END(w->wlp, mlen) >= w->wle)
 			WSL_Flush(w, 1);
 
 		p = VSL_DATA(w->wlp);
@@ -250,7 +250,7 @@ WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
 		if (n > mlen)
 			n = mlen;	/* we truncate long fields */
 		vsl_hdr(tag, w->wlp, n, id);
-		w->wlp = VSL_NEXT(w->wlp, n);
+		w->wlp = VSL_END(w->wlp, n);
 		assert(w->wlp < w->wle);
 		w->wlr++;
 	}

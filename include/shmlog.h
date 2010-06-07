@@ -97,7 +97,8 @@ struct shmloghead {
  */
 
 #define VSL_WORDS(len) (((len) + 3) / 4)
-#define VSL_NEXT(ptr, len) ((ptr) + 2 + VSL_WORDS(len))
+#define VSL_END(ptr, len) ((ptr) + 2 + VSL_WORDS(len))
+#define VSL_NEXT(ptr) VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr) ((ptr)[0] & 0xffff)
 #define VSL_TAG(ptr) ((ptr)[0] >> 24)
 #define VSL_ID(ptr) ((ptr)[1])

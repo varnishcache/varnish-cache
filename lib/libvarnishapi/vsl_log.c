@@ -117,7 +117,7 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 
 		if (t != SLT_ENDMARKER) {
 			*pp = vd->log_ptr;
-			vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
+			vd->log_ptr = VSL_NEXT(vd->log_ptr);
 			return (1);
 		}
 
@@ -282,7 +282,7 @@ VSL_OpenLog(struct VSL_data *vd)
 
 	if (!vd->d_opt && vd->r_fd == -1) {
 		while (VSL_TAG(vd->log_ptr) != SLT_ENDMARKER)
-			vd->log_ptr = VSL_NEXT(vd->log_ptr, VSL_LEN(vd->log_ptr));
+			vd->log_ptr = VSL_NEXT(vd->log_ptr);
 	}
 	return (0);
 }
