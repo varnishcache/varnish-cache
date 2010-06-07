@@ -14,6 +14,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/svn_version.c \
 	../libvarnish/version.c \
 	../libvarnish/vin.c \
+	../libvarnish/vmb.c \
 	../libvarnish/vre.c \
 	base64.c \
 	vsl.c \

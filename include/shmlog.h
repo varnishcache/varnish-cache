@@ -96,24 +96,26 @@ struct shmloghead {
  *	[n + 2] ... [m]	= content
  */
 
-#define VSL_WORDS(len) (((len) + 3) / 4)
-#define VSL_END(ptr, len) ((ptr) + 2 + VSL_WORDS(len))
-#define VSL_NEXT(ptr) VSL_END(ptr, VSL_LEN(ptr))
-#define VSL_LEN(ptr) ((ptr)[0] & 0xffff)
-#define VSL_TAG(ptr) ((ptr)[0] >> 24)
-#define VSL_ID(ptr) ((ptr)[1])
-#define VSL_DATA(ptr) ((char*)((ptr)+2))
+#define VSL_WORDS(len)		(((len) + 3) / 4)
+#define VSL_END(ptr, len)	((ptr) + 2 + VSL_WORDS(len))
+#define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
+#define VSL_LEN(ptr)		((ptr)[0] & 0xffff)
+#define VSL_TAG(ptr)		((ptr)[0] >> 24)
+#define VSL_ID(ptr)		((ptr)[1])
+#define VSL_DATA(ptr)		((char*)((ptr)+2))
+
+#define VSL_ENDMARKER	(((uint32_t)SLT_Reserved << 24) | 0x454545) /* "EEE" */
+#define VSL_WRAPMARKER	(((uint32_t)SLT_Reserved << 24) | 0x575757) /* "WWW" */
 
 /*
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
 enum shmlogtag {
-	SLT_ENDMARKER = 0,
 #define SLTM(foo)	SLT_##foo,
 #include "shmlog_tags.h"
 #undef SLTM
-	SLT_WRAPMARKER = 255U
+	SLT_Reserved = 255
 };
 
 /* This function lives in both libvarnish and libvarnishapi */

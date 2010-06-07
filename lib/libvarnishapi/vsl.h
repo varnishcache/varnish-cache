@@ -66,9 +66,11 @@ struct VSL_data {
 
 	/* Stuff relating the log records below here */
 
-	uint32_t		*log_start;
-	uint32_t		*log_end;
-	uint32_t		*log_ptr;
+	volatile uint32_t	*log_start;
+	volatile uint32_t	*log_end;
+	volatile uint32_t	*log_ptr;
+
+	volatile uint32_t	last_seq;
 
 	/* for -r option */
 	int			r_fd;

@@ -15,4 +15,5 @@
 -e574	// Signed-unsigned mix with relational
 
 -e788	// enum constant '___' not used within defaulted switch
+-e641	// Converting enum '___' to '___'
 

@@ -49,6 +49,7 @@ SVNID("$Id$")
 #include "varnishapi.h"
 
 #include "vsl.h"
+#include "vmb.h"
 
 static int vsl_nextlog(struct VSL_data *vd, uint32_t **pp);
 
@@ -63,7 +64,7 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Select(struct VSL_data *vd, unsigned tag)
+VSL_Select(const struct VSL_data *vd, unsigned tag)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -88,9 +89,8 @@ static int
 vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 {
 	unsigned w, l;
-	uint8_t t;
+	uint32_t t;
 	int i;
-	uint32_t seq;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->r_fd != -1) {
@@ -111,27 +111,26 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 		*pp = vd->rbuf;
 		return (1);
 	}
-	seq = vd->log_start[0];
 	for (w = 0; w < TIMEOUT_USEC;) {
-		t = VSL_TAG(vd->log_ptr);
+		t = *vd->log_ptr;
 
-		if (t != SLT_ENDMARKER) {
-			*pp = vd->log_ptr;
-			vd->log_ptr = VSL_NEXT(vd->log_ptr);
-			return (1);
-		}
-
-		if (t == SLT_WRAPMARKER || vd->log_start[0] != seq) {
+		if (t == VSL_WRAPMARKER ||
+		    (t == VSL_ENDMARKER && vd->last_seq != vd->log_start[0])) {
 			vd->log_ptr = vd->log_start + 1;
-			seq = vd->log_start[0];
+			vd->last_seq = vd->log_start[0];
+			VRMB();
 			continue;
 		}
-
-		/* XXX: check log_start[0] */
-		if (vd->flags & F_NON_BLOCKING)
-			return (-1);
-		w += SLEEP_USEC;
-		usleep(SLEEP_USEC);
+		if (t == VSL_ENDMARKER) {
+			if (vd->flags & F_NON_BLOCKING)
+				return (-1);
+			w += SLEEP_USEC;
+			AZ(usleep(SLEEP_USEC));
+			continue;
+		}
+		*pp = (void*)(uintptr_t)vd->log_ptr; /* Loose volatile */
+		vd->log_ptr = VSL_NEXT(vd->log_ptr);
+		return (1);
 	}
 	*pp = NULL;
 	return (0);
@@ -142,7 +141,7 @@ VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
 {
 	uint32_t *p;
 	unsigned char t;
-	unsigned u, l;
+	unsigned u;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -151,7 +150,6 @@ VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
 		if (i != 1)
 			return (i);
 		u = VSL_ID(p);
-		l = VSL_LEN(p);
 		t = VSL_TAG(p);
 		switch(t) {
 		case SLT_SessionOpen:
@@ -186,18 +184,14 @@ VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
 		if (vd->c_opt && !vbit_test(vd->vbm_client, u))
 			continue;
 		if (vd->regincl != NULL) {
-			i = VRE_exec(vd->regincl,
-				     VSL_DATA(p),
-				     VSL_LEN(p), /* Length */
-				     0, 0, NULL, 0);
+			i = VRE_exec(vd->regincl, VSL_DATA(p), VSL_LEN(p),
+			    0, 0, NULL, 0);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
-			i = VRE_exec(vd->regincl,
-				     VSL_DATA(p),
-				     VSL_LEN(p), /* Length */
-				     0, 0, NULL, 0);
+			i = VRE_exec(vd->regincl, VSL_DATA(p), VSL_LEN(p),
+			    0, 0, NULL, 0);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
@@ -247,7 +241,7 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 	    (spec & VSL_S_BACKEND) ? 'b' : '-';
 
 	if (tag == SLT_Debug) {
-		fprintf(fo, "%5d %-12s %c \"", fd, VSL_tags[tag], type);
+		fprintf(fo, "%5u %-12s %c \"", fd, VSL_tags[tag], type);
 		while (len-- > 0) {
 			if (*ptr >= ' ' && *ptr <= '~')
 				fprintf(fo, "%c", *ptr);
@@ -258,7 +252,7 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 		fprintf(fo, "\"\n");
 		return (0);
 	}
-	fprintf(fo, "%5d %-12s %c %.*s\n", fd, VSL_tags[tag], type, len, ptr);
+	fprintf(fo, "%5u %-12s %c %.*s\n", fd, VSL_tags[tag], type, len, ptr);
 	return (0);
 }
 
@@ -276,13 +270,14 @@ VSL_OpenLog(struct VSL_data *vd)
 	assert(sha != NULL);
 
 	vd->log_start = SHA_PTR(sha);
-	vd->log_end = (void*)((char *)vd->log_start + sha->len - sizeof *sha);
+	vd->log_end = SHA_NEXT(sha);
 	vd->log_ptr = vd->log_start + 1;
 
+	vd->last_seq = vd->log_start[0];
+	VRMB();
 	if (!vd->d_opt && vd->r_fd == -1) {
-		while (VSL_TAG(vd->log_ptr) != SLT_ENDMARKER)
+		while (*vd->log_ptr != VSL_ENDMARKER)
 			vd->log_ptr = VSL_NEXT(vd->log_ptr);
 	}
 	return (0);
 }
-

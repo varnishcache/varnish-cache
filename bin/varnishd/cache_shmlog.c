@@ -69,12 +69,12 @@ static void
 vsl_wrap(void)
 {
 
-	vsl_log_start[1] = vsl_w0(SLT_ENDMARKER, 0);
+	vsl_log_start[1] = VSL_ENDMARKER;
 	do
 		vsl_log_start[0]++;
 	while (vsl_log_start[0] == 0);
 	VWMB();
-	*vsl_log_nxt = vsl_w0(SLT_WRAPMARKER, 0);
+	*vsl_log_nxt = VSL_WRAPMARKER;
 	vsl_log_nxt = vsl_log_start + 1;
 	VSL_stats->shm_cycles++;
 }
@@ -106,7 +106,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 	p = vsl_log_nxt;
 	vsl_log_nxt = VSL_END(vsl_log_nxt, len);
 
-	*vsl_log_nxt = vsl_w0(SLT_ENDMARKER, 0);
+	*vsl_log_nxt = VSL_ENDMARKER;
 
 	assert(vsl_log_nxt < vsl_log_end);
 	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);

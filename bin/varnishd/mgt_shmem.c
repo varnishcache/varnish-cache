@@ -295,7 +295,8 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	AN(vsl_log_start);
 	vsl_log_end = (void*)((uint8_t *)vsl_log_start + s1);
 	vsl_log_nxt = vsl_log_start + 1;
-	*vsl_log_nxt = (SLT_ENDMARKER << 24);
+	*vsl_log_nxt = VSL_ENDMARKER;
+	VWMB();
 
 	do
 		*vsl_log_start = random() & 0xffff;

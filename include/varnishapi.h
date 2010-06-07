@@ -50,7 +50,7 @@ typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd,
 vsl_handler VSL_H_Print;
 struct VSL_data;
 struct VSL_data *VSL_New(void);
-void VSL_Select(struct VSL_data *vd, unsigned tag);
+void VSL_Select(const struct VSL_data *vd, unsigned tag);
 int VSL_OpenLog(struct VSL_data *vd);
 void VSL_NonBlocking(struct VSL_data *vd, int nb);
 int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
