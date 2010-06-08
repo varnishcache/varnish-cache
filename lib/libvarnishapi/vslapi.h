@@ -33,19 +33,7 @@
 #define			SLEEP_USEC	(50*1000)
 #define			TIMEOUT_USEC	(5*1000*1000)
 
-struct vsc_sf {
-	unsigned		magic;
-#define VSL_SF_MAGIC		0x558478dd
-	VTAILQ_ENTRY(vsc_sf)	next;
-	int			flags;
-#define VSL_SF_EXCL		(1 << 0)
-#define VSL_SF_CL_WC		(1 << 1)
-#define VSL_SF_ID_WC		(1 << 2)
-#define VSL_SF_NM_WC		(1 << 3)
-	char			*class;
-	char			*ident;
-	char			*name;
-};
+struct vsc;
 
 struct VSM_data {
 	unsigned		magic;
@@ -67,8 +55,7 @@ struct VSM_data {
 
 	/* Stuff relating the stats fields start here */
 
-	int			sf_init;
-	VTAILQ_HEAD(, vsc_sf)	sf_list;
+	struct vsc		*vsc;
 
 	/* Stuff relating the log records below here */
 
@@ -119,3 +106,6 @@ struct VSM_data {
 
 struct vsm_chunk *vsm_find_alloc(const struct VSM_data *vd, const char *class,
     const char *type, const char *ident);
+
+void vsc_delete(struct VSM_data *vd);
+

@@ -49,20 +49,75 @@ SVNID("$Id$")
 
 #include "vslapi.h"
 
+struct vsc_sf {
+	unsigned		magic;
+#define VSL_SF_MAGIC		0x558478dd
+	VTAILQ_ENTRY(vsc_sf)	next;
+	int			flags;
+#define VSL_SF_EXCL		(1 << 0)
+#define VSL_SF_CL_WC		(1 << 1)
+#define VSL_SF_ID_WC		(1 << 2)
+#define VSL_SF_NM_WC		(1 << 3)
+	char			*class;
+	char			*ident;
+	char			*name;
+};
+
+struct vsc {
+	unsigned		magic;
+#define VSC_MAGIC		0x3373554a
+
+	int			sf_init;
+	VTAILQ_HEAD(, vsc_sf)	sf_list;
+
+};
+
+
+/*--------------------------------------------------------------------*/
+
+void
+VSC_Setup(struct VSM_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AZ(vd->vsc);
+	// XXX: AZ(vd->vsm);
+	ALLOC_OBJ(vd->vsc, VSC_MAGIC);
+	AN(vd->vsc);
+	VTAILQ_INIT(&vd->vsc->sf_list);
+}
+
+void
+vsc_delete(struct VSM_data *vd)
+{
+	struct vsc_sf *sf;
+	struct vsc *vsc = vd->vsc;
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	while(!VTAILQ_EMPTY(&vsc->sf_list)) {
+		sf = VTAILQ_FIRST(&vsc->sf_list);
+		VTAILQ_REMOVE(&vsc->sf_list, sf, next);
+		free(sf->class);
+		free(sf->ident);
+		free(sf->name);
+		free(sf);
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_sf_arg(struct VSM_data *vd, const char *opt)
+vsc_sf_arg(struct vsc *vsc, const char *opt)
 {
 	struct vsc_sf *sf;
 	char **av, *q, *p;
 	int i;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
-	if (VTAILQ_EMPTY(&vd->sf_list)) {
+	if (VTAILQ_EMPTY(&vsc->sf_list)) {
 		if (*opt == '^')
-			vd->sf_init = 1;
+			vsc->sf_init = 1;
 	}
 
 	av = ParseArgv(opt, ARGV_COMMA);
@@ -74,7 +129,7 @@ vsc_sf_arg(struct VSM_data *vd, const char *opt)
 	for (i = 1; av[i] != NULL; i++) {
 		ALLOC_OBJ(sf, VSL_SF_MAGIC);
 		AN(sf);
-		VTAILQ_INSERT_TAIL(&vd->sf_list, sf, next);
+		VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, next);
 
 		p = av[i];
 		if (*p == '^') {
@@ -134,10 +189,13 @@ vsc_sf_arg(struct VSM_data *vd, const char *opt)
 int
 VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
+	struct vsc *vsc;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsc = vd->vsc;
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	switch (arg) {
-	case 'f': return (vsc_sf_arg(vd, opt));
+	case 'f': return (vsc_sf_arg(vsc, opt));
 	case 'n': return (VSM_n_Arg(vd, opt));
 	default:
 		return (0);
@@ -146,12 +204,27 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 
 /*--------------------------------------------------------------------*/
 
+int
+VSC_Open(struct VSM_data *vd, int diag)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vd->vsc);
+
+	i = VSM_Open(vd, diag);
+	return (i);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct vsc_main *
-VSM_OpenStats(struct VSM_data *vd)
+VSC_Main(struct VSM_data *vd)
 {
 	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	CHECK_OBJ_NOTNULL(vd->vsc, VSC_MAGIC);
 
 	sha = vsm_find_alloc(vd, VSC_CLASS, "", "");
 	assert(sha != NULL);
@@ -176,16 +249,20 @@ iter_test(const char *s1, const char *s2, int wc)
 }
 
 static int
-iter_call(const struct VSM_data *vd, vsc_iter_f *func, void *priv,
+iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
     const struct vsc_point *const sp)
 {
 	struct vsc_sf *sf;
-	int good = vd->sf_init;
+	int good;
 
-	if (VTAILQ_EMPTY(&vd->sf_list))
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+
+	if (VTAILQ_EMPTY(&vsc->sf_list))
 		return (func(priv, sp));
 
-	VTAILQ_FOREACH(sf, &vd->sf_list, next) {
+	good = vsc->sf_init;
+
+	VTAILQ_FOREACH(sf, &vsc->sf_list, next) {
 		if (iter_test(sf->class, sp->class, sf->flags & VSL_SF_CL_WC))
 			continue;
 		if (iter_test(sf->ident, sp->ident, sf->flags & VSL_SF_ID_WC))
@@ -203,13 +280,17 @@ iter_call(const struct VSM_data *vd, vsc_iter_f *func, void *priv,
 }
 
 static int
-iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
+iter_main(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
     void *priv)
 {
-	struct vsc_main *st = VSM_PTR(sha);
+	struct vsc_main *st;
 	struct vsc_point sp;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+
+	st = VSM_PTR(sha);
 	sp.class = "";
 	sp.ident = "";
 #define VSC_F_MAIN(nn, tt, ll, ff, dd)					\
@@ -218,7 +299,7 @@ iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
 	sp.flag = ff;							\
 	sp.desc = dd;							\
 	sp.ptr = &st->nn;						\
-	i = iter_call(vd, func, priv, &sp);				\
+	i = iter_call(vsc, func, priv, &sp);				\
 	if (i)								\
 		return(i);
 #include "vsc_fields.h"
@@ -227,12 +308,16 @@ iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
 }
 
 static int
-iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
+iter_sma(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
     void *priv)
 {
-	struct vsc_sma *st = VSM_PTR(sha);
+	struct vsc_sma *st;
 	struct vsc_point sp;
 	int i;
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+	st = VSM_PTR(sha);
 
 	sp.class = VSC_TYPE_SMA;
 	sp.ident = sha->ident;
@@ -242,7 +327,7 @@ iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
 	sp.flag = ff;							\
 	sp.desc = dd;							\
 	sp.ptr = &st->nn;						\
-	i = iter_call(vd, func, priv, &sp);				\
+	i = iter_call(vsc, func, priv, &sp);				\
 	if (i)								\
 		return(i);
 #include "vsc_fields.h"
@@ -253,8 +338,13 @@ iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
 int
 VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv)
 {
+	struct vsc *vsc;
 	struct vsm_chunk *sha;
 	int i;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsc = vd->vsc;
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
 	i = 0;
 	VSM_FOREACH(sha, vd) {
@@ -262,9 +352,9 @@ VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv)
 		if (strcmp(sha->class, VSC_CLASS))
 			continue;
 		if (!strcmp(sha->type, VSC_TYPE_MAIN))
-			i = iter_main(vd, sha, func, priv);
+			i = iter_main(vsc, sha, func, priv);
 		else if (!strcmp(sha->type, VSC_TYPE_SMA))
-			i = iter_sma(vd, sha, func, priv);
+			i = iter_sma(vsc, sha, func, priv);
 		else
 			i = -1;
 		if (i != 0)

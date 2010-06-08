@@ -197,6 +197,7 @@ main(int argc, char * const *argv)
 	int delay = 1, once = 0, xml = 0;
 
 	vd = VSM_New();
+	VSC_Setup(vd);
 
 	while ((c = getopt(argc, argv, VSL_STAT_ARGS "1f:lVw:x")) != -1) {
 		switch (c) {
@@ -207,7 +208,7 @@ main(int argc, char * const *argv)
 			(void)VSC_Arg(vd, c, optarg);
 			break;
 		case 'l':
-			if (VSM_Open(vd, 1))
+			if (VSC_Open(vd, 1))
 				exit(1);
 			list_fields(vd);
 			exit(0);
@@ -227,11 +228,10 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (VSM_Open(vd, 1))
+	if (VSC_Open(vd, 1))
 		exit(1);
 
-	if ((VSL_stats = VSM_OpenStats(vd)) == NULL)
-		exit(1);
+	VSL_stats = VSC_Main(vd);
 
 	if (xml)
 		do_xml(vd);

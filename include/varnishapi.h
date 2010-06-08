@@ -125,8 +125,11 @@ void vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp);
  * VSC level access functions
  */
 
+void VSC_Setup(struct VSM_data *vd);
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
-struct vsc_main *VSM_OpenStats(struct VSM_data *vd);
+int VSC_Open(struct VSM_data *vd, int diag);
+
+struct vsc_main *VSC_Main(struct VSM_data *vd);
 
 struct vsc_point {
 	const char *class;		/* stat struct type		*/
@@ -146,7 +149,6 @@ int VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv);
  * VSL level access functions
  */
 
-/* shmlog.c */
 typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)

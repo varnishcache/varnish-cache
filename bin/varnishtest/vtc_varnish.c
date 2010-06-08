@@ -67,8 +67,6 @@ struct varnish {
 	struct vtclog		*vl1;
 	VTAILQ_ENTRY(varnish)	list;
 
-	struct vsc_main	*stats;
-
 	struct vsb		*storage;
 
 	struct vsb		*args;
@@ -262,6 +260,7 @@ varnish_launch(struct varnish *v)
 	char *r;
 
 	v->vd = VSM_New();
+	VSC_Setup(v->vd);
 
 	/* Create listener socket */
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
@@ -362,11 +361,8 @@ varnish_launch(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
-	if (v->stats != NULL)
-		VSM_Close(v->vd);
 	(void)VSL_Log_Arg(v->vd, 'n', v->workdir);
-	AZ(VSM_Open(v->vd, 1));
-	v->stats = VSM_OpenStats(v->vd);
+	AZ(VSC_Open(v->vd, 1));
 }
 
 /**********************************************************************

@@ -87,8 +87,6 @@ VSM_New(void)
 	vd->rbuf = malloc(vd->rbuflen * 4);
 	assert(vd->rbuf != NULL);
 
-	VTAILQ_INIT(&vd->sf_list);
-
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vd);
 }
@@ -139,7 +137,6 @@ VSM_Name(const struct VSM_data *vd)
 void
 VSM_Delete(struct VSM_data *vd)
 {
-	struct vsc_sf *sf;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	VSM_Close(vd);
@@ -151,14 +148,7 @@ VSM_Delete(struct VSM_data *vd)
 	free(vd->rbuf);
 	free(vd->fname);
 
-	while(!VTAILQ_EMPTY(&vd->sf_list)) {
-		sf = VTAILQ_FIRST(&vd->sf_list);
-		VTAILQ_REMOVE(&vd->sf_list, sf, next);
-		free(sf->class);
-		free(sf->ident);
-		free(sf->name);
-		free(sf);
-	}
+	vsc_delete(vd);
 
 	free(vd);
 }
