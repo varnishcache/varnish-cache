@@ -168,7 +168,7 @@ static int
 vsl_open(struct VSL_data *vd, int diag)
 {
 	int i;
-	struct shmloghead slh;
+	struct vsm_head slh;
 
 	if (vd->vsl_lh != NULL)
 		return (0);
@@ -196,7 +196,7 @@ vsl_open(struct VSL_data *vd, int diag)
 			    vd->fname, strerror(errno));
 		return (1);
 	}
-	if (slh.magic != SHMLOGHEAD_MAGIC) {
+	if (slh.magic != VSM_HEAD_MAGIC) {
 		if (diag)
 			vd->diag(vd->priv, "Wrong magic number in file %s\n",
 			    vd->fname);
@@ -271,19 +271,19 @@ VSL_ReOpen(struct VSL_data *vd, int diag)
 
 /*--------------------------------------------------------------------*/
 
-struct shmalloc *
+struct vsm_chunk *
 vsl_iter0(const struct VSL_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
 		return(NULL);
-	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, SHMALLOC_MAGIC);
+	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, VSM_CHUNK_MAGIC);
 	return (&vd->vsl_lh->head);
 }
 
 void
-vsl_itern(const struct VSL_data *vd, struct shmalloc **pp)
+vsl_itern(const struct VSL_data *vd, struct vsm_chunk **pp)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
@@ -291,25 +291,25 @@ vsl_itern(const struct VSL_data *vd, struct shmalloc **pp)
 		*pp = NULL;
 		return;
 	}
-	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
-	*pp = SHA_NEXT(*pp);
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+	*pp = VSM_NEXT(*pp);
 	if ((void*)(*pp) >= vd->vsl_end) {
 		*pp = NULL;
 		return;
 	}
-	CHECK_OBJ_NOTNULL(*pp, SHMALLOC_MAGIC);
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
 }
 
 /*--------------------------------------------------------------------*/
 
-struct shmalloc *
+struct vsm_chunk *
 vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, const char *ident)
 {
-	struct shmalloc *sha;
+	struct vsm_chunk *sha;
 
 	assert (vd->vsl_lh != NULL);
 	VSL_FOREACH(sha, vd) {
-		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 		if (strcmp(sha->class, class))
 			continue;
 		if (type != NULL && strcmp(sha->type, type))
@@ -327,7 +327,7 @@ void *
 VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident,
     unsigned *lenp)
 {
-	struct shmalloc *sha;
+	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	sha = vsl_find_alloc(vd, class, type, ident);
@@ -335,5 +335,5 @@ VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const c
 		return (NULL);
 	if (lenp != NULL)
 		*lenp = sha->len - sizeof *sha;
-	return (SHA_PTR(sha));
+	return (VSM_PTR(sha));
 }

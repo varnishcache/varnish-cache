@@ -61,7 +61,7 @@ struct VSL_data {
 	struct stat		fstat;
 
 	int			vsl_fd;
-	struct shmloghead	*vsl_lh;
+	struct vsm_head	*vsl_lh;
 	void			*vsl_end;
 	unsigned		alloc_seq;
 
@@ -117,5 +117,5 @@ struct VSL_data {
 	unsigned long		keep;
 };
 
-struct shmalloc *vsl_find_alloc(const struct VSL_data *vd, const char *class,
+struct vsm_chunk *vsl_find_alloc(const struct VSL_data *vd, const char *class,
     const char *type, const char *ident);

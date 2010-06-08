@@ -137,8 +137,8 @@ struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
 extern const char *VSL_tags[256];
 
 
-struct shmalloc *vsl_iter0(const struct VSL_data *vd);
-void vsl_itern(const struct VSL_data *vd, struct shmalloc **pp);
+struct vsm_chunk *vsl_iter0(const struct VSL_data *vd);
+void vsl_itern(const struct VSL_data *vd, struct vsm_chunk **pp);
 
 #define VSL_FOREACH(var, vd) \
 	for((var) = vsl_iter0((vd)); (var) != NULL; vsl_itern((vd), &(var)))

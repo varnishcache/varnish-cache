@@ -50,13 +50,13 @@ SVNID("$Id$")
 struct varnish_stats *
 VSL_OpenStats(struct VSL_data *vd)
 {
-	struct shmalloc *sha;
+	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 
-	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
+	sha = vsl_find_alloc(vd, VSM_CLASS_STAT, "", "");
 	assert(sha != NULL);
-	return (SHA_PTR(sha));
+	return (VSM_PTR(sha));
 }
 
 /*--------------------------------------------------------------------
@@ -104,10 +104,10 @@ iter_call(const struct VSL_data *vd, vsl_stat_f *func, void *priv,
 }
 
 static int
-iter_main(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
+iter_main(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
     void *priv)
 {
-	struct varnish_stats *st = SHA_PTR(sha);
+	struct varnish_stats *st = VSM_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
@@ -128,10 +128,10 @@ iter_main(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
 }
 
 static int
-iter_sma(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
+iter_sma(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
     void *priv)
 {
-	struct varnish_stats_sma *st = SHA_PTR(sha);
+	struct varnish_stats_sma *st = VSM_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
@@ -154,13 +154,13 @@ iter_sma(const struct VSL_data *vd, struct shmalloc *sha, vsl_stat_f *func,
 int
 VSL_IterStat(const struct VSL_data *vd, vsl_stat_f *func, void *priv)
 {
-	struct shmalloc *sha;
+	struct vsm_chunk *sha;
 	int i;
 
 	i = 0;
 	VSL_FOREACH(sha, vd) {
-		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
-		if (strcmp(sha->class, VSL_CLASS_STAT))
+		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+		if (strcmp(sha->class, VSM_CLASS_STAT))
 			continue;
 		if (!strcmp(sha->type, VSL_TYPE_STAT))
 			i = iter_main(vd, sha, func, priv);

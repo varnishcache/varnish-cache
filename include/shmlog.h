@@ -36,7 +36,7 @@
 #ifndef SHMLOG_H_INCLUDED
 #define SHMLOG_H_INCLUDED
 
-#define SHMLOG_FILENAME		"_.vsl"
+#define VSM_FILENAME		"_.vsm"
 
 #include <time.h>
 #include <sys/types.h>
@@ -47,8 +47,8 @@
  * This structure describes each allocation from the shmlog
  */
 
-struct shmalloc {
-#define SHMALLOC_MAGIC		0x43907b6e	/* From /dev/random */
+struct vsm_chunk {
+#define VSM_CHUNK_MAGIC		0x43907b6e	/* From /dev/random */
 	unsigned		magic;
 	unsigned		len;
 	char			class[8];
@@ -56,11 +56,11 @@ struct shmalloc {
 	char			ident[16];
 };
 
-#define SHA_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
-#define SHA_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
+#define VSM_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
+#define VSM_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
 
-struct shmloghead {
-#define SHMLOGHEAD_MAGIC	4185512502U	/* From /dev/random */
+struct vsm_head {
+#define VSM_HEAD_MAGIC		4185512502U	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
@@ -76,11 +76,11 @@ struct shmloghead {
 
 	unsigned		alloc_seq;
 	/* Must be last element */
-	struct shmalloc		head;
+	struct vsm_chunk	head;
 };
 
-#define VSL_CLASS_LOG		"Log"
-#define VSL_CLASS_STAT		"Stat"
+#define VSM_CLASS_LOG		"Log"
+#define VSM_CLASS_STAT		"Stat"
 
 /*
  * Shared memory log format

@@ -55,7 +55,7 @@ SVNID("$Id$")
 #endif
 
 struct varnish_stats	*VSL_stats;
-struct shmloghead	*loghead;
+struct vsm_head	*loghead;
 uint32_t		*vsl_log_start;
 uint32_t		*vsl_log_end;
 uint32_t		*vsl_log_nxt;
@@ -67,7 +67,7 @@ static int vsl_fd = -1;
 void *
 mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 {
-	struct shmalloc *sha, *sha2;
+	struct vsm_chunk *sha, *sha2;
 	unsigned seq;
 
 	ASSERT_MGT();
@@ -79,10 +79,10 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 	size += sizeof *sha;
 	sha = &loghead->head;
 	while (1) {
-		CHECK_OBJ_NOTNULL(sha, SHMALLOC_MAGIC);
+		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 
 		if (strcmp(sha->class, "Free")) {
-			sha = SHA_NEXT(sha);
+			sha = VSM_NEXT(sha);
 			continue;
 		}
 		assert(size <= sha->len);
@@ -94,7 +94,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 		VWMB();
 
 		memset(sha2, 0, sizeof *sha2);
-		sha2->magic = SHMALLOC_MAGIC;
+		sha2->magic = VSM_CHUNK_MAGIC;
 		sha2->len = sha->len - size;
 		bprintf(sha2->class, "%s", "Free");
 
@@ -109,7 +109,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 				loghead->alloc_seq = seq++;
 			while (loghead->alloc_seq == 0);
 
-		return (SHA_PTR(sha));
+		return (VSM_PTR(sha));
 	}
 	return (NULL);
 }
@@ -122,7 +122,7 @@ mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *id
 static void
 vsl_n_check(int fd)
 {
-	struct shmloghead slh;
+	struct vsm_head slh;
 	int i;
 	struct stat st;
 
@@ -134,7 +134,7 @@ vsl_n_check(int fd)
 	i = read(fd, &slh, sizeof slh);
 	if (i != sizeof slh)
 		return;
-	if (slh.magic != SHMLOGHEAD_MAGIC)
+	if (slh.magic != VSM_HEAD_MAGIC)
 		return;
 	if (slh.hdrsize != sizeof slh)
 		return;
@@ -157,7 +157,7 @@ vsl_n_check(int fd)
 static void
 vsl_buildnew(const char *fn, unsigned size, int fill)
 {
-	struct shmloghead slh;
+	struct vsm_head slh;
 	int i;
 	unsigned u;
 	char buf[64*1024];
@@ -171,7 +171,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	}
 
 	memset(&slh, 0, sizeof slh);
-	slh.magic = SHMLOGHEAD_MAGIC;
+	slh.magic = VSM_HEAD_MAGIC;
 	slh.hdrsize = sizeof slh;
 	slh.shm_size = size;
 	i = write(vsl_fd, &slh, sizeof slh);
@@ -276,14 +276,14 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	(void)mlock((void*)loghead, size);
 
 	memset(&loghead->head, 0, sizeof loghead->head);
-	loghead->head.magic = SHMALLOC_MAGIC;
+	loghead->head.magic = VSM_CHUNK_MAGIC;
 	loghead->head.len =
 	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
 	bprintf(loghead->head.class, "%s", "Free");
 	VWMB();
 
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
-	    VSL_CLASS_STAT, VSL_TYPE_STAT, "");
+	    VSM_CLASS_STAT, VSL_TYPE_STAT, "");
 	AN(VSL_stats);
 
 	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "", "");
@@ -291,7 +291,7 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	*pp = *params;
 	params = pp;
 
-	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS_LOG, "", "");
+	vsl_log_start = mgt_SHM_Alloc(s1, VSM_CLASS_LOG, "", "");
 	AN(vsl_log_start);
 	vsl_log_end = (void*)((uint8_t *)vsl_log_start + s1);
 	vsl_log_nxt = vsl_log_start + 1;

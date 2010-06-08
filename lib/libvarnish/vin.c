@@ -75,7 +75,7 @@ vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)
 	}
 
 	/* Definitive length check */
-	if (strlen(dn) + 1 + strlen(SHMLOG_FILENAME) >= sizeof dn) {
+	if (strlen(dn) + 1 + strlen(VSM_FILENAME) >= sizeof dn) {
 		errno = ENAMETOOLONG;
 		return (-1);
 	}
@@ -93,7 +93,7 @@ vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)
 			return (-1);
 	}
 	if (vsl != NULL) {
-		bprintf(nm, "%s%s", dn, SHMLOG_FILENAME);
+		bprintf(nm, "%s%s", dn, VSM_FILENAME);
 		*vsl = strdup(nm);
 		if (*vsl == NULL)
 			return (-1);

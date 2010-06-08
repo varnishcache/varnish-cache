@@ -623,7 +623,7 @@ main(int argc, char * const *argv)
 
 	HSH_config(h_arg);
 
-	mgt_SHM_Init(SHMLOG_FILENAME, l_arg);
+	mgt_SHM_Init(VSM_FILENAME, l_arg);
 
 	vsb_finish(vident);
 	AZ(vsb_overflowed(vident));

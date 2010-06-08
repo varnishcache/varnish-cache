@@ -261,14 +261,14 @@ VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
 int
 VSL_OpenLog(struct VSL_data *vd)
 {
-	struct shmalloc *sha;
+	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, "", "");
+	sha = vsl_find_alloc(vd, VSM_CLASS_LOG, "", "");
 	assert(sha != NULL);
 
-	vd->log_start = SHA_PTR(sha);
-	vd->log_end = SHA_NEXT(sha);
+	vd->log_start = VSM_PTR(sha);
+	vd->log_end = VSM_NEXT(sha);
 	vd->log_ptr = vd->log_start + 1;
 
 	vd->last_seq = vd->log_start[0];
