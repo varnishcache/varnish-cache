@@ -52,7 +52,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static int
-do_xml_cb(void *priv, const struct vsl_statpt * const pt)
+do_xml_cb(void *priv, const struct vsc_point * const pt)
 {
 	uint64_t val;
 
@@ -83,7 +83,7 @@ do_xml(const struct VSM_data *vd)
 	now = time(NULL);
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
-	(void)VSL_IterStat(vd, do_xml_cb, NULL);
+	(void)VSC_Iter(vd, do_xml_cb, NULL);
 	printf("</varnishstat>\n");
 }
 
@@ -95,7 +95,7 @@ struct once_priv {
 };
 
 static int
-do_once_cb(void *priv, const struct vsl_statpt * const pt)
+do_once_cb(void *priv, const struct vsc_point * const pt)
 {
 	struct once_priv *op;
 	uint64_t val;
@@ -129,13 +129,13 @@ do_once(const struct VSM_data *vd, const struct vsc_main *VSL_stats)
 	op.up = VSL_stats->uptime;
 	op.pad = 18;
 
-	(void)VSL_IterStat(vd, do_once_cb, &op);
+	(void)VSC_Iter(vd, do_once_cb, &op);
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-do_list_cb(void *priv, const struct vsl_statpt * const pt)
+do_list_cb(void *priv, const struct vsc_point * const pt)
 {
 	int i;
 
@@ -159,7 +159,7 @@ list_fields(const struct VSM_data *vd)
 	fprintf(stderr, "Field name                     Description\n");
 	fprintf(stderr, "----------                     -----------\n");
 
-	(void)VSL_IterStat(vd, do_list_cb, NULL);
+	(void)VSC_Iter(vd, do_list_cb, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -204,7 +204,7 @@ main(int argc, char * const *argv)
 			once = 1;
 			break;
 		case 'f':
-			(void)VSL_Stat_Arg(vd, c, optarg);
+			(void)VSC_Arg(vd, c, optarg);
 			break;
 		case 'l':
 			if (VSM_Open(vd, 1))
@@ -221,7 +221,7 @@ main(int argc, char * const *argv)
 			xml = 1;
 			break;
 		default:
-			if (VSL_Stat_Arg(vd, c, optarg) > 0)
+			if (VSC_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}

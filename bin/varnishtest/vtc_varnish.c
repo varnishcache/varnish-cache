@@ -607,7 +607,7 @@ struct stat_priv {
 };
 
 static int
-do_stat_cb(void *priv, const struct vsl_statpt * const pt)
+do_stat_cb(void *priv, const struct vsc_point * const pt)
 {
 	struct stat_priv *sp = priv;
 	const char *p = sp->target;
@@ -655,7 +655,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
 
 		good = -1;
-		if (!VSL_IterStat(v->vd, do_stat_cb, &sp))
+		if (!VSC_Iter(v->vd, do_stat_cb, &sp))
 			continue;
 		good = 0;
 

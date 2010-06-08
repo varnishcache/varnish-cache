@@ -66,7 +66,7 @@ struct pt {
 static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
 
 static int
-do_curses_cb(void *priv, const struct vsl_statpt * const sp)
+do_curses_cb(void *priv, const struct vsc_point * const sp)
 {
 	struct pt *pt;
 	char buf[128];
@@ -110,7 +110,7 @@ prep_pts(const struct VSM_data *vd)
 		free(pt);
 	}
 
-	(void)VSL_IterStat(vd, do_curses_cb, NULL);
+	(void)VSC_Iter(vd, do_curses_cb, NULL);
 }
 
 static void

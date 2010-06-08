@@ -68,7 +68,7 @@ int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	/*
 	 * Configure which varnishd instance to access.
 	 * Can also be, and normally is done through the VSL_Log_arg()
-	 * and VSL_Stat_Arg() functions.
+	 * and VSC_Arg() functions.
 	 * Returns:
 	 *	 1 on success
 	 *	 -1 on failure, with diagnostic on stderr.
@@ -121,6 +121,30 @@ void vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp);
 #define VSM_FOREACH(var, vd) \
 	for((var) = vsm_iter0((vd)); (var) != NULL; vsm_itern((vd), &(var)))
 
+/*---------------------------------------------------------------------
+ * VSC level access functions
+ */
+
+int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
+struct vsc_main *VSM_OpenStats(struct VSM_data *vd);
+
+struct vsc_point {
+	const char *class;		/* stat struct type		*/
+	const char *ident;		/* stat struct ident		*/
+	const char *name;		/* field name			*/
+	const char *fmt;		/* field format ("uint64_t")	*/
+	int flag;			/* 'a' = counter, 'i' = gauge	*/
+	const char *desc;		/* description			*/
+	const volatile void *ptr;	/* field value			*/
+};
+
+typedef int vsc_iter_f(void *priv, const struct vsc_point *const pt);
+
+int VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv);
+
+/*---------------------------------------------------------------------
+ * VSL level access functions
+ */
 
 /* shmlog.c */
 typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
@@ -139,24 +163,8 @@ void VSL_NonBlocking(struct VSM_data *vd, int nb);
 int VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSM_data *lh, uint32_t **pp);
 int VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt);
-int VSL_Stat_Arg(struct VSM_data *vd, int arg, const char *opt);
-struct vsc_main *VSM_OpenStats(struct VSM_data *vd);
 extern const char *VSL_tags[256];
 
-
-struct vsl_statpt {
-	const char *class;	/* stat struct type			*/
-	const char *ident;	/* stat struct ident			*/
-	const char *name;	/* field name				*/
-	const char *fmt;	/* field format ("uint64_t")		*/
-	int flag;		/* 'a' = counter, 'i' = gauge		*/
-	const char *desc;	/* description				*/
-	const volatile void *ptr;	/* field value		*/
-};
-
-typedef int vsl_stat_f(void *priv, const struct vsl_statpt *const pt);
-
-int VSL_IterStat(const struct VSM_data *vd, vsl_stat_f *func, void *priv);
 
 /* base64.c */
 void base64_init(void);

@@ -35,16 +35,114 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "vas.h"
 #include "vsm.h"
 #include "vsc.h"
 #include "vre.h"
+#include "argv.h"
 #include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
 #include "vslapi.h"
+
+/*--------------------------------------------------------------------*/
+
+static int
+vsc_sf_arg(struct VSM_data *vd, const char *opt)
+{
+	struct vsl_sf *sf;
+	char **av, *q, *p;
+	int i;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+
+	if (VTAILQ_EMPTY(&vd->sf_list)) {
+		if (*opt == '^')
+			vd->sf_init = 1;
+	}
+
+	av = ParseArgv(opt, ARGV_COMMA);
+	AN(av);
+	if (av[0] != NULL) {
+		fprintf(stderr, "Parse error: %s", av[0]);
+		exit (1);
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		ALLOC_OBJ(sf, VSL_SF_MAGIC);
+		AN(sf);
+		VTAILQ_INSERT_TAIL(&vd->sf_list, sf, next);
+
+		p = av[i];
+		if (*p == '^') {
+			sf->flags |= VSL_SF_EXCL;
+			p++;
+		}
+
+		q = strchr(p, '.');
+		if (q != NULL) {
+			*q++ = '\0';
+			if (*p != '\0')
+				REPLACE(sf->class, p);
+			p = q;
+			if (*p != '\0') {
+				q = strchr(p, '.');
+				if (q != NULL) {
+					*q++ = '\0';
+					if (*p != '\0')
+						REPLACE(sf->ident, p);
+					p = q;
+				}
+			}
+		}
+		if (*p != '\0') {
+			REPLACE(sf->name, p);
+		}
+
+		/* Check for wildcards */
+		if (sf->class != NULL) {
+			q = strchr(sf->class, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_CL_WC;
+			}
+		}
+		if (sf->ident != NULL) {
+			q = strchr(sf->ident, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_ID_WC;
+			}
+		}
+		if (sf->name != NULL) {
+			q = strchr(sf->name, '*');
+			if (q != NULL && q[1] == '\0') {
+				*q = '\0';
+				sf->flags |= VSL_SF_NM_WC;
+			}
+		}
+	}
+	FreeArgv(av);
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	switch (arg) {
+	case 'f': return (vsc_sf_arg(vd, opt));
+	case 'n': return (VSM_n_Arg(vd, opt));
+	default:
+		return (0);
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -78,8 +176,8 @@ iter_test(const char *s1, const char *s2, int wc)
 }
 
 static int
-iter_call(const struct VSM_data *vd, vsl_stat_f *func, void *priv,
-    const struct vsl_statpt *const sp)
+iter_call(const struct VSM_data *vd, vsc_iter_f *func, void *priv,
+    const struct vsc_point *const sp)
 {
 	struct vsl_sf *sf;
 	int good = vd->sf_init;
@@ -105,11 +203,11 @@ iter_call(const struct VSM_data *vd, vsl_stat_f *func, void *priv,
 }
 
 static int
-iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
+iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
     void *priv)
 {
 	struct vsc_main *st = VSM_PTR(sha);
-	struct vsl_statpt sp;
+	struct vsc_point sp;
 	int i;
 
 	sp.class = "";
@@ -129,11 +227,11 @@ iter_main(const struct VSM_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 }
 
 static int
-iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
+iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsc_iter_f *func,
     void *priv)
 {
 	struct vsc_sma *st = VSM_PTR(sha);
-	struct vsl_statpt sp;
+	struct vsc_point sp;
 	int i;
 
 	sp.class = VSC_TYPE_SMA;
@@ -153,7 +251,7 @@ iter_sma(const struct VSM_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 }
 
 int
-VSL_IterStat(const struct VSM_data *vd, vsl_stat_f *func, void *priv)
+VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv)
 {
 	struct vsm_chunk *sha;
 	int i;
