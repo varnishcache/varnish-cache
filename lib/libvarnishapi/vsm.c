@@ -139,7 +139,7 @@ VSM_Name(const struct VSM_data *vd)
 void
 VSM_Delete(struct VSM_data *vd)
 {
-	struct vsl_sf *sf;
+	struct vsc_sf *sf;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	VSM_Close(vd);

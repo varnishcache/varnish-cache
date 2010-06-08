@@ -54,7 +54,7 @@ SVNID("$Id$")
 static int
 vsc_sf_arg(struct VSM_data *vd, const char *opt)
 {
-	struct vsl_sf *sf;
+	struct vsc_sf *sf;
 	char **av, *q, *p;
 	int i;
 
@@ -179,7 +179,7 @@ static int
 iter_call(const struct VSM_data *vd, vsc_iter_f *func, void *priv,
     const struct vsc_point *const sp)
 {
-	struct vsl_sf *sf;
+	struct vsc_sf *sf;
 	int good = vd->sf_init;
 
 	if (VTAILQ_EMPTY(&vd->sf_list))
