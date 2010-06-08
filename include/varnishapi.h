@@ -113,23 +113,58 @@ struct vsm_head *VSM_Head(struct VSM_data *vd);
 
 void *VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type,
     const char *ident, unsigned *lenp);
+	/*
+	 * Find a given chunk in the shared memory.
+	 * Returns pointer or NULL.
+	 * Lenp, if non-NULL, is set to length of chunk.
+	 */
+
 void VSM_Close(struct VSM_data *vd);
+	/*
+	 * Unmap shared memory
+	 * Deallocate all storage (including VSC and VSL allocations)
+	 */
 
 struct vsm_chunk *vsm_iter0(const struct VSM_data *vd);
 void vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp);
 
 #define VSM_FOREACH(var, vd) \
-	for((var) = vsm_iter0((vd)); (var) != NULL; vsm_itern((vd), &(var)))
+    for((var) = vsm_iter0((vd)); (var) != NULL; vsm_itern((vd), &(var)))
+
+	/*
+	 * Iterate over all chunks in shared memory
+	 * var = "struct vsm_chunk *"
+	 * vd = "struct VSM_data"
+	 */
 
 /*---------------------------------------------------------------------
  * VSC level access functions
  */
 
 void VSC_Setup(struct VSM_data *vd);
+	/*
+	 * Setup vd for use with VSC functions.
+	 */
+
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
+	/*
+	 * Handle standard stat-presenter arguments 
+	 * Return:
+	 *	-1 error
+	 *	 0 not handled
+	 *	 1 Handled.
+	 */
+
 int VSC_Open(struct VSM_data *vd, int diag);
+	/*
+	 * Open shared memory for VSC processing.
+	 * args and returns as VSM_Open()
+	 */
 
 struct vsc_main *VSC_Main(struct VSM_data *vd);
+	/*
+	 * return Main stats structure
+	 */
 
 struct vsc_point {
 	const char *class;		/* stat struct type		*/
@@ -144,6 +179,10 @@ struct vsc_point {
 typedef int vsc_iter_f(void *priv, const struct vsc_point *const pt);
 
 int VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv);
+	/*
+	 * Iterate over all statistics counters, calling "func" for
+	 * each counter not suppressed by any "-f" arguments.
+	 */
 
 /*---------------------------------------------------------------------
  * VSL level access functions

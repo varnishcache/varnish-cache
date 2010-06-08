@@ -35,7 +35,6 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "vas.h"
@@ -107,12 +106,15 @@ vsc_delete(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_sf_arg(struct vsc *vsc, const char *opt)
+vsc_sf_arg(struct VSM_data *vd, const char *opt)
 {
+	struct vsc *vsc;
 	struct vsc_sf *sf;
 	char **av, *q, *p;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsc = vd->vsc;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
 	if (VTAILQ_EMPTY(&vsc->sf_list)) {
@@ -123,8 +125,8 @@ vsc_sf_arg(struct vsc *vsc, const char *opt)
 	av = ParseArgv(opt, ARGV_COMMA);
 	AN(av);
 	if (av[0] != NULL) {
-		fprintf(stderr, "Parse error: %s", av[0]);
-		exit (1);
+		vd->diag(vd->priv, "Parse error: %s", av[0]);
+		return (-1);
 	}
 	for (i = 1; av[i] != NULL; i++) {
 		ALLOC_OBJ(sf, VSL_SF_MAGIC);
@@ -189,13 +191,11 @@ vsc_sf_arg(struct vsc *vsc, const char *opt)
 int
 VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
-	struct vsc *vsc;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vsc = vd->vsc;
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(vd->vsc);
 	switch (arg) {
-	case 'f': return (vsc_sf_arg(vsc, opt));
+	case 'f': return (vsc_sf_arg(vd, opt));
 	case 'n': return (VSM_n_Arg(vd, opt));
 	default:
 		return (0);
