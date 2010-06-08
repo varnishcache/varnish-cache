@@ -51,7 +51,7 @@ SVNID("$Id$")
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vsl.h"
+#include "vslapi.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */

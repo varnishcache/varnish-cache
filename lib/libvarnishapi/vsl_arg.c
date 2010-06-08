@@ -52,7 +52,7 @@ SVNID("$Id$")
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vsl.h"
+#include "vslapi.h"
 
 /*--------------------------------------------------------------------*/
 

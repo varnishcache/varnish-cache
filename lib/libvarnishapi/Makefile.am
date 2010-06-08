@@ -7,7 +7,7 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = -version-info 1:0:0
 
 libvarnishapi_la_SOURCES = \
-	vsl.h \
+	vslapi.h \
 	\
 	../libvarnish/assert.c \
 	../libvarnish/argv.c \

@@ -48,7 +48,7 @@ SVNID("$Id$")
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vsl.h"
+#include "vslapi.h"
 #include "vmb.h"
 
 static int vsl_nextlog(struct VSL_data *vd, uint32_t **pp);
