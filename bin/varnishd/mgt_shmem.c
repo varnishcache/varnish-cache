@@ -41,6 +41,7 @@ SVNID("$Id$")
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include "vsm.h"
 #include "shmlog.h"
 #include "mgt.h"
 #include "heritage.h"
@@ -194,7 +195,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 }
 
 void
-mgt_SHM_Init(const char *fn, const char *l_arg)
+mgt_SHM_Init(const char *l_arg)
 {
 	int i, fill;
 	struct params *pp;
@@ -259,13 +260,13 @@ mgt_SHM_Init(const char *fn, const char *l_arg)
 	size += ps - 1;
 	size &= ~(ps - 1);
 
-	i = open(fn, O_RDWR, 0644);
+	i = open(VSM_FILENAME, O_RDWR, 0644);
 	if (i >= 0) {
 		vsl_n_check(i);
 		(void)close(i);
 	}
 	(void)close(i);
-	vsl_buildnew(fn, size, fill);
+	vsl_buildnew(VSM_FILENAME, size, fill);
 
 	loghead = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,

@@ -1,6 +1,7 @@
 # $Id$
 
 pkginclude_HEADERS = \
+	vsm.h \
 	shmlog.h \
 	shmlog_tags.h \
 	stat_field.h \

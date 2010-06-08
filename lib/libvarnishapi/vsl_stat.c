@@ -37,6 +37,7 @@ SVNID("$Id$")
 #include <string.h>
 
 #include "vas.h"
+#include "vsm.h"
 #include "shmlog.h"
 #include "vre.h"
 #include "vqueue.h"

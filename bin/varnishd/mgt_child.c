@@ -59,7 +59,7 @@ SVNID("$Id$")
 #endif
 
 #include "mgt.h"
-#include "shmlog.h"
+#include "vsm.h"
 #include "heritage.h"
 #include "cli.h"
 #include "cli_priv.h"

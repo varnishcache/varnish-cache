@@ -44,7 +44,8 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "vas.h"
-#include "shmlog.h"
+#include "vin.h"
+#include "vsm.h"
 #include "vre.h"
 #include "vbm.h"
 #include "vqueue.h"

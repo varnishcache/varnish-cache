@@ -40,7 +40,8 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsm.h"
+#include "vin.h"
 
 int
 vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)

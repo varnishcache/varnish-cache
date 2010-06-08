@@ -66,7 +66,7 @@ SVNID("$Id$")
 #include "cli_priv.h"
 #include "cli_common.h"
 
-#include "shmlog.h"
+#include "vin.h"
 #include "heritage.h"
 #include "mgt.h"
 #include "hash_slinger.h"
@@ -623,7 +623,7 @@ main(int argc, char * const *argv)
 
 	HSH_config(h_arg);
 
-	mgt_SHM_Init(VSM_FILENAME, l_arg);
+	mgt_SHM_Init(l_arg);
 
 	vsb_finish(vident);
 	AZ(vsb_overflowed(vident));
