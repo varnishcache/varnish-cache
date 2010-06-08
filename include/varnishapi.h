@@ -116,7 +116,7 @@ void VSL_Close(struct VSL_data *vd);
 
 
 /* shmlog.c */
-typedef int vsl_handler(void *priv, enum shmlogtag tag, unsigned fd,
+typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)

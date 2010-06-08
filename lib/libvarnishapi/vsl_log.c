@@ -230,7 +230,7 @@ VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_H_Print(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr)
 {
 	FILE *fo = priv;
@@ -265,7 +265,7 @@ VSL_OpenLog(struct VSL_data *vd)
 	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	sha = vsl_find_alloc(vd, VSM_CLASS_LOG, "", "");
+	sha = vsl_find_alloc(vd, VSL_CLASS, "", "");
 	assert(sha != NULL);
 
 	vd->log_start = VSM_PTR(sha);

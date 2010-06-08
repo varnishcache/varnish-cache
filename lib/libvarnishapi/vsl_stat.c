@@ -114,7 +114,7 @@ iter_main(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 
 	sp.class = "";
 	sp.ident = "";
-#define MAC_STAT(nn, tt, ll, ff, dd)					\
+#define VSC_F_MAIN(nn, tt, ll, ff, dd)					\
 	sp.name = #nn;							\
 	sp.fmt = #tt;							\
 	sp.flag = ff;							\
@@ -124,7 +124,7 @@ iter_main(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 	if (i)								\
 		return(i);
 #include "vsc_fields.h"
-#undef MAC_STAT
+#undef VSC_F_MAIN
 	return (0);
 }
 
@@ -138,7 +138,7 @@ iter_sma(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 
 	sp.class = VSC_TYPE_SMA;
 	sp.ident = sha->ident;
-#define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
+#define VSC_F_SMA(nn, tt, ll, ff, dd)				\
 	sp.name = #nn;							\
 	sp.fmt = #tt;							\
 	sp.flag = ff;							\
@@ -148,7 +148,7 @@ iter_sma(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 	if (i)								\
 		return(i);
 #include "vsc_fields.h"
-#undef MAC_STAT_SMA
+#undef VSC_F_SMA
 	return (0);
 }
 

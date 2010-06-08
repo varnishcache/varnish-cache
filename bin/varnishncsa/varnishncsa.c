@@ -178,7 +178,7 @@ trimline(const char *str, const char *end)
 }
 
 static int
-collect_backend(struct logline *lp, enum shmlogtag tag, unsigned spec,
+collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next;
@@ -261,7 +261,7 @@ collect_backend(struct logline *lp, enum shmlogtag tag, unsigned spec,
 }
 
 static int
-collect_client(struct logline *lp, enum shmlogtag tag, unsigned spec,
+collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next;
@@ -353,7 +353,7 @@ collect_client(struct logline *lp, enum shmlogtag tag, unsigned spec,
 }
 
 static int
-h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
+h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr)
 {
 	struct logline *lp;

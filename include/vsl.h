@@ -36,7 +36,7 @@
 #ifndef SHMLOG_H_INCLUDED
 #define SHMLOG_H_INCLUDED
 
-#define VSM_CLASS_LOG		"Log"
+#define VSL_CLASS		"Log"
 
 /*
  * Shared memory log format
@@ -67,7 +67,7 @@
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
-enum shmlogtag {
+enum vsl_tag {
 #define SLTM(foo)	SLT_##foo,
 #include "vsl_tags.h"
 #undef SLTM

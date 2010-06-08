@@ -96,9 +96,9 @@ wrk_sumstat(struct worker *w)
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
 #define L1(n) (VSL_stats->n += w->stats.n)
-#define MAC_STAT(n, t, l, f, d) L##l(n);
+#define VSC_F_MAIN(n, t, l, f, d) L##l(n);
 #include "vsc_fields.h"
-#undef MAC_STAT
+#undef VSC_F_MAIN
 #undef L0
 #undef L1
 	memset(&w->stats, 0, sizeof w->stats);

@@ -293,7 +293,7 @@ mgt_SHM_Init(const char *l_arg)
 	*pp = *params;
 	params = pp;
 
-	vsl_log_start = mgt_SHM_Alloc(s1, VSM_CLASS_LOG, "", "");
+	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS, "", "");
 	AN(vsl_log_start);
 	vsl_log_end = (void*)((uint8_t *)vsl_log_start + s1);
 	vsl_log_nxt = vsl_log_start + 1;

@@ -64,14 +64,14 @@ SVNID("$Id$")
 	LOGMTX2(ax, HTTP_HDR_FIRST,	Header),	\
 	}
 
-static const enum shmlogtag logmtx[][HTTP_HDR_FIRST + 1] = {
+static const enum vsl_tag logmtx[][HTTP_HDR_FIRST + 1] = {
 	[HTTP_Rx] = LOGMTX1(Rx),
 	[HTTP_Tx] = LOGMTX1(Tx),
 	[HTTP_Obj] = LOGMTX1(Obj)
 };
 /*lint -restore */
 
-static enum shmlogtag
+static enum vsl_tag
 http2shmlog(const struct http *hp, int t)
 {
 

@@ -75,7 +75,7 @@ name2tag(const char *n)
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
-static enum shmlogtag   last[65536];
+static enum vsl_tag   last[65536];
 #define F_INVCL		(1 << 0)
 #define F_MATCH		(1 << 1)
 
@@ -112,7 +112,7 @@ clean_order(void)
 }
 
 static int
-h_order(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr)
 {
 	char type;

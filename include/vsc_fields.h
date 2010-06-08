@@ -32,146 +32,147 @@
  * stats structure.
  */
 
-#ifndef MAC_STAT
-#define MAC_STAT(a, b, c, d, e)
-#define __MAC_STAT
+#ifndef VSC_F_MAIN
+#define VSC_F_MAIN(a, b, c, d, e)
+#define __VSC_F_MAIN
 #endif
 
 
-MAC_STAT(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
-MAC_STAT(client_drop,		uint64_t, 0, 'a', "Connection dropped, no sess/wrk")
-MAC_STAT(client_req,		uint64_t, 1, 'a', "Client requests received")
+VSC_F_MAIN(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
+VSC_F_MAIN(client_drop,		uint64_t, 0, 'a',
+					"Connection dropped, no sess/wrk")
+VSC_F_MAIN(client_req,		uint64_t, 1, 'a', "Client requests received")
 
-MAC_STAT(cache_hit,		uint64_t, 1, 'a', "Cache hits")
-MAC_STAT(cache_hitpass,		uint64_t, 1, 'a', "Cache hits for pass")
-MAC_STAT(cache_miss,		uint64_t, 1, 'a', "Cache misses")
+VSC_F_MAIN(cache_hit,		uint64_t, 1, 'a', "Cache hits")
+VSC_F_MAIN(cache_hitpass,	uint64_t, 1, 'a', "Cache hits for pass")
+VSC_F_MAIN(cache_miss,		uint64_t, 1, 'a', "Cache misses")
 
-MAC_STAT(backend_conn,		uint64_t, 0, 'a', "Backend conn. success")
-MAC_STAT(backend_unhealthy,	uint64_t, 0, 'a', "Backend conn. not attempted")
-MAC_STAT(backend_busy,		uint64_t, 0, 'a', "Backend conn. too many")
-MAC_STAT(backend_fail,		uint64_t, 0, 'a', "Backend conn. failures")
-MAC_STAT(backend_reuse,		uint64_t, 0, 'a', "Backend conn. reuses")
-MAC_STAT(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed")
-MAC_STAT(backend_recycle,	uint64_t, 0, 'a', "Backend conn. recycles")
-MAC_STAT(backend_unused,	uint64_t, 0, 'a', "Backend conn. unused")
+VSC_F_MAIN(backend_conn,	uint64_t, 0, 'a', "Backend conn. success")
+VSC_F_MAIN(backend_unhealthy,	uint64_t, 0, 'a', "Backend conn. not attempted")
+VSC_F_MAIN(backend_busy,	uint64_t, 0, 'a', "Backend conn. too many")
+VSC_F_MAIN(backend_fail,	uint64_t, 0, 'a', "Backend conn. failures")
+VSC_F_MAIN(backend_reuse,	uint64_t, 0, 'a', "Backend conn. reuses")
+VSC_F_MAIN(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed")
+VSC_F_MAIN(backend_recycle,	uint64_t, 0, 'a', "Backend conn. recycles")
+VSC_F_MAIN(backend_unused,	uint64_t, 0, 'a', "Backend conn. unused")
 
-MAC_STAT(fetch_head,		uint64_t, 1, 'a', "Fetch head")
-MAC_STAT(fetch_length,		uint64_t, 1, 'a', "Fetch with Length")
-MAC_STAT(fetch_chunked,		uint64_t, 1, 'a', "Fetch chunked")
-MAC_STAT(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF")
-MAC_STAT(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers")
-MAC_STAT(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close")
-MAC_STAT(fetch_oldhttp,		uint64_t, 1, 'a', "Fetch pre HTTP/1.1 closed")
-MAC_STAT(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len")
-MAC_STAT(fetch_failed,		uint64_t, 1, 'a', "Fetch failed")
+VSC_F_MAIN(fetch_head,		uint64_t, 1, 'a', "Fetch head")
+VSC_F_MAIN(fetch_length,	uint64_t, 1, 'a', "Fetch with Length")
+VSC_F_MAIN(fetch_chunked,	uint64_t, 1, 'a', "Fetch chunked")
+VSC_F_MAIN(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF")
+VSC_F_MAIN(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers")
+VSC_F_MAIN(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close")
+VSC_F_MAIN(fetch_oldhttp,	uint64_t, 1, 'a', "Fetch pre HTTP/1.1 closed")
+VSC_F_MAIN(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len")
+VSC_F_MAIN(fetch_failed,	uint64_t, 1, 'a', "Fetch failed")
 
 
-MAC_STAT(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
-MAC_STAT(n_sess,		uint64_t, 0, 'i', "N struct sess")
-MAC_STAT(n_object,		uint64_t, 1, 'i', "N struct object")
-MAC_STAT(n_vampireobject,	uint64_t, 1, 'i', "N unresurrected objects")
-MAC_STAT(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore")
-MAC_STAT(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead")
-MAC_STAT(n_smf,			uint64_t, 0, 'i', "N struct smf")
-MAC_STAT(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
-MAC_STAT(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
-MAC_STAT(n_vbe_conn,		uint64_t, 0, 'i', "N struct vbe_conn")
-MAC_STAT(n_wrk,			uint64_t, 0, 'i', "N worker threads")
-MAC_STAT(n_wrk_create,		uint64_t, 0, 'a', "N worker threads created")
-MAC_STAT(n_wrk_failed,		uint64_t, 0, 'a',
+VSC_F_MAIN(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
+VSC_F_MAIN(n_sess,		uint64_t, 0, 'i', "N struct sess")
+VSC_F_MAIN(n_object,		uint64_t, 1, 'i', "N struct object")
+VSC_F_MAIN(n_vampireobject,	uint64_t, 1, 'i', "N unresurrected objects")
+VSC_F_MAIN(n_objectcore,	uint64_t, 1, 'i', "N struct objectcore")
+VSC_F_MAIN(n_objecthead,	uint64_t, 1, 'i', "N struct objecthead")
+VSC_F_MAIN(n_smf,		uint64_t, 0, 'i', "N struct smf")
+VSC_F_MAIN(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
+VSC_F_MAIN(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
+VSC_F_MAIN(n_vbe_conn,		uint64_t, 0, 'i', "N struct vbe_conn")
+VSC_F_MAIN(n_wrk,		uint64_t, 0, 'i', "N worker threads")
+VSC_F_MAIN(n_wrk_create,	uint64_t, 0, 'a', "N worker threads created")
+VSC_F_MAIN(n_wrk_failed,	uint64_t, 0, 'a',
 					"N worker threads not created")
-MAC_STAT(n_wrk_max,		uint64_t, 0, 'a', "N worker threads limited")
-MAC_STAT(n_wrk_queue,		uint64_t, 0, 'a', "N queued work requests")
-MAC_STAT(n_wrk_overflow,	uint64_t, 0, 'a', "N overflowed work requests")
-MAC_STAT(n_wrk_drop,		uint64_t, 0, 'a', "N dropped work requests")
-MAC_STAT(n_backend,		uint64_t, 0, 'i', "N backends")
+VSC_F_MAIN(n_wrk_max,		uint64_t, 0, 'a', "N worker threads limited")
+VSC_F_MAIN(n_wrk_queue,		uint64_t, 0, 'a', "N queued work requests")
+VSC_F_MAIN(n_wrk_overflow,	uint64_t, 0, 'a', "N overflowed work requests")
+VSC_F_MAIN(n_wrk_drop,		uint64_t, 0, 'a', "N dropped work requests")
+VSC_F_MAIN(n_backend,		uint64_t, 0, 'i', "N backends")
 
-MAC_STAT(n_expired,		uint64_t, 0, 'i', "N expired objects")
-MAC_STAT(n_lru_nuked,		uint64_t, 0, 'i', "N LRU nuked objects")
-MAC_STAT(n_lru_saved,		uint64_t, 0, 'i', "N LRU saved objects")
-MAC_STAT(n_lru_moved,		uint64_t, 0, 'i', "N LRU moved objects")
-MAC_STAT(n_deathrow,		uint64_t, 0, 'i', "N objects on deathrow")
+VSC_F_MAIN(n_expired,		uint64_t, 0, 'i', "N expired objects")
+VSC_F_MAIN(n_lru_nuked,		uint64_t, 0, 'i', "N LRU nuked objects")
+VSC_F_MAIN(n_lru_saved,		uint64_t, 0, 'i', "N LRU saved objects")
+VSC_F_MAIN(n_lru_moved,		uint64_t, 0, 'i', "N LRU moved objects")
+VSC_F_MAIN(n_deathrow,		uint64_t, 0, 'i', "N objects on deathrow")
 
-MAC_STAT(losthdr,		uint64_t, 0, 'a', "HTTP header overflows")
+VSC_F_MAIN(losthdr,		uint64_t, 0, 'a', "HTTP header overflows")
 
-MAC_STAT(n_objsendfile,		uint64_t, 0, 'a', "Objects sent with sendfile")
-MAC_STAT(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write")
-MAC_STAT(n_objoverflow,		uint64_t, 1, 'a',
+VSC_F_MAIN(n_objsendfile,	uint64_t, 0, 'a', "Objects sent with sendfile")
+VSC_F_MAIN(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write")
+VSC_F_MAIN(n_objoverflow,	uint64_t, 1, 'a',
 					"Objects overflowing workspace")
 
-MAC_STAT(s_sess,		uint64_t, 1, 'a', "Total Sessions")
-MAC_STAT(s_req,			uint64_t, 1, 'a', "Total Requests")
-MAC_STAT(s_pipe,		uint64_t, 1, 'a', "Total pipe")
-MAC_STAT(s_pass,		uint64_t, 1, 'a', "Total pass")
-MAC_STAT(s_fetch,		uint64_t, 1, 'a', "Total fetch")
-MAC_STAT(s_hdrbytes,		uint64_t, 1, 'a', "Total header bytes")
-MAC_STAT(s_bodybytes,		uint64_t, 1, 'a', "Total body bytes")
+VSC_F_MAIN(s_sess,		uint64_t, 1, 'a', "Total Sessions")
+VSC_F_MAIN(s_req,		uint64_t, 1, 'a', "Total Requests")
+VSC_F_MAIN(s_pipe,		uint64_t, 1, 'a', "Total pipe")
+VSC_F_MAIN(s_pass,		uint64_t, 1, 'a', "Total pass")
+VSC_F_MAIN(s_fetch,		uint64_t, 1, 'a', "Total fetch")
+VSC_F_MAIN(s_hdrbytes,		uint64_t, 1, 'a', "Total header bytes")
+VSC_F_MAIN(s_bodybytes,		uint64_t, 1, 'a', "Total body bytes")
 
-MAC_STAT(sess_closed,		uint64_t, 1, 'a', "Session Closed")
-MAC_STAT(sess_pipeline,		uint64_t, 1, 'a', "Session Pipeline")
-MAC_STAT(sess_readahead,	uint64_t, 1, 'a', "Session Read Ahead")
-MAC_STAT(sess_linger,		uint64_t, 1, 'a', "Session Linger")
-MAC_STAT(sess_herd,		uint64_t, 1, 'a', "Session herd")
+VSC_F_MAIN(sess_closed,		uint64_t, 1, 'a', "Session Closed")
+VSC_F_MAIN(sess_pipeline,	uint64_t, 1, 'a', "Session Pipeline")
+VSC_F_MAIN(sess_readahead,	uint64_t, 1, 'a', "Session Read Ahead")
+VSC_F_MAIN(sess_linger,		uint64_t, 1, 'a', "Session Linger")
+VSC_F_MAIN(sess_herd,		uint64_t, 1, 'a', "Session herd")
 
-MAC_STAT(shm_records,		uint64_t, 0, 'a', "SHM records")
-MAC_STAT(shm_writes,		uint64_t, 0, 'a', "SHM writes")
-MAC_STAT(shm_flushes,		uint64_t, 0, 'a', "SHM flushes due to overflow")
-MAC_STAT(shm_cont,		uint64_t, 0, 'a', "SHM MTX contention")
-MAC_STAT(shm_cycles,		uint64_t, 0, 'a', "SHM cycles through buffer")
+VSC_F_MAIN(shm_records,		uint64_t, 0, 'a', "SHM records")
+VSC_F_MAIN(shm_writes,		uint64_t, 0, 'a', "SHM writes")
+VSC_F_MAIN(shm_flushes,		uint64_t, 0, 'a', "SHM flushes due to overflow")
+VSC_F_MAIN(shm_cont,		uint64_t, 0, 'a', "SHM MTX contention")
+VSC_F_MAIN(shm_cycles,		uint64_t, 0, 'a', "SHM cycles through buffer")
 
-MAC_STAT(sm_nreq,		uint64_t, 0, 'a', "allocator requests")
-MAC_STAT(sm_nobj,		uint64_t, 0, 'i', "outstanding allocations")
-MAC_STAT(sm_balloc,		uint64_t, 0, 'i', "bytes allocated")
-MAC_STAT(sm_bfree,		uint64_t, 0, 'i', "bytes free")
+VSC_F_MAIN(sm_nreq,		uint64_t, 0, 'a', "allocator requests")
+VSC_F_MAIN(sm_nobj,		uint64_t, 0, 'i', "outstanding allocations")
+VSC_F_MAIN(sm_balloc,		uint64_t, 0, 'i', "bytes allocated")
+VSC_F_MAIN(sm_bfree,		uint64_t, 0, 'i', "bytes free")
 
-MAC_STAT(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests")
-MAC_STAT(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations")
-MAC_STAT(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes")
-MAC_STAT(sms_balloc,		uint64_t, 0, 'i', "SMS bytes allocated")
-MAC_STAT(sms_bfree,		uint64_t, 0, 'i', "SMS bytes freed")
+VSC_F_MAIN(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests")
+VSC_F_MAIN(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations")
+VSC_F_MAIN(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes")
+VSC_F_MAIN(sms_balloc,		uint64_t, 0, 'i', "SMS bytes allocated")
+VSC_F_MAIN(sms_bfree,		uint64_t, 0, 'i', "SMS bytes freed")
 
-MAC_STAT(backend_req,		uint64_t, 0, 'a', "Backend requests made")
+VSC_F_MAIN(backend_req,		uint64_t, 0, 'a', "Backend requests made")
 
-MAC_STAT(n_vcl,			uint64_t, 0, 'a', "N vcl total")
-MAC_STAT(n_vcl_avail,		uint64_t, 0, 'a', "N vcl available")
-MAC_STAT(n_vcl_discard,		uint64_t, 0, 'a', "N vcl discarded")
+VSC_F_MAIN(n_vcl,		uint64_t, 0, 'a', "N vcl total")
+VSC_F_MAIN(n_vcl_avail,		uint64_t, 0, 'a', "N vcl available")
+VSC_F_MAIN(n_vcl_discard,	uint64_t, 0, 'a', "N vcl discarded")
 
-MAC_STAT(n_purge,		uint64_t, 0, 'i', "N total active purges")
-MAC_STAT(n_purge_add,		uint64_t, 0, 'a', "N new purges added")
-MAC_STAT(n_purge_retire,	uint64_t, 0, 'a', "N old purges deleted")
-MAC_STAT(n_purge_obj_test,	uint64_t, 0, 'a', "N objects tested")
-MAC_STAT(n_purge_re_test,	uint64_t, 0, 'a', "N regexps tested against")
-MAC_STAT(n_purge_dups,		uint64_t, 0, 'a', "N duplicate purges removed")
+VSC_F_MAIN(n_purge,		uint64_t, 0, 'i', "N total active purges")
+VSC_F_MAIN(n_purge_add,		uint64_t, 0, 'a', "N new purges added")
+VSC_F_MAIN(n_purge_retire,	uint64_t, 0, 'a', "N old purges deleted")
+VSC_F_MAIN(n_purge_obj_test,	uint64_t, 0, 'a', "N objects tested")
+VSC_F_MAIN(n_purge_re_test,	uint64_t, 0, 'a', "N regexps tested against")
+VSC_F_MAIN(n_purge_dups,	uint64_t, 0, 'a', "N duplicate purges removed")
 
-MAC_STAT(hcb_nolock,		uint64_t, 0, 'a', "HCB Lookups without lock")
-MAC_STAT(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock")
-MAC_STAT(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts")
+VSC_F_MAIN(hcb_nolock,		uint64_t, 0, 'a', "HCB Lookups without lock")
+VSC_F_MAIN(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock")
+VSC_F_MAIN(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts")
 
-MAC_STAT(esi_parse,		uint64_t, 0, 'a', "Objects ESI parsed (unlock)")
-MAC_STAT(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
-MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
-MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
-MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
+VSC_F_MAIN(esi_parse,		uint64_t, 0, 'a', "Objects ESI parsed (unlock)")
+VSC_F_MAIN(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
+VSC_F_MAIN(accept_fail,		uint64_t, 0, 'a', "Accept failures")
+VSC_F_MAIN(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
+VSC_F_MAIN(uptime,		uint64_t, 0, 'a', "Client uptime")
 
-MAC_STAT(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
+VSC_F_MAIN(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 
-#ifdef __MAC_STAT
-#undef MAC_STAT
-#undef __MAC_STAT
+#ifdef __VSC_F_MAIN
+#undef VSC_F_MAIN
+#undef __VSC_F_MAIN
 #endif
 
-#ifndef MAC_STAT_SMA
-#define MAC_STAT_SMA(a, b, c, d, e)
-#define __MAC_STAT_SMA
+#ifndef VSC_F_SMA
+#define VSC_F_SMA(a, b, c, d, e)
+#define __VSC_F_SMA
 #endif
 
-MAC_STAT_SMA(sma_nreq,		uint64_t, 0, 'a', "Allocator requests")
-MAC_STAT_SMA(sma_nobj,		uint64_t, 0, 'i', "Outstanding allocations")
-MAC_STAT_SMA(sma_nbytes,	uint64_t, 0, 'i', "Outstanding bytes")
-MAC_STAT_SMA(sma_balloc,	uint64_t, 0, 'i', "Bytes allocated")
-MAC_STAT_SMA(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
+VSC_F_SMA(sma_nreq,		uint64_t, 0, 'a', "Allocator requests")
+VSC_F_SMA(sma_nobj,		uint64_t, 0, 'i', "Outstanding allocations")
+VSC_F_SMA(sma_nbytes,		uint64_t, 0, 'i', "Outstanding bytes")
+VSC_F_SMA(sma_balloc,		uint64_t, 0, 'i', "Bytes allocated")
+VSC_F_SMA(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
 
-#ifdef __MAC_STAT_SMA
-#undef MAC_STAT_SMA
-#undef __MAC_STAT_SMA
+#ifdef __VSC_F_SMA
+#undef VSC_F_SMA
+#undef __VSC_F_SMA
 #endif

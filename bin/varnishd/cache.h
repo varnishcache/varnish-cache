@@ -194,11 +194,11 @@ struct acct {
 
 #define L0(n)
 #define L1(n)			int n;
-#define MAC_STAT(n, t, l, f, e)	L##l(n)
+#define VSC_F_MAIN(n, t, l, f, e)	L##l(n)
 struct dstat {
 #include "vsc_fields.h"
 };
-#undef MAC_STAT
+#undef VSC_F_MAIN
 #undef L0
 #undef L1
 
@@ -638,9 +638,9 @@ void SES_Charge(struct sess *sp);
 /* cache_shmlog.c */
 void VSL_Init(void);
 #ifdef VSL_ENDMARKER
-void VSL(enum shmlogtag tag, int id, const char *fmt, ...);
-void WSLR(struct worker *w, enum shmlogtag tag, int id, txt t);
-void WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...);
+void VSL(enum vsl_tag tag, int id, const char *fmt, ...);
+void WSLR(struct worker *w, enum vsl_tag tag, int id, txt t);
+void WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\

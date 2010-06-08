@@ -36,15 +36,15 @@
 #define VSC_TYPE_MAIN		""
 
 struct vsc_main {
-#define MAC_STAT(n, t, l, f, e)	t n;
+#define VSC_F_MAIN(n, t, l, f, e)	t n;
 #include "vsc_fields.h"
-#undef MAC_STAT
+#undef VSC_F_MAIN
 };
 
 #define VSC_TYPE_SMA	"SMA"
 
 struct vsc_sma {
-#define MAC_STAT_SMA(n, t, l, f, e)	t n;
+#define VSC_F_SMA(n, t, l, f, e)	t n;
 #include "vsc_fields.h"
-#undef MAC_STAT_SMA
+#undef VSC_F_SMA
 };

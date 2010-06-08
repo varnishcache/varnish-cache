@@ -53,7 +53,7 @@ vsl_w0(uint32_t type, uint32_t length)
 /*--------------------------------------------------------------------*/
 
 static inline void
-vsl_hdr(enum shmlogtag tag, uint32_t *p, unsigned len, unsigned id)
+vsl_hdr(enum vsl_tag tag, uint32_t *p, unsigned len, unsigned id)
 {
 
 	assert(((uintptr_t)p & 0x3) == 0);
@@ -121,7 +121,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-VSLR(enum shmlogtag tag, int id, const char *b, unsigned len)
+VSLR(enum vsl_tag tag, int id, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -141,7 +141,7 @@ VSLR(enum shmlogtag tag, int id, const char *b, unsigned len)
 /*--------------------------------------------------------------------*/
 
 void
-VSL(enum shmlogtag tag, int id, const char *fmt, ...)
+VSL(enum vsl_tag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned n, mlen = params->shm_reclen;
@@ -191,7 +191,7 @@ WSL_Flush(struct worker *w, int overflow)
 /*--------------------------------------------------------------------*/
 
 void
-WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
+WSLR(struct worker *w, enum vsl_tag tag, int id, txt t)
 {
 	unsigned l, mlen;
 
@@ -223,7 +223,7 @@ WSLR(struct worker *w, enum shmlogtag tag, int id, txt t)
 /*--------------------------------------------------------------------*/
 
 void
-WSL(struct worker *w, enum shmlogtag tag, int id, const char *fmt, ...)
+WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	char *p;

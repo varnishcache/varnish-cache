@@ -148,7 +148,7 @@ update(struct VSL_data *vd)
 }
 
 static int
-h_hist(void *priv, enum shmlogtag tag, unsigned fd, unsigned len,
+h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr)
 {
 	double b;
