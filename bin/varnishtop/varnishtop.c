@@ -143,7 +143,7 @@ accumulate(uint32_t * const p)
 }
 
 static void
-update(const struct VSL_data *vd)
+update(const struct VSM_data *vd)
 {
 	struct top *tp, *tp2;
 	int l, len;
@@ -158,7 +158,7 @@ update(const struct VSL_data *vd)
 
 	l = 1;
 	AC(erase());
-	AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
+	AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
 		if (++l < LINES) {
@@ -185,7 +185,7 @@ update(const struct VSL_data *vd)
 static void *
 accumulate_thread(void *arg)
 {
-	struct VSL_data *vd = arg;
+	struct VSM_data *vd = arg;
 	uint32_t *p;
 	int i;
 
@@ -207,7 +207,7 @@ accumulate_thread(void *arg)
 }
 
 static void
-do_curses(struct VSL_data *vd)
+do_curses(struct VSM_data *vd)
 {
 	pthread_t thr;
 	int i;
@@ -284,7 +284,7 @@ dump(void)
 }
 
 static void
-do_once(struct VSL_data *vd)
+do_once(struct VSM_data *vd)
 {
 	uint32_t *p;
 
@@ -304,10 +304,10 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 	int o, once = 0;
 
-	vd = VSL_New();
+	vd = VSM_New();
 
 	while ((o = getopt(argc, argv, VSL_LOG_ARGS "1fV")) != -1) {
 		switch (o) {
@@ -328,7 +328,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_OpenLog(vd))
+	if (VSM_OpenLog(vd))
 		exit (1);
 
 	if (once) {

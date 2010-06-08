@@ -195,7 +195,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 }
 
 static void
-do_order(struct VSL_data *vd, int argc, char * const *argv)
+do_order(struct VSM_data *vd, int argc, char * const *argv)
 {
 	int i;
 	const char *error;
@@ -268,7 +268,7 @@ open_log(const char *w_arg, int a_flag)
 }
 
 static void
-do_write(struct VSL_data *vd, const char *w_arg, int a_flag)
+do_write(struct VSM_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i, l;
 	uint32_t *p;
@@ -316,9 +316,9 @@ main(int argc, char * const *argv)
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 
-	vd = VSL_New();
+	vd = VSM_New();
 
 	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDoP:uVw:")) != -1) {
 		switch (c) {
@@ -361,7 +361,7 @@ main(int argc, char * const *argv)
 	if (o_flag && w_arg != NULL)
 		usage();
 
-	if (VSL_OpenLog(vd))
+	if (VSM_OpenLog(vd))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

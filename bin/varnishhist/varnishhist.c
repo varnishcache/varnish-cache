@@ -96,7 +96,7 @@ static int scales[] = {
 };
 
 static void
-update(struct VSL_data *vd)
+update(struct VSM_data *vd)
 {
 	int w = COLS / HIST_RANGE;
 	int n = w * HIST_RANGE;
@@ -116,7 +116,7 @@ update(struct VSL_data *vd)
 		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
-	mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd));
+	mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd));
 
 	/* count our flock */
 	for (i = 0; i < n; ++i)
@@ -224,7 +224,7 @@ h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 static void *
 accumulate_thread(void *arg)
 {
-	struct VSL_data *vd = arg;
+	struct VSM_data *vd = arg;
 	int i;
 
 	for (;;) {
@@ -238,7 +238,7 @@ accumulate_thread(void *arg)
 }
 
 static void
-do_curses(struct VSL_data *vd)
+do_curses(struct VSM_data *vd)
 {
 	pthread_t thr;
 	int ch;
@@ -319,9 +319,9 @@ int
 main(int argc, char **argv)
 {
 	int o;
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 
-	vd = VSL_New();
+	vd = VSM_New();
 
 	while ((o = getopt(argc, argv, VSL_LOG_ARGS "Vw:")) != -1) {
 		switch (o) {
@@ -338,7 +338,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_OpenLog(vd))
+	if (VSM_OpenLog(vd))
 		exit(1);
 
 	log_ten = log(10.0);

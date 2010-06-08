@@ -60,15 +60,15 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
-struct VSL_data *
-VSL_New(void)
+struct VSM_data *
+VSM_New(void)
 {
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 
-	ALLOC_OBJ(vd, VSL_MAGIC);
+	ALLOC_OBJ(vd, VSM_MAGIC);
 	AN(vd);
 
-	vd->diag = (vsl_diag_f*)fprintf;
+	vd->diag = (vsm_diag_f*)fprintf;
 	vd->priv = stderr;
 
 	vd->vsl_fd = -1;
@@ -89,19 +89,19 @@ VSL_New(void)
 
 	VTAILQ_INIT(&vd->sf_list);
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vd);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Diag(struct VSL_data *vd, vsl_diag_f *func, void *priv)
+VSM_Diag(struct VSM_data *vd, vsm_diag_f *func, void *priv)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (func == NULL)
-		vd->diag = (vsl_diag_f*)getpid;
+		vd->diag = (vsm_diag_f*)getpid;
 	else
 		vd->diag = func;
 	vd->priv = priv;
@@ -110,10 +110,10 @@ VSL_Diag(struct VSL_data *vd, vsl_diag_f *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_n_Arg(struct VSL_data *vd, const char *opt)
+VSM_n_Arg(struct VSM_data *vd, const char *opt)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	REPLACE(vd->n_opt, opt);
 	AN(vd->n_opt);
 	if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
@@ -127,22 +127,22 @@ VSL_n_Arg(struct VSL_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 const char *
-VSL_Name(const struct VSL_data *vd)
+VSM_Name(const struct VSM_data *vd)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vd->n_opt);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Delete(struct VSL_data *vd)
+VSM_Delete(struct VSM_data *vd)
 {
 	struct vsl_sf *sf;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	VSL_Close(vd);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	VSM_Close(vd);
 	vbit_destroy(vd->vbm_client);
 	vbit_destroy(vd->vbm_backend);
 	vbit_destroy(vd->vbm_supress);
@@ -166,11 +166,12 @@ VSL_Delete(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_open(struct VSL_data *vd, int diag)
+vsl_open(struct VSM_data *vd, int diag)
 {
 	int i;
 	struct vsm_head slh;
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (vd->vsl_lh != NULL)
 		return (0);
 
@@ -223,18 +224,21 @@ vsl_open(struct VSL_data *vd, int diag)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Open(struct VSL_data *vd, int diag)
+VSM_Open(struct VSM_data *vd, int diag)
 
 {
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vsl_open(vd, diag));
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Close(struct VSL_data *vd)
+VSM_Close(struct VSM_data *vd)
 {
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (vd->vsl_lh == NULL)
 		return;
 	assert(0 == munmap((void*)vd->vsl_lh, vd->vsl_lh->shm_size));
@@ -247,11 +251,12 @@ VSL_Close(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_ReOpen(struct VSL_data *vd, int diag)
+VSM_ReOpen(struct VSM_data *vd, int diag)
 {
 	struct stat st;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->vsl_lh);
 
 	if (stat(vd->fname, &st))
@@ -260,7 +265,7 @@ VSL_ReOpen(struct VSL_data *vd, int diag)
 	if (st.st_dev == vd->fstat.st_dev && st.st_ino == vd->fstat.st_ino)
 		return (0);
 
-	VSL_Close(vd);
+	VSM_Close(vd);
 	for (i = 0; i < 5; i++) {		/* XXX param */
 		if (!vsl_open(vd, 0))
 			return (1);
@@ -272,44 +277,26 @@ VSL_ReOpen(struct VSL_data *vd, int diag)
 
 /*--------------------------------------------------------------------*/
 
-struct vsm_chunk *
-vsl_iter0(const struct VSL_data *vd)
+struct vsm_head *
+VSM_Head(struct VSM_data *vd)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
-		return(NULL);
-	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, VSM_CHUNK_MAGIC);
-	return (&vd->vsl_lh->head);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vd->vsl_lh);
+	return(vd->vsl_lh);
 }
 
-void
-vsl_itern(const struct VSL_data *vd, struct vsm_chunk **pp)
-{
-
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (vd->alloc_seq != vd->vsl_lh->alloc_seq) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-	*pp = VSM_NEXT(*pp);
-	if ((void*)(*pp) >= vd->vsl_end) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-}
 
 /*--------------------------------------------------------------------*/
 
 struct vsm_chunk *
-vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, const char *ident)
+vsm_find_alloc(const struct VSM_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct vsm_chunk *sha;
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	assert (vd->vsl_lh != NULL);
-	VSL_FOREACH(sha, vd) {
+	VSM_FOREACH(sha, vd) {
 		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 		if (strcmp(sha->class, class))
 			continue;
@@ -325,16 +312,47 @@ vsl_find_alloc(const struct VSL_data *vd, const char *class, const char *type, c
 /*--------------------------------------------------------------------*/
 
 void *
-VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const char *ident,
+VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type, const char *ident,
     unsigned *lenp)
 {
 	struct vsm_chunk *sha;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	sha = vsl_find_alloc(vd, class, type, ident);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	sha = vsm_find_alloc(vd, class, type, ident);
 	if (sha == NULL)
 		return (NULL);
 	if (lenp != NULL)
 		*lenp = sha->len - sizeof *sha;
 	return (VSM_PTR(sha));
+}
+
+/*--------------------------------------------------------------------*/
+
+struct vsm_chunk *
+vsm_iter0(const struct VSM_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
+		return(NULL);
+	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, VSM_CHUNK_MAGIC);
+	return (&vd->vsl_lh->head);
+}
+
+void
+vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	if (vd->alloc_seq != vd->vsl_lh->alloc_seq) {
+		*pp = NULL;
+		return;
+	}
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+	*pp = VSM_NEXT(*pp);
+	if ((void*)(*pp) >= vd->vsl_end) {
+		*pp = NULL;
+		return;
+	}
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
 }

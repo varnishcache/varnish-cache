@@ -74,7 +74,7 @@ do_xml_cb(void *priv, const struct vsl_statpt * const pt)
 }
 
 static void
-do_xml(const struct VSL_data *vd)
+do_xml(const struct VSM_data *vd)
 {
 	char time_stamp[20];
 	time_t now;
@@ -121,7 +121,7 @@ do_once_cb(void *priv, const struct vsl_statpt * const pt)
 }
 
 static void
-do_once(const struct VSL_data *vd, const struct vsc_main *VSL_stats)
+do_once(const struct VSM_data *vd, const struct vsc_main *VSL_stats)
 {
 	struct once_priv op;
 
@@ -153,7 +153,7 @@ do_list_cb(void *priv, const struct vsl_statpt * const pt)
 }
 
 static void
-list_fields(const struct VSL_data *vd)
+list_fields(const struct VSM_data *vd)
 {
 	fprintf(stderr, "Varnishstat -f option fields:\n");
 	fprintf(stderr, "Field name                     Description\n");
@@ -192,11 +192,11 @@ int
 main(int argc, char * const *argv)
 {
 	int c;
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 	const struct vsc_main *VSL_stats;
 	int delay = 1, once = 0, xml = 0;
 
-	vd = VSL_New();
+	vd = VSM_New();
 
 	while ((c = getopt(argc, argv, VSL_STAT_ARGS "1f:lVw:x")) != -1) {
 		switch (c) {
@@ -207,7 +207,7 @@ main(int argc, char * const *argv)
 			(void)VSL_Stat_Arg(vd, c, optarg);
 			break;
 		case 'l':
-			if (VSL_Open(vd, 1))
+			if (VSM_Open(vd, 1))
 				exit(1);
 			list_fields(vd);
 			exit(0);
@@ -227,10 +227,10 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (VSL_Open(vd, 1))
+	if (VSM_Open(vd, 1))
 		exit(1);
 
-	if ((VSL_stats = VSL_OpenStats(vd)) == NULL)
+	if ((VSL_stats = VSM_OpenStats(vd)) == NULL)
 		exit(1);
 
 	if (xml)

@@ -524,10 +524,10 @@ main(int argc, char *argv[])
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 	FILE *of;
 
-	vd = VSL_New();
+	vd = VSM_New();
 
 	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDP:Vw:f")) != -1) {
 		switch (c) {
@@ -565,7 +565,7 @@ main(int argc, char *argv[])
 
 	VSL_Log_Arg(vd, 'c', optarg);
 
-	if (VSL_OpenLog(vd))
+	if (VSM_OpenLog(vd))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

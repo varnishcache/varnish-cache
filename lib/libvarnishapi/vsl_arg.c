@@ -57,10 +57,10 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_r_arg(struct VSL_data *vd, const char *opt)
+vsl_r_arg(struct VSM_data *vd, const char *opt)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (!strcmp(opt, "-"))
 		vd->r_fd = STDIN_FILENO;
 	else
@@ -75,13 +75,13 @@ vsl_r_arg(struct VSL_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
+vsl_IX_arg(struct VSM_data *vd, const char *opt, int arg)
 {
 	vre_t **rp;
 	const char *error;
 	int erroroffset;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (arg == 'I')
 		rp = &vd->regincl;
 	else
@@ -101,12 +101,12 @@ vsl_IX_arg(struct VSL_data *vd, const char *opt, int arg)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
+vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
 {
 	int i, j, l;
 	const char *b, *e, *p, *q;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	/* If first option is 'i', set all bits for supression */
 	if (arg == 'i' && !(vd->flags & F_SEEN_IX))
 		for (i = 0; i < 256; i++)
@@ -153,11 +153,11 @@ vsl_ix_arg(struct VSL_data *vd, const char *opt, int arg)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_s_arg(struct VSL_data *vd, const char *opt)
+vsl_s_arg(struct VSM_data *vd, const char *opt)
 {
 	char *end;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (*opt == '\0') {
 		fprintf(stderr, "number required for -s\n");
 		return (-1);
@@ -173,11 +173,11 @@ vsl_s_arg(struct VSL_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_k_arg(struct VSL_data *vd, const char *opt)
+vsl_k_arg(struct VSM_data *vd, const char *opt)
 {
 	char *end;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (*opt == '\0') {
 		fprintf(stderr, "number required for -k\n");
 		return (-1);
@@ -193,10 +193,10 @@ vsl_k_arg(struct VSL_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
+VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	switch (arg) {
 	case 'b': vd->b_opt = !vd->b_opt; return (1);
 	case 'c': vd->c_opt = !vd->c_opt; return (1);
@@ -206,7 +206,7 @@ VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'k': return (vsl_k_arg(vd, opt));
-	case 'n': return (VSL_n_Arg(vd, opt));
+	case 'n': return (VSM_n_Arg(vd, opt));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
@@ -229,13 +229,13 @@ VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_sf_arg(struct VSL_data *vd, const char *opt)
+vsl_sf_arg(struct VSM_data *vd, const char *opt)
 {
 	struct vsl_sf *sf;
 	char **av, *q, *p;
 	int i;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	if (VTAILQ_EMPTY(&vd->sf_list)) {
 		if (*opt == '^')
@@ -309,13 +309,13 @@ vsl_sf_arg(struct VSL_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt)
+VSL_Stat_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	switch (arg) {
 	case 'f': return (vsl_sf_arg(vd, opt));
-	case 'n': return (VSL_n_Arg(vd, opt));
+	case 'n': return (VSM_n_Arg(vd, opt));
 	default:
 		return (0);
 	}

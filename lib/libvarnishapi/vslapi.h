@@ -47,11 +47,11 @@ struct vsl_sf {
 	char			*name;
 };
 
-struct VSL_data {
+struct VSM_data {
 	unsigned		magic;
-#define VSL_MAGIC		0x6e3bd69b
+#define VSM_MAGIC		0x6e3bd69b
 
-	vsl_diag_f		*diag;
+	vsm_diag_f		*diag;
 	void			*priv;
 
 	char			*n_opt;
@@ -117,5 +117,5 @@ struct VSL_data {
 	unsigned long		keep;
 };
 
-struct vsm_chunk *vsl_find_alloc(const struct VSL_data *vd, const char *class,
+struct vsm_chunk *vsm_find_alloc(const struct VSM_data *vd, const char *class,
     const char *type, const char *ident);

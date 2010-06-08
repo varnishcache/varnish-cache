@@ -216,7 +216,7 @@ main(int argc, char * const *argv)
 	const char *T_arg = NULL;
 	const char *S_arg = NULL;
 	const char *n_arg = NULL;
-	struct VSL_data *vsd;
+	struct VSM_data *vsd;
 	char *p;
 	int opt, sock;
 
@@ -243,17 +243,17 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	if (n_arg != NULL) {
-		vsd = VSL_New();
+		vsd = VSM_New();
 		assert(VSL_Log_Arg(vsd, 'n', n_arg));
-		if (!VSL_Open(vsd, 1)) {
+		if (!VSM_Open(vsd, 1)) {
 			if (T_arg == NULL) {
-				p = VSL_Find_Alloc(vsd, "Arg", "-T", "", NULL);
+				p = VSM_Find_Chunk(vsd, "Arg", "-T", "", NULL);
 				if (p != NULL) {
 					T_arg = strdup(p);
 				}
 			}
 			if (S_arg == NULL) {
-				p = VSL_Find_Alloc(vsd, "Arg", "-S", "", NULL);
+				p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
 				if (p != NULL) {
 					S_arg = strdup(p);
 				}

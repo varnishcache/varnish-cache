@@ -27,4 +27,4 @@
  *
  */
 
-void do_curses(struct VSL_data *vd, const struct vsc_main *VSL_stats, int delay);
+void do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats, int delay);

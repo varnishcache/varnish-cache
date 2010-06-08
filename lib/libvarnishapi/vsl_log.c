@@ -52,7 +52,7 @@ SVNID("$Id$")
 #include "vslapi.h"
 #include "vmb.h"
 
-static int vsl_nextlog(struct VSL_data *vd, uint32_t **pp);
+static int vsl_nextlog(struct VSM_data *vd, uint32_t **pp);
 
 /*--------------------------------------------------------------------*/
 
@@ -65,10 +65,10 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Select(const struct VSL_data *vd, unsigned tag)
+VSL_Select(const struct VSM_data *vd, unsigned tag)
 {
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vbit_set(vd->vbm_select, tag);
 }
 
@@ -76,7 +76,7 @@ VSL_Select(const struct VSL_data *vd, unsigned tag)
 /*--------------------------------------------------------------------*/
 
 void
-VSL_NonBlocking(struct VSL_data *vd, int nb)
+VSL_NonBlocking(struct VSM_data *vd, int nb)
 {
 	if (nb)
 		vd->flags |= F_NON_BLOCKING;
@@ -87,13 +87,13 @@ VSL_NonBlocking(struct VSL_data *vd, int nb)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
+vsl_nextlog(struct VSM_data *vd, uint32_t **pp)
 {
 	unsigned w, l;
 	uint32_t t;
 	int i;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (vd->r_fd != -1) {
 		assert(vd->rbuflen >= 8);
 		i = read(vd->r_fd, vd->rbuf, 8);
@@ -138,14 +138,14 @@ vsl_nextlog(struct VSL_data *vd, uint32_t **pp)
 }
 
 int
-VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
+VSL_NextLog(struct VSM_data *vd, uint32_t **pp)
 {
 	uint32_t *p;
 	unsigned char t;
 	unsigned u;
 	int i;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	while (1) {
 		i = vsl_nextlog(vd, &p);
 		if (i != 1)
@@ -204,13 +204,13 @@ VSL_NextLog(struct VSL_data *vd, uint32_t **pp)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv)
+VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 {
 	int i;
 	unsigned u, l, s;
 	uint32_t *p;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	while (1) {
 		i = VSL_NextLog(vd, &p);
 		if (i != 1)
@@ -260,12 +260,12 @@ VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 /*--------------------------------------------------------------------*/
 
 int
-VSL_OpenLog(struct VSL_data *vd)
+VSM_OpenLog(struct VSM_data *vd)
 {
 	struct vsm_chunk *sha;
 
-	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	sha = vsl_find_alloc(vd, VSL_CLASS, "", "");
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	sha = vsm_find_alloc(vd, VSL_CLASS, "", "");
 	assert(sha != NULL);
 
 	vd->log_start = VSM_PTR(sha);

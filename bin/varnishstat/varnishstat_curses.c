@@ -100,7 +100,7 @@ do_curses_cb(void *priv, const struct vsl_statpt * const sp)
 }
 
 static void
-prep_pts(const struct VSL_data *vd)
+prep_pts(const struct VSM_data *vd)
 {
 	struct pt *pt, *pt2;
 
@@ -123,7 +123,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 void
-do_curses(struct VSL_data *vd, const struct vsc_main *VSL_stats,
+do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
     int delay)
 {
 	intmax_t ju;
@@ -164,7 +164,7 @@ do_curses(struct VSL_data *vd, const struct vsc_main *VSL_stats,
 			 * Only check if it looks like nothing is happening.
 			 */
 			act = VSL_stats->cache_hit + VSL_stats->cache_miss + 1;
-			if (act == lact && VSL_ReOpen(vd, 1))
+			if (act == lact && VSM_ReOpen(vd, 1))
 				break;
 			lact = act;
 
@@ -175,7 +175,7 @@ do_curses(struct VSL_data *vd, const struct vsc_main *VSL_stats,
 			rt = VSL_stats->uptime;
 			up = rt;
 
-			AC(mvprintw(0, 0, "%*s", COLS - 1, VSL_Name(vd)));
+			AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
 			    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
 

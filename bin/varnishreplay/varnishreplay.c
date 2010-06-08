@@ -717,10 +717,10 @@ int
 main(int argc, char *argv[])
 {
 	int c;
-	struct VSL_data *vd;
+	struct VSM_data *vd;
 	const char *address = NULL;
 
-	vd = VSL_New();
+	vd = VSM_New();
 	debug = 0;
 
 	VSL_Log_Arg(vd, 'c', NULL);
@@ -743,7 +743,7 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (VSL_OpenLog(vd))
+	if (VSM_OpenLog(vd))
 		exit(1);
 
 	addr_info = init_connection(address);
