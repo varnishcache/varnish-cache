@@ -87,7 +87,7 @@ VSC_Setup(struct VSM_data *vd)
 }
 
 void
-vsc_delete(struct VSM_data *vd)
+vsc_delete(const struct VSM_data *vd)
 {
 	struct vsc_sf *sf;
 	struct vsc *vsc = vd->vsc;
@@ -106,7 +106,7 @@ vsc_delete(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_sf_arg(struct VSM_data *vd, const char *opt)
+vsc_sf_arg(const struct VSM_data *vd, const char *opt)
 {
 	struct vsc *vsc;
 	struct vsc_sf *sf;
@@ -219,7 +219,7 @@ VSC_Open(struct VSM_data *vd, int diag)
 /*--------------------------------------------------------------------*/
 
 struct vsc_main *
-VSC_Main(struct VSM_data *vd)
+VSC_Main(const struct VSM_data *vd)
 {
 	struct vsm_chunk *sha;
 

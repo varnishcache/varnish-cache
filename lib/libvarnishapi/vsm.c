@@ -48,7 +48,6 @@ SVNID("$Id$")
 #include "vsm.h"
 #include "vre.h"
 #include "vbm.h"
-#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
@@ -84,7 +83,7 @@ VSM_New(void)
 	vd->r_fd = -1;
 	/* XXX: Allocate only if -r option given ? */
 	vd->rbuflen = 256;	/* XXX ?? */
-	vd->rbuf = malloc(vd->rbuflen * 4);
+	vd->rbuf = malloc(vd->rbuflen * 4L);
 	assert(vd->rbuf != NULL);
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -206,7 +205,7 @@ vsl_open(struct VSM_data *vd, int diag)
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
 
 	while(slh.alloc_seq == 0)
-		usleep(50000);			/* XXX limit total sleep */
+		(void)usleep(50000);		/* XXX limit total sleep */
 	vd->alloc_seq = slh.alloc_seq;
 	return (0);
 }
@@ -268,7 +267,7 @@ VSM_ReOpen(struct VSM_data *vd, int diag)
 /*--------------------------------------------------------------------*/
 
 struct vsm_head *
-VSM_Head(struct VSM_data *vd)
+VSM_Head(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -302,8 +301,8 @@ vsm_find_alloc(const struct VSM_data *vd, const char *class, const char *type, c
 /*--------------------------------------------------------------------*/
 
 void *
-VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type, const char *ident,
-    unsigned *lenp)
+VSM_Find_Chunk(const struct VSM_data *vd, const char *class, const char *type,
+    const char *ident, unsigned *lenp)
 {
 	struct vsm_chunk *sha;
 

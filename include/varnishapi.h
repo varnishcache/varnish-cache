@@ -106,13 +106,13 @@ int VSM_ReOpen(struct VSM_data *vd, int diag);
 	 *	-1 failure to reopen.
 	 */
 
-struct vsm_head *VSM_Head(struct VSM_data *vd);
+struct vsm_head *VSM_Head(const struct VSM_data *vd);
 	/*
 	 * Return the head of the VSM.
 	 */
 
-void *VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type,
-    const char *ident, unsigned *lenp);
+void *VSM_Find_Chunk(const struct VSM_data *vd, const char *class,
+    const char *type, const char *ident, unsigned *lenp);
 	/*
 	 * Find a given chunk in the shared memory.
 	 * Returns pointer or NULL.
@@ -161,7 +161,7 @@ int VSC_Open(struct VSM_data *vd, int diag);
 	 * args and returns as VSM_Open()
 	 */
 
-struct vsc_main *VSC_Main(struct VSM_data *vd);
+struct vsc_main *VSC_Main(const struct VSM_data *vd);
 	/*
 	 * return Main stats structure
 	 */
