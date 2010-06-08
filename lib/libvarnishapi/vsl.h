@@ -51,7 +51,13 @@ struct VSL_data {
 	unsigned		magic;
 #define VSL_MAGIC		0x6e3bd69b
 
+	vsl_diag_f		*diag;
+	void			*priv;
+
+	char			*n_opt;
 	char			*fname;
+
+
 	struct stat		fstat;
 
 	int			vsl_fd;
@@ -78,7 +84,6 @@ struct VSL_data {
 	uint32_t		*rbuf;
 
 	unsigned		L_opt;
-	char			*n_opt;
 	int			b_opt;
 	int			c_opt;
 	int			d_opt;

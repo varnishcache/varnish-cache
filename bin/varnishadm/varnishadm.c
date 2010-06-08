@@ -245,7 +245,7 @@ main(int argc, char * const *argv)
 	if (n_arg != NULL) {
 		vsd = VSL_New();
 		assert(VSL_Log_Arg(vsd, 'n', n_arg));
-		if (!VSL_Open(vsd)) {
+		if (!VSL_Open(vsd, 1)) {
 			if (T_arg == NULL) {
 				p = VSL_Find_Alloc(vsd, "Arg", "-T", "", NULL);
 				if (p != NULL) {

@@ -264,8 +264,6 @@ VSL_OpenLog(struct VSL_data *vd)
 	struct shmalloc *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (VSL_Open(vd))
-		return (-1);
 	sha = vsl_find_alloc(vd, VSL_CLASS_LOG, "", "");
 	assert(sha != NULL);
 

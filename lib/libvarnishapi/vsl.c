@@ -64,11 +64,15 @@ VSL_New(void)
 {
 	struct VSL_data *vd;
 
-	vd = calloc(sizeof *vd, 1);
-	assert(vd != NULL);
-	vd->regflags = 0;
-	vd->magic = VSL_MAGIC;
+	ALLOC_OBJ(vd, VSL_MAGIC);
+	AN(vd);
+
+	vd->diag = (vsl_diag_f*)fprintf;
+	vd->priv = stderr;
+
 	vd->vsl_fd = -1;
+
+	vd->regflags = 0;
 
 	/* XXX: Allocate only if log access */
 	vd->vbm_client = vbit_init(4096);
@@ -84,7 +88,49 @@ VSL_New(void)
 
 	VTAILQ_INIT(&vd->sf_list);
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	return (vd);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VSL_Diag(struct VSL_data *vd, vsl_diag_f *func, void *priv)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	if (func == NULL)
+		vd->diag = (vsl_diag_f*)getpid;
+	else
+		vd->diag = func;
+	vd->priv = priv;
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSL_n_Arg(struct VSL_data *vd, const char *opt)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	REPLACE(vd->n_opt, opt);
+	AN(vd->n_opt);
+	if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
+		vd->diag(vd->priv, "Invalid instance name: %s\n",
+		    strerror(errno));
+		return (-1);
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
+const char *
+VSL_Name(const struct VSL_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
+	return (vd->n_opt);
 }
 
 /*--------------------------------------------------------------------*/
@@ -94,6 +140,7 @@ VSL_Delete(struct VSL_data *vd)
 {
 	struct vsl_sf *sf;
 
+	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	VSL_Close(vd);
 	vbit_destroy(vd->vbm_client);
 	vbit_destroy(vd->vbm_backend);
@@ -118,7 +165,7 @@ VSL_Delete(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_open(struct VSL_data *vd, int rep)
+vsl_open(struct VSL_data *vd, int diag)
 {
 	int i;
 	struct shmloghead slh;
@@ -128,30 +175,30 @@ vsl_open(struct VSL_data *vd, int rep)
 
 	vd->vsl_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsl_fd < 0) {
-		if (rep)
-			fprintf(stderr, "Cannot open %s: %s\n",
+		if (diag)
+			vd->diag(vd->priv, "Cannot open %s: %s\n",
 			    vd->fname, strerror(errno));
 		return (1);
 	}
 
 	assert(fstat(vd->vsl_fd, &vd->fstat) == 0);
 	if (!S_ISREG(vd->fstat.st_mode)) {
-		if (rep)
-			fprintf(stderr, "%s is not a regular file\n",
+		if (diag)
+			vd->diag(vd->priv, "%s is not a regular file\n",
 			    vd->fname);
 		return (1);
 	}
 
 	i = read(vd->vsl_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
-		if (rep)
-			fprintf(stderr, "Cannot read %s: %s\n",
+		if (diag)
+			vd->diag(vd->priv, "Cannot read %s: %s\n",
 			    vd->fname, strerror(errno));
 		return (1);
 	}
 	if (slh.magic != SHMLOGHEAD_MAGIC) {
-		if (rep)
-			fprintf(stderr, "Wrong magic number in file %s\n",
+		if (diag)
+			vd->diag(vd->priv, "Wrong magic number in file %s\n",
 			    vd->fname);
 		return (1);
 	}
@@ -159,24 +206,27 @@ vsl_open(struct VSL_data *vd, int rep)
 	vd->vsl_lh = (void *)mmap(NULL, slh.shm_size,
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
 	if (vd->vsl_lh == MAP_FAILED) {
-		if (rep)
-			fprintf(stderr, "Cannot mmap %s: %s\n",
+		if (diag)
+			vd->diag(vd->priv, "Cannot mmap %s: %s\n",
 			    vd->fname, strerror(errno));
 		return (1);
 	}
 	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
 
 	while(slh.alloc_seq == 0)
-		usleep(50000);
+		usleep(50000);			/* XXX limit total sleep */
 	vd->alloc_seq = slh.alloc_seq;
 	return (0);
 }
 
+/*--------------------------------------------------------------------*/
+
 int
-VSL_Open(struct VSL_data *vd)
+VSL_Open(struct VSL_data *vd, int diag)
+
 {
 
-	return (vsl_open(vd, 1));
+	return (vsl_open(vd, diag));
 }
 
 /*--------------------------------------------------------------------*/
@@ -196,13 +246,12 @@ VSL_Close(struct VSL_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_ReOpen(struct VSL_data *vd)
+VSL_ReOpen(struct VSL_data *vd, int diag)
 {
 	struct stat st;
 	int i;
 
-	if (vd->vsl_lh == NULL)
-		return (-1);
+	AN(vd->vsl_lh);
 
 	if (stat(vd->fname, &st))
 		return (0);
@@ -211,11 +260,11 @@ VSL_ReOpen(struct VSL_data *vd)
 		return (0);
 
 	VSL_Close(vd);
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {		/* XXX param */
 		if (!vsl_open(vd, 0))
 			return (1);
 	}
-	if (vsl_open(vd, 1))
+	if (vsl_open(vd, diag))
 		return (-1);
 	return (1);
 }
@@ -281,21 +330,10 @@ VSL_Find_Alloc(struct VSL_data *vd, const char *class, const char *type, const c
 	struct shmalloc *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
-	if (VSL_Open(vd))
-		return (NULL);
 	sha = vsl_find_alloc(vd, class, type, ident);
 	if (sha == NULL)
 		return (NULL);
 	if (lenp != NULL)
 		*lenp = sha->len - sizeof *sha;
 	return (SHA_PTR(sha));
-}
-
-/*--------------------------------------------------------------------*/
-
-const char *
-VSL_Name(const struct VSL_data *vd)
-{
-
-	return (vd->n_opt);
 }

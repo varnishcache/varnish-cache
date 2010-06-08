@@ -207,7 +207,7 @@ main(int argc, char * const *argv)
 			(void)VSL_Stat_Arg(vd, c, optarg);
 			break;
 		case 'l':
-			if (VSL_Open(vd))
+			if (VSL_Open(vd, 1))
 				exit(1);
 			list_fields(vd);
 			exit(0);
@@ -227,7 +227,7 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (VSL_Open(vd))
+	if (VSL_Open(vd, 1))
 		exit(1);
 
 	if ((VSL_stats = VSL_OpenStats(vd)) == NULL)

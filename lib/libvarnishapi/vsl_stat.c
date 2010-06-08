@@ -54,8 +54,6 @@ VSL_OpenStats(struct VSL_data *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 
-	if (VSL_Open(vd))
-		return (NULL);
 	sha = vsl_find_alloc(vd, VSL_CLASS_STAT, "", "");
 	assert(sha != NULL);
 	return (SHA_PTR(sha));

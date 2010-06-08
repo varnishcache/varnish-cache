@@ -164,7 +164,7 @@ do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
 			 * Only check if it looks like nothing is happening.
 			 */
 			act = VSL_stats->cache_hit + VSL_stats->cache_miss + 1;
-			if (act == lact && VSL_ReOpen(vd))
+			if (act == lact && VSL_ReOpen(vd, 1))
 				break;
 			lact = act;
 

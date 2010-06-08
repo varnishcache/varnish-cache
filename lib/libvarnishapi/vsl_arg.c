@@ -192,22 +192,6 @@ vsl_k_arg(struct VSL_data *vd, const char *opt)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vsl_n_arg(struct VSL_data *vd, const char *opt)
-{
-
-	REPLACE(vd->n_opt, opt);
-	AN(vd->n_opt);
-	if (vin_n_arg(vd->n_opt, NULL, NULL, &vd->fname)) {
-		fprintf(stderr, "Invalid instance name: %s\n",
-		    strerror(errno));
-		return (-1);
-	}
-	return (1);
-}
-
-/*--------------------------------------------------------------------*/
-
 int
 VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 {
@@ -222,7 +206,7 @@ VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt)
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'k': return (vsl_k_arg(vd, opt));
-	case 'n': return (vsl_n_arg(vd, opt));
+	case 'n': return (VSL_n_Arg(vd, opt));
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
@@ -331,7 +315,7 @@ VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt)
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 	switch (arg) {
 	case 'f': return (vsl_sf_arg(vd, opt));
-	case 'n': return (vsl_n_arg(vd, opt));
+	case 'n': return (VSL_n_Arg(vd, opt));
 	default:
 		return (0);
 	}
