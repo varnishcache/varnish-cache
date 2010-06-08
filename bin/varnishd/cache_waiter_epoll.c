@@ -51,7 +51,6 @@ SVNID("$Id$")
 #  define EPOLLRDHUP 0
 #endif
 
-#include "shmlog.h"
 #include "cache.h"
 #include "cache_waiter.h"
 

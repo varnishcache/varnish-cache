@@ -67,7 +67,7 @@ struct varnish {
 	struct vtclog		*vl1;
 	VTAILQ_ENTRY(varnish)	list;
 
-	struct varnish_stats	*stats;
+	struct vsc_main	*stats;
 
 	struct vsb		*storage;
 

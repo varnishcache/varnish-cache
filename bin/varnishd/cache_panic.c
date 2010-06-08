@@ -45,7 +45,6 @@ SVNID("$Id$")
 #endif
 #include "cache.h"
 #include "vsm.h"
-#include "shmlog.h"
 #include "cache_backend.h"
 #include "vcl.h"
 #include "libvcl.h"

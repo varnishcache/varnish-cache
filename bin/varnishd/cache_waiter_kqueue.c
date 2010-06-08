@@ -47,7 +47,6 @@ SVNID("$Id$")
 
 #include <sys/event.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "cache_waiter.h"
 

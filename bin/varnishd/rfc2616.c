@@ -39,7 +39,6 @@ SVNID("$Id$")
 #include <limits.h>
 #include <math.h>
 
-#include "shmlog.h"
 #include "cache.h"
 
 

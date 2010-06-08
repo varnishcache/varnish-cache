@@ -49,7 +49,7 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsl.h"
 #include "varnishapi.h"
 
 #define HIST_N 2000 /* how far back we remember */

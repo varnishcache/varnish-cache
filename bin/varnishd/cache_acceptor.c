@@ -46,7 +46,6 @@ SVNID("$Id$")
 
 #include "cli.h"
 #include "cli_priv.h"
-#include "shmlog.h"
 #include "cache.h"
 #include "cache_waiter.h"
 

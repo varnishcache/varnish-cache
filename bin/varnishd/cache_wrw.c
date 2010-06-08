@@ -60,7 +60,6 @@ SVNID("$Id$")
 #endif
 #endif /* SENDFILE_WORKS */
 
-#include "shmlog.h"
 #include "cache.h"
 
 /*--------------------------------------------------------------------

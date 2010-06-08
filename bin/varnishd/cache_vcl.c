@@ -44,7 +44,6 @@ SVNID("$Id$")
 
 #include "cli.h"
 #include "cli_priv.h"
-#include "shmlog.h"
 #include "vcl.h"
 #include "cache.h"
 #include "libvcl.h"

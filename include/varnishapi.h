@@ -32,7 +32,7 @@
 #ifndef VARNISHAPI_H_INCLUDED
 #define VARNISHAPI_H_INCLUDED
 
-#include "shmlog.h"
+#include "vsl.h"
 
 /*
  * Various notes:
@@ -133,7 +133,7 @@ int VSL_Dispatch(struct VSL_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(struct VSL_data *lh, uint32_t **pp);
 int VSL_Log_Arg(struct VSL_data *vd, int arg, const char *opt);
 int VSL_Stat_Arg(struct VSL_data *vd, int arg, const char *opt);
-struct varnish_stats *VSL_OpenStats(struct VSL_data *vd);
+struct vsc_main *VSL_OpenStats(struct VSL_data *vd);
 extern const char *VSL_tags[256];
 
 

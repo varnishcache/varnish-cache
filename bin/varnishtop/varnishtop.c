@@ -51,7 +51,7 @@ SVNID("$Id$")
 #include "vsb.h"
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsl.h"
 #include "varnishapi.h"
 
 #define AC(x) assert((x) != ERR)

@@ -49,7 +49,6 @@ SVNID("$Id$")
 #include "compat/clock_gettime.h"
 #endif
 
-#include "shmlog.h"
 #include "cache.h"
 #include "cache_waiter.h"
 

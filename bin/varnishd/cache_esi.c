@@ -50,7 +50,6 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "shmlog.h"
 #include "vrt.h"
 #include "vcl.h"
 #include "vct.h"

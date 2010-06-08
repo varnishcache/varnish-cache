@@ -39,7 +39,6 @@ SVNID("$Id$")
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 
@@ -48,7 +47,7 @@ struct sma_sc {
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
-	struct varnish_stats_sma *stats;
+	struct vsc_sma *stats;
 };
 
 struct sma {
@@ -189,7 +188,7 @@ sma_ready(struct stevedore *st)
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	sma_sc->stats = mgt_SHM_Alloc(sizeof *sma_sc->stats,
-	    VSM_CLASS_STAT, VSL_TYPE_STAT_SMA, st->ident);
+	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
 }
 

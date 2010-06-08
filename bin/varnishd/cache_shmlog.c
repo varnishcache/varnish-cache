@@ -37,7 +37,6 @@ SVNID("$Id$")
 #include <stdarg.h>
 
 #include "vsm.h"
-#include "shmlog.h"
 #include "cache.h"
 #include "vmb.h"
 

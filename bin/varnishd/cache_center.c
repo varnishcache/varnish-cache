@@ -72,7 +72,6 @@ SVNID("$Id$")
 #include "compat/srandomdev.h"
 #endif
 
-#include "shmlog.h"
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"

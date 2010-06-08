@@ -38,7 +38,6 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 #include "cli_priv.h"
@@ -380,7 +379,7 @@ FetchHdr(struct sess *sp)
 		return (__LINE__);
 	}
 
-	/* Checkpoint the shmlog here */
+	/* Checkpoint the vsl.here */
 	WSL_Flush(w, 0);
 
 	/* XXX is this the right place? */

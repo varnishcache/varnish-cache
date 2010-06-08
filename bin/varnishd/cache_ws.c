@@ -42,7 +42,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <unistd.h>
 
-#include "shmlog.h"
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"

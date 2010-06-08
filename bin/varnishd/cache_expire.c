@@ -48,7 +48,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <math.h>
 
-#include "shmlog.h"
 #include "binary_heap.h"
 #include "cache.h"
 #include "vcl.h"

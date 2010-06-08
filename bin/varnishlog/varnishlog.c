@@ -49,7 +49,7 @@ SVNID("$Id$")
 #include "vpf.h"
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsl.h"
 #include "vre.h"
 #include "varnishapi.h"
 

@@ -40,7 +40,7 @@ void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* mgt_shmem.c */
 void *mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident);
-extern struct varnish_stats *VSL_stats;
+extern struct vsc_main *VSL_stats;
 extern struct vsm_head *loghead;
 extern uint32_t			*vsl_log_start;
 extern uint32_t			*vsl_log_end;

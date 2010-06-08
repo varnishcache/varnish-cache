@@ -38,7 +38,7 @@ SVNID("$Id$")
 
 #include "vas.h"
 #include "vsm.h"
-#include "shmlog.h"
+#include "vsc.h"
 #include "vre.h"
 #include "vqueue.h"
 #include "miniobj.h"
@@ -48,14 +48,14 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
-struct varnish_stats *
+struct vsc_main *
 VSL_OpenStats(struct VSL_data *vd)
 {
 	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSL_MAGIC);
 
-	sha = vsl_find_alloc(vd, VSM_CLASS_STAT, "", "");
+	sha = vsl_find_alloc(vd, VSC_CLASS, "", "");
 	assert(sha != NULL);
 	return (VSM_PTR(sha));
 }
@@ -108,7 +108,7 @@ static int
 iter_main(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
     void *priv)
 {
-	struct varnish_stats *st = VSM_PTR(sha);
+	struct vsc_main *st = VSM_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
@@ -123,7 +123,7 @@ iter_main(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 	i = iter_call(vd, func, priv, &sp);				\
 	if (i)								\
 		return(i);
-#include "stat_field.h"
+#include "vsc_fields.h"
 #undef MAC_STAT
 	return (0);
 }
@@ -132,11 +132,11 @@ static int
 iter_sma(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
     void *priv)
 {
-	struct varnish_stats_sma *st = VSM_PTR(sha);
+	struct vsc_sma *st = VSM_PTR(sha);
 	struct vsl_statpt sp;
 	int i;
 
-	sp.class = VSL_TYPE_STAT_SMA;
+	sp.class = VSC_TYPE_SMA;
 	sp.ident = sha->ident;
 #define MAC_STAT_SMA(nn, tt, ll, ff, dd)				\
 	sp.name = #nn;							\
@@ -147,7 +147,7 @@ iter_sma(const struct VSL_data *vd, struct vsm_chunk *sha, vsl_stat_f *func,
 	i = iter_call(vd, func, priv, &sp);				\
 	if (i)								\
 		return(i);
-#include "stat_field.h"
+#include "vsc_fields.h"
 #undef MAC_STAT_SMA
 	return (0);
 }
@@ -161,11 +161,11 @@ VSL_IterStat(const struct VSL_data *vd, vsl_stat_f *func, void *priv)
 	i = 0;
 	VSL_FOREACH(sha, vd) {
 		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-		if (strcmp(sha->class, VSM_CLASS_STAT))
+		if (strcmp(sha->class, VSC_CLASS))
 			continue;
-		if (!strcmp(sha->type, VSL_TYPE_STAT))
+		if (!strcmp(sha->type, VSC_TYPE_MAIN))
 			i = iter_main(vd, sha, func, priv);
-		else if (!strcmp(sha->type, VSL_TYPE_STAT_SMA))
+		else if (!strcmp(sha->type, VSC_TYPE_SMA))
 			i = iter_sma(vd, sha, func, priv);
 		else
 			i = -1;

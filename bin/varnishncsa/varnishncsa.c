@@ -78,7 +78,7 @@ SVNID("$Id$")
 #include "vpf.h"
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsl.h"
 #include "varnishapi.h"
 
 static volatile sig_atomic_t reopen;

@@ -42,7 +42,8 @@ SVNID("$Id$")
 #include <sys/stat.h>
 
 #include "vsm.h"
-#include "shmlog.h"
+#include "vsc.h"
+#include "vsl.h"
 #include "mgt.h"
 #include "heritage.h"
 #include "vmb.h"
@@ -55,7 +56,7 @@ SVNID("$Id$")
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct varnish_stats	*VSL_stats;
+struct vsc_main	*VSL_stats;
 struct vsm_head	*loghead;
 uint32_t		*vsl_log_start;
 uint32_t		*vsl_log_end;
@@ -284,7 +285,7 @@ mgt_SHM_Init(const char *l_arg)
 	VWMB();
 
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
-	    VSM_CLASS_STAT, VSL_TYPE_STAT, "");
+	    VSC_CLASS, VSC_TYPE_MAIN, "");
 	AN(VSL_stats);
 
 	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "", "");

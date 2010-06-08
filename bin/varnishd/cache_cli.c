@@ -46,7 +46,6 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <poll.h>
 
-#include "shmlog.h"
 #include "cli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
@@ -137,7 +136,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct objhead);
 	SZOF(struct sess);
 	SZOF(struct vbe_conn);
-	SZOF(struct varnish_stats);
+	SZOF(struct vsc_main);
 	SZOF(struct lock);
 }
 

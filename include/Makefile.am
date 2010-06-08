@@ -2,10 +2,10 @@
 
 pkginclude_HEADERS = \
 	vsm.h \
-	shmlog.h \
-	shmlog_tags.h \
-	stat_field.h \
-	stats.h \
+	vsl.h \
+	vsl_tags.h \
+	vsc_fields.h \
+	vsc.h \
 	varnishapi.h
 
 nobase_noinst_HEADERS = \

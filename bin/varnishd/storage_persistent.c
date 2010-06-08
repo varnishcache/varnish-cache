@@ -46,7 +46,6 @@ SVNID("$Id$")
 #include <sys/param.h>
 #include <sys/mman.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "stevedore.h"
 #include "hash_slinger.h"

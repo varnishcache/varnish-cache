@@ -55,7 +55,7 @@ SVNID("$Id$")
 #include "cli_common.h"
 #include "cli_serve.h"
 #include "vev.h"
-#include "shmlog.h"
+#include "vsc.h"
 #include "vlu.h"
 #include "vss.h"
 
@@ -84,7 +84,7 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 #define MAC_STAT(n, t, l, f, d) \
 	if (VSL_stats->n != 0) \
 	    cli_out(cli, "%12ju  %s\n", (VSL_stats->n), d);
-#include "stat_field.h"
+#include "vsc_fields.h"
 #undef MAC_STAT
 }
 

@@ -27,22 +27,51 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * Define the layout of the shared memory log segment.
+ *
+ * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
-#include <stdint.h>
+#ifndef SHMLOG_H_INCLUDED
+#define SHMLOG_H_INCLUDED
 
-#define VSL_TYPE_STAT		""
+#define VSM_CLASS_LOG		"Log"
 
-struct varnish_stats {
-#define MAC_STAT(n, t, l, f, e)	t n;
-#include "stat_field.h"
-#undef MAC_STAT
+/*
+ * Shared memory log format
+ *
+ * The log is structured as an array of 32bit unsigned integers.
+ *
+ * The first integer contains a non-zero serial number, which changes
+ * whenever writing the log starts from the front.
+ *
+ * Each logrecord consist of:
+ *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
+ *	[n + 1]		= identifier
+ *	[n + 2] ... [m]	= content
+ */
+
+#define VSL_WORDS(len)		(((len) + 3) / 4)
+#define VSL_END(ptr, len)	((ptr) + 2 + VSL_WORDS(len))
+#define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
+#define VSL_LEN(ptr)		((ptr)[0] & 0xffff)
+#define VSL_TAG(ptr)		((ptr)[0] >> 24)
+#define VSL_ID(ptr)		((ptr)[1])
+#define VSL_DATA(ptr)		((char*)((ptr)+2))
+
+#define VSL_ENDMARKER	(((uint32_t)SLT_Reserved << 24) | 0x454545) /* "EEE" */
+#define VSL_WRAPMARKER	(((uint32_t)SLT_Reserved << 24) | 0x575757) /* "WWW" */
+
+/*
+ * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
+ * on this file to extract the table rather than handcode it
+ */
+enum shmlogtag {
+#define SLTM(foo)	SLT_##foo,
+#include "vsl_tags.h"
+#undef SLTM
+	SLT_Reserved = 255
 };
 
-#define VSL_TYPE_STAT_SMA	"SMA"
-
-struct varnish_stats_sma {
-#define MAC_STAT_SMA(n, t, l, f, e)	t n;
-#include "stat_field.h"
-#undef MAC_STAT_SMA
-};
+#endif

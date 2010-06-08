@@ -40,7 +40,6 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <poll.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "cache_waiter.h"
 

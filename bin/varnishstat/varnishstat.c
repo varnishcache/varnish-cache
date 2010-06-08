@@ -45,7 +45,7 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsc.h"
 #include "varnishapi.h"
 #include "varnishstat.h"
 
@@ -121,7 +121,7 @@ do_once_cb(void *priv, const struct vsl_statpt * const pt)
 }
 
 static void
-do_once(const struct VSL_data *vd, const struct varnish_stats *VSL_stats)
+do_once(const struct VSL_data *vd, const struct vsc_main *VSL_stats)
 {
 	struct once_priv op;
 
@@ -193,7 +193,7 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSL_data *vd;
-	const struct varnish_stats *VSL_stats;
+	const struct vsc_main *VSL_stats;
 	int delay = 1, once = 0, xml = 0;
 
 	vd = VSL_New();

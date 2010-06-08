@@ -47,7 +47,7 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "shmlog.h"
+#include "vsc.h"
 #include "vqueue.h"
 #include "varnishapi.h"
 #include "varnishstat.h"
@@ -123,7 +123,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 void
-do_curses(struct VSL_data *vd, const struct varnish_stats *VSL_stats,
+do_curses(struct VSL_data *vd, const struct vsc_main *VSL_stats,
     int delay)
 {
 	intmax_t ju;

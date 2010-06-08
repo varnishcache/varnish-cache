@@ -46,7 +46,6 @@ SVNID("$Id$")
 #endif
 #include <stdlib.h>
 
-#include "shmlog.h"
 #include "cache.h"
 
 /*The constability of lck depends on platform pthreads implementation */

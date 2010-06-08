@@ -62,6 +62,9 @@
 #include "heritage.h"
 #include "miniobj.h"
 
+#include "vsc.h"
+#include "vsl.h"
+
 enum {
 	/* Fields from the first line of HTTP proto */
 	HTTP_HDR_REQ,
@@ -193,7 +196,7 @@ struct acct {
 #define L1(n)			int n;
 #define MAC_STAT(n, t, l, f, e)	L##l(n)
 struct dstat {
-#include "stat_field.h"
+#include "vsc_fields.h"
 };
 #undef MAC_STAT
 #undef L0

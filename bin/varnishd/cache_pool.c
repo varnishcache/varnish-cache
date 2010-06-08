@@ -54,7 +54,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <unistd.h>
 
-#include "shmlog.h"
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"
@@ -98,7 +97,7 @@ wrk_sumstat(struct worker *w)
 #define L0(n)
 #define L1(n) (VSL_stats->n += w->stats.n)
 #define MAC_STAT(n, t, l, f, d) L##l(n);
-#include "stat_field.h"
+#include "vsc_fields.h"
 #undef MAC_STAT
 #undef L0
 #undef L1
@@ -361,7 +360,7 @@ wrk_addpools(const unsigned pools)
  */
 
 static void
-wrk_decimate_flock(struct wq *qp, double t_idle, struct varnish_stats *vs)
+wrk_decimate_flock(struct wq *qp, double t_idle, struct vsc_main *vs)
 {
 	struct worker *w = NULL;
 
@@ -403,7 +402,7 @@ wrk_herdtimer_thread(void *priv)
 {
 	volatile unsigned u;
 	double t_idle;
-	struct varnish_stats vsm, *vs;
+	struct vsc_main vsm, *vs;
 	int errno_is_multi_threaded;
 
 	THR_SetName("wrk_herdtimer");

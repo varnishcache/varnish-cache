@@ -42,7 +42,7 @@ SVNID("$Id$")
 
 #include "vas.h"
 #include "vsm.h"
-#include "shmlog.h"
+#include "vsl.h"
 #include "vre.h"
 #include "vbm.h"
 #include "vqueue.h"
@@ -58,7 +58,7 @@ static int vsl_nextlog(struct VSL_data *vd, uint32_t **pp);
 
 const char *VSL_tags[256] = {
 #define SLTM(foo)       [SLT_##foo] = #foo,
-#include "shmlog_tags.h"
+#include "vsl_tags.h"
 #undef SLTM
 };
 

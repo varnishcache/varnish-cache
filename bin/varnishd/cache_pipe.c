@@ -41,7 +41,6 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#include "shmlog.h"
 #include "cache.h"
 
 static int

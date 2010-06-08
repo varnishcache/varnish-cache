@@ -43,7 +43,6 @@ SVNID("$Id$")
 
 #include <sys/socket.h>
 
-#include "shmlog.h"
 #include "cache.h"
 #include "vrt.h"
 #include "vsha256.h"
