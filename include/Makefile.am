@@ -9,6 +9,7 @@ pkginclude_HEADERS = \
 	varnishapi.h
 
 nobase_noinst_HEADERS = \
+	argv.h \
 	binary_heap.h \
 	cli.h \
 	cli_common.h \
@@ -40,6 +41,7 @@ nobase_noinst_HEADERS = \
 	vct.h \
 	vend.h \
 	vev.h \
+	vin.h \
 	vlu.h \
 	vbm.h \
 	vmb.h \
