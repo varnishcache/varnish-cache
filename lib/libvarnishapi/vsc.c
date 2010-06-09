@@ -40,13 +40,12 @@ SVNID("$Id$")
 #include "vas.h"
 #include "vsm.h"
 #include "vsc.h"
-#include "vre.h"
 #include "argv.h"
 #include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vslapi.h"
+#include "vsm_api.h"
 
 struct vsc_sf {
 	unsigned		magic;
@@ -80,18 +79,23 @@ VSC_Setup(struct VSM_data *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->vsc);
-	// XXX: AZ(vd->vsm);
+	AZ(vd->vsl);
 	ALLOC_OBJ(vd->vsc, VSC_MAGIC);
 	AN(vd->vsc);
 	VTAILQ_INIT(&vd->vsc->sf_list);
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-vsc_delete(const struct VSM_data *vd)
+vsc_delete(struct VSM_data *vd)
 {
 	struct vsc_sf *sf;
-	struct vsc *vsc = vd->vsc;
+	struct vsc *vsc;
 
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsc = vd->vsc;
+	vd->vsc = NULL;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	while(!VTAILQ_EMPTY(&vsc->sf_list)) {
 		sf = VTAILQ_FIRST(&vsc->sf_list);
@@ -99,7 +103,7 @@ vsc_delete(const struct VSM_data *vd)
 		free(sf->class);
 		free(sf->ident);
 		free(sf->name);
-		free(sf);
+		FREE_OBJ(sf);
 	}
 }
 

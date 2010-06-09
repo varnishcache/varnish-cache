@@ -188,6 +188,21 @@ int VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv);
  * VSL level access functions
  */
 
+void VSL_Setup(struct VSM_data *vd);
+	/*
+	 * Setup vd for use with VSL functions.
+	 */
+
+int VSL_Open(struct VSM_data *vd, int diag);
+	/*
+	 * Attempt to open and map the shared memory file.
+	 * If diag is non-zero, diagnostics are emitted.
+	 * Returns:
+	 *	0 on success
+	 * 	!= 0 on failure
+	 */
+	
+
 typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
@@ -199,10 +214,9 @@ typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
 vsl_handler VSL_H_Print;
 struct VSM_data;
 void VSL_Select(const struct VSM_data *vd, unsigned tag);
-int VSM_OpenLog(struct VSM_data *vd);
-void VSL_NonBlocking(struct VSM_data *vd, int nb);
-int VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv);
-int VSL_NextLog(struct VSM_data *lh, uint32_t **pp);
+void VSL_NonBlocking(const struct VSM_data *vd, int nb);
+int VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv);
+int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp);
 int VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt);
 extern const char *VSL_tags[256];
 

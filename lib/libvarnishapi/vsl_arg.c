@@ -44,28 +44,27 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include "vas.h"
-#include "argv.h"
 #include "vin.h"
 #include "vre.h"
 #include "vbm.h"
-#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vslapi.h"
+#include "vsm_api.h"
+#include "vsl_api.h"
 
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_r_arg(struct VSM_data *vd, const char *opt)
+vsl_r_arg(const struct VSM_data *vd, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (!strcmp(opt, "-"))
-		vd->r_fd = STDIN_FILENO;
+		vd->vsl->r_fd = STDIN_FILENO;
 	else
-		vd->r_fd = open(opt, O_RDONLY);
-	if (vd->r_fd < 0) {
+		vd->vsl->r_fd = open(opt, O_RDONLY);
+	if (vd->vsl->r_fd < 0) {
 		perror(opt);
 		return (-1);
 	}
@@ -75,7 +74,7 @@ vsl_r_arg(struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_IX_arg(struct VSM_data *vd, const char *opt, int arg)
+vsl_IX_arg(const struct VSM_data *vd, const char *opt, int arg)
 {
 	vre_t **rp;
 	const char *error;
@@ -83,14 +82,14 @@ vsl_IX_arg(struct VSM_data *vd, const char *opt, int arg)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (arg == 'I')
-		rp = &vd->regincl;
+		rp = &vd->vsl->regincl;
 	else
-		rp = &vd->regexcl;
+		rp = &vd->vsl->regexcl;
 	if (*rp != NULL) {
 		fprintf(stderr, "Option %c can only be given once", arg);
 		return (-1);
 	}
-	*rp = VRE_compile(opt, vd->regflags, &error, &erroroffset);
+	*rp = VRE_compile(opt, vd->vsl->regflags, &error, &erroroffset);
 	if (*rp == NULL) {
 		fprintf(stderr, "Illegal regex: %s\n", error);
 		return (-1);
@@ -101,17 +100,17 @@ vsl_IX_arg(struct VSM_data *vd, const char *opt, int arg)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
+vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 {
 	int i, j, l;
 	const char *b, *e, *p, *q;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	/* If first option is 'i', set all bits for supression */
-	if (arg == 'i' && !(vd->flags & F_SEEN_IX))
+	if (arg == 'i' && !(vd->vsl->flags & F_SEEN_IX))
 		for (i = 0; i < 256; i++)
-			vbit_set(vd->vbm_supress, i);
-	vd->flags |= F_SEEN_IX;
+			vbit_set(vd->vsl->vbm_supress, i);
+	vd->vsl->flags |= F_SEEN_IX;
 
 	for (b = opt; *b; b = e) {
 		while (isspace(*b))
@@ -136,9 +135,9 @@ vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
 				continue;
 
 			if (arg == 'x')
-				vbit_set(vd->vbm_supress, i);
+				vbit_set(vd->vsl->vbm_supress, i);
 			else
-				vbit_clr(vd->vbm_supress, i);
+				vbit_clr(vd->vsl->vbm_supress, i);
 			break;
 		}
 		if (i == 256) {
@@ -153,7 +152,7 @@ vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_s_arg(struct VSM_data *vd, const char *opt)
+vsl_s_arg(const struct VSM_data *vd, const char *opt)
 {
 	char *end;
 
@@ -162,7 +161,7 @@ vsl_s_arg(struct VSM_data *vd, const char *opt)
 		fprintf(stderr, "number required for -s\n");
 		return (-1);
 	}
-	vd->skip = strtoul(opt, &end, 10);
+	vd->vsl->skip = strtoul(opt, &end, 10);
 	if (*end != '\0') {
 		fprintf(stderr, "invalid number for -s\n");
 		return (-1);
@@ -173,7 +172,7 @@ vsl_s_arg(struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_k_arg(struct VSM_data *vd, const char *opt)
+vsl_k_arg(const struct VSM_data *vd, const char *opt)
 {
 	char *end;
 
@@ -182,7 +181,7 @@ vsl_k_arg(struct VSM_data *vd, const char *opt)
 		fprintf(stderr, "number required for -k\n");
 		return (-1);
 	}
-	vd->keep = strtoul(opt, &end, 10);
+	vd->vsl->keep = strtoul(opt, &end, 10);
 	if (*end != '\0') {
 		fprintf(stderr, "invalid number for -k\n");
 		return (-1);
@@ -198,11 +197,11 @@ VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	switch (arg) {
-	case 'b': vd->b_opt = !vd->b_opt; return (1);
-	case 'c': vd->c_opt = !vd->c_opt; return (1);
+	case 'b': vd->vsl->b_opt = !vd->vsl->b_opt; return (1);
+	case 'c': vd->vsl->c_opt = !vd->vsl->c_opt; return (1);
 	case 'd':
-		vd->d_opt = !vd->d_opt;
-		vd->flags |= F_NON_BLOCKING;
+		vd->vsl->d_opt = !vd->vsl->d_opt;
+		vd->vsl->flags |= F_NON_BLOCKING;
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'k': return (vsl_k_arg(vd, opt));
@@ -210,15 +209,15 @@ VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt)
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
-	case 'C': vd->regflags = VRE_CASELESS; return (1);
+	case 'C': vd->vsl->regflags = VRE_CASELESS; return (1);
 	case 'L':
-		vd->L_opt = strtoul(opt, NULL, 0);
-		if (vd->L_opt < 1024 || vd->L_opt > 65000) {
+		vd->vsl->L_opt = strtoul(opt, NULL, 0);
+		if (vd->vsl->L_opt < 1024 || vd->vsl->L_opt > 65000) {
 			fprintf(stderr, "%s\n", VIN_L_MSG);
 			exit (1);
 		}
 		free(vd->n_opt);
-		vd->n_opt = vin_L_arg(vd->L_opt);
+		vd->n_opt = vin_L_arg(vd->vsl->L_opt);
 		assert(vd->n_opt != NULL);
 		return (1);
 	default:

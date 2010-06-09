@@ -308,6 +308,7 @@ main(int argc, char **argv)
 	int o, once = 0;
 
 	vd = VSM_New();
+	VSL_Setup(vd);
 
 	while ((o = getopt(argc, argv, VSL_LOG_ARGS "1fV")) != -1) {
 		switch (o) {
@@ -328,7 +329,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSM_OpenLog(vd))
+	if (VSL_Open(vd, 1))
 		exit (1);
 
 	if (once) {

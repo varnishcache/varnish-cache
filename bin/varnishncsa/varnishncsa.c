@@ -528,6 +528,7 @@ main(int argc, char *argv[])
 	FILE *of;
 
 	vd = VSM_New();
+	VSL_Setup(vd);
 
 	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDP:Vw:f")) != -1) {
 		switch (c) {
@@ -565,7 +566,7 @@ main(int argc, char *argv[])
 
 	VSL_Log_Arg(vd, 'c', optarg);
 
-	if (VSM_OpenLog(vd))
+	if (VSL_Open(vd, 1))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

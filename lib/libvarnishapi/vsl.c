@@ -45,14 +45,12 @@ SVNID("$Id$")
 #include "vsl.h"
 #include "vre.h"
 #include "vbm.h"
-#include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vslapi.h"
+#include "vsm_api.h"
+#include "vsl_api.h"
 #include "vmb.h"
-
-static int vsl_nextlog(struct VSM_data *vd, uint32_t **pp);
 
 /*--------------------------------------------------------------------*/
 
@@ -65,72 +63,132 @@ const char *VSL_tags[256] = {
 /*--------------------------------------------------------------------*/
 
 void
-VSL_Select(const struct VSM_data *vd, unsigned tag)
+VSL_Setup(struct VSM_data *vd)
 {
+	struct vsl *vsl;
+        
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AZ(vd->vsc);
+	AZ(vd->vsl);
+	ALLOC_OBJ(vsl, VSL_MAGIC);
+	AN(vsl);
+
+	vd->vsl = vsl;
+
+	vsl->regflags = 0;
+
+	/* XXX: Allocate only if log access */
+	vsl->vbm_client = vbit_init(4096);
+	vsl->vbm_backend = vbit_init(4096);
+	vsl->vbm_supress = vbit_init(256);
+	vsl->vbm_select = vbit_init(256);
+
+	vsl->r_fd = -1;
+	/* XXX: Allocate only if -r option given ? */
+	vsl->rbuflen = 256;      /* XXX ?? */
+	vsl->rbuf = malloc(vsl->rbuflen * 4L);
+	assert(vsl->rbuf != NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+vsl_delete(struct VSM_data *vd)
+{
+	struct vsl *vsl;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vbit_set(vd->vbm_select, tag);
+	vsl = vd->vsl;
+	vd->vsl = NULL;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	vbit_destroy(vsl->vbm_client);
+	vbit_destroy(vsl->vbm_backend);
+	vbit_destroy(vsl->vbm_supress);
+	vbit_destroy(vsl->vbm_select);
+	free(vsl->rbuf);
+
+	FREE_OBJ(vsl);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VSL_Select(const struct VSM_data *vd, unsigned tag)
+{
+	struct vsl *vsl;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	vbit_set(vsl->vbm_select, tag);
 }
 
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_NonBlocking(struct VSM_data *vd, int nb)
+VSL_NonBlocking(const struct VSM_data *vd, int nb)
 {
+	struct vsl *vsl;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (nb)
-		vd->flags |= F_NON_BLOCKING;
+		vsl->flags |= F_NON_BLOCKING;
 	else
-		vd->flags &= ~F_NON_BLOCKING;
+		vsl->flags &= ~F_NON_BLOCKING;
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_nextlog(struct VSM_data *vd, uint32_t **pp)
+vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 {
 	unsigned w, l;
 	uint32_t t;
 	int i;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->r_fd != -1) {
-		assert(vd->rbuflen >= 8);
-		i = read(vd->r_fd, vd->rbuf, 8);
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	if (vsl->r_fd != -1) {
+		assert(vsl->rbuflen >= 8);
+		i = read(vsl->r_fd, vsl->rbuf, 8);
 		if (i != 8)
 			return (-1);
-		l = 2 + VSL_WORDS(VSL_LEN(vd->rbuf));
-		if (vd->rbuflen < l) {
+		l = 2 + VSL_WORDS(VSL_LEN(vsl->rbuf));
+		if (vsl->rbuflen < l) {
 			l += 256;
-			vd->rbuf = realloc(vd->rbuf, l * 4);
-			assert(vd->rbuf != NULL);
-			vd->rbuflen = l;
+			vsl->rbuf = realloc(vsl->rbuf, l * 4L);
+			assert(vsl->rbuf != NULL);
+			vsl->rbuflen = l;
 		}
-		i = read(vd->r_fd, vd->rbuf + 2, l * 4 - 8);
+		i = read(vsl->r_fd, vsl->rbuf + 2, l * 4L - 8L);
 		if (i != l)
 			return (-1);
-		*pp = vd->rbuf;
+		*pp = vsl->rbuf;
 		return (1);
 	}
 	for (w = 0; w < TIMEOUT_USEC;) {
-		t = *vd->log_ptr;
+		t = *vsl->log_ptr;
 
 		if (t == VSL_WRAPMARKER ||
-		    (t == VSL_ENDMARKER && vd->last_seq != vd->log_start[0])) {
-			vd->log_ptr = vd->log_start + 1;
-			vd->last_seq = vd->log_start[0];
+		    (t == VSL_ENDMARKER && vsl->last_seq != vsl->log_start[0])) {
+			vsl->log_ptr = vsl->log_start + 1;
+			vsl->last_seq = vsl->log_start[0];
 			VRMB();
 			continue;
 		}
 		if (t == VSL_ENDMARKER) {
-			if (vd->flags & F_NON_BLOCKING)
+			if (vsl->flags & F_NON_BLOCKING)
 				return (-1);
 			w += SLEEP_USEC;
 			AZ(usleep(SLEEP_USEC));
 			continue;
 		}
-		*pp = (void*)(uintptr_t)vd->log_ptr; /* Loose volatile */
-		vd->log_ptr = VSL_NEXT(vd->log_ptr);
+		*pp = (void*)(uintptr_t)vsl->log_ptr; /* Loose volatile */
+		vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 		return (1);
 	}
 	*pp = NULL;
@@ -138,16 +196,20 @@ vsl_nextlog(struct VSM_data *vd, uint32_t **pp)
 }
 
 int
-VSL_NextLog(struct VSM_data *vd, uint32_t **pp)
+VSL_NextLog(const struct VSM_data *vd, uint32_t **pp)
 {
+	struct vsl *vsl;
 	uint32_t *p;
 	unsigned char t;
 	unsigned u;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
 	while (1) {
-		i = vsl_nextlog(vd, &p);
+		i = vsl_nextlog(vsl, &p);
 		if (i != 1)
 			return (i);
 		u = VSL_ID(p);
@@ -155,43 +217,43 @@ VSL_NextLog(struct VSM_data *vd, uint32_t **pp)
 		switch(t) {
 		case SLT_SessionOpen:
 		case SLT_ReqStart:
-			vbit_set(vd->vbm_client, u);
-			vbit_clr(vd->vbm_backend, u);
+			vbit_set(vsl->vbm_client, u);
+			vbit_clr(vsl->vbm_backend, u);
 			break;
 		case SLT_BackendOpen:
 		case SLT_BackendXID:
-			vbit_clr(vd->vbm_client, u);
-			vbit_set(vd->vbm_backend, u);
+			vbit_clr(vsl->vbm_client, u);
+			vbit_set(vsl->vbm_backend, u);
 			break;
 		default:
 			break;
 		}
-		if (vd->skip) {
-			--vd->skip;
+		if (vsl->skip) {
+			--vsl->skip;
 			continue;
-		} else if (vd->keep) {
-			if (--vd->keep == 0)
+		} else if (vsl->keep) {
+			if (--vsl->keep == 0)
 				return (-1);
 		}
 
-		if (vbit_test(vd->vbm_select, t)) {
+		if (vbit_test(vsl->vbm_select, t)) {
 			*pp = p;
 			return (1);
 		}
-		if (vbit_test(vd->vbm_supress, t))
+		if (vbit_test(vsl->vbm_supress, t))
 			continue;
-		if (vd->b_opt && !vbit_test(vd->vbm_backend, u))
+		if (vsl->b_opt && !vbit_test(vsl->vbm_backend, u))
 			continue;
-		if (vd->c_opt && !vbit_test(vd->vbm_client, u))
+		if (vsl->c_opt && !vbit_test(vsl->vbm_client, u))
 			continue;
-		if (vd->regincl != NULL) {
-			i = VRE_exec(vd->regincl, VSL_DATA(p), VSL_LEN(p),
+		if (vsl->regincl != NULL) {
+			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
 			    0, 0, NULL, 0);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
-		if (vd->regexcl != NULL) {
-			i = VRE_exec(vd->regincl, VSL_DATA(p), VSL_LEN(p),
+		if (vsl->regexcl != NULL) {
+			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
 			    0, 0, NULL, 0);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
@@ -204,13 +266,17 @@ VSL_NextLog(struct VSM_data *vd, uint32_t **pp)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
+VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv)
 {
+	struct vsl *vsl;
 	int i;
 	unsigned u, l, s;
 	uint32_t *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
 	while (1) {
 		i = VSL_NextLog(vd, &p);
 		if (i != 1)
@@ -218,9 +284,9 @@ VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 		u = VSL_ID(p);
 		l = VSL_LEN(p);
 		s = 0;
-		if (vbit_test(vd->vbm_backend, u))
+		if (vbit_test(vsl->vbm_backend, u))
 			s |= VSL_S_BACKEND;
-		if (vbit_test(vd->vbm_client, u))
+		if (vbit_test(vsl->vbm_client, u))
 			s |= VSL_S_CLIENT;
 		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p)))
 			return (1);
@@ -260,23 +326,32 @@ VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 /*--------------------------------------------------------------------*/
 
 int
-VSM_OpenLog(struct VSM_data *vd)
+VSL_Open(struct VSM_data *vd, int diag)
 {
+	struct vsl *vsl;
 	struct vsm_chunk *sha;
+	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	i = VSM_Open(vd, diag);
+	if (i)
+		return (i);
+
 	sha = vsm_find_alloc(vd, VSL_CLASS, "", "");
 	assert(sha != NULL);
 
-	vd->log_start = VSM_PTR(sha);
-	vd->log_end = VSM_NEXT(sha);
-	vd->log_ptr = vd->log_start + 1;
+	vsl->log_start = VSM_PTR(sha);
+	vsl->log_end = VSM_NEXT(sha);
+	vsl->log_ptr = vsl->log_start + 1;
 
-	vd->last_seq = vd->log_start[0];
+	vsl->last_seq = vsl->log_start[0];
 	VRMB();
-	if (!vd->d_opt && vd->r_fd == -1) {
-		while (*vd->log_ptr != VSL_ENDMARKER)
-			vd->log_ptr = VSL_NEXT(vd->log_ptr);
+	if (!vsl->d_opt && vsl->r_fd == -1) {
+		while (*vsl->log_ptr != VSL_ENDMARKER)
+			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 	}
 	return (0);
 }

@@ -322,6 +322,7 @@ main(int argc, char **argv)
 	struct VSM_data *vd;
 
 	vd = VSM_New();
+	VSL_Setup(vd);
 
 	while ((o = getopt(argc, argv, VSL_LOG_ARGS "Vw:")) != -1) {
 		switch (o) {
@@ -338,7 +339,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSM_OpenLog(vd))
+	if (VSL_Open(vd, 1))
 		exit(1);
 
 	log_ten = log(10.0);

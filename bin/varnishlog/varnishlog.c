@@ -41,7 +41,6 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "compat/daemon.h"
 
@@ -80,7 +79,7 @@ static enum vsl_tag   last[65536];
 #define F_MATCH		(1 << 1)
 
 static int		match_tag = -1;
-static vre_t		*match_re;
+static const vre_t	*match_re;
 
 static void
 h_order_finish(int fd)
@@ -195,7 +194,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 }
 
 static void
-do_order(struct VSM_data *vd, int argc, char * const *argv)
+do_order(const struct VSM_data *vd, int argc, char * const *argv)
 {
 	int i;
 	const char *error;
@@ -268,7 +267,7 @@ open_log(const char *w_arg, int a_flag)
 }
 
 static void
-do_write(struct VSM_data *vd, const char *w_arg, int a_flag)
+do_write(const struct VSM_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i, l;
 	uint32_t *p;
@@ -282,7 +281,7 @@ do_write(struct VSM_data *vd, const char *w_arg, int a_flag)
 			break;
 		if (i > 0) {
 			l = VSL_LEN(p);
-			i = write(fd, p, 8 + VSL_WORDS(l) * 4);
+			i = write(fd, p, 8L + VSL_WORDS(l) * 4L);
 			if (i < 0) {
 				perror(w_arg);
 				exit(1);
@@ -319,6 +318,7 @@ main(int argc, char * const *argv)
 	struct VSM_data *vd;
 
 	vd = VSM_New();
+	VSL_Setup(vd);
 
 	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDoP:uVw:")) != -1) {
 		switch (c) {
@@ -361,7 +361,7 @@ main(int argc, char * const *argv)
 	if (o_flag && w_arg != NULL)
 		usage();
 
-	if (VSM_OpenLog(vd))
+	if (VSL_Open(vd, 1))
 		exit(1);
 
 	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {

@@ -56,56 +56,11 @@ struct VSM_data {
 	/* Stuff relating the stats fields start here */
 
 	struct vsc		*vsc;
-
-	/* Stuff relating the log records below here */
-
-	volatile uint32_t	*log_start;
-	volatile uint32_t	*log_end;
-	volatile uint32_t	*log_ptr;
-
-	volatile uint32_t	last_seq;
-
-	/* for -r option */
-	int			r_fd;
-	unsigned		rbuflen;
-	uint32_t		*rbuf;
-
-	unsigned		L_opt;
-	int			b_opt;
-	int			c_opt;
-	int			d_opt;
-
-	unsigned		flags;
-#define F_SEEN_IX		(1 << 0)
-#define F_NON_BLOCKING		(1 << 1)
-
-	/*
-	 * These two bitmaps mark fd's as belonging to client or backend
-	 * transactions respectively.
-	 */
-	struct vbitmap		*vbm_client;
-	struct vbitmap		*vbm_backend;
-
-	/*
-	 * Bit map of programatically selected tags, that cannot be suppressed.
-	 * This way programs can make sure they will see certain tags, even
-	 * if the user tries to supress them with -x/-X
-	 */
-	struct vbitmap		*vbm_select;	/* index: tag */
-
-	/* Bit map of tags selected/supressed with -[iIxX] options */
-	struct vbitmap		*vbm_supress;	/* index: tag */
-
-	int			regflags;
-	vre_t			*regincl;
-	vre_t			*regexcl;
-
-	unsigned long		skip;
-	unsigned long		keep;
+	struct vsl		*vsl;
 };
 
 struct vsm_chunk *vsm_find_alloc(const struct VSM_data *vd, const char *class,
     const char *type, const char *ident);
 
-void vsc_delete(const struct VSM_data *vd);
-
+void vsc_delete(struct VSM_data *vd);
+void vsl_delete(struct VSM_data *vd);

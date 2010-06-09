@@ -46,12 +46,11 @@ SVNID("$Id$")
 #include "vas.h"
 #include "vin.h"
 #include "vsm.h"
-#include "vre.h"
 #include "vbm.h"
 #include "miniobj.h"
 #include "varnishapi.h"
 
-#include "vslapi.h"
+#include "vsm_api.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -71,20 +70,6 @@ VSM_New(void)
 	vd->priv = stderr;
 
 	vd->vsl_fd = -1;
-
-	vd->regflags = 0;
-
-	/* XXX: Allocate only if log access */
-	vd->vbm_client = vbit_init(4096);
-	vd->vbm_backend = vbit_init(4096);
-	vd->vbm_supress = vbit_init(256);
-	vd->vbm_select = vbit_init(256);
-
-	vd->r_fd = -1;
-	/* XXX: Allocate only if -r option given ? */
-	vd->rbuflen = 256;	/* XXX ?? */
-	vd->rbuf = malloc(vd->rbuflen * 4L);
-	assert(vd->rbuf != NULL);
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vd);
@@ -138,16 +123,16 @@ VSM_Delete(struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+
 	VSM_Close(vd);
-	vbit_destroy(vd->vbm_client);
-	vbit_destroy(vd->vbm_backend);
-	vbit_destroy(vd->vbm_supress);
-	vbit_destroy(vd->vbm_select);
+
 	free(vd->n_opt);
-	free(vd->rbuf);
 	free(vd->fname);
 
-	vsc_delete(vd);
+	if (vd->vsc != NULL)
+		vsc_delete(vd);
+	if (vd->vsl != NULL)
+		vsl_delete(vd);
 
 	free(vd);
 }
