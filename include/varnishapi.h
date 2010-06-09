@@ -32,6 +32,8 @@
 #ifndef VARNISHAPI_H_INCLUDED
 #define VARNISHAPI_H_INCLUDED
 
+#include <stdint.h>
+
 #include "vsl.h"
 
 /*

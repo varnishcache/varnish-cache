@@ -9,7 +9,6 @@
 #include "svnid.h"
 SVNID("$Id$")
 
-#include <stdint.h>
 #include <sys/types.h>
 #include "varnishapi.h"
 
