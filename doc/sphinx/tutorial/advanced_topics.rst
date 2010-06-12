@@ -14,7 +14,7 @@ More VCL
 VCL is a bit more complex then what we've covered so far. There are a
 few more subroutines available and there a few actions that we haven't
 discussed. For a complete(ish) guide to VCL have a look at the VCL man
-page - `ref`:reference-vcl.
+page - ref:`reference-vcl`.
 
 Using Inline C to extend Varnish
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
