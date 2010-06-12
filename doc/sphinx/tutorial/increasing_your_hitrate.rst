@@ -116,6 +116,22 @@ kept inside Varnish. You can grep out Age from varnishlog like this::
 
   varnishlog -i TxHeader -I ^Age
 
+Overriding the time-to-live (ttl)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes your backend will misbehave. It might, depending on your
+setup, be easier to override the ttl in Varnish then to fix your
+somewhat cumbersome backend. 
+
+You need VCL to identify the objects you want and then you set the
+beresp.ttl to whatever you want.::
+
+  sub vcl_fetch {
+      if (req.url ~ "^/legacy_broken_cms/") {
+          set beresp.ttl = 5d;
+      }
+  }
+
 Cookies
 ~~~~~~~
 
@@ -304,7 +320,7 @@ following VCL in place:::
 		  if (!client.ip ~ purge) {
 			  error 405 "Not allowed.";
 		  }
-		  lookup;
+		  return (lookup);
 	  }
   }
   
@@ -324,6 +340,11 @@ following VCL in place:::
 	  }
   }
 
+As you can see we have used to new VCL subroutines, vcl_hit and
+vcl_miss. When we call lookup Varnish will try to lookup the object in
+its cache. It will either hit an object or miss it and so the
+corresponding subroutine is called. In vcl_hit the object that is
+stored in cache is available and we can set the TTL.
 
 So for vg.no to invalidate their front page they would call out to
 varnish like this:::
