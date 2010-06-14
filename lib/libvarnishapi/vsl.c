@@ -266,7 +266,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv)
+VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 {
 	struct vsl *vsl;
 	int i;
@@ -279,6 +279,8 @@ VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv)
 
 	while (1) {
 		i = VSL_NextLog(vd, &p);
+		if (i == 0 && VSM_ReOpen(vd, 0) == 1)
+			continue;
 		if (i != 1)
 			return (i);
 		u = VSL_ID(p);
@@ -325,11 +327,32 @@ VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 
 /*--------------------------------------------------------------------*/
 
+void
+vsl_open_cb(struct VSM_data *vd)
+{
+	struct vsl *vsl;
+	struct vsm_chunk *sha;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	sha = vsm_find_alloc(vd, VSL_CLASS, "", "");
+	assert(sha != NULL);
+
+	vsl->log_start = VSM_PTR(sha);
+	vsl->log_end = VSM_NEXT(sha);
+	vsl->log_ptr = vsl->log_start + 1;
+
+	vsl->last_seq = vsl->log_start[0];
+	VRMB();
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 VSL_Open(struct VSM_data *vd, int diag)
 {
 	struct vsl *vsl;
-	struct vsm_chunk *sha;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -340,15 +363,6 @@ VSL_Open(struct VSM_data *vd, int diag)
 	if (i)
 		return (i);
 
-	sha = vsm_find_alloc(vd, VSL_CLASS, "", "");
-	assert(sha != NULL);
-
-	vsl->log_start = VSM_PTR(sha);
-	vsl->log_end = VSM_NEXT(sha);
-	vsl->log_ptr = vsl->log_start + 1;
-
-	vsl->last_seq = vsl->log_start[0];
-	VRMB();
 	if (!vsl->d_opt && vsl->r_fd == -1) {
 		while (*vsl->log_ptr != VSL_ENDMARKER)
 			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);

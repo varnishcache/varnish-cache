@@ -250,7 +250,7 @@ vsl_handler VSL_H_Print;
 struct VSM_data;
 void VSL_Select(const struct VSM_data *vd, unsigned tag);
 void VSL_NonBlocking(const struct VSM_data *vd, int nb);
-int VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv);
+int VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp);
 extern const char *VSL_tags[256];
 

@@ -191,6 +191,9 @@ vsm_open(struct VSM_data *vd, int diag)
 	while(slh.alloc_seq == 0)
 		(void)usleep(50000);		/* XXX limit total sleep */
 	vd->alloc_seq = slh.alloc_seq;
+
+	if (vd->vsl != NULL)
+		vsl_open_cb(vd);
 	return (0);
 }
 

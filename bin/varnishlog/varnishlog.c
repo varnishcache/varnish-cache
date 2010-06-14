@@ -194,7 +194,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 }
 
 static void
-do_order(const struct VSM_data *vd, int argc, char * const *argv)
+do_order(struct VSM_data *vd, int argc, char * const *argv)
 {
 	int i;
 	const char *error;

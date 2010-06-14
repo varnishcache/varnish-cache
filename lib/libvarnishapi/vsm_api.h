@@ -64,3 +64,4 @@ struct vsm_chunk *vsm_find_alloc(const struct VSM_data *vd, const char *class,
 
 void vsc_delete(struct VSM_data *vd);
 void vsl_delete(struct VSM_data *vd);
+void vsl_open_cb(struct VSM_data *vd);
