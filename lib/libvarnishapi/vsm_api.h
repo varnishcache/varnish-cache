@@ -48,9 +48,9 @@ struct VSM_data {
 
 	struct stat		fstat;
 
-	int			vsl_fd;
-	struct vsm_head	*vsl_lh;
-	void			*vsl_end;
+	int			vsm_fd;
+	struct vsm_head		*vsm_head;
+	void			*vsm_end;
 	unsigned		alloc_seq;
 
 	/* Stuff relating the stats fields start here */

@@ -69,7 +69,7 @@ VSM_New(void)
 	vd->diag = (vsm_diag_f*)fprintf;
 	vd->priv = stderr;
 
-	vd->vsl_fd = -1;
+	vd->vsm_fd = -1;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	return (vd);
@@ -140,24 +140,23 @@ VSM_Delete(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_open(struct VSM_data *vd, int diag)
+vsm_open(struct VSM_data *vd, int diag)
 {
 	int i;
 	struct vsm_head slh;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->vsl_lh != NULL)
-		return (0);
+	AZ(vd->vsm_head);
 
-	vd->vsl_fd = open(vd->fname, O_RDONLY);
-	if (vd->vsl_fd < 0) {
+	vd->vsm_fd = open(vd->fname, O_RDONLY);
+	if (vd->vsm_fd < 0) {
 		if (diag)
 			vd->diag(vd->priv, "Cannot open %s: %s\n",
 			    vd->fname, strerror(errno));
 		return (1);
 	}
 
-	assert(fstat(vd->vsl_fd, &vd->fstat) == 0);
+	assert(fstat(vd->vsm_fd, &vd->fstat) == 0);
 	if (!S_ISREG(vd->fstat.st_mode)) {
 		if (diag)
 			vd->diag(vd->priv, "%s is not a regular file\n",
@@ -165,7 +164,7 @@ vsl_open(struct VSM_data *vd, int diag)
 		return (1);
 	}
 
-	i = read(vd->vsl_fd, &slh, sizeof slh);
+	i = read(vd->vsm_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		if (diag)
 			vd->diag(vd->priv, "Cannot read %s: %s\n",
@@ -179,15 +178,15 @@ vsl_open(struct VSM_data *vd, int diag)
 		return (1);
 	}
 
-	vd->vsl_lh = (void *)mmap(NULL, slh.shm_size,
-	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsl_fd, 0);
-	if (vd->vsl_lh == MAP_FAILED) {
+	vd->vsm_head = (void *)mmap(NULL, slh.shm_size,
+	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
+	if (vd->vsm_head == MAP_FAILED) {
 		if (diag)
 			vd->diag(vd->priv, "Cannot mmap %s: %s\n",
 			    vd->fname, strerror(errno));
 		return (1);
 	}
-	vd->vsl_end = (uint8_t *)vd->vsl_lh + slh.shm_size;
+	vd->vsm_end = (uint8_t *)vd->vsm_head + slh.shm_size;
 
 	while(slh.alloc_seq == 0)
 		(void)usleep(50000);		/* XXX limit total sleep */
@@ -203,7 +202,8 @@ VSM_Open(struct VSM_data *vd, int diag)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	return (vsl_open(vd, diag));
+	AZ(vd->vsm_head);
+	return (vsm_open(vd, diag));
 }
 
 /*--------------------------------------------------------------------*/
@@ -213,13 +213,12 @@ VSM_Close(struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->vsl_lh == NULL)
-		return;
-	assert(0 == munmap((void*)vd->vsl_lh, vd->vsl_lh->shm_size));
-	vd->vsl_lh = NULL;
-	assert(vd->vsl_fd >= 0);
-	assert(0 == close(vd->vsl_fd));
-	vd->vsl_fd = -1;
+	AN(vd->vsm_head);
+	assert(0 == munmap((void*)vd->vsm_head, vd->vsm_head->shm_size));
+	vd->vsm_head = NULL;
+	assert(vd->vsm_fd >= 0);
+	assert(0 == close(vd->vsm_fd));
+	vd->vsm_fd = -1;
 }
 
 /*--------------------------------------------------------------------*/
@@ -231,7 +230,7 @@ VSM_ReOpen(struct VSM_data *vd, int diag)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->vsl_lh);
+	AN(vd->vsm_head);
 
 	if (stat(vd->fname, &st))
 		return (0);
@@ -241,10 +240,10 @@ VSM_ReOpen(struct VSM_data *vd, int diag)
 
 	VSM_Close(vd);
 	for (i = 0; i < 5; i++) {		/* XXX param */
-		if (!vsl_open(vd, 0))
+		if (!vsm_open(vd, 0))
 			return (1);
 	}
-	if (vsl_open(vd, diag))
+	if (vsm_open(vd, diag))
 		return (-1);
 	return (1);
 }
@@ -256,8 +255,8 @@ VSM_Head(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->vsl_lh);
-	return(vd->vsl_lh);
+	AN(vd->vsm_head);
+	return(vd->vsm_head);
 }
 
 
@@ -269,7 +268,7 @@ vsm_find_alloc(const struct VSM_data *vd, const char *class, const char *type, c
 	struct vsm_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	assert (vd->vsl_lh != NULL);
+	AN(vd->vsm_head);
 	VSM_FOREACH(sha, vd) {
 		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 		if (strcmp(sha->class, class))
@@ -307,10 +306,10 @@ vsm_iter0(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->alloc_seq != vd->vsl_lh->alloc_seq)
+	if (vd->alloc_seq != vd->vsm_head->alloc_seq)
 		return(NULL);
-	CHECK_OBJ_NOTNULL(&vd->vsl_lh->head, VSM_CHUNK_MAGIC);
-	return (&vd->vsl_lh->head);
+	CHECK_OBJ_NOTNULL(&vd->vsm_head->head, VSM_CHUNK_MAGIC);
+	return (&vd->vsm_head->head);
 }
 
 void
@@ -318,13 +317,13 @@ vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->alloc_seq != vd->vsl_lh->alloc_seq) {
+	if (vd->alloc_seq != vd->vsm_head->alloc_seq) {
 		*pp = NULL;
 		return;
 	}
 	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
 	*pp = VSM_NEXT(*pp);
-	if ((void*)(*pp) >= vd->vsl_end) {
+	if ((void*)(*pp) >= vd->vsm_end) {
 		*pp = NULL;
 		return;
 	}
