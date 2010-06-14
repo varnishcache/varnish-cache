@@ -141,7 +141,7 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 	AC(noecho());
 	AC(nonl());
 	AC(intrflush(stdscr, FALSE));
-	AC(curs_set(0));
+	(void)curs_set(0);	/* XXX: too many implementations are bogus */
 
 	while (1) {
 		/*
