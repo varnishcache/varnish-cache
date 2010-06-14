@@ -530,7 +530,7 @@ main(int argc, char *argv[])
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDP:Vw:f")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:f")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -558,13 +558,13 @@ main(int argc, char *argv[])
 			/* XXX: Silently ignored: it's required anyway */
 			break;
 		default:
-			if (VSL_Log_Arg(vd, c, optarg) > 0)
+			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}
 	}
 
-	VSL_Log_Arg(vd, 'c', optarg);
+	VSL_Arg(vd, 'c', optarg);
 
 	if (VSL_Open(vd, 1))
 		exit(1);

@@ -310,10 +310,10 @@ main(int argc, char **argv)
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((o = getopt(argc, argv, VSL_LOG_ARGS "1fV")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
 		switch (o) {
 		case '1':
-			AN(VSL_Log_Arg(vd, 'd', NULL));
+			AN(VSL_Arg(vd, 'd', NULL));
 			once = 1;
 			break;
 		case 'f':
@@ -323,7 +323,7 @@ main(int argc, char **argv)
 			varnish_version("varnishtop");
 			exit(0);
 		default:
-			if (VSL_Log_Arg(vd, o, optarg) > 0)
+			if (VSL_Arg(vd, o, optarg) > 0)
 				break;
 			usage();
 		}

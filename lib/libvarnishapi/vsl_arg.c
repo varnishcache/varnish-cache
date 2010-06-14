@@ -192,7 +192,7 @@ vsl_k_arg(const struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt)
+VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);

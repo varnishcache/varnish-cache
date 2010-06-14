@@ -320,18 +320,18 @@ main(int argc, char * const *argv)
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_LOG_ARGS "aDoP:uVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDoP:uVw:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
 			break;
 		case 'b':
 			b_flag = 1;
-			AN(VSL_Log_Arg(vd, c, optarg));
+			AN(VSL_Arg(vd, c, optarg));
 			break;
 		case 'c':
 			c_flag = 1;
-			AN(VSL_Log_Arg(vd, c, optarg));
+			AN(VSL_Arg(vd, c, optarg));
 			break;
 		case 'D':
 			D_flag = 1;
@@ -352,7 +352,7 @@ main(int argc, char * const *argv)
 			w_arg = optarg;
 			break;
 		default:
-			if (VSL_Log_Arg(vd, c, optarg) > 0)
+			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}

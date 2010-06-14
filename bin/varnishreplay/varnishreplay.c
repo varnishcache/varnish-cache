@@ -724,7 +724,7 @@ main(int argc, char *argv[])
 	VSL_Setup(vd);
 	debug = 0;
 
-	VSL_Log_Arg(vd, 'c', NULL);
+	VSL_Arg(vd, 'c', NULL);
 	while ((c = getopt(argc, argv, "a:Dr:n:")) != -1) {
 		switch (c) {
 		case 'a':
@@ -734,7 +734,7 @@ main(int argc, char *argv[])
 			++debug;
 			break;
 		default:
-			if (VSL_Log_Arg(vd, c, optarg) > 0)
+			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
 			usage();
 		}

@@ -169,7 +169,9 @@ usage(void)
 {
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, "usage: varnishstat "
-	    "[-1lV] [-f field_list] [-n varnish_name] [-w delay]\n");
+	    "[-1lV] [-f field_list] "
+	    VSC_n_USAGE " "
+	    "[-w delay]\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics once and exit");
 	fprintf(stderr, FMT, "-f field_list",
 	    "Comma separated list of fields to display. ");
@@ -199,7 +201,7 @@ main(int argc, char * const *argv)
 	vd = VSM_New();
 	VSC_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_STAT_ARGS "1f:lVw:x")) != -1) {
+	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:x")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;

@@ -361,7 +361,7 @@ varnish_launch(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
-	(void)VSL_Log_Arg(v->vd, 'n', v->workdir);
+	(void)VSL_Arg(v->vd, 'n', v->workdir);
 	AZ(VSC_Open(v->vd, 1));
 }
 

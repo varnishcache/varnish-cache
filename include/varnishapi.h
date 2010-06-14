@@ -66,6 +66,8 @@ void VSM_Diag(struct VSM_data *vd, vsm_diag_f *func, void *priv);
 	 * If func is NULL, diagnostics are disabled.
 	 */
 
+#define VSM_n_USAGE	"[-n varnish_name]"
+
 int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	/*
 	 * Configure which varnishd instance to access.
@@ -148,6 +150,10 @@ void VSC_Setup(struct VSM_data *vd);
 	 * Setup vd for use with VSC functions.
 	 */
 
+#define VSC_ARGS	"L:n:"
+#define VSC_n_USAGE	VSM_n_USAGE
+#define VSC_USAGE	VSC_N_USAGE
+
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments 
@@ -204,22 +210,48 @@ int VSL_Open(struct VSM_data *vd, int diag);
 	 * 	!= 0 on failure
 	 */
 	
+#define VSL_ARGS	"bCcdI:i:k:L:n:r:s:X:x:"
+#define VSL_b_USAGE	"[-b]"
+#define VSL_c_USAGE	"[-c]"
+#define VSL_C_USAGE	"[-C]"
+#define VSL_d_USAGE	"[-d]"
+#define VSL_i_USAGE	"[-i tag]"
+#define VSL_I_USAGE	"[-I regexp]"
+#define VSL_k_USAGE	"[-k keep]"
+#define VSL_n_USAGE	VSM_n_USAGE
+#define VSL_r_USAGE	"[-r file]"
+#define VSL_s_USAGE	"[-s skip]"
+#define VSL_x_USAGE	"[-x tag]"
+#define VSL_X_USAGE	"[-X regexp]"
+#define VSL_USAGE	"[-bCcd] "		\
+			VSL_i_USAGE " " 	\
+			VSL_I_USAGE " "		\
+			VSL_k_USAGE " "		\
+			VSL_n_USAGE " "		\
+			VSL_r_USAGE " "		\
+			VSL_s_USAGE " "		\
+			VSL_X_USAGE " "		\
+			VSL_x_USAGE 
+			
+int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
+	/*
+	 * Handle standard log-presenter arguments 
+	 * Return:
+	 *	-1 error
+	 *	 0 not handled
+	 *	 1 Handled.
+	 */
 
 typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr);
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-#define VSL_LOG_ARGS	"bCcdI:i:k:L:n:r:s:X:x:"
-#define VSL_STAT_ARGS	"L:n:"
-#define VSL_USAGE	"[-bCcd] [-i tag] [-I regexp] [-k keep]" \
-			" [-r file] [-s skip] [-X regexp] [-x tag]"
 vsl_handler VSL_H_Print;
 struct VSM_data;
 void VSL_Select(const struct VSM_data *vd, unsigned tag);
 void VSL_NonBlocking(const struct VSM_data *vd, int nb);
 int VSL_Dispatch(const struct VSM_data *vd, vsl_handler *func, void *priv);
 int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp);
-int VSL_Log_Arg(struct VSM_data *vd, int arg, const char *opt);
 extern const char *VSL_tags[256];
 
 

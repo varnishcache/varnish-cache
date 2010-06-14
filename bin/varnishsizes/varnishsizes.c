@@ -325,7 +325,7 @@ main(int argc, char **argv)
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((o = getopt(argc, argv, VSL_LOG_ARGS "Vw:")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (o) {
 		case 'V':
 			varnish_version("varnishsizes");
@@ -334,7 +334,7 @@ main(int argc, char **argv)
 			delay = atoi(optarg);
 			break;
 		default:
-			if (VSL_Log_Arg(vd, o, optarg) > 0)
+			if (VSL_Arg(vd, o, optarg) > 0)
 				break;
 			usage();
 		}

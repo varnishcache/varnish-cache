@@ -244,7 +244,7 @@ main(int argc, char * const *argv)
 
 	if (n_arg != NULL) {
 		vsd = VSM_New();
-		assert(VSL_Log_Arg(vsd, 'n', n_arg));
+		assert(VSL_Arg(vsd, 'n', n_arg));
 		if (!VSM_Open(vsd, 1)) {
 			if (T_arg == NULL) {
 				p = VSM_Find_Chunk(vsd, "Arg", "-T", "", NULL);
