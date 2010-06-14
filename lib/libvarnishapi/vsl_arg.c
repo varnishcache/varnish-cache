@@ -210,16 +210,6 @@ VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
 	case 'C': vd->vsl->regflags = VRE_CASELESS; return (1);
-	case 'L':
-		vd->vsl->L_opt = strtoul(opt, NULL, 0);
-		if (vd->vsl->L_opt < 1024 || vd->vsl->L_opt > 65000) {
-			fprintf(stderr, "%s\n", VIN_L_MSG);
-			exit (1);
-		}
-		free(vd->n_opt);
-		vd->n_opt = vin_L_arg(vd->vsl->L_opt);
-		assert(vd->n_opt != NULL);
-		return (1);
 	default:
 		return (0);
 	}

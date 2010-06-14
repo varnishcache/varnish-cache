@@ -136,10 +136,7 @@ client_new(const char *name)
 	if (*c->name != 'c')
 		vtc_log(c->vl, 0, "Client name must start with 'c'");
 
-	if (vtc_learn)
-		bprintf(c->connect, "127.0.0.1:%d", vtc_learn);
-	else
-		bprintf(c->connect, "%s", "${v1_sock}");
+	bprintf(c->connect, "%s", "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
 	return (c);
 }
@@ -183,8 +180,7 @@ client_wait(struct client *c)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
-	if (!vtc_learn)
-		vtc_log(c->vl, 2, "Waiting for client");
+	vtc_log(c->vl, 2, "Waiting for client");
 	AZ(pthread_join(c->tp, &res));
 	if (res != NULL)
 		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
@@ -242,11 +238,7 @@ cmd_client(CMD_ARGS)
 		if (vtc_error)
 			break;
 		if (!strcmp(*av, "-connect")) {
-			if (vtc_learn)
-				bprintf(c->connect, "127.0.0.1:%d",
-				    vtc_learn + atoi(av[1]));
-			else
-				bprintf(c->connect, "%s", av[1]);
+			bprintf(c->connect, "%s", av[1]);
 			av++;
 			continue;
 		}

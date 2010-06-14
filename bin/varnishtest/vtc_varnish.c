@@ -459,7 +459,7 @@ varnish_wait(struct varnish *v)
 	AZ(close(v->cli_fd));
 	v->cli_fd = -1;
 
-	AZ(close(v->fds[1]));
+	(void)close(v->fds[1]);		/* May already have been closed */
 
 	AZ(pthread_join(v->tp, &p));
 	AZ(close(v->fds[0]));

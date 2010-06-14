@@ -213,7 +213,8 @@ VSM_Close(struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->vsm_head);
+	if (vd->vsm_head == NULL)
+		return;
 	assert(0 == munmap((void*)vd->vsm_head, vd->vsm_head->shm_size));
 	vd->vsm_head = NULL;
 	assert(vd->vsm_fd >= 0);

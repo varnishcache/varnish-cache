@@ -84,7 +84,6 @@ pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
-unsigned		L_arg = 0;
 
 static void
 build_vident(void)
@@ -365,7 +364,6 @@ main(int argc, char * const *argv)
 	struct cli cli[1];
 	struct pidfh *pfh = NULL;
 	char *dirname;
-	char tmpbuf[128];
 
 	/*
 	 * Start out by closing all unwanted file descriptors we might
@@ -460,20 +458,6 @@ main(int argc, char * const *argv)
 		case 'l':
 			l_arg = optarg;
 			break;
-		case 'L':
-			L_arg = strtoul(optarg, NULL, 0);
-			if (!VIN_L_OK(L_arg)) {
-				fprintf(stderr, "%s\n", VIN_L_MSG);
-				exit (1);
-			}
-			d_flag++;
-			n_arg = vin_L_arg(L_arg);
-			MCF_ParamSet(cli, "ping_interval", "0");
-
-			bprintf(tmpbuf, "127.0.0.1:%u", L_arg);
-			MCF_ParamSet(cli, "listen_address", tmpbuf);
-
-			break;
 		case 'M':
 			M_arg = optarg;
 			break;
@@ -531,14 +515,6 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	mgt_vcc_init();
-
-	if (L_arg) {
-		/* Learner mode */
-		if (!s_arg_given) {
-			STV_config("malloc,1m");
-			s_arg_given = 1;
-		}
-	}
 
 	if (argc != 0) {
 		fprintf(stderr, "Too many arguments (%s...)\n", argv[0]);
@@ -611,7 +587,7 @@ main(int argc, char * const *argv)
 		exit(1);
 	}
 
-	if (b_arg != NULL || f_arg != NULL || L_arg > 0)
+	if (b_arg != NULL || f_arg != NULL)
 		if (mgt_vcc_default(b_arg, f_arg, vcl, C_flag))
 			exit (2);
 
@@ -654,10 +630,6 @@ main(int argc, char * const *argv)
 		mgt_cli_master(M_arg);
 	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
-	else if (L_arg > 0) {
-		bprintf(tmpbuf, "127.0.0.1:%u", L_arg + 1);
-		mgt_cli_telnet(tmpbuf);
-	}
 
 	STV_ready();	/* Complete initialization */
 

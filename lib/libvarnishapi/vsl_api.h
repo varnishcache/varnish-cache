@@ -46,7 +46,6 @@ struct vsl {
 	unsigned		rbuflen;
 	uint32_t		*rbuf;
 
-	unsigned		L_opt;
 	int			b_opt;
 	int			c_opt;
 	int			d_opt;

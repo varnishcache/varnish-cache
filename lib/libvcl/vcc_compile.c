@@ -86,8 +86,6 @@ struct method method_tab[] = {
 
 static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 
-unsigned Learn_mode = 0;
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -675,10 +673,9 @@ VCC_Return_Name(unsigned method)
  */
 
 void
-VCC_InitCompile(const char *default_vcl, unsigned L_arg)
+VCC_InitCompile(const char *default_vcl)
 {
 
-	Learn_mode = L_arg;
 	vcc_default_vcl_b = default_vcl;
 	vcc_default_vcl_e = strchr(default_vcl, '\0');
 	assert(vcc_default_vcl_e != NULL);

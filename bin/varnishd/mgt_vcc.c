@@ -336,15 +336,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	/* XXX: annotate vcl with -b/-f arg so people know where it came from */
 	(void)f_arg;
 
-	if (L_arg && b_arg == NULL) {
-		bprintf(buf,
-		    "backend default {\n"
-		    "    .host = \"127.0.0.1\";\n"
-		    "    .port = %s;\n"
-		    "}\n", "Learn(0)");
-		vcl = strdup(buf);
-		AN(vcl);
-	} else if (b_arg != NULL) {
+	if (b_arg != NULL) {
 		AZ(vcl);
 		/*
 		 * XXX: should do a "HEAD /" on the -b argument to see that
@@ -456,7 +448,7 @@ void
 mgt_vcc_init(void)
 {
 
-	VCC_InitCompile(default_vcl, L_arg);
+	VCC_InitCompile(default_vcl);
 	AZ(atexit(mgt_vcc_atexit));
 }
 

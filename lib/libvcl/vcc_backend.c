@@ -393,9 +393,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 	struct fld_spec *fs;
 	struct vsb *vsb;
 	unsigned u;
-	unsigned tL_port = 0;
 	double t;
-	char tmpbuf[20];
 
 	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, tl->ndirector);
 
@@ -449,39 +447,10 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "port")) {
-			if (Learn_mode) {
-				ExpectErr(tl, ID);
-				if (!vcc_IdIs(tl->t, "Learn")) {
-					vsb_printf(tl->sb,
-					    "Expected \"Learn\"\n");
-					vcc_ErrToken(tl, tl->t);
-					vcc_ErrWhere(tl, tl->t);
-					return;
-				}
-				vcc_NextToken(tl);
-
-				ExpectErr(tl, '(');
-				vcc_NextToken(tl);
-
-				ExpectErr(tl, CNUM);
-				t_port = tl->t;
-				tL_port = vcc_UintVal(tl);
-				if (tL_port > 9) {
-					vsb_printf(tl->sb,
-					    "Learn port > 9\n");
-					vcc_ErrToken(tl, t_port);
-					vcc_ErrWhere(tl, t_port);
-					return;
-				}
-
-				ExpectErr(tl, ')');
-				vcc_NextToken(tl);
-			} else {
-				ExpectErr(tl, CSTR);
-				assert(tl->t->dec != NULL);
-				t_port = tl->t;
-				vcc_NextToken(tl);
-			}
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_port = tl->t;
+			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "host_header")) {
 			ExpectErr(tl, CSTR);
@@ -550,10 +519,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 	}
 
 	/* Check that the portname makes sense */
-	if (Learn_mode && t_port != NULL && t_port->tok == CNUM) {
-		bprintf(tmpbuf, "%u", Learn_mode + 10 + tL_port);
-		Emit_Sockaddr(tl, t_host, tmpbuf);
-	} else if (t_port != NULL) {
+	if (t_port != NULL) {
 		ep = CheckHostPort("127.0.0.1", t_port->dec);
 		if (ep != NULL) {
 			vsb_printf(tl->sb,

@@ -137,10 +137,7 @@ server_new(const char *name)
 	if (*s->name != 's')
 		vtc_log(s->vl, 0, "Server name must start with 's'");
 
-	if (vtc_learn)
-		bprintf(s->listen, "127.0.0.1:%d", vtc_learn + 10);
-	else
-		bprintf(s->listen, "127.0.0.1:%d", 0);
+	bprintf(s->listen, "127.0.0.1:%d", 0);
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
 	s->depth = 1;
@@ -174,8 +171,7 @@ server_start(struct server *s)
 	int naddr;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	if (!vtc_learn)
-		vtc_log(s->vl, 2, "Starting server");
+	vtc_log(s->vl, 2, "Starting server");
 	if (s->sock < 0) {
 		naddr = VSS_resolve(s->addr, s->port, &s->vss_addr);
 		if (naddr != 1)
@@ -194,8 +190,7 @@ server_start(struct server *s)
 		if (!strcmp(s->port, "0"))
 			REPLACE(s->port, s->aport);
 	}
-	if (!vtc_learn)
-		vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
+	vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
 	s->run = 1;
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
@@ -210,8 +205,7 @@ server_wait(struct server *s)
 	void *res;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	if (!vtc_learn)
-		vtc_log(s->vl, 2, "Waiting for server");
+	vtc_log(s->vl, 2, "Waiting for server");
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL && !vtc_stop)
 		vtc_log(s->vl, 0, "Server returned \"%p\"",
@@ -300,11 +294,7 @@ cmd_server(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-listen")) {
-			if (vtc_learn)
-				bprintf(s->listen, "127.0.0.1:%d",
-				    vtc_learn + 10 + atoi(av[1]));
-			else
-				bprintf(s->listen, "%s", av[1]);
+			bprintf(s->listen, "%s", av[1]);
 			AZ(VSS_parse(s->listen, &s->addr, &s->port));
 			av++;
 			continue;

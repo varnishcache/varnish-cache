@@ -150,7 +150,7 @@ void VSC_Setup(struct VSM_data *vd);
 	 * Setup vd for use with VSC functions.
 	 */
 
-#define VSC_ARGS	"L:n:"
+#define VSC_ARGS	"f:n:"
 #define VSC_n_USAGE	VSM_n_USAGE
 #define VSC_USAGE	VSC_N_USAGE
 
@@ -210,7 +210,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 	 * 	!= 0 on failure
 	 */
 	
-#define VSL_ARGS	"bCcdI:i:k:L:n:r:s:X:x:"
+#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:"
 #define VSL_b_USAGE	"[-b]"
 #define VSL_c_USAGE	"[-c]"
 #define VSL_C_USAGE	"[-C]"

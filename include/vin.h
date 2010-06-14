@@ -35,10 +35,4 @@
 
 /* This function lives in both libvarnish and libvarnishapi */
 int vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl);
-char *vin_L_arg(unsigned L_arg);
-#define VIN_L_LOW	1024
-#define VIN_L_HIGH	65000
-#define VIN_L_OK(a)	(a >= VIN_L_LOW && a <= VIN_L_HIGH)
-#define VIN_L_MSG	"-L argument must be [1024...65000]"
-
 #endif

@@ -206,9 +206,6 @@ main(int argc, char * const *argv)
 		case '1':
 			once = 1;
 			break;
-		case 'f':
-			(void)VSC_Arg(vd, c, optarg);
-			break;
 		case 'l':
 			if (VSC_Open(vd, 1))
 				exit(1);

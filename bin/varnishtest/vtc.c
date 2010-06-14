@@ -64,8 +64,6 @@ static struct vtclog	*vltop;
 static pthread_mutex_t	vtc_mtx;
 static pthread_cond_t	vtc_cond;
 
-int			vtc_learn = 0;
-
 /**********************************************************************
  * Macro facility
  */
@@ -119,11 +117,9 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		va_end(ap);
 		m->val = strdup(buf2);
 		AN(m->val);
-		if (!vtc_learn)
-			vtc_log(vl, 4, "macro def %s=%s", name, m->val);
+		vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	} else if (m != NULL) {
-		if (!vtc_learn)
-			vtc_log(vl, 4, "macro undef %s", name);
+		vtc_log(vl, 4, "macro undef %s", name);
 		VTAILQ_REMOVE(&macro_list, m, list);
 		free(m->name);
 		free(m->val);
@@ -623,17 +619,6 @@ main(int argc, char * const *argv)
 	AN(vltop);
 	while ((ch = getopt(argc, argv, "L:n:qt:v")) != -1) {
 		switch (ch) {
-		case 'L':
-			/* XXX: append "/tutorial" to default search path */
-			vtc_learn = strtoul(optarg, NULL, 0);
-			if (vtc_learn > 65000) {
-				fprintf(stderr,
-				    "-L argument must be 1...65000\n");
-				exit(1);
-			}
-			vtc_verbosity += 2;
-			dur = 60 * 3;	/* seconds */
-			break;
 		case 'n':
 			ntest = strtoul(optarg, NULL, 0);
 			break;
