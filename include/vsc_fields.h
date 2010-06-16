@@ -32,11 +32,11 @@
  * stats structure.
  */
 
+/**********************************************************************/
 #ifndef VSC_F_MAIN
 #define VSC_F_MAIN(a, b, c, d, e)
 #define __VSC_F_MAIN
 #endif
-
 
 VSC_F_MAIN(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
 VSC_F_MAIN(client_drop,		uint64_t, 0, 'a',
@@ -161,6 +161,8 @@ VSC_F_MAIN(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 #undef __VSC_F_MAIN
 #endif
 
+/**********************************************************************/
+
 #ifndef VSC_F_SMA
 #define VSC_F_SMA(a, b, c, d, e)
 #define __VSC_F_SMA
@@ -175,4 +177,18 @@ VSC_F_SMA(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
 #ifdef __VSC_F_SMA
 #undef VSC_F_SMA
 #undef __VSC_F_SMA
+#endif
+
+/**********************************************************************/
+
+#ifndef VSC_F_VBE
+#define VSC_F_VBE(a, b, c, d, e)
+#define __VSC_F_VBE
+#endif
+
+VSC_F_VBE(vcls,			uint64_t, 0, 'i', "VCL references")
+
+#ifdef __VSC_F_VBE
+#undef VSC_F_VBE
+#undef __VSC_F_VBE
 #endif

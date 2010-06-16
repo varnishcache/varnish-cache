@@ -48,3 +48,11 @@ struct vsc_sma {
 #include "vsc_fields.h"
 #undef VSC_F_SMA
 };
+
+#define VSC_TYPE_VBE	"VBE"
+
+struct vsc_vbe {
+#define VSC_F_VBE(n, t, l, f, e)	t n;
+#include "vsc_fields.h"
+#undef VSC_F_VBE
+};

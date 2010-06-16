@@ -456,6 +456,73 @@ VBE_Healthy(double now, const struct director *d, uintptr_t target)
 }
 
 /*--------------------------------------------------------------------
+ * Backend VSC counters
+ *
+ * We use a private list, because we do not trust the content of the
+ * VSM (to hold our refcount).
+ *
+ * Backend stats are indexed purely by name, across all VCLs.
+ */
+
+struct vbe_cnt {
+	unsigned		magic;
+#define CNT_PRIV_MAGIC		0x1acda1f5
+	VTAILQ_ENTRY(vbe_cnt)	list;
+	char			*name;
+	int			refcnt;
+	struct vsc_vbe		*vsc_vbe;
+};
+
+static VTAILQ_HEAD(, vbe_cnt) vbe_cnt_head =
+     VTAILQ_HEAD_INITIALIZER(vbe_cnt_head);
+
+static struct vsc_vbe *
+vbe_stat_ref(const char *name)
+{
+	struct vbe_cnt *vc;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH(vc, &vbe_cnt_head, list) {
+		if (!strcmp(vc->name, name)) {
+			vc->refcnt++;
+			vc->vsc_vbe->vcls = vc->refcnt;
+			return (vc->vsc_vbe);
+		}
+	}
+	ALLOC_OBJ(vc, CNT_PRIV_MAGIC);
+	AN(vc);
+	REPLACE(vc->name, name);
+	VTAILQ_INSERT_HEAD(&vbe_cnt_head, vc, list);
+	vc->vsc_vbe = VSM_Alloc(sizeof *vc->vsc_vbe,
+	    VSC_CLASS, VSC_TYPE_VBE, name);
+	AN(vc->vsc_vbe);
+	vc->refcnt = 1;
+	vc->vsc_vbe->vcls = vc->refcnt;
+	return (vc->vsc_vbe);
+}
+
+static void
+vbe_stat_deref(const char *name)
+{
+	struct vbe_cnt *vc;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH(vc, &vbe_cnt_head, list)
+		if (!strcmp(vc->name, name))
+			break;
+	AN(vc);
+	vc->refcnt--;
+	vc->vsc_vbe->vcls = vc->refcnt;
+	if (vc->refcnt > 0)
+		return;
+	AZ(vc->refcnt);
+	VTAILQ_REMOVE(&vbe_cnt_head, vc, list);
+	VSM_Free(vc->vsc_vbe);
+	FREE_OBJ(vc);
+}
+
+
+/*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
  * connections happen.  Nontheless, pretend it is simple by sequestering
  * the directoricity of it under this line.
@@ -466,6 +533,7 @@ struct vdi_simple {
 #define VDI_SIMPLE_MAGIC	0x476d25b7
 	struct director		dir;
 	struct backend		*backend;
+	struct vsc_vbe		*stats;
 };
 
 static struct vbe_conn *
@@ -507,6 +575,7 @@ vdi_simple_fini(struct director *d)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
 	VBE_DropRef(vs->backend);
+	vbe_stat_deref(vs->dir.vcl_name);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	FREE_OBJ(vs);
@@ -534,6 +603,7 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 	vs->dir.healthy = vdi_simple_healthy;
 
 	vs->backend = VBE_AddBackend(cli, t);
+	vs->stats = vbe_stat_ref(t->vcl_name);
 
 	bp[idx] = &vs->dir;
 }
