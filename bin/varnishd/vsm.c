@@ -35,11 +35,14 @@
 SVNID("$Id$")
 
 #include <unistd.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "miniobj.h"
 #include "libvarnish.h"
 #include "common.h"
 #include "vsm.h"
+#include "vmb.h"
 
 struct vsm_head		*vsm_head;
 void			*vsm_end;
@@ -67,4 +70,56 @@ vsm_iter_n(struct vsm_chunk **pp)
 		return;
 	}
 	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+}
+
+/*--------------------------------------------------------------------*/
+
+void *
+VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
+{
+	struct vsm_chunk *sha, *sha2;
+	unsigned seq;
+
+	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+
+	/* Round up to pointersize */
+	size += sizeof(void *) - 1;
+	size &= ~(sizeof(void *) - 1);
+
+	size += sizeof *sha;		/* Make space for the header */
+
+	VSM_ITER(sha) {
+		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+
+		if (strcmp(sha->class, "Free"))
+			continue;
+
+		xxxassert(size <= sha->len);
+
+		sha2 = (void*)((uintptr_t)sha + size);
+
+		/* Mark as inconsistent while we write string fields */
+		seq = vsm_head->alloc_seq;
+		vsm_head->alloc_seq = 0;
+		VWMB();
+
+		memset(sha2, 0, sizeof *sha2);
+		sha2->magic = VSM_CHUNK_MAGIC;
+		sha2->len = sha->len - size;
+		bprintf(sha2->class, "%s", "Free");
+
+		sha->len = size;
+		bprintf(sha->class, "%s", class);
+		bprintf(sha->type, "%s", type);
+		bprintf(sha->ident, "%s", ident);
+
+		VWMB();
+		if (seq != 0)
+			do
+				loghead->alloc_seq = seq++;
+			while (loghead->alloc_seq == 0);
+
+		return (VSM_PTR(sha));
+	}
+	return (NULL);
 }

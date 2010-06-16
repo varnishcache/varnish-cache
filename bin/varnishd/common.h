@@ -73,6 +73,9 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 extern struct vsm_head		*vsm_head;
 extern void			*vsm_end;
 
+void *VSM_Alloc(unsigned size, const char *class, const char *type,
+    const char *ident);
+
 struct vsm_chunk *vsm_iter_0(void);
 void vsm_iter_n(struct vsm_chunk **pp);
 

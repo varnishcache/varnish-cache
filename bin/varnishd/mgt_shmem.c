@@ -118,58 +118,6 @@ struct vsm_head	*loghead;
 
 static int vsl_fd = -1;
 
-/*--------------------------------------------------------------------*/
-
-void *
-mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
-{
-	struct vsm_chunk *sha, *sha2;
-	unsigned seq;
-
-	ASSERT_MGT();
-	AN(loghead);
-	/* Round up to pointersize */
-	size += sizeof(sha) - 1;
-	size &= ~(sizeof(sha) - 1);
-
-	size += sizeof *sha;
-	sha = &loghead->head;
-	while (1) {
-		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-
-		if (strcmp(sha->class, "Free")) {
-			sha = VSM_NEXT(sha);
-			continue;
-		}
-		assert(size <= sha->len);
-
-		sha2 = (void*)((uintptr_t)sha + size);
-
-		seq = loghead->alloc_seq;
-		loghead->alloc_seq = 0;
-		VWMB();
-
-		memset(sha2, 0, sizeof *sha2);
-		sha2->magic = VSM_CHUNK_MAGIC;
-		sha2->len = sha->len - size;
-		bprintf(sha2->class, "%s", "Free");
-
-		sha->len = size;
-		bprintf(sha->class, "%s", class);
-		bprintf(sha->type, "%s", type);
-		bprintf(sha->ident, "%s", ident);
-
-		VWMB();
-		if (seq != 0)
-			do
-				loghead->alloc_seq = seq++;
-			while (loghead->alloc_seq == 0);
-
-		return (VSM_PTR(sha));
-	}
-	return (NULL);
-}
-
 /*--------------------------------------------------------------------
  * Check that we are not started with the same -n argument as an already
  * running varnishd
@@ -342,16 +290,16 @@ mgt_SHM_Init(const char *l_arg)
 	vsm_head = loghead;
 	vsm_end = (uint8_t*)loghead + size;
 
-	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
+	VSL_stats = VSM_Alloc(sizeof *VSL_stats,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
 	AN(VSL_stats);
 
-	pp = mgt_SHM_Alloc(sizeof *pp, "Params", "", "");
+	pp = VSM_Alloc(sizeof *pp, "Params", "", "");
 	AN(pp);
 	*pp = *params;
 	params = pp;
 
-	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS, "", "");
+	vsl_log_start = VSM_Alloc(s1, VSL_CLASS, "", "");
 	AN(vsl_log_start);
 	vsl_log_start[1] = VSL_ENDMARKER;
 	VWMB();

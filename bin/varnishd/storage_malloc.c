@@ -187,7 +187,7 @@ sma_ready(struct stevedore *st)
 	struct sma_sc *sma_sc;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	sma_sc->stats = mgt_SHM_Alloc(sizeof *sma_sc->stats,
+	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
 	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
 }

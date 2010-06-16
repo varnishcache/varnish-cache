@@ -511,7 +511,7 @@ mgt_cli_secret(const char *S_arg)
 
 	/* Save in shmem */
 	i = strlen(S_arg);
-	p = mgt_SHM_Alloc(i + 1, "Arg", "-S", "");
+	p = VSM_Alloc(i + 1, "Arg", "-S", "");
 	AN(p);
 	strcpy(p, S_arg);
 
@@ -546,7 +546,7 @@ mgt_cli_telnet(const char *T_arg)
 
 	/* Save in shmem */
 	i = strlen(T_arg);
-	p = mgt_SHM_Alloc(i + 1, "Arg", "-T", "");
+	p = VSM_Alloc(i + 1, "Arg", "-T", "");
 	AN(p);
 	strcpy(p, T_arg);
 
