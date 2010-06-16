@@ -114,7 +114,6 @@ SVNID("$Id$")
 #endif
 
 struct vsc_main	*VSL_stats;
-struct vsm_head	*loghead;
 
 static int vsl_fd = -1;
 
@@ -272,29 +271,28 @@ mgt_SHM_Init(const char *l_arg)
 	(void)close(i);
 	vsl_buildnew(VSM_FILENAME, size, fill);
 
-	loghead = (void *)mmap(NULL, size,
+	vsm_head = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsl_fd, 0);
-	loghead->master_pid = getpid();
-	xxxassert(loghead != MAP_FAILED);
-	(void)mlock((void*)loghead, size);
+	vsm_head->master_pid = getpid();
+	xxxassert(vsm_head != MAP_FAILED);
+	(void)mlock((void*)vsm_head, size);
 
-	memset(&loghead->head, 0, sizeof loghead->head);
-	loghead->head.magic = VSM_CHUNK_MAGIC;
-	loghead->head.len =
-	    (uint8_t*)(loghead) + size - (uint8_t*)&loghead->head;
-	bprintf(loghead->head.class, "%s", "Free");
+	memset(&vsm_head->head, 0, sizeof vsm_head->head);
+	vsm_head->head.magic = VSM_CHUNK_MAGIC;
+	vsm_head->head.len =
+	    (uint8_t*)(vsm_head) + size - (uint8_t*)&vsm_head->head;
+	bprintf(vsm_head->head.class, "%s", VSM_CLASS_FREE);
 	VWMB();
 
-	vsm_head = loghead;
-	vsm_end = (uint8_t*)loghead + size;
+	vsm_end = (void*)((uint8_t*)vsm_head + size);
 
 	VSL_stats = VSM_Alloc(sizeof *VSL_stats,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
 	AN(VSL_stats);
 
-	pp = VSM_Alloc(sizeof *pp, "Params", "", "");
+	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
 	AN(pp);
 	*pp = *params;
 	params = pp;
@@ -311,8 +309,8 @@ mgt_SHM_Init(const char *l_arg)
 	VWMB();
 
 	do
-		loghead->alloc_seq = random();
-	while (loghead->alloc_seq == 0);
+		vsm_head->alloc_seq = random();
+	while (vsm_head->alloc_seq == 0);
 
 }
 
@@ -320,5 +318,5 @@ void
 mgt_SHM_Pid(void)
 {
 
-	loghead->master_pid = getpid();
+	vsm_head->master_pid = getpid();
 }

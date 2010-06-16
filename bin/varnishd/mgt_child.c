@@ -461,10 +461,10 @@ static void
 mgt_report_panic(pid_t r)
 {
 
-	if (loghead->panicstr[0] == '\0')
+	if (vsm_head->panicstr[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, loghead->panicstr);
+	    (intmax_t)r, vsm_head->panicstr);
 }
 
 /*--------------------------------------------------------------------*/

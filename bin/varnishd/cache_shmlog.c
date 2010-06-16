@@ -43,7 +43,7 @@ SVNID("$Id$")
 static pthread_mutex_t vsl_mtx;
 
 static uint32_t			*vsl_start;
-static uint32_t			*vsl_end;
+static const uint32_t		*vsl_end;
 static uint32_t			*vsl_ptr;
 
 static inline uint32_t
@@ -276,6 +276,8 @@ VSL_Init(void)
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 
+	VSM_Clean();
+
 	VSM_ITER(vsc)
 		if (!strcmp(vsc->class, VSL_CLASS))
 			break;
@@ -285,8 +287,8 @@ VSL_Init(void)
 	vsl_ptr = vsl_start + 1;
 
 	vsl_wrap();
-	loghead->starttime = (intmax_t)TIM_real();
-	loghead->panicstr[0] = '\0';
+	vsm_head->starttime = (intmax_t)TIM_real();
+	vsm_head->panicstr[0] = '\0';
 	memset(VSL_stats, 0, sizeof *VSL_stats);
-	loghead->child_pid = getpid();
+	vsm_head->child_pid = getpid();
 }
