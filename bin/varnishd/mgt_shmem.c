@@ -115,9 +115,6 @@ SVNID("$Id$")
 
 struct vsc_main	*VSL_stats;
 struct vsm_head	*loghead;
-uint32_t		*vsl_log_start;
-uint32_t		*vsl_log_end;
-uint32_t		*vsl_log_nxt;
 
 static int vsl_fd = -1;
 
@@ -260,6 +257,7 @@ mgt_SHM_Init(const char *l_arg)
 	const char *q;
 	uintmax_t size, s1, s2, ps;
 	char **av, **ap;
+	uint32_t *vsl_log_start;
 
 	if (l_arg == NULL)
 		l_arg = "";
@@ -341,6 +339,9 @@ mgt_SHM_Init(const char *l_arg)
 	bprintf(loghead->head.class, "%s", "Free");
 	VWMB();
 
+	vsm_head = loghead;
+	vsm_end = (uint8_t*)loghead + size;
+
 	VSL_stats = mgt_SHM_Alloc(sizeof *VSL_stats,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
 	AN(VSL_stats);
@@ -352,9 +353,7 @@ mgt_SHM_Init(const char *l_arg)
 
 	vsl_log_start = mgt_SHM_Alloc(s1, VSL_CLASS, "", "");
 	AN(vsl_log_start);
-	vsl_log_end = (void*)((uint8_t *)vsl_log_start + s1);
-	vsl_log_nxt = vsl_log_start + 1;
-	*vsl_log_nxt = VSL_ENDMARKER;
+	vsl_log_start[1] = VSL_ENDMARKER;
 	VWMB();
 
 	do

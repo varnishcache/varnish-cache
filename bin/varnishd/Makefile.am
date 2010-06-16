@@ -57,7 +57,8 @@ varnishd_SOURCES = \
 	storage_synth.c \
 	storage_umem.c \
 	stevedore_utils.c \
-	varnishd.c
+	varnishd.c \
+	vsm.c
 
 noinst_HEADERS = \
 	acct_fields.h \

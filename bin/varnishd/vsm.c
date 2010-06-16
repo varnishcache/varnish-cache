@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Redpill Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,54 +25,46 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
+ * VSM stuff common to manager and child.
+ *
  */
 
-struct cli;
-struct sockaddr;
+#include "config.h"
 
-extern pid_t mgt_pid;
-#define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
+#include "svnid.h"
+SVNID("$Id$")
 
-/* cache_acceptor.c */
-void VCA_tweak_waiter(struct cli *cli, const char *arg);
+#include <unistd.h>
 
-/* mgt_shmem.c */
-void *mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident);
-extern struct vsc_main *VSL_stats;
-extern struct vsm_head *loghead;
+#include "miniobj.h"
+#include "libvarnish.h"
+#include "common.h"
+#include "vsm.h"
 
-/* varnishd.c */
-struct vsb;
-extern struct vsb *vident;
-int Symbol_Lookup(struct vsb *vsb, void *ptr);
-extern unsigned L_arg;
+struct vsm_head		*vsm_head;
+void			*vsm_end;
 
-#define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
+/*--------------------------------------------------------------------*/
 
-/* Really belongs in mgt.h, but storage_file chokes on both */
-void mgt_child_inherit(int fd, const char *what);
+struct vsm_chunk *
+vsm_iter_0(void)
+{
 
-#define ARGV_ERR(...)						\
-	do {							\
-		fprintf(stderr, "Error: " __VA_ARGS__);		\
-		exit(2);					\
-	} while (0);
+	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
+	return (&vsm_head->head);
+}
 
-/* A tiny helper for choosing hash/storage modules */
-struct choice {
-	const char      *name;
-	const void	*ptr;
-};
-const void *pick(const struct choice *cp, const char *which, const char *kind);
+void
+vsm_iter_n(struct vsm_chunk **pp)
+{
 
-#define NEEDLESS_RETURN(foo)	return (foo)
-
-/* vsm.c */
-extern struct vsm_head		*vsm_head;
-extern void			*vsm_end;
-
-struct vsm_chunk *vsm_iter_0(void);
-void vsm_iter_n(struct vsm_chunk **pp);
-
-#define VSM_ITER(vd) for ((vd) = vsm_iter_0(); (vd) != NULL; vsm_iter_n(&vd))
+	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+	*pp = VSM_NEXT(*pp);
+	if ((void*)(*pp) >= vsm_end) {
+		*pp = NULL;
+		return;
+	}
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+}

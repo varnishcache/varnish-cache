@@ -42,6 +42,10 @@ SVNID("$Id$")
 
 static pthread_mutex_t vsl_mtx;
 
+static uint32_t			*vsl_start;
+static uint32_t			*vsl_end;
+static uint32_t			*vsl_ptr;
+
 static inline uint32_t
 vsl_w0(uint32_t type, uint32_t length)
 {
@@ -69,13 +73,17 @@ static void
 vsl_wrap(void)
 {
 
-	vsl_log_start[1] = VSL_ENDMARKER;
+	assert(vsl_ptr >= vsl_start + 1);
+	assert(vsl_ptr < vsl_end);
+	vsl_start[1] = VSL_ENDMARKER;
 	do
-		vsl_log_start[0]++;
-	while (vsl_log_start[0] == 0);
+		vsl_start[0]++;
+	while (vsl_start[0] == 0);
 	VWMB();
-	*vsl_log_nxt = VSL_WRAPMARKER;
-	vsl_log_nxt = vsl_log_start + 1;
+	if (vsl_ptr != vsl_start + 1) {
+		*vsl_ptr = VSL_WRAPMARKER;
+		vsl_ptr = vsl_start + 1;
+	}
 	VSL_stats->shm_cycles++;
 }
 
@@ -92,24 +100,24 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 		AZ(pthread_mutex_lock(&vsl_mtx));
 		VSL_stats->shm_cont++;
 	}
-	assert(vsl_log_nxt < vsl_log_end);
-	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+	assert(vsl_ptr < vsl_end);
+	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
 
 	VSL_stats->shm_writes++;
 	VSL_stats->shm_flushes += flushes;
 	VSL_stats->shm_records += records;
 
 	/* Wrap if necessary */
-	if (VSL_END(vsl_log_nxt, len) >= vsl_log_end)
+	if (VSL_END(vsl_ptr, len) >= vsl_end)
 		vsl_wrap();
 
-	p = vsl_log_nxt;
-	vsl_log_nxt = VSL_END(vsl_log_nxt, len);
+	p = vsl_ptr;
+	vsl_ptr = VSL_END(vsl_ptr, len);
 
-	*vsl_log_nxt = VSL_ENDMARKER;
+	*vsl_ptr = VSL_ENDMARKER;
 
-	assert(vsl_log_nxt < vsl_log_end);
-	assert(((uintptr_t)vsl_log_nxt & 0x3) == 0);
+	assert(vsl_ptr < vsl_end);
+	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
 	AZ(pthread_mutex_unlock(&vsl_mtx));
 
 	return (p);
@@ -264,8 +272,18 @@ WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...)
 void
 VSL_Init(void)
 {
+	struct vsm_chunk *vsc;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
+
+	VSM_ITER(vsc)
+		if (!strcmp(vsc->class, VSL_CLASS))
+			break;
+	AN(vsc);
+	vsl_start = VSM_PTR(vsc);
+	vsl_end = VSM_NEXT(vsc);
+	vsl_ptr = vsl_start + 1;
+
 	vsl_wrap();
 	loghead->starttime = (intmax_t)TIM_real();
 	loghead->panicstr[0] = '\0';
