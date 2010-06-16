@@ -215,18 +215,6 @@ STV_free(struct storage *st)
 }
 
 void
-STV_ready(void)
-{
-	struct stevedore *stv;
-
-	ASSERT_MGT();
-	VTAILQ_FOREACH(stv, &stevedores, list) {
-		if (stv->ready != NULL)
-			stv->ready(stv);
-	}
-}
-
-void
 STV_open(void)
 {
 	struct stevedore *stv;

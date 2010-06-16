@@ -182,30 +182,21 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 }
 
 static void
-sma_ready(struct stevedore *st)
-{
-	struct sma_sc *sma_sc;
-
-	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
-	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
-	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
-}
-
-static void
 sma_open(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx);
+	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
+	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
+	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
 }
 
 const struct stevedore sma_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"malloc",
 	.init	=	sma_init,
-	.ready	=	sma_ready,
 	.open	=	sma_open,
 	.alloc	=	sma_alloc,
 	.free	=	sma_free,
