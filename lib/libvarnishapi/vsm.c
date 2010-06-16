@@ -142,7 +142,7 @@ VSM_Delete(struct VSM_data *vd)
 static int
 vsm_open(struct VSM_data *vd, int diag)
 {
-	int i;
+	int i, j;
 	struct vsm_head slh;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -161,6 +161,8 @@ vsm_open(struct VSM_data *vd, int diag)
 		if (diag)
 			vd->diag(vd->priv, "%s is not a regular file\n",
 			    vd->fname);
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
 		return (1);
 	}
 
@@ -169,12 +171,16 @@ vsm_open(struct VSM_data *vd, int diag)
 		if (diag)
 			vd->diag(vd->priv, "Cannot read %s: %s\n",
 			    vd->fname, strerror(errno));
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
 		return (1);
 	}
 	if (slh.magic != VSM_HEAD_MAGIC) {
 		if (diag)
 			vd->diag(vd->priv, "Wrong magic number in file %s\n",
 			    vd->fname);
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
 		return (1);
 	}
 
@@ -188,8 +194,17 @@ vsm_open(struct VSM_data *vd, int diag)
 	}
 	vd->vsm_end = (uint8_t *)vd->vsm_head + slh.shm_size;
 
-	while(slh.alloc_seq == 0)
-		(void)usleep(50000);		/* XXX limit total sleep */
+	for (j = 0; j < 20 && slh.alloc_seq == 0; j++)
+		(void)usleep(50000);
+	if (slh.alloc_seq == 0) {
+		if (diag)
+			vd->diag(vd->priv, "File not initialized %s\n",
+			    vd->fname);
+		assert(0 == munmap((void*)vd->vsm_head, slh.shm_size));
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		return (1);
+	}
 	vd->alloc_seq = slh.alloc_seq;
 
 	if (vd->vsl != NULL)
