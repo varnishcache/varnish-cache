@@ -49,6 +49,7 @@ struct vsm_chunk {
 #define VSM_CHUNK_MAGIC		0x43907b6e	/* From /dev/random */
 	unsigned		magic;
 	unsigned		len;
+	unsigned		state;
 	char			class[8];
 	char			type[8];
 	char			ident[16];
