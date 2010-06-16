@@ -223,7 +223,7 @@ VSC_Open(struct VSM_data *vd, int diag)
 /*--------------------------------------------------------------------*/
 
 struct vsc_main *
-VSC_Main(const struct VSM_data *vd)
+VSC_Main(struct VSM_data *vd)
 {
 	struct vsm_chunk *sha;
 
@@ -340,7 +340,7 @@ iter_sma(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
 }
 
 int
-VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv)
+VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
 {
 	struct vsc *vsc;
 	struct vsm_chunk *sha;

@@ -110,12 +110,17 @@ int VSM_ReOpen(struct VSM_data *vd, int diag);
 	 *	-1 failure to reopen.
 	 */
 
+unsigned VSM_Seq(struct VSM_data *vd);
+	/*
+	 * Return the allocation sequence number
+	 */
+
 struct vsm_head *VSM_Head(const struct VSM_data *vd);
 	/*
 	 * Return the head of the VSM.
 	 */
 
-void *VSM_Find_Chunk(const struct VSM_data *vd, const char *class,
+void *VSM_Find_Chunk(struct VSM_data *vd, const char *class,
     const char *type, const char *ident, unsigned *lenp);
 	/*
 	 * Find a given chunk in the shared memory.
@@ -129,7 +134,7 @@ void VSM_Close(struct VSM_data *vd);
 	 * Deallocate all storage (including VSC and VSL allocations)
 	 */
 
-struct vsm_chunk *vsm_iter0(const struct VSM_data *vd);
+struct vsm_chunk *vsm_iter0(struct VSM_data *vd);
 void vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp);
 
 #define VSM_FOREACH(var, vd) \
@@ -169,7 +174,7 @@ int VSC_Open(struct VSM_data *vd, int diag);
 	 * args and returns as VSM_Open()
 	 */
 
-struct vsc_main *VSC_Main(const struct VSM_data *vd);
+struct vsc_main *VSC_Main(struct VSM_data *vd);
 	/*
 	 * return Main stats structure
 	 */
@@ -186,7 +191,7 @@ struct vsc_point {
 
 typedef int vsc_iter_f(void *priv, const struct vsc_point *const pt);
 
-int VSC_Iter(const struct VSM_data *vd, vsc_iter_f *func, void *priv);
+int VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.

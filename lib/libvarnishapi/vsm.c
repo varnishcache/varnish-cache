@@ -267,7 +267,7 @@ VSM_Head(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 struct vsm_chunk *
-vsm_find_alloc(const struct VSM_data *vd, const char *class, const char *type, const char *ident)
+vsm_find_alloc(struct VSM_data *vd, const char *class, const char *type, const char *ident)
 {
 	struct vsm_chunk *sha;
 
@@ -289,7 +289,7 @@ vsm_find_alloc(const struct VSM_data *vd, const char *class, const char *type, c
 /*--------------------------------------------------------------------*/
 
 void *
-VSM_Find_Chunk(const struct VSM_data *vd, const char *class, const char *type,
+VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type,
     const char *ident, unsigned *lenp)
 {
 	struct vsm_chunk *sha;
@@ -306,12 +306,15 @@ VSM_Find_Chunk(const struct VSM_data *vd, const char *class, const char *type,
 /*--------------------------------------------------------------------*/
 
 struct vsm_chunk *
-vsm_iter0(const struct VSM_data *vd)
+vsm_iter0(struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->alloc_seq != vd->vsm_head->alloc_seq)
-		return(NULL);
+	vd->alloc_seq = vd->vsm_head->alloc_seq;
+	while (vd->alloc_seq == 0) {
+		usleep(50000);
+		vd->alloc_seq = vd->vsm_head->alloc_seq;
+	}
 	CHECK_OBJ_NOTNULL(&vd->vsm_head->head, VSM_CHUNK_MAGIC);
 	return (&vd->vsm_head->head);
 }
@@ -332,4 +335,13 @@ vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp)
 		return;
 	}
 	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+}
+
+/*--------------------------------------------------------------------*/
+unsigned
+VSM_Seq(struct VSM_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	return (vd->vsm_head->alloc_seq);
 }

@@ -74,7 +74,7 @@ do_xml_cb(void *priv, const struct vsc_point * const pt)
 }
 
 static void
-do_xml(const struct VSM_data *vd)
+do_xml(struct VSM_data *vd)
 {
 	char time_stamp[20];
 	time_t now;
@@ -121,7 +121,7 @@ do_once_cb(void *priv, const struct vsc_point * const pt)
 }
 
 static void
-do_once(const struct VSM_data *vd, const struct vsc_main *VSL_stats)
+do_once(struct VSM_data *vd, const struct vsc_main *VSL_stats)
 {
 	struct once_priv op;
 
@@ -153,7 +153,7 @@ do_list_cb(void *priv, const struct vsc_point * const pt)
 }
 
 static void
-list_fields(const struct VSM_data *vd)
+list_fields(struct VSM_data *vd)
 {
 	fprintf(stderr, "Varnishstat -f option fields:\n");
 	fprintf(stderr, "Field name                     Description\n");

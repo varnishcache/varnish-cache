@@ -59,7 +59,7 @@ struct VSM_data {
 	struct vsl		*vsl;
 };
 
-struct vsm_chunk *vsm_find_alloc(const struct VSM_data *vd, const char *class,
+struct vsm_chunk *vsm_find_alloc(struct VSM_data *vd, const char *class,
     const char *type, const char *ident);
 
 void vsc_delete(struct VSM_data *vd);

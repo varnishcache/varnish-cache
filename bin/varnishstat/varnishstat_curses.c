@@ -100,7 +100,7 @@ do_curses_cb(void *priv, const struct vsc_point * const sp)
 }
 
 static void
-prep_pts(const struct VSM_data *vd)
+prep_pts(struct VSM_data *vd)
 {
 	struct pt *pt, *pt2;
 
@@ -135,6 +135,7 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 	int ch, line;
 	struct pt *pt;
 	double act, lact;
+	unsigned seq;
 
 	(void)initscr();
 	AC(raw());
@@ -147,6 +148,7 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 		/*
 		 * Initialization goes in outher loop
 		 */
+		seq = VSM_Seq(vd);
 		prep_pts(vd);
 		AC(erase());
 		AC(refresh());
@@ -159,6 +161,8 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 		lact = 0;
 
 		while (1) {
+			if (seq != VSM_Seq(vd))
+				break;
 			/*
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
