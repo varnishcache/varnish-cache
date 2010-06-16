@@ -607,8 +607,6 @@ vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm)
 
 		sprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
 
-		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
-		    PF(tl->t_dir));
 		vcc_ParseHostDef(tl, serial, vgcname);
 		if (tl->err) {
 			vsb_printf(tl->sb,
@@ -672,6 +670,7 @@ vcc_ParseDirector(struct tokenlist *tl)
 {
 	struct token *t_first;
 	struct dirlist const *dl;
+	int isfirst;
 
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: director | backend */
@@ -682,14 +681,12 @@ vcc_ParseDirector(struct tokenlist *tl)
 	vcc_NextToken(tl);
 
 
+	isfirst = tl->ndirector;
 	if (vcc_IdIs(t_first, "backend")) {
 		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
-		Fh(tl, 1, "\n#define VGC_backend__%.*s %d\n",
-		    PF(tl->t_dir), tl->ndirector);
 		vcc_AddDef(tl, tl->t_dir, R_BACKEND);
-		tl->ndirector++;
 		ExpectErr(tl, ID);		/* ID: policy */
 		tl->t_policy = tl->t;
 		vcc_NextToken(tl);
@@ -708,9 +705,14 @@ vcc_ParseDirector(struct tokenlist *tl)
 		dl->func(tl);
 		if (!tl->err)
 			SkipToken(tl, '}');
+		Fh(tl, 1, "\n#define VGC_backend__%.*s %d\n",
+		    PF(tl->t_dir), tl->ndirector);
+		tl->ndirector++;
 		Fi(tl, 0,
 		    "\tVRT_init_dir(cli, VCL_conf.director, \"%.*s\",\n",
 		    PF(tl->t_policy));
+		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
+		    PF(tl->t_dir));
 		Fi(tl, 0, "\t    VGC_backend__%.*s, &vgc_dir_priv_%.*s);\n",
 		    PF(tl->t_dir), PF(tl->t_dir));
 
@@ -722,6 +724,18 @@ vcc_ParseDirector(struct tokenlist *tl)
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
+
+	if (isfirst == 1) {
+		/*
+		 * If this is the first backend|director explicitly
+		 * defined, use it as default backend.
+		 */
+		Fi(tl, 0,
+		    "\tVCL_conf.director[0] = VCL_conf.director[%d];\n",
+		    tl->ndirector - 1);
+		vcc_AddRef(tl, tl->t_dir, R_BACKEND);
+	}
+
 	tl->t_policy = NULL;
 	tl->t_dir = NULL;
 }
