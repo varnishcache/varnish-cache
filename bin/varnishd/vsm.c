@@ -116,7 +116,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 		VWMB();
 		if (seq != 0)
 			do
-				loghead->alloc_seq = seq++;
+				loghead->alloc_seq = ++seq;
 			while (loghead->alloc_seq == 0);
 
 		return (VSM_PTR(sha));
