@@ -701,6 +701,8 @@ vcc_ParseDirector(struct tokenlist *tl)
 			vcc_ErrWhere(tl, tl->t_policy);
 			return;
 		}
+		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
+		    PF(tl->t_dir));
 		SkipToken(tl, '{');
 		dl->func(tl);
 		if (!tl->err)
@@ -711,8 +713,6 @@ vcc_ParseDirector(struct tokenlist *tl)
 		Fi(tl, 0,
 		    "\tVRT_init_dir(cli, VCL_conf.director, \"%.*s\",\n",
 		    PF(tl->t_policy));
-		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
-		    PF(tl->t_dir));
 		Fi(tl, 0, "\t    VGC_backend__%.*s, &vgc_dir_priv_%.*s);\n",
 		    PF(tl->t_dir), PF(tl->t_dir));
 
