@@ -77,26 +77,20 @@ struct objhead {
 	int			refcnt;
 	VTAILQ_HEAD(,objcore)	objcs;
 	unsigned char		digest[DIGEST_LEN];
-	union {
-		VTAILQ_HEAD(, sess)	__u_waitinglist;
-		VTAILQ_ENTRY(objhead)	__u_coollist;
-	} __u;
-#define waitinglist __u.__u_waitinglist
-#define coollist __u.__u_coollist
+	VTAILQ_HEAD(, sess)	waitinglist;
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of
 	 * the hash implementation(s).
 	 */
 	union {
-		void		*filler[3];
 		struct {
 			VTAILQ_ENTRY(objhead)	u_n_hoh_list;
 			void			*u_n_hoh_head;
 		} n;
-	} u;
-#define hoh_list u.n.u_n_hoh_list
-#define hoh_head u.n.u_n_hoh_head
+	} _u;
+#define hoh_list _u.n.u_n_hoh_list
+#define hoh_head _u.n.u_n_hoh_head
 };
 
 void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);

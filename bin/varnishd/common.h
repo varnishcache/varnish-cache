@@ -39,15 +39,12 @@ extern pid_t mgt_pid;
 void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* mgt_shmem.c */
-void *mgt_SHM_Alloc(unsigned size, const char *class, const char *type, const char *ident);
 extern struct vsc_main *VSL_stats;
-extern struct vsm_head *loghead;
 
 /* varnishd.c */
 struct vsb;
 extern struct vsb *vident;
 int Symbol_Lookup(struct vsb *vsb, void *ptr);
-extern unsigned L_arg;
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
 
