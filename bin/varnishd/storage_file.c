@@ -181,9 +181,9 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	b = sp->size / sc->pagesize;
 	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
-		VSL_stats->n_smf_large++;
+		VSC_main->n_smf_large++;
 	} else {
-		VSL_stats->n_smf_frag++;
+		VSC_main->n_smf_frag++;
 	}
 	sp->flist = &sc->free[b];
 	ns = b * sc->pagesize;
@@ -211,9 +211,9 @@ remfree(const struct smf_sc *sc, struct smf *sp)
 	b = sp->size / sc->pagesize;
 	if (b >= NBUCKET) {
 		b = NBUCKET - 1;
-		VSL_stats->n_smf_large--;
+		VSC_main->n_smf_large--;
 	} else {
-		VSL_stats->n_smf_frag--;
+		VSC_main->n_smf_frag--;
 	}
 	assert(sp->flist == &sc->free[b]);
 	VTAILQ_REMOVE(sp->flist, sp, status);
@@ -259,7 +259,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	/* Split from front */
 	sp2 = malloc(sizeof *sp2);
 	XXXAN(sp2);
-	VSL_stats->n_smf++;
+	VSC_main->n_smf++;
 	*sp2 = *sp;
 
 	sp->offset += bytes;
@@ -301,7 +301,7 @@ free_smf(struct smf *sp)
 		VTAILQ_REMOVE(&sc->order, sp2, order);
 		remfree(sc, sp2);
 		free(sp2);
-		VSL_stats->n_smf--;
+		VSC_main->n_smf--;
 	}
 
 	sp2 = VTAILQ_PREV(sp, smfhead, order);
@@ -313,7 +313,7 @@ free_smf(struct smf *sp)
 		sp2->size += sp->size;
 		VTAILQ_REMOVE(&sc->order, sp, order);
 		free(sp);
-		VSL_stats->n_smf--;
+		VSC_main->n_smf--;
 		sp = sp2;
 	}
 
@@ -338,7 +338,7 @@ trim_smf(struct smf *sp, size_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
 	XXXAN(sp2);
-	VSL_stats->n_smf++;
+	VSC_main->n_smf++;
 	*sp2 = *sp;
 
 	sp2->size -= bytes;
@@ -364,7 +364,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	XXXAN(sp);
 	sp->magic = SMF_MAGIC;
 	sp->s.magic = STORAGE_MAGIC;
-	VSL_stats->n_smf++;
+	VSC_main->n_smf++;
 
 	sp->sc = sc;
 	sp->size = len;
@@ -450,7 +450,7 @@ smf_open(const struct stevedore *st)
 	if (sum < MINPAGES * (off_t)getpagesize())
 		exit (2);
 
-	VSL_stats->sm_bfree += sc->filesize;
+	VSC_main->sm_bfree += sc->filesize;
 }
 
 /*--------------------------------------------------------------------*/
@@ -466,16 +466,16 @@ smf_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	size += (sc->pagesize - 1);
 	size &= ~(sc->pagesize - 1);
 	Lck_Lock(&sc->mtx);
-	VSL_stats->sm_nreq++;
+	VSC_main->sm_nreq++;
 	smf = alloc_smf(sc, size);
 	if (smf == NULL) {
 		Lck_Unlock(&sc->mtx);
 		return (NULL);
 	}
 	CHECK_OBJ_NOTNULL(smf, SMF_MAGIC);
-	VSL_stats->sm_nobj++;
-	VSL_stats->sm_balloc += smf->size;
-	VSL_stats->sm_bfree -= smf->size;
+	VSC_main->sm_nobj++;
+	VSC_main->sm_balloc += smf->size;
+	VSC_main->sm_bfree -= smf->size;
 	Lck_Unlock(&sc->mtx);
 	CHECK_OBJ_NOTNULL(&smf->s, STORAGE_MAGIC);	/*lint !e774 */
 	XXXAN(smf);
@@ -509,8 +509,8 @@ smf_trim(struct storage *s, size_t size)
 	size &= ~(sc->pagesize - 1);
 	if (smf->size > size) {
 		Lck_Lock(&sc->mtx);
-		VSL_stats->sm_balloc -= (smf->size - size);
-		VSL_stats->sm_bfree += (smf->size - size);
+		VSC_main->sm_balloc -= (smf->size - size);
+		VSC_main->sm_bfree += (smf->size - size);
 		trim_smf(smf, size);
 		assert(smf->size == size);
 		Lck_Unlock(&sc->mtx);
@@ -531,9 +531,9 @@ smf_free(struct storage *s)
 	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
 	sc = smf->sc;
 	Lck_Lock(&sc->mtx);
-	VSL_stats->sm_nobj--;
-	VSL_stats->sm_balloc -= smf->size;
-	VSL_stats->sm_bfree += smf->size;
+	VSC_main->sm_nobj--;
+	VSC_main->sm_balloc -= smf->size;
+	VSC_main->sm_bfree += smf->size;
 	free_smf(smf);
 	Lck_Unlock(&sc->mtx);
 }

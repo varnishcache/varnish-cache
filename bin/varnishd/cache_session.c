@@ -107,7 +107,7 @@ ses_sm_alloc(void)
 	volatile unsigned nhttp;
 	unsigned l, hl;
 
-	if (VSL_stats->n_sess_mem >= params->max_sess)
+	if (VSC_main->n_sess_mem >= params->max_sess)
 		return (NULL);
 	/*
 	 * It is not necessary to lock these, but we need to
@@ -124,7 +124,7 @@ ses_sm_alloc(void)
 	q = p + l;
 
 	Lck_Lock(&stat_mtx);
-	VSL_stats->n_sess_mem++;
+	VSC_main->n_sess_mem++;
 	Lck_Unlock(&stat_mtx);
 
 	/* Don't waste time zeroing the workspace */
@@ -216,7 +216,7 @@ SES_New(void)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	}
 
-	VSL_stats->n_sess++;		/* XXX: locking  ? */
+	VSC_main->n_sess++;		/* XXX: locking  ? */
 
 	return (sp);
 }
@@ -256,7 +256,7 @@ SES_Delete(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	VSL_stats->n_sess--;			/* XXX: locking ? */
+	VSC_main->n_sess--;			/* XXX: locking ? */
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
@@ -265,7 +265,7 @@ SES_Delete(struct sess *sp)
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->sess_workspace) {
 		Lck_Lock(&stat_mtx);
-		VSL_stats->n_sess_mem--;
+		VSC_main->n_sess_mem--;
 		Lck_Unlock(&stat_mtx);
 		free(sm);
 	} else {
@@ -277,7 +277,7 @@ SES_Delete(struct sess *sp)
 	}
 
 	/* Try to precreate some ses-mem so the acceptor will not have to */
-	if (VSL_stats->n_sess_mem < VSL_stats->n_sess + 10) {
+	if (VSC_main->n_sess_mem < VSC_main->n_sess + 10) {
 		sm = ses_sm_alloc();
 		if (sm != NULL) {
 			ses_setup(sm);

@@ -437,19 +437,19 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 			}
 			AN(sp->wrk->nhashpriv);
 			Lck_Lock(&hcb_mtx);
-			VSL_stats->hcb_lock++;
+			VSC_main->hcb_lock++;
 			assert(noh->refcnt == 1);
 			oh = hcb_insert(sp->wrk, &hcb_root, noh, 1);
 			Lck_Unlock(&hcb_mtx);
 		} else {
-			VSL_stats->hcb_nolock++;
+			VSC_main->hcb_nolock++;
 			oh = hcb_insert(sp->wrk, &hcb_root, noh, 0);
 		}
 
 		if (oh != NULL && oh == noh) {
 			/* Assert that we only muck with the tree with a lock */
 			assert(with_lock);
-			VSL_stats->hcb_insert++;
+			VSC_main->hcb_insert++;
 			assert(oh->refcnt > 0);
 			return (oh);
 		}

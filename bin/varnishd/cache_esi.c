@@ -200,7 +200,7 @@ esi_error(const struct esi_work *ew, const char *p, int i, const char *err)
 	char buf[256], *q;
 	txt t;
 
-	VSL_stats->esi_errors++;
+	VSC_main->esi_errors++;
 	if (i == 0)
 		i = p - ew->t.b;
 	if (i > 20) {
@@ -733,7 +733,7 @@ ESI_Parse(struct sess *sp)
 	/* XXX: debugging hack */
 	hack = sp->wrk->ws->f;
 
-	VSL_stats->esi_parse++;
+	VSC_main->esi_parse++;
 	/* XXX: only if GET ? */
 	ew = eww;
 	memset(eww, 0, sizeof eww);

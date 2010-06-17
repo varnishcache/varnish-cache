@@ -72,7 +72,7 @@ VBE_Nuke(struct backend *b)
 	free(b->ipv4);
 	free(b->ipv6);
 	FREE_OBJ(b);
-	VSL_stats->n_backend--;
+	VSC_main->n_backend--;
 }
 
 /*--------------------------------------------------------------------
@@ -253,7 +253,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 
 	VBP_Start(b, &vb->probe);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
-	VSL_stats->n_backend++;
+	VSC_main->n_backend++;
 	return (b);
 }
 

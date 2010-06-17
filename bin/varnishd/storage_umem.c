@@ -62,13 +62,13 @@ smu_alloc(struct stevedore *st, size_t size)
 	struct smu *smu;
 
 	Lck_Lock(&smu_mtx);
-	VSL_stats->sma_nreq++;
-	if (VSL_stats->sma_nbytes + size > smu_max)
+	VSC_main->sma_nreq++;
+	if (VSC_main->sma_nbytes + size > smu_max)
 		size = 0;
 	else {
-		VSL_stats->sma_nobj++;
-		VSL_stats->sma_nbytes += size;
-		VSL_stats->sma_balloc += size;
+		VSC_main->sma_nobj++;
+		VSC_main->sma_nbytes += size;
+		VSC_main->sma_balloc += size;
 	}
 	Lck_Unlock(&smu_mtx);
 
@@ -100,9 +100,9 @@ smu_free(struct storage *s)
 	smu = s->priv;
 	assert(smu->sz == smu->s.space);
 	Lck_Lock(&smu_mtx);
-	VSL_stats->sma_nobj--;
-	VSL_stats->sma_nbytes -= smu->sz;
-	VSL_stats->sma_bfree += smu->sz;
+	VSC_main->sma_nobj--;
+	VSC_main->sma_nbytes -= smu->sz;
+	VSC_main->sma_bfree += smu->sz;
 	Lck_Unlock(&smu_mtx);
 	umem_free(smu->s.ptr, smu->s.space);
 	umem_free(smu, sizeof *smu);
@@ -121,8 +121,8 @@ smu_trim(const struct storage *s, size_t size)
 		memcpy(p, smu->s.ptr, size);
 		umem_free(smu->s.ptr, smu->s.space);
 		Lck_Lock(&smu_mtx);
-		VSL_stats->sma_nbytes -= (smu->sz - size);
-		VSL_stats->sma_bfree += smu->sz - size;
+		VSC_main->sma_nbytes -= (smu->sz - size);
+		VSC_main->sma_bfree += smu->sz - size;
 		smu->sz = size;
 		Lck_Unlock(&smu_mtx);
 		smu->s.ptr = p;

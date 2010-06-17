@@ -95,7 +95,7 @@ wrk_sumstat(struct worker *w)
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) (VSL_stats->n += w->stats.n)
+#define L1(n) (VSC_main->n += w->stats.n)
 #define VSC_F_MAIN(n, t, l, f, d) L##l(n);
 #include "vsc_fields.h"
 #undef VSC_F_MAIN
@@ -445,10 +445,10 @@ wrk_herdtimer_thread(void *priv)
 		for (u = 0; u < nwq; u++)
 			wrk_decimate_flock(wq[u], t_idle, vs);
 
-		VSL_stats->n_wrk= vs->n_wrk;
-		VSL_stats->n_wrk_queue = vs->n_wrk_queue;
-		VSL_stats->n_wrk_drop = vs->n_wrk_drop;
-		VSL_stats->n_wrk_overflow = vs->n_wrk_overflow;
+		VSC_main->n_wrk= vs->n_wrk;
+		VSC_main->n_wrk_queue = vs->n_wrk_queue;
+		VSC_main->n_wrk_drop = vs->n_wrk_drop;
+		VSC_main->n_wrk_overflow = vs->n_wrk_overflow;
 
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
@@ -472,15 +472,15 @@ wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 	    (qp->nqueue > params->wthread_add_threshold && /* more needed */
 	    qp->nqueue > qp->lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
-			VSL_stats->n_wrk_max++;
+			VSC_main->n_wrk_max++;
 		} else if (pthread_create(&tp, tp_attr, wrk_thread, qp)) {
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
-			VSL_stats->n_wrk_failed++;
+			VSC_main->n_wrk_failed++;
 			TIM_sleep(params->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
-			VSL_stats->n_wrk_create++;
+			VSC_main->n_wrk_create++;
 			TIM_sleep(params->wthread_add_delay * 1e-3);
 		}
 	}

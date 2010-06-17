@@ -80,10 +80,10 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	AN(VSL_stats);
+	AN(VSC_main);
 #define VSC_F_MAIN(n, t, l, f, d) \
-	if (VSL_stats->n != 0) \
-	    cli_out(cli, "%12ju  %s\n", (VSL_stats->n), d);
+	if (VSC_main->n != 0) \
+	    cli_out(cli, "%12ju  %s\n", (VSC_main->n), d);
 #include "vsc_fields.h"
 #undef VSC_F_MAIN
 }

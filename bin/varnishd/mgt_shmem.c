@@ -113,7 +113,7 @@ SVNID("$Id$")
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct vsc_main	*VSL_stats;
+struct vsc_main	*VSC_main;
 
 static int vsl_fd = -1;
 
@@ -288,9 +288,9 @@ mgt_SHM_Init(const char *l_arg)
 
 	vsm_end = (void*)((uint8_t*)vsm_head + size);
 
-	VSL_stats = VSM_Alloc(sizeof *VSL_stats,
+	VSC_main = VSM_Alloc(sizeof *VSC_main,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
-	AN(VSL_stats);
+	AN(VSC_main);
 
 	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
 	AN(pp);

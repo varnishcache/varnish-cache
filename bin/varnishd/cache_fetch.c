@@ -383,7 +383,7 @@ FetchHdr(struct sess *sp)
 	WSL_Flush(w, 0);
 
 	/* XXX is this the right place? */
-	VSL_stats->backend_req++;
+	VSC_main->backend_req++;
 
 	/* Receive response */
 

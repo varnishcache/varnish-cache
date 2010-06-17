@@ -343,12 +343,12 @@ RES_WriteObj(struct sess *sp)
 		 */
 		if (st->fd >= 0 &&
 		    st->len >= params->sendfile_threshold) {
-			VSL_stats->n_objsendfile++;
+			VSC_main->n_objsendfile++;
 			WRW_Sendfile(sp->wrk, st->fd, st->where + off, len);
 			continue;
 		}
 #endif /* SENDFILE_WORKS */
-		VSL_stats->n_objwrite++;
+		VSC_main->n_objwrite++;
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);

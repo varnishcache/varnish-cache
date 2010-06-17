@@ -39,7 +39,7 @@ extern pid_t mgt_pid;
 void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* mgt_shmem.c */
-extern struct vsc_main *VSL_stats;
+extern struct vsc_main *VSC_main;
 
 /* varnishd.c */
 struct vsb;

@@ -265,19 +265,19 @@ vca_acct(void *arg)
 			TIM_sleep(pace);
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
-		VSL_stats->uptime = (uint64_t)(now - t0);
+		VSC_main->uptime = (uint64_t)(now - t0);
 		u = 0;
 		VTAILQ_FOREACH(ls, &heritage.socks, list) {
 			if (ls->sock < 0)
 				continue;
 			if (pfd[u++].revents == 0)
 				continue;
-			VSL_stats->client_conn++;
+			VSC_main->client_conn++;
 			l = sizeof addr_s;
 			addr = (void*)&addr_s;
 			i = accept(ls->sock, addr, &l);
 			if (i < 0) {
-				VSL_stats->accept_fail++;
+				VSC_main->accept_fail++;
 				switch (errno) {
 				case EAGAIN:
 				case ECONNABORTED:
@@ -300,7 +300,7 @@ vca_acct(void *arg)
 			sp = SES_New();
 			if (sp == NULL) {
 				AZ(close(i));
-				VSL_stats->client_drop++;
+				VSC_main->client_drop++;
 				pace += params->acceptor_sleep_incr;
 				continue;
 			}
@@ -315,7 +315,7 @@ vca_acct(void *arg)
 
 			sp->step = STP_FIRST;
 			if (WRK_QueueSession(sp)) {
-				VSL_stats->client_drop++;
+				VSC_main->client_drop++;
 				pace += params->acceptor_sleep_incr;
 			} else {
 				pace *= params->acceptor_sleep_decay;
@@ -343,7 +343,7 @@ vca_handover(struct sess *sp, int status)
 	case 1:
 		sp->step = STP_START;
 		if (WRK_QueueSession(sp))
-			VSL_stats->client_drop_late++;
+			VSC_main->client_drop_late++;
 		break;
 	default:
 		INCOMPL();

@@ -80,11 +80,11 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	if (params->cache_vbe_conns) {
 		Lck_Lock(&VBE_mtx);
 		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
-		VSL_stats->backend_unused++;
+		VSC_main->backend_unused++;
 		Lck_Unlock(&VBE_mtx);
 	} else {
 		Lck_Lock(&VBE_mtx);
-		VSL_stats->n_vbe_conn--;
+		VSC_main->n_vbe_conn--;
 		Lck_Unlock(&VBE_mtx);
 		free(vc);
 	}
@@ -212,7 +212,7 @@ vbe_NewConn(void)
 		Lck_Lock(&VBE_mtx);
 		vc = VTAILQ_FIRST(&vbe_conns);
 		if (vc != NULL) {
-			VSL_stats->backend_unused--;
+			VSC_main->backend_unused--;
 			VTAILQ_REMOVE(&vbe_conns, vc, list);
 		}
 		Lck_Unlock(&VBE_mtx);
@@ -224,7 +224,7 @@ vbe_NewConn(void)
 	vc->magic = VBE_CONN_MAGIC;
 	vc->fd = -1;
 	Lck_Lock(&VBE_mtx);
-	VSL_stats->n_vbe_conn++;
+	VSC_main->n_vbe_conn++;
 	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
@@ -335,23 +335,23 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 			break;
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
-			VSL_stats->backend_reuse += 1;
+			VSC_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
 			return (vc);
 		}
-		VSL_stats->backend_toolate++;
+		VSC_main->backend_toolate++;
 		sp->vbe = vc;
 		VBE_ClosedFd(sp);
 	}
 
 	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {
-		VSL_stats->backend_unhealthy++;
+		VSC_main->backend_unhealthy++;
 		return (NULL);
 	}
 
 	if (bp->max_conn > 0 && bp->n_conn >= bp->max_conn) {
-		VSL_stats->backend_busy++;
+		VSC_main->backend_busy++;
 		return (NULL);
 	}
 
@@ -361,11 +361,11 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 	vc->fd = bes_conn_try(sp, bp);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
-		VSL_stats->backend_fail++;
+		VSC_main->backend_fail++;
 		return (NULL);
 	}
 	vc->backend = bp;
-	VSL_stats->backend_conn++;
+	VSC_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->director->vcl_name, bp->vcl_name);
 	return (vc);
@@ -412,7 +412,7 @@ VBE_RecycleFd(struct sess *sp)
 	 */
 	WSL_Flush(sp->wrk, 0);
 	Lck_Lock(&bp->mtx);
-	VSL_stats->backend_recycle++;
+	VSC_main->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
 	sp->vbe = NULL;
 	VBE_DropRefLocked(bp);

@@ -180,8 +180,8 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	Lck_Unlock(&vcl_mtx);
 	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	vcl->conf->init_func(cli);
-	VSL_stats->n_vcl++;
-	VSL_stats->n_vcl_avail++;
+	VSC_main->n_vcl++;
+	VSC_main->n_vcl_avail++;
 	return (0);
 }
 
@@ -203,8 +203,8 @@ VCL_Nuke(struct vcls *vcl)
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);
-	VSL_stats->n_vcl--;
-	VSL_stats->n_vcl_discard--;
+	VSC_main->n_vcl--;
+	VSC_main->n_vcl_discard--;
 }
 
 /*--------------------------------------------------------------------*/
@@ -278,8 +278,8 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		cli_out(cli, "VCL %s is the active VCL", av[2]);
 		return;
 	}
-	VSL_stats->n_vcl_discard++;
-	VSL_stats->n_vcl_avail--;
+	VSC_main->n_vcl_discard++;
+	VSC_main->n_vcl_avail--;
 	vcl->conf->discard = 1;
 	Lck_Unlock(&vcl_mtx);
 	if (vcl->conf->busy == 0)

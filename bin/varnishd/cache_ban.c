@@ -323,8 +323,8 @@ BAN_Insert(struct ban *b)
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
-	VSL_stats->n_purge++;
-	VSL_stats->n_purge_add++;
+	VSC_main->n_purge++;
+	VSC_main->n_purge_add++;
 
 	be = VTAILQ_LAST(&ban_head, banhead);
 	if (params->purge_dups && be != b)
@@ -352,7 +352,7 @@ BAN_Insert(struct ban *b)
 	}
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
-	VSL_stats->n_purge_dups += pcount;
+	VSC_main->n_purge_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -379,8 +379,8 @@ BAN_CheckLast(void)
 	Lck_AssertHeld(&ban_mtx);
 	b = VTAILQ_LAST(&ban_head, banhead);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSL_stats->n_purge--;
-		VSL_stats->n_purge_retire++;
+		VSC_main->n_purge--;
+		VSC_main->n_purge_retire++;
 		VTAILQ_REMOVE(&ban_head, b, list);
 	} else {
 		b = NULL;
@@ -455,8 +455,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		VTAILQ_INSERT_TAIL(&b0->objcore, o->objcore, ban_list);
 		b0->refcount++;
 	}
-	VSL_stats->n_purge_obj_test++;
-	VSL_stats->n_purge_re_test += tests;
+	VSC_main->n_purge_obj_test++;
+	VSC_main->n_purge_re_test += tests;
 	Lck_Unlock(&ban_mtx);
 
 	if (b == o->ban) {	/* not banned */
@@ -629,8 +629,8 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 			break;
 	}
 
-	VSL_stats->n_purge++;
-	VSL_stats->n_purge_add++;
+	VSC_main->n_purge++;
+	VSC_main->n_purge_add++;
 
 	b2 = BAN_New();
 	AN(b2);

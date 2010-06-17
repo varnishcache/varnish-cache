@@ -84,7 +84,7 @@ vsl_wrap(void)
 		*vsl_ptr = VSL_WRAPMARKER;
 		vsl_ptr = vsl_start + 1;
 	}
-	VSL_stats->shm_cycles++;
+	VSC_main->shm_cycles++;
 }
 
 /*--------------------------------------------------------------------
@@ -98,14 +98,14 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 
 	if (pthread_mutex_trylock(&vsl_mtx)) {
 		AZ(pthread_mutex_lock(&vsl_mtx));
-		VSL_stats->shm_cont++;
+		VSC_main->shm_cont++;
 	}
 	assert(vsl_ptr < vsl_end);
 	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
 
-	VSL_stats->shm_writes++;
-	VSL_stats->shm_flushes += flushes;
-	VSL_stats->shm_records += records;
+	VSC_main->shm_writes++;
+	VSC_main->shm_flushes += flushes;
+	VSC_main->shm_records += records;
 
 	/* Wrap if necessary */
 	if (VSL_END(vsl_ptr, len) >= vsl_end)
@@ -289,6 +289,6 @@ VSL_Init(void)
 	vsl_wrap();
 	vsm_head->starttime = (intmax_t)TIM_real();
 	vsm_head->panicstr[0] = '\0';
-	memset(VSL_stats, 0, sizeof *VSL_stats);
+	memset(VSC_main, 0, sizeof *VSC_main);
 	vsm_head->child_pid = getpid();
 }

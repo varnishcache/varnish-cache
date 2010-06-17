@@ -121,12 +121,12 @@ do_once_cb(void *priv, const struct vsc_point * const pt)
 }
 
 static void
-do_once(struct VSM_data *vd, const struct vsc_main *VSL_stats)
+do_once(struct VSM_data *vd, const struct vsc_main *VSC_main)
 {
 	struct once_priv op;
 
 	memset(&op, 0, sizeof op);
-	op.up = VSL_stats->uptime;
+	op.up = VSC_main->uptime;
 	op.pad = 18;
 
 	(void)VSC_Iter(vd, do_once_cb, &op);
@@ -195,7 +195,7 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	const struct vsc_main *VSL_stats;
+	const struct vsc_main *VSC_main;
 	int delay = 1, once = 0, xml = 0;
 
 	vd = VSM_New();
@@ -230,14 +230,14 @@ main(int argc, char * const *argv)
 	if (VSC_Open(vd, 1))
 		exit(1);
 
-	VSL_stats = VSC_Main(vd);
+	VSC_main = VSC_Main(vd);
 
 	if (xml)
 		do_xml(vd);
 	else if (once)
-		do_once(vd, VSL_stats);
+		do_once(vd, VSC_main);
 	else
-		do_curses(vd, VSL_stats, delay);
+		do_curses(vd, VSC_main, delay);
 
 	exit(0);
 }

@@ -123,7 +123,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 void
-do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
+do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
     int delay)
 {
 	intmax_t ju;
@@ -167,7 +167,7 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
 			 */
-			act = VSL_stats->cache_hit + VSL_stats->cache_miss + 1;
+			act = VSC_main->cache_hit + VSC_main->cache_miss + 1;
 			if (act == lact && VSM_ReOpen(vd, 1))
 				break;
 			lact = act;
@@ -176,15 +176,15 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSL_stats,
 			tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 			lt = tt - lt;
 
-			rt = VSL_stats->uptime;
+			rt = VSC_main->uptime;
 			up = rt;
 
 			AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
 			    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
 
-			hit = VSL_stats->cache_hit;
-			miss = VSL_stats->cache_miss;
+			hit = VSC_main->cache_hit;
+			miss = VSC_main->cache_miss;
 			hr = (hit - lhit) / lt;
 			mr = (miss - lmiss) / lt;
 			lhit = hit;

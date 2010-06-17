@@ -194,7 +194,7 @@ EXP_Touch(const struct object *o)
 	if (oc->flags & OC_F_ONLRU) {	/* XXX ?? */
 		VLIST_REMOVE(oc, lru_list);
 		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
-		VSL_stats->n_lru_moved++;
+		VSC_main->n_lru_moved++;
 		retval = 1;
 	}
 	Lck_Unlock(&exp_mtx);
@@ -288,7 +288,7 @@ exp_timer(struct sess *sp, void *priv)
 			oc->flags &= ~OC_F_ONLRU;
 		}
 
-		VSL_stats->n_expired++;
+		VSC_main->n_expired++;
 
 		Lck_Unlock(&exp_mtx);
 
@@ -353,7 +353,7 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 		oc->flags &= ~OC_F_ONLRU;
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		VSL_stats->n_lru_nuked++;
+		VSC_main->n_lru_nuked++;
 	}
 	Lck_Unlock(&exp_mtx);
 
