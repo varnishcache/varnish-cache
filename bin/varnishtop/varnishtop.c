@@ -229,7 +229,7 @@ do_curses(struct VSM_data *vd)
 	AC(noecho());
 	AC(nonl());
 	AC(intrflush(stdscr, FALSE));
-	AC(curs_set(0));
+	(void)curs_set(0);
 	AC(erase());
 	for (;;) {
 		AZ(pthread_mutex_lock(&mtx));
