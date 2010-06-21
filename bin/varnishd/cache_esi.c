@@ -262,7 +262,7 @@ esi_addbit(struct esi_work *ew, const char *verbatim, unsigned len)
 			ew->eb->verbatim.e = TRUST_ME(verbatim + len);
 		sprintf(ew->eb->chunk_length, "%x\r\n", Tlen(ew->eb->verbatim));
 		if (params->esi_syntax & 0x4)
-			VSL(SLT_Debug, ew->sp->fd, "AddBit: %d <%.*s>",
+			WSP(ew->sp, SLT_Debug, "AddBit: %d <%.*s>",
 			    Tlen(ew->eb->verbatim),
 			    Tlen(ew->eb->verbatim),
 			    ew->eb->verbatim.b);
@@ -399,10 +399,10 @@ esi_handle_include(struct esi_work *ew)
 	if (ew->eb == NULL || ew->eb->include.b != NULL)
 		esi_addbit(ew, NULL, 0);
 	eb = ew->eb;
-	VSL(SLT_Debug, ew->sp->fd, "Incl \"%.*s\"", t.e - t.b, t.b);
+	WSP(ew->sp, SLT_Debug, "Incl \"%.*s\"", t.e - t.b, t.b);
 	while (esi_attrib(ew, &t, &tag, &val) == 1) {
 		if (params->esi_syntax & 0x4)
-			VSL(SLT_Debug, ew->sp->fd, "<%.*s> -> <%.*s>",
+			WSP(ew->sp, SLT_Debug, "<%.*s> -> <%.*s>",
 			    tag.e - tag.b, tag.b, val.e - val.b, val.b);
 		if (Tlen(tag) != 3 || memcmp(tag.b, "src", 3))
 			continue;
@@ -650,7 +650,7 @@ parse_esi_tag(struct esi_work *ew, int closing)
 
 	ew->tag.b += 4 + (closing ? 1 : 0);
 	l = Tlen(ew->tag);
-	VSL(SLT_Debug, ew->sp->fd,
+	WSP(ew->sp, SLT_Debug,
 	    "tag {%.*s} %d %d %d", l, ew->tag.b, ew->remflg, empty, closing);
 	if (l >= 6 && !memcmp(ew->tag.b, "remove", 6)) {
 		if (empty) {
