@@ -216,8 +216,8 @@ sp_variables = (
 	),
 	('bereq.connect_timeout',
 		'RTIME',
-		( 'pass', 'miss',),
-		( 'pass', 'miss',),
+		( 'pipe', 'pass', 'miss',),
+		( 'pipe', 'pass', 'miss',),
 		'struct sess *'
 	),
 	('bereq.first_byte_timeout',
