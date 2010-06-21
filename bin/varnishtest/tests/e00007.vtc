@@ -31,7 +31,7 @@ server s1 {
 	}
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -storage "-smalloc,2m" -vcl+backend {
 	sub vcl_fetch {
 		esi;
 	}

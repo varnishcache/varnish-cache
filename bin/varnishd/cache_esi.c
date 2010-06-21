@@ -622,8 +622,8 @@ parse_esi_tag(struct esi_work *ew, int closing)
 		 * XXX: Ideally, we should only pull together the bits
 		 * XXX: we need, like the filename.
 		 */
-		ew->tag.b = ew->sp->obj->ws_o->f;
-		ew->tag.e = ew->tag.b + WS_Reserve(ew->sp->obj->ws_o, 0);
+		ew->tag.b = ew->sp->wrk->ws->f;
+		ew->tag.e = ew->tag.b + WS_Reserve(ew->sp->wrk->ws, 0);
 		px = ew->s;
 		q = ew->tag.b;
 		while (px.p != ew->p.p) {
@@ -632,7 +632,7 @@ parse_esi_tag(struct esi_work *ew, int closing)
 			Nep(&px);
 		}
 		ew->tag.e = q;
-		WS_Release(ew->sp->obj->ws_o, Tlen(ew->tag));
+		WS_Release(ew->sp->wrk->ws, Tlen(ew->tag));
 	}
 	ll = Tlen(ew->tag);
 	ew->tag.b++;
