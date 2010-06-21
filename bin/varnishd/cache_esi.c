@@ -394,7 +394,6 @@ esi_handle_include(struct esi_work *ew)
 	txt tag;
 	txt val;
 	unsigned u, v, s;
-	struct ws *ws;
 
 	if (ew->eb == NULL || ew->eb->include.b != NULL)
 		esi_addbit(ew, NULL, 0);
@@ -412,9 +411,7 @@ esi_handle_include(struct esi_work *ew)
 			continue;
 		}
 
-		/* Wee are saving the original string */
-		ws = ew->sp->obj->ws_o;
-		WS_Assert(ws);
+		/* We are saving the original string */
 		s = 0;
 
 		if (val.b != val.e) {
