@@ -92,6 +92,8 @@
 -esym(534, strcpy)
 -esym(534, strlcpy)
 
++typename(844)
+-etype(844, struct pthread *)
 -sem(pthread_create, custodial(4))
 -emacro(413, offsetof)  // likely null pointer
 -emacro(736, isnan)  // loss of prec.
