@@ -516,6 +516,8 @@ FetchBody(struct sess *sp)
 		return (__LINE__);
 	}
 
+	WSL(sp->wrk, SLT_Length, sp->vbe->fd, "%u", sp->obj->len);
+
 	{
 	/* Sanity check fetch methods accounting */
 		unsigned uu;
