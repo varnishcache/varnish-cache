@@ -1,0 +1,36 @@
+# $Id$
+
+test "Check that backend named 'default' is the default"
+
+server s1 {
+	rxreq
+	txresp -bodylen 25
+} -start
+
+server s2 {
+	rxreq
+	txresp -bodylen 52
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_addr}"; 
+		.port = "${s1_port}";
+	}
+	backend default {
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
+	}
+
+	sub vcl_recv {
+		if (req.url != req.url) {
+			set req.backend = s1;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 52
+} -run
