@@ -725,15 +725,9 @@ vcc_ParseDirector(struct tokenlist *tl)
 		return;
 	}
 
-	if (isfirst == 1) {
-		/*
-		 * If this is the first backend|director explicitly
-		 * defined, use it as default backend.
-		 */
-		Fi(tl, 0,
-		    "\tVCL_conf.director[0] = VCL_conf.director[%d];\n",
-		    tl->ndirector - 1);
-		vcc_AddRef(tl, tl->t_dir, R_BACKEND);
+	if (isfirst == 1 || vcc_IdIs(tl->t_dir, "default")) {
+		tl->defaultdir = tl->ndirector - 1;
+		tl->t_defaultdir = tl->t_dir;
 	}
 
 	tl->t_policy = NULL;

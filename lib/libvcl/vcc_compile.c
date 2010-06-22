@@ -589,6 +589,11 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 	}
 
+	/* Configure the default director */
+	Fi(tl, 0, "\tVCL_conf.director[0] = VCL_conf.director[%d];\n",
+	    tl->defaultdir);
+	vcc_AddRef(tl, tl->t_defaultdir, R_BACKEND);
+
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))
 		return (vcc_DestroyTokenList(tl, NULL));
