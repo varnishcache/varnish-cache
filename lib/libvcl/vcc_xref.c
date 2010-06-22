@@ -86,6 +86,7 @@ vcc_typename(struct tokenlist *tl, const struct ref *r)
 	case R_FUNC: return ("function");
 	case R_ACL: return ("acl");
 	case R_BACKEND: return ("backend");
+	case R_PROBE: return ("probe");
 	default:
 		ErrInternal(tl);
 		vsb_printf(tl->sb, "Ref ");
@@ -153,6 +154,7 @@ vcc_CheckReferences(struct tokenlist *tl)
 	struct ref *r;
 	const char *type;
 	int nerr = 0;
+	const char *sep = "";
 
 	VTAILQ_FOREACH(r, &tl->refs, list) {
 		if (r->defcnt != 0 && r->refcnt != 0)
@@ -163,15 +165,16 @@ vcc_CheckReferences(struct tokenlist *tl)
 
 		if (r->defcnt == 0) {
 			vsb_printf(tl->sb,
-			    "Undefined %s %.*s, first reference:\n",
-			    type, PF(r->name));
+			    "%sUndefined %s %.*s, first reference:\n",
+			    sep, type, PF(r->name));
 			vcc_ErrWhere(tl, r->name);
 			continue;
 		}
 
-		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
-		    type, PF(r->name));
+		vsb_printf(tl->sb, "%sUnused %s %.*s, defined:\n",
+		    sep, type, PF(r->name));
 		vcc_ErrWhere(tl, r->name);
+		sep = "\n";
 	}
 	return (nerr);
 }

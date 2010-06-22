@@ -570,6 +570,7 @@ static struct toplev {
 	{ "sub",		vcc_Function },
 	{ "backend",		vcc_ParseDirector },
 	{ "director",		vcc_ParseDirector },
+	{ "probe",		vcc_ParseProbe },
 	{ NULL, NULL }
 };
 

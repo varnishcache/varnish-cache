@@ -10,18 +10,20 @@ server s1 {
 
 varnish v1 -vcl {
 
+	probe foo {
+		.url = "/";
+		.timeout = 1s;
+		.interval = 1s;
+		.window = 3;
+		.threshold = 2;
+		.initial = 0;
+	}
+
 	backend default {
 		.host = "${s1_addr}";
 		.port = "${s1_port}";
 		.max_connections = 1;
-		.probe = {
-			.url = "/";
-			.timeout = 1s;
-			.interval = 1s;
-			.window = 3;
-			.threshold = 2;
-			.initial = 0;
-		}
+		.probe = foo;
 	}
 
 	sub vcl_recv {

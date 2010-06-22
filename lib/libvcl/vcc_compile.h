@@ -116,7 +116,8 @@ enum var_type {
 enum ref_type {
 	R_FUNC,
 	R_ACL,
-	R_BACKEND
+	R_BACKEND,
+	R_PROBE
 };
 
 struct ref {
@@ -158,6 +159,7 @@ int vcc_ParseAction(struct tokenlist *tl);
 struct fld_spec;
 typedef void parsedirector_f(struct tokenlist *tl);
 
+void vcc_ParseProbe(struct tokenlist *tl);
 void vcc_ParseDirector(struct tokenlist *tl);
 void vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm);
 struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);

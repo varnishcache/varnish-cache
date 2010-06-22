@@ -264,7 +264,7 @@ vcc_ParseProbeSpec(struct tokenlist *tl)
 	threshold = 0;
 	initial = 0;
 	status = 0;
-	Fh(tl, 0, "static const struct vrt_backend_probe vgc_probe_%d = {\n",
+	Fh(tl, 0, "static const struct vrt_backend_probe vgc_probe__%d = {\n",
 	    tl->nprobe++);
 	while (tl->t->tok != '}') {
 
@@ -371,6 +371,28 @@ vcc_ParseProbeSpec(struct tokenlist *tl)
 		Fh(tl, 0, "\t.exp_status = %u,\n", status);
 	Fh(tl, 0, "};\n");
 	SkipToken(tl, '}');
+}
+
+/*--------------------------------------------------------------------
+ * Parse and emit a probe definition
+ */
+
+void
+vcc_ParseProbe(struct tokenlist *tl)
+{
+	struct token *t_probe;
+
+	vcc_NextToken(tl);		/* ID: probe */
+
+	vcc_ExpectCid(tl);		/* ID: name */
+	ERRCHK(tl);
+	t_probe = tl->t;
+	vcc_NextToken(tl);
+	vcc_AddDef(tl, t_probe, R_PROBE);
+
+	Fh(tl, 0, "\n#define vgc_probe_%.*s\tvgc_probe__%d\n",
+	    PF(t_probe), tl->nprobe);
+	vcc_ParseProbeSpec(tl);
 }
 
 /*--------------------------------------------------------------------
@@ -496,9 +518,21 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			saint = u;
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
-			Fb(tl, 0, "\t.probe = &vgc_probe_%d,\n", tl->nprobe);
+			Fb(tl, 0, "\t.probe = &vgc_probe__%d,\n", tl->nprobe);
 			vcc_ParseProbeSpec(tl);
 			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
+			Fb(tl, 0, "\t.probe = &vgc_probe_%.*s,\n", PF(tl->t));
+			vcc_AddRef(tl, tl->t, R_PROBE);
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "probe")) {
+			vsb_printf(tl->sb,
+			    "Expected '{' or name of probe.");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
 		} else {
 			ErrInternal(tl);
 			return;
