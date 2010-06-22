@@ -251,7 +251,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
-	VBP_Start(b, &vb->probe);
+	VBP_Start(b, vb->probe);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_main->n_backend++;
 	return (b);

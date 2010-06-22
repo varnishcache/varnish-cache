@@ -228,11 +228,9 @@ vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did,
 	/* .url and .request are mutually exclusive */
 
 	if (*t_did != NULL) {
-		vsb_printf(tl->sb,
-		    "Probe request redefinition at:\n");
+		vsb_printf(tl->sb, "Probe request redefinition at:\n");
 		vcc_ErrWhere(tl, t_field);
-		vsb_printf(tl->sb,
-		    "Previous definition:\n");
+		vsb_printf(tl->sb, "Previous definition:\n");
 		vcc_ErrWhere(tl, *t_did);
 		return;
 	}
@@ -240,7 +238,7 @@ vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did,
 }
 
 static void
-vcc_ParseProbe(struct tokenlist *tl)
+vcc_ParseProbeSpec(struct tokenlist *tl)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
@@ -266,7 +264,8 @@ vcc_ParseProbe(struct tokenlist *tl)
 	threshold = 0;
 	initial = 0;
 	status = 0;
-	Fb(tl, 0, "\t.probe = {\n");
+	Fh(tl, 0, "static const struct vrt_backend_probe vgc_probe_%d = {\n",
+	    tl->nprobe++);
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -275,32 +274,32 @@ vcc_ParseProbe(struct tokenlist *tl)
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
-			Fb(tl, 0, "\t\t.url = ");
-			EncToken(tl->fb, tl->t);
-			Fb(tl, 0, ",\n");
+			Fh(tl, 0, "\t.url = ");
+			EncToken(tl->fh, tl->t);
+			Fh(tl, 0, ",\n");
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "request")) {
 			vcc_ProbeRedef(tl, &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
-			Fb(tl, 0, "\t\t.request =\n");
+			Fh(tl, 0, "\t.request =\n");
 			while (tl->t->tok == CSTR) {
-				Fb(tl, 0, "\t\t\t");
-				EncToken(tl->fb, tl->t);
-				Fb(tl, 0, " \"\\r\\n\"\n");
+				Fh(tl, 0, "\t\t");
+				EncToken(tl->fh, tl->t);
+				Fh(tl, 0, " \"\\r\\n\"\n");
 				vcc_NextToken(tl);
 			}
-			Fb(tl, 0, "\t\t\t\"\\r\\n\",\n");
+			Fh(tl, 0, "\t\t\"\\r\\n\",\n");
 		} else if (vcc_IdIs(t_field, "timeout")) {
-			Fb(tl, 0, "\t\t.timeout = ");
+			Fh(tl, 0, "\t.timeout = ");
 			vcc_TimeVal(tl, &t);
 			ERRCHK(tl);
-			Fb(tl, 0, "%g,\n", t);
+			Fh(tl, 0, "%g,\n", t);
 		} else if (vcc_IdIs(t_field, "interval")) {
-			Fb(tl, 0, "\t\t.interval = ");
+			Fh(tl, 0, "\t.interval = ");
 			vcc_TimeVal(tl, &t);
 			ERRCHK(tl);
-			Fb(tl, 0, "%g,\n", t);
+			Fh(tl, 0, "%g,\n", t);
 		} else if (vcc_IdIs(t_field, "window")) {
 			t_window = tl->t;
 			window = vcc_UintVal(tl);
@@ -361,16 +360,16 @@ vcc_ParseProbe(struct tokenlist *tl)
 			AN(t_window);
 			vcc_ErrWhere(tl, t_window);
 		}
-		Fb(tl, 0, "\t\t.window = %u,\n", window);
-		Fb(tl, 0, "\t\t.threshold = %u,\n", threshold);
+		Fh(tl, 0, "\t.window = %u,\n", window);
+		Fh(tl, 0, "\t.threshold = %u,\n", threshold);
 	}
 	if (t_initial != NULL)
-		Fb(tl, 0, "\t\t.initial = %u,\n", initial);
+		Fh(tl, 0, "\t.initial = %u,\n", initial);
 	else
-		Fb(tl, 0, "\t\t.initial = ~0U,\n", initial);
+		Fh(tl, 0, "\t.initial = ~0U,\n", initial);
 	if (status > 0)
-		Fb(tl, 0, "\t\t.exp_status = %u,\n", status);
-	Fb(tl, 0, "\t},\n");
+		Fh(tl, 0, "\t.exp_status = %u,\n", status);
+	Fh(tl, 0, "};\n");
 	SkipToken(tl, '}');
 }
 
@@ -496,8 +495,9 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 			ERRCHK(tl);
 			saint = u;
 			SkipToken(tl, ';');
-		} else if (vcc_IdIs(t_field, "probe")) {
-			vcc_ParseProbe(tl);
+		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
+			Fb(tl, 0, "\t.probe = &vgc_probe_%d,\n", tl->nprobe);
+			vcc_ParseProbeSpec(tl);
 			ERRCHK(tl);
 		} else {
 			ErrInternal(tl);

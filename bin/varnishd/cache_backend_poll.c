@@ -424,14 +424,13 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 
 	ASSERT_CLI();
 
-	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
-	AN(vt);
-	if (!memcmp(&vt->probe, p, sizeof *p)) {
-		FREE_OBJ(vt);
-		/* No probe defined for this backend, set it healthy */
+	if (p == NULL) {
 		b->healthy = 1;
 		return;
 	}
+
+	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
+	AN(vt);
 	vt->backend = b;
 	vt->probe = *p;
 

@@ -74,7 +74,7 @@ struct vrt_backend {
 	double				between_bytes_timeout;
 	unsigned			max_connections;
 	unsigned			saintmode_threshold;
-	struct vrt_backend_probe	probe;
+	const struct vrt_backend_probe	*probe;
 };
 
 /*

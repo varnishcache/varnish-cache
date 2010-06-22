@@ -88,6 +88,8 @@ struct tokenlist {
 
 	VTAILQ_HEAD(, acl_e)	acl;
 
+	int			nprobe;
+
 	int			defaultdir;
 	struct token		*t_defaultdir;
 	struct token		*t_dir;
