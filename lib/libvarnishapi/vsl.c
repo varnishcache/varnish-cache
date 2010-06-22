@@ -253,7 +253,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp)
 				continue;
 		}
 		if (vsl->regexcl != NULL) {
-			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
+			i = VRE_exec(vsl->regexcl, VSL_DATA(p), VSL_LEN(p),
 			    0, 0, NULL, 0);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
