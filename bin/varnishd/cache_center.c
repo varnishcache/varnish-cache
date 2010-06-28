@@ -240,30 +240,32 @@ cnt_done(struct sess *sp)
 		sp->vcl = NULL;
 	}
 
+	SES_Charge(sp);
+
 	sp->t_end = TIM_real();
 	sp->wrk->lastused = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
-	} else {
+	} else if (sp->esis == 0) {
 		dp = sp->t_resp - sp->t_req;
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
+		/* XXX: Add StatReq == StatSess */
 		WSP(sp, SLT_Length, "%u", sp->acct_req.bodybytes);
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
-
 	sp->xid = 0;
 	sp->t_open = sp->t_end;
 	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0) {
-		SES_Charge(sp);
+	if (sp->esis > 0) 
 		return (1);
-	}
+
+	memset(&sp->acct_req, 0, sizeof sp->acct_req);
 
 	sp->t_req = NAN;
 
@@ -275,8 +277,6 @@ cnt_done(struct sess *sp)
 		// XXX: not yet (void)TCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
-
-	SES_Charge(sp);
 
 	if (sp->fd < 0) {
 		sp->wrk->stats.sess_closed++;
@@ -647,7 +647,7 @@ cnt_fetch(struct sess *sp)
 		AN(sp->obj->ban);
 		HSH_Unbusy(sp);
 	}
-	sp->acct_req.fetch++;
+	sp->acct_tmp.fetch++;
 	sp->wrk->bereq = NULL;
 	sp->wrk->beresp = NULL;
 	sp->wrk->beresp1 = NULL;
@@ -679,7 +679,7 @@ cnt_first(struct sess *sp)
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd);
 	sp->wrk->lastused = sp->t_open;
-	sp->acct_req.sess++;
+	sp->acct_tmp.sess++;
 
 	sp->step = STP_WAIT;
 	return (0);
@@ -946,7 +946,7 @@ cnt_pass(struct sess *sp)
 		return (0);
 	}
 	assert(sp->handling == VCL_RET_PASS);
-	sp->acct_req.pass++;
+	sp->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
@@ -984,7 +984,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	sp->acct_req.pipe++;
+	sp->acct_tmp.pipe++;
 	WS_Reset(sp->wrk->ws, NULL);
 	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
@@ -1108,7 +1108,7 @@ cnt_start(struct sess *sp)
 	sp->wrk->stats.client_req++;
 	sp->t_req = TIM_real();
 	sp->wrk->lastused = sp->t_req;
-	sp->acct_req.req++;
+	sp->acct_tmp.req++;
 
 	/* Assign XID and log */
 	sp->xid = ++xids;				/* XXX not locked */

@@ -434,8 +434,9 @@ struct sess {
 	struct sessmem		*mem;
 
 	struct workreq		workreq;
-	struct acct		acct;
+	struct acct		acct_tmp;
 	struct acct		acct_req;
+	struct acct		acct_ses;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;

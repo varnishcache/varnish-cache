@@ -176,7 +176,7 @@ VCA_Prep(struct sess *sp)
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
-	sp->acct.first = sp->t_open;
+	sp->acct_ses.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
