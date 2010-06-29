@@ -429,17 +429,16 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_cc_command(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
 {
+	char **p = TRUST_ME(par->priv);
 
+	AN(p);
 	/* XXX should have tweak_generic_string */
-	(void)par;
 	if (arg == NULL) {
-		cli_quote(cli, mgt_cc_cmd);
+		cli_quote(cli, *p);
 	} else {
-		free(mgt_cc_cmd);
-		mgt_cc_cmd = strdup(arg);
-		XXXAN(mgt_cc_cmd);
+		REPLACE(*p, arg);
 	}
 }
 
@@ -629,14 +628,13 @@ static const struct parspec input_parspec[] = {
 		"operations necessary for LRU list access.",
 		EXPERIMENTAL,
 		"2", "seconds" },
-	{ "cc_command", tweak_cc_command, NULL, 0, 0,
+	{ "cc_command", tweak_string, &mgt_cc_cmd, 0, 0,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
 		"and %o will be replaced with the output file name.",
 		MUST_RELOAD,
-		VCC_CC
-		, NULL },
+		VCC_CC , NULL },
 	{ "max_restarts", tweak_uint, &master.max_restarts, 0, UINT_MAX,
 		"Upper limit on how many times a request can restart."
 		"\nBe aware that restarts are likely to cause a hit against "
@@ -824,6 +822,11 @@ static const struct parspec input_parspec[] = {
 		"A value of zero disables the ban lurker.",
 		EXPERIMENTAL,
 		"180.0", "s" },
+	{ "vcl_dir", tweak_string, &mgt_vcl_dir, 0, 0,
+		"Directory from which relative VCL filenames (vcl.load and "
+		"include) are opened.",
+		0,
+		".", NULL },
 	{ NULL, NULL, NULL }
 };
 
