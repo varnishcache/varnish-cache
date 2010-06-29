@@ -49,7 +49,7 @@ SVNID("$Id$")
  */
 
 void
-vcc_ParseRoundRobinDirector(struct tokenlist *tl)
+vcc_ParseRoundRobinDirector(struct vcc *tl)
 {
 	struct token *t_field, *t_be;
 	int nelem;

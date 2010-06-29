@@ -47,7 +47,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 char *
-vcc_regexp(struct tokenlist *tl)
+vcc_regexp(struct vcc *tl)
 {
 	char buf[BUFSIZ], *p;
 	vre_t *t;
@@ -81,7 +81,7 @@ vcc_regexp(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static int
-vcc_regsub(struct tokenlist *tl, int all)
+vcc_regsub(struct vcc *tl, int all)
 {
 	char *p;
 
@@ -140,7 +140,7 @@ vcc_regsub(struct tokenlist *tl, int all)
  */
 
 int
-vcc_StringVal(struct tokenlist *tl)
+vcc_StringVal(struct vcc *tl)
 {
 	struct var *vp;
 
@@ -198,7 +198,7 @@ vcc_StringVal(struct tokenlist *tl)
 }
 
 void
-vcc_ExpectedStringval(struct tokenlist *tl)
+vcc_ExpectedStringval(struct vcc *tl)
 {
 
 	if (!tl->err) {

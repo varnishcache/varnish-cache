@@ -47,7 +47,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static void
-parse_call(struct tokenlist *tl)
+parse_call(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
@@ -63,7 +63,7 @@ parse_call(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_error(struct tokenlist *tl)
+parse_error(struct vcc *tl)
 {
 	struct var *vp;
 
@@ -102,7 +102,7 @@ parse_error(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-illegal_assignment(const struct tokenlist *tl, const char *type)
+illegal_assignment(const struct vcc *tl, const char *type)
 {
 
 	vsb_printf(tl->sb, "Invalid assignment operator ");
@@ -112,7 +112,7 @@ illegal_assignment(const struct tokenlist *tl, const char *type)
 }
 
 static void
-parse_set(struct tokenlist *tl)
+parse_set(struct vcc *tl)
 {
 	struct var *vp;
 	struct token *at, *vt;
@@ -244,7 +244,7 @@ parse_set(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_unset(struct tokenlist *tl)
+parse_unset(struct vcc *tl)
 {
 	struct var *vp;
 
@@ -277,7 +277,7 @@ static const struct purge_var {
 };
 
 static void
-parse_purge(struct tokenlist *tl)
+parse_purge(struct vcc *tl)
 {
 	const struct purge_var *pv;
 
@@ -359,7 +359,7 @@ parse_purge(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge_url(struct tokenlist *tl)
+parse_purge_url(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
@@ -379,7 +379,7 @@ parse_purge_url(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_esi(struct tokenlist *tl)
+parse_esi(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
@@ -389,7 +389,7 @@ parse_esi(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_new_syntax(struct tokenlist *tl)
+parse_new_syntax(struct vcc *tl)
 {
 
 	vsb_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
@@ -400,7 +400,7 @@ parse_new_syntax(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_panic(struct tokenlist *tl)
+parse_panic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
@@ -418,7 +418,7 @@ parse_panic(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_return(struct tokenlist *tl)
+parse_return(struct vcc *tl)
 {
 	int retval = 0;
 
@@ -450,7 +450,7 @@ parse_return(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_rollback(struct tokenlist *tl)
+parse_rollback(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
@@ -460,7 +460,7 @@ parse_rollback(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_synthetic(struct tokenlist *tl)
+parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
@@ -477,7 +477,7 @@ parse_synthetic(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-typedef void action_f(struct tokenlist *tl);
+typedef void action_f(struct vcc *tl);
 
 static struct action_table {
 	const char		*name;
@@ -507,7 +507,7 @@ static struct action_table {
 };
 
 int
-vcc_ParseAction(struct tokenlist *tl)
+vcc_ParseAction(struct vcc *tl)
 {
 	struct token *at;
 	struct action_table *atp;

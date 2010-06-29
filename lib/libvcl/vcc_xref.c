@@ -80,7 +80,7 @@ struct proc {
 /*--------------------------------------------------------------------*/
 
 static const char *
-vcc_typename(struct tokenlist *tl, const struct ref *r)
+vcc_typename(struct vcc *tl, const struct ref *r)
 {
 	switch (r->type) {
 	case R_FUNC: return ("function");
@@ -102,7 +102,7 @@ vcc_typename(struct tokenlist *tl, const struct ref *r)
  */
 
 static struct ref *
-vcc_findref(struct tokenlist *tl, struct token *t, enum ref_type type)
+vcc_findref(struct vcc *tl, struct token *t, enum ref_type type)
 {
 	struct ref *r;
 
@@ -121,14 +121,14 @@ vcc_findref(struct tokenlist *tl, struct token *t, enum ref_type type)
 }
 
 void
-vcc_AddRef(struct tokenlist *tl, struct token *t, enum ref_type type)
+vcc_AddRef(struct vcc *tl, struct token *t, enum ref_type type)
 {
 
 	vcc_findref(tl, t, type)->refcnt++;
 }
 
 void
-vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
+vcc_AddDef(struct vcc *tl, struct token *t, enum ref_type type)
 {
 	struct ref *r;
 	const char *tp;
@@ -149,7 +149,7 @@ vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type)
 /*--------------------------------------------------------------------*/
 
 int
-vcc_CheckReferences(struct tokenlist *tl)
+vcc_CheckReferences(struct vcc *tl)
 {
 	struct ref *r;
 	const char *type;
@@ -184,7 +184,7 @@ vcc_CheckReferences(struct tokenlist *tl)
  */
 
 static struct proc *
-vcc_findproc(struct tokenlist *tl, struct token *t)
+vcc_findproc(struct vcc *tl, struct token *t)
 {
 	struct proc *p;
 
@@ -201,7 +201,7 @@ vcc_findproc(struct tokenlist *tl, struct token *t)
 }
 
 struct proc *
-vcc_AddProc(struct tokenlist *tl, struct token *t)
+vcc_AddProc(struct vcc *tl, struct token *t)
 {
 	struct proc *p;
 
@@ -212,7 +212,7 @@ vcc_AddProc(struct tokenlist *tl, struct token *t)
 }
 
 void
-vcc_AddUses(struct tokenlist *tl, const struct token *t, unsigned mask,
+vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
     const char *use)
 {
 	struct procuse *pu;
@@ -229,7 +229,7 @@ vcc_AddUses(struct tokenlist *tl, const struct token *t, unsigned mask,
 }
 
 void
-vcc_AddCall(struct tokenlist *tl, struct token *t)
+vcc_AddCall(struct vcc *tl, struct token *t)
 {
 	struct proccall *pc;
 	struct proc *p;
@@ -254,7 +254,7 @@ vcc_ProcAction(struct proc *p, unsigned returns, struct token *t)
 }
 
 static int
-vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned bitmap)
+vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 {
 	unsigned u;
 	struct proccall *pc;
@@ -299,7 +299,7 @@ vcc_CheckActionRecurse(struct tokenlist *tl, struct proc *p, unsigned bitmap)
 }
 
 int
-vcc_CheckAction(struct tokenlist *tl)
+vcc_CheckAction(struct vcc *tl)
 {
 	struct proc *p;
 	struct method *m;
@@ -348,7 +348,7 @@ vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 }
 
 static int
-vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p,
+vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
     struct method *m)
 {
 	struct proccall *pc;
@@ -377,7 +377,7 @@ vcc_CheckUseRecurse(struct tokenlist *tl, const struct proc *p,
 }
 
 int
-vcc_CheckUses(struct tokenlist *tl)
+vcc_CheckUses(struct vcc *tl)
 {
 	struct proc *p;
 	struct method *m;

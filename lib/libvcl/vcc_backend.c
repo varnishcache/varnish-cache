@@ -97,7 +97,7 @@ CheckHostPort(const char *host, const char *port)
  */
 
 static void
-Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
+Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
     const char *port)
 {
 	struct addrinfo *res, *res0, *res1, hint;
@@ -190,7 +190,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
  */
 
 static void
-vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v,
+vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
     int serial, const struct token *first, const struct token *last)
 {
 
@@ -222,7 +222,7 @@ vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v,
  */
 
 static void
-vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did,
+vcc_ProbeRedef(struct vcc *tl, struct token **t_did,
     struct token *t_field)
 {
 	/* .url and .request are mutually exclusive */
@@ -238,7 +238,7 @@ vcc_ProbeRedef(struct tokenlist *tl, struct token **t_did,
 }
 
 static void
-vcc_ParseProbeSpec(struct tokenlist *tl)
+vcc_ParseProbeSpec(struct vcc *tl)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
@@ -378,7 +378,7 @@ vcc_ParseProbeSpec(struct tokenlist *tl)
  */
 
 void
-vcc_ParseProbe(struct tokenlist *tl)
+vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
 
@@ -402,7 +402,7 @@ vcc_ParseProbe(struct tokenlist *tl)
  */
 
 static void
-vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
+vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 {
 	struct token *t_field;
 	struct token *t_first;
@@ -612,7 +612,7 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
  */
 
 void
-vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm)
+vcc_ParseBackendHost(struct vcc *tl, int serial, char **nm)
 {
 	struct host *h;
 	struct token *t;
@@ -666,7 +666,7 @@ vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm)
  */
 
 static void
-vcc_ParseSimpleDirector(struct tokenlist *tl)
+vcc_ParseSimpleDirector(struct vcc *tl)
 {
 	struct host *h;
 	char vgcname[BUFSIZ];
@@ -700,7 +700,7 @@ static const struct dirlist {
 };
 
 void
-vcc_ParseDirector(struct tokenlist *tl)
+vcc_ParseDirector(struct vcc *tl)
 {
 	struct token *t_first;
 	struct dirlist const *dl;

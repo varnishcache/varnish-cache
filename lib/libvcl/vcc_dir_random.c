@@ -50,7 +50,7 @@ SVNID("$Id$")
  */
 
 void
-vcc_ParseRandomDirector(struct tokenlist *tl)
+vcc_ParseRandomDirector(struct vcc *tl)
 {
 	struct token *t_field, *t_be;
 	int nelem;

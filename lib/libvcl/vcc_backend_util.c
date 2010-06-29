@@ -67,7 +67,7 @@ vcc_ResetFldSpec(struct fld_spec *f)
 }
 
 struct fld_spec *
-vcc_FldSpec(struct tokenlist *tl, const char *first, ...)
+vcc_FldSpec(struct vcc *tl, const char *first, ...)
 {
 	struct fld_spec f[100], *r;
 	int n = 0;
@@ -94,7 +94,7 @@ vcc_FldSpec(struct tokenlist *tl, const char *first, ...)
 }
 
 void
-vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
+vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs)
 {
 	struct token *t_field;
 
@@ -128,7 +128,7 @@ vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs)
 }
 
 void
-vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs)
+vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs)
 {
 
 	for (; fs->name != NULL; fs++) {

@@ -48,7 +48,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 void
-vcc_ErrToken(const struct tokenlist *tl, const struct token *t)
+vcc_ErrToken(const struct vcc *tl, const struct token *t)
 {
 
 	if (t->tok == EOI)
@@ -60,7 +60,7 @@ vcc_ErrToken(const struct tokenlist *tl, const struct token *t)
 }
 
 void
-vcc__ErrInternal(struct tokenlist *tl, const char *func, unsigned line)
+vcc__ErrInternal(struct vcc *tl, const char *func, unsigned line)
 {
 
 	vsb_printf(tl->sb, "VCL compiler internal error at %s():%u\n",
@@ -97,7 +97,7 @@ vcc_icoord(struct vsb *vsb, const struct token *t, const char **ll)
 }
 
 void
-vcc_Coord(const struct tokenlist *tl, struct vsb *vsb, const struct token *t)
+vcc_Coord(const struct vcc *tl, struct vsb *vsb, const struct token *t)
 {
 
 	if (t == NULL)
@@ -106,7 +106,7 @@ vcc_Coord(const struct tokenlist *tl, struct vsb *vsb, const struct token *t)
 }
 
 void
-vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
+vcc_ErrWhere(struct vcc *tl, const struct token *t)
 {
 	unsigned x, y;
 	const char *p, *l, *e;
@@ -156,7 +156,7 @@ vcc_ErrWhere(struct tokenlist *tl, const struct token *t)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_NextToken(struct tokenlist *tl)
+vcc_NextToken(struct vcc *tl)
 {
 
 	tl->t = VTAILQ_NEXT(tl->t, list);
@@ -170,7 +170,7 @@ vcc_NextToken(struct tokenlist *tl)
 }
 
 void
-vcc__Expect(struct tokenlist *tl, unsigned tok, int line)
+vcc__Expect(struct vcc *tl, unsigned tok, int line)
 {
 	if (tl->t->tok == tok)
 		return;
@@ -228,7 +228,7 @@ vcc_isCid(const struct token *t)
 }
 
 void
-vcc_ExpectCid(struct tokenlist *tl)
+vcc_ExpectCid(struct vcc *tl)
 {
 
 	ExpectErr(tl, ID);
@@ -260,7 +260,7 @@ vcc_xdig(const char c)
 }
 
 static int
-vcc_decstr(struct tokenlist *tl)
+vcc_decstr(struct vcc *tl)
 {
 	const char *p;
 	char *q;
@@ -309,7 +309,7 @@ vcc_decstr(struct tokenlist *tl)
  */
 
 void
-vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
+vcc_AddToken(struct vcc *tl, unsigned tok, const char *b, const char *e)
 {
 	struct token *t;
 
@@ -331,7 +331,7 @@ vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b, const char *e)
  */
 
 void
-vcc_Lexer(struct tokenlist *tl, struct source *sp)
+vcc_Lexer(struct vcc *tl, struct source *sp)
 {
 	const char *p, *q;
 	unsigned u;

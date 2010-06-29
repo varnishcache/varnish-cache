@@ -89,7 +89,7 @@ static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
 /*--------------------------------------------------------------------*/
 
 static void
-TlDoFree(struct tokenlist *tl, void *p)
+TlDoFree(struct vcc *tl, void *p)
 {
 	struct membit *mb;
 
@@ -101,7 +101,7 @@ TlDoFree(struct tokenlist *tl, void *p)
 
 
 void *
-TlAlloc(struct tokenlist *tl, unsigned len)
+TlAlloc(struct vcc *tl, unsigned len)
 {
 	void *p;
 
@@ -130,7 +130,7 @@ IsMethod(const struct token *t)
  */
 
 void
-Fh(const struct tokenlist *tl, int indent, const char *fmt, ...)
+Fh(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -142,7 +142,7 @@ Fh(const struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fb(const struct tokenlist *tl, int indent, const char *fmt, ...)
+Fb(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -155,7 +155,7 @@ Fb(const struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fc(const struct tokenlist *tl, int indent, const char *fmt, ...)
+Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -167,7 +167,7 @@ Fc(const struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Fi(const struct tokenlist *tl, int indent, const char *fmt, ...)
+Fi(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -179,7 +179,7 @@ Fi(const struct tokenlist *tl, int indent, const char *fmt, ...)
 }
 
 void
-Ff(const struct tokenlist *tl, int indent, const char *fmt, ...)
+Ff(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -239,7 +239,7 @@ EncToken(struct vsb *sb, const struct token *t)
  */
 
 static void
-LocTable(const struct tokenlist *tl)
+LocTable(const struct vcc *tl)
 {
 	struct token *t;
 	unsigned lin, pos;
@@ -288,7 +288,7 @@ LocTable(const struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-EmitInitFunc(const struct tokenlist *tl)
+EmitInitFunc(const struct vcc *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
@@ -299,7 +299,7 @@ EmitInitFunc(const struct tokenlist *tl)
 }
 
 static void
-EmitFiniFunc(const struct tokenlist *tl)
+EmitFiniFunc(const struct vcc *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
@@ -312,7 +312,7 @@ EmitFiniFunc(const struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-EmitStruct(const struct tokenlist *tl)
+EmitStruct(const struct vcc *tl)
 {
 	struct source *sp;
 
@@ -405,7 +405,7 @@ vcc_file_source(struct vsb *sb, const char *fn)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_resolve_includes(struct tokenlist *tl)
+vcc_resolve_includes(struct vcc *tl)
 {
 	struct token *t, *t1, *t2;
 	struct source *sp;
@@ -453,10 +453,10 @@ vcc_resolve_includes(struct tokenlist *tl)
 
 /*--------------------------------------------------------------------*/
 
-static struct tokenlist *
+static struct vcc *
 vcc_NewTokenList(void)
 {
-	struct tokenlist *tl;
+	struct vcc *tl;
 	int i;
 
 	tl = calloc(sizeof *tl, 1);
@@ -498,7 +498,7 @@ vcc_NewTokenList(void)
 /*--------------------------------------------------------------------*/
 
 static char *
-vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
+vcc_DestroyTokenList(struct vcc *tl, char *ret)
 {
 	struct membit *mb;
 	struct source *sp;
@@ -534,7 +534,7 @@ vcc_DestroyTokenList(struct tokenlist *tl, char *ret)
 static char *
 vcc_CompileSource(struct vsb *sb, struct source *sp)
 {
-	struct tokenlist *tl;
+	struct vcc *tl;
 	char *of;
 	int i;
 

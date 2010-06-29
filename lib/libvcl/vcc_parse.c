@@ -44,8 +44,8 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
-static void vcc_Compound(struct tokenlist *tl);
-static void vcc_Cond_0(struct tokenlist *tl);
+static void vcc_Compound(struct vcc *tl);
+static void vcc_Cond_0(struct vcc *tl);
 
 /*--------------------------------------------------------------------*/
 
@@ -65,7 +65,7 @@ static void vcc_Cond_0(struct tokenlist *tl);
  */
 
 static double
-vcc_TimeUnit(struct tokenlist *tl)
+vcc_TimeUnit(struct vcc *tl)
 {
 	double sc = 1.0;
 
@@ -98,7 +98,7 @@ vcc_TimeUnit(struct tokenlist *tl)
  */
 
 static double
-vcc_SizeUnit(struct tokenlist *tl)
+vcc_SizeUnit(struct vcc *tl)
 {
 	double sc = 1.0;
 
@@ -128,7 +128,7 @@ vcc_SizeUnit(struct tokenlist *tl)
  */
 
 unsigned
-vcc_UintVal(struct tokenlist *tl)
+vcc_UintVal(struct vcc *tl)
 {
 	unsigned d = 0;
 	const char *p;
@@ -148,7 +148,7 @@ vcc_UintVal(struct tokenlist *tl)
  */
 
 double
-vcc_DoubleVal(struct tokenlist *tl)
+vcc_DoubleVal(struct vcc *tl)
 {
 	double d = 0.0, e = 0.1;
 	const char *p;
@@ -177,7 +177,7 @@ vcc_DoubleVal(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_RTimeVal(struct tokenlist *tl, double *d)
+vcc_RTimeVal(struct vcc *tl, double *d)
 {
 	double v, sc;
 	int sign = 1;
@@ -196,7 +196,7 @@ vcc_RTimeVal(struct tokenlist *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_TimeVal(struct tokenlist *tl, double *d)
+vcc_TimeVal(struct vcc *tl, double *d)
 {
 	double v, sc;
 
@@ -210,7 +210,7 @@ vcc_TimeVal(struct tokenlist *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_SizeVal(struct tokenlist *tl, double *d)
+vcc_SizeVal(struct vcc *tl, double *d)
 {
 	double v, sc;
 
@@ -224,7 +224,7 @@ vcc_SizeVal(struct tokenlist *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_Cond_String(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_String(const struct var *vp, struct vcc *tl)
 {
 	char *p;
 
@@ -258,7 +258,7 @@ vcc_Cond_String(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-vcc_Cond_Int(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_Int(const struct var *vp, struct vcc *tl)
 {
 
 	Fb(tl, 1, "%s ", vp->rname);
@@ -287,14 +287,14 @@ vcc_Cond_Int(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-vcc_Cond_Bool(const struct var *vp, const struct tokenlist *tl)
+vcc_Cond_Bool(const struct var *vp, const struct vcc *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
 }
 
 static void
-vcc_Cond_Backend(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_Backend(const struct var *vp, struct vcc *tl)
 {
 
 	Fb(tl, 1, "%s\n", vp->rname);
@@ -320,7 +320,7 @@ vcc_Cond_Backend(const struct var *vp, struct tokenlist *tl)
 }
 
 static void
-vcc_Cond_2(struct tokenlist *tl)
+vcc_Cond_2(struct vcc *tl)
 {
 	struct var *vp;
 
@@ -370,7 +370,7 @@ vcc_Cond_2(struct tokenlist *tl)
 }
 
 static void
-vcc_Cond_1(struct tokenlist *tl)
+vcc_Cond_1(struct vcc *tl)
 {
 
 	Fb(tl, 1, "(\n");
@@ -384,7 +384,7 @@ vcc_Cond_1(struct tokenlist *tl)
 }
 
 static void
-vcc_Cond_0(struct tokenlist *tl)
+vcc_Cond_0(struct vcc *tl)
 {
 
 	Fb(tl, 1, "(\n");
@@ -398,7 +398,7 @@ vcc_Cond_0(struct tokenlist *tl)
 }
 
 static void
-vcc_Conditional(struct tokenlist *tl)
+vcc_Conditional(struct vcc *tl)
 {
 
 	SkipToken(tl, '(');
@@ -412,7 +412,7 @@ vcc_Conditional(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_IfStmt(struct tokenlist *tl)
+vcc_IfStmt(struct vcc *tl)
 {
 
 	SkipToken(tl, T_IF);
@@ -451,7 +451,7 @@ vcc_IfStmt(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_Compound(struct tokenlist *tl)
+vcc_Compound(struct vcc *tl)
 {
 	int i;
 
@@ -505,7 +505,7 @@ vcc_Compound(struct tokenlist *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_Function(struct tokenlist *tl)
+vcc_Function(struct vcc *tl)
 {
 	int m;
 
@@ -560,7 +560,7 @@ vcc_Function(struct tokenlist *tl)
  *	End of input
  */
 
-typedef void parse_f(struct tokenlist *tl);
+typedef void parse_f(struct vcc *tl);
 
 static struct toplev {
 	const char	*name;
@@ -575,7 +575,7 @@ static struct toplev {
 };
 
 void
-vcc_Parse(struct tokenlist *tl)
+vcc_Parse(struct vcc *tl)
 {
 	struct toplev *tp;
 

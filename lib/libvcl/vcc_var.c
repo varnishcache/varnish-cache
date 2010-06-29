@@ -44,7 +44,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static struct var *
-HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
+HeaderVar(struct vcc *tl, const struct token *t, const struct var *vh)
 {
 	char *p;
 	struct var *v;
@@ -87,7 +87,7 @@ HeaderVar(struct tokenlist *tl, const struct token *t, const struct var *vh)
 /*--------------------------------------------------------------------*/
 
 struct var *
-vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl,
+vcc_FindVar(struct vcc *tl, const struct token *t, struct var *vl,
     int wr_access, const char *use)
 {
 	struct var *v;
@@ -132,7 +132,7 @@ vcc_FindVar(struct tokenlist *tl, const struct token *t, struct var *vl,
 /*--------------------------------------------------------------------*/
 
 void
-vcc_VarVal(struct tokenlist *tl, const struct var *vp, const struct token *vt)
+vcc_VarVal(struct vcc *tl, const struct var *vp, const struct token *vt)
 {
 	double d;
 

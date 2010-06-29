@@ -97,7 +97,7 @@ vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 
 
 static void
-vcc_acl_add_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
+vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
     const unsigned char *u, int fam)
 {
 	struct acl_e *ae2, *aen;
@@ -162,7 +162,7 @@ vcc_acl_add_entry(struct tokenlist *tl, const struct acl_e *ae, int l,
 }
 
 static void
-vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
+vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 {
 	struct addrinfo *res0, *res, hint;
 	struct sockaddr_in *sin4;
@@ -246,7 +246,7 @@ vcc_acl_try_getaddrinfo(struct tokenlist *tl, struct acl_e *ae)
  */
 
 static int
-vcc_acl_try_netnotation(struct tokenlist *tl, struct acl_e *ae)
+vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 {
 	unsigned char b[4];
 	int i, j, k;
@@ -275,7 +275,7 @@ vcc_acl_try_netnotation(struct tokenlist *tl, struct acl_e *ae)
 }
 
 static void
-vcc_acl_entry(struct tokenlist *tl)
+vcc_acl_entry(struct vcc *tl)
 {
 	struct acl_e *ae;
 
@@ -332,7 +332,7 @@ vcc_acl_entry(struct tokenlist *tl)
 
 /*lint -save -e506 -e774 -e550 */
 static void
-c_is_a_silly_language(const struct tokenlist *tl)
+c_is_a_silly_language(const struct vcc *tl)
 {
 	struct sockaddr sa;
 
@@ -351,7 +351,7 @@ c_is_a_silly_language(const struct tokenlist *tl)
 /*lint -restore */
 
 static void
-vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
+vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -449,7 +449,7 @@ vcc_acl_emit(const struct tokenlist *tl, const char *acln, int anon)
 }
 
 void
-vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
+vcc_Cond_Ip(const struct var *vp, struct vcc *tl)
 {
 	unsigned tcond;
 	char acln[32];
@@ -486,7 +486,7 @@ vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl)
 }
 
 void
-vcc_Acl(struct tokenlist *tl)
+vcc_Acl(struct vcc *tl)
 {
 	struct token *an;
 	char acln[1024];

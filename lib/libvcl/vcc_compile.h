@@ -63,7 +63,7 @@ struct token {
 
 VTAILQ_HEAD(tokenhead, token);
 
-struct tokenlist {
+struct vcc {
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
 	VTAILQ_HEAD(, membit)	membits;
@@ -149,23 +149,23 @@ struct method {
 
 /* vcc_acl.c */
 
-void vcc_Acl(struct tokenlist *tl);
-void vcc_Cond_Ip(const struct var *vp, struct tokenlist *tl);
+void vcc_Acl(struct vcc *tl);
+void vcc_Cond_Ip(const struct var *vp, struct vcc *tl);
 
 /* vcc_action.c */
-int vcc_ParseAction(struct tokenlist *tl);
+int vcc_ParseAction(struct vcc *tl);
 
 /* vcc_backend.c */
 struct fld_spec;
-typedef void parsedirector_f(struct tokenlist *tl);
+typedef void parsedirector_f(struct vcc *tl);
 
-void vcc_ParseProbe(struct tokenlist *tl);
-void vcc_ParseDirector(struct tokenlist *tl);
-void vcc_ParseBackendHost(struct tokenlist *tl, int serial, char **nm);
-struct fld_spec * vcc_FldSpec(struct tokenlist *tl, const char *first, ...);
+void vcc_ParseProbe(struct vcc *tl);
+void vcc_ParseDirector(struct vcc *tl);
+void vcc_ParseBackendHost(struct vcc *tl, int serial, char **nm);
+struct fld_spec * vcc_FldSpec(struct vcc *tl, const char *first, ...);
 void vcc_ResetFldSpec(struct fld_spec *f);
-void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
-void vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
+void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
+void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
@@ -176,14 +176,14 @@ extern struct method method_tab[];
  * I -> Initializer function
  * F -> Finish function
  */
-void Fh(const struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fc(const struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fb(const struct tokenlist *tl, int indent, const char *fmt, ...);
-void Fi(const struct tokenlist *tl, int indent, const char *fmt, ...);
-void Ff(const struct tokenlist *tl, int indent, const char *fmt, ...);
+void Fh(const struct vcc *tl, int indent, const char *fmt, ...);
+void Fc(const struct vcc *tl, int indent, const char *fmt, ...);
+void Fb(const struct vcc *tl, int indent, const char *fmt, ...);
+void Fi(const struct vcc *tl, int indent, const char *fmt, ...);
+void Ff(const struct vcc *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
-void *TlAlloc(struct tokenlist *tl, unsigned len);
+void *TlAlloc(struct vcc *tl, unsigned len);
 
 /* vcc_dir_random.c */
 parsedirector_f vcc_ParseRandomDirector;
@@ -195,52 +195,52 @@ parsedirector_f vcc_ParseRoundRobinDirector;
 extern struct var vcc_vars[];
 
 /* vcc_parse.c */
-void vcc_Parse(struct tokenlist *tl);
-void vcc_RTimeVal(struct tokenlist *tl, double *);
-void vcc_TimeVal(struct tokenlist *tl, double *);
-void vcc_SizeVal(struct tokenlist *tl, double *);
-unsigned vcc_UintVal(struct tokenlist *tl);
-double vcc_DoubleVal(struct tokenlist *tl);
+void vcc_Parse(struct vcc *tl);
+void vcc_RTimeVal(struct vcc *tl, double *);
+void vcc_TimeVal(struct vcc *tl, double *);
+void vcc_SizeVal(struct vcc *tl, double *);
+unsigned vcc_UintVal(struct vcc *tl);
+double vcc_DoubleVal(struct vcc *tl);
 
 /* vcc_string.c */
-char *vcc_regexp(struct tokenlist *tl);
-int vcc_StringVal(struct tokenlist *tl);
-void vcc_ExpectedStringval(struct tokenlist *tl);
+char *vcc_regexp(struct vcc *tl);
+int vcc_StringVal(struct vcc *tl);
+void vcc_ExpectedStringval(struct vcc *tl);
 
 /* vcc_token.c */
-void vcc_Coord(const struct tokenlist *tl, struct vsb *vsb,
+void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
     const struct token *t);
-void vcc_ErrToken(const struct tokenlist *tl, const struct token *t);
-void vcc_ErrWhere(struct tokenlist *tl, const struct token *t);
-void vcc__Expect(struct tokenlist *tl, unsigned tok, int line);
+void vcc_ErrToken(const struct vcc *tl, const struct token *t);
+void vcc_ErrWhere(struct vcc *tl, const struct token *t);
+void vcc__Expect(struct vcc *tl, unsigned tok, int line);
 int vcc_Teq(const struct token *t1, const struct token *t2);
 int vcc_IdIs(const struct token *t, const char *p);
-void vcc_ExpectCid(struct tokenlist *tl);
-void vcc_Lexer(struct tokenlist *tl, struct source *sp);
-void vcc_NextToken(struct tokenlist *tl);
-void vcc__ErrInternal(struct tokenlist *tl, const char *func,
+void vcc_ExpectCid(struct vcc *tl);
+void vcc_Lexer(struct vcc *tl, struct source *sp);
+void vcc_NextToken(struct vcc *tl);
+void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
-void vcc_AddToken(struct tokenlist *tl, unsigned tok, const char *b,
+void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
     const char *e);
 
 /* vcc_var.c */
-struct var *vcc_FindVar(struct tokenlist *tl, const struct token *t,
+struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
     struct var *vl, int wr_access, const char *use);
-void vcc_VarVal(struct tokenlist *tl, const struct var *vp,
+void vcc_VarVal(struct vcc *tl, const struct var *vp,
     const struct token *vt);
 
 /* vcc_xref.c */
-void vcc_AddDef(struct tokenlist *tl, struct token *t, enum ref_type type);
-void vcc_AddRef(struct tokenlist *tl, struct token *t, enum ref_type type);
-int vcc_CheckReferences(struct tokenlist *tl);
+void vcc_AddDef(struct vcc *tl, struct token *t, enum ref_type type);
+void vcc_AddRef(struct vcc *tl, struct token *t, enum ref_type type);
+int vcc_CheckReferences(struct vcc *tl);
 
-void vcc_AddCall(struct tokenlist *tl, struct token *t);
-struct proc *vcc_AddProc(struct tokenlist *tl, struct token *t);
+void vcc_AddCall(struct vcc *tl, struct token *t);
+struct proc *vcc_AddProc(struct vcc *tl, struct token *t);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
-int vcc_CheckAction(struct tokenlist *tl);
-void vcc_AddUses(struct tokenlist *tl, const struct token *t, unsigned mask,
+int vcc_CheckAction(struct vcc *tl);
+void vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
     const char *use);
-int vcc_CheckUses(struct tokenlist *tl);
+int vcc_CheckUses(struct vcc *tl);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)
