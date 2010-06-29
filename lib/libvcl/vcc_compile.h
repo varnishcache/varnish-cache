@@ -31,6 +31,7 @@
 
 #include "vqueue.h"
 
+#include "miniobj.h"
 #include "vcl.h"
 
 #define INDENT		2
@@ -64,6 +65,14 @@ struct token {
 VTAILQ_HEAD(tokenhead, token);
 
 struct vcc {
+	unsigned		magic;
+#define VCC_MAGIC		0x24ad719d
+
+	/* Parameter/Template section */
+	char			*default_vcl;
+	char			*vcl_dir;
+
+	/* Instance section */
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
 	VTAILQ_HEAD(, membit)	membits;

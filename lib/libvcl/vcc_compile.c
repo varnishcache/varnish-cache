@@ -84,10 +84,6 @@ struct method method_tab[] = {
 
 /*--------------------------------------------------------------------*/
 
-static const char *vcc_default_vcl_b, *vcc_default_vcl_e;
-
-/*--------------------------------------------------------------------*/
-
 static void
 TlDoFree(struct vcc *tl, void *p)
 {
@@ -454,13 +450,17 @@ vcc_resolve_includes(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static struct vcc *
-vcc_NewTokenList(void)
+vcc_NewVcc(const struct vcc *tl0)
 {
 	struct vcc *tl;
 	int i;
 
-	tl = calloc(sizeof *tl, 1);
-	assert(tl != NULL);
+	ALLOC_OBJ(tl, VCC_MAGIC);
+	AN(tl);
+	if (tl0 != NULL) {
+		REPLACE(tl->default_vcl, tl0->default_vcl);
+		REPLACE(tl->vcl_dir, tl0->vcl_dir);
+	}
 	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
@@ -532,13 +532,13 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
  */
 
 static char *
-vcc_CompileSource(struct vsb *sb, struct source *sp)
+vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 {
 	struct vcc *tl;
 	char *of;
 	int i;
 
-	tl = vcc_NewTokenList();
+	tl = vcc_NewVcc(tl0);
 	tl->sb = sb;
 
 	vcl_output_lang_h(tl->fh);
@@ -556,7 +556,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Register and lex the default VCL */
-	sp = vcc_new_source(vcc_default_vcl_b, vcc_default_vcl_e, "Default");
+	sp = vcc_new_source(tl->default_vcl, NULL, "Default");
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -646,15 +646,15 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
  */
 
 char *
-VCC_Compile(struct vsb *sb, const char *b, const char *e)
+VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
 {
 	struct source *sp;
 	char *r;
 
-	sp = vcc_new_source(b, e, "input");
+	sp = vcc_new_source(b, NULL, "input");
 	if (sp == NULL)
 		return (NULL);
-	r = vcc_CompileSource(sb, sp);
+	r = vcc_CompileSource(tl, sb, sp);
 	return (r);
 }
 
@@ -674,15 +674,38 @@ VCC_Return_Name(unsigned method)
 }
 
 /*--------------------------------------------------------------------
- * Initialize the compiler and register the default VCL code for later
- * compilation runs.
+ * Allocate a compiler instance
+ */
+
+struct vcc *
+VCC_New(void)
+{
+	struct vcc *tl;
+
+	tl = vcc_NewVcc(NULL);
+	return (tl);
+}
+
+/*--------------------------------------------------------------------
+ * Configure default VCL source code
  */
 
 void
-VCC_InitCompile(const char *default_vcl)
+VCC_Default_VCL(struct vcc *tl, const char *str)
 {
 
-	vcc_default_vcl_b = default_vcl;
-	vcc_default_vcl_e = strchr(default_vcl, '\0');
-	assert(vcc_default_vcl_e != NULL);
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	REPLACE(tl->default_vcl, str);
+}
+
+/*--------------------------------------------------------------------
+ * Configure default VCL source directory
+ */
+
+void
+VCC_VCL_dir(struct vcc *tl, const char *str)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	REPLACE(tl->vcl_dir, str);
 }

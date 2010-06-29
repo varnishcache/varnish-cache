@@ -29,7 +29,11 @@
  * $Id$
  */
 
-char *VCC_Compile(struct vsb *sb, const char *b, const char *e);
-void VCC_InitCompile(const char *default_vcl);
-const char *VCC_Return_Name(unsigned action);
+struct vcc;
 
+struct vcc *VCC_New(void);
+void VCC_Default_VCL(struct vcc *, const char *str);
+void VCC_VCL_dir(struct vcc *, const char *str);
+
+char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);
+const char *VCC_Return_Name(unsigned action);

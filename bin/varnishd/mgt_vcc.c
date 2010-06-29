@@ -69,6 +69,8 @@ static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 char *mgt_cc_cmd;
 char *mgt_vcl_dir;
 
+static struct vcc *vcc;
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -151,7 +153,7 @@ run_vcc(void *priv)
 	vp = priv;
 	sb = vsb_newauto();
 	XXXAN(sb);
-	csrc = VCC_Compile(sb, vp->vcl, NULL);
+	csrc = VCC_Compile(vcc, sb, vp->vcl);
 	vsb_finish(sb);
 	AZ(vsb_overflowed(sb));
 	if (vsb_len(sb))
@@ -449,7 +451,9 @@ void
 mgt_vcc_init(void)
 {
 
-	VCC_InitCompile(default_vcl);
+	vcc = VCC_New();
+	AN(vcc);
+	VCC_Default_VCL(vcc, default_vcl);
 	AZ(atexit(mgt_vcc_atexit));
 }
 
