@@ -153,6 +153,7 @@ run_vcc(void *priv)
 	vp = priv;
 	sb = vsb_newauto();
 	XXXAN(sb);
+	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
 	vsb_finish(sb);
 	AZ(vsb_overflowed(sb));
@@ -212,7 +213,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	}
 
 	if (C_flag) {
-		csrc = vreadfile(sf);
+		csrc = vreadfile(NULL, sf);
 		XXXAN(csrc);
 		(void)fputs(csrc, stdout);
 		free(csrc);
@@ -513,7 +514,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vcl = vreadfile(av[3]);
+	vcl = vreadfile(mgt_vcl_dir, av[3]);
 	if (vcl == NULL) {
 		cli_out(cli, "Cannot open '%s'", av[3]);
 		cli_result(cli, CLIS_PARAM);

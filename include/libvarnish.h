@@ -97,7 +97,7 @@ void varnish_version(const char *);
 
 /* from libvarnish/vtmpfile.c */
 int vtmpfile(char *);
-char *vreadfile(const char *fn);
+char *vreadfile(const char *pfx, const char *fn);
 
 const char* svn_version(void);
 

@@ -382,12 +382,12 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(struct vsb *sb, const char *fn)
+vcc_file_source(struct vcc *tl, struct vsb *sb, const char *fn)
 {
 	char *f;
 	struct source *sp;
 
-	f = vreadfile(fn);
+	f = vreadfile(tl->vcl_dir, fn);
 	if (f == NULL) {
 		vsb_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));
@@ -428,7 +428,7 @@ vcc_resolve_includes(struct vcc *tl)
 		}
 		assert(t2 != NULL);
 
-		sp = vcc_file_source(tl->sb, t1->dec);
+		sp = vcc_file_source(tl, tl->sb, t1->dec);
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
 			return;

@@ -34,6 +34,7 @@ SVNID("$Id$")
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -98,12 +99,19 @@ vreadfd(int fd)
 }
 
 char *
-vreadfile(const char *fn)
+vreadfile(const char *pfx, const char *fn)
 {
 	int fd, err;
 	char *r;
+	char fnb[PATH_MAX + 1];
 
-	fd = open(fn, O_RDONLY);
+	if (fn[0] == '/')
+		fd = open(fn, O_RDONLY);
+	else if (pfx != NULL) {
+		bprintf(fnb, "/%s/%s", pfx, fn); /* XXX: graceful length check */
+		fd = open(fnb, O_RDONLY);
+	} else 
+		fd = open(fn, O_RDONLY);
 	if (fd < 0)
 		return (NULL);
 	r = vreadfd(fd);
