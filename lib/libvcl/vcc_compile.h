@@ -71,6 +71,7 @@ struct vcc {
 	/* Parameter/Template section */
 	char			*default_vcl;
 	char			*vcl_dir;
+	char			*vmod_dir;
 
 	/* Instance section */
 	struct tokenhead	tokens;

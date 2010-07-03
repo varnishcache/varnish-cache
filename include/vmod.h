@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -27,14 +26,13 @@
  * SUCH DAMAGE.
  *
  * $Id$
+ *
+ * VCL modules
+ *
+ * XXX: When this file is changed, lib/libvcl/generate.py *MUST* be rerun.
  */
 
-struct vcc;
-
-struct vcc *VCC_New(void);
-void VCC_Default_VCL(struct vcc *, const char *str);
-void VCC_VCL_dir(struct vcc *, const char *str);
-void VCC_VMOD_dir(struct vcc *, const char *str);
-
-char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);
-const char *VCC_Return_Name(unsigned action);
+struct vmod_conf {
+	unsigned		magic;
+#define VMOD_CONF_MAGIC		0x3f017730
+};

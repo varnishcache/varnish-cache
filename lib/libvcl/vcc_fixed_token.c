@@ -189,6 +189,37 @@ vcl_output_lang_h(struct vsb *sb)
 	    "\tvcl_func_f\t*fetch_func;\n\tvcl_func_f\t*deliver_func;\n"
 	    "\tvcl_func_f\t*error_func;\n};\n");
 
+	/* ../../include/vmod.h */
+
+	vsb_cat(sb, "/*-\n * Copyright (c) 2010 Linpro AS\n"
+	    " * All rights reserved.\n *\n * Author: Poul-Henning Kamp "
+	    "<phk@phk.freebsd.dk>\n *\n * Redistribution and use in source "
+	    "and binary forms, with or without\n * modification, are permitte"
+	    "d provided that the following conditions\n * are met:\n"
+	    " * 1. Redistributions of source code must retain the above "
+	    "copyright\n *    notice, this list of conditions and the followi"
+	    "ng disclaimer.\n * 2. Redistributions in binary form must "
+	    "reproduce the above copyright\n *    notice, this list of "
+	    "conditions and the following disclaimer in the\n *    documentat"
+	    "ion and/or other materials provided with the distribution.\n"
+	    " *\n * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "
+	    "``AS IS'' AND\n * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, "
+	    "BUT NOT LIMITED TO, THE\n * IMPLIED WARRANTIES OF MERCHANTABILIT"
+	    "Y AND FITNESS FOR A PARTICULAR PURPOSE\n * ARE DISCLAIMED. "
+	    " IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE\n"
+	    " * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, "
+	    "OR CONSEQUENTIAL\n * DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+	    "PROCUREMENT OF SUBSTITUTE GOODS\n * OR SERVICES; LOSS OF USE, "
+	    "DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\n * HOWEVER CAUSED "
+	    "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\n"
+	    " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) "
+	    "ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFTWARE, EVEN "
+	    "IF ADVISED OF THE POSSIBILITY OF\n * SUCH DAMAGE.\n"
+	    " *\n * $Id$\n *\n * VCL modules\n *\n * XXX: When this file "
+	    "is changed, lib/libvcl/generate.py *MUST* be rerun.\n"
+	    " */\n\nstruct vmod_conf {\n\tunsigned\t\tmagic;\n"
+	    "#define VMOD_CONF_MAGIC\t\t0x3f017730\n};\n");
+
 	/* ../../include/vrt.h */
 
 	vsb_cat(sb, "/*-\n * Copyright (c) 2006 Verdens Gang AS\n"
@@ -215,8 +246,8 @@ vcl_output_lang_h(struct vsb *sb)
 	    "OF LIABILITY, WHETHER IN CONTRACT, STRICT\n * LIABILITY, OR "
 	    "TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\n"
 	    " * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE "
-	    "POSSIBILITY OF\n * SUCH DAMAGE.\n *\n * $Id: vrt.h 4735 2010-04-"
-	    "27 15:19:41Z phk $\n *\n * Runtime support for compiled VCL "
+	    "POSSIBILITY OF\n * SUCH DAMAGE.\n *\n * $Id: vrt.h 4984 2010-06-"
+	    "22 13:01:22Z phk $\n *\n * Runtime support for compiled VCL "
 	    "programs.\n *\n * XXX: When this file is changed, lib/libvcl/gen"
 	    "erate.py *MUST* be rerun.\n */\n\nstruct sess;\nstruct vsb;\n"
 	    "struct cli;\nstruct director;\nstruct VCL_conf;\n"

@@ -709,3 +709,15 @@ VCC_VCL_dir(struct vcc *tl, const char *str)
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	REPLACE(tl->vcl_dir, str);
 }
+
+/*--------------------------------------------------------------------
+ * Configure default VMOD directory
+ */
+
+void
+VCC_VMOD_dir(struct vcc *tl, const char *str)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	REPLACE(tl->vmod_dir, str);
+}

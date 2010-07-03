@@ -573,6 +573,7 @@ vcl_output_lang_h(struct vsb *sb)
 """)
 
 emit_file(fo, "../../include/vcl.h")
+emit_file(fo, "../../include/vmod.h")
 emit_file(fo, "../../include/vrt.h")
 emit_file(fo, "../../include/vrt_obj.h")
 

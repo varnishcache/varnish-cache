@@ -827,6 +827,10 @@ static const struct parspec input_parspec[] = {
 		"include) are opened.",
 		0,
 		".", NULL },
+	{ "vmod_dir", tweak_string, &mgt_vmod_dir, 0, 0,
+		"Directory where VCL modules are to be found.",
+		0,
+		".", NULL },
 	{ NULL, NULL, NULL }
 };
 
