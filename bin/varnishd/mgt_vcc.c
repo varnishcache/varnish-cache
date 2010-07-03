@@ -55,6 +55,7 @@ SVNID("$Id$")
 #include "mgt_cli.h"
 #include "heritage.h"
 
+#include "vcl.h"
 #include "vss.h"
 
 struct vclprog {
@@ -124,16 +125,6 @@ mgt_make_cc_cmd(const char *sf, const char *of)
 }
 
 /*--------------------------------------------------------------------
- * Invoke system C compiler in a sub-process
- */
-
-static void
-run_cc(void *priv)
-{
-	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
-}
-
-/*--------------------------------------------------------------------
  * Invoke system VCC compiler in a sub-process
  */
 
@@ -168,7 +159,6 @@ run_vcc(void *priv)
 		fprintf(stderr, "Cannot open %s", vp->sf);
 		exit (1);
 	}
-	mgt_got_fd(fd);
 	l = strlen(csrc);
 	i = write(fd, csrc, l);
 	if (i != l) {
@@ -178,6 +168,57 @@ run_vcc(void *priv)
 	AZ(close(fd));
 	free(csrc);
 	exit (0);
+}
+
+/*--------------------------------------------------------------------
+ * Invoke system C compiler in a sub-process
+ */
+
+static void
+run_cc(void *priv)
+{
+	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Attempt to open compiled VCL in a sub-process
+ */
+
+static void
+run_dlopen(void *priv)
+{
+	const char *of;
+	void *dlh;
+	struct VCL_conf const *cnf;
+
+	of = priv;
+
+	/* Try to load the object into the management process */
+	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
+		fprintf(stderr,
+		    "Compiled VCL program failed to load:\n  %s\n",
+		    dlerror());
+		exit(1);
+	}
+
+	cnf = dlsym(dlh, "VCL_conf");
+	if (cnf == NULL) {
+		fprintf(stderr, "Compiled VCL program, metadata not found\n");
+		exit(1);
+	}
+
+	if (cnf->magic != VCL_CONF_MAGIC) {
+		fprintf(stderr, "Compiled VCL program, mangled metadata\n");
+		exit(1);
+	}
+
+	if (dlclose(dlh)) {
+		fprintf(stderr,
+		    "Compiled VCL program failed to unload:\n  %s\n",
+		    dlerror());
+		exit(1);
+	}
+	exit(0);
 }
 
 /*--------------------------------------------------------------------
@@ -193,7 +234,6 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	char of[sizeof sf + 1];
 	char *retval;
 	int sfd, i;
-	void *dlh;
 	struct vcc_priv vp;
 
 	/* Create temporary C source file */
@@ -235,25 +275,14 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	(void)unlink(sf);
 	vsb_delete(cmdsb);
 
+	if (!i) 
+		i = SUB_run(sb, run_dlopen, of, "dlopen", 10);
+
 	if (i) {
 		(void)unlink(of);
 		return (NULL);
 	}
 
-	/* Try to load the object into the management process */
-	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
-		vsb_printf(sb,
-		    "Compiled VCL program failed to load:\n  %s", dlerror());
-		(void)unlink(of);
-		return (NULL);
-	}
-
-	/*
-	 * XXX: we should look up and check the handle in the loaded
-	 * object
-	 */
-
-	AZ(dlclose(dlh));
 	retval = strdup(of);
 	XXXAN(retval);
 	return (retval);
