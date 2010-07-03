@@ -2,6 +2,19 @@
 //
 
 -esym(763, sess)	// Redundant declaration for symbol 'sess'
+-esym(763, cli)		// Redundant declaration for symbol 'cli'
+
+-e785		// Too few initializers for aggregate '___' of type '___'
+
+
+-esym(750, VCL_RET_*)	// not ref
+-esym(750, VCL_MET_*)	// not ref
+
+-esym(753, vsb)		// not ref
+-esym(750, vrt_*)	// not ref
+-esym(753, vrt_*)	// not ref
+-esym(750, VRT_*)	// not ref
+
 			// Harmless
 
 -e786			// String concatenation within initializer
