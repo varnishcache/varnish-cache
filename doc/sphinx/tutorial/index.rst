@@ -4,7 +4,7 @@
 Varnish Tutorial
 %%%%%%%%%%%%%%%%
 
-Varnish is a web accelerator. It is installed in frond of your web
+Varnish is a web accelerator. It is installed in front of your web
 application and it caches the reponses, making your web site run  Varnish
 is fast, flexible and easy to use.
 
@@ -18,13 +18,16 @@ and that you want to accelerate this application with Varnish.
 Furthermore we assume you have read the :ref:`install-index` and that
 it is installed with the default configuration.
 
+Good luck.
 
+perbu.
 
 .. toctree:: 
 
 	backend_servers.rst
         starting_varnish.rst
 	logging.rst
+        sizing_your_cache.rst
         putting_varnish_on_port_80.rst
 	vcl.rst
         statistics.rst
