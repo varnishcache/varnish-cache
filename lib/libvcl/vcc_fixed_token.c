@@ -315,11 +315,10 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 4428 2010-01-06 "
-	    "17:38:59Z tfheen $\n *\n * NB:  This file is machine generated, "
-	    "DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixed_token.tcl "
-	    "instead\n */\n\nstruct sockaddr * VRT_r_client_ip(const struct "
-	    "sess *);\nstruct sockaddr * VRT_r_server_ip(struct sess *);\n"
+	vsb_cat(sb, "\n/*\n * $Id$\n *\n * NB:  This file is machine "
+	    "generated, DO NOT EDIT!\n *\n * Edit and run generate.py instead"
+	    "\n */\nstruct sockaddr * VRT_r_client_ip(const struct sess "
+	    "*);\nstruct sockaddr * VRT_r_server_ip(struct sess *);\n"
 	    "const char * VRT_r_server_hostname(struct sess *);\n"
 	    "const char * VRT_r_server_identity(struct sess *);\n"
 	    "int VRT_r_server_port(struct sess *);\nconst char * VRT_r_req_re"

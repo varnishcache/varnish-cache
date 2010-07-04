@@ -1,11 +1,11 @@
+
 /*
  * $Id$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit and run vcc_gen_fixed_token.tcl instead
+ * Edit and run generate.py instead
  */
-
 struct sockaddr * VRT_r_client_ip(const struct sess *);
 struct sockaddr * VRT_r_server_ip(struct sess *);
 const char * VRT_r_server_hostname(struct sess *);

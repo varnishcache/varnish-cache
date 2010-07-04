@@ -167,7 +167,7 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('req.grace',
-		'RTIME',
+		'DURATION',
 		( 'all',),
 		( 'all',),
 		'struct sess *'
@@ -215,19 +215,19 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('bereq.connect_timeout',
-		'RTIME',
+		'DURATION',
 		( 'pipe', 'pass', 'miss',),
 		( 'pipe', 'pass', 'miss',),
 		'struct sess *'
 	),
 	('bereq.first_byte_timeout',
-		'RTIME',
+		'DURATION',
 		( 'pass', 'miss',),
 		( 'pass', 'miss',),
 		'struct sess *'
 	),
 	('bereq.between_bytes_timeout',
-		'RTIME',
+		'DURATION',
 		( 'pass', 'miss',),
 		( 'pass', 'miss',),
 		'struct sess *'
@@ -239,7 +239,7 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('beresp.saintmode',
-		'RTIME',
+		'DURATION',
 		( ),
 		( 'fetch',),
 		'const struct sess *'
@@ -269,13 +269,13 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('beresp.ttl',
-		'RTIME',
+		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.grace',
-		'RTIME',
+		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
@@ -317,19 +317,19 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('obj.ttl',
-		'RTIME',
+		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
 		'const struct sess *'
 	),
 	('obj.grace',
-		'RTIME',
+		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
 		'const struct sess *'
 	),
 	('obj.lastuse',
-		'RTIME',
+		'DURATION',
 		( 'hit', 'deliver', 'error',),
 		( ),
 		'const struct sess *'
@@ -375,16 +375,10 @@ vcltypes = {
 	'BOOL':		"unsigned",
 	'BACKEND':	"struct director *",
 	'TIME':		"double",
-	'RTIME':	"double",
+	'DURATION':	"double",
 	'INT':		"int",
-	'HDR_RESP':	"const char *",
-	'HDR_OBJ':	"const char *",
-	'HDR_REQ':	"const char *",
-	'HDR_BEREQ':	"const char *",
-	'HOSTNAME':	"const char *",
-	'PORTNAME':	"const char *",
+	'HEADER':	"const char *",
 	'HASH':		"const char *",
-	'SET':		"struct vrt_backend_entry *",
 }
 
 #######################################################################
@@ -727,6 +721,9 @@ def restrict(fo, spec):
 
 #######################################################################
 
+fh=open("../../include/vrt_obj.h", "w")
+file_header(fh)
+
 fo=open("vcc_obj.c", "w")
 file_header(fo)
 
@@ -742,16 +739,28 @@ for i in sp_variables:
 	typ = i[1]
 	if typ[:4] == "HDR_":
 		typ = "HEADER"
+
+	cnam = i[0].replace(".", "_")
+	ctyp = vcltypes[typ]
+
 	fo.write("\t{ \"%s\", %s, %d,\n" % (i[0], typ, len(i[0])))
 
 	if len(i[2]) > 0:
-		fo.write('\t    "VRT_r_%s(sp)",\n' % i[0].replace(".", "_"))
+		fo.write('\t    "VRT_r_%s(sp)",\n' % cnam)
+		if typ != "HEADER":
+			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
 	else:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
 	restrict(fo, i[2])
 
 	if len(i[3]) > 0:
-		fo.write('\t    "VRT_l_%s(sp, ",\n' % i[0].replace(".", "_"))
+		fo.write('\t    "VRT_l_%s(sp, ",\n' % cnam)
+		if typ != "HEADER":
+			fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
+			if typ != "STRING":
+				fh.write(ctyp + ");\n")
+			else:
+				fh.write(ctyp + ", ...);\n")
 	else:
 		fo.write('\t    NULL,\t/* No writes allowed */\n')
 	restrict(fo, i[3])
@@ -765,3 +774,4 @@ for i in sp_variables:
 fo.write("\t{ NULL }\n};\n")
 
 fo.close()
+fh.close()
