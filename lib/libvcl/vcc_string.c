@@ -179,7 +179,7 @@ vcc_StringVal(struct vcc *tl)
 		case TIME:
 			Fb(tl, 0, "VRT_time_string(sp, %s)", vp->rname);
 			break;
-		case RTIME:
+		case DURATION:
 			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
 			break;
 		case BACKEND:

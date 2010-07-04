@@ -140,7 +140,7 @@ vcc_VarVal(struct vcc *tl, const struct var *vp, const struct token *vt)
 		vcc_TimeVal(tl, &d);
 		ERRCHK(tl);
 		Fb(tl, 0, "%g", d);
-	} else if (vp->fmt == RTIME) {
+	} else if (vp->fmt == DURATION) {
 		vcc_RTimeVal(tl, &d);
 		ERRCHK(tl);
 		Fb(tl, 0, "%g", d);

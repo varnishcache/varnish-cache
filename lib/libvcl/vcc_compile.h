@@ -116,7 +116,7 @@ enum var_type {
 	FLOAT,
 	SIZE,
 	TIME,
-	RTIME,
+	DURATION,
 	STRING,
 	IP,
 	HASH,

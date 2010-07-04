@@ -129,7 +129,7 @@ parse_set(struct vcc *tl)
 	case INT:
 	case SIZE:
 	case TIME:
-	case RTIME:
+	case DURATION:
 	case FLOAT:
 		if (tl->t->tok != '=')
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);

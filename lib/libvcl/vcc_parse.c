@@ -347,7 +347,7 @@ vcc_Cond_2(struct vcc *tl)
 		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
 		case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;
 		case TIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		case RTIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		case DURATION:	L(tl, vcc_Cond_Int(vp, tl)); break;
 		case BACKEND:	L(tl, vcc_Cond_Backend(vp, tl)); break;
 		default:
 			vsb_printf(tl->sb,
