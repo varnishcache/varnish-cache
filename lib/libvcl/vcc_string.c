@@ -173,9 +173,11 @@ vcc_StringVal(struct vcc *tl)
 		case INT:
 			Fb(tl, 0, "VRT_int_string(sp, %s)", vp->rname);
 			break;
+#if 0
 		case FLOAT:
 			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
 			break;
+#endif
 		case TIME:
 			Fb(tl, 0, "VRT_time_string(sp, %s)", vp->rname);
 			break;

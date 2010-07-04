@@ -113,18 +113,16 @@ enum var_type {
 	BACKEND,
 	BOOL,
 	INT,
-	FLOAT,
 	SIZE,
 	TIME,
 	DURATION,
 	STRING,
 	IP,
-	HASH,
 	HEADER
 };
 
 enum ref_type {
-	R_FUNC,
+	R_SUB,
 	R_ACL,
 	R_BACKEND,
 	R_PROBE

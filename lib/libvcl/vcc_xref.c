@@ -28,11 +28,11 @@
  *
  * This file contains code for two cross-reference or consistency checks.
  *
- * The first check is simply that all functions, acls and backends are
+ * The first check is simply that all subroutine, acls and backends are
  * both defined and referenced.  Complaints about referenced but undefined
  * or defined but unreferenced objects will be emitted.
  *
- * The second check recursively decends through function calls to make
+ * The second check recursively decends through subroutine calls to make
  * sure that action actions are correct for the methods through which
  * they are called.
  */
@@ -83,7 +83,7 @@ static const char *
 vcc_typename(struct vcc *tl, const struct ref *r)
 {
 	switch (r->type) {
-	case R_FUNC: return ("function");
+	case R_SUB: return ("subroutine");
 	case R_ACL: return ("acl");
 	case R_BACKEND: return ("backend");
 	case R_PROBE: return ("probe");
@@ -280,7 +280,8 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 /*lint -restore */
-		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n", PF(p->name));
+		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
+		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -360,7 +361,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 		    "'%.*s': %s not possible in method '%.*s'.\n",
 		    PF(pu->t), pu->use, PF(p->name));
 		vcc_ErrWhere(tl, pu->t);
-		vsb_printf(tl->sb, "\n...in function \"%.*s\"\n",
+		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);

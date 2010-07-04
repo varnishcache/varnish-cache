@@ -53,7 +53,7 @@ parse_call(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
-	vcc_AddRef(tl, tl->t, R_FUNC);
+	vcc_AddRef(tl, tl->t, R_SUB);
 	Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
 	Fb(tl, 1, "\treturn (1);\n");
 	vcc_NextToken(tl);
@@ -130,7 +130,7 @@ parse_set(struct vcc *tl)
 	case SIZE:
 	case TIME:
 	case DURATION:
-	case FLOAT:
+//	case FLOAT:
 		if (tl->t->tok != '=')
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 		at = tl->t;
@@ -180,15 +180,6 @@ parse_set(struct vcc *tl)
 		vcc_AddRef(tl, tl->t, R_BACKEND);
 		Fb(tl, 0, "VGCDIR(_%.*s)", PF(tl->t));
 		vcc_NextToken(tl);
-		Fb(tl, 0, ");\n");
-		break;
-	case HASH:
-		SkipToken(tl, T_INCR);
-		if (!vcc_StringVal(tl)) {
-			ERRCHK(tl);
-			vcc_ExpectedStringval(tl);
-			return;
-		}
 		Fb(tl, 0, ");\n");
 		break;
 	case STRING:
