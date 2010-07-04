@@ -342,7 +342,7 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_NextToken(tl);
 		switch (vp->fmt) {
 		case INT:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
+		// case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
 		case BOOL:	L(tl, vcc_Cond_Bool(vp, tl)); break;
 		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
 		case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;

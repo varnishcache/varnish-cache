@@ -127,7 +127,7 @@ parse_set(struct vcc *tl)
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
 	case INT:
-	case SIZE:
+//	case SIZE:
 	case TIME:
 	case DURATION:
 //	case FLOAT:
