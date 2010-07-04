@@ -150,6 +150,8 @@ void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
     const char *, ...);
 void VRT_handling(struct sess *sp, unsigned hand);
 
+void VRT_hashdata(struct sess *sp, const char *str, ...);
+
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);

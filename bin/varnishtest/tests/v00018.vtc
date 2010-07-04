@@ -53,7 +53,7 @@ varnish v1 -badvcl {
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_hash { set req.hash += 1; }
+	sub vcl_hash { hash_data(req.hash); }
 }
 
 varnish v1 -badvcl {

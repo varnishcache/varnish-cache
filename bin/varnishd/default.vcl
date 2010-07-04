@@ -82,11 +82,11 @@ sub vcl_pass {
 }
 
 sub vcl_hash {
-    set req.hash += req.url;
+    hash_data(req.url);
     if (req.http.host) {
-        set req.hash += req.http.host;
+        hash_data(req.http.host);
     } else {
-        set req.hash += server.ip;
+        hash_data(server.ip);
     }
     return (hash);
 }

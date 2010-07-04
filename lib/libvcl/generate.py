@@ -148,12 +148,6 @@ sp_variables = (
 		( 'all',),
 		'const struct sess *'
 	),
-	('req.hash',
-		'HASH',
-		( ),
-		( 'hash', 'error',),	# XXX error ???
-		'struct sess *'
-	),
 	('req.backend',
 		'BACKEND',
 		( 'all',),
@@ -378,7 +372,6 @@ vcltypes = {
 	'DURATION':	"double",
 	'INT':		"int",
 	'HEADER':	"const char *",
-	'HASH':		"const char *",
 }
 
 #######################################################################

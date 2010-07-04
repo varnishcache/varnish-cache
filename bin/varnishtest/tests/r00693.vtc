@@ -60,7 +60,7 @@ varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
 		return (pass);
 	}
 	sub vcl_hash {
-		set req.hash += req.url;
+		hash_data(req.url);
 		return (hash);
 	}
 } -start

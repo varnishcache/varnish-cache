@@ -17,7 +17,6 @@ const char * VRT_r_req_url(const struct sess *);
 void VRT_l_req_url(const struct sess *, const char *, ...);
 const char * VRT_r_req_proto(const struct sess *);
 void VRT_l_req_proto(const struct sess *, const char *, ...);
-void VRT_l_req_hash(struct sess *, const char *);
 struct director * VRT_r_req_backend(struct sess *);
 void VRT_l_req_backend(struct sess *, struct director *);
 int VRT_r_req_restarts(const struct sess *);

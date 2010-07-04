@@ -315,10 +315,11 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "\n/*\n * $Id$\n *\n * NB:  This file is machine "
-	    "generated, DO NOT EDIT!\n *\n * Edit and run generate.py instead"
-	    "\n */\nstruct sockaddr * VRT_r_client_ip(const struct sess "
-	    "*);\nstruct sockaddr * VRT_r_server_ip(struct sess *);\n"
+	vsb_cat(sb, "\n/*\n * $Id: vrt_obj.h 5000 2010-07-04 14:15:28Z "
+	    "phk $\n *\n * NB:  This file is machine generated, DO NOT "
+	    "EDIT!\n *\n * Edit and run generate.py instead\n */\n"
+	    "struct sockaddr * VRT_r_client_ip(const struct sess *);\n"
+	    "struct sockaddr * VRT_r_server_ip(struct sess *);\n"
 	    "const char * VRT_r_server_hostname(struct sess *);\n"
 	    "const char * VRT_r_server_identity(struct sess *);\n"
 	    "int VRT_r_server_port(struct sess *);\nconst char * VRT_r_req_re"

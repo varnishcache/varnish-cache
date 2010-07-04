@@ -101,13 +101,6 @@ struct var vcc_vars[] = {
 	     | VCL_MET_ERROR,
 	    "HDR_REQ",
 	},
-	{ "req.hash", HASH, 8,
-	    NULL,	/* No reads allowed */
-	    0,
-	    "VRT_l_req_hash(sp, ",
-	    VCL_MET_HASH | VCL_MET_ERROR,
-	    0,
-	},
 	{ "req.backend", BACKEND, 11,
 	    "VRT_r_req_backend(sp)",
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH

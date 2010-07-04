@@ -400,6 +400,26 @@ parse_new_syntax(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_hash_data(struct vcc *tl)
+{
+	vcc_NextToken(tl);
+	SkipToken(tl, '(');
+
+	Fb(tl, 1, "VRT_hashdata(sp, ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	do
+		Fb(tl, 0, ", ");
+	while (vcc_StringVal(tl));
+	Fb(tl, 0, " vrt_magic_string_end);\n");
+	SkipToken(tl, ')');
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_panic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
@@ -494,6 +514,7 @@ static struct action_table {
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
 	{ "esi",		parse_esi, VCL_MET_FETCH },
+	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "panic",		parse_panic },
 	{ "purge",		parse_purge },
 	{ "purge_url",		parse_purge_url },
