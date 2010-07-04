@@ -93,6 +93,7 @@ vcc_TimeUnit(struct vcc *tl)
 	return (sc);
 }
 
+#if 0
 /*--------------------------------------------------------------------
  * Recognize and convert units of size, return bytes.
  */
@@ -121,6 +122,7 @@ vcc_SizeUnit(struct vcc *tl)
 	vcc_NextToken(tl);
 	return (sc);
 }
+#endif
 
 /*--------------------------------------------------------------------
  * Recognize and convert { CNUM } to unsigned value
@@ -207,6 +209,7 @@ vcc_TimeVal(struct vcc *tl, double *d)
 	*d = v * sc;
 }
 
+#if 0
 /*--------------------------------------------------------------------*/
 
 void
@@ -220,6 +223,7 @@ vcc_SizeVal(struct vcc *tl, double *d)
 	sc = vcc_SizeUnit(tl);
 	*d = v * sc;
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 
