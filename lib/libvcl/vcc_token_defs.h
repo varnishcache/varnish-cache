@@ -31,4 +31,3 @@
 #define	T_NOMATCH 150
 #define	T_SHL 151
 #define	T_SHR 152
-#define	VAR 153

@@ -158,7 +158,7 @@ vcc_StringVal(struct vcc *tl)
 		vcc_NextToken(tl);
 		return 1;
 	}
-	if (tl->t->tok == VAR) {
+	if (tl->t->tok == ID) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		if (tl->err)
 			return (0);

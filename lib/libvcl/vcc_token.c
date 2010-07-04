@@ -462,16 +462,9 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		/* Match Identifiers */
 		if (isident1(*p)) {
 			for (q = p; q < sp->e; q++)
-				if (!isident(*q))
+				if (!isvar(*q))
 					break;
-			if (isvar(*q)) {
-				for (; q < sp->e; q++)
-					if (!isvar(*q))
-						break;
-				vcc_AddToken(tl, VAR, p, q);
-			} else {
-				vcc_AddToken(tl, ID, p, q);
-			}
+			vcc_AddToken(tl, ID, p, q);
 			p = q;
 			continue;
 		}

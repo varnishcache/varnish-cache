@@ -152,7 +152,6 @@ const char * const vcl_tnames[256] = {
 	[T_NOMATCH] = "!~",
 	[T_SHL] = "<<",
 	[T_SHR] = ">>",
-	[VAR] = "VAR",
 };
 
 void
@@ -246,8 +245,8 @@ vcl_output_lang_h(struct vsb *sb)
 	    "OF LIABILITY, WHETHER IN CONTRACT, STRICT\n * LIABILITY, OR "
 	    "TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\n"
 	    " * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE "
-	    "POSSIBILITY OF\n * SUCH DAMAGE.\n *\n * $Id: vrt.h 4984 2010-06-"
-	    "22 13:01:22Z phk $\n *\n * Runtime support for compiled VCL "
+	    "POSSIBILITY OF\n * SUCH DAMAGE.\n *\n * $Id: vrt.h 5001 2010-07-"
+	    "04 14:40:33Z phk $\n *\n * Runtime support for compiled VCL "
 	    "programs.\n *\n * XXX: When this file is changed, lib/libvcl/gen"
 	    "erate.py *MUST* be rerun.\n */\n\nstruct sess;\nstruct vsb;\n"
 	    "struct cli;\nstruct director;\nstruct VCL_conf;\n"
@@ -296,6 +295,7 @@ vcl_output_lang_h(struct vsb *sb)
 	    "const char *);\nvoid VRT_SetHdr(const struct sess *, enum "
 	    "gethdr_e where, const char *,\n    const char *, ...);\n"
 	    "void VRT_handling(struct sess *sp, unsigned hand);\n"
+	    "\nvoid VRT_hashdata(struct sess *sp, const char *str, ...);\n"
 	    "\n/* Simple stuff */\nint VRT_strcmp(const char *s1, const "
 	    "char *s2);\nvoid VRT_memmove(void *dst, const void *src, unsigne"
 	    "d len);\n\nvoid VRT_ESI(struct sess *sp);\nvoid VRT_Rollback(str"
@@ -315,7 +315,7 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "\n/*\n * $Id: vrt_obj.h 5000 2010-07-04 14:15:28Z "
+	vsb_cat(sb, "\n/*\n * $Id: vrt_obj.h 5001 2010-07-04 14:40:33Z "
 	    "phk $\n *\n * NB:  This file is machine generated, DO NOT "
 	    "EDIT!\n *\n * Edit and run generate.py instead\n */\n"
 	    "struct sockaddr * VRT_r_client_ip(const struct sess *);\n"
@@ -328,9 +328,8 @@ vcl_output_lang_h(struct vsb *sb)
 	    "onst struct sess *);\nvoid VRT_l_req_url(const struct sess "
 	    "*, const char *, ...);\nconst char * VRT_r_req_proto(const "
 	    "struct sess *);\nvoid VRT_l_req_proto(const struct sess *, "
-	    "const char *, ...);\nvoid VRT_l_req_hash(struct sess *, const "
-	    "char *);\nstruct director * VRT_r_req_backend(struct sess "
-	    "*);\nvoid VRT_l_req_backend(struct sess *, struct director "
+	    "const char *, ...);\nstruct director * VRT_r_req_backend(struct "
+	    "sess *);\nvoid VRT_l_req_backend(struct sess *, struct director "
 	    "*);\nint VRT_r_req_restarts(const struct sess *);\n"
 	    "double VRT_r_req_grace(struct sess *);\nvoid VRT_l_req_grace(str"
 	    "uct sess *, double);\nconst char * VRT_r_req_xid(struct sess "

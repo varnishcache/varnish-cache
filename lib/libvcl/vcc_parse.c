@@ -339,7 +339,7 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_NextToken(tl);
 		vcc_Cond_0(tl);
 		SkipToken(tl, ')');
-	} else if (tl->t->tok == VAR) {
+	} else if (tl->t->tok == ID) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		ERRCHK(tl);
 		assert(vp != NULL);

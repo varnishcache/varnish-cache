@@ -68,7 +68,7 @@ parse_error(struct vcc *tl)
 	struct var *vp;
 
 	vcc_NextToken(tl);
-	if (tl->t->tok == VAR) {
+	if (tl->t->tok == ID) {
 		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
 		ERRCHK(tl);
 		assert(vp != NULL);
@@ -85,7 +85,7 @@ parse_error(struct vcc *tl)
 	if (tl->t->tok == CSTR) {
 		Fb(tl, 0, ", %.*s", PF(tl->t));
 		vcc_NextToken(tl);
-	} else if (tl->t->tok == VAR) {
+	} else if (tl->t->tok == ID) {
 		Fb(tl, 0, ", ");
 		if (!vcc_StringVal(tl)) {
 			ERRCHK(tl);
@@ -118,7 +118,7 @@ parse_set(struct vcc *tl)
 	struct token *at, *vt;
 
 	vcc_NextToken(tl);
-	ExpectErr(tl, VAR);
+	ExpectErr(tl, ID);
 	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "set");
 	ERRCHK(tl);
@@ -240,7 +240,7 @@ parse_unset(struct vcc *tl)
 	struct var *vp;
 
 	vcc_NextToken(tl);
-	ExpectErr(tl, VAR);
+	ExpectErr(tl, ID);
 	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "unset");
 	ERRCHK(tl);
 	assert(vp != NULL);
@@ -277,11 +277,11 @@ parse_purge(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	if (tl->t->tok == VAR) {
+	if (tl->t->tok == ID) {
 		Fb(tl, 1, "VRT_ban(sp,\n");
 		tl->indent += INDENT;
 		while (1) {
-			ExpectErr(tl, VAR);
+			ExpectErr(tl, ID);
 
 			/* Check valididity of purge variable */
 			for (pv = purge_var; pv->name != NULL; pv++) {
