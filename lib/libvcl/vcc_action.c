@@ -69,7 +69,7 @@ parse_error(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
+		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
 		ERRCHK(tl);
 		assert(vp != NULL);
 		if (vp->fmt == INT) {
@@ -120,7 +120,7 @@ parse_set(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vt = tl->t;
-	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "set");
+	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "cannot be set");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	Fb(tl, 1, "%s", vp->lname);
@@ -241,7 +241,7 @@ parse_unset(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "unset");
+	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "cannot be unset");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	if (vp->fmt != STRING || vp->hdr == NULL) {
@@ -529,7 +529,8 @@ vcc_ParseAction(struct vcc *tl)
 	for(atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
 			if (atp->bitmask != 0)
-				vcc_AddUses(tl, at, atp->bitmask, "is");
+				vcc_AddUses(tl, at, atp->bitmask,
+				    "not a valid action");
 			atp->func(tl);
 			return(1);
 		}

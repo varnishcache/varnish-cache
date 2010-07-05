@@ -159,7 +159,7 @@ vcc_StringVal(struct vcc *tl)
 		return 1;
 	}
 	if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
+		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
 		if (tl->err)
 			return (0);
 		assert(vp != NULL);

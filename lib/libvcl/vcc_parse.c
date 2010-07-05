@@ -340,7 +340,7 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_Cond_0(tl);
 		SkipToken(tl, ')');
 	} else if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "read");
+		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
 		ERRCHK(tl);
 		assert(vp != NULL);
 		vcc_NextToken(tl);

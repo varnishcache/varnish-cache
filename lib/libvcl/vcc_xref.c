@@ -60,7 +60,7 @@ struct proccall {
 
 struct procuse {
 	VTAILQ_ENTRY(procuse)	list;
-	struct token		*t;
+	const struct token	*t;
 	unsigned		mask;
 	const char		*use;
 };
@@ -217,12 +217,11 @@ vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
 {
 	struct procuse *pu;
 
-	(void)t;
 	if (tl->curproc == NULL)	/* backend */
 		return;
 	pu = TlAlloc(tl, sizeof *pu);
 	assert(pu != NULL);
-	pu->t = tl->t;
+	pu->t = t;
 	pu->mask = mask;
 	pu->use = use;
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
@@ -358,7 +357,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
 		vsb_printf(tl->sb,
-		    "'%.*s': %s not possible in method '%.*s'.\n",
+		    "'%.*s': %s from method '%.*s'.\n",
 		    PF(pu->t), pu->use, PF(p->name));
 		vcc_ErrWhere(tl, pu->t);
 		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
@@ -393,7 +392,7 @@ vcc_CheckUses(struct vcc *tl)
 		pu = vcc_FindIllegalUse(p, m);
 		if (pu != NULL) {
 			vsb_printf(tl->sb,
-			    "'%.*s': %s not possible in method '%.*s'.",
+			    "'%.*s': %s in method '%.*s'.",
 			    PF(pu->t), pu->use, PF(p->name));
 			vsb_cat(tl->sb, "\nAt: ");
 			vcc_ErrWhere(tl, pu->t);
