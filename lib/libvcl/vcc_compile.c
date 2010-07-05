@@ -463,6 +463,7 @@ vcc_NewVcc(const struct vcc *tl0)
 		REPLACE(tl->vcl_dir, tl0->vcl_dir);
 		tl->vars = tl0->vars;
 	}
+	VTAILQ_INIT(&tl->symbols);
 	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
@@ -504,6 +505,7 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 {
 	struct membit *mb;
 	struct source *sp;
+	struct symbol *sym;
 	int i;
 
 	while (!VTAILQ_EMPTY(&tl->membits)) {
@@ -516,6 +518,12 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 		sp = VTAILQ_FIRST(&tl->sources);
 		VTAILQ_REMOVE(&tl->sources, sp, list);
 		vcc_destroy_source(sp);
+	}
+
+	while (!VTAILQ_EMPTY(&tl->symbols)) {
+		sym = VTAILQ_FIRST(&tl->symbols);
+		VTAILQ_REMOVE(&tl->symbols, sym, list);
+		FREE_OBJ(sym);
 	}
 
 	vsb_delete(tl->fh);
@@ -537,11 +545,20 @@ static char *
 vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 {
 	struct vcc *tl;
+	struct symbol *sym;
+	const struct var *v;
 	char *of;
 	int i;
 
 	tl = vcc_NewVcc(tl0);
 	tl->sb = sb;
+
+	for (v = tl->vars; v->name != NULL; v++) {
+		sym = VCC_AddSymbol(tl, v->name);
+		sym->var = v;
+		if (v->fmt == HEADER)
+			sym->wildcard = 1;
+	}
 
 	vcl_output_lang_h(tl->fh);
 	Fh(tl, 0, "\n/* ---===### VCC generated below here ###===---*/\n");
@@ -685,7 +702,9 @@ VCC_New(void)
 	struct vcc *tl;
 
 	tl = vcc_NewVcc(NULL);
+
 	tl->vars = vcc_vars;
+
 	return (tl);
 }
 

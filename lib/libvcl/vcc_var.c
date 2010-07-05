@@ -91,15 +91,14 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
     const char *use)
 {
 	const struct var *v;
+	const struct symbol *sym;
 
 	AN(tl->vars);
-	for (v = tl->vars; v->name != NULL; v++) {
-		if (v->fmt == HEADER  && (t->e - t->b) <= v->len)
-			continue;
-		if (v->fmt != HEADER  && t->e - t->b != v->len)
-			continue;
-		if (memcmp(t->b, v->name, v->len))
-			continue;
+	sym = VCC_FindSymbol(tl, t);
+	if (sym != NULL) {
+		v = sym->var;
+		AN(v);
+
 		if (wr_access && v->l_methods == 0) {
 			vsb_printf(tl->sb, "Variable ");
 			vcc_ErrToken(tl, t);

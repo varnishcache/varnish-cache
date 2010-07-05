@@ -62,6 +62,16 @@ struct token {
 	char			*dec;
 };
 
+struct symbol {
+	unsigned			magic;
+#define SYMBOL_MAGIC			0x3368c9fb
+	VTAILQ_ENTRY(symbol)		list;
+	char				*name;
+	unsigned			nlen;
+	unsigned			wildcard;
+	const struct var		*var;
+};
+
 VTAILQ_HEAD(tokenhead, token);
 
 struct vcc {
@@ -74,6 +84,7 @@ struct vcc {
 	char			*vmod_dir;
 
 	const struct var	*vars;
+	VTAILQ_HEAD(, symbol)	symbols;
 
 	/* Instance section */
 	struct tokenhead	tokens;
@@ -224,6 +235,11 @@ double vcc_DoubleVal(struct vcc *tl);
 char *vcc_regexp(struct vcc *tl);
 int vcc_StringVal(struct vcc *tl);
 void vcc_ExpectedStringval(struct vcc *tl);
+
+/* vcc_symbol */
+struct symbol *VCC_AddSymbol(struct vcc *tl, const char *name);
+const struct symbol *VCC_FindSymbol(const struct vcc *tl,
+    const struct token *t);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
