@@ -62,7 +62,7 @@ HeaderVar(struct vcc *tl, const struct token *t, const struct var *vh)
 	p[i] = '\0';
 	v->name = p;
 	v->r_methods = vh->r_methods;
-	v->l_methods = vh->l_methods;
+	v->w_methods = vh->w_methods;
 	v->fmt = STRING;
 	v->hdr = vh->hdr;
 	l = strlen(v->name + vh->len) + 1;
@@ -99,7 +99,7 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 		v = sym->var;
 		AN(v);
 
-		if (wr_access && v->l_methods == 0) {
+		if (wr_access && v->w_methods == 0) {
 			vsb_printf(tl->sb, "Variable ");
 			vcc_ErrToken(tl, t);
 			vsb_printf(tl->sb, " is read only.");
@@ -107,7 +107,7 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 			vcc_ErrWhere(tl, t);
 			return (NULL);
 		} else if (wr_access) {
-			vcc_AddUses(tl, t, v->l_methods, use);
+			vcc_AddUses(tl, t, v->w_methods, use);
 		} else if (v->r_methods == 0) {
 			vsb_printf(tl->sb, "Variable ");
 			vcc_ErrToken(tl, t);

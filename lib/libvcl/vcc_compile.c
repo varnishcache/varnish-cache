@@ -556,6 +556,8 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	for (v = tl->vars; v->name != NULL; v++) {
 		sym = VCC_AddSymbol(tl, v->name);
 		sym->var = v;
+		sym->fmt = v->fmt;
+		sym->r_methods = v->r_methods;
 		if (v->fmt == HEADER)
 			sym->wildcard = 1;
 	}

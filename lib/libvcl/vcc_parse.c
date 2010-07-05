@@ -323,10 +323,92 @@ vcc_Cond_Backend(const struct var *vp, struct vcc *tl)
 	vcc_NextToken(tl);
 }
 
+const char *typenm[] = {
+#define VCC_TYPE(foo)	[foo] = #foo,
+#include "vcc_types.h"
+#undef VCC_TYPE
+};
+
+static int
+vcc_Relation(struct vcc *tl, enum var_type fmt)
+{
+
+	switch(tl->t->tok) {
+	case T_EQ:
+	case T_NEQ:
+		if (fmt != BOOL)
+			return (tl->t->tok);
+		break;
+	case '>':
+	case T_GEQ:
+	case '<':
+	case T_LEQ:
+		if (fmt == INT || fmt == TIME || fmt == DURATION)
+			return (tl->t->tok);
+		break;
+	case '~':
+	case T_NOMATCH:
+		if (fmt == IP || fmt == STRING || fmt == HEADER)
+			return (tl->t->tok);
+		break;
+	default:
+		if (fmt == STRING || fmt == HEADER || fmt == BOOL)
+			return (-1);
+		break;
+	}
+	vsb_printf(tl->sb, "Invalid comparison/match operator ");
+	vsb_printf(tl->sb, " for type %s.\n", typenm[fmt]);
+	vcc_ErrToken(tl, tl->t);
+	vcc_ErrWhere(tl, tl->t);
+	return (-1);
+}
+
+static void
+vcc_Cond_3(struct vcc *tl)
+{
+	const struct var *vp;
+	const struct symbol *sym;
+
+	sym = VCC_FindSymbol(tl, tl->t);
+	if (sym == NULL) {
+		vsb_printf(tl->sb,
+		    "Syntax error in condition.\n"
+		    "Expected '(', '!' or variable name.\n"
+		    "Found ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, "\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+	AN(sym->var);
+	vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
+	ERRCHK(tl);
+	assert(vp != NULL);
+	vcc_NextToken(tl);
+	vcc_Relation(tl, sym->fmt);
+	switch (vp->fmt) {
+	case INT:	L(tl, vcc_Cond_Int(vp, tl)); break;
+	// case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
+	case BOOL:	L(tl, vcc_Cond_Bool(vp, tl)); break;
+	case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
+	case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;
+	case TIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
+	case DURATION:	L(tl, vcc_Cond_Int(vp, tl)); break;
+	case BACKEND:	L(tl, vcc_Cond_Backend(vp, tl)); break;
+	default:
+		vsb_printf(tl->sb,
+		    "Variable '%s'"
+		    " has no conditions that can be checked\n",
+		    vp->name);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}
+
 static void
 vcc_Cond_2(struct vcc *tl)
 {
-	const struct var *vp;
 
 	C(tl, ",");
 	if (tl->t->tok == '!') {
@@ -339,38 +421,22 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_NextToken(tl);
 		vcc_Cond_0(tl);
 		SkipToken(tl, ')');
-	} else if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
-		ERRCHK(tl);
-		assert(vp != NULL);
-		vcc_NextToken(tl);
-		switch (vp->fmt) {
-		case INT:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		// case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		case BOOL:	L(tl, vcc_Cond_Bool(vp, tl)); break;
-		case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
-		case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;
-		case TIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		case DURATION:	L(tl, vcc_Cond_Int(vp, tl)); break;
-		case BACKEND:	L(tl, vcc_Cond_Backend(vp, tl)); break;
-		default:
-			vsb_printf(tl->sb,
-			    "Variable '%s'"
-			    " has no conditions that can be checked\n",
-			    vp->name);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-	} else {
-		vsb_printf(tl->sb,
-		    "Syntax error in condition, expected '(', '!' or"
-		    " variable name, found ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, "\n");
-		vcc_ErrWhere(tl, tl->t);
+		Fb(tl, 1, ")\n");
 		return;
 	}
-	Fb(tl, 1, ")\n");
+	if (tl->t->tok == ID) {
+		vcc_Cond_3(tl);
+		Fb(tl, 1, ")\n");
+		return;
+	} 
+	vsb_printf(tl->sb,
+	    "Syntax error in condition.\n"
+	    "Expected '(', '!' or variable name.\n"
+	    "Found ");
+	vcc_ErrToken(tl, tl->t);
+	vsb_printf(tl->sb, "\n");
+	vcc_ErrWhere(tl, tl->t);
+	return;
 }
 
 static void

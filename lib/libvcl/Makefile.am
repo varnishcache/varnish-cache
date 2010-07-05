@@ -10,6 +10,7 @@ libvcl_la_SOURCES = \
 	vcc_priv.h \
 	vcc_compile.h \
 	vcc_token_defs.h \
+	vcc_types.h \
 	\
 	vcc_acl.c \
 	vcc_action.c \

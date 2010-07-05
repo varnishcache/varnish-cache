@@ -38,6 +38,12 @@
 
 struct acl_e;
 
+enum var_type {
+#define VCC_TYPE(foo)	foo,
+#include "vcc_types.h"
+#undef VCC_TYPE
+};
+
 struct membit {
 	VTAILQ_ENTRY(membit)	list;
 	void			*ptr;
@@ -70,6 +76,8 @@ struct symbol {
 	unsigned			nlen;
 	unsigned			wildcard;
 	const struct var		*var;
+	enum var_type			fmt;
+	unsigned			r_methods;
 };
 
 VTAILQ_HEAD(tokenhead, token);
@@ -129,19 +137,6 @@ struct vcc {
 	unsigned		nsockaddr;
 };
 
-enum var_type {
-	BACKEND,
-	BOOL,
-	INT,
-	// SIZE,
-	// FLOAT,
-	TIME,
-	DURATION,
-	STRING,
-	IP,
-	HEADER
-};
-
 enum ref_type {
 	R_SUB,
 	R_ACL,
@@ -164,7 +159,7 @@ struct var {
 	const char		*rname;
 	unsigned		r_methods;
 	const char		*lname;
-	unsigned		l_methods;
+	unsigned		w_methods;
 	const char		*hdr;
 };
 
@@ -227,7 +222,7 @@ extern const struct var vcc_vars[];
 void vcc_Parse(struct vcc *tl);
 void vcc_RTimeVal(struct vcc *tl, double *);
 void vcc_TimeVal(struct vcc *tl, double *);
-void vcc_SizeVal(struct vcc *tl, double *);
+// void vcc_SizeVal(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 double vcc_DoubleVal(struct vcc *tl);
 
