@@ -272,7 +272,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	u = p->ret_bitmap & ~bitmap;
 	if (u) {
 /*lint -save -e525 -e539 */
-#define VCL_RET_MAC(l, U)						\
+#define VCL_RET_MAC(l, U, B)						\
 		if (u & (1 << (VCL_RET_##U))) {				\
 			vsb_printf(tl->sb, "Invalid return \"" #l "\"\n");\
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
@@ -315,7 +315,7 @@ vcc_CheckAction(struct vcc *tl)
 			vsb_printf(tl->sb,
 			    "\n...which is the \"%s\" method\n", m->name);
 			vsb_printf(tl->sb, "Legal returns are:");
-#define VCL_RET_MAC(l, U)						\
+#define VCL_RET_MAC(l, U, B)						\
 			if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
 				vsb_printf(tl->sb, " \"%s\"", #l);
 /*lint -save -e525 -e539 */

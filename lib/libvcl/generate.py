@@ -607,8 +607,15 @@ fo.write("\n#ifdef VCL_RET_MAC\n")
 l = list(rets.keys())
 l.sort()
 for i in l:
-	fo.write("VCL_RET_MAC(%s, %s)\n" % (i.lower(), i.upper()))
+	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
+	s=", "
+	for j in returns:
+		if i in j[1]:
+			fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
+			s = " | "
+	fo.write(")\n")
 fo.write("#endif\n")
+
 fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in returns:
 	fo.write("VCL_MET_MAC(%s,%s,\n" % (i[0].lower(), i[0].upper()))

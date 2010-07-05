@@ -438,7 +438,7 @@ parse_return(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 
-#define VCL_RET_MAC(l, U)						\
+#define VCL_RET_MAC(l, U, B)						\
 	do {								\
 		if (vcc_IdIs(tl->t, #l)) {				\
 			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
@@ -497,7 +497,7 @@ static struct action_table {
 } action_table[] = {
 	{ "error",		parse_error },
 
-#define VCL_RET_MAC(l, U)						\
+#define VCL_RET_MAC(l, U, B)						\
 	{ #l,			parse_new_syntax },
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
