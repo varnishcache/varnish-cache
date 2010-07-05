@@ -114,6 +114,7 @@ IsMethod(const struct token *t)
 {
 	struct method *m;
 
+	assert(t->tok == ID);
 	for(m = method_tab; m->name != NULL; m++) {
 		if (vcc_IdIs(t, m->name))
 			return (m - method_tab);

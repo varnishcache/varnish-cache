@@ -650,6 +650,7 @@ for i in returns:
 	n += 1
 
 fo.write("\n#define VCL_MET_MAX\t\t%d\n" % n)
+fo.write("\n#define VCL_MET_MASK\t\t0x%x\n" % ((1 << n) - 1))
 
 
 fo.write("\n/* VCL Returns */\n")

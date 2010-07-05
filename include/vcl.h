@@ -27,6 +27,8 @@ typedef int vcl_func_f(struct sess *sp);
 
 #define VCL_MET_MAX		9
 
+#define VCL_MET_MASK		0x1ff
+
 /* VCL Returns */
 #define VCL_RET_DELIVER		0
 #define VCL_RET_ERROR		1

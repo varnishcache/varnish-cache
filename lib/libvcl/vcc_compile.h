@@ -86,8 +86,15 @@ struct vcc {
 	int			iindent;
 	int			findent;
 	unsigned		cnt;
-	struct vsb		*fc, *fh, *fi, *ff, *fb;
-	struct vsb		*fm[VCL_MET_MAX];
+
+	struct vsb		*fc;		/* C-code */
+	struct vsb		*fh;		/* H-code (before C-code) */
+	struct vsb		*fi;		/* Init func code */
+	struct vsb		*ff;		/* Finish func code */
+	struct vsb		*fb;		/* Body of current sub
+						 * NULL otherwise
+						 */
+	struct vsb		*fm[VCL_MET_MAX];	/* Method bodies */
 	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
