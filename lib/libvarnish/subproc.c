@@ -116,7 +116,7 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 	do {
 		rv = waitpid(pid, &status, 0);
 		if (rv < 0 && errno != EINTR) {
-			vsb_printf(sb, "Running %s: waitpid() failed: %s",
+			vsb_printf(sb, "Running %s: waitpid() failed: %s\n",
 			    name, strerror(errno));
 			return (-1);
 		}
@@ -129,6 +129,7 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 			vsb_printf(sb, ", signal %d", WTERMSIG(status));
 		if (WCOREDUMP(status))
 			vsb_printf(sb, ", core dumped");
+		vsb_printf(sb, "\n");
 		return (-1);
 	}
 	return (0);
