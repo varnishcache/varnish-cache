@@ -2,15 +2,15 @@
 varnishhist
 ===========
 
+-------------------------
+Varnish request histogram
+-------------------------
+
 :Author: Dag-Erling Smørgrav
 :Date:   2010-05-31
 :Version: 1.0
 :Manual section: 1
 
-
--------------------------
-Varnish request histogram
--------------------------
 
 SYNOPSIS
 ========

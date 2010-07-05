@@ -31,13 +31,16 @@ replies between the CLI socket and stdin/stdout.
 OPTIONS
 =======
 
--t timeout               Wait no longer than this many seconds for an operation to finish.
+-t timeout
+	Wait no longer than this many seconds for an operation to finish.
 
--S secret_file           Specify the authentication secret file. This should be the same -S 
-                         argument as was given to varnishd. Only processes which can read 
-                         the contents of this file, will be able to authenticate the CLI connection.
+-S secret_file
+        Specify the authentication secret file. This should be the same -S 
+        argument as was given to varnishd. Only processes which can read 
+        the contents of this file, will be able to authenticate the CLI connection.
 
--T address:port          Connect to the management interface at the specified address and port.
+-T address:port   
+        Connect to the management interface at the specified address and port.
 
 
 Available commands and parameters are documented in the varnishd(1)
