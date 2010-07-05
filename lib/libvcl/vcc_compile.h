@@ -73,6 +73,8 @@ struct vcc {
 	char			*vcl_dir;
 	char			*vmod_dir;
 
+	const struct var	*vars;
+
 	/* Instance section */
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
@@ -208,7 +210,7 @@ parsedirector_f vcc_ParseRandomDirector;
 parsedirector_f vcc_ParseRoundRobinDirector;
 
 /* vcc_obj.c */
-extern struct var vcc_vars[];
+extern const struct var vcc_vars[];
 
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
@@ -240,8 +242,8 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
     const char *e);
 
 /* vcc_var.c */
-struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
-    struct var *vl, int wr_access, const char *use);
+const struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
+    int wr_access, const char *use);
 void vcc_VarVal(struct vcc *tl, const struct var *vp,
     const struct token *vt);
 

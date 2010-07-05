@@ -461,6 +461,7 @@ vcc_NewVcc(const struct vcc *tl0)
 	if (tl0 != NULL) {
 		REPLACE(tl->default_vcl, tl0->default_vcl);
 		REPLACE(tl->vcl_dir, tl0->vcl_dir);
+		tl->vars = tl0->vars;
 	}
 	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
@@ -684,6 +685,7 @@ VCC_New(void)
 	struct vcc *tl;
 
 	tl = vcc_NewVcc(NULL);
+	tl->vars = vcc_vars;
 	return (tl);
 }
 

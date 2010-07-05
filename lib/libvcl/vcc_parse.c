@@ -326,7 +326,7 @@ vcc_Cond_Backend(const struct var *vp, struct vcc *tl)
 static void
 vcc_Cond_2(struct vcc *tl)
 {
-	struct var *vp;
+	const struct var *vp;
 
 	C(tl, ",");
 	if (tl->t->tok == '!') {
@@ -340,7 +340,7 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_Cond_0(tl);
 		SkipToken(tl, ')');
 	} else if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
+		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 		ERRCHK(tl);
 		assert(vp != NULL);
 		vcc_NextToken(tl);

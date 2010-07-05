@@ -65,11 +65,11 @@ parse_call(struct vcc *tl)
 static void
 parse_error(struct vcc *tl)
 {
-	struct var *vp;
+	const struct var *vp;
 
 	vcc_NextToken(tl);
 	if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
+		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 		ERRCHK(tl);
 		assert(vp != NULL);
 		if (vp->fmt == INT) {
@@ -114,13 +114,13 @@ illegal_assignment(const struct vcc *tl, const char *type)
 static void
 parse_set(struct vcc *tl)
 {
-	struct var *vp;
+	const struct var *vp;
 	struct token *at, *vt;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vt = tl->t;
-	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "cannot be set");
+	vp = vcc_FindVar(tl, tl->t, 1, "cannot be set");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	Fb(tl, 1, "%s", vp->lname);
@@ -237,11 +237,11 @@ parse_set(struct vcc *tl)
 static void
 parse_unset(struct vcc *tl)
 {
-	struct var *vp;
+	const struct var *vp;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	vp = vcc_FindVar(tl, tl->t, vcc_vars, 1, "cannot be unset");
+	vp = vcc_FindVar(tl, tl->t, 1, "cannot be unset");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	if (vp->fmt != STRING || vp->hdr == NULL) {

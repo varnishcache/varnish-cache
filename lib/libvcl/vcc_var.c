@@ -86,13 +86,14 @@ HeaderVar(struct vcc *tl, const struct token *t, const struct var *vh)
 
 /*--------------------------------------------------------------------*/
 
-struct var *
-vcc_FindVar(struct vcc *tl, const struct token *t, struct var *vl,
-    int wr_access, const char *use)
+const struct var *
+vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
+    const char *use)
 {
-	struct var *v;
+	const struct var *v;
 
-	for (v = vl; v->name != NULL; v++) {
+	AN(tl->vars);
+	for (v = tl->vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER  && (t->e - t->b) <= v->len)
 			continue;
 		if (v->fmt != HEADER  && t->e - t->b != v->len)

@@ -142,7 +142,7 @@ vcc_regsub(struct vcc *tl, int all)
 int
 vcc_StringVal(struct vcc *tl)
 {
-	struct var *vp;
+	const struct var *vp;
 
 	if (tl->t->tok == CSTR) {
 		EncToken(tl->fb, tl->t);
@@ -159,7 +159,7 @@ vcc_StringVal(struct vcc *tl)
 		return 1;
 	}
 	if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, vcc_vars, 0, "cannot be read");
+		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 		if (tl->err)
 			return (0);
 		assert(vp != NULL);

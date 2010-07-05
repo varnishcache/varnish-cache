@@ -732,7 +732,7 @@ fo.write("""
 #include <stdio.h>
 #include "vcc_compile.h"
 
-struct var vcc_vars[] = {
+const struct var vcc_vars[] = {
 """)
 
 for i in sp_variables:

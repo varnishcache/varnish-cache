@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "vcc_compile.h"
 
-struct var vcc_vars[] = {
+const struct var vcc_vars[] = {
 	{ "client.ip", IP, 9,
 	    "VRT_r_client_ip(sp)",
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH

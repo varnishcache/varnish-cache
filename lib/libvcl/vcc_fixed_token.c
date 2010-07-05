@@ -160,10 +160,11 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "\n/*\n * $Id$\n *\n * NB:  This file is machine "
-	    "generated, DO NOT EDIT!\n *\n * Edit and run generate.py instead"
-	    "\n */\n\nstruct sess;\nstruct cli;\n\ntypedef void vcl_init_f(st"
-	    "ruct cli *);\ntypedef void vcl_fini_f(struct cli *);\n"
+	vsb_cat(sb, "\n/*\n * $Id: vcl.h 5007 2010-07-05 09:37:53Z "
+	    "phk $\n *\n * NB:  This file is machine generated, DO NOT "
+	    "EDIT!\n *\n * Edit and run generate.py instead\n */\n"
+	    "\nstruct sess;\nstruct cli;\n\ntypedef void vcl_init_f(struct "
+	    "cli *);\ntypedef void vcl_fini_f(struct cli *);\n"
 	    "typedef int vcl_func_f(struct sess *sp);\n\n/* VCL Methods "
 	    "*/\n#define VCL_MET_RECV\t\t(1U << 0)\n#define VCL_MET_PIPE\t"
 	    "\t(1U << 1)\n#define VCL_MET_PASS\t\t(1U << 2)\n#define VCL_MET_"
