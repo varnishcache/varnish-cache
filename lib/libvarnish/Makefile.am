@@ -23,6 +23,7 @@ libvarnish_la_SOURCES = \
 	version.c \
 	vev.c \
 	vlu.c \
+	vmb.c \
 	vpf.c \
 	vre.c \
 	vsb.c \
