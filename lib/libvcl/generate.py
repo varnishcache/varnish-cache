@@ -40,6 +40,13 @@
 # which hopefully makes for better error messages.
 # XXX: does it actually do that ?
 
+import sys
+srcroot = "../.."
+buildroot = "../.."
+if len(sys.argv) == 3:
+	srcroot = sys.argv[1]
+	buildroot = sys.argv[2]
+
 tokens = {
 	"T_INC":	"++",
 	"T_DEC":	"--",
@@ -535,43 +542,9 @@ def file_header(fo):
 
 #######################################################################
 
-fo = open("vcc_fixed_token.c", "w")
-
-file_header(fo)
-fo.write("""
-
-#include "config.h"
-#include <stdio.h>
-#include <ctype.h>
-#include "config.h"
-#include "vcc_priv.h"
-#include "vsb.h"
-""")
-
 polish_tokens(tokens)
-emit_vcl_fixed_token(fo, tokens)
-emit_vcl_tnames(fo, tokens)
 
-fo.write("""
-void
-vcl_output_lang_h(struct vsb *sb)
-{
-""")
-
-emit_file(fo, "../../include/vcl.h")
-emit_file(fo, "../../include/vmod.h")
-emit_file(fo, "../../include/vrt.h")
-emit_file(fo, "../../include/vrt_obj.h")
-
-fo.write("""
-}
-""")
-
-fo.close()
-
-#######################################################################
-
-fo = open("vcc_token_defs.h", "w")
+fo = open(buildroot + "/lib/libvcl/vcc_token_defs.h", "w")
 
 file_header(fo)
 
@@ -596,10 +569,9 @@ for i in returns:
 	for j in i[1]:
 		rets[j] = True
 	
-
 #######################################################################
 
-fo = open("../../include/vcl_returns.h", "w")
+fo = open(buildroot + "/include/vcl_returns.h", "w")
 
 file_header(fo)
 
@@ -629,7 +601,7 @@ fo.close()
 
 #######################################################################
 
-fo = open("../../include/vcl.h", "w")
+fo = open(buildroot + "/include/vcl.h", "w")
 
 file_header(fo)
 
@@ -721,10 +693,10 @@ def restrict(fo, spec):
 
 #######################################################################
 
-fh=open("../../include/vrt_obj.h", "w")
+fh = open(buildroot + "/include/vrt_obj.h", "w")
 file_header(fh)
 
-fo=open("vcc_obj.c", "w")
+fo = open(buildroot + "/lib/libvcl/vcc_obj.c", "w")
 file_header(fo)
 
 fo.write("""
@@ -775,3 +747,39 @@ fo.write("\t{ NULL }\n};\n")
 
 fo.close()
 fh.close()
+
+#######################################################################
+
+fo = open(buildroot + "/lib/libvcl/vcc_fixed_token.c", "w")
+
+file_header(fo)
+fo.write("""
+
+#include "config.h"
+#include <stdio.h>
+#include <ctype.h>
+#include "config.h"
+#include "vcc_priv.h"
+#include "vsb.h"
+""")
+
+emit_vcl_fixed_token(fo, tokens)
+emit_vcl_tnames(fo, tokens)
+
+fo.write("""
+void
+vcl_output_lang_h(struct vsb *sb)
+{
+""")
+
+emit_file(fo, buildroot + "/include/vcl.h")
+emit_file(fo, srcroot + "/include/vmod.h")
+emit_file(fo, srcroot + "/include/vrt.h")
+emit_file(fo, buildroot + "/include/vrt_obj.h")
+
+fo.write("""
+}
+""")
+
+fo.close()
+

@@ -1,6 +1,6 @@
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
 lib_LTLIBRARIES = libvcl.la
 
@@ -20,7 +20,7 @@ libvcl_la_SOURCES = \
 	vcc_dir_random.c \
 	vcc_dir_round_robin.c \
 	vcc_parse.c \
-	vcc_fixed_token.c \
+	$(builddir)/vcc_fixed_token.c \
 	vcc_obj.c \
 	vcc_string.c \
 	vcc_symb.c \
@@ -31,11 +31,9 @@ libvcl_la_SOURCES = \
 EXTRA_DIST = \
 	generate.py
 
-$(srcdir)/vcc_obj.c: $(srcdir)/generate.py
-	cd $(srcdir) && @PYTHON@ generate.py || true
+$(builddir)/vcc_obj.c $(builddir)/vcc_fixed_token.c $(builddir)/vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vmod.h $(top_srcdir)/include/vrt.h
+	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
 
-$(srcdir)/vcc_fixed_token.c: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @PYTHON@ generate.py || true
-
-$(srcdir)/vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vcl.h $(top_srcdir)/include/vrt.h $(top_srcdir)/include/vrt_obj.h
-	cd $(srcdir) && @PYTHON@ generate.py || true
+CLEANFILES = $(builddir)/vcc_token_defs.h \
+	$(builddir)/vcc_fixed_token.c \
+	$(builddir)/vcc_obj.c
