@@ -45,6 +45,7 @@ nobase_noinst_HEADERS = \
 	vlu.h \
 	vbm.h \
 	vmb.h \
+	vmod.h \
 	vre.h \
 	vrt.h \
 	vrt_obj.h \
