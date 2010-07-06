@@ -474,7 +474,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	q = p;
 	if (!vct_iscrlf(*p)) {
 		for (; !vct_iscrlf(*p); p++)
-			if (vct_isctl(*p))
+			if (!vct_issep(*p) && vct_isctl(*p))
 				return (-1);
 	}
 	hp->hd[h3].b = q;
