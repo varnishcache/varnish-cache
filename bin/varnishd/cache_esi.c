@@ -863,6 +863,7 @@ ESI_Deliver(struct sess *sp)
 	char *ws_wm;
 	struct http http_save;
 	struct esidata *ed;
+	unsigned sxid;
 
 	w = sp->wrk;
 	WRW_Reserve(w, &sp->fd);
@@ -873,7 +874,7 @@ ESI_Deliver(struct sess *sp)
 		if (Tlen(eb->verbatim)) {
 			if (sp->http->protover >= 1.1)
 				(void)WRW_Write(w, eb->chunk_length, -1);
-			sp->acct_req.bodybytes += WRW_Write(w,
+			sp->acct_tmp.bodybytes += WRW_Write(w,
 			    eb->verbatim.b, Tlen(eb->verbatim));
 			if (sp->http->protover >= 1.1)
 				(void)WRW_Write(w, "\r\n", -1);
@@ -923,6 +924,7 @@ ESI_Deliver(struct sess *sp)
 		/* Client content already taken care of */
 		http_Unset(sp->http, H_Content_Length);
 
+		sxid = sp->xid;
 		while (1) {
 			sp->wrk = w;
 			CNT_Session(sp);
@@ -933,6 +935,7 @@ ESI_Deliver(struct sess *sp)
 			DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
 			(void)usleep(10000);
 		}
+		sp->xid = sxid;
 		AN(sp->wrk);
 		assert(sp->step == STP_DONE);
 		sp->esis--;

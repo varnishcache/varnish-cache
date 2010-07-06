@@ -259,7 +259,7 @@ RES_WriteObj(struct sess *sp)
 
 		if (sp->esis == 0)
 			/* no headers for interior ESI includes */
-			sp->acct_req.hdrbytes +=
+			sp->acct_tmp.hdrbytes +=
 			    http_Write(sp->wrk, sp->wrk->resp, 1);
 
 		if (WRW_FlushRelease(sp->wrk)) {
@@ -284,7 +284,7 @@ RES_WriteObj(struct sess *sp)
 		    http_GetHdr(sp->http, H_Range, &r))
 			res_dorange(sp, r, &low, &high);
 
-		sp->acct_req.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
+		sp->acct_tmp.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
 	} else if (!sp->disable_esi &&
 	    sp->esis > 0 &&
 	    sp->http->protover >= 1.1 &&
@@ -330,7 +330,7 @@ RES_WriteObj(struct sess *sp)
 
 		ptr += len;
 
-		sp->acct_req.bodybytes += len;
+		sp->acct_tmp.bodybytes += len;
 #ifdef SENDFILE_WORKS
 		/*
 		 * XXX: the overhead of setting up sendfile is not

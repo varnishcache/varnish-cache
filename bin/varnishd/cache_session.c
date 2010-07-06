@@ -84,11 +84,12 @@ static struct lock		stat_mtx;
 void
 SES_Charge(struct sess *sp)
 {
-	struct acct *a = &sp->acct_req;
+	struct acct *a = &sp->acct_tmp;
 
-#define ACCT(foo)	\
+#define ACCT(foo)				\
 	sp->wrk->stats.s_##foo += a->foo;	\
-	sp->acct.foo += a->foo;		\
+	sp->acct_req.foo += a->foo;		\
+	sp->acct_ses.foo += a->foo;		\
 	a->foo = 0;
 #include "acct_fields.h"
 #undef ACCT
@@ -248,7 +249,7 @@ SES_Alloc(void)
 void
 SES_Delete(struct sess *sp)
 {
-	struct acct *b = &sp->acct;
+	struct acct *b = &sp->acct_ses;
 	struct sessmem *sm;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
