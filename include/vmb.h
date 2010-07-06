@@ -36,7 +36,7 @@
 
 void vmb_pthread(void);
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && __FreeBSD_version >= 800058
 #include <sys/types.h>
 #include <machine/atomic.h>
 #define VMB()		mb()
