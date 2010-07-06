@@ -131,7 +131,7 @@ res_do_conds(struct sess *sp)
 static void
 res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 {
-	unsigned low, high;
+	unsigned low, high, has_low;
 
 	(void)sp;
 	if (strncmp(r, "bytes=", 6))
@@ -139,10 +139,11 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 	r += 6;
 
 	/* The low end of range */
-	low = 0;
+	has_low = low = 0;
 	if (!vct_isdigit(*r) && *r != '-')
 		return;
 	while (vct_isdigit(*r)) {
+		has_low = 1;
 		low *= 10;
 		low += *r - '0';
 		r++;
@@ -162,6 +163,10 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 			high *= 10;
 			high += *r - '0';
 			r++;
+		}
+		if (!has_low) {
+			low = sp->obj->len - high;
+			high = sp->obj->len - 1;
 		}
 	} else
 		high = sp->obj->len - 1;

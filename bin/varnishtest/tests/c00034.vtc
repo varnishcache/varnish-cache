@@ -59,7 +59,7 @@ client c1 {
 	txreq -hdr "Range: bytes=-9"
 	rxresp
 	expect resp.status == 206
-	expect resp.bodylen == 10
+	expect resp.bodylen == 9
 
 	txreq -hdr "Range: bytes=-"
 	rxresp
