@@ -487,6 +487,23 @@ parse_synthetic(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------*/
+static void
+parse_log(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+
+	Fb(tl, 1, "VRT_log(sp, ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	do
+		Fb(tl, 0, ", ");
+	while (vcc_StringVal(tl));
+	Fb(tl, 0, " vrt_magic_string_end);\n");
+}
+
+/*--------------------------------------------------------------------*/
 
 typedef void action_f(struct vcc *tl);
 
@@ -515,6 +532,7 @@ static struct action_table {
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic },
 	{ "unset",		parse_unset },
+	{ "log",		parse_log },
 	{ NULL,			NULL }
 };
 
