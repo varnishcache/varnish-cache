@@ -347,7 +347,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 				continue;
 		}
 		if (vd->regexcl != NULL) {
-			i = VRE_exec(vd->regincl,
+			i = VRE_exec(vd->regexcl,
 				     (char *)p + SHMLOG_DATA,
 				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
 				     0, 0, NULL, 0);
