@@ -138,6 +138,7 @@ void VRT_panic(struct sess *sp, const char *, ...);
 void VRT_ban(struct sess *sp, char *, ...);
 void VRT_ban_string(struct sess *sp, const char *, ...);
 void VRT_purge(struct sess *sp, double ttl, double grace);
+void VRT_log(struct sess *, const char *msg, ...);
 
 void VRT_count(const struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);

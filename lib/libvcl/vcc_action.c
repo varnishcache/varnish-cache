@@ -488,7 +488,7 @@ parse_synthetic(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 static void
-parse_log(struct tokenlist *tl)
+parse_log(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
