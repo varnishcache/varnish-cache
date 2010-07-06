@@ -50,8 +50,6 @@ res_do_304(struct sess *sp)
 	char lm[64];
 	char *p;
 
-	WSP(sp, SLT_Length, "%u", 0);
-
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
 	http_SetResp(sp->wrk->resp, "HTTP/1.1", "304", "Not Modified");
@@ -202,8 +200,6 @@ RES_BuildHttp(struct sess *sp)
 
 	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
 		return;
-
-	WSP(sp, SLT_Length, "%u", sp->obj->len);
 
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;

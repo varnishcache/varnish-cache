@@ -246,12 +246,14 @@ cnt_done(struct sess *sp)
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
+	} else {
+		dp = sp->t_resp - sp->t_req;
+		da = sp->t_end - sp->t_resp;
+		dh = sp->t_req - sp->t_open;
+		WSP(sp, SLT_Length, "%u", sp->acct_req.bodybytes);
+		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
+		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
-	dp = sp->t_resp - sp->t_req;
-	da = sp->t_end - sp->t_resp;
-	dh = sp->t_req - sp->t_open;
-	WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
-	    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 
 	sp->xid = 0;
 	sp->t_open = sp->t_end;
