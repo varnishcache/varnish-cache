@@ -45,7 +45,7 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 static void vcc_Compound(struct vcc *tl);
-static void vcc_Cond_0(struct vcc *tl);
+static void vcc_Conditional(struct vcc *tl);
 
 /*--------------------------------------------------------------------*/
 
@@ -381,19 +381,15 @@ vcc_Cond_2(struct vcc *tl)
 
 	C(tl, ",");
 	if (tl->t->tok == '!') {
-		Fb(tl, 1, "!(\n");
+		Fb(tl, 1, "!");
 		vcc_NextToken(tl);
-	} else {
-		Fb(tl, 1, "(\n");
 	}
 	if (tl->t->tok == '(') {
-		vcc_NextToken(tl);
-		vcc_Cond_0(tl);
-		SkipToken(tl, ')');
-		Fb(tl, 1, ")\n");
+		vcc_Conditional(tl);
 		return;
 	}
 	if (tl->t->tok == ID) {
+		Fb(tl, 1, "(\n");
 		vcc_Cond_3(tl);
 		Fb(tl, 1, ")\n");
 		return;
@@ -418,6 +414,7 @@ vcc_Cond_1(struct vcc *tl)
 		vcc_NextToken(tl);
 		Fb(tl, 1, ") && (\n");
 		L(tl, vcc_Cond_2(tl));
+		ERRCHK(tl);
 	}
 	Fb(tl, 1, ")\n");
 }
@@ -432,6 +429,7 @@ vcc_Cond_0(struct vcc *tl)
 		vcc_NextToken(tl);
 		Fb(tl, 1, ") || (\n");
 		L(tl, vcc_Cond_1(tl));
+		ERRCHK(tl);
 	}
 	Fb(tl, 1, ")\n");
 }
