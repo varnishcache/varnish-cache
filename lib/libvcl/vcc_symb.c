@@ -56,7 +56,9 @@ VCC_AddSymbol(struct vcc *tl, const char *name)
 		WRONG("name collision");
 	}
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
+	AN(sym);
 	REPLACE(sym->name, name);
+	AN(name);
 	sym->nlen = strlen(name);
 	VTAILQ_INSERT_TAIL(&tl->symbols, sym, list);
 	return (sym);

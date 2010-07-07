@@ -51,10 +51,12 @@ SVNID("$Id$")
 	tl->indent -= INDENT;	\
 } while (0)
 
+#if 0
 #define C(tl, sep)	do {					\
 	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt;					\
 } while (0)
+#endif
 
 /*--------------------------------------------------------------------
  * Recognize and convert units of time, return seconds.
@@ -114,30 +116,44 @@ vcc_UintVal(struct vcc *tl)
  * The tokenizer made sure we only get digits and a '.'
  */
 
-double
-vcc_DoubleVal(struct vcc *tl)
+static void
+vcc_NumVal(struct vcc *tl, double *d, int *frac)
 {
-	double d = 0.0, e = 0.1;
+	double e = 0.1;
 	const char *p;
 
+	*frac = 0;
+	*d = 0.0;
 	Expect(tl, CNUM);
-	if (tl->err)
-		return (NAN);
+	if (tl->err) {
+		*d = NAN;
+		return;
+	}
 	for (p = tl->t->b; p < tl->t->e; p++) {
-		d *= 10;
-		d += *p - '0';
+		*d *= 10;
+		*d += *p - '0';
 	}
 	vcc_NextToken(tl);
 	if (tl->t->tok != '.')
-		return (d);
+		return;
+	*frac = 1;
 	vcc_NextToken(tl);
 	if (tl->t->tok != CNUM)
-		return (d);
+		return;
 	for (p = tl->t->b; p < tl->t->e; p++) {
-		d += (*p - '0') * e;
+		*d += (*p - '0') * e;
 		e *= 0.1;
 	}
 	vcc_NextToken(tl);
+}
+
+double
+vcc_DoubleVal(struct vcc *tl)
+{
+	double d;
+	int i;
+
+	vcc_NumVal(tl, &d, &i);
 	return (d);
 }
 
@@ -176,27 +192,156 @@ vcc_TimeVal(struct vcc *tl, double *d)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_Expr2(struct vcc *tl, enum var_type *fmt)
+{
+	const struct symbol *sym;
+	const struct var *vp;
+	double d;
+	int frac;
+
+	*fmt = VOID;
+	switch(tl->t->tok) {
+	case ID:
+		sym = VCC_FindSymbol(tl, tl->t);
+		if (sym == NULL) {
+			vsb_printf(tl->sb,
+			    "Unknown symbol in numeric expression:\n");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, "\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+		AN(sym->var);
+		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
+		ERRCHK(tl);
+		assert(vp != NULL);
+		Fb(tl, 1, "%s\n", vp->rname);
+		*fmt = sym->fmt;
+		vcc_NextToken(tl);
+		return;
+	case CNUM:
+		vcc_NumVal(tl, &d, &frac);
+		ERRCHK(tl);
+		if (tl->t->tok == ID) {
+			d *= vcc_TimeUnit(tl);
+			ERRCHK(tl);
+			*fmt = DURATION;
+		} else if (!frac) {
+			*fmt = INT;
+		} else {
+			WRONG("numeric constant botch");
+		}
+		Fb(tl, 1, "%g\n", d);
+		return;
+
+	default:
+		vsb_printf(tl->sb,
+		    "Unknown token in numeric expression:\n");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, "\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}
+
+static void
+vcc_Expr1(struct vcc *tl, enum var_type fmt)
+{
+	enum var_type lfmt, rfmt, afmt;
+	struct token *top;
+	struct token *tfirst;
+
+	tfirst = tl->t;
+	Fb(tl, 1, "(\n");
+	L(tl, vcc_Expr2(tl, &lfmt));
+	ERRCHK(tl);
+	afmt = lfmt;
+	while (1) {
+		top = tl->t;
+		if (tl->t->tok == '+') {
+			vcc_NextToken(tl);
+			Fb(tl, 1, " +\n");
+			L(tl, vcc_Expr2(tl, &rfmt));
+			ERRCHK(tl);
+			if (lfmt == INT && rfmt == INT)
+				afmt = INT;
+			else if (lfmt == DURATION && rfmt == DURATION)
+				afmt = DURATION;
+			else if (lfmt == TIME && rfmt == DURATION)
+				afmt = TIME;
+			else if (lfmt == DURATION && rfmt == TIME)
+				afmt = TIME;
+			else {
+				vsb_printf(tl->sb,
+				    /* XXX print actual types */
+				    "Incompatible types in addition.\n"
+				    "Legal combinations:\n"
+				    "\tINT+INT,\n"
+				    "\tDURATION+DURATION,\n"
+				    "\tDURATION+TIME,\n"
+				    "\tTIME+DURATION\n");
+				vcc_ErrWhere(tl, top);
+				return;
+			}
+		} else if (tl->t->tok == '-') {
+			vcc_NextToken(tl);
+			Fb(tl, 1, " -\n");
+			L(tl, vcc_Expr2(tl, &rfmt));
+			if (lfmt == INT && rfmt == INT)
+				afmt = INT;
+			else if (lfmt == DURATION && rfmt == DURATION)
+				afmt = DURATION;
+			else if (lfmt == TIME && rfmt == DURATION)
+				afmt = TIME;
+			else if (lfmt == TIME && rfmt == TIME)
+				afmt = DURATION;
+			else {
+				vsb_printf(tl->sb,
+				    /* XXX print actual types */
+				    "Incompatible types in subtraction.\n"
+				    "Legal combinations:\n"
+				    "\tINT-INT,\n"
+				    "\tDURATION-DURATION,\n"
+				    "\tTIME-DURATION,\n"
+				    "\tTIME-TIME,\n");
+				vcc_ErrWhere(tl, top);
+				return;
+			}
+		} else 
+			break;
+		lfmt = afmt;
+	}
+	Fb(tl, 1, ")\n");
+	if (fmt != afmt) {
+		vsb_printf(tl->sb,
+		    /* XXX print actual types */
+		    "Add/Subtract results in wrong type.\n"
+		    "\nExpression starting at:\n" );
+		vcc_ErrWhere(tl, tfirst);
+		vsb_printf(tl->sb, "\nending before:\n\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+}
+
 void
 vcc_Expr(struct vcc *tl, enum var_type fmt)
 {
-	double d;
 
-	switch(fmt) {
+	switch (fmt) {
 	case DURATION:
-		vcc_RTimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g\n", d);
-		break;
-	case TIME:
-		vcc_RTimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g\n", d);
-		break;
 	case INT:
-		Fb(tl, 0, "%u\n", vcc_UintVal(tl));
+	case TIME:
+		/* These types support addition and subtraction */
+		Fb(tl, 1, "(\n");
+		L(tl, vcc_Expr1(tl, fmt));
 		ERRCHK(tl);
-		break;
+		Fb(tl, 1, ")\n");
+		return;
 	default:
-		WRONG("missing type support");
+		WRONG("type not implemented yet");
 	}
 }
+

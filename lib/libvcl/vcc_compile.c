@@ -383,7 +383,7 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(struct vcc *tl, struct vsb *sb, const char *fn)
+vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 {
 	char *f;
 	struct source *sp;

@@ -34,7 +34,6 @@ SVNID("$Id$")
 
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 #include "vsb.h"
 
@@ -96,6 +95,7 @@ vcc_Cond_String(struct vcc *tl, const char *a1)
 	case '>':
 	case '<':
 		vcc_inval_test(tl, "STRING", "'==', '!=', '~' and '!~'");
+		break;
 	case T_EQ:
 	case T_NEQ:
 		Fb(tl, 1, "%sVRT_strcmp(%s, ",
@@ -114,7 +114,7 @@ vcc_Cond_String(struct vcc *tl, const char *a1)
 }
 
 static void
-vcc_Cond_Bool(struct vcc *tl, const char *a1)
+vcc_Cond_Bool(const struct vcc *tl, const char *a1)
 {
 
 	Fb(tl, 1, "%s\n", a1);
@@ -152,7 +152,7 @@ vcc_Cond_Num(struct vcc *tl, enum var_type fmt, const char *fmtn,
 	case T_GEQ:
 	case '>':
 	case '<':
-		Fb(tl, 0, "%.*s ", PF(tl->t));
+		Fb(tl, 0, "%.*s\n", PF(tl->t));
 		vcc_NextToken(tl);
 		vcc_Expr(tl, fmt);
 		break;
