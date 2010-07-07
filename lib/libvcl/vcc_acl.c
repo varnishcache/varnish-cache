@@ -449,18 +449,19 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 }
 
 void
-vcc_Cond_Ip(const struct var *vp, struct vcc *tl)
+vcc_Cond_Ip(struct vcc *tl, const char *a1)
 {
 	unsigned tcond;
 	char acln[32];
 
 	switch (tl->t->tok) {
+	/* XXX: T_NOMATCH */
 	case '~':
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, R_ACL);
 		Fb(tl, 1, "match_acl_named_%.*s(sp, %s)\n",
-		    PF(tl->t), vp->rname);
+		    PF(tl->t), a1);
 		vcc_NextToken(tl);
 		break;
 	case T_EQ:
@@ -473,7 +474,7 @@ vcc_Cond_Ip(const struct var *vp, struct vcc *tl)
 		vcc_acl_entry(tl);
 		vcc_acl_emit(tl, acln, 1);
 		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
-		    (tcond == T_NEQ ? "!" : ""), acln, vp->rname);
+		    (tcond == T_NEQ ? "!" : ""), acln, a1);
 		break;
 	default:
 		vsb_printf(tl->sb, "Invalid condition ");

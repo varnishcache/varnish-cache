@@ -174,7 +174,7 @@ struct method {
 /* vcc_acl.c */
 
 void vcc_Acl(struct vcc *tl);
-void vcc_Cond_Ip(const struct var *vp, struct vcc *tl);
+void vcc_Cond_Ip(struct vcc *tl, const char *a1);
 
 /* vcc_action.c */
 int vcc_ParseAction(struct vcc *tl);

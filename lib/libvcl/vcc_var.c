@@ -144,16 +144,6 @@ vcc_VarVal(struct vcc *tl, const struct var *vp, const struct token *vt)
 		vcc_RTimeVal(tl, &d);
 		ERRCHK(tl);
 		Fb(tl, 0, "%g", d);
-#if 0
-	} else if (vp->fmt == SIZE) {
-		vcc_SizeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g", d);
-#endif
-#if 0
-	} else if (vp->fmt == FLOAT) {
-		Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-#endif
 	} else if (vp->fmt == INT) {
 		Fb(tl, 0, "%u", vcc_UintVal(tl));
 	} else {

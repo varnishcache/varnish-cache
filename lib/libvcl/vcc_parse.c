@@ -60,6 +60,18 @@ static void vcc_Cond_0(struct vcc *tl);
 	tl->t->cnt = tl->cnt;					\
 } while (0)
 
+/*--------------------------------------------------------------------*/
+
+static void
+vcc_inval_test(struct vcc *tl, const char *type, const char *valid)
+{
+	vsb_printf(tl->sb, "Invalid test ");
+	vcc_ErrToken(tl, tl->t);
+	vsb_printf(tl->sb, " on expression of type %s.\n", type);
+	vsb_printf(tl->sb, "  only %s are legal\n", valid);
+	vcc_ErrWhere(tl, tl->t);
+}
+
 /*--------------------------------------------------------------------
  * Recognize and convert units of time, return seconds.
  */
@@ -92,37 +104,6 @@ vcc_TimeUnit(struct vcc *tl)
 	vcc_NextToken(tl);
 	return (sc);
 }
-
-#if 0
-/*--------------------------------------------------------------------
- * Recognize and convert units of size, return bytes.
- */
-
-static double
-vcc_SizeUnit(struct vcc *tl)
-{
-	double sc = 1.0;
-
-	assert(tl->t->tok == ID);
-	if (vcc_IdIs(tl->t, "b"))
-		sc = 1.0;
-	else if (vcc_IdIs(tl->t, "kb"))
-		sc = 1024.0;
-	else if (vcc_IdIs(tl->t, "mb") || vcc_IdIs(tl->t, "Mb"))
-		sc = 1024.0 * 1024.0;
-	else if (vcc_IdIs(tl->t, "gb") || vcc_IdIs(tl->t, "Gb"))
-		sc = 1024.0 * 1024.0 * 1024.0;
-	else {
-		vsb_printf(tl->sb, "Unknown size unit ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, ".  Legal are 'kb', 'mb' and 'gb'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return (1.0);
-	}
-	vcc_NextToken(tl);
-	return (sc);
-}
-#endif
 
 /*--------------------------------------------------------------------
  * Recognize and convert { CNUM } to unsigned value
@@ -209,26 +190,10 @@ vcc_TimeVal(struct vcc *tl, double *d)
 	*d = v * sc;
 }
 
-#if 0
-/*--------------------------------------------------------------------*/
-
-void
-vcc_SizeVal(struct vcc *tl, double *d)
-{
-	double v, sc;
-
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = vcc_SizeUnit(tl);
-	*d = v * sc;
-}
-#endif
-
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_Cond_String(const struct var *vp, struct vcc *tl)
+vcc_Cond_String(struct vcc *tl, const char *a1)
 {
 	char *p;
 
@@ -242,12 +207,17 @@ vcc_Cond_String(const struct var *vp, struct vcc *tl)
 		p = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		Fb(tl, 1, "%s, %s)\n", vp->rname, p);
+		Fb(tl, 1, "%s, %s)\n", a1, p);
 		break;
+	case T_LEQ:
+	case T_GEQ:
+	case '>':
+	case '<':
+		vcc_inval_test(tl, "STRING", "'==', '!=', '~' and '!~'");
 	case T_EQ:
 	case T_NEQ:
 		Fb(tl, 1, "%sVRT_strcmp(%s, ",
-		    tl->t->tok == T_EQ ? "!" : "", vp->rname);
+		    tl->t->tok == T_EQ ? "!" : "", a1);
 		vcc_NextToken(tl);
 		if (!vcc_StringVal(tl)) {
 			vcc_ExpectedStringval(tl);
@@ -256,16 +226,16 @@ vcc_Cond_String(const struct var *vp, struct vcc *tl)
 		Fb(tl, 0, ")\n");
 		break;
 	default:
-		Fb(tl, 1, "%s != (void*)0\n", vp->rname);
+		Fb(tl, 1, "%s != (void*)0\n", a1);
 		break;
 	}
 }
 
 static void
-vcc_Cond_Int(const struct var *vp, struct vcc *tl)
+vcc_Cond_Int(struct vcc *tl, const char *a1)
 {
 
-	Fb(tl, 1, "%s ", vp->rname);
+	Fb(tl, 1, "%s ", a1);
 	switch (tl->t->tok) {
 	case T_EQ:
 	case T_NEQ:
@@ -275,44 +245,33 @@ vcc_Cond_Int(const struct var *vp, struct vcc *tl)
 	case '<':
 		Fb(tl, 0, "%.*s ", PF(tl->t));
 		vcc_NextToken(tl);
-		vcc_VarVal(tl, vp, NULL);
+                Fb(tl, 0, "%u", vcc_UintVal(tl));
 		ERRCHK(tl);
 		Fb(tl, 0, "\n");
 		break;
 	default:
-		vsb_printf(tl->sb, "Invalid condition ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " on numeric variable\n");
-		vsb_printf(tl->sb,
-		    "  only '==', '!=', '<', '>', '<=' and '>=' are legal\n");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_inval_test(tl, "INT",
+		    "'==', '!=', '<', '>', '<=' and '>='");
 		break;
 	}
 }
 
 static void
-vcc_Cond_Bool(const struct var *vp, const struct vcc *tl)
+vcc_Cond_Bool(struct vcc *tl, const char *a1)
 {
 
-	Fb(tl, 1, "%s\n", vp->rname);
+	Fb(tl, 1, "%s\n", a1);
 }
 
 static void
-vcc_Cond_Backend(const struct var *vp, struct vcc *tl)
+vcc_Cond_Backend(struct vcc *tl, const char *a1)
 {
 
-	Fb(tl, 1, "%s\n", vp->rname);
-	if (tl->t->tok == T_EQ) {
-		Fb(tl, 1, "  ==\n");
-	} else if (tl->t->tok == T_NEQ) {
-		Fb(tl, 1, "  !=\n");
+	Fb(tl, 1, "%s\n", a1);
+	if (tl->t->tok == T_EQ || tl->t->tok == T_NEQ) {
+		Fb(tl, 1, "  %.*s\n", PF(tl->t));
 	} else {
-		vsb_printf(tl->sb, "Invalid condition ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " on backend variable\n");
-		vsb_printf(tl->sb,
-		    "  only '==' and '!=' are legal\n");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_inval_test(tl, "BACKEND", "'==' and '!='");
 		return;
 	}
 	vcc_NextToken(tl);
@@ -323,44 +282,56 @@ vcc_Cond_Backend(const struct var *vp, struct vcc *tl)
 	vcc_NextToken(tl);
 }
 
-const char *typenm[] = {
-#define VCC_TYPE(foo)	[foo] = #foo,
-#include "vcc_types.h"
-#undef VCC_TYPE
-};
-
-static int
-vcc_Relation(struct vcc *tl, enum var_type fmt)
+static void
+vcc_Cond_Time(struct vcc *tl, const char *a1)
 {
+	double d;
 
-	switch(tl->t->tok) {
+	Fb(tl, 1, "%s ", a1);
+	switch (tl->t->tok) {
 	case T_EQ:
 	case T_NEQ:
-		if (fmt != BOOL)
-			return (tl->t->tok);
-		break;
-	case '>':
-	case T_GEQ:
-	case '<':
 	case T_LEQ:
-		if (fmt == INT || fmt == TIME || fmt == DURATION)
-			return (tl->t->tok);
-		break;
-	case '~':
-	case T_NOMATCH:
-		if (fmt == IP || fmt == STRING || fmt == HEADER)
-			return (tl->t->tok);
+	case T_GEQ:
+	case '>':
+	case '<':
+		Fb(tl, 0, "%.*s ", PF(tl->t));
+		vcc_NextToken(tl);
+		vcc_RTimeVal(tl, &d);
+		ERRCHK(tl);
+		Fb(tl, 0, "%g\n", d);
 		break;
 	default:
-		if (fmt == STRING || fmt == HEADER || fmt == BOOL)
-			return (-1);
+		vcc_inval_test(tl, "TIME",
+		    "'==', '!=', '<', '>', '<=' and '>='");
 		break;
 	}
-	vsb_printf(tl->sb, "Invalid comparison/match operator ");
-	vsb_printf(tl->sb, " for type %s.\n", typenm[fmt]);
-	vcc_ErrToken(tl, tl->t);
-	vcc_ErrWhere(tl, tl->t);
-	return (-1);
+}
+
+static void
+vcc_Cond_Duration(struct vcc *tl, const char *a1)
+{
+	double d;
+
+	Fb(tl, 1, "%s ", a1);
+	switch (tl->t->tok) {
+	case T_EQ:
+	case T_NEQ:
+	case T_LEQ:
+	case T_GEQ:
+	case '>':
+	case '<':
+		Fb(tl, 0, "%.*s ", PF(tl->t));
+		vcc_NextToken(tl);
+		vcc_RTimeVal(tl, &d);
+		ERRCHK(tl);
+		Fb(tl, 0, "%g\n", d);
+		break;
+	default:
+		vcc_inval_test(tl, "DURATION",
+		    "'==', '!=', '<', '>', '<=' and '>='");
+		break;
+	}
 }
 
 static void
@@ -386,16 +357,14 @@ vcc_Cond_3(struct vcc *tl)
 	ERRCHK(tl);
 	assert(vp != NULL);
 	vcc_NextToken(tl);
-	vcc_Relation(tl, sym->fmt);
 	switch (vp->fmt) {
-	case INT:	L(tl, vcc_Cond_Int(vp, tl)); break;
-	// case SIZE:	L(tl, vcc_Cond_Int(vp, tl)); break;
-	case BOOL:	L(tl, vcc_Cond_Bool(vp, tl)); break;
-	case IP:	L(tl, vcc_Cond_Ip(vp, tl)); break;
-	case STRING:	L(tl, vcc_Cond_String(vp, tl)); break;
-	case TIME:	L(tl, vcc_Cond_Int(vp, tl)); break;
-	case DURATION:	L(tl, vcc_Cond_Int(vp, tl)); break;
-	case BACKEND:	L(tl, vcc_Cond_Backend(vp, tl)); break;
+	case BACKEND:	L(tl, vcc_Cond_Backend(tl, vp->rname)); break;
+	case BOOL:	L(tl, vcc_Cond_Bool(tl, vp->rname)); break;
+	case DURATION:	L(tl, vcc_Cond_Duration(tl, vp->rname)); break;
+	case INT:	L(tl, vcc_Cond_Int(tl, vp->rname)); break;
+	case IP:	L(tl, vcc_Cond_Ip(tl, vp->rname)); break;
+	case STRING:	L(tl, vcc_Cond_String(tl, vp->rname)); break;
+	case TIME:	L(tl, vcc_Cond_Time(tl, vp->rname)); break;
 	default:
 		vsb_printf(tl->sb,
 		    "Variable '%s'"

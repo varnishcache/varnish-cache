@@ -127,10 +127,8 @@ parse_set(struct vcc *tl)
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
 	case INT:
-//	case SIZE:
 	case TIME:
 	case DURATION:
-//	case FLOAT:
 		if (tl->t->tok != '=')
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 		at = tl->t;
@@ -153,22 +151,6 @@ parse_set(struct vcc *tl)
 		}
 		Fb(tl, 0, ");\n");
 		break;
-#if 0	/* XXX: enable if we find a legit use */
-	case IP:
-		if (tl->t->tok != '=') {
-			illegal_assignment(tl, "IP numbers");
-			return;
-		}
-		vcc_NextToken(tl);
-		u = vcc_vcc_IpVal(tl);
-		Fb(tl, 0, "= %uU; /* %u.%u.%u.%u */\n",
-		    u,
-		    (u >> 24) & 0xff,
-		    (u >> 16) & 0xff,
-		    (u >> 8) & 0xff,
-		    u & 0xff);
-		break;
-#endif
 	case BACKEND:
 		if (tl->t->tok != '=') {
 			illegal_assignment(tl, "backend");
