@@ -72,124 +72,6 @@ vcc_inval_test(struct vcc *tl, const char *type, const char *valid)
 	vcc_ErrWhere(tl, tl->t);
 }
 
-/*--------------------------------------------------------------------
- * Recognize and convert units of time, return seconds.
- */
-
-static double
-vcc_TimeUnit(struct vcc *tl)
-{
-	double sc = 1.0;
-
-	assert(tl->t->tok == ID);
-	if (vcc_IdIs(tl->t, "ms"))
-		sc = 1e-3;
-	else if (vcc_IdIs(tl->t, "s"))
-		sc = 1.0;
-	else if (vcc_IdIs(tl->t, "m"))
-		sc = 60.0;
-	else if (vcc_IdIs(tl->t, "h"))
-		sc = 60.0 * 60.0;
-	else if (vcc_IdIs(tl->t, "d"))
-		sc = 60.0 * 60.0 * 24.0;
-	else if (vcc_IdIs(tl->t, "w"))
-		sc = 60.0 * 60.0 * 24.0 * 7.0;
-	else {
-		vsb_printf(tl->sb, "Unknown time unit ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, ".  Legal are 's', 'm', 'h' and 'd'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return (1.0);
-	}
-	vcc_NextToken(tl);
-	return (sc);
-}
-
-/*--------------------------------------------------------------------
- * Recognize and convert { CNUM } to unsigned value
- * The tokenizer made sure we only get digits.
- */
-
-unsigned
-vcc_UintVal(struct vcc *tl)
-{
-	unsigned d = 0;
-	const char *p;
-
-	Expect(tl, CNUM);
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		d *= 10;
-		d += *p - '0';
-	}
-	vcc_NextToken(tl);
-	return (d);
-}
-
-/*--------------------------------------------------------------------
- * Recognize and convert { CNUM [ '.' [ CNUM ] ] } to double value
- * The tokenizer made sure we only get digits and a '.'
- */
-
-double
-vcc_DoubleVal(struct vcc *tl)
-{
-	double d = 0.0, e = 0.1;
-	const char *p;
-
-	Expect(tl, CNUM);
-	if (tl->err)
-		return (NAN);
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		d *= 10;
-		d += *p - '0';
-	}
-	vcc_NextToken(tl);
-	if (tl->t->tok != '.')
-		return (d);
-	vcc_NextToken(tl);
-	if (tl->t->tok != CNUM)
-		return (d);
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		d += (*p - '0') * e;
-		e *= 0.1;
-	}
-	vcc_NextToken(tl);
-	return (d);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-vcc_RTimeVal(struct vcc *tl, double *d)
-{
-	double v, sc;
-	int sign = 1;
-
-	if (tl->t->tok == '-') {
-		sign *= -1;
-		vcc_NextToken(tl);
-	}
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = vcc_TimeUnit(tl);
-	*d = sign * v * sc;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-vcc_TimeVal(struct vcc *tl, double *d)
-{
-	double v, sc;
-
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = vcc_TimeUnit(tl);
-	*d = v * sc;
-}
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -232,31 +114,6 @@ vcc_Cond_String(struct vcc *tl, const char *a1)
 }
 
 static void
-vcc_Cond_Int(struct vcc *tl, const char *a1)
-{
-
-	Fb(tl, 1, "%s ", a1);
-	switch (tl->t->tok) {
-	case T_EQ:
-	case T_NEQ:
-	case T_LEQ:
-	case T_GEQ:
-	case '>':
-	case '<':
-		Fb(tl, 0, "%.*s ", PF(tl->t));
-		vcc_NextToken(tl);
-                Fb(tl, 0, "%u", vcc_UintVal(tl));
-		ERRCHK(tl);
-		Fb(tl, 0, "\n");
-		break;
-	default:
-		vcc_inval_test(tl, "INT",
-		    "'==', '!=', '<', '>', '<=' and '>='");
-		break;
-	}
-}
-
-static void
 vcc_Cond_Bool(struct vcc *tl, const char *a1)
 {
 
@@ -283,9 +140,9 @@ vcc_Cond_Backend(struct vcc *tl, const char *a1)
 }
 
 static void
-vcc_Cond_Time(struct vcc *tl, const char *a1)
+vcc_Cond_Num(struct vcc *tl, enum var_type fmt, const char *fmtn,
+    const char *a1)
 {
-	double d;
 
 	Fb(tl, 1, "%s ", a1);
 	switch (tl->t->tok) {
@@ -297,38 +154,10 @@ vcc_Cond_Time(struct vcc *tl, const char *a1)
 	case '<':
 		Fb(tl, 0, "%.*s ", PF(tl->t));
 		vcc_NextToken(tl);
-		vcc_RTimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g\n", d);
+		vcc_Expr(tl, fmt);
 		break;
 	default:
-		vcc_inval_test(tl, "TIME",
-		    "'==', '!=', '<', '>', '<=' and '>='");
-		break;
-	}
-}
-
-static void
-vcc_Cond_Duration(struct vcc *tl, const char *a1)
-{
-	double d;
-
-	Fb(tl, 1, "%s ", a1);
-	switch (tl->t->tok) {
-	case T_EQ:
-	case T_NEQ:
-	case T_LEQ:
-	case T_GEQ:
-	case '>':
-	case '<':
-		Fb(tl, 0, "%.*s ", PF(tl->t));
-		vcc_NextToken(tl);
-		vcc_RTimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g\n", d);
-		break;
-	default:
-		vcc_inval_test(tl, "DURATION",
+		vcc_inval_test(tl, fmtn,
 		    "'==', '!=', '<', '>', '<=' and '>='");
 		break;
 	}
@@ -339,6 +168,7 @@ vcc_Cond_3(struct vcc *tl)
 {
 	const struct var *vp;
 	const struct symbol *sym;
+	const char *left;
 
 	sym = VCC_FindSymbol(tl, tl->t);
 	if (sym == NULL) {
@@ -356,15 +186,17 @@ vcc_Cond_3(struct vcc *tl)
 	vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 	ERRCHK(tl);
 	assert(vp != NULL);
+	left = vp->rname;
 	vcc_NextToken(tl);
+
 	switch (vp->fmt) {
-	case BACKEND:	L(tl, vcc_Cond_Backend(tl, vp->rname)); break;
-	case BOOL:	L(tl, vcc_Cond_Bool(tl, vp->rname)); break;
-	case DURATION:	L(tl, vcc_Cond_Duration(tl, vp->rname)); break;
-	case INT:	L(tl, vcc_Cond_Int(tl, vp->rname)); break;
-	case IP:	L(tl, vcc_Cond_Ip(tl, vp->rname)); break;
-	case STRING:	L(tl, vcc_Cond_String(tl, vp->rname)); break;
-	case TIME:	L(tl, vcc_Cond_Time(tl, vp->rname)); break;
+	case BACKEND:	L(tl, vcc_Cond_Backend(tl, left)); break;
+	case BOOL:	L(tl, vcc_Cond_Bool(tl, left)); break;
+	case DURATION:	L(tl, vcc_Cond_Num(tl, DURATION, "DURATION", left)); break;
+	case INT:	L(tl, vcc_Cond_Num(tl, INT, "INT", left)); break;
+	case IP:	L(tl, vcc_Cond_Ip(tl, left)); break;
+	case STRING:	L(tl, vcc_Cond_String(tl, left)); break;
+	case TIME:	L(tl, vcc_Cond_Num(tl, TIME, "TIME", left)); break;
 	default:
 		vsb_printf(tl->sb,
 		    "Variable '%s'"

@@ -215,16 +215,18 @@ parsedirector_f vcc_ParseRandomDirector;
 /* vcc_dir_round_robin.c */
 parsedirector_f vcc_ParseRoundRobinDirector;
 
+/* vcc_expr.c */
+void vcc_RTimeVal(struct vcc *tl, double *);
+void vcc_TimeVal(struct vcc *tl, double *);
+unsigned vcc_UintVal(struct vcc *tl);
+double vcc_DoubleVal(struct vcc *tl);
+void vcc_Expr(struct vcc *tl, enum var_type fmt);
+
 /* vcc_obj.c */
 extern const struct var vcc_vars[];
 
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
-void vcc_RTimeVal(struct vcc *tl, double *);
-void vcc_TimeVal(struct vcc *tl, double *);
-// void vcc_SizeVal(struct vcc *tl, double *);
-unsigned vcc_UintVal(struct vcc *tl);
-double vcc_DoubleVal(struct vcc *tl);
 
 /* vcc_string.c */
 char *vcc_regexp(struct vcc *tl);
