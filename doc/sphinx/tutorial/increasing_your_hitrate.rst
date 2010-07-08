@@ -7,7 +7,12 @@ Now that Varnish is up and running, and you can access your web
 application through Varnish. Unless your application is specifically
 written to work behind a web accelerator you'll probably need to do
 some changes to either the configuration or the application in order
-to get a high hitrate in Varnish.
+to get a high hit rate in Varnish.
+
+Varnish will not cache your data unless it's absolutely sure it is
+safe to do so. So, for you to understand how Varnish decides if and
+how to cache a page I'll guide you through a couple of tools that you
+will find useful.
 
 Note that you need a tool to see what HTTP headers fly between you and
 the web server. If you have Varnish the easiest is to use varnishlog
@@ -202,8 +207,8 @@ The Vary header is sent by the web server to indicate what makes a
 HTTP object Vary. This makes a lot of sense with headers like
 Accept-Encoding. When a server issues a "Vary: Accept-Encoding" it
 tells Varnish that its needs to cache a separate version for every
-different Accept-Encoding that is comming from the clients. So, if a
-clients only accepts gzip encoding Varnish wont't serve the version of
+different Accept-Encoding that is coming from the clients. So, if a
+clients only accepts gzip encoding Varnish won't serve the version of
 the page encoded with the deflate encoding.
 
 The problem is that the Accept-Encoding field contains a lot of
@@ -213,7 +218,7 @@ different encodings. If one browser sends::
 
 And another one sends::
 
-  Accept-Encoding:: deflate, gzip
+  Accept-Encoding:: deflate,gzip
 
 Varnish will keep two variants of the page requested due to the
 different Accept-Encoding headers. Normalizing the accept-encoding
@@ -245,8 +250,11 @@ with their content. This instructs Varnish to cache a separate copy
 for every variation of User-Agent there is. There are plenty. Even a
 single patchlevel of the same browser will generate at least 10
 different User-Agent headers based just on what operating system they
-are running. So if you need to Vary based on User-Agent be sure to
-normalize the header or your hit rate will suffer badly.
+are running. 
+
+So if you *really* need to Vary based on User-Agent be sure to
+normalize the header or your hit rate will suffer badly. Use the above
+code as a template.
 
 .. _tutorial-increasing_your_hitrate-pragma:
 
@@ -278,8 +286,8 @@ hostnames. http://www.varnish-software.com ,
 http://varnish-software.com and http://varnishsoftware.com/ all point
 at the same site. Since Varnish doesn't know they are different
 Varnish will cache different versions of every page for every
-hostname. You can mitigate this in your web server config by setting
-up redirects or by useing the following VCL:::
+hostname. You can mitigate this in your web server configuration by setting
+up redirects or by using the following VCL:::
 
   if (req.http.host ~ "^(www.)?varnish-?software.com") {
     set req.http.host = "varnish-software.com";
