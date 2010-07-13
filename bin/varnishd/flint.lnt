@@ -157,6 +157,7 @@
 -emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
 -emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(506, VSTAILQ_FOREACH_SAFE) // constant value boolean
 
 -esym(765, vcc_ProcAction) // could be made static
 -esym(759, vcc_ProcAction) // could be moved to module

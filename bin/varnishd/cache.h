@@ -206,6 +206,7 @@ struct worker {
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
+	void			*nhashpriv;
 	struct dstat		stats;
 
 	double			lastused;
