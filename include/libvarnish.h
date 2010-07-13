@@ -60,7 +60,16 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 #define TCP_ADDRBUFSIZE		64
 #define TCP_PORTBUFSIZE		16
 
+#if defined (__SVR4) && defined (__sun)
+/*
+ * Solaris returns EINVAL if the other end unexepectedly reset the
+ * connection.  This is a bug in Solaris.
+ */
+#define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN \
+    || errno == EINVAL)
+#else
 #define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN)
+#endif
 
 #define TCP_Assert(a) assert(TCP_Check(a))
 

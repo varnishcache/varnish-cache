@@ -84,7 +84,7 @@ server_thread(void *priv)
 {
 	struct server *s;
 	struct vtclog *vl;
-	int i, fd;
+	int i, j, fd;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
 	socklen_t l;
@@ -105,8 +105,9 @@ server_thread(void *priv)
 			vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 		http_process(vl, s->spec, fd, s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
-		assert((shutdown(fd, SHUT_WR) == 0)
-		    || errno == ENOTCONN || errno == ECONNRESET);
+		j = shutdown(fd, SHUT_WR);
+		if (!TCP_Check(j))
+			vtc_log(vl, 0, "Shutdown failed: %s", strerror(errno));
 		TCP_close(&fd);
 	}
 	macro_def(s->vl, s->name, "addr", NULL);

@@ -236,9 +236,11 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 void
 TCP_close(int *s)
 {
-	assert (close(*s) == 0 ||
-	    errno == ECONNRESET ||
-	    errno == ENOTCONN);
+	int i;
+
+	i = close(*s);
+
+	assert (TCP_Check(i));
 	*s = -1;
 }
 
