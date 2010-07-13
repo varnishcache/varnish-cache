@@ -34,6 +34,7 @@ SVNID("$Id$")
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "vsb.h"
 
@@ -153,6 +154,8 @@ vcc_DoubleVal(struct tokenlist *tl)
 	const char *p;
 
 	Expect(tl, CNUM);
+	if (tl->err)
+		return (NAN);
 	for (p = tl->t->b; p < tl->t->e; p++) {
 		d *= 10;
 		d += *p - '0';

@@ -321,7 +321,7 @@ parse_purge(struct tokenlist *tl)
 
 	vcc_NextToken(tl);
 
-	Expect(tl, '(');
+	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
 	if (tl->t->tok == VAR) {
@@ -390,7 +390,7 @@ parse_purge(struct tokenlist *tl)
 		Fb(tl, 0, "vrt_magic_string_end);\n");
 	}
 
-	Expect(tl, ')');
+	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 }
 
@@ -401,7 +401,7 @@ parse_purge_url(struct tokenlist *tl)
 {
 
 	vcc_NextToken(tl);
-	Expect(tl, '(');
+	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
 	Fb(tl, 1, "VRT_ban(sp, \"req.url\", \"~\", ");
@@ -409,7 +409,7 @@ parse_purge_url(struct tokenlist *tl)
 		vcc_ExpectedStringval(tl);
 		return;
 	}
-	Expect(tl, ')');
+	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 	Fb(tl, 0, ", 0);\n");
 }
@@ -450,9 +450,9 @@ parse_return(struct tokenlist *tl)
 	int retval = 0;
 
 	vcc_NextToken(tl);
-	Expect(tl, '(');
+	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
-	Expect(tl, ID);
+	ExpectErr(tl, ID);
 
 #define VCL_RET_MAC(l, U)						\
 	do {								\
@@ -470,7 +470,7 @@ parse_return(struct tokenlist *tl)
 		ERRCHK(tl);
 	}
 	vcc_NextToken(tl);
-	Expect(tl, ')');
+	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 }
 
