@@ -469,6 +469,7 @@ vcc_NewTokenList(void)
 	VTAILQ_INIT(&tl->sources);
 
 	tl->nsources = 0;
+	tl->ndirector = 1;
 
 	/* General C code */
 	tl->fc = vsb_newauto();
@@ -580,7 +581,7 @@ vcc_CompileSource(struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Check if we have any backends at all */
-	if (tl->ndirector == 0) {
+	if (tl->ndirector == 1) {
 		vsb_printf(tl->sb,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
