@@ -493,6 +493,23 @@ parse_synthetic(struct tokenlist *tl)
 }
 
 /*--------------------------------------------------------------------*/
+static void
+parse_log(struct tokenlist *tl)
+{
+	vcc_NextToken(tl);
+
+	Fb(tl, 1, "VRT_log(sp, ");
+	if (!vcc_StringVal(tl)) {
+		vcc_ExpectedStringval(tl);
+		return;
+	}
+	do
+		Fb(tl, 0, ", ");
+	while (vcc_StringVal(tl));
+	Fb(tl, 0, " vrt_magic_string_end);\n");
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 parse_new_syntax(struct tokenlist *tl)
@@ -530,6 +547,7 @@ static struct action_table {
 	{ "synthetic",		parse_synthetic },
 	{ "unset",		parse_unset },
 	{ "return",		parse_return },
+	{ "log",		parse_log },
 	{ NULL,			NULL }
 };
 

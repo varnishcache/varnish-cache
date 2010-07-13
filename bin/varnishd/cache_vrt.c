@@ -940,6 +940,20 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
+VRT_log(struct sess *sp, const char *str, ...)
+{
+	va_list ap;
+	char *b;
+
+	va_start(ap, str);
+	b = vrt_assemble_string(sp->http, NULL, str, ap);
+	va_end(ap);
+	WSP(sp, SLT_VCL_Log, "%s", b);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 VRT_ban(struct sess *sp, char *cmds, ...)
 {
 	char *a1, *a2, *a3;
