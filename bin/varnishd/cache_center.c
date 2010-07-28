@@ -1150,7 +1150,7 @@ cnt_start(struct sess *sp)
 	 * Handle Expect headers
 	 */
 	if (http_GetHdr(sp->http, H_Expect, &p)) {
-		if (strcmp(p, "100-continue")) {
+		if (strcasecmp(p, "100-continue")) {
 			sp->err_code = 417;
 			sp->step = STP_ERROR;
 			return (0);
