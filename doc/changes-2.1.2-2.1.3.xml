@@ -70,5 +70,6 @@
       <para>The <code>-X</code> parameter didn't work correctly.  This
       has been fixed.</para>
     </change>
+  </subsystem>
 
 </group>
