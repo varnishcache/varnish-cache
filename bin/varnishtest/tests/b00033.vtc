@@ -1,0 +1,44 @@
+# $Id$
+
+test "classic hash code coverage"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	txresp -bodylen 5
+
+	rxreq
+	expect req.url == /2
+	txresp -bodylen 6
+
+	rxreq
+	expect req.url == /1
+	txresp -bodylen 7
+
+	rxreq
+	expect req.url == /2
+	txresp -bodylen 8
+
+} -start
+
+varnish v1 -arg "-hclassic,11" -vcl+backend {} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.bodylen == 5
+	txreq -url /2
+	rxresp
+	expect resp.bodylen == 6
+} -run
+
+varnish v1 -cliok "purge req.url ~ ."
+	
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.bodylen == 7
+	txreq -url /2
+	rxresp
+	expect resp.bodylen == 8
+} -run
