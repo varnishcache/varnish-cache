@@ -1,6 +1,6 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.2
+Version: 2.1.3
 Release: 1
 License: BSD
 Group: System Environment/Daemons
@@ -255,6 +255,10 @@ fi
 %post libs -p /sbin/ldconfig
 
 %postun libs -p /sbin/ldconfig
+
+%changelog
+* Wed Jul 28 2010 Tollef Fog Heen <tfheen@varnish-software.com> - 2.1.3-1
+- New upstream release
 
 %changelog
 * Wed May 05 2010 Tollef Fog Heen <tfheen@varnish-software.com> - 2.1.2-1
