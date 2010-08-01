@@ -154,6 +154,12 @@ VSC_F_MAIN(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 VSC_F_MAIN(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 VSC_F_MAIN(uptime,		uint64_t, 0, 'a', "Client uptime")
 
+VSC_F_MAIN(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups")
+VSC_F_MAIN(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
+VSC_F_MAIN(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
+VSC_F_MAIN(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
+
+
 VSC_F_MAIN(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 
 #ifdef __VSC_F_MAIN

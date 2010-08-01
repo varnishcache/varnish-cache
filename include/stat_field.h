@@ -153,6 +153,12 @@ MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
 
+MAC_STAT(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups")
+MAC_STAT(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
+MAC_STAT(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
+MAC_STAT(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
+
+
 MAC_STAT(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 
 #ifdef __MAC_STAT

@@ -96,7 +96,7 @@ CheckHostPort(const char *host, const char *port)
  * and put it in an official sockaddr when we load the VCL.
  */
 
-static void
+void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
     const char *port)
 {
@@ -189,7 +189,7 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
  * in that context.
  */
 
-static void
+void
 vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
     int serial, const struct token *first, const struct token *last)
 {
@@ -696,6 +696,7 @@ static const struct dirlist {
 	{ "random",		vcc_ParseRandomDirector },
 	{ "client",		vcc_ParseRandomDirector },
 	{ "round-robin",	vcc_ParseRoundRobinDirector },
+	{ "dns",		vcc_ParseDnsDirector },
 	{ NULL,		NULL }
 };
 

@@ -536,6 +536,24 @@ struct vdi_simple {
 	struct vsc_vbe		*stats;
 };
 
+/* Returns the backend if and only if the this is a simple director.
+ * XXX: Needs a better name and possibly needs a better general approach.
+ * XXX: This is mainly used by the DNS director to fetch the actual backend
+ * XXX: so it can compare DNS lookups with the actual IP.
+ */
+struct backend *
+vdi_get_backend_if_simple(const struct director *d)
+{
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	struct vdi_simple *vs, *vs2;
+
+	vs2 = d->priv;
+	if (vs2->magic != VDI_SIMPLE_MAGIC)
+		return NULL;
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+	return vs->backend;
+}
+
 static struct vbe_conn *
 vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
