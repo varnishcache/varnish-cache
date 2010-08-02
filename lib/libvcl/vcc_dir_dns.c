@@ -51,14 +51,6 @@ SVNID("$Id$")
  * Parse directors
  */
 
-
-void
-vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
-    int serial, const struct token *first, const struct token *last);
-void
-Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
-    const char *port);
-
 struct vcc_dir_backend_defaults {
 	char *port;
 	char *hostheader;
@@ -69,7 +61,7 @@ struct vcc_dir_backend_defaults {
 	unsigned saint;
 } b_defaults;
 
-void vcc_dir_initialize_defaults(void)
+static void vcc_dir_initialize_defaults(void)
 {
 	b_defaults.port = NULL;
 	b_defaults.hostheader = NULL;
@@ -80,10 +72,11 @@ void vcc_dir_initialize_defaults(void)
 	b_defaults.saint = UINT_MAX;
 }
 
-struct token *dns_first;
-void
+static struct token *dns_first;
+
+static void
 print_backend(struct vcc *tl,
-	      uint32_t serial,
+	      int serial,
 	      uint8_t *ip)
 {
 	char vgcname[BUFSIZ];
@@ -92,12 +85,12 @@ print_backend(struct vcc *tl,
 	struct vsb *vsb;
 	sprintf(strip, "%d.%d.%d.%d",ip[3],ip[2],ip[1],ip[0]);
 	tmptok.dec = strip;
-	sprintf(vgcname,"%.*s_%u",PF(tl->t_dir),serial);
+	sprintf(vgcname,"%.*s_%d",PF(tl->t_dir),serial);
 	vsb = vsb_newauto();
 	AN(vsb);
 	tl->fb = vsb;
 	Fc(tl, 0, "\t{ .host = VGC_backend_%s },\n",vgcname);
-	Fh(tl, 1, "\n#define VGC_backend_%s %u\n", vgcname, serial);
+	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, serial);
 
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n", vgcname);
 
@@ -142,9 +135,9 @@ print_backend(struct vcc *tl,
  * This assumes that a uint32_t can be safely accessed as an array of 4
  * uint8_ts.
  */
-void
+static void
 vcc_dir_dns_makebackend(struct vcc *tl, 
-			uint32_t *serial,
+			int *serial,
 			unsigned char a[],
 			int inmask)
 {
@@ -172,7 +165,8 @@ vcc_dir_dns_makebackend(struct vcc *tl,
 		ip4++;
 	}
 }
-void
+
+static void
 vcc_dir_dns_parse_backend_options(struct vcc *tl)
 {
 	struct fld_spec *fs;
@@ -253,18 +247,18 @@ vcc_dir_dns_parse_backend_options(struct vcc *tl)
 /* Parse a list of backends with optional /mask notation, then print out
  * all relevant backends.
  */
-void
+static void
 vcc_dir_dns_parse_list(struct vcc *tl, int *serial)
 {
 	unsigned char a[4],mask;
-	int ret, nitem;
+	int ret;
 	ERRCHK(tl);
 	SkipToken(tl, '{');
 	if (tl->t->tok != CSTR)
 		vcc_dir_dns_parse_backend_options(tl);
 	while (tl->t->tok == CSTR) {
 		mask = 32;
-		ret = sscanf(tl->t->dec, "%d.%d.%d.%d",&a[0],&a[1],&a[2],&a[3],&a[4]);
+		ret = sscanf(tl->t->dec, "%hhu.%hhu.%hhu.%hhu",&a[0],&a[1],&a[2],&a[3]);
 		assert(ret == 4);
 		vcc_NextToken(tl);
 		if (tl->t->tok == '/') {

@@ -191,6 +191,10 @@ void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
+void Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port);
+void vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
+	 int serial, const struct token *first, const struct token *last);
+
 /* vcc_compile.c */
 extern struct method method_tab[];
 /*

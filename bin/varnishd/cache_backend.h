@@ -143,6 +143,7 @@ struct backend {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbe_conn *vc);
+struct backend *vdi_get_backend_if_simple(const struct director *d);
 
 /* cache_backend_cfg.c */
 extern struct lock VBE_mtx;
@@ -158,6 +159,7 @@ void VBP_Stop(struct backend *b);
 /* Init functions for directors */
 typedef void dir_init_f(struct cli *, struct director **, int , const void*);
 dir_init_f VRT_init_dir_simple;
+dir_init_f VRT_init_dir_dns;
 dir_init_f VRT_init_dir_hash;
 dir_init_f VRT_init_dir_random;
 dir_init_f VRT_init_dir_round_robin;

@@ -124,9 +124,6 @@ vdi_dns_comp_addrinfo6(struct backend *bp,
 	return 1;
 }
 
-struct backend *
-vdi_get_backend_if_simple(const struct director *d);
-
 /* Check if a backends socket is the same as addr */
 static int
 vdi_dns_comp_addrinfo(struct director *dir,
@@ -387,7 +384,6 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 static struct vbe_conn *
 vdi_dns_getfd(const struct director *director, struct sess *sp)
 {
-	int i;
 	struct vdi_dns *vs;
 	struct director *dir;
 	struct vbe_conn *vbe;
@@ -407,6 +403,12 @@ vdi_dns_getfd(const struct director *director, struct sess *sp)
 static unsigned
 vdi_dns_healthy(double now, const struct director *dir, uintptr_t target)
 {
+	/* XXX: Fooling -Werror for a bit until it's actually implemented.
+	 */
+	if (now || dir || target)
+		return 1;
+	else
+		return 1;
 	return 1;
 	/*
 	struct vdi_dns *vs;
@@ -429,7 +431,6 @@ vdi_dns_healthy(double now, const struct director *dir, uintptr_t target)
 static void
 vdi_dns_fini(struct director *d)
 {
-	int i;
 	struct vdi_dns *vs;
 	struct director **vh;
 
