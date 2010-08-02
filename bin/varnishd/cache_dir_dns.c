@@ -43,6 +43,8 @@ SVNID("$Id$")
 #include <unistd.h>
 
 #include <stdio.h>
+#include <netinet/in.h>
+
 #include "cache.h"
 #include "cache_backend.h"
 #include "vrt.h"
