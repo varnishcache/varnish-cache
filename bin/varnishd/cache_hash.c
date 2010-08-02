@@ -402,7 +402,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VBE_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
+	    || !VBE_Healthy(sp->t_req, sp->director, (uintptr_t)oh))
+	    && sp->step != STP_REFRESH) {
 					 /* Or it is impossible to fetch: */
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -414,16 +415,24 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
-
-		/* We found an object we like */
-		oc->refcnt++;
-		if (o->hits < INT_MAX)
-			o->hits++;
-		assert(oh->refcnt > 1);
-		Lck_Unlock(&oh->mtx);
-		assert(hash->deref(oh));
-		*poh = oh;
-		return (oc);
+		if (sp->step == STP_REFRESH) {
+			if (o->ttl >= sp->t_req) {
+				o->ttl = sp->t_req - 1;
+				o->grace = HSH_Grace(sp->grace);
+				EXP_Rearm(o);
+			}
+			o = NULL;
+		} else {
+			/* We found an object we like */
+			oc->refcnt++;
+			if (o->hits < INT_MAX)
+				o->hits++;
+			assert(oh->refcnt > 1);
+			Lck_Unlock(&oh->mtx);
+			assert(hash->deref(oh));
+			*poh = oh;
+			return (oc);
+		}
 	}
 
 	if (busy_oc != NULL) {

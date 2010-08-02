@@ -310,6 +310,11 @@ vcl_recv
   pipe    
     Switch to pipe mode.  Control will eventually pass to vcl_pipe.
 
+  refresh
+    Go through normal caching channels, but guarantee a cache miss even if
+    there is valid content in the cache, thereby performing a controlled
+    refresh of the content.
+
   lookup  
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the

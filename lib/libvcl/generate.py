@@ -84,7 +84,7 @@ tokens = {
 # Our methods and actions
 
 returns =(
-	('recv',	('error', 'pass', 'pipe', 'lookup',)),
+	('recv',	('error', 'pass', 'pipe', 'refresh','lookup',)),
 	('pipe',	('error', 'pipe',)),
 	('pass',	('error', 'restart', 'pass',)),
 	('hash',	('hash',)),

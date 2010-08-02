@@ -830,6 +830,11 @@ cnt_lookup(struct sess *sp)
 	return (0);
 }
 
+static int
+cnt_refresh(struct sess *sp)
+{
+	return cnt_lookup(sp);
+}
 /*--------------------------------------------------------------------
  * We had a miss, ask VCL, proceed as instructed
  *
@@ -1063,6 +1068,9 @@ cnt_recv(struct sess *sp)
 		/* XXX: discard req body, if any */
 		sp->step = STP_LOOKUP;
 		return (0);
+	case VCL_RET_REFRESH:
+		sp->step = STP_REFRESH;
+		return (0);
 	case VCL_RET_PIPE:
 		if (sp->esis > 0) {
 			/* XXX: VSL something */
@@ -1207,6 +1215,7 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_FIRST ||
 	    sp->step == STP_START ||
 	    sp->step == STP_LOOKUP ||
+	    sp->step == STP_REFRESH ||
 	    sp->step == STP_RECV);
 
 	/*
