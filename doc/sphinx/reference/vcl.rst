@@ -229,7 +229,7 @@ enclosed in parentheses, however, it will simply be ignored.
 To match an IP address against an ACL, simply use the match operator:::
 
   if (client.ip ~ local) {
-    pipe;
+    return (pipe);
   }
 
 Grace
@@ -276,7 +276,7 @@ A subroutine is used to group code for legibility or reusability:::
   
   sub pipe_if_local {
     if (client.ip ~ local) {
-      pipe;
+      return (pipe);
     }
   }
 
@@ -594,8 +594,8 @@ Values may be assigned to variables using the set keyword:::
     # Normalize the Host: header
     if (req.http.host ~ "^(www.)?example.com$") {
       set req.http.host = "www.example.com";
-      }
-   }
+    }
+  }
 
 HTTP headers can be removed entirely using the remove keyword:::
 
@@ -651,7 +651,7 @@ based on the request URL:::
   
   sub vcl_fetch {
     if (obj.ttl < 120s) {
-    set obj.ttl = 120s;
+      set obj.ttl = 120s;
     }
   }
 
@@ -660,13 +660,13 @@ documents even when cookies are present:::
 
   sub vcl_recv {
     if (req.request == "GET" && req.http.cookie) {
-    call(lookup);
+       return(lookup);
     }
   }
   
   sub vcl_fetch {
     if (beresp.http.Set-Cookie) {
-    deliver;
+       return(deliver);
    }
   }
 
@@ -680,10 +680,10 @@ for object invalidation:::
 
   sub vcl_recv {
     if (req.request == "PURGE") {
-    if (!client.ip ~ purge) {
-      error 405 "Not allowed.";
-    }
-    lookup;
+      if (!client.ip ~ purge) {
+        error 405 "Not allowed.";
+      }
+      return(lookup);
     }
   }
 
