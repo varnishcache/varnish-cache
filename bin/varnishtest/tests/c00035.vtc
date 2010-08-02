@@ -1,0 +1,38 @@
+# $Id: c00024.vtc 4651 2010-04-08 16:21:16Z phk $
+
+test "Test return(refresh) in vcl_recv"
+
+server s1 {
+        rxreq 
+        txresp -hdr "Inc: 1"
+        rxreq 
+        txresp -hdr "Inc: 2"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_recv {
+		if (req.http.x-refresh == "1") {
+			return(refresh);
+		}
+	}
+ } -start 
+
+client c1 {
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+	expect resp.http.Inc == "1"
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+	expect resp.http.Inc == "1"
+        txreq -url "/" -hdr "x-refresh: 1"
+        rxresp
+        expect resp.status == 200
+	expect resp.http.Inc == "2"
+        txreq -url "/"
+        rxresp
+        expect resp.status == 200
+	expect resp.http.Inc == "2"
+} -run
+
