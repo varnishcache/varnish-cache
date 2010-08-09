@@ -18,7 +18,9 @@ test "ESI spanning storage bits"
 server s1 {
 	rxreq 
 	expect req.url == "/foo/bar"
-	txresp -hdr "Connection: close"
+	send "HTTP/1.1 200 Ok\n"
+	send "Connection: close\n"
+	send "\n"
 	send {
 		<html>filler
 		This is before the test

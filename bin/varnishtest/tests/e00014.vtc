@@ -5,7 +5,9 @@ test "Check <esi: detector"
 server s1 {
         rxreq
         expect req.url == "/foo"
-        txresp -hdr "Connection: close"
+	send "HTTP/1.1 200 Ok\n"
+        send "Connection: close\n"
+	send "\n"
         send {           <a>   <esi/>                          }
 } -start
 

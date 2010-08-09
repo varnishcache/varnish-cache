@@ -446,7 +446,10 @@ FetchBody(struct sess *sp)
 
 	is_head = (strcasecmp(http_GetReq(sp->wrk->bereq), "head") == 0);
 
-	/* Determine if we have a body or not */
+	/*
+	 * Determine if we have a body or not
+	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
+	 */
 	cls = 0;
 	mklen = 0;
 	if (is_head) {
@@ -493,6 +496,7 @@ FetchBody(struct sess *sp)
 		 * Assume zero length
 		 * XXX:  ???
 		 */
+		cls = fetch_eof(sp, sp->wrk->htc);
 		mklen = 1;
 	}
 
