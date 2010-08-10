@@ -114,25 +114,21 @@ PipeSession(struct sess *sp)
 		if (i < 1)
 			break;
 		if (fds[0].revents && rdf(vc->fd, sp->fd)) {
+			if (fds[1].fd == -1)
+				break;
 			(void)shutdown(vc->fd, SHUT_RD);
 			(void)shutdown(sp->fd, SHUT_WR);
 			fds[0].events = 0;
 			fds[0].fd = -1;
 		}
 		if (fds[1].revents && rdf(sp->fd, vc->fd)) {
+			if (fds[0].fd == -1)
+				break;
 			(void)shutdown(sp->fd, SHUT_RD);
 			(void)shutdown(vc->fd, SHUT_WR);
 			fds[1].events = 0;
 			fds[1].fd = -1;
 		}
-	}
-	if (fds[0].fd >= 0) {
-		(void)shutdown(vc->fd, SHUT_RD);
-		(void)shutdown(sp->fd, SHUT_WR);
-	}
-	if (fds[1].fd >= 0) {
-		(void)shutdown(sp->fd, SHUT_RD);
-		(void)shutdown(vc->fd, SHUT_WR);
 	}
 	vca_close_session(sp, "pipe");
 	VBE_CloseFd(sp);
