@@ -154,7 +154,7 @@ matches certain criteria:::
   sub vcl_fetch {
      if (beresp.url ~ "\.(png|gif|jpg)$") {
        unset beresp.http.set-cookie;
-       beresp.ttl = 3600;
+       set beresp.ttl = 3600;
     }
   }
 
