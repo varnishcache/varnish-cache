@@ -1,0 +1,56 @@
+# $Id$
+
+test "Client director"
+
+server s1 {
+	rxreq
+	txresp -hdr "be: s1" -bodylen 1
+} -start
+
+server s2 {
+	rxreq
+	txresp -hdr "be: s2" -bodylen 2
+	rxreq
+	txresp -hdr "be: s2" -bodylen 4
+} -start
+
+varnish v1 -vcl+backend {
+	director d1 client {
+		{ .backend = s1; .weight = 1; }
+		{ .backend = s2; .weight = 1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = d1;
+		if (req.http.id) {
+			set client.identity = req.http.id;
+		}
+		return (pass);
+	}
+	sub vcl_deliver {
+		set resp.http.id = client.identity;
+	}
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.id == "127.0.0.1"
+	expect resp.http.be == s2
+	expect resp.bodylen == 2
+
+	txreq -hdr "id: foo"
+	rxresp
+	expect resp.http.id == "foo"
+	expect resp.http.be == s1
+	expect resp.bodylen == 1
+
+	txreq -hdr "id: baz"
+	rxresp
+	expect resp.http.id == "baz"
+	expect resp.http.be == s2
+	expect resp.bodylen == 4
+} -run
+
+

@@ -106,7 +106,11 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		 */
 		SHA256_Init(&ctx);
 		AN(sp->addr);
-		SHA256_Update(&ctx, sp->addr, strlen(sp->addr));
+		if (sp->client_identity != NULL)
+			SHA256_Update(&ctx, sp->client_identity,
+			    strlen(sp->client_identity));
+		else
+			SHA256_Update(&ctx, sp->addr, strlen(sp->addr));
 		SHA256_Final(sign, &ctx);
 		hp = sign;
 	}

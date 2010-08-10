@@ -106,6 +106,12 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('client.identity',
+		'STRING',
+		( 'all',),
+		( 'all',),
+		'struct sess *'
+	),
 	('server.ip',
 		'IP',
 		( 'all',),

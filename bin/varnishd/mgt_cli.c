@@ -187,8 +187,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	assert(i == 1 || errno == EPIPE);
-	(void)cli_readres(cli_i,
-	    &u, &q, params->cli_timeout);
+	(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", q);
 	free(q);
