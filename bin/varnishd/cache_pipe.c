@@ -91,7 +91,7 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		vca_close_session(sp, "pipe");
-		VBE_ClosedFd(sp);
+		VBE_CloseFd(sp);
 		return;
 	}
 
@@ -135,5 +135,5 @@ PipeSession(struct sess *sp)
 		(void)shutdown(vc->fd, SHUT_WR);
 	}
 	vca_close_session(sp, "pipe");
-	VBE_ClosedFd(sp);
+	VBE_CloseFd(sp);
 }
