@@ -113,31 +113,34 @@ struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
 
+	VTAILQ_ENTRY(backend)	list;
+	int			refcount;
+	struct lock		mtx;
+
 	char			*hosthdr;
 	char			*vcl_name;
 	char			*ipv4_addr;
 	char			*ipv6_addr;
 	char			*port;
-	double			connect_timeout;
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-
-	VTAILQ_ENTRY(backend)	list;
-	int			refcount;
-	struct lock		mtx;
 
 	struct sockaddr		*ipv4;
 	socklen_t		ipv4len;
 	struct sockaddr		*ipv6;
 	socklen_t		ipv6len;
 
-	unsigned		max_conn;
 	unsigned		n_conn;
 	VTAILQ_HEAD(, vbc)	connlist;
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
 	VTAILQ_HEAD(, trouble)	troublelist;
+
+	struct vsc_vbe		*vsc;
+
+	double			connect_timeout;
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
+	unsigned		max_conn;
 	unsigned		saintmode_threshold;
 };
 

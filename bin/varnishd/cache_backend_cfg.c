@@ -72,6 +72,7 @@ VBE_Nuke(struct backend *b)
 	free(b->ipv6);
 	free(b->ipv6_addr);
 	free(b->port);
+	VSM_Free(b->vsc);
 	FREE_OBJ(b);
 	VSC_main->n_backend--;
 }
@@ -174,6 +175,7 @@ struct backend *
 VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 {
 	struct backend *b;
+	char buf[128];
 
 	AN(vb->vcl_name);
 	assert(vb->ipv4_sockaddr != NULL || vb->ipv6_sockaddr != NULL);
@@ -202,6 +204,11 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	XXXAN(b);
 	Lck_New(&b->mtx);
 	b->refcount = 1;
+
+	bprintf(buf, "%s(%s,%s,%s)",
+	    vb->vcl_name, vb->ipv4_addr, vb->ipv6_addr, vb->port);
+
+	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_TYPE_VBE, buf);
 
 	VTAILQ_INIT(&b->connlist);
 
