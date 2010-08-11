@@ -592,7 +592,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	ExpectErr(tl, '}');
 
 	/* We have parsed it all, emit the ident string */
-	vcc_EmitBeIdent(tl, tl->fb, serial, t_first, tl->t);
 
 	/* Emit the hosthdr field, fall back to .host if not specified */
 	Fb(tl, 0, "\t.hosthdr = ");

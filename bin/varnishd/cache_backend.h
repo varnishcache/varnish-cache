@@ -114,13 +114,13 @@ struct backend {
 #define BACKEND_MAGIC		0x64c4c7c6
 
 	char			*hosthdr;
-	char			*ident;
 	char			*vcl_name;
+	char			*ipv4_addr;
+	char			*ipv6_addr;
+	char			*port;
 	double			connect_timeout;
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
-
-	uint32_t		hash;
 
 	VTAILQ_ENTRY(backend)	list;
 	int			refcount;

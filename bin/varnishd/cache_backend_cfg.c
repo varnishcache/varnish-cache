@@ -45,7 +45,6 @@ SVNID("$Id$")
 
 #include "cache.h"
 #include "vrt.h"
-#include "vsha256.h"
 #include "cache_backend.h"
 #include "cli_priv.h"
 
@@ -67,10 +66,12 @@ VBE_Nuke(struct backend *b)
 
 	ASSERT_CLI();
 	VTAILQ_REMOVE(&backends, b, list);
-	free(b->ident);
 	free(b->hosthdr);
 	free(b->ipv4);
+	free(b->ipv4_addr);
 	free(b->ipv6);
+	free(b->ipv6_addr);
+	free(b->port);
 	FREE_OBJ(b);
 	VSC_main->n_backend--;
 }
@@ -148,7 +149,9 @@ VBE_DropRefConn(struct backend *b)
 	VBE_DropRefLocked(b);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * See lib/libvcl/vcc_backend.c::emit_sockaddr()
+ */
 
 static void
 copy_sockaddr(struct sockaddr **sa, socklen_t *len, const unsigned char *src)
@@ -156,7 +159,7 @@ copy_sockaddr(struct sockaddr **sa, socklen_t *len, const unsigned char *src)
 
 	assert(*src > 0);
 	*sa = malloc(*src);
-	AN(*sa);
+	XXXAN(*sa);
 	memcpy(*sa, src + 1, *src);
 	*len = *src;
 }
@@ -171,46 +174,24 @@ struct backend *
 VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 {
 	struct backend *b;
-	uint32_t u;
-	struct SHA256Context ctx;
-	uint8_t hash[SHA256_LEN];
 
-	AN(vb->ident);
+	AN(vb->vcl_name);
 	assert(vb->ipv4_sockaddr != NULL || vb->ipv6_sockaddr != NULL);
 	(void)cli;
 	ASSERT_CLI();
 
-	/* calculate a hash of (ident + ipv4_sockaddr + ipv6_sockaddr) */
-	SHA256_Init(&ctx);
-	SHA256_Update(&ctx, vb->ident, strlen(vb->ident));
-	if (vb->ipv4_sockaddr != NULL)
-		SHA256_Update(&ctx,
-		    vb->ipv4_sockaddr + 1, vb->ipv4_sockaddr[0]);
-	if (vb->ipv6_sockaddr != NULL)
-		SHA256_Update(&ctx,
-		    vb->ipv6_sockaddr + 1, vb->ipv6_sockaddr[0]);
-
-	SHA256_Final(hash, &ctx);
-	memcpy(&u, hash, sizeof u);
-
 	/* Run through the list and see if we already have this backend */
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (u != b->hash)
+		if (strcmp(b->vcl_name, vb->vcl_name))
 			continue;
-		if (strcmp(b->ident, vb->ident))
+		if (vb->ipv4_sockaddr != NULL && (
+		    b->ipv4len != vb->ipv4_sockaddr[0] ||
+		    memcmp(b->ipv4, vb->ipv4_sockaddr + 1, b->ipv4len)))
 			continue;
-		if (vb->ipv4_sockaddr != NULL &&
-		    b->ipv4len != vb->ipv4_sockaddr[0])
-			continue;
-		if (vb->ipv6_sockaddr != NULL &&
-		    b->ipv6len != vb->ipv6_sockaddr[0])
-			continue;
-		if (b->ipv4len != 0 &&
-		    memcmp(b->ipv4, vb->ipv4_sockaddr + 1, b->ipv4len))
-			continue;
-		if (b->ipv6len != 0 &&
-		    memcmp(b->ipv6, vb->ipv6_sockaddr + 1, b->ipv6len))
+		if (vb->ipv6_sockaddr != NULL && (
+		    b->ipv6len != vb->ipv6_sockaddr[0] ||
+		    memcmp(b->ipv6, vb->ipv6_sockaddr + 1, b->ipv6len)))
 			continue;
 		b->refcount++;
 		return (b);
@@ -223,7 +204,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->refcount = 1;
 
 	VTAILQ_INIT(&b->connlist);
-	b->hash = u;
 
 	VTAILQ_INIT(&b->troublelist);
 
@@ -231,8 +211,10 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 * This backend may live longer than the VCL that instantiated it
 	 * so we cannot simply reference the VCL's copy of things.
 	 */
-	REPLACE(b->ident, vb->ident);
 	REPLACE(b->vcl_name, vb->vcl_name);
+	REPLACE(b->ipv4_addr, vb->ipv4_addr);
+	REPLACE(b->ipv6_addr, vb->ipv6_addr);
+	REPLACE(b->port, vb->port);
 	REPLACE(b->hosthdr, vb->hosthdr);
 
 	b->connect_timeout = vb->connect_timeout;
@@ -304,8 +286,9 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s %d %d/%d\n",
-		    b, b->vcl_name, b->refcount,
+		cli_out(cli, "%p %s(%s,%s,:%s) %d %d/%d\n",
+		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
+		    b->refcount,
 		    b->n_conn, b->max_conn);
 	}
 }

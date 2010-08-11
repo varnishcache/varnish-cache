@@ -62,15 +62,14 @@ struct vrt_backend_probe {
  */
 struct vrt_backend {
 	const char			*vcl_name;
-	const char			*ident;
-
-	const char			*hosthdr;
-
-	const unsigned char		*ipv4_sockaddr;
 	const char			*ipv4_addr;
-	const unsigned char		*ipv6_sockaddr;
 	const char			*ipv6_addr;
 	const char			*port;
+
+	const unsigned char		*ipv4_sockaddr;
+	const unsigned char		*ipv6_sockaddr;
+
+	const char			*hosthdr;
 
 	double				connect_timeout;
 	double				first_byte_timeout;
