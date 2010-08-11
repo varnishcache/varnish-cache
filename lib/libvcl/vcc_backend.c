@@ -90,6 +90,32 @@ CheckHostPort(const char *host, const char *port)
 	return (NULL);
 }
 
+static int
+emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
+{
+	unsigned len;
+	uint8_t *u;
+
+	AN(sa);
+	AN(sal);
+	assert(sal < 256);
+	Fh(tl, 0, "\nstatic const unsigned char sockaddr%u[%d] = {\n",
+	    tl->nsockaddr, sal + 1);
+	Fh(tl, 0, "    %3u, /* Length */\n",  sal);
+	u = sa;
+	for (len = 0; len <sal; len++) {
+		if ((len % 8) == 0)
+			Fh(tl, 0, "   ");
+		Fh(tl, 0, " %3u", u[len]);
+		if (len + 1 < sal)
+			Fh(tl, 0, ",");
+		if ((len % 8) == 7)
+			Fh(tl, 0, "\n");
+	}
+	Fh(tl, 0, "\n};\n");
+	return (tl->nsockaddr++);
+}
+
 /*--------------------------------------------------------------------
  * Struct sockaddr is not really designed to be a compile time
  * initialized data structure, so we encode it as a byte-string
@@ -101,9 +127,8 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
     const char *port)
 {
 	struct addrinfo *res, *res0, *res1, hint;
-	int n4, n6, len, error, retval;
+	int n4, n6, error, retval, x;
 	const char *emit, *multiple;
-	unsigned char *u;
 	char hbuf[NI_MAXHOST];
 
 	AN(t_host->dec);
@@ -115,16 +140,17 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 	AZ(error);
 	n4 = n6 = 0;
 	multiple = NULL;
+
 	for (res = res0; res; res = res->ai_next) {
 		emit = NULL;
 		if (res->ai_family == PF_INET) {
 			if (n4++ == 0)
-				emit = "ipv4_sockaddr";
+				emit = "ipv4";
 			else
 				multiple = "IPv4";
 		} else if (res->ai_family == PF_INET6) {
 			if (n6++ == 0)
-				emit = "ipv6_sockaddr";
+				emit = "ipv6";
 			else
 				multiple = "IPv6";
 		} else
@@ -149,25 +175,21 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 			return;
 		}
 		AN(emit);
-		AN(res->ai_addr);
-		AN(res->ai_addrlen);
-		assert(res->ai_addrlen < 256);
-		Fh(tl, 0, "\nstatic const unsigned char sockaddr%u[%d] = {\n",
-		    tl->nsockaddr, res->ai_addrlen + 1);
-		Fh(tl, 0, "    %3u, /* Length */\n",  res->ai_addrlen);
-		u = (void*)res->ai_addr;
-		for (len = 0; len < res->ai_addrlen; len++) {
-			if ((len % 8) == 0)
-				Fh(tl, 0, "   ");
-			Fh(tl, 0, " %3u", u[len]);
-			if (len + 1 < res->ai_addrlen)
-				Fh(tl, 0, ",");
-			if ((len % 8) == 7)
-				Fh(tl, 0, "\n");
-		}
-		Fh(tl, 0, "\n};\n");
-		Fb(tl, 0, "\t.%s = sockaddr%u,\n", emit, tl->nsockaddr++);
+		x = emit_sockaddr(tl, res->ai_addr, res->ai_addrlen);
+		Fb(tl, 0, "\t.%s_sockaddr = sockaddr%u,\n", emit, x);
+		error = getnameinfo(res->ai_addr,
+		    res->ai_addrlen, hbuf, sizeof hbuf,
+		    NULL, 0, NI_NUMERICHOST);
+		AZ(error);
+		Fb(tl, 0, "\t.%s_addr = \"%s\",\n", emit, hbuf);
 		retval++;
+	}
+	if (res0 != NULL) {
+		error = getnameinfo(res0->ai_addr,
+		    res0->ai_addrlen, NULL, 0, hbuf, sizeof hbuf,
+		    NI_NUMERICSERV);
+		AZ(error);
+		Fb(tl, 0, "\t.port = \"%s\",\n", hbuf);
 	}
 	freeaddrinfo(res0);
 	if (retval == 0) {
