@@ -76,7 +76,7 @@ VSC_F_MAIN(n_objecthead,	uint64_t, 1, 'i', "N struct objecthead")
 VSC_F_MAIN(n_smf,		uint64_t, 0, 'i', "N struct smf")
 VSC_F_MAIN(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
 VSC_F_MAIN(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
-VSC_F_MAIN(n_vbe_conn,		uint64_t, 0, 'i', "N struct vbe_conn")
+VSC_F_MAIN(n_vbc,		uint64_t, 0, 'i', "N struct vbc")
 VSC_F_MAIN(n_wrk,		uint64_t, 0, 'i', "N worker threads")
 VSC_F_MAIN(n_wrk_create,	uint64_t, 0, 'a', "N worker threads created")
 VSC_F_MAIN(n_wrk_failed,	uint64_t, 0, 'a',

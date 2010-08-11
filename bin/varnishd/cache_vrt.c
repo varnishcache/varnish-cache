@@ -293,12 +293,12 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	struct trouble *tr2;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (!sp->vbe)
+	if (!sp->vbc)
 		return;
-	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
-	if (!sp->vbe->backend)
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	if (!sp->vbc->backend)
 		return;
-	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
 	if (!sp->objhead)
 		return;
 	CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
@@ -317,8 +317,8 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * timeout at a later date (ie: sort by which entry will time out
 	 * from the list
 	 */
-	Lck_Lock(&sp->vbe->backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &sp->vbe->backend->troublelist, list, tr2) {
+	Lck_Lock(&sp->vbc->backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &sp->vbc->backend->troublelist, list, tr2) {
 		if (tr->timeout < new->timeout) {
 			VTAILQ_INSERT_BEFORE(tr, new, list);
 			new = NULL;
@@ -330,9 +330,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * items have a longer timeout.
 	 */
 	if (new)
-		VTAILQ_INSERT_TAIL(&sp->vbe->backend->troublelist, new, list);
+		VTAILQ_INSERT_TAIL(&sp->vbc->backend->troublelist, new, list);
 
-	Lck_Unlock(&sp->vbe->backend->mtx);
+	Lck_Unlock(&sp->vbc->backend->mtx);
 }
 
 int

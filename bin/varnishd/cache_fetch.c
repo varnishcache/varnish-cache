@@ -329,7 +329,7 @@ FetchReqBody(struct sess *sp)
 int
 FetchHdr(struct sess *sp)
 {
-	struct vbe_conn *vc;
+	struct vbc *vc;
 	struct worker *w;
 	char *b;
 	struct http *hp;
@@ -351,12 +351,12 @@ FetchHdr(struct sess *sp)
 	w = sp->wrk;
 	hp = sp->wrk->bereq;
 
-	sp->vbe = VBE_GetFd(NULL, sp);
-	if (sp->vbe == NULL) {
+	sp->vbc = VBE_GetFd(NULL, sp);
+	if (sp->vbc == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
 		return (__LINE__);
 	}
-	vc = sp->vbe;
+	vc = sp->vbc;
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
@@ -424,7 +424,7 @@ FetchHdr(struct sess *sp)
 int
 FetchBody(struct sess *sp)
 {
-	struct vbe_conn *vc;
+	struct vbc *vc;
 	char *b;
 	int cls;
 	struct http *hp;
@@ -442,7 +442,7 @@ FetchBody(struct sess *sp)
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
 
-	vc = sp->vbe;
+	vc = sp->vbc;
 
 	is_head = (strcasecmp(http_GetReq(sp->wrk->bereq), "head") == 0);
 
@@ -520,7 +520,7 @@ FetchBody(struct sess *sp)
 		return (__LINE__);
 	}
 
-	WSL(sp->wrk, SLT_Length, sp->vbe->fd, "%u", sp->obj->len);
+	WSL(sp->wrk, SLT_Length, sp->vbc->fd, "%u", sp->obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */

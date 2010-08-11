@@ -426,7 +426,7 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct vbe_conn		*vbe;
+	struct vbc		*vbc;
 	struct object		*obj;
 	struct objcore		*objcore;
 	struct objhead		*objhead;
@@ -448,10 +448,10 @@ struct sess {
 /* -------------------------------------------------------------------*/
 
 /* Backend connection */
-struct vbe_conn {
+struct vbc {
 	unsigned		magic;
-#define VBE_CONN_MAGIC		0x0c5e6592
-	VTAILQ_ENTRY(vbe_conn)	list;
+#define VBC_MAGIC		0x0c5e6592
+	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
 	int			fd;
 
@@ -473,7 +473,7 @@ extern pthread_t VCA_thread;
 
 /* cache_backend.c */
 
-struct vbe_conn *VBE_GetFd(const struct director *, struct sess *sp);
+struct vbc *VBE_GetFd(const struct director *, struct sess *sp);
 int VBE_Healthy(double now, const struct director *, uintptr_t target);
 int VBE_Healthy_sp(const struct sess *sp, const struct director *);
 void VBE_CloseFd(struct sess *sp);

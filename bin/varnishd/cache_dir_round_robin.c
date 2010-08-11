@@ -59,13 +59,13 @@ struct vdi_round_robin {
 	unsigned			next_host;
 };
 
-static struct vbe_conn *
+static struct vbc *
 vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 {
 	int i;
 	struct vdi_round_robin *vs;
 	struct director *backend;
-	struct vbe_conn *vbe;
+	struct vbc *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);

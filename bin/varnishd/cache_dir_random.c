@@ -80,14 +80,14 @@ struct vdi_random {
 	unsigned		nhosts;
 };
 
-static struct vbe_conn *
+static struct vbc *
 vdi_random_getfd(const struct director *d, struct sess *sp)
 {
 	int i, k;
 	struct vdi_random *vs;
 	double r, s1;
 	unsigned u = 0;
-	struct vbe_conn *vbe;
+	struct vbc *vbe;
 	struct director *d2;
 	struct SHA256Context ctx;
 	uint8_t sign[SHA256_LEN], *hp;

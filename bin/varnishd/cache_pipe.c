@@ -65,7 +65,7 @@ rdf(int fd0, int fd1)
 void
 PipeSession(struct sess *sp)
 {
-	struct vbe_conn *vc;
+	struct vbc *vc;
 	struct worker *w;
 	struct pollfd fds[2];
 	int i;
@@ -74,10 +74,10 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	sp->vbe = VBE_GetFd(NULL, sp);
-	if (sp->vbe == NULL)
+	sp->vbc = VBE_GetFd(NULL, sp);
+	if (sp->vbc == NULL)
 		return;
-	vc = sp->vbe;
+	vc = sp->vbc;
 	(void)TCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);

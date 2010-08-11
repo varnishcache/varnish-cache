@@ -49,9 +49,9 @@ SVNID("$Id$")
 #include "vrt.h"
 
 /*
- * List of cached vbe_conns, used if enabled in params/heritage
+ * List of cached vbcs, used if enabled in params/heritage
  */
-static VTAILQ_HEAD(,vbe_conn) vbe_conns = VTAILQ_HEAD_INITIALIZER(vbe_conns);
+static VTAILQ_HEAD(,vbc) vbcs = VTAILQ_HEAD_INITIALIZER(vbcs);
 
 /*--------------------------------------------------------------------
  * Create default Host: header for backend request
@@ -62,29 +62,29 @@ VBE_AddHostHeader(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
-	    "Host: %s", sp->vbe->backend->hosthdr);
+	    "Host: %s", sp->vbc->backend->hosthdr);
 }
 
 /* Private interface from backend_cfg.c */
 void
-VBE_ReleaseConn(struct vbe_conn *vc)
+VBE_ReleaseConn(struct vbc *vc)
 {
 
-	CHECK_OBJ_NOTNULL(vc, VBE_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
 
-	if (params->cache_vbe_conns) {
+	if (params->cache_vbcs) {
 		Lck_Lock(&VBE_mtx);
-		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
+		VTAILQ_INSERT_HEAD(&vbcs, vc, list);
 		VSC_main->backend_unused++;
 		Lck_Unlock(&VBE_mtx);
 	} else {
 		Lck_Lock(&VBE_mtx);
-		VSC_main->n_vbe_conn--;
+		VSC_main->n_vbc--;
 		Lck_Unlock(&VBE_mtx);
 		free(vc);
 	}
@@ -197,23 +197,23 @@ vbe_CheckFd(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Manage a pool of vbe_conn structures.
+ * Manage a pool of vbc structures.
  * XXX: as an experiment, make this caching controled by a parameter
  * XXX: so we can see if it has any effect.
  */
 
-static struct vbe_conn *
+static struct vbc *
 vbe_NewConn(void)
 {
-	struct vbe_conn *vc;
+	struct vbc *vc;
 
-	vc = VTAILQ_FIRST(&vbe_conns);
+	vc = VTAILQ_FIRST(&vbcs);
 	if (vc != NULL) {
 		Lck_Lock(&VBE_mtx);
-		vc = VTAILQ_FIRST(&vbe_conns);
+		vc = VTAILQ_FIRST(&vbcs);
 		if (vc != NULL) {
 			VSC_main->backend_unused--;
-			VTAILQ_REMOVE(&vbe_conns, vc, list);
+			VTAILQ_REMOVE(&vbcs, vc, list);
 		}
 		Lck_Unlock(&VBE_mtx);
 	}
@@ -221,10 +221,10 @@ vbe_NewConn(void)
 		return (vc);
 	vc = calloc(sizeof *vc, 1);
 	XXXAN(vc);
-	vc->magic = VBE_CONN_MAGIC;
+	vc->magic = VBC_MAGIC;
 	vc->fd = -1;
 	Lck_Lock(&VBE_mtx);
-	VSC_main->n_vbe_conn++;
+	VSC_main->n_vbc++;
 	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
@@ -312,15 +312,15 @@ vbe_Healthy(double now, uintptr_t target, struct backend *backend)
  * Get a connection to a particular backend.
  */
 
-static struct vbe_conn *
+static struct vbc *
 vbe_GetVbe(struct sess *sp, struct backend *bp)
 {
-	struct vbe_conn *vc;
+	struct vbc *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
-	/* first look for vbe_conn's we can recycle */
+	/* first look for vbc's we can recycle */
 	while (1) {
 		Lck_Lock(&bp->mtx);
 		vc = VTAILQ_FIRST(&bp->connlist);
@@ -341,7 +341,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 			return (vc);
 		}
 		VSC_main->backend_toolate++;
-		sp->vbe = vc;
+		sp->vbc = vc;
 		VBE_CloseFd(sp);
 	}
 
@@ -378,18 +378,18 @@ VBE_CloseFd(struct sess *sp)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
-	assert(sp->vbe->fd >= 0);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
+	assert(sp->vbc->fd >= 0);
 
-	bp = sp->vbe->backend;
+	bp = sp->vbc->backend;
 
-	WSL(sp->wrk, SLT_BackendClose, sp->vbe->fd, "%s", bp->vcl_name);
-	TCP_close(&sp->vbe->fd);
+	WSL(sp->wrk, SLT_BackendClose, sp->vbc->fd, "%s", bp->vcl_name);
+	TCP_close(&sp->vbc->fd);
 	VBE_DropRefConn(bp);
-	sp->vbe->backend = NULL;
-	VBE_ReleaseConn(sp->vbe);
-	sp->vbe = NULL;
+	sp->vbc->backend = NULL;
+	VBE_ReleaseConn(sp->vbc);
+	sp->vbc = NULL;
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -399,13 +399,13 @@ VBE_RecycleFd(struct sess *sp)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(sp->vbe, VBE_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbe->backend, BACKEND_MAGIC);
-	assert(sp->vbe->fd >= 0);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
+	assert(sp->vbc->fd >= 0);
 
-	bp = sp->vbe->backend;
+	bp = sp->vbc->backend;
 
-	WSL(sp->wrk, SLT_BackendReuse, sp->vbe->fd, "%s", bp->vcl_name);
+	WSL(sp->wrk, SLT_BackendReuse, sp->vbc->fd, "%s", bp->vcl_name);
 	/*
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.
@@ -413,14 +413,14 @@ VBE_RecycleFd(struct sess *sp)
 	WSL_Flush(sp->wrk, 0);
 	Lck_Lock(&bp->mtx);
 	VSC_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbe, list);
-	sp->vbe = NULL;
+	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbc, list);
+	sp->vbc = NULL;
 	VBE_DropRefLocked(bp);
 }
 
 /* Get a connection --------------------------------------------------*/
 
-struct vbe_conn *
+struct vbc *
 VBE_GetFd(const struct director *d, struct sess *sp)
 {
 
@@ -554,11 +554,11 @@ vdi_get_backend_if_simple(const struct director *d)
 	return vs->backend;
 }
 
-static struct vbe_conn *
+static struct vbc *
 vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
 	struct vdi_simple *vs;
-	struct vbe_conn *vc;
+	struct vbc *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);

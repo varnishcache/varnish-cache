@@ -38,10 +38,10 @@
  *    A backend is a TCP destination, possibly multi-homed and it has a
  *    number of associated properties and statistics.
  *
- *    A vbe_conn is an open TCP connection to a backend.
+ *    A vbc is an open TCP connection to a backend.
  *
  *    A bereq is a memory carrier for handling a HTTP transaction with
- *    a backend over a vbe_conn.
+ *    a backend over a vbc.
  *
  *    A director is a piece of code that selects which backend to use,
  *    by whatever method or metric it chooses.
@@ -53,7 +53,7 @@
  *
  *    When a VCL tries to instantiate a backend, any existing backend
  *    with the same identity (== definition in VCL) will be used instead
- *    so that vbe_conn's can be reused across VCL changes.
+ *    so that vbc's can be reused across VCL changes.
  *
  *    Directors disapper with the VCL that created them.
  *
@@ -69,7 +69,7 @@
  */
 
 struct vbp_target;
-struct vbe_conn;
+struct vbc;
 struct vrt_backend_probe;
 
 /*--------------------------------------------------------------------
@@ -77,7 +77,7 @@ struct vrt_backend_probe;
  * backends to use.
  */
 
-typedef struct vbe_conn *vdi_getfd_f(const struct director *, struct sess *sp);
+typedef struct vbc *vdi_getfd_f(const struct director *, struct sess *sp);
 typedef void vdi_fini_f(struct director *);
 typedef unsigned vdi_healthy(double now, const struct director *,
     uintptr_t target);
@@ -133,7 +133,7 @@ struct backend {
 
 	unsigned		max_conn;
 	unsigned		n_conn;
-	VTAILQ_HEAD(, vbe_conn)	connlist;
+	VTAILQ_HEAD(, vbc)	connlist;
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
@@ -142,7 +142,7 @@ struct backend {
 };
 
 /* cache_backend.c */
-void VBE_ReleaseConn(struct vbe_conn *vc);
+void VBE_ReleaseConn(struct vbc *vc);
 struct backend *vdi_get_backend_if_simple(const struct director *d);
 
 /* cache_backend_cfg.c */

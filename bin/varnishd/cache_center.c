@@ -229,7 +229,7 @@ cnt_done(struct sess *sp)
 	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
-	AZ(sp->vbe);
+	AZ(sp->vbc);
 	sp->director = NULL;
 	sp->restarts = 0;
 
@@ -432,7 +432,7 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->director);
-	AZ(sp->vbe);
+	AZ(sp->vbc);
 
 	/* sp->wrk->http[0] is (still) bereq */
 	sp->wrk->beresp = sp->wrk->http[1];
@@ -592,7 +592,7 @@ cnt_fetch(struct sess *sp)
 
 	i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
-	AZ(sp->vbe);
+	AZ(sp->vbc);
 	AN(sp->director);
 
 	if (i) {

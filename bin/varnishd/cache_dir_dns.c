@@ -383,12 +383,12 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	return ret;
 }
 
-static struct vbe_conn *
+static struct vbc *
 vdi_dns_getfd(const struct director *director, struct sess *sp)
 {
 	struct vdi_dns *vs;
 	struct director *dir;
-	struct vbe_conn *vbe;
+	struct vbc *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(director, DIRECTOR_MAGIC);

@@ -144,8 +144,8 @@ struct params {
 	/* Rush exponent */
 	unsigned		rush_exponent;
 
-	/* Cache vbe_conns */
-	unsigned		cache_vbe_conns;
+	/* Cache vbcs */
+	unsigned		cache_vbcs;
 
 	/* Default connection_timeout */
 	double			connect_timeout;
