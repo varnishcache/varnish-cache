@@ -48,11 +48,42 @@ SVNID("$Id$")
 #include "cache_backend.h"
 #include "vrt.h"
 
+/*--------------------------------------------------------------------
+ * The "simple" director really isn't, since thats where all the actual
+ * connections happen.  Nontheless, pretend it is simple by sequestering
+ * the directoricity of it under this line.
+ */
+
+struct vdi_simple {
+	unsigned		magic;
+#define VDI_SIMPLE_MAGIC	0x476d25b7
+	struct director		dir;
+	struct backend		*backend;
+	const struct vrt_backend *vrt;
+};
+
+
 /*
  * List of cached vbcs, used if enabled in params/heritage
  */
 static VTAILQ_HEAD(,vbc) vbcs = VTAILQ_HEAD_INITIALIZER(vbcs);
 
+/*--------------------------------------------------------------------
+ * Create default Host: header for backend request
+ */
+void
+VDI_AddHostHeader(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc->vdis, VDI_SIMPLE_MAGIC);
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
+	    "Host: %s", sp->vbc->vdis->vrt->hosthdr);
+}
+
+/*--------------------------------------------------------------------*/
 
 /* Private interface from backend_cfg.c */
 void
@@ -85,7 +116,6 @@ VBE_ReleaseConn(struct vbc *vc)
 			dst = params->tmx;	\
 	} while (0)
 
-
 /*--------------------------------------------------------------------
  * Attempt to connect to a given addrinfo entry.
  *
@@ -97,7 +127,7 @@ VBE_ReleaseConn(struct vbc *vc)
 
 static int
 vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
-    socklen_t salen, const struct backend *bp)
+    socklen_t salen, struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;
@@ -105,12 +135,13 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
 	s = socket(pf, SOCK_STREAM, 0);
 	if (s < 0)
 		return (s);
 
-	FIND_TMO(connect_timeout, tmod, sp, bp);
+	FIND_TMO(connect_timeout, tmod, sp, vs->vrt);
 
 	tmo = (int)(tmod * 1000.0);
 
@@ -127,7 +158,7 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    bp->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+	    vs->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
 	return (s);
 }
@@ -135,9 +166,12 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 /*--------------------------------------------------------------------*/
 
 static int
-bes_conn_try(const struct sess *sp, struct backend *bp)
+bes_conn_try(const struct sess *sp, struct vdi_simple *vs)
 {
 	int s;
+	struct backend *bp = vs->backend;
+
+	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
 	Lck_Lock(&bp->mtx);
 	bp->refcount++;
@@ -150,11 +184,11 @@ bes_conn_try(const struct sess *sp, struct backend *bp)
 	/* release lock during stuff that can take a long time */
 
 	if (params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 	if (s == -1 && bp->ipv4 != NULL)
-		s = vbe_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, bp);
+		s = vbe_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, vs);
 	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
-		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, bp);
+		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 
 	if (s < 0) {
 		Lck_Lock(&bp->mtx);
@@ -215,7 +249,6 @@ vbe_NewConn(void)
 	return (vc);
 }
 
-
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on sp->objhead. This is mainly for saint-mode,
@@ -228,7 +261,7 @@ vbe_NewConn(void)
  */
 
 static unsigned int
-vbe_Healthy(double now, uintptr_t target, struct backend *backend)
+vbe_Healthy(double now, uintptr_t target, struct vdi_simple *vs, struct backend *backend)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -236,6 +269,7 @@ vbe_Healthy(double now, uintptr_t target, struct backend *backend)
 	unsigned i = 0, retval;
 	unsigned int threshold;
 
+	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
 	if (!backend->healthy)
@@ -244,10 +278,10 @@ vbe_Healthy(double now, uintptr_t target, struct backend *backend)
 	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
 	 * specified by VCL (thus use param).
 	 */
-	if (backend->saintmode_threshold == UINT_MAX)
+	if (vs->vrt->saintmode_threshold == UINT_MAX)
 		threshold = params->saintmode_threshold;
 	else
-		threshold = backend->saintmode_threshold;
+		threshold = vs->vrt->saintmode_threshold;
 
 	/* Saintmode is disabled */
 	if (threshold == 0)
@@ -299,11 +333,14 @@ vbe_Healthy(double now, uintptr_t target, struct backend *backend)
  */
 
 static struct vbc *
-vbe_GetVbe(struct sess *sp, struct backend *bp)
+vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
 {
 	struct vbc *vc;
+	struct backend *bp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
+	bp = vs->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
 	/* first look for vbc's we can recycle */
@@ -324,6 +361,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 			VSC_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
+			vc->vdis = vs;
 			return (vc);
 		}
 		VSC_main->backend_toolate++;
@@ -331,12 +369,13 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 		VDI_CloseFd(sp);
 	}
 
-	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {
+	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, vs, bp)) {
 		VSC_main->backend_unhealthy++;
 		return (NULL);
 	}
 
-	if (bp->max_conn > 0 && bp->n_conn >= bp->max_conn) {
+	if (vs->vrt->max_connections > 0 &&
+	    bp->n_conn >= vs->vrt->max_connections) {
 		VSC_main->backend_busy++;
 		return (NULL);
 	}
@@ -344,7 +383,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 	vc = vbe_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
-	vc->fd = bes_conn_try(sp, bp);
+	vc->fd = bes_conn_try(sp, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
 		VSC_main->backend_fail++;
@@ -354,27 +393,17 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 	VSC_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->director->vcl_name, bp->vcl_name);
+	vc->vdis = vs;
 	return (vc);
 }
 
 /*--------------------------------------------------------------------
- * The "simple" director really isn't, since thats where all the actual
- * connections happen.  Nontheless, pretend it is simple by sequestering
- * the directoricity of it under this line.
- */
-
-struct vdi_simple {
-	unsigned		magic;
-#define VDI_SIMPLE_MAGIC	0x476d25b7
-	struct director		dir;
-	struct backend		*backend;
-};
-
-/* Returns the backend if and only if the this is a simple director.
+ * Returns the backend if and only if the this is a simple director.
  * XXX: Needs a better name and possibly needs a better general approach.
  * XXX: This is mainly used by the DNS director to fetch the actual backend
  * XXX: so it can compare DNS lookups with the actual IP.
  */
+
 struct backend *
 vdi_get_backend_if_simple(const struct director *d)
 {
@@ -385,8 +414,32 @@ vdi_get_backend_if_simple(const struct director *d)
 	if (vs2->magic != VDI_SIMPLE_MAGIC)
 		return NULL;
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return vs->backend;
+	return (vs->backend);
 }
+
+/*--------------------------------------------------------------------
+ *
+ */
+
+void
+VBE_UseHealth(struct director *vdi)
+{
+	struct vdi_simple *vs;
+
+	ASSERT_CLI();
+
+	if (strcmp(vdi->name, "simple"))
+		return;
+	printf("USE HEALTH %p\n", vdi);
+	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
+	if (vs->vrt->probe == NULL)
+		return;
+	VBP_Start(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
+}
+
+/*--------------------------------------------------------------------
+ *
+ */
 
 static struct vbc *
 vdi_simple_getfd(const struct director *d, struct sess *sp)
@@ -397,12 +450,12 @@ vdi_simple_getfd(const struct director *d, struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	vc = vbe_GetVbe(sp, vs->backend);
+	vc = vbe_GetVbe(sp, vs);
 	if (vc != NULL) {
 		FIND_TMO(first_byte_timeout,
-		    vc->first_byte_timeout, sp, vc->backend);
+		    vc->first_byte_timeout, sp, vs->vrt);
 		FIND_TMO(between_bytes_timeout,
-		    vc->between_bytes_timeout, sp, vc->backend);
+		    vc->between_bytes_timeout, sp, vs->vrt);
 	}
 	return (vc);
 }
@@ -414,7 +467,7 @@ vdi_simple_healthy(double now, const struct director *d, uintptr_t target)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(now, target, vs->backend));
+	return (vbe_Healthy(now, target, vs, vs->backend));
 }
 
 /*lint -e{818} not const-able */
@@ -426,8 +479,8 @@ vdi_simple_fini(struct director *d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
+	VBP_Stop(vs->backend, vs->vrt->probe);
 	VBE_DropRef(vs->backend);
-	// vbe_stat_deref(vs->dir.vcl_name);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	FREE_OBJ(vs);
@@ -454,7 +507,11 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 	vs->dir.fini = vdi_simple_fini;
 	vs->dir.healthy = vdi_simple_healthy;
 
+	vs->vrt = t;
+
 	vs->backend = VBE_AddBackend(cli, t);
+	if (vs->backend->probe == NULL)
+		VBP_Start(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
 	bp[idx] = &vs->dir;
 }

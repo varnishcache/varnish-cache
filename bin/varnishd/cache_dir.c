@@ -38,21 +38,6 @@ SVNID("$Id: cache_backend.c 5089 2010-08-11 12:12:47Z phk $")
 #include "cache.h"
 #include "cache_backend.h"
 
-/*--------------------------------------------------------------------
- * Create default Host: header for backend request
- */
-void
-VDI_AddHostHeader(const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
-	    "Host: %s", sp->vbc->backend->hosthdr);
-}
-
 /* Close a connection ------------------------------------------------*/
 
 void

@@ -290,6 +290,7 @@ static void
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
+	int i;
 
 	(void)av;
 	(void)priv;
@@ -302,6 +303,10 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	Lck_Lock(&vcl_mtx);
 	vcl_active = vcl;
 	Lck_Unlock(&vcl_mtx);
+
+	/* Tickle this VCL's backends to take over health polling */
+	for(i = 1; i < vcl->conf->ndirector; i++) 
+		VBE_UseHealth(vcl->conf->director[i]);
 }
 
 /*--------------------------------------------------------------------*/

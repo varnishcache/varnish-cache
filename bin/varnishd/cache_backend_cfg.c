@@ -56,7 +56,6 @@ struct lock VBE_mtx;
  */
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 
-
 /*--------------------------------------------------------------------
  */
 
@@ -66,7 +65,6 @@ VBE_Nuke(struct backend *b)
 
 	ASSERT_CLI();
 	VTAILQ_REMOVE(&backends, b, list);
-	free(b->hosthdr);
 	free(b->ipv4);
 	free(b->ipv4_addr);
 	free(b->ipv6);
@@ -122,10 +120,7 @@ VBE_DropRefLocked(struct backend *b)
 		vbe->backend = NULL;
 		VBE_ReleaseConn(vbe);
 	}
-	if (b->probe != NULL)
-		VBP_Stop(b);
-	else
-		VBE_Nuke(b);
+	VBE_Nuke(b);
 }
 
 void
@@ -222,13 +217,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	REPLACE(b->ipv4_addr, vb->ipv4_addr);
 	REPLACE(b->ipv6_addr, vb->ipv6_addr);
 	REPLACE(b->port, vb->port);
-	REPLACE(b->hosthdr, vb->hosthdr);
-
-	b->connect_timeout = vb->connect_timeout;
-	b->first_byte_timeout = vb->first_byte_timeout;
-	b->between_bytes_timeout = vb->between_bytes_timeout;
-	b->max_conn = vb->max_connections;
-	b->saintmode_threshold = vb->saintmode_threshold;
 
 	/*
 	 * Copy over the sockaddrs
@@ -240,12 +228,12 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
-	VBP_Start(b, vb->probe);
+	b->healthy = 1;
+
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_main->n_backend++;
 	return (b);
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -293,10 +281,9 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s(%s,%s,:%s) %d %d/%d\n",
+		cli_out(cli, "%p %s(%s,%s,:%s) %d %d\n",
 		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
-		    b->refcount,
-		    b->n_conn, b->max_conn);
+		    b->refcount, b->n_conn);
 	}
 }
 

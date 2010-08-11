@@ -453,6 +453,7 @@ struct vbc {
 #define VBC_MAGIC		0x0c5e6592
 	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
+	struct vdi_simple	*vdis;
 	int			fd;
 
 	/* Timeouts */
@@ -472,6 +473,7 @@ const char *VCA_waiter_name(void);
 extern pthread_t VCA_thread;
 
 /* cache_backend.c */
+void VBE_UseHealth(struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(double now, const struct director *, uintptr_t target);

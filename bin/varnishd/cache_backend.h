@@ -117,7 +117,6 @@ struct backend {
 	int			refcount;
 	struct lock		mtx;
 
-	char			*hosthdr;
 	char			*vcl_name;
 	char			*ipv4_addr;
 	char			*ipv6_addr;
@@ -136,12 +135,6 @@ struct backend {
 	VTAILQ_HEAD(, trouble)	troublelist;
 
 	struct vsc_vbe		*vsc;
-
-	double			connect_timeout;
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-	unsigned		max_conn;
-	unsigned		saintmode_threshold;
 };
 
 /* cache_backend.c */
@@ -155,9 +148,8 @@ void VBE_DropRef(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
 
 /* cache_backend_poll.c */
-void VBP_Start(struct backend *b, struct vrt_backend_probe const *p);
-void VBP_Stop(struct backend *b);
-
+void VBP_Start(struct backend *b, struct vrt_backend_probe const *p, const char *hosthdr);
+void VBP_Stop(struct backend *b, struct vrt_backend_probe const *p);
 
 /* Init functions for directors */
 typedef void dir_init_f(struct cli *, struct director **, int , const void*);

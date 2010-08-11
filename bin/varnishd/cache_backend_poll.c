@@ -57,11 +57,23 @@ SVNID("$Id$")
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
 
+struct vbp_vcl {
+	unsigned			magic;
+#define VBP_VCL_MAGIC			0x70829764
+
+	VTAILQ_ENTRY(vbp_vcl)		list;
+	const struct vrt_backend_probe	*probe;
+	const char			*hosthdr;
+};
+
 struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
 	struct backend			*backend;
+	VTAILQ_HEAD( ,vbp_vcl)		vcls;
+
+	const struct vrt_backend_probe	*probe_cache;
 	struct vrt_backend_probe	probe;
 	int				stop;
 	char				*req;
@@ -85,6 +97,8 @@ struct vbp_target {
 
 static VTAILQ_HEAD(, vbp_target)	vbp_list =
     VTAILQ_HEAD_INITIALIZER(vbp_list);
+
+static struct lock			vbp_mtx;
 
 static const char default_request[] =
     "GET / HTTP/1.1\r\n"
@@ -413,26 +427,50 @@ static struct cli_proto debug_cmds[] = {
 };
 
 /*--------------------------------------------------------------------
- * Start/Stop called from cache_backend_cfg.c
+ * Start/Stop called from cache_backend.c
  */
 
 void
-VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
+VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *hosthdr)
 {
 	struct vbp_target *vt;
 	struct vsb *vsb;
+	struct vbp_vcl *vcl;
+	int startthread = 0;
 
 	ASSERT_CLI();
 
-	if (p == NULL) {
-		b->healthy = 1;
+	if (p == NULL)
 		return;
+
+	Lck_Lock(&vbp_mtx);
+	if (b->probe == NULL) {
+		ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
+		XXXAN(vt);
+		VTAILQ_INIT(&vt->vcls);
+		vt->backend = b;
+		startthread = 1;
+		VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
+	} else {
+		vt = b->probe;
 	}
 
-	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
-	AN(vt);
-	vt->backend = b;
-	vt->probe = *p;
+	VTAILQ_FOREACH(vcl, &vt->vcls, list)
+		if (vcl->probe == p)
+			break;
+
+	if (vcl == NULL) {
+		ALLOC_OBJ(vcl, VBP_VCL_MAGIC);
+		XXXAN(vcl);
+		vcl->probe = p;
+		vcl->hosthdr = hosthdr;
+		VTAILQ_INSERT_HEAD(&vt->vcls, vcl, list);
+	} else {
+		VTAILQ_REMOVE(&vt->vcls, vcl, list);
+		VTAILQ_INSERT_HEAD(&vt->vcls, vcl, list);
+	}
+
+	vt->probe = *vcl->probe;
 
 	p = &vt->probe;
 
@@ -443,8 +481,8 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 		XXXAN(vsb);
 		vsb_printf(vsb, "GET %s HTTP/1.1\r\n",
 		    p->url != NULL ? p->url : "/");
-		if (b->hosthdr != NULL)
-			vsb_printf(vsb, "Host: %s\r\n", b->hosthdr);
+		if (hosthdr != NULL)
+			vsb_printf(vsb, "Host: %s\r\n", hosthdr);
 		vsb_printf(vsb, "Connection: close\r\n");
 		vsb_printf(vsb, "\r\n");
 		vsb_finish(vsb);
@@ -455,25 +493,48 @@ VBP_Start(struct backend *b, struct vrt_backend_probe const *p)
 	}
 	vt->req_len = strlen(vt->req);
 
-	b->probe = vt;
-
-	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
-
-	AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
+	Lck_Unlock(&vbp_mtx);
+	if (startthread)
+		AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
 }
 
 void
-VBP_Stop(struct backend *b)
+VBP_Stop(struct backend *b, struct vrt_backend_probe const *p)
 {
 	struct vbp_target *vt;
+	struct vbp_vcl *vcl;
 	void *ret;
+	int first;
+
+	ASSERT_CLI();
+
+	if (p == NULL)
+		return;
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	ASSERT_CLI();
-	if (b->probe == NULL)
+	Lck_Lock(&vbp_mtx);
+	AN(b->probe);
+	vt = b->probe;
+	VTAILQ_FOREACH(vcl, &vt->vcls, list)
+		if (vcl->probe == p)
+			break;
+	AN(vcl);
+	first = (vcl == VTAILQ_FIRST(&vt->vcls));
+	VTAILQ_REMOVE(&vt->vcls, vcl, list);
+	Lck_Unlock(&vbp_mtx);
+
+	FREE_OBJ(vcl);
+	if (!first)
 		return;
-	CHECK_OBJ_NOTNULL(b->probe, VBP_TARGET_MAGIC);
+	vcl = VTAILQ_FIRST(&vt->vcls);
+	if (vcl != NULL) {
+		VBP_Start(b, vcl->probe, vcl->hosthdr);
+		return;
+	}
+
+	/* No more polling for this backend */
+
 	vt = b->probe;
 
 	vt->stop = 1;
@@ -493,5 +554,6 @@ void
 VBP_Init(void)
 {
 
+	Lck_New(&vbp_mtx);
 	CLI_AddFuncs(debug_cmds);
 }
