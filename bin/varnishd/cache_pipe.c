@@ -74,7 +74,7 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	sp->vbc = VBE_GetFd(NULL, sp);
+	sp->vbc = VDI_GetFd(NULL, sp);
 	if (sp->vbc == NULL)
 		return;
 	vc = sp->vbc;
@@ -91,7 +91,7 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		vca_close_session(sp, "pipe");
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 		return;
 	}
 
@@ -131,5 +131,5 @@ PipeSession(struct sess *sp)
 		}
 	}
 	vca_close_session(sp, "pipe");
-	VBE_CloseFd(sp);
+	VDI_CloseFd(sp);
 }

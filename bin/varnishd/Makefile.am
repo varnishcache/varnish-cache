@@ -20,6 +20,7 @@ varnishd_SOURCES = \
 	cache_ban.c \
 	cache_center.c \
 	cache_cli.c \
+	cache_dir.c \
 	cache_dir_random.c \
 	cache_dir_dns.c \
 	cache_dir_round_robin.c \

@@ -53,20 +53,6 @@ SVNID("$Id$")
  */
 static VTAILQ_HEAD(,vbc) vbcs = VTAILQ_HEAD_INITIALIZER(vbcs);
 
-/*--------------------------------------------------------------------
- * Create default Host: header for backend request
- */
-void
-VBE_AddHostHeader(const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
-	    "Host: %s", sp->vbc->backend->hosthdr);
-}
 
 /* Private interface from backend_cfg.c */
 void
@@ -342,7 +328,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 		}
 		VSC_main->backend_toolate++;
 		sp->vbc = vc;
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 	}
 
 	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {
@@ -369,90 +355,6 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 	WSP(sp, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->director->vcl_name, bp->vcl_name);
 	return (vc);
-}
-
-/* Close a connection ------------------------------------------------*/
-
-void
-VBE_CloseFd(struct sess *sp)
-{
-	struct backend *bp;
-
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	assert(sp->vbc->fd >= 0);
-
-	bp = sp->vbc->backend;
-
-	WSL(sp->wrk, SLT_BackendClose, sp->vbc->fd, "%s", bp->vcl_name);
-	TCP_close(&sp->vbc->fd);
-	VBE_DropRefConn(bp);
-	sp->vbc->backend = NULL;
-	VBE_ReleaseConn(sp->vbc);
-	sp->vbc = NULL;
-}
-
-/* Recycle a connection ----------------------------------------------*/
-
-void
-VBE_RecycleFd(struct sess *sp)
-{
-	struct backend *bp;
-
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	assert(sp->vbc->fd >= 0);
-
-	bp = sp->vbc->backend;
-
-	WSL(sp->wrk, SLT_BackendReuse, sp->vbc->fd, "%s", bp->vcl_name);
-	/*
-	 * Flush the shmlog, so that another session reusing this backend
-	 * will log chronologically later than our use of it.
-	 */
-	WSL_Flush(sp->wrk, 0);
-	Lck_Lock(&bp->mtx);
-	VSC_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbc, list);
-	sp->vbc = NULL;
-	VBE_DropRefLocked(bp);
-}
-
-/* Get a connection --------------------------------------------------*/
-
-struct vbc *
-VBE_GetFd(const struct director *d, struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (d == NULL)
-		d = sp->director;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->getfd(d, sp));
-}
-
-/* Check health ------------------------------------------------------
- *
- * The target is really an objhead pointer, but since it can not be
- * dereferenced during health-checks, we pass it as uintptr_t, which
- * hopefully will make people investigate, before mucking about with it.
- */
-
-int
-VBE_Healthy_sp(const struct sess *sp, const struct director *d)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(sp->t_req, d, (uintptr_t)sp->objhead));
-}
-
-int
-VBE_Healthy(double now, const struct director *d, uintptr_t target)
-{
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(now, d, target));
 }
 
 /*--------------------------------------------------------------------

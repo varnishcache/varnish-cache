@@ -819,7 +819,7 @@ VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	return (VBE_Healthy_sp(sp, sp->director));
+	return (VDI_Healthy_sp(sp, sp->director));
 }
 
 /*--------------------------------------------------------------------*/

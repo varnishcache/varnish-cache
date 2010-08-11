@@ -473,12 +473,12 @@ extern pthread_t VCA_thread;
 
 /* cache_backend.c */
 
-struct vbc *VBE_GetFd(const struct director *, struct sess *sp);
-int VBE_Healthy(double now, const struct director *, uintptr_t target);
-int VBE_Healthy_sp(const struct sess *sp, const struct director *);
-void VBE_CloseFd(struct sess *sp);
-void VBE_RecycleFd(struct sess *sp);
-void VBE_AddHostHeader(const struct sess *sp);
+struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
+int VDI_Healthy(double now, const struct director *, uintptr_t target);
+int VDI_Healthy_sp(const struct sess *sp, const struct director *);
+void VDI_CloseFd(struct sess *sp);
+void VDI_RecycleFd(struct sess *sp);
+void VDI_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 
 /* cache_backend_cfg.c */

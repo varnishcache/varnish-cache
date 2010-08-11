@@ -351,7 +351,7 @@ FetchHdr(struct sess *sp)
 	w = sp->wrk;
 	hp = sp->wrk->bereq;
 
-	sp->vbc = VBE_GetFd(NULL, sp);
+	sp->vbc = VDI_GetFd(NULL, sp);
 	if (sp->vbc == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
 		return (__LINE__);
@@ -364,7 +364,7 @@ FetchHdr(struct sess *sp)
 	 * XXX: This possibly ought to go into the default VCL
 	 */
 	if (!http_GetHdr(hp, H_Host, &b))
-		VBE_AddHostHeader(sp);
+		VDI_AddHostHeader(sp);
 
 	(void)TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(w, &vc->fd);
@@ -374,7 +374,7 @@ FetchHdr(struct sess *sp)
 	i = FetchReqBody(sp);
 	if (WRW_FlushRelease(w) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d", errno);
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
@@ -397,7 +397,7 @@ FetchHdr(struct sess *sp)
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
 			    "http read error: %d", errno);
-			VBE_CloseFd(sp);
+			VDI_CloseFd(sp);
 			/* XXX: other cleanup ? */
 			return (__LINE__);
 		}
@@ -412,7 +412,7 @@ FetchHdr(struct sess *sp)
 
 	if (http_DissectResponse(sp->wrk, sp->wrk->htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 		/* XXX: other cleanup ? */
 		return (__LINE__);
 	}
@@ -466,7 +466,7 @@ FetchBody(struct sess *sp)
 		sp->wrk->stats.fetch_bad++;
 		/* XXX: AUGH! */
 		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 		return (__LINE__);
 	} else if (http_HdrIs(hp, H_Connection, "keep-alive")) {
 		/*
@@ -515,7 +515,7 @@ FetchBody(struct sess *sp)
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 		sp->obj->len = 0;
 		return (__LINE__);
 	}
@@ -540,9 +540,9 @@ FetchBody(struct sess *sp)
 		cls = 1;
 
 	if (cls)
-		VBE_CloseFd(sp);
+		VDI_CloseFd(sp);
 	else
-		VBE_RecycleFd(sp);
+		VDI_RecycleFd(sp);
 
 	return (0);
 }
