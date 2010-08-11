@@ -102,10 +102,12 @@ VBE_DropRefLocked(struct backend *b)
 	int i;
 	struct vbc *vbe, *vbe2;
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	assert(b->refcount > 0);
 
 	i = --b->refcount;
+	b->vsc->vcls--;
 	Lck_Unlock(&b->mtx);
 	if (i > 0)
 		return;
@@ -191,6 +193,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		    memcmp(b->ipv6, vb->ipv6_sockaddr + 1, b->ipv6len)))
 			continue;
 		b->refcount++;
+		b->vsc->vcls++;
 		return (b);
 	}
 
@@ -201,9 +204,12 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->refcount = 1;
 
 	bprintf(buf, "%s(%s,%s,%s)",
-	    vb->vcl_name, vb->ipv4_addr, vb->ipv6_addr, vb->port);
+	    vb->vcl_name,
+	    vb->ipv4_addr == NULL ? "" : vb->ipv4_addr,
+	    vb->ipv6_addr == NULL ? "" : vb->ipv6_addr, vb->port);
 
 	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_TYPE_VBE, buf);
+	b->vsc->vcls++;
 
 	VTAILQ_INIT(&b->connlist);
 

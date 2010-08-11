@@ -476,6 +476,7 @@ vdi_simple_fini(struct director *d)
 {
 	struct vdi_simple *vs;
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
