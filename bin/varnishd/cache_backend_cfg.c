@@ -102,7 +102,6 @@ VBE_DropRefLocked(struct backend *b)
 	int i;
 	struct vbc *vbe, *vbe2;
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	assert(b->refcount > 0);
 

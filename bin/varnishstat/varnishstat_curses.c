@@ -215,6 +215,15 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
 					    ju, (ju - (intmax_t)pt->ref)/lt,
 					    ju / up, pt->name));
 					pt->ref = ju;
+				} else if (pt->type == 'b') {
+					AC(mvprintw(line, 0, "  %010.10jx <",
+					    (ju >> 24) & 0xffffffffffLL));
+					for (ch = 0x800000; ch; ch >>= 1)
+						if (ju & ch)	
+							AC(printw("V"));
+						else
+							AC(printw("_"));
+					AC(printw(" %s", pt->name));
 				} else {
 					AC(mvprintw(line, 0,
 					    "%12ju %12s %12s %s\n",

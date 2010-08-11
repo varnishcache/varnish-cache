@@ -430,7 +430,6 @@ VBE_UseHealth(struct director *vdi)
 
 	if (strcmp(vdi->name, "simple"))
 		return;
-	printf("USE HEALTH %p\n", vdi);
 	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
 	if (vs->vrt->probe == NULL)
 		return;

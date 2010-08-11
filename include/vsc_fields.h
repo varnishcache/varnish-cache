@@ -193,6 +193,7 @@ VSC_F_SMA(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
 #endif
 
 VSC_F_VBE(vcls,			uint64_t, 0, 'i', "VCL references")
+VSC_F_VBE(happy,		uint64_t, 0, 'b', "Happy health probes")
 
 #ifdef __VSC_F_VBE
 #undef VSC_F_VBE

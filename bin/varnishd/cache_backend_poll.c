@@ -101,11 +101,6 @@ static VTAILQ_HEAD(, vbp_target)	vbp_list =
 
 static struct lock			vbp_mtx;
 
-static const char default_request[] =
-    "GET / HTTP/1.1\r\n"
-    "Connection: close\r\n"
-    "\r\n";
-
 /*--------------------------------------------------------------------
  * Poke one backend, once, but possibly at both IPv4 and IPv6 addresses.
  *
@@ -303,6 +298,7 @@ vbp_has_poked(struct vbp_target *vt)
 	    vt->backend->vcl_name, logmsg, bits,
 	    vt->good, vt->probe.threshold, vt->probe.window,
 	    vt->last, vt->avg, vt->resp_buf);
+	vt->backend->vsc->happy = vt->happy;
 }
 
 /*--------------------------------------------------------------------
@@ -451,8 +447,6 @@ vbp_new_vcl(const struct vrt_backend_probe *p, const char *hosthdr)
 	 * Sanitize and insert defaults
 	 * XXX: we could make these defaults parameters
 	 */
-	if (vcl->probe.request == NULL)
-		vcl->probe.request = default_request;
 	if (vcl->probe.timeout == 0.0)
 		vcl->probe.timeout = 2.0;
 	if (vcl->probe.interval == 0.0)
