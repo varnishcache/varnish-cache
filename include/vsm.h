@@ -52,7 +52,7 @@ struct vsm_chunk {
 	unsigned		state;
 	char			class[8];
 	char			type[8];
-	char			ident[16];
+	char			ident[64];
 };
 
 #define VSM_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
