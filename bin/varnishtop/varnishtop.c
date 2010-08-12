@@ -54,7 +54,11 @@ SVNID("$Id$")
 #include "vsl.h"
 #include "varnishapi.h"
 
+#if 0
 #define AC(x) assert((x) != ERR)
+#else
+#define AC(x) x
+#endif
 
 struct top {
 	uint8_t			tag;

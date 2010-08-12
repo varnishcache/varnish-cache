@@ -52,7 +52,11 @@ SVNID("$Id$")
 #include "varnishapi.h"
 #include "varnishstat.h"
 
+#if 0
 #define AC(x) assert((x) != ERR)
+#else
+#define AC(x) x
+#endif
 
 struct pt {
 	VTAILQ_ENTRY(pt)	next;
@@ -202,13 +206,13 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
 
 			line = 3;
 			VTAILQ_FOREACH(pt, &pthead, next) {
-				if (line >= LINES)
-					break;
 				ju = *pt->ptr;
 				if (ju == 0 && !pt->seen)
 					continue;
 				pt->seen = 1;
 				line++;
+				if (line >= LINES)
+					break;
 				if (pt->type == 'a') {
 					AC(mvprintw(line, 0,
 					    "%12ju %12.2f %12.2f %s\n",
