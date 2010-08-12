@@ -127,7 +127,7 @@ VBE_ReleaseConn(struct vbc *vc)
 
 static int
 vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
-    socklen_t salen, struct vdi_simple *vs)
+    socklen_t salen, const struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;
@@ -166,7 +166,7 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 /*--------------------------------------------------------------------*/
 
 static int
-bes_conn_try(const struct sess *sp, struct vdi_simple *vs)
+bes_conn_try(const struct sess *sp, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
@@ -261,15 +261,17 @@ vbe_NewConn(void)
  */
 
 static unsigned int
-vbe_Healthy(double now, uintptr_t target, struct vdi_simple *vs, struct backend *backend)
+vbe_Healthy(double now, uintptr_t target, const struct vdi_simple *vs)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
 	struct trouble *old;
 	unsigned i = 0, retval;
 	unsigned int threshold;
+	struct backend *backend;
 
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
+	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
 	if (!backend->healthy)
@@ -369,7 +371,7 @@ vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
 		VDI_CloseFd(sp);
 	}
 
-	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, vs, bp)) {
+	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, vs)) {
 		VSC_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -422,7 +424,7 @@ vdi_get_backend_if_simple(const struct director *d)
  */
 
 void
-VBE_UseHealth(struct director *vdi)
+VBE_UseHealth(const struct director *vdi)
 {
 	struct vdi_simple *vs;
 
@@ -466,7 +468,7 @@ vdi_simple_healthy(double now, const struct director *d, uintptr_t target)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(now, target, vs, vs->backend));
+	return (vbe_Healthy(now, target, vs));
 }
 
 /*lint -e{818} not const-able */

@@ -473,7 +473,7 @@ const char *VCA_waiter_name(void);
 extern pthread_t VCA_thread;
 
 /* cache_backend.c */
-void VBE_UseHealth(struct director *vdi);
+void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(double now, const struct director *, uintptr_t target);
