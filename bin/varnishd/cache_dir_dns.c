@@ -79,14 +79,13 @@ struct vdi_dns {
 	pthread_rwlock_t		rwlock;
 	const char			*suffix;
 	double			ttl;
-	const unsigned			max_cache_size;
 };
 
 
 
 /* Compare an IPv4 backend to a IPv4 addr/len */
 static int
-vdi_dns_comp_addrinfo4(struct backend *bp, 
+vdi_dns_comp_addrinfo4(const struct backend *bp, 
 		       const struct sockaddr_in *addr,
 		       const socklen_t len)
 {
@@ -104,7 +103,7 @@ vdi_dns_comp_addrinfo4(struct backend *bp,
 
 /* Compare an IPv6 backend to a IPv6 addr/len */
 static int
-vdi_dns_comp_addrinfo6(struct backend *bp,
+vdi_dns_comp_addrinfo6(const struct backend *bp,
 		       struct sockaddr_in6 *addr,
 		       const socklen_t len)
 {
@@ -128,12 +127,14 @@ vdi_dns_comp_addrinfo6(struct backend *bp,
 
 /* Check if a backends socket is the same as addr */
 static int
-vdi_dns_comp_addrinfo(struct director *dir,
+vdi_dns_comp_addrinfo(const struct director *dir,
 		      struct sockaddr *addr,
 		      const socklen_t len)
 {
 	struct backend *bp;
+
 	bp = vdi_get_backend_if_simple(dir);
+	AN(bp);
 	if (addr->sa_family == PF_INET && bp->ipv4) {
 		return (vdi_dns_comp_addrinfo4(bp, (struct sockaddr_in *)
 			addr, len));
@@ -279,8 +280,9 @@ vdi_dns_cache_add(const struct sess *sp,
 	hint.ai_socktype = SOCK_STREAM;
 
 	ALLOC_OBJ(new, VDI_DNSDIR_MAGIC);
+	XXXAN(new);
 	new->hostname = calloc(sizeof(char), strlen(hostname)+1);
-	assert(new->hostname != NULL);
+	XXXAN(new->hostname);
 	strcpy(new->hostname, hostname);
 
 	error = getaddrinfo(hostname, "80", &hint, &res0);
@@ -292,15 +294,15 @@ vdi_dns_cache_add(const struct sess *sp,
 	}
 
 	for (res = res0; res; res = res->ai_next) {
-		if (res->ai_family != PF_INET &&
-				res->ai_family != PF_INET6)
+		if (res->ai_family != PF_INET && res->ai_family != PF_INET6)
 			continue;
 
 		for (i = 0; i < vs->nhosts; i++) {
 			if (vdi_dns_comp_addrinfo(vs->hosts[i],
-						res->ai_addr, res->ai_addrlen)) {
+			    res->ai_addr, res->ai_addrlen)) {
 				new->hosts[host] = vs->hosts[i];
-				CHECK_OBJ_NOTNULL(new->hosts[host], DIRECTOR_MAGIC);
+				CHECK_OBJ_NOTNULL(new->hosts[host],
+				    DIRECTOR_MAGIC);
 				host++;
 			}
 		}
@@ -327,11 +329,11 @@ vdi_dns_walk_cache(const struct sess *sp,
 	int ret;
 	AZ(pthread_rwlock_rdlock(&vs->rwlock));
 	ret = vdi_dns_cache_has(sp, vs, hostname, &backend, 0);
-	pthread_rwlock_unlock(&vs->rwlock);
+	AZ(pthread_rwlock_unlock(&vs->rwlock));
 	if (!ret) {
 		AZ(pthread_rwlock_wrlock(&vs->rwlock));
 		ret = vdi_dns_cache_add(sp, vs, hostname, &backend);
-		pthread_rwlock_unlock(&vs->rwlock);
+		AZ(pthread_rwlock_unlock(&vs->rwlock));
 	} else
 		VSC_main->dir_dns_hit++;
 
@@ -434,17 +436,15 @@ static void
 vdi_dns_fini(struct director *d)
 {
 	struct vdi_dns *vs;
-	struct director **vh;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_DNS_MAGIC);
 
-	vh = vs->hosts;
 	free(vs->hosts);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	/* FIXME: Free the cache */
-	pthread_rwlock_destroy(&vs->rwlock);
+	AZ(pthread_rwlock_destroy(&vs->rwlock));
 	FREE_OBJ(vs);
 }
 
@@ -482,6 +482,6 @@ VRT_init_dir_dns(struct cli *cli, struct director **bp, int idx,
 	vs->nhosts = t->nmember;
 	vs->ttl = t->ttl;
 	VTAILQ_INIT(&vs->cachelist);
-	pthread_rwlock_init(&vs->rwlock, NULL);
+	AZ(pthread_rwlock_init(&vs->rwlock, NULL));
 	bp[idx] = &vs->dir;
 }

@@ -35,7 +35,6 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -51,7 +50,7 @@ SVNID("$Id$")
  * Parse directors
  */
 
-struct vcc_dir_backend_defaults {
+static struct vcc_dir_backend_defaults {
 	char *port;
 	char *hostheader;
 	double connect_timeout;
@@ -72,20 +71,21 @@ static void vcc_dir_initialize_defaults(void)
 	b_defaults.saint = UINT_MAX;
 }
 
-static struct token *dns_first;
+static const struct token *dns_first;
 
 static void
 print_backend(struct vcc *tl,
 	      int serial,
-	      uint8_t *ip)
+	      const uint8_t *ip)
 {
 	char vgcname[BUFSIZ];
 	char strip[16];
 	struct token tmptok;
 	struct vsb *vsb;
-	sprintf(strip, "%d.%d.%d.%d",ip[3],ip[2],ip[1],ip[0]);
+
+	sprintf(strip, "%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
 	tmptok.dec = strip;
-	sprintf(vgcname,"%.*s_%d",PF(tl->t_dir),serial);
+	sprintf(vgcname,"%.*s_%d",PF(tl->t_dir), serial);
 	vsb = vsb_newauto();
 	AN(vsb);
 	tl->fb = vsb;
@@ -127,6 +127,7 @@ print_backend(struct vcc *tl,
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
 	tl->ndirector++;
 }
+
 /*
  * Output backends for all IPs in the range supplied by
  * "a[0].a[1].a[2].a[3]/inmask".
@@ -138,7 +139,7 @@ print_backend(struct vcc *tl,
 static void
 vcc_dir_dns_makebackend(struct vcc *tl, 
 			int *serial,
-			unsigned char a[],
+			const unsigned char a[],
 			int inmask)
 {
 	uint32_t ip4=0;
@@ -258,7 +259,8 @@ vcc_dir_dns_parse_list(struct vcc *tl, int *serial)
 		vcc_dir_dns_parse_backend_options(tl);
 	while (tl->t->tok == CSTR) {
 		mask = 32;
-		ret = sscanf(tl->t->dec, "%hhu.%hhu.%hhu.%hhu",&a[0],&a[1],&a[2],&a[3]);
+		ret = sscanf(tl->t->dec, "%hhu.%hhu.%hhu.%hhu",
+		    &a[0], &a[1], &a[2], &a[3]);
 		assert(ret == 4);
 		vcc_NextToken(tl);
 		if (tl->t->tok == '/') {
@@ -277,7 +279,7 @@ vcc_ParseDnsDirector(struct vcc *tl)
 {
 	struct token *t_field, *t_be, *t_suffix = NULL;
 	double ttl = 60.0;
-	int nbh, nelem = 0;
+	int nelem = 0;
 	struct fld_spec *fs;
 	const char *first;
 	char *p;
@@ -294,7 +296,6 @@ vcc_ParseDnsDirector(struct vcc *tl)
 			first = "";
 			t_be = tl->t;
 			vcc_ResetFldSpec(fs);
-			nbh = -1;
 
 			ExpectErr(tl, '{');
 			vcc_NextToken(tl);

@@ -100,6 +100,8 @@
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
+-sem(vdi_dns_cache_list_add, custodial(3))
+
 -e455	// thread lock
 -e458	// unprotected read
 -e763	// Redundant declaration for symbol '...' previously declared
