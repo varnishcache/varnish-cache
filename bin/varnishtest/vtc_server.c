@@ -112,9 +112,6 @@ server_thread(void *priv)
 			vtc_log(vl, 0, "Shutdown failed: %s", strerror(errno));
 		TCP_close(&fd);
 	}
-	macro_def(s->vl, s->name, "addr", NULL);
-	macro_def(s->vl, s->name, "port", NULL);
-	macro_def(s->vl, s->name, "sock", NULL);
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
 }
@@ -155,6 +152,9 @@ server_delete(struct server *s)
 {
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
+	macro_def(s->vl, s->name, "addr", NULL);
+	macro_def(s->vl, s->name, "port", NULL);
+	macro_def(s->vl, s->name, "sock", NULL);
 	vtc_logclose(s->vl);
 	free(s->name);
 	/* XXX: MEMLEAK (?) (VSS ??) */

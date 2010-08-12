@@ -557,9 +557,13 @@ VBP_Stop(struct backend *b, struct vrt_backend_probe const *p)
 
 	/* No more polling for this backend */
 
+	b->healthy = 1;
+
 	vt->stop = 1;
 	AZ(pthread_cancel(vt->thread));
 	AZ(pthread_join(vt->thread, &ret));
+
+	b->healthy = 1;
 
 	VTAILQ_REMOVE(&vbp_list, vt, list);
 	b->probe = NULL;

@@ -396,7 +396,7 @@ FetchHdr(struct sess *sp)
 		i = HTC_Rx(sp->wrk->htc);
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
-			    "http read error: %d", errno);
+			    "http read error: %d (%s)", errno, strerror(errno));
 			VDI_CloseFd(sp);
 			/* XXX: other cleanup ? */
 			return (__LINE__);
