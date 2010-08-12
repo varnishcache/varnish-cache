@@ -60,7 +60,8 @@ static struct vcc_dir_backend_defaults {
 	unsigned saint;
 } b_defaults;
 
-static void vcc_dir_initialize_defaults(void)
+static void
+vcc_dir_initialize_defaults(void)
 {
 	b_defaults.port = NULL;
 	b_defaults.hostheader = NULL;
@@ -83,16 +84,17 @@ print_backend(struct vcc *tl,
 	struct token tmptok;
 	struct vsb *vsb;
 
-	sprintf(strip, "%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
+	bprintf(strip, "%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
 	tmptok.dec = strip;
-	sprintf(vgcname,"%.*s_%d",PF(tl->t_dir), serial);
+	bprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
 	vsb = vsb_newauto();
 	AN(vsb);
 	tl->fb = vsb;
 	Fc(tl, 0, "\t{ .host = VGC_backend_%s },\n",vgcname);
 	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, serial);
 
-	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n", vgcname);
+	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
+	    vgcname);
 
 	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(tl->t_dir));
 	if (serial >= 0)
@@ -308,7 +310,8 @@ vcc_ParseDnsDirector(struct vcc *tl)
 					vcc_ParseBackendHost(tl, nelem, &p);
 					ERRCHK(tl);
 					AN(p);
-					Fc(tl, 0, "%s .host = VGC_backend_%s", first, p);
+					Fc(tl, 0, "%s .host = VGC_backend_%s",
+					    first, p);
 				} else {
 					ErrInternal(tl);
 				}
@@ -316,8 +319,8 @@ vcc_ParseDnsDirector(struct vcc *tl)
 			}
 			vcc_FieldsOk(tl, fs);
 			if (tl->err) {
-				vsb_printf(tl->sb,
-						"\nIn member host specification starting at:\n");
+				vsb_printf(tl->sb, "\nIn member host"
+				    " specification starting at:\n");
 				vcc_ErrWhere(tl, t_be);
 				return;
 			}
@@ -340,8 +343,7 @@ vcc_ParseDnsDirector(struct vcc *tl)
 		vcc_NextToken(tl);
 	}
 	Fc(tl, 0, "};\n");
-	Fc(tl, 0,
-	    "\nstatic const struct vrt_dir_dns vgc_dir_priv_%.*s = {\n",
+	Fc(tl, 0, "\nstatic const struct vrt_dir_dns vgc_dir_priv_%.*s = {\n",
 	    PF(tl->t_dir));
 	Fc(tl, 0, "\t.name = \"%.*s\",\n", PF(tl->t_dir));
 	Fc(tl, 0, "\t.nmember = %d,\n", nelem);
