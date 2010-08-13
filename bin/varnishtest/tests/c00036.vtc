@@ -1,14 +1,17 @@
-# Test that we get anything through at all
-#
 # $Id$
+
+test "Backend close retry"
 
 server s1 -repeat 1 {
 	rxreq 
 	txresp -bodylen 5
+
 	rxreq 
 	accept
+
 	rxreq
 	txresp -bodylen 6
+
 } -start
 
 varnish v1 -vcl+backend {
@@ -22,6 +25,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 5
+
 	txreq 
 	rxresp
 	expect resp.status == 200
