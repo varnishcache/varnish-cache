@@ -365,6 +365,7 @@ vcc_new_source(const char *b, const char *e, const char *name)
 	sp = calloc(sizeof *sp, 1);
 	assert(sp != NULL);
 	sp->name = strdup(name);
+	AN(sp->name);
 	sp->b = b;
 	sp->e = e;
 	return (sp);
