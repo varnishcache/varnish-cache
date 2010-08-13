@@ -456,6 +456,8 @@ struct vbc {
 	struct vdi_simple	*vdis;
 	int			fd;
 
+	uint8_t			recycled;
+
 	/* Timeouts */
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
