@@ -55,6 +55,7 @@ VSC_F_MAIN(backend_reuse,	uint64_t, 0, 'a', "Backend conn. reuses")
 VSC_F_MAIN(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed")
 VSC_F_MAIN(backend_recycle,	uint64_t, 0, 'a', "Backend conn. recycles")
 VSC_F_MAIN(backend_unused,	uint64_t, 0, 'a', "Backend conn. unused")
+VSC_F_MAIN(backend_retry,	uint64_t, 0, 'a', "Backend conn. retry")
 
 VSC_F_MAIN(fetch_head,		uint64_t, 1, 'a', "Fetch head")
 VSC_F_MAIN(fetch_length,	uint64_t, 1, 'a', "Fetch with Length")

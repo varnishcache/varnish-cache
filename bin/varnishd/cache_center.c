@@ -439,6 +439,15 @@ cnt_fetch(struct sess *sp)
 	http_Setup(sp->wrk->beresp, sp->wrk->ws);
 
 	i = FetchHdr(sp);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_main->backend_retry++;
+		i = FetchHdr(sp);
+	}
 
 	/*
 	 * Save a copy before it might get mangled in VCL.  When it comes to
