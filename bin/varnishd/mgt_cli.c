@@ -99,6 +99,8 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 	cli_out(cli, "-----------------------------\n");
 	cli_out(cli, "Varnish HTTP accelerator CLI.\n");
 	cli_out(cli, "-----------------------------\n");
+	cli_out(cli, "%s\n", vsb_data(vident) + 1);
+	cli_out(cli, "\n");
 	cli_out(cli, "Type 'help' for command list.\n");
 	cli_out(cli, "Type 'quit' to close CLI session.\n");
 	if (child_pid < 0)
@@ -154,7 +156,6 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	char *q;
 	unsigned u;
 
-	(void)av;
 	(void)priv;
 	/*
 	 * Command not recognized in master, try cacher if it is
