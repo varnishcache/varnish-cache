@@ -95,7 +95,8 @@ static void
 cli_cb_after(const struct cli *cli)
 {
 	Lck_Unlock(&cli_mtx);
-	VSL(SLT_CLI, 0, "Wr %03u %s", cli->result, vsb_data(cli->sb));
+	VSL(SLT_CLI, 0, "Wr %03u %u %s",
+	    cli->result, vsb_len(cli->sb), vsb_data(cli->sb));
 }
 
 void
@@ -183,4 +184,3 @@ CLI_Init(void)
 
 	CLI_AddFuncs(master_cmds);
 }
-
