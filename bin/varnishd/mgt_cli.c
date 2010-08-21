@@ -178,16 +178,16 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	if (i != strlen(cli->cmd)) {
 		cli_result(cli, CLIS_COMMS);
 		cli_out(cli, "CLI communication error");
+		MGT_Child_Cli_Fail();
 		return;
 	}
 	i = write(cli_o, "\n", 1);
 	if (i != 1) {
 		cli_result(cli, CLIS_COMMS);
 		cli_out(cli, "CLI communication error");
+		MGT_Child_Cli_Fail();
 		return;
 	}
-
-	assert(i == 1 || errno == EPIPE);
 	(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", q);
@@ -233,12 +233,15 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 			*status = CLIS_COMMS;
 		if (resp != NULL)
 			*resp = strdup("CLI communication error");
+		MGT_Child_Cli_Fail();
 		return (CLIS_COMMS);
 	}
 
 	(void)cli_readres(cli_i, &u, resp, params->cli_timeout);
 	if (status != NULL)
 		*status = u;
+	if (u == CLIS_COMMS)
+		MGT_Child_Cli_Fail();
 	return (u == CLIS_OK ? 0 : u);
 }
 
