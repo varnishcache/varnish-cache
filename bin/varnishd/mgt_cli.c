@@ -542,7 +542,6 @@ void
 mgt_cli_telnet(const char *T_arg)
 {
 	struct vss_addr **ta;
-	char *addr, *port;
 	int i, n, sock, good;
 	struct telnet *tn;
 	char *p;
@@ -553,9 +552,7 @@ mgt_cli_telnet(const char *T_arg)
 	AN(p);
 	strcpy(p, T_arg);
 
-	XXXAZ(VSS_parse(T_arg, &addr, &port));
-
-	n = VSS_resolve(addr, port, &ta);
+	n = VSS_resolve(T_arg, NULL, &ta);
 	if (n == 0) {
 		fprintf(stderr, "Could not open management port\n");
 		exit(2);
@@ -578,19 +575,15 @@ mgt_cli_telnet(const char *T_arg)
 	}
 	free(ta);
 	if (good == 0) {
-		REPORT(LOG_ERR, "-T %s:%s could not be listened on.",
-		    addr, port);
+		REPORT(LOG_ERR, "-T %s could not be listened on.", T_arg);
 		exit(2);
 	}
-	free(addr);
-	free(port);
 }
 
 /* Reverse CLI ("Master") connections --------------------------------*/
 
 static int M_fd = -1;
 static struct vev *M_poker, *M_conn;
-static char *M_addr, *M_port;
 static struct vss_addr **M_ta;
 static int M_nta, M_nxt;
 static double M_poll = 0.1;
@@ -666,11 +659,7 @@ mgt_cli_master(const char *M_arg)
 {
 	(void)M_arg;
 
-	if (VSS_parse(M_arg, &M_addr, &M_port) || M_port == NULL) {
-		fprintf(stderr, "Could not parse -M argument\n");
-		exit (1);
-	}
-	M_nta = VSS_resolve(M_addr, M_port, &M_ta);
+	M_nta = VSS_resolve(M_arg, NULL, &M_ta);
 	if (M_nta <= 0) {
 		fprintf(stderr, "Could resolve -M argument to address\n");
 		exit (1);

@@ -678,16 +678,9 @@ init_connection(const char *address)
 {
 	struct vss_addr **ta;
 	struct vss_addr *tap;
-	char *addr, *port;
 	int i, n;
 
-	if (VSS_parse(address, &addr, &port) != 0) {
-		thread_log(0, 0, "Invalid address");
-		exit(2);
-	}
-	n = VSS_resolve(addr, port, &ta);
-	free(addr);
-	free(port);
+	n = VSS_resolve(address, NULL, &ta);
 	if (n == 0) {
 		thread_log(0, 0, "Could not connect to server");
 		exit(2);

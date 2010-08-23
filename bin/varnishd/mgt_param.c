@@ -378,18 +378,9 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 	VTAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
 		struct vss_addr **ta;
-		char *host, *port;
 		int j, n;
 
-		if (VSS_parse(av[i], &host, &port) != 0) {
-			cli_out(cli, "Invalid listen address ");
-			cli_quote(cli, av[i]);
-			cli_result(cli, CLIS_PARAM);
-			break;
-		}
-		n = VSS_resolve(host, port ? port : "http", &ta);
-		free(host);
-		free(port);
+		n = VSS_resolve(av[i], "http", &ta);
 		if (n == 0) {
 			cli_out(cli, "Invalid listen address ");
 			cli_quote(cli, av[i]);
