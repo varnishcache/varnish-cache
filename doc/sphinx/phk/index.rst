@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning think.
 
 .. toctree::
 
+	ipv6suckage.rst
 	backends.rst
 	platforms.rst
 	barriers.rst

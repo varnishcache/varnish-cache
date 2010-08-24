@@ -752,6 +752,10 @@ VRT_r_server_hostname(struct sess *sp)
 	return (vrt_hostname);
 }
 
+/*--------------------------------------------------------------------
+ * XXX: This is pessimistically silly
+ */
+
 int
 VRT_r_server_port(struct sess *sp)
 {

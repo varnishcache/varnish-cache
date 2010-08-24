@@ -95,7 +95,7 @@ server_thread(void *priv)
 
 	vl = vtc_logopen(s->name);
 
-	vtc_log(vl, 2, "Started on %s:%s", s->aaddr, s->aport);
+	vtc_log(vl, 2, "Started on %s %s", s->aaddr, s->aport);
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
 			vtc_log(vl, 3, "Iteration %d", i);
@@ -185,12 +185,12 @@ server_start(struct server *s)
 		    s->aport, sizeof s->aport);
 		macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
 		macro_def(s->vl, s->name, "port", "%s", s->aport);
-		macro_def(s->vl, s->name, "sock", "%s:%s", s->aaddr, s->aport);
+		macro_def(s->vl, s->name, "sock", "%s %s", s->aaddr, s->aport);
 		/* Record the actual port, and reuse it on subsequent starts */
 		if (!strcmp(s->port, "0"))
 			REPLACE(s->port, s->aport);
 	}
-	vtc_log(s->vl, 1, "Listen on %s:%s", s->addr, s->port);
+	vtc_log(s->vl, 1, "Listen on %s %s", s->addr, s->port);
 	s->run = 1;
 	AZ(pthread_create(&s->tp, NULL, server_thread, s));
 }
