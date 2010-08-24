@@ -423,7 +423,7 @@ JEMALLOC_SUBDIR=
 JEMALLOC_LDADD=
 AC_ARG_ENABLE(jemalloc,
 AS_HELP_STRING([--disable-jemalloc],[do not use jemalloc (default is yes on Linux, no everywhere else)]),
-[if "x$enableval" = "xyes"; then
+[if test "x$enableval" = "xyes"; then
 	JEMALLOC_SUBDIR=libjemalloc
 	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
 fi],
