@@ -1,4 +1,4 @@
-# $Id#
+# $Id$
 
 test "% escapes in VCL source and vcl.show"
 
