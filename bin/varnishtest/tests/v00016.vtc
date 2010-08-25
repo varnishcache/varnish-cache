@@ -95,7 +95,7 @@ varnish v1 -badvcl {
 	sub vcl_hash { if (req.hash != "foo") { } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (2 == 3) { } }
 }

@@ -449,41 +449,19 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 }
 
 void
-vcc_Cond_Ip(struct vcc *tl, const char *a1)
+vcc_Acl_Hack(struct vcc *tl, char *b)
 {
-	unsigned tcond;
 	char acln[32];
+	unsigned tcond;
 
-	switch (tl->t->tok) {
-	/* XXX: T_NOMATCH */
-	case '~':
-		vcc_NextToken(tl);
-		ExpectErr(tl, ID);
-		vcc_AddRef(tl, tl->t, R_ACL);
-		Fb(tl, 1, "match_acl_named_%.*s(sp, %s)\n",
-		    PF(tl->t), a1);
-		vcc_NextToken(tl);
-		break;
-	case T_EQ:
-	case T_NEQ:
-
-		VTAILQ_INIT(&tl->acl);
-		tcond = tl->t->tok;
-		vcc_NextToken(tl);
-		bprintf(acln, "%u", tl->cnt);
-		vcc_acl_entry(tl);
-		vcc_acl_emit(tl, acln, 1);
-		Fb(tl, 1, "%smatch_acl_anon_%s(sp, %s)\n",
-		    (tcond == T_NEQ ? "!" : ""), acln, a1);
-		break;
-	default:
-		vsb_printf(tl->sb, "Invalid condition ");
-		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " on IP number variable\n");
-		vsb_printf(tl->sb, "  only '==', '!=' and '~' are legal\n");
-		vcc_ErrWhere(tl, tl->t);
-		break;
-	}
+	VTAILQ_INIT(&tl->acl);
+	tcond = tl->t->tok;
+	vcc_NextToken(tl);
+	bprintf(acln, "%u", tl->cnt);
+	vcc_acl_entry(tl);
+	vcc_acl_emit(tl, acln, 1);
+	sprintf(b, "%smatch_acl_anon_%s(sp, \v1)",
+	    (tcond == T_NEQ ? "!" : ""), acln);
 }
 
 void

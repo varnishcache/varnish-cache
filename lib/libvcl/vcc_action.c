@@ -101,6 +101,7 @@ parse_error(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
+#if 1
 static void
 illegal_assignment(const struct vcc *tl, const char *type)
 {
@@ -110,12 +111,14 @@ illegal_assignment(const struct vcc *tl, const char *type)
 	vsb_printf(tl->sb,
 	    " only '=' is legal for %s\n", type);
 }
+#endif
 
 static void
 parse_set(struct vcc *tl)
 {
 	const struct var *vp;
-	struct token *at, *vt;
+	struct token *vt;
+	struct token *at;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
@@ -124,6 +127,11 @@ parse_set(struct vcc *tl)
 	ERRCHK(tl);
 	assert(vp != NULL);
 	Fb(tl, 1, "%s", vp->lname);
+#if 0
+	vcc_NextToken(tl);
+	SkipToken(tl, '=');
+	vcc_Expr(tl, vp->fmt);
+#else
 	vcc_NextToken(tl);
 	switch (vp->fmt) {
 	case INT:
@@ -212,6 +220,7 @@ parse_set(struct vcc *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+#endif
 }
 
 /*--------------------------------------------------------------------*/

@@ -174,7 +174,7 @@ struct method {
 /* vcc_acl.c */
 
 void vcc_Acl(struct vcc *tl);
-void vcc_Cond_Ip(struct vcc *tl, const char *a1);
+void vcc_Acl_Hack(struct vcc *tl, char *b);
 
 /* vcc_action.c */
 int vcc_ParseAction(struct vcc *tl);
@@ -224,7 +224,7 @@ void vcc_RTimeVal(struct vcc *tl, double *);
 void vcc_TimeVal(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 double vcc_DoubleVal(struct vcc *tl);
-void vcc_Expr(struct vcc *tl, enum var_type fmt);
+void vcc_Expr(struct vcc *tl, enum var_type typ);
 
 /* vcc_dir_dns.c */
 parsedirector_f vcc_ParseDnsDirector;

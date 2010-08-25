@@ -105,6 +105,7 @@ vcc_Coord(const struct vcc *tl, struct vsb *vsb, const struct token *t)
 	vcc_icoord(vsb, t, NULL);
 }
 
+/* XXX: should take first+last token */
 void
 vcc_ErrWhere(struct vcc *tl, const struct token *t)
 {
