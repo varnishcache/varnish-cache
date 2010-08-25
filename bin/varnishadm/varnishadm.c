@@ -79,21 +79,23 @@ cli_sock(const char *T_arg, const char *S_arg)
 
 	sock = VSS_open(T_arg, timeout);
 	if (sock < 0) {
-		fprintf(stderr, "Connection failed\n");
-		exit(1);
+		fprintf(stderr, "Connection failed (%s)\n", T_arg);
+		return (-1);
 	}
 
 	(void)cli_readres(sock, &status, &answer, timeout);
 	if (status == CLIS_AUTH) {
 		if (S_arg == NULL) {
 			fprintf(stderr, "Authentication required\n");
-			exit(1);
+			AZ(close(sock));
+			return(-1);
 		}
 		fd = open(S_arg, O_RDONLY);
 		if (fd < 0) {
 			fprintf(stderr, "Cannot open \"%s\": %s\n",
 			    S_arg, strerror(errno));
-			exit (1);
+			AZ(close(sock));
+			return (-1);
 		}
 		CLI_response(fd, answer, buf);
 		AZ(close(fd));
@@ -106,7 +108,8 @@ cli_sock(const char *T_arg, const char *S_arg)
 	}
 	if (status != CLIS_OK) {
 		fprintf(stderr, "Rejected %u\n%s\n", status, answer);
-		exit(1);
+		AZ(close(sock));
+		return (-1);
 	}
 	free(answer);
 
@@ -114,10 +117,12 @@ cli_sock(const char *T_arg, const char *S_arg)
 	(void)cli_readres(sock, &status, &answer, timeout);
 	if (status != CLIS_OK || strstr(answer, "PONG") == NULL) {
 		fprintf(stderr, "No pong received from server\n");
-		exit(1);
+		AZ(close(sock));
+		return(-1);
 	}
 	free(answer);
 
+	fprintf(stderr, "CLI connected to %s\n", T_arg);
 	return (sock);
 }
 
@@ -205,9 +210,53 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishadm [-t timeout] [-S secretfile] "
+	    "usage: varnishadm [-n ident] [-t timeout] [-S secretfile] "
 	    "-T [address]:port command [...]\n");
+	fprintf(stderr, "\t-n is mutually exlusive with -S and -T\n");
 	exit(1);
+}
+
+static int
+n_arg_sock(const char *n_arg)
+{
+	char *T_arg = NULL;
+	char *S_arg = NULL;
+	struct VSM_data *vsd;
+	char *p;
+	int sock;
+
+	vsd = VSM_New();
+	assert(VSL_Arg(vsd, 'n', n_arg));
+	if (VSM_Open(vsd, 1)) {
+		fprintf(stderr, "Could not open shared memory\n");
+		return (-1);
+	}
+	if (T_arg == NULL) {
+		p = VSM_Find_Chunk(vsd, "Arg", "-T", "", NULL);
+		if (p == NULL)  {
+			fprintf(stderr, "No -T arg in shared memory\n");
+			return (-1);
+		}
+		T_arg = strdup(p);
+	}
+	if (S_arg == NULL) {
+		p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
+		if (p != NULL) 
+			S_arg = strdup(p);
+	}
+	sock = -1;
+	while (*T_arg) {
+		p = strchr(T_arg, '\n');
+		AN(p);
+		*p = '\0';
+		sock = cli_sock(T_arg, S_arg);
+		if (sock >= 0) 
+			break;
+		T_arg = p + 1;
+	}
+	free(T_arg);
+	free(S_arg);
+	return (sock);
 }
 
 int
@@ -216,8 +265,6 @@ main(int argc, char * const *argv)
 	const char *T_arg = NULL;
 	const char *S_arg = NULL;
 	const char *n_arg = NULL;
-	struct VSM_data *vsd;
-	char *p;
 	int opt, sock;
 
 	while ((opt = getopt(argc, argv, "n:S:T:t:")) != -1) {
@@ -243,29 +290,18 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	if (n_arg != NULL) {
-		vsd = VSM_New();
-		assert(VSL_Arg(vsd, 'n', n_arg));
-		if (!VSM_Open(vsd, 1)) {
-			if (T_arg == NULL) {
-				p = VSM_Find_Chunk(vsd, "Arg", "-T", "", NULL);
-				if (p != NULL) {
-					T_arg = strdup(p);
-				}
-			}
-			if (S_arg == NULL) {
-				p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
-				if (p != NULL) {
-					S_arg = strdup(p);
-				}
-			}
+		if (T_arg != NULL || S_arg != NULL) {
+			usage();
 		}
-	}
-
-	if (T_arg == NULL)
+		sock = n_arg_sock(n_arg);
+		if (sock < 0)
+			exit(2);
+	} else if (T_arg == NULL) {
 		usage();
-
-	assert(T_arg != NULL);
-	sock = cli_sock(T_arg, S_arg);
+	} else {
+		assert(T_arg != NULL);
+		sock = cli_sock(T_arg, S_arg);
+	}
 
 	if (argc > 0)
 		do_args(sock, argc, argv);

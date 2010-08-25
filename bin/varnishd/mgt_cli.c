@@ -545,23 +545,24 @@ mgt_cli_telnet(const char *T_arg)
 	int i, n, sock, good;
 	struct telnet *tn;
 	char *p;
-
-	/* Save in shmem */
-	i = strlen(T_arg);
-	p = VSM_Alloc(i + 1, "Arg", "-T", "");
-	AN(p);
-	strcpy(p, T_arg);
+	struct vsb *vsb;
+	char abuf[TCP_ADDRBUFSIZE];
+	char pbuf[TCP_PORTBUFSIZE];
 
 	n = VSS_resolve(T_arg, NULL, &ta);
 	if (n == 0) {
-		fprintf(stderr, "Could not open management port\n");
+		REPORT(LOG_ERR, "-T %s Could not be resolved\n", T_arg);
 		exit(2);
 	}
 	good = 0;
+	vsb = vsb_newauto();
+	XXXAN(vsb);
 	for (i = 0; i < n; ++i) {
 		sock = VSS_listen(ta[i], 10);
 		if (sock < 0)
 			continue;
+		TCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		vsb_printf(vsb, "%s %s\n", abuf, pbuf);
 		good++;
 		tn = telnet_new(sock);
 		tn->ev = vev_new();
@@ -578,6 +579,13 @@ mgt_cli_telnet(const char *T_arg)
 		REPORT(LOG_ERR, "-T %s could not be listened on.", T_arg);
 		exit(2);
 	}
+	vsb_finish(vsb);
+	AZ(vsb_overflowed(vsb));
+	/* Save in shmem */
+	p = VSM_Alloc(vsb_len(vsb) + 1, "Arg", "-T", "");
+	AN(p);
+	strcpy(p, vsb_data(vsb));
+	vsb_delete(vsb);
 }
 
 /* Reverse CLI ("Master") connections --------------------------------*/
