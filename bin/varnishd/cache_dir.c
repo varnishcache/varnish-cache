@@ -33,7 +33,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: cache_backend.c 5089 2010-08-11 12:12:47Z phk $")
+SVNID("$Id$")
 
 #include "cache.h"
 #include "cache_backend.h"
