@@ -225,7 +225,7 @@ vcc_Cond_2(struct vcc *tl)
 		vcc_Cond_3(tl);
 		Fb(tl, 1, ")\n");
 		return;
-	} 
+	}
 	vsb_printf(tl->sb,
 	    "Syntax error in condition.\n"
 	    "Expected '(', '!' or variable name.\n"

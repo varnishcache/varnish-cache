@@ -110,7 +110,7 @@ vreadfile(const char *pfx, const char *fn)
 	else if (pfx != NULL) {
 		bprintf(fnb, "/%s/%s", pfx, fn); /* XXX: graceful length check */
 		fd = open(fnb, O_RDONLY);
-	} else 
+	} else
 		fd = open(fn, O_RDONLY);
 	if (fd < 0)
 		return (NULL);

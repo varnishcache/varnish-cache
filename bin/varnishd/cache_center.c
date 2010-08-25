@@ -262,7 +262,7 @@ cnt_done(struct sess *sp)
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0) 
+	if (sp->esis > 0)
 		return (1);
 
 	memset(&sp->acct_req, 0, sizeof sp->acct_req);

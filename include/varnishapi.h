@@ -54,7 +54,7 @@ struct VSM_data *VSM_New(void);
 	 * You can have multiple active VSL_data handles at the same time
 	 * referencing the same or different shared memory files.
 	 * Returns:
-	 * 	Pointer to usable VSL_data handle.
+	 *	Pointer to usable VSL_data handle.
 	 */
 
 typedef void vsm_diag_f(void *priv, const char *fmt, ...);
@@ -96,7 +96,7 @@ int VSM_Open(struct VSM_data *vd, int diag);
 	 * If diag is non-zero, diagnostics are emitted.
 	 * Returns:
 	 *	0 on success
-	 * 	!= 0 on failure
+	 *	!= 0 on failure
 	 */
 
 int VSM_ReOpen(struct VSM_data *vd, int diag);
@@ -161,7 +161,7 @@ void VSC_Setup(struct VSM_data *vd);
 
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
-	 * Handle standard stat-presenter arguments 
+	 * Handle standard stat-presenter arguments
 	 * Return:
 	 *	-1 error
 	 *	 0 not handled
@@ -212,9 +212,9 @@ int VSL_Open(struct VSM_data *vd, int diag);
 	 * If diag is non-zero, diagnostics are emitted.
 	 * Returns:
 	 *	0 on success
-	 * 	!= 0 on failure
+	 *	!= 0 on failure
 	 */
-	
+
 #define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:"
 #define VSL_b_USAGE	"[-b]"
 #define VSL_c_USAGE	"[-c]"
@@ -229,18 +229,18 @@ int VSL_Open(struct VSM_data *vd, int diag);
 #define VSL_x_USAGE	"[-x tag]"
 #define VSL_X_USAGE	"[-X regexp]"
 #define VSL_USAGE	"[-bCcd] "		\
-			VSL_i_USAGE " " 	\
+			VSL_i_USAGE " "		\
 			VSL_I_USAGE " "		\
 			VSL_k_USAGE " "		\
 			VSL_n_USAGE " "		\
 			VSL_r_USAGE " "		\
 			VSL_s_USAGE " "		\
 			VSL_X_USAGE " "		\
-			VSL_x_USAGE 
-			
+			VSL_x_USAGE
+
 int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
-	 * Handle standard log-presenter arguments 
+	 * Handle standard log-presenter arguments
 	 * Return:
 	 *	-1 error
 	 *	 0 not handled

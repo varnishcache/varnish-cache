@@ -277,7 +277,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	(void)unlink(sf);
 	vsb_delete(cmdsb);
 
-	if (!i) 
+	if (!i)
 		i = SUB_run(sb, run_dlopen, of, "dlopen", 10);
 
 	if (i) {

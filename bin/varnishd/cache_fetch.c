@@ -367,7 +367,6 @@ FetchHdr(struct sess *sp)
 	vc = sp->vbc;
 	if (vc->recycled)
 		retry = 1;
-		
 
 	/*
 	 * Now that we know our backend, we can set a default Host:

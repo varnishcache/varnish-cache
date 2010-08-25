@@ -55,12 +55,12 @@ SVNID("$Id$")
 #define VDI_DNS_MAX_CACHE		1024
 #define VDI_DNS_GROUP_MAX_BACKENDS	1024
 
-/* DNS Cache entry 
+/* DNS Cache entry
  */
 struct vdi_dns_hostgroup {
 	unsigned			magic;
 #define VDI_DNSDIR_MAGIC		0x1bacab21
-	char 				*hostname;
+	char				*hostname;
 	struct director			*hosts[VDI_DNS_GROUP_MAX_BACKENDS];
 	unsigned			nhosts;
 	unsigned			next_host; /* Next to use...*/
@@ -85,7 +85,7 @@ struct vdi_dns {
 
 /* Compare an IPv4 backend to a IPv4 addr/len */
 static int
-vdi_dns_comp_addrinfo4(const struct backend *bp, 
+vdi_dns_comp_addrinfo4(const struct backend *bp,
 		       const struct sockaddr_in *addr,
 		       const socklen_t len)
 {
@@ -226,7 +226,7 @@ vdi_dns_cache_has(const struct sess *sp,
 		if (vdi_dns_groupmatch(hostgr, hostname)) {
 			ret = (vdi_dns_pick_host(sp, hostgr));
 			*backend = ret;
-			if (*backend != NULL) 
+			if (*backend != NULL)
 				CHECK_OBJ_NOTNULL(*backend, DIRECTOR_MAGIC);
 			return 1;
 		}
@@ -274,7 +274,7 @@ vdi_dns_cache_add(const struct sess *sp,
 
 	if (vdi_dns_cache_has(sp, vs, hostname, backend, 1))
 		return 1;
-	
+
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
@@ -311,7 +311,7 @@ vdi_dns_cache_add(const struct sess *sp,
 
 	new->nhosts = host;
 	vdi_dns_cache_list_add(sp, vs, new);
-	*backend = vdi_dns_pick_host(sp, new);	
+	*backend = vdi_dns_pick_host(sp, new);
 	return 1;
 }
 
@@ -367,7 +367,7 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	if (http_GetHdr(hp, H_Host, &p) == 0)
 		return (NULL);
 
-	/* We need a working copy since it's going to be modified */	
+	/* We need a working copy since it's going to be modified */
 	strncpy(hostname, p, sizeof(hostname));
 
 	/* remove port-portion of the Host-header, if present. */
@@ -399,7 +399,7 @@ vdi_dns_getfd(const struct director *director, struct sess *sp)
 	dir = vdi_dns_find_backend(sp, vs);
 	if (!dir || !VDI_Healthy_sp(sp, dir))
 		return (NULL);
-	
+
 	vbe = VDI_GetFd(dir, sp);
 	return (vbe);
 }

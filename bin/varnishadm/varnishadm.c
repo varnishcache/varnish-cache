@@ -241,7 +241,7 @@ n_arg_sock(const char *n_arg)
 	}
 	if (S_arg == NULL) {
 		p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
-		if (p != NULL) 
+		if (p != NULL)
 			S_arg = strdup(p);
 	}
 	sock = -1;
@@ -250,7 +250,7 @@ n_arg_sock(const char *n_arg)
 		AN(p);
 		*p = '\0';
 		sock = cli_sock(T_arg, S_arg);
-		if (sock >= 0) 
+		if (sock >= 0)
 			break;
 		T_arg = p + 1;
 	}

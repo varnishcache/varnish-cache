@@ -77,7 +77,7 @@ struct vbp_target {
 	struct vrt_backend_probe	probe;
 	int				stop;
 	struct vsb			*vsb;
-	char				*req;	
+	char				*req;
 	int				req_len;
 
 	char				resp_buf[128];

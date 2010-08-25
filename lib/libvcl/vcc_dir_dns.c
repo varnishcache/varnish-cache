@@ -139,7 +139,7 @@ print_backend(struct vcc *tl,
  * uint8_ts.
  */
 static void
-vcc_dir_dns_makebackend(struct vcc *tl, 
+vcc_dir_dns_makebackend(struct vcc *tl,
 			int *serial,
 			const unsigned char a[],
 			int inmask)

@@ -508,7 +508,7 @@ cmd_http_txresp(CMD_ARGS)
 	int bodylen = 0;
 	char *b, *c;
 	char *body = NULL, *nullbody;
-	
+
 
 	(void)cmd;
 	(void)vl;

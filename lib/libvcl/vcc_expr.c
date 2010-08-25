@@ -309,7 +309,7 @@ vcc_Expr1(struct vcc *tl, enum var_type fmt)
 				vcc_ErrWhere(tl, top);
 				return;
 			}
-		} else 
+		} else
 			break;
 		lfmt = afmt;
 	}

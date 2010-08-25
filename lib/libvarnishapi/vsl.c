@@ -66,7 +66,7 @@ void
 VSL_Setup(struct VSM_data *vd)
 {
 	struct vsl *vsl;
-        
+
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->vsc);
 	AZ(vd->vsl);

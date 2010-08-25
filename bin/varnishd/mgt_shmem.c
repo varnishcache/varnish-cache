@@ -38,7 +38,7 @@
  *		|
  *		v
  *      Open old VSM,
- *	check pid 	--------> exit/fail (-n message)
+ *	check pid	--------> exit/fail (-n message)
  *		|
  *		+<----------------------+
  *		|			^
@@ -81,7 +81,7 @@
  *		|		|
  *		v		|
  *		+-------------->+
- *		
+ *
  */
 
 #include "config.h"

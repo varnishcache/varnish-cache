@@ -578,7 +578,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 
 	/* Check that the hostname makes sense */
 	assert(t_host != NULL);
-	if (t_port != NULL) 
+	if (t_port != NULL)
 		Emit_Sockaddr(tl, t_host, t_port->dec);
 	else
 		Emit_Sockaddr(tl, t_host, "80");
