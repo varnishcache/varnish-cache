@@ -9,7 +9,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-p thread_pool_stack=131072" -vcl+backend {} -start
+varnish v1 -arg "-p thread_pool_stack=262144" -vcl+backend {} -start
 
 client c1 {
 	txreq -url "/"
