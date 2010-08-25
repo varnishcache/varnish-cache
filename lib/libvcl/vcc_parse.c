@@ -163,6 +163,25 @@ vcc_Cond_Num(struct vcc *tl, enum var_type fmt, const char *fmtn,
 	}
 }
 
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Cond_3:
+ *	Typed_Expr Relation Compat_Typed_Expr
+ *    Typed_Expr:
+ *	VarName
+ *	FuncCall
+ *    Relation:
+ *	Subset('==', '!=', '<', '<=', '>', '>=', '~', '!~')
+ *    Compat_Typed_Expr
+ *	Typed_Expr
+ *	Typed_Const
+ *
+ * Since we cannot tell if "10 s" is a TIME or DURATION type, or for that
+ * matter if "127.0.0.1" is a STRING or IP type, we demand that the expression
+ * before the relational operator provides us with a type which can be used to
+ * guide parsing of other expression.
+ */
+
 static void
 vcc_Cond_3(struct vcc *tl)
 {
@@ -207,6 +226,13 @@ vcc_Cond_3(struct vcc *tl)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Cond_2:
+ *	'!'? '(' Conditional ')'
+ *	'!'? Cond_3
+ */
+
 static void
 vcc_Cond_2(struct vcc *tl)
 {
@@ -236,6 +262,12 @@ vcc_Cond_2(struct vcc *tl)
 	return;
 }
 
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Cond_1:
+ *	Cond_2 { '&&' Cond_2 }*
+ */
+
 static void
 vcc_Cond_1(struct vcc *tl)
 {
@@ -250,6 +282,12 @@ vcc_Cond_1(struct vcc *tl)
 	}
 	Fb(tl, 1, ")\n");
 }
+
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Cond_0:
+ *	Cond_1 { '||' Cond_1 }*
+ */
 
 static void
 vcc_Cond_0(struct vcc *tl)
@@ -266,6 +304,12 @@ vcc_Cond_0(struct vcc *tl)
 	Fb(tl, 1, ")\n");
 }
 
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Conditional:
+ *	'(' Cond_0 ')'
+ */
+
 static void
 vcc_Conditional(struct vcc *tl)
 {
@@ -278,7 +322,16 @@ vcc_Conditional(struct vcc *tl)
 	SkipToken(tl, ')');
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    IfStmt:
+ *	'if' Conditional  Compound Branch1* Branch2
+ *    Branch1:
+ *      'elseif' Conditional Compound
+ *    Branch2:
+ *      'else' Compound
+ *	null
+ */
 
 static void
 vcc_IfStmt(struct vcc *tl)
@@ -317,7 +370,17 @@ vcc_IfStmt(struct vcc *tl)
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Compound:
+ *	'{' Stmt* '}'
+ *
+ *    Stmt:
+ *	Compound
+ *	IfStmt
+ *	CSRC
+ *	Id(Action) (XXX)
+ */
 
 static void
 vcc_Compound(struct vcc *tl)
@@ -371,7 +434,11 @@ vcc_Compound(struct vcc *tl)
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Function:
+ *	'sub' ID(name) Compound
+ */
 
 static void
 vcc_Function(struct vcc *tl)
