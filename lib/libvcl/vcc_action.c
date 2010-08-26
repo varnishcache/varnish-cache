@@ -65,37 +65,25 @@ parse_call(struct vcc *tl)
 static void
 parse_error(struct vcc *tl)
 {
-	const struct var *vp;
+	int paran = 0;
 
 	vcc_NextToken(tl);
-	if (tl->t->tok == ID) {
-		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
-		ERRCHK(tl);
-		assert(vp != NULL);
-		if (vp->fmt == INT) {
-			Fb(tl, 1, "VRT_error(sp, %s", vp->rname);
-			vcc_NextToken(tl);
-		} else {
-			Fb(tl, 1, "VRT_error(sp, 0");
-		}
-	} else if (tl->t->tok == CNUM) {
-		Fb(tl, 1, "VRT_error(sp, %u", vcc_UintVal(tl));
-	} else
-		Fb(tl, 1, "VRT_error(sp, 0");
-	if (tl->t->tok == CSTR) {
-		Fb(tl, 0, ", %.*s", PF(tl->t));
+	if (tl->t->tok == '(') {
+		paran = 1;
 		vcc_NextToken(tl);
-	} else if (tl->t->tok == ID) {
-		Fb(tl, 0, ", ");
-		if (!vcc_StringVal(tl)) {
-			ERRCHK(tl);
-			vcc_ExpectedStringval(tl);
-			return;
-		}
-	} else {
-		Fb(tl, 0, ", (const char *)0");
 	}
-	Fb(tl, 0, ");\n");
+	Fb(tl, 1, "VRT_error(sp,\n");
+	vcc_Expr(tl, INT);
+	if (tl->t->tok == ',') {
+		Fb(tl, 1, ",\n");
+		vcc_NextToken(tl);
+		vcc_Expr(tl, STRING);
+	} else {
+		Fb(tl, 1, ", 0\n");
+	}
+	if (paran)
+		SkipToken(tl, ')');
+	Fb(tl, 1, ");\n");
 	Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
 }
 

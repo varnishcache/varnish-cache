@@ -480,6 +480,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e2;
 	enum var_type f2, f3;
+	struct token *tk;
 
 	*e = NULL;
 	vcc_expr4(tl, e, fmt);
@@ -493,10 +494,11 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 		return;
 	}
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
+		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
 		ERRCHK(tl);
-		if (tl->t->tok == '+')
+		if (tk->tok == '+')
 			*e = vcc_expr_edit(f3, "(\v1+\v2)", *e, e2);
 		else
 			*e = vcc_expr_edit(f3, "(\v1-\v2)", *e, e2);
