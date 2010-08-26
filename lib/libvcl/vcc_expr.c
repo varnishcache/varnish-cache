@@ -247,38 +247,68 @@ vcc_delete_expr(struct expr *e)
  * XXX: check line lengths in edit, should pass indent in for this
  */
 
+static void
+vcc_show(const char *p)
+{
+
+	fprintf(stderr, "<");
+	for (; *p; p++) {
+		if (*p == '\n')
+			fprintf(stderr, "\\n");
+		else if (*p == '\v')
+			fprintf(stderr, "\\v");
+		else
+			fprintf(stderr, "%c", *p);
+	}
+	fprintf(stderr, ">\n");
+}
+
+
 static struct expr *
 vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2)
 {
 	struct expr *e;
-	char *q;
+	int nl = 1;
 
-	q = strchr(vsb_data(e1->vsb), '\n');
-	if (q == NULL && e2 != NULL)
-		q = strchr(vsb_data(e2->vsb), '\n');
+	fprintf(stderr, "EDIT:");
+	vcc_show(p);
+	if (e1 != NULL) {
+		fprintf(stderr, "E1:");
+		vcc_show(vsb_data(e1->vsb));
+	}
+	if (e2 != NULL) {
+		fprintf(stderr, "E2:");
+		vcc_show(vsb_data(e2->vsb));
+	}
+
 	e = vcc_new_expr();
 	while (*p != '\0') {
+		if (*p == '\n') {
+			if (!nl) 
+				vsb_putc(e->vsb, *p);
+			nl = 1;
+			p++;
+			continue;
+		}
+		nl = 0;
 		if (*p != '\v') {
 			vsb_putc(e->vsb, *p);
 			p++;
 			continue;
 		} 
+		assert(*p == '\v');
 		p++;
 		switch(*p) {
 		case '+': vsb_cat(e->vsb, "\v+"); break;
 		case '-': vsb_cat(e->vsb, "\v-"); break;
 		case '1': 
 		case '2': 
-			if (q != NULL) 
-				vsb_cat(e->vsb, "\v+\n");
 			if (*p == '1')
 				vsb_cat(e->vsb, vsb_data(e1->vsb));
 			else {
 				AN(e2);
 				vsb_cat(e->vsb, vsb_data(e2->vsb));
 			}
-			if (q != NULL) 
-				vsb_cat(e->vsb, "\v-\n");
 			break;
 		default:
 			assert(__LINE__ == 0);
@@ -290,6 +320,8 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	e->fmt = fmt;
+	fprintf(stderr, "RESULT:");
+	vcc_show(vsb_data(e->vsb));
 	return (e);
 }
 
@@ -479,7 +511,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
 	ERRCHK(tl);
-	if (fmt == STRING) {
+	if (fmt == STRING || fmt == STRING_LIST) {
 		p = NULL;
 		switch((*e)->fmt) {
 		case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
@@ -491,7 +523,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		default:	break;
 		}
 		if (p != NULL) {
-			*e = vcc_expr_edit(STRING, p, *e, NULL);
+			*e = vcc_expr_edit(fmt, p, *e, NULL);
 			return;
 		}
 	}
@@ -521,16 +553,16 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	default:
 		return;
 	}
-	while (tl->t->tok == '+' || tl->t->tok == '-') {
+	while (tl->t->tok == '*' || tl->t->tok == '/') {
 		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
 		assert(e2->fmt == f2);
 		ERRCHK(tl);
-		if (tk->tok == '+')
-			*e = vcc_expr_edit(f3, "(\v1+\v2)", *e, e2);
+		if (tk->tok == '*')
+			*e = vcc_expr_edit(f3, "(\v1*\v2)", *e, e2);
 		else
-			*e = vcc_expr_edit(f3, "(\v1-\v2)", *e, e2);
+			*e = vcc_expr_edit(f3, "(\v1/\v2)", *e, e2);
 	}
 }
 
@@ -550,6 +582,17 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
 	f2 = (*e)->fmt;
+
+	if (fmt == STRING_LIST && f2 == STRING) {
+		if (f2 == STRING)
+			(*e)->fmt = STRING_LIST;
+		while (tl->t->tok == '+') {
+			vcc_NextToken(tl);
+			vcc_expr_mul(tl, &e2, STRING);
+			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
+		}
+		return;
+	}
 
 	if (f2 == STRING && tl->t->tok == '+') {
 		*e = vcc_expr_edit(STRING, "\v+VRT_String(sp,\n\v1", *e, NULL);
@@ -735,14 +778,16 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr_cmp(tl, e, fmt);
 	ERRCHK(tl);
-	if ((*e)->fmt != BOOL) 
+	if ((*e)->fmt != BOOL || tl->t->tok != T_CAND)
 		return;
+	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_CAND) {
 		vcc_NextToken(tl);
 		vcc_expr_cmp(tl, &e2, fmt);
 		ERRCHK(tl);
-		*e = vcc_expr_edit(BOOL, "(\v1&&\v2)", *e, e2);
+		*e = vcc_expr_edit(BOOL, "\v1\v-\n&&\v+\n\v2", *e, e2);
 	}
+	*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -792,6 +837,10 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 		tl->err = 1;
 	}
 	if (!tl->err) {
+		if (e->fmt == STRING_LIST) {
+			e = vcc_expr_edit(STRING_LIST,
+			    "\v+\n\v1,\nvrt_magic_string_end\v-", e, NULL);
+		}
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		vsb_putc(tl->fb, '\n');
 	} else {

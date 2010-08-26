@@ -69,8 +69,8 @@ vcc_Conditional(struct vcc *tl)
 {
 
 	SkipToken(tl, '(');
-	Fb(tl, 1, "(\n");
-	vcc_Expr(tl, BOOL);
+	Fb(tl, 0, "(\n");
+	L(tl, vcc_Expr(tl, BOOL));
 	ERRCHK(tl);
 	Fb(tl, 1, ")\n");
 	SkipToken(tl, ')');
@@ -92,8 +92,8 @@ vcc_IfStmt(struct vcc *tl)
 {
 
 	SkipToken(tl, T_IF);
-	Fb(tl, 1, "if \n");
-	L(tl, vcc_Conditional(tl));
+	Fb(tl, 1, "if ");
+	vcc_Conditional(tl);
 	ERRCHK(tl);
 	L(tl, vcc_Compound(tl));
 	ERRCHK(tl);
@@ -110,9 +110,9 @@ vcc_IfStmt(struct vcc *tl)
 			/* FALLTHROUGH */
 		case T_ELSEIF:
 		case T_ELSIF:
-			Fb(tl, 1, "else if \n");
+			Fb(tl, 1, "else if ");
 			vcc_NextToken(tl);
-			L(tl, vcc_Conditional(tl));
+			vcc_Conditional(tl);
 			ERRCHK(tl);
 			L(tl, vcc_Compound(tl));
 			ERRCHK(tl);

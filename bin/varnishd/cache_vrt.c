@@ -1007,15 +1007,10 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_log(struct sess *sp, const char *str, ...)
+VRT_log(struct sess *sp, const char *str)
 {
-	va_list ap;
-	char *b;
 
-	va_start(ap, str);
-	b = vrt_assemble_string(sp->http, NULL, str, ap);
-	va_end(ap);
-	WSP(sp, SLT_VCL_Log, "%s", b);
+	WSP(sp, SLT_VCL_Log, "%s", str);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1056,22 +1051,16 @@ VRT_ban(struct sess *sp, char *cmds, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban_string(struct sess *sp, const char *str, ...)
+VRT_ban_string(struct sess *sp, const char *str)
 {
-	char *p, *a1, *a2, *a3;
+	char *a1, *a2, *a3;
 	char **av;
-	va_list ap;
 	struct ban *b;
 	int good;
 	int i;
 
-	va_start(ap, str);
-	p = vrt_assemble_string(sp->http, NULL, str, ap);
-	if (p == NULL)
-		/* XXX: report error how ? */
-		return;
-
-	av = ParseArgv(p, 0);
+	(void)sp;
+	av = ParseArgv(str, 0);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
 		FreeArgv(av);

@@ -146,10 +146,12 @@ parse_set(struct vcc *tl)
 	}
 	if (ap->type == VOID)
 		SkipToken(tl, ap->oper);
-	vcc_Expr(tl, fmt);
-	if (vp->fmt == STRING)
-		Fb(tl, 1, ", vrt_magic_string_end");
-	Fb(tl, 0, ");\n");
+	if (fmt == STRING) {
+		vcc_Expr(tl, STRING_LIST);
+	} else {
+		vcc_Expr(tl, fmt);
+	}
+	Fb(tl, 1, ");\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -253,8 +255,7 @@ parse_purge(struct vcc *tl)
 		Fb(tl, 1, "VRT_ban_string(sp, ");
 		vcc_Expr(tl, STRING);
 		ERRCHK(tl);
-		Fb(tl, 0, ", ");
-		Fb(tl, 0, "vrt_magic_string_end);\n");
+		Fb(tl, 0, ");\n");
 	}
 
 	ExpectErr(tl, ')');
@@ -309,9 +310,9 @@ parse_hash_data(struct vcc *tl)
 	SkipToken(tl, '(');
 
 	Fb(tl, 1, "VRT_hashdata(sp, ");
-	vcc_Expr(tl, STRING);
+	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
-	Fb(tl, 0, ", vrt_magic_string_end);\n");
+	Fb(tl, 0, ");\n");
 	SkipToken(tl, ')');
 }
 
@@ -378,9 +379,9 @@ parse_synthetic(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	Fb(tl, 1, "VRT_synth_page(sp, 0, ");
-	vcc_Expr(tl, STRING);
+	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
-	Fb(tl, 0, ", vrt_magic_string_end);\n");
+	Fb(tl, 0, ");\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -392,7 +393,7 @@ parse_log(struct vcc *tl)
 	Fb(tl, 1, "VRT_log(sp, ");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
-	Fb(tl, 0, ", vrt_magic_string_end);\n");
+	Fb(tl, 0, ");\n");
 }
 
 /*--------------------------------------------------------------------*/
