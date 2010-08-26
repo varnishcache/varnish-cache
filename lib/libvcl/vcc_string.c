@@ -185,7 +185,7 @@ vcc_StringVal(struct vcc *tl)
 			Fb(tl, 0, "VRT_double_string(sp, %s)", vp->rname);
 			break;
 		case BACKEND:
-			Fb(tl, 0, "VRT_backend_string(sp)");
+			Fb(tl, 0, "VRT_backend_string(sp, NULL)");
 			break;
 		default:
 			vsb_printf(tl->sb, "String representation of '%s'"

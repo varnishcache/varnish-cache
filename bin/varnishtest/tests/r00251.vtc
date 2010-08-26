@@ -13,8 +13,8 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
 		set beresp.http.Snafu1 =
-		    "zoom"
-		    regsub(beresp.http.Foomble, "ar", "\0\0")
+		    "zoom" +
+		    regsub(beresp.http.Foomble, "ar", "\0\0") +
 		    "box";
 	}
 } -start 

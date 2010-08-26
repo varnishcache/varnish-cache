@@ -273,8 +273,10 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 				vsb_cat(e->vsb, "\v+\n");
 			if (*p == '1')
 				vsb_cat(e->vsb, vsb_data(e1->vsb));
-			else
+			else {
+				AN(e2);
 				vsb_cat(e->vsb, vsb_data(e2->vsb));
+			}
 			if (q != NULL) 
 				vsb_cat(e->vsb, "\v-\n");
 			break;
@@ -327,6 +329,35 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+hack_regsub(struct vcc *tl, struct expr **e, int all)
+{
+	struct expr *e2;
+	char *p;
+	char buf[128];
+
+	SkipToken(tl, ID);
+	SkipToken(tl, '(');
+
+	vcc_expr0(tl, &e2, STRING);
+
+	SkipToken(tl, ',');
+	ExpectErr(tl, CSTR);
+	p = vcc_regexp(tl);
+	vcc_NextToken(tl);
+
+	bprintf(buf, "VRT_regsub(sp, %d,\n\v1,\n%s\n", all, p);
+	*e = vcc_expr_edit(STRING, buf, e2, *e);
+
+	SkipToken(tl, ',');
+	vcc_expr0(tl, &e2, STRING);
+	*e = vcc_expr_edit(STRING, "\v1, \v2)", *e, e2);
+	SkipToken(tl, ')');
+}
+
+/*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr4:
  *	'(' Expr0 ')'
@@ -354,10 +385,42 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 	e1 = vcc_new_expr();
 	switch(tl->t->tok) {
 	case ID:
+		if (vcc_IdIs(tl->t, "regsub")) {
+			vcc_delete_expr(e1);
+			hack_regsub(tl, e, 0);
+			return;
+		}
+		if (vcc_IdIs(tl->t, "regsuball")) {
+			vcc_delete_expr(e1);
+			hack_regsub(tl, e, 1);
+			return;
+		}
+		if (vcc_IdIs(tl->t, "true")) {
+			vcc_NextToken(tl);
+			vsb_printf(e1->vsb, "(1==1)");
+			e1->fmt = BOOL;
+			break;
+		}
+		if (vcc_IdIs(tl->t, "false")) {
+			vcc_NextToken(tl);
+			vsb_printf(e1->vsb, "(0!=0)");
+			e1->fmt = BOOL;
+			break;
+		}
+		if (fmt == BACKEND) {
+			vcc_ExpectCid(tl);
+			vcc_AddRef(tl, tl->t, R_BACKEND);
+			vsb_printf(e1->vsb, "VGCDIR(_%.*s)", PF(tl->t));
+			e1->fmt = BACKEND;
+			vcc_NextToken(tl);
+			break;
+		}
 		sym = VCC_FindSymbol(tl, tl->t);
 		if (sym == NULL) {
 			vsb_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " (expected type %s):\n",
+			    vcc_Type(fmt));
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -385,6 +448,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			ERRCHK(tl);
 			vsb_printf(e1->vsb, "%g", d);
 			e1->fmt = DURATION;
+		} else if (fmt == REAL) {
+			vsb_printf(e1->vsb, "%g", vcc_DoubleVal(tl));
+			e1->fmt = REAL;
 		} else {
 			vsb_printf(e1->vsb, "%.*s", PF(tl->t));
 			vcc_NextToken(tl);
@@ -422,7 +488,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 	switch(f2) {
 	case INT:	f2 = INT; break;
-	case DURATION:	f2 = INT; break; 	/* XXX: should be Double */
+	case DURATION:	f2 = REAL; break;
 	default:
 		return;
 	}
@@ -453,6 +519,19 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
 	f2 = (*e)->fmt;
+
+	if (f2 == STRING && tl->t->tok == '+') {
+		*e = vcc_expr_edit(STRING, "\v+VRT_String(sp,\n\v1", *e, NULL);
+		while (tl->t->tok == '+') {
+			vcc_NextToken(tl);
+			vcc_expr0(tl, &e2, STRING);
+			assert(e2->fmt == STRING);
+			*e = vcc_expr_edit(STRING, "\v1, \v2", *e, e2);
+		}
+		*e = vcc_expr_edit(STRING, "\v1, vrt_magic_string_end)",
+		    *e, NULL);
+		return;
+	}
 
 	switch(f2) {
 	case INT:	break;
@@ -517,6 +596,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	char buf[256];
 	char *re;
 	const char *not;
+	const char *p;
 	struct token *tk;
 
 	*e = NULL;
@@ -600,6 +680,20 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		default:
 			break;
+		}
+	}
+	if (fmt == STRING) {
+		p = NULL;
+		switch((*e)->fmt) {
+		case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
+		case INT:	p = "VRT_int_string(sp, \v1)"; break;
+		case IP:	p = "VRT_IP_string(sp, \v1)"; break;
+		case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+		default:	break;
+		}
+		if (p != NULL) {
+			*e = vcc_expr_edit(STRING, p, *e, NULL);
+			return;
 		}
 	}
 	if (fmt == VOID || fmt != (*e)->fmt) {

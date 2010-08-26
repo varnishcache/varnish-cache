@@ -143,13 +143,13 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 
 /*lint -e{818} ap,hp could be const */
 static char *
-vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
+vrt_build_string(struct ws *ws, const char *h, const char *p, va_list ap)
 {
 	char *b, *e;
 	unsigned u, x;
 
-	u = WS_Reserve(hp->ws, 0);
-	e = b = hp->ws->f;
+	u = WS_Reserve(ws, 0);
+	e = b = ws->f;
 	e += u;
 	if (h != NULL) {
 		x = strlen(h);
@@ -173,14 +173,43 @@ vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
-		WS_Release(hp->ws, 0);
+		WS_Release(ws, 0);
 		return (NULL);
 	} else {
 		e = b;
-		b = hp->ws->f;
-		WS_Release(hp->ws, e - b);
+		b = ws->f;
+		WS_Release(ws, e - b);
 		return (b);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * XXX: Optimize the single element case ?
+ */
+
+/*lint -e{818} ap,hp could be const */
+static char *
+vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
+{
+
+	return (vrt_build_string(hp->ws, h, p, ap));
+}
+
+/*--------------------------------------------------------------------
+ * Build a string on the worker threads workspace
+ */
+
+const char *
+VRT_String(const struct sess *sp, const char *p, ...)
+{
+	va_list ap;
+	char *b;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	va_start(ap, p);
+	b = vrt_build_string(sp->wrk->ws, NULL, p, ap);
+	va_end(ap);
+	return (b);
 }
 
 /*--------------------------------------------------------------------*/
@@ -892,12 +921,14 @@ VRT_time_string(const struct sess *sp, double t)
 }
 
 const char *
-VRT_backend_string(struct sess *sp)
+VRT_backend_string(struct sess *sp, const struct director *d)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->director == NULL)
+	if (d == NULL)
+		d = sp->director;
+	if (d == NULL)
 		return (NULL);
-	return (sp->director->vcl_name);
+	return (d->vcl_name);
 }
 
 /*--------------------------------------------------------------------*/

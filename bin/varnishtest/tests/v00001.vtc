@@ -13,8 +13,8 @@ server s1 -start
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.http.foobar =
-		    req.url
-		    req.request
+		    req.url +
+		    req.request +
 		    req.proto;
 		set req.url = "/";
 		set req.proto = "HTTP/1.2";
@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_miss {
 		set bereq.http.foobar =
-		    bereq.url
+		    bereq.url +
 		    bereq.proto;
 		set bereq.url = "/";
 		set bereq.proto = "HTTP/1.2";
@@ -30,7 +30,7 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_fetch {
 		set beresp.http.foobar =
-		    beresp.proto beresp.response beresp.status;
+		    beresp.proto + beresp.response + beresp.status;
 		set beresp.proto = "HTTP/1.2";
 		set beresp.response = "For circular files";
 		set beresp.status = 903;
@@ -42,9 +42,7 @@ varnish v1 -vcl+backend {
 		# XXX should be moved to it's own test
 		set resp.http.x-served-by-hostname = server.hostname;
 		set resp.http.x-served-by-identity = server.identity;
-		set resp.http.foobar =
-		    resp.proto
-		    resp.status;
+		set resp.http.foobar = resp.proto + resp.status;
 	}
 } -start
 

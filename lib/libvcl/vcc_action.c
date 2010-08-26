@@ -101,126 +101,64 @@ parse_error(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-#if 1
-static void
-illegal_assignment(const struct vcc *tl, const char *type)
-{
-
-	vsb_printf(tl->sb, "Invalid assignment operator ");
-	vcc_ErrToken(tl, tl->t);
-	vsb_printf(tl->sb,
-	    " only '=' is legal for %s\n", type);
-}
-#endif
+static const struct arith {
+	enum var_type		type;
+	unsigned		oper;
+	enum var_type		want;
+} arith[] = {
+	{ INT,		T_INCR,		INT },
+	{ INT,		T_DECR,		INT },
+	{ INT,		T_MUL,		INT },
+	{ INT,		T_DIV,		INT },
+	{ INT, 		'=',		INT },
+	{ INT, 		0,		INT },
+	{ TIME,		T_INCR,		DURATION },
+	{ TIME,		T_DECR,		DURATION },
+	{ TIME,		T_MUL,		REAL },
+	{ TIME,		T_DIV,		REAL },
+	{ TIME,		'=',		TIME },
+	{ TIME,		0,		TIME },
+	{ DURATION,	T_INCR,		DURATION },
+	{ DURATION,	T_DECR,		DURATION },
+	{ DURATION,	T_MUL,		REAL },
+	{ DURATION,	T_DIV,		REAL },
+	{ DURATION,	'=',		DURATION },
+	{ DURATION,	0,		DURATION },
+	{ VOID, 	'=',		VOID }
+};
 
 static void
 parse_set(struct vcc *tl)
 {
 	const struct var *vp;
-	struct token *vt;
-	struct token *at;
+	const struct arith *ap;
+	enum var_type fmt;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	vt = tl->t;
 	vp = vcc_FindVar(tl, tl->t, 1, "cannot be set");
 	ERRCHK(tl);
 	assert(vp != NULL);
 	Fb(tl, 1, "%s", vp->lname);
-#if 0
 	vcc_NextToken(tl);
-	SkipToken(tl, '=');
-	vcc_Expr(tl, vp->fmt);
-#else
-	vcc_NextToken(tl);
-	switch (vp->fmt) {
-	case INT:
-	case TIME:
-	case DURATION:
-		if (tl->t->tok != '=')
+	fmt = vp->fmt;
+	for (ap = arith; ap->type != VOID; ap++) {
+		if (ap->type != fmt)
+			continue;
+		if (ap->oper != tl->t->tok)
+			continue;
+		if (ap->oper != '=') 
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
-		at = tl->t;
 		vcc_NextToken(tl);
-		switch (at->tok) {
-		case T_MUL:
-		case T_DIV:
-			Fb(tl, 0, "%g", vcc_DoubleVal(tl));
-			break;
-		case T_INCR:
-		case T_DECR:
-		case '=':
-			vcc_VarVal(tl, vp, vt);
-			ERRCHK(tl);
-			break;
-		default:
-			vsb_printf(tl->sb, "Invalid assignment operator.\n");
-			vcc_ErrWhere(tl, at);
-			return;
-		}
-		Fb(tl, 0, ");\n");
+		fmt = ap->want;
 		break;
-	case BACKEND:
-		if (tl->t->tok != '=') {
-			illegal_assignment(tl, "backend");
-			return;
-		}
-		vcc_NextToken(tl);
-		vcc_ExpectCid(tl);
-		ERRCHK(tl);
-		vcc_AddRef(tl, tl->t, R_BACKEND);
-		Fb(tl, 0, "VGCDIR(_%.*s)", PF(tl->t));
-		vcc_NextToken(tl);
-		Fb(tl, 0, ");\n");
-		break;
-	case STRING:
-		if (tl->t->tok != '=') {
-			illegal_assignment(tl, "strings");
-			return;
-		}
-		vcc_NextToken(tl);
-		if (!vcc_StringVal(tl)) {
-			ERRCHK(tl);
-			vcc_ExpectedStringval(tl);
-			return;
-		}
-		do
-			Fb(tl, 0, ", ");
-		while (vcc_StringVal(tl));
-		if (tl->t->tok != ';') {
-			ERRCHK(tl);
-			vsb_printf(tl->sb,
-			    "Expected variable, string or semicolon\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		Fb(tl, 0, "vrt_magic_string_end);\n");
-		break;
-	case BOOL:
-		if (tl->t->tok != '=') {
-			illegal_assignment(tl, "boolean");
-			return;
-		}
-		vcc_NextToken(tl);
-		ExpectErr(tl, ID);
-		if (vcc_IdIs(tl->t, "true")) {
-			Fb(tl, 0, " 1);\n", vp->lname);
-		} else if (vcc_IdIs(tl->t, "false")) {
-			Fb(tl, 0, " 0);\n", vp->lname);
-		} else {
-			vsb_printf(tl->sb,
-			    "Expected true or false\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_NextToken(tl);
-		break;
-	default:
-		vsb_printf(tl->sb,
-		    "Assignments not possible for type of '%s'\n", vp->name);
-		vcc_ErrWhere(tl, tl->t);
-		return;
 	}
-#endif
+	if (ap->type == VOID)
+		SkipToken(tl, ap->oper);
+	vcc_Expr(tl, fmt);
+	if (vp->fmt == STRING)
+		Fb(tl, 1, ", vrt_magic_string_end");
+	Fb(tl, 0, ");\n");
 }
 
 /*--------------------------------------------------------------------*/

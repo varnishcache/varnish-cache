@@ -24,37 +24,37 @@ varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.foo = 
-			req.http.bar
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" "0123456789abcdef"
-			"0123456789abcdef" 
+			req.http.bar +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcdef" +
 			"01234567";
 		set req.http.baz = "BAZ";
 		return (pass);
