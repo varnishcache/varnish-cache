@@ -15,8 +15,8 @@ varnish v1 -vcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_miss { error req.url ; }
-	sub vcl_pass { error "the butter please" ; }
+	sub vcl_miss { error 100 req.url ; }
+	sub vcl_pass { error 100 "the butter please" ; }
 	sub vcl_fetch { error beresp.status req.url; }
 }
 

@@ -27,7 +27,7 @@ varnish v1 -vcl+backend {
 			error 410;
 		}
 		if (req.request == "PURGESTR") {
-			purge ("" req.http.purge);
+			purge ("" + req.http.purge);
 			error 410;
 		}
 	}

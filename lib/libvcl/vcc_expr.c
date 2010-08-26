@@ -359,14 +359,14 @@ hack_regsub(struct vcc *tl, struct expr **e, int all)
 
 /*--------------------------------------------------------------------
  * SYNTAX:
- *    Expr4:
+ *    Expr5:
  *	'(' Expr0 ')'
  *	CNUM
  *	CSTR
  */
 
 static void
-vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr5(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e1, *e2;
 	const struct symbol *sym;
@@ -470,6 +470,34 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 }
 
 /*--------------------------------------------------------------------
+ */
+static void
+vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
+{
+	const char *p;
+
+	*e = NULL;
+	vcc_expr5(tl, e, fmt);
+	ERRCHK(tl);
+	if (fmt == STRING) {
+		p = NULL;
+		switch((*e)->fmt) {
+		case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
+		case INT:	p = "VRT_int_string(sp, \v1)"; break;
+		case IP:	p = "VRT_IP_string(sp, \v1)"; break;
+		case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+		case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
+				/* XXX: should have "s" suffix ? */
+		default:	break;
+		}
+		if (p != NULL) {
+			*e = vcc_expr_edit(STRING, p, *e, NULL);
+			return;
+		}
+	}
+}
+
+/*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr3:
  *      Expr4 { {'*'|'/'} Expr4 } *
@@ -497,6 +525,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
+		assert(e2->fmt == f2);
 		ERRCHK(tl);
 		if (tk->tok == '+')
 			*e = vcc_expr_edit(f3, "(\v1+\v2)", *e, e2);
@@ -526,9 +555,9 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(STRING, "\v+VRT_String(sp,\n\v1", *e, NULL);
 		while (tl->t->tok == '+') {
 			vcc_NextToken(tl);
-			vcc_expr0(tl, &e2, STRING);
+			vcc_expr_mul(tl, &e2, STRING);
 			assert(e2->fmt == STRING);
-			*e = vcc_expr_edit(STRING, "\v1, \v2", *e, e2);
+			*e = vcc_expr_edit(STRING, "\v1,\n\v2", *e, e2);
 		}
 		*e = vcc_expr_edit(STRING, "\v1, vrt_magic_string_end)",
 		    *e, NULL);
@@ -546,6 +575,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		vcc_NextToken(tl);
 		vcc_expr_mul(tl, &e2, f2);
+		assert(e2->fmt == f2);
 		ERRCHK(tl);
 		if (tl->t->tok == '+')
 			*e = vcc_expr_edit(f2, "(\v1+\v2)", *e, e2);
@@ -598,7 +628,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	char buf[256];
 	char *re;
 	const char *not;
-	const char *p;
 	struct token *tk;
 
 	*e = NULL;
@@ -682,20 +711,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		default:
 			break;
-		}
-	}
-	if (fmt == STRING) {
-		p = NULL;
-		switch((*e)->fmt) {
-		case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
-		case INT:	p = "VRT_int_string(sp, \v1)"; break;
-		case IP:	p = "VRT_IP_string(sp, \v1)"; break;
-		case TIME:	p = "VRT_time_string(sp, \v1)"; break;
-		default:	break;
-		}
-		if (p != NULL) {
-			*e = vcc_expr_edit(STRING, p, *e, NULL);
-			return;
 		}
 	}
 	if (fmt == VOID || fmt != (*e)->fmt) {

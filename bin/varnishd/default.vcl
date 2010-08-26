@@ -126,13 +126,13 @@ sub vcl_error {
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
   <head>
-    <title>"} obj.status " " obj.response {"</title>
+    <title>"} + obj.status + " " + obj.response + {"</title>
   </head>
   <body>
-    <h1>Error "} obj.status " " obj.response {"</h1>
-    <p>"} obj.response {"</p>
+    <h1>Error "} + obj.status + " " + obj.response + {"</h1>
+    <p>"} + obj.response + {"</p>
     <h3>Guru Meditation:</h3>
-    <p>XID: "} req.xid {"</p>
+    <p>XID: "} + req.xid + {"</p>
     <hr>
     <p>Varnish cache server</p>
   </body>
