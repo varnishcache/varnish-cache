@@ -25,3 +25,11 @@ varnish v1 -vcl {
 	}
 }
 
+varnish v1 -badvcl {
+	sub vcl_recv {
+		if (req.restarts == req.url) {
+			set req.http.foo = "foo" + 3;
+		}
+
+	}
+}
