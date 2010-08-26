@@ -439,7 +439,6 @@ static void
 vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 {
 	struct token *t_field;
-	struct token *t_first;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
@@ -462,7 +461,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	    "?max_connections",
 	    "?saintmode_threshold",
 	    NULL);
-	t_first = tl->t;
 
 	SkipToken(tl, '{');
 

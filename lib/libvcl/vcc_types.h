@@ -28,6 +28,7 @@
  * $Id$
  */
 
+/*lint -save -e525 -e539 */
 VCC_TYPE(VOID)
 VCC_TYPE(BACKEND)
 VCC_TYPE(BOOL)
@@ -39,3 +40,4 @@ VCC_TYPE(STRING_LIST)
 VCC_TYPE(IP)
 VCC_TYPE(HEADER)
 VCC_TYPE(REAL)
+/*lint -restore */

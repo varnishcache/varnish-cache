@@ -225,7 +225,6 @@ vcc_delete_expr(struct expr *e)
 	vsb_delete(e->vsb);
 	FREE_OBJ(e);
 }
-
 /*--------------------------------------------------------------------
  * We want to get the indentation right in the emitted C code so we have
  * to represent it symbolically until we are ready to render.
@@ -247,39 +246,11 @@ vcc_delete_expr(struct expr *e)
  * XXX: check line lengths in edit, should pass indent in for this
  */
 
-static void
-vcc_show(const char *p)
-{
-
-	fprintf(stderr, "<");
-	for (; *p; p++) {
-		if (*p == '\n')
-			fprintf(stderr, "\\n");
-		else if (*p == '\v')
-			fprintf(stderr, "\\v");
-		else
-			fprintf(stderr, "%c", *p);
-	}
-	fprintf(stderr, ">\n");
-}
-
-
 static struct expr *
 vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2)
 {
 	struct expr *e;
 	int nl = 1;
-
-	fprintf(stderr, "EDIT:");
-	vcc_show(p);
-	if (e1 != NULL) {
-		fprintf(stderr, "E1:");
-		vcc_show(vsb_data(e1->vsb));
-	}
-	if (e2 != NULL) {
-		fprintf(stderr, "E2:");
-		vcc_show(vsb_data(e2->vsb));
-	}
 
 	e = vcc_new_expr();
 	while (*p != '\0') {
@@ -320,8 +291,6 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	e->fmt = fmt;
-	fprintf(stderr, "RESULT:");
-	vcc_show(vsb_data(e->vsb));
 	return (e);
 }
 
@@ -337,17 +306,20 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 
 	for (i = 0; i < ind; i++)
 		vsb_cat(d, " ");
-	for (p = vsb_data(e1->vsb); *p != '\0'; p++) {
+	p = vsb_data(e1->vsb);
+	while (*p != '\0') {
 		if (*p == '\n') {
 			vsb_putc(d, '\n');
 			if (p[1] != '\0') {
 				for (i = 0; i < ind; i++)
 					vsb_cat(d, " ");
 			}
+			p++;
 			continue;
 		}
 		if (*p != '\v') {
 			vsb_putc(d, *p);
+			p++;
 			continue;
 		}
 		p++;
@@ -357,7 +329,32 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 		default:
 			assert(__LINE__ == 0);
 		}
+		p++;
 	}
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+vcc_expr_tostring(struct expr **e, enum var_type fmt)
+{
+	const char *p;
+
+	AN(fmt == STRING || fmt == STRING_LIST);
+
+	p = NULL;
+	switch((*e)->fmt) {
+	case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
+	case INT:	p = "VRT_int_string(sp, \v1)"; break;
+	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
+	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+	case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
+			/* XXX: should have "s" suffix ? */
+	default:	break;
+	}
+	if (p != NULL)
+		*e = vcc_expr_edit(fmt, p, *e, NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -391,14 +388,14 @@ hack_regsub(struct vcc *tl, struct expr **e, int all)
 
 /*--------------------------------------------------------------------
  * SYNTAX:
- *    Expr5:
+ *    Expr4:
  *	'(' Expr0 ')'
  *	CNUM
  *	CSTR
  */
 
 static void
-vcc_expr5(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e1, *e2;
 	const struct symbol *sym;
@@ -502,34 +499,6 @@ vcc_expr5(struct vcc *tl, struct expr **e, enum var_type fmt)
 }
 
 /*--------------------------------------------------------------------
- */
-static void
-vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
-{
-	const char *p;
-
-	*e = NULL;
-	vcc_expr5(tl, e, fmt);
-	ERRCHK(tl);
-	if (fmt == STRING || fmt == STRING_LIST) {
-		p = NULL;
-		switch((*e)->fmt) {
-		case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
-		case INT:	p = "VRT_int_string(sp, \v1)"; break;
-		case IP:	p = "VRT_IP_string(sp, \v1)"; break;
-		case TIME:	p = "VRT_time_string(sp, \v1)"; break;
-		case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
-				/* XXX: should have "s" suffix ? */
-		default:	break;
-		}
-		if (p != NULL) {
-			*e = vcc_expr_edit(fmt, p, *e, NULL);
-			return;
-		}
-	}
-}
-
-/*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr3:
  *      Expr4 { {'*'|'/'} Expr4 } *
@@ -577,6 +546,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr  *e2;
 	enum var_type f2;
+	struct token *tk;
 
 	*e = NULL;
 	vcc_expr_mul(tl, e, fmt);
@@ -584,11 +554,13 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	f2 = (*e)->fmt;
 
 	if (fmt == STRING_LIST && f2 == STRING) {
-		if (f2 == STRING)
-			(*e)->fmt = STRING_LIST;
+		(*e)->fmt = STRING_LIST;
 		while (tl->t->tok == '+') {
 			vcc_NextToken(tl);
 			vcc_expr_mul(tl, &e2, STRING);
+			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
+				vcc_expr_tostring(&e2, f2);
+			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
 		}
 		return;
@@ -599,7 +571,10 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		while (tl->t->tok == '+') {
 			vcc_NextToken(tl);
 			vcc_expr_mul(tl, &e2, STRING);
-			assert(e2->fmt == STRING);
+			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
+				vcc_expr_tostring(&e2, f2);
+
+			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 			*e = vcc_expr_edit(STRING, "\v1,\n\v2", *e, e2);
 		}
 		*e = vcc_expr_edit(STRING, "\v1, vrt_magic_string_end)",
@@ -616,11 +591,12 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
+		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr_mul(tl, &e2, f2);
 		assert(e2->fmt == f2);
 		ERRCHK(tl);
-		if (tl->t->tok == '+')
+		if (tk->tok == '+')
 			*e = vcc_expr_edit(f2, "(\v1+\v2)", *e, e2);
 		else
 			*e = vcc_expr_edit(f2, "(\v1-\v2)", *e, e2);
@@ -756,12 +732,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 			break;
 		}
 	}
-	if (fmt == VOID || fmt != (*e)->fmt) {
-		vsb_printf(tl->sb, "WANT: %s has %s next %.*s (%s)\n",
-		    vcc_Type(fmt), vcc_Type((*e)->fmt),
-		    PF(tl->t), vsb_data((*e)->vsb));
-		tl->err = 1;
-	}
 }
 
 /*--------------------------------------------------------------------
@@ -804,14 +774,18 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr_cand(tl, e, fmt);
 	ERRCHK(tl);
-	if ((*e)->fmt != BOOL)
+	if (fmt == STRING || fmt == STRING_LIST)
+		vcc_expr_tostring(e, fmt);
+	if ((*e)->fmt != BOOL || tl->t->tok != T_COR) 
 		return;
+	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_COR) {
 		vcc_NextToken(tl);
 		vcc_expr_cand(tl, &e2, fmt);
 		ERRCHK(tl);
-		*e = vcc_expr_edit(BOOL, "(\v1||\v2)", *e, e2);
+		*e = vcc_expr_edit(BOOL, "\v1\v-\n||\v+\n\v2", *e, e2);
 	}
+	*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 }
 
 /*--------------------------------------------------------------------
