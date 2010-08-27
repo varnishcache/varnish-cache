@@ -29,6 +29,7 @@
  * $Id$
  */
 
+/*lint -save -e525 -e539 */
 STEP(wait,	WAIT)
 STEP(first,	FIRST)
 STEP(recv,	RECV)
@@ -42,3 +43,4 @@ STEP(fetch,	FETCH)
 STEP(deliver,	DELIVER)
 STEP(error,	ERROR)
 STEP(done,	DONE)
+/*lint -restore */

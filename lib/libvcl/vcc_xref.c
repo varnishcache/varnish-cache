@@ -270,7 +270,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	}
 	u = p->ret_bitmap & ~bitmap;
 	if (u) {
-/*lint -save -e525 -e539 */
+
 #define VCL_RET_MAC(l, U, B)						\
 		if (u & (1 << (VCL_RET_##U))) {				\
 			vsb_printf(tl->sb, "Invalid return \"" #l "\"\n");\
@@ -278,7 +278,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-/*lint -restore */
+
 		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
@@ -317,11 +317,9 @@ vcc_CheckAction(struct vcc *tl)
 #define VCL_RET_MAC(l, U, B)						\
 			if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
 				vsb_printf(tl->sb, " \"%s\"", #l);
-/*lint -save -e525 -e539 */
+
 #include "vcl_returns.h"
-/*lint +e525 */
 #undef VCL_RET_MAC
-/*lint -restore */
 			vsb_printf(tl->sb, "\n");
 			return (1);
 		}

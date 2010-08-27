@@ -581,6 +581,8 @@ fo = open(buildroot + "/include/vcl_returns.h", "w")
 
 file_header(fo)
 
+fo.write("\n/*lint -save -e525 -e539 */\n")
+
 fo.write("\n#ifdef VCL_RET_MAC\n")
 l = list(rets.keys())
 l.sort()
@@ -603,6 +605,7 @@ for i in returns:
 		p = "| "
 	fo.write("))\n")
 fo.write("#endif\n")
+fo.write("\n/*lint -restore */\n")
 fo.close()
 
 #######################################################################

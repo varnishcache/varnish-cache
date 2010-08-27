@@ -42,6 +42,8 @@
  *
  */
 
+/*lint -save -e525 -e539 */
+
 #ifndef HTTPH_R_PASS
 #define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
 #define HTTPH_A_PASS	(1 << 1)	/* Response (b->c)in pass mode */
@@ -99,3 +101,5 @@ HTTPH("Vary",			H_Vary,			2, 0, 0,										0, 0)	/* RFC2616 14.44 */
 HTTPH("Via",			H_Via,			2, 0, 0,										0, 0)	/* RFC2616 14.45 */
 HTTPH("Warning",		H_Warning,		2, 0, 0,										0, 0)	/* RFC2616 14.46 */
 HTTPH("WWW-Authenticate",	H_WWW_Authenticate,	2, 0, 0,										0, 0)	/* RFC2616 14.47 */
+
+/*lint -restore */

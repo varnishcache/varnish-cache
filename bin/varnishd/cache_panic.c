@@ -219,11 +219,9 @@ pan_sess(const struct sess *sp)
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
 	switch (sp->step) {
-/*lint -save -e525 */
 #define STEP(l, u) case STP_##u: stp = "STP_" #u; break;
 #include "steps.h"
 #undef STEP
-/*lint -restore */
 		default: stp = NULL;
 	}
 	hand = VCC_Return_Name(sp->handling);

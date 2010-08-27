@@ -96,8 +96,6 @@
 
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
--efunc(525, VCC_Return_Name)	// Negative indent
-
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
@@ -129,18 +127,10 @@
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean
 
-// cache_center.c
--efunc(525, CNT_Session)	// Negative indentation from line
--efunc(525, http_FilterFields)	// Negative indentation from line
--efunc(525, http_EstimateWS)	// Negative indentation from line
--efunc(539, http_FilterFields)	// Positive indentation from line
--efunc(539, http_EstimateWS)	// Positive indentation from line
-
 -esym(525, __builtin_frame_address)	// Not defined
 -esym(525, __builtin_return_address)	// Not defined
 
 // cache_vcl.c
--efunc(525, vcl_handlingname)	// Negative indentation from line
 -esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
