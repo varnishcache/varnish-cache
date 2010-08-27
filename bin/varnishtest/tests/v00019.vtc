@@ -54,3 +54,34 @@ varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	?
 }
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if ("foo" + "bar" == 777) {
+			set req.http.host = 1;
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if ("foo" + "bar" ==
+		    777) {
+			set req.http.host = 1;
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if ("foo" + "bar" ==
+
+
+		    777) {
+			set req.http.host = 1;
+		}
+	}
+}
