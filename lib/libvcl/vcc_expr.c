@@ -673,12 +673,10 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_NextToken(tl);
 		vcc_expr_add(tl, &e2, (*e)->fmt);
 		if (e2->fmt != (*e)->fmt) { /* XXX */
-			vsb_printf(tl->sb, "Comparison of different types\n");
-			vsb_printf(tl->sb, "Left side has type %s\n",
-			    vcc_Type((*e)->fmt));
-			vsb_printf(tl->sb, "Right side has type %s\n",
-			    vcc_Type(e2->fmt));
+			vsb_printf(tl->sb, "Comparison of different types: ");
+			vsb_printf(tl->sb, "%s ", vcc_Type((*e)->fmt));
 			vcc_ErrToken(tl, tk);
+			vsb_printf(tl->sb, " %s\n", vcc_Type(e2->fmt));
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
@@ -818,12 +816,7 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		vsb_putc(tl->fb, '\n');
 	} else {
-		vsb_printf(tl->sb, "Expression starts here:\n");
-		vcc_ErrWhere(tl, t1);
-		if (t1 != tl->t) {
-			vsb_printf(tl->sb, "Expression ends here:\n");
-			vcc_ErrWhere(tl, tl->t);
-		}
+		vcc_ErrWhere2(tl, t1, tl->t);
 	}
 	vcc_delete_expr(e);
 }

@@ -68,33 +68,55 @@ vcc__ErrInternal(struct vcc *tl, const char *func, unsigned line)
 	tl->err = 1;
 }
 
+/*--------------------------------------------------------------------
+ * Find start of source-line of token
+ */
+
 static void
-vcc_icoord(struct vsb *vsb, const struct token *t, const char **ll)
+vcc_iline(const struct token *t, const char **ll, int tail)
+{
+	const char *p, *b, *x;
+
+	b = t->src->b;
+	if (ll != NULL)
+		*ll = b;
+	x = tail ? t->e - 1 : t->b;
+	for (p = b; p < x; p++) {
+		if (*p == '\n') {
+			if (ll != NULL)
+				*ll = p + 1;
+		}
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Find and print src+line+pos of this token
+ */
+
+static void
+vcc_icoord(struct vsb *vsb, const struct token *t, int tail)
 {
 	unsigned lin, pos;
-	const char *p, *b;
-	struct source *sp;
+	const char *p, *b, *x;
 
 	lin = 1;
 	pos = 0;
-	sp = t->src;
-	b = sp->b;
-	if (ll != NULL)
-		*ll = b;
-	for (p = b; p < t->b; p++) {
+	b = t->src->b;
+	x = tail ? t->e - 1 : t->b;
+	for (p = b; p < x; p++) {
 		if (*p == '\n') {
 			lin++;
 			pos = 0;
-			if (ll != NULL)
-				*ll = p + 1;
 		} else if (*p == '\t') {
 			pos &= ~7;
 			pos += 8;
 		} else
 			pos++;
 	}
-	vsb_printf(vsb, "(%s Line %d Pos %d)", sp->name, lin, pos + 1);
+	vsb_printf(vsb, "('%s' Line %d Pos %d)", t->src->name, lin, pos + 1);
 }
+
+/*--------------------------------------------------------------------*/
 
 void
 vcc_Coord(const struct vcc *tl, struct vsb *vsb, const struct token *t)
@@ -102,22 +124,22 @@ vcc_Coord(const struct vcc *tl, struct vsb *vsb, const struct token *t)
 
 	if (t == NULL)
 		t = tl->t;
-	vcc_icoord(vsb, t, NULL);
+	vcc_icoord(vsb, t, 0);
 }
 
-/* XXX: should take first+last token */
-void
-vcc_ErrWhere(struct vcc *tl, const struct token *t)
-{
-	unsigned x, y;
-	const char *p, *l, *e;
+/*--------------------------------------------------------------------
+ * Output one line of source code, starting at 'l' and ending at the
+ * first NL or 'le'.
+ */
 
-	vcc_icoord(tl->sb, t, &l);
-	vsb_printf(tl->sb, "\n");
+static void
+vcc_quoteline(const struct vcc *tl, const char *l, const char *le)
+{
+	const char *p;
+	unsigned x, y;
 
 	x = y = 0;
-	e = t->src->e;
-	for (p = l; p < e && *p != '\n'; p++) {
+	for (p = l; p < le && *p != '\n'; p++) {
 		if (*p == '\t') {
 			y &= ~7;
 			y += 8;
@@ -131,26 +153,99 @@ vcc_ErrWhere(struct vcc *tl, const struct token *t)
 			vsb_bcat(tl->sb, p, 1);
 		}
 	}
-	vsb_cat(tl->sb, "\n");
+	vsb_putc(tl->sb, '\n');
+}
+
+/*--------------------------------------------------------------------
+ * Output a marker line for a sourceline starting at 'l' and ending at
+ * the first NL or 'le'.  Characters between 'b' and 'e' are marked.
+ */
+
+static void
+vcc_markline(const struct vcc *tl, const char *l, const char *le,
+    const char *b, const char *e)
+{
+	const char *p;
+	unsigned x, y;
+	char c;
+
 	x = y = 0;
-	for (p = l; p < e && *p != '\n'; p++) {
-		if (p >= t->b && p < t->e) {
-			vsb_bcat(tl->sb, "#", 1);
-			x++;
-			y++;
-			continue;
-		}
+	for (p = l; p < le && *p != '\n'; p++) {
+		if (p >= b && p < e) 
+			c = '#';
+		else
+			c = '-';
+		
 		if (*p == '\t') {
 			y &= ~7;
 			y += 8;
 		} else
 			y++;
 		while (x < y) {
-			vsb_bcat(tl->sb, "-", 1);
+			vsb_putc(tl->sb, c);
 			x++;
 		}
 	}
-	vsb_cat(tl->sb, "\n");
+	vsb_putc(tl->sb, '\n');
+}
+
+/*--------------------------------------------------------------------*/
+/* XXX: should take first+last token */
+
+void
+vcc_ErrWhere2(struct vcc *tl, const struct token *t, const struct token *t2)
+{
+	const char  *l1, *l2, *l3;
+
+	vcc_iline(t, &l1, 0);
+	t2 = VTAILQ_PREV(t2, tokenhead, list);
+	vcc_iline(t2, &l2, 1);
+
+
+	if (l1 == l2) {
+		vcc_icoord(tl->sb, t, 0);
+		vsb_cat(tl->sb, " -- ");
+		vcc_icoord(tl->sb, t2, 1);
+		vsb_putc(tl->sb, '\n');
+		/* Two tokens on same line */
+		vcc_quoteline(tl, l1, t->src->e);
+		vcc_markline(tl, l1, t->src->e, t->b, t2->e);
+	} else {
+		/* Two tokens different lines */
+		l3 = strchr(l1, '\n');
+		AN(l3);
+		/* XXX: t had better be before t2 */
+		vcc_icoord(tl->sb, t, 0);
+		if (l3 + 1 == l2) {
+			vsb_cat(tl->sb, " -- ");
+			vcc_icoord(tl->sb, t2, 1);
+		}
+		vsb_putc(tl->sb, '\n');
+		vcc_quoteline(tl, l1, t->src->e);
+		vcc_markline(tl, l1, t->src->e, t->b, t2->e);
+		if (l3 + 1 != l2) {
+			vsb_cat(tl->sb, "[...]\n");
+			vcc_icoord(tl->sb, t2, 1);
+			vsb_putc(tl->sb, '\n');
+		}
+		vcc_quoteline(tl, l2, t->src->e);
+		vcc_markline(tl, l2, t->src->e, t->b, t2->e);
+	}
+	vsb_putc(tl->sb, '\n');
+	tl->err = 1;
+}
+
+void
+vcc_ErrWhere(struct vcc *tl, const struct token *t)
+{
+	const char  *l1;
+
+	vcc_iline(t, &l1, 0);
+	vcc_icoord(tl->sb, t, 0);
+	vsb_putc(tl->sb, '\n');
+	vcc_quoteline(tl, l1, t->src->e);
+	vcc_markline(tl, l1, t->src->e, t->b, t->e);
+	vsb_putc(tl->sb, '\n');
 	tl->err = 1;
 }
 

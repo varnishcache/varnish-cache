@@ -249,7 +249,9 @@ const struct symbol *VCC_FindSymbol(const struct vcc *tl,
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
     const struct token *t);
 void vcc_ErrToken(const struct vcc *tl, const struct token *t);
-void vcc_ErrWhere(struct vcc *tl, const struct token *t);
+void vcc_ErrWhere(struct vcc *, const struct token *);
+void vcc_ErrWhere2(struct vcc *, const struct token *, const struct token *);
+
 void vcc__Expect(struct vcc *tl, unsigned tok, int line);
 int vcc_Teq(const struct token *t1, const struct token *t2);
 int vcc_IdIs(const struct token *t, const char *p);
