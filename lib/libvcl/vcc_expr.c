@@ -198,7 +198,8 @@ struct expr {
 #define EXPR_MAGIC	0x38c794ab
 	enum var_type	fmt;
 	struct vsb	*vsb;
-	/* XXX: first and last token */
+	uint8_t		constant;
+	struct token	*t1, *t2;
 };
 
 static void vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt);
@@ -288,6 +289,16 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 	}
 	vsb_finish(e->vsb);
 	AZ(vsb_overflowed(e->vsb));
+	if (e1 != NULL)
+		e->t1 = e1->t1;
+	else if (e2 != NULL)
+		e->t1 = e2->t1;
+	if (e2 != NULL)
+		e->t2 = e2->t1;
+	else if (e1 != NULL)
+		e->t1 = e1->t1;
+	if ((e1 == NULL || e1->constant) && (e2 == NULL || e2->constant))
+		e->constant = 1;
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	e->fmt = fmt;
@@ -468,6 +479,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		assert(fmt != VOID);
 		EncToken(e1->vsb, tl->t);
 		e1->fmt = STRING;
+		e1->t1 = tl->t;
+		e1->constant = 1;
 		vcc_NextToken(tl);
 		break;
 	case CNUM:
@@ -485,11 +498,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vcc_NextToken(tl);
 			e1->fmt = INT;
 		}
+		e1->constant = 1;
 		break;
 	default:
-		e1->fmt = fmt;
-		vsb_printf(e1->vsb, "<E4 %.*s %u>", PF(tl->t), tl->t->tok);
-		vcc_NextToken(tl);
+		vsb_printf(tl->sb, "Unknown token ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " when looking for %s\n\n", vcc_Type(fmt));
+		vcc_ErrWhere(tl, tl->t);
 		break;
 	}
 
@@ -553,34 +568,29 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	ERRCHK(tl);
 	f2 = (*e)->fmt;
 
-	if (fmt == STRING_LIST && f2 == STRING) {
+	if ((f2 == STRING_LIST || f2 == STRING) && tl->t->tok == '+') {
+		while (tl->t->tok == '+') {
+			vcc_NextToken(tl);
+			vcc_expr_mul(tl, &e2, STRING);
+			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
+				vcc_expr_tostring(&e2, f2);
+				ERRCHK(tl);
+			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
+			if ((*e)->constant &&  e2->constant) {
+				assert((*e)->fmt == STRING);
+				assert(e2->fmt == STRING);
+				*e = vcc_expr_edit(STRING, "\v1\n\v2", *e, e2);
+			} else {
+				*e = vcc_expr_edit(STRING_LIST,
+				    "\v1,\n\v2", *e, e2);
+			}
+		}
+	}
+	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
+		*e = vcc_expr_edit(STRING,
+		    "\v+VRT_String(sp,\n\v1,\nvrt_magic_string_end)", *e, NULL);
+	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
-		while (tl->t->tok == '+') {
-			vcc_NextToken(tl);
-			vcc_expr_mul(tl, &e2, STRING);
-			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
-				vcc_expr_tostring(&e2, f2);
-			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
-			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
-		}
-		return;
-	}
-
-	if (f2 == STRING && tl->t->tok == '+') {
-		*e = vcc_expr_edit(STRING, "\v+VRT_String(sp,\n\v1", *e, NULL);
-		while (tl->t->tok == '+') {
-			vcc_NextToken(tl);
-			vcc_expr_mul(tl, &e2, STRING);
-			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
-				vcc_expr_tostring(&e2, f2);
-
-			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
-			*e = vcc_expr_edit(STRING, "\v1,\n\v2", *e, e2);
-		}
-		*e = vcc_expr_edit(STRING, "\v1, vrt_magic_string_end)",
-		    *e, NULL);
-		return;
-	}
 
 	switch(f2) {
 	case INT:	break;
