@@ -74,6 +74,8 @@ void vmb_pthread(void);
 
 #else
 
+#define VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE 1
+
 #define VMB()	vmb_pthread()
 #define VWMB()	vmb_pthread()
 #define VRMB()	vmb_pthread()
