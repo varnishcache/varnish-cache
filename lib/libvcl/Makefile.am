@@ -28,6 +28,7 @@ libvcl_la_SOURCES = \
 	vcc_symb.c \
 	vcc_token.c \
 	vcc_var.c \
+	vcc_vmod.c \
 	vcc_xref.c
 
 EXTRA_DIST = \

@@ -189,7 +189,7 @@ Ff(const struct vcc *tl, int indent, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 EncString(struct vsb *sb, const char *b, const char *e, int mode)
 {
 

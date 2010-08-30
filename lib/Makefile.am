@@ -5,6 +5,7 @@ SUBDIRS = \
 	libvarnish \
 	libvarnishapi \
 	libvcl \
+	libvmod_std \
 	@JEMALLOC_SUBDIR@
 
 DIST_SUBDIRS = 	\
@@ -12,4 +13,5 @@ DIST_SUBDIRS = 	\
 	libvarnish \
 	libvarnishapi \
 	libvcl \
+	libvmod_std \
 	libjemalloc

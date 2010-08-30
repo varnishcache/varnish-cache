@@ -261,6 +261,7 @@ static struct toplev {
 	{ "backend",		vcc_ParseDirector },
 	{ "director",		vcc_ParseDirector },
 	{ "probe",		vcc_ParseProbe },
+	{ "import",		vcc_ParseImport },
 	{ NULL, NULL }
 };
 

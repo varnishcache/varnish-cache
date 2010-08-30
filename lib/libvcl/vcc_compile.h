@@ -212,6 +212,7 @@ void Ff(const struct vcc *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);
+void EncString(struct vsb *sb, const char *b, const char *e, int mode);
 
 /* vcc_dir_random.c */
 parsedirector_f vcc_ParseRandomDirector;
@@ -268,6 +269,9 @@ const struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
     int wr_access, const char *use);
 void vcc_VarVal(struct vcc *tl, const struct var *vp,
     const struct token *vt);
+
+/* vcc_vmod.c */
+void vcc_ParseImport(struct vcc *tl);
 
 /* vcc_xref.c */
 void vcc_AddDef(struct vcc *tl, struct token *t, enum ref_type type);
