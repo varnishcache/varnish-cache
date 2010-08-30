@@ -39,7 +39,7 @@
 struct acl_e;
 
 enum var_type {
-#define VCC_TYPE(foo)	foo,
+#define VCC_TYPE(foo, bar)	foo,
 #include "vcc_types.h"
 #undef VCC_TYPE
 };
@@ -75,6 +75,8 @@ struct symbol {
 	char				*name;
 	unsigned			nlen;
 	unsigned			wildcard;
+	const char			*cfunc;
+	const char			*args;
 	const struct var		*var;
 	enum var_type			fmt;
 	unsigned			r_methods;

@@ -33,6 +33,7 @@ SVNID("$Id$");
 
 #include <stdio.h>
 #include <dlfcn.h>
+#include <string.h>
 
 #include "vsb.h"
 
@@ -48,6 +49,9 @@ vcc_ParseImport(struct vcc *tl)
 	struct token *mod;
 	const char *modname;
 	const char *proto;
+	const char **spec;
+	struct symbol *sym;
+	const char *p;
 	// int *modlen;
 
 	SkipToken(tl, ID);
@@ -114,6 +118,21 @@ vcc_ParseImport(struct vcc *tl)
 		    PF(mod), fn, "Symbol Vmod_Proto not found");
 		vcc_ErrWhere(tl, mod);
 		return;
+	}
+	spec = dlsym(hdl, "Vmod_Spec");
+	if (modname == NULL) {
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
+		    PF(mod), fn, "Symbol Vmod_Spec not found");
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+	for (; *spec != NULL; spec++) {
+		p = *spec;
+		sym = VCC_AddSymbol(tl, p);
+		p += strlen(p) + 1;
+		sym->cfunc = p;
+		p += strlen(p) + 1;
+		sym->args = p;
 	}
 	Fh(tl, 0, "\n%s\n", proto);
 }

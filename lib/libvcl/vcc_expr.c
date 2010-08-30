@@ -49,11 +49,25 @@ static const char *
 vcc_Type(enum var_type fmt)
 {
 	switch(fmt) {
-#define VCC_TYPE(a)	case a: return(#a);
+#define VCC_TYPE(a, b)	case a: return(#a);
 #include "vcc_types.h"
 #undef VCC_TYPE
 	default:
-		return("Unknown Type");
+		assert("Unknwon Type");
+		return(NULL);
+	}
+}
+
+static enum var_type
+vcc_Ltype(char c)
+{
+	switch (c) {
+#define VCC_TYPE(a, b)	case b: return(a);
+#include "vcc_types.h"
+#undef VCC_TYPE
+	default:
+		assert("Unknwon Type");
+		return(0);
 	}
 }
 
@@ -398,6 +412,46 @@ hack_regsub(struct vcc *tl, struct expr **e, int all)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
+{
+	const char *p, *q;
+	struct expr *e1;
+
+	(void)tl;
+	(void)e;
+	AN(sym->cfunc);
+	AN(sym->args);
+	SkipToken(tl, ID);
+	SkipToken(tl, '(');
+	p = sym->args;
+	(*e)->fmt = vcc_Ltype(*p++);
+	vsb_printf((*e)->vsb, "%s(sp, \v+", sym->cfunc);
+	vsb_finish((*e)->vsb);
+	AZ(vsb_overflowed((*e)->vsb));
+	q = "\v1\n\v2";
+	while (*p != '\0') {
+		e1 = NULL;
+		vcc_expr0(tl, &e1, vcc_Ltype(*p));
+		ERRCHK(tl);
+		assert(e1->fmt == vcc_Ltype(*p));
+		if (e1->fmt == STRING_LIST) {
+			e1 = vcc_expr_edit(STRING_LIST,
+			    "\v+\n\v1,\nvrt_magic_string_end\v-", e1, NULL);
+		}
+		*e = vcc_expr_edit((*e)->fmt, q, *e, e1);
+		q = "\v1,\n\v2";
+		p++;
+		if (*p != '\0') 
+			SkipToken(tl, ',');
+	}
+	SkipToken(tl, ')');
+	*e = vcc_expr_edit((*e)->fmt, "\v1\n)\v-", *e, NULL);
+}
+
+/*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr4:
  *	'(' Expr0 ')'
@@ -466,14 +520,20 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		}
 		AN(sym);
 
-		vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
-		AN(sym->var);
-		vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
-		ERRCHK(tl);
-		assert(vp != NULL);
-		vsb_printf(e1->vsb, "%s", vp->rname);
-		e1->fmt = vp->fmt;
-		vcc_NextToken(tl);
+		if (sym->var != NULL) {
+			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+			vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
+			ERRCHK(tl);
+			assert(vp != NULL);
+			vsb_printf(e1->vsb, "%s", vp->rname);
+			e1->fmt = vp->fmt;
+			vcc_NextToken(tl);
+		} else if (sym->cfunc != NULL) {
+			vcc_expr_call(tl, &e1, sym);
+			ERRCHK(tl);
+			*e = e1;
+			return;
+		}
 		break;
 	case CSTR:
 		assert(fmt != VOID);
