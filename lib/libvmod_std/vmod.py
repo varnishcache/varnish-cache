@@ -73,21 +73,22 @@ pstruct = ""
 pinit = ""
 tdl = ""
 plist = ""
+slist = ""
 
 def do_func(fname, rval, args):
 	global pstruct
 	global pinit
 	global plist
+	global slist
 	global tdl
 	print(fname, rval, args)
 
-	proto = ctypes[rval] + " vmod_" + fname + "("
-	sproto = ctypes[rval] + " td_" + fname + "("
-	s=""
+	proto = ctypes[rval] + " vmod_" + fname + "(struct sess *"
+	sproto = ctypes[rval] + " td_" + fname + "(struct sess *"
+	s=", "
 	for i in args:
 		proto += s + ctypes[i]
 		sproto += s + ctypes[i]
-		s = ", "
 	proto += ")"
 	sproto += ")"
 
@@ -96,6 +97,13 @@ def do_func(fname, rval, args):
 
 	pstruct += "\ttd_" + fname + "\t*" + fname + ";\n"
 	pinit += "\tvmod_" + fname + ",\n"
+
+	s = modname + '.' + fname + "\\0"
+	s += "Vmod_Func_" + modname + "." + fname + "\\0"
+	s += type_tab[rval]
+	for i in args:
+		s += type_tab[i]
+	slist += '\t"' + s + '",\n'
 
 #######################################################################
 
@@ -151,13 +159,21 @@ def dumps(s):
 fc = open("vmod.c", "w")
 fh = open("vmod.h", "w")
 
+fh.write('struct sess;\n')
+fh.write("\n");
+
 fh.write(plist)
 
 fc.write('#include "vmod.h"\n')
 fc.write("\n");
 
+fc.write('struct sess;\n')
+fc.write("\n");
+
 fc.write(tdl);
 fc.write("\n");
+
+fc.write('const char Vmod_Name[] = "' + modname + '";\n')
 
 fc.write("const struct Vmod_Func_" + modname + " {\n")
 fc.write(pstruct + "} Vmod_Func = {\n" + pinit + "};\n")
@@ -174,4 +190,4 @@ dumps(pstruct + "} Vmod_Func_" + modname + ";\n")
 fc.write('\t;\n')
 fc.write("\n");
 
-fc.write('const char Vmod_Name[] = "' + modname + '";\n')
+fc.write('const char *Vmod_Spec[] = {\n' + slist + '\t0\n};\n')
