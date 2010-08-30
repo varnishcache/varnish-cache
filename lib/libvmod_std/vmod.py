@@ -156,15 +156,15 @@ def dumps(s):
 
 #######################################################################
 
-fc = open("vmod.c", "w")
-fh = open("vmod.h", "w")
+fc = open("vcc_if.c", "w")
+fh = open("vcc_if.h", "w")
 
 fh.write('struct sess;\n')
 fh.write("\n");
 
 fh.write(plist)
 
-fc.write('#include "vmod.h"\n')
+fc.write('#include "vcc_if.h"\n')
 fc.write("\n");
 
 fc.write('struct sess;\n')

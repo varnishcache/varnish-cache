@@ -3,7 +3,7 @@
 #include "vrt.h"
 #include "../../bin/varnishd/cache.h"
 
-#include "vmod.h"
+#include "vcc_if.h"
 
 const char *
 vmod_toupper(struct sess *sp, const char *s, ...)
