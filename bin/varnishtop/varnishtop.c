@@ -55,7 +55,7 @@ SVNID("$Id$")
 #include "varnishapi.h"
 
 struct top {
-	unsigned char		rec[4];
+	unsigned char		rec[SHMLOG_DATA-1];
 	unsigned char		*rec_data;
 	unsigned		clen;
 	unsigned		hash;
