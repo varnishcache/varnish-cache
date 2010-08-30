@@ -10,9 +10,9 @@ libvmod_std_la_SOURCES = \
 	$(builddir)/vmod.c \
 	vmod_std.c
 
-$(builddir)/vmod.c $(builddir)/vmod.h: $(top_srcdir)/lib/libvmod_std/vmod.py $(top_srcdir)/lib/libvmod_std/vmod.spec
-	@PYTHON@ $(top_srcdir)/lib/libvmod_std/vmod.py $(top_srcdir)/lib/libvmod_std/vmod.spec
+$(builddir)/vmod.c $(builddir)/vmod.h: $(top_srcdir)/lib/libvmod_std/vmod.py $(top_srcdir)/lib/libvmod_std/vmod.vcc
+	@PYTHON@ $(top_srcdir)/lib/libvmod_std/vmod.py $(top_srcdir)/lib/libvmod_std/vmod.vcc
 
-EXTRA_DIST = vmod.py
+EXTRA_DIST = vmod.py vmod.vcc
 
 CLEANFILES = $(builddir)/vmod.c $(builddir)/vmod.h
