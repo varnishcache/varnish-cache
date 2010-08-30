@@ -462,6 +462,7 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
+    lib/libvmod_std/Makefile
     lib/libjemalloc/Makefile
     man/Makefile
     redhat/Makefile
