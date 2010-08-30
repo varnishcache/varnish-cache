@@ -65,28 +65,20 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 	AN(v);
 	REPLACE(v->nm, nm);
 	REPLACE(v->path, path);
-	fprintf(stderr, "LOAD MODULE %s (%s)\n", v->nm, v->path);
 	v->hdl = dlopen(v->path, RTLD_NOW | RTLD_LOCAL);
-	if (v->hdl == NULL)
-		fprintf(stderr, "Err: %s\n", dlerror());
 	AN(v->hdl);
 
 	x = dlsym(v->hdl, "Vmod_Name");
 	AN(x);
 	p = x;
-	fprintf(stderr, "Loaded name: %p\n", p);
-	fprintf(stderr, "Loaded name: %s\n", p);
 
 	x = dlsym(v->hdl, "Vmod_Len");
 	AN(x);
 	i = x;
-	fprintf(stderr, "Loaded len: %p\n", i);
-	fprintf(stderr, "Loaded len: %d\n", *i);
 	assert(len == *i);
 
 	x = dlsym(v->hdl, "Vmod_Func");
 	AN(x);
-	fprintf(stderr, "Loaded Funcs at: %p\n", x);
 	memcpy(ptr, x, len);
 
 	v->funcs = x;
@@ -102,7 +94,6 @@ VRT_Vmod_Fini(void **hdl)
 
 	AN(*hdl);
 	v = *hdl;
-	fprintf(stderr, "UNLOAD MODULE %s\n", v->nm);
 	free(*hdl);
 	*hdl = NULL;
 }
