@@ -48,11 +48,6 @@ else:
 
 type_tab = dict()
 
-type_tab['VOID'] = "V"
-type_tab['REAL'] = "R"
-type_tab['STRING'] = "S"
-type_tab['STRING_LIST'] = "L"
-
 ctypes = {
 	'IP':		"struct sockaddr *",
 	'STRING':	"const char *",
@@ -100,10 +95,10 @@ def do_func(fname, rval, args):
 
 	s = modname + '.' + fname + "\\0"
 	s += "Vmod_Func_" + modname + "." + fname + "\\0"
-	s += type_tab[rval]
+	s += rval
 	for i in args:
-		s += type_tab[i]
-	slist += '\t"' + s + '",\n'
+		s += '\\0' + i
+	slist += '\t"' + s + '\\0",\n'
 
 #######################################################################
 

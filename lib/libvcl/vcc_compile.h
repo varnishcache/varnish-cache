@@ -39,7 +39,7 @@
 struct acl_e;
 
 enum var_type {
-#define VCC_TYPE(foo, bar)	foo,
+#define VCC_TYPE(foo)		foo,
 #include "vcc_types.h"
 #undef VCC_TYPE
 };

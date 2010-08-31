@@ -49,25 +49,12 @@ static const char *
 vcc_Type(enum var_type fmt)
 {
 	switch(fmt) {
-#define VCC_TYPE(a, b)	case a: return(#a);
+#define VCC_TYPE(a)	case a: return(#a);
 #include "vcc_types.h"
 #undef VCC_TYPE
 	default:
 		assert("Unknwon Type");
 		return(NULL);
-	}
-}
-
-static enum var_type
-vcc_Ltype(char c)
-{
-	switch (c) {
-#define VCC_TYPE(a, b)	case b: return(a);
-#include "vcc_types.h"
-#undef VCC_TYPE
-	default:
-		assert("Unknwon Type");
-		return(0);
 	}
 }
 
@@ -413,12 +400,31 @@ hack_regsub(struct vcc *tl, struct expr **e, int all)
 
 /*--------------------------------------------------------------------
  */
+#if 0
+#define VCC_TYPE(a)	case a: return(#a);
+#include "vcc_types.h"
+#undef VCC_TYPE
+#endif
+
+static enum var_type
+vcc_arg_type(const char **p)
+{
+
+#define VCC_TYPE(a) if (!strcmp(#a, *p)) { *p += strlen(#a) + 1; return (a);}
+#include "vcc_types.h"
+#undef VCC_TYPE
+	return (VOID);
+}
+
+/*--------------------------------------------------------------------
+ */
 
 static void
 vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 	const char *p, *q;
 	struct expr *e1;
+	enum var_type fmt;
 
 	(void)tl;
 	(void)e;
@@ -427,23 +433,23 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	p = sym->args;
-	(*e)->fmt = vcc_Ltype(*p++);
+	(*e)->fmt = vcc_arg_type(&p);
 	vsb_printf((*e)->vsb, "%s(sp, \v+", sym->cfunc);
 	vsb_finish((*e)->vsb);
 	AZ(vsb_overflowed((*e)->vsb));
 	q = "\v1\n\v2";
 	while (*p != '\0') {
 		e1 = NULL;
-		vcc_expr0(tl, &e1, vcc_Ltype(*p));
+		fmt = vcc_arg_type(&p);
+		vcc_expr0(tl, &e1, fmt);
 		ERRCHK(tl);
-		assert(e1->fmt == vcc_Ltype(*p));
+		assert(e1->fmt == fmt);
 		if (e1->fmt == STRING_LIST) {
 			e1 = vcc_expr_edit(STRING_LIST,
 			    "\v+\n\v1,\nvrt_magic_string_end\v-", e1, NULL);
 		}
 		*e = vcc_expr_edit((*e)->fmt, q, *e, e1);
 		q = "\v1,\n\v2";
-		p++;
 		if (*p != '\0') 
 			SkipToken(tl, ',');
 	}
