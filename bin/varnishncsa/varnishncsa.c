@@ -96,7 +96,8 @@ static struct logline {
 	char *df_s;			/* %s, Status */
 	struct tm df_t;			/* %t, Date and time */
 	char *df_u;			/* %u, Remote user */
-	int bogus;			/* bogus request */
+	int active;			/* Is log line in an active trans */
+	int complete;			/* Is log line complete */
 } **ll;
 
 static size_t nll;
@@ -177,6 +178,25 @@ trimline(const char *str, const char *end)
 	return (p);
 }
 
+static void
+clean_logline(struct logline *lp)
+{
+#define freez(x) do { if (x) free(x); x = NULL; } while (0);
+	freez(lp->df_H);
+	freez(lp->df_Host);
+	freez(lp->df_Referer);
+	freez(lp->df_Uq);
+	freez(lp->df_User_agent);
+	freez(lp->df_X_Forwarded_For);
+	freez(lp->df_b);
+	freez(lp->df_h);
+	freez(lp->df_m);
+	freez(lp->df_s);
+	freez(lp->df_u);
+#undef freez
+	memset(lp, 0, sizeof *lp);
+}
+
 static int
 collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
     const char *ptr, unsigned len)
@@ -188,52 +208,72 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	switch (tag) {
 	case SLT_BackendOpen:
-		if (lp->df_h != NULL)
-			lp->bogus = 1;
+		if(lp->active || lp->df_h != NULL) {
+			/* New start for active line,
+			   clean it and start from scratch */
+			clean_logline(lp);
+		}
+		lp->active = 1;
+		if (isprefix(ptr, "default", end, &next))
+			lp->df_h = trimfield(next, end);
 		else
-			if (isprefix(ptr, "default", end, &next))
-				lp->df_h = trimfield(next, end);
-			else
-				lp->df_h = trimfield(ptr, end);
+			lp->df_h = trimfield(ptr, end);
 		break;
 
 	case SLT_TxRequest:
-		if (lp->df_m != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_m = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_m != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_m = trimline(ptr, end);
 		break;
 
 	case SLT_TxURL:
-		if (lp->df_Uq != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_Uq = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if(lp->df_Uq != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_Uq = trimline(ptr, end);
 		break;
 
 	case SLT_TxProtocol:
-		if (lp->df_H != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_H = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_H != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_H = trimline(ptr, end);
 		break;
 
 	case SLT_RxStatus:
-		if (lp->df_s != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_s = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_s != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_s = trimline(ptr, end);
 		break;
 
 	case SLT_RxHeader:
+		if(!lp->active)
+			break;
 		if (isprefix(ptr, "content-length:", end, &next))
 			lp->df_b = trimline(next, end);
 		else if (isprefix(ptr, "date:", end, &next) &&
-		    strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL)
-			lp->bogus = 1;
+			 strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL) {
+			clean_logline(lp);
+		}
 		break;
 
 	case SLT_TxHeader:
+		if(!lp->active)
+			break;
 		if (isprefix(ptr, "user-agent:", end, &next))
 			lp->df_User_agent = trimline(next, end);
 		else if (isprefix(ptr, "referer:", end, &next))
@@ -249,14 +289,16 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	case SLT_BackendReuse:
 	case SLT_BackendClose:
+		if(!lp->active)
+			break;
 		/* got it all */
-		return (0);
+		lp->complete = 1;
+		break;
 
 	default:
 		break;
 	}
 
-	/* more to come */
 	return (1);
 }
 
@@ -273,41 +315,57 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	switch (tag) {
 	case SLT_ReqStart:
-		if (lp->df_h != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_h = trimfield(ptr, end);
+		if(lp->active || lp->df_h != NULL) {
+			/* New start for active line,
+			   clean it and start from scratch */
+			clean_logline(lp);
+		}
+		lp->active = 1;
+		lp->df_h = trimfield(ptr, end);
 		break;
 
 	case SLT_RxRequest:
-		if (lp->df_m != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_m = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_m != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_m = trimline(ptr, end);
 		break;
 
 	case SLT_RxURL:
-		if (lp->df_Uq != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_Uq = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_Uq != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_Uq = trimline(ptr, end);
 		break;
 
 	case SLT_RxProtocol:
-		if (lp->df_H != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_H = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_H != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_H = trimline(ptr, end);
 		break;
 
 	case SLT_TxStatus:
+		if(!lp->active)
+			break;
 		if (lp->df_s != NULL)
-			lp->bogus = 1;
+			clean_logline(lp);
 		else
 			lp->df_s = trimline(ptr, end);
 		break;
 
 	case SLT_RxHeader:
+		if(!lp->active)
+			break;
 		if (isprefix(ptr, "user-agent:", end, &next))
 			lp->df_User_agent = trimline(next, end);
 		else if (isprefix(ptr, "referer:", end, &next))
@@ -322,33 +380,42 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_Length:
-		if (lp->df_b != NULL)
-			lp->bogus = 1;
-		else
-			lp->df_b = trimline(ptr, end);
+		if(!lp->active)
+			break;
+		if (lp->df_b != NULL) {
+			clean_logline(lp);
+			break;
+		}
+		lp->df_b = trimline(ptr, end);
 		break;
 
 	case SLT_SessionClose:
+		if(!lp->active)
+			break;
 		if (strncmp(ptr, "pipe", len) == 0 ||
-		    strncmp(ptr, "error", len) == 0)
-			lp->bogus = 1;
+		    strncmp(ptr, "error", len) == 0) {
+			clean_logline(lp);
+			break;
+		}
 		break;
 
 	case SLT_ReqEnd:
+		if(!lp->active)
+			break;
 		if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1) {
-			lp->bogus = 1;
-		} else {
-			t = l;
-			localtime_r(&t, &lp->df_t);
+			clean_logline(lp);
+			break;
 		}
+		t = l;
+		localtime_r(&t, &lp->df_t);
 		/* got it all */
-		return (0);
+		lp->complete = 1;
+		break;
 
 	default:
 		break;
 	}
 
-	/* more to come */
 	return (1);
 }
 
@@ -379,105 +446,95 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 	lp = ll[fd];
 
 	if (spec & VSL_S_BACKEND) {
-		if (collect_backend(lp, tag, spec, ptr, len))
-			return (reopen);
+		collect_backend(lp, tag, spec, ptr, len);
 	} else if (spec & VSL_S_CLIENT) {
-		if (collect_client(lp, tag, spec, ptr, len))
-			return (reopen);
+		collect_client(lp, tag, spec, ptr, len);
 	} else {
 		/* huh? */
 		return (reopen);
 	}
 
+	if(!lp->complete)
+		return (reopen);
+
 #if 0
 	/* non-optional fields */
-	if (!lp->df_m || !lp->df_Uq || !lp->df_H || !lp->df_s)
-		lp->bogus = 1;
+	if (!lp->df_m || !lp->df_Uq || !lp->df_H || !lp->df_s) {
+		clean_logline(lp);
+		return (reopen);
+	}
 #endif
 
-	if (!lp->bogus) {
-		fo = priv;
+	/* We have a complete data set - log a line */
 
-		/* %h */
-		if (!lp->df_h && spec & VSL_S_BACKEND)
-			fprintf(fo, "127.0.0.1 ");
-		else if (lp->df_X_Forwarded_For && prefer_x_forwarded_for)
-			fprintf(fo, "%s ", lp->df_X_Forwarded_For);
-		else
-			fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
+	fo = priv;
 
-		/* %l */
+	/* %h */
+	if (!lp->df_h && spec & VSL_S_BACKEND)
+		fprintf(fo, "127.0.0.1 ");
+	else if (lp->df_X_Forwarded_For && prefer_x_forwarded_for)
+		fprintf(fo, "%s ", lp->df_X_Forwarded_For);
+	else
+		fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
+
+	/* %l */
+	fprintf(fo, "- ");
+
+	/* %u: decode authorization string */
+	if (lp->df_u != NULL) {
+		char *rubuf;
+		size_t rulen;
+
+		base64_init();
+		rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
+		rubuf = malloc(rulen);
+		assert(rubuf != NULL);
+		base64_decode(rubuf, rulen, lp->df_u);
+		q = strchr(rubuf, ':');
+		if (q != NULL)
+			*q = '\0';
+		fprintf(fo, "%s ", rubuf);
+		free(rubuf);
+	} else {
 		fprintf(fo, "- ");
-
-		/* %u: decode authorization string */
-		if (lp->df_u != NULL) {
-			char *rubuf;
-			size_t rulen;
-
-			base64_init();
-			rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
-			rubuf = malloc(rulen);
-			assert(rubuf != NULL);
-			base64_decode(rubuf, rulen, lp->df_u);
-			q = strchr(rubuf, ':');
-			if (q != NULL)
-				*q = '\0';
-			fprintf(fo, "%s ", rubuf);
-			free(rubuf);
-		} else {
-			fprintf(fo, "- ");
-		}
-
-		/* %t */
-		strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
-		fprintf(fo, "%s ", tbuf);
-
-		/*
-		 * Fake "%r".  This would be a lot easier if Varnish
-		 * normalized the request URL.
-		 */
-		fprintf(fo, "\"%s ", lp->df_m);
-		if (lp->df_Host) {
-			if (strncmp(lp->df_Host, "http://", 7) != 0)
-				fprintf(fo, "http://");
-			fprintf(fo, "%s", lp->df_Host);
-		}
-		fprintf(fo, "%s ", lp->df_Uq);
-		fprintf(fo, "%s\" ", lp->df_H);
-
-		/* %s */
-		fprintf(fo, "%s ", lp->df_s);
-
-		/* %b */
-		fprintf(fo, "%s ", lp->df_b ? lp->df_b : "-");
-
-		/* %{Referer}i */
-		fprintf(fo, "\"%s\" ",
-		    lp->df_Referer ? lp->df_Referer : "-");
-
-		/* %{User-agent}i */
-		fprintf(fo, "\"%s\"\n",
-		    lp->df_User_agent ? lp->df_User_agent : "-");
-
-		/* flush the stream */
-		fflush(fo);
 	}
 
+	/* %t */
+	strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
+	fprintf(fo, "%s ", tbuf);
+
+	/*
+	 * Fake "%r".  This would be a lot easier if Varnish
+	 * normalized the request URL.
+	 */
+	fprintf(fo, "\"%s ", lp->df_m);
+	if (lp->df_Host) {
+		if (strncmp(lp->df_Host, "http://", 7) != 0)
+			fprintf(fo, "http://");
+		fprintf(fo, "%s", lp->df_Host);
+	}
+	fprintf(fo, "%s ", lp->df_Uq);
+	fprintf(fo, "%s\" ", lp->df_H);
+
+	/* %s */
+	fprintf(fo, "%s ", lp->df_s);
+
+	/* %b */
+	fprintf(fo, "%s ", lp->df_b ? lp->df_b : "-");
+
+	/* %{Referer}i */
+	fprintf(fo, "\"%s\" ",
+		lp->df_Referer ? lp->df_Referer : "-");
+
+	/* %{User-agent}i */
+	fprintf(fo, "\"%s\"\n",
+	    lp->df_User_agent ? lp->df_User_agent : "-");
+
+	/* flush the stream */
+	fflush(fo);
+
 	/* clean up */
-#define freez(x) do { if (x) free(x); x = NULL; } while (0);
-	freez(lp->df_H);
-	freez(lp->df_Host);
-	freez(lp->df_Referer);
-	freez(lp->df_Uq);
-	freez(lp->df_User_agent);
-	freez(lp->df_X_Forwarded_For);
-	freez(lp->df_b);
-	freez(lp->df_h);
-	freez(lp->df_m);
-	freez(lp->df_s);
-	freez(lp->df_u);
-#undef freez
-	memset(lp, 0, sizeof *lp);
+	clean_logline(lp);
 
 	return (reopen);
 }
