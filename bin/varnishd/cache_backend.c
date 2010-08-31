@@ -370,6 +370,11 @@ vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
 		}
 		VSC_main->backend_toolate++;
 		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
+
+		/* Checkpoint log to flush all info related to this connection
+		   before the OS reuses the FD */
+		WSL_Flush(sp->wrk, 0);
+
 		TCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
 		vc->backend = NULL;
