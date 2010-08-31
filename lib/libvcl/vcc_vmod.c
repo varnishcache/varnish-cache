@@ -128,11 +128,18 @@ vcc_ParseImport(struct vcc *tl)
 	}
 	for (; *spec != NULL; spec++) {
 		p = *spec;
-		sym = VCC_AddSymbol(tl, p);
-		p += strlen(p) + 1;
-		sym->cfunc = p;
-		p += strlen(p) + 1;
-		sym->args = p;
+		if (!strcmp(p, "META")) {
+			p += strlen(p) + 1;
+			Fh(tl, 0, "static void *vmod_priv_%.*s;\n", PF(mod));
+			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n", p, PF(mod));
+			Ff(tl, 0, "\t%s(&vmod_priv_%.*s, 0);\n", p, PF(mod));
+		} else {
+			sym = VCC_AddSymbol(tl, p);
+			p += strlen(p) + 1;
+			sym->cfunc = p;
+			p += strlen(p) + 1;
+			sym->args = p;
+		}
 	}
 	Fh(tl, 0, "\n%s\n", proto);
 }

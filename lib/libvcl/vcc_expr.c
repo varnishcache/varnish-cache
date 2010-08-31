@@ -422,7 +422,7 @@ vcc_arg_type(const char **p)
 static void
 vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
-	const char *p, *q;
+	const char *p, *q, *r;
 	struct expr *e1;
 	enum var_type fmt;
 
@@ -441,17 +441,29 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
-		vcc_expr0(tl, &e1, fmt);
-		ERRCHK(tl);
-		assert(e1->fmt == fmt);
-		if (e1->fmt == STRING_LIST) {
-			e1 = vcc_expr_edit(STRING_LIST,
-			    "\v+\n\v1,\nvrt_magic_string_end\v-", e1, NULL);
+		if (fmt == VOID && !strcmp(p, "PRIV_VCL")) {
+			e1 = vcc_new_expr();
+			r = strchr(sym->name, '.');
+			AN(r);
+			vsb_printf(e1->vsb, "&vmod_priv_%.*s",
+			    r - sym->name, sym->name);
+			vsb_finish(e1->vsb);
+			AZ(vsb_overflowed(e1->vsb));
+			p += strlen(p) + 1;
+		} else {
+			vcc_expr0(tl, &e1, fmt);
+			ERRCHK(tl);
+			assert(e1->fmt == fmt);
+			if (e1->fmt == STRING_LIST) {
+				e1 = vcc_expr_edit(STRING_LIST,
+				    "\v+\n\v1,\nvrt_magic_string_end\v-",
+				    e1, NULL);
+			}
+			if (*p != '\0') 
+				SkipToken(tl, ',');
 		}
 		*e = vcc_expr_edit((*e)->fmt, q, *e, e1);
 		q = "\v1,\n\v2";
-		if (*p != '\0') 
-			SkipToken(tl, ',');
 	}
 	SkipToken(tl, ')');
 	*e = vcc_expr_edit((*e)->fmt, "\v1\n)\v-", *e, NULL);

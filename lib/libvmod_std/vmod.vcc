@@ -1,3 +1,4 @@
 Module std
+Meta meta_function
 Function STRING toupper(STRING_LIST)
-Function STRING tolower(STRING_LIST)
+Function STRING tolower(PRIV_VCL, STRING_LIST)

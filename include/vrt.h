@@ -189,6 +189,7 @@ void VRT_fini_dir(struct cli *, struct director *);
 void VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
     const char *path);
 void VRT_Vmod_Fini(void **hdl);
+typedef int vmod_meta_f(void **,  const struct VCL_conf *);
 
 /* Convert things to string */
 

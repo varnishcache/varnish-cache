@@ -59,10 +59,12 @@ ctypes = {
 	'DURATION':	"double",
 	'INT':		"int",
 	'HEADER':	"const char *",
+	'PRIV_VCL':	"void **",
 }
 
 #######################################################################
 
+metaname = ""
 modname = "???"
 pstruct = ""
 pinit = ""
@@ -79,7 +81,7 @@ def do_func(fname, rval, args):
 	print(fname, rval, args)
 
 	proto = ctypes[rval] + " vmod_" + fname + "(struct sess *"
-	sproto = ctypes[rval] + " td_" + fname + "(struct sess *"
+	sproto = ctypes[rval] + " td_" + modname + "_" + fname + "(struct sess *"
 	s=", "
 	for i in args:
 		proto += s + ctypes[i]
@@ -88,9 +90,9 @@ def do_func(fname, rval, args):
 	sproto += ")"
 
 	plist += proto + ";\n"
-	tdl += "typedef\t" + sproto + ";\n"
+	tdl += "typedef " + sproto + ";\n"
 
-	pstruct += "\ttd_" + fname + "\t*" + fname + ";\n"
+	pstruct += "\ttd_" + modname + "_" + fname + "\t*" + fname + ";\n"
 	pinit += "\tvmod_" + fname + ",\n"
 
 	s = modname + '.' + fname + "\\0"
@@ -118,6 +120,10 @@ for l0 in f:
 
 	if l[0] == "Module":
 		modname = l[2].strip();
+		continue
+
+	if l[0] == "Meta":
+		metaname = l[2].strip();
 		continue
 
 	if l[0] != "Function":
@@ -151,18 +157,28 @@ def dumps(s):
 
 #######################################################################
 
+if metaname != "":
+	plist += "int " + metaname + "(void **, const struct VCL_conf *);\n"
+	pstruct += "\tvmod_meta_f\t*_meta;\n"
+	pinit += "\t" + metaname + ",\n"
+	slist += '\t"META\\0Vmod_Func_' + modname + '._meta",\n'
+
+#######################################################################
+
 fc = open("vcc_if.c", "w")
 fh = open("vcc_if.h", "w")
 
 fh.write('struct sess;\n')
+fh.write('struct VCL_conf;\n')
 fh.write("\n");
 
 fh.write(plist)
 
+
 fc.write('#include "vcc_if.h"\n')
+fc.write('#include "vrt.h"\n')
 fc.write("\n");
 
-fc.write('struct sess;\n')
 fc.write("\n");
 
 fc.write(tdl);
@@ -186,3 +202,6 @@ fc.write('\t;\n')
 fc.write("\n");
 
 fc.write('const char *Vmod_Spec[] = {\n' + slist + '\t0\n};\n')
+
+fc.write("\n")
+

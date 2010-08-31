@@ -53,14 +53,31 @@ vmod_toupper(struct sess *sp, const char *s, ...)
 }
 
 const char *
-vmod_tolower(struct sess *sp, const char *s, ...)
+vmod_tolower(struct sess *sp, void **vcl_priv, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(*vcl_priv == (void *)8);
 	va_start(ap, s);
 	p = vmod_updown(sp, 0, s, ap);
 	va_end(ap);
 	return (p);
+}
+
+int
+meta_function(void **priv, const struct VCL_conf *cfg)
+{
+	if (cfg != NULL) {
+		// Initialization in new VCL program
+		// Hang any private data/state off *priv
+		*priv = (void *)8;
+	} else {
+		// Cleaup in new VCL program
+		// Cleanup/Free any private data/state hanging of *priv
+		assert(*priv == (void *)8);
+		*priv = NULL;
+	}
+	return (0);
 }
