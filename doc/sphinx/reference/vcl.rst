@@ -543,19 +543,20 @@ beresp.status
   The HTTP status code returned by the server.
 
 beresp.response
-The HTTP status message returned by the server.
+  The HTTP status message returned by the server.
 
 beresp.cacheable
   True if the request resulted in a cacheable response.  A response is
-  considered cacheable if it is valid (see above), and the HTTP status
-  code is 200, 203, 300, 301, 302, 404 or 410.
+  considered cacheable if it has no Set-Cookies or Authentication, 
+  and the HTTP status code is 200, 203, 300, 301, 302, 404 or 410.
+  beresp.cacheable is writable.
 
 beresp.ttl
-  The object's remaining time to live, in seconds.
+  The object's remaining time to live, in seconds. beresp.ttl is writable.
 
-After the object is entered into the cache, the following (mostyl
+After the object is entered into the cache, the following (mostly
 read-only) variables are available when the object has been located in
-cache:
+cache, typically in vcl_hit and vcl_deliver.
 
 obj.proto
   The HTTP protocol version used when the object was retrieved.
@@ -564,15 +565,14 @@ obj.status
   The HTTP status code returned by the server.
 
 obj.response
-The HTTP status message returned by the server.
+  The HTTP status message returned by the server.
 
 obj.cacheable
-  True if the request resulted in a cacheable response.  A response is
-  considered cacheable if it is valid (see above), and the HTTP status
-  code is 200, 203, 300, 301, 302, 404 or 410.
+  True if the object had beresp.cacheable. Unless you've forced delivery
+  in your VCL obj.cacheable will always be true.
 
 obj.ttl
-  The object's remaining time to live, in seconds.
+  The object's remaining time to live, in seconds. obj.ttl is writable.
 
 obj.lastuse
   The approximate time elapsed since the object was last requests, in
