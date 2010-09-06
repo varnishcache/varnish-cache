@@ -339,7 +339,7 @@ vcl_pass
   
   The vcl_recv subroutine may terminate with calling return() with one of
   the following keywords:
- 
+  
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
@@ -358,7 +358,7 @@ vcl_hash
 
 vcl_hit
   Called after a cache lookup if the requested document was found in the cache.
-
+  
   The vcl_hit subroutine may terminate with calling return() with one of
   the following keywords:
 
@@ -376,7 +376,7 @@ vcl_miss
   Called after a cache lookup if the requested document was not found
   in the cache.  Its purpose is to decide whether or not to attempt to
   retrieve the document from the backend, and which backend to use.
-
+  
   The vcl_miss subroutine may terminate with calling return() with one of
   the following keywords:
 
@@ -411,7 +411,7 @@ vcl_fetch
 
 vcl_deliver
   Called before a cached object is delivered to the client.
-
+  
   The vcl_deliver subroutine may terminate with one of the following
   keywords:
 
@@ -554,9 +554,12 @@ beresp.response
   The HTTP status message returned by the server.
 
 beresp.cacheable
-  True if the request resulted in a cacheable response.  A response is
-  considered cacheable if it has no Set-Cookies or Authentication, 
-  and the HTTP status code is 200, 203, 300, 301, 302, 404 or 410.
+  True if the request resulted in a cacheable response. A response is
+  considered cacheable if HTTP status code is 200, 203, 300, 301, 302,
+  404 or 410 and pass wasn't called in vcl_recv. If however, both the
+  TTL and the grace time for the response are 0 beresp.cacheable will
+  be 0.
+  
   beresp.cacheable is writable.
 
 beresp.ttl
