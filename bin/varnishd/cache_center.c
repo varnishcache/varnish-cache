@@ -269,6 +269,8 @@ cnt_done(struct sess *sp)
 	memset(&sp->acct_req, 0, sizeof sp->acct_req);
 
 	sp->t_req = NAN;
+	sp->hash_always_miss = 0;
+	sp->hash_ignore_busy = 0;
 
 	if (sp->fd >= 0 && sp->doclose != NULL) {
 		/*

@@ -403,8 +403,9 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VBE_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
-					 /* Or it is impossible to fetch: */
+	    || !VBE_Healthy(sp->t_req, sp->director, (uintptr_t)oh))
+					/* Or it is impossible to fetch */
+	    && !sp->hash_ignore_busy) { /* And we've not been told to ignore busy */
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
@@ -416,18 +417,27 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
-		/* We found an object we like */
-		oc->refcnt++;
-		if (o->hits < INT_MAX)
-			o->hits++;
-		assert(oh->refcnt > 1);
-		Lck_Unlock(&oh->mtx);
-		assert(hash->deref(oh));
-		*poh = oh;
-		return (oc);
+		if(sp->hash_always_miss) {
+			if (o->ttl >= sp->t_req) {
+				o->ttl = sp->t_req - 1;
+				o->grace = HSH_Grace(sp->grace);
+				EXP_Rearm(o);
+			}
+			o = NULL;
+		} else {
+			/* We found an object we like */
+			oc->refcnt++;
+			if (o->hits < INT_MAX)
+				o->hits++;
+			assert(oh->refcnt > 1);
+			Lck_Unlock(&oh->mtx);
+			assert(hash->deref(oh));
+			*poh = oh;
+			return (oc);
+		}
 	}
 
-	if (busy_oc != NULL) {
+	if (busy_oc != NULL && !sp->hash_ignore_busy) {
 		/* There are one or more busy objects, wait for them */
 		if (sp->esis == 0)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);

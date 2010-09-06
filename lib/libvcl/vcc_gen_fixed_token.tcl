@@ -174,6 +174,18 @@ set spobj {
 	"const struct sess *"
     }
 
+    { req.hash_ignore_busy		BOOL
+	RW
+	{ recv }
+	"struct sess *"
+    }
+
+    { req.hash_always_miss		BOOL
+	RW
+	{ recv }
+	"struct sess *"
+    }
+
     #######################################################################
     # Request sent to backend
     { bereq.request			STRING

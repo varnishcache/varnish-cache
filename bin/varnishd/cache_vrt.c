@@ -684,6 +684,42 @@ VRT_r_req_xid(struct sess *sp)
 	return (p);
 }
 
+/*--------------------------------------------------------------------
+ * req.hash_ignore_busy
+ */
+
+void
+VRT_l_req_hash_ignore_busy(struct sess *sp, unsigned ignore_busy)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->hash_ignore_busy = !!ignore_busy;
+}
+
+unsigned
+VRT_r_req_hash_ignore_busy(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return sp->hash_ignore_busy;
+}
+
+/*--------------------------------------------------------------------
+ * req.hash_always_miss
+ */
+
+void
+VRT_l_req_hash_always_miss(struct sess *sp, unsigned always_miss)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->hash_always_miss = !!always_miss;
+}
+
+unsigned
+VRT_r_req_hash_always_miss(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return sp->hash_always_miss;
+}
+
 /*--------------------------------------------------------------------*/
 
 struct sockaddr *

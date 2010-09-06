@@ -376,6 +376,9 @@ struct sess {
 	int			esis;
 	int			disable_esi;
 
+	uint8_t			hash_ignore_busy;
+	uint8_t			hash_always_miss;
+
 	struct worker		*wrk;
 
 	socklen_t		sockaddrlen;

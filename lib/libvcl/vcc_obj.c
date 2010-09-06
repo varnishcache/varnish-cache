@@ -135,6 +135,18 @@ struct var vcc_vars[] = {
 	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	     | VCL_MET_ERROR
 	},
+	{ "req.hash_ignore_busy", BOOL, 20,
+	    "VRT_r_req_hash_ignore_busy(sp)",
+	    "VRT_l_req_hash_ignore_busy(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_RECV
+	},
+	{ "req.hash_always_miss", BOOL, 20,
+	    "VRT_r_req_hash_always_miss(sp)",
+	    "VRT_l_req_hash_always_miss(sp, ",
+	    V_RW,	    0,
+	    VCL_MET_RECV
+	},
 	{ "bereq.request", STRING, 13,
 	    "VRT_r_bereq_request(sp)",
 	    "VRT_l_bereq_request(sp, ",
