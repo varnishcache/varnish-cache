@@ -101,7 +101,6 @@ print_backend(struct vcc *tl,
 		Fb(tl, 0, "[%d]", serial);
 	Fb(tl, 0, "\",\n");
 	Emit_Sockaddr(tl, &tmptok, b_defaults.port);
-	vcc_EmitBeIdent(tl, tl->fb, serial, dns_first , tl->t);
 
 	Fb(tl, 0, "\t.hosthdr = \"");
 	if (b_defaults.hostheader != NULL)
