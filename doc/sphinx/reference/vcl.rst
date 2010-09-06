@@ -151,7 +151,7 @@ random or round-robin director or using .list::
           .list = {
                   .host_header = "www.example.com";
                   .port = "80";
-                  .connection_timeout = 0.4;
+                  .connect_timeout = 0.4;
                   "192.168.15.0"/24;
                   "192.168.16.128"/25;
           }
