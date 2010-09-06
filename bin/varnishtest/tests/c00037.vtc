@@ -1,0 +1,44 @@
+# $Id$
+
+test "Test req.hash_always_miss in vcl_recv"
+
+server s1 {
+        rxreq 
+        txresp -hdr "Inc: 1"
+        rxreq 
+        txresp -hdr "Inc: 2"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_recv {
+		if (req.http.x-missit == "1") {
+			set req.hash_always_miss = true;
+		}
+	}
+	sub vcl_deliver {
+		if(obj.hits > 0) {
+			set resp.http.X-Cache = "HIT";
+		} else {
+			set resp.http.X-Cache = "MISS";
+		}
+	}
+ } -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Inc == "1"
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Inc == "1"
+	txreq -url "/" -hdr "x-missit: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Inc == "2"
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Inc == "2"
+} -run

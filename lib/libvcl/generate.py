@@ -196,6 +196,18 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('req.hash_ignore_busy',
+		'BOOL',
+		( 'recv',),
+		( 'recv',),
+		'struct sess *'
+	),
+	('req.hash_always_miss',
+		'BOOL',
+		( 'recv',),
+		( 'recv',),
+		'struct sess *'
+	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'pass', 'miss', 'fetch',),

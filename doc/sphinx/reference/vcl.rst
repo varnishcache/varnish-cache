@@ -514,6 +514,12 @@ req.backend.healthy
 req.http.header
   The corresponding HTTP header.
 
+req.hash_always_miss
+  Force a cache miss for this request.
+
+req.hash_ignore_busy
+  Ignore any busy object during cache lookup.
+
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
