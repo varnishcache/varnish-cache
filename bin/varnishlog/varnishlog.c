@@ -382,11 +382,11 @@ main(int argc, char * const *argv)
 	if (w_arg != NULL)
 		do_write(vd, w_arg, a_flag);
 
-	if (o_flag)
-		do_order(vd, argc - optind, argv + optind);
-
 	if (u_flag)
 		setbuf(stdout, NULL);
+
+	if (o_flag)
+		do_order(vd, argc - optind, argv + optind);
 
 	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
 		if (fflush(stdout) != 0) {
