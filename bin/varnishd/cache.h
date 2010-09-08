@@ -699,6 +699,9 @@ void ESI_Deliver(struct sess *);
 void ESI_Destroy(struct object *);
 void ESI_Parse(struct sess *);
 
+/* cache_vrt_vmod.c */
+void VMOD_Init(void);
+
 /* cache_ws.c */
 
 void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);

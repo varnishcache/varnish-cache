@@ -163,6 +163,8 @@ VSC_F_MAIN(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
 
 VSC_F_MAIN(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 
+VSC_F_MAIN(vmods,		uint64_t, 0, 'i', "Loaded VMODs")
+
 #ifdef __VSC_F_MAIN
 #undef VSC_F_MAIN
 #undef __VSC_F_MAIN

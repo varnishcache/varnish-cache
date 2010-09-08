@@ -129,6 +129,8 @@ child_main(void)
 	SMS_Init();
 	STV_open();
 
+	VMOD_Init();
+
 	BAN_Compile();
 
 	/* Wait for persistent storage to load if asked to */

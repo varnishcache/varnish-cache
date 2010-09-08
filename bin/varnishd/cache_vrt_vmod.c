@@ -38,6 +38,7 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <dlfcn.h>
 
+#include "cli_priv.h"
 #include "vrt.h"
 #include "cache.h"
 
@@ -46,12 +47,21 @@ SVNID("$Id$")
  */
 
 struct vmod {
+	unsigned		magic;
+#define VMOD_MAGIC		0xb750219c
+
+	VTAILQ_ENTRY(vmod)	list;
+
+	int			ref;
+
 	char 			*nm;
 	char 			*path;
 	void 			*hdl;
 	const void		*funcs;
 	int			funclen;
 };
+
+static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
 void
 VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
@@ -61,28 +71,41 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 	const int *i;
 	const char *p;
 
-	v = calloc(sizeof *v, 1);
-	AN(v);
-	REPLACE(v->nm, nm);
-	REPLACE(v->path, path);
-	v->hdl = dlopen(v->path, RTLD_NOW | RTLD_LOCAL);
-	AN(v->hdl);
+	ASSERT_CLI();
 
-	x = dlsym(v->hdl, "Vmod_Name");
-	AN(x);
-	p = x;
+	VTAILQ_FOREACH(v, &vmods, list)
+		if (!strcmp(v->nm, nm))
+			break;
+	if (v == NULL) {
+		ALLOC_OBJ(v, VMOD_MAGIC);
+		AN(v);
 
-	x = dlsym(v->hdl, "Vmod_Len");
-	AN(x);
-	i = x;
-	assert(len == *i);
+		VTAILQ_INSERT_TAIL(&vmods, v, list);
+		VSC_main->vmods++;
 
-	x = dlsym(v->hdl, "Vmod_Func");
-	AN(x);
-	memcpy(ptr, x, len);
+		REPLACE(v->nm, nm);
+		REPLACE(v->path, path);
 
-	v->funcs = x;
-	v->funclen = *i;
+		v->hdl = dlopen(v->path, RTLD_NOW | RTLD_LOCAL);
+		AN(v->hdl);
+
+		x = dlsym(v->hdl, "Vmod_Name");
+		AN(x);
+		p = x;
+
+		x = dlsym(v->hdl, "Vmod_Len");
+		AN(x);
+		i = x;
+		assert(len == *i);
+
+		x = dlsym(v->hdl, "Vmod_Func");
+		AN(x);
+		memcpy(ptr, x, len);
+
+		v->funcs = x;
+		v->funclen = *i;
+	}
+	v->ref++;
 
 	*hdl = v;
 }
@@ -92,8 +115,44 @@ VRT_Vmod_Fini(void **hdl)
 {
 	struct vmod *v;
 
+	ASSERT_CLI();
+
 	AN(*hdl);
-	v = *hdl;
-	free(*hdl);
+	CAST_OBJ_NOTNULL(v, *hdl, VMOD_MAGIC);
 	*hdl = NULL;
+	if (--v->ref != 0)
+		return;
+	dlclose(v->hdl);
+	free(v->nm);
+	free(v->path);
+	VTAILQ_REMOVE(&vmods, v, list);
+	VSC_main->vmods--;
+	FREE_OBJ(v);
+}
+
+/*---------------------------------------------------------------------*/
+
+static void
+ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vmod *v;
+
+	(void)av;
+	(void)priv;
+	ASSERT_CLI();
+	VTAILQ_FOREACH(v, &vmods, list)
+		cli_out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
+}
+
+static struct cli_proto vcl_cmds[] = {
+	{ "debug.vmod", "debug.vmod", "show loaded vmods", 0, 0,
+		"d", ccf_debug_vmod },
+	{ NULL }
+};
+
+void
+VMOD_Init(void)
+{
+
+	CLI_AddFuncs(vcl_cmds);
 }
