@@ -50,7 +50,6 @@ SVNID("$Id$")
 
 #include "binary_heap.h"
 #include "cache.h"
-#include "vcl.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
 
@@ -155,8 +154,7 @@ EXP_Insert(struct object *o)
  *
  * To avoid the exp_mtx becoming a hotspot, we only attempt to move
  * objects if they have not been moved recently and if the lock is available.
- * This optimization obviously leaves the LRU list imperfectly sorted, but
- * that can be worked around by examining obj.last_use in vcl_discard{}
+ * This optimization obviously leaves the LRU list imperfectly sorted.
  */
 
 int
@@ -258,7 +256,6 @@ exp_timer(struct sess *sp, void *priv)
 	double t;
 
 	(void)priv;
-	VCL_Get(&sp->vcl);
 	t = TIM_real();
 	while (1) {
 		Lck_Lock(&exp_mtx);
@@ -269,7 +266,6 @@ exp_timer(struct sess *sp, void *priv)
 			WSL_Flush(sp->wrk, 0);
 			WRK_SumStat(sp->wrk);
 			AZ(sleep(1));
-			VCL_Refresh(&sp->vcl);
 			t = TIM_real();
 			continue;
 		}
