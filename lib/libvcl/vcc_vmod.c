@@ -76,12 +76,8 @@ vcc_ParseImport(struct vcc *tl)
 	Fi(tl, 0, "\t    &Vmod_Func_%.*s,\n", PF(mod));
 	Fi(tl, 0, "\t    sizeof(Vmod_Func_%.*s),\n", PF(mod));
 	Fi(tl, 0, "\t    \"%.*s\",\n", PF(mod));
-	if (fn != NULL) {
-		Fi(tl, 0, "\t    ");
-		EncString(tl->fi, fn, NULL, 0);
-	} else {
-		Fi(tl, 0, "\t    0");
-	}
+	Fi(tl, 0, "\t    ");
+	EncString(tl->fi, fn, NULL, 0);
 	Fi(tl, 0, ");\n");
 
 	/* XXX: zero the function pointer structure */
@@ -113,14 +109,14 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	proto = dlsym(hdl, "Vmod_Proto");
-	if (modname == NULL) {
+	if (proto == NULL) {
 		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
 		    PF(mod), fn, "Symbol Vmod_Proto not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 	spec = dlsym(hdl, "Vmod_Spec");
-	if (modname == NULL) {
+	if (spec == NULL) {
 		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
 		    PF(mod), fn, "Symbol Vmod_Spec not found");
 		vcc_ErrWhere(tl, mod);
