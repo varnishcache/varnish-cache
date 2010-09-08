@@ -38,7 +38,9 @@
 #ifndef VMB_H_INCLUDED
 #define VMB_H_INCLUDED
 
-void vmb_pthread(void);
+#if defined(__FreeBSD__)
+#include <sys/param.h>
+#endif
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800058
 
@@ -75,6 +77,8 @@ void vmb_pthread(void);
 #else
 
 #define VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE 1
+
+void vmb_pthread(void);
 
 #define VMB()	vmb_pthread()
 #define VWMB()	vmb_pthread()
