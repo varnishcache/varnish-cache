@@ -38,6 +38,8 @@ client c1 {
 } -run
 
 client c1 -run
+client c1 -run
+delay .5
 
 varnish v1 -expect vmods == 1
 
