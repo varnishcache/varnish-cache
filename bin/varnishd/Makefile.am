@@ -83,7 +83,9 @@ noinst_HEADERS = \
 	vparam.h
 
 varnishd_CFLAGS = \
-        -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
+        -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
+	-DVARNISH_VMOD_DIR='"${pkglibdir}"' \
+	-DVARNISH_VCL_DIR='"${varnishconfdir}"'
 
 varnishd_LDFLAGS = -export-dynamic
 
