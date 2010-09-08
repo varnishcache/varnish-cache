@@ -80,9 +80,6 @@ vcc_ParseImport(struct vcc *tl)
 	EncString(tl->fi, fn, NULL, 0);
 	Fi(tl, 0, ");\n");
 
-	/* XXX: zero the function pointer structure */
-	Ff(tl, 0, "\tVRT_Vmod_Fini(&VGC_vmod_%.*s);\n", PF(mod));
-
 	SkipToken(tl, ';');
 
 	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
@@ -138,4 +135,7 @@ vcc_ParseImport(struct vcc *tl)
 		}
 	}
 	Fh(tl, 0, "\n%s\n", proto);
+
+	/* XXX: zero the function pointer structure */
+	Ff(tl, 0, "\tVRT_Vmod_Fini(&VGC_vmod_%.*s);\n", PF(mod));
 }
