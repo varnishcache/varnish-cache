@@ -1,0 +1,26 @@
+# $Id$
+
+test "Test std vmod"
+
+server s1 {
+	rxreq 
+	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+} -start
+
+varnish v1 -vcl+backend {
+	import std from "${topsrc}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+
+	sub vcl_deliver {
+		set resp.http.foo = std.toupper(resp.http.foo);
+		set resp.http.bar = std.tolower(resp.http.bar);
+	}
+} -start
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	expect resp.http.foo == "BAR"
+	expect resp.http.bar == "foo"
+} -run
