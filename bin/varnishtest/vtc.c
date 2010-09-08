@@ -617,6 +617,8 @@ main(int argc, char * const *argv)
 	unsigned dur = 30;
 	const char *nmax;
 	char cmd[BUFSIZ];
+	char *cwd;
+	char topsrc[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -654,6 +656,10 @@ main(int argc, char * const *argv)
 	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
+
+	cwd = getcwd(NULL, 0);
+	bprintf(topsrc, "%s/%s", cwd, TOP_SRCDIR);
+	macro_def(vltop, NULL, "topsrc", topsrc);
 
 	AZ(pthread_mutex_init(&vtc_mtx, NULL));
 	AZ(pthread_cond_init(&vtc_cond, NULL));

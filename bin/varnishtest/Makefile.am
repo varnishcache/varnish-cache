@@ -29,6 +29,9 @@ varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 		${LIBM} ${PTHREAD_LIBS}
 
+varnishtest_CFLAGS = \
+		-DTOP_SRCDIR='"${top_srcdir}"'
+
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README
 
