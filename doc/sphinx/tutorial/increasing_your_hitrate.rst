@@ -155,7 +155,7 @@ VCL snipplet in vcl_recv will disregard cookies unless you are
 accessing /admin/.::
 
   if ( !( req.url ~ ^/admin/) ) {
-    unset http.Cookie;
+    unset req.http.Cookie;
   }
 
 Quite simple. If, however, you need to do something more complicated,
