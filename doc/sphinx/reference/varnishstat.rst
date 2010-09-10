@@ -16,7 +16,7 @@ HTTP accelerator statistics
 SYNOPSIS
 ========
 
-varnishstat [-1] [-f field_list] [-l] [-n varnish_name] [-V] [-w delay]
+varnishstat [-1] [-x] [-f field_list] [-l] [-n varnish_name] [-V] [-w delay]
 
 DESCRIPTION
 ===========
@@ -39,26 +39,30 @@ The following options are available:
 
 -w delay    Wait delay seconds between updates.  The default is 1.
 
+-x          Displays the result as XML once.
+
 The columns in the main display are, from left to right:
 
 1.   Value
-
 2.   Per-second average in the period since last update, or a period if the value can not be averaged
-
 3.   Per-second average over process lifetime, or a period if the value can not be averaged
-
 4.   Descriptive text
-
 
 When using the -1 option, the columns in the output are, from left to right:
 
 1.   Symbolic entry name
-
 2.   Value
-
 3.   Per-second average over process lifetime, or a period if the value can not be averaged
-
 4.   Descriptive text
+
+When using the -x option, the output is::
+
+  <stat> 
+    <name>FIELD NAME</name> 
+    <value>FIELD VALUE</value> 
+    <description>FIELD DESCRIPTION</description> 
+  </stat> 
+
 
 SEE ALSO
 ========
