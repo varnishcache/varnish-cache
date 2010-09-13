@@ -104,6 +104,14 @@ def do_func(fname, rval, args):
 
 #######################################################################
 
+def partition(string, separator):
+	if (hasattr(string,"partition")):
+		return string.partition(separator)
+	i = string.find(separator)
+	if i >= 0:
+		return (string[:i],separator,string[i+len(separator):])
+	return (string, '', '')
+
 f = open(specfile, "r")
 
 for l0 in f:
@@ -116,7 +124,7 @@ for l0 in f:
 	else:
 		line = l0
 	line = line.expandtabs().strip()
-	l = line.partition(" ")
+	l = partition(line, " ")
 
 	if l[0] == "Module":
 		modname = l[2].strip();
@@ -129,27 +137,27 @@ for l0 in f:
 	if l[0] != "Function":
 		assert False
 
-	l = l[2].strip().partition(" ")
+	l = partition(l[2].strip(), " ")
 	rt_type = l[0]
 
-	l = l[2].strip().partition("(")
+	l = partition(l[2].strip(), "(")
 	fname = l[0].strip()
 
 	args = list()
 
 	while True:
-		l = l[2].strip().partition(",")
+		l = partition(l[2].strip(), ",")
 		if len(l[2]) == 0:
 			break
 		args.append(l[0])
-	l = l[0].strip().partition(")")
+	l = partition(l[0].strip(), ")")
 	args.append(l[0])
 	do_func(fname, rt_type, args)
 
 #######################################################################
 def dumps(s):
 	while True:
-		l = s.partition("\n")
+		l = partition(s, "\n")
 		if len(l[0]) == 0:
 			break
 		fc.write('\t"' + l[0] + '\\n"\n')
