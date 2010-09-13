@@ -18,6 +18,7 @@ The Varnish Reference Manual
 	varnishtest.rst
 	varnishtop.rst
 	shmem.rst
+	vmod.rst
 
 .. todo::
         The programs:
