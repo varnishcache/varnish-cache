@@ -103,11 +103,15 @@ parameter.
 Directors
 ---------
 
-Directors choose from different backends based on health status and a
-per-director algorithm.  There currently exists a round-robin and a
-random director.
+A director is a logical group of backend servers clustered together
+for redundancy. The basic role of the director is to let Varnish
+choose a backend server amongst several so if one is down another can
+be used.
 
-Directors are defined using:::
+There are several types of directors. The different director types
+use different algorithms to choose which backend to use.
+
+Configuring a director may look like this:::
 
   director b2 random {
     .retries = 5;
@@ -152,7 +156,11 @@ the client by picking up the value of a session cookie or similar.
 Note: in 2.1 *client.identity* isn't available and the director will
 use client.ip to distribute clients across backends.
 
-The client director takes no options.
+The client director takes one option - *retries* which set the number
+of retries the director should take in order to find a healthy
+backend.
+
+
 
 The hash director
 ~~~~~~~~~~~~~~~~~
@@ -164,7 +172,9 @@ This is useful is you are using Varnish to load balance in front of
 other Varnish caches or other web accelerators as objects won't be
 duplicated across caches.
 
-The hash director takes no options.
+The client director takes one option - *retries* which set the number
+of retries the director should take in order to find a healthy
+backend.
 
 The DNS director
 ~~~~~~~~~~~~~~~~
