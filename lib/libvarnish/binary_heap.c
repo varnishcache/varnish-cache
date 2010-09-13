@@ -57,6 +57,9 @@ SVNID("$Id$")
  */
 #define ROW_SHIFT		16
 
+
+#undef PARANOIA
+
 /* Private definitions -----------------------------------------------*/
 
 #define ROOT_IDX		1
@@ -127,8 +130,12 @@ child(const struct binheap *bh, unsigned u, unsigned *a, unsigned *b)
 	} else {
 		/* The rest is as usual, only inside the page */
 		*a = u + (u & bh->page_mask);
-		*b += 1;
+		*b = *a + 1;
 	}
+#ifdef PARANOIA
+	assert(parent(bh, *a) == u);
+	assert(parent(bh, *b) == u);
+#endif
 }
 
 
@@ -284,12 +291,29 @@ binheap_insert(struct binheap *bh, void *p)
 	(void)binheap_trickleup(bh, u);
 }
 
+
+#ifdef PARANOIA
+static void
+chk(const struct binheap *bh)
+{
+	unsigned u, v;
+
+	for (u = 2; u < bh->next; u++) {
+		v = parent(bh, u);
+		assert(!bh->cmp(bh->priv, A(bh, u), A(bh, v)));
+	}
+}
+#endif 
+
 void *
 binheap_root(const struct binheap *bh)
 {
 
 	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
+#ifdef PARANOIA
+	chk(bh);
+#endif
 	return (A(bh, ROOT_IDX));
 }
 
