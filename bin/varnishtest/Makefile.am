@@ -30,7 +30,7 @@ varnishtest_LDADD = \
 		${LIBM} ${PTHREAD_LIBS}
 
 varnishtest_CFLAGS = \
-		-DTOP_SRCDIR='"${top_srcdir}"'
+		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README

@@ -618,7 +618,7 @@ main(int argc, char * const *argv)
 	const char *nmax;
 	char cmd[BUFSIZ];
 	char *cwd;
-	char topsrc[BUFSIZ];
+	char topbuild[BUFSIZ];
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -658,8 +658,8 @@ main(int argc, char * const *argv)
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
 
 	cwd = getcwd(NULL, 0);
-	bprintf(topsrc, "%s/%s", cwd, TOP_SRCDIR);
-	macro_def(vltop, NULL, "topsrc", topsrc);
+	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
+	macro_def(vltop, NULL, "topbuild", topbuild);
 
 	AZ(pthread_mutex_init(&vtc_mtx, NULL));
 	AZ(pthread_cond_init(&vtc_cond, NULL));
