@@ -453,6 +453,15 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 		} else {
 			vcc_expr0(tl, &e1, fmt);
 			ERRCHK(tl);
+			if (e1->fmt != fmt) {
+				vsb_printf(tl->sb, "Wrong argument type.");
+				vsb_printf(tl->sb, "  Expected %s.",
+					vcc_Type(fmt));
+				vsb_printf(tl->sb, "  Got %s.\n",
+					vcc_Type(e1->fmt));
+				vcc_ErrWhere2(tl, e1->t1, tl->t);
+				return;
+			}
 			assert(e1->fmt == fmt);
 			if (e1->fmt == STRING_LIST) {
 				e1 = vcc_expr_edit(STRING_LIST,
@@ -560,7 +569,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		default:
-			vsb_printf(tl->sb, "Wrong kind of symbol.\n");
+			vsb_printf(tl->sb, "Symbol is not a function.\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -921,3 +930,26 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 	}
 	vcc_delete_expr(e);
 }
+
+/*--------------------------------------------------------------------
+ */
+
+void
+vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
+{
+
+	struct expr *e;
+	struct token *t1;
+
+	t1 = tl->t;
+	e = vcc_new_expr();
+	vcc_expr_call(tl, &e, sym);
+	if (!tl->err) {
+		vcc_expr_fmt(tl->fb, tl->indent, e);
+		vsb_cat(tl->fb, ";\n");
+	} else if (t1 != tl->t) {
+		vcc_ErrWhere2(tl, t1, tl->t);
+	}
+	vcc_delete_expr(e);
+}
+
