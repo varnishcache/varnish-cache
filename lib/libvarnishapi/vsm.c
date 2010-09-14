@@ -147,6 +147,7 @@ vsm_open(struct VSM_data *vd, int diag)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->vsm_head);
+	AN(vd->fname);
 
 	vd->vsm_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsm_fd < 0) {
@@ -221,6 +222,8 @@ VSM_Open(struct VSM_data *vd, int diag)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->vsm_head);
+	if (!vd->n_opt)
+		VSM_n_Arg(vd, "");
 	return (vsm_open(vd, diag));
 }
 
