@@ -43,18 +43,28 @@ The std VMODs vmod.vcc file looks somewhat like this::
 	Meta meta_function
 	Function STRING toupper(STRING_LIST)
 	Function STRING tolower(PRIV_VCL, STRING_LIST)
+	Function VOID set_ip_tos(INT)
 
 The first line gives the name of the module, nothing special there.
 
 The second line specifies an optional "Meta" function, which will
 be called whenever a VCL program which imports this VMOD is loaded
 or unloaded.  You probably will not need such a function, so we will
-postpone that subject until later.
+postpone that subject until further down.
 
-The next two lines specify the functions in the VMOD, along with the
+The next three lines specify two functions in the VMOD, along with the
 types of the arguments, and that is probably where the hardest bit
 of writing a VMOD is to be found, so we will talk about that at length
 in a moment.
+
+Notice that the third function returns VOID, that makes it a "procedure"
+in VCL lingo, meaning that it cannot be used in expressions, right
+side of assignments and such places.  Instead it can be used as a
+primary action, something functions which return a value can not::
+
+	sub vcl_recv {
+		std.set_ip_tos(32);
+	}
 
 Running vmod.py on the vmod.vcc file, produces an "vcc_if.c" and
 "vcc_if.h" files, which you must use to build your shared library
@@ -185,6 +195,12 @@ PRIV_VCL
 
 	When the last VCL program that uses the module is discarded
 	the shared library containing the module will be dlclosed().
+
+VOID
+	C-type: void
+
+	Can only be used for return-value, which makes the function a VCL
+	procedure.
 
 IP, BOOL, HEADER
 	XXX: these types are not released for use in vmods yet.
