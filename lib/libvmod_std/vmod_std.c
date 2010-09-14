@@ -1,9 +1,17 @@
 #include <ctype.h>
 #include <stdarg.h>
+#include <netinet/in.h>
 #include "vrt.h"
 #include "../../bin/varnishd/cache.h"
 
 #include "vcc_if.h"
+
+void
+vmod_set_ip_tos(struct sess *sp, int tos)
+{
+
+	TCP_Assert(setsockopt(sp->fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
+}
 
 static const char *
 vmod_updown(struct sess *sp, int up, const char *s, va_list ap)

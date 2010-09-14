@@ -2,3 +2,4 @@ Module std
 Meta meta_function
 Function STRING toupper(STRING_LIST)
 Function STRING tolower(PRIV_VCL, STRING_LIST)
+Function VOID set_ip_tos(INT)

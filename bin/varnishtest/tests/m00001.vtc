@@ -13,6 +13,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
+		std.set_ip_tos(32);
 	}
 } -start
 
@@ -52,5 +53,14 @@ varnish v1 -expect vmods == 0
 varnish v1 -badvcl {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+}
+
+varnish v1 -badvcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+
+	sub vcl_recv {
+		if (std == 2) {
+		}
+	}
 }
 
