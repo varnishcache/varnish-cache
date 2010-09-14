@@ -258,7 +258,7 @@ int vcc_StringVal(struct vcc *tl);
 void vcc_ExpectedStringval(struct vcc *tl);
 
 /* vcc_symbol */
-struct symbol *VCC_AddSymbol(struct vcc *tl, const char *name);
+struct symbol *VCC_AddSymbol(struct vcc *tl, const char *name, enum symkind);
 const struct symbol *VCC_FindSymbol(const struct vcc *tl,
     const struct token *t);
 

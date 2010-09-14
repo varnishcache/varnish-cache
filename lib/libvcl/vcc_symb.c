@@ -45,7 +45,7 @@ SVNID("$Id$")
 
 
 struct symbol *
-VCC_AddSymbol(struct vcc *tl, const char *name)
+VCC_AddSymbol(struct vcc *tl, const char *name, enum symkind kind)
 {
 	struct symbol *sym;
 
@@ -61,6 +61,7 @@ VCC_AddSymbol(struct vcc *tl, const char *name)
 	AN(name);
 	sym->nlen = strlen(name);
 	VTAILQ_INSERT_TAIL(&tl->symbols, sym, list);
+	sym->kind = kind;
 	return (sym);
 }
 

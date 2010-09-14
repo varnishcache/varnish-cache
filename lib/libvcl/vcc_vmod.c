@@ -80,8 +80,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	bprintf(fn, "%.*s", PF(mod));
-	sym = VCC_AddSymbol(tl, fn);
-	sym->kind = SYM_VMOD;
+	sym = VCC_AddSymbol(tl, fn, SYM_VMOD);
 	sym->def_b = t1;
 	sym->def_e = tl->t;
 
@@ -152,7 +151,7 @@ vcc_ParseImport(struct vcc *tl)
 			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n", p, PF(mod));
 			Ff(tl, 0, "\t%s(&vmod_priv_%.*s, 0);\n", p, PF(mod));
 		} else {
-			sym = VCC_AddSymbol(tl, p);
+			sym = VCC_AddSymbol(tl, p, SYM_FUNC);
 			p += strlen(p) + 1;
 			sym->cfunc = p;
 			p += strlen(p) + 1;
