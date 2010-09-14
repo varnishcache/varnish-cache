@@ -156,6 +156,10 @@ vcc_ParseImport(struct vcc *tl)
 			sym->cfunc = p;
 			p += strlen(p) + 1;
 			sym->args = p;
+
+			/* Functions which return VOID are procedures */
+			if (!memcmp(p, "VOID\0", 5))
+				sym->kind = SYM_PROC;
 		}
 	}
 	Fh(tl, 0, "\n%s\n", proto);
