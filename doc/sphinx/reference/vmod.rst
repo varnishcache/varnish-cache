@@ -85,7 +85,7 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 	const char * vmod_tolower(struct sess *, void **, const char *, ...);
 	int meta_function(void **, const struct VCL_conf *);
 
-Those are your C prototypes.  Notice the "vmod_" prefix on the function
+Those are your C prototypes.  Notice the "vmod\_" prefix on the function
 names and the C-types as return types and arguments.
 
 VCL and C data types
