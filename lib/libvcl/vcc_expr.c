@@ -538,7 +538,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		}
 		AN(sym);
 
-		if (sym->var != NULL) {
+		if (sym->kind == SYM_VAR) {
 			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 			vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 			ERRCHK(tl);
@@ -546,10 +546,14 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vsb_printf(e1->vsb, "%s", vp->rname);
 			e1->fmt = vp->fmt;
 			vcc_NextToken(tl);
-		} else if (sym->cfunc != NULL) {
+		} else if (sym->kind == SYM_FUNC) {
 			vcc_expr_call(tl, &e1, sym);
 			ERRCHK(tl);
 			*e = e1;
+			return;
+		} else {
+			vsb_printf(tl->sb, "Wrong kind of symbol.\n");
+			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		break;
