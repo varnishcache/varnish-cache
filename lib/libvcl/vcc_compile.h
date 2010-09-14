@@ -68,17 +68,31 @@ struct token {
 	char			*dec;
 };
 
+enum symkind {
+	SYM_NONE,
+	SYM_VAR,
+	SYM_FUNC,
+	SYM_PROC,
+	SYM_VMOD
+};
+
 struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
 	VTAILQ_ENTRY(symbol)		list;
+
 	char				*name;
 	unsigned			nlen;
 	unsigned			wildcard;
+
+	enum symkind			kind;
+	enum var_type			fmt;
+
+	struct token			*def_b, *def_e;
+
 	const char			*cfunc;
 	const char			*args;
 	const struct var		*var;
-	enum var_type			fmt;
 	unsigned			r_methods;
 };
 

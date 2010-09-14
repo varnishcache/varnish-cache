@@ -46,19 +46,44 @@ vcc_ParseImport(struct vcc *tl)
 {
 	void *hdl;
 	char fn[1024];
-	struct token *mod;
+	struct token *mod, *t1;
 	const char *modname;
 	const char *proto;
 	const char **spec;
 	struct symbol *sym;
+	const struct symbol *osym;
 	const char *p;
 	// int *modlen;
 
-	SkipToken(tl, ID);
+	t1 = tl->t;
+	SkipToken(tl, ID);		/* "import" */
 
 	ExpectErr(tl, ID);
 	mod = tl->t;
+
 	vcc_NextToken(tl);
+
+	osym = VCC_FindSymbol(tl, mod);
+	if (osym != NULL && osym->kind != SYM_VMOD) {
+		vsb_printf(tl->sb, "Module %.*s conflics with other symbol.\n",
+		    PF(mod));
+		vcc_ErrWhere2(tl, t1, tl->t);
+		return;
+	}
+	if (osym != NULL) {
+		vsb_printf(tl->sb, "Module %.*s already imported.\n", 
+		    PF(mod));
+		vcc_ErrWhere2(tl, t1, tl->t);
+		vsb_printf(tl->sb, "Previous import was here:\n");
+		vcc_ErrWhere2(tl, osym->def_b, osym->def_e);
+		return;
+	}
+
+	bprintf(fn, "%.*s", PF(mod));
+	sym = VCC_AddSymbol(tl, fn);
+	sym->kind = SYM_VMOD;
+	sym->def_b = t1;
+	sym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
 		vcc_NextToken(tl);

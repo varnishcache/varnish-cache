@@ -48,3 +48,9 @@ varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
 varnish v1 -expect vmods == 0
+
+varnish v1 -badvcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+}
+
