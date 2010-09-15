@@ -1,0 +1,18 @@
+# $Id$
+
+test "Edge case of chunked encoding, trimming storage to length."
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 4096
+} -start
+
+varnish v1 \
+	-arg "-p fetch_chunksize=4" \
+	-arg "-s malloc,1m" -vcl+backend { } -start
+
+client c1 {
+	txreq 
+	rxresp
+} -run
