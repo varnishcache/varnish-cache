@@ -59,6 +59,7 @@ struct ilck {
 	pthread_t		owner;
 	VTAILQ_ENTRY(ilck)	list;
 	const char		*w;
+	struct vsc_lck		*stat;
 };
 
 static VTAILQ_HEAD(, ilck)	ilck_head =
@@ -76,6 +77,7 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	if (!(params->diag_bitmap & 0x18)) {
 		AZ(pthread_mutex_lock(&ilck->mtx));
 		AZ(ilck->held);
+		ilck->stat->locks++;
 		ilck->owner = pthread_self();
 		ilck->held = 1;
 		return;
@@ -83,12 +85,16 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	r = pthread_mutex_trylock(&ilck->mtx);
 	assert(r == 0 || r == EBUSY);
 	if (r) {
-		VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)", p, f, l, ilck->w);
+		ilck->stat->colls++;
+		if (params->diag_bitmap & 0x8)
+			VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)",
+			    p, f, l, ilck->w);
 		AZ(pthread_mutex_lock(&ilck->mtx));
 	} else if (params->diag_bitmap & 0x8) {
 		VSL(SLT_Debug, 0, "MTX_LOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 	}
 	AZ(ilck->held);
+	ilck->stat->locks++;
 	ilck->owner = pthread_self();
 	ilck->held = 1;
 }
@@ -157,7 +163,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
 }
 
 void
-Lck__New(struct lock *lck, const char *w)
+Lck__New(struct lock *lck, struct vsc_lck *st, const char *w)
 {
 	struct ilck *ilck;
 
@@ -165,6 +171,8 @@ Lck__New(struct lock *lck, const char *w)
 	ALLOC_OBJ(ilck, ILCK_MAGIC);
 	AN(ilck);
 	ilck->w = w;
+	ilck->stat = st;
+	ilck->stat->creat++;
 	AZ(pthread_mutex_init(&ilck->mtx, NULL));
 	AZ(pthread_mutex_lock(&lck_mtx));
 	VTAILQ_INSERT_TAIL(&ilck_head, ilck, list);
@@ -178,6 +186,7 @@ Lck_Delete(struct lock *lck)
 	struct ilck *ilck;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
+	ilck->stat->destroy++;
 	lck->priv = NULL;
 	AZ(pthread_mutex_lock(&lck_mtx));
 	VTAILQ_REMOVE(&ilck_head, ilck, list);
@@ -186,12 +195,20 @@ Lck_Delete(struct lock *lck)
 	FREE_OBJ(ilck);
 }
 
+#define LOCK(nam) struct vsc_lck *lck_##nam;
+#include "locks.h"
+#undef LOCK
 
 void
 LCK_Init(void)
 {
 
 	AZ(pthread_mutex_init(&lck_mtx, NULL));
+#define LOCK(nam) 						\
+	lck_##nam = VSM_Alloc(sizeof(struct vsc_lck), 		\
+	   VSC_CLASS, VSC_TYPE_LCK, #nam);
+#include "locks.h"
+#undef LOCK
 }
 
 /*lint -restore */

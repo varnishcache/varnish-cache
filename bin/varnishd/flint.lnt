@@ -68,6 +68,7 @@
 -efile(451, "sys/\*.h")	// No include guard
 -efile(451, "machine/\*.h")	// No include guard
 -efile(451, "vcl_returns.h")	// No include guard
+-efile(451, "locks.h")	// No include guard
 -efile(451, "cache_backend_poll.h")	// No include guard
 -efile(451, "steps.h")	// No include guard
 -efile(451, "http_headers.h")	// No include guard

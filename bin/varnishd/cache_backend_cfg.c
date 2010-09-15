@@ -199,7 +199,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
-	Lck_New(&b->mtx);
+	Lck_New(&b->mtx, lck_backend);
 	b->refcount = 1;
 
 	bprintf(buf, "%s(%s,%s,%s)",
@@ -304,6 +304,6 @@ void
 VBE_Init(void)
 {
 
-	Lck_New(&VBE_mtx);
+	Lck_New(&VBE_mtx, lck_vbe);
 	CLI_AddFuncs(debug_cmds);
 }

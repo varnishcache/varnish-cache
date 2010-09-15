@@ -439,7 +439,7 @@ smf_open(const struct stevedore *st)
 
 	sc = st->priv;
 
-	Lck_New(&sc->mtx);
+	Lck_New(&sc->mtx, lck_smf);
 	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);
 	Lck_Unlock(&sc->mtx);

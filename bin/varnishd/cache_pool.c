@@ -347,7 +347,7 @@ wrk_addpools(const unsigned pools)
 		wq[u] = calloc(sizeof *wq[0], 1);
 		XXXAN(wq[u]);
 		wq[u]->magic = WQ_MAGIC;
-		Lck_New(&wq[u]->mtx);
+		Lck_New(&wq[u]->mtx, lck_wq);
 		VTAILQ_INIT(&wq[u]->overflow);
 		VTAILQ_INIT(&wq[u]->idle);
 	}
@@ -597,8 +597,8 @@ WRK_Init(void)
 	pthread_t tp;
 
 	AZ(pthread_cond_init(&herder_cond, NULL));
-	Lck_New(&herder_mtx);
-	Lck_New(&wstat_mtx);
+	Lck_New(&herder_mtx, lck_herder);
+	Lck_New(&wstat_mtx, lck_wstat);
 
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));

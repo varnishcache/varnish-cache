@@ -178,7 +178,7 @@ void
 CLI_Init(void)
 {
 
-	Lck_New(&cli_mtx);
+	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
 	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);

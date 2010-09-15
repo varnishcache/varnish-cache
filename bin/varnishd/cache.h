@@ -89,6 +89,7 @@ struct vrt_backend;
 struct cli_proto;
 struct ban;
 struct SHA256Context;
+struct vsc_lck;
 
 struct smp_object;
 struct smp_seg;
@@ -598,7 +599,7 @@ const struct sess * THR_GetSession(void);
 void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
 int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
-void Lck__New(struct lock *lck, const char *w);
+void Lck__New(struct lock *lck, struct vsc_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
@@ -606,12 +607,16 @@ void LCK_Init(void);
 void Lck_Delete(struct lock *lck);
 void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
 
-#define Lck_New(a) Lck__New(a, #a);
+#define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __FILE__, __LINE__)
 #define Lck_Unlock(a) Lck__Unlock(a, __func__, __FILE__, __LINE__)
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 #define Lck_AssertNotHeld(a) Lck__Assert(a, 0)
+
+#define LOCK(nam) extern struct vsc_lck *lck_##nam;
+#include "locks.h"
+#undef LOCK
 
 /* cache_panic.c */
 void PAN_Init(void);

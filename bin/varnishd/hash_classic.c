@@ -100,7 +100,7 @@ hcl_start(void)
 
 	for (u = 0; u < hcl_nhash; u++) {
 		VTAILQ_INIT(&hcl_head[u].head);
-		Lck_New(&hcl_head[u].mtx);
+		Lck_New(&hcl_head[u].mtx, lck_hcl);
 		hcl_head[u].magic = HCL_HEAD_MAGIC;
 	}
 }

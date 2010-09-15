@@ -794,7 +794,7 @@ void
 BAN_Init(void)
 {
 
-	Lck_New(&ban_mtx);
+	Lck_New(&ban_mtx, lck_ban);
 	CLI_AddFuncs(ban_cmds);
 
 	ban_magic = BAN_New();

@@ -387,7 +387,7 @@ hcb_start(void)
 
 	(void)oh;
 	CLI_AddFuncs(hcb_cmds);
-	Lck_New(&hcb_mtx);
+	Lck_New(&hcb_mtx, lck_hcb);
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();

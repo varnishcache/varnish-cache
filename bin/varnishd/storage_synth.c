@@ -64,7 +64,7 @@ void
 SMS_Init(void)
 {
 
-	Lck_New(&sms_mtx);
+	Lck_New(&sms_mtx, lck_sms);
 }
 
 static struct stevedore sms_stevedore = {

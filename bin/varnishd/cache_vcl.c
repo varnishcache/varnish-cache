@@ -344,5 +344,5 @@ VCL_Init()
 {
 
 	CLI_AddFuncs(vcl_cmds);
-	Lck_New(&vcl_mtx);
+	Lck_New(&vcl_mtx, lck_vcl);
 }

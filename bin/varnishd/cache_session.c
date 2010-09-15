@@ -295,6 +295,6 @@ void
 SES_Init()
 {
 
-	Lck_New(&stat_mtx);
-	Lck_New(&ses_mem_mtx);
+	Lck_New(&stat_mtx, lck_stat);
+	Lck_New(&ses_mem_mtx, lck_sessmem);
 }

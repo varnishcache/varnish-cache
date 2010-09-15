@@ -393,7 +393,7 @@ void
 EXP_Init(void)
 {
 
-	Lck_New(&exp_mtx);
+	Lck_New(&exp_mtx, lck_exp);
 	exp_heap = binheap_new(NULL, object_cmp, object_update);
 	XXXAN(exp_heap);
 	WRK_BgThread(&exp_thread, "cache-timeout", exp_timer, NULL);

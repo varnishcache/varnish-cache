@@ -579,6 +579,6 @@ void
 VBP_Init(void)
 {
 
-	Lck_New(&vbp_mtx);
+	Lck_New(&vbp_mtx, lck_vbp);
 	CLI_AddFuncs(debug_cmds);
 }

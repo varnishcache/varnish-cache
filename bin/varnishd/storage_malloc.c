@@ -187,7 +187,7 @@ sma_open(const struct stevedore *st)
 	struct sma_sc *sma_sc;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	Lck_New(&sma_sc->sma_mtx);
+	Lck_New(&sma_sc->sma_mtx, lck_sma);
 	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
 	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);

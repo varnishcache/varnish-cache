@@ -1228,7 +1228,7 @@ smp_open(const struct stevedore *st)
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
-	Lck_New(&sc->mtx);
+	Lck_New(&sc->mtx, lck_smp);
 	Lck_Lock(&sc->mtx);
 
 	sc->objbuf = malloc(sizeof *sc->objbuf * sc->aim_nobj);

@@ -122,7 +122,7 @@ HSH_Prealloc(const struct sess *sp)
 		oh->refcnt = 1;
 		VTAILQ_INIT(&oh->objcs);
 		VTAILQ_INIT(&oh->waitinglist);
-		Lck_New(&oh->mtx);
+		Lck_New(&oh->mtx, lck_objhdr);
 		w->nobjhead = oh;
 		w->stats.n_objecthead++;
 	}

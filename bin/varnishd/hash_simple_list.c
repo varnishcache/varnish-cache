@@ -55,7 +55,7 @@ static void
 hsl_start(void)
 {
 
-	Lck_New(&hsl_mtx);
+	Lck_New(&hsl_mtx, lck_hsl);
 }
 
 /*--------------------------------------------------------------------
