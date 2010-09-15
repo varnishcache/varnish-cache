@@ -56,3 +56,11 @@ struct vsc_vbe {
 #include "vsc_fields.h"
 #undef VSC_F_VBE
 };
+
+#define VSC_TYPE_LCK	"LCK"
+
+struct vsc_lck {
+#define VSC_F_LCK(n, t, l, f, e)	t n;
+#include "vsc_fields.h"
+#undef VSC_F_LCK
+};

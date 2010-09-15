@@ -367,6 +367,34 @@ iter_vbe(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
 	return (0);
 }
 
+static int
+iter_lck(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
+    void *priv)
+{
+	struct vsc_lck *st;
+	struct vsc_point sp;
+	int i;
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+	st = VSM_PTR(sha);
+
+	sp.class = VSC_TYPE_LCK;
+	sp.ident = sha->ident;
+#define VSC_F_LCK(nn, tt, ll, ff, dd)				\
+	sp.name = #nn;							\
+	sp.fmt = #tt;							\
+	sp.flag = ff;							\
+	sp.desc = dd;							\
+	sp.ptr = &st->nn;						\
+	i = iter_call(vsc, func, priv, &sp);				\
+	if (i)								\
+		return(i);
+#include "vsc_fields.h"
+#undef VSC_F_LCK
+	return (0);
+}
+
 int
 VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
 {
@@ -389,6 +417,8 @@ VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
 			i = iter_sma(vsc, sha, func, priv);
 		else if (!strcmp(sha->type, VSC_TYPE_VBE))
 			i = iter_vbe(vsc, sha, func, priv);
+		else if (!strcmp(sha->type, VSC_TYPE_LCK))
+			i = iter_lck(vsc, sha, func, priv);
 		else
 			i = -1;
 		if (i != 0)

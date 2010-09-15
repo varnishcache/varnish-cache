@@ -202,3 +202,20 @@ VSC_F_VBE(happy,		uint64_t, 0, 'b', "Happy health probes")
 #undef VSC_F_VBE
 #undef __VSC_F_VBE
 #endif
+
+/**********************************************************************/
+
+#ifndef VSC_F_LCK
+#define VSC_F_LCK(a, b, c, d, e)
+#define __VSC_F_LCK
+#endif
+
+VSC_F_LCK(creat,		uint64_t, 0, 'a', "Created locks")
+VSC_F_LCK(destroy,		uint64_t, 0, 'a', "Destroyed locks")
+VSC_F_LCK(locks,		uint64_t, 0, 'a', "Lock Operations")
+VSC_F_LCK(colls,		uint64_t, 0, 'a', "Collisions")
+
+#ifdef __VSC_F_LCK
+#undef VSC_F_LCK
+#undef __VSC_F_LCK
+#endif
