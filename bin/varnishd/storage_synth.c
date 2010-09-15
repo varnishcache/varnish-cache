@@ -120,6 +120,8 @@ SMS_Finish(struct object *obj)
 	sto->len = vsb_len(vsb);
 	sto->space = vsb_len(vsb);
 	obj->len = sto->len;
+	Lck_Lock(&sms_mtx);
 	VSC_main->sms_nbytes += sto->len;
 	VSC_main->sms_balloc += sto->len;
+	Lck_Unlock(&sms_mtx);
 }
