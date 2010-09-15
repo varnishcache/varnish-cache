@@ -20,7 +20,7 @@ For instance::
 	}
 
 The "std" vmod is one you get with Varnish, it will always be there
-and we will put "butique" functions in it, such as the "toupper"
+and we will put "boutique" functions in it, such as the "toupper"
 function shown above.  The full contents of the "std" module is
 documented in XXX:TBW.
 
