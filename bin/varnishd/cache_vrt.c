@@ -308,6 +308,7 @@ VRT_l_obj_status(const struct sess *sp, int num)
 	else
 		sprintf(p, "%d", num);
 	http_SetH(sp->obj->http, HTTP_HDR_STATUS, p);
+	sp->obj->http->status = num;
 }
 
 /* Add an objecthead to the saintmode list for the (hopefully) relevant
@@ -388,6 +389,7 @@ VRT_l_resp_status(const struct sess *sp, int num)
 	else
 		sprintf(p, "%d", num);
 	http_SetH(sp->wrk->resp, HTTP_HDR_STATUS, p);
+	sp->wrk->resp->status = num;
 }
 
 int
@@ -395,6 +397,8 @@ VRT_r_resp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->resp, HTTP_MAGIC);
+	if (sp->wrk->resp->status)
+		return (sp->wrk->resp->status);
 	return (atoi(sp->wrk->resp->hd[HTTP_HDR_STATUS].b));
 }
 
@@ -490,6 +494,7 @@ VRT_l_beresp_status(const struct sess *sp, int num)
 	else
 		sprintf(p, "%d", num);
 	http_SetH(sp->wrk->beresp, HTTP_HDR_STATUS, p);
+	sp->wrk->beresp->status = num;
 }
 
 int
