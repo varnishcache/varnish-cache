@@ -508,6 +508,7 @@ cmd_http_txresp(CMD_ARGS)
 	int bodylen = 0;
 	char *b, *c;
 	char *body = NULL, *nullbody;
+	int nolen = 0;
 
 
 	(void)cmd;
@@ -541,7 +542,9 @@ cmd_http_txresp(CMD_ARGS)
 	vsb_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
 
 	for(; *av != NULL; av++) {
-		if (!strcmp(*av, "-hdr")) {
+		if (!strcmp(*av, "-nolen")) {
+			nolen = 1;
+		} else if (!strcmp(*av, "-hdr")) {
 			vsb_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else
@@ -575,7 +578,7 @@ cmd_http_txresp(CMD_ARGS)
 	}
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
-	if (body != NULL)
+	if (body != NULL && !nolen)
 		vsb_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL)
