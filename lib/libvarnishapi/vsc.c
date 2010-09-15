@@ -283,117 +283,39 @@ iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
 	return (func(priv, sp));
 }
 
-static int
-iter_main(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
-    void *priv)
-{
-	struct vsc_main *st;
-	struct vsc_point sp;
-	int i;
+#define VSC_DO(U,l,t)							\
+	static int							\
+	iter_##l(const struct vsc *vsc, struct vsm_chunk *sha,		\
+	    vsc_iter_f *func, void *priv)				\
+	{								\
+		struct vsc_##l *st;					\
+		struct vsc_point sp;					\
+		int i;							\
+									\
+		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
+		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);		\
+		st = VSM_PTR(sha);					\
+		sp.class = t;						\
+		sp.ident = sha->ident;
 
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
+#define VSC_F(nn,tt,ll,ff,dd)						\
+		sp.name = #nn;						\
+		sp.fmt = #tt;						\
+		sp.flag = ff;						\
+		sp.desc = dd;						\
+		sp.ptr = &st->nn;					\
+		i = iter_call(vsc, func, priv, &sp);			\
+		if (i)							\
+			return(i);
 
-	st = VSM_PTR(sha);
-	sp.class = "";
-	sp.ident = "";
-#define VSC_F_MAIN(nn, tt, ll, ff, dd)					\
-	sp.name = #nn;							\
-	sp.fmt = #tt;							\
-	sp.flag = ff;							\
-	sp.desc = dd;							\
-	sp.ptr = &st->nn;						\
-	i = iter_call(vsc, func, priv, &sp);				\
-	if (i)								\
-		return(i);
-#include "vsc_fields.h"
-#undef VSC_F_MAIN
-	return (0);
-}
+#define VSC_DONE(U,l,t)							\
+		return (0);						\
+	}
 
-static int
-iter_sma(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
-    void *priv)
-{
-	struct vsc_sma *st;
-	struct vsc_point sp;
-	int i;
-
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-	st = VSM_PTR(sha);
-
-	sp.class = VSC_TYPE_SMA;
-	sp.ident = sha->ident;
-#define VSC_F_SMA(nn, tt, ll, ff, dd)				\
-	sp.name = #nn;							\
-	sp.fmt = #tt;							\
-	sp.flag = ff;							\
-	sp.desc = dd;							\
-	sp.ptr = &st->nn;						\
-	i = iter_call(vsc, func, priv, &sp);				\
-	if (i)								\
-		return(i);
-#include "vsc_fields.h"
-#undef VSC_F_SMA
-	return (0);
-}
-
-static int
-iter_vbe(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
-    void *priv)
-{
-	struct vsc_vbe *st;
-	struct vsc_point sp;
-	int i;
-
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-	st = VSM_PTR(sha);
-
-	sp.class = VSC_TYPE_VBE;
-	sp.ident = sha->ident;
-#define VSC_F_VBE(nn, tt, ll, ff, dd)				\
-	sp.name = #nn;							\
-	sp.fmt = #tt;							\
-	sp.flag = ff;							\
-	sp.desc = dd;							\
-	sp.ptr = &st->nn;						\
-	i = iter_call(vsc, func, priv, &sp);				\
-	if (i)								\
-		return(i);
-#include "vsc_fields.h"
-#undef VSC_F_VBE
-	return (0);
-}
-
-static int
-iter_lck(const struct vsc *vsc, struct vsm_chunk *sha, vsc_iter_f *func,
-    void *priv)
-{
-	struct vsc_lck *st;
-	struct vsc_point sp;
-	int i;
-
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-	st = VSM_PTR(sha);
-
-	sp.class = VSC_TYPE_LCK;
-	sp.ident = sha->ident;
-#define VSC_F_LCK(nn, tt, ll, ff, dd)				\
-	sp.name = #nn;							\
-	sp.fmt = #tt;							\
-	sp.flag = ff;							\
-	sp.desc = dd;							\
-	sp.ptr = &st->nn;						\
-	i = iter_call(vsc, func, priv, &sp);				\
-	if (i)								\
-		return(i);
-#include "vsc_fields.h"
-#undef VSC_F_LCK
-	return (0);
-}
+#include "vsc_all.h"
+#undef VSC_DO
+#undef VSC_F
+#undef VSC_DONE
 
 int
 VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
@@ -411,18 +333,20 @@ VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
 		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 		if (strcmp(sha->class, VSC_CLASS))
 			continue;
-		if (!strcmp(sha->type, VSC_TYPE_MAIN))
-			i = iter_main(vsc, sha, func, priv);
-		else if (!strcmp(sha->type, VSC_TYPE_SMA))
-			i = iter_sma(vsc, sha, func, priv);
-		else if (!strcmp(sha->type, VSC_TYPE_VBE))
-			i = iter_vbe(vsc, sha, func, priv);
-		else if (!strcmp(sha->type, VSC_TYPE_LCK))
-			i = iter_lck(vsc, sha, func, priv);
-		else
-			i = -1;
-		if (i != 0)
-			break;
+
+#define VSC_F(a,b,c,d,e)
+#define VSC_DONE(a,b,c)
+#define VSC_DO(U,l,t)						\
+		if (!strcmp(sha->type, t)) {			\
+			i = iter_##l(vsc, sha, func, priv);	\
+			if (!i)					\
+				continue;			\
+		}
+#include "vsc_all.h"
+#undef VSC_F
+#undef VSC_DO
+#undef VSC_DONE
+		break;
 	}
 	return (i);
 }

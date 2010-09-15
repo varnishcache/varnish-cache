@@ -81,11 +81,13 @@ mcf_stats(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	AN(VSC_main);
-#define VSC_F_MAIN(n, t, l, f, d) \
+#define VSC_DO_MAIN
+#define VSC_F(n, t, l, f, d) \
 	if (VSC_main->n != 0) \
 	    cli_out(cli, "%12ju  %s\n", (VSC_main->n), d);
 #include "vsc_fields.h"
-#undef VSC_F_MAIN
+#undef VSC_F
+#undef VSC_DO_MAIN
 }
 
 /*--------------------------------------------------------------------*/

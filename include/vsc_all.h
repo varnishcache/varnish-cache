@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Linpro AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -29,22 +28,27 @@
  * $Id$
  */
 
-#include <stdint.h>
 
-#define VSC_CLASS          "Stat"
+VSC_DO(MAIN, main, VSC_TYPE_MAIN)
+#define VSC_DO_MAIN
+#include "vsc_fields.h"
+#undef VSC_DO_MAIN
+VSC_DONE(MAIN, main, VSC_TYPE_MAIN)
 
-#define VSC_TYPE_MAIN		""
-#define VSC_TYPE_SMA	"SMA"
-#define VSC_TYPE_VBE	"VBE"
-#define VSC_TYPE_LCK	"LCK"
+VSC_DO(SMA, sma, VSC_TYPE_SMA)
+#define VSC_DO_SMA
+#include "vsc_fields.h"
+#undef VSC_DO_SMA
+VSC_DONE(SMA, sma, VSC_TYPE_SMA)
 
-#define VSC_F(n, t, l, f, e)	t n;
+VSC_DO(VBE, vbe, VSC_TYPE_VBE)
+#define VSC_DO_VBE
+#include "vsc_fields.h"
+#undef VSC_DO_VBE
+VSC_DONE(VBE, vbe, VSC_TYPE_VBE)
 
-#define VSC_DO(u,l,t) struct vsc_##l {
-#define VSC_DONE(u,l,t) };
-
-#include "vsc_all.h"
-
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE
+VSC_DO(LCK, lck, VSC_TYPE_LCK)
+#define VSC_DO_LCK
+#include "vsc_fields.h"
+#undef VSC_DO_LCK
+VSC_DONE(LCK, lck, VSC_TYPE_LCK)
