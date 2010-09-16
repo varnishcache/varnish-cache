@@ -47,7 +47,7 @@ struct sma_sc {
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
-	struct vsc_sma *stats;
+	struct vsc_sma		*stats;
 };
 
 struct sma {
@@ -67,13 +67,13 @@ sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	(void)oc;
 	Lck_Lock(&sma_sc->sma_mtx);
-	sma_sc->stats->sma_nreq++;
-	if (sma_sc->stats->sma_nbytes + size > sma_sc->sma_max)
+	sma_sc->stats->nreq++;
+	if (sma_sc->stats->nbytes + size > sma_sc->sma_max)
 		size = 0;
 	else {
-		sma_sc->stats->sma_nobj++;
-		sma_sc->stats->sma_nbytes += size;
-		sma_sc->stats->sma_balloc += size;
+		sma_sc->stats->nobj++;
+		sma_sc->stats->nbytes += size;
+		sma_sc->stats->balloc += size;
 	}
 	Lck_Unlock(&sma_sc->sma_mtx);
 
@@ -117,9 +117,9 @@ sma_free(struct storage *s)
 	sma_sc = sma->sc;
 	assert(sma->sz == sma->s.space);
 	Lck_Lock(&sma_sc->sma_mtx);
-	sma_sc->stats->sma_nobj--;
-	sma_sc->stats->sma_nbytes -= sma->sz;
-	sma_sc->stats->sma_bfree += sma->sz;
+	sma_sc->stats->nobj--;
+	sma_sc->stats->nbytes -= sma->sz;
+	sma_sc->stats->bfree += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
@@ -140,8 +140,8 @@ sma_trim(struct storage *s, size_t size)
 	assert(size < sma->sz);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
 		Lck_Lock(&sma_sc->sma_mtx);
-		sma_sc->stats->sma_nbytes -= (sma->sz - size);
-		sma_sc->stats->sma_bfree += sma->sz - size;
+		sma_sc->stats->nbytes -= (sma->sz - size);
+		sma_sc->stats->bfree += sma->sz - size;
 		sma->sz = size;
 		Lck_Unlock(&sma_sc->sma_mtx);
 		sma->s.ptr = p;
@@ -175,7 +175,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	if ((u != (uintmax_t)(size_t)u))
 		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
 
-	printf("storage.malloc.%s: max size %ju MB.\n", parent->ident,
+	printf("SMA.%s: max size %ju MB.\n", parent->ident,
 	    u / (1024 * 1024));
 	sc->sma_max = u;
 

@@ -72,9 +72,7 @@ VSC_F(n_object,		uint64_t, 1, 'i', "N struct object")
 VSC_F(n_vampireobject,	uint64_t, 1, 'i', "N unresurrected objects")
 VSC_F(n_objectcore,	uint64_t, 1, 'i', "N struct objectcore")
 VSC_F(n_objecthead,	uint64_t, 1, 'i', "N struct objecthead")
-VSC_F(n_smf,		uint64_t, 0, 'i', "N struct smf")
-VSC_F(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
-VSC_F(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
+
 VSC_F(n_vbc,		uint64_t, 0, 'i', "N struct vbc")
 VSC_F(n_wrk,		uint64_t, 0, 'i', "N worker threads")
 VSC_F(n_wrk_create,	uint64_t, 0, 'a', "N worker threads created")
@@ -117,11 +115,6 @@ VSC_F(shm_flushes,		uint64_t, 0, 'a', "SHM flushes due to overflow")
 VSC_F(shm_cont,		uint64_t, 0, 'a', "SHM MTX contention")
 VSC_F(shm_cycles,		uint64_t, 0, 'a', "SHM cycles through buffer")
 
-VSC_F(sm_nreq,		uint64_t, 0, 'a', "allocator requests")
-VSC_F(sm_nobj,		uint64_t, 0, 'i', "outstanding allocations")
-VSC_F(sm_balloc,		uint64_t, 0, 'i', "bytes allocated")
-VSC_F(sm_bfree,		uint64_t, 0, 'i', "bytes free")
-
 VSC_F(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests")
 VSC_F(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations")
 VSC_F(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes")
@@ -163,14 +156,40 @@ VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs")
 
 /**********************************************************************/
 
+#ifdef VSC_DO_LCK
+
+VSC_F(creat,		uint64_t, 0, 'a', "Created locks")
+VSC_F(destroy,		uint64_t, 0, 'a', "Destroyed locks")
+VSC_F(locks,		uint64_t, 0, 'a', "Lock Operations")
+VSC_F(colls,		uint64_t, 0, 'a', "Collisions")
+
+#endif
+
+/**********************************************************************
+ * All Stevedores support these counters
+ */
+
+#if defined(VSC_DO_SMA) || defined (VSC_DO_SMF)
+VSC_F(nreq,		uint64_t, 0, 'a', "Allocator requests")
+VSC_F(nobj,		uint64_t, 0, 'i', "Outstanding allocations")
+VSC_F(nbytes,		uint64_t, 0, 'i', "Outstanding bytes")
+VSC_F(balloc,		uint64_t, 0, 'i', "Bytes allocated")
+VSC_F(bfree,		uint64_t, 0, 'i', "Bytes free")
+#endif
+
+
+/**********************************************************************/
+
 #ifdef VSC_DO_SMA
+/* No SMA specific counters */
+#endif
 
-VSC_F(sma_nreq,		uint64_t, 0, 'a', "Allocator requests")
-VSC_F(sma_nobj,		uint64_t, 0, 'i', "Outstanding allocations")
-VSC_F(sma_nbytes,		uint64_t, 0, 'i', "Outstanding bytes")
-VSC_F(sma_balloc,		uint64_t, 0, 'i', "Bytes allocated")
-VSC_F(sma_bfree,		uint64_t, 0, 'i', "Bytes free")
+/**********************************************************************/
 
+#ifdef VSC_DO_SMF
+VSC_F(n_smf,		uint64_t, 0, 'i', "N struct smf")
+VSC_F(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
+VSC_F(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
 #endif
 
 /**********************************************************************/
@@ -182,13 +201,3 @@ VSC_F(happy,		uint64_t, 0, 'b', "Happy health probes")
 
 #endif
 
-/**********************************************************************/
-
-#ifdef VSC_DO_LCK
-
-VSC_F(creat,		uint64_t, 0, 'a', "Created locks")
-VSC_F(destroy,		uint64_t, 0, 'a', "Destroyed locks")
-VSC_F(locks,		uint64_t, 0, 'a', "Lock Operations")
-VSC_F(colls,		uint64_t, 0, 'a', "Collisions")
-
-#endif

@@ -302,7 +302,7 @@ STV_config(const char *spec)
 	AN(stv->alloc);
 
 	if (p == NULL)
-		bprintf(stv->ident, "storage_%u", seq++);
+		bprintf(stv->ident, "s%u", seq++);
 	else {
 		l = p - spec;
 		if (l > sizeof stv->ident - 1)
