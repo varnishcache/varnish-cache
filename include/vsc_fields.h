@@ -88,9 +88,7 @@ VSC_F(n_backend,		uint64_t, 0, 'i', "N backends")
 
 VSC_F(n_expired,		uint64_t, 0, 'i', "N expired objects")
 VSC_F(n_lru_nuked,		uint64_t, 0, 'i', "N LRU nuked objects")
-VSC_F(n_lru_saved,		uint64_t, 0, 'i', "N LRU saved objects")
 VSC_F(n_lru_moved,		uint64_t, 0, 'i', "N LRU moved objects")
-VSC_F(n_deathrow,		uint64_t, 0, 'i', "N objects on deathrow")
 
 VSC_F(losthdr,		uint64_t, 0, 'a', "HTTP header overflows")
 
@@ -158,8 +156,6 @@ VSC_F(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
 VSC_F(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
 VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
 
-
-VSC_F(critbit_cooler,	uint64_t, 0, 'i', "Objhdr's on cool list")
 
 VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs")
 
