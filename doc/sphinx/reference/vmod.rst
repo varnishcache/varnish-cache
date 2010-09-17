@@ -40,17 +40,17 @@ data structures that does all the hard work.
 The std VMODs vmod.vcc file looks somewhat like this::
 
 	Module std
-	Meta meta_function
-	Function STRING toupper(STRING_LIST)
+	Init init_function
+	Function STRING toupper(PRIV_CALL, STRING_LIST)
 	Function STRING tolower(PRIV_VCL, STRING_LIST)
 	Function VOID set_ip_tos(INT)
 
 The first line gives the name of the module, nothing special there.
 
-The second line specifies an optional "Meta" function, which will
-be called whenever a VCL program which imports this VMOD is loaded
-or unloaded.  You probably will not need such a function, so we will
-postpone that subject until further down.
+The second line specifies an optional "Init" function, which will
+be called whenever a VCL program which imports this VMOD is loaded.
+This gives a chance to initialize the module before any of the
+functions it implements are called.
 
 The next three lines specify two functions in the VMOD, along with the
 types of the arguments, and that is probably where the hardest bit
@@ -81,8 +81,8 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 
 	struct sess;
 	struct VCL_conf;
-	const char * vmod_toupper(struct sess *, const char *, ...);
-	const char * vmod_tolower(struct sess *, void **, const char *, ...);
+	const char * vmod_toupper(struct sess *, struct vmod_priv *, const char *, ...);
+	const char * vmod_tolower(struct sess *, struct vmod_priv *, const char *, ...);
 	int meta_function(void **, const struct VCL_conf *);
 
 Those are your C prototypes.  Notice the "vmod\_" prefix on the function
@@ -174,27 +174,10 @@ STRING_LIST
 	and make sure your sess_workspace param is big enough.
 
 PRIV_VCL
-	C-type: void **
+	See below
 
-	Passes a pointer to a per-VCL program private "void *" for
-	this module.
-	
-	This is where the Meta function comes into the picture.
-
-	Each VCL program which imports a given module can provide the
-	module with a pointer to hang private data from.
-
-	When the VCL program is loaded, the Meta function will be
-	called with the private pointer and with the VCL programs
-	descriptor structure as second argument, to give the module
-	a chance to initialize things.
-
-	When the VCL program is discarded, the Meta function will
-	also be called, but this time with a second argument of NULL,
-	to give the module a chance to clean up and free per VCL stuff.
-
-	When the last VCL program that uses the module is discarded
-	the shared library containing the module will be dlclosed().
+PRIV_CALL
+	See below
 
 VOID
 	C-type: void
@@ -205,3 +188,47 @@ VOID
 IP, BOOL, HEADER
 	XXX: these types are not released for use in vmods yet.
 
+
+Private Pointers
+================
+
+It is often useful for library functions to maintain local state,
+this can be anything from a precompiled regexp to open file descriptors
+and vast data structures.
+
+The VCL compiler supports two levels of private pointers, "per call"
+and "per VCL"
+
+"per call" private pointers are useful to cache/store state relative
+to the specific call or its arguments, for instance a compiled regular
+expression specific to a regsub() statement or a simply caching the
+last output of some expensive lookup.
+
+"per vcl" private pointers are useful for such global state that
+applies to all calls in this VCL, for instance flags that determine
+if regular expressions are case-sensitive in this vmod or similar.
+
+The way it works in the vmod code, is that a "struct vmod_priv *" is
+passed to the functions where argument type PRIV_VCL or PRIV_CALL
+is specified.
+
+This structure contains two members::
+
+	typedef void vmod_priv_free_f(void *);
+	struct vmod_priv {
+		void                    *priv;
+		vmod_priv_free_f        *free;
+	};
+
+The "priv" element can be used for whatever the vmod code wants to
+use it for, it defaults to a NULL pointer.
+
+The "free" element defaults to NULL, and it is the modules responsibility
+to set it to a suitable function, which can clean up whatever the "priv"
+pointer points to.
+
+When a VCL program is discarded, all private pointers are checked
+to see if both the "priv" and "free" elements are non-NULL, and if
+they are, the "free" function will be called with the "priv" pointer
+as only argument.  The "per vcl" pointers is guaranteed to be the
+last one inspected.
