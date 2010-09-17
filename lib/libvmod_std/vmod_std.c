@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <netinet/in.h>
 #include "vrt.h"
 #include "../../bin/varnishd/cache.h"
@@ -48,12 +49,18 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 }
 
 const char *
-vmod_toupper(struct sess *sp, const char *s, ...)
+vmod_toupper(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (priv->priv == NULL) {
+		priv->priv = strdup("BAR");
+		priv->free = free;
+	} else {
+		assert(!strcmp(priv->priv, "BAR"));
+	}
 	va_start(ap, s);
 	p = vmod_updown(sp, 1, s, ap);
 	va_end(ap);
@@ -61,13 +68,13 @@ vmod_toupper(struct sess *sp, const char *s, ...)
 }
 
 const char *
-vmod_tolower(struct sess *sp, void **vcl_priv, const char *s, ...)
+vmod_tolower(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(*vcl_priv == (void *)8);
+	assert(!strcmp(priv->priv, "FOO"));
 	va_start(ap, s);
 	p = vmod_updown(sp, 0, s, ap);
 	va_end(ap);
@@ -75,17 +82,11 @@ vmod_tolower(struct sess *sp, void **vcl_priv, const char *s, ...)
 }
 
 int
-meta_function(void **priv, const struct VCL_conf *cfg)
+init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
 {
-	if (cfg != NULL) {
-		// Initialization in new VCL program
-		// Hang any private data/state off *priv
-		*priv = (void *)8;
-	} else {
-		// Cleaup in new VCL program
-		// Cleanup/Free any private data/state hanging of *priv
-		assert(*priv == (void *)8);
-		*priv = NULL;
-	}
+	(void)cfg;
+
+	priv->priv = strdup("FOO");
+	priv->free = free;
 	return (0);
 }

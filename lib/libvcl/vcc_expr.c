@@ -425,6 +425,7 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	const char *p, *q, *r;
 	struct expr *e1;
 	enum var_type fmt;
+	char buf[32];
 
 	(void)tl;
 	(void)e;
@@ -447,6 +448,14 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			AN(r);
 			vsb_printf(e1->vsb, "&vmod_priv_%.*s",
 			    r - sym->name, sym->name);
+			vsb_finish(e1->vsb);
+			AZ(vsb_overflowed(e1->vsb));
+			p += strlen(p) + 1;
+		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
+			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
+			e1 = vcc_new_expr();
+			Fh(tl, 0, "struct vmod_priv %s;\n", buf);
+			vsb_printf(e1->vsb, "&%s", buf);
 			vsb_finish(e1->vsb);
 			AZ(vsb_overflowed(e1->vsb));
 			p += strlen(p) + 1;

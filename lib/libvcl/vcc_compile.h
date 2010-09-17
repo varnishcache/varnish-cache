@@ -151,6 +151,7 @@ struct vcc {
 
 	unsigned		recnt;
 	unsigned		nsockaddr;
+	unsigned		nvmodpriv;
 };
 
 enum ref_type {

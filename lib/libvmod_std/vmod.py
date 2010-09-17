@@ -59,13 +59,14 @@ ctypes = {
 	'DURATION':	"double",
 	'INT':		"int",
 	'HEADER':	"const char *",
-	'PRIV_VCL':	"void **",
+	'PRIV_VCL':	"struct vmod_priv *",
+	'PRIV_CALL':	"struct vmod_priv *",
 	'VOID':		"void",
 }
 
 #######################################################################
 
-metaname = ""
+initname = ""
 modname = "???"
 pstruct = ""
 pinit = ""
@@ -131,8 +132,8 @@ for l0 in f:
 		modname = l[2].strip();
 		continue
 
-	if l[0] == "Meta":
-		metaname = l[2].strip();
+	if l[0] == "Init":
+		initname = l[2].strip();
 		continue
 
 	if l[0] != "Function":
@@ -166,11 +167,11 @@ def dumps(s):
 
 #######################################################################
 
-if metaname != "":
-	plist += "int " + metaname + "(void **, const struct VCL_conf *);\n"
-	pstruct += "\tvmod_meta_f\t*_meta;\n"
-	pinit += "\t" + metaname + ",\n"
-	slist += '\t"META\\0Vmod_Func_' + modname + '._meta",\n'
+if initname != "":
+	plist += "int " + initname + "(struct vmod_priv *, const struct VCL_conf *);\n"
+	pstruct += "\tvmod_init_f\t*_init;\n"
+	pinit += "\t" + initname + ",\n"
+	slist += '\t"INIT\\0Vmod_Func_' + modname + '._init",\n'
 
 #######################################################################
 
@@ -179,6 +180,7 @@ fh = open("vcc_if.h", "w")
 
 fh.write('struct sess;\n')
 fh.write('struct VCL_conf;\n')
+fh.write('struct vmod_priv;\n')
 fh.write("\n");
 
 fh.write(plist)

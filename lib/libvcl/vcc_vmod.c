@@ -143,13 +143,12 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
+	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	for (; *spec != NULL; spec++) {
 		p = *spec;
-		if (!strcmp(p, "META")) {
+		if (!strcmp(p, "INIT")) {
 			p += strlen(p) + 1;
-			Fh(tl, 0, "static void *vmod_priv_%.*s;\n", PF(mod));
 			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n", p, PF(mod));
-			Ff(tl, 0, "\t%s(&vmod_priv_%.*s, 0);\n", p, PF(mod));
 		} else {
 			sym = VCC_AddSymbol(tl, p, SYM_FUNC);
 			p += strlen(p) + 1;
@@ -164,6 +163,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 	Fh(tl, 0, "\n%s\n", proto);
 
-	/* XXX: zero the function pointer structure */
+	/* XXX: zero the function pointer structure ?*/
+	Ff(tl, 0, "\tvmod_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
 	Ff(tl, 0, "\tVRT_Vmod_Fini(&VGC_vmod_%.*s);\n", PF(mod));
 }

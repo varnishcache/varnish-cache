@@ -185,11 +185,27 @@ void VRT_init_dir(struct cli *, struct director **, const char *name,
     int idx, const void *priv);
 void VRT_fini_dir(struct cli *, struct director *);
 
-/* Modules related */
+/* VMOD/Modules related */
 void VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
     const char *path);
 void VRT_Vmod_Fini(void **hdl);
-typedef int vmod_meta_f(void **,  const struct VCL_conf *);
+
+struct vmod_priv;
+typedef void vmod_priv_free_f(void *);
+struct vmod_priv {
+	void			*priv;
+	vmod_priv_free_f	*free;
+};
+
+typedef int vmod_init_f(struct vmod_priv *,  const struct VCL_conf *);
+
+static inline void 
+vmod_priv_fini(struct vmod_priv *p)
+{
+
+	if (p->priv != (void*)0 && p->free != (void*)0)
+		p->free(p->priv);
+}
 
 /* Convert things to string */
 

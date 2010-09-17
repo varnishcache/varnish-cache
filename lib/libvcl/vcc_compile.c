@@ -298,8 +298,17 @@ EmitInitFunc(const struct vcc *tl)
 static void
 EmitFiniFunc(const struct vcc *tl)
 {
+	unsigned u;
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
+
+	/*
+	 * We do this here, so we are sure they happen before any
+	 * per-vcl vmod_privs get cleaned.
+	 */
+	for (u = 0; u < tl->nvmodpriv; u++)
+		Fc(tl, 0, "\tvmod_priv_fini(&vmod_priv_%u);\n", u);
+
 	vsb_finish(tl->ff);
 	AZ(vsb_overflowed(tl->ff));
 	vsb_cat(tl->fc, vsb_data(tl->ff));
