@@ -161,12 +161,12 @@ vrt_build_string(struct ws *ws, const char *h, const char *p, va_list ap)
 		b++;
 	}
 	while (p != vrt_magic_string_end && b < e) {
-		if (p == NULL)
-			p = "(null)";
-		x = strlen(p);
-		if (b + x < e)
-			memcpy(b, p, x);
-		b += x;
+		if (p != NULL) {
+			x = strlen(p);
+			if (b + x < e)
+				memcpy(b, p, x);
+			b += x;
+		}
 		p = va_arg(ap, const char *);
 	}
 	if (b < e)
@@ -247,10 +247,10 @@ vrt_do_string(struct worker *w, int fd, struct http *hp, int fld,
 {
 	char *b;
 
-	AN(p);
+	// AN(p);
 	AN(hp);
 	b = vrt_assemble_string(hp, NULL, p, ap);
-	if (b == NULL) {
+	if (b == NULL || *b == '\0') {
 		WSL(w, SLT_LostHeader, fd, err);
 	} else {
 		http_SetH(hp, fld, b);
@@ -264,7 +264,6 @@ VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 {								\
 	va_list ap;						\
 								\
-	AN(p);							\
 	va_start(ap, p);					\
 	vrt_do_string(sp->wrk, sp->fd,				\
 	    http, fld, #obj "." #hdr, p, ap);			\

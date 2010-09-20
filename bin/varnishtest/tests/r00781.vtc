@@ -1,0 +1,22 @@
+# $Id$
+
+test "NULL assignment to line1 fields."
+
+server s1 {
+	rxreq
+	txresp  -bodylen 10
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.url = req.http.foo;
+	}
+	sub vcl_miss {
+		set bereq.url = req.http.foo;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+} -run
