@@ -40,12 +40,11 @@ In addition to the C-like assignment (=), comparison (==) and boolean
 matching using the ~ operator.
 
 Unlike C and Perl, the backslash (\) character has no special meaning
-in strings in VCL, which use the (%xx) escape mechanism just like
-URLs, so it can be freely used in regular expressions without
-doubling.
+in strings in VCL, so it can be freely used in regular expressions
+without doubling.
 
-Strings are concatenated by just putting them one after each other
-without any operator in between.
+Strings are concatenated by putting them one after each other
+without a '+' operator between.
 
 Assignments are introduced with the set keyword.  There are no
 user-defined variables; values can only be assigned to variables

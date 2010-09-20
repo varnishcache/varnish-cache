@@ -4,26 +4,6 @@ test "VCL compiler coverage test: vcc_token.c"
 
 varnish v1 -badvcl " C{ "
 
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url = "%/"; }
-}
-
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url = "%a/"; }
-}
-
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url = "%4a"; }
-}
-
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url = "%0a"; }
-}
-
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	# comment

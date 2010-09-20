@@ -339,64 +339,22 @@ vcc_ExpectCid(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
- * Decode %xx in a string
+ * Decode a string
  */
-
-static int8_t
-vcc_xdig(const char c)
-{
-	static const char * const xdigit =
-	    "0123456789abcdef"
-	    "0123456789ABCDEF";
-	const char *p;
-
-	p = strchr(xdigit, c);
-	assert(p != NULL);
-	return ((p - xdigit) % 16);
-}
 
 static int
 vcc_decstr(struct vcc *tl)
 {
-	const char *p;
 	char *q;
-	unsigned char u;
+	unsigned char l;
 
 	assert(tl->t->tok == CSTR);
-	tl->t->dec = TlAlloc(tl, (tl->t->e - tl->t->b) - 1);
+	l = (tl->t->e - tl->t->b) - 2;
+	tl->t->dec = TlAlloc(tl, l + 1);
 	assert(tl->t->dec != NULL);
 	q = tl->t->dec;
-	for (p = tl->t->b + 1; p < tl->t->e - 1; ) {
-		if (*p != '%') {
-			*q++ = *p++;
-			continue;
-		}
-		if (p + 4 > tl->t->e) {
-			vcc_AddToken(tl, CSTR, p, tl->t->e);
-			vsb_printf(tl->sb,
-			    "Incomplete %%xx escape\n");
-			vcc_ErrWhere(tl, tl->t);
-			return(1);
-		}
-		if (!isxdigit(p[1]) || !isxdigit(p[2])) {
-			vcc_AddToken(tl, CSTR, p, p + 3);
-			vsb_printf(tl->sb,
-			    "Invalid hex char in %%xx escape\n");
-			vcc_ErrWhere(tl, tl->t);
-			return(1);
-		}
-		u = (vcc_xdig(p[1]) * 16 + vcc_xdig(p[2])) & 0xff;
-		if (!isgraph(u)) {
-			vcc_AddToken(tl, CSTR, p, p + 3);
-			vsb_printf(tl->sb,
-			    "Control character in %%xx escape\n");
-			vcc_ErrWhere(tl, tl->t);
-			return(1);
-		}
-		*q++ = u;
-		p += 3;
-	}
-	*q++ = '\0';
+	memcpy(q, tl->t->b + 1, l);
+	q[l] = '\0';
 	return (0);
 }
 
