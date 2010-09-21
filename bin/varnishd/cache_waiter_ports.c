@@ -3,6 +3,7 @@
  * Copyright (c) 2006 Linpro AS
  * Copyright (c) 2007 OmniTI Computer Consulting, Inc.
  * Copyright (c) 2007 Theo Schlossnagle
+ * Copyright (c) 2010 UPLEX, Nils Goroll
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,9 +27,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * XXX: We need to pass sessions back into the event engine when they are
- * reused.  Not sure what the most efficient way is for that.  For now
- * write the session pointer to a pipe which the event engine monitors.
  */
 
 #include "config.h"
@@ -42,12 +40,10 @@ SVNID("$Id$")
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <port.h>
-
-#ifndef HAVE_CLOCK_GETTIME
-#include "compat/clock_gettime.h"
-#endif
+#include <sys/time.h>
 
 #include "cache.h"
 #include "cache_waiter.h"
@@ -58,47 +54,68 @@ int solaris_dport = -1;
 
 static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
 
-static void
+static inline void
 vca_add(int fd, void *data)
 {
-	AZ(port_associate(solaris_dport, PORT_SOURCE_FD, fd,
-	    POLLIN | POLLERR | POLLPRI, data));
+	/*
+	 * POLLIN should be all we need here
+	 *
+	 */
+	AZ(port_associate(solaris_dport, PORT_SOURCE_FD, fd, POLLIN, data));
 }
 
-static void
+static inline void
 vca_del(int fd)
 {
 	port_dissociate(solaris_dport, PORT_SOURCE_FD, fd);
 }
 
-static void
+static inline void
 vca_port_ev(port_event_t *ev) {
 	struct sess *sp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
-		sp = ev->portev_user;
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
 		AZ(sp->obj);
 		VTAILQ_INSERT_TAIL(&sesshead, sp, list);
 		vca_add(sp->fd, sp);
 	} else {
 		int i;
+		assert(ev->portev_source == PORT_SOURCE_FD);
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
+		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
-			VTAILQ_REMOVE(&sesshead, sp, list);
+			vca_del(sp->fd);
+			VTAILQ_REMOVE(&sesshead, sp, list);			
 			vca_close_session(sp, "EOF");
 			SES_Delete(sp);
 			return;
 		}
 		i = HTC_Rx(sp->htc);
-		if (i == 0)
+
+		if (i == 0) {
+			/* incomplete header, wait for more data */
+			vca_add(sp->fd, sp);
 			return;
-		if (i > 0) {
-			VTAILQ_REMOVE(&sesshead, sp, list);
-			if (sp->fd != -1)
-				vca_del(sp->fd);
-			vca_handover(sp, i);
 		}
+
+		/* 
+		 * note: the original man page for port_associate(3C) states:
+		 *
+		 *    When an event for a PORT_SOURCE_FD object is retrieved,
+		 *    the object no longer has an association with the port.
+		 *
+		 * This can be read along the lines of sparing the
+		 * port_dissociate after port_getn(), but in fact,
+		 * port_dissociate should be used
+		 *
+		 * Ref: http://opensolaris.org/jive/thread.jspa?threadID=129476&tstart=0
+		 */
+		vca_del(sp->fd);
+		VTAILQ_REMOVE(&sesshead, sp, list);
+
+		/* vca_handover will also handle errors */
+		vca_handover(sp, i);
 	}
 	return;
 }
@@ -108,39 +125,124 @@ vca_main(void *arg)
 {
 	struct sess *sp;
 
+	/*
+	 * timeouts:
+	 *
+	 * min_ts : Minimum timeout for port_getn
+	 * min_t  : ^ equivalent in floating point representation
+	 *
+	 * max_ts : Maximum timeout for port_getn
+	 * max_t  : ^ equivalent in floating point representation
+	 *
+	 * with (nevents == 1), we should always choose the correct port_getn
+	 * timeout to check session timeouts, so max is just a safety measure
+	 * (if this implementation is correct, it could be set to an "infinte"
+	 *  value)
+	 *
+	 * with (nevents > 1), min and max define the acceptable range for
+	 * - additional latency of keep-alive connections and
+	 * - additional tolerance for handling session timeouts
+	 *
+	 */
+	static struct timespec min_ts = {0L,    100L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/};
+	static double          min_t  = 0.1; /* 100    ms*/
+	static struct timespec max_ts = {1L, 0L}; 		/* 1 second */
+	static double	       max_t  = 1.0;			/* 1 second */
+
+	struct timespec ts;
+	struct timespec *timeout;
+
 	(void)arg;
 
 	solaris_dport = port_create();
 	assert(solaris_dport >= 0);
 
+	timeout = &max_ts;
+
 	while (1) {
 		port_event_t ev[MAX_EVENTS];
-		int nevents, ei;
-		double deadline;
-		struct timespec ts;
-		ts.tv_sec = 0L;
-		ts.tv_nsec = 50L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/;
+		int nevents, ei, ret;
+		double now, deadline;
+
+		/*
+		 * XXX Do we want to scale this up dynamically to increase
+		 *     efficiency in high throughput situations? - would need to
+		 *     start with one to keep latency low at any rate
+		 *
+		 *     Note: when increasing nevents, we must lower min_ts
+		 *	     and max_ts
+		 */
 		nevents = 1;
-		if (port_getn(solaris_dport, ev, MAX_EVENTS, &nevents, &ts)
-		     == 0) {
-			for (ei=0; ei<nevents; ei++) {
-				vca_port_ev(ev + ei);
-			}
+
+		/*
+		 * see disucssion in
+		 * - https://issues.apache.org/bugzilla/show_bug.cgi?id=47645
+		 * - http://mail.opensolaris.org/pipermail/networking-discuss/2009-August/011979.html
+		 *
+		 * comment from apr/poll/unix/port.c :
+		 *
+		 * This confusing API can return an event at the same time
+		 * that it reports EINTR or ETIME.
+		 *
+		 */
+
+		ret = port_getn(solaris_dport, ev, MAX_EVENTS, &nevents, timeout);
+
+		if (ret < 0)
+			assert((errno == EINTR) || (errno == ETIME));
+
+		for (ei=0; ei<nevents; ei++) {
+			vca_port_ev(ev + ei);
 		}
+
 		/* check for timeouts */
-		deadline = TIM_real() - params->sess_timeout;
+		now = TIM_real();
+		deadline = now - params->sess_timeout;
+
+		/*
+		 * This loop assumes that the oldest sessions are always at the
+		 * beginning of the list (which is the case if we guarantee to
+		 * enqueue at the tail only
+		 *
+		 */
+
 		for (;;) {
 			sp = VTAILQ_FIRST(&sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline)
+			if (sp->t_open > deadline) {
 				break;
+			}
 			VTAILQ_REMOVE(&sesshead, sp, list);
-			if(sp->fd != -1)
+			if(sp->fd != -1) {
 				vca_del(sp->fd);
-			// XXX: not yet TCP_linger(sp->fd, 0);
+			}
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
+		}
+
+		/*
+		 * Calculate the timeout for the next get_portn
+		 */
+
+		if (sp) {
+			double tmo = (sp->t_open + params->sess_timeout) - now;
+
+			/* we should have removed all sps whose timeout has passed */
+			assert(tmo > 0.0);
+
+			if (tmo < min_t) {
+				timeout = &min_ts;
+			} else if (tmo > max_t) {
+				timeout = &max_ts;
+			} else {
+				/* TIM_t2ts() ? see #630 */
+				ts.tv_sec = (int)floor(tmo);
+				ts.tv_nsec = 1e9 * (tmo - ts.tv_sec);
+				timeout = &ts;
+			}
+		} else {
+			timeout = &max_ts;
 		}
 	}
 }
