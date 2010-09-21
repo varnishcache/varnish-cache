@@ -720,13 +720,15 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
-		if (f2 == TIME && tl->t->tok == '+')
+		if (f2 == TIME)
 			f2 = DURATION;
 		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
-		if (e2->fmt != f2) {
+		if (tk->tok == '-' && (*e)->fmt == TIME && e2->fmt == TIME) {
+			/* OK */
+		} else if (e2->fmt != f2) {
 			vsb_printf(tl->sb, "%s %.*s %s not possible.\n",
 			    vcc_Type((*e)->fmt), PF(tk), vcc_Type(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
@@ -851,14 +853,23 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
-	if (fmt == BOOL) {
-		switch((*e)->fmt) {
-		case STRING:
-			*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);
-			return;
-		default:
-			break;
-		}
+	switch (tl->t->tok) {
+	case T_EQ:
+	case T_NEQ:
+	case '<':
+	case T_LEQ:
+	case '>':
+	case T_GEQ:
+	case '~':
+	case T_NOMATCH:
+		vsb_printf(tl->sb, "Operator %.*s not possible on %s\n",
+		    PF(tl->t), vcc_Type((*e)->fmt));
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	if (fmt == BOOL && (*e)->fmt == STRING) {
+		*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);
+		return;
 	}
 }
 
@@ -903,6 +914,7 @@ static void
 vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e2;
+	struct token *tk;
 
 	*e = NULL;
 	vcc_expr_not(tl, e, fmt);
@@ -912,8 +924,16 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_CAND) {
 		vcc_NextToken(tl);
+		tk = tl->t;
 		vcc_expr_not(tl, &e2, fmt);
 		ERRCHK(tl);
+		if (e2->fmt != BOOL) {
+			vsb_printf(tl->sb,
+			    "'&&' must be followed by BOOL, found ");
+			vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+			vcc_ErrWhere2(tl, tk, tl->t);
+			return;
+		}
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n&&\v+\n\v2", *e, e2);
 	}
 	*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
@@ -929,6 +949,7 @@ static void
 vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e2;
+	struct token *tk;
 
 	*e = NULL;
 	vcc_expr_cand(tl, e, fmt);
@@ -938,8 +959,16 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_COR) {
 		vcc_NextToken(tl);
+		tk = tl->t;
 		vcc_expr_cand(tl, &e2, fmt);
 		ERRCHK(tl);
+		if (e2->fmt != BOOL) {
+			vsb_printf(tl->sb,
+			    "'||' must be followed by BOOL, found ");
+			vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+			vcc_ErrWhere2(tl, tk, tl->t);
+			return;
+		}
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n||\v+\n\v2", *e, e2);
 	}
 	*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
