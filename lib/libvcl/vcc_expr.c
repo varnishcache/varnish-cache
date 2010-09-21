@@ -643,8 +643,14 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case INT:	f2 = INT; break;
 	case DURATION:	f2 = REAL; break;
 	default:
+		if (tl->t->tok != '*' && tl->t->tok != '/') 
+			return;
+		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
+		    PF(tl->t), vcc_Type(f2));
+		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+
 	while (tl->t->tok == '*' || tl->t->tok == '/') {
 		tk = tl->t;
 		vcc_NextToken(tl);
@@ -702,20 +708,34 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 	switch(f2) {
 	case INT:	break;
-	case TIME:	f2 = DURATION; break;
-	case DURATION:	f2 = DURATION; break;
+	case TIME:	break;
+	case DURATION:	break;
 	default:
+		if (tl->t->tok != '+' && tl->t->tok != '-') 
+			return;
+		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
+		    PF(tl->t), vcc_Type(f2));
+		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
+		if (f2 == TIME && tl->t->tok == '+')
+			f2 = DURATION;
 		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr_mul(tl, &e2, f2);
-		assert(e2->fmt == f2);
 		ERRCHK(tl);
+		if (e2->fmt != f2) {
+			vsb_printf(tl->sb, "%s %.*s %s not possible.\n",
+			    vcc_Type((*e)->fmt), PF(tk), vcc_Type(e2->fmt));
+			vcc_ErrWhere2(tl, tk, tl->t);
+			return;
+		}
 		if (tk->tok == '+')
 			*e = vcc_expr_edit(f2, "(\v1+\v2)", *e, e2);
+		else if (f2 == TIME && e2->fmt == TIME)
+			*e = vcc_expr_edit(DURATION, "(\v1-\v2)", *e, e2);
 		else
 			*e = vcc_expr_edit(f2, "(\v1-\v2)", *e, e2);
 	}
