@@ -768,14 +768,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	struct token *tk;
 
 	*e = NULL;
-	
-	if (fmt == BOOL && tl->t->tok == '!') {
-		vcc_NextToken(tl);
-		vcc_expr_add(tl, &e2, fmt);
-		ERRCHK(tl);
-		*e = vcc_expr_edit(BOOL, "!(\v1)", e2, NULL);
-		return;
-	}
 
 	vcc_expr_add(tl, e, fmt);
 	ERRCHK(tl);
@@ -852,8 +844,39 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 /*--------------------------------------------------------------------
  * SYNTAX:
+ *    ExprNot:
+ *      '!' ExprCmp
+ */
+
+static void
+vcc_expr_not(struct vcc *tl, struct expr **e, enum var_type fmt)
+{
+	struct expr *e2;
+	struct token *tk;
+	
+	*e = NULL;
+	if (fmt != BOOL || tl->t->tok != '!') {
+		vcc_expr_cmp(tl, e, fmt);
+		return;
+	}
+
+	vcc_NextToken(tl);
+	tk = tl->t;
+	vcc_expr_cmp(tl, &e2, fmt);
+	ERRCHK(tl);
+	if (e2->fmt == BOOL) {
+		*e = vcc_expr_edit(BOOL, "!(\v1)", e2, NULL);
+		return;
+	}
+	vsb_printf(tl->sb, "'!' must be followed by BOOL, found ");
+	vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+	vcc_ErrWhere2(tl, tk, tl->t);
+}
+
+/*--------------------------------------------------------------------
+ * SYNTAX:
  *    ExprCand:
- *      ExprAdd { '&&' ExprAdd } *
+ *      ExprNot { '&&' ExprNot } *
  */
 
 static void
@@ -862,14 +885,14 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
 	struct expr *e2;
 
 	*e = NULL;
-	vcc_expr_cmp(tl, e, fmt);
+	vcc_expr_not(tl, e, fmt);
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL || tl->t->tok != T_CAND)
 		return;
 	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_CAND) {
 		vcc_NextToken(tl);
-		vcc_expr_cmp(tl, &e2, fmt);
+		vcc_expr_not(tl, &e2, fmt);
 		ERRCHK(tl);
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n&&\v+\n\v2", *e, e2);
 	}
@@ -890,8 +913,6 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr_cand(tl, e, fmt);
 	ERRCHK(tl);
-	if (fmt == STRING || fmt == STRING_LIST)
-		vcc_expr_tostring(e, fmt);
 	if ((*e)->fmt != BOOL || tl->t->tok != T_COR) 
 		return;
 	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
@@ -921,6 +942,8 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 
 	t1 = tl->t;
 	vcc_expr0(tl, &e, fmt);
+	if (fmt == STRING || fmt == STRING_LIST)
+		vcc_expr_tostring(&e, fmt);
 	if (!tl->err && fmt != e->fmt)  {
 		vsb_printf(tl->sb, "Expression has type %s, expected %s\n",
 		    vcc_Type(e->fmt), vcc_Type(fmt));
@@ -961,4 +984,3 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 	}
 	vcc_delete_expr(e);
 }
-
