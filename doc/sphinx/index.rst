@@ -6,6 +6,12 @@
 Welcome to Varnish's documentation!
 ===================================
 
+Arnold's Laws of Documentation:
+        (1) If it should exist, it doesn't.
+        (2) If it does exist, it's out of date.
+        (3) Only documentation for useless programs transcends the
+            first two laws.
+
 Contents:
 
 .. toctree::
@@ -14,6 +20,9 @@ Contents:
    installation/index.rst
    tutorial/index.rst
    reference/index.rst
+   faq/index.rst
+   phk/index.rst
+   glossary/index.rst
 
 Indices and tables
 ==================
@@ -21,4 +30,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

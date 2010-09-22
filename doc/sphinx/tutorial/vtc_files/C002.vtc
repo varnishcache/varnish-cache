@@ -1,0 +1,6 @@
+# $Id$
+
+client c1 {
+	txreq
+	rxresp
+} -run

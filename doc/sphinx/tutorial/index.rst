@@ -1,6 +1,17 @@
+.. _Tutorial:
+
 %%%%%%%%%%%%%%%%
 Varnish Tutorial
 %%%%%%%%%%%%%%%%
+
+Welcome to the Varnish Tutorial, we hope this will help you get to 
+know and understand Varnish.
+
+.. toctree::
+
+	intro.rst
+	tut001.rst
+	tut002.rst
 
 .. todo::
         starting varnish with -d, seeing a transaction go through
