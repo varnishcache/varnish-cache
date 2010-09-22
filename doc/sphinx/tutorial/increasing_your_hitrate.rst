@@ -52,8 +52,9 @@ headers. Some of the headers, like the X-Rick-Would-Never are specific
 to vg.no and their somewhat odd sense of humour. Others, like the
 X-VG-Webcache are for debugging purposes. 
 
-So, to check whether a site sets cookies for a specific URL just do
-``GET -Used http://example.com/ |grep ^Set-Cookie``
+So, to check whether a site sets cookies for a specific URL just do::
+
+  GET -Used http://example.com/ |grep ^Set-Cookie
 
 Firefox plugins
 ~~~~~~~~~~~~~~~
@@ -214,13 +215,27 @@ In vcl_fetch::
      pass;
   }
 
-Authentication
-~~~~~~~~~~~~~~
+Authorization
+~~~~~~~~~~~~~
+
+If Varnish sees a Authorization header it will pass the request. If
+this is not what you want you can unset the header.
+
 
 Normalizing your namespace
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Some sites are accessed via lots of
+hostnames. http://www.varnish-software.com ,
+http://varnish-software.com and http://varnishsoftware.com/ all point
+at the same site. Since Varnish doesn't know they are different
+Varnish will cache different versions of every page for every
+hostname. You can mitigate this in your web server config by setting
+up redirects or by useing the following VCL:::
 
+  if (req.http.host ~ "^(www.)?varnish-?software.com") {
+    set req.http.host = "varnish-software.com";
+  }
 
 .. _tutorial-increasing_your_hitrate-purging:
 
