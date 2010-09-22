@@ -4,8 +4,12 @@
 Installing Varnish on your computer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-With open source software, you can choose to install binary
-packages or compile stuff from source-code. 
+With open source software, you can choose to install binary packages
+or compile stuff from source-code. To install a package or compile
+from source is a matter of personal taste. If you don't know which
+method too choose read the whole document and choose the method you
+are most confortable with.
+
 
 Installing Varnish from packages
 ================================
@@ -22,8 +26,8 @@ From source:
 Binary package:
 		``pkg_add -r varnish``
 
-CentOS/RedHat 5.4
-~~~~~~~~~~~~~~~~~
+CentOS/RedHat
+~~~~~~~~~~~~~
 
 We try to keep the lastest version available as prebuildt RPMs (el4 &
 el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
@@ -36,8 +40,8 @@ the latest version there is Varnish 2.0.6.
 
 EPEL6 should have Varnish 2.1 available once it releases. 
 
-Debian/Ubuntu - DEB files
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Debian/Ubuntu
+~~~~~~~~~~~~~
 
 Varnish is distributed with both Debian and Ubuntu. In order to get
 Varnish up and running type `sudo apt-get install varnish`. Please
@@ -49,9 +53,9 @@ Other systems
 You are probably best of compiling your own code. See `Compiling
 Varnish from source`_.
 
-If that worked for you, you can skip the rest of this document
-for now, and and start reading the much more interesting :ref:`tutorial-index`
-instead.
+If that worked for you, you can skip the rest of this document for
+now, and and start reading the much more interesting
+:ref:`tutorial-index` instead.
 
 
 Compiling Varnish from source
@@ -110,7 +114,7 @@ Configuring and compiling
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Next, configuration: The configuration will need the dependencies
-above satisfied. Once that is take care of:::
+above satisfied. Once that is taken care of:::
 
 	cd varnish-cache
 	sh autogen.sh
@@ -140,6 +144,9 @@ And finally, the true test of a brave heart::
 	make install
 
 Varnish will now be installed in /usr/local. The varnishd binary is in
-/usr/local/sbin/varnishd and its 
+/usr/local/sbin/varnishd and its default configuration will be
+/usr/local/etc/varnish/default.vcl. 
+
+You can now proceed to the :ref:`tutorial-index`. 
 
 .. _SubVersion: http://subversion.tigris.org/
