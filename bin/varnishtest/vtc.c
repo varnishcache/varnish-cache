@@ -657,7 +657,7 @@ main(int argc, char * const *argv)
 	AZ(mkdir(vtc_tmpdir, 0700));
 	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
 
-	cwd = getcwd(NULL, 0);
+	cwd = getcwd(NULL, PATH_MAX);
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "topbuild", topbuild);
 
