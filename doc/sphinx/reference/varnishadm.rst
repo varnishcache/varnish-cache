@@ -8,8 +8,7 @@ Control a running varnish instance
 
 :Author: Cecilie Fritzvold
 :Author: Per Buer
-:Date:   2008-01-31
-:Copyright: public domain
+:Date:   2010-05-31
 :Version: 0.2
 :Manual section: 1
 
@@ -72,3 +71,14 @@ HISTORY
 The varnishadm utility and this manual page were written by Cecilie
 Fritzvold. Converted to reStructured and updated in 2010 by Per
 Buer.
+
+COPYRIGHT
+=========
+
+This document is licensed under the same licence as Varnish
+itself. See LICENCE for details.
+
+* Copyright (c) 2006 Verdens Gang AS
+* Copyright (c) 2006-2008 Linpro AS
+* Copyright (c) 2008-2010 Redpill Linpro AS
+* Copyright (c) 2010 Varnish Software AS
