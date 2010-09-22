@@ -8,7 +8,7 @@ Now that your varnish is up and running lets have a look at how it is
 doing. There are several tools that can help.
 
 varnishtop
-==========
+~~~~~~~~~~
 
 The varnishtop utility reads the shared memory logs and presents a
 continuously updated list of the most commonly occurring log entries.
@@ -24,7 +24,7 @@ Accept-Encoding`` will show the most popular Accept-Encoding header
 the client are sendning you.
 
 varnishhist
-===========
+~~~~~~~~~~~
 
 The varnishhist utility reads varnishd(1) shared memory logs and
 presents a continuously updated histogram showing the distribution of
@@ -35,7 +35,7 @@ and misses are marked with a hash character ("#").
 
 
 varnishsizes
-============
+~~~~~~~~~~~~
 
 Varnishsizes does the same as varnishhist, except it shows the size of
 the objects and not the time take to complete the request. This gives
@@ -43,7 +43,7 @@ you a good overview of how big the objects you are serving are.
 
 
 varnishstat
-===========
+~~~~~~~~~~~
 
 Varnish has lots of counters. We count misses, hits, information about
 the storage, threads created, deleted objects. Just about

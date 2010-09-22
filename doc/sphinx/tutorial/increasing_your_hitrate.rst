@@ -1,7 +1,7 @@
 .. _tutorial-increasing_your_hitrate:
 
 Achieving a high hitrate
-========================
+------------------------
 
 Now that Varnish is up and running, and you can access your web
 application through Varnish. Unless your application is specifically
@@ -59,6 +59,7 @@ Firefox plugins
 There are also a couple of great plugins for Firefox. Both *Live HTTP
 Headers* and *Firebug* can show you what headers are beeing sent and
 recieved.
+
 
 HTTP Headers
 ------------
