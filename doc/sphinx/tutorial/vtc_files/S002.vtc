@@ -1,6 +1,0 @@
-# $Id$
-
-server s1 {
-	rxreq
-	txresp -hdr "Foo: bar" -body "Hello World!"
-} -start -wait
