@@ -7,11 +7,6 @@ Installing Varnish on your computer
 With open source software, you can choose to install binary
 packages or compile stuff from source-code. 
 
-In general, from a point of principle, I would argue that
-everybody should compile from source, but realistically
-binary packages are *so much easier* so lets cover that first:
-
-
 Installing Varnish from packages
 ================================
 
@@ -19,28 +14,40 @@ Installing Varnish on most relevant operating systems can usually
 be done with with the systems package manager, typical examples
 being:
 
-**FreeBSD**
+FreeBSD
+~~~~~~~
 
-	FreeBSD (from source)
+From source:
 		``cd /usr/ports/varnish && make install clean``
-	FreeBSD (binary package)
+Binary package:
 		``pkg_add -r varnish``
 
-**CentOS/RedHat 5.4 - RPM files**
+CentOS/RedHat 5.4
+~~~~~~~~~~~~~~~~~
 
-	We try to keep the lastest version available as prebuildt RPMs (el4 & el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
+We try to keep the lastest version available as prebuildt RPMs (el4 &
+el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
 
-	Varnish is included in the `EPEL <http://fedoraproject.org/wiki/EPEL>`_ repository. **BUT** unfortunatly we had a syntax change in Varnish 2.0.6->2.1.X. This means that we can not update Varnish in `EPEL <http://fedoraproject.org/wiki/EPEL>`_ so the latest version there is Varnish 2.0.6. In the future (EPEL6) we should be available with Varnish 2.1.X or higher.
+Varnish is included in the `EPEL
+<http://fedoraproject.org/wiki/EPEL>`_ repository.  Unfortunatly we
+had a syntax change in Varnish 2.0.6->2.1.X. This means that we can
+not update Varnish in `EPEL <http://fedoraproject.org/wiki/EPEL>`_ so
+the latest version there is Varnish 2.0.6.
 
-**Debian/Ubuntu - DEB files**
+EPEL6 should have Varnish 2.1 available once it releases. 
 
-	Varnish is distributed to the *unstable* repository of Debian. You should be able to get a hold of the lastest version there.
-	
-	Ubuntu syncronize the *unstable* Debian repository. See `Ubuntu Packages <http://packages.ubuntu.com/>`_.
+Debian/Ubuntu - DEB files
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Other systems**
+Varnish is distributed with both Debian and Ubuntu. In order to get
+Varnish up and running type `sudo apt-get install varnish`. Please
+note that this might not be the latest version of Varnish.
 
-	You are probably best of compiling your own code. See `Compiling Varnish from source`_.
+Other systems
+~~~~~~~~~~~~~
+
+You are probably best of compiling your own code. See `Compiling
+Varnish from source`_.
 
 If that worked for you, you can skip the rest of this document
 for now, and and start reading the much more interesting :ref:`tutorial-index`
@@ -59,19 +66,51 @@ you do not have this command, you need to install SubVersion_ on
 your system.  There is usually a binary package, try substituting
 "subversion" for "varnish" in the examples above, it might just work.
 
-To get the development source code::
-
-	svn co http://varnish-cache.org/svn/varnish/trunk
-
-or if you want the production branch::
+To fetch the current (2.1) production branch:::
 
 	svn co http://varnish-cache.org/svn/varnish/branches/2.1
 
-Next, configuration:  For this you will need ``libtoolize``, ``aclocal``,
-``autoheader``, ``automake`` and ``autoconf``, also known as *the
-autocrap tools* installed on your system.
+To get the development source code:::
 
-Once you have them::
+	svn co http://varnish-cache.org/svn/varnish/trunk
+
+Build dependencies on Debian / Ubuntu 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to build Varnish from source you need a number of packages
+installed. On a Debian or Ubuntu system these are:
+
+* autotools-dev
+* automake1.9
+* libtool 
+* autoconf
+* libncurses-dev
+* xsltproc
+* groff-base
+* libpcre3-dev
+
+To install all these just type ``sudo apt-get install autotools-dev automake1.9 libtool autoconf libncurses-dev xsltproc groff-base libpcre3-dev``. 
+
+Build dependencies on Red Hat / Centos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To build Varnish on a Red Hat or Centos system you need the following
+packages installed:
+
+* automake 
+* autoconf 
+* libtool
+* ncurses-devel
+* libxslt
+* groff
+* pcre-devel
+* pkgconfig
+
+Configuring and compiling
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Next, configuration: The configuration will need the dependencies
+above satisfied. Once that is take care of:::
 
 	cd varnish-cache
 	sh autogen.sh
@@ -93,8 +132,14 @@ if a lot of them fails, and in particular if the ``b00000.vtc`` test
 fails, something is horribly wrong, and you will get nowhere without
 figuring out what.
 
+Installing
+~~~~~~~~~~
+
 And finally, the true test of a brave heart::
 
 	make install
+
+Varnish will now be installed in /usr/local. The varnishd binary is in
+/usr/local/sbin/varnishd and its 
 
 .. _SubVersion: http://subversion.tigris.org/
