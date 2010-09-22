@@ -10,16 +10,33 @@ some changes to either the configuration or the application in order
 to get a high hitrate in Varnish.
 
 Note that you need a tool to see what HTTP headers fly between you and
-the web server. If you have Varnish the easiest might be to use
-varnishlog, but sometimes a separate tool makes sense. Here are the
-ones I use.
+the web server. If you have Varnish the easiest is to use varnishlog
+and varnishtop but sometimes a client-side tool makes sense. Here are
+the ones I use.
+
+Tool: varnistop
+~~~~~~~~~~~~~~~
+
+You can use varnishtop to identify what URLs are hitting the backend
+the most. ``varnishtop -i txurl`` is a essential command. You can see
+some other examples of varnishtop usage in :ref:`tutorial-statistics`.
+
+
+Tool: varnishlog
+~~~~~~~~~~~~~~~~
+
+When you have identified the an URL which is frequently sent to the
+backend you can use varnishlog to have a look at the whole request.
+``varnishlog -c -o /foo/bar`` will give the whole (-o) requests coming
+from the client (-c) matching /foo/bar. 
+
 
 Tool: lwp-request
 ~~~~~~~~~~~~~~~~~
 
 lwp-request is part of The World-Wide Web library for Perl. It's
 couple of really basic programs that can execute a HTTP request and
-give you the result. I use two programs, GET and HEAD.
+give you the result. I mostly use two programs, GET and HEAD.
 
 vg.no was the first site to use Varnish and the people running Varnish
 there are quite cluefull. So its interesting to look at their HTTP
