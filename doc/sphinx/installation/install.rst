@@ -43,7 +43,7 @@ being:
 	You are probably best of compiling your own code. See `Compiling Varnish from source`_.
 
 If that worked for you, you can skip the rest of this document
-for now, and and start reading the much more interesting :ref:`Tutorial`
+for now, and and start reading the much more interesting :ref:`tutorial-index`
 instead.
 
 

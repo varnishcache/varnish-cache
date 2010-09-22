@@ -65,5 +65,5 @@ give you a clue.
 Varnish doesn't cache
 ~~~~~~~~~~~~~~~~~~~~~
 
-See :ref:`_tutorial-increasing_your_hitrate:`.
+See :ref:`tutorial-increasing_your_hitrate`.
 

@@ -22,8 +22,8 @@ couple of really basic programs that can execute a HTTP request and
 give you the result. I use two programs, GET and HEAD.
 
 vg.no was the first site to use Varnish and the people running Varnish
-there are quite clueful. So its interesting to look at their HTTP
-Headers. Lets send a GET requst for their home page.::
+there are quite cluefull. So its interesting to look at their HTTP
+Headers. Lets send a GET request for their home page.::
 
   $ GET -H 'Host: www.vg.no' -Used http://vg.no/
   GET http://vg.no/
@@ -81,9 +81,8 @@ The Cache-Control instructs caches how to handle the content. Varnish
 cares about the *max-age* parameter and uses it to calculate the TTL
 for an object. 
 
-"Cache-Control: nocache" is ignored. See
-:ref:`tutorial-increasing_your_hitrate-pragma:` for an example on how
-to implement support.
+"Cache-Control: nocache" is ignored but if you need this you can
+easyli add support for it.
 
 So make sure use issue a Cache-Control header with a max-age
 header. You can have a look at what Varnish Softwares drupal server

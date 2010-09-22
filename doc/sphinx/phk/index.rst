@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning think.
 
 .. toctree::
 
-	sphinx.rst
+	thoughts.rst
 	autocrap.rst
+	sphinx.rst
 
