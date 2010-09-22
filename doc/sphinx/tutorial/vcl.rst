@@ -1,8 +1,8 @@
 Varnish Configuration Language - VCL
-==============================
+====================================
 
 How ordinary configuration files work
----------------------------------
+-------------------------------------
 
 Varnish has a really neat configuration system. Most other systems use
 configuration directives, where you basically turn on and off a bunch

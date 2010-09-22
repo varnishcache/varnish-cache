@@ -61,7 +61,8 @@ want to know are:
 
 -i tag
  Only show lines with a certain tag. "varnishlog -i SessionOpen" 
- will only give you new sessions.
+ will only give you new sessions. Note that the tags are case 
+ insensitive. 
 
 -I Regex
  Filter the data through a regex and only show the matching lines. To
