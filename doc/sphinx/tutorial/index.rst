@@ -30,6 +30,7 @@ it is installed with the default configuration.
         statistics.rst
         increasing_your_hitrate.rst
 	advanced_backend_servers.rst
+        handling_misbehaving_servers.rst
 	troubleshooting.rst
 
 .. todo::
