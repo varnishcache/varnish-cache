@@ -4,7 +4,7 @@ Starting Varnish
 ----------------
 
 I assume varnishd is in your path. You might want to run ``pkill
-varnishd`` to make sure Varnish isn't running. Become root and type:
+varnishd`` to make sure varnishd isn't running. Become root and type:
 
 ``# varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1:2000 -a 0.0.0.0:8080``
 
@@ -18,7 +18,7 @@ I added a few options, lets go through them:
  storing its content. I used the type *malloc*, which just uses memory
  for storage. There are other backends as well, described in 
  :ref:tutorial-storage. 1G specifies how much memory should be allocated 
- - one gigabyte.
+ - one gigabyte. 
 
 ``-T 127.0.0.1:2000``
  Varnish has a buildt in text-based administration
