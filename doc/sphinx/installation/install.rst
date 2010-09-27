@@ -71,11 +71,11 @@ your system.  There is usually a binary package, try substituting
 
 To fetch the current (2.1) production branch:::
 
-	svn co http://varnish-cache.org/svn/varnish/branches/2.1
+	svn co http://varnish-cache.org/svn/branches/2.1
 
 To get the development source code:::
 
-	svn co http://varnish-cache.org/svn/varnish/trunk
+	svn co http://varnish-cache.org/svn/trunk
 
 Build dependencies on Debian / Ubuntu 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
