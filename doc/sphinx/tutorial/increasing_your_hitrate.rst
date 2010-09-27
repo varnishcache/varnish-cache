@@ -352,7 +352,7 @@ Support for bans is built into Varnish and available in the CLI
 interface. For VG to ban every png object belonging on vg.no they could
 issue:::
 
-  purge req.http.host ~ ^vg.no && req.http.url ~ \.png$
+  purge req.http.host == "vg.no" && req.http.url ~ "\.png$"
 
 Quite powerful, really.
 
@@ -361,4 +361,22 @@ deliver it. An object is only checked against newer bans. If you have
 a lot of objects with long TTL in your cache you should be aware of a
 potential performance impact of having many bans.
 
+You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL.::
 
+  sub vcl_recv {
+	  if (req.request == "BAN") {
+                  # Same ACL check as above:
+		  if (!client.ip ~ purge) {
+			  error 405 "Not allowed.";
+		  }
+		  purge("req.http.host == " req.http.host 
+		        "&& req.url == " req.url);
+
+		  # Throw a synthetic page so the
+                  # request wont go to the backend.
+		  error 200 "Ban added"
+	  }
+  }
+
+This VCL sniplet enables Varnish to handle a HTTP BAN method. Adding a
+ban on the URL, including the host part.
