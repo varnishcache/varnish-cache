@@ -1,4 +1,4 @@
-.. _Installation:
+.. _install-index:
 
 %%%%%%%%%%%%%%%%%%%%
 Varnish Installation
