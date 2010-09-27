@@ -1,6 +1,16 @@
-%%%%%%%%%%%%%%%%%%%%%
-The Varnish Reference
-%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The Varnish Reference Manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+.. toctree::
+	
+	varnishadm.rst
+	shmem.rst
+	vcl.rst
+	varnishstat.rst
+	varnishsizes.rst
+	varnishreplay.rst
+	varnishlog.rst
 
 .. todo::
         The programs:
