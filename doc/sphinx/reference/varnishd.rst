@@ -794,17 +794,17 @@ isons.  Prepending an operator with "!" negates the expression.
 The argument could be a quoted string, a regexp, or an integer.  Integers can have "KB", "MB", "GB" or "TB"
 appended for size related fields.
 
-Simple example: All requests where req.url exactly matches the string /news are purged from the cache.
+Simple example: All requests where req.url exactly matches the string /news are purged from the cache:::
 
     req.url == "/news"
 
 Example: Purge all documents where the name does not end with ".ogg", and where the size of the object is greater
-than 10 megabytes.
+than 10 megabytes:::
 
     req.url !~ "\.ogg$" && obj.size > 10MB
 
 Example: Purge all documents where the serving host is "example.com" or "www.example.com", and where the Set-
-Cookie header received from the backend contains "USERID=1663".
+Cookie header received from the backend contains "USERID=1663":::
 
     req.http.host ~ "^(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
 
