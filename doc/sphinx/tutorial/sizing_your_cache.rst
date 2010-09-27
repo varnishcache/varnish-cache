@@ -12,5 +12,6 @@ task. A few things to consider:
    they are cheap to serve from the backend and you have a limited
    amount of memory.
  * Watch the n_lru_nuked counter with varnishstat or some other
-   tool. If you have a lot of LRU activity then you should consider
-   increasing the size of the cache.
+   tool. If you have a lot of LRU activity then your cache is evicting
+   objects due to space constraints and you should consider increasing
+   the size of the cache.

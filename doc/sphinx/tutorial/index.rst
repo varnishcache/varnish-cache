@@ -20,8 +20,6 @@ it is installed with the default configuration.
 
 Good luck.
 
-perbu.
-
 .. toctree:: 
 
 	backend_servers.rst
