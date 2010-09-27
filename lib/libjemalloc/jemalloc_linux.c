@@ -273,6 +273,11 @@
 #  define QUANTUM_2POW		4
 #  define SIZEOF_PTR_2POW	2
 #endif
+#ifdef __s390__
+#  define PAGESIZE_2POW		12
+#  define QUANTUM_2POW		4
+#  define SIZEOF_PTR_2POW	2
+#endif
 #ifdef __s390x__
 #  define PAGESIZE_2POW		12
 #  define QUANTUM_2POW		4
