@@ -22,7 +22,7 @@ Varnish will execute some built in VCL code. You will see this VCL
 code commented out in default.vcl.
 
 99% of all the changes you'll need to do will be done in two of these
-subroutines. vcl_recv and vcl_fetch.
+subroutines. *vcl_recv* and *vcl_fetch*.
 
 vcl_recv
 ~~~~~~~~
@@ -35,7 +35,7 @@ the request, how to do it, and, if applicable, which backend to use.
 In vcl_recv you can also alter the request. Typically you can alter
 the cookies and add and remove request headers.
 
-Note that in vcl_recv only the request object, req is availble.
+Note that in vcl_recv only the request object, req is available.
 
 vcl_fetch
 ~~~~~~~~~
@@ -66,12 +66,66 @@ The most common actions to call are these:
   should be passed. You can't call lookup from vcl_fetch.
 
 *pipe*
- 
+  Pipe can be called from vcl_recv as well. Pipe short circuits the
+  client and the backend connections and Varnish will just sit there
+  and shuffle bytes back and forth. Varnish will not look at the data being 
+  send back and forth - so your logs will be incomplete. 
+  Beware that with HTTP 1.1 a client can send several requests on the same 
+  connection and so you should instruct Varnish to add a "Connection: close"
+  header before actually calling pipe. 
 
 *deliver*
+ Deliver the cached object to the client.  Usually called in vcl_fetch. 
 
 *esi*
  ESI-process the fetched document.
+
+Requests, responses and objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In VCL, there are three important data structures. The request, coming
+from the client, the response coming from the backend server and the
+object, stored in cache.
+
+In VCL you should know the following structures.
+
+*req*
+ The request object. When Varnish has received the request the req object is 
+ created and populated. Most of the work you do in vcl_recv you 
+ do on or with the req object.
+
+*beresp*
+ The backend respons object. It contains the headers of the object 
+ comming from the backend. Most of the work you do in vcl_fetch you 
+ do on the beresp object.
+
+*obj*
+ The cached object. Mostly a read only object that resides in memory. 
+ obj.ttl is writable, the rest is read only.
+
+Operators
+~~~~~~~~~
+
+The following operators are available in VCL. See the examples further
+down for, uhm, examples.
+
+= 
+ Assignment operator.
+
+== 
+ Comparison.
+
+~
+ Match. Can either be used with regular expressions or ACLs.
+
+!
+ Negation.
+
+&&
+ Logical *and*
+
+||
+ Logical *or*
 
 Example 1 - manipulating headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,19 +141,9 @@ directory of our web server:::
 
 Now, when the request is handled to the backend server there will be
 no cookie header. The interesting line is the one with the
-if-statement. It probably needs a bit of explaining. Varnish has a few
-objects that are available throughout the VCL. The important ones are:
-
-*req*
- The request object. Each HTTP transaction contains a request and a 
- response. When Varnish has recieved the request the req object is 
- created and populated. Most of the work you do in vcl_fetch you 
- do on or with the req object.
-
-*beresp*
- The backend respons object. It contains the headers of the object 
- comming from the backend. Most of the work you do in vcl_fetch you 
- do on the beresp object.
+if-statement. It matches the URL, taken from the request object, and
+matches it against the regular expression. Note the match operator. If
+it matches the Cookie: header of the request is unset (deleted). 
 
 Example 2 - manipulating beresp
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,3 +160,35 @@ matches certain criteria:::
 
 Example 3 - ACLs
 ~~~~~~~~~~~~~~~~
+
+You create a named access control list with the *acl* keyword. You can match
+the IP address of the client against an ACL with the match operator.::
+
+  # Who is allowed to purge....
+  acl local {
+      "localhost";
+      "192.168.1.0"/24; /* and everyone on the local network */
+      ! "192.168.1.23"; /* except for the dialin router */
+  }
+  
+  sub vcl_recv {
+    if (req.request == "PURGE") {
+      if (client.ip ~ local) {
+         return(lookup);
+      }
+    } 
+  }
+  
+  sub vcl_hit {
+     if (req.request == "PURGE") {
+       set obj.ttl = 0s;
+       error 200 "Purged.";
+      }
+  }
+
+  sub vcl_miss {
+    if (req.request == "PURGE") {
+      error 404 "Not in cache.";
+    }
+  }
+
