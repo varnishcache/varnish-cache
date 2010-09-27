@@ -233,7 +233,8 @@ purge.list
 purge.url regexp
       Immediately invalidate all documents whose URL matches the specified regular expression.
 
-quit  Close the connection to the varnish admin port.
+quit
+      Close the connection to the varnish admin port.
 
 start
       Start the Varnish cache process if it is not already running.
@@ -247,7 +248,8 @@ stats
 status
       Check the status of the Varnish cache process.
 
-stop  Stop the Varnish cache process.
+stop
+      Stop the Varnish cache process.
 
 url.purge regexp
       Deprecated, see purge.url instead.

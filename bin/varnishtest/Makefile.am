@@ -9,7 +9,9 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS =	varnishtest
 
+if HAVE_RST2MAN
 dist_man_MANS = varnishtest.1
+endif
 
 varnishtest_SOURCES = \
 		vtc.c \
@@ -29,3 +31,13 @@ varnishtest_LDADD = \
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README
+
+%.1: ../../doc/sphinx/reference/%.rst
+if HAVE_RST2MAN
+	${RST2MAN} $< >$@
+else
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif

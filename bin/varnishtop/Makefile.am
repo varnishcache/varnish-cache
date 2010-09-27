@@ -4,7 +4,9 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishtop
 
+if HAVE_RST2MAN
 dist_man_MANS = varnishtop.1
+endif
 
 varnishtop_SOURCES = varnishtop.c
 
@@ -13,3 +15,13 @@ varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	${CURSES_LIBS} ${PTHREAD_LIBS}
+
+%.1: ../../doc/sphinx/reference/%.rst
+if HAVE_RST2MAN
+	${RST2MAN} $< >$@
+else
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif

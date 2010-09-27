@@ -4,7 +4,9 @@ INCLUDES = -I$(top_srcdir)/include
 
 sbin_PROGRAMS = varnishd
 
+if HAVE_RST2MAN
 dist_man_MANS = varnishd.1
+endif
 
 varnishd_SOURCES = \
 	cache_acceptor.c \
@@ -99,3 +101,13 @@ default_vcl.h:	default.vcl Makefile
 
 # Explicitly record dependency
 mgt_vcc.c:	default_vcl.h
+
+%.1: ../../doc/sphinx/reference/%.rst
+if HAVE_RST2MAN
+	${RST2MAN} $< >$@
+else
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif

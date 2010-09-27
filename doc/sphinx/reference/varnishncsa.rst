@@ -2,15 +2,15 @@
 varnishncsa
 ===========
 
+---------------------------------------------------------
+Display Varnish logs in Apache / NCSA combined log format
+---------------------------------------------------------
+
 :Author: Dag-Erling Smørgrav
 :Date:   2010-05-31
 :Version: 1.0
 :Manual section: 1
 
-
----------------------------------------------------------
-Display Varnish logs in Apache / NCSA combined log format
----------------------------------------------------------
 
 SYNOPSIS
 ========
