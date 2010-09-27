@@ -15,7 +15,7 @@ is done.
 We assume you have a web server and a web application up and running
 and that you want to accelerate this application with Varnish.
 
-Furthermore we assume you have read the :ref:`Installation` and that
+Furthermore we assume you have read the :ref:`install-index` and that
 it is installed with the default configuration.
 
 
@@ -31,6 +31,7 @@ it is installed with the default configuration.
         increasing_your_hitrate.rst
 	advanced_backend_servers.rst
         handling_misbehaving_servers.rst
+        advanced_topics.rst
 	troubleshooting.rst
 
 .. todo::
