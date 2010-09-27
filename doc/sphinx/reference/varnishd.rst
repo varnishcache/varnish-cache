@@ -44,6 +44,9 @@ OPTIONS
             Use the specified host as backend server.  If port is not specified, 
 	    the default is 8080.
 
+-C	    Print VCL code compiled to C language and exit. Specify the VCL file 
+	    to compile with the -f option.
+
 -d          Enables debugging mode: The parent process runs in the foreground with a CLI connection
             on stdin/stdout, and the child process must be started explicitly with a CLI command.
             Terminating the parent process will also terminate the child.
