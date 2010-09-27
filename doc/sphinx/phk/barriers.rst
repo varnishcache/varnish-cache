@@ -49,7 +49,7 @@ The really Important Barrier
 ============================
 
 The central actor in Varnish is the Manager process, "MGR", which is the 
-proces the administrator "(ADMIN)" starts to get web-cache service.
+process the administrator "(ADMIN)" starts to get web-cache service.
 
 Having been there myself, I do not subscribe to the "I feel cool and important
 when I get woken up at 3AM to restart a dead process" school of thought, in
@@ -104,7 +104,7 @@ The Administrator has the final say, and of course, the administrator
 can decide under which circumstances that authority will be shared.
 
 Needless to say, if the system on which Varnish runs is not properly
-secured, the Administators monopoly of control will be compromised.
+secured, the Administator's monopoly of control will be compromised.
 
 All the other barriers
 ======================
