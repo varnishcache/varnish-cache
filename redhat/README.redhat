@@ -68,14 +68,11 @@ build the rpm package:
 
 #!/bin/bash
 VERSION=$( awk ' /^Version:/ { print $2 } ' varnish-cache/redhat/varnish.spec )
-ln -s varnish-cache varnish-$VERSION
-tar $(
-    find varnish-$VERSION/ -type d -name .svn | \
+tar $(  find varnish-cache -type d -name .svn | \
         while read i; do 
             echo -n "--exclude $i "
             done
-) -cvzf varnish-$VERSION.tar.gz varnish-$VERSION/*
-rm varnish-$VERSION
+) -cvzf varnish-$VERSION.tar.gz varnish-cache/*
 rpmbuild -ts varnish-$VERSION.tar.gz
 # End of script
 
