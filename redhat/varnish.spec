@@ -50,6 +50,14 @@ Requires: varnish-libs = %{version}-%{release}
 Development files for %{name}-libs
 Varnish is a high-performance HTTP accelerator
 
+%package docs
+Summary: Documentation files for %name
+Group: System Environment/Libraries
+BuildRequires: python-sphinx
+
+%description docs
+Documentation files for %name
+
 #%package libs-static
 #Summary: Files for static linking of %{name} library functions
 #Group: System Environment/Libraries
@@ -131,6 +139,19 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
+# Build html and latex/pdf docs
+# Including the sphinx sources may be a good thing for advanced users
+pushd doc/sphinx
+%{__make} html
+%{__make} latex
+pushd \=build/latex
+# Something is broken in the latex version
+for i in `seq 1 53`; do echo -e '\n'; done | %{__make} || true 
+popd; popd
+mv doc/sphinx/\=build/html doc
+mv doc/sphinx/\=build/latex/Varnish.pdf doc
+rm -rvf doc/sphinx/\=build/*
+
 %check
 # rhel5 on ppc64 is just too strange
 %ifarch ppc64
@@ -148,12 +169,8 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	%endif
 %endif
 
-LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
-%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
-
-# Remove uneccessary doc src files
-mkdir doc.src
-mv doc/*.xml doc/*.xsl doc/Makefile* doc.src
+#LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
+#%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
 %install
 rm -rf %{buildroot}
@@ -184,11 +201,10 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_var}/lib/varnish
 %{_var}/log/varnish
-#%{_mandir}/man1/*.1*
-#%{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat ChangeLog 
+%{_mandir}/man1/*.1*
+%{_mandir}/man7/*.7*
+%doc INSTALL LICENSE README redhat/README.redhat ChangeLog doc/getting-started.html
 %doc examples
-%doc doc
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/sysconfig/varnish
@@ -212,6 +228,12 @@ rm -rf %{buildroot}
 %{_includedir}/varnish/*
 %{_libdir}/pkgconfig/varnishapi.pc
 %doc LICENSE
+
+%files docs
+%doc LICENSE
+%doc doc/Varnish.pdf
+%doc doc/sphinx
+%doc doc/html
 
 #%files libs-static
 #%{_libdir}/libvarnish.a
@@ -250,7 +272,8 @@ fi
 %changelog
 * Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-0.svn20100730
 - Replaced specific include files with a wildcard glob
-- The man pages seems to have vanished
+- Needs python-sphinx to build sphinx documentation
+- Builds html and latex documentation. Put that in a subpackage varnish-docs
 
 * Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.3-1
 - New upstream release
