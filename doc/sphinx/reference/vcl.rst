@@ -504,10 +504,30 @@ bereq.between_bytes_timeout
   The time in seconds to wait between each received byte from the
   backend.  Not available in pipe mode.
 
-XXX: Aren't these beresp now?
-
 The following variables are available after the requested object has
-been retrieved from cache or from the backend:
+been retrieved from the backend, before it is entered into the cache. In
+other words, they are available in vcl_fetch:
+
+beresp.proto
+  The HTTP protocol version used when the object was retrieved.
+
+beresp.status
+  The HTTP status code returned by the server.
+
+beresp.response
+The HTTP status message returned by the server.
+
+beresp.cacheable
+  True if the request resulted in a cacheable response.  A response is
+  considered cacheable if it is valid (see above), and the HTTP status
+  code is 200, 203, 300, 301, 302, 404 or 410.
+
+beresp.ttl
+  The object's remaining time to live, in seconds.
+
+After the object is entered into the cache, the following (mostyl
+read-only) variables are available when the object has been located in
+cache:
 
 obj.proto
   The HTTP protocol version used when the object was retrieved.
@@ -568,7 +588,7 @@ HTTP headers can be removed entirely using the remove keyword:::
 
   sub vcl_fetch {
     # Don't cache cookies
-    remove obj.http.Set-Cookie;
+    remove beresp.http.Set-Cookie;
   }
 
 EXAMPLES
@@ -617,8 +637,8 @@ based on the request URL:::
   which the backend did not specify a TTL:::
   
   sub vcl_fetch {
-    if (obj.ttl < 120s) {
-      set obj.ttl = 120s;
+    if (beresp.ttl < 120s) {
+      set beresp.ttl = 120s;
     }
   }
 
