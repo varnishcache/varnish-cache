@@ -246,9 +246,11 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, "\tconst char\t\t\t*vcl_name;\n\tconst char\t\t\t*ident");
 	vsb_cat(sb, ";\n\n\tconst char\t\t\t*hosthdr;\n");
 	vsb_cat(sb, "\n\tconst unsigned char\t\t*ipv4_sockaddr;\n");
+	vsb_cat(sb, "\tconst char\t\t\t*ipv4_addr;\n");
 	vsb_cat(sb, "\tconst unsigned char\t\t*ipv6_sockaddr;\n");
-	vsb_cat(sb, "\n\tdouble\t\t\t\tconnect_timeout;\n");
-	vsb_cat(sb, "\tdouble\t\t\t\tfirst_byte_timeout;\n");
+	vsb_cat(sb, "\tconst char\t\t\t*ipv6_addr;\n");
+	vsb_cat(sb, "\tconst char\t\t\t*port;\n\n\tdouble\t\t\t\tconnect_ti");
+	vsb_cat(sb, "meout;\n\tdouble\t\t\t\tfirst_byte_timeout;\n");
 	vsb_cat(sb, "\tdouble\t\t\t\tbetween_bytes_timeout;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tmax_connections;\n");
 	vsb_cat(sb, "\tunsigned\t\t\tsaintmode_threshold;\n");
