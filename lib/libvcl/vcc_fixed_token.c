@@ -227,8 +227,8 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWI");
 	vsb_cat(sb, "SE) ARISING IN ANY WAY\n * OUT OF THE USE OF THIS SOFT");
 	vsb_cat(sb, "WARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n");
-	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 5047 2010-07-13 11:");
-	vsb_cat(sb, "07:00Z tfheen $\n *\n * Runtime support for compiled V");
+	vsb_cat(sb, " * SUCH DAMAGE.\n *\n * $Id: vrt.h 5310 2010-09-28 11:");
+	vsb_cat(sb, "51:44Z tfheen $\n *\n * Runtime support for compiled V");
 	vsb_cat(sb, "CL programs.\n *\n * XXX: When this file is changed, l");
 	vsb_cat(sb, "ib/libvcl/vcc_gen_fixed_token.tcl\n");
 	vsb_cat(sb, " * XXX: *MUST* be rerun.\n */\n");

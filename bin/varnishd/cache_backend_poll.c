@@ -478,9 +478,13 @@ VBP_Stop(struct backend *b)
 	CHECK_OBJ_NOTNULL(b->probe, VBP_TARGET_MAGIC);
 	vt = b->probe;
 
+	b->healthy = 1;
+
 	vt->stop = 1;
 	AZ(pthread_cancel(vt->thread));
 	AZ(pthread_join(vt->thread, &ret));
+
+	b->healthy = 1;
 
 	VTAILQ_REMOVE(&vbp_list, vt, list);
 	b->probe = NULL;
