@@ -507,7 +507,8 @@ cmd_http_txresp(CMD_ARGS)
 	const char *msg = "Ok";
 	int bodylen = 0;
 	char *b, *c;
-	char *body = NULL;
+	char *body = NULL, *nullbody;
+	
 
 	(void)cmd;
 	(void)vl;
@@ -517,6 +518,10 @@ cmd_http_txresp(CMD_ARGS)
 	av++;
 
 	vsb_clear(hp->vsb);
+
+	/* send a "Content-Length: 0" header unless something else happens */
+	REPLACE(body, "");
+	nullbody = body;
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-proto")) {
@@ -544,8 +549,9 @@ cmd_http_txresp(CMD_ARGS)
 	}
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-body")) {
-			AZ(body);
+			assert(body == nullbody);
 			REPLACE(body, av[1]);
+
 			AN(body);
 			av++;
 			bodylen = strlen(body);
@@ -560,7 +566,7 @@ cmd_http_txresp(CMD_ARGS)
 				}
 			}
 		} else if (!strcmp(*av, "-bodylen")) {
-			AZ(body);
+			assert(body == nullbody);
 			body = synth_body(av[1]);
 			bodylen = strlen(body);
 			av++;

@@ -4,7 +4,9 @@ test "Check HTTP/1.0 EOF transmission"
 
 server s1 {
 	rxreq 
-	txresp -hdr "Connection: close" 
+	send "HTTP/1.1 200 Ok\n"
+	send "Connection: close\n" 
+	send "\n"
 	send "Body line 1\n"
 	send "Body line 2\n"
 	send "Body line 3\n"

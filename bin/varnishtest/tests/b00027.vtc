@@ -8,7 +8,9 @@ server s1 {
 	rxreq
 	txresp -proto HTTP/1.0 -hdr "Connection: keep-alive"
 	rxreq
-	txresp -hdr "Transfer-encoding: foobar"
+	send "HTTP/1.1 200 Ok\n"
+	send "Transfer-encoding: foobar\n"
+	send "\n"
 } -start
 
 varnish v1 -vcl+backend {} -start
