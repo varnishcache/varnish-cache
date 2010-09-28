@@ -1,7 +1,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.3
-Release: 1
+Version: 2.1.4
+Release: 0.svn20100928%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -105,11 +105,6 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 	%configure --disable-static --localstatedir=/var/lib
 %endif
 
-# Have to regenerate the docs because of patched doc/changes-2.0.6-2.1.0.xml
-pushd doc/
-make clean
-popd
-
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
@@ -189,8 +184,8 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_var}/lib/varnish
 %{_var}/log/varnish
-%{_mandir}/man1/*.1*
-%{_mandir}/man7/*.7*
+#%{_mandir}/man1/*.1*
+#%{_mandir}/man7/*.7*
 %doc INSTALL LICENSE README redhat/README.redhat ChangeLog 
 %doc examples
 %doc doc
@@ -214,11 +209,7 @@ rm -rf %{buildroot}
 %{_libdir}/libvarnishcompat.so
 %{_libdir}/libvcl.so
 %dir %{_includedir}/varnish
-%{_includedir}/varnish/shmlog.h
-%{_includedir}/varnish/shmlog_tags.h
-%{_includedir}/varnish/stat_field.h
-%{_includedir}/varnish/stats.h
-%{_includedir}/varnish/varnishapi.h
+%{_includedir}/varnish/*
 %{_libdir}/pkgconfig/varnishapi.pc
 %doc LICENSE
 
@@ -257,11 +248,15 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Wed Jul 28 2010 Tollef Fog Heen <tfheen@varnish-software.com> - 2.1.3-1
-- New upstream release
+* Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-0.svn20100730
+- Replaced specific include files with a wildcard glob
+- The man pages seems to have vanished
 
-%changelog
-* Wed May 05 2010 Tollef Fog Heen <tfheen@varnish-software.com> - 2.1.2-1
+* Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.3-1
+- New upstream release
+- Add a patch for jemalloc on s390 that lacks upstream
+
+* Wed May 05 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.2-1
 - New upstream release
 - Remove patches merged upstream
 
