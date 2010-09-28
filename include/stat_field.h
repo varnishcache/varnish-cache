@@ -152,3 +152,5 @@ MAC_STAT(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
 MAC_STAT(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
+
+MAC_STAT(backend_retry,		uint64_t, 0, 'a', "Backend conn. retry")
