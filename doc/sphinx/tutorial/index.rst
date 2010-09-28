@@ -1,24 +1,37 @@
 .. _tutorial-index:
 
-%%%%%%%%%%%%%%%%
-Varnish Tutorial
-%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%
+Using Varnish
+%%%%%%%%%%%%%
 
-Varnish is a web accelerator. It is installed in front of your web
-application and it caches the reponses, making your web site run  Varnish
-is fast, flexible and easy to use.
-
-This tutorial does not go through every bit of functionality Varnish
-has. It will give you a good overview of what Varnish does and how it
-is done.
-
-We assume you have a web server and a web application up and running
-and that you want to accelerate this application with Varnish.
-
-Furthermore we assume you have read the :ref:`install-index` and that
-it is installed with the default configuration.
+This tutorial is intended for system administrators managing Varnish
+cache. The reader should know how to configure her web- or application
+server and have basic knowledge of the HTTP protocol. The reader
+should have Varnish up and running with the default configuration. 
 
 Good luck.
+
+TOC
+
+ Getting Varnish Running
+	backend_servers.rst
+        starting_varnish.rst
+	logging.rst
+        sizing_your_cache.rst
+        putting_varnish_on_port_80.rst
+ The Varnish Configuration Language
+	vcl.rst
+
+ Tuning Varnish
+        increasing_your_hitrate.rst
+	advanced_backend_servers.rst
+        handling_misbehaving_servers.rst
+
+ Advanced topics
+        advanced_topics.rst
+
+Troubleshooting and getting help
+	troubleshooting.rst
 
 .. toctree:: 
 

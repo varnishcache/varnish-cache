@@ -93,8 +93,6 @@ installed. On a Debian or Ubuntu system these are:
 * libpcre3-dev
 * pkg-config
 
-To install all these just type ``sudo apt-get install autotools-dev automake1.9 libtool autoconf libncurses-dev xsltproc groff-base libpcre3-dev``. 
-
 Build dependencies on Red Hat / Centos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
