@@ -1,0 +1,24 @@
+# $Id#
+
+test "% escapes in VCL source and vcl.show"
+
+server s1 {
+	rxreq	
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	C{
+	void foo(void)
+	{
+		printf("%s %s %s", "foo", "bar", "barf");
+	}
+	}C
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok "vcl.show vcl1"

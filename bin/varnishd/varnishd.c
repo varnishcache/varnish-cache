@@ -554,6 +554,7 @@ main(int argc, char * const *argv)
 			MCF_ParamSet(cli, "user", optarg);
 			break;
 		case 'V':
+			/* XXX: we should print the ident here */
 			varnish_version("varnishd");
 			exit(0);
 		case 'x':

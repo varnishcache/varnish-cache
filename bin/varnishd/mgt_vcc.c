@@ -633,6 +633,8 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 
 /*
  * XXX: This should take an option argument to show all (include) files
+ * XXX: This violates the principle of not loading VCL's in the master
+ * XXX: process.
  */
 void
 mcf_config_show(struct cli *cli, const char * const *av, void *priv)
@@ -654,7 +656,7 @@ mcf_config_show(struct cli *cli, const char * const *av, void *priv)
 			AZ(dlclose(dlh));
 		} else {
 			src = sym;
-			cli_out(cli, src[0]);
+			cli_out(cli, "%s", src[0]);
 			/* cli_out(cli, src[1]); */
 			AZ(dlclose(dlh));
 		}
