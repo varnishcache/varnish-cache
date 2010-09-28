@@ -416,6 +416,7 @@ struct sess {
 	enum step		step;
 	unsigned		cur_method;
 	unsigned		handling;
+	unsigned char		pass;
 	unsigned char		sendbody;
 	unsigned char		wantbody;
 	int			err_code;

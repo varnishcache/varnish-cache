@@ -535,7 +535,7 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objcore);
 	}
 
-	l = http_EstimateWS(sp->wrk->beresp, HTTPH_A_INS, &nhttp);
+	l = http_EstimateWS(sp->wrk->beresp, sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	if (vary != NULL)
 		l += varyl;
@@ -587,7 +587,7 @@ cnt_fetch(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp, HTTPH_A_INS);
+	http_FilterFields(sp->wrk, sp->fd, hp2, hp, sp->pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
@@ -952,6 +952,7 @@ cnt_pass(struct sess *sp)
 	sp->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
+	sp->pass = 1;
 	return (0);
 }
 
@@ -1039,6 +1040,7 @@ cnt_recv(struct sess *sp)
 	AN(sp->director);
 
 	sp->disable_esi = 0;
+	sp->pass = 0;
 
 	VCL_recv_method(sp);
 	recv_handling = sp->handling;

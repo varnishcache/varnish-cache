@@ -198,7 +198,8 @@ varnish_delete(struct varnish *v)
 	vtc_logclose(v->vl);
 	free(v->name);
 	free(v->workdir);
-	VSL_Close();
+	if (v->stats != NULL)
+		VSL_Close();
 
 	/*
 	 * We do not delete the workdir, it may contain stuff people

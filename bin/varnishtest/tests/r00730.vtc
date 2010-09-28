@@ -1,0 +1,33 @@
+# $Id$
+
+test "Check that HEAD returns Content-Length: if backend provides"
+
+server s1 {
+	rxreq
+	txresp -bodylen 5
+	rxreq
+	txresp -bodylen 6
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -req HEAD
+	rxresp -no_obj
+	expect resp.http.content-length == 5
+} -run
+
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+} 
+
+client c1 {
+	txreq -req HEAD
+	rxresp -no_obj
+	expect resp.http.content-length == 6
+} -run
+
