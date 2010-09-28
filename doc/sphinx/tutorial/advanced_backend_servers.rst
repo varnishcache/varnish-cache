@@ -126,6 +126,10 @@ window
 threshold 
  How many of the .window last polls must be good for the backend to be declared healthy.
 
+initial 
+ How many of the of the probes a good when Varnish starts - defaults
+ to the same amount as the threshold.
+
 Now we define the director.::
 
   director example_director round-robin {
@@ -144,3 +148,8 @@ backend. Varnish will not send traffic to hosts that are marked as
 unhealty. Varnish can also serve stale content if all the backends are
 down. See :ref:`tutorial-handling_misbehaving_servers` for more
 information on how to enable this.
+
+Please note that Varnish will keep probes active for all loaded
+VCLs. Varnish will coalesce probes that seem identical - so be careful
+not to change the probe config if you do a lot of VCL
+loading. Unloading the VCL will discard the probes.
