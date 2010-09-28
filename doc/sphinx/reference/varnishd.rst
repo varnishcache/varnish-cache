@@ -131,8 +131,10 @@ classic[,buckets]
   key. The buckets parameter specifies the number of entries in the
   hash table.  The default is 16383.
 
-critbit XXX
-  Very nice.
+critbit
+  A self-scaling tree structure. The default hash algorithm in 2.1. In
+  comparison to a more traditional B tree the critbit tree is almost
+  completely lockless.
 
 Storage Types
 -------------
