@@ -1,0 +1,35 @@
+# Usage: make -f Makefile.kristian -j20 (for 20 parallel jobs)
+
+SHELL = /bin/sh
+
+# Complete all tests even if one fails
+MAKEFLAGS = -k
+
+objs=$(addsuffix .done,$(basename $(notdir $(wildcard tests/*vtc))))
+
+check: $(objs)
+	@echo "==================="
+	@echo "All tests succeeded"
+	@echo "==================="
+
+# Capture output of varnishtest for a specific test. Only output it if the
+# test failed.
+#
+# XXX: 'echo' in dash (often used as /bin/sh) does not support -E and
+#      always interpret \n's(as in a \ and a n, not a real line break),
+#      thus the /bin/echo -E crud to avoid double line breaks on
+#      "body | <foo>\n".
+#
+# XXX: Even if this doesn't create a real file, it's not a phony target per
+#      se, as it has to fire every time you run 'make check'.
+%.done: tests/%.vtc
+	@if output=$$(./varnishtest $< 2>&1 ); then\
+		echo "$< OK";\
+	else\
+		ret=$$?;\
+		/bin/echo -E 1>&2 "$$output";\
+		echo 1>&2 $< "FAILED ($$ret)\n";\
+		exit $$ret;\
+	fi;
+
+.PHONY: check
