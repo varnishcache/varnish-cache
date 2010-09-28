@@ -476,7 +476,7 @@ extern pthread_t VCA_thread;
 struct vbe_conn *VBE_GetFd(const struct director *, struct sess *sp);
 int VBE_Healthy(double now, const struct director *, uintptr_t target);
 int VBE_Healthy_sp(const struct sess *sp, const struct director *);
-void VBE_ClosedFd(struct sess *sp);
+void VBE_CloseFd(struct sess *sp);
 void VBE_RecycleFd(struct sess *sp);
 void VBE_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);

@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 5171 2010-09-06 14:11:53Z martin $
+ * $Id: vcc_gen_fixed_token.tcl 5303 2010-09-28 09:28:24Z tfheen $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -159,8 +159,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vcl.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 5171 2010-09-06 14");
-	vsb_cat(sb, ":11:53Z martin $\n *\n * NB:  This file is machine gen");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 5303 2010-09-28 09");
+	vsb_cat(sb, ":28:24Z tfheen $\n *\n * NB:  This file is machine gen");
 	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixe");
 	vsb_cat(sb, "d_token.tcl instead\n */\n\nstruct sess;\n");
 	vsb_cat(sb, "struct cli;\n\ntypedef void vcl_init_f(struct cli *);\n");
@@ -314,8 +314,8 @@ vcl_output_lang_h(struct vsb *sb)
 
 	/* ../../include/vrt_obj.h */
 
-	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 5171 2010-09-06 14");
-	vsb_cat(sb, ":11:53Z martin $\n *\n * NB:  This file is machine gen");
+	vsb_cat(sb, "/*\n * $Id: vcc_gen_fixed_token.tcl 5303 2010-09-28 09");
+	vsb_cat(sb, ":28:24Z tfheen $\n *\n * NB:  This file is machine gen");
 	vsb_cat(sb, "erated, DO NOT EDIT!\n *\n * Edit and run vcc_gen_fixe");
 	vsb_cat(sb, "d_token.tcl instead\n */\n\nstruct sockaddr * VRT_r_cl");
 	vsb_cat(sb, "ient_ip(const struct sess *);\n");

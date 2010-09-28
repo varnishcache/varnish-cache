@@ -343,7 +343,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 		}
 		VSL_stats->backend_toolate++;
 		sp->vbe = vc;
-		VBE_ClosedFd(sp);
+		VBE_CloseFd(sp);
 	}
 
 	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {
@@ -375,7 +375,7 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 /* Close a connection ------------------------------------------------*/
 
 void
-VBE_ClosedFd(struct sess *sp)
+VBE_CloseFd(struct sess *sp)
 {
 	struct backend *bp;
 
