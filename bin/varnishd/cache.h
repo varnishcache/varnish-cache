@@ -390,6 +390,7 @@ struct sess {
 	/* formatted ascii client address */
 	char			*addr;
 	char			*port;
+	char			*client_identity;
 
 	/* HTTP request */
 	const char		*doclose;

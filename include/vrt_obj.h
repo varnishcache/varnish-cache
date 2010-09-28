@@ -7,6 +7,8 @@
  */
 
 struct sockaddr * VRT_r_client_ip(const struct sess *);
+const char * VRT_r_client_identity(struct sess *);
+void VRT_l_client_identity(struct sess *, const char *, ...);
 struct sockaddr * VRT_r_server_ip(struct sess *);
 const char * VRT_r_server_hostname(struct sess *);
 const char * VRT_r_server_identity(struct sess *);

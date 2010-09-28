@@ -1,5 +1,5 @@
 /*
- * $Id: vcc_gen_fixed_token.tcl 4428 2010-01-06 17:38:59Z tfheen $
+ * $Id: vcc_gen_fixed_token.tcl 5171 2010-09-06 14:11:53Z martin $
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
@@ -15,6 +15,14 @@ struct var vcc_vars[] = {
 	    "VRT_r_client_ip(sp)",
 	    NULL,
 	    V_RO,	    0,
+	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
+	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+	     | VCL_MET_ERROR
+	},
+	{ "client.identity", STRING, 15,
+	    "VRT_r_client_identity(sp)",
+	    "VRT_l_client_identity(sp, ",
+	    V_RW,	    0,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH
 	     | VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
 	     | VCL_MET_ERROR

@@ -92,6 +92,11 @@ set spobj {
 	all
 	"const struct sess *"
     }
+    { client.identity			STRING
+	RW
+	all
+	"struct sess *"
+    }
     { server.ip				IP
 	RO
 	all

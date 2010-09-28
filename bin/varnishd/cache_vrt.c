@@ -372,7 +372,7 @@ VRT_r_resp_status(const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#define VBEREQ(dir, type,onm,field)					\
+#define VBEREQ(dir, type, onm, field)					\
 void									\
 VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
 {									\
@@ -389,6 +389,30 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 
 VBEREQ(beresp, unsigned, cacheable, cacheable)
 VBEREQ(beresp, double, grace, grace)
+
+/*--------------------------------------------------------------------*/
+
+const char *
+VRT_r_client_identity(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->client_identity != NULL)
+		return (sp->client_identity);
+	else
+		return (sp->addr);
+}
+
+void
+VRT_l_client_identity(struct sess *sp, const char *str, ...)
+{
+	va_list ap;
+	char *b;
+
+	va_start(ap, str);
+	b = vrt_assemble_string(sp->http, NULL, str, ap);
+	va_end(ap);
+	sp->client_identity = b;
+}
 
 /*--------------------------------------------------------------------
  * XXX: Working relative to t_req is maybe not the right thing, we could
