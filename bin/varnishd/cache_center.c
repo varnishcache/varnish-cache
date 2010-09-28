@@ -402,7 +402,7 @@ DOT		label="fetch from backend\n(find obj.ttl)"
 DOT	]
 DOT	vcl_fetch [
 DOT		shape=record
-DOT		label="vcl_fetch()|req.\nobj.\nbereq.\nberesp."
+DOT		label="vcl_fetch()|req.\nbereq.\nberesp."
 DOT	]
 DOT	fetch -> vcl_fetch [style=bold,color=blue,weight=2]
 DOT	fetch_pass [
