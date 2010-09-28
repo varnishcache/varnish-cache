@@ -78,6 +78,7 @@ VBE_ReleaseConn(struct vbe_conn *vc)
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
 
+	vc->recycled = 0;
 	if (params->cache_vbe_conns) {
 		Lck_Lock(&VBE_mtx);
 		VTAILQ_INSERT_HEAD(&vbe_conns, vc, list);
@@ -339,11 +340,15 @@ vbe_GetVbe(struct sess *sp, struct backend *bp)
 			VSL_stats->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
+			vc->recycled = 1;
 			return (vc);
 		}
 		VSL_stats->backend_toolate++;
-		sp->vbe = vc;
-		VBE_CloseFd(sp);
+		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
+		TCP_close(&vc->fd);
+		VBE_DropRefConn(bp);
+		vc->backend = NULL;
+		VBE_ReleaseConn(vc);
 	}
 
 	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, bp)) {

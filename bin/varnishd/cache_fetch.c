@@ -325,7 +325,15 @@ FetchReqBody(struct sess *sp)
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Send request, and receive the HTTP protocol response, but not the
+ * response body.
+ *
+ * Return value:
+ *	-1 failure, not retryable
+ *	 0 success
+ *	 1 failure which can be retried.
+ */
 
 int
 FetchHdr(struct sess *sp)
@@ -334,35 +342,38 @@ FetchHdr(struct sess *sp)
 	struct worker *w;
 	char *b;
 	struct http *hp;
+	int retry = -1;
 	int i;
-	double tmo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
+
 	AN(sp->director);
 	AZ(sp->obj);
+
 	if (sp->objcore != NULL) {		/* pass has no objcore */
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		AN(sp->objhead);		/* details in hash_slinger.h */
 		AN(sp->objcore->flags & OC_F_BUSY);
 	}
 
-	/* Transmit request */
-
-	w = sp->wrk;
 	hp = sp->wrk->bereq;
 
 	sp->vbe = VBE_GetFd(NULL, sp);
 	if (sp->vbe == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
-		return (__LINE__);
+		return (-1);
 	}
 	vc = sp->vbe;
+	if (vc->recycled)
+		retry = 1;
+		
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
-	 * header if one is necessary.
-	 * XXX: This possibly ought to go into the default VCL
+	 * header if one is necessary.  This cannot be done in the VCL
+	 * because the backend may be chosen by a director.
 	 */
 	if (!http_GetHdr(hp, H_Host, &b))
 		VBE_AddHostHeader(sp);
@@ -374,10 +385,11 @@ FetchHdr(struct sess *sp)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
 	if (WRW_FlushRelease(w) || i > 0) {
-		WSP(sp, SLT_FetchError, "backend write error: %d", errno);
+		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
+		    errno, strerror(errno));
 		VBE_CloseFd(sp);
 		/* XXX: other cleanup ? */
-		return (__LINE__);
+		return (retry);
 	}
 
 	/* Checkpoint the shmlog here */
@@ -391,23 +403,31 @@ FetchHdr(struct sess *sp)
 	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd);
 
 	TCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
-	tmo = vc->first_byte_timeout;
 
-	do {
+	i = HTC_Rx(sp->wrk->htc);
+
+	if (i < 0) {
+		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
+		    i, errno, strerror(errno));
+		VBE_CloseFd(sp);
+		/* XXX: other cleanup ? */
+		/* Retryable if we never received anything */
+		return (i == -1 ? retry : -1);
+	}
+
+	TCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
+
+	while (i == 0) {
 		i = HTC_Rx(sp->wrk->htc);
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
-			    "http read error: %d (%s)", errno, strerror(errno));
+			    "http first read error: %d %d (%s)",
+			    i, errno, strerror(errno));
 			VBE_CloseFd(sp);
 			/* XXX: other cleanup ? */
-			return (__LINE__);
+			return (-1);
 		}
-
-		if (vc->between_bytes_timeout != tmo) {
-			TCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
-			tmo = vc->between_bytes_timeout;
-		}
-	} while (i == 0);
+	}
 
 	hp = sp->wrk->beresp;
 
@@ -415,7 +435,7 @@ FetchHdr(struct sess *sp)
 		WSP(sp, SLT_FetchError, "http format error");
 		VBE_CloseFd(sp);
 		/* XXX: other cleanup ? */
-		return (__LINE__);
+		return (-1);
 	}
 	return (0);
 }
