@@ -215,7 +215,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	struct vsb *token_exp[MAX_TOKENS];
-	char *p, *q;
+	char *p, *q, *f;
 	int nest_brace;
 	int tn;
 	const struct cmds *cp;
@@ -237,6 +237,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 
 		/* First content on line, collect tokens */
 		tn = 0;
+		f = p;
 		while (*p != '\0') {
 			assert(tn < MAX_TOKENS);
 			if (*p == '\n') { /* End on NL */
@@ -261,8 +262,9 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 						q++;
 					} else {
 						if (*p == '\n')
-							fprintf(stderr,
-				"Unterminated quoted string in line:\n%s", p);
+							vtc_log(vl, 0,
+				"Unterminated quoted string in line: %*.*s",
+				(int)(p - f), (int)(p - f), f);
 						assert(*p != '\n');
 						*q++ = *p;
 					}
