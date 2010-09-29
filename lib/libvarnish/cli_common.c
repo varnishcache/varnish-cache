@@ -90,6 +90,7 @@ cli_writeres(int fd, const struct cli *cli)
 {
 	int i, l;
 	struct iovec iov[3];
+	char nl[2] = "\n";
 	char res[CLI_LINE0_LEN + 2];	/*
 					 * NUL + one more so we can catch
 					 * any misformats by snprintf
@@ -97,16 +98,22 @@ cli_writeres(int fd, const struct cli *cli)
 
 	assert(cli->result >= 100);
 	assert(cli->result <= 999);	/*lint !e650 const out of range */
+
 	i = snprintf(res, sizeof res,
 	    "%-3d %-8d\n", cli->result, vsb_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
-	iov[0].iov_base = (void*)(uintptr_t)res;
-	iov[1].iov_base = (void*)(uintptr_t)vsb_data(cli->sb);
-	iov[2].iov_base = (void*)(uintptr_t)"\n";
-	for (l = i = 0; i < 3; i++) {
-		iov[i].iov_len = strlen(iov[i].iov_base);
+
+	iov[0].iov_base = res;
+	iov[0].iov_len = CLI_LINE0_LEN;
+
+	iov[1].iov_base = vsb_data(cli->sb);
+	iov[1].iov_len = vsb_len(cli->sb);
+
+	iov[2].iov_base = nl;
+	iov[2].iov_len = 1;
+
+	for (l = i = 0; i < 3; i++)
 		l += iov[i].iov_len;
-	}
 	i = writev(fd, iov, 3);
 	return (i != l);
 }
