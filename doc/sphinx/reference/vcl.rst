@@ -139,7 +139,31 @@ of traffic to send to the particular backend.
 The round-robin director
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The round-robin does not take any options.
+The round-robin director does not take any options.
+
+The client director
+~~~~~~~~~~~~~~~~~~~
+
+The client director picks a backend based on the clients
+*identity*. You can set the VCL variable *client.identity* to identify
+the client by picking up the value of a session cookie or similar.
+
+Note: in 2.1 *client.identity* isn't available and the director will
+use client.ip to distribute clients across backends.
+
+The client director takes no options.
+
+The hash director
+~~~~~~~~~~~~~~~~~
+
+The hash director will pick a backend based on the URL hash
+value. 
+
+This is useful is you are using Varnish to load balance in front of
+other Varnish caches or other web accelerators as objects won't be
+duplicated across caches.
+
+The hash director takes no options.
 
 Backend probes
 --------------
