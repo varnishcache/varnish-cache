@@ -72,6 +72,10 @@ TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen,
 	i = getnameinfo(addr, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
+		/*
+		 * XXX this printf is shitty, but we may not have space
+		 * for the gai_strerror in the bufffer :-(
+		 */
 		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
 		strlcpy(abuf, "Conversion", alen);
 		strlcpy(pbuf, "Failed", plen);
