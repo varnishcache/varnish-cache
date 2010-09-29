@@ -23,7 +23,7 @@ The varnishtest program is a script driven program used to test the
 varnish HTTP accelerator.
 
 The varnishtest program, when started and given one or more script
-files, can create a number of threads repre senting backends, some
+files, can create a number of threads representing backends, some
 threads representing clients, and a varnishd process.
 
 The following options are available:

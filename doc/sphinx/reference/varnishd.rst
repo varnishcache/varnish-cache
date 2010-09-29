@@ -33,7 +33,7 @@ OPTIONS
 =======
 
 -a address[:port][,address[:port][...]
-            Listen for client requests on the specified address and port.  The address can be a host
+	    Listen for client requests on the specified address and port.  The address can be a host
             name (“localhost”), an IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address enclosed in
             square brackets (“[::1]”).  If address is not specified, varnishd will listen on all
             available IPv4 and IPv6 interfaces.  If port is not specified, the default HTTP port as
@@ -93,24 +93,30 @@ OPTIONS
             Offer a management interface on the specified address and port.  See Management
             Interface for a list of management commands.
 
--t ttl      Specifies a hard minimum time to live for cached documents.  This is a shortcut for
+-t ttl      
+   	    Specifies a hard minimum time to live for cached documents.  This is a shortcut for
             specifying the default_ttl run-time parameter.
 
--u user     Specifies the name of an unprivileged user to which the child process should switch
-            before it starts accepting connections.  This is a shortcut for specifying the user run-
-            time parameter.
+-u user     Specifies the name of an unprivileged user to which the child
+            process should switch before it starts accepting
+            connections.  This is a shortcut for specifying the user
+            run- time parameter.
 	    
-            If specifying both a user and a group, the user should be specified first.
+            If specifying both a user and a group, the user should be
+            specified first.
 
 -V          Display the version number and exit.
 
 -w min[,max[,timeout]]
-            Start at least min but no more than max worker threads with the specified idle timeout.
-            This is a shortcut for specifying the thread_pool_min, thread_pool_max and
+
+            Start at least min but no more than max worker threads
+            with the specified idle timeout.  This is a shortcut for
+            specifying the thread_pool_min, thread_pool_max and
             thread_pool_timeout run-time parameters.
 
-            If only one number is specified, thread_pool_min and thread_pool_max are both set to
-            this number, and thread_pool_timeout has no effect.
+            If only one number is specified, thread_pool_min and
+            thread_pool_max are both set to this number, and
+            thread_pool_timeout has no effect.
 
 
 
