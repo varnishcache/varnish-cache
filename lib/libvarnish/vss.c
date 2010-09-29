@@ -79,7 +79,10 @@ struct vss_addr {
  * "0.0.0.0" - "0.0.0.0:80"
  * "[::1]" - "[::1]:80"
  * "[::]" - "[::]:80"
+ *
+ * See also RFC5952
  */
+
 int
 VSS_parse(const char *str, char **addr, char **port)
 {
@@ -131,6 +134,9 @@ VSS_parse(const char *str, char **addr, char **port)
  *
  * The return value is the number of addresses resoved, or zero.
  *
+ * If the addr argument contains a port specification, that takes
+ * precedence over the port argument.
+ *
  * XXX: We need a function to free the allocated addresses.
  */
 int
@@ -139,15 +145,27 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	struct addrinfo hints, *res0, *res;
 	struct vss_addr **va;
 	int i, ret;
+	char *adp, *hop;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
-	ret = getaddrinfo(addr, port, &hints, &res0);
-	if (ret != 0) {
-		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ret));
+
+	ret = VSS_parse(addr, &hop, &adp);
+	if (ret)
 		return (0);
-	}
+
+	if (adp == NULL)
+		ret = getaddrinfo(addr, port, &hints, &res0);
+	else
+		ret = getaddrinfo(hop, adp, &hints, &res0);
+
+	free(hop);
+	free(adp);
+
+	if (ret != 0)
+		return (0);
+
 	XXXAN(res0);
 	for (res = res0, i = 0; res != NULL; res = res->ai_next, ++i)
 		/* nothing */ ;

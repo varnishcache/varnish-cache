@@ -60,9 +60,11 @@ SVNID("$Id$")
 #include <netdb.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "vsb.h"
+#include "vss.h"
 
 #include "vcc_priv.h"
 #include "vcc_compile.h"
@@ -73,22 +75,6 @@ struct host {
 	struct token            *name;
 	char			*vgcname;
 };
-
-static const char *
-CheckHostPort(const char *host, const char *port)
-{
-	struct addrinfo *res, hint;
-	int error;
-
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
-	error = getaddrinfo(host, port, &hint, &res);
-	if (error)
-		return (gai_strerror(error));
-	freeaddrinfo(res);
-	return (NULL);
-}
 
 static int
 emit_sockaddr(struct tokenlist *tl, void *sa, unsigned sal)
@@ -122,21 +108,49 @@ emit_sockaddr(struct tokenlist *tl, void *sa, unsigned sal)
  * and put it in an official sockaddr when we load the VCL.
  */
 
-static void
+#include <stdio.h>
+
+void
 Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
     const char *port)
+
 {
 	struct addrinfo *res, *res0, *res1, hint;
 	int n4, n6, error, retval, x;
 	const char *emit, *multiple;
 	char hbuf[NI_MAXHOST];
+	char *hop, *pop;
 
 	AN(t_host->dec);
 	retval = 0;
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
-	error = getaddrinfo(t_host->dec, port, &hint, &res0);
+
+	if (VSS_parse(t_host->dec, &hop, &pop)) {
+		vsb_printf(tl->sb,
+		    "Backend host '%.*s': wrong syntax (unbalanced [...] ?)\n",
+		    PF(t_host) );
+		vcc_ErrWhere(tl, t_host);
+		return;
+	}
+	if (pop != NULL)
+		error = getaddrinfo(hop, pop, &hint, &res0);
+	else
+		error = getaddrinfo(t_host->dec, port, &hint, &res0);
+	free(hop);
+	free(pop);
+	if (error) {
+		vsb_printf(tl->sb,
+		    "Backend host '%.*s'"
+		    " could not be resolved to an IP address:\n", PF(t_host));
+		vsb_printf(tl->sb,
+		    "\t%s\n"
+		    "(Sorry if that error message is gibberish.)\n",
+		    gai_strerror(error));
+		vcc_ErrWhere(tl, t_host);
+		return;
+	}
 	AZ(error);
 	n4 = n6 = 0;
 	multiple = NULL;
@@ -411,7 +425,6 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
 	unsigned saint = UINT_MAX;
-	const char *ep;
 	struct fld_spec *fs;
 	struct vsb *vsb;
 	unsigned u;
@@ -533,26 +546,10 @@ vcc_ParseHostDef(struct tokenlist *tl, int serial, const char *vgcname)
 
 	/* Check that the hostname makes sense */
 	assert(t_host != NULL);
-	ep = CheckHostPort(t_host->dec, "80");
-	if (ep != NULL) {
-		vsb_printf(tl->sb, "Backend host '%.*s': %s\n", PF(t_host), ep);
-		vcc_ErrWhere(tl, t_host);
-		return;
-	}
-
-	/* Check that the portname makes sense */
-	if (t_port != NULL) {
-		ep = CheckHostPort("127.0.0.1", t_port->dec);
-		if (ep != NULL) {
-			vsb_printf(tl->sb,
-			    "Backend port '%.*s': %s\n", PF(t_port), ep);
-			vcc_ErrWhere(tl, t_port);
-			return;
-		}
+	if (t_port != NULL) 
 		Emit_Sockaddr(tl, t_host, t_port->dec);
-	} else {
+	else
 		Emit_Sockaddr(tl, t_host, "80");
-	}
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');

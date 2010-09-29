@@ -327,7 +327,6 @@ mgt_vcc_delbyname(const char *name)
 int
 mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 {
-	char *addr, *port;
 	char *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
@@ -345,26 +344,10 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 		 * XXX: a bug for a backend to not reply at that time, so then
 		 * XXX: again: we should check it here in the "trivial" case.
 		 */
-		if (VSS_parse(b_arg, &addr, &port) != 0 || addr == NULL) {
-			/*
-			 * (addr == NULL && port != NULL) is possible if
-			 * the user incorrectly specified an address such
-			 * as ":80", which is a valid listening address.
-			 * In the future, we may want to interpret this as
-			 * a shortcut for "localhost:80".
-			 */
-			free(port);
-			fprintf(stderr, "invalid backend address\n");
-			return (1);
-		}
-
 		bprintf(buf,
 		    "backend default {\n"
 		    "    .host = \"%s\";\n"
-		    "    .port = \"%s\";\n"
-		    "}\n", addr, port ? port : "http");
-		free(addr);
-		free(port);
+		    "}\n", b_arg);
 		vcl = strdup(buf);
 		AN(vcl);
 	}
