@@ -1,0 +1,18 @@
+# $Id$
+
+test "Vary header with extra colon"
+
+server s1 {
+	rxreq
+	txresp -hdr "Vary:: foo" -hdr "Foo: bar" -bodylen 9
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.vary == ": foo"
+} -run
+
+
