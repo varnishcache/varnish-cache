@@ -129,6 +129,8 @@ CLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		debug = 1;
 	} else {
 		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+			if (cfn->auth > cli->auth)
+				continue;
 			for (cp = cfn->clp; cp->request != NULL; cp++) {
 				if (!strcmp(cp->request, av[2])) {
 					cli_out(cli, "%s\n%s\n",
@@ -148,6 +150,8 @@ CLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
+		if (cfn->auth > cli->auth)
+			continue;
 		for (cp = cfn->clp; cp->request != NULL; cp++) {
 			d = 0;
 			h = 0;
