@@ -262,7 +262,7 @@ There are a number of special subroutines which hook into the Varnish
 workflow.  These subroutines may inspect and manipulate HTTP headers
 and various other aspects of each request, and to a certain extent
 decide how the request should be handled.  Each subroutine terminates
-by calling one of a small number of keywords which indi‐ cates the
+by calling one of a small number of keywords which indicates the
 desired outcome.
 
 vcl_recv
@@ -270,8 +270,9 @@ vcl_recv
   been received and parsed.  Its purpose is to decide whether or not
   to serve the request, how to do it, and, if applicable, which backend
   to use.
-
-  The vcl_recv subroutine may terminate with one of the following keywords:
+  
+  The vcl_recv subroutine may terminate with calling return() on one of
+  the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
@@ -292,8 +293,9 @@ vcl_pipe
   on to the backend, and any further data from either client or
   backend is passed on unaltered until either end closes the
   connection.
-
-  The vcl_pipe subroutine may terminate with one of the following keywords:
+  
+  The vcl_pipe subroutine may terminate with calling return() with one of
+  the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
@@ -306,9 +308,10 @@ vcl_pass
   on to the backend, and the backend's response is passed on to the
   client, but is not entered into the cache.  Subsequent requests sub‐
   mitted over the same client connection are handled normally.
-
-  The vcl_pass subroutine may terminate with one of the following keywords:
-
+  
+  The vcl_recv subroutine may terminate with calling return() with one of
+  the following keywords:
+ 
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
@@ -317,8 +320,10 @@ vcl_pass
 
 vcl_hash
   Use req.hash += req.http.Cookie or similar to include the Cookie HTTP
-  header in the hash string.  The vcl_hash subroutine may terminate with
-  one of the following keywords:
+  header in the hash string.  
+  
+  The vcl_hash subroutine may terminate with calling return() with one of
+  the following keywords:
 
   hash
     Proceed.
@@ -326,7 +331,8 @@ vcl_hash
 vcl_hit
   Called after a cache lookup if the requested document was found in the cache.
 
-  The vcl_hit subroutine may terminate with one of the following keywords:
+  The vcl_hit subroutine may terminate with calling return() with one of
+  the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
@@ -343,7 +349,8 @@ vcl_miss
   in the cache.  Its purpose is to decide whether or not to attempt to
   retrieve the document from the backend, and which backend to use.
 
-  The vcl_miss subroutine may terminate with one of the following keywords:
+  The vcl_miss subroutine may terminate with calling return() with one of
+  the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
@@ -357,8 +364,9 @@ vcl_miss
 
 vcl_fetch
   Called after a document has been successfully retrieved from the backend.
-
-  The vcl_fetch subroutine may terminate with one of the following keywords:
+  
+  The vcl_fetch subroutine may terminate with calling return() with
+  one of the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
