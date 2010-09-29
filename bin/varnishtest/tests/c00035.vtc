@@ -29,7 +29,7 @@ varnish v1 -vcl {
 	}
 } -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
 
-delay .5
+delay 1
 
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.health"
