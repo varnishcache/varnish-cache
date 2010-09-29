@@ -200,14 +200,33 @@ child_poker(const struct vev *e, int what)
 		return (0);
 	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
 		return (0);
-	REPORT(LOG_ERR,
-	    "Child (%jd) not responding to ping, killing it.",
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * If CLI communications with the child process fails, there is nothing
+ * for us to do but to drag it behind the barn and get it over with.
+ *
+ * The typical case is where the child process fails to return a reply
+ * before the cli_timeout expires.  This invalidates the CLI pipes for
+ * all future use, as we don't know if the child was just slow and the
+ * result gets piped later on, or if the child is catatonic.
+ */
+
+void
+MGT_Child_Cli_Fail(void)
+{
+
+	if (child_state != CH_RUNNING)
+		return;
+	if (child_pid < 0)
+		return;
+	REPORT(LOG_ERR, "Child (%jd) not responding to CLI, killing it.",
 	    (intmax_t)child_pid);
 	if (params->diag_bitmap & 0x1000)
 		(void)kill(child_pid, SIGKILL);
 	else
 		(void)kill(child_pid, SIGQUIT);
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/
