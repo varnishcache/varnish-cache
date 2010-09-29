@@ -484,6 +484,12 @@ http_headers
       This space is preallocated in sessions and workthreads only objects allocate only space for the headers
       they store.
 
+http_range
+      Default: off
+      
+      Enables experimental support for the HTTP range header, enabling Varnish to serve parts of 
+      an object to a client. However, Varnish will request the whole object from the backend server.
+
 listen_address
       Default: :80
       Flags: must_restart
