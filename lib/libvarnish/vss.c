@@ -102,6 +102,8 @@ VSS_parse(const char *str, char **addr, char **port)
 	} else {
 		/* IPv4 address of the form 127.0.0.1:80, or non-numeric */
 		p = strchr(str, ':');
+		if (p == NULL)
+			p = strchr(str, ' ');
 		if (p == NULL) {
 			*addr = strdup(str);
 			XXXAN(*addr);

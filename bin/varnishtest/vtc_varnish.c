@@ -277,7 +277,7 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " -p syslog_cli_traffic=off");
 	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");
 	vsb_printf(vsb, " -S %s/_S", v->workdir);
-	vsb_printf(vsb, " -M %s:%s", abuf, pbuf);
+	vsb_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	vsb_printf(vsb, " %s", vsb_data(v->storage));
 	vsb_printf(vsb, " %s", vsb_data(v->args));
@@ -408,7 +408,7 @@ varnish_start(struct varnish *v)
 	vtc_log(v->vl, 2, "Listen on %s %s", h, p);
 	macro_def(v->vl, v->name, "addr", "%s", h);
 	macro_def(v->vl, v->name, "port", "%s", p);
-	macro_def(v->vl, v->name, "sock", "%s:%s", h, p);
+	macro_def(v->vl, v->name, "sock", "%s %s", h, p);
 }
 
 /**********************************************************************

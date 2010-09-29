@@ -443,7 +443,7 @@ sock_id(const char *pfx, int fd)
 	AN(vsb);
 	TCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	vsb_printf(vsb, "%s %s:%s %s:%s", pfx, abuf2, pbuf2, abuf1, pbuf1);
+	vsb_printf(vsb, "%s %s %s %s %s", pfx, abuf2, pbuf2, abuf1, pbuf1);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 	return (vsb);

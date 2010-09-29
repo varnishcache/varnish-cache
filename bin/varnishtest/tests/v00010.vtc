@@ -25,7 +25,7 @@ varnish v1 -storage "-smalloc,1m" -vcl+backend {
 varnish v1 -cliok "param.set diag_bitmap 0x00001000"
 
 # Force the (random) port selected to be used again after restart.
-varnish v1 -cliok "param.set listen_address ${v1_sock}"
+varnish v1 -cliok "param.set listen_address ${v1_addr}:${v1_port}"
 
 # varnishtest defaults to auto_restart off, to avoid masking bugs.
 varnish v1 -cliok "param.set auto_restart on" 
