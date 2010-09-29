@@ -79,5 +79,5 @@ rpmbuild -ts varnish-$VERSION.tar.gz
 This builds a source rpm. Then you can, for example on a RHEL4 system,
 do something like this:
 
-rpmbuild --define "dist el4" --rebuild /path/to/varnish-1.1.2.src.rpm
+rpmbuild --define "dist .el4" --rebuild /path/to/varnish-2.1.4-0.svn20100826r5134.src.rpm
 
