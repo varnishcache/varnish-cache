@@ -10,7 +10,9 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
 #BuildRequires: automake autoconf libtool
-BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
+BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig tex(latex)
+BuildRequires: python-docutils >= 0.6
+BuildRequires: python-sphinx >= 0.6
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
@@ -103,12 +105,9 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 %endif
 
 # Remove "--disable static" if you want to build static libraries 
-# jemalloc is not compatible with Red Hat's ppc* RHEL5 kernel koji server :-(
+# jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
 %ifarch ppc64 ppc
-	if [[ `uname -r` =~ "2.6.18-.*" ]]
-		then %configure --disable-static --localstatedir=/var/lib --disable-jemalloc
-		else %configure --disable-static --localstatedir=/var/lib
-	fi
+	%configure --disable-static --localstatedir=/var/lib --disable-jemalloc
 %else
 	%configure --disable-static --localstatedir=/var/lib
 %endif
@@ -169,8 +168,8 @@ rm -rvf doc/sphinx/\=build/*
 	%endif
 %endif
 
-#LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
-#%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
+LD_LIBRARY_PATH="lib/libvarnish/.libs:lib/libvarnishcompat/.libs:lib/libvarnishapi/.libs:lib/libvcl/.libs" bin/varnishd/varnishd -b 127.0.0.1:80 -C -n /tmp/foo
+%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs"
 
 %install
 rm -rf %{buildroot}
@@ -270,9 +269,9 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
-* Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-0.svn20100730
+* Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-0.svn20100824r5117
 - Replaced specific include files with a wildcard glob
-- Needs python-sphinx to build sphinx documentation
+- Needs python-sphinx and deps to build sphinx documentation
 - Builds html and latex documentation. Put that in a subpackage varnish-docs
 
 * Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.3-1
