@@ -86,6 +86,7 @@ static void
 cli_cb_before(const struct cli *cli)
 {
 
+	ASSERT_CLI();
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
 	VCL_Poll();
 	VBE_Poll();
@@ -95,6 +96,8 @@ cli_cb_before(const struct cli *cli)
 static void
 cli_cb_after(const struct cli *cli)
 {
+
+	ASSERT_CLI();
 	Lck_Unlock(&cli_mtx);
 	VSL(SLT_CLI, 0, "Wr %03u %u %s",
 	    cli->result, vsb_len(cli->sb), vsb_data(cli->sb));
@@ -167,7 +170,6 @@ static struct cli_proto master_cmds[] = {
 		0, 0, "d", ccf_panic },
 	{ NULL }
 };
-
 
 /*--------------------------------------------------------------------
  * Initialize the CLI subsystem
