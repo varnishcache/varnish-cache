@@ -94,6 +94,8 @@ VBE_ReleaseConn(struct vbc *vc)
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
 
+	vc->addr = NULL;
+	vc->addrlen = 0;
 	vc->recycled = 0;
 	if (params->cache_vbcs) {
 		Lck_Lock(&VBE_mtx);
@@ -166,8 +168,8 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 
 /*--------------------------------------------------------------------*/
 
-static int
-bes_conn_try(const struct sess *sp, const struct vdi_simple *vs)
+static void
+bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
@@ -184,20 +186,31 @@ bes_conn_try(const struct sess *sp, const struct vdi_simple *vs)
 
 	/* release lock during stuff that can take a long time */
 
-	if (params->prefer_ipv6 && bp->ipv6 != NULL)
+	if (params->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
-	if (s == -1 && bp->ipv4 != NULL)
+		vc->addr = bp->ipv6;
+		vc->addrlen = bp->ipv6len;
+	}
+	if (s == -1 && bp->ipv4 != NULL) {
 		s = vbe_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, vs);
-	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL)
+		vc->addr = bp->ipv4;
+		vc->addrlen = bp->ipv4len;
+	}
+	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		vc->addr = bp->ipv6;
+		vc->addrlen = bp->ipv6len;
+	}
 
+	vc->fd = s;
 	if (s < 0) {
 		Lck_Lock(&bp->mtx);
 		bp->n_conn--;
 		bp->refcount--;		/* Only keep ref on success */
 		Lck_Unlock(&bp->mtx);
+		vc->addr = NULL;
+		vc->addrlen = 0;
 	}
-	return (s);
 }
 
 /*--------------------------------------------------------------------
@@ -354,6 +367,7 @@ vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
 			bp->refcount++;
 			assert(vc->backend == bp);
 			assert(vc->fd >= 0);
+			AN(vc->addr);
 			VTAILQ_REMOVE(&bp->connlist, vc, list);
 		}
 		Lck_Unlock(&bp->mtx);
@@ -395,7 +409,7 @@ vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
 	vc = vbe_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
-	vc->fd = bes_conn_try(sp, vs);
+	bes_conn_try(sp, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
 		VSC_main->backend_fail++;

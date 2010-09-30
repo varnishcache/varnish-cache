@@ -552,6 +552,40 @@ VRT_r_bereq_between_bytes_timeout(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+const char *
+VRT_r_beresp_backend_name(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	return(sp->vbc->backend->vcl_name);
+}
+
+struct sockaddr *
+VRT_r_beresp_backend_ip(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	return(sp->vbc->addr);
+}
+
+int
+VRT_r_beresp_backend_port(const struct sess *sp)
+{
+	char abuf[TCP_ADDRBUFSIZE];
+	char pbuf[TCP_PORTBUFSIZE];
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
+	TCP_name(sp->vbc->addr, sp->vbc->addrlen,
+	    abuf, sizeof abuf, pbuf, sizeof pbuf);
+
+	return (atoi(pbuf));
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VRT_handling(struct sess *sp, unsigned hand)
 {

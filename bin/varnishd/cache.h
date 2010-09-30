@@ -462,6 +462,9 @@ struct vbc {
 	struct vdi_simple	*vdis;
 	int			fd;
 
+	struct sockaddr		*addr;
+	socklen_t		addrlen;
+
 	uint8_t			recycled;
 
 	/* Timeouts */

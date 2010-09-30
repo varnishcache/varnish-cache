@@ -298,6 +298,24 @@ sp_variables = (
 		( 'fetch',),
 		'const struct sess *'
 	),
+	('beresp.backend.name',
+		'STRING',
+		( 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('beresp.backend.ip',
+		'IP',
+		( 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('beresp.backend.port',
+		'INT',
+		( 'fetch',),
+		( ),
+		'const struct sess *'
+	),
 	('obj.proto',
 		'STRING',
 		( 'hit', 'error',),

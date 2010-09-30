@@ -27,6 +27,11 @@ varnish v1 -vcl+backend {
 		}
 		return (pass);
 	}
+	sub vcl_fetch {
+		set beresp.http.be_ip = beresp.backend.ip;
+		set beresp.http.be_port = beresp.backend.port;
+		set beresp.http.be_name = beresp.backend.name;
+	}
 	sub vcl_deliver {
 		set resp.http.id = client.identity;
 	}
