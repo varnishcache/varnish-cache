@@ -411,29 +411,20 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			oc = grace_oc;
 	}
 
-	if (oc != NULL) {
+	if (oc != NULL && !sp->hash_always_miss) {
 		o = oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
-		if(sp->hash_always_miss) {
-			if (o->ttl >= sp->t_req) {
-				o->ttl = sp->t_req - 1;
-				o->grace = HSH_Grace(sp->grace);
-				EXP_Rearm(o);
-			}
-			o = NULL;
-		} else {
-			/* We found an object we like */
-			oc->refcnt++;
-			if (o->hits < INT_MAX)
-				o->hits++;
-			assert(oh->refcnt > 1);
-			Lck_Unlock(&oh->mtx);
-			assert(hash->deref(oh));
-			*poh = oh;
-			return (oc);
-		}
+		/* We found an object we like */
+		oc->refcnt++;
+		if (o->hits < INT_MAX)
+			o->hits++;
+		assert(oh->refcnt > 1);
+		Lck_Unlock(&oh->mtx);
+		assert(hash->deref(oh));
+		*poh = oh;
+		return (oc);
 	}
 
 	if (busy_oc != NULL && !sp->hash_ignore_busy) {
@@ -461,8 +452,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	/* XXX: Should this not be ..._HEAD now ? */
-	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->objhead = oh;
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
