@@ -286,23 +286,30 @@ waive_privileges(void)
 {
 
 #ifdef HAVE_SETPPRIV
-	priv_set_t *empty;
+	priv_set_t *empty, *minimal;
 
-	if (!(empty = priv_allocset())) {
+	if (!(empty = priv_allocset()) ||
+	    !(minimal = priv_allocset())) {
 		perror("priv_allocset_failed");
 		return;
 	}
 	priv_emptyset(empty);
+	priv_emptyset(minimal);
+
+	/* new privilege, silently ignore any errors if it doesn't exist */
+	priv_addset(minimal, "net_access");
 
 #define SETPPRIV(which, set)				       \
 	if (setppriv(PRIV_SET, which, set))		       \
 		perror("Waiving privileges failed on " #which)
 
-	SETPPRIV(PRIV_LIMIT, empty);
+	/* need to set I after P to avoid SNOCD being set */
+	SETPPRIV(PRIV_LIMIT, minimal);
+	SETPPRIV(PRIV_PERMITTED, minimal); /* implies PRIV_EFFECTIVE */
 	SETPPRIV(PRIV_INHERITABLE, empty);
-	SETPPRIV(PRIV_PERMITTED, empty); /* implies PRIV_EFFECTIVE */
 
 	priv_freeset(empty);
+	priv_freeset(minimal);
 #else
 	return;
 #endif
