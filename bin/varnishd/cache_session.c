@@ -251,6 +251,7 @@ SES_Delete(struct sess *sp)
 {
 	struct acct *b = &sp->acct_ses;
 	struct sessmem *sm;
+	static char noaddr[] = "-";
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
@@ -261,6 +262,10 @@ SES_Delete(struct sess *sp)
 	VSL_stats->n_sess--;			/* XXX: locking ? */
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
+	if (sp->addr == NULL)
+		sp->addr = noaddr;
+	if (sp->port == NULL)
+		sp->port = noaddr;
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
