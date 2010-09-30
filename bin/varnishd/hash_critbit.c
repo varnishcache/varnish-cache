@@ -469,12 +469,10 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u > 0) {
+		if (u > 0)
 			oh->refcnt++;
-		} else {
-			assert(!with_lock);
+		else 
 			with_lock = 1;
-		}
 		Lck_Unlock(&oh->mtx);
 		if (u > 0)
 			return (oh);
