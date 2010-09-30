@@ -490,6 +490,7 @@ FetchBody(struct sess *sp)
 		VBE_CloseFd(sp);
 		return (__LINE__);
 	} else if (http_HdrIs(hp, H_Connection, "keep-alive")) {
+		sp->wrk->stats.fetch_zero++;
 		/*
 		 * If we have Connection: keep-alive, it cannot possibly be
 		 * EOF encoded, and since it is neither length nor chunked
@@ -512,10 +513,10 @@ FetchBody(struct sess *sp)
 		cls = fetch_eof(sp, sp->wrk->htc);
 		mklen = 1;
 	} else {
-		sp->wrk->stats.fetch_zero++;
+		sp->wrk->stats.fetch_eof++;
 		/*
-		 * Assume zero length
-		 * XXX:  ???
+		 * This is what happens when HTTP/1.0 backends claim
+		 * to be HTTP/1.1, assume EOF
 		 */
 		cls = fetch_eof(sp, sp->wrk->htc);
 		mklen = 1;
