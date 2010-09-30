@@ -211,7 +211,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 	if (st != NULL && st->len == 0) {
 		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
-	} else if (st != NULL)
+	} else if (st != NULL && st->len < st->space)
 		STV_trim(st, st->len);
 	return (0);
 }
@@ -276,7 +276,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
-	} else
+	} else 
 		STV_trim(st, st->len);
 
 	return (1);
