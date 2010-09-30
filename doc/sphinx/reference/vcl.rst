@@ -648,7 +648,7 @@ specified:::
    .port = "http";
   }
 
-.. include:: ../../../man/default.vcl
+.. include:: ../../../bin/varnishd/default.vcl
   :literal:
 
 The following example shows how to support multiple sites running on
