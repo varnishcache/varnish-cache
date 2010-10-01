@@ -403,7 +403,7 @@ VRT_r_resp_status(const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#define VBEREQ(dir, type, onm, field)					\
+#define VBERESP(dir, type, onm, field)					\
 void									\
 VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
 {									\
@@ -418,8 +418,8 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 	return (sp->wrk->field);					\
 }
 
-VBEREQ(beresp, unsigned, cacheable, cacheable)
-VBEREQ(beresp, double, grace, grace)
+VBERESP(beresp, unsigned, cacheable, cacheable)
+VBERESP(beresp, double, grace, grace)
 
 /*--------------------------------------------------------------------*/
 
