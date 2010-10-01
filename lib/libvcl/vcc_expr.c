@@ -702,7 +702,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
-		    "\v+VRT_String(sp,\n\v1,\nvrt_magic_string_end)", *e, NULL);
+		    "\v+VRT_WrkString(sp,\n\v1,\nvrt_magic_string_end)", *e, NULL);
 	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
 

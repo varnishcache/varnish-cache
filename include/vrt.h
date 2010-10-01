@@ -221,4 +221,4 @@ const char *VRT_backend_string(struct sess *sp, const struct director *d);
 		return (1);			\
 	} while (0)
 
-const char *VRT_String(const struct sess *sp, const char *p, ...);
+const char *VRT_WrkString(const struct sess *sp, const char *p, ...);

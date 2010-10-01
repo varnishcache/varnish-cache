@@ -43,6 +43,7 @@
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
@@ -707,6 +708,10 @@ void VCL_Poll(void);
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
 #include "vcl_returns.h"
 #undef VCL_MET_MAC
+
+/* cache_vrt.c */
+
+char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 
 /* cache_vrt_esi.c */
 
