@@ -341,7 +341,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->regincl != NULL) {
 			i = VRE_exec(vd->regincl,
 				     (char *)p + SHMLOG_DATA,
-				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     SHMLOG_LEN(p), /* Length */
 				     0, 0, NULL, 0);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
@@ -349,7 +349,7 @@ VSL_NextLog(struct VSL_data *vd, unsigned char **pp)
 		if (vd->regexcl != NULL) {
 			i = VRE_exec(vd->regexcl,
 				     (char *)p + SHMLOG_DATA,
-				     SHMLOG_LEN(p) - SHMLOG_DATA, /* Length */
+				     SHMLOG_LEN(p), /* Length */
 				     0, 0, NULL, 0);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
