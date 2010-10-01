@@ -63,6 +63,24 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
+int
+TCP_port(const struct sockaddr *addr)
+{
+
+	if (addr->sa_family == AF_INET) {
+		const struct sockaddr_in *ain = (const void *)addr;
+		return ntohs((ain->sin_port));
+	}
+	if (addr->sa_family == AF_INET6) {
+		const struct sockaddr_in6 *ain = (const void *)addr;
+		return ntohs((ain->sin6_port));
+	}
+	return (-1);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 void
 TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen,
     char *pbuf, unsigned plen)

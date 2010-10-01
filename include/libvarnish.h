@@ -76,6 +76,7 @@ int TCP_blocking(int sock);
 int TCP_nonblocking(int sock);
 int TCP_linger(int sock, int linger);
 #ifdef SOL_SOCKET
+int TCP_port(const struct sockaddr *addr);
 void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);
 int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen,

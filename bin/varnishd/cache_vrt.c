@@ -573,15 +573,10 @@ VRT_r_beresp_backend_ip(const struct sess *sp)
 int
 VRT_r_beresp_backend_port(const struct sess *sp)
 {
-	char abuf[TCP_ADDRBUFSIZE];
-	char pbuf[TCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	TCP_name(sp->vbc->addr, sp->vbc->addrlen,
-	    abuf, sizeof abuf, pbuf, sizeof pbuf);
-
-	return (atoi(pbuf));
+	return (TCP_port(sp->vbc->addr));
 }
 
 /*--------------------------------------------------------------------*/
@@ -856,7 +851,7 @@ VRT_r_server_hostname(struct sess *sp)
 	(void)sp;
 
 	if (vrt_hostname[0] == '\0')
-		AZ(gethostname(vrt_hostname, 255));
+		AZ(gethostname(vrt_hostname, sizeof(vrt_hostname)));
 
 	return (vrt_hostname);
 }
@@ -868,15 +863,10 @@ VRT_r_server_hostname(struct sess *sp)
 int
 VRT_r_server_port(struct sess *sp)
 {
-	char abuf[TCP_ADDRBUFSIZE];
-	char pbuf[TCP_PORTBUFSIZE];
 
 	if (sp->mysockaddr->sa_family == AF_UNSPEC)
 		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
-	TCP_name(sp->mysockaddr, sp->mysockaddrlen,
-	    abuf, sizeof abuf, pbuf, sizeof pbuf);
-
-	return (atoi(pbuf));
+	return (TCP_port(sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------
