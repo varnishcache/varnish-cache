@@ -293,16 +293,30 @@ VRT_DO_HDR(beresp,  response,	sp->wrk->beresp,	HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 
-/* XXX: review this */
-
-void
-VRT_l_obj_status(const struct sess *sp, int num)
-{
-
-	assert(num >= 100 && num <= 999);
-	sp->obj->http->status = num;
+#define VRT_DO_STATUS(obj, http)				\
+void								\
+VRT_l_##obj##_status(const struct sess *sp, int num)		\
+{								\
+								\
+	assert(num >= 100 && num <= 999);			\
+	http->status = num;					\
+}								\
+								\
+int								\
+VRT_r_##obj##_status(const struct sess *sp)			\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	return(http->status);					\
 }
 
+VRT_DO_STATUS(obj, sp->obj->http);
+VRT_DO_STATUS(beresp, sp->wrk->beresp);
+VRT_DO_STATUS(resp, sp->wrk->resp);
+
+/*--------------------------------------------------------------------*/
+
+/* XXX: review this */
 /* Add an objecthead to the saintmode list for the (hopefully) relevant
  * backend. Some double-up asserting here to avoid assert-errors when there
  * is no object.
@@ -356,33 +370,6 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	Lck_Unlock(&sp->vbc->backend->mtx);
 }
-
-int
-VRT_r_obj_status(const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	return (sp->obj->http->status);
-}
-
-void
-VRT_l_resp_status(const struct sess *sp, int num)
-{
-
-	assert(num >= 100 && num <= 999);
-	sp->wrk->resp->status = num;
-}
-
-int
-VRT_r_resp_status(const struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->resp, HTTP_MAGIC);
-	return (sp->wrk->resp->status);
-}
-
 /*--------------------------------------------------------------------*/
 
 #define VBERESP(dir, type, onm, field)					\
@@ -461,21 +448,6 @@ VRT_r_beresp_ttl(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp->wrk->ttl - sp->t_req);
-}
-
-void
-VRT_l_beresp_status(const struct sess *sp, int num)
-{
-
-	assert(num >= 100 && num <= 999);
-	sp->wrk->beresp->status = num;
-}
-
-int
-VRT_r_beresp_status(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->beresp->status);
 }
 
 
