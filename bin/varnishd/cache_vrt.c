@@ -709,10 +709,12 @@ void
 VRT_l_req_esi(struct sess *sp, unsigned process_esi)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	/* only allow you to turn of esi in the main request
-	   else everything gets confused */
+	/*
+	 * Only allow you to turn of esi in the main request
+	 * else everything gets confused
+	 */
 	if(sp->esis == 0)
-	   sp->disable_esi = !process_esi;
+		sp->disable_esi = !process_esi;
 }
 
 unsigned
@@ -781,15 +783,17 @@ VRT_r_req_xid(struct sess *sp)
 void
 VRT_l_req_hash_ignore_busy(struct sess *sp, unsigned ignore_busy)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_ignore_busy = !!ignore_busy;
+	sp->hash_ignore_busy = ignore_busy;
 }
 
 unsigned
 VRT_r_req_hash_ignore_busy(struct sess *sp)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return sp->hash_ignore_busy;
+	return (sp->hash_ignore_busy);
 }
 
 /*--------------------------------------------------------------------
@@ -799,15 +803,17 @@ VRT_r_req_hash_ignore_busy(struct sess *sp)
 void
 VRT_l_req_hash_always_miss(struct sess *sp, unsigned always_miss)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_always_miss = !!always_miss;
+	sp->hash_always_miss = always_miss;
 }
 
 unsigned
 VRT_r_req_hash_always_miss(struct sess *sp)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return sp->hash_always_miss;
+	return (sp->hash_always_miss);
 }
 
 /*--------------------------------------------------------------------*/

@@ -1049,6 +1049,8 @@ cnt_recv(struct sess *sp)
 
 	sp->disable_esi = 0;
 	sp->pass = 0;
+	sp->hash_always_miss = 0;
+	sp->hash_ignore_busy = 0;
 	sp->client_identity = NULL;
 
 	VCL_recv_method(sp);
