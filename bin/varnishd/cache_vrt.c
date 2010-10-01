@@ -450,48 +450,28 @@ VRT_r_beresp_ttl(const struct sess *sp)
 	return (sp->wrk->ttl - sp->t_req);
 }
 
+/*--------------------------------------------------------------------*/
 
-void
-VRT_l_bereq_connect_timeout(struct sess *sp, double num)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->wrk->connect_timeout = (num > 0 ? num : 0);
+#define BEREQ_TIMEOUT(which)					\
+void								\
+VRT_l_bereq_##which(struct sess *sp, double num)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	sp->wrk->which = (num > 0.0 ? num : 0.0);		\
+}								\
+								\
+double								\
+VRT_r_bereq_##which(struct sess *sp)				\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	return(sp->wrk->which);					\
 }
 
-double
-VRT_r_bereq_connect_timeout(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->connect_timeout);
-}
-
-void
-VRT_l_bereq_first_byte_timeout(struct sess *sp, double num)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->wrk->first_byte_timeout = (num > 0 ? num : 0);
-}
-
-double
-VRT_r_bereq_first_byte_timeout(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->first_byte_timeout);
-}
-
-void
-VRT_l_bereq_between_bytes_timeout(struct sess *sp, double num)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->wrk->between_bytes_timeout = (num > 0 ? num : 0);
-}
-
-double
-VRT_r_bereq_between_bytes_timeout(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->between_bytes_timeout);
-}
+BEREQ_TIMEOUT(connect_timeout)
+BEREQ_TIMEOUT(first_byte_timeout)
+BEREQ_TIMEOUT(between_bytes_timeout)
 
 /*--------------------------------------------------------------------*/
 
