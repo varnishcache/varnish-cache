@@ -337,7 +337,6 @@ int
 http_GetStatus(const struct http *hp)
 {
 
-	Tcheck(hp->hd[HTTP_HDR_STATUS]);
 	return (hp->status);
 }
 
@@ -615,24 +614,24 @@ http_ForceGet(const struct http *to)
 }
 
 void
-http_CopyResp(const struct http *to, const struct http *fm)
+http_CopyResp(struct http *to, const struct http *fm)
 {
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	http_copyh(to, fm, HTTP_HDR_STATUS);
+	to->status = fm->status;
 	http_copyh(to, fm, HTTP_HDR_RESPONSE);
 }
 
 void
-http_SetResp(const struct http *to, const char *proto, const char *status,
+http_SetResp(struct http *to, const char *proto, int status,
     const char *response)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, proto);
-	http_SetH(to, HTTP_HDR_STATUS, status);
+	to->status = status;
 	http_SetH(to, HTTP_HDR_RESPONSE, response);
 }
 
@@ -828,13 +827,10 @@ http_PutProtocol(struct worker *w, int fd, const struct http *to,
 }
 
 void
-http_PutStatus(struct worker *w, int fd, struct http *to, int status)
+http_PutStatus(struct http *to, int status)
 {
-	char stat[4];
 
 	assert(status >= 0 && status <= 999);
-	sprintf(stat, "%d", status);
-	http_PutField(w, fd, to, HTTP_HDR_STATUS, stat);
 	to->status = status;
 }
 
@@ -915,11 +911,18 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 	unsigned u, l;
 
 	if (resp) {
-		AN(hp->hd[HTTP_HDR_STATUS].b);
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
 		WSLH(w, *w->wfd, hp, HTTP_HDR_PROTO);
+
+		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(w->ws, 4);
+		AN(hp->hd[HTTP_HDR_STATUS].b);
+
+		sprintf(hp->hd[HTTP_HDR_STATUS].b, "%3d", hp->status);
+		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
+
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
 		WSLH(w, *w->wfd, hp, HTTP_HDR_STATUS);
+
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
 		WSLH(w, *w->wfd, hp, HTTP_HDR_RESPONSE);
 	} else {

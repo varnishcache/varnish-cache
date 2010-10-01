@@ -298,15 +298,8 @@ VRT_DO_HDR(beresp,  response,	sp->wrk->beresp,	HTTP_HDR_RESPONSE)
 void
 VRT_l_obj_status(const struct sess *sp, int num)
 {
-	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->obj->http->ws, 4);
-	if (p == NULL)
-		WSP(sp, SLT_LostHeader, "%s", "obj.status");
-	else
-		sprintf(p, "%d", num);
-	http_SetH(sp->obj->http, HTTP_HDR_STATUS, p);
 	sp->obj->http->status = num;
 }
 
@@ -367,38 +360,27 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 int
 VRT_r_obj_status(const struct sess *sp)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	/* XXX: use http_GetStatus() */
-	if (sp->obj->http->status)
-		return (sp->obj->http->status);
-	AN(sp->obj->http->hd[HTTP_HDR_STATUS].b);
-	return (atoi(sp->obj->http->hd[HTTP_HDR_STATUS].b));
+	return (sp->obj->http->status);
 }
 
 void
 VRT_l_resp_status(const struct sess *sp, int num)
 {
-	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->wrk->ws, 4);
-	if (p == NULL)
-		WSP(sp, SLT_LostHeader, "%s", "resp.status");
-	else
-		sprintf(p, "%d", num);
-	http_SetH(sp->wrk->resp, HTTP_HDR_STATUS, p);
 	sp->wrk->resp->status = num;
 }
 
 int
 VRT_r_resp_status(const struct sess *sp)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->resp, HTTP_MAGIC);
-	if (sp->wrk->resp->status)
-		return (sp->wrk->resp->status);
-	return (atoi(sp->wrk->resp->hd[HTTP_HDR_STATUS].b));
+	return (sp->wrk->resp->status);
 }
 
 /*--------------------------------------------------------------------*/
@@ -484,15 +466,8 @@ VRT_r_beresp_ttl(const struct sess *sp)
 void
 VRT_l_beresp_status(const struct sess *sp, int num)
 {
-	char *p;
 
 	assert(num >= 100 && num <= 999);
-	p = WS_Alloc(sp->wrk->beresp->ws, 4);
-	if (p == NULL)
-		WSP(sp, SLT_LostHeader, "%s", "obj.status");
-	else
-		sprintf(p, "%d", num);
-	http_SetH(sp->wrk->beresp, HTTP_HDR_STATUS, p);
 	sp->wrk->beresp->status = num;
 }
 
@@ -500,11 +475,7 @@ int
 VRT_r_beresp_status(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	/* XXX: use http_GetStatus() */
-	if (sp->wrk->beresp->status)
-		return (sp->wrk->beresp->status);
-	AN(sp->wrk->beresp->hd[HTTP_HDR_STATUS].b);
-	return (atoi(sp->wrk->beresp->hd[HTTP_HDR_STATUS].b));
+	return (sp->wrk->beresp->status);
 }
 
 
@@ -780,7 +751,7 @@ VRT_l_req_hash_ignore_busy(struct sess *sp, unsigned ignore_busy)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_ignore_busy = ignore_busy;
+	sp->hash_ignore_busy = ignore_busy ? 1 : 0;
 }
 
 unsigned
@@ -800,7 +771,7 @@ VRT_l_req_hash_always_miss(struct sess *sp, unsigned always_miss)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_always_miss = always_miss;
+	sp->hash_always_miss = always_miss ? 1 : 0;
 }
 
 unsigned

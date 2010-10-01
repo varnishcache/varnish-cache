@@ -65,6 +65,11 @@
 #include "vsc.h"
 #include "vsl.h"
 
+/*
+ * NB: HDR_STATUS is only used in cache_http.c, everybody else uses the
+ * http->status integer field.
+ */
+
 enum {
 	/* Fields from the first line of HTTP proto */
 	HTTP_HDR_REQ,
@@ -551,15 +556,15 @@ unsigned http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);
-void http_CopyResp(const struct http *to, const struct http *fm);
-void http_SetResp(const struct http *to, const char *proto, const char *status,
+void http_CopyResp(struct http *to, const struct http *fm);
+void http_SetResp(struct http *to, const char *proto, int status,
     const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
 void http_PutProtocol(struct worker *w, int fd, const struct http *to,
     const char *protocol);
-void http_PutStatus(struct worker *w, int fd, struct http *to, int status);
+void http_PutStatus(struct http *to, int status);
 void http_PutResponse(struct worker *w, int fd, const struct http *to,
     const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to,

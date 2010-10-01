@@ -354,7 +354,7 @@ cnt_error(struct sess *sp)
 		sp->err_code = 501;
 
 	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
-	http_PutStatus(w, sp->fd, h, sp->err_code);
+	http_PutStatus(h, sp->err_code);
 	TIM_format(TIM_real(), date);
 	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
 	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");

@@ -51,7 +51,7 @@ res_do_304(struct sess *sp)
 
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
-	http_SetResp(sp->wrk->resp, "HTTP/1.1", "304", "Not Modified");
+	http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
 	TIM_format(sp->t_req, lm);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", lm);
 	http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp, "Via: 1.1 varnish");
@@ -181,7 +181,7 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 	http_Unset(sp->wrk->resp, H_Content_Length);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 	    "Content-Length: %u", 1 + high - low);
-	http_SetResp(sp->wrk->resp, "HTTP/1.1", "206", "Partial Content");
+	http_SetResp(sp->wrk->resp, "HTTP/1.1", 206, "Partial Content");
 
 
 	*plow = low;
