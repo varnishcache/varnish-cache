@@ -1,4 +1,6 @@
 # $Id$
+# We can't test the value of x-timestamp, but this should fail
+# if we can't set the header at all.
 
 test "Test formatting of timestamps"
 
@@ -10,6 +12,9 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		error 200 req.grace;
+	}
+	sub vcl_error {
+		set obj.http.x-timestamp = now;
 	}
 } -start
 
