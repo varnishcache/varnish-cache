@@ -388,7 +388,6 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 }
 
 VBERESP(beresp, unsigned, cacheable, cacheable)
-VBERESP(beresp, double, grace, grace)
 
 /*--------------------------------------------------------------------*/
 
@@ -557,31 +556,6 @@ VRT_r_obj_ttl(const struct sess *sp)
 	return (sp->obj->ttl - sp->t_req);
 }
 
-/*--------------------------------------------------------------------
- * obj.grace is relative to obj.ttl, so no special magic is necessary.
- */
-
-void
-VRT_l_obj_grace(const struct sess *sp, double a)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	if (a < 0)
-		a = 0;
-	sp->obj->grace = a;
-	EXP_Rearm(sp->obj);
-}
-
-double
-VRT_r_obj_grace(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	if (isnan(sp->obj->grace))
-		return ((double)params->default_grace);
-	return (sp->obj->grace);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -652,29 +626,31 @@ VRT_r_req_restarts(const struct sess *sp)
 	return (sp->restarts);
 }
 
-/*--------------------------------------------------------------------
- * req.grace
- */
+/*--------------------------------------------------------------------*/
 
-void
-VRT_l_req_grace(struct sess *sp, double a)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (a < 0)
-		a = 0;
-	sp->grace = a;
+#define VRT_DO_GRACE(which, fld, extra)				\
+void								\
+VRT_l_##which##_grace(struct sess *sp, double a)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	fld = a >= 0.0 ? a : NAN;				\
+	extra;							\
+}								\
+								\
+double								\
+VRT_r_##which##_grace(struct sess *sp)				\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	if (isnan(fld))						\
+		 return ((double)params->default_grace);	\
+	return(fld);						\
 }
 
-/*lint -e{818} sp could be const */
-double
-VRT_r_req_grace(struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (isnan(sp->grace))
-		return ((double)params->default_grace);
-	return (sp->grace);
-}
+VRT_DO_GRACE(req, sp->grace, )
+VRT_DO_GRACE(obj, sp->obj->grace, EXP_Rearm(sp->obj))
+VRT_DO_GRACE(beresp, sp->wrk->grace, )
 
 /*--------------------------------------------------------------------
  * req.xid
@@ -694,45 +670,27 @@ VRT_r_req_xid(struct sess *sp)
 	return (p);
 }
 
-/*--------------------------------------------------------------------
- * req.hash_ignore_busy
- */
+/*--------------------------------------------------------------------*/
 
-void
-VRT_l_req_hash_ignore_busy(struct sess *sp, unsigned ignore_busy)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_ignore_busy = ignore_busy ? 1 : 0;
+#define REQ_BOOL(which)						\
+void								\
+VRT_l_req_##which(struct sess *sp, unsigned val)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	sp->which = val ? 1 : 0;				\
+}								\
+								\
+unsigned							\
+VRT_r_req_##which(struct sess *sp)				\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	return(sp->which);					\
 }
 
-unsigned
-VRT_r_req_hash_ignore_busy(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->hash_ignore_busy);
-}
-
-/*--------------------------------------------------------------------
- * req.hash_always_miss
- */
-
-void
-VRT_l_req_hash_always_miss(struct sess *sp, unsigned always_miss)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->hash_always_miss = always_miss ? 1 : 0;
-}
-
-unsigned
-VRT_r_req_hash_always_miss(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->hash_always_miss);
-}
+REQ_BOOL(hash_ignore_busy)
+REQ_BOOL(hash_always_miss)
 
 /*--------------------------------------------------------------------*/
 

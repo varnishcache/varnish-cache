@@ -296,7 +296,7 @@ sp_variables = (
 		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'struct sess *'
 	),
 	('beresp.backend.name',
 		'STRING',
@@ -362,7 +362,7 @@ sp_variables = (
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'const struct sess *'
+		'struct sess *'
 	),
 	('obj.lastuse',
 		'DURATION',
