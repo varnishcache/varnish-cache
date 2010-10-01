@@ -117,9 +117,9 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 	return(http->status);					\
 }
 
-VRT_DO_STATUS(obj, sp->obj->http);
-VRT_DO_STATUS(beresp, sp->wrk->beresp);
-VRT_DO_STATUS(resp, sp->wrk->resp);
+VRT_DO_STATUS(obj, sp->obj->http)
+VRT_DO_STATUS(beresp, sp->wrk->beresp)
+VRT_DO_STATUS(resp, sp->wrk->resp)
 
 /*--------------------------------------------------------------------*/
 
