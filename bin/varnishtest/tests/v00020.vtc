@@ -33,3 +33,9 @@ varnish v1 -badvcl {
 
 	}
 }
+
+varnish v1 -badvcl {
+	sub vcl_recv {
+		set req.http.foo = vcl_recv;
+	}
+}
