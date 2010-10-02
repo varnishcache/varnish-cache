@@ -546,6 +546,10 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vcc_NextToken(tl);
 			break;
 		}
+		/*
+		 * XXX: what if var and func/proc had same name ?
+		 * XXX: look for SYM_VAR first for consistency ?
+		 */
 		sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 		if (sym == NULL) {
 			vsb_printf(tl->sb, "Symbol not found: ");
@@ -579,7 +583,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		default:
-			vsb_printf(tl->sb, "Symbol is not a function.\n");
+			vsb_printf(tl->sb,
+			    "Symbol type (%s) wrong in expression.\n",
+			    VCC_SymKind(tl, sym));
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
