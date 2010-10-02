@@ -422,7 +422,7 @@ vcc_ParseProbe(struct vcc *tl)
 	ERRCHK(tl);
 	t_probe = tl->t;
 	vcc_NextToken(tl);
-	vcc_AddDef(tl, t_probe, R_PROBE);
+	vcc_AddDef(tl, t_probe, SYM_PROBE);
 
 	Fh(tl, 0, "\n#define vgc_probe_%.*s\tvgc_probe__%d\n",
 	    PF(t_probe), tl->nprobe);
@@ -554,7 +554,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			Fb(tl, 0, "\t.probe = &vgc_probe_%.*s,\n", PF(tl->t));
-			vcc_AddRef(tl, tl->t, R_PROBE);
+			vcc_AddRef(tl, tl->t, SYM_PROBE);
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
@@ -646,7 +646,7 @@ vcc_ParseBackendHost(struct vcc *tl, int serial, char **nm)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		vcc_AddRef(tl, h->name, R_BACKEND);
+		vcc_AddRef(tl, h->name, SYM_BACKEND);
 		vcc_NextToken(tl);
 		SkipToken(tl, ';');
 		*nm = h->vgcname;
@@ -687,7 +687,7 @@ vcc_ParseSimpleDirector(struct vcc *tl)
 
 	h = TlAlloc(tl, sizeof *h);
 	h->name = tl->t_dir;
-	vcc_AddDef(tl, tl->t_dir, R_BACKEND);
+	vcc_AddDef(tl, tl->t_dir, SYM_BACKEND);
 	sprintf(vgcname, "_%.*s", PF(h->name));
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
@@ -735,7 +735,7 @@ vcc_ParseDirector(struct vcc *tl)
 		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
-		vcc_AddDef(tl, tl->t_dir, R_BACKEND);
+		vcc_AddDef(tl, tl->t_dir, SYM_BACKEND);
 		ExpectErr(tl, ID);		/* ID: policy */
 		tl->t_policy = tl->t;
 		vcc_NextToken(tl);

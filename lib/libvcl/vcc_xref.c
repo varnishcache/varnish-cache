@@ -66,7 +66,6 @@ struct procuse {
 };
 
 struct proc {
-	VTAILQ_ENTRY(proc)	list;
 	VTAILQ_HEAD(,proccall)	calls;
 	VTAILQ_HEAD(,procuse)	uses;
 	struct token		*name;
@@ -77,106 +76,53 @@ struct proc {
 	struct token		*return_tok[VCL_RET_MAX];
 };
 
-/*--------------------------------------------------------------------*/
-
-static const char *
-vcc_typename(struct vcc *tl, const struct ref *r)
-{
-	switch (r->type) {
-	case R_SUB: return ("subroutine");
-	case R_ACL: return ("acl");
-	case R_BACKEND: return ("backend");
-	case R_PROBE: return ("probe");
-	default:
-		ErrInternal(tl);
-		vsb_printf(tl->sb, "Ref ");
-		vcc_ErrToken(tl, r->name);
-		vsb_printf(tl->sb, " has unknown type %d\n",
-		    r->type);
-		return "?";
-	}
-}
-
 /*--------------------------------------------------------------------
  * Keep track of definitions and references
  */
 
-static struct ref *
-vcc_findref(struct vcc *tl, struct token *t, enum ref_type type)
+void
+vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind kind)
 {
-	struct ref *r;
+	struct symbol *sym;
 
-	VTAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->type != type)
-			continue;
-		if (vcc_Teq(r->name, t))
-			return (r);
-	}
-	r = TlAlloc(tl, sizeof *r);
-	assert(r != NULL);
-	r->name = t;
-	r->type = type;
-	VTAILQ_INSERT_TAIL(&tl->refs, r, list);
-	return (r);
+	sym = VCC_GetSymbolTok(tl, t, kind);
+	AN(sym);
+	sym->nref++;
 }
 
 void
-vcc_AddRef(struct vcc *tl, struct token *t, enum ref_type type)
+vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind kind)
 {
+	struct symbol *sym;
 
-	vcc_findref(tl, t, type)->refcnt++;
-}
-
-void
-vcc_AddDef(struct vcc *tl, struct token *t, enum ref_type type)
-{
-	struct ref *r;
-	const char *tp;
-
-	r = vcc_findref(tl, t, type);
-	if (r->defcnt > 0) {
-		tp = vcc_typename(tl, r);
-		vsb_printf(tl->sb, "Multiple definitions of %s \"%.*s\"\n",
-		    tp, PF(t));
-		vcc_ErrWhere(tl, r->name);
-		vsb_printf(tl->sb, "...and\n");
-		vcc_ErrWhere(tl, t);
-	}
-	r->defcnt++;
-	r->name = t;
+	sym = VCC_GetSymbolTok(tl, t, kind);
+	AN(sym);
+	sym->ndef++;
 }
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_checkref(struct vcc *tl, const struct symbol *sym)
+{
+
+	if (sym->ndef == 0 && sym->nref != 0) {
+		vsb_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
+		    VCC_SymKind(tl, sym), PF(sym->def_b));
+		vcc_ErrWhere(tl, sym->def_b);
+	} else if (sym->ndef != 0 && sym->nref == 0) {
+		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
+		    VCC_SymKind(tl, sym), PF(sym->def_b));
+		vcc_ErrWhere(tl, sym->def_b);
+	}
+}
+
 int
 vcc_CheckReferences(struct vcc *tl)
 {
-	struct ref *r;
-	const char *type;
-	int nerr = 0;
-	const char *sep = "";
 
-	VTAILQ_FOREACH(r, &tl->refs, list) {
-		if (r->defcnt != 0 && r->refcnt != 0)
-			continue;
-		nerr++;
-
-		type = vcc_typename(tl, r);
-
-		if (r->defcnt == 0) {
-			vsb_printf(tl->sb,
-			    "%sUndefined %s %.*s, first reference:\n",
-			    sep, type, PF(r->name));
-			vcc_ErrWhere(tl, r->name);
-			continue;
-		}
-
-		vsb_printf(tl->sb, "%sUnused %s %.*s, defined:\n",
-		    sep, type, PF(r->name));
-		vcc_ErrWhere(tl, r->name);
-		sep = "\n";
-	}
-	return (nerr);
+	VCC_WalkSymbols(tl, vcc_checkref, SYM_NONE);
+	return (tl->err);
 }
 
 /*--------------------------------------------------------------------
@@ -186,17 +132,21 @@ vcc_CheckReferences(struct vcc *tl)
 static struct proc *
 vcc_findproc(struct vcc *tl, struct token *t)
 {
+	struct symbol *sym;
 	struct proc *p;
 
-	VTAILQ_FOREACH(p, &tl->procs, list)
-		if (vcc_Teq(p->name, t))
-			return (p);
+
+	sym = VCC_GetSymbolTok(tl, t, SYM_SUB);
+	AN(sym);
+	if (sym->proc != NULL)
+		return (sym->proc);
+
 	p = TlAlloc(tl, sizeof *p);
 	assert(p != NULL);
 	VTAILQ_INIT(&p->calls);
 	VTAILQ_INIT(&p->uses);
-	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
 	p->name = t;
+	sym->proc = p;
 	return (p);
 }
 
@@ -298,41 +248,63 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	return (0);
 }
 
-int
-vcc_CheckAction(struct vcc *tl)
+/*--------------------------------------------------------------------*/
+
+static void
+vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
 	struct method *m;
 	int i;
 
-	VTAILQ_FOREACH(p, &tl->procs, list) {
-		i = IsMethod(p->name);
-		if (i < 0)
-			continue;
-		m = method_tab + i;
-		if (vcc_CheckActionRecurse(tl, p, m->ret_bitmap)) {
-			vsb_printf(tl->sb,
-			    "\n...which is the \"%s\" method\n", m->name);
-			vsb_printf(tl->sb, "Legal returns are:");
+	p = sym->proc;
+	AN(p);
+	i = IsMethod(p->name);
+	if (i < 0)
+		return;
+	m = method_tab + i;
+	if (vcc_CheckActionRecurse(tl, p, m->ret_bitmap)) {
+		vsb_printf(tl->sb,
+		    "\n...which is the \"%s\" method\n", m->name);
+		vsb_printf(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
-			if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
-				vsb_printf(tl->sb, " \"%s\"", #l);
+		if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
+			vsb_printf(tl->sb, " \"%s\"", #l);
 
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-			vsb_printf(tl->sb, "\n");
-			return (1);
-		}
+		vsb_printf(tl->sb, "\n");
+		tl->err = 1;
 	}
-	VTAILQ_FOREACH(p, &tl->procs, list) {
-		if (p->called)
-			continue;
-		vsb_printf(tl->sb, "Function unused\n");
-		vcc_ErrWhere(tl, p->name);
-		return (1);
-	}
-	return (0);
+
 }
+
+static void
+vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
+{
+	struct proc *p;
+
+	p = sym->proc;
+	AN(p);
+
+	if (p->called)
+		return;
+	vsb_printf(tl->sb, "Function unused\n");
+	vcc_ErrWhere(tl, p->name);
+}
+
+int
+vcc_CheckAction(struct vcc *tl)
+{
+
+	VCC_WalkSymbols(tl, vcc_checkaction1, SYM_SUB);
+	if (tl->err)
+		return (tl->err);
+	VCC_WalkSymbols(tl, vcc_checkaction2, SYM_SUB);
+	return (tl->err);
+}
+
+/*--------------------------------------------------------------------*/
 
 static struct procuse *
 vcc_FindIllegalUse(const struct proc *p, const struct method *m)
@@ -374,34 +346,41 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	return (0);
 }
 
-int
-vcc_CheckUses(struct vcc *tl)
+static void
+vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
 	struct method *m;
 	struct procuse *pu;
 	int i;
 
-	VTAILQ_FOREACH(p, &tl->procs, list) {
-		i = IsMethod(p->name);
-		if (i < 0)
-			continue;
-		m = method_tab + i;
-		pu = vcc_FindIllegalUse(p, m);
-		if (pu != NULL) {
-			vsb_printf(tl->sb,
-			    "'%.*s': %s in method '%.*s'.",
-			    PF(pu->t), pu->use, PF(p->name));
-			vsb_cat(tl->sb, "\nAt: ");
-			vcc_ErrWhere(tl, pu->t);
-			return (1);
-		}
-		if (vcc_CheckUseRecurse(tl, p, m)) {
-			vsb_printf(tl->sb,
-			    "\n...which is the \"%s\" method\n", m->name);
-			return (1);
-		}
+	p = sym->proc;
+	AN(p);
+
+	i = IsMethod(p->name);
+	if (i < 0)
+		return;
+	m = method_tab + i;
+	pu = vcc_FindIllegalUse(p, m);
+	if (pu != NULL) {
+		vsb_printf(tl->sb,
+		    "'%.*s': %s in method '%.*s'.",
+		    PF(pu->t), pu->use, PF(p->name));
+		vsb_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, pu->t);
+		return;
 	}
-	return (0);
+	if (vcc_CheckUseRecurse(tl, p, m)) {
+		vsb_printf(tl->sb,
+		    "\n...which is the \"%s\" method\n", m->name);
+		return;
+	}
 }
 
+int
+vcc_CheckUses(struct vcc *tl)
+{
+
+	VCC_WalkSymbols(tl, vcc_checkuses, SYM_SUB);
+	return (tl->err);
+}

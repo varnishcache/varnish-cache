@@ -53,7 +53,7 @@ parse_call(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
-	vcc_AddRef(tl, tl->t, R_SUB);
+	vcc_AddRef(tl, tl->t, SYM_SUB);
 	Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
 	Fb(tl, 1, "\treturn (1);\n");
 	vcc_NextToken(tl);
@@ -447,7 +447,7 @@ vcc_ParseAction(struct vcc *tl)
 			return (1);
 		}
 	}
-	sym = VCC_FindSymbol(tl, tl->t);
+	sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 	if (sym != NULL && sym->kind == SYM_PROC) {
 		vcc_Expr_Call(tl, sym);
 		return (1);

@@ -94,7 +94,7 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 	const struct symbol *sym;
 
 	AN(tl->vars);
-	sym = VCC_FindSymbol(tl, t);
+	sym = VCC_FindSymbol(tl, t, SYM_NONE);
 	if (sym != NULL) {
 		v = sym->var;
 		AN(v);

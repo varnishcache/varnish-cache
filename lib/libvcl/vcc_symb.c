@@ -43,35 +43,80 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
+const char *
+VCC_SymKind(struct vcc *tl, const struct symbol *s)
+{
+	switch(s->kind) {
+#define VCC_SYMB(uu, ll, dd)	case SYM_##uu: return(dd);
+#include "symbol_kind.h"
+#undef VCC_SYMB
+	default:
+		ErrInternal(tl);
+		vsb_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
+		return("INTERNALERROR");
+	}
+}
 
-struct symbol *
-VCC_AddSymbol(struct vcc *tl, const char *name, enum symkind kind)
+
+static struct symbol *
+vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 {
 	struct symbol *sym;
 
 	VTAILQ_FOREACH(sym, &tl->symbols, list) {
-		if (strcmp(name, sym->name))
+		if (sym->nlen != l)
 			continue;
-		printf("%s <> %s\n", name, sym->name);
-		WRONG("name collision");
+		if (memcmp(nb, sym->name, l))
+			continue;
+		if (kind != sym->kind)
+			continue;
+		vsb_printf(tl->sb, "Name Collision: <%.*s> <%s>\n",
+		    l, nb, VCC_SymKind(tl, sym));
+		ErrInternal(tl);
+		return (NULL);
 	}
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
-	REPLACE(sym->name, name);
-	AN(name);
-	sym->nlen = strlen(name);
+	sym->name = malloc(l + 1);
+	AN(sym->name);
+	memcpy(sym->name, nb, l);
+	sym->name[l] = '\0';
+	sym->nlen = l;
 	VTAILQ_INSERT_TAIL(&tl->symbols, sym, list);
 	sym->kind = kind;
 	return (sym);
 }
 
-const struct symbol *
-VCC_FindSymbol(const struct vcc *tl, const struct token *t)
+struct symbol *
+VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind kind)
+{
+
+	return (vcc_AddSymbol(tl, name, strlen(name), kind));
+}
+
+struct symbol *
+VCC_GetSymbolTok(struct vcc *tl, const struct token *tok, enum symkind kind)
+{
+	struct symbol *sym;
+
+	sym = VCC_FindSymbol(tl, tok, kind);
+	if (sym == NULL) {
+		sym = vcc_AddSymbol(tl, tok->b, tok->e - tok->b, kind);
+		AN(sym);
+		sym->def_b = tok;
+	}
+	return (sym);
+}
+
+struct symbol *
+VCC_FindSymbol(const struct vcc *tl, const struct token *t, enum symkind kind)
 {
 	struct symbol *sym;
 
 	assert(t->tok == ID);
 	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+		if (kind != SYM_NONE && kind != sym->kind)
+			continue;
 		if (!sym->wildcard) {
 			if (vcc_IdIs(t, sym->name))
 				return (sym);
@@ -83,4 +128,16 @@ VCC_FindSymbol(const struct vcc *tl, const struct token *t)
 			return (sym);
 	}
 	return (NULL);
+}
+
+void
+VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
+{
+	struct symbol *sym;
+
+	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+		if (kind == SYM_NONE || kind == sym->kind)
+			func(tl, sym);
+		ERRCHK(tl);
+	}
 }

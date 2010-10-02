@@ -477,7 +477,7 @@ vcc_Acl(struct vcc *tl)
 	an = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_AddDef(tl, an, R_ACL);
+	vcc_AddDef(tl, an, SYM_ACL);
 	bprintf(acln, "%.*s", PF(an));
 
 	SkipToken(tl, '{');

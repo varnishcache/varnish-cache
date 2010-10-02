@@ -207,9 +207,9 @@ vcc_Function(struct vcc *tl)
 		assert(m < VCL_MET_MAX);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
+			vcc_AddDef(tl, tl->t, SYM_SUB);
+			vcc_AddRef(tl, tl->t, SYM_SUB);
 			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
-			vcc_AddDef(tl, tl->t, R_SUB);
-			vcc_AddRef(tl, tl->t, R_SUB);
 		}
 		tl->curproc = tl->mprocs[m];
 		Fb(tl, 1, "  /* ... from ");
@@ -217,8 +217,8 @@ vcc_Function(struct vcc *tl)
 		Fb(tl, 0, " */\n");
 	} else {
 		tl->fb = tl->fc;
+		vcc_AddDef(tl, tl->t, SYM_SUB);
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		vcc_AddDef(tl, tl->t, R_SUB);
 		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
 		    PF(tl->t));
 		Fc(tl, 1, "\nstatic int\n");

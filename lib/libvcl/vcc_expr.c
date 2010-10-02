@@ -540,13 +540,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		}
 		if (fmt == BACKEND) {
 			vcc_ExpectCid(tl);
-			vcc_AddRef(tl, tl->t, R_BACKEND);
+			vcc_AddRef(tl, tl->t, SYM_BACKEND);
 			vsb_printf(e1->vsb, "VGCDIR(_%.*s)", PF(tl->t));
 			e1->fmt = BACKEND;
 			vcc_NextToken(tl);
 			break;
 		}
-		sym = VCC_FindSymbol(tl, tl->t);
+		sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 		if (sym == NULL) {
 			vsb_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
@@ -687,9 +687,10 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		while (tl->t->tok == '+') {
 			vcc_NextToken(tl);
 			vcc_expr_mul(tl, &e2, STRING);
+			ERRCHK(tl);
 			if (e2->fmt != STRING && e2->fmt != STRING_LIST)
 				vcc_expr_tostring(&e2, f2);
-				ERRCHK(tl);
+			ERRCHK(tl);
 			assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 			if ((*e)->constant &&  e2->constant) {
 				assert((*e)->fmt == STRING);
@@ -833,7 +834,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	        not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
-		vcc_AddRef(tl, tl->t, R_ACL);
+		vcc_AddRef(tl, tl->t, SYM_ACL);
 		bprintf(buf, "%smatch_acl_named_%.*s(sp, \v1)", not, PF(tl->t));
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
@@ -848,7 +849,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	    (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
-		vcc_AddRef(tl, tl->t, R_BACKEND);
+		vcc_AddRef(tl, tl->t, SYM_BACKEND);
 		bprintf(buf, "(\v1 %.*s VGCDIR(_%.*s))", PF(tk), PF(tl->t));
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
@@ -867,6 +868,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		    PF(tl->t), vcc_Type((*e)->fmt));
 		vcc_ErrWhere(tl, tl->t);
 		return;
+	default:
+		break;
 	}
 	if (fmt == BOOL && (*e)->fmt == STRING) {
 		*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);

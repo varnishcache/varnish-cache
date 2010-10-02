@@ -477,8 +477,6 @@ vcc_NewVcc(const struct vcc *tl0)
 	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
-	VTAILQ_INIT(&tl->refs);
-	VTAILQ_INIT(&tl->procs);
 	VTAILQ_INIT(&tl->sources);
 
 	tl->nsources = 0;
@@ -564,7 +562,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	tl->sb = sb;
 
 	for (v = tl->vars; v->name != NULL; v++) {
-		sym = VCC_AddSymbol(tl, v->name, SYM_VAR);
+		sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
 		sym->var = v;
 		sym->fmt = v->fmt;
 		sym->r_methods = v->r_methods;
@@ -623,7 +621,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	/* Configure the default director */
 	Fi(tl, 0, "\tVCL_conf.director[0] = VCL_conf.director[%d];\n",
 	    tl->defaultdir);
-	vcc_AddRef(tl, tl->t_defaultdir, R_BACKEND);
+	vcc_AddRef(tl, tl->t_defaultdir, SYM_BACKEND);
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

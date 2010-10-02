@@ -63,7 +63,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	vcc_NextToken(tl);
 
-	osym = VCC_FindSymbol(tl, mod);
+	osym = VCC_FindSymbol(tl, mod, SYM_NONE);
 	if (osym != NULL && osym->kind != SYM_VMOD) {
 		vsb_printf(tl->sb, "Module %.*s conflics with other symbol.\n",
 		    PF(mod));
@@ -80,7 +80,9 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	bprintf(fn, "%.*s", PF(mod));
-	sym = VCC_AddSymbol(tl, fn, SYM_VMOD);
+	sym = VCC_AddSymbolStr(tl, fn, SYM_VMOD);
+	ERRCHK(tl);
+	AN(sym);
 	sym->def_b = t1;
 	sym->def_e = tl->t;
 
@@ -150,7 +152,9 @@ vcc_ParseImport(struct vcc *tl)
 			p += strlen(p) + 1;
 			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n", p, PF(mod));
 		} else {
-			sym = VCC_AddSymbol(tl, p, SYM_FUNC);
+			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
+			ERRCHK(tl);
+			AN(sym);
 			p += strlen(p) + 1;
 			sym->cfunc = p;
 			p += strlen(p) + 1;

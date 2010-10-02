@@ -37,6 +37,7 @@
 #define INDENT		2
 
 struct acl_e;
+struct proc;
 
 enum var_type {
 #define VCC_TYPE(foo)		foo,
@@ -69,11 +70,9 @@ struct token {
 };
 
 enum symkind {
-	SYM_NONE,
-	SYM_VAR,
-	SYM_FUNC,
-	SYM_PROC,
-	SYM_VMOD
+#define VCC_SYMB(uu, ll, dd)	SYM_##uu,
+#include "symbol_kind.h"
+#undef VCC_SYMB
 };
 
 struct symbol {
@@ -84,11 +83,14 @@ struct symbol {
 	char				*name;
 	unsigned			nlen;
 	unsigned			wildcard;
-
 	enum symkind			kind;
+
+	unsigned			nref, ndef;
+	const struct token		*def_b, *def_e;
+
 	enum var_type			fmt;
 
-	struct token			*def_b, *def_e;
+	struct proc			*proc;
 
 	const char			*cfunc;
 	const char			*args;
@@ -132,11 +134,9 @@ struct vcc {
 						 * NULL otherwise
 						 */
 	struct vsb		*fm[VCL_MET_MAX];	/* Method bodies */
-	VTAILQ_HEAD(, ref)	refs;
 	struct vsb		*sb;
 	int			err;
 	int			ndirector;
-	VTAILQ_HEAD(, proc)	procs;
 	struct proc		*curproc;
 	struct proc		*mprocs[VCL_MET_MAX];
 
@@ -152,21 +152,6 @@ struct vcc {
 	unsigned		recnt;
 	unsigned		nsockaddr;
 	unsigned		nvmodpriv;
-};
-
-enum ref_type {
-	R_SUB,
-	R_ACL,
-	R_BACKEND,
-	R_PROBE
-};
-
-struct ref {
-	enum ref_type		type;
-	struct token		*name;
-	unsigned		defcnt;
-	unsigned		refcnt;
-	VTAILQ_ENTRY(ref)	list;
 };
 
 struct var {
@@ -260,9 +245,14 @@ int vcc_StringVal(struct vcc *tl);
 void vcc_ExpectedStringval(struct vcc *tl);
 
 /* vcc_symbol */
-struct symbol *VCC_AddSymbol(struct vcc *tl, const char *name, enum symkind);
-const struct symbol *VCC_FindSymbol(const struct vcc *tl,
-    const struct token *t);
+struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
+struct symbol *VCC_GetSymbolTok(struct vcc *tl, const struct token *tok,
+    enum symkind);
+struct symbol *VCC_FindSymbol(const struct vcc *tl,
+    const struct token *t, enum symkind kind);
+const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
+typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
+void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
@@ -292,8 +282,8 @@ void vcc_VarVal(struct vcc *tl, const struct var *vp,
 void vcc_ParseImport(struct vcc *tl);
 
 /* vcc_xref.c */
-void vcc_AddDef(struct vcc *tl, struct token *t, enum ref_type type);
-void vcc_AddRef(struct vcc *tl, struct token *t, enum ref_type type);
+void vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind type);
+void vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind type);
 int vcc_CheckReferences(struct vcc *tl);
 
 void vcc_AddCall(struct vcc *tl, struct token *t);
