@@ -56,7 +56,6 @@ SVNID("$Id$")
 #include "heritage.h"
 
 #include "vcl.h"
-#include "vss.h"
 
 struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;

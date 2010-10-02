@@ -349,7 +349,7 @@ vbe_Healthy(double now, uintptr_t target, const struct vdi_simple *vs)
  */
 
 static struct vbc *
-vbe_GetVbe(struct sess *sp, struct vdi_simple *vs)
+vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 {
 	struct vbc *vc;
 	struct backend *bp;
