@@ -353,6 +353,7 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 {
 	const char *p;
 
+	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
 	AN(fmt == STRING || fmt == STRING_LIST);
 
 	p = NULL;
@@ -991,6 +992,7 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 
 	t1 = tl->t;
 	vcc_expr0(tl, &e, fmt);
+	ERRCHK(tl);
 	if (fmt == STRING || fmt == STRING_LIST)
 		vcc_expr_tostring(&e, fmt);
 	if (!tl->err && fmt != e->fmt)  {
