@@ -200,7 +200,7 @@ struct vmod_priv {
 typedef int vmod_init_f(struct vmod_priv *,  const struct VCL_conf *);
 
 static inline void 
-vmod_priv_fini(struct vmod_priv *p)
+vmod_priv_fini(const struct vmod_priv *p)
 {
 
 	if (p->priv != (void*)0 && p->free != (void*)0)
