@@ -111,6 +111,9 @@ sub vcl_fetch {
     if (beresp.http.Set-Cookie) {
         return (pass);
     }
+    if (beresp.http.Vary == "*") {
+        return (pass);
+    }
     return (deliver);
 }
 
