@@ -62,10 +62,7 @@ struct vss_addr {
 	int			 va_socktype;
 	int			 va_protocol;
 	socklen_t		 va_addrlen;
-	union {
-		struct sockaddr_storage	 _storage;
-		struct sockaddr		 sa;
-	} va_addr;
+	struct sockaddr_storage	 va_addr;
 };
 
 /*lint -esym(754, _storage) not ref */
@@ -224,7 +221,7 @@ VSS_bind(const struct vss_addr *va)
 		return (-1);
 	}
 #endif
-	if (bind(sd, &va->va_addr.sa, va->va_addrlen) != 0) {
+	if (bind(sd, (const void*)&va->va_addr, va->va_addrlen) != 0) {
 		perror("bind()");
 		(void)close(sd);
 		return (-1);
@@ -272,7 +269,7 @@ VSS_connect(const struct vss_addr *va, int nonblock)
 	}
 	if (nonblock)
 		(void)TCP_nonblocking(sd);
-	i = connect(sd, &va->va_addr.sa, va->va_addrlen);
+	i = connect(sd, (const void *)&va->va_addr, va->va_addrlen);
 	if (i == 0 || (nonblock && errno == EINPROGRESS))
 		return (sd);
 	perror("connect()");

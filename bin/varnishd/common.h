@@ -30,7 +30,6 @@
  */
 
 struct cli;
-struct sockaddr;
 
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
