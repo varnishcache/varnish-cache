@@ -110,9 +110,9 @@ update(struct VSM_data *vd)
 	w = COLS / HIST_RANGE;
 	n = w * HIST_RANGE;
 	for (i = 0; i < n; ++i)
-		mvaddch(LINES - 2, i, '-');
+		(void)mvaddch(LINES - 2, i, '-');
 	for (i = 0, j = HIST_LOW; i < HIST_RANGE; ++i, ++j) {
-		mvaddch(LINES - 2, w * i, '+');
+		(void)mvaddch(LINES - 2, w * i, '+');
 		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
@@ -139,9 +139,9 @@ update(struct VSM_data *vd)
 	/* show them */
 	for (i = 0; i < n; ++i) {
 		for (j = 0; j < bm[i] / scale; ++j)
-			mvaddch(LINES - 3 - j, i, '#');
+			(void)mvaddch(LINES - 3 - j, i, '#');
 		for (; j < (bm[i] + bh[i]) / scale; ++j)
-			mvaddch(LINES - 3 - j, i, '|');
+			(void)mvaddch(LINES - 3 - j, i, '|');
 	}
 
 	refresh();
