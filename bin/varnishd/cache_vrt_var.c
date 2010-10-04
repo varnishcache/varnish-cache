@@ -291,7 +291,7 @@ VRT_r_beresp_backend_name(const struct sess *sp)
 	return(sp->vbc->backend->vcl_name);
 }
 
-struct sockaddr *
+struct sockaddr_storage *
 VRT_r_beresp_backend_ip(const struct sess *sp)
 {
 
@@ -480,20 +480,20 @@ REQ_BOOL(hash_always_miss)
 
 /*--------------------------------------------------------------------*/
 
-struct sockaddr *
+struct sockaddr_storage *
 VRT_r_client_ip(const struct sess *sp)
 {
 
 	return (sp->sockaddr);
 }
 
-struct sockaddr *
+struct sockaddr_storage *
 VRT_r_server_ip(struct sess *sp)
 {
 	int i;
 
-	if (sp->mysockaddr->sa_family == AF_UNSPEC) {
-		i = getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen);
+	if (sp->mysockaddr->ss_family == AF_UNSPEC) {
+		i = getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen);
 		assert(TCP_Check(i));
 	}
 
@@ -531,8 +531,8 @@ int
 VRT_r_server_port(struct sess *sp)
 {
 
-	if (sp->mysockaddr->sa_family == AF_UNSPEC)
-		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
+	if (sp->mysockaddr->ss_family == AF_UNSPEC)
+		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
 	return (TCP_port(sp->mysockaddr));
 }
 

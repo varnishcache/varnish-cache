@@ -169,7 +169,7 @@ ses_setup(struct sessmem *sm)
 	sp->sockaddrlen = sizeof(sm->sockaddr[0]);
 	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
 	sp->mysockaddrlen = sizeof(sm->sockaddr[1]);
-	sp->sockaddr->sa_family = sp->mysockaddr->sa_family = PF_UNSPEC;
+	sp->sockaddr->ss_family = sp->mysockaddr->ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_req = NAN;
 	sp->t_resp = NAN;

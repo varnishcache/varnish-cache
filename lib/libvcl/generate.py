@@ -405,7 +405,7 @@ sp_variables = (
 # VCL to C type conversion
 
 vcltypes = {
-	'IP':		"struct sockaddr *",
+	'IP':		"struct sockaddr_storage *",
 	'STRING':	"const char *",
 	'BOOL':		"unsigned",
 	'BACKEND':	"struct director *",

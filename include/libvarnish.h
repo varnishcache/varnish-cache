@@ -76,10 +76,10 @@ int TCP_blocking(int sock);
 int TCP_nonblocking(int sock);
 int TCP_linger(int sock, int linger);
 #ifdef SOL_SOCKET
-int TCP_port(const struct sockaddr *addr);
-void TCP_name(const struct sockaddr *addr, unsigned l, char *abuf,
+int TCP_port(const struct sockaddr_storage *addr);
+void TCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);
-int TCP_connect(int s, const struct sockaddr *name, socklen_t namelen,
+int TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
     int msec);
 void TCP_close(int *s);
 void TCP_set_read_timeout(int s, double seconds);

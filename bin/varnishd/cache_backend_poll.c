@@ -109,7 +109,7 @@ static struct lock			vbp_mtx;
  */
 
 static int
-vbp_connect(int pf, const struct sockaddr *sa, socklen_t salen, int tmo)
+vbp_connect(int pf, const struct sockaddr_storage *sa, socklen_t salen, int tmo)
 {
 	int s, i;
 

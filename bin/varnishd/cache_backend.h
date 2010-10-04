@@ -122,9 +122,9 @@ struct backend {
 	char			*ipv6_addr;
 	char			*port;
 
-	struct sockaddr		*ipv4;
+	struct sockaddr_storage	*ipv4;
 	socklen_t		ipv4len;
-	struct sockaddr		*ipv6;
+	struct sockaddr_storage	*ipv6;
 	socklen_t		ipv6len;
 
 	unsigned		n_conn;

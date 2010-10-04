@@ -128,17 +128,17 @@ vdi_dns_comp_addrinfo6(const struct backend *bp,
 /* Check if a backends socket is the same as addr */
 static int
 vdi_dns_comp_addrinfo(const struct director *dir,
-		      struct sockaddr *addr,
+		      struct sockaddr_storage *addr,
 		      const socklen_t len)
 {
 	struct backend *bp;
 
 	bp = vdi_get_backend_if_simple(dir);
 	AN(bp);
-	if (addr->sa_family == PF_INET && bp->ipv4) {
+	if (addr->ss_family == PF_INET && bp->ipv4) {
 		return (vdi_dns_comp_addrinfo4(bp, (struct sockaddr_in *)
 			addr, len));
-	} else if (addr->sa_family == PF_INET6 && bp->ipv6) {
+	} else if (addr->ss_family == PF_INET6 && bp->ipv6) {
 		return (vdi_dns_comp_addrinfo6(bp, (struct sockaddr_in6 *)
 			addr, len));
 	}
@@ -298,8 +298,10 @@ vdi_dns_cache_add(const struct sess *sp,
 			continue;
 
 		for (i = 0; i < vs->nhosts; i++) {
+			struct sockaddr_storage ss_hack;
+			memcpy(&ss_hack, res->ai_addr, res->ai_addrlen);
 			if (vdi_dns_comp_addrinfo(vs->hosts[i],
-			    res->ai_addr, res->ai_addrlen)) {
+			    &ss_hack, res->ai_addrlen)) {
 				new->hosts[host] = vs->hosts[i];
 				CHECK_OBJ_NOTNULL(new->hosts[host],
 				    DIRECTOR_MAGIC);

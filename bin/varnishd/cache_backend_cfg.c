@@ -151,11 +151,12 @@ VBE_DropRefConn(struct backend *b)
  */
 
 static void
-copy_sockaddr(struct sockaddr **sa, socklen_t *len, const unsigned char *src)
+copy_sockaddr(struct sockaddr_storage **sa, socklen_t *len,
+    const unsigned char *src)
 {
 
 	assert(*src > 0);
-	*sa = malloc(*src);
+	*sa = malloc(*src);		/* XXX: malloc(sizeof **sa) ? */
 	XXXAN(*sa);
 	memcpy(*sa, src + 1, *src);
 	*len = *src;

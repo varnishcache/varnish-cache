@@ -167,7 +167,7 @@ VCA_Prep(struct sess *sp)
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (params->log_local_addr) {
-		AZ(getsockname(sp->fd, sp->mysockaddr, &sp->mysockaddrlen));
+		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
 		TCP_name(sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",

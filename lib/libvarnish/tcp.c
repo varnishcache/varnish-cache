@@ -64,14 +64,14 @@ SVNID("$Id$")
 /*--------------------------------------------------------------------*/
 
 int
-TCP_port(const struct sockaddr *addr)
+TCP_port(const struct sockaddr_storage *addr)
 {
 
-	if (addr->sa_family == AF_INET) {
+	if (addr->ss_family == AF_INET) {
 		const struct sockaddr_in *ain = (const void *)addr;
 		return ntohs((ain->sin_port));
 	}
-	if (addr->sa_family == AF_INET6) {
+	if (addr->ss_family == AF_INET6) {
 		const struct sockaddr_in6 *ain = (const void *)addr;
 		return ntohs((ain->sin6_port));
 	}
@@ -82,12 +82,12 @@ TCP_port(const struct sockaddr *addr)
 /*--------------------------------------------------------------------*/
 
 void
-TCP_name(const struct sockaddr *addr, unsigned l, char *abuf, unsigned alen,
-    char *pbuf, unsigned plen)
+TCP_name(const struct sockaddr_storage *addr, unsigned l,
+    char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	int i;
 
-	i = getnameinfo(addr, l, abuf, alen, pbuf, plen,
+	i = getnameinfo((const void *)addr, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
 		/*
@@ -113,12 +113,11 @@ void
 TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	struct sockaddr_storage addr_s;
-	struct sockaddr	*addr = (void*)&addr_s;
 	socklen_t l;
 
 	l = sizeof addr_s;
-	AZ(getsockname(sock, addr, &l));
-	TCP_name(addr, l, abuf, alen, pbuf, plen);
+	AZ(getsockname(sock, (void *)&addr_s, &l));
+	TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 }
 /*--------------------------------------------------------------------*/
 
@@ -126,12 +125,11 @@ void
 TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	struct sockaddr_storage addr_s;
-	struct sockaddr	*addr = (void*)&addr_s;
 	socklen_t l;
 
 	l = sizeof addr_s;
-	if (!getpeername(sock, addr, &l))
-		TCP_name(addr, l, abuf, alen, pbuf, plen);
+	if (!getpeername(sock, (void*)&addr_s, &l))
+		TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 	else {
 		strlcpy(abuf, "<none>", alen);
 		strlcpy(pbuf, "<none>", plen);
@@ -209,7 +207,7 @@ TCP_nonblocking(int sock)
  */
 
 int
-TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
+TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int msec)
 {
 	int i, k;
 	socklen_t l;
@@ -218,13 +216,15 @@ TCP_connect(int s, const struct sockaddr *name, socklen_t namelen, int msec)
 	assert(s >= 0);
 
 	/* Set the socket non-blocking */
-	(void)TCP_nonblocking(s);
+	if (msec > 0)
+		(void)TCP_nonblocking(s);
 
 	/* Attempt the connect */
-	i = connect(s, name, namelen);
+	i = connect(s, (const void *)name, namelen);
 	if (i == 0 || errno != EINPROGRESS)
 		return (i);
 
+	assert(msec > 0);
 	/* Exercise our patience, polling for write */
 	fds[0].fd = s;
 	fds[0].events = POLLWRNORM;

@@ -395,8 +395,8 @@ struct sess {
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
-	struct sockaddr		*sockaddr;
-	struct sockaddr		*mysockaddr;
+	struct sockaddr_storage	*sockaddr;
+	struct sockaddr_storage	*mysockaddr;
 	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */
@@ -468,7 +468,7 @@ struct vbc {
 	struct vdi_simple	*vdis;
 	int			fd;
 
-	struct sockaddr		*addr;
+	struct sockaddr_storage	*addr;
 	socklen_t		addrlen;
 
 	uint8_t			recycled;

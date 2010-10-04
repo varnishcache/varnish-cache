@@ -129,7 +129,7 @@ VBE_ReleaseConn(struct vbc *vc)
  */
 
 static int
-vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
+vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
     socklen_t salen, const struct vdi_simple *vs)
 {
 	int s, i, tmo;
@@ -148,10 +148,7 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr *sa,
 
 	tmo = (int)(tmod * 1000.0);
 
-	if (tmo > 0)
-		i = TCP_connect(s, sa, salen, tmo);
-	else
-		i = connect(s, sa, salen);
+	i = TCP_connect(s, sa, salen, tmo);
 
 	if (i != 0) {
 		AZ(close(s));
