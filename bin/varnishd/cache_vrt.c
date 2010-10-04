@@ -282,7 +282,7 @@ VRT_r_now(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
+VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
 {
 	char *p;
 	const struct sockaddr_in *si4;
@@ -290,7 +290,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 	const void *addr;
 	int len;
 
-	switch (sa->sa_family) {
+	switch (sa->ss_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
 		si4 = (const void *)sa;
@@ -306,7 +306,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr *sa)
 	}
 	XXXAN(len);
 	AN(p = WS_Alloc(sp->http->ws, len));
-	AN(inet_ntop(sa->sa_family, addr, p, len));
+	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
 

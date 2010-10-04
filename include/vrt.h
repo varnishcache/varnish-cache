@@ -38,7 +38,7 @@ struct vsb;
 struct cli;
 struct director;
 struct VCL_conf;
-struct sockaddr;
+struct sockaddr_storage;
 
 /*
  * A backend probe specification
@@ -209,7 +209,7 @@ vmod_priv_fini(struct vmod_priv *p)
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct sess *sp, const struct sockaddr *sa);
+char *VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa);
 char *VRT_int_string(const struct sess *sp, int);
 char *VRT_double_string(const struct sess *sp, double);
 char *VRT_time_string(const struct sess *sp, double);
