@@ -49,7 +49,7 @@ else:
 type_tab = dict()
 
 ctypes = {
-	'IP':		"struct sockaddr *",
+	'IP':		"struct sockaddr_storage *",
 	'STRING':	"const char *",
 	'STRING_LIST':	"const char *, ...",
 	'BOOL':		"unsigned",
