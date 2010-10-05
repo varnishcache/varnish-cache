@@ -2,10 +2,38 @@
 
 test "Check grace with sick backends"
 
-server s1 -repeat 4 {
+server s1 {
 	rxreq
 	expect req.url == "/"
-	txresp -body "hi"
+	txresp -proto HTTP/1.0 -hdr "nbr: 1" -body "hi"
+
+	accept
+
+	rxreq
+	expect req.url == "/"
+	txresp -proto HTTP/1.0 -hdr "nbr: 2" -body "hi"
+
+	sema r1 sync 2
+	accept
+
+	rxreq
+	expect req.url == "/"
+	txresp -proto HTTP/1.0 -hdr "nbr: 3" -hdr "foo: bar" -body "hi"
+
+	accept
+	rxreq
+	expect req.url == "/"
+	txresp -proto HTTP/1.0 -status 400 -hdr "nbr: 4" -body "hi"
+	accept
+
+	accept
+	rxreq
+	expect req.url == "/"
+	txresp -proto HTTP/1.0 -status 400 -hdr "nbr: 5" -body "hi"
+	accept
+
+	sema r1 sync 2
+
 } -start
 
 varnish v1 -vcl {
@@ -28,18 +56,20 @@ varnish v1 -vcl {
 	}
 } -start
 
-delay 2
 
 client c1 {
+	sema r1 sync 2
 	txreq -url "/"
 	rxresp
+	expect resp.http.foo == "bar"
 	expect resp.status == 200
 } -run
 
-delay 3
-
 client c2 {
+	sema r1 sync 2
 	txreq -url "/"
 	rxresp
+	expect resp.http.foo == "bar"
 	expect resp.status == 200
+	expect resp.http.x-varnish == "1002 1001"
 } -run
