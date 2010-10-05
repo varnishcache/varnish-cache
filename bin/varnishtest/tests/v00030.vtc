@@ -1,4 +1,4 @@
-# $Id: v00028.vtc 5125 2010-08-25 08:57:04Z phk $
+# $Id$
 
 test "DNS director bad VCL tests"
 
