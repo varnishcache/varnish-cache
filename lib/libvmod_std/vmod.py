@@ -180,14 +180,13 @@ if initname != "":
 
 def file_header(fo):
         fo.write("""/*
- * $%s$
  *
  * NB:  This file is machine generated, DO NOT EDIT!
  *
  * Edit vmod.vcc and run vmod.py instead
  */
 
-""" % "Id")
+""")
 
 #######################################################################
 
