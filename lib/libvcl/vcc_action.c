@@ -101,8 +101,8 @@ static const struct arith {
 	{ INT,		T_DECR,		INT },
 	{ INT,		T_MUL,		INT },
 	{ INT,		T_DIV,		INT },
-	{ INT, 		'=',		INT },
-	{ INT, 		0,		INT },
+	{ INT,		'=',		INT },
+	{ INT,		0,		INT },
 	{ TIME,		T_INCR,		DURATION },
 	{ TIME,		T_DECR,		DURATION },
 	{ TIME,		T_MUL,		REAL },
@@ -115,7 +115,7 @@ static const struct arith {
 	{ DURATION,	T_DIV,		REAL },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
-	{ VOID, 	'=',		VOID }
+	{ VOID,		'=',		VOID }
 };
 
 static void
@@ -138,7 +138,7 @@ parse_set(struct vcc *tl)
 			continue;
 		if (ap->oper != tl->t->tok)
 			continue;
-		if (ap->oper != '=') 
+		if (ap->oper != '=')
 			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
 		vcc_NextToken(tl);
 		fmt = ap->want;

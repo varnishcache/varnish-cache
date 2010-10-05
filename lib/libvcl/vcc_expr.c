@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * XXX: add VRT_count()'s 
+ * XXX: add VRT_count()'s
  */
 
 #include "config.h"
@@ -257,7 +257,7 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 	e = vcc_new_expr();
 	while (*p != '\0') {
 		if (*p == '\n') {
-			if (!nl) 
+			if (!nl)
 				vsb_putc(e->vsb, *p);
 			nl = 1;
 			p++;
@@ -268,14 +268,14 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1, struct expr *e2
 			vsb_putc(e->vsb, *p);
 			p++;
 			continue;
-		} 
+		}
 		assert(*p == '\v');
 		p++;
 		switch(*p) {
 		case '+': vsb_cat(e->vsb, "\v+"); break;
 		case '-': vsb_cat(e->vsb, "\v-"); break;
-		case '1': 
-		case '2': 
+		case '1':
+		case '2':
 			if (*p == '1')
 				vsb_cat(e->vsb, vsb_data(e1->vsb));
 			else {
@@ -478,7 +478,7 @@ vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				    "\v+\n\v1,\nvrt_magic_string_end\v-",
 				    e1, NULL);
 			}
-			if (*p != '\0') 
+			if (*p != '\0')
 				SkipToken(tl, ',');
 		}
 		*e = vcc_expr_edit((*e)->fmt, q, *e, e1);
@@ -650,7 +650,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case INT:	f2 = INT; break;
 	case DURATION:	f2 = REAL; break;
 	default:
-		if (tl->t->tok != '*' && tl->t->tok != '/') 
+		if (tl->t->tok != '*' && tl->t->tok != '/')
 			return;
 		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
 		    PF(tl->t), vcc_Type(f2));
@@ -719,7 +719,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case TIME:	break;
 	case DURATION:	break;
 	default:
-		if (tl->t->tok != '+' && tl->t->tok != '-') 
+		if (tl->t->tok != '+' && tl->t->tok != '-')
 			return;
 		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
 		    PF(tl->t), vcc_Type(f2));
@@ -755,7 +755,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
  * SYNTAX:
  *    ExprCmp:
  *	ExprAdd
- *      ExprAdd Relation ExprAdd 
+ *      ExprAdd Relation ExprAdd
  *	ExprAdd(STRING) '~' CString
  *	ExprAdd(STRING) '!~' CString
  *	ExprAdd(IP) '~' IP
@@ -763,7 +763,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static const struct cmps {
-	enum var_type 		fmt;
+	enum var_type		fmt;
 	unsigned		token;
 	const char		*emit;
 } vcc_cmps[] = {
@@ -802,7 +802,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	vcc_expr_add(tl, e, fmt);
 	ERRCHK(tl);
 
-	if ((*e)->fmt == BOOL) 
+	if ((*e)->fmt == BOOL)
 		return;
 
 	tk = tl->t;
@@ -823,7 +823,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
 		return;
 	}
-	if ((*e)->fmt == STRING && 
+	if ((*e)->fmt == STRING &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
 	        not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
@@ -835,7 +835,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
-	if ((*e)->fmt == IP && 
+	if ((*e)->fmt == IP &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
 	        not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
@@ -851,7 +851,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
-	if ((*e)->fmt == BACKEND && 
+	if ((*e)->fmt == BACKEND &&
 	    (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
@@ -894,7 +894,7 @@ vcc_expr_not(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e2;
 	struct token *tk;
-	
+
 	*e = NULL;
 	if (fmt != BOOL || tl->t->tok != '!') {
 		vcc_expr_cmp(tl, e, fmt);
@@ -964,7 +964,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr_cand(tl, e, fmt);
 	ERRCHK(tl);
-	if ((*e)->fmt != BOOL || tl->t->tok != T_COR) 
+	if ((*e)->fmt != BOOL || tl->t->tok != T_COR)
 		return;
 	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
 	while (tl->t->tok == T_COR) {

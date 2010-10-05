@@ -104,7 +104,16 @@ DISTCLEANFILES = default_vcl.h
 # Turn the default.vcl file into a C-string we can include in the program.
 #
 default_vcl.h:	default.vcl Makefile
-	sed -e 's/"/\\"/g' -e 's/$$/\\n"/' -e 's/^/ "/' $(srcdir)/default.vcl > $@
+	echo '/*' > $@
+	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
+	echo ' *' >> $@
+	echo ' * Edit default.vcl instead and run make' >> $@
+	echo ' *' >> $@
+	echo ' */' >> $@
+	echo '' >> $@
+	sed -e 's/"/\\"/g' \
+	    -e 's/$$/\\n"/' \
+	    -e 's/^/ "/' $(srcdir)/default.vcl >> $@
 
 # Explicitly record dependency
 mgt_vcc.c:	default_vcl.h

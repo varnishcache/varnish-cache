@@ -54,9 +54,9 @@ struct vmod {
 
 	int			ref;
 
-	char 			*nm;
-	char 			*path;
-	void 			*hdl;
+	char			*nm;
+	char			*path;
+	void			*hdl;
 	const void		*funcs;
 	int			funclen;
 };

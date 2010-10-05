@@ -171,11 +171,11 @@ vcc_markline(const struct vcc *tl, const char *l, const char *le,
 
 	x = y = 0;
 	for (p = l; p < le && *p != '\n'; p++) {
-		if (p >= b && p < e) 
+		if (p >= b && p < e)
 			c = '#';
 		else
 			c = '-';
-		
+
 		if (*p == '\t') {
 			y &= ~7;
 			y += 8;

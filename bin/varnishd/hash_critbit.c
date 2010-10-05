@@ -470,7 +470,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		u = oh->refcnt;
 		if (u > 0)
 			oh->refcnt++;
-		else 
+		else
 			with_lock = 1;
 		Lck_Unlock(&oh->mtx);
 		if (u > 0)

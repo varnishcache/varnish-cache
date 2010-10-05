@@ -303,7 +303,7 @@ chk(const struct binheap *bh)
 		assert(!bh->cmp(bh->priv, A(bh, u), A(bh, v)));
 	}
 }
-#endif 
+#endif
 
 void *
 binheap_root(const struct binheap *bh)

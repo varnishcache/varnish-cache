@@ -275,7 +275,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
-	} else 
+	} else
 		STV_trim(st, st->len);
 
 	return (1);

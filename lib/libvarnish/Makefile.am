@@ -42,6 +42,13 @@ svn_version.c: FORCE
 	[ "$$V" = "exported" ] && [ -e svn_version.c ] && exit 0 ; \
 	if [ "/* $$V */" != "$$H" ]; then \
 		( \
+		  echo '/*' ;\
+		  echo ' * NB:  This file is machine generated, DO NOT EDIT!' ;\
+		  echo ' *' ;\
+		  echo ' * Run make to regenerate' ;\
+		  echo ' *'  ;\
+		  echo ' */' ;\
+		  echo '' ;\
 		  echo "/* $$V */" ;\
 		  echo "#include <libvarnish.h>" ;\
 		  echo "const char* svn_version(void)" ;\

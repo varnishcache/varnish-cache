@@ -86,7 +86,7 @@ vca_port_ev(port_event_t *ev) {
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
 			vca_del(sp->fd);
-			VTAILQ_REMOVE(&sesshead, sp, list);			
+			VTAILQ_REMOVE(&sesshead, sp, list);
 			vca_close_session(sp, "EOF");
 			SES_Delete(sp);
 			return;
@@ -99,7 +99,7 @@ vca_port_ev(port_event_t *ev) {
 			return;
 		}
 
-		/* 
+		/*
 		 * note: the original man page for port_associate(3C) states:
 		 *
 		 *    When an event for a PORT_SOURCE_FD object is retrieved,
@@ -146,7 +146,7 @@ vca_main(void *arg)
 	 */
 	static struct timespec min_ts = {0L,    100L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/};
 	static double          min_t  = 0.1; /* 100    ms*/
-	static struct timespec max_ts = {1L, 0L}; 		/* 1 second */
+	static struct timespec max_ts = {1L, 0L};		/* 1 second */
 	static double	       max_t  = 1.0;			/* 1 second */
 
 	struct timespec ts;

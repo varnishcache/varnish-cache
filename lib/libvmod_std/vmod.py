@@ -80,7 +80,7 @@ def do_func(fname, rval, args):
 	global plist
 	global slist
 	global tdl
-	print(fname, rval, args)
+	#print(fname, rval, args)
 
 	proto = ctypes[rval] + " vmod_" + fname + "(struct sess *"
 	sproto = ctypes[rval] + " td_" + modname + "_" + fname + "(struct sess *"
@@ -118,6 +118,9 @@ f = open(specfile, "r")
 
 for l0 in f:
 	# print("# " + l0)
+	l0=l0.strip()
+	if l0 == "":
+		continue
 	i = l0.find("#")
 	if i == 0:
 		continue
@@ -175,8 +178,24 @@ if initname != "":
 
 #######################################################################
 
+def file_header(fo):
+        fo.write("""/*
+ * $%s$
+ *
+ * NB:  This file is machine generated, DO NOT EDIT!
+ *
+ * Edit vmod.vcc and run vmod.py instead
+ */
+
+""" % "Id")
+
+#######################################################################
+
 fc = open("vcc_if.c", "w")
 fh = open("vcc_if.h", "w")
+
+file_header(fc)
+file_header(fh)
 
 fh.write('struct sess;\n')
 fh.write('struct VCL_conf;\n')
@@ -204,7 +223,7 @@ fc.write("\n");
 fc.write("const int Vmod_Len = sizeof(Vmod_Func);\n")
 fc.write("\n");
 
-fc.write('const char Vmod_Proto[] = \n')
+fc.write('const char Vmod_Proto[] =\n')
 dumps(tdl);
 fc.write('\t"\\n"\n')
 dumps("struct Vmod_Func_" + modname + " {\n")

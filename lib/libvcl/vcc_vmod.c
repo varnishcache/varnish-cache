@@ -71,7 +71,7 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 	if (osym != NULL) {
-		vsb_printf(tl->sb, "Module %.*s already imported.\n", 
+		vsb_printf(tl->sb, "Module %.*s already imported.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		vsb_printf(tl->sb, "Previous import was here:\n");
@@ -110,7 +110,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (hdl == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, dlerror());
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -118,13 +118,13 @@ vcc_ParseImport(struct vcc *tl)
 
 	modname = dlsym(hdl, "Vmod_Name");
 	if (modname == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Name not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 	if (!vcc_IdIs(mod, modname)) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n", 
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
 		    PF(mod), fn);
 		vsb_printf(tl->sb, "\tModule has wrong name: <%s>\n", modname);
 		vcc_ErrWhere(tl, mod);
@@ -133,14 +133,14 @@ vcc_ParseImport(struct vcc *tl)
 
 	proto = dlsym(hdl, "Vmod_Proto");
 	if (proto == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Proto not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 	spec = dlsym(hdl, "Vmod_Spec");
 	if (spec == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n", 
+		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Spec not found");
 		vcc_ErrWhere(tl, mod);
 		return;
