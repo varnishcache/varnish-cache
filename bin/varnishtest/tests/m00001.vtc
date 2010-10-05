@@ -64,7 +64,7 @@ varnish v1 -badvcl {
 	}
 }
 
-delay .5
+delay 1.5
 varnish v1 -expect vmods == 0
 
 
