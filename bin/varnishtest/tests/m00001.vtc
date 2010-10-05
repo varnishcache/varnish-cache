@@ -40,7 +40,6 @@ client c1 {
 
 client c1 -run
 
-
 varnish v1 -cliok "debug.vmod"
 varnish v1 -cliok "vcl.list"
 
@@ -64,7 +63,5 @@ varnish v1 -badvcl {
 	}
 }
 
-delay 1.5
+varnish v1 -cliok "debug.vmod"
 varnish v1 -expect vmods == 0
-
-
