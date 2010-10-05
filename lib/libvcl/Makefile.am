@@ -22,7 +22,7 @@ libvcl_la_SOURCES = \
 	vcc_dir_dns.c \
 	vcc_expr.c \
 	vcc_parse.c \
-	$(builddir)/vcc_fixed_token.c \
+	vcc_fixed_token.c \
 	vcc_obj.c \
 	vcc_string.c \
 	vcc_symb.c \
@@ -34,7 +34,7 @@ libvcl_la_SOURCES = \
 EXTRA_DIST = \
 	generate.py
 
-$(builddir)/vcc_obj.c $(builddir)/vcc_fixed_token.c $(builddir)/vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vrt.h
+vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vrt.h
 	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
 
 CLEANFILES = $(builddir)/vcc_token_defs.h \
