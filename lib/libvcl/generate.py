@@ -568,15 +568,12 @@ def polish_tokens(tokens):
 #######################################################################
 
 def file_header(fo):
-	fo.write("""
-/*
- * $%s$
- *
+	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
  * Edit and run generate.py instead
  */
-""" % "Id")
+""")
 
 #######################################################################
 
