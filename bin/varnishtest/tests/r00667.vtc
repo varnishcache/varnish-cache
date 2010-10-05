@@ -5,13 +5,12 @@ test "things stuck on busy object"
 server s1 {
 	rxreq
 	sema r1 sync 2
-	delay 1
+	sema r1 sync 2
 	# There is a race in varnish between the first request releasing
 	# the backend connection, and the second request trying to get it
 	# which makes reuse of backend connection sometimes work and
 	# sometimes not.  Solve by never reusing the backend connection.
 	txresp -hdr "Connection: close" -bodylen 2
-	expect_close
 	accept
 	rxreq
 	txresp -bodylen 5
@@ -34,6 +33,7 @@ client c1 {
 client c2 {
 	sema r1 sync 2
 	txreq
+	sema r1 sync 2
 	rxresp
 	expect resp.bodylen == 5
 } -start
