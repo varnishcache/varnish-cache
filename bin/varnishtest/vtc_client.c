@@ -82,6 +82,7 @@ client_thread(void *priv)
 	unsigned u;
 	struct vsb *vsb;
 	char *p;
+	char mabuf[32], mpbuf[32];
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(*c->connect);
@@ -107,7 +108,9 @@ client_thread(void *priv)
 		if (fd < 0)
 			vtc_log(c->vl, 0, "Failed to open %s", vsb_data(vsb));
 		assert(fd >= 0);
-		vtc_log(vl, 3, "connected fd %d", fd);
+		TCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
+		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
+		    fd, mabuf, mpbuf, vsb_data(vsb));
 		http_process(vl, c->spec, fd, -1);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		TCP_close(&fd);
