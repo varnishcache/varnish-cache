@@ -7,7 +7,7 @@ server s1 {
 	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-pthread_pools=1" -vcl+backend {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
 
 	sub vcl_deliver {
