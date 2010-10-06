@@ -63,6 +63,7 @@ struct client {
 	unsigned		repeat;
 
 	pthread_t		tp;
+	unsigned		running;
 };
 
 static VTAILQ_HEAD(, client)	clients =
@@ -171,6 +172,7 @@ client_start(struct client *c)
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
 	vtc_log(c->vl, 2, "Starting client");
 	AZ(pthread_create(&c->tp, NULL, client_thread, c));
+	c->running = 1;
 }
 
 /**********************************************************************
@@ -188,6 +190,7 @@ client_wait(struct client *c)
 	if (res != NULL)
 		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
 	c->tp = 0;
+	c->running = 0;
 }
 
 /**********************************************************************
@@ -240,6 +243,16 @@ cmd_client(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
+
+		if (!strcmp(*av, "-wait")) {
+			client_wait(c);
+			continue;
+		}
+
+		/* Don't muck about with a running client */
+		if (c->running)
+			client_wait(c);
+
 		if (!strcmp(*av, "-connect")) {
 			bprintf(c->connect, "%s", av[1]);
 			av++;
@@ -252,10 +265,6 @@ cmd_client(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-start")) {
 			client_start(c);
-			continue;
-		}
-		if (!strcmp(*av, "-wait")) {
-			client_wait(c);
 			continue;
 		}
 		if (!strcmp(*av, "-run")) {
