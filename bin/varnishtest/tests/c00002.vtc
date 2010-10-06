@@ -9,11 +9,10 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=2 -p thread_pools=4" 
+varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=8 -p thread_pools=4 -p thread_pool_purge_delay=10" 
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -expect n_wrk_create == 8
 
 client c1 {
 	txreq -url "/"
@@ -21,3 +20,5 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+varnish v1 -cliok stats
+varnish v1 -expect n_wrk == 8
