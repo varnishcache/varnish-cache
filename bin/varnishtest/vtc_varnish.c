@@ -304,6 +304,8 @@ varnish_launch(struct varnish *v)
 			(void)close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
 		exit(1);
+	} else {
+		vtc_log(v->vl, 3, "PID: %d", v->pid);
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));
@@ -315,7 +317,7 @@ varnish_launch(struct varnish *v)
 	/* Wait for the varnish to call home */
 	fd.fd = v->cli_fd;
 	fd.events = POLLIN;
-	i = poll(&fd, 1, 6000);
+	i = poll(&fd, 1, 10000);
 	if (i != 1) {
 		AZ(close(v->fds[1]));
 		(void)kill(v->pid, SIGKILL);
