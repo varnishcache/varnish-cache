@@ -20,6 +20,14 @@ varnish v1 -badvcl {
        }
 }
 
+varnish v9 -badvcl {
+       director directorname dns {
+               .list = {
+                       .host_hdr = "192.168.1.1";
+		       "192.168.1.2";
+               }
+       }
+}
 varnish v1 -badvcl {
        director directorname dns {
                .list = {
@@ -45,10 +53,10 @@ varnish v1 -badvcl {
        }
 }
 
-#varnish v1 -badvcl {
-#       director directorname dns {
-#               .list = {
-#                       "192.168.16.255"/24;
-#               }
-#       }
-#}
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       "192.168.16.255"/24;
+               }
+       }
+}

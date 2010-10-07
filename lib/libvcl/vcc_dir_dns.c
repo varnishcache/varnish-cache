@@ -153,12 +153,14 @@ vcc_dir_dns_makebackend(struct vcc *tl,
 	ip4 |= a[3] ;
 
 	ip4end = ip4 | ~mask;
-	assert (ip4 == (ip4 & mask));
+	if (ip4 != (ip4 & mask)) {
+		vsb_printf(tl->sb, "IP and network mask not compatible: ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, " at\n");
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
 
-/*	printf("uip4: \t0x%.8X\na: \t0x", ip4,ip4);
-	for (int i=0;i<4;i++) printf("%.2X",a[i]);
-	printf("\nmask:\t0x%.8X\nend:\t0x%.8X\n", mask, ip4end);
-*/
 	while (ip4 <= ip4end) {
 		uint8_t *b;
 		b=(uint8_t *)&ip4;
@@ -256,13 +258,23 @@ vcc_dir_dns_parse_list(struct vcc *tl, int *serial)
 	int ret;
 	ERRCHK(tl);
 	SkipToken(tl, '{');
-	if (tl->t->tok != CSTR)
+	if (tl->t->tok != CSTR) {
 		vcc_dir_dns_parse_backend_options(tl);
+		ERRCHK(tl);
+	}
+
 	while (tl->t->tok == CSTR) {
 		mask = 32;
 		ret = sscanf(tl->t->dec, "%hhu.%hhu.%hhu.%hhu",
 		    &a[0], &a[1], &a[2], &a[3]);
-		assert(ret == 4);
+		if (ret != 4) {
+			vsb_printf(tl->sb, "Incomplete IP supplied: ");
+			vcc_ErrToken(tl, tl->t);
+			vsb_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t);
+			ERRCHK(tl);
+		}
+
 		vcc_NextToken(tl);
 		if (tl->t->tok == '/') {
 			vcc_NextToken(tl);
