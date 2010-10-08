@@ -48,12 +48,8 @@ The following options are available:
 -f          Prefer the X-Forwarded-For HTTP header over client.ip in 
 	    the log output.
 
--I regex    Include log entries which match the specified regular 
-   	    expression.  If neither -I nor -i is specified, 
-	    all log entries are included.
-
--i tag      Include log entries with the specified tag.  If neither -I nor 
-   	    -i is specified, all log entries are included.
+-o	    Filter log output to request groups that match a regular
+	    expression on a specified tag.
 
 -n          Specifies the name of the varnishd instance to get logs 
 	    from.  If -n is not specified, the host name is used.
@@ -76,6 +72,10 @@ The following options are available:
    	    regular expression.
 
 -x tag      Exclude log entries with the specified tag.
+
+If the -o option was specified, a tag and a regex argument must be given.
+varnishncsa will then only log for request groups which include that tag
+and the regular expression matches on that tag.
 
 SEE ALSO
 ========

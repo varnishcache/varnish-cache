@@ -79,6 +79,7 @@ SVNID("$Id$")
 
 #include "libvarnish.h"
 #include "vsl.h"
+#include "vre.h"
 #include "varnishapi.h"
 
 static volatile sig_atomic_t reopen;
@@ -98,10 +99,29 @@ static struct logline {
 	char *df_u;			/* %u, Remote user */
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
+	int matched;			/* Did log line match */
 } **ll;
 
 static size_t nll;
 static int prefer_x_forwarded_for = 0;
+
+static int o_flag = 0;
+static int match_tag;
+static vre_t *match_tag_re;
+
+static int
+name2tag(const char *n)
+{
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (!strcasecmp(n, VSL_tags[i]))
+			return (i);
+	}
+	return (-1);
+}
 
 static int
 isprefix(const char *str, const char *prefix, const char *end,
@@ -313,6 +333,11 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	assert(spec & VSL_S_CLIENT);
 	end = ptr + len;
 
+	/* Do -o matching if specified */
+	if (o_flag && match_tag == tag && lp->active && 
+	   VRE_exec(match_tag_re, ptr, len, 0, 0, NULL, 0) > 0)
+		lp->matched = 1;
+
 	switch (tag) {
 	case SLT_ReqStart:
 		if(lp->active || lp->df_h != NULL) {
@@ -457,6 +482,10 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 	if(!lp->complete)
 		return (reopen);
 
+	if (o_flag && !lp->matched)
+		/* -o is in effect matching rule failed. Don't display */
+		return (reopen);
+
 #if 0
 	/* non-optional fields */
 	if (!lp->df_m || !lp->df_Uq || !lp->df_H || !lp->df_s) {
@@ -587,7 +616,7 @@ main(int argc, char *argv[])
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:f")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fo")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -611,8 +640,19 @@ main(int argc, char *argv[])
 			fprintf(stderr, "-b is not valid for varnishncsa\n");
 			exit(1);
 			break;
+		case 'i':
+			fprintf(stderr, "-i is not valid for varnishncsa\n");
+			exit(1);
+			break;
+		case 'I':
+			fprintf(stderr, "-I is not valid for varnishncsa\n");
+			exit(1);
+			break;
 		case 'c':
 			/* XXX: Silently ignored: it's required anyway */
+			break;
+		case 'o':
+			o_flag = 1;
 			break;
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
@@ -622,6 +662,26 @@ main(int argc, char *argv[])
 	}
 
 	VSL_Arg(vd, 'c', optarg);
+
+	if (o_flag) {
+		const char *error;
+		int erroroffset;
+
+		if (argc-optind != 2) {
+			fprintf(stderr, "Wrong number of arguments when using -o\n");
+			exit(2);
+		}
+		match_tag = name2tag(argv[optind]);
+		if (match_tag < 0) {
+			fprintf(stderr, "Tag \"%s\" unknown\n", argv[optind]);
+			exit(2);
+		}
+		match_tag_re = VRE_compile(argv[optind + 1], 0, &error, &erroroffset);
+		if (match_tag_re==NULL) {
+			fprintf(stderr, "Invalid regex: %s\n", error);
+			exit(2);
+		}
+	}
 
 	if (VSL_Open(vd, 1))
 		exit(1);
