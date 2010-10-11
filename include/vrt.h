@@ -213,6 +213,7 @@ char *VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa);
 char *VRT_int_string(const struct sess *sp, int);
 char *VRT_double_string(const struct sess *sp, double);
 char *VRT_time_string(const struct sess *sp, double);
+const char *VRT_bool_string(const struct sess *sp, unsigned);
 const char *VRT_backend_string(struct sess *sp, const struct director *d);
 
 #define VRT_done(sp, hand)			\

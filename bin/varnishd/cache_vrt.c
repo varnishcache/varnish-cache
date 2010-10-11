@@ -355,6 +355,14 @@ VRT_backend_string(struct sess *sp, const struct director *d)
 	return (d->vcl_name);
 }
 
+const char *
+VRT_bool_string(const struct sess *sp, unsigned val)
+{
+
+	(void)sp;
+	return (val ? "true" : "false");
+}
+
 /*--------------------------------------------------------------------*/
 
 void

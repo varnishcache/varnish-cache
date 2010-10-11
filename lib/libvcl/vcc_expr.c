@@ -359,12 +359,12 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	p = NULL;
 	switch((*e)->fmt) {
 	case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
+	case BOOL:	p = "VRT_bool_string(sp, \v1)"; break;
+	case DURATION:	p = "VRT_double_string(sp, \v1)"; break; /* XXX: should have "s" suffix ? */
 	case INT:	p = "VRT_int_string(sp, \v1)"; break;
 	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
-	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
 	case REAL:	p = "VRT_double_string(sp, \v1)"; break;
-	case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
-			/* XXX: should have "s" suffix ? */
+	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
 	default:	break;
 	}
 	if (p != NULL)
