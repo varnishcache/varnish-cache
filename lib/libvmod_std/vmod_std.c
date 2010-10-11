@@ -120,3 +120,16 @@ init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
 	priv->free = free;
 	return (0);
 }
+
+double
+vmod_random(struct sess *sp, double lo, double hi)
+{
+	double a;
+
+	(void)sp;
+
+	a = random() / (double)(1ULL<<32);
+	a *= hi - lo;
+	a += lo;
+	return (a);
+}

@@ -1,0 +1,38 @@
+# $Id$
+
+test "Test std.random"
+
+# needs random generator
+random
+
+server s1 {
+	rxreq
+	txresp -proto HTTP/1.0 -nolen -bodylen 9
+} -start
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+
+	sub vcl_fetch {
+		set beresp.http.rnd1 = std.random(0,1);
+		set beresp.http.rnd2 = std.random(0,10);
+		set beresp.http.rnd3 = std.random(8,10);
+		set beresp.http.rnd4 = std.random(99,100);
+	}
+} -start
+
+# NB: Do not change the number 1
+# NB: Only srandom(1) is standardized as deterministic.
+varnish v1 -cliok "debug.srandom 1"
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.rnd1 == 0.420
+	expect resp.http.rnd2 == 1.972
+	expect resp.http.rnd3 == 8.783
+	expect resp.http.rnd4 == 99.399
+	expect resp.bodylen == 9
+} -run
+
+

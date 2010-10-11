@@ -30,3 +30,4 @@ Init init_function
 Function STRING toupper(PRIV_CALL, STRING_LIST)
 Function STRING tolower(PRIV_VCL, STRING_LIST)
 Function VOID set_ip_tos(INT)
+Function REAL random(REAL, REAL)
