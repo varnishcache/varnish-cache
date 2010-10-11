@@ -362,6 +362,7 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	case INT:	p = "VRT_int_string(sp, \v1)"; break;
 	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
 	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+	case REAL:	p = "VRT_double_string(sp, \v1)"; break;
 	case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
 			/* XXX: should have "s" suffix ? */
 	default:	break;
