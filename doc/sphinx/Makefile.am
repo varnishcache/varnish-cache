@@ -87,3 +87,54 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+EXTRA_DIST = \
+	conf.py \
+	index.rst \
+	faq/configuration.rst \
+	faq/general.rst \
+	faq/http.rst \
+	faq/index.rst \
+	faq/logging.rst \
+	glossary/index.rst \
+	installation/bugs.rst \
+	installation/help.rst \
+	installation/index.rst \
+	installation/install.rst \
+	installation/prerequisites.rst \
+	phk/autocrap.rst \
+	phk/backends.rst \
+	phk/barriers.rst \
+	phk/index.rst \
+	phk/ipv6suckage.rst \
+	phk/platforms.rst \
+	phk/sphinx.rst \
+	phk/thoughts.rst \
+	phk/vcl_expr.rst \
+	reference/index.rst \
+	reference/shmem.rst \
+	reference/varnishadm.rst \
+	reference/varnishd.rst \
+	reference/varnishhist.rst \
+	reference/varnishlog.rst \
+	reference/varnishncsa.rst \
+	reference/varnishreplay.rst \
+	reference/varnishsizes.rst \
+	reference/varnishstat.rst \
+	reference/varnishtest.rst \
+	reference/varnishtop.rst \
+	reference/vcl.rst \
+	reference/vmod.rst \
+	tutorial/advanced_backend_servers.rst \
+	tutorial/advanced_topics.rst \
+	tutorial/backend_servers.rst \
+	tutorial/handling_misbehaving_servers.rst \
+	tutorial/increasing_your_hitrate.rst \
+	tutorial/index.rst \
+	tutorial/logging.rst \
+	tutorial/putting_varnish_on_port_80.rst \
+	tutorial/sizing_your_cache.rst \
+	tutorial/starting_varnish.rst \
+	tutorial/statistics.rst \
+	tutorial/troubleshooting.rst \
+	tutorial/vcl.rst

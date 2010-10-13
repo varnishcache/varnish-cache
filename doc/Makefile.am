@@ -34,8 +34,7 @@ all: ${CHANGELOGS}
 endif
 
 EXTRA_DIST = ${CHANGELOGS} ${XML} \
-	changes.css changes-html.xsl \
-	getting-started.html
+	changes.css changes-html.xsl
 
 CLEANFILES = ${CHANGELOGS}
 SUFFIXES = .xml .html
@@ -52,3 +51,4 @@ endif
 
 ${CHANGELOGS}: changes-html.xsl
 
+SUBDIRS = sphinx

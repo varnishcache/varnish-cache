@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishsizes
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishsizes.1
-endif
 
 varnishsizes_SOURCES = varnishsizes.c
 
@@ -16,7 +14,7 @@ varnishsizes_LDADD = \
 	-lm \
 	${CURSES_LIBS} ${PTHREAD_LIBS}
 
-%.1: ../../doc/sphinx/reference/%.rst
+%.1: $(top_srcdir)/doc/sphinx/reference/%.rst
 if HAVE_RST2MAN
 	${RST2MAN} $< >$@
 else

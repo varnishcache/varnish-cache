@@ -455,6 +455,7 @@ AC_CONFIG_FILES([
     bin/varnishtest/Makefile
     bin/varnishtop/Makefile
     doc/Makefile
+    doc/sphinx/Makefile
     etc/Makefile
     include/Makefile
     lib/Makefile
