@@ -20,8 +20,8 @@ DESCRIPTION
 ===========
 
 The VCL language is a small domain-specific language designed to be
-used to define request handling and document caching policies for the
-Varnish HTTP accelerator.
+used to define request handling and document caching policies for
+Varnish Cache.
 
 When a new configuration is loaded, the varnishd management process
 translates the VCL code to C and compiles it to a shared object which

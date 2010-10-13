@@ -30,7 +30,7 @@ listening on its port.::
     Platform: Linux,2.6.32-21-generic,i686,-smalloc,-hcritbit
     200 193     
     -----------------------------
-    Varnish HTTP accelerator CLI.
+    Varnish Cache CLI.
     -----------------------------
     Type 'help' for command list.
     Type 'quit' to close CLI session.

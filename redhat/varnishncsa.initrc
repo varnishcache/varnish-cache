@@ -1,9 +1,9 @@
 #! /bin/sh
 #
-# varnishncsa Control the varnish nsca logging daemon
+# varnishncsa Control the Varnish NSCA logging daemon
 #
 # chkconfig: - 90 10
-# description: Varnish logging daemon
+# description: Varnish Cache logging daemon
 # processname: varnishncsa
 # config: 
 # pidfile: /var/run/varnish/varnishncsa.pid
@@ -13,7 +13,7 @@
 # Required-Start: $network $local_fs $remote_fs
 # Required-Stop: $network $local_fs $remote_fs
 # Short-Description: start and stop varnishncsa
-# Description: Varnish HTTP accelerator logging daemon
+# Description: Varnish Cache NSCA logging daemon
 ### END INIT INFO
 
 # Source function library.

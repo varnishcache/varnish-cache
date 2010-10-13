@@ -3,7 +3,7 @@ varnishstat
 ===========
 
 ---------------------------
-HTTP accelerator statistics
+Varnish Cache statistics
 ---------------------------
 
 :Author: Dag-Erling Smørgrav

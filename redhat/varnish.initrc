@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# varnish Control the varnish HTTP accelerator
+# varnish Control the Varnish Cache
 #
 # chkconfig: - 90 10
 # description: Varnish is a high-perfomance HTTP accelerator
@@ -45,7 +45,7 @@ start() {
 		echo $config not found
 		exit 6
 	fi
-	echo -n "Starting varnish HTTP accelerator: "
+	echo -n "Starting Varnish Cache: "
 
 	# Open files (usually 1024, which is way too small for varnish)
 	ulimit -n ${NFILES:-131072}
@@ -76,7 +76,7 @@ start() {
 }
 
 stop() {
-	echo -n "Stopping varnish HTTP accelerator: "
+	echo -n "Stopping Varnish Cache: "
 	killproc -p $pidfile $prog
 	retval=$?
 	echo

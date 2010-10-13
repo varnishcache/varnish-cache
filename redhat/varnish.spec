@@ -28,9 +28,9 @@ Requires(preun): initscripts
 Requires: gcc
 
 %description
-This is the Varnish high-performance HTTP accelerator. Documentation
-wiki and additional information about Varnish is available on the following
-web site: http://www.varnish-cache.org/
+This is Varnish Cache, a high-performance HTTP accelerator.
+Documentation wiki and additional information about Varnish is
+available on the following web site: http://www.varnish-cache.org/
 
 %package libs
 Summary: Libraries for %{name}
@@ -40,7 +40,7 @@ BuildRequires: ncurses-devel
 
 %description libs
 Libraries for %{name}.
-Varnish is a high-performance HTTP accelerator.
+Varnish Cache is a high-performance HTTP accelerator.
 
 %package libs-devel
 Summary: Development files for %{name}-libs
@@ -50,7 +50,7 @@ Requires: varnish-libs = %{version}-%{release}
 
 %description libs-devel
 Development files for %{name}-libs
-Varnish is a high-performance HTTP accelerator
+Varnish Cache is a high-performance HTTP accelerator
 
 %package docs
 Summary: Documentation files for %name
@@ -68,7 +68,7 @@ Documentation files for %name
 #
 #%description libs-static
 #Files for static linking of varnish library functions
-#Varnish is a high-performance HTTP accelerator
+#Varnish Cache is a high-performance HTTP accelerator
 
 %prep
 #%setup -q
@@ -245,7 +245,7 @@ rm -rf %{buildroot}
 getent group varnish >/dev/null || groupadd -r varnish
 getent passwd varnish >/dev/null || \
 	useradd -r -g varnish -d /var/lib/varnish -s /sbin/nologin \
-		-c "Varnish http accelerator user" varnish
+		-c "Varnish Cache" varnish
 exit 0
 
 %post

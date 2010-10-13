@@ -1,9 +1,9 @@
 #! /bin/sh
 #
-# varnishlog Control the varnish logging daemon
+# varnishlog Control the Varnish logging daemon
 #
 # chkconfig: - 90 10
-# description: Varnish logging daemon
+# description: Varnish Cache logging daemon
 # processname: varnishlog
 # config: 
 # pidfile: /var/run/varnish/varnishlog.pid
@@ -13,7 +13,7 @@
 # Required-Start: $network $local_fs $remote_fs
 # Required-Stop: $network $local_fs $remote_fs
 # Short-Description: start and stop varnishlog
-# Description: Varnish HTTP accelerator logging daemon
+# Description: Varnish Cache logging daemon
 ### END INIT INFO
 
 # Source function library.
