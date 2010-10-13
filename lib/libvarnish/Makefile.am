@@ -4,8 +4,7 @@ INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 lib_LTLIBRARIES = libvarnish.la
 
-libvarnish_la_LDFLAGS = -version-info 1:0:0 \
-	../libvarnishcompat/libvarnishcompat.la
+libvarnish_la_LDFLAGS = -version-info 1:0:0
 
 libvarnish_la_SOURCES = \
 	argv.c \
