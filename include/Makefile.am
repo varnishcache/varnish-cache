@@ -5,6 +5,7 @@ pkginclude_HEADERS = \
 	vsl.h \
 	vsl_tags.h \
 	vsc_fields.h \
+	vsc_all.h \
 	vsc.h \
 	varnishapi.h
 

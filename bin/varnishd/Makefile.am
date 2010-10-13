@@ -77,6 +77,7 @@ noinst_HEADERS = \
 	default_vcl.h \
 	hash_slinger.h \
 	heritage.h \
+	locks.h \
 	mgt.h \
 	mgt_cli.h \
 	steps.h \
