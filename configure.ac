@@ -29,7 +29,7 @@ if test "x$XSLTPROC" = "xno"; then
    AC_MSG_WARN([xsltproc not found – not building documentation])
 fi
 AM_CONDITIONAL(HAVE_XSLTPROC,[test "x$XSLTPROC" != "xno"])
-AC_CHECK_PROGS(RST2MAN, [rst2man], "no")
+AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], "no")
 if test "x$RST2MAN" = "xno"; then
    AC_MSG_WARN([rst2man not found – not building man pages])
 fi
