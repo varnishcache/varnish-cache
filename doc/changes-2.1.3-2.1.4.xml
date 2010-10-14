@@ -90,12 +90,6 @@
     </change>
 
     <change type="enh">
-      <para>The client director now has a variable
-      <code>client.identity</code> which is used to choose which
-      backend should receive a given request.</para>
-    </change>
-
-    <change type="enh">
       <para>The Solaris <code>port</code> waiter has been updated, and
       other portability fixes for Solaris.</para>
     </change>
