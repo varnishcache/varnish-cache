@@ -15,7 +15,7 @@ have Varnish up and running go through the :ref:`tutorial-index`.
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    installation/index.rst
    tutorial/index.rst
