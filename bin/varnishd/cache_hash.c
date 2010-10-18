@@ -661,7 +661,10 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 	CHECK_OBJ_NOTNULL(oc1, OBJCORE_MAGIC);
 	oh = oc1->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	Lck_Lock(&oh->mtx);
+	if (Lck_Trylock(&oh->mtx)) {
+		*oc = NULL;
+		return;
+	}
 	VTAILQ_FOREACH(oc2, &oh->objcs, list)
 		if (oc1 == oc2)
 			break;
