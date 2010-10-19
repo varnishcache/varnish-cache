@@ -1,15 +1,9 @@
 # $Id$
 
-DISTCLEANFILES = vcl.7 default.vcl
-
-if HAVE_RST2MAN
 dist_man_MANS = vcl.7
-endif
 
-default.vcl:	$(top_srcdir)/bin/varnishd/default.vcl Makefile
-	sed -n '/vcl_recv/,$$p' $(top_srcdir)/bin/varnishd/default.vcl > $@
-
-vcl.7: ../doc/sphinx/reference/vcl.rst default.vcl
+vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
+	$(top_srcdir)/bin/varnishd/default.vcl
 if HAVE_RST2MAN
 	${RST2MAN} $< >$@
 else
