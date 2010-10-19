@@ -225,7 +225,7 @@ Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host,
  * in that context.
  */
 
-static void
+void
 vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v,
     int serial, const struct token *first, const struct token *last)
 {
@@ -681,6 +681,7 @@ static const struct dirlist {
 	{ "random",		vcc_ParseRandomDirector },
 	{ "client",		vcc_ParseRandomDirector },
 	{ "round-robin",	vcc_ParseRoundRobinDirector },
+	{ "dns",		vcc_ParseDnsDirector },
 	{ NULL,		NULL }
 };
 

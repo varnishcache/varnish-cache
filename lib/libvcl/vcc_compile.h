@@ -167,6 +167,10 @@ void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct tokenlist *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct tokenlist *tl, const struct fld_spec *fs);
 
+void Emit_Sockaddr(struct tokenlist *tl, const struct token *t_host, const char *port);
+void vcc_EmitBeIdent(const struct tokenlist *tl, struct vsb *v,
+	 int serial, const struct token *first, const struct token *last);
+
 /* vcc_compile.c */
 extern struct method method_tab[];
 /*
@@ -190,6 +194,9 @@ parsedirector_f vcc_ParseRandomDirector;
 
 /* vcc_dir_round_robin.c */
 parsedirector_f vcc_ParseRoundRobinDirector;
+
+/* vcc_dir_dns.c */
+parsedirector_f vcc_ParseDnsDirector;
 
 /* vcc_obj.c */
 extern struct var vcc_vars[];

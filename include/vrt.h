@@ -111,6 +111,21 @@ struct vrt_dir_round_robin {
 	const struct vrt_dir_round_robin_entry	*members;
 };
 
+/*
+ * A director with dns-based selection
+ */
+
+struct vrt_dir_dns_entry {
+	int					host;
+};
+
+struct vrt_dir_dns {
+	const char				*name;
+	const char				*suffix;
+	const double				ttl;
+	unsigned				nmember;
+	const struct vrt_dir_dns_entry		*members;
+};
 
 /*
  * other stuff.

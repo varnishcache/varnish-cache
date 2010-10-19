@@ -175,6 +175,34 @@ The client director takes one option - *retries* which set the number
 of retries the director should take in order to find a healthy
 backend.
 
+The DNS director
+~~~~~~~~~~~~~~~~
+
+The DNS director can use backends in three different ways. Either like the
+random or round-robin director or using .list::
+
+  director directorname dns {
+          .list = {
+                  .host_header = "www.example.com";
+                  .port = "80";
+                  .connect_timeout = 0.4;
+                  "192.168.15.0"/24;
+                  "192.168.16.128"/25;
+          }
+          .ttl = 5m;
+          .suffix = "internal.example.net";
+  }
+
+This will specify 384 backends, all using port 80 and a connection timeout
+of 0.4s. Options must come before the list of IPs in the .list statement.
+
+The .ttl defines the cache duration of the DNS lookups.
+
+The above example will append "internal.example.net" to the incoming Host
+header supplied by the client, before looking it up. All settings are
+optional.
+
+
 Backend probes
 --------------
 

@@ -268,7 +268,14 @@ vcl_output_lang_h(struct vsb *sb)
 	vsb_cat(sb, " {\n\tconst char\t\t\t\t*name;\n");
 	vsb_cat(sb, "\tunsigned\t\t\t\tnmember;\n\tconst struct vrt_dir_rou");
 	vsb_cat(sb, "nd_robin_entry\t*members;\n};\n");
-	vsb_cat(sb, "\n\n/*\n * other stuff.\n * XXX: document when bored\n");
+	vsb_cat(sb, "\n/*\n * A director with dns-based selection\n");
+	vsb_cat(sb, " */\n\nstruct vrt_dir_dns_entry {\n");
+	vsb_cat(sb, "\tint\t\t\t\t\thost;\n};\n\nstruct vrt_dir_dns {\n");
+	vsb_cat(sb, "\tconst char\t\t\t\t*name;\n\tconst char\t\t\t\t*suffi");
+	vsb_cat(sb, "x;\n\tconst double\t\t\t\tttl;\n");
+	vsb_cat(sb, "\tunsigned\t\t\t\tnmember;\n\tconst struct vrt_dir_dns");
+	vsb_cat(sb, "_entry\t\t*members;\n};\n\n/*\n");
+	vsb_cat(sb, " * other stuff.\n * XXX: document when bored\n");
 	vsb_cat(sb, " */\n\nstruct vrt_ref {\n\tunsigned\tsource;\n");
 	vsb_cat(sb, "\tunsigned\toffset;\n\tunsigned\tline;\n");
 	vsb_cat(sb, "\tunsigned\tpos;\n\tunsigned\tcount;\n");

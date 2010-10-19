@@ -141,6 +141,7 @@
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
+-sem(vdi_dns_cache_list_add, custodial(3))
 -ffc	// No automatic custody
 
 -e455	// thread lock

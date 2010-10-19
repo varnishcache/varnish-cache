@@ -154,3 +154,8 @@ MAC_STAT(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 MAC_STAT(uptime,		uint64_t, 0, 'a', "Client uptime")
 
 MAC_STAT(backend_retry,		uint64_t, 0, 'a', "Backend conn. retry")
+
+MAC_STAT(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups")
+MAC_STAT(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
+MAC_STAT(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
+MAC_STAT(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
