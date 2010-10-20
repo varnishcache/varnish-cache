@@ -11,3 +11,11 @@ EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in
 
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
+
+distcheck-hook:
+	if ! grep "^Version: @PACKAGE_VERSION@$$" $(top_distdir)/redhat/varnish.spec && \
+	  [ "@PACKAGE_VERSION@" != "trunk" ]; then \
+	  echo "redhat/varnish.spec does not have a version number matching the package" ; \
+	  exit 1 ; \
+	fi
+
