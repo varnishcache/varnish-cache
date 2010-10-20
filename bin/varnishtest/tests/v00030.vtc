@@ -1,0 +1,53 @@
+# $Id: v00028.vtc 5125 2010-08-25 08:57:04Z phk $
+
+test "DNS director bad VCL tests"
+
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       192.168.15.0/24;
+               }
+       }
+}
+
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       .host_header = "www.example.com";
+                       .port = "80";
+                       .connect_timeout = 0.4s;
+               }
+       }
+}
+
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       .host_hdr = "www.example.com";
+                       "192.168.16.128"/25;
+               }
+       }
+}
+
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       .port = 80;
+                       "192.168.15.0"/24;
+               }
+       }
+}
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       "192.168.15.0"/33;
+               }
+       }
+}
+varnish v1 -badvcl {
+       director directorname dns {
+               .list = {
+                       "192.168.16.255"/24;
+               }
+       }
+}

@@ -1,0 +1,45 @@
+# $Id: v00028.vtc 5125 2010-08-25 08:57:04Z phk $
+
+test "DNS director"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	director d1 dns {
+		{ .backend = s1; }
+	}
+
+	sub vcl_recv {
+		set req.backend = d1;
+		return (pass);
+	}
+} -start
+
+
+client c1 {
+	txreq -hdr "Host: localhost"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "Host: .......coco-x-zamzam-i-cant-bother-making-it-random"
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v2 -vcl {
+
+       director directorname dns {
+               .list = {
+                       .host_header = "www.example.com";
+                       .port = "80";
+                       .connect_timeout = 0.4s;
+                       "192.168.15.0"/24;
+                       "192.168.16.128"/25;
+               }
+               .ttl = 5m;
+               .suffix = "internal.example.net";
+       }
+}
