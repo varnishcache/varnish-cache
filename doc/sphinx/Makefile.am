@@ -138,3 +138,10 @@ EXTRA_DIST = \
 	tutorial/statistics.rst \
 	tutorial/troubleshooting.rst \
 	tutorial/vcl.rst
+
+dist-hook:
+	$(MAKE) html
+	cp -r $(BUILDDIR) $(distdir)
+
+distclean-local:
+	rm -r $(BUILDDIR)
