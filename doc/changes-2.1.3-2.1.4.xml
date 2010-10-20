@@ -16,7 +16,13 @@
     <change type="enh">
       <para>We now have updated documentation in the reStructuredText
       format.  Manual pages and reference documentation are both built
-      from this..</para>
+      from this.</para>
+    </change>
+
+    <change type="enh">
+      <para>We now include a DNS director which uses DNS for choosing
+      which backend to route requests to.  Please see the
+      documentation for more details.</para>
     </change>
 
     <change type="bug" ref="758">
