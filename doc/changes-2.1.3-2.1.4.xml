@@ -57,14 +57,6 @@
       when a backend connection is closed.</para>
     </change>
 
-    <change type="bug" ref="733">
-      <para>In a high traffic environment, we would sometimes reuse a
-      file descriptor before flushing the logs from a worker thread to
-      the shared log buffer.  This would cause confusion in some of
-      the tools.  This has been fixed by explicitly flushing the log
-      when a backend connection is closed.</para>
-    </change>
-
     <change type="bug" ref="744">
       <para>If the communication between the management and the child
       process gets out of sync, we have no way to recover.
