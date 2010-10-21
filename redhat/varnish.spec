@@ -10,9 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
 #BuildRequires: automake autoconf libtool
-BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig tex(latex)
-BuildRequires: python-docutils >= 0.6
-BuildRequires: python-sphinx >= 0.6
+BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
@@ -138,18 +136,7 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-# Build html and latex/pdf docs
-# Including the sphinx sources may be a good thing for advanced users
-pushd doc/sphinx
-%{__make} html
-%{__make} latex
-pushd \=build/latex
-# Something is broken in the latex version
-for i in `seq 1 53`; do echo -e '\n'; done | %{__make} || true 
-popd; popd
-mv doc/sphinx/\=build/html doc
-mv doc/sphinx/\=build/latex/Varnish.pdf doc
-rm -rvf doc/sphinx/\=build/*
+cp -r doc/sphinx/\=build/html doc
 
 %check
 # rhel5 on ppc64 is just too strange
@@ -202,7 +189,7 @@ rm -rf %{buildroot}
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
 %{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat ChangeLog doc/getting-started.html
+%doc INSTALL LICENSE README redhat/README.redhat ChangeLog
 %doc examples
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
@@ -230,7 +217,6 @@ rm -rf %{buildroot}
 
 %files docs
 %doc LICENSE
-%doc doc/Varnish.pdf
 %doc doc/sphinx
 %doc doc/html
 
