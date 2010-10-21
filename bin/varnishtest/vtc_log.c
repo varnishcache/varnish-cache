@@ -37,7 +37,6 @@ SVNID("$Id$")
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <stdarg.h>
 
 #include "libvarnish.h"

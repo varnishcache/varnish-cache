@@ -37,7 +37,6 @@ SVNID("$Id$")
 #include <fcntl.h>
 #include <math.h>
 #include <limits.h>
-#include <pthread.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -65,8 +64,6 @@ int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 char			vtc_tmpdir[PATH_MAX];
 static struct vtclog	*vltop;
-static pthread_mutex_t	vtc_mtx;
-static pthread_cond_t	vtc_cond;
 
 /**********************************************************************
  * Macro facility
@@ -516,9 +513,6 @@ exec_file_thread(void *priv)
 	vtc_log(vltop, 1, "RESETTING after %s", pe->fn);
 	reset_cmds(cmds);
 	vtc_error = old_err;
-	AZ(pthread_mutex_lock(&vtc_mtx));
-	AZ(pthread_cond_signal(&vtc_cond));
-	AZ(pthread_mutex_unlock(&vtc_mtx));
 	return (NULL);
 }
 
@@ -532,6 +526,7 @@ exec_file(const char *fn, unsigned dur)
 	void *v;
 	int i;
 
+	vtc_logreset();
 	t0 = TIM_mono();
 	vtc_stop = 0;
 	vtc_desc = NULL;
@@ -546,37 +541,22 @@ exec_file(const char *fn, unsigned dur)
 	ts.tv_sec = (long)floor(t);
 	ts.tv_nsec = (long)((t - ts.tv_sec) * 1e9);
 
-	AZ(pthread_mutex_lock(&vtc_mtx));
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
-	i = pthread_cond_timedwait(&vtc_cond, &vtc_mtx, &ts);
+	i = pthread_timedjoin_np(pt, &v, &ts);
 	memset(&vtc_thread, 0, sizeof vtc_thread);
 
-	if (i == 0) {
-		AZ(pthread_mutex_unlock(&vtc_mtx));
-		AZ(pthread_join(pt, &v));
-	} else {
-		AZ(pthread_mutex_unlock(&vtc_mtx));
+	if (i != 0) {
 		if (i != ETIMEDOUT)
 			vtc_log(vltop, 1, "Weird condwait return: %d %s",
 			    i, strerror(i));
-		/*
-		 * We are all going to die anyway, so don't waste time
-		 * trying to clean things up, it seems to trigger a
-		 * problem in the tinderbox
-		 *   AZ(pthread_mutex_unlock(&vtc_mtx));
-		 *   AZ(pthread_cancel(pt));
-		 *   AZ(pthread_join(pt, &v));
-		 */
 		vtc_log(vltop, 1, "Test timed out");
 		vtc_error = 1;
 	}
 
 	if (vtc_error)
 		vtc_log(vltop, 1, "TEST %s FAILED", fn);
-	else {
+	else 
 		vtc_log(vltop, 1, "TEST %s completed", fn);
-		vtc_logreset();
-	}
 
 	t0 = TIM_mono() - t0;
 
@@ -599,10 +579,6 @@ usage(void)
 	fprintf(stderr, "usage: varnishtest [-n iter] [-qv] file ...\n");
 	exit(1);
 }
-
-/**********************************************************************
- * Main
- */
 
 /**********************************************************************
  * Main
@@ -660,9 +636,6 @@ main(int argc, char * const *argv)
 	cwd = getcwd(NULL, PATH_MAX);
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "topbuild", topbuild);
-
-	AZ(pthread_mutex_init(&vtc_mtx, NULL));
-	AZ(pthread_cond_init(&vtc_cond, NULL));
 
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 	tmax = 0;

@@ -35,7 +35,6 @@ SVNID("$Id$")
 #include <poll.h>
 #include <stdio.h>
 #include <poll.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

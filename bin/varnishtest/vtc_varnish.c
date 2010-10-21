@@ -41,7 +41,6 @@ SVNID("$Id$")
 #include <string.h>
 #include <signal.h>
 #include <poll.h>
-#include <pthread.h>
 #include <inttypes.h>
 
 #include <sys/types.h>
