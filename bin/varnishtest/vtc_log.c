@@ -65,6 +65,7 @@ void
 vtc_loginit()
 {
 
+	AZ(vtclog_full);
 	vtclog_full = vsb_newauto();
 	AN(vtclog_full);
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
@@ -74,6 +75,7 @@ void
 vtc_logreset()
 {
 
+	AN(vtclog_full);
 	vsb_clear(vtclog_full);
 }
 
