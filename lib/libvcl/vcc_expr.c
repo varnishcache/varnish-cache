@@ -663,8 +663,8 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 		tk = tl->t;
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
-		assert(e2->fmt == f2);
 		ERRCHK(tl);
+		assert(e2->fmt == f2);
 		if (tk->tok == '*')
 			*e = vcc_expr_edit(f3, "(\v1*\v2)", *e, e2);
 		else
