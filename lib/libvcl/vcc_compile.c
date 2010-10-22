@@ -472,6 +472,9 @@ vcc_NewVcc(const struct vcc *tl0)
 		REPLACE(tl->default_vcl, tl0->default_vcl);
 		REPLACE(tl->vcl_dir, tl0->vcl_dir);
 		tl->vars = tl0->vars;
+		tl->err_unref = tl0->err_unref;
+	} else {
+		tl->err_unref = 1;
 	}
 	VTAILQ_INIT(&tl->symbols);
 	VTAILQ_INIT(&tl->hosts);
@@ -752,4 +755,17 @@ VCC_VMOD_dir(struct vcc *tl, const char *str)
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	REPLACE(tl->vmod_dir, str);
+}
+
+/*--------------------------------------------------------------------
+ * Configure default 
+ */
+
+void
+VCC_Err_Unref(struct vcc *tl, unsigned u)
+{
+	
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	printf("EU= %u\n", u);
+	tl->err_unref = u;
 }

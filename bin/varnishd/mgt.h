@@ -83,7 +83,7 @@ int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
 extern char *mgt_vcl_dir;
 extern char *mgt_vmod_dir;
-
+extern unsigned mgt_vcc_err_unref;
 
 #define REPORT0(pri, fmt)				\
 	do {						\

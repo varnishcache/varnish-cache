@@ -35,6 +35,7 @@ struct vcc *VCC_New(void);
 void VCC_Default_VCL(struct vcc *, const char *str);
 void VCC_VCL_dir(struct vcc *, const char *str);
 void VCC_VMOD_dir(struct vcc *, const char *str);
+void VCC_Err_Unref(struct vcc *tl, unsigned u);
 
 char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);
 const char *VCC_Return_Name(unsigned action);

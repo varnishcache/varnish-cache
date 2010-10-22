@@ -152,6 +152,8 @@ struct vcc {
 	unsigned		recnt;
 	unsigned		nsockaddr;
 	unsigned		nvmodpriv;
+
+	unsigned		err_unref;
 };
 
 struct var {

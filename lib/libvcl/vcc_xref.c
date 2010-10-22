@@ -114,6 +114,10 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
 		    VCC_SymKind(tl, sym), PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
+		if (!tl->err_unref) {
+			vsb_printf(tl->sb, "(That was just a warning)\n");
+			tl->err = 0;
+		}
 	}
 }
 

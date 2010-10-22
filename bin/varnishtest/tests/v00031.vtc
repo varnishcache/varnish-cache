@@ -1,0 +1,23 @@
+# $Id$
+
+test "param vcc_err_unref"
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	backend c { .host = "127.0.0.1"; }
+}
+
+varnish v1 -cliok "param.set vcc_err_unref false"
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	backend c { .host = "127.0.0.1"; }
+}
+
+varnish v1 -cliok "param.set vcc_err_unref true"
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	backend c { .host = "127.0.0.1"; }
+}
+

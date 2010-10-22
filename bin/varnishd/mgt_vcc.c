@@ -69,6 +69,7 @@ static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 char *mgt_cc_cmd;
 char *mgt_vcl_dir;
 char *mgt_vmod_dir;
+unsigned mgt_vcc_err_unref;
 
 static struct vcc *vcc;
 
@@ -146,6 +147,7 @@ run_vcc(void *priv)
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
+	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
 	vsb_finish(sb);
 	AZ(vsb_overflowed(sb));
