@@ -266,6 +266,7 @@ STV_config(const char *spec)
 	int ac, l;
 	static unsigned seq = 0;
 
+	ASSERT_MGT();
 	p = strchr(spec, '=');
 	q = strchr(spec, ',');
 	if (p != NULL && (q == NULL || q > p)) {
