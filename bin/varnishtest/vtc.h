@@ -28,6 +28,7 @@
  * $Id$
  */
 
+#include <limits.h>
 #include <pthread.h>
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
