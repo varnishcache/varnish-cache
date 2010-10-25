@@ -552,9 +552,11 @@ FetchBody(struct sess *sp)
 		assert(uu == sp->obj->len);
 	}
 
-	if (mklen > 0)
+	if (mklen > 0) {
+		http_Unset(sp->obj->http, H_Content_Length);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 		    "Content-Length: %u", sp->obj->len);
+	}
 
 	if (http_HdrIs(hp, H_Connection, "close"))
 		cls = 1;
