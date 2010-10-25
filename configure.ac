@@ -8,6 +8,9 @@ AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
+# save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
+OCFLAGS="$CFLAGS"
+
 AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
@@ -21,6 +24,13 @@ if test "x$ac_cv_prog_cc_c99" = xno; then
   AC_MSG_ERROR([Could not find a C99 compatible compiler])
 fi
 AC_PROG_CPP
+
+AX_PTHREAD(,[AC_MSG_ERROR([Could not configure pthreads support])])
+
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
+
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
@@ -406,16 +416,25 @@ if test "$ac_cv_env_VCC_CC_set" = "set"; then
 else
 	case $target in
 	*-*-solaris*)
-		VCC_CC="cc -Kpic -G -o %o %s"
+		case $PTHREAD_CC in
+		*gcc*)
+			VCC_CC="$PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -fpic -shared -o %o %s"
+			break
+			;;
+		*cc)
+			VCC_CC="$PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			;;
+		esac
 		;;
 	*-*-darwin*)
-		VCC_CC="exec cc -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		VCC_CC="exec cc $OCFLAGS -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec cc -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
 fi
+
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
 # Use jemalloc on Linux
