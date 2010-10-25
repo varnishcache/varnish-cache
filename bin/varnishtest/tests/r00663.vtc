@@ -5,9 +5,10 @@ test "Test that errno is thread-local"
 
 server s1 {
 	rxreq
-	txresp
+	txresp -bodylen 1
+	sema r1 sync 2
 	rxreq
-	txresp
+	txresp -bodylen 2
 } -start
 
 varnish v1 -vcl+backend {
@@ -48,9 +49,6 @@ varnish v1 -vcl+backend {
 		char buf[16];
 		int fd;
 		
-		/* make sure "one" has done its open */
-		    sleep(1);
-		
 		fd = open("/dev/null", O_RDONLY);
 		
 		sprintf(buf, "%d", errno);
@@ -75,6 +73,7 @@ client c1 {
 } -start
 
 client c2 {
+	sema r1 sync 2
 	txreq -url "/two" -hdr "Client: two"
 	rxresp
         expect resp.status == 200
