@@ -63,5 +63,7 @@ varnish v1 -badvcl {
 	}
 }
 
+delay 2
+
 varnish v1 -cliok "debug.vmod"
 varnish v1 -expect vmods == 0
