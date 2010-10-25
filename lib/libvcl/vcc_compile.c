@@ -766,6 +766,5 @@ VCC_Err_Unref(struct vcc *tl, unsigned u)
 {
 	
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	printf("EU= %u\n", u);
 	tl->err_unref = u;
 }
