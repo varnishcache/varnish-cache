@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
 sbin_PROGRAMS = varnishd
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishd.1
-endif
 
 varnishd_SOURCES = \
 	cache_acceptor.c \

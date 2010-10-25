@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishhist
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishhist.1
-endif
 
 varnishhist_SOURCES = varnishhist.c
 

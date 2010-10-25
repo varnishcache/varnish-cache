@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishncsa
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishncsa.1
-endif
 
 varnishncsa_SOURCES = varnishncsa.c
 

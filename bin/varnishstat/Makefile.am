@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishstat
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishstat.1
-endif
 
 varnishstat_SOURCES = \
 	varnishstat.h \

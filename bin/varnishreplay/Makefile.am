@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishreplay
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishreplay.1
-endif
 
 varnishreplay_SOURCES = \
 	varnishreplay.c
