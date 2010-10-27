@@ -91,17 +91,21 @@ struct symbol {
 	unsigned			wildcard;
 	enum symkind			kind;
 
-	unsigned			nref, ndef;
 	const struct token		*def_b, *def_e;
 
 	enum var_type			fmt;
 
-	struct proc			*proc;
-
 	sym_expr_t			*eval;
 
+	/* xref.c */
+	struct proc			*proc;
+	unsigned			nref, ndef;
+
+	/* SYM_PROC, SYM_FUNC */
 	const char			*cfunc;
 	const char			*args;
+
+	/* SYM_VAR */
 	const struct var		*var;
 	unsigned			r_methods;
 };
