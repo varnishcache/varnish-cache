@@ -568,6 +568,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
 		sym->var = v;
 		sym->fmt = v->fmt;
+		sym->eval = vcc_Expr_Var;
 		sym->r_methods = v->r_methods;
 		if (v->fmt == HEADER)
 			sym->wildcard = 1;

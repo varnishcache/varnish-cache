@@ -417,6 +417,26 @@ vcc_arg_type(const char **p)
  */
 
 void
+vcc_Expr_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
+{
+	const struct var *vp;
+
+	assert(sym->kind == SYM_VAR);
+	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+	vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
+	ERRCHK(tl);
+	assert(vp != NULL);
+	vsb_printf((*e)->vsb, "%s", vp->rname);
+	(*e)->fmt = vp->fmt;
+	vcc_NextToken(tl);
+	vsb_finish((*e)->vsb);
+	AZ(vsb_overflowed((*e)->vsb));
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
 vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 	const char *p, *q, *r;
@@ -424,8 +444,7 @@ vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	enum var_type fmt;
 	char buf[32];
 
-	(void)tl;
-	(void)e;
+	assert(sym->kind == SYM_FUNC || sym->kind == SYM_PROC);
 	AN(sym->cfunc);
 	AN(sym->args);
 	SkipToken(tl, ID);
@@ -565,14 +584,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 		switch(sym->kind) {
 		case SYM_VAR:
-			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
-			vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
-			ERRCHK(tl);
-			assert(vp != NULL);
-			vsb_printf(e1->vsb, "%s", vp->rname);
-			e1->fmt = vp->fmt;
-			vcc_NextToken(tl);
-			break;
+			ErrInternal(tl);
+			return;
 		case SYM_FUNC:
 			ErrInternal(tl);
 			return;
