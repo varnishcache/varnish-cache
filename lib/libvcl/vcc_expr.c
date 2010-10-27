@@ -402,11 +402,6 @@ hack_regsub(struct vcc *tl, struct expr **e, int all)
 
 /*--------------------------------------------------------------------
  */
-#if 0
-#define VCC_TYPE(a)	case a: return(#a);
-#include "vcc_types.h"
-#undef VCC_TYPE
-#endif
 
 static enum var_type
 vcc_arg_type(const char **p)
@@ -421,8 +416,8 @@ vcc_arg_type(const char **p)
 /*--------------------------------------------------------------------
  */
 
-static void
-vcc_expr_call(struct vcc *tl, struct expr **e, const struct symbol *sym)
+void
+vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 	const char *p, *q, *r;
 	struct expr *e1;
@@ -561,6 +556,12 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		}
 		AN(sym);
+		if (sym->eval != NULL) {
+			sym->eval(tl, &e1, sym);
+			ERRCHK(tl);
+			*e = e1;
+			return;
+		}
 
 		switch(sym->kind) {
 		case SYM_VAR:
@@ -573,9 +574,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			vcc_NextToken(tl);
 			break;
 		case SYM_FUNC:
-			vcc_expr_call(tl, &e1, sym);
-			ERRCHK(tl);
-			*e = e1;
+			ErrInternal(tl);
 			return;
 		case SYM_PROC:
 			vsb_printf(tl->sb,
@@ -1036,7 +1035,7 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 
 	t1 = tl->t;
 	e = vcc_new_expr();
-	vcc_expr_call(tl, &e, sym);
+	vcc_Expr_Func(tl, &e, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		vsb_cat(tl->fb, ";\n");

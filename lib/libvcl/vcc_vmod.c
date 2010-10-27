@@ -155,6 +155,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
+			sym->eval = vcc_Expr_Func;
 			p += strlen(p) + 1;
 			sym->cfunc = p;
 			p += strlen(p) + 1;

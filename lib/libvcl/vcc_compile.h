@@ -38,6 +38,9 @@
 
 struct acl_e;
 struct proc;
+struct expr;
+struct vcc;
+struct symbol;
 
 enum var_type {
 #define VCC_TYPE(foo)		foo,
@@ -75,6 +78,9 @@ enum symkind {
 #undef VCC_SYMB
 };
 
+typedef void sym_expr_t(struct vcc *tl, struct expr **e,
+    const struct symbol *sym);
+
 struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
@@ -91,6 +97,8 @@ struct symbol {
 	enum var_type			fmt;
 
 	struct proc			*proc;
+
+	sym_expr_t			*eval;
 
 	const char			*cfunc;
 	const char			*args;
@@ -231,6 +239,7 @@ unsigned vcc_UintVal(struct vcc *tl);
 double vcc_DoubleVal(struct vcc *tl);
 void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
+sym_expr_t vcc_Expr_Func;
 
 /* vcc_dir_dns.c */
 parsedirector_f vcc_ParseDnsDirector;
@@ -246,7 +255,7 @@ char *vcc_regexp(struct vcc *tl);
 int vcc_StringVal(struct vcc *tl);
 void vcc_ExpectedStringval(struct vcc *tl);
 
-/* vcc_symbol */
+/* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
 struct symbol *VCC_GetSymbolTok(struct vcc *tl, const struct token *tok,
     enum symkind);
