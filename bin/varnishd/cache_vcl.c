@@ -104,6 +104,7 @@ VCL_Rel(struct VCL_conf **vcc)
 {
 	struct VCL_conf *vc;
 
+	AN(*vcc);
 	vc = *vcc;
 	*vcc = NULL;
 
