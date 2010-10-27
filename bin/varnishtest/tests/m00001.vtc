@@ -49,6 +49,8 @@ varnish v1 -cliok "vcl.discard vcl1"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
+client c1 -run
+
 varnish v1 -badvcl {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
@@ -62,8 +64,6 @@ varnish v1 -badvcl {
 		}
 	}
 }
-
-delay 2
 
 varnish v1 -cliok "debug.vmod"
 varnish v1 -expect vmods == 0
