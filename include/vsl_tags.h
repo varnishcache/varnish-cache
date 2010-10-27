@@ -79,6 +79,7 @@ SLTM(ObjHeader)
 SLTM(LostHeader)
 
 SLTM(TTL)
+SLTM(Fetch_Body)
 SLTM(VCL_acl)
 SLTM(VCL_call)
 SLTM(VCL_trace)

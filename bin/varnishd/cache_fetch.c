@@ -476,13 +476,14 @@ FetchBody(struct sess *sp)
 	 * Determine if we have a body or not
 	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
 	 */
-	cls = 0;
-	mklen = 0;
 
 	switch (sp->wrk->body_status) {
 	case BS_NONE:
+		cls = 0;
+		mklen = 0;
 		break;
 	case BS_ZERO:
+		cls = 0;
 		mklen = 1;
 		break;
 	case BS_LENGTH:
@@ -499,10 +500,21 @@ FetchBody(struct sess *sp)
 		mklen = 1;
 		break;
 	case BS_ERROR:
+		cls = 1;
+		mklen = 0;
+		break;
+	default:
+		cls = 0;
+		mklen = 0;
+		INCOMPL();
+	}
+
+	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %u %u",
+	    sp->wrk->body_status, cls, mklen);
+
+	if (sp->wrk->body_status == BS_ERROR) {
 		VDI_CloseFd(sp);
 		return (__LINE__);
-	default:
-		INCOMPL();
 	}
 
 	if (cls == 0 && http_HdrIs(hp, H_Connection, "close"))
