@@ -15,9 +15,9 @@ server s1 {
 
 varnish v1 -storage "-smalloc,1m" -vcl+backend {
 
-	sub vcl_fetch {
-		if (beresp.http.panic) {
-			panic "Had Panic header: " + beresp.http.panic;
+	sub vcl_deliver {
+		if (resp.http.panic) {
+			panic "Had Panic header: " + resp.http.panic;
 		}
 	}
 } -start
