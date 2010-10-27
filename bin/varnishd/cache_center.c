@@ -506,6 +506,8 @@ cnt_fetch(struct sess *sp)
 	sp->wrk->do_esi = 0;
 	sp->wrk->grace = NAN;
 
+	sp->wrk->body_status = RFC2616_Body(sp);
+
 	VCL_fetch_method(sp);
 
 	/*

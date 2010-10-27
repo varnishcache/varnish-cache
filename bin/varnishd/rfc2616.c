@@ -40,7 +40,7 @@ SVNID("$Id$")
 #include <math.h>
 
 #include "cache.h"
-
+#include "vrt.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish
@@ -162,4 +162,75 @@ RFC2616_Ttl(const struct sess *sp)
 	    (int)h_expires, max_age, age);
 
 	return (ttd);
+}
+
+/*--------------------------------------------------------------------
+ * Body existence and fetch method
+ * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
+ */
+
+enum body_status
+RFC2616_Body(const struct sess *sp)
+{
+	struct http *hp;
+	char *b;
+
+	hp = sp->wrk->beresp1;
+
+	if (!strcasecmp(http_GetReq(sp->wrk->bereq), "head")) {
+		/*
+		 * A HEAD request can never have a body in the reply,
+		 * no matter what the headers might say.
+		 */
+		sp->wrk->stats.fetch_head++;
+		return (BS_NONE);
+	}
+
+	/* If the headers tells us what to do, obey. */
+
+	if (http_GetHdr(hp, H_Content_Length, &b)) {
+		sp->wrk->stats.fetch_length++;
+		return (BS_LENGTH);
+	}
+
+	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
+		 sp->wrk->stats.fetch_chunked++;
+		return (BS_CHUNKED);
+	}
+
+	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		sp->wrk->stats.fetch_bad++;
+		return (BS_ERROR);
+	}
+
+	if (http_HdrIs(hp, H_Connection, "keep-alive")) {
+		/*
+		 * Keep alive with neither TE=Chunked or C-Len is impossible.
+		 * We assume a zero length body.
+		 */
+		sp->wrk->stats.fetch_zero++;
+		return (BS_ZERO);
+	}
+
+	if (http_HdrIs(hp, H_Connection, "close")) {
+		/*
+		 * In this case, it is safe to just read what comes.
+		 */
+		sp->wrk->stats.fetch_close++;
+		return (BS_EOF);
+	}
+
+	if (hp->protover < 1.1) {
+		/*
+		 * With no Connection header, assume EOF.
+		 */
+		sp->wrk->stats.fetch_oldhttp++;
+		return (BS_EOF);
+	}
+
+	/*
+	 * XXX: Here it should depends on the status code
+	 */
+	sp->wrk->stats.fetch_eof++;
+	return (BS_EOF);
 }
