@@ -17,6 +17,8 @@ varnish v1 -arg "-pthread_pools=1" -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set diag_bitmap 0x40000"
+
 client c1 {
 	txreq -url "/bar"
 	rxresp
@@ -38,8 +40,6 @@ client c1 {
 	expect resp.http.bar == "fOo"
 } -run
 
-client c1 -run
-
 varnish v1 -cliok "debug.vmod"
 varnish v1 -cliok "vcl.list"
 
@@ -48,8 +48,6 @@ varnish v1 -expect vmods == 1
 varnish v1 -cliok "vcl.discard vcl1"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
-
-client c1 -run
 
 varnish v1 -badvcl {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;

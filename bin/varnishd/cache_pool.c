@@ -190,6 +190,8 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		AZ(w->wfd);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
+		if (params->diag_bitmap & 0x00040000)
+			VCL_Rel(&w->vcl);
 		if (!Lck_Trylock(&wstat_mtx)) {
 			wrk_sumstat(w);
 			Lck_Unlock(&wstat_mtx);
