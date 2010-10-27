@@ -78,7 +78,7 @@ enum symkind {
 #undef VCC_SYMB
 };
 
-typedef void sym_expr_t(struct vcc *tl, struct expr **e,
+typedef void sym_expr_t(struct vcc *tl, struct expr * const *e,
     const struct symbol *sym);
 
 struct symbol {
@@ -241,6 +241,7 @@ void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 sym_expr_t vcc_Expr_Var;
 sym_expr_t vcc_Expr_Func;
+sym_expr_t vcc_Expr_Backend;
 
 /* vcc_dir_dns.c */
 parsedirector_f vcc_ParseDnsDirector;

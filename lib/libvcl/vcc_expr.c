@@ -417,7 +417,22 @@ vcc_arg_type(const char **p)
  */
 
 void
-vcc_Expr_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
+vcc_Expr_Backend(struct vcc *tl, struct expr * const *e, const struct symbol *sym)
+{
+
+	assert(sym->kind == SYM_BACKEND);
+
+	vcc_ExpectCid(tl);
+	vcc_AddRef(tl, tl->t, SYM_BACKEND);
+	vsb_printf((*e)->vsb, "VGCDIR(_%.*s)", PF(tl->t));
+	(*e)->fmt = BACKEND;
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------
+ */
+void
+vcc_Expr_Var(struct vcc *tl, struct expr * const *e, const struct symbol *sym)
 {
 	const struct var *vp;
 
@@ -429,18 +444,16 @@ vcc_Expr_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	vsb_printf((*e)->vsb, "%s", vp->rname);
 	(*e)->fmt = vp->fmt;
 	vcc_NextToken(tl);
-	vsb_finish((*e)->vsb);
-	AZ(vsb_overflowed((*e)->vsb));
 }
 
 /*--------------------------------------------------------------------
  */
 
 void
-vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
+vcc_Expr_Func(struct vcc *tl, struct expr * const *e, const struct symbol *sym)
 {
 	const char *p, *q, *r;
-	struct expr *e1;
+	struct expr *e1, *e2;
 	enum var_type fmt;
 	char buf[32];
 
@@ -450,10 +463,11 @@ vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	p = sym->args;
-	(*e)->fmt = vcc_arg_type(&p);
-	vsb_printf((*e)->vsb, "%s(sp, \v+", sym->cfunc);
-	vsb_finish((*e)->vsb);
-	AZ(vsb_overflowed((*e)->vsb));
+	e2 = vcc_new_expr();
+	e2->fmt = vcc_arg_type(&p);
+	vsb_printf(e2->vsb, "%s(sp, \v+", sym->cfunc);
+	vsb_finish(e2->vsb);
+	AZ(vsb_overflowed(e2->vsb));
 	q = "\v1\n\v2";
 	while (*p != '\0') {
 		e1 = NULL;
@@ -496,11 +510,13 @@ vcc_Expr_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		}
-		*e = vcc_expr_edit((*e)->fmt, q, *e, e1);
+		e2 = vcc_expr_edit(e2->fmt, q, e2, e1);
 		q = "\v1,\n\v2";
 	}
 	SkipToken(tl, ')');
-	*e = vcc_expr_edit((*e)->fmt, "\v1\n)\v-", *e, NULL);
+	e2 = vcc_expr_edit(e2->fmt, "\v1\n)\v-", e2, NULL);
+	(*e)->fmt = e2->fmt;
+	vsb_cat((*e)->vsb, vsb_data(e2->vsb));
 }
 
 /*--------------------------------------------------------------------
@@ -516,7 +532,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e1, *e2;
 	const struct symbol *sym;
-	const struct var *vp;
 	double d;
 
 	*e = NULL;
@@ -553,14 +568,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			e1->fmt = BOOL;
 			break;
 		}
-		if (fmt == BACKEND) {
-			vcc_ExpectCid(tl);
-			vcc_AddRef(tl, tl->t, SYM_BACKEND);
-			vsb_printf(e1->vsb, "VGCDIR(_%.*s)", PF(tl->t));
-			e1->fmt = BACKEND;
-			vcc_NextToken(tl);
-			break;
-		}
 		/*
 		 * XXX: what if var and func/proc had same name ?
 		 * XXX: look for SYM_VAR first for consistency ?
@@ -578,8 +585,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		if (sym->eval != NULL) {
 			sym->eval(tl, &e1, sym);
 			ERRCHK(tl);
-			*e = e1;
-			return;
+			break;
 		}
 
 		switch(sym->kind) {
@@ -1049,6 +1055,8 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 	t1 = tl->t;
 	e = vcc_new_expr();
 	vcc_Expr_Func(tl, &e, sym);
+	vsb_finish(e->vsb);
+	AZ(vsb_overflowed(e->vsb));
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		vsb_cat(tl->fb, ";\n");

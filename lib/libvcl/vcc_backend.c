@@ -676,6 +676,22 @@ vcc_ParseBackendHost(struct vcc *tl, int serial, char **nm)
 }
 
 /*--------------------------------------------------------------------
+ * Tell rest of compiler about a backend
+ */
+
+static void
+vcc_DefBackend(struct vcc *tl, const struct token *nm)
+{
+	struct symbol *sym;
+
+	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
+	AN(sym);
+	sym->fmt = BACKEND;
+	sym->eval = vcc_Expr_Backend;
+	sym->ndef++;
+}
+
+/*--------------------------------------------------------------------
  * Parse a plain backend aka a simple director
  */
 
@@ -687,7 +703,7 @@ vcc_ParseSimpleDirector(struct vcc *tl)
 
 	h = TlAlloc(tl, sizeof *h);
 	h->name = tl->t_dir;
-	vcc_AddDef(tl, tl->t_dir, SYM_BACKEND);
+	vcc_DefBackend(tl, tl->t_dir);
 	sprintf(vgcname, "_%.*s", PF(h->name));
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
@@ -735,7 +751,7 @@ vcc_ParseDirector(struct vcc *tl)
 		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
-		vcc_AddDef(tl, tl->t_dir, SYM_BACKEND);
+		vcc_DefBackend(tl, tl->t_dir);
 		ExpectErr(tl, ID);		/* ID: policy */
 		tl->t_policy = tl->t;
 		vcc_NextToken(tl);
