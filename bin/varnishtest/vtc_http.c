@@ -778,7 +778,7 @@ cmd_http_chunkedlen(CMD_ARGS)
 		vsb_printf(hp->vsb, "%x%s", v, nl);
 		vsb_printf(hp->vsb, "%*.*s%s", v, v, buf, nl);
 	}
-	vsb_printf(hp->vsb, "%x%s", 0, nl);
+	vsb_printf(hp->vsb, "%x%s%s", 0, nl, nl);
 	http_write(hp, 4, "chunked");
 }
 

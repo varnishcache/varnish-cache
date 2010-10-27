@@ -10,6 +10,7 @@ server s1 {
 	send "004\r\n1234\r\n"
 	send "000000000000000000001\r\n@\r\n"
 	send "00000000\r\n"
+	send "\r\n"
 } -start
 
 varnish v1 -vcl+backend {} -start

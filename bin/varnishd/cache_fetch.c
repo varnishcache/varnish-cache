@@ -207,6 +207,15 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		q = bp = buf + v;
 	}
 
+	/* Expect a CRLF to trail the chunks */
+	i = HTC_Read(htc, buf, 1);
+	if (i == 1 && buf[0] == '\r')
+		i = HTC_Read(htc, buf, 1);
+	if (i != 1 || buf[0] != '\n') {
+		WSP(sp, SLT_FetchError, "chunked missing trailing crlf");
+		return (1);	/* Accept fetch, but do not reuse connection */
+	}
+
 	if (st != NULL && st->len == 0) {
 		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
