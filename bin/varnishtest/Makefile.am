@@ -33,9 +33,9 @@ varnishtest_CFLAGS = \
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README
 
-%.1: ../../doc/sphinx/reference/%.rst
+varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
 if HAVE_RST2MAN
-	${RST2MAN} $< >$@
+	${RST2MAN} $? $@
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"

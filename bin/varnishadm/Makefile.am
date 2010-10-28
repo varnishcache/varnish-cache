@@ -15,9 +15,9 @@ varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	${PTHREAD_LIBS} ${NET_LIBS}
 
-%.1: $(top_srcdir)/doc/sphinx/reference/%.rst
+varnishadm.1: $(top_srcdir)/doc/sphinx/reference/varnishadm.rst
 if HAVE_RST2MAN
-	${RST2MAN} $< >$@
+	${RST2MAN} $? $@
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"
