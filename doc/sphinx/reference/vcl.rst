@@ -46,16 +46,23 @@ without doubling.
 Strings are concatenated by putting them one after each other
 without a '+' operator between.
 
-Assignments are introduced with the set keyword.  There are no
+Assignments are introduced with the *set* keyword.  There are no
 user-defined variables; values can only be assigned to variables
 attached to backend, request or document objects.  Most of these are
 typed, and the values assigned to them must have a compatible unit
 suffix.
 
+You can use the *set* keyword to arbitrary HTTP headers. You can
+remove headers with the *remove* or *unset* keywords, which are
+synonym.
+
 VCL has if tests, but no loops.
 
+You may log arbitrary strings to the shared memory log with the
+keyword *log*.
+
 The contents of another VCL file may be inserted at any point in the
-code by using the include keyword followed by the name of the other
+code by using the *include* keyword followed by the name of the other
 file as a quoted string.
 
 Backend declarations
@@ -717,6 +724,7 @@ based on the request URL:::
   
   sub vcl_fetch {
     if (beresp.ttl < 120s) {
+      log "Adjusting TTL";
       set beresp.ttl = 120s;
     }
   }
