@@ -291,6 +291,7 @@ cnt_done(struct sess *sp)
 		WRK_SumStat(sp->wrk);
 	/* Reset the workspace to the session-watermark */
 	WS_Reset(sp->ws, sp->ws_ses);
+	WS_Reset(sp->wrk->ws, NULL);
 
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
