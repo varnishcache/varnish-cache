@@ -1,10 +1,12 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
  * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Anders Berg <andersb@vgnett.no>
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Tollef Fog Heen <tfheen@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -88,7 +90,8 @@ static struct logline {
 	char *df_H;			/* %H, Protocol version */
 	char *df_Host;			/* %{Host}i */
 	char *df_Referer;		/* %{Referer}i */
-	char *df_Uq;			/* %U%q, URL path and query string */
+	char *df_U;			/* %U, URL path */
+	char *df_q;			/* %q, query string */
 	char *df_User_agent;		/* %{User-agent}i */
 	char *df_X_Forwarded_For;	/* %{X-Forwarded-For}i */
 	char *df_b;			/* %b, Bytes */
@@ -97,17 +100,20 @@ static struct logline {
 	char *df_s;			/* %s, Status */
 	struct tm df_t;			/* %t, Date and time */
 	char *df_u;			/* %u, Remote user */
+	char *df_ttfb;			/* Time to first byte */
+	const char *df_hitmiss;		/* Whether this is a hit or miss */
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
 	int matched;			/* Did log line match */
 } **ll;
 
 static size_t nll;
-static int prefer_x_forwarded_for = 0;
 
 static int o_flag = 0;
 static int match_tag;
 static vre_t *match_tag_re;
+
+static const char *format;
 
 static int
 name2tag(const char *n)
@@ -205,7 +211,8 @@ clean_logline(struct logline *lp)
 	freez(lp->df_H);
 	freez(lp->df_Host);
 	freez(lp->df_Referer);
-	freez(lp->df_Uq);
+	freez(lp->df_U);
+	freez(lp->df_q);
 	freez(lp->df_User_agent);
 	freez(lp->df_X_Forwarded_For);
 	freez(lp->df_b);
@@ -228,7 +235,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	switch (tag) {
 	case SLT_BackendOpen:
-		if(lp->active || lp->df_h != NULL) {
+		if (lp->active || lp->df_h != NULL) {
 			/* New start for active line,
 			   clean it and start from scratch */
 			clean_logline(lp);
@@ -241,7 +248,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_TxRequest:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
 			clean_logline(lp);
@@ -250,18 +257,27 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		lp->df_m = trimline(ptr, end);
 		break;
 
-	case SLT_TxURL:
-		if(!lp->active)
+	case SLT_TxURL: {
+		char *qs;
+
+		if (!lp->active)
 			break;
-		if(lp->df_Uq != NULL) {
+		if (lp->df_U != NULL || lp->df_q != NULL) {
 			clean_logline(lp);
 			break;
 		}
-		lp->df_Uq = trimline(ptr, end);
+		qs = index(ptr, '?');
+		if (qs) {
+			lp->df_U = trimline(ptr, qs);
+			lp->df_q = trimline(qs, end);
+		} else {
+			lp->df_U = trimline(ptr, end);
+		}
 		break;
+	}
 
 	case SLT_TxProtocol:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_H != NULL) {
 			clean_logline(lp);
@@ -271,7 +287,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_RxStatus:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_s != NULL) {
 			clean_logline(lp);
@@ -281,7 +297,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_RxHeader:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (isprefix(ptr, "content-length:", end, &next))
 			lp->df_b = trimline(next, end);
@@ -292,7 +308,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_TxHeader:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (isprefix(ptr, "user-agent:", end, &next))
 			lp->df_User_agent = trimline(next, end);
@@ -309,7 +325,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	case SLT_BackendReuse:
 	case SLT_BackendClose:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		/* got it all */
 		lp->complete = 1;
@@ -340,7 +356,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 	switch (tag) {
 	case SLT_ReqStart:
-		if(lp->active || lp->df_h != NULL) {
+		if (lp->active || lp->df_h != NULL) {
 			/* New start for active line,
 			   clean it and start from scratch */
 			clean_logline(lp);
@@ -350,7 +366,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_RxRequest:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
 			clean_logline(lp);
@@ -359,18 +375,27 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		lp->df_m = trimline(ptr, end);
 		break;
 
-	case SLT_RxURL:
-		if(!lp->active)
+	case SLT_RxURL: {
+		char *qs;
+
+		if (!lp->active)
 			break;
-		if (lp->df_Uq != NULL) {
+		if (lp->df_U != NULL || lp->df_q != NULL) {
 			clean_logline(lp);
 			break;
 		}
-		lp->df_Uq = trimline(ptr, end);
+		qs = index(ptr, '?');
+		if (qs) {
+			lp->df_U = trimline(ptr, qs);
+			lp->df_q = trimline(qs, end);
+		} else {
+			lp->df_U = trimline(ptr, end);
+		}
 		break;
+	}
 
 	case SLT_RxProtocol:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_H != NULL) {
 			clean_logline(lp);
@@ -380,7 +405,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_TxStatus:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_s != NULL)
 			clean_logline(lp);
@@ -389,7 +414,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_RxHeader:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (isprefix(ptr, "user-agent:", end, &next))
 			lp->df_User_agent = trimline(next, end);
@@ -405,7 +430,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_Length:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (lp->df_b != NULL) {
 			clean_logline(lp);
@@ -415,7 +440,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_SessionClose:
-		if(!lp->active)
+		if (!lp->active)
 			break;
 		if (strncmp(ptr, "pipe", len) == 0 ||
 		    strncmp(ptr, "error", len) == 0) {
@@ -425,17 +450,21 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		break;
 
 	case SLT_ReqEnd:
-		if(!lp->active)
+	{
+		char ttfb[64];
+		if (!lp->active)
 			break;
-		if (sscanf(ptr, "%*u %*u.%*u %ld.", &l) != 1) {
+		if (sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
 			clean_logline(lp);
 			break;
 		}
+		lp->df_ttfb = strdup(ttfb);
 		t = l;
 		localtime_r(&t, &lp->df_t);
 		/* got it all */
 		lp->complete = 1;
 		break;
+	}
 
 	default:
 		break;
@@ -451,6 +480,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 	struct logline *lp;
 	FILE *fo = priv;
 	char *q, tbuf[64];
+	const char *p;
 
 	if (fd >= nll) {
 		struct logline **newll = ll;
@@ -479,7 +509,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 		return (reopen);
 	}
 
-	if(!lp->complete)
+	if (!lp->complete)
 		return (reopen);
 
 	if (o_flag && !lp->matched)
@@ -488,7 +518,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 
 #if 0
 	/* non-optional fields */
-	if (!lp->df_m || !lp->df_Uq || !lp->df_H || !lp->df_s) {
+	if (!lp->df_m || !lp->df_U || !lp->df_H || !lp->df_s) {
 		clean_logline(lp);
 		return (reopen);
 	}
@@ -498,66 +528,132 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 
 	fo = priv;
 
-	/* %h */
-	if (!lp->df_h && spec & VSL_S_BACKEND)
-		fprintf(fo, "127.0.0.1 ");
-	else if (lp->df_X_Forwarded_For && prefer_x_forwarded_for)
-		fprintf(fo, "%s ", lp->df_X_Forwarded_For);
-	else
-		fprintf(fo, "%s ", lp->df_h ? lp->df_h : "-");
+	for (p = format; *p != '\0'; p++) {
 
-	/* %l */
-	fprintf(fo, "- ");
 
-	/* %u: decode authorization string */
-	if (lp->df_u != NULL) {
-		char *rubuf;
-		size_t rulen;
+		if (*p != '%') {
+			fprintf(fo, "%c", *p);
+			continue;
+		}
+		p++;
+		switch (*p) {
+		case 'h':
+			if (!lp->df_h && spec & VSL_S_BACKEND)
+				fprintf(fo, "127.0.0.1");
+			else
+				fprintf(fo, "%s", lp->df_h ? lp->df_h : "-");
+			break;
+		case 'l':
+			fprintf(fo, "-");
+			break;
 
-		base64_init();
-		rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
-		rubuf = malloc(rulen);
-		assert(rubuf != NULL);
-		base64_decode(rubuf, rulen, lp->df_u);
-		q = strchr(rubuf, ':');
-		if (q != NULL)
-			*q = '\0';
-		fprintf(fo, "%s ", rubuf);
-		free(rubuf);
-	} else {
-		fprintf(fo, "- ");
+		case 'u':
+			/* %u: decode authorization string */
+			if (lp->df_u != NULL) {
+				char *rubuf;
+				size_t rulen;
+
+				base64_init();
+				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
+				rubuf = malloc(rulen);
+				assert(rubuf != NULL);
+				base64_decode(rubuf, rulen, lp->df_u);
+				q = strchr(rubuf, ':');
+				if (q != NULL)
+					*q = '\0';
+				fprintf(fo, "%s", rubuf);
+				free(rubuf);
+			} else {
+				fprintf(fo, "-");
+			}
+			break;
+		case 't':
+			/* %t */
+			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
+			fprintf(fo, "%s", tbuf);
+			break;
+
+		case 'm':
+			fprintf(fo, "%s", lp->df_m);
+			break;
+
+		case 'U':
+			fprintf(fo, "%s", lp->df_U);
+			break;
+
+		case 'q':
+			fprintf(fo, "%s", lp->df_q ? lp->df_q : "");
+			break;
+
+		case 'H':
+			fprintf(fo, "%s", lp->df_H);
+			break;
+
+		case 'r':
+			/*
+			 * Fake "%r".  This would be a lot easier if Varnish
+			 * normalized the request URL.
+			 */
+			fprintf(fo, "%s ", lp->df_m);
+			if (lp->df_Host) {
+				if (strncmp(lp->df_Host, "http://", 7) != 0)
+					fprintf(fo, "http://");
+				fprintf(fo, "%s", lp->df_Host);
+			}
+			fprintf(fo, "%s", lp->df_U);
+			fprintf(fo, "%s ", lp->df_q ? lp->df_q : "");
+			fprintf(fo, "%s", lp->df_H);
+			break;
+
+		case 's':
+			/* %s */
+			fprintf(fo, "%s", lp->df_s);
+			break;
+
+		case 'b':
+			/* %b */
+			fprintf(fo, "%s", lp->df_b ? lp->df_b : "-");
+			break;
+
+		case '{':
+			if (strncmp(p, "{Referer}i", 10) == 0) {
+				fprintf(fo, "%s",
+					lp->df_Referer ? lp->df_Referer : "-");
+				p += 9;
+				break;
+			} else if (strncmp(p, "{Host}i", 7) == 0) {
+				fprintf(fo, "%s",
+					lp->df_Host ? lp->df_Host : "-");
+				p += 6;
+				break;
+			} else if (strncmp(p, "{X-Forwarded-For}i", 18) == 0) {
+				/* %{Referer}i */
+				fprintf(fo, "%s",
+					lp->df_X_Forwarded_For ? lp->df_X_Forwarded_For : "-");
+				p += 17;
+				break;
+			} else if (strncmp(p, "{User-agent}i", 13) == 0) {
+				/* %{User-agent}i */
+				fprintf(fo, "%s",
+					lp->df_User_agent ? lp->df_User_agent : "-");
+				p += 12;
+				break;
+			} else if (strncmp(p, "{Varnish:", 9) == 0) {
+				/* Scan for what we're looking for */
+				const char *what = p+9;
+				if (strncmp(what, "time_firstbyte}x", 16) == 0) {
+					fprintf(fo, "%s", lp->df_ttfb);
+					p += 9+15;
+					break;
+				}
+			}
+			/* Fall through if we haven't handled something */
+		default:
+			fprintf(stderr, "Unknown format character: %c\n", *p);
+			exit(1);
+		}
 	}
-
-	/* %t */
-	strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
-	fprintf(fo, "%s ", tbuf);
-
-	/*
-	 * Fake "%r".  This would be a lot easier if Varnish
-	 * normalized the request URL.
-	 */
-	fprintf(fo, "\"%s ", lp->df_m);
-	if (lp->df_Host) {
-		if (strncmp(lp->df_Host, "http://", 7) != 0)
-			fprintf(fo, "http://");
-		fprintf(fo, "%s", lp->df_Host);
-	}
-	fprintf(fo, "%s ", lp->df_Uq);
-	fprintf(fo, "%s\" ", lp->df_H);
-
-	/* %s */
-	fprintf(fo, "%s ", lp->df_s);
-
-	/* %b */
-	fprintf(fo, "%s ", lp->df_b ? lp->df_b : "-");
-
-	/* %{Referer}i */
-	fprintf(fo, "\"%s\" ",
-		lp->df_Referer ? lp->df_Referer : "-");
-
-	/* %{User-agent}i */
-	fprintf(fo, "\"%s\"\n",
-	    lp->df_User_agent ? lp->df_User_agent : "-");
+	fprintf(fo, "\n");
 
 	/* flush the stream */
 	fflush(fo);
@@ -606,23 +702,37 @@ int
 main(int argc, char *argv[])
 {
 	int c;
-	int a_flag = 0, D_flag = 0;
+	int a_flag = 0, D_flag = 0, format_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
 	struct VSM_data *vd;
 	FILE *of;
+	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fo")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:foF:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
 			break;
 		case 'f':
-			prefer_x_forwarded_for = 1;
+			if (format_flag) {
+				fprintf(stderr, "-f and -F can not be combined\n");
+				exit(1);
+			}
+			format = "%{X-Forwarded-For}i %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+			format_flag = 1;
+			break;
+		case 'F':
+			if (format_flag) {
+				fprintf(stderr, "-f and -F can not be combined\n");
+				exit(1);
+			}
+			format_flag = 1;
+			format = optarg;
 			break;
 		case 'D':
 			D_flag = 1;
