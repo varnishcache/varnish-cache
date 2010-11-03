@@ -61,6 +61,7 @@
 #include "common.h"
 #include "heritage.h"
 #include "miniobj.h"
+#include "vtypes.h"
 
 enum {
 	/* Fields from the first line of HTTP proto */
@@ -238,6 +239,7 @@ struct worker {
 	struct http		*beresp;
 	struct http		*resp;
 
+	enum body_status	body_status;
 	unsigned		cacheable;
 	double			age;
 	double			entered;
@@ -709,6 +711,7 @@ unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
 double RFC2616_Ttl(const struct sess *sp);
+enum body_status RFC2616_Body(const struct sess *sp);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);

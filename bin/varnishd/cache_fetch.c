@@ -56,6 +56,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	unsigned cl, sl;
 	struct storage *st;
 
+	assert(sp->wrk->body_status == BS_LENGTH);
 	cll = strtoumax(b, NULL, 0);
 	if (cll == 0)
 		return (0);
@@ -101,6 +102,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 	char buf[20];		/* XXX: arbitrary */
 	char *bp, *be;
 
+	assert(sp->wrk->body_status == BS_CHUNKED);
 	be = buf + sizeof buf - 1;
 	bp = buf;
 	st = NULL;
@@ -237,6 +239,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	struct storage *st;
 	unsigned v;
 
+	assert(sp->wrk->body_status == BS_EOF);
 	if (fetchfrag > 0)
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "Fetch %d byte segments:", fetchfrag);
@@ -445,12 +448,11 @@ FetchHdr(struct sess *sp)
 int
 FetchBody(struct sess *sp)
 {
-	struct vbe_conn *vc;
 	char *b;
 	int cls;
 	struct http *hp;
 	struct storage *st;
-	int mklen, is_head;
+	int mklen;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -463,63 +465,37 @@ FetchBody(struct sess *sp)
 	if (sp->obj->objcore != NULL)		/* pass has no objcore */
 		AN(ObjIsBusy(sp->obj));
 
-	vc = sp->vbe;
-
-	is_head = (strcasecmp(http_GetReq(sp->wrk->bereq), "head") == 0);
-
 	/*
 	 * Determine if we have a body or not
 	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
 	 */
 	cls = 0;
 	mklen = 0;
-	if (is_head) {
-		sp->wrk->stats.fetch_head++;
-	} else if (http_GetHdr(hp, H_Content_Length, &b)) {
-		sp->wrk->stats.fetch_length++;
+
+	switch (sp->wrk->body_status) {
+	case BS_NONE:
+		break;
+	case BS_ZERO:
+		mklen = 1;
+		break;
+	case BS_LENGTH:
+		AN(http_GetHdr(hp, H_Content_Length, &b));
 		cls = fetch_straight(sp, sp->wrk->htc, b);
 		mklen = 1;
-	} else if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		sp->wrk->stats.fetch_chunked++;
+		break;
+	case BS_CHUNKED:
 		cls = fetch_chunked(sp, sp->wrk->htc);
 		mklen = 1;
-	} else if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
-		sp->wrk->stats.fetch_bad++;
-		/* XXX: AUGH! */
-		WSL(sp->wrk, SLT_Debug, vc->fd, "Invalid Transfer-Encoding");
+		break;
+	case BS_EOF:
+		cls = fetch_eof(sp, sp->wrk->htc);
+		mklen = 1;
+		break;
+	case BS_ERROR:
 		VBE_CloseFd(sp);
 		return (__LINE__);
-	} else if (http_HdrIs(hp, H_Connection, "keep-alive")) {
-		sp->wrk->stats.fetch_zero++;
-		/*
-		 * If we have Connection: keep-alive, it cannot possibly be
-		 * EOF encoded, and since it is neither length nor chunked
-		 * it must be zero length.
-		 */
-		mklen = 1;
-	} else if (http_HdrIs(hp, H_Connection, "close")) {
-		sp->wrk->stats.fetch_close++;
-		/*
-		 * If we have connection closed, it is safe to read what
-		 * comes in any case.
-		 */
-		cls = fetch_eof(sp, sp->wrk->htc);
-		mklen = 1;
-	} else if (hp->protover < 1.1) {
-		sp->wrk->stats.fetch_oldhttp++;
-		/*
-		 * With no Connection header, assume EOF
-		 */
-		cls = fetch_eof(sp, sp->wrk->htc);
-		mklen = 1;
-	} else {
-		sp->wrk->stats.fetch_eof++;
-		/*
-		 * This is what happens when HTTP/1.0 backends claim
-		 * to be HTTP/1.1, assume EOF
-		 */
-		cls = fetch_eof(sp, sp->wrk->htc);
-		mklen = 1;
+	default:
+		INCOMPL();
 	}
 
 	if (cls == 0 && http_HdrIs(hp, H_Connection, "close"))
