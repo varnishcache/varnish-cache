@@ -537,6 +537,16 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 		}
 		p++;
 		switch (*p) {
+
+		case 'b':
+			/* %b */
+			fprintf(fo, "%s", lp->df_b ? lp->df_b : "-");
+			break;
+
+		case 'H':
+			fprintf(fo, "%s", lp->df_H);
+			break;
+
 		case 'h':
 			if (!lp->df_h && spec & VSL_S_BACKEND)
 				fprintf(fo, "127.0.0.1");
@@ -547,46 +557,12 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 			fprintf(fo, "-");
 			break;
 
-		case 'u':
-			/* %u: decode authorization string */
-			if (lp->df_u != NULL) {
-				char *rubuf;
-				size_t rulen;
-
-				base64_init();
-				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
-				rubuf = malloc(rulen);
-				assert(rubuf != NULL);
-				base64_decode(rubuf, rulen, lp->df_u);
-				q = strchr(rubuf, ':');
-				if (q != NULL)
-					*q = '\0';
-				fprintf(fo, "%s", rubuf);
-				free(rubuf);
-			} else {
-				fprintf(fo, "-");
-			}
-			break;
-		case 't':
-			/* %t */
-			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
-			fprintf(fo, "%s", tbuf);
-			break;
-
 		case 'm':
 			fprintf(fo, "%s", lp->df_m);
 			break;
 
-		case 'U':
-			fprintf(fo, "%s", lp->df_U);
-			break;
-
 		case 'q':
 			fprintf(fo, "%s", lp->df_q ? lp->df_q : "");
-			break;
-
-		case 'H':
-			fprintf(fo, "%s", lp->df_H);
 			break;
 
 		case 'r':
@@ -610,9 +586,35 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 			fprintf(fo, "%s", lp->df_s);
 			break;
 
-		case 'b':
-			/* %b */
-			fprintf(fo, "%s", lp->df_b ? lp->df_b : "-");
+		case 't':
+			/* %t */
+			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
+			fprintf(fo, "%s", tbuf);
+			break;
+
+		case 'U':
+			fprintf(fo, "%s", lp->df_U);
+			break;
+
+		case 'u':
+			/* %u: decode authorization string */
+			if (lp->df_u != NULL) {
+				char *rubuf;
+				size_t rulen;
+
+				base64_init();
+				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
+				rubuf = malloc(rulen);
+				assert(rubuf != NULL);
+				base64_decode(rubuf, rulen, lp->df_u);
+				q = strchr(rubuf, ':');
+				if (q != NULL)
+					*q = '\0';
+				fprintf(fo, "%s", rubuf);
+				free(rubuf);
+			} else {
+				fprintf(fo, "-");
+			}
 			break;
 
 		case '{':
