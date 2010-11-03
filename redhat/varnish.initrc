@@ -70,6 +70,7 @@ start() {
 			echo
 		else
 			echo_failure
+			echo
 		fi
 		return $retval
 	fi
