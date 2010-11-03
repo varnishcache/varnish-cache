@@ -48,6 +48,54 @@ The following options are available:
 -f          Prefer the X-Forwarded-For HTTP header over client.ip in 
 	    the log output.
 
+-F format   Specify the log format used.  Supported formatters are:
+
+	      %b 
+	         Size of response in bytes, excluding HTTP headers.
+   	         In CLF format, i.e. a '-' rather than a 0 when no
+   	         bytes are sent.
+
+	      %H 
+	         The request protocol
+
+              %h
+	         Remote host
+
+	      %{X}i
+	         The contents of header line X.  Supported headers are
+	         *Referer*, *Host*, *X-Forwarded-For* and *User-agent*.
+
+	      %l
+	         Remote logname (always '-')
+
+	      %m
+	         Request method
+
+	      %q
+	         The query string, if no query string exists, an empty string.
+
+	      %r
+	         The first line of the request
+
+	      %s
+	         Status sent to the client
+
+	      %t
+	         Time when the request was received, in HTTP date/time
+	         format.
+
+	      %U
+	         The request URL without any query string.
+
+	      %u
+	         Remote user from auth
+
+	      %{X}x
+	         Extended variables.  Supported variables are:
+
+		   Varnish:time_firstbyte
+		     Time to the first byte from the backend arrived
+
 -o	    Filter log output to request groups that match a regular
 	    expression on a specified tag.
 
