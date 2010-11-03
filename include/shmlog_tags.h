@@ -97,3 +97,4 @@ SLTM(Hash)
 
 SLTM(Backend_health)
 SLTM(VCL_Log)
+SLTM(Fetch_Body)

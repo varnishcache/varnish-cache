@@ -159,3 +159,7 @@ MAC_STAT(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups")
 MAC_STAT(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
 MAC_STAT(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
 MAC_STAT(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
+
+MAC_STAT(fetch_1xx,		uint64_t, 1, 'a', "Fetch no body (1xx)")
+MAC_STAT(fetch_204,		uint64_t, 1, 'a', "Fetch no body (204)")
+MAC_STAT(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)")

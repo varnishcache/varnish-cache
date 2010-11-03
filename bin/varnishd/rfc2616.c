@@ -167,7 +167,6 @@ RFC2616_Ttl(const struct sess *sp)
 
 /*--------------------------------------------------------------------
  * Body existence and fetch method
- * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
  */
 
 enum body_status
@@ -182,6 +181,7 @@ RFC2616_Body(const struct sess *sp)
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.
+		 * [RFC2516 4.3 p33]
 		 */
 		sp->wrk->stats.fetch_head++;
 		return (BS_NONE);
@@ -202,6 +202,33 @@ RFC2616_Body(const struct sess *sp)
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		sp->wrk->stats.fetch_bad++;
 		return (BS_ERROR);
+	}
+
+	if (hp->status <= 199) {
+		/*
+		 * 1xx responses never have a body.
+		 * [RFC2616 4.3 p33]
+		 */
+		sp->wrk->stats.fetch_1xx++;
+		return (BS_NONE);
+	}
+
+	if (hp->status == 204) {
+		/*
+		 * 204 is "No Content", obviously don't expect a body.
+		 * [RFC2616 10.2.5 p60]
+		 */
+		sp->wrk->stats.fetch_204++;
+		return (BS_NONE);
+	}
+
+	if (hp->status == 304) {
+		/*
+		 * 304 is "Not Modified" it has no body.
+		 * [RFC2616 10.3.5 p63]
+		 */
+		sp->wrk->stats.fetch_304++;
+		return (BS_NONE);
 	}
 
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {
@@ -230,7 +257,7 @@ RFC2616_Body(const struct sess *sp)
 	}
 
 	/*
-	 * XXX: Here it should depends on the status code
+	 * Fall back to EOF transfer.
 	 */
 	sp->wrk->stats.fetch_eof++;
 	return (BS_EOF);
