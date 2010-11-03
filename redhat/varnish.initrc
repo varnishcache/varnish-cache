@@ -12,6 +12,8 @@
 # Provides: varnish
 # Required-Start: $network $local_fs $remote_fs
 # Required-Stop: $network $local_fs $remote_fs
+# Default-Start:
+# Default-Stop:
 # Should-Start: $syslog
 # Short-Description: start and stop varnishd
 # Description: Varnish is a high-perfomance HTTP accelerator
