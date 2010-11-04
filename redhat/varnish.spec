@@ -1,7 +1,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.4
-Release: 0.svn20100826r5134%{?dist}
+Version: 2.1.5
+Release: 0.svn20101104r5510%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
@@ -136,6 +136,9 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
+pushd doc/sphinx
+make html
+popd
 cp -r doc/sphinx/\=build/html doc
 
 %check
@@ -177,7 +180,7 @@ mkdir -p %{buildroot}/var/run/varnish
 %{__install} -D -m 0755 redhat/varnish.initrc %{buildroot}%{_initrddir}/varnish
 %{__install} -D -m 0755 redhat/varnishlog.initrc %{buildroot}%{_initrddir}/varnishlog
 %{__install} -D -m 0755 redhat/varnishncsa.initrc %{buildroot}%{_initrddir}/varnishncsa
-%{__install} -D -m 0755 redhat/varnish_reload_vcl %{buildroot}%{_sbindir}varnish_reload_vcl
+%{__install} -D -m 0755 redhat/varnish_reload_vcl %{buildroot}%{_sbindir}/varnish_reload_vcl
 
 %clean
 rm -rf %{buildroot}
@@ -207,10 +210,7 @@ rm -rf %{buildroot}
 
 %files libs-devel
 %defattr(-,root,root,-)
-%{_libdir}/libvarnish.so
-%{_libdir}/libvarnishapi.so
-%{_libdir}/libvarnishcompat.so
-%{_libdir}/libvcl.so
+%{_libdir}/lib*.so
 %dir %{_includedir}/varnish
 %{_includedir}/varnish/*
 %{_libdir}/pkgconfig/varnishapi.pc
