@@ -172,6 +172,7 @@ save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
 AC_CHECK_FUNCS([pthread_set_name_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
+AC_CHECK_FUNCS([pthread_timedjoin_np])
 LIBS="${save_LIBS}"
 
 # sendfile is tricky: there are multiple versions, and most of them

@@ -37,6 +37,7 @@ SVNID("$Id$")
 #include <fcntl.h>
 #include <math.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -59,7 +60,7 @@ SVNID("$Id$")
 #define		MAX_TOKENS		200
 
 static char		*vtc_desc;
-int			vtc_error;	/* Error encountered */
+volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 char			vtc_tmpdir[PATH_MAX];
@@ -525,13 +526,29 @@ exec_file_thread(void *priv)
 	return (NULL);
 }
 
+#ifndef HAVE_PTHREAD_TIMEDJOIN_NP
+static volatile sig_atomic_t alrm_flag = 0;
+
+static void
+sigalrm(int x)
+{
+
+	(void)x;
+	alrm_flag = 1;
+	vtc_error = 1;
+}
+#endif
+
 static double
 exec_file(const char *fn, unsigned dur)
 {
-	double t0, t;
+	double t0;
 	struct priv_exec pe;
 	pthread_t pt;
+#ifdef HAVE_PTHREAD_TIMEDJOIN_NP
+	double t;
 	struct timespec ts;
+#endif
 	void *v;
 	int i;
 
@@ -546,6 +563,7 @@ exec_file(const char *fn, unsigned dur)
 		    fn, strerror(errno));
 	pe.fn = fn;
 
+#ifdef HAVE_PTHREAD_TIMEDJOIN_NP
 	t = TIM_real() + dur;
 	ts.tv_sec = (long)floor(t);
 	ts.tv_nsec = (long)((t - ts.tv_sec) * 1e9);
@@ -553,6 +571,16 @@ exec_file(const char *fn, unsigned dur)
 	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
 	i = pthread_timedjoin_np(pt, &v, &ts);
 	memset(&vtc_thread, 0, sizeof vtc_thread);
+#else
+	alrm_flag = 0;
+	(void)signal(SIGALRM, sigalrm);
+	alarm(dur);
+	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
+	i = pthread_join(pt, &v);
+	alarm(0);
+	if (alrm_flag)
+		i = ETIMEDOUT;
+#endif
 
 	if (i != 0) {
 		if (i != ETIMEDOUT)

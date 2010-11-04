@@ -58,7 +58,7 @@ cmd_f cmd_varnish;
 cmd_f cmd_sema;
 
 extern int vtc_verbosity;
-extern int vtc_error;		/* Error, bail out */
+extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
 extern char vtc_tmpdir[PATH_MAX];
