@@ -98,7 +98,6 @@ reload() {
 	then
 		$reload_exec
 	else
-		echo RELOAD_VCL is not set
 		force_reload
 	fi
 }
