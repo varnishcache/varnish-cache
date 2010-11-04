@@ -134,10 +134,19 @@ macro_get(const char *b, const char *e)
 {
 	struct macro *m;
 	int l;
-
 	char *retval = NULL;
-	AZ(pthread_mutex_lock(&macro_mtx));
+
 	l = e - b;
+
+	if (l == 4 && !memcmp(b, "date", l)) {
+		double t = TIM_real();
+		retval = malloc(64);
+		AN(retval);
+		TIM_format(t, retval);
+		return (retval);
+	}
+
+	AZ(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!memcmp(b, m->name, l) && m->name[l] == '\0')
 			break;
