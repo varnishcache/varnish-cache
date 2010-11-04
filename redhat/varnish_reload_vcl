@@ -1,0 +1,105 @@
+#!/bin/bash
+#
+# reload vcl revisited
+# A script that loads new vcl based on data from /etc/sysconfig/varnish
+# Ingvar Hagelund <ingvar@redpill-linpro.com>
+#
+# This is free software, distributed under the standard 2 clause BSD license,
+# see the LICENSE file in the Varnish documentation directory
+#
+# The following environment variables have to be set:
+# RELOAD_VCL, VARNISH_VCL_CONF, VARNISH_ADMIN_LISTEN_ADDRESS,
+# VARNISH_ADMIN_LISTEN_PORT, VARNISH_SECRET_FILE
+#
+# Requires GNU bash and GNU date
+#
+
+debug=false
+
+missing() {
+	echo "Missing configuration variable: $1"
+	exit 2
+}
+
+print_debug() {
+	echo "
+Parsed configuration:
+RELOAD_VCL=\"$RELOAD_VCL\"
+VARNISH_VCL_CONF=\"$VARNISH_VCL_CONF\"
+VARNISH_ADMIN_LISTEN_ADDRESS=\"$VARNISH_ADMIN_LISTEN_ADDRESS\"
+VARNISH_ADMIN_LISTEN_PORT=\"$VARNISH_ADMIN_LISTEN_PORT\"
+VARNISH_SECRET_FILE=\"$VARNISH_SECRET_FILE\"
+"
+}
+
+# Read configuration
+exec="/usr/sbin/varnishd"
+. /etc/sysconfig/varnish
+
+$debug && print_debug
+
+# Check configuration
+if [ ! "$RELOAD_VCL" = "1" ]; then
+	echo "Error: RELOAD_VCL is not set to 1"
+	exit 2
+
+elif [ -z "$VARNISH_VCL_CONF" ]; then
+	echo "Error: VARNISH_VCL_CONF" is not set
+	exit 2
+
+elif [ ! -s "$VARNISH_VCL_CONF" ]; then
+	echo "Eror: VCL config $VARNISH_VCL_CONF is unreadable or empty"
+	exit 2
+
+elif [ -z "$VARNISH_ADMIN_LISTEN_ADDRESS" ]; then
+	echo "Warning: VARNISH_ADMIN_LISTEN_ADDRESS is not set, using 127.0.0.1"
+	VARNISH_ADMIN_LISTEN_ADDRESS="127.0.0.1"
+
+elif [ -z "$VARNISH_ADMIN_LISTEN_PORT" ]; then
+	echo "Error: VARNISH_ADMIN_LISTEN_PORT is not set"
+	exit 2
+
+elif [ -z "$VARNISH_SECRET_FILE" ]; then
+	echo "Error: VARNISH_SECRET_FILE is not set"
+	exit 2
+
+elif [ ! -s "$VARNISH_SECRET_FILE" ]; then
+	echo "Error: varnish secret file $VARNISH_SECRET_FILE is unreadable or empty"
+	exit 2
+fi
+
+# Done parsing, set up command
+VARNISHADM="varnishadm -S $VARNISH_SECRET_FILE -T $VARNISH_ADMIN_LISTEN_ADDRESS:$VARNISH_ADMIN_LISTEN_PORT"
+
+# Now do the real work
+new_config="reload_$(date +%FT%H:%M:%S)"
+
+if $VARNISHADM vcl.list | awk ' { print $3 } ' | grep -q $new_config; then
+	echo Trying to use new config $new_config, but that is already in use
+	exit 2
+fi
+
+current_config=$( $VARNISHADM vcl.list | awk ' /^active/ { print $3 } ' )
+
+echo "Loading vcl from $VARNISH_VCL_CONF"
+echo "Current running config name is $current_config"
+echo "Using new config name $new_config"
+
+if $VARNISHADM vcl.load $new_config $VARNISH_VCL_CONF; then
+	$debug && echo "$VARNISHADM vcl.load succeded"
+else
+	retval=$?
+	echo "$VARNISHADM vcl.load failed"
+	exit 1
+fi
+
+if $VARNISHADM vcl.use $new_config; then
+	$debug && echo "$VARNISHADM vcl.use succeded"
+else
+	echo "$VARNISHADM vcl.use failed"
+	exit 1
+fi
+$VARNISHADM vcl.list
+echo Done
+exit 0
+
