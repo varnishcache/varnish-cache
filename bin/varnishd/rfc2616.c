@@ -186,23 +186,6 @@ RFC2616_Body(const struct sess *sp)
 		return (BS_NONE);
 	}
 
-	/* If the headers tells us what to do, obey. */
-
-	if (http_GetHdr(hp, H_Content_Length, &b)) {
-		sp->wrk->stats.fetch_length++;
-		return (BS_LENGTH);
-	}
-
-	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		 sp->wrk->stats.fetch_chunked++;
-		return (BS_CHUNKED);
-	}
-
-	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
-		sp->wrk->stats.fetch_bad++;
-		return (BS_ERROR);
-	}
-
 	if (hp->status <= 199) {
 		/*
 		 * 1xx responses never have a body.
@@ -228,6 +211,21 @@ RFC2616_Body(const struct sess *sp)
 		 */
 		sp->wrk->stats.fetch_304++;
 		return (BS_NONE);
+	}
+
+	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
+		 sp->wrk->stats.fetch_chunked++;
+		return (BS_CHUNKED);
+	}
+
+	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		sp->wrk->stats.fetch_bad++;
+		return (BS_ERROR);
+	}
+
+	if (http_GetHdr(hp, H_Content_Length, &b)) {
+		sp->wrk->stats.fetch_length++;
+		return (BS_LENGTH);
 	}
 
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {

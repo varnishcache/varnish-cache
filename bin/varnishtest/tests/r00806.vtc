@@ -1,0 +1,30 @@
+# $Id$
+
+test "Content-Length in pass'ed 304 does not trigger body fetch"
+
+server s1 {
+	rxreq
+	txresp -status 304 \
+		-nolen \
+		-hdr "Date: Mon, 25 Oct 2010 06:34:06 GMT" \
+		-hdr "Connection: close" \
+		-hdr "Content-Length: 100"
+} -start
+
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return(pass);}
+	sub vcl_deliver {
+		set resp.http.CL = resp.http.content-length;
+		unset resp.http.content-length;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 304
+	expect resp.http.cl == 100
+} -run
+
+
