@@ -26,7 +26,7 @@ retval=0
 pidfile=/var/run/varnish.pid
 
 exec="/usr/sbin/varnishd"
-reload_exec="/usr/sbin/varnish_reload_vcl"
+reload_exec="/usr/bin/varnish_reload_vcl"
 prog="varnishd"
 config="/etc/sysconfig/varnish"
 lockfile="/var/lock/subsys/varnish"

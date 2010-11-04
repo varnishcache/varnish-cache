@@ -34,7 +34,6 @@ VARNISH_SECRET_FILE=\"$VARNISH_SECRET_FILE\"
 }
 
 # Read configuration
-exec="/usr/sbin/varnishd"
 . /etc/sysconfig/varnish
 
 $debug && print_debug
