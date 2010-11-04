@@ -1,0 +1,21 @@
+# $Id$
+
+test "pass should not filter Content-Range header"
+
+server s1 {
+	rxreq
+	expect req.http.range == "bytes=1-1"
+	txresp -status 206 -hdr "Content-Range: bytes 1-1/20" -body "F"
+
+} -start
+
+
+varnish v1 -vcl+backend { sub vcl_recv {return(pass);} } -start
+
+client c1 {
+	txreq -hdr "Range: bytes=1-1"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 1
+	expect resp.http.content-range == "bytes 1-1/20"
+} -run
