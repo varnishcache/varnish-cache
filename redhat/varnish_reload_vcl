@@ -8,8 +8,9 @@
 # see the LICENSE file in the Varnish documentation directory
 #
 # The following environment variables have to be set:
-# RELOAD_VCL, VARNISH_VCL_CONF, VARNISH_ADMIN_LISTEN_ADDRESS,
-# VARNISH_ADMIN_LISTEN_PORT, VARNISH_SECRET_FILE
+# RELOAD_VCL, VARNISH_VCL_CONF, VARNISH_ADMIN_LISTEN_PORT
+# The following are optional:
+# VARNISH_SECRET_FILE, VARNISH_ADMIN_LISTEN_ADDRESS
 #
 # Requires GNU bash and GNU date
 #
@@ -60,19 +61,29 @@ elif [ -z "$VARNISH_ADMIN_LISTEN_PORT" ]; then
 	exit 2
 
 elif [ -z "$VARNISH_SECRET_FILE" ]; then
-	echo "Error: VARNISH_SECRET_FILE is not set"
-	exit 2
+	echo "Warning: VARNISH_SECRET_FILE is not set"
+	secret=""
 
 elif [ ! -s "$VARNISH_SECRET_FILE" ]; then
 	echo "Error: varnish secret file $VARNISH_SECRET_FILE is unreadable or empty"
 	exit 2
+else
+	secret="-S $VARNISH_SECRET_FILE"
 fi
 
 # Done parsing, set up command
-VARNISHADM="varnishadm -S $VARNISH_SECRET_FILE -T $VARNISH_ADMIN_LISTEN_ADDRESS:$VARNISH_ADMIN_LISTEN_PORT"
+VARNISHADM="varnishadm $secret -T $VARNISH_ADMIN_LISTEN_ADDRESS:$VARNISH_ADMIN_LISTEN_PORT"
 
 # Now do the real work
 new_config="reload_$(date +%FT%H:%M:%S)"
+
+# Check if we are able to connect at all
+if $VARNISHADM vcl.list > /dev/null; then
+	$debug && echo vcl.list succeeded
+else
+	echo "Unable to run $VARNISHADM vcl.list"
+	exit 2
+fi
 
 if $VARNISHADM vcl.list | awk ' { print $3 } ' | grep -q $new_config; then
 	echo Trying to use new config $new_config, but that is already in use
