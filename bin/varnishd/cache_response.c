@@ -103,9 +103,8 @@ res_do_conds(struct sess *sp)
 		ims = TIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (sp->obj->last_modified > ims) {
+		if (sp->obj->last_modified > ims)
 			return (0);
-		}
 		do_cond = 1;
 	}
 
