@@ -148,7 +148,7 @@ tst_cb(const struct vev *ve, int what)
 		jp->evt = NULL;
 		return (1);
 	}
-	assert(what & EV_RD);
+	assert(what & (EV_RD | EV_HUP));
 
 	*buf = '\0';
 	i = read(ve->fd, buf, sizeof buf - 1);
@@ -208,11 +208,10 @@ start_test(void)
 
 	jp->bufsiz = 64*1024;		/* XXX */
 
-	jp->buf = mmap(NULL, jp->bufsiz, PROT_READ|PROT_WRITE, MAP_ANON, -1, 0);
+	jp->buf = mmap(NULL, jp->bufsiz, PROT_READ|PROT_WRITE,
+	    MAP_ANON | MAP_SHARED, -1, 0);
 	assert(jp->buf != MAP_FAILED);
 	memset(jp->buf, 0, jp->bufsiz);
-
-	AZ(minherit(jp->buf, jp->bufsiz, INHERIT_SHARE));
 
 	tp = VTAILQ_FIRST(&tst_head);
 	CHECK_OBJ_NOTNULL(tp, TST_MAGIC);
@@ -241,7 +240,6 @@ start_test(void)
 		_exit(retval);
 	}
 	AZ(close(p[1]));
-	AZ(minherit(jp->buf, jp->bufsiz, INHERIT_NONE));
 
 	jp->ev = vev_new();
 	AN(jp->ev);
