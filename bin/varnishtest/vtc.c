@@ -35,17 +35,17 @@ SVNID("$Id$")
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <math.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include "libvarnish.h"
+#include "vev.h"
 #include "vsb.h"
 #include "vqueue.h"
 #include "miniobj.h"
@@ -56,7 +56,6 @@ SVNID("$Id$")
 #include "compat/srandomdev.h"
 #endif
 
-#define		MAX_FILESIZE		(1024 * 1024)
 #define		MAX_TOKENS		200
 
 static char		*vtc_desc;
@@ -193,36 +192,6 @@ macro_expand(struct vtclog *vl, const char *text)
 	}
 	vsb_finish(vsb);
 	return (vsb);
-}
-
-/**********************************************************************
- * Read a file into memory
- */
-
-static char *
-read_file(const char *fn)
-{
-	char *buf;
-	ssize_t sz = MAX_FILESIZE;
-	ssize_t s;
-	int fd;
-
-	fd = open(fn, O_RDONLY);
-	if (fd < 0)
-		return (NULL);
-	buf = malloc(sz);
-	assert(buf != NULL);
-	s = read(fd, buf, sz - 1);
-	if (s <= 0) {
-		free(buf);
-		return (NULL);
-	}
-	AZ(close (fd));
-	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
-	buf[s] = '\0';
-	buf = realloc(buf, s + 1);
-	assert(buf != NULL);
-	return (buf);
 }
 
 /**********************************************************************
@@ -503,214 +472,51 @@ static const struct cmds cmds[] = {
 	{ NULL,		NULL }
 };
 
-struct priv_exec {
-	const char	*fn;
-	char		*buf;
-};
-
-static void *
-exec_file_thread(void *priv)
+int
+exec_file(const char *fn, const char *script, char *logbuf, unsigned loglen)
 {
 	unsigned old_err;
-	struct priv_exec *pe;
-
-	pe = priv;
-
-	vtc_thread = pthread_self();
-	parse_string(pe->buf, cmds, NULL, vltop);
-	old_err = vtc_error;
-	vtc_stop = 1;
-	vtc_log(vltop, 1, "RESETTING after %s", pe->fn);
-	reset_cmds(cmds);
-	vtc_error = old_err;
-	return (NULL);
-}
-
-#ifndef HAVE_PTHREAD_TIMEDJOIN_NP
-static volatile sig_atomic_t alrm_flag = 0;
-
-static void
-sigalrm(int x)
-{
-
-	(void)x;
-	alrm_flag = 1;
-	vtc_error = 1;
-}
-#endif
-
-static double
-exec_file(const char *fn, unsigned dur)
-{
-	double t0;
-	struct priv_exec pe;
-	pthread_t pt;
-#ifdef HAVE_PTHREAD_TIMEDJOIN_NP
-	double t;
-	struct timespec ts;
-#endif
-	void *v;
-	int i;
-
-	vtc_logreset();
-	t0 = TIM_mono();
-	vtc_stop = 0;
-	vtc_desc = NULL;
-	vtc_log(vltop, 1, "TEST %s starting", fn);
-	pe.buf = read_file(fn);
-	if (pe.buf == NULL)
-		vtc_log(vltop, 0, "Cannot read file '%s': %s",
-		    fn, strerror(errno));
-	pe.fn = fn;
-
-#ifdef HAVE_PTHREAD_TIMEDJOIN_NP
-	t = TIM_real() + dur;
-	ts.tv_sec = (long)floor(t);
-	ts.tv_nsec = (long)((t - ts.tv_sec) * 1e9);
-
-	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
-	i = pthread_timedjoin_np(pt, &v, &ts);
-	memset(&vtc_thread, 0, sizeof vtc_thread);
-#else
-	alrm_flag = 0;
-	(void)signal(SIGALRM, sigalrm);
-	alarm(dur);
-	AZ(pthread_create(&pt, NULL, exec_file_thread, &pe));
-	i = pthread_join(pt, &v);
-	alarm(0);
-	if (alrm_flag)
-		i = ETIMEDOUT;
-#endif
-
-	if (i != 0) {
-		if (i != ETIMEDOUT)
-			vtc_log(vltop, 1, "Weird condwait return: %d %s",
-			    i, strerror(i));
-		vtc_log(vltop, 1, "Test timed out");
-		vtc_error = 1;
-	}
-
-	if (vtc_error)
-		vtc_log(vltop, 1, "TEST %s FAILED", fn);
-	else 
-		vtc_log(vltop, 1, "TEST %s completed", fn);
-
-	t0 = TIM_mono() - t0;
-
-	if (vtc_error && vtc_verbosity == 0)
-		printf("%s", vtc_logfull());
-	else if (vtc_verbosity == 0)
-		printf("#    top  TEST %s passed (%.3fs)\n", fn, t0);
-
-	free(vtc_desc);
-	return (t0);
-}
-
-/**********************************************************************
- * Print usage
- */
-
-static void
-usage(void)
-{
-	fprintf(stderr, "usage: varnishtest [-n iter] [-qv] file ...\n");
-	exit(1);
-}
-
-/**********************************************************************
- * Main
- */
-
-int
-main(int argc, char * const *argv)
-{
-	int ch, i, ntest = 1, ncheck = 0;
-	FILE *fok;
-	double tmax, t0, t00;
-	unsigned dur = 30;
-	const char *nmax;
-	char cmd[BUFSIZ];
-	char *cwd;
+	char *cwd, *p;
 	char topbuild[BUFSIZ];
 
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
-	vtc_loginit();
+	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
 	AN(vltop);
-	while ((ch = getopt(argc, argv, "L:n:qt:v")) != -1) {
-		switch (ch) {
-		case 'n':
-			ntest = strtoul(optarg, NULL, 0);
-			break;
-		case 'q':
-			vtc_verbosity--;
-			break;
-		case 't':
-			dur = strtoul(optarg, NULL, 0);
-			break;
-		case 'v':
-			vtc_verbosity++;
-			break;
-		default:
-			usage();
-		}
-	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc == 0)
-		usage();
 
 	init_macro();
 	init_sema();
-
-	srandomdev();
-	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
-	AZ(mkdir(vtc_tmpdir, 0700));
-	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
 
 	cwd = getcwd(NULL, PATH_MAX);
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "topbuild", topbuild);
 
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
-	tmax = 0;
-	nmax = NULL;
-	t00 = TIM_mono();
-	for (i = 0; i < ntest; i++) {
-		for (ch = 0; ch < argc; ch++) {
-			t0 = exec_file(argv[ch], dur);
-			ncheck++;
-			if (t0 > tmax) {
-				tmax = t0;
-				nmax = argv[ch];
-			}
-			if (vtc_error)
-				break;
-		}
-		if (vtc_error)
-			break;
-	}
 
-	/* Remove tmpdir on success or non-verbosity */
-	if (vtc_error == 0 || vtc_verbosity == 0) {
-		bprintf(cmd, "rm -rf %s", vtc_tmpdir);
-		AZ(system(cmd));
-	}
+	srandomdev();
+	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
+	AZ(mkdir(vtc_tmpdir, 0700));
+	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
+
+	vtc_stop = 0;
+	vtc_desc = NULL;
+	vtc_log(vltop, 1, "TEST %s starting", fn);
+
+	p = strdup(script);
+	AN(p);
+
+	vtc_thread = pthread_self();
+	parse_string(p, cmds, NULL, vltop);
+	old_err = vtc_error;
+	vtc_stop = 1;
+	vtc_log(vltop, 1, "RESETTING after %s", fn);
+	reset_cmds(cmds);
+	vtc_error = old_err;
 
 	if (vtc_error)
-		return (2);
+		vtc_log(vltop, 1, "TEST %s FAILED", fn);
+	else 
+		vtc_log(vltop, 1, "TEST %s completed", fn);
 
-	t00 = TIM_mono() - t00;
-	if (ncheck > 1) {
-		printf("#    top  Slowest test: %s %.3fs\n", nmax, tmax);
-		printf("#    top  Total tests run:   %d\n", ncheck);
-		printf("#    top  Total duration: %.3fs\n", t00);
-	}
-
-	fok = fopen("_.ok", "w");
-	if (fok != NULL)
-		AZ(fclose(fok));
-	return (0);
+	free(vtc_desc);
+	return (vtc_error);
 }

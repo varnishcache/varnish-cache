@@ -44,10 +44,9 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
-int vtc_verbosity = 0;
-
-static struct vsb	*vtclog_full;
 static pthread_mutex_t	vtclog_mtx;
+static char		*vtclog_buf;
+static unsigned		vtclog_left;
 
 struct vtclog {
 	unsigned	magic;
@@ -60,29 +59,12 @@ struct vtclog {
 /**********************************************************************/
 
 void
-vtc_loginit()
+vtc_loginit(char *buf, unsigned buflen)
 {
 
-	AZ(vtclog_full);
-	vtclog_full = vsb_newauto();
-	AN(vtclog_full);
+	vtclog_buf = buf;
+	vtclog_left = buflen;
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
-}
-
-void
-vtc_logreset()
-{
-
-	AN(vtclog_full);
-	vsb_clear(vtclog_full);
-}
-
-const char *
-vtc_logfull(void)
-{
-	vsb_finish(vtclog_full);
-	AZ(vsb_overflowed(vtclog_full));
-	return (vsb_data(vtclog_full));
 }
 
 /**********************************************************************/
@@ -124,14 +106,18 @@ static const char * const lead[] = {
 static void
 vtc_log_emit(const struct vtclog *vl, unsigned lvl)
 {
+	int l;
+
 	if (vtc_stop && lvl == 0)
 		return;
+	l = vsb_len(vl->vsb);
 	AZ(pthread_mutex_lock(&vtclog_mtx));
-	vsb_cat(vtclog_full, vsb_data(vl->vsb));
+	assert(vtclog_left > l);
+	memcpy(vtclog_buf,vsb_data(vl->vsb), l);
+	vtclog_buf += l;
+	*vtclog_buf = '\0';
+	vtclog_left -= l;
 	AZ(pthread_mutex_unlock(&vtclog_mtx));
-
-	if (lvl <= vtc_verbosity)
-		(void)fputs(vsb_data(vl->vsb), stdout);
 }
 
 //lint -e{818}
