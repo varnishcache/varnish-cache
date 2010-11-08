@@ -759,13 +759,13 @@ VCC_VMOD_dir(struct vcc *tl, const char *str)
 }
 
 /*--------------------------------------------------------------------
- * Configure default 
+ * Configure default
  */
 
 void
 VCC_Err_Unref(struct vcc *tl, unsigned u)
 {
-	
+
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	tl->err_unref = u;
 }

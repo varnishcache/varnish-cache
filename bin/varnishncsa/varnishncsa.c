@@ -350,7 +350,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	end = ptr + len;
 
 	/* Do -o matching if specified */
-	if (o_flag && match_tag == tag && lp->active && 
+	if (o_flag && match_tag == tag && lp->active &&
 	   VRE_exec(match_tag_re, ptr, len, 0, 0, NULL, 0) > 0)
 		lp->matched = 1;
 

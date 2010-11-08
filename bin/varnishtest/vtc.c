@@ -514,7 +514,7 @@ exec_file(const char *fn, const char *script, char *logbuf, unsigned loglen)
 
 	if (vtc_error)
 		vtc_log(vltop, 1, "TEST %s FAILED", fn);
-	else 
+	else
 		vtc_log(vltop, 1, "TEST %s completed", fn);
 
 	free(vtc_desc);
