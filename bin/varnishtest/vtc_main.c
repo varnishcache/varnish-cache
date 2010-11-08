@@ -29,7 +29,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: vtc.c 5507 2010-11-04 11:28:06Z phk $")
+SVNID("$Id$")
 
 #include <stdio.h>
 #include <string.h>
