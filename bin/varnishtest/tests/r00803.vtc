@@ -1,0 +1,24 @@
+# $Id$
+
+test "304 response in pass mode"
+
+server s1 {
+	rxreq
+	txresp -status 304 \
+		-nolen \
+		-hdr "Date: Mon, 25 Oct 2010 06:34:06 GMT"
+	delay 600
+} -start
+
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return (pass); }
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.status == 304
+} -run
+
+
