@@ -539,7 +539,9 @@ main(int argc, char * const *argv)
 	if (b_arg != NULL && f_arg != NULL) {
 		fprintf(stderr, "Only one of -b or -f can be specified\n");
 		usage();
-	} else if (S_arg == NULL && T_arg == NULL) {
+	}
+	if (S_arg == NULL && T_arg == NULL && d_flag == 0 && b_arg == NULL &&
+	    f_arg == NULL) {
 		fprintf(stderr,
 		    "At least one of -d, -b, -f, -S or -T must be specified\n");
 		usage();
