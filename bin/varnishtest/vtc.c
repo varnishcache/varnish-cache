@@ -478,6 +478,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	unsigned old_err;
 	char *cwd, *p;
 	char topbuild[BUFSIZ];
+	FILE *f;
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
@@ -486,14 +487,22 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	init_macro();
 	init_sema();
 
+	/* We are still in bin/varnishtest at this point */
 	cwd = getcwd(NULL, PATH_MAX);
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "topbuild", topbuild);
 
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 
+	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
 	macro_def(vltop, NULL, "tmpdir", tmpdir);
+
+	/* Drop file to tell what was going on here */
+	f = fopen("INFO", "w");
+	AN(f);
+	fprintf(f, "Test case: %s\n", fn);
+	AZ(fclose(f));
 
 	vtc_stop = 0;
 	vtc_desc = NULL;

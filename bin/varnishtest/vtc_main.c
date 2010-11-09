@@ -85,6 +85,7 @@ static int vtc_continue;		/* Continue on error */
 static int vtc_verbosity = 1;		/* Verbosity Level */
 static int vtc_good;
 static int vtc_fail;
+static int leave_temp;
 
 /**********************************************************************
  * Read a file into memory
@@ -123,7 +124,16 @@ read_file(const char *fn)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtest [-n iter] [-qv] file ...\n");
+	fprintf(stderr, "usage: varnishtest [options] file ...\n");
+#define FMT "    %-28s # %s\n"
+	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
+	fprintf(stderr, FMT, "-k", "Continue on test failure");
+	fprintf(stderr, FMT, "-l", "Leave /tmp/vtc.* if test fails");
+	fprintf(stderr, FMT, "-L", "Always leave /tmp/vtc.*");
+	fprintf(stderr, FMT, "-n iterations", "Run tests this many times");
+	fprintf(stderr, FMT, "-q", "Quiet mode: report only failues");
+	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
+	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
 	exit(1);
 }
 
@@ -139,6 +149,7 @@ tst_cb(const struct vev *ve, int what)
 	int i, stx;
 	pid_t px;
 	double t;
+	FILE *f;
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
 
@@ -160,6 +171,7 @@ tst_cb(const struct vev *ve, int what)
 	if (i == 0) {
 		njob--;
 		px = wait4(jp->child, &stx, 0, NULL);
+		assert(px == jp->child);
 		t = TIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
@@ -172,6 +184,18 @@ tst_cb(const struct vev *ve, int what)
 			vtc_fail++;
 		else
 			vtc_good++;
+
+		if (leave_temp == 0 || (leave_temp == 1 && !stx)) {
+			bprintf(buf, "rm -rf %s", jp->tmpdir);
+			AZ(system(buf));
+		} else {
+			bprintf(buf, "%s/LOG", jp->tmpdir);
+			f = fopen(buf, "w");
+			AN(f);
+			(void)fprintf(f, "%s\n", jp->buf);
+			AZ(fclose(f));
+		}
+		free(jp->tmpdir);
 
 		if (stx) {
 			printf("#     top  TEST %s FAILED (%.3f)\n",
@@ -188,9 +212,6 @@ tst_cb(const struct vev *ve, int what)
 		if (jp->evt != NULL)
 			vev_del(vb, jp->evt);
 
-		bprintf(buf, "rm -rf %s", jp->tmpdir);
-		AZ(system(buf));
-		free(jp->tmpdir);
 		FREE_OBJ(jp);
 		return (1);
 	}
@@ -208,7 +229,6 @@ start_test(void)
 	int p[2], sfd, retval;
 	struct vtc_job *jp;
 	char tmpdir[PATH_MAX];
-
 
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
@@ -286,10 +306,16 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "j:kL:n:qt:v")) != -1) {
+	while ((ch = getopt(argc, argv, "j:klLn:qt:v")) != -1) {
 		switch (ch) {
 		case 'j':
 			npar = strtoul(optarg, NULL, 0);
+			break;
+		case 'l':
+			leave_temp = 1;
+			break;
+		case 'L':
+			leave_temp = 2;
 			break;
 		case 'k':
 			vtc_continue = !vtc_continue;
