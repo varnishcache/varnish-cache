@@ -71,6 +71,7 @@ struct vtc_job {
 	struct vev		*ev;
 	struct vev		*evt;
 	char			*buf;
+	char			*tmpdir;
 	unsigned		bufsiz;
 	double			t0;
 };
@@ -186,6 +187,10 @@ tst_cb(const struct vev *ve, int what)
 		AZ(munmap(jp->buf, jp->bufsiz));
 		if (jp->evt != NULL)
 			vev_del(vb, jp->evt);
+
+		bprintf(buf, "rm -rf %s", jp->tmpdir);
+		AZ(system(buf));
+		free(jp->tmpdir);
 		FREE_OBJ(jp);
 		return (1);
 	}
@@ -202,6 +207,8 @@ start_test(void)
 	struct vtc_tst *tp;
 	int p[2], sfd, retval;
 	struct vtc_job *jp;
+	char tmpdir[PATH_MAX];
+
 
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
@@ -213,6 +220,10 @@ start_test(void)
 	assert(jp->buf != MAP_FAILED);
 	memset(jp->buf, 0, jp->bufsiz);
 
+	srandomdev();
+	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
+	AZ(mkdir(tmpdir, 0700));
+
 	tp = VTAILQ_FIRST(&tst_head);
 	CHECK_OBJ_NOTNULL(tp, TST_MAGIC);
 	AN(tp->ntodo);
@@ -222,6 +233,8 @@ start_test(void)
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 
 	jp->tst = tp;
+	jp->tmpdir = strdup(tmpdir);
+	AN(jp->tmpdir);
 
 	AZ(pipe(p));
 	assert(p[0] > STDERR_FILENO);
@@ -236,7 +249,8 @@ start_test(void)
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
 			(void)close(sfd);
-		retval = exec_file(jp->tst->filename, jp->tst->script, jp->buf, jp->bufsiz);
+		retval = exec_file(jp->tst->filename, jp->tst->script,
+		    jp->tmpdir, jp->buf, jp->bufsiz);
 		_exit(retval);
 	}
 	AZ(close(p[1]));

@@ -7,7 +7,7 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-s file,varnishtest_backing,10M" -vcl+backend {}  -start
+varnish v1 -arg "-s file,${tmpdir}/varnishtest_backing,10M" -vcl+backend {}  -start
 
 client c1 {
 	txreq -url "/"
@@ -18,4 +18,4 @@ client c1 {
 server s1 -wait
 
 varnish v1 -stop
-shell "rm ../varnishd/varnishtest_backing"
+shell "rm ${tmpdir}/varnishtest_backing"

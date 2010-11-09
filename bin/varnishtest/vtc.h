@@ -61,7 +61,6 @@ cmd_f cmd_sema;
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
-extern char vtc_tmpdir[PATH_MAX];
 
 void init_sema(void);
 
@@ -76,7 +75,8 @@ void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
 void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
     const char *str);
 
-int exec_file(const char *fn, const char *script, char *logbuf, unsigned loglen);
+int exec_file(const char *fn, const char *script, const char *tmpdir,
+    char *logbuf, unsigned loglen);
 
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...);

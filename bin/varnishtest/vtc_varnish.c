@@ -147,6 +147,7 @@ static struct varnish *
 varnish_new(const char *name)
 {
 	struct varnish *v;
+	struct vsb *vsb;
 	char buf[1024];
 
 	AN(name);
@@ -154,16 +155,19 @@ varnish_new(const char *name)
 	AN(v);
 	REPLACE(v->name, name);
 
-	bprintf(buf, "%s/%s", vtc_tmpdir, name);
-	v->workdir = strdup(buf);
+	v->vl = vtc_logopen(name);
+	AN(v->vl);
+
+	bprintf(buf, "${tmpdir}/%s", name);
+	vsb = macro_expand(v->vl, buf);
+	AN(vsb);
+	v->workdir = strdup(vsb_data(vsb));
 	AN(v->workdir);
+	vsb_delete(vsb);
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s ; echo ' %ld' > %s/_S",
 	    v->workdir, v->workdir, random(), v->workdir);
 	AZ(system(buf));
-
-	v->vl = vtc_logopen(name);
-	AN(v->vl);
 
 	v->vl1 = vtc_logopen(name);
 	AN(v->vl1);
@@ -250,7 +254,7 @@ varnish_thread(void *priv)
 static void
 varnish_launch(struct varnish *v)
 {
-	struct vsb *vsb;
+	struct vsb *vsb, *vsb1;
 	int i, nfd, nap;
 	struct vss_addr **ap;
 	char abuf[128], pbuf[128];
@@ -272,7 +276,7 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 2, "Launch");
 	vsb = vsb_newauto();
 	AN(vsb);
-	vsb_printf(vsb, "cd ../varnishd &&");
+	vsb_printf(vsb, "cd ${topbuild}/bin/varnishd &&");
 	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
 	vsb_printf(vsb, " -l 10m,1m,-");
 	vsb_printf(vsb, " -p auto_restart=off");
@@ -285,6 +289,11 @@ varnish_launch(struct varnish *v)
 	vsb_printf(vsb, " %s", vsb_data(v->args));
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
+	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
+	vsb1 = macro_expand(v->vl, vsb_data(vsb));
+	AN(vsb1);
+	vsb_delete(vsb);
+	vsb = vsb1;
 	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
 	AZ(pipe(&v->fds[0]));
 	AZ(pipe(&v->fds[2]));

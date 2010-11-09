@@ -62,7 +62,6 @@ static char		*vtc_desc;
 volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
-char			vtc_tmpdir[PATH_MAX];
 static struct vtclog	*vltop;
 
 /**********************************************************************
@@ -473,7 +472,8 @@ static const struct cmds cmds[] = {
 };
 
 int
-exec_file(const char *fn, const char *script, char *logbuf, unsigned loglen)
+exec_file(const char *fn, const char *script, const char *tmpdir,
+    char *logbuf, unsigned loglen)
 {
 	unsigned old_err;
 	char *cwd, *p;
@@ -492,10 +492,8 @@ exec_file(const char *fn, const char *script, char *logbuf, unsigned loglen)
 
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 
-	srandomdev();
-	bprintf(vtc_tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
-	AZ(mkdir(vtc_tmpdir, 0700));
-	macro_def(vltop, NULL, "tmpdir", vtc_tmpdir);
+	AZ(chdir(tmpdir));
+	macro_def(vltop, NULL, "tmpdir", tmpdir);
 
 	vtc_stop = 0;
 	vtc_desc = NULL;
