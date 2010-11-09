@@ -55,6 +55,7 @@
 -e459	// unlocked access from func-ptr
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
+-e835	// A zero has been given as ___ argument to operator '___'  (<<)
 -e777	// float equality comparison
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 

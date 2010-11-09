@@ -116,8 +116,3 @@ varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_error { synthetic if "foo"; }
 }
-
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { log "FOO"; }
-}

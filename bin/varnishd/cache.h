@@ -714,6 +714,7 @@ void VCL_Poll(void);
 /* cache_vrt.c */
 
 char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
+char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
 /* cache_vrt_esi.c */
 

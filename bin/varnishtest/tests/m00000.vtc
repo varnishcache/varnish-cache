@@ -13,6 +13,8 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
+		std.log("VCL initiated log");
+		std.syslog(8 + 7, "Somebody runs varnishtest");
 	}
 } -start
 

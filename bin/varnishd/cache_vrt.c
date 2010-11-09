@@ -142,6 +142,37 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 
 /*lint -e{818} ap,hp could be const */
 char *
+VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
+{
+	char *b, *e;
+	unsigned x;
+
+	b = d;
+	e = b + dl;
+	while (p != vrt_magic_string_end && b < e) {
+		if (p != NULL) {
+			x = strlen(p);
+			if (b + x < e)
+				memcpy(b, p, x);
+			b += x;
+		}
+		p = va_arg(ap, const char *);
+	}
+	if (b < e)
+		*b = '\0';
+	b++;
+	if (b > e) 
+		return (NULL);
+	else 
+		return (b);
+}
+
+/*--------------------------------------------------------------------
+ * XXX: Optimize the single element case ?
+ */
+
+/*lint -e{818} ap,hp could be const */
+char *
 VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 {
 	char *b, *e;
@@ -159,27 +190,15 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 			*b = ' ';
 		b++;
 	}
-	while (p != vrt_magic_string_end && b < e) {
-		if (p != NULL) {
-			x = strlen(p);
-			if (b + x < e)
-				memcpy(b, p, x);
-			b += x;
-		}
-		p = va_arg(ap, const char *);
-	}
-	if (b < e)
-		*b = '\0';
-	b++;
-	if (b > e) {
+	b = VRT_StringList(b, e > b ? e - b : 0, p, ap);
+	if (b == NULL || b == e) {
 		WS_Release(ws, 0);
 		return (NULL);
-	} else {
-		e = b;
-		b = ws->f;
-		WS_Release(ws, e - b);
-		return (b);
-	}
+	} 
+	e = b;
+	b = ws->f;
+	WS_Release(ws, e - b);
+	return (b);
 }
 
 /*--------------------------------------------------------------------
@@ -434,15 +453,6 @@ VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
 	http_Unset(sp->obj->http, H_Content_Length);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 	    "Content-Length: %d", sp->obj->len);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VRT_log(struct sess *sp, const char *str)
-{
-
-	WSP(sp, SLT_VCL_Log, "%s", str);
 }
 
 /*--------------------------------------------------------------------*/

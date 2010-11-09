@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <netinet/in.h>
 #include "vrt.h"
 #include "../../bin/varnishd/cache.h"
@@ -132,4 +133,31 @@ vmod_random(struct sess *sp, double lo, double hi)
 	a *= hi - lo;
 	a += lo;
 	return (a);
+}
+
+void
+vmod_log(struct sess *sp, const char *fmt, ...)
+{
+	char buf[64*1024], *p;
+	va_list ap;
+
+	va_start(ap, fmt);
+	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+	if (p != NULL)
+		WSP(sp, SLT_VCL_Log, "%s", buf);
+}
+
+void
+vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
+{
+	char buf[64*1024], *p;
+	va_list ap;
+
+	(void)sp;
+	va_start(ap, fmt);
+	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+	if (p != NULL)
+		syslog(fac, "%s", buf);
 }
