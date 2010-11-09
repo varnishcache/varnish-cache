@@ -62,7 +62,7 @@ HTTPH("Accept-Ranges",		H_Accept_Ranges,	2, 3,				    HTTPH_R_FETCH | HTTPH_A_IN
 HTTPH("Age",			H_Age,			2, 0,						    HTTPH_A_INS,			0, 0)	/* RFC2616 14.6 */
 HTTPH("Allow",			H_Allow,		2, 0, 0,										0, 0)	/* RFC2616 14.7 */
 HTTPH("Authorization",		H_Authorization,	1, 0, 0,										0, 0)	/* RFC2616 14.8 */
-HTTPH("Cache-Control",		H_Cache_Control,	3, 3, HTTPH_R_PASS |		    HTTPH_R_FETCH,					0, 0)	/* RFC2616 14.9 */
+HTTPH("Cache-Control",		H_Cache_Control,	3, 3,               		    HTTPH_R_FETCH,					0, 0)	/* RFC2616 14.9 */
 HTTPH("Connection",		H_Connection,		3, 3, HTTPH_R_PASS | HTTPH_A_PASS | HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.10 */
 HTTPH("Content-Encoding",	H_Content_Encoding,	2, 0, 0,										0, 0)	/* RFC2616 14.11 */
 HTTPH("Content-Langugae",	H_Content_Language,	2, 0, 0,										0, 0)	/* RFC2616 14.12 */
