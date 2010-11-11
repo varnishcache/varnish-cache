@@ -365,7 +365,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			SMP_Fixup(sp, oh, oc);
 
 		if (oc->flags & OC_F_BUSY) {
-			busy_oc = oc;
+			if (!sp->hash_ignore_busy)
+				busy_oc = oc;
 			continue;
 		}
 
@@ -402,9 +403,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VDI_Healthy(sp->t_req, sp->director, (uintptr_t)oh))
+	    || !VDI_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
 					/* Or it is impossible to fetch */
-	    && !sp->hash_ignore_busy) { /* And we've not been told to ignore busy */
 		o = grace_oc->obj;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
@@ -427,7 +427,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		return (oc);
 	}
 
-	if (busy_oc != NULL && !sp->hash_ignore_busy) {
+	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
 		if (sp->esis == 0)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
@@ -781,6 +781,7 @@ HSH_config(const char *h_arg)
 	int ac;
 	const struct hash_slinger *hp;
 
+	ASSERT_MGT();
 	av = ParseArgv(h_arg, ARGV_COMMA);
 	AN(av);
 
