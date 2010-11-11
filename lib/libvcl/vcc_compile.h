@@ -78,8 +78,7 @@ enum symkind {
 #undef VCC_SYMB
 };
 
-typedef void sym_expr_t(struct vcc *tl, struct expr * const *e,
-    const struct symbol *sym);
+typedef void sym_expr_t(struct vcc *tl, struct expr **, const struct symbol *sym);
 
 struct symbol {
 	unsigned			magic;
@@ -96,6 +95,7 @@ struct symbol {
 	enum var_type			fmt;
 
 	sym_expr_t			*eval;
+	void				*eval_priv;
 
 	/* xref.c */
 	struct proc			*proc;
@@ -243,9 +243,10 @@ unsigned vcc_UintVal(struct vcc *tl);
 double vcc_DoubleVal(struct vcc *tl);
 void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
-sym_expr_t vcc_Expr_Var;
-sym_expr_t vcc_Expr_Func;
-sym_expr_t vcc_Expr_Backend;
+void vcc_Expr_Init(struct vcc *tl);
+sym_expr_t vcc_Eval_Var;
+sym_expr_t vcc_Eval_Func;
+sym_expr_t vcc_Eval_Backend;
 
 /* vcc_dir_dns.c */
 parsedirector_f vcc_ParseDnsDirector;

@@ -687,7 +687,7 @@ vcc_DefBackend(struct vcc *tl, const struct token *nm)
 	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
 	AN(sym);
 	sym->fmt = BACKEND;
-	sym->eval = vcc_Expr_Backend;
+	sym->eval = vcc_Eval_Backend;
 	sym->ndef++;
 }
 
