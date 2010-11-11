@@ -1,0 +1,33 @@
+# $Id$
+
+test "Test vmod_dir param"
+
+server s1 {
+	rxreq 
+	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+} -start
+
+varnish v1 -arg "-pthread_pools=1" \
+	-arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
+	-vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.foo = std.toupper(resp.http.foo);
+		set resp.http.bar = std.tolower(resp.http.bar);
+		std.set_ip_tos(32);
+	}
+} -start
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	expect resp.http.foo == "BAR"
+	expect resp.http.bar == "foo"
+} -run
+
+varnish v1 -badvcl {
+	import std to;
+}
