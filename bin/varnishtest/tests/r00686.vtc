@@ -1,0 +1,22 @@
+# $Id$
+
+test "Check that cache-control headers are collapsed"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-Control: foo" -hdr "Cache-control: bar" -bodylen 4
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_deliver {
+		set resp.http.Foo = req.http.cache-control;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Cache-Control: froo" -hdr "Cache-control: boz"
+	rxresp
+	expect resp.http.foo == "froo, boz"
+	expect resp.http.cache-control == "foo, bar"
+	expect resp.status == 200
+} -run
