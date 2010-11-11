@@ -471,6 +471,7 @@ vcc_NewVcc(const struct vcc *tl0)
 	if (tl0 != NULL) {
 		REPLACE(tl->default_vcl, tl0->default_vcl);
 		REPLACE(tl->vcl_dir, tl0->vcl_dir);
+		REPLACE(tl->vmod_dir, tl0->vmod_dir);
 		tl->vars = tl0->vars;
 		tl->err_unref = tl0->err_unref;
 	} else {

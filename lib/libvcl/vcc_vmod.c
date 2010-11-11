@@ -87,13 +87,18 @@ vcc_ParseImport(struct vcc *tl)
 	sym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
+		if (!vcc_IdIs(tl->t, "from")) {
+			vsb_printf(tl->sb, "Expected 'from path...' at ");
+			vcc_ErrToken(tl, tl->t);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
 		bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		Fi(tl, 0, ", NULL);\n");
-		bprintf(fn, "XXX: %s", "XXX: no default path");
+		bprintf(fn, "%s/libvmod_%.*s.so.1", tl->vmod_dir, PF(mod));
 	}
 
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
