@@ -442,8 +442,9 @@ static void
 vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 
-	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
 	vcc_NextToken(tl);
+	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
+	(*e)->constant = 1;
 }
 
 /*--------------------------------------------------------------------
