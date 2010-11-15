@@ -1,15 +1,15 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.5
-Release: 0.svn20101104r5510%{?dist}
+Version: 3.0.0
+Release: 0.svn20101115r5543%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-Source0: http://downloads.sourceforge.net/varnish/varnish-%{version}.tar.gz
+Source0: http://www.varnish-software.com/sites/default/files/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
-BuildRequires: automake autoconf libtool
+BuildRequires: automake autoconf libtool python-docutils
 BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
@@ -38,7 +38,7 @@ BuildRequires: ncurses-devel
 
 %description libs
 Libraries for %{name}.
-Varnish Cache is a high-performance HTTP accelerator.
+Varnish Cache is a high-performance HTTP accelerator
 
 %package libs-devel
 Summary: Development files for %{name}-libs
@@ -53,7 +53,9 @@ Varnish Cache is a high-performance HTTP accelerator
 %package docs
 Summary: Documentation files for %name
 Group: System Environment/Libraries
+%if 0%{?rhel} > 4 && 0%{?fedora} > 10
 BuildRequires: python-sphinx
+%endif
 
 %description docs
 Documentation files for %name
@@ -95,6 +97,10 @@ mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 %build
+# No rst2man in rhel4 or rhel5 (use pregenerated manpages)
+#%if 0%{?rhel} < 6 && 0%{?fedora} < 12
+#	export RST2MAN=true
+#%endif
 
 # No pkgconfig/libpcre.pc in rhel4
 %if 0%{?rhel} == 4
@@ -136,10 +142,12 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
+%if 0%{?rhel} > 4 || 0%{?fedora} > 6
 pushd doc/sphinx
-make html
+%{__make} html
 popd
-cp -r doc/sphinx/\=build/html doc
+mv doc/sphinx/\=build/html doc
+%endif
 
 %check
 # rhel5 on ppc64 is just too strange
@@ -217,9 +225,11 @@ rm -rf %{buildroot}
 %doc LICENSE
 
 %files docs
+%defattr(-,root,root,-)
 %doc LICENSE
 %doc doc/sphinx
 %doc doc/html
+%doc doc/changes*.html
 
 #%files libs-static
 #%{_libdir}/libvarnish.a
@@ -256,6 +266,38 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Nov 15 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.0-0.svn20101115r5543
+- Merged some changes from fedora
+- Upped general version to 3.0 prerelease in trunk
+
+* Wed Nov 04 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-4
+- Added a patch fixing a missing echo in the init script that
+  masked failure output from the script
+- Added a patch from upstream, fixing a problem with Content-Length
+  headers (upstream r5461, upstream bug #801)
+- Added a patch from upstream, adding empty Default-Start and Default-Stop
+  to initscripts for better lsb compliance
+- Added varnish_reload_vcl from trunk
+- Synced descriptions from release spec
+
+* Thu Oct 28 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-3
+- Fixed missing manpages because of no rst2man in rhel4 and 5
+
+* Mon Oct 25 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-2
+- Removed RHEL6/ppc64 specific patch that has been included upstream
+
+* Mon Oct 25 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-1
+- New upstream release
+- New URL for source tarball and main website
+- Prebuilt html docs now included, use that instead of running sphinx
+- Putting sphinx generated doc in a separate subpackage
+- Replaced specific include files with a wildcard glob
+- Needs python-sphinx and deps to build sphinx documentation
+
+* Tue Aug 24 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.3-2
+- Added a RHEL6/ppc64 specific patch that changes the hard coded
+  stack size in tests/c00031.vtc
+
 * Thu Jul 29 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.4-0.svn20100824r5117
 - Replaced specific include files with a wildcard glob
 - Needs python-sphinx and deps to build sphinx documentation
