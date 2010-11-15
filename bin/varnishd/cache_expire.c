@@ -145,8 +145,7 @@ EXP_Insert(struct object *o)
 		oc->flags |= OC_F_ONLRU;
 	}
 	Lck_Unlock(&exp_mtx);
-	if (o->objcore->smp_seg != NULL)
-		SMP_TTLchanged(o);
+	oc_updatemeta(oc);
 }
 
 /*--------------------------------------------------------------------
@@ -237,8 +236,7 @@ EXP_Rearm(const struct object *o)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
-	if (o->objcore->smp_seg != NULL)
-		SMP_TTLchanged(o);
+	oc_updatemeta(oc);
 }
 
 
@@ -289,9 +287,9 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		if (!(oc->flags & OC_F_PERSISTENT)) {
-			o = oc->obj;
-			CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		if (oc->methods == &default_oc_methods) {
+			o = oc_getobj(sp->wrk, oc);
+			AN(o);
 			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
 			    o->xid, (int)(o->ttl - t));
 			HSH_Deref(sp->wrk, &o);
@@ -299,8 +297,7 @@ exp_timer(struct sess *sp, void *priv)
 			WSL(sp->wrk, SLT_ExpKill, 1, "-1 %d",
 			    (int)(oc->timer_when - t));
 
-			/* XXX: Should we tell -spersistent ? */
-			oc->obj = NULL;
+			oc->priv = NULL;
 			HSH_DerefObjCore(sp->wrk, oc);
 			sp->wrk->stats.n_vampireobject--;
 		}
@@ -355,8 +352,8 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 	if (oc == NULL)
 		return (-1);
 
-	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", oc->obj->xid);
-	o = oc->obj;
+	o = oc_getobj(sp->wrk, oc);
+	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
 	HSH_Deref(sp->wrk, &o);
 	return (1);
 }

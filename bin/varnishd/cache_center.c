@@ -575,7 +575,7 @@ cnt_fetch(struct sess *sp)
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		sp->objcore->obj = sp->obj;
+		sp->objcore->priv = sp->obj; /* XXX */
 		sp->obj->objcore = sp->objcore;
 		sp->objcore->objhead = sp->objhead;
 		sp->objhead = NULL;	/* refcnt follows pointer. */
@@ -830,14 +830,14 @@ cnt_lookup(struct sess *sp)
 	if (oc->flags & OC_F_BUSY) {
 		sp->wrk->stats.cache_miss++;
 
-		AZ(oc->obj);
+		// AZ(oc->obj);
 		sp->objhead = oh;
 		sp->objcore = oc;
 		sp->step = STP_MISS;
 		return (0);
 	}
 
-	o = oc->obj;
+	o = oc_getobj(sp->wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	sp->obj = o;
 

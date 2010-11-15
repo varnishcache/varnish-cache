@@ -67,6 +67,8 @@ SVNID("$Id$")
 #define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
 #define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
 
+#define OC_F_NEEDFIXUP OC_F_PRIV
+
 /*
  * Context for a signature.
  *
@@ -642,42 +644,105 @@ smp_save_segs(struct smp_sc *sc)
 	smp_save_seg(sc, &sc->seg2);
 }
 
-/*--------------------------------------------------------------------
- * Fixup an object
+/*---------------------------------------------------------------------
+ * objcore methods for zombie objects
  */
 
-void
-SMP_Fixup(struct sess *sp, const struct objhead *oh, struct objcore *oc)
+static struct object *
+smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
+	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
-	Lck_AssertHeld(&oh->mtx);
-	(void)sp;
-	sg = oc->smp_seg;
-	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
 
 	/*
 	 * XXX: failed checks here should fail gracefully and not assert
 	 */
-	so = (void*)oc->obj;
+	so = oc->priv;
 	xxxassert(so >= sg->objs && so <= sg->objs + sg->nalloc2);
 
-	oc->obj = so->ptr;
+	o = so->ptr;
 
-	CHECK_OBJ_NOTNULL(oc->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-	AN(oc->flags & OC_F_PERSISTENT);
-	oc->flags &= ~OC_F_PERSISTENT;
+	if (wrk == NULL)
+		AZ(oc->flags & OC_F_NEEDFIXUP);
 
-	/* refcnt is one because the object is in the hash */
-	oc->obj->objcore = oc;
-	oc->obj->ban = oc->ban;
+	if (oc->flags & OC_F_NEEDFIXUP) {
+		AN(wrk);
+		Lck_Lock(&sg->sc->mtx);
+		if (oc->flags & OC_F_NEEDFIXUP) {
+			oc->flags &= ~OC_F_NEEDFIXUP;
 
-	sg->nfixed++;
-	sp->wrk->stats.n_object++;
-	sp->wrk->stats.n_vampireobject--;
+			/* refcnt is one because the object is in the hash */
+			o->objcore = oc;
+			o->ban = oc->ban;
+
+			sg->nfixed++;
+			wrk->stats.n_object++;
+			wrk->stats.n_vampireobject--;
+		}
+		Lck_Unlock(&sg->sc->mtx);
+	}
+	return (o);
 }
+
+static void
+smp_oc_updatemeta(struct objcore *oc)
+{
+	struct object *o;
+	struct smp_seg *sg;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	o = smp_oc_getobj(NULL, oc);
+	AN(o);
+	
+	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
+
+	if (sg == sg->sc->cur_seg) {
+		/* Lock necessary, we might race close_seg */
+		Lck_Lock(&sg->sc->mtx);
+		sg->objs[o->smp_index].ban = o->ban_t;
+		sg->objs[o->smp_index].ttl = o->ttl;
+		Lck_Unlock(&sg->sc->mtx);
+	} else {
+		sg->objs[o->smp_index].ban = o->ban_t;
+		sg->objs[o->smp_index].ttl = o->ttl;
+	}
+}
+
+static void
+smp_oc_freeobj(struct objcore *oc)
+{
+	struct smp_seg *sg;
+	struct object *o;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	o = smp_oc_getobj(NULL, oc);
+	AN(o);
+
+	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+
+	Lck_Lock(&sg->sc->mtx);
+	sg->objs[o->smp_index].ttl = 0;
+	sg->objs[o->smp_index].ptr = 0;
+
+	assert(sg->nobj > 0);
+	assert(sg->nfixed > 0);
+	sg->nobj--;
+	sg->nfixed--;
+
+	Lck_Unlock(&sg->sc->mtx);
+}
+
+static struct objcore_methods smp_oc_methods = {
+	.getobj =		smp_oc_getobj,
+	.updatemeta =		smp_oc_updatemeta,
+	.freeobj =		smp_oc_freeobj,
+};
 
 /*--------------------------------------------------------------------
  * Add a new ban to all silos
@@ -779,71 +844,6 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 	return (retval);
 }
 
-/*--------------------------------------------------------------------
- * Update objects
- */
-
-void
-SMP_FreeObj(const struct object *o)
-{
-	struct smp_seg *sg;
-
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	AZ(o->objcore->flags & OC_F_PERSISTENT);
-	sg = o->objcore->smp_seg;
-	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
-
-	Lck_Lock(&sg->sc->mtx);
-	sg->objs[o->smp_index].ttl = 0;
-	sg->objs[o->smp_index].ptr = 0;
-
-	assert(sg->nobj > 0);
-	assert(sg->nfixed > 0);
-	sg->nobj--;
-	sg->nfixed--;
-
-	Lck_Unlock(&sg->sc->mtx);
-}
-
-void
-SMP_BANchanged(const struct object *o, double t)
-{
-	struct smp_seg *sg;
-
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	sg = o->objcore->smp_seg;
-	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
-	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
-
-	if (sg == sg->sc->cur_seg) {
-		/* Lock necessary, we might race close_seg */
-		Lck_Lock(&sg->sc->mtx);
-		sg->objs[o->smp_index].ban = t;
-		Lck_Unlock(&sg->sc->mtx);
-	} else {
-		sg->objs[o->smp_index].ban = t;
-	}
-}
-
-void
-SMP_TTLchanged(const struct object *o)
-{
-	struct smp_seg *sg;
-
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	sg = o->objcore->smp_seg;
-	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
-	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
-
-	if (sg == sg->sc->cur_seg) {
-		/* Lock necessary, we might race close_seg */
-		Lck_Lock(&sg->sc->mtx);
-		sg->objs[o->smp_index].ttl = o->ttl;
-		Lck_Unlock(&sg->sc->mtx);
-	} else {
-		sg->objs[o->smp_index].ttl = o->ttl;
-	}
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -908,10 +908,11 @@ smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 			continue;
 		HSH_Prealloc(sp);
 		oc = sp->wrk->nobjcore;
-		oc->flags |= OC_F_PERSISTENT | OC_F_LRUDONTMOVE;
+		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
-		oc->obj = (void*)so;
-		oc->smp_seg = sg;
+		oc->priv = so;
+		oc->priv2 = sg;
+		oc->methods = &smp_oc_methods;
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
@@ -1300,13 +1301,13 @@ smp_object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objcore->smp_seg, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
+	CAST_OBJ_NOTNULL(sg, sp->obj->objcore->priv2, SMP_SEG_MAGIC);
 	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
 
 	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
 
 	Lck_Lock(&sc->mtx);
-	sg = sp->obj->objcore->smp_seg;
 	assert(sg->nalloc2 < sg->nalloc1);
 
 	sp->obj->smp_index = sg->nalloc2++;
@@ -1407,7 +1408,7 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 		sg->nalloc1++;
 		sc->objreserv += sizeof (struct smp_object);
 		assert(sc->objreserv <= smp_spaceleft(sg));
-		oc->smp_seg = sg;
+		oc->priv2 = sg;
 	}
 
 	sg->nalloc++;

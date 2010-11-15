@@ -462,15 +462,13 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	if (b == o->ban) {	/* not banned */
 		o->ban = b0;
 		o->ban_t = o->ban->t0;
-		if (o->objcore->smp_seg != NULL)
-			SMP_BANchanged(o, b0->t0);
+		oc_updatemeta(o->objcore);
 		return (0);
 	} else {
 		o->ttl = 0;
 		o->cacheable = 0;
 		o->ban = NULL;
-		if (o->objcore->smp_seg != NULL)
-			SMP_TTLchanged(o);
+		oc_updatemeta(o->objcore);
 		/* BAN also changed, but that is not important any more */
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
@@ -532,8 +530,8 @@ ban_lurker(struct sess *sp, void *priv)
 			TIM_sleep(1.0);
 			continue;
 		}
-		AZ(oc->flags & OC_F_PERSISTENT);
-		o = oc->obj;
+		// AZ(oc->flags & OC_F_PERSISTENT);
+		o = oc_getobj(sp->wrk, oc);
 		i = ban_check_object(o, sp, 0);
 		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->ttl, i);
 		HSH_Deref(sp->wrk, &o);

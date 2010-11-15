@@ -71,6 +71,43 @@ SVNID("$Id$")
 
 static const struct hash_slinger *hash;
 
+/*---------------------------------------------------------------------
+ * Default objcore methods
+ */
+
+static struct object *
+default_oc_getobj(struct worker *wrk, struct objcore *oc)
+{
+	struct object *o;
+
+	(void)wrk;
+	if (oc->priv == NULL)
+		return (NULL);
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o);
+}
+
+static void
+default_oc_freeobj(struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	oc->priv = NULL;
+
+	HSH_Freestore(o);
+	if (o->objstore != NULL)
+		STV_free(o->objstore);
+	else
+		FREE_OBJ(o);
+}
+
+struct objcore_methods default_oc_methods = {
+	.getobj = default_oc_getobj,
+	.freeobj = default_oc_freeobj,
+};
+
+/*---------------------------------------------------------------------*/
 double
 HSH_Grace(double g)
 {
@@ -111,6 +148,7 @@ HSH_Prealloc(const struct sess *sp)
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		XXXAN(oc);
 		w->nobjcore = oc;
+		oc->methods = &default_oc_methods;
 		w->stats.n_objectcore++;
 		oc->flags |= OC_F_BUSY;
 	}
@@ -127,7 +165,6 @@ HSH_Prealloc(const struct sess *sp)
 		w->stats.n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
-
 }
 
 void
@@ -361,16 +398,13 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		if (oc->flags & OC_F_PERSISTENT)
-			SMP_Fixup(sp, oh, oc);
-
 		if (oc->flags & OC_F_BUSY) {
 			if (!sp->hash_ignore_busy)
 				busy_oc = oc;
 			continue;
 		}
 
-		o = oc->obj;
+		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 		if (!o->cacheable)
@@ -405,14 +439,14 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	    && (busy_oc != NULL		/* Somebody else is already busy */
 	    || !VDI_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
 					/* Or it is impossible to fetch */
-		o = grace_oc->obj;
+		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 			oc = grace_oc;
 	}
 
 	if (oc != NULL && !sp->hash_always_miss) {
-		o = oc->obj;
+		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
@@ -520,8 +554,7 @@ HSH_Purge(struct sess *sp, struct objhead *oh, double ttl, double grace)
 			continue;
 		}
 
-		if (oc->flags & OC_F_PERSISTENT)
-			SMP_Fixup(sp, oh, oc);
+		(void)oc_getobj(sp->wrk, oc); /* XXX: still needed ? */
 
 		xxxassert(spc >= sizeof *ocp);
 		oc->refcnt++;
@@ -535,7 +568,7 @@ HSH_Purge(struct sess *sp, struct objhead *oh, double ttl, double grace)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc->obj;
+		o = oc_getobj(sp->wrk, oc);
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -589,7 +622,7 @@ HSH_Unbusy(const struct sess *sp)
 
 	AN(ObjIsBusy(o));
 	AN(o->ban);
-	assert(o->objcore->obj == o);
+	assert(oc_getobj(sp->wrk, o->objcore) == o);
 	assert(o->objcore->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
@@ -629,7 +662,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore *oc)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	AZ(oc->obj);
+	AZ(oc->priv);
 
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
@@ -672,8 +705,8 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 	VTAILQ_FOREACH(oc2, &oh->objcs, list)
 		if (oc1 == oc2)
 			break;
-	if (oc2 != NULL && oc2->flags & OC_F_PERSISTENT)
-		SMP_Fixup(sp, oh, oc2);
+	if (oc2 != NULL)
+		oc_getobj(sp->wrk, oc2);
 	if (oc2 != NULL)
 		oc2->refcnt++;
 	Lck_Unlock(&oh->mtx);
@@ -723,15 +756,8 @@ HSH_Deref(struct worker *w, struct object **oo)
 
 	if (o->esidata != NULL)
 		ESI_Destroy(o);
-	if (o->objcore != NULL && o->objcore->smp_seg != NULL) {
-		SMP_FreeObj(o);
-	} else {
-		HSH_Freestore(o);
-		if (o->objstore != NULL)
-			STV_free(o->objstore);
-		else
-			FREE_OBJ(o);
-	}
+	if (o->objcore != NULL)
+		oc_freeobj(o->objcore);
 	o = NULL;
 	w->stats.n_object--;
 

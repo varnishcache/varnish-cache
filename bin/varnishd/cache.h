@@ -98,9 +98,6 @@ struct ban;
 struct SHA256Context;
 struct vsc_lck;
 
-struct smp_object;
-struct smp_seg;
-
 struct lock { void *priv; };		// Opaque
 
 #define DIGEST_LEN		32
@@ -306,26 +303,61 @@ struct storage {
  * housekeeping fields parts of an object.
  */
 
+typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
+typedef void updatemeta_f(struct objcore *oc);
+typedef void freeobj_f(struct objcore *oc);
+
+struct objcore_methods {
+	getobj_f	*getobj;
+	updatemeta_f	*updatemeta;
+	freeobj_f	*freeobj;
+};
+
+extern struct objcore_methods default_oc_methods;
+
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
 	unsigned		refcnt;
-	struct object		*obj;
+	struct objcore_methods	*methods;
+	void			*priv;
+	void			*priv2;
 	struct objhead		*objhead;
 	double			timer_when;
 	unsigned		flags;
 #define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
-#define OC_F_PERSISTENT		(1<<3)
 #define OC_F_LRUDONTMOVE	(1<<4)
+#define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VLIST_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
-	struct smp_seg		*smp_seg;
 	struct ban		*ban;
 };
+
+static inline struct object *
+oc_getobj(struct worker *wrk, struct objcore *oc)
+{
+
+	return (oc->methods->getobj(wrk, oc));
+}
+
+static inline void
+oc_updatemeta(struct objcore *oc)
+{
+
+	if (oc->methods->updatemeta != NULL)
+		oc->methods->updatemeta(oc);
+}
+
+static inline void
+oc_freeobj(struct objcore *oc)
+{
+
+	oc->methods->freeobj(oc);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -748,10 +780,6 @@ struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
 
 /* storage_persistent.c */
-void SMP_Fixup(struct sess *sp, const struct objhead *oh, struct objcore *oc);
-void SMP_BANchanged(const struct object *o, double t);
-void SMP_TTLchanged(const struct object *o);
-void SMP_FreeObj(const struct object *o);
 void SMP_Ready(void);
 void SMP_NewBan(double t0, const char *ban);
 
