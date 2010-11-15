@@ -607,17 +607,16 @@ HSH_Unbusy(const struct sess *sp)
 }
 
 void
-HSH_Ref(const struct object *o)
+HSH_Ref(struct objcore *oc)
 {
 	struct objhead *oh;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	oh = o->objcore->objhead;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
-	assert(o->objcore->refcnt > 0);
-	o->objcore->refcnt++;
+	assert(oc->refcnt > 0);
+	oc->refcnt++;
 	Lck_Unlock(&oh->mtx);
 }
 

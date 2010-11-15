@@ -56,7 +56,7 @@ void HSH_Cleanup(struct worker *w);
 void HSH_Freestore(struct object *o);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(const struct sess *sp);
-void HSH_Ref(const struct object *o);
+void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct sess *sp);
 double HSH_Grace(double g);
 void HSH_Init(void);

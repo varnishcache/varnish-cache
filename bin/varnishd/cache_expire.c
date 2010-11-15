@@ -128,8 +128,8 @@ EXP_Insert(struct object *o)
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	AN(ObjIsBusy(o));
 	assert(o->cacheable);
-	HSH_Ref(o);
 	oc = o->objcore;
+	HSH_Ref(oc);
 
 	assert(o->entered != 0 && !isnan(o->entered));
 	o->last_lru = o->entered;
