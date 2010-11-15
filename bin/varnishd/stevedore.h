@@ -49,6 +49,7 @@ struct stevedore {
 	unsigned		magic;
 #define STEVEDORE_MAGIC		0x4baf43db
 	const char		*name;
+	unsigned		transient;
 	storage_init_f		*init;		/* called by mgt process */
 	storage_open_f		*open;		/* called by cache process */
 	storage_alloc_f		*alloc;		/* --//-- */
@@ -63,7 +64,7 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	char			ident[16];
+	char			ident[16];	/* XXX: match vsm_chunk.ident */
 };
 
 struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl,
@@ -73,8 +74,9 @@ void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);
 void STV_close(void);
-void STV_config(const char *spec);
 struct lru *STV_lru(const struct storage *st);
+void STV_Config(const char *spec);
+void STV_Config_Transient(void);
 
 struct lru *LRU_Alloc(void);
 

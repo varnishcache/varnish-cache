@@ -478,7 +478,7 @@ main(int argc, char * const *argv)
 			break;
 		case 's':
 			s_arg_given = 1;
-			STV_config(optarg);
+			STV_Config(optarg);
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
@@ -601,8 +601,12 @@ main(int argc, char * const *argv)
 	if (C_flag)
 		exit (0);
 
+	/* If no -s argument specified, process default -s argument */
 	if (!s_arg_given)
-		STV_config(s_arg);
+		STV_Config(s_arg);
+
+	/* Configure Transient storage, if user did not */
+	STV_Config_Transient();
 
 	HSH_config(h_arg);
 

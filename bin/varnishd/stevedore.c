@@ -24,6 +24,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * STEVEDORE: one who works at or is responsible for loading and
+ * unloading ships in port.  Example: "on the wharves, stevedores were
+ * unloading cargo from the far corners of the world." Origin: Spanish
+ * estibador, from estibar to pack.  First Known Use: 1788
  */
 
 #include "config.h"
@@ -39,6 +44,8 @@ SVNID("$Id$")
 #include "cache.h"
 #include "stevedore.h"
 #include "cli_priv.h"
+
+#define TRANSIENT_NAME	"Transient"
 
 static VTAILQ_HEAD(, stevedore)	stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
@@ -82,6 +89,8 @@ stv_pick_stevedore(void)
 	AN(stv);
 	AN(stv->name);
 	stv_next = stv;
+	if (stv->transient)
+		stv = stv_pick_stevedore();
 	return (stv);
 }
 
@@ -254,10 +263,13 @@ static const struct choice STV_choice[] = {
 	{ NULL,		NULL }
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Parse a stevedore argument on the form:
+ *	[ name '=' ] strategy [ ',' arg ] *
+ */
 
 void
-STV_config(const char *spec)
+STV_Config(const char *spec)
 {
 	char **av;
 	const char *p, *q;
@@ -281,7 +293,7 @@ STV_config(const char *spec)
 		ARGV_ERR("%s\n", av[0]);
 
 	if (av[1] == NULL)
-		ARGV_ERR("-s argument is empty\n");
+		ARGV_ERR("-s argument lacks strategy {malloc, file, ...}\n");
 
 	for (ac = 0; av[ac + 2] != NULL; ac++)
 		continue;
@@ -289,7 +301,7 @@ STV_config(const char *spec)
 	stv2 = pick(STV_choice, av[1], "storage");
 	AN(stv2);
 
-	/* Append to ident string */
+	/* Append strategy to ident string */
 	vsb_printf(vident, ",-s%s", av[1]);
 
 	av += 2;
@@ -308,7 +320,17 @@ STV_config(const char *spec)
 		l = p - spec;
 		if (l > sizeof stv->ident - 1)
 			l = sizeof stv->ident - 1;
-		bprintf(stv->ident, "%*.*s", l, l, spec);
+		bprintf(stv->ident, "%.*s", l, spec);
+	}
+
+	if (!strcmp(stv->ident, TRANSIENT_NAME))
+		stv->transient = 1;
+
+	VTAILQ_FOREACH(stv2, &stevedores, list) {
+		if (strcmp(stv2->ident, stv->ident))
+			continue;
+		ARGV_ERR("(-s%s=%s) already defined once\n",
+		    stv->ident, stv->name);
 	}
 
 	stv->lru = LRU_Alloc();
@@ -322,6 +344,19 @@ STV_config(const char *spec)
 
 	if (!stv_next)
 		stv_next = VTAILQ_FIRST(&stevedores);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+STV_Config_Transient(void)
+{
+	const struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stevedores, list)
+		if (!strcmp(stv->name, TRANSIENT_NAME))
+			return;
+	STV_Config(TRANSIENT_NAME "=malloc");
 }
 
 /*--------------------------------------------------------------------*/
@@ -347,4 +382,3 @@ struct cli_proto cli_stv[] = {
 	    0, 0, "", stv_cli_list },
 	{ NULL}
 };
-
