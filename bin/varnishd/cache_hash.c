@@ -629,6 +629,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore *oc)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
+	AZ(oc->obj);
+
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	if (oc->flags & OC_F_BUSY)

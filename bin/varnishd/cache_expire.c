@@ -298,6 +298,9 @@ exp_timer(struct sess *sp, void *priv)
 		} else {
 			WSL(sp->wrk, SLT_ExpKill, 1, "-1 %d",
 			    (int)(oc->timer_when - t));
+
+			/* XXX: Should we tell -spersistent ? */
+			oc->obj = NULL;
 			HSH_DerefObjCore(sp->wrk, oc);
 			sp->wrk->stats.n_vampireobject--;
 		}
