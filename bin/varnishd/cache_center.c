@@ -471,9 +471,9 @@ cnt_fetch(struct sess *sp)
 		if (sp->objcore != NULL) {
 			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-			HSH_DerefObjCore(sp);
-			AZ(sp->objhead);
-			AZ(sp->objcore);
+			HSH_DerefObjCore(sp->wrk, sp->objcore);
+			sp->objhead = NULL;
+			sp->objcore = NULL;
 		}
 		AZ(sp->obj);
 		sp->wrk->bereq = NULL;
@@ -531,8 +531,11 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objhead);
 		sp->wrk->cacheable = 0;
 	} else if (!sp->wrk->cacheable) {
-		if (sp->objhead != NULL)
-			HSH_DerefObjCore(sp);
+		if (sp->objhead != NULL) {
+			HSH_DerefObjCore(sp->wrk, sp->objcore);
+			sp->objhead = NULL;
+			sp->objcore = NULL;
+		}
 	}
 
 	/*
@@ -898,18 +901,24 @@ cnt_miss(struct sess *sp)
 	VCL_miss_method(sp);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
-		HSH_DerefObjCore(sp);
+		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		sp->objhead = NULL;
+		sp->objcore = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		HSH_DerefObjCore(sp);
+		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		sp->objhead = NULL;
+		sp->objcore = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_FETCH:
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
-		HSH_DerefObjCore(sp);
+		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		sp->objhead = NULL;
+		sp->objcore = NULL;
 		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_miss{}");

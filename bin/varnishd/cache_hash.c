@@ -621,21 +621,15 @@ HSH_Ref(struct objcore *oc)
 }
 
 void
-HSH_DerefObjCore(struct sess *sp)
+HSH_DerefObjCore(struct worker *wrk, struct objcore *oc)
 {
 	struct objhead *oh;
-	struct objcore *oc;
 
-	CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-
-	oh = sp->objhead;
-	sp->objhead = NULL;
-	oc = sp->objcore;
-	sp->objcore = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	assert(oc->objhead == oh);
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	if (oc->flags & OC_F_BUSY)
 		hsh_rush(oh);
@@ -643,9 +637,9 @@ HSH_DerefObjCore(struct sess *sp)
 	oc->objhead = NULL;
 	assert(oh->refcnt > 0);
 	FREE_OBJ(oc);
-	sp->wrk->stats.n_objectcore--;
+	wrk->stats.n_objectcore--;
 	if (!hash->deref(oh))
-		HSH_DeleteObjHead(sp->wrk, oh);
+		HSH_DeleteObjHead(wrk, oh);
 }
 
 /*******************************************************************
