@@ -51,6 +51,10 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
+
 #define		MAX_FILESIZE		(1024 * 1024)
 
 
