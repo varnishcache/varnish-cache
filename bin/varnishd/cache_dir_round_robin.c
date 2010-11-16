@@ -102,9 +102,8 @@ vdi_round_robin_healthy(double now, const struct director *d, uintptr_t target)
 	return 0;
 }
 
-/*lint -e{818} not const-able */
 static void
-vdi_round_robin_fini(struct director *d)
+vdi_round_robin_fini(const struct director *d)
 {
 	struct vdi_round_robin *vs;
 

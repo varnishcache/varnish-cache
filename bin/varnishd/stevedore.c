@@ -98,8 +98,8 @@ stv_pick_stevedore(void)
 /*********************************************************************/
 
 static void
-STV_InitObj(struct sess *sp, struct object *o, unsigned wsl, unsigned lhttp,
-    unsigned nhttp)
+STV_InitObj(const struct sess *sp, struct object *o, unsigned wsl,
+    unsigned lhttp, unsigned nhttp)
 {
 
 	memset(o, 0, sizeof *o);
@@ -123,7 +123,7 @@ STV_InitObj(struct sess *sp, struct object *o, unsigned wsl, unsigned lhttp,
 /*********************************************************************/
 
 struct object *
-STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
+STV_NewObject(const struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 {
 	struct object *o;
 	struct storage *st;
@@ -161,7 +161,7 @@ STV_NewObject(struct sess *sp, unsigned l, double ttl, unsigned nhttp)
 /*********************************************************************/
 
 struct storage *
-STV_alloc(struct sess *sp, size_t size, struct objcore *oc)
+STV_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 {
 	struct storage *st;
 	struct stevedore *stv = NULL;

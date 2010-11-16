@@ -487,7 +487,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
  * Ban tail lurker thread
  */
 
-static void *
+static void * __match_proto__(bgthread_t)
 ban_lurker(struct sess *sp, void *priv)
 {
 	struct ban *b, *bf;

@@ -75,7 +75,7 @@ static const struct hash_slinger *hash;
  * Default objcore methods
  */
 
-static struct object *
+static struct object * __match_proto__(getobj_f)
 default_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
@@ -538,7 +538,7 @@ hsh_rush(struct objhead *oh)
  */
 
 void
-HSH_Purge(struct sess *sp, struct objhead *oh, double ttl, double grace)
+HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, nobj, n;
@@ -698,7 +698,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore *oc)
  */
 
 void
-HSH_FindBan(struct sess *sp, struct objcore **oc)
+HSH_FindBan(const struct sess *sp, struct objcore **oc)
 {
 	struct objcore *oc1, *oc2;
 	struct objhead *oh;
@@ -715,7 +715,7 @@ HSH_FindBan(struct sess *sp, struct objcore **oc)
 		if (oc1 == oc2)
 			break;
 	if (oc2 != NULL)
-		oc_getobj(sp->wrk, oc2);
+		(void)oc_getobj(sp->wrk, oc2);
 	if (oc2 != NULL)
 		oc2->refcnt++;
 	Lck_Unlock(&oh->mtx);

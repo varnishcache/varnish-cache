@@ -62,9 +62,9 @@ double HSH_Grace(double g);
 void HSH_Init(void);
 void HSH_AddString(const struct sess *sp, const char *str);
 void HSH_DerefObjCore(struct worker *sp, struct objcore *oc);
-void HSH_FindBan(struct sess *sp, struct objcore **oc);
+void HSH_FindBan(const struct sess *sp, struct objcore **oc);
 struct objcore *HSH_Insert(const struct sess *sp);
-void HSH_Purge(struct sess *, struct objhead *, double ttl, double grace);
+void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);
 void HSH_config(const char *h_arg);
 
 #ifdef VARNISH_CACHE_CHILD

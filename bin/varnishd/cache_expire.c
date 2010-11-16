@@ -246,7 +246,7 @@ EXP_Rearm(const struct object *o)
  * discarded.
  */
 
-static void *
+static void * __match_proto__(void *start_routine(void *))
 exp_timer(struct sess *sp, void *priv)
 {
 	struct objcore *oc;

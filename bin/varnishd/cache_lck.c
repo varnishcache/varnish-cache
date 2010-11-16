@@ -45,7 +45,6 @@ SVNID("$Id$")
 #include "cache.h"
 
 /*The constability of lck depends on platform pthreads implementation */
-/*lint -save -esym(818,lck) */
 
 struct ilck {
 	unsigned		magic;
@@ -63,7 +62,7 @@ static VTAILQ_HEAD(, ilck)	ilck_head =
 
 static pthread_mutex_t		lck_mtx;
 
-void
+void __match_proto__()
 Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
@@ -95,7 +94,7 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	ilck->held = 1;
 }
 
-void
+void __match_proto__()
 Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
@@ -109,7 +108,7 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 }
 
-int
+int __match_proto__()
 Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
@@ -143,7 +142,7 @@ Lck__Assert(const struct lock *lck, int held)
 		    !pthread_equal(ilck->owner, pthread_self()));
 }
 
-void
+void __match_proto__()
 Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
 {
 	struct ilck *ilck;
@@ -206,5 +205,3 @@ LCK_Init(void)
 #include "locks.h"
 #undef LOCK
 }
-
-/*lint -restore */

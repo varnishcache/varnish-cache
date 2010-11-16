@@ -877,7 +877,7 @@ smp_spaceleft(const struct smp_seg *sg)
  */
 
 static void
-smp_load_seg(struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
+smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 {
 	struct smp_object *so;
 	struct objcore *oc;
@@ -1465,7 +1465,7 @@ smp_trim(struct storage *ss, size_t size)
  * can be reclaimed.
  */
 
-static void
+static void __match_proto__(storage_free_f)
 smp_free(struct storage *st)
 {
 

@@ -526,8 +526,7 @@ smf_trim(struct storage *s, size_t size)
 
 /*--------------------------------------------------------------------*/
 
-/*lint -e{818} not const-able */
-static void
+static void __match_proto__(storage_free_f)
 smf_free(struct storage *s)
 {
 	struct smf *smf;

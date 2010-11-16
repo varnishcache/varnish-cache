@@ -273,6 +273,7 @@ VRT_fini_dir(struct cli *cli, struct director *b)
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, DIRECTOR_MAGIC);
 	b->fini(b);
+	b->priv = NULL;
 }
 
 /*--------------------------------------------------------------------*/

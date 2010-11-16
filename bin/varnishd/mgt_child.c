@@ -645,8 +645,7 @@ MGT_Run(void)
 
 /*--------------------------------------------------------------------*/
 
-/*lint -e{818} priv could be const */
-void
+void __match_proto__(cli_func_t)
 mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 {
 

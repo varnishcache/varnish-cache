@@ -463,7 +463,7 @@ VBE_UseHealth(const struct director *vdi)
  *
  */
 
-static struct vbc *
+static struct vbc * __match_proto__(vdi_getfd_f)
 vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
 	struct vdi_simple *vs;
@@ -492,9 +492,8 @@ vdi_simple_healthy(double now, const struct director *d, uintptr_t target)
 	return (vbe_Healthy(now, target, vs));
 }
 
-/*lint -e{818} not const-able */
 static void
-vdi_simple_fini(struct director *d)
+vdi_simple_fini(const struct director *d)
 {
 	struct vdi_simple *vs;
 

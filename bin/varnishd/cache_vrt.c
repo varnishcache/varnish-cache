@@ -53,9 +53,6 @@ SVNID("$Id$")
 #include "hash_slinger.h"
 #include "cache_backend.h"
 
-/*XXX: sort of a hack, improve the Tcl code in the compiler to avoid */
-/*lint -save -esym(818,sp) */
-
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 
 /*--------------------------------------------------------------------*/
@@ -140,7 +137,6 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
  * XXX: Optimize the single element case ?
  */
 
-/*lint -e{818} ap,hp could be const */
 char *
 VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
 {
@@ -161,9 +157,9 @@ VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
 	if (b < e)
 		*b = '\0';
 	b++;
-	if (b > e) 
+	if (b > e)
 		return (NULL);
-	else 
+	else
 		return (b);
 }
 
@@ -171,7 +167,6 @@ VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
  * XXX: Optimize the single element case ?
  */
 
-/*lint -e{818} ap,hp could be const */
 char *
 VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 {
@@ -194,7 +189,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 	if (b == NULL || b == e) {
 		WS_Release(ws, 0);
 		return (NULL);
-	} 
+	}
 	e = b;
 	b = ws->f;
 	WS_Release(ws, e - b);
@@ -205,9 +200,9 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
  * XXX: Optimize the single element case ?
  */
 
-/*lint -e{818} ap,hp could be const */
 static char *
-vrt_assemble_string(struct http *hp, const char *h, const char *p, va_list ap)
+vrt_assemble_string(const struct http *hp, const char *h, const char *p,
+    va_list ap)
 {
 
 	return (VRT_String(hp->ws, h, p, ap));
@@ -273,7 +268,7 @@ VRT_handling(struct sess *sp, unsigned hand)
  */
 
 void
-VRT_hashdata(struct sess *sp, const char *str, ...)
+VRT_hashdata(const struct sess *sp, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
@@ -364,7 +359,7 @@ VRT_time_string(const struct sess *sp, double t)
 }
 
 const char *
-VRT_backend_string(struct sess *sp, const struct director *d)
+VRT_backend_string(const struct sess *sp, const struct director *d)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
@@ -395,7 +390,7 @@ VRT_Rollback(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ESI(struct sess *sp)
+VRT_ESI(const struct sess *sp)
 {
 
 	if (sp->cur_method != VCL_MET_FETCH) {
@@ -410,9 +405,8 @@ VRT_ESI(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-/*lint -e{818} sp could be const */
 void
-VRT_panic(struct sess *sp, const char *str, ...)
+VRT_panic(const struct sess *sp, const char *str, ...)
 {
 	va_list ap;
 	char *b;
@@ -425,9 +419,8 @@ VRT_panic(struct sess *sp, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-/*lint -e{818} sp could be const */
 void
-VRT_synth_page(struct sess *sp, unsigned flags, const char *str, ...)
+VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
@@ -543,7 +536,7 @@ VRT_ban_string(struct sess *sp, const char *str)
  */
 
 void
-VRT_purge(struct sess *sp, double ttl, double grace)
+VRT_purge(const struct sess *sp, double ttl, double grace)
 {
 	if (sp->cur_method == VCL_MET_HIT)
 		HSH_Purge(sp, sp->obj->objcore->objhead, ttl, grace);
@@ -569,5 +562,3 @@ VRT_memmove(void *dst, const void *src, unsigned len)
 
 	(void)memmove(dst, src, len);
 }
-
-/*lint -restore */

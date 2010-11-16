@@ -187,7 +187,7 @@ run_cc(void *priv)
  * Attempt to open compiled VCL in a sub-process
  */
 
-static void
+static void __match_proto__(sub_func_f)
 run_dlopen(void *priv)
 {
 	const char *of;

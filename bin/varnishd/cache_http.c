@@ -206,7 +206,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
 			if (b + x < e) {
 				memcpy(b, hp->hd[f].b, x);
 				b += x;
-			} else 
+			} else
 				b = e;
 		}
 
@@ -220,7 +220,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
 		if (b + x < e) {
 			memcpy(b, hp->hd[u].b + *hdr, x);
 			b += x;
-		} else 
+		} else
 			b = e;
 
 		/* Shift remaining headers up one slot */

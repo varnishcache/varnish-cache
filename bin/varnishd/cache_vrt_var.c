@@ -49,7 +49,7 @@ static char vrt_hostname[255] = "";
 /*--------------------------------------------------------------------*/
 
 static void
-vrt_do_string(struct worker *w, int fd, struct http *hp, int fld,
+vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	char *b;
@@ -199,7 +199,7 @@ VBERESP(beresp, unsigned, cacheable, cacheable)
 
 /*--------------------------------------------------------------------*/
 
-const char *
+const char * __match_proto__()
 VRT_r_client_identity(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -260,7 +260,7 @@ VRT_r_beresp_ttl(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
-void								\
+void __match_proto__()						\
 VRT_l_bereq_##which(struct sess *sp, double num)		\
 {								\
 								\
@@ -268,7 +268,7 @@ VRT_l_bereq_##which(struct sess *sp, double num)		\
 	sp->wrk->which = (num > 0.0 ? num : 0.0);		\
 }								\
 								\
-double								\
+double __match_proto__()					\
 VRT_r_bereq_##which(struct sess *sp)				\
 {								\
 								\
@@ -373,8 +373,7 @@ VRT_l_req_backend(struct sess *sp, struct director *be)
 	sp->director = be;
 }
 
-/*lint -e{818} sp could be const */
-struct director *
+struct director * __match_proto__()
 VRT_r_req_backend(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -395,7 +394,7 @@ VRT_l_req_esi(struct sess *sp, unsigned process_esi)
 		sp->disable_esi = !process_esi;
 }
 
-unsigned
+unsigned __match_proto__()
 VRT_r_req_esi(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -415,7 +414,7 @@ VRT_r_req_restarts(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 #define VRT_DO_GRACE(which, fld, extra)				\
-void								\
+void __match_proto__()						\
 VRT_l_##which##_grace(struct sess *sp, double a)		\
 {								\
 								\
@@ -424,7 +423,7 @@ VRT_l_##which##_grace(struct sess *sp, double a)		\
 	extra;							\
 }								\
 								\
-double								\
+double __match_proto__()					\
 VRT_r_##which##_grace(struct sess *sp)				\
 {								\
 								\
@@ -442,8 +441,7 @@ VRT_DO_GRACE(beresp, sp->wrk->grace, )
  * req.xid
  */
 
-/*lint -e{818} sp could be const */
-const char *
+const char * __match_proto__()
 VRT_r_req_xid(struct sess *sp)
 {
 	char *p;
@@ -459,7 +457,7 @@ VRT_r_req_xid(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 #define REQ_BOOL(which)						\
-void								\
+void __match_proto__()						\
 VRT_l_req_##which(struct sess *sp, unsigned val)		\
 {								\
 								\
@@ -467,7 +465,7 @@ VRT_l_req_##which(struct sess *sp, unsigned val)		\
 	sp->which = val ? 1 : 0;				\
 }								\
 								\
-unsigned							\
+unsigned __match_proto__()					\
 VRT_r_req_##which(struct sess *sp)				\
 {								\
 								\

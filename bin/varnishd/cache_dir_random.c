@@ -203,9 +203,8 @@ vdi_random_healthy(double now, const struct director *d, uintptr_t target)
 	return 0;
 }
 
-/*lint -e{818} not const-able */
 static void
-vdi_random_fini(struct director *d)
+vdi_random_fini(const struct director *d)
 {
 	struct vdi_random *vs;
 

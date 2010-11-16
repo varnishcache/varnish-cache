@@ -105,8 +105,7 @@ sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	return (&sma->s);
 }
 
-/*lint -e{818} not const-able */
-static void
+static void __match_proto__(storage_free_f)
 sma_free(struct storage *s)
 {
 	struct sma_sc *sma_sc;

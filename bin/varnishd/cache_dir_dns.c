@@ -424,9 +424,8 @@ vdi_dns_healthy(double now, const struct director *dir, uintptr_t target)
 	*/
 }
 
-/*lint -e{818} not const-able */
 static void
-vdi_dns_fini(struct director *d)
+vdi_dns_fini(const struct director *d)
 {
 	struct vdi_dns *vs;
 

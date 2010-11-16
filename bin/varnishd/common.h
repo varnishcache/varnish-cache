@@ -47,6 +47,10 @@ int Symbol_Lookup(struct vsb *vsb, void *ptr);
 
 #define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
 
+
+/* Help shut up FlexeLint */
+#define __match_proto__(xxx) /*lint -e{818} */
+
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void mgt_child_inherit(int fd, const char *what);
 

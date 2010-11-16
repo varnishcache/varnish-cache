@@ -47,7 +47,7 @@ static unsigned fetchfrag;
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
+fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 {
 	int i;
 	unsigned char *p;
@@ -92,7 +92,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
 static int
-fetch_chunked(struct sess *sp, struct http_conn *htc)
+fetch_chunked(const struct sess *sp, struct http_conn *htc)
 {
 	int i;
 	char *q;
@@ -240,7 +240,7 @@ dump_st(const struct sess *sp, const struct storage *st)
 }
 
 static int
-fetch_eof(struct sess *sp, struct http_conn *htc)
+fetch_eof(const struct sess *sp, struct http_conn *htc)
 {
 	int i;
 	unsigned char *p;
