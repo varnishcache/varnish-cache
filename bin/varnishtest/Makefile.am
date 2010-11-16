@@ -1,7 +1,11 @@
 # $Id$
 
-TESTS_ENVIRONMENT = ./varnishtest
-TESTS = $(srcdir)/tests/*.vtc
+TESTS_PARALLELISM = 3
+check: varnishtest
+	./varnishtest -j$(TESTS_PARALLELISM) $(srcdir)/tests/*.vtc
+	@echo "==================="
+	@echo "All tests succeeded"
+	@echo "==================="
 
 DISTCLEANFILES = _.ok
 
