@@ -102,7 +102,7 @@ The following options are available:
 
 		   Varnish:handling
 		     How the request was handled, whether it was a
-		     cache hit, miss, pass or pipe.
+		     cache hit, miss, pass, pipe or error.
 
 -o	    Filter log output to request groups that match a regular
 	    expression on a specified tag.
