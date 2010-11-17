@@ -203,7 +203,7 @@ cnt_deliver(struct sess *sp)
 
 	RES_WriteObj(sp);
 	AZ(sp->wrk->wfd);
-	HSH_Deref(sp->wrk, &sp->obj);
+	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	sp->wrk->resp = NULL;
 	sp->step = STP_DONE;
 	return (0);
@@ -471,7 +471,7 @@ cnt_fetch(struct sess *sp)
 		if (sp->objcore != NULL) {
 			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-			HSH_DerefObjCore(sp->wrk, sp->objcore);
+			AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 			sp->objhead = NULL;
 			sp->objcore = NULL;
 		}
@@ -532,7 +532,7 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->cacheable = 0;
 	} else if (!sp->wrk->cacheable) {
 		if (sp->objhead != NULL) {
-			HSH_DerefObjCore(sp->wrk, sp->objcore);
+			AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 			sp->objhead = NULL;
 			sp->objcore = NULL;
 		}
@@ -751,7 +751,7 @@ cnt_hit(struct sess *sp)
 	}
 
 	/* Drop our object, we won't need it */
-	HSH_Deref(sp->wrk, &sp->obj);
+	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	sp->objcore = NULL;
 	AZ(sp->objhead);
 
@@ -844,7 +844,7 @@ cnt_lookup(struct sess *sp)
 	if (oc->flags & OC_F_PASS) {
 		sp->wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
-		HSH_Deref(sp->wrk, &sp->obj);
+		(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 		sp->objcore = NULL;
 		sp->objhead = NULL;
 		sp->step = STP_PASS;
@@ -901,13 +901,13 @@ cnt_miss(struct sess *sp)
 	VCL_miss_method(sp);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
-		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 		sp->objhead = NULL;
 		sp->objcore = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 		sp->objhead = NULL;
 		sp->objcore = NULL;
 		sp->step = STP_PASS;
@@ -916,7 +916,7 @@ cnt_miss(struct sess *sp)
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
-		HSH_DerefObjCore(sp->wrk, sp->objcore);
+		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 		sp->objhead = NULL;
 		sp->objcore = NULL;
 		INCOMPL();

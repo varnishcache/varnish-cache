@@ -61,7 +61,6 @@ void HSH_Drop(struct sess *sp);
 double HSH_Grace(double g);
 void HSH_Init(void);
 void HSH_AddString(const struct sess *sp, const char *str);
-void HSH_DerefObjCore(struct worker *sp, struct objcore *oc);
 void HSH_FindBan(const struct sess *sp, struct objcore **oc);
 struct objcore *HSH_Insert(const struct sess *sp);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);
@@ -94,7 +93,7 @@ struct objhead {
 };
 
 void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
-void HSH_Deref(struct worker *w, struct object **o);
+int HSH_Deref(struct worker *w, struct objcore *oc, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

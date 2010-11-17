@@ -585,7 +585,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 		if (!isnan(grace))
 			o->grace = grace;
 		EXP_Rearm(o);
-		HSH_Deref(sp->wrk, &o);
+		(void)HSH_Deref(sp->wrk, NULL, &o);
 	}
 	WS_Release(sp->wrk->ws, 0);
 }
@@ -613,7 +613,7 @@ HSH_Drop(struct sess *sp)
 	o->cacheable = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
-	HSH_Deref(sp->wrk, &sp->obj);
+	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 }
 
 void
@@ -662,28 +662,84 @@ HSH_Ref(struct objcore *oc)
 	Lck_Unlock(&oh->mtx);
 }
 
-void
-HSH_DerefObjCore(struct worker *wrk, struct objcore *oc)
+/*******************************************************************
+ * Dereference objcore and or object
+ *
+ * Can deal with:
+ *	bare objcore (incomplete fetch)
+ *	bare object (pass)
+ *	object with objcore
+ *	XXX later:  objcore with object (?)
+ *
+ * But you can only supply one of the two arguments at a time.
+ *
+ * Returns zero if target was destroyed.
+ */
+
+int
+HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 {
+	struct object *o;
 	struct objhead *oh;
+	unsigned r;
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	oh = oc->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (oc != NULL) {
+		AZ(oo);
+		o = NULL;
+		AZ(oc->priv);	// XXX: for now
+	} else {
+		AZ(oc);
+		AN(oo);
+		o = *oo;
+		*oo = NULL;
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		oc = o->objcore;
+	}
 
-	AZ(oc->priv);
+	if (oc != NULL) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		oh = oc->objhead;
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	Lck_Lock(&oh->mtx);
-	VTAILQ_REMOVE(&oh->objcs, oc, list);
-	if (oc->flags & OC_F_BUSY)
-		hsh_rush(oh);
-	Lck_Unlock(&oh->mtx);
-	oc->objhead = NULL;
-	assert(oh->refcnt > 0);
+		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 0);
+		assert(oc->refcnt > 0);
+		r = --oc->refcnt;
+		if (!r)
+			VTAILQ_REMOVE(&oh->objcs, oc, list);
+		if (oc->flags & OC_F_BUSY)
+			hsh_rush(oh);
+		Lck_Unlock(&oh->mtx);
+		if (r != 0)
+			return (r);
+	}
+
+	if (o != NULL) {
+		if (oc != NULL)
+			BAN_DestroyObj(o);
+		AZ(o->ban);
+		DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
+		    o->xid, WS_Free(o->ws_o));
+
+		if (o->esidata != NULL)
+			ESI_Destroy(o);
+		if (oc != NULL)
+			oc_freeobj(oc);
+		w->stats.n_object--;
+	}
+
+	if (oc == NULL) 
+		return (0);
+
+	AN(oh);
 	FREE_OBJ(oc);
-	wrk->stats.n_objectcore--;
-	if (!hash->deref(oh))
-		HSH_DeleteObjHead(wrk, oh);
+	w->stats.n_objectcore--;
+	/* Drop our ref on the objhead */
+	assert(oh->refcnt > 0);
+	if (hash->deref(oh))
+		return (0);
+	HSH_DeleteObjHead(w, oh);
+	return (0);
 }
 
 /*******************************************************************
@@ -722,67 +778,6 @@ HSH_FindBan(const struct sess *sp, struct objcore **oc)
 	*oc = oc2;
 }
 
-void
-HSH_Deref(struct worker *w, struct object **oo)
-{
-	struct object *o;
-	struct objhead *oh;
-	struct objcore *oc;
-	unsigned r;
-
-	AN(oo);
-	o = *oo;
-	*oo = NULL;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
-	if (oc == NULL) {
-		r = 0;
-		oh = NULL;
-	} else {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		oh = oc->objhead;
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		assert(oc->refcnt > 0);
-		r = --oc->refcnt;
-		if (!r)
-			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		hsh_rush(oh);
-		Lck_Unlock(&oh->mtx);
-	}
-
-	/* If still referenced, done */
-	if (r != 0)
-		return;
-
-	if (oh != NULL)
-		BAN_DestroyObj(o);
-	AZ(o->ban);
-	DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
-	    o->xid, WS_Free(o->ws_o));
-
-	if (o->esidata != NULL)
-		ESI_Destroy(o);
-	if (o->objcore != NULL)
-		oc_freeobj(o->objcore);
-	o = NULL;
-	w->stats.n_object--;
-
-	if (oc == NULL) {
-		AZ(oh);
-		return;
-	}
-	AN(oh);
-	FREE_OBJ(oc);
-	w->stats.n_objectcore--;
-	/* Drop our ref on the objhead */
-	assert(oh->refcnt > 0);
-	if (hash->deref(oh))
-		return;
-	HSH_DeleteObjHead(w, oh);
-}
 
 void
 HSH_Init(void)

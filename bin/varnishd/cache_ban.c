@@ -534,7 +534,7 @@ ban_lurker(struct sess *sp, void *priv)
 		o = oc_getobj(sp->wrk, oc);
 		i = ban_check_object(o, sp, 0);
 		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->ttl, i);
-		HSH_Deref(sp->wrk, &o);
+		(void)HSH_Deref(sp->wrk, NULL, &o);
 		TIM_sleep(params->ban_lurker_sleep);
 	}
 	NEEDLESS_RETURN(NULL);

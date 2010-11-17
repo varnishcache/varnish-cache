@@ -292,13 +292,13 @@ exp_timer(struct sess *sp, void *priv)
 			AN(o);
 			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
 			    o->xid, (int)(o->ttl - t));
-			HSH_Deref(sp->wrk, &o);
+			(void)HSH_Deref(sp->wrk, NULL, &o);
 		} else {
 			WSL(sp->wrk, SLT_ExpKill, 1, "-1 %d",
 			    (int)(oc->timer_when - t));
 
 			oc->priv = NULL;
-			HSH_DerefObjCore(sp->wrk, oc);
+			AZ(HSH_Deref(sp->wrk, oc, NULL));
 			sp->wrk->stats.n_vampireobject--;
 		}
 	}
@@ -354,7 +354,7 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 
 	o = oc_getobj(sp->wrk, oc);
 	WSL(sp->wrk, SLT_ExpKill, 0, "%u LRU", o->xid);
-	HSH_Deref(sp->wrk, &o);
+	(void)HSH_Deref(sp->wrk, NULL, &o);
 	return (1);
 }
 
