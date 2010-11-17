@@ -102,6 +102,7 @@ static struct logline {
 	char *df_u;			/* %u, Remote user */
 	char *df_ttfb;			/* Time to first byte */
 	const char *df_hitmiss;		/* Whether this is a hit or miss */
+	const char *df_handling;	/* How the request was handled (hit/miss/pass/pipe) */
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
 	int matched;			/* Did log line match */
@@ -429,6 +430,24 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 			lp->df_Host = trimline(next, end);
 		break;
 
+	case SLT_VCL_call:
+		if(!lp->active)
+			break;
+		if (strncmp(ptr, "hit", len) == 0) {
+			lp->df_hitmiss = "hit";
+			lp->df_handling = "hit";
+		} else if (strncmp(ptr, "miss", len) == 0) {
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "miss";
+		} else if (strncmp(ptr, "pass", len) == 0) {
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "pass";
+		} else if (strncmp(ptr, "pipe", len) == 0) {
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "pipe";
+		}
+		break;
+
 	case SLT_Length:
 		if (!lp->active)
 			break;
@@ -646,6 +665,14 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 				if (strncmp(what, "time_firstbyte}x", 16) == 0) {
 					fprintf(fo, "%s", lp->df_ttfb);
 					p += 9+15;
+					break;
+				} else if (strncmp(what, "hitmiss}x", 9) == 0) {
+					fprintf(fo, "%s", lp->df_hitmiss);
+					p += 9+8;
+					break;
+				} else if (strncmp(what, "handling}x", 10) == 0) {
+					fprintf(fo, "%s", lp->df_handling);
+					p += 9+9;
 					break;
 				}
 			}

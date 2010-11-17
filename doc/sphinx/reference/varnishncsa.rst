@@ -96,6 +96,14 @@ The following options are available:
 		   Varnish:time_firstbyte
 		     Time to the first byte from the backend arrived
 
+		   Varnish:hitmiss
+		     Whether the request was a cache hit or miss. Pipe
+		     and pass are considered misses.
+
+		   Varnish:handling
+		     How the request was handled, whether it was a
+		     cache hit, miss, pass or pipe.
+
 -o	    Filter log output to request groups that match a regular
 	    expression on a specified tag.
 
