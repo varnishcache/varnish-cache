@@ -125,10 +125,10 @@ EXP_Insert(struct object *o)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	AN(ObjIsBusy(o));
-	assert(o->cacheable);
 	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AssertObjBusy(o);
+	assert(o->cacheable);
 	HSH_Ref(oc);
 
 	assert(o->entered != 0 && !isnan(o->entered));

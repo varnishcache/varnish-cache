@@ -127,7 +127,7 @@ HSH_Object(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
-	AN(ObjIsBusy(sp->obj));
+	AssertObjBusy(sp->obj);
 	if (sp->obj->objstore->stevedore->object != NULL)
 		sp->obj->objstore->stevedore->object(sp);
 }
@@ -605,12 +605,9 @@ HSH_Drop(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	if (o->objcore != NULL) {	/* Pass has no objcore */
-		assert(o->objcore->refcnt > 0);
-		AN(ObjIsBusy(o));
-		o->ttl = 0;
-	}
+	AssertObjPassOrBusy(o);
 	o->cacheable = 0;
+	o->ttl = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
@@ -621,18 +618,20 @@ HSH_Unbusy(const struct sess *sp)
 {
 	struct object *o;
 	struct objhead *oh;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	oh = o->objcore->objhead;
+	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-	AN(ObjIsBusy(o));
-	AN(o->ban);
-	assert(oc_getobj(sp->wrk, o->objcore) == o);
-	assert(o->objcore->refcnt > 0);
+	AssertObjBusy(o);
+	AN(oc->ban);
+	assert(oc_getobj(sp->wrk, oc) == o);
+	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
 		sp->wrk->stats.n_objoverflow++;
@@ -642,9 +641,9 @@ HSH_Unbusy(const struct sess *sp)
 
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
-	o->objcore->flags &= ~OC_F_BUSY;
+	oc->flags &= ~OC_F_BUSY;
 	hsh_rush(oh);
-	AN(o->ban);
+	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -715,9 +714,10 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 	}
 
 	if (o != NULL) {
-		if (oc != NULL)
-			BAN_DestroyObj(o);
-		AZ(o->ban);
+		if (oc != NULL) {
+			BAN_DestroyObj(oc);
+			AZ(oc->ban);
+		}
 		DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 		    o->xid, WS_Free(o->ws_o));
 

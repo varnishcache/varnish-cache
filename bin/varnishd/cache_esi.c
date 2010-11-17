@@ -704,8 +704,7 @@ ESI_Parse(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	if (sp->obj->objcore != NULL)	/* Pass has no objcore */
-		AN(ObjIsBusy(sp->obj));
+	AssertObjPassOrBusy(sp->obj);
 	if (VTAILQ_EMPTY(&sp->obj->store))
 		return;
 

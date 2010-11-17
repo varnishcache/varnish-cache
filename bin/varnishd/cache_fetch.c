@@ -469,8 +469,7 @@ FetchBody(struct sess *sp)
 	/* We use the unmodified headers */
 	hp = sp->wrk->beresp1;
 	AN(sp->director);
-	if (sp->obj->objcore != NULL)		/* pass has no objcore */
-		AN(ObjIsBusy(sp->obj));
+	AssertObjPassOrBusy(sp->obj);
 
 	/*
 	 * Determine if we have a body or not

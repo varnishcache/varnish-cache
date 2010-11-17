@@ -678,7 +678,6 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 
 			/* refcnt is one because the object is in the hash */
 			o->objcore = oc;
-			o->ban = oc->ban;
 
 			sg->nfixed++;
 			wrk->stats.n_object++;

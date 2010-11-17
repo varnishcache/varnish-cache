@@ -359,16 +359,18 @@ BAN_Insert(struct ban *b)
 void
 BAN_NewObj(struct object *o)
 {
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	AZ(o->ban);
+	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->ban);
 	Lck_Lock(&ban_mtx);
-	o->ban = ban_start;
+	oc->ban = ban_start;
 	ban_start->refcount++;
-	VTAILQ_INSERT_TAIL(&ban_start->objcore, o->objcore, ban_list);
+	VTAILQ_INSERT_TAIL(&ban_start->objcore, oc, ban_list);
 	Lck_Unlock(&ban_mtx);
-	o->ban_t = o->ban->t0;
+	o->ban_t = oc->ban->t0;
 }
 
 static struct ban *
@@ -389,19 +391,19 @@ BAN_CheckLast(void)
 }
 
 void
-BAN_DestroyObj(struct object *o)
+BAN_DestroyObj(struct objcore *oc)
 {
 	struct ban *b;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	if (o->ban == NULL)
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	if (oc->ban == NULL)
 		return;
-	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 	Lck_Lock(&ban_mtx);
-	assert(o->ban->refcount > 0);
-	o->ban->refcount--;
-	VTAILQ_REMOVE(&o->ban->objcore, o->objcore, ban_list);
-	o->ban = NULL;
+	assert(oc->ban->refcount > 0);
+	oc->ban->refcount--;
+	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
+	oc->ban = NULL;
 
 	/* Attempt to purge last ban entry */
 	b = BAN_CheckLast();
@@ -415,17 +417,20 @@ static int
 ban_check_object(struct object *o, const struct sess *sp, int has_req)
 {
 	struct ban *b;
+	struct objcore *oc;
 	struct ban_test *bt;
 	struct ban * volatile b0;
 	unsigned tests;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->ban, BAN_MAGIC);
+	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 
 	b0 = ban_start;
 
-	if (b0 == o->ban)
+	if (b0 == oc->ban)
 		return (0);
 
 	/*
@@ -434,7 +439,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	 * inspect the list past that ban.
 	 */
 	tests = 0;
-	for (b = b0; b != o->ban; b = VTAILQ_NEXT(b, list)) {
+	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
 		if (b->flags & BAN_F_GONE)
 			continue;
 		if (!has_req && (b->flags & BAN_F_REQ))
@@ -449,26 +454,26 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	}
 
 	Lck_Lock(&ban_mtx);
-	o->ban->refcount--;
-	VTAILQ_REMOVE(&o->ban->objcore, o->objcore, ban_list);
-	if (b == o->ban) {	/* not banned */
-		VTAILQ_INSERT_TAIL(&b0->objcore, o->objcore, ban_list);
+	oc->ban->refcount--;
+	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
+	if (b == oc->ban) {	/* not banned */
+		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 	}
 	VSC_main->n_purge_obj_test++;
 	VSC_main->n_purge_re_test += tests;
 	Lck_Unlock(&ban_mtx);
 
-	if (b == o->ban) {	/* not banned */
-		o->ban = b0;
-		o->ban_t = o->ban->t0;
-		oc_updatemeta(o->objcore);
+	if (b == oc->ban) {	/* not banned */
+		oc->ban = b0;
+		o->ban_t = oc->ban->t0;
+		oc_updatemeta(oc);
 		return (0);
 	} else {
 		o->ttl = 0;
 		o->cacheable = 0;
-		o->ban = NULL;
-		oc_updatemeta(o->objcore);
+		oc->ban = NULL;
+		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */
 		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);

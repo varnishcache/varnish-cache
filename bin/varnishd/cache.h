@@ -383,7 +383,6 @@ struct object {
 	unsigned char		*vary;
 
 	double			ban_t;
-	struct ban		*ban;	/* XXX --> objcore */
 	unsigned		response;
 
 	unsigned		cacheable;
@@ -549,7 +548,7 @@ void BAN_Free(struct ban *b);
 void BAN_Insert(struct ban *b);
 void BAN_Init(void);
 void BAN_NewObj(struct object *o);
-void BAN_DestroyObj(struct object *o);
+void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct object *o, const struct sess *sp);
 void BAN_Reload(double t0, unsigned flags, const char *ban);
 struct ban *BAN_TailRef(void);
@@ -832,10 +831,16 @@ Tadd(txt *t, const char *p, int l)
 	}
 }
 
-static inline unsigned
-ObjIsBusy(const struct object *o)
+static inline void
+AssertObjBusy(const struct object *o)
 {
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	return (o->objcore->flags & OC_F_BUSY);
+	AN(o->objcore);
+	AN (o->objcore->flags & OC_F_BUSY);
+}
+
+static inline void
+AssertObjPassOrBusy(const struct object *o)
+{
+	if (o->objcore != NULL)
+		AN (o->objcore->flags & OC_F_BUSY);
 }

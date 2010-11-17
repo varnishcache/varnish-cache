@@ -671,7 +671,8 @@ cnt_fetch(struct sess *sp)
 	sp->obj->cacheable = 1;
 	if (sp->wrk->cacheable) {
 		EXP_Insert(sp->obj);
-		AN(sp->obj->ban);
+		AN(sp->obj->objcore);
+		AN(sp->obj->objcore->ban);
 		HSH_Unbusy(sp);
 	}
 	sp->acct_tmp.fetch++;
