@@ -804,7 +804,7 @@ ESI_Parse(struct sess *sp)
 		esi_error(ew, ew->t.e, -1,
 		    "ESI 1.0 unterminated <!--esi comment");
 
-	st = STV_alloc(sp, ew->space, sp->obj->objcore);
+	st = STV_alloc(sp, ew->space);
 	AN(st);
 	assert(st->space >= ew->space);
 

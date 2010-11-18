@@ -119,49 +119,10 @@ STV_InitObj(const struct sess *sp, struct object *o, unsigned wsl,
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 }
-
 /*********************************************************************/
 
-struct object *
-STV_NewObject(const struct sess *sp, unsigned l, double ttl, unsigned nhttp)
-{
-	struct object *o;
-	struct storage *st;
-	unsigned lh;
-
-	(void)ttl;
-	assert(l > 0);
-	l = PRNDUP(l);
-
-	lh = HTTP_estimate(nhttp);
-	lh = PRNDUP(lh);
-
-	if (!sp->wrk->cacheable) {
-		o = malloc(sizeof *o + l + lh);
-		XXXAN(o);
-		STV_InitObj(sp, o, l, lh, nhttp);
-		return (o);
-	}
-	st = STV_alloc(sp, sizeof *o + l + lh, sp->objcore);
-	XXXAN(st);
-	xxxassert(st->space >= (sizeof *o + l + lh));
-
-	st->len = st->space;
-
-	o = (void *)st->ptr; /* XXX: align ? */
-
-	l = PRNDDN(st->space - (sizeof *o + lh));
-
-
-	STV_InitObj(sp, o, l, lh, nhttp);
-	o->objstore = st;
-	return (o);
-}
-
-/*********************************************************************/
-
-struct storage *
-STV_alloc(const struct sess *sp, size_t size, struct objcore *oc)
+static struct storage *
+stv_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 {
 	struct storage *st;
 	struct stevedore *stv = NULL;
@@ -201,6 +162,54 @@ STV_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 	}
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	return (st);
+}
+
+
+/*********************************************************************/
+
+struct object *
+STV_NewObject(const struct sess *sp, unsigned l, double ttl, unsigned nhttp)
+{
+	struct object *o;
+	struct storage *st;
+	unsigned lh;
+
+	(void)ttl;
+	assert(l > 0);
+	l = PRNDUP(l);
+
+	lh = HTTP_estimate(nhttp);
+	lh = PRNDUP(lh);
+
+	if (!sp->wrk->cacheable) {
+		o = malloc(sizeof *o + l + lh);
+		XXXAN(o);
+		STV_InitObj(sp, o, l, lh, nhttp);
+		return (o);
+	}
+	st = stv_alloc(sp, sizeof *o + l + lh, sp->objcore);
+	XXXAN(st);
+	xxxassert(st->space >= (sizeof *o + l + lh));
+
+	st->len = st->space;
+
+	o = (void *)st->ptr; /* XXX: align ? */
+
+	l = PRNDDN(st->space - (sizeof *o + lh));
+
+
+	STV_InitObj(sp, o, l, lh, nhttp);
+	o->objstore = st;
+	return (o);
+}
+
+/*********************************************************************/
+
+struct storage *
+STV_alloc(const struct sess *sp, size_t size)
+{
+
+	return (stv_alloc(sp, size, NULL));
 }
 
 void
