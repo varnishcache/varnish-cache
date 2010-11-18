@@ -52,6 +52,8 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 
 static const struct stevedore * volatile stv_next;
 
+static const struct stevedore *stv_transient;
+
 /*********************************************************************
  * NB! Dirty trick alert:
  *
@@ -94,31 +96,6 @@ stv_pick_stevedore(void)
 	return (stv);
 }
 
-
-/*********************************************************************/
-
-static void
-STV_InitObj(const struct sess *sp, struct object *o, unsigned wsl,
-    unsigned lhttp, unsigned nhttp)
-{
-
-	memset(o, 0, sizeof *o);
-	o->magic = OBJECT_MAGIC;
-
-	assert(PAOK(wsl));
-	assert(PAOK(lhttp));
-
-	o->http = HTTP_create(o + 1, nhttp);
-	WS_Init(o->ws_o, "obj", (char *)(o + 1) + lhttp, wsl);
-	WS_Assert(o->ws_o);
-
-	http_Setup(o->http, o->ws_o);
-	o->http->magic = HTTP_MAGIC;
-	o->grace = NAN;
-	o->entered = NAN;
-	VTAILQ_INIT(&o->store);
-	sp->wrk->stats.n_object++;
-}
 /*********************************************************************/
 
 static struct storage *
@@ -168,37 +145,51 @@ stv_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 /*********************************************************************/
 
 struct object *
-STV_NewObject(const struct sess *sp, unsigned l, double ttl, unsigned nhttp)
+STV_NewObject(const struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 {
 	struct object *o;
 	struct storage *st;
-	unsigned lh;
+	unsigned lhttp;
 
 	(void)ttl;
-	assert(l > 0);
-	l = PRNDUP(l);
+	assert(wsl > 0);
+	wsl = PRNDUP(wsl);
 
-	lh = HTTP_estimate(nhttp);
-	lh = PRNDUP(lh);
+	lhttp = HTTP_estimate(nhttp);
+	lhttp = PRNDUP(lhttp);
 
 	if (!sp->wrk->cacheable) {
-		o = malloc(sizeof *o + l + lh);
+		o = malloc(sizeof *o + wsl + lhttp);
 		XXXAN(o);
-		STV_InitObj(sp, o, l, lh, nhttp);
-		return (o);
+		st = NULL;
+	} else {
+		st = stv_alloc(sp, sizeof *o + wsl + lhttp, sp->objcore);
+		XXXAN(st);
+		xxxassert(st->space >= (sizeof *o + wsl + lhttp));
+
+		st->len = st->space;
+
+		o = (void *)st->ptr; /* XXX: align ? */
+
+		wsl = PRNDDN(st->space - (sizeof *o + lhttp));
 	}
-	st = stv_alloc(sp, sizeof *o + l + lh, sp->objcore);
-	XXXAN(st);
-	xxxassert(st->space >= (sizeof *o + l + lh));
 
-	st->len = st->space;
+	memset(o, 0, sizeof *o);
+	o->magic = OBJECT_MAGIC;
 
-	o = (void *)st->ptr; /* XXX: align ? */
+	assert(PAOK(wsl));
+	assert(PAOK(lhttp));
 
-	l = PRNDDN(st->space - (sizeof *o + lh));
+	o->http = HTTP_create(o + 1, nhttp);
+	WS_Init(o->ws_o, "obj", (char *)(o + 1) + lhttp, wsl);
+	WS_Assert(o->ws_o);
 
-
-	STV_InitObj(sp, o, l, lh, nhttp);
+	http_Setup(o->http, o->ws_o);
+	o->http->magic = HTTP_MAGIC;
+	o->grace = NAN;
+	o->entered = NAN;
+	VTAILQ_INIT(&o->store);
+	sp->wrk->stats.n_object++;
 	o->objstore = st;
 	return (o);
 }
@@ -332,9 +323,6 @@ STV_Config(const char *spec)
 		bprintf(stv->ident, "%.*s", l, spec);
 	}
 
-	if (!strcmp(stv->ident, TRANSIENT_NAME))
-		stv->transient = 1;
-
 	VTAILQ_FOREACH(stv2, &stevedores, list) {
 		if (strcmp(stv2->ident, stv->ident))
 			continue;
@@ -349,10 +337,15 @@ STV_Config(const char *spec)
 	else if (ac != 0)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
-	VTAILQ_INSERT_TAIL(&stevedores, stv, list);
-
-	if (!stv_next)
-		stv_next = VTAILQ_FIRST(&stevedores);
+	if (!strcmp(stv->ident, TRANSIENT_NAME)) {
+		stv->transient = 1;
+		AZ(stv_transient);
+		stv_transient = stv;
+	} else {
+		VTAILQ_INSERT_TAIL(&stevedores, stv, list);
+		if (!stv_next)
+			stv_next = VTAILQ_FIRST(&stevedores);
+	}
 }
 
 /*--------------------------------------------------------------------*/
