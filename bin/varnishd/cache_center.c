@@ -634,7 +634,7 @@ cnt_fetch(struct sess *sp)
 	}
 
 	if (sp->wrk->cacheable)
-		HSH_Object(sp);
+		STV_Object(sp);
 
 	if (sp->wrk->do_esi)
 		ESI_Parse(sp);

@@ -43,6 +43,7 @@ SVNID("$Id$")
 
 #include "cache.h"
 #include "stevedore.h"
+#include "hash_slinger.h"
 #include "cli_priv.h"
 
 #define TRANSIENT_NAME	"Transient"
@@ -192,6 +193,53 @@ STV_NewObject(const struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 	sp->wrk->stats.n_object++;
 	o->objstore = st;
 	return (o);
+}
+
+/*---------------------------------------------------------------------
+ * Default objcore methods
+ */
+
+static struct object * __match_proto__(getobj_f)
+default_oc_getobj(struct worker *wrk, struct objcore *oc)
+{
+	struct object *o;
+
+	(void)wrk;
+	if (oc->priv == NULL)
+		return (NULL);
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o);
+}
+
+static void
+default_oc_freeobj(struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	oc->priv = NULL;
+
+	HSH_Freestore(o);
+	if (o->objstore != NULL)
+		STV_free(o->objstore);
+	else
+		FREE_OBJ(o);
+}
+
+struct objcore_methods default_oc_methods = {
+	.getobj = default_oc_getobj,
+	.freeobj = default_oc_freeobj,
+};
+
+void
+STV_Object(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	AssertObjBusy(sp->obj);
+	if (sp->obj->objstore->stevedore->object != NULL)
+		sp->obj->objstore->stevedore->object(sp);
 }
 
 /*********************************************************************/
