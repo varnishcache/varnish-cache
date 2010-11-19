@@ -84,7 +84,7 @@ noinst_HEADERS = \
 
 varnishd_CFLAGS = \
         -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	-DVARNISH_VMOD_DIR='"${pkglibdir}"' \
+	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
 	-DVARNISH_VCL_DIR='"${varnishconfdir}"'
 
 varnishd_LDFLAGS = -export-dynamic
