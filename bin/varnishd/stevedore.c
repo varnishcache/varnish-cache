@@ -53,7 +53,7 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 
 static const struct stevedore * volatile stv_next;
 
-static const struct stevedore *stv_transient;
+static struct stevedore *stv_transient;
 
 /*********************************************************************
  * NB! Dirty trick alert:
@@ -143,46 +143,52 @@ stv_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 }
 
 
-/*********************************************************************/
+/*********************************************************************
+ * Structure used to transport internal knowledge from STV_NewObject()
+ * to STV_MkObject().  Nobody else should mess with this struct.
+ */
+
+struct stv_objsecrets {
+	unsigned	magic;
+#define STV_OBJ_SECRETES_MAGIC	0x78c87247
+	unsigned 	nhttp;
+	unsigned 	lhttp;
+	unsigned	wsl;
+	double 		ttl;
+};
+
+/*********************************************************************
+ * This function is called by stevedores ->allocobj() method, which
+ * very often will be stv_default_allocobj() below, to convert a slab
+ * of storage into object which the stevedore can then register in its
+ * internal state, before returning it to STV_NewObject().
+ * As you probably guessed: All this for persistence.
+ */
 
 struct object *
-STV_NewObject(const struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
+STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
+    struct stv_objsecrets *soc)
 {
 	struct object *o;
-	struct storage *st;
-	unsigned lhttp;
+	unsigned l;
 
-	(void)ttl;
-	assert(wsl > 0);
-	wsl = PRNDUP(wsl);
+	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 
-	lhttp = HTTP_estimate(nhttp);
-	lhttp = PRNDUP(lhttp);
+	assert(PAOK(ptr));
+	assert(ltot >= sizeof *o + soc->lhttp + soc->wsl);
 
-	if (!sp->wrk->cacheable) {
-		o = malloc(sizeof *o + wsl + lhttp);
-		XXXAN(o);
-		st = NULL;
-	} else {
-		st = stv_alloc(sp, sizeof *o + wsl + lhttp, sp->objcore);
-		XXXAN(st);
-		xxxassert(st->space >= (sizeof *o + wsl + lhttp));
-
-		st->len = st->space;
-
-		o = (void *)st->ptr; /* XXX: align ? */
-
-		wsl = PRNDDN(st->space - (sizeof *o + lhttp));
-	}
-
+	o = ptr; 
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 
-	assert(PAOK(wsl));
-	assert(PAOK(lhttp));
+	l = PRNDDN(ltot - (sizeof *o + soc->lhttp));
+	assert(l >= soc->wsl);
 
-	o->http = HTTP_create(o + 1, nhttp);
-	WS_Init(o->ws_o, "obj", (char *)(o + 1) + lhttp, wsl);
+	assert(PAOK(soc->wsl));
+	assert(PAOK(soc->lhttp));
+
+	o->http = HTTP_create(o + 1, soc->nhttp);
+	WS_Init(o->ws_o, "obj", (char *)(o + 1) + soc->lhttp, soc->wsl);
 	WS_Assert(o->ws_o);
 
 	http_Setup(o->http, o->ws_o);
@@ -191,7 +197,75 @@ STV_NewObject(const struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 	o->entered = NAN;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
+
+	if (sp->objhead != NULL) {
+		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		sp->objcore->priv = o; /* XXX */
+		o->objcore = sp->objcore;
+		sp->objcore->objhead = sp->objhead;
+		sp->objhead = NULL;     /* refcnt follows pointer. */
+		sp->objcore = NULL;     /* refcnt follows pointer. */
+		BAN_NewObj(o);
+	}
+	return (o);
+}
+
+/*********************************************************************
+ * This is the default ->allocobj() which all stevedores who do not
+ * implement persistent storage can rely on.
+ */
+
+static struct object *
+stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
+    struct stv_objsecrets *soc)
+{
+	struct object *o;
+	struct storage *st;
+
+	(void)stv;		/* XXX */
+	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
+	st = stv_alloc(sp, ltot, sp->objcore);
+	XXXAN(st);
+	xxxassert(st->space >= ltot);
+	ltot = st->len = st->space;
+	o = STV_MkObject(sp, st->ptr, ltot, soc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
+	return (o);
+}
+
+/*********************************************************************/
+
+struct object *
+STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
+{
+	struct object *o;
+	struct stevedore *stv;
+	unsigned lhttp, ltot;
+	struct stv_objsecrets soc;
+
+	assert(wsl > 0);
+	wsl = PRNDUP(wsl);
+
+	lhttp = HTTP_estimate(nhttp);
+	lhttp = PRNDUP(lhttp);
+
+	soc.magic = STV_OBJ_SECRETES_MAGIC;
+	soc.nhttp = nhttp;
+	soc.lhttp = lhttp;
+	soc.wsl = wsl;
+	soc.ttl = ttl;
+
+	ltot = sizeof *o + wsl + lhttp;
+
+	if (!sp->wrk->cacheable)
+		stv = stv_transient;
+	else
+		stv = stv_pick_stevedore();
+	AN(stv->allocobj);
+	o = stv->allocobj(stv, sp, ltot, &soc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	return (o);
 }
 
@@ -361,6 +435,8 @@ STV_Config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 	AN(stv->alloc);
+	if (stv->allocobj == NULL)
+		stv->allocobj = stv_default_allocobj;
 
 	if (p == NULL)
 		bprintf(stv->ident, "s%u", seq++);

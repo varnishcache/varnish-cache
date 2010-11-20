@@ -557,7 +557,8 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objcore);
 	}
 
-	l = http_EstimateWS(sp->wrk->beresp, sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	l = http_EstimateWS(sp->wrk->beresp,
+	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	if (vary != NULL)
 		l += varyl;
@@ -571,17 +572,7 @@ cnt_fetch(struct sess *sp)
 	 */
 
 	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl, nhttp);
-
-	if (sp->objhead != NULL) {
-		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
-		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		sp->objcore->priv = sp->obj; /* XXX */
-		sp->obj->objcore = sp->objcore;
-		sp->objcore->objhead = sp->objhead;
-		sp->objhead = NULL;	/* refcnt follows pointer. */
-		sp->objcore = NULL;	/* refcnt follows pointer. */
-		BAN_NewObj(sp->obj);
-	}
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	if (vary != NULL) {
 		sp->obj->vary =
@@ -609,7 +600,8 @@ cnt_fetch(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp, sp->pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
+	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
@@ -633,8 +625,13 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 
-	if (sp->wrk->cacheable)
+	if (sp->wrk->cacheable) {
+		/*
+		 * Needs ttl & ban to be in order.
+		 * XXX call oc->updatemeta() instead ?
+		 */
 		STV_Object(sp);
+	}
 
 	if (sp->wrk->do_esi)
 		ESI_Parse(sp);
