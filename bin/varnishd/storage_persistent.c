@@ -69,6 +69,9 @@ SVNID("$Id$")
 
 #define OC_F_NEEDFIXUP OC_F_PRIV
 
+static struct storage *smp_alloc(struct stevedore *st, size_t size,
+    struct objcore *oc);
+
 /*
  * Context for a signature.
  *
@@ -1286,6 +1289,28 @@ smp_close(const struct stevedore *st)
 }
 
 /*--------------------------------------------------------------------
+ * Allocate an object
+ */
+
+static struct object *
+smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
+    struct stv_objsecrets *soc)
+{
+	struct object *o;
+	struct storage *st;
+
+	st = smp_alloc(stv, ltot, sp->objcore);
+	XXXAN(st);
+	xxxassert(st->space >= ltot);
+	ltot = st->len = st->space;
+	o = STV_MkObject(sp, st->ptr, ltot, soc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	o->objstore = st;
+	return (o);
+}
+
+
+/*--------------------------------------------------------------------
  * Designate object
  */
 
@@ -1503,6 +1528,7 @@ const struct stevedore smp_stevedore = {
 	.open	=	smp_open,
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,
+	.allocobj =	smp_allocobj,
 	.object	=	smp_object,
 	.free	=	smp_free,
 	.trim	=	smp_trim,
