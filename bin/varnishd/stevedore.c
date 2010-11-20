@@ -204,7 +204,8 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 
 		o->objcore = sp->objcore;
-		sp->objcore->objhead = sp->objhead;
+		assert(o->objcore->objhead == sp->objhead);
+
 		sp->objhead = NULL;     /* refcnt follows pointer. */
 		sp->objcore = NULL;     /* refcnt follows pointer. */
 		BAN_NewObj(o);
