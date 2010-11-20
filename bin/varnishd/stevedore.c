@@ -167,7 +167,7 @@ struct stv_objsecrets {
 
 struct object *
 STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
-    struct stv_objsecrets *soc)
+    const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	unsigned l;
@@ -195,18 +195,22 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	o->http->magic = HTTP_MAGIC;
 	o->grace = NAN;
 	o->entered = NAN;
+	o->ttl = soc->ttl;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 
 	if (sp->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		sp->objcore->priv = o; /* XXX */
+
 		o->objcore = sp->objcore;
 		sp->objcore->objhead = sp->objhead;
 		sp->objhead = NULL;     /* refcnt follows pointer. */
 		sp->objcore = NULL;     /* refcnt follows pointer. */
 		BAN_NewObj(o);
+
+		o->objcore->methods = &default_oc_methods;
+		o->objcore->priv = o;
 	}
 	return (o);
 }
@@ -218,7 +222,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 static struct object *
 stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
-    struct stv_objsecrets *soc)
+    const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
@@ -303,17 +307,6 @@ struct objcore_methods default_oc_methods = {
 	.getobj = default_oc_getobj,
 	.freeobj = default_oc_freeobj,
 };
-
-void
-STV_Object(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
-	AssertObjBusy(sp->obj);
-	if (sp->obj->objstore->stevedore->object != NULL)
-		sp->obj->objstore->stevedore->object(sp);
-}
 
 /*********************************************************************/
 

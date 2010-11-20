@@ -1286,11 +1286,15 @@ smp_close(const struct stevedore *st)
 }
 
 /*--------------------------------------------------------------------
- * Allocate a bite
+ * Allocate a bite, possibly for an object.
+ *
+ * if the segment pointer is provided, we are allocating for an object
+ * structure, and should reserve space for the smp_object structure in
+ * the index.  This complicates things somewhat.
  */
 
 static struct storage *
-smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
+smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 {
 	struct smp_sc *sc;
 	struct storage *ss;
@@ -1310,17 +1314,16 @@ smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
 
 		overhead = C_ALIGN(sizeof *ss);
 		overhead += SEG_SPACE * 2;
-		if (oc == NULL) {
+		if (sgp == NULL) {
 			overhead += C_ALIGN(sc->objreserv);
 		} else {
-			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			overhead +=
 			    C_ALIGN(sizeof(struct smp_object) + sc->objreserv);
 		}
 		needed = overhead + size;
 		left = smp_spaceleft(sg);
 
-		if (oc == NULL && needed > left && (overhead + 4096) < left) {
+		if (sgp == NULL && needed > left && (overhead + 4096) < left) {
 			/* XXX: Also check the bit we cut off isn't silly
 			 * short
 			 */
@@ -1337,7 +1340,7 @@ smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
 
 		/* If there is space, fine */
 		if (needed <= left &&
-		    (oc == NULL || sg->nalloc1 < sc->aim_nobj))
+		    (sgp == NULL || sg->nalloc1 < sc->aim_nobj))
 			break;
 
 		smp_close_seg(sc, sc->cur_seg);
@@ -1364,13 +1367,21 @@ smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
 	/* Paint our marker */
 	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
 
-	if (oc != NULL) {
+	if (sgp != NULL) {
 		/* Make reservation in the index */
 		assert(sg->nalloc1 < sc->aim_nobj);
 		sg->nalloc1++;
 		sc->objreserv += sizeof (struct smp_object);
 		assert(sc->objreserv <= smp_spaceleft(sg));
-		oc->priv2 = sg;
+		/*
+		 * NB: Tricky.
+		 * We can not use the smp_getobj() method yet, because the
+		 * smp_object's position is not finalized until the segment
+		 * closes.  Fortunately we don't need to either, because newly
+		 * created objects will never regress into NEEDFIXUP state, 
+		 * so the default oc->methods, will do just fine.
+		 */
+		*sgp = sg;
 	}
 
 	sg->nalloc++;
@@ -1398,57 +1409,52 @@ smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
 
 static struct object *
 smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
-    struct stv_objsecrets *soc)
+    const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
-
-	st = smp_allocx(stv, ltot, sp->objcore);
-	XXXAN(st);
-	xxxassert(st->space >= ltot);
-	ltot = st->len = st->space;
-	o = STV_MkObject(sp, st->ptr, ltot, soc);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	o->objstore = st;
-	return (o);
-}
-
-
-/*--------------------------------------------------------------------
- * Designate object
- */
-
-static void
-smp_object(const struct sess *sp)
-{
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 	struct smp_object *so;
+	struct objcore *oc;
 
+	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
-	CAST_OBJ_NOTNULL(sg, sp->obj->objcore->priv2, SMP_SEG_MAGIC);
-	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
+	/* XXX: temporary sanity */
+	AN(sp->objhead);
+	AN(sp->wrk->cacheable);
 
-	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
+	sg = NULL;
+	st = smp_allocx(stv, ltot, &sg);
+	if (st == NULL)
+		return (NULL);
+
+	assert(st->space >= ltot);
+	ltot = st->len = st->space;
+
+	o = STV_MkObject(sp, st->ptr, ltot, soc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	o->objstore = st;
+	
+	oc = o->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oc->flags |= OC_F_LRUDONTMOVE;
 
 	Lck_Lock(&sc->mtx);
 	assert(sg->nalloc2 < sg->nalloc1);
 
-	sp->obj->smp_index = sg->nalloc2++;
-	so = &sg->objs[sp->obj->smp_index];
+	o->smp_index = sg->nalloc2++;
+	so = &sg->objs[o->smp_index];
 	sg->nfixed++;
 	sg->nobj++;
 	assert(sizeof so->hash == DIGEST_LEN);
-	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
-	so->ttl = sp->obj->ttl;
-	so->ptr = sp->obj;
-	so->ban = sp->obj->ban_t;
+	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
+	so->ttl = o->ttl;
+	so->ptr = o;
+	so->ban = o->ban_t;
 
 	Lck_Unlock(&sc->mtx);
+	return (o);
 }
 
 /*--------------------------------------------------------------------
@@ -1538,7 +1544,6 @@ const struct stevedore smp_stevedore = {
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
-	.object	=	smp_object,
 	.free	=	smp_free,
 	.trim	=	smp_trim,
 };

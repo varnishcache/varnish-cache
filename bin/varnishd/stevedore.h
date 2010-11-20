@@ -41,9 +41,8 @@ typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
-typedef void storage_object_f(const struct sess *sp);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
-    unsigned ltot, struct stv_objsecrets *);
+    unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 
 
@@ -57,7 +56,6 @@ struct stevedore {
 	storage_alloc_f		*alloc;		/* --//-- */
 	storage_trim_f		*trim;		/* --//-- */
 	storage_free_f		*free;		/* --//-- */
-	storage_object_f	*object;	/* --//-- */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
 
@@ -71,7 +69,7 @@ struct stevedore {
 };
 
 struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
-    struct stv_objsecrets *soc);
+    const struct stv_objsecrets *soc);
 
 struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl,
     unsigned nhttp);
@@ -83,7 +81,6 @@ void STV_close(void);
 struct lru *STV_lru(const struct storage *st);
 void STV_Config(const char *spec);
 void STV_Config_Transient(void);
-void STV_Object(const struct sess *sp);
 
 struct lru *LRU_Alloc(void);
 

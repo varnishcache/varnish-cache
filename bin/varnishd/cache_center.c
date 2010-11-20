@@ -586,13 +586,13 @@ cnt_fetch(struct sess *sp)
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
 	sp->obj->cacheable = sp->wrk->cacheable;
-	sp->obj->ttl = sp->wrk->ttl;
 	sp->obj->grace = sp->wrk->grace;
 	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)
 		sp->obj->cacheable = 0;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
+
 
 	/* Filter into object */
 	hp = sp->wrk->beresp;
@@ -623,14 +623,6 @@ cnt_fetch(struct sess *sp)
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
-	}
-
-	if (sp->wrk->cacheable) {
-		/*
-		 * Needs ttl & ban to be in order.
-		 * XXX call oc->updatemeta() instead ?
-		 */
-		STV_Object(sp);
 	}
 
 	if (sp->wrk->do_esi)

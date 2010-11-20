@@ -96,7 +96,6 @@ HSH_Prealloc(const struct sess *sp)
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		XXXAN(oc);
 		w->nobjcore = oc;
-		oc->methods = &default_oc_methods;
 		w->stats.n_objectcore++;
 		oc->flags |= OC_F_BUSY;
 	}
