@@ -370,6 +370,11 @@ BAN_NewObj(struct object *o)
 	ban_start->refcount++;
 	VTAILQ_INSERT_TAIL(&ban_start->objcore, oc, ban_list);
 	Lck_Unlock(&ban_mtx);
+	/*
+	 * XXX Should this happen here or in stevedore.c ?
+	 * XXX Or even at all ?  -spersistent is only user
+	 * XXX and has the field duplicated.
+	 */
 	o->ban_t = oc->ban->t0;
 }
 
