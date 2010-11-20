@@ -69,9 +69,6 @@ SVNID("$Id$")
 
 #define OC_F_NEEDFIXUP OC_F_PRIV
 
-static struct storage *smp_alloc(struct stevedore *st, size_t size,
-    struct objcore *oc);
-
 /*
  * Context for a signature.
  *
@@ -1289,70 +1286,11 @@ smp_close(const struct stevedore *st)
 }
 
 /*--------------------------------------------------------------------
- * Allocate an object
- */
-
-static struct object *
-smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
-    struct stv_objsecrets *soc)
-{
-	struct object *o;
-	struct storage *st;
-
-	st = smp_alloc(stv, ltot, sp->objcore);
-	XXXAN(st);
-	xxxassert(st->space >= ltot);
-	ltot = st->len = st->space;
-	o = STV_MkObject(sp, st->ptr, ltot, soc);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	o->objstore = st;
-	return (o);
-}
-
-
-/*--------------------------------------------------------------------
- * Designate object
- */
-
-static void
-smp_object(const struct sess *sp)
-{
-	struct smp_sc	*sc;
-	struct smp_seg *sg;
-	struct smp_object *so;
-
-
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
-	CAST_OBJ_NOTNULL(sg, sp->obj->objcore->priv2, SMP_SEG_MAGIC);
-	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
-
-	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
-
-	Lck_Lock(&sc->mtx);
-	assert(sg->nalloc2 < sg->nalloc1);
-
-	sp->obj->smp_index = sg->nalloc2++;
-	so = &sg->objs[sp->obj->smp_index];
-	sg->nfixed++;
-	sg->nobj++;
-	assert(sizeof so->hash == DIGEST_LEN);
-	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
-	so->ttl = sp->obj->ttl;
-	so->ptr = sp->obj;
-	so->ban = sp->obj->ban_t;
-
-	Lck_Unlock(&sc->mtx);
-}
-
-/*--------------------------------------------------------------------
  * Allocate a bite
  */
 
 static struct storage *
-smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
+smp_allocx(struct stevedore *st, size_t size, struct objcore *oc)
 {
 	struct smp_sc *sc;
 	struct storage *ss;
@@ -1451,6 +1389,77 @@ smp_alloc(struct stevedore *st, size_t size, struct objcore *oc)
 	assert((char*)ss->ptr > (char*)ss);
 	assert((char*)ss->ptr + ss->space <= (char*)sc->ptr + sc->mediasize);
 	return (ss);
+}
+
+
+/*--------------------------------------------------------------------
+ * Allocate an object
+ */
+
+static struct object *
+smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
+    struct stv_objsecrets *soc)
+{
+	struct object *o;
+	struct storage *st;
+
+	st = smp_allocx(stv, ltot, sp->objcore);
+	XXXAN(st);
+	xxxassert(st->space >= ltot);
+	ltot = st->len = st->space;
+	o = STV_MkObject(sp, st->ptr, ltot, soc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	o->objstore = st;
+	return (o);
+}
+
+
+/*--------------------------------------------------------------------
+ * Designate object
+ */
+
+static void
+smp_object(const struct sess *sp)
+{
+	struct smp_sc	*sc;
+	struct smp_seg *sg;
+	struct smp_object *so;
+
+
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objstore->stevedore, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
+	CAST_OBJ_NOTNULL(sg, sp->obj->objcore->priv2, SMP_SEG_MAGIC);
+	CAST_OBJ_NOTNULL(sc, sp->obj->objstore->priv, SMP_SC_MAGIC);
+
+	sp->obj->objcore->flags |= OC_F_LRUDONTMOVE;
+
+	Lck_Lock(&sc->mtx);
+	assert(sg->nalloc2 < sg->nalloc1);
+
+	sp->obj->smp_index = sg->nalloc2++;
+	so = &sg->objs[sp->obj->smp_index];
+	sg->nfixed++;
+	sg->nobj++;
+	assert(sizeof so->hash == DIGEST_LEN);
+	memcpy(so->hash, sp->obj->objcore->objhead->digest, DIGEST_LEN);
+	so->ttl = sp->obj->ttl;
+	so->ptr = sp->obj;
+	so->ban = sp->obj->ban_t;
+
+	Lck_Unlock(&sc->mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Allocate a bite
+ */
+
+static struct storage *
+smp_alloc(struct stevedore *st, size_t size)
+{
+
+	return (smp_allocx(st, size, NULL));
 }
 
 static void

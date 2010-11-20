@@ -461,12 +461,11 @@ smf_open(const struct stevedore *st)
 /*--------------------------------------------------------------------*/
 
 static struct storage *
-smf_alloc(struct stevedore *st, size_t size, struct objcore *oc)
+smf_alloc(struct stevedore *st, size_t size)
 {
 	struct smf *smf;
 	struct smf_sc *sc;
 
-	(void)oc;
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
 	assert(size > 0);
 	size += (sc->pagesize - 1);

@@ -100,7 +100,7 @@ stv_pick_stevedore(void)
 /*********************************************************************/
 
 static struct storage *
-stv_alloc(const struct sess *sp, size_t size, struct objcore *oc)
+stv_alloc(const struct sess *sp, size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv = NULL;
@@ -126,7 +126,7 @@ stv_alloc(const struct sess *sp, size_t size, struct objcore *oc)
 
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = stv->alloc(stv, size, oc);
+		st = stv->alloc(stv, size);
 		if (st != NULL)
 			break;
 
@@ -224,7 +224,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
-	st = stv->alloc(stv, ltot, sp->objcore);
+	st = stv->alloc(stv, ltot);
 	XXXAN(st);
 	xxxassert(st->space >= ltot);
 	ltot = st->len = st->space;
@@ -321,7 +321,7 @@ struct storage *
 STV_alloc(const struct sess *sp, size_t size)
 {
 
-	return (stv_alloc(sp, size, NULL));
+	return (stv_alloc(sp, size));
 }
 
 void

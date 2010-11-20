@@ -59,13 +59,12 @@ struct sma {
 };
 
 static struct storage *
-sma_alloc(struct stevedore *st, size_t size, struct objcore *oc)
+sma_alloc(struct stevedore *st, size_t size)
 {
 	struct sma_sc *sma_sc;
 	struct sma *sma;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	(void)oc;
 	Lck_Lock(&sma_sc->sma_mtx);
 	sma_sc->stats->nreq++;
 	if (sma_sc->stats->nbytes + size > sma_sc->sma_max)
