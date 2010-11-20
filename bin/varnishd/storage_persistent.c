@@ -645,7 +645,7 @@ smp_save_segs(struct smp_sc *sc)
 }
 
 /*---------------------------------------------------------------------
- * objcore methods for zombie objects
+ * objcore methods for persistent objects
  */
 
 static struct object *
@@ -653,38 +653,42 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
-	struct smp_object *so;
+	unsigned smp_index;
 
-	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+	/* Some calls are direct, but they should match anyway */
+	assert(oc->methods->getobj == smp_oc_getobj);
 
-	/*
-	 * XXX: failed checks here should fail gracefully and not assert
-	 */
-	so = oc->priv;
-	xxxassert(so >= sg->objs && so <= sg->objs + sg->nalloc2);
-
-	o = so->ptr;
-
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (wrk == NULL)
 		AZ(oc->flags & OC_F_NEEDFIXUP);
 
+	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+	smp_index = (uintptr_t) oc->priv;
+	assert(smp_index < sg->nalloc2);
+
+	o = sg->objs[smp_index].ptr;
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
+	/*
+	 * If this flag is not set, it will not be, and the lock is not
+	 * needed to test it.
+	 */
+	if (!(oc->flags & OC_F_NEEDFIXUP))
+		return (o);
+
+	AN(wrk);
+	Lck_Lock(&sg->sc->mtx);
+	/* Check again, we might have raced. */
 	if (oc->flags & OC_F_NEEDFIXUP) {
-		AN(wrk);
-		Lck_Lock(&sg->sc->mtx);
-		if (oc->flags & OC_F_NEEDFIXUP) {
-			oc->flags &= ~OC_F_NEEDFIXUP;
+		/* refcnt is >=1 because the object is in the hash */
+		o->objcore = oc;
 
-			/* refcnt is one because the object is in the hash */
-			o->objcore = oc;
-
-			sg->nfixed++;
-			wrk->stats.n_object++;
-			wrk->stats.n_vampireobject--;
-		}
-		Lck_Unlock(&sg->sc->mtx);
+		sg->nfixed++;
+		wrk->stats.n_object++;
+		wrk->stats.n_vampireobject--;
+		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
+	Lck_Unlock(&sg->sc->mtx);
 	return (o);
 }
 
@@ -880,7 +884,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 {
 	struct smp_object *so;
 	struct objcore *oc;
-	uint32_t no;
+	uint32_t no, n;
 	double t_now = TIM_real();
 	struct smp_signctx ctx[1];
 
@@ -902,14 +906,15 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	no = sg->p.nalloc;
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
-	for (;no > 0; so++,no--) {
+	n = 0;
+	for (;no > 0; so++,no--,n++) {
 		if (so->ttl < t_now)
 			continue;
 		HSH_Prealloc(sp);
 		oc = sp->wrk->nobjcore;
 		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
-		oc->priv = so;
+		oc->priv = (void*)(uintptr_t)n;
 		oc->priv2 = sg;
 		oc->methods = &smp_oc_methods;
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
@@ -1373,14 +1378,6 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 		sg->nalloc1++;
 		sc->objreserv += sizeof (struct smp_object);
 		assert(sc->objreserv <= smp_spaceleft(sg));
-		/*
-		 * NB: Tricky.
-		 * We can not use the smp_getobj() method yet, because the
-		 * smp_object's position is not finalized until the segment
-		 * closes.  Fortunately we don't need to either, because newly
-		 * created objects will never regress into NEEDFIXUP state, 
-		 * so the default oc->methods, will do just fine.
-		 */
 		*sgp = sg;
 	}
 
@@ -1452,6 +1449,10 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	so->ttl = o->ttl;
 	so->ptr = o;
 	so->ban = o->ban_t;
+
+	oc->priv = (void*)(uintptr_t)(o->smp_index);
+	oc->priv2 = sg;
+	oc->methods = &smp_oc_methods;
 
 	Lck_Unlock(&sc->mtx);
 	return (o);
