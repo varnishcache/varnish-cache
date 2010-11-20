@@ -223,9 +223,8 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	struct object *o;
 	struct storage *st;
 
-	(void)stv;		/* XXX */
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
-	st = stv_alloc(sp, ltot, sp->objcore);
+	st = stv->alloc(stv, ltot, sp->objcore);
 	XXXAN(st);
 	xxxassert(st->space >= ltot);
 	ltot = st->len = st->space;
@@ -354,6 +353,9 @@ STV_open(void)
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
+	stv = stv_transient;
+	if (stv->open != NULL)
+		stv->open(stv);
 }
 
 void
