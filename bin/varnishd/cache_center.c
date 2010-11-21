@@ -1297,6 +1297,7 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 	if (av[2] != NULL)
 		seed = strtoul(av[2], NULL, 0);
 	srandom(seed);
+	srand48(random());
 	cli_out(cli, "Random(3) seeded with %lu", seed);
 }
 
@@ -1317,6 +1318,7 @@ CNT_Init(void)
 {
 
 	srandomdev();
+	srand48(random());
 	xids = random();
 	CLI_AddFuncs(debug_cmds);
 }

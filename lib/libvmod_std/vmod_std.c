@@ -129,7 +129,7 @@ vmod_random(struct sess *sp, double lo, double hi)
 
 	(void)sp;
 
-	a = random() / (double)(1ULL<<32);
+	a = drand48();
 	a *= hi - lo;
 	a += lo;
 	return (a);

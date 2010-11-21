@@ -15,14 +15,14 @@ server s2 {
 	txresp -body "22"
 	rxreq
 	txresp -body "22"
+	rxreq
+	txresp -body "22"
 } -start
 server s3 {
 	rxreq
 	txresp -body "333"
 } -start
 server s4 {
-	rxreq
-	txresp -body "4444"
 	rxreq
 	txresp -body "4444"
 	rxreq
@@ -55,9 +55,6 @@ varnish v1 -cliok "debug.srandom 1"
 client c1 {
 	txreq 
 	rxresp
-	expect resp.bodylen == 4
-	txreq 
-	rxresp
 	expect resp.bodylen == 2
 	txreq 
 	rxresp
@@ -83,4 +80,7 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.bodylen == 3
+	txreq 
+	rxresp
+	expect resp.bodylen == 2
 } -run
