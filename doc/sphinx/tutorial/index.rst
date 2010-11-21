@@ -22,6 +22,10 @@ separate topic. Good luck.
 	vcl
         statistics
         increasing_your_hitrate
+	cookies
+	vary
+	purging
+	esi
 	advanced_backend_servers
         handling_misbehaving_servers
         advanced_topics
