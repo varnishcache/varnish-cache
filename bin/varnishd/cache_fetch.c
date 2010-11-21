@@ -364,7 +364,6 @@ FetchHdr(struct sess *sp)
 
 	if (sp->objcore != NULL) {		/* pass has no objcore */
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		AN(sp->objhead);		/* details in hash_slinger.h */
 		AN(sp->objcore->flags & OC_F_BUSY);
 	}
 

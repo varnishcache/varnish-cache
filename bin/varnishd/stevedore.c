@@ -199,14 +199,12 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 
-	if (sp->objhead != NULL) {
-		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 
 		o->objcore = sp->objcore;
-		assert(o->objcore->objhead == sp->objhead);
 
-		sp->objhead = NULL;     /* refcnt follows pointer. */
+		sp->objhead = NULL;     /* XXX: refcnt follows pointer. */
 		sp->objcore = NULL;     /* refcnt follows pointer. */
 		BAN_NewObj(o);
 

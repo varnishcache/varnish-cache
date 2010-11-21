@@ -262,8 +262,8 @@ vbe_NewConn(void)
 
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
- * That means that it relies on sp->objhead. This is mainly for saint-mode,
- * but also takes backend->healthy into account. If
+ * That means that it relies on sp->objcore->objhead. This is mainly for
+ * saint-mode, but also takes backend->healthy into account. If
  * params->saintmode_threshold is 0, this is basically just a test of
  * backend->healthy.
  *
@@ -272,7 +272,7 @@ vbe_NewConn(void)
  */
 
 static unsigned int
-vbe_Healthy(double now, uintptr_t target, const struct vdi_simple *vs)
+vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -280,7 +280,10 @@ vbe_Healthy(double now, uintptr_t target, const struct vdi_simple *vs)
 	unsigned i = 0, retval;
 	unsigned int threshold;
 	struct backend *backend;
+	uintptr_t target;
+	double now;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
@@ -300,11 +303,11 @@ vbe_Healthy(double now, uintptr_t target, const struct vdi_simple *vs)
 	if (threshold == 0)
 		return (1);
 
-	/* No need to test if we don't have an object head to test against.
-	 * FIXME: Should check the magic too, but probably not assert?
-	 */
-	if (target == 0)
+	if (sp->objcore == NULL) 
 		return (1);
+
+	now = sp->t_req;
+	target = (uintptr_t)(sp->objcore->objhead);
 
 	old = NULL;
 	retval = 1;
@@ -392,7 +395,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(sp->t_req, (uintptr_t)sp->objhead, vs)) {
+	if (!vbe_Healthy(vs, sp)) {
 		VSC_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -489,7 +492,7 @@ vdi_simple_healthy(const struct director *d, const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(sp->t_req, (uintptr_t)(sp->objhead), vs));
+	return (vbe_Healthy(vs, sp));
 }
 
 static void

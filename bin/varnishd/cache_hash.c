@@ -390,8 +390,9 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * XXX: this until the object is unbusy'ed, so in practice we
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
-	AZ(sp->objhead);
-	sp->objhead = oh;		/* XXX: Hack */
+
+	AZ(sp->objcore);
+	sp->objcore = grace_oc;		/* XXX: Hack-ish */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
@@ -402,7 +403,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 			oc = grace_oc;
 	}
-	sp->objhead = NULL;
+	sp->objcore = NULL;
 
 	if (oc != NULL && !sp->hash_always_miss) {
 		o = oc_getobj(sp->wrk, oc);

@@ -142,9 +142,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	if (!sp->vbc->backend)
 		return;
 	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	if (!sp->objhead)
+	if (!sp->objcore)
 		return;
-	CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 
 	/* Setting a negative holdoff period is a mistake. Detecting this
 	 * when compiling the VCL would be better.
@@ -153,7 +153,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->target = (uintptr_t)sp->objhead;
+	new->target = (uintptr_t)(sp->objcore->objhead);
 	new->timeout = sp->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
