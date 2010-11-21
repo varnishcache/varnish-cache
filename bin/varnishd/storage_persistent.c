@@ -1418,7 +1418,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
 	/* XXX: temporary sanity */
-	AN(sp->objhead);
+	AN(sp->objcore);
 	AN(sp->wrk->cacheable);
 
 	sg = NULL;
