@@ -157,7 +157,7 @@ vdi_dns_pick_host(const struct sess *sp, struct vdi_dns_hostgroup *group) {
 			current = i + initial - nhosts;
 		else
 			current = i + initial;
-		if (VDI_Healthy_sp(sp, group->hosts[current])) {
+		if (VDI_Healthy(group->hosts[current], sp)) {
 			group->next_host = current+1;
 			return (group->hosts[current]);
 		}
@@ -390,7 +390,7 @@ vdi_dns_getfd(const struct director *director, struct sess *sp)
 	CAST_OBJ_NOTNULL(vs, director->priv, VDI_DNS_MAGIC);
 
 	dir = vdi_dns_find_backend(sp, vs);
-	if (!dir || !VDI_Healthy_sp(sp, dir))
+	if (!dir || !VDI_Healthy(dir, sp))
 		return (NULL);
 
 	vbe = VDI_GetFd(dir, sp);

@@ -393,7 +393,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VDI_Healthy(sp->t_req, sp->director, (uintptr_t)oh))) {
+	    || !VDI_Healthy_x(sp->t_req, sp->director, (uintptr_t)oh))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

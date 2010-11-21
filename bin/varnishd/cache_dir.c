@@ -111,7 +111,7 @@ VDI_GetFd(const struct director *d, struct sess *sp)
  */
 
 int
-VDI_Healthy_sp(const struct sess *sp, const struct director *d)
+VDI_Healthy(const struct director *d, const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -120,7 +120,7 @@ VDI_Healthy_sp(const struct sess *sp, const struct director *d)
 }
 
 int
-VDI_Healthy(double now, const struct director *d, uintptr_t target)
+VDI_Healthy_x(double now, const struct director *d, uintptr_t target)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);

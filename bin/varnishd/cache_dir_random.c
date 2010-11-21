@@ -138,7 +138,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 			if (r >= s1)
 				continue;
 			d2 = vs->hosts[i].backend;
-			if (!VDI_Healthy_sp(sp, d2))
+			if (!VDI_Healthy(d2, sp))
 				break;
 			vbe = VDI_GetFd(d2, sp);
 			if (vbe != NULL)
@@ -153,7 +153,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		for (i = 0; i < vs->nhosts; i++) {
 			d2 = vs->hosts[i].backend;
 			/* XXX: cache result of healty to avoid double work */
-			if (VDI_Healthy_sp(sp, d2))
+			if (VDI_Healthy(d2, sp))
 				s1 += vs->hosts[i].weight;
 		}
 
@@ -172,7 +172,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 		s1 = 0.0;
 		for (i = 0; i < vs->nhosts; i++)  {
 			d2 = vs->hosts[i].backend;
-			if (!VDI_Healthy_sp(sp, d2))
+			if (!VDI_Healthy(d2, sp))
 				continue;
 			s1 += vs->hosts[i].weight;
 			if (r >= s1)
@@ -197,7 +197,7 @@ vdi_random_healthy(double now, const struct director *d, uintptr_t target)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VDI_Healthy(now, vs->hosts[i].backend, target))
+		if (VDI_Healthy_x(now, vs->hosts[i].backend, target))
 			return 1;
 	}
 	return 0;

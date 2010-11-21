@@ -526,8 +526,8 @@ extern pthread_t VCA_thread;
 void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
-int VDI_Healthy(double now, const struct director *, uintptr_t target);
-int VDI_Healthy_sp(const struct sess *sp, const struct director *);
+int VDI_Healthy_x(double now, const struct director *, uintptr_t target);
+int VDI_Healthy(const struct director *, const struct sess *sp);
 void VDI_CloseFd(struct sess *sp);
 void VDI_RecycleFd(struct sess *sp);
 void VDI_AddHostHeader(const struct sess *sp);

@@ -74,7 +74,7 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[vs->next_host].backend;
 		vs->next_host = (vs->next_host + 1) % vs->nhosts;
-		if (!VDI_Healthy_sp(sp, backend))
+		if (!VDI_Healthy(backend, sp))
 			continue;
 		vbe = VDI_GetFd(backend, sp);
 		if (vbe != NULL)
@@ -96,7 +96,7 @@ vdi_round_robin_healthy(double now, const struct director *d, uintptr_t target)
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[i].backend;
-		if (VDI_Healthy(now, backend, target))
+		if (VDI_Healthy_x(now, backend, target))
 			return 1;
 	}
 	return 0;
