@@ -630,7 +630,7 @@ int
 HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 {
 	struct object *o;
-	struct objhead *oh;
+	struct objhead *oh = NULL;
 	unsigned r;
 
 	if (oc != NULL) {
