@@ -398,15 +398,14 @@ vdi_dns_getfd(const struct director *director, struct sess *sp)
 }
 
 static unsigned
-vdi_dns_healthy(double now, const struct director *dir, uintptr_t target)
+vdi_dns_healthy(const struct director *dir, const struct sess *sp)
 {
 	/* XXX: Fooling -Werror for a bit until it's actually implemented.
 	 */
-	if (now || dir || target)
-		return (1);
-	else
-		return (1);
+	(void)dir;
+	(void)sp;
 	return (1);
+
 	/*
 	struct vdi_dns *vs;
 	struct director *dir;

@@ -188,7 +188,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_random_healthy(double now, const struct director *d, uintptr_t target)
+vdi_random_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_random *vs;
 	int i;
@@ -197,10 +197,10 @@ vdi_random_healthy(double now, const struct director *d, uintptr_t target)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VDI_Healthy_x(now, vs->hosts[i].backend, target))
-			return 1;
+		if (VDI_Healthy(vs->hosts[i].backend, sp))
+			return (1);
 	}
-	return 0;
+	return (0);
 }
 
 static void

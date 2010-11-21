@@ -79,8 +79,7 @@ struct vrt_backend_probe;
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct sess *sp);
 typedef void vdi_fini_f(const struct director *);
-typedef unsigned vdi_healthy(double now, const struct director *,
-    uintptr_t target);
+typedef unsigned vdi_healthy(const struct director *, const struct sess *sp);
 
 struct director {
 	unsigned		magic;

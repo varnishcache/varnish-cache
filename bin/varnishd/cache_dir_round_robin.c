@@ -85,7 +85,7 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_round_robin_healthy(double now, const struct director *d, uintptr_t target)
+vdi_round_robin_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_round_robin *vs;
 	struct director *backend;
@@ -96,10 +96,10 @@ vdi_round_robin_healthy(double now, const struct director *d, uintptr_t target)
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[i].backend;
-		if (VDI_Healthy_x(now, backend, target))
-			return 1;
+		if (VDI_Healthy(backend, sp))
+			return (1);
 	}
-	return 0;
+	return (0);
 }
 
 static void

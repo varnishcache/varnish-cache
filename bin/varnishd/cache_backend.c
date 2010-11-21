@@ -483,13 +483,13 @@ vdi_simple_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_simple_healthy(double now, const struct director *d, uintptr_t target)
+vdi_simple_healthy(const struct director *d, const struct sess *sp)
 {
 	struct vdi_simple *vs;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(now, target, vs));
+	return (vbe_Healthy(sp->t_req, (uintptr_t)(sp->objhead), vs));
 }
 
 static void

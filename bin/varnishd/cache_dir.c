@@ -116,13 +116,5 @@ VDI_Healthy(const struct director *d, const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(sp->t_req, d, (uintptr_t)sp->objhead));
-}
-
-int
-VDI_Healthy_x(double now, const struct director *d, uintptr_t target)
-{
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(now, d, target));
+	return (d->healthy(d, sp));
 }

@@ -383,23 +383,26 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	/*
 	 * If we have seen a busy object or the backend is unhealthy, and
-	 * have an object in grace, use it, if req.grace is also
+	 * we have an object in grace, use it, if req.grace is also
 	 * satisified.
 	 * XXX: Interesting footnote:  The busy object might be for a
 	 * XXX: different "Vary:" than we sought.  We have no way of knowing
 	 * XXX: this until the object is unbusy'ed, so in practice we
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
+	AZ(sp->objhead);
+	sp->objhead = oh;		/* XXX: Hack */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VDI_Healthy_x(sp->t_req, sp->director, (uintptr_t)oh))) {
+	    || !VDI_Healthy(sp->director, sp))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
 			oc = grace_oc;
 	}
+	sp->objhead = NULL;
 
 	if (oc != NULL && !sp->hash_always_miss) {
 		o = oc_getobj(sp->wrk, oc);
