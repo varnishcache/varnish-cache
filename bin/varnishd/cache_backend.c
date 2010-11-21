@@ -303,7 +303,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	if (threshold == 0)
 		return (1);
 
-	if (sp->objcore == NULL) 
+	if (sp->objcore == NULL)
 		return (1);
 
 	now = sp->t_req;

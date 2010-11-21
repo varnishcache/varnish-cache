@@ -151,10 +151,10 @@ stv_alloc(const struct sess *sp, size_t size)
 struct stv_objsecrets {
 	unsigned	magic;
 #define STV_OBJ_SECRETES_MAGIC	0x78c87247
-	unsigned 	nhttp;
-	unsigned 	lhttp;
+	unsigned	nhttp;
+	unsigned	lhttp;
 	unsigned	wsl;
-	double 		ttl;
+	double		ttl;
 };
 
 /*********************************************************************
@@ -177,7 +177,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	assert(PAOK(ptr));
 	assert(ltot >= sizeof *o + soc->lhttp + soc->wsl);
 
-	o = ptr; 
+	o = ptr;
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 

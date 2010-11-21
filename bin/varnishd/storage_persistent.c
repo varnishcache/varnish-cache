@@ -702,7 +702,7 @@ smp_oc_updatemeta(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = smp_oc_getobj(NULL, oc);
 	AN(o);
-	
+
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 	smp_index = oc->priv2;
@@ -1439,7 +1439,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	o = STV_MkObject(sp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
-	
+
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oc->flags |= OC_F_LRUDONTMOVE;

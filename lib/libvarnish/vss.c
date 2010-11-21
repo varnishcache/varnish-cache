@@ -290,10 +290,12 @@ VSS_open(const char *str, double tmo)
 	struct vss_addr **vaddr;
 	struct pollfd pfd;
 
+#if 0
 	retval = VSS_parse(str, &addr, &port);
 	if (retval < 0)
 		return (retval);
-	nvaddr = VSS_resolve(addr, port, &vaddr);
+#endif
+	nvaddr = VSS_resolve(str, NULL, &vaddr);
 	if (nvaddr <= 0) {
 		free(addr);
 		free(port);

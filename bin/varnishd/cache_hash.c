@@ -679,7 +679,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 		w->stats.n_object--;
 	}
 
-	if (oc == NULL) 
+	if (oc == NULL)
 		return (0);
 
 	AN(oh);
