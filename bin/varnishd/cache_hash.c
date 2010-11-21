@@ -270,7 +270,7 @@ HSH_Insert(const struct sess *sp)
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
-	AZ(sp->objhead);
+	AZ(sp->hash_objhead);
 	AN(w->nobjhead);
 	oh = hash->lookup(sp, w->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -320,14 +320,14 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	if (params->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
-	if (sp->objhead != NULL) {
+	if (sp->hash_objhead != NULL) {
 		/*
 		 * This sess came off the waiting list, and brings a
 		 * oh refcnt with it.
 		 */
-		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
-		oh = sp->objhead;
-		sp->objhead = NULL;
+		CHECK_OBJ_NOTNULL(sp->hash_objhead, OBJHEAD_MAGIC);
+		oh = sp->hash_objhead;
+		sp->hash_objhead = NULL;
 	} else {
 		AN(w->nobjhead);
 		oh = hash->lookup(sp, w->nobjhead);
@@ -434,7 +434,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		 * back when the sess comes off the waiting list and
 		 * calls us again
 		 */
-		sp->objhead = oh;
+		sp->hash_objhead = oh;
 		sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);

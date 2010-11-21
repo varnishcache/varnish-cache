@@ -469,10 +469,8 @@ cnt_fetch(struct sess *sp)
 
 	if (i) {
 		if (sp->objcore != NULL) {
-			CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 			AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-			sp->objhead = NULL;
 			sp->objcore = NULL;
 		}
 		AZ(sp->obj);
@@ -528,14 +526,10 @@ cnt_fetch(struct sess *sp)
 
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
-		AZ(sp->objhead);
 		sp->wrk->cacheable = 0;
-	} else if (!sp->wrk->cacheable) {
-		if (sp->objhead != NULL) {
-			AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-			sp->objhead = NULL;
-			sp->objcore = NULL;
-		}
+	} else if (!sp->wrk->cacheable && sp->objcore != NULL) {
+		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
+		sp->objcore = NULL;
 	}
 
 	/*
@@ -545,7 +539,6 @@ cnt_fetch(struct sess *sp)
 	 */
 
 	if (sp->wrk->cacheable) {
-		CHECK_OBJ_NOTNULL(sp->objhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(sp, sp->wrk->beresp);
 		if (vary != NULL) {
@@ -553,7 +546,6 @@ cnt_fetch(struct sess *sp)
 			assert(varyl > 0);
 		}
 	} else {
-		AZ(sp->objhead);
 		AZ(sp->objcore);
 	}
 
@@ -743,7 +735,6 @@ cnt_hit(struct sess *sp)
 	/* Drop our object, we won't need it */
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	sp->objcore = NULL;
-	AZ(sp->objhead);
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
@@ -820,8 +811,6 @@ cnt_lookup(struct sess *sp)
 	if (oc->flags & OC_F_BUSY) {
 		sp->wrk->stats.cache_miss++;
 
-		// AZ(oc->obj);
-		sp->objhead = oh;
 		sp->objcore = oc;
 		sp->step = STP_MISS;
 		return (0);
@@ -836,7 +825,6 @@ cnt_lookup(struct sess *sp)
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 		sp->objcore = NULL;
-		sp->objhead = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -879,7 +867,6 @@ cnt_miss(struct sess *sp)
 
 	AZ(sp->obj);
 	AN(sp->objcore);
-	AN(sp->objhead);
 	WS_Reset(sp->wrk->ws, NULL);
 	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
@@ -892,13 +879,11 @@ cnt_miss(struct sess *sp)
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
 		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-		sp->objhead = NULL;
 		sp->objcore = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
 		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-		sp->objhead = NULL;
 		sp->objcore = NULL;
 		sp->step = STP_PASS;
 		return (0);
@@ -907,7 +892,6 @@ cnt_miss(struct sess *sp)
 		return (0);
 	case VCL_RET_RESTART:
 		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-		sp->objhead = NULL;
 		sp->objcore = NULL;
 		INCOMPL();
 	default:

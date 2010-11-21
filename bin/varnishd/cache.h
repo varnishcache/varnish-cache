@@ -474,8 +474,10 @@ struct sess {
 	struct vbc		*vbc;
 	struct object		*obj;
 	struct objcore		*objcore;
-	struct objhead		*objhead;
 	struct VCL_conf		*vcl;
+
+	/* The busy objhead we sleep on */
+	struct objhead		*hash_objhead;
 
 	/* Various internal stuff */
 	struct sessmem		*mem;
