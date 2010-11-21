@@ -662,8 +662,8 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	if (wrk == NULL)
 		AZ(oc->flags & OC_F_NEEDFIXUP);
 
-	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
-	smp_index = (uintptr_t) oc->priv;
+	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
+	smp_index = oc->priv2;
 	assert(smp_index < sg->nalloc2);
 
 	o = sg->objs[smp_index].ptr;
@@ -702,7 +702,7 @@ smp_oc_updatemeta(struct objcore *oc)
 	o = smp_oc_getobj(NULL, oc);
 	AN(o);
 	
-	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 
 	if (sg == sg->sc->cur_seg) {
@@ -727,7 +727,7 @@ smp_oc_freeobj(struct objcore *oc)
 	o = smp_oc_getobj(NULL, oc);
 	AN(o);
 
-	CAST_OBJ_NOTNULL(sg, oc->priv2, SMP_SEG_MAGIC);
+	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 
 	Lck_Lock(&sg->sc->mtx);
 	sg->objs[o->smp_index].ttl = 0;
@@ -914,8 +914,8 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		oc = sp->wrk->nobjcore;
 		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
-		oc->priv = (void*)(uintptr_t)n;
-		oc->priv2 = sg;
+		oc->priv = sg;
+		oc->priv2 = n;
 		oc->methods = &smp_oc_methods;
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
@@ -1450,8 +1450,8 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	so->ptr = o;
 	so->ban = o->ban_t;
 
-	oc->priv = (void*)(uintptr_t)(o->smp_index);
-	oc->priv2 = sg;
+	oc->priv = sg;
+	oc->priv2 = o->smp_index;
 	oc->methods = &smp_oc_methods;
 
 	Lck_Unlock(&sc->mtx);

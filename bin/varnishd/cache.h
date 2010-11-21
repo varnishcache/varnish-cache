@@ -321,7 +321,7 @@ struct objcore {
 	unsigned		refcnt;
 	struct objcore_methods	*methods;
 	void			*priv;
-	void			*priv2;
+	unsigned		priv2;
 	struct objhead		*objhead;
 	double			timer_when;
 	unsigned		flags;
