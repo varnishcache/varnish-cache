@@ -697,6 +697,7 @@ smp_oc_updatemeta(struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
+	unsigned smp_index;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = smp_oc_getobj(NULL, oc);
@@ -704,16 +705,18 @@ smp_oc_updatemeta(struct objcore *oc)
 	
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
+	smp_index = oc->priv2;
+	assert(smp_index < sg->nalloc2);
 
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
-		sg->objs[o->smp_index].ban = o->ban_t;
-		sg->objs[o->smp_index].ttl = o->ttl;
+		sg->objs[smp_index].ban = o->ban_t;
+		sg->objs[smp_index].ttl = o->ttl;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
-		sg->objs[o->smp_index].ban = o->ban_t;
-		sg->objs[o->smp_index].ttl = o->ttl;
+		sg->objs[smp_index].ban = o->ban_t;
+		sg->objs[smp_index].ttl = o->ttl;
 	}
 }
 
@@ -722,16 +725,19 @@ smp_oc_freeobj(struct objcore *oc)
 {
 	struct smp_seg *sg;
 	struct object *o;
+	unsigned smp_index;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = smp_oc_getobj(NULL, oc);
 	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
+	smp_index = oc->priv2;
+	assert(smp_index < sg->nalloc2);
 
 	Lck_Lock(&sg->sc->mtx);
-	sg->objs[o->smp_index].ttl = 0;
-	sg->objs[o->smp_index].ptr = 0;
+	sg->objs[smp_index].ttl = 0;
+	sg->objs[smp_index].ptr = 0;
 
 	assert(sg->nobj > 0);
 	assert(sg->nfixed > 0);
@@ -1414,6 +1420,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	struct smp_seg *sg;
 	struct smp_object *so;
 	struct objcore *oc;
+	unsigned smp_index;
 
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
@@ -1440,8 +1447,8 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	Lck_Lock(&sc->mtx);
 	assert(sg->nalloc2 < sg->nalloc1);
 
-	o->smp_index = sg->nalloc2++;
-	so = &sg->objs[o->smp_index];
+	smp_index = sg->nalloc2++;
+	so = &sg->objs[smp_index];
 	sg->nfixed++;
 	sg->nobj++;
 	assert(sizeof so->hash == DIGEST_LEN);
@@ -1451,7 +1458,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	so->ban = o->ban_t;
 
 	oc->priv = sg;
-	oc->priv2 = o->smp_index;
+	oc->priv2 = smp_index;
 	oc->methods = &smp_oc_methods;
 
 	Lck_Unlock(&sc->mtx);
