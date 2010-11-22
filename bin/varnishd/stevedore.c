@@ -55,7 +55,7 @@ static const struct stevedore * volatile stv_next;
 
 static struct stevedore *stv_transient;
 
-/*********************************************************************
+/*--------------------------------------------------------------------
  * NB! Dirty trick alert:
  *
  * We use a captive objcore as tail senteniel for LRU lists, but to
@@ -76,7 +76,7 @@ LRU_Alloc(void)
 	return (l);
 }
 
-/*********************************************************************
+/*--------------------------------------------------------------------
  * XXX: trust pointer writes to be atomic
  */
 
@@ -97,7 +97,7 @@ stv_pick_stevedore(void)
 	return (stv);
 }
 
-/*********************************************************************/
+/*-------------------------------------------------------------------*/
 
 static struct storage *
 stv_alloc(const struct sess *sp, size_t size)
@@ -143,7 +143,7 @@ stv_alloc(const struct sess *sp, size_t size)
 }
 
 
-/*********************************************************************
+/*-------------------------------------------------------------------*
  * Structure used to transport internal knowledge from STV_NewObject()
  * to STV_MkObject().  Nobody else should mess with this struct.
  */
@@ -157,7 +157,7 @@ struct stv_objsecrets {
 	double		ttl;
 };
 
-/*********************************************************************
+/*--------------------------------------------------------------------
  * This function is called by stevedores ->allocobj() method, which
  * very often will be stv_default_allocobj() below, to convert a slab
  * of storage into object which the stevedore can then register in its
@@ -212,7 +212,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	return (o);
 }
 
-/*********************************************************************
+/*--------------------------------------------------------------------
  * This is the default ->allocobj() which all stevedores who do not
  * implement persistent storage can rely on.
  */
@@ -235,7 +235,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	return (o);
 }
 
-/*********************************************************************/
+/*-------------------------------------------------------------------*/
 
 struct object *
 STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
@@ -305,7 +305,7 @@ struct objcore_methods default_oc_methods = {
 	.freeobj = default_oc_freeobj,
 };
 
-/*********************************************************************/
+/*-------------------------------------------------------------------*/
 
 struct storage *
 STV_alloc(const struct sess *sp, size_t size)
@@ -353,10 +353,12 @@ STV_close(void)
 {
 	struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stevedores, list) {
+	VTAILQ_FOREACH(stv, &stevedores, list)
 		if (stv->close != NULL)
 			stv->close(stv);
-	}
+	stv = stv_transient;
+	if (stv->close != NULL)
+		stv->close(stv);
 }
 
 struct lru *
@@ -367,6 +369,11 @@ STV_lru(const struct storage *st)
 	return (st->stevedore->lru);
 }
 
+/*--------------------------------------------------------------------
+ * Parse a stevedore argument on the form:
+ *	[ name '=' ] strategy [ ',' arg ] *
+ */
+
 static const struct choice STV_choice[] = {
 	{ "file",	&smf_stevedore },
 	{ "malloc",	&sma_stevedore },
@@ -376,11 +383,6 @@ static const struct choice STV_choice[] = {
 #endif
 	{ NULL,		NULL }
 };
-
-/*--------------------------------------------------------------------
- * Parse a stevedore argument on the form:
- *	[ name '=' ] strategy [ ',' arg ] *
- */
 
 void
 STV_Config(const char *spec)
@@ -471,6 +473,7 @@ STV_Config_Transient(void)
 {
 	const struct stevedore *stv;
 
+	ASSERT_MGT();
 	VTAILQ_FOREACH(stv, &stevedores, list)
 		if (!strcmp(stv->name, TRANSIENT_NAME))
 			return;

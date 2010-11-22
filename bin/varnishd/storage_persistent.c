@@ -183,7 +183,7 @@ struct smp_sc {
  */
 static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 
-/*********************************************************************
+/*--------------------------------------------------------------------
  * SIGNATURE functions
  * The signature is SHA256 over:
  *    1. The smp_sign struct up to but not including the length field.

@@ -227,7 +227,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 		    " to %ju (80%% of available disk space)\n", ctx, l);
 	}
 
-	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 */
+	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 !e845 */
 		fprintf(stderr,
 		    "NB: Storage size limited to 2GB on 32 bit architecture,\n"
 		    "NB: otherwise we could run out of address space.\n"

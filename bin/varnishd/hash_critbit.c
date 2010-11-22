@@ -45,7 +45,7 @@ SVNID("$Id$")
 
 static struct lock hcb_mtx;
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Table for finding out how many bits two bytes have in common,
  * counting from the MSB towards the LSB.
  * ie:
@@ -80,7 +80,7 @@ hcb_build_bittbl(void)
 	assert(hcb_bits(0x10, 0x0b) == 3);
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * For space reasons we overload the two pointers with two different
  * kinds of of pointers.  We cast them to uintptr_t's and abuse the
  * low two bits to tell them apart, assuming that Varnish will never
@@ -113,7 +113,7 @@ static VSTAILQ_HEAD(, hcb_y)	dead_y = VSTAILQ_HEAD_INITIALIZER(dead_y);
 static VTAILQ_HEAD(, objhead)	cool_h = VTAILQ_HEAD_INITIALIZER(cool_h);
 static VTAILQ_HEAD(, objhead)	dead_h = VTAILQ_HEAD_INITIALIZER(dead_h);
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Pointer accessor functions
  */
 static int
@@ -165,7 +165,7 @@ hcb_l_y(uintptr_t u)
 	return ((struct hcb_y *)(u & ~HCB_BIT_Y));
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Find the "critical" bit that separates these two digests
  */
 
@@ -186,7 +186,7 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
 	return (y->critbit);
 }
 
-/*********************************************************************
+/*---------------------------------------------------------------------
  * Unless we have the lock, we need to be very careful about pointer
  * references into the tree, we cannot trust things to be the same
  * in two consequtive memory accesses.
@@ -267,7 +267,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int ha
 	return(oh);
 }
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 static void
 hcb_delete(struct hcb_root *r, struct objhead *oh)
@@ -299,7 +299,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	}
 }
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 static void
 dumptree(struct cli *cli, uintptr_t p, int indent)
@@ -343,7 +343,7 @@ static struct cli_proto hcb_cmds[] = {
 	{ NULL }
 };
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 static void *
 hcb_cleaner(void *priv)
@@ -376,7 +376,7 @@ hcb_cleaner(void *priv)
 	NEEDLESS_RETURN(NULL);
 }
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 static void
 hcb_start(void)

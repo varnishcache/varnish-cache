@@ -249,7 +249,7 @@ hsh_testmagic(void *result)
 	fprintf(stderr, ">\n");
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Insert an object which magically appears out of nowhere or, more likely,
  * comes off some persistent storage device.
  */
@@ -295,7 +295,7 @@ HSH_Insert(const struct sess *sp)
 	return (oc);
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  */
 
 struct objcore *
@@ -454,7 +454,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	return (oc);
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  */
 
 static void
@@ -484,7 +484,7 @@ hsh_rush(struct objhead *oh)
 	}
 }
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Purge an entire objhead
  */
 
@@ -542,7 +542,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 }
 
 
-/**********************************************************************
+/*---------------------------------------------------------------------
  * Kill a busy object we don't need anyway.
  * There may be sessions on the waiting list, so we cannot just blow
  * it out of the water.
@@ -612,7 +612,7 @@ HSH_Ref(struct objcore *oc)
 	Lck_Unlock(&oh->mtx);
 }
 
-/*******************************************************************
+/*--------------------------------------------------------------------
  * Dereference objcore and or object
  *
  * Can deal with:
@@ -693,7 +693,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 	return (0);
 }
 
-/*******************************************************************
+/*--------------------------------------------------------------------
  * This one is slightly tricky.  This is called from the BAN module
  * to try to wash the object which holds the oldest ban.
  * We compete against HSH_Deref() which comes in the opposite
