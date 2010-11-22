@@ -79,7 +79,7 @@ SMS_Makesynth(struct object *obj)
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	HSH_Freestore(obj);
+	STV_Freestore(obj);
 	obj->len = 0;
 
 	Lck_Lock(&sms_mtx);

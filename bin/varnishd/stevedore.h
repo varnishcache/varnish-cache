@@ -81,6 +81,7 @@ void STV_close(void);
 struct lru *STV_lru(const struct storage *st);
 void STV_Config(const char *spec);
 void STV_Config_Transient(void);
+void STV_Freestore(struct object *o);
 
 struct lru *LRU_Alloc(void);
 

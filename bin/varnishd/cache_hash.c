@@ -147,18 +147,6 @@ HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
 }
 
 void
-HSH_Freestore(struct object *o)
-{
-	struct storage *st, *stn;
-
-	VTAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->store, st, list);
-		STV_free(st);
-	}
-}
-
-void
 HSH_AddString(const struct sess *sp, const char *str)
 {
 	int l;

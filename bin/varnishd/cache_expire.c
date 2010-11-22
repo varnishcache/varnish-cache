@@ -138,12 +138,10 @@ EXP_Insert(struct object *o)
 	(void)update_object_when(o);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	if (o->objstore != NULL) {
-		lru = STV_lru(o->objstore);
-		CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
-		oc->flags |= OC_F_ONLRU;
-	}
+	lru = STV_lru(o->objstore);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
+	oc->flags |= OC_F_ONLRU;
 	Lck_Unlock(&exp_mtx);
 	oc_updatemeta(oc);
 }
@@ -168,8 +166,6 @@ EXP_Touch(const struct object *o)
 	if (oc == NULL)
 		return (0);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	/* We must have an objhead, otherwise we have no business on a LRU */
-	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 
 	/*
 	 * For -spersistent we don't move objects on the lru list.  Each
@@ -181,8 +177,6 @@ EXP_Touch(const struct object *o)
 	if (oc->flags & OC_F_LRUDONTMOVE)
 		return (0);
 
-	if (o->objstore == NULL)	/* XXX ?? */
-		return (0);
 	lru = STV_lru(o->objstore);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	retval = 0;

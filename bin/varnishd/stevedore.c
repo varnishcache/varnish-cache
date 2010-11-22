@@ -112,10 +112,8 @@ stv_alloc(const struct sess *sp, size_t size)
 	 */
 	if (sp->obj != NULL) {
 		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		if (sp->obj->objstore != NULL) {
-			stv = sp->obj->objstore->stevedore;
-			CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-		}
+		stv = sp->obj->objstore->stevedore;
+		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	}
 
 	for (;;) {
@@ -266,7 +264,22 @@ STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, sp, ltot, &soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	return (o);
+}
+
+/*-------------------------------------------------------------------*/
+
+void
+STV_Freestore(struct object *o)
+{
+	struct storage *st, *stn;
+
+	VTAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		VTAILQ_REMOVE(&o->store, st, list);
+		STV_free(st);
+	}
 }
 
 /*---------------------------------------------------------------------
@@ -293,11 +306,8 @@ default_oc_freeobj(struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
 	oc->priv = NULL;
 
-	HSH_Freestore(o);
-	if (o->objstore != NULL)
-		STV_free(o->objstore);
-	else
-		FREE_OBJ(o);
+	STV_Freestore(o);
+	STV_free(o->objstore);
 }
 
 struct objcore_methods default_oc_methods = {
