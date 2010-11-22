@@ -87,6 +87,21 @@ update_object_when(const struct object *o)
 	return (1);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+exp_insert(struct objcore *oc, struct lru *lru)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
+	assert(oc->timer_idx == BINHEAP_NOIDX);
+	binheap_insert(exp_heap, oc);
+	assert(oc->timer_idx != BINHEAP_NOIDX);
+	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
+	oc->flags |= OC_F_ONLRU;
+}
+
 /*--------------------------------------------------------------------
  * Object has been added to cache, record in lru & binheap.
  *
@@ -94,19 +109,15 @@ update_object_when(const struct object *o)
  */
 
 void
-EXP_Inject(struct objcore *oc, struct lru *lru, double ttl)
+EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&exp_mtx);
-	assert(oc->timer_idx == BINHEAP_NOIDX);
-	oc->timer_when = ttl;
-	binheap_insert(exp_heap, oc);
-	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
-	oc->flags |= OC_F_ONLRU;
+	oc->timer_when = when;
+	exp_insert(oc, lru);
 	Lck_Unlock(&exp_mtx);
 }
 
@@ -132,15 +143,12 @@ EXP_Insert(struct object *o)
 
 	assert(o->entered != 0 && !isnan(o->entered));
 	o->last_lru = o->entered;
-	Lck_Lock(&exp_mtx);
-	assert(oc->timer_idx == BINHEAP_NOIDX);
-	(void)update_object_when(o);
-	binheap_insert(exp_heap, oc);
-	assert(oc->timer_idx != BINHEAP_NOIDX);
+
 	lru = STV_lru(o->objstore);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
-	oc->flags |= OC_F_ONLRU;
+	Lck_Lock(&exp_mtx);
+	(void)update_object_when(o);
+	exp_insert(oc, lru);
 	Lck_Unlock(&exp_mtx);
 	oc_updatemeta(oc);
 }

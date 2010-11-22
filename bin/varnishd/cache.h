@@ -568,7 +568,7 @@ extern pthread_t cli_thread;
 
 /* cache_expiry.c */
 void EXP_Insert(struct object *o);
-void EXP_Inject(struct objcore *oc, struct lru *lru, double ttl);
+void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 void EXP_Touch(struct object *o, double tnow);
