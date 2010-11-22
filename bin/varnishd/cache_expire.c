@@ -33,7 +33,7 @@
  *
  * Any object on the LRU is also on the binheap and vice versa.
  *
- * We hold one object reference for both data structures.
+ * We hold a single object reference for both data structures.
  *
  */
 
@@ -90,8 +90,7 @@ update_object_when(const struct object *o)
 /*--------------------------------------------------------------------
  * Object has been added to cache, record in lru & binheap.
  *
- * We grab a reference to the object, which will keep it around until
- * we decide its time to let it go.
+ * The objcore comes with a reference, which we inherit.
  */
 
 void
@@ -295,7 +294,7 @@ exp_timer(struct sess *sp, void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Attempt to make space by nuking, the oldest object on the LRU list
+ * Attempt to make space by nuking the oldest object on the LRU list
  * which isn't in use.
  * Returns: 1: did, 0: didn't, -1: can't
  */
@@ -306,16 +305,7 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 	struct objcore *oc;
 	struct object *o;
 
-	/*
-	 * Find the first currently unused object on the LRU.
-	 *
-	 * Ideally we would have the refcnt in the objcore so we object does
-	 * not need to get paged in for this check, but it does not pay off
-	 * the complexity:  The chances of an object being in front of the LRU,
-	 * with active references, likely means that it is already in core. An
-	 * object with no active references will be prodded further anyway.
-	 *
-	 */
+	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&exp_mtx);
 	VLIST_FOREACH(oc, &lru->lru_head, lru_list) {
 		if (oc == &lru->senteniel) {

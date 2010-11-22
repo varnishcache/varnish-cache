@@ -240,6 +240,7 @@ hsh_testmagic(void *result)
 /*---------------------------------------------------------------------
  * Insert an object which magically appears out of nowhere or, more likely,
  * comes off some persistent storage device.
+ * Return it with a reference held.
  */
 
 struct objcore *
