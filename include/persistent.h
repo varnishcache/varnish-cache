@@ -130,6 +130,9 @@ struct smp_segptr {
 
 /*
  * An object descriptor
+ *
+ * A positive ttl is obj.ttl with obj.grace being NAN
+ * A negative ttl is - (obj.ttl + obj.grace)
  */
 
 struct smp_object {

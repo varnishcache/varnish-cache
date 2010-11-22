@@ -700,6 +700,7 @@ smp_oc_updatemeta(struct objcore *oc)
 	struct object *o;
 	struct smp_seg *sg;
 	unsigned smp_index;
+	double mttl;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = smp_oc_getobj(NULL, oc);
@@ -710,15 +711,20 @@ smp_oc_updatemeta(struct objcore *oc)
 	smp_index = oc->priv2;
 	assert(smp_index < sg->nalloc2);
 
+	if (isnan(o->grace))
+		mttl = o->ttl;
+	else
+		mttl = - (o->ttl + o->grace);
+
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		sg->objs[smp_index].ban = o->ban_t;
-		sg->objs[smp_index].ttl = o->ttl;
+		sg->objs[smp_index].ttl = mttl;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		sg->objs[smp_index].ban = o->ban_t;
-		sg->objs[smp_index].ttl = o->ttl;
+		sg->objs[smp_index].ttl = mttl;
 	}
 }
 
@@ -916,7 +922,9 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	sg->nobj = 0;
 	n = 0;
 	for (;no > 0; so++,no--,n++) {
-		if (so->ttl < t_now)
+		if (so->ttl > 0 && so->ttl < t_now)
+			continue;
+		if (so->ttl < 0 && -so->ttl < t_now)
 			continue;
 		HSH_Prealloc(sp);
 		oc = sp->wrk->nobjcore;
@@ -929,7 +937,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		AZ(sp->wrk->nobjcore);
-		EXP_Inject(oc, sg->lru, so->ttl);
+		EXP_Inject(oc, sg->lru, fabs(so->ttl));
 		sg->nobj++;
 	}
 	WRK_SumStat(sp->wrk);
