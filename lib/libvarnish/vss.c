@@ -144,6 +144,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	int i, ret;
 	char *adp, *hop;
 
+	*vap = NULL;
 	memset(&hints, 0, sizeof hints);
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
@@ -284,14 +285,12 @@ VSS_connect(const struct vss_addr *va, int nonblock)
 int
 VSS_open(const char *str, double tmo)
 {
-	int retval;
+	int retval = -1;
 	int nvaddr, n, i;
 	struct vss_addr **vaddr;
 	struct pollfd pfd;
 
 	nvaddr = VSS_resolve(str, NULL, &vaddr);
-	if (nvaddr <= 0)
-		return (-1);
 	for (n = 0; n < nvaddr; n++) {
 		retval = VSS_connect(vaddr[n], tmo != 0.0);
 		if (retval >= 0 && tmo != 0.0) {
