@@ -179,9 +179,8 @@ cnt_deliver(struct sess *sp)
 
 	sp->t_resp = TIM_real();
 	if (sp->obj->objcore != NULL) {
-		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
-		    EXP_Touch(sp->obj))
-			sp->obj->last_lru = sp->t_resp;	/* XXX: locking ? */
+		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout)
+			EXP_Touch(sp->obj, sp->t_resp);
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
 	}
 	sp->wrk->resp = sp->wrk->http[2];

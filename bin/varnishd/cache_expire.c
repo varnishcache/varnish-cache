@@ -154,17 +154,14 @@ EXP_Insert(struct object *o)
  * This optimization obviously leaves the LRU list imperfectly sorted.
  */
 
-int
-EXP_Touch(const struct object *o)
+void
+EXP_Touch(struct object *o, double tnow)
 {
-	int retval;
 	struct objcore *oc;
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
-	if (oc == NULL)
-		return (0);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	/*
@@ -175,21 +172,22 @@ EXP_Touch(const struct object *o)
 	 * the cleaner from doing its job.
 	 */
 	if (oc->flags & OC_F_LRUDONTMOVE)
-		return (0);
+		return;
 
 	lru = STV_lru(o->objstore);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	retval = 0;
+
 	if (Lck_Trylock(&exp_mtx))
-		return (retval);
+		return;
+
 	if (oc->flags & OC_F_ONLRU) {	/* XXX ?? */
 		VLIST_REMOVE(oc, lru_list);
 		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
 		VSC_main->n_lru_moved++;
-		retval = 1;
+		o->last_lru = tnow;
 	}
+
 	Lck_Unlock(&exp_mtx);
-	return (retval);
 }
 
 /*--------------------------------------------------------------------

@@ -29,6 +29,8 @@
  *
  * XXX: Before we start the client or maybe after it stops, we should give the
  * XXX: stevedores a chance to examine their storage for consistency.
+ *
+ * XXX: Do we ever free the LRU-lists ?
  */
 
 #include "config.h"
