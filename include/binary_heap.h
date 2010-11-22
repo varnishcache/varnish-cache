@@ -63,6 +63,11 @@ void binheap_insert(struct binheap *, void *);
 	 * Insert an item
 	 */
 
+void binheap_reorder(struct binheap *, unsigned idx);
+	/*
+	 * Move an order after changing its key value.
+	 */
+
 void binheap_delete(struct binheap *, unsigned idx);
 	/*
 	 * Delete an item

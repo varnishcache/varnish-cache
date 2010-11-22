@@ -374,6 +374,23 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	}
 }
 
+/*
+ * Move an item up/down after changing its key value
+ */
+
+void
+binheap_reorder(struct binheap *bh, unsigned idx)
+{
+
+	assert(bh != NULL);
+	assert(bh->magic == BINHEAP_MAGIC);
+	assert(bh->next > ROOT_IDX);
+	assert(idx < bh->next);
+	assert(idx > 0);
+	assert(A(bh, idx) != NULL);
+	idx = binheap_trickleup(bh, idx);
+	binheap_trickledown(bh, idx);
+}
 
 #ifdef TEST_DRIVER
 /* Test driver -------------------------------------------------------*/

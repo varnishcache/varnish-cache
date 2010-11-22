@@ -215,16 +215,8 @@ EXP_Rearm(const struct object *o)
 	 * tending to a timer.  If so, we do not muck with it here.
 	 */
 	if (oc->timer_idx != BINHEAP_NOIDX && update_object_when(o)) {
-		/*
-		 * XXX: this could possibly be optimized by shuffling
-		 * XXX: up or down, but that leaves some very nasty
-		 * XXX: corner cases, such as shuffling all the way
-		 * XXX: down the left half, then back up the right half.
-		 */
 		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(exp_heap, oc->timer_idx);
-		assert(oc->timer_idx == BINHEAP_NOIDX);
-		binheap_insert(exp_heap, oc);
+		binheap_reorder(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
 	Lck_Unlock(&exp_mtx);
