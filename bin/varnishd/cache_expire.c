@@ -226,8 +226,7 @@ EXP_Rearm(const struct object *o)
 
 /*--------------------------------------------------------------------
  * This thread monitors the root of the binary heap and whenever an
- * object gets close enough, VCL is asked to decide if it should be
- * discarded.
+ * object expires, accounting also for graceability, it is killed.
  */
 
 static void * __match_proto__(void *start_routine(void *))
@@ -243,11 +242,17 @@ exp_timer(struct sess *sp, void *priv)
 		Lck_Lock(&exp_mtx);
 		oc = binheap_root(exp_heap);
 		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+		/*
+		 * We may have expired so many objects that our timestamp
+		 * got out of date, refresh it and check again.
+		 */
+		if (oc != NULL && oc->timer_when > t)
+			t = TIM_real();
 		if (oc == NULL || oc->timer_when > t) { /* XXX: > or >= ? */
 			Lck_Unlock(&exp_mtx);
 			WSL_Flush(sp->wrk, 0);
 			WRK_SumStat(sp->wrk);
-			AZ(sleep(1));
+			TIM_sleep(params->expiry_sleep);
 			t = TIM_real();
 			continue;
 		}

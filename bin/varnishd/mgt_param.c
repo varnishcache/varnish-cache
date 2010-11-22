@@ -549,6 +549,11 @@ static const struct parspec input_parspec[] = {
 		"seconds, the session is closed.",
 		0,
 		"5", "seconds" },
+	{ "expiry_sleep", tweak_timeout_double, &master.expiry_sleep, 0, 60,
+		"How long the expiry thread sleeps when there is nothing "
+		"for it to do.  Reduce if your expiry thread gets behind.\n",
+		0,
+		"1", "seconds" },
 	{ "pipe_timeout", tweak_timeout, &master.pipe_timeout, 0, 0,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "

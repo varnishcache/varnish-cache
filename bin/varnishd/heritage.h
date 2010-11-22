@@ -178,6 +178,9 @@ struct params {
 	/* Acceptable clockskew with backends */
 	unsigned		clock_skew;
 
+	/* Expiry pacer parameters */
+	double			expiry_sleep;
+
 	/* Acceptor pacer parameters */
 	double			acceptor_sleep_max;
 	double			acceptor_sleep_incr;
