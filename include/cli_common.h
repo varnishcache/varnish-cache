@@ -37,7 +37,7 @@ struct cli {
 #define CLI_MAGIC		0x4038d570
 	struct vsb		*sb;
 	enum cli_status_e	result;
-	const char		*cmd;
+	char			*cmd;
 	unsigned		auth;
 	char			challenge[34];
 	char			*ident;
