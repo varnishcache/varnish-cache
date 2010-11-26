@@ -338,7 +338,7 @@ cls_vlu(void *priv, const char *p)
 		}
 		for (i = 1; av[i] != NULL; i++)
 			continue;
-		if (i < 3 || strcmp(av[i - 2], "<<")) {
+		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
 			i = cls_vlu2(priv, av);
 			FreeArgv(av);	
 			free(cli->cmd);
