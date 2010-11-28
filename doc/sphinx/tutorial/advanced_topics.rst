@@ -16,14 +16,14 @@ few more subroutines available and there a few actions that we haven't
 discussed. For a complete(ish) guide to VCL have a look at the VCL man
 page - ref:`reference-vcl`.
 
-Using Inline C to extend Varnish
+Using In-line C to extend Varnish
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *inline C* to extend Varnish. Please note that you can
+You can use *in-line C* to extend Varnish. Please note that you can
 seriously mess up Varnish this way. The C code runs within the Varnish
 Cache process so if your code generates a segfault the cache will crash.
 
-One of the first uses I saw of Inline C was logging to syslog.::
+One of the first uses I saw of In-line C was logging to syslog.::
 
 	# The include statements must be outside the subroutines.
 	C{
@@ -45,7 +45,7 @@ together. These *fragments* can have individual cache policies. If you
 have a web site with a list showing the 5 most popular articles on
 your site this list can probably be cached as a fragment and included
 in all the other pages. Used properly it can dramatically increase
-your hitrate and reduce the load on your servers. ESI looks like this::
+your hit rate and reduce the load on your servers. ESI looks like this::
 
   <HTML>
   <BODY>

@@ -9,7 +9,7 @@ over HTTP.
 
 On most web sites a lot of content is shared between
 pages. Regenerating this content for every page view is wasteful and
-ESI tries to address that lettting you decide the cache policy for
+ESI tries to address that letting you decide the cache policy for
 each fragment individually.
 
 In Varnish we've only implemented a small subset of ESI. As of 2.1 we
@@ -59,7 +59,7 @@ Example: esi remove
 ~~~~~~~~~~~~~~~~~~~
 
 The *remove* keyword allows you to remove output. You can use this to make
-a fallback of sorts, when ESI is not available, like this:::
+a fall back of sorts, when ESI is not available, like this:::
 
   <esi:include src="http://www.example.com/ad.html"/> 
   <esi:remove> 

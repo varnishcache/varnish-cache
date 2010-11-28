@@ -45,7 +45,7 @@ Directors
 
 You can also group several backend into a group of backends. These
 groups are called directors. This will give you increased performance
-and resillience. You can define several backends and group them
+and resilience. You can define several backends and group them
 together in a director.::
 
 	 backend server1 {
@@ -70,7 +70,7 @@ Now we create the director.::
 
 
 This director is a round-robin director. This means the director will
-distribute the incomming requests on a round-robin basis. There is
+distribute the incoming requests on a round-robin basis. There is
 also a *random* director which distributes requests in a, you guessed
 it, random fashion.
 
@@ -145,7 +145,7 @@ Now we define the director.::
 
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
-unhealty. Varnish can also serve stale content if all the backends are
+unhealthy. Varnish can also serve stale content if all the backends are
 down. See :ref:`tutorial-handling_misbehaving_servers` for more
 information on how to enable this.
 

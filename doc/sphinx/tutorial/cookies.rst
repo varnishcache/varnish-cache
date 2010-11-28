@@ -3,18 +3,18 @@
 Cookies
 -------
 
-Varnish will not cache a object comming from the backend with a
+Varnish will not cache a object coming from the backend with a
 Set-Cookie header present. Also, if the client sends a Cookie header,
 Varnish will bypass the cache and go directly to the backend.
 
 This can be overly conservative. A lot of sites use Google Analytics
-(GA) to analyse their traffic. GA sets a cookie to track you. This
+(GA) to analyze their traffic. GA sets a cookie to track you. This
 cookie is used by the client side java script and is therefore of no
 interest to the server. 
 
-For a lot of web application it makes sense to completly disregard the
+For a lot of web application it makes sense to completely disregard the
 cookies unless you are accessing a special part of the web site. This
-VCL snipplet in vcl_recv will disregard cookies unless you are
+VCL snippet in vcl_recv will disregard cookies unless you are
 accessing /admin/.::
 
   if ( !( req.url ~ ^/admin/) ) {
@@ -23,7 +23,7 @@ accessing /admin/.::
 
 Quite simple. If, however, you need to do something more complicated,
 like removing one out of several cookies, things get
-difficult. Unfornunatly Varnish doesn't have good tools for
+difficult. Unfortunately Varnish doesn't have good tools for
 manipulating the Cookies. We have to use regular expressions to do the
 work. If you are familiar with regular expressions you'll understand
 whats going on. If you don't I suggest you either pick up a book on
