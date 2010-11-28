@@ -1,0 +1,117 @@
+# $Id$
+# XXX: filenames should really contain m00004 for disambiguation
+
+test "Test fileread for std VMOD"
+
+shell {
+	echo -n "File One" > "${tmpdir}/file_one"
+	echo -n "File Two" > "${tmpdir}/file_two"
+	echo -n "File Three" > "${tmpdir}/file_three"
+}
+
+server s1 {
+	loop 3 {
+		rxreq
+		txresp -hdr "foo: bar" -bodylen 4
+	}
+} -start
+
+varnish v1 -arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
+	-vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		if (req.url == "/one") {
+			set resp.http.one = std.fileread("${tmpdir}/file_one");
+		} else if (req.url == "/two") {
+			set resp.http.two = std.fileread("${tmpdir}/file_two");
+		} else if (req.url == "/three") {
+			set resp.http.three = std.fileread("${tmpdir}/file_three");
+		}
+	}
+} -start
+
+client c1 {
+	loop 5 {
+		txreq -url "/one"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.one == "File One"
+	}
+
+	loop 5 {
+		txreq -url "/two"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.two == "File Two"
+
+		txreq -url "/three"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.three == "File Three"
+	}
+}
+
+client c2 {
+	loop 5 {
+		txreq -url "/two"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.two == "File Two"
+	}
+
+	loop 5 {
+		txreq -url "/one"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.one == "File One"
+
+		txreq -url "/three"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.three == "File Three"
+	}
+}
+
+client c3 {
+	loop 5 {
+		txreq -url "/three"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.three == "File Three"
+	}
+
+	loop 5 {
+		txreq -url "/two"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.two == "File Two"
+
+		txreq -url "/one"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-length == "4"
+		expect resp.http.foo == "bar"
+		expect resp.http.one == "File One"
+	}
+}
+
+client c1 -run
+client c2 -run
+client c3 -run
