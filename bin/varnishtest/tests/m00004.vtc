@@ -1,12 +1,11 @@
 # $Id$
-# XXX: filenames should really contain m00004 for disambiguation
 
 test "Test fileread for std VMOD"
 
 shell {
-	echo -n "File One" > "${tmpdir}/file_one"
-	echo -n "File Two" > "${tmpdir}/file_two"
-	echo -n "File Three" > "${tmpdir}/file_three"
+	echo -n "File One" > "${tmpdir}/m00004_file_one"
+	echo -n "File Two" > "${tmpdir}/m00004_file_two"
+	echo -n "File Three" > "${tmpdir}/m00004_file_three"
 }
 
 server s1 {
@@ -22,11 +21,11 @@ varnish v1 -arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
 
 	sub vcl_deliver {
 		if (req.url == "/one") {
-			set resp.http.one = std.fileread("${tmpdir}/file_one");
+			set resp.http.one = std.fileread("${tmpdir}/m00004_file_one");
 		} else if (req.url == "/two") {
-			set resp.http.two = std.fileread("${tmpdir}/file_two");
+			set resp.http.two = std.fileread("${tmpdir}/m00004_file_two");
 		} else if (req.url == "/three") {
-			set resp.http.three = std.fileread("${tmpdir}/file_three");
+			set resp.http.three = std.fileread("${tmpdir}/m00004_file_three");
 		}
 	}
 } -start
