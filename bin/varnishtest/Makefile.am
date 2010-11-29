@@ -9,9 +9,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS =	varnishtest
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishtest.1
-endif
 
 varnishtest_SOURCES = \
 		vtc.c \

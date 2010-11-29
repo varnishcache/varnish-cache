@@ -4,9 +4,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishlog
 
-if HAVE_RST2MAN
 dist_man_MANS = varnishlog.1
-endif
 
 varnishlog_SOURCES = varnishlog.c
 
