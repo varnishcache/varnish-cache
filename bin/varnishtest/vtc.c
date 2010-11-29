@@ -132,8 +132,16 @@ static char *
 macro_get(const char *name)
 {
 	struct macro *m;
-
 	char *retval = NULL;
+
+	if (!strcmp(name, "date")) {
+		double t = TIM_real();
+		retval = malloc(64);
+		AN(retval);
+		TIM_format(t, retval);
+		return (retval);
+	}
+
 	AZ(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!strcmp(name, m->name))
