@@ -10,6 +10,7 @@ server s1 {
 	send "\r\n"
 	send "00000004\r\n1234\r\n"
 	send "00000000\r\n"
+	send "\r\n"
 
 	rxreq 
 	expect req.url == "/foo"
