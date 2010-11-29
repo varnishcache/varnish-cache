@@ -12,6 +12,8 @@
 # Provides: varnishlog
 # Required-Start: $network $local_fs $remote_fs
 # Required-Stop: $network $local_fs $remote_fs
+# Default-Start:
+# Default-Stop:
 # Short-Description: start and stop varnishlog
 # Description: Varnish HTTP accelerator logging daemon
 ### END INIT INFO
