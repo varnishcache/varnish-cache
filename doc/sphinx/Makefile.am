@@ -140,4 +140,4 @@ dist-hook:
 	cp -r $(BUILDDIR) $(distdir)
 
 distclean-local:
-	rm -r $(BUILDDIR)
+	rm -rf $(BUILDDIR)
