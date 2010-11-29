@@ -15,9 +15,9 @@ varnishhist_LDADD = \
 	-lm \
 	${CURSES_LIBS} ${PTHREAD_LIBS}
 
-%.1: ../../doc/sphinx/reference/%.rst
+varnishhist.1: $(top_srcdir)/doc/sphinx/reference/varnishhist.rst
 if HAVE_RST2MAN
-	${RST2MAN} $< >$@
+	${RST2MAN} $? $@
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"

@@ -101,9 +101,9 @@ default_vcl.h:	default.vcl Makefile
 # Explicitly record dependency
 mgt_vcc.c:	default_vcl.h
 
-%.1: ../../doc/sphinx/reference/%.rst
+varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
 if HAVE_RST2MAN
-	${RST2MAN} $< >$@
+	${RST2MAN} $? @
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"
