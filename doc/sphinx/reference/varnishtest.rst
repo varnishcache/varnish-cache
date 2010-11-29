@@ -34,8 +34,6 @@ The following options are available:
 
 -v          Be verbose.
 
--L port     Listen on *port*. 
-
 -t          Dunno.
 
 file        File to use as a script
