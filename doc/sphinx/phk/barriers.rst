@@ -104,7 +104,7 @@ The Administrator has the final say, and of course, the administrator
 can decide under which circumstances that authority will be shared.
 
 Needless to say, if the system on which Varnish runs is not properly
-secured, the Administator's monopoly of control will be compromised.
+secured, the Administrator's monopoly of control will be compromised.
 
 All the other barriers
 ======================
