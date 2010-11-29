@@ -604,6 +604,8 @@ cnt_fetch(struct sess *sp)
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
+	else
+		sp->obj->last_modified = sp->wrk->entered;
 
 	i = FetchBody(sp);
 	AZ(sp->wrk->wfd);
