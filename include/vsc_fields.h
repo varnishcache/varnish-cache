@@ -70,11 +70,12 @@ VSC_F(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)")
 
 
 VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
-VSC_F(n_sess,		uint64_t, 0, 'i', "N struct sess")
-VSC_F(n_object,		uint64_t, 1, 'i', "N struct object")
-VSC_F(n_vampireobject,	uint64_t, 1, 'i', "N unresurrected objects")
-VSC_F(n_objectcore,	uint64_t, 1, 'i', "N struct objectcore")
-VSC_F(n_objecthead,	uint64_t, 1, 'i', "N struct objecthead")
+VSC_F(n_sess,			uint64_t, 0, 'i', "N struct sess")
+VSC_F(n_object,			uint64_t, 1, 'i', "N struct object")
+VSC_F(n_vampireobject,		uint64_t, 1, 'i', "N unresurrected objects")
+VSC_F(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore")
+VSC_F(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead")
+VSC_F(n_waitinglist,		uint64_t, 1, 'i', "N struct waitinglist")
 
 VSC_F(n_vbc,		uint64_t, 0, 'i', "N struct vbc")
 VSC_F(n_wrk,		uint64_t, 0, 'i', "N worker threads")

@@ -35,6 +35,7 @@ struct object;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
+typedef void hash_prep_f(const struct sess *sp);
 typedef struct objhead *
     hash_lookup_f(const struct sess *sp, struct objhead *nobj);
 typedef int hash_deref_f(struct objhead *obj);
@@ -45,6 +46,7 @@ struct hash_slinger {
 	const char		*name;
 	hash_init_f		*init;
 	hash_start_f		*start;
+	hash_prep_f		*prep;
 	hash_lookup_f		*lookup;
 	hash_deref_f		*deref;
 };
@@ -66,6 +68,12 @@ void HSH_config(const char *h_arg);
 
 #ifdef VARNISH_CACHE_CHILD
 
+struct waitinglist {
+	unsigned		magic;
+#define WAITINGLIST_MAGIC	0x063a477a
+	VTAILQ_HEAD(, sess)	list;
+};
+
 struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
@@ -74,7 +82,7 @@ struct objhead {
 	int			refcnt;
 	VTAILQ_HEAD(,objcore)	objcs;
 	unsigned char		digest[DIGEST_LEN];
-	VTAILQ_HEAD(, sess)	waitinglist;
+	struct waitinglist	*waitinglist;
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of

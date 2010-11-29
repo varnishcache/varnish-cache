@@ -97,6 +97,7 @@ struct cli_proto;
 struct ban;
 struct SHA256Context;
 struct vsc_lck;
+struct waitinglist;
 
 struct lock { void *priv; };		// Opaque
 
@@ -216,6 +217,7 @@ struct worker {
 #define WORKER_MAGIC		0x6391adcf
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
+	struct waitinglist	*nwaitinglist;
 	void			*nhashpriv;
 	struct dstat		stats;
 

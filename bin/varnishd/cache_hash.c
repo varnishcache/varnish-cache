@@ -87,6 +87,7 @@ HSH_Prealloc(const struct sess *sp)
 	struct worker *w;
 	struct objhead *oh;
 	struct objcore *oc;
+	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -106,12 +107,23 @@ HSH_Prealloc(const struct sess *sp)
 		XXXAN(oh);
 		oh->refcnt = 1;
 		VTAILQ_INIT(&oh->objcs);
-		VTAILQ_INIT(&oh->waitinglist);
 		Lck_New(&oh->mtx, lck_objhdr);
 		w->nobjhead = oh;
 		w->stats.n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
+
+	if (w->nwaitinglist == NULL) {
+		ALLOC_OBJ(wl, WAITINGLIST_MAGIC);
+		XXXAN(wl);
+		VTAILQ_INIT(&wl->list);
+		w->nwaitinglist = wl;
+		w->stats.n_waitinglist++;
+	}
+	CHECK_OBJ_NOTNULL(w->nwaitinglist, WAITINGLIST_MAGIC);
+
+	if (hash->prep != NULL)
+		hash->prep(sp);
 }
 
 void
@@ -129,7 +141,12 @@ HSH_Cleanup(struct worker *w)
 		w->nobjhead = NULL;
 		w->stats.n_objecthead--;
 	}
+	if (w->nwaitinglist != NULL) {
+		FREE_OBJ(w->nwaitinglist);
+		w->nwaitinglist = NULL;
+	}
 	if (w->nhashpriv != NULL) {
+		/* XXX: If needed, add slinger method for this */
 		free(w->nhashpriv);
 		w->nhashpriv = NULL;
 	}
@@ -412,8 +429,15 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
-		if (sp->esis == 0)
-			VTAILQ_INSERT_TAIL(&oh->waitinglist, sp, list);
+		if (sp->esis == 0) {
+			CHECK_OBJ_NOTNULL(sp->wrk->nwaitinglist,
+			    WAITINGLIST_MAGIC);
+			if (oh->waitinglist == NULL) {
+				oh->waitinglist = sp->wrk->nwaitinglist;
+				sp->wrk->nwaitinglist = NULL;
+			}
+			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
+		}
 		if (params->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%p>", oh);
@@ -451,16 +475,24 @@ hsh_rush(struct objhead *oh)
 {
 	unsigned u;
 	struct sess *sp;
+	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
+	wl = oh->waitinglist;
+	if (wl == NULL)
+		return;
+	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < params->rush_exponent; u++) {
-		sp = VTAILQ_FIRST(&oh->waitinglist);
-		if (sp == NULL)
+		sp = VTAILQ_FIRST(&wl->list);
+		if (sp == NULL) {
+			oh->waitinglist = NULL;
+			FREE_OBJ(wl);
 			return;
+		}
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
-		VTAILQ_REMOVE(&oh->waitinglist, sp, list);
+		VTAILQ_REMOVE(&wl->list, sp, list);
 		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
 		if (WRK_QueueSession(sp)) {
 			/*

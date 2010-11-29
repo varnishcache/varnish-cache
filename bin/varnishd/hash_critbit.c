@@ -408,7 +408,7 @@ hcb_deref(struct objhead *oh)
 		VTAILQ_INSERT_TAIL(&cool_h, oh, hoh_list);
 		Lck_Unlock(&hcb_mtx);
 		assert(VTAILQ_EMPTY(&oh->objcs));
-		assert(VTAILQ_EMPTY(&oh->waitinglist));
+		AZ(oh->waitinglist);
 	}
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK
@@ -430,11 +430,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	with_lock = 0;
 	while (1) {
 		if (with_lock) {
-			if (sp->wrk->nhashpriv == NULL) {
-				ALLOC_OBJ(y, HCB_Y_MAGIC);
-				sp->wrk->nhashpriv = y;
-			}
-			AN(sp->wrk->nhashpriv);
+			CAST_OBJ_NOTNULL(y, sp->wrk->nhashpriv, HCB_Y_MAGIC);
 			Lck_Lock(&hcb_mtx);
 			VSC_main->hcb_lock++;
 			assert(noh->refcnt == 1);
@@ -477,11 +473,22 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	}
 }
 
+static void
+hcb_prep(const struct sess *sp)
+{
+	struct hcb_y *y;
+
+	if (sp->wrk->nhashpriv == NULL) {
+		ALLOC_OBJ(y, HCB_Y_MAGIC);
+		sp->wrk->nhashpriv = y;
+	}
+}
 
 const struct hash_slinger hcb_slinger = {
-	.magic  =       SLINGER_MAGIC,
-	.name   =       "critbit",
-	.start  =       hcb_start,
-	.lookup =       hcb_lookup,
-	.deref  =       hcb_deref,
+	.magic  =	SLINGER_MAGIC,
+	.name   =	"critbit",
+	.start  =	hcb_start,
+	.lookup =	hcb_lookup,
+	.prep =		hcb_prep,
+	.deref  =	hcb_deref,
 };
