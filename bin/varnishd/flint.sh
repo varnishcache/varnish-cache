@@ -11,7 +11,9 @@ flexelint \
 	*.c \
 	../../lib/libvarnish/*.c \
 	../../lib/libvarnishcompat/execinfo.c \
-	../../lib/libvcl/*.c 2>&1 | tee _.fl
+	../../lib/libvcl/*.c \
+	../../lib/libvmod_std/*.c \
+	2>&1 | tee _.fl
 
 if [ -f _.fl.old ] ; then
 	diff -u _.fl.old _.fl

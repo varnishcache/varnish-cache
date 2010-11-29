@@ -146,3 +146,4 @@
 -e574	// 48 Signed-unsigned mix with relational
 -e712	// 96 Loss of precision (___) (___ to ___)
 -e747	// 297 Significant prototype coercion (___) ___ to ___
+-e840	// Use of nul character in a string literal (see: vcc_if.c)
