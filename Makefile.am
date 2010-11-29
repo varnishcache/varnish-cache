@@ -19,3 +19,6 @@ distcheck-hook:
 	  exit 1 ; \
 	fi
 
+distcleancheck_listfiles = \
+	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
+		sh '{}' ';'
