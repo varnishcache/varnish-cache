@@ -20,7 +20,7 @@ server s1 {
 	accept
 
 	rxreq
-	txresp -proto HTTP/1.0 -status 204 -body bar
+	txresp -proto HTTP/1.0 -status 205 -body bar
 
 } -start
 
@@ -40,5 +40,5 @@ client c1 {
 	expect resp.status == 203
 	txreq 
 	rxresp
-	expect resp.status == 204
+	expect resp.status == 205
 } -run
