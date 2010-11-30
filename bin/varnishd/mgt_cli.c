@@ -97,7 +97,7 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 	(void)av;
 	(void)priv;
 	cli_out(cli, "-----------------------------\n");
-	cli_out(cli, "Varnish HTTP accelerator CLI.\n");
+	cli_out(cli, "Varnish Cache CLI 1.0\n");
 	cli_out(cli, "-----------------------------\n");
 	cli_out(cli, "%s\n", vsb_data(vident) + 1);
 	cli_out(cli, "\n");
