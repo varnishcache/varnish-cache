@@ -68,7 +68,7 @@ static int		cli_i = -1, cli_o = -1;
 static struct cls	*cls;
 static const char	*secret_file;
 
-#define	MCF_NOAUTH	0
+#define	MCF_NOAUTH	0	/* NB: zero disables here-documents */
 #define MCF_AUTH	16
 
 /*--------------------------------------------------------------------*/
