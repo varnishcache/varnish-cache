@@ -521,6 +521,15 @@ HSH_Purge(struct sess *sp, struct objhead *oh, double ttl, double grace)
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
+		if (oc->flags & OC_F_BUSY) {
+			/*
+			 * We cannot purge busy objects here, because their
+			 * owners have special rights to them, and may nuke
+			 * them without concern for the refcount, which by
+			 * definition always must be one, so they don't check.
+			 */
+			continue;
+		}
 
 		if (oc->flags & OC_F_PERSISTENT)
 			SMP_Fixup(sp, oh, oc);
