@@ -288,20 +288,13 @@ int
 VSS_open(const char *str, double tmo)
 {
 	int retval;
-	char *addr = NULL, *port = NULL;
 	int nvaddr, n, i;
 	struct vss_addr **vaddr;
 	struct pollfd pfd;
 
-	retval = VSS_parse(str, &addr, &port);
-	if (retval < 0)
-		return (retval);
-	nvaddr = VSS_resolve(addr, port, &vaddr);
-	if (nvaddr <= 0) {
-		free(addr);
-		free(port);
+	nvaddr = VSS_resolve(str, NULL, &vaddr);
+	if (nvaddr <= 0)
 		return (-1);
-	}
 	for (n = 0; n < nvaddr; n++) {
 		retval = VSS_connect(vaddr[n], tmo != 0.0);
 		if (retval >= 0 && tmo != 0.0) {
@@ -319,7 +312,5 @@ VSS_open(const char *str, double tmo)
 	for (n = 0; n < nvaddr; n++)
 		free(vaddr[n]);
 	free(vaddr);
-	free(addr);
-	free(port);
 	return (retval);
 }
