@@ -44,7 +44,7 @@ couple of really basic programs that can execute a HTTP request and
 give you the result. I mostly use two programs, GET and HEAD.
 
 vg.no was the first site to use Varnish and the people running Varnish
-there are quite cluefull. So its interesting to look at their HTTP
+there are quite clue-full. So its interesting to look at their HTTP
 Headers. Lets send a GET request for their home page.::
 
   $ GET -H 'Host: www.vg.no' -Used http://vg.no/
