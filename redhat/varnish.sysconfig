@@ -14,6 +14,13 @@ MEMLOCK=82000
 # Maximum size of corefile (for ulimit -c). Default in Fedora is 0
 # DAEMON_COREFILE_LIMIT="unlimited"
 
+# Set this to 1 to make init script reload try to switch vcl without restart.
+# To make this work, you need to set the following variables
+# explicit: VARNISH_VCL_CONF, VARNISH_ADMIN_LISTEN_ADDRESS,
+# VARNISH_ADMIN_LISTEN_PORT, VARNISH_SECRET_FILE, or in short,
+# use Alternative 3, Advanced configuration, below
+RELOAD_VCL=1
+
 # This file contains 4 alternatives, please use only one.
 
 ## Alternative 1, Minimal configuration, no VCL
@@ -34,12 +41,12 @@ MEMLOCK=82000
 # one content server selected by the vcl file, based on the request.  Use a
 # fixed-size cache file.
 #
-DAEMON_OPTS="-a :6081 \
-             -T localhost:6082 \
-             -f /etc/varnish/default.vcl \
-             -u varnish -g varnish \
-             -S /etc/varnish/secret \
-             -s file,/var/lib/varnish/varnish_storage.bin,1G"
+#DAEMON_OPTS="-a :6081 \
+#             -T localhost:6082 \
+#             -f /etc/varnish/default.vcl \
+#             -u varnish -g varnish \
+#             -S /etc/varnish/secret \
+#             -s file,/var/lib/varnish/varnish_storage.bin,1G"
 
 
 ## Alternative 3, Advanced configuration
@@ -47,49 +54,53 @@ DAEMON_OPTS="-a :6081 \
 # See varnishd(1) for more information.
 #
 # # Main configuration file. You probably want to change it :)
-# VARNISH_VCL_CONF=/etc/varnish/default.vcl
+VARNISH_VCL_CONF=/etc/varnish/default.vcl
 #
 # # Default address and port to bind to
 # # Blank address means all IPv4 and IPv6 interfaces, otherwise specify
 # # a host name, an IPv4 dotted quad, or an IPv6 address in brackets.
 # VARNISH_LISTEN_ADDRESS=
-# VARNISH_LISTEN_PORT=6081
+VARNISH_LISTEN_PORT=6081
 #
 # # Telnet admin interface listen address and port
-# VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
-# VARNISH_ADMIN_LISTEN_PORT=6082
+VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
+VARNISH_ADMIN_LISTEN_PORT=6082
+#
+# # Shared secret file for admin interface
+VARNISH_SECRET_FILE=/etc/varnish/secret
 #
 # # The minimum number of worker threads to start
-# VARNISH_MIN_THREADS=1
+VARNISH_MIN_THREADS=1
 #
 # # The Maximum number of worker threads to start
-# VARNISH_MAX_THREADS=1000
+VARNISH_MAX_THREADS=1000
 #
 # # Idle timeout for worker threads
-# VARNISH_THREAD_TIMEOUT=120
+VARNISH_THREAD_TIMEOUT=120
 #
 # # Cache file location
-# VARNISH_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
+VARNISH_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
 #
 # # Cache file size: in bytes, optionally using k / M / G / T suffix,
 # # or in percentage of available disk space using the % suffix.
-# VARNISH_STORAGE_SIZE=1G
+VARNISH_STORAGE_SIZE=1G
 #
 # # Backend storage specification
-# VARNISH_STORAGE="file,${VARNISH_STORAGE_FILE},${VARNISH_STORAGE_SIZE}"
+VARNISH_STORAGE="file,${VARNISH_STORAGE_FILE},${VARNISH_STORAGE_SIZE}"
 #
 # # Default TTL used when the backend does not specify one
-# VARNISH_TTL=120
+VARNISH_TTL=120
 #
 # # DAEMON_OPTS is used by the init script.  If you add or remove options, make
 # # sure you update this section, too.
-# DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
-#              -f ${VARNISH_VCL_CONF} \
-#              -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
-#              -t ${VARNISH_TTL} \
-#              -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
-#              -u varnish -g varnish \
-#              -s ${VARNISH_STORAGE}"
+DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+             -f ${VARNISH_VCL_CONF} \
+             -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+             -t ${VARNISH_TTL} \
+             -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
+             -u varnish -g varnish \
+             -S ${VARNISH_SECRET_FILE} \
+             -s ${VARNISH_STORAGE}"
 #
 
 
