@@ -56,7 +56,7 @@ HTTPH("Accept",			H_Accept,		1, 0, 0,										0, 0)	/* RFC2616 14.1 */
 HTTPH("Accept-Charset",		H_Accept_Charset,	1, 0, 0,										0, 0)	/* RFC2616 14.2 */
 HTTPH("Accept-Encoding",	H_Accept_Encoding,	1, 0, 0,										0, 0)	/* RFC2616 14.3 */
 HTTPH("Accept-Language",	H_Accept_Language,	1, 0, 0,										0, 0)	/* RFC2616 14.4 */
-HTTPH("Accept-Ranges",		H_Accept_Ranges,	2, 3, HTTPH_R_PASS | HTTPH_A_PASS | HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.5 */
+HTTPH("Accept-Ranges",		H_Accept_Ranges,	2, 3, 				    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.5 */
 HTTPH("Age",			H_Age,			2, 0,						    HTTPH_A_INS,			0, 0)	/* RFC2616 14.6 */
 HTTPH("Allow",			H_Allow,		2, 0, 0,										0, 0)	/* RFC2616 14.7 */
 HTTPH("Authorization",		H_Authorization,	1, 0, 0,										0, 0)	/* RFC2616 14.8 */
@@ -67,7 +67,7 @@ HTTPH("Content-Langugae",	H_Content_Language,	2, 0, 0,										0, 0)	/* RFC2616
 HTTPH("Content-Length",		H_Content_Length,	2, 2,				    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.13 */
 HTTPH("Content-Location",	H_Content_Location,	2, 0, 0,										0, 0)	/* RFC2616 14.14 */
 HTTPH("Content-MD5",		H_Content_MD5,		2, 0, 0,										0, 0)	/* RFC2616 14.15 */
-HTTPH("Content-Range",		H_Content_Range,	2, 3, HTTPH_R_PASS | HTTPH_A_PASS | HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.16 */
+HTTPH("Content-Range",		H_Content_Range,	2, 3,				    HTTPH_R_FETCH | HTTPH_A_INS,			0, 0)	/* RFC2616 14.16 */
 HTTPH("Content-Type",		H_Content_Type,		2, 0, 0,										0, 0)	/* RFC2616 14.17 */
 HTTPH("Date",			H_Date,			2, 0,								HTTPH_A_DELIVER,	0, 0)	/* RFC2616 14.18 */
 HTTPH("ETag",			H_ETag,			2, 0, 0,										0, 0)	/* RFC2616 14.19 */
