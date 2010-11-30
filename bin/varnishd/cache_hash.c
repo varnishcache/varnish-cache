@@ -323,6 +323,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	struct objcore *oc;
 	struct objcore *busy_oc, *grace_oc;
 	struct object *o;
+	double grace_ttl;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -356,6 +357,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	assert(oh->refcnt > 0);
 	busy_oc = NULL;
 	grace_oc = NULL;
+	grace_ttl = NAN;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -386,9 +388,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		if (o->ttl >= sp->t_req)
 			break;
 
-		/* Remember any matching objects inside their grace period */
-		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req)
-			grace_oc = oc;
+		/*
+		 * Remember any matching objects inside their grace period
+		 * and if there are several, use the least expired one.
+		 */
+		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req) {
+			if (grace_oc == NULL || grace_ttl < o->ttl) {
+				grace_oc = oc;
+				grace_ttl = o->ttl;
+			}
+		}
 	}
 
 	/*
