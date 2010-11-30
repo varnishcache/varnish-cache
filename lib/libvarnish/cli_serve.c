@@ -68,6 +68,9 @@ struct cls_fd {
 	struct cli			*cli, clis;
 	cls_cb_f			*closefunc;
 	void				*priv;
+	struct vsb			*last_arg;
+	int				last_idx;
+	char				**argv;
 };
 
 struct cls {
@@ -234,13 +237,12 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
  */
 
 static int
-cls_vlu(void *priv, const char *p)
+cls_vlu2(void *priv, char * const *av)
 {
 	struct cls_fd *cfd;
 	struct cls *cs;
 	struct cls_func *cfn;
 	struct cli *cli;
-	char * * av;
 	unsigned na;
 
 	CAST_OBJ_NOTNULL(cfd, priv, CLS_FD_MAGIC);
@@ -249,22 +251,9 @@ cls_vlu(void *priv, const char *p)
 
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
-	AZ(cli->cmd);
+	AN(cli->cmd);
 
-	/*
-	 * Lines with only whitespace are simply ignored, in order to not
-	 * complicate CLI-client side scripts and TELNET users
-	 */
-	for (; isspace(*p); p++)
-		continue;
-	if (*p == '\0')
-		return (0);
-
-	cli->cmd = p;
 	cli->cls = cs;
-
-	av = ParseArgv(p, 0);
-	AN(av);
 
 	cli->result = CLIS_UNKNOWN;
 	vsb_clear(cli->sb);
@@ -306,14 +295,88 @@ cls_vlu(void *priv, const char *p)
 	if (cs->after != NULL)
 		cs->after(cli);
 
-	cli->cmd = NULL;
 	cli->cls = NULL;
-	FreeArgv(av);
 
 	if (cli_writeres(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
 		return (1);
 
 	return (0);
+}
+
+static int
+cls_vlu(void *priv, const char *p)
+{
+	struct cls_fd *cfd;
+	struct cli *cli;
+	int i;
+	char **av;
+
+	CAST_OBJ_NOTNULL(cfd, priv, CLS_FD_MAGIC);
+
+	cli = cfd->cli;
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+
+	if (cfd->argv == NULL) {
+		/*
+		 * Lines with only whitespace are simply ignored, in order
+		 * to not complicate CLI-client side scripts and TELNET users
+		 */
+		for (; isspace(*p); p++)
+			continue;
+		if (*p == '\0')
+			return (0);
+		REPLACE(cli->cmd, p);
+
+		av = ParseArgv(p, 0);
+		AN(av);
+		if (av[0] != NULL) {
+			i = cls_vlu2(priv, av);
+			FreeArgv(av);	
+			free(cli->cmd);
+			cli->cmd = NULL;
+			return (i);
+		}
+		for (i = 1; av[i] != NULL; i++)
+			continue;
+		if (i < 3 || strcmp(av[i - 2], "<<")) {
+			i = cls_vlu2(priv, av);
+			FreeArgv(av);	
+			free(cli->cmd);
+			cli->cmd = NULL;
+			return (i);
+		}
+		cfd->argv = av;
+		cfd->last_idx = i - 2;
+		cfd->last_arg = vsb_newauto();
+		AN(cfd->last_arg);
+		return (0);
+	} else {
+		AN(cfd->argv[cfd->last_idx]);
+		assert(!strcmp(cfd->argv[cfd->last_idx], "<<"));
+		AN(cfd->argv[cfd->last_idx + 1]);
+		if (strcmp(p, cfd->argv[cfd->last_idx + 1])) {
+			vsb_cat(cfd->last_arg, p);
+			vsb_cat(cfd->last_arg, "\n");
+			return (0);
+		}
+		vsb_finish(cfd->last_arg);
+		AZ(vsb_overflowed(cfd->last_arg));
+		free(cfd->argv[cfd->last_idx]);
+		cfd->argv[cfd->last_idx] = NULL;
+		free(cfd->argv[cfd->last_idx + 1]);
+		cfd->argv[cfd->last_idx + 1] = NULL;
+		cfd->argv[cfd->last_idx] = vsb_data(cfd->last_arg);
+		i = cls_vlu2(priv, cfd->argv);
+		cfd->argv[cfd->last_idx] = NULL;
+		FreeArgv(cfd->argv);	
+		cfd->argv = NULL;
+		free(cli->cmd);
+		cli->cmd = NULL;
+		vsb_delete(cfd->last_arg);
+		cfd->last_arg = NULL;
+		cfd->last_idx = 0;
+		return (i);
+	}
 }
 
 struct cls *

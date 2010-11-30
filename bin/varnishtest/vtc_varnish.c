@@ -82,6 +82,8 @@ struct varnish {
 	char			*workdir;
 };
 
+#define NONSENSE	"%XJEIFLH|)Xspa8P"
+
 static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
 
@@ -117,28 +119,6 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	else
 		free(r);
 	return ((enum cli_status_e)retval);
-}
-
-static void
-varnish_cli_encode(struct vsb *vsb, const char *str)
-{
-
-	for (; *str != '\0'; str++) {
-		switch (*str) {
-		case '\\':
-		case '"':
-			vsb_printf(vsb, "\\%c", *str); break;
-		case '\n':
-			vsb_printf(vsb, "\\n"); break;
-		case '\t':
-			vsb_printf(vsb, "\\t"); break;
-		default:
-			if (isgraph(*str) || *str == ' ')
-				vsb_putc(vsb, *str);
-			else
-				vsb_printf(vsb, "\\x%02x", *str);
-		}
-	}
 }
 
 /**********************************************************************
@@ -512,10 +492,8 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 	vsb = vsb_newauto();
 	AN(vsb);
 
-	v->vcl_nbr++;
-	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
-	varnish_cli_encode(vsb, vcl);
-	vsb_printf(vsb, "\"", *vcl);
+	vsb_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n",
+	    ++v->vcl_nbr, NONSENSE, vcl, NONSENSE);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 
@@ -561,14 +539,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	vsb_finish(vsb2);
 	AZ(vsb_overflowed(vsb2));
 
-	v->vcl_nbr++;
-	vsb_printf(vsb, "vcl.inline vcl%d \"", v->vcl_nbr);
-
-	varnish_cli_encode(vsb, vsb_data(vsb2));
-
-	varnish_cli_encode(vsb, vcl);
-
-	vsb_printf(vsb, "\"", *vcl);
+	vsb_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n%s\n",
+	    ++v->vcl_nbr, NONSENSE, vsb_data(vsb2), vcl, NONSENSE);
 	vsb_finish(vsb);
 	AZ(vsb_overflowed(vsb));
 
