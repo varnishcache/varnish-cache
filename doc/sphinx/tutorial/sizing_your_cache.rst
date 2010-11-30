@@ -16,3 +16,10 @@ task. A few things to consider:
    tool. If you have a lot of LRU activity then your cache is evicting
    objects due to space constraints and you should consider increasing
    the size of the cache.
+
+Be aware that every object that is stored also carries overhead that
+is kept outside the actually storage area. So, even if you specify -s
+malloc,16G varnish might actually use **double** that. Varnish has a
+overhead of about 1k per object. So, if you have lots of small objects
+in your cache the overhead might be significant.
+
