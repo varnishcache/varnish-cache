@@ -571,6 +571,7 @@ int http_DissectResponse(struct worker *w, const struct http_conn *htc,
 const char *http_DoConnection(const struct http *hp);
 void http_CopyHome(struct worker *w, int fd, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
+void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
 void HTC_Init(struct http_conn *htc, struct ws *ws, int fd);

@@ -454,6 +454,14 @@ cnt_fetch(struct sess *sp)
 	}
 
 	/*
+	 * These two headers can be spread over multiple actual headers
+	 * and we rely on their content outside of VCL, so collect them
+	 * into one line here.
+	 */
+	http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
+	http_CollectHdr(sp->wrk->beresp, H_Vary);
+
+	/*
 	 * Save a copy before it might get mangled in VCL.  When it comes to
 	 * dealing with the body, we want to see the unadultered headers.
 	 */
@@ -1056,6 +1064,8 @@ cnt_recv(struct sess *sp)
 	sp->disable_esi = 0;
 	sp->pass = 0;
 	sp->client_identity = NULL;
+
+	http_CollectHdr(sp->http, H_Cache_Control);
 
 	VCL_recv_method(sp);
 	recv_handling = sp->handling;

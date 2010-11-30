@@ -164,7 +164,6 @@ http_Setup(struct http *hp, struct ws *ws)
 
 /*--------------------------------------------------------------------*/
 
-
 static int
 http_IsHdr(const txt *hh, const char *hdr)
 {
@@ -179,6 +178,72 @@ http_IsHdr(const txt *hh, const char *hdr)
 	return (!strncasecmp(hdr, hh->b, l));
 }
 
+/*--------------------------------------------------------------------
+ * This function collapses multiple headerlines of the same name.
+ * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
+ */
+
+void
+http_CollectHdr(struct http *hp, const char *hdr)
+{
+	unsigned u, v, ml, f = 0, x;
+	char *b = NULL, *e = NULL;
+
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		Tcheck(hp->hd[u]);
+		if (!http_IsHdr(&hp->hd[u], hdr))
+			continue;
+		if (f == 0) {
+			/* Found first header, just record the fact */
+			f = u;
+			continue;
+		}
+		if (b == NULL) {
+			/* Found second header */
+			ml = WS_Reserve(hp->ws, 0);
+			b = hp->ws->f;
+			e = b + ml;
+			x = Tlen(hp->hd[f]);
+			if (b + x < e) {
+				memcpy(b, hp->hd[f].b, x);
+				b += x;
+			} else 
+				b = e;
+		}
+
+		AN(b);
+		AN(e);
+
+		/* Append the Nth header we found */
+		if (b < e)
+			*b++ = ',';
+		x = Tlen(hp->hd[u]) - *hdr;
+		if (b + x < e) {
+			memcpy(b, hp->hd[u].b + *hdr, x);
+			b += x;
+		} else 
+			b = e;
+
+		/* Shift remaining headers up one slot */
+		for (v = u; v < hp->nhd + 1; v++)
+			hp->hd[v] = hp->hd[v + 1];
+		hp->nhd--;
+
+	}
+	if (b == NULL)
+		return;
+	AN(e);
+	if (b >= e) {
+		WS_Release(hp->ws, 0);
+		return;
+	}
+	*b = '\0';
+	hp->hd[f].b = hp->ws->f;
+	hp->hd[f].e = b;
+	WS_ReleaseP(hp->ws, b + 1);
+}
+
+
 /*--------------------------------------------------------------------*/
 
 static unsigned
@@ -187,11 +252,6 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 	unsigned u;
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		/* XXX We have to check for empty header entries
-		   because a header could have been lost in
-		   http_copyHome */
-		if (hp->hd[u].b == NULL)
-			continue;
 		Tcheck(hp->hd[u]);
 		if (hp->hd[u].e < hp->hd[u].b + l + 1)
 			continue;
@@ -228,6 +288,7 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	}
 	return (1);
 }
+
 
 /*--------------------------------------------------------------------
  * Find a given headerfield, and if present and wanted, the beginning
