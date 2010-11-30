@@ -26,6 +26,7 @@ retval=0
 pidfile=/var/run/varnish.pid
 
 exec="/usr/sbin/varnishd"
+reload_exec="/usr/sbin/varnish_reload_vcl"
 prog="varnishd"
 config="/etc/sysconfig/varnish"
 lockfile="/var/lock/subsys/varnish"
@@ -93,7 +94,13 @@ restart() {
 }
 
 reload() {
-	restart
+	if [ "$RELOAD_VCL" = "1" ]
+	then
+		$reload_exec
+	else
+		echo RELOAD_VCL is not set
+		force_reload
+	fi
 }
 
 force_reload() {
