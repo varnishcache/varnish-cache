@@ -5,6 +5,7 @@ EXTRA_DIST =			\
 	TODO			\
 	varnish.initrc		\
 	varnish.logrotate	\
+	varnish_reload_vcl	\
 	varnish.spec		\
 	varnish.sysconfig	\
 	varnishlog.initrc	\
