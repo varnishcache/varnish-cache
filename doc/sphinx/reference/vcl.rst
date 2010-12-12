@@ -288,6 +288,22 @@ To match an IP address against an ACL, simply use the match operator:::
     return (pipe);
   }
 
+Regular Expressions
+-------------------
+
+In Varnish 2.1.0 Varnish switched to using PCRE - Perl-compatible
+regular expressions. For a complete description of PCRE please see the
+PCRE(3) man page.
+
+To send flags to the PCRE engine, such as to turn on *case
+insensitivity* add the flag within parens following a question mark,
+like this:::
+
+  if (req.http.host ~ "(?i)example.com$") {
+          ...
+  }
+
+
 Functions
 ---------
 
