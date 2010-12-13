@@ -1,0 +1,48 @@
+# $Id$
+
+test "Test restart in vcl_deliver"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 303 -hdr "Location: /bar"
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -status 200 -body "1"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_hit {
+		if (obj.http.X-Magic-Redirect == "1") {
+			set req.url = obj.http.Location;
+			return (restart);
+		}
+	}
+	sub vcl_fetch {
+		if (beresp.status == 303) {
+			set beresp.cacheable = true;
+			set beresp.http.X-Magic-Redirect = "1";
+		}
+	}
+	sub vcl_deliver {
+		if (resp.http.X-Magic-Redirect == "1") {
+			return (restart);
+		}
+		set resp.http.X-Restarts = req.restarts;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+	expect resp.http.X-Restarts == "2"
+
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+	expect resp.http.X-Restarts == "1"
+} -run

@@ -191,8 +191,18 @@ cnt_deliver(struct sess *sp)
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_RESTART:
-		INCOMPL();
-		break;
+		if (sp->restarts >= params->max_restarts)
+			break;
+		(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
+		AZ(sp->obj);
+		sp->restarts++;
+		sp->director = NULL;
+		sp->wrk->bereq = NULL;
+		sp->wrk->beresp = NULL;
+		sp->wrk->beresp1 = NULL;
+		sp->wrk->resp = NULL;
+		sp->step = STP_RECV;
+		return (0);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
