@@ -23,9 +23,11 @@ varnishsizes [-b] [-C] [-c] [-d] [-I regex] [-i tag] [-n varnish_name]
 DESCRIPTION
 ===========
 
-The varnishsizes utility reads varnishd(1) shared memory logs and presents a continuously updated histogram
-showing the distribution of the last N requests by their processing.  The value of N and the vertical scale are
-displayed in the top left corner.  The horizontal scale is logarithmic.  Hits are marked with a pipe character
+The varnishsizes utility reads varnishd(1) shared memory logs and presents
+a continuously updated histogram showing the distribution of the last N
+requests by their processing.  The value of N and the vertical scale are
+displayed in the top left corner.  The horizontal scale is a logarithmic
+representation of bytes.  Hits are marked with a pipe character
 ("|"), and misses are marked with a hash character ("#").
 
 The following options are available:
