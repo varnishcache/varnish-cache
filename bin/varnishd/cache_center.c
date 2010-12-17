@@ -436,7 +436,7 @@ cnt_fetch(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned handling, l, nhttp;
+	unsigned l, nhttp;
 	int varyl = 0;
 	struct vsb *vary = NULL;
 
@@ -525,13 +525,6 @@ cnt_fetch(struct sess *sp)
 	sp->wrk->body_status = RFC2616_Body(sp);
 
 	VCL_fetch_method(sp);
-
-	/*
-	 * When we fetch the body, we may hit the LRU cleanup and that
-	 * will overwrite sp->handling, so we have to save our plans
-	 * here.
-	 */
-	handling = sp->handling;
 
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
@@ -629,7 +622,7 @@ cnt_fetch(struct sess *sp)
 	if (sp->wrk->do_esi)
 		ESI_Parse(sp);
 
-	switch (handling) {
+	switch (sp->handling) {
 	case VCL_RET_RESTART:
 		HSH_Drop(sp);
 		sp->director = NULL;
