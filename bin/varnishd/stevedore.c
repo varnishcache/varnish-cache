@@ -113,15 +113,13 @@ stv_alloc(const struct sess *sp, size_t size)
 	if (sp->obj != NULL) {
 		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 		stv = sp->obj->objstore->stevedore;
-		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	} else {
+		INCOMPL();
+		stv = stv_transient;
 	}
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	for (;;) {
-		if (stv == NULL) {
-			stv = stv_pick_stevedore();
-			fail = 0;
-		}
-
 		/* try to allocate from it */
 		AN(stv->alloc);
 		st = stv->alloc(stv, size);
@@ -133,8 +131,8 @@ stv_alloc(const struct sess *sp, size_t size)
 			break;
 
 		/* Enough is enough: try another if we have one */
-		if (++fail == 50)
-			stv = NULL;
+		if (++fail == 50)	/* XXX Param */
+			break;
 	}
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	return (st);
@@ -233,7 +231,11 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	return (o);
 }
 
-/*-------------------------------------------------------------------*/
+/*-------------------------------------------------------------------
+ * Allocate storage for an object, based on the header information.
+ * XXX: If we know (a hint of) the length, we should allocate space
+ * XXX: for the body in the same allocation while we are at it.
+ */
 
 struct object *
 STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
@@ -249,6 +251,7 @@ STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 	lhttp = HTTP_estimate(nhttp);
 	lhttp = PRNDUP(lhttp);
 
+	memset(&soc, 0, sizeof soc);
 	soc.magic = STV_OBJ_SECRETES_MAGIC;
 	soc.nhttp = nhttp;
 	soc.lhttp = lhttp;
