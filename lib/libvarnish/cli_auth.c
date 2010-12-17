@@ -29,7 +29,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id$");
+SVNID("$Id$")
 
 #include <sys/types.h>
 #include <stdio.h>
