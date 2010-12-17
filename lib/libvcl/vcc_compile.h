@@ -79,6 +79,8 @@ enum symkind {
 };
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **, const struct symbol *sym);
+typedef struct symbol *sym_wildcard_t(struct vcc *tl, const struct token *t,
+    const struct symbol *sym);
 
 struct symbol {
 	unsigned			magic;
@@ -87,7 +89,7 @@ struct symbol {
 
 	char				*name;
 	unsigned			nlen;
-	unsigned			wildcard;
+	sym_wildcard_t			*wildcard;
 	enum symkind			kind;
 
 	const struct token		*def_b, *def_e;
@@ -264,9 +266,10 @@ void vcc_ExpectedStringval(struct vcc *tl);
 
 /* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
+struct symbol *VCC_AddSymbolTok(struct vcc *tl, const struct token *t, enum symkind kind);
 struct symbol *VCC_GetSymbolTok(struct vcc *tl, const struct token *tok,
     enum symkind);
-struct symbol *VCC_FindSymbol(const struct vcc *tl,
+struct symbol *VCC_FindSymbol(struct vcc *tl,
     const struct token *t, enum symkind kind);
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
@@ -291,6 +294,7 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
     const char *e);
 
 /* vcc_var.c */
+sym_wildcard_t vcc_Var_Wildcard;
 const struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
     int wr_access, const char *use);
 void vcc_VarVal(struct vcc *tl, const struct var *vp,

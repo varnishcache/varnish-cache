@@ -43,18 +43,21 @@ SVNID("$Id$")
 
 /*--------------------------------------------------------------------*/
 
-static struct var *
-HeaderVar(struct vcc *tl, const struct token *t, const struct var *vh)
+struct symbol *
+vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 {
 	char *p;
+	struct symbol *sym;
 	struct var *v;
+	const struct var *vh;
 	int i, l;
 	char buf[258];
 
-	(void)tl;
+	vh = wc->var;
 
 	v = TlAlloc(tl, sizeof *v);
 	assert(v != NULL);
+
 	i = t->e - t->b;
 	p = TlAlloc(tl, i + 1);
 	assert(p != NULL);
@@ -81,7 +84,13 @@ HeaderVar(struct vcc *tl, const struct token *t, const struct var *vh)
 	memcpy(p, buf, i + 1);
 	v->lname = p;
 
-	return (v);
+	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
+	AN(sym);
+	sym->var = v;
+	sym->fmt = v->fmt;
+	sym->eval = vcc_Eval_Var;
+	sym->r_methods = v->r_methods;
+	return (sym);
 }
 
 /*--------------------------------------------------------------------*/
@@ -118,9 +127,8 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 		} else {
 			vcc_AddUses(tl, t, v->r_methods, use);
 		}
-		if (v->fmt != HEADER)
-			return (v);
-		return (HeaderVar(tl, t, v));
+		assert(v->fmt != HEADER);
+		return (v);
 	}
 	vsb_printf(tl->sb, "Unknown variable ");
 	vcc_ErrToken(tl, t);

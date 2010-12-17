@@ -568,13 +568,16 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	vcc_Expr_Init(tl);
 
 	for (v = tl->vars; v->name != NULL; v++) {
-		sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
+		if (v->fmt == HEADER) {
+			sym = VCC_AddSymbolStr(tl, v->name, SYM_WILDCARD);
+			sym->wildcard = vcc_Var_Wildcard;
+		} else {
+			sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
+		}
 		sym->var = v;
 		sym->fmt = v->fmt;
 		sym->eval = vcc_Eval_Var;
 		sym->r_methods = v->r_methods;
-		if (v->fmt == HEADER)
-			sym->wildcard = 1;
 	}
 
 	vcl_output_lang_h(tl->fh);

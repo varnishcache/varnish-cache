@@ -38,4 +38,5 @@ VCC_SYMB(ACL,		acl,		"acl")
 VCC_SYMB(SUB,		sub,		"sub")		/* VCL subroutine */
 VCC_SYMB(BACKEND,	backend,	"backend")
 VCC_SYMB(PROBE,		probe,		"probe")
+VCC_SYMB(WILDCARD,	wildcard,	"wildcard")
 /*lint -restore */

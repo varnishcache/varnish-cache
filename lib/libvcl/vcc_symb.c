@@ -82,7 +82,7 @@ vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 	memcpy(sym->name, nb, l);
 	sym->name[l] = '\0';
 	sym->nlen = l;
-	VTAILQ_INSERT_TAIL(&tl->symbols, sym, list);
+	VTAILQ_INSERT_HEAD(&tl->symbols, sym, list);
 	sym->kind = kind;
 	return (sym);
 }
@@ -92,6 +92,13 @@ VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind kind)
 {
 
 	return (vcc_AddSymbol(tl, name, strlen(name), kind));
+}
+
+struct symbol *
+VCC_AddSymbolTok(struct vcc *tl, const struct token *t, enum symkind kind)
+{
+
+	return (vcc_AddSymbol(tl, t->b, t->e - t->b, kind));
 }
 
 struct symbol *
@@ -109,22 +116,21 @@ VCC_GetSymbolTok(struct vcc *tl, const struct token *tok, enum symkind kind)
 }
 
 struct symbol *
-VCC_FindSymbol(const struct vcc *tl, const struct token *t, enum symkind kind)
+VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
 {
 	struct symbol *sym;
 
 	assert(t->tok == ID);
 	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+		if (sym->kind == SYM_WILDCARD &&
+		   (t->e - t->b > sym->nlen) &&
+		   !memcmp(sym->name, t->b, sym->nlen)) {
+			AN (sym->wildcard);
+			return (sym->wildcard(tl, t, sym));
+		}
 		if (kind != SYM_NONE && kind != sym->kind)
 			continue;
-		if (!sym->wildcard) {
-			if (vcc_IdIs(t, sym->name))
-				return (sym);
-			continue;
-		}
-		if (t->e - t->b <= sym->nlen)
-			continue;
-		if (!memcmp(sym->name, t->b, sym->nlen))
+		if (vcc_IdIs(t, sym->name))
 			return (sym);
 	}
 	return (NULL);
