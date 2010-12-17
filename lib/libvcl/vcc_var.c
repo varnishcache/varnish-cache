@@ -46,24 +46,18 @@ SVNID("$Id$")
 struct symbol *
 vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 {
-	char *p;
 	struct symbol *sym;
 	struct var *v;
 	const struct var *vh;
-	int i, l;
+	int l;
 	char buf[258];
 
 	vh = wc->var;
 
 	v = TlAlloc(tl, sizeof *v);
-	assert(v != NULL);
+	AN(v);
 
-	i = t->e - t->b;
-	p = TlAlloc(tl, i + 1);
-	assert(p != NULL);
-	memcpy(p, t->b, i);
-	p[i] = '\0';
-	v->name = p;
+	v->name = TlDupTok(tl, t);
 	v->r_methods = vh->r_methods;
 	v->w_methods = vh->w_methods;
 	v->fmt = STRING;
@@ -72,17 +66,11 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 
 	bprintf(buf, "VRT_GetHdr(sp, %s, \"\\%03o%s:\")",
 	    v->hdr, (unsigned)l, v->name + vh->len);
-	i = strlen(buf);
-	p = TlAlloc(tl, i + 1);
-	memcpy(p, buf, i + 1);
-	v->rname = p;
+	v->rname = TlDup(tl, buf);
 
 	bprintf(buf, "VRT_SetHdr(sp, %s, \"\\%03o%s:\", ",
 	    v->hdr, (unsigned)l, v->name + vh->len);
-	i = strlen(buf);
-	p =  TlAlloc(tl, i + 1);
-	memcpy(p, buf, i + 1);
-	v->lname = p;
+	v->lname = TlDup(tl, buf);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
 	AN(sym);

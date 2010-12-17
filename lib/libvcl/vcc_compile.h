@@ -230,6 +230,9 @@ void Ff(const struct vcc *tl, int indent, const char *fmt, ...);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);
+char *TlDup(struct vcc *tl, const char *s);
+char *TlDupTok(struct vcc *tl, const struct token *tok);
+
 void EncString(struct vsb *sb, const char *b, const char *e, int mode);
 
 /* vcc_dir_random.c */
