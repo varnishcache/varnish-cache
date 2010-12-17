@@ -262,6 +262,9 @@ extern const struct var vcc_vars[];
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
 
+/* vcc_storage.c */
+sym_wildcard_t vcc_Stv_Wildcard;
+
 /* vcc_string.c */
 char *vcc_regexp(struct vcc *tl);
 int vcc_StringVal(struct vcc *tl);

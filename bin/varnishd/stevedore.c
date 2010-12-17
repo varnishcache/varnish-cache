@@ -489,7 +489,7 @@ STV_Config_Transient(void)
 
 	ASSERT_MGT();
 	VTAILQ_FOREACH(stv, &stevedores, list)
-		if (!strcmp(stv->name, TRANSIENT_NAME))
+		if (!strcmp(stv->ident, TRANSIENT_NAME))
 			return;
 	STV_Config(TRANSIENT_NAME "=malloc");
 }
@@ -505,9 +505,8 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	cli_out(cli, "Storage devices:\n");
-	VTAILQ_FOREACH(stv, &stevedores, list) {
-		cli_out(cli, "\tstorage.%s.%s\n", stv->name, stv->ident);
-	}
+	VTAILQ_FOREACH(stv, &stevedores, list)
+		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -517,3 +516,32 @@ struct cli_proto cli_stv[] = {
 	    0, 0, "", stv_cli_list },
 	{ NULL}
 };
+
+/*--------------------------------------------------------------------
+ * VRT functions for stevedores
+ */
+
+#include "vrt.h"
+
+static const struct stevedore *
+stv_find(const char *nm)
+{
+	const struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stevedores, list)
+		if (!strcmp(stv->ident, nm))
+			return (stv);
+	if (!strcmp(TRANSIENT_NAME, nm))
+		return (stv_transient);
+	return (NULL);
+}
+
+int
+VRT_Stv(struct sess *sp, const char *nm)
+{
+	(void)sp;
+
+	if (stv_find(nm) != NULL)
+		return (1);
+	return (0);
+}

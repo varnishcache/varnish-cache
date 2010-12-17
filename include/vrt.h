@@ -206,6 +206,9 @@ vmod_priv_fini(const struct vmod_priv *p)
 		p->free(p->priv);
 }
 
+/* Stevedore related functions */
+int VRT_Stv(struct sess *sp, const char *nm);
+
 /* Convert things to string */
 
 char *VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa);

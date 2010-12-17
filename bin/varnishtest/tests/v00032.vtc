@@ -1,0 +1,26 @@
+# $Id$
+
+test "Storage related vcl variables"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.http.has_s0 = storage.s0;
+		set beresp.http.has_foo = storage.foo;
+		set beresp.http.has_Transient = storage.Transient;
+	}
+} -start
+
+varnish v1 -cliok "storage.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.has_s0 == true
+	expect resp.http.has_foo == false
+	expect resp.http.has_Transient == true
+} -run
