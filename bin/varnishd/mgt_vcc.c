@@ -75,14 +75,11 @@ static struct vcc *vcc;
 
 /*--------------------------------------------------------------------*/
 
-/*
- * Keep this in synch with man/vcl.7 and etc/default.vcl!
- */
 static const char * const default_vcl =
 #include "default_vcl.h"
     ""	;
 
-/*
+/*--------------------------------------------------------------------
  * Prepare the compiler command line
  */
 static struct vsb *
@@ -130,6 +127,8 @@ mgt_make_cc_cmd(const char *sf, const char *of)
  */
 
 struct vcc_priv {
+	unsigned	magic;
+#define VCC_PRIV_MAGIC	0x70080cb8
 	char		*sf;
 	const char	*vcl;
 };
@@ -142,7 +141,7 @@ run_vcc(void *priv)
 	struct vcc_priv *vp;
 	int fd, i, l;
 
-	vp = priv;
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 	sb = vsb_newauto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
@@ -248,6 +247,8 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	AZ(close(sfd));
 
 	/* Run the VCC compiler in a sub-process */
+	memset(&vp, 0, sizeof vp);
+	vp.magic = VCC_PRIV_MAGIC;
 	vp.sf = sf;
 	vp.vcl = vcl;
 	if (SUB_run(sb, run_vcc, &vp, "VCC-compiler", -1)) {
