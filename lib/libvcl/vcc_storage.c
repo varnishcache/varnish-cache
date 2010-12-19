@@ -96,7 +96,7 @@ static struct stvars {
 #define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
 #include "vrt_stv_var.h"
 #undef VRTSTVVAR
-	{ NULL,			0 }
+	{ NULL,			BOOL }
 };
 
 struct symbol *

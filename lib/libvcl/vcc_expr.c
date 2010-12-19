@@ -191,6 +191,44 @@ vcc_TimeVal(struct vcc *tl, double *d)
 	*d = v * sc;
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+vcc_ByteVal(struct vcc *tl, double *d)
+{
+	double v, sc;
+
+	v = vcc_DoubleVal(tl);
+	ERRCHK(tl);
+	if (tl->t->tok != ID) {
+		vsb_printf(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb, "\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	if (vcc_IdIs(tl->t, "B"))
+		sc = 1.;
+	else if (vcc_IdIs(tl->t, "KB"))
+		sc = 1024.;
+	else if (vcc_IdIs(tl->t, "MB"))
+		sc = 1024. * 1024.;
+	else if (vcc_IdIs(tl->t, "GB"))
+		sc = 1024. * 1024. * 1024.;
+	else if (vcc_IdIs(tl->t, "TB"))
+		sc = 1024. * 1024. * 1024. * 1024.;
+	else {
+		vsb_printf(tl->sb, "Unknown BYTES unit ");
+		vcc_ErrToken(tl, tl->t);
+		vsb_printf(tl->sb,
+		    ".  Legal are 'B', 'KB', 'MB', 'GB' and 'TB'\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_NextToken(tl);
+	*d = v * sc;
+}
+
 /*--------------------------------------------------------------------
  * Facility for carrying expressions around and do text-processing on
  * them.
@@ -396,6 +434,7 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 			 /* XXX: should DURATION insist on "s" suffix ? */
 	case INT:	p = "VRT_int_string(sp, \v1)"; break;
 	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
+	case BYTES:	p = "VRT_double_string(sp, \v1)"; break; /* XXX */
 	case REAL:	p = "VRT_double_string(sp, \v1)"; break;
 	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
 	default:	break;
@@ -609,11 +648,20 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = e1;
 		break;
 	case CNUM:
+		/*
+		 * XXX: %g may not have enough decimals by default
+		 * XXX: but %a is ugly, isn't it ?
+		 */
 		assert(fmt != VOID);
 		if (fmt == DURATION) {
 			vcc_RTimeVal(tl, &d);
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(DURATION, "%g", d);
+		} else if (fmt == BYTES) {
+			vcc_ByteVal(tl, &d);
+			ERRCHK(tl);
+			e1 = vcc_mk_expr(BYTES, "%.1f", d);
+			ERRCHK(tl);
 		} else if (fmt == REAL) {
 			e1 = vcc_mk_expr(REAL, "%g", vcc_DoubleVal(tl));
 			ERRCHK(tl);
@@ -654,6 +702,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	switch(f2) {
 	case INT:	f2 = INT; break;
 	case DURATION:	f2 = REAL; break;
+	case BYTES:	f2 = REAL; break;
 	default:
 		if (tl->t->tok != '*' && tl->t->tok != '/')
 			return;
@@ -724,6 +773,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case INT:	break;
 	case TIME:	break;
 	case DURATION:	break;
+	case BYTES:	break;
 	default:
 		if (tl->t->tok != '+' && tl->t->tok != '-')
 			return;
@@ -741,6 +791,9 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
 		if (tk->tok == '-' && (*e)->fmt == TIME && e2->fmt == TIME) {
+			/* OK */
+		} else if (tk->tok == '-' &&
+		    (*e)->fmt == BYTES && e2->fmt == BYTES) {
 			/* OK */
 		} else if (e2->fmt != f2) {
 			vsb_printf(tl->sb, "%s %.*s %s not possible.\n",
@@ -768,30 +821,30 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
  *	ExprAdd(IP) '!~' IP
  */
 
+#define NUM_REL(typ)					\
+	{typ,		T_EQ,	"(\v1 == \v2)" },	\
+	{typ,		T_NEQ,	"(\v1 != \v2)" },	\
+	{typ,		T_LEQ,	"(\v1 <= \v2)" },	\
+	{typ,		T_GEQ,	"(\v1 >= \v2)" },	\
+	{typ,		'<',	"(\v1 < \v2)" },	\
+	{typ,		'>',	"(\v1 > \v2)" }	
+
 static const struct cmps {
 	enum var_type		fmt;
 	unsigned		token;
 	const char		*emit;
 } vcc_cmps[] = {
-	{INT,		T_EQ,	"(\v1 == \v2)" },
-	{INT,		T_NEQ,	"(\v1 != \v2)" },
-	{INT,		T_LEQ,	"(\v1 <= \v2)" },
-	{INT,		T_GEQ,	"(\v1 >= \v2)" },
-	{INT,		'<',	"(\v1 < \v2)" },
-	{INT,		'>',	"(\v1 > \v2)" },
-
-	{DURATION,	T_EQ,	"(\v1 == \v2)" },
-	{DURATION,	T_NEQ,	"(\v1 != \v2)" },
-	{DURATION,	T_LEQ,	"(\v1 <= \v2)" },
-	{DURATION,	T_GEQ,	"(\v1 >= \v2)" },
-	{DURATION,	'<',	"(\v1 < \v2)" },
-	{DURATION,	'>',	"(\v1 > \v2)" },
+	NUM_REL(INT),
+	NUM_REL(DURATION),
+	NUM_REL(BYTES),
 
 	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
 	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
 
 	{VOID, 0, NULL}
 };
+
+#undef NUM_REL
 
 static void
 vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
@@ -818,6 +871,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	if (cp->fmt != VOID) {
 		vcc_NextToken(tl);
 		vcc_expr_add(tl, &e2, (*e)->fmt);
+		ERRCHK(tl);
 		if (e2->fmt != (*e)->fmt) { /* XXX */
 			vsb_printf(tl->sb, "Comparison of different types: ");
 			vsb_printf(tl->sb, "%s ", vcc_Type((*e)->fmt));

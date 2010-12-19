@@ -32,9 +32,9 @@
 #define VRTSTVVAR(nm, vtype, ctype, dval) ctype VRT_Stv_ ## nm(const char *nm);
 #endif
 
-VRTSTVVAR(free_space,	REAL, double,	0.)
-VRTSTVVAR(used_space,	REAL, double,	0.)
-VRTSTVVAR(happy,	BOOL, int,	0)
+VRTSTVVAR(free_space,	BYTES,	double,	0.)
+VRTSTVVAR(used_space,	BYTES,	double,	0.)
+VRTSTVVAR(happy,	BOOL,	int,	0)
 
 #ifdef VRTSTVVAR_PROTO
 #undef VRTSTVVAR_PROTO
