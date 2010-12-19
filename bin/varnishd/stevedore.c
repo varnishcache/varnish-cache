@@ -537,11 +537,30 @@ stv_find(const char *nm)
 }
 
 int
-VRT_Stv(struct sess *sp, const char *nm)
+VRT_Stv(const char *nm)
 {
-	(void)sp;
 
 	if (stv_find(nm) != NULL)
 		return (1);
 	return (0);
 }
+
+#define VRTSTVVAR_PROTO
+#include "vrt_stv_var.h"
+
+#define VRTSTVVAR(nm, vtype, ctype, dval)	\
+ctype						\
+VRT_Stv_##nm(const char *nm)			\
+{						\
+	const struct stevedore *stv;		\
+						\
+	stv = stv_find(nm);			\
+	if (stv == NULL)			\
+		return (dval);			\
+	if (stv->var_##nm == NULL)		\
+		return (dval);			\
+	return (stv->var_##nm(stv));		\
+}
+
+#include "vrt_stv_var.h"
+#undef VRTSTVVAR

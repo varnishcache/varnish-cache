@@ -45,6 +45,9 @@ typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
     unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 
+/* Prototypes for VCL variable responders */
+typedef double storage_var_double(const struct stevedore *);
+typedef int storage_var_int(const struct stevedore *);
 
 struct stevedore {
 	unsigned		magic;
@@ -60,6 +63,10 @@ struct stevedore {
 	storage_allocobj_f	*allocobj;	/* --//-- */
 
 	struct lru		*lru;
+
+#define VRTSTVVAR(nm, vtype, ctype, dval) storage_var_##ctype *var_##nm;
+#include "vrt_stv_var.h"
+#undef VRTSTVVAR
 
 	/* private fields */
 	void			*priv;
@@ -98,4 +105,3 @@ extern const struct stevedore smp_stevedore;
 #ifdef HAVE_LIBUMEM
 extern const struct stevedore smu_stevedore;
 #endif
-

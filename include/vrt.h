@@ -207,7 +207,7 @@ vmod_priv_fini(const struct vmod_priv *p)
 }
 
 /* Stevedore related functions */
-int VRT_Stv(struct sess *sp, const char *nm);
+int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 

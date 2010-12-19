@@ -89,6 +89,16 @@ vcc_Stv_mkvar(struct vcc *tl, const struct token *t, enum var_type fmt)
 	return (v);
 }
 
+static struct stvars {
+	const char	*name;
+	enum var_type	fmt;
+} stvars[] = {
+#define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
+#include "vrt_stv_var.h"
+#undef VRTSTVVAR
+	{ NULL,			0 }
+};
+
 struct symbol *
 vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
     const struct symbol *wcsym)
@@ -96,6 +106,7 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 	const char *p, *q;
 	struct var *v = NULL;
 	struct symbol *sym;
+	struct stvars *sv;
 	char stv[1024];
 	char buf[1024];
 
@@ -110,13 +121,21 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 
 	if (q == t->e) {
 		v = vcc_Stv_mkvar(tl, t, BOOL);
-		bprintf(buf, "VRT_Stv(sp, \"%s\")", stv);
+		bprintf(buf, "VRT_Stv(\"%s\")", stv);
 		v->rname = TlDup(tl, buf);
-#if 0
 	} else {
+		assert(*q  == '.');
 		q++;
-fprintf(stderr, "Q: %s <%.*s>\n", stv, (int)(t->e - q), q);
-#endif
+		for(sv = stvars; sv->name != NULL; sv++) {
+			if (strncmp(q, sv->name, t->e - q))
+				continue;
+			if (sv->name[t->e - q] != '\0')
+				continue;
+			v = vcc_Stv_mkvar(tl, t, sv->fmt);
+			bprintf(buf, "VRT_Stv_%s(\"%s\")", sv->name, stv);
+			v->rname = TlDup(tl, buf);
+			break;
+		}
 	}
 
 	if (v == NULL)

@@ -41,6 +41,9 @@
 # XXX: does it actually do that ?
 
 import sys
+import subprocess
+
+
 srcroot = "../.."
 buildroot = "../.."
 if len(sys.argv) == 3:
@@ -504,10 +507,14 @@ def emit_vcl_tnames(fo, tokens):
 #######################################################################
 # Read a C-source file and spit out code that outputs it with vsb_cat()
 
-def emit_file(fo, fn):
-	fi = open(fn)
-	fc = fi.read()
-	fi.close()
+def emit_file(fo, fn, cpp = False):
+	if cpp:
+		fc = subprocess.check_output(["cpp", "-DVRTSTVVAR_PROTO", fn])
+		fc = fc.decode("ascii")
+	else:
+		fi = open(fn)
+		fc = fi.read()
+		fi.close()
 
 	w = 66		# Width of lines, after white space prefix
 	maxlen = 10240	# Max length of string literal
@@ -809,6 +816,7 @@ vcl_output_lang_h(struct vsb *sb)
 emit_file(fo, buildroot + "/include/vcl.h")
 emit_file(fo, srcroot + "/include/vrt.h")
 emit_file(fo, buildroot + "/include/vrt_obj.h")
+emit_file(fo, buildroot + "/include/vrt_stv_var.h", True)
 
 fo.write("""
 }

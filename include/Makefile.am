@@ -49,6 +49,7 @@ nobase_noinst_HEADERS = \
 	vre.h \
 	vrt.h \
 	vrt_obj.h \
+	vrt_stv_var.h \
 	vss.h \
 	vtypes.h
 
