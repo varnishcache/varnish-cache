@@ -316,6 +316,12 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('beresp.storage',
+		'STRING',
+		( 'fetch',),
+		( 'fetch',),
+		'struct sess *'
+	),
 	('obj.proto',
 		'STRING',
 		( 'hit', 'error',),

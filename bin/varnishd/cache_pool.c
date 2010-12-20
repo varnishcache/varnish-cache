@@ -181,6 +181,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		w->beresp1 = NULL;
 		w->beresp = NULL;
 		w->resp = NULL;
+		w->storage = NULL;
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->bereq);
 		AZ(w->beresp1);
@@ -188,6 +189,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		AZ(w->resp);
 		WS_Assert(w->ws);
 		AZ(w->wfd);
+		AZ(w->storage);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;
 		if (params->diag_bitmap & 0x00040000) {

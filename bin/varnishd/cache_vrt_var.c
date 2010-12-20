@@ -309,6 +309,28 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 	return (TCP_port(sp->vbc->addr));
 }
 
+const char * __match_proto__()
+VRT_r_beresp_storage(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->wrk->storage != NULL)
+		return (sp->wrk->storage);
+	else
+		return (NULL);
+}
+
+void
+VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
+{
+	va_list ap;
+	char *b;
+
+	va_start(ap, str);
+	b = VRT_String(sp->wrk->ws, NULL, str, ap);
+	va_end(ap);
+	sp->wrk->storage = b;
+}
+
 void
 VRT_l_obj_ttl(const struct sess *sp, double a)
 {

@@ -524,6 +524,8 @@ cnt_fetch(struct sess *sp)
 
 	sp->wrk->body_status = RFC2616_Body(sp);
 
+	AZ(sp->wrk->storage);
+
 	VCL_fetch_method(sp);
 
 	if (sp->objcore == NULL) {
@@ -567,6 +569,8 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl, nhttp);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+
+	sp->wrk->storage = NULL;
 
 	if (vary != NULL) {
 		sp->obj->vary =
@@ -1249,6 +1253,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 		WS_Assert(w->ws);
+		AZ(sp->wrk->storage);
 
 		switch (sp->step) {
 #define STEP(l,u) \

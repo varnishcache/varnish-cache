@@ -258,6 +258,8 @@ struct worker {
 	double			grace;
 	unsigned		do_esi;
 
+	char			*storage;
+
 	/* Timeouts */
 	double			connect_timeout;
 	double			first_byte_timeout;
