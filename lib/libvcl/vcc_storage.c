@@ -83,7 +83,11 @@ vcc_Stv_mkvar(struct vcc *tl, const struct token *t, enum var_type fmt)
 	AN(v);
 
 	v->name = TlDupTok(tl, t);
-	v->r_methods = VCL_MET_FETCH;		/* XXX ? */
+	v->r_methods = 0
+#define VCL_MET_MAC(l,u,b)	| VCL_MET_##u
+#include "vcl_returns.h"
+#undef VCL_MET_MAC
+		;
 	v->fmt = fmt;
 
 	return (v);

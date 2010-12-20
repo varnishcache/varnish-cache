@@ -351,7 +351,8 @@ cnt_error(struct sess *sp)
 		HSH_Prealloc(sp);
 		sp->wrk->cacheable = 0;
 		/* XXX: 1024 is a pure guess */
-		sp->obj = STV_NewObject(sp, 1024, 0, params->http_headers);
+		sp->obj = STV_NewObject(sp, NULL, 1024, 0,
+		     params->http_headers);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -567,7 +568,7 @@ cnt_fetch(struct sess *sp)
 	 * XXX: also.
 	 */
 
-	sp->obj = STV_NewObject(sp, l, sp->wrk->ttl, nhttp);
+	sp->obj = STV_NewObject(sp, sp->wrk->storage, l, sp->wrk->ttl, nhttp);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->wrk->storage = NULL;

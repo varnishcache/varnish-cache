@@ -79,8 +79,8 @@ struct stevedore {
 struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
     const struct stv_objsecrets *soc);
 
-struct object *STV_NewObject(struct sess *sp, unsigned len, double ttl,
-    unsigned nhttp);
+struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
+    double ttl, unsigned nhttp);
 struct storage *STV_alloc(const struct sess *sp, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);

@@ -82,10 +82,18 @@ LRU_Alloc(void)
  */
 
 static struct stevedore *
-stv_pick_stevedore(void)
+stv_pick_stevedore(const char *hint)
 {
 	struct stevedore *stv;
 
+	if (hint != NULL && *hint != '\0') {
+		VTAILQ_FOREACH(stv, &stevedores, list) {
+			if (!strcmp(stv->ident, hint))
+				return (stv);
+		}
+		if (!strcmp(TRANSIENT_NAME, hint))
+			return (stv_transient);
+	}
 	/* pick a stevedore and bump the head along */
 	stv = VTAILQ_NEXT(stv_next, list);
 	if (stv == NULL)
@@ -93,8 +101,6 @@ stv_pick_stevedore(void)
 	AN(stv);
 	AN(stv->name);
 	stv_next = stv;
-	if (stv->transient)
-		stv = stv_pick_stevedore();
 	return (stv);
 }
 
@@ -239,7 +245,8 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
  */
 
 struct object *
-STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
+STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
+    unsigned nhttp)
 {
 	struct object *o;
 	struct stevedore *stv;
@@ -264,7 +271,7 @@ STV_NewObject(struct sess *sp, unsigned wsl, double ttl, unsigned nhttp)
 	if (!sp->wrk->cacheable)
 		stv = stv_transient;
 	else
-		stv = stv_pick_stevedore();
+		stv = stv_pick_stevedore(hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, sp, ltot, &soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
