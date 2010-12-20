@@ -197,18 +197,6 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 }
 
 /*--------------------------------------------------------------------
- * XXX: Optimize the single element case ?
- */
-
-static char *
-vrt_assemble_string(const struct http *hp, const char *h, const char *p,
-    va_list ap)
-{
-
-	return (VRT_String(hp->ws, h, p, ap));
-}
-
-/*--------------------------------------------------------------------
  * Build a string on the worker threads workspace
  */
 
@@ -241,7 +229,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 	if (p == NULL) {
 		http_Unset(hp, hdr);
 	} else {
-		b = vrt_assemble_string(hp, hdr + 1, p, ap);
+		b = VRT_String(hp->ws, hdr + 1, p, ap);
 		if (b == NULL) {
 			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
 		} else {
@@ -412,7 +400,7 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = vrt_assemble_string(sp->http, "PANIC: ", str, ap);
+	b = VRT_String(sp->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
 	vas_fail("VCL", "", 0, b, 0, 2);
 }
