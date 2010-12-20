@@ -147,6 +147,24 @@ sma_trim(struct storage *s, size_t size)
 	}
 }
 
+static double
+sma_used_space(const struct stevedore *st)
+{
+	struct sma_sc *sma_sc;
+
+	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
+	return (sma_sc->stats->nbytes);
+}
+
+static double
+sma_free_space(const struct stevedore *st)
+{
+	struct sma_sc *sma_sc;
+
+	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
+	return (sma_sc->sma_max - sma_sc->stats->nbytes);
+}
+
 static void
 sma_init(struct stevedore *parent, int ac, char * const *av)
 {
@@ -199,4 +217,6 @@ const struct stevedore sma_stevedore = {
 	.alloc	=	sma_alloc,
 	.free	=	sma_free,
 	.trim	=	sma_trim,
+	.var_free_space =	sma_free_space,
+	.var_used_space =	sma_used_space,
 };
