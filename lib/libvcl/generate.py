@@ -41,8 +41,6 @@
 # XXX: does it actually do that ?
 
 import sys
-import subprocess
-
 
 srcroot = "../.."
 buildroot = "../.."
@@ -404,6 +402,12 @@ sp_variables = (
 	),
 )
 
+stv_variables = (
+	('free_space',	'BYTES',	"0."),
+	('used_space',	'BYTES',	"0."),
+	('happy',	'BOOL',		"0"),
+)
+
 #######################################################################
 # VCL to C type conversion
 
@@ -414,6 +418,7 @@ vcltypes = {
 	'BACKEND':	"struct director *",
 	'TIME':		"double",
 	'DURATION':	"double",
+	'BYTES':	"double",
 	'INT':		"int",
 	'HEADER':	"const char *",
 }
@@ -507,14 +512,10 @@ def emit_vcl_tnames(fo, tokens):
 #######################################################################
 # Read a C-source file and spit out code that outputs it with vsb_cat()
 
-def emit_file(fo, fn, cpp = False):
-	if cpp:
-		fc = subprocess.check_output(["cpp", "-DVRTSTVVAR_PROTO", fn])
-		fc = fc.decode("ascii")
-	else:
-		fi = open(fn)
-		fc = fi.read()
-		fi.close()
+def emit_file(fo, fn):
+	fi = open(fn)
+	fc = fi.read()
+	fi.close()
 
 	w = 66		# Width of lines, after white space prefix
 	maxlen = 10240	# Max length of string literal
@@ -786,6 +787,9 @@ for i in sp_variables:
 
 fo.write("\t{ NULL }\n};\n")
 
+for i in stv_variables:
+	fh.write(vcltypes[i[1]] + " VRT_Stv_" + i[0] + "(const char *);\n")
+
 fo.close()
 fh.close()
 
@@ -816,7 +820,6 @@ vcl_output_lang_h(struct vsb *sb)
 emit_file(fo, buildroot + "/include/vcl.h")
 emit_file(fo, srcroot + "/include/vrt.h")
 emit_file(fo, buildroot + "/include/vrt_obj.h")
-emit_file(fo, buildroot + "/include/vrt_stv_var.h", True)
 
 fo.write("""
 }
@@ -824,3 +827,42 @@ fo.write("""
 
 fo.close()
 
+#######################################################################
+
+fo = open(buildroot + "/include/vrt_stv_var.h", "w")
+
+file_header(fo)
+
+fo.write("""
+#ifndef VRTSTVTYPE
+#define VRTSTVTYPE(ct)
+#define VRTSTVTYPEX
+#endif
+#ifndef VRTSTVVAR
+#define VRTSTVVAR(nm, vtype, ctype, dval)
+#define VRTSTVVARX
+#endif
+""")
+
+x=dict()
+for i in stv_variables:
+	ct = vcltypes[i[1]]
+	if not ct in x:
+		fo.write("VRTSTVTYPE(" + ct + ")\n")
+		x[ct] = 1
+	fo.write("VRTSTVVAR(" + i[0] + ",\t" + i[1] + ",\t")
+	fo.write(ct + ",\t" + i[2] + ")")
+	fo.write("\n")
+
+fo.write("""
+#ifdef VRTSTVTYPEX
+#undef VRTSTVTYPEX
+#undef VRTSTVTYPE
+#endif
+#ifdef VRTSTVVARX
+#undef VRTSTVVARX
+#undef VRTSTVVAR
+#endif
+""")
+
+fo.close

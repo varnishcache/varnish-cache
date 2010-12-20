@@ -45,6 +45,7 @@ SVNID("$Id$")
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "cli_priv.h"
+#include "vrt_obj.h"
 
 #define TRANSIENT_NAME	"Transient"
 
@@ -544,9 +545,6 @@ VRT_Stv(const char *nm)
 		return (1);
 	return (0);
 }
-
-#define VRTSTVVAR_PROTO
-#include "vrt_stv_var.h"
 
 #define VRTSTVVAR(nm, vtype, ctype, dval)	\
 ctype						\

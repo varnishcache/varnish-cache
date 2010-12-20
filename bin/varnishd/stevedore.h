@@ -46,8 +46,9 @@ typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
 typedef void storage_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
-typedef double storage_var_double(const struct stevedore *);
-typedef int storage_var_int(const struct stevedore *);
+#define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
+#include "vrt_stv_var.h"
+#undef VRTSTVTYPE
 
 struct stevedore {
 	unsigned		magic;
