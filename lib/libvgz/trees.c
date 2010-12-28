@@ -990,7 +990,8 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     } else if (s->strategy == Z_FIXED || static_lenb == opt_lenb) {
 #endif
         send_bits(s, (STATIC_TREES<<1)+last, 3);
-        compress_block(s, (ct_data *)static_ltree, (ct_data *)static_dtree);
+        compress_block(s, (ct_data *)(uintptr_t)static_ltree,
+		       (ct_data *)(uintptr_t)static_dtree);
 #ifdef DEBUG
         s->compressed_len += 3 + s->static_len;
 #endif

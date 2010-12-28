@@ -501,14 +501,14 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
 
     /* for an out of memory error, save as static string */
     if (err == Z_MEM_ERROR) {
-        state->msg = (char *)msg;
+        state->msg = (char *)(uintptr_t)msg;
         return;
     }
 
     /* construct error message with path */
     if ((state->msg = malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
         state->err = Z_MEM_ERROR;
-        state->msg = (char *)"out of memory";
+        state->msg = (char *)(uintptr_t)"out of memory";
         return;
     }
     strcpy(state->msg, state->path);

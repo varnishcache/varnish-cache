@@ -194,7 +194,7 @@ int ZEXPORT gzwrite(file, buf, len)
             memcpy(strm->next_in + strm->avail_in, buf, n);
             strm->avail_in += n;
             state->pos += n;
-            buf = (char *)buf + n;
+            buf = (char *)((uintptr_t)buf + n);
             len -= n;
             if (len && gz_comp(state, Z_NO_FLUSH) == -1)
                 return 0;
@@ -207,7 +207,7 @@ int ZEXPORT gzwrite(file, buf, len)
 
         /* directly compress user buffer to file */
         strm->avail_in = len;
-        strm->next_in = (voidp)buf;
+        strm->next_in = (voidp)(uintptr_t)buf;
         state->pos += len;
         if (gz_comp(state, Z_NO_FLUSH) == -1)
             return 0;
