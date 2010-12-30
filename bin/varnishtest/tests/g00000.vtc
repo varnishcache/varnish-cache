@@ -1,0 +1,49 @@
+# $Id$
+
+test "test req.can_gzip VCL variable"
+
+server s1 {
+	rxreq
+	txresp -bodylen 4
+} -start
+
+
+varnish v1 -vcl+backend { 
+	sub vcl_deliver {
+		set resp.http.gzip = req.can_gzip;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip, deflate"
+	rxresp
+	expect resp.http.gzip == "true"
+
+	txreq -hdr "Accept-Encoding: gzip;q=0.7, *;q=0"
+	rxresp
+	expect resp.http.gzip == "true"
+
+	txreq -hdr "Accept-Encoding: deflate;q=0.7, *;q=0"
+	rxresp
+	expect resp.http.gzip == "false"
+
+	txreq -hdr "Accept-Encoding: x-gzip;q=0.4, gzip"
+	rxresp
+	expect resp.http.gzip == "true"
+
+	txreq -hdr "Accept-Encoding: gzip;q=0, x-gzip"
+	rxresp
+	expect resp.http.gzip == "true"
+
+	txreq -hdr "Accept-Encoding: gzip;q=0"
+	rxresp
+	expect resp.http.gzip == "false"
+
+	txreq -hdr "Accept-Encoding: gzip;q=-1"
+	rxresp
+	expect resp.http.gzip == "false"
+
+	txreq -hdr "Accept-Encoding: gzip;q=0.0000001"
+	rxresp
+	expect resp.http.gzip == "true"
+} -run

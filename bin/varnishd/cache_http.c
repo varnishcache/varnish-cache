@@ -290,12 +290,12 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 
 
 /*--------------------------------------------------------------------
- * Find a given headerfield, and if present and wanted, the beginning
- * of its value.
+ * Find a given data element in a header according to RFC2616's #rule
+ * (section 2.1, p15)
  */
 
 int
-http_GetHdrField(const struct http *hp, const char *hdr,
+http_GetHdrData(const struct http *hp, const char *hdr,
     const char *field, char **ptr)
 {
 	char *h, *e;
@@ -309,34 +309,110 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 	e = strchr(h, '\0');
 	fl = strlen(field);
 	while (h + fl <= e) {
-		/* Skip leading separators */
-		if (vct_issepctl(*h)) {
+		/* Skip leading whitespace and commas */
+		if (vct_islws(*h) || *h == ',') {
 			h++;
 			continue;
 		}
 		/* Check for substrings before memcmp() */
 		if ((h + fl == e || vct_issepctl(h[fl])) &&
 		    !memcmp(h, field, fl)) {
-			/* got it */
-			h += fl;
 			if (ptr != NULL) {
-				/* Skip whitespace, looking for '=' */
-				while (*h && vct_issp(*h))
+				h += fl;
+				while (vct_islws(*h))
 					h++;
-				if (*h == '=') {
-					h++;
-					while (*h && vct_issp(*h))
-						h++;
-					*ptr = h;
-				}
+				*ptr = h;
 			}
 			return (1);
 		}
-		/* Skip token */
-		while (*h && !vct_issepctl(*h))
+		/* Skip until end of header or comma */
+		while (*h && *h != ',')
 			h++;
 	}
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Find a given headerfields Q value.
+ */
+
+double
+http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
+{
+	char *h;
+	int i;
+	double a, b;
+
+	h = NULL;
+	i = http_GetHdrData(hp, hdr, field, &h);
+	if (!i)
+		return (0.);
+
+	if (h == NULL) 
+		return (1.);
+	/* Skip whitespace, looking for '=' */
+	while (*h && vct_issp(*h))
+		h++;
+	if (*h++ != ';') 
+		return (1.);
+	while (*h && vct_issp(*h))
+		h++;
+	if (*h++ != 'q') 
+		return (1.);
+	while (*h && vct_issp(*h))
+		h++;
+	if (*h++ != '=') 
+		return (1.);
+	while (*h && vct_issp(*h))
+		h++;
+	a = 0.;
+	while (vct_isdigit(*h)) {
+		a *= 10.;
+		a += *h - '0';
+		h++;
+	}
+	if (*h++ != '.')
+		return (a);
+	b = .1;
+	while (vct_isdigit(*h)) {
+		a += b * (*h - '0');
+		b *= .1;
+		h++;
+	}
+	return (a);
+}
+
+/*--------------------------------------------------------------------
+ * Find a given headerfields value.
+ */
+
+int
+http_GetHdrField(const struct http *hp, const char *hdr,
+    const char *field, char **ptr)
+{
+	char *h;
+	int i;
+
+	if (ptr != NULL)
+		*ptr = NULL;
+
+	h = NULL;
+	i = http_GetHdrData(hp, hdr, field, &h);
+	if (!i)
+		return (i);
+
+	if (ptr != NULL && h != NULL) {
+		/* Skip whitespace, looking for '=' */
+		while (*h && vct_issp(*h))
+			h++;
+		if (*h == '=') {
+			h++;
+			while (*h && vct_issp(*h))
+				h++;
+			*ptr = h;
+		}
+	}
+	return (i);
 }
 
 /*--------------------------------------------------------------------

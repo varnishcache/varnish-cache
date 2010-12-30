@@ -425,6 +425,17 @@ VRT_r_req_esi(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+unsigned __match_proto__()
+VRT_r_req_can_gzip(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (RFC2616_Req_Gzip(sp));
+}
+
+
+/*--------------------------------------------------------------------*/
+
 int
 VRT_r_req_restarts(const struct sess *sp)
 {

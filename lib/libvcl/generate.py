@@ -190,6 +190,12 @@ sp_variables = (
 		( 'recv', 'fetch', 'deliver', 'error',),
 		'struct sess *'
 	),
+	('req.can_gzip',
+		'BOOL',
+		( 'all',),
+		( ),
+		'struct sess *'
+	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'all',),

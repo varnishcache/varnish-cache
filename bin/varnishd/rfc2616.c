@@ -259,3 +259,32 @@ RFC2616_Body(const struct sess *sp)
 	sp->wrk->stats.fetch_eof++;
 	return (BS_EOF);
 }
+
+/*--------------------------------------------------------------------
+ * Find out if the request can receive a gzip'ed response
+ */
+
+unsigned
+RFC2616_Req_Gzip(const struct sess *sp)
+{
+
+
+	/*
+	 * "x-gzip" is for http/1.0 backwards compat, final note in 14.3
+	 * p104 says to not do q values for x-gzip, so we just test
+	 * for its existence.
+	 */
+	if (http_GetHdrData(sp->http, H_Accept_Encoding, "x-gzip", NULL))
+		return (1);
+
+	/*
+ 	 * "gzip" is the real thing, but the 'q' value must be nonzero.
+	 * We do not care a hoot if the client prefers some other
+	 * compression more than gzip: Varnish only does gzip.
+	 */
+	if (http_GetHdrQ(sp->http, H_Accept_Encoding, "gzip") > 0.)
+		return (1);
+
+	/* Bad client, no gzip. */
+	return (0);
+}

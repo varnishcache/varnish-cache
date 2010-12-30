@@ -611,8 +611,11 @@ void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
+int http_GetHdrData(const struct http *hp, const char *hdr,
+    const char *field, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
+double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 int http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
@@ -776,6 +779,7 @@ unsigned WS_Free(const struct ws *ws);
 /* rfc2616.c */
 double RFC2616_Ttl(const struct sess *sp);
 enum body_status RFC2616_Body(const struct sess *sp);
+unsigned RFC2616_Req_Gzip(const struct sess *sp);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
