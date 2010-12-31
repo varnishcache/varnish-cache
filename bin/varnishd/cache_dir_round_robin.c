@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2009 Linpro AS
+ * Copyright (c) 2008-2010 Linpro AS
  * All rights reserved.
  *
  * Author: Petter Knudsen <petter@linpro.no>
