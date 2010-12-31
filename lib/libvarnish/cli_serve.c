@@ -331,7 +331,7 @@ cls_vlu(void *priv, const char *p)
 		AN(av);
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);	
+			FreeArgv(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
@@ -340,7 +340,7 @@ cls_vlu(void *priv, const char *p)
 			continue;
 		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);	
+			FreeArgv(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
@@ -368,7 +368,7 @@ cls_vlu(void *priv, const char *p)
 		cfd->argv[cfd->last_idx] = vsb_data(cfd->last_arg);
 		i = cls_vlu2(priv, cfd->argv);
 		cfd->argv[cfd->last_idx] = NULL;
-		FreeArgv(cfd->argv);	
+		FreeArgv(cfd->argv);
 		cfd->argv = NULL;
 		free(cli->cmd);
 		cli->cmd = NULL;

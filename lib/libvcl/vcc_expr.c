@@ -827,7 +827,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	{typ,		T_LEQ,	"(\v1 <= \v2)" },	\
 	{typ,		T_GEQ,	"(\v1 >= \v2)" },	\
 	{typ,		'<',	"(\v1 < \v2)" },	\
-	{typ,		'>',	"(\v1 > \v2)" }	
+	{typ,		'>',	"(\v1 > \v2)" }
 
 static const struct cmps {
 	enum var_type		fmt;

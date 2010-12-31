@@ -278,7 +278,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 		return (1);
 
 	/*
- 	 * "gzip" is the real thing, but the 'q' value must be nonzero.
+	 * "gzip" is the real thing, but the 'q' value must be nonzero.
 	 * We do not care a hoot if the client prefers some other
 	 * compression more than gzip: Varnish only does gzip.
 	 */

@@ -348,20 +348,20 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 	if (!i)
 		return (0.);
 
-	if (h == NULL) 
+	if (h == NULL)
 		return (1.);
 	/* Skip whitespace, looking for '=' */
 	while (*h && vct_issp(*h))
 		h++;
-	if (*h++ != ';') 
+	if (*h++ != ';')
 		return (1.);
 	while (*h && vct_issp(*h))
 		h++;
-	if (*h++ != 'q') 
+	if (*h++ != 'q')
 		return (1.);
 	while (*h && vct_issp(*h))
 		h++;
-	if (*h++ != '=') 
+	if (*h++ != '=')
 		return (1.);
 	while (*h && vct_issp(*h))
 		h++;
