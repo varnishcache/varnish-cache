@@ -55,7 +55,7 @@
 #include "config.h"
 
 #include "svnid.h"
-SVNID("$Id: vcc_expr.c 5537 2010-11-11 11:31:35Z phk $")
+SVNID("$Id$")
 
 #include <stdarg.h>
 #include <stdio.h>
