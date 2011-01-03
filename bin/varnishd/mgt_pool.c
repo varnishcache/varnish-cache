@@ -205,8 +205,8 @@ const struct parspec WRK_parspec[] = {
 		"its accumulated stats into the global counters.\n",
 		EXPERIMENTAL,
 		"10", "requests" },
-	{ "overflow_max", tweak_uint, &master.overflow_max, 0, UINT_MAX,
-		"Percentage permitted overflow queue length.\n"
+	{ "queue_max", tweak_uint, &master.queue_max, 0, UINT_MAX,
+		"Percentage permitted queue length.\n"
 		"\n"
 		"This sets the ratio of queued requests to worker threads, "
 		"above which sessions will be dropped instead of queued.\n",

@@ -91,7 +91,7 @@ struct params {
 	unsigned		wthread_stats_rate;
 	unsigned		wthread_stacksize;
 
-	unsigned		overflow_max;
+	unsigned		queue_max;
 
 	/* Memory allocation hints */
 	unsigned		sess_workspace;

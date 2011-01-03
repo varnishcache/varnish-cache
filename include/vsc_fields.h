@@ -83,8 +83,8 @@ VSC_F(n_wrk_create,	uint64_t, 0, 'a', "N worker threads created")
 VSC_F(n_wrk_failed,	uint64_t, 0, 'a',
 					"N worker threads not created")
 VSC_F(n_wrk_max,		uint64_t, 0, 'a', "N worker threads limited")
-VSC_F(n_wrk_queue,		uint64_t, 0, 'a', "N queued work requests")
-VSC_F(n_wrk_overflow,	uint64_t, 0, 'a', "N overflowed work requests")
+VSC_F(n_wrk_lqueue,		uint64_t, 0, 'a', "work request queue length")
+VSC_F(n_wrk_queued,		uint64_t, 0, 'a', "N queued work requests")
 VSC_F(n_wrk_drop,		uint64_t, 0, 'a', "N dropped work requests")
 VSC_F(n_backend,		uint64_t, 0, 'i', "N backends")
 

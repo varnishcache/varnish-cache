@@ -70,17 +70,17 @@ struct wq {
 #define WQ_MAGIC		0x606658fa
 	struct lock		mtx;
 	struct workerhead	idle;
-	VTAILQ_HEAD(, workreq)	overflow;
+	VTAILQ_HEAD(, workreq)	queue;
 	unsigned		nthr;
-	unsigned		nqueue;
 	unsigned		lqueue;
+	unsigned		last_lqueue;
 	uintmax_t		ndrop;
-	uintmax_t		noverflow;
+	uintmax_t		nqueue;
 };
 
 static struct wq		**wq;
 static unsigned			nwq;
-static unsigned			ovfl_max;
+static unsigned			queue_max;
 static unsigned			nthr_max;
 
 static pthread_cond_t		herder_cond;
@@ -156,11 +156,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	while (1) {
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
-		/* Process overflow requests, if any */
-		w->wrq = VTAILQ_FIRST(&qp->overflow);
+		/* Process queued requests, if any */
+		w->wrq = VTAILQ_FIRST(&qp->queue);
 		if (w->wrq != NULL) {
-			VTAILQ_REMOVE(&qp->overflow, w->wrq, list);
-			qp->nqueue--;
+			VTAILQ_REMOVE(&qp->queue, w->wrq, list);
+			qp->lqueue--;
 		} else {
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
@@ -271,16 +271,16 @@ WRK_Queue(struct workreq *wrq)
 		return (0);
 	}
 
-	/* If we have too much in the overflow already, refuse. */
-	if (qp->nqueue > ovfl_max) {
+	/* If we have too much in the queue already, refuse. */
+	if (qp->lqueue > queue_max) {
 		qp->ndrop++;
 		Lck_Unlock(&qp->mtx);
 		return (-1);
 	}
 
-	VTAILQ_INSERT_TAIL(&qp->overflow, wrq, list);
-	qp->noverflow++;
+	VTAILQ_INSERT_TAIL(&qp->queue, wrq, list);
 	qp->nqueue++;
+	qp->lqueue++;
 	Lck_Unlock(&qp->mtx);
 	AZ(pthread_cond_signal(&herder_cond));
 	return (0);
@@ -356,7 +356,7 @@ wrk_addpools(const unsigned pools)
 		XXXAN(wq[u]);
 		wq[u]->magic = WQ_MAGIC;
 		Lck_New(&wq[u]->mtx, lck_wq);
-		VTAILQ_INIT(&wq[u]->overflow);
+		VTAILQ_INIT(&wq[u]->queue);
 		VTAILQ_INIT(&wq[u]->idle);
 	}
 	(void)owq;	/* XXX: avoid race, leak it. */
@@ -374,9 +374,9 @@ wrk_decimate_flock(struct wq *qp, double t_idle, struct vsc_main *vs)
 
 	Lck_Lock(&qp->mtx);
 	vs->n_wrk += qp->nthr;
-	vs->n_wrk_queue += qp->nqueue;
+	vs->n_wrk_lqueue += qp->lqueue;
 	vs->n_wrk_drop += qp->ndrop;
-	vs->n_wrk_overflow += qp->noverflow;
+	vs->n_wrk_queued += qp->nqueue;
 
 	if (qp->nthr > params->wthread_min) {
 		w = VTAILQ_LAST(&qp->idle, workerhead);
@@ -442,21 +442,21 @@ wrk_herdtimer_thread(void *priv)
 			u = params->wthread_min;
 		nthr_max = u;
 
-		ovfl_max = (nthr_max * params->overflow_max) / 100;
+		queue_max = (nthr_max * params->queue_max) / 100;
 
 		vs->n_wrk = 0;
-		vs->n_wrk_queue = 0;
+		vs->n_wrk_lqueue = 0;
 		vs->n_wrk_drop = 0;
-		vs->n_wrk_overflow = 0;
+		vs->n_wrk_queued = 0;
 
 		t_idle = TIM_real() - params->wthread_timeout;
 		for (u = 0; u < nwq; u++)
 			wrk_decimate_flock(wq[u], t_idle, vs);
 
 		VSC_main->n_wrk= vs->n_wrk;
-		VSC_main->n_wrk_queue = vs->n_wrk_queue;
+		VSC_main->n_wrk_lqueue = vs->n_wrk_lqueue;
 		VSC_main->n_wrk_drop = vs->n_wrk_drop;
-		VSC_main->n_wrk_overflow = vs->n_wrk_overflow;
+		VSC_main->n_wrk_queued = vs->n_wrk_queued;
 
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
@@ -477,8 +477,8 @@ wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 	 * one more thread.
 	 */
 	if (qp->nthr < params->wthread_min ||	/* Not enough threads yet */
-	    (qp->nqueue > params->wthread_add_threshold && /* more needed */
-	    qp->nqueue > qp->lqueue)) {	/* not getting better since last */
+	    (qp->lqueue > params->wthread_add_threshold && /* more needed */
+	    qp->lqueue > qp->last_lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
 			VSC_main->n_wrk_max++;
 		} else if (pthread_create(&tp, tp_attr, wrk_thread, qp)) {
@@ -492,11 +492,11 @@ wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 			TIM_sleep(params->wthread_add_delay * 1e-3);
 		}
 	}
-	qp->lqueue = qp->nqueue;
+	qp->last_lqueue = qp->lqueue;
 }
 
 /*--------------------------------------------------------------------
- * This thread wakes up whenever a pool overflows.
+ * This thread wakes up whenever a pool queues.
  *
  * The trick here is to not be too aggressive about creating threads.
  * We do this by only examining one pool at a time, and by sleeping
