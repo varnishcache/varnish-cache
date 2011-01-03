@@ -155,7 +155,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 
 //lint -e{818}
 void
-vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
+vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int len)
 {
 	int nl = 1;
 	unsigned l;
@@ -170,9 +170,10 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
 		    lead[lvl], vl->id, pfx);
 	else {
-		l = 0;
-		for(; *str != '\0'; str++) {
-			if (++l > 512) {
+		if (len == -1)
+			len = strlen(str);
+		for (l = 0; l < len; l++, str++) {
+			if (l > 512) {
 				vsb_printf(vl->vsb, "...");
 				break;
 			}
@@ -189,7 +190,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str)
 				vsb_printf(vl->vsb, "\\n\n");
 				nl = 1;
 			} else if (*str < 0x20 || *str > 0x7e)
-				vsb_printf(vl->vsb, "\\x%02x", *str);
+				vsb_printf(vl->vsb, "\\x%02x", (*str) & 0xff);
 			else
 				vsb_printf(vl->vsb, "%c", *str);
 		}

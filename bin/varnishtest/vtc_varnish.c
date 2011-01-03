@@ -96,7 +96,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	char *r;
 
 	if (cmd != NULL) {
-		vtc_dump(v->vl, 4, "CLI TX", cmd);
+		vtc_dump(v->vl, 4, "CLI TX", cmd, -1);
 		i = write(v->cli_fd, cmd, strlen(cmd));
 		assert(i == strlen(cmd));
 		i = write(v->cli_fd, "\n", 1);
@@ -110,7 +110,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	}
 	assert(i == 0);
 	vtc_log(v->vl, 3, "CLI RX  %u", retval);
-	vtc_dump(v->vl, 4, "CLI RX", r);
+	vtc_dump(v->vl, 4, "CLI RX", r, -1);
 	if (repl != NULL)
 		*repl = r;
 	else
@@ -221,7 +221,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vtc_dump(v->vl1, 3, "debug", buf);
+		vtc_dump(v->vl1, 3, "debug", buf, -1);
 	}
 	return (NULL);
 }

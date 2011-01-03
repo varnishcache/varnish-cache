@@ -5,6 +5,7 @@ flexelint \
 	-I/usr/include \
 	-I. \
 	-I../../include \
+	-I../../lib/libvgz \
 	-I../.. \
 	../flint.lnt \
 	flint.lnt \

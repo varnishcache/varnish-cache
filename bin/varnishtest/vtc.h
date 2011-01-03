@@ -73,7 +73,7 @@ struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
 void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
-    const char *str);
+    const char *str, int len);
 
 int exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen);

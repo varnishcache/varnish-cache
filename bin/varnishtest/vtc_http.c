@@ -49,6 +49,8 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
+#include "zlib.h"
+
 #define MAX_HDR		50
 
 struct http {
@@ -65,6 +67,7 @@ struct http {
 	char			*rxbuf;
 	int			prxbuf;
 	char			*body;
+	unsigned		bodyl;
 	char			bodylen[20];
 
 	char			*req[MAX_HDR];
@@ -135,7 +138,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 
 	vsb_finish(hp->vsb);
 	AZ(vsb_overflowed(hp->vsb));
-	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb));
+	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	if (l != vsb_len(hp->vsb))
 		vtc_log(hp->vl, 0, "Write failed: %s", strerror(errno));
@@ -315,7 +318,7 @@ http_splitheader(struct http *hp, int req)
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
 		sprintf(buf, "http[%2d] ", n);
-		vtc_dump(hp->vl, 4, buf, hh[n]);
+		vtc_dump(hp->vl, 4, buf, hh[n], -1);
 	}
 }
 
@@ -381,7 +384,8 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		l = strtoul(p, NULL, 0);
 		hp->body = hp->rxbuf + hp->prxbuf;
 		http_rxchar(hp, l);
-		vtc_dump(hp->vl, 4, "body", hp->body);
+		vtc_dump(hp->vl, 4, "body", hp->body, l);
+		hp->bodyl = l;
 		sprintf(hp->bodylen, "%d", l);
 		return;
 	}
@@ -393,7 +397,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			do
 				http_rxchar(hp, 1);
 			while (hp->rxbuf[hp->prxbuf - 1] != '\n');
-			vtc_dump(hp->vl, 4, "len", hp->rxbuf + l);
+			vtc_dump(hp->vl, 4, "len", hp->rxbuf + l, -1);
 			i = strtoul(hp->rxbuf + l, &q, 16);
 			assert(q != hp->rxbuf + l);
 			assert(*q == '\0' || vct_islws(*q));
@@ -401,7 +405,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			if (i > 0) {
 				ll += i;
 				http_rxchar(hp, i);
-				vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l);
+				vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l, -1);
 			}
 			l = hp->prxbuf;
 			http_rxchar(hp, 2);
@@ -412,7 +416,8 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			if (i == 0)
 				break;
 		}
-		vtc_dump(hp->vl, 4, "body", hp->body);
+		vtc_dump(hp->vl, 4, "body", hp->body, ll);
+		hp->bodyl = ll;
 		sprintf(hp->bodylen, "%d", ll);
 		return;
 	}
@@ -422,8 +427,9 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			i = http_rxchar_eof(hp, 1);
 			ll += i;
 		} while (i > 0);
-		vtc_dump(hp->vl, 4, "rxeof", hp->body);
+		vtc_dump(hp->vl, 4, "rxeof", hp->body, ll);
 	}
+	hp->bodyl = ll;
 	sprintf(hp->bodylen, "%d", ll);
 }
 
@@ -454,7 +460,7 @@ http_rxhdr(struct http *hp)
 		if (i == 2)
 			break;
 	}
-	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf);
+	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, -1);
 }
 
 
@@ -490,6 +496,82 @@ cmd_http_rxresp(CMD_ARGS)
 	else
 		http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
+}
+
+/**********************************************************************
+ * Ungzip rx'ed body
+ */
+
+#define TRUST_ME(ptr)   ((void*)(uintptr_t)(ptr))
+
+#define OVERHEAD 31
+
+
+static void
+cmd_http_gunzip_body(CMD_ARGS)
+{
+	int i;
+	z_stream vz;
+	struct http *hp;
+	char *p;
+	unsigned l;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_CLIENT(hp, av);
+
+	memset(&vz, 0, sizeof vz);
+
+	vz.next_in = TRUST_ME(hp->body);
+	vz.avail_in = hp->bodyl;
+
+	l = hp->bodyl;
+	p = calloc(l, 1);
+	AN(p);
+
+	vz.next_out = TRUST_ME(p);
+	vz.avail_out = l;
+
+	assert(Z_OK == inflateInit2(&vz, 31));
+	i = inflate(&vz, Z_FINISH);
+	if (i != Z_STREAM_END)
+		vtc_log(hp->vl, 0, "Gunzip error = %d", i);
+	hp->bodyl = vz.total_out;
+	memcpy(hp->body, p, hp->bodyl);
+	free(p);
+	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
+	bprintf(hp->bodylen, "%u", hp->bodyl);
+	assert(Z_OK == inflateEnd(&vz));
+}
+
+/**********************************************************************
+ * Create a gzip'ed body
+ */
+
+static void
+gzip_body(const char *txt, char **body, int *bodylen)
+{
+	int l;
+	z_stream vz;
+
+	memset(&vz, 0, sizeof vz);
+
+	l = strlen(txt);
+	*body = calloc(l + OVERHEAD, 1);
+	AN(*body);
+
+	vz.next_in = TRUST_ME(txt);
+	vz.avail_in = l;
+
+	vz.next_out = TRUST_ME(*body);
+	vz.avail_out = l + OVERHEAD;
+
+	assert(Z_OK == deflateInit2(&vz,
+	    Z_NO_COMPRESSION, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
+	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
+	*bodylen = vz.total_out;
+	assert(Z_OK == deflateEnd(&vz));
 }
 
 /**********************************************************************
@@ -570,6 +652,11 @@ cmd_http_txresp(CMD_ARGS)
 			assert(body == nullbody);
 			body = synth_body(av[1]);
 			bodylen = strlen(body);
+			av++;
+		} else if (!strcmp(*av, "-gzipbody")) {
+			assert(body == nullbody);
+			gzip_body(av[1], &body, &bodylen);
+			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			av++;
 		} else
 			break;
@@ -726,7 +813,7 @@ cmd_http_send(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	vtc_dump(hp->vl, 4, "send", av[1]);
+	vtc_dump(hp->vl, 4, "send", av[1], -1);
 	i = write(hp->fd, av[1], strlen(av[1]));
 	assert(i == strlen(av[1]));
 
@@ -900,6 +987,7 @@ static const struct cmds http_cmds[] = {
 
 	{ "txresp",		cmd_http_txresp },
 	{ "rxresp",		cmd_http_rxresp },
+	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
 	{ "chunked",		cmd_http_chunked },

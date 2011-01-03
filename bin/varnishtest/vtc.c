@@ -355,7 +355,7 @@ cmd_shell(CMD_ARGS)
 		return;
 	AN(av[1]);
 	AZ(av[2]);
-	vtc_dump(vl, 4, "shell", av[1]);
+	vtc_dump(vl, 4, "shell", av[1], -1);
 	r = system(av[1]);
 	assert(WEXITSTATUS(r) == 0);
 }

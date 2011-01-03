@@ -1,0 +1,17 @@
+# $Id$
+
+test "test vtc gzip support"
+
+server s1 {
+	rxreq
+	txresp -gzipbody FOO
+} -start
+
+client c1 -connect ${s1_sock} {
+	txreq 
+	rxresp
+	expect resp.bodylen == "26"
+	gunzip
+	expect resp.bodylen == "3"
+	expect resp.http.content-encoding == "gzip"
+} -run

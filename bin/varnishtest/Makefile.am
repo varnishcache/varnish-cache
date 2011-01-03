@@ -9,7 +9,7 @@ check: varnishtest
 
 DISTCLEANFILES = _.ok
 
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/lib/libvgz
 
 bin_PROGRAMS =	varnishtest
 
@@ -30,6 +30,7 @@ varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.la \
 		$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
+		$(top_builddir)/lib/libvgz/libvgz.la \
 		${LIBM} ${PTHREAD_LIBS}
 
 varnishtest_CFLAGS = \
