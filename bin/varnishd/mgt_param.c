@@ -812,6 +812,10 @@ static const struct parspec input_parspec[] = {
 		"Enable support for HTTP Range headers.\n",
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "http_gzip_support", tweak_bool, &master.http_gzip_support, 0, 0,
+		"Enable support for HTTP GZIP compression.\n",
+		EXPERIMENTAL,
+		"off", "bool" },
 	{ "critbit_cooloff", tweak_timeout_double,
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "

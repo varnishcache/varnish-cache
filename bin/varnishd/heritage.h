@@ -199,6 +199,8 @@ struct params {
 
 	unsigned		http_range_support;
 
+	unsigned		http_gzip_support;
+
 	double			critbit_cooloff;
 };
 
