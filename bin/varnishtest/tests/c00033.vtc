@@ -1,6 +1,6 @@
 # $Id$
 
-test "real purges"
+test "real bans"
 
 server s1 {
 	rxreq

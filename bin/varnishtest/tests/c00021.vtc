@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test banning a url with cli:purge"
+test "Test banning a url with cli:ban"
 
 server s1 {
 	rxreq
@@ -31,17 +31,17 @@ client c1 {
 } -run
 
 # syntax checks
-varnish v1 -clierr 104 "purge"
-varnish v1 -clierr 104 "purge foo"
-varnish v1 -clierr 104 "purge foo bar"
-varnish v1 -clierr 106 "purge a b c && a"
-varnish v1 -clierr 106 "purge a b c && a b"
-varnish v1 -clierr 106 "purge a b c || a b c"
-varnish v1 -cliok "purge.list"
+varnish v1 -clierr 104 "ban"
+varnish v1 -clierr 104 "ban foo"
+varnish v1 -clierr 104 "ban foo bar"
+varnish v1 -clierr 106 "ban a b c && a"
+varnish v1 -clierr 106 "ban a b c && a b"
+varnish v1 -clierr 106 "ban a b c || a b c"
+varnish v1 -cliok "ban.list"
 
 # exact match, not matching
-varnish v1 -cliok "purge req.url == foo"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.url == foo"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"
@@ -52,8 +52,8 @@ client c1 {
 } -run
 
 # exact match, matching
-varnish v1 -cliok "purge req.url == /foo"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.url == /foo"
+varnish v1 -cliok "ban.list"
 client c1 {
 	txreq -url "/foo"
 	rxresp
@@ -63,8 +63,8 @@ client c1 {
 } -run
 
 # regexp nonmatch
-varnish v1 -cliok "purge req.url ~ bar"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.url ~ bar"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"
@@ -76,8 +76,8 @@ client c1 {
 
 
 # regexp match
-varnish v1 -cliok "purge req.url ~ foo"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.url ~ foo"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"
@@ -88,8 +88,8 @@ client c1 {
 } -run
 
 # header check, nonmatch
-varnish v1 -cliok "purge obj.http.foo != bar7"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban obj.http.foo != bar7"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"
@@ -100,8 +100,8 @@ client c1 {
 } -run
 
 # header check, match
-varnish v1 -cliok "purge req.http.foo == barcheck"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.http.foo == barcheck"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo" -hdr "foo: barcheck" 
@@ -112,8 +112,8 @@ client c1 {
 } -run
 
 # header check, no header
-varnish v1 -cliok "purge req.url ~ foo && obj.http.bar == barcheck"
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban req.url ~ foo && obj.http.bar == barcheck"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"

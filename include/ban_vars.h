@@ -27,7 +27,7 @@
  *
  * $Id$
  *
- * Define which variables we can purge on, and which function does it.
+ * Define which variables we can ban on, and which function does it.
  *
  */
 

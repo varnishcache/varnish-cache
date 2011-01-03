@@ -32,7 +32,7 @@ client c1 {
 	expect resp.bodylen == 6
 } -run
 
-varnish v1 -cliok "purge req.url ~ ."
+varnish v1 -cliok "ban req.url ~ ."
 	
 client c1 {
 	txreq -url /1

@@ -60,24 +60,24 @@
 	    "\tReturns the TTL, size and checksum of the object.",	\
 	1, 1
 
-#define CLI_PURGE_URL							\
-	"purge.url",							\
-	"purge.url <regexp>",						\
+#define CLI_BAN_URL							\
+	"ban.url",							\
+	"ban.url <regexp>",						\
 	"\tAll objects where the urls matches regexp will be "		\
 	    "marked obsolete.",						\
 	1, 1
 
-#define CLI_PURGE							\
-	"purge",							\
-	"purge <field> <operator> <arg> [&& <field> <oper> <arg>]...",	\
+#define CLI_BAN								\
+	"ban",								\
+	"ban <field> <operator> <arg> [&& <field> <oper> <arg>]...",	\
 	"\tAll objects where the all the conditions match will be "	\
 	    "marked obsolete.",						\
 	3, UINT_MAX
 
-#define CLI_PURGE_LIST							\
-	"purge.list",							\
-	"purge.list",							\
-	"\tList the active purges.",					\
+#define CLI_BAN_LIST							\
+	"ban.list",							\
+	"ban.list",							\
+	"\tList the active bans.",					\
 	0, 0
 
 #define CLI_URL_STATUS							\

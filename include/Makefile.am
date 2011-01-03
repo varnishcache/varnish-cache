@@ -11,6 +11,7 @@ pkginclude_HEADERS = \
 
 nobase_noinst_HEADERS = \
 	argv.h \
+	ban_vars.h \
 	binary_heap.h \
 	cli.h \
 	cli_common.h \
@@ -30,7 +31,6 @@ nobase_noinst_HEADERS = \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
-	purge_vars.h \
 	svnid.h \
 	vas.h \
 	vsha256.h \

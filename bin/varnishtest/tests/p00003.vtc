@@ -15,7 +15,7 @@ varnish v1 \
 	-arg "-pban_lurker_sleep=0" \
 	-vcl+backend { } -start 
 
-varnish v1 -cliok purge.list
+varnish v1 -cliok ban.list
 
 client c1 {
 	txreq -url "/"
@@ -25,8 +25,8 @@ client c1 {
 	expect resp.http.foo == "foo"
 } -run
 
-varnish v1 -cliok "purge req.url == /"
-varnish v1 -cliok purge.list
+varnish v1 -cliok "ban req.url == /"
+varnish v1 -cliok ban.list
 varnish v1 -stop
 server s1 -wait
 
@@ -37,10 +37,10 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok purge.list
+varnish v1 -cliok ban.list
 
 # Count of 2 here, because the "magic" ban is also there"
-# varnish v1 -expect n_purge == 2
+# varnish v1 -expect n_ban == 2
 
 
 client c1 {
@@ -52,7 +52,7 @@ client c1 {
 } -run
 
 
-varnish v1 -cliok purge.list
+varnish v1 -cliok ban.list
 
 varnish v1 -stop
 

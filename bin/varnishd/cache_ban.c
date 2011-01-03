@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Ban ("purge") processing
+ * Ban processing
  *
  * A ban consists of a number of conditions (or tests), all of which must be
  * satisfied.  Here are some potential bans we could support:
@@ -224,7 +224,7 @@ static const struct pvar {
 	ban_cond_f		*func;
 } pvars[] = {
 #define PVAR(a, b, c)	{ (a), (b), (c) },
-#include "purge_vars.h"
+#include "ban_vars.h"
 #undef PVAR
 	{ 0, 0, 0}
 };
@@ -323,11 +323,11 @@ BAN_Insert(struct ban *b)
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
-	VSC_main->n_purge++;
-	VSC_main->n_purge_add++;
+	VSC_main->n_ban++;
+	VSC_main->n_ban_add++;
 
 	be = VTAILQ_LAST(&ban_head, banhead);
-	if (params->purge_dups && be != b)
+	if (params->ban_dups && be != b)
 		be->refcount++;
 	else
 		be = NULL;
@@ -352,7 +352,7 @@ BAN_Insert(struct ban *b)
 	}
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
-	VSC_main->n_purge_dups += pcount;
+	VSC_main->n_ban_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -386,8 +386,8 @@ BAN_CheckLast(void)
 	Lck_AssertHeld(&ban_mtx);
 	b = VTAILQ_LAST(&ban_head, banhead);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSC_main->n_purge--;
-		VSC_main->n_purge_retire++;
+		VSC_main->n_ban--;
+		VSC_main->n_ban_retire++;
 		VTAILQ_REMOVE(&ban_head, b, list);
 	} else {
 		b = NULL;
@@ -465,8 +465,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 	}
-	VSC_main->n_purge_obj_test++;
-	VSC_main->n_purge_re_test += tests;
+	VSC_main->n_ban_obj_test++;
+	VSC_main->n_ban_re_test += tests;
 	Lck_Unlock(&ban_mtx);
 
 	if (b == oc->ban) {	/* not banned */
@@ -637,8 +637,8 @@ BAN_Reload(double t0, unsigned flags, const char *ban)
 			break;
 	}
 
-	VSC_main->n_purge++;
-	VSC_main->n_purge_add++;
+	VSC_main->n_ban++;
+	VSC_main->n_ban_add++;
 
 	b2 = BAN_New();
 	AN(b2);
@@ -699,7 +699,7 @@ BAN_Compile(void)
  */
 
 static void
-ccf_purge(struct cli *cli, const char * const *av, void *priv)
+ccf_ban(struct cli *cli, const char * const *av, void *priv)
 {
 	int narg, i;
 	struct ban *b;
@@ -737,22 +737,22 @@ ccf_purge(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void
-ccf_purge_url(struct cli *cli, const char * const *av, void *priv)
+ccf_ban_url(struct cli *cli, const char * const *av, void *priv)
 {
 	const char *aav[6];
 
 	(void)priv;
 	aav[0] = NULL;
-	aav[1] = "purge";
+	aav[1] = "ban";
 	aav[2] = "req.url";
 	aav[3] = "~";
 	aav[4] = av[2];
 	aav[5] = NULL;
-	ccf_purge(cli, aav, priv);
+	ccf_ban(cli, aav, priv);
 }
 
 static void
-ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
+ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b, *bl = NULL;
 
@@ -786,15 +786,9 @@ ccf_purge_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto ban_cmds[] = {
-	/*
-	 * XXX: COMPAT: Retain these two entries for entire 2.x series
-	 * XXX: COMPAT: to stay compatible with 1.x series syntax.
-	 */
-	{ CLI_HIDDEN("url.purge", 1, 1)		"h", ccf_purge_url },
-
-	{ CLI_PURGE_URL,			"", ccf_purge_url },
-	{ CLI_PURGE,				"", ccf_purge },
-	{ CLI_PURGE_LIST,			"", ccf_purge_list },
+	{ CLI_BAN_URL,				"", ccf_ban_url },
+	{ CLI_BAN,				"", ccf_ban },
+	{ CLI_BAN_LIST,				"", ccf_ban_list },
 	{ NULL }
 };
 

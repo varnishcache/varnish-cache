@@ -88,17 +88,17 @@ varnish v1 -badvcl {
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { purge_url (if); }
+	sub vcl_recv { ban_url (if); }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { purge_hash (if); }
+	sub vcl_recv { ban_hash (if); }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { purge_url ("foo"); }
+	sub vcl_recv { ban_url ("foo"); }
 }
 
 varnish v1 -badvcl {

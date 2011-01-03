@@ -12,7 +12,7 @@ varnish v1 -cliok "help -d"
 
 varnish v1 -cliok "help vcl.load"
 
-varnish v1 -cliok "help purge"
+varnish v1 -cliok "help ban"
 
 varnish v1 -clierr 101 "FOO?"
 

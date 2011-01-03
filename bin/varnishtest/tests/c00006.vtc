@@ -22,7 +22,7 @@ client c1 {
 
 client c1 -run
 
-varnish v1 -cli "purge.url foo"
+varnish v1 -cli "ban.url foo"
 
 client c1 {
 	txreq -url "/foo"

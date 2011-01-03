@@ -1,6 +1,6 @@
 # $Id$
 
-test "multi element purge"
+test "multi element ban"
 
 server s1 {
 	rxreq
@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		purge("req.url == / && obj.http.foo ~ bar1");
+		ban("req.url == / && obj.http.foo ~ bar1");
 	}
 } -start
 
@@ -27,4 +27,4 @@ client c1 {
 	expect resp.http.foo == "bar2"
 } -run
 
-varnish v1 -cliok purge.list
+varnish v1 -cliok ban.list

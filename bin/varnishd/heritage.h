@@ -186,8 +186,8 @@ struct params {
 	double			acceptor_sleep_incr;
 	double			acceptor_sleep_decay;
 
-	/* Get rid of duplicate purges */
-	unsigned		purge_dups;
+	/* Get rid of duplicate bans */
+	unsigned		ban_dups;
 
 	/* How long time does the ban lurker sleep */
 	double			ban_lurker_sleep;

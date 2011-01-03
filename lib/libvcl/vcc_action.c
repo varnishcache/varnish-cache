@@ -179,20 +179,20 @@ parse_unset(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static const struct purge_var {
+static const struct ban_var {
 	const char	*name;
 	unsigned	flag;
-} purge_var[] = {
+} ban_var[] = {
 #define PVAR(a, b, c)   { (a), (b) },
-#include "purge_vars.h"
+#include "ban_vars.h"
 #undef PVAR
         { 0, 0 }
 };
 
 static void
-parse_purge(struct vcc *tl)
+parse_ban(struct vcc *tl)
 {
-	const struct purge_var *pv;
+	const struct ban_var *pv;
 
 	vcc_NextToken(tl);
 
@@ -205,14 +205,14 @@ parse_purge(struct vcc *tl)
 		while (1) {
 			ExpectErr(tl, ID);
 
-			/* Check valididity of purge variable */
-			for (pv = purge_var; pv->name != NULL; pv++) {
+			/* Check valididity of ban variable */
+			for (pv = ban_var; pv->name != NULL; pv++) {
 				if (!strncmp(pv->name, tl->t->b,
 				    strlen(pv->name)))
 					break;
 			}
 			if (pv->name == NULL) {
-				vsb_printf(tl->sb, "Unknown purge variable.");
+				vsb_printf(tl->sb, "Unknown ban variable.");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
@@ -265,7 +265,7 @@ parse_purge(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_purge_url(struct vcc *tl)
+parse_ban_url(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
@@ -405,8 +405,8 @@ static struct action_table {
 	{ "esi",		parse_esi, VCL_MET_FETCH },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "panic",		parse_panic },
-	{ "purge",		parse_purge },
-	{ "purge_url",		parse_purge_url },
+	{ "ban",		parse_ban },
+	{ "ban_url",		parse_ban_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },

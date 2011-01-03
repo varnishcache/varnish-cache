@@ -1,6 +1,6 @@
 # $Id$
 
-test "Check purge counters and duplicate purge elimination"
+test "Check ban counters and duplicate ban elimination"
 
 server s1 {
 	rxreq
@@ -15,14 +15,14 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok "purge.url FOO"
+varnish v1 -cliok "ban.url FOO"
 
-# There is one "magic" purge from boot
-varnish v1 -expect n_purge_add == 2
-varnish v1 -cliok "purge.list"
+# There is one "magic" ban from boot
+varnish v1 -expect n_ban_add == 2
+varnish v1 -cliok "ban.list"
 
-# Our fetch is not affected by the purge
-# as the FOO-purge was preexisting
+# Our fetch is not affected by the ban
+# as the FOO-ban was preexisting
 client c1 {
 	txreq -url /BAR
 	rxresp
@@ -32,16 +32,16 @@ client c1 {
 	expect resp.http.foo == 1
 } -run
 
-varnish v1 -cliok "purge.list"
-varnish v1 -expect n_purge_obj_test == 0
-varnish v1 -expect n_purge_re_test == 0
+varnish v1 -cliok "ban.list"
+varnish v1 -expect n_ban_obj_test == 0
+varnish v1 -expect n_ban_re_test == 0
 
-# Add another purge
-varnish v1 -cliok "purge.url FOO"
-varnish v1 -expect n_purge_add == 3
-varnish v1 -cliok "purge.list"
+# Add another ban
+varnish v1 -cliok "ban.url FOO"
+varnish v1 -expect n_ban_add == 3
+varnish v1 -cliok "ban.list"
 
-# The cached object will be purged, and a new
+# The cached object will be band, and a new
 # fetched from the backend
 client c1 {
 	txreq -url /FOO
@@ -49,9 +49,9 @@ client c1 {
 	expect resp.http.foo == 2
 } -run
 
-varnish v1 -expect n_purge_obj_test == 1
-varnish v1 -expect n_purge_re_test == 1
-varnish v1 -cliok "purge.list"
+varnish v1 -expect n_ban_obj_test == 1
+varnish v1 -expect n_ban_re_test == 1
+varnish v1 -cliok "ban.list"
 
 # Fetch the cached copy, just for grins
 client c1 {
@@ -61,19 +61,19 @@ client c1 {
 } -run
 
 
-# Now add another two purges, Kilroy should not be hit
-varnish v1 -cliok "purge.url KILROY"
-varnish v1 -cliok "purge.url FOO"
-varnish v1 -expect n_purge_add == 5
+# Now add another two bans, Kilroy should not be hit
+varnish v1 -cliok "ban.url KILROY"
+varnish v1 -cliok "ban.url FOO"
+varnish v1 -expect n_ban_add == 5
 
-# Enable dup removal of purges
-varnish v1 -cliok "param.set purge_dups on"
+# Enable dup removal of bans
+varnish v1 -cliok "param.set ban_dups on"
 
-# This should incapacitate the two previous FOO purges.
-varnish v1 -cliok "purge.url FOO"
-varnish v1 -expect n_purge_add == 6
-varnish v1 -expect n_purge_dups == 3
-varnish v1 -cliok "purge.list"
+# This should incapacitate the two previous FOO bans.
+varnish v1 -cliok "ban.url FOO"
+varnish v1 -expect n_ban_add == 6
+varnish v1 -expect n_ban_dups == 3
+varnish v1 -cliok "ban.list"
 
 # And we should get a fresh object from backend
 client c1 {
@@ -83,10 +83,10 @@ client c1 {
 } -run
 
 # With only two objects having ever been compared
-varnish v1 -expect n_purge_obj_test == 2
-varnish v1 -expect n_purge_re_test == 2
-varnish v1 -cliok "purge.list"
+varnish v1 -expect n_ban_obj_test == 2
+varnish v1 -expect n_ban_re_test == 2
+varnish v1 -cliok "ban.list"
 
 # Test a bogus regexp
 
-varnish v1 -clierr 106 "purge.url [[["
+varnish v1 -clierr 106 "ban.url [[["

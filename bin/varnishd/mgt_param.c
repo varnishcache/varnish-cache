@@ -504,7 +504,7 @@ static const struct parspec input_parspec[] = {
 		"Objects already cached will not be affected by changes "
 		"made until they are fetched from the backend again.\n"
 		"To force an immediate effect at the expense of a total "
-		"flush of the cache use \"purge.url .\"",
+		"flush of the cache use \"ban.url .\"",
 		0,
 		"120", "seconds" },
 	{ "sess_workspace", tweak_uint, &master.sess_workspace, 1024, UINT_MAX,
@@ -785,8 +785,8 @@ static const struct parspec input_parspec[] = {
 		"The TTL assigned to the synthesized error pages\n",
 		0,
 		"0", "seconds" },
-	{ "purge_dups", tweak_bool, &master.purge_dups, 0, 0,
-		"Detect and eliminate duplicate purges.\n",
+	{ "ban_dups", tweak_bool, &master.ban_dups, 0, 0,
+		"Detect and eliminate duplicate bans.\n",
 		0,
 		"on", "bool" },
 	{ "syslog_cli_traffic", tweak_bool, &master.syslog_cli_traffic, 0, 0,
@@ -796,7 +796,7 @@ static const struct parspec input_parspec[] = {
 	{ "ban_lurker_sleep", tweak_timeout_double,
 		&master.ban_lurker_sleep, 0, UINT_MAX,
 		"How long time does the ban lurker thread sleeps between "
-		"successfull attempts to push the last item up the purge "
+		"successfull attempts to push the last item up the ban "
 		" list.  It always sleeps a second when nothing can be done.\n"
 		"A value of zero disables the ban lurker.",
 		0,

@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test banning a url with VCL purge"
+test "Test banning a url with VCL ban"
 
 server s1 {
 	rxreq
@@ -23,11 +23,11 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
 		if (req.request == "PURGE") {
-			purge (req.url == req.url);
+			ban (req.url == req.url);
 			error 410;
 		}
 		if (req.request == "PURGESTR") {
-			purge ("" + req.http.purge);
+			ban ("" + req.http.ban);
 			error 410;
 		}
 	}
@@ -39,7 +39,7 @@ varnish v1 -badvcl {
 		.host = "127.0.0.1";
 	}
 	sub vcl_recv {
-		purge (req.foo == req.url);
+		ban (req.foo == req.url);
 	}
 }
 
@@ -49,7 +49,7 @@ varnish v1 -badvcl {
 		.host = "127.0.0.1";
 	}
 	sub vcl_recv {
-		purge (req.http. == req.url);
+		ban (req.http. == req.url);
 	}
 }
 
@@ -62,13 +62,13 @@ client c1 {
 	expect resp.bodylen == 5
 } -run
 
-# Purge something else
+# Ban: something else
 client c1 {
 	txreq -req PURGE -url /foox
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 # Still in cache
 client c1 {
@@ -79,13 +79,13 @@ client c1 {
 	expect resp.bodylen == 5
 } -run
 
-# Purge it
+# Ban: it
 client c1 {
 	txreq -req PURGE -url /foo
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 # New obj 
 client c1 {
@@ -96,13 +96,13 @@ client c1 {
 	expect resp.bodylen == 6
 } -run
 
-# Purge everything else
+# Ban: everything else
 client c1 {
-	txreq -req PURGESTR -hdr "purge=req.url != /foo"
+	txreq -req PURGESTR -hdr "ban=req.url != /foo"
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 # still there
 client c1 {
@@ -113,13 +113,13 @@ client c1 {
 	expect resp.bodylen == 6
 } -run
 
-# Purge it
+# Ban: it
 client c1 {
-	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 # New one
 client c1 {
@@ -130,13 +130,13 @@ client c1 {
 	expect resp.bodylen == 7
 } -run
 
-# Purge something else
+# Ban: something else
 client c1 {
-	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 # Still there
 client c1 {
@@ -149,11 +149,11 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Purge: req.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: req.http.foo == \"barcheck\""
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo" -hdr "foo: barcheck" 
@@ -165,11 +165,11 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Purge: obj.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"barcheck\""
 	rxresp
 	expect resp.status == 410
 } -run
-varnish v1 -cliok "purge.list"
+varnish v1 -cliok "ban.list"
 
 client c1 {
 	txreq -url "/foo"
