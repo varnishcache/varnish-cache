@@ -1,6 +1,9 @@
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
+INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/lib/libvgz \
+	-I$(top_builddir)/include
 
 sbin_PROGRAMS = varnishd
 
@@ -94,6 +97,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcl/libvcl.la \
+	$(top_builddir)/lib/libvgz/libvgz.la \
 	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM} ${LIBUMEM}
 
