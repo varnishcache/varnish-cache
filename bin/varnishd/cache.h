@@ -584,6 +584,14 @@ int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 
+/* cache_gzip.c */
+struct vgz;
+
+struct vgz *VGZ_NewUnzip(struct sess *sp, struct ws *tmp, struct ws *buf);
+int VGZ_Feed(struct vgz *, const void *, size_t len);
+int VGZ_Produce(struct vgz *, const void **, size_t *len);
+int VGZ_Destroy(struct vgz **);
+
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);
