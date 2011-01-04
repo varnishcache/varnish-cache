@@ -246,7 +246,6 @@ RES_WriteObj(struct sess *sp)
 	unsigned low, high, ptr, off, len;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
@@ -274,7 +273,7 @@ RES_WriteObj(struct sess *sp)
 	high = sp->obj->len - 1;
 
 	if (sp->disable_esi || sp->esis == 0) {
-		/* For none ESI and non ESI-included objects, try Range */
+		/* For non-ESI and non ESI-included objects, try Range */
 		if (params->http_range_support &&
 		    (sp->disable_esi || sp->esis == 0) &&
 		    sp->obj->response == 200 &&
@@ -353,6 +352,112 @@ RES_WriteObj(struct sess *sp)
 	    sp->obj->len > 0) {
 		/* post-chunk new line */
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
+	}
+
+	if (WRW_FlushRelease(sp->wrk))
+		vca_close_session(sp, "remote closed");
+}
+
+/*--------------------------------------------------------------------
+ * We have a gzip'ed object and need to ungzip it for a client which
+ * does not understand gzip.
+ */
+
+void
+RES_WriteGunzipObj(struct sess *sp)
+{
+	struct storage *st;
+	unsigned u = 0;
+#if 0
+	char lenbuf[20];
+#endif
+	struct vgz *vg;
+	const void *dp;
+	size_t dl;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wantbody);
+
+	WRW_Reserve(sp->wrk, &sp->fd);
+
+	/* We don't know the length  (XXX: Cache once we do ?) */
+	http_Unset(sp->wrk->resp, H_Content_Length);
+	http_Unset(sp->wrk->resp, H_Content_Encoding);
+	http_Unset(sp->wrk->resp, H_Connection);
+
+	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
+	    "close");
+	sp->doclose = "Gunzip EOF";
+
+	/*
+	 * ESI objects get special delivery
+	 */
+	if (!sp->disable_esi && sp->obj->esidata != NULL) {
+		INCOMPL();
+#if 0
+		if (sp->esis == 0)
+			/* no headers for interior ESI includes */
+			sp->acct_tmp.hdrbytes +=
+			    http_Write(sp->wrk, sp->wrk->resp, 1);
+
+		if (WRW_FlushRelease(sp->wrk)) {
+			vca_close_session(sp, "remote closed");
+		} else 
+			ESI_Deliver(sp);
+		return;
+#endif
+	}
+
+	if (sp->disable_esi || sp->esis == 0) {
+		sp->acct_tmp.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
+	} else if (!sp->disable_esi &&
+	    sp->esis > 0 &&
+	    sp->http->protover >= 1.1 &&
+	    sp->obj->len > 0) {
+		INCOMPL();
+#if 0
+		/*
+		 * Interior ESI includes (which are not themselves ESI
+		 * objects) use chunked encoding (here) or EOF (nothing)
+		 */
+		sprintf(lenbuf, "%x\r\n", sp->obj->len);
+		(void)WRW_Write(sp->wrk, lenbuf, -1);
+#endif
+	}
+
+	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
+	AN(vg);
+
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		u += st->len;
+
+		sp->acct_tmp.bodybytes += st->len;
+		VSC_main->n_objwrite++;
+
+		VGZ_Feed(vg, st->ptr, st->len);
+		do {
+			i = VGZ_Produce(vg, &dp, &dl);
+			if (dl != 0) {
+				(void)WRW_Write(sp->wrk, dp, dl);
+				if (WRW_Flush(sp->wrk))
+					break;
+			}
+		} while (i == 0);
+	}
+	VGZ_Destroy(&vg);
+	assert(u == sp->obj->len);
+	if (!sp->disable_esi &&
+	    sp->esis > 0 &&
+	    sp->http->protover >= 1.1 &&
+	    sp->obj->len > 0) {
+		INCOMPL();
+#if 0
+		/* post-chunk new line */
+		(void)WRW_Write(sp->wrk, "\r\n", -1);
+#endif
 	}
 
 	if (WRW_FlushRelease(sp->wrk))

@@ -210,7 +210,14 @@ cnt_deliver(struct sess *sp)
 	sp->director = NULL;
 	sp->restarts = 0;
 
-	RES_WriteObj(sp);
+	if (params->http_gzip_support &&
+	    http_HdrIs(sp->wrk->resp, H_Content_Encoding, "gzip") &&
+	    !RFC2616_Req_Gzip(sp) &&
+	    sp->wantbody)
+		RES_WriteGunzipObj(sp);
+	else 
+		RES_WriteObj(sp);
+
 	AZ(sp->wrk->wfd);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	sp->wrk->resp = NULL;
@@ -879,6 +886,15 @@ cnt_miss(struct sess *sp)
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	http_ForceGet(sp->wrk->bereq);
+	if (params->http_gzip_support) {
+		/*
+		 * We always ask the backend for gzip, even if the
+		 * client doesn't grok it.  We will uncompress for
+		 * the minority of clients which don't.
+		 */
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
+		    "Accept-Encoding: gzip");
+	}
 	sp->wrk->connect_timeout = 0;
 	sp->wrk->first_byte_timeout = 0;
 	sp->wrk->between_bytes_timeout = 0;
