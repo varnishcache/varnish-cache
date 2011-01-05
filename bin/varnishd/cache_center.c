@@ -190,6 +190,7 @@ cnt_deliver(struct sess *sp)
 		sp->wrk->res_mode &= ~RES_LEN;
 		sp->wrk->res_mode |= RES_EOF;		/* XXX */
 		sp->wrk->res_mode |= RES_GUNZIP;
+		sp->doclose = "gunzip EOF";
 	}
 
 	if (!(sp->wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {

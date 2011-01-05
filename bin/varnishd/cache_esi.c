@@ -867,7 +867,7 @@ ESI_Deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
 	VTAILQ_FOREACH(eb, &ed->esibits, list) {
 		if (Tlen(eb->verbatim)) {
-			if (sp->http->protover >= 1.1)
+			if (sp->wrk->res_mode & RES_CHUNKED)
 				(void)WRW_Write(w, eb->chunk_length, -1);
 			sp->acct_tmp.bodybytes += WRW_Write(w,
 			    eb->verbatim.b, Tlen(eb->verbatim));

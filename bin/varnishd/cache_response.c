@@ -178,10 +178,10 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 	    "Content-Range: bytes %u-%u/%u", low, high, sp->obj->len);
 	http_Unset(sp->wrk->resp, H_Content_Length);
+	assert(sp->wrk->res_mode & RES_LEN);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 	    "Content-Length: %u", 1 + high - low);
 	http_SetResp(sp->wrk->resp, "HTTP/1.1", 206, "Partial Content");
-
 
 	*plow = low;
 	*phigh = high;
@@ -249,46 +249,38 @@ RES_WriteObj(struct sess *sp)
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	/*
+	 * If nothing special planned, we can attempt Range support
+	 */
+	low = 0;
+	high = sp->obj->len - 1;
+	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
+	    params->http_range_support && sp->obj->response == 200 &&
+	    sp->wantbody && http_GetHdr(sp->http, H_Range, &r))
+		res_dorange(sp, r, &low, &high);
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		assert(sp->wrk->res_mode & RES_EOF);
+		assert(!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD)));
+		AN(sp->doclose);
+		http_Unset(sp->wrk->resp, H_Content_Encoding);
+	}
+
+	/*
+	 * no headers for interior ESI includes 
+	 */
+	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
+		sp->acct_tmp.hdrbytes +=
+		    http_Write(sp->wrk, sp->wrk->resp, 1);
+
+	/*
 	 * ESI objects get special delivery
 	 */
 	if (sp->wrk->res_mode & RES_ESI) {
-		if (!(sp->wrk->res_mode & RES_ESI_CHILD))
-			/* no headers for interior ESI includes */
-			sp->acct_tmp.hdrbytes +=
-			    http_Write(sp->wrk, sp->wrk->resp, 1);
-
 		if (WRW_FlushRelease(sp->wrk)) {
 			vca_close_session(sp, "remote closed");
 		} else if (sp->wantbody)
 			ESI_Deliver(sp);
 		return;
-	}
-
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		RES_WriteGunzipObj(sp);
-		return;
-	}
-
-	/*
-	 * How much of the object we want to deliver
-	 */
-	low = 0;
-	high = sp->obj->len - 1;
-
-	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD))) {
-		/* For non-ESI and non ESI-included objects, try Range */
-		if (params->http_range_support &&
-		    (sp->disable_esi || sp->esis == 0) &&
-		    sp->obj->response == 200 &&
-		    sp->wantbody &&
-		    http_GetHdr(sp->http, H_Range, &r))
-			res_dorange(sp, r, &low, &high);
-
-		sp->acct_tmp.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
-	} else if (sp->obj->len > 0 && (sp->wrk->res_mode & RES_CHUNKED)) {
-		assert(sp->wantbody);
-		sprintf(lenbuf, "%x\r\n", sp->obj->len);
-		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
 
 	if (!sp->wantbody) {
@@ -297,6 +289,24 @@ RES_WriteObj(struct sess *sp)
 		if (WRW_FlushRelease(sp->wrk))
 			vca_close_session(sp, "remote closed");
 		return;
+	}
+
+	if (sp->obj->len == 0) {
+		if (WRW_FlushRelease(sp->wrk))
+			vca_close_session(sp, "remote closed");
+		return;
+	}
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		RES_WriteGunzipObj(sp);
+		return;
+	}
+
+
+	if (sp->wrk->res_mode & RES_CHUNKED) {
+		assert(sp->wantbody);
+		sprintf(lenbuf, "%x\r\n", sp->obj->len);
+		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
 
 	ptr = 0;
@@ -342,13 +352,9 @@ RES_WriteObj(struct sess *sp)
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);
-	if (!sp->disable_esi &&
-	    sp->esis > 0 &&
-	    sp->http->protover >= 1.1 &&
-	    sp->obj->len > 0) {
+	if ((sp->wrk->res_mode & RES_CHUNKED))
 		/* post-chunk new line */
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
-	}
 
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
@@ -364,9 +370,6 @@ RES_WriteGunzipObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
-#if 0
-	char lenbuf[20];
-#endif
 	struct vgz *vg;
 	const void *dp;
 	size_t dl;
@@ -374,51 +377,6 @@ RES_WriteGunzipObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(sp->wantbody);
-
-	/* We don't know the length  (XXX: Cache once we do ?) */
-	http_Unset(sp->wrk->resp, H_Content_Length);
-	http_Unset(sp->wrk->resp, H_Content_Encoding);
-	http_Unset(sp->wrk->resp, H_Connection);
-
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
-	    "close");
-	sp->doclose = "Gunzip EOF";
-
-	/*
-	 * ESI objects get special delivery
-	 */
-	if (!sp->disable_esi && sp->obj->esidata != NULL) {
-		INCOMPL();
-#if 0
-		if (sp->esis == 0)
-			/* no headers for interior ESI includes */
-			sp->acct_tmp.hdrbytes +=
-			    http_Write(sp->wrk, sp->wrk->resp, 1);
-
-		if (WRW_FlushRelease(sp->wrk)) {
-			vca_close_session(sp, "remote closed");
-		} else 
-			ESI_Deliver(sp);
-		return;
-#endif
-	}
-
-	if (sp->disable_esi || sp->esis == 0) {
-		sp->acct_tmp.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
-	} else if (!sp->disable_esi &&
-	    sp->esis > 0 &&
-	    sp->http->protover >= 1.1 &&
-	    sp->obj->len > 0) {
-		INCOMPL();
-#if 0
-		/*
-		 * Interior ESI includes (which are not themselves ESI
-		 * objects) use chunked encoding (here) or EOF (nothing)
-		 */
-		sprintf(lenbuf, "%x\r\n", sp->obj->len);
-		(void)WRW_Write(sp->wrk, lenbuf, -1);
-#endif
-	}
 
 	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
 	AN(vg);
@@ -443,16 +401,6 @@ RES_WriteGunzipObj(struct sess *sp)
 	}
 	VGZ_Destroy(&vg);
 	assert(u == sp->obj->len);
-	if (!sp->disable_esi &&
-	    sp->esis > 0 &&
-	    sp->http->protover >= 1.1 &&
-	    sp->obj->len > 0) {
-		INCOMPL();
-#if 0
-		/* post-chunk new line */
-		(void)WRW_Write(sp->wrk, "\r\n", -1);
-#endif
-	}
 
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
