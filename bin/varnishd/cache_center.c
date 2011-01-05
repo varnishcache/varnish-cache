@@ -156,17 +156,6 @@ DOT     rstdeliver [label="RESTART",shape=plaintext]
 DOT }
 DOT deliver2 -> DONE [style=bold,color=green,weight=4]
  *
- * XXX: Ideally we should make the req. available in vcl_deliver() but for
- * XXX: reasons of economy we don't, since that allows us to reuse the space
- * XXX: in sp->req for the response.
- *
- * XXX: Rather than allocate two http's and workspaces for all sessions to
- * XXX: address this deficiency, we could make the VCL compiler set a flag
- * XXX: if req. is used in vcl_deliver().  When the flag is set we would
- * XXX: take the memory overhead, for instance by borrowing a struct bereq
- * XXX: or similar.
- *
- * XXX: For now, wait until somebody asks for it.
  */
 
 static int
