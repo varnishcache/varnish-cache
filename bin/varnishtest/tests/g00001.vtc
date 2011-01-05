@@ -16,12 +16,28 @@ client c1 {
 	rxresp
 	expect resp.bodylen == "3"
 	expect resp.http.content-encoding == "resp.http.content-encoding"
-} -run
 
-client c1 {
 	txreq -hdr "Accept-encoding: gzip;q=0.1"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
 	gunzip
 	expect resp.bodylen == "3"
+} -run
+
+client c1 {
+	txreq -proto HTTP/1.0
+	rxresp
+	expect resp.bodylen == "3"
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+} -run
+
+client c1 {
+	txreq -req HEAD
+	rxresp -no_obj
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+
+	txreq -req HEAD -hdr "Accept-encoding: gzip;q=0.1"
+	rxresp -no_obj
+	expect resp.http.content-length == "26"
+	expect resp.http.content-encoding == "gzip"
 } -run
