@@ -171,6 +171,12 @@ cnt_deliver(struct sess *sp)
 	if (!sp->disable_esi && sp->obj->esidata != NULL) {
 		/* In ESI mode, we don't know the aggregate length */
 		sp->wrk->res_mode &= ~RES_LEN;
+		sp->wrk->res_mode |= RES_ESI;
+	}
+
+	if (sp->esis > 0) {
+		sp->wrk->res_mode &= ~RES_LEN;
+		sp->wrk->res_mode |= RES_ESI_CHILD;
 	}
 
 	if (params->http_gzip_support &&

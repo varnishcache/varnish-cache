@@ -246,19 +246,13 @@ RES_WriteObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		RES_WriteGunzipObj(sp);
-		return;
-	}
-
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	/*
 	 * ESI objects get special delivery
 	 */
-	if (!sp->disable_esi && sp->obj->esidata != NULL) {
-
-		if (sp->esis == 0)
+	if (sp->wrk->res_mode & RES_ESI) {
+		if (!(sp->wrk->res_mode & RES_ESI_CHILD))
 			/* no headers for interior ESI includes */
 			sp->acct_tmp.hdrbytes +=
 			    http_Write(sp->wrk, sp->wrk->resp, 1);
@@ -270,13 +264,18 @@ RES_WriteObj(struct sess *sp)
 		return;
 	}
 
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		RES_WriteGunzipObj(sp);
+		return;
+	}
+
 	/*
 	 * How much of the object we want to deliver
 	 */
 	low = 0;
 	high = sp->obj->len - 1;
 
-	if (sp->disable_esi || sp->esis == 0) {
+	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD))) {
 		/* For non-ESI and non ESI-included objects, try Range */
 		if (params->http_range_support &&
 		    (sp->disable_esi || sp->esis == 0) &&
@@ -286,14 +285,7 @@ RES_WriteObj(struct sess *sp)
 			res_dorange(sp, r, &low, &high);
 
 		sp->acct_tmp.hdrbytes += http_Write(sp->wrk, sp->wrk->resp, 1);
-	} else if (!sp->disable_esi &&
-	    sp->esis > 0 &&
-	    sp->http->protover >= 1.1 &&
-	    sp->obj->len > 0) {
-		/*
-		 * Interior ESI includes (which are not themselves ESI
-		 * objects) use chunked encoding (here) or EOF (nothing)
-		 */
+	} else if (sp->obj->len > 0 && (sp->wrk->res_mode & RES_CHUNKED)) {
 		assert(sp->wantbody);
 		sprintf(lenbuf, "%x\r\n", sp->obj->len);
 		(void)WRW_Write(sp->wrk, lenbuf, -1);
@@ -382,8 +374,6 @@ RES_WriteGunzipObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(sp->wantbody);
-
-	WRW_Reserve(sp->wrk, &sp->fd);
 
 	/* We don't know the length  (XXX: Cache once we do ?) */
 	http_Unset(sp->wrk->resp, H_Content_Length);
