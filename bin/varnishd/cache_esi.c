@@ -858,10 +858,9 @@ ESI_Deliver(struct sess *sp)
 	char *ws_wm;
 	struct http http_save;
 	struct esidata *ed;
-	unsigned sxid;
+	unsigned sxid, res_mode;
 
 	w = sp->wrk;
-	WRW_Reserve(w, &sp->fd);
 	http_save.magic = 0;
 	ed = sp->obj->esidata;
 	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
@@ -878,14 +877,16 @@ ESI_Deliver(struct sess *sp)
 		    sp->esis >= params->max_esi_includes)
 			continue;
 
-		if (WRW_FlushRelease(w)) {
+		if (WRW_Flush(w)) {
 			vca_close_session(sp, "remote closed");
 			return;
 		}
+		AZ(WRW_FlushRelease(w));
 
 		sp->esis++;
 		obj = sp->obj;
 		sp->obj = NULL;
+		res_mode = sp->wrk->res_mode;
 
 		/* Save the master objects HTTP state, we may need it later */
 		if (http_save.magic == 0)
@@ -935,6 +936,7 @@ ESI_Deliver(struct sess *sp)
 		assert(sp->step == STP_DONE);
 		sp->esis--;
 		sp->obj = obj;
+		sp->wrk->res_mode = res_mode;
 
 		/* Reset the workspace */
 		WS_Reset(sp->ws, ws_wm);
@@ -943,13 +945,6 @@ ESI_Deliver(struct sess *sp)
 		if (sp->fd < 0)
 			break;
 	}
-	/* Restore master objects HTTP state */
-	if (http_save.magic)
-		*sp->http = http_save;
-	if (sp->esis == 0 && sp->http->protover >= 1.1)
-		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
-	if (WRW_FlushRelease(sp->wrk))
-		vca_close_session(sp, "remote closed");
 }
 
 /*--------------------------------------------------------------------*/

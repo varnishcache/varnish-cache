@@ -181,20 +181,23 @@ cnt_deliver(struct sess *sp)
 
 	if (params->http_gzip_support &&
 	    http_HdrIs(sp->obj->http, H_Content_Encoding, "gzip") &&
-	    !RFC2616_Req_Gzip(sp) &&
-	    sp->wantbody) {
+	    !RFC2616_Req_Gzip(sp)) {
 		/*
 		 * We don't know what it uncompresses to
 		 * XXX: we could cache that
 		 */
 		sp->wrk->res_mode &= ~RES_LEN;
-		sp->wrk->res_mode |= RES_EOF;		/* XXX */
 		sp->wrk->res_mode |= RES_GUNZIP;
-		sp->doclose = "gunzip EOF";
 	}
 
 	if (!(sp->wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		if(sp->http->protover >= 1.1) {
+		if (sp->obj->len == 0)
+			/*
+			 * If the object is empty, neither ESI nor GUNZIP
+			 * can make it any different size
+			 */
+			sp->wrk->res_mode |= RES_LEN;
+		else if (sp->http->protover >= 1.1) {
 			sp->wrk->res_mode |= RES_CHUNKED;
 		} else {
 			sp->wrk->res_mode |= RES_EOF;

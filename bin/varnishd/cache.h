@@ -750,7 +750,6 @@ void WSL_Flush(struct worker *w, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
-void RES_WriteGunzipObj(struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

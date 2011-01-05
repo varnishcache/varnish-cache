@@ -233,79 +233,67 @@ RES_BuildHttp(struct sess *sp)
 	    sp->doclose ? "close" : "keep-alive");
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * We have a gzip'ed object and need to ungzip it for a client which
+ * does not understand gzip.
+ */
 
-void
-RES_WriteObj(struct sess *sp)
+static void
+res_WriteGunzipObj(struct sess *sp, char lenbuf[20])
 {
 	struct storage *st;
 	unsigned u = 0;
-	char lenbuf[20];
-	char *r;
-	unsigned low, high, ptr, off, len;
+	struct vgz *vg;
+	const void *dp;
+	size_t dl;
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	WRW_Reserve(sp->wrk, &sp->fd);
+	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
+	AN(vg);
 
-	/*
-	 * If nothing special planned, we can attempt Range support
-	 */
-	low = 0;
-	high = sp->obj->len - 1;
-	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
-	    params->http_range_support && sp->obj->response == 200 &&
-	    sp->wantbody && http_GetHdr(sp->http, H_Range, &r))
-		res_dorange(sp, r, &low, &high);
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		u += st->len;
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		assert(sp->wrk->res_mode & RES_EOF);
-		assert(!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD)));
-		AN(sp->doclose);
-		http_Unset(sp->wrk->resp, H_Content_Encoding);
+		sp->acct_tmp.bodybytes += st->len;
+		VSC_main->n_objwrite++;
+
+		VGZ_Feed(vg, st->ptr, st->len);
+		do {
+			i = VGZ_Produce(vg, &dp, &dl);
+			if (dl != 0) {
+				if (sp->wrk->res_mode & RES_CHUNKED) {
+					bprintf(lenbuf, "%x\r\n", (unsigned)dl);
+					(void)WRW_Write(sp->wrk, lenbuf, -1);
+				}
+				(void)WRW_Write(sp->wrk, dp, dl);
+				if (sp->wrk->res_mode & RES_CHUNKED) 
+					(void)WRW_Write(sp->wrk, "\r\n", -1);
+				if (WRW_Flush(sp->wrk))
+					break;
+			}
+		} while (i == 0);
 	}
+	VGZ_Destroy(&vg);
+	assert(u == sp->obj->len);
+}
 
-	/*
-	 * no headers for interior ESI includes 
-	 */
-	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
-		sp->acct_tmp.hdrbytes +=
-		    http_Write(sp->wrk, sp->wrk->resp, 1);
+/*--------------------------------------------------------------------*/
 
-	/*
-	 * ESI objects get special delivery
-	 */
-	if (sp->wrk->res_mode & RES_ESI) {
-		if (WRW_FlushRelease(sp->wrk)) {
-			vca_close_session(sp, "remote closed");
-		} else if (sp->wantbody)
-			ESI_Deliver(sp);
-		return;
-	}
+static void
+res_WriteDirObj(struct sess *sp, char lenbuf[20], size_t low, size_t high)
+{
+	unsigned u = 0;
+	size_t ptr, off, len;
+	struct storage *st;
 
-	if (!sp->wantbody) {
-		/* This was a HEAD request */
-		assert(sp->esis == 0);
-		if (WRW_FlushRelease(sp->wrk))
-			vca_close_session(sp, "remote closed");
-		return;
-	}
-
-	if (sp->obj->len == 0) {
-		if (WRW_FlushRelease(sp->wrk))
-			vca_close_session(sp, "remote closed");
-		return;
-	}
-
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		RES_WriteGunzipObj(sp);
-		return;
-	}
-
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wrk->res_mode & RES_CHUNKED) {
-		assert(sp->wantbody);
-		sprintf(lenbuf, "%x\r\n", sp->obj->len);
+		bprintf(lenbuf, "%x\r\n", sp->obj->len);
 		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
 
@@ -352,55 +340,61 @@ RES_WriteObj(struct sess *sp)
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);
-	if ((sp->wrk->res_mode & RES_CHUNKED))
-		/* post-chunk new line */
+	if (sp->wrk->res_mode & RES_CHUNKED) 
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
-
-	if (WRW_FlushRelease(sp->wrk))
-		vca_close_session(sp, "remote closed");
 }
 
-/*--------------------------------------------------------------------
- * We have a gzip'ed object and need to ungzip it for a client which
- * does not understand gzip.
- */
+/*--------------------------------------------------------------------*/
 
 void
-RES_WriteGunzipObj(struct sess *sp)
+RES_WriteObj(struct sess *sp)
 {
-	struct storage *st;
-	unsigned u = 0;
-	struct vgz *vg;
-	const void *dp;
-	size_t dl;
-	int i;
+	char *r;
+	unsigned low, high;
+	char lenbuf[20];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(sp->wantbody);
 
-	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
-	AN(vg);
+	WRW_Reserve(sp->wrk, &sp->fd);
 
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		u += st->len;
+	/*
+	 * If nothing special planned, we can attempt Range support
+	 */
+	low = 0;
+	high = sp->obj->len - 1;
+	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
+	    params->http_range_support && sp->obj->response == 200 &&
+	    sp->wantbody && http_GetHdr(sp->http, H_Range, &r))
+		res_dorange(sp, r, &low, &high);
 
-		sp->acct_tmp.bodybytes += st->len;
-		VSC_main->n_objwrite++;
+	/*
+	 * Always remove C-E if client don't grok it
+	 */
+	if (sp->wrk->res_mode & RES_GUNZIP)
+		http_Unset(sp->wrk->resp, H_Content_Encoding);
 
-		VGZ_Feed(vg, st->ptr, st->len);
-		do {
-			i = VGZ_Produce(vg, &dp, &dl);
-			if (dl != 0) {
-				(void)WRW_Write(sp->wrk, dp, dl);
-				if (WRW_Flush(sp->wrk))
-					break;
-			}
-		} while (i == 0);
+	/*
+	 * Send HTTP protocol header, unless interior ESI object
+	 */
+	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
+		sp->acct_tmp.hdrbytes +=
+		    http_Write(sp->wrk, sp->wrk->resp, 1);
+
+	if (!sp->wantbody) {
+		/* This was a HEAD request */
+	} else if (sp->obj->len == 0) {
+		/* Nothing to do here */
+	} else if (sp->wrk->res_mode & RES_ESI) {
+		ESI_Deliver(sp);
+	} else if (sp->wrk->res_mode & RES_GUNZIP) {
+		res_WriteGunzipObj(sp, lenbuf); 
+	} else {
+		res_WriteDirObj(sp, lenbuf, low, high);
 	}
-	VGZ_Destroy(&vg);
-	assert(u == sp->obj->len);
+
+	if (sp->wrk->res_mode & RES_CHUNKED &&
+	    !(sp->wrk->res_mode & RES_ESI_CHILD))
+		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
 
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
