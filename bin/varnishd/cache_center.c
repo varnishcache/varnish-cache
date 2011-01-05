@@ -166,6 +166,35 @@ cnt_deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	sp->wrk->res_mode = RES_LEN;
+
+	if (!sp->disable_esi && sp->obj->esidata != NULL) {
+		/* In ESI mode, we don't know the aggregate length */
+		sp->wrk->res_mode &= ~RES_LEN;
+	}
+
+	if (params->http_gzip_support &&
+	    http_HdrIs(sp->obj->http, H_Content_Encoding, "gzip") &&
+	    !RFC2616_Req_Gzip(sp) &&
+	    sp->wantbody) {
+		/*
+		 * We don't know what it uncompresses to
+		 * XXX: we could cache that
+		 */
+		sp->wrk->res_mode &= ~RES_LEN;
+		sp->wrk->res_mode |= RES_EOF;		/* XXX */
+		sp->wrk->res_mode |= RES_GUNZIP;
+	}
+
+	if (!(sp->wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
+		if(sp->http->protover >= 1.1) {
+			sp->wrk->res_mode |= RES_CHUNKED;
+		} else {
+			sp->wrk->res_mode |= RES_EOF;
+			sp->doclose = "EOF mode";
+		}
+	}
+
 	sp->t_resp = TIM_real();
 	if (sp->obj->objcore != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout)
@@ -199,13 +228,7 @@ cnt_deliver(struct sess *sp)
 	sp->director = NULL;
 	sp->restarts = 0;
 
-	if (params->http_gzip_support &&
-	    http_HdrIs(sp->wrk->resp, H_Content_Encoding, "gzip") &&
-	    !RFC2616_Req_Gzip(sp) &&
-	    sp->wantbody)
-		RES_WriteGunzipObj(sp);
-	else 
-		RES_WriteObj(sp);
+	RES_WriteObj(sp);
 
 	AZ(sp->wrk->wfd);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);

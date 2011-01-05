@@ -205,18 +205,17 @@ RES_BuildHttp(struct sess *sp)
 	http_FilterFields(sp->wrk, sp->fd, sp->wrk->resp, sp->obj->http,
 	    HTTPH_A_DELIVER);
 
-	/* Only HTTP 1.1 can do Chunked encoding */
-	if (!sp->disable_esi && sp->obj->esidata != NULL) {
+	if (!(sp->wrk->res_mode & RES_LEN)) {
 		http_Unset(sp->wrk->resp, H_Content_Length);
-		if(sp->http->protover >= 1.1)
-			http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-			    "Transfer-Encoding: chunked");
-		else
-			sp->doclose = "ESI EOF";
-	} else if (params->http_range_support)
+	} else if (params->http_range_support) {
+		/* We only accept ranges if we know the length */
 		http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "Accept-Ranges: bytes");
+	}
 
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Transfer-Encoding: chunked");
 
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);
@@ -246,6 +245,11 @@ RES_WriteObj(struct sess *sp)
 	unsigned low, high, ptr, off, len;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		RES_WriteGunzipObj(sp);
+		return;
+	}
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
