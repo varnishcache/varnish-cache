@@ -399,13 +399,19 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			while (hp->rxbuf[hp->prxbuf - 1] != '\n');
 			vtc_dump(hp->vl, 4, "len", hp->rxbuf + l, -1);
 			i = strtoul(hp->rxbuf + l, &q, 16);
+			if ((q == hp->rxbuf + l) ||
+				(*q != '\0' && !vct_islws(*q))) {
+				vtc_log(hp->vl, 0, "chunked fail %02x @ %d",
+				    *q, q - (hp->rxbuf + l));
+			}
 			assert(q != hp->rxbuf + l);
 			assert(*q == '\0' || vct_islws(*q));
 			hp->prxbuf = l;
 			if (i > 0) {
 				ll += i;
 				http_rxchar(hp, i);
-				vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l, -1);
+				vtc_dump(hp->vl, 4, "chunk",
+				    hp->rxbuf + l, -1);
 			}
 			l = hp->prxbuf;
 			http_rxchar(hp, 2);
