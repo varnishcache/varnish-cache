@@ -197,7 +197,9 @@ cnt_deliver(struct sess *sp)
 			 * can make it any different size
 			 */
 			sp->wrk->res_mode |= RES_LEN;
-		else if (sp->http->protover >= 1.1) {
+		else if (!sp->wantbody) {
+			/* Nothing */
+		} else if (sp->http->protover >= 1.1) {
 			sp->wrk->res_mode |= RES_CHUNKED;
 		} else {
 			sp->wrk->res_mode |= RES_EOF;
