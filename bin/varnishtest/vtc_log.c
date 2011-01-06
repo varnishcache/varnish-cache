@@ -162,6 +162,15 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	assert(lvl < NLEAD);
+	if (0 && str != NULL && len > 0) {
+		for (l = 0; l < len; l++) {
+			if (str[l] & 0x80) {
+				vtc_hexdump(vl, lvl, pfx,
+				    (const void*)str, len);
+				return;
+			}
+		}
+	}
 	AZ(pthread_mutex_lock(&vl->mtx));
 	vsb_clear(vl->vsb);
 	if (pfx == NULL)
@@ -193,6 +202,61 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 				vsb_printf(vl->vsb, "\\x%02x", (*str) & 0xff);
 			else
 				vsb_printf(vl->vsb, "%c", *str);
+		}
+	}
+	if (!nl)
+		vsb_printf(vl->vsb, "\n");
+	vsb_finish(vl->vsb);
+	AZ(vsb_overflowed(vl->vsb));
+
+	vtc_log_emit(vl, lvl);
+
+	vsb_clear(vl->vsb);
+	AZ(pthread_mutex_unlock(&vl->mtx));
+	if (lvl == 0) {
+		vtc_error = 1;
+		if (pthread_self() != vtc_thread)
+			pthread_exit(NULL);
+	}
+}
+
+/**********************************************************************
+ * Hexdump
+ */
+
+//lint -e{818}
+void
+vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned char *str, int len)
+{
+	int nl = 1;
+	unsigned l;
+
+	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
+	assert(len >= 0);
+	assert(lvl < NLEAD);
+	AZ(pthread_mutex_lock(&vl->mtx));
+	vsb_clear(vl->vsb);
+	if (pfx == NULL)
+		pfx = "";
+	if (str == NULL)
+		vsb_printf(vl->vsb, "%s %-4s %s(null)\n",
+		    lead[lvl], vl->id, pfx);
+	else {
+		for (l = 0; l < len; l++, str++) {
+			if (l > 512) {
+				vsb_printf(vl->vsb, "...");
+				break;
+			}
+			if (nl) {
+				vsb_printf(vl->vsb, "%s %-4s %s| ",
+				    lead[lvl], vl->id, pfx);
+				nl = 0;
+			}
+			vsb_printf(vl->vsb, " %02x", *str);
+			if ((l & 0xf) == 0xf) {
+				vsb_printf(vl->vsb, "\n");
+				nl = 1;
+			}
 		}
 	}
 	if (!nl)
