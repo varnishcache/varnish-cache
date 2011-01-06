@@ -1,7 +1,16 @@
-This is a cut down version of the ZLIB data compression library.
+This is a modified version of the ZLIB 1.2.5 data compression library.
 
 For the original and complete version of the library please visit:
 
 	http://www.zlib.net/
 
 For copyright and licensing information, please see the zlib.h file.
+
+Modifications include:
+
+* Unnecessary files not imported.
+
+* Extension to inflate() to record the bit positions of:
+	A) The first deflate block
+	B) The 'last' bit
+	C) The first (padding) bit after the last deflate block

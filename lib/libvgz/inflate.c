@@ -810,13 +810,18 @@ int flush;
         case TYPE:
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
         case TYPEDO:
+            if (strm->start_bit == 0) 
+                strm->start_bit = 8 * (strm->total_in + in - have) - bits;
             if (state->last) {
+                strm->stop_bit = 8 * (strm->total_in + in - have) - bits;
                 BYTEBITS();
                 state->mode = CHECK;
                 break;
             }
             NEEDBITS(3);
             state->last = BITS(1);
+            if (state->last)
+                strm->last_bit = 8 * (strm->total_in + in - have) - bits;
             DROPBITS(1);
             switch (BITS(2)) {
             case 0:                             /* stored block */

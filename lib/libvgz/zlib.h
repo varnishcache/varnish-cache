@@ -101,6 +101,10 @@ typedef struct z_stream_s {
     int     data_type;  /* best guess about the data type: binary or text */
     uLong   adler;      /* adler32 value of the uncompressed data */
     uLong   reserved;   /* reserved for future use */
+
+    uLong   start_bit;	/* Bit pos of first deflate block */
+    uLong   stop_bit;	/* Bit pos after last deflate block */
+    uLong   last_bit;	/* Bit pos of 'last' bit */
 } z_stream;
 
 typedef z_stream FAR *z_streamp;
