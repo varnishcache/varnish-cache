@@ -671,13 +671,14 @@ cmd_http_txresp(CMD_ARGS)
 			assert(body == nullbody);
 			b = synth_body(av[1], 1);
 			gzip_body(b, &body, &bodylen);
-			vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
+			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
+			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			gzip_body(av[1], &body, &bodylen);
 			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
+			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else
 			break;
