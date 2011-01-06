@@ -97,7 +97,7 @@ static const char * const nl = "\r\n";
  */
 
 static char *
-synth_body(const char *len)
+synth_body(const char *len, int rnd)
 {
 	int i, j, k, l;
 	char *b;
@@ -116,6 +116,8 @@ synth_body(const char *len)
 			if (k == '~')
 				k = '!';
 			l = k;
+		} else if (rnd) {
+			b[j] = (random() % 95) + ' ';
 		} else {
 			b[j] = (char)l;
 			if (++l == '~')
@@ -548,6 +550,12 @@ cmd_http_gunzip_body(CMD_ARGS)
 	free(p);
 	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
 	bprintf(hp->bodylen, "%u", hp->bodyl);
+	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
+	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
+	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
+	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
 	assert(Z_OK == inflateEnd(&vz));
 }
 
@@ -656,13 +664,20 @@ cmd_http_txresp(CMD_ARGS)
 			}
 		} else if (!strcmp(*av, "-bodylen")) {
 			assert(body == nullbody);
-			body = synth_body(av[1]);
+			body = synth_body(av[1], 0);
 			bodylen = strlen(body);
+			av++;
+		} else if (!strcmp(*av, "-gziplen")) {
+			assert(body == nullbody);
+			b = synth_body(av[1], 1);
+			gzip_body(b, &body, &bodylen);
+			vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			gzip_body(av[1], &body, &bodylen);
 			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
+			vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else
 			break;
@@ -787,7 +802,7 @@ cmd_http_txreq(CMD_ARGS)
 			av++;
 		} else if (!strcmp(*av, "-bodylen")) {
 			AZ(body);
-			body = synth_body(av[1]);
+			body = synth_body(av[1], 0);
 			av++;
 		} else
 			break;
