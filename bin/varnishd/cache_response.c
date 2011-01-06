@@ -275,6 +275,7 @@ res_WriteGunzipObj(struct sess *sp, char lenbuf[20])
 				if (WRW_Flush(sp->wrk))
 					break;
 			}
+			assert(i >= 0);
 		} while (i == 0);
 	}
 	VGZ_Destroy(&vg);

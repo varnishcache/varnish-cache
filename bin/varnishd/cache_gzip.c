@@ -119,6 +119,7 @@ VGZ_Feed(struct vgz *vg, const void *ptr, size_t len)
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
+	AZ(vg->vz.avail_in);
 	vg->vz.next_in = TRUST_ME(ptr);
 	vg->vz.avail_in = len;
 
@@ -126,7 +127,7 @@ VGZ_Feed(struct vgz *vg, const void *ptr, size_t len)
 }
 
 /*--------------------------------------------------------------------*/
-
+#include <stdio.h>
 int
 VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 {
@@ -148,6 +149,9 @@ VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 		return (0);
 	if (i == Z_STREAM_END)
 		return (1);
+	if (i == Z_BUF_ERROR)
+		return (2);
+fprintf(stderr, "--------------------> GUNZIP = %d\n", i);
 	return (-1);
 }
 
