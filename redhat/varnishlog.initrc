@@ -6,7 +6,7 @@
 # description: Varnish Cache logging daemon
 # processname: varnishlog
 # config: 
-# pidfile: /var/run/varnish/varnishlog.pid
+# pidfile: /var/run/varnishlog.pid
 
 ### BEGIN INIT INFO
 # Provides: varnishlog
@@ -31,7 +31,7 @@ prog="varnishlog"
 
 DAEMON_OPTS="-a -w $logfile -D -P $pidfile"
 
-# Include varnish defaults
+# Include varnishlog defaults
 [ -e /etc/sysconfig/varnishlog ] && . /etc/sysconfig/varnishlog
 
 start() {

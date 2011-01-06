@@ -6,7 +6,7 @@
 # description: Varnish is a high-perfomance HTTP accelerator
 # processname: varnishd
 # config: /etc/sysconfig/varnish
-# pidfile: /var/run/varnish/varnishd.pid
+# pidfile: /var/run/varnishd.pid
 
 ### BEGIN INIT INFO
 # Provides: varnish

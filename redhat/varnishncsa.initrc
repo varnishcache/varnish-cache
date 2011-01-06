@@ -6,7 +6,7 @@
 # description: Varnish Cache logging daemon
 # processname: varnishncsa
 # config: 
-# pidfile: /var/run/varnish/varnishncsa.pid
+# pidfile: /var/run/varnishncsa.pid
 
 ### BEGIN INIT INFO
 # Provides: varnishncsa
@@ -31,7 +31,7 @@ prog="varnishncsa"
 
 DAEMON_OPTS="-a -w $logfile -D -P $pidfile"
 
-# Include defaults
+# Include varnishncsa defaults
 [ -e /etc/sysconfig/varnishncsa ] && . /etc/sysconfig/varnishncsa
 
 start() {
