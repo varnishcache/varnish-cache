@@ -258,7 +258,8 @@ struct worker {
 	double			grace;
 	unsigned		do_esi;
 
-	char			*storage;
+	/* This is only here so VRT can find it */
+	char			*storage_hint;
 
 	/* Timeouts */
 	double			connect_timeout;
