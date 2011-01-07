@@ -6,7 +6,7 @@ server s1 {
 	rxreq
 	txresp \
 		-hdr "Date: Mon, 25 Oct 2010 06:34:06 GMT" \
-		-hdr "Content-length: 10xx" \
+		-hdr "Content-length: 000010" \
 		-nolen -bodylen 10
 } -start
 
