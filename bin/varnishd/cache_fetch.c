@@ -41,8 +41,114 @@ SVNID("$Id$")
 #include "cache.h"
 #include "stevedore.h"
 #include "cli_priv.h"
+#include "vct.h"
 
 static unsigned fetchfrag;
+
+/*--------------------------------------------------------------------
+ * If we have any idea how big this object might be, we try to allocate
+ * a slab of storage that big.
+ */
+
+static void
+fetch_estimate(const struct sess *sp, size_t estimate)
+{
+
+	AZ(sp->wrk->storage);
+	if (fetchfrag > 0) {
+		estimate = fetchfrag;
+		WSL(sp->wrk, SLT_Debug, sp->fd,
+		    "Fetch %d byte segments:", fetchfrag);
+	}
+	sp->wrk->storage = STV_alloc(sp, estimate);
+}
+
+/*--------------------------------------------------------------------
+ * Fetch this many bytes and feed them to the monster.
+ */
+
+static int
+fetch_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+{
+	ssize_t l, w;
+	struct storage *st;
+
+	while (bytes > 0) {
+		if (sp->wrk->storage == NULL) {
+			l = fetchfrag;
+			if (l == 0)
+				l = params->fetch_chunksize * 1024LL;
+			sp->wrk->storage = STV_alloc(sp, l);
+		}
+		if (sp->wrk->storage == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		st = sp->wrk->storage;
+		l = st->space - st->len;
+		if (l > bytes)
+			l = bytes;
+		w = HTC_Read(htc, st->ptr + st->len, l);
+		if (w <= 0)
+			return (w);
+		st->len += w;
+		sp->obj->len += w;
+		if (st->len == st->space) {
+			VTAILQ_INSERT_TAIL(&sp->obj->store,
+			    sp->wrk->storage, list);
+			sp->wrk->storage = NULL;
+			st = NULL;
+		}
+		bytes -= w;
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Fetch is complete, dispose of cached storage slab
+ */
+
+static void
+fetch_end(const struct sess *sp)
+{
+	struct storage *st;
+
+	st = sp->wrk->storage;
+	sp->wrk->storage = NULL;
+	if (st == NULL)
+		return;
+
+	if (st->len == 0) {
+		STV_free(st);
+		return;
+	}
+	if (st->len < st->space)
+		STV_trim(st, st->len);
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+}
+
+/*--------------------------------------------------------------------
+ * Convert a string to a size_t safely
+ */
+
+static ssize_t
+fetch_number(const char *nbr, int radix)
+{
+	uintmax_t cll;
+	ssize_t cl;
+	char *q;
+
+	if (*nbr == '\0')
+		return (-1);
+	cll = strtoumax(nbr, &q, radix);
+	if (q == NULL || *q != '\0')
+		return (-1);
+
+	cl = (ssize_t)cll;
+	if((uintmax_t)cl != cll) /* Protect against bogusly large values */
+		return (-1);
+	return (cl);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -50,40 +156,24 @@ static int
 fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 {
 	int i;
-	unsigned char *p;
-	uintmax_t cll;
-	unsigned cl, sl;
-	struct storage *st;
+	ssize_t cl;
 
 	assert(sp->wrk->body_status == BS_LENGTH);
-	cll = strtoumax(b, NULL, 0);
-	if (cll == 0)
+	cl = fetch_number(b, 10);
+	if (cl < 0) {
+		WSP(sp, SLT_FetchError, "straight length syntax");
+		return (-1);
+	}
+	if (cl == 0)
 		return (0);
 
-	cl = (unsigned)cll;
-	assert((uintmax_t)cl == cll); /* Protect against bogusly large values */
+	fetch_estimate(sp, cl);
 
-	while (cl > 0) {
-		st = STV_alloc(sp, cl);
-		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-		sl = st->space;
-		if (sl > cl)
-			sl = cl;
-		p = st->ptr;
-
-		while (sl > 0) {
-			i = HTC_Read(htc, p, sl);
-			if (i <= 0) {
-				WSP(sp, SLT_FetchError,
-				    "straight read_error: %d", errno);
-				return (-1);
-			}
-			p += i;
-			st->len += i;
-			sp->obj->len += i;
-			sl -= i;
-			cl -= i;
-		}
+	i = fetch_bytes(sp, htc, cl);
+	if (i <= 0) {
+		WSP(sp, SLT_FetchError, "straight read_error: %d (%s)",
+		    errno, strerror(errno));
+		return (-1);
 	}
 	return (0);
 }
@@ -91,205 +181,97 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 /*--------------------------------------------------------------------*/
 /* XXX: Cleanup.  It must be possible somehow :-( */
 
+#define CERR() do {						\
+		if (i != 1) {					\
+			WSP(sp, SLT_FetchError,			\
+			    "chunked read_error: %d (%s)",	\
+			    errno, strerror(errno));		\
+			return (-1);				\
+		}						\
+	} while (0)
+
 static int
 fetch_chunked(const struct sess *sp, struct http_conn *htc)
 {
 	int i;
-	char *q;
-	struct storage *st;
-	unsigned u, v, w;
-	char buf[20];		/* XXX: arbitrary */
-	char *bp, *be;
+	char buf[20];		/* XXX: 20 is arbitrary */
+	unsigned u;
+	ssize_t cl;
 
 	assert(sp->wrk->body_status == BS_CHUNKED);
-	be = buf + sizeof buf - 1;
-	bp = buf;
-	st = NULL;
-	u = 0;
-	while (1) {
-		/* Try to parse buf as a chunk length */
-		*bp = '\0';
-		u = strtoul(buf, &q, 16);
+	do {
+		/* Skip leading whitespace */
+		do {
+			i = HTC_Read(htc, buf, 1);
+			CERR();
+		} while (vct_islws(buf[0]));
 
-		/* Skip trailing whitespace */
-		if (q != NULL && q > buf) {
-			while (*q == '\t' || *q == ' ')
-				q++;
-			if (*q == '\r')
-				q++;
-		}
-
-		/* If we didn't succeed, add to buffer, try again */
-		if (q == NULL || q == buf || *q != '\n') {
-			if (bp >= be) {
-				WSP(sp, SLT_FetchError,
-				    "chunked hex-line too long");
-				return (-1);
-			}
-			/*
-			 * The semantics we need here is "read until you have
-			 * received at least one character, but feel free to
-			 * return up to (be-bp) if they are available, but do
-			 * not wait for those extra characters.
-			 *
-			 * The canonical way to do that is to do a blocking
-			 * read(2) of one char, then change to nonblocking,
-			 * read as many as we find, then change back to
-			 * blocking reads again.
-			 *
-			 * Hardly much more efficient and certainly a good
-			 * deal more complex than reading a single character
-			 * at a time.
-			 */
-			i = HTC_Read(htc, bp, 1);
-			if (i <= 0) {
-				WSP(sp, SLT_FetchError,
-				    "chunked read_error: %d", errno);
-				return (-1);
-			}
-			bp += i;
-			continue;
-		}
-
-		/* Skip NL */
-		q++;
-
-		/* Last chunk is zero bytes long */
-		if (u == 0)
-			break;
-
-		while (u > 0) {
-
-			/* Get some storage if we don't have any */
-			if (st == NULL || st->len == st->space) {
-				v = u;
-				if (u < params->fetch_chunksize * 1024)
-					v = params->fetch_chunksize * 1024;
-				st = STV_alloc(sp, v);
-				VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-			}
-			v = st->space - st->len;
-			if (v > u)
-				v = u;
-
-			/* Handle anything left in our buffer first */
-			w = pdiff(q, bp);
-			if (w > v)
-				w = v;
-			if (w != 0) {
-				memcpy(st->ptr + st->len, q, w);
-				st->len += w;
-				sp->obj->len += w;
-				u -= w;
-				v -= w;
-				q += w;
-			}
-			if (u == 0)
+		/* Collect hex digits, skipping leading zeros */
+		for (u = 1; u < sizeof buf; u++) {
+			do {
+				i = HTC_Read(htc, buf + u, 1);
+				CERR();
+			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
+			if (!vct_ishex(buf[u]))
 				break;
-			if (v == 0)
-				continue;
-
-			/* Pick up the rest of this chunk */
-			while (v > 0) {
-				i = HTC_Read(htc, st->ptr + st->len, v);
-				if (i <= 0)
-					return (-1);
-				st->len += i;
-				sp->obj->len += i;
-				u -= i;
-				v -= i;
-			}
 		}
-		assert(u == 0);
 
-		/* We might still have stuff in our buffer */
-		v = pdiff(q, bp);
-		if (v > 0)
-			memcpy(buf, q, v);
-		q = bp = buf + v;
-	}
+		if (u >= sizeof buf) {
+			WSP(sp, SLT_FetchError,	"chunked header too long");
+			return (-1);
+		}
 
-	/* Expect a CRLF to trail the chunks */
-	i = HTC_Read(htc, buf, 1);
-	if (i == 1 && buf[0] == '\r')
+		/* Skip trailing white space */
+		while(vct_islws(buf[u]) && buf[u] != '\n') {
+			i = HTC_Read(htc, buf + u, 1);
+			CERR();
+		}
+
+		if (buf[u] != '\n') {
+			WSP(sp, SLT_FetchError,	"chunked header char syntax");
+			return (-1);
+		}
+		buf[u] = '\0';
+
+		cl = fetch_number(buf, 16);
+		if (cl < 0) {
+			WSP(sp, SLT_FetchError,	"chunked header nbr syntax");
+			return (-1);
+		} else if (cl > 0) {
+			i = fetch_bytes(sp, htc, cl);
+			CERR();
+		}
 		i = HTC_Read(htc, buf, 1);
-	if (i != 1 || buf[0] != '\n') {
-		WSP(sp, SLT_FetchError, "chunked missing trailing crlf");
-		return (1);	/* Accept fetch, but do not reuse connection */
-	}
-
-	if (st != NULL && st->len == 0) {
-		VTAILQ_REMOVE(&sp->obj->store, st, list);
-		STV_free(st);
-	} else if (st != NULL && st->len < st->space)
-		STV_trim(st, st->len);
+		CERR();
+		if (buf[0] == '\r') {
+			i = HTC_Read(htc, buf, 1);
+			CERR();
+		}
+		if (buf[0] != '\n') {
+			WSP(sp, SLT_FetchError,	"chunked tail syntax");
+			return (-1);
+		}
+	} while (cl > 0);
 	return (0);
 }
 
+#undef CERR
 
 /*--------------------------------------------------------------------*/
-
-static void
-dump_st(const struct sess *sp, const struct storage *st)
-{
-	txt t;
-
-	t.b = (void*)st->ptr;
-	t.e = (void*)(st->ptr + st->len);
-	WSLR(sp->wrk, SLT_Debug, sp->fd, t);
-}
 
 static int
 fetch_eof(const struct sess *sp, struct http_conn *htc)
 {
 	int i;
-	unsigned char *p;
-	struct storage *st;
-	unsigned v;
 
 	assert(sp->wrk->body_status == BS_EOF);
-	if (fetchfrag > 0)
-		WSL(sp->wrk, SLT_Debug, sp->fd,
-		    "Fetch %d byte segments:", fetchfrag);
-	p = NULL;
-	v = 0;
-	st = NULL;
-	while (1) {
-		if (v == 0) {
-			if (st != NULL && fetchfrag > 0)
-				dump_st(sp, st);
-			st = STV_alloc(sp, params->fetch_chunksize * 1024LL);
-			VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-			p = st->ptr + st->len;
-			v = st->space - st->len;
-			if (fetchfrag > 0 && v > fetchfrag)
-				v = fetchfrag;
-		}
-		AN(p);
-		AN(st);
-		i = HTC_Read(htc, p, v);
-		if (i < 0) {
-			WSP(sp, SLT_FetchError,
-			    "eof read_error: %d", errno);
-			return (-1);
-		}
-		if (i == 0)
-			break;
-		p += i;
-		v -= i;
-		st->len += i;
-		sp->obj->len += i;
+	i = fetch_bytes(sp, htc, 1000000000000);	/* XXX ? */
+	if (i < 0) {
+		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
+		    errno, strerror(errno));
+		return (-1);
 	}
-	if (fetchfrag > 0)
-		dump_st(sp, st);
-
-	if (st->len == 0) {
-		VTAILQ_REMOVE(&sp->obj->store, st, list);
-		STV_free(st);
-	} else
-		STV_trim(st, st->len);
-
-	return (1);
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -474,6 +456,7 @@ FetchBody(struct sess *sp)
 	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
 	 */
 
+	AZ(sp->wrk->storage);
 	switch (sp->wrk->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -505,8 +488,10 @@ FetchBody(struct sess *sp)
 		mklen = 0;
 		INCOMPL();
 	}
+	fetch_end(sp);
+	AZ(sp->wrk->storage);
 
-	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %u %u",
+	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
 	    sp->wrk->body_status, cls, mklen);
 
 	if (sp->wrk->body_status == BS_ERROR) {

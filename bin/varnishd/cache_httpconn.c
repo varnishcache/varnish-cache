@@ -178,12 +178,12 @@ HTC_Rx(struct http_conn *htc)
 	return (HTC_Complete(htc));
 }
 
-int
-HTC_Read(struct http_conn *htc, void *d, unsigned len)
+ssize_t
+HTC_Read(struct http_conn *htc, void *d, size_t len)
 {
-	unsigned l;
+	size_t l;
 	unsigned char *p;
-	int i;
+	ssize_t i;
 
 	l = 0;
 	p = d;

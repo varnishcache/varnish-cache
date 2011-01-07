@@ -90,6 +90,7 @@ struct director;
 struct object;
 struct objhead;
 struct objcore;
+struct storage;
 struct workreq;
 struct esidata;
 struct vrt_backend;
@@ -250,7 +251,6 @@ struct worker {
 	struct http		*beresp;
 	struct http		*resp;
 
-	enum body_status	body_status;
 	unsigned		cacheable;
 	double			age;
 	double			entered;
@@ -260,6 +260,10 @@ struct worker {
 
 	/* This is only here so VRT can find it */
 	char			*storage_hint;
+
+	/* Fetch stuff */
+	enum body_status	body_status;
+	struct storage		*storage;
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -649,7 +653,7 @@ void http_CollectHdr(struct http *hp, const char *hdr);
 void HTC_Init(struct http_conn *htc, struct ws *ws, int fd);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-int HTC_Read(struct http_conn *htc, void *d, unsigned len);
+ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
