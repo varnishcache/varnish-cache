@@ -54,6 +54,7 @@ vct_is(unsigned char x, uint16_t y)
 }
 
 #define vct_issp(x) vct_is(x, VCT_SP)
+#define vct_ishex(x) vct_is(x, VCT_HEX)
 #define vct_iscrlf(x) vct_is(x, VCT_CRLF)
 #define vct_islws(x) vct_is(x, VCT_LWS)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
