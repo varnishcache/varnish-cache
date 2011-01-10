@@ -811,6 +811,9 @@ int ZEXPORT deflate (strm, flush)
         ERR_RETURN(strm, Z_BUF_ERROR);
     }
 
+    if (strm->start_bit == 0)
+	strm->start_bit = (strm->total_out + s->pending) * 8 + s->bi_valid;
+
     /* Start a new block or continue the current one.
      */
     if (strm->avail_in != 0 || s->lookahead != 0 ||
