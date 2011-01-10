@@ -132,10 +132,10 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
-	if (pop != NULL)
-		error = getaddrinfo(hop, pop, &hint, &res0);
-	else
-		error = getaddrinfo(t_host->dec, port, &hint, &res0);
+	error = getaddrinfo(
+	    hop != NULL ? hop : t_host->dec,
+	    pop != NULL ? pop : port,
+	    &hint, &res0);
 	free(hop);
 	free(pop);
 	if (error) {
