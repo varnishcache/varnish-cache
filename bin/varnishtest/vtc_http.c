@@ -534,7 +534,7 @@ cmd_http_gunzip_body(CMD_ARGS)
 	vz.next_in = TRUST_ME(hp->body);
 	vz.avail_in = hp->bodyl;
 
-	l = hp->bodyl;
+	l = hp->bodyl * 10;
 	p = calloc(l, 1);
 	AN(p);
 
@@ -564,7 +564,7 @@ cmd_http_gunzip_body(CMD_ARGS)
  */
 
 static void
-gzip_body(const char *txt, char **body, int *bodylen)
+gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 {
 	int l;
 	z_stream vz;
@@ -585,6 +585,12 @@ gzip_body(const char *txt, char **body, int *bodylen)
 	    Z_NO_COMPRESSION, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
 	*bodylen = vz.total_out;
+	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
+	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
+	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
+	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
 	assert(Z_OK == deflateEnd(&vz));
 }
 
@@ -670,13 +676,13 @@ cmd_http_txresp(CMD_ARGS)
 		} else if (!strcmp(*av, "-gziplen")) {
 			assert(body == nullbody);
 			b = synth_body(av[1], 1);
-			gzip_body(b, &body, &bodylen);
+			gzip_body(hp, b, &body, &bodylen);
 			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
-			gzip_body(av[1], &body, &bodylen);
+			gzip_body(hp, av[1], &body, &bodylen);
 			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
