@@ -53,7 +53,7 @@ nobase_noinst_HEADERS = \
 	vss.h \
 	vtypes.h
 
-vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
+vrt_stv_var.h vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
 	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
 
 CLEANFILES = vcl_returns.h \
