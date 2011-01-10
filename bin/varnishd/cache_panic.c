@@ -238,8 +238,8 @@ pan_sess(const struct sess *sp)
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
 
-	vsb_printf(vsp, "  restarts = %d, esis = %d\n",
-	    sp->restarts, sp->esis);
+	vsb_printf(vsp, "  restarts = %d, esi_level = %d\n",
+	    sp->restarts, sp->esi_level);
 
 	pan_ws(sp->ws, 2);
 	pan_http("req", sp->http, 2);

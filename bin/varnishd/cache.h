@@ -434,7 +434,7 @@ struct sess {
 	unsigned		xid;
 
 	int			restarts;
-	int			esis;
+	int			esi_level;
 	int			disable_esi;
 
 	uint8_t			hash_ignore_busy;

@@ -174,7 +174,7 @@ cnt_deliver(struct sess *sp)
 		sp->wrk->res_mode |= RES_ESI;
 	}
 
-	if (sp->esis > 0) {
+	if (sp->esi_level > 0) {
 		sp->wrk->res_mode &= ~RES_LEN;
 		sp->wrk->res_mode |= RES_ESI_CHILD;
 	}
@@ -273,7 +273,7 @@ cnt_done(struct sess *sp)
 	sp->director = NULL;
 	sp->restarts = 0;
 
-	if (sp->vcl != NULL && sp->esis == 0) {
+	if (sp->vcl != NULL && sp->esi_level == 0) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
 		sp->wrk->vcl = sp->vcl;
@@ -287,7 +287,7 @@ cnt_done(struct sess *sp)
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
-	} else if (sp->esis == 0) {
+	} else if (sp->esi_level == 0) {
 		dp = sp->t_resp - sp->t_req;
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
@@ -302,7 +302,7 @@ cnt_done(struct sess *sp)
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
-	if (sp->esis > 0)
+	if (sp->esi_level > 0)
 		return (1);
 
 	memset(&sp->acct_req, 0, sizeof sp->acct_req);
@@ -1126,7 +1126,7 @@ cnt_recv(struct sess *sp)
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
-		if (sp->esis > 0) {
+		if (sp->esi_level > 0) {
 			/* XXX: VSL something */
 			INCOMPL();
 			/* sp->step = STP_DONE; */

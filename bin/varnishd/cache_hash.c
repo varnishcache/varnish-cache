@@ -429,7 +429,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
-		if (sp->esis == 0) {
+		if (sp->esi_level == 0) {
 			CHECK_OBJ_NOTNULL(sp->wrk->nwaitinglist,
 			    WAITINGLIST_MAGIC);
 			if (oh->waitinglist == NULL) {

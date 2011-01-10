@@ -12,13 +12,18 @@ server s1 {
 		After include
 	}
 	rxreq 
-	expect req.url == "/body"
+	expect req.url == "/body1"
 	txresp -body {
 		Included file
 	}
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.esi_level > 0) {
+			set req.url = req.url + req.esi_level;
+		}
+	}
 	sub vcl_fetch {
 		esi;
 	}

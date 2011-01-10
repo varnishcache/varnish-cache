@@ -172,6 +172,12 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('req.esi_level',
+		'INT',
+		( 'all',),
+		( ),
+		'const struct sess *'
+	),
 	('req.grace',
 		'DURATION',
 		( 'all',),

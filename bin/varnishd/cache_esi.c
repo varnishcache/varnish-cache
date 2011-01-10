@@ -874,7 +874,7 @@ ESI_Deliver(struct sess *sp)
 				(void)WRW_Write(w, "\r\n", -1);
 		}
 		if (eb->include.b == NULL ||
-		    sp->esis >= params->max_esi_includes)
+		    sp->esi_level >= params->max_esi_includes)
 			continue;
 
 		if (WRW_Flush(w)) {
@@ -883,7 +883,7 @@ ESI_Deliver(struct sess *sp)
 		}
 		AZ(WRW_FlushRelease(w));
 
-		sp->esis++;
+		sp->esi_level++;
 		obj = sp->obj;
 		sp->obj = NULL;
 		res_mode = sp->wrk->res_mode;
@@ -934,7 +934,7 @@ ESI_Deliver(struct sess *sp)
 		sp->xid = sxid;
 		AN(sp->wrk);
 		assert(sp->step == STP_DONE);
-		sp->esis--;
+		sp->esi_level--;
 		sp->obj = obj;
 		sp->wrk->res_mode = res_mode;
 
