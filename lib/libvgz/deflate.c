@@ -361,6 +361,7 @@ int ZEXPORT deflateReset (strm)
     }
 
     strm->total_in = strm->total_out = 0;
+    strm->start_bit = strm->stop_bit = strm->last_bit = 0;
     strm->msg = Z_NULL; /* use zfree if we ever allocate msg dynamically */
     strm->data_type = Z_UNKNOWN;
 

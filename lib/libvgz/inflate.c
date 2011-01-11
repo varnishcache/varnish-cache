@@ -108,6 +108,7 @@ z_streamp strm;
     if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
     strm->total_in = strm->total_out = state->total = 0;
+    strm->start_bit = strm->stop_bit = strm->last_bit = 0;
     strm->msg = Z_NULL;
     strm->adler = 1;        /* to support ill-conceived Java test suite */
     state->mode = HEAD;
