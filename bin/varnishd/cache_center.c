@@ -643,7 +643,9 @@ cnt_fetch(struct sess *sp)
 	else
 		sp->obj->last_modified = sp->wrk->entered;
 
+	AZ(sp->wrk->vfp);
 	i = FetchBody(sp);
+	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbc);
 	AN(sp->director);

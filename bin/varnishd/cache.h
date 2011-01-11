@@ -211,6 +211,18 @@ struct dstat {
 #undef L0
 #undef L1
 
+/* Fetch processors --------------------------------------------------*/
+
+typedef void vfp_begin_f(const struct sess *, size_t );
+typedef int vfp_bytes_f(const struct sess *, struct http_conn *, size_t);
+typedef int vfp_end_f(const struct sess *sp);
+
+struct vfp {
+	vfp_begin_f	*begin;
+	vfp_bytes_f	*bytes;
+	vfp_end_f	*end;
+};
+
 /*--------------------------------------------------------------------*/
 
 struct worker {
@@ -264,6 +276,7 @@ struct worker {
 	/* Fetch stuff */
 	enum body_status	body_status;
 	struct storage		*storage;
+	struct vfp		*vfp;
 
 	/* Timeouts */
 	double			connect_timeout;

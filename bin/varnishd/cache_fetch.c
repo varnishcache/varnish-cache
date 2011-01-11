@@ -46,12 +46,22 @@ SVNID("$Id$")
 static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
- * If we have any idea how big this object might be, we try to allocate
- * a slab of storage that big.
+ * VFP NOOP
+ *
+ * This fetch-processor does nothing but store the object.
+ * It also documents the API
  */
 
+/*--------------------------------------------------------------------
+ * VFP_BEGIN
+ *
+ * Called to set up stuff.
+ *
+ * 'estimate' is the estimate of the number of bytes we expect to receive,
+ * as seen on the socket, or zero if unknown.
+ */
 static void
-fetch_begin(const struct sess *sp, size_t estimate)
+vfp_nop_begin(const struct sess *sp, size_t estimate)
 {
 
 	AZ(sp->wrk->storage);
@@ -65,11 +75,17 @@ fetch_begin(const struct sess *sp, size_t estimate)
 }
 
 /*--------------------------------------------------------------------
- * Fetch this many bytes and feed them to the monster.
+ * VFP_BYTES
+ *
+ * Process (up to) 'bytes' from the socket.
+ *
+ * Return -1 on error
+ * Return 0 on EOF on socket even if bytes not reached.
+ * Return 1 when 'bytes' have been processed.
  */
 
 static int
-fetch_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_nop_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	ssize_t l, w;
 	struct storage *st;
@@ -106,27 +122,39 @@ fetch_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
 }
 
 /*--------------------------------------------------------------------
- * Fetch is complete, dispose of cached storage slab
+ * VFP_END
+ *
+ * Finish & cleanup
+ *
+ * Return -1 for error
+ * Return 0 for OK
  */
 
-static void
-fetch_end(const struct sess *sp)
+static int
+vfp_nop_end(const struct sess *sp)
 {
 	struct storage *st;
 
 	st = sp->wrk->storage;
 	sp->wrk->storage = NULL;
 	if (st == NULL)
-		return;
+		return (0);
 
 	if (st->len == 0) {
 		STV_free(st);
-		return;
+		return (0);
 	}
 	if (st->len < st->space)
 		STV_trim(st, st->len);
 	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	return (0);
 }
+
+static struct vfp vfp_nop = {
+	.begin	=	vfp_nop_begin,
+	.bytes	=	vfp_nop_bytes,
+	.end	=	vfp_nop_end,
+};
 
 /*--------------------------------------------------------------------
  * Convert a string to a size_t safely
@@ -168,9 +196,9 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 	if (cl == 0)
 		return (0);
 
-	fetch_begin(sp, cl);
+	sp->wrk->vfp->begin(sp, cl);
 
-	i = fetch_bytes(sp, htc, cl);
+	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {
 		WSP(sp, SLT_FetchError, "straight read_error: %d (%s)",
 		    errno, strerror(errno));
@@ -199,7 +227,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	fetch_begin(sp, 0);
+	sp->wrk->vfp->begin(sp, 0);
 	assert(sp->wrk->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
@@ -240,7 +268,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 			WSP(sp, SLT_FetchError,	"chunked header nbr syntax");
 			return (-1);
 		} else if (cl > 0) {
-			i = fetch_bytes(sp, htc, cl);
+			i = sp->wrk->vfp->bytes(sp, htc, cl);
 			CERR();
 		}
 		i = HTC_Read(htc, buf, 1);
@@ -267,8 +295,8 @@ fetch_eof(const struct sess *sp, struct http_conn *htc)
 	int i;
 
 	assert(sp->wrk->body_status == BS_EOF);
-	fetch_begin(sp, 0);
-	i = fetch_bytes(sp, htc, 1000000000000);	/* XXX ? */
+	sp->wrk->vfp->begin(sp, 0);
+	i = sp->wrk->vfp->bytes(sp, htc, 1000000000000);	/* XXX ? */
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
 		    errno, strerror(errno));
@@ -449,6 +477,9 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
 
+	if (sp->wrk->vfp == NULL)
+		sp->wrk->vfp = &vfp_nop;
+
 	/* We use the unmodified headers */
 	hp = sp->wrk->beresp1;
 	AN(sp->director);
@@ -491,7 +522,7 @@ FetchBody(struct sess *sp)
 		mklen = 0;
 		INCOMPL();
 	}
-	fetch_end(sp);
+	XXXAZ(sp->wrk->vfp->end(sp));
 	AZ(sp->wrk->storage);
 
 	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
