@@ -283,16 +283,6 @@ parse_ban_url(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_esi(struct vcc *tl)
-{
-
-	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_ESI(sp);\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_new_syntax(struct vcc *tl)
 {
 
@@ -402,7 +392,6 @@ static struct action_table {
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
-	{ "esi",		parse_esi, VCL_MET_FETCH },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "panic",		parse_panic },
 	{ "ban",		parse_ban },

@@ -223,6 +223,9 @@ struct vfp {
 	vfp_end_f	*end;
 };
 
+extern struct vfp vfp_gunzip;
+extern struct vfp vfp_gzip;
+
 /*--------------------------------------------------------------------*/
 
 struct worker {
@@ -268,7 +271,6 @@ struct worker {
 	double			entered;
 	double			ttl;
 	double			grace;
-	unsigned		do_esi;
 
 	/* This is only here so VRT can find it */
 	char			*storage_hint;
@@ -277,6 +279,9 @@ struct worker {
 	enum body_status	body_status;
 	struct storage		*storage;
 	struct vfp		*vfp;
+	unsigned		do_esi;
+	unsigned		do_gzip;
+	unsigned		do_gunzip;
 
 	/* Timeouts */
 	double			connect_timeout;

@@ -46,7 +46,7 @@ SVNID("$Id$")
 static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
- * VFP NOOP
+ * VFP_NOP
  *
  * This fetch-processor does nothing but store the object.
  * It also documents the API

@@ -14,7 +14,7 @@ server s1 {
 varnish v1 -arg "-p diag_bitmap=0x20" -vcl+backend {
 	sub vcl_fetch {
 		if (req.url == "/") {
-			esi;
+			set beresp.do_esi = true;
 		}
 	}
 } -start

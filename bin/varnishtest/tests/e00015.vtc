@@ -29,7 +29,7 @@ varnish v1 -vcl+backend {
 	    	if(req.url == "/") {
  	    	   set req.esi = false;
 		}
-		esi;
+		set beresp.do_esi = true;
 	}
 } -start
 

@@ -298,19 +298,19 @@ sp_variables = (
 		( 'fetch',),
 		'const struct sess *'
 	),
-	('beresp.esi',
+	('beresp.do_esi',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
-	('beresp.gzip',
+	('beresp.do_gzip',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
 		'const struct sess *'
 	),
-	('beresp.gunzip',
+	('beresp.do_gunzip',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),

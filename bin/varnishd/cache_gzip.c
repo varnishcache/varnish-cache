@@ -167,3 +167,75 @@ VGZ_Destroy(struct vgz **vg)
 	*vg = NULL;
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * VFP_GUNZIP
+ *
+ * A VFP for gunzip'ing an object as we receive it from the backend
+ */
+
+static void
+vfp_gunzip_begin(const struct sess *sp, size_t estimate)
+{
+	(void)sp;
+	(void)estimate;
+}
+
+static int
+vfp_gunzip_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+{
+	(void)sp;
+	(void)htc;
+	(void)bytes;
+	return (-1);
+}
+
+static int
+vfp_gunzip_end(const struct sess *sp)
+{
+	(void)sp;
+	return (-1);
+}
+
+struct vfp vfp_gunzip = {
+        .begin  =       vfp_gunzip_begin,
+        .bytes  =       vfp_gunzip_bytes,
+        .end    =       vfp_gunzip_end,
+};
+
+
+/*--------------------------------------------------------------------
+ * VFP_GZIP
+ *
+ * A VFP for gzip'ing an object as we receive it from the backend
+ */
+
+static void
+vfp_gzip_begin(const struct sess *sp, size_t estimate)
+{
+	(void)sp;
+	(void)estimate;
+}
+
+static int
+vfp_gzip_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+{
+	(void)sp;
+	(void)htc;
+	(void)bytes;
+	return (-1);
+}
+
+static int
+vfp_gzip_end(const struct sess *sp)
+{
+	(void)sp;
+	return (-1);
+}
+
+struct vfp vfp_gzip = {
+        .begin  =       vfp_gzip_begin,
+        .bytes  =       vfp_gzip_bytes,
+        .end    =       vfp_gzip_end,
+};
+

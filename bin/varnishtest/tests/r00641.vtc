@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 		// return (pass);
 	}
 	sub vcl_fetch {
-		esi;
+		set beresp.do_esi = true;
 	}
 } -cliok "param.set sess_timeout 60" -start
 

@@ -15,7 +15,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
-		esi;
+		set beresp.do_esi = true;
 	}
 } -start -cliok "param.set esi_syntax 4"
 

@@ -378,22 +378,6 @@ VRT_Rollback(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ESI(const struct sess *sp)
-{
-
-	if (sp->cur_method != VCL_MET_FETCH) {
-		/* XXX: we should catch this at compile time */
-		WSP(sp, SLT_VCL_error,
-		    "esi can only be called from vcl_fetch");
-		return;
-	}
-
-	sp->wrk->do_esi = 1;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
 VRT_panic(const struct sess *sp, const char *str, ...)
 {
 	va_list ap;

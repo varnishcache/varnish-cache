@@ -34,7 +34,7 @@ varnish v1 -vcl+backend {
 	    	if(req.url == "/body") {
 		   set req.esi = false;
 		} 
-		esi;
+		set beresp.do_esi = true;
 	}
 } -start
 
