@@ -1,0 +1,54 @@
+# $Id$
+
+test "test gunzip on fetch"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.accept-encoding == "gzip"
+	txresp -gziplen 41
+
+	rxreq
+	expect req.url == "/bar"
+	expect req.http.accept-encoding == "gzip"
+	txresp -bodylen 42
+
+	rxreq
+	expect req.url == "/foobar"
+	expect req.http.accept-encoding == "gzip"
+	txresp -bodylen 43
+} -start
+
+varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
+
+	sub vcl_fetch {
+		set beresp.do_gunzip = true;
+		if (req.url == "/foobar") {
+			set beresp.do_gzip = true;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /foo -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.bodylen == 41
+
+	txreq -url /bar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.bodylen == 42
+
+	txreq -url /foobar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	gunzip
+	expect resp.bodylen == 43
+
+	txreq -url /foobar 
+	rxresp
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.bodylen == 43
+} -run
+

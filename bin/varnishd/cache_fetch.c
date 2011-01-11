@@ -60,7 +60,7 @@ static unsigned fetchfrag;
  * 'estimate' is the estimate of the number of bytes we expect to receive,
  * as seen on the socket, or zero if unknown.
  */
-static void
+static void __match_proto__()
 vfp_nop_begin(struct sess *sp, size_t estimate)
 {
 
@@ -84,7 +84,7 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
  * Return 1 when 'bytes' have been processed.
  */
 
-static int
+static int __match_proto__()
 vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	ssize_t l, w;
@@ -130,7 +130,7 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
  * Return 0 for OK
  */
 
-static int
+static int __match_proto__()
 vfp_nop_end(struct sess *sp)
 {
 	struct storage *st;

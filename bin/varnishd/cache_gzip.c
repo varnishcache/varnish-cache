@@ -41,6 +41,7 @@
 SVNID("$Id$")
 
 #include "cache.h"
+#include "stevedore.h"
 
 #include "zlib.h"
 
@@ -52,7 +53,7 @@ struct vgz {
 	char			*tmp_snapshot;
 
 	struct ws		*buf;
-	unsigned		bufsiz;
+	size_t			bufsiz;
 
 	z_stream		vz;
 };
@@ -173,31 +174,86 @@ VGZ_Destroy(struct vgz **vg)
  * A VFP for gunzip'ing an object as we receive it from the backend
  */
 
-static void
+static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 	sp->wrk->vfp_private = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
 }
 
-static int
+static int __match_proto__()
 vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
-	struct vgz *vgz;
+	struct vgz *vg;
+	struct storage *st;
+	ssize_t l, w;
+	int i = -100;
 
-	CAST_OBJ_NOTNULL(vgz, sp->wrk->vfp_private, VGZ_MAGIC);
-	(void)htc;
-	(void)bytes;
+	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	AZ(vg->vz.avail_in);
+	while (bytes > 0 || vg->vz.avail_in > 0) {
+		if (sp->wrk->storage == NULL)
+			sp->wrk->storage = STV_alloc(sp,
+			    params->fetch_chunksize * 1024LL);
+		if (sp->wrk->storage == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		st = sp->wrk->storage;
+
+		vg->vz.next_out = st->ptr + st->len;
+		vg->vz.avail_out = st->space - st->len;
+
+		if (vg->vz.avail_in == 0 && bytes > 0) {
+			l = vg->bufsiz;
+			if (l > bytes)
+				l = bytes;
+			w = HTC_Read(htc, vg->buf->f, l);
+			if (w <= 0)
+				return (w);
+			vg->vz.next_in = (void*)vg->buf->f;
+			vg->vz.avail_in = w;
+			bytes -= w;
+		}
+
+		i = inflate(&vg->vz, 0);
+		assert(i == Z_OK || i == Z_STREAM_END);
+		st->len = st->space - vg->vz.avail_out;
+		if (st->len == st->space) {
+			VTAILQ_INSERT_TAIL(&sp->obj->store,
+			    sp->wrk->storage, list);
+			sp->obj->len += st->len;
+			sp->wrk->storage = NULL;
+		}
+	}
+	if (i == Z_STREAM_END)
+		return (1);
 	return (-1);
 }
 
-static int
+static int __match_proto__()
 vfp_gunzip_end(struct sess *sp)
 {
-	struct vgz *vgz;
+	struct vgz *vg;
+	struct storage *st;
 
-	CAST_OBJ_NOTNULL(vgz, sp->wrk->vfp_private, VGZ_MAGIC);
-	return (-1);
+	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	VGZ_Destroy(&vg);
+
+	st = sp->wrk->storage;
+	sp->wrk->storage = NULL;
+	if (st == NULL)
+		return (0);
+
+	if (st->len == 0) {
+		STV_free(st);
+		return (0);
+	}
+	if (st->len < st->space)
+		STV_trim(st, st->len);
+	sp->obj->len += st->len;
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	return (0);
 }
 
 struct vfp vfp_gunzip = {
@@ -213,27 +269,98 @@ struct vfp vfp_gunzip = {
  * A VFP for gzip'ing an object as we receive it from the backend
  */
 
-static void
+static void __match_proto__()
 vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
-	(void)sp;
+	struct vgz *vg;
 	(void)estimate;
+
+	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
+	/* XXX: hack */
+	memset(&vg->vz, 0, sizeof vg->vz);
+	assert(Z_OK == deflateInit2(&vg->vz,
+	    0,
+	    Z_DEFLATED,
+	    31,
+	    9,
+	    Z_DEFAULT_STRATEGY));
+
+	sp->wrk->vfp_private = vg;
 }
 
-static int
+static int __match_proto__()
 vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
-	(void)sp;
-	(void)htc;
-	(void)bytes;
+	struct vgz *vg;
+	struct storage *st;
+	ssize_t l, w;
+	int i = -100;
+
+	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	AZ(vg->vz.avail_in);
+	while (bytes > 0 || vg->vz.avail_in > 0) {
+		if (sp->wrk->storage == NULL)
+			sp->wrk->storage = STV_alloc(sp,
+			    params->fetch_chunksize * 1024LL);
+		if (sp->wrk->storage == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		st = sp->wrk->storage;
+
+		vg->vz.next_out = st->ptr + st->len;
+		vg->vz.avail_out = st->space - st->len;
+
+		if (vg->vz.avail_in == 0 && bytes > 0) {
+			l = vg->bufsiz;
+			if (l > bytes)
+				l = bytes;
+			w = HTC_Read(htc, vg->buf->f, l);
+			if (w <= 0)
+				return (w);
+			vg->vz.next_in = (void*)vg->buf->f;
+			vg->vz.avail_in = w;
+			bytes -= w;
+		}
+
+		i = deflate(&vg->vz, bytes == 0 ? Z_FINISH : 0);
+		assert(i == Z_OK || i == Z_STREAM_END);
+		st->len = st->space - vg->vz.avail_out;
+		if (st->len == st->space) {
+			VTAILQ_INSERT_TAIL(&sp->obj->store,
+			    sp->wrk->storage, list);
+			sp->obj->len += st->len;
+			sp->wrk->storage = NULL;
+		}
+	}
+	if (i == Z_STREAM_END)
+		return (1);
 	return (-1);
 }
 
-static int
+static int __match_proto__()
 vfp_gzip_end(struct sess *sp)
 {
-	(void)sp;
-	return (-1);
+	struct vgz *vg;
+	struct storage *st;
+
+	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	VGZ_Destroy(&vg);
+
+	st = sp->wrk->storage;
+	sp->wrk->storage = NULL;
+	if (st == NULL)
+		return (0);
+
+	if (st->len == 0) {
+		STV_free(st);
+		return (0);
+	}
+	if (st->len < st->space)
+		STV_trim(st, st->len);
+	sp->obj->len += st->len;
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	return (0);
 }
 
 struct vfp vfp_gzip = {
@@ -241,4 +368,3 @@ struct vfp vfp_gzip = {
         .bytes  =       vfp_gzip_bytes,
         .end    =       vfp_gzip_end,
 };
-

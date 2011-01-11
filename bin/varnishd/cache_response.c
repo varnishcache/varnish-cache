@@ -236,6 +236,7 @@ RES_BuildHttp(struct sess *sp)
 /*--------------------------------------------------------------------
  * We have a gzip'ed object and need to ungzip it for a client which
  * does not understand gzip.
+ * XXX: handle invalid gzip data better (how ?)
  */
 
 static void

@@ -585,6 +585,22 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->objcore);
 	}
 
+	AZ(sp->wrk->vfp);
+	/* XXX: precedence, also: do_esi */
+
+	if (sp->wrk->do_gunzip &&
+	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
+		http_Unset(sp->wrk->beresp, H_Content_Encoding);
+		sp->wrk->vfp = &vfp_gunzip;
+	}
+
+	if (sp->wrk->do_gzip &&
+	    !http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
+		    "Content-Encoding: %s", "gzip");
+		sp->wrk->vfp = &vfp_gzip;
+	}
+
 	l = http_EstimateWS(sp->wrk->beresp,
 	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
@@ -642,12 +658,6 @@ cnt_fetch(struct sess *sp)
 	else
 		sp->obj->last_modified = sp->wrk->entered;
 
-	AZ(sp->wrk->vfp);
-	/* XXX: precedence, also: do_esi */
-	if (sp->wrk->do_gunzip)
-		sp->wrk->vfp = &vfp_gunzip;
-	else if (sp->wrk->do_gzip)
-		sp->wrk->vfp = &vfp_gzip;
 	i = FetchBody(sp);
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
