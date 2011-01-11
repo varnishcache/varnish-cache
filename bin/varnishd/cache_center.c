@@ -591,8 +591,11 @@ cnt_fetch(struct sess *sp)
 	if (vary != NULL)
 		l += varyl;
 
-	/* Space for producing a Content-Length: header */
-	l += 30;
+	/*
+	 * Space for producing a Content-Length: header including padding 
+	 * A billion gigabytes is enough for anybody.
+	 */
+	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
 
 	/*
 	 * XXX: If we have a Length: header, we should allocate the body
