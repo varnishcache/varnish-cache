@@ -213,9 +213,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(const struct sess *, size_t );
-typedef int vfp_bytes_f(const struct sess *, struct http_conn *, size_t);
-typedef int vfp_end_f(const struct sess *sp);
+typedef void vfp_begin_f(struct sess *, size_t );
+typedef int vfp_bytes_f(struct sess *, struct http_conn *, size_t);
+typedef int vfp_end_f(struct sess *sp);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -279,6 +279,7 @@ struct worker {
 	enum body_status	body_status;
 	struct storage		*storage;
 	struct vfp		*vfp;
+	void			*vfp_private;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		do_gunzip;

@@ -61,7 +61,7 @@ static unsigned fetchfrag;
  * as seen on the socket, or zero if unknown.
  */
 static void
-vfp_nop_begin(const struct sess *sp, size_t estimate)
+vfp_nop_begin(struct sess *sp, size_t estimate)
 {
 
 	AZ(sp->wrk->storage);
@@ -85,7 +85,7 @@ vfp_nop_begin(const struct sess *sp, size_t estimate)
  */
 
 static int
-vfp_nop_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	ssize_t l, w;
 	struct storage *st;
@@ -131,7 +131,7 @@ vfp_nop_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
  */
 
 static int
-vfp_nop_end(const struct sess *sp)
+vfp_nop_end(struct sess *sp)
 {
 	struct storage *st;
 
@@ -182,7 +182,7 @@ fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
+fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 {
 	int i;
 	ssize_t cl;
@@ -220,7 +220,7 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 	} while (0)
 
 static int
-fetch_chunked(const struct sess *sp, struct http_conn *htc)
+fetch_chunked(struct sess *sp, struct http_conn *htc)
 {
 	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
@@ -290,7 +290,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_eof(const struct sess *sp, struct http_conn *htc)
+fetch_eof(struct sess *sp, struct http_conn *htc)
 {
 	int i;
 

@@ -127,7 +127,7 @@ VGZ_Feed(struct vgz *vg, const void *ptr, size_t len)
 }
 
 /*--------------------------------------------------------------------*/
-#include <stdio.h>
+
 int
 VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 {
@@ -151,7 +151,6 @@ VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 		return (1);
 	if (i == Z_BUF_ERROR)
 		return (2);
-fprintf(stderr, "--------------------> GUNZIP = %d\n", i);
 	return (-1);
 }
 
@@ -175,25 +174,29 @@ VGZ_Destroy(struct vgz **vg)
  */
 
 static void
-vfp_gunzip_begin(const struct sess *sp, size_t estimate)
+vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
-	(void)sp;
 	(void)estimate;
+	sp->wrk->vfp_private = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
 }
 
 static int
-vfp_gunzip_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
-	(void)sp;
+	struct vgz *vgz;
+
+	CAST_OBJ_NOTNULL(vgz, sp->wrk->vfp_private, VGZ_MAGIC);
 	(void)htc;
 	(void)bytes;
 	return (-1);
 }
 
 static int
-vfp_gunzip_end(const struct sess *sp)
+vfp_gunzip_end(struct sess *sp)
 {
-	(void)sp;
+	struct vgz *vgz;
+
+	CAST_OBJ_NOTNULL(vgz, sp->wrk->vfp_private, VGZ_MAGIC);
 	return (-1);
 }
 
@@ -211,14 +214,14 @@ struct vfp vfp_gunzip = {
  */
 
 static void
-vfp_gzip_begin(const struct sess *sp, size_t estimate)
+vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)sp;
 	(void)estimate;
 }
 
 static int
-vfp_gzip_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	(void)sp;
 	(void)htc;
@@ -227,7 +230,7 @@ vfp_gzip_bytes(const struct sess *sp, struct http_conn *htc, size_t bytes)
 }
 
 static int
-vfp_gzip_end(const struct sess *sp)
+vfp_gzip_end(struct sess *sp)
 {
 	(void)sp;
 	return (-1);

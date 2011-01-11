@@ -598,8 +598,7 @@ cnt_fetch(struct sess *sp)
 	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
 
 	/*
-	 * XXX: If we have a Length: header, we should allocate the body
-	 * XXX: also.
+	 * XXX: VFP's may affect estimate
 	 */
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
@@ -644,6 +643,11 @@ cnt_fetch(struct sess *sp)
 		sp->obj->last_modified = sp->wrk->entered;
 
 	AZ(sp->wrk->vfp);
+	/* XXX: precedence, also: do_esi */
+	if (sp->wrk->do_gunzip)
+		sp->wrk->vfp = &vfp_gunzip;
+	else if (sp->wrk->do_gzip)
+		sp->wrk->vfp = &vfp_gzip;
 	i = FetchBody(sp);
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
