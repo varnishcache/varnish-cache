@@ -51,7 +51,7 @@ static unsigned fetchfrag;
  */
 
 static void
-fetch_estimate(const struct sess *sp, size_t estimate)
+fetch_begin(const struct sess *sp, size_t estimate)
 {
 
 	AZ(sp->wrk->storage);
@@ -60,7 +60,8 @@ fetch_estimate(const struct sess *sp, size_t estimate)
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "Fetch %d byte segments:", fetchfrag);
 	}
-	sp->wrk->storage = STV_alloc(sp, estimate);
+	if (estimate > 0)
+		sp->wrk->storage = STV_alloc(sp, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -167,7 +168,7 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 	if (cl == 0)
 		return (0);
 
-	fetch_estimate(sp, cl);
+	fetch_begin(sp, cl);
 
 	i = fetch_bytes(sp, htc, cl);
 	if (i <= 0) {
@@ -198,6 +199,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
+	fetch_begin(sp, 0);
 	assert(sp->wrk->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
@@ -265,6 +267,7 @@ fetch_eof(const struct sess *sp, struct http_conn *htc)
 	int i;
 
 	assert(sp->wrk->body_status == BS_EOF);
+	fetch_begin(sp, 0);
 	i = fetch_bytes(sp, htc, 1000000000000);	/* XXX ? */
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
