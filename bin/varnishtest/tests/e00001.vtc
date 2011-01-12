@@ -9,7 +9,7 @@ server s1 {
 		<esi:remove>
 		This is a test: Unseen University
 		</esi:remove>
-		This is a test: Hello world
+		<esX>This is a test: Hello world
 	}
 } -start
 
@@ -23,7 +23,7 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 35
+	expect resp.bodylen == 40
 }
 
 client c1 -run
