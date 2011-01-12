@@ -811,6 +811,8 @@ char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 void ESI_Deliver(struct sess *);
 void ESI_Destroy(struct object *);
 void ESI_Parse(struct sess *);
+#else
+void ESI_Deliver(struct sess *);
 #endif /* OLD_ESI */
 
 /* cache_vrt_vmod.c */

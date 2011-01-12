@@ -170,6 +170,7 @@ vep_end_verbatim(struct vep_state *vep, const char *p)
 		vbe32enc(buf + 1, (uint32_t)l);
 		vsb_bcat(vep->vsb, buf, 5);
 	}
+	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 	vep->ver_p = p;
 } 
 
@@ -411,6 +412,7 @@ vfp_esi_end(struct sess *sp)
 	sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));
 	AN(sp->obj->esidata);
 	memcpy(sp->obj->esidata->ptr, vsb_data(vep->vsb), vsb_len(vep->vsb));
+	sp->obj->esidata->len = vsb_len(vep->vsb);
 
 	st = sp->wrk->storage;
 	sp->wrk->storage = NULL;
