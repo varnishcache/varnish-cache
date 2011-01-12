@@ -75,6 +75,7 @@ noinst_HEADERS = \
 	cache_ban.h \
 	cache_backend.h \
 	cache_backend_poll.h \
+	cache_esi.h \
 	cache_waiter.h \
 	common.h \
 	default_vcl.h \
