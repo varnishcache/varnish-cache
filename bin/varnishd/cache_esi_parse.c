@@ -241,6 +241,8 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				else
 					vep->state = VEP_NOTXML;
 			}
+		} else if (vep->state == VEP_NOTXML) {
+			p = e;
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
 			 * Hunt for start of next tag
@@ -406,13 +408,17 @@ vfp_esi_end(struct sess *sp)
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	vsb_finish(vep->vsb);
-	printf("ESI <%s>\n", vsb_data(vep->vsb));
+	if (vep->state != VEP_NOTXML) {
+		printf("ESI <%s>\n", vsb_data(vep->vsb));
 
-	/* XXX: This is a huge waste of storage... */
-	sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));
-	AN(sp->obj->esidata);
-	memcpy(sp->obj->esidata->ptr, vsb_data(vep->vsb), vsb_len(vep->vsb));
-	sp->obj->esidata->len = vsb_len(vep->vsb);
+		/* XXX: This is a huge waste of storage... */
+		sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));
+		AN(sp->obj->esidata);
+		memcpy(sp->obj->esidata->ptr,
+		    vsb_data(vep->vsb), vsb_len(vep->vsb));
+		sp->obj->esidata->len = vsb_len(vep->vsb);
+	}
+	vsb_delete(vep->vsb);
 
 	st = sp->wrk->storage;
 	sp->wrk->storage = NULL;
