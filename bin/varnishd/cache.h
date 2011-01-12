@@ -35,6 +35,8 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
+#define OLD_ESI 
+
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
@@ -225,6 +227,7 @@ struct vfp {
 
 extern struct vfp vfp_gunzip;
 extern struct vfp vfp_gzip;
+extern struct vfp vfp_esi;
 
 /*--------------------------------------------------------------------*/
 
@@ -283,6 +286,9 @@ struct worker {
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		do_gunzip;
+
+	/* ESI stuff */
+	struct vep_state	*vep;
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -436,7 +442,11 @@ struct object {
 
 	VTAILQ_HEAD(, storage)	store;
 
+#ifdef OLD_ESI
 	struct esidata		*esidata;
+#else
+	struct storage		*esidata;
+#endif
 
 	double			last_use;
 
@@ -795,11 +805,13 @@ void VCL_Poll(void);
 char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
+#ifdef OLD_ESI
 /* cache_vrt_esi.c */
 
 void ESI_Deliver(struct sess *);
 void ESI_Destroy(struct object *);
 void ESI_Parse(struct sess *);
+#endif /* OLD_ESI */
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

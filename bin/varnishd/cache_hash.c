@@ -693,8 +693,15 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 		DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 		    o->xid, WS_Free(o->ws_o));
 
+#ifdef OLD_ESI
 		if (o->esidata != NULL)
 			ESI_Destroy(o);
+#else
+		if (o->esidata != NULL) {
+			STV_free(o->esidata);
+			o->esidata = NULL;
+		}
+#endif
 		if (oc != NULL)
 			oc_freeobj(oc);
 		w->stats.n_object--;

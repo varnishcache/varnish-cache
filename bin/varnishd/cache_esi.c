@@ -38,6 +38,7 @@
  * hanging, esi:include
  */
 
+
 #include "config.h"
 
 #include "svnid.h"
@@ -55,6 +56,8 @@ SVNID("$Id$")
 #include "vct.h"
 #include "cache.h"
 #include "stevedore.h"
+
+#ifdef OLD_ESI
 
 /*--------------------------------------------------------------------*/
 
@@ -959,3 +962,5 @@ ESI_Destroy(struct object *o)
 	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
 	STV_free(ed->storage);
 }
+
+#endif /* OLD_ESI */

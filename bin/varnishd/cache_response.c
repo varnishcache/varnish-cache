@@ -386,8 +386,10 @@ RES_WriteObj(struct sess *sp)
 		/* This was a HEAD request */
 	} else if (sp->obj->len == 0) {
 		/* Nothing to do here */
+#ifdef OLD_ESI
 	} else if (sp->wrk->res_mode & RES_ESI) {
 		ESI_Deliver(sp);
+#endif
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp, lenbuf); 
 	} else {

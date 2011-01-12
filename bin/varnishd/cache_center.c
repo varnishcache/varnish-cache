@@ -587,14 +587,16 @@ cnt_fetch(struct sess *sp)
 
 	AZ(sp->wrk->vfp);
 	/* XXX: precedence, also: do_esi */
-
+#ifndef OLD_ESI
+	if (sp->wrk->do_esi) {
+		sp->wrk->vfp = &vfp_esi;
+	} else
+#endif
 	if (sp->wrk->do_gunzip &&
 	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
 		http_Unset(sp->wrk->beresp, H_Content_Encoding);
 		sp->wrk->vfp = &vfp_gunzip;
-	}
-
-	if (sp->wrk->do_gzip &&
+	} else if (sp->wrk->do_gzip &&
 	    !http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
 		    "Content-Encoding: %s", "gzip");
@@ -675,8 +677,10 @@ cnt_fetch(struct sess *sp)
 		return (0);
 	}
 
+#ifdef OLD_ESI
 	if (sp->wrk->do_esi)
 		ESI_Parse(sp);
+#endif
 
 	switch (sp->handling) {
 	case VCL_RET_RESTART:
