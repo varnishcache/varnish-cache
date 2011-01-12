@@ -38,6 +38,8 @@ SVNID("$Id")
 #include "vct.h"
 #include "stevedore.h"
 
+#include <stdio.h>
+
 #ifndef OLD_ESI
 
 struct vep_match {
@@ -53,6 +55,12 @@ struct vep_state {
 
 	/* parser state */
 	const char		*state;
+
+	unsigned		remove;
+	unsigned		skip;
+
+	unsigned		o_verbatim;
+	unsigned		o_skip;
 
 	const char		*ver_p;
 
@@ -73,6 +81,7 @@ struct vep_state {
 static const char *VEP_START =		"[Start]";
 static const char *VEP_NOTXML =	 	"[NotXml]";
 static const char *VEP_STARTTAG = 	"[StartTag]";
+static const char *VEP_ENDTAG = 	"[EndTag]";
 static const char *VEP_MATCHBUF = 	"[MatchBuf]";
 static const char *VEP_NEXTTAG = 	"[NxtTag]";
 static const char *VEP_NOTMYTAG =	"[NotMyTag]";
@@ -113,6 +122,14 @@ static struct vep_match vep_match_esi[] = {
 static const int vep_match_esi_len =
     sizeof vep_match_esi / sizeof vep_match_esi[0];
 
+static struct vep_match vep_match_esie[] = {
+	{ "remove",	&VEP_ESI_REMOVE },
+	{ NULL,		&VEP_XXX }
+};
+
+static const int vep_match_esie_len =
+    sizeof vep_match_esie / sizeof vep_match_esie[0];
+
 /*---------------------------------------------------------------------
  * return match or NULL if more input needed.
  */
@@ -146,15 +163,38 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
  */
 
 static void
-vep_end_verbatim(struct vep_state *vep, const char *p)
+vep_emit_skip(struct vep_state *vep)
 {
 	ssize_t l;
 	uint8_t buf[5];
 
-	AN(vep->ver_p);
-	l = p - vep->ver_p;
-	if (l == 0)
-		return;
+	l = vep->o_skip;
+	vep->o_skip = 0;
+	assert(l > 0);
+	if (l < 256) {
+		buf[0] = VEC_S1;
+		buf[1] = (uint8_t)l;
+		vsb_bcat(vep->vsb, buf, 2);
+	} else if (l < 65536) {
+		buf[0] = VEC_S2;
+		vbe16enc(buf + 1, (uint16_t)l);
+		vsb_bcat(vep->vsb, buf, 3);
+	} else {
+		/* XXX assert < 2^32 */
+		buf[0] = VEC_S4;
+		vbe32enc(buf + 1, (uint32_t)l);
+		vsb_bcat(vep->vsb, buf, 5);
+	}
+} 
+
+static void
+vep_emit_verbatim(struct vep_state *vep)
+{
+	ssize_t l;
+	uint8_t buf[5];
+
+	l = vep->o_verbatim;
+	vep->o_verbatim = 0;
 	assert(l > 0);
 	if (l < 256) {
 		buf[0] = VEC_V1;
@@ -171,6 +211,22 @@ vep_end_verbatim(struct vep_state *vep, const char *p)
 		vsb_bcat(vep->vsb, buf, 5);
 	}
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
+} 
+
+static void
+vep_end_verbatim(struct vep_state *vep, const char *p)
+{
+	ssize_t l;
+
+	AN(vep->ver_p);
+	l = p - vep->ver_p;
+	if (l == 0)
+		return;
+	if (vep->o_skip > 0) 
+		vep_emit_skip(vep);
+	AZ(vep->o_skip);
+	printf("-->V(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
+	vep->o_verbatim += l;
 	vep->ver_p = p;
 } 
 
@@ -178,35 +234,22 @@ static void
 vep_end_skip(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
-	uint8_t buf[5];
 
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
 	if (l == 0)
 		return;
-	assert(l > 0);
-	if (l < 256) {
-		buf[0] = VEC_S1;
-		buf[1] = (uint8_t)l;
-		vsb_bcat(vep->vsb, buf, 2);
-	} else if (l < 65536) {
-		buf[0] = VEC_S2;
-		vbe16enc(buf + 1, (uint16_t)l);
-		vsb_bcat(vep->vsb, buf, 3);
-	} else {
-		/* XXX assert < 2^32 */
-		buf[0] = VEC_S4;
-		vbe32enc(buf + 1, (uint32_t)l);
-		vsb_bcat(vep->vsb, buf, 5);
-	}
+	if (vep->o_verbatim > 0) 
+		vep_emit_verbatim(vep);
+	AZ(vep->o_verbatim);
+	printf("-->S(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
+	vep->o_skip += l;
 	vep->ver_p = p;
 } 
 
 /*---------------------------------------------------------------------
  * Parse object for ESI instructions
  */
-
-#include <stdio.h>
 
 static void
 vep_parse(struct vep_state *vep, const char *b, size_t l)
@@ -266,10 +309,26 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			/*
 			 * Start of tag, set up match table
 			 */
-			vep_end_verbatim(vep, p);
+			assert(*p == '<');
+			if (!vep->remove)
+				vep_end_verbatim(vep, p);
 			vep->match = vep_match_tbl;
 			vep->match_l = vep_match_tbl_len;
 			vep->state = VEP_MATCH;
+			vep->skip = 1;
+		} else if (vep->state == VEP_ENDTAG) {
+			while (p < e && *p != '>') 
+				p++;
+			if (*p == '>') {
+				p++;
+				vep->state = VEP_NEXTTAG;
+			}
+			vep_end_skip(vep, p);
+			vep->skip = 0;
+		} else if (vep->state == VEP_CDATA) {
+			vep->until_p = vep->until = "]]>";
+			vep->until_s = VEP_NEXTTAG;
+			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_MATCH) {
 			/*
 			 * Match against a table
@@ -280,11 +339,46 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					p += strlen(vm->match);
 				b = p;
 				vep->state = *vm->state;
+				vep->match = NULL;
 				vep->tag_i = 0;
 			} else {
+				memcpy(vep->tag, p, e - p);
+				vep->tag_i = e - p;
 				vep->state = VEP_MATCHBUF;
-				return;
+				p = e;
+				break;
 			}
+		} else if (vep->state == VEP_MATCHBUF) {
+			/*
+			 * Match against a table while split over input
+			 * sections.
+			 */
+			do {
+				if (*p == '>') {
+					vm = NULL;
+				} else {
+					vep->tag[vep->tag_i++] = *p++;
+					vm = vep_match(vep,
+					    vep->tag, vep->tag + vep->tag_i);
+				}
+			} while (vm == 0 && p < e);
+			if (vm == 0) {
+				b = e;
+				break;
+			}
+			if (vep->tag_i > strlen(vm->match)) {
+				/*
+				 * not generally safe but
+				 * works for the required
+				 * case of <--esi and <--
+				 */
+				p -= vep->tag_i -
+				    strlen(vm->match);
+			}
+			b = p;
+			vep->state = *vm->state;
+			vep->match = NULL;
+			vep->tag_i = 0;
 		} else if (vep->state == VEP_UNTIL) {
 			/*
 			 * Skip until we see magic string
@@ -298,22 +392,31 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				}
 			}
 		} else if (vep->state == VEP_ESITAG) {
+			vep->skip = 1;
+			vep_end_skip(vep, p);
 			vep->match = vep_match_esi;
 			vep->match_l = vep_match_esi_len;
 			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_ESIETAG) {
+			vep->match = vep_match_esie;
+			vep->match_l = vep_match_esie_len;
+			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIREMOVE) {
-			vep->until_p = vep->until = "</esi:remove>";
-			vep->until_s = VEP_ESI_REMOVE;
-			vep->state = VEP_UNTIL;;
-		} else if (vep->state == VEP_ESI_REMOVE) {
 			vep_end_skip(vep, p);
+			vep->remove = 1;
 			vep->state = VEP_NEXTTAG;
+		} else if (vep->state == VEP_ESI_REMOVE) {
+			vep->remove = 0;
+			vep->state = VEP_ENDTAG;
 		} else {
 			printf("*** Unknown state %s\n", vep->state);
 			break;
 		}
 	}
-	vep_end_verbatim(vep, p);
+	if (vep->remove || vep->skip)
+		vep_end_skip(vep, p);
+	else
+		vep_end_verbatim(vep, p);
 }
 
 /*---------------------------------------------------------------------
@@ -347,7 +450,14 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		w = HTC_Read(htc, st->ptr + st->len, l);
 		if (w <= 0)
 			return (w);
+#if 0
+		{
+		for (l = 0; l < w; l++) 
+			vep_parse(vep, (const char *)st->ptr + st->len + l, 1);
+		}
+#else
 		vep_parse(vep, (const char *)st->ptr + st->len, w);
+#endif
 		st->len += w;
 		sp->obj->len += w;
 		if (st->len == st->space) {
@@ -402,14 +512,20 @@ vfp_esi_end(struct sess *sp)
 {
 	struct storage *st;
 	struct vep_state *vep;
+	size_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
+	if (vep->o_verbatim)
+		vep_emit_verbatim(vep);
+	if (vep->o_skip)
+		vep_emit_skip(vep);
 	vsb_finish(vep->vsb);
-	if (vep->state != VEP_NOTXML) {
-		printf("ESI <%s>\n", vsb_data(vep->vsb));
+	l = vsb_len(vep->vsb);
+	if (vep->state != VEP_NOTXML && l != 0) {
+		printf("ESI %d <%s>\n", (int)l, vsb_data(vep->vsb));
 
 		/* XXX: This is a huge waste of storage... */
 		sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));

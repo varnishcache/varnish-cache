@@ -32,13 +32,15 @@
 #include "svnid.h"
 SVNID("$Id")
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "cache.h"
 #include "cache_esi.h"
 #include "vend.h"
 #include "vct.h"
 #include "stevedore.h"
 
-#include <stdio.h>
 
 #ifndef OLD_ESI
 
@@ -51,8 +53,6 @@ ESI_Deliver(struct sess *sp)
 	size_t l;
 
 printf("DELIV\n");
-fflush(stdout);
-sleep(1);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
 	AN(st);
@@ -75,7 +75,7 @@ sleep(1);
 			WRW_Write(sp->wrk, st->ptr + off, l);
 			if (sp->wrk->res_mode & RES_CHUNKED)
 				WRW_Write(sp->wrk, "\r\n", -1);
-			printf("[%.*s]", (int)l, st->ptr + off);
+			// printf("[%.*s]", (int)l, st->ptr + off);
 			off += l;
 			p = q + 1;
 			break;
@@ -87,6 +87,7 @@ sleep(1);
 			break;
 		default:
 			printf("XXXX %02x [%c]\n", *p, *p);
+			INCOMPL();
 			return;
 		}
 	}
