@@ -85,6 +85,20 @@ printf("DELIV\n");
 			printf("SKIP(%d)\n", (int)l);
 			off += l;
 			break;
+		case VEC_L1:
+			l = p[1];
+			p += 2;
+			q = (void*)strchr((const char*)p, '\0');
+			assert (q > p);
+			printf("LIT(%d) %d\n", (int)l, (int)(q-p));
+			if (sp->wrk->res_mode & RES_CHUNKED)
+				WRW_Write(sp->wrk, p, q - p);
+			p = q + 1;
+			WRW_Write(sp->wrk, p, l);
+			if (sp->wrk->res_mode & RES_CHUNKED)
+				WRW_Write(sp->wrk, "\r\n", -1);
+			p = p + l;
+			break;
 		default:
 			printf("XXXX %02x [%c]\n", *p, *p);
 			INCOMPL();

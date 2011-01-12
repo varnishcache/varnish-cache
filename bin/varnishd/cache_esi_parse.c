@@ -163,58 +163,52 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
  */
 
 static void
-vep_emit_skip(struct vep_state *vep)
+vep_emit_len(struct vep_state *vep, ssize_t l, int m8, int m16, int m32)
 {
-	ssize_t l;
 	uint8_t buf[5];
 
-	l = vep->o_skip;
-	vep->o_skip = 0;
 	assert(l > 0);
 	if (l < 256) {
-		buf[0] = VEC_S1;
+		buf[0] = m8;
 		buf[1] = (uint8_t)l;
 		vsb_bcat(vep->vsb, buf, 2);
 	} else if (l < 65536) {
-		buf[0] = VEC_S2;
+		buf[0] = m16;
 		vbe16enc(buf + 1, (uint16_t)l);
 		vsb_bcat(vep->vsb, buf, 3);
 	} else {
 		/* XXX assert < 2^32 */
-		buf[0] = VEC_S4;
+		buf[0] = m32;
 		vbe32enc(buf + 1, (uint32_t)l);
 		vsb_bcat(vep->vsb, buf, 5);
 	}
+} 
+
+static void
+vep_emit_skip(struct vep_state *vep)
+{
+	ssize_t l;
+
+	l = vep->o_skip;
+	vep->o_skip = 0;
+	assert(l > 0);
+	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S4);
 } 
 
 static void
 vep_emit_verbatim(struct vep_state *vep)
 {
 	ssize_t l;
-	uint8_t buf[5];
 
 	l = vep->o_verbatim;
 	vep->o_verbatim = 0;
 	assert(l > 0);
-	if (l < 256) {
-		buf[0] = VEC_V1;
-		buf[1] = (uint8_t)l;
-		vsb_bcat(vep->vsb, buf, 2);
-	} else if (l < 65536) {
-		buf[0] = VEC_V2;
-		vbe16enc(buf + 1, (uint16_t)l);
-		vsb_bcat(vep->vsb, buf, 3);
-	} else {
-		/* XXX assert < 2^32 */
-		buf[0] = VEC_V4;
-		vbe32enc(buf + 1, (uint32_t)l);
-		vsb_bcat(vep->vsb, buf, 5);
-	}
+	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V4);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
 
 static void
-vep_end_verbatim(struct vep_state *vep, const char *p)
+vep_mark_verbatim(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
 
@@ -231,7 +225,7 @@ vep_end_verbatim(struct vep_state *vep, const char *p)
 } 
 
 static void
-vep_end_skip(struct vep_state *vep, const char *p)
+vep_mark_skip(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
 
@@ -246,6 +240,22 @@ vep_end_skip(struct vep_state *vep, const char *p)
 	vep->o_skip += l;
 	vep->ver_p = p;
 } 
+
+static void
+vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
+{
+	ssize_t l;
+
+	if (vep->o_verbatim > 0) 
+		vep_emit_verbatim(vep);
+	if (vep->o_skip > 0) 
+		vep_emit_skip(vep);
+	l = e - p;
+	printf("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
+	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L4);
+	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
+	vsb_bcat(vep->vsb, p, l);
+}
 
 /*---------------------------------------------------------------------
  * Parse object for ESI instructions
@@ -311,7 +321,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			 */
 			assert(*p == '<');
 			if (!vep->remove)
-				vep_end_verbatim(vep, p);
+				vep_mark_verbatim(vep, p);
 			vep->match = vep_match_tbl;
 			vep->match_l = vep_match_tbl_len;
 			vep->state = VEP_MATCH;
@@ -323,7 +333,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				p++;
 				vep->state = VEP_NEXTTAG;
 			}
-			vep_end_skip(vep, p);
+			vep_mark_skip(vep, p);
 			vep->skip = 0;
 		} else if (vep->state == VEP_CDATA) {
 			vep->until_p = vep->until = "]]>";
@@ -366,7 +376,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				b = e;
 				break;
 			}
-			if (vep->tag_i > strlen(vm->match)) {
+			if (vm->match && vep->tag_i > strlen(vm->match)) {
 				/*
 				 * not generally safe but
 				 * works for the required
@@ -374,6 +384,11 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				 */
 				p -= vep->tag_i -
 				    strlen(vm->match);
+				vep->tag_i--;
+			}
+			if (vm->match == NULL) {
+				vep_emit_literal(vep,
+				    vep->tag, vep->tag + vep->tag_i);
 			}
 			b = p;
 			vep->state = *vm->state;
@@ -391,9 +406,17 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					break;
 				}
 			}
+		} else if (vep->state == VEP_NOTMYTAG) {
+			vep->skip = 0;
+			while (p < e) {
+				if (*p++ == '>') {
+					vep->state = VEP_NEXTTAG;
+					break;
+				}
+			}
 		} else if (vep->state == VEP_ESITAG) {
 			vep->skip = 1;
-			vep_end_skip(vep, p);
+			vep_mark_skip(vep, p);
 			vep->match = vep_match_esi;
 			vep->match_l = vep_match_esi_len;
 			vep->state = VEP_MATCH;
@@ -402,7 +425,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			vep->match_l = vep_match_esie_len;
 			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIREMOVE) {
-			vep_end_skip(vep, p);
+			vep_mark_skip(vep, p);
 			vep->remove = 1;
 			vep->state = VEP_NEXTTAG;
 		} else if (vep->state == VEP_ESI_REMOVE) {
@@ -414,9 +437,9 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		}
 	}
 	if (vep->remove || vep->skip)
-		vep_end_skip(vep, p);
+		vep_mark_skip(vep, p);
 	else
-		vep_end_verbatim(vep, p);
+		vep_mark_verbatim(vep, p);
 }
 
 /*---------------------------------------------------------------------
@@ -450,7 +473,7 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		w = HTC_Read(htc, st->ptr + st->len, l);
 		if (w <= 0)
 			return (w);
-#if 0
+#if 1
 		{
 		for (l = 0; l < w; l++) 
 			vep_parse(vep, (const char *)st->ptr + st->len + l, 1);
