@@ -5,7 +5,7 @@ test "All white-space object, in multiple storage segments"
 server s1 {
         rxreq
         expect req.url == "/foo"
-        txresp -hdr "Connection: close"
+        txresp -nolen -hdr "Connection: close"
         send {<x>                                      }
 } -start
 
