@@ -1,6 +1,6 @@
 # $Id$
 
-test "zero length ESI include segmens with chunked encoding"
+test "zero length ESI include segments with chunked encoding"
 
 server s1 {
 	rxreq
