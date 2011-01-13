@@ -551,7 +551,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 						break;
 					}
 				}
-				if (!vep->remove)
+				if (p < e && !vep->remove)
 					vep_mark_verbatim(vep, p + 1);
 			}
 		} else if (vep->state == VEP_NEXTTAG) {
@@ -583,7 +583,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					vep->esicmt_p = vep->esicmt;
 				}
 			}
-			if (vep->esicmt_p == NULL && !vep->remove)
+			if (p < e && vep->esicmt_p == NULL && !vep->remove)
 				vep_mark_verbatim(vep, p);
 			if (p < e)
 				vep->state = VEP_STARTTAG;
@@ -974,13 +974,20 @@ vfp_esi_end(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
+	sp->wrk->vep = NULL;
 	Debug("ENDING %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	usleep(100);
-	Debug("ENDING STATE: %s\n", vep->state);
+	st = sp->wrk->storage;
+	if (st != NULL)
+		l = (const char *)(st->ptr + st->len) - (const char*)vep->ver_p;
+	else
+		l = 0;
+	Debug("ENDING STATE: %s (%ld)\n", vep->state, l);
 	if (vep->o_skip)
 		vep_emit_skip(vep);
+	vep->o_verbatim += l;
 	if (vep->o_verbatim)
 		vep_emit_verbatim(vep);
 	vsb_finish(vep->vsb);
