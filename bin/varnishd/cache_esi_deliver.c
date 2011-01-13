@@ -72,7 +72,7 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 	ws_wm = WS_Snapshot(sp->ws);
 
 	http_SetH(sp->http, HTTP_HDR_URL, src);
-	if (host != NULL)  {
+	if (host != NULL && *host != '\0')  {
 		http_Unset(sp->http, H_Host);
 		http_Unset(sp->http, H_If_Modified_Since);
 		http_SetHeader(w, sp->fd, sp->http, host);
@@ -125,7 +125,7 @@ void
 ESI_Deliver(struct sess *sp)
 {
 	struct storage *st;
-	uint8_t *p, *e, *q;
+	uint8_t *p, *e, *q, *r;
 	unsigned off;
 	size_t l;
 
@@ -140,6 +140,8 @@ printf("DELIV\n");
 	off = 0;
 
 	while (p < e) {
+		//usleep(10000);
+		//WRW_Flush(sp->wrk);
 		switch (*p) {
 		case VEC_V1:
 			l = p[1];
@@ -179,9 +181,14 @@ printf("DELIV\n");
 		case VEC_INCL:
 			p++;
 			q = (void*)strchr((const char*)p, '\0');
-			printf("INCL [%s]\n", p);
-			ESI_Include(sp, (const char*)p, NULL);
-			p = q + 1;
+			AN(q);
+			q++;
+			r = (void*)strchr((const char*)q, '\0');
+			AN(r);
+			printf("INCL [%s][%s] BEGIN\n", p, q);
+			ESI_Include(sp, (const char*)p, (const char*)q);
+			printf("INCL [%s] END\n", p);
+			p = r + 1;
 			break;
 		default:
 			printf("XXXX %02x [%c]\n", *p, *p);
@@ -189,6 +196,7 @@ printf("DELIV\n");
 			return;
 		}
 	}
+printf("DONE\n");
 	WRW_Flush(sp->wrk);
 }
 

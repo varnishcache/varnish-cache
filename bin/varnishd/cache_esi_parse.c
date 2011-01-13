@@ -59,6 +59,8 @@ struct vep_state {
 	vfp_bytes_f		*bytes;
 	struct vsb		*vsb;
 
+	struct sess		*sp;
+
 	/* parser state */
 	const char		*state;
 
@@ -324,6 +326,9 @@ vep_do_nothing(struct vep_state *vep, enum dowhat what)
 static void
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
+	char *p, *q, *h;
+	ssize_t l;
+	txt url;
 
 	printf("DO_INCLUDE(%d)\n", what);
 	if (what == DO_ATTR) {
@@ -338,9 +343,38 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		if (vep->o_verbatim > 0) 
 			vep_emit_verbatim(vep);
 		/* XXX: what if it contains NUL bytes ?? */
-		vsb_printf(vep->vsb, "%c%s%c",
-		    VEC_INCL,
-		    vsb_data(vep->include_src), 0);
+		p = vsb_data(vep->include_src);
+		l = vsb_len(vep->include_src);
+		h = 0;
+
+		if (l > 7 && !memcmp(p, "http://", 7)) {
+			h = p + 7;
+			p = strchr(h, '/');
+			AN(p);
+			printf("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
+			vsb_printf(vep->vsb, "%c%s%cHost: %.*s%c",
+			    VEC_INCL, p, 0,
+			    (int)(p-h), h, 0);
+		} else if (*p == '/') {
+			vsb_printf(vep->vsb, "%c%s%c%c",
+			    VEC_INCL, p, 0, 0);
+		} else {
+			url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
+			/* Look for the last / before a '?' */
+			h = NULL;
+			for (q = url.b; q < url.e && *q != '?'; q++)
+				if (*q == '/')
+					h = q;
+			if (h == NULL)
+				h = q + 1;
+				
+			printf("INCL:: %.*s/%s\n",
+			    (int)(h - url.b), url.b, p);
+			vsb_printf(vep->vsb, "%c%.*s/%s%c%c",
+			    VEC_INCL, 
+			    (int)(h - url.b), url.b,
+			    p, 0, 0);
+		}
 
 		vsb_delete(vep->include_src);
 		vep->include_src = NULL;
@@ -373,12 +407,15 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 	p = b;
 	while (p < e) {
 		AN(vep->state);
+		i = e - p;
+		if (i > 10)
+			i = 10;
 		printf("EP %s %d %d (%.*s) [%.*s]\n",
 		    vep->state,
 		    vep->skip,
 		    vep->remove,
 		    vep->tag_i, vep->tag,
-		    (int)(e - p), p);
+		    i, p);
 		fflush(stdout);
 		usleep(10);
 
@@ -415,13 +452,13 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		} else if (vep->state == VEP_NOTMYTAG) {
 			vep->tag_i = 0;
 			while (p < e) {
-				if (!vep->remove)
-					vep_mark_verbatim(vep, p + 1);
 				if (*p++ == '>') {
 					vep->state = VEP_NEXTTAG;
 					break;
 				}
 			}
+			if (!vep->remove)
+				vep_mark_verbatim(vep, p + 1);
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
 			 * Hunt for start of next tag and keep an eye
@@ -447,11 +484,10 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				} else {
 					p++;
 					vep->esicmt_p = vep->esicmt;
-					if (vep->esicmt_p == NULL &&
-					    !vep->remove)
-						vep_mark_verbatim(vep, p);
 				}
 			}
+			if (vep->esicmt_p == NULL && !vep->remove)
+				vep_mark_verbatim(vep, p);
 			if (p < e)
 				vep->state = VEP_STARTTAG;
 
@@ -507,13 +543,13 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			if (vep->remove) {
 				VSC_main->esi_errors++;
 				vep->state = VEP_NOTMYTAG;
-				break;
+			} else {
+				vep->skip = 1;
+				vep_mark_skip(vep, p);
+				vep->match = vep_match_esi;
+				vep->match_l = vep_match_esi_len;
+				vep->state = VEP_MATCH;
 			}
-			vep->skip = 1;
-			vep_mark_skip(vep, p);
-			vep->match = vep_match_esi;
-			vep->match_l = vep_match_esi_len;
-			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIETAG) {
 			vep->tag_i = 0;
 			vep->endtag = 1;
@@ -528,6 +564,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		} else if (vep->state == VEP_ESIREMOVE) {
 			vep->dostuff = vep_do_nothing;
 			vep->remove = !vep->endtag;
+printf(">>> REMOVE %d\n", vep->remove);
 			vep->state = VEP_INTAG;
 
 		/******************************************************
@@ -754,6 +791,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
+	vep->sp = sp;
 	vep->bytes = vfp_esi_bytes_uu;
 	vep->vsb = vsb_newauto();
 	vep->state = VEP_START;
