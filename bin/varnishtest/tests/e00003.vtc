@@ -8,7 +8,7 @@ server s1 {
 	txresp -body {
 		<html>
 		Before include
-		<esi:include src="/body"/>
+		<esi:include src="/body" sr="foo"/>
 		After include
 	}
 	rxreq 
