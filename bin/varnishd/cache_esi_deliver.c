@@ -121,6 +121,9 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 
 #ifndef OLD_ESI
 
+// #define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
+#define Debug(fmt, ...) /**/
+
 void
 ESI_Deliver(struct sess *sp)
 {
@@ -129,7 +132,6 @@ ESI_Deliver(struct sess *sp)
 	unsigned off;
 	size_t l;
 
-printf("DELIV\n");
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
 	AN(st);
@@ -148,26 +150,26 @@ printf("DELIV\n");
 			p += 2;
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
-			printf("VER(%d) %d\n", (int)l, (int)(q-p));
+			Debug("VER(%d) %d\n", (int)l, (int)(q-p));
 			if (sp->wrk->res_mode & RES_CHUNKED)
 				WRW_Write(sp->wrk, p, q - p);
 			WRW_Write(sp->wrk, st->ptr + off, l);
 			if (sp->wrk->res_mode & RES_CHUNKED)
 				WRW_Write(sp->wrk, "\r\n", -1);
-			// printf("[%.*s]", (int)l, st->ptr + off);
+			// Debug("[%.*s]", (int)l, st->ptr + off);
 			off += l;
 			p = q + 1;
 			break;
 		case VEC_S1:
 			l = p[1];
 			p += 2;
-			printf("SKIP(%d)\n", (int)l);
+			Debug("SKIP(%d)\n", (int)l);
 			off += l;
 			break;
 		case VEC_S2:
 			l = vbe16dec(p + 1);
 			p += 3;
-			printf("SKIP(%d)\n", (int)l);
+			Debug("SKIP(%d)\n", (int)l);
 			off += l;
 			break;
 		case VEC_L1:
@@ -175,7 +177,7 @@ printf("DELIV\n");
 			p += 2;
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
-			printf("LIT(%d) %d\n", (int)l, (int)(q-p));
+			Debug("LIT(%d) %d\n", (int)l, (int)(q-p));
 			if (sp->wrk->res_mode & RES_CHUNKED)
 				WRW_Write(sp->wrk, p, q - p);
 			p = q + 1;
@@ -191,18 +193,17 @@ printf("DELIV\n");
 			q++;
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
-			printf("INCL [%s][%s] BEGIN\n", p, q);
+			Debug("INCL [%s][%s] BEGIN\n", p, q);
 			ESI_Include(sp, (const char*)p, (const char*)q);
-			printf("INCL [%s] END\n", p);
+			Debug("INCL [%s] END\n", p);
 			p = r + 1;
 			break;
 		default:
-			printf("XXXX 0x%02x [%s]\n", *p, p);
+			Debug("XXXX 0x%02x [%s]\n", *p, p);
 			INCOMPL();
 			return;
 		}
 	}
-printf("DONE\n");
 	WRW_Flush(sp->wrk);
 }
 

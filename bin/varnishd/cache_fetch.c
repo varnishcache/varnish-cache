@@ -193,10 +193,14 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 		WSP(sp, SLT_FetchError, "straight length syntax");
 		return (-1);
 	}
+	/*
+	 * XXX: we shouldn't need this if we have cl==0
+	 * XXX: but we must also conditionalize the vfp->end()
+	 */
+	sp->wrk->vfp->begin(sp, cl);
 	if (cl == 0)
 		return (0);
 
-	sp->wrk->vfp->begin(sp, cl);
 
 	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {

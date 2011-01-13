@@ -43,6 +43,9 @@ SVNID("$Id")
 
 #ifndef OLD_ESI
 
+// #define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
+#define Debug(fmt, ...) /**/
+
 struct vep_state;
 
 enum dowhat {DO_ATTR, DO_TAG};
@@ -104,6 +107,7 @@ const char		*hack_p;
 /*---------------------------------------------------------------------*/
 
 static const char *VEP_START =		"[Start]";
+static const char *VEP_TESTXML = 	"[TestXml]";
 static const char *VEP_NOTXML =	 	"[NotXml]";
 
 static const char *VEP_NEXTTAG = 	"[NxtTag]";
@@ -282,7 +286,7 @@ vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
 	if (vep->o_skip > 0) 
 		vep_emit_skip(vep);
 	l = e - p;
-	printf("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
+	Debug("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
 	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L4);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 	vsb_bcat(vep->vsb, p, l);
@@ -301,7 +305,7 @@ vep_mark_verbatim(struct vep_state *vep, const char *p)
 	if (vep->o_skip > 0) 
 		vep_emit_skip(vep);
 	AZ(vep->o_skip);
-	printf("-->V(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
+	Debug("-->V(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
 	vep->o_verbatim += l;
 	vep->ver_p = p;
 } 
@@ -318,7 +322,7 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 	if (vep->o_verbatim > 0) 
 		vep_emit_verbatim(vep);
 	AZ(vep->o_verbatim);
-	printf("-->S(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
+	Debug("-->S(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
 	vep->o_skip += l;
 	vep->ver_p = p;
 } 
@@ -330,9 +334,9 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 static void
 vep_do_nothing(struct vep_state *vep, enum dowhat what)
 {
-	printf("DO_NOTHING(%d)\n", what);
+	Debug("DO_NOTHING(%d)\n", what);
 	if (what == DO_ATTR) {
-		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
 		vsb_delete(vep->attr_vsb);
 	}
@@ -345,9 +349,9 @@ vep_do_nothing(struct vep_state *vep, enum dowhat what)
 static void
 vep_do_comment(struct vep_state *vep, enum dowhat what)
 {
-	printf("DO_COMMENT(%d)\n", what);
+	Debug("DO_COMMENT(%d)\n", what);
 	if (what == DO_ATTR) {
-		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
 		vsb_delete(vep->attr_vsb);
 	} else {
@@ -366,9 +370,9 @@ vep_do_comment(struct vep_state *vep, enum dowhat what)
 static void
 vep_do_remove(struct vep_state *vep, enum dowhat what)
 {
-	printf("DO_REMOVE(%d)\n", what);
+	Debug("DO_REMOVE(%d)\n", what);
 	if (what == DO_ATTR) {
-		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
 		vsb_delete(vep->attr_vsb);
 	} else {
@@ -401,9 +405,9 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	ssize_t l;
 	txt url;
 
-	printf("DO_INCLUDE(%d)\n", what);
+	Debug("DO_INCLUDE(%d)\n", what);
 	if (what == DO_ATTR) {
-		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
 		XXXAZ(vep->include_src);	/* multiple src= */
 		vep->include_src = vep->attr_vsb;
@@ -427,7 +431,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			h = p + 7;
 			p = strchr(h, '/');
 			AN(p);
-			printf("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
+			Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
 			vsb_printf(vep->vsb, "%c%s%cHost: %.*s%c",
 			    VEC_INCL, p, 0,
 			    (int)(p-h), h, 0);
@@ -444,7 +448,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			if (h == NULL)
 				h = q + 1;
 				
-			printf("INCL:: %.*s/%s\n",
+			Debug("INCL:: %.*s/%s\n",
 			    (int)(h - url.b), url.b, p);
 			vsb_printf(vep->vsb, "%c%.*s/%s%c%c",
 			    VEC_INCL, 
@@ -486,7 +490,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		i = e - p;
 		if (i > 10)
 			i = 10;
-		printf("EP %s %d %d (%.*s) [%.*s]\n",
+		Debug("EP %s %d %d (%.*s) [%.*s]\n",
 		    vep->state,
 		    vep->skip,
 		    vep->remove,
@@ -500,6 +504,11 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		 */
 
 		if (vep->state == VEP_START) {
+			if (params->esi_syntax & 0x1)
+				vep->state = VEP_NEXTTAG;
+			else
+				vep->state = VEP_TESTXML;
+		} else if (vep->state == VEP_TESTXML) {
 			/*
 			 * If the first non-whitespace char is different
 			 * from '<' we assume this is not XML.
@@ -529,15 +538,22 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		 */
 
 		} else if (vep->state == VEP_NOTMYTAG) {
-			vep->tag_i = 0;
-			while (p < e) {
-				if (*p++ == '>') {
-					vep->state = VEP_NEXTTAG;
-					break;
+			if (params->esi_syntax & 0x2) {
+				p++;
+				vep->state = VEP_NEXTTAG;
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p + 1);
+			} else {
+				vep->tag_i = 0;
+				while (p < e) {
+					if (*p++ == '>') {
+						vep->state = VEP_NEXTTAG;
+						break;
+					}
 				}
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p + 1);
 			}
-			if (!vep->remove)
-				vep_mark_verbatim(vep, p + 1);
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
 			 * Hunt for start of next tag and keep an eye
@@ -687,7 +703,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Illegal attribute start char");
-printf("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
+Debug("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_TAGERROR) {
@@ -769,7 +785,7 @@ printf("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
 				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Missing end attribute delimiter");
-printf("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
+Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
@@ -848,7 +864,7 @@ printf("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 				}
 			}
 		} else {
-			printf("*** Unknown state %s\n", vep->state);
+			Debug("*** Unknown state %s\n", vep->state);
 			INCOMPL();
 		}
 	}
@@ -922,6 +938,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	vep = (void*)WS_Alloc(sp->wrk->ws, sizeof *vep);
 	AN(vep);
 
+	Debug("BEGIN %p\n", vep);
 
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
@@ -942,6 +959,7 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
+	Debug("BYTES %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	AN(vep->bytes);
 	return (vep->bytes(sp, htc, bytes));
@@ -956,16 +974,19 @@ vfp_esi_end(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
+	Debug("ENDING %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
-	if (vep->o_verbatim)
-		vep_emit_verbatim(vep);
+	usleep(100);
+	Debug("ENDING STATE: %s\n", vep->state);
 	if (vep->o_skip)
 		vep_emit_skip(vep);
+	if (vep->o_verbatim)
+		vep_emit_verbatim(vep);
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l != 0) {
-		printf("ESI %d <%s>\n", (int)l, vsb_data(vep->vsb));
+		Debug("ESI %d <%s>\n", (int)l, vsb_data(vep->vsb));
 
 		/* XXX: This is a huge waste of storage... */
 		sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));
