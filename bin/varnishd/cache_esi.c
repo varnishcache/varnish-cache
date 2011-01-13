@@ -856,15 +856,10 @@ void
 ESI_Deliver(struct sess *sp)
 {
 	struct esi_bit *eb;
-	struct object *obj;
 	struct worker *w;
-	char *ws_wm;
-	struct http http_save;
 	struct esidata *ed;
-	unsigned sxid, res_mode;
 
 	w = sp->wrk;
-	http_save.magic = 0;
 	ed = sp->obj->esidata;
 	CHECK_OBJ_NOTNULL(ed, ESIDATA_MAGIC);
 	VTAILQ_FOREACH(eb, &ed->esibits, list) {
@@ -880,71 +875,7 @@ ESI_Deliver(struct sess *sp)
 		    sp->esi_level >= params->max_esi_includes)
 			continue;
 
-		if (WRW_Flush(w)) {
-			vca_close_session(sp, "remote closed");
-			return;
-		}
-		AZ(WRW_FlushRelease(w));
-
-		sp->esi_level++;
-		obj = sp->obj;
-		sp->obj = NULL;
-		res_mode = sp->wrk->res_mode;
-
-		/* Save the master objects HTTP state, we may need it later */
-		if (http_save.magic == 0)
-			http_save = *sp->http;
-
-		/* Reset request to status before we started messing with it */
-		HTTP_Copy(sp->http, sp->http0);
-
-		/* Take a workspace snapshot */
-		ws_wm = WS_Snapshot(sp->ws);
-
-		http_SetH(sp->http, HTTP_HDR_URL, eb->include.b);
-		if (eb->host.b != NULL)  {
-			http_Unset(sp->http, H_Host);
-			http_Unset(sp->http, H_If_Modified_Since);
-			http_SetHeader(w, sp->fd, sp->http, eb->host.b);
-		}
-		/*
-		 * XXX: We should decide if we should cache the director
-		 * XXX: or not (for session/backend coupling).  Until then
-		 * XXX: make sure we don't trip up the check in vcl_recv.
-		 */
-		sp->director = NULL;
-		sp->step = STP_RECV;
-		http_ForceGet(sp->http);
-
-		/* Don't do conditionals */
-		sp->http->conds = 0;
-		http_Unset(sp->http, H_If_Modified_Since);
-
-		/* Client content already taken care of */
-		http_Unset(sp->http, H_Content_Length);
-
-		sxid = sp->xid;
-		while (1) {
-			sp->wrk = w;
-			CNT_Session(sp);
-			if (sp->step == STP_DONE)
-				break;
-			AZ(sp->wrk);
-			WSL_Flush(w, 0);
-			DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
-			(void)usleep(10000);
-		}
-		sp->xid = sxid;
-		AN(sp->wrk);
-		assert(sp->step == STP_DONE);
-		sp->esi_level--;
-		sp->obj = obj;
-		sp->wrk->res_mode = res_mode;
-
-		/* Reset the workspace */
-		WS_Reset(sp->ws, ws_wm);
-
-		WRW_Reserve(sp->wrk, &sp->fd);
+		ESI_Include(sp, eb->include.b, eb->host.b);
 		if (sp->fd < 0)
 			break;
 	}

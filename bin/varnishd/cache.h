@@ -814,6 +814,7 @@ void ESI_Parse(struct sess *);
 #else
 void ESI_Deliver(struct sess *);
 #endif /* OLD_ESI */
+void ESI_Include(struct sess *sp, const char *src, const char *host);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

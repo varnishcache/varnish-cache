@@ -41,6 +41,83 @@ SVNID("$Id")
 #include "vct.h"
 #include "stevedore.h"
 
+/*--------------------------------------------------------------------*/
+
+void
+ESI_Include(struct sess *sp, const char *src, const char *host)
+{
+	struct object *obj;
+	struct worker *w;
+	char *ws_wm;
+	unsigned sxid, res_mode;
+
+	w = sp->wrk;
+
+	if (WRW_Flush(w)) {
+		vca_close_session(sp, "remote closed");
+		return;
+	}
+
+	AZ(WRW_FlushRelease(w));
+
+	sp->esi_level++;
+	obj = sp->obj;
+	sp->obj = NULL;
+	res_mode = sp->wrk->res_mode;
+
+	/* Reset request to status before we started messing with it */
+	HTTP_Copy(sp->http, sp->http0);
+
+	/* Take a workspace snapshot */
+	ws_wm = WS_Snapshot(sp->ws);
+
+	http_SetH(sp->http, HTTP_HDR_URL, src);
+	if (host != NULL)  {
+		http_Unset(sp->http, H_Host);
+		http_Unset(sp->http, H_If_Modified_Since);
+		http_SetHeader(w, sp->fd, sp->http, host);
+	}
+	/*
+	 * XXX: We should decide if we should cache the director
+	 * XXX: or not (for session/backend coupling).  Until then
+	 * XXX: make sure we don't trip up the check in vcl_recv.
+	 */
+	sp->director = NULL;
+	sp->step = STP_RECV;
+	http_ForceGet(sp->http);
+
+	/* Don't do conditionals */
+	sp->http->conds = 0;
+	http_Unset(sp->http, H_If_Modified_Since);
+
+	/* Client content already taken care of */
+	http_Unset(sp->http, H_Content_Length);
+
+	sxid = sp->xid;
+	while (1) {
+		sp->wrk = w;
+		CNT_Session(sp);
+		if (sp->step == STP_DONE)
+			break;
+		AZ(sp->wrk);
+		WSL_Flush(w, 0);
+		DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
+		(void)usleep(10000);
+	}
+	sp->xid = sxid;
+	AN(sp->wrk);
+	assert(sp->step == STP_DONE);
+	sp->esi_level--;
+	sp->obj = obj;
+	sp->wrk->res_mode = res_mode;
+
+	/* Reset the workspace */
+	WS_Reset(sp->ws, ws_wm);
+
+	WRW_Reserve(sp->wrk, &sp->fd);
+}
+
+/*--------------------------------------------------------------------*/
 
 #ifndef OLD_ESI
 
@@ -103,6 +180,7 @@ printf("DELIV\n");
 			p++;
 			q = (void*)strchr((const char*)p, '\0');
 			printf("INCL [%s]\n", p);
+			ESI_Include(sp, (const char*)p, NULL);
 			p = q + 1;
 			break;
 		default:
