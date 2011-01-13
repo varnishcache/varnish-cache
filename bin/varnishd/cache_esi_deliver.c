@@ -99,6 +99,12 @@ printf("DELIV\n");
 				WRW_Write(sp->wrk, "\r\n", -1);
 			p = p + l;
 			break;
+		case VEC_INCL:
+			p++;
+			q = (void*)strchr((const char*)p, '\0');
+			printf("INCL [%s]\n", p);
+			p = q + 1;
+			break;
 		default:
 			printf("XXXX %02x [%c]\n", *p, *p);
 			INCOMPL();

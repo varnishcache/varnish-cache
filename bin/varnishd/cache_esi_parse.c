@@ -43,6 +43,11 @@ SVNID("$Id")
 
 #ifndef OLD_ESI
 
+struct vep_state;
+
+enum dowhat {DO_ATTR, DO_TAG};
+typedef void dostuff_f(struct vep_state *, enum dowhat);
+
 struct vep_match {
 	const char	*match;
 	const char	**state;
@@ -87,6 +92,10 @@ struct vep_state {
 
 	char			tag[10];
 	int			tag_i;
+
+	dostuff_f		*dostuff;
+
+	struct vsb		*include_src;
 };
 
 /*---------------------------------------------------------------------*/
@@ -296,6 +305,35 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 } 
 
 /*---------------------------------------------------------------------
+ */
+
+static void
+vep_do_include(struct vep_state *vep, enum dowhat what)
+{
+
+	printf("DO_INCLUDE(%d)\n", what);
+	if (what == DO_ATTR) {
+		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+			vsb_data(vep->attr_vsb));
+		XXXAZ(vep->include_src);	/* multiple src= */
+		vep->include_src = vep->attr_vsb;
+	} else {
+		XXXAN(vep->include_src);
+		if (vep->o_skip > 0) 
+			vep_emit_skip(vep);
+		if (vep->o_verbatim > 0) 
+			vep_emit_verbatim(vep);
+		/* XXX: what if it contains NUL bytes ?? */
+		vsb_printf(vep->vsb, "%c%s%c",
+		    VEC_INCL,
+		    vsb_data(vep->include_src), 0);
+
+		vsb_delete(vep->include_src);
+		vep->include_src = NULL;
+	}
+}
+
+/*---------------------------------------------------------------------
  * Lex/Parse object for ESI instructions
  *
  * This function is called with the input object piecemal so do not
@@ -469,6 +507,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			vep->match_l = vep_match_esie_len;
 			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIINCLUDE) {
+			vep->dostuff = vep_do_include;
 			vep->state = VEP_INTAG;
 			vep->attr = vep_match_attr_include;
 			vep->attr_l = vep_match_attr_include_len;
@@ -492,7 +531,9 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			}
 			if (p < e && *p == '>') {
 				p++;
-				/* XXX: processing */
+				vep_mark_skip(vep, p);
+				AN(vep->dostuff);
+				vep->dostuff(vep, DO_TAG);
 				vep->state = VEP_NEXTTAG;
 			} else if (p < e && vep->emptytag) {
 				INCOMPL();	/* ESI-SYNTAX ERROR */
@@ -535,9 +576,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			if (p < e && *p == '=') {
 				p++;
 				vep->state = VEP_ATTRVAL;
-				break;
-			}
-			if (p < e) {
+			} else if (p < e) {
 				INCOMPL();	/* ESI-SYNTAX ERROR */
 			}
 		} else if (vep->state == VEP_ATTRGETVAL) {
@@ -557,10 +596,8 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			if (p < e) {
 				if (vep->attr_vsb != NULL) {
 					vsb_finish(vep->attr_vsb);
-					printf("ATTR (%s) (%s)\n",
-						vep->match_hit->match,
-						vsb_data(vep->attr_vsb));
-					vsb_delete(vep->attr_vsb);
+					AN(vep->dostuff);
+					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
 				}
 				p++;
@@ -591,7 +628,6 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				vep->tag_i = e - p;
 				vep->state = VEP_MATCHBUF;
 				p = e;
-				break;
 			}
 		} else if (vep->state == VEP_MATCHBUF) {
 			/*
@@ -606,15 +642,14 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					vm = vep_match(vep,
 					    vep->tag, vep->tag + vep->tag_i);
 				}
-			} while (vm == 0 && p < e);
+			} while (vm == NULL && p < e);
 			vep->match_hit = vm;
-			if (vm == 0) {
-				b = e;
-				break;
+			if (vm == NULL) {
+				assert(p == e);
+			} else {
+				vep->state = *vm->state;
+				vep->match = NULL;
 			}
-			b = p;
-			vep->state = *vm->state;
-			vep->match = NULL;
 		} else if (vep->state == VEP_UNTIL) {
 			/*
 			 * Skip until we see magic string

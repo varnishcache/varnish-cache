@@ -36,3 +36,4 @@
 #define	VEC_L1	'c'
 #define	VEC_L2	'x'
 #define	VEC_L4	'm'
+#define	VEC_INCL	'I'
