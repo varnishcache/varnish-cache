@@ -43,7 +43,7 @@ SVNID("$Id")
 
 #ifndef OLD_ESI
 
-// #define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
+//#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
 
 struct vep_state;
@@ -230,24 +230,26 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
  */
 
 static void
-vep_emit_len(struct vep_state *vep, ssize_t l, int m8, int m16, int m32)
+vep_emit_len(struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 {
-	uint8_t buf[5];
+	uint8_t buf[9];
 
 	assert(l > 0);
 	if (l < 256) {
 		buf[0] = m8;
 		buf[1] = (uint8_t)l;
+		assert((ssize_t)buf[1] == l);
 		vsb_bcat(vep->vsb, buf, 2);
 	} else if (l < 65536) {
 		buf[0] = m16;
 		vbe16enc(buf + 1, (uint16_t)l);
+		assert((ssize_t)vbe16dec(buf + 1) == l);
 		vsb_bcat(vep->vsb, buf, 3);
 	} else {
-		/* XXX assert < 2^32 */
-		buf[0] = m32;
-		vbe32enc(buf + 1, (uint32_t)l);
-		vsb_bcat(vep->vsb, buf, 5);
+		buf[0] = m64;
+		vbe64enc(buf + 1, l);
+		assert((ssize_t)vbe64dec(buf + 1) == l);
+		vsb_bcat(vep->vsb, buf, 9);
 	}
 } 
 
@@ -259,7 +261,7 @@ vep_emit_skip(struct vep_state *vep)
 	l = vep->o_skip;
 	vep->o_skip = 0;
 	assert(l > 0);
-	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S4);
+	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
 } 
 
 static void
@@ -270,7 +272,7 @@ vep_emit_verbatim(struct vep_state *vep)
 	l = vep->o_verbatim;
 	vep->o_verbatim = 0;
 	assert(l > 0);
-	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V4);
+	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
 
@@ -287,7 +289,7 @@ vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
 		vep_emit_skip(vep);
 	l = e - p;
 	Debug("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
-	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L4);
+	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L8);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 	vsb_bcat(vep->vsb, p, l);
 }
@@ -427,18 +429,18 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		l = vsb_len(vep->include_src);
 		h = 0;
 
+		vsb_printf(vep->vsb, "%c", VEC_INCL);
 		if (l > 7 && !memcmp(p, "http://", 7)) {
 			h = p + 7;
 			p = strchr(h, '/');
 			AN(p);
 			Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
-			vsb_printf(vep->vsb, "%c%s%cHost: %.*s%c",
-			    VEC_INCL, p, 0,
+			vsb_printf(vep->vsb, "Host: %.*s%c",
 			    (int)(p-h), h, 0);
 		} else if (*p == '/') {
-			vsb_printf(vep->vsb, "%c%s%c%c",
-			    VEC_INCL, p, 0, 0);
+			vsb_printf(vep->vsb, "%c", 0);
 		} else {
+			vsb_printf(vep->vsb, "%c", 0);
 			url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
 			/* Look for the last / before a '?' */
 			h = NULL;
@@ -448,13 +450,29 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			if (h == NULL)
 				h = q + 1;
 				
-			Debug("INCL:: %.*s/%s\n",
+			Debug("INCL:: [%.*s]/[%s]\n",
 			    (int)(h - url.b), url.b, p);
-			vsb_printf(vep->vsb, "%c%.*s/%s%c%c",
-			    VEC_INCL, 
-			    (int)(h - url.b), url.b,
-			    p, 0, 0);
+			vsb_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
 		}
+		l -= (p - vsb_data(vep->include_src));
+		for (q = p; *q != '\0'; ) {
+			if (*q == '&') {
+#define R(w,f,r)							\
+				if (q + w <= p + l && !memcmp(q, f, w)) { \
+					vsb_printf(vep->vsb, "%c", r);	\
+					q += l;				\
+					continue;			\
+				}
+				R(6, "&apos;", '\'');
+				R(6, "&quot;", '"');
+				R(4, "&lt;", '<');
+				R(4, "&gt;", '>');
+				R(5, "&amp;", '&');
+			}
+			vsb_printf(vep->vsb, "%c", *q++);
+		}
+#undef R
+		vsb_printf(vep->vsb, "%c", 0);
 
 		vsb_delete(vep->include_src);
 		vep->include_src = NULL;

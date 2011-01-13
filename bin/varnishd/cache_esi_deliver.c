@@ -121,8 +121,21 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 
 #ifndef OLD_ESI
 
-// #define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
+//#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
+
+static void
+esi_sendchunk(struct sess *sp, const void *cb, ssize_t cl,
+    const void *ptr, ssize_t l)
+{
+
+	Debug("VER(%d) %d\n", (int)l, (int)(cb-ce));
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Write(sp->wrk, cb, cl);
+	WRW_Write(sp->wrk, ptr, l);
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Write(sp->wrk, "\r\n", -1);
+}
 
 void
 ESI_Deliver(struct sess *sp)
@@ -150,26 +163,44 @@ ESI_Deliver(struct sess *sp)
 			p += 2;
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
-			Debug("VER(%d) %d\n", (int)l, (int)(q-p));
-			if (sp->wrk->res_mode & RES_CHUNKED)
-				WRW_Write(sp->wrk, p, q - p);
-			WRW_Write(sp->wrk, st->ptr + off, l);
-			if (sp->wrk->res_mode & RES_CHUNKED)
-				WRW_Write(sp->wrk, "\r\n", -1);
-			// Debug("[%.*s]", (int)l, st->ptr + off);
+			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
+			off += l;
+			p = q + 1;
+			break;
+		case VEC_V2:
+			l = vbe16dec(p + 1);
+			p += 3;
+			q = (void*)strchr((const char*)p, '\0');
+			assert (q > p);
+			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
+			off += l;
+			p = q + 1;
+			break;
+		case VEC_V8:
+			l = vbe64dec(p + 1);
+			p += 9;
+			q = (void*)strchr((const char*)p, '\0');
+			assert (q > p);
+			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
 			off += l;
 			p = q + 1;
 			break;
 		case VEC_S1:
 			l = p[1];
 			p += 2;
-			Debug("SKIP(%d)\n", (int)l);
+			Debug("SKIP1(%d)\n", (int)l);
 			off += l;
 			break;
 		case VEC_S2:
 			l = vbe16dec(p + 1);
 			p += 3;
-			Debug("SKIP(%d)\n", (int)l);
+			Debug("SKIP2(%d)\n", (int)l);
+			off += l;
+			break;
+		case VEC_S8:
+			l = vbe64dec(p + 1);
+			p += 9;
+			Debug("SKIP8(%d)\n", (int)l);
 			off += l;
 			break;
 		case VEC_L1:
@@ -193,9 +224,9 @@ ESI_Deliver(struct sess *sp)
 			q++;
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
-			Debug("INCL [%s][%s] BEGIN\n", p, q);
-			ESI_Include(sp, (const char*)p, (const char*)q);
-			Debug("INCL [%s] END\n", p);
+			Debug("INCL [%s][%s] BEGIN\n", q, p);
+			ESI_Include(sp, (const char*)q, (const char*)p);
+			Debug("INCL [%s][%s] END\n", q, p);
 			p = r + 1;
 			break;
 		default:
