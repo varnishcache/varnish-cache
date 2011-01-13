@@ -164,6 +164,12 @@ printf("DELIV\n");
 			printf("SKIP(%d)\n", (int)l);
 			off += l;
 			break;
+		case VEC_S2:
+			l = vbe16dec(p + 1);
+			p += 3;
+			printf("SKIP(%d)\n", (int)l);
+			off += l;
+			break;
 		case VEC_L1:
 			l = p[1];
 			p += 2;
@@ -191,7 +197,7 @@ printf("DELIV\n");
 			p = r + 1;
 			break;
 		default:
-			printf("XXXX %02x [%c]\n", *p, *p);
+			printf("XXXX 0x%02x [%s]\n", *p, p);
 			INCOMPL();
 			return;
 		}
