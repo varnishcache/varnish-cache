@@ -125,16 +125,16 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 #define Debug(fmt, ...) /**/
 
 static void
-esi_sendchunk(struct sess *sp, const void *cb, ssize_t cl,
+esi_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
     const void *ptr, ssize_t l)
 {
 
 	Debug("VER(%d) %d\n", (int)l, (int)(cb-ce));
 	if (sp->wrk->res_mode & RES_CHUNKED)
-		WRW_Write(sp->wrk, cb, cl);
-	WRW_Write(sp->wrk, ptr, l);
+		(void)WRW_Write(sp->wrk, cb, cl);
+	(void)WRW_Write(sp->wrk, ptr, l);
 	if (sp->wrk->res_mode & RES_CHUNKED)
-		WRW_Write(sp->wrk, "\r\n", -1);
+		(void)WRW_Write(sp->wrk, "\r\n", -1);
 }
 
 void
@@ -209,12 +209,7 @@ ESI_Deliver(struct sess *sp)
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
 			Debug("LIT(%d) %d\n", (int)l, (int)(q-p));
-			if (sp->wrk->res_mode & RES_CHUNKED)
-				WRW_Write(sp->wrk, p, q - p);
-			p = q + 1;
-			WRW_Write(sp->wrk, p, l);
-			if (sp->wrk->res_mode & RES_CHUNKED)
-				WRW_Write(sp->wrk, "\r\n", -1);
+			esi_sendchunk(sp, p, q - p, q + 1, l);
 			p = p + l;
 			break;
 		case VEC_INCL:
@@ -232,10 +227,9 @@ ESI_Deliver(struct sess *sp)
 		default:
 			Debug("XXXX 0x%02x [%s]\n", *p, p);
 			INCOMPL();
-			return;
 		}
 	}
-	WRW_Flush(sp->wrk);
+	(void)WRW_Flush(sp->wrk);
 }
 
 #endif /* OLD_ESI */

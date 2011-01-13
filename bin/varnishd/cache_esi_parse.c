@@ -53,7 +53,7 @@ typedef void dostuff_f(struct vep_state *, enum dowhat);
 
 struct vep_match {
 	const char	*match;
-	const char	**state;
+	const char	* const *state;
 };
 
 struct vep_state {
@@ -106,37 +106,37 @@ const char		*hack_p;
 
 /*---------------------------------------------------------------------*/
 
-static const char *VEP_START =		"[Start]";
-static const char *VEP_TESTXML = 	"[TestXml]";
-static const char *VEP_NOTXML =	 	"[NotXml]";
+static const char * const VEP_START =		"[Start]";
+static const char * const VEP_TESTXML = 	"[TestXml]";
+static const char * const VEP_NOTXML =	 	"[NotXml]";
 
-static const char *VEP_NEXTTAG = 	"[NxtTag]";
-static const char *VEP_NOTMYTAG =	"[NotMyTag]";
+static const char * const VEP_NEXTTAG = 	"[NxtTag]";
+static const char * const VEP_NOTMYTAG =	"[NotMyTag]";
 
-static const char *VEP_STARTTAG = 	"[StartTag]";
-static const char *VEP_COMMENT =	"[Comment]";
-static const char *VEP_CDATA =		"[CDATA]";
-static const char *VEP_ESITAG =		"[ESITag]";
-static const char *VEP_ESIETAG =	"[ESIEndTag]";
+static const char * const VEP_STARTTAG = 	"[StartTag]";
+static const char * const VEP_COMMENT =		"[Comment]";
+static const char * const VEP_CDATA =		"[CDATA]";
+static const char * const VEP_ESITAG =		"[ESITag]";
+static const char * const VEP_ESIETAG =		"[ESIEndTag]";
 
-static const char *VEP_ESIREMOVE =	"[ESI:Remove]";
-static const char *VEP_ESIINCLUDE =	"[ESI:Include]";
-static const char *VEP_ESICOMMENT =	"[ESI:Comment]";
-static const char *VEP_ESIBOGON =	"[ESI:Bogon]";
+static const char * const VEP_ESIREMOVE =	"[ESI:Remove]";
+static const char * const VEP_ESIINCLUDE =	"[ESI:Include]";
+static const char * const VEP_ESICOMMENT =	"[ESI:Comment]";
+static const char * const VEP_ESIBOGON =	"[ESI:Bogon]";
 
-static const char *VEP_INTAG =		"[InTag]";
-static const char *VEP_TAGERROR =	"[TagError]";
+static const char * const VEP_INTAG =		"[InTag]";
+static const char * const VEP_TAGERROR =	"[TagError]";
 
-static const char *VEP_ATTR =		"[Attribute]";
-static const char *VEP_SKIPATTR =	"[SkipAttribute]";
-static const char *VEP_SKIPATTR2 =	"[SkipAttribute2]";
-static const char *VEP_ATTRDELIM =	"[AttrDelim]";
-static const char *VEP_ATTRGETVAL =	"[AttrGetValue]";
-static const char *VEP_ATTRVAL =	"[AttrValue]";
+static const char * const VEP_ATTR =		"[Attribute]";
+static const char * const VEP_SKIPATTR =	"[SkipAttribute]";
+static const char * const VEP_SKIPATTR2 =	"[SkipAttribute2]";
+static const char * const VEP_ATTRDELIM =	"[AttrDelim]";
+static const char * const VEP_ATTRGETVAL =	"[AttrGetValue]";
+static const char * const VEP_ATTRVAL =	"[AttrValue]";
 
-static const char *VEP_UNTIL =		"[Until]";
-static const char *VEP_MATCHBUF = 	"[MatchBuf]";
-static const char *VEP_MATCH =		"[Match]";
+static const char * const VEP_UNTIL =		"[Until]";
+static const char * const VEP_MATCHBUF = 	"[MatchBuf]";
+static const char * const VEP_MATCH =		"[Match]";
 
 /*---------------------------------------------------------------------*/
 
@@ -205,6 +205,7 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
 {
 	struct vep_match *vm;
 	const char *q, *r;
+	ssize_t l;
 
 	for (vm = vep->match; vm->match; vm++) {
 		r = b;
@@ -213,9 +214,10 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
 				break;
 		if (*q != '\0' && r == e) {
 			if (b != vep->tag) {
-				assert(e - b < sizeof vep->tag);
-				memcpy(vep->tag, b, e - b);
-				vep->tag_i = e - b;
+				l = e - b;
+				assert(l < sizeof vep->tag);
+				memmove(vep->tag, b, l);
+				vep->tag_i = l;
 			}
 			return (NULL);
 		}
@@ -230,23 +232,23 @@ vep_match(struct vep_state *vep, const char *b, const char *e)
  */
 
 static void
-vep_emit_len(struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
+vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 {
 	uint8_t buf[9];
 
 	assert(l > 0);
 	if (l < 256) {
-		buf[0] = m8;
+		buf[0] = (uint8_t)m8;
 		buf[1] = (uint8_t)l;
 		assert((ssize_t)buf[1] == l);
 		vsb_bcat(vep->vsb, buf, 2);
 	} else if (l < 65536) {
-		buf[0] = m16;
+		buf[0] = (uint8_t)m16;
 		vbe16enc(buf + 1, (uint16_t)l);
 		assert((ssize_t)vbe16dec(buf + 1) == l);
 		vsb_bcat(vep->vsb, buf, 3);
 	} else {
-		buf[0] = m64;
+		buf[0] = (uint8_t)m64;
 		vbe64enc(buf + 1, l);
 		assert((ssize_t)vbe64dec(buf + 1) == l);
 		vsb_bcat(vep->vsb, buf, 9);
@@ -276,6 +278,7 @@ vep_emit_verbatim(struct vep_state *vep)
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
 
+#if 0
 static void
 vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
 {
@@ -293,7 +296,7 @@ vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 	vsb_bcat(vep->vsb, p, l);
 }
-
+#endif
 
 static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
@@ -332,23 +335,7 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 /*---------------------------------------------------------------------
  */
 
-#if 0
-static void
-vep_do_nothing(struct vep_state *vep, enum dowhat what)
-{
-	Debug("DO_NOTHING(%d)\n", what);
-	if (what == DO_ATTR) {
-		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
-			vsb_data(vep->attr_vsb));
-		vsb_delete(vep->attr_vsb);
-	}
-}
-#endif
-
-/*---------------------------------------------------------------------
- */
-
-static void
+static void __match_proto__()
 vep_do_comment(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_COMMENT(%d)\n", what);
@@ -369,7 +356,7 @@ vep_do_comment(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
-static void
+static void __match_proto__()
 vep_do_remove(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_REMOVE(%d)\n", what);
@@ -400,7 +387,7 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
-static void
+static void __match_proto__()
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
 	char *p, *q, *h;
@@ -488,21 +475,17 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  */
 
 static void
-vep_parse(struct vep_state *vep, const char *b, size_t l)
+vep_parse(struct vep_state *vep, const char *p, size_t l)
 {
-	const char *e, *p;
+	const char *e;
 	struct vep_match *vm;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
-	e = b + l;
+	e = p + l;
 
-	if (0)
-		vep_emit_literal(vep, "A", "B");
-
-	p = b;
 	while (p < e) {
 		AN(vep->state);
 		i = e - p;
@@ -514,8 +497,6 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		    vep->remove,
 		    vep->tag_i, vep->tag,
 		    i, p);
-		fflush(stdout);
-		usleep(10);
 
 		/******************************************************
 		 * SECTION A
@@ -721,7 +702,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Illegal attribute start char");
-Debug("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
+				Debug("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_TAGERROR) {
@@ -803,7 +784,7 @@ Debug("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
 				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Missing end attribute delimiter");
-Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
+				Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
@@ -838,7 +819,6 @@ Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 			if (vm != NULL) {
 				if (vm->match != NULL)
 					p += strlen(vm->match);
-				b = p;
 				vep->state = *vm->state;
 				vep->match = NULL;
 				vep->tag_i = 0;
@@ -886,6 +866,7 @@ Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 			INCOMPL();
 		}
 	}
+	/* XXX: should we return p ? */
 }
 
 /*---------------------------------------------------------------------
@@ -919,8 +900,8 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		w = HTC_Read(htc, st->ptr + st->len, l);
 		if (w <= 0)
 			return (w);
-if (vep->hack_p == NULL)
-	vep->hack_p = (const char *)st->ptr + st->len;
+		if (vep->hack_p == NULL)
+			vep->hack_p = (const char *)st->ptr + st->len;
 		vep->ver_p = (const char *)st->ptr + st->len;
 #if 0
 		{
@@ -996,7 +977,6 @@ vfp_esi_end(struct sess *sp)
 	Debug("ENDING %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
-	usleep(100);
 	st = sp->wrk->storage;
 	if (st != NULL)
 		l = (const char *)(st->ptr + st->len) - (const char*)vep->ver_p;
@@ -1010,15 +990,14 @@ vfp_esi_end(struct sess *sp)
 		vep_emit_verbatim(vep);
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
-	if (vep->state != VEP_NOTXML && l != 0) {
+	if (vep->state != VEP_NOTXML && l > 0) {
 		Debug("ESI %d <%s>\n", (int)l, vsb_data(vep->vsb));
 
 		/* XXX: This is a huge waste of storage... */
-		sp->obj->esidata = STV_alloc(sp, vsb_len(vep->vsb));
+		sp->obj->esidata = STV_alloc(sp, l);
 		AN(sp->obj->esidata);
-		memcpy(sp->obj->esidata->ptr,
-		    vsb_data(vep->vsb), vsb_len(vep->vsb));
-		sp->obj->esidata->len = vsb_len(vep->vsb);
+		memcpy(sp->obj->esidata->ptr, vsb_data(vep->vsb), l);
+		sp->obj->esidata->len = l;
 	}
 	vsb_delete(vep->vsb);
 
