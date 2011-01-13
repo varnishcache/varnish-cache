@@ -35,7 +35,6 @@
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
-#if 0
 static __inline uint16_t
 vbe16dec(const void *pp)
 {
@@ -43,7 +42,6 @@ vbe16dec(const void *pp)
 
 	return ((p[0] << 8) | p[1]);
 }
-#endif
 
 static __inline uint32_t
 vbe32dec(const void *pp)
@@ -53,7 +51,6 @@ vbe32dec(const void *pp)
 	return (((unsigned)p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
 }
 
-#if 0
 static __inline uint64_t
 vbe64dec(const void *pp)
 {
@@ -62,6 +59,7 @@ vbe64dec(const void *pp)
 	return (((uint64_t)vbe32dec(p) << 32) | vbe32dec(p + 4));
 }
 
+#if 0
 static __inline uint16_t
 vle16dec(const void *pp)
 {
@@ -87,6 +85,7 @@ vle64dec(const void *pp)
 
 	return (((uint64_t)vle32dec(p + 4) << 32) | vle32dec(p));
 }
+#endif
 
 static __inline void
 vbe16enc(void *pp, uint16_t u)
@@ -96,8 +95,6 @@ vbe16enc(void *pp, uint16_t u)
 	p[0] = (u >> 8) & 0xff;
 	p[1] = u & 0xff;
 }
-
-#endif
 
 static __inline void
 vbe32enc(void *pp, uint32_t u)
