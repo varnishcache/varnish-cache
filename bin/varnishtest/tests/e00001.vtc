@@ -8,6 +8,8 @@ server s1 {
 	txresp -body {
 		<esi:remove>
 		This is a test: Unseen University
+		<esi:include src="trick question">
+		<!--esi XXX -->
 		</esi:remove>
 		<esX>This is a test: Hello world
 	}
