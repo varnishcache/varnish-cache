@@ -308,6 +308,20 @@ vep_mark_skip(struct vep_state *vep, const char *p)
  */
 
 static void
+vep_do_nothing(struct vep_state *vep, enum dowhat what)
+{
+	printf("DO_NOTHING(%d)\n", what);
+	if (what == DO_ATTR) {
+		printf("ATTR (%s) (%s)\n", vep->match_hit->match,
+			vsb_data(vep->attr_vsb));
+		vsb_delete(vep->attr_vsb);
+	}
+}
+
+/*---------------------------------------------------------------------
+ */
+
+static void
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
 
@@ -512,7 +526,9 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			vep->attr = vep_match_attr_include;
 			vep->attr_l = vep_match_attr_include_len;
 		} else if (vep->state == VEP_ESIREMOVE) {
+			vep->dostuff = vep_do_nothing;
 			vep->remove = !vep->endtag;
+			vep->state = VEP_INTAG;
 
 		/******************************************************
 		 * SECTION F
@@ -731,6 +747,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk->vep);
+	/* XXX: snapshot WS ? We'll need the space */
 	vep = (void*)WS_Alloc(sp->wrk->ws, sizeof *vep);
 	AN(vep);
 
@@ -799,6 +816,7 @@ vfp_esi_end(struct sess *sp)
 	if (st->len < st->space)
 		STV_trim(st, st->len);
 	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	sp->wrk->vep = NULL;
 	return (0);
 }
 
