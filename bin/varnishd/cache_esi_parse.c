@@ -32,13 +32,14 @@
 #include "svnid.h"
 SVNID("$Id")
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "cache.h"
 #include "cache_esi.h"
 #include "vend.h"
 #include "vct.h"
 #include "stevedore.h"
-
-#include <stdio.h>
 
 #ifndef OLD_ESI
 
@@ -68,12 +69,14 @@ struct vep_state {
 	const char		*until_p;
 	const char		*until_s;
 
+	const char		*esicmt;
+	const char		*esicmt_p;
+
 	struct vep_match	*match;
 	int			match_l;
 
 	char			tag[10];
 	int			tag_i;
-	
 };
 
 /*---------------------------------------------------------------------*/
@@ -85,8 +88,7 @@ static const char *VEP_ENDTAG = 	"[EndTag]";
 static const char *VEP_MATCHBUF = 	"[MatchBuf]";
 static const char *VEP_NEXTTAG = 	"[NxtTag]";
 static const char *VEP_NOTMYTAG =	"[NotMyTag]";
-static const char *VEP_ESICMT =		"[EsiComment]";
-static const char *VEP_CMT =		"[Comment]";
+static const char *VEP_COMMENT =	"[Comment]";
 static const char *VEP_CDATA =		"[CDATA]";
 static const char *VEP_ESITAG =		"[ESITag]";
 static const char *VEP_ESIETAG =	"[ESIEndTag]";
@@ -100,17 +102,18 @@ static const char *VEP_XXX =		"[XXX]";
 
 /*---------------------------------------------------------------------*/
 
-static struct vep_match vep_match_tbl[] = {
-	{ "<!--esi",	&VEP_ESICMT },
-	{ "<!--",	&VEP_CMT },
+static struct vep_match vep_match_starttag[] = {
+	{ "<!--",	&VEP_COMMENT },
 	{ "</esi:",	&VEP_ESIETAG },
 	{ "<esi:",	&VEP_ESITAG },
 	{ "<![CDATA[",	&VEP_CDATA },
 	{ NULL,		&VEP_NOTMYTAG }
 };
 
-static const int vep_match_tbl_len =
-    sizeof vep_match_tbl / sizeof vep_match_tbl[0];
+static const int vep_match_starttag_len =
+    sizeof vep_match_starttag / sizeof vep_match_starttag[0];
+
+/*---------------------------------------------------------------------*/
 
 static struct vep_match vep_match_esi[] = {
 	{ "include",	&VEP_ESIINCLUDE },
@@ -121,6 +124,8 @@ static struct vep_match vep_match_esi[] = {
 
 static const int vep_match_esi_len =
     sizeof vep_match_esi / sizeof vep_match_esi[0];
+
+/*---------------------------------------------------------------------*/
 
 static struct vep_match vep_match_esie[] = {
 	{ "remove",	&VEP_ESI_REMOVE },
@@ -208,6 +213,25 @@ vep_emit_verbatim(struct vep_state *vep)
 } 
 
 static void
+vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
+{
+	ssize_t l;
+
+	if (e == NULL)
+		e = strchr(p, '\0');
+	if (vep->o_verbatim > 0) 
+		vep_emit_verbatim(vep);
+	if (vep->o_skip > 0) 
+		vep_emit_skip(vep);
+	l = e - p;
+	printf("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
+	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L4);
+	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
+	vsb_bcat(vep->vsb, p, l);
+}
+
+
+static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
@@ -241,24 +265,12 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 	vep->ver_p = p;
 } 
 
-static void
-vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
-{
-	ssize_t l;
-
-	if (vep->o_verbatim > 0) 
-		vep_emit_verbatim(vep);
-	if (vep->o_skip > 0) 
-		vep_emit_skip(vep);
-	l = e - p;
-	printf("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
-	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L4);
-	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
-	vsb_bcat(vep->vsb, p, l);
-}
-
 /*---------------------------------------------------------------------
- * Parse object for ESI instructions
+ * Lex/Parse object for ESI instructions
+ *
+ * This function is called with the input object piecemal so do not
+ * assume that we have more than one char available at at time, but
+ * optimize for getting huge chunks. 
  */
 
 static void
@@ -272,49 +284,98 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 
 	e = b + l;
 
-	vep->ver_p = b;
-	printf("EP Call %d [%.*s]\n", (int)l, (int)l, b);
+	if (0)
+		vep_emit_literal(vep, "A", "B");
+
 	p = b;
 	while (p < e) {
 		AN(vep->state);
-		printf("EP %s [%.*s]\n",
+		printf("EP %s %d %d (%.*s) [%.*s]\n",
 		    vep->state,
+		    vep->skip,
+		    vep->remove,
+		    vep->tag_i, vep->tag,
 		    (int)(e - p), p);
+		fflush(stdout);
+		usleep(10);
+
+		/******************************************************
+		 *
+		 */
+
 		if (vep->state == VEP_START) {
 			/*
-			 * Look for the first non-white char, and
-			 * abandon if it is not '<' under the assumption
-			 * that it is not an ESI file
+			 * If the first non-whitespace char is different
+			 * from '<' we assume this is not XML.
 			 */
-			while (p < e && vct_islws(*p))
+			while (p < e && vct_islws(*p)) {
 				p++;
+				vep_mark_verbatim(vep, p);
+			}
 			if (p < e) {
-				if (*p == '<')
+				if (*p == '<') {
 					vep->state = VEP_STARTTAG;
-				else
+				} else
 					vep->state = VEP_NOTXML;
 			}
 		} else if (vep->state == VEP_NOTXML) {
+			/*
+			 * This is not recognized as XML, just skip thru
+			 * vfp_esi_end() will handle the rest
+			 */
 			p = e;
+
+		/******************************************************
+		 *
+		 */
+
+		} else if (vep->state == VEP_NOTMYTAG) {
+			vep->tag_i = 0;
+			while (p < e) {
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p + 1);
+				if (*p++ == '>') {
+					vep->state = VEP_NEXTTAG;
+					break;
+				}
+			}
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
-			 * Hunt for start of next tag
+			 * Hunt for start of next tag and keep an eye
+			 * out for end of EsiCmt if armed.
 			 */
 			while (p < e && *p != '<') {
-#if 0
-				if (vep->incmt != NULL &&
-				    *p == *vep->incmt_p) {
-					if (*++vep->incmt_p == '\0') {
-						vep->incmt = NULL;
-						vep->incmt = NULL;
+				if (vep->esicmt_p != NULL &&
+				    *p == *vep->esicmt_p++) {
+					p++;
+					if (*vep->esicmt_p == '\0') {
+						vep->esicmt = NULL;
+						vep->esicmt_p = NULL;
+						/*
+						 * The end of the esicmt
+						 * should not be emitted.
+						 * But the stuff before should
+						 */
+						if (!vep->remove)
+							vep_mark_verbatim(vep,
+							    p - 3);
+						vep_mark_skip(vep, p);
 					}
-				} else
-					vep->incmt_p = vep->incmt;
-#endif
-				p++;
+				} else {
+					p++;
+					vep->esicmt_p = vep->esicmt;
+					if (vep->esicmt_p == NULL &&
+					    !vep->remove)
+						vep_mark_verbatim(vep, p);
+				}
 			}
 			if (p < e)
 				vep->state = VEP_STARTTAG;
+
+		/******************************************************
+		 *
+		 */
+
 		} else if (vep->state == VEP_STARTTAG) {
 			/*
 			 * Start of tag, set up match table
@@ -322,10 +383,41 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			assert(*p == '<');
 			if (!vep->remove)
 				vep_mark_verbatim(vep, p);
-			vep->match = vep_match_tbl;
-			vep->match_l = vep_match_tbl_len;
+			vep->match = vep_match_starttag;
+			vep->match_l = vep_match_starttag_len;
 			vep->state = VEP_MATCH;
-			vep->skip = 1;
+		} else if (vep->state == VEP_COMMENT) {
+			/*
+			 * We are in a comment, find out if it is an
+			 * ESI comment or a regular comment
+			 */
+			if (vep->esicmt == NULL)
+				vep->esicmt_p = vep->esicmt = "esi";
+			while (p < e) {
+				if (*p == *vep->esicmt_p) {
+					p++;
+					if (*++vep->esicmt_p == '\0') {
+						vep->esicmt_p =
+						    vep->esicmt = "-->";
+						vep->state = VEP_NEXTTAG;
+						vep_mark_skip(vep, p);
+						break;
+					}
+				} else {
+					vep->esicmt_p = vep->esicmt = NULL; 
+					vep->until_p = vep->until = "-->";
+					vep->until_s = VEP_NEXTTAG;
+					vep->state = VEP_UNTIL;
+					break;
+				}
+			}
+		} else if (vep->state == VEP_CDATA) {
+			/*
+			 * Easy: just look for the end of CDATA
+			 */
+			vep->until_p = vep->until = "]]>";
+			vep->until_s = VEP_NEXTTAG;
+			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_ENDTAG) {
 			while (p < e && *p != '>') 
 				p++;
@@ -335,10 +427,38 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			}
 			vep_mark_skip(vep, p);
 			vep->skip = 0;
-		} else if (vep->state == VEP_CDATA) {
-			vep->until_p = vep->until = "]]>";
-			vep->until_s = VEP_NEXTTAG;
-			vep->state = VEP_UNTIL;
+
+		/******************************************************
+		 *
+		 */
+
+		} else if (vep->state == VEP_ESITAG) {
+			if (vep->remove) {
+				VSC_main->esi_errors++;
+				vep->state = VEP_NOTMYTAG;
+				break;
+			}
+			vep->skip = 1;
+			vep_mark_skip(vep, p);
+			vep->match = vep_match_esi;
+			vep->match_l = vep_match_esi_len;
+			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_ESIETAG) {
+			vep->match = vep_match_esie;
+			vep->match_l = vep_match_esie_len;
+			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_ESIREMOVE) {
+			vep_mark_skip(vep, p);
+			vep->remove = 1;
+			vep->state = VEP_NEXTTAG;
+		} else if (vep->state == VEP_ESI_REMOVE) {
+			vep->remove = 0;
+			vep->state = VEP_ENDTAG;
+
+		/******************************************************
+		 *
+		 */
+
 		} else if (vep->state == VEP_MATCH) {
 			/*
 			 * Match against a table
@@ -376,24 +496,9 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				b = e;
 				break;
 			}
-			if (vm->match && vep->tag_i > strlen(vm->match)) {
-				/*
-				 * not generally safe but
-				 * works for the required
-				 * case of <--esi and <--
-				 */
-				p -= vep->tag_i -
-				    strlen(vm->match);
-				vep->tag_i--;
-			}
-			if (vm->match == NULL) {
-				vep_emit_literal(vep,
-				    vep->tag, vep->tag + vep->tag_i);
-			}
 			b = p;
 			vep->state = *vm->state;
 			vep->match = NULL;
-			vep->tag_i = 0;
 		} else if (vep->state == VEP_UNTIL) {
 			/*
 			 * Skip until we see magic string
@@ -406,40 +511,11 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					break;
 				}
 			}
-		} else if (vep->state == VEP_NOTMYTAG) {
-			vep->skip = 0;
-			while (p < e) {
-				if (*p++ == '>') {
-					vep->state = VEP_NEXTTAG;
-					break;
-				}
-			}
-		} else if (vep->state == VEP_ESITAG) {
-			vep->skip = 1;
-			vep_mark_skip(vep, p);
-			vep->match = vep_match_esi;
-			vep->match_l = vep_match_esi_len;
-			vep->state = VEP_MATCH;
-		} else if (vep->state == VEP_ESIETAG) {
-			vep->match = vep_match_esie;
-			vep->match_l = vep_match_esie_len;
-			vep->state = VEP_MATCH;
-		} else if (vep->state == VEP_ESIREMOVE) {
-			vep_mark_skip(vep, p);
-			vep->remove = 1;
-			vep->state = VEP_NEXTTAG;
-		} else if (vep->state == VEP_ESI_REMOVE) {
-			vep->remove = 0;
-			vep->state = VEP_ENDTAG;
 		} else {
 			printf("*** Unknown state %s\n", vep->state);
-			break;
+			INCOMPL();
 		}
 	}
-	if (vep->remove || vep->skip)
-		vep_mark_skip(vep, p);
-	else
-		vep_mark_verbatim(vep, p);
 }
 
 /*---------------------------------------------------------------------
@@ -473,6 +549,7 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		w = HTC_Read(htc, st->ptr + st->len, l);
 		if (w <= 0)
 			return (w);
+		vep->ver_p = (const char *)st->ptr + st->len;
 #if 1
 		{
 		for (l = 0; l < w; l++) 
