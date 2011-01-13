@@ -9,7 +9,6 @@ server s1 {
 		<esi:remove>
 			bar
 		</esi:remove>
-		<esi:include
 	}
 	rxreq 
 	txresp -body {
@@ -17,7 +16,6 @@ server s1 {
 		<esi:remove>
 			bar
 		</esi:remove>
-		<esi:include
 	}
 } -start
 
@@ -31,8 +29,8 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 72
-	expect resp.http.content-length == 72
+	expect resp.bodylen == 57
+	expect resp.http.content-length == 57
 } -run
 
 varnish v1  -cli "param.set esi_syntax 1" 
@@ -41,7 +39,7 @@ client c1 {
 	txreq -url bar
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 37
+	expect resp.bodylen == 22
 	expect resp.http.transfer-encoding == "chunked"
 } -run
-varnish v1 -expect esi_errors == 1
+varnish v1 -expect esi_errors == 0
