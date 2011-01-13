@@ -57,6 +57,10 @@ struct vep_state {
 	/* parser state */
 	const char		*state;
 
+	unsigned		endtag;
+	unsigned		emptytag;
+	unsigned		canattr;
+
 	unsigned		remove;
 	unsigned		skip;
 
@@ -72,8 +76,14 @@ struct vep_state {
 	const char		*esicmt;
 	const char		*esicmt_p;
 
+	struct vep_match	*attr;
+	int			attr_l;
+	struct vsb		*attr_vsb;
+	int			attr_delim;
+
 	struct vep_match	*match;
 	int			match_l;
+	struct vep_match	*match_hit;
 
 	char			tag[10];
 	int			tag_i;
@@ -83,20 +93,30 @@ struct vep_state {
 
 static const char *VEP_START =		"[Start]";
 static const char *VEP_NOTXML =	 	"[NotXml]";
-static const char *VEP_STARTTAG = 	"[StartTag]";
-static const char *VEP_ENDTAG = 	"[EndTag]";
-static const char *VEP_MATCHBUF = 	"[MatchBuf]";
+
 static const char *VEP_NEXTTAG = 	"[NxtTag]";
 static const char *VEP_NOTMYTAG =	"[NotMyTag]";
+
+static const char *VEP_STARTTAG = 	"[StartTag]";
 static const char *VEP_COMMENT =	"[Comment]";
 static const char *VEP_CDATA =		"[CDATA]";
 static const char *VEP_ESITAG =		"[ESITag]";
 static const char *VEP_ESIETAG =	"[ESIEndTag]";
-static const char *VEP_UNTIL =		"[Until]";
+
 static const char *VEP_ESIREMOVE =	"[ESI:Remove]";
-static const char *VEP_ESI_REMOVE =	"[ESI:/Remove]";
 static const char *VEP_ESIINCLUDE =	"[ESI:Include]";
 static const char *VEP_ESICOMMENT =	"[ESI:Comment]";
+
+static const char *VEP_INTAG =		"[InTag]";
+
+static const char *VEP_ATTR =		"[Attribute]";
+static const char *VEP_SKIPATTR =	"[SkipAttribute]";
+static const char *VEP_SKIPATTR2 =	"[SkipAttribute2]";
+static const char *VEP_ATTRGETVAL =	"[AttrGetValue]";
+static const char *VEP_ATTRVAL =	"[AttrValue]";
+
+static const char *VEP_UNTIL =		"[Until]";
+static const char *VEP_MATCHBUF = 	"[MatchBuf]";
 static const char *VEP_MATCH =		"[Match]";
 static const char *VEP_XXX =		"[XXX]";
 
@@ -128,12 +148,22 @@ static const int vep_match_esi_len =
 /*---------------------------------------------------------------------*/
 
 static struct vep_match vep_match_esie[] = {
-	{ "remove",	&VEP_ESI_REMOVE },
+	{ "remove",	&VEP_ESIREMOVE },
 	{ NULL,		&VEP_XXX }
 };
 
 static const int vep_match_esie_len =
     sizeof vep_match_esie / sizeof vep_match_esie[0];
+
+/*---------------------------------------------------------------------*/
+
+static struct vep_match vep_match_attr_include[] = {
+	{ "src=",	&VEP_ATTRGETVAL },
+	{ NULL,		&VEP_SKIPATTR }
+};
+
+static const int vep_match_attr_include_len =
+    sizeof vep_match_attr_include / sizeof vep_match_attr_include[0];
 
 /*---------------------------------------------------------------------
  * return match or NULL if more input needed.
@@ -278,6 +308,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 {
 	const char *e, *p;
 	struct vep_match *vm;
+	int i;
 
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
@@ -300,7 +331,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 		usleep(10);
 
 		/******************************************************
-		 *
+		 * SECTION A
 		 */
 
 		if (vep->state == VEP_START) {
@@ -326,7 +357,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			p = e;
 
 		/******************************************************
-		 *
+		 * SECTION D
 		 */
 
 		} else if (vep->state == VEP_NOTMYTAG) {
@@ -373,7 +404,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 				vep->state = VEP_STARTTAG;
 
 		/******************************************************
-		 *
+		 * SECTION B
 		 */
 
 		} else if (vep->state == VEP_STARTTAG) {
@@ -418,21 +449,9 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			vep->until_p = vep->until = "]]>";
 			vep->until_s = VEP_NEXTTAG;
 			vep->state = VEP_UNTIL;
-		} else if (vep->state == VEP_ENDTAG) {
-			while (p < e && *p != '>') 
-				p++;
-			if (*p == '>') {
-				p++;
-				vep->state = VEP_NEXTTAG;
-			}
-			vep_mark_skip(vep, p);
-			vep->skip = 0;
-
-		/******************************************************
-		 *
-		 */
-
 		} else if (vep->state == VEP_ESITAG) {
+			vep->tag_i = 0;
+			vep->endtag = 0;
 			if (vep->remove) {
 				VSC_main->esi_errors++;
 				vep->state = VEP_NOTMYTAG;
@@ -444,19 +463,114 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			vep->match_l = vep_match_esi_len;
 			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIETAG) {
+			vep->tag_i = 0;
+			vep->endtag = 1;
 			vep->match = vep_match_esie;
 			vep->match_l = vep_match_esie_len;
 			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_ESIINCLUDE) {
+			vep->state = VEP_INTAG;
+			vep->attr = vep_match_attr_include;
+			vep->attr_l = vep_match_attr_include_len;
 		} else if (vep->state == VEP_ESIREMOVE) {
-			vep_mark_skip(vep, p);
-			vep->remove = 1;
-			vep->state = VEP_NEXTTAG;
-		} else if (vep->state == VEP_ESI_REMOVE) {
-			vep->remove = 0;
-			vep->state = VEP_ENDTAG;
+			vep->remove = !vep->endtag;
 
 		/******************************************************
-		 *
+		 * SECTION F
+		 */
+
+		} else if (vep->state == VEP_INTAG) {
+			vep->tag_i = 0;
+			while (p < e && vct_islws(*p)) {
+				p++;	
+				vep->canattr = 1;
+			}
+			if (p < e && *p == '/' && !vep->emptytag) {
+				p++;
+				vep->emptytag = 1;
+				vep->canattr = 0;
+			}
+			if (p < e && *p == '>') {
+				p++;
+				/* XXX: processing */
+				vep->state = VEP_NEXTTAG;
+			} else if (p < e && vep->emptytag) {
+				INCOMPL();	/* ESI-SYNTAX ERROR */
+			} else if (p < e && vct_isxmlnamestart(*p)) {
+				vep->state = VEP_ATTR;
+			} else if (p < e) {
+				INCOMPL();	/* ESI-SYNTAX ERROR */
+			}
+
+		/******************************************************
+		 * SECTION G
+		 */
+
+		} else if (vep->state == VEP_ATTR) {
+			AZ(vep->attr_delim);
+			if (vep->attr == NULL) {
+				p++;
+				AZ(vep->attr_vsb);
+				vep->state = VEP_SKIPATTR;
+				break;
+			}
+			vep->match = vep->attr;
+			vep->match_l = vep->attr_l;
+			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_SKIPATTR) {
+			vep->state = VEP_SKIPATTR2;
+			for (i = 0; i < vep->tag_i; i++) {
+				if (vct_isxmlname(vep->tag[i]))
+					continue;
+				if (vep->tag[i] == '=') {
+					assert(i + 1 == vep->tag_i);
+					vep->state = VEP_ATTRVAL;
+				}
+			}
+			xxxassert(i == vep->tag_i);
+			vep->tag_i = 0;
+		} else if (vep->state == VEP_SKIPATTR2) {
+			while (p < e && vct_isxmlname(*p))
+				p++;
+			if (p < e && *p == '=') {
+				p++;
+				vep->state = VEP_ATTRVAL;
+				break;
+			}
+			if (p < e) {
+				INCOMPL();	/* ESI-SYNTAX ERROR */
+			}
+		} else if (vep->state == VEP_ATTRGETVAL) {
+			vep->attr_vsb = vsb_newauto();
+			vep->state = VEP_ATTRVAL;
+		} else if (vep->state == VEP_ATTRVAL) {
+			if (vep->attr_delim == 0)  {
+				if (*p != '"' && *p != '\'')
+					INCOMPL();	/* ESI-SYNTAX */
+				vep->attr_delim = *p++;
+			}
+			while (p < e && *p != vep->attr_delim) {
+				if (vep->attr_vsb != NULL)
+					vsb_bcat(vep->attr_vsb, p, 1);
+				p++;
+			}
+			if (p < e) {
+				if (vep->attr_vsb != NULL) {
+					vsb_finish(vep->attr_vsb);
+					printf("ATTR (%s) (%s)\n",
+						vep->match_hit->match,
+						vsb_data(vep->attr_vsb));
+					vsb_delete(vep->attr_vsb);
+					vep->attr_vsb = NULL;
+				}
+				p++;
+				vep->attr_delim = 0;
+				vep->state = VEP_INTAG;
+			}
+	
+
+		/******************************************************
+		 * Utility Section
 		 */
 
 		} else if (vep->state == VEP_MATCH) {
@@ -464,6 +578,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 			 * Match against a table
 			 */
 			vm = vep_match(vep, p, e);
+			vep->match_hit = vm;
 			if (vm != NULL) {
 				if (vm->match != NULL)
 					p += strlen(vm->match);
@@ -492,6 +607,7 @@ vep_parse(struct vep_state *vep, const char *b, size_t l)
 					    vep->tag, vep->tag + vep->tag_i);
 				}
 			} while (vm == 0 && p < e);
+			vep->match_hit = vm;
 			if (vm == 0) {
 				b = e;
 				break;
