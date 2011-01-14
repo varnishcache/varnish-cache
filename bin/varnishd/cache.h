@@ -35,7 +35,7 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
-#define OLD_ESI 
+#undef OLD_ESI 
 
 #include <sys/time.h>
 #include <sys/uio.h>
