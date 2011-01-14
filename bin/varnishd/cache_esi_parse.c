@@ -125,7 +125,6 @@ static const char * const VEP_TAGERROR =	"[TagError]";
 
 static const char * const VEP_ATTR =		"[Attribute]";
 static const char * const VEP_SKIPATTR =	"[SkipAttribute]";
-static const char * const VEP_SKIPATTR2 =	"[SkipAttribute2]";
 static const char * const VEP_ATTRDELIM =	"[AttrDelim]";
 static const char * const VEP_ATTRGETVAL =	"[AttrGetValue]";
 static const char * const VEP_ATTRVAL =		"[AttrValue]";
@@ -684,7 +683,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_ATTR;
 			} else if (p < e) {
 				vep_error(vep,
-				    "XML 1.0 Illegal attribute start char");
+				    "XML 1.0 Illegal attribute tart char");
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_TAGERROR) {
@@ -711,22 +710,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_MATCH;
 			}
 		} else if (vep->state == VEP_SKIPATTR) {
-			vep->state = VEP_SKIPATTR2;
-			for (i = 0; i < vep->tag_i; i++) {
-				if (vct_isxmlname(vep->tag[i]))
-					continue;
-				if (vep->tag[i] == '=') {
-					assert(i + 1 == vep->tag_i);
-					vep->state = VEP_ATTRDELIM;
-				} else {
-					vep_error(vep,
-					    "XML 1.0 Illegal attr char (_i)");
-					vep->state = VEP_TAGERROR;
-				}
-			}
-			xxxassert(i == vep->tag_i);
-			vep->tag_i = 0;
-		} else if (vep->state == VEP_SKIPATTR2) {
 			while (p < e && vct_isxmlname(*p))
 				p++;
 			if (p < e && *p == '=') {
@@ -1122,7 +1105,6 @@ TAGERROR	-> NEXTTAGd	[label="'>'"]
 
 ATTR		[shape=ellipse]
 SKIPATTR	[shape=ellipse]
-SKIPATTR2	[shape=ellipse]
 ATTRGETVAL	[shape=ellipse]
 ATTRDELIM	[shape=ellipse]
 ATTRVAL		[shape=ellipse]
@@ -1132,11 +1114,7 @@ ATTR		-> SKIPATTR	[label="*"]
 ATTR		-> ATTRGETVAL	[label="wanted attr"]
 SKIPATTR	-> SKIPATTR	[label="XMLname"]
 SKIPATTR	-> ATTRDELIM	[label="'='"]
-SKIPATTR	-> SKIPATTR2	[label="(when tag exhaused)"]
 SKIPATTR	-> TAGERRORe	[label="*"]
-SKIPATTR2	-> SKIPATTR2	[label="XMLname"]
-SKIPATTR2	-> ATTRDELIM	[label="'='"]
-SKIPATTR2	-> TAGERRORe	[label="*"]
 ATTRGETVAL	-> ATTRDELIM
 ATTRDELIM	-> ATTRVAL	[label="\""]
 ATTRDELIM	-> ATTRVAL	[label="\'"]
