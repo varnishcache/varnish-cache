@@ -643,7 +643,8 @@ static const struct parspec input_parspec[] = {
 		"  0x00000001 - Don't check if it looks like XML\n"
 		"  0x00000002 - Ignore non-esi elements\n"
 		"  0x00000004 - Emit parsing debug records\n"
-		"  0x00000008 - Force-dplit parser input (debugging)\n"
+		"  0x00000008 - Force-split parser input (debugging)\n"
+		"  0x00000010 - Don't coalesce VEC string (debugging)\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },

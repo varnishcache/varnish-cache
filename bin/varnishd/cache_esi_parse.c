@@ -73,8 +73,10 @@ struct vep_state {
 
 	unsigned		remove;
 
-	unsigned		o_verbatim;
-	unsigned		o_skip;
+	ssize_t			o_verbatim;
+	ssize_t			o_skip;
+	ssize_t			o_pending;
+	ssize_t			o_total;
 
 const char		*hack_p;
 	const char		*ver_p;
@@ -250,26 +252,30 @@ vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 } 
 
 static void
-vep_emit_skip(struct vep_state *vep)
+vep_emit_skip(struct vep_state *vep, ssize_t *l)
 {
-	ssize_t l;
 
-	l = vep->o_skip;
-	vep->o_skip = 0;
-	assert(l > 0);
-	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
+	assert(*l > 0);
+	if (params->esi_syntax & 0x20) {
+		Debug("---> SKIP(%jd)\n", (intmax_t)*l);
+	}
+	vep_emit_len(vep, *l, VEC_S1, VEC_S2, VEC_S8);
+	vep->o_total += *l;
+	*l = 0;
 } 
 
 static void
-vep_emit_verbatim(struct vep_state *vep)
+vep_emit_verbatim(struct vep_state *vep, ssize_t *l)
 {
-	ssize_t l;
 
-	l = vep->o_verbatim;
-	vep->o_verbatim = 0;
-	assert(l > 0);
-	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
-	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
+	assert(*l > 0);
+	if (params->esi_syntax & 0x20) {
+		Debug("---> VERBATIM(%jd)\n", (intmax_t)*l);
+	}
+	vep_emit_len(vep, *l, VEC_V1, VEC_V2, VEC_V8);
+	vsb_printf(vep->vsb, "%lx\r\n%c", *l, 0);
+	vep->o_total += *l;
+	*l = 0;
 } 
 
 static void
@@ -279,14 +285,20 @@ vep_mark_verbatim(struct vep_state *vep, const char *p)
 
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
-	if (l == 0)
-		return;
-	if (vep->o_skip > 0) 
-		vep_emit_skip(vep);
-	AZ(vep->o_skip);
-	Debug("-->V(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
-	vep->o_verbatim += l;
 	vep->ver_p = p;
+	assert(l >= 0);
+	if (params->esi_syntax & 0x10) {
+		if (vep->o_pending)
+			vep_emit_verbatim(vep, &vep->o_pending);
+		if (l)
+			vep_emit_verbatim(vep, &l);
+	} else {
+		if (vep->o_skip > 0) 
+			vep_emit_skip(vep, &vep->o_skip);
+		vep->o_verbatim += vep->o_pending;
+		vep->o_pending = 0;
+		vep->o_verbatim += l;
+	}
 } 
 
 static void
@@ -296,14 +308,20 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
-	if (l == 0)
-		return;
-	if (vep->o_verbatim > 0) 
-		vep_emit_verbatim(vep);
-	AZ(vep->o_verbatim);
-	Debug("-->S(%d) [%.*s]\n", (int)l, (int)l, vep->ver_p);
-	vep->o_skip += l;
 	vep->ver_p = p;
+	assert(l >= 0);
+	if (params->esi_syntax & 0x10) {
+		if (vep->o_pending) 
+			vep_emit_skip(vep, &vep->o_pending);
+		if (l)
+			vep_emit_skip(vep, &l);
+	} else {
+		if (vep->o_verbatim > 0) 
+			vep_emit_verbatim(vep, &vep->o_verbatim);
+		vep->o_skip += vep->o_pending;
+		vep->o_pending = 0;
+		vep->o_skip += l;
+	}
 } 
 
 /*---------------------------------------------------------------------
@@ -371,9 +389,9 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	}
 	XXXAN(vep->include_src);
 	if (vep->o_skip > 0) 
-		vep_emit_skip(vep);
+		vep_emit_skip(vep, &vep->o_skip);
 	if (vep->o_verbatim > 0) 
-		vep_emit_verbatim(vep);
+		vep_emit_verbatim(vep, &vep->o_verbatim);
 	/* XXX: what if it contains NUL bytes ?? */
 	p = vsb_data(vep->include_src);
 	l = vsb_len(vep->include_src);
@@ -461,6 +479,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 		    vep->remove,
 		    vep->tag_i, vep->tag,
 		    i, p);
+		assert(p >= vep->ver_p);
 
 		/******************************************************
 		 * SECTION A
@@ -506,7 +525,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				p++;
 				vep->state = VEP_NEXTTAG;
 				if (!vep->remove)
-					vep_mark_verbatim(vep, p + 1);
+					vep_mark_verbatim(vep, p);
 			} else {
 				vep->tag_i = 0;
 				while (p < e) {
@@ -516,7 +535,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 					}
 				}
 				if (p < e && !vep->remove)
-					vep_mark_verbatim(vep, p + 1);
+					vep_mark_verbatim(vep, p);
 			}
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
@@ -526,6 +545,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->emptytag = 0;
 			vep->endtag = 0;
 			vep->attr = NULL;
+			vep->dostuff = NULL;
 			while (p < e && *p != '<') {
 				if (vep->esicmt_p != NULL &&
 				    *p == *vep->esicmt_p++) {
@@ -538,13 +558,12 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 						 * should not be emitted.
 						 * But the stuff before should
 						 */
-						if (!vep->remove)
-							vep_mark_verbatim(vep,
-							    p - 3);
 						vep_mark_skip(vep, p);
 					}
 				} else {
 					p++;
+					if (!vep->remove) 
+						vep_mark_verbatim(vep, p);
 					vep->esicmt_p = vep->esicmt;
 				}
 			}
@@ -808,7 +827,8 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				if (*p == '>') {
 					for (vm = vep->match;
 					    vm->match != NULL; vm++)
-						break;
+						continue;
+					AZ(vm->match);
 				} else {
 					vep->tag[vep->tag_i++] = *p++;
 					vm = vep_match(vep,
@@ -843,7 +863,8 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			INCOMPL();
 		}
 	}
-	/* XXX: should we return p ? */
+	vep->o_pending +=  p - vep->ver_p;
+	vep->ver_p = p;
 }
 
 /*---------------------------------------------------------------------
@@ -938,7 +959,7 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
-	Debug("BYTES %p\n", vep);
+	Debug("BYTES %jd\n", (intmax_t)bytes);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	AN(vep->bytes);
 	return (vep->bytes(sp, htc, bytes));
@@ -949,7 +970,7 @@ vfp_esi_end(struct sess *sp)
 {
 	struct storage *st;
 	struct vep_state *vep;
-	size_t l;
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
@@ -957,17 +978,21 @@ vfp_esi_end(struct sess *sp)
 	Debug("ENDING %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
-	st = sp->wrk->storage;
-	if (st != NULL)
-		l = (const char *)(st->ptr + st->len) - (const char*)vep->ver_p;
-	else
-		l = 0;
-	Debug("ENDING STATE: %s (%ld)\n", vep->state, l);
+	l = sp->obj->len - vep->o_total;
+	Debug("ENDING STATE: %s (skip %jd) (verbatim %jd)"
+	    " (tot %jd) (len %jd) (diff %jd)\n",
+	    vep->state,
+	    (intmax_t)vep->o_skip, (intmax_t)vep->o_verbatim,
+	    (intmax_t)vep->o_total, (intmax_t)sp->obj->len, (intmax_t)l);
+	assert(l >= 0);
 	if (vep->o_skip)
-		vep_emit_skip(vep);
-	vep->o_verbatim += l;
+		vep_emit_skip(vep, &vep->o_skip);
 	if (vep->o_verbatim)
-		vep_emit_verbatim(vep);
+		vep_emit_verbatim(vep, &vep->o_verbatim);
+	l = sp->obj->len - vep->o_total;
+	if (l)
+		vep_emit_verbatim(vep, &l);
+	vep->o_verbatim += l;
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l > 0) {

@@ -4,20 +4,37 @@ test "Push corners in new ESI parser"
 
 server s1 {
 	rxreq 
-	txresp -body {
-		</esi:comment foo>
-		<esi:comment / >
-		<esi:remove foo="bar"></esi:remove>
-		<esi:include src="foo">
-	}
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunked {<1></esi:comment foo><1>}
+	chunked {<2><esi:comment / ><esi:comment doo><2>}
+	chunked {<3><esi:remove foo="bar"></esi:remove><3>}
+	chunked {<4><esi:include src="foo"><esi:incl><4>}
+	chunked {<H1><esi:remove>}
+	chunkedlen 256
+	chunked {</esi:remove></H1>}
+
+	chunked {<H2><esi:remove>}
+	chunkedlen 65536
+	chunked {</esi:remove></H2>}
+
+	chunked {<esi:comment/>}
+	chunkedlen 256
+	chunked {<esi:comment/>}
+	chunkedlen 65536
+	chunked {<esi:comment/>}
+
+	chunkedlen 0
+
 	rxreq
 	expect req.url == "bar/foo"
-	txresp -body {<H1></H1>}
+	txresp -body {<INCL>}
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
-		set beresp.do_esi = true;
+		if (req.url == "bar") {
+			set beresp.do_esi = true;
+		}
 	}
 } -start 
 
@@ -29,8 +46,8 @@ client c1 {
 	txreq  -url bar
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 23
+	expect resp.bodylen == 65840
 } -run
 
-varnish v1 -expect esi_errors == 2
+varnish v1 -expect esi_errors == 4
 varnish v1 -expect esi_warnings == 1
