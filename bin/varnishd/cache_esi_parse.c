@@ -453,6 +453,9 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  * This function is called with the input object piecemal so do not
  * assume that we have more than one char available at at time, but
  * optimize for getting huge chunks. 
+ *
+ * NB: At the bottom of this source-file, there is a dot-diagram matching
+ * NB: the state-machine.  Please maintain it along with the code.
  */
 
 static void
@@ -512,7 +515,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			p = e;
 
 		/******************************************************
-		 * SECTION D
+		 * SECTION B
 		 */
 
 		} else if (vep->state == VEP_NOTMYTAG) {
@@ -567,7 +570,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_STARTTAG;
 
 		/******************************************************
-		 * SECTION B
+		 * SECTION C
 		 */
 
 		} else if (vep->state == VEP_STARTTAG) {
@@ -651,7 +654,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->state = VEP_TAGERROR;
 
 		/******************************************************
-		 * SECTION F
+		 * SECTION D
 		 */
 
 		} else if (vep->state == VEP_INTAG) {
@@ -674,14 +677,15 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->dostuff(vep, DO_TAG);
 				vep->state = VEP_NEXTTAG;
 			} else if (p < e && vep->emptytag) {
-				INCOMPL();	/* ESI-SYNTAX ERROR */
-			} else if (p < e && vct_isxmlnamestart(*p)) {
+				vep_error(vep,
+				    "XML 1.0 '>' does not follow '/' in tag");
+				vep->state = VEP_TAGERROR;
+			} else if (p < e && vep->canattr &&
+			    vct_isxmlnamestart(*p)) {
 				vep->state = VEP_ATTR;
 			} else if (p < e) {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Illegal attribute start char");
-				Debug("ERR %d [%.*s]\n", __LINE__, (int)(e-p), p);
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_TAGERROR) {
@@ -694,7 +698,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			}
 
 		/******************************************************
-		 * SECTION G
+		 * SECTION E
 		 */
 
 		} else if (vep->state == VEP_ATTR) {
@@ -716,6 +720,10 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				if (vep->tag[i] == '=') {
 					assert(i + 1 == vep->tag_i);
 					vep->state = VEP_ATTRDELIM;
+				} else {
+					vep_error(vep,
+					    "XML 1.0 Illegal attr char");
+					vep->state = VEP_TAGERROR;
 				}
 			}
 			xxxassert(i == vep->tag_i);
@@ -1008,3 +1016,130 @@ struct vfp vfp_esi = {
 };
 
 #endif /* OLD_ESI */
+
+#if 0
+
+digraph xml {
+	rankdir="LR"
+	size="7,10"
+#################################################################
+# SECTION A
+#
+
+START		[shape=ellipse]
+TESTXML		[shape=ellipse]
+NOTXML		[shape=ellipse]
+NEXTTAGa	[shape=hexagon, label="NEXTTAG"]
+STARTTAGa	[shape=hexagon, label="STARTTAG"]
+START		-> TESTXML
+START		-> NEXTTAGa	[style=dotted, label="syntax:1"]
+TESTXML		-> TESTXML	[label="lws"]
+TESTXML		-> NOTXML
+TESTXML		-> STARTTAGa	[label="'<'"]
+
+#################################################################
+# SECTION B
+
+NOTMYTAG	[shape=ellipse]
+NEXTTAG		[shape=ellipse]
+NOTMYTAG	-> NEXTTAG	[style=dotted, label="syntax:2"]
+STARTTAGb	[shape=hexagon, label="STARTTAG"]
+NOTMYTAG	-> NEXTTAG	[label="'>'"]
+NOTMYTAG	-> NOTMYTAG	[label="*"]
+NEXTTAG		-> NEXTTAG	[label="'-->'"]
+NEXTTAG		-> NEXTTAG	[label="*"]
+NEXTTAG		-> STARTTAGb	[label="'<'"]
+
+#################################################################
+# SECTION C
+
+STARTTAG	[shape=ellipse]
+COMMENT		[shape=ellipse]
+CDATA		[shape=ellipse]
+ESITAG		[shape=ellipse]
+ESIETAG		[shape=ellipse]
+ESIINCLUDE	[shape=ellipse]
+ESIREMOVE	[shape=ellipse]
+ESICOMMENT	[shape=ellipse]
+ESIBOGON	[shape=ellipse]
+INTAGc		[shape=hexagon, label="INTAG"]
+NOTMYTAGc	[shape=hexagon, label="NOTMYTAG"]
+NEXTTAGc	[shape=hexagon, label="NEXTTAG"]
+TAGERRORc	[shape=hexagon, label="TAGERROR"]
+C1		[shape=circle,label=""]
+STARTTAG	-> COMMENT	[label="'<!--'"]
+STARTTAG	-> ESIETAG	[label="'</esi'"]
+STARTTAG	-> ESITAG	[label="'<esi'"]
+STARTTAG	-> CDATA	[label="'<![CDATA['"]
+STARTTAG	-> NOTMYTAGc	[label="'*'"]
+COMMENT		-> NEXTTAGc	[label="'esi'"]
+COMMENT		-> C1		[label="*"]
+C1		-> C1		[label="*"]
+C1		-> NEXTTAGc	[label="-->"]
+CDATA		-> CDATA	[label="*"]
+CDATA		-> NEXTTAGc	[label="]]>"]
+ESITAG		-> ESIINCLUDE	[label="'include'"]
+ESITAG		-> ESIREMOVE	[label="'remove'"]
+ESITAG		-> ESICOMMENT	[label="'comment'"]
+ESITAG		-> ESIBOGON	[label="*"]
+ESITAG		-> NOTMYTAGc	[style=dotted, label="nested\nin\nremove"]
+ESIETAG		-> ESIREMOVE	[label="'remove'"]
+ESIETAG		-> ESIBOGON	[label="*"]
+ESICOMMENT	-> INTAGc
+ESIREMOVE	-> INTAGc
+ESIINCLUDE	-> INTAGc
+ESIBOGON	-> TAGERRORc
+
+#################################################################
+# SECTION D
+
+INTAG		[shape=ellipse]
+TAGERROR	[shape=ellipse]
+NEXTTAGd	[shape=hexagon, label="NEXTTAG"]
+ATTRd		[shape=hexagon, label="ATTR"]
+D1		[shape=circle, label=""]
+D2		[shape=circle, label=""]
+INTAG		-> D1		[label="lws"]
+D1		-> D2		[label="/"]
+INTAG		-> D2		[label="/"]
+INTAG		-> NEXTTAGd	[label=">"]
+D1		-> NEXTTAGd	[label=">"]
+D2		-> NEXTTAGd	[label=">"]
+D1		-> ATTRd	[label="XMLstartchar"]
+D1		-> TAGERROR	[label="*"]
+D2		-> TAGERROR	[label="*"]
+TAGERROR	-> TAGERROR	[label="*"]
+TAGERROR	-> NEXTTAGd	[label="'>'"]
+
+#################################################################
+# SECTION E
+
+ATTR		[shape=ellipse]
+SKIPATTR	[shape=ellipse]
+SKIPATTR2	[shape=ellipse]
+ATTRGETVAL	[shape=ellipse]
+ATTRDELIM	[shape=ellipse]
+ATTRVAL		[shape=ellipse]
+TAGERRORe	[shape=hexagon, label="TAGERROR"]
+INTAGe		[shape=hexagon, label="INTAG"]
+ATTR		-> SKIPATTR	[label="*"]
+ATTR		-> ATTRGETVAL	[label="wanted attr"]
+SKIPATTR	-> SKIPATTR	[label="XMLname"]
+SKIPATTR	-> ATTRDELIM	[label="'='"]
+SKIPATTR	-> SKIPATTR2	[label="(when tag exhaused)"]
+SKIPATTR	-> TAGERRORe	[label="*"]
+SKIPATTR2	-> SKIPATTR2	[label="XMLname"]
+SKIPATTR2	-> ATTRDELIM	[label="'='"]
+SKIPATTR2	-> TAGERRORe	[label="*"]
+ATTRGETVAL	-> ATTRDELIM
+ATTRDELIM	-> ATTRVAL	[label="\""]
+ATTRDELIM	-> ATTRVAL	[label="\'"]
+ATTRDELIM	-> ATTRVAL	[label="*"]
+ATTRDELIM	-> TAGERRORe	[label="lws"]
+ATTRVAL		-> TAGERRORe	[label="'>'"]
+ATTRVAL		-> INTAGe	[label="delim"]
+ATTRVAL		-> ATTRVAL	[label="*"]
+
+}
+
+#endif
