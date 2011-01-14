@@ -883,17 +883,21 @@ cmd_http_chunkedlen(CMD_ARGS)
 
 	len = atoi(av[1]);
 
-	for (u = 0; u < sizeof buf; u++)
-		buf[u] = (u & 7) + '0';
+	if (len == 0) {
+		vsb_printf(hp->vsb, "0%s%s", nl, nl);
+	} else {
+		for (u = 0; u < sizeof buf; u++)
+			buf[u] = (u & 7) + '0';
 
-	for (u = 0; u < len; u += 16384) {
-		v = len - u;
-		if (v > sizeof buf)
-			v = sizeof buf;
-		vsb_printf(hp->vsb, "%x%s", v, nl);
-		vsb_printf(hp->vsb, "%*.*s%s", v, v, buf, nl);
+		vsb_printf(hp->vsb, "%x%s", len, nl);
+		for (u = 0; u < len; u += v) {
+			v = len - u;
+			if (v > sizeof buf)
+				v = sizeof buf;
+			vsb_bcat(hp->vsb, buf, v);
+		}
+		vsb_printf(hp->vsb, "%s", nl);
 	}
-	vsb_printf(hp->vsb, "%x%s%s", 0, nl, nl);
 	http_write(hp, 4, "chunked");
 }
 

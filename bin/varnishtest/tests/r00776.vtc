@@ -6,6 +6,7 @@ server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
 	chunkedlen 4096
+	chunkedlen 0
 } -start
 
 varnish v1 \

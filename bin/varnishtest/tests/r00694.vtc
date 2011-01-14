@@ -9,6 +9,7 @@ server s1 {
 	send "\r\n"
 	# This is chunksize (128k) + 2 to force to chunks to be allocated
 	chunkedlen 131074
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend {
