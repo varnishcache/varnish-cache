@@ -33,7 +33,4 @@
 #define	VEC_S1	'b'
 #define	VEC_S2	'w'
 #define	VEC_S8	'l'
-#define	VEC_L1	'c'
-#define	VEC_L2	'x'
-#define	VEC_L8	'm'
 #define	VEC_INCL	'I'

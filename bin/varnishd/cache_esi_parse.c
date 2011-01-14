@@ -200,6 +200,7 @@ vep_error(const struct vep_state *vep, const char *p)
 /*---------------------------------------------------------------------
  * return match or NULL if more input needed.
  */
+
 static struct vep_match *
 vep_match(struct vep_state *vep, const char *b, const char *e)
 {
@@ -277,26 +278,6 @@ vep_emit_verbatim(struct vep_state *vep)
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
-
-#if 0
-static void
-vep_emit_literal(struct vep_state *vep, const char *p, const char *e)
-{
-	ssize_t l;
-
-	if (e == NULL)
-		e = strchr(p, '\0');
-	if (vep->o_verbatim > 0) 
-		vep_emit_verbatim(vep);
-	if (vep->o_skip > 0) 
-		vep_emit_skip(vep);
-	l = e - p;
-	Debug("---->L(%d) [%.*s]\n", (int)l, (int)l, p);
-	vep_emit_len(vep, l, VEC_L1, VEC_L2, VEC_L8);
-	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
-	vsb_bcat(vep->vsb, p, l);
-}
-#endif
 
 static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
@@ -516,14 +497,12 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				p++;
 				vep_mark_verbatim(vep, p);
 			}
-			if (p < e) {
-				if (*p == '<') {
-					vep->state = VEP_STARTTAG;
-				} else {
-					WSP(vep->sp, SLT_ESI_xmlerror,
-					    "No ESI processing, first char not '<'");
-					vep->state = VEP_NOTXML;
-				}
+			if (p < e && *p == '<') {
+				vep->state = VEP_STARTTAG;
+			} else if (p < e) {
+				WSP(vep->sp, SLT_ESI_xmlerror,
+				    "No ESI processing, first char not '<'");
+				vep->state = VEP_NOTXML;
 			}
 		} else if (vep->state == VEP_NOTXML) {
 			/*
@@ -835,7 +814,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			 */
 			do {
 				if (*p == '>') {
-					vm = NULL;
+					vm = vep->match+vep->match_l-1;
 				} else {
 					vep->tag[vep->tag_i++] = *p++;
 					vm = vep_match(vep,
@@ -905,8 +884,13 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		vep->ver_p = (const char *)st->ptr + st->len;
 #if 0
 		{
-		for (l = 0; l < w; l++) 
-			vep_parse(vep, (const char *)st->ptr + st->len + l, 1);
+		ssize_t d;
+		for (l = 0; l < w; l += d)  {
+			d = 1;
+			if (l + d >= w)
+				d = 1;
+			vep_parse(vep, (const char *)st->ptr + st->len + l, d);
+		}
 		}
 #else
 		vep_parse(vep, (const char *)st->ptr + st->len, w);

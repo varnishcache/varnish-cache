@@ -203,15 +203,6 @@ ESI_Deliver(struct sess *sp)
 			Debug("SKIP8(%d)\n", (int)l);
 			off += l;
 			break;
-		case VEC_L1:
-			l = p[1];
-			p += 2;
-			q = (void*)strchr((const char*)p, '\0');
-			assert (q > p);
-			Debug("LIT(%d) %d\n", (int)l, (int)(q-p));
-			esi_sendchunk(sp, p, q - p, q + 1, l);
-			p = p + l;
-			break;
 		case VEC_INCL:
 			p++;
 			q = (void*)strchr((const char*)p, '\0');
