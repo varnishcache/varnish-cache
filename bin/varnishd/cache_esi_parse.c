@@ -890,19 +890,17 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (vep->hack_p == NULL)
 			vep->hack_p = (const char *)st->ptr + st->len;
 		vep->ver_p = (const char *)st->ptr + st->len;
-#if 0
-		{
-		ssize_t d;
-		for (l = 0; l < w; l += d)  {
-			d = 1;
-			if (l + d >= w)
-				d = 1;
-			vep_parse(vep, (const char *)st->ptr + st->len + l, d);
-		}
-		}
-#else
-		vep_parse(vep, (const char *)st->ptr + st->len, w);
-#endif
+		if (params->esi_syntax & 0x8) {
+			ssize_t d;
+			for (l = 0; l < w; l += d)  {
+				d = (random() & 3) + 1;
+				if (l + d >= w)
+					d = 1;
+				vep_parse(vep,
+				    (const char *)st->ptr + st->len + l, d);
+			}
+		} else
+			vep_parse(vep, (const char *)st->ptr + st->len, w);
 		st->len += w;
 		sp->obj->len += w;
 		if (st->len == st->space) {
