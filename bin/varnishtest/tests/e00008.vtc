@@ -63,7 +63,7 @@ varnish v1 -vcl+backend {
 	}
 } -start 
 
-varnish v1 -cliok "param.set esi_syntax 6" 
+varnish v1 -cliok "param.set esi_syntax 0xe" 
 
 varnish v1 -cliok "param.set diag_bitmap 0x10000"
 
