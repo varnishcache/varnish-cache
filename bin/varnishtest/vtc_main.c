@@ -237,7 +237,7 @@ start_test(void)
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
 
-	jp->bufsiz = 64*1024;		/* XXX */
+	jp->bufsiz = 256*1024;		/* XXX */
 
 	jp->buf = mmap(NULL, jp->bufsiz, PROT_READ|PROT_WRITE,
 	    MAP_ANON | MAP_SHARED, -1, 0);

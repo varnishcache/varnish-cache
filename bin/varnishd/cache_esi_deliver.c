@@ -130,6 +130,7 @@ esi_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
 {
 
 	Debug("VER(%d) %d\n", (int)l, (int)(cb-ce));
+	assert(l > 0);
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		(void)WRW_Write(sp->wrk, cb, cl);
 	(void)WRW_Write(sp->wrk, ptr, l);

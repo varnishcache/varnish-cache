@@ -1,0 +1,36 @@
+# $Id$
+
+test "Push corners in new ESI parser"
+
+server s1 {
+	rxreq 
+	txresp -body {
+		</esi:comment foo>
+		<esi:comment / >
+		<esi:remove foo="bar"></esi:remove>
+		<esi:include src="foo">
+	}
+	rxreq
+	expect req.url == "bar/foo"
+	txresp -body {<H1></H1>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start 
+
+varnish v1 -cliok "param.set esi_syntax 8" 
+
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
+
+client c1 {
+	txreq  -url bar
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 23
+} -run
+
+varnish v1 -expect esi_errors == 2
+varnish v1 -expect esi_warnings == 1

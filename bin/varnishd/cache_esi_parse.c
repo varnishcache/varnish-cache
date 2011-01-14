@@ -72,7 +72,6 @@ struct vep_state {
 	unsigned		canattr;
 
 	unsigned		remove;
-	unsigned		skip;
 
 	unsigned		o_verbatim;
 	unsigned		o_skip;
@@ -88,12 +87,10 @@ const char		*hack_p;
 	const char		*esicmt_p;
 
 	struct vep_match	*attr;
-	int			attr_l;
 	struct vsb		*attr_vsb;
 	int			attr_delim;
 
 	struct vep_match	*match;
-	int			match_l;
 	struct vep_match	*match_hit;
 
 	char			tag[10];
@@ -117,7 +114,6 @@ static const char * const VEP_STARTTAG = 	"[StartTag]";
 static const char * const VEP_COMMENT =		"[Comment]";
 static const char * const VEP_CDATA =		"[CDATA]";
 static const char * const VEP_ESITAG =		"[ESITag]";
-static const char * const VEP_ESIETAG =		"[ESIEndTag]";
 
 static const char * const VEP_ESIREMOVE =	"[ESI:Remove]";
 static const char * const VEP_ESIINCLUDE =	"[ESI:Include]";
@@ -132,7 +128,7 @@ static const char * const VEP_SKIPATTR =	"[SkipAttribute]";
 static const char * const VEP_SKIPATTR2 =	"[SkipAttribute2]";
 static const char * const VEP_ATTRDELIM =	"[AttrDelim]";
 static const char * const VEP_ATTRGETVAL =	"[AttrGetValue]";
-static const char * const VEP_ATTRVAL =	"[AttrValue]";
+static const char * const VEP_ATTRVAL =		"[AttrValue]";
 
 static const char * const VEP_UNTIL =		"[Until]";
 static const char * const VEP_MATCHBUF = 	"[MatchBuf]";
@@ -141,15 +137,11 @@ static const char * const VEP_MATCH =		"[Match]";
 /*---------------------------------------------------------------------*/
 
 static struct vep_match vep_match_starttag[] = {
-	{ "<!--",	&VEP_COMMENT },
-	{ "</esi:",	&VEP_ESIETAG },
-	{ "<esi:",	&VEP_ESITAG },
-	{ "<![CDATA[",	&VEP_CDATA },
+	{ "!--",	&VEP_COMMENT },
+	{ "esi:",	&VEP_ESITAG },
+	{ "![CDATA[",	&VEP_CDATA },
 	{ NULL,		&VEP_NOTMYTAG }
 };
-
-static const int vep_match_starttag_len =
-    sizeof vep_match_starttag / sizeof vep_match_starttag[0];
 
 /*---------------------------------------------------------------------*/
 
@@ -160,28 +152,12 @@ static struct vep_match vep_match_esi[] = {
 	{ NULL,		&VEP_ESIBOGON }
 };
 
-static const int vep_match_esi_len =
-    sizeof vep_match_esi / sizeof vep_match_esi[0];
-
-/*---------------------------------------------------------------------*/
-
-static struct vep_match vep_match_esie[] = {
-	{ "remove",	&VEP_ESIREMOVE },
-	{ NULL,		&VEP_ESIBOGON }
-};
-
-static const int vep_match_esie_len =
-    sizeof vep_match_esie / sizeof vep_match_esie[0];
-
 /*---------------------------------------------------------------------*/
 
 static struct vep_match vep_match_attr_include[] = {
 	{ "src=",	&VEP_ATTRGETVAL },
 	{ NULL,		&VEP_SKIPATTR }
 };
-
-static const int vep_match_attr_include_len =
-    sizeof vep_match_attr_include / sizeof vep_match_attr_include[0];
 
 /*--------------------------------------------------------------------
  * Report a parsing error
@@ -190,10 +166,28 @@ static const int vep_match_attr_include_len =
 static void
 vep_error(const struct vep_state *vep, const char *p)
 {
+	intmax_t l;
 
 	VSC_main->esi_errors++;
-	WSP(vep->sp, SLT_ESI_xmlerror, "at %ld %s",
-	    (vep->ver_p - vep->hack_p), p);
+	l = (intmax_t)(vep->ver_p - vep->hack_p);
+	printf("ERROR at %jd %s\n", l , p);
+	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	
+}
+
+/*--------------------------------------------------------------------
+ * Report a parsing warning
+ */
+
+static void
+vep_warn(const struct vep_state *vep, const char *p)
+{
+	intmax_t l;
+
+	VSC_main->esi_warnings++;
+	l = (intmax_t)(vep->ver_p - vep->hack_p);
+	printf("WARNING at %jd %s\n", l, p);
+	WSP(vep->sp, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 	
 }
 
@@ -320,18 +314,9 @@ static void __match_proto__()
 vep_do_comment(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_COMMENT(%d)\n", what);
-	if (what == DO_ATTR) {
-		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
-			vsb_data(vep->attr_vsb));
-		vsb_delete(vep->attr_vsb);
-	} else {
-		if (vep->endtag)
-			vep_error(vep,
-			    "ESI 1.0 </esi:comment> not allowed");
-		else if (!vep->emptytag) 
-			vep_error(vep,
-			    "ESI 1.0 <esi:comment> not allowed");
-	}
+	assert(what == DO_TAG);
+	if (!vep->emptytag) 
+		vep_error(vep, "ESI 1.0 <esi:comment> needs final '/'");
 }
 
 /*---------------------------------------------------------------------
@@ -340,20 +325,13 @@ vep_do_comment(struct vep_state *vep, enum dowhat what)
 static void __match_proto__()
 vep_do_remove(struct vep_state *vep, enum dowhat what)
 {
-	Debug("DO_REMOVE(%d)\n", what);
-	if (what == DO_ATTR) {
-		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
-			vsb_data(vep->attr_vsb));
-		vsb_delete(vep->attr_vsb);
+	Debug("DO_REMOVE(%d, end %d empty %d remove %d)\n",
+	    what, vep->endtag, vep->emptytag, vep->remove);
+	assert(what == DO_TAG);
+	if (vep->emptytag) {
+		vep_error(vep,
+		    "ESI 1.0 <esi:remove/> not legal");
 	} else {
-		if (vep->emptytag)
-#if 0
-			vep_error(vep,
-			    "ESI 1.0 <esi:remove/> not legal");
-#else
-			;
-#endif
-		else
 		if (vep->remove && !vep->endtag)
 			vep_error(vep,
 			    "ESI 1.0 <esi:remove> already open");
@@ -381,70 +359,74 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			vsb_data(vep->attr_vsb));
 		XXXAZ(vep->include_src);	/* multiple src= */
 		vep->include_src = vep->attr_vsb;
-	} else {
-		if (vep->include_src == NULL) {
-			vep_error(vep,
-			    "ESI 1.0 <esi:include> lacks src attr");
-			return;
-		}
-		XXXAN(vep->include_src);
-		if (vep->o_skip > 0) 
-			vep_emit_skip(vep);
-		if (vep->o_verbatim > 0) 
-			vep_emit_verbatim(vep);
-		/* XXX: what if it contains NUL bytes ?? */
-		p = vsb_data(vep->include_src);
-		l = vsb_len(vep->include_src);
-		h = 0;
-
-		vsb_printf(vep->vsb, "%c", VEC_INCL);
-		if (l > 7 && !memcmp(p, "http://", 7)) {
-			h = p + 7;
-			p = strchr(h, '/');
-			AN(p);
-			Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
-			vsb_printf(vep->vsb, "Host: %.*s%c",
-			    (int)(p-h), h, 0);
-		} else if (*p == '/') {
-			vsb_printf(vep->vsb, "%c", 0);
-		} else {
-			vsb_printf(vep->vsb, "%c", 0);
-			url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
-			/* Look for the last / before a '?' */
-			h = NULL;
-			for (q = url.b; q < url.e && *q != '?'; q++)
-				if (*q == '/')
-					h = q;
-			if (h == NULL)
-				h = q + 1;
-				
-			Debug("INCL:: [%.*s]/[%s]\n",
-			    (int)(h - url.b), url.b, p);
-			vsb_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
-		}
-		l -= (p - vsb_data(vep->include_src));
-		for (q = p; *q != '\0'; ) {
-			if (*q == '&') {
-#define R(w,f,r)							\
-				if (q + w <= p + l && !memcmp(q, f, w)) { \
-					vsb_printf(vep->vsb, "%c", r);	\
-					q += l;				\
-					continue;			\
-				}
-				R(6, "&apos;", '\'');
-				R(6, "&quot;", '"');
-				R(4, "&lt;", '<');
-				R(4, "&gt;", '>');
-				R(5, "&amp;", '&');
-			}
-			vsb_printf(vep->vsb, "%c", *q++);
-		}
-#undef R
-		vsb_printf(vep->vsb, "%c", 0);
-
-		vsb_delete(vep->include_src);
-		vep->include_src = NULL;
+		return;
 	}
+	assert(what == DO_TAG);
+	if (!vep->emptytag) 
+		vep_warn(vep,
+		    "ESI 1.0 <esi:include> lacks final '/'");
+	if (vep->include_src == NULL) {
+		vep_error(vep,
+		    "ESI 1.0 <esi:include> lacks src attr");
+		return;
+	}
+	XXXAN(vep->include_src);
+	if (vep->o_skip > 0) 
+		vep_emit_skip(vep);
+	if (vep->o_verbatim > 0) 
+		vep_emit_verbatim(vep);
+	/* XXX: what if it contains NUL bytes ?? */
+	p = vsb_data(vep->include_src);
+	l = vsb_len(vep->include_src);
+	h = 0;
+
+	vsb_printf(vep->vsb, "%c", VEC_INCL);
+	if (l > 7 && !memcmp(p, "http://", 7)) {
+		h = p + 7;
+		p = strchr(h, '/');
+		AN(p);
+		Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
+		vsb_printf(vep->vsb, "Host: %.*s%c",
+		    (int)(p-h), h, 0);
+	} else if (*p == '/') {
+		vsb_printf(vep->vsb, "%c", 0);
+	} else {
+		vsb_printf(vep->vsb, "%c", 0);
+		url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
+		/* Look for the last / before a '?' */
+		h = NULL;
+		for (q = url.b; q < url.e && *q != '?'; q++)
+			if (*q == '/')
+				h = q;
+		if (h == NULL)
+			h = q + 1;
+			
+		Debug("INCL:: [%.*s]/[%s]\n",
+		    (int)(h - url.b), url.b, p);
+		vsb_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
+	}
+	l -= (p - vsb_data(vep->include_src));
+	for (q = p; *q != '\0'; ) {
+		if (*q == '&') {
+#define R(w,f,r)							\
+			if (q + w <= p + l && !memcmp(q, f, w)) { \
+				vsb_printf(vep->vsb, "%c", r);	\
+				q += l;				\
+				continue;			\
+			}
+			R(6, "&apos;", '\'');
+			R(6, "&quot;", '"');
+			R(4, "&lt;", '<');
+			R(4, "&gt;", '>');
+			R(5, "&amp;", '&');
+		}
+		vsb_printf(vep->vsb, "%c", *q++);
+	}
+#undef R
+	vsb_printf(vep->vsb, "%c", 0);
+
+	vsb_delete(vep->include_src);
+	vep->include_src = NULL;
 }
 
 /*---------------------------------------------------------------------
@@ -475,9 +457,8 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 		i = e - p;
 		if (i > 10)
 			i = 10;
-		Debug("EP %s %d %d (%.*s) [%.*s]\n",
+		Debug("EP %s %d (%.*s) [%.*s]\n",
 		    vep->state,
-		    vep->skip,
 		    vep->remove,
 		    vep->tag_i, vep->tag,
 		    i, p);
@@ -501,6 +482,9 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep_mark_verbatim(vep, p);
 			}
 			if (p < e && *p == '<') {
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p);
+				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e) {
 				WSP(vep->sp, SLT_ESI_xmlerror,
@@ -542,6 +526,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			 */
 			vep->emptytag = 0;
 			vep->endtag = 0;
+			vep->attr = NULL;
 			while (p < e && *p != '<') {
 				if (vep->esicmt_p != NULL &&
 				    *p == *vep->esicmt_p++) {
@@ -566,8 +551,13 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			}
 			if (p < e && vep->esicmt_p == NULL && !vep->remove)
 				vep_mark_verbatim(vep, p);
-			if (p < e)
+			if (p < e) {
+				assert(*p == '<');
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p);
+				p++;
 				vep->state = VEP_STARTTAG;
+			}
 
 		/******************************************************
 		 * SECTION C
@@ -577,12 +567,14 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			/*
 			 * Start of tag, set up match table
 			 */
-			assert(*p == '<');
-			if (!vep->remove)
-				vep_mark_verbatim(vep, p);
-			vep->match = vep_match_starttag;
-			vep->match_l = vep_match_starttag_len;
-			vep->state = VEP_MATCH;
+			if (p < e) {
+				if (*p == '/') {
+					vep->endtag = 1;
+					p++;
+				} 
+				vep->match = vep_match_starttag;
+				vep->state = VEP_MATCH;
+			}
 		} else if (vep->state == VEP_COMMENT) {
 			/*
 			 * We are in a comment, find out if it is an
@@ -591,22 +583,24 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			if (vep->esicmt == NULL)
 				vep->esicmt_p = vep->esicmt = "esi";
 			while (p < e) {
-				if (*p == *vep->esicmt_p) {
-					p++;
-					if (*++vep->esicmt_p == '\0') {
-						vep->esicmt_p =
-						    vep->esicmt = "-->";
-						vep->state = VEP_NEXTTAG;
-						vep_mark_skip(vep, p);
-						break;
-					}
-				} else {
+				if (*p != *vep->esicmt_p) {
 					vep->esicmt_p = vep->esicmt = NULL; 
 					vep->until_p = vep->until = "-->";
 					vep->until_s = VEP_NEXTTAG;
 					vep->state = VEP_UNTIL;
 					break;
 				}
+				p++;
+				if (*++vep->esicmt_p != '\0')
+					continue;
+				if (vep->remove)
+					vep_error(vep,
+					    "ESI 1.0 Nested <!--esi"
+					    " element in <esi:remove>");
+				vep->esicmt_p = vep->esicmt = "-->";
+				vep->state = VEP_NEXTTAG;
+				vep_mark_skip(vep, p);
+				break;
 			}
 		} else if (vep->state == VEP_CDATA) {
 			/*
@@ -616,37 +610,43 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->until_s = VEP_NEXTTAG;
 			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_ESITAG) {
-			vep->tag_i = 0;
-			vep->endtag = 0;
+			vep_mark_skip(vep, p);
+			vep->match = vep_match_esi;
+			vep->state = VEP_MATCH;
+		} else if (vep->state == VEP_ESIINCLUDE) {
 			if (vep->remove) {
 				vep_mark_skip(vep, p);
 				vep_error(vep,
-				    "ESI 1.0 Nested ESI element in <esi:remove>");
-				vep->state = VEP_NOTMYTAG;
+				    "ESI 1.0 <esi:include> element"
+				    " nested in <esi:remove>");
+				vep->state = VEP_TAGERROR;
+			} else if (vep->endtag) {
+				vep_error(vep,
+				    "ESI 1.0 </esi:include> illegal end-tag");
+				vep->state = VEP_TAGERROR;
 			} else {
-				vep->skip = 1;
-				vep_mark_skip(vep, p);
-				vep->match = vep_match_esi;
-				vep->match_l = vep_match_esi_len;
-				vep->state = VEP_MATCH;
+				vep->dostuff = vep_do_include;
+				vep->state = VEP_INTAG;
+				vep->attr = vep_match_attr_include;
 			}
-		} else if (vep->state == VEP_ESIETAG) {
-			vep->tag_i = 0;
-			vep->endtag = 1;
-			vep->match = vep_match_esie;
-			vep->match_l = vep_match_esie_len;
-			vep->state = VEP_MATCH;
-		} else if (vep->state == VEP_ESIINCLUDE) {
-			vep->dostuff = vep_do_include;
-			vep->state = VEP_INTAG;
-			vep->attr = vep_match_attr_include;
-			vep->attr_l = vep_match_attr_include_len;
 		} else if (vep->state == VEP_ESIREMOVE) {
 			vep->dostuff = vep_do_remove;
 			vep->state = VEP_INTAG;
 		} else if (vep->state == VEP_ESICOMMENT) {
-			vep->dostuff = vep_do_comment;
-			vep->state = VEP_INTAG;
+			if (vep->remove) {
+				vep_mark_skip(vep, p);
+				vep_error(vep,
+				    "ESI 1.0 <esi:comment> element"
+				    " nested in <esi:remove>");
+				vep->state = VEP_TAGERROR;
+			} else if (vep->endtag) {
+				vep_error(vep,
+				    "ESI 1.0 </esi:comment> illegal end-tag");
+				vep->state = VEP_TAGERROR;
+			} else {
+				vep->dostuff = vep_do_comment;
+				vep->state = VEP_INTAG;
+			}
 		} else if (vep->state == VEP_ESIBOGON) {
 			vep_mark_skip(vep, p);
 			vep_error(vep,
@@ -660,7 +660,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 		} else if (vep->state == VEP_INTAG) {
 			vep->tag_i = 0;
 			vep_mark_skip(vep, p);
-			while (p < e && vct_islws(*p)) {
+			while (p < e && vct_islws(*p) && !vep->emptytag) {
 				p++;	
 				vep->canattr = 1;
 			}
@@ -671,7 +671,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			}
 			if (p < e && *p == '>') {
 				p++;
-				vep_mark_skip(vep, p);
 				AN(vep->dostuff);
 				vep_mark_skip(vep, p);
 				vep->dostuff(vep, DO_TAG);
@@ -707,11 +706,10 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				p++;
 				AZ(vep->attr_vsb);
 				vep->state = VEP_SKIPATTR;
-				break;
+			} else {
+				vep->match = vep->attr;
+				vep->state = VEP_MATCH;
 			}
-			vep->match = vep->attr;
-			vep->match_l = vep->attr_l;
-			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_SKIPATTR) {
 			vep->state = VEP_SKIPATTR2;
 			for (i = 0; i < vep->tag_i; i++) {
@@ -722,7 +720,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 					vep->state = VEP_ATTRDELIM;
 				} else {
 					vep_error(vep,
-					    "XML 1.0 Illegal attr char");
+					    "XML 1.0 Illegal attr char (_i)");
 					vep->state = VEP_TAGERROR;
 				}
 			}
@@ -734,6 +732,10 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			if (p < e && *p == '=') {
 				p++;
 				vep->state = VEP_ATTRDELIM;
+			} else if (p < e && *p == '>') {
+				vep->state = VEP_INTAG;
+			} else if (p < e && *p == '/') {
+				vep->state = VEP_INTAG;
 			} else if (p < e && vct_issp(*p)) {
 				vep->state = VEP_INTAG;
 			} else if (p < e) {
@@ -771,7 +773,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Missing end attribute delimiter");
-				Debug("ERR %d %c %c\n", __LINE__, *p, vep->attr_delim);
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
@@ -822,11 +823,17 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			 */
 			do {
 				if (*p == '>') {
-					vm = vep->match+vep->match_l-1;
+					for (vm = vep->match;
+					    vm->match != NULL; vm++)
+						break;
 				} else {
 					vep->tag[vep->tag_i++] = *p++;
 					vm = vep_match(vep,
 					    vep->tag, vep->tag + vep->tag_i);
+					if (vm && vm->match == NULL) {
+						vep->tag_i--;
+						p--;
+					}
 				}
 			} while (vm == NULL && p < e);
 			vep->match_hit = vm;
@@ -1066,7 +1073,6 @@ NEXTTAGc	[shape=hexagon, label="NEXTTAG"]
 TAGERRORc	[shape=hexagon, label="TAGERROR"]
 C1		[shape=circle,label=""]
 STARTTAG	-> COMMENT	[label="'<!--'"]
-STARTTAG	-> ESIETAG	[label="'</esi'"]
 STARTTAG	-> ESITAG	[label="'<esi'"]
 STARTTAG	-> CDATA	[label="'<![CDATA['"]
 STARTTAG	-> NOTMYTAGc	[label="'*'"]
@@ -1080,12 +1086,14 @@ ESITAG		-> ESIINCLUDE	[label="'include'"]
 ESITAG		-> ESIREMOVE	[label="'remove'"]
 ESITAG		-> ESICOMMENT	[label="'comment'"]
 ESITAG		-> ESIBOGON	[label="*"]
-ESITAG		-> NOTMYTAGc	[style=dotted, label="nested\nin\nremove"]
-ESIETAG		-> ESIREMOVE	[label="'remove'"]
-ESIETAG		-> ESIBOGON	[label="*"]
 ESICOMMENT	-> INTAGc
+ESICOMMENT	-> TAGERRORc
+ESICOMMENT	-> TAGERRORc	[style=dotted, label="nested\nin\nremove"]
 ESIREMOVE	-> INTAGc
+ESIREMOVE	-> TAGERRORc
 ESIINCLUDE	-> INTAGc
+ESIINCLUDE	-> TAGERRORc
+ESIINCLUDE	-> TAGERRORc	[style=dotted, label="nested\nin\nremove"]
 ESIBOGON	-> TAGERRORc
 
 #################################################################
