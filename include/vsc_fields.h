@@ -144,6 +144,7 @@ VSC_F(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts")
 
 VSC_F(esi_parse,		uint64_t, 0, 'a', "Objects ESI parsed (unlock)")
 VSC_F(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)")
+VSC_F(esi_warnings,		uint64_t, 0, 'a', "ESI parse warnings (unlock)")
 VSC_F(accept_fail,		uint64_t, 0, 'a', "Accept failures")
 VSC_F(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late")
 VSC_F(uptime,		uint64_t, 0, 'a', "Client uptime")
