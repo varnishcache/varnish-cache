@@ -8,4 +8,5 @@ EXTRA_DIST =			\
 	varnish.spec		\
 	varnish.sysconfig	\
 	varnishlog.initrc	\
+	varnish_reload_vcl	\
 	varnishncsa.initrc

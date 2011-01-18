@@ -1,6 +1,6 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 2.1.4
+Version: 2.1.5
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
@@ -136,9 +136,6 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-pushd doc/sphinx
-make html
-popd
 cp -r doc/sphinx/\=build/html doc
 
 %check
