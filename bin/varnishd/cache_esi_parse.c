@@ -393,12 +393,10 @@ vep_mark_pending(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
 
-	if (vep->last_mark == 2 && p == vep->ver_p)
-		return;
+	assert (vep->last_mark != 2 || p != vep->ver_p);
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
-	if (l == 0)
-		return;
+	assert(l > 0);
 // printf("MARK PEND %d %s <%.*s>\n", vep->remove, vep->state, (int)l, vep->ver_p);
 	assert(l >= 0);
 	vep->crcp = crc32(vep->crcp, (const void *)vep->ver_p, l);
@@ -473,10 +471,16 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		return;
 	}
 	XXXAN(vep->include_src);
-	if (vep->o_skip > 0) 
-		vep_emit_common(vep, &vep->o_skip, 1);
-	if (vep->o_verbatim > 0) 
-		vep_emit_common(vep, &vep->o_verbatim, 0);
+	/*
+	 * Strictly speaking, we ought to spit out any piled up skip before
+	 * emitting the VEC for the include, but objectively that makes no
+	 * difference and robs us of a chance to collapse another skip into
+	 * this on so we don't do that.
+	 * However, we cannot tolerate any verbatim stuff piling up.
+	 * The mark_skip() before calling dostuff should have taken
+	 * care of that.  Make sure.
+	 */
+	assert(vep->o_verbatim == 0);
 	/* XXX: what if it contains NUL bytes ?? */
 	p = vsb_data(vep->include_src);
 	l = vsb_len(vep->include_src);
