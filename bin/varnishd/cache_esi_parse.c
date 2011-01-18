@@ -89,6 +89,8 @@ const char		*hack_p;
 	const char		*until_p;
 	const char		*until_s;
 
+	int			in_esi_tag;
+
 	const char		*esicmt;
 	const char		*esicmt_p;
 
@@ -105,6 +107,11 @@ const char		*hack_p;
 	dostuff_f		*dostuff;
 
 	struct vsb		*include_src;
+
+	unsigned		nm_skip;
+	unsigned		nm_verbatim;
+	unsigned		nm_pending;
+	int			last_mark;
 };
 
 /*---------------------------------------------------------------------*/
@@ -362,13 +369,23 @@ vep_mark_common(struct vep_state *vep, const char *p, int skip)
 static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
 {
+	if (vep->last_mark == 0 && p == vep->ver_p)
+		return;
+//printf("MARK VERB %d %s <%.*s>\n", vep->remove, vep->state, (int)(p - vep->ver_p), vep->ver_p);
 	vep_mark_common(vep, p, 0);
+	vep->nm_verbatim++;
+	vep->last_mark = 0;
 } 
 
 static void
 vep_mark_skip(struct vep_state *vep, const char *p)
 {
+	if (vep->last_mark == 1 && p == vep->ver_p)
+		return;
+//printf("MARK SKIP %d %s <%.*s>\n", vep->remove, vep->state, (int)(p - vep->ver_p), vep->ver_p);
 	vep_mark_common(vep, p, 1);
+	vep->nm_skip++;
+	vep->last_mark = 1;
 } 
 
 static void
@@ -376,16 +393,20 @@ vep_mark_pending(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
 
+	if (vep->last_mark == 2 && p == vep->ver_p)
+		return;
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
 	if (l == 0)
 		return;
+// printf("MARK PEND %d %s <%.*s>\n", vep->remove, vep->state, (int)l, vep->ver_p);
 	assert(l >= 0);
 	vep->crcp = crc32(vep->crcp, (const void *)vep->ver_p, l);
 	vep->ver_p = p;
 
 	vep->o_pending += l;
-	fflush(stdout);
+	vep->nm_pending++;
+	vep->last_mark = 2;
 }
 
 /*---------------------------------------------------------------------
@@ -559,13 +580,10 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			 * If the first non-whitespace char is different
 			 * from '<' we assume this is not XML.
 			 */
-			while (p < e && vct_islws(*p)) {
+			while (p < e && vct_islws(*p)) 
 				p++;
-				vep_mark_verbatim(vep, p);
-			}
+			vep_mark_verbatim(vep, p);
 			if (p < e && *p == '<') {
-				if (!vep->remove)
-					vep_mark_verbatim(vep, p);
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e) {
@@ -579,6 +597,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			 * vfp_esi_end() will handle the rest
 			 */
 			p = e;
+			vep_mark_verbatim(vep, p);
 
 		/******************************************************
 		 * SECTION B
@@ -588,8 +607,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			if (params->esi_syntax & 0x2) {
 				p++;
 				vep->state = VEP_NEXTTAG;
-				if (!vep->remove)
-					vep_mark_verbatim(vep, p);
 			} else {
 				vep->tag_i = 0;
 				while (p < e) {
@@ -598,9 +615,9 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 						break;
 					}
 				}
-				if (p < e && !vep->remove)
-					vep_mark_verbatim(vep, p);
 			}
+			if (p == e && !vep->remove)
+				vep_mark_verbatim(vep, p);
 		} else if (vep->state == VEP_NEXTTAG) {
 			/*
 			 * Hunt for start of next tag and keep an eye
@@ -611,35 +628,38 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->attr = NULL;
 			vep->dostuff = NULL;
 			while (p < e && *p != '<') {
-				if (vep->esicmt_p != NULL &&
-				    *p == *vep->esicmt_p++) {
+				if (vep->esicmt_p == NULL) {
 					p++;
-					if (*vep->esicmt_p == '\0') {
-						vep->esicmt = NULL;
-						vep->esicmt_p = NULL;
-						/*
-						 * The end of the esicmt
-						 * should not be emitted.
-						 * But the stuff before should
-						 */
-						vep_mark_skip(vep, p);
-					}
-				} else {
-					p++;
-					if (!vep->remove) 
-						vep_mark_verbatim(vep, p);
-					vep->esicmt_p = vep->esicmt;
+					continue;
 				}
-			}
-			if (p < e && vep->esicmt_p == NULL && !vep->remove)
-				vep_mark_verbatim(vep, p);
-			if (p < e) {
-				assert(*p == '<');
-				if (!vep->remove)
+				if (*p != *vep->esicmt_p) {
+					p++;
+					vep->esicmt_p = vep->esicmt;
+					continue;
+				}
+				if (!vep->remove &&
+				    vep->esicmt_p == vep->esicmt)
 					vep_mark_verbatim(vep, p);
 				p++;
-				vep->state = VEP_STARTTAG;
+				if (*++vep->esicmt_p == '\0') {
+					vep->esicmt = NULL;
+					vep->esicmt_p = NULL;
+					/*
+					 * The end of the esicmt
+					 * should not be emitted.
+					 * But the stuff before should
+					 */
+					vep_mark_skip(vep, p);
+				}
 			}
+			if (p < e) {
+				if (!vep->remove)
+					vep_mark_verbatim(vep, p);
+				assert(*p == '<');
+				p++;
+				vep->state = VEP_STARTTAG;
+			} else if (vep->esicmt_p == vep->esicmt && !vep->remove)
+				vep_mark_verbatim(vep, p);
 
 		/******************************************************
 		 * SECTION C
@@ -692,12 +712,12 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->until_s = VEP_NEXTTAG;
 			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_ESITAG) {
+			vep->in_esi_tag = 1;
 			vep_mark_skip(vep, p);
 			vep->match = vep_match_esi;
 			vep->state = VEP_MATCH;
 		} else if (vep->state == VEP_ESIINCLUDE) {
 			if (vep->remove) {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "ESI 1.0 <esi:include> element"
 				    " nested in <esi:remove>");
@@ -716,7 +736,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			vep->state = VEP_INTAG;
 		} else if (vep->state == VEP_ESICOMMENT) {
 			if (vep->remove) {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "ESI 1.0 <esi:comment> element"
 				    " nested in <esi:remove>");
@@ -730,7 +749,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_INTAG;
 			}
 		} else if (vep->state == VEP_ESIBOGON) {
-			vep_mark_skip(vep, p);
 			vep_error(vep,
 			    "ESI 1.0 <esi:bogus> element");
 			vep->state = VEP_TAGERROR;
@@ -741,7 +759,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 
 		} else if (vep->state == VEP_INTAG) {
 			vep->tag_i = 0;
-			vep_mark_skip(vep, p);
 			while (p < e && vct_islws(*p) && !vep->emptytag) {
 				p++;	
 				vep->canattr = 1;
@@ -756,6 +773,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				AN(vep->dostuff);
 				vep_mark_skip(vep, p);
 				vep->dostuff(vep, DO_TAG);
+				vep->in_esi_tag = 0;
 				vep->state = VEP_NEXTTAG;
 			} else if (p < e && vep->emptytag) {
 				vep_error(vep,
@@ -775,6 +793,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			if (p < e) {
 				p++;
 				vep_mark_skip(vep, p);
+				vep->in_esi_tag = 0;
 				vep->state = VEP_NEXTTAG;
 			}
 
@@ -805,7 +824,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			} else if (p < e && vct_issp(*p)) {
 				vep->state = VEP_INTAG;
 			} else if (p < e) {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Illegal attr char");
 				vep->state = VEP_TAGERROR;
@@ -822,7 +840,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				vep->attr_delim = ' ';
 				vep->state = VEP_ATTRVAL;
 			} else {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Illegal attribute delimiter");
 				vep->state = VEP_TAGERROR;
@@ -836,7 +853,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				p++;
 			}
 			if (p < e && *p == '>') {
-				vep_mark_skip(vep, p);
 				vep_error(vep,
 				    "XML 1.0 Missing end attribute delimiter");
 				vep->state = VEP_TAGERROR;
@@ -852,7 +868,6 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 				if (vep->attr_vsb != NULL) {
 					vsb_finish(vep->attr_vsb);
 					AN(vep->dostuff);
-					vep_mark_skip(vep, p);
 					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
 				}
@@ -921,13 +936,27 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 					vep->state = vep->until_s;
 					break;
 				}
+			if (p == e && !vep->remove)
+				vep_mark_verbatim(vep, p);
 			}
 		} else {
 			Debug("*** Unknown state %s\n", vep->state);
 			INCOMPL();
 		}
 	}
-	vep_mark_pending(vep, p);
+	/*
+	 * We must always mark up the storage we got, try to do so
+	 * in the most efficient way, in particular with respect to
+	 * minimizing and limiting use of pending.
+	 */
+	if (p == vep->ver_p) 
+		;
+	else if (vep->in_esi_tag)
+		vep_mark_skip(vep, p);
+	else if (vep->remove)
+		vep_mark_skip(vep, p);
+	else
+		vep_mark_pending(vep, p);
 }
 
 /*---------------------------------------------------------------------
@@ -1056,6 +1085,8 @@ vfp_esi_end(struct sess *sp)
 		vep_emit_common(vep, &vep->o_skip, 1);
 	else if (vep->o_verbatim > 0)
 		vep_emit_common(vep, &vep->o_verbatim, 0);
+
+printf("NMARK VER %u SKIP %u PEND %u\n", vep->nm_verbatim, vep->nm_skip, vep->nm_pending);
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l > 0) {
