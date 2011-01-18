@@ -94,7 +94,9 @@ struct objhead;
 struct objcore;
 struct storage;
 struct workreq;
+#ifdef OLD_ESI
 struct esidata;
+#endif
 struct vrt_backend;
 struct cli_proto;
 struct ban;
