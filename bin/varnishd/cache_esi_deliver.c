@@ -138,13 +138,42 @@ esi_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
 }
 
+static ssize_t
+ved_decode_len(uint8_t **pp)
+{
+	uint8_t *p;
+	ssize_t l;
+
+	p = *pp;
+	switch (*p & 15) {
+	case 1:
+		l = p[1];
+		p += 2;
+		break;
+	case 2:
+		l = vbe16dec(p + 1);
+		p += 3;
+		break;
+	case 8:
+		l = vbe64dec(p + 1);
+		p += 9;
+		break;
+	default:
+		printf("%d\n",(*p & 15));
+		INCOMPL();
+	}
+	*pp = p;
+	assert(l > 0);
+	return (l);
+}
+
 void
 ESI_Deliver(struct sess *sp)
 {
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	size_t l;
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
@@ -156,30 +185,11 @@ ESI_Deliver(struct sess *sp)
 	off = 0;
 
 	while (p < e) {
-		//usleep(10000);
-		//WRW_Flush(sp->wrk);
 		switch (*p) {
 		case VEC_V1:
-			l = p[1];
-			p += 2;
-			q = (void*)strchr((const char*)p, '\0');
-			assert (q > p);
-			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
-			off += l;
-			p = q + 1;
-			break;
 		case VEC_V2:
-			l = vbe16dec(p + 1);
-			p += 3;
-			q = (void*)strchr((const char*)p, '\0');
-			assert (q > p);
-			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
-			off += l;
-			p = q + 1;
-			break;
 		case VEC_V8:
-			l = vbe64dec(p + 1);
-			p += 9;
+			l = ved_decode_len(&p);
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
 			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
@@ -187,21 +197,10 @@ ESI_Deliver(struct sess *sp)
 			p = q + 1;
 			break;
 		case VEC_S1:
-			l = p[1];
-			p += 2;
-			Debug("SKIP1(%d)\n", (int)l);
-			off += l;
-			break;
 		case VEC_S2:
-			l = vbe16dec(p + 1);
-			p += 3;
-			Debug("SKIP2(%d)\n", (int)l);
-			off += l;
-			break;
 		case VEC_S8:
-			l = vbe64dec(p + 1);
-			p += 9;
-			Debug("SKIP8(%d)\n", (int)l);
+			l = ved_decode_len(&p);
+			Debug("SKIP1(%d)\n", (int)l);
 			off += l;
 			break;
 		case VEC_INCL:

@@ -27,10 +27,10 @@
  *
  */
 
-#define	VEC_V1	'B'
-#define	VEC_V2	'W'
-#define	VEC_V8	'L'
-#define	VEC_S1	'b'
-#define	VEC_S2	'w'
-#define	VEC_S8	'l'
+#define	VEC_V1	(0x40 + 1)
+#define	VEC_V2	(0x40 + 2)
+#define	VEC_V8	(0x40 + 8)
+#define	VEC_S1	(0x60 + 1)
+#define	VEC_S2	(0x60 + 2)
+#define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
