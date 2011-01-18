@@ -39,6 +39,7 @@ SVNID("$Id")
 #include "cache_esi.h"
 #include "vend.h"
 #include "vct.h"
+#include "zlib.h"
 #include "stevedore.h"
 
 /*--------------------------------------------------------------------*/
@@ -159,7 +160,7 @@ ved_decode_len(uint8_t **pp)
 		p += 9;
 		break;
 	default:
-		printf("%d\n",(*p & 15));
+		printf("Illegal Length %d %d\n", *p, (*p & 15));
 		INCOMPL();
 	}
 	*pp = p;
@@ -174,6 +175,7 @@ ESI_Deliver(struct sess *sp)
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
 	ssize_t l;
+	uint32_t crc, crc_ref;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
@@ -190,8 +192,16 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
+			crc = vbe32dec(p);
+			p += 4;
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
+			crc_ref = crc32(0L, Z_NULL, 0);
+			crc_ref = crc32(crc_ref, st->ptr + off, l);
+			if (crc_ref != crc) {
+				printf("CRC Mismatch %08x %08x\n", crc_ref, crc);
+			}
+			xxxassert(crc_ref == crc);
 			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
 			off += l;
 			p = q + 1;

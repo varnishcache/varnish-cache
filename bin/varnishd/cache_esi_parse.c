@@ -39,6 +39,7 @@ SVNID("$Id")
 #include "cache_esi.h"
 #include "vend.h"
 #include "vct.h"
+#include "zlib.h"
 #include "stevedore.h"
 
 #ifndef OLD_ESI
@@ -77,6 +78,9 @@ struct vep_state {
 	ssize_t			o_skip;
 	ssize_t			o_pending;
 	ssize_t			o_total;
+	uint32_t		crc;
+	ssize_t			o_crc;
+	uint32_t		crcp;
 
 const char		*hack_p;
 	const char		*ver_p;
@@ -252,77 +256,137 @@ vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 } 
 
 static void
-vep_emit_skip(struct vep_state *vep, ssize_t *l)
+vep_emit_skip(struct vep_state *vep, ssize_t l)
 {
 
-	assert(*l > 0);
 	if (params->esi_syntax & 0x20) {
-		Debug("---> SKIP(%jd)\n", (intmax_t)*l);
+		Debug("---> SKIP(%jd)\n", (intmax_t)l);
 	}
-	vep_emit_len(vep, *l, VEC_S1, VEC_S2, VEC_S8);
-	vep->o_total += *l;
-	*l = 0;
+	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
 } 
 
 static void
-vep_emit_verbatim(struct vep_state *vep, ssize_t *l)
+vep_emit_verbatim(struct vep_state *vep, ssize_t l)
 {
+	uint8_t buf[4];
 
-	assert(*l > 0);
 	if (params->esi_syntax & 0x20) {
-		Debug("---> VERBATIM(%jd)\n", (intmax_t)*l);
+		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
-	vep_emit_len(vep, *l, VEC_V1, VEC_V2, VEC_V8);
-	vsb_printf(vep->vsb, "%lx\r\n%c", *l, 0);
+	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
+	vbe32enc(buf, vep->crc);
+	vsb_bcat(vep->vsb, buf, sizeof buf);
+	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
+} 
+
+static void
+vep_emit_common(struct vep_state *vep, ssize_t *l, int skip)
+{
+	assert(*l > 0);
+	assert(*l == vep->o_crc);
+
+	if (skip)
+		vep_emit_skip(vep, *l);
+	else
+		vep_emit_verbatim(vep, *l);
+
+	vep->crc = crc32(0L, Z_NULL, 0);
+	vep->o_crc = 0;
 	vep->o_total += *l;
 	*l = 0;
-} 
+}
+
+/*---------------------------------------------------------------------
+ *
+ */
+
+static void
+vep_mark_common(struct vep_state *vep, const char *p, int skip)
+{
+	ssize_t l;
+
+	/*
+	 * If we changed mode, emit whatever the opposite mode
+	 * assembled before the pending bytes.
+	 */
+	if (skip && vep->o_verbatim > 0)
+		vep_emit_common(vep, &vep->o_verbatim, 0);
+	else if (!skip && vep->o_skip > 0)
+		vep_emit_common(vep, &vep->o_skip, 1);
+
+	/* In debug mode, the pending bytes are emitted separately.  */
+	if ((params->esi_syntax & 0x10) && vep->o_pending) {
+		vep->o_crc = vep->o_pending;
+		vep->crc = vep->crcp;
+		vep->crcp = crc32(0L, Z_NULL, 0);
+		vep_emit_common(vep, &vep->o_pending, skip);
+	}
+
+	/* Transfer pending bytes CRC into active mode.  */
+	if (vep->o_pending) {
+		if (vep->o_crc == 0) {
+			vep->crc = vep->crcp;
+			vep->o_crc = vep->o_pending;
+		} else {
+			vep->crc = crc32_combine(vep->crc,
+			    vep->crcp, vep->o_pending);
+			vep->o_crc += vep->o_pending;
+		}
+		vep->crcp = crc32(0L, Z_NULL, 0);
+	}
+
+	/*
+	 * Process this bit of input
+	 */
+	AN(vep->ver_p);
+	l = p - vep->ver_p;
+	assert(l >= 0);
+	vep->crc = crc32(vep->crc, (const void*)vep->ver_p, l);
+	vep->o_crc += l;
+	vep->ver_p = p;
+
+	if ((params->esi_syntax & 0x10) && l > 0) {
+		/* Emit right away if debug mode */
+		vep_emit_common(vep, &l, skip);
+	} else if (skip) {
+		vep->o_skip += vep->o_pending;
+		vep->o_skip += l;
+	} else {
+		vep->o_verbatim += vep->o_pending;
+		vep->o_verbatim += l;
+	}
+	vep->o_pending = 0;
+}
+
 
 static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
 {
-	ssize_t l;
-
-	AN(vep->ver_p);
-	l = p - vep->ver_p;
-	vep->ver_p = p;
-	assert(l >= 0);
-	if (params->esi_syntax & 0x10) {
-		if (vep->o_pending)
-			vep_emit_verbatim(vep, &vep->o_pending);
-		if (l)
-			vep_emit_verbatim(vep, &l);
-	} else {
-		if (vep->o_skip > 0) 
-			vep_emit_skip(vep, &vep->o_skip);
-		vep->o_verbatim += vep->o_pending;
-		vep->o_pending = 0;
-		vep->o_verbatim += l;
-	}
+	vep_mark_common(vep, p, 0);
 } 
 
 static void
 vep_mark_skip(struct vep_state *vep, const char *p)
 {
+	vep_mark_common(vep, p, 1);
+} 
+
+static void
+vep_mark_pending(struct vep_state *vep, const char *p)
+{
 	ssize_t l;
 
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
-	vep->ver_p = p;
+	if (l == 0)
+		return;
 	assert(l >= 0);
-	if (params->esi_syntax & 0x10) {
-		if (vep->o_pending) 
-			vep_emit_skip(vep, &vep->o_pending);
-		if (l)
-			vep_emit_skip(vep, &l);
-	} else {
-		if (vep->o_verbatim > 0) 
-			vep_emit_verbatim(vep, &vep->o_verbatim);
-		vep->o_skip += vep->o_pending;
-		vep->o_pending = 0;
-		vep->o_skip += l;
-	}
-} 
+	vep->crcp = crc32(vep->crcp, (const void *)vep->ver_p, l);
+	vep->ver_p = p;
+
+	vep->o_pending += l;
+	fflush(stdout);
+}
 
 /*---------------------------------------------------------------------
  */
@@ -389,9 +453,9 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	}
 	XXXAN(vep->include_src);
 	if (vep->o_skip > 0) 
-		vep_emit_skip(vep, &vep->o_skip);
+		vep_emit_common(vep, &vep->o_skip, 1);
 	if (vep->o_verbatim > 0) 
-		vep_emit_verbatim(vep, &vep->o_verbatim);
+		vep_emit_common(vep, &vep->o_verbatim, 0);
 	/* XXX: what if it contains NUL bytes ?? */
 	p = vsb_data(vep->include_src);
 	l = vsb_len(vep->include_src);
@@ -863,8 +927,7 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 			INCOMPL();
 		}
 	}
-	vep->o_pending +=  p - vep->ver_p;
-	vep->ver_p = p;
+	vep_mark_pending(vep, p);
 }
 
 /*---------------------------------------------------------------------
@@ -944,9 +1007,11 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
 	vep->bytes = vfp_esi_bytes_uu;
-	vep->vsb = vsb_newauto();
 	vep->state = VEP_START;
+	vep->vsb = vsb_newauto();
 	AN(vep->vsb);
+	vep->crc = crc32(0L, Z_NULL, 0);
+	vep->crcp = crc32(0L, Z_NULL, 0);
 
 	sp->wrk->vep = vep;
 	(void)estimate;
@@ -985,14 +1050,12 @@ vfp_esi_end(struct sess *sp)
 	    (intmax_t)vep->o_skip, (intmax_t)vep->o_verbatim,
 	    (intmax_t)vep->o_total, (intmax_t)sp->obj->len, (intmax_t)l);
 	assert(l >= 0);
-	if (vep->o_skip)
-		vep_emit_skip(vep, &vep->o_skip);
-	if (vep->o_verbatim)
-		vep_emit_verbatim(vep, &vep->o_verbatim);
-	l = sp->obj->len - vep->o_total;
-	if (l)
-		vep_emit_verbatim(vep, &l);
-	vep->o_verbatim += l;
+	if (vep->o_pending)
+		vep_mark_verbatim(vep, vep->ver_p);
+	if (vep->o_skip > 0)
+		vep_emit_common(vep, &vep->o_skip, 1);
+	else if (vep->o_verbatim > 0)
+		vep_emit_common(vep, &vep->o_verbatim, 0);
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l > 0) {
