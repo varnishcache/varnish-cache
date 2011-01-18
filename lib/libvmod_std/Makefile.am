@@ -2,7 +2,8 @@
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-lib_LTLIBRARIES = libvmod_std.la
+vmoddir = $(pkglibdir)/vmods
+vmod_LTLIBRARIES = libvmod_std.la
 
 libvmod_std_la_LDFLAGS = -version-info 1:0:0
 
