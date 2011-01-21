@@ -586,20 +586,33 @@ cnt_fetch(struct sess *sp)
 	}
 
 	AZ(sp->wrk->vfp);
-	/* XXX: precedence, also: do_esi */
-	if (sp->wrk->do_esi) {
-		sp->wrk->vfp = &vfp_esi;
-	} else
+
+	/* We won't gunzip unless it is gzip'ed, if we do remove C-E header */
 	if (sp->wrk->do_gunzip &&
-	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
+	     !http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip"))
+		sp->wrk->do_gunzip = 0;
+	if (sp->wrk->do_gunzip) 
 		http_Unset(sp->wrk->beresp, H_Content_Encoding);
-		sp->wrk->vfp = &vfp_gunzip;
-	} else if (sp->wrk->do_gzip &&
-	    !http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
+
+
+	/* And we wont gzip if it already has a C-E header, if we do add it */
+	if (sp->wrk->do_gzip &&
+	     http_GetHdr(sp->wrk->beresp, H_Content_Encoding, NULL))
+		sp->wrk->do_gzip = 0;
+	if (sp->wrk->do_gzip) 
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
 		    "Content-Encoding: %s", "gzip");
+
+	/* But we can't do both */
+	assert(sp->wrk->do_gzip == 0 || sp->wrk->do_gunzip == 0);
+
+	/* ESI takes precedence and handles gzip/gunzip also */
+	if (sp->wrk->do_esi)
+		sp->wrk->vfp = &vfp_esi;
+	else if (sp->wrk->do_gunzip)
+		sp->wrk->vfp = &vfp_gunzip;
+	else if (sp->wrk->do_gzip)
 		sp->wrk->vfp = &vfp_gzip;
-	}
 
 	l = http_EstimateWS(sp->wrk->beresp,
 	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
