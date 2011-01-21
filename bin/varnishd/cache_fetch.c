@@ -567,7 +567,7 @@ FetchBody(struct sess *sp)
 
 	{
 	/* Sanity check fetch methods accounting */
-		unsigned uu;
+		ssize_t uu;
 
 		uu = 0;
 		VTAILQ_FOREACH(st, &sp->obj->store, list)

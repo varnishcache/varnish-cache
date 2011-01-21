@@ -82,7 +82,7 @@ struct vgz {
 	struct ws		*tmp;
 	char			*tmp_snapshot;
 
-	void			*before;
+	struct storage		*obuf;
 
 	z_stream		vz;
 };
@@ -221,12 +221,45 @@ VGZ_Obuf(struct vgz *vg, const void *ptr, ssize_t len)
 	vg->vz.avail_out = len;
 }
 
+/*--------------------------------------------------------------------
+ * Keep the outbuffer supplied with storage and file it under the
+ * sp->obj as it fills.
+ */
+
+int
+VGZ_ObufStorage(const struct sess *sp, struct vgz *vg)
+{
+	struct storage *st;
+
+	st = sp->wrk->storage;
+	if (st != NULL && st->len == st->space) {
+		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+		sp->wrk->storage = NULL;
+		st = NULL;
+		vg->obuf = NULL;
+	}
+	if (st == NULL) { 
+		st = STV_alloc(sp, params->fetch_chunksize * 1024LL);
+		if (st == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		sp->wrk->storage = st;
+	}
+	vg->obuf = st;
+	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
+
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 int
 VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 {
 	int i;
+	ssize_t l;
+	const uint8_t *before;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
@@ -234,11 +267,14 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 	*plen = 0;
 	AN(vg->vz.next_out);
 	AN(vg->vz.avail_out);
-	vg->before = vg->vz.next_out;
+	before = vg->vz.next_out;
 	i = inflate(&vg->vz, 0);
 	if (i == Z_OK || i == Z_STREAM_END) {
-		*pptr = vg->before;
-		*plen = (const uint8_t *)vg->vz.next_out - (const uint8_t*)vg->before;
+		*pptr = before;
+		l = (const uint8_t *)vg->vz.next_out - before;
+		*plen = l;
+		if (vg->obuf != NULL)
+			vg->obuf->len += l;
 	}
 	if (i == Z_OK)
 		return (0);
@@ -256,6 +292,8 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 {
 	int i;
 	int zflg;
+	ssize_t l;
+	const uint8_t *before;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
@@ -263,7 +301,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	*plen = 0;
 	AN(vg->vz.next_out);
 	AN(vg->vz.avail_out);
-	vg->before = vg->vz.next_out;
+	before = vg->vz.next_out;
 	switch(flags) {
 	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
@@ -273,8 +311,11 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	}
 	i = deflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
-		*pptr = vg->before;
-		*plen = (const uint8_t *)vg->vz.next_out - (const uint8_t*)vg->before;
+		*pptr = before;
+		l = (const uint8_t *)vg->vz.next_out - before;
+		*plen = l;
+		if (vg->obuf != NULL)
+			vg->obuf->len += l;
 	}
 	if (i == Z_OK)
 		return (0);
@@ -313,7 +354,6 @@ static int __match_proto__()
 vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	struct vgz *vg;
-	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
 	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
@@ -324,17 +364,6 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || vg->vz.avail_in > 0) {
-		if (sp->wrk->storage == NULL)
-			sp->wrk->storage = STV_alloc(sp,
-			    params->fetch_chunksize * 1024LL);
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		st = sp->wrk->storage;
-
-		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
-
 		if (vg->vz.avail_in == 0 && bytes > 0) {
 			l = sizeof ibuf;
 			if (l > bytes)
@@ -346,15 +375,11 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			bytes -= w;
 		}
 
+		if (VGZ_ObufStorage(sp, vg))
+			return (-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		assert(i == Z_OK || i == Z_STREAM_END);
-		st->len += dl;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->obj->len += st->len;
-			sp->wrk->storage = NULL;
-		}
+		sp->obj->len += dl;
 	}
 	if (i == Z_STREAM_END)
 		return (1);
@@ -382,7 +407,6 @@ vfp_gunzip_end(struct sess *sp)
 	}
 	if (st->len < st->space)
 		STV_trim(st, st->len);
-	sp->obj->len += st->len;
 	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	return (0);
 }
@@ -412,7 +436,6 @@ static int __match_proto__()
 vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	struct vgz *vg;
-	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
 	uint8_t ibuf[1024 * params->gzip_stack_buffer];
@@ -423,17 +446,6 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || !VGZ_IbufEmpty(vg)) {
-		if (sp->wrk->storage == NULL)
-			sp->wrk->storage = STV_alloc(sp,
-			    params->fetch_chunksize * 1024LL);
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		st = sp->wrk->storage;
-
-		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
-
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
 			l = sizeof ibuf;
 			if (l > bytes)
@@ -444,16 +456,11 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
-
+		if (VGZ_ObufStorage(sp, vg))
+			return (-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
-		st->len += dl;
 		sp->obj->len += dl;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-		}
 	}
 	return (1);
 }
@@ -462,33 +469,19 @@ static int __match_proto__()
 vfp_gzip_end(struct sess *sp)
 {
 	struct vgz *vg;
-	struct storage *st;
 	size_t dl;
 	const void *dp;
 	int i;
+	struct storage *st;
 
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	do {
-		if (sp->wrk->storage == NULL)
-			sp->wrk->storage = STV_alloc(sp,
-			    params->fetch_chunksize * 1024LL);
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		st = sp->wrk->storage;
-
 		VGZ_Ibuf(vg, "", 0);
-		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
+		if (VGZ_ObufStorage(sp, vg))
+			return (-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
-		st->len += dl;
 		sp->obj->len += dl;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-		}
 	} while (i != Z_STREAM_END);
 	VGZ_Destroy(&vg);
 

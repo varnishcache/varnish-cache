@@ -103,7 +103,6 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, w;
-	struct storage *st;
 	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
 	int i;
 	size_t dl;
@@ -113,18 +112,6 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 	vg = sp->wrk->vgz_rx;
 
 	while (bytes > 0) {
-		if (sp->wrk->storage == NULL) {
-			l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		st = sp->wrk->storage;
-
-		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
-
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
 			l = sizeof ibuf;
 			if (l > bytes)
@@ -135,16 +122,11 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
+		if (VGZ_ObufStorage(sp, vg))
+			return (-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		VEP_parse(sp, dp, dl);
-		st->len += dl;
 		sp->obj->len += dl;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-			st = NULL;
-		}
 	}
 	return (1);
 }
@@ -172,11 +154,9 @@ static ssize_t
 vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 {
 	struct vef_priv *vef;
-	struct storage *st;
 	size_t dl;
 	const void *dp;
 	int i;
-	char *p;
 
 printf("ZCB(%jd, %d)\n", l, flg);
 
@@ -192,29 +172,15 @@ printf("ZCB(%jd, %d)\n", l, flg);
 
 	VGZ_Ibuf(vef->vgz, vef->bufp, l);
 	do {
-		if (sp->wrk->storage == NULL) {
-			l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
+		if (VGZ_ObufStorage(sp, vef->vgz)) {
 			vef->error = ENOMEM;
 			vef->tot += l;
 			return (vef->tot);
 		}
-
-		st = sp->wrk->storage;
-		VGZ_Obuf(vef->vgz, st->ptr + st->len, st->space - st->len);
-		p = (void*)(st->ptr + st->len);
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 printf("GZI = %d %jd\n", i, dl);
 		vef->tot += dl;
-		st->len += dl;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-			st = NULL;
-		}
+		sp->obj->len += dl;
 	} while (!VGZ_IbufEmpty(vef->vgz));
 	vef->bufp += l;
 if (flg == VGZ_FINISH)
@@ -251,15 +217,13 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (l > bytes)
 			l = bytes;
 		w = HTC_Read(htc, ibuf, l);
-		if (w <= 0) {
-printf("RT %jd\n", w);
+		if (w <= 0)
 			return (w);
-}
 		bytes -= w;
 		vef->bufp = ibuf;
 		VEP_parse(sp, ibuf, l);
 		if (vef->error) {
-			// errno = vef->error;
+			errno = vef->error;
 			return (-1);
 		}
 	}
