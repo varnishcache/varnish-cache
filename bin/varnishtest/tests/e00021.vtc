@@ -1,0 +1,41 @@
+# $Id$
+
+test "ESI ability to stitch gzip files together"
+
+
+server s1 {
+	rxreq 
+	txresp -body {
+		<esi:remove>
+		This is a test: Unseen University
+		<esi:include src="trick question">
+		<!--esi XXX -->
+		</esi:remove>
+		<esX>This is a test: Hello world
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.esi = true;
+	}
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+		set beresp.do_gzip = true;
+	}
+} -start 
+
+varnish v1 -cliok "param.set esi_syntax 4"
+varnish v1 -cliok "param.set http_gzip_support true"
+
+client c1 {
+	txreq  -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 40
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 2

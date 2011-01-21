@@ -27,6 +27,7 @@
  *
  */
 
+#define	VEC_GZ	(0x21)
 #define	VEC_V1	(0x40 + 1)
 #define	VEC_V2	(0x40 + 2)
 #define	VEC_V8	(0x40 + 8)

@@ -64,6 +64,7 @@ struct vep_state {
 	struct vsb		*vsb;
 
 	const struct sess	*sp;
+	int			dogzip;
 	vep_callback_t		*cb;
 
 	/* Internal Counter for default call-back function */
@@ -285,9 +286,12 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
-	vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
-	vbe32enc(buf, vep->crc);
-	vsb_bcat(vep->vsb, buf, sizeof buf);
+	if (vep->dogzip) {
+		vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
+		vbe32enc(buf, vep->crc);
+		vsb_bcat(vep->vsb, buf, sizeof buf);
+	}
+	/* Emit Chunked header */
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
 
@@ -992,14 +996,19 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
-	if (cb != NULL)
-		vep->cb = cb;
-	else
-		vep->cb = vep_default_cb;
-
-	vep->state = VEP_START;
 	vep->vsb = vsb_newauto();
 	AN(vep->vsb);
+
+	if (cb != NULL) {
+		vep->dogzip = 1;
+		/* XXX */
+		vsb_printf(vep->vsb, "%c", VEC_GZ);
+		vep->cb = cb;
+	} else {
+		vep->cb = vep_default_cb;
+	}
+
+	vep->state = VEP_START;
 	vep->crc = crc32(0L, Z_NULL, 0);
 	vep->crcp = crc32(0L, Z_NULL, 0);
 }
@@ -1020,8 +1029,9 @@ VEP_Finish(const struct sess *sp)
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
-		lcb = vep->cb(vep->sp, 0, VGZ_FINISH);
+		lcb = vep->cb(vep->sp, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
+		(void)vep->cb(vep->sp, 0, VGZ_FINISH);
 	}
 
 	sp->wrk->vep = NULL;

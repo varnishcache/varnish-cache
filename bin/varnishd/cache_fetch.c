@@ -204,8 +204,8 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 
 	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {
-		WSP(sp, SLT_FetchError, "straight read_error: %d (%s)",
-		    errno, strerror(errno));
+		WSP(sp, SLT_FetchError, "straight read_error: %d %d (%s)",
+		    i, errno, strerror(errno));
 		return (-1);
 	}
 	return (0);

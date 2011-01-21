@@ -98,6 +98,7 @@ struct ban;
 struct SHA256Context;
 struct vsc_lck;
 struct waitinglist;
+struct vef_priv;
 
 struct lock { void *priv; };		// Opaque
 
@@ -280,7 +281,7 @@ struct worker {
 	struct storage		*storage;
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
-	struct vgz		*vgz_esi;
+	struct vef_priv		*vef_priv;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		is_gzip;
