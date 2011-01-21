@@ -42,8 +42,6 @@ SVNID("$Id")
 #include "zlib.h"
 #include "stevedore.h"
 
-#ifndef OLD_ESI
-
 //#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
 
@@ -1097,8 +1095,6 @@ struct vfp vfp_esi = {
         .bytes  =       vfp_esi_bytes,
         .end    =       vfp_esi_end,
 };
-
-#endif /* OLD_ESI */
 
 #if 0
 

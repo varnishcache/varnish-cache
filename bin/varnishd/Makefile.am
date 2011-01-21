@@ -27,7 +27,6 @@ varnishd_SOURCES = \
 	cache_dir_round_robin.c \
 	cache_esi_parse.c \
 	cache_esi_deliver.c \
-	cache_esi.c \
 	cache_expire.c \
 	cache_fetch.c \
 	cache_gzip.c \

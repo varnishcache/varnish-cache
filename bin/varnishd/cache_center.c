@@ -587,11 +587,9 @@ cnt_fetch(struct sess *sp)
 
 	AZ(sp->wrk->vfp);
 	/* XXX: precedence, also: do_esi */
-#ifndef OLD_ESI
 	if (sp->wrk->do_esi) {
 		sp->wrk->vfp = &vfp_esi;
 	} else
-#endif
 	if (sp->wrk->do_gunzip &&
 	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip")) {
 		http_Unset(sp->wrk->beresp, H_Content_Encoding);
@@ -676,11 +674,6 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	}
-
-#ifdef OLD_ESI
-	if (sp->wrk->do_esi)
-		ESI_Parse(sp);
-#endif
 
 	switch (sp->handling) {
 	case VCL_RET_RESTART:

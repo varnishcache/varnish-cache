@@ -44,7 +44,7 @@ SVNID("$Id")
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 ESI_Include(struct sess *sp, const char *src, const char *host)
 {
 	struct object *obj;
@@ -120,7 +120,6 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 
 /*--------------------------------------------------------------------*/
 
-#ifndef OLD_ESI
 
 //#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
@@ -233,4 +232,3 @@ ESI_Deliver(struct sess *sp)
 	(void)WRW_Flush(sp->wrk);
 }
 
-#endif /* OLD_ESI */

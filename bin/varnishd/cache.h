@@ -35,8 +35,6 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
-#undef OLD_ESI 
-
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
@@ -94,9 +92,6 @@ struct objhead;
 struct objcore;
 struct storage;
 struct workreq;
-#ifdef OLD_ESI
-struct esidata;
-#endif
 struct vrt_backend;
 struct cli_proto;
 struct ban;
@@ -444,11 +439,7 @@ struct object {
 
 	VTAILQ_HEAD(, storage)	store;
 
-#ifdef OLD_ESI
-	struct esidata		*esidata;
-#else
 	struct storage		*esidata;
-#endif
 
 	double			last_use;
 
@@ -807,16 +798,7 @@ void VCL_Poll(void);
 char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
-#ifdef OLD_ESI
-/* cache_vrt_esi.c */
-
 void ESI_Deliver(struct sess *);
-void ESI_Destroy(struct object *);
-void ESI_Parse(struct sess *);
-#else
-void ESI_Deliver(struct sess *);
-#endif /* OLD_ESI */
-void ESI_Include(struct sess *sp, const char *src, const char *host);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
