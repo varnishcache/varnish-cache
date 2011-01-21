@@ -240,18 +240,20 @@ RES_BuildHttp(struct sess *sp)
  */
 
 static void
-res_WriteGunzipObj(struct sess *sp, char lenbuf[20])
+res_WriteGunzipObj(struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
 	const void *dp;
+	char lenbuf[20];
+	char obuf[64*1024];	/* XXX: size? */
 	size_t dl;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws, NULL, 0);
+	vg = VGZ_NewUnzip(sp, sp->wrk->ws, NULL, obuf, sizeof obuf);
 	AN(vg);
 
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -259,7 +261,7 @@ res_WriteGunzipObj(struct sess *sp, char lenbuf[20])
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		sp->acct_tmp.bodybytes += st->len;
+		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
 		VSC_main->n_objwrite++;
 
 		VGZ_Feed(vg, st->ptr, st->len);
@@ -389,7 +391,7 @@ RES_WriteObj(struct sess *sp)
 	} else if (sp->wrk->res_mode & RES_ESI) {
 		ESI_Deliver(sp);
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
-		res_WriteGunzipObj(sp, lenbuf); 
+		res_WriteGunzipObj(sp); 
 	} else {
 		res_WriteDirObj(sp, lenbuf, low, high);
 	}
