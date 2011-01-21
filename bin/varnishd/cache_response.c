@@ -247,7 +247,7 @@ res_WriteGunzipObj(struct sess *sp)
 	struct vgz *vg;
 	const void *dp;
 	char lenbuf[20];
-	char obuf[64*1024];	/* XXX: size? */
+	char obuf[1024 * params->gzip_stack_buffer];
 	size_t dl;
 	int i;
 
