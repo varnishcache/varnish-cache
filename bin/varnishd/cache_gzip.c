@@ -190,7 +190,7 @@ VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_Ibuf(struct vgz *vg, const void *ptr, size_t len)
+VGZ_Ibuf(struct vgz *vg, const void *ptr, ssize_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -200,10 +200,18 @@ VGZ_Ibuf(struct vgz *vg, const void *ptr, size_t len)
 	vg->vz.avail_in = len;
 }
 
+int
+VGZ_IbufEmpty(struct vgz *vg)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	return (vg->vz.avail_in == 0);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_Obuf(struct vgz *vg, const void *ptr, size_t len)
+VGZ_Obuf(struct vgz *vg, const void *ptr, ssize_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
