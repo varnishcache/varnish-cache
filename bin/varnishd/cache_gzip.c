@@ -65,6 +65,7 @@
  */
 
 #include "config.h"
+#include <stdio.h>
 
 #include "svnid.h"
 SVNID("$Id$")
@@ -77,11 +78,11 @@ SVNID("$Id$")
 struct vgz {
 	unsigned		magic;
 #define VGZ_MAGIC		0x162df0cb
-	struct sess 		*sp;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
 
-	struct ws		*buf;
+	struct ws		*buf_ws;
+	void			*buf;
 	size_t			bufsiz;
 
 	z_stream		vz;
@@ -96,7 +97,7 @@ vgz_alloc(voidpf opaque, uInt items, uInt size)
 
 	CAST_OBJ_NOTNULL(vg, opaque, VGZ_MAGIC);
 
-	return(WS_Alloc(vg->tmp, items * size));
+	return (WS_Alloc(vg->tmp, items * size));
 }
 
 static void
@@ -108,36 +109,94 @@ vgz_free(voidpf opaque, voidpf address)
 	(void)address;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Set up a gunzip instance
+ */
 
-struct vgz *
-VGZ_NewUnzip(struct sess *sp, struct ws *tmp, struct ws *buf)
+static struct vgz *
+vgz_alloc_vgz(struct ws *ws, struct ws *buf_ws, void *buf, ssize_t bufl)
 {
-	struct vgz *vg;
 	char *s;
+	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	WS_Assert(tmp);
-	WS_Assert(buf);
-
-	s = WS_Snapshot(tmp);
-	vg = (void*)WS_Alloc(tmp, sizeof *vg);
+	WS_Assert(ws);
+	s = WS_Snapshot(ws);
+	vg = (void*)WS_Alloc(ws, sizeof *vg);
 	AN(vg);
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
-	vg->sp = sp;
-	vg->tmp = tmp;
-	vg->buf = buf;
+	vg->tmp = ws;
 	vg->tmp_snapshot = s;
 
 	vg->vz.zalloc = vgz_alloc;
 	vg->vz.zfree = vgz_free;
 	vg->vz.opaque = vg;
 
-	vg->bufsiz = WS_Reserve(buf, 0);
+	assert(buf_ws == NULL || buf == NULL);
+	if (buf_ws != NULL) {
+		WS_Assert(buf_ws);
+		vg->buf_ws = buf_ws;
+		vg->bufsiz = WS_Reserve(buf_ws, 0);
+		vg->buf = buf_ws->f;
+	} else {
+		assert(bufl > 0);
+		vg->buf = buf;
+		vg->bufsiz = bufl;
+	}
 
+	return (vg);
+}
+
+struct vgz *
+VGZ_NewUnzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
+    void *buf, ssize_t bufl)
+{
+	struct vgz *vg;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	vg = vgz_alloc_vgz(tmp, buf_ws, buf, bufl);
+
+	/*
+	 * Max memory usage according to zonf.h:
+	 * 	mem_needed = "a few kb" + (1 << (windowBits))
+	 * Since we don't control windowBits, we have to assume
+	 * it is 15, so 34-35KB or so.
+	 */
 	assert(Z_OK == inflateInit2(&vg->vz, 31));
+	return (vg);
+}
+
+static struct vgz *
+VGZ_NewGzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
+    void *buf, ssize_t bufl)
+{
+	struct vgz *vg;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	vg = vgz_alloc_vgz(tmp, buf_ws, buf, bufl);
+
+	/*
+	 * From zconf.h:
+	 *
+	 * 	mem_needed = "a few kb" 
+	 *		+ (1 << (windowBits+2))
+	 *		+  (1 << (memLevel+9))
+	 *
+	 * windowBits [8..15] (-> 1K..128K)
+	 * memLevel [1..9] (-> 1K->256K)
+	 *
+	 * XXX: They probably needs to be params...
+	 */
+	i = deflateInit2(&vg->vz,
+	    0,				/* Level */
+	    Z_DEFLATED,			/* Method */
+	    16 + 8,			/* Window bits (16=gzip + 15) */
+	    1,				/* memLevel */
+	    Z_DEFAULT_STRATEGY);
+	if (i != Z_OK)
+		printf("deflateInit2() = %d\n", i);
+	assert(Z_OK == i);
 	return (vg);
 }
 
@@ -167,12 +226,12 @@ VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 
 	*pptr = NULL;
 	*plen = 0;
-	vg->vz.next_out = (void*)vg->buf->f;
+	vg->vz.next_out = vg->buf;
 	vg->vz.avail_out = vg->bufsiz;
 
 	i = inflate(&vg->vz, 0);
 	if (i == Z_OK || i == Z_STREAM_END) {
-		*pptr = vg->buf->f;
+		*pptr = vg->buf;
 		*plen = vg->bufsiz - vg->vz.avail_out;
 	}
 	if (i == Z_OK)
@@ -186,15 +245,15 @@ VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 
 /*--------------------------------------------------------------------*/
 
-int
+void
 VGZ_Destroy(struct vgz **vg)
 {
 
 	CHECK_OBJ_NOTNULL(*vg, VGZ_MAGIC);
-	WS_Release((*vg)->buf, 0);
+	if ((*vg)->buf_ws != NULL)
+		WS_Release((*vg)->buf_ws, 0);
 	WS_Reset((*vg)->tmp, (*vg)->tmp_snapshot);
 	*vg = NULL;
-	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -207,7 +266,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vfp_private = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
+	sp->wrk->vfp_private = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws, NULL, 0);
 }
 
 static int __match_proto__()
@@ -237,10 +296,10 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			l = vg->bufsiz;
 			if (l > bytes)
 				l = bytes;
-			w = HTC_Read(htc, vg->buf->f, l);
+			w = HTC_Read(htc, vg->buf, l);
 			if (w <= 0)
 				return (w);
-			vg->vz.next_in = (void*)vg->buf->f;
+			vg->vz.next_in = vg->buf;
 			vg->vz.avail_in = w;
 			bytes -= w;
 		}
@@ -304,16 +363,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 	struct vgz *vg;
 	(void)estimate;
 
-	vg = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws);
-	/* XXX: hack */
-	memset(&vg->vz, 0, sizeof vg->vz);
-	assert(Z_OK == deflateInit2(&vg->vz,
-	    0,
-	    Z_DEFLATED,
-	    31,
-	    9,
-	    Z_DEFAULT_STRATEGY));
-
+	vg = VGZ_NewGzip(sp, sp->ws, sp->wrk->ws, NULL, 0);
 	sp->wrk->vfp_private = vg;
 }
 
@@ -344,10 +394,10 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			l = vg->bufsiz;
 			if (l > bytes)
 				l = bytes;
-			w = HTC_Read(htc, vg->buf->f, l);
+			w = HTC_Read(htc, vg->buf, l);
 			if (w <= 0)
 				return (w);
-			vg->vz.next_in = (void*)vg->buf->f;
+			vg->vz.next_in = vg->buf;
 			vg->vz.avail_in = w;
 			bytes -= w;
 		}

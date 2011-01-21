@@ -625,10 +625,11 @@ void Fetch_Init(void);
 /* cache_gzip.c */
 struct vgz;
 
-struct vgz *VGZ_NewUnzip(struct sess *sp, struct ws *tmp, struct ws *buf);
+struct vgz *VGZ_NewUnzip(const struct sess *sp, struct ws *tmp,
+    struct ws *buf_ws, void *buf, ssize_t bufl);
 int VGZ_Feed(struct vgz *, const void *, size_t len);
 int VGZ_Produce(struct vgz *, const void **, size_t *len);
-int VGZ_Destroy(struct vgz **);
+void VGZ_Destroy(struct vgz **);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
