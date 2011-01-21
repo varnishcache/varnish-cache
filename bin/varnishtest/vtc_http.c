@@ -531,6 +531,8 @@ cmd_http_gunzip_body(CMD_ARGS)
 
 	memset(&vz, 0, sizeof vz);
 
+	if (hp->body[0] != (char)0x1f || hp->body[1] != (char)0x8b)
+		vtc_log(hp->vl, 0, "Gunzip error: Body lacks gzip magics");
 	vz.next_in = TRUST_ME(hp->body);
 	vz.avail_in = hp->bodyl;
 
