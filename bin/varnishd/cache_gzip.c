@@ -390,24 +390,10 @@ static int __match_proto__()
 vfp_gunzip_end(struct sess *sp)
 {
 	struct vgz *vg;
-	struct storage *st;
 
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_Destroy(&vg);
-
-	st = sp->wrk->storage;
-	sp->wrk->storage = NULL;
-	if (st == NULL)
-		return (0);
-
-	if (st->len == 0) {
-		STV_free(st);
-		return (0);
-	}
-	if (st->len < st->space)
-		STV_trim(st, st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	return (0);
 }
 
@@ -472,7 +458,6 @@ vfp_gzip_end(struct sess *sp)
 	size_t dl;
 	const void *dp;
 	int i;
-	struct storage *st;
 
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -484,15 +469,6 @@ vfp_gzip_end(struct sess *sp)
 		sp->obj->len += dl;
 	} while (i != Z_STREAM_END);
 	VGZ_Destroy(&vg);
-
-	st = sp->wrk->storage;
-	sp->wrk->storage = NULL;
-	if (st != NULL && st->len == 0) {
-		STV_free(st);
-	} else if (st != NULL && st->len < st->space) {
-		STV_trim(st, st->len);
-		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-	}
 	return (0);
 }
 

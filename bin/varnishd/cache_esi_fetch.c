@@ -292,7 +292,6 @@ printf("BYTES = %d\n", i);
 static int __match_proto__()
 vfp_esi_end(struct sess *sp)
 {
-	struct storage *st;
 	struct vsb *vsb;
 	struct vef_priv *vef;
 	ssize_t l;
@@ -315,9 +314,6 @@ printf("END\n");
 		vsb_delete(vsb);
 	}
 
-	st = sp->wrk->storage;
-	sp->wrk->storage = NULL;
-
 	if (sp->wrk->vef_priv != NULL) {
 		vef = sp->wrk->vef_priv;
 		sp->wrk->vef_priv = NULL;
@@ -326,17 +322,6 @@ printf("END\n");
 printf("TOT %jd\n", vef->tot);
 sp->obj->len = vef->tot;
 	}
-
-	if (st == NULL)
-		return (0);
-
-	if (st->len == 0) {
-		STV_free(st);
-		return (0);
-	}
-	if (st->len < st->space)
-		STV_trim(st, st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	return (0);
 }
 

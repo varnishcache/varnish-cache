@@ -533,6 +533,12 @@ FetchBody(struct sess *sp)
 		INCOMPL();
 	}
 	XXXAZ(sp->wrk->vfp->end(sp));
+	/*
+	 * It is OK for ->end to just leave the last storage segment
+	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()
+	 * to get it trimmed and added to the object.
+	 */
+	XXXAZ(vfp_nop_end(sp));
 	AZ(sp->wrk->storage);
 
 	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
