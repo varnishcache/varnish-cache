@@ -817,6 +817,11 @@ static const struct parspec input_parspec[] = {
 		"Enable support for HTTP GZIP compression.\n",
 		EXPERIMENTAL,
 		"off", "bool" },
+	{ "gzip_stack_buffer", tweak_uint, &master.gzip_stack_buffer,
+	        4, UINT_MAX,
+		"Size of stack buffer used for gzip processing.\n",
+		EXPERIMENTAL,
+		"64", "Kilobytes" },
 	{ "critbit_cooloff", tweak_timeout_double,
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "
