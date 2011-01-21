@@ -422,7 +422,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
-	while (bytes > 0 || vg->vz.avail_in > 0) {
+	while (bytes > 0 || !VGZ_IbufEmpty(vg)) {
 		if (sp->wrk->storage == NULL)
 			sp->wrk->storage = STV_alloc(sp,
 			    params->fetch_chunksize * 1024LL);
@@ -434,7 +434,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 
 		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
-		if (vg->vz.avail_in == 0 && bytes > 0) {
+		if (VGZ_IbufEmpty(vg) && bytes > 0) {
 			l = sizeof ibuf;
 			if (l > bytes)
 				l = bytes;
@@ -445,20 +445,17 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			bytes -= w;
 		}
 
-		i = VGZ_Gzip(vg, &dp, &dl,
-		    bytes == 0 ? VGZ_FINISH : VGZ_NORMAL);
-		assert(i == Z_OK || i == Z_STREAM_END);
-		st->len = st->space - dl;
+		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
+		assert(i == Z_OK);
+		st->len += dl;
+		sp->obj->len += dl;
 		if (st->len == st->space) {
 			VTAILQ_INSERT_TAIL(&sp->obj->store,
 			    sp->wrk->storage, list);
-			sp->obj->len += st->len;
 			sp->wrk->storage = NULL;
 		}
 	}
-	if (i == Z_STREAM_END)
-		return (1);
-	return (-1);
+	return (1);
 }
 
 static int __match_proto__()
@@ -466,24 +463,43 @@ vfp_gzip_end(struct sess *sp)
 {
 	struct vgz *vg;
 	struct storage *st;
+	size_t dl;
+	const void *dp;
+	int i;
 
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	do {
+		if (sp->wrk->storage == NULL)
+			sp->wrk->storage = STV_alloc(sp,
+			    params->fetch_chunksize * 1024LL);
+		if (sp->wrk->storage == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		st = sp->wrk->storage;
+
+		VGZ_Ibuf(vg, "", 0);
+		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
+		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
+		st->len += dl;
+		sp->obj->len += dl;
+		if (st->len == st->space) {
+			VTAILQ_INSERT_TAIL(&sp->obj->store,
+			    sp->wrk->storage, list);
+			sp->wrk->storage = NULL;
+		}
+	} while (i != Z_STREAM_END);
 	VGZ_Destroy(&vg);
 
 	st = sp->wrk->storage;
 	sp->wrk->storage = NULL;
-	if (st == NULL)
-		return (0);
-
-	if (st->len == 0) {
+	if (st != NULL && st->len == 0) {
 		STV_free(st);
-		return (0);
-	}
-	if (st->len < st->space)
+	} else if (st != NULL && st->len < st->space) {
 		STV_trim(st, st->len);
-	sp->obj->len += st->len;
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	}
 	return (0);
 }
 
