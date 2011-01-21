@@ -64,6 +64,10 @@ struct vep_state {
 	struct vsb		*vsb;
 
 	const struct sess	*sp;
+	vep_callback_t		*cb;
+
+	/* Internal Counter for default call-back function */
+	ssize_t			cb_x;
 
 	/* parser state */
 	const char		*state;
@@ -80,6 +84,7 @@ struct vep_state {
 	uint32_t		crc;
 	ssize_t			o_crc;
 	uint32_t		crcp;
+	ssize_t			o_last;
 
 const char		*hack_p;
 	const char		*ver_p;
@@ -272,7 +277,7 @@ vep_emit_skip(const struct vep_state *vep, ssize_t l)
 } 
 
 static void
-vep_emit_verbatim(const struct vep_state *vep, ssize_t l)
+vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 {
 	uint8_t buf[4];
 
@@ -280,28 +285,26 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l)
 		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
-	vep_emit_len(vep, l, VEC_C1, VEC_C2, VEC_C8);
+	vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
 	vbe32enc(buf, vep->crc);
 	vsb_bcat(vep->vsb, buf, sizeof buf);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 } 
 
 static void
-vep_emit_common(struct vep_state *vep, ssize_t *l, enum vep_mark mark)
+vep_emit_common(struct vep_state *vep, ssize_t l, enum vep_mark mark)
 {
-	assert(*l > 0);
-	assert(*l == vep->o_crc);
+	assert(l > 0);
 
 	assert(mark == SKIP || mark == VERBATIM);
 	if (mark == SKIP)
-		vep_emit_skip(vep, *l);
+		vep_emit_skip(vep, l);
 	else
-		vep_emit_verbatim(vep, *l);
+		vep_emit_verbatim(vep, l, vep->o_crc);
 
 	vep->crc = crc32(0L, Z_NULL, 0);
 	vep->o_crc = 0;
-	vep->o_total += *l;
-	*l = 0;
+	vep->o_total += l;
 }
 
 /*---------------------------------------------------------------------
@@ -311,7 +314,7 @@ vep_emit_common(struct vep_state *vep, ssize_t *l, enum vep_mark mark)
 static void
 vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 {
-	ssize_t l;
+	ssize_t l, lcb;
 
 	assert(mark == SKIP || mark == VERBATIM);
 
@@ -324,11 +327,17 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	 * assembled before the pending bytes.
 	 */
 
-	if (vep->last_mark != mark && vep->o_wait > 0)
-		vep_emit_common(vep, &vep->o_wait, vep->last_mark);
+	if (vep->last_mark != mark && vep->o_wait > 0) {
+		lcb = vep->cb(vep->sp, 0,
+		    mark == VERBATIM ? VEP_RESET : VEP_ALIGN);
+		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
+		vep->o_last = lcb;
+		vep->o_wait = 0;
+	}
 
 	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
+		(void)vep->cb(vep->sp, vep->o_pending, VEP_NORMAL);
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
 			vep->o_crc = vep->o_pending;
@@ -338,6 +347,8 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 			vep->o_crc += vep->o_pending;
 		}
 		vep->crcp = crc32(0L, Z_NULL, 0);
+		vep->o_wait += vep->o_pending;
+		vep->o_pending = 0;
 	}
 
 	/* * Process this bit of input */
@@ -348,10 +359,9 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	vep->o_crc += l;
 	vep->ver_p = p;
 
-	vep->o_wait += vep->o_pending;
 	vep->o_wait += l;
-	vep->o_pending = 0;
 	vep->last_mark = mark;
+	(void)vep->cb(vep->sp, l, VEP_NORMAL);
 }
 
 static void
@@ -951,8 +961,26 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 		vep_mark_pending(vep, p);
 }
 
+
+/*---------------------------------------------------------------------
+ */
+
+static ssize_t
+vep_default_cb(const struct sess *sp, ssize_t l, enum vep_flg flg)
+{
+
+	(void)flg;
+	AN(sp->wrk->vep);
+	sp->wrk->vep->cb_x += l;
+Debug("CB(%jd,%d) = %jd\n", (intmax_t)l, flg, (intmax_t)sp->wrk->vep->cb_x);
+	return (sp->wrk->vep->cb_x);
+}
+
+/*---------------------------------------------------------------------
+ */
+
 void
-VEP_Init(const struct sess *sp)
+VEP_Init(const struct sess *sp, vep_callback_t *cb)
 {
 	struct vep_state *vep;
 
@@ -964,6 +992,10 @@ VEP_Init(const struct sess *sp)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
+	if (cb != NULL)
+		vep->cb = cb;
+	else
+		vep->cb = vep_default_cb;
 
 	vep->state = VEP_START;
 	vep->vsb = vsb_newauto();
@@ -972,21 +1004,27 @@ VEP_Init(const struct sess *sp)
 	vep->crcp = crc32(0L, Z_NULL, 0);
 }
 
+/*---------------------------------------------------------------------
+ */
+
 struct vsb *
 VEP_Finish(const struct sess *sp)
 {
 	struct vep_state *vep;
-	ssize_t l;
+	ssize_t l, lcb;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
-	sp->wrk->vep = NULL;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
-	if (vep->o_wait > 0)
-		vep_emit_common(vep, &vep->o_wait, vep->last_mark);
+	if (vep->o_wait > 0) {
+		lcb = vep->cb(vep->sp, 0, VEP_FINISH);
+		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
+	}
+
+	sp->wrk->vep = NULL;
 
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);

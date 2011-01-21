@@ -179,7 +179,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	/* XXX: snapshot WS's ? We'll need the space */
 
-	VEP_Init(sp);
+	VEP_Init(sp, NULL);
 
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
 		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);

@@ -38,7 +38,11 @@
 #define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
 
-void VEP_Init(const struct sess *sp);
+enum vep_flg { VEP_NORMAL, VEP_ALIGN, VEP_RESET, VEP_FINISH };
+typedef ssize_t vep_callback_t(const struct sess *sp,
+    ssize_t l, enum vep_flg flg);
+
+void VEP_Init(const struct sess *sp, vep_callback_t *cb);
 void VEP_parse(const struct sess *sp, const char *p, size_t l);
 struct vsb *VEP_Finish(const struct sess *sp);
 
