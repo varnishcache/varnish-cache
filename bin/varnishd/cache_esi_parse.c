@@ -57,6 +57,8 @@ struct vep_match {
 	const char	* const *state;
 };
 
+enum vep_mark { VERBATIM = 0, SKIP };
+
 struct vep_state {
 	unsigned		magic;
 #define VEP_MAGIC		0x55cb9b82
@@ -74,8 +76,7 @@ struct vep_state {
 
 	unsigned		remove;
 
-	ssize_t			o_verbatim;
-	ssize_t			o_skip;
+	ssize_t			o_wait;
 	ssize_t			o_pending;
 	ssize_t			o_total;
 	uint32_t		crc;
@@ -111,7 +112,7 @@ const char		*hack_p;
 	unsigned		nm_skip;
 	unsigned		nm_verbatim;
 	unsigned		nm_pending;
-	int			last_mark;
+	enum vep_mark		last_mark;
 };
 
 /*---------------------------------------------------------------------*/
@@ -263,7 +264,7 @@ vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 } 
 
 static void
-vep_emit_skip(struct vep_state *vep, ssize_t l)
+vep_emit_skip(const struct vep_state *vep, ssize_t l)
 {
 
 	if (params->esi_syntax & 0x20) {
@@ -273,7 +274,7 @@ vep_emit_skip(struct vep_state *vep, ssize_t l)
 } 
 
 static void
-vep_emit_verbatim(struct vep_state *vep, ssize_t l)
+vep_emit_verbatim(const struct vep_state *vep, ssize_t l)
 {
 	uint8_t buf[4];
 
@@ -287,12 +288,13 @@ vep_emit_verbatim(struct vep_state *vep, ssize_t l)
 } 
 
 static void
-vep_emit_common(struct vep_state *vep, ssize_t *l, int skip)
+vep_emit_common(struct vep_state *vep, ssize_t *l, enum vep_mark mark)
 {
 	assert(*l > 0);
 	assert(*l == vep->o_crc);
 
-	if (skip)
+	assert(mark == SKIP || mark == VERBATIM);
+	if (mark == SKIP)
 		vep_emit_skip(vep, *l);
 	else
 		vep_emit_verbatim(vep, *l);
@@ -308,28 +310,25 @@ vep_emit_common(struct vep_state *vep, ssize_t *l, int skip)
  */
 
 static void
-vep_mark_common(struct vep_state *vep, const char *p, int skip)
+vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 {
 	ssize_t l;
+
+	assert(mark == SKIP || mark == VERBATIM);
+
+	/* The NO-OP case, no data, no pending data & no change of mode */
+	if (vep->last_mark == mark && p == vep->ver_p && vep->o_pending == 0)
+		return;
 
 	/*
 	 * If we changed mode, emit whatever the opposite mode
 	 * assembled before the pending bytes.
 	 */
-	if (skip && vep->o_verbatim > 0)
-		vep_emit_common(vep, &vep->o_verbatim, 0);
-	else if (!skip && vep->o_skip > 0)
-		vep_emit_common(vep, &vep->o_skip, 1);
 
-	/* In debug mode, the pending bytes are emitted separately.  */
-	if ((params->esi_syntax & 0x10) && vep->o_pending) {
-		vep->o_crc = vep->o_pending;
-		vep->crc = vep->crcp;
-		vep->crcp = crc32(0L, Z_NULL, 0);
-		vep_emit_common(vep, &vep->o_pending, skip);
-	}
+	if (vep->last_mark != mark && vep->o_wait > 0)
+		vep_emit_common(vep, &vep->o_wait, vep->last_mark);
 
-	/* Transfer pending bytes CRC into active mode.  */
+	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
@@ -342,9 +341,7 @@ vep_mark_common(struct vep_state *vep, const char *p, int skip)
 		vep->crcp = crc32(0L, Z_NULL, 0);
 	}
 
-	/*
-	 * Process this bit of input
-	 */
+	/* * Process this bit of input */
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
 	assert(l >= 0);
@@ -352,40 +349,26 @@ vep_mark_common(struct vep_state *vep, const char *p, int skip)
 	vep->o_crc += l;
 	vep->ver_p = p;
 
-	if ((params->esi_syntax & 0x10) && l > 0) {
-		/* Emit right away if debug mode */
-		vep_emit_common(vep, &l, skip);
-	} else if (skip) {
-		vep->o_skip += vep->o_pending;
-		vep->o_skip += l;
-	} else {
-		vep->o_verbatim += vep->o_pending;
-		vep->o_verbatim += l;
-	}
+	vep->o_wait += vep->o_pending;
+	vep->o_wait += l;
 	vep->o_pending = 0;
+	vep->last_mark = mark;
 }
-
 
 static void
 vep_mark_verbatim(struct vep_state *vep, const char *p)
 {
-	if (vep->last_mark == 0 && p == vep->ver_p)
-		return;
-//printf("MARK VERB %d %s <%.*s>\n", vep->remove, vep->state, (int)(p - vep->ver_p), vep->ver_p);
-	vep_mark_common(vep, p, 0);
+
+	vep_mark_common(vep, p, VERBATIM);
 	vep->nm_verbatim++;
-	vep->last_mark = 0;
 } 
 
 static void
 vep_mark_skip(struct vep_state *vep, const char *p)
 {
-	if (vep->last_mark == 1 && p == vep->ver_p)
-		return;
-//printf("MARK SKIP %d %s <%.*s>\n", vep->remove, vep->state, (int)(p - vep->ver_p), vep->ver_p);
-	vep_mark_common(vep, p, 1);
+
+	vep_mark_common(vep, p, SKIP);
 	vep->nm_skip++;
-	vep->last_mark = 1;
 } 
 
 static void
@@ -393,18 +376,15 @@ vep_mark_pending(struct vep_state *vep, const char *p)
 {
 	ssize_t l;
 
-	assert (vep->last_mark != 2 || p != vep->ver_p);
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
 	assert(l > 0);
-// printf("MARK PEND %d %s <%.*s>\n", vep->remove, vep->state, (int)l, vep->ver_p);
 	assert(l >= 0);
 	vep->crcp = crc32(vep->crcp, (const void *)vep->ver_p, l);
 	vep->ver_p = p;
 
 	vep->o_pending += l;
 	vep->nm_pending++;
-	vep->last_mark = 2;
 }
 
 /*---------------------------------------------------------------------
@@ -470,7 +450,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		    "ESI 1.0 <esi:include> lacks src attr");
 		return;
 	}
-	XXXAN(vep->include_src);
+
 	/*
 	 * Strictly speaking, we ought to spit out any piled up skip before
 	 * emitting the VEC for the include, but objectively that makes no
@@ -480,7 +460,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	 * The mark_skip() before calling dostuff should have taken
 	 * care of that.  Make sure.
 	 */
-	assert(vep->o_verbatim == 0);
+	assert(vep->o_wait == 0 || vep->last_mark == SKIP);
 	/* XXX: what if it contains NUL bytes ?? */
 	p = vsb_data(vep->include_src);
 	l = vsb_len(vep->include_src);
@@ -1077,20 +1057,12 @@ vfp_esi_end(struct sess *sp)
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	l = sp->obj->len - vep->o_total;
-	Debug("ENDING STATE: %s (skip %jd) (verbatim %jd)"
-	    " (tot %jd) (len %jd) (diff %jd)\n",
-	    vep->state,
-	    (intmax_t)vep->o_skip, (intmax_t)vep->o_verbatim,
-	    (intmax_t)vep->o_total, (intmax_t)sp->obj->len, (intmax_t)l);
 	assert(l >= 0);
 	if (vep->o_pending)
-		vep_mark_verbatim(vep, vep->ver_p);
-	if (vep->o_skip > 0)
-		vep_emit_common(vep, &vep->o_skip, 1);
-	else if (vep->o_verbatim > 0)
-		vep_emit_common(vep, &vep->o_verbatim, 0);
+		vep_mark_common(vep, vep->ver_p, vep->last_mark);
+	if (vep->o_wait > 0)
+		vep_emit_common(vep, &vep->o_wait, vep->last_mark);
 
-printf("NMARK VER %u SKIP %u PEND %u\n", vep->nm_verbatim, vep->nm_skip, vep->nm_pending);
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l > 0) {
