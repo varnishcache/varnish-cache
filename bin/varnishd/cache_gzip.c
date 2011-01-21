@@ -151,7 +151,7 @@ VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
 	return (vg);
 }
 
-static struct vgz *
+struct vgz *
 VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 {
 	struct vgz *vg;
