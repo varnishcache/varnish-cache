@@ -81,9 +81,7 @@ struct vgz {
 	struct ws		*tmp;
 	char			*tmp_snapshot;
 
-	struct ws		*buf_ws;
-	void			*buf;
-	size_t			bufsiz;
+	void			*before;
 
 	z_stream		vz;
 };
@@ -114,7 +112,7 @@ vgz_free(voidpf opaque, voidpf address)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct ws *ws, struct ws *buf_ws, void *buf, ssize_t bufl)
+vgz_alloc_vgz(struct ws *ws)
 {
 	char *s;
 	struct vgz *vg;
@@ -132,29 +130,16 @@ vgz_alloc_vgz(struct ws *ws, struct ws *buf_ws, void *buf, ssize_t bufl)
 	vg->vz.zfree = vgz_free;
 	vg->vz.opaque = vg;
 
-	assert(buf_ws == NULL || buf == NULL);
-	if (buf_ws != NULL) {
-		WS_Assert(buf_ws);
-		vg->buf_ws = buf_ws;
-		vg->bufsiz = WS_Reserve(buf_ws, 0);
-		vg->buf = buf_ws->f;
-	} else {
-		assert(bufl > 0);
-		vg->buf = buf;
-		vg->bufsiz = bufl;
-	}
-
 	return (vg);
 }
 
 struct vgz *
-VGZ_NewUnzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
-    void *buf, ssize_t bufl)
+VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
 {
 	struct vgz *vg;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(tmp, buf_ws, buf, bufl);
+	vg = vgz_alloc_vgz(tmp);
 
 	/*
 	 * Max memory usage according to zonf.h:
@@ -167,14 +152,13 @@ VGZ_NewUnzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
 }
 
 static struct vgz *
-VGZ_NewGzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
-    void *buf, ssize_t bufl)
+VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 {
 	struct vgz *vg;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(tmp, buf_ws, buf, bufl);
+	vg = vgz_alloc_vgz(tmp);
 
 	/*
 	 * From zconf.h:
@@ -202,8 +186,8 @@ VGZ_NewGzip(const struct sess *sp, struct ws *tmp, struct ws *buf_ws,
 
 /*--------------------------------------------------------------------*/
 
-int
-VGZ_Feed(struct vgz *vg, const void *ptr, size_t len)
+void
+VGZ_Ibuf(struct vgz *vg, const void *ptr, size_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -211,14 +195,24 @@ VGZ_Feed(struct vgz *vg, const void *ptr, size_t len)
 	AZ(vg->vz.avail_in);
 	vg->vz.next_in = TRUST_ME(ptr);
 	vg->vz.avail_in = len;
+}
 
-	return (0);
+/*--------------------------------------------------------------------*/
+
+void
+VGZ_Obuf(struct vgz *vg, const void *ptr, size_t len)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+
+	vg->vz.next_out = TRUST_ME(ptr);
+	vg->vz.avail_out = len;
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
+VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 {
 	int i;
 
@@ -226,13 +220,41 @@ VGZ_Produce(struct vgz *vg, const void **pptr, size_t *plen)
 
 	*pptr = NULL;
 	*plen = 0;
-	vg->vz.next_out = vg->buf;
-	vg->vz.avail_out = vg->bufsiz;
-
+	AN(vg->vz.next_out);
+	AN(vg->vz.avail_out);
+	vg->before = vg->vz.next_out;
 	i = inflate(&vg->vz, 0);
 	if (i == Z_OK || i == Z_STREAM_END) {
-		*pptr = vg->buf;
-		*plen = vg->bufsiz - vg->vz.avail_out;
+		*pptr = vg->before;
+		*plen = (const uint8_t *)vg->vz.next_out - (const uint8_t*)vg->before;
+	}
+	if (i == Z_OK)
+		return (0);
+	if (i == Z_STREAM_END)
+		return (1);
+	if (i == Z_BUF_ERROR)
+		return (2);
+	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, int flags)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+
+	*pptr = NULL;
+	*plen = 0;
+	AN(vg->vz.next_out);
+	AN(vg->vz.avail_out);
+	vg->before = vg->vz.next_out;
+	i = deflate(&vg->vz, flags);
+	if (i == Z_OK || i == Z_STREAM_END) {
+		*pptr = vg->before;
+		*plen = (const uint8_t *)vg->vz.next_out - (const uint8_t*)vg->before;
 	}
 	if (i == Z_OK)
 		return (0);
@@ -250,8 +272,6 @@ VGZ_Destroy(struct vgz **vg)
 {
 
 	CHECK_OBJ_NOTNULL(*vg, VGZ_MAGIC);
-	if ((*vg)->buf_ws != NULL)
-		WS_Release((*vg)->buf_ws, 0);
 	WS_Reset((*vg)->tmp, (*vg)->tmp_snapshot);
 	*vg = NULL;
 }
@@ -266,7 +286,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vfp_private = VGZ_NewUnzip(sp, sp->ws, sp->wrk->ws, NULL, 0);
+	sp->wrk->vfp_private = VGZ_NewUngzip(sp, sp->ws);
 }
 
 static int __match_proto__()
@@ -276,6 +296,9 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
+	uint8_t	ibuf[64*1024];		/* XXX size ? */
+	size_t dl;
+	const void *dp;
 
 	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -289,24 +312,22 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 		}
 		st = sp->wrk->storage;
 
-		vg->vz.next_out = st->ptr + st->len;
-		vg->vz.avail_out = st->space - st->len;
+		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
 		if (vg->vz.avail_in == 0 && bytes > 0) {
-			l = vg->bufsiz;
+			l = sizeof ibuf;
 			if (l > bytes)
 				l = bytes;
-			w = HTC_Read(htc, vg->buf, l);
+			w = HTC_Read(htc, ibuf, l);
 			if (w <= 0)
 				return (w);
-			vg->vz.next_in = vg->buf;
-			vg->vz.avail_in = w;
+			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
 
-		i = inflate(&vg->vz, 0);
+		i = VGZ_Gunzip(vg, &dp, &dl);
 		assert(i == Z_OK || i == Z_STREAM_END);
-		st->len = st->space - vg->vz.avail_out;
+		st->len += dl;
 		if (st->len == st->space) {
 			VTAILQ_INSERT_TAIL(&sp->obj->store,
 			    sp->wrk->storage, list);
@@ -363,7 +384,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 	struct vgz *vg;
 	(void)estimate;
 
-	vg = VGZ_NewGzip(sp, sp->ws, sp->wrk->ws, NULL, 0);
+	vg = VGZ_NewGzip(sp, sp->ws);
 	sp->wrk->vfp_private = vg;
 }
 
@@ -374,6 +395,9 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
+	uint8_t ibuf[64*1024];		/* XXX size ? */
+	size_t dl;
+	const void *dp;
 
 	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -387,24 +411,22 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 		}
 		st = sp->wrk->storage;
 
-		vg->vz.next_out = st->ptr + st->len;
-		vg->vz.avail_out = st->space - st->len;
+		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
 		if (vg->vz.avail_in == 0 && bytes > 0) {
-			l = vg->bufsiz;
+			l = sizeof ibuf;
 			if (l > bytes)
 				l = bytes;
-			w = HTC_Read(htc, vg->buf, l);
+			w = HTC_Read(htc, ibuf, l);
 			if (w <= 0)
 				return (w);
-			vg->vz.next_in = vg->buf;
-			vg->vz.avail_in = w;
+			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
 
-		i = deflate(&vg->vz, bytes == 0 ? Z_FINISH : 0);
+		i = VGZ_Gzip(vg, &dp, &dl, bytes == 0 ? Z_FINISH : 0);
 		assert(i == Z_OK || i == Z_STREAM_END);
-		st->len = st->space - vg->vz.avail_out;
+		st->len = st->space - dl;
 		if (st->len == st->space) {
 			VTAILQ_INSERT_TAIL(&sp->obj->store,
 			    sp->wrk->storage, list);

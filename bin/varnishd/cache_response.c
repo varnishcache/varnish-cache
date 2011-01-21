@@ -253,8 +253,7 @@ res_WriteGunzipObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUnzip(sp, sp->wrk->ws, NULL, obuf, sizeof obuf);
-	AN(vg);
+	vg = VGZ_NewUngzip(sp, sp->wrk->ws);
 
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -264,9 +263,10 @@ res_WriteGunzipObj(struct sess *sp)
 		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
 		VSC_main->n_objwrite++;
 
-		VGZ_Feed(vg, st->ptr, st->len);
+		VGZ_Ibuf(vg, st->ptr, st->len);
 		do {
-			i = VGZ_Produce(vg, &dp, &dl);
+			VGZ_Obuf(vg, obuf, sizeof obuf);
+			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (dl != 0) {
 				if (sp->wrk->res_mode & RES_CHUNKED) {
 					bprintf(lenbuf, "%x\r\n", (unsigned)dl);
