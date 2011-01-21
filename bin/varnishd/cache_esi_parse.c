@@ -280,6 +280,7 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l)
 		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
+	vep_emit_len(vep, l, VEC_C1, VEC_C2, VEC_C8);
 	vbe32enc(buf, vep->crc);
 	vsb_bcat(vep->vsb, buf, sizeof buf);
 	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);

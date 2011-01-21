@@ -151,7 +151,7 @@ VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
 	return (vg);
 }
 
-static struct vgz *
+struct vgz *
 VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 {
 	struct vgz *vg;
@@ -307,7 +307,7 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t	ibuf[64*1024];		/* XXX size ? */
+	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -406,7 +406,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	struct storage *st;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t ibuf[64*1024];		/* XXX size ? */
+	uint8_t ibuf[1024 * params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
