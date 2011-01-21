@@ -33,6 +33,35 @@
  *
  * The API defined by this file, will also insulate the rest of the code,
  * should we find a better gzip library at a later date.
+ *
+ * The absolutely worst case gzip processing path, once we have pipe-lining,
+ * will be the following, so we need to be a bit careful with the scratch
+ * space we use:
+ *
+ * 	Backend		Tmp	Input	Output
+ *         |		----------------------
+ *	   v
+ *	 gunzip		wrk	stack	?
+ *         |
+ *	   v
+ *	  esi
+ *         |
+ *	   v
+ *	  gzip		wrk	?	storage
+ *         |
+ *	   v
+ *	  cache
+ *         |
+ *	   v
+ *	 gunzip		wrk	storage	stack
+ *         |
+ *	   v
+ *	 client
+ *
+ * XXXX: The two '?' are obviously the same memory, but I have yet to decide
+ * where it goes.   As usual we try to avoid the session->ws if we can but
+ * I may have to use that.
+ *
  */
 
 #include "config.h"
