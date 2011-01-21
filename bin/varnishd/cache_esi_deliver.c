@@ -25,6 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * VED - Varnish Esi Delivery
  */
 
 #include "config.h"
@@ -45,7 +46,7 @@ SVNID("$Id")
 /*--------------------------------------------------------------------*/
 
 static void
-ESI_Include(struct sess *sp, const char *src, const char *host)
+ved_include(struct sess *sp, const char *src, const char *host)
 {
 	struct object *obj;
 	struct worker *w;
@@ -125,7 +126,7 @@ ESI_Include(struct sess *sp, const char *src, const char *host)
 #define Debug(fmt, ...) /**/
 
 static void
-esi_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
+ved_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
     const void *ptr, ssize_t l)
 {
 
@@ -197,11 +198,8 @@ ESI_Deliver(struct sess *sp)
 			assert (q > p);
 			crc_ref = crc32(0L, Z_NULL, 0);
 			crc_ref = crc32(crc_ref, st->ptr + off, l);
-			if (crc_ref != crc) {
-				printf("CRC Mismatch %08x %08x\n", crc_ref, crc);
-			}
 			xxxassert(crc_ref == crc);
-			esi_sendchunk(sp, p, q - p, st->ptr + off, l);
+			ved_sendchunk(sp, p, q - p, st->ptr + off, l);
 			off += l;
 			p = q + 1;
 			break;
@@ -220,7 +218,7 @@ ESI_Deliver(struct sess *sp)
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
-			ESI_Include(sp, (const char*)q, (const char*)p);
+			ved_include(sp, (const char*)q, (const char*)p);
 			Debug("INCL [%s][%s] END\n", q, p);
 			p = r + 1;
 			break;
