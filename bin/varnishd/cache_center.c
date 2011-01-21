@@ -587,26 +587,53 @@ cnt_fetch(struct sess *sp)
 
 	AZ(sp->wrk->vfp);
 
-	/* We won't gunzip unless it is gzip'ed, if we do remove C-E header */
-	if (sp->wrk->do_gunzip &&
-	     !http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip"))
+	/*
+	 * The VCL variables beresp.do_g[un]zip tells us how we want the
+	 * object stored.
+	 *
+ 	 * The backend Content-Encoding header tells us what we are going
+	 * to receive, which we classify in the following three classes:
+	 *
+	 * 	"Content-Encoding: gzip"	--> object is gzip'ed.
+	 * 	no Content-Encoding		--> object is not gzip'ed.
+	 * 	anything else			--> do nothing wrt gzip
+	 *
+	 */
+
+	/* We do nothing unless the param is set */
+	if (!params->http_gzip_support)
+		sp->wrk->do_gzip = sp->wrk->do_gunzip = 0;
+
+	sp->wrk->is_gzip = 
+	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip");
+
+	sp->wrk->is_gunzip = 
+	    !http_GetHdr(sp->wrk->beresp, H_Content_Encoding, NULL);
+
+	/* It can't be both */
+	assert(sp->wrk->is_gzip == 0 || sp->wrk->is_gunzip == 0);
+
+	/* We won't gunzip unless it is gzip'ed */
+	if (sp->wrk->do_gunzip && !sp->wrk->is_gzip)
 		sp->wrk->do_gunzip = 0;
-	if (sp->wrk->do_gunzip) 
+
+	/* If we do gunzip, remove the C-E header */
+	if (sp->wrk->do_gunzip)
 		http_Unset(sp->wrk->beresp, H_Content_Encoding);
 
-
-	/* And we wont gzip if it already has a C-E header, if we do add it */
-	if (sp->wrk->do_gzip &&
-	     http_GetHdr(sp->wrk->beresp, H_Content_Encoding, NULL))
+	/* We wont gzip unless it is ungziped */
+	if (sp->wrk->do_gzip && !sp->wrk->is_gunzip)
 		sp->wrk->do_gzip = 0;
+
+	/* If we do gzip, add the C-E header */
 	if (sp->wrk->do_gzip) 
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
 		    "Content-Encoding: %s", "gzip");
 
-	/* But we can't do both */
+	/* But we can't do both at the same time */
 	assert(sp->wrk->do_gzip == 0 || sp->wrk->do_gunzip == 0);
 
-	/* ESI takes precedence and handles gzip/gunzip also */
+	/* ESI takes precedence and handles gzip/gunzip itself */
 	if (sp->wrk->do_esi)
 		sp->wrk->vfp = &vfp_esi;
 	else if (sp->wrk->do_gunzip)

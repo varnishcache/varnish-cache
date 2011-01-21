@@ -282,7 +282,9 @@ struct worker {
 	void			*vfp_private;
 	unsigned		do_esi;
 	unsigned		do_gzip;
+	unsigned		is_gzip;
 	unsigned		do_gunzip;
+	unsigned		is_gunzip;
 
 	/* ESI stuff */
 	struct vep_state	*vep;
