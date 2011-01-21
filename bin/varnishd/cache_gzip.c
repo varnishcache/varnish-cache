@@ -66,6 +66,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "svnid.h"
 SVNID("$Id$")
@@ -251,9 +252,10 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 /*--------------------------------------------------------------------*/
 
 int
-VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, int flags)
+VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 {
 	int i;
+	int zflg;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
@@ -262,7 +264,14 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, int flags)
 	AN(vg->vz.next_out);
 	AN(vg->vz.avail_out);
 	vg->before = vg->vz.next_out;
-	i = deflate(&vg->vz, flags);
+	switch(flags) {
+	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
+	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
+	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;
+	case VGZ_FINISH:	zflg = Z_FINISH; break;
+	default:		INCOMPL();
+	}
+	i = deflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
 		*pptr = vg->before;
 		*plen = (const uint8_t *)vg->vz.next_out - (const uint8_t*)vg->before;
@@ -436,7 +445,8 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			bytes -= w;
 		}
 
-		i = VGZ_Gzip(vg, &dp, &dl, bytes == 0 ? Z_FINISH : 0);
+		i = VGZ_Gzip(vg, &dp, &dl,
+		    bytes == 0 ? VGZ_FINISH : VGZ_NORMAL);
 		assert(i == Z_OK || i == Z_STREAM_END);
 		st->len = st->space - dl;
 		if (st->len == st->space) {

@@ -329,7 +329,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	if (vep->last_mark != mark && vep->o_wait > 0) {
 		lcb = vep->cb(vep->sp, 0,
-		    mark == VERBATIM ? VEP_RESET : VEP_ALIGN);
+		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 		vep->o_last = lcb;
 		vep->o_wait = 0;
@@ -337,7 +337,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
-		(void)vep->cb(vep->sp, vep->o_pending, VEP_NORMAL);
+		(void)vep->cb(vep->sp, vep->o_pending, VGZ_NORMAL);
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
 			vep->o_crc = vep->o_pending;
@@ -361,7 +361,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	vep->o_wait += l;
 	vep->last_mark = mark;
-	(void)vep->cb(vep->sp, l, VEP_NORMAL);
+	(void)vep->cb(vep->sp, l, VGZ_NORMAL);
 }
 
 static void
@@ -966,7 +966,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
  */
 
 static ssize_t
-vep_default_cb(const struct sess *sp, ssize_t l, enum vep_flg flg)
+vep_default_cb(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 {
 
 	(void)flg;
@@ -1020,7 +1020,7 @@ VEP_Finish(const struct sess *sp)
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
-		lcb = vep->cb(vep->sp, 0, VEP_FINISH);
+		lcb = vep->cb(vep->sp, 0, VGZ_FINISH);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 	}
 
