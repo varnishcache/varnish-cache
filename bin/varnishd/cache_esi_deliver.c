@@ -174,7 +174,7 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l;
+	ssize_t l, l_crc;
 	uint32_t crc, crc_ref;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -192,6 +192,8 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
+			assert(*p == VEC_C1 || *p == VEC_C2 || *p == VEC_C8);
+			l_crc = ved_decode_len(&p);
 			crc = vbe32dec(p);
 			p += 4;
 			q = (void*)strchr((const char*)p, '\0');
