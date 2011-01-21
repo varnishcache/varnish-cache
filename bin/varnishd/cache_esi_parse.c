@@ -61,10 +61,9 @@ enum vep_mark { VERBATIM = 0, SKIP };
 struct vep_state {
 	unsigned		magic;
 #define VEP_MAGIC		0x55cb9b82
-	vfp_bytes_f		*bytes;
 	struct vsb		*vsb;
 
-	struct sess		*sp;
+	const struct sess	*sp;
 
 	/* parser state */
 	const char		*state;
@@ -525,15 +524,24 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  * NB: the state-machine.  Please maintain it along with the code.
  */
 
-static void
-vep_parse(struct vep_state *vep, const char *p, size_t l)
+void
+VEP_parse(const struct sess *sp, const char *p, size_t l)
 {
+	struct vep_state *vep;
 	const char *e;
 	struct vep_match *vm;
 	int i;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	vep = sp->wrk->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
+
+	/* XXX: Really need to fix this */
+	if (vep->hack_p == NULL)
+		vep->hack_p = p;
+
+	vep->ver_p = p;
 
 	e = p + l;
 
@@ -942,121 +950,38 @@ vep_parse(struct vep_state *vep, const char *p, size_t l)
 		vep_mark_pending(vep, p);
 }
 
-/*---------------------------------------------------------------------
- * We receive a ungzip'ed object, and want to store it ungzip'ed.
- */
-
-static int __match_proto__()
-vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
-{
-	struct vep_state *vep;
-	ssize_t l, w;
-	struct storage *st;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vep = sp->wrk->vep;
-	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
-
-	while (bytes > 0) {
-		if (sp->wrk->storage == NULL) {
-			l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		st = sp->wrk->storage;
-		l = st->space - st->len;
-		if (l > bytes)
-			l = bytes;
-		w = HTC_Read(htc, st->ptr + st->len, l);
-		if (w <= 0)
-			return (w);
-		if (vep->hack_p == NULL)
-			vep->hack_p = (const char *)st->ptr + st->len;
-		vep->ver_p = (const char *)st->ptr + st->len;
-		if (params->esi_syntax & 0x8) {
-			ssize_t d;
-			for (l = 0; l < w; l += d)  {
-				d = (random() & 3) + 1;
-				if (l + d >= w)
-					d = 1;
-				vep_parse(vep,
-				    (const char *)st->ptr + st->len + l, d);
-			}
-		} else
-			vep_parse(vep, (const char *)st->ptr + st->len, w);
-		st->len += w;
-		sp->obj->len += w;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-			st = NULL;
-		}
-		bytes -= w;
-	}
-	return (1);
-}
-
-/*---------------------------------------------------------------------*/
-
-static void __match_proto__()
-vfp_esi_begin(struct sess *sp, size_t estimate)
+void
+VEP_Init(const struct sess *sp)
 {
 	struct vep_state *vep;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk->vep);
-	/* XXX: snapshot WS ? We'll need the space */
-	vep = (void*)WS_Alloc(sp->wrk->ws, sizeof *vep);
-	AN(vep);
+	sp->wrk->vep = (void*)WS_Alloc(sp->wrk->ws, sizeof *vep);
+	AN(sp->wrk->vep);
 
-	Debug("BEGIN %p\n", vep);
-
+	vep = sp->wrk->vep;
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
-	vep->bytes = vfp_esi_bytes_uu;
+
 	vep->state = VEP_START;
 	vep->vsb = vsb_newauto();
 	AN(vep->vsb);
 	vep->crc = crc32(0L, Z_NULL, 0);
 	vep->crcp = crc32(0L, Z_NULL, 0);
-
-	sp->wrk->vep = vep;
-	(void)estimate;
 }
 
-static int __match_proto__()
-vfp_esi_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
+struct vsb *
+VEP_Finish(const struct sess *sp)
 {
-	struct vep_state *vep;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vep = sp->wrk->vep;
-	Debug("BYTES %jd\n", (intmax_t)bytes);
-	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
-	AN(vep->bytes);
-	return (vep->bytes(sp, htc, bytes));
-}
-
-static int __match_proto__()
-vfp_esi_end(struct sess *sp)
-{
-	struct storage *st;
 	struct vep_state *vep;
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vep = sp->wrk->vep;
 	sp->wrk->vep = NULL;
-	Debug("ENDING %p\n", vep);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
-	l = sp->obj->len - vep->o_total;
-	assert(l >= 0);
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0)
@@ -1064,38 +989,11 @@ vfp_esi_end(struct sess *sp)
 
 	vsb_finish(vep->vsb);
 	l = vsb_len(vep->vsb);
-	if (vep->state != VEP_NOTXML && l > 0) {
-		Debug("ESI %d <%s>\n", (int)l, vsb_data(vep->vsb));
-
-		/* XXX: This is a huge waste of storage... */
-		sp->obj->esidata = STV_alloc(sp, l);
-		AN(sp->obj->esidata);
-		memcpy(sp->obj->esidata->ptr, vsb_data(vep->vsb), l);
-		sp->obj->esidata->len = l;
-	}
+	if (vep->state != VEP_NOTXML && l > 0)
+		return (vep->vsb);
 	vsb_delete(vep->vsb);
-
-	st = sp->wrk->storage;
-	sp->wrk->storage = NULL;
-	if (st == NULL)
-		return (0);
-
-	if (st->len == 0) {
-		STV_free(st);
-		return (0);
-	}
-	if (st->len < st->space)
-		STV_trim(st, st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-	sp->wrk->vep = NULL;
-	return (0);
+	return (NULL);
 }
-
-struct vfp vfp_esi = {
-        .begin  =       vfp_esi_begin,
-        .bytes  =       vfp_esi_bytes,
-        .end    =       vfp_esi_end,
-};
 
 #if 0
 

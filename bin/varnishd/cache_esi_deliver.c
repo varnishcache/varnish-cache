@@ -223,7 +223,7 @@ ESI_Deliver(struct sess *sp)
 			p = r + 1;
 			break;
 		default:
-			Debug("XXXX 0x%02x [%s]\n", *p, p);
+			printf("XXXX 0x%02x [%s]\n", *p, p);
 			INCOMPL();
 		}
 	}

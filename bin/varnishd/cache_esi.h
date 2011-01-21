@@ -34,3 +34,9 @@
 #define	VEC_S2	(0x60 + 2)
 #define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
+
+void VEP_Init(const struct sess *sp);
+void VEP_parse(const struct sess *sp, const char *p, size_t l);
+struct vsb *VEP_Finish(const struct sess *sp);
+
+
