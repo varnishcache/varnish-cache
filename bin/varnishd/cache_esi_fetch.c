@@ -111,8 +111,52 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
 static int __match_proto__()
 vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
+	struct vgz *vg;
+	ssize_t l, w;
+	struct storage *st;
+	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
+	int i;
+	size_t dl;
+	const void *dp;
 
-	return (vfp_esi_bytes_uu(sp, htc, bytes));
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	vg = sp->wrk->vgz_rx;
+
+	while (bytes > 0) {
+		if (sp->wrk->storage == NULL) {
+			l = params->fetch_chunksize * 1024LL;
+			sp->wrk->storage = STV_alloc(sp, l);
+		}
+		if (sp->wrk->storage == NULL) {
+			errno = ENOMEM;
+			return (-1);
+		}
+		st = sp->wrk->storage;
+
+		VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
+
+		if (VGZ_IbufEmpty(vg) && bytes > 0) {
+			l = sizeof ibuf;
+			if (l > bytes)
+				l = bytes;
+			w = HTC_Read(htc, ibuf, l);
+			if (w <= 0)
+				return (w);
+			VGZ_Ibuf(vg, ibuf, w);
+			bytes -= w;
+		}
+		i = VGZ_Gunzip(vg, &dp, &dl);
+		VEP_parse(sp, dp, dl);
+		st->len += dl;
+		sp->obj->len += dl;
+		if (st->len == st->space) {
+			VTAILQ_INSERT_TAIL(&sp->obj->store,
+			    sp->wrk->storage, list);
+			sp->wrk->storage = NULL;
+			st = NULL;
+		}
+	}
+	return (1);
 }
 
 /*---------------------------------------------------------------------
@@ -136,6 +180,9 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	/* XXX: snapshot WS's ? We'll need the space */
 
 	VEP_Init(sp);
+
+	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
 
 	(void)estimate;
 }
@@ -165,6 +212,8 @@ vfp_esi_end(struct sess *sp)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
+		VGZ_Destroy(&sp->wrk->vgz_rx);
 
 	vsb = VEP_Finish(sp);
 
