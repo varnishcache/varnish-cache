@@ -111,6 +111,7 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
 static int __match_proto__()
 vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
+
 	return (vfp_esi_bytes_uu(sp, htc, bytes));
 }
 

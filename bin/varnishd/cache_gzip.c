@@ -171,6 +171,9 @@ VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 	 * memLevel [1..9] (-> 1K->256K)
 	 *
 	 * XXX: They probably needs to be params...
+	 *
+	 * XXX: It may be more efficent to malloc them, rather than have
+	 * XXX: too many worker threads grow the stacks.
 	 */
 	i = deflateInit2(&vg->vz,
 	    0,				/* Level */
@@ -286,7 +289,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vfp_private = VGZ_NewUngzip(sp, sp->ws);
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
 }
 
 static int __match_proto__()
@@ -300,7 +303,8 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	size_t dl;
 	const void *dp;
 
-	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || vg->vz.avail_in > 0) {
 		if (sp->wrk->storage == NULL)
@@ -346,7 +350,8 @@ vfp_gunzip_end(struct sess *sp)
 	struct vgz *vg;
 	struct storage *st;
 
-	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_Destroy(&vg);
 
 	st = sp->wrk->storage;
@@ -381,11 +386,9 @@ struct vfp vfp_gunzip = {
 static void __match_proto__()
 vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
-	struct vgz *vg;
 	(void)estimate;
 
-	vg = VGZ_NewGzip(sp, sp->ws);
-	sp->wrk->vfp_private = vg;
+	sp->wrk->vgz_rx = VGZ_NewGzip(sp, sp->ws);
 }
 
 static int __match_proto__()
@@ -399,7 +402,8 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	size_t dl;
 	const void *dp;
 
-	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || vg->vz.avail_in > 0) {
 		if (sp->wrk->storage == NULL)
@@ -445,7 +449,8 @@ vfp_gzip_end(struct sess *sp)
 	struct vgz *vg;
 	struct storage *st;
 
-	CAST_OBJ_NOTNULL(vg, sp->wrk->vfp_private, VGZ_MAGIC);
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_Destroy(&vg);
 
 	st = sp->wrk->storage;

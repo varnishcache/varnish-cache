@@ -279,7 +279,8 @@ struct worker {
 	enum body_status	body_status;
 	struct storage		*storage;
 	struct vfp		*vfp;
-	void			*vfp_private;
+	struct vgz		*vgz_rx;
+	struct vgz		*vgz_esi;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		is_gzip;
