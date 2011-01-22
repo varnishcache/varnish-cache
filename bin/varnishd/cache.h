@@ -290,6 +290,9 @@ struct worker {
 
 	/* ESI stuff */
 	struct vep_state	*vep;
+	int			gzip_resp;
+	ssize_t			l_crc;
+	uint32_t		crc;
 
 	/* Timeouts */
 	double			connect_timeout;

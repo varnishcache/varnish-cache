@@ -174,10 +174,9 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l, l_icrc, l_crc = 0;
-	uint32_t crc = 0, icrc;
+	ssize_t l, l_icrc;
+	uint32_t icrc;
 	uint8_t tailbuf[8 + 5];
-	int dogzip;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
@@ -185,13 +184,14 @@ ESI_Deliver(struct sess *sp)
 	p = st->ptr;
 	e = st->ptr + st->len;
 
-	if (*p == VEC_GZ) {
-		p++;	
-		dogzip = 1;
-		crc = crc32(0L, Z_NULL, 0);
-		l_crc = 0;
-	} else 
-		dogzip = 0;
+	if (sp->esi_level == 0) {
+		if (*p == VEC_GZ) {
+			p++;	
+			sp->wrk->gzip_resp = 1;
+			sp->wrk->crc = crc32(0L, Z_NULL, 0);
+		} else 
+			sp->wrk->gzip_resp = 0;
+	}
 
 	st = VTAILQ_FIRST(&sp->obj->store);
 	off = 0;
@@ -202,14 +202,15 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
-			if (dogzip) {
+			if (sp->wrk->gzip_resp) {
 				assert(*p == VEC_C1 || *p == VEC_C2 ||
 				    *p == VEC_C8);
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
-				crc = crc32_combine(crc, icrc, l_icrc);
-				l_crc += l_icrc;
+				sp->wrk->crc =
+				    crc32_combine(sp->wrk->crc, icrc, l_icrc);
+				sp->wrk->l_crc += l_icrc;
 			}
 			q = (void*)strchr((const char*)p, '\0');
 			assert (q > p);
@@ -241,7 +242,7 @@ ESI_Deliver(struct sess *sp)
 			INCOMPL();
 		}
 	}
-	if (dogzip) {
+	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
 		tailbuf[0] = 0x01;
 		tailbuf[1] = 0x00;
@@ -250,10 +251,10 @@ ESI_Deliver(struct sess *sp)
 		tailbuf[4] = 0xff;
 
 		/* Emit CRC32 */
-		vle32enc(tailbuf + 5, crc);
+		vle32enc(tailbuf + 5, sp->wrk->crc);
 
 		/* MOD(2^32) length */
-		vle32enc(tailbuf + 9, l_crc);
+		vle32enc(tailbuf + 9, sp->wrk->l_crc);
 
 		ved_sendchunk(sp, "d\r\n", 3, tailbuf, 13);
 	}
