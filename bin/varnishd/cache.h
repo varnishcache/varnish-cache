@@ -432,7 +432,7 @@ struct object {
 
 	unsigned		cacheable;
 
-	unsigned		len;
+	ssize_t			len;
 
 	double			ttl;
 	double			age;

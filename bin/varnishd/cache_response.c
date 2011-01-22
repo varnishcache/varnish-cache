@@ -297,7 +297,7 @@ res_WriteDirObj(struct sess *sp, char lenbuf[20], size_t low, size_t high)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wrk->res_mode & RES_CHUNKED) {
-		bprintf(lenbuf, "%x\r\n", sp->obj->len);
+		bprintf(lenbuf, "%jx\r\n", (intmax_t)sp->obj->len);
 		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
 
