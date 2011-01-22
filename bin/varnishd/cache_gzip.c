@@ -492,3 +492,78 @@ struct vfp vfp_gzip = {
         .bytes  =       vfp_gzip_bytes,
         .end    =       vfp_gzip_end,
 };
+
+/*--------------------------------------------------------------------
+ * VFP_TESTGZIP
+ *
+ * A VFP for testing that received gzip data is valid, and for
+ * collecting the magic bits while we're at it.
+ */
+
+static void __match_proto__()
+vfp_testgzip_begin(struct sess *sp, size_t estimate)
+{
+	(void)estimate;
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+}
+
+static int __match_proto__()
+vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
+{
+	struct vgz *vg;
+	ssize_t l, w;
+	int i = -100;
+	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
+	size_t dl;
+	const void *dp;
+	struct storage *st;
+
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AZ(vg->vz.avail_in);
+	while (bytes > 0) {
+		if (FetchStorage(sp))
+			return (-1);
+		st = sp->wrk->storage;
+		l = st->space - st->len;
+		if (l > bytes)
+			l = bytes;
+		w = HTC_Read(htc, st->ptr + st->len, l);
+		if (w <= 0)
+			return (w);
+		bytes -= w;
+		VGZ_Ibuf(vg, st->ptr + st->len, w);
+		st->len += w;
+		sp->obj->len += w;
+
+		while (!VGZ_IbufEmpty(vg)) {
+			VGZ_Obuf(vg, ibuf, sizeof ibuf);
+			i = VGZ_Gunzip(vg, &dp, &dl);
+			assert(i == Z_OK || i == Z_STREAM_END);
+		}
+	}
+	if (i == Z_STREAM_END)
+		return (1);
+	return (-1);
+}
+
+static int __match_proto__()
+vfp_testgzip_end(struct sess *sp)
+{
+	struct vgz *vg;
+
+	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	VGZ_UpdateObj(vg, sp->obj);
+	VGZ_Destroy(&vg);
+	sp->obj->gziped = 1;
+	return (0);
+}
+
+struct vfp vfp_testgzip = {
+        .begin  =       vfp_testgzip_begin,
+        .bytes  =       vfp_testgzip_bytes,
+        .end    =       vfp_testgzip_end,
+};
+
+

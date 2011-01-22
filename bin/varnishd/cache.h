@@ -225,6 +225,7 @@ struct vfp {
 
 extern struct vfp vfp_gunzip;
 extern struct vfp vfp_gzip;
+extern struct vfp vfp_testgzip;
 extern struct vfp vfp_esi;
 
 /*--------------------------------------------------------------------*/

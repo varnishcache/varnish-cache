@@ -639,6 +639,8 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->vfp = &vfp_gunzip;
 	else if (sp->wrk->do_gzip)
 		sp->wrk->vfp = &vfp_gzip;
+	else if (sp->wrk->is_gzip)
+		sp->wrk->vfp = &vfp_testgzip;
 
 	l = http_EstimateWS(sp->wrk->beresp,
 	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
