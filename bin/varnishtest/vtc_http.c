@@ -74,6 +74,7 @@ struct http {
 	char			*resp[MAX_HDR];
 
 	int			gziplevel;
+	int			gzipresidual;
 };
 
 #define ONLY_CLIENT(hp, av)						\
@@ -576,7 +577,7 @@ cmd_http_gunzip_body(CMD_ARGS)
 static void
 gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 {
-	int l;
+	int l, i;
 	z_stream vz;
 
 	memset(&vz, 0, sizeof vz);
@@ -594,6 +595,10 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 	assert(Z_OK == deflateInit2(&vz,
 	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
+	i = vz.stop_bit & 7;
+	if (hp->gzipresidual >= 0 && hp->gzipresidual != i) 
+		vtc_log(hp->vl, 0, "Wrong gzip residual got %d wanted %d",
+		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
 	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
@@ -682,6 +687,9 @@ cmd_http_txresp(CMD_ARGS)
 			assert(body == nullbody);
 			body = synth_body(av[1], 0);
 			bodylen = strlen(body);
+			av++;
+		} else if (!strcmp(*av, "-gzipresidual")) {
+			hp->gzipresidual = strtoul(av[1], NULL, 0);
 			av++;
 		} else if (!strcmp(*av, "-gziplevel")) {
 			hp->gziplevel = strtoul(av[1], NULL, 0);
@@ -1061,6 +1069,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
 	hp->vl = vl;
+	hp->gziplevel = 0;
+	hp->gzipresidual = -1;
 	AN(hp->rxbuf);
 	AN(hp->vsb);
 
