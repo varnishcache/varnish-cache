@@ -73,7 +73,7 @@ struct http {
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
 
-	int			gzip_level;
+	int			gziplevel;
 };
 
 #define ONLY_CLIENT(hp, av)						\
@@ -684,7 +684,7 @@ cmd_http_txresp(CMD_ARGS)
 			bodylen = strlen(body);
 			av++;
 		} else if (!strcmp(*av, "-gziplevel")) {
-			hp->gzip_level = strtoul(av[1], NULL, 0);
+			hp->gziplevel = strtoul(av[1], NULL, 0);
 			av++;
 		} else if (!strcmp(*av, "-gziplen")) {
 			assert(body == nullbody);
