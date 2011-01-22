@@ -1,0 +1,85 @@
+# $Id$
+
+test "Test all 8 gzip stopbit residuals"
+
+server s1 {
+	rxreq 
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {
+		<html>					1
+		Before includes				2
+		{<esi:include src="/bit0"/>} bit0	3
+		{<esi:include src="/bit1"/>} bit1	4
+		{<esi:include src="/bit2"/>} bit2	5
+		{<esi:include src="/bit3"/>} bit3	6
+		{<esi:include src="/bit4"/>} bit4	7
+		{<esi:include src="/bit5"/>} bit5	8
+		{<esi:include src="/bit6"/>} bit6	9
+		{<esi:include src="/bit7"/>} bit7	10
+		After includes				11
+	}
+
+	rxreq
+	expect req.url == "/bit0"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 0 -gziplevel 9 -gzipbody {e04c8d0fd604c}
+
+	rxreq
+	expect req.url == "/bit1"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 1 -gziplevel 9 -gzipbody {1ea86e6cf31bf4ec3d7a86}
+
+	rxreq
+	expect req.url == "/bit2"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 2 -gziplevel 9 -gzipbody {10}
+
+	rxreq
+	expect req.url == "/bit3"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 3 -gziplevel 9 -gzipbody {a5e2e2e1c2e2}
+
+	rxreq
+	expect req.url == "/bit4"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 4 -gziplevel 9 -gzipbody {71c5d18ec5d5d1}
+
+	rxreq
+	expect req.url == "/bit5"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 5 -gziplevel 9 -gzipbody {39886d28a6d2988}
+
+	rxreq
+	expect req.url == "/bit6"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 6 -gziplevel 9 -gzipbody {80000}
+
+	rxreq
+	expect req.url == "/bit7"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipresidual 7 -gziplevel 9 -gzipbody {386811868}
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start 
+
+varnish v1 -cliok "param.set http_gzip_support true"
+varnish v1 -cliok "param.set esi_syntax 0x3e" 
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 252
+} -run
+
+varnish v1 -expect esi_errors == 0
