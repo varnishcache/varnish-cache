@@ -72,6 +72,8 @@ struct http {
 
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
+
+	int			gzip_level;
 };
 
 #define ONLY_CLIENT(hp, av)						\
@@ -590,7 +592,7 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 	vz.avail_out = l + OVERHEAD;
 
 	assert(Z_OK == deflateInit2(&vz,
-	    Z_NO_COMPRESSION, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
+	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
@@ -680,6 +682,9 @@ cmd_http_txresp(CMD_ARGS)
 			assert(body == nullbody);
 			body = synth_body(av[1], 0);
 			bodylen = strlen(body);
+			av++;
+		} else if (!strcmp(*av, "-gziplevel")) {
+			hp->gzip_level = strtoul(av[1], NULL, 0);
 			av++;
 		} else if (!strcmp(*av, "-gziplen")) {
 			assert(body == nullbody);
