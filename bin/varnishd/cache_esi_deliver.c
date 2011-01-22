@@ -259,4 +259,3 @@ ESI_Deliver(struct sess *sp)
 	}
 	(void)WRW_Flush(sp->wrk);
 }
-

@@ -64,17 +64,7 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		w = HTC_Read(htc, st->ptr + st->len, l);
 		if (w <= 0)
 			return (w);
-		if (params->esi_syntax & 0x8) {
-			ssize_t d;
-			for (l = 0; l < w; l += d)  {
-				d = (random() & 3) + 1;
-				if (l + d >= w)
-					d = 1;
-				VEP_parse(sp,
-				    (const char *)st->ptr + st->len + l, d);
-			}
-		} else
-			VEP_parse(sp, (const char *)st->ptr + st->len, w);
+		VEP_parse(sp, (const char *)st->ptr + st->len, w);
 		st->len += w;
 		sp->obj->len += w;
 		bytes -= w;
