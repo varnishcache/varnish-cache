@@ -138,6 +138,8 @@ struct vef_priv {
 	char			*bufp;
 	ssize_t			tot;
 	int			error;
+	char			pending[20];
+	ssize_t			npend;
 };
 
 /*---------------------------------------------------------------------
@@ -148,7 +150,7 @@ static ssize_t
 vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 {
 	struct vef_priv *vef;
-	size_t dl;
+	size_t dl, px;
 	const void *dp;
 	int i;
 
@@ -162,23 +164,42 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 		return (vef->tot);
 	}
 
-	/* This would just give Z_BUF_ERROR anyway */
+	/*
+	 * l == 0 is valid when 'flg' calls for action, but in the
+	 * normal case we can just ignore a l==0 request.
+	 * (It would cause Z_BUF_ERROR anyway)
+	 */
 	if (l == 0 && flg == VGZ_NORMAL)
 		return (vef->tot);
 
-printf("xxC %jd\n", l);
-	VGZ_Ibuf(vef->vgz, vef->bufp, l);
 	do {
-		if (VGZ_ObufStorage(sp, vef->vgz)) {
-			vef->error = ENOMEM;
-			vef->tot += l;
-			return (vef->tot);
+		px = vef->npend;
+		if (l < px)
+			px = l;
+		if (px != 0) {
+			VGZ_Ibuf(vef->vgz, vef->pending, px);
+			l -= px;
+		} else {
+			VGZ_Ibuf(vef->vgz, vef->bufp, l);
+			vef->bufp += l;
+			l = 0;
 		}
-		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
-		vef->tot += dl;
-		sp->obj->len += dl;
-	} while (!VGZ_IbufEmpty(vef->vgz));
-	vef->bufp += l;
+		do {
+			if (VGZ_ObufStorage(sp, vef->vgz)) {
+				vef->error = errno;
+				vef->tot += l;
+				return (vef->tot);
+			}
+			i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
+			vef->tot += dl;
+			sp->obj->len += dl;
+		} while (!VGZ_IbufEmpty(vef->vgz));
+		if (px != 0) {
+			memmove(vef->pending, vef->pending + px,
+			    vef->npend - px);
+			vef->npend -= px;
+		}
+	} while (l > 0);
 	if (flg == VGZ_FINISH)
 		assert(i == 1);			/* XXX */
 	else
@@ -203,13 +224,17 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			return (w);
 		bytes -= w;
 		vef->bufp = ibuf;
-printf("xxP %jd\n", w);
 		VEP_parse(sp, ibuf, w);
 		if (vef->error) {
 			errno = vef->error;
 			return (-1);
 		}
-		assert(vef->bufp == ibuf + w);
+		if (vef->bufp < ibuf + w) {
+			w = (ibuf + w) - vef->bufp;
+			assert(w + vef->npend < sizeof vef->pending);
+			memcpy(vef->pending + vef->npend, vef->bufp, w);
+			vef->npend += w;
+		}
 	}
 	return (1);
 }
