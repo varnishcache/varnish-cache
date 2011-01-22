@@ -1,19 +1,24 @@
 # $Id$
 
-test "Include an ungzip'ed ESI object in a gzip'ed ESI object"
+test "Include an ungzip'ed (ESI) object in a gzip'ed ESI object"
 
 server s1 {
 	rxreq 
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {
 		<html>					1
-		Before include				2
+		Before includes				2
 		<esi:include src="/foo"/>		3
-		After include				4
+		Between includes			4
+		<esi:include src="/bar"/>		5
+		After includes				6
 	}
 	rxreq
 	expect req.url == "/foo"
 	txresp -body {<h1>/////<h2>}
+	rxreq
+	expect req.url == "/bar"
+	txresp -body {*****}
 } -start
 
 varnish v1 -vcl+backend {
@@ -33,7 +38,7 @@ client c1 {
 	expect resp.http.content-encoding == gzip
 	gunzip
 	expect resp.status == 200
-	expect resp.bodylen == 79
+	expect resp.bodylen == 115
 }
 
 client c1 -run

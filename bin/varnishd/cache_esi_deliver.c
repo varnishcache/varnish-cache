@@ -333,3 +333,20 @@ ESI_Deliver(struct sess *sp)
 	}
 	(void)WRW_Flush(sp->wrk);
 }
+
+/*---------------------------------------------------------------------
+ * Include an object in a gzip'ed ESI object delivery
+ */
+
+void
+ESI_DeliverChild(struct sess *sp)
+{
+	struct storage *st;
+
+	if (sp->obj->gziped) {
+		INCOMPL();
+	} else {
+		VTAILQ_FOREACH(st, &sp->obj->store, list)
+			ved_pretend_gzip(sp, st->ptr, st->len);
+	}
+}
