@@ -168,6 +168,57 @@ ved_decode_len(uint8_t **pp)
 	return (l);
 }
 
+/*---------------------------------------------------------------------
+ * If a gzip'ed ESI object includes a ungzip'ed object, we need to make
+ * it looked like a gzip'ed data stream.  The official way to do so would
+ * be to fire up libvgz and gzip it, but we don't, we fake it.
+ *
+ * First, we cannot know if it is ungzip'ed on purpose, the admin may
+ * know something we don't.
+ *
+ * What do you mean "BS ?"
+ *
+ * All right then...
+ *
+ * The matter of the fact is that we simply will not fire up a gzip in
+ * the output path because it costs too much memory and CPU, so we simply
+ * wrap the data in very convenient "gzip copy-blocks" and send it down
+ * the stream with a bit more overhead.
+ */
+
+static void
+ved_pretend_gzip(struct sess *sp, uint8_t *p, ssize_t l)
+{
+	ssize_t ll;
+	uint8_t buf[5];
+	char chunk[20];
+
+	while (l > 0) {
+		ll = l;
+		if (ll > 65535)
+			ll = 65535;
+		buf[0] = 0;
+		vle16enc(buf + 1, ll);
+		vle16enc(buf + 3, ~ll);
+		if (sp->wrk->res_mode & RES_CHUNKED) {
+			bprintf(chunk, "%jx\r\n", (intmax_t)ll + 5);
+			(void)WRW_Write(sp->wrk, chunk, -1);
+		}
+		(void)WRW_Write(sp->wrk, buf, sizeof buf);
+		(void)WRW_Write(sp->wrk, p, ll);
+		if (sp->wrk->res_mode & RES_CHUNKED) 
+			(void)WRW_Write(sp->wrk, "\r\n", -1);
+		(void)WRW_Flush(sp->wrk);
+		sp->wrk->crc = crc32(sp->wrk->crc, p, ll);
+		sp->wrk->l_crc += ll;
+		l -= ll;
+		p += ll;
+	}
+}
+
+/*---------------------------------------------------------------------
+ */
+
 void
 ESI_Deliver(struct sess *sp)
 {
@@ -177,6 +228,7 @@ ESI_Deliver(struct sess *sp)
 	ssize_t l, l_icrc;
 	uint32_t icrc;
 	uint8_t tailbuf[8 + 5];
+	int isgzip;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
@@ -184,9 +236,15 @@ ESI_Deliver(struct sess *sp)
 	p = st->ptr;
 	e = st->ptr + st->len;
 
+	if (*p == VEC_GZ) {
+		isgzip = 1;
+		p++;
+	} else {
+		isgzip = 0;
+	}
+
 	if (sp->esi_level == 0) {
-		if (*p == VEC_GZ) {
-			p++;	
+		if (isgzip) {
 			sp->wrk->gzip_resp = 1;
 			sp->wrk->crc = crc32(0L, Z_NULL, 0);
 		} else 
@@ -202,21 +260,36 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
-			if (sp->wrk->gzip_resp) {
-				assert(*p == VEC_C1 || *p == VEC_C2 ||
-				    *p == VEC_C8);
-				l_icrc = ved_decode_len(&p);
-				icrc = vbe32dec(p);
-				p += 4;
-				sp->wrk->crc =
-				    crc32_combine(sp->wrk->crc, icrc, l_icrc);
-				sp->wrk->l_crc += l_icrc;
-			}
+			r = p;
 			q = (void*)strchr((const char*)p, '\0');
-			assert (q > p);
-			ved_sendchunk(sp, p, q - p, st->ptr + off, l);
-			off += l;
 			p = q + 1;
+			if (sp->wrk->gzip_resp) {
+				if (isgzip) {
+					assert(*p == VEC_C1 || *p == VEC_C2 ||
+					    *p == VEC_C8);
+					l_icrc = ved_decode_len(&p);
+					icrc = vbe32dec(p);
+					p += 4;
+					sp->wrk->crc = crc32_combine(
+					    sp->wrk->crc, icrc, l_icrc);
+					sp->wrk->l_crc += l_icrc;
+					ved_sendchunk(sp, r, q - r,
+					    st->ptr + off, l);
+					off += l;
+				} else {
+					ved_pretend_gzip(sp,
+					    st->ptr + off, l);
+					off += l;
+				}
+			} else {
+				if (isgzip) {
+					INCOMPL();
+				} else {
+					ved_sendchunk(sp, r, q - r,
+					    st->ptr + off, l);
+					off += l;
+				}
+			}
 			break;
 		case VEC_S1:
 		case VEC_S2:
