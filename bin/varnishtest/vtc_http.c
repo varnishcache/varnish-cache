@@ -417,8 +417,14 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 			}
 			l = hp->prxbuf;
 			http_rxchar(hp, 2);
-			assert(vct_iscrlf(hp->rxbuf[l]));
-			assert(vct_iscrlf(hp->rxbuf[l + 1]));
+			if(!vct_iscrlf(hp->rxbuf[l]))
+				vtc_log(hp->vl, 0,
+				    "Wrong chunk tail[0] = %02x",
+				    hp->rxbuf[l] & 0xff);
+			if(!vct_iscrlf(hp->rxbuf[l + 1]))
+				vtc_log(hp->vl, 0,
+				    "Wrong chunk tail[1] = %02x",
+				    hp->rxbuf[l + 1] & 0xff);
 			hp->prxbuf = l;
 			hp->rxbuf[l] = '\0';
 			if (i == 0)

@@ -129,14 +129,22 @@ static void
 ved_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
     const void *ptr, ssize_t l)
 {
+	char chunk[20];
 
-	Debug("VER(%d) %d\n", (int)l, (int)(cb-ce));
 	assert(l > 0);
-	if (sp->wrk->res_mode & RES_CHUNKED)
-		(void)WRW_Write(sp->wrk, cb, cl);
+	if (sp->wrk->res_mode & RES_CHUNKED) {
+		if (cb == NULL) {
+			bprintf(chunk, "%jx\r\n", l);
+			(void)WRW_Write(sp->wrk, chunk, -1);
+		} else
+			(void)WRW_Write(sp->wrk, cb, cl);
+	}
 	(void)WRW_Write(sp->wrk, ptr, l);
-	if (sp->wrk->res_mode & RES_CHUNKED)
+	if (sp->wrk->res_mode & RES_CHUNKED) {
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
+		if (cb == NULL) 
+			(void)WRW_Flush(sp->wrk);
+	}
 }
 
 static ssize_t
@@ -273,8 +281,14 @@ ESI_Deliver(struct sess *sp)
 					sp->wrk->crc = crc32_combine(
 					    sp->wrk->crc, icrc, l_icrc);
 					sp->wrk->l_crc += l_icrc;
+if (sp->esi_level > 0 && off == 0) {
+assert(l > 10);
+					ved_sendchunk(sp, NULL, 0,
+					    st->ptr + off + 10, l - 10);
+} else {
 					ved_sendchunk(sp, r, q - r,
 					    st->ptr + off, l);
+}
 					off += l;
 				} else {
 					ved_pretend_gzip(sp,
@@ -342,11 +356,82 @@ void
 ESI_DeliverChild(struct sess *sp)
 {
 	struct storage *st;
+	struct object *obj;
+	ssize_t start, last, stop, l, lx, dl;
+	u_char *p;
+	uint32_t icrc;
+	uint32_t ilen;
 
-	if (sp->obj->gziped) {
-		INCOMPL();
-	} else {
+	if (!sp->obj->gziped) {
 		VTAILQ_FOREACH(st, &sp->obj->store, list)
 			ved_pretend_gzip(sp, st->ptr, st->len);
+		return;
 	}
+	/*
+	 * This is the interesting case: Deliver all the deflate
+	 * blocks, stripping the "LAST" bit of the last one and
+	 * padding it, as necessary, to a byte boundary.
+	 */
+	obj = sp->obj;
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+	start = obj->gzip_start;
+	last = obj->gzip_last;
+	stop = obj->gzip_stop;
+	assert(last >= start);
+	assert(last < stop);
+	assert(start > 0 && start <= obj->len * 8);
+	assert(last > 0 && last <= obj->len * 8);
+	assert(stop > 0 && stop <= obj->len * 8);
+printf("BITS %jd %jd %jd\n", start, last, stop);
+
+	/* The start bit must be byte aligned. */
+	AZ(start & 7);
+
+	lx = 0;
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		p = st->ptr;
+		l = st->len;
+		xxxassert(start/8 < l);
+		if (start/8 > 0) {
+			l -= start/8;
+			p += start/8;
+			lx += start/8;
+			start = 0;
+		}
+		assert(l >= 0);
+		if (l == 0)
+			continue;
+		printf("XXXX: %jd %jd %jd\n", l, lx, last / 8);
+		dl = last/8 - lx;
+		if (dl > 0) {
+			if (dl > l)
+				dl = l;
+printf("CH1 %jd\n", dl);
+			ved_sendchunk(sp, NULL, 0, p, dl);
+			lx += dl;
+			p += dl;
+			l -= dl;
+		}
+		assert(l >= 0);
+		if (l == 0)
+			continue;
+		printf("XXXX: %jd %jd %jd %02x\n", l, lx, last / 8, *p);
+		/*
+		 * If we are lucky, the last bit is aligned and in a copy
+		 * block, detect and be happy
+		 */
+		if (l >= 3 && (last & 7) == 0 &&
+		    p[0] == 0x01 && p[1] == 0 && p[2] == 0)
+			break;
+		INCOMPL();
+	}
+	AZ(VTAILQ_NEXT(st, list));
+	assert(st->len > 8);
+	p = st->ptr + st->len - 8;
+	icrc = vle32dec(p);
+	ilen = vle32dec(p + 4);
+printf("CRC %08x LEN %d\n", icrc, ilen);
+	sp->wrk->crc = crc32_combine(sp->wrk->crc, icrc, ilen);
+	sp->wrk->l_crc += ilen;
+
 }
