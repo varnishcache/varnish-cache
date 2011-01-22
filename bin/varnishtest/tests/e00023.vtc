@@ -1,0 +1,40 @@
+# $Id$
+
+test "Include an ungzip'ed ESI object in a gzip'ed ESI object"
+
+server s1 {
+	rxreq 
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {
+		<html>					1
+		Before include				2
+		<esi:include src="/foo"/>		3
+		After include				4
+	}
+	rxreq
+	expect req.url == "/foo"
+	txresp -body {<h1>/////<h2>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start 
+
+varnish v1 -cliok "param.set http_gzip_support true"
+varnish v1 -cliok "param.set esi_syntax 0x3e" 
+
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 79
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0
