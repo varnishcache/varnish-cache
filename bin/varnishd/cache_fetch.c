@@ -91,16 +91,8 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	struct storage *st;
 
 	while (bytes > 0) {
-		if (sp->wrk->storage == NULL) {
-			l = fetchfrag;
-			if (l == 0)
-				l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
+		if (FetchStorage(sp)) 
 			return (-1);
-		}
 		st = sp->wrk->storage;
 		l = st->space - st->len;
 		if (l > bytes)
@@ -110,12 +102,6 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 			return (w);
 		st->len += w;
 		sp->obj->len += w;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-			st = NULL;
-		}
 		bytes -= w;
 	}
 	return (1);
@@ -155,6 +141,33 @@ static struct vfp vfp_nop = {
 	.bytes	=	vfp_nop_bytes,
 	.end	=	vfp_nop_end,
 };
+
+/*--------------------------------------------------------------------
+ * Fetch Storage
+ */
+
+int
+FetchStorage(const struct sess *sp)
+{
+	ssize_t l;
+
+	if (sp->wrk->storage != NULL &&
+	    sp->wrk->storage->len == sp->wrk->storage->space) {
+		VTAILQ_INSERT_TAIL(&sp->obj->store, sp->wrk->storage, list);
+		sp->wrk->storage = NULL;
+	}
+	if (sp->wrk->storage == NULL) {
+		l = fetchfrag;
+		if (l == 0)
+			l = params->fetch_chunksize * 1024LL;
+		sp->wrk->storage = STV_alloc(sp, l);
+	}
+	if (sp->wrk->storage == NULL) {
+		errno = ENOMEM;
+		return (-1);
+	}
+	return (0);
+}
 
 /*--------------------------------------------------------------------
  * Convert a string to a size_t safely

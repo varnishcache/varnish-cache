@@ -619,6 +619,7 @@ void EXP_Touch(struct object *o, double tnow);
 int EXP_NukeOne(const struct sess *sp, const struct lru *lru);
 
 /* cache_fetch.c */
+int FetchStorage(const struct sess *sp);
 int FetchHdr(struct sess *sp);
 int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);

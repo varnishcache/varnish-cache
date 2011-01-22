@@ -55,14 +55,8 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	while (bytes > 0) {
-		if (sp->wrk->storage == NULL) {
-			l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
+		if (FetchStorage(sp))
 			return (-1);
-		}
 		st = sp->wrk->storage;
 		l = st->space - st->len;
 		if (l > bytes)
@@ -83,12 +77,6 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 			VEP_parse(sp, (const char *)st->ptr + st->len, w);
 		st->len += w;
 		sp->obj->len += w;
-		if (st->len == st->space) {
-			VTAILQ_INSERT_TAIL(&sp->obj->store,
-			    sp->wrk->storage, list);
-			sp->wrk->storage = NULL;
-			st = NULL;
-		}
 		bytes -= w;
 	}
 	return (1);
@@ -205,14 +193,6 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		if (sp->wrk->storage == NULL) {
-			l = params->fetch_chunksize * 1024LL;
-			sp->wrk->storage = STV_alloc(sp, l);
-		}
-		if (sp->wrk->storage == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
 		l = sizeof ibuf;
 		if (l > bytes)
 			l = bytes;

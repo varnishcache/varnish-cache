@@ -231,21 +231,10 @@ VGZ_ObufStorage(const struct sess *sp, struct vgz *vg)
 {
 	struct storage *st;
 
+	if (FetchStorage(sp)) 
+		return (-1);
+
 	st = sp->wrk->storage;
-	if (st != NULL && st->len == st->space) {
-		VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
-		sp->wrk->storage = NULL;
-		st = NULL;
-		vg->obuf = NULL;
-	}
-	if (st == NULL) { 
-		st = STV_alloc(sp, params->fetch_chunksize * 1024LL);
-		if (st == NULL) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		sp->wrk->storage = st;
-	}
 	vg->obuf = st;
 	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
