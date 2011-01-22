@@ -352,15 +352,55 @@ assert(l > 10);
  * Include an object in a gzip'ed ESI object delivery
  */
 
+static unsigned
+ved_deliver_byterange(struct sess *sp, ssize_t low, ssize_t high)
+{
+	struct storage *st;
+	ssize_t l, lx;
+	u_char *p;
+
+//printf("BR %jd %jd\n", low, high);
+	lx = 0;
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		p = st->ptr;
+		l = st->len;
+//printf("[0-] %jd %jd\n", lx, lx + l);
+		if (lx + l < low) {
+			lx += l;
+			continue;
+		}
+		if (lx == high)
+			return (p[0]);
+		assert(lx < high);
+		if (lx < low) {
+			p += (low - lx);
+			l -= (low - lx);
+			lx = low;
+		}
+//printf("[1-] %jd %jd\n", lx, lx + l);
+		if (lx + l >= high) 
+			l = high - lx;
+//printf("[2-] %jd %jd\n", lx, lx + l);
+		assert(lx >= low && lx + l <= high);
+		if (l != 0)
+			ved_sendchunk(sp, NULL, 0, p, l);
+		if (lx + st->len > high)
+			return(p[l]);
+		lx += st->len;
+	}
+	INCOMPL();
+}
+
 void
 ESI_DeliverChild(struct sess *sp)
 {
 	struct storage *st;
 	struct object *obj;
-	ssize_t start, last, stop, l, lx, dl;
-	u_char *p;
+	ssize_t start, last, stop, lpad;
+	u_char *p, cc;
 	uint32_t icrc;
 	uint32_t ilen;
+	uint8_t pad[6];
 
 	if (!sp->obj->gziped) {
 		VTAILQ_FOREACH(st, &sp->obj->store, list)
@@ -377,61 +417,74 @@ ESI_DeliverChild(struct sess *sp)
 	start = obj->gzip_start;
 	last = obj->gzip_last;
 	stop = obj->gzip_stop;
+	assert(start > 0 && start < obj->len * 8);
+	assert(last > 0 && last < obj->len * 8);
+	assert(stop > 0 && stop < obj->len * 8);
 	assert(last >= start);
 	assert(last < stop);
-	assert(start > 0 && start <= obj->len * 8);
-	assert(last > 0 && last <= obj->len * 8);
-	assert(stop > 0 && stop <= obj->len * 8);
-printf("BITS %jd %jd %jd\n", start, last, stop);
+//printf("BITS %jd %jd %jd\n", start, last, stop);
 
 	/* The start bit must be byte aligned. */
 	AZ(start & 7);
 
-	lx = 0;
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		p = st->ptr;
-		l = st->len;
-		xxxassert(start/8 < l);
-		if (start/8 > 0) {
-			l -= start/8;
-			p += start/8;
-			lx += start/8;
-			start = 0;
-		}
-		assert(l >= 0);
-		if (l == 0)
-			continue;
-		printf("XXXX: %jd %jd %jd\n", l, lx, last / 8);
-		dl = last/8 - lx;
-		if (dl > 0) {
-			if (dl > l)
-				dl = l;
-printf("CH1 %jd\n", dl);
-			ved_sendchunk(sp, NULL, 0, p, dl);
-			lx += dl;
-			p += dl;
-			l -= dl;
-		}
-		assert(l >= 0);
-		if (l == 0)
-			continue;
-		printf("XXXX: %jd %jd %jd %02x\n", l, lx, last / 8, *p);
-		/*
-		 * If we are lucky, the last bit is aligned and in a copy
-		 * block, detect and be happy
-		 */
-		if (l >= 3 && (last & 7) == 0 &&
-		    p[0] == 0x01 && p[1] == 0 && p[2] == 0)
-			break;
-		INCOMPL();
+	/*
+	 * XXX: optimize for the case where the 'last'
+	 * XXX: bit is in a empty copy block
+	 */
+	cc = ved_deliver_byterange(sp, start/8, last/8);
+//printf("CC_LAST %x\n", cc);
+	cc &= ~(1 << (start & 7));
+	ved_sendchunk(sp, NULL, 0, &cc, 1);
+	cc = ved_deliver_byterange(sp, 1 + last/8, stop/8);
+//printf("CC_STOP %x (%d)\n", cc, (int)(stop & 7));
+	switch((int)(stop & 7)) {
+	case 0: /* xxxxxxxx */
+		/* I think we have an off by one here, but that's OK */
+		lpad = 0;
+		break;
+	case 1: /* x000.... 00000000 00000000 11111111 11111111 */
+	case 3: /* xxx000.. 00000000 00000000 11111111 11111111 */
+	case 5: /* xxxxx000 00000000 00000000 11111111 11111111 */
+		pad[0] = cc | 0x00;
+		pad[1] = 0x00; pad[2] = 0x00; pad[3] = 0xff; pad[4] = 0xff;
+		lpad = 5;
+		break;
+	case 2: /* xx010000 00000100 00000001 00000000 */
+		pad[0] = cc | 0x08;
+		pad[1] = 0x20;
+		pad[2] = 0x80;
+		pad[3] = 0x00;
+		lpad = 4;
+		break;
+	case 4: /* xxxx0100 00000001 00000000 */
+		pad[0] = cc | 0x20;
+		pad[1] = 0x80;
+		pad[2] = 0x00;
+		lpad = 3;
+		break;
+	case 6: /* xxxxxx01 00000000 */
+		pad[0] = cc | 0x80;
+		pad[1] = 0x00;
+		lpad = 2;
+		break;
+	case 7:	/* xxxxxxx0 00...... 00000000 00000000 11111111 11111111 */
+		pad[0] = cc | 0x00;
+		pad[1] = 0x00;
+		pad[2] = 0x00; pad[3] = 0x00; pad[4] = 0xff; pad[5] = 0xff;
+		lpad = 6;
+		break;
+	default:
+		AZ(stop & 7);
 	}
-	AZ(VTAILQ_NEXT(st, list));
+	if (lpad > 0)
+		ved_sendchunk(sp, NULL, 0, pad, lpad);
+	st = VTAILQ_LAST(&sp->obj->store, objecthead);
 	assert(st->len > 8);
+
 	p = st->ptr + st->len - 8;
 	icrc = vle32dec(p);
 	ilen = vle32dec(p + 4);
-printf("CRC %08x LEN %d\n", icrc, ilen);
+//printf("CRC %08x LEN %d\n", icrc, ilen);
 	sp->wrk->crc = crc32_combine(sp->wrk->crc, icrc, ilen);
 	sp->wrk->l_crc += ilen;
-
 }
