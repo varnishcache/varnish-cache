@@ -413,7 +413,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 				ll += i;
 				http_rxchar(hp, i);
 				vtc_dump(hp->vl, 4, "chunk",
-				    hp->rxbuf + l, -1);
+				    hp->rxbuf + l, i);
 			}
 			l = hp->prxbuf;
 			http_rxchar(hp, 2);
