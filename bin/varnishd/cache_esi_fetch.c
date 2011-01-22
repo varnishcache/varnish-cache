@@ -269,6 +269,7 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 		do {
 			VGZ_Obuf(sp->wrk->vgz_rx, ibuf2, sizeof ibuf2);
 			i = VGZ_Gunzip(sp->wrk->vgz_rx, &dp, &dl);
+			/* XXX: check i */
 			vef->bufp = ibuf2;
 			if (dl > 0)
 				VEP_parse(sp, ibuf2, dl);
@@ -373,6 +374,9 @@ vfp_esi_end(struct sess *sp)
 		sp->wrk->vef_priv = NULL;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 		XXXAZ(vef->error);
+		sp->obj->gziped = 1;
+	} else {
+		sp->obj->gziped = 0;
 	}
 	return (0);
 }

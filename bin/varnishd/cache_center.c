@@ -179,8 +179,7 @@ cnt_deliver(struct sess *sp)
 		sp->wrk->res_mode |= RES_ESI_CHILD;
 	}
 
-	if (params->http_gzip_support &&
-	    http_HdrIs(sp->obj->http, H_Content_Encoding, "gzip") &&
+	if (params->http_gzip_support && sp->obj->gziped &&
 	    !RFC2616_Req_Gzip(sp)) {
 		/*
 		 * We don't know what it uncompresses to
@@ -662,6 +661,7 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->wrk->storage_hint = NULL;
+	sp->obj->gziped = sp->wrk->is_gzip;
 
 	if (vary != NULL) {
 		sp->obj->vary =

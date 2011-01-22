@@ -430,7 +430,9 @@ struct object {
 	double			ban_t;
 	unsigned		response;
 
+	/* XXX: make bitmap */
 	unsigned		cacheable;
+	unsigned		gziped;
 
 	ssize_t			len;
 

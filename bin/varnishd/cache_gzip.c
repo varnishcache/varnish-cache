@@ -383,6 +383,7 @@ vfp_gunzip_end(struct sess *sp)
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_Destroy(&vg);
+	sp->obj->gziped = 0;
 	return (0);
 }
 
@@ -458,6 +459,7 @@ vfp_gzip_end(struct sess *sp)
 		sp->obj->len += dl;
 	} while (i != Z_STREAM_END);
 	VGZ_Destroy(&vg);
+	sp->obj->gziped = 1;
 	return (0);
 }
 
