@@ -520,7 +520,7 @@ cmd_http_rxresp(CMD_ARGS)
 
 #define TRUST_ME(ptr)   ((void*)(uintptr_t)(ptr))
 
-#define OVERHEAD 31
+#define OVERHEAD 64
 
 
 static void
@@ -1073,3 +1073,65 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	free(hp->rxbuf);
 	free(hp);
 }
+
+/**********************************************************************
+ * Magic test routine
+ *
+ * This function brute-forces some short strings through gzip(9) to
+ * find candidates for all possible 8 bit positions of the stopbit.
+ *
+ * Here is some good short output strings:
+ *
+ *	0 184 <e04c8d0fd604c>
+ *	1 257 <1ea86e6cf31bf4ec3d7a86>
+ *	2 106 <10>
+ *	3 163 <a5e2e2e1c2e2>
+ *	4 180 <71c5d18ec5d5d1>
+ *	5 189 <39886d28a6d2988>
+ *	6 118 <80000>
+ *	7 151 <386811868>
+ *
+ */
+
+#if 0
+void xxx(void);
+
+void
+xxx(void)
+{
+	z_stream vz;
+	int n;
+	char ibuf[200];
+	char obuf[200];
+	int fl[8];
+	int i, j;
+
+	for (n = 0; n < 8; n++)
+		fl[n] = 9999;
+
+	memset(&vz, 0, sizeof vz);
+
+	for(n = 0;  n < 999999999; n++) {
+		*ibuf = 0;
+		for (j = 0; j < 7; j++) {
+			sprintf(strchr(ibuf, 0), "%x",
+			    (unsigned)random() & 0xffff);
+			vz.next_in = TRUST_ME(ibuf);
+			vz.avail_in = strlen(ibuf);
+			vz.next_out = TRUST_ME(obuf);
+			vz.avail_out = sizeof obuf;
+			assert(Z_OK == deflateInit2(&vz,
+			    9, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
+			assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
+			i = vz.stop_bit & 7;
+			if (fl[i] > strlen(ibuf)) {
+				printf("%d %jd <%s>\n", i, vz.stop_bit, ibuf);
+				fl[i] = strlen(ibuf);
+			}
+			assert(Z_OK == deflateEnd(&vz));
+		}
+	}
+
+	printf("FOO\n");
+}
+#endif
