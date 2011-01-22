@@ -116,8 +116,6 @@ vbe64enc(void *pp, uint64_t u)
 	vbe32enc(p + 4, (uint32_t)(u & 0xffffffffU));
 }
 
-#if 0
-
 static __inline void
 vle16enc(void *pp, uint16_t u)
 {
@@ -126,7 +124,6 @@ vle16enc(void *pp, uint16_t u)
 	p[0] = u & 0xff;
 	p[1] = (u >> 8) & 0xff;
 }
-#endif
 
 static __inline void
 vle32enc(void *pp, uint32_t u)
