@@ -313,13 +313,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 
 	assert(sp->wrk->body_status == BS_EOF);
 	sp->wrk->vfp->begin(sp, 0);
-	i = sp->wrk->vfp->bytes(sp, htc,
-#ifdef SSIZE_T_MAX
-	    SSIZE_T_MAX
-#else
-	    sizeof(size_t) == 4 ? ((size_t)1<<30) : ((size_t)1 << 62)
-#endif
-	    ); 
+	i = sp->wrk->vfp->bytes(sp, htc, SSIZE_MAX);
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
 		    errno, strerror(errno));
