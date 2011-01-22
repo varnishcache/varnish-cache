@@ -113,6 +113,7 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (VGZ_ObufStorage(sp, vg))
 			return (-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
+		xxxassert(i == Z_OK || i == Z_STREAM_END);
 		VEP_parse(sp, dp, dl);
 		sp->obj->len += dl;
 	}
@@ -136,8 +137,6 @@ struct vef_priv {
  * We receive a ungzip'ed object, and want to store it gzip'ed.
  */
 
-#include "vend.h"
-
 static ssize_t
 vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 {
@@ -145,8 +144,6 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 	size_t dl;
 	const void *dp;
 	int i;
-
-printf("ZCB(%jd, %d)\n", l, flg);
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vef = sp->wrk->vef_priv;
@@ -166,18 +163,14 @@ printf("ZCB(%jd, %d)\n", l, flg);
 			return (vef->tot);
 		}
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
-printf("GZI = %d %jd\n", i, dl);
 		vef->tot += dl;
 		sp->obj->len += dl;
 	} while (!VGZ_IbufEmpty(vef->vgz));
 	vef->bufp += l;
-if (flg == VGZ_FINISH)
-	assert(i == 1);			/* XXX */
-else
-	assert(i == 0);			/* XXX */
-printf("ZCB = %jd\n", vef->tot);
-fflush(stdout);
-usleep(100);
+	if (flg == VGZ_FINISH)
+		assert(i == 1);			/* XXX */
+	else
+		assert(i == 0);			/* XXX */
 	return (vef->tot);
 }
 
@@ -256,7 +249,6 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-printf("BYTES = %jd\n", bytes);
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
 		i = vfp_esi_bytes_gu(sp, htc, bytes);
 	else if (sp->wrk->is_gunzip && sp->wrk->do_gzip)
@@ -265,7 +257,6 @@ printf("BYTES = %jd\n", bytes);
 		i = vfp_esi_bytes_gg(sp, htc, bytes);
 	else
 		i = vfp_esi_bytes_uu(sp, htc, bytes);
-printf("BYTES = %d\n", i);
 	return (i);
 }
 
@@ -276,7 +267,6 @@ vfp_esi_end(struct sess *sp)
 	struct vef_priv *vef;
 	ssize_t l;
 
-printf("END\n");
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
 		VGZ_Destroy(&sp->wrk->vgz_rx);
@@ -299,8 +289,7 @@ printf("END\n");
 		sp->wrk->vef_priv = NULL;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 		XXXAZ(vef->error);
-printf("TOT %jd\n", vef->tot);
-sp->obj->len = vef->tot;
+		// sp->obj->len = vef->tot;
 	}
 	return (0);
 }

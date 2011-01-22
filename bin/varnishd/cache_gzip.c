@@ -202,7 +202,7 @@ VGZ_Ibuf(struct vgz *vg, const void *ptr, ssize_t len)
 }
 
 int
-VGZ_IbufEmpty(struct vgz *vg)
+VGZ_IbufEmpty(const struct vgz *vg)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);

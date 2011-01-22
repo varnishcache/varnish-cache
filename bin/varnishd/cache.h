@@ -632,7 +632,7 @@ enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
 struct vgz *VGZ_NewUngzip(const struct sess *sp, struct ws *tmp);
 struct vgz *VGZ_NewGzip(const struct sess *sp, struct ws *tmp);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
-int VGZ_IbufEmpty(struct vgz *vg);
+int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, const void *, ssize_t len);
 int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);

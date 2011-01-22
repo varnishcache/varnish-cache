@@ -174,8 +174,8 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l, l_icrc, l_crc;
-	uint32_t crc, icrc;
+	ssize_t l, l_icrc, l_crc = 0;
+	uint32_t crc = 0, icrc;
 	uint8_t tailbuf[8 + 5];
 	int dogzip;
 
@@ -208,13 +208,11 @@ ESI_Deliver(struct sess *sp)
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
-			}
-			q = (void*)strchr((const char*)p, '\0');
-			assert (q > p);
-			if (dogzip) {
 				crc = crc32_combine(crc, icrc, l_icrc);
 				l_crc += l_icrc;
 			}
+			q = (void*)strchr((const char*)p, '\0');
+			assert (q > p);
 			ved_sendchunk(sp, p, q - p, st->ptr + off, l);
 			off += l;
 			p = q + 1;
