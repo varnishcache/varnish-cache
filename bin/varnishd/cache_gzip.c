@@ -148,6 +148,11 @@ VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
 	 * Since we don't control windowBits, we have to assume
 	 * it is 15, so 34-35KB or so.
 	 */
+#if 1
+	vg->vz.zalloc = NULL;
+	vg->vz.zfree = NULL;
+	vg->vz.opaque = NULL;
+#endif
 	assert(Z_OK == inflateInit2(&vg->vz, 31));
 	return (vg);
 }
@@ -176,6 +181,11 @@ VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 	 * XXX: It may be more efficent to malloc them, rather than have
 	 * XXX: too many worker threads grow the stacks.
 	 */
+#if 1
+	vg->vz.zalloc = NULL;
+	vg->vz.zfree = NULL;
+	vg->vz.opaque = NULL;
+#endif
 	i = deflateInit2(&vg->vz,
 	    0,				/* Level */
 	    Z_DEFLATED,			/* Method */
@@ -271,6 +281,7 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 		return (1);
 	if (i == Z_BUF_ERROR)
 		return (2);
+printf("INFLATE=%d\n", i);
 	return (-1);
 }
 
@@ -313,6 +324,18 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	if (i == Z_BUF_ERROR)
 		return (2);
 	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	obj->gzip_start	= vg->vz.start_bit;
+	obj->gzip_last	= vg->vz.last_bit;
+	obj->gzip_stop	= vg->vz.stop_bit;
 }
 
 /*--------------------------------------------------------------------*/
@@ -458,6 +481,7 @@ vfp_gzip_end(struct sess *sp)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		sp->obj->len += dl;
 	} while (i != Z_STREAM_END);
+	VGZ_UpdateObj(vg, sp->obj);
 	VGZ_Destroy(&vg);
 	sp->obj->gziped = 1;
 	return (0);

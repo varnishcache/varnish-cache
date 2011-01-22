@@ -433,6 +433,10 @@ struct object {
 	/* XXX: make bitmap */
 	unsigned		cacheable;
 	unsigned		gziped;
+	/* Bit positions in the gzip stream */
+	ssize_t			gzip_start;
+	ssize_t			gzip_last;
+	ssize_t			gzip_stop;
 
 	ssize_t			len;
 
@@ -643,6 +647,7 @@ int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
+void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
