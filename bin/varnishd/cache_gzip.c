@@ -340,7 +340,7 @@ vfp_gunzip_begin(struct sess *sp, size_t estimate)
 }
 
 static int __match_proto__()
-vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, w;
@@ -408,7 +408,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 }
 
 static int __match_proto__()
-vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, w;

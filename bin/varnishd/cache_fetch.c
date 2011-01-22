@@ -85,7 +85,7 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
  */
 
 static int __match_proto__()
-vfp_nop_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	ssize_t l, w;
 	struct storage *st;
@@ -314,10 +314,10 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	assert(sp->wrk->body_status == BS_EOF);
 	sp->wrk->vfp->begin(sp, 0);
 	i = sp->wrk->vfp->bytes(sp, htc,
-#ifdef SIZE_T_MAX
-	    SIZE_T_MAX
+#ifdef SSIZE_T_MAX
+	    SSIZE_T_MAX
 #else
-	    sizeof(void*) == 4 ? ((size_t)1<<31) : ((size_t)1 << 63)
+	    sizeof(size_t) == 4 ? ((size_t)1<<30) : ((size_t)1 << 62)
 #endif
 	    ); 
 	if (i < 0) {

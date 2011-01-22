@@ -43,13 +43,35 @@ SVNID("$Id")
 #include "stevedore.h"
 
 /*---------------------------------------------------------------------
+ * Read some bytes.
+ *
+ * If the esi_syntax&8 bit is set, we read only a couple of bytes at
+ * a time, in order to stress the parse/pending/callback code.
+ */
+
+static ssize_t
+vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
+{
+	ssize_t d;
+
+	if (buflen < bytes)
+		bytes = buflen;
+	if (params->esi_syntax & 0x8) {
+		d = (random() & 3) + 1;
+		if (d < bytes)
+			bytes = d;
+	}
+	return (HTC_Read(htc, buf, bytes));
+}
+
+/*---------------------------------------------------------------------
  * We receive a ungzip'ed object, and want to store it ungzip'ed.
  */
 
 static int __match_proto__()
-vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
-	ssize_t l, w;
+	ssize_t w;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -58,10 +80,8 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (FetchStorage(sp))
 			return (-1);
 		st = sp->wrk->storage;
-		l = st->space - st->len;
-		if (l > bytes)
-			l = bytes;
-		w = HTC_Read(htc, st->ptr + st->len, l);
+		w = vef_read(htc,
+		    st->ptr + st->len, st->space - st->len, bytes);
 		if (w <= 0)
 			return (w);
 		VEP_parse(sp, (const char *)st->ptr + st->len, w);
@@ -77,10 +97,10 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, size_t bytes)
  */
 
 static int __match_proto__()
-vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
-	ssize_t l, w;
+	ssize_t w;
 	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
 	int i;
 	size_t dl;
@@ -91,10 +111,7 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, size_t bytes)
 
 	while (bytes > 0) {
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
-			l = sizeof ibuf;
-			if (l > bytes)
-				l = bytes;
-			w = HTC_Read(htc, ibuf, l);
+			w = vef_read(htc, ibuf, sizeof ibuf, bytes);
 			if (w <= 0)
 				return (w);
 			VGZ_Ibuf(vg, ibuf, w);
@@ -145,6 +162,11 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 		return (vef->tot);
 	}
 
+	/* This would just give Z_BUF_ERROR anyway */
+	if (l == 0 && flg == VGZ_NORMAL)
+		return (vef->tot);
+
+printf("xxC %jd\n", l);
 	VGZ_Ibuf(vef->vgz, vef->bufp, l);
 	do {
 		if (VGZ_ObufStorage(sp, vef->vgz)) {
@@ -165,9 +187,9 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 }
 
 static int __match_proto__()
-vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
-	ssize_t l, w;
+	ssize_t w;
 	char ibuf[1024 * params->gzip_stack_buffer];
 	struct vef_priv *vef;
 
@@ -176,19 +198,18 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		l = sizeof ibuf;
-		if (l > bytes)
-			l = bytes;
-		w = HTC_Read(htc, ibuf, l);
+		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
 		if (w <= 0)
 			return (w);
 		bytes -= w;
 		vef->bufp = ibuf;
-		VEP_parse(sp, ibuf, l);
+printf("xxP %jd\n", w);
+		VEP_parse(sp, ibuf, w);
 		if (vef->error) {
 			errno = vef->error;
 			return (-1);
 		}
+		assert(vef->bufp == ibuf + w);
 	}
 	return (1);
 }
@@ -234,7 +255,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 }
 
 static int __match_proto__()
-vfp_esi_bytes(struct sess *sp, struct http_conn *htc, size_t bytes)
+vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	int i;
 

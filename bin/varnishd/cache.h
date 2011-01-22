@@ -214,7 +214,7 @@ struct dstat {
 /* Fetch processors --------------------------------------------------*/
 
 typedef void vfp_begin_f(struct sess *, size_t );
-typedef int vfp_bytes_f(struct sess *, struct http_conn *, size_t);
+typedef int vfp_bytes_f(struct sess *, struct http_conn *, ssize_t);
 typedef int vfp_end_f(struct sess *sp);
 
 struct vfp {

@@ -539,8 +539,8 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  * NB: the state-machine.  Please maintain it along with the code.
  */
 
-static void
-vep_parse_int(const struct sess *sp, const char *p, size_t l)
+void
+VEP_parse(const struct sess *sp, const char *p, size_t l)
 {
 	struct vep_state *vep;
 	const char *e;
@@ -963,22 +963,6 @@ vep_parse_int(const struct sess *sp, const char *p, size_t l)
 		vep_mark_skip(vep, p);
 	else
 		vep_mark_pending(vep, p);
-}
-
-void
-VEP_parse(const struct sess *sp, const char *p, size_t w)
-{
-	ssize_t l, d;
-
-	if (params->esi_syntax & 0x8) {
-		for (l = 0; l < w; l += d)  {
-			d = (random() & 3) + 1;
-			if (l + d >= w)
-				d = 1;
-			vep_parse_int(sp, p + l, d);
-		}
-	} else
-		vep_parse_int(sp, p, w);
 }
 
 /*---------------------------------------------------------------------
