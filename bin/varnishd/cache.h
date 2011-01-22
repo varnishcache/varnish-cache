@@ -417,6 +417,7 @@ struct lru {
 };
 
 /* Object structure --------------------------------------------------*/
+VTAILQ_HEAD(objecthead, storage);
 
 struct object {
 	unsigned		magic;
@@ -451,7 +452,7 @@ struct object {
 
 	struct http		*http;
 
-	VTAILQ_HEAD(, storage)	store;
+	struct objecthead	store;
 
 	struct storage		*esidata;
 
