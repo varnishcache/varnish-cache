@@ -232,7 +232,7 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		if (vef->bufp < ibuf + w) {
 			w = (ibuf + w) - vef->bufp;
 			assert(w + vef->npend < sizeof vef->pending);
-			memcpy(vef->pending + vef->npend, vef->bufp, w);
+			memmove(vef->pending + vef->npend, vef->bufp, w);
 			vef->npend += w;
 		}
 	}
@@ -246,7 +246,45 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 static int __match_proto__()
 vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
-	return (vfp_esi_bytes_uu(sp, htc, bytes));
+	ssize_t w;
+	char ibuf[1024 * params->gzip_stack_buffer];
+	char ibuf2[1024 * params->gzip_stack_buffer];
+	struct vef_priv *vef;
+	size_t dl;
+	const void *dp;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	vef = sp->wrk->vef_priv;
+	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
+
+	while (bytes > 0) {
+		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
+		if (w <= 0)
+			return (w);
+		bytes -= w;
+		
+		vef->bufp = ibuf;
+		VGZ_Ibuf(sp->wrk->vgz_rx, ibuf, w);
+		do {
+			VGZ_Obuf(sp->wrk->vgz_rx, ibuf2, sizeof ibuf2);
+			i = VGZ_Gunzip(sp->wrk->vgz_rx, &dp, &dl);
+			vef->bufp = ibuf2;
+			if (dl > 0)
+				VEP_parse(sp, ibuf2, dl);
+			if (vef->error) {
+				errno = vef->error;
+				return (-1);
+			}
+			if (vef->bufp < ibuf2 + dl) {
+				dl = (ibuf2 + dl) - vef->bufp;
+				assert(dl + vef->npend < sizeof vef->pending);
+				memmove(vef->pending + vef->npend, vef->bufp, dl);
+				vef->npend += dl;
+			}
+		} while (!VGZ_IbufEmpty(sp->wrk->vgz_rx));
+	}
+	return (1);
 }
 
 
@@ -264,7 +302,6 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
 		VEP_Init(sp, NULL);
 	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
-		VEP_Init(sp, vfp_vep_callback);
 		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		AN(vef);
 		memset(vef, 0, sizeof *vef);
@@ -272,6 +309,17 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 		vef->vgz = VGZ_NewGzip(sp, sp->ws);
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
+		VEP_Init(sp, vfp_vep_callback);
+	} else if (sp->wrk->is_gzip) {
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
+		AN(vef);
+		memset(vef, 0, sizeof *vef);
+		vef->magic = VEF_MAGIC;
+		vef->vgz = VGZ_NewGzip(sp, sp->ws);
+		AZ(sp->wrk->vef_priv);
+		sp->wrk->vef_priv = vef;
+		VEP_Init(sp, vfp_vep_callback);
 	} else {
 		VEP_Init(sp, NULL);
 	}
@@ -325,7 +373,6 @@ vfp_esi_end(struct sess *sp)
 		sp->wrk->vef_priv = NULL;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 		XXXAZ(vef->error);
-		// sp->obj->len = vef->tot;
 	}
 	return (0);
 }
