@@ -29,9 +29,15 @@ Clients which can do gzip, gets their header rewritten to:
 
 	Accept-Encoding: gzip
 
-And clients which do not support gzip gets their Accept-Encoding header
-removed.  This ensures conformity with respect to Vary: strings during
-hash lookup.
+And clients which do not support gzip gets their Accept-Encoding
+header removed.  This ensures conformity with respect to creating
+Vary: strings during object creation.
+
+During lookup, we ignore any "Accept-encoding" in objects Vary: strings,
+to avoid having a gzip and gunzip'ed version of the object, varnish
+can gunzip on demand.  (We implement this bit of magic at lookup time,
+so that any objects stored in persistent storage can be used with
+or without gzip support enabled.)
 
 Varnish will not do any other types of compressions than gzip, in particular
 we will not do deflate, as there are browser bugs in that case.
