@@ -2,8 +2,7 @@
 <!DOCTYPE group [
 <!ENTITY mdash "&#8212;">
 ]>
-<!-- $Id: changes-2.1.2-2.1.3.xml 4672 2010-04-19 10:26:23Z tfheen $ -->
-<group from="2.1.2" to="2.1.3">
+<group from="2.1.3" to="2.1.4">
   <subsystem>
     <name>varnishd</name>
     <change type="bug">
