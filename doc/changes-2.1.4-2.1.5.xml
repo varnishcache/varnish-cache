@@ -102,7 +102,7 @@
       <para>Add bourn-shell like "here" documents on the CLI. Typical
       usage:
       <code>
-      vcl.inline vcl_new << 42
+      vcl.inline vcl_new &lt;&lt; 42
       backend foo {...}
       sub vcl_recv {...}
       42
