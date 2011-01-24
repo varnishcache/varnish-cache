@@ -975,6 +975,7 @@ cnt_miss(struct sess *sp)
 		 * client doesn't grok it.  We will uncompress for
 		 * the minority of clients which don't.
 		 */
+		http_Unset(sp->wrk->bereq, H_Accept_Encoding);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
 		    "Accept-Encoding: gzip");
 	}
