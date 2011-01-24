@@ -1,6 +1,7 @@
 #
 
 CHANGELOGS = \
+	changes-2.1.5.html \
 	changes-2.1.4.html \
 	changes-2.1.3.html \
 	changes-2.1.2.html \
@@ -19,6 +20,7 @@ CHANGELOGS = \
 	changes-1.0.4.html
 
 XML = \
+	changes-2.1.4-2.1.5.xml \
 	changes-2.1.3-2.1.4.xml \
 	changes-2.1.2-2.1.3.xml \
 	changes-2.1.1-2.1.2.xml \
