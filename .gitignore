@@ -1,0 +1,78 @@
+# Matches ALL Makefile and Makefile.in occurrences 
+Makefile
+Makefile.in
+
+# ...
+.deps/
+.libs/
+*.o
+*.lo
+*.la
+
+# Various auto-tools artifacts
+/aclocal.m4
+/autom4te.cache/
+/compile
+/config.guess
+/config.h
+/config.h.in
+/config.h.in~
+/config.log
+/config.status
+/config.sub
+/configure
+/depcomp
+/install-sh
+/libtool
+/ltmain.sh
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
+/missing
+/stamp-h1
+/varnishapi.pc
+
+# Default vcl made from bin/varnishd/default.vcl
+/bin/varnishd/default_vcl.h
+/etc/default.vcl
+
+# Various auto-generated code snippets
+/include/vcl.h
+/include/vcl_returns.h
+/include/vrt_obj.h
+/include/vrt_stv_var.h
+/lib/libvarnish/svn_version.c
+/lib/libvcl/vcc_fixed_token.c
+/lib/libvcl/vcc_obj.c
+/lib/libvcl/vcc_token_defs.h
+/lib/libvmod_std/vcc_if.c
+/lib/libvmod_std/vcc_if.h
+
+# Man-files and binaries
+/man/vcl.7
+/bin/varnishadm/varnishadm
+/bin/varnishadm/varnishadm.1
+/bin/varnishd/varnishd
+/bin/varnishd/varnishd.1
+/bin/varnishhist/varnishhist
+/bin/varnishhist/varnishhist.1
+/bin/varnishlog/varnishlog
+/bin/varnishlog/varnishlog.1
+/bin/varnishncsa/varnishncsa
+/bin/varnishncsa/varnishncsa.1
+/bin/varnishreplay/varnishreplay
+/bin/varnishreplay/varnishreplay.1
+/bin/varnishsizes/varnishsizes
+/bin/varnishsizes/varnishsizes.1
+/bin/varnishstat/varnishstat
+/bin/varnishstat/varnishstat.1
+/bin/varnishtest/varnishtest
+/bin/varnishtest/varnishtest.1
+/bin/varnishtop/varnishtop
+/bin/varnishtop/varnishtop.1
+
+# Doc-stuff generated from xml
+/doc/*.html
+/doc/sphinx/=build/
