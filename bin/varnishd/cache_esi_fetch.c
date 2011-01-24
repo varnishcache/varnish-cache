@@ -39,7 +39,7 @@ SVNID("$Id")
 #include "cache.h"
 #include "cache_esi.h"
 #include "vct.h"
-#include "zlib.h"
+#include "vgz.h"
 #include "stevedore.h"
 
 /*---------------------------------------------------------------------

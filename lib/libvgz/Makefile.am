@@ -28,6 +28,6 @@ libvgz_la_SOURCES = \
 	trees.h \
 	uncompr.c \
 	zconf.h \
-	zlib.h \
+	vgz.h \
 	zutil.c \
 	zutil.h

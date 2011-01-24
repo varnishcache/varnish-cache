@@ -49,7 +49,7 @@ SVNID("$Id$")
 
 #include "vtc.h"
 
-#include "zlib.h"
+#include "vgz.h"
 
 #define MAX_HDR		50
 

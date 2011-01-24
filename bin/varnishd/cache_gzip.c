@@ -27,9 +27,9 @@
  *
  * Interaction with the linvgz (zlib) library.
  *
- * The libz library pollutes namespace a LOT when you include the "zlib.h"
- * file so we contain the damage by vectoring all access to libz through
- * this source file.
+ * The zlib library pollutes namespace a LOT when you include the "vgz.h"
+ * (aka (zlib.h") file so we contain the damage by vectoring all access
+ * to libz through this source file.
  *
  * The API defined by this file, will also insulate the rest of the code,
  * should we find a better gzip library at a later date.
@@ -74,7 +74,7 @@ SVNID("$Id$")
 #include "cache.h"
 #include "stevedore.h"
 
-#include "zlib.h"
+#include "vgz.h"
 
 struct vgz {
 	unsigned		magic;
