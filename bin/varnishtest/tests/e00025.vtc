@@ -1,0 +1,26 @@
+# $Id$
+
+test "Test that esi+gzip correctly bypasses Vary: accept-encoding"
+
+server s1 {
+	rxreq 
+	expect req.http.accept-encoding == gzip
+	txresp -hdr "Vary: Accept-encoding" -gzipbody {FOO}
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -hdr "Accept-encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	expect resp.status == 200
+	gunzip
+	expect resp.bodylen == 3
+
+	txreq 
+	rxresp
+	expect resp.http.content-encoding == resp.http.content-encoding
+	expect resp.status == 200
+	expect resp.bodylen == 3
+} -run

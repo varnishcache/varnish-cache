@@ -144,6 +144,24 @@ VRY_Match(const struct sess *sp, const unsigned char *vary)
 
 	while (*vary) {
 
+		if (params->http_gzip_support &&
+		    !strcasecmp(H_Accept_Encoding, (const char*)vary)) {
+			/*
+			 * If we do gzip processing, we do not vary on
+			 * Accept-Encoding, because we want everybody to
+			 * get the gzip'ed object, and varnish will gunzip
+			 * as necessary.  We implement the skip at check
+			 * time, rather than create time, so that object
+			 * in persistent storage can be used with either
+			 *  setting of http_gzip_support.
+			 */
+			vary += *vary + 2;
+			l = vary[0] * 256 + vary[1];
+			vary += 2;
+			if (l != 0xffff)
+				vary += l;
+			continue;
+		}
 		/* Look for header */
 		i = http_GetHdr(sp->http, (const char*)vary, &h);
 		vary += *vary + 2;
