@@ -1168,6 +1168,18 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
+	if (params->http_gzip_support &&
+	     (recv_handling != VCL_RET_PIPE) &&
+	     (recv_handling != VCL_RET_PASS)) {
+		if (RFC2616_Req_Gzip(sp)) {
+			http_Unset(sp->http, H_Accept_Encoding);
+			http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+			    "Accept-Encoding: gzip");
+		} else {
+			http_Unset(sp->http, H_Accept_Encoding);
+		}
+	}
+
 	SHA256_Init(sp->wrk->sha256ctx);
 	VCL_hash_method(sp);
 	assert(sp->handling == VCL_RET_HASH);
