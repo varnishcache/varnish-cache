@@ -195,32 +195,33 @@ ved_decode_len(uint8_t **pp)
  */
 
 static void
-ved_pretend_gzip(struct sess *sp, uint8_t *p, ssize_t l)
+ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 {
-	ssize_t ll;
 	uint8_t buf[5];
 	char chunk[20];
+	uint16_t lx;
 
 	while (l > 0) {
-		ll = l;
-		if (ll > 65535)
-			ll = 65535;
+		if (l > 65535)
+			lx = 65535;
+		else
+			lx = (uint16_t)l;
 		buf[0] = 0;
-		vle16enc(buf + 1, ll);
-		vle16enc(buf + 3, ~ll);
+		vle16enc(buf + 1, lx);
+		vle16enc(buf + 3, ~lx);
 		if (sp->wrk->res_mode & RES_CHUNKED) {
-			bprintf(chunk, "%jx\r\n", (intmax_t)ll + 5);
+			bprintf(chunk, "%x\r\n", lx + 5);
 			(void)WRW_Write(sp->wrk, chunk, -1);
 		}
 		(void)WRW_Write(sp->wrk, buf, sizeof buf);
-		(void)WRW_Write(sp->wrk, p, ll);
+		(void)WRW_Write(sp->wrk, p, lx);
 		if (sp->wrk->res_mode & RES_CHUNKED) 
 			(void)WRW_Write(sp->wrk, "\r\n", -1);
 		(void)WRW_Flush(sp->wrk);
-		sp->wrk->crc = crc32(sp->wrk->crc, p, ll);
-		sp->wrk->l_crc += ll;
-		l -= ll;
-		p += ll;
+		sp->wrk->crc = crc32(sp->wrk->crc, p, lx);
+		sp->wrk->l_crc += lx;
+		l -= lx;
+		p += lx;
 	}
 }
 
@@ -233,14 +234,24 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l, l_icrc;
-	uint32_t icrc;
+	ssize_t l, l_icrc = 0;
+	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
+	struct vgz *vgz = NULL;
+	char obuf[1024 * params->gzip_stack_buffer];
+	ssize_t obufl = 0;
+	size_t dl;
+	const void *dp;
+	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->obj->esidata;
 	AN(st);
+	assert(sizeof obuf >= 1024);
+
+	obuf[0] = 0;	/* For flexelint */
+
 	p = st->ptr;
 	e = st->ptr + st->len;
 
@@ -252,16 +263,24 @@ ESI_Deliver(struct sess *sp)
 	}
 
 	if (sp->esi_level == 0) {
-		if (isgzip) {
+		/*
+		 * Only the top level document gets to decide this.
+		 */
+		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
 			sp->wrk->gzip_resp = 1;
 			sp->wrk->crc = crc32(0L, Z_NULL, 0);
 		} else 
 			sp->wrk->gzip_resp = 0;
 	}
 
+	if (isgzip && !sp->wrk->gzip_resp) {
+		vgz = VGZ_NewUngzip(sp, sp->wrk->ws);
+		obufl = 0;
+	}
+
 	st = VTAILQ_FIRST(&sp->obj->store);
 	off = 0;
-
+	
 	while (p < e) {
 		switch (*p) {
 		case VEC_V1:
@@ -271,39 +290,65 @@ ESI_Deliver(struct sess *sp)
 			r = p;
 			q = (void*)strchr((const char*)p, '\0');
 			p = q + 1;
-			if (sp->wrk->gzip_resp) {
-				if (isgzip) {
-					assert(*p == VEC_C1 || *p == VEC_C2 ||
-					    *p == VEC_C8);
-					l_icrc = ved_decode_len(&p);
-					icrc = vbe32dec(p);
-					p += 4;
-					sp->wrk->crc = crc32_combine(
-					    sp->wrk->crc, icrc, l_icrc);
-					sp->wrk->l_crc += l_icrc;
-if (sp->esi_level > 0 && off == 0) {
-assert(l > 10);
-					ved_sendchunk(sp, NULL, 0,
-					    st->ptr + off + 10, l - 10);
-} else {
-					ved_sendchunk(sp, r, q - r,
-					    st->ptr + off, l);
-}
-					off += l;
-				} else {
-					ved_pretend_gzip(sp,
-					    st->ptr + off, l);
-					off += l;
-				}
-			} else {
-				if (isgzip) {
-					INCOMPL();
-				} else {
-					ved_sendchunk(sp, r, q - r,
-					    st->ptr + off, l);
-					off += l;
-				}
+			if (isgzip) {
+				assert(*p == VEC_C1 || *p == VEC_C2 ||
+				    *p == VEC_C8);
+				l_icrc = ved_decode_len(&p);
+				icrc = vbe32dec(p);
+				p += 4;
 			}
+			if (sp->wrk->gzip_resp && isgzip) {
+				/*
+				 * We have a gzip'ed VEC and delivers a
+				 * gzip'ed ESI response.
+				 */
+				sp->wrk->crc = crc32_combine(
+				    sp->wrk->crc, icrc, l_icrc);
+				sp->wrk->l_crc += l_icrc;
+				if (sp->esi_level > 0 && off == 0) {
+					/*
+					 * Skip the GZ header, we know it is
+					 * 10 bytes: we made it ourself.
+					 */
+					assert(l > 10);
+					ved_sendchunk(sp, NULL, 0,
+					    st->ptr + 10, l - 10);
+				} else {
+					ved_sendchunk(sp, r, q - r,
+					    st->ptr + off, l);
+				}
+			} else if (sp->wrk->gzip_resp) {
+				/*
+				 * A gzip'ed ESI response, but the VEC was
+				 * not gzip'ed.
+				 */
+				ved_pretend_gzip(sp, st->ptr + off, l);
+				off += l;
+			} else if (isgzip) {
+				/*
+				 * A gzip'ed VEC, but ungzip'ed ESI response
+				 */
+				AN(vgz);
+				VGZ_Ibuf(vgz, st->ptr + off, l);
+				do {
+					if (obufl == sizeof obuf) {
+						ved_sendchunk(sp, NULL, 0,
+						    obuf, obufl);
+						obufl = 0;
+					}
+					VGZ_Obuf(vgz, obuf + obufl,
+					    sizeof obuf - obufl);
+					i = VGZ_Gunzip(vgz, &dp, &dl);
+					assert(i == Z_OK || i == Z_STREAM_END);
+					obufl += dl;
+				} while (!VGZ_IbufEmpty(vgz));
+			} else {
+				/*
+				 * Ungzip'ed VEC, ungzip'ed ESI response
+				 */
+				ved_sendchunk(sp, r, q - r, st->ptr + off, l);
+			}
+			off += l;
 			break;
 		case VEC_S1:
 		case VEC_S2:
@@ -329,6 +374,11 @@ assert(l > 10);
 			INCOMPL();
 		}
 	}
+	if (vgz != NULL) {
+		if (obufl > 0) 
+			ved_sendchunk(sp, NULL, 0, obuf, obufl);
+		VGZ_Destroy(&vgz);
+	}
 	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
 		tailbuf[0] = 0x01;
@@ -352,8 +402,8 @@ assert(l > 10);
  * Include an object in a gzip'ed ESI object delivery
  */
 
-static unsigned
-ved_deliver_byterange(struct sess *sp, ssize_t low, ssize_t high)
+static uint8_t
+ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 {
 	struct storage *st;
 	ssize_t l, lx;
@@ -392,7 +442,7 @@ ved_deliver_byterange(struct sess *sp, ssize_t low, ssize_t high)
 }
 
 void
-ESI_DeliverChild(struct sess *sp)
+ESI_DeliverChild(const struct sess *sp)
 {
 	struct storage *st;
 	struct object *obj;
@@ -400,7 +450,7 @@ ESI_DeliverChild(struct sess *sp)
 	u_char *p, cc;
 	uint32_t icrc;
 	uint32_t ilen;
-	uint8_t pad[6];
+	uint8_t pad[6] = { 0 };
 
 	if (!sp->obj->gziped) {
 		VTAILQ_FOREACH(st, &sp->obj->store, list)
@@ -433,7 +483,7 @@ ESI_DeliverChild(struct sess *sp)
 	 */
 	cc = ved_deliver_byterange(sp, start/8, last/8);
 //printf("CC_LAST %x\n", cc);
-	cc &= ~(1 << (start & 7));
+	cc &= ~(1U << (start & 7));
 	ved_sendchunk(sp, NULL, 0, &cc, 1);
 	cc = ved_deliver_byterange(sp, 1 + last/8, stop/8);
 //printf("CC_STOP %x (%d)\n", cc, (int)(stop & 7));
@@ -474,7 +524,7 @@ ESI_DeliverChild(struct sess *sp)
 		lpad = 6;
 		break;
 	default:
-		AZ(stop & 7);
+		INCOMPL();
 	}
 	if (lpad > 0)
 		ved_sendchunk(sp, NULL, 0, pad, lpad);

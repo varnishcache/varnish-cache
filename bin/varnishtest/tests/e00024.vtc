@@ -80,6 +80,12 @@ client c1 {
 	gunzip
 	expect resp.status == 200
 	expect resp.bodylen == 252
+
+	txreq 
+	rxresp
+	expect resp.http.content-encoding == resp.http.content-encoding
+	expect resp.status == 200
+	expect resp.bodylen == 252
 } -run
 
 varnish v1 -expect esi_errors == 0

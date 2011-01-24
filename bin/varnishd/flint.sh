@@ -5,6 +5,7 @@ flexelint \
 	flint.lnt \
 	-I. \
 	-I../../include \
+	-I../../lib/libvgz \
 	-I../.. \
 	-I/usr/local/include \
 	-DVARNISH_STATE_DIR=\"foo\" \

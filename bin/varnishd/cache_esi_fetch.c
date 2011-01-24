@@ -257,6 +257,8 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vef = sp->wrk->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
+	assert(sizeof ibuf >= 1024);
+	ibuf2[0] = 0; /* For Flexelint */
 
 	while (bytes > 0) {
 		w = vef_read(htc, ibuf, sizeof ibuf, bytes);

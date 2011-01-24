@@ -822,7 +822,7 @@ char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
 void ESI_Deliver(struct sess *);
-void ESI_DeliverChild(struct sess *);
+void ESI_DeliverChild(const struct sess *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
