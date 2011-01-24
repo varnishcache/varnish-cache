@@ -816,7 +816,7 @@ static const struct parspec input_parspec[] = {
 	{ "http_gzip_support", tweak_bool, &master.http_gzip_support, 0, 0,
 		"Enable support for HTTP GZIP compression.\n",
 		EXPERIMENTAL,
-		"off", "bool" },
+		"on", "bool" },
 	{ "gzip_stack_buffer", tweak_uint, &master.gzip_stack_buffer,
 	        4, UINT_MAX,
 		"Size of stack buffer used for gzip processing.\n",
