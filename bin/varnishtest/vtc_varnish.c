@@ -305,15 +305,11 @@ varnish_launch(struct varnish *v)
 	fd.events = POLLIN;
 	i = poll(&fd, 1, 10000);
 	if (i != 1) {
-		AZ(close(v->fds[1]));
-		(void)kill(v->pid, SIGKILL);
 		vtc_log(v->vl, 0, "FAIL timeout waiting for CLI connection");
 		return;
 	}
 	nfd = accept(v->cli_fd, NULL, NULL);
 	if (nfd < 0) {
-		AZ(close(v->fds[1]));
-		(void)kill(v->pid, SIGKILL);
 		vtc_log(v->vl, 0, "FAIL no CLI connection accepted");
 		return;
 	}
