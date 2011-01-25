@@ -954,6 +954,8 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	if (pp != NULL) {
 		pp->func(cli, pp, val);
 		if (cli->result != CLIS_OK) {
+			cli_out(cli, "(attempting to set param %s to %s)\n",
+			    pp->name, val);
 		} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
 			cli_out(cli, "Change will take effect"
 			    " when child is restarted");
