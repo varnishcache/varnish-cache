@@ -5,7 +5,7 @@ Release: 0.svn20101115r5543%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-Source0: http://www.varnish-software.com/sites/default/files/%{name}-%{version}.tar.gz
+Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
