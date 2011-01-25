@@ -138,7 +138,7 @@ vmod_random(struct sess *sp, double lo, double hi)
 void
 vmod_log(struct sess *sp, const char *fmt, ...)
 {
-	char buf[64*1024], *p;
+	char buf[8192], *p;
 	va_list ap;
 
 	va_start(ap, fmt);
@@ -151,7 +151,7 @@ vmod_log(struct sess *sp, const char *fmt, ...)
 void
 vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 {
-	char buf[64*1024], *p;
+	char buf[8192], *p;
 	va_list ap;
 
 	(void)sp;
