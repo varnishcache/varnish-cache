@@ -288,7 +288,7 @@ res_WriteGunzipObj(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct sess *sp, char lenbuf[20], size_t low, size_t high)
+res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
 {
 	unsigned u = 0;
 	size_t ptr, off, len;
@@ -297,7 +297,7 @@ res_WriteDirObj(struct sess *sp, char lenbuf[20], size_t low, size_t high)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (sp->wrk->res_mode & RES_CHUNKED) {
-		bprintf(lenbuf, "%jx\r\n", (intmax_t)sp->obj->len);
+		sprintf(lenbuf, "%jx\r\n", (intmax_t)sp->obj->len);
 		(void)WRW_Write(sp->wrk, lenbuf, -1);
 	}
 
