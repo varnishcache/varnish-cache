@@ -134,7 +134,7 @@ ved_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
 	assert(l > 0);
 	if (sp->wrk->res_mode & RES_CHUNKED) {
 		if (cb == NULL) {
-			bprintf(chunk, "%jx\r\n", l);
+			bprintf(chunk, "%jx\r\n", (intmax_t)l);
 			(void)WRW_Write(sp->wrk, chunk, -1);
 		} else
 			(void)WRW_Write(sp->wrk, cb, cl);
