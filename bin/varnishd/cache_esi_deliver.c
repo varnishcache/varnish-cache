@@ -239,7 +239,7 @@ ESI_Deliver(struct sess *sp)
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
 	struct vgz *vgz = NULL;
-	char obuf[1024 * params->gzip_stack_buffer];
+	char obuf[params->gzip_stack_buffer];
 	ssize_t obufl = 0;
 	size_t dl;
 	const void *dp;

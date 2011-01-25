@@ -818,10 +818,10 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"on", "bool" },
 	{ "gzip_stack_buffer", tweak_uint, &master.gzip_stack_buffer,
-	        4, UINT_MAX,
+	        2048, UINT_MAX,
 		"Size of stack buffer used for gzip processing.\n",
 		EXPERIMENTAL,
-		"64", "Kilobytes" },
+		"32768", "Bytes" },
 	{ "critbit_cooloff", tweak_timeout_double,
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "

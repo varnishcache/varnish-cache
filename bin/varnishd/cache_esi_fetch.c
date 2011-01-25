@@ -101,7 +101,7 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t w;
-	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
+	uint8_t	ibuf[params->gzip_stack_buffer];
 	int i;
 	size_t dl;
 	const void *dp;
@@ -211,7 +211,7 @@ static int __match_proto__()
 vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 {
 	ssize_t w;
-	char ibuf[1024 * params->gzip_stack_buffer];
+	char ibuf[params->gzip_stack_buffer];
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -247,8 +247,8 @@ static int __match_proto__()
 vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 {
 	ssize_t w;
-	char ibuf[1024 * params->gzip_stack_buffer];
-	char ibuf2[1024 * params->gzip_stack_buffer];
+	char ibuf[params->gzip_stack_buffer];
+	char ibuf2[params->gzip_stack_buffer];
 	struct vef_priv *vef;
 	size_t dl;
 	const void *dp;

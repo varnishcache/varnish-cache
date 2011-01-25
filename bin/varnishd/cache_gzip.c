@@ -368,7 +368,7 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
+	uint8_t	ibuf[params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -437,7 +437,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t ibuf[1024 * params->gzip_stack_buffer];
+	uint8_t ibuf[params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -513,7 +513,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t	ibuf[1024 * params->gzip_stack_buffer];
+	uint8_t	ibuf[params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 	struct storage *st;
