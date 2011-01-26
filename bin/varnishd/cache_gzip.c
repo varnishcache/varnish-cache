@@ -113,34 +113,48 @@ vgz_free(voidpf opaque, voidpf address)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct ws *ws)
+vgz_alloc_vgz(struct sess *sp)
 {
-	char *s;
 	struct vgz *vg;
+	struct ws *ws = sp->wrk->ws;
 
 	WS_Assert(ws);
-	s = WS_Snapshot(ws);
 	vg = (void*)WS_Alloc(ws, sizeof *vg);
 	AN(vg);
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
-	vg->tmp = ws;
-	vg->tmp_snapshot = s;
 
-	vg->vz.zalloc = vgz_alloc;
-	vg->vz.zfree = vgz_free;
-	vg->vz.opaque = vg;
-
+	switch (params->gzip_tmp_space) {
+	case 0:
+		/* malloc, the default */
+		break;
+	case 1:
+		vg->tmp = sp->ws;
+		vg->tmp_snapshot = WS_Snapshot(vg->tmp);
+		vg->vz.zalloc = vgz_alloc;
+		vg->vz.zfree = vgz_free;
+		vg->vz.opaque = vg;
+		break;
+	case 2:
+		vg->tmp = sp->wrk->ws;
+		vg->tmp_snapshot = WS_Snapshot(vg->tmp);
+		vg->vz.zalloc = vgz_alloc;
+		vg->vz.zfree = vgz_free;
+		vg->vz.opaque = vg;
+		break;
+	default:
+		assert(0 == __LINE__);
+	} 
 	return (vg);
 }
 
 struct vgz *
-VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
+VGZ_NewUngzip(struct sess *sp)
 {
 	struct vgz *vg;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(tmp);
+	vg = vgz_alloc_vgz(sp);
 
 	/*
 	 * Max memory usage according to zonf.h:
@@ -148,23 +162,18 @@ VGZ_NewUngzip(const struct sess *sp, struct ws *tmp)
 	 * Since we don't control windowBits, we have to assume
 	 * it is 15, so 34-35KB or so.
 	 */
-#if 1
-	vg->vz.zalloc = NULL;
-	vg->vz.zfree = NULL;
-	vg->vz.opaque = NULL;
-#endif
 	assert(Z_OK == inflateInit2(&vg->vz, 31));
 	return (vg);
 }
 
 struct vgz *
-VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
+VGZ_NewGzip(struct sess *sp)
 {
 	struct vgz *vg;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(tmp);
+	vg = vgz_alloc_vgz(sp);
 
 	/*
 	 * From zconf.h:
@@ -181,13 +190,8 @@ VGZ_NewGzip(const struct sess *sp, struct ws *tmp)
 	 * XXX: It may be more efficent to malloc them, rather than have
 	 * XXX: too many worker threads grow the stacks.
 	 */
-#if 1
-	vg->vz.zalloc = NULL;
-	vg->vz.zfree = NULL;
-	vg->vz.opaque = NULL;
-#endif
 	i = deflateInit2(&vg->vz,
-	    0,				/* Level */
+	    params->gzip_level,		/* Level */
 	    Z_DEFLATED,			/* Method */
 	    16 + 8,			/* Window bits (16=gzip + 15) */
 	    1,				/* memLevel */
@@ -345,7 +349,8 @@ VGZ_Destroy(struct vgz **vg)
 {
 
 	CHECK_OBJ_NOTNULL(*vg, VGZ_MAGIC);
-	WS_Reset((*vg)->tmp, (*vg)->tmp_snapshot);
+	if ((*vg)->tmp != NULL) 
+		WS_Reset((*vg)->tmp, (*vg)->tmp_snapshot);
 	*vg = NULL;
 }
 
@@ -359,7 +364,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
 }
 
 static int __match_proto__()
@@ -428,7 +433,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 
-	sp->wrk->vgz_rx = VGZ_NewGzip(sp, sp->ws);
+	sp->wrk->vgz_rx = VGZ_NewGzip(sp);
 }
 
 static int __match_proto__()
@@ -504,7 +509,7 @@ static void __match_proto__()
 vfp_testgzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
 }
 
 static int __match_proto__()

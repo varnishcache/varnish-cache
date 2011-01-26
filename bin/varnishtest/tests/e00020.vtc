@@ -24,6 +24,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set esi_syntax 4"
 varnish v1 -cliok "param.set http_gzip_support true"
+varnish v1 -cliok "param.set gzip_tmp_space 2"
 
 client c1 {
 	txreq 

@@ -274,7 +274,7 @@ ESI_Deliver(struct sess *sp)
 	}
 
 	if (isgzip && !sp->wrk->gzip_resp) {
-		vgz = VGZ_NewUngzip(sp, sp->wrk->ws);
+		vgz = VGZ_NewUngzip(sp);
 		obufl = 0;
 	}
 
