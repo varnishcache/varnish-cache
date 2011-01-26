@@ -71,8 +71,7 @@ Documentation files for %name
 #Varnish Cache is a high-performance HTTP accelerator
 
 %prep
-#%setup -q
-%setup -q -n varnish-cache
+%setup -q
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
