@@ -528,7 +528,7 @@ ESI_DeliverChild(const struct sess *sp)
 	}
 	if (lpad > 0)
 		ved_sendchunk(sp, NULL, 0, pad, lpad);
-	st = VTAILQ_LAST(&sp->obj->store, objecthead);
+	st = VTAILQ_LAST(&sp->obj->store, storagehead);
 	assert(st->len > 8);
 
 	p = st->ptr + st->len - 8;

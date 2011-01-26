@@ -71,7 +71,7 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
 		    "Fetch %d byte segments:", fetchfrag);
 	}
 	if (estimate > 0)
-		sp->wrk->storage = STV_alloc(sp, estimate);
+		(void)FetchStorage(sp, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -91,7 +91,7 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct storage *st;
 
 	while (bytes > 0) {
-		if (FetchStorage(sp))
+		if (FetchStorage(sp, 0))
 			return (-1);
 		st = sp->wrk->storage;
 		l = st->space - st->len;
@@ -126,13 +126,15 @@ vfp_nop_end(struct sess *sp)
 	if (st == NULL)
 		return (0);
 
+	assert(st == VTAILQ_LAST(&sp->obj->store, storagehead));
+
 	if (st->len == 0) {
+		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
 		return (0);
 	}
 	if (st->len < st->space)
 		STV_trim(st, st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	return (0);
 }
 
@@ -147,25 +149,30 @@ static struct vfp vfp_nop = {
  */
 
 int
-FetchStorage(const struct sess *sp)
+FetchStorage(const struct sess *sp, ssize_t sz)
 {
 	ssize_t l;
 
 	if (sp->wrk->storage != NULL &&
-	    sp->wrk->storage->len == sp->wrk->storage->space) {
-		VTAILQ_INSERT_TAIL(&sp->obj->store, sp->wrk->storage, list);
+	    sp->wrk->storage->len == sp->wrk->storage->space)
 		sp->wrk->storage = NULL;
+	if (sp->wrk->storage != NULL) {
+		assert(sp->wrk->storage == VTAILQ_LAST(&sp->obj->store, storagehead));
+		return (0);
 	}
-	if (sp->wrk->storage == NULL) {
-		l = fetchfrag;
-		if (l == 0)
-			l = params->fetch_chunksize * 1024LL;
-		sp->wrk->storage = STV_alloc(sp, l);
-	}
+
+	l = fetchfrag;
+	if (l == 0)
+		l = sz;
+	if (l == 0)
+		l = params->fetch_chunksize * 1024LL;
+	sp->wrk->storage = STV_alloc(sp, l);
 	if (sp->wrk->storage == NULL) {
 		errno = ENOMEM;
 		return (-1);
 	}
+	AZ(sp->wrk->storage->len);
+	VTAILQ_INSERT_TAIL(&sp->obj->store, sp->wrk->storage, list);
 	return (0);
 }
 
