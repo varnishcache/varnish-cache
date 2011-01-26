@@ -476,6 +476,12 @@ group
 
       The unprivileged group to run as.
 
+gzip_level
+      Default: 6
+
+      Gzip compression level ranging from 1 (the fastest) to 9 (the
+      smallest possible output). 0 indicates "debug mode".
+
 http_headers
       Units: header lines
       Default: 64
