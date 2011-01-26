@@ -42,11 +42,6 @@ SVNID("$Id$")
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <pwd.h>
-
-#ifdef __linux__
-#include <sys/prctl.h>
-#endif
 
 #include "libvarnish.h"
 #include "vev.h"
@@ -368,21 +363,6 @@ main(int argc, char * const *argv)
 	}
 
 	vb = vev_new_base();
-
-	if (geteuid() == 0) {
-		struct passwd *pw;
-		pw = getpwnam("nobody");
-		assert(setgid(pw->pw_gid) == 0);
-		assert(setuid(pw->pw_uid) == 0);
-		/* On Linux >= 2.4, you need to set the dumpable flag
-		   to get core dumps after you have done a setuid. */
-#ifdef __linux__
-		if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		  printf("Could not set dumpable bit.  Core dumps turned "
-			 "off\n");
-		}
-#endif
-	}
 
 	i = 0;
 	while(!VTAILQ_EMPTY(&tst_head) || i) {
