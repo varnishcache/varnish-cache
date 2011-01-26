@@ -596,7 +596,7 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
 	i = vz.stop_bit & 7;
-	if (hp->gzipresidual >= 0 && hp->gzipresidual != i) 
+	if (hp->gzipresidual >= 0 && hp->gzipresidual != i)
 		vtc_log(hp->vl, 0, "Wrong gzip residual got %d wanted %d",
 		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;

@@ -273,7 +273,7 @@ res_WriteGunzipObj(struct sess *sp)
 					(void)WRW_Write(sp->wrk, lenbuf, -1);
 				}
 				(void)WRW_Write(sp->wrk, dp, dl);
-				if (sp->wrk->res_mode & RES_CHUNKED) 
+				if (sp->wrk->res_mode & RES_CHUNKED)
 					(void)WRW_Write(sp->wrk, "\r\n", -1);
 				if (WRW_Flush(sp->wrk))
 					break;
@@ -344,7 +344,7 @@ res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);
-	if (sp->wrk->res_mode & RES_CHUNKED) 
+	if (sp->wrk->res_mode & RES_CHUNKED)
 		(void)WRW_Write(sp->wrk, "\r\n", -1);
 }
 
@@ -393,7 +393,7 @@ RES_WriteObj(struct sess *sp)
 	} else if (sp->wrk->res_mode & RES_ESI_CHILD && sp->wrk->gzip_resp) {
 		ESI_DeliverChild(sp);
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
-		res_WriteGunzipObj(sp); 
+		res_WriteGunzipObj(sp);
 	} else {
 		res_WriteDirObj(sp, lenbuf, low, high);
 	}

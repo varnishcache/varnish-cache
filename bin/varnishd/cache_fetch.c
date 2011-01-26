@@ -91,7 +91,7 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct storage *st;
 
 	while (bytes > 0) {
-		if (FetchStorage(sp)) 
+		if (FetchStorage(sp))
 			return (-1);
 		st = sp->wrk->storage;
 		l = st->space - st->len;

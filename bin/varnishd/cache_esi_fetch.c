@@ -265,7 +265,7 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (w <= 0)
 			return (w);
 		bytes -= w;
-		
+
 		vef->bufp = ibuf;
 		VGZ_Ibuf(sp->wrk->vgz_rx, ibuf, w);
 		do {

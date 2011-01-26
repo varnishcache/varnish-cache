@@ -122,13 +122,13 @@ const char		*hack_p;
 /*---------------------------------------------------------------------*/
 
 static const char * const VEP_START =		"[Start]";
-static const char * const VEP_TESTXML = 	"[TestXml]";
-static const char * const VEP_NOTXML =	 	"[NotXml]";
+static const char * const VEP_TESTXML =		"[TestXml]";
+static const char * const VEP_NOTXML =		"[NotXml]";
 
-static const char * const VEP_NEXTTAG = 	"[NxtTag]";
+static const char * const VEP_NEXTTAG =		"[NxtTag]";
 static const char * const VEP_NOTMYTAG =	"[NotMyTag]";
 
-static const char * const VEP_STARTTAG = 	"[StartTag]";
+static const char * const VEP_STARTTAG =	"[StartTag]";
 static const char * const VEP_COMMENT =		"[Comment]";
 static const char * const VEP_CDATA =		"[CDATA]";
 static const char * const VEP_ESITAG =		"[ESITag]";
@@ -148,7 +148,7 @@ static const char * const VEP_ATTRGETVAL =	"[AttrGetValue]";
 static const char * const VEP_ATTRVAL =		"[AttrValue]";
 
 static const char * const VEP_UNTIL =		"[Until]";
-static const char * const VEP_MATCHBUF = 	"[MatchBuf]";
+static const char * const VEP_MATCHBUF =	"[MatchBuf]";
 static const char * const VEP_MATCH =		"[Match]";
 
 /*---------------------------------------------------------------------*/
@@ -189,7 +189,7 @@ vep_error(const struct vep_state *vep, const char *p)
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("ERROR at %jd %s\n", l , p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
-	
+
 }
 
 /*--------------------------------------------------------------------
@@ -205,7 +205,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("WARNING at %jd %s\n", l, p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
-	
+
 }
 
 /*---------------------------------------------------------------------
@@ -265,7 +265,7 @@ vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 		assert((ssize_t)vbe64dec(buf + 1) == l);
 		vsb_bcat(vep->vsb, buf, 9);
 	}
-} 
+}
 
 static void
 vep_emit_skip(const struct vep_state *vep, ssize_t l)
@@ -275,7 +275,7 @@ vep_emit_skip(const struct vep_state *vep, ssize_t l)
 		Debug("---> SKIP(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
-} 
+}
 
 static void
 vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
@@ -293,7 +293,7 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 		vbe32enc(buf, vep->crc);
 		vsb_bcat(vep->vsb, buf, sizeof buf);
 	}
-} 
+}
 
 static void
 vep_emit_common(struct vep_state *vep, ssize_t l, enum vep_mark mark)
@@ -374,7 +374,7 @@ vep_mark_verbatim(struct vep_state *vep, const char *p)
 
 	vep_mark_common(vep, p, VERBATIM);
 	vep->nm_verbatim++;
-} 
+}
 
 static void
 vep_mark_skip(struct vep_state *vep, const char *p)
@@ -382,7 +382,7 @@ vep_mark_skip(struct vep_state *vep, const char *p)
 
 	vep_mark_common(vep, p, SKIP);
 	vep->nm_skip++;
-} 
+}
 
 static void
 vep_mark_pending(struct vep_state *vep, const char *p)
@@ -408,7 +408,7 @@ vep_do_comment(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_COMMENT(%d)\n", what);
 	assert(what == DO_TAG);
-	if (!vep->emptytag) 
+	if (!vep->emptytag)
 		vep_error(vep, "ESI 1.0 <esi:comment> needs final '/'");
 }
 
@@ -431,7 +431,7 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 		else if (!vep->remove && vep->endtag)
 			vep_error(vep,
 			    "ESI 1.0 <esi:remove> not open");
-		else 
+		else
 			vep->remove = !vep->endtag;
 	}
 }
@@ -455,7 +455,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		return;
 	}
 	assert(what == DO_TAG);
-	if (!vep->emptytag) 
+	if (!vep->emptytag)
 		vep_warn(vep,
 		    "ESI 1.0 <esi:include> lacks final '/'");
 	if (vep->include_src == NULL) {
@@ -499,7 +499,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 				h = q;
 		if (h == NULL)
 			h = q + 1;
-			
+
 		Debug("INCL:: [%.*s]/[%s]\n",
 		    (int)(h - url.b), url.b, p);
 		vsb_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
@@ -533,7 +533,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  *
  * This function is called with the input object piecemal so do not
  * assume that we have more than one char available at at time, but
- * optimize for getting huge chunks. 
+ * optimize for getting huge chunks.
  *
  * NB: At the bottom of this source-file, there is a dot-diagram matching
  * NB: the state-machine.  Please maintain it along with the code.
@@ -586,7 +586,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 			 * If the first non-whitespace char is different
 			 * from '<' we assume this is not XML.
 			 */
-			while (p < e && vct_islws(*p)) 
+			while (p < e && vct_islws(*p))
 				p++;
 			vep_mark_verbatim(vep, p);
 			if (p < e && *p == '<') {
@@ -679,7 +679,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				if (*p == '/') {
 					vep->endtag = 1;
 					p++;
-				} 
+				}
 				vep->match = vep_match_starttag;
 				vep->state = VEP_MATCH;
 			}
@@ -692,7 +692,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->esicmt_p = vep->esicmt = "esi";
 			while (p < e) {
 				if (*p != *vep->esicmt_p) {
-					vep->esicmt_p = vep->esicmt = NULL; 
+					vep->esicmt_p = vep->esicmt = NULL;
 					vep->until_p = vep->until = "-->";
 					vep->until_s = VEP_NEXTTAG;
 					vep->state = VEP_UNTIL;
@@ -766,7 +766,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 		} else if (vep->state == VEP_INTAG) {
 			vep->tag_i = 0;
 			while (p < e && vct_islws(*p) && !vep->emptytag) {
-				p++;	
+				p++;
 				vep->canattr = 1;
 			}
 			if (p < e && *p == '/' && !vep->emptytag) {
@@ -850,7 +850,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				    "XML 1.0 Illegal attribute delimiter");
 				vep->state = VEP_TAGERROR;
 			}
-			
+
 		} else if (vep->state == VEP_ATTRVAL) {
 			while (p < e && *p != '>' && *p != vep->attr_delim &&
 			   (vep->attr_delim != ' ' || !vct_issp(*p))) {
@@ -879,7 +879,6 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				}
 				vep->state = VEP_INTAG;
 			}
-	
 
 		/******************************************************
 		 * Utility Section
@@ -955,7 +954,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 	 * in the most efficient way, in particular with respect to
 	 * minimizing and limiting use of pending.
 	 */
-	if (p == vep->ver_p) 
+	if (p == vep->ver_p)
 		;
 	else if (vep->in_esi_tag)
 		vep_mark_skip(vep, p);
