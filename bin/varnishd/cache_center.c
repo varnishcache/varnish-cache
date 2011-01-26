@@ -1367,7 +1367,6 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 		WS_Assert(w->ws);
 		AZ(sp->wrk->storage_hint);
-		AZ(sp->wrk->storage);
 
 		switch (sp->step) {
 #define STEP(l,u) \

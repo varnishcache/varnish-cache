@@ -245,10 +245,10 @@ VGZ_ObufStorage(const struct sess *sp, struct vgz *vg)
 {
 	struct storage *st;
 
-	if (FetchStorage(sp, 0))
+	st = FetchStorage(sp, 0);
+	if (st == NULL)
 		return (-1);
 
-	st = sp->wrk->storage;
 	vg->obuf = st;
 	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
@@ -527,9 +527,9 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0) {
-		if (FetchStorage(sp, 0))
+		st = FetchStorage(sp, 0);
+		if (st == NULL)
 			return (-1);
-		st = sp->wrk->storage;
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
