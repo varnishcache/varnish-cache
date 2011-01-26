@@ -484,6 +484,21 @@ http_headers
       This space is preallocated in sessions and workthreads only objects allocate only space for the headers
       they store.
 
+http_gzip_support
+      Default: on
+
+      Enable gzip support. When enabled Varnish will compress
+      uncompressed objects before they are stored in the cache. If a
+      client does not support gzip encoding Varnish will uncompress
+      compressed objects on demand.
+      Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to:
+
+      Accept-Encoding: gzip
+
+      Clients that do not support gzip will have their Accept-Encoding
+      header removed. For more information no how gzip is implemted
+      please see the chapter on gzip in the Varnish reference.
+
 http_range
       Default: off
       
