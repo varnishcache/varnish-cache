@@ -48,7 +48,12 @@ The following options are available:
 -f          Prefer the X-Forwarded-For HTTP header over client.ip in 
 	    the log output.
 
--F format   Specify the log format used.  Supported formatters are:
+-F format   Specify the log format used. If no format is specified the  
+   	    default log format is used. Currently it is:
+
+            %h %l %u %t "%r" %>s %b "%{Referer}i" "%{User-agent}i"
+
+	    Supported formatters are:
 
 	      %b 
 	         Size of response in bytes, excluding HTTP headers.
