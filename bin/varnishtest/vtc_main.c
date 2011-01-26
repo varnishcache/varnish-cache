@@ -246,7 +246,7 @@ start_test(void)
 
 	srandomdev();
 	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
-	AZ(mkdir(tmpdir, 0700));
+	AZ(mkdir(tmpdir, 0711));
 
 	tp = VTAILQ_FIRST(&tst_head);
 	CHECK_OBJ_NOTNULL(tp, TST_MAGIC);
