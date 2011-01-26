@@ -470,9 +470,6 @@ vcl_fetch
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  esi
-     ESI-process the document which has just been fetched.
-
   pass
     Switch to pass mode.  Control will eventually pass to vcl_pass.
 
@@ -645,6 +642,22 @@ bereq.between_bytes_timeout
 The following variables are available after the requested object has
 been retrieved from the backend, before it is entered into the cache. In
 other words, they are available in vcl_fetch:
+
+beresp.do_esi
+  ESI-process the object after fetching it. Defaults to 0. Set it to 1 to 
+  activate ESI.
+
+beresp.do_gzip
+  Gzip the object before storing it. Defaults to 1, 
+
+beresp.is_gzip
+  True if the object is compressed.
+
+beresp.do_gunzip
+  Unzip the object before storing it. 
+
+beresp.is_gunzip 
+  True if the object is not compressed.
 
 beresp.proto
   The HTTP protocol version used when the object was retrieved.
