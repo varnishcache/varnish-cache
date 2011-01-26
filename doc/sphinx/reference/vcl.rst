@@ -44,7 +44,7 @@ in strings in VCL, so it can be freely used in regular expressions
 without doubling.
 
 Strings are concatenated by putting them one after each other
-without a '+' operator between.
+with a '+' operator between.
 
 Assignments are introduced with the *set* keyword.  There are no
 user-defined variables; values can only be assigned to variables
