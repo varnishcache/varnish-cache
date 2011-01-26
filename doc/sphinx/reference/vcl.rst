@@ -613,6 +613,9 @@ req.hash_ignore_busy
   this if you have two server looking up content from each other to 
   avoid potential deadlocks.
 
+req.can_gzip
+  Does the client accept the gzip transfer encoding.
+
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
