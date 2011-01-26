@@ -817,9 +817,29 @@ static const struct parspec input_parspec[] = {
 		"Enable support for HTTP GZIP compression.\n",
 		EXPERIMENTAL,
 		"on", "bool" },
+	{ "gzip_tmp_space", tweak_uint, &master.gzip_tmp_space, 0, 2,
+		"Where temporary space for gzip/gunzip is allocated.\n"
+		"  0 - malloc\n"
+		"  1 - session workspace\n"
+		"  2 - thread workspace\n"
+		"If you have much gzip/gunzip activity, it may be an"
+		" advantage to use workspace for these allocations to reduce"
+		" malloc activity.  Be aware that gzip needs 256+KB and gunzip"
+		" needs 32+KB of workspace (64+KB if ESI processing).",
+		EXPERIMENTAL,
+		"0", "" },
+	{ "gzip_level", tweak_uint, &master.gzip_level, 0, 9,
+		"Gzip compression level: 0=debug, 1=fast, 9=best",
+		0,
+		"6", ""},
 	{ "gzip_stack_buffer", tweak_uint, &master.gzip_stack_buffer,
 	        2048, UINT_MAX,
-		"Size of stack buffer used for gzip processing.\n",
+		"Size of stack buffer used for gzip processing.\n"
+		"The stack buffers are used for in-transit data,"
+		" for instance gunzip'ed data being sent to a client."
+		"Making this space to small results in more overhead,"
+		" writes to sockets etc, making it too big is probably"
+		" just a waste of memory.",
 		EXPERIMENTAL,
 		"32768", "Bytes" },
 	{ "critbit_cooloff", tweak_timeout_double,

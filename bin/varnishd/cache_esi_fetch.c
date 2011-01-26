@@ -303,24 +303,24 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	/* XXX: snapshot WS's ? We'll need the space */
 
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
 		VEP_Init(sp, NULL);
 	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
 		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		AN(vef);
 		memset(vef, 0, sizeof *vef);
 		vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp, sp->ws);
+		vef->vgz = VGZ_NewGzip(sp);
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
 	} else if (sp->wrk->is_gzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, sp->ws);
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
 		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		AN(vef);
 		memset(vef, 0, sizeof *vef);
 		vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp, sp->ws);
+		vef->vgz = VGZ_NewGzip(sp);
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
