@@ -482,6 +482,26 @@ gzip_level
       Gzip compression level ranging from 1 (the fastest) to 9 (the
       smallest possible output). 0 indicates "debug mode".
 
+gzip_stack_buffer
+      Unit: kilobytes
+      Default: 2048
+
+      Size of stack buffer used for in transit gzip processing, like
+      on the fly decompression.
+
+gzip_tmp_space
+      Default: 0
+
+      Where temporary space for gzip/gunzip is allocated.
+        0 - malloc
+        1 - session workspace
+        2 - thread workspace
+      
+      If you have much gzip/gunzip activity, it may be an advantage to
+      use workspace for these allocations to reduce malloc activity.
+      Be aware that gzip needs 256+KB and gunzip" needs 32+KB of
+      workspace (64+KB if ESI processing).
+
 http_headers
       Units: header lines
       Default: 64
