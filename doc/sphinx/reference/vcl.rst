@@ -644,23 +644,18 @@ been retrieved from the backend, before it is entered into the cache. In
 other words, they are available in vcl_fetch:
 
 beresp.do_esi
-  ESI-process the object after fetching it. Defaults to 0. Set it to 1 to 
-  activate ESI.
+  Boolean. ESI-process the object after fetching it. Defaults to false. Set it
+  to true to parse the object for ESI directives.
 
 beresp.do_gzip
-  Gzip the object before storing it. Defaults to 1, 
-
-beresp.is_gzip
-  True if the object is compressed.
+  Boolean. Gzip the object before storing it. Defaults to true. 
 
 beresp.do_gunzip
-  Unzip the object before storing it. 
-
-beresp.is_gunzip 
-  True if the object is not compressed.
+  Boolean. Unzip the object before storing it in the cache.  Defaults
+  to false.
 
 beresp.proto
-  The HTTP protocol version used when the object was retrieved.
+  The HTTP protocol version used the backend replied with.
 
 beresp.status
   The HTTP status code returned by the server.
