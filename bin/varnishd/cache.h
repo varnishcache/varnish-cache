@@ -643,6 +643,7 @@ struct vgz *VGZ_NewGzip(struct sess *sp);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, const void *, ssize_t len);
+int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);

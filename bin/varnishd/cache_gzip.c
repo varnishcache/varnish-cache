@@ -235,6 +235,14 @@ VGZ_Obuf(struct vgz *vg, const void *ptr, ssize_t len)
 	vg->vz.avail_out = len;
 }
 
+int
+VGZ_ObufFull(const struct vgz *vg)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	return (vg->vz.avail_out == 0);
+}
+
 /*--------------------------------------------------------------------
  * Keep the outbuffer supplied with storage and file it under the
  * sp->obj as it fills.
