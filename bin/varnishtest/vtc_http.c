@@ -555,7 +555,8 @@ cmd_http_gunzip_body(CMD_ARGS)
 	assert(Z_OK == inflateInit2(&vz, 31));
 	i = inflate(&vz, Z_FINISH);
 	if (i != Z_STREAM_END)
-		vtc_log(hp->vl, 0, "Gunzip error = %d (%s)", i, vz.msg);
+		vtc_log(hp->vl, 0, "Gunzip error = %d (%s) in:%jd out:%jd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
 	hp->bodyl = vz.total_out;
 	memcpy(hp->body, p, hp->bodyl);
 	free(p);
