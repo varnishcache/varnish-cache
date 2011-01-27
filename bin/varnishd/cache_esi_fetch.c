@@ -193,7 +193,8 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 			i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 			vef->tot += dl;
 			sp->obj->len += dl;
-		} while (!VGZ_IbufEmpty(vef->vgz));
+		} while (!VGZ_IbufEmpty(vef->vgz) ||
+		    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
 		if (px != 0) {
 			memmove(vef->pending, vef->pending + px,
 			    vef->npend - px);
@@ -283,7 +284,8 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 			if (vef->bufp < ibuf2 + dl) {
 				dl = (ibuf2 + dl) - vef->bufp;
 				assert(dl + vef->npend < sizeof vef->pending);
-				memmove(vef->pending + vef->npend, vef->bufp, dl);
+				memmove(vef->pending + vef->npend,
+				    vef->bufp, dl);
 				vef->npend += dl;
 			}
 		} while (!VGZ_IbufEmpty(sp->wrk->vgz_rx));
