@@ -77,21 +77,6 @@ Documentation files for %name
 # Release tarballs would not need this
 #./autogen.sh
 
-# Hack to get 32- and 64-bits tests run concurrently on the same build machine
-case `uname -m` in
-	ppc64 | s390x | x86_64 | sparc64 )
-		sed -i ' 
-			s,9001,9011,g;
-			s,9080,9090,g; 
-			s,9081,9091,g; 
-			s,9082,9092,g; 
-			s,9180,9190,g;
-		' bin/varnishtest/*.c bin/varnishtest/tests/*vtc
-		;;
-	*)
-		;;
-esac
-
 mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
