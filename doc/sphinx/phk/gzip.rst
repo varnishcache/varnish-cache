@@ -89,7 +89,7 @@ the backend didn't send us a gzip'ed object.
 
 Remember that a lot of content types cannot sensibly be gziped, most
 notably compressed image formats like jpeg, png and similar, so a
-typical use would be:
+typical use would be::
 
 	sub vcl_fetch {
 		if (req.url ~ "html$") {
@@ -100,7 +100,7 @@ typical use would be:
 GZIP and ESI
 ------------
 
-First, note the new syntax for activating ESI:
+First, note the new syntax for activating ESI::
 
 	sub vcl_fetch {
 		set beresp.do_esi = true;
@@ -147,7 +147,7 @@ gunzip them, but when we encounter gunzip'ed objects which should
 be, we gzip them, but only at compression level zero.
 
 So in order to avoid unnecessary work, and in order to get maximum
-compression efficiency, you should:
+compression efficiency, you should::
 
 	sub vcl_miss {
 		if (object needs ESI processing) {

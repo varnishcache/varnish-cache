@@ -17,7 +17,7 @@ discussed. For a complete(ish) guide to VCL have a look at the VCL man
 page - ref:`reference-vcl`.
 
 Using In-line C to extend Varnish
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can use *in-line C* to extend Varnish. Please note that you can
 seriously mess up Varnish this way. The C code runs within the Varnish

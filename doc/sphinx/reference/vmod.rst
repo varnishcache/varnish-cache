@@ -85,7 +85,7 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 	const char * vmod_tolower(struct sess *, struct vmod_priv *, const char *, ...);
 	int meta_function(void **, const struct VCL_conf *);
 
-Those are your C prototypes.  Notice the "vmod\_" prefix on the function
+Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
 names and the C-types as return types and arguments.
 
 VCL and C data types
@@ -97,36 +97,36 @@ language representation.  Here is a description of them, from simple
 to nasty.
 
 INT
-	C-type: int
+	C-type: ``int``
 
 	An integer as we know and love them.
 
 REAL
-	C-type: double
+	C-type: ``double``
 
 	A floating point value
 
 DURATION
-	C-type: double
+	C-type: ``double``
 
 	Units: seconds
 
 	A time interval, as in "25 minutes".
 
 TIME
-	C-type: double
+	C-type: ``double``
 
 	Units: seconds since UNIX epoch
 
 	An absolute time, as in "Mon Sep 13 19:06:01 UTC 2010".
 
 STRING
-	C-type: const char *
+	C-type: ``const char *``
 
 	A NUL-terminated text-string.
 
 	Can be NULL to indicate that the nonexistent string, for
-	instance:
+	instance::
 
 		mymod.foo(req.http.foobar);
 
@@ -140,7 +140,7 @@ STRING
 	workspaces.
 
 STRING_LIST
-	C-type: const char *, ...
+	C-type: ``const char *, ...``
 
 	A multi-component text-string.  We try very hard to avoid
 	doing text-processing in Varnish, and this is one way we
@@ -152,15 +152,15 @@ STRING_LIST
 		set bereq.http.foo = std.toupper(req.http.foo + req.http.bar);
 
 	The usual way to do this, would be be to allocate memory for
-	the concatenated string, then pass that to toupper() which in
+	the concatenated string, then pass that to ``toupper()`` which in
 	turn would return another freshly allocated string with the
-	modified result.  Remember: strings in VCL are "const", we
+	modified result.  Remember: strings in VCL are ``const``, we
 	cannot just modify the string in place.
 
-	What we do instead, is declare that toupper() takes a "STRING_LIST"
-	as argument.  This makes the C function implementing toupper()
+	What we do instead, is declare that ``toupper()`` takes a "STRING_LIST"
+	as argument.  This makes the C function implementing ``toupper()``
 	a vararg function (see the prototype above) and responsible for
-	considering all the "const char *" arguments it finds, until the
+	considering all the ``const char *`` arguments it finds, until the
 	magic marker "vrt_magic_string_end" is encountered.
 
 	Bear in mind that the individual strings in a STRING_LIST can be
@@ -180,7 +180,7 @@ PRIV_CALL
 	See below
 
 VOID
-	C-type: void
+	C-type: ``void``
 
 	Can only be used for return-value, which makes the function a VCL
 	procedure.
@@ -208,7 +208,7 @@ last output of some expensive lookup.
 applies to all calls in this VCL, for instance flags that determine
 if regular expressions are case-sensitive in this vmod or similar.
 
-The way it works in the vmod code, is that a "struct vmod_priv *" is
+The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where argument type PRIV_VCL or PRIV_CALL
 is specified.
 

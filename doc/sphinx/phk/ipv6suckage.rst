@@ -53,7 +53,9 @@ way (the same as RFC3986), you need to inspect the version field
 in the sockaddr to see if you should do
 
 	"%s:%s", host, port
+
 or
+
 	"[%s]:%s", host, port
 
 Careless standardization costs code, have I mentioned this before ?
