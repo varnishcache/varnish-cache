@@ -67,8 +67,8 @@ struct vclprog {
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 
 char *mgt_cc_cmd;
-char *mgt_vcl_dir;
-char *mgt_vmod_dir;
+const char *mgt_vcl_dir;
+const char *mgt_vmod_dir;
 unsigned mgt_vcc_err_unref;
 
 static struct vcc *vcc;

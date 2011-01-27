@@ -322,7 +322,7 @@ VRT_r_beresp_storage(struct sess *sp)
 		return (NULL);
 }
 
-void
+void __match_proto__()
 VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 {
 	va_list ap;

@@ -81,8 +81,8 @@ int mgt_vcc_default(const char *bflag, const char *f_arg, char *vcl, int Cflag);
 int mgt_push_vcls_and_start(unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
-extern char *mgt_vcl_dir;
-extern char *mgt_vmod_dir;
+extern const char *mgt_vcl_dir;
+extern const char *mgt_vmod_dir;
 extern unsigned mgt_vcc_err_unref;
 
 #define REPORT0(pri, fmt)				\

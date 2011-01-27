@@ -379,7 +379,7 @@ binheap_delete(struct binheap *bh, unsigned idx)
  */
 
 void
-binheap_reorder(struct binheap *bh, unsigned idx)
+binheap_reorder(const struct binheap *bh, unsigned idx)
 {
 
 	assert(bh != NULL);

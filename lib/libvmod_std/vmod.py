@@ -230,7 +230,7 @@ dumps(pstruct + "} Vmod_Func_" + modname + ";\n")
 fc.write('\t;\n')
 fc.write("\n");
 
-fc.write('const char *Vmod_Spec[] = {\n' + slist + '\t0\n};\n')
+fc.write('const char * const Vmod_Spec[] = {\n' + slist + '\t0\n};\n')
 
 fc.write("\n")
 

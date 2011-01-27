@@ -645,7 +645,7 @@ main(int argc, char * const *argv)
 	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
 
-	VSM_Alloc(0, VSM_CLASS_MARK, "", "");
+	AN(VSM_Alloc(0, VSM_CLASS_MARK, "", ""));
 
 	MGT_Run();
 

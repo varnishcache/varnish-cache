@@ -36,14 +36,14 @@
 
 #include "vcc_if.h"
 
-void
+void __match_proto__()
 vmod_set_ip_tos(struct sess *sp, int tos)
 {
 
 	TCP_Assert(setsockopt(sp->fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
 }
 
-static const char *
+static const char * __match_proto__()
 vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 {
 	unsigned u;
@@ -79,7 +79,7 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 	}
 }
 
-const char *
+const char * __match_proto__()
 vmod_toupper(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 {
 	const char *p;
@@ -98,7 +98,7 @@ vmod_toupper(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 	return (p);
 }
 
-const char *
+const char * __match_proto__()
 vmod_tolower(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 {
 	const char *p;
@@ -135,7 +135,7 @@ vmod_random(struct sess *sp, double lo, double hi)
 	return (a);
 }
 
-void
+void __match_proto__()
 vmod_log(struct sess *sp, const char *fmt, ...)
 {
 	char buf[8192], *p;
