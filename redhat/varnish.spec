@@ -75,22 +75,7 @@ Documentation files for %name
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-./autogen.sh
-
-# Hack to get 32- and 64-bits tests run concurrently on the same build machine
-case `uname -m` in
-	ppc64 | s390x | x86_64 | sparc64 )
-		sed -i ' 
-			s,9001,9011,g;
-			s,9080,9090,g; 
-			s,9081,9091,g; 
-			s,9082,9092,g; 
-			s,9180,9190,g;
-		' bin/varnishtest/*.c bin/varnishtest/tests/*vtc
-		;;
-	*)
-		;;
-esac
+#./autogen.sh
 
 mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
@@ -141,12 +126,7 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-%if 0%{?rhel} > 4 || 0%{?fedora} > 6
-pushd doc/sphinx
-%{__make} html
-popd
-mv doc/sphinx/\=build/html doc
-%endif
+cp -r doc/sphinx/\=build/html doc
 
 %check
 # rhel5 on ppc64 is just too strange
@@ -195,6 +175,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_sbindir}/*
 %{_bindir}/*
+%{_libdir}/varnish
 %{_var}/lib/varnish
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
