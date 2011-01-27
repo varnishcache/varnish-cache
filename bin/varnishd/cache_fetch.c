@@ -481,7 +481,7 @@ FetchHdr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct sess *sp, struct http *hp)
+FetchBody(struct sess *sp, const struct http *hp)
 {
 	char *b;
 	int cls;

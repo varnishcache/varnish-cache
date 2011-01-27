@@ -514,7 +514,6 @@ struct sess {
 	enum step		step;
 	unsigned		cur_method;
 	unsigned		handling;
-	unsigned char		pass;
 	unsigned char		sendbody;
 	unsigned char		wantbody;
 	int			err_code;
@@ -631,7 +630,7 @@ int EXP_NukeOne(const struct sess *sp, const struct lru *lru);
 /* cache_fetch.c */
 struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
 int FetchHdr(struct sess *sp);
-int FetchBody(struct sess *sp, struct http *hp);
+int FetchBody(struct sess *sp, const struct http *hp);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 

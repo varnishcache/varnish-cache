@@ -468,7 +468,7 @@ cnt_fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	char *b;
 	unsigned l, nhttp;
-	int varyl = 0;
+	int varyl = 0, pass;
 	struct vsb *vary = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -562,18 +562,14 @@ cnt_fetch(struct sess *sp)
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		sp->wrk->cacheable = 0;
-	} else if (!sp->wrk->cacheable && sp->objcore != NULL) {
-		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-		sp->objcore = NULL;
+		pass = 1;
+	} else if (sp->handling == VCL_RET_PASS || !sp->wrk->cacheable) {
+		/* pass from vcl_fetch{} -> hit-for-pass */
+		pass = 1;
+	} else {
+		/* regular object */
+		pass = 0;
 	}
-
-	/*
-	 * At this point we are either committed to flesh out the busy
-	 * object we have in the hash or we have let go of it, if we ever
-	 * had one.
-	 */
-
-	AZ(sp->wrk->vfp);
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -587,6 +583,8 @@ cnt_fetch(struct sess *sp)
 	 *	anything else			--> do nothing wrt gzip
 	 *
 	 */
+
+	AZ(sp->wrk->vfp);
 
 	/* We do nothing unless the param is set */
 	if (!params->http_gzip_support)
@@ -632,7 +630,7 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->vfp = &vfp_testgzip;
 
 	l = http_EstimateWS(sp->wrk->beresp,
-	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
 	if (sp->wrk->cacheable) {
@@ -677,7 +675,6 @@ cnt_fetch(struct sess *sp)
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
 
-
 	/* Filter into object */
 	hp = sp->wrk->beresp;
 	hp2 = sp->obj->http;
@@ -685,7 +682,7 @@ cnt_fetch(struct sess *sp)
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
 	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
-	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
@@ -1050,7 +1047,6 @@ cnt_pass(struct sess *sp)
 	sp->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
-	sp->pass = 1;
 	return (0);
 }
 
@@ -1138,7 +1134,6 @@ cnt_recv(struct sess *sp)
 	AN(sp->director);
 
 	sp->disable_esi = 0;
-	sp->pass = 0;
 	sp->hash_always_miss = 0;
 	sp->hash_ignore_busy = 0;
 	sp->client_identity = NULL;
