@@ -182,13 +182,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		w->beresp = NULL;
 		w->resp = NULL;
 		w->storage_hint = NULL;
-		w->storage = NULL;
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->bereq);
 		AZ(w->beresp1);
 		AZ(w->beresp);
 		AZ(w->resp);
-		AZ(w->storage);
 		WS_Assert(w->ws);
 		AZ(w->wfd);
 		AZ(w->storage_hint);

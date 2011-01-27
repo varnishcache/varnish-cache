@@ -77,9 +77,9 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	while (bytes > 0) {
-		if (FetchStorage(sp))
+		st = FetchStorage(sp, 0);
+		if (st == NULL)
 			return (-1);
-		st = sp->wrk->storage;
 		w = vef_read(htc,
 		    st->ptr + st->len, st->space - st->len, bytes);
 		if (w <= 0)
@@ -265,7 +265,7 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 		if (w <= 0)
 			return (w);
 		bytes -= w;
-		
+
 		vef->bufp = ibuf;
 		VGZ_Ibuf(sp->wrk->vgz_rx, ibuf, w);
 		do {

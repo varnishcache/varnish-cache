@@ -279,7 +279,6 @@ struct worker {
 
 	/* Fetch stuff */
 	enum body_status	body_status;
-	struct storage		*storage;
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
@@ -417,7 +416,7 @@ struct lru {
 };
 
 /* Object structure --------------------------------------------------*/
-VTAILQ_HEAD(objecthead, storage);
+VTAILQ_HEAD(storagehead, storage);
 
 struct object {
 	unsigned		magic;
@@ -452,7 +451,7 @@ struct object {
 
 	struct http		*http;
 
-	struct objecthead	store;
+	struct storagehead	store;
 
 	struct storage		*esidata;
 
@@ -630,7 +629,7 @@ void EXP_Touch(struct object *o, double tnow);
 int EXP_NukeOne(const struct sess *sp, const struct lru *lru);
 
 /* cache_fetch.c */
-int FetchStorage(const struct sess *sp);
+struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
 int FetchHdr(struct sess *sp);
 int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);

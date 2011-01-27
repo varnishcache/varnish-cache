@@ -476,6 +476,32 @@ group
 
       The unprivileged group to run as.
 
+gzip_level
+      Default: 6
+
+      Gzip compression level ranging from 1 (the fastest) to 9 (the
+      smallest possible output). 0 indicates "debug mode".
+
+gzip_stack_buffer
+      Unit: kilobytes
+      Default: 2048
+
+      Size of stack buffer used for in transit gzip processing, like
+      on the fly decompression.
+
+gzip_tmp_space
+      Default: 0
+
+      Where temporary space for gzip/gunzip is allocated.
+        0 - malloc
+        1 - session workspace
+        2 - thread workspace
+      
+      If you have much gzip/gunzip activity, it may be an advantage to
+      use workspace for these allocations to reduce malloc activity.
+      Be aware that gzip needs 256+KB and gunzip" needs 32+KB of
+      workspace (64+KB if ESI processing).
+
 http_headers
       Units: header lines
       Default: 64
@@ -483,6 +509,21 @@ http_headers
       Maximum number of HTTP headers we will deal with.
       This space is preallocated in sessions and workthreads only objects allocate only space for the headers
       they store.
+
+http_gzip_support
+      Default: on
+
+      Enable gzip support. When enabled Varnish will compress
+      uncompressed objects before they are stored in the cache. If a
+      client does not support gzip encoding Varnish will uncompress
+      compressed objects on demand.
+      Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to:
+
+      Accept-Encoding: gzip
+
+      Clients that do not support gzip will have their Accept-Encoding
+      header removed. For more information no how gzip is implemted
+      please see the chapter on gzip in the Varnish reference.
 
 http_range
       Default: off

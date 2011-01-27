@@ -44,7 +44,7 @@ in strings in VCL, so it can be freely used in regular expressions
 without doubling.
 
 Strings are concatenated by putting them one after each other
-without a '+' operator between.
+with a '+' operator between.
 
 Assignments are introduced with the *set* keyword.  There are no
 user-defined variables; values can only be assigned to variables
@@ -470,9 +470,6 @@ vcl_fetch
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  esi
-     ESI-process the document which has just been fetched.
-
   pass
     Switch to pass mode.  Control will eventually pass to vcl_pass.
 
@@ -616,6 +613,9 @@ req.hash_ignore_busy
   this if you have two server looking up content from each other to 
   avoid potential deadlocks.
 
+req.can_gzip
+  Does the client accept the gzip transfer encoding.
+
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
@@ -646,8 +646,19 @@ The following variables are available after the requested object has
 been retrieved from the backend, before it is entered into the cache. In
 other words, they are available in vcl_fetch:
 
+beresp.do_esi
+  Boolean. ESI-process the object after fetching it. Defaults to false. Set it
+  to true to parse the object for ESI directives.
+
+beresp.do_gzip
+  Boolean. Gzip the object before storing it. Defaults to true. 
+
+beresp.do_gunzip
+  Boolean. Unzip the object before storing it in the cache.  Defaults
+  to false.
+
 beresp.proto
-  The HTTP protocol version used when the object was retrieved.
+  The HTTP protocol version used the backend replied with.
 
 beresp.status
   The HTTP status code returned by the server.

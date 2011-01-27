@@ -64,14 +64,13 @@ static void __match_proto__()
 vfp_nop_begin(struct sess *sp, size_t estimate)
 {
 
-	AZ(sp->wrk->storage);
 	if (fetchfrag > 0) {
 		estimate = fetchfrag;
 		WSL(sp->wrk, SLT_Debug, sp->fd,
 		    "Fetch %d byte segments:", fetchfrag);
 	}
 	if (estimate > 0)
-		sp->wrk->storage = STV_alloc(sp, estimate);
+		(void)FetchStorage(sp, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -91,9 +90,9 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct storage *st;
 
 	while (bytes > 0) {
-		if (FetchStorage(sp)) 
+		st = FetchStorage(sp, 0);
+		if (st == NULL)
 			return (-1);
-		st = sp->wrk->storage;
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
@@ -121,18 +120,17 @@ vfp_nop_end(struct sess *sp)
 {
 	struct storage *st;
 
-	st = sp->wrk->storage;
-	sp->wrk->storage = NULL;
+	st = VTAILQ_LAST(&sp->obj->store, storagehead);
 	if (st == NULL)
 		return (0);
 
 	if (st->len == 0) {
+		VTAILQ_REMOVE(&sp->obj->store, st, list);
 		STV_free(st);
 		return (0);
 	}
 	if (st->len < st->space)
 		STV_trim(st, st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
 	return (0);
 }
 
@@ -146,27 +144,29 @@ static struct vfp vfp_nop = {
  * Fetch Storage
  */
 
-int
-FetchStorage(const struct sess *sp)
+struct storage *
+FetchStorage(const struct sess *sp, ssize_t sz)
 {
 	ssize_t l;
+	struct storage *st;
 
-	if (sp->wrk->storage != NULL &&
-	    sp->wrk->storage->len == sp->wrk->storage->space) {
-		VTAILQ_INSERT_TAIL(&sp->obj->store, sp->wrk->storage, list);
-		sp->wrk->storage = NULL;
-	}
-	if (sp->wrk->storage == NULL) {
-		l = fetchfrag;
-		if (l == 0)
-			l = params->fetch_chunksize * 1024LL;
-		sp->wrk->storage = STV_alloc(sp, l);
-	}
-	if (sp->wrk->storage == NULL) {
+	st = VTAILQ_LAST(&sp->obj->store, storagehead);
+	if (st != NULL && st->len < st->space)
+		return (st);
+
+	l = fetchfrag;
+	if (l == 0)
+		l = sz;
+	if (l == 0)
+		l = params->fetch_chunksize * 1024LL;
+	st = STV_alloc(sp, l);
+	if (st == NULL) {
 		errno = ENOMEM;
-		return (-1);
+		return (NULL);
 	}
-	return (0);
+	AZ(st->len);
+	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	return (st);
 }
 
 /*--------------------------------------------------------------------
@@ -507,7 +507,7 @@ FetchBody(struct sess *sp)
 	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
 	 */
 
-	AZ(sp->wrk->storage);
+	AZ(VTAILQ_FIRST(&sp->obj->store));
 	switch (sp->wrk->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -546,7 +546,6 @@ FetchBody(struct sess *sp)
 	 * to get it trimmed and added to the object.
 	 */
 	XXXAZ(vfp_nop_end(sp));
-	AZ(sp->wrk->storage);
 
 	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
 	    sp->wrk->body_status, cls, mklen);
