@@ -75,7 +75,7 @@ Documentation files for %name
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
-./autogen.sh
+#./autogen.sh
 
 # Hack to get 32- and 64-bits tests run concurrently on the same build machine
 case `uname -m` in
@@ -141,12 +141,7 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-%if 0%{?rhel} > 4 || 0%{?fedora} > 6
-pushd doc/sphinx
-%{__make} html
-popd
-mv doc/sphinx/\=build/html doc
-%endif
+cp -r doc/sphinx/\=build/html doc
 
 %check
 # rhel5 on ppc64 is just too strange
