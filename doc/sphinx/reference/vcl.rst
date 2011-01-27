@@ -56,7 +56,7 @@ You can use the *set* keyword to arbitrary HTTP headers. You can
 remove headers with the *remove* or *unset* keywords, which are
 synonym.
 
-The return(action) keyword terminates the subroutine. *action* can be,
+The ``return(action)`` keyword terminates the subroutine. *action* can be,
 depending on context one of
 
 * deliver
