@@ -31,7 +31,9 @@ client c1 {
 } -run
 
 # If this fails, the multiple storage allocations did not happen
-varnish v1 -expect SMF.s0.nreq == 3
+varnish v1 -expect SMF.s0.nreq != 0
+varnish v1 -expect SMF.s0.nreq != 1
+varnish v1 -expect SMF.s0.nreq != 2
 
 client c1 {
 	# See varnish can gunzip it.
