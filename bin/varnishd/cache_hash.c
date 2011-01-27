@@ -485,11 +485,8 @@ hsh_rush(struct objhead *oh)
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < params->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&wl->list);
-		if (sp == NULL) {
-			oh->waitinglist = NULL;
-			FREE_OBJ(wl);
-			return;
-		}
+		if (sp == NULL) 
+			break;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
 		VTAILQ_REMOVE(&wl->list, sp, list);
@@ -502,6 +499,10 @@ hsh_rush(struct objhead *oh)
 			VSC_main->client_drop_late++;
 			break;
 		}
+	}
+	if (VTAILQ_EMPTY(&wl->list)) {
+		oh->waitinglist = NULL;
+		FREE_OBJ(wl);
 	}
 }
 
