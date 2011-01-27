@@ -81,11 +81,6 @@ mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 %build
-# No rst2man in rhel4 or rhel5 (use pregenerated manpages)
-#%if 0%{?rhel} < 6 && 0%{?fedora} < 12
-#	export RST2MAN=true
-#%endif
-
 # No pkgconfig/libpcre.pc in rhel4
 %if 0%{?rhel} == 4
 	export PCRE_CFLAGS=`pcre-config --cflags`
