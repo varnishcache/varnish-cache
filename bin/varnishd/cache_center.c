@@ -468,7 +468,7 @@ cnt_fetch(struct sess *sp)
 	struct http *hp, *hp2;
 	char *b;
 	unsigned l, nhttp;
-	int varyl = 0;
+	int varyl = 0, pass;
 	struct vsb *vary = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -562,33 +562,18 @@ cnt_fetch(struct sess *sp)
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		sp->wrk->cacheable = 0;
-	} else if (!sp->wrk->cacheable && sp->objcore != NULL) {
-		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-		sp->objcore = NULL;
-	}
-
-	/*
-	 * At this point we are either committed to flesh out the busy
-	 * object we have in the hash or we have let go of it, if we ever
-	 * had one.
-	 */
-
-	if (sp->wrk->cacheable) {
-		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, sp->wrk->beresp);
-		if (vary != NULL) {
-			varyl = vsb_len(vary);
-			assert(varyl > 0);
-		}
+		pass = 1;
+	} else if (sp->handling == VCL_RET_PASS || !sp->wrk->cacheable) {
+		/* pass from vcl_fetch{} -> hit-for-pass */
+		pass = 1;
 	} else {
-		AZ(sp->objcore);
+		/* regular object */
+		pass = 0;
 	}
-
-	AZ(sp->wrk->vfp);
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
-	 * object stored.
+	 * object processed before it is stored.
 	 *
 	 * The backend Content-Encoding header tells us what we are going
 	 * to receive, which we classify in the following three classes:
@@ -598,6 +583,8 @@ cnt_fetch(struct sess *sp)
 	 *	anything else			--> do nothing wrt gzip
 	 *
 	 */
+
+	AZ(sp->wrk->vfp);
 
 	/* We do nothing unless the param is set */
 	if (!params->http_gzip_support)
@@ -643,20 +630,24 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->vfp = &vfp_testgzip;
 
 	l = http_EstimateWS(sp->wrk->beresp,
-	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
-	if (vary != NULL)
-		l += varyl;
+	/* Create Vary instructions */
+	if (sp->wrk->cacheable) {
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		vary = VRY_Create(sp, sp->wrk->beresp);
+		if (vary != NULL) {
+			varyl = vsb_len(vary);
+			assert(varyl > 0);
+			l += varyl;
+		}
+	}
 
 	/*
 	 * Space for producing a Content-Length: header including padding
 	 * A billion gigabytes is enough for anybody.
 	 */
 	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
-
-	/*
-	 * XXX: VFP's may affect estimate
-	 */
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
 	    sp->wrk->ttl, nhttp);
@@ -684,7 +675,6 @@ cnt_fetch(struct sess *sp)
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
 
-
 	/* Filter into object */
 	hp = sp->wrk->beresp;
 	hp2 = sp->obj->http;
@@ -692,7 +682,7 @@ cnt_fetch(struct sess *sp)
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
 	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
-	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(sp->wrk, sp->fd, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
@@ -700,7 +690,13 @@ cnt_fetch(struct sess *sp)
 	else
 		sp->obj->last_modified = sp->wrk->entered;
 
-	i = FetchBody(sp);
+
+	/* Use unmodified headers*/
+	i = FetchBody(sp, sp->wrk->beresp1);
+
+	sp->wrk->bereq = NULL;
+	sp->wrk->beresp = NULL;
+	sp->wrk->beresp1 = NULL;
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbc);
@@ -709,9 +705,6 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		HSH_Drop(sp);
 		AZ(sp->obj);
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
@@ -722,9 +715,6 @@ cnt_fetch(struct sess *sp)
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
@@ -737,9 +727,6 @@ cnt_fetch(struct sess *sp)
 		break;
 	case VCL_RET_ERROR:
 		HSH_Drop(sp);
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	default:
@@ -754,9 +741,6 @@ cnt_fetch(struct sess *sp)
 		HSH_Unbusy(sp);
 	}
 	sp->acct_tmp.fetch++;
-	sp->wrk->bereq = NULL;
-	sp->wrk->beresp = NULL;
-	sp->wrk->beresp1 = NULL;
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -1063,7 +1047,6 @@ cnt_pass(struct sess *sp)
 	sp->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
-	sp->pass = 1;
 	return (0);
 }
 
@@ -1151,7 +1134,6 @@ cnt_recv(struct sess *sp)
 	AN(sp->director);
 
 	sp->disable_esi = 0;
-	sp->pass = 0;
 	sp->hash_always_miss = 0;
 	sp->hash_ignore_busy = 0;
 	sp->client_identity = NULL;
