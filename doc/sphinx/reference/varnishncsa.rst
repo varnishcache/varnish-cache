@@ -16,7 +16,7 @@ SYNOPSIS
 ========
 
 varnishncsa [-a] [-b] [-C] [-c] [-D] [-d] [-f] [-F format] [-I regex]
-[-i tag] [-n varnish_name] [-P file] [-r file] [-V] [-w file] 
+[-i tag] [-n varnish_name] [-o tag regex] [-P file] [-r file] [-V] [-w file] 
 [-X regex] [-x tag]
 
 
