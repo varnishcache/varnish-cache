@@ -573,22 +573,11 @@ cnt_fetch(struct sess *sp)
 	 * had one.
 	 */
 
-	if (sp->wrk->cacheable) {
-		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, sp->wrk->beresp);
-		if (vary != NULL) {
-			varyl = vsb_len(vary);
-			assert(varyl > 0);
-		}
-	} else {
-		AZ(sp->objcore);
-	}
-
 	AZ(sp->wrk->vfp);
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
-	 * object stored.
+	 * object processed before it is stored.
 	 *
 	 * The backend Content-Encoding header tells us what we are going
 	 * to receive, which we classify in the following three classes:
@@ -645,18 +634,22 @@ cnt_fetch(struct sess *sp)
 	l = http_EstimateWS(sp->wrk->beresp,
 	    sp->pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
-	if (vary != NULL)
-		l += varyl;
+	/* Create Vary instructions */
+	if (sp->wrk->cacheable) {
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		vary = VRY_Create(sp, sp->wrk->beresp);
+		if (vary != NULL) {
+			varyl = vsb_len(vary);
+			assert(varyl > 0);
+			l += varyl;
+		}
+	}
 
 	/*
 	 * Space for producing a Content-Length: header including padding
 	 * A billion gigabytes is enough for anybody.
 	 */
 	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
-
-	/*
-	 * XXX: VFP's may affect estimate
-	 */
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
 	    sp->wrk->ttl, nhttp);
@@ -700,7 +693,13 @@ cnt_fetch(struct sess *sp)
 	else
 		sp->obj->last_modified = sp->wrk->entered;
 
-	i = FetchBody(sp);
+
+	/* Use unmodified headers*/
+	i = FetchBody(sp, sp->wrk->beresp1);
+
+	sp->wrk->bereq = NULL;
+	sp->wrk->beresp = NULL;
+	sp->wrk->beresp1 = NULL;
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbc);
@@ -709,9 +708,6 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		HSH_Drop(sp);
 		AZ(sp->obj);
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
@@ -722,9 +718,6 @@ cnt_fetch(struct sess *sp)
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
@@ -737,9 +730,6 @@ cnt_fetch(struct sess *sp)
 		break;
 	case VCL_RET_ERROR:
 		HSH_Drop(sp);
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->step = STP_ERROR;
 		return (0);
 	default:
@@ -754,9 +744,6 @@ cnt_fetch(struct sess *sp)
 		HSH_Unbusy(sp);
 	}
 	sp->acct_tmp.fetch++;
-	sp->wrk->bereq = NULL;
-	sp->wrk->beresp = NULL;
-	sp->wrk->beresp1 = NULL;
 	sp->step = STP_DELIVER;
 	return (0);
 }

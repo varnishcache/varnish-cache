@@ -481,11 +481,10 @@ FetchHdr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct sess *sp)
+FetchBody(struct sess *sp, struct http *hp)
 {
 	char *b;
 	int cls;
-	struct http *hp;
 	struct storage *st;
 	int mklen;
 
@@ -497,8 +496,6 @@ FetchBody(struct sess *sp)
 	if (sp->wrk->vfp == NULL)
 		sp->wrk->vfp = &vfp_nop;
 
-	/* We use the unmodified headers */
-	hp = sp->wrk->beresp1;
 	AN(sp->director);
 	AssertObjPassOrBusy(sp->obj);
 
