@@ -246,9 +246,10 @@ VRT_l_beresp_ttl(const struct sess *sp, double a)
 	 * of the rounding to seconds.
 	 * We special case and make sure that rounding does not surprise.
 	 */
-	if (a <= 0)
+	if (a <= 0) {
 		sp->wrk->ttl = sp->t_req - 1;
-	else
+		sp->wrk->grace = 0.;
+	} else
 		sp->wrk->ttl = sp->t_req + a;
 }
 
@@ -349,9 +350,10 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	 * of the rounding to seconds.
 	 * We special case and make sure that rounding does not surprise.
 	 */
-	if (a <= 0)
+	if (a <= 0) {
 		sp->obj->ttl = sp->t_req - 1;
-	else
+		sp->obj->grace = 0;
+	} else
 		sp->obj->ttl = sp->t_req + a;
 	EXP_Rearm(sp->obj);
 }
