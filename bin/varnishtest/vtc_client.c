@@ -77,7 +77,6 @@ client_thread(void *priv)
 	struct client *c;
 	struct vtclog *vl;
 	int fd;
-	int i;
 	unsigned u;
 	struct vsb *vsb;
 	char *p;
@@ -99,14 +98,11 @@ client_thread(void *priv)
 		vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
 	for (u = 0; u < c->repeat; u++) {
 		vtc_log(vl, 3, "Connect to %s", vsb_data(vsb));
-		fd = VSS_open(vsb_data(vsb), 0);
-		for (i = 0; fd < 0 && i < 3; i++) {
-			(void)sleep(1);
-			fd = VSS_open(vsb_data(vsb), 0);
-		}
+		fd = VSS_open(vsb_data(vsb), 10.);
 		if (fd < 0)
 			vtc_log(c->vl, 0, "Failed to open %s", vsb_data(vsb));
 		assert(fd >= 0);
+		TCP_blocking(fd);
 		TCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
 		    fd, mabuf, mpbuf, vsb_data(vsb));
