@@ -450,9 +450,7 @@ VRT_r_##which##_grace(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	if (isnan(fld))						\
-		 return ((double)params->default_grace);	\
-	return(fld);						\
+	return(HSH_Grace(fld));					\
 }
 
 VRT_DO_GRACE(req, sp->grace, )
