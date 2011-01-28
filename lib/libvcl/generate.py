@@ -382,12 +382,6 @@ sp_variables = (
 		( 'error',),		# XXX ?
 		'const struct sess *'
 	),
-	('obj.cacheable',
-		'BOOL',
-		( 'hit',),
-		( 'hit',),
-		'const struct sess *'
-	),
 	('obj.ttl',
 		'DURATION',
 		( 'hit', 'error',),

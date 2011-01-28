@@ -416,7 +416,9 @@ varnish_stop(struct varnish *v)
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	while (1) {
+		r = NULL;
 		(void)varnish_ask_cli(v, "status", &r);
+		AN(r);
 		if (!strcmp(r, "Child in state stopped"))
 			break;
 		free(r);

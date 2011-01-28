@@ -362,8 +362,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (!o->cacheable)
-			continue;
 		if (o->ttl == 0)
 			continue;
 		if (BAN_CheckObject(o, sp))
@@ -579,7 +577,6 @@ HSH_Drop(struct sess *sp)
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AssertObjPassOrBusy(o);
-	o->cacheable = 0;
 	o->ttl = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);

@@ -476,7 +476,6 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		return (0);
 	} else {
 		o->ttl = 0;
-		o->cacheable = 0;
 		oc->ban = NULL;
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */

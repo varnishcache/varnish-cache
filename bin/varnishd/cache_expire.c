@@ -138,7 +138,6 @@ EXP_Insert(struct object *o)
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AssertObjBusy(o);
-	assert(o->cacheable);
 	HSH_Ref(oc);
 
 	assert(o->entered != 0 && !isnan(o->entered));

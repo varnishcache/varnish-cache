@@ -667,10 +667,7 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->cacheable = sp->wrk->cacheable;
 	sp->obj->grace = sp->wrk->grace;
-	if (sp->obj->ttl == 0. && sp->obj->grace == 0.)
-		sp->obj->cacheable = 0;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
@@ -733,7 +730,6 @@ cnt_fetch(struct sess *sp)
 		WRONG("Illegal action in vcl_fetch{}");
 	}
 
-	sp->obj->cacheable = 1;
 	if (sp->wrk->cacheable) {
 		EXP_Insert(sp->obj);
 		AN(sp->obj->objcore);

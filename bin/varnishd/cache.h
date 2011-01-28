@@ -432,7 +432,6 @@ struct object {
 	unsigned		response;
 
 	/* XXX: make bitmap */
-	unsigned		cacheable;
 	unsigned		gziped;
 	/* Bit positions in the gzip stream */
 	ssize_t			gzip_start;

@@ -367,28 +367,6 @@ VRT_r_obj_ttl(const struct sess *sp)
 	return (sp->obj->ttl - sp->t_req);
 }
 
-
-/*--------------------------------------------------------------------*/
-
-#define VOBJ(type,onm,field)						\
-void									\
-VRT_l_obj_##onm(const struct sess *sp, type a)				\
-{									\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
-	sp->obj->field = a;						\
-}									\
-									\
-type									\
-VRT_r_obj_##onm(const struct sess *sp)					\
-{									\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */	\
-	return (sp->obj->field);					\
-}
-
-VOBJ(unsigned, cacheable, cacheable)
-
 /*--------------------------------------------------------------------*/
 
 void

@@ -13,7 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_hit {
-		set obj.cacheable = false;
+		set obj.ttl = 0s;
 		return (restart);
 	}
 } -start

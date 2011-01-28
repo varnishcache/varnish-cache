@@ -63,27 +63,27 @@ varnish v1 -vcl {
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set obj.cacheable += 1; }
+	sub vcl_fetch { set beresp.do_gzip += 1; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.cacheable = true; }
+	sub vcl_fetch { set beresp.do_gzip = true; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.cacheable = false; }
+	sub vcl_fetch { set beresp.do_gzip = false; }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.cacheable = mu; }
+	sub vcl_fetch { set beresp.do_gzip = mu; }
 }
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { unset beresp.cacheable; }
+	sub vcl_fetch { unset beresp.do_gzip; }
 }
 
 varnish v1 -badvcl {
