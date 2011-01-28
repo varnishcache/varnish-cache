@@ -41,6 +41,7 @@ SVNID("$Id$")
 #include "libvarnish.h"
 #include "vsb.h"
 #include "miniobj.h"
+#include "vas.h"
 
 #include "vtc.h"
 
@@ -56,6 +57,8 @@ struct vtclog {
 	pthread_mutex_t	mtx;
 };
 
+static pthread_key_t log_key;
+
 /**********************************************************************/
 
 void
@@ -65,6 +68,7 @@ vtc_loginit(char *buf, unsigned buflen)
 	vtclog_buf = buf;
 	vtclog_left = buflen;
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
+	AZ(pthread_key_create(&log_key, NULL));
 }
 
 /**********************************************************************/
@@ -80,6 +84,7 @@ vtc_logopen(const char *id)
 	vl->id = id;
 	vl->vsb = vsb_newauto();
 	AZ(pthread_mutex_init(&vl->mtx, NULL));
+	AZ(pthread_setspecific(log_key, vl));
 	return (vl);
 }
 
@@ -274,3 +279,27 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 			pthread_exit(NULL);
 	}
 }
+
+/**********************************************************************/
+
+static void
+vtc_log_vas_fail(const char *func, const char *file, int line,
+    const char *cond, int err, int xxx)
+{
+	struct vtclog *vl;
+
+	(void)err;
+	(void)xxx;
+	vl = pthread_getspecific(log_key);
+	if (vl == NULL) {
+		fprintf(stderr,
+		    "Assert error in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	} else {
+		vtc_log(vl, 0, "Assert error in %s(), %s line %d:"
+		    "  Condition(%s) not true.\n", func, file, line, cond);
+	}
+}
+
+vas_f *vas_fail = vtc_log_vas_fail;
