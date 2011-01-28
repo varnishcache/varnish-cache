@@ -205,6 +205,8 @@ struct params {
 	unsigned		gzip_level;
 
 	double			critbit_cooloff;
+
+	double			shortlived;
 };
 
 /*

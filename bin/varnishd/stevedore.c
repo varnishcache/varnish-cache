@@ -47,8 +47,6 @@ SVNID("$Id$")
 #include "cli_priv.h"
 #include "vrt_obj.h"
 
-#define TRANSIENT_NAME	"Transient"
-
 static VTAILQ_HEAD(, stevedore)	stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
 
@@ -91,7 +89,7 @@ stv_pick_stevedore(const char *hint)
 			if (!strcmp(stv->ident, hint))
 				return (stv);
 		}
-		if (!strcmp(TRANSIENT_NAME, hint))
+		if (!strcmp(TRANSIENT_STORAGE, hint))
 			return (stv_transient);
 	}
 	/* pick a stevedore and bump the head along */
@@ -268,10 +266,7 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	if (!sp->wrk->cacheable)
-		stv = stv_transient;
-	else
-		stv = stv_pick_stevedore(hint);
+	stv = stv_pick_stevedore(hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, sp, ltot, &soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -477,7 +472,7 @@ STV_Config(const char *spec)
 	else if (ac != 0)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
-	if (!strcmp(stv->ident, TRANSIENT_NAME)) {
+	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
 		stv->transient = 1;
 		AZ(stv_transient);
 		stv_transient = stv;
@@ -497,9 +492,9 @@ STV_Config_Transient(void)
 
 	ASSERT_MGT();
 	VTAILQ_FOREACH(stv, &stevedores, list)
-		if (!strcmp(stv->ident, TRANSIENT_NAME))
+		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
 			return;
-	STV_Config(TRANSIENT_NAME "=malloc");
+	STV_Config(TRANSIENT_STORAGE "=malloc");
 }
 
 /*--------------------------------------------------------------------*/
@@ -539,7 +534,7 @@ stv_find(const char *nm)
 	VTAILQ_FOREACH(stv, &stevedores, list)
 		if (!strcmp(stv->ident, nm))
 			return (stv);
-	if (!strcmp(TRANSIENT_NAME, nm))
+	if (!strcmp(TRANSIENT_STORAGE, nm))
 		return (stv_transient);
 	return (NULL);
 }

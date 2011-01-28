@@ -104,6 +104,8 @@ struct lock { void *priv; };		// Opaque
 
 #define DIGEST_LEN		32
 
+/* Name of transient storage */
+#define TRANSIENT_STORAGE	"Transient"
 
 /*--------------------------------------------------------------------
  * Pointer aligment magic
@@ -268,14 +270,13 @@ struct worker {
 	struct http		*beresp;
 	struct http		*resp;
 
-	unsigned		cacheable;
 	double			age;
 	double			entered;
 	double			ttl;
 	double			grace;
 
 	/* This is only here so VRT can find it */
-	char			*storage_hint;
+	const char		*storage_hint;
 
 	/* Fetch stuff */
 	enum body_status	body_status;

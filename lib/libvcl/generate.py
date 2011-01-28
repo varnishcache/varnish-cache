@@ -292,12 +292,6 @@ sp_variables = (
 		( 'fetch',),
 		'const struct sess *'
 	),
-	('beresp.cacheable',
-		'BOOL',
-		( 'fetch',),
-		( 'fetch',),
-		'const struct sess *'
-	),
 	('beresp.do_esi',
 		'BOOL',
 		( 'fetch',),

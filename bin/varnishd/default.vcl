@@ -102,7 +102,7 @@ sub vcl_miss {
 }
 
 sub vcl_fetch {
-    if (!beresp.cacheable) {
+    if (beresp.ttl <= 0s) {
         return (pass);
     }
     if (beresp.http.Set-Cookie) {

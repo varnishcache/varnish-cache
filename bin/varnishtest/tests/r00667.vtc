@@ -19,7 +19,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
-		set beresp.cacheable = false;
+		set beresp.ttl = 0s;
 	}
 } -start
 

@@ -1436,7 +1436,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 	/* XXX: temporary sanity */
 	AN(sp->objcore);
-	AN(sp->wrk->cacheable);
+	AN(sp->wrk->ttl >= 0);
 
 	sg = NULL;
 	st = smp_allocx(stv, ltot, &sg);

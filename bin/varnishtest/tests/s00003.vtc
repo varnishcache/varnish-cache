@@ -20,7 +20,6 @@ varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		set beresp.ttl = 1s;
 		set beresp.grace = 10m;
-		set beresp.cacheable = true;
 		if (beresp.http.foo == "2")
 		{
 			set beresp.saintmode = 2s;

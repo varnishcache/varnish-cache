@@ -842,6 +842,12 @@ static const struct parspec input_parspec[] = {
 		" just a waste of memory.",
 		EXPERIMENTAL,
 		"32768", "Bytes" },
+	{ "shortlived", tweak_timeout_double,
+		&master.shortlived, 0, UINT_MAX,
+		"Objects created with TTL shorter than this are always "
+		"put in transient storage.\n",
+		0,
+		"10.0", "s" },
 	{ "critbit_cooloff", tweak_timeout_double,
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "

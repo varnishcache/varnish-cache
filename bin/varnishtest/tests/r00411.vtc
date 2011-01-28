@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_fetch {
 		if (beresp.status == 303) {
-			set beresp.cacheable = true;
+			set beresp.ttl = 3m;
 			set beresp.http.X-Magic-Redirect = "1";
 		}
 	}

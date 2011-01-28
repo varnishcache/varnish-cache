@@ -195,7 +195,6 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 	return (sp->wrk->field);					\
 }
 
-VBERESP(beresp, unsigned, cacheable, cacheable)
 VBERESP(beresp, unsigned, do_esi, do_esi)
 VBERESP(beresp, unsigned, do_gzip, do_gzip)
 VBERESP(beresp, unsigned, do_gunzip, do_gunzip)

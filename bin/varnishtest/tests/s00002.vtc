@@ -52,7 +52,6 @@ varnish v1 -vcl {
 	sub vcl_fetch { 
 		set beresp.ttl = 1s; 
 		set beresp.grace = 1m; 
-		set beresp.cacheable = true; 
 	}
 } -start
 

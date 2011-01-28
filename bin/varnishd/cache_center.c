@@ -379,7 +379,6 @@ cnt_error(struct sess *sp)
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
-		sp->wrk->cacheable = 0;
 		/* XXX: 1024 is a pure guess */
 		sp->obj = STV_NewObject(sp, NULL, 1024, 0,
 		     params->http_headers);
@@ -525,6 +524,13 @@ cnt_fetch(struct sess *sp)
 	sp->err_code = http_GetStatus(sp->wrk->beresp);
 
 	/*
+	 * What does RFC2616 think about TTL ?
+	 */
+	sp->wrk->entered = TIM_real();
+	sp->wrk->age = 0;
+	sp->wrk->ttl = RFC2616_Ttl(sp);
+
+	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
 	 * We do not support ranges yet, so 206 is out.
 	 */
@@ -536,19 +542,15 @@ cnt_fetch(struct sess *sp)
 	case 302: /* Moved Temporarily */
 	case 410: /* Gone */
 	case 404: /* Not Found */
-		sp->wrk->cacheable = 1;
 		break;
 	default:
-		sp->wrk->cacheable = 0;
+		sp->wrk->ttl = sp->t_req - 1.;
 		break;
 	}
 
-	sp->wrk->entered = TIM_real();
-	sp->wrk->age = 0;
-	sp->wrk->ttl = RFC2616_Ttl(sp);
-
+	/* pass from vclrecv{} has negative TTL */
 	if (sp->objcore == NULL)
-		sp->wrk->cacheable = 0;
+		sp->wrk->ttl = sp->t_req - 1.;
 
 	sp->wrk->do_esi = 0;
 	sp->wrk->grace = NAN;
@@ -561,11 +563,17 @@ cnt_fetch(struct sess *sp)
 
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
-		sp->wrk->cacheable = 0;
 		pass = 1;
-	} else if (sp->handling == VCL_RET_PASS || !sp->wrk->cacheable) {
+		/* VCL may have fiddled this, but that doesn't help */
+		sp->wrk->ttl = sp->t_req - 1.;
+	} else if (sp->handling == VCL_RET_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
+		/* XXX: the bereq was not filtered pass... */
 		pass = 1;
+		sp->objcore->flags |= OC_F_PASS;
+		/* Enforce a minimum TTL of 1 sec (if set from VCL) */
+		if (sp->wrk->ttl <= sp->t_req)
+			sp->wrk->ttl = sp->wrk->entered + params->default_ttl;
 	} else {
 		/* regular object */
 		pass = 0;
@@ -633,7 +641,7 @@ cnt_fetch(struct sess *sp)
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
-	if (sp->wrk->cacheable) {
+	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(sp, sp->wrk->beresp);
 		if (vary != NULL) {
@@ -649,11 +657,18 @@ cnt_fetch(struct sess *sp)
 	 */
 	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
 
+	if (sp->wrk->ttl < sp->t_req + params->shortlived ||
+	    sp->objcore == NULL) 
+		sp->wrk->storage_hint = TRANSIENT_STORAGE;
+
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
 	    sp->wrk->ttl, nhttp);
+	/* XXX: -> 513 */
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->wrk->storage_hint = NULL;
+
+	/* VFP will update as needed */
 	sp->obj->gziped = sp->wrk->is_gzip;
 
 	if (vary != NULL) {
@@ -687,7 +702,6 @@ cnt_fetch(struct sess *sp)
 	else
 		sp->obj->last_modified = sp->wrk->entered;
 
-
 	/* Use unmodified headers*/
 	i = FetchBody(sp, sp->wrk->beresp1);
 
@@ -715,11 +729,6 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_RECV;
 		return (0);
 	case VCL_RET_PASS:
-		if (sp->obj->objcore != NULL)
-			sp->obj->objcore->flags |= OC_F_PASS;
-		if (sp->obj->ttl - sp->t_req < params->default_ttl)
-			sp->obj->ttl = sp->t_req + params->default_ttl;
-		break;
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_ERROR:
@@ -730,7 +739,7 @@ cnt_fetch(struct sess *sp)
 		WRONG("Illegal action in vcl_fetch{}");
 	}
 
-	if (sp->wrk->cacheable) {
+	if (sp->obj->objcore != NULL) {
 		EXP_Insert(sp->obj);
 		AN(sp->obj->objcore);
 		AN(sp->obj->objcore->ban);
