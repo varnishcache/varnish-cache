@@ -492,6 +492,9 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "topbuild", topbuild);
 
+	AN(getcwd(topbuild, sizeof topbuild));
+	macro_def(vltop, NULL, "pwd", topbuild);
+
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 
 	/* Move into our tmpdir */
