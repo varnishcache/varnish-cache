@@ -40,13 +40,12 @@
 # $Id$
 
 import sys
+import re
 
 if len(sys.argv) == 2:
 	specfile = sys.argv[1]
 else:
 	specfile = "vmod.vcc"
-
-type_tab = dict()
 
 ctypes = {
 	'IP':		"struct sockaddr_storage *",
@@ -114,49 +113,89 @@ def partition(string, separator):
 		return (string[:i],separator,string[i+len(separator):])
 	return (string, '', '')
 
+#######################################################################
+
 f = open(specfile, "r")
 
-for l0 in f:
-	# print("# " + l0)
-	l0=l0.strip()
+def nextline():
+	while True:
+		l0 = f.readline()
+		if l0 == "":
+			return l0
+		l0 = re.sub("#.*$", "", l0)
+		l0 = re.sub("\s\s*", " ", l0.strip())
+		if l0 != "":
+			return l0
+
+def is_c_name(s):
+	return None != re.match("^[a-z][a-z0-9_]*$", s)
+
+while True:
+	l0 = nextline()
 	if l0 == "":
-		continue
-	i = l0.find("#")
-	if i == 0:
-		continue
-	if i >= 0:
-		line = l0[:i-1]
-	else:
-		line = l0
-	line = line.expandtabs().strip()
-	l = partition(line, " ")
+		break;
+	l = partition(l0, " ")
 
 	if l[0] == "Module":
 		modname = l[2].strip();
+		if not is_c_name(modname):
+			raise Exception("Module name '%s' is illegal" % modname)
 		continue
 
 	if l[0] == "Init":
 		initname = l[2].strip();
+		if not is_c_name(initname):
+			raise Exception("Init name '%s' is illegal" % initname)
 		continue
 
 	if l[0] != "Function":
-		assert False
+		raise Exception("Expected 'Function' line, got '%s'" % l[0])
 
+	# Find the return type of the function
 	l = partition(l[2].strip(), " ")
 	rt_type = l[0]
+	if rt_type not in ctypes:
+		raise Exception("Return type '%s' not a valid type" % rt_type)
 
+	# Find the function name
 	l = partition(l[2].strip(), "(")
+
 	fname = l[0].strip()
+	if not is_c_name(fname):
+		raise Exception("Function name '%s' is illegal" % fname)
+
+	if l[1] != '(':
+		raise Exception("Missing '('")
+
+	l = l[2]
+
+	while -1 == l.find(")"):
+		l1 = nextline()
+		if l1 == "":	
+			raise Exception("End Of Input looking for ')'")
+		l = l + l1
+
+	if -1 != l.find("("):
+		raise Exception("Nesting trouble with '(...)' ")
+
+	if l[-1:] != ')':
+		raise Exception("Junk after ')'")
+
+	l = l[:-1]
 
 	args = list()
 
 	while True:
-		l = partition(l[2].strip(), ",")
-		if len(l[2]) == 0:
+		l = partition(l, ",")
+		t = l[0].strip()
+		if t not in ctypes:
+			raise Exception(
+			    "Argument type '%s' not a valid type" % t)
+		args.append(t)
+		l = l[2]
+		if l == "":
 			break
-		args.append(l[0])
-	l = partition(l[0].strip(), ")")
-	args.append(l[0])
+
 	do_func(fname, rt_type, args)
 
 #######################################################################
