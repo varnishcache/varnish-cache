@@ -154,8 +154,10 @@ VSC_F(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups")
 VSC_F(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit")
 VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache")
 
-
 VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs")
+
+VSC_F(n_gzip,			uint64_t, 0, 'a', "Gzip operations")
+VSC_F(n_gunzip,			uint64_t, 0, 'a', "Gunzip operations")
 
 #endif
 
