@@ -27,7 +27,7 @@ varnish v1 -vcl {
 
 varnish v1 -badvcl {
 	sub vcl_recv {
-		if (req.restarts == req.url) {
+		if (!req.restarts != req.url) {
 			set req.http.foo = "foo" + 3;
 		}
 
@@ -37,5 +37,33 @@ varnish v1 -badvcl {
 varnish v1 -badvcl {
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_recv {
+		if (req.grace < 3s || req.grace) {
+			set req.http.foo = vcl_recv;
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_recv {
+		if (req.grace < 3s && req.grace) {
+			set req.http.foo = vcl_recv;
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_recv {
+		set req.http.foo = "bla" * "foo";
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_fetch {
+		set req.http.foo = req.grace + beresp.status;
 	}
 }

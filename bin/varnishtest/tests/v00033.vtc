@@ -38,3 +38,16 @@ client c1 {
 	expect resp.http.foo == 1100586419201.000
 	expect resp.http.bar == true
 } -run
+
+varnish v1 -badvcl {
+	sub vcl_recv {
+		if (storage.nowhere.free_space > 4 "X") {
+		}
+	}
+}
+varnish v1 -badvcl {
+	sub vcl_recv {
+		if (storage.nowhere.free_space > 4 X) {
+		}
+	}
+}

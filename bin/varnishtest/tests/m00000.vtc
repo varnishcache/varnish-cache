@@ -34,3 +34,10 @@ varnish v1 -badvcl {
 		set resp.http.who = std.author(jfk);
 	}
 }
+
+varnish v1 -badvcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	sub vcl_deliver {
+		set resp.http.who = std.random("foo", "bar");
+	}
+}
