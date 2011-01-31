@@ -185,16 +185,13 @@ while True:
 
 	args = list()
 
-	while True:
-		l = partition(l, ",")
-		t = l[0].strip()
-		if t not in ctypes:
+	for i in re.finditer("([A-Z_]+)\s*({[^}]+})?(,|$)", l):
+		at = i.group(1)
+		tq = i.group(2)
+		if at not in ctypes:
 			raise Exception(
-			    "Argument type '%s' not a valid type" % t)
-		args.append(t)
-		l = l[2]
-		if l == "":
-			break
+			    "Argument type '%s' not a valid type" % at)
+		args.append(at)
 
 	do_func(fname, rt_type, args)
 
