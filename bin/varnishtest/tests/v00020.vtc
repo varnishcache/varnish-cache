@@ -42,7 +42,7 @@ varnish v1 -badvcl {
 
 varnish v1 -badvcl {
 	sub vcl_recv {
-		if (req.grace < 3s || req.grace) {
+		if (req.grace < -3s || req.grace) {
 			set req.http.foo = vcl_recv;
 		}
 	}
@@ -65,5 +65,19 @@ varnish v1 -badvcl {
 varnish v1 -badvcl {
 	sub vcl_fetch {
 		set req.http.foo = req.grace + beresp.status;
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_fetch {
+		if (! req.grace) {
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	sub vcl_fetch {
+		if (beresp.do_gzip + beresp.do_gunzip) {
+		}
 	}
 }
