@@ -638,8 +638,8 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct sess *sp);
-struct vgz *VGZ_NewGzip(struct sess *sp);
+struct vgz *VGZ_NewUngzip(struct sess *sp, const char *id);
+struct vgz *VGZ_NewGzip(struct sess *sp, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, const void *, ssize_t len);

@@ -431,8 +431,7 @@ cnt_error(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * We have fetched the headers from the backend, ask the VCL code what
- * to do next, then head off in that direction.
+ * Fetch an object from the backend, either for pass or for caching.
  *
 DOT subgraph xcluster_fetch {
 DOT	fetch [

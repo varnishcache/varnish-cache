@@ -71,6 +71,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include "vsl.h"
 #include "cache.h"
 #include "stevedore.h"
 
@@ -79,6 +80,8 @@ SVNID("$Id$")
 struct vgz {
 	unsigned		magic;
 #define VGZ_MAGIC		0x162df0cb
+	struct sess		*sess;
+	const char		*id;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
 
@@ -113,7 +116,7 @@ vgz_free(voidpf opaque, voidpf address)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct sess *sp)
+vgz_alloc_vgz(struct sess *sp, const char *id)
 {
 	struct vgz *vg;
 	struct ws *ws = sp->wrk->ws;
@@ -123,6 +126,8 @@ vgz_alloc_vgz(struct sess *sp)
 	AN(vg);
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
+	vg->sess = sp;
+	vg->id = id;
 
 	switch (params->gzip_tmp_space) {
 	case 0:
@@ -149,12 +154,12 @@ vgz_alloc_vgz(struct sess *sp)
 }
 
 struct vgz *
-VGZ_NewUngzip(struct sess *sp)
+VGZ_NewUngzip(struct sess *sp, const char *id)
 {
 	struct vgz *vg;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(sp);
+	vg = vgz_alloc_vgz(sp, id);
 
 	/*
 	 * Max memory usage according to zonf.h:
@@ -167,13 +172,13 @@ VGZ_NewUngzip(struct sess *sp)
 }
 
 struct vgz *
-VGZ_NewGzip(struct sess *sp)
+VGZ_NewGzip(struct sess *sp, const char *id)
 {
 	struct vgz *vg;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(sp);
+	vg = vgz_alloc_vgz(sp, id);
 
 	/*
 	 * From zconf.h:
@@ -353,13 +358,23 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_Destroy(struct vgz **vg)
+VGZ_Destroy(struct vgz **vgp)
 {
+	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(*vg, VGZ_MAGIC);
-	if ((*vg)->tmp != NULL)
-		WS_Reset((*vg)->tmp, (*vg)->tmp_snapshot);
-	*vg = NULL;
+	vg = *vgp;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	*vgp = NULL;
+
+	WSP(vg->sess, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
+	    vg->id,
+	    (intmax_t)vg->vz.total_in,
+	    (intmax_t)vg->vz.total_out,
+	    (intmax_t)vg->vz.start_bit,
+	    (intmax_t)vg->vz.last_bit,
+	    (intmax_t)vg->vz.stop_bit);
+	if (vg->tmp != NULL)
+		WS_Reset(vg->tmp, vg->tmp_snapshot);
 }
 
 /*--------------------------------------------------------------------
@@ -372,7 +387,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F -");
 }
 
 static int __match_proto__()
@@ -441,7 +456,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 
-	sp->wrk->vgz_rx = VGZ_NewGzip(sp);
+	sp->wrk->vgz_rx = VGZ_NewGzip(sp, "G F -");
 }
 
 static int __match_proto__()
@@ -517,7 +532,7 @@ static void __match_proto__()
 vfp_testgzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "u F -");
 }
 
 static int __match_proto__()

@@ -305,24 +305,24 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	/* XXX: snapshot WS's ? We'll need the space */
 
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F E");
 		VEP_Init(sp, NULL);
 	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
 		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		AN(vef);
 		memset(vef, 0, sizeof *vef);
 		vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp);
+		vef->vgz = VGZ_NewGzip(sp, "G F E");
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
 	} else if (sp->wrk->is_gzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp);
+		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F E");
 		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		AN(vef);
 		memset(vef, 0, sizeof *vef);
 		vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp);
+		vef->vgz = VGZ_NewGzip(sp, "G F E");
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
@@ -373,12 +373,15 @@ vfp_esi_end(struct sess *sp)
 		sp->obj->esidata->len = l;
 		vsb_delete(vsb);
 	}
+	if (sp->wrk->vgz_rx != NULL)
+		VGZ_Destroy(&sp->wrk->vgz_rx);
 
 	if (sp->wrk->vef_priv != NULL) {
 		vef = sp->wrk->vef_priv;
-		VGZ_UpdateObj(vef->vgz, sp->obj);
-		sp->wrk->vef_priv = NULL;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
+		sp->wrk->vef_priv = NULL;
+		VGZ_UpdateObj(vef->vgz, sp->obj);
+		VGZ_Destroy(&vef->vgz);
 		XXXAZ(vef->error);
 		sp->obj->gziped = 1;
 	} else {

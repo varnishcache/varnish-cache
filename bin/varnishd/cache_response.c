@@ -253,7 +253,7 @@ res_WriteGunzipObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUngzip(sp);
+	vg = VGZ_NewUngzip(sp, "U R -");
 
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
