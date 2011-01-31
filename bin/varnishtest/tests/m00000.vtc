@@ -13,6 +13,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
+		set resp.http.who = std.author(phk);
 		std.log("VCL initiated log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 	}
@@ -26,3 +27,10 @@ client c1 {
 	expect resp.http.foo == "BAR"
 	expect resp.http.bar == "foo"
 } -run
+
+varnish v1 -badvcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	sub vcl_deliver {
+		set resp.http.who = std.author(jfk);
+	}
+}

@@ -550,6 +550,32 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			Fh(tl, 0, "struct vmod_priv %s;\n", buf);
 			e1 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
+		} else if (fmt == ENUM) {
+			ExpectErr(tl, ID);
+			ERRCHK(tl);
+			r = p;
+			do {
+				if (vcc_IdIs(tl->t, p))
+					break;
+				p += strlen(p) + 1;
+			} while (*p != '\0');
+			if (*p == '\0') {
+				vsb_printf(tl->sb, "Wrong enum value.");
+				vsb_printf(tl->sb, "  Expected one of:\n");
+				do {
+					vsb_printf(tl->sb, "\t%s\n", r);
+					r += strlen(r) + 1;
+				} while (*r != '\0');
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			e1 = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
+			while (*p != '\0')
+				p += strlen(p) + 1;
+			p++;
+			SkipToken(tl, ID);
+			if (*p != '\0')
+				SkipToken(tl, ',');
 		} else {
 			vcc_expr0(tl, &e1, fmt);
 			ERRCHK(tl);

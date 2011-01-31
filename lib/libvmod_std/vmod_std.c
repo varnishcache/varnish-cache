@@ -161,3 +161,18 @@ vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 	if (p != NULL)
 		syslog(fac, "%s", buf);
 }
+
+const char * __match_proto__()
+vmod_author(struct sess *sp, const char *id)
+{
+	(void)sp;
+	if (!strcmp(id, "phk"))
+		return ("Poul-Henning");
+	if (!strcmp(id, "des"))
+		return ("Dag-Erling");
+	if (!strcmp(id, "kristian"))
+		return ("Kristian");
+	if (!strcmp(id, "mithrandir"))
+		return ("Tollef");
+	WRONG("Illegal VMOD enum");
+}

@@ -53,6 +53,7 @@ ctypes = {
 	'STRING_LIST':	"const char *, ...",
 	'BOOL':		"unsigned",
 	'BACKEND':	"struct director *",
+	'ENUM':		"const char *",
 	'TIME':		"double",
 	'REAL':		"double",
 	'DURATION':	"double",
@@ -73,7 +74,7 @@ tdl = ""
 plist = ""
 slist = ""
 
-def do_func(fname, rval, args):
+def do_func(fname, rval, args, vargs):
 	global pstruct
 	global pinit
 	global plist
@@ -81,27 +82,33 @@ def do_func(fname, rval, args):
 	global tdl
 	#print(fname, rval, args)
 
-	proto = ctypes[rval] + " vmod_" + fname + "(struct sess *"
-	sproto = ctypes[rval] + " td_" + modname + "_" + fname + "(struct sess *"
-	s=", "
+	# C argument list
+	cargs = "(struct sess *"
 	for i in args:
-		proto += s + ctypes[i]
-		sproto += s + ctypes[i]
-	proto += ")"
-	sproto += ")"
+		cargs += ", " + i
+	cargs += ")"
 
+	# Prototypes for vmod implementation and interface typedef
+	proto = ctypes[rval] + " vmod_" + fname + cargs
+	sproto = ctypes[rval] + " td_" + modname + "_" + fname + cargs
+
+	# append to lists of prototypes
 	plist += proto + ";\n"
 	tdl += "typedef " + sproto + ";\n"
 
+	# Append to struct members
 	pstruct += "\ttd_" + modname + "_" + fname + "\t*" + fname + ";\n"
+
+	# Append to struct initializer
 	pinit += "\tvmod_" + fname + ",\n"
 
+	# Compose the vmod spec-string
 	s = modname + '.' + fname + "\\0"
 	s += "Vmod_Func_" + modname + "." + fname + "\\0"
-	s += rval
-	for i in args:
-		s += '\\0' + i
-	slist += '\t"' + s + '\\0",\n'
+	s += rval + '\\0'
+	for i in vargs:
+		s +=  i + '\\0'
+	slist += '\t"' + s + '",\n'
 
 #######################################################################
 
@@ -112,6 +119,30 @@ def partition(string, separator):
 	if i >= 0:
 		return (string[:i],separator,string[i+len(separator):])
 	return (string, '', '')
+
+#######################################################################
+
+def is_c_name(s):
+	return None != re.match("^[a-z][a-z0-9_]*$", s)
+
+#######################################################################
+
+def parse_enum(tq):
+	assert tq[0] == '{'
+	assert tq[-1] == '}'
+	f = tq[1:-1].split(',')
+	s="ENUM\\0"
+	b=dict()
+	for i in f:
+		i = i.strip()
+		if not is_c_name(i):
+			raise Exception("Enum value '%s' is illegal" % i)
+		if i in b:
+			raise Exception("Duplicate Enum value '%s'" % i)
+		b[i] = True
+		s = s + i.strip() + '\\0'
+	s = s + '\\0'
+	return s
 
 #######################################################################
 
@@ -126,9 +157,6 @@ def nextline():
 		l0 = re.sub("\s\s*", " ", l0.strip())
 		if l0 != "":
 			return l0
-
-def is_c_name(s):
-	return None != re.match("^[a-z][a-z0-9_]*$", s)
 
 while True:
 	l0 = nextline()
@@ -184,6 +212,7 @@ while True:
 	l = l[:-1]
 
 	args = list()
+	vargs = list()
 
 	for i in re.finditer("([A-Z_]+)\s*({[^}]+})?(,|$)", l):
 		at = i.group(1)
@@ -191,9 +220,22 @@ while True:
 		if at not in ctypes:
 			raise Exception(
 			    "Argument type '%s' not a valid type" % at)
-		args.append(at)
 
-	do_func(fname, rt_type, args)
+		args.append(ctypes[at])
+
+		if at == "ENUM":
+			if tq == None:
+				raise Exception(
+				    "Argument type '%s' needs qualifier {...}" % at)
+			at=parse_enum(tq)
+
+		elif tq != None:
+			raise Exception(
+			    "Argument type '%s' cannot be qualified with {...}" % at)
+		
+		vargs.append(at)
+
+	do_func(fname, rt_type, args, vargs)
 
 #######################################################################
 def dumps(s):
