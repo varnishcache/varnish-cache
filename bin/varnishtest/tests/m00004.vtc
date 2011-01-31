@@ -3,9 +3,9 @@
 test "Test fileread for std VMOD"
 
 shell {
-	echo -n "File One" > "${tmpdir}/m00004_file_one"
-	echo -n "File Two" > "${tmpdir}/m00004_file_two"
-	echo -n "File Three" > "${tmpdir}/m00004_file_three"
+	printf "File One" > "${tmpdir}/m00004_file_one"
+	printf "File Two" > "${tmpdir}/m00004_file_two"
+	printf "File Three" > "${tmpdir}/m00004_file_three"
 }
 
 server s1 {
