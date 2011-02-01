@@ -176,6 +176,9 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 
 	assert(PAOK(ptr));
+	assert(PAOK(soc->wsl));
+	assert(PAOK(soc->lhttp));
+
 	assert(ltot >= sizeof *o + soc->lhttp + soc->wsl);
 
 	o = ptr;
@@ -185,12 +188,10 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	l = PRNDDN(ltot - (sizeof *o + soc->lhttp));
 	assert(l >= soc->wsl);
 
-	assert(PAOK(soc->wsl));
-	assert(PAOK(soc->lhttp));
-
 	o->http = HTTP_create(o + 1, soc->nhttp);
 	WS_Init(o->ws_o, "obj", (char *)(o + 1) + soc->lhttp, soc->wsl);
 	WS_Assert(o->ws_o);
+	assert(o->ws_o->e <= (char*)ptr + ltot);
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
@@ -227,8 +228,12 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 	st = stv->alloc(stv, ltot);
-	XXXAN(st);
-	xxxassert(st->space >= ltot);
+	if (st == NULL)
+		return (NULL);
+	if (st->space < ltot) {
+		stv->free(st);
+		return (NULL);
+	}
 	ltot = st->len = st->space;
 	o = STV_MkObject(sp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -238,7 +243,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 /*-------------------------------------------------------------------
  * Allocate storage for an object, based on the header information.
- * XXX: If we know (a hint of) the length, we should allocate space
+ * XXX: If we know (a hint of) the length, we could allocate space
  * XXX: for the body in the same allocation while we are at it.
  */
 
@@ -269,6 +274,8 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
 	stv = stv_pick_stevedore(hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, sp, ltot, &soc);
+	if (o == NULL)
+		return (NULL);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	return (o);

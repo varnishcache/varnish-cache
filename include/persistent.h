@@ -44,11 +44,11 @@
  *	sha256[...]			checksum of same
  *
  *	struct smp_sign;
- *	struct smp_segment_1[N];	Segment table
+ *	struct smp_segment_1[N];	First Segment table
  *	sha256[...]			checksum of same
  *
  *	struct smp_sign;
- *	struct smp_segment_2[N];	Segment table
+ *	struct smp_segment_2[N];	Second Segment table
  *	sha256[...]			checksum of same
  *
  *	N segments {

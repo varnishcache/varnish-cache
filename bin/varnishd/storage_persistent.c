@@ -133,7 +133,7 @@ struct smp_sc {
 	unsigned		granularity;
 	uint32_t		unique;
 
-	uint8_t			*ptr;
+	uint8_t			*base;
 
 	struct smp_ident	*ident;
 
@@ -210,7 +210,7 @@ smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 	assert(strlen(id) < sizeof ctx->ss->ident);
 
 	memset(ctx, 0, sizeof ctx);
-	ctx->ss = (void*)(sc->ptr + off);
+	ctx->ss = (void*)(sc->base + off);
 	ctx->unique = sc->unique;
 	ctx->id = id;
 }
@@ -567,10 +567,10 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(ftruncate(sc->fd, sc->mediasize));
 
-	sc->ptr = mmap(NULL, sc->mediasize, PROT_READ|PROT_WRITE,
+	sc->base = mmap(NULL, sc->mediasize, PROT_READ|PROT_WRITE,
 	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
 
-	if (sc->ptr == MAP_FAILED)
+	if (sc->base == MAP_FAILED)
 		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
 		    strerror(errno));
 
@@ -914,7 +914,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	smp_def_sign(sc, ctx, sg->p.offset, "SEGHEAD");
 	if (smp_chk_sign(ctx))
 		return;
-	so = (void*)(sc->ptr + sg->p.objlist);
+	so = (void*)(sc->base + sg->p.objlist);
 	sg->objs = so;
 	sg->nalloc2 = sg->p.nalloc;
 	no = sg->p.nalloc;
@@ -1144,7 +1144,7 @@ smp_new_seg(struct smp_sc *sc)
 	sg->next_addr = sg->p.offset +
 	    sizeof (struct smp_sign) +		// XXX use macro
 	    SHA256_LEN;
-	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+	memcpy(sc->base + sg->next_addr, "HERE", 4);
 	sc->objreserv = 0;
 }
 
@@ -1188,7 +1188,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	sg->p.objlist = sg->next_addr;
 	sg->p.nalloc = sg->nalloc1;
 
-	p = (void*)(sc->ptr + sg->next_addr);
+	p = (void*)(sc->base + sg->next_addr);
 	sg->next_addr += C_ALIGN(sc->objreserv);
 
 	memcpy(p, sg->objs, sc->objreserv);
@@ -1258,7 +1258,7 @@ smp_open(const struct stevedore *st)
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
 
-	AZ(mprotect(sc->ptr, 4096, PROT_READ));
+	AZ(mprotect(sc->base, 4096, PROT_READ));
 
 	sc->ident = SIGN_DATA(&sc->idn);
 
@@ -1378,15 +1378,15 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 	assert(needed <= smp_spaceleft(sg));
 
 	/* Grab for storage struct */
-	ss = (void *)(sc->ptr + sg->next_addr);
+	ss = (void *)(sc->base + sg->next_addr);
 	sg->next_addr += C_ALIGN(sizeof *ss);
 
 	/* Grab for allocated space */
-	allocation = sc->ptr + sg->next_addr;
+	allocation = sc->base + sg->next_addr;
 	sg->next_addr += size;
 
 	/* Paint our marker */
-	memcpy(sc->ptr + sg->next_addr, "HERE", 4);
+	memcpy(sc->base + sg->next_addr, "HERE", 4);
 
 	if (sgp != NULL) {
 		/* Make reservation in the index */
@@ -1411,7 +1411,7 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 	// XXX: wrong: ss->where = sg->next_addr + sizeof *ss;
 	assert((uintmax_t)ss->space == (uintmax_t)size);
 	assert((char*)ss->ptr > (char*)ss);
-	assert((char*)ss->ptr + ss->space <= (char*)sc->ptr + sc->mediasize);
+	assert((char*)ss->ptr + ss->space <= (char*)sc->base + sc->mediasize);
 	return (ss);
 }
 
@@ -1442,6 +1442,10 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	st = smp_allocx(stv, ltot, &sg);
 	if (st == NULL)
 		return (NULL);
+	if (st->space < ltot) {
+		// XXX: smp_free(st);
+		return (NULL);
+	}
 
 	assert(st->space >= ltot);
 	ltot = st->len = st->space;
@@ -1463,7 +1467,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	sg->nobj++;
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->ttl = o->ttl;
+	so->ttl = o->ttl;	/* XXX: grace? */
 	so->ptr = o;
 	so->ban = o->ban_t;
 
@@ -1486,40 +1490,24 @@ smp_alloc(struct stevedore *st, size_t size)
 	return (smp_allocx(st, size, NULL));
 }
 
+/*--------------------------------------------------------------------
+ * Trim a bite
+ * XXX: We could trim the last allocation.
+ */
+
 static void
 smp_trim(struct storage *ss, size_t size)
 {
-	struct smp_sc *sc;
-	struct smp_seg *sg;
-	const char z[4] = { 0, 0, 0, 0};
 
-	return;
-
-	CAST_OBJ_NOTNULL(sc, ss->priv, SMP_SC_MAGIC);
-
-	/* We want 16 bytes alignment */
-	size |= 0xf;
-	size += 1;
-
-	sg = sc->cur_seg;
-	if (ss->ptr + ss->space != sg->next_addr + sc->ptr)
-		return;
-
-	Lck_Lock(&sc->mtx);
-	sg = sc->cur_seg;
-	if (ss->ptr + ss->space == sg->next_addr + sc->ptr) {
-		memcpy(sc->ptr + sg->next_addr, z, 4);
-		sg->next_addr -= ss->space - size;
-		ss->space = size;
-		memcpy(sc->ptr + sg->next_addr, "HERE", 4);
-	}
-	Lck_Unlock(&sc->mtx);
+	(void)ss;
+	(void)size;
 }
 
 /*--------------------------------------------------------------------
- * We don't track frees of storage, we track the objects which own them
- * instead, when there are no more objects in in the first segment, it
- * can be reclaimed.
+ * We don't track frees of storage, we track the objects which own the
+ * storage and when there are no more objects in in the first segment,
+ * it can be reclaimed.
+ * XXX: We could free the last allocation, but does that happen ?
  */
 
 static void __match_proto__(storage_free_f)
@@ -1540,16 +1528,13 @@ SMP_Ready(void)
 	struct smp_sc *sc;
 
 	ASSERT_CLI();
-	while (1) {
-		VTAILQ_FOREACH(sc, &silos, list) {
-			if (sc->flags & SMP_F_LOADED)
-				continue;
+	do {
+		VTAILQ_FOREACH(sc, &silos, list) 
+			if (!(sc->flags & SMP_F_LOADED))
+				break;
+		if (sc != NULL)
 			(void)sleep(1);
-			break;
-		}
-		if (sc == NULL)
-			break;
-	}
+	} while (sc != NULL);
 }
 
 /*--------------------------------------------------------------------*/
