@@ -237,7 +237,7 @@ varnish_launch(struct varnish *v)
 	int i, nfd, nap;
 	struct vss_addr **ap;
 	char abuf[128], pbuf[128];
-	struct pollfd fd;
+	struct pollfd fd[2];
 	enum cli_status_e u;
 	char *r;
 
@@ -301,11 +301,23 @@ varnish_launch(struct varnish *v)
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	/* Wait for the varnish to call home */
-	fd.fd = v->cli_fd;
-	fd.events = POLLIN;
-	i = poll(&fd, 1, 10000);
-	if (i != 1) {
+	fd[0].fd = v->cli_fd;
+	fd[0].events = POLLIN;
+	fd[1].fd = v->fds[0];
+	fd[1].events = POLLOUT;
+	i = poll(fd, 2, 10000);
+	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
+	    i, fd[0].revents, fd[1].revents);
+	if (i == 0) {
 		vtc_log(v->vl, 0, "FAIL timeout waiting for CLI connection");
+		return;
+	}
+	if (fd[1].revents & POLLHUP) {
+		vtc_log(v->vl, 0, "FAIL debug pipe closed");
+		return;
+	}
+	if (!(fd[0].revents & POLLIN)) {
+		vtc_log(v->vl, 0, "FAIL CLI connection wait failure");
 		return;
 	}
 	nfd = accept(v->cli_fd, NULL, NULL);
