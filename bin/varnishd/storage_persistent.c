@@ -66,9 +66,6 @@ SVNID("$Id$")
 #define ASSERT_SILO_THREAD(sc) \
     do {assert(pthread_self() == (sc)->thread);} while (0)
 
-#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
-#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
-
 #define OC_F_NEEDFIXUP OC_F_PRIV
 
 /*
@@ -130,7 +127,8 @@ struct smp_sc {
 	int			fd;
 	const char		*filename;
 	off_t			mediasize;
-	unsigned		granularity;
+	uint64_t		align;		/* 64b to avoid casts */
+	uint32_t		granularity;
 	uint32_t		unique;
 
 	uint8_t			*base;
@@ -173,11 +171,23 @@ struct smp_sc {
 	uint64_t		free_reserve;
 };
 
-#define CACHE_LINE_ALIGN	16
+/*--------------------------------------------------------------------*/
 
-#define C_ALIGN(x)	RUP2(x, CACHE_LINE_ALIGN)
+/* Generic power-2 rounding */
+#define PWR2(x)     ((((x)-1)&(x))==0)		/* Is a power of two */
+#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
 
-#define SEG_SPACE RUP2(SMP_SIGN_SPACE, CACHE_LINE_ALIGN)
+/* Pointer round up/down & assert */
+#define PRNDN(sc, x)	((void*)RDN2((uintptr_t)x, sc->align))
+#define PRNUP(sc, x)	((void*)RUP2((uintptr_t)x, sc->align))
+#define ASSERTALIGN(sc, x)	assert(PRDN(sc, x) == x)
+
+/* Integer round up/down & assert */
+#define IRNDN(sc, x)	RDN2(x, sc->align)
+#define IRNUP(sc, x)	RUP2(x, sc->align)
+
+/*--------------------------------------------------------------------*/
 
 /*
  * silos is unlocked, it only changes during startup when we are
@@ -356,11 +366,15 @@ smp_newsilo(struct smp_sc *sc)
 	strcpy(si->ident, SMP_IDENT_STRING);
 	si->byte_order = 0x12345678;
 	si->size = sizeof *si;
-	si->major_version = 1;
-	si->minor_version = 2;
+	si->major_version = 2;
 	si->unique = sc->unique;
 	si->mediasize = sc->mediasize;
 	si->granularity = sc->granularity;
+	/*
+	 * Aim for cache-line-width
+	 */
+	si->align = sizeof(void*) * 2;
+	sc->align = si->align;
 
 	si->stuff[SMP_BAN1_STUFF] = sc->granularity;
 	si->stuff[SMP_BAN2_STUFF] = si->stuff[SMP_BAN1_STUFF] + 1024*1024;
@@ -401,14 +415,17 @@ smp_valid_silo(struct smp_sc *sc)
 		return (3);
 	if (si->size != sizeof *si)
 		return (4);
-	if (si->major_version != 1)
+	if (si->major_version != 2)
 		return (5);
-	if (si->minor_version != 2)
-		return (6);
 	if (si->mediasize != sc->mediasize)
 		return (7);
 	if (si->granularity != sc->granularity)
 		return (8);
+	if (si->align < sizeof(void*))
+		return (9);
+	if (!PWR2(si->align))
+		return (10);
+	sc->align = si->align;
 	sc->unique = si->unique;
 
 	/* XXX: Sanity check stuff[6] */
@@ -544,6 +561,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 #undef SIZOF
 
 	/* See comments in persistent.h */
+printf("%jd %d\n", sizeof(struct smp_ident), SMP_IDENT_SIZE);
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
 
 	/* Allocate softc */
@@ -561,6 +579,7 @@ smp_init(struct stevedore *parent, int ac, char * const *av)
 	if (i == 2)
 		ARGV_ERR("(-spersistent) need filename (not directory)\n");
 
+	sc->align = sizeof(void*) * 2;
 	sc->granularity = getpagesize();
 	sc->mediasize = STV_FileSize(sc->fd, av[1], &sc->granularity,
 	    "-spersistent");
@@ -1174,7 +1193,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	}
 
 	assert(sg->nalloc1 * sizeof(struct smp_object) == sc->objreserv);
-	assert(C_ALIGN(sc->objreserv) + 2 * SEG_SPACE <= smp_spaceleft(sg));
+	// assert(C_ALIGN(sc->objreserv) + 2 * SEG_SPACE <= smp_spaceleft(sg));
 
 	/* Write the OBJIDX */
 	sg->next_addr |= 7;
@@ -1182,14 +1201,14 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	smp_def_sign(sc, sg->ctx, sg->next_addr, "OBJIDX");
 	smp_reset_sign(sg->ctx);
 	smp_sync_sign(sg->ctx);
-	sg->next_addr += SEG_SPACE;
+	sg->next_addr += IRNUP(sc, SMP_SIGN_SPACE);
 
 	/* Update the segment header */
 	sg->p.objlist = sg->next_addr;
 	sg->p.nalloc = sg->nalloc1;
 
 	p = (void*)(sc->base + sg->next_addr);
-	sg->next_addr += C_ALIGN(sc->objreserv);
+	sg->next_addr += IRNUP(sc, sc->objreserv);
 
 	memcpy(p, sg->objs, sc->objreserv);
 	sc->objbuf = sg->objs;
@@ -1200,7 +1219,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	smp_def_sign(sc, sg->ctx, sg->next_addr, "SEGTAIL");
 	smp_reset_sign(sg->ctx);
 	smp_sync_sign(sg->ctx);
-	sg->next_addr += SEG_SPACE;
+	sg->next_addr += IRNUP(sc, SMP_SIGN_SPACE);
 
 	sg->p.length = sg->next_addr - sg->p.offset;
 
@@ -1327,19 +1346,19 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 	Lck_Lock(&sc->mtx);
 
-	size = C_ALIGN(size);
+	size = IRNUP(sc, size);
 
 	for (tries = 0; tries < 3; tries++) {
 		sg = sc->cur_seg;
 		CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 
-		overhead = C_ALIGN(sizeof *ss);
-		overhead += SEG_SPACE * 2;
+		overhead = IRNUP(sc, sizeof *ss);
+		overhead += 2 * IRNUP(sc, SMP_SIGN_SPACE);
 		if (sgp == NULL) {
-			overhead += C_ALIGN(sc->objreserv);
+			overhead += IRNUP(sc, sc->objreserv);
 		} else {
-			overhead +=
-			    C_ALIGN(sizeof(struct smp_object) + sc->objreserv);
+			overhead += IRNUP(sc,
+			    sizeof(struct smp_object) + sc->objreserv);
 		}
 		needed = overhead + size;
 		left = smp_spaceleft(sg);
@@ -1368,7 +1387,7 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 		smp_new_seg(sc);
 	}
 
-	assert(size == C_ALIGN(size));
+	assert(size == IRNUP(sc, size));
 
 	if (needed > smp_spaceleft(sg)) {
 		Lck_Unlock(&sc->mtx);
@@ -1379,11 +1398,13 @@ smp_allocx(struct stevedore *st, size_t size, struct smp_seg **sgp)
 
 	/* Grab for storage struct */
 	ss = (void *)(sc->base + sg->next_addr);
-	sg->next_addr += C_ALIGN(sizeof *ss);
+	sg->next_addr += IRNUP(sc, sizeof *ss);
 
 	/* Grab for allocated space */
 	allocation = sc->base + sg->next_addr;
 	sg->next_addr += size;
+
+	assert((char*)allocation > (char*)ss);
 
 	/* Paint our marker */
 	memcpy(sc->base + sg->next_addr, "HERE", 4);

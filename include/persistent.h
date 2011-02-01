@@ -79,9 +79,9 @@ struct smp_ident {
 
 	uint32_t		major_version;
 
-	uint32_t		minor_version;
-
 	uint32_t		unique;
+
+	uint32_t		align;		/* alignment in silo */
 
 	uint32_t		granularity;	/* smallest ... in bytes */
 
