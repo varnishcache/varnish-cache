@@ -16,7 +16,7 @@ server s1 {
 	}
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-p sess_workspace=131072 -p thread_pool_stack=262144" -vcl+backend {
 	sub vcl_recv {
 		set req.esi = true;
 	}
