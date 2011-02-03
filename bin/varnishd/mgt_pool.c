@@ -217,7 +217,7 @@ const struct parspec WRK_parspec[] = {
 		"request on the object.\n"
 		"NB: Even with the implict delay of delivery, "
 		"this parameter controls an exponential increase in "
-		"number of worker threads.  ",
+		"number of worker threads.",
 		EXPERIMENTAL,
 		"3", "requests per request" },
 	{ "thread_pool_stack",
