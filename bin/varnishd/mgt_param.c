@@ -820,7 +820,7 @@ static const struct parspec input_parspec[] = {
 		"uncompress compressed objects on demand. Varnish will also "
 		"rewrite the Accept-Encoding header of clients indicating "
 		"support for gzip to:\n"
-		"Accept-Encoding: gzip"
+		"Accept-Encoding: gzip\n\n"
 		"Clients that do not support gzip will have their "
 		"Accept-Encoding header removed. For more information no how "
 		"gzip is implemted please see the chapter on gzip in the "
