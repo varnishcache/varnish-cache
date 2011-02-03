@@ -1104,7 +1104,7 @@ MCF_DumpRst(void)
 		printf("%s\n", pp->name);
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t- Units: %s\n", pp->units);
-		printf("\t- Default: %s\n", pp->def == MAGIC_INIT_STRING ? "magic" : pp->def);
+		printf("\t- Default: %s\n", strcmp(pp->def,MAGIC_INIT_STRING) == 0 ? "magic" : pp->def);
 		/*
 		 * XXX: we should mark the params with one/two flags
 		 * XXX: that say if ->min/->max are valid, so we
