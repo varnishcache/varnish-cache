@@ -814,11 +814,21 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"off", "bool" },
 	{ "http_gzip_support", tweak_bool, &master.http_gzip_support, 0, 0,
-		"Enable support for HTTP GZIP compression.\n",
+		"Enable gzip support. When enabled Varnish will compress "
+		"uncompressed objects before they are stored in the cache. "
+		"If a client does not support gzip encoding Varnish will "
+		"uncompress compressed objects on demand. Varnish will also "
+		"rewrite the Accept-Encoding header of clients indicating "
+		"support for gzip to:\n"
+		"Accept-Encoding: gzip"
+		"Clients that do not support gzip will have their "
+		"Accept-Encoding header removed. For more information no how "
+		"gzip is implemted please see the chapter on gzip in the "
+		"Varnish reference.",
 		EXPERIMENTAL,
 		"on", "bool" },
 	{ "gzip_tmp_space", tweak_uint, &master.gzip_tmp_space, 0, 2,
-		"Where temporary space for gzip/gunzip is allocated.\n"
+		"Where temporary space for gzip/gunzip is allocated:\n"
 		"  0 - malloc\n"
 		"  1 - session workspace\n"
 		"  2 - thread workspace\n"
