@@ -1,11 +1,12 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 3.0.0
-Release: 0.svn20101115r5543%{?dist}
+Release: 0.git20110203%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
-Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
+#Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
+Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # The svn sources needs autoconf, automake and libtool to generate a suitable
 # configure script. Release tarballs would not need this
@@ -71,7 +72,8 @@ Documentation files for %name
 #Varnish Cache is a high-performance HTTP accelerator
 
 %prep
-%setup -q
+#%setup -q
+%setup -q -n varnish-trunk
 
 # The svn sources needs to generate a suitable configure script
 # Release tarballs would not need this
