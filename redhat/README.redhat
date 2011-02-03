@@ -5,6 +5,25 @@ build varnish with. This means GCC 3.4.6 on a standard RHEL4 system.
 
 Varnish should work fine with GCC 3.3 and above.
 
+Building a RPM package from a git checkout
+==========================================
+
+You may build an rpm package direct from a git checkout. Here is an
+example on how you may do this:
+
+git clone git://git.varnish-cache.org/varnish-cache
+cd varnish-cache
+sed -i "s/^Release: .*/Release: 0.git$(date +%Y%m%d)%{?dist}/" \
+    redhat/varnish.spec
+./autogen.sh && ./configure 
+make dist && rpmbuild -ts varnish-trunk.tar.gz
+
+This builds a source rpm. Then you can, for example on a RHEL5 system,
+do something like this:
+
+rpmbuild --define "dist .el5" --rebuild /path/to/varnish-3.0-0.git20110203.src.rpm
+
+
 Upgrading from 1.x to 2.0
 =========================
 There are a few changes in the vcl language from varnish-1.x to 2.0.
@@ -56,28 +75,4 @@ that suits jemalloc better, you might want to change the specfile and
 recompile.  We would very much like feedback from anyone running
 varnish on Fedora's own ppc64 kernel.
 
-Building a RPM package from SVN
-===============================
-You may build the package from a svn checkout. Follow the instructions
-at http://varnish.projects.linpro.no/wiki/Repository to get the
-source. Then enter the trunk directory and edit
-varnish-cache/redhat/varnish.spec. At least bump the version and/or
-release numbers, and uncomment the autogen call. You need to install
-the autoconf and automake packages. Then use something like this to
-build the rpm package:
-
-#!/bin/bash
-VERSION=$( awk ' /^Version:/ { print $2 } ' varnish-cache/redhat/varnish.spec )
-tar $(  find varnish-cache -type d -name .svn | \
-        while read i; do 
-            echo -n "--exclude $i "
-            done
-) -cvzf varnish-$VERSION.tar.gz varnish-cache/*
-rpmbuild -ts varnish-$VERSION.tar.gz
-# End of script
-
-This builds a source rpm. Then you can, for example on a RHEL4 system,
-do something like this:
-
-rpmbuild --define "dist .el4" --rebuild /path/to/varnish-2.1.4-0.svn20100826r5134.src.rpm
 
