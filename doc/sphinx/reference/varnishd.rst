@@ -519,7 +519,7 @@ http_gzip_support
 
 	Accept-Encoding: gzip
 
-	Clients that do not support gzip will have their Accept-Encoding header removed. For more information no how gzip is implemted please see the chapter on gzip in the Varnish reference.
+	Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
 
 http_headers
 	- Units: header lines

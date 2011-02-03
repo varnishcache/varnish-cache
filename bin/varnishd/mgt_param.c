@@ -822,8 +822,8 @@ static const struct parspec input_parspec[] = {
 		"support for gzip to:\n"
 		"Accept-Encoding: gzip\n\n"
 		"Clients that do not support gzip will have their "
-		"Accept-Encoding header removed. For more information no how "
-		"gzip is implemted please see the chapter on gzip in the "
+		"Accept-Encoding header removed. For more information on how "
+		"gzip is implemented please see the chapter on gzip in the "
 		"Varnish reference.",
 		EXPERIMENTAL,
 		"on", "bool" },
