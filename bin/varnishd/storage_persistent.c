@@ -52,6 +52,8 @@ SVNID("$Id$")
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "vsha256.h"
+#include "cli.h"
+#include "cli_priv.h"
 
 #include "persistent.h"
 
@@ -124,6 +126,7 @@ struct smp_sc {
 	unsigned		flags;
 #define SMP_F_LOADED		(1 << 0)
 
+	const struct stevedore	*stevedore;
 	int			fd;
 	const char		*filename;
 	off_t			mediasize;
@@ -1292,6 +1295,8 @@ smp_open(const struct stevedore *st)
 	Lck_New(&sc->mtx, lck_smp);
 	Lck_Lock(&sc->mtx);
 
+	sc->stevedore = st;
+
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
 
@@ -1569,3 +1574,40 @@ const struct stevedore smp_stevedore = {
 	.free	=	smp_free,
 	.trim	=	smp_trim,
 };
+
+/*--------------------------------------------------------------------*/
+
+static void
+debug_persistent(struct cli *cli, const char * const * av, void *priv)
+{
+	struct smp_sc *sc;
+	struct smp_seg *sg;
+
+	(void)priv;
+
+	if (av[2] == NULL || av[3] == NULL) {
+		VTAILQ_FOREACH(sc, &silos, list) {
+			if (av[2] != NULL &&
+			    strcmp(av[2], sc->stevedore->ident))
+				continue;
+			cli_out(cli, "Silo: %s (%s)\n",
+			    sc->stevedore->ident, sc->filename);
+			VTAILQ_FOREACH(sg, &sc->segments, list) {
+				cli_out(cli, "   Seg: %p\n", sg);
+			}
+		}
+		return;
+	}
+}
+
+static struct cli_proto debug_cmds[] = {
+        { "debug.persistent", "debug.persistent",
+                "Persistent debugging magic\n", 0, 2, "d", debug_persistent },
+        { NULL }
+};
+
+void
+SMP_Init(void)
+{
+	CLI_AddFuncs(debug_cmds);
+}

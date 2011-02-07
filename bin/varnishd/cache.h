@@ -849,6 +849,7 @@ struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
 
 /* storage_persistent.c */
+void SMP_Init(void);
 void SMP_Ready(void);
 void SMP_NewBan(double t0, const char *ban);
 
