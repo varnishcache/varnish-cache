@@ -14,7 +14,7 @@ But making your program run on everything is hard work very hard work.
 
 For instance, did you know that:
 
-	sizeof(void*) != sizeof(const * void)
+	sizeof(void*) != sizeof(void * const)
 
 is legal in a ISO-C compliant environment ?
 
