@@ -283,6 +283,19 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
 
 /*-------------------------------------------------------------------*/
 
+static struct lru *
+stv_default_getlru(const struct object *o)
+{
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore->stevedore, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore->stevedore->lru, LRU_MAGIC);
+	return (o->objstore->stevedore->lru);
+}
+
+/*-------------------------------------------------------------------*/
+
 void
 STV_Freestore(struct object *o)
 {
@@ -386,11 +399,14 @@ STV_close(void)
 }
 
 struct lru *
-STV_lru(const struct storage *st)
+STV_lru(const struct object *o)
 {
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objstore->stevedore, STEVEDORE_MAGIC);
+	AN(o->objstore->stevedore->getlru);
 
-	return (st->stevedore->lru);
+	return (o->objstore->stevedore->getlru(o));
 }
 
 /*--------------------------------------------------------------------
@@ -455,6 +471,8 @@ STV_Config(const char *spec)
 	AN(stv->alloc);
 	if (stv->allocobj == NULL)
 		stv->allocobj = stv_default_allocobj;
+	if (stv->getlru == NULL)
+		stv->getlru = stv_default_getlru;
 
 	if (p == NULL)
 		bprintf(stv->ident, "s%u", seq++);

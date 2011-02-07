@@ -143,7 +143,7 @@ EXP_Insert(struct object *o)
 	assert(o->entered != 0 && !isnan(o->entered));
 	o->last_lru = o->entered;
 
-	lru = STV_lru(o->objstore);
+	lru = STV_lru(o);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&exp_mtx);
 	(void)update_object_when(o);
@@ -180,7 +180,7 @@ EXP_Touch(struct object *o, double tnow)
 	if (oc->flags & OC_F_LRUDONTMOVE)
 		return;
 
-	lru = STV_lru(o->objstore);
+	lru = STV_lru(o);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	if (Lck_Trylock(&exp_mtx))

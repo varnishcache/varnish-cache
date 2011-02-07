@@ -1427,6 +1427,19 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 	return (ss);
 }
 
+/*--------------------------------------------------------------------
+ * Find the per-segment lru list for this object
+ */
+
+static struct lru *
+smp_getlru(const struct object *o)
+{
+	struct smp_seg *sg;
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CAST_OBJ_NOTNULL(sg, o->objcore->priv, SMP_SEG_MAGIC);
+	return (sg->lru);
+}
 
 /*--------------------------------------------------------------------
  * Allocate an object
@@ -1552,6 +1565,7 @@ const struct stevedore smp_stevedore = {
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
+	.getlru	=	smp_getlru,
 	.free	=	smp_free,
 	.trim	=	smp_trim,
 };
