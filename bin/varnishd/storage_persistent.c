@@ -110,9 +110,6 @@ struct smp_seg {
 
 	/* Only for open segment */
 	struct smp_object	*objs;		/* objdesc array */
-	uint64_t		next_bot;	/* next alloc address bottom */
-	uint64_t		next_top;	/* next alloc address top */
-
 	struct smp_signctx	ctx[1];
 };
 
@@ -140,6 +137,9 @@ struct smp_sc {
 
 	struct smp_seghead	segments;
 	struct smp_seg		*cur_seg;
+	uint64_t		next_bot;	/* next alloc address bottom */
+	uint64_t		next_top;	/* next alloc address top */
+
 	uint64_t		free_offset;
 
 	pthread_t		thread;
@@ -921,9 +921,11 @@ static uint64_t
 smp_spaceleft(const struct smp_sc *sc, const struct smp_seg *sg)
 {
 
-	IASSERTALIGN(sc, sg->next_bot);
-	assert(sg->next_bot <= sg->next_top - IRNUP(sc, SMP_SIGN_SPACE));
-	return ((sg->next_top - sg->next_bot) - IRNUP(sc, SMP_SIGN_SPACE));
+	IASSERTALIGN(sc, sc->next_bot);
+	assert(sc->next_bot <= sc->next_top - IRNUP(sc, SMP_SIGN_SPACE));
+	assert(sc->next_bot >= sg->p.offset);
+	assert(sc->next_top < sg->p.offset + sg->p.length);
+	return ((sc->next_top - sc->next_bot) - IRNUP(sc, SMP_SIGN_SPACE));
 }
 
 /*--------------------------------------------------------------------
@@ -1176,12 +1178,12 @@ smp_new_seg(struct smp_sc *sc)
 
 	/* Set up our allocation points */
 	sc->cur_seg = sg;
-	sg->next_bot = sg->p.offset + IRNUP(sc, SMP_SIGN_SPACE);
-	sg->next_top = smp_segend(sg);
-	sg->next_top -= IRNUP(sc, SMP_SIGN_SPACE);
-	IASSERTALIGN(sc, sg->next_bot);
-	IASSERTALIGN(sc, sg->next_top);
-	sg->objs = (void*)(sc->base + sg->next_top);
+	sc->next_bot = sg->p.offset + IRNUP(sc, SMP_SIGN_SPACE);
+	sc->next_top = smp_segend(sg);
+	sc->next_top -= IRNUP(sc, SMP_SIGN_SPACE);
+	IASSERTALIGN(sc, sc->next_bot);
+	IASSERTALIGN(sc, sc->next_top);
+	sg->objs = (void*)(sc->base + sc->next_top);
 	sg->nalloc1 = 0;
 }
 
@@ -1208,9 +1210,6 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 		return;
 	}
 
-	assert(sg->next_bot <= sg->next_top - IRNUP(sc, SMP_SIGN_SPACE));
-	IASSERTALIGN(sc, sg->next_bot);
-
 	/*
 	 * If there is enough space left, that we can move the smp_objects
 	 * down without overwriting the present copy, we will do so to
@@ -1219,25 +1218,26 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	left = smp_spaceleft(sc, sg);
 	len = sizeof(struct smp_object) * sg->nalloc1;
 	if (len < left) {
-		dst = sg->next_bot + IRNUP(sc, SMP_SIGN_SPACE);
+		dst = sc->next_bot + IRNUP(sc, SMP_SIGN_SPACE);
 		dp = sc->base + dst;
 		assert((uintptr_t)dp + len < (uintptr_t)sg->objs);
 		memcpy(dp, sg->objs, len);
-		sg->next_top = dst;
+		sc->next_top = dst;
 		sg->objs = dp;
-		sg->p.length = sg->next_top + len + IRNUP(sc, SMP_SIGN_SPACE);
+		sg->p.length = (sc->next_top - sg->p.offset)
+		     + len + IRNUP(sc, SMP_SIGN_SPACE);
 		(void)smp_spaceleft(sc, sg); 	/* for asserts */
 		
 	}
 
 	/* Update the segment header */
-	sg->p.objlist = sg->next_top;
+	sg->p.objlist = sc->next_top;
 	sg->p.nalloc = sg->nalloc1;
 
 	/* Write the (empty) OBJIDX signature */
-	sg->next_top -= IRNUP(sc, SMP_SIGN_SPACE);
-	assert(sg->next_top >= sg->next_bot);
-	smp_def_sign(sc, sg->ctx, sg->next_top, "OBJIDX");
+	sc->next_top -= IRNUP(sc, SMP_SIGN_SPACE);
+	assert(sc->next_top >= sc->next_bot);
+	smp_def_sign(sc, sg->ctx, sc->next_top, "OBJIDX");
 	smp_reset_sign(sg->ctx);
 	smp_sync_sign(sg->ctx);
 
@@ -1397,12 +1397,12 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 			max_size = IRNDN(sc, left - extra);
 
 		sg = sc->cur_seg;
-		ss = (void*)(sc->base + sg->next_bot);
-		sg->next_bot += max_size + IRNUP(sc, sizeof(*ss));
+		ss = (void*)(sc->base + sc->next_bot);
+		sc->next_bot += max_size + IRNUP(sc, sizeof(*ss));
 		sg->nalloc++;
 		if (so != NULL) {
-			sg->next_top -= sizeof(**so);
-			*so = (void*)(sc->base + sg->next_top);
+			sc->next_top -= sizeof(**so);
+			*so = (void*)(sc->base + sc->next_top);
 			/* Render this smp_object mostly harmless */
 			(*so)->ttl = 0.;
 			(*so)->ban = 0.;
@@ -1510,7 +1510,8 @@ static struct storage *
 smp_alloc(struct stevedore *st, size_t size)
 {
 
-	return (smp_allocx(st, 4096, size, NULL, NULL, NULL));
+	return (smp_allocx(st, 
+	    size > 4096 ? 4096 : size, size, NULL, NULL, NULL));
 }
 
 /*--------------------------------------------------------------------
@@ -1578,26 +1579,65 @@ const struct stevedore smp_stevedore = {
 /*--------------------------------------------------------------------*/
 
 static void
+debug_report_silo(struct cli *cli, const struct smp_sc *sc)
+{
+	struct smp_seg *sg;
+	struct objcore *oc;
+
+	cli_out(cli, "Silo: %s (%s)\n",
+	    sc->stevedore->ident, sc->filename);
+	VTAILQ_FOREACH(sg, &sc->segments, list) {
+		cli_out(cli, "  Seg: [0x%jx ... +0x%jx]\n",
+		   (uintmax_t)sg->p.offset, (uintmax_t)sg->p.length);
+		if (sg == sc->cur_seg) 
+			cli_out(cli, "\t[0x%jx ... 0x%jx] = 0x%jx free\n",
+			   (uintmax_t)(sc->next_bot),
+			   (uintmax_t)(sc->next_top),
+			   (uintmax_t)(sc->next_top - sc->next_bot));
+		cli_out(cli, "\t%u nobj, %u alloc, %u alloc1, %u fixed\n",
+		    sg->nobj, sg->nalloc, sg->nalloc1, sg->nfixed);
+		VLIST_FOREACH(oc, &sg->lru->lru_head, lru_list) {
+			if (oc == &sg->lru->senteniel)
+				cli_out(cli, "\t\t(senteniel) %p\n", oc);
+			else
+				cli_out(cli, "\t\tOC: %p\n", oc);
+		}
+	}
+}
+
+static void
 debug_persistent(struct cli *cli, const char * const * av, void *priv)
 {
 	struct smp_sc *sc;
-	struct smp_seg *sg;
 
 	(void)priv;
 
-	if (av[2] == NULL || av[3] == NULL) {
-		VTAILQ_FOREACH(sc, &silos, list) {
-			if (av[2] != NULL &&
-			    strcmp(av[2], sc->stevedore->ident))
-				continue;
-			cli_out(cli, "Silo: %s (%s)\n",
-			    sc->stevedore->ident, sc->filename);
-			VTAILQ_FOREACH(sg, &sc->segments, list) {
-				cli_out(cli, "   Seg: %p\n", sg);
-			}
-		}
+	if (av[2] == NULL) {
+		VTAILQ_FOREACH(sc, &silos, list)
+			debug_report_silo(cli, sc);
 		return;
 	}
+	VTAILQ_FOREACH(sc, &silos, list)
+		if (!strcmp(av[2], sc->stevedore->ident))
+			break;
+	if (sc == NULL) {
+		cli_out(cli, "Silo <%s> not found\n", av[2]);
+		cli_result(cli, CLIS_PARAM);
+		return;
+	}
+	if (av[3] == NULL) {
+		debug_report_silo(cli, sc);
+		return;
+	}
+	Lck_Lock(&sc->mtx);
+	if (!strcmp(av[3], "sync")) {
+		smp_close_seg(sc, sc->cur_seg);
+		smp_new_seg(sc);
+	} else {
+		cli_out(cli, "Unknown operation\n");
+		cli_result(cli, CLIS_PARAM);
+	}
+	Lck_Unlock(&sc->mtx);
 }
 
 static struct cli_proto debug_cmds[] = {
