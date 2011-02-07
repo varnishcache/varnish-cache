@@ -301,6 +301,10 @@ STV_Freestore(struct object *o)
 {
 	struct storage *st, *stn;
 
+	if (o->esidata != NULL) {
+		STV_free(o->esidata);
+		o->esidata = NULL;
+	}
 	VTAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		VTAILQ_REMOVE(&o->store, st, list);
