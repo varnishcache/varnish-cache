@@ -1,0 +1,72 @@
+# $Id$
+
+test "test reload of object spanning incomplete segment"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	send "HTTP/1.1 200 Ok\n"
+	send "Transfer-encoding: chunked\n"
+	send "\n"
+	chunkedlen 32
+	# Tell top-level that it can sync the stevedore
+	sema r1 sync 2
+	# Top-level tells us it has synched the stevedore
+	sema r1 sync 2
+	chunkedlen 32
+	chunkedlen 0
+	accept
+
+	rxreq
+	expect req.url == "/2"
+	txresp -bodylen 100
+
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 48
+} -start
+
+varnish v1 -storage "-spersistent,${tmpdir}/_.per,10m" \
+	-vcl+backend {} -start
+
+varnish v1 -cliok "debug.fragfetch 32"
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	expect resp.bodylen == 64
+} -start
+
+# Wait for first chunk to have been sent
+sema r1 sync 2
+delay .2
+
+# Sync the stevedore, so the next chunk ends up i segment 2
+varnish v1 -cliok "debug.persistent s0 sync"
+
+# Tell server to continue
+sema r1 sync 2
+
+# Get the result
+client c1 -wait
+
+varnish v1 -cliok "debug.persistent s0 dump"
+
+# Panic worker so second segment does not get closed
+varnish v1 -clierr 400 "debug.panic.worker"
+
+# start again
+varnish v1 -start
+
+client c1 {
+	# Make sure there is not a valid "struct storage" in second seg.
+	txreq -url "/2"
+	rxresp
+	expect resp.bodylen == 100
+
+	# Fetch the vampire object and see how that goes...
+	txreq -url "/1"
+	rxresp
+	expect resp.bodylen == 48
+} -run
+
