@@ -648,65 +648,61 @@ HSH_Ref(struct objcore *oc)
 int
 HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 {
-	struct object *o;
-	struct objhead *oh = NULL;
+	struct object *o = NULL;
+	struct objhead *oh;
 	unsigned r;
 
-	if (oc != NULL) {
-		AZ(oo);
-		o = NULL;
-		AZ(oc->priv);	// XXX: for now
-	} else {
-		AZ(oc);
-		AN(oo);
+	/* Only one arg at a time */
+	assert(oc == NULL || oo == NULL);
+
+	if (oo != NULL) {
 		o = *oo;
 		*oo = NULL;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = o->objcore;
 	}
 
-	if (oc != NULL) {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		oh = oc->objhead;
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		assert(oc->refcnt > 0);
-		r = --oc->refcnt;
-		if (!r)
-			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		if (oc->flags & OC_F_BUSY)
-			hsh_rush(oh);
-		Lck_Unlock(&oh->mtx);
-		if (r != 0)
-			return (r);
-	}
-
-	if (oc != NULL) {
-		BAN_DestroyObj(oc);
-		AZ(oc->ban);
-	}
-
-	if (o != NULL) {
-		DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
-		    o->xid, WS_Free(o->ws_o));
-
-		if (oc != NULL)
-			oc_freeobj(oc);
-		else {
-			STV_Freestore(o);
-			STV_free(o->objstore);
-			o = NULL;
-		}
+	if (o != NULL && oc == NULL) {
+		/*
+		 * A pass object with neither objcore nor objhdr reference.
+		 * -> simply free the (Transient) storage
+		 */
+		STV_Freestore(o);
+		STV_free(o->objstore);
 		w->stats.n_object--;
+		return (0);
 	}
 
-	if (oc == NULL)
-		return (0);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AN(oh);
+	oh = oc->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
+	assert(oc->refcnt > 0);
+	r = --oc->refcnt;
+	if (!r)
+		VTAILQ_REMOVE(&oh->objcs, oc, list);
+	else {
+		/* Must have an object */
+		AN(oc->methods);
+	}
+	if (oc->flags & OC_F_BUSY)
+		hsh_rush(oh);
+	Lck_Unlock(&oh->mtx);
+	if (r != 0)
+		return (r);
+
+	BAN_DestroyObj(oc);
+	AZ(oc->ban);
+
+	if (oc->methods != NULL) {
+		oc_freeobj(oc);
+		w->stats.n_object--;
+	} 
 	FREE_OBJ(oc);
+
 	w->stats.n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);

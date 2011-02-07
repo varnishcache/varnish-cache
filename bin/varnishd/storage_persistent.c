@@ -774,16 +774,13 @@ smp_oc_updatemeta(struct objcore *oc)
 	}
 }
 
-static void
+static void __match_proto__()
 smp_oc_freeobj(struct objcore *oc)
 {
 	struct smp_seg *sg;
-	struct object *o;
 	struct smp_object *so;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_getobj(NULL, oc);
-	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc);

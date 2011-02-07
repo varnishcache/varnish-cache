@@ -239,7 +239,6 @@ static void * __match_proto__(void *start_routine(void *))
 exp_timer(struct sess *sp, void *priv)
 {
 	struct objcore *oc;
-	struct object *o;
 	double t;
 
 	(void)priv;
@@ -282,20 +281,7 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		if (oc->methods == &default_oc_methods) {
-			o = oc_getobj(sp->wrk, oc);
-			AN(o);
-			WSL(sp->wrk, SLT_ExpKill, 0, "%u %d",
-			    o->xid, (int)(o->ttl - t));
-			(void)HSH_Deref(sp->wrk, NULL, &o);
-		} else {
-			WSL(sp->wrk, SLT_ExpKill, 1, "-1 %d",
-			    (int)(oc->timer_when - t));
-
-			oc->priv = NULL;
-			AZ(HSH_Deref(sp->wrk, oc, NULL));
-			sp->wrk->stats.n_vampireobject--;
-		}
+		(void)HSH_Deref(sp->wrk, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
 }
