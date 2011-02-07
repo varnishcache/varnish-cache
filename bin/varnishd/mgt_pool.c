@@ -175,8 +175,8 @@ const struct parspec WRK_parspec[] = {
 		"\n"
 		"Setting this too short increases the risk of worker "
 		"thread pile-up.\n",
-		EXPERIMENTAL,
-		"20", "milliseconds" },
+		0,
+		"2", "milliseconds" },
 	{ "thread_pool_fail_delay",
 		tweak_timeout, &master.wthread_fail_delay, 100, UINT_MAX,
 		"Wait at least this long after a failed thread creation "
