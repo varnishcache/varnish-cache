@@ -122,10 +122,10 @@ struct smp_sign {
  */
 
 struct smp_segptr {
-	uint64_t		offset;
-	uint64_t		length;
-	uint64_t		objlist;
-	uint32_t		nalloc;
+	uint64_t		offset;		/* rel to silo */
+	uint64_t		length;		/* rel to offset */
+	uint64_t		objlist;	/* rel to silo */
+	uint32_t		lobjlist;	/* len of objlist */
 };
 
 /*

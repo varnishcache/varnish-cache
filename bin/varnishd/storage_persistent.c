@@ -105,7 +105,6 @@ struct smp_seg {
 
 	uint32_t		nobj;		/* Number of objects */
 	uint32_t		nalloc;		/* Allocations */
-	uint32_t		nalloc1;	/* Allocated objects */
 	uint32_t		nfixed;		/* How many fixed objects */
 
 	/* Only for open segment */
@@ -683,8 +682,8 @@ smp_find_so(const struct smp_seg *sg, const struct objcore *oc)
 
 	smp_idx = oc->priv2;
 	assert(smp_idx > 0);
-	assert(smp_idx <= sg->nalloc1);
-	so = &sg->objs[sg->nalloc1 - smp_idx];
+	assert(smp_idx <= sg->p.lobjlist);
+	so = &sg->objs[sg->p.lobjlist - smp_idx];
 	return (so);
 }
 
@@ -968,8 +967,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	/* test OBJIDX */
 	so = (void*)(sc->base + sg->p.objlist);
 	sg->objs = so;
-	sg->nalloc1 = sg->p.nalloc;
-	no = sg->p.nalloc;
+	no = sg->p.lobjlist;
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
 	for (;no > 0; so++,no--) {
@@ -1184,7 +1182,6 @@ smp_new_seg(struct smp_sc *sc)
 	IASSERTALIGN(sc, sc->next_bot);
 	IASSERTALIGN(sc, sc->next_top);
 	sg->objs = (void*)(sc->base + sc->next_top);
-	sg->nalloc1 = 0;
 }
 
 /*--------------------------------------------------------------------
@@ -1216,7 +1213,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	 * compact the segment.
 	 */
 	left = smp_spaceleft(sc, sg);
-	len = sizeof(struct smp_object) * sg->nalloc1;
+	len = sizeof(struct smp_object) * sg->p.lobjlist;
 	if (len < left) {
 		dst = sc->next_bot + IRNUP(sc, SMP_SIGN_SPACE);
 		dp = sc->base + dst;
@@ -1232,7 +1229,6 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 
 	/* Update the segment header */
 	sg->p.objlist = sc->next_top;
-	sg->p.nalloc = sg->nalloc1;
 
 	/* Write the (empty) OBJIDX signature */
 	sc->next_top -= IRNUP(sc, SMP_SIGN_SPACE);
@@ -1408,7 +1404,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 			(*so)->ban = 0.;
 			(*so)->ptr = NULL;
 			sg->objs = *so;
-			*idx = ++sg->nalloc1;
+			*idx = ++sg->p.lobjlist;
 		}
 		(void)smp_spaceleft(sc, sg);	/* for the assert */
 	}
@@ -1594,8 +1590,8 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc)
 			   (uintmax_t)(sc->next_bot),
 			   (uintmax_t)(sc->next_top),
 			   (uintmax_t)(sc->next_top - sc->next_bot));
-		cli_out(cli, "\t%u nobj, %u alloc, %u alloc1, %u fixed\n",
-		    sg->nobj, sg->nalloc, sg->nalloc1, sg->nfixed);
+		cli_out(cli, "\t%u nobj, %u alloc, %u lobjlist, %u fixed\n",
+		    sg->nobj, sg->nalloc, sg->p.lobjlist, sg->nfixed);
 		VLIST_FOREACH(oc, &sg->lru->lru_head, lru_list) {
 			if (oc == &sg->lru->senteniel)
 				cli_out(cli, "\t\t(senteniel) %p\n", oc);
