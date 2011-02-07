@@ -683,16 +683,22 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 			return (r);
 	}
 
+	if (oc != NULL) {
+		BAN_DestroyObj(oc);
+		AZ(oc->ban);
+	}
+
 	if (o != NULL) {
-		if (oc != NULL) {
-			BAN_DestroyObj(oc);
-			AZ(oc->ban);
-		}
 		DSL(0x40, SLT_Debug, 0, "Object %u workspace min free %u",
 		    o->xid, WS_Free(o->ws_o));
 
 		if (oc != NULL)
 			oc_freeobj(oc);
+		else {
+			STV_Freestore(o);
+			STV_free(o->objstore);
+			o = NULL;
+		}
 		w->stats.n_object--;
 	}
 
