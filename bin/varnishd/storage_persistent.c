@@ -101,7 +101,9 @@ struct smp_seg {
 
 	struct smp_segptr	p;
 
-	unsigned		must_load;
+	unsigned		flags;
+#define SMP_SEG_MUSTLOAD	(1 << 0)
+#define SMP_SEG_LOADED		(1 << 1)
 
 	uint32_t		nobj;		/* Number of objects */
 	uint32_t		nalloc;		/* Allocations */
@@ -120,7 +122,7 @@ struct smp_sc {
 	struct stevedore	*parent;
 
 	unsigned		flags;
-#define SMP_F_LOADED		(1 << 0)
+#define SMP_SC_LOADED		(1 << 0)
 
 	const struct stevedore	*stevedore;
 	int			fd;
@@ -676,6 +678,54 @@ smp_find_so(const struct smp_seg *sg, const struct objcore *oc)
 }
 
 /*---------------------------------------------------------------------
+ * Check if a given storage structure is valid to use
+ */
+
+static int
+smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
+    const struct storage *st)
+{
+	struct smp_seg *sg2;
+	const uint8_t *pst;
+	uint64_t o;
+
+	(void)sg;		/* XXX: faster: Start search from here */
+	pst = (const void *)st;
+
+	if (pst < (sc->base + sc->ident->stuff[SMP_SPC_STUFF]))
+		return (0x01);		/* Before silo payload start */
+	if (pst > (sc->base + sc->ident->stuff[SMP_END_STUFF]))
+		return (0x02);		/* After silo end */
+
+	o = pst - sc->base;
+
+	/* Find which segment contains the storage structure */
+	VTAILQ_FOREACH(sg2, &sc->segments, list)
+		if (o > sg2->p.offset && (o + sizeof(*st)) < sg2->p.objlist)
+			break;
+	if (sg2 == NULL)
+		return (0x04);		/* No claiming segment */
+	if (!(sg2->flags & SMP_SEG_LOADED))
+		return (0x08);		/* Claiming segment not loaded */
+
+	/* It is now safe to access the storage structure */
+	if (st->magic != STORAGE_MAGIC)
+		return (0x10);		/* Not enough magic */
+
+	if (o + st->space >= sg2->p.objlist)
+		return (0x20);		/* Allocation not inside segment */
+
+	if (st->len > st->space)
+		return (0x40);		/* Plain bad... */
+
+	/*
+	 * XXX: We could patch up st->stevedore and st->priv here
+	 * XXX: but if things go right, we will never need them.
+	 */
+	return (0);
+}
+
+/*---------------------------------------------------------------------
  * objcore methods for persistent objects
  */
 
@@ -685,6 +735,9 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
+	struct storage *st;
+	uint64_t l;
+	int bad;
 
 	/* Some calls are direct, but they should match anyway */
 	assert(oc->methods->getobj == smp_oc_getobj);
@@ -717,8 +770,25 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	Lck_Lock(&sg->sc->mtx);
 	/* Check again, we might have raced. */
 	if (oc->flags & OC_F_NEEDFIXUP) {
-		/* refcnt is >=1 because the object is in the hash */
+		/* We trust caller to have a refcnt for us */
 		o->objcore = oc;
+
+		bad = 0;
+		l = 0;
+		VTAILQ_FOREACH(st, &o->store, list) {
+			bad |= smp_loaded_st(sg->sc, sg, st);
+			if (bad)
+				break;
+			l += st->len;
+		}
+		if (l != o->len)
+			bad |= 0x100;
+
+		if(bad) {
+			o->ttl = 0;
+			o->grace = 0;
+			so->ttl = 0;
+		}
 
 		sg->nfixed++;
 		wrk->stats.n_object++;
@@ -939,8 +1009,8 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
-	assert(sg->must_load == 1);
-	sg->must_load = 0;
+	assert(sg->flags & SMP_SEG_MUSTLOAD);
+	sg->flags &= ~SMP_SEG_MUSTLOAD;
 	AN(sg->p.offset);
 	if (sg->p.objlist == 0)
 		return;
@@ -975,6 +1045,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc, struct smp_seg *sg)
 		sg->nobj++;
 	}
 	WRK_SumStat(sp->wrk);
+	sg->flags |= SMP_SEG_LOADED;
 }
 
 /*--------------------------------------------------------------------
@@ -1062,7 +1133,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 		sg->p = *ss;
 
-		sg->must_load = 1;
+		sg->flags |= SMP_SEG_MUSTLOAD;
 
 		/*
 		 * HACK: prevent save_segs from nuking segment until we have
@@ -1248,10 +1319,10 @@ smp_thread(struct sess *sp, void *priv)
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
-		if (sg->must_load)
+		if (sg->flags & SMP_SEG_MUSTLOAD)
 			smp_load_seg(sp, sc, sg);
 
-	sc->flags |= SMP_F_LOADED;
+	sc->flags |= SMP_SC_LOADED;
 	BAN_Deref(&sc->tailban);
 	sc->tailban = NULL;
 	printf("Silo completely loaded\n");
@@ -1535,7 +1606,7 @@ SMP_Ready(void)
 	ASSERT_CLI();
 	do {
 		VTAILQ_FOREACH(sc, &silos, list)
-			if (!(sc->flags & SMP_F_LOADED))
+			if (!(sc->flags & SMP_SC_LOADED))
 				break;
 		if (sc != NULL)
 			(void)sleep(1);
