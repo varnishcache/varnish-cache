@@ -25,6 +25,9 @@ client c1 {
 	expect resp.http.X-Varnish == "1001"
 } -run
 
+varnish v1 -cliok "storage.list"
+varnish v1 -cliok "debug.persistent s0 dump"
+varnish v1 -cliok "debug.persistent s0 sync"
 varnish v1 -stop
 
 varnish v1 -start

@@ -161,8 +161,6 @@ struct smp_sc {
 	unsigned		aim_nseg;
 	unsigned		max_nseg;
 
-	unsigned		aim_nobj;
-
 	uint64_t		min_segl;
 	uint64_t		aim_segl;
 	uint64_t		max_segl;
@@ -486,7 +484,7 @@ smp_metrics(struct smp_sc *sc)
 	 *
 	 * XXX: This should possibly depend on the size of the silo so
 	 * XXX: trivially small silos do not run into trouble along
-	 * XXX: the lines of "one object per silo".
+	 * XXX: the lines of "one object per segment".
 	 */
 
 	sc->min_nseg = 10;
@@ -526,16 +524,6 @@ smp_metrics(struct smp_sc *sc)
 
 	fprintf(stderr, "aim_nseg = %u, aim_segl = %ju\n",
 	    sc->aim_nseg, (uintmax_t)sc->aim_segl);
-
-	/*
-	 * Objects per segment
-	 *
-	 * XXX: calculate size of minimum object (workspace, http etc)
-	 */
-
-	sc->aim_nobj = sc->max_segl / 4000;
-
-	fprintf(stderr, "aim_nobj = %u\n", sc->aim_nobj);
 
 	/*
 	 * How much space in the free reserve pool ?
@@ -708,7 +696,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc);
 
-	o = so->ptr;
+	o = (void*)(sg->sc->base + so->ptr);
 	/*
 	 * The object may not be in this segment since we allocate it
 	 * In a separate operation than the smp_object.  We could check
@@ -1220,8 +1208,8 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 		sg->objs = dp;
 		sg->p.length = (sc->next_top - sg->p.offset)
 		     + len + IRNUP(sc, SMP_SIGN_SPACE);
-		(void)smp_spaceleft(sc, sg); 	/* for asserts */
-		
+		(void)smp_spaceleft(sc, sg);	/* for the asserts */
+
 	}
 
 	/* Update the segment header */
@@ -1347,7 +1335,7 @@ smp_close(const struct stevedore *st)
  * Allocate [min_size...max_size] space from the bottom of the segment,
  * as is convenient.
  *
- * If 'so' + 'idx' is given, also allocate a smp_object from the top 
+ * If 'so' + 'idx' is given, also allocate a smp_object from the top
  * of the segment.
  *
  * Return the segment in 'ssg' if given.
@@ -1380,7 +1368,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 	ss = NULL;
 	for (tries = 0; tries < 3; tries++) {
 		left = smp_spaceleft(sc, sc->cur_seg);
-		if (left >= extra + min_size) 
+		if (left >= extra + min_size)
 			break;
 		smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
@@ -1399,7 +1387,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 			/* Render this smp_object mostly harmless */
 			(*so)->ttl = 0.;
 			(*so)->ban = 0.;
-			(*so)->ptr = NULL;
+			(*so)->ptr = 0;;
 			sg->objs = *so;
 			*idx = ++sg->p.lobjlist;
 		}
@@ -1484,7 +1472,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
 	so->ttl = o->ttl;	/* XXX: grace? */
-	so->ptr = o;
+	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = o->ban_t;
 
 	oc->priv = sg;
@@ -1503,7 +1491,7 @@ static struct storage *
 smp_alloc(struct stevedore *st, size_t size)
 {
 
-	return (smp_allocx(st, 
+	return (smp_allocx(st,
 	    size > 4096 ? 4096 : size, size, NULL, NULL, NULL));
 }
 
@@ -1546,7 +1534,7 @@ SMP_Ready(void)
 
 	ASSERT_CLI();
 	do {
-		VTAILQ_FOREACH(sc, &silos, list) 
+		VTAILQ_FOREACH(sc, &silos, list)
 			if (!(sc->flags & SMP_F_LOADED))
 				break;
 		if (sc != NULL)
@@ -1569,10 +1557,13 @@ const struct stevedore smp_stevedore = {
 	.trim	=	smp_trim,
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Persistence is a bear to test unadultered, so we cheat by adding
+ * a cli command we can use to make it do tricks for us.
+ */
 
 static void
-debug_report_silo(struct cli *cli, const struct smp_sc *sc)
+debug_report_silo(struct cli *cli, const struct smp_sc *sc, int objs)
 {
 	struct smp_seg *sg;
 	struct objcore *oc;
@@ -1582,18 +1573,19 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc)
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
 		cli_out(cli, "  Seg: [0x%jx ... +0x%jx]\n",
 		   (uintmax_t)sg->p.offset, (uintmax_t)sg->p.length);
-		if (sg == sc->cur_seg) 
-			cli_out(cli, "\t[0x%jx ... 0x%jx] = 0x%jx free\n",
+		if (sg == sc->cur_seg)
+			cli_out(cli,
+			   "    Alloc: [0x%jx ... 0x%jx] = 0x%jx free\n",
 			   (uintmax_t)(sc->next_bot),
 			   (uintmax_t)(sc->next_top),
 			   (uintmax_t)(sc->next_top - sc->next_bot));
-		cli_out(cli, "\t%u nobj, %u alloc, %u lobjlist, %u fixed\n",
+		cli_out(cli, "    %u nobj, %u alloc, %u lobjlist, %u fixed\n",
 		    sg->nobj, sg->nalloc, sg->p.lobjlist, sg->nfixed);
-		VLIST_FOREACH(oc, &sg->lru->lru_head, lru_list) {
-			if (oc == &sg->lru->senteniel)
-				cli_out(cli, "\t\t(senteniel) %p\n", oc);
-			else
-				cli_out(cli, "\t\tOC: %p\n", oc);
+		if (objs) {
+			VLIST_FOREACH(oc, &sg->lru->lru_head, lru_list)
+				cli_out(cli, "      %s %p\n",
+				    oc == &sg->lru->senteniel ?
+				    "senteniel" : "OC: ", oc);
 		}
 	}
 }
@@ -1607,7 +1599,7 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 
 	if (av[2] == NULL) {
 		VTAILQ_FOREACH(sc, &silos, list)
-			debug_report_silo(cli, sc);
+			debug_report_silo(cli, sc, 0);
 		return;
 	}
 	VTAILQ_FOREACH(sc, &silos, list)
@@ -1619,13 +1611,15 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 		return;
 	}
 	if (av[3] == NULL) {
-		debug_report_silo(cli, sc);
+		debug_report_silo(cli, sc, 0);
 		return;
 	}
 	Lck_Lock(&sc->mtx);
 	if (!strcmp(av[3], "sync")) {
 		smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
+	} else if (!strcmp(av[3], "dump")) {
+		debug_report_silo(cli, sc, 1);
 	} else {
 		cli_out(cli, "Unknown operation\n");
 		cli_result(cli, CLIS_PARAM);
@@ -1635,7 +1629,14 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
         { "debug.persistent", "debug.persistent",
-                "Persistent debugging magic\n", 0, 2, "d", debug_persistent },
+                "Persistent debugging magic:\n"
+		"\tdebug.persistent [stevedore [cmd]]\n"
+		"With no cmd arg, a summary of the silo is returned.\n"
+		"Possible commands:\n"
+		"\tsync\tClose current segment, open a new one\n"
+		"\tdump\tinclude objcores in silo summary\n"
+		"",
+		0, 2, "d", debug_persistent },
         { NULL }
 };
 

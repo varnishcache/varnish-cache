@@ -136,8 +136,8 @@ struct smp_segptr {
  */
 
 struct smp_object {
-	unsigned char		hash[32];
+	uint8_t			hash[32];	/* really: DIGEST_LEN */
 	double			ttl;
 	double			ban;
-	struct object		*ptr;
+	uint64_t		ptr;		/* rel to silo */
 };
