@@ -174,9 +174,9 @@ The client director picks a backend based on the clients
 *identity*. You can set the VCL variable *client.identity* to identify
 the client by picking up the value of a session cookie or similar.
 
-Note: from 2.1.0 to 2.1.2 *client.identity* isn't available and the
+Note: from 2.1.0 to 2.1.3 *client.identity* isn't available and the
 director will use automatically set the idenity based on client.ip In
-2.1.3 and onwards you can set client.identity to any string available.
+2.1.4 and onwards you can set client.identity to any string available.
 
 The client director takes one option - *retries* which set the number
 of retries the director should take in order to find a healthy
