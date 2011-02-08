@@ -87,6 +87,7 @@ noinst_HEADERS = \
 	mgt_cli.h \
 	steps.h \
 	stevedore.h \
+	storage_persistent.h \
 	vparam.h
 
 varnishd_CFLAGS = \
