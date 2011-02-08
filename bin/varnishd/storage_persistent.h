@@ -173,3 +173,34 @@ struct smp_sc {
 
 #define SIGN_DATA(ctx)	((void *)((ctx)->ss + 1))
 #define SIGN_END(ctx)	((void *)((int8_t *)SIGN_DATA(ctx) + (ctx)->ss->length))
+
+/* storage_persistent.c */
+void smp_newsilo(struct smp_sc *sc);
+int smp_valid_silo(struct smp_sc *sc);
+
+void smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
+    uint64_t off, const char *id);
+
+/* storage_persistent_mgt.c */
+void smp_mgt_init(struct stevedore *parent, int ac, char * const *av);
+
+/*--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------
+ * Caculate payload of some stuff
+ */
+ 
+static inline uint64_t
+smp_stuff_len(const struct smp_sc *sc, unsigned stuff)
+{
+	uint64_t l;
+
+	assert(stuff < SMP_END_STUFF);
+	l = sc->ident->stuff[stuff + 1] - sc->ident->stuff[stuff];
+	l -= SMP_SIGN_SPACE;
+	return (l);
+}
+
+
+
+

@@ -79,7 +79,7 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  * Define a signature by location and identifier.
  */
 
-static void
+void
 smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
     uint64_t off, const char *id)
 {
@@ -195,28 +195,14 @@ smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 	smp_sync_sign(ctx);
 }
 
-/*--------------------------------------------------------------------
- * Caculate payload of some stuff
- */
 
-static uint64_t
-smp_stuff_len(const struct smp_sc *sc, unsigned stuff)
-{
-	uint64_t l;
-
-	assert(stuff < SMP_END_STUFF);
-	l = sc->ident->stuff[stuff + 1] - sc->ident->stuff[stuff];
-	l -= SMP_SIGN_SPACE;
-	return (l);
-}
-
-/*--------------------------------------------------------------------
+/*-------------------------------------------------------------------:e 
  * Initialize a Silo with a valid but empty structure.
  *
  * XXX: more intelligent sizing of things.
  */
 
-static void
+void
 smp_newsilo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
@@ -265,7 +251,7 @@ smp_newsilo(struct smp_sc *sc)
  * Check if a silo is valid.
  */
 
-static int
+int
 smp_valid_silo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
@@ -331,141 +317,6 @@ smp_valid_silo(struct smp_sc *sc)
 		return (200 + i * 10 + j);
 	return (0);
 }
-
-/*--------------------------------------------------------------------
- * Calculate cleaner metrics from silo dimensions
- */
-
-static void
-smp_metrics(struct smp_sc *sc)
-{
-
-	/*
-	 * We do not want to loose too big chunks of the silos
-	 * content when we are forced to clean a segment.
-	 *
-	 * For now insist that a segment covers no more than 1% of the silo.
-	 *
-	 * XXX: This should possibly depend on the size of the silo so
-	 * XXX: trivially small silos do not run into trouble along
-	 * XXX: the lines of "one object per segment".
-	 */
-
-	sc->min_nseg = 10;
-	sc->max_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->min_nseg;
-
-	fprintf(stderr, "min_nseg = %u, max_segl = %ju\n",
-	    sc->min_nseg, (uintmax_t)sc->max_segl);
-
-	/*
-	 * The number of segments are limited by the size of the segment
-	 * table(s) and from that follows the minimum size of a segmement.
-	 */
-
-	sc->max_nseg = smp_stuff_len(sc, SMP_SEG1_STUFF) / sc->min_nseg;
-	sc->min_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->max_nseg;
-
-	while (sc->min_segl < sizeof(struct object)) {
-		sc->max_nseg /= 2;
-		sc->min_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->max_nseg;
-	}
-
-	fprintf(stderr, "max_nseg = %u, min_segl = %ju\n",
-	    sc->max_nseg, (uintmax_t)sc->min_segl);
-
-	/*
-	 * Set our initial aim point at the exponential average of the
-	 * two extremes.
-	 *
-	 * XXX: This is a pretty arbitrary choice, but having no idea
-	 * XXX: object count, size distribution or ttl pattern at this
-	 * XXX: point, we have to do something.
-	 */
-
-	sc->aim_nseg =
-	   (unsigned) exp((log(sc->min_nseg) + log(sc->max_nseg))*.5);
-	sc->aim_segl = smp_stuff_len(sc, SMP_SPC_STUFF) / sc->aim_nseg;
-
-	fprintf(stderr, "aim_nseg = %u, aim_segl = %ju\n",
-	    sc->aim_nseg, (uintmax_t)sc->aim_segl);
-
-	/*
-	 * How much space in the free reserve pool ?
-	 */
-	sc->free_reserve = sc->aim_segl * 10;
-
-	fprintf(stderr, "free_reserve = %ju\n", sc->free_reserve);
-}
-
-/*--------------------------------------------------------------------
- * Set up persistent storage silo in the master process.
- */
-
-static void
-smp_init(struct stevedore *parent, int ac, char * const *av)
-{
-	struct smp_sc		*sc;
-	int i;
-
-	ASSERT_MGT();
-
-	AZ(av[ac]);
-#define SIZOF(foo)       fprintf(stderr, \
-    "sizeof(%s) = %zu = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
-	SIZOF(struct smp_ident);
-	SIZOF(struct smp_sign);
-	SIZOF(struct smp_segptr);
-	SIZOF(struct smp_object);
-#undef SIZOF
-
-	/* See comments in persistent.h */
-	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
-
-	/* Allocate softc */
-	ALLOC_OBJ(sc, SMP_SC_MAGIC);
-	XXXAN(sc);
-	sc->parent = parent;
-	sc->fd = -1;
-	VTAILQ_INIT(&sc->segments);
-
-	/* Argument processing */
-	if (ac != 2)
-		ARGV_ERR("(-spersistent) wrong number of arguments\n");
-
-	i = STV_GetFile(av[0], &sc->fd, &sc->filename, "-spersistent");
-	if (i == 2)
-		ARGV_ERR("(-spersistent) need filename (not directory)\n");
-
-	sc->align = sizeof(void*) * 2;
-	sc->granularity = getpagesize();
-	sc->mediasize = STV_FileSize(sc->fd, av[1], &sc->granularity,
-	    "-spersistent");
-
-	AZ(ftruncate(sc->fd, sc->mediasize));
-
-	sc->base = mmap(NULL, sc->mediasize, PROT_READ|PROT_WRITE,
-	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
-
-	if (sc->base == MAP_FAILED)
-		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
-		    strerror(errno));
-
-	smp_def_sign(sc, &sc->idn, 0, "SILO");
-	sc->ident = SIGN_DATA(&sc->idn);
-
-	i = smp_valid_silo(sc);
-	if (i)
-		smp_newsilo(sc);
-	AZ(smp_valid_silo(sc));
-
-	smp_metrics(sc);
-
-	parent->priv = sc;
-
-	/* XXX: only for sendfile I guess... */
-	mgt_child_inherit(sc->fd, "storage_persistent");
-}
-
 
 /*--------------------------------------------------------------------
  * Write the segmentlist back to the silo.
@@ -1480,7 +1331,7 @@ SMP_Ready(void)
 const struct stevedore smp_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"persistent",
-	.init	=	smp_init,
+	.init	=	smp_mgt_init,
 	.open	=	smp_open,
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,

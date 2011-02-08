@@ -64,6 +64,7 @@ varnishd_SOURCES = \
 	storage_file.c \
 	storage_malloc.c \
 	storage_persistent.c \
+	storage_persistent_mgt.c \
 	storage_synth.c \
 	storage_umem.c \
 	stevedore_utils.c \
