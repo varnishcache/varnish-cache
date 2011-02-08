@@ -169,7 +169,7 @@ smp_sync_sign(const struct smp_signctx *ctx)
  * Create and force a new signature to backing store
  */
 
-void
+static void
 smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
     uint64_t off, const char *id)
 {

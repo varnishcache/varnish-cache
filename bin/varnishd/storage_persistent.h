@@ -174,20 +174,26 @@ struct smp_sc {
 #define SIGN_DATA(ctx)	((void *)((ctx)->ss + 1))
 #define SIGN_END(ctx)	((void *)((int8_t *)SIGN_DATA(ctx) + (ctx)->ss->length))
 
-/* storage_persistent.c */
-
 /* storage_persistent_mgt.c */
+
 void smp_mgt_init(struct stevedore *parent, int ac, char * const *av);
 
+/* storage_persistent_silo.c */
+
+void smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
+    struct smp_seg *sg);
+void smp_new_seg(struct smp_sc *sc);
+void smp_close_seg(struct smp_sc *sc, struct smp_seg *sg);
+void smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx);
+
 /* storage_persistent_subr.c */
+
 void smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
     uint64_t off, const char *id);
 int smp_chk_sign(struct smp_signctx *ctx);
 void smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len);
 void smp_reset_sign(struct smp_signctx *ctx);
 void smp_sync_sign(const struct smp_signctx *ctx);
-void smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
-    uint64_t off, const char *id);
 void smp_newsilo(struct smp_sc *sc);
 int smp_valid_silo(struct smp_sc *sc);
 
@@ -206,6 +212,20 @@ smp_stuff_len(const struct smp_sc *sc, unsigned stuff)
 	return (l);
 }
 
+static inline uint64_t
+smp_segend(const struct smp_seg *sg)
+{
 
+	return (sg->p.offset + sg->p.length);
+}
 
+static inline uint64_t
+smp_spaceleft(const struct smp_sc *sc, const struct smp_seg *sg)
+{
 
+	IASSERTALIGN(sc, sc->next_bot);
+	assert(sc->next_bot <= sc->next_top - IRNUP(sc, SMP_SIGN_SPACE));
+	assert(sc->next_bot >= sg->p.offset);
+	assert(sc->next_top < sg->p.offset + sg->p.length);
+	return ((sc->next_top - sc->next_bot) - IRNUP(sc, SMP_SIGN_SPACE));
+}
