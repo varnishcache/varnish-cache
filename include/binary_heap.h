@@ -79,3 +79,4 @@ void *binheap_root(const struct binheap *);
 	 * Return the root item
 	 */
 
+#define BINHEAP_NOIDX	0

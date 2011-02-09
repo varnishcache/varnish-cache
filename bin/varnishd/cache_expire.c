@@ -57,13 +57,6 @@ static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
 
-/*
- * This is a magic marker for the objects currently on the SIOP [look it up]
- * so that other users of the object will not stumble trying to change the
- * ttl or lru position.
- */
-#define BINHEAP_NOIDX 0		/* XXX: should be in binary_heap.h */
-
 /*--------------------------------------------------------------------
  * When & why does the timer fire for this object ?
  */

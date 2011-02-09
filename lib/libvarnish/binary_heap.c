@@ -351,7 +351,7 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	assert(idx < bh->next);
 	assert(idx > 0);
 	assert(A(bh, idx) != NULL);
-	bh->update(bh->priv, A(bh, idx), 0);
+	bh->update(bh->priv, A(bh, idx), BINHEAP_NOIDX);
 	if (idx == --bh->next) {
 		A(bh, bh->next) = NULL;
 		return;
