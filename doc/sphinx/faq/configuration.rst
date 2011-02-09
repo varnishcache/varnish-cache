@@ -9,11 +9,14 @@ VCL
 
 **What is VCL?**
 
-VCL is an acronym for Varnish Configuration Language.  In a VCL file, you configure how Varnish should behave.  Sample VCL files will be included in this Wiki at a later stage.
+VCL is an acronym for Varnish Configuration Language.  In a VCL file,
+you configure how Varnish should behave.  Sample VCL files will be
+included in this Wiki at a later stage.
 
 **Where is the documentation on VCL?**
 
-We are working on documenting VCL. The `WIKI <http://varnish-cache.org/wiki/VCLExamples>`_ contains some examples.
+We are working on documenting VCL. The `WIKI
+<http://varnish-cache.org/wiki/VCLExamples>`_ contains some examples.
 
 Please also see ``man 7 vcl``.
 
@@ -22,8 +25,10 @@ Please also see ``man 7 vcl``.
 
 * Place the VCL file on the server
 * Telnet into the managment port.
-* do a "vcl.load <configname> <filename>" in managment interface. <configname> is whatever you would like to call your new configuration.
-* do a "vcl.use <configname>" to start using your new config.
+* Do a "vcl.load <configname> <filename>" in managment
+  interface. <configname> is whatever you would like to call your new
+  configuration.
+* Do a "vcl.use <configname>" to start using your new config.
 
 **Should I use ''pipe'' or ''pass'' in my VCL code? What is the difference?**
 
@@ -35,9 +40,11 @@ request can then be handled like any other.
 ``pass``. ``pipe`` reads the request, pushes in onty the backend
 _only_ pushes bytes back and forth, with no other actions taken.
 
-Since most HTTP clients do pipeline several requests into one
-connection this might give you an undesirable result - as every
-subsequent request will reuse the existing ``pipe``.
+Since most HTTP clients will pipeline several requests into one
+connection, this might give you an undesirable result - as every
+subsequent request will reuse the existing ``pipe``. Please see `this
+article <http://www.varnish-cache.org/trac/wiki/VCLExamplePipe>` for
+more details and a workaround.
 
 Varnish versions prior to 2.0 does not support handling a request body
 with ``pass`` mode, so in those releases ``pipe`` is required for
