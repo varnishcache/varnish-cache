@@ -156,14 +156,11 @@ EXP_Insert(struct object *o)
  * This optimization obviously leaves the LRU list imperfectly sorted.
  */
 
-void
-EXP_Touch(struct object *o, double tnow)
+int
+EXP_Touch(struct objcore *oc)
 {
-	struct objcore *oc;
 	struct lru *lru;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	/*
@@ -174,7 +171,7 @@ EXP_Touch(struct object *o, double tnow)
 	 * the cleaner from doing its job.
 	 */
 	if (oc->flags & OC_F_LRUDONTMOVE)
-		return;
+		return (0);
 
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
@@ -186,16 +183,15 @@ EXP_Touch(struct object *o, double tnow)
 	 * reduce contention a fair bit
 	 */
 	if (Lck_Trylock(&lru->mtx))
-		return;
+		return (0);
 
 	if (oc->timer_idx != BINHEAP_NOIDX) {
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_main->n_lru_moved++;
-		o->last_lru = tnow;
 	}
-
 	Lck_Unlock(&lru->mtx);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
