@@ -30,7 +30,6 @@
  * XXX: Before we start the client or maybe after it stops, we should give the
  * XXX: stevedores a chance to examine their storage for consistency.
  *
- * XXX: Do we ever free the LRU-lists ?
  */
 
 #include "config.h"
@@ -101,7 +100,8 @@ smp_save_segs(struct smp_sc *sc)
 		if (sg == sc->cur_seg)
 			continue;
 		VTAILQ_REMOVE(&sc->segments, sg, list);
-		free(sg);
+		LRU_Free(sg->lru);
+		FREE_OBJ(sg);
 	}
 	smp_save_seg(sc, &sc->seg1);
 	smp_save_seg(sc, &sc->seg2);
