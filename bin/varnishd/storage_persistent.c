@@ -309,8 +309,16 @@ smp_thread(struct sess *sp, void *priv)
 	BAN_Deref(&sc->tailban);
 	sc->tailban = NULL;
 	printf("Silo completely loaded\n");
-	while (1)
+	while (1) {
 		(void)sleep (1);
+		sg = VTAILQ_FIRST(&sc->segments);
+		if (sg != NULL && sg -> sc->cur_seg &&
+		    sg->nobj == 0) {
+			Lck_Lock(&sc->mtx);
+			smp_save_segs(sc);
+			Lck_Unlock(&sc->mtx);
+		}
+	}
 	NEEDLESS_RETURN(NULL);
 }
 

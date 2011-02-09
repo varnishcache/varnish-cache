@@ -83,7 +83,7 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 	smp_sync_sign(ctx);
 }
 
-static void
+void
 smp_save_segs(struct smp_sc *sc)
 {
 	struct smp_seg *sg, *sg2;
