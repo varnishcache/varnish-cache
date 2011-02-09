@@ -50,6 +50,16 @@ typedef void storage_close_f(const struct stevedore *);
 #include "vrt_stv_var.h"
 #undef VRTSTVTYPE
 
+/*--------------------------------------------------------------------*/
+
+struct lru {
+	unsigned		magic;
+#define LRU_MAGIC		0x3fec7bb0
+	VTAILQ_HEAD(,objcore)	lru_head;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct stevedore {
 	unsigned		magic;
 #define STEVEDORE_MAGIC		0x4baf43db

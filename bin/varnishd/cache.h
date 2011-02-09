@@ -382,7 +382,7 @@ struct objcore {
 #define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
-	VLIST_ENTRY(objcore)	lru_list;
+	VTAILQ_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct ban		*ban;
 };
@@ -415,15 +415,6 @@ oc_getlru(const struct objcore *oc)
 
 	return (oc->methods->getlru(oc));
 }
-
-/*--------------------------------------------------------------------*/
-
-struct lru {
-	unsigned		magic;
-#define LRU_MAGIC		0x3fec7bb0
-	VLIST_HEAD(,objcore)	lru_head;
-	struct objcore		senteniel;
-};
 
 /* Object structure --------------------------------------------------*/
 VTAILQ_HEAD(storagehead, storage);
@@ -634,7 +625,7 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 void EXP_Touch(struct object *o, double tnow);
-int EXP_NukeOne(const struct sess *sp, const struct lru *lru);
+int EXP_NukeOne(const struct sess *sp, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(const struct sess *sp, ssize_t sz);

@@ -98,7 +98,7 @@ exp_insert(struct objcore *oc, struct lru *lru)
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
+	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 	oc->flags |= OC_F_ONLRU;
 }
 
@@ -187,8 +187,8 @@ EXP_Touch(struct object *o, double tnow)
 		return;
 
 	if (oc->flags & OC_F_ONLRU) {	/* XXX ?? */
-		VLIST_REMOVE(oc, lru_list);
-		VLIST_INSERT_BEFORE(&lru->senteniel, oc, lru_list);
+		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_main->n_lru_moved++;
 		o->last_lru = tnow;
 	}
@@ -239,6 +239,7 @@ static void * __match_proto__(void *start_routine(void *))
 exp_timer(struct sess *sp, void *priv)
 {
 	struct objcore *oc;
+	struct lru *lru;
 	double t;
 
 	(void)priv;
@@ -272,7 +273,8 @@ exp_timer(struct sess *sp, void *priv)
 
 		/* And from LRU */
 		if (oc->flags & OC_F_ONLRU) {
-			VLIST_REMOVE(oc, lru_list);
+			lru = oc_getlru(oc);
+			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 			oc->flags &= ~OC_F_ONLRU;
 		}
 
@@ -293,19 +295,14 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(const struct sess *sp, const struct lru *lru)
+EXP_NukeOne(const struct sess *sp, struct lru *lru)
 {
 	struct objcore *oc;
 	struct object *o;
 
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&exp_mtx);
-	VLIST_FOREACH(oc, &lru->lru_head, lru_list) {
-		if (oc == &lru->senteniel) {
-			AZ(VLIST_NEXT(oc, lru_list));
-			oc = NULL;
-			break;
-		}
+	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		if (oc->timer_idx == BINHEAP_NOIDX)	/* exp_timer has it */
 			continue;
@@ -313,7 +310,7 @@ EXP_NukeOne(const struct sess *sp, const struct lru *lru)
 			break;
 	}
 	if (oc != NULL) {
-		VLIST_REMOVE(oc, lru_list);
+		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		oc->flags &= ~OC_F_ONLRU;
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);

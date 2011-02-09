@@ -70,8 +70,7 @@ LRU_Alloc(void)
 
 	ALLOC_OBJ(l, LRU_MAGIC);
 	AN(l);
-	VLIST_INIT(&l->lru_head);
-	VLIST_INSERT_HEAD(&l->lru_head, &l->senteniel, lru_list);
+	VTAILQ_INIT(&l->lru_head);
 	return (l);
 }
 

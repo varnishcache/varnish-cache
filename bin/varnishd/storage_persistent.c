@@ -601,10 +601,8 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc, int objs)
 		cli_out(cli, "    %u nobj, %u alloc, %u lobjlist, %u fixed\n",
 		    sg->nobj, sg->nalloc, sg->p.lobjlist, sg->nfixed);
 		if (objs) {
-			VLIST_FOREACH(oc, &sg->lru->lru_head, lru_list)
-				cli_out(cli, "      %s %p\n",
-				    oc == &sg->lru->senteniel ?
-				    "senteniel" : "OC: ", oc);
+			VTAILQ_FOREACH(oc, &sg->lru->lru_head, lru_list)
+				cli_out(cli, "      OC %p\n", oc);
 		}
 	}
 }
