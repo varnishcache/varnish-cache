@@ -654,7 +654,7 @@ cnt_fetch(struct sess *sp)
 	 * Space for producing a Content-Length: header including padding
 	 * A billion gigabytes is enough for anybody.
 	 */
-	l += strlen("Content-Encoding: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
+	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx" + sizeof(void *));
 
 	if (sp->wrk->ttl < sp->t_req + params->shortlived ||
 	    sp->objcore == NULL) 
