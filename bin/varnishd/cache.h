@@ -100,8 +100,6 @@ struct vsc_lck;
 struct waitinglist;
 struct vef_priv;
 
-struct lock { void *priv; };		// Opaque
-
 #define DIGEST_LEN		32
 
 /* Name of transient storage */
@@ -375,7 +373,6 @@ struct objcore {
 	struct objhead		*objhead;
 	double			timer_when;
 	unsigned		flags;
-#define OC_F_ONLRU		(1<<0)
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
 #define OC_F_LRUDONTMOVE	(1<<4)
@@ -391,6 +388,9 @@ static inline struct object *
 oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	AN(oc->methods->getobj);
 	return (oc->methods->getobj(wrk, oc));
 }
 
@@ -398,6 +398,8 @@ static inline void
 oc_updatemeta(struct objcore *oc)
 {
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
 	if (oc->methods->updatemeta != NULL)
 		oc->methods->updatemeta(oc);
 }
@@ -406,6 +408,9 @@ static inline void
 oc_freeobj(struct objcore *oc)
 {
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	AN(oc->methods->freeobj);
 	oc->methods->freeobj(oc);
 }
 
@@ -413,6 +418,9 @@ static inline struct lru *
 oc_getlru(const struct objcore *oc)
 {
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	AN(oc->methods->getlru);
 	return (oc->methods->getlru(oc));
 }
 

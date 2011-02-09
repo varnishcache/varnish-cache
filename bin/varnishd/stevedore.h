@@ -56,6 +56,7 @@ struct lru {
 	unsigned		magic;
 #define LRU_MAGIC		0x3fec7bb0
 	VTAILQ_HEAD(,objcore)	lru_head;
+	struct lock		mtx;
 };
 
 /*--------------------------------------------------------------------*/

@@ -162,6 +162,7 @@ Lck__New(struct lock *lck, struct vsc_lck *st, const char *w)
 {
 	struct ilck *ilck;
 
+	AN(st);
 	AZ(lck->priv);
 	ALLOC_OBJ(ilck, ILCK_MAGIC);
 	AN(ilck);

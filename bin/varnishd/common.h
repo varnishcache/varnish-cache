@@ -90,3 +90,6 @@ void vsm_iter_n(struct vsm_chunk **pp);
 #define VSM_CLASS_PARAM	"Params"
 #define VSM_CLASS_MARK	"MgrCld"
 #define VSM_COOL_TIME	5
+
+/* cache_lck.c */
+struct lock { void *priv; };		// Opaque

@@ -71,6 +71,7 @@ LRU_Alloc(void)
 	ALLOC_OBJ(l, LRU_MAGIC);
 	AN(l);
 	VTAILQ_INIT(&l->lru_head);
+	Lck_New(&l->mtx, lck_lru);
 	return (l);
 }
 
