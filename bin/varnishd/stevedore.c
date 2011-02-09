@@ -377,12 +377,15 @@ STV_open(void)
 	struct stevedore *stv;
 
 	VTAILQ_FOREACH(stv, &stevedores, list) {
+		stv->lru = LRU_Alloc();
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
 	stv = stv_transient;
-	if (stv->open != NULL)
+	if (stv->open != NULL) {
+		stv->lru = LRU_Alloc();
 		stv->open(stv);
+	}
 }
 
 void
@@ -476,8 +479,6 @@ STV_Config(const char *spec)
 		ARGV_ERR("(-s%s=%s) already defined once\n",
 		    stv->ident, stv->name);
 	}
-
-	stv->lru = LRU_Alloc();
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
