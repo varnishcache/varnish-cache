@@ -55,12 +55,6 @@ static const struct stevedore * volatile stv_next;
 static struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------
- * NB! Dirty trick alert:
- *
- * We use a captive objcore as tail senteniel for LRU lists, but to
- * make sure it does not get into play by accident, we do _not_
- * initialize its magic with OBJCORE_MAGIC.
- *
  */
 
 struct lru *
@@ -73,6 +67,14 @@ LRU_Alloc(void)
 	VTAILQ_INIT(&l->lru_head);
 	Lck_New(&l->mtx, lck_lru);
 	return (l);
+}
+
+void
+LRU_Free(struct lru *lru)
+{
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	Lck_Delete(&lru->mtx);
+	FREE_OBJ(lru);
 }
 
 /*--------------------------------------------------------------------

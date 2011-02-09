@@ -102,6 +102,7 @@ void STV_Config_Transient(void);
 void STV_Freestore(struct object *o);
 
 struct lru *LRU_Alloc(void);
+void LRU_Free(struct lru *lru);
 
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
