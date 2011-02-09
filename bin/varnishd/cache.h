@@ -354,11 +354,13 @@ struct storage {
 typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct objcore *oc);
+typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct objcore_methods {
 	getobj_f	*getobj;
 	updatemeta_f	*updatemeta;
 	freeobj_f	*freeobj;
+	getlru_f	*getlru;
 };
 
 extern struct objcore_methods default_oc_methods;
@@ -405,6 +407,13 @@ oc_freeobj(struct objcore *oc)
 {
 
 	oc->methods->freeobj(oc);
+}
+
+static inline struct lru *
+oc_getlru(const struct objcore *oc)
+{
+
+	return (oc->methods->getlru(oc));
 }
 
 /*--------------------------------------------------------------------*/

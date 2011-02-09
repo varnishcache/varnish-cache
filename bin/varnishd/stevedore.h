@@ -43,7 +43,6 @@ typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
     unsigned ltot, const struct stv_objsecrets *);
-typedef struct lru *storage_getlru_f(const struct object *);
 typedef void storage_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
@@ -59,7 +58,6 @@ struct stevedore {
 	storage_init_f		*init;		/* called by mgt process */
 	storage_open_f		*open;		/* called by cache process */
 	storage_alloc_f		*alloc;		/* --//-- */
-	storage_getlru_f	*getlru;	/* --//-- */
 	storage_trim_f		*trim;		/* --//-- */
 	storage_free_f		*free;		/* --//-- */
 	storage_close_f		*close;		/* --//-- */
@@ -88,7 +86,6 @@ void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);
 void STV_close(void);
-struct lru *STV_lru(const struct object *o);
 void STV_Config(const char *spec);
 void STV_Config_Transient(void);
 void STV_Freestore(struct object *o);

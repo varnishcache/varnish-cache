@@ -503,10 +503,24 @@ smp_oc_freeobj(struct objcore *oc)
 	Lck_Unlock(&sg->sc->mtx);
 }
 
+/*--------------------------------------------------------------------
+ * Find the per-segment lru list for this object
+ */
+
+static struct lru *
+smp_oc_getlru(const struct objcore *oc)
+{
+	struct smp_seg *sg;
+
+	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
+	return (sg->lru);
+}
+
 static struct objcore_methods smp_oc_methods = {
 	.getobj =		smp_oc_getobj,
 	.updatemeta =		smp_oc_updatemeta,
 	.freeobj =		smp_oc_freeobj,
+	.getlru =		smp_oc_getlru,
 };
 
 /*--------------------------------------------------------------------*/

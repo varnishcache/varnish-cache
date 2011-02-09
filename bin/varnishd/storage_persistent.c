@@ -66,7 +66,7 @@ SVNID("$Id$")
 static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
 
 /*--------------------------------------------------------------------
- * Add a new ban to all silos
+ * Add bans to silos
  */
 
 static void
@@ -95,6 +95,8 @@ smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0,
 
 	smp_append_sign(ctx, ptr2, ptr - ptr2);
 }
+
+/* Trust that cache_ban.c takes care of locking */
 
 void
 SMP_NewBan(double t0, const char *ban)
@@ -164,8 +166,6 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 	assert(ptr <= pe);
 	return (retval);
 }
-
-
 
 /*--------------------------------------------------------------------
  * Attempt to open and read in a segment list
@@ -468,20 +468,6 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 }
 
 /*--------------------------------------------------------------------
- * Find the per-segment lru list for this object
- */
-
-static struct lru *
-smp_getlru(const struct object *o)
-{
-	struct smp_seg *sg;
-
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CAST_OBJ_NOTNULL(sg, o->objcore->priv, SMP_SEG_MAGIC);
-	return (sg->lru);
-}
-
-/*--------------------------------------------------------------------
  * Allocate an object
  */
 
@@ -575,24 +561,6 @@ smp_free(struct storage *st)
 	(void)st;
 }
 
-/*--------------------------------------------------------------------
- * Pause until all silos have loaded.
- */
-
-void
-SMP_Ready(void)
-{
-	struct smp_sc *sc;
-
-	ASSERT_CLI();
-	do {
-		VTAILQ_FOREACH(sc, &silos, list)
-			if (!(sc->flags & SMP_SC_LOADED))
-				break;
-		if (sc != NULL)
-			(void)sleep(1);
-	} while (sc != NULL);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -604,7 +572,6 @@ const struct stevedore smp_stevedore = {
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
-	.getlru	=	smp_getlru,
 	.free	=	smp_free,
 	.trim	=	smp_trim,
 };
@@ -692,8 +659,29 @@ static struct cli_proto debug_cmds[] = {
         { NULL }
 };
 
+/*--------------------------------------------------------------------*/
+
 void
 SMP_Init(void)
 {
 	CLI_AddFuncs(debug_cmds);
+}
+
+/*--------------------------------------------------------------------
+ * Pause until all silos have loaded.
+ */
+
+void
+SMP_Ready(void)
+{
+	struct smp_sc *sc;
+
+	ASSERT_CLI();
+	do {
+		VTAILQ_FOREACH(sc, &silos, list)
+			if (!(sc->flags & SMP_SC_LOADED))
+				break;
+		if (sc != NULL)
+			(void)sleep(1);
+	} while (sc != NULL);
 }
