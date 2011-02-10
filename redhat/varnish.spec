@@ -54,7 +54,6 @@ Varnish Cache is a high-performance HTTP accelerator
 %package docs
 Summary: Documentation files for %name
 Group: System Environment/Libraries
-%endif
 
 %description docs
 Documentation files for %name
