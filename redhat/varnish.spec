@@ -1,16 +1,16 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 3.0.0
-Release: 0.git20110203%{?dist}
+Release: 0.git20110210%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
 Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-# The svn sources needs autoconf, automake and libtool to generate a suitable
-# configure script. Release tarballs would not need this
-BuildRequires: automake autoconf libtool python-docutils
+# To build from git, start with a make dist, see redhat/README.redhat 
+# You will need at least automake autoconf libtool python-docutils
+#BuildRequires: automake autoconf libtool python-docutils
 BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
@@ -54,8 +54,6 @@ Varnish Cache is a high-performance HTTP accelerator
 %package docs
 Summary: Documentation files for %name
 Group: System Environment/Libraries
-%if 0%{?rhel} > 4 && 0%{?fedora} > 10
-BuildRequires: python-sphinx
 %endif
 
 %description docs
@@ -75,18 +73,14 @@ Documentation files for %name
 #%setup -q
 %setup -q -n varnish-trunk
 
-# The svn sources needs to generate a suitable configure script
-# Release tarballs would not need this
-#./autogen.sh
-
 mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 %build
 # No pkgconfig/libpcre.pc in rhel4
 %if 0%{?rhel} == 4
-	export PCRE_CFLAGS=`pcre-config --cflags`
-	export PCRE_LIBS=`pcre-config --libs` 
+	export PCRE_CFLAGS="`pcre-config --cflags`"
+	export PCRE_LIBS="`pcre-config --libs`"
 %endif
 
 # Remove "--disable static" if you want to build static libraries 
