@@ -104,7 +104,7 @@ struct smp_sc {
 	int			fd;
 	const char		*filename;
 	off_t			mediasize;
-	uint64_t		align;		/* 64b to avoid casts */
+	uintptr_t		align;
 	uint32_t		granularity;
 	uint32_t		unique;
 
