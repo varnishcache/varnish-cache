@@ -82,7 +82,7 @@ tweak_stack_size(struct cli *cli, const struct parspec *par,
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 
-	if (arg != NULL && !strcmp(arg, "32")) {
+	if (arg != NULL && !strcmp(arg, "32bit")) {
 		u = 65536;
 		if (u < low)
 			u = low;
