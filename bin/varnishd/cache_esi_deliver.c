@@ -364,6 +364,11 @@ ESI_Deliver(struct sess *sp)
 			q++;
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
+			if (obufl > 0) {
+				ved_sendchunk(sp, NULL, 0,
+				    obuf, obufl);
+				obufl = 0;
+			}
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
 			ved_include(sp, (const char*)q, (const char*)p);
 			Debug("INCL [%s][%s] END\n", q, p);
