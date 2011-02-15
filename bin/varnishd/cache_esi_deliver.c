@@ -228,6 +228,13 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 /*---------------------------------------------------------------------
  */
 
+static const char gzip_hdr[] = {
+	0x1f, 0x8b, 0x08,
+	0x00, 0x00, 0x00, 0x00,
+	0x00,
+	0x02, 0x03
+};
+
 void
 ESI_Deliver(struct sess *sp)
 {
@@ -266,15 +273,28 @@ ESI_Deliver(struct sess *sp)
 		/*
 		 * Only the top level document gets to decide this.
 		 */
+		sp->wrk->gzip_resp = 0;
 		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
+			assert(sizeof gzip_hdr == 10);
+			/* Send out the gzip header */
+			ved_sendchunk(sp, "a\r\n", 3, gzip_hdr, 10);
+			sp->wrk->l_crc = 0;
 			sp->wrk->gzip_resp = 1;
 			sp->wrk->crc = crc32(0L, Z_NULL, 0);
-		} else
-			sp->wrk->gzip_resp = 0;
+		}
 	}
 
 	if (isgzip && !sp->wrk->gzip_resp) {
 		vgz = VGZ_NewUngzip(sp, "U D E");
+
+		/* Feed a gzip header to gunzip to make it happy */
+		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);
+		VGZ_Obuf(vgz, obuf, sizeof obuf);
+		i = VGZ_Gunzip(vgz, &dp, &dl);
+		assert(i == Z_OK || i == Z_STREAM_END);
+		assert(VGZ_IbufEmpty(vgz));
+		assert(dl == 0);
+
 		obufl = 0;
 	}
 
@@ -305,18 +325,7 @@ ESI_Deliver(struct sess *sp)
 				sp->wrk->crc = crc32_combine(
 				    sp->wrk->crc, icrc, l_icrc);
 				sp->wrk->l_crc += l_icrc;
-				if (sp->esi_level > 0 && off == 0) {
-					/*
-					 * Skip the GZ header, we know it is
-					 * 10 bytes: we made it ourself.
-					 */
-					assert(l > 10);
-					ved_sendchunk(sp, NULL, 0,
-					    st->ptr + 10, l - 10);
-				} else {
-					ved_sendchunk(sp, r, q - r,
-					    st->ptr + off, l);
-				}
+				ved_sendchunk(sp, r, q - r, st->ptr + off, l);
 			} else if (sp->wrk->gzip_resp) {
 				/*
 				 * A gzip'ed ESI response, but the VEC was

@@ -143,7 +143,7 @@ struct vef_priv {
 };
 
 /*---------------------------------------------------------------------
- * We receive a ungzip'ed object, and want to store it gzip'ed.
+ * We receive a [un]gzip'ed object, and want to store it gzip'ed.
  */
 
 static ssize_t
