@@ -1,0 +1,82 @@
+# $Id$
+
+test "Test esi-include + gzip edgecase with respect to gzip hdr"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -gzipbody {<h1>/////<h2>}
+
+	rxreq 
+	expect req.url == "/1"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {B<esi:include src="/foo"/>A}
+
+	rxreq 
+	expect req.url == "/2"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {B<esi:include src="/foo"/>}
+
+	rxreq 
+	expect req.url == "/3"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {<esi:include src="/foo"/>A}
+
+	rxreq 
+	expect req.url == "/4"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {<esi:include src="/foo"/>}
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (req.url != "/foo") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start 
+
+varnish v1 -cliok "param.set esi_syntax 0x21" 
+
+varnish v1 -cliok "param.set diag_bitmap 0x10000"
+
+client c1 {
+	txreq -url /foo -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 13
+
+	txreq -url /1 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 15
+
+	txreq -url /2 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 14
+
+	txreq -url /3 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 14
+
+	txreq -url /4 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 13
+
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0
