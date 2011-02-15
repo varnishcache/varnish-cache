@@ -361,8 +361,6 @@ vfp_esi_end(struct sess *sp)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
-		VGZ_Destroy(&sp->wrk->vgz_rx);
 
 	vsb = VEP_Finish(sp);
 
