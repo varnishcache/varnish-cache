@@ -1,0 +1,29 @@
+# $Id$
+
+test "Regression test for ESI/Gzip issues in #861"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -body {<H1><esi:include src="/foo"/><H2><esi:include src="/bar"/><H3>}
+	rxreq
+	expect req.url == "/foo"
+	txresp -body  <FOO>
+	rxreq
+	expect req.url == "/bar"
+	txresp -body <BAR>
+} -start
+
+varnish v1 \
+	-vcl+backend {
+		sub vcl_fetch {
+			set beresp.do_esi = true;
+			set beresp.do_gzip = true;
+		}
+	} -start
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+} -run
+
