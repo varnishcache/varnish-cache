@@ -122,7 +122,9 @@ vgz_alloc_vgz(struct sess *sp, const char *id)
 	struct ws *ws = sp->wrk->ws;
 
 	WS_Assert(ws);
-	vg = (void*)WS_Alloc(ws, sizeof *vg);
+	// XXX: we restore workspace in esi:include
+	// vg = (void*)WS_Alloc(ws, sizeof *vg);
+	ALLOC_OBJ(vg, VGZ_MAGIC);
 	AN(vg);
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
@@ -377,6 +379,7 @@ VGZ_Destroy(struct vgz **vgp)
 	    (intmax_t)vg->vz.stop_bit);
 	if (vg->tmp != NULL)
 		WS_Reset(vg->tmp, vg->tmp_snapshot);
+	FREE_OBJ(vg);
 }
 
 /*--------------------------------------------------------------------
