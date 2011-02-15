@@ -554,12 +554,10 @@ cmd_http_gunzip_body(CMD_ARGS)
 
 	assert(Z_OK == inflateInit2(&vz, 31));
 	i = inflate(&vz, Z_FINISH);
-	if (i != Z_STREAM_END)
-		vtc_log(hp->vl, 0, "Gunzip error = %d (%s) in:%jd out:%jd",
-		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
 	hp->bodyl = vz.total_out;
 	memcpy(hp->body, p, hp->bodyl);
 	free(p);
+	vtc_log(hp->vl, 3, "new bodylen %u", hp->bodyl);
 	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
 	bprintf(hp->bodylen, "%u", hp->bodyl);
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
@@ -568,6 +566,9 @@ cmd_http_gunzip_body(CMD_ARGS)
 	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
 	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
+	if (i != Z_STREAM_END)
+		vtc_log(hp->vl, 0, "Gunzip error = %d (%s) in:%jd out:%jd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
 	assert(Z_OK == inflateEnd(&vz));
 }
 
