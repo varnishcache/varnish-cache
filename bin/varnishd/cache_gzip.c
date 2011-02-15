@@ -302,7 +302,7 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 		return (1);
 	if (i == Z_BUF_ERROR)
 		return (2);
-printf("INFLATE=%d\n", i);
+printf("INFLATE=%d (%s)\n", i, vg->vz.msg);
 	return (-1);
 }
 
