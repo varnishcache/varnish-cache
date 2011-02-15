@@ -504,6 +504,7 @@ FetchBody(struct sess *sp, const struct http *hp)
 	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
 	 */
 
+	AZ(sp->wrk->vgz_rx);
 	AZ(VTAILQ_FIRST(&sp->obj->store));
 	switch (sp->wrk->body_status) {
 	case BS_NONE:
@@ -537,6 +538,7 @@ FetchBody(struct sess *sp, const struct http *hp)
 		INCOMPL();
 	}
 	XXXAZ(sp->wrk->vfp->end(sp));
+	AZ(sp->wrk->vgz_rx);
 	/*
 	 * It is OK for ->end to just leave the last storage segment
 	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()

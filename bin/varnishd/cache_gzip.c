@@ -393,6 +393,7 @@ static void __match_proto__()
 vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
+	AZ(sp->wrk->vgz_rx);
 	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F -");
 }
 
@@ -438,6 +439,7 @@ vfp_gunzip_end(struct sess *sp)
 	struct vgz *vg;
 
 	vg = sp->wrk->vgz_rx;
+	sp->wrk->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_Destroy(&vg);
 	sp->obj->gziped = 0;
@@ -462,6 +464,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 
+	AZ(sp->wrk->vgz_rx);
 	sp->wrk->vgz_rx = VGZ_NewGzip(sp, "G F -");
 }
 
@@ -507,6 +510,7 @@ vfp_gzip_end(struct sess *sp)
 	int i;
 
 	vg = sp->wrk->vgz_rx;
+	sp->wrk->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	do {
 		VGZ_Ibuf(vg, "", 0);
@@ -587,6 +591,7 @@ vfp_testgzip_end(struct sess *sp)
 	struct vgz *vg;
 
 	vg = sp->wrk->vgz_rx;
+	sp->wrk->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_UpdateObj(vg, sp->obj);
 	VGZ_Destroy(&vg);
