@@ -497,7 +497,7 @@ ESI_DeliverChild(const struct sess *sp)
 	 */
 	cc = ved_deliver_byterange(sp, start/8, last/8);
 //printf("CC_LAST %x\n", cc);
-	cc &= ~(1U << (start & 7));
+	cc &= ~(1U << (last & 7));
 	ved_sendchunk(sp, NULL, 0, &cc, 1);
 	cc = ved_deliver_byterange(sp, 1 + last/8, stop/8);
 //printf("CC_STOP %x (%d)\n", cc, (int)(stop & 7));

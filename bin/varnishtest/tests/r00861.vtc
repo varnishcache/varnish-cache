@@ -12,18 +12,38 @@ server s1 {
 	rxreq
 	expect req.url == "/bar"
 	txresp -body <BAR>
+
+	rxreq 
+	expect req.url == "/barf"
+	txresp -body {[{"program":true,"id":972389,"vendorId":"15451701","starttime":1297777500000,"endtime":1297783500000,"title":"Swimming Pool","oTitle":"true","genre":"0x10x0","timeshiftEnabled":true},{"program":true,"id":972391,"vendorId":"15451702","starttime":1297783500000,"endtime":1297785000000,"title":"Fashion -Trends","oTitle":null,"genre":"0x30x0","timeshiftEnabled":true},{"program":true,"id":972384,"vendorId":"15451703","starttime":1297785000000,"endtime":1297786500000,"title":"Fashion - mænd","oTitle":null,"genre":"0x30x0","timeshiftEnabled":true},{"program":true,"id":972388,"vendorId":"15451704","starttime":1297786500000,"endtime":1297789800000,"title":"The Day Before","oTitle":"true","genre":"0x30x0","timeshiftEnabled":true},{"program":true,"id":972393,"vendorId":"15451705","starttime":1297789800000,"endtime":1297793100000,"title":"Kessels øje","oTitle":null,"genre":"0x20x3","timeshiftEnabled":true}]}
+
+	rxreq
+	expect req.url == "/2"
+	txresp -body { <esi:include src="/barf" />}
+
 } -start
 
 varnish v1 \
 	-vcl+backend {
 		sub vcl_fetch {
-			set beresp.do_esi = true;
-			set beresp.do_gzip = true;
+			if (req.url == "/1" || req.url == "/2") {
+				set beresp.do_esi = true;
+				set beresp.do_gzip = true;
+			}
 		}
 	} -start
 
 client c1 {
 	txreq -url "/1"
 	rxresp
-} -run
 
+	txreq -url "/barf" -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.Content-Encoding == resp.http.Content-Encoding
+	expect resp.bodylen == 909
+
+	txreq -url "/2" -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.bodylen == 910
+} -run
