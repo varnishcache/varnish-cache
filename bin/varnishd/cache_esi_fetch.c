@@ -308,25 +308,28 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F E");
 		VEP_Init(sp, NULL);
 	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
-		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
-		AN(vef);
-		memset(vef, 0, sizeof *vef);
-		vef->magic = VEF_MAGIC;
+		ALLOC_OBJ(vef, VEF_MAGIC);
+		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
+		//AN(vef);
+		//memset(vef, 0, sizeof *vef);
+		//vef->magic = VEF_MAGIC;
 		vef->vgz = VGZ_NewGzip(sp, "G F E");
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
 	} else if (sp->wrk->is_gzip) {
 		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F E");
-		vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
-		AN(vef);
-		memset(vef, 0, sizeof *vef);
-		vef->magic = VEF_MAGIC;
+		ALLOC_OBJ(vef, VEF_MAGIC);
+		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
+		//AN(vef);
+		//memset(vef, 0, sizeof *vef);
+		//vef->magic = VEF_MAGIC;
 		vef->vgz = VGZ_NewGzip(sp, "G F E");
 		AZ(sp->wrk->vef_priv);
 		sp->wrk->vef_priv = vef;
 		VEP_Init(sp, vfp_vep_callback);
 	} else {
+		AZ(sp->wrk->vef_priv);
 		VEP_Init(sp, NULL);
 	}
 
@@ -384,6 +387,7 @@ vfp_esi_end(struct sess *sp)
 		VGZ_Destroy(&vef->vgz);
 		XXXAZ(vef->error);
 		sp->obj->gziped = 1;
+		FREE_OBJ(vef);
 	} else {
 		sp->obj->gziped = 0;
 	}

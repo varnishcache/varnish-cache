@@ -354,6 +354,7 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	obj->gzip_start	= vg->vz.start_bit;
 	obj->gzip_last	= vg->vz.last_bit;
 	obj->gzip_stop	= vg->vz.stop_bit;
