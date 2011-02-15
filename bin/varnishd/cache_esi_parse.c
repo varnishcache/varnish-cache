@@ -72,6 +72,7 @@ struct vep_state {
 
 	/* parser state */
 	const char		*state;
+	unsigned		startup;
 
 	unsigned		endtag;
 	unsigned		emptytag;
@@ -298,8 +299,8 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 static void
 vep_emit_common(struct vep_state *vep, ssize_t l, enum vep_mark mark)
 {
-	assert(l > 0);
 
+	assert(l > 0);
 	assert(mark == SKIP || mark == VERBATIM);
 	if (mark == SKIP)
 		vep_emit_skip(vep, l);
@@ -331,10 +332,11 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	 * assembled before the pending bytes.
 	 */
 
-	if (vep->last_mark != mark && vep->o_wait > 0) {
+	if (vep->last_mark != mark && (vep->o_wait > 0 || vep->startup)) {
 		lcb = vep->cb(vep->sp, 0,
 		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
-		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
+		if (lcb - vep->o_last > 0)
+			vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 		vep->o_last = lcb;
 		vep->o_wait = 0;
 	}
@@ -1009,6 +1011,17 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
 	vep->state = VEP_START;
 	vep->crc = crc32(0L, Z_NULL, 0);
 	vep->crcp = crc32(0L, Z_NULL, 0);
+
+	/*
+	 * We must force the GZIP header out as a SKIP string, otherwise
+	 * an object starting with <esi:include would have its GZIP header
+	 * appear after the included object (e000026.vtc)
+	 */
+	vep->startup = 1;
+	vep->ver_p = "";
+	vep->last_mark = SKIP;
+	vep_mark_common(vep, vep->ver_p, VERBATIM);
+	vep->startup = 0;
 }
 
 /*---------------------------------------------------------------------
