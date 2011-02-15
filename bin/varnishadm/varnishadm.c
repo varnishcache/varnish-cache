@@ -38,8 +38,11 @@ SVNID("$Id$")
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-
 #include <sys/socket.h>
+
+#ifdef HAVE_LIBEDIT
+#include <editline/readline.h>
+#endif
 
 #include "cli.h"
 #include "cli_common.h"
@@ -154,6 +157,19 @@ do_args(int sock, int argc, char * const *argv)
 	exit(1);
 }
 
+#ifdef HAVE_LIBEDIT
+/* Callback for readline, doesn't take a private pointer, so we need
+ * to have a global variable.
+ */
+static int _line_sock;
+void send_line(char *l)
+{
+	cli_write(_line_sock, l);
+	cli_write(_line_sock, "\n");
+	add_history(l);
+}
+#endif
+
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  * Send a "banner" to varnish, to provoke a welcome message.
@@ -164,6 +180,16 @@ pass(int sock)
 	struct pollfd fds[2];
 	char buf[1024];
 	int i, n, m;
+
+#ifdef HAVE_LIBEDIT
+	_line_sock = sock;
+	rl_already_prompted = 1;
+	if (isatty(0)) {
+		rl_callback_handler_install("varnish> ", send_line);
+	} else {
+		rl_callback_handler_install("", send_line);
+	}
+#endif
 
 	cli_write(sock, "banner\n");
 	fds[0].fd = sock;
@@ -182,13 +208,21 @@ pass(int sock)
 				exit (0);
 			}
 			assert(n > 0);
+			/* Get rid of the prompt, kinda hackish */
+			write(1, "\r           \r", 13);
 			m = write(1, buf, n);
 			if (n != m) {
 				perror("Write error writing stdout");
 				exit (1);
 			}
+#ifdef HAVE_LIBEDIT
+			rl_forced_update_display();
+#endif
 		}
 		if (fds[1].revents & POLLIN) {
+#ifdef HAVE_LIBEDIT
+			rl_callback_read_char();
+#else
 			n = read(fds[1].fd, buf, sizeof buf);
 			if (n == 0) {
 				AZ(shutdown(sock, SHUT_WR));
@@ -196,12 +230,10 @@ pass(int sock)
 			} else if (n < 0) {
 				exit(0);
 			} else {
-				m = write(sock, buf, n);
-				if (n != m) {
-					perror("Write error writing CLI socket");
-					exit (1);
-				}
+				buf[n] = '\0';
+				cli_write(sock, buf);
 			}
+#endif
 		}
 	}
 }
