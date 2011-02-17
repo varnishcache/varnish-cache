@@ -177,7 +177,7 @@ Varnish will cache different versions of every page for every
 hostname. You can mitigate this in your web server configuration by
 setting up redirects or by using the following VCL::
 
-  if (req.http.host ~ "^(www.)?varnish-?software.com") {
+  if (req.http.host ~ "(?i)^(www.)?varnish-?software.com") {
     set req.http.host = "varnish-software.com";
   }
 
