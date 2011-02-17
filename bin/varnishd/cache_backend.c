@@ -62,12 +62,6 @@ struct vdi_simple {
 	const struct vrt_backend *vrt;
 };
 
-
-/*
- * List of cached vbcs, used if enabled in params/heritage
- */
-static VTAILQ_HEAD(,vbc) vbcs = VTAILQ_HEAD_INITIALIZER(vbcs);
-
 /*--------------------------------------------------------------------
  * Create default Host: header for backend request
  */
@@ -97,17 +91,10 @@ VBE_ReleaseConn(struct vbc *vc)
 	vc->addr = NULL;
 	vc->addrlen = 0;
 	vc->recycled = 0;
-	if (params->cache_vbcs) {
-		Lck_Lock(&VBE_mtx);
-		VTAILQ_INSERT_HEAD(&vbcs, vc, list);
-		VSC_main->backend_unused++;
-		Lck_Unlock(&VBE_mtx);
-	} else {
-		Lck_Lock(&VBE_mtx);
-		VSC_main->n_vbc--;
-		Lck_Unlock(&VBE_mtx);
-		free(vc);
-	}
+	Lck_Lock(&VBE_mtx);
+	VSC_main->n_vbc--;
+	Lck_Unlock(&VBE_mtx);
+	FREE_OBJ(vc);
 }
 
 #define FIND_TMO(tmx, dst, sp, be)		\
@@ -238,21 +225,8 @@ vbe_NewConn(void)
 {
 	struct vbc *vc;
 
-	vc = VTAILQ_FIRST(&vbcs);
-	if (vc != NULL) {
-		Lck_Lock(&VBE_mtx);
-		vc = VTAILQ_FIRST(&vbcs);
-		if (vc != NULL) {
-			VSC_main->backend_unused--;
-			VTAILQ_REMOVE(&vbcs, vc, list);
-		}
-		Lck_Unlock(&VBE_mtx);
-	}
-	if (vc != NULL)
-		return (vc);
-	vc = calloc(sizeof *vc, 1);
+	ALLOC_OBJ(vc, VBC_MAGIC);
 	XXXAN(vc);
-	vc->magic = VBC_MAGIC;
 	vc->fd = -1;
 	Lck_Lock(&VBE_mtx);
 	VSC_main->n_vbc++;

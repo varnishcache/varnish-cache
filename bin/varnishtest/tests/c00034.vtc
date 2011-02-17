@@ -9,6 +9,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 } -start
+varnish v1 -cliok "param.set http_range_support off"
 
 client c1 {
 	txreq -hdr "Range: bytes=0-9"

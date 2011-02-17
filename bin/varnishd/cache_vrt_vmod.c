@@ -123,7 +123,7 @@ VRT_Vmod_Fini(void **hdl)
 	if (--v->ref != 0)
 		return;
 #ifndef DONT_DLCLOSE_VMODS
-	dlclose(v->hdl);
+	AZ(dlclose(v->hdl));
 #endif
 	free(v->nm);
 	free(v->path);

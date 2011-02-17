@@ -136,16 +136,13 @@ struct params {
 	unsigned		max_restarts;
 
 	/* Maximum esi:include depth allowed */
-	unsigned		max_esi_includes;
+	unsigned		max_esi_depth;
 
 	/* ESI parser hints */
 	unsigned		esi_syntax;
 
 	/* Rush exponent */
 	unsigned		rush_exponent;
-
-	/* Cache vbcs */
-	unsigned		cache_vbcs;
 
 	/* Default connection_timeout */
 	double			connect_timeout;

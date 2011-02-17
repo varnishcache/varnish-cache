@@ -483,6 +483,10 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 	"this parameter, or if the default value is even sensible.  " \
 	"Caution is advised, and feedback is most welcome."
 
+#define WIZARD_TEXT \
+	"\nNB: Do not change this parameter, unless a developer tell " \
+	"you to do so." 
+
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
@@ -647,15 +651,11 @@ static const struct parspec input_parspec[] = {
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
-	{ "max_esi_includes",
-		tweak_uint, &master.max_esi_includes, 0, UINT_MAX,
+	{ "max_esi_depth",
+		tweak_uint, &master.max_esi_depth, 0, UINT_MAX,
 		"Maximum depth of esi:include processing.\n",
 		0,
-		"5", "includes" },
-	{ "cache_vbcs", tweak_bool,  &master.cache_vbcs, 0, 0,
-		"Cache vbc's or rely on malloc, that's the question.",
-		EXPERIMENTAL,
-		"off", "bool" },
+		"5", "levels" },
 	{ "connect_timeout", tweak_timeout_double,
 		&master.connect_timeout,0, UINT_MAX,
 		"Default connection timeout for backend connections. "
@@ -664,7 +664,7 @@ static const struct parspec input_parspec[] = {
 		"VCL can override this default value for each backend and "
 		"backend request.",
 		0,
-		"0.4", "s" },
+		"0.7", "s" },
 	{ "first_byte_timeout", tweak_timeout_double,
 		&master.first_byte_timeout,0, UINT_MAX,
 		"Default timeout for receiving first byte from backend. "
@@ -748,9 +748,9 @@ static const struct parspec input_parspec[] = {
 		0,
 		"8192", "bytes" },
 	{ "log_hashstring", tweak_bool, &master.log_hash, 0, 0,
-		"Log the hash string to shared memory log.\n",
+		"Log the hash string components to shared memory log.\n",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ "log_local_address", tweak_bool, &master.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
 		"SessionOpen shared memory record.\n",
@@ -812,7 +812,7 @@ static const struct parspec input_parspec[] = {
 	{ "http_range_support", tweak_bool, &master.http_range_support, 0, 0,
 		"Enable support for HTTP Range headers.\n",
 		EXPERIMENTAL,
-		"off", "bool" },
+		"on", "bool" },
 	{ "http_gzip_support", tweak_bool, &master.http_gzip_support, 0, 0,
 		"Enable gzip support. When enabled Varnish will compress "
 		"uncompressed objects before they are stored in the cache. "
@@ -862,7 +862,7 @@ static const struct parspec input_parspec[] = {
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "
 		"on the cooloff list.\n",
-		EXPERIMENTAL,
+		WIZARD,
 		"180.0", "s" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir, 0, 0,
 		"Directory from which relative VCL filenames (vcl.load and "
@@ -958,6 +958,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, MUST_RELOAD_TEXT);
 			if (pp->flags & MUST_RESTART)
 				mcf_wrap(cli, MUST_RESTART_TEXT);
+			if (pp->flags & WIZARD)
+				mcf_wrap(cli, WIZARD_TEXT);
 			if (!lfmt)
 				return;
 			else
