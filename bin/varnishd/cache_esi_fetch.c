@@ -310,8 +310,8 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 		VEP_Init(sp, NULL);
 	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
+		AN(vef);
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
-		//AN(vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
 		vef->vgz = VGZ_NewGzip(sp, "G F E");
@@ -321,8 +321,8 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	} else if (sp->wrk->is_gzip) {
 		sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
+		AN(vef);
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
-		//AN(vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
 		vef->vgz = VGZ_NewGzip(sp, "G F E");
