@@ -812,7 +812,7 @@ static const struct parspec input_parspec[] = {
 	{ "http_range_support", tweak_bool, &master.http_range_support, 0, 0,
 		"Enable support for HTTP Range headers.\n",
 		EXPERIMENTAL,
-		"off", "bool" },
+		"on", "bool" },
 	{ "http_gzip_support", tweak_bool, &master.http_gzip_support, 0, 0,
 		"Enable gzip support. When enabled Varnish will compress "
 		"uncompressed objects before they are stored in the cache. "
