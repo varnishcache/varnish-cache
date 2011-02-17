@@ -656,10 +656,6 @@ static const struct parspec input_parspec[] = {
 		"Maximum depth of esi:include processing.\n",
 		0,
 		"5", "levels" },
-	{ "cache_vbcs", tweak_bool,  &master.cache_vbcs, 0, 0,
-		"Cache vbc's or rely on malloc, that's the question.",
-		EXPERIMENTAL,
-		"off", "bool" },
 	{ "connect_timeout", tweak_timeout_double,
 		&master.connect_timeout,0, UINT_MAX,
 		"Default connection timeout for backend connections. "
