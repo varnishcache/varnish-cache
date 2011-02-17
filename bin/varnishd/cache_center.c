@@ -566,14 +566,11 @@ cnt_fetch(struct sess *sp)
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
 		sp->wrk->ttl = sp->t_req - 1.;
-	} else if (sp->handling == VCL_RET_PASS) {
+	} else if (sp->handling == VCL_RET_HIT_FOR_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
 		pass = 1;
 		sp->objcore->flags |= OC_F_PASS;
-		/* Enforce a minimum TTL of 1 sec (if set from VCL) */
-		if (sp->wrk->ttl <= sp->t_req)
-			sp->wrk->ttl = sp->wrk->entered + params->default_ttl;
 	} else {
 		/* regular object */
 		pass = 0;
@@ -728,7 +725,7 @@ cnt_fetch(struct sess *sp)
 		sp->restarts++;
 		sp->step = STP_RECV;
 		return (0);
-	case VCL_RET_PASS:
+	case VCL_RET_HIT_FOR_PASS:
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_ERROR:

@@ -91,7 +91,7 @@ returns =(
 	('hash',	('hash',)),
 	('miss',	('error', 'restart', 'pass', 'fetch',)),
 	('hit',		('error', 'restart', 'pass', 'deliver',)),
-	('fetch',	('error', 'restart', 'pass', 'deliver',)),
+	('fetch',	('error', 'restart', 'hit_for_pass', 'deliver',)),
 	('deliver',	('restart', 'deliver',)),
 	('error',	('restart', 'deliver',)),
 )
