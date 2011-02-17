@@ -92,7 +92,7 @@ A backend declaration creates and initializes a named backend object:::
 
 The backend object can later be used to select a backend at request time:::
 
-  if (req.http.host ~ "^(www.)?example.com$") {
+  if (req.http.host ~ "(?i)^(www.)?example.com$") {
     set req.backend = www;
   }
 
@@ -528,9 +528,9 @@ Example:::
 
 	# in file "backends.vcl"
 	sub vcl_recv {
-	  if (req.http.host ~ "example.com") {
+	  if (req.http.host ~ "(?i)example.com") {
 	    set req.backend = foo;
-	  } elsif (req.http.host ~ "example.org") {
+	  } elsif (req.http.host ~ "(?i)example.org") {
 	    set req.backend = bar;
 	  }
 	}
@@ -731,7 +731,7 @@ Values may be assigned to variables using the set keyword:::
 
   sub vcl_recv {
     # Normalize the Host: header
-    if (req.http.host ~ "^(www.)?example.com$") {
+    if (req.http.host ~ "(?i)^(www.)?example.com$") {
       set req.http.host = "www.example.com";
     }
   }
@@ -803,10 +803,10 @@ based on the request URL:::
   }
   
   sub vcl_recv {
-    if (req.http.host ~ "^(www.)?example.com$") {
+    if (req.http.host ~ "(?i)^(www.)?example.com$") {
       set req.http.host = "www.example.com";
       set req.backend = www;
-    } elsif (req.http.host ~ "^images.example.com$") {
+    } elsif (req.http.host ~ "(?i)^images.example.com$") {
       set req.backend = images;
     } else {
       error 404 "Unknown virtual host";

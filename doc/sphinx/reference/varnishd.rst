@@ -839,30 +839,36 @@ waiter
 Purge expressions
 -----------------
 
-A purge expression consists of one or more conditions.  A condition consists of a field, an operator, and an
-argument.  Conditions can be ANDed together with "&&".
+A purge expression consists of one or more conditions.  A condition
+consists of a field, an operator, and an argument.  Conditions can be
+ANDed together with "&&".
 
-A field can be any of the variables from VCL, for instance req.url, req.http.host or obj.set-cookie.
+A field can be any of the variables from VCL, for instance req.url,
+req.http.host or obj.set-cookie.
 
-Operators are "==" for direct comparision, "~" for a regular expression match, and ">" or "<" for size compar‐
-isons.  Prepending an operator with "!" negates the expression.
+Operators are "==" for direct comparision, "~" for a regular
+expression match, and ">" or "<" for size comparisons.  Prepending
+an operator with "!" negates the expression.
 
-The argument could be a quoted string, a regexp, or an integer.  Integers can have "KB", "MB", "GB" or "TB"
-appended for size related fields.
+The argument could be a quoted string, a regexp, or an integer.
+Integers can have "KB", "MB", "GB" or "TB" appended for size related
+fields.
 
-Simple example: All requests where req.url exactly matches the string /news are purged from the cache:::
+Simple example: All requests where req.url exactly matches the string
+/news are purged from the cache:::
 
     req.url == "/news"
 
-Example: Purge all documents where the name does not end with ".ogg", and where the size of the object is greater
-than 10 megabytes:::
+Example: Purge all documents where the name does not end with ".ogg",
+and where the size of the object is greater than 10 megabytes:::
 
     req.url !~ "\.ogg$" && obj.size > 10MB
 
-Example: Purge all documents where the serving host is "example.com" or "www.example.com", and where the Set-
-Cookie header received from the backend contains "USERID=1663":::
+Example: Purge all documents where the serving host is "example.com"
+or "www.example.com", and where the Set- Cookie header received from
+the backend contains "USERID=1663":::
 
-    req.http.host ~ "^(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
+    req.http.host ~ "^(?i)(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
 
 SEE ALSO
 ========
