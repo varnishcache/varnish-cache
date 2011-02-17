@@ -55,6 +55,10 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	w = sp->wrk;
 
+	if (sp->esi_level >= params->max_esi_depth)
+		return;
+	sp->esi_level++;
+
 	if (WRW_Flush(w)) {
 		vca_close_session(sp, "remote closed");
 		return;
@@ -62,7 +66,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	AZ(WRW_FlushRelease(w));
 
-	sp->esi_level++;
 	obj = sp->obj;
 	sp->obj = NULL;
 	res_mode = sp->wrk->res_mode;
