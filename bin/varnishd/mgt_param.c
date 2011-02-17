@@ -748,9 +748,9 @@ static const struct parspec input_parspec[] = {
 		0,
 		"8192", "bytes" },
 	{ "log_hashstring", tweak_bool, &master.log_hash, 0, 0,
-		"Log the hash string to shared memory log.\n",
+		"Log the hash string components to shared memory log.\n",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ "log_local_address", tweak_bool, &master.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
 		"SessionOpen shared memory record.\n",
