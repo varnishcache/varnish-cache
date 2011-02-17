@@ -17,7 +17,7 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_fetch {
-		return(pass);
+		return(hit_for_pass);
 	}
 } -start
 
