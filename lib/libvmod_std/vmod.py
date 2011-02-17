@@ -141,7 +141,6 @@ def parse_enum(tq):
 			raise Exception("Duplicate Enum value '%s'" % i)
 		b[i] = True
 		s = s + i.strip() + '\\0'
-	s = s + '\\0'
 	return s
 
 #######################################################################
