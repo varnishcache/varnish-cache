@@ -84,7 +84,7 @@ static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
 static struct vev_base *vb;
 static int njob = 0;
 static int npar = 1;			/* Number of parallel tests */
-static unsigned vtc_maxdur = 30;	/* Max duration of any test */
+static unsigned vtc_maxdur = 60;	/* Max duration of any test */
 static int vtc_continue;		/* Continue on error */
 static int vtc_verbosity = 1;		/* Verbosity Level */
 static int vtc_good;
