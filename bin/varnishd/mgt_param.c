@@ -483,6 +483,10 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 	"this parameter, or if the default value is even sensible.  " \
 	"Caution is advised, and feedback is most welcome."
 
+#define WIZARD_TEXT \
+	"\nNB: Do not change this parameter, unless a developer tell " \
+	"you to do so." 
+
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
@@ -862,7 +866,7 @@ static const struct parspec input_parspec[] = {
 		&master.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "
 		"on the cooloff list.\n",
-		EXPERIMENTAL,
+		WIZARD,
 		"180.0", "s" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir, 0, 0,
 		"Directory from which relative VCL filenames (vcl.load and "
@@ -958,6 +962,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, MUST_RELOAD_TEXT);
 			if (pp->flags & MUST_RESTART)
 				mcf_wrap(cli, MUST_RESTART_TEXT);
+			if (pp->flags & WIZARD)
+				mcf_wrap(cli, WIZARD_TEXT);
 			if (!lfmt)
 				return;
 			else

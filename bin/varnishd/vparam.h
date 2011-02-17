@@ -41,10 +41,11 @@ struct parspec {
 	double		max;
 	const char	*descr;
 	int		 flags;
-#define DELAYED_EFFECT 1
-#define EXPERIMENTAL   2
-#define MUST_RESTART   4
-#define MUST_RELOAD    8
+#define DELAYED_EFFECT	(1<<0)
+#define EXPERIMENTAL	(1<<1)
+#define MUST_RESTART	(1<<2)
+#define MUST_RELOAD	(1<<3)
+#define WIZARD		(1<<4)
 	const char	*def;
 	const char	*units;
 };
