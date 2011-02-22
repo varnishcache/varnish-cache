@@ -7,7 +7,7 @@ With open source software, you can choose to install binary packages
 or compile stuff from source-code. To install a package or compile
 from source is a matter of personal taste. If you don't know which
 method too choose read the whole document and choose the method you
-are most confortable with.
+are most comfortable with.
 
 
 Source or packages?
@@ -28,11 +28,11 @@ Binary package:
 CentOS/RedHat
 ~~~~~~~~~~~~~
 
-We try to keep the lastest version available as prebuildt RPMs (el4 &
+We try to keep the latest version available as prebuilt RPMs (el4 &
 el5) on `SourceForge <http://sourceforge.net/projects/varnish/files/>`_.
 
 Varnish is included in the `EPEL
-<http://fedoraproject.org/wiki/EPEL>`_ repository.  Unfortunatly we
+<http://fedoraproject.org/wiki/EPEL>`_ repository.  Unfortunately we
 had a syntax change in Varnish 2.0.6->2.1.X. This means that we can
 not update Varnish in `EPEL <http://fedoraproject.org/wiki/EPEL>`_ so
 the latest version there is Varnish 2.0.6.
@@ -64,8 +64,8 @@ If there are no binary packages available for your system, or if you
 want to compile Varnish from source for other reasons, follow these
 steps:
 
-First get a copy of the sourcecode using the ``svn`` command.  If
-you do not have this command, you need to install SubVersion_ on
+First get a copy of the source code using the ``svn`` command.  If
+you do not have this command, you need to install Subversion_ on
 your system.  There is usually a binary package, try substituting
 "subversion" for "varnish" in the examples above, it might just work.
 
@@ -93,10 +93,10 @@ installed. On a Debian or Ubuntu system these are:
 * libpcre3-dev
 * pkg-config
 
-Build dependencies on Red Hat / Centos
+Build dependencies on Red Hat / CentOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To build Varnish on a Red Hat or Centos system you need the following
+To build Varnish on a Red Hat or CentOS system you need the following
 packages installed:
 
 * automake 
@@ -121,7 +121,7 @@ above satisfied. Once that is taken care of:::
 
 The ``configure`` script takes some arguments, but more likely than
 not, you can forget about that for now, almost everything in Varnish
-are runtime parameters.
+are run time parameters.
 
 Before you install, you may want to run the regression tests, make
 a cup of tea while it runs, it takes some minutes::
@@ -147,4 +147,4 @@ Varnish will now be installed in /usr/local. The varnishd binary is in
 
 You can now proceed to the :ref:`tutorial-index`. 
 
-.. _SubVersion: http://subversion.tigris.org/
+.. _Subversion: http://subversion.tigris.org/
