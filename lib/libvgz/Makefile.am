@@ -1,8 +1,8 @@
 # $Id$
 
-lib_LTLIBRARIES = libvgz.la
+pkglib_LTLIBRARIES = libvgz.la
 
-libvgz_la_LDFLAGS = -version-info 1:0:0
+libvgz_la_LDFLAGS = -avoid-version
 libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 $(libvgz_extra_cflags)
 
 libvgz_la_SOURCES = \

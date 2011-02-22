@@ -2,9 +2,9 @@
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-lib_LTLIBRARIES = libvcl.la
+pkglib_LTLIBRARIES = libvcl.la
 
-libvcl_la_LDFLAGS = -version-info 1:0:0
+libvcl_la_LDFLAGS = -avoid-version
 
 libvcl_la_SOURCES = \
 	vcc_priv.h \
