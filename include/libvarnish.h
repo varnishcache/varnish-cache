@@ -100,7 +100,7 @@ void varnish_version(const char *);
 int vtmpfile(char *);
 char *vreadfile(const char *pfx, const char *fn);
 
-const char* svn_version(void);
+const char* vcs_version(void);
 
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\

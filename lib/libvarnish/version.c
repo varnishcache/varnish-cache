@@ -41,8 +41,8 @@ SVNID("$Id$")
 void
 varnish_version(const char *progname)
 {
-	fprintf(stderr, "%s (%s-%s SVN %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, svn_version());
+	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
+		PACKAGE_TARNAME, PACKAGE_VERSION, vcs_version());
 	fprintf(stderr,
 	    "Copyright (c) 2006-2009 Linpro AS / Verdens Gang AS\n");
 }

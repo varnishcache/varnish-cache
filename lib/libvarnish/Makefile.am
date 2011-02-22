@@ -1,5 +1,3 @@
-# $Id$
-
 INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 lib_LTLIBRARIES = libvarnish.la
@@ -16,7 +14,7 @@ libvarnish_la_SOURCES = \
 	cli_serve.c \
 	flopen.c \
 	num.c \
-	svn_version.c \
+	vcs_version.c \
 	time.c \
 	tcp.c \
 	vct.c \
@@ -35,12 +33,12 @@ libvarnish_la_SOURCES = \
 libvarnish_la_CFLAGS = -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
 
-DISTCLEANFILES = svn_version.c
-svn_version.c: FORCE
-	V="$$(sh -c "git log -n 1 --pretty=format:%h" 2>/dev/null || LANG=C svnversion -n $(top_srcdir))" \
-	H="$$(head -n 1 svn_version.c 2>/dev/null || true)"; \
-	[ "$$V" = "exported" ] && [ -e svn_version.c ] && exit 0 ; \
-	if [ "/* $$V */" != "$$H" ]; then \
+DISTCLEANFILES = vcs_version.c
+vcs_version.c: FORCE
+	if [ -d "$(top_srcdir)/.git" ]; then \
+		V="$$(git describe --always)" \
+		H="$$(head -n 1 vcs_version.c 2>/dev/null || true)"; \
+		if [ "/* $$V */" != "$$H" ]; then \
 		( \
 		  echo "/* $$V */" ;\
 		  echo '/*' ;\
@@ -51,12 +49,13 @@ svn_version.c: FORCE
 		  echo ' */' ;\
 		  echo '' ;\
 		  echo "#include <libvarnish.h>" ;\
-		  echo "const char* svn_version(void)" ;\
+		  echo "const char* vcs_version(void)" ;\
 		  echo "{" ;\
-		  echo "	const char* SVN_Version = \"$$V\";" ;\
-		  echo "	return SVN_Version;" ;\
+		  echo "	const char* VCS_Version = \"$$V\";" ;\
+		  echo "	return VCS_Version;" ;\
 		  echo "}" ;\
-		) > svn_version.c ; \
+		) > vcs_version.c ; \
+		fi \
 	fi
 FORCE:
 
