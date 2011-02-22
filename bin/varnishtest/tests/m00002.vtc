@@ -11,7 +11,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
 
 	sub vcl_fetch {
 		set beresp.http.rnd1 = std.random(0,1);
