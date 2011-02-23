@@ -98,7 +98,7 @@ vcc_ParseImport(struct vcc *tl)
 		bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		bprintf(fn, "%s/libvmod_%.*s.so.1", tl->vmod_dir, PF(mod));
+		bprintf(fn, "%s/libvmod_%.*s.so", tl->vmod_dir, PF(mod));
 	}
 
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));

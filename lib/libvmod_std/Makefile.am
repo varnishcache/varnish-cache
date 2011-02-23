@@ -5,7 +5,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 vmoddir = $(pkglibdir)/vmods
 vmod_LTLIBRARIES = libvmod_std.la
 
-libvmod_std_la_LDFLAGS = -version-info 1:0:0
+libvmod_std_la_LDFLAGS = -avoid-version
 
 libvmod_std_la_SOURCES = \
 	vcc_if.c \
