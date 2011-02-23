@@ -224,7 +224,7 @@ wrk_thread(void *priv)
 
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	/* We need to snapshot these two for consistency */
-	nhttp = params->http_headers;
+	nhttp = params->http_max_hdr;
 	siov = nhttp * 2;
 	if (siov > IOV_MAX)
 		siov = IOV_MAX;

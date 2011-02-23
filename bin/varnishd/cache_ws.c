@@ -173,6 +173,8 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 	assert(ws->r == NULL);
 	if (bytes == 0)
 		b2 = ws->e - ws->f;
+	else if (bytes > ws->e - ws->f)
+		b2 = ws->e - ws->f;
 	else
 		b2 = bytes;
 	b2 = PRNDDN(b2);

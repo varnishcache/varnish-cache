@@ -1,0 +1,54 @@
+# $Id$
+
+test "request req and hdr length limits"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 5
+
+	rxreq
+	expect req.url == "/2"
+	txresp -bodylen 5
+} -start
+
+varnish v1 \
+	-vcl+backend {
+	} -start
+
+varnish v1 -cliok "param.set http_req_size 256"
+varnish v1 -cliok "param.set http_req_hdr_len 40"
+
+client c1 {
+	txreq -url "/1" -hdr "1...5: ..0....5....0....5....0....5....0"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/1" -hdr "1...5....0....5....0....5....0....5....0."
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	txreq -url "/2" -hdr "1...5: ..0....5\n ..0....5....0....5....0"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/2" -hdr "1...5....0....5\n ..0....5....0....5....0."
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	txreq -url "/1" \
+		-hdr "1...5: ..0....5\n ..0....5....0....5....0" \
+		-hdr "1...5: ..0....5\n ..0....5....0....5....0" \
+		-hdr "1...5: ..0....5\n ..0....5....0....5....0" \
+		-hdr "1...5: ..0....5\n ..0....5....0....5....0" \
+		-hdr "1...5: ..0....5\n ..0....5....0....5....0" \
+		-hdr "1...5: ..0....5\n ..0...." 
+	rxresp
+	expect resp.status == 200
+	# XXX: Varnish test does not allow us to test for the fact
+	# XXX: that the backend summarily closes on us.  Adding one
+	# XXX: char to the above test, should cause that.
+} -run
+

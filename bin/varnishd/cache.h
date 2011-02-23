@@ -183,6 +183,8 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
+	unsigned		maxbytes;
+	unsigned		maxhdr;
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
@@ -702,7 +704,8 @@ void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd);
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
+    unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);

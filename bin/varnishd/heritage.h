@@ -96,7 +96,11 @@ struct params {
 	/* Memory allocation hints */
 	unsigned		sess_workspace;
 	unsigned		shm_workspace;
-	unsigned		http_headers;
+	unsigned		http_req_size;
+	unsigned		http_req_hdr_len;
+	unsigned		http_resp_size;
+	unsigned		http_resp_hdr_len;
+	unsigned		http_max_hdr;
 
 	unsigned		shm_reclen;
 

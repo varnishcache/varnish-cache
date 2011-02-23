@@ -382,7 +382,7 @@ cnt_error(struct sess *sp)
 		HSH_Prealloc(sp);
 		/* XXX: 1024 is a pure guess */
 		sp->obj = STV_NewObject(sp, NULL, 1024, 0,
-		     params->http_headers);
+		     params->http_max_hdr);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -769,7 +769,8 @@ cnt_first(struct sess *sp)
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd);
+	HTC_Init(sp->htc, sp->ws, sp->fd, params->http_req_size,
+	    params->http_req_hdr_len);
 	sp->wrk->lastused = sp->t_open;
 	sp->acct_tmp.sess++;
 

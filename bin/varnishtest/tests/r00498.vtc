@@ -11,6 +11,8 @@ server s1 {
 varnish v1 -vcl+backend {
 } -start
 
+varnish v1 -cliok "param.set http_resp_hdr_len 32768"
+
 client c1 {
 	txreq 
 	rxresp

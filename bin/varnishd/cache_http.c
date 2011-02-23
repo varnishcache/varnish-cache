@@ -491,9 +491,11 @@ http_GetReq(const struct http *hp)
  */
 
 static int
-http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
+http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
+    const struct http_conn *htc)
 {
 	char *q, *r;
+	txt t = htc->rxbuf;
 
 	if (*p == '\r')
 		p++;
@@ -522,6 +524,12 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p, txt t)
 			/* Clear line continuation LWS to spaces */
 			while (vct_islws(*q))
 				*q++ = ' ';
+		}
+
+		if (q - p > htc->maxhdr) {
+			VSC_main->losthdr++;
+			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
+			return (400);
 		}
 
 		/* Empty header = end of headers */
@@ -629,7 +637,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 		WSLH(w, fd, hp, h3);
 	}
 
-	return (http_dissect_hdrs(w, hp, fd, p, htc->rxbuf));
+	return (http_dissect_hdrs(w, hp, fd, p, htc));
 }
 
 /*--------------------------------------------------------------------*/

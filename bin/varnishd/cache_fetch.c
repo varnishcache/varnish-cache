@@ -438,7 +438,8 @@ FetchHdr(struct sess *sp)
 
 	/* Receive response */
 
-	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd);
+	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd, params->http_resp_size,
+	    params->http_resp_hdr_len);
 
 	TCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 

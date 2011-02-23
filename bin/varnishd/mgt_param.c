@@ -519,10 +519,44 @@ static const struct parspec input_parspec[] = {
 		DELAYED_EFFECT,
 		"65536",
 		"bytes" },
-	{ "http_headers", tweak_uint, &master.http_headers, 32, UINT_MAX,
-		"Maximum number of HTTP headers we will deal with.\n"
-		"This space is preallocated in sessions and workthreads only "
-		"objects allocate only space for the headers they store.\n",
+	{ "http_req_hdr_len", tweak_uint, &master.http_req_hdr_len,
+		40, UINT_MAX,
+		"Maximum length of any HTTP client request header we will "
+		"allow.  The limit is inclusive its continuation lines.\n",
+		0,
+		"512", "bytes" },
+	{ "http_req_size", tweak_uint, &master.http_req_size,
+		256, UINT_MAX,
+		"Maximum number of bytes of HTTP client request we will deal "
+		"with.  This is a limit on all bytes up to the double blank "
+		"line which ends the HTTP request.\n"
+		"The memory for the request is allocated from the session "
+		"workspace (param: sess_workspace) and this parameter limits "
+		"how much of that the request is allowed to take up.",
+		0,
+		"32768", "bytes" },
+	{ "http_resp_hdr_len", tweak_uint, &master.http_resp_hdr_len,
+		40, UINT_MAX,
+		"Maximum length of any HTTP backend response header we will "
+		"allow.  The limit is inclusive its continuation lines.\n",
+		0,
+		"512", "bytes" },
+	{ "http_resp_size", tweak_uint, &master.http_resp_size,
+		256, UINT_MAX,
+		"Maximum number of bytes of HTTP backend resonse we will deal "
+		"with.  This is a limit on all bytes up to the double blank "
+		"line which ends the HTTP request.\n"
+		"The memory for the request is allocated from the worker "
+		"workspace (param: sess_workspace) and this parameter limits "
+		"how much of that the request is allowed to take up.",
+		0,
+		"32768", "bytes" },
+	{ "http_max_hdr", tweak_uint, &master.http_max_hdr, 32, UINT_MAX,
+		"Maximum number of HTTP headers we will deal with in "
+		"client request or backend reponses.  "
+		"Note that the first line occupies five header fields.\n"
+		"This paramter does not influence storage consumption, "
+		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
 	{ "shm_workspace", tweak_uint, &master.shm_workspace, 4096, UINT_MAX,

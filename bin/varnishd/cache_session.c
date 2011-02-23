@@ -116,7 +116,7 @@ ses_sm_alloc(void)
 	 * view of the value.
 	 */
 	nws = params->sess_workspace;
-	nhttp = params->http_headers;
+	nhttp = params->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
 	p = malloc(l);

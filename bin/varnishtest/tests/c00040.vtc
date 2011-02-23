@@ -1,0 +1,84 @@
+# $Id$
+
+test "request resp and hdr length limits"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-bodylen 1
+	rxreq
+	expect req.url == "/2"
+	txresp \
+		-hdr "1...5: ..0....5....0....5....0....5....0." \
+		-bodylen 2
+	accept
+	rxreq
+	expect req.url == "/3"
+	txresp \
+		-hdr "1...5: ..0....5....0\n ..5....0....5....0" \
+		-bodylen 3
+	rxreq
+	expect req.url == "/4"
+	txresp \
+		-hdr "1...5: ..0....5....0\n ..5....0....5....0." \
+		-bodylen 4
+	
+	accept
+	rxreq
+	expect req.url == "/5"
+	txresp \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5" \
+		-hdr "1...5: ..0" \
+		-bodylen 5
+
+	rxreq
+	expect req.url == "/6"
+	txresp \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5....0" \
+		-hdr "1...5: ..0....5....0....5....0....5" \
+		-hdr "1...5: ..0." \
+		-bodylen 6
+} -start
+
+varnish v1 \
+	-vcl+backend {
+	} -start
+
+varnish v1 -cliok "param.set http_resp_size 256"
+varnish v1 -cliok "param.set http_resp_hdr_len 40"
+
+client c1 {
+	txreq -url "/1" 
+	rxresp
+	expect resp.status == 200
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url "/3"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/4"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url "/5"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/6"
+	rxresp
+	expect resp.status == 503
+} -run
+
