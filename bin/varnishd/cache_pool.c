@@ -123,6 +123,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 {
 	struct worker *w, ww;
 	uint32_t wlog[shm_workspace / 4];
+	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
 	unsigned char http0[http_space];
 	unsigned char http1[http_space];
@@ -230,7 +231,7 @@ wrk_thread(void *priv)
 		siov = IOV_MAX;
 	return (wrk_thread_real(qp,
 	    params->shm_workspace,
-	    params->sess_workspace,
+	    params->wthread_workspace,
 	    nhttp, HTTP_estimate(nhttp), siov));
 }
 

@@ -227,5 +227,16 @@ const struct parspec WRK_parspec[] = {
 		"many threads into the limited address space.\n",
 		EXPERIMENTAL,
 		"-1", "bytes" },
+	{ "thread_pool_workspace", tweak_uint, &master.wthread_workspace,
+		1024, UINT_MAX,
+		"Bytes of HTTP protocol workspace allocated for worker "
+		"threads. "
+		"This space must be big enough for the backend request "
+		"and responses, and response to the client plus any other "
+		"memory needs in the VCL code."
+		"Minimum is 1024 bytes.",
+		DELAYED_EFFECT,
+		"65536",
+		"bytes" },
 	{ NULL, NULL, NULL }
 };

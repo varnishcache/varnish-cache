@@ -90,6 +90,7 @@ struct params {
 	unsigned		wthread_purge_delay;
 	unsigned		wthread_stats_rate;
 	unsigned		wthread_stacksize;
+	unsigned		wthread_workspace;
 
 	unsigned		queue_max;
 
