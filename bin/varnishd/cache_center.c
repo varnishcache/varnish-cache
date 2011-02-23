@@ -1153,6 +1153,11 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
+	sp->wrk->is_gzip = 0;
+	sp->wrk->is_gunzip = 0;
+	sp->wrk->do_gzip = 0;
+	sp->wrk->do_gunzip = 0;
+
 	if (params->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {

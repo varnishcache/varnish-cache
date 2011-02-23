@@ -36,6 +36,8 @@ varnish v1 \
 client c1 {
 	txreq -url "/1"
 	rxresp
+	expect resp.http.Content-Encoding == resp.http.Content-Encoding
+	expect resp.bodylen == 22
 
 	txreq -url "/barf" -hdr "Accept-Encoding: gzip"
 	rxresp
