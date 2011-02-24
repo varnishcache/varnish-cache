@@ -368,5 +368,4 @@ vcc_ParseDnsDirector(struct vcc *tl)
 	Fc(tl, 0, "\t.ttl = %f", ttl);
 	Fc(tl, 0, ",\n");
 	Fc(tl, 0, "};\n");
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n", PF(tl->t_dir));
 }
