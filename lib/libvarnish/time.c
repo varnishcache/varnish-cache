@@ -161,20 +161,42 @@ TIM_parse(const char *p)
 void
 TIM_sleep(double t)
 {
+#ifdef HAVE_NANOSLEEP
 	struct timespec ts;
 
-	ts.tv_sec = (time_t)floor(t);
-	ts.tv_nsec = (long)floor((t - ts.tv_sec) * 1e9);
+	ts = TIM_timespec(t);
 
-#ifdef HAVE_NANOSLEEP
 	(void)nanosleep(&ts, NULL);
 #else
-	if (ts.tv_sec > 0)
-		(void)sleep(ts.tv_sec);
-	ts.tv_nsec /= 1000;
-	if (ts.tv_nsec > 0)
-		(void)usleep(ts.tv_nsec);
+	if (t >= 1.) {
+		(void)sleep(floor(t);
+		t -= floor(t);
+	}
+	/* XXX: usleep() is not mandated to be thread safe */
+	t *= 1e6;
+	if (t > 0)
+		(void)usleep(floor(t));
 #endif
+}
+
+struct timeval
+TIM_timeval(double t)
+{
+	struct timeval tv;
+
+	tv.tv_sec = (time_t)trunc(t);
+	tv.tv_usec = (int)(1e6 * (t - tv.tv_sec));
+	return (tv);
+}
+
+struct timespec
+TIM_timespec(double t)
+{
+	struct timespec tv;
+
+	tv.tv_sec = (time_t)trunc(t);
+	tv.tv_nsec = (int)(1e9 * (t - tv.tv_sec));
+	return (tv);
 }
 
 

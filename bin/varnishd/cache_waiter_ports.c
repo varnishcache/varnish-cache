@@ -236,9 +236,7 @@ vca_main(void *arg)
 			} else if (tmo > max_t) {
 				timeout = &max_ts;
 			} else {
-				/* TIM_t2ts() ? see #630 */
-				ts.tv_sec = (int)floor(tmo);
-				ts.tv_nsec = 1e9 * (tmo - ts.tv_sec);
+				ts = TIM_timespec(tmo);
 				timeout = &ts;
 			}
 		} else {

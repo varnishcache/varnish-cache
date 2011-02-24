@@ -92,6 +92,8 @@ time_t TIM_parse(const char *p);
 double TIM_mono(void);
 double TIM_real(void);
 void TIM_sleep(double t);
+struct timespec TIM_timespec(double t);
+struct timeval TIM_timeval(double t);
 
 /* from libvarnish/version.c */
 void varnish_version(const char *);

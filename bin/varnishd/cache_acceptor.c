@@ -85,7 +85,7 @@ VCA_waiter_name(void)
 
 
 /*--------------------------------------------------------------------
- * We want to get out of any kind of touble-hit TCP connections as fast
+ * We want to get out of any kind of trouble-hit TCP connections as fast
  * as absolutely possible, so we set them LINGER enabled with zero timeout,
  * so that even if there are outstanding write data on the socket, a close(2)
  * will return immediately.
@@ -203,6 +203,7 @@ vca_acct(void *arg)
 	socklen_t l;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
+	double send_timeout = 0, sess_timeout = 0;
 	int i;
 	struct pollfd *pfd;
 	struct listen_sock *ls;
@@ -231,9 +232,10 @@ vca_acct(void *arg)
 	t0 = TIM_real();
 	while (1) {
 #ifdef SO_SNDTIMEO_WORKS
-		if (params->send_timeout != tv_sndtimeo.tv_sec) {
+		if (params->send_timeout != send_timeout) {
 			need_test = 1;
-			tv_sndtimeo.tv_sec = params->send_timeout;
+			send_timeout = params->send_timeout;
+			tv_sndtimeo = TIM_timeval(send_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -244,9 +246,10 @@ vca_acct(void *arg)
 		}
 #endif
 #ifdef SO_RCVTIMEO_WORKS
-		if (params->sess_timeout != tv_rcvtimeo.tv_sec) {
+		if (params->sess_timeout != sess_timeout) {
 			need_test = 1;
-			tv_rcvtimeo.tv_sec = params->sess_timeout;
+			sess_timeout = params->sess_timeout;
+			tv_rcvtimeo = TIM_timeval(sess_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
