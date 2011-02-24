@@ -201,7 +201,7 @@ int smp_valid_silo(struct smp_sc *sc);
 /*--------------------------------------------------------------------
  * Caculate payload of some stuff
  */
- 
+
 static inline uint64_t
 smp_stuff_len(const struct smp_sc *sc, unsigned stuff)
 {

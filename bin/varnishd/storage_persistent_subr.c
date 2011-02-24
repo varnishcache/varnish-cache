@@ -178,7 +178,7 @@ smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 	smp_sync_sign(ctx);
 }
 
-/*-------------------------------------------------------------------:e 
+/*--------------------------------------------------------------------
  * Initialize a Silo with a valid but empty structure.
  *
  * XXX: more intelligent sizing of things.

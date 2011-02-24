@@ -485,7 +485,7 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 
 #define WIZARD_TEXT \
 	"\nNB: Do not change this parameter, unless a developer tell " \
-	"you to do so." 
+	"you to do so."
 
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or

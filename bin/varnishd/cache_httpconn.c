@@ -46,7 +46,7 @@ SVNID("$Id$")
  * Check if we have a complete HTTP request or response yet
  *
  * Return values:
- *	 0  No, keep trying 
+ *	 0  No, keep trying
  *	>0  Yes, it is this many bytes long.
  */
 

@@ -268,7 +268,7 @@ exp_timer(struct sess *sp, void *priv)
 		 */
 		if (oc->timer_when > t)
 			t = TIM_real();
-		if (oc->timer_when > t) { 
+		if (oc->timer_when > t) {
 			Lck_Unlock(&exp_mtx);
 			oc = NULL;
 			continue;

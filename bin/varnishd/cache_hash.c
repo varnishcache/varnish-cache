@@ -483,7 +483,7 @@ hsh_rush(struct objhead *oh)
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < params->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&wl->list);
-		if (sp == NULL) 
+		if (sp == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
@@ -700,7 +700,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
 		w->stats.n_object--;
-	} 
+	}
 	FREE_OBJ(oc);
 
 	w->stats.n_objectcore--;
