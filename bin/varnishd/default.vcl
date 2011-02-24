@@ -120,6 +120,7 @@ sub vcl_deliver {
 
 sub vcl_error {
     set obj.http.Content-Type = "text/html; charset=utf-8";
+    set obj.http.Retry-After = "5";
     synthetic {"
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"

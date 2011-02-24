@@ -399,7 +399,6 @@ cnt_error(struct sess *sp)
 	TIM_format(TIM_real(), date);
 	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
 	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
-	http_PrintfHeader(w, sp->fd, h, "Retry-After: %d", params->err_ttl);
 
 	if (sp->err_reason != NULL)
 		http_PutResponse(w, sp->fd, h, sp->err_reason);

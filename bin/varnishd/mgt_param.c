@@ -589,7 +589,7 @@ static const struct parspec input_parspec[] = {
 		"5", "seconds" },
 	{ "expiry_sleep", tweak_timeout_double, &master.expiry_sleep, 0, 60,
 		"How long the expiry thread sleeps when there is nothing "
-		"for it to do.  Reduce if your expiry thread gets behind.\n",
+		"for it to do.\n",
 		0,
 		"1", "seconds" },
 	{ "pipe_timeout", tweak_timeout, &master.pipe_timeout, 0, 0,
@@ -604,7 +604,7 @@ static const struct parspec input_parspec[] = {
 		"the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
-		"600", "seconds" },
+		"60", "seconds" },
 	{ "auto_restart", tweak_bool, &master.auto_restart, 0, 0,
 		"Restart child process automatically if it dies.\n",
 		0,
@@ -816,10 +816,6 @@ static const struct parspec input_parspec[] = {
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
 		"0", "bitmap" },
-	{ "err_ttl", tweak_uint, &master.err_ttl, 0, UINT_MAX,
-		"The TTL assigned to the synthesized error pages\n",
-		0,
-		"0", "seconds" },
 	{ "ban_dups", tweak_bool, &master.ban_dups, 0, 0,
 		"Detect and eliminate duplicate bans.\n",
 		0,
@@ -835,7 +831,7 @@ static const struct parspec input_parspec[] = {
 		" list.  It always sleeps a second when nothing can be done.\n"
 		"A value of zero disables the ban lurker.",
 		0,
-		"0.1", "s" },
+		"0.01", "s" },
 	{ "saintmode_threshold", tweak_uint,
 		&master.saintmode_threshold, 0, UINT_MAX,
 		"The maximum number of objects held off by saint mode before "

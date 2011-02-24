@@ -73,9 +73,6 @@ struct params {
 	/* TTL used for lack of anything better */
 	unsigned		default_ttl;
 
-	/* TTL used for synthesized error pages */
-	unsigned		err_ttl;
-
 	/* Maximum concurrent sessions */
 	unsigned		max_sess;
 
