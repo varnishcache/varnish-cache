@@ -503,6 +503,7 @@ AC_CONFIG_FILES([
     bin/varnishtop/Makefile
     doc/Makefile
     doc/sphinx/Makefile
+    doc/sphinx/conf.py
     etc/Makefile
     include/Makefile
     lib/Makefile
