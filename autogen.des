@@ -5,6 +5,12 @@
 
 set -ex
 
+# Prefer CLANG if we have it, and have not given preferences
+if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
+	CC=clang
+	export CC
+fi
+
 . ./autogen.sh
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
