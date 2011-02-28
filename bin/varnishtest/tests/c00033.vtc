@@ -1,6 +1,6 @@
 # $Id$
 
-test "real bans"
+test "Inline C access to purges (could be retired)"
 
 server s1 {
 	rxreq
