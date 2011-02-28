@@ -11,13 +11,13 @@ to get a high hit rate in Varnish.
 
 Varnish will not cache your data unless it's absolutely sure it is
 safe to do so. So, for you to understand how Varnish decides if and
-how to cache a page I'll guide you through a couple of tools that you
+how to cache a page, I'll guide you through a couple of tools that you
 will find useful.
 
 Note that you need a tool to see what HTTP headers fly between you and
-the web server. If you have Varnish the easiest is to use varnishlog
-and varnishtop but sometimes a client-side tool makes sense. Here are
-the ones I use.
+the web server. On the Varnish server, the easiest is to use
+varnishlog and varnishtop but sometimes a client-side tool makes
+sense. Here are the ones I use.
 
 Tool: varnishtop
 ~~~~~~~~~~~~~~~~
@@ -34,6 +34,9 @@ When you have identified the an URL which is frequently sent to the
 backend you can use varnishlog to have a look at the whole request.
 ``varnishlog -c -o /foo/bar`` will give the whole (-o) requests coming
 from the client (-c) matching /foo/bar. 
+
+For extended diagnostics headers, see
+http://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
 
 
 Tool: lwp-request
@@ -64,7 +67,7 @@ Headers. Let's send a GET request for their home page::
   X-VG-WebCache: joanie
   X-VG-WebServer: leon
 
-OK. Let me explain what it does. GET usually send off HTTP 0.9
+OK. Let me explain what it does. GET usually sends off HTTP 0.9
 requests, which lack the Host header. So I add a Host header with the
 -H option. -U print request headers, -s prints response status, -e
 prints response headers and -d discards the actual content. We don't
@@ -116,7 +119,7 @@ for an object.
 "Cache-Control: nocache" is ignored but if you need this you can
 easily add support for it.
 
-So make sure use issue a Cache-Control header with a max-age
+So make sure you issue a Cache-Control header with a max-age
 header. You can have a look at what Varnish Software's drupal server
 issues::
 
@@ -134,7 +137,7 @@ kept inside Varnish. You can grep out Age from varnishlog like this::
 Pragma
 ~~~~~~
 
-HTTP 1.0 server might send "Pragma: nocache". Varnish ignores this
+An HTTP 1.0 server might send "Pragma: nocache". Varnish ignores this
 header. You could easily add support for this header in VCL.
 
 In vcl_fetch::
