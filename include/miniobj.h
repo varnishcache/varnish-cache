@@ -44,14 +44,14 @@
 		(to) = (from);						\
 		if ((to) != NULL)					\
 			CHECK_OBJ((to), (type_magic));			\
-	} while (0);
+	} while (0)
 
 #define CAST_OBJ_NOTNULL(to, from, type_magic)				\
 	do {								\
 		(to) = (from);						\
 		assert((to) != NULL);					\
 		CHECK_OBJ((to), (type_magic));				\
-	} while (0);
+	} while (0)
 
 #define REPLACE(ptr, val)						\
 	do {								\
@@ -63,4 +63,4 @@
 		} else {						\
 			ptr = NULL;					\
 		}							\
-	} while (0);
+	} while (0)
