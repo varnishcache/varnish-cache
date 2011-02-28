@@ -1,0 +1,100 @@
+# $Id$
+
+test "test purging from vcl"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo1"
+	txresp -hdr "Vary: foo" -bodylen 1
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo2"
+	txresp -hdr "Vary: foo" -bodylen 2
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo2"
+	txresp -hdr "Vary: foo" -bodylen 12
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo1"
+	txresp -hdr "Vary: foo" -bodylen 11
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo3"
+	txresp -hdr "Vary: foo" -bodylen 23
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo1"
+	txresp -hdr "Vary: foo" -bodylen 21
+
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "foo2"
+	txresp -hdr "Vary: foo" -bodylen 22
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_miss { if (req.http.purge == "yes") { purge; } }
+	sub vcl_hit { if (req.http.purge == "yes") { purge; return(restart);} }
+} -start
+
+client c1 {
+	txreq -url "/1" -hdr "foo: foo1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/1" -hdr "Foo: foo2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+
+	txreq -url "/1" -hdr "foo: foo1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/1" -hdr "Foo: foo2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+
+	# Purge on hit
+	txreq -url "/1" -hdr "Foo: foo2" -hdr "purge: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 12
+
+	txreq -url "/1" -hdr "foo: foo1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 11
+
+	# Purge on miss
+	txreq -url "/1" -hdr "Foo: foo3" -hdr "purge: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 23
+
+	txreq -url "/1" -hdr "foo: foo1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 21
+
+	txreq -url "/1" -hdr "Foo: foo2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 22
+} -run
+
+varnish v1 -badvcl {
+	backend s1 { .host = "${s1_addr}"; }
+	sub vcl_recv { if (req.http.purge == "yes") { purge; } }
+} 
