@@ -294,7 +294,7 @@ AC_ARG_ENABLE(kqueue,
 
 if test "$enable_kqueue" = yes; then
 	case $target in
-	*-*-freebsd* | *-*-darwin9* )
+	*-*-freebsd* | *-*-darwin9* | *-*-netbsd* )
 		AC_CHECK_FUNCS([kqueue])
 		;;
 	*-*-bsd*)
