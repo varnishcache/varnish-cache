@@ -364,6 +364,16 @@ parse_rollback(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_purge(struct vcc *tl)
+{
+
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_purge(sp, 0, 0);\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
@@ -402,6 +412,7 @@ static struct action_table {
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic },
 	{ "unset",		parse_unset },
+	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_HIT },
 	{ NULL,			NULL }
 };
 
