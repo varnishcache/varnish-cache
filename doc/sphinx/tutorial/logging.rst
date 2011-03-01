@@ -41,7 +41,7 @@ app. You'll see lines like these.::
 The first column is an arbitrary number, it defines the request. Lines
 with the same number are part of the same HTTP transaction. The second
 column is the *tag* of the log message. All log entries are tagged
-with a tag indicating what sort of activity is beeing logged. Tags
+with a tag indicating what sort of activity is being logged. Tags
 starting with Rx indicate Varnish is recieving data and Tx indicates
 sending data.
 
