@@ -44,7 +44,7 @@ underscore::
   // Remove a ";" prefix, if present.
   set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
 
-Let me show you an example where we remove everything but the cookies
+Let me show you an example where we remove everything except the cookies
 named COOKIE1 and COOKIE2 and you can marvel at it::
 
   sub vcl_recv {
