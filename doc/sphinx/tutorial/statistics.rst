@@ -17,7 +17,7 @@ With suitable filtering using the -I, -i, -X and -x options, it can be
 used to display a ranking of requested documents, clients, user
 agents, or any other information which is recorded in the log.
 
-``varnishtop -i rxurl`` will show you what URLs are beeing asked for
+``varnishtop -i rxurl`` will show you what URLs are being asked for
 by the client. ``varnishtop -i txurl`` will show you what your backend
 is beeing asked the most. ``varnishtop -i RxHeader -I
 Accept-Encoding`` will show the most popular Accept-Encoding header
