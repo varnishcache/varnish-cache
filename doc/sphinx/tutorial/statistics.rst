@@ -19,7 +19,7 @@ agents, or any other information which is recorded in the log.
 
 ``varnishtop -i rxurl`` will show you what URLs are being asked for
 by the client. ``varnishtop -i txurl`` will show you what your backend
-is beeing asked the most. ``varnishtop -i RxHeader -I
+is being asked the most. ``varnishtop -i RxHeader -I
 Accept-Encoding`` will show the most popular Accept-Encoding header
 the client are sending you.
 
