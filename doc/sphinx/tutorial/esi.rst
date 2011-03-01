@@ -20,13 +20,13 @@ have three ESI statements:
  * <!--esi ...-->
 
 Content substitution based on variables and cookies is not implemented
-but is on the roadmap. 
+but is on the roadmap.
 
 Example: esi include
 ~~~~~~~~~~~~~~~~~~~~
 
 Lets see an example how this could be used. This simple cgi script
-outputs the date:::
+outputs the date::
 
      #!/bin/sh
      
@@ -34,7 +34,7 @@ outputs the date:::
      echo ''
      date "+%Y-%m-%d %H:%M"
 
-Now, lets have an HTML file that has an ESI include statement:::
+Now, lets have an HTML file that has an ESI include statement::
 
      <HTML>
      <BODY>
@@ -43,7 +43,7 @@ Now, lets have an HTML file that has an ESI include statement:::
      </BODY>
      </HTML>
 
-For ESI to work you need to activate ESI processing in VCL, like this:::
+For ESI to work you need to activate ESI processing in VCL, like this::
 
     sub vcl_fetch {
     	if (req.url == "/test.html") {
@@ -59,7 +59,7 @@ Example: esi remove
 ~~~~~~~~~~~~~~~~~~~
 
 The *remove* keyword allows you to remove output. You can use this to make
-a fall back of sorts, when ESI is not available, like this:::
+a fall back of sorts, when ESI is not available, like this::
 
   <esi:include src="http://www.example.com/ad.html"/> 
   <esi:remove> 

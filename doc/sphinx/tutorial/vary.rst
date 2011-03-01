@@ -21,9 +21,9 @@ And another one sends::
   Accept-Encoding:: deflate,gzip
 
 Varnish will keep two variants of the page requested due to the
-different Accept-Encoding headers. Normalizing the accept-encoding
+different Accept-Encoding headers. Normalizing the Accept-Encoding
 header will sure that you have as few variants as possible. The
-following VCL code will normalize the Accept-Encoding headers.::
+following VCL code will normalize the Accept-Encoding headers::
 
     if (req.http.Accept-Encoding) {
         if (req.url ~ "\.(jpg|png|gif|gz|tgz|bz2|tbz|mp3|ogg)$") {
