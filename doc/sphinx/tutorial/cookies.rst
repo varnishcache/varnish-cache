@@ -15,7 +15,7 @@ interest to the server.
 For a lot of web application it makes sense to completely disregard the
 cookies unless you are accessing a special part of the web site. This
 VCL snippet in vcl_recv will disregard cookies unless you are
-accessing /admin/.::
+accessing /admin/::
 
   if ( !( req.url ~ ^/admin/) ) {
     unset req.http.Cookie;
@@ -37,15 +37,15 @@ cookies and since Varnish will cease caching of pages when the client
 sends cookies we will discard these unnecessary cookies in VCL. 
 
 In the following VCL we discard all cookies that start with a
-underscore.::
+underscore::
 
   // Remove has_js and Google Analytics __* cookies.
   set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js)=[^;]*", "");
   // Remove a ";" prefix, if present.
   set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
 
-Let me show you an example where we remove everything the the cookies
-named COOKIE1 and COOKIE2 and you can marvel at it.::
+Let me show you an example where we remove everything except the
+cookies named COOKIE1 and COOKIE2 and you can marvel at it::
 
   sub vcl_recv {
     if (req.http.Cookie) {
