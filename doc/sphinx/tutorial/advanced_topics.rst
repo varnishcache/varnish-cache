@@ -43,7 +43,7 @@ Edge Side Includes
 Varnish can cache create web pages by putting different pages
 together. These *fragments* can have individual cache policies. If you
 have a web site with a list showing the 5 most popular articles on
-your site this list can probably be cached as a fragment and included
+your site, this list can probably be cached as a fragment and included
 in all the other pages. Used properly it can dramatically increase
 your hit rate and reduce the load on your servers. ESI looks like this::
 

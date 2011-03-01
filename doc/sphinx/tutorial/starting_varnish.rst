@@ -21,14 +21,14 @@ I added a few options, lets go through them:
  - one gigabyte. 
 
 ``-T 127.0.0.1:2000``
- Varnish has a buildt in text-based administration
+ Varnish has a built-in text-based administration
  interface. Activating the interface makes Varnish manageble without
  stopping it. You can specify what interface the management interface
  should listen to. Make sure you don't expose the management interface
  to the world as you can easily gain root access to a system via the
- Varnish management interace. I recommend tieing it to localhost. If
- you have users on your system that you don't fully trust use firewall
- rules to restrict access to the interace to root only.
+ Varnish management interface. I recommend tieing it to localhost. If
+ you have users on your system that you don't fully trust, use firewall
+ rules to restrict access to the interface to root only.
 
 ``-a 0.0.0.0:8080``
  I specify that I want Varnish to listen on port 8080 for incomming
@@ -36,8 +36,9 @@ I added a few options, lets go through them:
  Varnish listen on port 80, which is the default.
 
 Now you have Varnish running. Let us make sure that it works
-properly. Use your browser to go to http://192.168.2.2:8080/ - you
-should now see your web application running there.
+properly. Use your browser to go to http://192.168.2.2:8080/
+(obviously, you should replace the IP address with one on your own
+system) - you should now see your web application running there.
 
 Whether or not the application actually goes faster when run through
 Varnish depends on a few factors. If you application uses cookies for
