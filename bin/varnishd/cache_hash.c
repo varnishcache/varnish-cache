@@ -354,7 +354,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (o->exp.ttl == 0)
+		if (o->exp.ttl <= 0.)
 			continue;
 		if (BAN_CheckObject(o, sp))
 			continue;
@@ -362,17 +362,17 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			continue;
 
 		/* If still valid, use it */
-		if (o->exp.ttl >= sp->t_req)
+		if (o->entered + o->exp.ttl >= sp->t_req)
 			break;
 
 		/*
 		 * Remember any matching objects inside their grace period
 		 * and if there are several, use the least expired one.
 		 */
-		if (o->exp.ttl + EXP_Grace(o->exp.grace) >= sp->t_req) {
-			if (grace_oc == NULL || grace_ttl < o->exp.ttl) {
+		if (o->entered + o->exp.ttl + EXP_Grace(o->exp.grace) >= sp->t_req) {
+			if (grace_oc == NULL || grace_ttl < o->entered + o->exp.ttl) {
 				grace_oc = oc;
-				grace_ttl = o->exp.ttl;
+				grace_ttl = o->entered + o->exp.ttl;
 			}
 		}
 	}
@@ -396,7 +396,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 					/* Or it is impossible to fetch */
 		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		if (o->exp.ttl + EXP_Grace(sp->exp.grace) >= sp->t_req)
+		if (o->entered + o->exp.ttl + EXP_Grace(sp->exp.grace) >= sp->t_req)
 			oc = grace_oc;
 	}
 	sp->objcore = NULL;
@@ -536,7 +536,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	Lck_Unlock(&oh->mtx);
 
 	if (ttl <= 0)
-		ttl = -1;
+		ttl = -1.;
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -544,7 +544,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		o->exp.ttl = sp->t_req + ttl;
+		o->exp.ttl = ttl;
 		if (!isnan(grace))
 			o->exp.grace = grace;
 		EXP_Rearm(o);
@@ -569,7 +569,7 @@ HSH_Drop(struct sess *sp)
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AssertObjPassOrBusy(o);
-	o->exp.ttl = 0;
+	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);

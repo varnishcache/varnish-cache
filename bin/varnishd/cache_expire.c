@@ -80,7 +80,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = o->exp.ttl + EXP_Grace(o->exp.grace);
+	when = o->entered + o->exp.ttl + EXP_Grace(o->exp.grace);
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);

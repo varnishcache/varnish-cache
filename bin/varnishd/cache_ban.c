@@ -475,8 +475,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		oc_updatemeta(oc);
 		return (0);
 	} else {
-		o->exp.ttl = 0;
-		o->exp.grace = 0;
+		o->exp.ttl = -1.;
+		o->exp.grace = -1.;
 		oc->ban = NULL;
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */

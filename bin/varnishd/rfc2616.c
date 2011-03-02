@@ -152,16 +152,16 @@ RFC2616_Ttl(const struct sess *sp)
 
 	} while (0);
 
-	if (ttl > 0 && ttd == 0)
-		ttd = sp->wrk->entered + ttl;
+	if (ttd > 0)
+		ttl = ttd - sp->wrk->entered;
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %u %u", sp->xid,
-	    ttd ? (int)(ttd - sp->wrk->entered) : 0,
+	    ttd ? (int)(ttl) : 0,
 	    (int)sp->wrk->entered, (int)h_date,
 	    (int)h_expires, max_age, age);
 
-	return (ttd);
+	return (ttl);
 }
 
 /*--------------------------------------------------------------------

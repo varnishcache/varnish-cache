@@ -433,8 +433,8 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			o->exp.ttl = 0;
-			o->exp.grace = 0;
+			o->exp.ttl = -1.;
+			o->exp.grace = 0.;
 			so->ttl = 0;
 		}
 
@@ -464,9 +464,9 @@ smp_oc_updatemeta(struct objcore *oc)
 	so = smp_find_so(sg, oc);
 
 	if (isnan(o->exp.grace))
-		mttl = o->exp.ttl;
+		mttl = o->entered + o->exp.ttl;
 	else
-		mttl = - (o->exp.ttl + o->exp.grace);
+		mttl = - (o->entered + o->exp.ttl + o->exp.grace);
 
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */

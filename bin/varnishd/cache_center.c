@@ -543,13 +543,13 @@ cnt_fetch(struct sess *sp)
 	case 404: /* Not Found */
 		break;
 	default:
-		sp->wrk->exp.ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = -1.;
 		break;
 	}
 
 	/* pass from vclrecv{} has negative TTL */
 	if (sp->objcore == NULL)
-		sp->wrk->exp.ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = -1.;
 
 	sp->wrk->do_esi = 0;
 	sp->wrk->exp.grace = NAN;
@@ -564,7 +564,7 @@ cnt_fetch(struct sess *sp)
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		sp->wrk->exp.ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = -1.;
 	} else if (sp->handling == VCL_RET_HIT_FOR_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
@@ -653,8 +653,7 @@ cnt_fetch(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (sp->wrk->exp.ttl < sp->t_req + params->shortlived ||
-	    sp->objcore == NULL)
+	if (sp->wrk->exp.ttl < params->shortlived || sp->objcore == NULL)
 		sp->wrk->storage_hint = TRANSIENT_STORAGE;
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
