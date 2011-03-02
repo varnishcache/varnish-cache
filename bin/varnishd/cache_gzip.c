@@ -428,7 +428,7 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		assert(i == Z_OK || i == Z_STREAM_END);
 		sp->obj->len += dl;
 	}
-	if (i == Z_STREAM_END)
+	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
 	return (-1);
 }
@@ -580,7 +580,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			assert(i == Z_OK || i == Z_STREAM_END);
 		}
 	}
-	if (i == Z_STREAM_END)
+	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
 	return (-1);
 }
