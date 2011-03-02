@@ -528,6 +528,7 @@ cnt_fetch(struct sess *sp)
 	sp->wrk->entered = TIM_real();
 	sp->wrk->age = 0;
 	sp->wrk->exp.ttl = RFC2616_Ttl(sp);
+	sp->wrk->exp.grace = NAN;
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
@@ -552,7 +553,6 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->exp.ttl = -1.;
 
 	sp->wrk->do_esi = 0;
-	sp->wrk->exp.grace = NAN;
 
 	sp->wrk->body_status = RFC2616_Body(sp);
 
