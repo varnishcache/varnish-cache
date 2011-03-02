@@ -223,43 +223,6 @@ VRT_l_client_identity(struct sess *sp, const char *str, ...)
 	sp->client_identity = b;
 }
 
-/*--------------------------------------------------------------------
- * XXX: Working relative to t_req is maybe not the right thing, we could
- * XXX: have spent a long time talking to the backend since then.
- * XXX: It might make sense to cache a timestamp as "current time"
- * XXX: before vcl_recv (== t_req) and vcl_fetch.
- * XXX: On the other hand, that might lead to inconsistent behaviour
- * XXX: where an object expires while we are running VCL code, and
- * XXX: and that may not be a good idea either.
- * XXX: See also related t_req use in cache_hash.c
- */
-
-void
-VRT_l_beresp_ttl(const struct sess *sp, double a)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req);
-	/*
-	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
-	 * any longer, but it will still be for up to 1s - epsilon because
-	 * of the rounding to seconds.
-	 * We special case and make sure that rounding does not surprise.
-	 */
-	if (a <= 0) {
-		sp->wrk->exp.ttl =  -1.;
-		sp->wrk->exp.grace = 0.;
-	} else
-		sp->wrk->exp.ttl = a;
-}
-
-double
-VRT_r_beresp_ttl(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->exp.ttl);
-}
-
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
@@ -334,40 +297,6 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	sp->wrk->storage_hint = b;
 }
 
-void
-VRT_l_obj_ttl(const struct sess *sp, double a)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	if (sp->obj->objcore == NULL)
-		return;
-	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f",
-	    sp->obj->xid, a, sp->t_req);
-	/*
-	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
-	 * any longer, but it will still be for up to 1s - epsilon because
-	 * of the rounding to seconds.
-	 * We special case and make sure that rounding does not surprise.
-	 */
-	if (a <= 0) {
-		sp->obj->exp.ttl = -1.;
-		sp->obj->exp.grace = 0.;
-	} else
-		sp->obj->exp.ttl = a;
-	EXP_Rearm(sp->obj);
-}
-
-double
-VRT_r_obj_ttl(const struct sess *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	if (sp->obj->objcore == NULL)
-		return (0.0);
-	return (sp->obj->exp.ttl);
-}
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -434,15 +363,91 @@ VRT_r_req_restarts(const struct sess *sp)
 	return (sp->restarts);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * ttl and grace have special magical relationships, encapsulated in
+ * cache_expire.c
+ */
 
-#define VRT_DO_GRACE(which, fld, extra)				\
+void
+VRT_l_obj_ttl(const struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (sp->obj->objcore == NULL)
+		return;
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f",
+	    sp->obj->xid, a, sp->t_req);
+	/*
+	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
+	 * any longer, but it will still be for up to 1s - epsilon because
+	 * of the rounding to seconds.
+	 * We special case and make sure that rounding does not surprise.
+	 */
+	if (a <= 0) {
+		sp->obj->exp.ttl = -1.;
+		sp->obj->exp.grace = 0.;
+	} else
+		sp->obj->exp.ttl = a;
+	EXP_Rearm(sp->obj);
+}
+
+double
+VRT_r_obj_ttl(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
+	if (sp->obj->objcore == NULL)
+		return (0.0);
+	return (sp->obj->exp.ttl);
+}
+
+
+/*--------------------------------------------------------------------
+ * XXX: Working relative to t_req is maybe not the right thing, we could
+ * XXX: have spent a long time talking to the backend since then.
+ * XXX: It might make sense to cache a timestamp as "current time"
+ * XXX: before vcl_recv (== t_req) and vcl_fetch.
+ * XXX: On the other hand, that might lead to inconsistent behaviour
+ * XXX: where an object expires while we are running VCL code, and
+ * XXX: and that may not be a good idea either.
+ * XXX: See also related t_req use in cache_hash.c
+ */
+
+void
+VRT_l_beresp_ttl(const struct sess *sp, double a)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req);
+	/*
+	 * If people set obj.ttl = 0s, they don't expect it to be cacheable
+	 * any longer, but it will still be for up to 1s - epsilon because
+	 * of the rounding to seconds.
+	 * We special case and make sure that rounding does not surprise.
+	 */
+	if (a <= 0) {
+		sp->wrk->exp.ttl =  -1.;
+		sp->wrk->exp.grace = 0.;
+	} else
+		sp->wrk->exp.ttl = a;
+}
+
+double
+VRT_r_beresp_ttl(const struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	return (sp->wrk->exp.ttl);
+}
+
+
+#define VRT_DO_EXP(which, exp, fld, extra)			\
 void __match_proto__()						\
 VRT_l_##which##_grace(struct sess *sp, double a)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	fld = a >= 0.0 ? a : NAN;				\
+	exp.fld = a >= 0.0 ? a : NAN;				\
 	extra;							\
 }								\
 								\
@@ -451,12 +456,12 @@ VRT_r_##which##_grace(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(EXP_Grace(fld));					\
+	return(EXP_Grace(exp.fld));				\
 }
 
-VRT_DO_GRACE(req, sp->exp.grace, )
-VRT_DO_GRACE(obj, sp->obj->exp.grace, EXP_Rearm(sp->obj))
-VRT_DO_GRACE(beresp, sp->wrk->exp.grace, )
+VRT_DO_EXP(req, sp->exp, grace, )
+VRT_DO_EXP(obj, sp->obj->exp, grace, EXP_Rearm(sp->obj))
+VRT_DO_EXP(beresp, sp->wrk->exp, grace, )
 
 /*--------------------------------------------------------------------
  * req.xid

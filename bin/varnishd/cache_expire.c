@@ -57,6 +57,10 @@ static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
 
+/*--------------------------------------------------------------------
+ * struct exp manipulations
+ */
+
 double
 EXP_Grace(double g)
 {
