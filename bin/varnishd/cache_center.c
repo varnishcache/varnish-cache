@@ -527,7 +527,7 @@ cnt_fetch(struct sess *sp)
 	 */
 	sp->wrk->entered = TIM_real();
 	sp->wrk->age = 0;
-	sp->wrk->ttl = RFC2616_Ttl(sp);
+	sp->wrk->exp.ttl = RFC2616_Ttl(sp);
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
@@ -543,16 +543,16 @@ cnt_fetch(struct sess *sp)
 	case 404: /* Not Found */
 		break;
 	default:
-		sp->wrk->ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = sp->t_req - 1.;
 		break;
 	}
 
 	/* pass from vclrecv{} has negative TTL */
 	if (sp->objcore == NULL)
-		sp->wrk->ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = sp->t_req - 1.;
 
 	sp->wrk->do_esi = 0;
-	sp->wrk->grace = NAN;
+	sp->wrk->exp.grace = NAN;
 
 	sp->wrk->body_status = RFC2616_Body(sp);
 
@@ -564,7 +564,7 @@ cnt_fetch(struct sess *sp)
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		sp->wrk->ttl = sp->t_req - 1.;
+		sp->wrk->exp.ttl = sp->t_req - 1.;
 	} else if (sp->handling == VCL_RET_HIT_FOR_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
@@ -653,12 +653,12 @@ cnt_fetch(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (sp->wrk->ttl < sp->t_req + params->shortlived ||
+	if (sp->wrk->exp.ttl < sp->t_req + params->shortlived ||
 	    sp->objcore == NULL)
 		sp->wrk->storage_hint = TRANSIENT_STORAGE;
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
-	    sp->wrk->ttl, nhttp);
+	    sp->wrk->exp.ttl, nhttp);
 	/* XXX: -> 513 */
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
@@ -678,7 +678,7 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->grace = sp->wrk->grace;
+	sp->obj->exp.grace = sp->wrk->exp.grace;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);

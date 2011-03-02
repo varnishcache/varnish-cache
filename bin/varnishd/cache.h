@@ -232,6 +232,13 @@ extern struct vfp vfp_esi;
 
 /*--------------------------------------------------------------------*/
 
+struct exp {
+	double			ttl;
+	double			grace;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -272,8 +279,7 @@ struct worker {
 
 	double			age;
 	double			entered;
-	double			ttl;
-	double			grace;
+	struct exp		exp;
 
 	/* This is only here so VRT can find it */
 	const char		*storage_hint;
@@ -449,10 +455,9 @@ struct object {
 
 	ssize_t			len;
 
-	double			ttl;
 	double			age;
 	double			entered;
-	double			grace;
+	struct exp		exp;
 
 	double			last_modified;
 	double			last_lru;
@@ -517,7 +522,7 @@ struct sess {
 	double			t_end;
 
 	/* Acceptable grace period */
-	double			grace;
+	struct exp		exp;
 
 	enum step		step;
 	unsigned		cur_method;
@@ -628,6 +633,7 @@ extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
 /* cache_expiry.c */
+double EXP_Grace(double g);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

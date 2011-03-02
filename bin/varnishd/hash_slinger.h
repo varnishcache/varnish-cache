@@ -58,7 +58,6 @@ struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(const struct sess *sp);
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct sess *sp);
-double HSH_Grace(double g);
 void HSH_Init(void);
 void HSH_AddString(const struct sess *sp, const char *str);
 void HSH_FindBan(const struct sess *sp, struct objcore **oc);

@@ -493,7 +493,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 	AN(sp->objcore);
-	AN(sp->wrk->ttl >= 0);
+	AN(sp->wrk->exp.ttl >= 0);
 
 	ltot = IRNUP(sc, ltot);
 
@@ -519,7 +519,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->ttl = o->ttl;	/* XXX: grace? */
+	so->ttl = o->exp.ttl;	/* XXX: grace? */
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = o->ban_t;
 

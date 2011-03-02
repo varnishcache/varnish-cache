@@ -57,6 +57,14 @@ static pthread_t exp_thread;
 static struct binheap *exp_heap;
 static struct lock exp_mtx;
 
+double
+EXP_Grace(double g)
+{
+	if (isnan(g))
+		return (double)(params->default_grace);
+	return (g);
+}
+
 /*--------------------------------------------------------------------
  * When & why does the timer fire for this object ?
  */
@@ -72,7 +80,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = o->ttl + HSH_Grace(o->grace);
+	when = o->exp.ttl + EXP_Grace(o->exp.grace);
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);

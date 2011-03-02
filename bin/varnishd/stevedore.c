@@ -198,9 +198,9 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->grace = NAN;
+	o->exp.grace = NAN;
 	o->entered = NAN;
-	o->ttl = soc->ttl;
+	o->exp.ttl = soc->ttl;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 

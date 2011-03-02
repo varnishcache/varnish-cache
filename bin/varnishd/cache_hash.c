@@ -72,14 +72,6 @@ SVNID("$Id$")
 static const struct hash_slinger *hash;
 
 /*---------------------------------------------------------------------*/
-double
-HSH_Grace(double g)
-{
-	if (isnan(g))
-		return (double)(params->default_grace);
-	return (g);
-}
-
 /* Precreate an objhead and object for later use */
 void
 HSH_Prealloc(const struct sess *sp)
@@ -362,7 +354,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (o->ttl == 0)
+		if (o->exp.ttl == 0)
 			continue;
 		if (BAN_CheckObject(o, sp))
 			continue;
@@ -370,17 +362,17 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			continue;
 
 		/* If still valid, use it */
-		if (o->ttl >= sp->t_req)
+		if (o->exp.ttl >= sp->t_req)
 			break;
 
 		/*
 		 * Remember any matching objects inside their grace period
 		 * and if there are several, use the least expired one.
 		 */
-		if (o->ttl + HSH_Grace(o->grace) >= sp->t_req) {
-			if (grace_oc == NULL || grace_ttl < o->ttl) {
+		if (o->exp.ttl + EXP_Grace(o->exp.grace) >= sp->t_req) {
+			if (grace_oc == NULL || grace_ttl < o->exp.ttl) {
 				grace_oc = oc;
-				grace_ttl = o->ttl;
+				grace_ttl = o->exp.ttl;
 			}
 		}
 	}
@@ -404,7 +396,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 					/* Or it is impossible to fetch */
 		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		if (o->ttl + HSH_Grace(sp->grace) >= sp->t_req)
+		if (o->exp.ttl + EXP_Grace(sp->exp.grace) >= sp->t_req)
 			oc = grace_oc;
 	}
 	sp->objcore = NULL;
@@ -552,9 +544,9 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		o->ttl = sp->t_req + ttl;
+		o->exp.ttl = sp->t_req + ttl;
 		if (!isnan(grace))
-			o->grace = grace;
+			o->exp.grace = grace;
 		EXP_Rearm(o);
 		(void)HSH_Deref(sp->wrk, NULL, &o);
 	}
@@ -577,7 +569,7 @@ HSH_Drop(struct sess *sp)
 	o = sp->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AssertObjPassOrBusy(o);
-	o->ttl = 0;
+	o->exp.ttl = 0;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);

@@ -247,17 +247,17 @@ VRT_l_beresp_ttl(const struct sess *sp, double a)
 	 * We special case and make sure that rounding does not surprise.
 	 */
 	if (a <= 0) {
-		sp->wrk->ttl = sp->t_req - 1;
-		sp->wrk->grace = 0.;
+		sp->wrk->exp.ttl = sp->t_req - 1;
+		sp->wrk->exp.grace = 0.;
 	} else
-		sp->wrk->ttl = sp->t_req + a;
+		sp->wrk->exp.ttl = sp->t_req + a;
 }
 
 double
 VRT_r_beresp_ttl(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->wrk->ttl - sp->t_req);
+	return (sp->wrk->exp.ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -351,10 +351,10 @@ VRT_l_obj_ttl(const struct sess *sp, double a)
 	 * We special case and make sure that rounding does not surprise.
 	 */
 	if (a <= 0) {
-		sp->obj->ttl = sp->t_req - 1;
-		sp->obj->grace = 0;
+		sp->obj->exp.ttl = sp->t_req - 1;
+		sp->obj->exp.grace = 0;
 	} else
-		sp->obj->ttl = sp->t_req + a;
+		sp->obj->exp.ttl = sp->t_req + a;
 	EXP_Rearm(sp->obj);
 }
 
@@ -365,7 +365,7 @@ VRT_r_obj_ttl(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
 	if (sp->obj->objcore == NULL)
 		return (0.0);
-	return (sp->obj->ttl - sp->t_req);
+	return (sp->obj->exp.ttl - sp->t_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -451,12 +451,12 @@ VRT_r_##which##_grace(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(HSH_Grace(fld));					\
+	return(EXP_Grace(fld));					\
 }
 
-VRT_DO_GRACE(req, sp->grace, )
-VRT_DO_GRACE(obj, sp->obj->grace, EXP_Rearm(sp->obj))
-VRT_DO_GRACE(beresp, sp->wrk->grace, )
+VRT_DO_GRACE(req, sp->exp.grace, )
+VRT_DO_GRACE(obj, sp->obj->exp.grace, EXP_Rearm(sp->obj))
+VRT_DO_GRACE(beresp, sp->wrk->exp.grace, )
 
 /*--------------------------------------------------------------------
  * req.xid

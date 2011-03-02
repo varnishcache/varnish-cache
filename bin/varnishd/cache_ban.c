@@ -475,8 +475,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		oc_updatemeta(oc);
 		return (0);
 	} else {
-		o->ttl = 0;
-		o->grace = 0;
+		o->exp.ttl = 0;
+		o->exp.grace = 0;
 		oc->ban = NULL;
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */
@@ -543,7 +543,7 @@ ban_lurker(struct sess *sp, void *priv)
 		// AZ(oc->flags & OC_F_PERSISTENT);
 		o = oc_getobj(sp->wrk, oc);
 		i = ban_check_object(o, sp, 0);
-		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->ttl, i);
+		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->exp.ttl, i);
 		(void)HSH_Deref(sp->wrk, NULL, &o);
 		TIM_sleep(params->ban_lurker_sleep);
 	}
