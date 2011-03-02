@@ -46,16 +46,8 @@ SVNID("$Id$")
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#ifdef HAVE_PRIV_H
-#include <priv.h>
-#endif
-
 #ifndef HAVE_SETPROCTITLE
 #include "compat/setproctitle.h"
-#endif
-
-#ifdef __linux__
-#include <sys/prctl.h>
 #endif
 
 #include "mgt.h"
@@ -280,44 +272,6 @@ close_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
-/* Waive all privileges in the child, it does not need any */
-
-static inline void
-waive_privileges(void)
-{
-
-#ifdef HAVE_SETPPRIV
-	priv_set_t *empty, *minimal;
-
-	if (!(empty = priv_allocset()) ||
-	    !(minimal = priv_allocset())) {
-		perror("priv_allocset_failed");
-		return;
-	}
-	priv_emptyset(empty);
-	priv_emptyset(minimal);
-
-	/* new privilege, silently ignore any errors if it doesn't exist */
-	priv_addset(minimal, "net_access");
-
-#define SETPPRIV(which, set)				       \
-	if (setppriv(PRIV_SET, which, set))		       \
-		perror("Waiving privileges failed on " #which)
-
-	/* need to set I after P to avoid SNOCD being set */
-	SETPPRIV(PRIV_LIMIT, minimal);
-	SETPPRIV(PRIV_PERMITTED, minimal); /* implies PRIV_EFFECTIVE */
-	SETPPRIV(PRIV_INHERITABLE, empty);
-
-	priv_freeset(empty);
-	priv_freeset(minimal);
-#else
-	return;
-#endif
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 start_child(struct cli *cli)
 {
@@ -370,19 +324,6 @@ start_child(struct cli *cli)
 		exit(1);
 	}
 	if (pid == 0) {
-		if (geteuid() == 0) {
-			XXXAZ(setgid(params->gid));
-			XXXAZ(setuid(params->uid));
-		}
-
-		/* On Linux >= 2.4, you need to set the dumpable flag
-		   to get core dumps after you have done a setuid. */
-#ifdef __linux__
-		if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		  printf("Could not set dumpable bit.  Core dumps turned "
-			 "off\n");
-		}
-#endif
 
 		/* Redirect stdin/out/err */
 		AZ(close(STDIN_FILENO));
@@ -397,14 +338,13 @@ start_child(struct cli *cli)
 				continue;
 			(void)(close(i) == 0);
 		}
-		printf("\n");
-
-		waive_privileges();
-
 		setproctitle("Varnish-Chld %s", heritage.name);
 
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
+
+		mgt_sandbox();
+
 		child_main();
 
 		exit(1);

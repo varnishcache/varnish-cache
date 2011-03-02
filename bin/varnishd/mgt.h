@@ -71,6 +71,9 @@ void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_DumpRst(void);
 #endif
 
+/* mgt_sandbox.c */
+void mgt_sandbox(void);
+
 /* mgt_shmem.c */
 void mgt_SHM_Init(const char *arg);
 void mgt_SHM_Pid(void);
