@@ -314,7 +314,7 @@ sp_variables = (
 		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'struct sess *'
 	),
 	('beresp.grace',
 		'DURATION',
@@ -380,7 +380,7 @@ sp_variables = (
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'const struct sess *'
+		'struct sess *'
 	),
 	('obj.grace',
 		'DURATION',
