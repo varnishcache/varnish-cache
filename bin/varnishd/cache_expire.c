@@ -59,7 +59,46 @@ static struct lock exp_mtx;
 
 /*--------------------------------------------------------------------
  * struct exp manipulations
+ *
+ * The Get/Set functions encapsulate the mutual magic between the
+ * fields in one single place.
  */
+
+void
+EXP_Set_grace(struct exp *e, double v)
+{
+
+	if (v > 0.)
+		e->grace = v;
+	else
+		e->grace = NAN;
+}
+
+double
+EXP_Get_grace(const struct exp *e)
+{
+
+	return (e->grace > 0. ? e->grace : -1.);
+}
+
+void
+EXP_Set_ttl(struct exp *e, double v)
+{
+
+	if (v > 0.)
+		e->ttl = v;
+	else {
+		e->ttl = -1.;
+		e->grace = NAN;
+	}
+}
+
+double
+EXP_Get_ttl(const struct exp *e)
+{
+
+	return (e->ttl > 0. ? e->ttl : -1.);
+}
 
 double
 EXP_Grace(double g)

@@ -633,6 +633,11 @@ extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
 /* cache_expiry.c */
+double EXP_Get_grace(const struct exp *e);
+double EXP_Get_ttl(const struct exp *e);
+void EXP_Set_grace(struct exp *e, double v);
+void EXP_Set_ttl(struct exp *e, double v);
+
 double EXP_Grace(double g);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
