@@ -49,6 +49,19 @@
 -efunc(838, VRT_purge)
 -efunc(838, VRT_purge_string)
 
+// Stuff in VMODs which is used through dl*(3) functions
+-esym(754, Vmod_Func*)
+-esym(765, Vmod_Func)
+-esym(552, Vmod_Func)
+-esym(765, Vmod_Len)
+-esym(714, Vmod_Len)
+-esym(765, Vmod_Name)
+-esym(714, Vmod_Name)
+-esym(765, Vmod_Proto)
+-esym(714, Vmod_Proto)
+-esym(765, Vmod_Spec)
+-esym(714, Vmod_Spec)
+
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
 -sem (VBE_DropRefLocked, thread_unlock)
