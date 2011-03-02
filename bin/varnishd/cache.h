@@ -363,8 +363,6 @@ struct objcore_methods {
 	getlru_f	*getlru;
 };
 
-extern struct objcore_methods default_oc_methods;
-
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302

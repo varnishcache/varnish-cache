@@ -53,6 +53,7 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 static const struct stevedore * volatile stv_next;
 
 static struct stevedore *stv_transient;
+static struct objcore_methods default_oc_methods;
 
 /*--------------------------------------------------------------------
  */
@@ -339,7 +340,7 @@ default_oc_getlru(const struct objcore *oc)
 	return (o->objstore->stevedore->lru);
 }
 
-struct objcore_methods default_oc_methods = {
+static struct objcore_methods default_oc_methods = {
 	.getobj = default_oc_getobj,
 	.freeobj = default_oc_freeobj,
 	.getlru = default_oc_getlru,
