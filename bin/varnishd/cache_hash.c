@@ -362,14 +362,14 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			continue;
 
 		/* If still valid, use it */
-		if (o->entered + o->exp.ttl >= sp->t_req)
+		if (EXP_Ttl(sp, o) >= sp->t_req)
 			break;
 
 		/*
 		 * Remember any matching objects inside their grace period
 		 * and if there are several, use the least expired one.
 		 */
-		if (o->entered + o->exp.ttl + EXP_Grace(o->exp.grace) >= sp->t_req) {
+		if (EXP_Grace(sp, o) >= sp->t_req) {
 			if (grace_oc == NULL || grace_ttl < o->entered + o->exp.ttl) {
 				grace_oc = oc;
 				grace_ttl = o->entered + o->exp.ttl;
@@ -396,8 +396,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 					/* Or it is impossible to fetch */
 		o = oc_getobj(sp->wrk, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		if (o->entered + o->exp.ttl + EXP_Grace(sp->exp.grace) >= sp->t_req)
-			oc = grace_oc;
+		oc = grace_oc;
 	}
 	sp->objcore = NULL;
 

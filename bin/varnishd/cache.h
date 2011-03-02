@@ -638,7 +638,8 @@ double EXP_Get_ttl(const struct exp *e);
 void EXP_Set_grace(struct exp *e, double v);
 void EXP_Set_ttl(struct exp *e, double v);
 
-double EXP_Grace(double g);
+double EXP_Grace(const struct sess *, const struct object*);
+double EXP_Ttl(const struct sess *, const struct object*);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

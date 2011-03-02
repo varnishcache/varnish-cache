@@ -71,7 +71,7 @@ EXP_Set_grace(struct exp *e, double v)
 	if (v > 0.)
 		e->grace = v;
 	else
-		e->grace = NAN;
+		e->grace = -1.;
 }
 
 double
@@ -89,7 +89,7 @@ EXP_Set_ttl(struct exp *e, double v)
 		e->ttl = v;
 	else {
 		e->ttl = -1.;
-		e->grace = NAN;
+		e->grace = -1.;
 	}
 }
 
@@ -100,12 +100,33 @@ EXP_Get_ttl(const struct exp *e)
 	return (e->ttl > 0. ? e->ttl : -1.);
 }
 
+/*--------------------------------------------------------------------
+ * Calculate when an object is out of ttl or grace, possibly constrained
+ * by per-session limits.
+ */
+
 double
-EXP_Grace(double g)
+EXP_Grace(const struct sess *sp, const struct object *o)
 {
-	if (isnan(g))
-		return (double)(params->default_grace);
-	return (g);
+	double r;
+
+	r = (double)params->default_grace;
+	if (o->exp.grace > 0.)
+		r = o->exp.grace;
+	if (sp != NULL && sp->exp.grace > 0. && sp->exp.grace > r)
+		r = sp->exp.grace;
+	return (EXP_Ttl(sp, o) + r);
+}
+
+double
+EXP_Ttl(const struct sess *sp, const struct object *o)
+{
+	double r;
+
+	r = o->exp.ttl;
+	if (sp != NULL && sp->exp.ttl > 0. && sp->exp.ttl > r)
+		r = sp->exp.ttl;
+	return (o->entered + r);
 }
 
 /*--------------------------------------------------------------------
@@ -123,7 +144,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = o->entered + o->exp.ttl + EXP_Grace(o->exp.grace);
+	when = EXP_Grace(NULL, o);
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);
