@@ -381,7 +381,8 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		/* XXX: 1024 is a pure guess */
-		sp->obj = STV_NewObject(sp, NULL, 1024, 0,
+		EXP_Clr(&w->exp);
+		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     params->http_max_hdr);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
@@ -527,8 +528,8 @@ cnt_fetch(struct sess *sp)
 	 */
 	sp->wrk->entered = TIM_real();
 	sp->wrk->age = 0;
+	EXP_Clr(&sp->wrk->exp);
 	sp->wrk->exp.ttl = RFC2616_Ttl(sp);
-	sp->wrk->exp.grace = NAN;
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
@@ -657,7 +658,7 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->storage_hint = TRANSIENT_STORAGE;
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
-	    sp->wrk->exp.ttl, nhttp);
+	    &sp->wrk->exp, nhttp);
 	/* XXX: -> 513 */
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
@@ -677,7 +678,6 @@ cnt_fetch(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->exp.grace = sp->wrk->exp.grace;
 	sp->obj->age = sp->wrk->age;
 	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);

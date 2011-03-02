@@ -370,7 +370,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		 * and if there are several, use the least expired one.
 		 */
 		if (EXP_Grace(sp, o) >= sp->t_req) {
-			if (grace_oc == NULL || grace_ttl < o->entered + o->exp.ttl) {
+			if (grace_oc == NULL ||
+			    grace_ttl < o->entered + o->exp.ttl) {
 				grace_oc = oc;
 				grace_ttl = o->entered + o->exp.ttl;
 			}
@@ -534,8 +535,11 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	}
 	Lck_Unlock(&oh->mtx);
 
-	if (ttl <= 0)
+	/* NB: inverse test to catch NAN also */
+	if (!(ttl > 0.))
 		ttl = -1.;
+	if (!(grace > 0.))
+		grace = -1.;
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -544,8 +548,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		o->exp.ttl = ttl;
-		if (!isnan(grace))
-			o->exp.grace = grace;
+		o->exp.grace = grace;
 		EXP_Rearm(o);
 		(void)HSH_Deref(sp->wrk, NULL, &o);
 	}

@@ -519,7 +519,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->ttl = o->entered + o->exp.ttl;	/* XXX: grace? */
+	so->ttl = EXP_Grace(NULL, o);
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = o->ban_t;
 

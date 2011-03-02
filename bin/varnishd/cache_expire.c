@@ -65,6 +65,14 @@ static struct lock exp_mtx;
  */
 
 void
+EXP_Clr(struct exp *e)
+{
+
+	e->grace = -1;
+	e->ttl = -1;
+}
+
+void
 EXP_Set_grace(struct exp *e, double v)
 {
 
@@ -113,7 +121,7 @@ EXP_Grace(const struct sess *sp, const struct object *o)
 	r = (double)params->default_grace;
 	if (o->exp.grace > 0.)
 		r = o->exp.grace;
-	if (sp != NULL && sp->exp.grace > 0. && sp->exp.grace > r)
+	if (sp != NULL && sp->exp.grace > 0. && sp->exp.grace < r)
 		r = sp->exp.grace;
 	return (EXP_Ttl(sp, o) + r);
 }
@@ -124,7 +132,7 @@ EXP_Ttl(const struct sess *sp, const struct object *o)
 	double r;
 
 	r = o->exp.ttl;
-	if (sp != NULL && sp->exp.ttl > 0. && sp->exp.ttl > r)
+	if (sp != NULL && sp->exp.ttl > 0. && sp->exp.ttl < r)
 		r = sp->exp.ttl;
 	return (o->entered + r);
 }

@@ -152,9 +152,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
 	for (;no > 0; so++,no--) {
-		if (so->ttl > 0 && so->ttl < t_now)
-			continue;
-		if (so->ttl < 0 && -so->ttl < t_now)
+		if (so->ttl == 0 || so->ttl < t_now)
 			continue;
 		HSH_Prealloc(sp);
 		oc = sp->wrk->nobjcore;
@@ -165,7 +163,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
 		(void)HSH_Insert(sp);
 		AZ(sp->wrk->nobjcore);
-		EXP_Inject(oc, sg->lru, fabs(so->ttl));
+		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
 	WRK_SumStat(sp->wrk);
@@ -433,10 +431,9 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			o->exp.ttl = -1.;
-			o->exp.grace = 0.;
+			EXP_Set_ttl(&o->exp, -1);
 			so->ttl = 0;
-		}
+		} 
 
 		sg->nfixed++;
 		wrk->stats.n_object++;
@@ -444,6 +441,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
+	EXP_Rearm(o);
 	return (o);
 }
 
@@ -463,10 +461,7 @@ smp_oc_updatemeta(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 	so = smp_find_so(sg, oc);
 
-	if (isnan(o->exp.grace))
-		mttl = o->entered + o->exp.ttl;
-	else
-		mttl = - (o->entered + o->exp.ttl + o->exp.grace);
+	mttl = EXP_Grace(NULL, o);
 
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */

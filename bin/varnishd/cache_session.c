@@ -174,7 +174,7 @@ ses_setup(struct sessmem *sm)
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
 	sp->t_end = NAN;
-	sp->exp.grace = NAN;
+	EXP_Clr(&sp->exp);
 
 	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
 	sp->http = sm->http[0];

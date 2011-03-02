@@ -158,7 +158,7 @@ struct stv_objsecrets {
 	unsigned	nhttp;
 	unsigned	lhttp;
 	unsigned	wsl;
-	double		ttl;
+	struct exp	*exp;
 };
 
 /*--------------------------------------------------------------------
@@ -198,9 +198,8 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->exp.grace = NAN;
 	o->entered = NAN;
-	o->exp.ttl = soc->ttl;
+	o->exp = *soc->exp;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 
@@ -251,7 +250,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
  */
 
 struct object *
-STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
+STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
     unsigned nhttp)
 {
 	struct object *o;
@@ -270,7 +269,7 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, double ttl,
 	soc.nhttp = nhttp;
 	soc.lhttp = lhttp;
 	soc.wsl = wsl;
-	soc.ttl = ttl;
+	soc.exp = ep;
 
 	ltot = sizeof *o + wsl + lhttp;
 
