@@ -69,7 +69,6 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 	struct vmod *v;
 	void *x;
 	const int *i;
-	const char *p;
 
 	ASSERT_CLI();
 
@@ -91,7 +90,6 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 
 		x = dlsym(v->hdl, "Vmod_Name");
 		AN(x);
-		p = x;
 
 		x = dlsym(v->hdl, "Vmod_Len");
 		AN(x);
