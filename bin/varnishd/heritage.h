@@ -71,7 +71,7 @@ struct params {
 	gid_t			gid;
 
 	/* TTL used for lack of anything better */
-	unsigned		default_ttl;
+	double			default_ttl;
 
 	/* Maximum concurrent sessions */
 	unsigned		max_sess;
@@ -163,7 +163,7 @@ struct params {
 	unsigned		diag_bitmap;
 
 	/* Default grace period */
-	unsigned		default_grace;
+	double			default_grace;
 
 	/* Log hash string to shm */
 	unsigned		log_hash;

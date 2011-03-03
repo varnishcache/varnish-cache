@@ -71,9 +71,9 @@ SVNID("$Id$")
 double
 RFC2616_Ttl(const struct sess *sp)
 {
-	int ttl;
+	double ttl;
 	unsigned max_age, age;
-	double h_date, h_expires, ttd;
+	double h_date, h_expires;
 	char *p;
 	const struct http *hp;
 
@@ -84,7 +84,6 @@ RFC2616_Ttl(const struct sess *sp)
 	ttl = params->default_ttl;
 
 	max_age = age = 0;
-	ttd = 0;
 	h_expires = 0;
 	h_date = 0;
 
@@ -116,6 +115,8 @@ RFC2616_Ttl(const struct sess *sp)
 
 		if (http_GetHdr(hp, H_Expires, &p))
 			h_expires = TIM_parse(p);
+
+		/* No expire header, fall back to default */
 		if (h_expires == 0)
 			break;
 
@@ -129,8 +130,7 @@ RFC2616_Ttl(const struct sess *sp)
 		}
 
 		if (h_date == 0 ||
-		    (h_date < sp->wrk->entered + params->clock_skew &&
-		    h_date + params->clock_skew > sp->wrk->entered)) {
+		    fabs(h_date - sp->wrk->entered) < params->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
@@ -139,27 +139,22 @@ RFC2616_Ttl(const struct sess *sp)
 			if (h_expires < sp->wrk->entered)
 				ttl = 0;
 			else
-				ttd = h_expires;
+				ttl = h_expires - sp->wrk->entered;
 			break;
+		} else {
+			/*
+			 * But even if the clocks are out of whack we can still
+			 * derive a relative time from the two headers.
+			 * (the negative ttl case is caught above)
+			 */
+			ttl = (int)(h_expires - h_date);
 		}
-
-		/*
-		 * But even if the clocks are out of whack we can still
-		 * derive a relative time from the two headers.
-		 * (the negative ttl case is caught above)
-		 */
-		ttl = (int)(h_expires - h_date);
 
 	} while (0);
 
-	if (ttd > 0)
-		ttl = ttd - sp->wrk->entered;
-
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %d %d %d %d %u %u", sp->xid,
-	    ttd ? (int)(ttl) : 0,
-	    (int)sp->wrk->entered, (int)h_date,
-	    (int)h_expires, max_age, age);
+	WSP(sp, SLT_TTL, "%u RFC %g %g %g %g %u %u", sp->xid,
+	    ttl, sp->wrk->entered, h_date, h_expires, max_age, age);
 
 	return (ttl);
 }

@@ -502,7 +502,8 @@ static const struct parspec input_parspec[] = {
 		"The unprivileged group to run as.",
 		MUST_RESTART,
 		MAGIC_INIT_STRING },
-	{ "default_ttl", tweak_uint, &master.default_ttl, 0, UINT_MAX,
+	{ "default_ttl", tweak_timeout_double, &master.default_ttl,
+		0, UINT_MAX,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.\n"
 		"Objects already cached will not be affected by changes "
@@ -573,7 +574,8 @@ static const struct parspec input_parspec[] = {
 		"Maximum is 65535 bytes.",
 		0,
 		"255", "bytes" },
-	{ "default_grace", tweak_uint, &master.default_grace, 0, UINT_MAX,
+	{ "default_grace", tweak_timeout_double, &master.default_grace,
+		0, UINT_MAX,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "
 		"is attempting to get a new copy.\n"
