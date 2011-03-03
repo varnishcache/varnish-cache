@@ -76,6 +76,11 @@ Varnish Glossary
 	the client.  When the response is stored in varnishd's cache,
 	we call it an object.
 
+   backend response
+        The response specifically served from a backend to
+        varnishd. The backend response may be manipulated in
+        vcl_fetch.
+
    body
 	The bytes that make up the contents of the object, varnishd
 	does not care if they are in HTML, XML, JPEG or even EBCDIC,
@@ -84,8 +89,8 @@ Varnish Glossary
    object
 	The (possibly) cached version of a backend response. Varnishd
 	receives a reponse from the backend and creates an object,
-	from which it may produce cached responses to clients. If the
-	backend response is created from a request which is passed, it
+	from which it may deliver cached responses to clients. If the
+	object is created as a result of a request which is passed, it
 	will not be stored for caching.
 
    .. comment: "configuration of varnishd -----------------------------"
