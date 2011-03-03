@@ -30,12 +30,12 @@ Varnish Glossary
 	The worker process is started and configured by the master
 	process.  This is the process that does all the work you actually
 	want varnish to do.  If the worker dies, the master will try start
-	it again, to keep your website alive..
+	it again, to keep your website alive.
 
    backend
 	The HTTP server varnishd is caching for.  This can be
 	any sort of device that handles HTTP requests, including, but
-	not limited to:  a webserver, a CMS, a load-balancer 
+	not limited to: a webserver, a CMS, a load-balancer 
 	another varnishd, etc.
 
    client
@@ -82,9 +82,11 @@ Varnish Glossary
 	to varnishd they are just bytes.
 
    object
-	The (possibly cached version of a) response.  Varnishd receives a reponse
-	from the backend and creates an object, from which it may
-	produce cached responses to clients.
+	The (possibly) cached version of a backend response. Varnishd
+	receives a reponse from the backend and creates an object,
+	from which it may produce cached responses to clients. If the
+	backend response is created from a request which is passed, it
+	will not be stored for caching.
 
    .. comment: "configuration of varnishd -----------------------------"
 
@@ -98,8 +100,9 @@ Varnish Glossary
 	An object Varnish delivers from cache.
 
    miss
-	An object Varnish fetches from the backend.  It may or may not
-	be put in the cache, that depends.
+	An object Varnish fetches from the backend before it is served
+	to the client.  The object may or may not be put in the cache,
+	that depends.
 
    pass
 	An object Varnish does not try to cache, but simply fetches
