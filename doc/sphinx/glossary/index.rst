@@ -82,8 +82,8 @@ Varnish Glossary
 	to varnishd they are just bytes.
 
    object
-	The cached version of a response.  Varnishd receives a reponse
-	from the backend and creates an object, from which it can
+	The (possibly cached version of a) response.  Varnishd receives a reponse
+	from the backend and creates an object, from which it may
 	produce cached responses to clients.
 
    .. comment: "configuration of varnishd -----------------------------"
@@ -99,7 +99,7 @@ Varnish Glossary
 
    miss
 	An object Varnish fetches from the backend.  It may or may not
-	be putin the cache, that depends.
+	be put in the cache, that depends.
 
    pass
 	An object Varnish does not try to cache, but simply fetches
