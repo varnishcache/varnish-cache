@@ -152,7 +152,7 @@ Here we override the TTL of a object comming from the backend if it
 matches certain criteria:::
 
   sub vcl_fetch {
-     if (beresp.url ~ "\.(png|gif|jpg)$") {
+     if (req.url ~ "\.(png|gif|jpg)$") {
        unset beresp.http.set-cookie;
        set beresp.ttl = 3600;
     }
