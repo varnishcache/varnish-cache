@@ -482,9 +482,8 @@ FetchHdr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct sess *sp, const struct http *hp)
+FetchBody(struct sess *sp)
 {
-	char *b;
 	int cls;
 	struct storage *st;
 	int mklen;
@@ -517,8 +516,8 @@ FetchBody(struct sess *sp, const struct http *hp)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		AN(http_GetHdr(hp, H_Content_Length, &b));
-		cls = fetch_straight(sp, sp->wrk->htc, b);
+		cls = fetch_straight(sp, sp->wrk->htc,
+		    sp->wrk->h_content_length);
 		mklen = 1;
 		break;
 	case BS_CHUNKED:
@@ -555,11 +554,7 @@ FetchBody(struct sess *sp, const struct http *hp)
 		return (__LINE__);
 	}
 
-	if (cls == 0 && http_HdrIs(hp, H_Connection, "close"))
-		cls = 1;
-
-	if (cls == 0 && hp->protover < 1.1 &&
-	    !http_HdrIs(hp, H_Connection, "keep-alive"))
+	if (cls == 0 && sp->wrk->do_close)
 		cls = 1;
 
 	if (cls < 0) {
@@ -592,9 +587,6 @@ FetchBody(struct sess *sp, const struct http *hp)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
 		    "Content-Length: %u", sp->obj->len);
 	}
-
-	if (http_HdrIs(hp, H_Connection, "close"))
-		cls = 1;
 
 	if (cls)
 		VDI_CloseFd(sp);

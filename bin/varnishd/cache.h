@@ -273,7 +273,6 @@ struct worker {
 	struct ws		ws[1];
 	struct http		*http[3];
 	struct http		*bereq;
-	struct http		*beresp1;
 	struct http		*beresp;
 	struct http		*resp;
 
@@ -294,6 +293,8 @@ struct worker {
 	unsigned		is_gzip;
 	unsigned		do_gunzip;
 	unsigned		is_gunzip;
+	unsigned		do_close;
+	char			*h_content_length;
 
 	/* ESI stuff */
 	struct vep_state	*vep;
@@ -651,7 +652,7 @@ int EXP_NukeOne(const struct sess *sp, struct lru *lru);
 /* cache_fetch.c */
 struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
 int FetchHdr(struct sess *sp);
-int FetchBody(struct sess *sp, const struct http *hp);
+int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 

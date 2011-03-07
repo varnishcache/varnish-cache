@@ -160,7 +160,7 @@ RFC2616_Ttl(const struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * Body existence and fetch method
+ * Body existence, fetch method and close policy.
  */
 
 enum body_status
@@ -169,7 +169,14 @@ RFC2616_Body(const struct sess *sp)
 	struct http *hp;
 	char *b;
 
-	hp = sp->wrk->beresp1;
+	hp = sp->wrk->beresp;
+
+	if (hp->protover < 1.1 && !http_HdrIs(hp, H_Connection, "keep-alive"))
+		sp->wrk->do_close = 1;
+	else if (http_HdrIs(hp, H_Connection, "close"))
+		sp->wrk->do_close = 1;
+	else
+		sp->wrk->do_close = 0;
 
 	if (!strcasecmp(http_GetReq(sp->wrk->bereq), "head")) {
 		/*
@@ -218,7 +225,7 @@ RFC2616_Body(const struct sess *sp)
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length, &b)) {
+	if (http_GetHdr(hp, H_Content_Length, &sp->wrk->h_content_length)) {
 		sp->wrk->stats.fetch_length++;
 		return (BS_LENGTH);
 	}

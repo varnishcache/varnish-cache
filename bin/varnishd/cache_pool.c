@@ -179,13 +179,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		w->lastused = NAN;
 		WS_Reset(w->ws, NULL);
 		w->bereq = NULL;
-		w->beresp1 = NULL;
 		w->beresp = NULL;
 		w->resp = NULL;
 		w->storage_hint = NULL;
 		w->wrq->func(w, w->wrq->priv);
 		AZ(w->bereq);
-		AZ(w->beresp1);
 		AZ(w->beresp);
 		AZ(w->resp);
 		WS_Assert(w->ws);

@@ -229,7 +229,6 @@ cnt_deliver(struct sess *sp)
 		sp->director = NULL;
 		sp->wrk->bereq = NULL;
 		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->wrk->resp = NULL;
 		sp->step = STP_RECV;
 		return (0);
@@ -475,6 +474,8 @@ cnt_fetch(struct sess *sp)
 
 	AN(sp->director);
 	AZ(sp->vbc);
+	AZ(sp->wrk->h_content_length);
+	AZ(sp->wrk->do_close);
 
 	/* sp->wrk->http[0] is (still) bereq */
 	sp->wrk->beresp = sp->wrk->http[1];
@@ -500,11 +501,11 @@ cnt_fetch(struct sess *sp)
 	http_CollectHdr(sp->wrk->beresp, H_Vary);
 
 	/*
-	 * Save a copy before it might get mangled in VCL.  When it comes to
-	 * dealing with the body, we want to see the unadultered headers.
-	 */
-	sp->wrk->beresp1 = sp->wrk->http[2];
-	*sp->wrk->beresp1 = *sp->wrk->beresp;
+	 * Figure out how the fetch is supposed to happen, before the
+	 * headers are adultered by VCL
+	 * Also sets other sp->wrk variables 
+	 */ 
+	sp->wrk->body_status = RFC2616_Body(sp);
 
 	if (i) {
 		if (sp->objcore != NULL) {
@@ -513,9 +514,10 @@ cnt_fetch(struct sess *sp)
 			sp->objcore = NULL;
 		}
 		AZ(sp->obj);
+		sp->wrk->do_close = 0;
+		sp->wrk->h_content_length = NULL;
 		sp->wrk->bereq = NULL;
 		sp->wrk->beresp = NULL;
-		sp->wrk->beresp1 = NULL;
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
@@ -555,7 +557,6 @@ cnt_fetch(struct sess *sp)
 
 	sp->wrk->do_esi = 0;
 
-	sp->wrk->body_status = RFC2616_Body(sp);
 
 	AZ(sp->wrk->storage_hint);
 
@@ -698,11 +699,13 @@ cnt_fetch(struct sess *sp)
 		sp->obj->last_modified = sp->wrk->entered;
 
 	/* Use unmodified headers*/
-	i = FetchBody(sp, sp->wrk->beresp1);
+	i = FetchBody(sp);
+
+	sp->wrk->do_close = 0;
+	sp->wrk->h_content_length = NULL;
 
 	sp->wrk->bereq = NULL;
 	sp->wrk->beresp = NULL;
-	sp->wrk->beresp1 = NULL;
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbc);
