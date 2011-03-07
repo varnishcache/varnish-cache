@@ -65,7 +65,15 @@
 
 #include "vsc.h"
 #include "vsl.h"
-#include "vtypes.h"
+
+enum body_status {
+	BS_NONE,
+	BS_ZERO,
+	BS_ERROR,
+	BS_CHUNKED,
+	BS_LENGTH,
+	BS_EOF
+};
 
 /*
  * NB: HDR_STATUS is only used in cache_http.c, everybody else uses the

@@ -499,11 +499,6 @@ FetchBody(struct sess *sp)
 	AN(sp->director);
 	AssertObjPassOrBusy(sp->obj);
 
-	/*
-	 * Determine if we have a body or not
-	 * XXX: Missing:  RFC2616 sec. 4.4 in re 1xx, 204 & 304 responses
-	 */
-
 	AZ(sp->wrk->vgz_rx);
 	AZ(VTAILQ_FIRST(&sp->obj->store));
 	switch (sp->wrk->body_status) {
@@ -542,9 +537,9 @@ FetchBody(struct sess *sp)
 	/*
 	 * It is OK for ->end to just leave the last storage segment
 	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()
-	 * to get it trimmed and added to the object.
+	 * to get it trimmed or thrown out if empty.
 	 */
-	XXXAZ(vfp_nop_end(sp));
+	AZ(vfp_nop_end(sp));
 
 	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
 	    sp->wrk->body_status, cls, mklen);
@@ -553,9 +548,6 @@ FetchBody(struct sess *sp)
 		VDI_CloseFd(sp);
 		return (__LINE__);
 	}
-
-	if (cls == 0 && sp->wrk->do_close)
-		cls = 1;
 
 	if (cls < 0) {
 		sp->wrk->stats.fetch_failed++;
@@ -569,6 +561,9 @@ FetchBody(struct sess *sp)
 		sp->obj->len = 0;
 		return (__LINE__);
 	}
+
+	if (cls == 0 && sp->wrk->do_close)
+		cls = 1;
 
 	WSL(sp->wrk, SLT_Length, sp->vbc->fd, "%u", sp->obj->len);
 
