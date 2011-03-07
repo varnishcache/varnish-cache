@@ -271,7 +271,6 @@ struct worker {
 
 	struct http_conn	htc[1];
 	struct ws		ws[1];
-	struct http		*http[3];
 	struct http		*bereq;
 	struct http		*beresp;
 	struct http		*resp;

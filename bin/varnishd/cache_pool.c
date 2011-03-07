@@ -140,9 +140,9 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
-	w->http[0] = HTTP_create(http0, nhttp);
-	w->http[1] = HTTP_create(http1, nhttp);
-	w->http[2] = HTTP_create(http2, nhttp);
+	w->bereq = HTTP_create(http0, nhttp);
+	w->beresp = HTTP_create(http1, nhttp);
+	w->resp = HTTP_create(http2, nhttp);
 	w->iov = iov;
 	w->siov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
@@ -155,6 +155,9 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	qp->nthr++;
 	stats_clean = 1;
 	while (1) {
+		CHECK_OBJ_NOTNULL(w->bereq, HTTP_MAGIC);
+		CHECK_OBJ_NOTNULL(w->beresp, HTTP_MAGIC);
+		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process queued requests, if any */
@@ -178,15 +181,14 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		AN(w->wrq->func);
 		w->lastused = NAN;
 		WS_Reset(w->ws, NULL);
-		w->bereq = NULL;
-		w->beresp = NULL;
-		w->resp = NULL;
 		w->storage_hint = NULL;
+
 		w->wrq->func(w, w->wrq->priv);
-		AZ(w->bereq);
-		AZ(w->beresp);
-		AZ(w->resp);
+
 		WS_Assert(w->ws);
+		AZ(w->bereq->ws);
+		AZ(w->beresp->ws);
+		AZ(w->resp->ws);
 		AZ(w->wfd);
 		AZ(w->storage_hint);
 		assert(w->wlp == w->wlb);

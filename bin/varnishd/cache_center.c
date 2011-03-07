@@ -213,7 +213,6 @@ cnt_deliver(struct sess *sp)
 			sp->obj->last_lru = sp->t_resp;
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
 	}
-	sp->wrk->resp = sp->wrk->http[2];
 	http_Setup(sp->wrk->resp, sp->wrk->ws);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
@@ -227,9 +226,9 @@ cnt_deliver(struct sess *sp)
 		AZ(sp->obj);
 		sp->restarts++;
 		sp->director = NULL;
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
-		sp->wrk->resp = NULL;
+		http_Setup(sp->wrk->bereq, NULL);
+		http_Setup(sp->wrk->beresp, NULL);
+		http_Setup(sp->wrk->resp, NULL);
 		sp->step = STP_RECV;
 		return (0);
 	default:
@@ -243,7 +242,7 @@ cnt_deliver(struct sess *sp)
 
 	AZ(sp->wrk->wfd);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
-	sp->wrk->resp = NULL;
+	http_Setup(sp->wrk->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -425,7 +424,7 @@ cnt_error(struct sess *sp)
 	assert(sp->handling == VCL_RET_DELIVER);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
-	sp->wrk->bereq = NULL;
+	http_Setup(sp->wrk->bereq, NULL);
 	sp->step = STP_DELIVER;
 	return (0);
 }
@@ -477,8 +476,6 @@ cnt_fetch(struct sess *sp)
 	AZ(sp->wrk->h_content_length);
 	AZ(sp->wrk->do_close);
 
-	/* sp->wrk->http[0] is (still) bereq */
-	sp->wrk->beresp = sp->wrk->http[1];
 	http_Setup(sp->wrk->beresp, sp->wrk->ws);
 
 	i = FetchHdr(sp);
@@ -516,8 +513,8 @@ cnt_fetch(struct sess *sp)
 		AZ(sp->obj);
 		sp->wrk->do_close = 0;
 		sp->wrk->h_content_length = NULL;
-		sp->wrk->bereq = NULL;
-		sp->wrk->beresp = NULL;
+		http_Setup(sp->wrk->bereq, NULL);
+		http_Setup(sp->wrk->beresp, NULL);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
@@ -704,8 +701,8 @@ cnt_fetch(struct sess *sp)
 	sp->wrk->do_close = 0;
 	sp->wrk->h_content_length = NULL;
 
-	sp->wrk->bereq = NULL;
-	sp->wrk->beresp = NULL;
+	http_Setup(sp->wrk->bereq, NULL);
+	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
 	AZ(sp->wrk->wfd);
 	AZ(sp->vbc);
@@ -812,7 +809,8 @@ cnt_hit(struct sess *sp)
 	if (sp->handling == VCL_RET_DELIVER) {
 		/* Dispose of any body part of the request */
 		(void)FetchReqBody(sp);
-		sp->wrk->bereq = NULL;
+		AZ(sp->wrk->bereq->ws);
+		AZ(sp->wrk->beresp->ws);
 		sp->step = STP_DELIVER;
 		return (0);
 	}
@@ -953,7 +951,6 @@ cnt_miss(struct sess *sp)
 	AZ(sp->obj);
 	AN(sp->objcore);
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	http_ForceGet(sp->wrk->bereq);
@@ -1035,7 +1032,6 @@ cnt_pass(struct sess *sp)
 	AZ(sp->obj);
 
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
@@ -1088,7 +1084,6 @@ cnt_pipe(struct sess *sp)
 
 	sp->acct_tmp.pipe++;
 	WS_Reset(sp->wrk->ws, NULL);
-	sp->wrk->bereq = sp->wrk->http[0];
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
@@ -1100,7 +1095,7 @@ cnt_pipe(struct sess *sp)
 
 	PipeSession(sp);
 	AZ(sp->wrk->wfd);
-	sp->wrk->bereq = NULL;
+	http_Setup(sp->wrk->bereq, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }

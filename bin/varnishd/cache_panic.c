@@ -198,10 +198,12 @@ pan_wrk(const struct worker *wrk)
 
 	vsb_printf(vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->ws, 4);
-	if (wrk->bereq != NULL)
+	if (wrk->bereq->ws != NULL)
 		pan_http("bereq", wrk->bereq, 4);
-	if (wrk->beresp != NULL)
+	if (wrk->beresp->ws != NULL)
 		pan_http("beresp", wrk->beresp, 4);
+	if (wrk->resp->ws != NULL)
+		pan_http("resp", wrk->resp, 4);
 	vsb_printf(vsp, "    },\n");
 }
 
