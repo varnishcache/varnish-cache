@@ -530,24 +530,6 @@ cnt_fetch(struct sess *sp)
 	EXP_Clr(&sp->wrk->exp);
 	sp->wrk->exp.ttl = RFC2616_Ttl(sp);
 
-	/*
-	 * Initial cacheability determination per [RFC2616, 13.4]
-	 * We do not support ranges yet, so 206 is out.
-	 */
-	switch (sp->err_code) {
-	case 200: /* OK */
-	case 203: /* Non-Authoritative Information */
-	case 300: /* Multiple Choices */
-	case 301: /* Moved Permanently */
-	case 302: /* Moved Temporarily */
-	case 410: /* Gone */
-	case 404: /* Not Found */
-		break;
-	default:
-		sp->wrk->exp.ttl = -1.;
-		break;
-	}
-
 	/* pass from vclrecv{} has negative TTL */
 	if (sp->objcore == NULL)
 		sp->wrk->exp.ttl = -1.;

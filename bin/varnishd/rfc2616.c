@@ -87,8 +87,22 @@ RFC2616_Ttl(const struct sess *sp)
 	h_expires = 0;
 	h_date = 0;
 
-	do {	/* Allows us to break when we want out */
+	/*
+	 * Initial cacheability determination per [RFC2616, 13.4]
+	 * We do not support ranges yet, so 206 is out.
+	 */
 
+	switch (sp->err_code) {
+	default:
+		sp->wrk->exp.ttl = -1.;
+		break;
+	case 200: /* OK */
+	case 203: /* Non-Authoritative Information */
+	case 300: /* Multiple Choices */
+	case 301: /* Moved Permanently */
+	case 302: /* Moved Temporarily */
+	case 410: /* Gone */
+	case 404: /* Not Found */
 		/*
 		 * First find any relative specification from the backend
 		 * These take precedence according to RFC2616, 13.2.4
@@ -150,7 +164,7 @@ RFC2616_Ttl(const struct sess *sp)
 			ttl = (int)(h_expires - h_date);
 		}
 
-	} while (0);
+	} 
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL, "%u RFC %g %g %g %g %u %u", sp->xid,
