@@ -17,10 +17,10 @@ one copy from the back end. In some products this is called request
 coalescing and Varnish does this automatically.
 
 If you are serving thousands of hits per second the queue of waiting
-requests can get huge. There are to potential problems - one is a
-thundering heard problem - suddenly releasing a thousand threads to
-serve content might send to load sky high. Secondly - nobody likes to
-wait. To deal with this Varnish can we can instruct Varnish to keep
+requests can get huge. There are two potential problems - one is a
+thundering herd problem - suddenly releasing a thousand threads to
+serve content might send the load sky high. Secondly - nobody likes to
+wait. To deal with this we can instruct Varnish to keep
 the objects in cache beyond their TTL and to serve the waiting
 requests somewhat stale content.
 
@@ -88,7 +88,7 @@ Known limitations on grace- and saint mode
 If your request fails while it is being fetched you're thrown into
 vcl_error. vcl_error has access to a rather limited set of data so you
 can't enable saint mode or grace mode here. This will be addressed in a
-future release but a work-around is available.
+future release but a work-around available.
 
 * Declare a backend that is always sick.
 * Set a magic marker in vcl_error
