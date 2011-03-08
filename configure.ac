@@ -354,7 +354,7 @@ struct timeval tv = { 1, 0 };
 if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
     socklen_t l = sizeof tv;
     if (getsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l) == 0) {
-        return 0;
+        return (l != sizeof tv);
     }
 }
 return 1;
@@ -379,7 +379,7 @@ struct timeval tv = { 1, 0 };
 if (setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
     socklen_t l = sizeof tv;
     if (getsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l) == 0) {
-        return 0;
+        return (l != sizeof tv);
     }
 }
 return 1;
