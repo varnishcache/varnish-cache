@@ -351,7 +351,13 @@ AC_CACHE_CHECK([whether SO_RCVTIMEO works],
     ]],[[
 int sd = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
-return !!setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
+    socklen_t l = sizeof tv;
+    if (getsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv_get, &l) == 0) {
+        return (l == sizeof tv);
+    }
+}
+return 1;
     ]])],
     [ac_cv_so_rcvtimeo_works=yes],
     [ac_cv_so_rcvtimeo_works=no])
@@ -370,7 +376,13 @@ AC_CACHE_CHECK([whether SO_SNDTIMEO works],
     ]],[[
 int sd = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
-return !!setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv);
+if (setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
+    socklen_t l = sizeof tv;
+    if (getsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv_get, &l) == 0) {
+        return (l == sizeof tv);
+    }
+}
+return 1;
     ]])],
     [ac_cv_so_sndtimeo_works=yes],
     [ac_cv_so_sndtimeo_works=no])
