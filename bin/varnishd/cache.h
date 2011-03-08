@@ -243,6 +243,7 @@ extern struct vfp vfp_esi;
 struct exp {
 	double			ttl;
 	double			grace;
+	double			keep;
 };
 
 /*--------------------------------------------------------------------*/
@@ -642,13 +643,16 @@ extern pthread_t cli_thread;
 
 /* cache_expiry.c */
 void EXP_Clr(struct exp *e);
-double EXP_Get_grace(const struct exp *e);
 double EXP_Get_ttl(const struct exp *e);
-void EXP_Set_grace(struct exp *e, double v);
+double EXP_Get_grace(const struct exp *e);
+double EXP_Get_keep(const struct exp *e);
 void EXP_Set_ttl(struct exp *e, double v);
+void EXP_Set_grace(struct exp *e, double v);
+void EXP_Set_keep(struct exp *e, double v);
 
-double EXP_Grace(const struct sess *, const struct object*);
 double EXP_Ttl(const struct sess *, const struct object*);
+double EXP_Grace(const struct sess *, const struct object*);
+double EXP_Keep(const struct sess *, const struct object*);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

@@ -73,6 +73,12 @@ struct params {
 	/* TTL used for lack of anything better */
 	double			default_ttl;
 
+	/* Default grace period */
+	double			default_grace;
+
+	/* Default keep period */
+	double			default_keep;
+
 	/* Maximum concurrent sessions */
 	unsigned		max_sess;
 
@@ -161,9 +167,6 @@ struct params {
 
 	/* Control diagnostic code */
 	unsigned		diag_bitmap;
-
-	/* Default grace period */
-	double			default_grace;
 
 	/* Log hash string to shm */
 	unsigned		log_hash;

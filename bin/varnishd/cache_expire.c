@@ -68,50 +68,50 @@ void
 EXP_Clr(struct exp *e)
 {
 
-	e->grace = -1;
 	e->ttl = -1;
+	e->grace = -1;
+	e->keep = -1;
 }
 
-void
-EXP_Set_grace(struct exp *e, double v)
-{
+#define EXP_ACCESS(fld, extra)					\
+	double							\
+	EXP_Get_##fld(const struct exp *e)			\
+	{							\
+		return (e->fld > 0. ? e->fld : -1.);		\
+	}							\
+								\
+	void							\
+	EXP_Set_##fld(struct exp *e, double v)			\
+	{							\
+		if (v > 0.)					\
+			e->fld = v;				\
+		else {						\
+			e->fld = -1.;				\
+			extra;					\
+		}						\
+	}							\
 
-	if (v > 0.)
-		e->grace = v;
-	else
-		e->grace = -1.;
-}
-
-double
-EXP_Get_grace(const struct exp *e)
-{
-
-	return (e->grace > 0. ? e->grace : -1.);
-}
-
-void
-EXP_Set_ttl(struct exp *e, double v)
-{
-
-	if (v > 0.)
-		e->ttl = v;
-	else {
-		e->ttl = -1.;
-		e->grace = -1.;
-	}
-}
-
-double
-EXP_Get_ttl(const struct exp *e)
-{
-
-	return (e->ttl > 0. ? e->ttl : -1.);
-}
+EXP_ACCESS(ttl, (e->grace = e->keep = -1.))
+EXP_ACCESS(grace,)
+EXP_ACCESS(keep,)
 
 /*--------------------------------------------------------------------
  * Calculate when an object is out of ttl or grace, possibly constrained
  * by per-session limits.
  */
+
+double
+EXP_Keep(const struct sess *sp, const struct object *o)
+{
+	double r;
+
+	r = (double)params->default_keep;
+	if (o->exp.keep > 0.)
+		r = o->exp.keep;
+	if (sp != NULL && sp->exp.keep > 0. && sp->exp.keep < r)
+		r = sp->exp.keep;
+	return (EXP_Grace(sp, o) + r);
+}
 
 double
 EXP_Grace(const struct sess *sp, const struct object *o)
@@ -152,7 +152,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = EXP_Grace(NULL, o);
+	when = EXP_Keep(NULL, o);
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);

@@ -178,7 +178,19 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('req.ttl',
+		'DURATION',
+		( 'all',),
+		( 'all',),
+		'struct sess *'
+	),
 	('req.grace',
+		'DURATION',
+		( 'all',),
+		( 'all',),
+		'struct sess *'
+	),
+	('req.keep',
 		'DURATION',
 		( 'all',),
 		( 'all',),
@@ -322,6 +334,12 @@ sp_variables = (
 		( 'fetch',),
 		'struct sess *'
 	),
+	('beresp.keep',
+		'DURATION',
+		( 'fetch',),
+		( 'fetch',),
+		'struct sess *'
+	),
 	('beresp.backend.name',
 		'STRING',
 		( 'fetch',),
@@ -383,6 +401,12 @@ sp_variables = (
 		'struct sess *'
 	),
 	('obj.grace',
+		'DURATION',
+		( 'hit', 'error',),
+		( 'hit', 'error',),
+		'struct sess *'
+	),
+	('obj.keep',
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),

@@ -1,0 +1,47 @@
+# $Id$
+
+test "using req.ttl to force fetch"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 1
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 2
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.short) {
+			set req.ttl = 1s;
+			set req.grace = 0s;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/1" 
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/1" 
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	delay 2
+
+	txreq -url "/1" -hdr "short: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+
+	txreq -url "/1" 
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+
+} -run
