@@ -10,9 +10,9 @@ leave clues of whats going on.
 When Varnish won't start
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sometimes Varnish wont start. There is a pletphora of reasons why
+Sometimes Varnish wont start. There is a plethora of reasons why
 Varnish wont start on your machine. We've seen everything from wrong
-permissions on /dev/null to other processses blocking the ports.
+permissions on /dev/null to other processes blocking the ports.
 
 Starting Varnish in debug mode to see what is going on.
 
@@ -53,14 +53,44 @@ on IRC.
 Varnish is crashing
 ~~~~~~~~~~~~~~~~~~~
 
-When varnish goes bust.
+When varnish goes bust the child processes crashes. Usually the mother
+process will manage this by restarting the child process again. Any
+errors will be logged in syslog. It might look like this:::
 
+       Mar  8 13:23:38 smoke varnishd[15670]: Child (15671) not responding to CLI, killing it.
+       Mar  8 13:23:43 smoke varnishd[15670]: last message repeated 2 times
+       Mar  8 13:23:43 smoke varnishd[15670]: Child (15671) died signal=3
+       Mar  8 13:23:43 smoke varnishd[15670]: Child cleanup complete
+       Mar  8 13:23:43 smoke varnishd[15670]: child (15697) Started
+
+Specifically if you see the "Error in munmap" error on Linux you might
+want to increase the amount of maps available. Linux is limited to a
+maximum of 64k maps. Setting vm.max_max_count i sysctl.conf will
+enable you to increase this limit. You can inspect the number of maps
+your program is consuming by counting the lines in /proc/$PID/maps
+
+This is a rather odd thing to document here - but hopefully Google
+will serve you this page if you ever encounter this error. 
 
 Varnish gives me Guru meditation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First find the relevant log entries in varnishlog. That will probably
-give you a clue.
+give you a clue. Since varnishlog logs so much data it might be hard
+to track the entries down. You can set varnishlog to log all your 503
+errors by issuing the following command:::
+
+   $ varnishlog -c -o TxStatus 503
+
+If the error happened just a short time ago the transaction might still
+be in the shared memory log segment. To get varnishlog to process the
+whole shared memory log just add the -d option:::
+
+   $ varnishlog -d -c -o TxStatus 503
+
+Please see the varnishlog man page for elaborations on further
+filtering capabilities and explanation of the various options.
+
 
 Varnish doesn't cache
 ~~~~~~~~~~~~~~~~~~~~~
