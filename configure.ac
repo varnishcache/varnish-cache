@@ -353,8 +353,8 @@ int sd = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
 if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
     socklen_t l = sizeof tv;
-    if (getsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv_get, &l) == 0) {
-        return (l == sizeof tv);
+    if (getsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l) == 0) {
+        return 0;
     }
 }
 return 1;
@@ -378,8 +378,8 @@ int sd = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
 if (setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
     socklen_t l = sizeof tv;
-    if (getsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv_get, &l) == 0) {
-        return (l == sizeof tv);
+    if (getsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l) == 0) {
+        return 0;
     }
 }
 return 1;
