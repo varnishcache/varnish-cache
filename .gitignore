@@ -33,6 +33,7 @@ Makefile.in
 /missing
 /stamp-h1
 /varnishapi.pc
+TAGS
 
 # Default vcl made from bin/varnishd/default.vcl
 /bin/varnishd/default_vcl.h
