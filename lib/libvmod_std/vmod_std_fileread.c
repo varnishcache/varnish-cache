@@ -125,7 +125,7 @@ vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 	if ((fd = open(file_name, O_RDONLY)) == -1)
 		return "";
 
-	fstat(fd, &buf);
+	AZ(fstat(fd, &buf)i);
 
 	AZ(pthread_rwlock_wrlock(&filelist_lock));
 
