@@ -34,9 +34,5 @@ Function REAL random(REAL, REAL)
 Function VOID log(STRING_LIST)
 Function VOID syslog(INT, STRING_LIST)
 Function STRING fileread(PRIV_CALL, STRING)
-Function STRING author(ENUM {
-	phk,
-	des,
-	kristian,
-	mithrandir
-})
+Function STRING author(ENUM { phk, des, kristian, mithrandir })
+Function DURATION duration(STRING, DURATION)
