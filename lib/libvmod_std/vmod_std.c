@@ -59,9 +59,9 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 		if (p != NULL) {
 			for (; b < e && *p != '\0'; p++)
 				if (up)
-					*b++ = toupper(*p);
+					*b++ = (char)toupper(*p);
 				else
-					*b++ = tolower(*p);
+					*b++ = (char)tolower(*p);
 		}
 		p = va_arg(ap, const char *);
 	}
