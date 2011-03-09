@@ -154,13 +154,10 @@ VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
 		}
 		p = va_arg(ap, const char *);
 	}
-	if (b < e)
-		*b = '\0';
-	b++;
-	if (b > e)
+	if (b >= e)
 		return (NULL);
-	else
-		return (b);
+	*b++ = '\0';
+	return (b);
 }
 
 /*--------------------------------------------------------------------
