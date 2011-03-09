@@ -17,7 +17,7 @@ Requires: logrotate
 Requires: ncurses
 Requires: pcre
 Requires(pre): shadow-utils
-Requires(post): /sbin/chkconfig, /usr/bin/mkpasswd
+Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 Requires(preun): initscripts
@@ -218,7 +218,7 @@ exit 0
 /sbin/chkconfig --add varnish
 /sbin/chkconfig --add varnishlog
 /sbin/chkconfig --add varnishncsa 
-test -f /etc/varnish/secret || (mkpasswd > /etc/varnish/secret && chmod 0600 /etc/varnish/secret)
+test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc/varnish/secret)
 
 %preun
 if [ $1 -lt 1 ]; then

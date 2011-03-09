@@ -236,6 +236,29 @@ if test "$ac_cv_have_viz" = no; then
 fi 
 CFLAGS="${save_CFLAGS}" 
 
+# Use jemalloc on Linux
+JEMALLOC_SUBDIR=
+JEMALLOC_LDADD=
+AC_ARG_WITH([jemalloc],
+            [AS_HELP_STRING([--with-jemalloc],
+              [use jemalloc memory allocator.  Default is yes on Linux,  no elsewhere])],
+            [],
+            [with_jemalloc=check])
+
+case $target in
+    *-*-linux*)
+        if test "x$with_jemalloc" != xno; then
+            AC_CHECK_LIB([jemalloc], [malloc_conf],
+                  [JEMALLOC_LDADD="-ljemalloc"],
+                  [AC_MSG_NOTICE([No system jemalloc found, using bundled version])
+                   JEMALLOC_SUBDIR=libjemalloc
+                   JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'])
+	fi
+	;;
+esac
+AC_SUBST(JEMALLOC_SUBDIR)
+AC_SUBST(JEMALLOC_LDADD)
+
 # Userland slab allocator, available only on Solaris
 case $target in
 *-*-solaris*)
@@ -476,28 +499,6 @@ else
 fi
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
-
-# Use jemalloc on Linux
-JEMALLOC_SUBDIR=
-JEMALLOC_LDADD=
-AC_ARG_ENABLE(jemalloc,
-AS_HELP_STRING([--disable-jemalloc],[do not use jemalloc (default is yes on Linux, no everywhere else)]),
-[if test "x$enableval" = "xyes"; then
-	JEMALLOC_SUBDIR=libjemalloc
-	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
-fi],
-[case $target in #(
-*-*-linux*)
-	JEMALLOC_SUBDIR=libjemalloc
-	JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'
-	;; #(
-*)
-	true
-	;;
-esac])
-
-AC_SUBST(JEMALLOC_SUBDIR)
-AC_SUBST(JEMALLOC_LDADD)
 
 # Generate output
 AC_CONFIG_FILES([
