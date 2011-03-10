@@ -91,6 +91,8 @@ static struct vev	*ev_poker;
 static struct vev	*ev_listen;
 static struct vlu	*vlu;
 
+static struct vsb *child_panic = NULL;
+
 /*--------------------------------------------------------------------
  * Track the highest file descriptor the parent knows is being used.
  *
@@ -433,6 +435,31 @@ mgt_report_panic(pid_t r)
 	    (intmax_t)r, vsm_head->panicstr);
 }
 
+static void
+mgt_save_panic(void)
+{
+	char time_str[30];
+	if (vsm_head->panicstr[0] == '\0')
+		return;
+
+	if (child_panic)
+		vsb_delete(child_panic);
+	child_panic = vsb_newauto();
+	XXXAN(child_panic);
+	TIM_format(TIM_real(), time_str);
+	vsb_printf(child_panic, "Last panic at: %s\n", time_str);
+	vsb_cat(child_panic, vsm_head->panicstr);
+	vsb_finish(child_panic);
+	AZ(vsb_overflowed(child_panic));
+}
+
+static void
+mgt_clear_panic(void)
+{
+	vsb_delete(child_panic);
+	child_panic = NULL;
+}
+
 /*--------------------------------------------------------------------*/
 
 static int
@@ -478,6 +505,7 @@ mgt_sigchld(const struct vev *e, int what)
 	vsb_delete(vsb);
 
 	mgt_report_panic(r);
+	mgt_save_panic();
 
 	child_pid = -1;
 
@@ -613,4 +641,34 @@ mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	cli_out(cli, "Child in state %s", ch_state[child_state]);
+}
+
+void
+mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+	if (!child_panic) {
+	  cli_result(cli, CLIS_CANT);
+	  cli_out(cli, "Child has not panicked or panic has been cleared");
+	  return;
+	}
+
+	cli_out(cli, "%s\n", vsb_data(child_panic));
+}
+
+void
+mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+	if (!child_panic) {
+	  cli_result(cli, CLIS_CANT);
+	  cli_out(cli, "No panic to clear");
+	  return;
+	}
+
+	mgt_clear_panic();
 }

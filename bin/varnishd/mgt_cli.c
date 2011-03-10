@@ -127,6 +127,8 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_VCL_SHOW,		"", mcf_config_show, NULL },
 	{ CLI_PARAM_SHOW,	"", mcf_param_show, NULL },
 	{ CLI_PARAM_SET,	"", mcf_param_set, NULL },
+	{ CLI_PANIC_SHOW,	"", mcf_panic_show, NULL },
+	{ CLI_PANIC_CLEAR,	"", mcf_panic_clear, NULL },
 	{ NULL }
 };
 

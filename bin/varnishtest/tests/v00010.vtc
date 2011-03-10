@@ -45,3 +45,7 @@ client c1 {
 	rxresp
 	expect resp.http.foo == "foo"
 } -run
+
+varnish v1 -cliok "panic.show"
+varnish v1 -cliok "panic.clear"
+varnish v1 -clierr 300 "panic.clear"

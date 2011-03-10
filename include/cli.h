@@ -230,6 +230,18 @@
 	"\tAuthenticate.",						\
 	1, 1
 
+#define CLI_PANIC_SHOW							\
+	"panic.show",							\
+	"panic.show",							\
+	"\tReturn the last panic, if any.",				\
+	0, 0
+
+#define CLI_PANIC_CLEAR							\
+	"panic.clear",							\
+	"panic.clear",							\
+	"\tClear the last panic, if any.",				\
+	0, 0
+
 #define CLI_HIDDEN(foo, min_arg, max_arg)				\
 	foo, NULL, NULL, min_arg, max_arg,
 
