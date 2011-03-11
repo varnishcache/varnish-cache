@@ -375,11 +375,20 @@ fi
 AM_MISSING_HAS_RUN
 AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], [AC_MSG_ERROR([Python is needed to build Varnish, please install python.])])
 
-# Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
+# Older Solaris versions define SO_{RCV,SND}TIMEO, but do not
+# implement them.
+#
 # Varnish will build and run without these, but connections will not
 # time out, which may leave Varnish vulnerable to denail-of-service
 # attacks which would not be possible on other platforms.
+#
+# Newer Solaris releases with the Volo framework (Solaris 11,
+# Opensolaris starting with onnv_106) do support SO_{RCV,SND}TIMEO
+# (see PSARC 2007/587, initially committed into onnv-gate /
+# OpenSolaris 8348:4137e18bfaf0 Thu Dec 11 20:04:13 2008)
 
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
 AC_CACHE_CHECK([whether SO_RCVTIMEO works],
   [ac_cv_so_rcvtimeo_works],
   [AC_RUN_IFELSE(
@@ -404,7 +413,10 @@ return 1;
 if test "$ac_cv_so_rcvtimeo_works" = yes; then
    AC_DEFINE([SO_RCVTIMEO_WORKS], [1], [Define if SO_RCVTIMEO works])
 fi
+LIBS="${save_LIBS}"
 
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
 AC_CACHE_CHECK([whether SO_SNDTIMEO works],
   [ac_cv_so_sndtimeo_works],
   [AC_RUN_IFELSE(
@@ -434,6 +446,7 @@ if test "$ac_cv_so_rcvtimeo_works" = no ||
    test "$ac_cv_so_sndtimeo_works" = no; then
 	AC_MSG_WARN([connection timeouts will not work])
 fi
+LIBS="${save_LIBS}"
 
 # Run-time directory
 VARNISH_STATE_DIR='${localstatedir}/varnish'
