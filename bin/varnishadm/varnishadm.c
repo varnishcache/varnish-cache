@@ -50,6 +50,16 @@ SVNID("$Id$")
 #include "varnishapi.h"
 #include "vss.h"
 
+#ifdef HAVE_LIBEDIT
+#define RL_EXIT(status) \
+	do { \
+		rl_callback_handler_remove(); \
+		exit(status); \
+	} while (0);
+#else
+#define RL_EXIT(status) exit(status);
+#endif
+
 static double timeout = 5;
 
 static void
@@ -62,7 +72,7 @@ cli_write(int sock, const char *s)
 	if (i == l)
 		return;
 	perror("Write error CLI socket");
-	exit (1);
+	RL_EXIT(1);
 }
 
 /*
@@ -164,9 +174,13 @@ do_args(int sock, int argc, char * const *argv)
 static int _line_sock;
 void send_line(char *l)
 {
-	cli_write(_line_sock, l);
-	cli_write(_line_sock, "\n");
-	add_history(l);
+	if (l) {
+		cli_write(_line_sock, l);
+		cli_write(_line_sock, "\n");
+		add_history(l);
+	} else {
+		RL_EXIT(0);
+	}
 }
 #endif
 
@@ -202,10 +216,10 @@ pass(int sock)
 		if (fds[0].revents & POLLIN) {
 			n = read(fds[0].fd, buf, sizeof buf);
 			if (n == 0)
-				exit (0);
+				RL_EXIT(0);
 			if (n < 0) {
 				perror("Read error reading CLI socket");
-				exit (0);
+				RL_EXIT(1);
 			}
 			assert(n > 0);
 			/* Get rid of the prompt, kinda hackish */
@@ -213,7 +227,7 @@ pass(int sock)
 			m = write(1, buf, n);
 			if (n != m) {
 				perror("Write error writing stdout");
-				exit (1);
+				RL_EXIT(1);
 			}
 #ifdef HAVE_LIBEDIT
 			rl_forced_update_display();
@@ -228,7 +242,7 @@ pass(int sock)
 				AZ(shutdown(sock, SHUT_WR));
 				fds[1].fd = -1;
 			} else if (n < 0) {
-				exit(0);
+				RL_EXIT(0);
 			} else {
 				buf[n] = '\0';
 				cli_write(sock, buf);
