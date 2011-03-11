@@ -55,9 +55,9 @@ SVNID("$Id$")
 	do { \
 		rl_callback_handler_remove(); \
 		exit(status); \
-	} while (0);
+	} while (0)
 #else
-#define RL_EXIT(status) exit(status);
+#define RL_EXIT(status) exit(status)
 #endif
 
 static double timeout = 5;
