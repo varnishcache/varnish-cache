@@ -181,7 +181,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 			/* Mark as inconsistent while we write string fields */
 		seq = vsm_mark();
 
-		if (size < sha->len) {
+		if (size + sizeof (*sha) < sha->len) {
 			sha2 = (void*)((uintptr_t)sha + size);
 
 			memset(sha2, 0, sizeof *sha2);
