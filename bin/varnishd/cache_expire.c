@@ -119,7 +119,7 @@ EXP_Grace(const struct sess *sp, const struct object *o)
 	double r;
 
 	r = (double)params->default_grace;
-	if (o->exp.grace > 0.)
+	if (o->exp.grace >= 0.)
 		r = o->exp.grace;
 	if (sp != NULL && sp->exp.grace > 0. && sp->exp.grace < r)
 		r = sp->exp.grace;
