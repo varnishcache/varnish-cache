@@ -193,7 +193,9 @@ pass(int sock)
 {
 	struct pollfd fds[2];
 	char buf[1024];
-	int i, n, m;
+	int i, n;
+	char *answer = NULL;
+	unsigned u, status;
 
 #ifdef HAVE_LIBEDIT
 	_line_sock = sock;
@@ -214,20 +216,24 @@ pass(int sock)
 		i = poll(fds, 2, -1);
 		assert(i > 0);
 		if (fds[0].revents & POLLIN) {
-			n = read(fds[0].fd, buf, sizeof buf);
-			if (n == 0)
-				RL_EXIT(0);
-			if (n < 0) {
-				perror("Read error reading CLI socket");
+			/* Get rid of the prompt, kinda hackish */
+			u = write(1, "\r           \r", 13);
+			u = cli_readres(fds[0].fd, &status, &answer, timeout);
+			if (u) {
+				if (status == CLIS_COMMS)
+					RL_EXIT(0);
+				if (answer)
+					fprintf(stderr, "%s\n", answer);
 				RL_EXIT(1);
 			}
-			assert(n > 0);
-			/* Get rid of the prompt, kinda hackish */
-			write(1, "\r           \r", 13);
-			m = write(1, buf, n);
-			if (n != m) {
-				perror("Write error writing stdout");
-				RL_EXIT(1);
+
+			sprintf(buf, "%u\n", status);
+			u = write(1, buf, strlen(buf));
+			if (answer) {
+				u = write(1, answer, strlen(answer));
+				u = write(1, "\n", 1);
+				free(answer);
+				answer = NULL;
 			}
 #ifdef HAVE_LIBEDIT
 			rl_forced_update_display();
