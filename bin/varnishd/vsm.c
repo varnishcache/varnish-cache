@@ -165,8 +165,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 	vsm_cleanup();
 
 	/* Round up to pointersize */
-	size += sizeof(void *) - 1;
-	size &= ~(sizeof(void *) - 1);
+	size = RUP2(size, sizeof(void*));
 
 	size += sizeof *sha;		/* Make space for the header */
 

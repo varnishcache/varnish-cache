@@ -148,11 +148,6 @@ struct smp_sc {
 
 /*--------------------------------------------------------------------*/
 
-/* Generic power-2 rounding */
-#define PWR2(x)     ((((x)-1)&(x))==0)		/* Is a power of two */
-#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
-#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
-
 /* Pointer round up/down & assert */
 #define PRNDN(sc, x)	((void*)RDN2((uintptr_t)(x), sc->align))
 #define PRNUP(sc, x)	((void*)RUP2((uintptr_t)(x), sc->align))

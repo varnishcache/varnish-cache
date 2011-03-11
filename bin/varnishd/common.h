@@ -93,3 +93,11 @@ void vsm_iter_n(struct vsm_chunk **pp);
 
 /* cache_lck.c */
 struct lock { void *priv; };		// Opaque
+
+/*---------------------------------------------------------------------
+ * Generic power-2 rounding macros
+ */
+
+#define PWR2(x)     ((((x)-1)&(x))==0)		/* Is a power of two */
+#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
