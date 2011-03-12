@@ -27,6 +27,22 @@
  *
  * VSM stuff common to manager and child.
  *
+ * We have three potential conflicts we need to lock against here:
+ *
+ * VSM-studying programs (varnishstat...) vs. everybody else
+ *	The VSM studying programs only have read-only access to the VSM
+ *	so everybody else must use memory barriers, stable storage and
+ *	similar tricks to keep the VSM image in sync (long enough) for
+ * 	the studying programs.
+ *
+ * Manager process vs child process.
+ *	Will only muck about in VSM when child process is not running
+ *	Responsible for cleaning up any mess left behind by dying child.
+ *
+ * Child process threads
+ *	Pthread locking necessary.
+ *
+ * XXX: not all of this is in place yet.
  */
 
 #include "config.h"
@@ -89,7 +105,7 @@ vsm_cleanup(void)
 	if (sha == NULL)
 		return;
 	seq = vsm_mark();
-	/* First pass, free, and collaps with next if applicable */
+	/* First pass, free, and collapse with next if applicable */
 	VSM_ITER(sha) {
 		if (strcmp(sha->class, VSM_CLASS_COOL))
 			continue;
