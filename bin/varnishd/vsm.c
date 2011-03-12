@@ -72,31 +72,6 @@ vsm_release(unsigned seq)
 
 /*--------------------------------------------------------------------*/
 
-struct vsm_chunk *
-vsm_iter_0(void)
-{
-
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
-	return (&vsm_head->head);
-}
-
-void
-vsm_iter_n(struct vsm_chunk **pp)
-{
-
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-	*pp = VSM_NEXT(*pp);
-	if (*pp >= vsm_end) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 vsm_cleanup(void)
 {
@@ -178,7 +153,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 		if (size > sha->len)
 			continue;
 
-			/* Mark as inconsistent while we write string fields */
+		/* Mark as inconsistent while we write string fields */
 		seq = vsm_mark();
 
 		if (size + sizeof (*sha) < sha->len) {

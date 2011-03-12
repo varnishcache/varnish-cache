@@ -36,9 +36,9 @@ SVNID("$Id$")
 #include <unistd.h>
 #include <stdarg.h>
 
-#include "vsm.h"
 #include "cache.h"
 #include "vmb.h"
+#include "vsm.h"
 
 static pthread_mutex_t vsl_mtx;
 

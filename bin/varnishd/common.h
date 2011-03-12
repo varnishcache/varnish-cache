@@ -78,12 +78,6 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
 void VSM_Free(const void *ptr);
 void VSM_Clean(void);
 
-
-struct vsm_chunk *vsm_iter_0(void);
-void vsm_iter_n(struct vsm_chunk **pp);
-
-#define VSM_ITER(vd) for ((vd) = vsm_iter_0(); (vd) != NULL; vsm_iter_n(&vd))
-
 /* These classes are opaque to other programs, so we define the here */
 #define VSM_CLASS_FREE	"Free"
 #define VSM_CLASS_COOL	"Cool"

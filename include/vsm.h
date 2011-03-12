@@ -78,4 +78,37 @@ struct vsm_head {
 	struct vsm_chunk	head;
 };
 
+/*
+ * You must include "miniobj.h" and have an assert function to be
+ * able to use the VSM_ITER() macro.
+ */
+#ifdef CHECK_OBJ_NOTNULL
+
+static inline struct vsm_chunk *
+vsm_iter_0(void)
+{
+
+	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
+	return (&vsm_head->head);
+}
+ 
+static inline void
+vsm_iter_n(struct vsm_chunk **pp)
+{
+
+	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+	*pp = VSM_NEXT(*pp);
+	if (*pp >= vsm_end) {
+		*pp = NULL;
+		return;
+	}
+	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
+}
+
+#define VSM_ITER(vd) for ((vd) = vsm_iter_0(); (vd) != NULL; vsm_iter_n(&vd))
+
+#endif /* CHECK_OBJ_NOTNULL */
+
 #endif
