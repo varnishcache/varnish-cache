@@ -104,7 +104,7 @@ child_main(void)
 
 	VSL_Init();	/* First, LCK needs it. */
 
-	LCK_Init();	/* Locking, must be first */
+	LCK_Init();	/* Second, locking */
 
 	PAN_Init();
 	CLI_Init();

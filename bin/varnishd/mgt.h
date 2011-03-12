@@ -99,3 +99,8 @@ extern unsigned mgt_vcc_err_unref;
 		fprintf(stderr, fmt "\n", __VA_ARGS__);	\
 		syslog(pri, fmt, __VA_ARGS__);		\
 	} while (0)
+
+#define VSM_Alloc(a, b, c, d)	VSM__Alloc(a,b,c,d)
+#define VSM_Free(a)		VSM__Free(a)
+#define VSM_Clean()		VSM__Clean()
+

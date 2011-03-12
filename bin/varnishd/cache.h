@@ -803,6 +803,9 @@ void SES_Charge(struct sess *sp);
 
 /* cache_shmlog.c */
 void VSL_Init(void);
+void *VSM_Alloc(unsigned size, const char *class, const char *type,
+    const char *ident);
+void VSM_Free(const void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum vsl_tag tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum vsl_tag tag, int id, txt t);

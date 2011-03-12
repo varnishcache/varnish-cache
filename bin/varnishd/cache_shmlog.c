@@ -40,7 +40,9 @@ SVNID("$Id$")
 #include "vmb.h"
 #include "vsm.h"
 
+/* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
+static pthread_mutex_t vsm_mtx;
 
 static uint32_t			*vsl_start;
 static const uint32_t		*vsl_end;
@@ -275,8 +277,9 @@ VSL_Init(void)
 	struct vsm_chunk *vsc;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
+	AZ(pthread_mutex_init(&vsm_mtx, NULL));
 
-	VSM_Clean();
+	VSM__Clean();
 
 	VSM_ITER(vsc)
 		if (!strcmp(vsc->class, VSL_CLASS))
@@ -291,4 +294,27 @@ VSL_Init(void)
 	vsm_head->panicstr[0] = '\0';
 	memset(VSC_main, 0, sizeof *VSC_main);
 	vsm_head->child_pid = getpid();
+}
+
+/*--------------------------------------------------------------------*/
+
+void *
+VSM_Alloc(unsigned size, const char *class, const char *type,
+    const char *ident)
+{
+	void *p;
+
+	AZ(pthread_mutex_lock(&vsm_mtx));
+	p = VSM__Alloc(size, class, type, ident);
+	AZ(pthread_mutex_unlock(&vsm_mtx));
+	return (p);
+}
+
+void
+VSM_Free(const void *ptr)
+{
+
+	AZ(pthread_mutex_lock(&vsm_mtx));
+	VSM__Free(ptr);
+	AZ(pthread_mutex_unlock(&vsm_mtx));
 }

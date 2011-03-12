@@ -60,6 +60,7 @@ SVNID("$Id$")
 #include "vsm.h"
 #include "vmb.h"
 
+/* These two come from beyond (mgt_shmem.c actually) */
 struct vsm_head		*vsm_head;
 const struct vsm_chunk	*vsm_end;
 
@@ -146,7 +147,7 @@ vsm_cleanup(void)
 /*--------------------------------------------------------------------*/
 
 void *
-VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
+VSM__Alloc(unsigned size, const char *class, const char *type, const char *ident)
 {
 	struct vsm_chunk *sha, *sha2;
 	unsigned seq;
@@ -195,7 +196,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type, const char *ident)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_Free(const void *ptr)
+VSM__Free(const void *ptr)
 {
 	struct vsm_chunk *sha;
 	unsigned seq;
@@ -216,7 +217,7 @@ VSM_Free(const void *ptr)
  */
 
 void
-VSM_Clean(void)
+VSM__Clean(void)
 {
 	struct vsm_chunk *sha;
 	unsigned f, seq;
@@ -233,7 +234,7 @@ VSM_Clean(void)
 			continue;
 		if (strcmp(sha->class, VSM_CLASS_FREE) &&
 		    strcmp(sha->class, VSM_CLASS_COOL))
-			VSM_Free(VSM_PTR(sha));
+			VSM__Free(VSM_PTR(sha));
 	}
 	vsm_release(seq);
 }

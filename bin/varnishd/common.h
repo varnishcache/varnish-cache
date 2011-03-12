@@ -73,10 +73,14 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 extern struct vsm_head		*vsm_head;
 extern const struct vsm_chunk	*vsm_end;
 
-void *VSM_Alloc(unsigned size, const char *class, const char *type,
+/*
+ * These three should not be called directly, but only through
+ * proper vectors in mgt.h/cache.h, hence the __
+ */
+void *VSM__Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
-void VSM_Free(const void *ptr);
-void VSM_Clean(void);
+void VSM__Free(const void *ptr);
+void VSM__Clean(void);
 
 /* These classes are opaque to other programs, so we define the here */
 #define VSM_CLASS_FREE	"Free"
