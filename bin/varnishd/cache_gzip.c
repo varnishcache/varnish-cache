@@ -80,6 +80,7 @@ SVNID("$Id$")
 struct vgz {
 	unsigned		magic;
 #define VGZ_MAGIC		0x162df0cb
+	enum {VGZ_GZ,VGZ_UN}	dir;
 	struct sess		*sess;
 	const char		*id;
 	struct ws		*tmp;
@@ -162,6 +163,7 @@ VGZ_NewUngzip(struct sess *sp, const char *id)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vg = vgz_alloc_vgz(sp, id);
+	vg->dir = VGZ_UN;
 	VSC_main->n_gunzip++;
 
 	/*
@@ -182,6 +184,7 @@ VGZ_NewGzip(struct sess *sp, const char *id)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vg = vgz_alloc_vgz(sp, id);
+	vg->dir = VGZ_GZ;
 	VSC_main->n_gzip++;
 
 	/*
@@ -380,6 +383,10 @@ VGZ_Destroy(struct vgz **vgp)
 	    (intmax_t)vg->vz.stop_bit);
 	if (vg->tmp != NULL)
 		WS_Reset(vg->tmp, vg->tmp_snapshot);
+	if (vg->dir == VGZ_GZ)
+		AZ(deflateEnd(&vg->vz));
+	else
+		AZ(inflateEnd(&vg->vz));
 	FREE_OBJ(vg);
 }
 
