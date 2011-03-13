@@ -335,6 +335,7 @@ vfp_esi_begin(struct sess *sp, size_t estimate)
 	}
 
 	(void)estimate;
+	AN(sp->wrk->vep);
 }
 
 static int __match_proto__()
@@ -343,6 +344,7 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wrk->vep);
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
 		i = vfp_esi_bytes_gu(sp, htc, bytes);
 	else if (sp->wrk->is_gunzip && sp->wrk->do_gzip)
@@ -351,6 +353,7 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		i = vfp_esi_bytes_gg(sp, htc, bytes);
 	else
 		i = vfp_esi_bytes_uu(sp, htc, bytes);
+	AN(sp->wrk->vep);
 	return (i);
 }
 
@@ -362,6 +365,7 @@ vfp_esi_end(struct sess *sp)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wrk->vep);
 
 	vsb = VEP_Finish(sp);
 
