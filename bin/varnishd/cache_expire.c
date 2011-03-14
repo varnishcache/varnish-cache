@@ -73,11 +73,11 @@ EXP_Clr(struct exp *e)
 	e->keep = -1;
 }
 
-#define EXP_ACCESS(fld, extra)					\
+#define EXP_ACCESS(fld, low_val, extra)				\
 	double							\
 	EXP_Get_##fld(const struct exp *e)			\
 	{							\
-		return (e->fld > 0. ? e->fld : -1.);		\
+		return (e->fld > 0. ? e->fld : low_val);	\
 	}							\
 								\
 	void							\
@@ -91,9 +91,9 @@ EXP_Clr(struct exp *e)
 		}						\
 	}							\
 
-EXP_ACCESS(ttl, (e->grace = e->keep = -1.))
-EXP_ACCESS(grace,)
-EXP_ACCESS(keep,)
+EXP_ACCESS(ttl, -1., (e->grace = e->keep = -1.))
+EXP_ACCESS(grace, 0., )
+EXP_ACCESS(keep, 0.,)
 
 /*--------------------------------------------------------------------
  * Calculate when an object is out of ttl or grace, possibly constrained
