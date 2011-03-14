@@ -110,7 +110,7 @@ EXP_Keep(const struct sess *sp, const struct object *o)
 		r = o->exp.keep;
 	if (sp != NULL && sp->exp.keep > 0. && sp->exp.keep < r)
 		r = sp->exp.keep;
-	return (EXP_Grace(sp, o) + r);
+	return (EXP_Ttl(sp, o) + r);
 }
 
 double
@@ -145,7 +145,7 @@ static int
 update_object_when(const struct object *o)
 {
 	struct objcore *oc;
-	double when;
+	double when, w2;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
@@ -153,6 +153,9 @@ update_object_when(const struct object *o)
 	Lck_AssertHeld(&exp_mtx);
 
 	when = EXP_Keep(NULL, o);
+	w2 = EXP_Grace(NULL, o);
+	if (w2 > when)
+		when = w2;
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);
