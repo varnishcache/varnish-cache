@@ -176,3 +176,16 @@ vmod_author(struct sess *sp, const char *id)
 		return ("Tollef");
 	WRONG("Illegal VMOD enum");
 }
+
+void __match_proto__()
+vmod_collect(struct sess *sp, enum gethdr_e e, const char *h)
+{
+	(void)e;
+	(void)sp;
+	(void)h;
+	if (e == HDR_REQ)
+		http_CollectHdr(sp->http, h);
+	else if (e == HDR_BERESP)
+		http_CollectHdr(sp->wrk->beresp, h);
+}
+

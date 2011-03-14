@@ -1,0 +1,40 @@
+# $Id$
+
+test "test vmod_std.collect()"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	expect req.http.foo == "1, 2"
+	txresp -hdr "bar: a" -hdr "bar: b" -bodylen 1
+
+} -start
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+
+	sub vcl_recv {
+		std.collect(req.http.foo);
+	}
+	sub vcl_fetch {
+		std.collect(beresp.http.bar);
+	}
+} -start
+
+client c1 {
+	txreq  -url "/1" -hdr "Foo: 1" -hdr "Foo: 2"
+	rxresp 
+	expect resp.http.bar == "a, b"
+	expect resp.status == 200
+	expect resp.bodylen == 1
+} -run
+
+varnish v1 -badvcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+
+	backend b { .host = "127.0.0.1"; }
+
+	sub vcl_recv {
+		std.collect(beresp.http.bar);
+	}
+}
