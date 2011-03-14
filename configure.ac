@@ -466,12 +466,34 @@ AC_ARG_ENABLE(diagnostics,
 # --enable-extra-developer-warnings
 AC_ARG_ENABLE(extra-developer-warnings,
 	AS_HELP_STRING([--enable-extra-developer-warnings],[enable even stricter warnings (default is NO)]),
-	CFLAGS="${CFLAGS} ${EXTRA_DEVELOPER_CFLAGS}")
+	[],
+	[enable_extra_developer_warnings=no])
+
+if test "x$enable_stack_protector" != "xno"; then
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="${CFLAGS} ${EXTRA_DEVELOPER_CFLAGS}"
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([],[],[])],
+		[],
+		[AC_MSG_WARN([All of ${EXTRA_DEVELOPER_CFLAGS} not supported, disabling])
+		    CFLAGS="$save_CFLAGS"])
+fi
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
 	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
-	CFLAGS="${CFLAGS} -fstack-protector-all")
+	[],
+	[enable_stack_protector=no])
+
+if test "x$enable_stack_protector" != "xno"; then
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="${CFLAGS} -fstack-protector-all"
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([],[],[])],
+		[],
+		[AC_MSG_WARN([-fstack-protector not supported, disabling])
+		    CFLAGS="$save_CFLAGS"])
+fi
 
 # --enable-tests
 AC_ARG_ENABLE(tests,
