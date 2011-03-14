@@ -514,14 +514,17 @@ FetchBody(struct sess *sp)
 		cls = fetch_straight(sp, sp->wrk->htc,
 		    sp->wrk->h_content_length);
 		mklen = 1;
+		XXXAZ(sp->wrk->vfp->end(sp));
 		break;
 	case BS_CHUNKED:
 		cls = fetch_chunked(sp, sp->wrk->htc);
 		mklen = 1;
+		XXXAZ(sp->wrk->vfp->end(sp));
 		break;
 	case BS_EOF:
 		cls = fetch_eof(sp, sp->wrk->htc);
 		mklen = 1;
+		XXXAZ(sp->wrk->vfp->end(sp));
 		break;
 	case BS_ERROR:
 		cls = 1;
@@ -532,8 +535,8 @@ FetchBody(struct sess *sp)
 		mklen = 0;
 		INCOMPL();
 	}
-	XXXAZ(sp->wrk->vfp->end(sp));
 	AZ(sp->wrk->vgz_rx);
+	
 	/*
 	 * It is OK for ->end to just leave the last storage segment
 	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()

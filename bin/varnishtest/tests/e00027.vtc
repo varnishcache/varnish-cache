@@ -1,0 +1,27 @@
+# $Id$
+
+test "test HEAD against ESI processing"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 1
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq  -url "/1" 
+	rxresp 
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -req "HEAD" -url "/1" 
+	rxresp -no_obj
+	expect resp.status == 200
+} -run
