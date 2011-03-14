@@ -20,8 +20,21 @@ AM_INIT_AUTOMAKE([foreign])
 AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_CC_STDC
-if test "x$ac_cv_prog_cc_c99" = xno; then
-  AC_MSG_ERROR([Could not find a C99 compatible compiler])
+if test "x$ac_cv_prog_cc_c99" = "xno" || test "x$ac_cv_prog_cc_c99" = "x"; then
+# We might be on RHEL5 with a git checkout and so broken
+# autoconf. Check if CC is gcc and if it bails when given -std=gnu99.
+# If not, use that.  Yuck.
+  if test "x$ac_cv_c_compiler_gnu" = "yes"; then
+     CC="$CC -std=gnu99"
+     AC_RUN_IFELSE(
+	[AC_LANG_PROGRAM([],[[
+return 0;
+    ]])],
+    [],
+    [AC_MSG_ERROR([Could not find a C99 compatible compiler])])
+  else
+    AC_MSG_ERROR([Could not find a C99 compatible compiler])
+  fi
 fi
 AC_PROG_CPP
 
