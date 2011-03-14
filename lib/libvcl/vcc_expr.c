@@ -576,6 +576,32 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			SkipToken(tl, ID);
 			if (*p != '\0')
 				SkipToken(tl, ',');
+		} else if (fmt == HEADER) {
+			const struct var *v;
+			sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+			ERRCHK(tl);
+			SkipToken(tl, ID);
+			if (sym == NULL) {
+				vsb_printf(tl->sb, "Symbol not found.\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			if (sym->kind != SYM_VAR) {
+				vsb_printf(tl->sb, "Wrong kind of symbol.\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			AN(sym->var);
+			v = sym->var;
+			if (v->http == NULL) {
+				vsb_printf(tl->sb,
+				    "Variable not an HTTP header.\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			e1 = vcc_mk_expr(VOID, "%s, \"%s\"", v->http, v->hdr);
+			p += strlen(p) + 1;
 		} else {
 			vcc_expr0(tl, &e1, fmt);
 			ERRCHK(tl);

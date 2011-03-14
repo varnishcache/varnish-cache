@@ -58,7 +58,7 @@ ctypes = {
 	'REAL':		"double",
 	'DURATION':	"double",
 	'INT':		"int",
-	'HEADER':	"const char *",
+	'HEADER':	"enum gethdr_e, const char *",
 	'PRIV_VCL':	"struct vmod_priv *",
 	'PRIV_CALL':	"struct vmod_priv *",
 	'VOID':		"void",
@@ -281,8 +281,8 @@ fh.write("\n");
 fh.write(plist)
 
 
-fc.write('#include "vcc_if.h"\n')
 fc.write('#include "vrt.h"\n')
+fc.write('#include "vcc_if.h"\n')
 fc.write("\n");
 
 fc.write("\n");

@@ -33,6 +33,7 @@
 
 #include "../../bin/varnishd/cache.h"
 
+#include "vrt.h"
 #include "vcc_if.h"
 
 double __match_proto__()
