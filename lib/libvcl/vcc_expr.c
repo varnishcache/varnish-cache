@@ -579,7 +579,6 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 		} else if (fmt == HEADER) {
 			const struct var *v;
 			sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
-			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 			ERRCHK(tl);
 			SkipToken(tl, ID);
 			if (sym == NULL) {
@@ -587,6 +586,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
+			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 			if (sym->kind != SYM_VAR) {
 				vsb_printf(tl->sb, "Wrong kind of symbol.\n");
 				vcc_ErrWhere(tl, tl->t);
