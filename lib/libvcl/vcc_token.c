@@ -197,6 +197,10 @@ vcc_ErrWhere2(struct vcc *tl, const struct token *t, const struct token *t2)
 {
 	const char  *l1, *l2, *l3;
 
+	if (t == NULL) {
+		vcc_ErrWhere(tl, t2);
+		return;
+	}
 	vcc_iline(t, &l1, 0);
 	t2 = VTAILQ_PREV(t2, tokenhead, list);
 	vcc_iline(t2, &l2, 1);
