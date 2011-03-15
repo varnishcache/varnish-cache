@@ -199,6 +199,9 @@ pass(int sock)
 	int i;
 	char *answer = NULL;
 	unsigned u, status;
+#ifndef HAVE_LIBEDIT
+	int n;
+#endif
 
 #ifdef HAVE_LIBEDIT
 	_line_sock = sock;
