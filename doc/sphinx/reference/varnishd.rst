@@ -517,7 +517,7 @@ http_gzip_support
 
 	Enable gzip support. When enabled Varnish will compress uncompressed objects before they are stored in the cache. If a client does not support gzip encoding Varnish will uncompress compressed objects on demand. Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to::
 
-	Accept-Encoding: gzip
+        	Accept-Encoding: gzip
 
 	Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
 
