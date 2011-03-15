@@ -56,6 +56,9 @@ SVNID("$Id$")
 		rl_callback_handler_remove(); \
 		exit(status); \
 	} while (0)
+
+void send_line(char *l);
+
 #else
 #define RL_EXIT(status) exit(status)
 #endif
@@ -193,7 +196,7 @@ pass(int sock)
 {
 	struct pollfd fds[2];
 	char buf[1024];
-	int i, n;
+	int i;
 	char *answer = NULL;
 	unsigned u, status;
 
