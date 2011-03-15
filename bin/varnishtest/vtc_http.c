@@ -561,11 +561,14 @@ cmd_http_gunzip_body(CMD_ARGS)
 	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
 	bprintf(hp->bodylen, "%u", hp->bodyl);
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	    (uintmax_t)vz.start_bit,
+	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
 	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	    (uintmax_t)vz.last_bit,
+	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
+	    (uintmax_t)vz.stop_bit,
+	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	if (i != Z_STREAM_END)
 		vtc_log(hp->vl, 0, "Gunzip error = %d (%s) in:%jd out:%jd",
 		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
