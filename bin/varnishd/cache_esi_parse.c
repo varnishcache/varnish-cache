@@ -1043,8 +1043,8 @@ VEP_Finish(const struct sess *sp)
 	if (vep->o_wait > 0) {
 		lcb = vep->cb(vep->sp, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
-		(void)vep->cb(vep->sp, 0, VGZ_FINISH);
 	}
+	(void)vep->cb(vep->sp, 0, VGZ_FINISH);
 
 	sp->wrk->vep = NULL;
 
