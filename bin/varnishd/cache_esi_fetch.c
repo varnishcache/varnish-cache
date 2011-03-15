@@ -226,6 +226,7 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		bytes -= w;
 		vef->bufp = ibuf;
 		VEP_parse(sp, ibuf, w);
+		assert(vef->bufp >= ibuf && vef->bufp <= ibuf + w);
 		if (vef->error) {
 			errno = vef->error;
 			return (-1);

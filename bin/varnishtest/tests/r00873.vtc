@@ -1,0 +1,29 @@
+# $Id$
+
+test "Ticket #873"
+
+server s1 {
+	rxreq 
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunked {<!-- jfsljfslkjfslkfjsljflskjflskjdj -->}
+	chunked {<![CDATA[fooooooooooooooooooobar]]>}
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+		set beresp.do_gzip = true;
+	}
+} -start 
+
+client c1 {
+	txreq  -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 75
+} -run
+
+varnish v1 -expect esi_errors == 0

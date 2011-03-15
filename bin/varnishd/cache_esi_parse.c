@@ -698,6 +698,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 					vep->until_p = vep->until = "-->";
 					vep->until_s = VEP_NEXTTAG;
 					vep->state = VEP_UNTIL;
+					vep_mark_verbatim(vep, p);
 					break;
 				}
 				p++;
@@ -943,9 +944,9 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 					vep->state = vep->until_s;
 					break;
 				}
+			}
 			if (p == e && !vep->remove)
 				vep_mark_verbatim(vep, p);
-			}
 		} else {
 			Debug("*** Unknown state %s\n", vep->state);
 			INCOMPL();
