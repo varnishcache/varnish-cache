@@ -611,8 +611,8 @@ static const struct parspec input_parspec[] = {
 		"60", "seconds" },
 	{ "send_timeout", tweak_timeout, &master.send_timeout, 0, 0,
 		"Send timeout for client connections. "
-		"If no data has been sent to the client in this many seconds, "
-		"the session is closed.\n"
+		"If the HTTP response hasn't been transmitted in this many\n"
+                "seconds the session is closed. \n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"60", "seconds" },
