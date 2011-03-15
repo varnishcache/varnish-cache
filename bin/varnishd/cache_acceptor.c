@@ -203,7 +203,12 @@ vca_acct(void *arg)
 	socklen_t l;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
-	double send_timeout = 0, sess_timeout = 0;
+#ifdef SO_RCVTIMEO_WORKS
+	double sess_timeout = 0;
+#endif
+#ifdef SO_SNDTIMEO_WORKS
+	double send_timeout = 0;
+#endif
 	int i;
 	struct pollfd *pfd;
 	struct listen_sock *ls;
