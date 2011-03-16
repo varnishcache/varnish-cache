@@ -355,7 +355,9 @@ main(int argc, char * const *argv)
 		if (sock < 0)
 			exit(2);
 	} else if (T_arg == NULL) {
-		usage();
+		sock = n_arg_sock("");
+		if (sock < 0)
+			exit(2);
 	} else {
 		assert(T_arg != NULL);
 		sock = cli_sock(T_arg, S_arg);
