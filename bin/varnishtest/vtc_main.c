@@ -92,6 +92,32 @@ static int vtc_fail;
 static int leave_temp;
 
 /**********************************************************************
+ * Parse a -D option argument into a name/val pair, and insert
+ * into extmacro list
+ */
+
+int
+parse_D_opt(char *arg)
+{
+	int i;
+	char *p, *q;
+	struct extmacro *m;
+
+	p = arg;
+	q = strchr(p, '=');
+	if (!q)
+		return (0);
+	*q++ = '\0';
+	m = calloc(sizeof *m, 1);
+	AN(m);
+	REPLACE(m->name, p);
+	REPLACE(m->val, q);
+	VTAILQ_INSERT_TAIL(&extmacro_list, m, list);
+
+	return (1);
+}
+
+/**********************************************************************
  * Read a file into memory
  */
 
@@ -130,6 +156,7 @@ usage(void)
 {
 	fprintf(stderr, "usage: varnishtest [options] file ...\n");
 #define FMT "    %-28s # %s\n"
+	fprintf(stderr, FMT, "-D name=val", "Define macro for use in scripts");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
 	fprintf(stderr, FMT, "-k", "Continue on test failure");
 	fprintf(stderr, FMT, "-l", "Leave /tmp/vtc.* if test fails");
@@ -310,8 +337,15 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "j:klLn:qt:v")) != -1) {
+	while ((ch = getopt(argc, argv, "D:j:klLn:qt:v")) != -1) {
 		switch (ch) {
+		case 'D':
+			if (!parse_D_opt(optarg)) {
+				fprintf(stderr, "Cannot parse D opt '%s'\n", 
+					optarg);
+				exit (2);
+			}
+			break;
 		case 'j':
 			npar = strtoul(optarg, NULL, 0);
 			break;

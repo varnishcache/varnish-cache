@@ -76,6 +76,8 @@ struct macro {
 
 static VTAILQ_HEAD(,macro) macro_list = VTAILQ_HEAD_INITIALIZER(macro_list);
 
+struct _extmacro_list extmacro_list = VTAILQ_HEAD_INITIALIZER(extmacro_list);
+
 static pthread_mutex_t		macro_mtx;
 
 static void
@@ -479,6 +481,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	char *cwd, *p;
 	char topbuild[BUFSIZ];
 	FILE *f;
+	struct extmacro *m;
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
@@ -500,6 +503,10 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
 	macro_def(vltop, NULL, "tmpdir", tmpdir);
+
+	/* Apply extmacro definitions */
+	VTAILQ_FOREACH(m, &extmacro_list, list)
+		macro_def(vltop, NULL, m->name, m->val);
 
 	/* Drop file to tell what was going on here */
 	f = fopen("INFO", "w");

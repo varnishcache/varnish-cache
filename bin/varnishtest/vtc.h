@@ -34,6 +34,7 @@
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
+#include "vqueue.h"
 
 struct vsb;
 struct vtclog;
@@ -48,6 +49,15 @@ struct cmds {
 	const char	*name;
 	cmd_f		*cmd;
 };
+
+struct extmacro {
+	VTAILQ_ENTRY(extmacro)	list;
+	char			*name;
+	char			*val;
+};
+
+VTAILQ_HEAD(_extmacro_list, extmacro);
+extern struct _extmacro_list extmacro_list;
 
 void parse_string(char *buf, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
