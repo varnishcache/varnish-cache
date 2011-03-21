@@ -490,6 +490,10 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	init_macro();
 	init_sema();
 
+	/* Apply extmacro definitions */
+	VTAILQ_FOREACH(m, &extmacro_list, list)
+		macro_def(vltop, NULL, m->name, m->val);
+
 	/* We are still in bin/varnishtest at this point */
 	cwd = getcwd(NULL, PATH_MAX);
 	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
@@ -503,10 +507,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
 	macro_def(vltop, NULL, "tmpdir", tmpdir);
-
-	/* Apply extmacro definitions */
-	VTAILQ_FOREACH(m, &extmacro_list, list)
-		macro_def(vltop, NULL, m->name, m->val);
 
 	/* Drop file to tell what was going on here */
 	f = fopen("INFO", "w");
