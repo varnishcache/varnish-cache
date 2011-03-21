@@ -233,7 +233,7 @@ tst_cb(const struct vev *ve, int what)
 			    jp->tst->filename, t);
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
-				exit (2);
+				exit(2);
 			}
 		} else if (vtc_verbosity) {
 			printf("#     top  TEST %s passed (%.3f)\n",
@@ -343,7 +343,7 @@ main(int argc, char * const *argv)
 			if (!parse_D_opt(optarg)) {
 				fprintf(stderr, "Cannot parse D opt '%s'\n", 
 					optarg);
-				exit (2);
+				exit(2);
 			}
 			break;
 		case 'j':
@@ -386,7 +386,7 @@ main(int argc, char * const *argv)
 			    *argv, strerror(errno));
 			if (vtc_continue)
 				continue;
-			exit (2);
+			exit(2);
 		}
 		ALLOC_OBJ(tp, TST_MAGIC);
 		AN(tp);
