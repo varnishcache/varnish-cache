@@ -96,10 +96,9 @@ static int leave_temp;
  * into extmacro list
  */
 
-int
+static int
 parse_D_opt(char *arg)
 {
-	int i;
 	char *p, *q;
 	struct extmacro *m;
 
