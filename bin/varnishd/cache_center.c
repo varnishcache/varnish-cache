@@ -430,12 +430,12 @@ cnt_error(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * Fetch an object from the backend, either for pass or for caching.
+ * Fetch response headers from the backend
  *
 DOT subgraph xcluster_fetch {
 DOT	fetch [
 DOT		shape=ellipse
-DOT		label="fetch from backend\n(find obj.ttl)"
+DOT		label="fetch hdr\nfrom backend\n(find obj.ttl)"
 DOT	]
 DOT	vcl_fetch [
 DOT		shape=record
@@ -446,11 +446,10 @@ DOT	fetch_pass [
 DOT		shape=ellipse
 DOT		label="obj.pass=true"
 DOT	]
-DOT	vcl_fetch -> fetch_pass [label="pass",style=bold,color=red]
+DOT	vcl_fetch -> fetch_pass [label="hit_for_pass",style=bold,color=red]
 DOT }
-DOT fetch_pass -> deliver [style=bold,color=red]
-DOT vcl_fetch -> deliver [label="deliver",style=bold,color=blue,weight=2]
-DOT vcl_fetch -> recv [label="restart"]
+DOT fetch_pass -> fetchbody [style=bold,color=red]
+DOT vcl_fetch -> fetchbody [label="deliver",style=bold,color=blue,weight=2]
 DOT vcl_fetch -> rstfetch [label="restart",color=purple]
 DOT rstfetch [label="RESTART",shape=plaintext]
 DOT fetch -> errfetch
@@ -462,11 +461,6 @@ static int
 cnt_fetch(struct sess *sp)
 {
 	int i;
-	struct http *hp, *hp2;
-	char *b;
-	unsigned l, nhttp;
-	int varyl = 0, pass;
-	struct vsb *vary = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
@@ -489,21 +483,6 @@ cnt_fetch(struct sess *sp)
 		i = FetchHdr(sp);
 	}
 
-	/*
-	 * These two headers can be spread over multiple actual headers
-	 * and we rely on their content outside of VCL, so collect them
-	 * into one line here.
-	 */
-	http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
-	http_CollectHdr(sp->wrk->beresp, H_Vary);
-
-	/*
-	 * Figure out how the fetch is supposed to happen, before the
-	 * headers are adultered by VCL
-	 * Also sets other sp->wrk variables 
-	 */ 
-	sp->wrk->body_status = RFC2616_Body(sp);
-
 	if (i) {
 		if (sp->objcore != NULL) {
 			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -519,6 +498,22 @@ cnt_fetch(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	}
+
+	/*
+	 * These two headers can be spread over multiple actual headers
+	 * and we rely on their content outside of VCL, so collect them
+	 * into one line here.
+	 */
+	http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
+	http_CollectHdr(sp->wrk->beresp, H_Vary);
+
+	/*
+	 * Figure out how the fetch is supposed to happen, before the
+	 * headers are adultered by VCL
+	 * Also sets other sp->wrk variables 
+	 */ 
+	sp->wrk->body_status = RFC2616_Body(sp);
+
 
 	sp->err_code = http_GetStatus(sp->wrk->beresp);
 
@@ -541,6 +536,75 @@ cnt_fetch(struct sess *sp)
 
 	VCL_fetch_method(sp);
 
+	switch (sp->handling) {
+	case VCL_RET_HIT_FOR_PASS:
+		if (sp->objcore != NULL)
+			sp->objcore->flags |= OC_F_PASS;
+		sp->step = STP_FETCHBODY;
+		return (0);
+	case VCL_RET_DELIVER:
+		sp->step = STP_FETCHBODY;
+		return (0);
+	default:
+		break;
+	}
+
+	/*
+	 * We are not going to fetch the body
+	 * Close the connection and clean up...
+	 */
+
+	VDI_CloseFd(sp);
+	if (sp->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
+		sp->objcore = NULL;
+	}
+	http_Setup(sp->wrk->bereq, NULL);
+	http_Setup(sp->wrk->beresp, NULL);
+	sp->wrk->h_content_length = NULL;
+	sp->director = NULL;
+	sp->wrk->storage_hint = NULL;
+
+	switch (sp->handling) {
+	case VCL_RET_RESTART:
+		sp->restarts++;
+		sp->step = STP_RECV;
+		return (0);
+	case VCL_RET_ERROR:
+		sp->step = STP_ERROR;
+		return (0);
+	default:
+		WRONG("Illegal action in vcl_fetch{}");
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Fetch response body from the backend
+ *
+DOT subgraph xcluster_body {
+DOT	fetchbody [
+DOT		shape=ellipse
+DOT		label="fetch body\nfrom backend\n"
+DOT	]
+DOT }
+DOT fetchbody -> deliver [style=bold,color=red]
+ */
+
+
+static int
+cnt_fetchbody(struct sess *sp)
+{
+	int i;
+	struct http *hp, *hp2;
+	char *b;
+	unsigned l, nhttp;
+	struct vsb *vary = NULL;
+	int varyl = 0, pass;
+
+	assert(sp->handling == VCL_RET_HIT_FOR_PASS ||
+	    sp->handling == VCL_RET_DELIVER);
+
 	if (sp->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		pass = 1;
@@ -550,7 +614,6 @@ cnt_fetch(struct sess *sp)
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
 		pass = 1;
-		sp->objcore->flags |= OC_F_PASS;
 	} else {
 		/* regular object */
 		pass = 0;
@@ -696,24 +759,6 @@ cnt_fetch(struct sess *sp)
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
-	}
-
-	switch (sp->handling) {
-	case VCL_RET_RESTART:
-		HSH_Drop(sp);
-		sp->director = NULL;
-		sp->restarts++;
-		sp->step = STP_RECV;
-		return (0);
-	case VCL_RET_HIT_FOR_PASS:
-	case VCL_RET_DELIVER:
-		break;
-	case VCL_RET_ERROR:
-		HSH_Drop(sp);
-		sp->step = STP_ERROR;
-		return (0);
-	default:
-		WRONG("Illegal action in vcl_fetch{}");
 	}
 
 	if (sp->obj->objcore != NULL) {
@@ -1334,7 +1379,6 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 		WS_Assert(w->ws);
-		AZ(sp->wrk->storage_hint);
 
 		switch (sp->step) {
 #define STEP(l,u) \

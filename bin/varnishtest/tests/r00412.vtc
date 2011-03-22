@@ -6,6 +6,7 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -status 303 -hdr "Location: /foo" 
+	accept
 	rxreq
 	expect req.url == "/foo"
 	txresp -body "12345"

@@ -11,6 +11,7 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -status 200 -hdr "foo: 2"
+	accept
 	rxreq
 	expect req.url == "/"
 	txresp -status 200 -hdr "foo: 3"

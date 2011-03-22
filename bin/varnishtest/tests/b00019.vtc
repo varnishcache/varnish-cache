@@ -5,14 +5,19 @@ test "Check that max_restarts works and that we don't fall over"
 server s1 {
 	rxreq
 	txresp -body "012345\n"
+	accept
 	rxreq
 	txresp -body "012345\n"
+	accept
 	rxreq
 	txresp -body "012345\n"
+	accept
 	rxreq
 	txresp -body "012345\n"
+	accept
 	rxreq
 	txresp -body "012345\n"
+	accept
 	rxreq
 	txresp -body "012345\n"
 } -start
