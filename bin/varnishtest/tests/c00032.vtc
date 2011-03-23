@@ -8,6 +8,7 @@ server s1 {
 	expect req.url == "/foo"
 	expect req.http.foobar == "harck-coff"
 	txresp -status 400
+	accept
 	rxreq
 	expect req.url == "/bar"
 	expect req.http.foobar == "snark"

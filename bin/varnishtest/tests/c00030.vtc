@@ -18,11 +18,17 @@ server s1 {
 	rxreq
 	txresp -hdr "X-Saint: yes"
 
-	rxreq
-	txresp -hdr "X-Saint: yes"
+	accept
 
 	rxreq
 	txresp -hdr "X-Saint: yes"
+
+	accept
+
+	rxreq
+	txresp -hdr "X-Saint: yes"
+
+	accept
 
 	rxreq
 	txresp -hdr "X-Saint: yes"
