@@ -32,7 +32,7 @@ statistics
      Statistic counters are available from the CLI.
 
 bans 
-     Bans are filters that are applied to hinder Varnish from serving
+     Bans are filters that are applied to keep Varnish from serving
      stale content. When you issue a ban Varnish will not serve any
      *banned* object from cache, but rather re-fetch it from it's back
      end servers.
@@ -44,11 +44,37 @@ process management
 
 If you invoke varnishd(1) with -T, -M or -d the CLI will be
 available. In debug mode (-d) the CLI will be in the foreground, with
--T you can connect to it with varnishadm and with -M varnishd will
-connect back to a listening service *pushing* the CLI to that
-service. Please see varnishd(1) for details.
+-T you can connect to it with varnishadm or telnet and with -M
+varnishd will connect back to a listening service *pushing* the CLI to
+that service. Please see varnishd(1) for details.
 
-Sessions can be authenticated
+
+Syntax
+------
+
+Commands are usually terminated with a newline. Long command can be
+entered using sh style *here documents*. The format of here-documents
+is:::
+
+   << word
+	here document
+   word
+
+*word* can be any continuous string choosen to make sure it doesn't
+appear naturally in the following *here document*.
+
+When using the here document style of input there are no restrictions
+on lenght. When using newline-terminated commands maximum lenght is
+limited by the varnishd parameter *cli_buffer*.
+
+When commands are newline terminated they get *tokenized* before
+parsing so if you have significant spaces enclose your strings in
+double quotes. Within the quotes you can escape characters with
+\\. The \n, \r and \t get translated to newlines, carrage returns and
+tabs. Double quotes themselves can be escaped with a backslash.
+
+To enter characters in octals use the \\nnn syntax. Hexadecimals can
+be entered with the \\xnn syntax.
 
 Commands
 --------
@@ -59,15 +85,17 @@ help [command]
       If the command is specified, display help for this command.
 
 param.set param value
-      Set the parameter specified by param to the specified value.  See Run-Time Parameters for a list of parame‐
-      ters.
+      Set the parameter specified by param to the specified value.
+      See Run-Time Parameters for a list of parame‐ ters.
 
 param.show [-l] [param]
       Display a list if run-time parameters and their values.
 
-      If the -l option is specified, the list includes a brief explanation of each parameter.
+      If the -l option is specified, the list includes a brief
+      explanation of each parameter.
 
-      If a param is specified, display only the value and explanation for this parameter.
+      If a param is specified, display only the value and explanation
+      for this parameter.
 
 ping  [timestamp]
       Ping the Varnish cache process, keeping the connection alive.
@@ -158,27 +186,6 @@ The argument could be a quoted string, a regexp, or an integer.
 Integers can have "KB", "MB", "GB" or "TB" appended for size related
 fields.
 
-Escapes
-
-
-
-The commands are tokenized. So if you need spaces they need to be
-wrapped in "". \" can be used to escape ".
-
-\n, \r, \t works as thought.
-
-\123 are used for bytes given in octals.
-
-\x12 are used for hexadecial bytes.
-
-
-Here documents
---------------
-When giving long commands 
-
-"<< MAGIC" can be used.
-
-The here documents only work for authenticated sessions.
 
 Scripting
 ---------
