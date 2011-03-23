@@ -15,12 +15,13 @@ Control a running varnish instance
 SYNOPSIS
 ========
 
-       varnishadm [-t timeout] [-S secret_file] -T address:port [command [...]]
+       varnishadm [-t timeout] [-S secret_file] [-T address:port] [-n name] [command [...]]
 
 DESCRIPTION
 ===========
 
-The varnishadm utility establishes a CLI connection using the -T and -S arguments.
+The varnishadm utility establishes a CLI connection to varnishd either
+using -n *name* or using the -T and -S arguments. If -n *name* is the location of the secret file and the address:port is looked up in shared memory. If neither is given varnishadm will look for an instance without a given name. 
 
 If a command is given, the command and arguments are sent over the CLI
 connection and the result returned on stdout.
@@ -42,6 +43,8 @@ OPTIONS
 -T address:port   
         Connect to the management interface at the specified address and port.
 
+-n name
+	Connect to the instance of varnishd with this name.
 
 Available commands and parameters are documented in the varnishd(1)
 manual page.  Additionally, a summary of commands can be obtained by
