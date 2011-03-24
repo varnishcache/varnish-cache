@@ -241,6 +241,7 @@ cnt_deliver(struct sess *sp)
 	RES_WriteObj(sp);
 
 	assert(WRW_IsReleased(sp->wrk));
+	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	http_Setup(sp->wrk->resp, NULL);
 	sp->step = STP_DONE;
@@ -1153,6 +1154,7 @@ cnt_recv(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 	AZ(sp->obj);
+	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
 
 	/* By default we use the first backend */
 	AZ(sp->director);

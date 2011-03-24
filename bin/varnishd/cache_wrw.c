@@ -115,9 +115,9 @@ WRW_Flush(struct worker *w)
 	if (wrw->ciov < wrw->siov)
 		assert(wrw->niov < wrw->siov);
 
-	if (*wrw->wfd >= 0 && wrw->niov > 0 && wrw->werr == 0) {
-		if (wrw->ciov < wrw->siov && wrw->liov > 0) {
-			bprintf(cbuf, "%jx\r\n", (intmax_t)wrw->cliov);
+	if (*wrw->wfd >= 0 && wrw->liov > 0 && wrw->werr == 0) {
+		if (wrw->ciov < wrw->siov && wrw->cliov > 0) {
+			bprintf(cbuf, "00%jx\r\n", (intmax_t)wrw->cliov);
 			i = strlen(cbuf);
 			wrw->iov[wrw->ciov].iov_base = cbuf;
 			wrw->iov[wrw->ciov].iov_len = i;
@@ -126,6 +126,9 @@ WRW_Flush(struct worker *w)
 			wrw->iov[wrw->niov].iov_base = cbuf + i - 2;
 			wrw->iov[wrw->niov++].iov_len = 2;
 			wrw->liov += 2;
+		} else if (wrw->ciov < wrw->siov) {
+			wrw->iov[wrw->ciov].iov_base = cbuf;
+			wrw->iov[wrw->ciov].iov_len = 0;
 		}
 		i = writev(*wrw->wfd, wrw->iov, wrw->niov);
 		if (i != wrw->liov) {
@@ -211,8 +214,24 @@ WRW_Chunked(struct worker *w)
 	if (wrw->niov + 3 >= wrw->siov)
 		(void)WRW_Flush(w);
 	wrw->ciov = wrw->niov++;
-	wrw->cliov = wrw->liov;
+	wrw->cliov = 0;
 	assert(wrw->ciov < wrw->siov);
+}
+
+void
+WRW_EndChunk(struct worker *w)
+{
+	struct wrw *wrw;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	wrw = &w->wrw;
+
+	assert(wrw->ciov < wrw->siov);
+	(void)WRW_Flush(w);
+	wrw->ciov = wrw->siov;
+	(void)WRW_Flush(w);
+	wrw->cliov = 0;
+	WRW_Write(w, "0\r\n\r\n", -1);
 }
 
 
