@@ -240,7 +240,7 @@ cnt_deliver(struct sess *sp)
 
 	RES_WriteObj(sp);
 
-	AZ(sp->wrk->wfd);
+	assert(WRW_IsReleased(sp->wrk));
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
 	http_Setup(sp->wrk->resp, NULL);
 	sp->step = STP_DONE;
@@ -749,7 +749,7 @@ cnt_fetchbody(struct sess *sp)
 	http_Setup(sp->wrk->bereq, NULL);
 	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
-	AZ(sp->wrk->wfd);
+	assert(WRW_IsReleased(sp->wrk));
 	AZ(sp->vbc);
 	AN(sp->director);
 
@@ -1121,7 +1121,7 @@ cnt_pipe(struct sess *sp)
 	assert(sp->handling == VCL_RET_PIPE);
 
 	PipeSession(sp);
-	AZ(sp->wrk->wfd);
+	assert(WRW_IsReleased(sp->wrk));
 	http_Setup(sp->wrk->bereq, NULL);
 	sp->step = STP_DONE;
 	return (0);
@@ -1396,7 +1396,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	WSL_Flush(w, 0);
-	AZ(w->wfd);
+	assert(WRW_IsReleased(w));
 }
 
 /*

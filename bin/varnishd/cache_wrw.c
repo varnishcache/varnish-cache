@@ -72,45 +72,51 @@ SVNID("$Id$")
 void
 WRW_Reserve(struct worker *w, int *fd)
 {
+	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AZ(w->wfd);
-	w->werr = 0;
-	w->liov = 0;
-	w->niov = 0;
-	w->wfd = fd;
+	wrw = &w->wrw;
+	AZ(wrw->wfd);
+	wrw->werr = 0;
+	wrw->liov = 0;
+	wrw->niov = 0;
+	wrw->wfd = fd;
 }
 
 static void
 WRW_Release(struct worker *w)
 {
+	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	w->werr = 0;
-	w->liov = 0;
-	w->niov = 0;
-	w->wfd = NULL;
+	wrw = &w->wrw;
+	wrw->werr = 0;
+	wrw->liov = 0;
+	wrw->niov = 0;
+	wrw->wfd = NULL;
 }
 
 unsigned
 WRW_Flush(struct worker *w)
 {
 	ssize_t i;
+	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->wfd);
-	if (*w->wfd >= 0 && w->niov > 0 && w->werr == 0) {
-		i = writev(*w->wfd, w->iov, w->niov);
-		if (i != w->liov) {
-			w->werr++;
-			WSL(w, SLT_Debug, *w->wfd,
+	wrw = &w->wrw;
+	AN(wrw->wfd);
+	if (*wrw->wfd >= 0 && wrw->niov > 0 && wrw->werr == 0) {
+		i = writev(*wrw->wfd, wrw->iov, wrw->niov);
+		if (i != wrw->liov) {
+			wrw->werr++;
+			WSL(w, SLT_Debug, *wrw->wfd,
 			    "Write error, retval = %d, len = %d, errno = %s",
-			    i, w->liov, strerror(errno));
+			    i, wrw->liov, strerror(errno));
 		}
 	}
-	w->liov = 0;
-	w->niov = 0;
-	return (w->werr);
+	wrw->liov = 0;
+	wrw->niov = 0;
+	return (wrw->werr);
 }
 
 unsigned
@@ -119,7 +125,7 @@ WRW_FlushRelease(struct worker *w)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->wfd);
+	AN(w->wrw.wfd);
 	u = WRW_Flush(w);
 	WRW_Release(w);
 	return (u);
@@ -131,7 +137,7 @@ WRW_WriteH(struct worker *w, const txt *hh, const char *suf)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->wfd);
+	AN(w->wrw.wfd);
 	AN(w);
 	AN(hh);
 	AN(hh->b);
@@ -145,19 +151,21 @@ WRW_WriteH(struct worker *w, const txt *hh, const char *suf)
 unsigned
 WRW_Write(struct worker *w, const void *ptr, int len)
 {
+	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->wfd);
-	if (len == 0 || *w->wfd < 0)
+	wrw = &w->wrw;
+	AN(wrw->wfd);
+	if (len == 0 || *wrw->wfd < 0)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (w->niov == w->siov)
+	if (wrw->niov == wrw->siov)
 		(void)WRW_Flush(w);
-	w->iov[w->niov].iov_base = TRUST_ME(ptr);
-	w->iov[w->niov].iov_len = len;
-	w->liov += len;
-	w->niov++;
+	wrw->iov[wrw->niov].iov_base = TRUST_ME(ptr);
+	wrw->iov[wrw->niov].iov_len = len;
+	wrw->liov += len;
+	wrw->niov++;
 	return (len);
 }
 
@@ -165,9 +173,11 @@ WRW_Write(struct worker *w, const void *ptr, int len)
 void
 WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 {
+	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->wfd);
+	wrw = &w->wrw;
+	AN(wrw->wfd);
 	assert(fd >= 0);
 	assert(len > 0);
 
@@ -175,31 +185,31 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	do {
 		struct sf_hdtr sfh;
 		memset(&sfh, 0, sizeof sfh);
-		if (w->niov > 0) {
-			sfh.headers = w->iov;
-			sfh.hdr_cnt = w->niov;
+		if (wrw->niov > 0) {
+			sfh.headers = wrw->iov;
+			sfh.hdr_cnt = wrw->niov;
 		}
-		if (sendfile(fd, *w->wfd, off, len, &sfh, NULL, 0) != 0)
-			w->werr++;
-		w->liov = 0;
-		w->niov = 0;
+		if (sendfile(fd, *wrw->wfd, off, len, &sfh, NULL, 0) != 0)
+			wrw->werr++;
+		wrw->liov = 0;
+		wrw->niov = 0;
 	} while (0);
 #elif defined(__linux__)
 	do {
 		if (WRK_Flush(w) == 0 &&
-		    sendfile(*w->wfd, fd, &off, len) != len)
-			w->werr++;
+		    sendfile(*wrw->wfd, fd, &off, len) != len)
+			wrw->werr++;
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILEV)
 	do {
 		sendfilevec_t svvec[params->http_headers * 2 + 1];
 		size_t xferred = 0, expected = 0;
 		int i;
-		for (i = 0; i < w->niov; i++) {
+		for (i = 0; i < wrw->niov; i++) {
 			svvec[i].sfv_fd = SFV_FD_SELF;
 			svvec[i].sfv_flag = 0;
-			svvec[i].sfv_off = (off_t) w->iov[i].iov_base;
-			svvec[i].sfv_len = w->iov[i].iov_len;
+			svvec[i].sfv_off = (off_t) wrw->iov[i].iov_base;
+			svvec[i].sfv_len = wrw->iov[i].iov_len;
 			expected += svvec[i].sfv_len;
 		}
 		svvec[i].sfv_fd = fd;
@@ -207,17 +217,17 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 		svvec[i].sfv_off = off;
 		svvec[i].sfv_len = len;
 		expected += svvec[i].sfv_len;
-		if (sendfilev(*w->wfd, svvec, i, &xferred) == -1 ||
+		if (sendfilev(*wrw->wfd, svvec, i, &xferred) == -1 ||
 		    xferred != expected)
-			w->werr++;
-		w->liov = 0;
-		w->niov = 0;
+			wrw->werr++;
+		wrw->liov = 0;
+		wrw->niov = 0;
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILE)
 	do {
 		if (WRK_Flush(w) == 0 &&
-		    sendfile(*w->wfd, fd, &off, len) != len)
-			w->werr++;
+		    sendfile(*wrw->wfd, fd, &off, len) != len)
+			wrw->werr++;
 	} while (0);
 #else
 #error Unknown sendfile() implementation

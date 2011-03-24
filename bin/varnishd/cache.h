@@ -248,6 +248,16 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
+/* WRW related fields */
+struct wrw {
+	int			*wfd;
+	unsigned		werr;	/* valid after WRK_Flush() */
+	struct iovec		*iov;
+	unsigned		siov;
+	unsigned		niov;
+	ssize_t			liov;
+};
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -259,17 +269,12 @@ struct worker {
 
 	double			lastused;
 
+	struct wrw		wrw;
+
 	pthread_cond_t		cond;
 
 	VTAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
-
-	int			*wfd;
-	unsigned		werr;	/* valid after WRK_Flush() */
-	struct iovec		*iov;
-	unsigned		siov;
-	unsigned		niov;
-	ssize_t			liov;
 
 	struct VCL_conf		*vcl;
 
@@ -781,6 +786,7 @@ int WRK_Queue(struct workreq *wrq);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
+#define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 void WRW_Reserve(struct worker *w, int *fd);
 unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);

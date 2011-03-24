@@ -1054,10 +1054,11 @@ unsigned
 http_Write(struct worker *w, const struct http *hp, int resp)
 {
 	unsigned u, l;
+	int fd = *(w->wrw.wfd);
 
 	if (resp) {
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_PROTO);
+		WSLH(w, fd, hp, HTTP_HDR_PROTO);
 
 		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(w->ws, 4);
 		AN(hp->hd[HTTP_HDR_STATUS].b);
@@ -1066,18 +1067,18 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_STATUS);
+		WSLH(w, fd, hp, HTTP_HDR_STATUS);
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_RESPONSE);
+		WSLH(w, fd, hp, HTTP_HDR_RESPONSE);
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_REQ);
+		WSLH(w, fd, hp, HTTP_HDR_REQ);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_URL);
+		WSLH(w, fd, hp, HTTP_HDR_URL);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
-		WSLH(w, *w->wfd, hp, HTTP_HDR_PROTO);
+		WSLH(w, fd, hp, HTTP_HDR_PROTO);
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
@@ -1085,7 +1086,7 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 		AN(hp->hd[u].b);
 		AN(hp->hd[u].e);
 		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
-		WSLH(w, *w->wfd, hp, u);
+		WSLH(w, fd, hp, u);
 	}
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);
