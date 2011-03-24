@@ -211,7 +211,7 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 /*---------------------------------------------------------------------
  */
 
-static const char gzip_hdr[] = {
+static const uint8_t gzip_hdr[] = {
 	0x1f, 0x8b, 0x08,
 	0x00, 0x00, 0x00, 0x00,
 	0x00,
@@ -291,8 +291,6 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V8:
 			l = ved_decode_len(&p);
 			r = p;
-			q = (void*)strchr((const char*)p, '\0');
-			p = q + 1;
 			if (isgzip) {
 				assert(*p == VEC_C1 || *p == VEC_C2 ||
 				    *p == VEC_C8);
