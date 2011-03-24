@@ -64,7 +64,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 		return;
 	}
 
-	AZ(WRW_FlushRelease(w));
+	(void)WRW_FlushRelease(w);
 
 	obj = sp->obj;
 	sp->obj = NULL;
