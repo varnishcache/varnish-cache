@@ -93,6 +93,10 @@ OPTIONS
             Offer a management interface on the specified address and port.  See Management
             Interface for a list of management commands.
 
+-M address:port
+            Connect to this port and offer the command line
+            interface. Think of it as a reverse shell.
+
 -t ttl      
    	    Specifies a hard minimum time to live for cached documents.  This is a shortcut for
             specifying the default_ttl run-time parameter.
@@ -204,85 +208,9 @@ Management Interface
 --------------------
 
 If the -T option was specified, varnishd will offer a command-line management interface on the specified address
-and port.  The following commands are available:
+and port.  The recommended way of connecting to the command-line management interface is through varnishadm(1).
 
-help [command]
-      Display a list of available commands.
-
-      If the command is specified, display help for this command.
-
-param.set param value
-      Set the parameter specified by param to the specified value.  See Run-Time Parameters for a list of parame‐
-      ters.
-
-param.show [-l] [param]
-      Display a list if run-time parameters and their values.
-
-      If the -l option is specified, the list includes a brief explanation of each parameter.
-
-      If a param is specified, display only the value and explanation for this parameter.
-
-ping [timestamp]
-      Ping the Varnish cache process, keeping the connection alive.
-
-purge field operator argument [&& field operator argument [...]]
-      Immediately invalidate all documents matching the purge expression.  See Purge expressions for more docu‐
-      mentation and examples.
-
-purge.list
-      Display the purge list.
-
-      All requests for objects from the cache are matched against items on the purge list.  If an object in the
-      cache is older than a matching purge list item, it is considered "purged", and will be fetched from the
-      backend instead.
-
-      When a purge expression is older than all the objects in the cache, it is removed from the list.
-
-purge.url regexp
-      Immediately invalidate all documents whose URL matches the specified regular expression.
-
-quit
-      Close the connection to the varnish admin port.
-
-start
-      Start the Varnish cache process if it is not already running.
-
-stats
-      Show summary statistics.
-
-      All the numbers presented are totals since server startup; for a better idea of the current situation, use
-      the varnishstat(1) utility.
-
-status
-      Check the status of the Varnish cache process.
-
-stop
-      Stop the Varnish cache process.
-
-url.purge regexp
-      Deprecated, see purge.url instead.
-
-vcl.discard configname
-      Discard the configuration specified by configname.  This will have no effect if the specified configuration
-      has a non-zero reference count.
-
-vcl.inline configname vcl
-      Create a new configuration named configname with the VCL code specified by vcl, which must be a quoted
-      string.
-
-vcl.list
-      List available configurations and their respective reference counts.  The active configuration is indicated
-      with an asterisk ("*").
-
-vcl.load configname filename
-      Create a new configuration named configname with the contents of the specified file.
-
-vcl.show configname
-      Display the source code for the specified configuration.
-
-vcl.use configname
-      Start using the configuration specified by configname for all new requests.  Existing requests will con‐
-      tinue using whichever configuration was in use when they arrived.
+The commands available are documented in varnish(7).
 
 Run-Time Parameters
 -------------------
@@ -834,41 +762,6 @@ waiter
 	- Flags: must_restart, experimental
 
 	Select the waiter kernel interface.
-
-
-Purge expressions
------------------
-
-A purge expression consists of one or more conditions.  A condition
-consists of a field, an operator, and an argument.  Conditions can be
-ANDed together with "&&".
-
-A field can be any of the variables from VCL, for instance req.url,
-req.http.host or obj.set-cookie.
-
-Operators are "==" for direct comparision, "~" for a regular
-expression match, and ">" or "<" for size comparisons.  Prepending
-an operator with "!" negates the expression.
-
-The argument could be a quoted string, a regexp, or an integer.
-Integers can have "KB", "MB", "GB" or "TB" appended for size related
-fields.
-
-Simple example: All requests where req.url exactly matches the string
-/news are purged from the cache:::
-
-    req.url == "/news"
-
-Example: Purge all documents where the name does not end with ".ogg",
-and where the size of the object is greater than 10 megabytes:::
-
-    req.url !~ "\.ogg$" && obj.size > 10MB
-
-Example: Purge all documents where the serving host is "example.com"
-or "www.example.com", and where the Set- Cookie header received from
-the backend contains "USERID=1663":::
-
-    req.http.host ~ "^(?i)(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
 
 SEE ALSO
 ========

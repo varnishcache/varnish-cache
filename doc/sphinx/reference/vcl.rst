@@ -35,16 +35,15 @@ Blocks are delimited by curly braces, statements end with semicolons,
 and comments may be written as in C, C++ or Perl according to your own
 preferences.
 
-In addition to the C-like assignment (=), comparison (==) and boolean
-(!, && and \|\|) operators, VCL supports regular expression and ACL
-matching using the ~ operator.
+In addition to the C-like assignment (=), comparison (==, !=) and
+boolean (!, && and \|\|) operators, VCL supports both regular
+expression and ACL matching using the ~ and the !~ operators.
 
 Unlike C and Perl, the backslash (\) character has no special meaning
 in strings in VCL, so it can be freely used in regular expressions
 without doubling.
 
-Strings are concatenated by putting them one after each other
-with a '+' operator between.
+Strings are concatenated using the '+' operator. 
 
 Assignments are introduced with the *set* keyword.  There are no
 user-defined variables; values can only be assigned to variables

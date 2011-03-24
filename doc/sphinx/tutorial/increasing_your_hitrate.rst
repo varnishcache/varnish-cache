@@ -168,6 +168,18 @@ beresp.ttl to whatever you want::
       }
   }
 
+The example will set the TTL to 5 days for the old legacy stuff on
+your site.
+
+Forcing caching for certain requests and certain responses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since you still have this cumbersome backend that isn't very friendly
+to work with you might want to override more stuff in Varnish. We
+recommend that you rely as much as you can on the default caching
+rules. It is perfectly easy to force Varnish to lookup an object in
+the cache but it isn't really recommended.
+
 
 Normalizing your namespace
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
