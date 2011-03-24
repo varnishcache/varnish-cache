@@ -145,6 +145,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
+	w->wrw.ciov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->ws, "wrk", ws, sess_workspace);

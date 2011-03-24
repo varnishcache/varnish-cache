@@ -120,6 +120,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	WS_Reset(sp->ws, ws_wm);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Chunked(sp->wrk);
 }
 
 /*--------------------------------------------------------------------*/
@@ -127,28 +129,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 //#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
-
-static void
-ved_sendchunk(const struct sess *sp, const void *cb, ssize_t cl,
-    const void *ptr, ssize_t l)
-{
-	char chunk[20];
-
-	assert(l > 0);
-	if (sp->wrk->res_mode & RES_CHUNKED) {
-		if (cb == NULL) {
-			bprintf(chunk, "%jx\r\n", (intmax_t)l);
-			(void)WRW_Write(sp->wrk, chunk, -1);
-		} else
-			(void)WRW_Write(sp->wrk, cb, cl);
-	}
-	(void)WRW_Write(sp->wrk, ptr, l);
-	if (sp->wrk->res_mode & RES_CHUNKED) {
-		(void)WRW_Write(sp->wrk, "\r\n", -1);
-		if (cb == NULL)
-			(void)WRW_Flush(sp->wrk);
-	}
-}
 
 static ssize_t
 ved_decode_len(uint8_t **pp)
@@ -200,32 +180,32 @@ ved_decode_len(uint8_t **pp)
 static void
 ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 {
-	uint8_t buf[5];
-	char chunk[20];
+	uint8_t buf1[5], buf2[5];
 	uint16_t lx;
 
+	lx = 65535;
+	buf1[0] = 0;
+	vle16enc(buf1 + 1, lx);
+	vle16enc(buf1 + 3, ~lx);
+
 	while (l > 0) {
-		if (l > 65535)
+		if (l >= 65535) {
 			lx = 65535;
-		else
+			(void)WRW_Write(sp->wrk, buf1, sizeof buf1);
+		} else {
 			lx = (uint16_t)l;
-		buf[0] = 0;
-		vle16enc(buf + 1, lx);
-		vle16enc(buf + 3, ~lx);
-		if (sp->wrk->res_mode & RES_CHUNKED) {
-			bprintf(chunk, "%x\r\n", lx + 5);
-			(void)WRW_Write(sp->wrk, chunk, -1);
+			buf2[0] = 0;
+			vle16enc(buf2 + 1, lx);
+			vle16enc(buf2 + 3, ~lx);
+			(void)WRW_Write(sp->wrk, buf2, sizeof buf2);
 		}
-		(void)WRW_Write(sp->wrk, buf, sizeof buf);
 		(void)WRW_Write(sp->wrk, p, lx);
-		if (sp->wrk->res_mode & RES_CHUNKED)
-			(void)WRW_Write(sp->wrk, "\r\n", -1);
-		(void)WRW_Flush(sp->wrk);
 		sp->wrk->crc = crc32(sp->wrk->crc, p, lx);
 		sp->wrk->l_crc += lx;
 		l -= lx;
 		p += lx;
 	}
+	(void)WRW_Flush(sp->wrk);
 }
 
 /*---------------------------------------------------------------------
@@ -280,7 +260,7 @@ ESI_Deliver(struct sess *sp)
 		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
-			ved_sendchunk(sp, "a\r\n", 3, gzip_hdr, 10);
+			WRW_Write(sp->wrk, gzip_hdr, 10);
 			sp->wrk->l_crc = 0;
 			sp->wrk->gzip_resp = 1;
 			sp->wrk->crc = crc32(0L, Z_NULL, 0);
@@ -328,7 +308,7 @@ ESI_Deliver(struct sess *sp)
 				sp->wrk->crc = crc32_combine(
 				    sp->wrk->crc, icrc, l_icrc);
 				sp->wrk->l_crc += l_icrc;
-				ved_sendchunk(sp, r, q - r, st->ptr + off, l);
+				WRW_Write(sp->wrk, st->ptr + off, l);
 			} else if (sp->wrk->gzip_resp) {
 				/*
 				 * A gzip'ed ESI response, but the VEC was
@@ -344,8 +324,7 @@ ESI_Deliver(struct sess *sp)
 				VGZ_Ibuf(vgz, st->ptr + off, l);
 				do {
 					if (obufl == sizeof obuf) {
-						ved_sendchunk(sp, NULL, 0,
-						    obuf, obufl);
+						WRW_Write(sp->wrk, obuf, obufl);
 						obufl = 0;
 					}
 					VGZ_Obuf(vgz, obuf + obufl,
@@ -358,7 +337,7 @@ ESI_Deliver(struct sess *sp)
 				/*
 				 * Ungzip'ed VEC, ungzip'ed ESI response
 				 */
-				ved_sendchunk(sp, r, q - r, st->ptr + off, l);
+				WRW_Write(sp->wrk, st->ptr + off, l);
 			}
 			off += l;
 			break;
@@ -377,8 +356,7 @@ ESI_Deliver(struct sess *sp)
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
 			if (obufl > 0) {
-				ved_sendchunk(sp, NULL, 0,
-				    obuf, obufl);
+				WRW_Write(sp->wrk, obuf, obufl);
 				obufl = 0;
 			}
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
@@ -393,7 +371,7 @@ ESI_Deliver(struct sess *sp)
 	}
 	if (vgz != NULL) {
 		if (obufl > 0)
-			ved_sendchunk(sp, NULL, 0, obuf, obufl);
+			WRW_Write(sp->wrk, obuf, obufl);
 		VGZ_Destroy(&vgz);
 	}
 	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
@@ -410,7 +388,7 @@ ESI_Deliver(struct sess *sp)
 		/* MOD(2^32) length */
 		vle32enc(tailbuf + 9, sp->wrk->l_crc);
 
-		ved_sendchunk(sp, "d\r\n", 3, tailbuf, 13);
+		WRW_Write(sp->wrk, tailbuf, 13);
 	}
 	(void)WRW_Flush(sp->wrk);
 }
@@ -450,7 +428,7 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 //printf("[2-] %jd %jd\n", lx, lx + l);
 		assert(lx >= low && lx + l <= high);
 		if (l != 0)
-			ved_sendchunk(sp, NULL, 0, p, l);
+			WRW_Write(sp->wrk, p, l);
 		if (lx + st->len > high)
 			return(p[l]);
 		lx += st->len;
@@ -502,7 +480,7 @@ ESI_DeliverChild(const struct sess *sp)
 	 */
 	*dbits = ved_deliver_byterange(sp, start/8, last/8);
 	*dbits &= ~(1U << (last & 7));
-	ved_sendchunk(sp, NULL, 0, dbits, 1);
+	WRW_Write(sp->wrk, dbits, 1);
 	cc = ved_deliver_byterange(sp, 1 + last/8, stop/8);
 	switch((int)(stop & 7)) {
 	case 0: /* xxxxxxxx */
@@ -546,7 +524,7 @@ ESI_DeliverChild(const struct sess *sp)
 		INCOMPL();
 	}
 	if (lpad > 0)
-		ved_sendchunk(sp, NULL, 0, dbits + 1, lpad);
+		WRW_Write(sp->wrk, dbits + 1, lpad);
 	st = VTAILQ_LAST(&sp->obj->store, storagehead);
 	assert(st->len > 8);
 

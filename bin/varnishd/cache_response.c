@@ -246,7 +246,6 @@ res_WriteGunzipObj(struct sess *sp)
 	unsigned u = 0;
 	struct vgz *vg;
 	const void *dp;
-	char lenbuf[20];
 	char obuf[params->gzip_stack_buffer];
 	size_t dl;
 	int i;
@@ -268,13 +267,7 @@ res_WriteGunzipObj(struct sess *sp)
 			VGZ_Obuf(vg, obuf, sizeof obuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (dl != 0) {
-				if (sp->wrk->res_mode & RES_CHUNKED) {
-					bprintf(lenbuf, "%x\r\n", (unsigned)dl);
-					(void)WRW_Write(sp->wrk, lenbuf, -1);
-				}
 				(void)WRW_Write(sp->wrk, dp, dl);
-				if (sp->wrk->res_mode & RES_CHUNKED)
-					(void)WRW_Write(sp->wrk, "\r\n", -1);
 				if (WRW_Flush(sp->wrk))
 					break;
 			}
@@ -288,18 +281,13 @@ res_WriteGunzipObj(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
+res_WriteDirObj(struct sess *sp, size_t low, size_t high)
 {
 	unsigned u = 0;
 	size_t ptr, off, len;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	if (sp->wrk->res_mode & RES_CHUNKED) {
-		sprintf(lenbuf, "%jx\r\n", (intmax_t)sp->obj->len);
-		(void)WRW_Write(sp->wrk, lenbuf, -1);
-	}
 
 	ptr = 0;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -344,8 +332,6 @@ res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);
-	if (sp->wrk->res_mode & RES_CHUNKED)
-		(void)WRW_Write(sp->wrk, "\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -355,7 +341,6 @@ RES_WriteObj(struct sess *sp)
 {
 	char *r;
 	unsigned low, high;
-	char lenbuf[20];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
@@ -384,6 +369,9 @@ RES_WriteObj(struct sess *sp)
 		sp->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->wrk->resp, 1);
 
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Chunked(sp->wrk);
+
 	if (!sp->wantbody) {
 		/* This was a HEAD request */
 	} else if (sp->obj->len == 0) {
@@ -395,12 +383,12 @@ RES_WriteObj(struct sess *sp)
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp);
 	} else {
-		res_WriteDirObj(sp, lenbuf, low, high);
+		res_WriteDirObj(sp, low, high);
 	}
 
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
-		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
+		WRW_EndChunk(sp->wrk);
 
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
