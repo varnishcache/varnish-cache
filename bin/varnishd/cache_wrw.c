@@ -45,6 +45,7 @@
 #include "svnid.h"
 SVNID("$Id$")
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 
@@ -80,6 +81,7 @@ WRW_Reserve(struct worker *w, int *fd)
 	wrw->werr = 0;
 	wrw->liov = 0;
 	wrw->niov = 0;
+	wrw->ciov = wrw->siov;
 	wrw->wfd = fd;
 }
 
@@ -90,9 +92,11 @@ WRW_Release(struct worker *w)
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	wrw = &w->wrw;
+	AN(wrw->wfd);
 	wrw->werr = 0;
 	wrw->liov = 0;
 	wrw->niov = 0;
+	wrw->ciov = wrw->siov;
 	wrw->wfd = NULL;
 }
 
@@ -101,11 +105,28 @@ WRW_Flush(struct worker *w)
 {
 	ssize_t i;
 	struct wrw *wrw;
+	char cbuf[32];
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	wrw = &w->wrw;
 	AN(wrw->wfd);
+
+	/* For chunked, there must be one slot reserved for the chunked tail */
+	if (wrw->ciov < wrw->siov)
+		assert(wrw->niov < wrw->siov);
+
 	if (*wrw->wfd >= 0 && wrw->niov > 0 && wrw->werr == 0) {
+		if (wrw->ciov < wrw->siov && wrw->liov > 0) {
+			bprintf(cbuf, "%jx\r\n", (intmax_t)wrw->cliov);
+			i = strlen(cbuf);
+			wrw->iov[wrw->ciov].iov_base = cbuf;
+			wrw->iov[wrw->ciov].iov_len = i;
+			wrw->liov += i;
+
+			wrw->iov[wrw->niov].iov_base = cbuf + i - 2;
+			wrw->iov[wrw->niov++].iov_len = 2;
+			wrw->liov += 2;
+		}
 		i = writev(*wrw->wfd, wrw->iov, wrw->niov);
 		if (i != wrw->liov) {
 			wrw->werr++;
@@ -115,7 +136,10 @@ WRW_Flush(struct worker *w)
 		}
 	}
 	wrw->liov = 0;
+	wrw->cliov = 0;
 	wrw->niov = 0;
+	if (wrw->ciov < wrw->siov)
+		wrw->ciov = wrw->niov++;
 	return (wrw->werr);
 }
 
@@ -160,14 +184,37 @@ WRW_Write(struct worker *w, const void *ptr, int len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (wrw->niov == wrw->siov)
+	if (wrw->niov == wrw->siov + (wrw->ciov < wrw->siov ? 1 : 0))
 		(void)WRW_Flush(w);
 	wrw->iov[wrw->niov].iov_base = TRUST_ME(ptr);
 	wrw->iov[wrw->niov].iov_len = len;
 	wrw->liov += len;
+	if (wrw->ciov < wrw->siov)
+		wrw->cliov += len;
 	wrw->niov++;
 	return (len);
 }
+
+void
+WRW_Chunked(struct worker *w)
+{
+	struct wrw *wrw;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	wrw = &w->wrw;
+
+	assert(wrw->ciov == wrw->siov);
+	/*
+	 * If there are not space for chunked header, a chunk of data and
+	 * a chunk tail, we might as well flush right away.
+	 */
+	if (wrw->niov + 3 >= wrw->siov)
+		(void)WRW_Flush(w);
+	wrw->ciov = wrw->niov++;
+	wrw->cliov = wrw->liov;
+	assert(wrw->ciov < wrw->siov);
+}
+
 
 #ifdef SENDFILE_WORKS
 void

@@ -256,6 +256,8 @@ struct wrw {
 	unsigned		siov;
 	unsigned		niov;
 	ssize_t			liov;
+	ssize_t			cliov;
+	unsigned		ciov;	/* Chunked header marker */
 };
 
 struct worker {
@@ -787,6 +789,7 @@ int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+void WRW_Chunked(struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd);
 unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
