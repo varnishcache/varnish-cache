@@ -470,6 +470,7 @@ cnt_fetch(struct sess *sp)
 	AZ(sp->vbc);
 	AZ(sp->wrk->h_content_length);
 	AZ(sp->wrk->do_close);
+	AZ(sp->wrk->storage_hint);
 
 	http_Setup(sp->wrk->beresp, sp->wrk->ws);
 
@@ -485,77 +486,62 @@ cnt_fetch(struct sess *sp)
 	}
 
 	if (i) {
-		if (sp->objcore != NULL) {
-			CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-			AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
-			sp->objcore = NULL;
-		}
-		AZ(sp->obj);
-		sp->wrk->do_close = 0;
-		sp->wrk->h_content_length = NULL;
-		http_Setup(sp->wrk->bereq, NULL);
-		http_Setup(sp->wrk->beresp, NULL);
+		sp->handling = VCL_RET_ERROR;
 		sp->err_code = 503;
-		sp->step = STP_ERROR;
-		return (0);
+		sp->wrk->do_close = 0;
+	} else {
+		/*
+		 * These two headers can be spread over multiple actual headers
+		 * and we rely on their content outside of VCL, so collect them
+		 * into one line here.
+		 */
+		http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
+		http_CollectHdr(sp->wrk->beresp, H_Vary);
+
+		/*
+		 * Figure out how the fetch is supposed to happen, before the
+		 * headers are adultered by VCL
+		 * NB: Also sets other sp->wrk variables 
+		 */ 
+		sp->wrk->body_status = RFC2616_Body(sp);
+
+		sp->err_code = http_GetStatus(sp->wrk->beresp);
+
+		/*
+		 * What does RFC2616 think about TTL ?
+		 */
+		sp->wrk->entered = TIM_real();
+		sp->wrk->age = 0;
+		EXP_Clr(&sp->wrk->exp);
+		sp->wrk->exp.ttl = RFC2616_Ttl(sp);
+
+		/* pass from vclrecv{} has negative TTL */
+		if (sp->objcore == NULL)
+			sp->wrk->exp.ttl = -1.;
+
+		sp->wrk->do_esi = 0;
+
+		VCL_fetch_method(sp);
+
+		switch (sp->handling) {
+		case VCL_RET_HIT_FOR_PASS:
+			if (sp->objcore != NULL)
+				sp->objcore->flags |= OC_F_PASS;
+			sp->step = STP_FETCHBODY;
+			return (0);
+		case VCL_RET_DELIVER:
+			sp->step = STP_FETCHBODY;
+			return (0);
+		default:
+			break;
+		}
+
+		/* We are not going to fetch the body, Close the connection */
+		VDI_CloseFd(sp);
 	}
 
-	/*
-	 * These two headers can be spread over multiple actual headers
-	 * and we rely on their content outside of VCL, so collect them
-	 * into one line here.
-	 */
-	http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
-	http_CollectHdr(sp->wrk->beresp, H_Vary);
+	/* Clean up partial fetch */
 
-	/*
-	 * Figure out how the fetch is supposed to happen, before the
-	 * headers are adultered by VCL
-	 * Also sets other sp->wrk variables 
-	 */ 
-	sp->wrk->body_status = RFC2616_Body(sp);
-
-
-	sp->err_code = http_GetStatus(sp->wrk->beresp);
-
-	/*
-	 * What does RFC2616 think about TTL ?
-	 */
-	sp->wrk->entered = TIM_real();
-	sp->wrk->age = 0;
-	EXP_Clr(&sp->wrk->exp);
-	sp->wrk->exp.ttl = RFC2616_Ttl(sp);
-
-	/* pass from vclrecv{} has negative TTL */
-	if (sp->objcore == NULL)
-		sp->wrk->exp.ttl = -1.;
-
-	sp->wrk->do_esi = 0;
-
-
-	AZ(sp->wrk->storage_hint);
-
-	VCL_fetch_method(sp);
-
-	switch (sp->handling) {
-	case VCL_RET_HIT_FOR_PASS:
-		if (sp->objcore != NULL)
-			sp->objcore->flags |= OC_F_PASS;
-		sp->step = STP_FETCHBODY;
-		return (0);
-	case VCL_RET_DELIVER:
-		sp->step = STP_FETCHBODY;
-		return (0);
-	default:
-		break;
-	}
-
-	/*
-	 * We are not going to fetch the body
-	 * Close the connection and clean up...
-	 */
-
-	VDI_CloseFd(sp);
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
@@ -717,7 +703,6 @@ cnt_fetchbody(struct sess *sp)
 		AN(sp->obj->vary);
 		memcpy(sp->obj->vary, vsb_data(vary), varyl);
 		vsb_delete(vary);
-		vary = NULL;
 	}
 
 	sp->obj->xid = sp->xid;
