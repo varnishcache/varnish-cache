@@ -134,6 +134,11 @@ stv_alloc(const struct sess *sp, size_t size)
 		if (st != NULL)
 			break;
 
+		if (size > params->fetch_chunksize) {
+			size >>= 1;
+			continue;
+		}
+
 		/* no luck; try to free some space and keep trying */
 		if (EXP_NukeOne(sp, stv->lru) == -1)
 			break;
