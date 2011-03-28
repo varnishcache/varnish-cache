@@ -606,11 +606,14 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	    (uintmax_t)vz.start_bit,
+	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
 	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	    (uintmax_t)vz.last_bit,
+	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
+	    (uintmax_t)vz.stop_bit,
+	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	assert(Z_OK == deflateEnd(&vz));
 }
 
