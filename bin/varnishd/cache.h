@@ -690,6 +690,12 @@ int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
+/* Return values */
+#define VGZ_ERROR	-1
+#define VGZ_OK		0
+#define VGZ_END		1
+#define VGZ_STUCK	2
+
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);

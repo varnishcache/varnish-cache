@@ -266,13 +266,13 @@ res_WriteGunzipObj(struct sess *sp)
 		do {
 			VGZ_Obuf(vg, obuf, sizeof obuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
+			assert(i >= VGZ_OK);
 			if (dl != 0) {
 				(void)WRW_Write(sp->wrk, dp, dl);
 				if (WRW_Flush(sp->wrk))
 					break;
 			}
-			assert(i >= 0);
-		} while (i == 0);
+		} while (!VGZ_IbufEmpty(vg));
 	}
 	VGZ_Destroy(&vg);
 	assert(u == sp->obj->len);
