@@ -584,11 +584,16 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, ibuf, sizeof ibuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
-			assert(i == Z_OK || i == Z_STREAM_END);
+			if (i != Z_OK && i != Z_STREAM_END) {
+				WSP(sp, SLT_FetchError,
+				    "Invalid Gzip data: %s", vg->vz.msg);
+				return (-1);
+			}
 		}
 	}
-	if (i == Z_OK || i == Z_STREAM_END)
+	if (i == Z_STREAM_END)
 		return (1);
+	WSP(sp, SLT_FetchError, "Incomplete Gzip data (not STREAM_END)");
 	return (-1);
 }
 
