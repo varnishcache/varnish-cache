@@ -65,14 +65,12 @@
 SVNID("$Id$")
 
 #include <ctype.h>
-#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <strings.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "compat/daemon.h"
 
@@ -112,7 +110,7 @@ static size_t nll;
 
 static int o_flag = 0;
 static int match_tag;
-static vre_t *match_tag_re;
+static const vre_t *match_tag_re;
 
 static const char *format;
 
@@ -677,6 +675,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 				}
 			}
 			/* Fall through if we haven't handled something */
+			/* FALLTHROUGH*/
 		default:
 			fprintf(stderr, "Unknown format character: %c\n", *p);
 			exit(1);
