@@ -123,6 +123,7 @@ EXTRA_DIST = \
 	reference/varnishstat.rst \
 	reference/varnishtest.rst \
 	reference/varnishtop.rst \
+	reference/varnish-cli.rst \
 	reference/vcl.rst \
 	reference/vmod.rst \
 	tutorial/advanced_backend_servers.rst \
