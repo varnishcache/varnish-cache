@@ -205,6 +205,7 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 		l -= lx;
 		p += lx;
 	}
+	/* buf2 is local, have to flush */
 	(void)WRW_Flush(sp->wrk);
 }
 
