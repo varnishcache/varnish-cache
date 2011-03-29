@@ -224,10 +224,11 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
 					    (ju >> 24) & 0xffffffffffLL));
 					for (ch = 0x800000; ch; ch >>= 1)
 						if (ju & ch)
-							AC(printw("V"));
+							AC(addstr("V"));
 						else
-							AC(printw("_"));
-					AC(printw(" %s", pt->name));
+							AC(addstr("_"));
+					AC(addstr(" "));
+					AC(addstr(pt->name));
 				} else {
 					AC(mvprintw(line, 0,
 					    "%12ju %12s %12s %s\n",
