@@ -245,15 +245,15 @@ res_WriteGunzipObj(struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
-	const void *dp;
 	char obuf[params->gzip_stack_buffer];
-	size_t dl;
+	ssize_t obufl = 0;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	vg = VGZ_NewUngzip(sp, "U D -");
 
+	VGZ_Obuf(vg, obuf, sizeof obuf);
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -262,17 +262,14 @@ res_WriteGunzipObj(struct sess *sp)
 		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
 		VSC_main->n_objwrite++;
 
-		VGZ_Ibuf(vg, st->ptr, st->len);
-		do {
-			VGZ_Obuf(vg, obuf, sizeof obuf);
-			i = VGZ_Gunzip(vg, &dp, &dl);
-			assert(i >= VGZ_OK);
-			if (dl != 0) {
-				(void)WRW_Write(sp->wrk, dp, dl);
-				if (WRW_Flush(sp->wrk))
-					break;
-			}
-		} while (!VGZ_IbufEmpty(vg));
+		i = VGZ_WrwGunzip(sp, vg,
+		    st->ptr, st->len,
+		    obuf, sizeof obuf, &obufl);
+		/* XXX: error check */
+	}
+	if (obufl) {
+		(void)WRW_Write(sp->wrk, obuf, obufl);
+		WRW_Flush(sp->wrk);
 	}
 	VGZ_Destroy(&vg);
 	assert(u == sp->obj->len);

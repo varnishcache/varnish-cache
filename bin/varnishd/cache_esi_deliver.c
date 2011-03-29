@@ -320,21 +320,9 @@ ESI_Deliver(struct sess *sp)
 				 * A gzip'ed VEC, but ungzip'ed ESI response
 				 */
 				AN(vgz);
-				VGZ_Ibuf(vgz, st->ptr + off, l);
-				do {
-					VGZ_Obuf(vgz, obuf + obufl,
-					    sizeof obuf - obufl);
-					i = VGZ_Gunzip(vgz, &dp, &dl);
-					assert(i >= VGZ_OK);
-					obufl += dl;
-					assert(obufl <= sizeof obuf);
-					if (obufl == sizeof obuf ||
-					    i == VGZ_STUCK) {
-						WRW_Write(sp->wrk, obuf, obufl);
-						WRW_Flush(sp->wrk);
-						obufl = 0;
-					}
-				} while (!VGZ_IbufEmpty(vgz));
+				i = VGZ_WrwGunzip(sp, vgz,
+					st->ptr + off, l,
+					obuf, sizeof obuf, &obufl);
 				assert (i == VGZ_OK || i == VGZ_END);
 			} else {
 				/*

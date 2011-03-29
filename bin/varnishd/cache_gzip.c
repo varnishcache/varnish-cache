@@ -350,6 +350,40 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	return (-1);
 }
 
+/*--------------------------------------------------------------------
+ * Gunzip ibuf into outb, if it runs full, emit it with WRW.
+ * Leave flushing to caller, more data may be coming.
+ */
+
+int
+VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
+    char *obuf, ssize_t obufl, ssize_t *obufp)
+{
+	int i;
+	size_t dl;
+	const void *dp;
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	VGZ_Ibuf(vg, ibuf, ibufl);
+	VGZ_Obuf(vg, obuf + *obufp, ibufl - *obufp);
+	do {
+		i = VGZ_Gunzip(vg, &dp, &dl);
+		if (i < VGZ_OK) {
+			/* XXX: VSL ? */
+			return (-1);
+		}
+		*obufp += dl;
+		if (obufl == *obufp || i == VGZ_STUCK) {
+			WRW_Write(sp->wrk, obuf, *obufp);
+			if (WRW_Flush(sp->wrk))
+				return (-1);
+			*obufp = 0;
+			VGZ_Obuf(vg, obuf + *obufp, ibufl - *obufp);
+		}
+	} while (!VGZ_IbufEmpty(vg));
+	return (i);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
