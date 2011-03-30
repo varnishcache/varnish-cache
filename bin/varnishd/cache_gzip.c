@@ -367,12 +367,16 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 	VGZ_Ibuf(vg, ibuf, ibufl);
 	VGZ_Obuf(vg, obuf + *obufp, ibufl - *obufp);
 	do {
-		i = VGZ_Gunzip(vg, &dp, &dl);
+		if (obufl == *obufp)
+			i = VGZ_STUCK;
+		else {
+			i = VGZ_Gunzip(vg, &dp, &dl);
+			*obufp += dl;
+		}
 		if (i < VGZ_OK) {
 			/* XXX: VSL ? */
 			return (-1);
 		}
-		*obufp += dl;
 		if (obufl == *obufp || i == VGZ_STUCK) {
 			WRW_Write(sp->wrk, obuf, *obufp);
 			if (WRW_Flush(sp->wrk))
