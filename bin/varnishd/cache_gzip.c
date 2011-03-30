@@ -364,7 +364,10 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 	const void *dp;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	assert(obufl > 16);
 	VGZ_Ibuf(vg, ibuf, ibufl);
+	if (ibufl == 0)
+		return (VGZ_OK);
 	VGZ_Obuf(vg, obuf + *obufp, ibufl - *obufp);
 	do {
 		if (obufl == *obufp)
@@ -382,7 +385,7 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 			if (WRW_Flush(sp->wrk))
 				return (-1);
 			*obufp = 0;
-			VGZ_Obuf(vg, obuf + *obufp, ibufl - *obufp);
+			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
 		}
 	} while (!VGZ_IbufEmpty(vg));
 	return (i);
