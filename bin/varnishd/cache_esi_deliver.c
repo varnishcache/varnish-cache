@@ -225,7 +225,7 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l, l_icrc = 0;
+	ssize_t l, l2, l_icrc = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
@@ -291,7 +291,6 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
-			r = p;
 			if (isgzip) {
 				assert(*p == VEC_C1 || *p == VEC_C2 ||
 				    *p == VEC_C8);
@@ -299,45 +298,76 @@ ESI_Deliver(struct sess *sp)
 				icrc = vbe32dec(p);
 				p += 4;
 			}
-			if (sp->wrk->gzip_resp && isgzip) {
-				/*
-				 * We have a gzip'ed VEC and delivers a
-				 * gzip'ed ESI response.
-				 */
-				sp->wrk->crc = crc32_combine(
-				    sp->wrk->crc, icrc, l_icrc);
-				sp->wrk->l_crc += l_icrc;
-				WRW_Write(sp->wrk, st->ptr + off, l);
-			} else if (sp->wrk->gzip_resp) {
-				/*
-				 * A gzip'ed ESI response, but the VEC was
-				 * not gzip'ed.
-				 */
-				ved_pretend_gzip(sp, st->ptr + off, l);
-				off += l;
-			} else if (isgzip) {
-				/*
-				 * A gzip'ed VEC, but ungzip'ed ESI response
-				 */
-				AN(vgz);
-				i = VGZ_WrwGunzip(sp, vgz,
-					st->ptr + off, l,
-					obuf, sizeof obuf, &obufl);
-				assert (i == VGZ_OK || i == VGZ_END);
-			} else {
-				/*
-				 * Ungzip'ed VEC, ungzip'ed ESI response
-				 */
-				WRW_Write(sp->wrk, st->ptr + off, l);
+			/*
+			 * There is no guarantee that the 'l' bytes are all
+			 * in the same storage segment, so loop over storage
+			 * until we have processed them all.
+			 */
+			while (l > 0) {
+				l2 = l;
+				if (l2 > st->len - off)
+					l2 = st->len - off;
+				l -= l2;
+
+				if (sp->wrk->gzip_resp && isgzip) {
+					/*
+					 * We have a gzip'ed VEC and delivers
+					 * a gzip'ed ESI response.
+					 */
+					sp->wrk->crc = crc32_combine(
+					    sp->wrk->crc, icrc, l_icrc);
+					sp->wrk->l_crc += l_icrc;
+					WRW_Write(sp->wrk, st->ptr + off, l2);
+				} else if (sp->wrk->gzip_resp) {
+					/*
+					 * A gzip'ed ESI response, but the VEC
+					 * was not gzip'ed.
+					 */
+					ved_pretend_gzip(sp, st->ptr + off, l2);
+				} else if (isgzip) {
+					/*
+					 * A gzip'ed VEC, but ungzip'ed ESI
+					 * response
+					 */
+					AN(vgz);
+					i = VGZ_WrwGunzip(sp, vgz,
+						st->ptr + off, l2,
+						obuf, sizeof obuf, &obufl);
+					assert (i == VGZ_OK || i == VGZ_END);
+				} else {
+					/*
+					 * Ungzip'ed VEC, ungzip'ed ESI response
+					 */
+					WRW_Write(sp->wrk, st->ptr + off, l2);
+				}
+				off += l2;
+				if (off == st->len) {
+					st = VTAILQ_NEXT(st, list);
+					off = 0;
+				}
 			}
-			off += l;
 			break;
 		case VEC_S1:
 		case VEC_S2:
 		case VEC_S8:
 			l = ved_decode_len(&p);
 			Debug("SKIP1(%d)\n", (int)l);
-			off += l;
+			/*
+			 * There is no guarantee that the 'l' bytes are all
+			 * in the same storage segment, so loop over storage
+			 * until we have processed them all.
+			 */
+			while (l > 0) {
+				l2 = l;
+				if (l2 > st->len - off)
+					l2 = st->len - off;
+				l -= l2;
+				off += l2;
+				if (off == st->len) {
+					st = VTAILQ_NEXT(st, list);
+					off = 0;
+				}
+			}
 			break;
 		case VEC_INCL:
 			p++;
