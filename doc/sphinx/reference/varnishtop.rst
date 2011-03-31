@@ -60,6 +60,10 @@ The following options are available:
 -i tag      Include log entries with the specified tag.  If neither ``-I``
    	    nor ``-i`` is specified, all log entries are included.
 
+-p period   Specifies the number of seconds to measure over, the default
+            is 60 seconds. The first number in the list is the average
+            number of requests seen over this time period.
+
 -n          Specifies the name of the varnishd instance to get logs from.  
 	    If ``-n`` is not specified, the host name is used.
 
